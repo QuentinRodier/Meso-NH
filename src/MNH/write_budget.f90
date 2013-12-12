@@ -12,8 +12,7 @@
 INTERFACE
 !
       SUBROUTINE WRITE_BUDGET(HFILEDIA,HLUOUT,TPDTCUR,                 &
-                              TPDTMOD,PTSTEP,                          &
-                              PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV,KSV      )
+                              TPDTMOD,PTSTEP, KSV                      )
 !
 USE MODD_TYPE_DATE
 !
@@ -22,12 +21,6 @@ CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT       ! name of output listing
 TYPE (DATE_TIME),   INTENT(IN) :: TPDTCUR      ! Current date and time
 TYPE (DATE_TIME),   INTENT(IN) :: TPDTMOD      ! Creation date and time
 REAL,               INTENT(IN) :: PTSTEP       ! time step
-REAL,               INTENT(IN) :: PTSTEP_UVW !  Effective time step for
-                                             !  momentum advection
-REAL,               INTENT(IN) :: PTSTEP_MET !  Effective time step for
-                                             !  meteorological variables advection
-REAL,               INTENT(IN) :: PTSTEP_SV  !  Effective time step for
-                                             !  scalar variables advection
 INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
 !
 END SUBROUTINE WRITE_BUDGET  
@@ -40,8 +33,7 @@ END MODULE MODI_WRITE_BUDGET
 !
 !     ##################################################################
       SUBROUTINE WRITE_BUDGET(HFILEDIA,HLUOUT,TPDTCUR,                 &
-                              TPDTMOD,PTSTEP,                          &
-                              PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV,KSV      )
+                              TPDTMOD,PTSTEP, KSV                      )
 !     ##################################################################
 !
 !!****  *WRITE_BUDGET* - routine to write a LFIFM file for the budget. 
@@ -158,12 +150,6 @@ CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT       ! name of output listing
 TYPE (DATE_TIME),   INTENT(IN) :: TPDTCUR      ! Current date and time
 TYPE (DATE_TIME),   INTENT(IN) :: TPDTMOD      ! Creation date and time
 REAL,               INTENT(IN) :: PTSTEP       ! time step
-REAL,               INTENT(IN) :: PTSTEP_UVW !  Effective time step for
-                                             !  momentum advection
-REAL,               INTENT(IN) :: PTSTEP_MET !  Effective time step for
-                                             !  meteorological variables advection
-REAL,               INTENT(IN) :: PTSTEP_SV  !  Effective time step for
-                                             !  scalar variables advection
 INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
 !  
 !*       0.2   Declarations of local variables :
@@ -268,7 +254,7 @@ SELECT CASE (CBUTYPE)
       IP=1
 ! unit conversion for  RU budgets 
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -341,7 +327,7 @@ SELECT CASE (CBUTYPE)
 !
       IP=2
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -413,7 +399,7 @@ SELECT CASE (CBUTYPE)
 ! 
       IP=3
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -520,7 +506,7 @@ SELECT CASE (CBUTYPE)
 !  RTH budgets storage
       IP=4
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -566,7 +552,7 @@ SELECT CASE (CBUTYPE)
 !  RTKE budgets storage
       IP=5
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -612,7 +598,7 @@ SELECT CASE (CBUTYPE)
 !  RRV budgets storage
       IP=6
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -658,7 +644,7 @@ SELECT CASE (CBUTYPE)
 !  RRV budgets storage
       IP=7
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -703,7 +689,7 @@ SELECT CASE (CBUTYPE)
     IF (LBU_RRR) THEN
       IP=8
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -748,7 +734,7 @@ SELECT CASE (CBUTYPE)
     IF (LBU_RRI) THEN
       IP=9
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -793,7 +779,7 @@ SELECT CASE (CBUTYPE)
     IF (LBU_RRS) THEN
       IP=10
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -838,7 +824,7 @@ SELECT CASE (CBUTYPE)
     IF (LBU_RRG) THEN
       IP=11
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -883,7 +869,7 @@ SELECT CASE (CBUTYPE)
     IF (LBU_RRH) THEN
       IP=12
       ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -929,7 +915,7 @@ SELECT CASE (CBUTYPE)
       DO JSV = 1,KSV
         IP=12+JSV
         ALLOCATE(ZCONVERT(NBUPROCNBR(IP)))
-        ZCONVERT(1:2)     = PTSTEP_SV * REAL(NBUSTEP)
+        ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
         ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
         ZCONVERT(4:NBUPROCNBR(IP)) = 2.
 ! 
@@ -1071,7 +1057,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(1)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(1)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(1)) = 2.
       DO JPROC=1,NBUPROCNBR(1)
@@ -1128,7 +1114,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(2)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(2)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(2)) = 2.
       DO JPROC=1,NBUPROCNBR(2)
@@ -1184,7 +1170,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(3)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(3)))
-      ZCONVERT(1:2)     = PTSTEP_UVW * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(3)) = 2.
       DO JPROC=1,NBUPROCNBR(3)
@@ -1242,7 +1228,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(4)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(4)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(4)) = 2.
       DO JPROC=1,NBUPROCNBR(4)
@@ -1273,7 +1259,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(5)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(5)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(5)) = 2.
       DO JPROC=1,NBUPROCNBR(5)
@@ -1304,7 +1290,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(6)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(6)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(6)) = 2.
       DO JPROC=1,NBUPROCNBR(6)
@@ -1335,7 +1321,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(7)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(7)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(7)) = 2.
       DO JPROC=1,NBUPROCNBR(7)
@@ -1366,7 +1352,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(8)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(8)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(8)) = 2.
       DO JPROC=1,NBUPROCNBR(8)
@@ -1397,7 +1383,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(9)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(9)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(9)) = 2.
       DO JPROC=1,NBUPROCNBR(9)
@@ -1428,7 +1414,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(10)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(10)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(10)) = 2.
       DO JPROC=1,NBUPROCNBR(10)
@@ -1459,7 +1445,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(11)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(11)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(11)) = 2.
       DO JPROC=1,NBUPROCNBR(11)
@@ -1490,7 +1476,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(NBUPROCNBR(12)))
 !
       ALLOCATE(ZCONVERT(NBUPROCNBR(12)))
-      ZCONVERT(1:2)     = PTSTEP_MET * REAL(NBUSTEP)
+      ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
       ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
       ZCONVERT(4:NBUPROCNBR(12)) = 2.
       DO JPROC=1,NBUPROCNBR(12)
@@ -1522,7 +1508,7 @@ SELECT CASE (CBUTYPE)
         ALLOCATE(IWORKGRID(NBUPROCNBR(12+JSV)))
 !
         ALLOCATE(ZCONVERT(NBUPROCNBR(12+JSV)))
-        ZCONVERT(1:2)     = PTSTEP_SV * REAL(NBUSTEP)
+        ZCONVERT(1:2)     = PTSTEP * REAL(NBUSTEP)
         ZCONVERT(3)       = 2. * PTSTEP * REAL(NBUSTEP)
         ZCONVERT(4:NBUPROCNBR(12+JSV)) = 2.
         DO JPROC=1,NBUPROCNBR(12+JSV)

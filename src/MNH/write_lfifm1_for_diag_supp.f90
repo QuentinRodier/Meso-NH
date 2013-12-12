@@ -1,3 +1,4 @@
+!-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$ $Date$
@@ -96,9 +97,9 @@ USE MODD_TIME_n
 USE MODD_TURB_n
 USE MODD_REF_n, ONLY: XRHODREF
 USE MODD_DIAG_FLAG
-USE MODD_NSV,   ONLY : NSV,NSV_USER,NSV_C2R2BEG,NSV_C2R2END,             &
-                       NSV_C1R3BEG, NSV_C1R3END,NSV_ELECBEG,NSV_ELECEND, &
-                       NSV_CHEMBEG, NSV_CHEMEND,NSV_LGBEG,  NSV_LGEND
+USE MODD_NSV, ONLY : NSV,NSV_USER,NSV_C2R2BEG,NSV_C2R2END,             &
+                     NSV_C1R3BEG, NSV_C1R3END,NSV_ELECBEG,NSV_ELECEND, &
+                     NSV_CHEMBEG, NSV_CHEMEND,NSV_LGBEG,  NSV_LGEND
 USE MODD_CH_M9_n,         ONLY: CNAMES
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
@@ -174,7 +175,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZIRBT, ZWVBT
 REAL  :: ZUNDEF ! undefined value in SURFEX
 !
 ! variables needed for 10m wind                                 
-INTEGER :: ILEVEL    
+INTEGER :: ILEVEL
 !
 INTEGER :: IPRES, ITH
 CHARACTER(LEN=4) :: YCAR4
@@ -202,7 +203,7 @@ IKE=IKU-JPVEXT
 ALLOCATE(ZWORK21(IIU,IJU))
 ALLOCATE(ZWORK31(IIU,IJU,IKU))
 ALLOCATE(ZTEMP(IIU,IJU,IKU))
-ZTEMP(:,:,:)=XTHM(:,:,:)*(XPABSM(:,:,:)/ XP00) **(XRD/XCPD)
+ZTEMP(:,:,:)=XTHT(:,:,:)*(XPABST(:,:,:)/ XP00) **(XRD/XCPD)
 !
 #ifdef MNH_NCWRIT
 IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
@@ -705,12 +706,12 @@ IF (CSURF=='EXTE') THEN
                    ( XZHAT(ILEVEL+1) + XZHAT(ILEVEL+2)) /2. >10.)
 
       !Interpolation between ILEVEL and ILEVEL+1
-      XCURRENT_ZON10M(IIB:IIE,IJB:IJE)=XUM(IIB:IIE,IJB:IJE,ILEVEL) + &
-            (XUM(IIB:IIE,IJB:IJE,ILEVEL+1)-XUM(IIB:IIE,IJB:IJE,ILEVEL)) * &
+      XCURRENT_ZON10M(IIB:IIE,IJB:IJE)=XUT(IIB:IIE,IJB:IJE,ILEVEL) + &
+            (XUT(IIB:IIE,IJB:IJE,ILEVEL+1)-XUT(IIB:IIE,IJB:IJE,ILEVEL)) * &
             ( 10.- (XZHAT(ILEVEL)+XZHAT(ILEVEL+1))/2. ) / &
            ( (XZHAT(ILEVEL+2)-XZHAT(ILEVEL)) /2.)
-      XCURRENT_MER10M(IIB:IIE,IJB:IJE)=XVM(IIB:IIE,IJB:IJE,ILEVEL) + &
-            (XVM(IIB:IIE,IJB:IJE,ILEVEL+1)-XVM(IIB:IIE,IJB:IJE,ILEVEL)) * &
+      XCURRENT_MER10M(IIB:IIE,IJB:IJE)=XVT(IIB:IIE,IJB:IJE,ILEVEL) + &
+            (XVT(IIB:IIE,IJB:IJE,ILEVEL+1)-XVT(IIB:IIE,IJB:IJE,ILEVEL)) * &
             (10.- (XZHAT(ILEVEL)+XZHAT(ILEVEL+1))/2. ) / &                                    
            ( (XZHAT(ILEVEL+2)-XZHAT(ILEVEL)) /2.)
     END WHERE
@@ -722,15 +723,14 @@ IF (CSURF=='EXTE') THEN
     IGRID=0
     ! in this case (argument IGRID=0), input winds are ZONal and MERidien 
     !          and, output ones are in MesoNH grid   
-    IF (.NOT. LCARTESIAN) THEN
-      CALL UV_TO_ZONAL_AND_MERID(XCURRENT_ZON10M,XCURRENT_MER10M,IGRID,     &
+    IF (.NOT. LCARTESIAN)                                                 &
+    CALL UV_TO_ZONAL_AND_MERID(XCURRENT_ZON10M,XCURRENT_MER10M,IGRID,     &
             HFMFILE=HFMFILE,HRECU='UM10',HRECV='VM10',HCOMMENT=YCOMMENT)
-    END IF
       !
-    IF (SIZE(XTKEM)>0) THEN
+    IF (SIZE(XTKET)>0) THEN
      ZWORK21(:,:)= 0.    
      ZWORK21(:,:) = SQRT(XCURRENT_ZON10M(:,:)**2+XCURRENT_MER10M(:,:)**2)
-     ZWORK21(:,:) =ZWORK21(:,:) + 4. * SQRT(XTKEM(:,:,IKB))
+     ZWORK21(:,:) =ZWORK21(:,:) + 4. * SQRT(XTKET(:,:,IKB))
      YRECFM      ='FF10MAX'
      YCOMMENT    ='X_Y_FF10MAX (m/s)'
      IGRID       =1
@@ -805,11 +805,11 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Potential Temperature
 ! *********************
-  CALL PINTER(XTHM, XPABSM, XZZ, ZTEMP, ZWRES, ZPRES, &
+  CALL PINTER(XTHT, XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
          IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
     ZWORK21(:,:) = ZWRES(:,:,JK)
-    YRECFM='THM'//TRIM(YPRES(JK))//'HPA'
+    YRECFM='THT'//TRIM(YPRES(JK))//'HPA'
     YCOMMENT='X_Y_potential temperature '//TRIM(YPRES(JK))//'hPa (K)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)
@@ -818,24 +818,24 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Wind
 ! *********************
-  ZWORK31(:,:,:) = MXF(XUM(:,:,:))
-  CALL PINTER(ZWORK31, XPABSM, XZZ, ZTEMP, ZWRES, ZPRES, &
+  ZWORK31(:,:,:) = MXF(XUT(:,:,:))
+  CALL PINTER(ZWORK31, XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
          IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
     ZWORK21(:,:) = ZWRES(:,:,JK)
-    YRECFM='UM'//TRIM(YPRES(JK))//'HPA'
+    YRECFM='UT'//TRIM(YPRES(JK))//'HPA'
     YCOMMENT='X_Y_U component of wind '//TRIM(YPRES(JK))//'hPa (m/s)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
   END DO
   !
-  ZWORK31(:,:,:) = MYF(XVM(:,:,:))
-  CALL PINTER(ZWORK31, XPABSM, XZZ, ZTEMP, ZWRES, ZPRES, &
+  ZWORK31(:,:,:) = MYF(XVT(:,:,:))
+  CALL PINTER(ZWORK31, XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
           IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
     ZWORK21(:,:) = ZWRES(:,:,JK)
-    YRECFM='VM'//TRIM(YPRES(JK))//'HPA'
+    YRECFM='VT'//TRIM(YPRES(JK))//'HPA'
     YCOMMENT='X_Y_V component of wind '//TRIM(YPRES(JK))//'hPa (m/s)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)
@@ -844,7 +844,7 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Water Vapour Mixing Ratio
 ! *********************
-  CALL PINTER(XRM(:,:,:,1), XPABSM, XZZ, ZTEMP, ZWRES, ZPRES, &
+  CALL PINTER(XRT(:,:,:,1), XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
          IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
     ZWORK21(:,:) = 1.E+3*ZWRES(:,:,JK)
@@ -858,7 +858,7 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! Geopotential in meters
 ! *********************
   ZWORK31(:,:,:) = MZF(1,IKU,1,XZZ(:,:,:))
-  CALL PINTER(ZWORK31, XPABSM, XZZ, ZTEMP, ZWRES, ZPRES, &
+  CALL PINTER(ZWORK31, XPABST, XZZ, ZTEMP, ZWRES, ZPRES, &
            IIU, IJU, IKU, IKB, IPRES, 'LOG', 'RHU.')
   DO JK=1,IPRES
     ZWORK21(:,:) = ZWRES(:,:,JK)
@@ -907,10 +907,10 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Pressure
 ! *********************
-  CALL ZINTER(XPABSM, XTHM, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
+  CALL ZINTER(XPABST, XTHT, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
   DO JK=1,ITH
     ZWORK21(:,:) = ZWTH(:,:,JK)
-    YRECFM='PABSM'//TRIM(YTH(JK))//'K'
+    YRECFM='PABST'//TRIM(YTH(JK))//'K'
     YCOMMENT='X_Y_pressure '//TRIM(YTH(JK))//'K (Pa)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)
@@ -920,26 +920,26 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! Potential Vorticity
 ! *********************
   ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
-  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWM,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVM,XDZZ)
+  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
   ZVOX(:,:,2)=ZVOX(:,:,3)
-  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUM,XDZZ)-GX_W_UW(1,IKU,1,XWM,XDXX,XDZZ,XDZX)
+  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
   ZVOY(:,:,2)=ZVOY(:,:,3)
-  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVM,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUM,XDYY,XDZZ,XDZY)
+  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
   ZVOZ(:,:,2)=ZVOZ(:,:,3)
   ZVOZ(:,:,1)=ZVOZ(:,:,3)
-  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHM,XDXX,XDZZ,XDZX)
-  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHM,XDYY,XDZZ,XDZY)
-  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHM,XDZZ)
+  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
   ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
   + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
    + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
   ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
   ZPOVO(:,:,1)  =-1.E+11
   ZPOVO(:,:,IKU)=-1.E+11
-  CALL ZINTER(ZPOVO, XTHM, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
+  CALL ZINTER(ZPOVO, XTHT, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
   DO JK=1,ITH
    ZWORK21(:,:) = ZWTH(:,:,JK)
-   YRECFM='POVOM'//TRIM(YTH(JK))//'K'
+   YRECFM='POVOT'//TRIM(YTH(JK))//'K'
    YCOMMENT='X_Y_POtential VOrticity '//TRIM(YTH(JK))//'K (PVU)'
    IGRID=1
    ILENCH=LEN(YCOMMENT)
@@ -948,22 +948,22 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 ! *********************
 ! Wind
 ! *********************
-  ZWORK31(:,:,:) = MXF(XUM(:,:,:))
-  CALL ZINTER(ZWORK31, XTHM, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
+  ZWORK31(:,:,:) = MXF(XUT(:,:,:))
+  CALL ZINTER(ZWORK31, XTHT, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
   DO JK=1,ITH
     ZWORK21(:,:) = ZWTH(:,:,JK)
-    YRECFM='UM'//TRIM(YTH(JK))//'K'
+    YRECFM='UT'//TRIM(YTH(JK))//'K'
     YCOMMENT='X_Y_U component of wind '//TRIM(YTH(JK))//'K (m/s)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
   END DO
   !
-  ZWORK31(:,:,:) = MYF(XVM(:,:,:))
-  CALL ZINTER(ZWORK31, XTHM, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
+  ZWORK31(:,:,:) = MYF(XVT(:,:,:))
+  CALL ZINTER(ZWORK31, XTHT, ZWTH, ZTH, IIU, IJU, IKU, IKB, ITH, XUNDEF)
   DO JK=1,ITH
     ZWORK21(:,:) = ZWTH(:,:,JK)
-    YRECFM='VM'//TRIM(YTH(JK))//'K'
+    YRECFM='VT'//TRIM(YTH(JK))//'K'
     YCOMMENT='X_Y_V component of wind '//TRIM(YTH(JK))//'K (m/s)'
     IGRID=1
     ILENCH=LEN(YCOMMENT)

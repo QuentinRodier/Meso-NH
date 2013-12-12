@@ -4,7 +4,6 @@
 ! $Source$ $Revision$
 ! masdev4_7 BUG1 2007/06/20 16:58:20
 !-----------------------------------------------------------------
-
 !     #########################
       MODULE MODI_WRITE_LFIFM_n
 !     #########################
@@ -173,7 +172,7 @@ USE MODD_LUNIT_n
 USE MODD_TURB_n
 USE MODD_RADIATIONS_n,   ONLY : XDTHRAD, NCLEARCOL_TM1, XFLALWD, &
                                 XZENITH, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD, &
-                                XDIRSRFSWD, XSCAFLASWD, XDIRFLASWD, XAZIM, XAER
+                                XDIRSRFSWD, XSCAFLASWD, XDIRFLASWD, XAZIM
 USE MODD_REF_n,  ONLY : XRHODREF
 USE MODD_FRC
 USE MODD_PRECIP_n
@@ -289,8 +288,8 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
-ALLOCATE(ZWORK2D(SIZE(XTHM,1),SIZE(XTHM,2)))
-ALLOCATE(ZWORK3D(SIZE(XTHM,1),SIZE(XTHM,2),SIZE(XTHM,3)))
+ALLOCATE(ZWORK2D(SIZE(XTHT,1),SIZE(XTHT,2)))
+ALLOCATE(ZWORK3D(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 !
 !
 !*       0.2     ARRAYS BOUNDS INITIALIZATION
@@ -597,31 +596,31 @@ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,LCPL_AROME,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 YDIR='XY'
 !
-!*       1.4.1  Time t-dt:
+!*       1.4.1  Time t:
 !   
-YRECFM='UM'
+YRECFM='UT'
 YCOMMENT='X_Y_Z_U component of wind (m/s)'
 IGRID=2
 ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XUM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-YRECFM='VM'
+YRECFM='VT'
 YCOMMENT='X_Y_Z_V component of wind (m/s)'
 IGRID=3
 ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XVM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XVT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-YRECFM='WM'
+YRECFM='WT'
 YCOMMENT='X_Y_Z_vertical wind (m/s)'
 IGRID=4
 ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XWM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XWT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-YRECFM='THM'
+YRECFM='THT'
 YCOMMENT='X_Y_Z_potential temperature (K)'
 IGRID=1
 ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTHM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 IF (MEAN_COUNT /= 0) THEN
 !
@@ -720,83 +719,90 @@ END IF
 !
 !
 IF (CTURB /= 'NONE') THEN
-  YRECFM='TKEM'
+  YRECFM='TKET'
   YCOMMENT='X_Y_Z_Turbulent Kinetic Energy (M**2/S**2)'
   IGRID=1
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTKEM,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTKET,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !
 !
-YRECFM='PABSM'
+YRECFM='PABST'
 YCOMMENT='X_Y_Z_ABSolute Pressure (Pa)'
 IGRID=1
 ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPABSM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPABST,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 IF (NRR >=1) THEN
   IRR=0
   IGRID=1                                    ! individually in file 
   IF (LUSERV) THEN
     IRR   = IRR+1 
-    YRECFM= 'RVM'
+    YRECFM= 'RVT'
     YCOMMENT='X_Y_Z_Vapor mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH,  &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
   END IF 
   IF (LUSERC) THEN
     IRR   = IRR+1 
-    YRECFM= 'RCM'
+    YRECFM= 'RCT'
     YCOMMENT='X_Y_Z_Cloud mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH,  &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
-    WRITE (ILUOUT,*) IRR,' RC min-max ',MIN_ll(XRM(:,:,:,IRR),INFO_ll),MAX_ll(XRM(:,:,:,IRR),INFO_ll)
+    WRITE (ILUOUT,*) IRR,' RC min-max ',MIN_ll(XRT(:,:,:,IRR),INFO_ll),MAX_ll(XRT(:,:,:,IRR),INFO_ll)
   END IF
   IF (LUSERR) THEN
     IRR   = IRR+1 
-    YRECFM= 'RRM'
+    YRECFM= 'RRT'
     YCOMMENT='X_Y_Z_Rain mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH,  &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
-    WRITE (ILUOUT,*) IRR,' RR min-max ',MIN_ll(XRM(:,:,:,IRR),INFO_ll),MAX_ll(XRM(:,:,:,IRR),INFO_ll)
+    WRITE (ILUOUT,*) IRR,' RR min-max ',MIN_ll(XRT(:,:,:,IRR),INFO_ll),MAX_ll(XRT(:,:,:,IRR),INFO_ll)
   END IF 
   IF (LUSERI) THEN
     IRR   = IRR+1 
-    YRECFM= 'RIM'
+    YRECFM= 'RIT'
     YCOMMENT='X_Y_Z_Ice mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH, &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH, &
                 YCOMMENT,IRESP)
-    WRITE (ILUOUT,*) IRR,' RI min-max ',MIN_ll(XRM(:,:,:,IRR),INFO_ll),MAX_ll(XRM(:,:,:,IRR),INFO_ll)
+    WRITE (ILUOUT,*) IRR,' RI min-max ',MIN_ll(XRT(:,:,:,IRR),INFO_ll),MAX_ll(XRT(:,:,:,IRR),INFO_ll)
+    IF ( CPROGRAM == 'MESONH' .AND. CCLOUD(1:3) == 'ICE') THEN
+      YRECFM= 'CIT'
+      YCOMMENT='X_Y_Z_Cloud Ice concentration (/M3)'
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XCIT(:,:,:),   IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+    END IF
   END IF 
   IF (LUSERS) THEN
     IRR   = IRR+1 
-    YRECFM= 'RSM'
+    YRECFM= 'RST'
     YCOMMENT='X_Y_Z_Snow mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH, &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH, &
                 YCOMMENT,IRESP)
-    WRITE (ILUOUT,*) IRR,' RS min-max ',MIN_ll(XRM(:,:,:,IRR),INFO_ll),MAX_ll(XRM(:,:,:,IRR),INFO_ll)
+    WRITE (ILUOUT,*) IRR,' RS min-max ',MINVAL(XRT(:,:,:,IRR)),MAXVAL(XRT(:,:,:,IRR))
   END IF
   IF (LUSERG) THEN
     IRR   = IRR+1 
-    YRECFM= 'RGM'
+    YRECFM= 'RGT'
     YCOMMENT='X_Y_Z_Graupel mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH,  &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
-    WRITE (ILUOUT,*) IRR,' RG min-max ',MIN_ll(XRM(:,:,:,IRR),INFO_ll),MAX_ll(XRM(:,:,:,IRR),INFO_ll)
+    WRITE (ILUOUT,*) IRR,' RG min-max ',MINVAL(XRT(:,:,:,IRR)),MAXVAL(XRT(:,:,:,IRR))
   END IF 
   IF (LUSERH) THEN
     IRR   = IRR+1 
-    YRECFM= 'RHM'
+    YRECFM= 'RHT'
     YCOMMENT='X_Y_Z_Hail mixing Ratio (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRM(:,:,:,IRR),IGRID,ILENCH,  &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
   END IF 
 END IF
@@ -806,42 +812,42 @@ IF (NSV >=1) THEN
   IGRID=1                                       ! individually in the file
   ! User scalar variables
   DO JSV = 1,NSV_USER
-    WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (KG/KG)'
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
   ! microphysical C2R2 scheme scalar variables
   DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    YRECFM=TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'M'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (/M3)'
+    YRECFM=TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/M3)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
   ! microphysical C3R5 scheme additional scalar variables
   DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'M'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (/M3)'
+    YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/M3)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
   ! electrical scalar variables
   DO JSV = NSV_ELECBEG,NSV_ELECEND
-    YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'M'
+    YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
     IF (JSV .GT. NSV_ELECBEG .AND. JSV .LT. NSV_ELECEND) THEN 
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (C/m3)'
+      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (C/m3)'
     ELSE
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (nb ions/m3)'
+      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (nb ions/m3)'
     END IF
     ILENCH=LEN(YCOMMENT)
     ZWORK3D(:,:,:) = 0.
-    ZWORK3D(:,:,:) = XSVM(:,:,:,JSV) * XRHODREF(:,:,:) ! C/kg --> C/m3
+    ZWORK3D(:,:,:) = XSVT(:,:,:,JSV) * XRHODREF(:,:,:) ! C/kg --> C/m3
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK3D(:,:,:),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
@@ -907,31 +913,32 @@ IF (NSV >=1) THEN
   END IF
   ! lagrangian variables
   DO JSV = NSV_LGBEG,NSV_LGEND
-    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'M'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (M)'
+    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (M)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
   ! Passive scalar variables        
  IF (LPASPOL) THEN
   DO JSV = NSV_PPBEG,NSV_PPEND
-      WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (KG/KG)'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
-                  YCOMMENT,IRESP)
-      JSA=JSA+1
-    END DO
-  END IF
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
+                YCOMMENT,IRESP)
+    JSA=JSA+1
+  END DO
+ END IF
+!
   ! Conditional sampling variables  
  IF (LCONDSAMP) THEN
   DO JSV = NSV_CSBEG,NSV_CSEND
-    WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (KG/KG)'
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
@@ -953,29 +960,41 @@ IF (NSV >=1) THEN
   ! chemical scalar variables
   IF (LUSECHEM) THEN
     DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-      YRECFM=TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))//'M'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+      YRECFM=TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))//'T'
+      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                   YCOMMENT,IRESP)
-      YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1) ! without M
+      YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1) ! without T
     END DO
     IF (LUSECHIC) THEN
       DO JSV = NSV_CHICBEG,NSV_CHICEND
-        YRECFM=TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                     YCOMMENT,IRESP)
         YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1) ! without M
       END DO
     ENDIF
+    IF (LUSECHAQ.AND.LCH_PH) THEN  ! pH values in cloud
+      YRECFM = 'PHC'
+      YCOMMENT='X_Y_Z_PHC'
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPHC,IGRID,ILENCH,YCOMMENT,IRESP)
+      IF (NRR>=3) THEN
+        YRECFM = 'PHR'
+        YCOMMENT='X_Y_Z_PHR'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPHR,IGRID,ILENCH,YCOMMENT,IRESP)
+      ENDIF
+    ENDIF
   ELSE IF (LCH_CONV_LINOX) THEN
     DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-      YRECFM='LINOXM'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A)') 'X_Y_Z_','SVM',JSV,' (ppp)'
+      YRECFM='LINOXT'
+      WRITE(YCOMMENT,'(A6,A3,I3.3,A)') 'X_Y_Z_','SVT',JSV,' (ppp)'
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH, &
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
                   YCOMMENT,IRESP)
       YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1)
     END DO
@@ -983,14 +1002,14 @@ IF (NSV >=1) THEN
   ! aerosol scalar variables
   IF (LORILAM) THEN
     IF ((CPROGRAM == 'REAL  ').AND.(NSV_AER > 1).AND.(IMI==1).AND.(LAERINIT))  &
-      CALL CH_AER_REALLFI_n(XSVM(:,:,:,NSV_AERBEG:NSV_AEREND),XSVM(:,:,:,NSV_CHEMBEG-1+JP_CH_CO), XRHODREF)
+      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO), XRHODREF)
     IF ((CPROGRAM == 'IDEAL ').AND.(NSV_AER > 1).AND.(IMI==1))  &
-      CALL CH_AER_REALLFI_n(XSVM(:,:,:,NSV_AERBEG:NSV_AEREND),XSVM(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
+      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
     DO JSV = NSV_AERBEG,NSV_AEREND
-      YRECFM=TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'M'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+      YRECFM=TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
+      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,    &
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                   YCOMMENT,IRESP)
       IF (JSV==NSV_AERBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERBEG ',JSV
       IF (JSV==NSV_AEREND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AEREND ',JSV
@@ -998,10 +1017,10 @@ IF (NSV >=1) THEN
     END DO
      IF (LDEPOS_AER(IMI)) THEN        
       DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
-        YRECFM=TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (JSV==NSV_AERDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERDEPBEG ',JSV
         IF (JSV==NSV_AERDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_AERDEPEND ',JSV
@@ -1012,11 +1031,11 @@ IF (NSV >=1) THEN
   ! dust scalar variables
   IF (LDUST) THEN
     IF ((CPROGRAM == 'REAL  ').AND.(NSV_DST > 1).AND.(IMI==1).AND.(LDSTINIT)) &
-      CALL DUSTLFI_n(XSVM(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
     IF ((CPROGRAM == 'IDEAL ').AND.(NSV_DST > 1).AND.(IMI==1)) &
-      CALL DUSTLFI_n(XSVM(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
+      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
     !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVM  
+    !if mode 2 is most important it will occupy place 1-3 of XSVT  
    IF ((CPROGRAM == 'REAL  ').AND.((LDSTINIT).OR.(LDSTPRES)).OR.&
        (CPROGRAM == 'IDEAL ')               ) THEN
       ! In this case CDUSTNAMES is not allocated. We will use YPDUST_INI,
@@ -1040,10 +1059,10 @@ IF (IMOMENTS == 1) THEN
      JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                 +  1              & !Number of moments in this mode
                 + (NSV_DSTBEG -1)      !Previous list of tracers
-     YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'M'  
-     WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+     YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'  
+     WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
      ILENCH=LEN(YCOMMENT)
-     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,&
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,&
                      YCOMMENT,IRESP)
 
           YDSTNAMES((JMODE-1)*IMOMENTS+1)=YRECFM(1:LEN_TRIM(YRECFM)-1)
@@ -1055,10 +1074,10 @@ ELSE
     JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                 + JMOM               & !Number of moments in this mode
                 + (NSV_DSTBEG -1)
-    YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'M'  !The refererence which will be written to file
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+    YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH, &
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
                      YCOMMENT,IRESP)
     YDSTNAMES((JMODE-1)*IMOMENTS+JMOM)=YRECFM(1:LEN_TRIM(YRECFM)-1)
    END DO ! Loop on moment
@@ -1071,12 +1090,12 @@ END IF ! Valeur IMOMENTS
       DEALLOCATE(YDSTNAMES)
     ELSE 
       ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPDUSTORDER)
+      !in the same order as the variables in XSVT (i.e. following JPDUSTORDER)
       DO JSV = NSV_DSTBEG,NSV_DSTEND
-        YRECFM=TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (JSV==NSV_DSTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTBEG ',JSV
         IF (JSV==NSV_DSTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTEND ',JSV
@@ -1085,10 +1104,10 @@ END IF ! Valeur IMOMENTS
     END IF 
      IF (LDEPOS_DST(IMI)) THEN        
       DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-        YRECFM=TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (JSV==NSV_DSTDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPBEG ',JSV
         IF (JSV==NSV_DSTDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_DSTDEPEND ',JSV
@@ -1099,11 +1118,11 @@ END IF ! Valeur IMOMENTS
   ! sea salt scalar variables
   IF (LSALT) THEN
     IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1).AND.(LSLTINIT)) &
-      CALL SALTLFI_n(XSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
     IF ((CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
-      CALL SALTLFI_n(XSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
+      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
     !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVM  
+    !if mode 2 is most important it will occupy place 1-3 of XSVT  
     IF (((CPROGRAM == 'REAL  ').AND.(LSLTINIT)).OR.&
         (CPROGRAM == 'IDEAL ')           ) THEN
       ! In this case CSALTNAMES is not allocated. We will use YPSALT_INI,
@@ -1123,14 +1142,14 @@ END IF ! Valeur IMOMENTS
         DO JMOM = 1, IMOMENTS
           !Index from which names are picked
           ISV_NAME_IDX = (JPSALTORDER(JMODE)-1)*IMOMENTS + JMOM 
-          !Index which counts in the XSVM
+          !Index which counts in the XSVT
           JSV = (JMODE-1)*IMOMENTS      & !Number of moments previously counted
                + JMOM                   & !Number of moments in this mode
                + (NSV_SLTBEG -1)          !Previous list of tracers 
-          YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'M'  !The refererence which will be written to file
-          WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+          YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
+          WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
           ILENCH=LEN(YCOMMENT)
-          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH, &
+          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
                      YCOMMENT,IRESP)
           YSLTNAMES((JMODE-1)*IMOMENTS+JMOM)=YRECFM(1:LEN_TRIM(YRECFM)-1)
         END DO ! Loop on moments
@@ -1142,12 +1161,12 @@ END IF ! Valeur IMOMENTS
       DEALLOCATE(YSLTNAMES)
     ELSE 
       ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPSALTORDER)
+      !in the same order as the variables in XSVT (i.e. following JPSALTORDER)
       DO JSV = NSV_SLTBEG,NSV_SLTEND
-        YRECFM=TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (JSV==NSV_SLTBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTBEG ',JSV
         IF (JSV==NSV_SLTEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTEND ',JSV
@@ -1156,10 +1175,10 @@ END IF ! Valeur IMOMENTS
     END IF 
      IF (LDEPOS_SLT(IMI)) THEN        
       DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-        YRECFM=TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'M'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVM',JSV,' (ppp)'
+        YRECFM=TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
         ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (JSV==NSV_SLTDEPBEG) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTDEPBEG ',JSV
         IF (JSV==NSV_SLTDEPEND) WRITE(ILUOUT,*)'MNHC: write_lfin:NSV_SLTDEPEND ',JSV
@@ -1194,6 +1213,14 @@ END IF ! Valeur IMOMENTS
     DEALLOCATE(YCHNAMES,ICH_NAMES)
   END IF 
   !
+  ! lagrangian variables
+  DO JSV = NSV_LGBEG,NSV_LGEND
+    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
+    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (M)'
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
+                YCOMMENT,IRESP)
+  END DO
 END IF
 !
 !
@@ -1232,368 +1259,6 @@ END IF
 CALL WRITE_LB_n(HFMFILE)
 !
 !
-IF (CSTORAGE_TYPE/='TT') THEN
-!
-!*       1.4.2  Time t:
-!   
-YRECFM='UT'
-YCOMMENT='X_Y_Z_U component of wind (m/s)'
-IGRID=2
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='VT'
-YCOMMENT='X_Y_Z_V component of wind (m/s)'
-IGRID=3
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XVT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='WT'
-YCOMMENT='X_Y_Z_vertical wind (m/s)'
-IGRID=4
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XWT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='THT'
-YCOMMENT='X_Y_Z_potential temperature (K)'
-IGRID=1
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-IF(CTURB/='NONE') THEN
-  YRECFM='TKET'
-  YCOMMENT='X_Y_Z_Turbulent Kinetic Energy (M**2/S**2)'
-  IGRID=1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTKET,IGRID,ILENCH,YCOMMENT,IRESP)
-END IF
-!
-!
-YRECFM='PABST'
-YCOMMENT='X_Y_Z_ABSolute Pressure (Pa)'
-IGRID=1
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPABST,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-IF (NRR >=1) THEN
-IRR=0
-  IGRID=1                                    ! individually in file 
-  IF (LUSERV) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RVT'
-    YCOMMENT='X_Y_Z_Vapor mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF 
-  IF (LUSERC) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RCT'
-    YCOMMENT='X_Y_Z_Cloud mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF
-  IF (LUSERR) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RRT'
-    YCOMMENT='X_Y_Z_Rain mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF 
-  IF (LUSERI) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RIT'
-    YCOMMENT='X_Y_Z_Ice mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-    IF ( CPROGRAM == 'MESONH' .AND. CCLOUD(1:3) == 'ICE') THEN
-      YRECFM= 'CIT'
-      YCOMMENT='X_Y_Z_Cloud Ice concentration (/M3)'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XCIT(:,:,:),   IGRID,ILENCH,  &
-                  YCOMMENT,IRESP)
-    END IF
- END IF 
-  IF (LUSERS) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RST'
-    YCOMMENT='X_Y_Z_Snow mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF
-  IF (LUSERG) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RGT'
-    YCOMMENT='X_Y_Z_Graupel mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF 
-  IF (LUSERH) THEN
-    IRR   = IRR+1 
-    YRECFM= 'RHT'
-    YCOMMENT='X_Y_Z_Hail mixing Ratio (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRT(:,:,:,IRR),IGRID,ILENCH,  &
-                YCOMMENT,IRESP)
-  END IF 
-END IF
-!
-IF (NSV >=1) THEN
-  IGRID=1                                       ! individually in the file
-  ! User scalar variables
-  DO JSV = 1,NSV_USER
-    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
-  ! microphysical C2R2 scheme scalar variables
-  DO JSV = NSV_C2R2BEG,NSV_C2R2END
-    YRECFM=TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
-  ! microphysical C3R5 scheme additional scalar variables
-  DO JSV = NSV_C1R3BEG,NSV_C1R3END
-    YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/M3)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
-  ! electrical scalar variables
-  DO JSV = NSV_ELECBEG,NSV_ELECEND
-    YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (C/m3)'
-    ILENCH=LEN(YCOMMENT)
-    ZWORK3D(:,:,:) = 0.
-    ZWORK3D(:,:,:) = XSVT(:,:,:,JSV) * XRHODREF(:,:,:) ! C/kg --> C/m3
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK3D(:,:,:),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
-
-  ! Passive scalar variables        
- IF (LPASPOL) THEN
-  DO JSV = NSV_PPBEG,NSV_PPEND
-    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
- END IF
-  ! Conditional sampling variables        
- IF (LCONDSAMP) THEN
-  DO JSV = NSV_CSBEG,NSV_CSEND
-    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
- END IF
-  ! chemical scalar variables
-  IF (LUSECHEM) THEN
-    DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-      YRECFM=TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))//'T'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A)') 'X_Y_Z_','SVT',JSV,' (ppp)'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                  YCOMMENT,IRESP)
-    END DO
-    IF (LUSECHIC) THEN
-      DO JSV = NSV_CHICBEG,NSV_CHICEND
-        YRECFM=TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                    YCOMMENT,IRESP)
-      END DO
-    ENDIF
-    IF (LUSECHAQ.AND.LCH_PH) THEN  ! pH values in cloud
-      YRECFM = 'PHC'
-      YCOMMENT='X_Y_Z_PHC'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPHC,IGRID,ILENCH,YCOMMENT,IRESP)
-      IF (NRR>=3) THEN
-        YRECFM = 'PHR'
-        YCOMMENT='X_Y_Z_PHR'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPHR,IGRID,ILENCH,YCOMMENT,IRESP)
-      ENDIF
-    ENDIF
-   ! linox scalar variables
-  ELSE IF (LCH_CONV_LINOX) THEN
-    DO JSV = NSV_LNOXBEG,NSV_LNOXEND
-      YRECFM='LINOXT'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A)') 'X_Y_Z_','SVT',JSV,' (ppp)'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
-                  YCOMMENT,IRESP)
-    END DO
-  ENDIF  
-  ! aerosol scalar variables
-  IF (LORILAM) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_AER > 1).AND.(IMI==1))  &
-      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO), XRHODREF)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_AER > 1).AND.(IMI==1))  &
-      CALL CH_AER_REALLFI_n(XSVT(:,:,:,NSV_AERBEG:NSV_AEREND),XSVT(:,:,:,NSV_CHEMBEG-1+JP_CH_CO),  XRHODREF)
-    DO JSV = NSV_AERBEG,NSV_AEREND
-      YRECFM=TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))//'T'
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                  YCOMMENT,IRESP)
-    END DO
-    IF (LDEPOS_AER(IMI)) THEN
-      DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
-        YRECFM=TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
-                    YCOMMENT,IRESP)
-      END DO   ! Loop on aq dust scalar variables        
-    ENDIF
-  END IF
-   ! dust scalar variables
-  IF (LDUST) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_DST > 1).AND.(IMI==1).AND.(LDSTINIT)) &
-      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_DST > 1).AND.(IMI==1)) &
-      CALL DUSTLFI_n(XSVT(:,:,:,NSV_DSTBEG:NSV_DSTEND), XRHODREF)
-    !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVM  
-    IF ((CPROGRAM == 'REAL  ').OR.(CPROGRAM == 'IDEAL ')) THEN
-      ! In this case CDUSTNAMES is not allocated. We will use YPDUST_INI,
-      !but remember that this variable does not follow JPDUSTORDER
-      IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG+1)/NMODE_DST  
-      !Should equal 3 at this point
-      IF (IMOMENTS > 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be 3'
-        WRITE(ILUOUT,*) NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
- !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
-      END IF
-      DO JMODE=1, NMODE_DST
-        DO JMOM = 1, IMOMENTS
-          !Index from which names are picked
-          ISV_NAME_IDX = (JPDUSTORDER(JMODE)-1)*IMOMENTS + JMOM 
-          !Index which counts in the XSVT
-          JSV = (JMODE-1)*IMOMENTS      & !Number of moments previously counted
-               + JMOM                   & !Number of moments in this mode
-               + (NSV_DSTBEG -1)          !Previous list of tracers 
-          YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
-          WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-          ILENCH=LEN(YCOMMENT)
-          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
-                      YCOMMENT,IRESP)
-        END DO ! Loop on moments
-      END DO   ! Loop on modes
-      !
-    ELSE 
-      ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPDUSTORDER)
-      DO JSV = NSV_DSTBEG,NSV_DSTEND
-        YRECFM=TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
-                    YCOMMENT,IRESP)
-      END DO   ! Loop on dust scalar variables
-    END IF 
-  ! Loop on aq dust scalar variables
-    IF (LDEPOS_DST(IMI)) THEN
-      DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-        YRECFM=TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
-                    YCOMMENT,IRESP)
-      END DO   ! Loop on aq dust scalar variables        
-    ENDIF
-  ENDIF  
-  !
-   ! sea salt scalar variables
-  IF (LSALT) THEN
-    IF ((CPROGRAM == 'REAL  ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
-    IF ((CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1).AND.(IMI==1)) &
-      CALL SALTLFI_n(XSVT(:,:,:,NSV_SLTBEG:NSV_SLTEND), XRHODREF)
-    !At this point, we have the tracer array in order of importance, i.e.
-    !if mode 2 is most important it will occupy place 1-3 of XSVM  
-    IF ((CPROGRAM == 'REAL  ').OR.(CPROGRAM == 'IDEAL ')) THEN
-      ! In this case CSALTNAMES is not allocated. We will use YPSALT_INI,
-      !but remember that this variable does not follow JPSALTORDER
-      IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG+1)/NMODE_SLT  
-      !Should equal 3 at this point
-      IF (IMOMENTS .NE. 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be 3'
-        WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
- !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
-      END IF
-      DO JMODE=1, NMODE_SLT
-        DO JMOM = 1, IMOMENTS
-          !Index from which names are picked
-          ISV_NAME_IDX = (JPSALTORDER(JMODE)-1)*IMOMENTS + JMOM 
-          !Index which counts in the XSVT
-          JSV = (JMODE-1)*IMOMENTS      & !Number of moments previously counted
-               + JMOM                   & !Number of moments in this mode
-               + (NSV_SLTBEG -1)          !Previous list of tracers 
-          YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'  !The refererence which will be written to file
-          WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-          ILENCH=LEN(YCOMMENT)
-          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH, &
-                      YCOMMENT,IRESP)
-        END DO ! Loop on moments
-      END DO   ! Loop on modes
-      !
-    ELSE 
-      ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
-      !in the same order as the variables in XSVM (i.e. following JPSALTORDER)
-      DO JSV = NSV_SLTBEG,NSV_SLTEND
-        YRECFM=TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
-                    YCOMMENT,IRESP)
-      END DO   ! Loop on sea salt scalar variables
-    END IF 
-    IF (LDEPOS_SLT(IMI)) THEN
-      DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-        YRECFM=TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
-                    YCOMMENT,IRESP)
-      END DO   ! Loop on aq dust scalar variables        
-    ENDIF
-  ENDIF  
-  !
-   ! lagrangian variables
-  DO JSV = NSV_LGBEG,NSV_LGEND
-    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
-    WRITE(YCOMMENT,'(A6,A3,I3.3,A)') 'X_Y_Z_','SVT',JSV,' (M)'
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-  END DO
-END IF
-!
-END IF ! test on CSTORAGE_TYPE
-!
 YRECFM='DRYMASST'
 YDIR='--'
 YCOMMENT='Total Dry Mass (KG)'
@@ -1627,20 +1292,13 @@ IF( CTURB /= 'NONE' .AND. (CPROGRAM == 'MESONH' .OR. CPROGRAM == 'DIAG')) THEN
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XWTHVMF,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
+!
 IF( NRR > 1 .AND. CTURB /= 'NONE' ) THEN
-  YRECFM='SRCM'
+  YRECFM='SRCT'
   YCOMMENT='X_Y_Z_normalized 2nd_order moment s_r_c/2Sigma_s2 (KG/KG**2)'
   IGRID=1
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSRCM,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  IF (CSTORAGE_TYPE/='TT') THEN
-    YRECFM='SRCT'
-    YCOMMENT='X_Y_Z_normalized 2nd_order moment s_r_c/2Sigma_s2 (KG/KG**2)'
-    IGRID=1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSRCT,IGRID,ILENCH,YCOMMENT,IRESP)
-  END IF
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSRCT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
   YRECFM='SIGS'
   YCOMMENT='X_Y_Z_Sigma_s from turbulence scheme (KG/KG**2)'
@@ -1672,7 +1330,113 @@ IGRID=4
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XEXNTOP,IGRID,ILENCH,YCOMMENT,IRESP)
 !
+!*       1.6  Tendencies                                         
 !
+IF (CPROGRAM == 'MESONH') THEN
+ YRECFM='US_PRES'
+ YCOMMENT='X_Y_Z_US_PRES'                 
+ IGRID=2
+ ILENCH=LEN(YCOMMENT)
+ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRUS_PRES,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+ YRECFM='VS_PRES'
+ YCOMMENT='X_Y_Z_VS_PRES'                       
+ IGRID=3
+ ILENCH=LEN(YCOMMENT)
+ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRVS_PRES,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+ YRECFM='WS_PRES'
+ YCOMMENT='X_Y_Z_WS_PRES'             
+ IGRID=4
+ ILENCH=LEN(YCOMMENT)
+ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRWS_PRES,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+ YRECFM='THS_CLD'
+ YCOMMENT='X_Y_Z_THS_CLD'                 
+ IGRID=1
+ ILENCH=LEN(YCOMMENT)
+ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRTHS_CLD,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+ IF (NRR >=1) THEN
+   IRR=0
+   IGRID=1               
+   IF (LUSERV) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RVS_CLD'
+    YCOMMENT='X_Y_Z_RVS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERC) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RCS_CLD'
+    YCOMMENT='X_Y_Z_RCS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERR) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RRS_CLD'
+    YCOMMENT='X_Y_Z_RCS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERI) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RIS_CLD'
+    YCOMMENT='X_Y_Z_RIS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERS) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RSS_CLD'
+    YCOMMENT='X_Y_Z_RSS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERG) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RGS_CLD'
+    YCOMMENT='X_Y_Z_RGS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+   IF (LUSERH) THEN
+    IRR   = IRR+1 
+    YRECFM= 'RHS_CLD'
+    YCOMMENT='X_Y_Z_RHS_CLD'                        
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+   END IF 
+ END IF 
+END IF 
+!
+IF (NSV >=1) THEN
+   DO JSV = NSV_C2R2BEG,NSV_C2R2END
+    IF (JSV == NSV_C2R2BEG ) THEN
+      YRECFM='RSVS_CLD1'
+      YCOMMENT='X_Y_Z_RHS_CLD'                        
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    END IF
+    IF (JSV == NSV_C2R2END ) THEN
+      YRECFM='RSVS_CLD2'
+      YCOMMENT='X_Y_Z_RHS_CLD'                        
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRRS_CLD(:,:,:,IRR),IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    END IF
+   END DO
+END IF
 !
 !*       1.8    Diagnostic variables related to the radiations
 !

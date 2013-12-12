@@ -801,8 +801,8 @@ IF ( LTURB_FLX ) THEN
   END IF
 END IF
 !!!! turb_ver_sv_flux
-IF (SIZE(XSVM,4)>0)  THEN
-  DO JSV=1, SIZE(XSVM,4)
+IF (SIZE(XSVT,4)>0)  THEN
+  DO JSV=1, SIZE(XSVT,4)
     IF (LTURB_FLX ) THEN
       ! stores the JSVth vertical flux
       WRITE(YRECFM,'("WSV_FLX_",I3.3)') JSV
