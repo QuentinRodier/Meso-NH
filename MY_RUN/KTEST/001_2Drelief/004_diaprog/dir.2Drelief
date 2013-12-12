@@ -42,16 +42,16 @@ _file_'EXPER.1.HYD2D.002-3d'
 LCOLINE=T LCOLAREA=F                                                            
 ! coupe verticale                                                               
 nidebcou=2 njdebcou=1 nlangle=0 xhmin=0 xhmax=15000 nlmax=256 lpointg=.T.       
-UM_CV_                                                                          
-THM_CV_                                                                         
-WM_CV_                                                                          
-RVM_CV_                                                                         
+UT_CV_                                                                          
+THT_CV_                                                                         
+WT_CV_                                                                          
+RVT_CV_                                                                         
 !profile                                                                        
 PROFILE=128                                                                     
-WM_T_time1_PV__ON_THM_T_time1_PV__MINUS_LSTHM_T_time1_PV_
-WM_T_time2_PV__ON_THM_T_time1_PV__MINUS_LSTHM_T_time2_PV_
-WM_T_time1_PV__ON_UM_T_time2_PV__MINUS_LSUM_T_time1_PV_
-WM_T_time2_PV__ON_UM_T_time2_PV__MINUS_LSUM_T_time2_PV_
+WT_T_time1_PV__ON_THT_T_time1_PV__MINUS_LSTHT_T_time1_PV_
+WT_T_time2_PV__ON_THT_T_time1_PV__MINUS_LSTHT_T_time2_PV_
+WT_T_time1_PV__ON_UT_T_time2_PV__MINUS_LSUT_T_time1_PV_
+WT_T_time2_PV__ON_UT_T_time2_PV__MINUS_LSUT_T_time2_PV_
 !
 ! a vous d indiquer vos directives                                                                            
 quit
