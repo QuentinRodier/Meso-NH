@@ -108,7 +108,7 @@ USE MODD_CST,        ONLY : XP00, XCPD, XRD, XRV,XRHOLW, XDAY, XPI, XLVTT, XMD, 
 USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
 USE MODD_DYN_n,      ONLY : XTSTEP
 USE MODD_CH_MNHC_n,  ONLY : LCH_SURFACE_FLUX
-USE MODD_FIELD_n,    ONLY : XUM, XVM, XWM, XTHM, XRM, XPABSM, XSVM
+USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT
 USE MODD_METRICS_n,  ONLY : XDXX, XDYY, XDZZ
 USE MODD_DIM_n,      ONLY : NKMAX
 USE MODD_GRID_n,     ONLY : XLON, XZZ, XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, &
@@ -331,7 +331,7 @@ PTSRAD   = XUNDEF
 ALLOCATE(ZRV(SIZE(PSFTH,1),SIZE(PSFTH,2),IKU))
 !
 IF(NRR>0) THEN
-  ZRV(:,:,:)=XRM(:,:,:,1)
+  ZRV(:,:,:)=XRT(:,:,:,1)
 ELSE
   ZRV(:,:,:)=0.
 END IF
@@ -339,8 +339,8 @@ END IF
 !        1.2    Horizontal wind direction (rad from N clockwise)
 !               -------------------------
 !
-ZU2D(:,:,:)=MXF(XUM(:,:,IKB:IKB))
-ZV2D(:,:,:)=MYF(XVM(:,:,IKB:IKB))
+ZU2D(:,:,:)=MXF(XUT(:,:,IKB:IKB))
+ZV2D(:,:,:)=MYF(XVT(:,:,IKB:IKB))
 !
 !* angle between Y axis and wind (rad., clockwise)
 !
@@ -362,7 +362,7 @@ END IF
 !        1.3    Rotate the wind
 !               ---------------
 !
-CALL ROTATE_WIND(XUM,XVM,XWM,           &
+CALL ROTATE_WIND(XUT,XVT,XWT,           &
      XDIRCOSXW, XDIRCOSYW, XDIRCOSZW,   &
      XCOSSLOPE,XSINSLOPE,               &
      XDXX,XDYY,XDZZ,                    &
@@ -380,7 +380,7 @@ ZV(:,:) = ZWIND(:,:) * COS(ZDIR)
 !        1.5   Horizontal interpolation the thermodynamic fields
 !              -------------------------------------------------
 !
-CALL NORMAL_INTERPOL(XTHM,ZRV,XPABSM,                    &
+CALL NORMAL_INTERPOL(XTHT,ZRV,XPABST,                    &
      XDIRCOSXW, XDIRCOSYW, XDIRCOSZW,                    &
      XCOSSLOPE,XSINSLOPE,                                &
      XDXX,XDYY,XDZZ,                                     &
@@ -395,8 +395,8 @@ DEALLOCATE(ZRV)
 !
 ZPA(:,:) = XP00 * ZEXNA(:,:) **(XCPD/XRD)
 !
-ZEXNS(:,:) = 0.5 * ( (XPABSM(:,:,IKB-1)/XP00)**(XRD/XCPD)  &
-                    +(XPABSM(:,:,IKB  )/XP00)**(XRD/XCPD)  &
+ZEXNS(:,:) = 0.5 * ( (XPABST(:,:,IKB-1)/XP00)**(XRD/XCPD)  &
+                    +(XPABST(:,:,IKB  )/XP00)**(XRD/XCPD)  &
                    )
 ZPS(:,:) = XP00 * ZEXNS(:,:) **(XCPD/XRD)
 !
@@ -704,7 +704,7 @@ ZP_RAIN(:)        = RESHAPE(ZRAIN(IIB:IIE,IJB:IJE),        ISHAPE_1)
 ZP_ZREF(:)        = RESHAPE(ZZREF(IIB:IIE,IJB:IJE),        ISHAPE_1)
 
 DO JLAYER=1,NSV
-  ZP_SV(:,JLAYER) = RESHAPE(XSVM(IIB:IIE,IJB:IJE,IKB,JLAYER), ISHAPE_1)
+  ZP_SV(:,JLAYER) = RESHAPE(XSVT(IIB:IIE,IJB:IJE,IKB,JLAYER), ISHAPE_1)
 END DO
 !
 !chemical conversion : from part/part to molec./m3

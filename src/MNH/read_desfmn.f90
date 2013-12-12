@@ -14,8 +14,7 @@ INTERFACE
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
                    OORILAM,ODEPOS_AER,OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY,KSV_USER,&
-                   HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS,    &
-                   PTSTEP_OLD                                                    )
+                   HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 USE MODD_PARAMETERS
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
 CHARACTER (LEN=32), INTENT(IN)  :: HDESFM ! name of the DESFM file
@@ -58,7 +57,6 @@ CHARACTER (LEN=4),  INTENT(OUT) :: HSCONV ! Kind of shallow convection scheme
 CHARACTER (LEN=4),  INTENT(OUT) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(OUT) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(OUT) :: HEQNSYS! type of equations' system
-REAL,               INTENT(OUT) :: PTSTEP_OLD ! OLD Time STEP (DESFM)
 END SUBROUTINE READ_DESFM_n
 !
 END INTERFACE
@@ -70,8 +68,7 @@ END MODULE MODI_READ_DESFM_n
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
                    OORILAM,ODEPOS_AER,OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY,KSV_USER,&
-                   HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS,    &
-                   PTSTEP_OLD                                                    )
+                   HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 !     #########################################################################
 !
 !!****  *READ_DESFM_n * - routine to read  the descriptor file DESFM
@@ -255,7 +252,6 @@ CHARACTER (LEN=4),  INTENT(OUT) :: HSCONV ! Kind of shallow convection scheme
 CHARACTER (LEN=4),  INTENT(OUT) :: HCLOUD ! Kind of microphysical scheme
 CHARACTER (LEN=4),  INTENT(OUT) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(OUT) :: HEQNSYS! type of equations' system
-REAL,               INTENT(OUT) :: PTSTEP_OLD ! OLD Time STEP (DESFM)
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
@@ -491,8 +487,6 @@ HSCONV = CSCONV
 HCLOUD = CCLOUD
 HELEC  = CELEC
 HEQNSYS = CEQNSYS
-!
-PTSTEP_OLD  = XTSTEP
 !
 !-------------------------------------------------------------------------------
 !

@@ -88,7 +88,7 @@ REAL, DIMENSION(:),       ALLOCATABLE :: ZMEANRC
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 !
-IKU = SIZE(XTHM,3)
+IKU = SIZE(XTHT,3)
 !
 !-------------------------------------------------------------------------------
 !
@@ -102,40 +102,40 @@ ZRT = 0.
 IRR=0
 IF (LUSERV) THEN
   IRR=IRR+1
-  ZRT = ZRT + XRM(:,:,:,1)
+  ZRT = ZRT + XRT(:,:,:,1)
 END IF
 IF (LUSERC) THEN
   IRR=IRR+1
   IRRC=IRR
-  ZRT = ZRT + XRM(:,:,:,IRRC)
+  ZRT = ZRT + XRT(:,:,:,IRRC)
 END IF
 IF (LUSERR) THEN
   IRR=IRR+1
   IRRR=IRR
-  ZRT = ZRT + XRM(:,:,:,IRRR)
+  ZRT = ZRT + XRT(:,:,:,IRRR)
 END IF
 IF (LUSERI) THEN
   IRR=IRR+1
   IRRI=IRR
-  ZRT = ZRT + XRM(:,:,:,IRRI)
+  ZRT = ZRT + XRT(:,:,:,IRRI)
 END IF
 IF (LUSERS) THEN
   IRR=IRR+1
   IRRS=IRR
-  ZRT = ZRT + XRM(:,:,:,IRRS)
+  ZRT = ZRT + XRT(:,:,:,IRRS)
 END IF
 IF (LUSERG) THEN
   IRR=IRR+1
   IRRG=IRR
-  ZRT = ZRT + XRM(:,:,:,IRRG)
+  ZRT = ZRT + XRT(:,:,:,IRRG)
 END IF
 !
 !
 !* computes fields on the LES grid in order to compute masks
 !
 ALLOCATE(ZTHV     (IIU,IJU,IKU))
-ZTHV = XTHM
-IF (LUSERV) ZTHV=ZTHV*(1.+XRV/XRD*XRM(:,:,:,1))/(1.+ZRT(:,:,:))
+ZTHV = XTHT
+IF (LUSERV) ZTHV=ZTHV*(1.+XRV/XRD*XRT(:,:,:,1))/(1.+ZRT(:,:,:))
 !
 !-------------------------------------------------------------------------------
 !
@@ -163,20 +163,20 @@ ZWORK1D=0.
 ZWORK3D=0.  
 ZWORK3DB=0.
 !
-CALL LES_VER_INT(MZF(1,IKU,1,XWM), ZW_LES)
+CALL LES_VER_INT(MZF(1,IKU,1,XWT), ZW_LES)
 IF (NSV_CS>0) THEN
   DO JSV=NSV_CSBEG, NSV_CSEND
-    CALL LES_VER_INT(  XSVM(:,:,:,JSV),  &
+    CALL LES_VER_INT(  XSVT(:,:,:,JSV),  &
                        ZSV_LES(:,:,:,JSV-NSV_CSBEG+1) )
   END DO
 END IF
 IF (LUSERC) THEN
-  CALL LES_VER_INT(XRM(:,:,:,IRRC), ZRC_LES)
+  CALL LES_VER_INT(XRT(:,:,:,IRRC), ZRC_LES)
 ELSE
   ZRC_LES = 0.
 END IF
 IF (LUSERI) THEN
-  CALL LES_VER_INT(XRM(:,:,:,IRRI), ZRI_LES)
+  CALL LES_VER_INT(XRT(:,:,:,IRRI), ZRI_LES)
 ELSE
   ZRI_LES = 0.
 END IF
@@ -186,7 +186,7 @@ CALL LES_ANOMALY_FIELD(ZTHV,ZTHV_ANOM)
 !
 IF (NSV_CS>0) THEN
  DO JSV=NSV_CSBEG, NSV_CSEND
-  ZWORK3D(:,:,:)=XSVM(:,:,:,JSV)
+  ZWORK3D(:,:,:)=XSVT(:,:,:,JSV)
   CALL LES_ANOMALY_FIELD(ZWORK3D,ZWORK3DB)
   ZSV_ANOM(:,:,:,JSV-NSV_CSBEG+1)=ZWORK3DB(:,:,:)
   CALL LES_STDEV(ZWORK3DB,ZWORK1D)
@@ -350,9 +350,6 @@ IF (LLES_MY_MASK) THEN
   ALLOCATE(LLES_CURRENT_MY_MASK(IIU,IJU,NLES_K))
   DO JI=1,NLES_MASKS_USER
     LLES_CURRENT_MY_MASKS (:,:,:,JI) = .FALSE.
-!   IF (JI==1) LLES_CURRENT_MY_MASKS (12:17,52:57,:,JI) = .TRUE.      
-!   IF (JI==2) LLES_CURRENT_MY_MASKS (12:17,57:62,:,JI) = .TRUE.      
-!   IF (JI==3) LLES_CURRENT_MY_MASKS (12:17,62:67,:,JI) = .TRUE.      
   END DO
 !
 END IF
@@ -414,7 +411,5 @@ END DO
 
 END SUBROUTINE LES_STDEV
 !-------------------------------------------------------------------------------  
-!
-!-------------------------------------------------------------------------------
 !
 END SUBROUTINE LES_CLOUD_MASKS_n   

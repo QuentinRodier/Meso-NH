@@ -177,6 +177,7 @@ REAL             :: XRADX=  10000. ! X-Radius of the perturbation
 REAL             :: XRADY=  10000. ! Y-Radius of the perturbation
 REAL             :: XRADZ=   2200. ! Z-Radius of the perturbation
 !
+REAL             :: ZOMEGA
 INTEGER, PARAMETER                 :: i_seed_param = 26032012
 INTEGER, DIMENSION(:), ALLOCATABLE :: i_seed
 INTEGER                            :: ni_seed
@@ -269,33 +270,33 @@ SELECT CASE(CPERT_KIND)
 !
 ! save the actual relative humidity
 !
-        ZT(:,:,:) =XTHM(:,:,:)*(XPABSM(:,:,:)/XP00) **(XRD/XCPD)
-        ZHU(:,:,:)  = (XRM(:,:,:,1)*XPABSM(:,:,:)) / (((XMV/XMD)+XRM(:,:,:,1))* &
+        ZT(:,:,:) =XTHT(:,:,:)*(XPABST(:,:,:)/XP00) **(XRD/XCPD)
+        ZHU(:,:,:)  = (XRT(:,:,:,1)*XPABST(:,:,:)) / (((XMV/XMD)+XRT(:,:,:,1))* &
                         EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) ))
 !
 ! set the perturbation for Theta
 !
-        XTHM(:,:,:) = XTHM(:,:,:) + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
+        XTHT(:,:,:) = XTHT(:,:,:) + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
 !
 ! compute the new vapor pressure (stored in ZHU!)
 !
-        ZT(:,:,:) =XTHM(:,:,:)*(XPABSM(:,:,:)/XP00) **(XRD/XCPD)
+        ZT(:,:,:) =XTHT(:,:,:)*(XPABST(:,:,:)/XP00) **(XRD/XCPD)
         ZHU(:,:,:) = ZHU(:,:,:)*                                             &
                      EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) )
 !
 ! set the perturbation for r_v such that the relative humidity is conserved
 !
-        XRM(:,:,:,1) = (XMV/XMD) * ZHU(:,:,:) / ( XPABSM(:,:,:) - ZHU(:,:,:) )
+        XRT(:,:,:,1) = (XMV/XMD) * ZHU(:,:,:) / ( XPABST(:,:,:) - ZHU(:,:,:) )
       END WHERE
       CALL MPPDB_CHECK3D(ZT,"SET_PERTURB::ZT",PRECISION)
       CALL MPPDB_CHECK3D(ZHU,"SET_PERTURB::ZHU",PRECISION)
    ELSE
       WHERE ( ZDIST(:,:,:) <= 1.) 
-        XTHM(:,:,:)  = XTHM(:,:,:)  + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
-        XRM(:,:,:,1) = XRM(:,:,:,1) + XAMPLIRV * COS (XPI*0.5*ZDIST(:,:,:)) **2 
+        XTHT(:,:,:)  = XTHT(:,:,:)  + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
+        XRT(:,:,:,1) = XRT(:,:,:,1) + XAMPLIRV * COS (XPI*0.5*ZDIST(:,:,:)) **2 
       END WHERE
     END IF
-    CALL MPPDB_CHECK3D(XRM(:,:,:,1),"SET_PERTURB::XRM",PRECISION)
+    CALL MPPDB_CHECK3D(XRT(:,:,:,1),"SET_PERTURB::XRT",PRECISION)
     CALL MPPDB_CHECK3D(XTHM,"SET_PERTURB::XTHM",PRECISION)
 !
 !-------------------------------------------------------------------------------
@@ -346,18 +347,18 @@ SELECT CASE(CPERT_KIND)
     DEALLOCATE(ZPU_ll,ZPV_ll)
     DO JI = 1,IIU
       DO JJ = 1,IJU
-        XUM(JI,JJ,:) = XUM(JI,JJ,:) + ZPU(JI,JJ)
+        XUT(JI,JJ,:) = XUT(JI,JJ,:) + ZPU(JI,JJ)
       END DO
     END DO
     DO JJ = 1,IJU
       DO JI = 1,IIU
-        XVM(JI,JJ,:) = XVM(JI,JJ,:) + ZPV(JI,JJ)
+        XVT(JI,JJ,:) = XVT(JI,JJ,:) + ZPV(JI,JJ)
       END DO
     END DO
     DEALLOCATE(ZPU,ZPV)
 !
 !
-  CASE('WH','WW')  !    white noise is computed on global domain 
+  CASE('WH','WW')  !    white noise is computed on global domain
                    ! J.Escobar optim => need only identical random on all domain 
 !
  DO JK = IKB, NKWH
@@ -428,27 +429,27 @@ SELECT CASE(CPERT_KIND)
     CALL MPPDB_CHECK2D(ZWHITE,"SET_PERTURB::ZWHITE",PRECISION)
 
     IF (CPERT_KIND=='WH') THEN ! white noise on theta
-      XTHM(:,:,JK) = XTHM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
-      CALL MPPDB_CHECK2D(XTHM(:,:,JK),"SET_PERTURB::XTHM",PRECISION)      
+      XTHT(:,:,JK) = XTHT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      CALL MPPDB_CHECK2D(XTHT(:,:,JK),"SET_PERTURB::XTHT",PRECISION)      
     ELSE  ! white noise on wind
-      XWM(:,:,JK) = XWM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
-      XUM(:,:,JK) = XUM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
-      XVM(:,:,JK) = XVM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      XWT(:,:,JK) = XWT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      XUT(:,:,JK) = XUT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      XVT(:,:,JK) = XVT(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
     ENDIF
     DEALLOCATE(ZWHITE)
 !
  END DO
 
- CALL GET_HALO(XTHM)
- CALL GET_HALO(XUM)
- CALL GET_HALO(XVM)
- CALL GET_HALO(XWM)
+ CALL GET_HALO(XTHT)
+ CALL GET_HALO(XUT)
+ CALL GET_HALO(XVT)
+ CALL GET_HALO(XWT)
 
- CALL MPPDB_CHECK3D(XTHM,"SET_PERTURB::XTHM",PRECISION)
- CALL MPPDB_CHECK3D(XUM,"SET_PERTURB::XUM",PRECISION)
- CALL MPPDB_CHECK3D(XVM,"SET_PERTURB::XVM",PRECISION)
- CALL MPPDB_CHECK3D(XWM,"SET_PERTURB::XWM",PRECISION)
- CALL MPPDB_CHECK3D(XRM(:,:,:,1),"SET_PERTURB::XRM",PRECISION)
+ CALL MPPDB_CHECK3D(XTHT,"SET_PERTURB::XTHT",PRECISION)
+ CALL MPPDB_CHECK3D(XUT,"SET_PERTURB::XUT",PRECISION)
+ CALL MPPDB_CHECK3D(XVT,"SET_PERTURB::XVT",PRECISION)
+ CALL MPPDB_CHECK3D(XWT,"SET_PERTURB::XWT",PRECISION)
+ CALL MPPDB_CHECK3D(XRT(:,:,:,1),"SET_PERTURB::XRT",PRECISION)
 
 !-------------------------------------------------------------------------------
 !
@@ -458,41 +459,53 @@ SELECT CASE(CPERT_KIND)
 !
   IF (CPERT_KIND=='WH') THEN ! white noise on theta
     IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
-     XTHM(IIB-1,:,IKB) = 2. * XTHM(IIB,:,IKB) - XTHM(IIB+1,:,IKB)
+     XTHT(IIB-1,:,IKB) = 2. * XTHT(IIB,:,IKB) - XTHT(IIB+1,:,IKB)
     IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
-     XTHM(IIE+1,:,IKB) = 2. * XTHM(IIE,:,IKB) - XTHM(IIE-1,:,IKB)
+     XTHT(IIE+1,:,IKB) = 2. * XTHT(IIE,:,IKB) - XTHT(IIE-1,:,IKB)
     IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XTHM(:,IJB-1,IKB) = 2. * XTHM(:,IJB,IKB) - XTHM(:,IJB+1,IKB)
+     XTHT(:,IJB-1,IKB) = 2. * XTHT(:,IJB,IKB) - XTHT(:,IJB+1,IKB)
     IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XTHM(:,IJE+1,IKB) = 2. * XTHM(:,IJE,IKB) - XTHM(:,IJE-1,IKB)
+     XTHT(:,IJE+1,IKB) = 2. * XTHT(:,IJE,IKB) - XTHT(:,IJE-1,IKB)
   ELSE ! white noise on wind
     IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
-     XWM(IIB-1,:,IKB) = 2. * XWM(IIB,:,IKB) - XWM(IIB+1,:,IKB)
+     XWT(IIB-1,:,IKB) = 2. * XWT(IIB,:,IKB) - XWT(IIB+1,:,IKB)
     IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
-     XWM(IIE+1,:,IKB) = 2. * XWM(IIE,:,IKB) - XWM(IIE-1,:,IKB)    
+     XWT(IIE+1,:,IKB) = 2. * XWT(IIE,:,IKB) - XWT(IIE-1,:,IKB)    
     IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XWM(:,IJB-1,IKB) = 2. * XWM(:,IJB,IKB) - XWM(:,IJB+1,IKB)
+     XWT(:,IJB-1,IKB) = 2. * XWT(:,IJB,IKB) - XWT(:,IJB+1,IKB)
     IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XWM(:,IJE+1,IKB) = 2. * XWM(:,IJE,IKB) - XWM(:,IJE-1,IKB)
+     XWT(:,IJE+1,IKB) = 2. * XWT(:,IJE,IKB) - XWT(:,IJE-1,IKB)
 !     
     IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
-     XUM(IIB-1,:,IKB) = 2. * XUM(IIB,:,IKB) - XUM(IIB+1,:,IKB)
+     XUT(IIB-1,:,IKB) = 2. * XUT(IIB,:,IKB) - XUT(IIB+1,:,IKB)
     IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
-     XUM(IIE+1,:,IKB) = 2. * XUM(IIE,:,IKB) - XUM(IIE-1,:,IKB)
+     XUT(IIE+1,:,IKB) = 2. * XUT(IIE,:,IKB) - XUT(IIE-1,:,IKB)
     IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XUM(:,IJB-1,IKB) = 2. * XUM(:,IJB,IKB) - XUM(:,IJB+1,IKB)
+     XUT(:,IJB-1,IKB) = 2. * XUT(:,IJB,IKB) - XUT(:,IJB+1,IKB)
     IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XUM(:,IJE+1,IKB) = 2. * XUM(:,IJE,IKB) - XUM(:,IJE-1,IKB)
+     XUT(:,IJE+1,IKB) = 2. * XUT(:,IJE,IKB) - XUT(:,IJE-1,IKB)
 !
     IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
-     XVM(IIB-1,:,IKB) = 2. * XVM(IIB,:,IKB) - XVM(IIB+1,:,IKB)
+     XVT(IIB-1,:,IKB) = 2. * XVT(IIB,:,IKB) - XVT(IIB+1,:,IKB)
     IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
-     XVM(IIE+1,:,IKB) = 2. * XVM(IIE,:,IKB) - XVM(IIE-1,:,IKB)
+     XVT(IIE+1,:,IKB) = 2. * XVT(IIE,:,IKB) - XVT(IIE-1,:,IKB)
     IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XVM(:,IJB-1,IKB) = 2. * XVM(:,IJB,IKB) - XVM(:,IJB+1,IKB)
+     XVT(:,IJB-1,IKB) = 2. * XVT(:,IJB,IKB) - XVT(:,IJB+1,IKB)
     IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
-     XVM(:,IJE+1,IKB) = 2. * XVM(:,IJE,IKB) - XVM(:,IJE-1,IKB)
+     XVT(:,IJE+1,IKB) = 2. * XVT(:,IJE,IKB) - XVT(:,IJE-1,IKB)
   ENDIF
+!
+!
+  CASE('SH')  !    Shock (Burger's Equation)
+!
+    ZOMEGA = 2.0*XPI/FLOAT(IIE-IIB)
+    DO JI = IIB, IIE
+      XUT(JI,:,:) = XUT(JI,:,:) + XAMPLIUV*SIN( ZOMEGA*FLOAT(JI-IIB) )
+    END DO
+    XVT(:,:,:) = 0.0
+    XWT(:,:,:) = 0.0
+!
+!
 END SELECT
 !
 DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
@@ -500,4 +513,3 @@ DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SET_PERTURB 
-

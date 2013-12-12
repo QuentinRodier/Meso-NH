@@ -175,10 +175,8 @@ USE MODD_CH_SOLVER_n
 !
 USE MODD_CH_PH_n                      ! pH value in 3D
 !
-USE MODD_FIELD_n,   ONLY: XSVM,      &! scalar variable at t-dt
-                          XSVT,      &! scalar variable at t
+USE MODD_FIELD_n,   ONLY: XSVT,      &! scalar variable at t
                           XRSVS,     &! source of scalar variable
-                          XRM,       &! water mixing ratio at t-dt
                           XRT,       &! water mixing ratio at t
                           XCIT,      &! pristine conc. at t
                           XRRS,      &! source of water mixing ratio 
@@ -289,8 +287,6 @@ TYPE(METEOTRANSTYPE), DIMENSION(:), ALLOCATABLE  :: TZM
 !
 !
 LOGICAL :: GSPLIT           ! use timesplitting as temporal discretization
-LOGICAL :: GCENTER          ! if not timesplitting, use centered rather than 
-                            ! lagged tendencies
 !
 INTEGER             :: IIU  ! Upper dimension in x direction
 INTEGER             :: IJU  ! Upper dimension in y direction
@@ -556,15 +552,12 @@ ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 SELECT CASE (CCH_TDISCRETIZATION)
   CASE ("SPLIT")
     GSPLIT = .TRUE. 
-    GCENTER = .FALSE.
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using SPLIT option"
   CASE ("CENTER")
     GSPLIT = .FALSE. 
-    GCENTER = .TRUE.
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using CENTER option"
   CASE ("LAGGED")
     GSPLIT = .FALSE. 
-    GCENTER = .FALSE.
     IF (KVERB >= 10) WRITE(KLUOUT,*) "CH_MONITOR_n: using LAGGED option"
   CASE DEFAULT
     ! the following line should never be reached:
@@ -756,16 +749,15 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
       CASE ('C2R2','C3R5')
         CALL CH_AQUEOUS_SEDIMC2R2(TDTCUR%TIME, PTSTEP, XRTMIN_AQ,              &
                                   XZZ, XRHODREF, XRHODJ,                       &
-                                  XRM(:,:,:,3),XRRS(:,:,:,3),                  &
-                                  XSVM(:,:,:,NSV_C2R2BEG+2),                   &
+                                  XRT(:,:,:,3),XRRS(:,:,:,3),                  &
+                                  XSVT(:,:,:,NSV_C2R2BEG+2),                   &
                                   XRSVS(:,:,:,NSV_C2R2BEG+2),                  &
                                   XSVT(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND), &
                                   XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND) )
 
       CASE ('KHKO')
         CALL CH_AQUEOUS_SEDIMKHKO(PTSTEP , XZZ, XRHODREF, XRHODJ,                &
-                                  XRM(:,:,:,3), XRT(:,:,:,3), XRRS(:,:,:,3),     &
-                                  XSVM(:,:,:,NSV_C2R2BEG+2),                     &
+                                  XRT(:,:,:,3), XRRS(:,:,:,3),                   &
                                   XSVT(:,:,:,NSV_C2R2BEG+2),                     &
                                   XRSVS(:,:,:,NSV_C2R2BEG+2),                    &
                                   XSVT(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND),   &
@@ -836,10 +828,8 @@ DO JL=1,ISVECNMASK
         ZCONV(JM+1) = (XRHODREF(JI,JJ,JK)/XRHODJ(JI,JJ,JK))*ZDEN2MOL
         IF (GSPLIT) THEN
           ZAERO(JM+1,JN) = XRSVS(JI,JJ,JK,NSV_AERBEG+JN-1)*PTSTEP*ZCONV(JM+1)
-        ELSE IF (GCENTER) THEN
+        ELSE 
           ZAERO(JM+1,JN) = XSVT(JI,JJ,JK,NSV_AERBEG+JN-1)*ZDEN2MOL*XRHODREF(JI,JJ,JK)
-        ELSE
-          ZAERO(JM+1,JN) = XSVM(JI,JJ,JK,NSV_AERBEG+JN-1)*ZDEN2MOL*XRHODREF(JI,JJ,JK)
         END IF
       END DO
     END DO
@@ -876,7 +866,7 @@ DO JL=1,ISVECNMASK
         ENDIF
       END DO 
     END DO
-  ELSE IF (GCENTER) THEN
+  ELSE 
     DO JM = 0, ISVECNPT-1
 !Vectorization:
 !ocl novrec
@@ -899,29 +889,6 @@ DO JL=1,ISVECNMASK
         ENDIF
       END DO 
     END DO
-  ELSE
-    DO JM = 0, ISVECNPT-1
-!Vectorization:
-!ocl novrec
-!cdir nodep
-      JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
-      JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
-      JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
-!
-      ZCONV(JM+1) = (XRHODREF(JI,JJ,JK)/XRHODJ(JI,JJ,JK))*ZDEN2MOL
-      DO JN = 1, LU_DIM_SPECIES(JM+1)
-        ZCHEM(JM+1,JN) = XSVM(JI,JJ,JK,NSV_CHEMBEG+JN-1) * ZDEN2MOL &
-                                                         * XRHODREF(JI,JJ,JK)
-      END DO
-      DO JN = 1, NEQAQ/2 ! set aqueous concentrations to zero where LW<XRTMIN_AQ
-        IF (((XRM(JI,JJ,JK,2)*XRHODREF(JI,JJ,JK))/1.e3) < XRTMIN_AQ) THEN ! cloud
-          ZCHEM(JM+1,NEQ-NEQAQ+JN) = 0.
-        ENDIF
-        IF (((XRM(JI,JJ,JK,3)*XRHODREF(JI,JJ,JK))/1.e3) < XRTMIN_AQ) THEN ! rain
-          ZCHEM(JM+1,NEQ-NEQAQ/2+JN) = 0.
-        ENDIF
-      END DO 
-    END DO
   END IF
 !
 !*       4.2   transfer meteo data into chemical core system
@@ -934,14 +901,8 @@ DO JL=1,ISVECNMASK
                              TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR,      &
                              XLAT, XLON, XLAT0, XLON0, LUSERV, LUSERC,   &
                              LUSERR, KLUOUT, CCLOUD, PTSTEP              )
-    ELSE IF (GCENTER) THEN
+    ELSE 
       CALL CH_METEO_TRANS_KESS(JL, XRHODJ, XRHODREF, XRT, XTHT, XPABST,  &
-                             ISVECNPT, ISVECMASK, TZM, TDTCUR%TDATE%DAY, &
-                             TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR,      &
-                             XLAT, XLON, XLAT0, XLON0, LUSERV, LUSERC,   &
-                             LUSERR, KLUOUT, CCLOUD                      )
-    ELSE
-      CALL CH_METEO_TRANS_KESS(JL, XRHODJ, XRHODREF, XRM, XTHT, XPABST,  &
                              ISVECNPT, ISVECMASK, TZM, TDTCUR%TDATE%DAY, &
                              TDTCUR%TDATE%MONTH, TDTCUR%TDATE%YEAR,      &
                              XLAT, XLON, XLAT0, XLON0, LUSERV, LUSERC,   &
@@ -955,18 +916,12 @@ DO JL=1,ISVECNMASK
                              ISVECMASK, TZM, TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH,     &
                              TDTCUR%TDATE%YEAR, XLAT,XLON, XLAT0, XLON0, LUSERV,       &
                              LUSERC, LUSERR, KLUOUT, CCLOUD,  PTSTEP                   )
-    ELSE IF (GCENTER) THEN
+    ELSE 
       CALL CH_METEO_TRANS_C2R2(JL, XRHODJ, XRHODREF, XRT, XSVT(:,:,:,NSV_C2R2BEG+1), &
                              XSVT(:,:,:,NSV_C2R2BEG+2), XTHT, XPABST, ISVECNPT,      &
                              ISVECMASK, TZM, TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH,   &
                              TDTCUR%TDATE%YEAR, XLAT,XLON, XLAT0, XLON0, LUSERV,     &
                              LUSERC, LUSERR, KLUOUT, CCLOUD                          )
-    ELSE
-      CALL CH_METEO_TRANS_C2R2(JL, XRHODJ, XRHODREF, XRM, XSVM(:,:,:,NSV_C2R2BEG+1), &
-                             XSVM(:,:,:,NSV_C2R2BEG+2), XTHT, XPABST, ISVECNPT,      &
-                             ISVECMASK, TZM, TDTCUR%TDATE%DAY, TDTCUR%TDATE%MONTH,   &
-                             TDTCUR%TDATE%YEAR, XLAT, XLON, XLAT0, XLON0, LUSERV,    &
-                             LUSERC, LUSERR,   KLUOUT, CCLOUD                        )
     ENDIF
   END SELECT
 !
@@ -1341,7 +1296,7 @@ END DO
                       .OR. XRRS(JI,JJ,JK,3)>(ZRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK))
           END DO
       END SELECT
-    ELSE IF (GCENTER) THEN
+    ELSE 
       SELECT CASE ( CCLOUD )
         CASE('REVE')
           DO JM=0,ISVECNPT-1
@@ -1357,24 +1312,6 @@ END DO
             JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
             GWATER(JM+1) = XRT(JI,JJ,JK,2)>(XRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK)) &
                       .OR. XRT(JI,JJ,JK,3)>(XRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK))
-          END DO
-      END SELECT
-    ELSE
-      SELECT CASE ( CCLOUD )
-        CASE('REVE')
-          DO JM=0,ISVECNPT-1
-            JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
-            JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
-            JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
-            GWATER(JM+1) = XRM(JI,JJ,JK,2)>(XRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK))
-          END DO
-        CASE('KESS','ICE3','ICE4','C2R2','C3R5','KHKO')
-          DO JM=0,ISVECNPT-1
-            JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
-            JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
-            JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
-            GWATER(JM+1) = XRM(JI,JJ,JK,2)>(XRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK)) &
-                      .OR. XRM(JI,JJ,JK,3)>(XRTMIN_AQ*1.e3/XRHODREF(JI,JJ,JK))
           END DO
       END SELECT
     END IF

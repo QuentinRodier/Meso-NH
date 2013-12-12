@@ -10,18 +10,16 @@
 !
 INTERFACE
 !
-      SUBROUTINE FORCING ( PTSTEP, PTSTEP_UVW, OUSERV, PRHODJ, PCORIOZ,    &
+      SUBROUTINE FORCING ( PTSTEP, OUSERV, PRHODJ, PCORIOZ,                &
                            PZHAT,  PZZ,  TPDTCUR,                          &
                            PUFRC_PAST, PVFRC_PAST,                         &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
-                           PUM,  PVM,  PWM,  PTHM,  PTKEM,  PRM,  PSVM,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
                            KMI)
 !
 USE MODD_TIME, ONLY: DATE_TIME
 !
 REAL,                   INTENT(IN) :: PTSTEP  ! time-step
-REAL,                   INTENT(IN) :: PTSTEP_UVW  ! time-step
 LOGICAL               , INTENT(IN) :: OUSERV  ! Logical to use rv
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! ( rhod J ) = dry density
               ! for reference state * Jacobian of the GCS transformation.
@@ -37,11 +35,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT,PVT,PWT,PTHT,PTKET
                                           ! TKE at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT !  moist variables at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT!  scalar variables at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM,PVM,PWM,PTHM,PTKEM 
-                                          ! wind, potential temperature and
-                                          ! TKE at time t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRM !  moist variables at time t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM!  scalar variables at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS,PRVS,PRWS,PRTHS,PRTKES
                                           ! wind, potential temperature and
                                           ! TKE tendencies at time t
@@ -57,11 +50,10 @@ END INTERFACE
 END MODULE MODI_FORCING
 !
 !     ######################################################################
-      SUBROUTINE FORCING ( PTSTEP,  PTSTEP_UVW, OUSERV, PRHODJ, PCORIOZ,   &
+      SUBROUTINE FORCING ( PTSTEP, OUSERV, PRHODJ, PCORIOZ,                &
                            PZHAT,  PZZ,  TPDTCUR,                          &
                            PUFRC_PAST, PVFRC_PAST,                         &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
-                           PUM,  PVM,  PWM,  PTHM,  PTKEM,  PRM,  PSVM,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
                            KMI)
 !     ######################################################################
@@ -175,7 +167,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of dummy arguments :
 !
 REAL,                   INTENT(IN) :: PTSTEP  ! time-step
-REAL,                   INTENT(IN) :: PTSTEP_UVW  ! time-step
 LOGICAL               , INTENT(IN) :: OUSERV  ! Logical to use rv
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! ( rhod J ) = dry density
               ! for reference state * Jacobian of the GCS transformation.
@@ -191,11 +182,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT,PVT,PWT,PTHT,PTKET
                                           ! TKE at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT !  moist variables at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT!  scalar variables at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM,PVM,PWM,PTHM,PTKEM 
-                                          ! wind, potential temperature and
-                                          ! TKE at time t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRM !  moist variables at time t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM!  scalar variables at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS,PRVS,PRWS,PRTHS,PRTKES
                                           ! wind, potential temperature and
                                           ! TKE tendencies at time t
@@ -606,41 +592,41 @@ IF (LVERT_MOTION_FRC) THEN
 !
 ! forced vertical transport of U and V
 !
-  ZDZZ(:,:,:) = MXF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PUM(:,:,:))
+  ZDZZ(:,:,:) = MXF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PUT(:,:,:))
   PRUS(:,:,:) = PRUS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
-  ZDZZ(:,:,:) = MYF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PVM(:,:,:))
+  ZDZZ(:,:,:) = MYF(ZRWCF(:,:,:)) *DZM(1,IKU,1,PVT(:,:,:))
   PRVS(:,:,:) = PRVS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
 !
 ! forced vertical transport of W
 !
   IF( .NOT.L1D ) THEN
-    ZDZZ(:,:,:) = MZF(1,IKU,1,ZRWCF(:,:,:)) *DZF(1,IKU,1,PWM(:,:,:))
+    ZDZZ(:,:,:) = MZF(1,IKU,1,ZRWCF(:,:,:)) *DZF(1,IKU,1,PWT(:,:,:))
     PRWS(:,:,:) = PRWS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END IF
 !
 ! forced vertical transport of THETA
 !
-  ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTHM(:,:,:))
+  ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTHT(:,:,:))
   PRTHS(:,:,:) = PRTHS(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
 !
 ! forced vertical transport of TKE (if allocated)
 !
-  IF( SIZE(PTKEM) == SIZE(ZDZZ) ) THEN
-    ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTKEM(:,:,:))
+  IF( SIZE(PTKET) == SIZE(ZDZZ) ) THEN
+    ZDZZ(:,:,:) = ZRWCF(:,:,:)  *DZM(1,IKU,1,PTKET(:,:,:))
     PRTKES(:,:,:) = PRTKES(:,:,:) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END IF
 !
 ! forced vertical transport of water variables
 !
   DO JL = 1 , SIZE(PRRS,4)
-    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PRM(:,:,:,JL))
+    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PRT(:,:,:,JL))
     PRRS(:,:,:,JL) = PRRS(:,:,:,JL) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END DO
 !
 ! forced vertical transport of scalar variables
 !
   DO JL = 1 , SIZE(PRSVS,4)
-    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PSVM(:,:,:,JL))
+    ZDZZ(:,:,:) = ZRWCF(:,:,:) *DZM(1,IKU,1,PSVT(:,:,:,JL))
     PRSVS(:,:,:,JL) = PRSVS(:,:,:,JL) - UPSTREAM_Z(ZDZZ(:,:,:),ZRWCF(:,:,:))
   END DO
 !
@@ -684,12 +670,12 @@ IF( LCORIO ) THEN
     !
     ZCOEF(:,:,:) = MIN(1.,SQRT(ZCOEF))
     !
-    ZDUT(:,:,:) = ZDUF(:,:,:) * MXM(ZCOEF) * PTSTEP_UVW / PTSTEP
-    ZDVT(:,:,:) = ZDVF(:,:,:) * MYM(ZCOEF) * PTSTEP_UVW / PTSTEP
+    ZDUT(:,:,:) = ZDUF(:,:,:) * MXM(ZCOEF) 
+    ZDVT(:,:,:) = ZDVF(:,:,:) * MYM(ZCOEF) 
     !
-    PRUS(:,:,:) = PRUS(:,:,:) + ZDUT(:,:,:) * MXM(PRHODJ) / PTSTEP_UVW
+    PRUS(:,:,:) = PRUS(:,:,:) + ZDUT(:,:,:) * MXM(PRHODJ) / PTSTEP
     !
-    PRVS(:,:,:) = PRVS(:,:,:) + ZDVT(:,:,:) * MYM(PRHODJ) / PTSTEP_UVW
+    PRVS(:,:,:) = PRVS(:,:,:) + ZDVT(:,:,:) * MYM(PRHODJ) / PTSTEP
     !
     !
     ! Takes into acount the Coriolis force due to this evolution
@@ -738,7 +724,7 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
 !  apply THETA relaxation
 !
     WHERE( GRELAX_MASK_FRC )
-      PRTHS(:,:,:) = PRTHS(:,:,:) - PRHODJ(:,:,:)*(PTHM(:,:,:)-ZTHF(:,:,:)) &
+      PRTHS(:,:,:) = PRTHS(:,:,:) - PRHODJ(:,:,:)*(PTHT(:,:,:)-ZTHF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
     END WHERE
 !
@@ -747,7 +733,7 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
     IF( OUSERV ) THEN
       WHERE( GRELAX_MASK_FRC )
         PRRS(:,:,:,1) = PRRS(:,:,:,1) &
-                      - PRHODJ(:,:,:)*(PRM(:,:,:,1)-ZRVF(:,:,:)) &
+		      - PRHODJ(:,:,:)*(PRT(:,:,:,1)-ZRVF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
       END WHERE
 !
@@ -760,9 +746,9 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
 !   apply UV relaxation
 !
     WHERE( GRELAX_MASK_FRC )
-      PRUS(:,:,:) = PRUS(:,:,:) - MXM(PRHODJ(:,:,:))*(PUM(:,:,:)-ZUF(:,:,:)) &
+      PRUS(:,:,:) = PRUS(:,:,:) - MXM(PRHODJ(:,:,:))*(PUT(:,:,:)-ZUF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
-      PRVS(:,:,:) = PRVS(:,:,:) - MYM(PRHODJ(:,:,:))*(PVM(:,:,:)-ZVF(:,:,:)) &
+      PRVS(:,:,:) = PRVS(:,:,:) - MYM(PRHODJ(:,:,:))*(PVT(:,:,:)-ZVF(:,:,:)) &
                                                  / XRELAX_TIME_FRC
     END WHERE
 !

@@ -169,9 +169,7 @@ LOGICAL, SAVE :: LBU_RU     ! True when the budget of RU is performed
 !                         
 INTEGER, SAVE :: NASSEU     ! time filter
 INTEGER, SAVE :: NNESTU     ! Efffect of 2way nesting on U
-INTEGER, SAVE :: NADVXU     ! advection along X
-INTEGER, SAVE :: NADVYU     ! advection along Y
-INTEGER, SAVE :: NADVZU     ! advection along Z 
+INTEGER, SAVE :: NADVU      ! advection 
 INTEGER, SAVE :: NFRCU      ! forcing
 INTEGER, SAVE :: NNUDU      ! nudging
 INTEGER, SAVE :: NCURVU     ! curvature
@@ -192,9 +190,7 @@ LOGICAL, SAVE :: LBU_RV     ! True when the budget of RV is performed
 !
 INTEGER, SAVE :: NASSEV     ! time filter
 INTEGER, SAVE :: NNESTV     ! Efffect of 2way nesting on V
-INTEGER, SAVE :: NADVXV     ! advection along X 
-INTEGER, SAVE :: NADVYV     ! advection along Y 
-INTEGER, SAVE :: NADVZV     ! advection along Z 
+INTEGER, SAVE :: NADVV      ! advection 
 INTEGER, SAVE :: NFRCV      ! forcing
 INTEGER, SAVE :: NNUDV      ! nudging
 INTEGER, SAVE :: NCURVV     ! curvature
@@ -215,9 +211,7 @@ LOGICAL, SAVE :: LBU_RW     ! True when the budget of RW is performed
 !                                                  
 INTEGER, SAVE :: NASSEW     ! time filter
 INTEGER, SAVE :: NNESTW     ! Efffect of 2way nesting on W
-INTEGER, SAVE :: NADVXW     ! advection along X
-INTEGER, SAVE :: NADVYW     ! advection along Y
-INTEGER, SAVE :: NADVZW     ! advection along Z 
+INTEGER, SAVE :: NADVW      ! advection
 INTEGER, SAVE :: NFRCW      ! forcing
 INTEGER, SAVE :: NNUDW      ! nudging
 INTEGER, SAVE :: NCURVW     ! curvature
@@ -238,9 +232,6 @@ LOGICAL, SAVE :: LBU_RTH    ! True when the budget of RTH is performed
 INTEGER, SAVE :: NASSETH    ! time filter
 INTEGER, SAVE :: NNESTTH    ! Efffect of 2way nesting on Th
 INTEGER, SAVE :: NADVTH     ! Total advection for PPM
-INTEGER, SAVE :: NADVXTH    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYTH    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZTH    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCTH     ! forcing
 INTEGER, SAVE :: N2DADVTH   ! 2d advecting forcing
 INTEGER, SAVE :: N2DRELTH   ! 2d relaxation forcing
@@ -283,9 +274,6 @@ LOGICAL, SAVE :: LBU_RTKE   ! True when the budget of RTKE is performed
 !
 INTEGER, SAVE :: NASSETKE   ! time filter
 INTEGER, SAVE :: NADVTKE    ! Total advection for PPM
-INTEGER, SAVE :: NADVXTKE   ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYTKE   ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZTKE   ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCTKE    ! forcing
 INTEGER, SAVE :: NDIFTKE    ! numerical diffusion
 INTEGER, SAVE :: NRELTKE    ! relaxation
@@ -305,9 +293,6 @@ LOGICAL, SAVE :: LBU_RRV   ! true when the budget of RRV is performed
 INTEGER, SAVE :: NASSERV   ! time filter
 INTEGER, SAVE :: NNESTRV   ! Effect of 2way nesting on Rv
 INTEGER, SAVE :: NADVRV    ! Total advection for PPM
-INTEGER, SAVE :: NADVXRV   ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRV   ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRV   ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRV    ! forcing
 INTEGER, SAVE :: N2DADVRV  ! 2d advecting forcing
 INTEGER, SAVE :: N2DRELRV  ! 2d relaxation forcing
@@ -335,9 +320,6 @@ LOGICAL, SAVE :: LBU_RRC    ! True when the budget of RRC is performed
 INTEGER, SAVE :: NASSERC    ! time filter
 INTEGER, SAVE :: NNESTRC    ! Efffect of 2way nesting on Rc
 INTEGER, SAVE :: NADVRC     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRC    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRC    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRC    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRC     ! forcing
 INTEGER, SAVE :: NDIFRC     ! numerical diffusion
 INTEGER, SAVE :: NRELRC     ! relaxation
@@ -368,9 +350,6 @@ LOGICAL, SAVE :: LBU_RRR    ! True when the budget of RRR is performed
 INTEGER, SAVE :: NASSERR    ! time filter
 INTEGER, SAVE :: NNESTRR    ! Efffect of 2way nesting on Rr
 INTEGER, SAVE :: NADVRR     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRR    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRR    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRR    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRR     ! forcing
 INTEGER, SAVE :: NDIFRR     ! numerical diffusion
 INTEGER, SAVE :: NRELRR     ! relaxation
@@ -397,9 +376,6 @@ LOGICAL, SAVE :: LBU_RRI    ! True when the budget of RRI is performed
 INTEGER, SAVE :: NASSERI    ! time filter
 INTEGER, SAVE :: NNESTRI    ! Efffect of 2way nesting on Ri
 INTEGER, SAVE :: NADVRI     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRI    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRI    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRI    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRI     ! forcing
 INTEGER, SAVE :: NDIFRI     ! numerical diffusion
 INTEGER, SAVE :: NRELRI     ! relaxation
@@ -429,9 +405,6 @@ LOGICAL, SAVE :: LBU_RRS    ! True when the budget of RRS is performed
 INTEGER, SAVE :: NASSERS    ! time filter
 INTEGER, SAVE :: NNESTRS    ! Efffect of 2way nesting on Rs
 INTEGER, SAVE :: NADVRS     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRS    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRS    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRS    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRS     ! forcing
 INTEGER, SAVE :: NDIFRS     ! numerical diffusion
 INTEGER, SAVE :: NRELRS     ! relaxation
@@ -456,9 +429,6 @@ LOGICAL, SAVE :: LBU_RRG    ! True when the budget of RRG is performed
 INTEGER, SAVE :: NASSERG    ! time filter
 INTEGER, SAVE :: NNESTRG    ! Efffect of 2way nesting on Rg
 INTEGER, SAVE :: NADVRG     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRG    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRG    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRG    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRG     ! forcing
 INTEGER, SAVE :: NDIFRG     ! numerical diffusion
 INTEGER, SAVE :: NRELRG     ! relaxation
@@ -484,9 +454,6 @@ LOGICAL, SAVE :: LBU_RRH    ! True when the budget of RRH is performed
 INTEGER, SAVE :: NASSERH    ! time filter
 INTEGER, SAVE :: NNESTRH    ! Efffect of 2way nesting on Rh
 INTEGER, SAVE :: NADVRH     ! Total advection for PPM
-INTEGER, SAVE :: NADVXRH    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYRH    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZRH    ! advection along Z (all except PPM) 
 INTEGER, SAVE :: NFRCRH     ! forcing
 INTEGER, SAVE :: NDIFRH     ! numerical diffusion
 INTEGER, SAVE :: NRELRH     ! relaxation
@@ -503,9 +470,6 @@ LOGICAL, SAVE :: LBU_RSV    ! True when the budget of RSVx is performed
 INTEGER, SAVE :: NASSESV    ! Asselin-Robert time filter
 INTEGER, SAVE :: NNESTSV    ! Efffect of 2way nesting on Sv
 INTEGER, SAVE :: NADVSV     ! Total advection for PPM
-INTEGER, SAVE :: NADVXSV    ! advection along X (all except PPM)
-INTEGER, SAVE :: NADVYSV    ! advection along Y (all except PPM)
-INTEGER, SAVE :: NADVZSV    ! advection along Z (all except PPM)
 INTEGER, SAVE :: NFRCSV     ! forcing
 INTEGER, SAVE :: NDIFSV     ! numerical diffusion
 INTEGER, SAVE :: NRELSV     ! relaxation

@@ -10,10 +10,8 @@ INTERFACE
                            PUM, PVM, PWM, PTHM, PRM, PTKEM, PSVM,              &
                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT,              &
                            PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,               &
-                           PRUS,PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,        &
-                           TPHALO2MLIST, TPHALO2LIST, TPHALO2SLIST )
+                           PRUS,PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS         )
 !
-USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 !
 CHARACTER(LEN=6),         INTENT(IN)    :: HMET_ADV_SCHEME, & ! Control of the 
                                            HSV_ADV_SCHEME,  & ! scheme applied 
@@ -50,10 +48,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
                                                   ! Sources terms 
 !
-! halo lists for 4th order advection
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2MLIST ! momentum variables
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2LIST  ! meteorological scalar variables
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2SLIST ! tracer scalar variables
 !
 END SUBROUTINE ADVECTION
 !
@@ -67,8 +61,7 @@ END MODULE MODI_ADVECTION
                            PUM, PVM, PWM, PTHM, PRM, PTKEM, PSVM,              &
                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT,              &
                            PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,               &
-                           PRUS,PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,        &
-                           TPHALO2MLIST, TPHALO2LIST, TPHALO2SLIST )
+                           PRUS,PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS         )
 !     ##########################################################################
 !
 !!****  *ADVECTION * - routine to call the specialized advection routines
@@ -132,26 +125,6 @@ END MODULE MODI_ADVECTION
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
-USE MODD_CONF
-USE MODD_BLANK
-USE MODD_GRID_n
-!
-USE MODI_SHUMAN
-USE MODI_CONTRAV
-USE MODI_ADVECUVW
-USE MODI_ADVECUVW_4TH
-USE MODI_ADVECMET      
-USE MODI_ADVECMET_4TH
-USE MODI_FCT_MET   
-USE MODI_MPDATA
-USE MODI_ADVECSCALAR
-USE MODI_ADVECSCALAR_4TH
-USE MODI_FCT_SCALAR 
-USE MODI_MPDATA_SCALAR
-USE MODI_PPM_MET
-USE MODI_PPM_SCALAR
 !
 !
 !-------------------------------------------------------------------------------
@@ -198,213 +171,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS , PRSVS
                                                   ! Sources terms 
 !
 !
-!*       0.2   declarations of local variables
-!
-!
-!  
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRUT 
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRVT 
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRWT
-                                                  ! cartesian 
-                                                  ! components of
-                                                  ! momentum
-!
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRUCT 
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRVCT
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRWCT
-                                                  ! contravariant
-                                                  ! components
-                                                  ! of momentum
-!
-INTEGER                     :: IINFO_ll    ! return code of parallel routine
-TYPE(LIST_ll), POINTER      :: TZFIELDS_ll ! list of fields to exchange
-! halo lists for 4th order advection
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2MLIST ! momentum variables
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2LIST  ! meteorological scalar variables
-TYPE(HALO2LIST_ll), POINTER :: TPHALO2SLIST ! tracer scalar variables
-INTEGER :: IKU
-!
-!-------------------------------------------------------------------------------
-!
-!
-IKU=SIZE(XZHAT)
-!*       1.     COMPUTES THE CONTRAVARIANT COMPONENTS
-!	        -------------------------------------
-!
-ZRUT = PUT(:,:,:) * MXM(PRHODJ)
-ZRVT = PVT(:,:,:) * MYM(PRHODJ)
-ZRWT = PWT(:,:,:) * MZM(1,IKU,1,PRHODJ)
-!
-IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-  CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,2)
-ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-  CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,4)
-ENDIF
-!
-NULLIFY(TZFIELDS_ll)
-IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRWCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRUCT)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRVCT)
-  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-  CALL CLEANLIST_ll(TZFIELDS_ll)
-END IF
-!
-!-------------------------------------------------------------------------------
-!
-!*       2.     CALLS THE ADVECTION ROUTINES FOR THE MOMENTUM 
-!	        ---------------------------------------------
-!
-! choose between 2nd and 4th order momentum advection.
-IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-!
-   CALL ADVECUVW (PUT,PVT,PWT,ZRUCT,ZRVCT,ZRWCT,PRUS,PRVS,PRWS)
-!
-ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-! 
-   CALL ADVECUVW_4TH ( HLBCX, HLBCY, ZRUCT, ZRVCT, ZRWCT,            &
-                       PUT, PVT, PWT, PRUS, PRVS, PRWS, TPHALO2MLIST )                 
-!
-END IF
-!
-!-------------------------------------------------------------------------------
-!
-!*       3.     CALLS THE ADVECTION ROUTINES FOR THE METEOROLOGICAL SCALARS 
-!	        -----------------------------------------------------------
-!
-!            3.1. 2nd order scheme
-!
-IF (HMET_ADV_SCHEME=='CEN2ND') THEN
-!
-   CALL ADVECMET (KRR, PTHT,PRT,PTKET,     &
-                  ZRUCT,ZRVCT,ZRWCT,       &
-                  PRTHS,PRRS,PRTKES        )
-!
-!             3.2. 4th order scheme
-!
-ELSEIF (HMET_ADV_SCHEME =='CEN4TH' ) THEN
-!
-   CALL ADVECMET_4TH (HLBCX,HLBCY, KRR,                &
-                      ZRUCT, ZRVCT, ZRWCT,             &
-                      PTHT, PTKET, PRT,                &
-                      PRTHS, PRTKES, PRRS, TPHALO2LIST )
-!
-!             3.3. Flux-Corrected Transport scheme
-!
-ELSEIF ( HMET_ADV_SCHEME=='FCT2ND') THEN
-!
-   CALL FCT_MET  (HLBCX, HLBCY,KRR,                        &
-                  PTSTEP_MET, PRHODJ, PTHM, PRM, PTKEM,    &
-                  PTHT, PRT, PTKET,                        &
-                  ZRUCT, ZRVCT, ZRWCT,                     &
-                  PRTHS, PRRS, PRTKES                      )
-!
-!             3.4. MPDATA scheme
-!
-ELSEIF (HMET_ADV_SCHEME=='MPDATA') THEN
-!
-   CALL MPDATA (KLITER, HLBCX, HLBCY, KRR,                 &
-                PTSTEP_MET, PRHODJ, PTHM, PRM, PTKEM,      &
-                PTHT, PRT, PTKET,                          &
-                ZRUCT, ZRVCT, ZRWCT,                       &
-                PRTHS, PRRS, PRTKES                        )
-!
-!             3.5. PPM schemes
-!   
-ELSEIF (HMET_ADV_SCHEME(1:3)=='PPM') THEN
-!
-! extrapolate velocity field to t+dt/2 to use in forward in time PPM
-! advection scheme
-!
-   ZRUT = (1.5*PUT(:,:,:) - 0.5*PUM(:,:,:))
-   ZRVT = (1.5*PVT(:,:,:) - 0.5*PVM(:,:,:))
-   ZRWT = (1.5*PWT(:,:,:) - 0.5*PWM(:,:,:))
-! calculate Courant numbers
-  IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-    CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,2)
-  ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-    CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,4)
-  ENDIF
-!
-   ZRUCT = ZRUCT*PTSTEP_MET
-   ZRVCT = ZRVCT*PTSTEP_MET
-   ZRWCT = ZRWCT*PTSTEP_MET
-
-   CALL PPM_MET   (HLBCX,HLBCY, KRR, KTCOUNT,                  &
-                   ZRUCT, ZRVCT, ZRWCT, PTSTEP_MET, PRHODJ,    &
-                   PTHT, PTKET, PRT, PRTHS, PRTKES, PRRS,      &
-                   HMET_ADV_SCHEME                             )
-!
-END IF
-!
-!-------------------------------------------------------------------------------
-!
-!*       4.     CALLS THE ADVECTION ROUTINES FOR TRACERS
-!	        ----------------------------------------
-!
-!            4.1. 2nd order scheme
-!
-IF (HSV_ADV_SCHEME=='CEN2ND') THEN
-!
-   CALL ADVECSCALAR  (KSV, PSVT, ZRUCT,ZRVCT,ZRWCT,PRSVS )             
-!
-!             4.2. 4th order scheme
-!
-ELSEIF (HSV_ADV_SCHEME =='CEN4TH' ) THEN
-!
-   CALL ADVECSCALAR_4TH (HLBCX,HLBCY, KSV,          &
-                         ZRUCT, ZRVCT, ZRWCT,       &
-                         PSVT, PRSVS, TPHALO2SLIST   )           
-!
-!             4.3. Flux-Corrected Transport scheme
-!
-ELSEIF ( HSV_ADV_SCHEME=='FCT2ND') THEN
-!
-   CALL FCT_SCALAR  (HLBCX, HLBCY, KSV,             &
-                     PTSTEP_SV, PRHODJ, PSVM,PSVT,  &
-                     ZRUCT, ZRVCT, ZRWCT, PRSVS     ) 
-!
-!             4.4. MPDATA scheme
-!
-ELSEIF (HSV_ADV_SCHEME=='MPDATA') THEN
-!
-   CALL MPDATA_SCALAR ( KLITER, HLBCX, HLBCY, KSV,           &
-                        PTSTEP_SV, PRHODJ, PSVM, PSVT,       &
-                        ZRUCT, ZRVCT, ZRWCT,  PRSVS          )           
-!
-!             4.5. PPM schemes
-!   
-ELSEIF (HSV_ADV_SCHEME(1:3)=='PPM') THEN
-!
-! extrapolate velocity field to t+dt/2 to use in forward in time PPM
-! advection scheme
-!
-   ZRUT = (1.5*PUT(:,:,:) - 0.5*PUM(:,:,:))
-   ZRVT = (1.5*PVT(:,:,:) - 0.5*PVM(:,:,:))
-   ZRWT = (1.5*PWT(:,:,:) - 0.5*PWM(:,:,:))
-! calculate Courant numbers
-  IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-    CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,2)
-  ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-    CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY, &
-                ZRUCT,ZRVCT,ZRWCT,4)
-  ENDIF
-!
-   ZRUCT = ZRUCT*PTSTEP_SV
-   ZRVCT = ZRVCT*PTSTEP_SV
-   ZRWCT = ZRWCT*PTSTEP_SV
-
-   CALL PPM_SCALAR(HLBCX,HLBCY, KSV, KTCOUNT,               &
-                   ZRUCT, ZRVCT, ZRWCT, PTSTEP_SV, PRHODJ,  &
-                   PSVT, PRSVS, HSV_ADV_SCHEME      )                     
-!
-END IF
-!
+! ROUTINE TO REMOVE
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ADVECTION

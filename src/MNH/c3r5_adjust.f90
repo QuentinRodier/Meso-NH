@@ -12,7 +12,7 @@ INTERFACE
 !
       SUBROUTINE C3R5_ADJUST( KRR, KMI, HFMFILE, HLUOUT, HRAD,                 &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST, &
                              PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,         &
                              PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,         &
                              PCCT, PCIT, PCNUCS, PCCS, PINUCS, PCIS,           &
@@ -36,7 +36,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODREF! Dry density of the
                                                    ! reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
 !
@@ -78,7 +77,7 @@ END MODULE MODI_C3R5_ADJUST
 !     ##########################################################################
       SUBROUTINE C3R5_ADJUST( KRR, KMI, HFMFILE, HLUOUT, HRAD,                 &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                             PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST, &
                              PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,         &
                              PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,         &
                              PCCT, PCIT, PCNUCS, PCCS, PINUCS, PCIS,           &

@@ -12,15 +12,14 @@ INTERFACE
       SUBROUTINE RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
                                 KSPLITR, PTSTEP, KMI, KRR,                            &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                                PTHT, PRVT, PRCT, PRCM, PRRT, PRRM, PRIT, PRST, PRSM, &
-                                PRGT, PRGM, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
+                                PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                                 PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
                                 PINPRS, PINPRG, PSIGS,                                &
                                 PQPIT, PQCT, PQRT, PQIT, PQST, PQGT, PQNIT,           &
                                 PQPIS, PQCS, PQRS, PQIS, PQSS, PQGS, PQNIS,           &
                                 PSEA, PTOWN,                                          &
-                                PRHT, PRHM, PRHS, PINPRH,                             &
-                                PQHT, PQHM, PQHS                                      )
+                                PRHT, PRHS, PINPRH, PQHT, PQHS                        )
 !
 !
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
@@ -49,14 +48,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR  ! Cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRSM    ! Snow/aggregate m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGM    ! Graupel/hail m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
 !
@@ -95,11 +90,9 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PQGS    ! Graupel CMR source
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PSEA
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHM    ! Hail m.r. at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(INOUT) :: PINPRH  ! Hail instant precip
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PQHT    ! Hail CMR at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PQHM    ! Hail CMR at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PQHS    ! Hail CMR source
 !
 END SUBROUTINE RAIN_ICE_ELEC
@@ -110,15 +103,14 @@ END MODULE MODI_RAIN_ICE_ELEC
       SUBROUTINE RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
                                 KSPLITR, PTSTEP, KMI, KRR,                            &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                                PTHT, PRVT, PRCT, PRCM, PRRT, PRRM, PRIT, PRST, PRSM, &
-                                PRGT, PRGM, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
+                                PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                                 PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
                                 PINPRS, PINPRG, PSIGS,                                &
                                 PQPIT, PQCT, PQRT, PQIT, PQST, PQGT, PQNIT,           &
                                 PQPIS, PQCS, PQRS, PQIS, PQSS, PQGS, PQNIS,           &
                                 PSEA, PTOWN,                                          &
-                                PRHT, PRHM, PRHS, PINPRH,                             &
-                                PQHT, PQHM, PQHS                                      )
+                                PRHT, PRHS, PINPRH, PQHT, PQHS                        )
 !     ######################################################################
 !
 !!****  * -  compute the explicit microphysical sources
@@ -214,6 +206,7 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         C. Barthe (LACy)  Nov. 2009 : update to V4.8.1
 !!         M. Chong      26/01/10  Add Small ions parameters
 !!         J-P Pinty     31/03/11  Add hail
+!!         C. Lac        2011 : Adaptation to FIT temporal scheme
 !!         B. Tsenova    June 2012 Add new NI parameterizations
 !!         C. Barthe     June 2012 Dependance of RAR on the RELATIVE terminal velocity
 !!
@@ -275,14 +268,10 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCLDFR! Convective Mass Flux Cloud fracti
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRSM    ! Snow/aggregate m.r. at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRGM    ! Graupel/hail m.r. at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PSIGS   ! Sigma_s at t
 !
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PTHS    ! Theta source
@@ -320,11 +309,9 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PQGS    ! Graupel CMR source
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PSEA
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(IN)    :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PRHM    ! Hail m.r. at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:),   OPTIONAL, INTENT(INOUT) :: PINPRH  ! Hail instant precip
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PQHT    ! Hail CMR at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)    :: PQHM    ! Hail CMR at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT) :: PQHS    ! Hail CMR source
 !
 !
@@ -1361,22 +1348,22 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
 !
   IF (OSEDIC) THEN
     ZPRCS(:,:,:) = 0.0
-    ZPRCS(:,:,:) = PRCS(:,:,:) - PRCM(:,:,:) / PTSTEP
-    PRCS(:,:,:)  = PRCM(:,:,:) / PTSTEP
+    ZPRCS(:,:,:) = PRCS(:,:,:) - PRCT(:,:,:) / PTSTEP
+    PRCS(:,:,:)  = PRCT(:,:,:) / PTSTEP
   END IF
   ZPRRS(:,:,:) = 0.0
   ZPRSS(:,:,:) = 0.0
   ZPRGS(:,:,:) = 0.0
   IF (KRR == 7) ZPRHS(:,:,:) = 0.0
 !
-  ZPRRS(:,:,:) = PRRS(:,:,:) - PRRM(:,:,:) / PTSTEP
-  ZPRSS(:,:,:) = PRSS(:,:,:) - PRSM(:,:,:) / PTSTEP
-  ZPRGS(:,:,:) = PRGS(:,:,:) - PRGM(:,:,:) / PTSTEP
-  IF (KRR == 7) ZPRHS(:,:,:) = PRHS(:,:,:) - PRHM(:,:,:) / PTSTEP
-  PRRS(:,:,:)  = PRRM(:,:,:) / PTSTEP
-  PRSS(:,:,:)  = PRSM(:,:,:) / PTSTEP
-  PRGS(:,:,:)  = PRGM(:,:,:) / PTSTEP
-  IF (KRR == 7) PRHS(:,:,:) = PRHM(:,:,:) / PTSTEP
+  ZPRRS(:,:,:) = PRRS(:,:,:) - PRRT(:,:,:) / PTSTEP
+  ZPRSS(:,:,:) = PRSS(:,:,:) - PRST(:,:,:) / PTSTEP
+  ZPRGS(:,:,:) = PRGS(:,:,:) - PRGT(:,:,:) / PTSTEP
+  IF (KRR == 7) ZPRHS(:,:,:) = PRHS(:,:,:) - PRHT(:,:,:) / PTSTEP
+  PRRS(:,:,:)  = PRRT(:,:,:) / PTSTEP
+  PRSS(:,:,:)  = PRST(:,:,:) / PTSTEP
+  PRGS(:,:,:)  = PRGT(:,:,:) / PTSTEP
+  IF (KRR == 7) PRHS(:,:,:) = PRHT(:,:,:) / PTSTEP
   ZPQRS(:,:,:) = 0.0
   ZPQSS(:,:,:) = 0.0
   ZPQGS(:,:,:) = 0.0
@@ -1910,22 +1897,22 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !
   IF (OSEDIC) THEN
     ZPRCS(:,:,:) = 0.0
-    ZPRCS(:,:,:) = PRCS(:,:,:) - PRCM(:,:,:) / PTSTEP
-    PRCS(:,:,:)  = PRCM(:,:,:) / PTSTEP
+    ZPRCS(:,:,:) = PRCS(:,:,:) - PRCT(:,:,:) / PTSTEP
+    PRCS(:,:,:)  = PRCT(:,:,:) / PTSTEP
   END IF
   ZPRRS(:,:,:) = 0.0
   ZPRSS(:,:,:) = 0.0
   ZPRGS(:,:,:) = 0.0
   IF (KRR == 7) ZPRHS(:,:,:) = 0.0
 !
-  ZPRRS(:,:,:) = PRRS(:,:,:) - PRRM(:,:,:) / PTSTEP
-  ZPRSS(:,:,:) = PRSS(:,:,:) - PRSM(:,:,:) / PTSTEP
-  ZPRGS(:,:,:) = PRGS(:,:,:) - PRGM(:,:,:) / PTSTEP
-  IF (KRR == 7) ZPRHS(:,:,:) = PRHS(:,:,:) - PRHM(:,:,:) / PTSTEP
-  PRRS(:,:,:)  = PRRM(:,:,:) / PTSTEP
-  PRSS(:,:,:)  = PRSM(:,:,:) / PTSTEP
-  PRGS(:,:,:)  = PRGM(:,:,:) / PTSTEP
-  IF (KRR == 7) PRHS(:,:,:)  = PRHM(:,:,:) / PTSTEP
+  ZPRRS(:,:,:) = PRRS(:,:,:) - PRRT(:,:,:) / PTSTEP
+  ZPRSS(:,:,:) = PRSS(:,:,:) - PRST(:,:,:) / PTSTEP
+  ZPRGS(:,:,:) = PRGS(:,:,:) - PRGT(:,:,:) / PTSTEP
+  IF (KRR == 7) ZPRHS(:,:,:) = PRHS(:,:,:) - PRHT(:,:,:) / PTSTEP
+  PRRS(:,:,:)  = PRRT(:,:,:) / PTSTEP
+  PRSS(:,:,:)  = PRST(:,:,:) / PTSTEP
+  PRGS(:,:,:)  = PRGT(:,:,:) / PTSTEP
+  IF (KRR == 7) PRHS(:,:,:)  = PRHT(:,:,:) / PTSTEP
 !
   IF (OSEDIC) PRCS(:,:,:) = PRCS(:,:,:) + ZPRCS(:,:,:)
   PRRS(:,:,:) = PRRS(:,:,:) + ZPRRS(:,:,:)

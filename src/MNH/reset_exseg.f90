@@ -85,7 +85,6 @@ CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name for output listing
 CHARACTER (LEN=9) :: YNAM      ! name of the namelist file
 INTEGER :: IRESP,ILUNAM        ! return code of FMLOOK and logical unit number
 LOGICAL :: GFOUND              ! Return code when searching namelist
-CHARACTER(LEN=2)       :: YSTORAGE_TYPE
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
@@ -151,13 +150,8 @@ IF(NRAD_3D>=1) THEN
   END IF
 ENDIF
 !
-CALL FMREAD(CINIFILE,'STORAGE_TYPE',HLUOUT,'--',YSTORAGE_TYPE,IGRID,ILENCH,YCOMMENT,IRESP)
-IF (IRESP/=0) THEN
-  PRINT*,'RESET_EXSEG: STORAGE_TYPE forced to MT'
-  YSTORAGE_TYPE='MT'
-END IF
 
-IF(YSTORAGE_TYPE/='MT' .OR. NRAD_3D>=1) THEN
+IF ( NRAD_3D>=1 ) THEN
   CRAD='ECMW'
   CGETRAD='INIT'
 END IF

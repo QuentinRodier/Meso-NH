@@ -11,9 +11,8 @@ MODULE MODI_VER_INTERP_FIELD
 INTERFACE
 !
       SUBROUTINE VER_INTERP_FIELD(HTURB,KRR,KSV,PZZ_LS,PZZ,                    &
-                              PUM,PVM,PWM,PTHVM,PRM,PHUM,PTKEM,PSVM,           &
                               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT,           &
-                              PSRCM,PSRCT,PSIGS,                               &
+                              PSRCT,PSIGS,                                     &
                               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM                  )
 !
 CHARACTER (LEN=4), INTENT(IN) :: HTURB !  Kind of turbulence parameterization
@@ -22,17 +21,12 @@ INTEGER,           INTENT(IN) :: KSV   ! number of scalar variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ_LS ! initial 3D grid
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ    ! new     3D grid
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM,PVM,PWM        !  model 2
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTKEM              ! variables
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRM,PSVM           !   at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHVM,PHUM         !
-!
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT        !  model 2
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTKET              ! variables
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT           !   at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHVT,PHUT         !
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRCM,PSRCT,PSIGS  ! secondary
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRCT,PSIGS  ! secondary
                                                             ! prognostic variables
            ! Larger Scale fields
 REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSUM, PLSVM, PLSWM  ! Wind
@@ -45,9 +39,8 @@ END MODULE MODI_VER_INTERP_FIELD
 !
 !     ##########################################################################
       SUBROUTINE VER_INTERP_FIELD(HTURB,KRR,KSV,PZZ_LS,PZZ,                    &
-                              PUM,PVM,PWM,PTHVM,PRM,PHUM,PTKEM,PSVM,           &
                               PUT,PVT,PWT,PTHVT,PRT,PHUT,PTKET,PSVT,           &
-                              PSRCM,PSRCT,PSIGS,                               &
+                              PSRCT,PSIGS,                                     &
                               PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM                  )
 !     ##########################################################################
 !
@@ -113,17 +106,12 @@ INTEGER,           INTENT(IN) :: KSV   ! number of scalar variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ_LS ! initial 3D grid
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ    ! new     3D grid
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM,PVM,PWM        !  model 2
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTKEM              ! variables
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRM,PSVM           !   at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHVM,PHUM         !
-!
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT        !  model 2
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTKET              ! variables
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT           !   at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHVT,PHUT         !
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRCM,PSRCT,PSIGS  ! secondary
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRCT,PSIGS  ! secondary
                                                        ! prognostic variables
            ! Larger Scale fields
 REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSUM, PLSVM, PLSWM  ! Wind
@@ -166,7 +154,6 @@ ZGRID2(1,:,:)=2.*ZGRID2(2,:,:)-ZGRID2(3,:,:)
 !
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
-PUM  (:,:,:)   =  VER_INTERP_LIN(PUM   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PUT  (:,:,:)   =  VER_INTERP_LIN(PUT   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSUM (:,:,:)  =  VER_INTERP_LIN(PLSUM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
@@ -188,7 +175,6 @@ ZGRID2(:,1,:)=2.*ZGRID2(:,2,:)-ZGRID2(:,3,:)
 !
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
-PVM  (:,:,:)   =  VER_INTERP_LIN(PVM   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PVT  (:,:,:)   =  VER_INTERP_LIN(PVT   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSVM (:,:,:)  =  VER_INTERP_LIN(PLSVM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
@@ -202,7 +188,6 @@ ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
 !
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
-PWM  (:,:,:)   =  VER_INTERP_LIN(PWM   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PWT  (:,:,:)   =  VER_INTERP_LIN(PWT   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSWM (:,:,:)  =  VER_INTERP_LIN(PLSWM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
@@ -217,7 +202,6 @@ ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
-PTHVM (:,:,:)   =  VER_INTERP_LIN(PTHVM  (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PTHVT (:,:,:)   =  VER_INTERP_LIN(PTHVT  (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSTHM(:,:,:)  =  VER_INTERP_LIN(PLSTHM(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
@@ -232,16 +216,12 @@ END IF
 !               ---------------
 !
 DO JRR=1,KRR
-  PRM  (:,:,:,JRR) =  VER_INTERP_LIN(PRM (:,:,:,JRR),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PRT  (:,:,:,JRR) =  VER_INTERP_LIN(PRT (:,:,:,JRR),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-  PRM (:,:,:,JRR) = MAX(PRM(:,:,:,JRR),0.)
   PRT (:,:,:,JRR) = MAX(PRT(:,:,:,JRR),0.)
 END DO
 !
 IF (CONF_MODEL(1)%NRR>=1) THEN
-  PHUM(:,:,:)   =  VER_INTERP_LIN(PHUM  (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PHUT(:,:,:)   =  VER_INTERP_LIN(PHUT  (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-  PHUM(:,:,:)   = MIN(MAX(PHUM(:,:,:),0.),100.)
   PHUT(:,:,:)   = MIN(MAX(PHUT(:,:,:),0.),100.)
 END IF
 !
@@ -251,9 +231,7 @@ END IF
 !               ----------------
 !
 DO JSV=1,KSV
-  PSVM (:,:,:,JSV) =  VER_INTERP_LIN(PSVM (:,:,:,JSV),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PSVT (:,:,:,JSV) =  VER_INTERP_LIN(PSVT (:,:,:,JSV),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-  PSVM (:,:,:,JSV) = MAX(PSVM(:,:,:,JSV),0.)
   PSVT (:,:,:,JSV) = MAX(PSVT(:,:,:,JSV),0.)
 END DO
 !
@@ -273,9 +251,7 @@ ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
 IF (HTURB /= 'NONE') THEN
-  PTKEM(:,:,:)   =  VER_INTERP_LIN(PTKEM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PTKET(:,:,:)   =  VER_INTERP_LIN(PTKET (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-  PTKEM=MAX(PTKEM,XTKEMIN)
   PTKET=MAX(PTKET,XTKEMIN)
 ENDIF
 !
@@ -286,7 +262,6 @@ ENDIF
 !               ------------------------------
 !
 IF (KRR > 1 .AND. HTURB /= 'NONE') THEN
-  PSRCM (:,:,:) =  VER_INTERP_LIN(PSRCM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PSRCT (:,:,:) =  VER_INTERP_LIN(PSRCT (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
   PSIGS (:,:,:) =  VER_INTERP_LIN(PSIGS (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 ENDIF

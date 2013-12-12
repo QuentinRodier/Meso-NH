@@ -54,6 +54,7 @@ END MODULE MODI_PASPOL
 !!    C.Lac 30/09/2010 Bugs for reproducibility : position of release +
 !!                            GET_INDICE_ll replaced by GET_PHYSICAL_ll +
 !!                            remove the diffusion at the release 
+!!    C.Lac 11/11 Remove instant M
 !! --------------------------------------------------------------------------
 !       
 !!    EXTERNAL
@@ -461,8 +462,6 @@ ZSSCUR=TDTCUR%TIME
 !
 WHERE (XSVT(:,:,:,NSV_PPBEG:NSV_PPEND) <0.0) &
         XSVT(:,:,:,NSV_PPBEG:NSV_PPEND)=0.0
-WHERE (XSVM(:,:,:,NSV_PPBEG:NSV_PPEND) <0.0) &
-        XSVM(:,:,:,NSV_PPBEG:NSV_PPEND)=0.0
 !
 DO JSV=1,NSV_PP
    !
@@ -536,9 +535,8 @@ DO JSV=1,NSV_PP
             !
             !
             IF (.NOT.GBEGEMIS(JSV)) THEN
-               XSVM(:,:,:,IP) =  XSVT(:,:,:,IP)
                XRSVS(:,:,:,IP) =  XRSVS(:,:,:,IP) &
-                                 +XRHODJ(:,:,:)*XSVM(:,:,:,IP)/PTSTEP
+                                 +XRHODJ(:,:,:)*XSVT(:,:,:,IP)/PTSTEP
                GBEGEMIS(JSV)= .TRUE.
             ELSE
                XRSVS(:,:,:,IP) = XRSVS(:,:,:,IP) &
@@ -563,7 +561,7 @@ END DO            ! BOUCLE sur les rejets.
 !
 !*	3.1 Calcul de la masse volumique de l'air en Kg/m3.
 !
-ZRHOM(:,:,:)=XPABSM(:,:,:)/(XRD*XTHM(:,:,:)*((XPABSM(:,:,:)/XP00)**(XRD/XCPD)))
+ZRHOM(:,:,:)=XPABST(:,:,:)/(XRD*XTHT(:,:,:)*((XPABST(:,:,:)/XP00)**(XRD/XCPD)))
 !
 !
 !*	3.2 Passage en g/m3.

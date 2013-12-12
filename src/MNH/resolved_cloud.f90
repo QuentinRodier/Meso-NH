@@ -8,10 +8,10 @@ INTERFACE
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
                                   HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,       &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
-                                  PTSTEP_MET, PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,  &
-                                  PPABSM, PPABST, PTHM, PTHT, PRM, PRT, PSIGS,PSIGQSAT,&
-                                  PMFCONV,                                             &
-                                  PW_ACT, PTHS, PRS, PSVM, PSVT, PSVS, PSRCS, PCLDFR,  &
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
+                                  PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
+                                  PTHM, PRCM, PPABSM,                                  &
+                                  PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI,                                &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -45,8 +45,6 @@ LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                         ! or that from turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
                                         ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP_MET   ! Effective Time step
-                                        ! for meteorological scalar variables
 REAL,                     INTENT(IN)   :: PTSTEP ! Time step :XTSTEP in namelist
 !
 !
@@ -56,21 +54,20 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
 !
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)   :: PRM     ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL,                     INTENT(IN)   :: PSIGQSAT! coeff applied to qsat variance contribution
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVM  ! Scalar variable at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
@@ -124,10 +121,10 @@ END MODULE MODI_RESOLVED_CLOUD
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
                                   HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,       &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
-                                  PTSTEP_MET, PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,  &
-                                  PPABSM, PPABST, PTHM, PTHT, PRM, PRT, PSIGS,PSIGQSAT,&
-                                  PMFCONV,                                             &
-                                  PW_ACT, PTHS, PRS, PSVM, PSVT, PSVS, PSRCS, PCLDFR,  &
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
+                                  PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
+                                  PTHM, PRCM, PPABSM,                                  &
+                                  PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI,                                &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -296,8 +293,6 @@ LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                         ! or that from turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
                                         ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP_MET   ! Effective Time step
-                                        ! for meteorological scalar variables
 REAL,                     INTENT(IN)   :: PTSTEP ! Time step :XTSTEP in namelist
 !
 !
@@ -307,21 +302,20 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
 !
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)   :: PRM     ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL,                     INTENT(IN)   :: PSIGQSAT! coeff applied to qsat variance contribution
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVM  ! Scalar variable at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
@@ -396,7 +390,6 @@ REAL  :: ZRATIO                     ! ZMASSTOT / ZMASSCOR
 INTEGER                               :: ISVBEG ! first scalar index for microphysics
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVM   ! scalar variable for microphysics only
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
 !
 !------------------------------------------------------------------------------
@@ -425,10 +418,8 @@ END IF
 !
 IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
   ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
-  ALLOCATE(ZSVM(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
   ALLOCATE(ZSVS(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
   ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
-  ZSVM(:,:,:,:) = PSVM(:,:,:,ISVBEG:ISVEND)
   ZSVS(:,:,:,:) = PSVS(:,:,:,ISVBEG:ISVEND)
 END IF
 !
@@ -680,8 +671,8 @@ SELECT CASE ( HCLOUD )
 !               -------------------------------
 !
     CALL FAST_TERMS ( KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,               &
-                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP_MET,   &
-                      PRHODJ, PPABSM, PSIGS, PPABST,                           &
+                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP,       &
+                      PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
                       PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
@@ -695,9 +686,8 @@ SELECT CASE ( HCLOUD )
 !
 !*       5.1    Compute the explicit microphysical sources
 !
-    CALL SLOW_TERMS ( KSPLITR, PTSTEP_MET, KMI, HSUBG_AUCV,                   &
+    CALL SLOW_TERMS ( KSPLITR, PTSTEP, KMI, HSUBG_AUCV,                       &
                       PZZ, PRHODJ, PRHODREF, PCLDFR,                          &
-                      PRM(:,:,:,3),                                           &
                       PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3), PPABST, &
                       PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),         &
                       PINPRR, PINPRR3D, PEVAP3D                         )
@@ -705,8 +695,8 @@ SELECT CASE ( HCLOUD )
 !*       5.2    Perform the saturation adjustment
 !
     CALL FAST_TERMS ( KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,               &
-                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP_MET,   &
-                      PRHODJ, PPABSM, PSIGS, PPABST,                           &
+                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP,       &
+                      PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
                       PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2), PRRS=PRS(:,:,:,3), &
@@ -722,13 +712,12 @@ SELECT CASE ( HCLOUD )
 !*       7.1    Compute the explicit microphysical sources
 !
 !
-    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP_MET, PTSTEP, KMI,      &
+    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
                      HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                     PPABSM, PPABST, PTHM, PTHT,                                  &
-                     PRT(:,:,:,1), PRM(:,:,:,2), PRT(:,:,:,2),                    &
-                     PRT(:,:,:,3), PRM(:,:,:,3),                                  &
+                     PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
+                     PTHM, PRCM, PPABSM,                                          &
                      PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
-                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVM(:,:,:,3), ZSVT(:,:,:,3),  &
+                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D ,                          &
                      PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN           )
@@ -738,7 +727,7 @@ SELECT CASE ( HCLOUD )
 !
    IF (LSUPSAT) THEN
     CALL KHKO_NOTADJUST (KRR, KTCOUNT,HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,         &
-                         PTSTEP_MET, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,      &
+                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
                          ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
@@ -746,10 +735,9 @@ SELECT CASE ( HCLOUD )
 !
    ELSE
     CALL C2R2_ADJUST ( KRR,HFMFILE, HLUOUT, HRAD,                              &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP_MET,           &
-                       PRHODJ, PPABSM, PSIGS, PPABST,                          &
-                       PTHS=PTHS, PRVS=PRS(:,:,:,1),                           &
-                       PRCS=PRS(:,:,:,2),                                      &
+                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
+                       PRHODJ, PSIGS, PPABST,                                  &
+                       PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
                        PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
                        PSRCS=PSRCS, PCLDFR=PCLDFR, PRRS=PRS(:,:,:,3)           )
 !
@@ -764,10 +752,11 @@ SELECT CASE ( HCLOUD )
 !*       8.1    Compute the explicit microphysical sources!
 !
 !
-    CALL RAIN_KHKO ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP_MET, PTSTEP, KMI, &
+    CALL RAIN_KHKO ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,             &
                      PZZ, PRHODJ, PRHODREF, PEXNREF,                         &
-                     PPABSM, PPABST, PTHM, PTHT,                             &
-                     PRT(:,:,:,1), PRM(:,:,:,2), PRT(:,:,:,2), PRT(:,:,:,3), &
+                     PPABST, PTHT,                                           &
+                     PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),               &
+                     PTHM, PRCM, PPABSM,                                     &
                      PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3), &
                      ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),            &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),            &
@@ -778,16 +767,16 @@ SELECT CASE ( HCLOUD )
 !
    IF (LSUPSAT) THEN
     CALL KHKO_NOTADJUST (KRR, KTCOUNT,HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,         &
-                         PTSTEP_MET, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,      &
+                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
                          ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
                          ZSVS(:,:,:,4), PCLDFR, PSRCS                            )
 !
    ELSE
-     CALL C2R2_ADJUST ( KRR, HFMFILE, HLUOUT, HRAD,                             &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP_MET,           &
-                       PRHODJ, PPABSM, PSIGS, PPABST,                          &
+    CALL C2R2_ADJUST ( KRR, HFMFILE, HLUOUT, HRAD,                             &
+                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
+                       PRHODJ, PSIGS, PPABST,                                  &
                        PTHS=PTHS, PRVS=PRS(:,:,:,1),                           &
                        PRCS=PRS(:,:,:,2),                                      &
                        PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
@@ -797,34 +786,33 @@ SELECT CASE ( HCLOUD )
 !
   CASE ('ICE3')
 !
-!*       10.     MIXED-PHASE MICROPHYSICAL SCHEME (WITH 3 ICE SPECIES)
+!*       9.     MIXED-PHASE MICROPHYSICAL SCHEME (WITH 3 ICE SPECIES)
 !               -----------------------------------------------------
 !
 !
-!*       10.1    Compute the explicit microphysical sources
+!*       9.1    Compute the explicit microphysical sources
 !
-!   
+!
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,                   &
-                    KSPLITR, PTSTEP_MET, KMI, KRR,                       &
-                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR, &
-                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRM(:,:,:,2),      &
-                    PRT(:,:,:,3), PRM(:,:,:,3),                          &
-                    PRT(:,:,:,4), PRT(:,:,:,5), PRM(:,:,:,5),            &
-                    PRT(:,:,:,6), PRM(:,:,:,6),                          &
+    CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
+                    KSPLITR, PTSTEP, KMI, KRR,                           &
+                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
+                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
+                    PRT(:,:,:,3), PRT(:,:,:,4),                          &
+                    PRT(:,:,:,5), PRT(:,:,:,6),                          &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
                     PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
                     PINPRS, PINPRG, PSIGS, PSEA,PTOWN)
 !
-!*       10.2    Perform the saturation adjustment over cloud ice and cloud water
+!*       9.2    Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,             &
-                    OSUBG_COND, OSIGMAS, PTSTEP_MET,PSIGQSAT,    &
-                    PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, PPABST, ZZZ,    &
+    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,     &
+                    OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
+                    PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
                     PCF_MF,PRC_MF,PRI_MF,                                    &   
                     PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
                     PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
@@ -846,26 +834,25 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    CALL RAIN_ICE ( OSEDIC, CSEDIM,HSUBG_AUCV, OWARM,1,IKU,1,                    &
-                    KSPLITR, PTSTEP_MET, KMI, KRR,                        &
-                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRM(:,:,:,2),       &
-                    PRT(:,:,:,3), PRM(:,:,:,3),                           &
-                    PRT(:,:,:,4), PRT(:,:,:,5), PRM(:,:,:,5),             &
-                    PRT(:,:,:,6), PRM(:,:,:,6),                           &
+    CALL RAIN_ICE ( OSEDIC, CSEDIM,HSUBG_AUCV, OWARM,1,IKU,1,             &
+                    KSPLITR, PTSTEP, KMI, KRR,                            &
+                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
+                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
+                    PRT(:,:,:,3), PRT(:,:,:,4),                           &
+                    PRT(:,:,:,5), PRT(:,:,:,6),                           &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                    PRT(:,:,:,7), PRM(:,:,:,7), PRS(:,:,:,7), PINPRH )
+                    PINPRS, PINPRG, PSIGS, PSEA, PTOWN,  &
+                    PRT(:,:,:,7), PRS(:,:,:,7), PINPRH )
 
 !
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
     CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,     &
-                    OSUBG_COND, OSIGMAS, PTSTEP_MET,PSIGQSAT,    &
-                    PRHODJ, PEXNREF, PPABSM, PSIGS, PMFCONV, PPABST, ZZZ,    &
+                    OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
+                    PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     PCF_MF,PRC_MF,PRI_MF,                                    &                     
                     PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
                     PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
@@ -884,23 +871,24 @@ SELECT CASE ( HCLOUD )
 !
 !*       11.1   Compute the explicit microphysical sources
 !
-    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP_MET, PTSTEP, KMI,      &
+    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
                      HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                     PPABSM, PPABST, PTHM, PTHT,                                  &
-                     PRT(:,:,:,1), PRM(:,:,:,2), PRT(:,:,:,2),                    &
-                     PRT(:,:,:,3), PRM(:,:,:,3),                                  &
+                     PPABST, PTHT,                                                &
+                     PRT(:,:,:,1), PRT(:,:,:,2),                                  &
+                     PRT(:,:,:,3),                                                &
+                     PTHM, PRCM, PPABSM,                                          &
                      PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
-                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVM(:,:,:,3), ZSVT(:,:,:,3),  &
+                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D,                           &
                      PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN )
 !
-    CALL ICE_C1R3  ( OSEDI, OHHONI, KSPLITG, PTSTEP_MET, KMI,                    &
+    CALL ICE_C1R3  ( OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,                    &
                      PZZ, PRHODJ, PRHODREF, PEXNREF,                         &
-                            PPABST, PW_ACT, PTHT,                            &
+                     PPABST, PW_ACT, PTHT,                            &
                      PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),               &
                      PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),               &
-                             PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3), &
+                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3), &
                      PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),               &
                                     ZSVT(:,:,:,2), ZSVT(:,:,:,3),            &
                                     ZSVT(:,:,:,4),                           &
@@ -912,8 +900,8 @@ SELECT CASE ( HCLOUD )
 !*       11.2   Perform the saturation adjustment
 !
     CALL C3R5_ADJUST ( KRR, KMI, HFMFILE, HLUOUT, HRAD,               &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP_MET,               &
-                       PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST,       &
+                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
+                       PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST,       &
                        PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2), PRRT=PRT(:,:,:,3),&
                        PRIT=PRT(:,:,:,4), PRST=PRT(:,:,:,5), PRGT=PRT(:,:,:,6),&
                        PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2), PRRS=PRS(:,:,:,3),&
@@ -945,7 +933,6 @@ IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
     PSVT(:,:,:,JSV+ISVBEG-1) = ZSVT(:,:,:,JSV)
   ENDDO
   DEALLOCATE(ZSVS)
-  DEALLOCATE(ZSVM)
   DEALLOCATE(ZSVT)
 ENDIF
 !

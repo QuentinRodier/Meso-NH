@@ -591,18 +591,18 @@ IF ( .NOT. LTURB_FLX .AND. .NOT. LTURB_DIAG .AND. &
   CTURB  = 'NONE'
 END IF
 ! no way to compute the turbulent tendencies.
-IF ( ( LTURB_FLX .OR. LTURB_DIAG .OR. LMF_FLX )   &
-       .AND. CSTORAGE_TYPE/='MT' ) THEN
-  CTURB  = 'NONE'
-  PRINT*, '******************* WARNING in DIAG ***********************'
-  PRINT*, ' '
-  PRINT*, 'You wanted to compute turbulence fluxes or diagnostics,'
-  PRINT*, 'But the initial file comes from PREP_REAL_CASE.'
-  PRINT*, 'Therefore, the boundary layer turbulence is meaningless.'
-  PRINT*, 'Turbulence fluxes and diagnostics will NOT be computed'
-  PRINT*, 'Please make your turbulence diagnostics from a meso-NH file'
-  PRINT*, 'coming from a MESO-NH simulation.'
-END IF
+!IF ( ( LTURB_FLX .OR. LTURB_DIAG .OR. LMF_FLX )   &
+!       .AND. CSTORAGE_TYPE/='MT' ) THEN
+!  CTURB  = 'NONE'
+!  PRINT*, '******************* WARNING in DIAG ***********************'
+!  PRINT*, ' '
+!  PRINT*, 'You wanted to compute turbulence fluxes or diagnostics,'
+!  PRINT*, 'But the initial file comes from PREP_REAL_CASE.'
+!  PRINT*, 'Therefore, the boundary layer turbulence is meaningless.'
+!  PRINT*, 'Turbulence fluxes and diagnostics will NOT be computed'
+!  PRINT*, 'Please make your turbulence diagnostics from a meso-NH file'
+!  PRINT*, 'coming from a MESO-NH simulation.'
+!END IF
 !
 !* convective scheme
 !
@@ -640,7 +640,7 @@ END IF
 !
 IF ( CTURB /= 'NONE' .OR. CDCONV /= 'NONE' .OR. CSCONV /= 'NONE' &                 
      .OR. CRAD /= 'NONE' ) THEN
-  IF (CSTORAGE_TYPE/='MT') THEN
+! IF (CSTORAGE_TYPE/='MT') THEN
     IF (XDTSTEP==XUNDEF) THEN
       PRINT*, ' '
       PRINT*, '******************* WARNING in DIAG ***********************'
@@ -652,7 +652,7 @@ IF ( CTURB /= 'NONE' .OR. CDCONV /= 'NONE' .OR. CSCONV /= 'NONE' &
     ELSE
       XTSTEP=XDTSTEP
     END IF
-  END IF
+! END IF
   PRINT*,' XTSTEP= ', XTSTEP
   PRINT*, ' '
   PRINT*, 'DIAG BEFORE PHYS_PARAM1: CTURB=',CTURB,' CDCONV=',CDCONV, &
@@ -675,8 +675,7 @@ XTIME_LES=0.
 XTIME_LES_BU_PROCESS=0.
 XTIME_BU_PROCESS=0.
 !
-CALL PHYS_PARAM_n(1,XTSTEP,XTSTEP,XTSTEP,YFMFILE,GCLOSE_OUT,      &
-                  CUVW_ADV_SCHEME,CMET_ADV_SCHEME,CSV_ADV_SCHEME, &
+CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
                   ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
 PRINT*, 'DIAG AFTER PHYS_PARAM1'
@@ -767,6 +766,7 @@ ZTIME1=ZTIME2
 !
 !*       9.0    Closes the FM files
 !
+DEALLOCATE(GMASKkids)
 IF (GCLOSE_OUT) THEN
   GCLOSE_OUT=.FALSE.
   CALL FMCLOS_ll(YFMFILE,'KEEP',CLUOUT,IRESP)

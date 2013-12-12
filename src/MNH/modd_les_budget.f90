@@ -48,9 +48,7 @@ REAL :: XTIME_LES_BU_PROCESS
 ! time spent in subgrid LES computations in this time-step for budgets
 ! for this process only (advection, microphysics, etc...)
 !
-REAL :: XCURRENT_TSTEP_UVW
-REAL :: XCURRENT_TSTEP_MET
-REAL :: XCURRENT_TSTEP_SV 
+REAL :: XCURRENT_TSTEP
 !-------------------------------------------------------------------------------
 !
 !* variables of current model needed in budget computations
@@ -111,8 +109,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: X_LES_BU_SBG_Tke
 !
 !* index for each processus taken into account in the budgets
 !
-INTEGER :: NLES_TOTADVH
-INTEGER :: NLES_TOTADVV
+INTEGER :: NLES_TOTADV
 INTEGER :: NLES_RELA
 INTEGER :: NLES_RAD
 INTEGER :: NLES_GRAV

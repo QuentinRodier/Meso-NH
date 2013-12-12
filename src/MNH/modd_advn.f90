@@ -33,6 +33,8 @@
 !!      Original     23/10/95  (Vila, lafore) For new scalar advection schemes
 !!      C.Lac       24/04/06  Introduction of CUVW_ADV_SCHEME and
 !!                            removal of CFV_ADV_SCHEME
+!!      J.-P. Pinty  20/03/10 Add NWENO_ORDER
+!!      C.Lac and V.Masson    Add CTEMP_SCHEME and TIME SPLITTING
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -46,24 +48,31 @@ TYPE ADV_t
   CHARACTER(LEN=6)       :: CMET_ADV_SCHEME, CSV_ADV_SCHEME, CUVW_ADV_SCHEME
                                   ! Control the selected advection scheme
                                   ! for the scalar variables
+  CHARACTER(LEN=4)       :: CTEMP_SCHEME
 !
-  INTEGER                :: NLITER  ! Number iterations MPDATA
-  REAL, DIMENSION(:,:,:), POINTER :: XRTHMS=>NULL()    ! Source of (rho theta)
-                                        ! advection for PPM
-  REAL, DIMENSION(:,:,:), POINTER :: XRTKEMS=>NULL()   ! Idem for kinetic energy
-  REAL, DIMENSION(:,:,:,:), POINTER :: XRRMS=>NULL()   ! Idem for Moist variables
-  REAL, DIMENSION(:,:,:,:), POINTER :: XRSVMS=>NULL()  ! Idem for  addi. scalar
+  INTEGER                :: NWENO_ORDER ! Order of the WENO scheme (3 or 5)
 !
+  INTEGER                :: NSPLIT      ! Number of time splitting   
+                                        ! for advection  
+!
+  LOGICAL                :: LSPLIT_CFL  ! Flag to automatically choose number of iterations
+  REAL                   :: XSPLIT_CFL  ! Limit of CFL to automatically choose number of iterations
+!
+  LOGICAL                :: LCFL_WRIT   ! Flag to write CFL fields in output file               
+!
+REAL, DIMENSION(:,:,:), POINTER :: XRTKEMS=>NULL()   ! Advection TKE source term
 END TYPE ADV_t
 
 TYPE(ADV_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: ADV_MODEL
 
 CHARACTER(LEN=6), POINTER :: CMET_ADV_SCHEME=>NULL(), CSV_ADV_SCHEME=>NULL(), CUVW_ADV_SCHEME=>NULL()
-INTEGER, POINTER :: NLITER=>NULL()
-REAL, DIMENSION(:,:,:), POINTER :: XRTHMS=>NULL()
+CHARACTER(LEN=4), POINTER :: CTEMP_SCHEME=>NULL()
+INTEGER, POINTER :: NWENO_ORDER=>NULL()
+INTEGER, POINTER :: NSPLIT=>NULL()
+LOGICAL, POINTER :: LSPLIT_CFL=>NULL()
+LOGICAL, POINTER :: LCFL_WRIT=>NULL()
+REAL,    POINTER :: XSPLIT_CFL=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTKEMS=>NULL()
-REAL, DIMENSION(:,:,:,:), POINTER :: XRRMS=>NULL()
-REAL, DIMENSION(:,:,:,:), POINTER :: XRSVMS=>NULL()
 
 
 CONTAINS
@@ -72,20 +81,19 @@ SUBROUTINE ADV_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Save current state for allocated arrays
-ADV_MODEL(KFROM)%XRTHMS=>XRTHMS
 ADV_MODEL(KFROM)%XRTKEMS=>XRTKEMS
-ADV_MODEL(KFROM)%XRRMS=>XRRMS
-ADV_MODEL(KFROM)%XRSVMS=>XRSVMS
 !
 ! Current model is set to model KTO
 CUVW_ADV_SCHEME=>ADV_MODEL(KTO)%CUVW_ADV_SCHEME
 CMET_ADV_SCHEME=>ADV_MODEL(KTO)%CMET_ADV_SCHEME
 CSV_ADV_SCHEME=>ADV_MODEL(KTO)%CSV_ADV_SCHEME
-NLITER=>ADV_MODEL(KTO)%NLITER
-XRTHMS=>ADV_MODEL(KTO)%XRTHMS
+CTEMP_SCHEME=>ADV_MODEL(KTO)%CTEMP_SCHEME
+NWENO_ORDER=>ADV_MODEL(KTO)%NWENO_ORDER
+NSPLIT=>ADV_MODEL(KTO)%NSPLIT         
+LSPLIT_CFL=>ADV_MODEL(KTO)%LSPLIT_CFL         
+LCFL_WRIT=>ADV_MODEL(KTO)%LCFL_WRIT          
+XSPLIT_CFL=>ADV_MODEL(KTO)%XSPLIT_CFL         
 XRTKEMS=>ADV_MODEL(KTO)%XRTKEMS
-XRRMS=>ADV_MODEL(KTO)%XRRMS
-XRSVMS=>ADV_MODEL(KTO)%XRSVMS
 
 END SUBROUTINE ADV_GOTO_MODEL
 

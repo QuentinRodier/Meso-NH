@@ -82,13 +82,11 @@ USE MODD_DIM_n
 USE MODD_GRID_n
 USE MODD_LBC_n
 USE MODD_PARAMETERS
-USE MODD_FIELD_n, ONLY: XUM,XVM,XWM
+USE MODD_FIELD_n, ONLY: XUT,XVT,XWT
 USE MODD_DYN_n
 USE MODD_REF_n
 USE MODD_CST
-!JUAN REALZ
 USE MODE_MPPDB
-!JUAN REALZ
 !
 IMPLICIT NONE
 !
@@ -123,11 +121,9 @@ INTEGER      :: IKU
 INTEGER      :: IINFO_ll
 REAL         :: ZMAXRES
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
-!JUAN
 REAL                  :: ZMAXVAL,ZRESIDUAL
 INTEGER, DIMENSION(3) :: IMAXLOC
 INTEGER               :: I,J,K
-!JUAN
 !-------------------------------------------------------------------------------
 !
 !*       1.    Initialisations
@@ -143,10 +139,9 @@ IKB=1+JPVEXT
 IKE=NKMAX+JPVEXT
 IKU=IKE+JPVEXT
 !
-ZU(:,:,:) = XUM(:,:,:)
-ZV(:,:,:) = XVM(:,:,:)
-ZW(:,:,:) = XWM(:,:,:)
-
+ZU(:,:,:) = XUT(:,:,:)
+ZV(:,:,:) = XVT(:,:,:)
+ZW(:,:,:) = XWT(:,:,:)
 !
 NULLIFY(TZFIELDS_ll)
 !
@@ -156,22 +151,19 @@ NULLIFY(TZFIELDS_ll)
 !              ----
 !
 DO
-  XUM(:,:,:) = ZU(:,:,:)
-  XVM(:,:,:) = ZV(:,:,:)
-  XWM(:,:,:) = ZW(:,:,:)
-!JUAN REALZ
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, XUM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, XVM)
-  CALL ADD3DFIELD_ll(TZFIELDS_ll, XWM)
+  XUT(:,:,:) = ZU(:,:,:)
+  XVT(:,:,:) = ZV(:,:,:)
+  XWT(:,:,:) = ZW(:,:,:)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XUT)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XVT)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XWT)
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
 
-  CALL MPPDB_CHECK3D(XUM,"PREP::XUM",PRECISION)
-  CALL MPPDB_CHECK3D(XVM,"PREP::XVM",PRECISION)
-  CALL MPPDB_CHECK3D(XWM,"PREP::XWM",PRECISION)
+  CALL MPPDB_CHECK3D(XUT,"PREP::XUM",PRECISION)
+  CALL MPPDB_CHECK3D(XVT,"PREP::XVM",PRECISION)
+  CALL MPPDB_CHECK3D(XWT,"PREP::XWM",PRECISION)
   CALL MPPDB_CHECK3D(XRHODJ,"PREP::XRHODJ",PRECISION)
-
-!JUAN REALZ
 !
 !-------------------------------------------------------------------------------
 !
@@ -184,16 +176,16 @@ DO
   IF (CPRESOPT=='RICHA') &
     WRITE(ILUOUT0,*) 'XRELAX   = ',XRELAX
 !
-  CALL ANEL_BALANCE_n('M',ZRESIDUAL)
+  CALL ANEL_BALANCE_n(ZRESIDUAL)
 !
 !-------------------------------------------------------------------------------
 !
 !*       4.    compute the residual divergence
 !              -------------------------------
 !
-  ZRU(:,:,:) = XUM(:,:,:) * MXM(XRHODJ)
-  ZRV(:,:,:) = XVM(:,:,:) * MYM(XRHODJ)
-  ZRW(:,:,:) = XWM(:,:,:) * MZM(1,IKU,1,XRHODJ)
+  ZRU(:,:,:) = XUT(:,:,:) * MXM(XRHODJ)
+  ZRV(:,:,:) = XVT(:,:,:) * MYM(XRHODJ)
+  ZRW(:,:,:) = XWT(:,:,:) * MZM(1,IKU,1,XRHODJ)
 !
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRU)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRV)
@@ -208,32 +200,8 @@ DO
     ELSE
       ZDIV=ZDIV/XRHODJ/XTH00*XRHODREF*XTHVREF*(1.+XRVREF)
     END IF
-    !JUAN FAUX ZMAXVAL=MAX_ll( ABS(ZDIV),IINFO_ll)
-    !JUAN FAUX IMAXLOC=MAXLOC( ABS(ZDIV(IIB:IIE,IJB:IJE,IKB:IKE)))
-    !JUAN FAUX WRITE(ILUOUT0,*) 'JUAN1 residual divergence / 2 DT = ',   &
-    !JUAN FAUX ZMAXVAL,  ' located at ',    &
-    !JUAN FAUX IMAXLOC
-    !WRITE(ILUOUT0,*) 'JUAN1 residual divergence / 2 DT = ',   &
-    !ZRESIDUAL
-!!$    DO K=1,size(ZDIV,3)
-!!$    DO J=1,size(ZDIV,2)
-!!$    DO I=1,size(ZDIV,1)
-!!$     IF ( ABS(ZDIV(I,J,K)) .EQ. ZMAXVAL ) THEN
-!!$	PRINT*,"I=",I," J=",J," K=",K," ZMAXVAL=",ZDIV(I,J,K)
-!!$	PRINT*,"SI=",size(ZDIV,1)," SJ=",size(ZDIV,2)," SK=",size(ZDIV,3)
-!!$     ENDIF
-!!$    ENDDO
-!!$    ENDDO
-!!$    ENDDO
   ELSEIF( CEQNSYS=='MAE' .OR. CEQNSYS=='LHE' ) THEN
     ZDIV=ZDIV/XRHODJ*XRHODREF
-    !JUAN FAUX ZMAXVAL=MAX_ll( ABS(ZDIV),IINFO_ll)
-    !JUAN FAUX IMAXLOC=MAXLOC( ABS(ZDIV(IIB:IIE,IJB:IJE,IKB:IKE)))
-    !JUAN FAUX WRITE(ILUOUT0,*) 'JUAN2 residual divergence / 2 DT = ',   &
-    !JUAN FAUX ZMAXVAL,  ' located at ',    &
-    !JUAN FAUX IMAXLOC
-    !WRITE(ILUOUT0,*) 'JUAN2 residual divergence / 2 DT = ',   &
-    !ZRESIDUAL
   END IF
 !
 !-------------------------------------------------------------------------------

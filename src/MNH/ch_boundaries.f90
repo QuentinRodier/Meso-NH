@@ -11,10 +11,10 @@ MODULE MODI_CH_BOUNDARIES
 INTERFACE
 !
       SUBROUTINE CH_BOUNDARIES (HLBCX,HLBCY,                 &
-                                PSVBM,PUT,PVT,PSVBT          )
+                                PUT,PVT,PSVBT          )
 !
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
-REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PSVBT,PSVBM
+REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PSVBT
 REAL, DIMENSION(:,:,:),         INTENT(IN) :: PUT,PVT
 !
 END SUBROUTINE CH_BOUNDARIES
@@ -26,7 +26,7 @@ END MODULE MODI_CH_BOUNDARIES
 !
 !     ####################################################################
 SUBROUTINE CH_BOUNDARIES (HLBCX,HLBCY,                           &
-     PSVBM,PUT,PVT,PSVBT                    )
+                          PUT,PVT,PSVBT                    )
 !     ####################################################################
 !
 !!****  *CH_BOUNDARIES* - routine to prepare the Lateral Boundary Conditions for
@@ -84,7 +84,7 @@ IMPLICIT NONE
 !
 !
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
-REAL, DIMENSION(:,:,:),     INTENT(INOUT)   :: PSVBT,PSVBM
+REAL, DIMENSION(:,:,:),     INTENT(INOUT)   :: PSVBT
 REAL, DIMENSION(:,:,:),          INTENT(IN) :: PUT,PVT
 !
 !
@@ -173,12 +173,8 @@ IF (LWEST_ll( ) .AND. HLBCX(1)=='OPEN') THEN
                (PSVBT(IIB+1,IJ,IZZW(1,IJ,IK)+1)-&
                PSVBT(IIB+1,IJ,IZZW(1,IJ,IK))) * ZZZW(1,IJ,IK)
           !
-          PSVBM(IIB-1,IJ,IK) = PSVBM(IIB+1,IJ,IZZW(1,IJ,IK))+&
-               (PSVBM(IIB+1,IJ,IZZW(1,IJ,IK)+1)-&
-               PSVBM(IIB+1,IJ,IZZW(1,IJ,IK))) * ZZZW(1,IJ,IK)
         ELSE
           PSVBT(IIB-1,IJ,IK) =  PSVBT(IIB+1,IJ,IK)
-          PSVBM(IIB-1,IJ,IK) =  PSVBM(IIB+1,IJ,IK)
         END IF
       END IF
     END DO
@@ -226,13 +222,8 @@ IF (LEAST_ll( ) .AND. HLBCX(1)=='OPEN') THEN
                (PSVBT(IIE-1,IJ,IZZE(1,IJ,IK)+1)-&
                PSVBT(IIE-1,IJ,IZZE(1,IJ,IK))) * ZZZE(1,IJ,IK)
           !
-          PSVBM(IIE+1,IJ,IK) = &
-               PSVBM(IIE-1,IJ,IZZE(1,IJ,IK))+&
-               (PSVBM(IIE-1,IJ,IZZE(1,IJ,IK)+1)-&
-               PSVBM(IIE-1,IJ,IZZE(1,IJ,IK))) * ZZZE(1,IJ,IK)
         ELSE
           PSVBT(IIE+1,IJ,IK) =  PSVBT(IIE-1,IJ,IK)
-          PSVBM(IIE+1,IJ,IK) =  PSVBM(IIE-1,IJ,IK)
         END IF
       END IF
     END DO
@@ -281,13 +272,8 @@ IF (LSOUTH_ll( ) .AND. HLBCY(1)=='OPEN') THEN
                (PSVBT(II,IJB+1,IZZS(II,1,IK)+1)-&
                PSVBT(II,IJB+1,IZZS(II,1,IK))) * ZZZS(II,1,IK)
           !
-          PSVBM(II,IJB-1,IK) = &
-               PSVBM(II,IJB+1,IZZS(II,1,IK))+&
-               (PSVBM(II,IJB+1,IZZS(II,1,IK)+1)-&
-               PSVBM(II,IJB+1,IZZS(II,1,IK))) * ZZZS(II,1,IK)
         ELSE
           PSVBT(II,IJB-1,IK) =  PSVBT(II,IJB+1,IK)
-          PSVBM(II,IJB-1,IK) =  PSVBM(II,IJB+1,IK)
         END IF
       END IF
     END DO
@@ -337,13 +323,8 @@ IF (LNORTH_ll( ) .AND. HLBCY(2)=='OPEN') THEN
                (PSVBT(II,IJE-1,IZZN(II,1,IK)+1)-&
                PSVBT(II,IJE-1,IZZN(II,1,IK))) * ZZZN(II,1,IK)
           !
-          PSVBM(II,IJE+1,IK) = &
-               PSVBM(II,IJE-1,IZZN(II,1,IK))+&
-               (PSVBM(II,IJE-1,IZZN(II,1,IK)+1)-&
-               PSVBM(II,IJE-1,IZZN(II,1,IK))) * ZZZN(II,1,IK)
         ELSE
           PSVBT(II,IJE+1,IK) =  PSVBT(II,IJE-1,IK)
-          PSVBM(II,IJE+1,IK) =  PSVBM(II,IJE-1,IK)
         END IF
       END IF
     END DO

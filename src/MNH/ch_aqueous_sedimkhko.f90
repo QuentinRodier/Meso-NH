@@ -3,18 +3,16 @@
 !      ################################
 !
 INTERFACE
-      SUBROUTINE CH_AQUEOUS_SEDIMKHKO (PTSTEP, PZZ, PRHODREF, PRHODJ, PRRM,       &
-                                       PRRT, PRRS, PCRM, PCRT, PCRS, PSVT, PRSVS  )
+      SUBROUTINE CH_AQUEOUS_SEDIMKHKO (PTSTEP, PZZ, PRHODREF, PRHODJ,             &
+                                       PRRT, PRRS, PCRT, PCRS, PSVT, PRSVS  )
 !
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRS    ! Rain water m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRT    ! Rain water C. at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRS    ! Rain water C. source
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Precip. aq. species at t
@@ -25,8 +23,8 @@ END INTERFACE
 END MODULE MODI_CH_AQUEOUS_SEDIMKHKO
 !
 !     #############################################################################
-      SUBROUTINE CH_AQUEOUS_SEDIMKHKO (PTSTEP, PZZ, PRHODREF, PRHODJ, PRRM,       &
-                                       PRRT, PRRS, PCRM, PCRT, PCRS, PSVT, PRSVS  )
+      SUBROUTINE CH_AQUEOUS_SEDIMKHKO (PTSTEP, PZZ, PRHODREF, PRHODJ,             &
+                                       PRRT, PRRS, PCRT, PCRS, PSVT, PRSVS  )
 !     #############################################################################
 !
 !!****  * -  compute the explicit microphysical sources 
@@ -88,10 +86,8 @@ REAL,                     INTENT(IN)    :: PTSTEP  ! Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRS    ! Rain water m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRT    ! Rain water C. at t
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRS    ! Rain water C. source
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT    ! Precip. aq. species at t
@@ -209,11 +205,11 @@ ZTSPLITR = PTSTEP / FLOAT(ISPLITR)       ! Small time step
 !  the precipitating fields are larger than a minimal value only !!!
 !
 ZZRRS(:,:,:) = 0.0
-ZZRRS(:,:,:) = ZRRS(:,:,:) - PRRM(:,:,:) / PTSTEP
-ZRRS(:,:,:) = PRRM(:,:,:) / PTSTEP
+ZZRRS(:,:,:) = ZRRS(:,:,:) - PRRT(:,:,:) / PTSTEP
+ZRRS(:,:,:) = PRRT(:,:,:) / PTSTEP
 ZZCRS(:,:,:) = 0.0
-ZZCRS(:,:,:) = ZCRS(:,:,:) - PCRM(:,:,:) / PTSTEP
-ZCRS(:,:,:) = PCRM(:,:,:) / PTSTEP
+ZZCRS(:,:,:) = ZCRS(:,:,:) - PCRT(:,:,:) / PTSTEP
+ZCRS(:,:,:) = PCRT(:,:,:) / PTSTEP
 ZSV_SEDIM_FACT(:,:,:) = 1.0
 DO JN = 1 , ISPLITR
 ! 

@@ -10,15 +10,15 @@
 INTERFACE
 !
       SUBROUTINE TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKEM,PLM,PLEPS,PDP,PTRH,  &
-                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,             &
-                      PTSTEP,PIMPL,PEXPL,                              &
-                      HTURBLEN,HTURBDIM,                               &
-                      HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
-                      PTP,PRTKES,PRTHLS,PCOEF_DISS                     )
+                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,                  &
+                      PTSTEP,PIMPL,PEXPL,                                   &
+                      HTURBLEN,HTURBDIM,                                    &
+                      HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,                 &
+                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS                 )
 !
-INTEGER,                 INTENT(IN)   :: KKA      !near ground array index  
-INTEGER,                 INTENT(IN)   :: KKU      !uppest atmosphere array index
-INTEGER,                 INTENT(IN)   :: KKL      !vert. levels type 1=MNH -1=ARO
+INTEGER,                 INTENT(IN)   ::  KKA          !near ground array index  
+INTEGER,                 INTENT(IN)   ::  KKU          !uppest atmosphere array index
+INTEGER,                 INTENT(IN)   ::  KKL          !vert. levels type 1=MNH -1=ARO
 INTEGER,                 INTENT(IN)   ::  KMI          ! model index number  
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTKEM        ! TKE at t-deltat
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PLM          ! mixing length         
@@ -27,8 +27,7 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRHODJ       ! density * grid volume
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                        ! metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
-REAL,                    INTENT(IN)   ::  PTSTEP       ! Double Time step ( *.5 for
-                                                       ! the first time step ) 
+REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
 REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
 CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
                                                        ! turbulence scheme
@@ -45,6 +44,7 @@ REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP, PTRH          ! Dyn. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PTP          ! Ther. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
 !
@@ -62,7 +62,7 @@ END MODULE MODI_TKE_EPS_SOURCES
                       PTSTEP,PIMPL,PEXPL,                              &
                       HTURBLEN,HTURBDIM,                               &
                       HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
-                      PTP,PRTKES,PRTHLS,PCOEF_DISS                     )
+                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS            )
 !     ##################################################################
 !
 !
@@ -116,7 +116,7 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!
 !!      Module MODD_PARAMETERS: 
 !!
-!!           JPVEXT_TURB
+!!           JPVEXT
 !!      Module MODD_BUDGET:
 !!         NBUMOD       : model in which budget is calculated
 !!         CBUTYPE      : type of desired budget
@@ -210,8 +210,7 @@ REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRHODJ       ! density * grid volume
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                        ! metric coefficients
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PZZ          ! physical height w-pt
-REAL,                    INTENT(IN)   ::  PTSTEP       ! Double Time step ( *.5 for
-                                                       ! the first time step ) 
+REAL,                    INTENT(IN)   ::  PTSTEP       ! Time step 
 REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
 CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
                                                        ! turbulence scheme
@@ -230,6 +229,7 @@ REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
 !
 !
 !
@@ -308,7 +308,8 @@ PDP(:,:,IKB) = PDP(:,:,IKB) * (1. + PDZZ(:,:,IKB+KKL)/PDZZ(:,:,IKB))
 ! Compute the source terms for TKE: ( ADVECtion + NUMerical DIFFusion + ..)
 ! + (Dynamical Production) + (Thermal Production) - (dissipation) 
 ZFLX(:,:,:) = XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:)
-ZSOURCE(:,:,:) = PRTKES(:,:,:) / PRHODJ(:,:,:) - PTKEM(:,:,:) / PTSTEP &
+ZSOURCE(:,:,:) = PRTKES(:,:,:) / PRHODJ(:,:,:)  +  PRTKESM(:,:,:) / PRHODJ(:,:,:) &
+   - PTKEM(:,:,:) / PTSTEP &
    + PDP(:,:,:) + PTP(:,:,:) + ZTR(:,:,:) - PEXPL * ZFLX(:,:,:) * PTKEM(:,:,:)
 !
 !*       2.2  implicit vertical TKE transport
@@ -337,10 +338,11 @@ ENDIF
 !
 ! TKE must be greater than its minimum value
 !
-GTKENEG =  ZRES <= XTKEMIN 
-WHERE ( GTKENEG ) 
-  ZRES = XTKEMIN
-END WHERE
+! CL : Now done at the end of the time step in ADVECTION_METSV
+!GTKENEG =  ZRES <= XTKEMIN 
+!WHERE ( GTKENEG ) 
+!  ZRES = XTKEMIN
+!END WHERE
 !
 IF ( LLES_CALL .OR.                         &
      (OTURB_DIAG .AND. OCLOSE_OUT)  ) THEN
@@ -389,8 +391,8 @@ CALL BUDGET (PRTKES(:,:,:),5,'DISS_BU_RTKE')
 END IF 
 !
 !*       2.5  computes the final RTKE and stores the whole turbulent transport
-!
-PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP
+!              with the removal of the advection part 
+PRTKES(:,:,:) = ZRES(:,:,:) * PRHODJ(:,:,:) / PTSTEP -  PRTKESM(:,:,:)
 !
 ! stores the whole turbulent transport
 !

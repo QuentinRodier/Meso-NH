@@ -13,8 +13,7 @@ INTERFACE
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP_UVW,PTSTEP_MET, PTSTEP_SV,             &
-                      HFMFILE,HLUOUT,                               &
+                      PTSTEP, HFMFILE,HLUOUT,                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -29,9 +28,6 @@ INTERFACE
                       PDP,PTP,PSIGS,PWTH,PWRC,PWSV                  )
 
 !
-INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
-INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
-INTEGER,                INTENT(IN)   :: KKL           !vert. levels type 1=MNH -1=ARO
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
@@ -43,9 +39,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
-REAL,                   INTENT(IN)   ::  PTSTEP_UVW   ! Dynamical timestep 
-REAL,                   INTENT(IN)   ::  PTSTEP_MET   ! Timestep for meteorological variables                        
-REAL,                   INTENT(IN)   ::  PTSTEP_SV    ! Timestep for tracer variables
+REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
                                                       ! FM-file 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
@@ -127,11 +121,10 @@ END MODULE MODI_TURB_VER
 !
 !
 !     ###############################################################
-      SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,                          &
+      SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,              &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP_UVW,PTSTEP_MET, PTSTEP_SV,             &
-                      HFMFILE,HLUOUT,                               &
+                      PTSTEP, HFMFILE,HLUOUT,                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -272,7 +265,7 @@ END MODULE MODI_TURB_VER
 !!           XCTV,XCHV   : cts for the T and moisture variances
 !!
 !!      Module MODD_PARAMETERS
-!!
+!!  
 !!           JPVEXT_TURB     : number of vertical external points
 !!           JPHEXT     : number of horizontal external points
 !!
@@ -377,9 +370,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
-REAL,                   INTENT(IN)   ::  PTSTEP_UVW   ! Dynamical timestep 
-REAL,                   INTENT(IN)   ::  PTSTEP_MET   ! Timestep for meteorological variables                        
-REAL,                   INTENT(IN)   ::  PTSTEP_SV    ! Timestep for tracer variables
+REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
                                                       ! FM-file 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
@@ -554,6 +545,7 @@ CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_FLX,        &
              ZREDS1,ZRED2THS, ZRED2RS,             &
              ZBLL_O_E,                             &
              ZETHETA, ZEMOIST                      )
+!
 ! Buoyancy coefficient
 !
 ZBETA = XG/PTHVREF
@@ -613,8 +605,7 @@ END IF
 !
   CALL  TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
                         OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
-                        PIMPL,PEXPL,                                  &
-                        PTSTEP_MET,                                   &
+                        PIMPL,PEXPL,PTSTEP,                           &
                         HFMFILE,HLUOUT,                               &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                         PRHODJ,PTHVREF,                               &
@@ -659,8 +650,7 @@ END IF
 !
 CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
                       OCLOSE_OUT,OTURB_FLX,KRR,                     &
-                      HTURBDIM,PIMPL,PEXPL,                         &
-                      PTSTEP_UVW,                                   &
+                      HTURBDIM,PIMPL,PEXPL,PTSTEP,                  &
                       HFMFILE,HLUOUT,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
@@ -680,8 +670,7 @@ CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
 IF (SIZE(PSVM,4)>0)                                                 &
 CALL  TURB_VER_SV_FLUX(KKA,KKU,KKL,                                 &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
-                      PIMPL,PEXPL,                                  &
-                      PTSTEP_SV,                                    &
+                      PIMPL,PEXPL,PTSTEP,                           &
                       HFMFILE,HLUOUT,                               &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &

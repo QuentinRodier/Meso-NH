@@ -7,10 +7,9 @@ INTERFACE
 !
       SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, KTCOUNT,              &
                           PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
-                          PTHT, PTKET, PRT,                       &
+                          PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
+                          PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
                           PRTHS, PRTKES, PRRS, HMET_ADV_SCHEME    )
-!
-USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
@@ -23,6 +22,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! Courant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  ! numbers
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRW  ! 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ ! density
+! Temporary advected rhodj
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
 REAL,                     INTENT(IN)    :: PTSTEP ! Single Time step 
 !
@@ -41,7 +44,8 @@ END MODULE MODI_PPM_MET
 !     ######################################################################
       SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, KTCOUNT,              &
                           PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
-                          PTHT, PTKET, PRT,                       &
+                          PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
+                          PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
                           PRTHS, PRTKES, PRRS, HMET_ADV_SCHEME    )
 !     ######################################################################
 !
@@ -71,6 +75,7 @@ END MODULE MODI_PPM_MET
 !!    MODIFICATIONS
 !!    -------------
 !!      Original 11.05.2006. T.Maric
+!!      Modification : 11.2011 C.Lac, V.Masson : Advection of (theta_l,r_t) 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -81,11 +86,8 @@ END MODULE MODI_PPM_MET
 !
 USE MODD_PARAMETERS
 USE MODD_CONF
-USE MODD_BUDGET
-USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
 USE MODI_PPM
 USE MODI_ADVEC_PPM_ALGO
 !
@@ -108,6 +110,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! contravariant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  !  components
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRW  ! of momentum
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ ! density
+! Temporary advected rhodj
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step 
 !
@@ -130,12 +136,6 @@ INTEGER :: IGRID ! localisation on the model grid
 ! Advection source term calulated in the PPM algorithm
 REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZSRC
 !
-! Temporary advected rhodj
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZRHOX1,ZRHOX2
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZRHOY1,ZRHOY2
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZRHOZ1,ZRHOZ2
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZUNIT
-!
 !-------------------------------------------------------------------------------
 !
 !*       1.     COMPUTES THE DOMAIN DIMENSIONS
@@ -150,36 +150,24 @@ GTKEALLOC = SIZE(PTKET,1) /= 0
 !
 IGRID = 1
 !
-! Calculate the advection of the density RHODJ to pass to the algorithm
-!
-ZUNIT = 1.0
-ZRHOX1 = PPM_S0_X(HLBCX, IGRID, ZUNIT, PCRU, PRHODJ, PTSTEP)
-ZRHOY1 = PPM_S0_Y(HLBCY, IGRID, ZUNIT, PCRV, ZRHOX1, PTSTEP)
-ZRHOZ1 = PPM_S0_Z(IGRID, ZUNIT, PCRW, ZRHOY1, PTSTEP)
-ZRHOZ2 = PPM_S0_Z(IGRID, ZUNIT, PCRW, PRHODJ, PTSTEP)
-ZRHOY2 = PPM_S0_Y(HLBCY, IGRID, ZUNIT, PCRV, ZRHOZ2, PTSTEP)
-ZRHOX2 = PPM_S0_X(HLBCX, IGRID, ZUNIT, PCRU, ZRHOY2, PTSTEP)
-!
 !
 ! Potential temperature
 !
 CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, &
-                    ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2, ZRHOZ1, ZRHOZ2, &
+                    PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
                     ZSRC, KTCOUNT, PCRU, PCRV, PCRW)
 ! add the advection to the sources
 PRTHS = PRTHS +  ZSRC 
 !
-IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADV_BU_RTH')
 !
 ! Turbulence variables
 !
 IF (GTKEALLOC) THEN
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTKET,PRHODJ,PTSTEP, &
-                       ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2, ZRHOZ1, ZRHOZ2, &
+                       PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
                        ZSRC, KTCOUNT, PCRU, PCRV, PCRW)
   PRTKES = PRTKES + ZSRC
 !
-  IF (LBUDGET_TKE) CALL BUDGET (PRTKES,5,'ADV_BU_RTKE')
 !
 END IF
 !
@@ -189,19 +177,11 @@ END IF
 !
 DO JRR=1,KRR
 !
-   CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PRT(:,:,:,JRR), &
-                       PRHODJ, PTSTEP, &
-                       ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2, ZRHOZ1, ZRHOZ2, &
-                       ZSRC, KTCOUNT, PCRU, PCRV, PCRW)
+   CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID,           &
+                       PRT(:,:,:,JRR), PRHODJ, PTSTEP,                 &
+                       PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
+                       ZSRC, KTCOUNT, PCRU, PCRV, PCRW                 )
    PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR) + ZSRC(:,:,:)
-!
-   IF (JRR==1.AND.LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1),6,'ADV_BU_RRV') 
-   IF (JRR==2.AND.LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'ADV_BU_RRC') 
-   IF (JRR==3.AND.LBUDGET_RR) CALL BUDGET (PRRS(:,:,:,3),8,'ADV_BU_RRR') 
-   IF (JRR==4.AND.LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9,'ADV_BU_RRI') 
-   IF (JRR==5.AND.LBUDGET_RS) CALL BUDGET (PRRS(:,:,:,5),10,'ADV_BU_RRS') 
-   IF (JRR==6.AND.LBUDGET_RG) CALL BUDGET (PRRS(:,:,:,6),11,'ADV_BU_RRG') 
-   IF (JRR==7.AND.LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADV_BU_RRH') 
 !
 END DO
 !

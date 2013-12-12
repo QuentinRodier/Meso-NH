@@ -5,11 +5,11 @@ MODULE MODI_ION_BOUNDARIES
 !
 INTERFACE
 !
-      SUBROUTINE ION_BOUNDARIES (HLBCX,HLBCY,PUM,PVM,PUT,PVT,PSVT)
+      SUBROUTINE ION_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT)
 
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PUT,PVT,PUM,PVM
+REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PUT,PVT
 !
 END SUBROUTINE ION_BOUNDARIES
 !
@@ -19,7 +19,7 @@ END MODULE MODI_ION_BOUNDARIES
 !
 !
 !     ####################################################################
-      SUBROUTINE ION_BOUNDARIES (HLBCX,HLBCY,PUM,PVM,PUT,PVT,PSVT)
+      SUBROUTINE ION_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT)
 !     ####################################################################
 !
 !!****  *ION_BOUNDARIES* - routine to force the Lateral Boundary Conditions for
@@ -71,7 +71,7 @@ IMPLICIT NONE
 !
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PUT,PVT,PUM,PVM
+REAL, DIMENSION(:,:,:),         INTENT(IN)  :: PUT,PVT
 !
 !
 !*       0.2   declarations of local variables
@@ -88,9 +88,9 @@ INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 !
 ! beginning and end indexes of the physical subdomain
 IIB = 1 + JPHEXT
-IIE = SIZE(PUM,1) - JPHEXT
+IIE = SIZE(PUT,1) - JPHEXT
 IJB = 1 + JPHEXT
-IJE = SIZE(PUM,2) - JPHEXT
+IJE = SIZE(PUT,2) - JPHEXT
 !
 !
 !-------------------------------------------------------------------------------
@@ -98,8 +98,8 @@ IJE = SIZE(PUM,2) - JPHEXT
 !*       2.    EXTRAPOLATE VELOCITY COMPONENTS TO T + DT/2 (PPM advection scheme)
 !              ------------------------------------------------------------------
 !
-ZUX = (1.5 * PUT - 0.5 * PUM)
-ZVY = (1.5 * PVT - 0.5 * PVM)
+ZUX =  PUT 
+ZVY =  PVT 
 !
 !
 !-------------------------------------------------------------------------------

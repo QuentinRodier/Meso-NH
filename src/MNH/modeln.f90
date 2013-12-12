@@ -2,11 +2,10 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
-!     #################
+!     ###################
       MODULE MODI_MODEL_n
-!     #################
+!     ###################
 !
 INTERFACE
 !
@@ -220,7 +219,8 @@ END MODULE MODI_MODEL_n
 !!                   10/11/2009 (P. Aumond) Add mean moments
 !!                   Nov, 12, 2009 (C. Barthe) add cloud electrification and lightning flashes
 !!                   July 2010 (M. Leriche) add ice phase chemical species
-!!
+!!                   April 2011 (C.Lac) : Remove instant M 
+!!                   April 2011 (C.Lac, V.Masson) : Time splitting for advection
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -263,6 +263,7 @@ USE MODD_DYN_n
 USE MODD_DYNZD_n
 USE MODD_ADV_n
 USE MODD_FIELD_n
+USE MODD_PAST_FIELD_n
 USE MODD_MEAN_FIELD_n
 USE MODD_MEAN_FIELD
 USE MODD_LSFIELD_n
@@ -294,7 +295,10 @@ USE MODD_CLOUD_MF_n
 USE MODI_INITIAL_GUESS
 USE MODI_MEAN_FIELD
 USE MODI_BOUNDARIES
-USE MODI_ADVECTION
+USE MODI_ADVECTION_METSV
+USE MODI_ADVECTION_UVW     
+USE MODI_ADVECTION_UVW_CEN 
+USE MODI_GRAVITY_IMPL         
 USE MODI_DYN_SOURCES
 USE MODI_RELAXATION
 USE MODI_NUM_DIFF
@@ -362,6 +366,7 @@ USE MODI_LES_N
 USE MODN_NCOUT
 USE MODE_UTIL
 #endif
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -376,6 +381,7 @@ LOGICAL, INTENT(INOUT):: OEXIT
 !
 INTEGER :: ILUOUT      ! Logical unit number for the output listing
 INTEGER :: IIU,IJU,IKU ! array size in first, second and third dimensions
+INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
 CHARACTER (LEN=28) :: YFMFILE   ! name of the OUTPUT FM-file
 CHARACTER (LEN=28) :: YDADFILE  ! name of the corresponding DAD model OUTPUT FM-file
@@ -465,6 +471,14 @@ REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XRM,DPTR_XSVM,DPTR_XRRS,DPTR_XRSVS
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRC,DPTR_XINPRR,DPTR_XINPRS,DPTR_XINPRG
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRH,DPTR_XPRCONV,DPTR_XPRSCONV
 LOGICAL, DIMENSION(:,:),POINTER :: DPTR_GMASKkids
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
+!
+! for various testing
+INTEGER :: IK
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZTMP
+!
+TYPE(LIST_ll), POINTER :: TZFIELDC_ll   ! list of fields to exchange
+TYPE(HALO2LIST_ll), POINTER :: TZHALO2C_ll   ! list of fields to exchange
 !
 !-------------------------------------------------------------------------------
 !
@@ -472,24 +486,6 @@ LOGICAL, DIMENSION(:,:),POINTER :: DPTR_GMASKkids
 !              ------------
 ITYPE = 1
 IMI = GET_CURRENT_MODEL_INDEX()
-!
-IF ((CCONF=='START').AND.(KTCOUNT==1)) THEN
-  ZTSTEP_UVW = XTSTEP
-ELSE
-  ZTSTEP_UVW = 2.*XTSTEP
-END IF
-!
-IF (CMET_ADV_SCHEME(1:3) == 'PPM') THEN
-  ZTSTEP_MET = XTSTEP
-ELSE
-  ZTSTEP_MET = 2.*XTSTEP
-END IF
-!
-IF (CSV_ADV_SCHEME(1:3) == 'PPM') THEN
-  ZTSTEP_SV = XTSTEP
-ELSE
-  ZTSTEP_SV = 2.*XTSTEP
-END IF
 !
 !*       1.0   update NSV_* variables for current model
 !              ----------------------------------------
@@ -504,6 +500,9 @@ CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=NKMAX+2*JPVEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IKB=1+JPVEXT
+IKE=IKU-JPVEXT
 !
 IF (IMI==1) THEN
   GSTEADY_DMASS=LSTEADYLS
@@ -515,15 +514,10 @@ END IF
 !
 IF (KTCOUNT == 1) THEN
 !
-  NULLIFY(TZFIELDS_ll,TZLSFIELD_ll,TZFIELDM_ll)
-  NULLIFY(TZHALO2M_ll)
-  NULLIFY(TZLSHALO2_ll)
-  NULLIFY(TZFIELDT_ll)
+  NULLIFY(TZFIELDS_ll,TZLSFIELD_ll,TZFIELDT_ll)
   NULLIFY(TZHALO2T_ll)
-  NULLIFY(TZFIELDMT_ll)
-  NULLIFY(TZHALO2MT_ll)
+  NULLIFY(TZLSHALO2_ll)
   NULLIFY(TZFIELDSC_ll)
-  NULLIFY(TZHALO2SC_ll)
 !
   ALLOCATE(ZWT_ACT_NUC(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
   ALLOCATE(GMASKkids(SIZE(XWT,1),SIZE(XWT,2)))
@@ -557,14 +551,20 @@ IF (KTCOUNT == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELDS_ll, XRVS)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, XRWS)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, XRTHS)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XRUS_PRES)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XRVS_PRES)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XRWS_PRES)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll, XRTHS_CLD)
   IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDS_ll, XRTKES)
   DO JRR=1,NRR
     CALL ADD3DFIELD_ll(TZFIELDS_ll, XRRS(:,:,:,JRR))
+    CALL ADD3DFIELD_ll(TZFIELDS_ll, XRRS_CLD(:,:,:,JRR))
   ENDDO
   DO JSV=1,NSV
     CALL ADD3DFIELD_ll(TZFIELDS_ll, XRSVS(:,:,:,JSV))
+    CALL ADD3DFIELD_ll(TZFIELDS_ll, XRSVS_CLD(:,:,:,JSV))
   ENDDO
-  IF (SIZE(XSRCM,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDS_ll, XSRCM)
+  IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDS_ll, XSRCT)
   !
   IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) .AND. NHALO==1 ) THEN
   !
@@ -578,25 +578,25 @@ IF (KTCOUNT == 1) THEN
       CALL ADD3DFIELD_ll(TZLSFIELD_ll, XLSRVM)
     ENDIF
   !
-  !                 c) Fields at t-dt
+  !                 c) Fields at t
   !
-    CALL ADD3DFIELD_ll(TZFIELDM_ll, XUM)
-    CALL ADD3DFIELD_ll(TZFIELDM_ll, XVM)
-    CALL ADD3DFIELD_ll(TZFIELDM_ll, XWM)
-    CALL ADD3DFIELD_ll(TZFIELDM_ll, XTHM)
-    IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDM_ll, XTKEM)
+    CALL ADD3DFIELD_ll(TZFIELDT_ll, XUT)
+    CALL ADD3DFIELD_ll(TZFIELDT_ll, XVT)
+    CALL ADD3DFIELD_ll(TZFIELDT_ll, XWT)
+    CALL ADD3DFIELD_ll(TZFIELDT_ll, XTHT)
+    IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDT_ll, XTKET)
     DO JRR=1,NRR
-      CALL ADD3DFIELD_ll(TZFIELDM_ll, XRM(:,:,:,JRR))
+      CALL ADD3DFIELD_ll(TZFIELDT_ll, XRT(:,:,:,JRR))
     ENDDO
     DO JSV=1,NSV
-      CALL ADD3DFIELD_ll(TZFIELDM_ll, XSVM(:,:,:,JSV))
+      CALL ADD3DFIELD_ll(TZFIELDT_ll, XSVT(:,:,:,JSV))
     ENDDO
   !
   !*       1.5   Initialize the list of fields for the halo updates (2nd layer)
   !
     INBVAR = 4+NRR+NSV
     IF (SIZE(XRTKES,1) /= 0) INBVAR=INBVAR+1
-    IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2M_ll,INBVAR,IIU,IJU,IKU)
+    IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
     IF( NHALO==1 ) CALL INIT_HALO2_ll(TZLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
   !
   !*       1.6   Initialise the 2nd layer of the halo of the LS fields
@@ -604,44 +604,6 @@ IF (KTCOUNT == 1) THEN
     IF ( LSTEADYLS .AND. NHALO==1 ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
   END IF
   !
-  !        1.7  Initialize the list of fields (2nd layer) time t if 4th order
-!             advection schemes are used
-!
-   IF( CUVW_ADV_SCHEME == "CEN4TH" .AND. NHALO==1 ) THEN
-!
-      CALL ADD3DFIELD_ll(TZFIELDMT_ll, XUT)
-      CALL ADD3DFIELD_ll(TZFIELDMT_ll, XVT)
-      CALL ADD3DFIELD_ll(TZFIELDMT_ll, XWT)
-!
-      INBVAR = 3
-      IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,IIU,IJU,IKU)
-!
-   END IF
-!
-   IF( CMET_ADV_SCHEME == "CEN4TH" .AND. NHALO==1 ) THEN 
-!
-      CALL ADD3DFIELD_ll(TZFIELDT_ll, XTHT)
-      IF (SIZE(XRTKES,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDT_ll, XTKET)
-      DO JRR=1,NRR
-         CALL ADD3DFIELD_ll(TZFIELDT_ll, XRT(:,:,:,JRR))
-      ENDDO
-!
-      INBVAR = 1+NRR
-      IF (SIZE(XRTKES,1) /= 0) INBVAR=INBVAR+1
-      IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
-!
-   END IF
-!
-   IF( CSV_ADV_SCHEME == "CEN4TH" .AND. NHALO==1 ) THEN 
-!
-      DO JSV=1,NSV
-         CALL ADD3DFIELD_ll(TZFIELDSC_ll, XSVT(:,:,:,JSV))
-      ENDDO
-
-      INBVAR = NSV
-      IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2SC_ll,INBVAR,IIU,IJU,IKU)
-!
-   END IF
 !
   !
   XT_START = 0.0
@@ -652,6 +614,8 @@ IF (KTCOUNT == 1) THEN
   XT_FORCING   = 0.0
   XT_NUDGING   = 0.0
   XT_ADV       = 0.0
+  XT_ADVUVW    = 0.0
+  XT_GRAV      = 0.0
   XT_SOURCES   = 0.0
   !
   XT_DIFF      = 0.0
@@ -849,8 +813,7 @@ CALL BOUNDARIES (                                                   &
             XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
             XRHODJ,                                                 &
-            XUM, XVM, XWM, XTHM, XTKEM, XRM, XSVM,XSRCM,            &
-            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT                   )
+            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -935,7 +898,7 @@ DO JOUT = 1,NOUT_NUMB
     !
     ! Reinitialize Lagragian variables at every model output
     IF (LLG .AND. LINIT_LG .AND. CINIT_LG=='FMOUT') THEN
-      CALL INI_LG(XXHAT,XYHAT,XZZ,XSVM,XSVT,XLBXSVM,XLBYSVM)
+      CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
       IF (NVERB>=5) THEN
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
         WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(YFMFILE),' output'
@@ -1004,12 +967,9 @@ XTIME_BU   = 0.0
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 !
-CALL INITIAL_GUESS ( NRR, NSV, KTCOUNT, XRHODJ,IMI,                         &
-                     XUM, XVM, XWM, XTHM, XRM, XTKEM, XSVM,                 &
-                     ZTSTEP_UVW, ZTSTEP_MET, ZTSTEP_SV,                     &
+CALL INITIAL_GUESS ( NRR, NSV, KTCOUNT, XRHODJ,IMI, XTSTEP,                 &
                      XRUS, XRVS, XRWS, XRTHS, XRRS, XRTKES, XRSVS,          &
-                     CMET_ADV_SCHEME,CSV_ADV_SCHEME, CUVW_ADV_SCHEME,       &
-                     XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT  )
+                     XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT )
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1022,7 +982,7 @@ XT_GUESS = XT_GUESS + ZTIME2 - ZTIME1 - XTIME_BU_PROCESS
 !
 XTIME_LES_BU   = 0.0
 XTIME_LES      = 0.0
-IF (LLES) CALL LES_INI_TIMESTEP_n(KTCOUNT,ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV)
+IF (LLES) CALL LES_INI_TIMESTEP_n(KTCOUNT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1039,13 +999,13 @@ GMASKkids(:,:)=.FALSE.
 IF (NMODEL>1) THEN
   ! correct an ifort bug
   DPTR_XRHODJ=>XRHODJ
-  DPTR_XUM=>XUM
-  DPTR_XVM=>XVM
-  DPTR_XWM=>XWM
-  DPTR_XTHM=>XTHM
-  DPTR_XRM=>XRM
-  DPTR_XTKEM=>XTKEM
-  DPTR_XSVM=>XSVM
+  DPTR_XUM=>XUT
+  DPTR_XVM=>XVT
+  DPTR_XWM=>XWT
+  DPTR_XTHM=>XTHT
+  DPTR_XRM=>XRT
+  DPTR_XTKEM=>XTKET
+  DPTR_XSVM=>XSVT
   DPTR_XRUS=>XRUS
   DPTR_XRVS=>XRVS
   DPTR_XRWS=>XRWS
@@ -1076,50 +1036,6 @@ CALL SECOND_MNH2(ZTIME2)
 XT_2WAY = XT_2WAY + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 !
 !-------------------------------------------------------------------------------
-!
-!*       9.    ADVECTION
-!              ---------
-!
-ZTIME1 = ZTIME2
-XTIME_BU_PROCESS = 0.
-XTIME_LES_BU_PROCESS = 0.
-!
-IF (LNEUTRAL) XTHT=XTHT-XTHVREF
-!
-IF (CUVW_ADV_SCHEME == "CEN4TH" .AND. NHALO == 1 ) THEN
-   CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
-ENDIF
-!
-IF (CMET_ADV_SCHEME == "CEN4TH" .AND. NHALO == 1 ) THEN
-   CALL UPDATE_HALO2_ll(TZFIELDT_ll,  TZHALO2T_ll,  IINFO_ll)
-ENDIF
-!
-IF (CSV_ADV_SCHEME == "CEN4TH" .AND. NHALO == 1 ) THEN
-   CALL UPDATE_HALO2_ll(TZFIELDSC_ll, TZHALO2SC_ll, IINFO_ll)
-ENDIF
-!
-CALL ADVECTION ( CUVW_ADV_SCHEME, CMET_ADV_SCHEME, CSV_ADV_SCHEME,   &
-                 NLITER, CLBCX, CLBCY,                               &
-                 NRR, NSV, KTCOUNT, ZTSTEP_MET, ZTSTEP_SV,           &
-                 XUM, XVM, XWM, XTHM, XRM, XTKEM, XSVM,              &
-                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT,              &
-                 XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,               &
-                 XRUS, XRVS, XRWS, XRTHS, XRRS, XRTKES,              &
-                 XRSVS, TZHALO2MT_ll, TZHALO2T_ll, TZHALO2SC_ll      )
-!
-IF (LNEUTRAL) XTHT=XTHT+XTHVREF
-!
-IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
-  CALL TURB_CLOUD_INDEX(ZTSTEP_MET,YFMFILE,CLUOUT,                &
-                        LTURB_DIAG,GCLOSE_OUT,NRRI,               &
-                        XRRS,XRM,XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                        XCEI )
-END IF
-!
-CALL SECOND_MNH2(ZTIME2)
-!
-XT_ADV = XT_ADV + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
-!
 !-------------------------------------------------------------------------------
 !
 !*       10.    FORCING
@@ -1131,18 +1047,17 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LFORCING ) THEN
-  CALL FORCING(XTSTEP, ZTSTEP_UVW,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
+  CALL FORCING(XTSTEP,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
                XUFRC_PAST, XVFRC_PAST,                &
                XUT,XVT,XWT,XTHT,XTKET,XRT,XSVT,       &
-               XUM,XVM,XWM,XTHM,XTKEM,XRM,XSVM,       &
                XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI)
 END IF
 !
 IF ( L2D_ADV_FRC ) THEN 
-  CALL ADV_FORCING_n(XRHODJ,TDTCUR,XTHM,XRM,XZZ,XRTHS,XRRS)
+  CALL ADV_FORCING_n(XRHODJ,TDTCUR,XTHT,XRT,XZZ,XRTHS,XRRS)
 END IF
 IF ( L2D_REL_FRC ) THEN 
-  CALL REL_FORCING_n(XRHODJ,TDTCUR,XTHM,XRM,XZZ,XRTHS,XRRS)
+  CALL REL_FORCING_n(XRHODJ,TDTCUR,XTHT,XRT,XZZ,XRTHS,XRRS)
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -1162,7 +1077,7 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LNUDGING ) THEN
   CALL NUDGING(LUSERV,XRHODJ,XTNUDGING,         &
-               XUM,XVM,XWM,XTHM,XRM,            &
+               XUT,XVT,XWT,XTHT,XRT,            &
                XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM, &
                XRUS,XRVS,XRWS,XRTHS,XRRS)
 
@@ -1187,7 +1102,7 @@ IF( LTRANS ) THEN
   XVT(:,:,:) = XVT(:,:,:) + XVTRANS
 END IF
 !
-CALL DYN_SOURCES( NRR,NRRL, NRRI,IMI,                           &
+CALL DYN_SOURCES( NRR,NRRL, NRRI,                              &
                   XUT, XVT, XWT, XTHT, XRT,                    &
                   XCORIOX, XCORIOY, XCORIOZ, XCURVX, XCURVY,   &
                   XRHODJ, XZZ, XTHVREF, XEXNREF,               &
@@ -1215,16 +1130,16 @@ XTIME_LES_BU_PROCESS = 0.
 IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
 !
   IF( NHALO==1 ) THEN
-    CALL UPDATE_HALO2_ll(TZFIELDM_ll, TZHALO2M_ll, IINFO_ll)
+    CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
     IF ( .NOT. LSTEADYLS) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
   ENDIF
   CALL NUM_DIFF ( CLBCX, CLBCY, NRR, NSV,                               &
                   XDK2U, XDK4U, XDK2TH, XDK4TH, XDK2SV, XDK4SV, IMI,    &
-                  XUM, XVM, XWM, XTHM, XTKEM, XRM, XSVM,                &
+                  XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT,                &
                   XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,XRHODJ,               &
                   XRUS, XRVS, XRWS, XRTHS, XRTKES, XRRS, XRSVS,         &
                   LZDIFFU,LNUMDIFU, LNUMDIFTH, LNUMDIFSV,               &
-                  TZHALO2M_ll, TZLSHALO2_ll,XZDIFFU_HALO2      )
+                  TZHALO2T_ll, TZLSHALO2_ll,XZDIFFU_HALO2      )
 END IF
 !
 DO JSV = NSV_CHEMBEG,NSV_CHEMEND
@@ -1277,7 +1192,7 @@ ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
-IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.                   &
+IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.&
    LHORELAX_RC .OR. LHORELAX_RR .OR. LHORELAX_RI .OR. LHORELAX_RS .OR.   &
    LHORELAX_RG .OR. LHORELAX_RH .OR. LHORELAX_TKE .OR.                   &
    ANY(LHORELAX_SV)) THEN
@@ -1289,7 +1204,7 @@ IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.       
                    LHORELAX_SVCHEM,LHORELAX_SVCHIC,LHORELAX_SVAER,     &
                    LHORELAX_SVDST,LHORELAX_SVSLT,LHORELAX_SVPP,        &
                    LHORELAX_SVCS, KTCOUNT,NRR,NSV,XTSTEP,XRHODJ,       &
-                   XUM, XVM, XWM, XTHM, XRM, XSVM, XTKEM,              &
+                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET,              &
                    XLSUM, XLSVM, XLSWM, XLSTHM,                        &
                    XLBXUM, XLBXVM, XLBXWM, XLBXTHM,                    &
                    XLBXRM, XLBXSVM, XLBXTKEM,                          &
@@ -1303,7 +1218,7 @@ IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.       
 END IF
 
 IF (CELEC.NE.'NONE' .AND. LRELAX2FW_ION) THEN
-   CALL RELAX2FW_ION (KTCOUNT, IMI, XTSTEP, XRHODJ, XSVM, NALBOT,      &
+   CALL RELAX2FW_ION (KTCOUNT, IMI, XTSTEP, XRHODJ, XSVT, NALBOT,      &
                       XALK, LMASK_RELAX, XKWRELAX, XRSVS )   
 END IF                      
 !
@@ -1329,16 +1244,16 @@ IF ( LNETCDF .AND. GCLOSE_OUT ) THEN
   DEF_NC=.FALSE.
   LLFIFM = .TRUE.
 END IF
-CALL PHYS_PARAM_n(KTCOUNT,ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,YFMFILE,           &
-                  GCLOSE_OUT,CUVW_ADV_SCHEME,CMET_ADV_SCHEME,CSV_ADV_SCHEME, &
-                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,XT_DRAG,      & 
-                  XT_TURB,XT_TRACER,XT_CHEM,ZTIME,GMASKkids)
+CALL PHYS_PARAM_n(KTCOUNT,YFMFILE, GCLOSE_OUT,                        &
+                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,       &
+                  XT_DRAG,XT_TURB,XT_TRACER,                          &
+                  XT_CHEM,ZTIME,GMASKkids)
 DEF_NC=.TRUE.
 #else
-CALL PHYS_PARAM_n(KTCOUNT,ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,YFMFILE,           &
-                  GCLOSE_OUT,CUVW_ADV_SCHEME,CMET_ADV_SCHEME,CSV_ADV_SCHEME, &
-                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,XT_DRAG,      & 
-                  XT_TURB,XT_TRACER,XT_CHEM,ZTIME,GMASKkids)
+CALL PHYS_PARAM_n(KTCOUNT,YFMFILE, GCLOSE_OUT,                        &
+                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,       &
+                  XT_DRAG,XT_TURB,XT_TRACER,                          &
+                  XT_CHEM,ZTIME,GMASKkids)
 #endif                  
 !
 IF (CDCONV/='NONE') THEN
@@ -1405,9 +1320,9 @@ IF (.NOT. LSTEADYLS) THEN
       NCPL_CUR=NCPL_CUR+1         ! coupling one, LS sources are refreshed
       !
       CALL LS_COUPLING(CLUOUT,XTSTEP,GSTEADY_DMASS,CCONF,                   &
-             CGETTKEM,                                                      &
-             CGETRVM,CGETRCM,CGETRRM,CGETRIM,                               &
-             CGETRSM,CGETRGM,CGETRHM,CGETSVM,LCH_INIT_FIELD,NSV,            &
+             CGETTKET,                                                      &
+             CGETRVT,CGETRCT,CGETRRT,CGETRIT,                               &
+             CGETRST,CGETRGT,CGETRHT,CGETSVT,LCH_INIT_FIELD, NSV,           &
              NIMAX_ll,NJMAX_ll,                                             &
              NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,             &
              NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                 &
@@ -1473,17 +1388,124 @@ XT_COUPL = XT_COUPL + ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !
+!
+!*       9.    ADVECTION
+!              ---------
+!
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+!
+!
+ CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
+                 CMET_ADV_SCHEME, CSV_ADV_SCHEME, NSPLIT,            &
+                 LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
+                 CLBCX, CLBCY, NRR, NSV, KTCOUNT, XTSTEP,            &
+                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT,              &
+                 XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
+                 XRTHS, XRRS, XRTKES, XRSVS,                         &
+                 XRTHS_CLD, XRRS_CLD, XRSVS_CLD, XRTKEMS             )
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+XT_ADV = XT_ADV + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+!
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+ZRWS = XRWS
+!
+CALL GRAVITY_IMPL ( CLBCX, CLBCY, NRR, NRRL, NRRI,XTSTEP,            &
+                 XTHT, XRT, XTHVREF, XRHODJ, XRWS, XRTHS, XRRS,      &
+                 XRTHS_CLD, XRRS_CLD                                 )   
+!
+! At the initial instant the difference with the ref state creates a 
+! vertical velocity production that must not be advected as it is 
+! compensated by the pressure gradient
+!
+IF (KTCOUNT == 1 .AND. CCONF=='START') XRWS_PRES = - (XRWS - ZRWS) 
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+XT_GRAV = XT_GRAV + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+! 
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
+  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+    NULLIFY(TZFIELDC_ll)
+    NULLIFY(TZHALO2C_ll)
+      CALL ADD3DFIELD_ll(TZFIELDC_ll, XUT)
+      CALL ADD3DFIELD_ll(TZFIELDC_ll, XVT)
+      CALL ADD3DFIELD_ll(TZFIELDC_ll, XWT)
+      CALL INIT_HALO2_ll(TZHALO2C_ll,3,IIU,IJU,IKU)
+      CALL UPDATE_HALO_ll(TZFIELDC_ll,IINFO_ll)
+      CALL UPDATE_HALO2_ll(TZFIELDC_ll, TZHALO2C_ll, IINFO_ll)
+  END IF
+ CALL ADVECTION_UVW_CEN(CUVW_ADV_SCHEME,                &
+                           CLBCX, CLBCY,                           &
+                           XTSTEP, KTCOUNT,                        &
+                           XUM, XVM, XWM, XDUM, XDVM, XDWM,        &
+                           XUT, XVT, XWT,                          &
+                           XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,   &
+                           XRUS,XRVS, XRWS,                        &
+                           TZHALO2C_ll                             )
+  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+    CALL CLEANLIST_ll(TZFIELDC_ll)
+    NULLIFY(TZFIELDC_ll)
+    CALL  DEL_HALO2_ll(TZHALO2C_ll)
+    NULLIFY(TZHALO2C_ll)
+  END IF
+ELSE
+
+  CALL ADVECTION_UVW(CUVW_ADV_SCHEME, CTEMP_SCHEME,                  &
+                 NWENO_ORDER, NSPLIT,                                &
+                 CLBCX, CLBCY, XTSTEP,                               &
+                 XUT, XVT, XWT,                                      &
+                 XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,               &
+                 XRUS, XRVS, XRWS,                                   &
+                 XRUS_PRES, XRVS_PRES, XRWS_PRES                     )
+END IF
+!
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+XT_ADVUVW = XT_ADVUVW + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+!
+!-------------------------------------------------------------------------------
+!
+IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
+  CALL TURB_CLOUD_INDEX(XTSTEP,YFMFILE,CLUOUT,                    &
+                        LTURB_DIAG,GCLOSE_OUT,NRRI,               &
+                        XRRS,XRT,XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
+                        XCEI )
+END IF
+!
+!-------------------------------------------------------------------------------
+!
 !*       18.    LATERAL BOUNDARY CONDITION FOR THE NORMAL VELOCITY
 !               --------------------------------------------------
 !
 ZTIME1 = ZTIME2
 !
+ZRUS=XRUS
+ZRVS=XRVS
+ZRWS=XRWS
+!
   CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XRIMKMAX,            &
-                ZTSTEP_UVW, XDXHAT, XDYHAT, XZHAT,       &
-                XUM, XVM, XUT, XVT,                      &
+                XTSTEP,                                  &
+                XDXHAT, XDYHAT, XZHAT,                   &
+                XUT, XVT,                                &
                 XLBXUM, XLBYVM, XLBXUS, XLBYVS,          &
                 XCPHASE, XCPHASE_PBL, XRHODJ,            &
-                XTKEM,XRUS, XRVS, XRWS                   )
+                XTKET,XRUS, XRVS, XRWS                   )
+ZRUS=XRUS-ZRUS
+ZRVS=XRVS-ZRVS
+ZRWS=XRWS-ZRWS
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1500,15 +1522,25 @@ XTIME_LES_BU_PROCESS = 0.
 !
 !
 IF(.NOT. L1D) THEN
-  CALL PRESSUREZ (CLUOUT,                           &
+!
+  XRUS_PRES = XRUS
+  XRVS_PRES = XRVS
+  XRWS_PRES = XRWS
+!
+  CALL PRESSUREZ( CLUOUT,                                                &
                   CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,KTCOUNT, XRELAX,IMI, &
                   XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,XDXHATM,XDYHATM,XRHOM, &
-                  XAF,XBFY,XCF,XTRIGSX,XTRIGSY,NIFAXX,NIFAXY,XPABSM,     &
+                  XAF,XBFY,XCF,XTRIGSX,XTRIGSY,NIFAXX,NIFAXY,            &
                   NRR,NRRL,NRRI,XDRYMASST,XREFMASS,XMASS_O_PHI0,         &
                   XTHT,XRT,XRHODREF,XTHVREF,XRVREF,XEXNREF, XLINMASS,    &
                   XRUS, XRVS, XRWS, XPABST,                              &
                   XBFB,&
                   XBF_SXP2_YP1_Z) !JUAN Z_SPLITING
+!
+  XRUS_PRES = XRUS - XRUS_PRES + ZRUS
+  XRVS_PRES = XRVS - XRVS_PRES + ZRVS
+  XRWS_PRES = XRWS - XRWS_PRES + ZRWS
+!
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -1540,6 +1572,9 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     ZWT_ACT_NUC(:,:,:) = 0.
   END IF
 !
+  XRTHS_CLD  = XRTHS
+  XRRS_CLD   = XRRS
+  XRSVS_CLD  = XRSVS
   IF (CSURF=='EXTE') THEN
     ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
     ALLOCATE (ZTOWN(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
@@ -1552,13 +1587,12 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,ZTSTEP_MET,&
-                          XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABSM, XPABST, XTHM, XTHT,XRM,XRT,XSIGS,VSIGQSAT,   &
-                          XMFCONV,                                             &
-                          ZWT_ACT_NUC, XRTHS, XRRS,                            &
-                          XSVM, XSVT, XRSVS,                                   &
-                          XSRCM, XCLDFR,XCIT,                                  &
+                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
+                          XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
+                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XSVT, XRSVS,                                         &
+                          XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
                           XCF_MF,XRC_MF, XRI_MF,                               &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
@@ -1568,13 +1602,12 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,ZTSTEP_MET,&
-                          XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABSM, XPABST, XTHM, XTHT,XRM,XRT,XSIGS,VSIGQSAT,   &
-                          XMFCONV,                                             &
-                          ZWT_ACT_NUC, XRTHS, XRRS,                            &
-                          XSVM, XSVT, XRSVS,                                   &
-                          XSRCM, XCLDFR,XCIT,                                  &
+                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
+                          XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
+                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XSVT, XRSVS,                                         &
+                          XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
                           XCF_MF,XRC_MF, XRI_MF,                               &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
@@ -1588,13 +1621,12 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,ZTSTEP_MET,&
+                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABSM, XPABST, XTHM, XTHT,XRM,XRT,XSIGS,VSIGQSAT,   &
-                          XMFCONV,                                             &
-                          ZWT_ACT_NUC, XRTHS, XRRS,                            &
-                          XSVM, XSVT, XRSVS,                                   &
-                          XSRCM, XCLDFR,XCIT,                                  &
+                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XSVT, XRSVS,                                         &
+                          XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
                           XCF_MF,XRC_MF, XRI_MF,                               &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
@@ -1604,19 +1636,21 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,ZTSTEP_MET,&
+                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABSM, XPABST, XTHM, XTHT,XRM,XRT,XSIGS,VSIGQSAT,   &
-                          XMFCONV,                                             &
-                          ZWT_ACT_NUC, XRTHS, XRRS,                            &
-                          XSVM, XSVT, XRSVS,                                   &
-                          XSRCM, XCLDFR,XCIT,                                  &
+                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XSVT, XRSVS,                                         &
+                          XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
                           XCF_MF,XRC_MF, XRI_MF,                               &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
                           XINPRS, XINPRG, XINPRH, XSOLORG, XMI                 )
 #endif
   END IF
+  XRTHS_CLD  = XRTHS - XRTHS_CLD
+  XRRS_CLD   = XRRS  - XRRS_CLD
+  XRSVS_CLD  = XRSVS - XRSVS_CLD
 !
   IF (CCLOUD /= 'REVE' ) THEN
     XACPRR = XACPRR + XINPRR * XTSTEP
@@ -1652,6 +1686,9 @@ XTIME_LES_BU_PROCESS = 0.
 IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
   ZWT_ACT_NUC(:,:,:) = 0.
 !
+  XRTHS_CLD = XRTHS
+  XRRS_CLD  = XRRS
+  XRSVS_CLD = XRRS
   IF (CSURF=='EXTE') THEN
     ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
     ALLOCATE (ZTOWN(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
@@ -1659,14 +1696,13 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     ZTOWN(:,:)= 0.
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
-                          NRR, NSPLITR, IMI, KTCOUNT,CUVW_ADV_SCHEME,    &
+                          NRR, NSPLITR, IMI, KTCOUNT,                    &
                           CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
                           GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,   &
-                          ZTSTEP_MET, XZZ, XRHODJ, XRHODREF, XEXNREF,    &
-                          XPABSM, XPABST, XTHM, XTHT, XRTHS, XWT,        &
-                          XRM, XRT, XRRS,                                &
-                          XSVM, XSVT, XRSVS, XCIT,                       &
-                          XSIGS, XSRCM, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
+                          XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
+                          XPABST, XTHT, XRTHS, XWT,  XRT, XRRS,          &
+                          XSVT, XRSVS, XCIT,                             &
+                          XSIGS, XSRCT, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
                           XRI_MF, LSEDIC, LWARM,                         &
                           XINPRC, XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS, XINPRG, XINPRH,                        &
@@ -1674,18 +1710,20 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     DEALLOCATE(ZTOWN)
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
-                          NRR, NSPLITR, IMI, KTCOUNT,CUVW_ADV_SCHEME,    &
+                          NRR, NSPLITR, IMI, KTCOUNT,                    &
                           CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
                           GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,   &
-                          ZTSTEP_MET, XZZ, XRHODJ, XRHODREF, XEXNREF,    &
-                          XPABSM, XPABST, XTHM, XTHT, XRTHS, XWT,        &
-                          XRM, XRT, XRRS,                                &
-                          XSVM, XSVT, XRSVS, XCIT,                       &
-                          XSIGS, XSRCM, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
+                          XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
+                          XPABST, XTHT, XRTHS, XWT,                      &
+                          XRT, XRRS, XSVT, XRSVS, XCIT,                  &
+                          XSIGS, XSRCT, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
                           XRI_MF, LSEDIC, LWARM,                         &
                           XINPRC, XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS, XINPRG, XINPRH                         )
   END IF
+  XRTHS_CLD = XRTHS - XRTHS_CLD
+  XRRS_CLD  = XRRS  - XRRS_CLD
+  XRSVS_CLD = XRSVS - XRSVS_CLD
 !
   XACPRR = XACPRR + XINPRR * XTSTEP
   IF ((CCLOUD(1:3) == 'ICE' .AND. LSEDIC)) & 
@@ -1721,8 +1759,7 @@ XT_SPECTRA = XT_SPECTRA + ZTIME2 - ZTIME1 + XTIME_LES_BU + XTIME_LES
 !               --------------------
 !
 IF (LMEAN_FIELD) THEN
-   CALL MEAN_FIELD(XUM, XVM, XWM, XTHM, XTKEM, XPABSM,&
-   XUT, XVT, XWT, XTHT, XPABST,KTCOUNT,ZTSTEP_UVW)
+   CALL MEAN_FIELD(XUT, XVT, XWT, XTHT, XTKET, XPABST)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1732,7 +1769,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-CALL EXCHANGE (ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,NRR,NSV,XRHODJ,TZFIELDS_ll, &
+CALL EXCHANGE (XTSTEP,NRR,NSV,XRHODJ,TZFIELDS_ll,     &
                XRUS, XRVS,XRWS,XRTHS,XRRS,XRTKES,XRSVS)
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -1747,8 +1784,8 @@ XT_HALO = XT_HALO + ZTIME2 - ZTIME1
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 !
-CALL ENDSTEP  ( XTSTEP,ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,   &
-                NRR,NSV,KTCOUNT,IMI,XRHODJ,               &
+CALL ENDSTEP  ( XTSTEP,NRR,NSV,KTCOUNT,IMI,               &
+                CUVW_ADV_SCHEME,XRHODJ,                   &
                 XRUS,XRVS,XRWS,XDRYMASSS,                 &
                 XRTHS,XRRS,XRTKES,XRSVS,                  &
                 XLSUS,XLSVS,XLSWS,                        &
@@ -1757,17 +1794,15 @@ CALL ENDSTEP  ( XTSTEP,ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,   &
                 XLBXTHS,XLBXRS,XLBXTKES,XLBXSVS,          &
                 XLBYUS,XLBYVS,XLBYWS,                     &
                 XLBYTHS,XLBYRS,XLBYTKES,XLBYSVS,          &
-                XUM,XVM,XWM,XPABSM,                       &
-                XTHM,XRM,XTKEM,XSVM,XSRCM,                &
+                XUM,XVM,XWM,                              &
                 XUT,XVT,XWT,XPABST,XDRYMASST,             &
-                XTHT, XRT, XTKET, XSVT,XSRCT,             &
+                XTHT, XRT, XTHM, XRCM, XPABSM,XTKET, XSVT,&
                 XLSUM,XLSVM,XLSWM,                        &
                 XLSTHM,XLSRVM,                            &
                 XLBXUM,XLBXVM,XLBXWM,                     &
                 XLBXTHM,XLBXRM,XLBXTKEM,XLBXSVM,          &
                 XLBYUM,XLBYVM,XLBYWM,                     &
-                XLBYTHM,XLBYRM,XLBYTKEM,XLBYSVM,          &
-                CMET_ADV_SCHEME, CSV_ADV_SCHEME           )
+                XLBYTHM,XLBYRM,XLBYTKEM,XLBYSVM           )
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1832,8 +1867,7 @@ CALL END_DIAG_IN_RUN
 ZTIME1 = ZTIME2
 !
 IF (NBUMOD==IMI .AND. CBUTYPE/='NONE') THEN
-  CALL ENDSTEP_BUDGET(CFMDIAC,CLUOUT,KTCOUNT,TDTCUR,TDTMOD,XTSTEP, &
-                      ZTSTEP_UVW,ZTSTEP_MET,ZTSTEP_SV,NSV )
+  CALL ENDSTEP_BUDGET(CFMDIAC,CLUOUT,KTCOUNT,TDTCUR,TDTMOD,XTSTEP,NSV)
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -1853,7 +1887,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !*       27.    CURRENT TIME REFRESH
-!               -------------------
+!               --------------------
 !
 TDTCUR%TIME=TDTCUR%TIME + XTSTEP
 CALL ADD_FORECAST_TO_DATE(TDTCUR%TDATE%YEAR, &
@@ -1941,7 +1975,9 @@ IF (OEXIT) THEN
     CALL TIME_STAT_ll(TIMEZ%T_WRIT2D_ALL ,ZTOT,    '   W2D_ALL ','-')
   CALL TIME_STAT_ll(XT_GUESS,ZTOT,      ' INITIAL_GUESS','=')
   CALL TIME_STAT_ll(XT_2WAY,ZTOT,       ' TWO WAY','=')
-  CALL TIME_STAT_ll(XT_ADV,ZTOT,        ' ADVECTION','=')
+  CALL TIME_STAT_ll(XT_ADV,ZTOT,        ' ADVECTION MET','=')
+  CALL TIME_STAT_ll(XT_ADVUVW,ZTOT,     ' ADVECTION UVW','=')
+  CALL TIME_STAT_ll(XT_GRAV,ZTOT,       ' GRAVITY','=')
   CALL TIME_STAT_ll(XT_FORCING,ZTOT,    ' FORCING','=')
   CALL TIME_STAT_ll(XT_NUDGING,ZTOT,    ' NUDGING','=')
   CALL TIME_STAT_ll(XT_SOURCES,ZTOT,    ' DYN_SOURCES','=')
@@ -1986,6 +2022,7 @@ IF (OEXIT) THEN
   !
   ZALL   = XT_1WAY + XT_BOUND   + XT_STORE   + XT_GUESS    +  XT_2WAY   + &
            XT_ADV  + XT_FORCING + XT_NUDGING + XT_SOURCES  +  XT_DIFF   + &
+           XT_ADVUVW  + XT_GRAV +                                         &
            XT_RELAX+ XT_PARAM   + XT_COUPL   + XT_RAD_BOUND+XT_PRESS    + &
            XT_CLOUD+  XT_HALO   + XT_SPECTRA + XT_STEP_SWA +XT_STEP_MISC+ &
            XT_STEP_BUD

@@ -10,7 +10,6 @@
 INTERFACE
       SUBROUTINE SLOW_TERMS ( KSPLITR, PTSTEP, KMI, HSUBG_AUCV,            &
                               PZZ, PRHODJ, PRHODREF, PCLDFR,               &
-                              PRRM,                                        &
                               PTHT, PRVT, PRCT, PRRT, PPABST,              &
                               PTHS, PRVS, PRCS, PRRS, PINPRR,              &
                               PINPRR3D, PEVAP3D                            )
@@ -29,7 +28,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),     INTENT(IN)  :: PCLDFR  ! Cloud fraction
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
@@ -55,7 +53,6 @@ END MODULE MODI_SLOW_TERMS
 !OPTION! -Ni
       SUBROUTINE SLOW_TERMS ( KSPLITR, PTSTEP, KMI, HSUBG_AUCV,            &
                               PZZ, PRHODJ, PRHODREF, PCLDFR,               &
-                              PRRM,                                        &
                               PTHT, PRVT, PRCT, PRRT, PPABST,              &
                               PTHS, PRVS, PRCS, PRRS, PINPRR,              &
                               PINPRR3D, PEVAP3D                            )
@@ -184,7 +181,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),     INTENT(IN)  :: PCLDFR  ! Cloud fraction
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 

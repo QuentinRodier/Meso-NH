@@ -407,6 +407,7 @@ USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_MNHWRITE_ZS_DUMMY_n
 USE MODI_COMPARE_DAD 
 USE MODI_PREP_SURF_MNH
+USE MODI_ICE_ADJUST_BIS
 !
 USE MODD_CONF            ! declaration modules
 USE MODD_CONF_n
@@ -942,6 +943,13 @@ IF (ALLOCATED(XZSMT_LS)) DEALLOCATE(XZSMT_LS)
 !
 !-------------------------------------------------------------------------------
 !
+!
+!*      13.    MICROPHYSICAL ADJUSTMENT
+!              ------------------------
+!CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
+!
+!-------------------------------------------------------------------------------
+!
 !*      13.    ANELASTIC CORRECTION
 !              --------------------
 !
@@ -949,6 +957,13 @@ CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 CALL SECOND_MNH(ZTIME2)
 ZDYN = ZTIME2 - ZTIME1
+!
+!-------------------------------------------------------------------------------
+!
+!*      13.    MICROPHYSICAL ADJUSTMENT
+!              ------------------------
+!
+!CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -978,8 +993,7 @@ CALL BOUNDARIES (                                                 &
           XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
           XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
           XRHODJ,                                                 &
-          XUM, XVM, XWM, XTHM, XTKEM, XRM, XSVM,XSRCM,            &
-          XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT                   )
+          XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 !
 CALL SECOND_MNH(ZTIME2)
 ZMISC = ZMISC + ZTIME2 - ZTIME1
@@ -992,7 +1006,7 @@ ZMISC = ZMISC + ZTIME2 - ZTIME1
 ZTIME1 = ZTIME2
 !
 IF (YATMFILETYPE=='GRIBEX' .AND. NVERB>1) THEN
-  CALL ERROR_ON_TEMPERATURE(XT_LS,XPMASS_LS,XPABSM,XPS_LS,XPSURF)
+  CALL ERROR_ON_TEMPERATURE(XT_LS,XPMASS_LS,XPABST,XPS_LS,XPSURF)
 END IF
 !
 IF (YATMFILETYPE=='GRIBEX') THEN

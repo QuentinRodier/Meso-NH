@@ -12,7 +12,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT, &
+      SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HPROGRAM,HCONF,                          &
+                              HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,                      &
                               PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,                        &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH )           
 !
@@ -22,6 +23,8 @@ INTERFACE
 CHARACTER (LEN=*),          INTENT(IN)  :: HINIFILE    ! name of the initial file
 CHARACTER (LEN=*),          INTENT(IN)  :: HLUOUT      ! name for output-listing
                                                        ! of nested models
+CHARACTER (LEN=*),          INTENT(IN)  :: HPROGRAM    ! 
+CHARACTER (LEN=*),          INTENT(IN)  :: HCONF       ! 
 !                    
 CHARACTER (LEN=*),          INTENT(IN)  :: HGETRCT, HGETRRT, HGETRST, HGETRGT, HGETRHT
                                                  ! Get indicator RCT,RRT,RST,RGT,RHT
@@ -46,7 +49,8 @@ END INTERFACE
 END MODULE MODI_READ_PRECIP_FIELD 
 !
 !     ################################################################################
-      SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT, &
+      SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HPROGRAM,HCONF,                          &
+                              HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,                      &
                               PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,                        &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH )           
 !     ################################################################################
@@ -85,6 +89,7 @@ END MODULE MODI_READ_PRECIP_FIELD
 !!      (J. Viviand)   04/02/97  convert precipitation rates in m/s
 !!      (V. Ducrocq)   14/08/98  // remove KIINF,KJINF,KISUP,KJSUP
 !!      (JP Pinty)     29/11/02  add C3R5, ICE2, ICE4
+!!      (C.Lac)        04/03/13  add YGETxxx for FIT scheme
 !!
 !-----------------------------------------------------------------------------
 !
@@ -103,6 +108,8 @@ CHARACTER (LEN=*),          INTENT(IN)  :: HLUOUT      ! name for output-listing
 !                    
 CHARACTER (LEN=*),          INTENT(IN)  :: HGETRCT,HGETRRT, HGETRST, HGETRGT, HGETRHT
                                                  ! Get indicator RRT,RST,RGT,RHT
+CHARACTER (LEN=*),          INTENT(IN)  :: HPROGRAM    ! 
+CHARACTER (LEN=*),          INTENT(IN)  :: HCONF       ! 
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Droplet instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PACPRC! Droplet accumulated precip
@@ -126,6 +133,7 @@ INTEGER             :: IGRID,ILENCH,IRESP         !   File
 CHARACTER (LEN=16)  :: YRECFM                     ! management
 CHARACTER (LEN=100) :: YCOMMENT                   ! variables   
 CHARACTER(LEN=2)    :: YDIR
+CHARACTER(LEN=4)    :: YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT                    
 INTEGER             :: ILUOUT                     ! Unit number for prints
 !
 !-------------------------------------------------------------------------------
@@ -137,13 +145,26 @@ CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 YDIR='XY'
 !
+IF ((HPROGRAM == 'MESONH') .AND. (HCONF == 'START')) THEN
+  YGETRCT = 'INIT'
+  YGETRRT = 'INIT'
+  YGETRST = 'INIT'
+  YGETRGT = 'INIT'
+  YGETRHT = 'INIT'
+ELSE
+  YGETRCT = HGETRCT
+  YGETRRT = HGETRRT
+  YGETRST = HGETRST
+  YGETRGT = HGETRGT
+  YGETRHT = HGETRHT
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       2..    READ PROGNOSTIC VARIABLES
 !              -------------------------
 !
 IF (SIZE(PINPRC) /= 0 ) THEN
-  SELECT CASE(HGETRCT)
+  SELECT CASE(YGETRCT)
   CASE ('READ')
     YRECFM = 'INPRC'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -158,7 +179,7 @@ IF (SIZE(PINPRC) /= 0 ) THEN
 END IF
 !
 IF (SIZE(PINPRR) /= 0 ) THEN
-  SELECT CASE(HGETRRT)
+  SELECT CASE(YGETRRT)
   CASE ('READ')
     YRECFM = 'INPRR'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -181,7 +202,7 @@ IF (SIZE(PINPRR) /= 0 ) THEN
 END IF
 !
 IF (SIZE(PINPRS) /= 0 ) THEN
-  SELECT CASE(HGETRST)
+  SELECT CASE(YGETRST)
   CASE ('READ')
     YRECFM = 'INPRS'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -196,7 +217,7 @@ IF (SIZE(PINPRS) /= 0 ) THEN
 END IF
 !
 IF (SIZE(PINPRG) /= 0 ) THEN
-  SELECT CASE(HGETRGT)
+  SELECT CASE(YGETRGT)
   CASE ('READ')
     YRECFM = 'INPRG'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -211,7 +232,7 @@ IF (SIZE(PINPRG) /= 0 ) THEN
 END IF
 !
 IF (SIZE(PINPRH) /= 0 ) THEN
-  SELECT CASE(HGETRHT)
+  SELECT CASE(YGETRHT)
   CASE ('READ')
     YRECFM = 'INPRH'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)

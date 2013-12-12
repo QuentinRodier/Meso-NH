@@ -11,8 +11,8 @@ INTERFACE
 !
       SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HFMFILE, HLUOUT, HRAD,   &
                              HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODJ, PEXNREF, PPABSM, PSIGS,PMFCONV,PPABST,PZZ,&
-                             PCF_MF,PRC_MF,PRI_MF,                             &
+                             PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
+                             PCF_MF,PRC_MF, PRI_MF,                            &
                              PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,     &
                              PRRT, PRRS, PRIT, PRIS, PRST,PRSS, PRGT, PRGS,    &
                              PRHT, PRHS                                        )
@@ -40,8 +40,6 @@ REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat vari
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at 
-                                                   !      time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t        
@@ -79,9 +77,9 @@ END INTERFACE
 END MODULE MODI_ICE_ADJUST
 !
 !     ##########################################################################
-      SUBROUTINE ICE_ADJUST (KKA,KKU,KKL,KRR, KMI, HFMFILE, HLUOUT, HRAD,      &
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HFMFILE, HLUOUT, HRAD,   &
                              HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODJ, PEXNREF, PPABSM, PSIGS,PMFCONV,PPABST,PZZ,&
+                             PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
                              PCF_MF,PRC_MF,PRI_MF,                             &
                              PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,     &
                              PRRT, PRRS, PRIT, PRIS, PRST,PRSS, PRGT, PRGS,    &
@@ -158,6 +156,7 @@ END MODULE MODI_ICE_ADJUST
 !!      JP Pinty   29/11/02  add ICE2 and IC4 cases
 !!      (P. Jabouille) 27/05/04 safety test for case where esw/i(T)> pabs (~Z>40km)
 !!      J.Pergaud and S.Malardel Add EDKF case
+!!      (E.Perraud)  06/08   add correction to avoid ice when T >0
 !!      S. Riette ice for EDKF
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
 !!
@@ -204,8 +203,6 @@ REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat vari
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at 
-                                                   !      time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t        
@@ -298,7 +295,7 @@ ZT00 = XTT-40.           ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 !
 !*       2.1    estimate the pressure at t+1
 !
-ZEXNS(:,:,:) = ((2. * PPABST(:,:,:) - PPABSM(:,:,:))/XP00)**(XRD/XCPD)
+ZEXNS(:,:,:) = ( PPABST(:,:,:) /XP00)**(XRD/XCPD)
 !
 !    beginning of the iterative loop
 !
@@ -384,9 +381,9 @@ END IF
 !*    compute the saturation mixing ratios at t+1
 !
       ZW3(:,:,:) =  ZW1(:,:,:) * ZEPS     &
-                 / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW1(:,:,:) )     ! r_sw
+                 / (  PPABST(:,:,:)  - ZW1(:,:,:) )     ! r_sw
       ZW4(:,:,:) =  ZW2(:,:,:) * ZEPS     &
-                 / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW2(:,:,:) )     ! r_si
+                 / (  PPABST(:,:,:)  - ZW2(:,:,:) )     ! r_si
 !
       WHERE(PRVS(:,:,:)*PTSTEP.LT.ZW4(:,:,:).AND. PRCS(:,:,:).GT.0..AND. ZT(:,:,:).LT.XTT)
 !
@@ -439,9 +436,9 @@ END IF
 !*       4.4    compute the saturation mixing ratios at t+1
 !
     ZW3(:,:,:) =  ZW1(:,:,:) * ZEPS     &
-               / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW1(:,:,:) ) ! r_sw
+               / ( PPABST(:,:,:) - ZW1(:,:,:) ) ! r_sw
     ZW4(:,:,:) =  ZW2(:,:,:) * ZEPS     &
-               / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW2(:,:,:) ) ! r_si
+               / ( PPABST(:,:,:)  - ZW2(:,:,:) ) ! r_si
 !
 !*       4.5    compute the saturation mixing ratio derivatives (r'_vs)
 !

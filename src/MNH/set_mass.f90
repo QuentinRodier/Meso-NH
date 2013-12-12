@@ -399,30 +399,24 @@ ELSE
 ! 
 ! Interpolation of theta and r
 !
-  ALLOCATE(XTHM(IIU,IJU,IKU))
-  ALLOCATE(XRM(IIU,IJU,IKU,NRR))
  IF (SIZE(ZTHV3D_MX,3) > 3) THEN
   CALL VER_INT_THERMO(OSHIFT,ZTHV3D_MX,ZMR3D_MX,PZS_MX,PZS_MX,PZMASS_MX,&
                       PZFLUX_MX,ZPMHP_MX,ZEXNTOP2D, &
-                      ZTHV3D,XRM,ZPMHP,ZDIAG)
+                      ZTHV3D,XRT,ZPMHP,ZDIAG)
  ELSE
    ZTHV3D = ZTHV3D_MX
-   XRM    = ZMR3D_MX
+   XRT    = ZMR3D_MX
    ZDIAG  = 0.
  END IF
-  XTHM(:,:,:)=ZTHV3D(:,:,:)*(1.+WATER_SUM(XRM(:,:,:,:)))/(1.+XRV/XRD*XRM(:,:,:,1))
+  XTHT(:,:,:)=ZTHV3D(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
   ZTHV3D(:,:,1)=ZTHV3D(:,:,2)
-  XTHM(:,:,1)=XTHM(:,:,2)
-  XRM(:,:,1,:)=XRM(:,:,2,:)
-
- CALL MPPDB_CHECK3D(ZTHV3D,"SET_MASS:ZTHV3D:",PRECISION)
- CALL MPPDB_CHECK3D(XRM(:,:,:,1),"SET_MASS:XRM:",PRECISION)
- CALL MPPDB_CHECK3D(XTHM,"SET_MASS::XTHM",PRECISION)
+  XTHT(:,:,1)=XTHT(:,:,2)
+  XRT(:,:,1,:)=XRT(:,:,2,:)
 
 !
   IF (NRR>=3) THEN
-    WHERE  (XRM(:,:,:,3)<1.E-20)
-      XRM(:,:,:,3)=0.
+    WHERE  (XRT(:,:,:,3)<1.E-20)
+      XRT(:,:,:,3)=0.
     END WHERE
   END IF
 !
@@ -434,12 +428,12 @@ ELSE
   ZRHODJU(:,:,:)=MXM(ZRHODUA(:,:,:)*PJ(:,:,:))
   ZRHODJV(:,:,:)=MYM(ZRHODVA(:,:,:)*PJ(:,:,:))
   CALL COMPUTE_EXNER_FROM_TOP(ZTHV3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
-  XPABSM(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
-  ZRHOD(:,:,:)=XPABSM(:,:,:)/(XPABSM(:,:,:)/XP00)**(XRD/XCPD) &
-            /(XRD*XTHM(:,:,:)*(1.+XRV/XRD*XRM(:,:,:,1)))
-  XUM(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
-  XVM(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
-  XWM(:,:,:)=0
+  XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
+  ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
+            /(XRD*XTHT(:,:,:)*(1.+XRV/XRD*XRT(:,:,:,1)))
+  XUT(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
+  XVT(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
+  XWT(:,:,:)=0
 ENDIF
 
 !
@@ -450,7 +444,7 @@ ENDIF
 IF (.NOT. OBOUSS) THEN
   DEALLOCATE(XTHVREFZ)
   DEALLOCATE(XRHODREFZ)
-  CALL SET_REFZ(ZTHV3D,XRM(:,:,:,1))
+  CALL SET_REFZ(ZTHV3D,XRT(:,:,:,1))
 ELSE 
   IF (OPROFILE_IN_PROC) THEN
     XTHVREFZ(:) = ZTHV3D(KILOC-IXOR_ll+1,KJLOC-IYOR_ll+1,2)
@@ -470,7 +464,7 @@ ELSE
 
   ZEXNTOP2D=ZHEXNFLUX(:,:,IKE+1)
   CALL COMPUTE_EXNER_FROM_TOP(ZTHVREF3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
-  XPABSM(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)   
+  XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)   
 ENDIF
 !---------------------------------------------------------------------------------
 END SUBROUTINE SET_MASS     

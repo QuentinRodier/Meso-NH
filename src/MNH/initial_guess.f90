@@ -4,18 +4,14 @@
 ! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !     #########################
       MODULE MODI_INITIAL_GUESS
 !     #########################
 !
 INTERFACE
 !
-      SUBROUTINE INITIAL_GUESS ( KRR, KSV, KTCOUNT,PRHODJ, KMI,                 &
-                         PUM, PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                         PTSTEP, PTSTEP_MET, PTSTEP_SV,                         &
-                         PRUS, PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,          &
-                         HMET_ADV_SCHEME,HSV_ADV_SCHEME, HUVW_ADV_SCHEME,       &
+      SUBROUTINE INITIAL_GUESS ( KRR, KSV, KTCOUNT,PRHODJ, KMI, PTSTEP,        &
+                         PRUS, PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,         &
                          PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT )
 !
 INTEGER,                  INTENT(IN)  :: KRR     ! Number of moist variables
@@ -26,29 +22,11 @@ INTEGER,                  INTENT(IN)  :: KMI     ! Model index
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! variables at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
-REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM      
-!
-REAL,                     INTENT(IN)  :: PTSTEP !  Double timestep except for
-                                                !  cold start (single)
-REAL,                     INTENT(IN)  :: PTSTEP_MET !  Effective time step for
-                                                ! meteorological scalar variables 
-                                                ! (depending on advection scheme)
-REAL,                     INTENT(IN)  :: PTSTEP_SV !  Effective time step for
-                                                ! tracer scalar variables 
-                                                ! (depending on advection scheme)
+REAL,                     INTENT(IN)  :: PTSTEP !  timestep 
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRUS, PRVS, PRWS         ! Source
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRRS, PRSVS              !  terms
-!
-! scalar meteorological advection scheme used
-CHARACTER(LEN=6),         INTENT(IN)  :: HMET_ADV_SCHEME 
-! scalar tracer advection scheme used
-CHARACTER(LEN=6),         INTENT(IN)  :: HSV_ADV_SCHEME 
-! advection scheme for momentum
-CHARACTER(LEN=6),         INTENT(IN)  :: HUVW_ADV_SCHEME 
 !
 ! variables at time t (needed for PPM schemes)
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUT, PVT, PWT
@@ -61,14 +39,9 @@ END INTERFACE
 !
 END MODULE MODI_INITIAL_GUESS 
 !
-!
-!
 !     #########################################################################
-      SUBROUTINE INITIAL_GUESS ( KRR, KSV, KTCOUNT,PRHODJ, KMI,                 &
-                         PUM, PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
-                         PTSTEP, PTSTEP_MET, PTSTEP_SV,                         &
-                         PRUS, PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,          &
-                         HMET_ADV_SCHEME,HSV_ADV_SCHEME, HUVW_ADV_SCHEME,       &
+      SUBROUTINE INITIAL_GUESS ( KRR, KSV, KTCOUNT,PRHODJ, KMI, PTSTEP,        &
+                         PRUS, PRVS, PRWS, PRTHS, PRRS, PRTKES, PRSVS,         &
                          PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT )
 !     #########################################################################
 !
@@ -166,6 +139,7 @@ END MODULE MODI_INITIAL_GUESS
 !!                  06/11/02 (V. Masson)    update the budget calls 
 !!                  20/05/06                Remove KEPS
 !!                  10/09    (C.Lac)        FIT for variables advected with PPM
+!!                  04/13    (C.Lac)        FIT for all variables 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -191,29 +165,12 @@ INTEGER,                  INTENT(IN)  :: KMI     ! Model index
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PRHODJ         ! (Rho) dry * Jacobian
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUM, PVM, PWM  ! Variables at t-dt 
-REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHM, PTKEM
-REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM, PSVM      
-!
-REAL,                     INTENT(IN)  :: PTSTEP !  Double timestep except for
-                                                !  cold start (single)
-REAL,                     INTENT(IN)  :: PTSTEP_MET !  Effective time step for
-                                                ! meteorological scalar variables 
-                                                ! (depending on advection scheme)
-REAL,                     INTENT(IN)  :: PTSTEP_SV !  Effective time step for
-                                                ! tracer scalar variables 
-                                                ! (depending on advection scheme)
+REAL,                     INTENT(IN)  :: PTSTEP !  timestep 
 !
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRUS, PRVS, PRWS         ! Source
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRTHS, PRTKES
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRRS, PRSVS  !  terms
 !
-! scalar meteorological advection scheme used
-CHARACTER(LEN=6),         INTENT(IN)  :: HMET_ADV_SCHEME 
-! scalar tracer advection scheme used
-CHARACTER(LEN=6),         INTENT(IN)  :: HSV_ADV_SCHEME 
-! advection scheme for momentum
-CHARACTER(LEN=6),         INTENT(IN)  :: HUVW_ADV_SCHEME 
 !
 ! variables at time t (needed for PPM schemes)
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PUT, PVT, PWT
@@ -224,7 +181,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRT, PSVT
 !
 INTEGER                               :: JRR, JSV
 INTEGER                               :: IKU
-REAL                                  :: ZINVTSTEP,ZINVTSTEP_MET,ZINVTSTEP_SV
+REAL                                  :: ZINVTSTEP
 !
 !-------------------------------------------------------------------------------
 !
@@ -233,63 +190,35 @@ IKU=SIZE(XZHAT)
 !   	        -----------------------------------------------
 !
 ZINVTSTEP = 1./PTSTEP                          
-ZINVTSTEP_MET = 1./PTSTEP_MET         
-ZINVTSTEP_SV = 1./PTSTEP_SV          
 !
 !
 !*       2.     COMPUTES THE FIRST SOURCE TERMS
 !   	        -------------------------------
 ! 
 ! *** momentum
-PRUS(:,:,:)   = PUM(:,:,:)  * ZINVTSTEP * MXM (PRHODJ)
-PRVS(:,:,:)   = PVM(:,:,:)  * ZINVTSTEP * MYM (PRHODJ)
-PRWS(:,:,:)   = PWM(:,:,:)  * ZINVTSTEP * MZM (1,IKU,1,PRHODJ)
+! forward-in-time time-marching scheme
+PRUS = PUT * ZINVTSTEP * MXM(PRHODJ)
+PRVS = PVT * ZINVTSTEP * MYM(PRHODJ)
+PRWS = PWT * ZINVTSTEP * MZM(1,IKU,1,PRHODJ)
 !
 ! *** meteorological variables
-IF (HMET_ADV_SCHEME(1:3) == 'PPM') THEN
 !
-   PRTHS(:,:,:) = PTHT(:,:,:) * ZINVTSTEP_MET * PRHODJ(:,:,:)
-!
-   IF (SIZE(PTKEM,1) /= 0) THEN 
-      PRTKES(:,:,:) = PTKET(:,:,:) * ZINVTSTEP_MET * PRHODJ(:,:,:)
-   END IF
-!
-! Case with KRR moist variables 
-   DO JRR=1,KRR
-      PRRS(:,:,:,JRR) = PRT(:,:,:,JRR) * ZINVTSTEP_MET * PRHODJ(:,:,:) 
-   END DO
-!
-ELSE ! other advection schemes
-!
-  PRTHS(:,:,:) = PTHM(:,:,:) * ZINVTSTEP_MET * PRHODJ(:,:,:)
-!
-  IF (SIZE(PTKEM,1) /= 0) THEN 
-    PRTKES(:,:,:) = PTKEM(:,:,:) * ZINVTSTEP_MET * PRHODJ(:,:,:)
-  END IF
-!
-! Case with KRR moist variables 
-  DO JRR=1,KRR
-    PRRS(:,:,:,JRR) = PRM(:,:,:,JRR) * ZINVTSTEP_MET * PRHODJ(:,:,:) 
-  END DO
-!
+PRTHS(:,:,:) = PTHT(:,:,:) * ZINVTSTEP * PRHODJ(:,:,:)
+IF (SIZE(PTKET,1) /= 0) THEN 
+  PRTKES(:,:,:) = PTKET(:,:,:) * ZINVTSTEP * PRHODJ(:,:,:)
 END IF
+!
+! Case with KRR moist variables 
+DO JRR=1,KRR
+  PRRS(:,:,:,JRR) = PRT(:,:,:,JRR) * ZINVTSTEP * PRHODJ(:,:,:) 
+END DO
 !
 ! *** passive tracers
-IF ( (HSV_ADV_SCHEME(1:3) == 'PPM') .OR. (HSV_ADV_SCHEME == '4TH_RK')) THEN
 !
 ! Case with KSV Scalar Variables
-   DO JSV=1,KSV
-      PRSVS(:,:,:,JSV) = PSVT(:,:,:,JSV) * ZINVTSTEP_SV * PRHODJ(:,:,:)
-   END DO
-!
-ELSE ! other advection schemes
-!
-   DO JSV=1,KSV
-     PRSVS(:,:,:,JSV) = PSVM(:,:,:,JSV) * ZINVTSTEP_SV * PRHODJ(:,:,:)
-   END DO
-!
-END IF
-!
+DO JSV=1,KSV
+  PRSVS(:,:,:,JSV) = PSVT(:,:,:,JSV) * ZINVTSTEP * PRHODJ(:,:,:)
+END DO
 !
 IF (LBU_ENABLE) THEN
   IF (LBU_BEG) THEN

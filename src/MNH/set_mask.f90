@@ -90,11 +90,11 @@ LBU_MASK(:,:,:)=.FALSE.
 ! Change the following lines to set the criterion for each of the NBUMASK masks
 ! 
 ! 1st mask on vertical velocity at level k=10
-LBU_MASK(IIB:IIE,IJB:IJE,1)=FIELD_MODEL(NBUMOD)%XWM(IIB:IIE,IJB:IJE,10)>0.
+LBU_MASK(IIB:IIE,IJB:IJE,1)=FIELD_MODEL(NBUMOD)%XWT(IIB:IIE,IJB:IJE,10)>0.
 !
 !2rd mask on rain mixing ratio at level k=2
 IF (NBUMASK>=2) &
-  LBU_MASK(IIB:IIE,IJB:IJE,2)=FIELD_MODEL(NBUMOD)%XRM(IIB:IIE,IJB:IJE,2,3)>1.E-8
+  LBU_MASK(IIB:IIE,IJB:IJE,2)=FIELD_MODEL(NBUMOD)%XRT(IIB:IIE,IJB:IJE,2,3)>1.E-8
 !
 !==============================================================================
 !

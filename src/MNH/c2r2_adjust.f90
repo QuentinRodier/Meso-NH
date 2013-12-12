@@ -12,7 +12,7 @@ INTERFACE
 !
       SUBROUTINE C2R2_ADJUST(KRR, HFMFILE, HLUOUT, HRAD,                  &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
-                             PRHODJ, PPABSM, PSIGS, PPABST,               &
+                             PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
                              PCCS, PSRCS, PCLDFR, PRRS )
          !
@@ -31,7 +31,6 @@ REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
                                                    ! (single if cold start)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
 !
@@ -55,7 +54,7 @@ END MODULE MODI_C2R2_ADJUST
 !     ##########################################################################
       SUBROUTINE C2R2_ADJUST(KRR, HFMFILE, HLUOUT, HRAD,                  &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
-                             PRHODJ, PPABSM, PSIGS, PPABST,               &
+                             PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
                              PCCS, PSRCS, PCLDFR, PRRS )
 !     ##########################################################################
@@ -183,7 +182,6 @@ REAL,                     INTENT(IN)    :: PTSTEP   ! Double Time step
                                                    ! (single if cold start)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t     
 !
@@ -267,7 +265,7 @@ END WHERE
 !
 !*       2.2    estimate the Exner function at t+1
 !
-ZEXNS(:,:,:) = ( (2. * PPABST(:,:,:) - PPABSM(:,:,:)) / XP00 ) ** (XRD/XCPD)  
+ZEXNS(:,:,:) = (  PPABST(:,:,:)  / XP00 ) ** (XRD/XCPD)  
 !
 !    beginning of the iterative loop
 !
@@ -298,7 +296,7 @@ DO JITER =1,ITERMAX
 !*       2.7    compute the saturation mixing ratio at t+1
 !
   ZW2(:,:,:) =  ZW1(:,:,:) * ZEPS /              &
-                ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW1(:,:,:) )   
+                ( PPABST(:,:,:) - ZW1(:,:,:) )   
 !
 !*       2.8    compute the saturation mixing ratio derivative (rvs')
 !

@@ -232,8 +232,7 @@ CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, X_LES_BU_SBG_Tke(:,NLES_ADV
 !*      4.   Advection by resolved flow
 !            --------------------------
 !
-X_LES_BU_SBG_Tke(:,NLES_ADVR) = X_LES_BU_SBG_Tke(:,NLES_TOTADVH) &
-                              + X_LES_BU_SBG_Tke(:,NLES_TOTADVV) &
+X_LES_BU_SBG_Tke(:,NLES_ADVR) = X_LES_BU_SBG_Tke(:,NLES_TOTADV) &
                               - X_LES_BU_SBG_Tke(:,NLES_ADVM)
 !
 !-------------------------------------------------------------------------------
@@ -241,46 +240,38 @@ X_LES_BU_SBG_Tke(:,NLES_ADVR) = X_LES_BU_SBG_Tke(:,NLES_TOTADVH) &
 !*      5.   Turbulent transport
 !            -------------------
 !
-X_LES_BU_RES_Ke(:,NLES_TR  ) = X_LES_BU_RES_Ke(:,NLES_TOTADVH) &
-                             + X_LES_BU_RES_Ke(:,NLES_TOTADVV) &
+X_LES_BU_RES_Ke(:,NLES_TR  ) = X_LES_BU_RES_Ke(:,NLES_TOTADV) &
                              - X_LES_BU_RES_Ke(:,NLES_ADVM)    &
                              - X_LES_BU_RES_Ke(:,NLES_DP)
 !
-X_LES_BU_RES_Thl2(:,NLES_TR  ) = X_LES_BU_RES_Thl2(:,NLES_TOTADVH) &
-                               + X_LES_BU_RES_Thl2(:,NLES_TOTADVV) &
+X_LES_BU_RES_Thl2(:,NLES_TR  ) = X_LES_BU_RES_Thl2(:,NLES_TOTADV) &
                                - X_LES_BU_RES_Thl2(:,NLES_ADVM)    &
                                - X_LES_BU_RES_Thl2(:,NLES_DP)
 !
-X_LES_BU_RES_WThl(:,NLES_TR  ) = X_LES_BU_RES_WThl(:,NLES_TOTADVH) &
-                               + X_LES_BU_RES_WThl(:,NLES_TOTADVV) &
+X_LES_BU_RES_WThl(:,NLES_TR  ) = X_LES_BU_RES_WThl(:,NLES_TOTADV) &
                                - X_LES_BU_RES_WThl(:,NLES_ADVM)    &
                                - X_LES_BU_RES_WThl(:,NLES_DP)
 !
 IF (OUSERV) THEN
-  X_LES_BU_RES_Rt2(:,NLES_TR  ) = X_LES_BU_RES_Rt2(:,NLES_TOTADVH) &
-                                + X_LES_BU_RES_Rt2(:,NLES_TOTADVV) &
+  X_LES_BU_RES_Rt2(:,NLES_TR  ) = X_LES_BU_RES_Rt2(:,NLES_TOTADV) &
                                 - X_LES_BU_RES_Rt2(:,NLES_ADVM)    &
                                 - X_LES_BU_RES_Rt2(:,NLES_DP)
   !
-  X_LES_BU_RES_WRt(:,NLES_TR  ) = X_LES_BU_RES_WRt(:,NLES_TOTADVH) &
-                                + X_LES_BU_RES_WRt(:,NLES_TOTADVV) &
+  X_LES_BU_RES_WRt(:,NLES_TR  ) = X_LES_BU_RES_WRt(:,NLES_TOTADV) &
                                 - X_LES_BU_RES_WRt(:,NLES_ADVM)    &
                                 - X_LES_BU_RES_WRt(:,NLES_DP)
   !
-  X_LES_BU_RES_ThlRt(:,NLES_TR) = X_LES_BU_RES_ThlRt(:,NLES_TOTADVH) &
-                                + X_LES_BU_RES_ThlRt(:,NLES_TOTADVV) &
+  X_LES_BU_RES_ThlRt(:,NLES_TR) = X_LES_BU_RES_ThlRt(:,NLES_TOTADV) &
                                 - X_LES_BU_RES_ThlRt(:,NLES_ADVM)    &
                                 - X_LES_BU_RES_ThlRt(:,NLES_DP)
 END IF
 !
 DO JSV=1,NSV
-  X_LES_BU_RES_Sv2(:,NLES_TR  ,JSV) = X_LES_BU_RES_Sv2(:,NLES_TOTADVH,JSV) &
-                                    + X_LES_BU_RES_Sv2(:,NLES_TOTADVV,JSV) &
+  X_LES_BU_RES_Sv2(:,NLES_TR  ,JSV) = X_LES_BU_RES_Sv2(:,NLES_TOTADV,JSV) &
                                     - X_LES_BU_RES_Sv2(:,NLES_ADVM,JSV)    &
                                     - X_LES_BU_RES_Sv2(:,NLES_DP,JSV)
   !
-  X_LES_BU_RES_WSv(:,NLES_TR  ,JSV) = X_LES_BU_RES_WSv(:,NLES_TOTADVH,JSV) &
-                                    + X_LES_BU_RES_WSv(:,NLES_TOTADVV,JSV) &
+  X_LES_BU_RES_WSv(:,NLES_TR  ,JSV) = X_LES_BU_RES_WSv(:,NLES_TOTADV,JSV) &
                                     - X_LES_BU_RES_WSv(:,NLES_ADVM,JSV)    &
                                     - X_LES_BU_RES_WSv(:,NLES_DP,JSV)
 END DO

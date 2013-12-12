@@ -7,7 +7,7 @@ INTERFACE
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
                 OCLOSE_OUT,OMF_FLX,HFMFILE,HLUOUT,PTIME_LES,          &
-                PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,              &
+                PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
@@ -40,8 +40,6 @@ CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
 REAL*8,DIMENSION(2),                  INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
 REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -76,7 +74,7 @@ END MODULE MODI_SHALLOW_MF_PACK
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
                 OCLOSE_OUT,OMF_FLX,HFMFILE,HLUOUT,PTIME_LES,          &
-                PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,              &
+                PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
@@ -155,8 +153,6 @@ CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
 REAL*8,DIMENSION(2),                   INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
 REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -303,7 +299,7 @@ ZSFRV(:)=RESHAPE(PSFRV(:,:),(/ IIU*IJU /) )
 CALL SHALLOW_MF(1,IKU,1,KRR,KRRL,KRRI,                              &
                 HMF_UPDRAFT, HMF_CLOUD, 'T', OMIXUV,                  &
                 LNOMIXLG,NSV_LGBEG,NSV_LGEND,                         &
-                PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,              &
+                PIMPL_MF, PTSTEP,                                     &
                 ZDZZ, ZZZ,                                            &
                 ZRHODJ,ZRHODREF,                                      &
                 ZPABSM, ZEXN,                                         &

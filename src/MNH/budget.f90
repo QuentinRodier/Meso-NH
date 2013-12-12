@@ -85,7 +85,8 @@ END MODULE MODI_BUDGET
 USE MODD_BUDGET
 USE MODD_LUNIT
 !USE MODD_CONF_n
-USE MODD_NSV, ONLY : NSV
+USE MODD_CONF, ONLY : LCHECK
+USE MODD_NSV,  ONLY : NSV
 USE MODD_LES
 !
 USE MODE_FM
@@ -94,6 +95,8 @@ USE MODE_IO_ll
 USE MODI_LES_BUDGET
 USE MODI_CART_COMPRESS
 USE MODI_MASK_COMPRESS
+!
+USE MODE_MPPDB
 !
 USE MODI_SECOND_MNH
 !
@@ -114,7 +117,19 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 REAL     :: ZTIME1  ! CPU time counter
 REAL     :: ZTIME2  ! CPU time counter
 !
+REAL     :: XPRECISION ! for reproductibility checks
+
 !-------------------------------------------------------------------------------
+!
+!* Reproductivity checks
+!  Warning: requires an adaptation of the makefile in order to run two runs in
+!  parallel for comparison
+!
+XPRECISION = 1E-10
+IF (LCHECK) THEN
+  CALL MPPDB_CHECK3D(PVARS,HBUVAR,XPRECISION)
+END IF
+!
 !
 !* call to LES budgets
 !

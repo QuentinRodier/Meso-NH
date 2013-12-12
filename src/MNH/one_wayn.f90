@@ -319,7 +319,7 @@ GVERT_INTERP=.TRUE.
 ZJ(:,:,:)   =0.
 ZRHOD(:,:,:)=0.
 !
-IRR=MIN(SIZE(XRM,4),SIZE(PLBXRM,4))
+IRR=MIN(SIZE(XRT,4),SIZE(PLBXRM,4))
 ISV_USER=MIN(NSV_USER_A(KDAD),NSV_USER_A(KMI))
 !
 IF (LWEST_ll() .AND. LEAST_ll()) THEN
@@ -822,14 +822,14 @@ IF(.NOT. OSTEADY_DMASS) THEN
 !
 !*       4.5 segment beginning (we have first to recover the dry mass at T-DT)
 !
-    IF(SIZE(XRM,4) == 0) THEN
+    IF(SIZE(XRT,4) == 0) THEN
                           ! dry air case
 !                           ------------
-      ZRHOD(:,:,:) = XPABSM(:,:,:)/(XPABSM(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHM(:,:,:))
+      ZRHOD(:,:,:) = XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHT(:,:,:))
     ELSE                  ! moist air case
 !                           --------------
-      ZRHOD(:,:,:) = XPABSM(:,:,:)/(XPABSM(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHM(:,:,:) &
-                                                       *(1.+ZRV_O_RD*XRM(:,:,:,1)))
+      ZRHOD(:,:,:) = XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**ZRD_O_CPD/(XRD*XTHT(:,:,:) &
+                                                       *(1.+ZRV_O_RD*XRT(:,:,:,1)))
     ENDIF
 !
 !

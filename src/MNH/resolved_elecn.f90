@@ -3,18 +3,18 @@
 !     ###########################
 !
 INTERFACE
-      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                     &
-                                  KRR, KSPLITR, KMI, KTCOUNT, HUVW_ADV_SCHEME,   &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM, &
+      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
+                                  KRR, KSPLITR, KMI, KTCOUNT,                             &
+                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,   &
-                                  PTSTEP_MET, PZZ, PRHODJ, PRHODREF, PEXNREF,    &
-                                  PPABSM, PPABST, PTHM, PTHT, PTHS, PWT,         & 
-                                  PRM, PRT, PRS, PSVM, PSVT, PSVS, PCIT,         & 
-                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF, &
-                                  PRI_MF, OSEDIC, OWARM,                         &
-                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,             &
-                                  PINPRS, PINPRG, PINPRH,                        &
-                                  PSEA, PTOWN                                    )   
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
+                                  PPABST, PTHT, PTHS, PWT,                                & 
+                                  PRT, PRS, PSVT, PSVS, PCIT,                             & 
+                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF,          &
+                                  PRI_MF, OSEDIC, OWARM,                                  &
+                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,                      &
+                                  PINPRS, PINPRG, PINPRH,                                 &
+                                  PSEA, PTOWN                                             )   
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
 CHARACTER(LEN=4),         INTENT(IN)   :: HSCONV   ! Shallow convection scheme
@@ -24,7 +24,6 @@ INTEGER,                  INTENT(IN)   :: KSPLITR  ! Number of small time step
                                        ! integrations for  rain sedimendation
 INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
-CHARACTER(LEN=6),         INTENT(IN)   :: HUVW_ADV_SCHEME
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
@@ -41,7 +40,7 @@ LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
                                         ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP_MET ! Double Time step
+REAL,                     INTENT(IN)   :: PTSTEP ! Double Time step
                                                    ! (single if cold start)
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PZZ     ! Height (z)
@@ -49,18 +48,14 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODJ  !Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)   :: PRM     ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM  ! Scalar variable at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
@@ -98,20 +93,20 @@ END SUBROUTINE RESOLVED_ELEC_n
 END INTERFACE
 END MODULE MODI_RESOLVED_ELEC_n
 !
-!     ############################################################################
-      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                     &
-                                  KRR, KSPLITR, KMI, KTCOUNT, HUVW_ADV_SCHEME,   &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM, &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS,PSIGQSAT,  HSUBG_AUCV,   &
-                                  PTSTEP_MET, PZZ, PRHODJ, PRHODREF, PEXNREF,    &
-                                  PPABSM, PPABST, PTHM, PTHT, PTHS, PWT,         & 
-                                  PRM, PRT, PRS, PSVM, PSVT, PSVS, PCIT,         & 
-                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF, &
-                                  PRI_MF, OSEDIC, OWARM,                         &
-                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,             &
-                                  PINPRS, PINPRG, PINPRH,                        &
-                                  PSEA, PTOWN                                    )
-!     ############################################################################
+!     #####################################################################################
+      SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
+                                  KRR, KSPLITR, KMI, KTCOUNT,                             &
+                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
+                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,   &
+                                  PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
+                                  PPABST, PTHT, PTHS, PWT,                                & 
+                                  PRT, PRS, PSVT, PSVS, PCIT,                             & 
+                                  PSIGS, PSRCS, PCLDFR, PMFCONV, PCF_MF, PRC_MF,          &
+                                  PRI_MF, OSEDIC, OWARM,                                  &
+                                  PINPRC, PINPRR, PINPRR3D, PEVAP3D,                      &
+                                  PINPRS, PINPRG, PINPRH,                                 &
+                                  PSEA, PTOWN                                             )   
+!     #####################################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -219,7 +214,6 @@ INTEGER,                  INTENT(IN)   :: KSPLITR  ! Number of small time step
                                        ! integrations for  ice  sedimendation
 INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
-CHARACTER(LEN=6),         INTENT(IN)   :: HUVW_ADV_SCHEME
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
@@ -236,7 +230,7 @@ LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
 REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat variance contribution
 CHARACTER(LEN=4),         INTENT(IN)   :: HSUBG_AUCV
                                         ! Kind of Subgrid autoconversion method
-REAL,                     INTENT(IN)   :: PTSTEP_MET   ! Double Time step
+REAL,                     INTENT(IN)   :: PTSTEP   ! Double Time step
                                                    ! (single if cold start)
 !
 !
@@ -246,11 +240,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRHODREF! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PEXNREF ! Reference Exner function
 !
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTHT    ! Theta at time t
-REAL, DIMENSION(:,:,:,:), INTENT(IN)   :: PRM     ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PRT     ! Moist variables at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
@@ -258,7 +249,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PMFCONV ! convective mass flux
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM  ! Scalar variable at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS  ! Scalar variable sources
 !
@@ -459,7 +449,7 @@ ZEXN(:,:,:) = (PPABST(:,:,:) / XP00)**(XRD / XCPD)
 ZT(:,:,:)   = PTHT(:,:,:) * ZEXN(:,:,:)
 ZLV(:,:,:)  = XLVTT + (XCPV - XCL) * (ZT(:,:,:) - XTT)
 ZLS(:,:,:)  = XLSTT + (XCPV - XCI) * (ZT(:,:,:) - XTT)
-ZCPH(:,:,:) = XCPD + XCPV * PTSTEP_MET * PRS(:,:,:,1)
+ZCPH(:,:,:) = XCPD + XCPV * PTSTEP * PRS(:,:,:,1)
 !
 !
 !------------------------------------------------------------------------------
@@ -644,7 +634,7 @@ CALL MYPROC_ELEC_ll (IPROC)
 !          of the positive and negative ions, respectively
 
 CALL ION_DRIFT(ZCPH, ZCOR, PSVT, PRHODREF, PRHODJ, HLBCX, HLBCY,            &
-               KTCOUNT, PTSTEP_MET, CDRIFT, HUVW_ADV_SCHEME )
+               KTCOUNT, PTSTEP, CDRIFT)
 
 PSVS(:,:,:,NSV_ELECBEG) = PSVS(:,:,:,NSV_ELECBEG) + ZCPH(:,:,:)/PRHODJ(:,:,:)
 PSVS(:,:,:,NSV_ELECEND) = PSVS(:,:,:,NSV_ELECEND) + ZCOR(:,:,:)/PRHODJ(:,:,:)
@@ -669,12 +659,10 @@ SELECT CASE (HCLOUD)
 !*              the explicit charging rates
 !
     CALL RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
-                        KSPLITR, PTSTEP_MET, KMI, KRR,                        &
+                        KSPLITR, PTSTEP, KMI, KRR,                            &
                         PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRM(:,:,:,2),       &
-                        PRT(:,:,:,3), PRM(:,:,:,3),                           &
-                        PRT(:,:,:,4), PRT(:,:,:,5), PRM(:,:,:,5),             &
-                        PRT(:,:,:,6), PRM(:,:,:,6),                           &
+                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),       &
+                        PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),             &
                         PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                         PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                         PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
@@ -695,8 +683,8 @@ SELECT CASE (HCLOUD)
     ZZZ = MZF(1,IKU,1, PZZ )
     CALL ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
                           HSCONV, HMF_CLOUD,                                  &
-                          OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP_MET,PSIGQSAT,&
-                          PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, ZZZ,        &
+                          OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,   &
+                          PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
                           PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    &
                           PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &
                           PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),               &
@@ -732,12 +720,10 @@ SELECT CASE (HCLOUD)
   CASE ('ICE4')
 !
     CALL RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
-                        KSPLITR, PTSTEP_MET, KMI, KRR,                        &
+                        KSPLITR, PTSTEP, KMI, KRR,                            &
                         PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRM(:,:,:,2),       &
-                        PRT(:,:,:,3), PRM(:,:,:,3),                           &
-                        PRT(:,:,:,4), PRT(:,:,:,5), PRM(:,:,:,5),             &
-                        PRT(:,:,:,6), PRM(:,:,:,6),                           &
+                        PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),       &
+                        PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),             &
                         PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                         PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                         PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
@@ -751,9 +737,8 @@ SELECT CASE (HCLOUD)
                         PSVS(:,:,:,NSV_ELECBEG+4), PSVS(:,:,:,NSV_ELECBEG+5), &
                         PSVS(:,:,:,NSV_ELECEND),          &
                         PSEA, PTOWN,                   &
-                        PRT(:,:,:,7), PRM(:,:,:,7), PRS(:,:,:,7), PINPRH,     &
-                        PSVT(:,:,:,NSV_ELECBEG+6), PSVM(:,:,:,NSV_ELECBEG+6), &
-                        PSVS(:,:,:,NSV_ELECBEG+6)                             )
+                        PRT(:,:,:,7), PRS(:,:,:,7), PINPRH,                   &
+                        PSVT(:,:,:,NSV_ELECBEG+6), PSVS(:,:,:,NSV_ELECBEG+6)  )
 ! Index NSV_ELECBEG: Positive ion , NSV_ELECEND: Negative ion
 !
 !
@@ -762,8 +747,8 @@ SELECT CASE (HCLOUD)
     ZZZ = MZF(1,IKU,1, PZZ )
     CALL ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,                    &
                           HTURBDIM, HSCONV, HMF_CLOUD,                        &
-                          OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP_MET,PSIGQSAT,&
-                          PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, ZZZ,        &
+                          OCLOSE_OUT,OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,    &
+                          PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
                           PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    & 
                           PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &
                           PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),               &
@@ -803,7 +788,7 @@ IF(KTCOUNT .EQ. 1 .AND. IPROC.EQ.0) PRINT *,'KSPLITR=', KSPLITR
 !
 PTHS(:,:,:) = PTHS(:,:,:) * PRHODJ(:,:,:)
 !
-DO JRR = 1, KRR
+DO JRR = 1,KRR
   PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) * PRHODJ(:,:,:)
 END DO
 !
@@ -823,12 +808,12 @@ GATTACH(:,:,:) = .FALSE.
 GATTACH(IIB:IIE, IJB:IJE, IKB:IKE) = .TRUE.
 !
 IF (PRESENT(PSEA)) THEN
-   CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP_MET, PRHODREF,               &
+   CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
                         PRHODJ, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),      & 
                         PRS, PTHT, PCIT, PPABST, XEFIELDU,                &
                         XEFIELDV, XEFIELDW, GATTACH, PTOWN, PSEA          )
 ELSE
-   CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP_MET, PRHODREF,                   &
+   CALL ION_ATTACH_ELEC(KTCOUNT, KRR, PTSTEP, PRHODREF,                   &
                         PRHODJ, PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),      &
                         PRS, PTHT, PCIT, PPABST, XEFIELDU,                &
                         XEFIELDV, XEFIELDW, GATTACH                       )
@@ -954,7 +939,7 @@ END IF
 IF ((.NOT. LOCG) .AND. LELEC_FIELD .AND.  MAX_ll(ABS(ZQTOT),IINFO_ll)>0.) THEN
   IF (PRESENT(PSEA)) THEN
     IF (LFLASH_GEOM) THEN
-      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP_MET, PRHODJ, PRHODREF, &
+      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP, PRHODJ, PRHODREF, &
                               PRT, PCIT,                                  &
                               PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),        &
                               PRS, PTHT, PPABST,                          & 
@@ -966,7 +951,7 @@ IF ((.NOT. LOCG) .AND. LELEC_FIELD .AND.  MAX_ll(ABS(ZQTOT),IINFO_ll)>0.) THEN
     END IF 
   ELSE
     IF (LFLASH_GEOM) THEN
-      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP_MET, PRHODJ, PRHODREF, &
+      CALL FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP, PRHODJ, PRHODREF,     &
                               PRT, PCIT,                                  &
                               PSVS(:,:,:,NSV_ELECBEG:NSV_ELECEND),        &
                               PRS, PTHT, PPABST,                          & 
@@ -1000,9 +985,9 @@ END IF
 !               ---------------------------
 !
 IF (LSERIES_ELEC) THEN
-  CALL SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP_MET,            &
+  CALL SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
                           PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                          PRM, PRT, PRS, PSVT,            &
+                          PRT, PRS, PSVT,                 &
                           PTHT, PWT, PPABST, PCIT, PINPRR  )
 END IF
 !

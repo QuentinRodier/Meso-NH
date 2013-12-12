@@ -11,12 +11,9 @@ MODULE MODI_LES_INI_TIMESTEP_n
 !
 INTERFACE LES_INI_TIMESTEP_n
 !
-      SUBROUTINE LES_INI_TIMESTEP_n(KTCOUNT,PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV)
+      SUBROUTINE LES_INI_TIMESTEP_n(KTCOUNT)
 !
 INTEGER, INTENT(IN) :: KTCOUNT ! current model time-step
-REAL,    INTENT(IN) :: PTSTEP_UVW ! leap-frog  time-step
-REAL,    INTENT(IN) :: PTSTEP_MET ! forward-in-time  time-step
-REAL,    INTENT(IN) :: PTSTEP_SV  ! forward-in-time  time-step
 !
 END SUBROUTINE LES_INI_TIMESTEP_n
 !
@@ -25,7 +22,7 @@ END INTERFACE
 END MODULE MODI_LES_INI_TIMESTEP_n
 
 !     ##############################
-      SUBROUTINE  LES_INI_TIMESTEP_n(KTCOUNT,PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV)
+      SUBROUTINE  LES_INI_TIMESTEP_n(KTCOUNT)
 !     ##############################
 !
 !
@@ -90,9 +87,6 @@ IMPLICIT NONE
 !
 !
 INTEGER, INTENT(IN) :: KTCOUNT ! current model time-step
-REAL,    INTENT(IN) :: PTSTEP_UVW ! leap-frog  time-step
-REAL,    INTENT(IN) :: PTSTEP_MET ! forward-in-time  time-step
-REAL,    INTENT(IN) :: PTSTEP_SV  ! forward-in-time  time-step
 !
 !
 !       0.2  declaration of local variables
@@ -170,11 +164,9 @@ XLES_DATIME(16,NLES_TCOUNT) = TDTCUR%TIME
 !
 XLES_TRAJT(NLES_TCOUNT,1) = (KTCOUNT-1) * XTSTEP
 !
-!* time-step
+!* forward-in-time time-step
 !
-XCURRENT_TSTEP_UVW = PTSTEP_UVW 
-XCURRENT_TSTEP_MET = PTSTEP_MET 
-XCURRENT_TSTEP_SV  = PTSTEP_SV  
+XCURRENT_TSTEP = XTSTEP
 !
 !-------------------------------------------------------------------------------
 !
@@ -187,7 +179,7 @@ IJB_ll=IYOR_ll+IJB-1
 IIE_ll=IXOR_ll+IIE-1
 IJE_ll=IYOR_ll+IJE-1
 !
-IKU = SIZE(XTHM,3)
+IKU = SIZE(XTHT,3)
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
@@ -250,37 +242,37 @@ IF (LUSERC) THEN
   !
   !* Exner function
   !
-  ZEXN(:,:,:) = (XPABSM/XP00)**(XRD/XCPD)
+  ZEXN(:,:,:) = (XPABST/XP00)**(XRD/XCPD)
   !
   !* Latent heat of vaporization
   !
-  ZL(:,:,:) = XLVTT + (XCPD-XCL) * (XTHM(:,:,:)*ZEXN(:,:,:)-XTT)
+  ZL(:,:,:) = XLVTT + (XCPD-XCL) * (XTHT(:,:,:)*ZEXN(:,:,:)-XTT)
   !
   !* heat capacity at constant pressure of the humid air
   !
   ZCP(:,:,:) = XCPD
   IRR=2
-  ZCP(:,:,:) = ZCP(:,:,:) + XCPV * XRM(:,:,:,1)
-  ZCP(:,:,:) = ZCP(:,:,:) + XCL  * XRM(:,:,:,2)
+  ZCP(:,:,:) = ZCP(:,:,:) + XCPV * XRT(:,:,:,1)
+  ZCP(:,:,:) = ZCP(:,:,:) + XCL  * XRT(:,:,:,2)
   IF (LUSERR) THEN
     IRR=IRR+1
-    ZCP(:,:,:) = ZCP(:,:,:) + XCL  * XRM(:,:,:,IRR)
+    ZCP(:,:,:) = ZCP(:,:,:) + XCL  * XRT(:,:,:,IRR)
   END IF
   IF (LUSERI) THEN
     IRR=IRR+1
-    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRM(:,:,:,IRR)
+    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRT(:,:,:,IRR)
   END IF
   IF (LUSERS) THEN
     IRR=IRR+1
-    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRM(:,:,:,IRR)
+    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRT(:,:,:,IRR)
   END IF
   IF (LUSERG) THEN
     IRR=IRR+1
-    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRM(:,:,:,IRR)
+    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRT(:,:,:,IRR)
   END IF
   IF (LUSERH) THEN
     IRR=IRR+1
-    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRM(:,:,:,IRR)
+    ZCP(:,:,:) = ZCP(:,:,:) + XCI  * XRT(:,:,:,IRR)
   END IF
   !
   !* L / (Exn * Cp)
@@ -373,19 +365,19 @@ ALLOCATE(ZRT (IIU,IJU,IKU))
 CALL THL_RT_FROM_TH_R(LUSERV, LUSERC, LUSERR,             &
                       LUSERI, LUSERS, LUSERG, LUSERH,     &
                       XCURRENT_L_O_EXN_CP,                &
-                      XTHM, XRM,                          &
+                      XTHT, XRT,                          &
                       ZTHL, ZRT                           )
 !
 !*      4.2  anomaly fields on the LES grid
 !            ------------------------------
 !
-CALL LES_ANOMALY_FIELD(MXF(XUM),XU_ANOM)
-CALL LES_ANOMALY_FIELD(MYF(XVM),XV_ANOM)
-CALL LES_ANOMALY_FIELD(MZF(1,IKU,1,XWM),XW_ANOM)
+CALL LES_ANOMALY_FIELD(MXF(XUT),XU_ANOM)
+CALL LES_ANOMALY_FIELD(MYF(XVT),XV_ANOM)
+CALL LES_ANOMALY_FIELD(MZF(1,IKU,1,XWT),XW_ANOM)
 CALL LES_ANOMALY_FIELD(ZTHL,XTHL_ANOM)
 IF (LUSERV) CALL LES_ANOMALY_FIELD(ZRT,XRT_ANOM)
 DO JSV=1,NSV
-  CALL LES_ANOMALY_FIELD(XSVM(:,:,:,JSV),XSV_ANOM(:,:,:,JSV))
+  CALL LES_ANOMALY_FIELD(XSVT(:,:,:,JSV),XSV_ANOM(:,:,:,JSV))
 END DO
 !
 !-------------------------------------------------------------------------------

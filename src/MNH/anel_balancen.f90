@@ -10,13 +10,9 @@
 !
 INTERFACE
 !
-SUBROUTINE ANEL_BALANCE_n(OINST,PRESIDUAL)
+SUBROUTINE ANEL_BALANCE_n(PRESIDUAL)
 !
-CHARACTER (LEN=1), INTENT(IN)  :: OINST      ! selected instant to enforce the
-                                             ! anelastic constraint
-!JUAN
 REAL, OPTIONAL                 :: PRESIDUAL
-!JUAN
 END SUBROUTINE ANEL_BALANCE_n
 !
 END INTERFACE
@@ -26,7 +22,8 @@ END MODULE MODI_ANEL_BALANCE_n
 !
 !
 !     ################################
-      SUBROUTINE ANEL_BALANCE_n(OINST,PRESIDUAL)
+      SUBROUTINE ANEL_BALANCE_n(PRESIDUAL)
+!
 !     ################################
 !
 !
@@ -128,26 +125,17 @@ USE MODD_DYN_n
 USE MODD_LBC_n
 USE MODD_LUNIT_n
 !
-! interface modules
-!JUANZ
-!USE MODI_TRID
-USE MODI_TRIDZ
-!USE MODI_PRESSURE
+USE MODI_TRIDZ    ! interface modules
 USE MODI_PRESSUREZ
 USE MODE_SPLITTINGZ_ll
-!JUANZ
 USE MODI_SHUMAN
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments :
 !
-!
-CHARACTER (LEN=1), INTENT(IN)  :: OINST      ! selected instant to enforce the
-                                             ! anelastic constraint
-!JUAN
 REAL, OPTIONAL                 :: PRESIDUAL
-!JUAN
+!
 !
 !*       0.2   Declarations of local variables :
 !
@@ -170,8 +158,8 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZTRIGSY   ! the FFT in x and y directions
 INTEGER, DIMENSION(19)            :: IIFAXX    ! decomposition in prime numbers
 INTEGER, DIMENSION(19)            :: IIFAXY    ! for the FFT in x and y
                                                ! directions
-REAL, DIMENSION(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)) :: ZPABSM,ZPABST
-                                               ! Potential at time t-dt  and t
+REAL, DIMENSION(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)) :: ZPABST
+                                               ! Potential at time t
 REAL, DIMENSION(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)) :: ZRU,ZRV,ZRW
                                                ! Rhod * (U,V,W)
 REAL, DIMENSION(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)) :: ZTH
@@ -236,26 +224,12 @@ CALL TRIDZ(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
 !
 !*       3.1     multiplication by RHODJ
 !
-IF (OINST == 'T') THEN
-  ZRU(:,:,:) = MXM(XRHODJ) * XUT(:,:,:)
-  ZRV(:,:,:) = MYM(XRHODJ) * XVT(:,:,:)
-  ZRW(:,:,:) = MZM(1,IKU,1,XRHODJ) * XWT(:,:,:)
-  ZTH(:,:,:) = XTHT(:,:,:)
-  ALLOCATE(ZRR(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),SIZE(XRT,4)))
-  ZRR(:,:,:,:) = XRT(:,:,:,:)
-ELSEIF (OINST == 'M') THEN
-  ZRU(:,:,:) = MXM(XRHODJ) * XUM(:,:,:)
-  ZRV(:,:,:) = MYM(XRHODJ) * XVM(:,:,:)
-  ZRW(:,:,:) = MZM(1,IKU,1,XRHODJ) * XWM(:,:,:)
-  ZTH(:,:,:) = XTHM(:,:,:)
-  ALLOCATE(ZRR(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),SIZE(XRM,4)))
-  ZRR(:,:,:,:) = XRM(:,:,:,:)
-ELSE
-!callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
-END IF
+ZRU(:,:,:) = MXM(XRHODJ) * XUT(:,:,:)
+ZRV(:,:,:) = MYM(XRHODJ) * XVT(:,:,:)
+ZRW(:,:,:) = MZM(1,IKU,1,XRHODJ) * XWT(:,:,:)
+ZTH(:,:,:) = XTHT(:,:,:)
+ALLOCATE(ZRR(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),SIZE(XRT,4)))
+ZRR(:,:,:,:) = XRT(:,:,:,:)
 !
 !
 !
@@ -263,7 +237,7 @@ END IF
 !*       3.2     satisfy the anelastic constraint
 !
 ITCOUNT      =-1     ! no first guess of the pressure is available
-ZPABSM(:,:,:)= 0.    !       ==================CAUTION=====================
+ZPABST(:,:,:)= 0.    !       ==================CAUTION=====================
 ZDRYMASST    = 0.    !      |   Initialization necessary for the           |
 ZREFMASS     = 0.    !      |  computation of the absolute pressure,       |
 ZMASS_O_PHI0 = 1.    !      |  which is here not needed                    |
@@ -274,29 +248,21 @@ GCLOSE_OUT=.FALSE.
 YFMFILE='UNUSED'
 !
 IMI = GET_CURRENT_MODEL_INDEX()
-CALL PRESSUREZ(CLUOUT,                            &
+CALL PRESSUREZ(CLUOUT,                                               &
               CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,ITCOUNT,XRELAX,IMI,  &
               XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,ZDXHATM,ZDYHATM,ZRHOM, &
-              ZAF,ZBFY,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,ZPABSM,     &
+              ZAF,ZBFY,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,            &
               IRR,IRRL,IRRI,ZDRYMASST,ZREFMASS,ZMASS_O_PHI0,         &
               ZTH,ZRR,XRHODREF,XTHVREF,XRVREF,XEXNREF, XLINMASS,     &
               ZRU,ZRV,ZRW,ZPABST,                                    &
-              ZBFB,                                                  &
-              ZBF_SXP2_YP1_Z,                                        &
-              PRESIDUAL                   )
+              ZBFB,ZBF_SXP2_YP1_Z,PRESIDUAL                          )
 !
 DEALLOCATE(ZBFY,ZTRIGSX,ZTRIGSY,ZRR,ZBF_SXP2_YP1_Z)
 !*       3.2     return to the historical variables
 !
-IF (OINST == 'T') THEN
-  XUT(:,:,:) = ZRU(:,:,:) / MXM(XRHODJ)
-  XVT(:,:,:) = ZRV(:,:,:) / MYM(XRHODJ)
-  XWT(:,:,:) = ZRW(:,:,:) / MZM(1,IKU,1,XRHODJ)
-ELSEIF (OINST == 'M') THEN
-  XUM(:,:,:) = ZRU(:,:,:) / MXM(XRHODJ)
-  XVM(:,:,:) = ZRV(:,:,:) / MYM(XRHODJ)
-  XWM(:,:,:) = ZRW(:,:,:) / MZM(1,IKU,1,XRHODJ)
-END IF
+XUT(:,:,:) = ZRU(:,:,:) / MXM(XRHODJ)
+XVT(:,:,:) = ZRV(:,:,:) / MYM(XRHODJ)
+XWT(:,:,:) = ZRW(:,:,:) / MZM(1,IKU,1,XRHODJ)
 !
 !
 !-------------------------------------------------------------------------------

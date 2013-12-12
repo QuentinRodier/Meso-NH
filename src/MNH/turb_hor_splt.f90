@@ -10,9 +10,8 @@
 !
 INTERFACE  
 !
-      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP_UVW,  &
-                      PTSTEP_MET, PTSTEP_SV,HLBCX,HLBCY,             &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
+                      HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
                       HFMFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -32,9 +31,7 @@ INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time splitting
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-REAL,                   INTENT(IN)   ::  PTSTEP_UVW   ! Dynamical timestep 
-REAL,                   INTENT(IN)   ::  PTSTEP_MET   ! Timestep for meteorological variables                        
-REAL,                   INTENT(IN)   ::  PTSTEP_SV    ! Timestep for tracer variables
+REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
 LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
                                                          ! file opening       
@@ -110,9 +107,8 @@ END INTERFACE
 !
 END MODULE MODI_TURB_HOR_SPLT
 !     ################################################################
-      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP_UVW,  &
-                      PTSTEP_MET, PTSTEP_SV,HLBCX,HLBCY,             &
-                      OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
+      SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
+                      HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
                       HFMFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
@@ -253,7 +249,6 @@ END MODULE MODI_TURB_HOR_SPLT
 !!                     Feb  20, 2003 (JP Pinty)  Add PFRAC_ICE
 !!                     Oct.2009  (C.Lac) Introduction of different PTSTEP according to the
 !!                              advection schemes
-!!                     06/2011 (J.escobar ) Bypass Bug with ifort11/12 on  HLBCX,HLBC
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -281,9 +276,7 @@ INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time splitting
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
-REAL,                   INTENT(IN)   ::  PTSTEP_UVW   ! Dynamical timestep 
-REAL,                   INTENT(IN)   ::  PTSTEP_MET   ! Timestep for meteorological variables                        
-REAL,                   INTENT(IN)   ::  PTSTEP_SV    ! Timestep for tracer variables
+REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN)       ::  HLBCX,HLBCY
 LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
                                                          ! file opening       
@@ -363,7 +356,7 @@ REAL,ALLOCATABLE,DIMENSION(:,:,:) :: ZMZM_PRHODJ  ! MZM(PRHODJ)
 !
 INTEGER :: JSPLT ! current split
 !
-INTEGER :: IKB, IKE, IIB, IIE, IJB, IJE,IKU
+INTEGER :: IKB, IKE, IIB, IIE, IJB, IJE, IKU
 INTEGER :: JRR, JSV
 !
 INTEGER :: ISV
@@ -477,7 +470,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
   DO JSPLT=1,KSPLIT
 !
 ! compute the turbulent tendencies for the small time step
-    CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP_UVW,             &
+    CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP,                 &
                    OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
                    HFMFILE,HLUOUT,                                &
                    PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
@@ -505,18 +498,18 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ! split temporal advance
 
-    ZUM=PUM+(ZRUS/KSPLIT-PRUS)/MXM(PRHODJ)*PTSTEP_UVW
-    ZVM=PVM+(ZRVS/KSPLIT-PRVS)/MYM(PRHODJ)*PTSTEP_UVW
-    ZWM=PWM+(ZRWS/KSPLIT-PRWS)/ZMZM_PRHODJ*PTSTEP_UVW
+    ZUM=PUM+(ZRUS/KSPLIT-PRUS)/MXM(PRHODJ)*PTSTEP
+    ZVM=PVM+(ZRVS/KSPLIT-PRVS)/MYM(PRHODJ)*PTSTEP
+    ZWM=PWM+(ZRWS/KSPLIT-PRWS)/ZMZM_PRHODJ*PTSTEP
     DO JSV=1,ISV
       ZSVM(:,:,:,JSV)=PSVM(:,:,:,JSV)+   &
-        (ZRSVS(:,:,:,JSV)/KSPLIT-PRSVS(:,:,:,JSV))/PRHODJ*PTSTEP_SV
+        (ZRSVS(:,:,:,JSV)/KSPLIT-PRSVS(:,:,:,JSV))/PRHODJ*PTSTEP
     END DO
-    ZTHLM=PTHLM+(ZRTHLS/KSPLIT-PRTHLS)/PRHODJ*PTSTEP_MET
-    ZTKEM=ZTKEM+PTRH*PTSTEP_MET/KSPLIT
+    ZTHLM=PTHLM+(ZRTHLS/KSPLIT-PRTHLS)/PRHODJ*PTSTEP
+    ZTKEM=ZTKEM+PTRH*PTSTEP/KSPLIT
     DO JRR=1,KRR
       ZRM(:,:,:,JRR)=PRM(:,:,:,JRR)+   &
-       (ZRRS(:,:,:,JRR)/KSPLIT-PRRS(:,:,:,JRR))/PRHODJ*PTSTEP_MET
+       (ZRRS(:,:,:,JRR)/KSPLIT-PRRS(:,:,:,JRR))/PRHODJ*PTSTEP
     END DO
 !
 ! reinforce boundary conditions
@@ -590,7 +583,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
   IF (ISV>0) PRSVS=ZRSVS/KSPLIT
   PRTHLS=ZRTHLS/KSPLIT
   IF (KRR>0) PRRS=ZRRS/KSPLIT
-  PTRH=(ZTKEM-PTKEM)/PTSTEP_MET
+  PTRH=(ZTKEM-PTKEM)/PTSTEP
 !
 !*       2.6  deallocations
 !             -------------
@@ -618,7 +611,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 !
 ELSE
 !
-  CALL TURB_HOR(1, KRR, KRRL, KRRI, PTSTEP_UVW,                &
+  CALL TURB_HOR(1, KRR, KRRL, KRRI,  PTSTEP,                   &
                 OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
                 HFMFILE,HLUOUT,                                &
                 PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &

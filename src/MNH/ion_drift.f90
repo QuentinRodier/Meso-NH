@@ -4,9 +4,8 @@
 
 INTERFACE
 !
-      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, PRHODREF, PRHODJ,  &
-                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT,     &
-                           HUVW_ADV_SCHEME)
+      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, PRHODREF, PRHODJ,       &
+                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT)
 !
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY
 CHARACTER(LEN=3), INTENT(IN)                :: HDRIFT
@@ -15,7 +14,6 @@ REAL, DIMENSION(:,:,:,:),     INTENT(INOUT) :: PSVT
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PRHODREF, PRHODJ
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 REAL,                     INTENT(IN)   :: PTSTEP
-CHARACTER(LEN=6),         INTENT(IN)   :: HUVW_ADV_SCHEME
 !
 END SUBROUTINE ION_DRIFT
 END INTERFACE
@@ -23,8 +21,7 @@ END MODULE MODI_ION_DRIFT
 !
 !     ################################################################ 
       SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, PRHODREF, PRHODJ, &
-                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT,    &
-                           HUVW_ADV_SCHEME)
+                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT)
 !     ################################################################
 !
 !!    PURPOSE
@@ -75,7 +72,6 @@ REAL, DIMENSION(:,:,:,:),     INTENT(INOUT) :: PSVT
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PRHODREF, PRHODJ
 INTEGER,                      INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
 REAL,                         INTENT(IN)    :: PTSTEP
-CHARACTER(LEN=6),             INTENT(IN)    :: HUVW_ADV_SCHEME
 !
 !
 !*       0.2   declarations of local variables
@@ -94,6 +90,11 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZADVS, ZSVT  !for advection form
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZXCT, ZYCT, ZZCT !
 CHARACTER (LEN=6)                     :: HSV_ADV_SCHEME
                                                      ! of drift source
+!
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOX1,ZRHOX2
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOY1,ZRHOY2
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOZ1,ZRHOZ2
+!
 REAL :: ZMIN_DRIFT, ZMAX_DRIFT
 REAL :: ZMAX__POS, ZMAX__NEG
 INTEGER :: IPROC, IPROCMIN, ISV
@@ -207,13 +208,8 @@ ELSE
   ALLOCATE (ZYCT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3)))
   ALLOCATE (ZZCT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3)))
 !
-  IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-    CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                  ZXCT,ZYCT,ZZCT,2)
-  ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-    CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                  ZXCT,ZYCT,ZZCT,4)
-  ENDIF
+  CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ, &
+                XDZX,XDZY,ZXCT,ZYCT,ZZCT,4)
 !
   ZXCT = ZXCT*PTSTEP
   ZYCT = ZYCT*PTSTEP
@@ -223,9 +219,13 @@ ELSE
   ZSVT(:,:,:,1) = PSVT(:,:,:,NSV_ELECBEG)
   HSV_ADV_SCHEME = 'PPM_01'
 !
-  CALL PPM_SCALAR(HLBCX,HLBCY,ISV,KTCOUNT,             &
-                   ZXCT, ZYCT, ZZCT, PTSTEP, PRHODJ,  &
-                   ZSVT, ZADVS, HSV_ADV_SCHEME      )
+  CALL PPM_RHODJ(HLBCX,HLBCY, ZXCT, ZYCT, ZZCT,                     &
+               PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,      &
+               ZRHOZ1, ZRHOZ2                                       )
+!
+  CALL PPM_SCALAR (HLBCX,HLBCY, ISV, KTCOUNT, ZXCT, ZYCT, ZZCT, &
+                   PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2, &
+                   ZSVT, ZADVS, HSV_ADV_SCHEME                                       )
 !
   PDRIFTP(:,:,:) = ZADVS(:,:,:,1)
 !
@@ -270,13 +270,8 @@ ZDRIFTZ(:,:,IKB-1) = ZDRIFTZ(:,:,IKB)
 IF (HDRIFT /= 'PPM') THEN
   CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTM)
 ELSE
-  IF (HUVW_ADV_SCHEME=='CEN2ND' ) THEN                                      
-    CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                  ZXCT,ZYCT,ZZCT,2)
-  ELSEIF (HUVW_ADV_SCHEME=='CEN4TH') THEN
-    CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
-                  ZXCT,ZYCT,ZZCT,4)
-  ENDIF
+  CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ, &
+                XDZX,XDZY,ZXCT,ZYCT,ZZCT,4)
 !
   ZXCT = ZXCT * PTSTEP
   ZYCT = ZYCT * PTSTEP
@@ -286,9 +281,13 @@ ELSE
   ZSVT(:,:,:,1) = PSVT(:,:,:,NSV_ELECEND)
   HSV_ADV_SCHEME = 'PPM_01'
 !
-  CALL PPM_SCALAR(HLBCX,HLBCY,ISV,KTCOUNT,             &
-                   ZXCT, ZYCT, ZZCT, PTSTEP, PRHODJ,  &
-                   ZSVT, ZADVS, HSV_ADV_SCHEME      )
+  CALL PPM_RHODJ(HLBCX,HLBCY, ZXCT, ZYCT, ZZCT,                     &
+               PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,      &
+               ZRHOZ1, ZRHOZ2                                       )
+!
+  CALL PPM_SCALAR (HLBCX,HLBCY, ISV, KTCOUNT, ZXCT, ZYCT, ZZCT, &
+                   PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2, &
+                   ZSVT, ZADVS, HSV_ADV_SCHEME                                       )
 !
   PDRIFTM(:,:,:) = ZADVS(:,:,:,1)
 !

@@ -5,7 +5,7 @@
 INTERFACE
   SUBROUTINE SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                                PRM, PRT, PRS, PSVT,            &
+                                PRT, PRS, PSVT,                 &
                                 PTHT, PWT, PPABST, PCIT, PINPRR )
 !
 !
@@ -18,7 +18,6 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRM     ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! Moist variables at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS     ! Moist  variable sources
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT    ! Scalar variable at time t
@@ -38,7 +37,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !      ###############################################################
        SUBROUTINE SERIES_CLOUD_ELEC (KTCOUNT, PTSTEP,                &
                                      PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                                     PRM, PRT, PRS, PSVT,            &
+                                     PRT, PRS, PSVT,                 &
                                      PTHT, PWT, PPABST, PCIT, PINPRR )
 !      ###############################################################
 !
@@ -116,7 +115,6 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PCIT     ! Pristine ice number
                                                ! concentration at time t
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PINPRR  ! Rain instant precip
 !
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRM    ! Moist variables at time t-dt
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT    ! Moist variables at time t
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS    ! Moist  variable sources
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT   ! Scalar variable at time t
@@ -223,7 +221,7 @@ ZCLOUD(IIB:IIE,IJB:IJE,IKB:IKE) = PRT(IIB:IIE,IJB:IJE,IKB:IKE,2) + &
 !*       1.3     compute the terminal fall speed
 !
 ! the mean terminal fall speed is computed following:
-! V_mean = Int(v(D) m(D) n(D) dD) / Int(m(D) n(D) dD)
+! V_mean = Int(v(D) n(D) dD) / Int(n(D) dD)
 !
 ALLOCATE(ZLAMBDAS(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3)))
 ALLOCATE(ZLAMBDAG(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3)))

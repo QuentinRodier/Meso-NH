@@ -85,48 +85,6 @@ END MODULE MODI_ADVECUVW_4TH
 !!         NBUPROCCTR   : process counter used for each budget variable
 !!         Switches for budgets activations:
 !!
-!!         LBU_RU       : logical for budget of RU (wind component along x)
-!!
-!!         LBU_RU       : logical for budget of RU (wind component along x)
-!!                        .TRUE. = budget of RU
-!!                        .FALSE. = no budget of RU
-!!         LBU_RV       : logical for budget of RV (wind component along y)
-!!                        .TRUE. = budget of RV
-!!                        .FALSE. = no budget of RV
-!!         LBU_RW        : logical for budget of RW (wind component along z)
-!!                        .TRUE. = budget of RW
-!!                        .FALSE. = no budget of RW
-!!         LBU_RTH      : logical for budget of RTH (potential temperature)
-!!                        .TRUE. = budget of RTH
-!!                        .FALSE. = no budget of RTH
-!!         LBU_RTKE     : logical for budget of RTKE (turbulent kinetic energy)
-!!                        .TRUE. = budget of RTKE
-!!                        .FALSE. = no budget of RTKE
-!!         LBU_RRV      : logical for budget of RRV (water vapor)
-!!                        .TRUE. = budget of RRV
-!!                        .FALSE. = no budget of RRV
-!!         LBU_RRC      : logical for budget of RRC (cloud water)
-!!                        .TRUE. = budget of RRC
-!!                        .FALSE. = no budget of RRC
-!!         LBU_RRR      : logical for budget of RRR (rain water)
-!!                        .TRUE. = budget of RRR
-!!                        .FALSE. = no budget of RRR
-!!         LBU_RRI      : logical for budget of RRI (ice)
-!!                        .TRUE. = budget of RRI
-!!                        .FALSE. = no budget of RRI
-!!         LBU_RRS      : logical for budget of RRS (snow)
-!!                        .TRUE. = budget of RRS
-!!                        .FALSE. = no budget of RRS
-!!         LBU_RRG      : logical for budget of RRG (graupel)
-!!                        .TRUE. = budget of RRG
-!!                        .FALSE. = no budget of RRG
-!!         LBU_RRH      : logical for budget of RRH (hail)
-!!                        .TRUE. = budget of RRH
-!!                        .FALSE. = no budget of RRH
-!!         LBU_RSV      : logical for budget of RSVx (scalar variable)
-!!                        .TRUE. = budget of RSVx
-!!                        .FALSE. = no budget of RSVx
-!!
 !!    MODULE MODD_ARGSLIST
 !!         HALO2LIST_ll : type for a list of "HALO2_lls"
 !!
@@ -152,11 +110,9 @@ USE MODE_ll
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_GRID_n
-USE MODD_BUDGET
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
 !
 USE MODI_ADVEC_4TH_ORDER_AUX
 !
@@ -214,15 +170,12 @@ ENDIF
 !
 PRUS(:,:,:) = PRUS(:,:,:)                          &
              -DXM( MXF(PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
-IF (LBUDGET_U)  CALL BUDGET (PRUS,1,'ADVX_BU_RU')
 !
 PRUS(:,:,:) = PRUS(:,:,:)                          &
              -DYF( MXM(PRVCT(:,:,:))*ZMEANY(:,:,:) ) 
-IF (LBUDGET_U)  CALL BUDGET (PRUS,1,'ADVY_BU_RU')
 !
 PRUS(:,:,:) = PRUS(:,:,:)                             &
              -DZF(1,IKU,1, MXM(PRWCT(:,:,:))*MZM4(PUT(:,:,:)) )
-IF (LBUDGET_U)  CALL BUDGET (PRUS,1,'ADVZ_BU_RU')
 !
 !
 IGRID = 3
@@ -236,15 +189,12 @@ ENDIF
 !
 PRVS(:,:,:) = PRVS(:,:,:)                          &
              -DXF( MYM(PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
-IF (LBUDGET_V)  CALL BUDGET (PRVS,2,'ADVX_BU_RV')
 !
 PRVS(:,:,:) = PRVS(:,:,:)                          &
              -DYM( MYF(PRVCT(:,:,:))*ZMEANY(:,:,:) )  
-IF (LBUDGET_V)  CALL BUDGET (PRVS,2,'ADVY_BU_RV')
 !
 PRVS(:,:,:) = PRVS(:,:,:)                             &
              -DZF(1,IKU,1, MYM(PRWCT(:,:,:))*MZM4(PVT(:,:,:)) )
-IF (LBUDGET_V)  CALL BUDGET (PRVS,2,'ADVZ_BU_RV')
 !
 !
 IGRID = 4
@@ -259,15 +209,12 @@ ENDIF
 !
 PRWS(:,:,:) = PRWS(:,:,:)                          &
              -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
-IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVX_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                          &
              -DYF( MZM(1,IKU,1,PRVCT(:,:,:))*ZMEANY(:,:,:) ) 
-IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVY_BU_RW')
 !
 PRWS(:,:,:) = PRWS(:,:,:)                             &
              -DZM(1,IKU,1, MZF(1,IKU,1,PRWCT(:,:,:))*MZF4(PWT(:,:,:)) )
-IF (LBUDGET_W)  CALL BUDGET (PRWS,3,'ADVZ_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !

@@ -2,6 +2,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! MASDEV4_7 prep_real 2006/07/07 12:04:57
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODI_VER_THERMO
@@ -157,7 +158,7 @@ USE MODD_CONF           ! declaration modules
 USE MODD_CONF_n
 USE MODD_LUNIT
 USE MODD_CST
-USE MODD_FIELD_n, ONLY: XTHM,XRM,XPABSM,XDRYMASST
+USE MODD_FIELD_n, ONLY: XTHT,XRT,XPABST,XDRYMASST
 USE MODD_LSFIELD_n
 USE MODD_DYN_n
 USE MODD_REF_n
@@ -169,12 +170,10 @@ USE MODD_PARAMETERS
 !
 USE MODE_FMWRIT
 USE MODE_FM
-!JUAN REALZ
 USE MODD_DIM_n
 USE MODE_MPPDB
 USE MODE_ll
 USE MODE_EXTRAPOL
-!JUAN REALZ
 !
 !
 IMPLICIT NONE
@@ -218,7 +217,6 @@ REAL,DIMENSION(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3))   :: ZRHOD,ZSUMRT
 CHARACTER(LEN=100) :: YCOMMENT
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
 CHARACTER(LEN=16)  :: YRECFM
-!JUAN REALZ
 INTEGER      :: IINFO_ll
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll => NULL()  ! list of fields to exchange
 !
@@ -227,7 +225,6 @@ INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 
-!JUAN REALZ
 !-------------------------------------------------------------------------------
 !
 IIB=JPHEXT+1
@@ -245,8 +242,8 @@ IKU=SIZE(PJ,3)
 !*       1.    SHIFT AND INTERPOLATION TO MESONH GRID
 !              --------------------------------------
 !
-ALLOCATE(XTHM(IIU,IJU,IKU))
-ALLOCATE(XRM(IIU,IJU,IKU,NRR))
+ALLOCATE(XTHT(IIU,IJU,IKU))
+ALLOCATE(XRT(IIU,IJU,IKU,NRR))
 
 CALL MPPDB_CHECK3D(PTHV_MX,"ver_thermo:PTHV_MX",PRECISION)
 CALL MPPDB_CHECK3D(PR_MX(:,:,:,1),"ver_thermo:PR_MX",PRECISION)
@@ -265,32 +262,29 @@ IF ( PRESENT(PLSTH_MX)) THEN
   CALL MPPDB_CHECK3D(PLSRV_MX,"PLSRV_MX",PRECISION)
   !
   CALL VER_INT_THERMO(OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
-                      ZTHV,XRM,ZPMHP,PDIAG,PLSTH_MX,PLSRV_MX,XLSTHM,XLSRVM)
+                      ZTHV,XRT,ZPMHP,PDIAG,PLSTH_MX,PLSRV_MX,XLSTHM,XLSRVM)
 ELSE
   CALL VER_INT_THERMO(OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
-                      ZTHV,XRM,ZPMHP,PDIAG)
+                      ZTHV,XRT,ZPMHP,PDIAG)
 END IF
 !
-XTHM(:,:,:)=ZTHV(:,:,:)*(1.+WATER_SUM(XRM(:,:,:,:)))/(1.+XRV/XRD*XRM(:,:,:,1))
+XTHT(:,:,:)=ZTHV(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
 !
 ZTHV(:,:,1)=ZTHV(:,:,2)
-XTHM(:,:,1)=XTHM(:,:,2)
-XRM(:,:,1,:)=XRM(:,:,2,:)
+XTHT(:,:,1)=XTHT(:,:,2)
+XRT(:,:,1,:)=XRT(:,:,2,:)
 !
 IF (NRR>=3) THEN
-  WHERE  (XRM(:,:,:,3)<1.E-20)
-    XRM(:,:,:,3)=0.
+  WHERE  (XRT(:,:,:,3)<1.E-20)
+    XRT(:,:,:,3)=0.
   END WHERE
 END IF
+CALL EXTRAPOL('E',XTHT)
 
-!CALL EXTRAPOL('W',XTHM)
-!CALL EXTRAPOL('S',XTHM) 
-CALL EXTRAPOL('E',XTHM)
+CALL MPPDB_CHECK3D(XTHT,"VERTHERMO::XTHT",PRECISION)
 
-CALL MPPDB_CHECK3D(XTHM,"VERTHERMO::XTHM",PRECISION)
-
-DO JRR=1,SIZE(XRM,4)
-  CALL EXTRAPOL('E',XRM(:,:,:,JRR))
+DO JRR=1,SIZE(XRT,4)
+  CALL EXTRAPOL('E',XRT(:,:,:,JRR))
 END DO
 !
 IF (NVERB>=10) THEN
@@ -304,10 +298,10 @@ END IF
 !*       2.    COMPUTATION OF 1D REFERENCE STATE VARIABLES
 !              -------------------------------------------
 !
-CALL SET_REFZ(ZTHV,XRM(:,:,:,1))
+CALL SET_REFZ(ZTHV,XRT(:,:,:,1))
 
 CALL MPPDB_CHECK3D(ZTHV,"VERTHERMO::ZTHV",PRECISION)
-CALL MPPDB_CHECK3D(XRM(:,:,:,1),"VERTHERMO::XRM",PRECISION)
+CALL MPPDB_CHECK3D(XRT(:,:,:,1),"VERTHERMO::XRT",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -337,7 +331,6 @@ CALL MPPDB_CHECK3D(XRVREF,"VERTHERMO::XRVREF",PRECISION)
 CALL MPPDB_CHECK3D(XEXNREF,"VERTHERMO::XEXNREF",PRECISION)
 CALL MPPDB_CHECK3D(XRHODJ,"VERTHERMO::XRHODJ",PRECISION)
 
-
 !
 !-------------------------------------------------------------------------------
 !
@@ -349,10 +342,10 @@ CALL COMPUTE_EXNER_FROM_TOP(ZTHV,XZZ,PEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
 PPSURF(:,:) = 1.5*ZPMHP(:,:,JPVEXT+1) - 0.5*ZPMHP(:,:,JPVEXT+2) &
              + XP00*ZHEXNFLUX(:,:,JPVEXT+1) ** (XCPD/XRD)
 !
-ALLOCATE(XPABSM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
-XPABSM(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
+ALLOCATE(XPABST(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
+XPABST(:,:,:)=ZPMHP(:,:,:) + XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
 
-CALL EXTRAPOL('E',XPABSM)
+CALL EXTRAPOL('E',XPABST)
 !
 !-------------------------------------------------------------------------------
 !
@@ -360,11 +353,11 @@ CALL EXTRAPOL('E',XPABSM)
 !              -----------------------------
 !
 ZSUMRT(:,:,:) = 0.
-DO JRR=1,SIZE(XRM,4)
-  ZSUMRT(:,:,:) = ZSUMRT(:,:,:) + XRM(:,:,:,JRR)
+DO JRR=1,SIZE(XRT,4)
+  ZSUMRT(:,:,:) = ZSUMRT(:,:,:) + XRT(:,:,:,JRR)
 END DO
 !
-ZRHOD(:,:,:)=XPABSM(:,:,:)/(XPABSM(:,:,:)/XP00)**(XRD/XCPD) &
+ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
             /(XRD*ZTHV(:,:,:)*(1.+ZSUMRT(:,:,:)))
 !
 CALL TOTAL_DMASS(CLUOUT0,PJ,ZRHOD,XDRYMASST)
@@ -386,8 +379,8 @@ CALL TOTAL_DMASS(CLUOUT0,PJ,ZRHOD,XDRYMASST)
 IF ( .NOT. PRESENT(PLSTH_MX) ) THEN
   ALLOCATE(XLSTHM(IIU,IJU,IKU))
   ALLOCATE(XLSRVM(IIU,IJU,IKU))
-  XLSTHM=XTHM
-  XLSRVM=XRM(:,:,:,1)
+  XLSTHM=XTHT
+  XLSRVM=XRT(:,:,:,1)
 END IF
 ! copy at the external levels
 XLSTHM(:,:,IKB-1)=XLSTHM(:,:,IKB)
@@ -404,8 +397,6 @@ IF ( LHORELAX_UVWTH ) THEN
     NSIZELBYV_ll=2*NRIMY+2
    ALLOCATE(XLBXTHM(IISIZEXF,IJSIZEXF,IKU))
    ALLOCATE(XLBYTHM(IISIZEYF,IJSIZEYF,IKU))
-!!$  ALLOCATE(XLBXTHM(2*NRIMX+2,IJU,IKU))
-!!$  ALLOCATE(XLBYTHM(IIU,2*NRIMY+2,IKU))
 ELSE
     NSIZELBX_ll=2
     NSIZELBXU_ll=4
@@ -413,26 +404,24 @@ ELSE
     NSIZELBYV_ll=4
    ALLOCATE(XLBXTHM(IISIZEX2,IJSIZEX2,IKU))
    ALLOCATE(XLBYTHM(IISIZEY2,IJSIZEY2,IKU))
-!!$  ALLOCATE(XLBXTHM(2,IJU,IKU))
-!!$  ALLOCATE(XLBYTHM(IIU,2,IKU))
 END IF
 !
-!!$ILBX=SIZE(XLBXTHM,1)/2-1
-!!$XLBXTHM(1:ILBX+1,:,:)         = XTHM(IIB-1:IIB-1+ILBX,:,:)
-!!$XLBXTHM(ILBX+2:2*ILBX+2,:,:)  = XTHM(IIE+1-ILBX:IIE+1,:,:)
-!!$ILBY=SIZE(XLBYTHM,2)/2-1
-!!$XLBYTHM(:,1:ILBY+1,:)        = XTHM(:,IJB-1:IJB-1+ILBY,:)
-!!$XLBYTHM(:,ILBY+2:2*ILBY+2,:) = XTHM(:,IJE+1-ILBY:IJE+1,:)
+!ILBX=SIZE(XLBXTHM,1)/2-1
+!XLBXTHM(1:ILBX+1,:,:)         = XTHT(IIB-1:IIB-1+ILBX,:,:)
+!XLBXTHM(ILBX+2:2*ILBX+2,:,:)  = XTHT(IIE+1-ILBX:IIE+1,:,:)
+!ILBY=SIZE(XLBYTHM,2)/2-1
+!XLBYTHM(:,1:ILBY+1,:)        = XTHT(:,IJB-1:IJB-1+ILBY,:)
+!XLBYTHM(:,ILBY+2:2*ILBY+2,:) = XTHT(:,IJE+1-ILBY:IJE+1,:)
 !
 IF ( NRR > 0 ) THEN
   IF (       LHORELAX_RV .OR. LHORELAX_RC .OR. LHORELAX_RR .OR. LHORELAX_RI    &
         .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. LHORELAX_RH                     &
      ) THEN
-!!$    ALLOCATE(XLBXRM(2*NRIMX+2,IJU,IKU,NRR))
-!!$    ALLOCATE(XLBYRM(IIU,2*NRIMY+2,IKU,NRR))
-!!$  ELSE
-!!$    ALLOCATE(XLBXRM(2,IJU,IKU,NRR))
-!!$    ALLOCATE(XLBYRM(IIU,2,IKU,NRR))
+!   ALLOCATE(XLBXRM(2*NRIMX+2,IJU,IKU,NRR))
+!   ALLOCATE(XLBYRM(IIU,2*NRIMY+2,IKU,NRR))
+! ELSE
+!   ALLOCATE(XLBXRM(2,IJU,IKU,NRR))
+!   ALLOCATE(XLBYRM(IIU,2,IKU,NRR))
       NSIZELBXR_ll=2*NRIMX+2
       NSIZELBYR_ll=2*NRIMY+2
       ALLOCATE(XLBXRM(IISIZEXF,IJSIZEXF,IKU,NRR))
@@ -446,13 +435,13 @@ IF ( NRR > 0 ) THEN
   !
   IF (SIZE(XLBXRM) .NE. 0 ) THEN
      ILBX=SIZE(XLBXRM,1)/2-1
-     XLBXRM(1:ILBX+1,:,:,:)         = XRM(IIB-1:IIB-1+ILBX,:,:,:)
-     XLBXRM(ILBX+2:2*ILBX+2,:,:,:)  = XRM(IIE+1-ILBX:IIE+1,:,:,:)
+     XLBXRM(1:ILBX+1,:,:,:)         = XRT(IIB-1:IIB-1+ILBX,:,:,:)
+     XLBXRM(ILBX+2:2*ILBX+2,:,:,:)  = XRT(IIE+1-ILBX:IIE+1,:,:,:)
   ENDIF
   IF (SIZE(XLBYRM) .NE. 0 ) THEN
      ILBY=SIZE(XLBYRM,2)/2-1
-     XLBYRM(:,1:ILBY+1,:,:)        = XRM(:,IJB-1:IJB-1+ILBY,:,:)
-     XLBYRM(:,ILBY+2:2*ILBY+2,:,:) = XRM(:,IJE+1-ILBY:IJE+1,:,:)
+     XLBYRM(:,1:ILBY+1,:,:)        = XRT(:,IJB-1:IJB-1+ILBY,:,:)
+     XLBYRM(:,ILBY+2:2*ILBY+2,:,:) = XRT(:,IJE+1-ILBY:IJE+1,:,:)
   ENDIF
 ELSE
    NSIZELBXR_ll=0
@@ -461,26 +450,26 @@ ELSE
    ALLOCATE(XLBYRM(0,0,0,0))
 END IF
 !
-!!$NSIZELBXR_ll=SIZE(XLBXRM,1)
-!!$NSIZELBYR_ll=SIZE(XLBYRM,2)   !! coding for one processor
+!NSIZELBXR_ll=SIZE(XLBXRM,1)
+!NSIZELBYR_ll=SIZE(XLBYRM,2)   !! coding for one processor
 
 ILBX=SIZE(XLBXTHM,1)
 ILBY=SIZE(XLBYTHM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXTHM(1:NRIMX+1,        :,:)   = XTHM(1:NRIMX+1,        :,:)
-  XLBXRM(1:NRIMX+1,        :,:,:)   = XRM(1:NRIMX+1,        :,:,:)
+  XLBXTHM(1:NRIMX+1,        :,:)   = XTHT(1:NRIMX+1,        :,:)
+  XLBXRM(1:NRIMX+1,        :,:,:)   = XRT(1:NRIMX+1,        :,:,:)
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHM(IIU-NRIMX:IIU,    :,:)
-  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRM(IIU-NRIMX:IIU,    :,:,:)
+  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHT(IIU-NRIMX:IIU,    :,:)
+  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRT(IIU-NRIMX:IIU,    :,:,:)
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYTHM(:,1:NRIMY+1,        :)    = XTHM(:,1:NRIMY+1,      :)
-  XLBYRM(:,1:NRIMY+1,        :,:)   = XRM(:,1:NRIMY+1,      :,:)
+  XLBYTHM(:,1:NRIMY+1,        :)    = XTHT(:,1:NRIMY+1,      :)
+  XLBYRM(:,1:NRIMY+1,        :,:)   = XRT(:,1:NRIMY+1,      :,:)
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHM(:,IJU-NRIMY:IJU,  :)
-  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRM(:,IJU-NRIMY:IJU,  :,:)
+  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHT(:,IJU-NRIMY:IJU,  :)
+  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRT(:,IJU-NRIMY:IJU,  :,:)
 ENDIF
 !
 !-------------------------------------------------------------------------------

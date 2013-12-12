@@ -9,10 +9,10 @@ MODULE MODI_PRESSUREZ
 !
 INTERFACE
 !
-      SUBROUTINE PRESSUREZ(HLUOUT,                      &
+      SUBROUTINE PRESSUREZ(HLUOUT,                                         &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
-      PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
-      PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
+      PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOT,               &
+      PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                           &
       KRR,KRRL,KRRI,PDRYMASST,PREFMASS,PMASS_O_PHI0,                       &
       PTHT,PRT,PRHODREF,PTHVREF,PRVREF,PEXNREF,PLINMASS,                   &
       PRUS,PRVS,PRWS,PPABST,                                               &
@@ -48,7 +48,7 @@ REAL, INTENT(IN) :: PDXHATM                     ! mean grid increment in the x
 REAL, INTENT(IN) :: PDYHATM                     ! mean grid increment in the y
                                                 ! direction
 !
-REAL, DIMENSION (:), INTENT(IN) :: PRHOM         !  mean of XRHODJ on the plane x y
+REAL, DIMENSION (:), INTENT(IN) :: PRHOT         !  mean of XRHODJ on the plane x y
                                                  !  localized at a mass level
 !
 REAL, DIMENSION(:), INTENT(IN)     :: PAF,PCF    ! vectors giving the nonvanishing
@@ -65,7 +65,6 @@ REAL, DIMENSION(:), INTENT(IN) :: PTRIGSY        ! - along y
 INTEGER, DIMENSION(19), INTENT(IN) :: KIFAXX      ! - along x
 INTEGER, DIMENSION(19), INTENT(IN) :: KIFAXY      ! - along y
 !
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABSM      ! pressure (t-dt)
 !
 INTEGER,                  INTENT(IN)    :: KRR   ! Total number of water var.
 INTEGER,                  INTENT(IN)    :: KRRL  ! Number of liquid water var.
@@ -107,10 +106,10 @@ END INTERFACE
 !
 END MODULE MODI_PRESSUREZ
 !     ######################################################################
-      SUBROUTINE PRESSUREZ(HLUOUT,                      &
+      SUBROUTINE PRESSUREZ(HLUOUT,                                         &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
-      PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
-      PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
+      PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOT,               &
+      PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                           &
       KRR,KRRL,KRRI,PDRYMASST,PREFMASS,PMASS_O_PHI0,                       &
       PTHT,PRT,PRHODREF,PTHVREF,PRVREF,PEXNREF,PLINMASS,                   &
       PRUS,PRVS,PRWS,PPABST,                                               &
@@ -277,7 +276,7 @@ REAL, INTENT(IN) :: PDXHATM                     ! mean grid increment in the x
 REAL, INTENT(IN) :: PDYHATM                     ! mean grid increment in the y
                                                 ! direction
 !
-REAL, DIMENSION (:), INTENT(IN) :: PRHOM         !  mean of XRHODJ on the plane x y
+REAL, DIMENSION (:), INTENT(IN) :: PRHOT         !  mean of XRHODJ on the plane x y
                                                  !  localized at a mass level
 !
 REAL, DIMENSION(:), INTENT(IN)     :: PAF,PCF    ! vectors giving the nonvanishing
@@ -293,8 +292,6 @@ REAL, DIMENSION(:), INTENT(IN) :: PTRIGSY        ! - along y
                                                  ! numbers for the FFT:
 INTEGER, DIMENSION(19), INTENT(IN) :: KIFAXX      ! - along x
 INTEGER, DIMENSION(19), INTENT(IN) :: KIFAXY      ! - along y
-!
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABSM      ! pressure (t-dt)
 !
 INTEGER,                  INTENT(IN)    :: KRR   ! Total number of water var.
 INTEGER,                  INTENT(IN)    :: KRRL  ! Number of liquid water var.
@@ -335,7 +332,7 @@ REAL, OPTIONAL                     :: PRESIDUAL
 !
 !                                                           Metric coefficients:
 !
-REAL, DIMENSION(SIZE(PPABSM,1),SIZE(PPABSM,2),SIZE(PPABSM,3)) :: ZDV_SOURCE
+REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2),SIZE(PPABST,3)) :: ZDV_SOURCE
 !                                                   ! divergence of the sources
 !
 INTEGER :: IIB          ! indice I for the first inner mass point along x
@@ -347,7 +344,7 @@ INTEGER :: IKE          ! indice K for the last inner mass point along z
 INTEGER :: ILUOUT       ! Logical unit of output listing
 INTEGER :: IRESP        ! Return code of FM routines
 !
-REAL, DIMENSION(SIZE(PPABSM,1),SIZE(PPABSM,2),SIZE(PPABSM,3)) :: ZTHETAV, &
+REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2),SIZE(PPABST,3)) :: ZTHETAV, &
                         ! virtual potential temperature
                                                                  ZPHIT
                         ! MAE + DUR => Exner function perturbation
@@ -381,7 +378,7 @@ CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 !
 IKB= 1+JPVEXT
-IKU= SIZE(PPABSM,3)
+IKU= SIZE(PPABST,3)
 IKE= IKU - JPVEXT
 !
 ZPABS_S(:,:) = 0.
@@ -452,10 +449,10 @@ IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
     ZTHETAV(:,:,:) = PTHT(:,:,:)
   END IF
   !
-  ZPHIT(:,:,:)=(PPABSM(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:)
+  ZPHIT(:,:,:)=(PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:)
   !
 ELSEIF(CEQNSYS=='LHE') THEN
-  ZPHIT(:,:,:)= ((PPABSM(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
+  ZPHIT(:,:,:)= ((PPABST(:,:,:)/XP00)**(XRD/XCPD)-PEXNREF(:,:,:))   &
                * XCPD * PTHVREF(:,:,:)
   !
 END IF
@@ -463,10 +460,10 @@ END IF
 IF(CEQNSYS=='LHE'.AND. LFLAT .AND. LCARTESIAN) THEN
    ! flat cartesian LHE case -> exact solution
  IF ( HPRESOPT /= "ZRESI" ) THEN
-  CALL FLAT_INV(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,         &
+  CALL FLAT_INV(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,         &
                PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,ZDV_SOURCE,ZPHIT)
  ELSE
-  CALL FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,         &
+  CALL FLAT_INVZ(HLBCX,HLBCY,PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,         &
                PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,ZDV_SOURCE,ZPHIT,& 
                PBFB,&
                PBF_SXP2_YP1_Z)
@@ -476,22 +473,22 @@ ELSE
   CASE('RICHA')     ! Richardson's method
 !
     CALL RICHARDSON(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTHETAV,      &
-    PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                        &
+    PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                        &
     KIFAXX,KIFAXY,KITR,KTCOUNT,PRELAX,ZDV_SOURCE,ZPHIT)
 !
    CASE('CGRAD')     ! Conjugate Gradient method
      CALL CONJGRAD(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTHETAV,       &
-     PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
+     PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
      KIFAXX,KIFAXY,KITR,ZDV_SOURCE,ZPHIT)
 !
   CASE('CRESI')     ! Conjugate Residual method
     CALL CONRESOL(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTHETAV,       &
-    PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
+    PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
     KIFAXX,KIFAXY,KITR,ZDV_SOURCE,ZPHIT)
 !
   CASE('ZRESI')     ! Conjugate Residual method
     CALL CONRESOLZ(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRHODJ,ZTHETAV,       &
-    PDXHATM,PDYHATM,PRHOM,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
+    PDXHATM,PDYHATM,PRHOT,PAF,PBF,PCF,PTRIGSX,PTRIGSY,                       &
     KIFAXX,KIFAXY,KITR,ZDV_SOURCE,ZPHIT,                                     &
     PBFB,&
     PBF_SXP2_YP1_Z) !JUAN Z_SPLITING

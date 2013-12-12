@@ -10,7 +10,7 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_OLD,PTSTEP_ALL)
+SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_ALL)
 INTEGER,              INTENT(IN)  :: KMI      ! Model index
 
 CHARACTER(LEN=16), INTENT(OUT)     :: HLUOUT  ! name of the  listing-
@@ -18,7 +18,6 @@ CHARACTER(LEN=16), INTENT(OUT)     :: HLUOUT  ! name of the  listing-
 CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILE! name of
                                               ! the initial file
 CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILEPGD
-REAL,               INTENT(OUT) :: PTSTEP_OLD ! OLD Time STEP (DESFM)
 REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL ! Time STEP of ALL models
 END SUBROUTINE INI_SEG_n
 !
@@ -30,7 +29,7 @@ END MODULE MODI_INI_SEG_n
 !
 !
 !     #############################################################
-      SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_OLD,PTSTEP_ALL)
+      SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !     #############################################################
 !
 !!****  *INI_SEG_n * - routine to read and update the descriptor files for 
@@ -191,7 +190,6 @@ CHARACTER(LEN=16), INTENT(OUT)     :: HLUOUT  ! name of the  listing-
 CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILE! name of
                                               ! the initial file
 CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILEPGD                                              
-REAL,               INTENT(OUT) :: PTSTEP_OLD ! OLD Time STEP (DESFM)
 REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL ! Time STEP of ALL models
 !
 !*       0.1   declarations of local variables
@@ -401,8 +399,7 @@ CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
                 GDEPOS_DST, GORILAM,  &
                 GDEPOS_AER, GLG, GPASPOL, GCONDSAMP, IRIMX,IRIMY,ISV,       &
-                YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
-                PTSTEP_OLD  )
+                YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
 !
 !
 !-------------------------------------------------------------------------------

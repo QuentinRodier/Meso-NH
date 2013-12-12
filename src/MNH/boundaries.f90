@@ -16,8 +16,7 @@ INTERFACE
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,   &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS,   &
             PRHODJ,                                                 &
-            PUM,PVM,PWM,PTHM,PTKEM,PRM,PSVM,PSRCM,                  &
-            PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT                         )
+            PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT,PSRCT                   )
 !
 REAL,                  INTENT(IN) :: PTSTEP        ! time step dt
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
@@ -49,10 +48,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(IN) :: PLBYRS  ,PLBYSVS  ! in x and y-di
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ    ! Jacobian * dry density of
                                                   !  the reference state
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM,PVM,PWM,PTHM,PTKEM,PSRCM
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRM,PSVM
-                                                      ! Variables at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET,PSRCT
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT
                                                       ! Variables at t
 !
@@ -72,8 +68,7 @@ END MODULE MODI_BOUNDARIES
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,   &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS,   &
             PRHODJ,                                                 &
-            PUM,PVM,PWM,PTHM,PTKEM,PRM,PSVM,PSRCM,                  &
-            PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT                         )
+            PUT,PVT,PWT,PTHT,PTKET,PRT,PSVT,PSRCT                   )
 !     ####################################################################
 !
 !!****  *BOUNDARIES* - routine to prepare the Lateral Boundary Conditions for
@@ -166,6 +161,7 @@ END MODULE MODI_BOUNDARIES
 !!      Modification    05/06               Remove EPS
 !!      Modification    12/2010  (Chong)    Add boundary condition for ions
 !!                                          (fair weather profiles)
+!!      Modification    04/2013  (C.Lac)    Remove instant M               
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -175,15 +171,15 @@ USE MODD_CTURB
 USE MODD_CONF
 USE MODD_NSV
 USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHIC
-USE MODD_CH_AEROSOL ,ONLY : LORILAM
+USE MODD_CH_AEROSOL , ONLY : LORILAM
 USE MODD_DUST
-USE MODD_SALT,       ONLY : LSALT
-USE MODD_PASPOL,       ONLY : LPASPOL
-USE MODD_CONDSAMP,     ONLY : LCONDSAMP
+USE MODD_SALT,        ONLY : LSALT
+USE MODD_PASPOL,      ONLY : LPASPOL
+USE MODD_CONDSAMP,    ONLY : LCONDSAMP
 USE MODD_ELEC_DESCR             
 USE MODD_ELEC_n                 
 USE MODD_REF_n    
-USE MODD_PARAM_n,    ONLY : CELEC 
+USE MODD_PARAM_n,     ONLY : CELEC 
 !
 USE MODE_MODELN_HANDLER
 !
@@ -231,10 +227,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(IN) :: PLBYRS  ,PLBYSVS  ! in x and y-di
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ    ! Jacobian * dry density of
                                                   !  the reference state
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM,PVM,PWM,PTHM,PTKEM,PSRCM
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRM,PSVM
-                                                      ! Variables at t-dt
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUT,PVT,PWT,PTHT,PTKET,PSRCT
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRT,PSVT
                                                       ! Variables at t
 !
@@ -289,7 +282,7 @@ LOGICAL              :: GCSTMP
 !              ----------------------------------------------
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
-IKE = SIZE(PUM,3) - JPVEXT
+IKE = SIZE(PUT,3) - JPVEXT
 IMI = GET_CURRENT_MODEL_INDEX()
 !
 !-------------------------------------------------------------------------------
@@ -310,17 +303,7 @@ IF(SIZE(PTHT) /= 0) PTHT (:,:,IKB-1)  = PTHT (:,:,IKB)
 IF(SIZE(PTKET) /= 0) PTKET(:,:,IKB-1) = PTKET(:,:,IKB)
 IF(SIZE(PRT) /= 0)  PRT  (:,:,IKB-1,:)= PRT  (:,:,IKB,:)
 IF(SIZE(PSVT)/= 0)  PSVT (:,:,IKB-1,:)= PSVT (:,:,IKB,:)
-!
-!         at the instant t-dt 
-!
-PUM  (:,:,IKB-1)   = PUM  (:,:,IKB) 
-PVM  (:,:,IKB-1)   = PVM  (:,:,IKB)
-PWM  (:,:,IKB-1)   = PWM  (:,:,IKB)
-PTHM (:,:,IKB-1)   = PTHM (:,:,IKB)
-IF(SIZE(PTKEM) /= 0) PTKEM(:,:,IKB-1)   = PTKEM(:,:,IKB)
-IF (KRR>0)           PRM  (:,:,IKB-1,:) = PRM  (:,:,IKB,:)
-IF (KSV>0)           PSVM (:,:,IKB-1,:) = PSVM (:,:,IKB,:)
-IF(SIZE(PSRCM) /= 0) PSRCM(:,:,IKB-1)   = PSRCM(:,:,IKB)
+IF(SIZE(PSRCT) /= 0) PSRCT(:,:,IKB-1)   = PSRCT(:,:,IKB)
 !
 !
 !*       2.2    COMPUTE THE FIELD EXTRAPOLATIONS AT THE TOP
@@ -334,25 +317,14 @@ IF(SIZE(PTHT) /= 0) PTHT (:,:,IKE+1)  = PTHT (:,:,IKE)
 IF(SIZE(PTKET) /= 0) PTKET(:,:,IKE+1) = PTKET(:,:,IKE)
 IF(SIZE(PRT) /= 0) PRT  (:,:,IKE+1,:) = PRT  (:,:,IKE,:)
 IF(SIZE(PSVT)/= 0) PSVT (:,:,IKE+1,:) = PSVT (:,:,IKE,:)
-!
-!         at the instant t-dt 
-!
-PWM  (:,:,IKE+1)   = 0.           
-PUM  (:,:,IKE+1)   = PUM  (:,:,IKE) 
-PVM  (:,:,IKE+1)   = PVM  (:,:,IKE)
-PTHM (:,:,IKE+1)   = PTHM (:,:,IKE)
-IF(SIZE(PTKEM) /= 0) PTKEM(:,:,IKE+1)   = PTKEM(:,:,IKE)
-IF (KRR>0)           PRM  (:,:,IKE+1,:) = PRM  (:,:,IKE,:)
-IF (KSV>0)           PSVM (:,:,IKE+1,:) = PSVM (:,:,IKE,:)
-IF(SIZE(PSRCM) /= 0) PSRCM(:,:,IKE+1)   = PSRCM(:,:,IKE)
+IF(SIZE(PSRCT) /= 0) PSRCT(:,:,IKE+1)   = PSRCT(:,:,IKE)
 
 ! specific for positive and negative ions mixing ratios (1/kg)
-!        valid for PPM advection scheme
 
 IF (NSV_ELEC .NE. 0) THEN
-
+!
    IF (SIZE(PWT) /= 0) THEN
-     WHERE ( (1.5*PWT(:,:,IKE+1) - 0.5*PWM(:,:,IKE+1)) .GE. 0.)    ! Outflow
+     WHERE ( PWT(:,:,IKE+1)  .GE. 0.)    ! Outflow
          PSVT (:,:,IKE+1,NSV_ELECBEG) = 2.*PSVT (:,:,IKE,NSV_ELECBEG) -  &
                                            PSVT (:,:,IKE-1,NSV_ELECBEG)
          PSVT (:,:,IKE+1,NSV_ELECEND) = 2.*PSVT (:,:,IKE,NSV_ELECEND) -  &
@@ -362,8 +334,9 @@ IF (NSV_ELEC .NE. 0) THEN
          PSVT (:,:,IKE+1,NSV_ELECEND) = XCION_NEG_FW(:,:,IKE+1)
      END WHERE
    ENDIF
-
+!
 END IF
+
 !
 !
 !-------------------------------------------------------------------------------
@@ -372,7 +345,7 @@ END IF
 !              ---------------------------
 !
 !
-IF ( CCONF == 'START' .AND. KTCOUNT == 1) THEN
+IF ( KTCOUNT == 1) THEN
   ZTSTEP = 0.
 ELSE
   ZTSTEP = PTSTEP
@@ -384,7 +357,7 @@ IF ( SIZE(PLBXTHS,1) /= 0 .AND.                      &
   ZLBXVT(:,:,:) = PLBXVM(:,:,:) + ZTSTEP * PLBXVS(:,:,:)
   ZLBXWT(:,:,:) = PLBXWM(:,:,:) + ZTSTEP * PLBXWS(:,:,:)
   ZLBXTHT(:,:,:) = PLBXTHM(:,:,:) + ZTSTEP * PLBXTHS(:,:,:)
-  IF ( SIZE(PTKEM,1) /= 0 ) THEN
+  IF ( SIZE(PTKET,1) /= 0 ) THEN
     ZLBXTKET(:,:,:) = PLBXTKEM(:,:,:) + ZTSTEP * PLBXTKES(:,:,:)
   END IF
   IF ( KRR > 0) THEN
@@ -399,7 +372,7 @@ ELSE
   ZLBXVT(:,:,:) = PLBXVM(:,:,:)
   ZLBXWT(:,:,:) = PLBXWM(:,:,:)
   ZLBXTHT(:,:,:) = PLBXTHM(:,:,:)
-  IF ( SIZE(PTKEM,1) /= 0 ) THEN
+  IF ( SIZE(PTKET,1) /= 0 ) THEN
     ZLBXTKET(:,:,:) = PLBXTKEM(:,:,:) 
   END IF
   IF ( KRR > 0) THEN
@@ -416,7 +389,7 @@ IF ( SIZE(PLBYTHS,1) /= 0 .AND.                       &
   ZLBYUT(:,:,:) = PLBYUM(:,:,:) + ZTSTEP * PLBYUS(:,:,:)
   ZLBYWT(:,:,:) = PLBYWM(:,:,:) + ZTSTEP * PLBYWS(:,:,:)
   ZLBYTHT(:,:,:) = PLBYTHM(:,:,:) + ZTSTEP * PLBYTHS(:,:,:)
-  IF ( SIZE(PTKEM,1) /= 0 ) THEN
+  IF ( SIZE(PTKET,1) /= 0 ) THEN
     ZLBYTKET(:,:,:) = PLBYTKEM(:,:,:) + ZTSTEP * PLBYTKES(:,:,:)
   END IF
   IF ( KRR > 0) THEN
@@ -431,7 +404,7 @@ ELSE
   ZLBYUT(:,:,:) = PLBYUM(:,:,:)
   ZLBYWT(:,:,:) = PLBYWM(:,:,:)
   ZLBYTHT(:,:,:) = PLBYTHM(:,:,:)
-  IF ( SIZE(PTKEM,1) /= 0 ) THEN
+  IF ( SIZE(PTKET,1) /= 0 ) THEN
     ZLBYTKET(:,:,:) = PLBYTKEM(:,:,:) 
   END IF
   IF ( KRR > 0) THEN
@@ -466,20 +439,11 @@ SELECT CASE ( HLBCX(1) )
        IF(SIZE(PTKET)/= 0) PTKET(IIB-JEXT,:,:)  = PTKET(IIB-1+JEXT,:,:)
        IF(SIZE(PRT) /= 0) PRT  (IIB-JEXT,:,:,:) = PRT  (IIB-1+JEXT,:,:,:)
        IF(SIZE(PSVT) /= 0) PSVT(IIB-JEXT,:,:,:) = PSVT (IIB-1+JEXT,:,:,:)
-!
-       PUM  (IIB-JEXT,:,:)   = PUM  (IIB       ,:,:)   ! never used during run
-       PVM  (IIB-JEXT,:,:)   = PVM  (IIB-1+JEXT,:,:)
-       PWM  (IIB-JEXT,:,:)   = PWM  (IIB-1+JEXT,:,:)
-       PTHM (IIB-JEXT,:,:)   = PTHM (IIB-1+JEXT,:,:)
-       IF(SIZE(PTKEM) /= 0) PTKEM(IIB-JEXT,:,:)   = PTKEM(IIB-1+JEXT,:,:)
-       PRM  (IIB-JEXT,:,:,:) = PRM  (IIB-1+JEXT,:,:,:)
-       PSVM (IIB-JEXT,:,:,:) = PSVM (IIB-1+JEXT,:,:,:)
-       IF(SIZE(PSRCM) /= 0) PSRCM (IIB-JEXT,:,:)   = PSRCM (IIB-1+JEXT,:,:)
+       IF(SIZE(PSRCT) /= 0) PSRCT (IIB-JEXT,:,:)   = PSRCT (IIB-1+JEXT,:,:)
 !
     END DO
 !
     IF(SIZE(PUT) /= 0) PUT(IIB     ,:,:)   = 0.    ! set the normal velocity
-    PUM  (IIB     ,:,:)   = 0.                     ! to zero
 !
 !
 !*       4.2  OPEN CASE:
@@ -501,17 +465,6 @@ SELECT CASE ( HLBCX(1) )
       ENDWHERE
     ENDIF
 !
-    PUM(IIB-JPHEXT,:,:)=0.
-    WHERE ( PUM(IIB,:,:) <= 0. )               !  OUTFLOW condition
-      PVM  (IIB-1,:,:) = 2.*PVM  (IIB,:,:)   -PVM  (IIB+1,:,:)
-      PWM  (IIB-1,:,:) = 2.*PWM  (IIB,:,:)   -PWM  (IIB+1,:,:)
-      PTHM (IIB-1,:,:) = 2.*PTHM (IIB,:,:)   -PTHM (IIB+1,:,:)
-!
-    ELSEWHERE                                   !  INFLOW  condition
-      PVM  (IIB-1,:,:) = PLBXVM   (1,:,:)
-      PWM  (IIB-1,:,:) = PLBXWM   (1,:,:) 
-      PTHM (IIB-1,:,:) = PLBXTHM  (1,:,:)
-    ENDWHERE
 !
   IF(SIZE(PTKET) /= 0) THEN
     WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
@@ -521,14 +474,6 @@ SELECT CASE ( HLBCX(1) )
     ENDWHERE
   END IF
     !
-  IF(SIZE(PTKEM) /= 0) THEN
-    WHERE ( PUM(IIB,:,:) <= 0. )               !  OUTFLOW condition
-      PTKEM(IIB-1,:,:) = MAX(XTKEMIN, 2.*PTKEM(IIB,:,:)-PTKEM(IIB+1,:,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKEM(IIB-1,:,:) = MAX(XTKEMIN,PLBXTKEM(1,:,:))  
-    ENDWHERE
-  END IF
-!
 !                      Case with KRR moist variables 
 ! 
 ! 
@@ -542,15 +487,9 @@ SELECT CASE ( HLBCX(1) )
       END WHERE
     END IF
     !
-    WHERE ( PUM(IIB,:,:) <= 0. )         !  OUTFLOW condition
-      PRM(IIB-1,:,:,JRR) = MAX(0.,2.*PRM(IIB,:,:,JRR) -PRM(IIB+1,:,:,JRR))
-    ELSEWHERE                            !  INFLOW  condition
-      PRM(IIB-1,:,:,JRR) = MAX(0.,PLBXRM(1,:,:,JRR))
-    END WHERE
-    !
   END DO
 !
-  IF(SIZE(PSRCM) /= 0) PSRCM (IIB-1,:,:)   = PSRCM (IIB,:,:)
+  IF(SIZE(PSRCT) /= 0) PSRCT (IIB-1,:,:)   = PSRCT (IIB,:,:)
 !
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
@@ -562,13 +501,6 @@ SELECT CASE ( HLBCX(1) )
         PSVT(IIB-1,:,:,JSV) = MAX(XSVMIN(JSV),ZLBXSVT(1,:,:,JSV))
       END WHERE
     END IF
-    !
-    WHERE ( PUM(IIB,:,:) <= 0. )         !  OUTFLOW condition
-      PSVM(IIB-1,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVM(IIB,:,:,JSV) - &
-                                             PSVM(IIB+1,:,:,JSV))
-    ELSEWHERE                            !  INFLOW  condition
-      PSVM(IIB-1,:,:,JSV) = MAX(XSVMIN(JSV),PLBXSVM(1,:,:,JSV))
-    END WHERE
     !
   END DO
 !
@@ -598,20 +530,11 @@ SELECT CASE ( HLBCX(2) )
        IF(SIZE(PTKET) /= 0) PTKET(IIE+JEXT,:,:) = PTKET(IIE+1-JEXT,:,:)
        IF(SIZE(PRT) /= 0) PRT  (IIE+JEXT,:,:,:) = PRT  (IIE+1-JEXT,:,:,:)
        IF(SIZE(PSVT) /= 0) PSVT(IIE+JEXT,:,:,:) = PSVT (IIE+1-JEXT,:,:,:)
-!
-       PUM  (IIE+JEXT,:,:)   = PUM  (IIE       ,:,:)   ! never used during run
-       PVM  (IIE+JEXT,:,:)   = PVM  (IIE+1-JEXT,:,:)
-       PWM  (IIE+JEXT,:,:)   = PWM  (IIE+1-JEXT,:,:)
-       PTHM (IIE+JEXT,:,:)   = PTHM (IIE+1-JEXT,:,:)
-       IF(SIZE(PTKEM) /= 0) PTKEM(IIE+JEXT,:,:)   = PTKEM(IIE+1-JEXT,:,:)
-       PRM  (IIE+JEXT,:,:,:) = PRM  (IIE+1-JEXT,:,:,:)
-       PSVM (IIE+JEXT,:,:,:) = PSVM (IIE+1-JEXT,:,:,:)
-       IF(SIZE(PSRCM) /= 0) PSRCM (IIE+JEXT,:,:)   = PSRCM (IIE+1-JEXT,:,:)
+       IF(SIZE(PSRCT) /= 0) PSRCT (IIE+JEXT,:,:)= PSRCT (IIE+1-JEXT,:,:)
 !
     END DO
 !
     IF(SIZE(PUT) /= 0) PUT(IIE+1   ,:,:)   = 0.     ! set the normal velocity
-    PUM  (IIE+1   ,:,:)   = 0.                      ! to zero
 !
 !*       5.2  OPEN CASE:
 !             =========
@@ -632,17 +555,6 @@ SELECT CASE ( HLBCX(2) )
       ENDWHERE
     ENDIF
 !
-    WHERE ( PUM(IIE+1,:,:) >= 0. )               !  OUTFLOW condition
-      PVM  (IIE+1,:,:) = 2.*PVM  (IIE,:,:)   -PVM  (IIE-1,:,:)
-      PWM  (IIE+1,:,:) = 2.*PWM  (IIE,:,:)   -PWM  (IIE-1,:,:)
-      PTHM (IIE+1,:,:) = 2.*PTHM (IIE,:,:)   -PTHM (IIE-1,:,:)
-!
-    ELSEWHERE                                   !  INFLOW  condition
-      PVM  (IIE+1,:,:) = PLBXVM   (ILBX,:,:)
-      PWM  (IIE+1,:,:) = PLBXWM   (ILBX,:,:) 
-      PTHM (IIE+1,:,:) = PLBXTHM  (ILBX,:,:)
-    ENDWHERE
-!
   IF(SIZE(PTKET) /= 0) THEN
     ILBX = SIZE(PLBXTKEM,1)
     WHERE ( PUT(IIE+1,:,:) >= 0. )             !  OUTFLOW condition
@@ -652,13 +564,6 @@ SELECT CASE ( HLBCX(2) )
     ENDWHERE
   END IF
     !
-  IF(SIZE(PTKEM) /= 0) THEN
-    WHERE ( PUM(IIE+1,:,:) >= 0. )             !  OUTFLOW condition
-      PTKEM(IIE+1,:,:) = MAX(XTKEMIN, 2.*PTKEM(IIE,:,:)-PTKEM(IIE-1,:,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKEM(IIE+1,:,:) = MAX(XTKEMIN,PLBXTKEM(ILBX,:,:))  
-    ENDWHERE
-  END IF
 !
 !                      Case with KRR moist variables 
 ! 
@@ -674,15 +579,9 @@ SELECT CASE ( HLBCX(2) )
       END WHERE
     END IF
     !
-    WHERE ( PUM(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
-      PRM(IIE+1,:,:,JRR) = MAX(0.,2.*PRM(IIE,:,:,JRR) -PRM(IIE-1,:,:,JRR))
-    ELSEWHERE                            !  INFLOW  condition
-      PRM(IIE+1,:,:,JRR) = MAX(0.,PLBXRM(ILBX,:,:,JRR))
-    END WHERE
   END DO
 !
-  IF(SIZE(PSRCM) /= 0) PSRCM (IIE+1,:,:)   = PSRCM (IIE,:,:)
-!
+  IF(SIZE(PSRCT) /= 0) PSRCT (IIE+1,:,:)   = PSRCT (IIE,:,:)
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
     ILBX=SIZE(PLBXSVM,1)
@@ -695,12 +594,6 @@ SELECT CASE ( HLBCX(2) )
       END WHERE
     END IF
     !
-    WHERE ( PUM(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
-      PSVM(IIE+1,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVM(IIE,:,:,JSV) - &
-                                             PSVM(IIE-1,:,:,JSV))
-    ELSEWHERE                            !  INFLOW  condition
-      PSVM(IIE+1,:,:,JSV) = MAX(XSVMIN(JSV),PLBXSVM(ILBX,:,:,JSV))
-    END WHERE
   END DO
 !
 !
@@ -728,20 +621,11 @@ SELECT CASE ( HLBCY(1) )
        IF(SIZE(PTKET) /= 0) PTKET(:,IJB-JEXT,:) = PTKET(:,IJB-1+JEXT,:)
        IF(SIZE(PRT) /= 0) PRT  (:,IJB-JEXT,:,:) = PRT  (:,IJB-1+JEXT,:,:)
        IF(SIZE(PSVT) /= 0) PSVT (:,IJB-JEXT,:,:)= PSVT (:,IJB-1+JEXT,:,:)
-!
-       PUM  (:,IJB-JEXT,:)   = PUM  (:,IJB-1+JEXT,:)
-       PVM  (:,IJB-JEXT,:)   = PVM  (:,IJB       ,:)   ! never used during run
-       PWM  (:,IJB-JEXT,:)   = PWM  (:,IJB-1+JEXT,:)
-       PTHM (:,IJB-JEXT,:)   = PTHM (:,IJB-1+JEXT,:)
-       IF(SIZE(PTKEM) /= 0) PTKEM(:,IJB-JEXT,:)   = PTKEM(:,IJB-1+JEXT,:)
-       PRM  (:,IJB-JEXT,:,:) = PRM  (:,IJB-1+JEXT,:,:)
-       PSVM (:,IJB-JEXT,:,:) = PSVM (:,IJB-1+JEXT,:,:)
-       IF(SIZE(PSRCM) /= 0) PSRCM(:,IJB-JEXT,:)   = PSRCM(:,IJB-1+JEXT,:)
+       IF(SIZE(PSRCT) /= 0) PSRCT(:,IJB-JEXT,:) = PSRCT(:,IJB-1+JEXT,:)
 !
     END DO
 !
     IF(SIZE(PVT) /= 0) PVT(:,IJB     ,:)   = 0.       ! set the normal velocity
-    PVM  (:,IJB     ,:)   = 0.                        ! to zero
 !
 !*       6.2  OPEN CASE:
 !             =========
@@ -761,17 +645,6 @@ SELECT CASE ( HLBCY(1) )
       ENDWHERE
     ENDIF
 !
-    PVM(:,IJB-JPHEXT,:)=0.
-    WHERE ( PVM(:,IJB,:) <= 0. )               !  OUTFLOW condition
-      PUM  (:,IJB-1,:) = 2.*PUM  (:,IJB,:)   -PUM  (:,IJB+1,:)
-      PWM  (:,IJB-1,:) = 2.*PWM  (:,IJB,:)   -PWM  (:,IJB+1,:)
-      PTHM (:,IJB-1,:) = 2.*PTHM (:,IJB,:)   -PTHM (:,IJB+1,:)
-    ELSEWHERE                                  !  INFLOW  condition
-      PUM  (:,IJB-1,:) = PLBYUM   (:,1,:)
-      PWM  (:,IJB-1,:) = PLBYWM   (:,1,:) 
-      PTHM (:,IJB-1,:) = PLBYTHM  (:,1,:)
-    ENDWHERE
-!
   IF(SIZE(PTKET) /= 0) THEN
     WHERE ( PVT(:,IJB,:) <= 0. )             !  OUTFLOW condition
       PTKET(:,IJB-1,:) = MAX(XTKEMIN, 2.*PTKET(:,IJB,:)-PTKET(:,IJB+1,:))  
@@ -780,13 +653,6 @@ SELECT CASE ( HLBCY(1) )
     ENDWHERE
   END IF
     !
-  IF(SIZE(PTKEM) /= 0) THEN
-    WHERE ( PVM(:,IJB,:) <= 0. )             !  OUTFLOW condition
-      PTKEM(:,IJB-1,:) = MAX(XTKEMIN, 2.*PTKEM(:,IJB,:)-PTKEM(:,IJB+1,:))  
-    ELSEWHERE                                !  INFLOW  condition
-      PTKEM(:,IJB-1,:) = MAX(XTKEMIN,PLBYTKEM(:,1,:))  
-    ENDWHERE
-  END IF
 !
 !                      Case with KRR moist variables 
 ! 
@@ -800,14 +666,9 @@ SELECT CASE ( HLBCY(1) )
       END WHERE
     END IF
     !
-    WHERE ( PVM(:,IJB,:) <= 0. )         !  OUTFLOW condition
-      PRM(:,IJB-1,:,JRR) = MAX(0.,2.*PRM(:,IJB,:,JRR) -PRM(:,IJB+1,:,JRR))
-    ELSEWHERE                            !  INFLOW  condition
-      PRM(:,IJB-1,:,JRR) = MAX(0.,PLBYRM(:,1,:,JRR))
-    END WHERE
   END DO
 !
-  IF(SIZE(PSRCM) /= 0) PSRCM(:,IJB-1,:)   = PSRCM(:,IJB,:)
+  IF(SIZE(PSRCT) /= 0) PSRCT(:,IJB-1,:)   = PSRCT(:,IJB,:)
 !
 !                       Case with KSV scalar variables  
 !
@@ -821,12 +682,6 @@ SELECT CASE ( HLBCY(1) )
       END WHERE
     END IF
     !
-    WHERE ( PVM(:,IJB,:) <= 0. )         !  OUTFLOW condition
-      PSVM(:,IJB-1,:,JSV) = MAX(XSVMIN(JSV),2.*PSVM(:,IJB,:,JSV) - &
-                                             PSVM(:,IJB+1,:,JSV))
-    ELSEWHERE                            !  INFLOW  condition
-      PSVM(:,IJB-1,:,JSV) = MAX(XSVMIN(JSV),PLBYSVM(:,1,:,JSV))
-    END WHERE
   END DO
 !
 !
@@ -855,20 +710,11 @@ SELECT CASE ( HLBCY(2) )
        IF(SIZE(PTKET) /= 0) PTKET(:,IJE+JEXT,:) = PTKET(:,IJE+1-JEXT,:)
        IF(SIZE(PRT) /= 0) PRT  (:,IJE+JEXT,:,:) = PRT  (:,IJE+1-JEXT,:,:)
        IF(SIZE(PSVT) /= 0) PSVT (:,IJE+JEXT,:,:)= PSVT (:,IJE+1-JEXT,:,:)
-!
-       PUM  (:,IJE+JEXT,:)   = PUM  (:,IJE+1-JEXT,:)
-       PVM  (:,IJE+JEXT,:)   = PVM  (:,IJE       ,:)   ! never used during run
-       PWM  (:,IJE+JEXT,:)   = PWM  (:,IJE+1-JEXT,:)
-       PTHM (:,IJE+JEXT,:)   = PTHM (:,IJE+1-JEXT,:)
-       IF(SIZE(PTKEM) /= 0) PTKEM(:,IJE+JEXT,:)   = PTKEM(:,IJE+1-JEXT,:)
-       PRM  (:,IJE+JEXT,:,:) = PRM  (:,IJE+1-JEXT,:,:)
-       PSVM (:,IJE+JEXT,:,:) = PSVM (:,IJE+1-JEXT,:,:)
-       IF(SIZE(PSRCM) /= 0) PSRCM(:,IJE+JEXT,:)   = PSRCM(:,IJE+1-JEXT,:)
+       IF(SIZE(PSRCT) /= 0) PSRCT(:,IJE+JEXT,:) = PSRCT(:,IJE+1-JEXT,:)
 !
     END DO
 !
     IF(SIZE(PVT) /= 0) PVT(:,IJE+1   ,:)   = 0.    ! set the normal velocity
-    PVM  (:,IJE+1   ,:)   = 0.                     ! to zero
 !
 !*       4.3.2  OPEN CASE:
 !               ========= 
@@ -889,16 +735,6 @@ SELECT CASE ( HLBCY(2) )
       ENDWHERE
     ENDIF
 !
-    WHERE ( PVM(:,IJE+1,:) >= 0. )               !  OUTFLOW condition
-      PUM  (:,IJE+1,:) = 2.*PUM  (:,IJE,:)   -PUM  (:,IJE-1,:)
-      PWM  (:,IJE+1,:) = 2.*PWM  (:,IJE,:)   -PWM  (:,IJE-1,:)
-      PTHM (:,IJE+1,:) = 2.*PTHM (:,IJE,:)   -PTHM (:,IJE-1,:)
-    ELSEWHERE                                   !  INFLOW  condition
-      PUM  (:,IJE+1,:) = PLBYUM   (:,ILBY,:)
-      PWM  (:,IJE+1,:) = PLBYWM   (:,ILBY,:) 
-      PTHM (:,IJE+1,:) = PLBYTHM  (:,ILBY,:)
-    ENDWHERE
-!
   IF(SIZE(PTKET) /= 0) THEN
     ILBY=SIZE(PLBYTKEM,2)
     WHERE ( PVT(:,IJE+1,:) >= 0. )             !  OUTFLOW condition
@@ -908,14 +744,6 @@ SELECT CASE ( HLBCY(2) )
     ENDWHERE
   ENDIF
     !
-  IF(SIZE(PTKEM) /= 0) THEN
-    WHERE ( PVM(:,IJE+1,:) >= 0. )             !  OUTFLOW condition
-      PTKEM(:,IJE+1,:) = MAX(XTKEMIN, 2.*PTKEM(:,IJE,:)-PTKEM(:,IJE-1,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKEM(:,IJE+1,:) = MAX(XTKEMIN,PLBYTKEM(:,ILBY,:))  
-    ENDWHERE
-  END IF
-!
 !                      Case with KRR moist variables 
 ! 
 ! 
@@ -930,14 +758,9 @@ SELECT CASE ( HLBCY(2) )
       END WHERE
     END IF
     !
-    WHERE ( PVM(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
-      PRM(:,IJE+1,:,JRR) = MAX(0.,2.*PRM(:,IJE,:,JRR) -PRM(:,IJE-1,:,JRR))
-    ELSEWHERE                            !  INFLOW  condition
-      PRM(:,IJE+1,:,JRR) = MAX(0.,PLBYRM(:,ILBY,:,JRR))
-    END WHERE
   END DO
 !
-  IF(SIZE(PSRCM) /= 0) PSRCM(:,IJE+1,:)   = PSRCM(:,IJE,:)
+  IF(SIZE(PSRCT) /= 0) PSRCT(:,IJE+1,:)   = PSRCT(:,IJE,:)
 !
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
@@ -952,12 +775,6 @@ SELECT CASE ( HLBCY(2) )
       END WHERE
     END IF
     !
-    WHERE ( PVM(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
-      PSVM(:,IJE+1,:,JSV) = MAX(XSVMIN(JSV),2.*PSVM(:,IJE,:,JSV) - &
-                                            PSVM(:,IJE-1,:,JSV))
-    ELSEWHERE                            !  INFLOW  condition
-      PSVM(:,IJE+1,:,JSV) = MAX(XSVMIN(JSV),PLBYSVM(:,ILBY,:,JSV))
-    END WHERE
   END DO
 !
 !
@@ -982,9 +799,7 @@ IF (LUSECHEM .AND. IMI == 1) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
     IF (GCHBOUNDARY(JSV-NSV_CHEMBEG+1))  THEN
       IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
@@ -1007,14 +822,11 @@ IF (LUSECHIC .AND. IMI == 1) THEN
   DO JSV=NSV_CHICBEG,NSV_CHICEND
     IF (GICBOUNDARY(JSV-NSV_CHICBEG+1))  THEN
       IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
 ENDIF
-!
 IF (LORILAM .AND. IMI == 1) THEN
   IF (GFIRSTCALL2) THEN
     ALLOCATE(GAERBOUNDARY(NSV_AER))
@@ -1032,9 +844,7 @@ IF (LORILAM .AND. IMI == 1) THEN
   DO JSV=NSV_AERBEG,NSV_AEREND
     IF (GAERBOUNDARY(JSV-NSV_AERBEG+1)) THEN
       IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
@@ -1057,9 +867,7 @@ IF (LDUST .AND. IMI == 1) THEN
   DO JSV=NSV_DSTBEG,NSV_DSTEND
     IF (GDSTBOUNDARY(JSV-NSV_DSTBEG+1)) THEN
       IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO 
@@ -1082,9 +890,7 @@ IF (LSALT .AND. IMI == 1) THEN
   DO JSV=NSV_SLTBEG,NSV_SLTEND
     IF (GSLTBOUNDARY(JSV-NSV_SLTBEG+1)) THEN
       IF (SIZE(PSVT)>0) THEN
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
@@ -1107,9 +913,7 @@ IF ( LPASPOL .AND. IMI == 1) THEN
   DO JSV=NSV_PPBEG,NSV_PPEND
     IF (GPPBOUNDARY(JSV-NSV_PPBEG+1)) THEN
       IF (SIZE(PSVT)>0) THEN
-       CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUT,PVT,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+       CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
@@ -1132,16 +936,14 @@ IF ( LCONDSAMP .AND. IMI == 1) THEN
   DO JSV=NSV_CSBEG,NSV_CSEND
     IF (GCSBOUNDARY(JSV-NSV_CSBEG+1)) THEN
       IF (SIZE(PSVT)>0) THEN
-       CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUT,PVT,PSVT(:,:,:,JSV))
-      ELSE
-        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+       CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
       ENDIF
     ENDIF
   ENDDO
 ENDIF
 !
 IF ( CELEC /= 'NONE' .AND. IMI == 1) THEN
-  CALL ION_BOUNDARIES (HLBCX,HLBCY,PUM,PVM,PUT,PVT,PSVT)
+  CALL ION_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT)
 ENDIF
 !
 !-------------------------------------------------------------------------------

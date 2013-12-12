@@ -148,7 +148,7 @@ IJB_ll=IYOR_ll+IJB-1
 IIE_ll=IXOR_ll+IIE-1
 IJE_ll=IYOR_ll+IJE-1
 !
-IKU = SIZE(XTHM,3)
+IKU = SIZE(XTHT,3)
 !
 !-------------------------------------------------------------------------------
 !

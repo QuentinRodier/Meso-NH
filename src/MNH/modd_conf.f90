@@ -53,12 +53,8 @@
 IMPLICIT NONE
 !
 CHARACTER (LEN=5),SAVE :: CCONF  ! Configuration of models
-                                 !  'START' for start configuration (variables
-                                 ! at time t and t-dt are the same in the
-                                 ! initial file)
+                                 !  'START' for start configuration 
                                  !  'RESTART' for restart configuration 
-                                 ! (variables  at time t and t-dt are different)   
-                                 !  'POST' for post-treatment configuration 
 LOGICAL,SAVE      :: LTHINSHELL  ! Logical for thinshell approximation
                                  ! .TRUE.  = thinshell approximation
                                  ! .FALSE. = no thinshell approximation
@@ -117,5 +113,7 @@ LOGICAL,SAVE      :: LNOMIXLG    ! to use turbulence for lagrangian variables
 LOGICAL,SAVE      :: LNEUTRAL ! True if ref. theta field is uniform
 !
 LOGICAL,SAVE      :: LCPL_AROME  ! true if coupling file are issued from AROME
+!
+LOGICAL,SAVE      :: LCHECK ! To test reproducibility
 !
 END MODULE MODD_CONF

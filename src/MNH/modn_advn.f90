@@ -27,9 +27,11 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    23/10/95  (Vila, Lafore) Implementation scalar advection scheme
-!!      C.Lac       24/04/06  Introduction of CUVW_ADV_SCHEME and
-!!                            removal of CFV_ADV_SCHEME
+!!      Original     23/10/95  (Vila, lafore) For new scalar advection schemes
+!!      C.Lac        24/04/06  Introduction of CUVW_ADV_SCHEME and
+!!                             removal of CFV_ADV_SCHEME
+!!      J.-P. Pinty  20/03/10  Add NWENO_ORDER
+!!      C.Lac, V.Masson        Add CTEMP_SCHEME and time splitting
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -39,16 +41,25 @@ USE MODD_ADV_n, ONLY: &
          CUVW_ADV_SCHEME_n => CUVW_ADV_SCHEME, &
          CMET_ADV_SCHEME_n => CMET_ADV_SCHEME, &
          CSV_ADV_SCHEME_n => CSV_ADV_SCHEME, &
-         NLITER_n => NLITER
+         CTEMP_SCHEME_n => CTEMP_SCHEME, &
+         NWENO_ORDER_n => NWENO_ORDER, &
+         LSPLIT_CFL_n => LSPLIT_CFL, &
+         LCFL_WRIT_n => LCFL_WRIT, &
+         XSPLIT_CFL_n => XSPLIT_CFL
 !
 IMPLICIT NONE
 !
 CHARACTER(LEN=6)  :: CUVW_ADV_SCHEME
 CHARACTER(LEN=6)  :: CMET_ADV_SCHEME
 CHARACTER(LEN=6)  :: CSV_ADV_SCHEME
-INTEGER  :: NLITER
+CHARACTER(LEN=4)  :: CTEMP_SCHEME
+INTEGER  :: NWENO_ORDER
+LOGICAL  :: LSPLIT_CFL     
+LOGICAL  :: LCFL_WRIT     
+REAL     :: XSPLIT_CFL     
 !
-NAMELIST/NAM_ADVn/CUVW_ADV_SCHEME,CMET_ADV_SCHEME,CSV_ADV_SCHEME,NLITER
+NAMELIST/NAM_ADVn/CUVW_ADV_SCHEME,CMET_ADV_SCHEME,CSV_ADV_SCHEME,CTEMP_SCHEME, &
+                  NWENO_ORDER,LSPLIT_CFL,XSPLIT_CFL,LCFL_WRIT             
 !
 CONTAINS
 !
@@ -56,14 +67,22 @@ SUBROUTINE INIT_NAM_ADVn
   CUVW_ADV_SCHEME = CUVW_ADV_SCHEME_n
   CMET_ADV_SCHEME = CMET_ADV_SCHEME_n
   CSV_ADV_SCHEME = CSV_ADV_SCHEME_n
-  NLITER = NLITER_n
+  CTEMP_SCHEME = CTEMP_SCHEME_n
+  NWENO_ORDER = NWENO_ORDER_n
+  LSPLIT_CFL = LSPLIT_CFL_n
+  LCFL_WRIT = LCFL_WRIT_n
+  XSPLIT_CFL = XSPLIT_CFL_n
 END SUBROUTINE INIT_NAM_ADVn
 
 SUBROUTINE UPDATE_NAM_ADVn
   CUVW_ADV_SCHEME_n = CUVW_ADV_SCHEME
   CMET_ADV_SCHEME_n = CMET_ADV_SCHEME
   CSV_ADV_SCHEME_n = CSV_ADV_SCHEME
-  NLITER_n = NLITER
+  CTEMP_SCHEME_n = CTEMP_SCHEME
+  NWENO_ORDER_n = NWENO_ORDER
+  LSPLIT_CFL_n = LSPLIT_CFL      
+  LCFL_WRIT_n = LCFL_WRIT      
+  XSPLIT_CFL_n = XSPLIT_CFL      
 END SUBROUTINE UPDATE_NAM_ADVn
 
 END MODULE MODN_ADV_n

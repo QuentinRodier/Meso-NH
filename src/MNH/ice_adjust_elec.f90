@@ -12,7 +12,7 @@ INTERFACE
       SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,                &
                                   HTURBDIM, HSCONV, HMF_CLOUD,                    &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,&
-                                  PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, PZZ,    &
+                                  PRHODJ, PEXNREF, PSIGS, PPABST, PZZ,            &
                                   PMFCONV, PCF_MF, PRC_MF, PRI_MF,                &
                                   PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,   &
                                   PRRT, PRRS, PRIT, PRIS, PRST, PRSS, PRGT, PRGS, &
@@ -44,8 +44,6 @@ REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat vari
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXNREF ! Reference Exner function
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABSM  ! Absolute Pressure at 
-                                                   !      time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t        
@@ -100,7 +98,7 @@ END MODULE MODI_ICE_ADJUST_ELEC
       SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,           &
                              HTURBDIM, HSCONV, HMF_CLOUD,                    &
                              OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,&
-                             PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, PZZ,    &
+                             PRHODJ, PEXNREF, PSIGS, PPABST, PZZ,            &
                              PMFCONV, PCF_MF, PRC_MF, PRI_MF,                &  
                              PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,   &
                              PRRT, PRRS, PRIT, PRIS, PRST, PRSS, PRGT, PRGS, &
@@ -219,8 +217,6 @@ REAL,                     INTENT(IN)   :: PSIGQSAT  ! coeff applied to qsat vari
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PEXNREF ! Reference Exner function
-REAL, DIMENSION(:,:,:), INTENT(IN)    :: PPABSM  ! Absolute Pressure at 
-                                                 !      time t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:), INTENT(IN)    :: PPABST  ! Absolute Pressure at t        
@@ -339,7 +335,7 @@ ZT00 = XTT-40.           ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 !
 !*       2.1    estimate the pressure at t+1
 !
-ZEXNS(:,:,:) = ((2. * PPABST(:,:,:) - PPABSM(:,:,:)) / XP00)**(XRD/XCPD)
+ZEXNS(:,:,:) = ( PPABST(:,:,:)  / XP00)**(XRD/XCPD)
 !
 !    beginning of the iterative loop
 !
@@ -389,9 +385,9 @@ DO JITER = 1, ITERMAX
   !   ZW3=water vapor    ZW1=rc (INOUT)  ZW2=ri (INOUT)   PSRC= s'rci'/Sigma_s^2
     ZW3 = PRVS * PTSTEP;     ZW1 = PRCS * PTSTEP;  ZW2 = PRIS * PTSTEP
 
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1,               &
-       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., OSIGMAS,&
-       PSIGQSAT )
+    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1,         &
+       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., &
+       OSIGMAS, PSIGQSAT )
 !
 !*       3.2    compute the variation of mixing ratio
 !
@@ -423,9 +419,9 @@ DO JITER = 1, ITERMAX
 !     compute the saturation mixing ratios at t+1
 !
       ZW3(:,:,:) = ZW1(:,:,:) * ZEPS / &
-                  (2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW1(:,:,:))  ! r_sw
+                  ( PPABST(:,:,:) - ZW1(:,:,:))  ! r_sw
       ZW4(:,:,:) = ZW2(:,:,:) * ZEPS / &
-                  (2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW2(:,:,:))  ! r_si
+                  ( PPABST(:,:,:) - ZW2(:,:,:))  ! r_si
 !
       WHERE(PRVS(:,:,:)*PTSTEP .LT. ZW4(:,:,:) .AND. &
             PRCS(:,:,:) .GT. 0. .AND. ZT(:,:,:) .LT. XTT)
@@ -479,9 +475,9 @@ DO JITER = 1, ITERMAX
 !*       4.4    compute the saturation mixing ratios at t+1
 !
     ZW3(:,:,:) =  ZW1(:,:,:) * ZEPS     &
-               / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW1(:,:,:) ) ! r_sw
+               / ( PPABST(:,:,:)  - ZW1(:,:,:) ) ! r_sw
     ZW4(:,:,:) =  ZW2(:,:,:) * ZEPS     &
-               / ( 2. * PPABST(:,:,:) - PPABSM(:,:,:) - ZW2(:,:,:) ) ! r_si
+               / ( PPABST(:,:,:)  - ZW2(:,:,:) ) ! r_si
 !
 !*       4.5    compute the saturation mixing ratio derivatives (r'_vs)
 !
@@ -632,10 +628,10 @@ ELSE
   IF (HSCONV == 'EDKF' .AND. HMF_CLOUD == 'DIRE') THEN
     PCLDFR(:,:,:) = MIN(1.,PCLDFR(:,:,:)+PCF_MF(:,:,:))
     PRCS(:,:,:)   = PRCS(:,:,:) + PRC_MF(:,:,:) / PTSTEP
-    PRIS(:,:,:)   = PRIS(:,:,:) + PRI_MF(:,:,:) / PTSTEP
-    PRVS(:,:,:)   = PRVS(:,:,:) - ( PRC_MF(:,:,:) + PRI_MF(:,:,:)) / PTSTEP
-    PTHS(:,:,:)   = PTHS(:,:,:) + ( PRC_MF(:,:,:) * ZLV(:,:,:) + &
-                    PRI_MF(:,:,:) * ZLS(:,:,:) ) / ZCPH(:,:,:) / &
+    PRIS(:,:,:)   = PRIS(:,:,:)+PRI_MF(:,:,:)/PTSTEP
+    PRVS(:,:,:)   = PRVS(:,:,:)- ( PRC_MF(:,:,:) + PRI_MF(:,:,:)) /PTSTEP
+    PTHS(:,:,:)   = PTHS(:,:,:) +  ( PRC_MF(:,:,:) * ZLV(:,:,:) +    &
+                    PRI_MF(:,:,:) * ZLS(:,:,:) ) / ZCPH(:,:,:) /     &
                     PEXNREF(:,:,:) / PTSTEP
   END IF
 ENDIF

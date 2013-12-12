@@ -92,6 +92,8 @@ USE MODI_VERSION
 USE MODI_INIT_MNH
 USE MODI_DEALLOC_SURFEX
 !
+USE MODE_MPPDB
+!
 IMPLICIT NONE 
 !
 !*       0.1    declarations of local variables
@@ -107,6 +109,7 @@ INTEGER       :: IINFO_ll                     ! return code of // routines
 !*       1.    INITIALIZATION
 !              --------------
 ! Switch to model 1 variables
+CALL MPPDB_INIT()
 CALL GOTO_MODEL(1)
 !
 CALL INITIO_ll()
@@ -127,7 +130,7 @@ GEXIT=.FALSE.
 DO JMODEL=1,NMODEL
   CALL GO_TOMODEL_ll(JMODEL,IINFO_ll)
   CALL GOTO_MODEL(JMODEL)
-  CSTORAGE_TYPE='MT'
+  CSTORAGE_TYPE='TT'
   CALL MODEL_n(1,GEXIT)
 END DO
 !
@@ -156,7 +159,12 @@ END DO
 !*       3.    FINALIZE THE PARALLEL SESSION
 !              -----------------------------
 !
-CALL END_PARA_ll(IINFO_ll)
+IF (LCHECK) THEN
+  CALL MPPDB_BARRIER()
+  CALL MPPDB_BARRIER()
+ELSE
+  CALL END_PARA_ll(IINFO_ll)
+END IF
 !
 !
 CALL DEALLOC_SURFEX

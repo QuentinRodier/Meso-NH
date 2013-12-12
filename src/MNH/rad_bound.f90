@@ -12,10 +12,10 @@ INTERFACE
 !
       SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB,PRIMKMAX,               &
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
-                        PUM,PVM,PUT,PVT,                              &
+                        PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
                         PCPHASE,PCPHASE_PBL,PRHODJ,                   &
-                        PTKEM,PRUS,PRVS,PRWS                          )
+                        PTKET,PRUS,PRVS,PRWS                          )
 ! 
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 CHARACTER(LEN=4),               INTENT(IN) :: HTURB         ! Turbulence scheme
@@ -27,8 +27,7 @@ REAL,      DIMENSION(:),  INTENT(IN) :: PDXHAT      ! X-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PZHAT       ! height level without orography
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUM,PVM     ! Horizontal momentum 
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t-dt , t
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t
 !
 ! Lateral Boundary fields at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUM,PLBYVM    
@@ -40,7 +39,7 @@ REAL,                     INTENT(IN) :: PCPHASE_PBL ! prescribed PBL phase veloc
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ      ! Jacobian * dry density 
                                                     ! of the reference state 
-REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTKEM ! TKE at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PTKET ! TKE at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT):: PRUS,PRVS   ! Horizontal and Vertical
 REAL, DIMENSION(:,:,:),   INTENT(INOUT):: PRWS        ! momentum tendencies
@@ -54,10 +53,10 @@ END MODULE MODI_RAD_BOUND
 !     #################################################################
       SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB,PRIMKMAX,               &
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
-                        PUM,PVM,PUT,PVT,                              &
+                        PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
                         PCPHASE,PCPHASE_PBL,PRHODJ,                   &
-                        PTKEM,PRUS,PRVS,PRWS                          )
+                        PTKET,PRUS,PRVS,PRWS                          )
 !     #################################################################
 !
 !!****  *RAD_BOUND* - routine computing the velocity components normal to
@@ -146,7 +145,8 @@ END MODULE MODI_RAD_BOUND
 !!                                       in the PBL
 !!      Juan 25/02/2010: BUG add ZTKEX = 0.0 
 !!      Modification   08/10  (V.Masson) Bug correction and add cphase_profile
-!!      Escobar     9/11/2010 : cphas_profile : array bound problem if NO Turb =>  PTKEM optional
+!!      Escobar     9/11/2010 : cphas_profile : array bound problem if NO Turb =>  PTKET optional
+!!      Lac.C.       2011     : Adaptation to FIT temporal scheme
 !!      Modification 06/13     (C.Lac)   Introduction of cphase_pbl                                        
 !!      
 !-------------------------------------------------------------------------------
@@ -179,8 +179,7 @@ REAL,      DIMENSION(:),  INTENT(IN) :: PDXHAT      ! X-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
 REAL,      DIMENSION(:),  INTENT(IN) :: PZHAT       ! height level without orography
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUM,PVM     ! Horizontal momentum 
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t-dt , t
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUT,PVT     ! at t
 !
 ! Lateral Boundary fields at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUM,PLBYVM    
@@ -192,7 +191,7 @@ REAL,                     INTENT(IN) :: PCPHASE_PBL ! prescribed PBL phase veloc
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ      ! Jacobian * dry density 
                                                     ! of the reference state 
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTKEM ! TKE at t-dt
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTKET ! TKE at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT):: PRUS,PRVS   ! Horizontal and Vertical
 REAL, DIMENSION(:,:,:),   INTENT(INOUT):: PRWS        ! momentum tendancies
@@ -225,6 +224,7 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,3)) :: ZCPHASY! Normalized Phase velocity
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,3)) :: ZPHASY ! Phase velocity
 !                                                  ! for V field at Y-boundaries
 REAL                                     :: ZTSTEP ! effective time step
+REAL                                     :: ZALPHA2! implicitness of the damping
 !
 !-------------------------------------------------------------------------------
 !
@@ -241,9 +241,11 @@ IKE = SIZE(PUT,3) - JPVEXT
 !*       1.2  Compute the inverse of the applicable timestep
 !
 !
-ZTSTEP = PTSTEP / 2.
-ZINVTSTEP = 0.5/ZTSTEP
+ZTSTEP = PTSTEP 
+ZINVTSTEP = 1./PTSTEP
 ZKTSTEP   = PRIMKMAX*ZTSTEP
+! ZALPHA2 = O : explicit ; ZALPHA2 = 1 : implicit ; ZALPHA2 = 0.5 SI
+ZALPHA2 = 1. 
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -270,14 +272,14 @@ SELECT CASE ( HLBCX(1) )
   CASE ('OPEN')
 !
     IF (HTURB /= "NONE" ) THEN
-       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX,PTKEM(IIB,:,:))
+       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX,PTKET(IIB,:,:))
     ELSE
        CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX)
     END IF
 
     ZCPHASX(:,:) = MAX ( 0., MIN ( 1.,                                      & 
-                      (-PUM(IIB,:,:) + ZPHASX(:,:) ) * ZTSTEP / PDXHAT(IIB)  )    )
-                      ! notice that ZCPHASX=0. when ZPHASX  < PUM(IIB,:,:)  
+                      (-PUT(IIB,:,:) + ZPHASX(:,:) ) * ZTSTEP / PDXHAT(IIB)  )    )
+                      ! notice that ZCPHASX=0. when ZPHASX  < PUT(IIB,:,:)  
 !
 !
     IF ( SIZE(PLBXUS,1) == 0 ) THEN
@@ -293,14 +295,22 @@ SELECT CASE ( HLBCX(1) )
 !  
 !     ============================================================
 !
-    PRUS (IIB,:,:) =(PRHODJ(IIB-1,:,:) + PRHODJ(IIB,:,:)) * 0.5 *           &
-                     (  (1. - ZCPHASX(:,:) - ZKTSTEP) * PUM(IIB  ,:,:)      &
-                       + 2. * ZCPHASX(:,:)            * PUT(IIB+1,:,:)      &
-            +2.* (   ZLBEU (:,:) * ZTSTEP                                   &
-                  -  ZLBGU (:,:) * ZCPHASX(:,:)                             &
-                  +  ZKTSTEP*( ZLBXU(:,:) )       )                         &
-                     ) * ZINVTSTEP / (1.+ ZCPHASX(:,:) +ZKTSTEP)
+!     PRUS (IIB,:,:) =(PRHODJ(IIB-1,:,:) + PRHODJ(IIB,:,:)) * 0.5 *           &
+!                    (  (1. - ZCPHASX(:,:) - ZKTSTEP) * PUM(IIB  ,:,:)      &
+!                      + 2. * ZCPHASX(:,:)            * PUT(IIB+1,:,:)      &
+!           +2.* (   ZLBEU (:,:) * ZTSTEP                                   &
+!                 -  ZLBGU (:,:) * ZCPHASX(:,:)                             &
+!                 +  ZKTSTEP*( ZLBXU(:,:) )       )                         &
+!                    ) * ZINVTSTEP / (1.+ ZCPHASX(:,:) +ZKTSTEP)
 !
+      PRUS (IIB,:,:) =(PRHODJ(IIB-1,:,:) + PRHODJ(IIB,:,:)) * 0.5 *          &
+                       ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *               &
+            (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2)) * PUT(IIB,:,:) &
+                         +  ZCPHASX(:,:)            * PUT(IIB+1  ,:,:)       &
+              + (   ZLBEU (:,:) * ZTSTEP                                     &
+                    -  ZLBGU (:,:) * ZCPHASX(:,:)                            &
+                    +  ZKTSTEP*ZLBXU(:,:)   )  )  
+
 !
 !
 END SELECT
@@ -331,13 +341,13 @@ SELECT CASE ( HLBCX(2) )
   CASE ('OPEN')
 !
     IF (HTURB /= "NONE" ) THEN
-       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX,PTKEM(IIE,:,:))
+       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX,PTKET(IIE,:,:))
     ELSE
        CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASX)
     END IF
 !
     ZCPHASX(:,:) = MAX ( 0., MIN ( 1.,                                  &
-                    ( PUM(IIE+1,:,:) + ZPHASX(:,:) ) * ZTSTEP/PDXHAT(IIE)  )      )
+                    ( PUT(IIE+1,:,:) + ZPHASX(:,:) ) * ZTSTEP/PDXHAT(IIE)  )      )
 !
 ! 
     ILBX=SIZE(PLBXUM,1)
@@ -354,13 +364,21 @@ SELECT CASE ( HLBCX(2) )
 !     
 !     ============================================================
 ! 
-    PRUS (IIE+1,:,:) =(PRHODJ(IIE+1,:,:) + PRHODJ(IIE,:,:)) * 0.5 *           &
-                       (  (1. - ZCPHASX(:,:) - ZKTSTEP) * PUM(IIE+1,:,:)      &
-                         + 2. * ZCPHASX(:,:)            * PUT(IIE  ,:,:)      &
-              +2.* (   ZLBEU (:,:) * ZTSTEP                                   &
-                    +  ZLBGU (:,:) * ZCPHASX(:,:)                             &
-                    +  ZKTSTEP*ZLBXU(:,:)   )                                 &
-                       ) * ZINVTSTEP / (1.+ZCPHASX(:,:) +ZKTSTEP)
+!     PRUS (IIE+1,:,:) =(PRHODJ(IIE+1,:,:) + PRHODJ(IIE,:,:)) * 0.5 *         &
+!                      (  (1. - ZCPHASX(:,:) - ZKTSTEP) * PUM(IIE+1,:,:)      &
+!                        + 2. * ZCPHASX(:,:)            * PUT(IIE  ,:,:)      &
+!             +2.* (   ZLBEU (:,:) * ZTSTEP                                   &
+!                   +  ZLBGU (:,:) * ZCPHASX(:,:)                             &
+!                   +  ZKTSTEP*ZLBXU(:,:)   )                                 &
+!                      ) * ZINVTSTEP / (1.+ZCPHASX(:,:) +ZKTSTEP)
+! 
+      PRUS (IIE+1,:,:) =(PRHODJ(IIE+1,:,:) + PRHODJ(IIE,:,:)) * 0.5 *           &
+                       ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                  &
+            (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PUT(IIE+1,:,:) &
+                         +  ZCPHASX(:,:)            * PUT(IIE  ,:,:)            &
+              + (   ZLBEU (:,:) * ZTSTEP                                        &
+                    +  ZLBGU (:,:) * ZCPHASX(:,:)                               &
+                    +  ZKTSTEP*ZLBXU(:,:)   )  )   
 !
 !
 !
@@ -393,13 +411,13 @@ SELECT CASE ( HLBCY(1) )
   CASE ('OPEN')
 !
     IF (HTURB /= "NONE" ) THEN
-       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY,PTKEM(:,IJB,:))
+       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY,PTKET(:,IJB,:))
     ELSE
        CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY)
     END IF    
 !
     ZCPHASY(:,:) = MAX ( 0., MIN ( 1.,                                      &
-                    (-PVM(:,IJB,:) + ZPHASY(:,:) ) * ZTSTEP/ PDYHAT(IJB)   )      )
+                    (-PVT(:,IJB,:) + ZPHASY(:,:) ) * ZTSTEP/ PDYHAT(IJB)   )      )
 !
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
@@ -414,13 +432,22 @@ SELECT CASE ( HLBCY(1) )
 !  
 !     ============================================================
 !
-    PRVS (:,IJB,:) =(PRHODJ(:,IJB-1,:) + PRHODJ(:,IJB,:)) * 0.5 *           &
-                     (  (1. - ZCPHASY(:,:) - ZKTSTEP) * PVM(:,IJB  ,:)      &
-                       + 2. * ZCPHASY(:,:)  * PVT(:,IJB+1,:)                &
-            +2.* (   ZLBEV (:,:) * ZTSTEP                                   &
-                  -  ZLBGV (:,:) * ZCPHASY(:,:)                             &
-                  +  ZKTSTEP*ZLBYV(:,:)       )                             &
-                     ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
+!     PRVS (:,IJB,:) =(PRHODJ(:,IJB-1,:) + PRHODJ(:,IJB,:)) * 0.5 *           &
+!                    (  (1. - ZCPHASY(:,:) - ZKTSTEP) * PVM(:,IJB  ,:)      &
+!                      + 2. * ZCPHASY(:,:)  * PVT(:,IJB+1,:)                &
+!           +2.* (   ZLBEV (:,:) * ZTSTEP                                   &
+!                 -  ZLBGV (:,:) * ZCPHASY(:,:)                             &
+!                 +  ZKTSTEP*ZLBYV(:,:)       )                             &
+!                    ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
+      PRVS (:,IJB,:) =(PRHODJ(:,IJB-1,:) + PRHODJ(:,IJB,:)) * 0.5 *        &
+                       ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *             &
+          (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJB,:)&
+                         +  ZCPHASY(:,:)            * PVT(:,IJB+1,:)       &
+              + (   ZLBEV (:,:) * ZTSTEP                                   &
+                    -  ZLBGV (:,:) * ZCPHASY(:,:)                          &
+                    +  ZKTSTEP*ZLBYV(:,:)   )  )   
+!
+!
 !
 !
 END SELECT
@@ -451,13 +478,13 @@ SELECT CASE ( HLBCY(2) )
   CASE ('OPEN')
 !
     IF (HTURB /= "NONE" ) THEN
-       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY,PTKEM(:,IJE,:))
+       CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY,PTKET(:,IJE,:))
     ELSE
        CALL CPHASE_PROFILE(PZHAT,PCPHASE,PCPHASE_PBL,ZPHASY)
     END IF    
 !
     ZCPHASY(:,:) = MAX ( 0., MIN ( 1.,                                      &
-                    ( PVM(:,IJE+1,:) + ZPHASY(:,:) ) * ZTSTEP/PDYHAT(IJE)  )      )
+                    ( PVT(:,IJE+1,:) + ZPHASY(:,:) ) * ZTSTEP/PDYHAT(IJE)  )      )
 !
     ILBY=SIZE(PLBYVM,2)
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
@@ -473,14 +500,22 @@ SELECT CASE ( HLBCY(2) )
 !  
 !     ============================================================
 !
-    PRVS (:,IJE+1,:) =(PRHODJ(:,IJE+1,:) + PRHODJ(:,IJE,:)) * 0.5 *           &
-                       (  (1. - ZCPHASY(:,:) - ZKTSTEP) * PVM(:,IJE+1,:)      &
-                         + 2. * ZCPHASY(:,:)  * PVT(:,IJE  ,:)                &
-              +2.* (   ZLBEV (:,:) * ZTSTEP                                   &
-                    +  ZLBGV (:,:) * ZCPHASY(:,:)                             &
-                    +  ZKTSTEP* ZLBYV(:,:)   )                                &
-                       ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
+!     PRVS (:,IJE+1,:) =(PRHODJ(:,IJE+1,:) + PRHODJ(:,IJE,:)) * 0.5 *           &
+!                      (  (1. - ZCPHASY(:,:) - ZKTSTEP) * PVM(:,IJE+1,:)      &
+!                        + 2. * ZCPHASY(:,:)  * PVT(:,IJE  ,:)                &
+!             +2.* (   ZLBEV (:,:) * ZTSTEP                                   &
+!                   +  ZLBGV (:,:) * ZCPHASY(:,:)                             &
+!                   +  ZKTSTEP* ZLBYV(:,:)   )                                &
+!                      ) * ZINVTSTEP / (1.+ ZCPHASY(:,:) +ZKTSTEP)
 !
+      PRVS (:,IJE+1,:) =(PRHODJ(:,IJE+1,:) + PRHODJ(:,IJE,:)) * 0.5 *         &
+                       ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                &
+           (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJE+1,:)&
+                         +  ZCPHASY(:,:)            * PVT(:,IJE,:)            &
+              + (   ZLBEV (:,:) * ZTSTEP                                      &
+                    +  ZLBGV (:,:) * ZCPHASY(:,:)                             &
+                    +  ZKTSTEP*ZLBYV(:,:)   )  )   
+! 
 !
 END SELECT
 !

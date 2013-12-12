@@ -161,47 +161,40 @@ CALL GET_MODEL_NUMBER_ll(IMI)
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 IIB=JPHEXT+1
-IIE=SIZE(XWM,1)-JPHEXT
-IIU=SIZE(XWM,1)
+IIE=SIZE(XWT,1)-JPHEXT
+IIU=SIZE(XWT,1)
 IJB=JPHEXT+1
-IJE=SIZE(XWM,2)-JPHEXT
-IJU=SIZE(XWM,2)
-IKU=SIZE(XWM,3)
+IJE=SIZE(XWT,2)-JPHEXT
+IJU=SIZE(XWT,2)
+IKU=SIZE(XWT,3)
 IIU_ll=NIMAX_ll + 2 * JPHEXT
 IJU_ll=NJMAX_ll + 2 * JPHEXT
 !-------------------------------------------------------------------------------
 !
-!*       1.    FIELDS AT TIME T
-!              ----------------
-!
-ALLOCATE(XUT(0,0,0),XVT(0,0,0),XWT(0,0,0))
-ALLOCATE(XTHT(0,0,0),XRT(0,0,0,0))
-!-------------------------------------------------------------------------------
-!
-!*       2.    TURBULENCE FIELDS
+!*       1.    TURBULENCE FIELDS
 !              -----------------
 !
 ALLOCATE(XTKET(0,0,0))
 ALLOCATE(XSRCT(0,0,0))
 IF (CTURB=='TKEL' ) THEN
-  ALLOCATE(XTKEM(IIU,IJU,IKU))
-  XTKEM(:,:,:)=PTKE_MX(:,:,:)
+  ALLOCATE(XTKET(IIU,IJU,IKU))
+  XTKET(:,:,:)=PTKE_MX(:,:,:)
   IF (NRR>1) THEN
-    ALLOCATE(XSRCM(IIU,IJU,IKU))
+    ALLOCATE(XSRCT(IIU,IJU,IKU))
     ALLOCATE(XSIGS(IIU,IJU,IKU))
-    WHERE (XRM(:,:,:,2)>1.E-10)
-      XSRCM(:,:,:)=1.
+    WHERE (XRT(:,:,:,2)>1.E-10)
+      XSRCT(:,:,:)=1.
     ELSEWHERE
-      XSRCM(:,:,:)=0.
+      XSRCT(:,:,:)=0.
     END WHERE
     XSIGS(:,:,:)=0.
   ELSE
-    ALLOCATE(XSRCM(0,0,0))
+    ALLOCATE(XSRCT(0,0,0))
     ALLOCATE(XSIGS(0,0,0))
   END IF
 ELSE
-  ALLOCATE(XTKEM(0,0,0))
-  ALLOCATE(XSRCM(0,0,0))
+  ALLOCATE(XTKET(0,0,0))
+  ALLOCATE(XSRCT(0,0,0))
   ALLOCATE(XSIGS(0,0,0))
 END IF
 !
@@ -229,7 +222,7 @@ IF(PRESENT(HCHEMFILE)) THEN
   END IF ! lorilam
   ! initialise NSV_* variables
   CALL INI_NSV(1)
-  ALLOCATE(XSVM(IIU,IJU,IKU,NSV))
+  ALLOCATE(XSVT(IIU,IJU,IKU,NSV))
   ! Read dimensions in chem file and checks with output file
   CALL FMOPEN_ll(HCHEMFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
   YRECFM='IMAX'
@@ -283,16 +276,16 @@ IF(PRESENT(HCHEMFILE)) THEN
   IF (.NOT.LDUST) THEN
   ! Read scalars in chem file 
     DO JSV = NSV_CHEMBEG,NSV_CHEMEND
-      YRECFM=TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'M'
+      YRECFM=TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'T'
       YDIR='XY'
-      CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+      CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                   YCOMMENT,IRESP)
       IF (IRESP/=0) THEN
         WRITE(ILUOUT,*) TRIM(YRECFM),'NOT FOUND IN THE CHEM FILE ',HCHEMFILE
-        XSVM(:,:,:,JSV) = 0.
+        XSVT(:,:,:,JSV) = 0.
       END IF !IRESP
     END DO ! JSV
-    IF (ALL(XSVM(:,:,:,NSV_CHEMBEG:NSV_CHEMEND) == 0.)) THEN 
+    IF (ALL(XSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND) == 0.)) THEN 
       LUSECHEM=.FALSE.
       NEQ = 0
     END IF
@@ -316,7 +309,7 @@ IF(PRESENT(HCHEMFILE)) THEN
              + (NSV_DSTBEG -1)      !Previous list of tracers  
         YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'M'
         YDIR='XY'
-        CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (IRESP/=0) THEN
           WRITE(ILUOUT,FMT=9000) 
@@ -333,10 +326,10 @@ IF(PRESENT(HCHEMFILE)) THEN
           JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                + JMOM               & !Number of moments in this mode
                + (NSV_DSTBEG -1)      !Previous list of tracers
-          YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'M'
+          YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
           YDIR='XY'
           WRITE(ILUOUT,*) 'JPC titi ',YRECFM
-          CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+          CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                       YCOMMENT,IRESP)
           IF (IRESP/=0) THEN
             WRITE(ILUOUT,FMT=9000) 
@@ -362,9 +355,9 @@ IF(PRESENT(HCHEMFILE)) THEN
         JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
              +  1                 & !Number of moments in this mode
              + (NSV_SLTBEG -1)      !Previous list of tracers  
-        YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'M'
+        YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
         YDIR='XY'
-        CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+        CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
         IF (IRESP/=0) THEN
           WRITE(ILUOUT,FMT=9000) 
@@ -381,9 +374,9 @@ IF(PRESENT(HCHEMFILE)) THEN
           JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                + JMOM               & !Number of moments in this mode
                + (NSV_SLTBEG -1)      !Previous list of tracers
-          YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'M'
+          YRECFM = TRIM(YPSALT_INI(ISV_NAME_IDX))//'T'
           YDIR='XY'
-          CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+          CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                       YCOMMENT,IRESP)
           IF (IRESP/=0) THEN
             WRITE(ILUOUT,FMT=9000) 
@@ -396,9 +389,9 @@ IF(PRESENT(HCHEMFILE)) THEN
   END IF  ! LSALT
 
   DO JSV = NSV_AERBEG,NSV_AEREND
-    YRECFM=TRIM(CAERONAMES(JSV-NSV_AERBEG+1))//'M'
+    YRECFM=TRIM(CAERONAMES(JSV-NSV_AERBEG+1))//'T'
     YDIR='XY'
-    CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVM(:,:,:,JSV),IGRID,ILENCH,  &
+    CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
     IF (IRESP/=0) THEN
       WRITE(ILUOUT,FMT=9000) 
@@ -413,10 +406,10 @@ IF(PRESENT(HCHEMFILE)) THEN
 
 ELSE ! HCHEMFILE
   IF (NSV >=1) THEN
-    ALLOCATE(XSVM(IIU,IJU,IKU,NSV))
-    XSVM(:,:,:,:)=PSV_MX(:,:,:,:)
+    ALLOCATE(XSVT(IIU,IJU,IKU,NSV))
+    XSVT(:,:,:,:)=PSV_MX(:,:,:,:)
   ELSE !NSV
-    ALLOCATE(XSVM(0,0,0,0))
+    ALLOCATE(XSVT(0,0,0,0))
   END IF ! NSV
 ENDIF ! HCHEMFILE
 !-------------------------------------------------------------------------------
@@ -435,11 +428,11 @@ IF (CTURB /= 'NONE') THEN
   END IF 
   !       
   ILBX=SIZE(XLBXTKEM,1)/2-1     
-  XLBXTKEM(1:ILBX+1,:,:)         = XTKEM(IIB-1:IIB-1+ILBX,:,:)
-  XLBXTKEM(ILBX+2:2*ILBX+2,:,:)  = XTKEM(IIE+1-ILBX:IIE+1,:,:)
+  XLBXTKEM(1:ILBX+1,:,:)         = XTKET(IIB-1:IIB-1+ILBX,:,:)
+  XLBXTKEM(ILBX+2:2*ILBX+2,:,:)  = XTKET(IIE+1-ILBX:IIE+1,:,:)
   ILBY=SIZE(XLBYTKEM,2)/2-1
-  XLBYTKEM(:,1:ILBY+1,:)        = XTKEM(:,IJB-1:IJB-1+ILBY,:)
-  XLBYTKEM(:,ILBY+2:2*ILBY+2,:) = XTKEM(:,IJE+1-ILBY:IJE+1,:)
+  XLBYTKEM(:,1:ILBY+1,:)        = XTKET(:,IJB-1:IJB-1+ILBY,:)
+  XLBYTKEM(:,ILBY+2:2*ILBY+2,:) = XTKET(:,IJE+1-ILBY:IJE+1,:)
 ELSE
   ALLOCATE(XLBXTKEM(0,0,0))
   ALLOCATE(XLBYTKEM(0,0,0))
@@ -455,11 +448,11 @@ IF ( NSV > 0 ) THEN
   END IF
   !       
   ILBX=SIZE(XLBXSVM,1)/2-1     
-  XLBXSVM(1:ILBX+1,:,:,:)         = XSVM(IIB-1:IIB-1+ILBX,:,:,:)
-  XLBXSVM(ILBX+2:2*ILBX+2,:,:,:)  = XSVM(IIE+1-ILBX:IIE+1,:,:,:)
+  XLBXSVM(1:ILBX+1,:,:,:)         = XSVT(IIB-1:IIB-1+ILBX,:,:,:)
+  XLBXSVM(ILBX+2:2*ILBX+2,:,:,:)  = XSVT(IIE+1-ILBX:IIE+1,:,:,:)
   ILBY=SIZE(XLBYSVM,2)/2-1
-  XLBYSVM(:,1:ILBY+1,:,:)        = XSVM(:,IJB-1:IJB-1+ILBY,:,:)
-  XLBYSVM(:,ILBY+2:2*ILBY+2,:,:) = XSVM(:,IJE+1-ILBY:IJE+1,:,:)
+  XLBYSVM(:,1:ILBY+1,:,:)        = XSVT(:,IJB-1:IJB-1+ILBY,:,:)
+  XLBYSVM(:,ILBY+2:2*ILBY+2,:,:) = XSVT(:,IJE+1-ILBY:IJE+1,:,:)
 ELSE
   ALLOCATE(XLBXSVM(0,0,0,0))
   ALLOCATE(XLBYSVM(0,0,0,0))

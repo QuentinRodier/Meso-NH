@@ -6,7 +6,7 @@ INTERFACE
 !     #################################################################
       SUBROUTINE MF_TURB(KKA,KKB,KKE,KKU,KKL,OMIXUV,                  &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                         &
-                PIMPL, PTSTEP, PTSTEP_MET, PTSTEP_SV,                 &
+                PIMPL, PTSTEP,                                        &
                 PDZZ,                                                 &
                 PRHODJ,                                               &
                 PTHLM,PTHVM,PRTM,PUM,PVM,PSVM,                        &
@@ -33,8 +33,6 @@ INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
 REAL,                   INTENT(IN)   :: PIMPL       ! degree of implicitness
 REAL,                 INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,                 INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,                 INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 !
 REAL, DIMENSION(:,:), INTENT(IN)   :: PDZZ        ! metric coefficients
 
@@ -80,7 +78,7 @@ END MODULE MODI_MF_TURB
 !     #################################################################
       SUBROUTINE MF_TURB(KKA,KKB,KKE,KKU,KKL,OMIXUV,                  &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                         &
-                PIMPL, PTSTEP, PTSTEP_MET, PTSTEP_SV,                 &
+                PIMPL, PTSTEP,                                        &
                 PDZZ,                                                 &
                 PRHODJ,                                               &
                 PTHLM,PTHVM,PRTM,PUM,PVM,PSVM,                        &
@@ -154,8 +152,6 @@ INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
 REAL,                   INTENT(IN)   :: PIMPL       ! degree of implicitness
 REAL,                 INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,                 INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,                 INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 !
 REAL, DIMENSION(:,:), INTENT(IN)   :: PDZZ        ! metric coefficients
 
@@ -253,25 +249,25 @@ ENDIF
 ! 3.1 Compute the tendency for the conservative potential temperature
 !     (PDZZ and flux in w-point and PRHODJ is mass point, result in mass point)
 !
-CALL TRIDIAG_MASSFLUX(KKA,KKB,KKE,KKU,KKL,PTHLM,PFLXZTHMF,-PEMF,PTSTEP_MET,PIMPL,  &
+CALL TRIDIAG_MASSFLUX(KKA,KKB,KKE,KKU,KKL,PTHLM,PFLXZTHMF,-PEMF,PTSTEP,PIMPL,  &
                       PDZZ,PRHODJ,ZVARS )
 ! compute new flux
 PFLXZTHMF(:,:) = PEMF(:,:)*(PTHL_UP(:,:)-MZM_MF(KKA,KKU,KKL,ZVARS(:,:)))
 
 !!! compute THL tendency
 !
-PTHLDT(:,:)= (ZVARS(:,:)-PTHLM(:,:))/PTSTEP_MET
+PTHLDT(:,:)= (ZVARS(:,:)-PTHLM(:,:))/PTSTEP
 
 !
 ! 3.2 Compute the tendency for the conservative mixing ratio
 !
-CALL TRIDIAG_MASSFLUX(KKA,KKB,KKE,KKU,KKL,PRTM(:,:),PFLXZRMF,-PEMF,PTSTEP_MET,PIMPL,  &
+CALL TRIDIAG_MASSFLUX(KKA,KKB,KKE,KKU,KKL,PRTM(:,:),PFLXZRMF,-PEMF,PTSTEP,PIMPL,  &
                                  PDZZ,PRHODJ,ZVARS )
 ! compute new flux
 PFLXZRMF(:,:) =  PEMF(:,:)*(PRT_UP(:,:)-MZM_MF(KKA,KKU,KKL,ZVARS(:,:)))
 
 !!! compute RT tendency
-PRTDT(:,:) = (ZVARS(:,:)-PRTM(:,:))/PTSTEP_MET
+PRTDT(:,:) = (ZVARS(:,:)-PRTM(:,:))/PTSTEP
 !
 
 IF (OMIXUV) THEN
@@ -320,12 +316,12 @@ DO JSV=1,ISV
   !     (PDZZ and flux in w-point and PRHODJ is mass point, result in mass point)
   !
   CALL TRIDIAG_MASSFLUX(KKA,KKB,KKE,KKU,KKL,PSVM(:,:,JSV),PFLXZSVMF(:,:,JSV),&
-                        -PEMF,PTSTEP_SV,PIMPL,PDZZ,PRHODJ,ZVARS )
+                        -PEMF,PTSTEP,PIMPL,PDZZ,PRHODJ,ZVARS )
   ! compute new flux
   PFLXZSVMF(:,:,JSV) = PEMF(:,:)*(PSV_UP(:,:,JSV)-MZM_MF(KKA,KKU,KKL,ZVARS))
 
   ! compute Sv tendency
-  PSVDT(:,:,JSV)= (ZVARS(:,:)-PSVM(:,:,JSV))/PTSTEP_SV
+  PSVDT(:,:,JSV)= (ZVARS(:,:)-PSVM(:,:,JSV))/PTSTEP
 
 ENDDO
 !

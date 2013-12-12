@@ -380,6 +380,7 @@ USE MODI_GOTO_SURFEX
 USE MODI_PGD_GRID_SURF_ATM
 USE MODI_SPLIT_GRID
 USE MODI_PGD_SURF_ATM
+USE MODI_ICE_ADJUST_BIS
 USE MODI_WRITE_PGD_SURF_ATM_n
 USE MODI_PREP_SURF_MNH
 USE MODI_ALLOC_SURFEX
@@ -848,10 +849,7 @@ CALL SET_XEND_ll(NIMAX_ll+2*JPHEXT, 1)
 CALL SET_YOR_ll(1, 1)
 CALL SET_YEND_ll(NJMAX_ll+2*JPHEXT, 1)
 CALL SET_DAD_ll(0, 1)
-!JUAN
-! CALL INI_PARA_ll(IINFO_ll)
 CALL INI_PARAZ_ll(IINFO_ll)
-!JUAN
 !
 ! sizes of arrays of the extended sub-domain
 !
@@ -861,7 +859,6 @@ CALL GET_INDICE_ll(NIB,NJB,NIE,NJE)
 CALL GET_OR_ll('B',IXOR,IYOR)
 NKB=1+JPVEXT
 NKU=NKMAX+2*JPVEXT
-!JUAN
 !
 !*       4.3  Global variables absent from the modules :
 !
@@ -880,13 +877,13 @@ END SELECT
 !
 !*       4.4   Prognostic variables at M instant (module MODD_FIELD1):
 !
-ALLOCATE(XUM(NIU,NJU,NKU))
-ALLOCATE(XVM(NIU,NJU,NKU))
-ALLOCATE(XWM(NIU,NJU,NKU))
-ALLOCATE(XTHM(NIU,NJU,NKU))
-ALLOCATE(XPABSM(NIU,NJU,NKU))
-ALLOCATE(XRM(NIU,NJU,NKU,NRR))
-ALLOCATE(XSVM(NIU,NJU,NKU,NSV))
+ALLOCATE(XUT(NIU,NJU,NKU))
+ALLOCATE(XVT(NIU,NJU,NKU))
+ALLOCATE(XWT(NIU,NJU,NKU))
+ALLOCATE(XTHT(NIU,NJU,NKU))
+ALLOCATE(XPABST(NIU,NJU,NKU))
+ALLOCATE(XRT(NIU,NJU,NKU,NRR))
+ALLOCATE(XSVT(NIU,NJU,NKU,NSV))
 !
 !*       4.5   Grid variables (module MODD_GRID1 and MODD_METRICS1):
 !
@@ -1481,20 +1478,20 @@ CALL TOTAL_DMASS(CLUOUT,XJ,XRHODREF,XDRYMASST)
 !*       5.6    Complete prognostic variables (multipliy by  rhoJ) at time t :
 !
 ! U grid   : gridpoint 2
-IF (LWEST_ll())  XUM(1,:,:)    = 2.*XUM(2,:,:) - XUM(3,:,:)
+IF (LWEST_ll())  XUT(1,:,:)    = 2.*XUT(2,:,:) - XUT(3,:,:)
 ! V grid   : gridpoint 3
-IF (LSOUTH_ll())  XVM(:,1,:)    = 2.*XVM(:,2,:) - XVM(:,3,:)
+IF (LSOUTH_ll())  XVT(:,1,:)    = 2.*XVT(:,2,:) - XVT(:,3,:)
 ! SV : gridpoint 1
-XSVM(:,:,:,:) = 0.
+XSVT(:,:,:,:) = 0.
 !
 !
 !*       5.7   Larger scale fields initialization :
 !
-XLSUM(:,:,:) = XUM(:,:,:)        ! these fields do not satisfy the 
-XLSVM(:,:,:) = XVM(:,:,:)        ! lower boundary condition but are 
-XLSWM(:,:,:) = XWM(:,:,:)        ! in equilibrium
-XLSTHM(:,:,:)= XTHM(:,:,:)
-XLSRVM(:,:,:)= XRM(:,:,:,1)
+XLSUM(:,:,:) = XUT(:,:,:)        ! these fields do not satisfy the 
+XLSVM(:,:,:) = XVT(:,:,:)        ! lower boundary condition but are 
+XLSWM(:,:,:) = XWT(:,:,:)        ! in equilibrium
+XLSTHM(:,:,:)= XTHT(:,:,:)
+XLSRVM(:,:,:)= XRT(:,:,:,1)
 !
 ! enforce the vertical homogeneity under the ground and above the top of
 ! the model for the LS fields
@@ -1515,42 +1512,42 @@ END IF
 ILBX=SIZE(XLBXUM,1)
 ILBY=SIZE(XLBYUM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(1:NRIMX+1,        :,:)     = XUM(2:NRIMX+2,        :,:)
-  XLBXVM(1:NRIMX+1,        :,:)     = XVM(1:NRIMX+1,        :,:)
-  XLBXWM(1:NRIMX+1,        :,:)     = XWM(1:NRIMX+1,        :,:)
-  XLBXTHM(1:NRIMX+1,        :,:)   = XTHM(1:NRIMX+1,        :,:)
-  XLBXRM(1:NRIMX+1,        :,:,:)   = XRM(1:NRIMX+1,        :,:,:)
+  XLBXUM(1:NRIMX+1,        :,:)     = XUT(2:NRIMX+2,        :,:)
+  XLBXVM(1:NRIMX+1,        :,:)     = XVT(1:NRIMX+1,        :,:)
+  XLBXWM(1:NRIMX+1,        :,:)     = XWT(1:NRIMX+1,        :,:)
+  XLBXTHM(1:NRIMX+1,        :,:)   = XTHT(1:NRIMX+1,        :,:)
+  XLBXRM(1:NRIMX+1,        :,:,:)   = XRT(1:NRIMX+1,        :,:,:)
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUM(NIU-NRIMX:NIU,    :,:)
-  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVM(NIU-NRIMX:NIU,    :,:)
-  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWM(NIU-NRIMX:NIU,    :,:)
-  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHM(NIU-NRIMX:NIU,    :,:)
-  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRM(NIU-NRIMX:NIU,    :,:,:)
+  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUT(NIU-NRIMX:NIU,    :,:)
+  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVT(NIU-NRIMX:NIU,    :,:)
+  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWT(NIU-NRIMX:NIU,    :,:)
+  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHT(NIU-NRIMX:NIU,    :,:)
+  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRT(NIU-NRIMX:NIU,    :,:,:)
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,1:NRIMY+1,        :)     = XUM(:,1:NRIMY+1,      :)
-  XLBYVM(:,1:NRIMY+1,        :)     = XVM(:,2:NRIMY+2,      :)
-  XLBYWM(:,1:NRIMY+1,        :)     = XWM(:,1:NRIMY+1,  :)
-  XLBYTHM(:,1:NRIMY+1,        :)    = XTHM(:,1:NRIMY+1,      :)
-  XLBYRM(:,1:NRIMY+1,        :,:)   = XRM(:,1:NRIMY+1,      :,:)
+  XLBYUM(:,1:NRIMY+1,        :)     = XUT(:,1:NRIMY+1,      :)
+  XLBYVM(:,1:NRIMY+1,        :)     = XVT(:,2:NRIMY+2,      :)
+  XLBYWM(:,1:NRIMY+1,        :)     = XWT(:,1:NRIMY+1,  :)
+  XLBYTHM(:,1:NRIMY+1,        :)    = XTHT(:,1:NRIMY+1,      :)
+  XLBYRM(:,1:NRIMY+1,        :,:)   = XRT(:,1:NRIMY+1,      :,:)
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUM(:,NJU-NRIMY:NJU,  :)
-  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVM(:,NJU-NRIMY:NJU,  :)
-  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWM(:,NJU-NRIMY:NJU,  :)
-  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHM(:,NJU-NRIMY:NJU,  :)
-  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRM(:,NJU-NRIMY:NJU,  :,:)
+  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUT(:,NJU-NRIMY:NJU,  :)
+  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVT(:,NJU-NRIMY:NJU,  :)
+  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWT(:,NJU-NRIMY:NJU,  :)
+  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHT(:,NJU-NRIMY:NJU,  :)
+  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRT(:,NJU-NRIMY:NJU,  :,:)
 ENDIF
 DO JSV = 1, NSV
   IF(LWEST_ll() .AND. .NOT. L1D) &
-  XLBXSVM(1:NRIMX+1,        :,:,JSV)   = XSVM(1:NRIMX+1,        :,:,JSV)
+  XLBXSVM(1:NRIMX+1,        :,:,JSV)   = XSVT(1:NRIMX+1,        :,:,JSV)
   IF(LEAST_ll() .AND. .NOT. L1D) &
-  XLBXSVM(ILBX-NRIMX:ILBX,:,:,JSV)   = XSVM(NIU-NRIMX:NIU,    :,:,JSV)
+  XLBXSVM(ILBX-NRIMX:ILBX,:,:,JSV)   = XSVT(NIU-NRIMX:NIU,    :,:,JSV)
   IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) &
-  XLBYSVM(:,1:NRIMY+1,        :,JSV)   = XSVM(:,1:NRIMY+1,      :,JSV)
+  XLBYSVM(:,1:NRIMY+1,        :,JSV)   = XSVT(:,1:NRIMY+1,      :,JSV)
   IF(LNORTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) &
-  XLBYSVM(:,ILBY-NRIMY:ILBY,:,JSV)   = XSVM(:,NJU-NRIMY:NJU,  :,JSV)
+  XLBYSVM(:,ILBY-NRIMY:ILBY,:,JSV)   = XSVT(:,NJU-NRIMY:NJU,  :,JSV)
 END DO
 !
 !
@@ -1561,7 +1558,9 @@ IF(LPERTURB) CALL SET_PERTURB(CEXPRE)
 !
 !*       5.9   Anelastic correction and pressure:
 !
+CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
 IF ( .NOT. L1D ) CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
+CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
 !
 !
 !*       5.10  Compute THETA, vapor and cloud mixing ratio
@@ -1577,40 +1576,40 @@ IF (CIDEAL == 'RSOU') THEN
   ALLOCATE(ZFRAC_ICE(NIU,NJU,NKU))
   ALLOCATE(ZRSATW(NIU,NJU,NKU))
   ALLOCATE(ZRSATI(NIU,NJU,NKU))             
-  ZRT=XRM(:,:,:,1)+XRM(:,:,:,2)+XRM(:,:,:,4)
-  ZEXN=(XPABSM/XP00) ** (XRD/XCPD)
-  ZT=XTHM*(XPABSM/XP00)**(XRD/XCPD)
-  ZCPH=XCPD+ XCPV * XRM(:,:,:,1)+ XCL *XRM(:,:,:,2)  + XCI * XRM(:,:,:,4)
+  ZRT=XRT(:,:,:,1)+XRT(:,:,:,2)+XRT(:,:,:,4)
+  ZEXN=(XPABST/XP00) ** (XRD/XCPD)
+  ZT=XTHT*(XPABST/XP00)**(XRD/XCPD)
+  ZCPH=XCPD+ XCPV * XRT(:,:,:,1)+ XCL *XRT(:,:,:,2)  + XCI * XRT(:,:,:,4)
   ZLVOCPEXN = (XLVTT + (XCPV-XCL) * (ZT-XTT))/(ZCPH*ZEXN)
   ZLSOCPEXN = (XLSTT + (XCPV-XCI) * (ZT-XTT))/(ZCPH*ZEXN)
-  ZTHL=XTHM-ZLVOCPEXN*XRM(:,:,:,2)-ZLSOCPEXN*XRM(:,:,:,4)
+  ZTHL=XTHT-ZLVOCPEXN*XRT(:,:,:,2)-ZLSOCPEXN*XRT(:,:,:,4)
   DEALLOCATE(ZEXN)         
   DEALLOCATE(ZT)       
   DEALLOCATE(ZCPH)        
   DEALLOCATE(ZLVOCPEXN)        
   DEALLOCATE(ZLSOCPEXN)
-  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABSM,ZTHL,ZRT,XTHM,XRM(:,:,:,1), &
-      XRM(:,:,:,2),XRM(:,:,:,4),ZRSATW, ZRSATI)
+  CALL TH_R_FROM_THL_RT_3D('T',ZFRAC_ICE,XPABST,ZTHL,ZRT,XTHT,XRT(:,:,:,1), &
+                            XRT(:,:,:,2),XRT(:,:,:,4),ZRSATW, ZRSATI)
   DEALLOCATE(ZTHL) 
   DEALLOCATE(ZRT)
 ! Coherence test
   IF ((.NOT. LUSERI) ) THEN
-    IF (MAXVAL(XRM(:,:,:,4))/= 0) THEN
+    IF (MAXVAL(XRT(:,:,:,4))/= 0) THEN
        WRITE(NLUOUT,FMT=*) "*********************************"             
        WRITE(NLUOUT,FMT=*) 'WARNING'      
        WRITE(NLUOUT,FMT=*) 'YOU HAVE LUSERI=FALSE '
        WRITE(NLUOUT,FMT=*) ' BUT WITH YOUR RADIOSOUNDING Ri/=0'
-       WRITE(NLUOUT,FMT=*) MINVAL(XRM(:,:,:,4)),MAXVAL(XRM(:,:,:,4))
+       WRITE(NLUOUT,FMT=*) MINVAL(XRT(:,:,:,4)),MAXVAL(XRT(:,:,:,4))
        WRITE(NLUOUT,FMT=*) "*********************************"       
     ENDIF  
   ENDIF
   IF ((.NOT. LUSERC)) THEN
-    IF (MAXVAL(XRM(:,:,:,2))/= 0) THEN          
+    IF (MAXVAL(XRT(:,:,:,2))/= 0) THEN          
       WRITE(NLUOUT,FMT=*) "*********************************"
       WRITE(NLUOUT,FMT=*) 'WARNING'    
       WRITE(NLUOUT,FMT=*) 'YOU HAVE LUSERC=FALSE '
       WRITE(NLUOUT,FMT=*) 'BUT WITH YOUR RADIOSOUNDING RC/=0'
-      WRITE(NLUOUT,FMT=*) MINVAL(XRM(:,:,:,2)),MAXVAL(XRM(:,:,:,2))      
+      WRITE(NLUOUT,FMT=*) MINVAL(XRT(:,:,:,2)),MAXVAL(XRT(:,:,:,2))      
       WRITE(NLUOUT,FMT=*) "*********************************"
     ENDIF  
   ENDIF
@@ -1626,7 +1625,7 @@ END IF
 !
 !  before calling chemistry
 CCONF = 'START'
-CSTORAGE_TYPE='TT'                  ! instant t and t-dt are the same
+CSTORAGE_TYPE='TT'                  
 CALL CLOSE_ll(CEXPRE,IOSTAT=NRESP)  ! Close the EXPRE file 
 !
 IF ( LCH_INIT_FIELD ) CALL CH_INIT_FIELD_n(1, NLUOUT, NVERB)

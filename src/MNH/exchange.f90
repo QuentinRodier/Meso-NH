@@ -12,18 +12,13 @@
 INTERFACE
 !
 !     ##############################################################################
-      SUBROUTINE EXCHANGE (PTSTEP,PTSTEP_MET,PTSTEP_SV,KRR,KSV,PRHODJ,TPFIELDS_ll, &
+      SUBROUTINE EXCHANGE (PTSTEP,KRR,KSV,PRHODJ,TPFIELDS_ll,                      &
                            PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS                  )
 !     ##############################################################################
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
-REAL,                     INTENT(IN) :: PTSTEP            !  Double Time step
-                                       ! (or single if cold start)
-REAL,                     INTENT(IN) :: PTSTEP_MET        !  Time step for
-                                       ! scalar meteorological variables
-REAL,                     INTENT(IN) :: PTSTEP_SV         !  Time step for
-                                       ! scalar tracer variables
+REAL,                     INTENT(IN) :: PTSTEP            !  Time step
 INTEGER,                  INTENT(IN) :: KRR               !  Number of water var.
 INTEGER,                  INTENT(IN) :: KSV               !  Number of scal. var.
                                                           ! (=1 at the segment beginning)
@@ -43,8 +38,8 @@ END MODULE MODI_EXCHANGE
 !
 !
 !     #######################################################################
-      SUBROUTINE EXCHANGE (PTSTEP,PTSTEP_MET,PTSTEP_SV,KRR,KSV,PRHODJ,TPFIELDS_ll, &
-                           PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS                  )
+      SUBROUTINE EXCHANGE (PTSTEP,KRR,KSV,PRHODJ,TPFIELDS_ll,               &
+                           PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS           )
 !     #######################################################################
 !
 !!****  * EXCHANGE* - update the halo of each subdomains for the variables at time step t+dt
@@ -93,7 +88,6 @@ END MODULE MODI_EXCHANGE
 USE MODE_ll
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_CONF, ONLY : CCONF
 USE MODD_GRID_n
 USE MODI_SHUMAN
 !
@@ -101,12 +95,7 @@ IMPLICIT NONE
 !
 !*      0.1  DECLARATIONS OF ARGUMENTS
 !
-REAL,                     INTENT(IN) :: PTSTEP            !  Double Time step
-                                       ! (or single if cold start)
-REAL,                     INTENT(IN) :: PTSTEP_MET        !  Time step for
-                                       ! scalar meteorological variables
-REAL,                     INTENT(IN) :: PTSTEP_SV         !  Time step for
-                                       ! scalar tracer variables
+REAL,                     INTENT(IN) :: PTSTEP            !  Time step
 INTEGER,                  INTENT(IN) :: KRR               !  Number of water var.
 INTEGER,                  INTENT(IN) :: KSV               !  Number of scal. var.
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ            ! (Rho) dry * Jacobian
@@ -121,7 +110,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS,PRSVS         !
 !
 INTEGER   :: IINFO_ll              ! return code of parallel routine
 INTEGER   :: JRR,JSV              ! loop counters
-REAL      :: ZTSTEP               !  Time step for temporal advance
 !
 INTEGER :: IKU
 !------------------------------------------------------------------------------
@@ -138,16 +126,16 @@ PRWS(:,:,:) = PRWS(:,:,:)*PTSTEP / MZM(1,IKU,1,PRHODJ)
 !
 !        1.b Meteorological scalar variables
 !
-PRTHS(:,:,:) = PRTHS(:,:,:)*PTSTEP_MET/PRHODJ
+PRTHS(:,:,:) = PRTHS(:,:,:)*PTSTEP/PRHODJ
 DO JRR=1,KRR
-  PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)*PTSTEP_MET/PRHODJ
+  PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)*PTSTEP/PRHODJ
 END DO
-IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP_MET/PRHODJ
+IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP/PRHODJ
 !
 !        1.c Tracer scalar variables
 !
 DO JSV=1,KSV
-  PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)*PTSTEP_SV/PRHODJ
+  PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)*PTSTEP/PRHODJ
 END DO
 !
 !------------------------------------------------------------------------------

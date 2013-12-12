@@ -10,7 +10,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE DYN_SOURCES( KRR,KRRL, KRRI, KMI,                         &
+      SUBROUTINE DYN_SOURCES( KRR,KRRL, KRRI,                              &
                               PUT, PVT, PWT, PTHT, PRT,                    &
                               PCORIOX, PCORIOY, PCORIOZ, PCURVX, PCURVY,   &
                               PRHODJ, PZZ, PTHVREF, PEXNREF,               &
@@ -19,7 +19,6 @@ INTERFACE
 INTEGER,                  INTENT(IN)    :: KRR  ! Total number of water var.
 INTEGER,                  INTENT(IN)    :: KRRL ! Number of liquid water var.
 INTEGER,                  INTENT(IN)    :: KRRI ! Number of ice water var.
-INTEGER,                  INTENT(IN)    :: KMI  ! Model number
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT            !     at
@@ -47,7 +46,7 @@ END INTERFACE
 !
 END MODULE MODI_DYN_SOURCES 
 !     ######################################################################
-      SUBROUTINE DYN_SOURCES( KRR,KRRL, KRRI, KMI,                         &
+      SUBROUTINE DYN_SOURCES( KRR,KRRL, KRRI,                              &
                               PUT, PVT, PWT, PTHT, PRT,                    &
                               PCORIOX, PCORIOY, PCORIOZ, PCURVX, PCURVY,   &
                               PRHODJ, PZZ, PTHVREF, PEXNREF,               &
@@ -147,7 +146,7 @@ END MODULE MODI_DYN_SOURCES
 !!  Corrections 19/12/96 (J.-P. Pinty)  Update the CALL BUDGET
 !!  Corrections 03/12/02  (P. Jabouille)  add no thinshell condition
 !!  Correction     06/10  (C.Lac) Exclude L1D for Coriolis term 
-!!
+!!  Modification   03/11  (C.Lac) Split the gravity term due to buoyancy
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -169,7 +168,6 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)    :: KRR  ! Total number of water var.
 INTEGER,                  INTENT(IN)    :: KRRL ! Number of liquid water var.
 INTEGER,                  INTENT(IN)    :: KRRI ! Number of ice water var.
-INTEGER,                  INTENT(IN)    :: KMI  ! Model index
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT            !     at
@@ -194,7 +192,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS            ! Sources of theta
 !
 !*       0.2   Declarations of local variables :
 !
-REAL       ::  ZRV_OV_RD    ! = RV / RD
 REAL       ::  ZCPD_OV_RD   ! = CPD / RD
 REAL       ::  ZG_OV_CPD    ! =-XG / XCPD
 INTEGER    ::  JWATER       ! loop index on the different types of water
@@ -292,45 +289,8 @@ IF (LBUDGET_V) CALL BUDGET (PRVS,2,'COR_BU_RV')
 IF (LBUDGET_W) CALL BUDGET (PRWS,3,'COR_BU_RW')
 !
 !-------------------------------------------------------------------------------
-!*       4.     COMPUTES THE GRAVITY TERM
-!	        -------------------------
 !
-IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
-!
-  IF(KRR > 0) THEN
-!
-!   compute the ratio : 1 + total water mass / dry air mass
-!
-    ZRV_OV_RD = XRV / XRD
-    ZWORK1(:,:,:) = 1.
-    DO JWATER = 1 , 1+KRRL+KRRI                
-      ZWORK1(:,:,:) = ZWORK1(:,:,:) + PRT(:,:,:,JWATER)
-    END DO
-!
-!   compute the virtual potential temperature when water is present in any form
-!
-    ZWORK2(:,:,:) = PTHT(:,:,:) * (1. + PRT(:,:,:,1)*ZRV_OV_RD) / ZWORK1(:,:,:)
-  ELSE
-!
-!   compute the virtual potential temperature when water is absent
-!
-    ZWORK2(:,:,:) = PTHT(:,:,:)
-  END IF
-!
-!   compute the gravity term
-!
-  PRWS(:,:,:) = PRWS + XG * MZM(1,IKU,1, ( (ZWORK2/PTHVREF) - 1. ) * PRHODJ )
-!
-!    the extrapolation for the PTHT and the THVREF must be the same at the
-!    ground
-!
-  IF (LBUDGET_W) CALL BUDGET (PRWS,3,'GRAV_BU_RW')
-!
-END IF
-!
-!-------------------------------------------------------------------------------
-!
-!*       5.     COMPUTES THE THETA SOURCE TERM DUE TO THE REFERENCE PRESSURE
+!*       4.     COMPUTES THE THETA SOURCE TERM DUE TO THE REFERENCE PRESSURE
 !	        ------------------------------------------------------------
 !
 IF (LCARTESIAN .OR. LTHINSHELL) THEN

@@ -5,24 +5,17 @@
 !
 INTERFACE
 !
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,PTSTEP,PTSTEP_MET,PTSTEP_SV,HFMFILE,OCLOSE_OUT,      &
-                              HUVW_ADV_SCHEME,HMET_ADV_SCHEME,HSV_ADV_SCHEME,              &
+      SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
                               PTIME_BU, OMASKkids                                          )           
 
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
-REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 CHARACTER (LEN=28),INTENT(IN)     :: HFMFILE   ! name of the synchronous 
                                                ! OUTPUT FM-file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
 ! advection schemes                   
-CHARACTER(LEN=6),  INTENT(IN)     :: HUVW_ADV_SCHEME
-CHARACTER(LEN=6),  INTENT(IN)     :: HSV_ADV_SCHEME
-CHARACTER(LEN=6),  INTENT(IN)     :: HMET_ADV_SCHEME
 REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                ! time for computing time
                                         
@@ -37,8 +30,7 @@ END INTERFACE
 END MODULE MODI_PHYS_PARAM_n
 !
 !     ######################################################################
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,PTSTEP,PTSTEP_MET,PTSTEP_SV,HFMFILE,OCLOSE_OUT,      &
-                              HUVW_ADV_SCHEME,HMET_ADV_SCHEME,HSV_ADV_SCHEME,              &
+      SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
                               PTIME_BU, OMASKkids                                          )           
 !     ######################################################################
@@ -218,7 +210,8 @@ END MODULE MODI_PHYS_PARAM_n
 !!                    06/2010    (P.Peyrille)  add Call to aerozon.f90 if LAERO_FT=T
 !!                                to update 
 !!                                aerosols and ozone climatology at each call to
-!!                                phys_param otherwise it is constant to monthly average 
+!!                                phys_param otherwise it is constant to monthly average
+!!                    03/2013  (C.Lac) FIT temporal scheme
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -276,6 +269,7 @@ USE MODD_SUB_PHYS_PARAM_n
 USE MODD_PARAM_MFSHALL_n
 USE MODI_SHALLOW_MF_PACK
 USE MODD_CLOUD_MF_n
+USE MODD_ADV_n,            ONLY : XRTKEMS
 !
 USE MODI_SURF_RAD_MODIF
 USE MODI_GROUND_PARAM_n
@@ -326,17 +320,11 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
-REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 CHARACTER (LEN=28),INTENT(IN)     :: HFMFILE   ! name of the synchronous 
                                                ! OUTPUT FM-file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
 ! advection schemes                   
-CHARACTER(LEN=6),  INTENT(IN)     :: HUVW_ADV_SCHEME
-CHARACTER(LEN=6),  INTENT(IN)     :: HSV_ADV_SCHEME
-CHARACTER(LEN=6),  INTENT(IN)     :: HMET_ADV_SCHEME
 REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                ! time for computing time
                                                !        statistics
@@ -398,11 +386,10 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC, ZRI, ZWT ! additional dummies
 REAL, DIMENSION(:,:),   ALLOCATABLE  :: ZDXDY         ! grid area
                     ! for rc, ri, w required if main variables not allocated
 !
-INTEGER :: IIU, IJU, IKU, II                              ! dimensional indexes
+INTEGER :: IIU, IJU, IKU                              ! dimensional indexes
 !
 INTEGER     :: JSV              ! Loop index for Scalar Variables
 INTEGER     :: JSWB             ! loop on SW spectral bands
-CHARACTER(LEN=1) :: YINST_SFU   ! temporal location of the surface friction flux
 INTEGER     :: IIB,IIE,IJB,IJE, IKB, IKE
 INTEGER     :: IMODEIDX
               ! index values for the Beginning or the End of the physical
@@ -433,7 +420,6 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSAVE_DIRFLASWD, ZSAVE_SCAFLASWD,ZSAVE
 !
 !-----------------------------------------------------------------------------
 !
-YINST_SFU ='M'
 NULLIFY(TZFIELDS_ll)
 IMI=GET_CURRENT_MODEL_INDEX()
 !
@@ -903,7 +889,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
       ENDDO
       !
       DO JSV=NSV_DSTBEG,NSV_DSTEND
-        ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP_SV / XRHODJ(:,:,:) 
+        ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) = XRSVS(:,:,:,JSV) * XTSTEP / XRHODJ(:,:,:) 
       ENDDO
       CALL PPP2DUST(ZSVDST(IIB:IIE,IJB:IJE,IKB:IKE,:), XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),&
               PSIG3D=ZSIGDST(IIB:IIE,IJB:IJE,IKB:IKE,:), PRG3D=ZRGDST(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
@@ -930,7 +916,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
       ENDDO
       !
       DO JSV=NSV_SLTBEG,NSV_SLTEND
-        ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP_SV / XRHODJ(:,:,:) 
+        ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) = XRSVS(:,:,:,JSV) * XTSTEP / XRHODJ(:,:,:) 
       ENDDO
       CALL PPP2SALT(ZSVSLT(IIB:IIE,IJB:IJE,IKB:IKE,:), XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE),&
               PSIG3D=ZSIGSLT(IIB:IIE,IJB:IJE,IKB:IKE,:), PRG3D=ZRGSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),   &
@@ -955,7 +941,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
   IF ((LDUST).AND.(LCHTRANS)) THEN ! dust convective balance
     IF (CPROGRAM == "MESONH") THEN
       DO JSV=NSV_DSTBEG,NSV_DSTEND
-          ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP_SV / XRHODJ(:,:,:) 
+          ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) = XRSVS(:,:,:,JSV) * XTSTEP / XRHODJ(:,:,:) 
       ENDDO
     ELSE
       DO JSV=NSV_DSTBEG,NSV_DSTEND
@@ -966,7 +952,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
                     XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), ZSIGDST(IIB:IIE,IJB:IJE,IKB:IKE,:),&
                     ZRGDST(IIB:IIE,IJB:IJE,IKB:IKE,:))
     DO JSV=NSV_DSTBEG,NSV_DSTEND
-      XRSVS(:,:,:,JSV) =  ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) * XRHODJ(:,:,:) / PTSTEP_SV
+      XRSVS(:,:,:,JSV) =  ZSVDST(:,:,:,JSV-NSV_DSTBEG+1) * XRHODJ(:,:,:) / XTSTEP
     ENDDO
     !
     DEALLOCATE(ZSVDST)
@@ -978,7 +964,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
   IF ((LSALT).AND.(LCHTRANS)) THEN ! sea salt convective balance
     IF (CPROGRAM == "MESONH") THEN
       DO JSV=NSV_SLTBEG,NSV_SLTEND
-        ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) = XRSVS(:,:,:,JSV) * PTSTEP_SV / XRHODJ(:,:,:) 
+        ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) = XRSVS(:,:,:,JSV) * XTSTEP / XRHODJ(:,:,:) 
       ENDDO
     ELSE
       DO JSV=NSV_SLTBEG,NSV_SLTEND
@@ -989,7 +975,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
                   XRHODREF(IIB:IIE,IJB:IJE,IKB:IKE), ZSIGSLT(IIB:IIE,IJB:IJE,IKB:IKE,:),&
                   ZRGSLT(IIB:IIE,IJB:IJE,IKB:IKE,:))
     DO JSV=NSV_SLTBEG,NSV_SLTEND
-      XRSVS(:,:,:,JSV) =  ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) * XRHODJ(:,:,:) / PTSTEP_SV
+      XRSVS(:,:,:,JSV) =  ZSVSLT(:,:,:,JSV-NSV_SLTBEG+1) * XRHODJ(:,:,:) / XTSTEP
     ENDDO
     !
     DEALLOCATE(ZSVSLT)
@@ -1065,8 +1051,6 @@ IF (CSURF=='EXTE') THEN
   IF( LTRANS ) THEN
     XUT(:,:,1+JPVEXT) = XUT(:,:,1+JPVEXT) + XUTRANS
     XVT(:,:,1+JPVEXT) = XVT(:,:,1+JPVEXT) + XVTRANS
-    XUM(:,:,1+JPVEXT) = XUM(:,:,1+JPVEXT) + XUTRANS
-    XVM(:,:,1+JPVEXT) = XVM(:,:,1+JPVEXT) + XVTRANS
   END IF
   !
   ALLOCATE(ZDIR_ALB(IIU,IJU,NSWB_MNH))
@@ -1145,13 +1129,10 @@ IF (CSURF=='EXTE') THEN
   DEALLOCATE(ZEMIS   )
   DEALLOCATE(ZTSRAD  )
   !
-  YINST_SFU='M'
   !
   IF( LTRANS ) THEN
     XUT(:,:,1+JPVEXT) = XUT(:,:,1+JPVEXT) - XUTRANS
     XVT(:,:,1+JPVEXT) = XVT(:,:,1+JPVEXT) - XVTRANS
-    XUM(:,:,1+JPVEXT) = XUM(:,:,1+JPVEXT) - XUTRANS
-    XVM(:,:,1+JPVEXT) = XVM(:,:,1+JPVEXT) - XVTRANS
   END IF
 !
 ELSE
@@ -1175,10 +1156,10 @@ PGROUND = PGROUND + ZTIME2 - ZTIME1
 IF (IMI==1) THEN  ! On calcule les flus turb. comme preconise par PP
 
    ! Heat eddy fluxes
-   IF ( LTH_FLX ) CALL EDDY_FLUX_n(IMI,KTCOUNT,XVM,XTHM,XRHODJ,XRTHS,XVTH_FLUX_M,XWTH_FLUX_M)
+   IF ( LTH_FLX ) CALL EDDY_FLUX_n(IMI,KTCOUNT,XVT,XTHT,XRHODJ,XRTHS,XVTH_FLUX_M,XWTH_FLUX_M)
    !
    ! Momentum eddy fluxes
-   IF ( LUV_FLX ) CALL EDDYUV_FLUX_n(IMI,CLUOUT,KTCOUNT,XVM,XTHM,XRHODJ,XRHODREF,XPABSM,XRVS,XVU_FLUX_M)
+   IF ( LUV_FLX ) CALL EDDYUV_FLUX_n(IMI,CLUOUT,KTCOUNT,XVT,XTHT,XRHODJ,XRHODREF,XPABSM,XRVS,XVU_FLUX_M)
 
 ELSE
    ! TEST pour maille infèrieure à 20km ? 
@@ -1198,7 +1179,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-IF (LPASPOL) CALL PASPOL(PTSTEP_SV, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, HFMFILE, CLUOUT )
+IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, HFMFILE, CLUOUT )
 !
 !
 !*        4b.  PASSIVE POLLUTANTS FOR MASS-FLUX SCHEME DIAGNOSTICS
@@ -1301,77 +1282,43 @@ IF ( CTURB == 'TKEL' ) THEN
   IF( LTRANS ) THEN
     XUT(:,:,:) = XUT(:,:,:) + XUTRANS
     XVT(:,:,:) = XVT(:,:,:) + XVTRANS
-    XUM(:,:,:) = XUM(:,:,:) + XUTRANS
-    XVM(:,:,:) = XVM(:,:,:) + XVTRANS
   END IF
 !
 !
 IF(ALLOCATED(XTHW_FLUX))  THEN
  DEALLOCATE(XTHW_FLUX)
- ALLOCATE(XTHW_FLUX(SIZE(XTHM,1),SIZE(XTHM,2),SIZE(XTHM,3)))
+ ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 ELSE
- ALLOCATE(XTHW_FLUX(SIZE(XTHM,1),SIZE(XTHM,2),SIZE(XTHM,3)))
+ ALLOCATE(XTHW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 END IF
 
 IF(ALLOCATED(XRCW_FLUX))  THEN
  DEALLOCATE(XRCW_FLUX)
- ALLOCATE(XRCW_FLUX(SIZE(XTHM,1),SIZE(XTHM,2),SIZE(XTHM,3)))
+ ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 ELSE
- ALLOCATE(XRCW_FLUX(SIZE(XTHM,1),SIZE(XTHM,2),SIZE(XTHM,3)))
+ ALLOCATE(XRCW_FLUX(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 END IF
 !
 IF(ALLOCATED(XSVW_FLUX))  THEN
  DEALLOCATE(XSVW_FLUX)
- ALLOCATE(XSVW_FLUX(SIZE(XSVM,1),SIZE(XSVM,2),SIZE(XSVM,3),SIZE(XSVM,4)))
+ ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
 ELSE
- ALLOCATE(XSVW_FLUX(SIZE(XSVM,1),SIZE(XSVM,2),SIZE(XSVM,3),SIZE(XSVM,4)))
+ ALLOCATE(XSVW_FLUX(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),SIZE(XSVT,4)))
 END IF
 !
-IF (HMET_ADV_SCHEME(1:3) == 'PPM') THEN
- IF (HSV_ADV_SCHEME(1:3) == 'PPM') THEN
-  CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,              &
+   CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,     &
       OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
-      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,YINST_SFU,XIMPL,                &
-      PTSTEP,PTSTEP_MET, PTSTEP_SV,HFMFILE,CLUOUT,          &
+      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,XIMPL,                          &
+      XTSTEP,HFMFILE,CLUOUT,                                                &
       XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
       XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
       XRHODJ,XTHVREF,XRHODREF,                                              &
       ZSFTH,ZSFRV,ZSFSV,ZSFU,ZSFV,                                          &
-      XPABSM,XUM,XVM,XWM,XTKET,XSVT,XSRCM,XBL_DEPTH,XSBL_DEPTH,             &
-      XUT,XVT,XWT,XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                    &
+      XPABST,XUT,XVT,XWT,XTKET,XSVT,XSRCT,XBL_DEPTH,XSBL_DEPTH,             &
+      XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                                &
       XTHT,XRT,                                                             &
-      XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XSIGS, XWTHVMF,                &
+      XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XRTKEMS, XSIGS, XWTHVMF,       &
       XTHW_FLUX, XRCW_FLUX, XSVW_FLUX                                       )
-  ELSE
-   CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,             &
-      OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
-      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,YINST_SFU,XIMPL,                &
-      PTSTEP,PTSTEP_MET, PTSTEP_SV,HFMFILE,CLUOUT,          &
-      XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
-      XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
-      XRHODJ,XTHVREF,XRHODREF,                                              &
-      ZSFTH,ZSFRV,ZSFSV,ZSFU,ZSFV,                                          &
-      XPABSM,XUM,XVM,XWM,XTKET,XSVM,XSRCM,XBL_DEPTH,XSBL_DEPTH,             &
-      XUT,XVT,XWT,XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                    &
-      XTHT,XRT,                                                             &
-      XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XSIGS, XWTHVMF,                &
-      XTHW_FLUX, XRCW_FLUX, XSVW_FLUX                                       )
-  END IF
-ELSE
-  CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,              &
-      OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
-      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,YINST_SFU,XIMPL,                &
-      PTSTEP,PTSTEP_MET, PTSTEP_SV,HFMFILE,CLUOUT,          &
-      XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
-      XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
-      XRHODJ,XTHVREF,XRHODREF,                                              &
-      ZSFTH,ZSFRV,ZSFSV,ZSFU,ZSFV,                                          &
-      XPABSM,XUM,XVM,XWM,XTKEM,XSVM,XSRCM,XBL_DEPTH,XSBL_DEPTH,             &
-      XUT,XVT,XWT,XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                    &
-      XTHM,XRM,                                                             &
-      XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XSIGS, XWTHVMF,                &
-      XTHW_FLUX, XRCW_FLUX, XSVW_FLUX                                       )
-END IF
 !
 IF (LRMC01) THEN
   CALL ADD2DFIELD_ll(TZFIELDS_ll,XSBL_DEPTH)
@@ -1402,37 +1349,15 @@ IF (CSCONV == 'EDKF') THEN
      ALLOCATE(ZEXN (IIU,IJU,IKU))
      ALLOCATE(ZSIGMF (IIU,IJU,IKU))
      ZSIGMF(:,:,:)=0.    
-     ZEXN(:,:,:)=(XPABSM(:,:,:)/XP00)**(XRD/XCPD)  
- IF (HMET_ADV_SCHEME(1:3) == 'PPM') THEN
-   IF (HSV_ADV_SCHEME(1:3) == 'PPM') THEN
+     ZEXN(:,:,:)=(XPABST(:,:,:)/XP00)**(XRD/XCPD)  
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
                    OCLOSE_OUT,LMF_FLX,HFMFILE,CLUOUT,ZTIME_LES_MF,        &
-                   XIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,               &
+                   XIMPL_MF, XTSTEP,                                      &
                    XDZZ, XZZ,                                             &
-                   XRHODJ, XRHODREF, XPABSM, ZEXN, ZSFTH, ZSFRV,          &
-                   XTHT,XRT,XUM,XVM,XTKET,XSVT,                           &
+                   XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &
+                   XTHT,XRT,XUT,XVT,XTKET,XSVT,                           &
                    XRTHS,XRRS,XRUS,XRVS,XRSVS,                            &
                    ZSIGMF,XRC_MF, XRI_MF, XCF_MF, XWTHVMF)
-   ELSE
-     CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
-                   OCLOSE_OUT,LMF_FLX,HFMFILE,CLUOUT,ZTIME_LES_MF,        &
-                   XIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,               &
-                   XDZZ, XZZ,                                             &
-                   XRHODJ, XRHODREF, XPABSM, ZEXN, ZSFTH, ZSFRV,          &
-                   XTHT,XRT,XUM,XVM,XTKET,XSVM,                           &
-                   XRTHS,XRRS,XRUS,XRVS,XRSVS,                            &
-                   ZSIGMF,XRC_MF, XRI_MF, XCF_MF, XWTHVMF)
-   END IF
- ELSE
-     CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
-                   OCLOSE_OUT,LMF_FLX,HFMFILE,CLUOUT,ZTIME_LES_MF,        &
-                   XIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,               &
-                   XDZZ, XZZ,                                             &
-                   XRHODJ, XRHODREF, XPABSM, ZEXN, ZSFTH, ZSFRV,          &
-                   XTHM,XRM,XUM,XVM,XTKEM,XSVM,                           &
-                   XRTHS,XRRS,XRUS,XRVS,XRSVS,                            &
-                   ZSIGMF,XRC_MF, XRI_MF, XCF_MF, XWTHVMF)
- END IF
 !
 ELSE
     XWTHVMF(:,:,:)=0.
@@ -1446,8 +1371,6 @@ CALL SECOND_MNH2(ZTIME4)
   IF( LTRANS ) THEN
     XUT(:,:,:) = XUT(:,:,:) - XUTRANS
     XVT(:,:,:) = XVT(:,:,:) - XVTRANS
-    XUM(:,:,:) = XUM(:,:,:) - XUTRANS
-    XVM(:,:,:) = XVM(:,:,:) - XVTRANS
   END IF
 
   IF (CMF_CLOUD == 'STAT') THEN
@@ -1480,7 +1403,7 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF (LUSECHEM) THEN
-  CALL CH_MONITOR_n(ZWETDEPAER,KTCOUNT,PTSTEP_SV, ILUOUT, NVERB)
+  CALL CH_MONITOR_n(ZWETDEPAER,KTCOUNT,XTSTEP, ILUOUT, NVERB)
 END IF
 !
 ! For inert aerosol (dust and sea salt) => aer_monitor_n
@@ -1514,7 +1437,7 @@ IF ((LDUST).OR.(LSALT)) THEN
     END IF
 
 !
-        CALL AER_MONITOR_n(KTCOUNT,PTSTEP_SV, ILUOUT, NVERB, GCLD)
+        CALL AER_MONITOR_n(KTCOUNT,XTSTEP, ILUOUT, NVERB, GCLD)
 END IF
 !
 !

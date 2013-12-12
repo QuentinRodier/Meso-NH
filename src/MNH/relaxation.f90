@@ -14,7 +14,7 @@ INTERFACE
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
                              OHORELAX_SVCS,                                    &
                              KTCOUNT,KRR,KSV,PTSTEP,PRHODJ,                    &
-                             PUM, PVM, PWM, PTHM, PRM, PSVM, PTKEM,            &
+                             PUT, PVT, PWT, PTHT, PRT, PSVT, PTKET,            &
                              PLSUM, PLSVM, PLSWM, PLSTHM,                      &
                              PLBXUM, PLBXVM, PLBXWM, PLBXTHM, PLBXRM, PLBXSVM, &
                              PLBXTKEM,                                         &
@@ -78,11 +78,11 @@ INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KSV    ! Number of scalar variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ ! effective dry rho * Jacobian
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM, PVM, PWM    ! Variables
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM             !    at
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRM              !   t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM             !         
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT    ! Variables at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT             !  
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT              !   
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT             !         
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PLSUM, PLSVM     !   Large Scale
@@ -147,7 +147,7 @@ END MODULE MODI_RELAXATION
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
                              OHORELAX_SVCS,                                    &
                              KTCOUNT,KRR,KSV,PTSTEP,PRHODJ,                    &
-                             PUM, PVM, PWM, PTHM, PRM, PSVM, PTKEM,            &
+                             PUT, PVT, PWT, PTHT, PRT, PSVT, PTKET,            &
                              PLSUM, PLSVM, PLSWM, PLSTHM,                      &
                              PLBXUM, PLBXVM, PLBXWM, PLBXTHM, PLBXRM, PLBXSVM, &
                              PLBXTKEM,                                         &
@@ -237,6 +237,7 @@ END MODULE MODI_RELAXATION
 !!                 06/11/02 (V. Masson)  update the budget calls 
 !!                 05/2006               Remove EPS
 !!                 06/2011 (M.Chong)     Case of ELEC
+!!                 11/2011 (C.Lac)       Adaptation to FIT temporal scheme
 !!
 !-------------------------------------------------------------------------------
 !
@@ -312,11 +313,11 @@ INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KSV    ! Number of scalar variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ ! effective dry rho * Jacobian
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM, PVM, PWM    ! Variables
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM             !    at
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRM              !   t-dt
-REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVM             !         
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT, PWT    ! Variables at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT             !  
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT              !  
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT             !         
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PLSUM, PLSVM     !   Large Scale
@@ -385,14 +386,14 @@ REAL, DIMENSION(SIZE(PALKBAS))          :: ZKVBAS  ! Function of the upper absor
                              ! layer damping coefficient for u,v,theta and qv
 REAL, DIMENSION(SIZE(PALKBAS))          :: ZKVWBAS !Idem but for w
 !
-REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3)) :: ZKHU,ZKHV,ZKHW,       &
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZKHU,ZKHV,ZKHW,       &
                              ! Function of the lateral absorbing layer damping 
                              ! for u,v and mass points respectively
                                                      ZRHODJU,ZRHODJV,ZRHODJW, &
                              ! averages along x,y,z of the PRHODJ field
                                                      ZWORK
                              ! work array used to expand the LB fields
-LOGICAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3)) :: GMASK3D_RELAX ! 3D
+LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: GMASK3D_RELAX ! 3D
                              ! mask for hor. relax.
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
 LOGICAL, DIMENSION(11) :: GHORELAXSV! local array of logical
@@ -402,7 +403,7 @@ LOGICAL, DIMENSION(11) :: GHORELAXSV! local array of logical
 !
 !*       1.     PRELIMINARIES
 !	        -------------
-IKU=SIZE(PUM,3)
+IKU=SIZE(PUT,3)
 IKE=IKU-JPVEXT
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 CALL GET_GLOBALDIMS_ll(IIU_ll,IJU_ll)
@@ -441,29 +442,29 @@ IF(OVE_RELAX) THEN
 !
 !*       2.1     SET THE TOP-LEVEL DAMPING COEF. (UPSTREAM OR LEAPFROG)
 !
-  IF ((KTCOUNT.EQ.1) .AND. (CCONF.EQ.'START') ) THEN
+! IF (KTCOUNT.EQ.1) THEN
     ZKV(:)  = PALK(:) /(1. - PTSTEP * PALK(:))
     ZKVW(:) = PALKW(:)/(1. - PTSTEP * PALKW(:))
-  ELSE
-    ZKV(:)  = PALK(:)
-    ZKVW(:) = PALKW(:)
-  ENDIF
+! ELSE
+!   ZKV(:)  = PALK(:)
+!   ZKVW(:) = PALKW(:)
+! ENDIF
 !
 !
 !*       2.2     APPLIES THE DAMPING IN THE UPPERMOST LEVELS
 !
   DO JK = KALBOT, IKE+1
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUM(:,:,JK)  -PLSUM(:,:,JK)  )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKV(JK)  *(PUT(:,:,JK)  -PLSUM(:,:,JK)  )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVM(:,:,JK)  -PLSVM(:,:,JK)  )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKV(JK)  *(PVT(:,:,JK)  -PLSVM(:,:,JK)  )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWM(:,:,JK)  -PLSWM(:,:,JK)  )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVW(JK) *(PWT(:,:,JK)  -PLSWM(:,:,JK)  )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHM(:,:,JK) -PLSTHM(:,:,JK) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKV(JK)  *(PTHT(:,:,JK) -PLSTHM(:,:,JK) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  
@@ -491,16 +492,16 @@ IF(OVE_RELAX_GRD) THEN
 !
   DO JK = 1,KALBAS
 !
-    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUM(:,:,JK)  -PLSUM(:,:,JK)  )&
+    PRUS(:,:,JK)  = PRUS(:,:,JK)  - ZKVBAS(JK)  *(PUT(:,:,JK)  -PLSUM(:,:,JK)  )&
                     * ZRHODJU(:,:,JK)
 !
-    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVM(:,:,JK)  -PLSVM(:,:,JK)  )&
+    PRVS(:,:,JK)  = PRVS(:,:,JK)  - ZKVBAS(JK)  *(PVT(:,:,JK)  -PLSVM(:,:,JK)  )&
                     * ZRHODJV(:,:,JK)
 !
-    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWM(:,:,JK)  -PLSWM(:,:,JK)  )&
+    PRWS(:,:,JK)  = PRWS(:,:,JK)  - ZKVWBAS(JK) *(PWT(:,:,JK)  -PLSWM(:,:,JK)  )&
                     * ZRHODJW(:,:,JK)
 !
-    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHM(:,:,JK) -PLSTHM(:,:,JK) )&
+    PRTHS(:,:,JK) = PRTHS(:,:,JK) - ZKVBAS(JK)  *(PTHT(:,:,JK) -PLSTHM(:,:,JK) )&
                     * PRHODJ(:,:,JK)
 !
   END DO  
@@ -518,19 +519,19 @@ END IF
 !
 IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
                     .OR. OHORELAX_UVWTH  .OR. OHORELAX_TKE     ) THEN 
-  IF( (KTCOUNT.EQ.1) .AND. (CCONF.EQ.'START') ) THEN
+! IF (KTCOUNT.EQ.1)  THEN
     DO JK=1,IKU
       ZKHU(:,:,JK) = PKURELAX(:,:) /(1. - PTSTEP * PKURELAX(:,:))
       ZKHV(:,:,JK) = PKVRELAX(:,:) /(1. - PTSTEP * PKVRELAX(:,:)) 
       ZKHW(:,:,JK) = PKWRELAX(:,:) /(1. - PTSTEP * PKWRELAX(:,:))
     END DO
-  ELSE
-    DO JK=1,IKU
-      ZKHU(:,:,JK) = PKURELAX(:,:) 
-      ZKHV(:,:,JK) = PKVRELAX(:,:)
-      ZKHW(:,:,JK) = PKWRELAX(:,:)
-    END DO
-  END IF
+! ELSE
+!   DO JK=1,IKU
+!     ZKHU(:,:,JK) = PKURELAX(:,:) 
+!     ZKHV(:,:,JK) = PKVRELAX(:,:)
+!     ZKHW(:,:,JK) = PKWRELAX(:,:)
+!   END DO
+!  END IF
 ENDIF
 !
 !
@@ -574,7 +575,7 @@ IF ( OHORELAX_UVWTH ) THEN
   END IF
   !
   WHERE (GMASK3D_RELAX)
-    PRUS(:,:,:)  = PRUS(:,:,:) - ZKHU(:,:,:)*(PUM(:,:,:)-ZWORK(:,:,:)) &
+    PRUS(:,:,:)  = PRUS(:,:,:) - ZKHU(:,:,:)*(PUT(:,:,:)-ZWORK(:,:,:)) &
                        * ZRHODJU(:,:,:)
   END WHERE
 !
@@ -607,7 +608,7 @@ IF ( OHORELAX_UVWTH ) THEN
   ENDIF
   !
   WHERE (GMASK3D_RELAX)
-    PRVS(:,:,:)  = PRVS(:,:,:) - ZKHV(:,:,:)*(PVM(:,:,:)-ZWORK(:,:,:)) &
+    PRVS(:,:,:)  = PRVS(:,:,:) - ZKHV(:,:,:)*(PVT(:,:,:)-ZWORK(:,:,:)) &
                        * ZRHODJV(:,:,:)
   END WHERE
   !
@@ -615,7 +616,7 @@ IF ( OHORELAX_UVWTH ) THEN
   IF (SIZE(PLBYWM,2) > 0) CALL EXPAND_LBY (PLBYWM,ZWORK)
   !
   WHERE (GMASK3D_RELAX)
-    PRWS(:,:,:)  = PRWS(:,:,:) - ZKHW(:,:,:)*(PWM(:,:,:)-ZWORK(:,:,:)) &
+    PRWS(:,:,:)  = PRWS(:,:,:) - ZKHW(:,:,:)*(PWT(:,:,:)-ZWORK(:,:,:)) &
                        * ZRHODJW(:,:,:)
   END WHERE
   !
@@ -624,7 +625,7 @@ IF ( OHORELAX_UVWTH ) THEN
   IF (SIZE(PLBYTHM,2) > 0) CALL EXPAND_LBY (PLBYTHM,ZWORK)
   !
   WHERE (GMASK3D_RELAX)
-    PRTHS(:,:,:)  = PRTHS(:,:,:) - ZKHW(:,:,:)*(PTHM(:,:,:)-ZWORK(:,:,:)) &
+    PRTHS(:,:,:)  = PRTHS(:,:,:) - ZKHW(:,:,:)*(PTHT(:,:,:)-ZWORK(:,:,:)) &
                        * PRHODJ(:,:,:)
   END WHERE
 END IF
@@ -634,7 +635,7 @@ DO JRR = 1,KRR
     IF (SIZE(PLBXRM,1) > 0) CALL EXPAND_LBX (PLBXRM(:,:,:,JRR),ZWORK)
     IF (SIZE(PLBYRM,2) > 0) CALL EXPAND_LBY (PLBYRM(:,:,:,JRR),ZWORK)
     WHERE (GMASK3D_RELAX)
-      PRRS(:,:,:,JRR)  = PRRS(:,:,:,JRR) - ZKHW(:,:,:)*(PRM(:,:,:,JRR)-ZWORK(:,:,:)) &
+      PRRS(:,:,:,JRR)  = PRRS(:,:,:,JRR) - ZKHW(:,:,:)*(PRT(:,:,:,JRR)-ZWORK(:,:,:)) &
                          * PRHODJ(:,:,:)
     END WHERE
   END IF
@@ -644,7 +645,7 @@ IF ( OHORELAX_TKE ) THEN
   IF (SIZE(PLBXTKEM,1) > 0) CALL EXPAND_LBX (PLBXTKEM,ZWORK)
   IF (SIZE(PLBYTKEM,2) > 0) CALL EXPAND_LBY (PLBYTKEM,ZWORK)
   WHERE (GMASK3D_RELAX)
-    PRTKES(:,:,:)  = PRTKES(:,:,:) - ZKHW(:,:,:)*(PTKEM(:,:,:)-ZWORK(:,:,:)) &
+    PRTKES(:,:,:)  = PRTKES(:,:,:) - ZKHW(:,:,:)*(PTKET(:,:,:)-ZWORK(:,:,:)) &
                        * PRHODJ(:,:,:)
   END WHERE
 END IF  
@@ -655,7 +656,7 @@ DO JSV=1,KSV
       IF (SIZE(PLBXSVM,1) > 0) CALL EXPAND_LBX (PLBXSVM(:,:,:,JSV),ZWORK)
       IF (SIZE(PLBYSVM,2) > 0) CALL EXPAND_LBY (PLBYSVM(:,:,:,JSV),ZWORK)
       WHERE (GMASK3D_RELAX)
-        PRSVS(:,:,:,JSV)  = PRSVS(:,:,:,JSV) - ZKHW(:,:,:)*(PSVM(:,:,:,JSV)-ZWORK(:,:,:)) &
+        PRSVS(:,:,:,JSV)  = PRSVS(:,:,:,JSV) - ZKHW(:,:,:)*(PSVT(:,:,:,JSV)-ZWORK(:,:,:)) &
                          * PRHODJ(:,:,:)
       END WHERE
     END IF

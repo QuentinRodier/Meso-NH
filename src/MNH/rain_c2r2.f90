@@ -9,13 +9,13 @@
 !      ######################
 !
 INTERFACE
-      SUBROUTINE RAIN_C2R2 (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP_MET, PTSTEP,  &
+      SUBROUTINE RAIN_C2R2 (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,              &
                             KMI, HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,      &
                             PRHODREF, PEXNREF,                                  &
-                            PPABSM, PPABST, PTHM, PTHT, PRVT, PRCM, PRCT,       &
-                            PRRT, PRRM,                                         &
+                            PPABST, PTHT, PRVT, PRCT,                           &
+                            PRRT, PTHM, PRCM, PPABSM,                           &
                             PW_NU, PTHS, PRVS, PRCS, PRRS,                      &
-                            PCNT, PCCT, PCRM, PCRT, PCNS, PCCS, PCRS,           &
+                            PCNT, PCCT, PCRT, PCNS, PCCS, PCRS,                 &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
                             PSOLORG, PMI, HACTCCN                               )
 !
@@ -30,8 +30,6 @@ LOGICAL,                  INTENT(IN)    :: ORAIN   ! switch to activate the
                                                    ! rain formation by coalescence
 INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step 
                                       ! integration for  rain sedimendation
-REAL,                     INTENT(IN)    :: PTSTEP_MET   ! Effective Time step
-                                        ! for meteorological scalar variables
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
@@ -45,15 +43,14 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 !
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM   ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
@@ -64,7 +61,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRRS    ! Rain water m.r. source
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCNT    ! Water vapor C. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRM    ! Rain water C. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRT    ! Rain water C. at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCNS    ! Water vapor C. source
@@ -84,13 +80,13 @@ END SUBROUTINE RAIN_C2R2
 END INTERFACE
 END MODULE MODI_RAIN_C2R2
 !     ######################################################################
-      SUBROUTINE RAIN_C2R2 (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP_MET, PTSTEP,  &
+      SUBROUTINE RAIN_C2R2 (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,              &
                             KMI, HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,      &
                             PRHODREF, PEXNREF,                                  &
-                            PPABSM, PPABST, PTHM, PTHT, PRVT, PRCM, PRCT,       &
-                            PRRT, PRRM,                                         &
+                            PPABST, PTHT, PRVT,  PRCT,                          &
+                            PRRT, PTHM, PRCM, PPABSM,                           &
                             PW_NU, PTHS, PRVS, PRCS, PRRS,                      &
-                            PCNT, PCCT, PCRM, PCRT, PCNS, PCCS, PCRS,           &
+                            PCNT, PCCT,  PCRT, PCNS, PCCS, PCRS,                &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
                             PSOLORG, PMI, HACTCCN                               )
 !     ######################################################################
@@ -230,8 +226,6 @@ LOGICAL,                  INTENT(IN)    :: ORAIN   ! switch to activate the
                                                    ! rain formation by coalescence
 INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step 
                                       ! integration for  rain sedimendation
-REAL,                     INTENT(IN)    :: PTSTEP_MET   ! Effective Time step
-                                        ! for meteorological scalar variables
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
@@ -245,15 +239,14 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF ! Reference Exner function
 !
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! abs. pressure at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST  ! abs. pressure at time t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHM    ! Theta at time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABSM  ! Pressure time t-Dt
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at time t-Dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU   ! updraft velocity used for
                                                    ! the nucleation param.
@@ -264,7 +257,6 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRRS    ! Rain water m.r. source
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCNT    ! Water vapor C. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCCT    ! Cloud water C. at t
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRM    ! Rain water C. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRT    ! Rain water C. at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCNS    ! Water vapor C. source
@@ -396,8 +388,8 @@ IKE=SIZE(PZZ,3) - JPVEXT
 !
 ISIZE = SIZE(XRTMIN);ALLOCATE(ZRTMIN(ISIZE))
 ISIZE = SIZE(XCTMIN);ALLOCATE(ZCTMIN(ISIZE))
-ZRTMIN(:) = XRTMIN(:) / PTSTEP_MET
-ZCTMIN(:) = XCTMIN(:) / PTSTEP_MET
+ZRTMIN(:) = XRTMIN(:) / PTSTEP
+ZCTMIN(:) = XCTMIN(:) / PTSTEP
 !
 ZWLBDC3(:,:,:) = 1.E30
 ZWLBDC(:,:,:)  = 1.E10
@@ -414,7 +406,6 @@ WHERE (PRRT(:,:,:)>XRTMIN(3) .AND. PCRT(:,:,:)>XCTMIN(3))
   ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
 END WHERE
 ZT(:,:,:)  = PTHT(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
 !
 !-------------------------------------------------------------------------------
 !
@@ -422,9 +413,9 @@ ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
 !   	        --------------------------------------
 !
 IF ((HACTCCN == 'ABRK').AND.((LORILAM).OR.(LDUST).OR.(LSALT))) THEN
-CALL AER_NUCLEATION
+  CALL AER_NUCLEATION
 ELSE
-CALL C2R2_NUCLEATION
+  CALL C2R2_NUCLEATION
 ENDIF
 
 !
@@ -506,7 +497,7 @@ END IF
 !
 !*       6.2    time splitting loop initialization        
 !
-ZTSPLITR= PTSTEP_MET / FLOAT(KSPLITR)
+ZTSPLITR= PTSTEP / FLOAT(KSPLITR)
 !
 CALL C2R2_SEDIMENTATION
 ! 
@@ -541,11 +532,11 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !  the precipitating fields are larger than a minimal value only !!!
 
 ZPRRS(:,:,:) = 0.0
-ZPRRS(:,:,:) = PRRS(:,:,:)-PRRM(:,:,:)/PTSTEP_MET
-PRRS(:,:,:)  = PRRM(:,:,:)/PTSTEP_MET
+ZPRRS(:,:,:) = PRRS(:,:,:)-PRRT(:,:,:)/PTSTEP
+PRRS(:,:,:)  = PRRT(:,:,:)/PTSTEP
 ZPCRS(:,:,:) = 0.0
-ZPCRS(:,:,:) = PCRS(:,:,:)-PCRM(:,:,:)/PTSTEP_MET
-PCRS(:,:,:)  = PCRM(:,:,:)/PTSTEP_MET
+ZPCRS(:,:,:) = PCRS(:,:,:)-PCRT(:,:,:)/PTSTEP
+PCRS(:,:,:)  = PCRT(:,:,:)/PTSTEP
 !
 DO JN = 1 , KSPLITR
   GSEDIM(:,:,:) = .FALSE.
@@ -566,11 +557,11 @@ DO JN = 1 , KSPLITR
       PRRS(:,:,:) = PRRS(:,:,:) + ZPRRS(:,:,:)/KSPLITR
       PCRS(:,:,:) = PCRS(:,:,:) + ZPCRS(:,:,:)/KSPLITR
       IF( OSEDC ) THEN
-        PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP_MET
-        PRCS(:,:,:) = PRCS(:,:,:) * PTSTEP_MET
+        PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP
+        PRCS(:,:,:) = PRCS(:,:,:) * PTSTEP
       END IF
-      PCRS(:,:,:) = PCRS(:,:,:) * PTSTEP_MET
-      PRRS(:,:,:) = PRRS(:,:,:) * PTSTEP_MET
+      PCRS(:,:,:) = PCRS(:,:,:) * PTSTEP
+      PRRS(:,:,:) = PRRS(:,:,:) * PTSTEP
       DO JK = IKB , IKE
         ZW(:,:,JK)=ZTSPLITR/(PZZ(:,:,JK+1)-PZZ(:,:,JK))
       END DO
@@ -625,7 +616,7 @@ DO JN = 1 , KSPLITR
     END IF
 !             
    END IF
-!          
+!         
    IF( OSEDC ) THEN
      DO JK = IKB , IKE
         PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*    &
@@ -696,11 +687,11 @@ DO JN = 1 , KSPLITR
 !
   IF( JN==KSPLITR ) THEN
       IF( OSEDC ) THEN
-        PRCS(:,:,:) = PRCS(:,:,:) / PTSTEP_MET
-        PCCS(:,:,:) = PCCS(:,:,:) / PTSTEP_MET
+        PRCS(:,:,:) = PRCS(:,:,:) / PTSTEP
+        PCCS(:,:,:) = PCCS(:,:,:) / PTSTEP
       END IF
-      PRRS(:,:,:) = PRRS(:,:,:) / PTSTEP_MET
-      PCRS(:,:,:) = PCRS(:,:,:) / PTSTEP_MET
+      PRRS(:,:,:) = PRRS(:,:,:) / PTSTEP
+      PCRS(:,:,:) = PCRS(:,:,:) / PTSTEP
   END IF
 !                    
   IF ( OSEDC .AND. OCLOSE_OUT ) THEN
@@ -783,6 +774,7 @@ ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 
 IF (OACTIT) THEN
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                          ! drc/dt
   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
@@ -935,9 +927,9 @@ IF( INUCT >= 1 ) THEN
 ! the CCN spectra formula uses ZSMAX in percent
 !
   IF (XCONC_CCN > 0.) THEN
-    ZZW1(:) = MIN( ZCONC_CCN(:),ZCHEN_TMP(:) * (100.0*ZSMAX(:))**XKHEN * ZZW3(:) ) / PTSTEP_MET
+    ZZW1(:) = MIN( ZCONC_CCN(:),ZCHEN_TMP(:) * (100.0*ZSMAX(:))**XKHEN * ZZW3(:) ) / PTSTEP
   ELSE
-    ZZW1(:) = ZCHEN_TMP(:) * (100.0*ZSMAX(:))**XKHEN * ZZW3(:) / PTSTEP_MET
+    ZZW1(:) = ZCHEN_TMP(:) * (100.0*ZSMAX(:))**XKHEN * ZZW3(:) / PTSTEP
   ENDIF
   ZW(:,:,:)   = PCNS(:,:,:)
   PCNS(:,:,:) = UNPACK( MAX( ZZW1(:),ZCNS(:) ),MASK=GNUCT(:,:,:), &
@@ -1058,6 +1050,7 @@ ZZW1LOG(:,:,:)= 0. ! supersaturation
 ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 IF (OACTIT) THEN
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
@@ -1078,7 +1071,7 @@ ELSE
            PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))
 END IF
 !
- INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
+INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 
 IF( INUCT >= 1 ) THEN
   ALLOCATE(ZRVT(INUCT))
@@ -1139,7 +1132,7 @@ CALL CH_AER_ACTIVATION(ZAERO, ZZT, ZZW2, ZTDTBIS, ZRHODREF, ZPABST,&
 ! Nb de goutelettes activées
 
 !test
-ZZW1(:) = MAX(ZNCN(:)/PTSTEP_MET - ZCNS(:), 0.)
+ZZW1(:) = MAX(ZNCN(:)/PTSTEP - ZCNS(:), 0.)
 !
 ZW(:,:,:) = UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ) 
 PCNS(:,:,:) = PCNS(:,:,:) + ZW(:,:,:)

@@ -673,11 +673,11 @@ DO JI = 1,IIU
 !
       IF (ZZM(JI,JJ,JK) >= ZZHATM(IKU)) THEN     ! copy out when
         PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,IKU)    ! ZZM(IKU)= ZZHATM(IKU)
-        XRM(JI,JJ,JK,1) = PMRM(IKU)              ! (in case zs=0.)
+        XRT(JI,JJ,JK,1) = PMRM(IKU)              ! (in case zs=0.)
 !
       ELSEIF (ZZM(JI,JJ,JK) < ZZHATM(1)) THEN    ! copy out when  
         PTHV(JI,JJ,JK)  =  ZTHV3D (JI,JJ,1)      ! ZZM(1)< ZZHATM(1)  
-        XRM(JI,JJ,JK,1) = PMRM(1)                ! (in case zs=0.)
+        XRT(JI,JJ,JK,1) = PMRM(1)                ! (in case zs=0.)
 !
       ELSE                  ! search levels on the mass grid without orography
         DO JKS = 2,IKU      ! that surrounded JK
@@ -688,7 +688,7 @@ DO JI = 1,IIU
             ZDZ2SDH = 1. - ZDZ1SDH
             PTHV(JI,JJ,JK)  = (ZDZ1SDH * ZTHV3D(JI,JJ,JKS)   )       &
                             + (ZDZ2SDH * ZTHV3D(JI,JJ,JKS-1) )
-            XRM(JI,JJ,JK,1) = (ZDZ1SDH  * PMRM(JKS)         )        &
+            XRT(JI,JJ,JK,1) = (ZDZ1SDH  * PMRM(JKS)         )        &
                             + (ZDZ2SDH  * PMRM(JKS-1)       )
           END IF
         END DO
@@ -702,7 +702,7 @@ END DO
 !*       5.     DEDUCE THETA FROM THETAV AND MR ON MODEL GRID
 !               ---------------------------------------------
 !
-XTHM(:,:,:) = PTHV(:,:,:) * (1.+SUM(XRM(:,:,:,:),DIM=4)) /(1. + ZRVSRD *XRM(:,:,:,1))
+XTHT(:,:,:) = PTHV(:,:,:) * (1.+SUM(XRT(:,:,:,:),DIM=4)) /(1. + ZRVSRD *XRT(:,:,:,1))
 !
 !
 !-------------------------------------------------------------------------------
@@ -725,14 +725,14 @@ DO JI = 2,IIU
 !
       IF (ZZUM(JI,JJ,JK) >= XZHAT(IKU)) THEN     ! extrapolation
         ZDZ1SDH = (ZZUM(JI,JJ,JK)-XZHAT(IKU))/ (XZHAT(IKU)-XZHAT(IKU-1))
-        XUM(JI,JJ,JK) =  0.5*( PU3D(JI,JJ,IKU) + PU3D(JI-1,JJ,IKU) )  &
+        XUT(JI,JJ,JK) =  0.5*( PU3D(JI,JJ,IKU) + PU3D(JI-1,JJ,IKU) )  &
                          * (1.+ ZDZ1SDH)                              &
                         -0.5*(PU3D(JI,JJ,IKU-1)+ PU3D(JI-1,JJ,IKU-1)) &
                          * ZDZ1SDH
 !
       ELSE IF (ZZUM(JI,JJ,JK) < XZHAT(1)) THEN     ! extrapolation
         ZDZ1SDH = (ZZUM(JI,JJ,JK)-XZHAT(1))/ (XZHAT(2)-XZHAT(1))
-        XUM(JI,JJ,JK) = 0.5*( PU3D(JI,JJ,1) + PU3D(JI-1,JJ,1) )  &
+        XUT(JI,JJ,JK) = 0.5*( PU3D(JI,JJ,1) + PU3D(JI-1,JJ,1) )  &
                          * (1.- ZDZ1SDH)                         &
                         +0.5*(PU3D(JI,JJ,2)+ PU3D(JI-1,JJ,2) )   &
                          * ZDZ1SDH
@@ -744,7 +744,7 @@ DO JI = 2,IIU
                           ! orography
             ZDZ1SDH = (ZZUM(JI,JJ,JK)-XZHAT(JKS-1))/ (XZHAT(JKS)-XZHAT(JKS-1))
             ZDZ2SDH = 1. - ZDZ1SDH
-            XUM(JI,JJ,JK) = ZDZ1SDH *.5 *( PU3D(JI,JJ,JKS)  + PU3D(JI-1,JJ,JKS)) &
+            XUT(JI,JJ,JK) = ZDZ1SDH *.5 *( PU3D(JI,JJ,JKS)  + PU3D(JI-1,JJ,JKS)) &
                            +ZDZ2SDH *.5 *( PU3D(JI,JJ,JKS-1)+ PU3D(JI-1,JJ,JKS-1))
           END IF
         END DO
@@ -753,7 +753,7 @@ DO JI = 2,IIU
   END DO
 END DO
 !
-XUM(1,:,:)=-999.
+XUT(1,:,:)=-999.
 !
 !
 !*       6.2 V interpolation
@@ -765,14 +765,14 @@ DO JI = 1,IIU
 !
       IF (ZZVM(JI,JJ,JK) >= XZHAT(IKU)) THEN     ! extrapolation
         ZDZ1SDH = (ZZVM(JI,JJ,JK)-XZHAT(IKU))/ (XZHAT(IKU)-XZHAT(IKU-1))
-        XVM(JI,JJ,JK) =   0.5*( PV3D(JI,JJ,IKU) + PV3D(JI,JJ-1,IKU) )  &
+        XVT(JI,JJ,JK) =   0.5*( PV3D(JI,JJ,IKU) + PV3D(JI,JJ-1,IKU) )  &
                          * (1.+ ZDZ1SDH)                               &
                         -0.5*(PV3D(JI,JJ,IKU-1)+ PV3D(JI,JJ-1,IKU-1))  &
                          * ZDZ1SDH
 !
       ELSE IF (ZZVM(JI,JJ,JK) < XZHAT(1)) THEN     ! extrapolation
         ZDZ1SDH = (ZZVM(JI,JJ,JK)-XZHAT(1))/ (XZHAT(2)-XZHAT(1))
-        XVM(JI,JJ,JK) =  0.5*( PV3D(JI,JJ,1) + PV3D(JI,JJ-1,1) )  &
+        XVT(JI,JJ,JK) =  0.5*( PV3D(JI,JJ,1) + PV3D(JI,JJ-1,1) )  &
                          * (1.- ZDZ1SDH)                         &
                         +0.5*(PV3D(JI,JJ,2)+ PV3D(JI,JJ-1,2) )   &
                          * ZDZ1SDH
@@ -784,7 +784,7 @@ DO JI = 1,IIU
                           ! orography
             ZDZ1SDH = (ZZVM(JI,JJ,JK)-XZHAT(JKS-1))/ (XZHAT(JKS)-XZHAT(JKS-1))
             ZDZ2SDH = 1. - ZDZ1SDH
-            XVM(JI,JJ,JK) = ZDZ1SDH *.5 *( PV3D(JI,JJ,JKS)  + PV3D(JI,JJ-1,JKS)) &
+            XVT(JI,JJ,JK) = ZDZ1SDH *.5 *( PV3D(JI,JJ,JKS)  + PV3D(JI,JJ-1,JKS)) &
                            +ZDZ2SDH *.5 *( PV3D(JI,JJ,JKS-1)+ PV3D(JI,JJ-1,JKS-1))
           END IF
         END DO
@@ -794,11 +794,11 @@ DO JI = 1,IIU
   END DO
 END DO
 !
-XVM(:,1,:)=-999.
+XVT(:,1,:)=-999.
 !
 !*       6.3 W initialization
 !
-XWM(:,:,:)=0.
+XWT(:,:,:)=0.
 !
 !-------------------------------------------------------------------------------
 !

@@ -9,26 +9,22 @@
 !     #######################
 INTERFACE
 !
-   SUBROUTINE INI_TKE_EPS(HGETTKEM,HGETTKET,PTHVREF,PZZ, &
-                          PUM,PVM,PTHM,                  &
+   SUBROUTINE INI_TKE_EPS(HGETTKET,PTHVREF,PZZ, &
                           PUT,PVT,PTHT,                  &
-                          PTKEM,PTKET,TPINITHALO3D_ll    )
+                          PTKET,TPINITHALO3D_ll    )
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-CHARACTER (LEN=*),               INTENT(IN)  :: HGETTKEM,HGETTKET
+CHARACTER (LEN=*),               INTENT(IN)  :: HGETTKET
              ! character string indicating whether TKE must be 
              ! initialized or not
 REAL, DIMENSION(:,:,:),        INTENT(IN)   :: PTHVREF ! virtual potential
                                                        ! temperature
 REAL, DIMENSION(:,:,:),        INTENT(IN)   :: PZZ     ! physical height for
                                                        ! w-point
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PUM     ! x-component of wind
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PVM     ! y-component of wind
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTHM    ! potential temperature
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PUT     ! x-component of wind
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PVT     ! y-component of wind
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTHT    ! potential temperature
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTKEM,PTKET ! TKE fields 
+REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTKET ! TKE fields 
 TYPE(LIST_ll), POINTER                      :: TPINITHALO3D_ll ! pointer for the list of fields
                                       !  which must be communicated in INIT
 !
@@ -39,10 +35,9 @@ END INTERFACE
 END MODULE MODI_INI_TKE_EPS
 !
 !  ###################################################################
-   SUBROUTINE INI_TKE_EPS(HGETTKEM,HGETTKET,PTHVREF,PZZ, &
-                          PUM,PVM,PTHM,                  &
+   SUBROUTINE INI_TKE_EPS(HGETTKET,PTHVREF,PZZ, &
                           PUT,PVT,PTHT,                  &
-                          PTKEM,PTKET,TPINITHALO3D_ll    )
+                          PTKET,TPINITHALO3D_ll    )
 !  ###################################################################
 !
 !
@@ -106,20 +101,17 @@ IMPLICIT NONE
 !
 !*          0.1. declarations of arguments
 !
-CHARACTER (LEN=*),               INTENT(IN)  :: HGETTKEM,HGETTKET
+CHARACTER (LEN=*),               INTENT(IN)  :: HGETTKET
              ! character string indicating whether TKE must be 
              ! initialized or not
 REAL, DIMENSION(:,:,:),        INTENT(IN)   :: PTHVREF ! virtual potential
                                                        ! temperature
 REAL, DIMENSION(:,:,:),        INTENT(IN)   :: PZZ     ! physical height for
                                                        ! w-point
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PUM     ! x-component of wind
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PVM     ! y-component of wind
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTHM    ! potential temperature
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PUT     ! x-component of wind
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PVT     ! y-component of wind
 REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTHT    ! potential temperature
-REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTKEM,PTKET ! TKE fields 
+REAL, DIMENSION(:,:,:),        INTENT(INOUT):: PTKET ! TKE field 
 TYPE(LIST_ll), POINTER                      :: TPINITHALO3D_ll ! pointer for the list of fields
                                       !  which must be communicated in INIT
 !
@@ -128,15 +120,15 @@ TYPE(LIST_ll), POINTER                      :: TPINITHALO3D_ll ! pointer for the
 INTEGER ::         IKB,IKE,IKU! index value for the first and last inner
                               ! mass points
 INTEGER ::         JKK        ! vertical loop index
-REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3)) :: ZDELTZ ! vertical
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZDELTZ ! vertical
                                                                ! increment
 !
 ! ---------------------------------------------------------------------
 ! 
 ! 
 IKB=1+JPVEXT
-IKE=SIZE(PTHM,3)-JPVEXT
-IKU=SIZE(PTHM,3)
+IKE=SIZE(PTHT,3)-JPVEXT
+IKU=SIZE(PTHT,3)
 !
 !*       1.     TKE DETERMINATION
 !               -----------------
@@ -145,32 +137,6 @@ DO JKK=IKB-1,IKE
   ZDELTZ(:,:,JKK) = PZZ(:,:,JKK+1)-PZZ(:,:,JKK)
 END DO
 ZDELTZ(:,:,IKE+1) = ZDELTZ(:,:,IKE)
-!
-IF (HGETTKEM == 'INIT' ) THEN
-!  instant t-deltat
-  PTHM(:,:,IKB-1) = PTHM(:,:,IKB)
-  PUM(:,:,IKB-1)  = PUM(:,:,IKB)
-  PVM(:,:,IKB-1)  = PVM(:,:,IKB)
-  !
-  PTHM(:,:,IKE+1) = PTHM(:,:,IKE)
-  PUM(:,:,IKE+1)  = PUM(:,:,IKE)
-  PVM(:,:,IKE+1)  = PVM(:,:,IKE)
-  !
-  ! determines TKE
-  PTKEM(:,:,:)=(XLINI**2/XCED)*(  &
-                  XCMFS*( DZF(1,IKU,1,MXF(MZM(1,IKU,1,PUM)))**2                  &
-                         +DZF(1,IKU,1,MYF(MZM(1,IKU,1,PVM)))**2) / ZDELTZ        &
-                 -(XG/PTHVREF)*XCSHF*DZF(1,IKU,1,MZM(1,IKU,1,PTHM))              &
-                               ) / ZDELTZ
-  ! positivity control
-  WHERE (PTKEM < XTKEMIN) PTKEM=XTKEMIN
-  !
-  ! 
-  ! Add PTKEM to TPINITHALO3D_ll list of fields updated at the 
-  ! end of initialization
-  CALL ADD3DFIELD_ll (TPINITHALO3D_ll,PTKEM)
-!
-END IF
 !
 IF (HGETTKET == 'INIT' ) THEN
 !  instant t

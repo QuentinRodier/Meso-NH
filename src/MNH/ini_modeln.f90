@@ -1,4 +1,4 @@
-! $Source$ $Revision$ $Date: 2010/11/16 15:45:48
+! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_INI_MODEL_n
@@ -6,10 +6,9 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_MODEL_n(KMI,PTSTEP_OLD,HLUOUT,HINIFILE,HINIFILEPGD)
+       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
 !
        INTEGER, INTENT(IN)              :: KMI      ! Model index 
-       REAL,              INTENT(IN)    :: PTSTEP_OLD ! OLD Time STEP 
        CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
        !  of nested models
        CHARACTER (LEN=28), INTENT(IN)   :: HINIFILE ! name of
@@ -21,7 +20,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_MODEL_n
 !     ######################################################
-      SUBROUTINE INI_MODEL_n(KMI,PTSTEP_OLD,HLUOUT,HINIFILE,HINIFILEPGD)
+      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
 !     ######################################################
 !
 !!****  *INI_MODEL_n* - routine to initialize the nested model _n
@@ -284,6 +283,7 @@ USE MODD_METRICS_n
 USE MODD_DYN_n
 USE MODD_DYNZD_n
 USE MODD_FIELD_n
+USE MODD_PAST_FIELD_n
 USE MODD_MEAN_FIELD_n
 USE MODD_MEAN_FIELD
 USE MODD_ADV_n
@@ -397,7 +397,6 @@ IMPLICIT NONE
 !
 !
 INTEGER, INTENT(IN)              :: KMI      ! Model Index 
-REAL,    INTENT(IN)              :: PTSTEP_OLD ! OLD Time STEP 
 
 CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
                                              !  of nested models
@@ -490,6 +489,7 @@ CLUOUT = HLUOUT
 CINIFILE=HINIFILE
 CINIFILEPGD=HINIFILEPGD
 !
+CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
 !-------------------------------------------------------------------------------
 !
 !*       2.   END OF READING
@@ -583,30 +583,30 @@ CALL GET_DIM_PHYS_ll('B',NIMAX,NJMAX)
 NRR=0
 NRRL=0
 NRRI=0
-IF ((CGETRVM /= 'SKIP' ).OR.(CGETRVT /= 'SKIP' )) THEN
+IF (CGETRVT /= 'SKIP' ) THEN
   NRR = NRR+1
 END IF
-IF ((CGETRCM /= 'SKIP' ).OR.(CGETRCT /= 'SKIP' )) THEN
-  NRR = NRR+1
-  NRRL = NRRL+1
-END IF
-IF ((CGETRRM /= 'SKIP').OR.(CGETRRT /= 'SKIP' )) THEN
+IF (CGETRCT /= 'SKIP' ) THEN
   NRR = NRR+1
   NRRL = NRRL+1
 END IF
-IF ((CGETRIM /= 'SKIP').OR.(CGETRIT /= 'SKIP' )) THEN
+IF (CGETRRT /= 'SKIP' ) THEN
+  NRR = NRR+1
+  NRRL = NRRL+1
+END IF
+IF (CGETRIT /= 'SKIP' ) THEN
   NRR = NRR+1
   NRRI = NRRI+1
 END IF
-IF ((CGETRSM /= 'SKIP').OR.(CGETRST /= 'SKIP' )) THEN
+IF (CGETRST /= 'SKIP' ) THEN
   NRR = NRR+1
   NRRI = NRRI+1
 END IF
-IF ((CGETRGM /= 'SKIP').OR.(CGETRGT /= 'SKIP' )) THEN
+IF (CGETRGT /= 'SKIP' ) THEN
   NRR = NRR+1
   NRRI = NRRI+1
 END IF
-IF ((CGETRHM /= 'SKIP').OR.(CGETRHT /= 'SKIP' )) THEN
+IF (CGETRHT /= 'SKIP' ) THEN
   NRR = NRR+1
   NRRI = NRRI+1
 END IF
@@ -627,11 +627,6 @@ CALL UPDATE_NSV(KMI)
 !              -----------------
 !
 !*       3.1   Module MODD_FIELD_n
-!
-ALLOCATE(XUM(IIU,IJU,IKU))      ; XUM  = 0.0
-ALLOCATE(XVM(IIU,IJU,IKU))      ; XVM  = 0.0
-ALLOCATE(XWM(IIU,IJU,IKU))      ; XWM  = 0.0
-ALLOCATE(XTHM(IIU,IJU,IKU))     ; XTHM = 0.0
 !
 IF (LMEAN_FIELD) THEN
 !
@@ -654,6 +649,15 @@ IF (LMEAN_FIELD) THEN
 !
 END IF
 !
+IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
+  ALLOCATE(XUM(IIU,IJU,IKU))      ; XUM  = 0.0
+  ALLOCATE(XVM(IIU,IJU,IKU))      ; XVM  = 0.0
+  ALLOCATE(XWM(IIU,IJU,IKU))      ; XWM  = 0.0
+  ALLOCATE(XDUM(IIU,IJU,IKU))     ; XDUM  = 0.0
+  ALLOCATE(XDVM(IIU,IJU,IKU))     ; XDVM  = 0.0
+  ALLOCATE(XDWM(IIU,IJU,IKU))     ; XDWM  = 0.0
+END IF
+!
 ALLOCATE(XUT(IIU,IJU,IKU))      ; XUT  = 0.0
 ALLOCATE(XVT(IIU,IJU,IKU))      ; XVT  = 0.0
 ALLOCATE(XWT(IIU,IJU,IKU))      ; XWT  = 0.0
@@ -661,15 +665,18 @@ ALLOCATE(XTHT(IIU,IJU,IKU))     ; XTHT = 0.0
 ALLOCATE(XRUS(IIU,IJU,IKU))     ; XRUS = 0.0
 ALLOCATE(XRVS(IIU,IJU,IKU))     ; XRVS = 0.0
 ALLOCATE(XRWS(IIU,IJU,IKU))     ; XRWS = 0.0
-ALLOCATE(XRTHS(IIU,IJU,IKU))
+ALLOCATE(XRUS_PRES(IIU,IJU,IKU)); XRUS_PRES = 0.0
+ALLOCATE(XRVS_PRES(IIU,IJU,IKU)); XRVS_PRES = 0.0
+ALLOCATE(XRWS_PRES(IIU,IJU,IKU)); XRWS_PRES = 0.0
+ALLOCATE(XRTHS(IIU,IJU,IKU))    ; XRTHS = 0.0
+ALLOCATE(XRTHS_CLD(IIU,IJU,IKU)); XRTHS_CLD = 0.0
 IF (CTURB /= 'NONE') THEN
-  ALLOCATE(XTKEM(IIU,IJU,IKU))
   ALLOCATE(XTKET(IIU,IJU,IKU))
   ALLOCATE(XRTKES(IIU,IJU,IKU))
+  ALLOCATE(XRTKEMS(IIU,IJU,IKU)); XRTKEMS = 0.0
   ALLOCATE(XWTHVMF(IIU,IJU,IKU))
-  XTKEMIN=XKEMIN  
+  XTKEMIN=XKEMIN
 ELSE
-  ALLOCATE(XTKEM(0,0,0))
   ALLOCATE(XTKET(0,0,0))
   ALLOCATE(XRTKES(0,0,0))
   ALLOCATE(XWTHVMF(0,0,0))
@@ -688,16 +695,14 @@ END IF
 ALLOCATE(XPABSM(IIU,IJU,IKU)) ; XPABSM = 0.0
 ALLOCATE(XPABST(IIU,IJU,IKU)) ; XPABST = 0.0
 !
-ALLOCATE(XRM(IIU,IJU,IKU,NRR))
 ALLOCATE(XRT(IIU,IJU,IKU,NRR))
 ALLOCATE(XRRS(IIU,IJU,IKU,NRR))
+ALLOCATE(XRRS_CLD(IIU,IJU,IKU,NRR)); XRRS_CLD = 0.0
 !
 IF (CTURB /= 'NONE' .AND. NRR>1) THEN
-  ALLOCATE(XSRCM(IIU,IJU,IKU))
   ALLOCATE(XSRCT(IIU,IJU,IKU))
   ALLOCATE(XSIGS(IIU,IJU,IKU))
 ELSE
-  ALLOCATE(XSRCM(0,0,0))
   ALLOCATE(XSRCT(0,0,0))
   ALLOCATE(XSIGS(0,0,0))
 END IF
@@ -708,9 +713,9 @@ ELSE
   ALLOCATE(XCLDFR(0,0,0))
 END IF
 !
-ALLOCATE(XSVM(IIU,IJU,IKU,NSV))
 ALLOCATE(XSVT(IIU,IJU,IKU,NSV))
 ALLOCATE(XRSVS(IIU,IJU,IKU,NSV))
+ALLOCATE(XRSVS_CLD(IIU,IJU,IKU,NSV)); XRSVS_CLD = 0.0
 !
 IF (LPASPOL) THEN
   ALLOCATE( XATC(IIU,IJU,IKU,NSV_PP) )
@@ -720,20 +725,7 @@ IF (LPASPOL) THEN
   XATC = 0.
 END IF
 !
-!*       3.2   Module MODD_ADV_n      
-!
-IF (CMET_ADV_SCHEME(1:3) == 'PPM' .OR. CSV_ADV_SCHEME(1:3) == 'PPM') THEN
-  ALLOCATE(XRTHMS(IIU,IJU,IKU)) ; XRTHMS = 0.
-  IF (CTURB /= 'NONE') THEN
-    ALLOCATE(XRTKEMS(IIU,IJU,IKU))
-    XRTKEMS = 0.
-  ENDIF
-  ALLOCATE(XRRMS(IIU,IJU,IKU,NRR)); XRRMS = 0.
-  ALLOCATE(XRSVMS(IIU,IJU,IKU,NSV)) ; XRSVMS = 0.
-END IF
-!
-!
-!*       3.3   Module MODD_GRID_n and MODD_METRICS_n
+!*       3.2   Module MODD_GRID_n and MODD_METRICS_n
 !
 IF (LCARTESIAN) THEN
   ALLOCATE(XLON(0,0))
@@ -764,7 +756,7 @@ ALLOCATE(XDZX(IIU,IJU,IKU))
 ALLOCATE(XDZY(IIU,IJU,IKU))
 ALLOCATE(XDZZ(IIU,IJU,IKU))
 !
-!*       3.4   Modules MODD_REF and  MODD_REF_n
+!*       3.3   Modules MODD_REF and  MODD_REF_n
 !
 IF (KMI == 1) THEN
   ALLOCATE(XRHODREFZ(IKU),XTHVREFZ(IKU))
@@ -779,7 +771,7 @@ ELSE
   ALLOCATE(XRVREF(0,0,0))
 END IF
 !
-!*       3.5   Module MODD_CURVCOR_n
+!*       3.4   Module MODD_CURVCOR_n
 !
 IF (LTHINSHELL) THEN
   ALLOCATE(XCORIOX(0,0))
@@ -797,7 +789,7 @@ ELSE
   ALLOCATE(XCURVY(IIU,IJU))
 END IF
 !
-!*       3.6   Module MODD_DYN_n
+!*       3.5   Module MODD_DYN_n
 !
 CALL GET_DIM_EXT_ll('Y',IIY,IJY)
 IF (L2D) THEN
@@ -841,7 +833,7 @@ ELSE
   CALL INIT_TYPE_ZDIFFU_HALO2(XZDIFFU_HALO2,0)
 ENDIF
 !
-!*       3.7   Larger Scale variables (Module MODD_LSFIELD$n)
+!*       3.6   Larger Scale variables (Module MODD_LSFIELD$n)
 !
 !
 ! upper relaxation part
@@ -1164,7 +1156,7 @@ ELSE
 END IF
 !
 !
-!*       4.8   Module MODD_RADIATIONS_n (except XOZON and XAER)
+!*       3.7   Module MODD_RADIATIONS_n (except XOZON and XAER)
 !
 !
 NSWB_MNH = 6
@@ -1232,7 +1224,7 @@ ELSE
   ALLOCATE(XSTATM(0,0))
 END IF
 !
-!*       4.9   Module MODD_DEEP_CONVECTION_n
+!*       3.8   Module MODD_DEEP_CONVECTION_n
 !
 IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   ALLOCATE(NCOUNTCONV(IIU,IJU))
@@ -1296,11 +1288,11 @@ ALLOCATE(XCF_MF(IIU,IJU,IKU)) ; XCF_MF=0.0
 ALLOCATE(XRC_MF(IIU,IJU,IKU)) ; XRC_MF=0.0
 ALLOCATE(XRI_MF(IIU,IJU,IKU)) ; XRI_MF=0.0
 !
-!*       4.10  Local variables
+!*       3.9   Local variables
 !
 ALLOCATE(ZJ(IIU,IJU,IKU))
 !
-!*      4.11 Forcing variables (Module MODD_FRC)
+!*      3.10 Forcing variables (Module MODD_FRC)
 !
 IF (KMI == 1) THEN
   IF ( LFORCING ) THEN
@@ -1388,7 +1380,7 @@ ELSE
    ALLOCATE(XVU_FLUX_M(0,0,0)) ; XVU_FLUX_M  = 0.
 END IF
 !
-!*      4.12   Module MODD_ICE_CONC_n
+!*      3.11   Module MODD_ICE_CONC_n
 !
 IF (     (CCLOUD == 'ICE3'.OR.CCLOUD == 'ICE4') .AND.   &
      (CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
@@ -1397,7 +1389,7 @@ ELSE
   ALLOCATE(XCIT(0,0,0))
 END IF
 !
-!*      4.13   Module MODD_TURB_CLOUD
+!*      3.12   Module MODD_TURB_CLOUD
 !
 IF (.NOT.(ALLOCATED(XCEI))) ALLOCATE(XCEI(0,0,0))
 IF (KMI == NMODEL_CLOUD .AND. CTURBLEN_CLOUD/='NONE' ) THEN
@@ -1405,7 +1397,7 @@ IF (KMI == NMODEL_CLOUD .AND. CTURBLEN_CLOUD/='NONE' ) THEN
   ALLOCATE(XCEI(IIU,IJU,IKU))
 ENDIF
 !
-!*      4.14  Module MODD_CH_PH_n
+!*      3.13  Module MODD_CH_PH_n
 !
 IF ( (LUSECHAQ.AND.LCH_PH) .AND.  &     
      (CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
@@ -1417,7 +1409,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*       5.    INITIALIZE BUDGET VARIABLES
+!*       4.    INITIALIZE BUDGET VARIABLES
 !              ---------------------------
 !
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
@@ -1426,20 +1418,19 @@ IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &
              LHORELAX_SV,LVE_RELAX,LCHTRANS,LNUDGING,LDRAGTREE,               &
-             CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD,                        &
-             CMET_ADV_SCHEME,CSV_ADV_SCHEME )
+             CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD                         )
 END IF
 !
 !-------------------------------------------------------------------------------
 !
 !
-!*       6.    INITIALIZE INTERPOLATION COEFFICIENTS
+!*       5.    INITIALIZE INTERPOLATION COEFFICIENTS
 !
 CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !
 !-------------------------------------------------------------------------------
 !
-!*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
+!*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
 CALL SET_GRID(KMI,HINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,         &
@@ -1475,7 +1466,7 @@ NDT_2_WAY(KMI)=4
 !
 !-------------------------------------------------------------------------------
 !
-!*      8.    INITIALIZE DATA FOR JVALUES AND AEROSOLS 
+!*      7.    INITIALIZE DATA FOR JVALUES AND AEROSOLS 
 !
 IF ( LUSECHEM .OR. LCHEMDIAG ) THEN
   IF ((KMI==1).AND.(CPROGRAM == "MESONH".OR.CPROGRAM == "DIAG  "))  &
@@ -1495,20 +1486,18 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       9.    INITIALIZE THE PROGNOSTIC FIELDS
+!*       8.    INITIALIZE THE PROGNOSTIC FIELDS
 !              --------------------------------
 !
-CALL READ_FIELD(HINIFILE,HLUOUT,IIU,IJU,IKU,PTSTEP_OLD,XTSTEP,                &
-                CGETTKEM,CGETRVM,CGETRCM,CGETRRM,CGETRIM,CGETRSM,             &
-                CGETRGM,CGETRHM,CGETSVM,CGETSRCM,                             &
+CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
-                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,                   &
+                CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
                 NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,            &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
-                XUM,XVM,XWM,XTHM,XPABSM,XTKEM,XRM,XSVM,XSRCM,                 &
-                XUT,XVT,XWT,XTHT,XPABST,XTKET,XRT,XSVT,XCIT,XDRYMASST,        &
+                XUM,XVM,XWM,                                                  &
+                XUT,XVT,XWT,XTHT,XPABST,XPABSM,XTKET,XRT,XSVT,XCIT,XDRYMASST, &
                 XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &
@@ -1520,12 +1509,13 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IIU,IJU,IKU,PTSTEP_OLD,XTSTEP,                &
                 XPGROUNDFRC, XATC,                                            &
                 NADVFRC,TDTADVFRC,XDTHFRC,XDRVFRC,                            &
                 NRELFRC,TDTRELFRC,XTHREL,XRVREL,                              &
-                XVTH_FLUX_M,XWTH_FLUX_M,XVU_FLUX_M                            )
+                XVTH_FLUX_M,XWTH_FLUX_M,XVU_FLUX_M,                           &
+                XRUS_PRES,XRVS_PRES,XRWS_PRES,XRTHS_CLD,XRRS_CLD,XRSVS_CLD    )
 !
 !-------------------------------------------------------------------------------
 !
 !
-!*       10.   INITIALIZE REFERENCE STATE
+!*        9.   INITIALIZE REFERENCE STATE
 !              ---------------------------
 !
 !
@@ -1536,25 +1526,24 @@ CALL SET_REF(KMI,HINIFILE,HLUOUT,                                &
 !
 !-------------------------------------------------------------------------------
 !
-!*       11.1    INITIALIZE THE TURBULENCE VARIABLES
+!*       10.1    INITIALIZE THE TURBULENCE VARIABLES
 !               -----------------------------------
 !
 IF ((CTURB == 'TKEL').AND.(CCONF=='START')) THEN
-  CALL INI_TKE_EPS(CGETTKEM,CGETTKET,XTHVREF,XZZ, &
-                   XUM,XVM,XTHM,                  &
+  CALL INI_TKE_EPS(CGETTKET,XTHVREF,XZZ, &
                    XUT,XVT,XTHT,                  &
-                   XTKEM,XTKET,TZINITHALO3D_ll    )
+                   XTKET,TZINITHALO3D_ll    )
 END IF
 !
 !
-!*       11.2   INITIALIZE THE LES VARIABLES
+!*       10.2   INITIALIZE THE LES VARIABLES
 !               ----------------------------
 !
 CALL INI_LES_n
 !
 !-------------------------------------------------------------------------------
 !
-!*       12.    INITIALIZE THE SOURCE OF TOTAL DRY MASS Md
+!*       11.    INITIALIZE THE SOURCE OF TOTAL DRY MASS Md
 !               ------------------------------------------
 !
 IF((KMI==1).AND.LSTEADYLS) THEN
@@ -1563,7 +1552,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       13.    INITIALIZE THE MICROPHYSICS                   
+!*       12.    INITIALIZE THE MICROPHYSICS                   
 !               ----------------------------
 !
 IF (CELEC == 'NONE') THEN
@@ -1571,7 +1560,7 @@ IF (CELEC == 'NONE') THEN
 !
 !-------------------------------------------------------------------------------
 !
-!*       14.    INITIALIZE THE ATMOSPHERIC ELECTRICITY                   
+!*       13.    INITIALIZE THE ATMOSPHERIC ELECTRICITY                   
 !               --------------------------------------
 !
 ELSE
@@ -1583,39 +1572,28 @@ ELSE
   FMT='(/,"ELECTRIC VARIABLES ARE BETWEEN INDEX",I2," AND ",I2)')&
   NSV_ELECBEG, NSV_ELECEND
 ! 
-  IF( CCONF == 'START' ) THEN
-      XSVM(:,:,:,NSV_ELECBEG) = XCION_POS_FW(:,:,:)                  ! Nb/kg
-      XSVM(:,:,:,NSV_ELECEND) = XCION_NEG_FW(:,:,:)
-      XSVT(:,:,:,NSV_ELECBEG) = XSVM(:,:,:,NSV_ELECBEG)
-      XSVT(:,:,:,NSV_ELECEND) = XSVM(:,:,:,NSV_ELECEND)
-  ELSE     ! Convert elec_variables per m3 into elec_variables per kg of air
-    IF( CGETSVM(NSV_ELECBEG)=='INIT' .OR. CGETSVT(NSV_ELECBEG)=='INIT' ) THEN
-      XSVM(:,:,:,NSV_ELECBEG) = XCION_POS_FW(:,:,:)                  ! Nb/kg
-      XSVM(:,:,:,NSV_ELECEND) = XCION_NEG_FW(:,:,:)
-      XSVT(:,:,:,NSV_ELECBEG) = XSVM(:,:,:,NSV_ELECBEG)
-      XSVT(:,:,:,NSV_ELECEND) = XSVM(:,:,:,NSV_ELECEND)
+    IF( CGETSVT(NSV_ELECBEG)=='INIT' ) THEN
+      XSVT(:,:,:,NSV_ELECBEG) = XCION_POS_FW(:,:,:)                  ! Nb/kg
+      XSVT(:,:,:,NSV_ELECEND) = XCION_NEG_FW(:,:,:)
 !
-      XSVM(:,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
       XSVT(:,:,:,NSV_ELECBEG+1:NSV_ELECEND-1) = 0.0
-    ELSE
+    ELSE  ! Convert elec_variables per m3 into elec_variables per kg of air
       DO JSV = NSV_ELECBEG, NSV_ELECEND
-         XSVM(:,:,:,JSV) = XSVM(:,:,:,JSV) / XRHODREF(:,:,:)
          XSVT(:,:,:,JSV) = XSVT(:,:,:,JSV) / XRHODREF(:,:,:)
       ENDDO
     END IF
-  END IF
 END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       15.   INITIALIZE THE LARGE SCALE SOURCES
+!*       14.   INITIALIZE THE LARGE SCALE SOURCES
 !              ----------------------------------
 !
 IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
   CALL INI_CPL(HLUOUT,NSTOP,XTSTEP,LSTEADYLS,CCONF,                           &
-               CGETTKEM,                                                      &
-               CGETRVM,CGETRCM,CGETRRM,CGETRIM,                               &
-               CGETRSM,CGETRGM,CGETRHM,CGETSVM,LCH_INIT_FIELD,                &
+               CGETTKET,                                                      &
+               CGETRVT,CGETRCT,CGETRRT,CGETRIT,                               &
+               CGETRST,CGETRGT,CGETRHT,CGETSVT,LCH_INIT_FIELD,                &
                NSV,NIMAX_ll,NJMAX_ll,                                         &
                NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,             &
                NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                 &
@@ -1725,14 +1703,14 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       16.    INITIALIZE THE SCALAR VARIABLES
+!*       15.    INITIALIZE THE SCALAR VARIABLES
 !               -------------------------------
 !
 IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
-  CALL INI_LG(XXHAT,XYHAT,XZZ,XSVM,XSVT,XLBXSVM,XLBYSVM)
+  CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
 
 !
-!*       17.    BUILT THE GENERIC OUTPUT NAME
+!*       16.    BUILT THE GENERIC OUTPUT NAME
 !               ----------------------------
 !
 WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
@@ -1750,7 +1728,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       18.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
+!*       17.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
 !               ------------------------------------------
 !
 CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
@@ -1774,10 +1752,10 @@ CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
 !
 !-------------------------------------------------------------------------------
 !
-!*      19.    SURFACE FIELDS
+!*      18.    SURFACE FIELDS
 !              --------------
 !
-!*      19.1   Radiative setup
+!*      18.1   Radiative setup
 !              ---------------
 !
 IF (CRAD   /= 'NONE') THEN
@@ -1824,13 +1802,13 @@ END IF
 CALL INI_SW_SETUP (CRAD,NSWB_MNH,XSW_BANDS)
 !
 !
-!       19.1.1 Special initialisation for CO2 content
+!       18.1.1 Special initialisation for CO2 content
 !              CO2 (molar mass=44) horizontally and vertically homogeneous at 360 ppm
 !
 XCCO2 = 360.0E-06 * 44.0E-03 / XMD
 !
 !
-!*      19.2   Externalized surface fields
+!*      18.2   Externalized surface fields
 !              ---------------------------
 !
 ALLOCATE(ZCO2(IIU,IJU))
@@ -1842,7 +1820,6 @@ ALLOCATE(ZSCA_ALB(IIU,IJU,NSWB_MNH))
 ALLOCATE(ZEMIS  (IIU,IJU))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
-CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
 IF (IMASDEV>=46) THEN
   CALL FMREAD(HINIFILE,'SURF',HLUOUT,'--',CSURF,IGRID,ILENCH,YCOMMENT,IRESP)
 ELSE
@@ -1921,14 +1898,14 @@ IF (CRAD   == 'ECMW' .AND. CGETRAD=='READ') THEN
 END IF
 !
 !
-!*      19.3   Mesonh fields
+!*      18.3   Mesonh fields
 !              -------------
 !
 IF (CPROGRAM/='REAL  ') CALL MNHREAD_ZS_DUMMY_n(CINIFILEPGD)
 !
 !-------------------------------------------------------------------------------
 !
-!*       20.    INITIALIZE THE PARAMETERS FOR THE PHYSICS
+!*       19.    INITIALIZE THE PARAMETERS FOR THE PHYSICS
 !               -----------------------------------------
 !
 IF (CRAD   == 'ECMW') THEN
@@ -1996,7 +1973,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !
-!*      21.    ALLOCATION OF THE TEMPORAL SERIES
+!*      19.    ALLOCATION OF THE TEMPORAL SERIES
 !              ---------------------------------
 !
 IF (LSERIES .AND. CPROGRAM/='DIAG  ') CALL INI_SERIES_n
@@ -2004,7 +1981,7 @@ IF (LSERIES .AND. CPROGRAM/='DIAG  ') CALL INI_SERIES_n
 !-------------------------------------------------------------------------------
 !
 !
-!*      22.   (re)initialize scalar variables
+!*      20.   (re)initialize scalar variables
 !             -------------------------------
 !
 !
@@ -2016,7 +1993,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*      23.    UPDATE HALO
+!*      22.    UPDATE HALO
 !              -----------
 !
 !
@@ -2028,7 +2005,7 @@ CALL CLEANLIST_ll(TZINITHALO2D_ll)
 !
 !-------------------------------------------------------------------------------
 !
-!*      24.    DEALLOCATION
+!*      23.    DEALLOCATION
 !              -------------
 !
 DEALLOCATE(ZJ)
@@ -2041,7 +2018,7 @@ DEALLOCATE(XSPOWATM)
 !
 !-------------------------------------------------------------------------------
 !
-!*      25.     BALLOON and AIRCRAFT initializations
+!*      24.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
 CALL INI_AIRCRAFT_BALLOON(HINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2050,7 +2027,7 @@ CALL INI_AIRCRAFT_BALLOON(HINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
 !
 !-------------------------------------------------------------------------------
 !
-!*      26.     STATION initializations
+!*      25.     STATION initializations
 !              -----------------------
 !
 CALL INI_SURFSTATION_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2059,7 +2036,7 @@ CALL INI_SURFSTATION_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
 !
 !-------------------------------------------------------------------------------
 !
-!*      27.     PROFILER initializations
+!*      26.     PROFILER initializations
 !              ------------------------
 !
 CALL INI_POSPROFILER_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2079,5 +2056,4 @@ CALL INI_AEROSET5
 CALL INI_AEROSET6
 !
 END SUBROUTINE INI_MODEL_n
-
 

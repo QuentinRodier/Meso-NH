@@ -11,8 +11,7 @@ MODULE MODI_SPAWN_PRESSURE2
 INTERFACE
 !
       SUBROUTINE SPAWN_PRESSURE2(KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,   &
-                                PZZ_LS,PZZ,PTHVM,PTHVT,                     &
-                                PPABSM,PPABST                               )
+                                PZZ_LS,PZZ,PTHVT, PPABST                    )
 !
 INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END
 INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the model 2 domain, relative to model 1
@@ -21,12 +20,8 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ_LS     ! purely interpolated alt.
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ        ! model 2 altitudes
 !                                                  !   model 2
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHVM      ! virt. pot. temp. at t-dt
-!
-!                                                  !   model 2
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHVT      ! virt. pot. temp. at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PPABSM    ! model 2 pressure a t-dt
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PPABST    ! model 2 pressure a t
 !
 END SUBROUTINE SPAWN_PRESSURE2
@@ -37,8 +32,7 @@ END MODULE MODI_SPAWN_PRESSURE2
 !
 !     #######################################################################
       SUBROUTINE SPAWN_PRESSURE2(KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,   &
-                                PZZ_LS,PZZ,PTHVM,PTHVT,                     &
-                                PPABSM,PPABST                               )
+                                PZZ_LS,PZZ,PTHVT, PPABST                    )
 !     #######################################################################
 !
 !!****  *SPAWN_PRESSURE2 * - subroutine generating the model 2 pressure
@@ -145,12 +139,8 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ_LS     ! purely interpolated alt.
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PZZ        ! model 2 altitudes
 !                                                  !   model 2
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHVM      ! virt. pot. temp. at t-dt
-!
-!                                                  !   model 2
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHVT      ! virt. pot. temp. at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PPABSM    ! model 2 pressure a t-dt
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PPABST    ! model 2 pressure a t
 !
 !*       0.2    Declarations of local variables
@@ -192,8 +182,8 @@ INTEGER  :: IMI
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
 !
-IIU = SIZE(PTHVM,1)
-IJU = SIZE(PTHVM,2)
+IIU = SIZE(PTHVT,1)
+IJU = SIZE(PTHVT,2)
 IIU1= SIZE(FIELD_MODEL(1)%XTHT,1)
 IJU1= SIZE(FIELD_MODEL(1)%XTHT,2)
 IKU=SIZE(PZZ,3)
@@ -207,7 +197,6 @@ IKE=IKU-JPVEXT
 !
 IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
 !
-  PPABSM  (:,:,:)   =  FIELD_MODEL(1)%XPABSM  (KXOR:KXEND,KYOR:KYEND,:)
   PPABST  (:,:,:)   =  FIELD_MODEL(1)%XPABST  (KXOR:KXEND,KYOR:KYEND,:)
 !
   CALL GOTO_MODEL(IMI) 
@@ -220,42 +209,24 @@ END IF
 !*       2.    GENERAL CASE: CHANGE OF RESOLUTION
 !              ----------------------------------
 !
-DO JINSTANT=1,2
-!
 !*       2.1      Model 1 Pi and thetav
 !                 ---------------------
 !
   ALLOCATE(ZEXN1(IIU1,IJU1,IKU))
   ALLOCATE(ZTHV1(IIU1,IJU1,IKU))
-  IF (JINSTANT==1) THEN
-    ALLOCATE(ZSUMR(IIU1,IJU1,IKU))
-    ZSUMR(:,:,:) = 0.
-    DO JRR=1,CONF_MODEL(1)%NRR
-      ZSUMR(:,:,:) = ZSUMR(:,:,:) + FIELD_MODEL(1)%XRM(:,:,:,JRR)
-    END DO
+  ALLOCATE(ZSUMR(IIU1,IJU1,IKU))
+  ZSUMR(:,:,:) = 0.
+  DO JRR=1,CONF_MODEL(1)%NRR
+    ZSUMR(:,:,:) = ZSUMR(:,:,:) + FIELD_MODEL(1)%XRT(:,:,:,JRR)
+  END DO
     !
-    ZEXN1(:,:,:)=(FIELD_MODEL(1)%XPABSM(:,:,:)/XP00)**(XRD/XCPD)
-    IF (CONF_MODEL(1)%LUSERV) THEN
-      ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHM(:,:,:)*(1.+XRV/XRD*FIELD_MODEL(1)%XRM(:,:,:,1))/(1.+ZSUMR)
-    ELSE
-      ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHM(:,:,:)
-    END IF
-    DEALLOCATE(ZSUMR)
-  ELSE IF (JINSTANT==2) THEN
-    ALLOCATE(ZSUMR(IIU1,IJU1,IKU))
-    ZSUMR(:,:,:) = 0.
-    DO JRR=1,CONF_MODEL(1)%NRR
-      ZSUMR(:,:,:) = ZSUMR(:,:,:) + FIELD_MODEL(1)%XRT(:,:,:,JRR)
-    END DO
-    !
-    ZEXN1(:,:,:)=(FIELD_MODEL(1)%XPABST(:,:,:)/XP00)**(XRD/XCPD)
-    IF (CONF_MODEL(1)%LUSERV) THEN
-      ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHT(:,:,:)*(1.+XRV/XRD*FIELD_MODEL(1)%XRT(:,:,:,1))/(1.+ZSUMR)
-    ELSE
-      ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHT(:,:,:)
-    END IF
-    DEALLOCATE(ZSUMR)
+  ZEXN1(:,:,:)=(FIELD_MODEL(1)%XPABST(:,:,:)/XP00)**(XRD/XCPD)
+  IF (CONF_MODEL(1)%LUSERV) THEN
+    ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHT(:,:,:)*(1.+XRV/XRD*FIELD_MODEL(1)%XRT(:,:,:,1))/(1.+ZSUMR)
+  ELSE
+    ZTHV1(:,:,:)=FIELD_MODEL(1)%XTHT(:,:,:)
   END IF
+  DEALLOCATE(ZSUMR)
 !
 !*       2.2      Model 1 top Exner function (guess)
 !                 --------------------------
@@ -330,11 +301,7 @@ DO JINSTANT=1,2
 !                 --------------
 !
   ALLOCATE(ZTHV2(IIU,IJU,IKU))
-  IF (JINSTANT==1) THEN
-    ZTHV2(:,:,:)=PTHVM(:,:,:)
-  ELSE IF (JINSTANT==2) THEN
-    ZTHV2(:,:,:)=PTHVT(:,:,:)
-  END IF
+  ZTHV2(:,:,:)=PTHVT(:,:,:)
 !
 !*       2.7      Model 2 hydrostatic pressure
 !                 ----------------------------
@@ -350,16 +317,11 @@ DO JINSTANT=1,2
 !*       2.8      Model 2 pressure
 !                 ----------------
 !
-  IF (JINSTANT==1) THEN
-    PPABSM(:,:,:)=XP00*(ZEXNMHEXN2(:,:,:)+ZHYDEXN2(:,:,:))**(XCPD/XRD)
-  ELSE IF (JINSTANT==2) THEN
-    PPABST(:,:,:)=XP00*(ZEXNMHEXN2(:,:,:)+ZHYDEXN2(:,:,:))**(XCPD/XRD)
-  END IF
+  PPABST(:,:,:)=XP00*(ZEXNMHEXN2(:,:,:)+ZHYDEXN2(:,:,:))**(XCPD/XRD)
 !
   DEALLOCATE(ZEXNMHEXN2)
   DEALLOCATE(ZHYDEXN2)
 !
-END DO
 !-------------------------------------------------------------------------------
 !
 CALL GOTO_MODEL(IMI)

@@ -298,6 +298,7 @@ IF (KMI == 1) THEN
   LINIT_LG   = .FALSE.
   CINIT_LG   = 'FMOUT'
   LNOMIXLG   = .FALSE.
+  LCHECK     = .FALSE.
 END IF
 !
 CCLOUD    = 'NONE'
@@ -395,10 +396,15 @@ END IF
 !*      5.    SET DEFAULT VALUES FOR MODD_ADV_n :
 !             ----------------------------------
 !
-CUVW_ADV_SCHEME =  'CEN4TH'
+CUVW_ADV_SCHEME =  'WENO_K'
 CMET_ADV_SCHEME =  'PPM_01'
 CSV_ADV_SCHEME  =  'PPM_01'
-NLITER    = 2
+CTEMP_SCHEME    =  'RK21'        
+NWENO_ORDER = 3
+NSPLIT      = 1
+LSPLIT_CFL  = .TRUE.
+XSPLIT_CFL  = 0.8
+LCFL_WRIT   = .FALSE.
 !
 !-------------------------------------------------------------------------------
 !
@@ -424,7 +430,6 @@ CLBCY(2) ='CYCL'
 NLBLX(:) = 1
 NLBLY(:) = 1
 XCPHASE = 20.
-XCPHASE_PBL = 0.
 !
 !-------------------------------------------------------------------------------
 !
@@ -500,9 +505,7 @@ IF (KMI == 1) THEN
   LBU_RU = .FALSE.
   NASSEU  = 0
   NNESTU  = 0
-  NADVXU  = 0
-  NADVYU  = 0
-  NADVZU  = 0
+  NADVU   = 0
   NFRCU   = 0
   NNUDU   = 0
   NCURVU  = 0
@@ -519,9 +522,7 @@ IF (KMI == 1) THEN
   LBU_RV = .FALSE.
   NASSEV  = 0
   NNESTV  = 0
-  NADVXV  = 0
-  NADVYV  = 0
-  NADVZV  = 0
+  NADVV   = 0
   NFRCV   = 0
   NNUDV   = 0
   NCURVV  = 0
@@ -538,9 +539,7 @@ IF (KMI == 1) THEN
   LBU_RW = .FALSE.
   NASSEW  = 0
   NNESTW  = 0
-  NADVXW  = 0
-  NADVYW  = 0
-  NADVZW  = 0
+  NADVW   = 0
   NFRCW   = 0
   NNUDW   = 0
   NCURVW  = 0
@@ -557,9 +556,6 @@ IF (KMI == 1) THEN
   NASSETH  = 0
   NNESTTH  = 0
   NADVTH   = 0
-  NADVXTH  = 0
-  NADVYTH  = 0
-  NADVZTH  = 0
   NFRCTH   = 0
   NNUDTH   = 0
   NPREFTH  = 0
@@ -596,9 +592,6 @@ IF (KMI == 1) THEN
   LBU_RTKE = .FALSE.
   NASSETKE = 0
   NADVTKE  = 0
-  NADVXTKE = 0
-  NADVYTKE = 0
-  NADVZTKE = 0
   NFRCTKE  = 0
   NDIFTKE  = 0
   NRELTKE  = 0
@@ -613,9 +606,6 @@ IF (KMI == 1) THEN
   NASSERV  = 0
   NNESTRV  = 0
   NADVRV   = 0
-  NADVXRV  = 0
-  NADVYRV  = 0
-  NADVZRV  = 0
   NFRCRV   = 0
   NNUDRV   = 0
   NDIFRV   = 0
@@ -638,9 +628,6 @@ IF (KMI == 1) THEN
   NASSERC  = 0
   NNESTRC  = 0
   NADVRC   = 0
-  NADVXRC  = 0
-  NADVYRC  = 0
-  NADVZRC  = 0
   NFRCRC   = 0
   NDIFRC   = 0
   NRELRC   = 0
@@ -667,9 +654,6 @@ IF (KMI == 1) THEN
   NASSERR  = 0
   NNESTRR  = 0
   NADVRR   = 0
-  NADVXRR  = 0
-  NADVYRR  = 0
-  NADVZRR  = 0
   NFRCRR   = 0
   NDIFRR   = 0
   NRELRR   = 0
@@ -692,9 +676,6 @@ IF (KMI == 1) THEN
   NASSERI  = 0
   NNESTRI  = 0
   NADVRI   = 0
-  NADVXRI  = 0
-  NADVYRI  = 0
-  NADVZRI  = 0
   NFRCRI   = 0
   NDIFRI   = 0
   NRELRI   = 0
@@ -720,9 +701,6 @@ IF (KMI == 1) THEN
   NASSERS  = 0
   NNESTRS  = 0
   NADVRS   = 0
-  NADVXRS  = 0
-  NADVYRS  = 0
-  NADVZRS  = 0
   NFRCRS   = 0
   NDIFRS   = 0
   NRELRS   = 0
@@ -743,9 +721,6 @@ IF (KMI == 1) THEN
   NASSERG  = 0
   NNESTRG  = 0
   NADVRG   = 0
-  NADVXRG  = 0
-  NADVYRG  = 0
-  NADVZRG  = 0
   NFRCRG   = 0
   NDIFRG   = 0
   NRELRG   = 0
@@ -767,9 +742,6 @@ IF (KMI == 1) THEN
   NASSERH  = 0
   NNESTRH  = 0
   NADVRH   = 0
-  NADVXRH  = 0
-  NADVYRH  = 0
-  NADVZRH  = 0
   NFRCRH   = 0
   NDIFRH   = 0
   NRELRH   = 0
@@ -783,9 +755,6 @@ IF (KMI == 1) THEN
   NASSESV  = 0
   NNESTSV  = 0
   NADVSV   = 0
-  NADVXSV  = 0
-  NADVYSV  = 0
-  NADVZSV  = 0
   NFRCSV   = 0
   NDIFSV   = 0
   NRELSV   = 0

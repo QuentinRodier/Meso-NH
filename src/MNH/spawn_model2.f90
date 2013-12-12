@@ -310,11 +310,8 @@ INTEGER             :: JRR            ! loop index for moist variables
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZZS_LS ! large scale interpolated zs
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZZSMT_LS ! large scale interpolated smooth zs
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZZZ_LS ! large scale interpolated z
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTHVM  ! virtual potential temperature
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTHVT  ! virtual potential temperature
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZHUM   ! relative humidity
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZHUT   ! relative humidity
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSUMRM ! sum of water ratios
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSUMRT ! sum of water ratios
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZRHOD  ! dry density
 !
@@ -560,12 +557,6 @@ CDCONV   = 'NONE'                 ! deep convection will have to be restarted
 CSCONV   = 'NONE'                 ! shallow convection will have to be restarted
 !
 !
-IF ( CSTORAGE_TYPE == 'MT' ) THEN
-  CCONF = 'RESTA'
-ELSE
-  CCONF = 'START'
-END IF
-!
 !*       3.5   model 2 configuration in MODD_NESTING to be written
 !*                on the FM-file to allow nesting or coupling 
 !
@@ -627,34 +618,23 @@ ALLOCATE(ZJ(IIU,IJU,IKU))
 !
 !*       4.2   Prognostic (and diagnostic) variables (module MODD_FIELD2) :
 !
-ALLOCATE(XUM(IIU,IJU,IKU))
 ALLOCATE(XUT(IIU,IJU,IKU))
-ALLOCATE(XVM(IIU,IJU,IKU))
 ALLOCATE(XVT(IIU,IJU,IKU))
-ALLOCATE(XWM(IIU,IJU,IKU))
 ALLOCATE(XWT(IIU,IJU,IKU))
-ALLOCATE(XTHM(IIU,IJU,IKU))
 ALLOCATE(XTHT(IIU,IJU,IKU))
 IF (CTURB/='NONE') THEN
-  ALLOCATE(XTKEM(IIU,IJU,IKU))
   ALLOCATE(XTKET(IIU,IJU,IKU))
 ELSE
-  ALLOCATE(XTKEM(0,0,0))
   ALLOCATE(XTKET(0,0,0))
 END IF
-ALLOCATE(XPABSM(IIU,IJU,IKU))
 ALLOCATE(XPABST(IIU,IJU,IKU))
-ALLOCATE(XRM(IIU,IJU,IKU,NRR))
 ALLOCATE(XRT(IIU,IJU,IKU,NRR))
-ALLOCATE(XSVM(IIU,IJU,IKU,NSV))
 ALLOCATE(XSVT(IIU,IJU,IKU,NSV))
 !
 IF (CTURB /= 'NONE' .AND. NRR>1) THEN
-  ALLOCATE(XSRCM(IIU,IJU,IKU))
   ALLOCATE(XSRCT(IIU,IJU,IKU))
   ALLOCATE(XSIGS(IIU,IJU,IKU))
 ELSE
-  ALLOCATE(XSRCM(0,0,0))
   ALLOCATE(XSRCT(0,0,0))
   ALLOCATE(XSIGS(0,0,0))
 END IF
@@ -970,24 +950,20 @@ ZTIME1 = ZTIME2
 !
 !* horizontal interpolation
 !
-ALLOCATE(ZTHVM(IIU,IJU,IKU))
 ALLOCATE(ZTHVT(IIU,IJU,IKU))
-ALLOCATE(ZHUM(IIU,IJU,IKU))
 ALLOCATE(ZHUT(IIU,IJU,IKU))
 !
 IF (GNOSON) THEN
   CALL SPAWN_FIELD2 (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,CTURB,            &
-                 XUM,XVM,XWM,ZTHVM,XRM,ZHUM,XTKEM,XSVM,                        &
                  XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XATC,                   &
-                 XSRCM,XSRCT,XSIGS,                                            &
+                 XSRCT,XSIGS,                                                  &
                  XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
                  XDTHFRC,XDRVFRC,XTHREL,XRVREL,                                &
                  XVU_FLUX_M,XVTH_FLUX_M,XWTH_FLUX_M            )
 ELSE
   CALL SPAWN_FIELD2 (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,CTURB,            &
-                 XUM,XVM,XWM,ZTHVM,XRM,ZHUM,XTKEM,XSVM,                        &
                  XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,XATC,                   &
-                 XSRCM,XSRCT,XSIGS,                                            &
+                 XSRCT,XSIGS,                                                  &
                  XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
                  XDTHFRC,XDRVFRC,XTHREL,XRVREL,                                &                 
                  XVU_FLUX_M, XVTH_FLUX_M,XWTH_FLUX_M,                          &
@@ -998,11 +974,7 @@ END IF
 !
 !* correction of positivity
 !
-IF (SIZE(XRM,1)>0)         XRM      = MAX(0.,XRM)
-IF (SIZE(ZHUM,1)>0)        ZHUM     = MIN(MAX(ZHUM,0.),100.)
-IF (SIZE(XTKEM,1)>0)       XTKEM    = MAX(XTKEMIN,XTKEM)
 IF (SIZE(XLSRVM,1)>0)      XLSRVM   = MAX(0.,XLSRVM)
-!
 IF (SIZE(XRT,1)>0)         XRT      = MAX(0.,XRT)
 IF (SIZE(ZHUT,1)>0)        ZHUT     = MIN(MAX(ZHUT,0.),100.)
 IF (SIZE(XTKET,1)>0)       XTKET    = MAX(XTKEMIN,XTKET)
@@ -1016,11 +988,10 @@ ZTIME1  = ZTIME2
 !* vertical interpolation
 !
 IF (ANY(XZS(:,:)>0.) .AND. (NDXRATIO/=1 .OR. NDYRATIO/=1) )  THEN
-  CALL VER_INTERP_FIELD (CTURB,NRR,NSV,ZZZ_LS,XZZ,                               &
-                  XUM,XVM,XWM,ZTHVM,XRM,ZHUM,XTKEM,XSVM,                          &
-                  XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,                          &
-                  XSRCM,XSRCT,XSIGS,                                              &
-                  XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM                                 )
+  CALL VER_INTERP_FIELD (CTURB,NRR,NSV,ZZZ_LS,XZZ,                             &
+               XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,                          &
+               XSRCT,XSIGS,                                                    &
+               XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM                                 )
 ENDIF
 !
 CALL SECOND_MNH(ZTIME2)
@@ -1032,13 +1003,10 @@ ZVER = ZTIME2 - ZTIME1
 ZTIME1 = ZTIME2
 !
 CALL SPAWN_PRESSURE2(NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,   &
-                     ZZZ_LS,XZZ,ZTHVM,ZTHVT,                    &
-                     XPABSM,XPABST                              )
+                     ZZZ_LS,XZZ,ZTHVT,XPABST                    )
 !
 IF (.NOT.GNOSON) THEN
   ALLOCATE(ZWORK3D(IIUSON,IJUSON,IKU))
-  CALL FMREAD(HSONFILE,'PABSM',CLUOUT,'XY',ZWORK3D,IGRID,ILENCH,YCOMMENT,IRESP)
-  XPABSM(IIB2:IIE2,IJB2:IJE2,:) = ZWORK3D(IIB1:IIE1,IJB1:IJE1,:)
   CALL FMREAD(HSONFILE,'PABST',CLUOUT,'XY',ZWORK3D,IGRID,ILENCH,YCOMMENT,IRESP)
   XPABST(IIB2:IIE2,IJB2:IJE2,:) = ZWORK3D(IIB1:IIE1,IJB1:IJE1,:)
   DEALLOCATE(ZWORK3D)
@@ -1046,15 +1014,15 @@ END IF
 !
 IF (NVERB>=2) THEN
   IK4000 = COUNT(XZHAT(:)<4000.)
-  IIJ = MAXLOC(        SUM(ZHUM(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
-                MASK=COUNT(ZHUM(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
-                           >=MAXVAL(ZHUM(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
+  IIJ = MAXLOC(        SUM(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
+                MASK=COUNT(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
+                           >=MAXVAL(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
                       >=1                                                   )           &
         + JPHEXT
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) 'humidity     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
-    WRITE(ILUOUT,'(F6.2,2H %)') ZHUM(IIJ(1),IIJ(2),JK)
+    WRITE(ILUOUT,'(F6.2,2H %)') ZHUT(IIJ(1),IIJ(2),JK)
   END DO
 END IF
 !*       5.8    Retrieve model thermodynamical variables :
@@ -1062,31 +1030,20 @@ END IF
 ALLOCATE(ZSUMRT(IIU,IJU,IKU))
 ZSUMRT(:,:,:) = 0.
 IF (NRR==0) THEN
-  XTHM(:,:,:) = ZTHVM(:,:,:)
   XTHT(:,:,:) = ZTHVT(:,:,:)
 ELSE
   IF (NDXRATIO/=1 .OR. NDYRATIO/=1) THEN
-    XRM(:,:,:,1) = SM_PMR_HU(CLUOUT,XPABSM(:,:,:),                          &
-                             ZTHVM(:,:,:)*(XPABSM(:,:,:)/XP00)**(XRD/XCPD), &
-                             ZHUM(:,:,:),XRM(:,:,:,:),KITERMAX=100          )
     XRT(:,:,:,1) = SM_PMR_HU(CLUOUT,XPABST(:,:,:),                          &
                              ZTHVT(:,:,:)*(XPABST(:,:,:)/XP00)**(XRD/XCPD), &
                              ZHUT(:,:,:),XRT(:,:,:,:),KITERMAX=100          )
   END IF
   !
-  ALLOCATE(ZSUMRM(IIU,IJU,IKU))
-  ZSUMRM(:,:,:) = 0.
   DO JRR=1,NRR
-    ZSUMRM(:,:,:) = ZSUMRM(:,:,:) + XRM(:,:,:,JRR)
     ZSUMRT(:,:,:) = ZSUMRT(:,:,:) + XRT(:,:,:,JRR)
   END DO
-  XTHM(:,:,:) = ZTHVM(:,:,:)/(1.+XRV/XRD*XRM(:,:,:,1))*(1.+ZSUMRM(:,:,:))
   XTHT(:,:,:) = ZTHVT(:,:,:)/(1.+XRV/XRD*XRT(:,:,:,1))*(1.+ZSUMRT(:,:,:))
-  DEALLOCATE (ZSUMRM)
 END IF
 !
-DEALLOCATE (ZTHVM)
-DEALLOCATE (ZHUM)
 DEALLOCATE (ZHUT)
 !
 CALL SECOND_MNH(ZTIME2)
@@ -1099,52 +1056,52 @@ ZPRESSURE2=ZTIME2-ZTIME1
 !
 !
 !
-XLBXUM(1:NRIMX+1,:,:)         = XUM(IIB:IIB+NRIMX,:,:)
-XLBXUM(NRIMX+2:2*NRIMX+2,:,:) = XUM(IIE+1-NRIMX:IIE+1,:,:)
+XLBXUM(1:NRIMX+1,:,:)         = XUT(IIB:IIB+NRIMX,:,:)
+XLBXUM(NRIMX+2:2*NRIMX+2,:,:) = XUT(IIE+1-NRIMX:IIE+1,:,:)
 IF( .NOT. L2D ) THEN
-  XLBYUM(:,1:NRIMY+1,:)         = XUM(:,IJB-1:IJB-1+NRIMY,:)
-  XLBYUM(:,NRIMY+2:2*NRIMY+2,:) = XUM(:,IJE+1-NRIMY:IJE+1,:)
+  XLBYUM(:,1:NRIMY+1,:)         = XUT(:,IJB-1:IJB-1+NRIMY,:)
+  XLBYUM(:,NRIMY+2:2*NRIMY+2,:) = XUT(:,IJE+1-NRIMY:IJE+1,:)
 END IF
 !
 !*       5.9.2  V variable
 !
 !
-XLBXVM(1:NRIMX+1,:,:)         = XVM(IIB-1:IIB-1+NRIMX,:,:)
-XLBXVM(NRIMX+2:2*NRIMX+2,:,:) = XVM(IIE+1-NRIMX:IIE+1,:,:)
+XLBXVM(1:NRIMX+1,:,:)         = XVT(IIB-1:IIB-1+NRIMX,:,:)
+XLBXVM(NRIMX+2:2*NRIMX+2,:,:) = XVT(IIE+1-NRIMX:IIE+1,:,:)
 IF( .NOT. L2D ) THEN
-  XLBYVM(:,1:NRIMY+1,:)         = XVM(:,IJB:IJB+NRIMY,:)
-  XLBYVM(:,NRIMY+2:2*NRIMY+2,:) = XVM(:,IJE+1-NRIMY:IJE+1,:)
+  XLBYVM(:,1:NRIMY+1,:)         = XVT(:,IJB:IJB+NRIMY,:)
+  XLBYVM(:,NRIMY+2:2*NRIMY+2,:) = XVT(:,IJE+1-NRIMY:IJE+1,:)
 END IF
 !
 !*       5.9.3  W variable
 !
 !
-XLBXWM(1:NRIMX+1,:,:)         = XWM(IIB-1:IIB-1+NRIMX,:,:)
-XLBXWM(NRIMX+2:2*NRIMX+2,:,:) = XWM(IIE+1-NRIMX:IIE+1,:,:)
+XLBXWM(1:NRIMX+1,:,:)         = XWT(IIB-1:IIB-1+NRIMX,:,:)
+XLBXWM(NRIMX+2:2*NRIMX+2,:,:) = XWT(IIE+1-NRIMX:IIE+1,:,:)
 IF( .NOT. L2D ) THEN
-  XLBYWM(:,1:NRIMY+1,:)         = XWM(:,IJB-1:IJB-1+NRIMY,:)
-  XLBYWM(:,NRIMY+2:2*NRIMY+2,:) = XWM(:,IJE+1-NRIMY:IJE+1,:)
+  XLBYWM(:,1:NRIMY+1,:)         = XWT(:,IJB-1:IJB-1+NRIMY,:)
+  XLBYWM(:,NRIMY+2:2*NRIMY+2,:) = XWT(:,IJE+1-NRIMY:IJE+1,:)
 END IF
 !
 !*       5.9.4  TH variable
 !
 !
-XLBXTHM(1:NRIMX+1,:,:)         = XTHM(IIB-1:IIB-1+NRIMX,:,:)
-XLBXTHM(NRIMX+2:2*NRIMX+2,:,:) = XTHM(IIE+1-NRIMX:IIE+1,:,:)
+XLBXTHM(1:NRIMX+1,:,:)         = XTHT(IIB-1:IIB-1+NRIMX,:,:)
+XLBXTHM(NRIMX+2:2*NRIMX+2,:,:) = XTHT(IIE+1-NRIMX:IIE+1,:,:)
 IF( .NOT. L2D ) THEN
-  XLBYTHM(:,1:NRIMY+1,:)         = XTHM(:,IJB-1:IJB-1+NRIMY,:)
-  XLBYTHM(:,NRIMY+2:2*NRIMY+2,:) = XTHM(:,IJE+1-NRIMY:IJE+1,:)
+  XLBYTHM(:,1:NRIMY+1,:)         = XTHT(:,IJB-1:IJB-1+NRIMY,:)
+  XLBYTHM(:,NRIMY+2:2*NRIMY+2,:) = XTHT(:,IJE+1-NRIMY:IJE+1,:)
 END IF
 !
 !*       5.9.5  TKE variable
 !
 !
 IF (HTURB /= 'NONE') THEN
-  XLBXTKEM(1:NRIMX+1,:,:)         = XTKEM(IIB-1:IIB-1+NRIMX,:,:)
-  XLBXTKEM(NRIMX+2:2*NRIMX+2,:,:) = XTKEM(IIE+1-NRIMX:IIE+1,:,:)
+  XLBXTKEM(1:NRIMX+1,:,:)         = XTKET(IIB-1:IIB-1+NRIMX,:,:)
+  XLBXTKEM(NRIMX+2:2*NRIMX+2,:,:) = XTKET(IIE+1-NRIMX:IIE+1,:,:)
   IF( .NOT. L2D ) THEN
-    XLBYTKEM(:,1:NRIMY+1,:)         = XTKEM(:,IJB-1:IJB-1+NRIMY,:)
-    XLBYTKEM(:,NRIMY+2:2*NRIMY+2,:) = XTKEM(:,IJE+1-NRIMY:IJE+1,:)
+    XLBYTKEM(:,1:NRIMY+1,:)         = XTKET(:,IJB-1:IJB-1+NRIMY,:)
+    XLBYTKEM(:,NRIMY+2:2*NRIMY+2,:) = XTKET(:,IJE+1-NRIMY:IJE+1,:)
   END IF
 ENDIF
 ! 
@@ -1153,11 +1110,11 @@ ENDIF
 !
 IF (NRR >= 1) THEN
   DO JRR =1,NRR  
-    XLBXRM(1:NRIMX+1,:,:,JRR)         = XRM(IIB-1:IIB-1+NRIMX,:,:,JRR)
-    XLBXRM(NRIMX+2:2*NRIMX+2,:,:,JRR) = XRM(IIE+1-NRIMX:IIE+1,:,:,JRR)
+    XLBXRM(1:NRIMX+1,:,:,JRR)         = XRT(IIB-1:IIB-1+NRIMX,:,:,JRR)
+    XLBXRM(NRIMX+2:2*NRIMX+2,:,:,JRR) = XRT(IIE+1-NRIMX:IIE+1,:,:,JRR)
     IF( .NOT. L2D ) THEN
-      XLBYRM(:,1:NRIMY+1,:,JRR)         = XRM(:,IJB-1:IJB-1+NRIMY,:,JRR)
-      XLBYRM(:,NRIMY+2:2*NRIMY+2,:,JRR) = XRM(:,IJE+1-NRIMY:IJE+1,:,JRR)
+      XLBYRM(:,1:NRIMY+1,:,JRR)         = XRT(:,IJB-1:IJB-1+NRIMY,:,JRR)
+      XLBYRM(:,NRIMY+2:2*NRIMY+2,:,JRR) = XRT(:,IJE+1-NRIMY:IJE+1,:,JRR)
     END IF
   END DO
 END IF
@@ -1166,11 +1123,11 @@ END IF
 !
 IF (NSV /= 0) THEN
   DO JSV = 1, NSV
-    XLBXSVM(1:NRIMX+1,:,:,JSV)         = XSVM(IIB-1:IIB-1+NRIMX,:,:,JSV)
-    XLBXSVM(NRIMX+2:2*NRIMX+2,:,:,JSV) = XSVM(IIE+1-NRIMX:IIE+1,:,:,JSV)
+    XLBXSVM(1:NRIMX+1,:,:,JSV)         = XSVT(IIB-1:IIB-1+NRIMX,:,:,JSV)
+    XLBXSVM(NRIMX+2:2*NRIMX+2,:,:,JSV) = XSVT(IIE+1-NRIMX:IIE+1,:,:,JSV)
     IF( .NOT. L2D ) THEN
-      XLBYSVM(:,1:NRIMY+1,:,JSV)         = XSVM(:,IJB-1:IJB-1+NRIMY,:,JSV)
-      XLBYSVM(:,NRIMY+2:2*NRIMY+2,:,JSV) = XSVM(:,IJE+1-NRIMY:IJE+1,:,JSV)
+      XLBYSVM(:,1:NRIMY+1,:,JSV)         = XSVT(:,IJB-1:IJB-1+NRIMY,:,JSV)
+      XLBYSVM(:,NRIMY+2:2*NRIMY+2,:,JSV) = XSVT(:,IJE+1-NRIMY:IJE+1,:,JSV)
     END IF
   END DO
 ENDIF
@@ -1224,8 +1181,7 @@ ZMISC = ZMISC + ZTIME2 - ZTIME1
 CALL SECOND_MNH(ZTIME1)
 !
 IF (.NOT. L1D) THEN
-  CALL ANEL_BALANCE_n('M')                        ! for wind field at t-dt
-  CALL ANEL_BALANCE_n('T')                        ! for wind field at t
+  CALL ANEL_BALANCE_n
   CALL BOUNDARIES (                                                 &
             0.,CLBCX,CLBCY,NRR,NSV,1,                               &
             XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
@@ -1233,8 +1189,7 @@ IF (.NOT. L1D) THEN
             XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
             XRHODJ,                                                 &
-            XUM, XVM, XWM, XTHM, XTKEM, XRM, XSVM,XSRCM,            &
-            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT                   )
+            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 END IF
 !
 CALL SECOND_MNH(ZTIME2)

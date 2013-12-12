@@ -7,7 +7,7 @@ INTERFACE
       SUBROUTINE SHALLOW_MF(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                 HMF_UPDRAFT, HMF_CLOUD, HFRAC_ICE, OMIXUV,            &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                         &
-                PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,              &
+                PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXNM,                                        &
@@ -44,8 +44,6 @@ INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
 REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
 REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -77,7 +75,7 @@ REAL, DIMENSION(:,:), INTENT(OUT)     ::  PFLXZUMF
 REAL, DIMENSION(:,:), INTENT(OUT)     ::  PFLXZVMF
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHL_UP   ! Thl updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_UP    ! Rt  updraft characteristics
-REAL, DIMENSION(:,:), INTENT(OUT) ::  PRV_UP    ! Vapor updraft characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRV_UP    ! Vapor updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_UP     ! U wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_UP     ! V wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRC_UP    ! cloud content updraft characteristics
@@ -100,7 +98,7 @@ END MODULE MODI_SHALLOW_MF
       SUBROUTINE SHALLOW_MF(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                 HMF_UPDRAFT, HMF_CLOUD, HFRAC_ICE, OMIXUV,            &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                         &
-                PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,              &
+                PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXNM,                                        &
@@ -188,8 +186,6 @@ INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
 REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
 REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
-REAL,              INTENT(IN)     ::  PTSTEP_MET! Timestep for meteorological variables                        
-REAL,              INTENT(IN)     ::  PTSTEP_SV! Timestep for tracer variables
 
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -221,7 +217,7 @@ REAL, DIMENSION(:,:), INTENT(OUT)     ::  PFLXZUMF
 REAL, DIMENSION(:,:), INTENT(OUT)     ::  PFLXZVMF
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHL_UP   ! Thl updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_UP    ! Rt  updraft characteristics
-REAL, DIMENSION(:,:), INTENT(OUT) ::  PRV_UP    ! Vapor updraft characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRV_UP    ! Vapor updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_UP     ! U wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_UP     ! V wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRC_UP    ! cloud content updraft characteristics
@@ -339,7 +335,7 @@ CALL COMPUTE_MF_CLOUD(KKA,IKB,IKE,KKU,KKL,KRR,KRRL,KRRI,&
 ZEMF_O_RHODREF=PEMF/PRHODREF
 CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                         &
              ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
-             PIMPL_MF, PTSTEP, PTSTEP_MET, PTSTEP_SV,                 &
+             PIMPL_MF, PTSTEP,                                        &
              PDZZ,                                                    &
              PRHODJ,                                                  &
              ZTHLM,ZTHVM,ZRTM,PUM,PVM,PSVM,                           &

@@ -114,7 +114,6 @@ USE MODI_VERSION
 USE MODI_INIT_MNH
 USE MODI_DEALLOC_SURFEX
 !
-!
 IMPLICIT NONE
 !
 !*       0.3    Local variables
@@ -178,7 +177,7 @@ IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_SPAWN_SURF)
 CALL UPDATE_MODD_FROM_NMLVAR
 CALL POSNAM(ILUSPA,'NAM_BLANK',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_BLANK)
-!!$CALL CLOSE_ll(YEXSPA)
+!!CALL CLOSE_ll(YEXSPA)
 !
 !-------------------------------------------------------------------------------
 !
@@ -192,8 +191,7 @@ CALL BOUNDARIES                                                     &
             XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
             XRHODJ,                                                 &
-            XUM, XVM, XWM, XTHM, XTKEM, XRM, XSVM,XSRCM,            &
-            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT                   )
+            XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
 !
 !-------------------------------------------------------------------------------
 !

@@ -12,11 +12,11 @@ INTERFACE
       SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
                             KSPLITR, PTSTEP, KMI, KRR,                            &
                             PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
-                            PTHT, PRVT, PRCT, PRCM, PRRT, PRRM, PRIT, PRST, PRSM, &
-                            PRGT, PRGM, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, &
+                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
+                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
                             PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                            PRHT, PRHM, PRHS, PINPRH                              )
+                            PRHT, PRHS, PINPRH                                    )
 !
 !
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
@@ -49,14 +49,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCLDFR  ! Cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRSM    ! Snow/aggregate m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGM    ! Graupel/hail m.r. at t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
 !
@@ -78,7 +74,6 @@ REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHM    ! Hail m.r. at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
 
@@ -90,11 +85,11 @@ END MODULE MODI_RAIN_ICE
       SUBROUTINE RAIN_ICE ( OSEDIC, HSEDIM, HSUBG_AUCV, OWARM,KKA,KKU,KKL,        &
                             KSPLITR, PTSTEP, KMI, KRR,                            &
                             PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                            PTHT, PRVT, PRCT, PRCM, PRRT, PRRM, PRIT, PRST, PRSM, &
-                            PRGT, PRGM, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, &
+                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
+                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
                             PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                            PRHT, PRHM, PRHS, PINPRH                              )
+                            PRHT, PRHS, PINPRH                                    )
 !     ######################################################################
 !
 !!****  * -  compute the explicit microphysical sources
@@ -229,6 +224,7 @@ END MODULE MODI_RAIN_ICE
 !!      (S. Riette) Oct 2010 Better vectorisation of RAIN_ICE_SEDIMENTATION_STAT
 !!      (Y. Seity), 02-2012  add possibility to run with reversed vertical levels
 !!      Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
+!!      (C. Lac) FIT temporal scheme : instant M removed
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -244,6 +240,7 @@ USE MODD_BUDGET
 USE MODD_LES
 USE MODI_BUDGET
 USE MODI_GAMMA
+USE MODE_FMWRIT
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -285,14 +282,10 @@ REAL, DIMENSION(:,:,:),     INTENT(IN)  :: PCLDFR! Convective Mass Flux Cloud fr
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT    ! Theta at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT    ! Water vapor m.r. at t 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT    ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM    ! Cloud water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT    ! Rain water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRM    ! Rain water m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRIT    ! Pristine ice m.r. at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRST    ! Snow/aggregate m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRSM    ! Snow/aggregate m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGT    ! Graupel/hail m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGM    ! Graupel/hail m.r. at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PSIGS   ! Sigma_s at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
@@ -312,7 +305,6 @@ REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHM    ! Hail m.r. at t-dt
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
 !
@@ -434,8 +426,6 @@ REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
 !
 INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 !-------------------------------------------------------------------------------
 !
@@ -568,7 +558,7 @@ IF( IMICRO >= 0 ) THEN
         ALLOCATE(ZZW1(IMICRO,6))
  ENDIF
 !
-  IF (LBU_ENABLE .OR. LLES_CALL) THEN
+  IF (LBU_ENABLE .OR. LLES_CALL .OR. LCHECK) THEN
     ALLOCATE(ZRHODJ(IMICRO))
     ZRHODJ(:) = PACK( PRHODJ(:,:,:),MASK=GMICRO(:,:,:) )
   END IF
@@ -918,22 +908,22 @@ IF ( KRR == 7 ) ILENALLOCH = 0
 !
 IF (OSEDIC) THEN
   ZPRCS(:,:,:) = 0.0
-  ZPRCS(:,:,:) = PRCS(:,:,:)-PRCM(:,:,:)* ZINVTSTEP
-  PRCS(:,:,:)  = PRCM(:,:,:)* ZINVTSTEP
+  ZPRCS(:,:,:) = PRCS(:,:,:)-PRCT(:,:,:)* ZINVTSTEP
+  PRCS(:,:,:)  = PRCT(:,:,:)* ZINVTSTEP
 END IF
 ZPRRS(:,:,:) = 0.0
 ZPRSS(:,:,:) = 0.0
 ZPRGS(:,:,:) = 0.0
 IF ( KRR == 7 ) ZPRHS(:,:,:) = 0.0
 !
-ZPRRS(:,:,:) = PRRS(:,:,:)-PRRM(:,:,:)* ZINVTSTEP
-ZPRSS(:,:,:) = PRSS(:,:,:)-PRSM(:,:,:)* ZINVTSTEP
-ZPRGS(:,:,:) = PRGS(:,:,:)-PRGM(:,:,:)* ZINVTSTEP
-IF ( KRR == 7 ) ZPRHS(:,:,:) = PRHS(:,:,:)-PRHM(:,:,:)* ZINVTSTEP
-PRRS(:,:,:)  = PRRM(:,:,:)* ZINVTSTEP
-PRSS(:,:,:)  = PRSM(:,:,:)* ZINVTSTEP
-PRGS(:,:,:)  = PRGM(:,:,:)* ZINVTSTEP
-IF ( KRR == 7 ) PRHS(:,:,:)  = PRHM(:,:,:)* ZINVTSTEP
+ZPRRS(:,:,:) = PRRS(:,:,:)-PRRT(:,:,:)* ZINVTSTEP
+ZPRSS(:,:,:) = PRSS(:,:,:)-PRST(:,:,:)* ZINVTSTEP
+ZPRGS(:,:,:) = PRGS(:,:,:)-PRGT(:,:,:)* ZINVTSTEP
+IF ( KRR == 7 ) ZPRHS(:,:,:) = PRHS(:,:,:)-PRHT(:,:,:)* ZINVTSTEP
+PRRS(:,:,:)  = PRRT(:,:,:)* ZINVTSTEP
+PRSS(:,:,:)  = PRST(:,:,:)* ZINVTSTEP
+PRGS(:,:,:)  = PRGT(:,:,:)* ZINVTSTEP
+IF ( KRR == 7 ) PRHS(:,:,:)  = PRHT(:,:,:)* ZINVTSTEP
 !
 ! PRiS = Source of the previous time step + source created during the subtime
 ! step
@@ -1325,22 +1315,22 @@ ZRTMIN(:)    = XRTMIN(:) * ZINVTSTEP
 !
 IF (OSEDIC) THEN
   ZPRCS(:,:,:) = 0.0
-  ZPRCS(:,:,:) = PRCS(:,:,:)-PRCM(:,:,:)* ZINVTSTEP
-  PRCS(:,:,:)  = PRCM(:,:,:)* ZINVTSTEP
+  ZPRCS(:,:,:) = PRCS(:,:,:)-PRCT(:,:,:)* ZINVTSTEP
+  PRCS(:,:,:)  = PRCT(:,:,:)* ZINVTSTEP
 END IF
 ZPRRS(:,:,:) = 0.0
 ZPRSS(:,:,:) = 0.0
 ZPRGS(:,:,:) = 0.0
 IF ( KRR == 7 ) ZPRHS(:,:,:) = 0.0
 !
-ZPRRS(:,:,:) = PRRS(:,:,:)-PRRM(:,:,:)* ZINVTSTEP
-ZPRSS(:,:,:) = PRSS(:,:,:)-PRSM(:,:,:)* ZINVTSTEP
-ZPRGS(:,:,:) = PRGS(:,:,:)-PRGM(:,:,:)* ZINVTSTEP
-IF ( KRR == 7 ) ZPRHS(:,:,:) = PRHS(:,:,:)-PRHM(:,:,:)* ZINVTSTEP
-PRRS(:,:,:)  = PRRM(:,:,:)* ZINVTSTEP
-PRSS(:,:,:)  = PRSM(:,:,:)* ZINVTSTEP
-PRGS(:,:,:)  = PRGM(:,:,:)* ZINVTSTEP
-IF ( KRR == 7 ) PRHS(:,:,:)  = PRHM(:,:,:)* ZINVTSTEP
+ZPRRS(:,:,:) = PRRS(:,:,:)-PRRT(:,:,:)* ZINVTSTEP
+ZPRSS(:,:,:) = PRSS(:,:,:)-PRST(:,:,:)* ZINVTSTEP
+ZPRGS(:,:,:) = PRGS(:,:,:)-PRGT(:,:,:)* ZINVTSTEP
+IF ( KRR == 7 ) ZPRHS(:,:,:) = PRHS(:,:,:)-PRHT(:,:,:)* ZINVTSTEP
+PRRS(:,:,:)  = PRRT(:,:,:)* ZINVTSTEP
+PRSS(:,:,:)  = PRST(:,:,:)* ZINVTSTEP
+PRGS(:,:,:)  = PRGT(:,:,:)* ZINVTSTEP
+IF ( KRR == 7 ) PRHS(:,:,:)  = PRHT(:,:,:)* ZINVTSTEP
 !
 IF (OSEDIC) PRCS(:,:,:) = PRCS(:,:,:) + ZPRCS(:,:,:)
 PRRS(:,:,:) = PRRS(:,:,:) + ZPRRS(:,:,:)

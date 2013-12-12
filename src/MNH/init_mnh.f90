@@ -112,7 +112,6 @@ INTEGER  :: ILUOUT0,IRESP                             ! Logical unit number for
                                                       ! output-listing common
                                                       ! to all models and return
                                                       ! code of file management
-REAL, DIMENSION(JPMODELMAX)            :: ZTSTEP_OLD  ! OLD Time STEP (DESFM)
 REAL, DIMENSION(JPMODELMAX)            :: ZTSTEP_ALL  ! Time STEP of ALL models
 INTEGER                                :: IINFO_ll    ! return code of // routines
 !
@@ -163,7 +162,7 @@ CALL INI_NEB
 !
 DO JMI=1,JPMODELMAX
   CALL GOTO_MODEL(JMI)
-  CALL INI_SEG_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI),ZTSTEP_OLD(JMI),ZTSTEP_ALL)
+  CALL INI_SEG_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI),ZTSTEP_ALL)
   IF (JMI.EQ.NMODEL) EXIT
 END DO
 !
@@ -211,7 +210,7 @@ ENDIF
 DO JMI=1,NMODEL
   CALL GO_TOMODEL_ll(JMI,IINFO_ll)
   CALL GOTO_MODEL(JMI)
-  CALL INI_MODEL_n(JMI,ZTSTEP_OLD(JMI),YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI))
+  CALL INI_MODEL_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI))
 END DO
 !
 !-------------------------------------------------------------------------------

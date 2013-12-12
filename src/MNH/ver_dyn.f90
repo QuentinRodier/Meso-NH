@@ -2,6 +2,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! MASDEV4_7 prep_real 2006/07/07 12:19:27
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODI_VER_DYN
@@ -139,13 +140,12 @@ USE MODI_VER_INTERP_LIN
 USE MODI_WGUESS
 USE MODI_VER_SHIFT
 USE MODI_VER_INT_DYN
-USE MODI_ANEL_BALANCE_n
 USE MODI_SHUMAN
 !
 USE MODD_CONF           ! declaration modules
 USE MODD_CST
 USE MODD_LUNIT
-USE MODD_FIELD_n, ONLY: XUM,XVM,XWM,XPABSM,XTHM,XRM
+USE MODD_FIELD_n, ONLY: XUT,XVT,XWT,XPABST,XTHT,XRT
 USE MODD_LSFIELD_n
 USE MODD_LBC_n
 USE MODD_REF_n
@@ -153,12 +153,10 @@ USE MODD_DYN_n
 USE MODD_GRID_n
 USE MODD_PARAMETERS
 USE MODD_VER_INTERP_LIN
-!JUAN REALZ
 USE MODD_DIM_n
 USE MODE_MPPDB
 USE MODE_ll
 USE MODE_EXTRAPOL
-!JUAN REALZ
 !
 IMPLICIT NONE
 !
@@ -213,7 +211,6 @@ INTEGER :: IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU     ! dimensions of the
 INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
-
 !-------------------------------------------------------------------------------
 !
 IIB=JPHEXT+1
@@ -267,18 +264,18 @@ CALL MPPDB_CHECK3D(ZRHODJV,"VERDYN::ZRHODJV",PRECISION)
 !*       4.    STORAGE IN MODD_FIELD1
 !              ----------------------
 !
-ALLOCATE(XUM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
-ALLOCATE(XVM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
-ALLOCATE(XWM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
+ALLOCATE(XUT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
+ALLOCATE(XVT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
+ALLOCATE(XWT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
 !
-ZRHOD(:,:,:)=XPABSM(:,:,:)/(XPABSM(:,:,:)/XP00)**(XRD/XCPD) &
-            /(XRD*XTHM(:,:,:)*(1.+XRV/XRD*XRM(:,:,:,1)))
+ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
+            /(XRD*XTHT(:,:,:)*(1.+XRV/XRD*XRT(:,:,:,1)))
 !
-XUM(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
-XVM(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
+XUT(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
+XVT(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
 
-CALL EXTRAPOL('W',XUM)
-CALL EXTRAPOL('S',XVM)
+CALL EXTRAPOL('W',XUT)
+CALL EXTRAPOL('S',XVT)
 
 !
 !
@@ -311,7 +308,7 @@ END IF
 !
 ZZFLUX_SH(:,:,:)=VER_SHIFT(PZFLUX_MX,PZS_LS,XZS)
 CALL COEF_VER_INTERP_LIN(ZZFLUX_SH(:,:,:),XZZ(:,:,:))
-XWM(:,:,:)=VER_INTERP_LIN(PW_MX(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
+XWT(:,:,:)=VER_INTERP_LIN(PW_MX(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
 IF ( HATMFILETYPE == 'MESONH' ) THEN
   ALLOCATE(XLSWM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
@@ -325,19 +322,19 @@ DEALLOCATE(XCOEFLIN)
 !
 ZCOEF(:,:,:)=(       XZZ(:,:,:)           -SPREAD(XZZ(:,:,IKB),3,IKU)) &
             /(SPREAD(XZZ(:,:,IKE+1),3,IKU)-SPREAD(XZZ(:,:,IKB),3,IKU))
-XWM(:,:,:)=XWM(:,:,:)*MAX(MIN( (4.-4.*ZCOEF(:,:,:)) ,1.),0.)
+XWT(:,:,:)=XWT(:,:,:)*MAX(MIN( (4.-4.*ZCOEF(:,:,:)) ,1.),0.)
 !-------------------------------------------------------------------------------
 !
 !*       6.    STORAGE OF LARGE SCALE FIELDS
 !              ------------------------------
 !
 IF ( HATMFILETYPE == 'GRIBEX' ) THEN
-  ALLOCATE(XLSUM(SIZE(XUM,1),SIZE(XUM,2),SIZE(XUM,3)))
-  ALLOCATE(XLSVM(SIZE(XVM,1),SIZE(XVM,2),SIZE(XVM,3)))
-  ALLOCATE(XLSWM(SIZE(XWM,1),SIZE(XWM,2),SIZE(XWM,3)))
-  XLSUM(:,:,:)=XUM(:,:,:)
-  XLSVM(:,:,:)=XVM(:,:,:)
-  XLSWM(:,:,:)=XWM(:,:,:)
+  ALLOCATE(XLSUM(SIZE(XUT,1),SIZE(XUT,2),SIZE(XUT,3)))
+  ALLOCATE(XLSVM(SIZE(XVT,1),SIZE(XVT,2),SIZE(XVT,3)))
+  ALLOCATE(XLSWM(SIZE(XWT,1),SIZE(XWT,2),SIZE(XWT,3)))
+  XLSUM(:,:,:)=XUT(:,:,:)
+  XLSVM(:,:,:)=XVT(:,:,:)
+  XLSWM(:,:,:)=XWT(:,:,:)
 END IF
 ! enforce zero gradient along the vertical under and above the vertical
 ! boundaries
@@ -352,8 +349,6 @@ CALL EXTRAPOL('W',XLSUM)
 CALL EXTRAPOL('E',XLSUM)
 CALL EXTRAPOL('S',XLSVM)
 CALL EXTRAPOL('E',XLSVM)
-
-
 
 ! FROM PREP_IDEAL_CASE
 !
@@ -397,98 +392,31 @@ CALL EXTRAPOL('E',XLSVM)
 ILBX=SIZE(XLBXUM,1)
 ILBY=SIZE(XLBYUM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(1:NRIMX+1,        :,:)     = XUM(2:NRIMX+2,        :,:)
-  XLBXVM(1:NRIMX+1,        :,:)     = XVM(1:NRIMX+1,        :,:)
-  XLBXWM(1:NRIMX+1,        :,:)     = XWM(1:NRIMX+1,        :,:)
+  XLBXUM(1:NRIMX+1,        :,:)     = XUT(2:NRIMX+2,        :,:)
+  XLBXVM(1:NRIMX+1,        :,:)     = XVT(1:NRIMX+1,        :,:)
+  XLBXWM(1:NRIMX+1,        :,:)     = XWT(1:NRIMX+1,        :,:)
 
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUM(IIU-NRIMX:IIU,    :,:)
-  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVM(IIU-NRIMX:IIU,    :,:)
-  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWM(IIU-NRIMX:IIU,    :,:)
+  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUT(IIU-NRIMX:IIU,    :,:)
+  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVT(IIU-NRIMX:IIU,    :,:)
+  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWT(IIU-NRIMX:IIU,    :,:)
 
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,1:NRIMY+1,        :)     = XUM(:,1:NRIMY+1,      :)
-  XLBYVM(:,1:NRIMY+1,        :)     = XVM(:,2:NRIMY+2,      :)
-  XLBYWM(:,1:NRIMY+1,        :)     = XWM(:,1:NRIMY+1,  :)
+  XLBYUM(:,1:NRIMY+1,        :)     = XUT(:,1:NRIMY+1,      :)
+  XLBYVM(:,1:NRIMY+1,        :)     = XVT(:,2:NRIMY+2,      :)
+  XLBYWM(:,1:NRIMY+1,        :)     = XWT(:,1:NRIMY+1,  :)
 
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUM(:,IJU-NRIMY:IJU,  :)
-  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVM(:,IJU-NRIMY:IJU,  :)
-  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWM(:,IJU-NRIMY:IJU,  :)
+  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUT(:,IJU-NRIMY:IJU,  :)
+  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVT(:,IJU-NRIMY:IJU,  :)
+  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWT(:,IJU-NRIMY:IJU,  :)
 
 ENDIF
 
-!!$IF ( LHORELAX_UVWTH ) THEN
-!!$  ALLOCATE(XLBXUM(2*NRIMX+2,IJU,IKU))
-!!$  ALLOCATE(XLBYUM(IIU,2*NRIMY+2,IKU))
-!!$  ALLOCATE(XLBXVM(2*NRIMX+2,IJU,IKU))
-!!$  ALLOCATE(XLBYVM(IIU,2*NRIMY+2,IKU))
-!!$  ALLOCATE(XLBXWM(2*NRIMX+2,IJU,IKU))
-!!$  ALLOCATE(XLBYWM(IIU,2*NRIMY+2,IKU))
-!!$ELSE
-!!$  ALLOCATE(XLBXUM(4,IJU,IKU))
-!!$  ALLOCATE(XLBYUM(IIU,2,IKU))
-!!$  ALLOCATE(XLBXVM(2,IJU,IKU))
-!!$  ALLOCATE(XLBYVM(IIU,4,IKU))
-!!$  ALLOCATE(XLBXWM(2,IJU,IKU))
-!!$  ALLOCATE(XLBYWM(IIU,2,IKU))
-!!$END IF
-
-
 !
-!!$NSIZELBX_ll=SIZE(XLBXWM,1)
-!!$NSIZELBXU_ll=SIZE(XLBXUM,1)
-!!$NSIZELBY_ll=SIZE(XLBYWM,2)
-!!$NSIZELBYV_ll=SIZE(XLBYVM,2)
-!!$!
-!!$!
-!!$ILBX=SIZE(XLBXUM,1)/2-1
-!!$ILBY=SIZE(XLBYUM,2)/2-1
-!!$!
-!!$IF(LWEST_ll() .AND. .NOT. L1D) THEN
-!!$   XLBXUM(1:ILBX+1,:,:)        = XUM(  IIB:IIB+ILBX  ,:,:)
-!!$   XLBXVM(1:ILBX+1,:,:)        = XVM(IIB-1:IIB-1+ILBX,:,:)
-!!$   XLBXWM(1:ILBX+1,:,:)        = XWM(IIB-1:IIB-1+ILBX,:,:)
-!!$ENDIF
-!!$!
-!!$!
-!!$!
-!!$ILBX=SIZE(XLBXVM,1)/2-1
-!!$ILBY=SIZE(XLBYVM,2)/2-1
-!!$!
-!!$IF(LEAST_ll() .AND. .NOT. L1D) THEN
-!!$   XLBXUM(ILBX+2:2*ILBX+2,:,:) = XUM(IIE+1-ILBX:IIE+1,:,:)
-!!$   XLBXVM(ILBX+2:2*ILBX+2,:,:) = XVM(IIE+1-ILBX:IIE+1,:,:)
-!!$   XLBXWM(ILBX+2:2*ILBX+2,:,:) = XWM(IIE+1-ILBX:IIE+1,:,:)
-!!$END IF
-!!$!
-!!$!
-!!$ILBX=SIZE(XLBXWM,1)/2-1
-!!$ILBY=SIZE(XLBYWM,2)/2-1
-!!$!
-!!$IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-!!$   XLBYUM(:,1:ILBY+1,:)        = XUM(:,IJB-1:IJB-1+ILBY,:)
-!!$   XLBYVM(:,1:ILBY+1,:)        = XVM(:,IJB  :IJB+ILBY  ,:)
-!!$   XLBYWM(:,1:ILBY+1,:)        = XWM(:,IJB-1:IJB-1+ILBY,:)
-!!$ENDIF
-!!$
-!!$IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-!!$   XLBYUM(:,ILBY+2:2*ILBY+2,:) = XUM(:,IJE+1-ILBY:IJE+1,:)
-!!$   XLBYVM(:,ILBY+2:2*ILBY+2,:) = XVM(:,IJE+1-ILBY:IJE+1,:)
-!!$   XLBYWM(:,ILBY+2:2*ILBY+2,:) = XWM(:,IJE+1-ILBY:IJE+1,:)
-!!$END IF
-
-CALL  MPPDB_CHECKLB(XLBXUM,"ver_dyn::XLBXUM::",PRECISION,'LBXU',NRIMX)
-CALL  MPPDB_CHECKLB(XLBXVM,"ver_dyn::XLBXVM::",PRECISION,'LBXU',NRIMX)
-CALL  MPPDB_CHECKLB(XLBXWM,"ver_dyn::XLBXWM::",PRECISION,'LBXU',NRIMX)
-
-
-CALL  MPPDB_CHECKLB(XLBYUM,"ver_dyn::XLBYUM::",PRECISION,'LBYV',NRIMY)
-CALL  MPPDB_CHECKLB(XLBYVM,"ver_dyn::XLBYVM::",PRECISION,'LBYV',NRIMY)
-CALL  MPPDB_CHECKLB(XLBYWM,"ver_dyn::XLBYWM::",PRECISION,'LBYV',NRIMY)
 !
 !-------------------------------------------------------------------------------
 !

@@ -90,6 +90,7 @@ END MODULE MODI_RELAX2FW_ION
 !!    MODIFICATIONS
 !!    -------------
 !!      C.Lac, 07/11 : Avoid the horizontal relaxation if not father model
+!!      C.Lac, 11/11 : Adaptation to FIT temporal scheme
 !!
 !!
 !-------------------------------------------------------------------------------
@@ -161,11 +162,7 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 !*       2.1    set the top-level damping coef. (upstream or leapfrog)
 !
-IF ((KTCOUNT.EQ.1) .AND. (CCONF.EQ.'START') ) THEN
   ZKV(:)  = PALK(:) / (1. - PTSTEP * PALK(:))
-ELSE
-  ZKV(:)  = PALK(:)
-ENDIF
 !
 !
 !*       2.2     applies the damping in the uppermost levels
@@ -188,11 +185,7 @@ ENDIF
 !
 IF (KMI == 1) THEN
 !
-IF( (KTCOUNT.EQ.1) .AND. (CCONF.EQ.'START') ) THEN
   ZKH(:,:) = PKWRELAX(:,:) / (1. - PTSTEP * PKWRELAX(:,:))
-ELSE
-  ZKH(:,:) = PKWRELAX(:,:)
-END IF
 !
 !
 !*       3.2    applies the damping near the lateral boundaries
@@ -204,7 +197,7 @@ DO JK = 1, IKU
     PRSVS(:,:,JK,NSV_ELECEND) = PRSVS(:,:,JK,NSV_ELECEND) - ZKH(:,:) *  &
        (PSVM(:,:,JK,NSV_ELECEND) - XCION_NEG_FW(:,:,JK)) * PRHODJ(:,:,JK)
   END WHERE
-ENDDO  
+ENDDO 
 !
 END IF 
 !
