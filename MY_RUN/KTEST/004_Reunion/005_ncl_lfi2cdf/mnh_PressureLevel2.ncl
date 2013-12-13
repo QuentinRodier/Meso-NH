@@ -37,7 +37,7 @@ begin
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-  mdims = getfilevardimsizes(a,"UM") ; get dimension sizes
+  mdims = getfilevardimsizes(a,"UT") ; get dimension sizes
   nd = dimsizes(mdims)
   imax=mdims(nd-1)-2
   jmax=mdims(nd-2)-2
@@ -47,11 +47,11 @@ begin
 ; Read the variables we need
 ;=================================================;
 
-  tk = a->THM(1:kmax,1:jmax,1:imax)	     ; potential temperature
+  tk = a->THT(1:kmax,1:jmax,1:imax)	     ; potential temperature
   tk@description="Potential Temperature"
 
-  u = a->UM(1:kmax,1:jmax,1:imax+1)         ; u
-  v = a->VM(1:kmax,1:jmax+1,1:imax)         ; v
+  u = a->UT(1:kmax,1:jmax,1:imax+1)         ; u
+  v = a->VT(1:kmax,1:jmax+1,1:imax)         ; v
 
 ; Unstagger u,v
   u!0="Z"
@@ -64,10 +64,10 @@ begin
   v!2="X"
   v_unst = wrf_user_unstagger(v,"Y")
 
-  p = a->PABSM(1:kmax,1:jmax,1:imax)        ; pressure
+  p = a->PABST(1:kmax,1:jmax,1:imax)        ; pressure
   p@description="Pressure"
 
-  rv = a->RVM(1:kmax,1:jmax,1:imax)*1000    ; water vapor mixing ratio
+  rv = a->RVT(1:kmax,1:jmax,1:imax)*1000    ; water vapor mixing ratio
   rv@description="Water vapor mixing ratio"
 
   zs = a->ZS(1:jmax,1:imax) 	            ; terrain
