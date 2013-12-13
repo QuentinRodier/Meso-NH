@@ -18,48 +18,48 @@ ACPRR
 ! trace de tous les vecteurs
 NISKIP=1                                                                        
 ! superposition de la pression et des vecteurs de vent au niveau K=2
-PABSM_K_2_ON_UMVM_K_2                                                           
+PABST_K_2_ON_UTVT_K_2                                                           
 ! superposition du rapport d eau nuageuse et des vecteurs vent a 3000m
-RCM_Z_3000_ON_UMVM_Z_3000                                                       
+RCT_Z_3000_ON_UTVT_Z_3000                                                       
 ! superposition du rapport d eau nuageuse et des vecteurs vent a 5000m
-RCM_Z_5000_ON_UMVM_Z_5000                                                       
+RCT_Z_5000_ON_UTVT_Z_5000                                                       
 ! concentration CO  et ozone à 3000m
-COM_Z_3000
-O3M_Z_3000
+COT_Z_3000
+O3T_Z_3000
 ! concentration CO et ozone à 5000m
-COM_Z_5000
-O3M_Z_5000
+COT_Z_5000
+O3T_Z_5000
 ! definition d une coupe verticale
 NIDEBCOU=5 NJDEBCOU=2 NLANGLE=47 NLMAX=21                                       
 ! trace de la coupe verticale dans le plan horizontal
 LTRACECV=T                                                                      
 ! rapport de vapeur et vecteurs vent dans la coupe verticale
-RVM_CV__ON_ULMWM_CV_                                                            
+RVT_CV__ON_ULTWT_CV_                                                            
 ! plus de trace de la coupe verticale
 LTRACECV=F                                                                      
 ! rapport de melange d eau nuageuse et rapport d eau de pluie
-RCM_CV__ON_RRM_CV_                                                              
+RCT_CV__ON_RRT_CV_                                                              
 ! difference pour la temperature potentielle avec le champ initial
-THM_CV__MINUS_LSTHM_CV_                                                         
+THT_CV__MINUS_LSTHM_CV_                                                         
 ! vitesse verticale en coupe verticale
-WM_CV_                                                                          
+WT_CV_                                                                          
 ! concentration CO en coupe verticale
-COM_CV_
+COT_CV_
 ! concentration HCHO en coupe verticale
-HCHOM_CV_
-WC_HCHOM_CV__ON_RCM_CV_ 
-WR_HCHOM_CV__ON_RRM_CV_
-IC_HCHOM_CV__ON_RSM_PLUS_RGM_CV_
+HCHOT_CV_
+WC_HCHOT_CV__ON_RCT_CV_ 
+WR_HCHOT_CV__ON_RRT_CV_
+IC_HCHOT_CV__ON_RST_PLUS_RGT_CV_
 ! concentration SO2 en coupe verticale
-SO2M_CV_
-WC_SO2M_CV__ON_RCM_CV_
-WR_SO2M_CV__ON_RRM_CV_
-IC_SO2M_CV__ON_RSM_PLUS_RGM_CV_
+SO2T_CV_
+WC_SO2T_CV__ON_RCT_CV_
+WR_SO2T_CV__ON_RRT_CV_
+IC_SO2T_CV__ON_RST_PLUS_RGT_CV_
 ! concentration HNO3 en coupe verticale
-HNO3M_CV_
-WC_HNO3M_CV__ON_RCM_CV_
-WR_HNO3M_CV__ON_RRM_CV_
-IC_HNO3M_CV__ON_RSM_PLUS_RGM_CV_ 
+HNO3T_CV_
+WC_HNO3T_CV__ON_RCT_CV_
+WR_HNO3T_CV__ON_RRT_CV_
+IC_HNO3T_CV__ON_RST_PLUS_RGT_CV_ 
 ! PH nuage et pluie en coupe verticale
 PHC_CV_ 
 PHR_CV_
@@ -67,30 +67,30 @@ quit
 ! definition d une autre coupe verticale
 NIDEBCOU=15 NJDEBCOU=2 NLANGLE=90 NLMAX=23       
 LTRACECV=T                                                                      
-RVM_CV__ON_ULMWM_CV_                                                            
+RVT_CV__ON_ULTWT_CV_                                                            
 LTRACECV=F                                                                      
-RCM_CV__ON_RRM_CV_                                                              
-THM_CV__MINUS_LSTHM_CV_                                                         
-WM_CV_                                                                          
+RCT_CV__ON_RRT_CV_                                                              
+THT_CV__MINUS_LSTHM_CV_                                                         
+WT_CV_                                                                          
 ! 2e fichier a ouvrir
 _file2_'KWRAI.1.SEG00.003.dia'                                                  
 ! definition d une coupe verticale
 LDEFCV2IND=T                                                                    
 NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
 LTRACECV=T                                                                    
-THM_CV_                                                                         
+THT_CV_                                                                         
 LTRACECV=F                                                                    
 NIMNMX=-1
-RVM_CV__ON_ULMWM_CV_  
-RCM_CV__ON_RRM_CV_    
-WM_CV_
+RVT_CV__ON_ULTWT_CV_  
+RCT_CV__ON_RRT_CV_    
+WT_CV_
 ! 3e fichier a ouvrir
 _file3_'KWRAI.1.SEG00.004.dia'                                                  
 LDEFCV2IND=T                                                                    
 NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
-THM_CV_                                                                         
-RVM_CV__ON_ULMWM_CV_  
-RCM_CV__ON_RRM_CV_    
-WM_CV_
+THT_CV_                                                                         
+RVT_CV__ON_ULTWT_CV_  
+RCT_CV__ON_RRT_CV_    
+WT_CV_
 !
 ! a vous d indiquer vos directives                                                                            
