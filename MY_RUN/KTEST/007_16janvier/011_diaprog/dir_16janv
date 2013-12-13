@@ -10,15 +10,15 @@ ZS
 LCOLAREA=T LISO=F                                                               
 LCOLZERO=T NCOLZERO=1                                                           
 LCOLZERO=F
-NIMNMX=0 XDIAINT_THM=1.                                                         
-THM_PR_850_ON_UMVM_PR_850                                                       
+NIMNMX=0 XDIAINT_THT=1.                                                         
+THT_PR_850_ON_UTVT_PR_850                                                       
 NIMNMX=-1                                                                       
-RVM(*1000)_PR_700                                                               
-PABSM_Z_9000_ON_UMVM_Z_9000                                                     
+RVT(*1000)_PR_700                                                               
+PABST_Z_9000_ON_UTVT_Z_9000                                                     
 _file2_
-NIMNMX=0 XDIAINT_THM=1.                                                         
-THM_PR_850_ON_UMVM_PR_850                                                       
+NIMNMX=0 XDIAINT_THT=1.                                                         
+THT_PR_850_ON_UTVT_PR_850                                                       
 NIMNMX=-1                                                                       
-RVM(*1000)_PR_700                                                               
-PABSM_Z_9000_ON_UMVM_Z_9000                                                     
+RVT(*1000)_PR_700                                                               
+PABST_Z_9000_ON_UTVT_Z_9000                                                     
 quit                           

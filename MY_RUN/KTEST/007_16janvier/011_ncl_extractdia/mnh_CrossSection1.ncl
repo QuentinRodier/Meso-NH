@@ -36,7 +36,7 @@ begin
 ;=================================================;
 ; Get informations on variable sizes
 ;=================================================;
-  mdims = getfilevardimsizes(a,"UM") ; get some dimension sizes for the file
+  mdims = getfilevardimsizes(a,"UT") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
 
 ;=================================================;
@@ -44,11 +44,11 @@ begin
 ;=================================================;
   ZS =a->ZSBIS(0,:,:)
 
-  th = a->THM(0,:,:,:)
+  th = a->THT(0,:,:,:)
   th@long_name="Potential Temperature"
   th@description="TH"
 
-  um = a->UM(0,:,:,:)
+  um = a->UT(0,:,:,:)
   um@description="U"
 
   z= a->ALT(0,:,:,:)

@@ -24,18 +24,18 @@ begin
 ;=================================================;
 ; Read the variables we need
 ;=================================================;
-  th  = a->THM(0,:,:,:)   ; theta
+  th  = a->THT(0,:,:,:)   ; theta
   th@description="Potential Temperature"
 
-  qv  = a->RVM(0,:,:,:)   ; Qv
+  qv  = a->RVT(0,:,:,:)   ; Qv
   qv = qv*1000.
   qv@units = "g/kg"
   qv@description="Water vapor mixing ratio"
 
-  u   = a->UM(0,:,:,:)        ; u 
+  u   = a->UT(0,:,:,:)        ; u 
   u@description="U"
 
-  v   = a->VM(0,:,:,:)        ; v 
+  v   = a->VT(0,:,:,:)        ; v 
   v@description="V"
 
 ; Calculate wind speed
