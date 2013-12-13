@@ -34,17 +34,17 @@ begin
 ;=================================================;
 ; Read the variables we need
 ;=================================================;
-    tk = a->THM(0,:,:,:)	          ; potential temperature
+    tk = a->THT(0,:,:,:)	          ; potential temperature
     tk@description="Potential Temperature"
 
-    u = a->UM(0,:,:,:)               ; u
+    u = a->UT(0,:,:,:)               ; u
 
-    v = a->VM(0,:,:,:)               ; v
+    v = a->VT(0,:,:,:)               ; v
 
-    p = a->PABSM(0,:,:,:)            ; pressure
+    p = a->PABST(0,:,:,:)            ; pressure
     p@description="Pressure"
 
-    rv = a->RVM(0,:,:,:)*1000        ; water vapor mixing ratio
+    rv = a->RVT(0,:,:,:)*1000        ; water vapor mixing ratio
     rv@description="Water vapor mixing ratio"
 
     ZS = a->ZSBIS(0,:,:) 	     ; terrain

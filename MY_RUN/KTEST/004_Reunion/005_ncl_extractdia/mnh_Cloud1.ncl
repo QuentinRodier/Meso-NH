@@ -43,8 +43,8 @@ begin
 ;=================================================;
 ; Read water wapor mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RVM"))
-      qv = a->RVM(0,:,:,:)
+    if(isfilevar(a,"RVT"))
+      qv = a->RVT(0,:,:,:)
       qv = qv*1000.
       qv@units = "g/kg"   
       qv@description="Water vapor mixing ratio"
@@ -70,8 +70,8 @@ begin
 
 ; Read ice mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RIM"))
-      qi = a->RIM(0,:,:,:)
+    if(isfilevar(a,"RIT"))
+      qi = a->RIT(0,:,:,:)
       qi = qi*1000.
       qi@units = "g/kg"   
       qi@description="Ice mixing ratio"

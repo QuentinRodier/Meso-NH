@@ -3,12 +3,12 @@
 /
 &NAM_LUNITn  CINIFILE = "REUNION_IDEA_410",
              CINIFILEPGD="REUNION_PGD_1km5_410" /
-&NAM_DYNn  XTSTEP = 20.,  
+&NAM_DYNn  XTSTEP = 5.,  
            !CPRESOPT = "ZRESI", 
            LITRADJ = T,
            LHORELAX_UVWTH = T, LHORELAX_RV = T, LVE_RELAX = T,
            NRIMX = 5, NRIMY = 5, XRIMKMAX = 0.01, XT4DIFU = 500. /
-&NAM_ADVn  CUVW_ADV_SCHEME = "WENO_K" , CMET_ADV_SCHEME = "PPM_01" /
+&NAM_ADVn  CUVW_ADV_SCHEME = "CEN4TH" , CMET_ADV_SCHEME = "PPM_01" /
 &NAM_PARAMn  CTURB = "TKEL", CRAD = "FIXE",
              CCLOUD = "NONE", CDCONV = "NONE" /
 &NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
@@ -20,7 +20,7 @@
            NVERB = 5, CEXP = "REUNI", CSEG = "00A20" ,
            CSPLIT="BSPLITTING" /
 &NAM_DYN  XSEGLEN = 40.,
-          LCORIO = F, LNUMDIFU = F,
+          LCORIO = F, LNUMDIFU = T,
           XALKTOP = 0.01, XALZBOT = 14000. /
 &NAM_FMOUT XFMOUT(1,1) = 10., XFMOUT(1,2) = 20.,
            XFMOUT(1,3) = 30., XFMOUT(1,4) = 40.  /
