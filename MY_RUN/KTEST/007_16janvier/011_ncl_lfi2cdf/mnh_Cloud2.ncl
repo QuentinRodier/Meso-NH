@@ -28,7 +28,7 @@ begin
 ; Get informations on variable sizes
 ;=================================================;
 
-  mdims = getfilevardimsizes(a,"RVM") ; get some dimension sizes for the file
+  mdims = getfilevardimsizes(a,"RVT") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
   imax=mdims(nd-1)-2
   jmax=mdims(nd-2)-2
@@ -41,8 +41,8 @@ begin
 
 ; Read water wapor mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RVM"))
-      qv = a->RVM(1:kmax,1:jmax,1:imax)
+    if(isfilevar(a,"RVT"))
+      qv = a->RVT(1:kmax,1:jmax,1:imax)
       qv = qv*1000.
       qv@units = "g/kg"   
       qv@description="Water vapor mixing ratio"
@@ -50,8 +50,8 @@ begin
 
 ; Read cloud mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RCM"))
-      qc = a->RCM(1:kmax,1:jmax,1:imax)
+    if(isfilevar(a,"RCT"))
+      qc = a->RCT(1:kmax,1:jmax,1:imax)
       qc = qc*1000.
       qc@units = "g/kg"   
       qc@description="Cloud mixing ratio"
@@ -59,8 +59,8 @@ begin
 
 ; Read rain mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RRM"))
-      qr = a->RRM(1:kmax,1:jmax,1:imax)
+    if(isfilevar(a,"RRT"))
+      qr = a->RRT(1:kmax,1:jmax,1:imax)
       qr = qr*1000.
       qr@units = "g/kg"   
       qr@description="Rain mixing ratio"
@@ -68,8 +68,8 @@ begin
 
 ; Read ice mixing ratio if it exists
 ; -----------------------------------------
-    if(isfilevar(a,"RIM"))
-      qi = a->RIM(1:kmax,1:jmax,1:imax)
+    if(isfilevar(a,"RIT"))
+      qi = a->RIT(1:kmax,1:jmax,1:imax)
       qi = qi*1000.
       qi@units = "g/kg"   
       qi@description="Ice mixing ratio"

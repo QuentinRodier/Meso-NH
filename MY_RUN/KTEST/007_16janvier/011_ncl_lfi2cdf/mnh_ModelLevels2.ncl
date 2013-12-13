@@ -29,7 +29,7 @@ begin
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-  mdims = getfilevardimsizes(a,"THM") ; get dimension sizes
+  mdims = getfilevardimsizes(a,"THT") ; get dimension sizes
   nd = dimsizes(mdims)
   imax=mdims(nd-1)-2
   jmax=mdims(nd-2)-2
@@ -38,20 +38,20 @@ begin
 ;=================================================;
 ; Read the variables we need
 ;=================================================;
-  th  = a->THM(1:kmax,1:jmax,1:imax)   ; theta
+  th  = a->THT(1:kmax,1:jmax,1:imax)   ; theta
   th@long_name="Potential Temperature"
   th@units = "K"
 
-  qv  = a->RVM(1:kmax,1:jmax,1:imax)   ; Qv
+  qv  = a->RVT(1:kmax,1:jmax,1:imax)   ; Qv
   qv = qv*1000.
   qv@long_name="Water vapor mixing ratio"
   qv@units = "g/kg"
 
-  um   = a->UM(1:kmax,1:jmax,1:imax+1)        ; u
+  um   = a->UT(1:kmax,1:jmax,1:imax+1)        ; u
   um@long_name="U"
   um@units="m/s"
 
-  vm   = a->VM(1:kmax,1:jmax+1,1:imax)        ; v
+  vm   = a->VT(1:kmax,1:jmax+1,1:imax)        ; v
   vm@long_name="V"
   vm@units="m/s"
 
