@@ -1,43 +1,32 @@
-!-------------------------------------------------------------------------------
-!     ##################
-      MODULE MODD_TOPODYN
-!     ##################
+MODULE MODD_BUDGET_COUPL_ROUT
+END MODULE MODD_BUDGET_COUPL_ROUT
+!     ######################
+!     ######################
+!     ######################      
+MODULE MODD_COUPLING_TOPD
+END MODULE MODD_COUPLING_TOPD 
+!     ######################
+!     ######################
+!     ######################        
+MODULE MODD_DUMMY_EXP_PROFILE
 !
-!!****  *MODD_TOPODYN - declaration of variables used by Topodyn
-!!
-!!    PURPOSE
-!!    -------
+END MODULE MODD_DUMMY_EXP_PROFILE
+!     ######################
+!     ######################
+!     ######################
+MODULE MODD_TOPD_PAR
 !
-!!
-!!**  IMPLICIT ARGUMENTS
-!!    ------------------
-!!      None 
-!!
-!!    REFERENCE
-!!    ---------
-!!
-!!    AUTHOR
-!!    ------
-!!     F. Habets and K. Chancibault
-!!
-!!    MODIFICATIONS
-!!    -------------
-!!      Original       29/09/03
-!!      BV: modifications  2006: division in two part (some variables are
-!                            now in modd_coupling_topo_n    
-!!      BV: modifications  04/2007: addition of XTOPD_STEP and NNB_TOPD_STEP
-!
-!*       0.   DECLARATIONS
-!             ------------
-!
+REAL,    PARAMETER :: XSTEPK = 0.05 
+INTEGER, PARAMETER :: NDIM = 20 
+INTEGER, PARAMETER :: JPCAT = 10    
+END MODULE MODD_TOPD_PAR
+
+!     ######################
+!     ######################
+!     ######################
+MODULE MODD_TOPODYN
 USE MODD_TOPD_PAR, ONLY : JPCAT
-!
-IMPLICIT NONE
-!
-!-------------------------------------------------------------------------------
-! Variables specific to Topodyn
-!
- CHARACTER(LEN=15), DIMENSION(JPCAT) :: CCAT     ! base name for topographic files
+CHARACTER(LEN=15), DIMENSION(JPCAT) :: CCAT     ! base name for topographic files
 INTEGER                             :: NNCAT    ! catchments number
 !
 INTEGER                             :: NNB_TOPD_STEP   ! number of TOPODYN time steps
@@ -57,7 +46,7 @@ INTEGER, ALLOCATABLE, DIMENSION(:,:):: NLINE    ! second index of the pixel in t
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: XTANB    ! pixels topographic slope (Tan(Beta))
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: XSLOP    ! pixels topographic slope/length flow
 
-!Variables à priori inutiles
+!Variables Ã  priori inutiles
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: XDAREA   ! drainage area (aire drainee)
 
 ! Variables defining the catchments
@@ -110,8 +99,38 @@ REAL, ALLOCATABLE, DIMENSION(:)   :: XRI,XRI_PREV! recharge on ISBA grid
 REAL, ALLOCATABLE, DIMENSION(:)   :: XSRFULL! reservoir of interception for
 !TOPODYN only
 REAL, ALLOCATABLE, DIMENSION(:,:) :: XDEFT! pixel deficit
-!
-!-------------------------------------------------------------------------------------
-!
+
 END MODULE MODD_TOPODYN
+!     ######################
+!     ######################
+!     ######################
+SUBROUTINE INIT_SURF_TOPD(HPROGRAM,KI)
+CHARACTER(LEN=*),  INTENT(IN)     :: HPROGRAM      !
+INTEGER,           INTENT(IN)     :: KI            ! grid dimension
+END SUBROUTINE INIT_SURF_TOPD
+
+      SUBROUTINE ISBA_TO_TOPD(PVARI,PVART)
+REAL, DIMENSION(:), INTENT(IN)      :: PVARI   ! variable from ISBA grid
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PVART   ! variable for TOPODYN grid
+END SUBROUTINE ISBA_TO_TOPD
+!     ######################
+!     ######################
+!     ######################
+SUBROUTINE COUPLING_SURF_TOPD (HPROGRAM,KI)
+ CHARACTER(LEN=6), INTENT(IN)         :: HPROGRAM ! program calling surf. schemes
+INTEGER,          INTENT(IN)         :: KI       ! Surfex grid dimension
+END SUBROUTINE COUPLING_SURF_TOPD
+!     ######################
+!     ######################
+!     ######################
+SUBROUTINE PGD_TOPD(HPROGRAM)
+ CHARACTER(LEN=*),  INTENT(IN)     :: HPROGRAM    
+END SUBROUTINE PGD_TOPD
+!     ######################
+!     ######################
+!     ######################
+SUBROUTINE READ_NAMELISTS_TOPD(HPROGRAM)
+ CHARACTER(LEN=*),  INTENT(IN)     :: HPROGRAM    
+END SUBROUTINE READ_NAMELISTS_TOPD
+
 
