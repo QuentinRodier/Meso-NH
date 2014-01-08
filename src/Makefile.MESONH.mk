@@ -130,11 +130,11 @@ endif
 ##########################################################
 #           Source RTTOV                                 #
 ##########################################################
+ifdef MNH_RTTOV
 DIR_RTTOV      +=  LIB/RTTOV/src
 #CPPFLAGS_RTTOV =
 INC_RTTOV      = -I$(B)LIB/RTTOV/src
 #
-ifdef DIR_RTTOV
 DIR_MASTER  += $(DIR_RTTOV)
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 INC         += $(INC_RTTOV)

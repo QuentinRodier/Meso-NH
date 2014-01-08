@@ -86,6 +86,7 @@ SUBROUTINE CALL_RTTOV(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
 !!*       0.    DECLARATIONS
 !!              ------------
 !!
+#ifdef MNH_RTTOV
 USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
@@ -488,6 +489,7 @@ END INTERFACE
 !!! #include "rttov_errorhandling.interface"
 !!! #include "rttov_dealloc_coef.interface"
 !!! #include "rttov_errorreport.interface"
+#endif
 !!!
 !!!*       0.1   DECLARATIONS OF DUMMY ARGUMENTS :
 !!!
@@ -520,6 +522,8 @@ LOGICAL, INTENT(IN)                  :: OUSERI ! logical switch to compute both
 INTEGER, DIMENSION(:,:), INTENT(IN) :: KRTTOVINFO ! platform, satelit, sensor,
                                                   ! and selection calculations
 CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+!
+#ifdef MNH_RTTOV
 !!!
 !!!*       0.2   DECLARATIONS OF LOCAL VARIABLES
 !!!
@@ -1767,5 +1771,8 @@ DO JSAT=1,IJSAT ! loop over sensors
 END DO
 DEALLOCATE(ZULAT,ZULON,ZANGS,IMSURF)
 DEALLOCATE(ZAV,ZSAV,ZSSV,ZCV,ZAP,ZAP_HL)
+#else
+PRINT *, "RTTOV LIBRARY NOT AVAILABLE = ###CALL_RTTOV####"
+#endif
 !
 END SUBROUTINE CALL_RTTOV
