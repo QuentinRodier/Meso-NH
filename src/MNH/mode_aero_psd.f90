@@ -3,19 +3,6 @@
 !ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !ORILAM_LIC for details.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$ $Log$
-! $Source$ $Revision$ $Date$ Revision 1.1.2.1.2.1.2.2  2012/10/16 13:29:03  tang
-! $Source$ $Revision$ $Date$ 16/10/2012 : optimisation EDKF
-! $Source$ $Revision$ $Date$
-! $Source$ $Revision$ $Date$ Revision 1.1.2.1.2.1.2.1  2011/12/05 14:38:06  tang
-! $Source$ $Revision$ $Date$ Gaelle 2011/12/05 : correction diagnostique des concentration en ug/m-3
-! $Source$ $Revision$ $Date$
-! $Source$ $Revision$ $Date$ Revision 1.1  2006/03/13 08:48:46  mallet
-! $Source$ $Revision$ $Date$ Initial revision
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
