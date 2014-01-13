@@ -1,3 +1,7 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
       SUBROUTINE ICE_SOILFR(HSNOW_ISBA, HSOILFRZ, PTSTEP, PKSFC_IVEG, PCG, PCT, &
                             PPSNG, PFFG, PTAUICE, PDWGI1, PDWGI2, PWSATZ,       &
                             PMPOTSATZ, PBCOEFZ, PD_G, PTG, PWGI, PWG            )   

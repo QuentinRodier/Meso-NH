@@ -1,3 +1,7 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
 SUBROUTINE DX_AIR_COOLING_COIL_CV(PT_CANYON, PQ_CANYON, PPS, PRHOA,    &
                              PT_IN, PQ_IN, PCOP_RAT, PCAP_SYS_RAT,     &
                              PT_ADP, PF_WATER_COND,                    &

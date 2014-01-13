@@ -1,3 +1,7 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
 !     #########
     SUBROUTINE GREENROOF(HIMPLICIT_WIND, TPTIME, PTSUN, PPEW_A_COEF, PPEW_B_COEF,    &
                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                  &

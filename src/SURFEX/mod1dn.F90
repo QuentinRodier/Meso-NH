@@ -1,3 +1,7 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
 !     #########
     SUBROUTINE MOD1D_n(HPROGRAM,PTIME,PEMIS,PDIR_ALB,PSCA_ALB,PLW,PSCA_SW,&
                        PDIR_SW, PSFTH,PSFTQ,PSFU,PSFV,PRAIN,PSST )           

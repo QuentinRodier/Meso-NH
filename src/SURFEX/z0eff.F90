@@ -1,3 +1,7 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
 !     #########
     SUBROUTINE Z0EFF(HROUGH, PALFA, PZREF, PUREF, PZ0, PZ0REL, PPSN,          &
                       PZ0EFFIP,PZ0EFFIM,PZ0EFFJP,PZ0EFFJM,PFF,PZ0_FLOOD,        &
