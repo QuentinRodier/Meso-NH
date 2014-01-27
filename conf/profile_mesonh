@@ -1,4 +1,8 @@
 #!/bin/ksh
+#MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+#MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+#MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+#MNH_LIC for details. version 1.
 ##########################################################
 #                                                        #
 # ENVIRONEMMENT CONFIGURATION FOR MESONH                 #
@@ -27,11 +31,11 @@ fi
 # SRC_MESONH : default path to mesonh sources 
 #              MUST BE SET TO YOUR OWN MESONH PATH
 #
-export SRC_MESONH="/home/escj/DEV64/MNH-V4-10-1"   
+export SRC_MESONH="/home/escj/DEV64/MNH-V5-1-0"   
 #
-#  Version MESONH PACKAGE :: PACK-MNH-V4-10-1 : 11/12/2013
+#  Version MESONH PACKAGE :: PACK-MNH-V5-1-0 : 11/12/2013
 #
-export VERSION_XYZ=MNH-V4-10-1
+export VERSION_XYZ=MNH-V5-1-0
 #
 #  Target Architecture/compiler Machine <=> Rules.*.mk files
 #
@@ -61,7 +65,7 @@ export MNH_NCWRIT=
 #
 # 'Scandollar' Post Processing default variables
 #
-export CONF_DOLLAR=/home/escj/DEV64/MNH-V4-10-1/conf/post/confdollar_aeropc_default
+export CONF_DOLLAR=/home/escj/DEV64/MNH-V5-1-0/conf/post/confdollar_aeropc_default
 #
 # Version of NETCDF
 #
