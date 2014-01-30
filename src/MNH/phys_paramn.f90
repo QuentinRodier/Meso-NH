@@ -216,6 +216,9 @@ END MODULE MODI_PHYS_PARAM_n
 !!                                aerosols and ozone climatology at each call to
 !!                                phys_param otherwise it is constant to monthly average
 !!                    03/2013  (C.Lac) FIT temporal scheme
+!!                    01/2014 (C.Lac) correction for the nesting of 2D surface
+!!                           fields if the number of the son model does not
+!!                           follow the number of the dad model
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -507,10 +510,13 @@ END DO
    END IF
  ENDIF
 !
+IKIDM=0
 DO JKID = IMI+1,NMODEL  ! min value of the possible kids
  IF (IMI == NDAD(JKID) .AND. XWAY(JKID) == 2. .AND. CPROGRAM=='MESONH' &
   .AND. (CCONF == 'RESTA' .OR. (CCONF == 'START' .AND. KTCOUNT /= 1))) THEN
-  IKIDM = JKID-IMI
+! BUG if number of the son does not follow the number of the dad
+! IKIDM = JKID-IMI
+  IKIDM = IKIDM + 1
    IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR. &
           (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
      ZSAVE_INPRC(:,:,IKIDM) = XINPRC(:,:)
@@ -1062,13 +1068,16 @@ IF (CSURF=='EXTE') THEN
   ALLOCATE(ZEMIS  (IIU,IJU))
   ALLOCATE(ZTSRAD (IIU,IJU))
   !  
+  IKIDM=0
   DO JKID = IMI+1,NMODEL  ! min value of the possible kids
     IF (IMI == NDAD(JKID) .AND. XWAY(JKID) == 2. .AND. &
      CPROGRAM=='MESONH' .AND. &
      (CCONF == 'RESTA' .OR. (CCONF == 'START' .AND. KTCOUNT /= 1))) THEN
     !  where kids exist, use the two-way output fields (i.e. OMASKkids true)
     !  rather than the farther calculations in radiation and convection schemes
-     IKIDM = JKID-IMI
+! BUG if number of the son does not follow the number of the dad
+!    IKIDM = JKID-IMI
+      IKIDM = IKIDM + 1
       IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
           (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
         WHERE (OMASKkids(:,:) )
