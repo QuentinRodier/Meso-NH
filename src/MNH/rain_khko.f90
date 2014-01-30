@@ -509,8 +509,6 @@ DO JN = 1 , KSPLITR
 !
   ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
 !
-  IF( ISEDIM >= 1 ) THEN
-!
     IF( JN==1 ) THEN
       IF( OSEDC ) THEN
         PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP
@@ -522,6 +520,11 @@ DO JN = 1 , KSPLITR
         ZW(:,:,JK) = ZTSPLITR/(PZZ(:,:,JK+1) -PZZ(:,:,JK))
       END DO
     END IF
+!
+  ZWSEDR(:,:,:) = 0.0
+  ZWSEDC(:,:,:) = 0.0
+!
+  IF( ISEDIM >= 1 ) THEN
 !
     ALLOCATE(ZRHODREF(ISEDIM))
     DO JL = 1,ISEDIM
@@ -543,8 +546,8 @@ DO JN = 1 , KSPLITR
       ALLOCATE(ZCCS(ISEDIM))
       ALLOCATE(ZLBDC(ISEDIM))
       DO JL = 1,ISEDIM
-        ZRCS(JL) = PRCT(I1(JL),I2(JL),I3(JL))
-        ZCCS(JL) = PCCT(I1(JL),I2(JL),I3(JL))
+        ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
+        ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
         ZLBDC(JL) = ZWLBDC(I1(JL),I2(JL),I3(JL))
       END DO
       WHERE( ZRCS(:)>XRTMIN(2) )
@@ -554,26 +557,31 @@ DO JN = 1 , KSPLITR
       END WHERE
       ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
       ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-      ZWSEDR(:,:,:) = MAX(MIN(ZW(:,:,:)*ZWSEDR(:,:,:)/PRHODREF(:,:,:), &
-                PRCS(:,:,:)),0.0) 
-      ZWSEDC(:,:,:) = MAX(MIN(ZW(:,:,:)*ZWSEDC(:,:,:),PCCS(:,:,:)),0.0)
-!      
-!*       2.3     update the rain tendency
-!
-      DO JK = IKB , IKE
-        PRCS(:,:,JK) = PRCS(:,:,JK)+ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK)
-        PCCS(:,:,JK) = PCCS(:,:,JK)+ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK)
-      END DO
-      IF( JN.EQ.1 ) THEN
-        PINPRC(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
-      END IF
       DEALLOCATE(ZRCS)
       DEALLOCATE(ZCCS)
       DEALLOCATE(ZLBDC)
     END IF
+!             
+   END IF
+!        
+   IF( OSEDC ) THEN
+     DO JK = IKB , IKE
+        PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*    &
+                      (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+        PCCS(:,:,JK) = PCCS(:,:,JK) + ZW(:,:,JK)*    &
+                      (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
+     END DO
+!             
+     IF( JN.EQ.1 ) THEN
+        PINPRC(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
+     END IF
+   END IF    
 !
 !*       2.22   for drizzle
 !
+  ZWSEDR(:,:,:) = 0.0
+  ZWSEDC(:,:,:) = 0.0
+  IF( ISEDIM >= 1 ) THEN
     ZZW1(:) = 0.0
     ZZW2(:) = 0.0
 !
@@ -583,8 +591,8 @@ DO JN = 1 , KSPLITR
       ALLOCATE(ZZVRR(ISEDIM))
       ALLOCATE(ZZVCR(ISEDIM))
       DO JL = 1,ISEDIM
-        ZRRS(JL) = PRRT(I1(JL),I2(JL),I3(JL))
-        ZCRS(JL) = PCRT(I1(JL),I2(JL),I3(JL))
+        ZRRS(JL) = PRRS(I1(JL),I2(JL),I3(JL))
+        ZCRS(JL) = PCRS(I1(JL),I2(JL),I3(JL))
         ZZVRR(JL) = ZVRR(I1(JL),I2(JL),I3(JL))
         ZZVCR(JL) = ZVCR(I1(JL),I2(JL),I3(JL))
       END DO
@@ -595,45 +603,43 @@ DO JN = 1 , KSPLITR
       ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
       ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
 !
-      ZWSEDR(:,:,:) = MAX(MIN(ZW(:,:,:)*ZWSEDR(:,:,:)/PRHODREF(:,:,:),&
-                      PRRS(:,:,:)),0.0) 
-      ZWSEDC(:,:,:)= MAX(MIN(ZW(:,:,:)*ZWSEDC(:,:,:),PCRS(:,:,:)),0.0) 
-!      
-!*       2.3     update the rain tendency
-!
-      DO JK = IKB , IKE
-        PRRS(:,:,JK) = PRRS(:,:,JK) +ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK)
-        PCRS(:,:,JK) = PCRS(:,:,JK) +ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK)
-      END DO
-!
       DEALLOCATE(ZRRS)
       DEALLOCATE(ZCRS)
       DEALLOCATE(ZZVRR)
       DEALLOCATE(ZZVCR)
 !
-    ELSE
-      ZWSEDR(:,:,IKB) = 0.0
-    END IF
-!
-!*       2.4     compute the explicit accumulated precipitations
-!         
-    IF( JN.EQ.1 ) THEN
-      PINPRR(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
-      PINPRR3D(:,:,:) = ZWSEDR(:,:,:)/XRHOLW                           ! in m/s
     END IF
 !
     DEALLOCATE(ZRHODREF)
     DEALLOCATE(ZZW1)
     DEALLOCATE(ZZW2)
     DEALLOCATE(ZZW3)
-    IF( JN==KSPLITR ) THEN
+!
+  END IF
+!
+!*       2.3     update the rain tendency
+!
+  DO JK = IKB , IKE
+        PRRS(:,:,JK) = PRRS(:,:,JK) + ZW(:,:,JK)* &
+                      (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+        PCRS(:,:,JK) = PCRS(:,:,JK) + ZW(:,:,JK)* &
+                      (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
+  END DO
+!
+!*       2.4     compute the explicit accumulated precipitations
+!         
+  IF( JN.EQ.1 ) THEN
+      PINPRR(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
+      PINPRR3D(:,:,:) = ZWSEDR(:,:,:)/XRHOLW                           ! in m/s
+  END IF
+!
+  IF( JN==KSPLITR ) THEN
       IF( OSEDC ) THEN
         PRCS(:,:,:) = PRCS(:,:,:) / PTSTEP
         PCCS(:,:,:) = PCCS(:,:,:) / PTSTEP
       END IF
       PRRS(:,:,:) = PRRS(:,:,:) / PTSTEP
       PCRS(:,:,:) = PCRS(:,:,:) / PTSTEP
-    END IF
   END IF
 END DO
 !
