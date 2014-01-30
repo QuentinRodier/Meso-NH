@@ -304,7 +304,7 @@ ELSE
                     KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,1,       &
                     LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,PRECIP_MODEL(1)%XACPRH,PACPRH)
      PINPRH(:,:)=MAX(0.,PINPRH(:,:))
-     PACPRR(:,:)=MAX(0.,PACPRH(:,:))
+     PACPRH(:,:)=MAX(0.,PACPRH(:,:))
     END IF
 !
   END IF
