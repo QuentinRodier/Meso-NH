@@ -695,6 +695,7 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
     WRITE(NLUOUT,FMT=*) ' '
     WRITE(NLUOUT,FMT=*) ' CINIFILEPGD HAS BEEN SET TO  ',CPGD_FILE        
     CINIFILEPGD=CPGD_FILE
+  ENDIF
 END IF
 !
 NIMAX_ll=NIMAX   !! _ll variables are global variables
