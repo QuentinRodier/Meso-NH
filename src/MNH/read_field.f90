@@ -1171,10 +1171,10 @@ ENDIF
 !
 IF (LUV_FLX) THEN
    IF ( CCONF /= 'START' .OR. CPROGRAM=='SPAWN ' ) THEN 
-       WRITE(ILUOUT,FMT=*) 'read_field.f90 : UV Eddy fluxes reading in the initial file'
        YRECFM='VU_FLX'
-       YDIR='XY'
-       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVU_FLUX_M,IGRID,ILENCH,YCOMMENT,IRESP)
+       YDIR='--'
+       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVU_FLUX_M,IGRID, &
+                   ILENCH,YCOMMENT,IRESP)
    ELSE IF (CCONF == 'START') THEN
        PVU_FLUX_M(:,:,:)=0.
    END IF
@@ -1182,12 +1182,14 @@ ENDIF
 !
 IF (LTH_FLX) THEN
    IF ( CCONF /= 'START' .OR. CPROGRAM=='SPAWN ' ) THEN 
-       WRITE(ILUOUT,FMT=*) 'read_field.f90 : Eddy fluxes reading in the initial file'
        YRECFM='VT_FLX'
-       YDIR='XY'
-       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVTH_FLUX_M,IGRID,ILENCH,YCOMMENT,IRESP)
+       YDIR='--'
+       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVTH_FLUX_M,IGRID, &
+                   ILENCH,YCOMMENT,IRESP)
        YRECFM='WT_FLX'
-       YDIR='XY'
+       YDIR='--'
+       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PWTH_FLUX_M,IGRID, &
+                   ILENCH,YCOMMENT,IRESP)       
    ELSE IF (CCONF == 'START') THEN
        PWTH_FLUX_M(:,:,:)=0.
        PVTH_FLUX_M(:,:,:)=0.
