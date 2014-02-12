@@ -1,8 +1,8 @@
 #
 # Version of PACKAGE MESONH "stand-alone distribution"
-#              PACK-MNH-V4-10-1
-#              DATE : 12/12/2013
-#              VERSION : MESONH MASDEV4_10 + BUG-1  
+#              PACK-MNH-V5-1-0
+#              DATE : 12/02/2014
+#              VERSION : MESONH MASDEV5_1 + BUG-0  
 #
 #  MAP
 #
@@ -75,7 +75,7 @@
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V4-10-1"
+#    ---> select "PACK-MNH-V5-1-0"
 #
 # and then download the file "PACK-MNH-VX-Y-Z.tar.gz" by the link 
 #
@@ -93,7 +93,7 @@ tar xvfz PACK-MNH-VX-Y-Z.tar.gz
 # to the right one
 #
  
-mv MNH-VX-Y-Z MNH-V4-10-1
+mv MNH-VX-Y-Z MNH-V5-1-0
       
 #
 #  Process now to the chapter to configure the MesoNH 
@@ -119,7 +119,7 @@ mv MNH-VX-Y-Z MNH-V4-10-1
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V4-10-1"
+#    ---> select "PACK-MNH-V5-1-0"
 #
 #   download the file "anoncvs.key"
 #
@@ -194,19 +194,19 @@ export CVSROOT=:ext:mesonh_anoncvs_www:/home/cvsroot
 #   -------------------------------------
 #
 #   Now, from your "$HOME" directory for example 
-#   extract the version "PACK-MNH-V4-10-1"
+#   extract the version "PACK-MNH-V5-1-0"
 #   of the directory "MNH-VX-Y-Z" from the
 #   cvs repository : 
 
 cd ~
-cvs co -r PACK-MNH-V4-10-1 -d MNH-V4-10-1 MNH-VX-Y-Z
+cvs co -r PACK-MNH-V5-1-0 -d MNH-V5-1-0 MNH-VX-Y-Z
 
 #
 # WARNING : don't use a sub-directory with dot "." in the name
 #            ---> you could have some trouble when compiling mesonh
 #
-#  this will create in your "$HOME" a directory "MNH-V4-10-1" 
-#  which contains of the last revision named "PACK-MNH-V4-10-1" 
+#  this will create in your "$HOME" a directory "MNH-V5-1-0" 
+#  which contains of the last revision named "PACK-MNH-V5-1-0" 
 #  of the MESONH PACKAGE 
 #
 #  The advantage of this way of downloading 
@@ -216,21 +216,21 @@ cvs co -r PACK-MNH-V4-10-1 -d MNH-V4-10-1 MNH-VX-Y-Z
 #  to download entirely the full package
 #
 #  Suppose that a new version for example
-#  "PACK-MNH-V4-10-2" is announced ...
+#  "PACK-MNH-V5-1-1" is announced ...
 #
 #  To see the differences with your working copy
 #  do
 #
 
-cd ~/MNH-V4-10-1
-cvs diff -r PACK-MNH-V4-10-2
+cd ~/MNH-V5-1-0
+cvs diff -r PACK-MNH-V5-1-1
 
 #
 #  And to upgrade your working copy
 #
 
-cd ~/MNH-V4-10-1
-cvs update -r PACK-MNH-V4-10-2 -d -P
+cd ~/MNH-V5-1-0
+cvs update -r PACK-MNH-V5-1-1 -d -P
 
 #
 # At any time you could also check for "uptodate" 
@@ -245,7 +245,7 @@ cvs diff -r MNH410-BUG-branch
 # ( not yet official ) version by
 #
 
-cd ~/MNH-V4-10-1
+cd ~/MNH-V5-1-0
 cvs update -r MNH410-BUG-branch -d -P
 
 #
@@ -265,7 +265,7 @@ cvs update -r MNH410-BUG-branch -d -P
 #    use the "./configure" script like this 
 #
 
-cd ~/MNH-V4-10-1/src
+cd ~/MNH-V5-1-0/src
 ./configure
 . ../conf/profile_mesonh
 
@@ -310,7 +310,7 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 
 #    and then source/load the new generate file
 
-. ../conf/profile_mesonh.LXifort.MNH-V4-10-1.MPIAUTO.O2
+. ../conf/profile_mesonh.LXifort.MNH-V5-1-0.MPIAUTO.O2
 
 #
 #  REM: 
@@ -335,7 +335,7 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 # go to the directory  "src"
 #
 
-cd  ~/MNH-V4-10-1/src
+cd  ~/MNH-V5-1-0/src
 
 #
 # if you have not already configured your MESONH environment
@@ -563,8 +563,8 @@ make examples
 # 
 
 cd $WORKDIR
-cvs co -r PACK-MNH-V4-10-1 -d MNH-V4-10-1 MNH-VX-Y-Z
-cd MNH-V4-10-1/src
+cvs co -r PACK-MNH-V5-1-0 -d MNH-V5-1-0 MNH-VX-Y-Z
+cd MNH-V5-1-0/src
 
 ./configure
  
@@ -696,7 +696,7 @@ scandollar
 
 ## OUTPUT ::
 
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V4-10-1/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-0/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -718,7 +718,7 @@ scandollar 0*
 
 ## OUTPUT ::
 >#
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V4-10-1/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-0/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -792,22 +792,22 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use this "profile_mesonh" :
 
-.  /home/rech/mnh/rmnh007/DEV/MNH-V4-10-1/conf/profile_mesonh-SX8-MNH-V4-10-1-MPIAUTO-O4
+.  /home/rech/mnh/rmnh007/DEV/MNH-V5-1-0/conf/profile_mesonh-SX8-MNH-V5-1-0-MPIAUTO-O4
 
 # And the examples are here ( link to my $WORKDIR in actually )  
 
-/home/rech/mnh/rmnh007/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+/home/rech/mnh/rmnh007/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  On vargas
 #  ---------
 #  use this "profile_mesonh" :
 
-. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V4-10-1/conf/profile_mesonh-AIX64-MNH-V4-10-1-MPIAUTO-O2
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-0/conf/profile_mesonh-AIX64-MNH-V5-1-0-MPIAUTO-O2
 
 # and examples here :
 
-/workgpfs/rech/mnh/rmnh007/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
 
 # 
 #  - At CINES on JADE :
@@ -815,11 +815,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use 
 
-. /work/escobar/DEV/MNH-V4-10-1/conf/profile_mesonh-LXifort-MNH-V4-10-1-MPIICE-O2
+. /work/escobar/DEV/MNH-V5-1-0/conf/profile_mesonh-LXifort-MNH-V5-1-0-MPIICE-O2
 
 # and the exemples
 
-/work/escobar/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+/work/escobar/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  - At ECMWF on cxa :
@@ -827,11 +827,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use
 
-. /c1a/ms_perm/au5/MNH-V4-10-1/conf/profile_mesonh-AIX64-MNH-V4-10-1-MPIAUTO-O2
+. /c1a/ms_perm/au5/MNH-V5-1-0/conf/profile_mesonh-AIX64-MNH-V5-1-0-MPIAUTO-O2
 
 # and the examples
 
-/c1a/ms_perm/au5/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+/c1a/ms_perm/au5/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
 
 
 #
