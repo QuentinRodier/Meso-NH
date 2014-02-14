@@ -11,8 +11,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --share
-#SBATCH -o MasterI.eo%j   #
-#SBATCH -e MasterI.eo%j   #
+#SBATCH -o VUserII.eo%j   #
+#SBATCH -e VUserII.eo%j   #
 #SBATCH --export=NONE
 
 export VER_USER=                ########## Your own USER Directory
