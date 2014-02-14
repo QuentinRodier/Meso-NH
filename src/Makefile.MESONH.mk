@@ -175,6 +175,18 @@ VPATH               += $(DIR_NEWLFI)
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_NEWLFI)
 endif
 ##########################################################
+#           Source FOREFIRE                              #
+##########################################################
+ifdef MNH_FOREFIRE
+DIR_FOREFIRE          += LIB/FOREFIRE
+INC_FOREFIRE           = -I$(B)$(DIR_FOREFIRE)
+DIR_MASTER            += $(DIR_FOREFIRE)
+OBJS_LISTE_MASTER     += C_ForeFire_Interface.o
+INC                   += $(INC_FOREFIRE)
+VPATH                 += $(DIR_FOREFIRE)
+CPPFLAGS              += -DMNH_FOREFIRE
+endif
+##########################################################
 #           Source MPIVIDE                               #
 ##########################################################
 #

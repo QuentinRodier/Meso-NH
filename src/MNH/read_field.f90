@@ -223,7 +223,8 @@ END MODULE MODI_READ_FIELD
 !!          M.Tomasini, 
 !!          P. Peyrille   06/12   2D west african monsoon : add reading of ADV forcing and addy fluxes 
 !!          C.Lac       03/13     add prognostic supersaturation for C2R2/KHKO
-!-------------------------------------------------------------------------------
+!!          Bosseur & Filippi 07/13 Adds Forefire
+!!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -238,6 +239,9 @@ USE MODD_NSV
 USE MODD_DUST
 USE MODD_SALT
 USE MODD_PASPOL
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE
+#endif
 USE MODD_CH_AEROSOL
 USE MODD_CH_MNHC_n, ONLY : XCH_PHINIT
 !
@@ -782,6 +786,24 @@ DO JSV = NSV_PPBEG,NSV_PPEND
     PATC(:,:,:,JSV-NSV_PPBEG+1) = 0.
   END SELECT
 END DO
+!
+#ifdef MNH_FOREFIRE
+DO JSV = NSV_FFBEG,NSV_FFEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    IF (IRESP == 0) THEN
+       PSVT(:,:,:,JSV) = Z3D(:,:,:)
+    ELSE
+       PSVT(:,:,:,JSV) = 0.
+    END IF
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+#endif
 !
 DO JSV = NSV_CSBEG,NSV_CSEND
   SELECT CASE(HGETSVT(JSV))

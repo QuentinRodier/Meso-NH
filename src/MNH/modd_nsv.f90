@@ -24,6 +24,7 @@
 !!       M. Leriche    12/04/07 add aqueous chemistry
 !!       M. Leriche    08/07/10 add ice phase chemistry
 !!       C.Lac         07/11    add conditional sampling
+!!       Pialat/Tulet  15/02/12 add ForeFire
 !!
 !-------------------------------------------------------------------------------
 !
@@ -112,7 +113,12 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_PPEND_A = 0 ! NSV_PPBEG_A...NSV_PPEND_A
 INTEGER,DIMENSION(JPMODELMAX)::NSV_CS_A = 0    ! number of condit.samplings
 INTEGER,DIMENSION(JPMODELMAX)::NSV_CSBEG_A = 0 ! with indices in the range :
 INTEGER,DIMENSION(JPMODELMAX)::NSV_CSEND_A = 0 ! NSV_CSBEG_A...NSV_CSEND_A
-
+!
+#ifdef MNH_FOREFIRE
+INTEGER,DIMENSION(JPMODELMAX)::NSV_FF_A = 0    ! number of ForeFire scalar variables
+INTEGER,DIMENSION(JPMODELMAX)::NSV_FFBEG_A = 0 ! with indices in the range :
+INTEGER,DIMENSION(JPMODELMAX)::NSV_FFEND_A = 0 ! NSV_FFBEG_A...NSV_FFEND_A
+#endif
 !
 !###############################################################################
 !
@@ -190,5 +196,11 @@ INTEGER :: NSV_PPEND = 0 ! NSV_PPBEG...NSV_PPEND
 INTEGER :: NSV_CS    = 0 ! number of condit.samplings         
 INTEGER :: NSV_CSBEG = 0 ! with indices in the range :
 INTEGER :: NSV_CSEND = 0 ! NSV_CSBEG...NSV_CSEND
+!
+#ifdef MNH_FOREFIRE
+INTEGER :: NSV_FF    = 0 ! number of ForeFire scalar variables
+INTEGER :: NSV_FFBEG = 0 ! with indices in the range :
+INTEGER :: NSV_FFEND = 0 ! NSV_FFBEG...NSV_FFEND
+#endif
 
 END MODULE MODD_NSV

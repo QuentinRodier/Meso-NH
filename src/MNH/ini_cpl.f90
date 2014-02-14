@@ -212,6 +212,7 @@ END MODULE MODI_INI_CPL
 !!      Modification   (Masson)  01/2004 surface externalization, removes 
 !!                                       SST forcing
 !!      Modification             05/2006  Remove KEPS
+!!                     (Escobar) 2/2014 add Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -234,6 +235,11 @@ USE MODI_TEMPORAL_DIST
 USE MODE_FMREAD
 USE MODI_INI_LS
 USE MODI_INI_LB
+#ifdef MNH_FOREFIRE
+USE MODD_PASPOL
+USE MODD_FOREFIRE
+USE MODD_FOREFIRE_n
+#endif
 !
 IMPLICIT NONE
 !
@@ -505,6 +511,10 @@ CALL INI_LS(CCPLFILE(NCPL_CUR),HLUOUT,HGETRVM,GLSOURCE,PLSUS,PLSVS,PLSWS,PLSTHS,
 !IF ( LUSECHEM .AND. (.NOT. OCH_INIT_FIELD) )  &
 !   YGETSVM(NSV_CHEMBEG: NSV_CHEMEND) = 'INIT'
 !IF (HCONF == 'RESTA')  THEN
+#ifdef MNH_FOREFIRE
+!   IF (LPASPOL) YGETSVM(NSV_PPBEG: NSV_PPEND) = 'INIT'
+!   IF (LFOREFIRE) YGETSVM(NSV_FFBEG: NSV_FFEND) = 'INIT'
+#endif
 !   IF (NSV_USER /= 0) YGETSVM(1/NSV_USER) = 'INIT'
 !   IF (NSV_C2R2 /= 0) YGETSVM(NSV_C2R2BEG: NSV_C2R2END) = 'INIT'
 !   IF (NSV_C1R3 /= 0) YGETSVM(NSV_C1R3BEG: NSV_C1R3END) = 'INIT'

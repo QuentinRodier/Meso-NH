@@ -116,6 +116,7 @@ END MODULE MODI_TWO_WAY_n
 !!      M. Leriche   16/07/10  Add ice phase chemical species
 !!      V.Masson, C.Lac 08/10  Corrections in relaxation
 !!      J. Escobar   27/06/2011 correction for gridnesting with different SHAPE
+!!      Bosseur & Filippi 07/2013 Adds Forefire
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -604,9 +605,29 @@ DO JVAR=1,NSV_PP_A(KMI)
            &XRHODJ(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:)*&
            &XSVT(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:,JVAR-1+NSV_PPBEG_A(IMI))
     END DO
+  END DO 
+END DO
+END IF
+#ifdef MNH_FOREFIRE
+! ForeFire variables
+IF (NSV_FF_A(IMI) > 0) THEN
+DO JVAR=1,NSV_FF_A(KMI)
+  ZTSVM(:,:,:,JVAR-1+NSV_FFBEG_A(KMI)) = 0.
+  DO JX=1,IDXRATIO
+    DO JY=1,IDYRATIO
+      II1 = IIB+JX-1
+      II2 = IIE+JX-IDXRATIO
+      IJ1 = IJB+JY-1
+      IJ2 = IJE+JY-IDYRATIO
+      ZTSVM(3:IDIMX-2,3:IDIMY-2,:,JVAR-1+NSV_FFBEG_A(KMI)) = &
+           &ZTSVM(3:IDIMX-2,3:IDIMY-2,:,JVAR-1+NSV_FFBEG_A(KMI))+&
+           &XRHODJ(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:)*&
+           &XSVT(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:,JVAR-1+NSV_FFBEG_A(IMI))
+    END DO
   END DO
 END DO
 END IF
+#endif
 ! Conditional sampling variables
 IF (NSV_CS_A(IMI) > 0) THEN
 DO JVAR=1,NSV_CS_A(KMI)
@@ -1208,6 +1229,15 @@ DO JVAR=NSV_PPBEG_A(KMI),NSV_PPEND_A(KMI)
      -  ZK2W * PRHODJ(IXOR:IXEND,IYOR:IYEND,:) * (PSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
                  -ZSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR)/ZRHODJ(IXOR:IXEND,IYOR:IYEND,:) )
 ENDDO
+#ifdef MNH_FOREFIRE
+
+! ForeFire variables
+DO JVAR=NSV_FFBEG_A(KMI),NSV_FFEND_A(KMI)
+  PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) = PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
+     -  ZK2W * PRHODJ(IXOR:IXEND,IYOR:IYEND,:) * (PSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
+                 -ZSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR)/ZRHODJ(IXOR:IXEND,IYOR:IYEND,:) )
+ENDDO
+#endif
 ! Conditional sampling variables
 DO JVAR=NSV_CSBEG_A(KMI),NSV_CSEND_A(KMI)
   PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) = PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) &

@@ -103,6 +103,7 @@ END MODULE MODI_GROUND_PARAM_n
 !      (P.Tulet )             01/11/03  externalisation of the surface chemistry!
 !!     (D.Gazen)              01/12/03  change emissions handling for surf. externalization
 !!     (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
+!      (J.escobar)            2/2014 add Forefire coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -112,7 +113,7 @@ USE MODD_CST,        ONLY : XP00, XCPD, XRD, XRV,XRHOLW, XDAY, XPI, XLVTT, XMD, 
 USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
 USE MODD_DYN_n,      ONLY : XTSTEP
 USE MODD_CH_MNHC_n,  ONLY : LCH_SURFACE_FLUX
-USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT
+USE MODD_FIELD_n,    ONLY : XUT, XVT, XWT, XTHT, XRT, XPABST, XSVT, XTKET
 USE MODD_METRICS_n,  ONLY : XDXX, XDYY, XDZZ
 USE MODD_DIM_n,      ONLY : NKMAX
 USE MODD_GRID_n,     ONLY : XLON, XZZ, XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, &
@@ -147,6 +148,12 @@ USE MODI_DIAG_SURF_ATM_n
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+#ifdef MNH_FOREFIRE
+!** MODULES FOR FOREFIRE **!
+USE MODD_FOREFIRE
+USE MODD_FOREFIRE_n
+USE MODI_COUPLING_FOREFIRE_n
+#endif
 !
 USE MODD_TIME_n
 USE MODD_TIME
@@ -517,6 +524,31 @@ END IF
 ! Transform 1D output fields into 2D:
 !
 CALL UNSHAPE_SURF(IDIM1,IDIM2)
+#ifdef MNH_FOREFIRE
+!------------------------!
+! COUPLING WITH FOREFIRE !
+!------------------------!
+	
+IF ( LFOREFIRE ) THEN
+	CALL FOREFIRE_DUMP_FIELDS_n(XUT, XVT, XWT, XSVT&
+	           , XTHT, XRT(:,:,:,1), XPABST, XTKET&
+	           , IDIM1+2, IDIM2+2, NKMAX+2)
+END IF
+
+IF ( FFCOUPLING ) THEN
+
+	CALL SEND_GROUND_WIND_n(XUT, XVT, IKB, IINFO_ll)
+	
+	CALL FOREFIRE_RECEIVE_PARAL_n()
+   
+   CALL COUPLING_FOREFIRE_n(XTSTEP, ZSFTH, ZSFTQ, ZSFTS)
+	
+	CALL FOREFIRE_SEND_PARAL_n(IINFO_ll)
+   
+END IF
+
+FF_TIME = FF_TIME + XTSTEP
+#endif
 !
 ! Friction of components along slope axes (U: largest local slope axis, V: zero slope axis)
 !

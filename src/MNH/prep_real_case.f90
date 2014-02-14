@@ -372,6 +372,7 @@
 !!                  Aou   09, 2005 (D.Barbary) add CDADATMFILE CDADBOGFILE
 !!                   May   2006    Remove KEPS
 !!                  Mar   2012    Add NAM_NCOUT for netcdf output
+!!                  July  2013     (Bosseur & Filippi) Adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -769,6 +770,9 @@ LHORELAX_SVDST  = (NSV_DST > 0)
 LHORELAX_SVSLT  = (NSV_SLT > 0)
 LHORELAX_SVAER  = (NSV_AER > 0)
 LHORELAX_SVPP   = (NSV_PP > 0)
+#ifdef MNH_FOREFIRE
+LHORELAX_SVFF   = (NSV_FF > 0)
+#endif
 LHORELAX_SVCS   = (NSV_CS > 0)
 
 LHORELAX_SVLG   = .FALSE.

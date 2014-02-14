@@ -176,6 +176,7 @@ END MODULE MODI_LS_COUPLING
 !!                   22/09/98   (Ducrocq) //,  and introduce INI_LS and INI_LB
 !!                   01/2004    (Masson) removes SST forcing (surface externalization)
 !!                   05/2006    Remove KEPS
+!!                   2/2014     (escobar) add paspol for Forefire
 !! 
 !------------------------------------------------------------------------------
 !
@@ -187,6 +188,9 @@ USE MODD_CTURB
 USE MODD_DYN
 USE MODD_LUNIT_n
 USE MODD_NSV
+#ifdef MNH_FOREFIRE
+USE MODD_PASPOL
+#endif
 USE MODD_CH_MNHC_n
 !
 USE MODE_FMREAD
@@ -326,6 +330,9 @@ GLSOURCE=.TRUE.
 !IF ( LUSECHEM .AND. (.NOT. OCH_INIT_FIELD) ) &
 !    YGETSVM(NSV_CHEMBEG: NSV_CHEMEND) = 'INIT'
 !IF (HCONF == 'RESTA')  THEN
+#ifdef MNH_FOREFIRE
+!   IF (LPASPOL) YGETSVM(NSV_PPBEG: NSV_PPEND) = 'INIT'
+#endif
 !   IF (NSV_USER /= 0) YGETSVM(1/NSV_USER) = 'INIT'
 !   IF (NSV_C2R2 /= 0) YGETSVM(NSV_C2R2BEG: NSV_C2R2END) = 'INIT'
 !   IF (NSV_C1R3 /= 0) YGETSVM(NSV_C1R3BEG: NSV_C1R3END) = 'INIT'
@@ -338,6 +345,9 @@ GLSOURCE=.TRUE.
 !   IF (NSV_SLTDEP /= 0) YGETSVM(NSV_SLTDEPBEG: NSV_SLTDEPEND) = 'INIT'
 !   IF (NSV_PP   /= 0) YGETSVM(NSV_PPBEG: NSV_PPEND) = 'INIT'
 !   IF (NSV_CS   /= 0) YGETSVM(NSV_CSBEG: NSV_CSEND) = 'INIT'
+#ifdef MNH_FOREFIRE
+!   IF (NSV_FF   /= 0) YGETSVM(NSV_FFBEG: NSV_FFEND) = 'INIT'
+#endif
 !END IF
 !
 CALL INI_LB(CCPLFILE(NCPL_CUR),HLUOUT,GLSOURCE,KSV,                   &

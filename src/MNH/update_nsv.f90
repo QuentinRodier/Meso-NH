@@ -21,6 +21,7 @@ END MODULE MODI_UPDATE_NSV
 !!                   current model. It is intended to be called from 
 !!                   any MesoNH routine WITH or WITHOUT $n before using 
 !!                   the NSV_* variables.
+!!  Modify (Escobar ) 2/2014 : add Forefire var
 USE MODD_CONF, ONLY : NVERB
 USE MODD_NSV
 IMPLICIT NONE 
@@ -85,6 +86,11 @@ NSV_LGEND   = NSV_LGEND_A(KMI)
 NSV_PP      = NSV_PP_A(KMI)
 NSV_PPBEG   = NSV_PPBEG_A(KMI)
 NSV_PPEND   = NSV_PPEND_A(KMI)
+#ifdef MNH_FOREFIRE
+NSV_FF      = NSV_FF_A(KMI)
+NSV_FFBEG   = NSV_FFBEG_A(KMI)
+NSV_FFEND   = NSV_FFEND_A(KMI)
+#endif
 NSV_CS      = NSV_CS_A(KMI)
 NSV_CSBEG   = NSV_CSBEG_A(KMI)
 NSV_CSEND   = NSV_CSEND_A(KMI)

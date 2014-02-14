@@ -1167,6 +1167,11 @@ END DO
 DO JSV = NSV_PPBEG,NSV_PPEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
+#ifdef MNH_FOREFIRE
+DO JSV = NSV_FFBEG,NSV_FFEND
+  XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
+END DO
+#endif
 DO JSV = NSV_CSBEG,NSV_CSEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
@@ -1207,7 +1212,11 @@ IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.&
                    LHORELAX_SVELEC,LHORELAX_SVLG,                      &
                    LHORELAX_SVCHEM,LHORELAX_SVCHIC,LHORELAX_SVAER,     &
                    LHORELAX_SVDST,LHORELAX_SVSLT,LHORELAX_SVPP,        &
-                   LHORELAX_SVCS, KTCOUNT,NRR,NSV,XTSTEP,XRHODJ,       &
+                   LHORELAX_SVCS,                                      &
+#ifdef MNH_FOREFIRE
+                   LHORELAX_SVFF,                                      &
+#endif
+                   KTCOUNT,NRR,NSV,XTSTEP,XRHODJ,                      &
                    XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET,              &
                    XLSUM, XLSVM, XLSWM, XLSTHM,                        &
                    XLBXUM, XLBXVM, XLBXWM, XLBXTHM,                    &
@@ -1378,6 +1387,13 @@ IF (.NOT. LSTEADYLS) THEN
         XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
       ENDDO
       !
+#ifdef MNH_FOREFIRE
+      DO JSV=NSV_FFBEG,NSV_FFEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+#endif
       DO JSV=NSV_CSBEG,NSV_CSEND
         XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
         XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)

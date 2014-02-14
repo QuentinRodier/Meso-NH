@@ -205,6 +205,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   13/01/11           add LCH_RET_ICE
 !!                   01/07/11 (F.Couvreux) Add CONDSAMP
 !!                   01/07/11 (B.Aouizerats) Add CAOP    
+!!                   07/2013  (Bosseur & Filippi) adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -247,6 +248,9 @@ USE MODD_MEAN_FIELD
 USE MODD_DRAGTREE
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE
+#endif
 !
 IMPLICIT NONE
 !
@@ -379,6 +383,9 @@ LHORELAX_SVSLT  = .FALSE.
 LHORELAX_SVPP   = .FALSE.
 LHORELAX_SVCS   = .FALSE.
 LHORELAX_SVAER  = .FALSE.
+#ifdef MNH_FOREFIRE
+LHORELAX_SVFF   = .FALSE.
+#endif
 !
 !-------------------------------------------------------------------------------
 !
@@ -1194,6 +1201,21 @@ XUV_FLX1=3.E+14
 XUV_FLX2=0.
 LTH_FLX=.FALSE.
 XTH_FLX=0.75
+#ifdef MNH_FOREFIRE
+!-------------------------------------------------------------------------------
+!
+!*      27.   SET DEFAULT VALUES FOR MODD_FOREFIRE         
+!             ----------------------------------
+!
+! other values initialized in modd_forefire
+!
+IF (KMI == 1) THEN 
+  LFOREFIRE = .FALSE.
+  LFFCHEM = .FALSE.
+  COUPLINGRES = 100.
+  NFFSCALARS = 0
+ENDIF  
+#endif                 
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE DEFAULT_DESFM_n

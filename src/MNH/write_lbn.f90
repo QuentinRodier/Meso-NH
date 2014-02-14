@@ -825,6 +825,26 @@ END IF ! valeur IMOMENTS
            & IGRID,ILENCH,YCOMMENT,IRESP)
     END IF
   END DO
+#ifdef MNH_FOREFIRE
+  ! ForeFire scalar variables
+  DO JSV = NSV_FFBEG,NSV_FFEND
+    IF(NSIZELBXSV_ll /= 0) THEN
+      YRECFM = 'LBX_FF'
+      WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBX_FF',JSV,' (KG/KG)'
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+    END IF
+!
+    IF(NSIZELBYSV_ll /= 0) THEN
+      YRECFM = 'LBY_FF'
+      WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBY_FF',JSV,' (KG/KG)'
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+    END IF
+  END DO
+#endif
 END IF
 !
 !-------------------------------------------------------------------------------

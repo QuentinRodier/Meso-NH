@@ -165,6 +165,7 @@ END MODULE MODI_BOUNDARIES
 !!      Modification    05/06               Remove EPS
 !!      Modification    12/2010  (Chong)    Add boundary condition for ions
 !!                                          (fair weather profiles)
+!!      Modification    07/2013  (Bosseur & Filippi) adds Forefire
 !!      Modification    04/2013  (C.Lac)    Remove instant M               
 !-------------------------------------------------------------------------------
 !
@@ -183,7 +184,10 @@ USE MODD_CONDSAMP,    ONLY : LCONDSAMP
 USE MODD_ELEC_DESCR             
 USE MODD_ELEC_n                 
 USE MODD_REF_n    
-USE MODD_PARAM_n,     ONLY : CELEC 
+USE MODD_PARAM_n,    ONLY : CELEC 
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE,   ONLY : LFOREFIRE
+#endif
 !
 USE MODE_MODELN_HANDLER
 !
@@ -251,14 +255,14 @@ REAL                :: ZTSTEP    ! effective time step
 INTEGER             :: ILBX,ILBY ! size of LB fields' arrays
 LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE :: GCHBOUNDARY, GAERBOUNDARY,&
                     GDSTBOUNDARY, GSLTBOUNDARY, GPPBOUNDARY,          &
-                    GCSBOUNDARY, GICBOUNDARY
+                    GCSBOUNDARY, GICBOUNDARY 
 LOGICAL, SAVE        :: GFIRSTCALL1 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL2 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL3 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL5 = .TRUE. 
 LOGICAL, SAVE        :: GFIRSTCALLPP = .TRUE.                         
 LOGICAL, SAVE        :: GFIRSTCALLCS = .TRUE.                         
-LOGICAL, SAVE        :: GFIRSTCALLIC = .TRUE.                         
+LOGICAL, SAVE        :: GFIRSTCALLIC = .TRUE.                 
 !
 REAL, DIMENSION(SIZE(PLBXWM,1),SIZE(PLBXWM,2),SIZE(PLBXWM,3)) ::  &
                        ZLBXVT,ZLBXWT,ZLBXTHT
@@ -279,6 +283,11 @@ REAL, DIMENSION(SIZE(PLBYSVM,1),SIZE(PLBYSVM,2),SIZE(PLBYSVM,3),SIZE(PLBYSVM,4))
 LOGICAL              :: GCHTMP
 LOGICAL              :: GPPTMP
 LOGICAL              :: GCSTMP
+#ifdef MNH_FOREFIRE
+LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE ::  GFFBOUNDARY
+LOGICAL, SAVE        :: GFIRSTCALLFF = .TRUE.                         
+LOGICAL              :: GFFTMP
+#endif
 !
 !-------------------------------------------------------------------------------
 !
@@ -945,6 +954,33 @@ IF ( LCONDSAMP .AND. IMI == 1) THEN
     ENDIF
   ENDDO
 ENDIF
+#ifdef MNH_FOREFIRE
+!ForeFire 
+IF ( LFOREFIRE .AND. IMI == 1) THEN
+  IF (GFIRSTCALLFF) THEN
+    ALLOCATE(GFFBOUNDARY(NSV_FF))
+    GFIRSTCALLFF = .FALSE.
+    DO JSV=NSV_FFBEG,NSV_FFEND
+      GFFTMP = .FALSE.
+      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
+      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
+      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
+      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+      GFFBOUNDARY(JSV-NSV_FFBEG+1) = GFFTMP
+    ENDDO
+  ENDIF
+
+  DO JSV=NSV_FFBEG,NSV_FFEND
+    IF (GFFBOUNDARY(JSV-NSV_FFBEG+1)) THEN
+      IF (SIZE(PSVT)>0) THEN
+       CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
+      ELSE
+!!$        CALL CH_BOUNDARIES (HLBCX,HLBCY,PSVM(:,:,:,JSV),PUM,PVM,PSVM(:,:,:,JSV))
+      ENDIF
+    ENDIF
+  ENDDO
+ENDIF
+#endif
 !
 IF ( CELEC /= 'NONE' .AND. IMI == 1) THEN
   CALL ION_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT)

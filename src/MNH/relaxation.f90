@@ -17,6 +17,9 @@ INTERFACE
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
                              OHORELAX_SVCS,                                    &
+#ifdef MNH_FOREFIRE
+                             OHORELAX_SVFF,                                    &
+#endif
                              KTCOUNT,KRR,KSV,PTSTEP,PRHODJ,                    &
                              PUT, PVT, PWT, PTHT, PRT, PSVT, PTKET,            &
                              PLSUM, PLSVM, PLSWM, PLSTHM,                      &
@@ -73,7 +76,11 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVDST  ! switch for the
 LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the 
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
-                       ! horizontal relaxation for passive scalar 
+                       ! horizontal relaxation for passive scalar
+#ifdef MNH_FOREFIRE
+LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
+                       ! horizontal relaxation for ForeFire variables 
+#endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
 INTEGER,                  INTENT(IN)    :: KTCOUNT! Temporal loop counter       
@@ -150,6 +157,9 @@ END MODULE MODI_RELAXATION
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
                              OHORELAX_SVCS,                                    &
+#ifdef MNH_FOREFIRE
+                             OHORELAX_SVFF,                                    &
+#endif
                              KTCOUNT,KRR,KSV,PTSTEP,PRHODJ,                    &
                              PUT, PVT, PWT, PTHT, PRT, PSVT, PTKET,            &
                              PLSUM, PLSVM, PLSWM, PLSTHM,                      &
@@ -308,7 +318,11 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVDST  ! switch for the
 LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the 
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
-                       ! horizontal relaxation for passive scalar 
+                       ! horizontal relaxation for passive scalar
+#ifdef MNH_FOREFIRE 
+LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
+                       ! horizontal relaxation for ForeFire variables 
+#endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
 INTEGER,                  INTENT(IN)    :: KTCOUNT! Temporal loop counter       
@@ -400,7 +414,11 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZKHU,ZKHV,ZKHW,       &
 LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: GMASK3D_RELAX ! 3D
                              ! mask for hor. relax.
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
+#ifdef MNH_FOREFIRE
+LOGICAL, DIMENSION(12) :: GHORELAXSV! local array of logical
+#else
 LOGICAL, DIMENSION(11) :: GHORELAXSV! local array of logical
+#endif
 !  
 !-------------------------------------------------------------------------------
 !
@@ -437,6 +455,9 @@ GHORELAXSV(8) = OHORELAX_SVSLT
 GHORELAXSV(9) = OHORELAX_SVPP
 GHORELAXSV(10) = OHORELAX_SVCS
 GHORELAXSV(11) = OHORELAX_SVCHIC
+#ifdef MNH_FOREFIRE
+GHORELAXSV(12) = OHORELAX_SVFF
+#endif
 !-------------------------------------------------------------------------------
 !
 !*       2.     RELAXATION IN THE UPPER LAYERS

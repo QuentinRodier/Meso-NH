@@ -158,6 +158,7 @@ END MODULE MODI_INI_SEG_n
 !!                       01/2005   add GDUST, GSALT, and GORILAM (P. Tulet)
 !!                       04/2010   add GUSECHAQ, GCH_PH (M. Leriche)
 !!                       09/2010   add GUSECHIC (M. Leriche)
+!!                       02/2012   add GFOREFIRE (Pialat/Tulet)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -226,6 +227,9 @@ LOGICAL            :: GSALT
 LOGICAL            :: GORILAM
 LOGICAL            :: GLG
 LOGICAL            :: GPASPOL
+#ifdef MNH_FOREFIRE
+LOGICAL            :: GFOREFIRE
+#endif
 LOGICAL            :: GCONDSAMP
                                                   ! These variables
                                                   ! are used to locally store 
@@ -402,7 +406,11 @@ CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
                 GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
                 GDEPOS_DST, GORILAM,  &
-                GDEPOS_AER, GLG, GPASPOL, GCONDSAMP, IRIMX,IRIMY,ISV,       &
+                GDEPOS_AER, GLG, GPASPOL, &
+#ifdef MNH_FOREFIRE
+                GFOREFIRE, &
+#endif
+                GCONDSAMP, IRIMX,IRIMY,ISV,       &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
 !
 !
@@ -418,7 +426,11 @@ CALL READ_EXSEG_n(KMI,YEXSEG,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &
                 GUSECHAQ,GUSECHIC,GCH_PH,                                   &
                 GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,GDEPOS_DST,           &
-                GORILAM,GDEPOS_AER,GLG,GPASPOL, GCONDSAMP, IRIMX,IRIMY,ISV, &
+                GORILAM,GDEPOS_AER,GLG,GPASPOL, &
+#ifdef MNH_FOREFIRE
+                GFOREFIRE, &
+#endif
+                GCONDSAMP, IRIMX,IRIMY,ISV, &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
                 PTSTEP_ALL,CSTORAGE_TYPE,CINIFILEPGD_n                      )
 !

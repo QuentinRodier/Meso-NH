@@ -257,6 +257,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   June  2011  (B.Aouizerats) Prognostic aerosols
 !!                   June  2011  (P.Aumond) Drag of the vegetation  
 !!                                         + Mean fields
+!!                   July  2013  (Bosseur & Filippi) Adds Forefire
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -384,6 +385,11 @@ USE MODI_INI_AEROSET4
 USE MODI_INI_AEROSET5
 USE MODI_INI_AEROSET6
 !
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE
+USE MODD_FOREFIRE_n
+USE MODI_INIT_FOREFIRE_n
+#endif
 USE MODI_INI_LES_N
 USE MODI_GOTO_SURFEX
 USE MODI_INI_SERIES_N
@@ -1743,6 +1749,9 @@ CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
              LHORELAX_SVC2R2,LHORELAX_SVC1R3,LHORELAX_SVELEC,LHORELAX_SVLG,   &
              LHORELAX_SVCHEM,LHORELAX_SVAER,LHORELAX_SVDST,LHORELAX_SVSLT,    &
              LHORELAX_SVPP,LHORELAX_SVCS,LHORELAX_SVCHIC,                     &
+#ifdef MNH_FOREFIRE
+             LHORELAX_SVFF,                                                   &
+#endif
              XRIMKMAX,NRIMX,NRIMY,                                            &
              XALKTOP,XALKGRD,XALZBOT,XALZBAS,                                 &
              XT4DIFU,XT4DIFTH,XT4DIFSV,                                       &
@@ -2058,6 +2067,29 @@ CALL INI_AEROSET3
 CALL INI_AEROSET4
 CALL INI_AEROSET5
 CALL INI_AEROSET6
+#ifdef MNH_FOREFIRE
+! 
+!-------------------------------------------------------------------------------
 !
+!*      29.    FOREFIRE initializations
+!              ------------------------
+!
+
+! Coupling with ForeFire if resolution is low enough
+!---------------------------------------------------
+IF ( LFOREFIRE .AND. 0.5*(XXHAT(2)-XXHAT(1)+XYHAT(2)-XYHAT(1)) < COUPLINGRES ) THEN
+	FFCOUPLING = .TRUE.	
+ELSE
+	FFCOUPLING = .FALSE.
+ENDIF
+
+! Initializing the ForeFire variables
+!------------------------------------
+IF ( LFOREFIRE ) THEN
+	CALL INIT_FOREFIRE_n(KMI, ILUOUT, IP &
+		, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME, XTSTEP)
+END IF
+#endif
+
 END SUBROUTINE INI_MODEL_n
 

@@ -180,6 +180,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!                             Replace DRY_MASS by TOTAL_DMASS
 !!      Modification 06/12  (M.Tomasini) Interpolation of the advective forcing (ADVFRC)
 !!                                       and of the turbulent fluxes (EDDY_FLUX)
+!!      Modification 07/13  (Bosseur & Filippi) Adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -608,6 +609,9 @@ IF (NSV_AER  > 0) LHORELAX_SVAER = .TRUE.
 IF (NSV_DST  > 0) LHORELAX_SVDST = .TRUE.
 IF (NSV_SLT  > 0) LHORELAX_SVSLT = .TRUE.
 IF (NSV_PP  > 0) LHORELAX_SVPP   = .TRUE.
+#ifdef MNH_FOREFIRE
+IF (NSV_FF  > 0) LHORELAX_SVFF   = .TRUE.
+#endif
 IF (NSV_CS  > 0) LHORELAX_SVCS   = .TRUE.
 LHORELAX_SVLG   = .FALSE.
 !

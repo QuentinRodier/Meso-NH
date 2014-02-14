@@ -58,6 +58,7 @@ END MODULE MODI_INI_NSV
 !!      M. Chong       26/01/10   Add Small ions
 !!      Modification   07/2010   (Leriche) add SV for ice chemistry
 !!      X.Pialat & J.Escobar 11/2012 remove deprecated line NSV_A(KMI) = ISV
+!!      Modification   15/02/12  (Pialat/Tulet) Add SV for ForeFire scalars
 !!                     03/2013   (C.Lac) add supersaturation as 
 !!                               the 4th C2R2 scalar variable
 !! 
@@ -76,6 +77,10 @@ USE MODD_DYN_n,     ONLY : LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3, &
                           LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
                           LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
                           LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC
+#ifdef MNH_FOREFIRE
+USE MODD_DYN_n,     ONLY : LHORELAX_SVFF
+USE MODD_FOREFIRE
+#endif
 USE MODD_CONF,     ONLY : LLG, CPROGRAM
 USE MODD_LG
 USE MODD_DUST
@@ -386,6 +391,23 @@ ELSE
   NSV_PPEND_A(KMI)= 0
 END IF
 !
+#ifdef MNH_FOREFIRE
+
+! ForeFire tracers
+IF (LFOREFIRE .AND. NFFSCALARS .GT. 0) THEN
+  NSV_FF_A(KMI)    = NFFSCALARS
+  NSV_FFBEG_A(KMI) = ISV+1
+  NSV_FFEND_A(KMI) = ISV+NSV_FF_A(KMI)
+  ISV              = NSV_FFEND_A(KMI)
+ELSE
+  NSV_FF_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_FFBEG_A(KMI)= 1
+  NSV_FFEND_A(KMI)= 0
+END IF
+#endif
+!
 IF (LCONDSAMP) THEN
   NSV_CS_A(KMI)   = NCONDSAMP
   NSV_CSBEG_A(KMI)= ISV+1
@@ -438,6 +460,11 @@ LHORELAX_SV(NSV_LGBEG_A(KMI):NSV_LGEND_A(KMI))=LHORELAX_SVLG
 ! Passive pollutants  
 IF (LPASPOL) &
 LHORELAX_SV(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=LHORELAX_SVPP
+#ifdef MNH_FOREFIRE
+! Fire pollutants
+IF (LFOREFIRE) &
+LHORELAX_SV(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=LHORELAX_SVFF
+#endif
 ! Conditional sampling
 IF (LCONDSAMP) &
 LHORELAX_SV(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=LHORELAX_SVCS
@@ -474,7 +501,10 @@ IF ((LSALT).AND.(LDEPOS_SLT(KMI))) &
 XSVMIN(NSV_SLTDEPBEG_A(KMI):NSV_SLTDEPEND_A(KMI))=XMNH_TINY
 IF ((LORILAM).AND.(LDEPOS_AER(KMI))) &
 XSVMIN(NSV_AERDEPBEG_A(KMI):NSV_AERDEPEND_A(KMI))=XMNH_TINY
-IF (LPASPOL) XSVMIN(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=0.          
+IF (LPASPOL) XSVMIN(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=0.    
+#ifdef MNH_FOREFIRE      
+IF (LFOREFIRE) XSVMIN(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=0.
+#endif
 IF (LCONDSAMP) XSVMIN(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=0.          
 !
 !  NAME OF THE SCALAR VARIABLES IN THE DIFFERENT SV GROUPS

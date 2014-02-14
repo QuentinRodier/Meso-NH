@@ -18,7 +18,12 @@ INTERFACE
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST,                                   &
-                   OORILAM,ODEPOS_AER, OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY, KSV_USER,&   
+                   OORILAM,ODEPOS_AER, OLG,OPASPOL,                                &
+#ifdef MNH_FOREFIRE
+                   OFOREFIRE,                                                      &
+#endif
+                   OCONDSAMP,                                                      &
+                   KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
 INTEGER,            INTENT(IN) :: KMI    ! Model index
@@ -44,6 +49,9 @@ LOGICAL,DIMENSION(:), INTENT(IN)  :: ODEPOS_AER  ! Orilam wet deposition FLAG in
 LOGICAL,            INTENT(IN) :: OSALT          ! Sea Salt FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OORILAM        ! Orilam FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMFILE
+#ifdef MNH_FOREFIRE
+LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
+#endif
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
 
 LOGICAL,            INTENT(IN) :: OLG            ! lagrangian FLAG in FMFILE
@@ -77,7 +85,12 @@ END MODULE MODI_READ_EXSEG_n
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST,                                   &
-                   OORILAM,ODEPOS_AER, OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY, KSV_USER,&   
+                   OORILAM,ODEPOS_AER, OLG,OPASPOL,                                &
+#ifdef MNH_FOREFIRE
+                   OFOREFIRE,                                                      &
+#endif
+                   OCONDSAMP,                                                      &
+                   KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
 !     #########################################################################
@@ -258,6 +271,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   09/2011   (J.Escobar) re-add 'ZRESI' choose
 !!      Modification   12/2011   (C.Lac) Adaptation to FIT temporal scheme 
 !!      Modification   12/2012   (S.Bielli) add NAM_NCOUT for netcdf output
+!!      Modification   02/2012   (Pialat/Tulet) add ForeFire
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -323,6 +337,10 @@ USE MODD_CH_AEROSOL
 USE MODD_DUST
 USE MODD_SALT
 USE MODD_PASPOL
+#ifdef MNH_FOREFIRE
+USE MODD_FOREFIRE
+USE MODN_FOREFIRE
+#endif
 USE MODD_CONDSAMP
 USE MODN_DUST
 USE MODN_SALT
@@ -360,6 +378,9 @@ LOGICAL,DIMENSION(:), INTENT(IN) :: ODEPOS_AER   ! Orilam wet deposition FLAG in
 LOGICAL,            INTENT(IN) :: OSALT          ! Sea Salt FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OORILAM        ! Orilam FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMFILE
+#ifdef MNH_FOREFIRE
+LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
+#endif
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
 
 LOGICAL,            INTENT(IN) :: OLG            ! lagrangian FLAG in FMFILE
@@ -517,6 +538,10 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_SALT)
   CALL POSNAM(ILUSEG,'NAM_PASPOL',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_PASPOL)
+#ifdef MNH_FOREFIRE
+  CALL POSNAM(ILUSEG,'NAM_FOREFIRE',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_FOREFIRE)
+#endif
   CALL POSNAM(ILUSEG,'NAM_CONDSAMP',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_CONDSAMP)
   CALL POSNAM(ILUSEG,'NAM_DRAGTREE',GFOUND,ILUOUT)
@@ -1639,6 +1664,27 @@ IF (LPASPOL) THEN
   END IF
 END IF
 !
+#ifdef MNH_FOREFIRE
+! ForeFire
+!
+IF (LFOREFIRE) THEN
+  IF (OFOREFIRE) THEN
+!!$    CGETSVM(NSV_FFBEG:NSV_FFEND)='READ'
+    CGETSVT(NSV_FFBEG:NSV_FFEND)='READ'
+    IF(HSTORAGE_TYPE=='TT') THEN
+      CGETSVT(NSV_FFBEG:NSV_FFEND)='INIT'
+!!$      CGETSVM(NSV_FFBEG:NSV_FFEND)='INIT'
+    END IF
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT=9001) KMI
+    WRITE(UNIT=ILUOUT,FMT='("THERE IS NO FOREFIRE SCALAR VARIABLES IN INITIAL FMFILE",/,&
+                       & "THE VARIABLES HAVE BEEN INITIALIZED TO ZERO")')
+!!$    CGETSVM(NSV_FFBEG:NSV_FFEND)='INIT'
+    CGETSVT(NSV_FFBEG:NSV_FFEND)='INIT'
+  END IF
+END IF
+#endif
+!
 ! Conditional sampling case
 !
 IF (LCONDSAMP) THEN
@@ -2115,7 +2161,14 @@ IF (.NOT. LPASPOL .AND. LHORELAX_SVPP) THEN
   WRITE(ILUOUT,FMT=*) 'YOU WANT TO RELAX PASSIVE POLLUTANT FIELD BUT IT DOES NOT EXIST.'
   WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVPP=FALSE'
 END IF
-
+#ifdef MNH_FOREFIRE
+IF (.NOT. LFOREFIRE .AND. LHORELAX_SVFF) THEN
+  LHORELAX_SVFF=.FALSE.
+  WRITE(UNIT=ILUOUT,FMT=9002) KMI
+  WRITE(ILUOUT,FMT=*) 'YOU WANT TO RELAX FOREFIRE FLUXES BUT THEY DO NOT EXIST.'
+  WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVFF=FALSE'
+END IF
+#endif
 IF (.NOT. LCONDSAMP .AND. LHORELAX_SVCS) THEN
   LHORELAX_SVCS=.FALSE.
   WRITE(UNIT=ILUOUT,FMT=9002) KMI
@@ -2161,6 +2214,9 @@ IF ( (.NOT. LHORELAX_UVWTH) .AND. (.NOT.(ANY(LHORELAX_SV))) .AND.  &
      (.NOT. LHORELAX_SVELEC).AND. (.NOT. LHORELAX_SVCHEM)   .AND.  &
      (.NOT. LHORELAX_SVLG)  .AND. (.NOT. LHORELAX_SVPP)     .AND.  &
      (.NOT. LHORELAX_SVCS)  .AND.                                  &
+#ifdef MNH_FOREFIRE
+     (.NOT. LHORELAX_SVFF)  .AND.                                  &
+#endif
      (.NOT. LHORELAX_RV)    .AND. (.NOT. LHORELAX_RC)       .AND.  &
      (.NOT. LHORELAX_RR)    .AND. (.NOT. LHORELAX_RI)       .AND.  &
      (.NOT. LHORELAX_RS)    .AND. (.NOT. LHORELAX_RG)       .AND.  &
@@ -2176,6 +2232,9 @@ END IF
 !
 IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP   .OR.  &
      LHORELAX_SVCS   .OR.                       &
+#ifdef MNH_FOREFIRE
+     LHORELAX_SVFF   .OR.                       &
+#endif
      LHORELAX_SVC2R2 .OR. LHORELAX_SVC1R3 .OR.  &
      LHORELAX_SVELEC .OR. LHORELAX_SVCHEM .OR.  &
      LHORELAX_SVLG   .OR. ANY(LHORELAX_SV) .OR. &
@@ -2196,6 +2255,9 @@ IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP   .OR.  &
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVCHIC=",LHORELAX_SVCHIC
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVLG=",LHORELAX_SVLG
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVPP=",LHORELAX_SVPP
+#ifdef MNH_FOREFIRE
+  WRITE(ILUOUT,FMT=*) "LHORELAX_SVFF=",LHORELAX_SVFF
+#endif
   WRITE(ILUOUT,FMT=*) "LHORELAX_SVCS=",LHORELAX_SVCS
   WRITE(ILUOUT,FMT=*) "LHORELAX_SV=",LHORELAX_SV
   WRITE(ILUOUT,FMT=*) "LHORELAX_RV=",LHORELAX_RV
@@ -2217,6 +2279,9 @@ END IF
 ! 
 IF ((LHORELAX_UVWTH  .OR. LHORELAX_SVPP  .OR.   &
      LHORELAX_SVCS   .OR.                       &
+#ifdef MNH_FOREFIRE
+     LHORELAX_SVFF   .OR.                       &
+#endif
      LHORELAX_SVC2R2 .OR. LHORELAX_SVC1R3 .OR.  &
      LHORELAX_SVELEC .OR. LHORELAX_SVCHEM .OR.  &
      LHORELAX_SVLG   .OR. ANY(LHORELAX_SV) .OR. &

@@ -17,7 +17,12 @@ INTERFACE
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY,KSV_USER,&
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+#ifdef MNH_FOREFIRE
+                   OFOREFIRE,                                                    &
+#endif
+                   OCONDSAMP,                                                    &
+                   KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 USE MODD_PARAMETERS
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
@@ -42,6 +47,9 @@ LOGICAL,            INTENT(OUT) :: OLG      ! lagrangian flag
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+#ifdef MNH_FOREFIRE
+LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
+#endif
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Orilam flag
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_DST    ! Dust Wet Deposition flag
@@ -71,7 +79,12 @@ END MODULE MODI_READ_DESFM_n
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
-                   OORILAM,ODEPOS_AER,OLG,OPASPOL,OCONDSAMP,KRIMX,KRIMY,KSV_USER,&
+                   OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
+#ifdef MNH_FOREFIRE
+                   OFOREFIRE,                                                    &
+#endif
+                   OCONDSAMP,                                                    &
+                   KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 !     #########################################################################
 !
@@ -171,6 +184,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   03/2005   (Tulet)  add dust, aerosols
 !!      Modification   03/2006   (O.Geoffroy) Add KHKO scheme
 !!      Modification   04/2010   (M. Leriche) Add aqueous + ice chemistry
+!!      Modification   07/2013   (Bosseur & Filippi) Adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -209,6 +223,9 @@ USE MODN_CH_ORILAM
 USE MODN_DUST
 USE MODN_SALT
 USE MODN_PASPOL
+#ifdef MNH_FOREFIRE
+USE MODN_FOREFIRE
+#endif
 USE MODN_CONDSAMP
 USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
@@ -258,6 +275,9 @@ CHARACTER (LEN=4),  INTENT(OUT) :: HELEC  ! Kind of electrical scheme
 CHARACTER (LEN=*),  INTENT(OUT) :: HEQNSYS! type of equations' system
 LOGICAL,            INTENT(OUT) :: OSALT    ! Sea Salt flag
 LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
+#ifdef MNH_FOREFIRE
+LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
+#endif
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Dust flag
@@ -440,6 +460,10 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_SALT)
   CALL POSNAM(ILUDES,'NAM_PASPOL',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PASPOL)
+#ifdef MNH_FOREFIRE
+  CALL POSNAM(ILUDES,'NAM_FOREFIRE',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_FOREFIRE)
+#endif
   CALL POSNAM(ILUDES,'NAM_CONDSAMP',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CONDSAMP)
   CALL POSNAM(ILUDES,'NAM_2D_FRC',GFOUND,ILUOUT)
@@ -478,6 +502,9 @@ OSALT    = LSALT
 OORILAM  = LORILAM
 OLG      = LLG
 OPASPOL  = LPASPOL
+#ifdef MNH_FOREFIRE
+OFOREFIRE  = LFOREFIRE
+#endif
 OCONDSAMP= LCONDSAMP
 KRIMX  = NRIMX
 KRIMY  = NRIMY
@@ -619,6 +646,11 @@ IF (NVERB >= 10) THEN
     WRITE(UNIT=ILUOUT,FMT="('************ PASSIVE POLLUTANT  ***************')")
     WRITE(UNIT=ILUOUT,NML=NAM_PASPOL)
 !
+#ifdef MNH_FOREFIRE
+	WRITE(UNIT=ILUOUT,FMT="('************ FOREFIRE  ***************')")
+	WRITE(UNIT=ILUOUT,NML=NAM_FOREFIRE)
+!
+#endif		
     WRITE(UNIT=ILUOUT,FMT="('************ CONDITIONAL SAMPLING *************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
 !

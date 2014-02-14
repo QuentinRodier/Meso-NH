@@ -124,6 +124,7 @@ SUBROUTINE INI_LB(HINIFILE,HLUOUT,OLSOURCE,KSV,                    &
 !!                      20/05/06    Remove KEPS
 !!      C.Lac           20/03/08    Add passive pollutants
 !!      M.Leriche       16/07/10    Add ice phase chemical species
+!!      Pialat/tulet    15/02/12    Add ForeFire scalars 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1098,6 +1099,53 @@ DO JSV = NSV_PPBEG, NSV_PPEND
     IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
   END SELECT
 END DO
+#ifdef MNH_FOREFIRE
+! ForeFire scalar variables
+DO JSV = NSV_FFBEG, NSV_FFEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    IF ( KSIZELBXSV_ll /= 0 ) THEN
+      YRECFM = 'LBX_FF'
+      YDIRLB='LBX'
+      CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+       WRITE(ILUOUT,*) 'ForeFire LBX_FF ', IRESP
+       IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+        IF (IRESP/=0) THEN
+          IF (PRESENT(PLBXSVMM)) THEN
+            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+            WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
+          ELSE
+            PLBXSVM(:,:,:,JSV)=0.
+            WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
+          ENDIF
+        END IF
+      END IF
+    END IF
+!
+    IF (KSIZELBYSV_ll  /= 0 ) THEN
+      YRECFM = 'LBY_FF'
+      YDIRLB='LBY'
+      CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+        IF (IRESP/=0) THEN
+          IF (PRESENT(PLBYSVMM)) THEN
+            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+            WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
+          ELSE
+            PLBYSVM(:,:,:,JSV)=0.
+            WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
+          ENDIF
+        END IF
+      END IF
+    END IF
+  CASE('INIT')
+    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+#endif
 ! Conditional sampling variables
 DO JSV = NSV_CSBEG, NSV_CSEND
   SELECT CASE(HGETSVM(JSV))

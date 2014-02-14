@@ -14,6 +14,9 @@ SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
                OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,&
                OHORELAX_SVCHEM,OHORELAX_SVAER,OHORELAX_SVDST,OHORELAX_SVSLT, &
                OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,                &
+#ifdef MNH_FOREFIRE
+               OHORELAX_SVFF,                                                &
+#endif
                PRIMKMAX,KRIMX,KRIMY,PALKTOP,PALKGRD,PALZBOT,PALZBAS,         &
                PT4DIFU,PT4DIFTH,PT4DIFSV,                                    &
                PCORIOX,PCORIOY,PCORIOZ,PCURVX,PCURVY,                        &
@@ -85,6 +88,10 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive pollutants
+#ifdef MNH_FOREFIRE
+LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
+                       ! horizontal relaxation for ForeFire variables
+#endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
 REAL,                    INTENT(IN)    :: PRIMKMAX !Max. value of the horiz.
@@ -177,6 +184,9 @@ SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
                OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,&
                OHORELAX_SVCHEM,OHORELAX_SVAER,OHORELAX_SVDST,OHORELAX_SVSLT, &
                OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,                &
+#ifdef MNH_FOREFIRE
+               OHORELAX_SVFF,                                                &
+#endif
                PRIMKMAX,KRIMX,KRIMY,PALKTOP,PALKGRD,PALZBOT,PALZBAS,         &
                PT4DIFU,PT4DIFTH,PT4DIFSV,                                    &
                PCORIOX,PCORIOY,PCORIOZ,PCURVX,PCURVY,                        &
@@ -266,6 +276,7 @@ SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
 !!      Modification    16/01/95  (J.Stein) conditional CALL to trid for 1D case
 !!      Modification    13/08/98  (N.Asencio) add parallel code
 !!      Modification    20/05/06  Remove KEPS
+!!      Modification    07/2013   (Bosseur & Filippi) Adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -345,6 +356,10 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive pollutants
+#ifdef MNH_FOREFIRE
+LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
+                       ! horizontal relaxation for ForeFire variables
+#endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
 REAL,                    INTENT(IN)    :: PRIMKMAX !Max. value of the horiz.
@@ -433,7 +448,11 @@ INTEGER                                    :: ILUOUT,IRESP ! Logical unit number
 INTEGER                                    :: IIU,IJU !  Upper bounds in x,y directions
 LOGICAL                                    :: GHORELAX
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
+#ifdef MNH_FOREFIRE
+LOGICAL, DIMENSION(12):: GHORELAXSV! local array of logical
+#else
 LOGICAL, DIMENSION(11):: GHORELAXSV! local array of logical
+#endif
 !
 !-------------------------------------------------------------------------------
 !
@@ -502,6 +521,9 @@ GHORELAXSV(8) = OHORELAX_SVSLT
 GHORELAXSV(9) = OHORELAX_SVPP
 GHORELAXSV(10)= OHORELAX_SVCS
 GHORELAXSV(11) = OHORELAX_SVCHIC
+#ifdef MNH_FOREFIRE
+GHORELAXSV(12) = OHORELAX_SVFF
+#endif
 !
 GHORELAX=ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
                         .OR. OHORELAX_UVWTH  .OR. OHORELAX_TKE 

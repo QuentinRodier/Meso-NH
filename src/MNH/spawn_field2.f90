@@ -137,6 +137,9 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 01/02/01 (D.Gazen)  add module MODD_NSV for NSV variable
 !!      Modification 07/07/05 (D.Barbary) spawn with 2 input files (father+son1)
 !!      Modification 05/06                Remove EPS, Clark and Farley
+!!      Modification 06/12  (M.Tomasini)  Interpolation of turbulent fluxes (EDDY_FLUX)
+!!                                        for 2D west african monsoon
+!!      Modification 07/13  (Bosseur & Filippi) Adds Forefire
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -651,6 +654,18 @@ IF (PRESENT(HSONFILE)) THEN
                   YCOMMENT,IRESP)
       IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
     END DO
+#ifdef MNH_FOREFIRE
+    DO JSV = NSV_FFBEG,NSV_FFEND     ! ForeFire variables
+      WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
+      CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+      IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+      WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+      CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+      IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+    END DO
+#endif
     DO JSV = NSV_CSBEG,NSV_CSEND     ! Passive scalar variables
       WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
       CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
@@ -662,6 +677,13 @@ IF (PRESENT(HSONFILE)) THEN
       CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,YCOMMENT,IRESP)
       IF(IRESP==0) PATC(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
     END DO
+#ifdef MNH_FOREFIRE
+   DO JSV = 1,NSV_FF               ! ForeFire variables
+      YRECFM='ATC'
+      CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,YCOMMENT,IRESP)
+      IF(IRESP==0) PATC(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+    END DO
+#endif
   END IF
   !
   ! Secondary pronostic variables

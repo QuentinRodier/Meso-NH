@@ -188,6 +188,7 @@ SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                     &
 !!                   05/2006  Remove EPS
 !!    M. Leriche     11/2009  modify the LB*SVS for the aqueous phase chemistry
 !!                   07/2010  idem for ice phase chemical species
+!!    Bosseur & Filippi 07/2013 Adds Forefire
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -572,6 +573,16 @@ DO JSV=1,NSV_PP_A(KMI)
   CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_PPBEG_A(KDAD)),&
        &ZTSVT(:,:,:,JSV-1+NSV_PPBEG_A(KMI)),KMI)
 END DO
+#ifdef MNH_FOREFIRE
+
+!
+! ForeFire variables     
+!
+DO JSV=1,NSV_FF_A(KMI)
+  CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_FFBEG_A(KDAD)),&
+       &ZTSVT(:,:,:,JSV-1+NSV_FFBEG_A(KMI)),KMI)
+END DO
+#endif
 !
 ! Conditional sampling  
 !
