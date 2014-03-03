@@ -480,9 +480,9 @@ CONTAINS
           MAX_DIFF = MAXVAL( TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll) / MAX_VAL )
           TAB_INTERIOR_ll => TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll)
           IF (MAX_DIFF > PRECISION ) THEN
-             write(6, '(" MPPDB_CHECK2D :: PB MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK2D :: PB MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
           ELSE
-             write(6, '(" MPPDB_CHECK2D :: OK MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
+             write(6, '(" MPPDB_CHECK2D :: OK MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
           END IF
           call flush(6)
           !
