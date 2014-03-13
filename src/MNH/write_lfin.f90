@@ -153,6 +153,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!                     AEROSOLS and ozone vertical distribution are also written
 !!       M.Tomasini    06/12 2D west african monsoon: nesting for ADV forcing writing
 !!       Pialat/Tulet  15/02/2012 add ForeFire variables
+!!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -1725,6 +1726,8 @@ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XEXNTOP,IGRID,ILENCH,YCOMMENT,IRESP)
 !*       1.6  Tendencies                                         
 !
 IF (CPROGRAM == 'MESONH') THEN
+
+ YDIR='XY'
  YRECFM='US_PRES'
  YCOMMENT='X_Y_Z_US_PRES'                 
  IGRID=2
