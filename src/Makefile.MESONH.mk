@@ -56,7 +56,7 @@ OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
 
 $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 
-OBJS0 += spll_switch_sbg_lesn.o
+OBJS0 += spll_switch_sbg_lesn.o spll_mode_mppdb.o
 
 $(OBJS0)     : OPT = $(OPT0) 
 
