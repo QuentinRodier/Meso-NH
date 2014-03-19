@@ -95,6 +95,7 @@ CONTAINS
        !
        ! NO Father !
        MPPDB_FATHER_WORLD = .TRUE.  
+       CALL MPI_BARRIER(NMNH_COMM_WORLD,ierr) 
        !
        ! if no config file , inactive MPPDB routines
        !
@@ -154,9 +155,12 @@ CONTAINS
        ! clone the son
        !
        ALLOCATE(info_error(MPPDB_NBSON))
+       CALL MPI_BARRIER(NMNH_COMM_WORLD,ierr) 
        !
        CALL MPI_COMM_SPAWN(MPPDB_EXEC, MPI_ARGV_NULL,MPPDB_NBSON,INFO_SPAWN, &
             RANK_FATHER, NMNH_COMM_WORLD,MPPDB_INTER_COMM ,info_error, ierr)
+       !
+       CALL MPI_BARRIER(NMNH_COMM_WORLD,ierr) 
        !
        DEALLOCATE(info_error)
        !
@@ -170,9 +174,12 @@ CONTAINS
        !         
        !... My rank in MPPDB_INTRA_COMM
        CALL MPI_COMM_RANK(MPPDB_INTRA_COMM, mppdb_irank_intra, ierr)
-       IF (MPPDB_DEBUG) print*,"MPPDB_INIT :: FATHER mppdb_irank_intra=", mppdb_irank_intra &
+       IF (MPPDB_IRANK_WORLD.EQ.0) THEN 
+          !  I'm the first father 
+       IF (MPPDB_DEBUG) print*,"MPPDB_INIT :: FIRST FATHER mppdb_irank_intra=", mppdb_irank_intra &
             ,"mppdb_nbproc_intra=",mppdb_nbproc_intra
        call flush(6)
+       endif
        !
        ! Wait the sons
        !
@@ -187,9 +194,11 @@ CONTAINS
        !                                                                         !
        !-------------------------------------------------------------------------!
        !
+       CALL MPI_BARRIER(NMNH_COMM_WORLD,ierr) 
+       !
        ! merge the communicator
        !
-       drapeau=.FALSE.
+       drapeau=.TRUE.
        CALL MPI_INTERCOMM_MERGE(MPPDB_INTER_COMM, drapeau, MPPDB_INTRA_COMM, ierr)
        !
        !... Numbre of processus in MPPDB_INTRA_COMM.
@@ -207,7 +216,7 @@ CONTAINS
        call system(MPPDB_COMMAND)
        !
        MPPDB_DEBUG = .TRUE.
-       IF (MPPDB_DEBUG) write(200,*) "MPPDB_INIT :: FIRSTSON mppdb_irank_intra=", mppdb_irank_intra &
+       IF (MPPDB_DEBUG) write(200,*) "MPPDB_INIT :: FIRST SON mppdb_irank_intra=", mppdb_irank_intra &
             ,"MPPDB_IRANK_WORLD=",MPPDB_IRANK_WORLD
        !
        IF (MPPDB_IRANK_WORLD.EQ.0) THEN 
