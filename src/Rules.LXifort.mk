@@ -77,6 +77,9 @@ endif
 else
 ifeq "$(VER_MPI)" "MPIINTEL"
 F90 = mpiifort
+ifeq "$(MNH_INT)" "I8"
+OPT_BASE         += -ilp64
+endif
 else
 F90 = ifort
 endif
