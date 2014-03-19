@@ -144,6 +144,7 @@ END MODULE MODI_FORCING
 !!      01/2004  V. Masson            surface externalization, removes SST
 !!                                    forcing
 !!      06/2012  V. Masson            Adds tendency of geostrophic wind itself to wind tendency
+!!      01/2014  J. escobar           correction for // initialisation geostrophic ZUF,ZVF,ZWF 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -165,6 +166,8 @@ USE MODI_UPSTREAM_Z
 USE MODI_TEMPORAL_LT
 USE MODI_TEMPORAL_DIST 
 USE MODI_BUDGET
+!
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -460,6 +463,8 @@ ELSE
   ZZF(:,:,:)   = MXM( ZZA(:,:,:) )
   ZZF(1,:,:)   = 2.0*ZZA(1,:,:) - ZZF(2,:,:)
 !
+  ZUF = 0.0
+!
   DO JL=1,IKU-1
     ZDZHAT_INV = 1.0 / ( PZHAT(JL+1)-PZHAT(JL) )
     DO JK=1,IKU
@@ -476,9 +481,12 @@ ELSE
       END DO
     END DO
   END DO
+  CALL GET_HALO(ZUF)
 !
   ZZF(:,:,:) = MYM( ZZA(:,:,:) )
   ZZF(:,1,:) = 2.0*ZZA(:,1,:)-ZZF(:,2,:)
+!
+  ZVF = 0.0
 !
   DO JL=1,IKU-1
     ZDZHAT_INV = 1.0 / ( PZHAT(JL+1)-PZHAT(JL) )
@@ -496,6 +504,10 @@ ELSE
       END DO
     END DO
   END DO
+  CALL GET_HALO(ZVF)
+!
+  ZWF = 0.0
+!
   DO JL=1,IKU-1
     ZDZHAT_INV = 1.0 / ( PZHAT(JL+1)-PZHAT(JL) )
     DO JK=1,IKU
@@ -512,6 +524,7 @@ ELSE
       END DO
     END DO
   END DO
+  CALL GET_HALO(ZWF)
 !
   ZZF(:,:,:)   = MZF(1,IKU,1, PZZ(:,:,:) )
   ZZF(:,:,IKU) = 2.0*PZZ(:,:,IKU)-ZZF(:,:,IKU-1)
