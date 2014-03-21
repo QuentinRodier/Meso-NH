@@ -100,6 +100,7 @@ END MODULE MODI_ADVECUVW_RK
 !!                  08/06    (T.Maric)               PPM scheme
 !!                  04/2011  (V. Masson & C. Lac)    splits the routine and adds
 !!                                                   time splitting
+!!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -259,16 +260,17 @@ ZV = PV
 ZW = PW
 !
 NULLIFY(TZFIELDMT_ll)
-IF( NHALO==1 ) THEN      
+!!$IF( NHALO==1 ) THEN      
 !
    CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZUT)
    CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZVT)
    CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZWT)
 !
    INBVAR = 3
-   IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3))
+!!$   IF( NHALO==1 ) 
+   CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3))
 !
- END IF
+!!$ END IF
 !
 ZRUS = 0.
 ZRVS = 0.
@@ -286,10 +288,10 @@ ZRWS = 0.
       CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
       ZW (:,:,IKE+1 ) = 0.
      !JUAN
-     IF ( NHALO == 1 ) THEN   
+!!$     IF ( NHALO == 1 ) THEN   
         CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)        
         CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
-     ENDIF
+!!$     ENDIF
      !JUAN
 !
 !*       4.     Advection with WENO
@@ -304,13 +306,13 @@ ZRWS = 0.
 ! ==> verifier si c'est utile !
 !
      NULLIFY(TZFIELDS4_ll)
-     IF(NHALO == 1) THEN
+!!$     IF(NHALO == 1) THEN
           CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRUS(:,:,:,JS))
           CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRVS(:,:,:,JS))
           CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRWS(:,:,:,JS))
           CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
           CALL CLEANLIST_ll(TZFIELDS4_ll)
-     END IF
+!!$     END IF
 
     IF ( JS /= ISPL ) THEN
 !

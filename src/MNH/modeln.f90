@@ -225,6 +225,7 @@ END MODULE MODI_MODEL_n
 !!                   July 2010 (M. Leriche) add ice phase chemical species
 !!                   April 2011 (C.Lac) : Remove instant M 
 !!                   April 2011 (C.Lac, V.Masson) : Time splitting for advection
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -371,6 +372,8 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 USE MODI_GET_HALO
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -570,7 +573,8 @@ IF (KTCOUNT == 1) THEN
   ENDDO
   IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDS_ll, XSRCT)
   !
-  IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) .AND. NHALO==1 ) THEN
+!!$  IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) .AND. NHALO==1 ) THEN
+  IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) ) THEN
   !
   !                 b) LS fields
   !
@@ -600,12 +604,16 @@ IF (KTCOUNT == 1) THEN
   !
     INBVAR = 4+NRR+NSV
     IF (SIZE(XRTKES,1) /= 0) INBVAR=INBVAR+1
-    IF( NHALO==1 ) CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
-    IF( NHALO==1 ) CALL INIT_HALO2_ll(TZLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
+!!$    IF( NHALO==1 ) 
+    CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
+!!$    IF( NHALO==1 ) 
+    CALL INIT_HALO2_ll(TZLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
   !
   !*       1.6   Initialise the 2nd layer of the halo of the LS fields
   !
-    IF ( LSTEADYLS .AND. NHALO==1 ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+!!$    IF ( LSTEADYLS .AND. NHALO==1 ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+    IF ( LSTEADYLS ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+
   END IF
   !
 !
@@ -1133,10 +1141,10 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
 !
-  IF( NHALO==1 ) THEN
+!!$  IF( NHALO==1 ) THEN
     CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
     IF ( .NOT. LSTEADYLS) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
-  ENDIF
+!!$  ENDIF
   CALL NUM_DIFF ( CLBCX, CLBCY, NRR, NSV,                               &
                   XDK2U, XDK4U, XDK2TH, XDK4TH, XDK2SV, XDK4SV, IMI,    &
                   XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT,                &
@@ -1456,7 +1464,8 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
-  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+!!$  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+  IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     NULLIFY(TZFIELDC_ll)
     NULLIFY(TZHALO2C_ll)
       CALL ADD3DFIELD_ll(TZFIELDC_ll, XUT)
@@ -1466,6 +1475,7 @@ IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
       CALL UPDATE_HALO_ll(TZFIELDC_ll,IINFO_ll)
       CALL UPDATE_HALO2_ll(TZFIELDC_ll, TZHALO2C_ll, IINFO_ll)
   END IF
+  CALL MPPDB_CHECK3D(XRUS,"modeln:before adv_uvw_cen:XRUS",PRECISION)                    
  CALL ADVECTION_UVW_CEN(CUVW_ADV_SCHEME,                &
                            CLBCX, CLBCY,                           &
                            XTSTEP, KTCOUNT,                        &
@@ -1474,7 +1484,8 @@ IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
                            XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,   &
                            XRUS,XRVS, XRWS,                        &
                            TZHALO2C_ll                             )
-  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+!!$  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
+  IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     CALL CLEANLIST_ll(TZFIELDC_ll)
     NULLIFY(TZFIELDC_ll)
     CALL  DEL_HALO2_ll(TZHALO2C_ll)
@@ -1516,6 +1527,7 @@ ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
 !
+  CALL MPPDB_CHECK3D(XRUS,"modeln:before rad_bound:XRUS",PRECISION)                    
   CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XRIMKMAX,            &
                 XTSTEP,                                  &
                 XDXHAT, XDYHAT, XZHAT,                   &
@@ -1547,6 +1559,7 @@ IF(.NOT. L1D) THEN
   XRVS_PRES = XRVS
   XRWS_PRES = XRWS
 !
+  CALL MPPDB_CHECK3D(XRUS,"modeln:before pressurez:XRUS",PRECISION)                    
   CALL PRESSUREZ( CLUOUT,                                                &
                   CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,KTCOUNT, XRELAX,IMI, &
                   XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,XDXHATM,XDYHATM,XRHOM, &

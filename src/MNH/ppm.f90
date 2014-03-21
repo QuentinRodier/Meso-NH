@@ -188,6 +188,7 @@ END MODULE MODI_PPM
 !!    -------------
 !!    
 !!    11.5.2006.  T. Maric - original version
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -252,15 +253,15 @@ IJN=IJE
 !
 !*              initialise & update halo & halo2 for PSRC
 !
-IF(NHALO /= 1) THEN
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
-    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
-   !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
-ENDIF
+!!$IF(NHALO /= 1) THEN
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
+!!$    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
+!!$   !callabortstop
+!!$    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$    CALL ABORT
+!!$    STOP
+!!$ENDIF
 CALL GET_HALO(PSRC)
 PR=PSRC
 ZQL=PSRC
@@ -635,6 +636,7 @@ END FUNCTION PPM_01_X
 !!    -------------
 !!    
 !!    11.5.2006.  T. Maric - original version
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -694,15 +696,15 @@ INTEGER                          :: IIW,IIA
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IIW=IIB
 IIA=IIE
-IF(NHALO /= 1) THEN
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
-    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
-   !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
-ENDIF
+!!$IF(NHALO /= 1) THEN
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
+!!$    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
+!!$   !callabortstop
+!!$    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$    CALL ABORT
+!!$    STOP
+!!$ENDIF
 CALL GET_HALO(PSRC)
 
 !
@@ -1286,6 +1288,7 @@ END FUNCTION PPM_01_Z
 !!    -------------
 !!    
 !!    20.6.2006.  T. Maric - original version
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1348,15 +1351,15 @@ IJN=IJE
 !
 !*              initialise & update halo & halo2 for PSRC
 !
-IF(NHALO /= 1) THEN
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
-    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
-   !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
-ENDIF
+!!$IF(NHALO /= 1) THEN
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : PPM ppm_met.f90 --> Juan '
+!!$    WRITE(ILUOUT,*) 'PPM not yet implemented/tested with NHALO /= 1'
+!!$   !callabortstop
+!!$    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$    CALL ABORT
+!!$    STOP
+!!$ENDIF
 !
 CALL GET_HALO2(PSRC,TZ_PSRC_HALO2_ll)
 ZPHAT=PSRC

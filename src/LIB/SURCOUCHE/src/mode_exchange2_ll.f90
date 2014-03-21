@@ -195,12 +195,15 @@
 !!    Author
 !!    ------
 !     P. Kloos                 * CERFACS - CNRM *
+!!    J.Escobar 21/03/014: add mppd_check for all updated field
 ! 
 !-------------------------------------------------------------------------------!
 !*       0.    DECLARATIONS
 !
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
   USE MODD_VAR_ll, ONLY : TCRRT_COMDATA, NHALO2_COM
+!
+  USE MODE_MPPDB
 !
 !*       0.1   declarations of arguments
 !
@@ -209,6 +212,8 @@
   TYPE(HALO2LIST_ll), POINTER :: TPLISTHALO2 ! pointer to the list of
                                              ! halo2 to be received
   INTEGER                     :: KINFO       ! return status
+!
+  TYPE(LIST_ll), POINTER :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -225,6 +230,20 @@
 !
    CALL COPY_CRSPD2(TCRRT_COMDATA%TSEND_HALO2, TCRRT_COMDATA%TRECV_HALO2, &
                     TPLIST, TPLISTHALO2, KINFO)
+!
+!JUAN MPP_CHECK2D/3D
+!
+   IF (MPPDB_INITIALIZED) THEN
+      TZFIELD => TPLIST
+      DO WHILE (ASSOCIATED(TZFIELD))
+         IF (TZFIELD%L2D) THEN
+            CALL MPPDB_CHECK2D(TZFIELD%ARRAY2D,"UPDATE_HALO2_ll",PRECISION)
+         ELSEIF(TZFIELD%L3D) THEN
+            CALL MPPDB_CHECK3D(TZFIELD%ARRAY3D,"UPDATE_HALO2_ll",PRECISION)
+         END IF
+         TZFIELD => TZFIELD%NEXT
+      END DO
+   END IF
 !
 !----------------------------------------------------------------------
 !

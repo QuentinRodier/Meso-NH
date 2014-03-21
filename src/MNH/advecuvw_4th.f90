@@ -103,6 +103,8 @@ END MODULE MODI_ADVECUVW_4TH
 !!    MODIFICATIONS
 !!    -------------
 !!      Original   25/10/05
+!!      Modif
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -164,13 +166,13 @@ IKU=SIZE(XZHAT)
 !               --------------------------------------------------
 !
 IGRID = 2
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   TZHALO2LIST => TPHALO2LIST
   CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PUT, IGRID, ZMEANX, ZMEANY, &
                             TZHALO2LIST%HALO2 )
-ELSE
-  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PUT, IGRID, ZMEANX, ZMEANY)
-ENDIF
+!!$ELSE
+!!$  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PUT, IGRID, ZMEANX, ZMEANY)
+!!$ENDIF
 !
 PRUS(:,:,:) = PRUS(:,:,:)                          &
              -DXM( MXF(PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
@@ -183,13 +185,13 @@ PRUS(:,:,:) = PRUS(:,:,:)                             &
 !
 !
 IGRID = 3
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PVT, IGRID, ZMEANX, ZMEANY, &
                             TZHALO2LIST%HALO2 )
-ELSE
-  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PVT, IGRID, ZMEANX, ZMEANY)
-ENDIF
+!!$ELSE
+!!$  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PVT, IGRID, ZMEANX, ZMEANY)
+!!$ENDIF
 !
 PRVS(:,:,:) = PRVS(:,:,:)                          &
              -DXF( MYM(PRUCT(:,:,:))*ZMEANX(:,:,:) ) 
@@ -203,13 +205,13 @@ PRVS(:,:,:) = PRVS(:,:,:)                             &
 !
 IGRID = 4
 !
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PWT, IGRID, ZMEANX, ZMEANY, &
                             TZHALO2LIST%HALO2 )
-ELSE
-  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PWT, IGRID, ZMEANX, ZMEANY)
-ENDIF
+!!$ELSE
+!!$  CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PWT, IGRID, ZMEANX, ZMEANY)
+!!$ENDIF
 !
 PRWS(:,:,:) = PRWS(:,:,:)                          &
              -DXF( MZM(1,IKU,1,PRUCT(:,:,:))*ZMEANX(:,:,:) ) 

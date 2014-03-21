@@ -219,6 +219,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!                    01/2014 (C.Lac) correction for the nesting of 2D surface
 !!                           fields if the number of the son model does not
 !!                           follow the number of the dad model
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1244,7 +1245,7 @@ IF ( CTURB == 'TKEL' ) THEN
 
 !*        6.1 complete surface fluxe fields on the border
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFTH)
     CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFRV)
     CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFU)
@@ -1257,7 +1258,7 @@ IF ( CTURB == 'TKEL' ) THEN
     CALL ADD2DFIELD_ll(TZFIELDS_ll,ZSFCO2)
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
-  END IF
+!!$  END IF
 !
   IF ( CLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
     ZSFTH(IIB-1,:)=ZSFTH(IIB,:)

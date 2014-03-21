@@ -457,6 +457,8 @@ USE MODI_READ_ALL_NAMELISTS
 USE MODI_GOTO_SURFEX
 USE MODI_DEALLOC_SURFEX
 !
+USE MODE_MPPDB
+!
 IMPLICIT NONE
 !
 !*       0.1   Declaration of local variables
@@ -528,6 +530,8 @@ CHARACTER (LEN=100)    :: HCOMMENT
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 
 !-------------------------------------------------------------------------------
+!
+CALL MPPDB_INIT()
 !
 CALL GOTO_MODEL(1)
 !
@@ -1194,6 +1198,9 @@ END IF
 CALL CLOSE_ll(CLUOUT0, IOSTAT=IRESP)
 CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT0,IRESP)
 !
+  CALL MPPDB_BARRIER()
+  CALL MPPDB_BARRIER()
+
 !
 CALL END_PARA_ll(IINFO_ll)
 !-------------------------------------------------------------------------------

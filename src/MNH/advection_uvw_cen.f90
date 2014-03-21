@@ -86,6 +86,8 @@ END MODULE MODI_ADVECTION_UVW_CEN
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2013  (from ADVECTION routine)
+!!      Modif
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !
 !!
 !-------------------------------------------------------------------------------
@@ -196,13 +198,13 @@ END IF
 
 !
 NULLIFY(TZFIELDS_ll)
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRWCT)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRUCT)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRVCT)
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
-END IF
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !

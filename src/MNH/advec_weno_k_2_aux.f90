@@ -131,6 +131,7 @@ END MODULE MODI_ADVEC_WENO_K_2_AUX
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -222,16 +223,16 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB
     IE=IIE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF
 !
 ! r: many left cells in regard to 'i' cell for each stencil
 !
@@ -295,7 +296,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LWEST_ll()) THEN
     PR(IW-1,:,:) = PSRC(IW-1,:,:) * (0.5+SIGN(0.5,PRUCT(IW-1,:,:))) + PSRC(IW,:,:) * (0.5-SIGN(0.5,PRUCT(IW-1,:,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE 
     ZFPOS1(IW-1,:,:) = 0.5 * (3.0*PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))
     ZFPOS2(IW-1,:,:) = 0.5 * (PSRC(IW-1,    :,:) + PSRC(IW,:,:))
     ZBPOS1(IW-1,:,:) = (PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))**2
@@ -321,7 +323,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LEAST_ll()) THEN
     PR(IE,:,:) = PSRC(IE,:,:) * (0.5+SIGN(0.5,PRUCT(IE,:,:))) + PSRC(IE+1,:,:) * (0.5-SIGN(0.5,PRUCT(IE,:,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(IE,:,:) = 0.5 * (3.0*PSRC(IE,:,:) - PSRC(IE-1,:,:))
     ZFPOS2(IE,:,:) = 0.5 * (PSRC(IE,    :,:) + PSRC(IE+1,:,:)) 
     ZBPOS1(IE,:,:) = (PSRC(IE,:,:) - PSRC(IE-1,:,:))**2
@@ -482,16 +485,16 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB
     IE=IIE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF  
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF  
 !
 ! intermediate fluxes for positive wind case
 !
@@ -554,7 +557,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LWEST_ll()) THEN
     PR(IW,:,:) = PSRC(IW-1,:,:) * (0.5+SIGN(0.5,PRUCT(IW,:,:))) + PSRC(IW,:,:) * (0.5-SIGN(0.5,PRUCT(IW,:,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(IW,:,:) = 0.5 * (3.0*PSRC(IW-1, :,:) - TPHALO2%WEST(:,:))
     ZFPOS2(IW,:,:) = 0.5 * (PSRC(IW-1,     :,:) + PSRC(IW,     :,:))
     ZBPOS1(IW,:,:) = (PSRC(IW-1,:,:) - TPHALO2%WEST(:,:))**2
@@ -580,7 +584,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LEAST_ll()) THEN
     PR(IE+1,:,:) = PSRC(IE,:,:) * (0.5+SIGN(0.5,PRUCT(IE+1,:,:))) + PSRC(IE+1,:,:) * (0.5-SIGN(0.5,PRUCT(IE+1,:,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(IE+1,:,:) = 0.5 * (3.0*PSRC(IE,:,:) - PSRC(IE-1,:,:))
     ZFPOS2(IE+1,:,:) = 0.5 * (PSRC(IE,    :,:) + PSRC(IE+1,:,:))
     ZBPOS1(IE+1,:,:) = (PSRC(IE,:,:) - PSRC(IE-1,:,:))**2
@@ -742,16 +747,16 @@ SELECT CASE ( HLBCY(1) ) !
 !
 CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IS=IJB
     IN=IJE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF
 !
 ! intermediate fluxes for positive wind case
 !
@@ -812,7 +817,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LSOUTH_ll()) THEN
     PR(:,IS,:) = PSRC(:,IS-1,:) * (0.5+SIGN(0.5,PRVCT(:,IS,:))) + PSRC(:,IS,:) * (0.5-SIGN(0.5,PRVCT(:,IS,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(:,IS,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))
     ZFPOS2(:,IS,:) = 0.5 * (PSRC(:,IS-1,:) + PSRC(:,IS,:))
     ZBPOS1(:,IS,:) = (PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))**2
@@ -838,7 +844,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LNORTH_ll()) THEN
     PR(:,IN+1,:) = PSRC(:,IN,:) * (0.5+SIGN(0.5,PRVCT(:,IN+1,:))) + PSRC(:,IN+1,:) * (0.5-SIGN(0.5,PRVCT(:,IN+1,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(:,IN+1,:) = 0.5 * (3.0*PSRC(:,IN,:) - PSRC(:,IN-1,:))
     ZFPOS2(:,IN+1,:) = 0.5 * (PSRC(:,IN,    :) + PSRC(:,IN+1,:))
     ZBPOS1(:,IN+1,:) = (PSRC(:,IN,:) - PSRC(:,IN-1,:))**2
@@ -996,16 +1003,16 @@ SELECT CASE ( HLBCY(1) ) ! Y direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IS=IJB
     IN=IJE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF
 !
 ! intermediate fluxes for positive wind case
 !
@@ -1064,7 +1071,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LSOUTH_ll()) THEN
     PR(:,IS-1,:) = PSRC(:,IS-1,:) * (0.5+SIGN(0.5,PRVCT(:,IS-1,:))) + PSRC(:,IS,:) * (0.5-SIGN(0.5,PRVCT(:,IS-1,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(:,IS-1,:) = 0.5 * (3.0*PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))
     ZFPOS2(:,IS-1,:) = 0.5 * (PSRC(:,IS-1,    :) + PSRC(:,IS,:))
     ZBPOS1(:,IS-1,:) = (PSRC(:,IS-1,:) - TPHALO2%SOUTH(:,:))**2
@@ -1090,7 +1098,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LNORTH_ll()) THEN
     PR(:,IN,:) = PSRC(:,IN,:) * (0.5+SIGN(0.5,PRVCT(:,IN,:))) + PSRC(:,IN+1,:) * (0.5-SIGN(0.5,PRVCT(:,IN,:)))
 !
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     ZFPOS1(:,IN,:) = 0.5 * (3.0*PSRC(:,IN,:) - PSRC(:,IN-1,:))
     ZFPOS2(:,IN,:) = 0.5 * (PSRC(:,IN,    :) + PSRC(:,IN+1,:))
     ZBPOS1(:,IN,:) = (PSRC(:,IN,  :) - PSRC(:,IN-1,:))**2

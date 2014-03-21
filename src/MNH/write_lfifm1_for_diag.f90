@@ -134,6 +134,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       G.Tanguy/ JP Pinty/ JP Chabureau 18/05/2011 : add lidar simulator
 !!       S.Bielli 12/2012 : add latitude and longitude
 !!       F. Duffourg 02/2013 : add new fields
+!!      J.Escobar 21/03/2013: for HALOK get correctly local array dim/bound
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -306,12 +307,14 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) :: ZDELTAZ ! interval (m) b
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
 !
-IIB=1+JPHEXT
-IJB=1+JPHEXT
-IIU=NIMAX+2*JPHEXT
-IJU=NJMAX+2*JPHEXT
-IIE=IIU-JPHEXT
-IJE=IJU-JPHEXT
+CALL GET_DIM_EXT_ll ('B',IIU,IJU)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+!!$IIB=1+JPHEXT
+!!$IJB=1+JPHEXT
+!!$IIU=NIMAX+2*JPHEXT
+!!$IJU=NJMAX+2*JPHEXT
+!!$IIE=IIU-JPHEXT
+!!$IJE=IJU-JPHEXT
 IKU=NKMAX+2*JPVEXT
 IKB=1+JPVEXT
 IKE=IKU-JPVEXT

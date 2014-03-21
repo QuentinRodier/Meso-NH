@@ -72,7 +72,9 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!    -------------
 !!      Original    01/2003
 !!      10/09    (P. Aumond) Add possibility to get H_tree and Leaf area index
-
+!!      Modif
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test 
+!!                            & correction of index linearisation for NHALO<>1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -242,7 +244,7 @@ POUT=XUNDEF
 !
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    POUT(JI,JJ) = PFIELD(JI-1+NHALO+(JJ-1+NHALO-1)*(IIE-IIB+1+2*NHALO))
+    POUT(JI,JJ) = PFIELD( JI-IIB+1 + NHALO + (JJ-IJB+NHALO)*(IIE-IIB+1+2*NHALO))
   END DO
 END DO
 !

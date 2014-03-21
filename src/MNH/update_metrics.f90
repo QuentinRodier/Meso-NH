@@ -60,6 +60,7 @@ END MODULE MODI_UPDATE_METRICS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    april 2006
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -108,7 +109,7 @@ NULLIFY(TZMETRICS_ll)
 !            -------------
 !
 !
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZMETRICS_ll,PDXX)
   CALL ADD3DFIELD_ll(TZMETRICS_ll,PDYY)
   CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZX)
@@ -116,7 +117,7 @@ IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZZ)
   CALL UPDATE_HALO_ll(TZMETRICS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZMETRICS_ll)
-END IF
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !

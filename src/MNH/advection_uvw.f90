@@ -88,6 +88,7 @@ END MODULE MODI_ADVECTION_UVW
 !!                  25/10/05 (JP Pinty)              4th order scheme
 !!                  04/2011  (V. Masson & C. Lac)    splits the routine and adds
 !!                                                   time splitting
+!!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -205,23 +206,23 @@ ZRVT = PVT(:,:,:) * ZMYM_RHODJ
 ZRWT = PWT(:,:,:) * ZMZM_RHODJ
 !
 NULLIFY(TZFIELD_ll)
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELD_ll, ZRUT)
   CALL ADD3DFIELD_ll(TZFIELD_ll, ZRVT)
   CALL UPDATE_HALO_ll(TZFIELD_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELD_ll)
-END IF
+!!$END IF
 !
 CALL CONTRAV (HLBCX,HLBCY,ZRUT,ZRVT,ZRWT,PDXX,PDYY,PDZZ,PDZX,PDZY,ZRUCT,ZRVCT,ZRWCT,4)
 !
 NULLIFY(TZFIELDS_ll)
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRWCT)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRUCT)
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRVCT)
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
-END IF
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -241,13 +242,13 @@ CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZRWS_OTHER)
 ZRWS_OTHER(:,:,IKE+1) = 0.
 
 NULLIFY(TZFIELDS0_ll)
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRUS_OTHER)
   CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRVS_OTHER)
   CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRWS_OTHER)
   CALL UPDATE_HALO_ll(TZFIELDS0_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS0_ll)
-END IF
+!!$END IF
 !
 !
 !

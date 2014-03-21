@@ -1149,6 +1149,7 @@ CONTAINS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original   24/06/99
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1179,12 +1180,12 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !         2 Update halo if necessary
 !
-IF (NHALO == 1) THEN
+!!$IF (NHALO == 1) THEN
   CALL ADD2DFIELD_ll(TZFIELDS_ll,PUSLOPE)
   CALL ADD2DFIELD_ll(TZFIELDS_ll,PVSLOPE)
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
-ENDIF
+!!$ENDIF
 !
 !        3 Boundary conditions for non cyclic case
 !

@@ -103,6 +103,8 @@ END MODULE MODI_ADVEC_4TH_ORDER_AUX
 !!    MODIFICATIONS
 !!    -------------
 !!      Original   25/10/05
+!!      Modif
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -165,21 +167,21 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE
 !    IE=IIE-1
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
-!    IW=IIB
-!    IE=IIE
-  END IF  
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    !callabortstop
+!!$    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$    CALL ABORT
+!!$    STOP
+!!$!    IW=IIB
+!!$!    IE=IIE
+!!$  END IF  
 !
   IF(KGRID == 2) THEN
     IWF=IW-1
@@ -224,13 +226,14 @@ CASE ('OPEN','WALL','NEST')
       IW=IIB+1
     END IF
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IW=IIB+1
-    ELSE
-      IW=IIB
-    ENDIF
+!!$    ELSE
+!!$      IW=IIB
+!!$    ENDIF
   ENDIF
-  IF (LEAST_ll() .OR. NHALO == 1) THEN
+!!$  IF (LEAST_ll() .OR. NHALO == 1) THEN
+  IF (LEAST_ll() ) THEN
 ! T. Maric
 !    IE=IIE-1 ! original
     IE=IIE
@@ -258,14 +261,16 @@ CASE ('OPEN','WALL','NEST')
     ! PMEANX(1,:,:) = PMEANX(IWF-1,:,:)
     ! extrapolate
     !PMEANX(1,:,:) = 0.5*(3.0*PFIELDT(1,:,:) - PFIELDT(2,:,:))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSE IF (NHALO == 1) THEN
+  ELSE
     PMEANX(IWF-1,:,:) = (7.0*( PFIELDT(IW-1,:,:)+PFIELDT(IW-2,:,:) ) -  &
                              ( PFIELDT(IW,:,:)+TPHALO2%WEST(:,:) ) )/12.0
   ENDIF
 !
   IF (LEAST_ll()) THEN
     PMEANX(IEF+1,:,:) = 0.5*( PFIELDT(IE+1,:,:)+PFIELDT(IE,:,:) )
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PMEANX(IEF+1,:,:) = (7.0*( PFIELDT(IE+1,:,:)+PFIELDT(IE,:,:) ) -  &
                          ( TPHALO2%EAST(:,:)+PFIELDT(IE-1,:,:) ) )/12.0
   ENDIF
@@ -289,21 +294,21 @@ IF ( .NOT. L2D ) THEN
   CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 !
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IS=IJB+1
       IN=IJE
 !      IN=IJE-1
-    ELSE
-      CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-      WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-      WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
-!      IS=IJB
-!      IN=IJE
-    END IF
+!!$    ELSE
+!!$      CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$      WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$      WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$!callabortstop
+!!$      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$      CALL ABORT
+!!$      STOP
+!!$!      IS=IJB
+!!$!      IN=IJE
+!!$    END IF
 !
     IF(KGRID == 3) THEN
       ISF=IS-1
@@ -346,13 +351,14 @@ IF ( .NOT. L2D ) THEN
         IS=IJB+1
       END IF
     ELSE
-      IF(NHALO == 1) THEN
+!!$      IF(NHALO == 1) THEN
         IS=IJB+1
-      ELSE
-        IS=IJB
-      ENDIF
+!!$      ELSE
+!!$        IS=IJB
+!!$      ENDIF
     ENDIF
-    IF (LNORTH_ll() .OR. NHALO == 1) THEN
+!!$    IF (LNORTH_ll() .OR. NHALO == 1) THEN
+    IF (LNORTH_ll()) THEN
 ! T. Maric
 !      IN=IJE-1  ! original
       IN=IJE
@@ -376,7 +382,8 @@ IF ( .NOT. L2D ) THEN
       ! PMEANY(:,1,:) = PMEANY(:,ISF-1,:)
       ! extrapolate
       !PMEANY(:,1,:) = 0.5*(3.0*PFIELDT(:,1,:) - PFIELDT(:,2,:))
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !!$      PMEANY(:,ISF-1,:) = (7.0*( PFIELDT(:,IS,:)+PFIELDT(:,IS-1,:)) -  &
 !!$                          ( PFIELDT(:,IS+1,:)+TPHALO2%SOUTH(:,:) ))/12.0
        PMEANY(:,ISF-1,:) = (7.0*( PFIELDT(:,IS-1,:)+PFIELDT(:,IS-2,:)) -  &
@@ -385,7 +392,8 @@ IF ( .NOT. L2D ) THEN
 !
     IF (LNORTH_ll()) THEN
       PMEANY(:,INF+1,:) = 0.5*( PFIELDT(:,IN+1,:)+PFIELDT(:,IN,:) )
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !!$      PMEANY(:,INF+1,:) = (7.0*( PFIELDT(:,IN,:)+PFIELDT(:,IN-1,:)) -  &
 !!$                          ( TPHALO2%NORTH(:,:)+PFIELDT(:,IN-2,:) ))/12.0
        PMEANY(:,INF+1,:) = (7.0*( PFIELDT(:,IN+1,:)+PFIELDT(:,IN,:)) -  &

@@ -157,6 +157,7 @@ END MODULE MODI_FAST_TERMS
 !!                     November 6, 2002 (S. Malardel,J.Pergaud) Cloud Fract + Rc of 
 !!                                                              Mass flux convection
 !!                                                              Scheme
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -248,10 +249,11 @@ CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !               -------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-IIB = 1 + JPHEXT
-IIE = SIZE(PRHODJ,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PRHODJ,2) - JPHEXT
+!!$IIB = 1 + JPHEXT
+!!$IIE = SIZE(PRHODJ,1) - JPHEXT
+!!$IJB = 1 + JPHEXT
+!!$IJE = SIZE(PRHODJ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IPLAN = (SIZE(PRHODJ,1)-2*JPHEXT)*(SIZE(PRHODJ,2)-2*JPHEXT)
 IKB = 1 + JPVEXT
 IKE = SIZE(PRHODJ,3) - JPVEXT

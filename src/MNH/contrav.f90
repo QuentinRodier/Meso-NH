@@ -104,6 +104,7 @@ END MODULE MODI_CONTRAV
 !!      Corrections 17/10/94 (by J.P. Lafore) WC modified for w-advection
 !!      Corrections 19/01/11 (by J.P. Pinty) WC 4th order
 !!      Corrections 28/03/11 (by V.Masson) // of WC 4th order
+!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -117,6 +118,8 @@ USE MODE_ll
 !
 USE MODI_SHUMAN
 USE MODI_GET_HALO
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -160,6 +163,8 @@ REAL          :: XPRECISION
 !*       1.    Compute the horizontal contravariant components
 !              -----------------------------------------------
 !
+CALL MPPDB_CHECK3DM("contrav big ::PRU/V/WT",PRECISION,PRUT,PRVT,PRWT)                    
+!
 IIU= SIZE(PDXX,1)
 IJU= SIZE(PDXX,2)
 IKU= SIZE(PDXX,3)
@@ -180,7 +185,7 @@ IF (KADV_ORDER == 4 ) THEN
   CALL ADD3DFIELD_ll(TZFIELD_V, PRVCT)
   CALL UPDATE_HALO_ll(TZFIELD_U,IINFO_ll)
   CALL UPDATE_HALO_ll(TZFIELD_V,IINFO_ll)
- IF( NHALO==1 ) THEN 
+!!$ IF( NHALO==1 ) THEN 
   NULLIFY(TZFIELD_DZX)
   NULLIFY(TZFIELD_DZY)
   CALL ADD3DFIELD_ll(TZFIELD_DZX, PDZX)
@@ -197,7 +202,7 @@ IF (KADV_ORDER == 4 ) THEN
   CALL UPDATE_HALO2_ll(TZFIELD_V, TZHALO2_V, IINFO_ll)
   CALL UPDATE_HALO2_ll(TZFIELD_DZX, TZHALO2_DZX, IINFO_ll)
   CALL UPDATE_HALO2_ll(TZFIELD_DZY, TZHALO2_DZY, IINFO_ll)
- END IF
+!!$ END IF
  END IF
 END IF
 !
@@ -238,48 +243,48 @@ IF (KADV_ORDER == 2 ) THEN
 !
 ELSE IF (KADV_ORDER == 4 ) THEN
 !
-  IF(NHALO == 1) THEN
-   IF ( LWEST_ll() .AND. HLBCX(1)/='CYCL' ) THEN
-     IW=IIB+2 -1
-   ELSE
-     IW=IIB+1 -1
-   END IF
-   IE=IIE-1
-  ELSE
-   IF (LWEST_ll()) THEN
-     IW=IIB+1
-   ELSE
-     IW=IIB
-   END IF
-   IF (LEAST_ll() .AND. HLBCX(2)/='CYCL' ) THEN
-     IE=IIE-1
-   ELSE
-     IE=IIE
-   END IF
-  END IF
-!
-  IF(NHALO == 1) THEN
-   IF ( LSOUTH_ll() .AND. HLBCY(1)/='CYCL' ) THEN
-     IS=IJB+2 -1
-   ELSE
-     IS=IJB+1 -1
-   END IF
-   IN=IJE-1
-  ELSE
-   IF (LSOUTH_ll()) THEN
-     IS=IJB+1
-   ELSE
-     IS=IJB
-   END IF
-   IF (LNORTH_ll() .AND. HLBCY(2)/='CYCL' ) THEN
-     IN=IJE-1
-   ELSE
-     IN=IJE
-   END IF
-  END IF
-!
-!
-!*       3.1    interior of the processor subdomain
+!!$   IF (NHALO == 1) THEN
+      IF ( LWEST_ll() .AND. HLBCX(1)/='CYCL' ) THEN
+         IW=IIB+2 -1
+      ELSE
+         IW=IIB+1 -1
+      END IF
+      IE=IIE-1
+!!$   ELSE
+!!$      IF (LWEST_ll()) THEN
+!!$         IW=IIB+1
+!!$      ELSE
+!!$         IW=IIB
+!!$      END IF
+!!$      IF (LEAST_ll() .AND. HLBCX(2)/='CYCL' ) THEN
+!!$         IE=IIE-1
+!!$      ELSE
+!!$         IE=IIE
+!!$      END IF
+!!$   END IF
+   !
+!!$   IF(NHALO == 1) THEN
+      IF ( LSOUTH_ll() .AND. HLBCY(1)/='CYCL' ) THEN
+         IS=IJB+2 -1
+      ELSE
+         IS=IJB+1 -1
+      END IF
+      IN=IJE-1
+!!$   ELSE
+!!$      IF (LSOUTH_ll()) THEN
+!!$         IS=IJB+1
+!!$      ELSE
+!!$         IS=IJB
+!!$      END IF
+!!$      IF (LNORTH_ll() .AND. HLBCY(2)/='CYCL' ) THEN
+!!$         IN=IJE-1
+!!$      ELSE
+!!$         IN=IJE
+!!$      END IF
+!!$   END IF
+   !
+   !
+   !*       3.1    interior of the processor subdomain
 !
 !
    Z1(IW:IE,:,IKB:IKE+1)=                                               &
@@ -309,7 +314,7 @@ ELSE IF (KADV_ORDER == 4 ) THEN
 !
 !*       3.2    limits of the processor subdomain (inside the whole domain or in cyclic conditions)
 !
-  IF (NHALO==1) THEN
+!!$  IF (NHALO==1) THEN
 
    Z1(IIE,:,IKB:IKE+1)=                                               &
        7.0*( (PRUCT(IIE,:,IKB:IKE+1)+PRUCT(IIE,:,IKB-1:IKE)) &
@@ -334,7 +339,7 @@ ELSE IF (KADV_ORDER == 4 ) THEN
             *PDZY(:,IJE-1,IKB:IKE+1) *0.5 &
             +(TZHALO2_V%HALO2%NORTH(:,IKB:IKE+1)+TZHALO2_V%HALO2%NORTH(:,IKB-1:IKE)) &
             *TZHALO2_DZY%HALO2%NORTH(:,IKB:IKE+1) *0.5)/12.0
-  END IF
+!!$  END IF
 !
 !*       3.3    non-CYCLIC CASE IN THE X DIRECTION: 2nd order case
 !
@@ -381,6 +386,10 @@ ELSE IF (KADV_ORDER == 4 ) THEN
 !*       3.5    Vertical contyravariant wind
 !
 !
+!!$  CALL GET_HALO(Z1)
+!!$  CALL GET_HALO(Z2)
+!!$
+!!$  CALL MPPDB_CHECK3DM("contrav ::Z1/Z2/ PDZZ",PRECISION,Z1,Z2,PDZZ)                    
   PRWCT=0.             
   PRWCT(IIB:IIE,IJB:IJE,IKB:IKE+1) =                 &
      (   PRWT(IIB:IIE,IJB:IJE,IKB:IKE+1)            &
@@ -395,15 +404,16 @@ PRWCT(:,:,1) = - PRWCT(:,:,3)     ! Mirror hypothesis
 IF (KADV_ORDER == 4 ) THEN
   CALL CLEANLIST_ll(TZFIELD_U)
   CALL CLEANLIST_ll(TZFIELD_V)
-  IF (NHALO==1) THEN
+!!$  IF (NHALO==1) THEN
     CALL CLEANLIST_ll(TZFIELD_DZX)
     CALL CLEANLIST_ll(TZFIELD_DZY)
     CALL DEL_HALO2_ll(TZHALO2_U)
     CALL DEL_HALO2_ll(TZHALO2_V)
     CALL DEL_HALO2_ll(TZHALO2_DZX)
     CALL DEL_HALO2_ll(TZHALO2_DZY)
-  END IF
+!!$  END IF
 END IF
 !-----------------------------------------------------------------------
+CALL MPPDB_CHECK3DM("contrav end ::PRU/V/WCT",PRECISION,PRUCT,PRVCT,PRWCT)                    
 !
 END SUBROUTINE CONTRAV
