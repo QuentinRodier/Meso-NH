@@ -135,6 +135,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       S.Bielli 12/2012 : add latitude and longitude
 !!       F. Duffourg 02/2013 : add new fields
 !!      J.Escobar 21/03/2013: for HALOK get correctly local array dim/bound
+!!       J. escobar 27/03/2014 : write LAT/LON only in not CARTESIAN case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -701,17 +702,19 @@ END IF
 !
 !*   Latitude and Longitude arrays
 !
-YRECFM='LAT'
-YCOMMENT='X_Y_latitude (degrees)'
-IGRID=1
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='LON'
-YCOMMENT='X_Y_longitude (degrees)'
-IGRID=1
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
+IF (.NOT.LCARTESIAN) THEN
+   YRECFM='LAT'
+   YCOMMENT='X_Y_latitude (degrees)'
+   IGRID=1
+   ILENCH=LEN(YCOMMENT)
+   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
+   !
+   YRECFM='LON'
+   YCOMMENT='X_Y_longitude (degrees)'
+   IGRID=1
+   ILENCH=LEN(YCOMMENT)
+   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
+END IF
 !
 !
 !-------------------------------------------------------------------------------
