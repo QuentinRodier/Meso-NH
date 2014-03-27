@@ -127,6 +127,7 @@ END MODULE MODI_WRITE_BUDGET
 !!                             third one is the number of the masks.
 !!      October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
+!!      24/03/2014  (J.Escobar ) miss placed deallocate in RSV budget
 !!                             
 !!
 !-------------------------------------------------------------------------------
@@ -963,6 +964,7 @@ SELECT CASE (CBUTYPE)
       END DO
     END IF
 !
+    IF (ALLOCATED(ZWORK)) DEALLOCATE(ZWORK)
     DEALLOCATE (ZWORKTEMP, ZWORKDATIME)
 !-------------------------------------------------------------------------------
 !
