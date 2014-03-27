@@ -213,6 +213,7 @@ END MODULE MODI_INI_CPL
 !!                                       SST forcing
 !!      Modification             05/2006  Remove KEPS
 !!                     (Escobar) 2/2014 add Forefire
+!!                     (J.Escobar) 26/03/2014 bug in init of NSV_USER on RESTA case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -515,7 +516,7 @@ CALL INI_LS(CCPLFILE(NCPL_CUR),HLUOUT,HGETRVM,GLSOURCE,PLSUS,PLSVS,PLSWS,PLSTHS,
 !   IF (LPASPOL) YGETSVM(NSV_PPBEG: NSV_PPEND) = 'INIT'
 !   IF (LFOREFIRE) YGETSVM(NSV_FFBEG: NSV_FFEND) = 'INIT'
 #endif
-!   IF (NSV_USER /= 0) YGETSVM(1/NSV_USER) = 'INIT'
+!   IF (NSV_USER /= 0) YGETSVM(1:NSV_USER) = 'INIT'
 !   IF (NSV_C2R2 /= 0) YGETSVM(NSV_C2R2BEG: NSV_C2R2END) = 'INIT'
 !   IF (NSV_C1R3 /= 0) YGETSVM(NSV_C1R3BEG: NSV_C1R3END) = 'INIT'
 !   IF (NSV_ELEC /= 0) YGETSVM(NSV_ELECBEG: NSV_ELECEND) = 'INIT'
