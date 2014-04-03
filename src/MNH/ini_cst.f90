@@ -66,6 +66,7 @@ END MODULE MODI_INI_CST
 !!      V. Masson   05/10/98  add XRHOLI
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add XCONDI
+!!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XMNH_TINY=1.0e-80 in real8 case 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -156,22 +157,25 @@ XALPI  = LOG(XESTT) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
 !   Some machine precision value depending of real4/8 use  
 !
 
-XMNH_TINY    = TINY    (XMNH_TINY    )
-XMNH_TINY_12 = SQRT    (XMNH_TINY    )
+
 XMNH_EPSILON = EPSILON (XMNH_EPSILON )
 XMNH_HUGE    = HUGE    (XMNH_HUGE )
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
+XMNH_TINY      = 1.0e-80
 XEPS_DT        = 1.0e-5
 XRES_FLAT_CART = 1.0e-12
 XRES_OTHER     = 1.0e-9
 XRES_PREP      = 1.0e-8
 #else
+XMNH_TINY      = TINY    (XMNH_TINY    )
 XEPS_DT        = 1.0e-4
 XRES_FLAT_CART = 1.0e-12
 XRES_OTHER     = 1.0e-7
 XRES_PREP      = 1.0e-4
 #endif
+XMNH_TINY_12 = SQRT    (XMNH_TINY    )
+
 
 
 !

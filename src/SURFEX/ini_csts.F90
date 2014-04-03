@@ -46,6 +46,7 @@
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add XCONDI
 !!      A. Voldoire 01/12/09  add XTTSI, XICEC, XTTS for ESM
+!!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XSURF_TINY=1.0e-80 in real8 case 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -76,7 +77,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('INI_CSTS',0,ZHOOK_HANDLE)
 
+#ifdef MNH
+#ifdef MNH_MPI_DOUBLE_PRECISION
+XSURF_TINY    = 1.0e-80
+#else
 XSURF_TINY    = TINY    (XSURF_TINY    )
+#endif
+#else
+XSURF_TINY    = 1.0e-80
+#endif
 XSURF_TINY_12 = SQRT    (XSURF_TINY    )
 XSURF_EPSILON = EPSILON (XSURF_EPSILON ) * 10.0
 
