@@ -185,7 +185,7 @@ REAL, DIMENSION(:), INTENT(OUT) :: PGFLUX_ISBA! flux through the ground
 REAL, DIMENSION(:), INTENT(IN)    :: PFFG,PFFV,PFF
 REAL, DIMENSION(:), INTENT(INOUT) :: PLE_FLOOD, PLEI_FLOOD ! Flood evaporation
 !
-REAL, DIMENSION(:),   INTENT(OUT) :: PRI       ! Total Ridcharson number
+REAL, DIMENSION(:),   INTENT(INOUT) :: PRI       ! Total Ridcharson number
 !
 !*      0.2    declarations of local variables
 !

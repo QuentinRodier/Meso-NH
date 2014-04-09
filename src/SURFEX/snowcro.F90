@@ -3450,7 +3450,7 @@ DO JJ=1, SIZE(PSNOW(:))
       !remaining snow for remaining layers
       THICKNESS_INTERMEDIATE=PSNOW_UPPER - SUM(ZDZOPT(JJ,1:5))-ZDZOPT(JJ,NB_UPPER_LAYER)
 
-      IF (PSNOW_UPPER<DEPTH_THRESHOLD1) THEN
+      IF ((PSNOW_UPPER<=DEPTH_THRESHOLD1) .OR.(NB_UPPER_LAYER<8)) THEN
         NB_INTERMEDIATE=NB_UPPER_LAYER-6
         END_INTERMEDIATE=NB_UPPER_LAYER-1
       ELSE
@@ -3940,42 +3940,36 @@ DO JJ=1,SIZE(PSNOW(:))
       INLVLS_USE(JJ)=INLVLS_USE(JJ)-1
       PSNOWDZN(JJ,INLVLS_USE(JJ))=PSNOWDZN(JJ,INLVLS_USE(JJ))+  &
                    PSNOWDZN(JJ,INLVLS_USE(JJ)+1)
+      PSNOWDZN(JJ,INLVLS_USE(JJ)+1) = 0.
    ELSE
 ! internal layer
-       DO JST=INLVLS_USE(JJ)-1,4 
+       DO JST=INLVLS_USE(JJ)-1,4,-1 
           IF(ABS(PSNOWDZN(JJ,JST)-PSNOWDZ(JJ,JST)) &
               > UEPSI) EXIT ! old/new grid differ ==> go to next grid point 
-         ZDIFTYPE_SUP= SNOW3LDIFTYP(PSNOWGRAN1(JJ,JST-1),PSNOWGRAN1(JJ, JST),&
-                       PSNOWGRAN2(JJ,JST-1),PSNOWGRAN2(JJ, JST))
-         ZDIFTYPE_SUP=MAX(DIFF_1,MIN(DIFF_MAX,ZDIFTYPE_SUP))
-         IF(PSNOWDZN(JJ,JST)>ZDZOPT(JJ,JST)*AGREG_COEF_1/ZDIFTYPE_SUP &
-            .OR.PSNOWDZN(JJ,JST)+PSNOWDZN(JJ,JST-1)>AGREG_COEF_2*&
-             MAX(ZDZOPT(JJ,JST),ZDZOPT(JJ,JST-1))) CYCLE! cheks upper layer
-! shallow internal layer to be merged with the upper layer             
-         PSNOWDZN(JJ,JST)= PSNOWDZN(JJ,JST)+PSNOWDZN(JJ,JST-1)
+         IF(PSNOWDZN(JJ,JST)> 0.001) CYCLE! 
+! If an internal layer is too shallow, it is merged with the upper layer             
+         PSNOWDZN(JJ,JST-1)= PSNOWDZN(JJ,JST)+PSNOWDZN(JJ,JST-1)
          INLVLS_USE(JJ)=INLVLS_USE(JJ)-1
-! shifts the upper layers       
-         DO JST_1=JST-1,1
-            PSNOWDZN(JJ,JST_1)=PSNOWDZ(JJ,JST_1-1)
-            ZDZOPT(JJ,JST_1)=ZDZOPT(JJ,JST_1-1)
-         ENDDO             
+! shifts the lower layers       
+         DO JST_1=JST,INLVLS_USE(JJ)
+            PSNOWDZN(JJ,JST_1)=PSNOWDZ(JJ,JST_1+1)
+            ZDZOPT(JJ,JST_1)=ZDZOPT(JJ,JST_1+1)
+         ENDDO
+         PSNOWDZN(JJ,INLVLS_USE(JJ)+1) = 0.
          EXIT ! goto to next grid point
       ENDDO ! end loop internal layers             
    ENDIF
 ENDDO ! end grid loops for checking shallow layers   
-
-
-
-
 !
 !final check of the consistensy of the new grid size
 !
 DO JJ=1,SIZE(PSNOW(:))
   IF(ABS(SUM(PSNOWDZN(JJ,1:INLVLS_USE(JJ)))-PSNOW(JJ)) > UEPSI) THEN
-   write(*,*) 'error in grid resizing',JJ, SUM(PSNOWDZN(JJ,1:INLVLS_USE(JJ))), &
-               PSNOW(JJ),INLVLS_USE(JJ) 
-write( *,*) 'PSNOWDZ:',     PSNOWDZ
-write( *,*) 'PSNOWDZN:',     PSNOWDZN
+   write(*,*) 'error in grid resizing JJ,USE,H_new,H_old,delta,ZSNOWFALL',&
+            JJ,INLVLS_USE(JJ), SUM(PSNOWDZN(JJ,1:INLVLS_USE(JJ))), PSNOW(JJ), & 
+        SUM(PSNOWDZN(JJ,1:INLVLS_USE(JJ)))-PSNOW(JJ),ZSNOWFALL(JJ)
+   write( *,*) 'JJ , PSNOWDZ(JJ):',JJ ,  PSNOWDZ(JJ,:)
+   write( *,*) 'JJ , PSNOWDZN(JJ):',JJ , PSNOWDZN(JJ,:)
  CALL ABOR1_SFX("SNOWCRO: error in grid resizing")
    ENDIF       
 ENDDO

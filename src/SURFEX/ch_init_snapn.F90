@@ -24,6 +24,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        11/2011
+!!      J.Escobar       11/2013 : ajout use MODI_CH_OPEN_INPUTB
 !!-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

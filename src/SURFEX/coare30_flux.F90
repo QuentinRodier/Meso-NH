@@ -50,13 +50,17 @@
 !!      Original     1/06/2006
 !!      B. Decharme    06/2009 limitation of Ri
 !!      B. Decharme    09/2012 Bug in Ri calculation and limitation of Ri in surface_ri.F90
+!!      B. Decharme    06/2013 bug in z0 (output) computation 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
 USE MODD_CSTS,       ONLY : XKARMAN, XG, XSTEFAN, XRD, XRV, XPI, &
-                              XLVTT, XCL, XCPD, XCPV, XRHOLW, XTT,XP00  
+                            XLVTT, XCL, XCPD, XCPV, XRHOLW, XTT, &
+                            XP00
+USE MODD_SURF_ATM,   ONLY : XVZ0CM
+!
 USE MODD_SEAFLUX_n
 USE MODD_SURF_PAR,   ONLY : XUNDEF, XSURF_EPSILON
 USE MODD_WATER_PAR
@@ -226,9 +230,11 @@ ZPA(:) = XP00* (PEXNA(:)**(XCPD/XRD))
 ZQASAT(:) = QSAT(PTA(:),ZPA(:)) 
 !
 !
-ZO(:)  = 0.0001
+ZO(:)  = PZ0SEA(:)
 ZWG(:) = 0.
 IF (LPWG) ZWG(:) = 0.5
+!
+ZCHARN(:) = 0.011  
 !
 DO J=1,SIZE(PTA)
   !
@@ -239,16 +245,16 @@ DO J=1,SIZE(PTA)
   ZDT(J) = -(PTA(J)/PEXNA(J)) + (PSST(J)/PEXNS(J)) !potential temperature difference
   ZDQ(J) = PQSAT(J)-PQA(J)                         !specific humidity difference
   !
-  ZDUWG(J) = (ZDU(J)*ZDU(J)+ZWG(J)*ZWG(J))**0.5    !wind speed difference including gustiness ZWG
+  ZDUWG(J) = SQRT(ZDU(J)**2+ZWG(J)**2)     !wind speed difference including gustiness ZWG
   !
   !      2.3   initialization of neutral coefficients
   !
   ZU10(J)  = ZDUWG(J)*LOG(ZS/ZO(J))/LOG(PUREF(J)/ZO(J))
   ZUSR(J)  = 0.035*ZU10(J)
   ZVISA(J) = 1.326E-5*(1.+6.542E-3*(PTA(J)-XTT)+&
-             8.301E-6*(PTA(J)-XTT)**2.-4.84E-9*(PTA(J)-XTT)**3.) !Andrea (1989) CRREL Rep. 89-11
+             8.301E-6*(PTA(J)-XTT)**2-4.84E-9*(PTA(J)-XTT)**3) !Andrea (1989) CRREL Rep. 89-11
   ! 
-  ZO10(J) = 0.011*ZUSR(J)*ZUSR(J)/XG+0.11*ZVISA(J)/ZUSR(J)
+  ZO10(J) = ZCHARN(J)*ZUSR(J)*ZUSR(J)/XG+0.11*ZVISA(J)/ZUSR(J)
   ZCD(J)  = (XKARMAN/LOG(PUREF(J)/ZO10(J)))**2  !drag coefficient
   ZCD10(J)= (XKARMAN/LOG(ZS/ZO10(J)))**2
   ZCT10(J)= ZCH10/SQRT(ZCD10(J))
@@ -280,8 +286,6 @@ ZUSR(:) = ZDUWG(:)*XKARMAN/(LOG(PUREF(:)/ZO10(:))-PSIFCTU(PUREF(:)/ZL10(:)))
 ZTSR(:) = -ZDT(:)*XKARMAN/(LOG(PZREF(:)/ZOT10(:))-PSIFCTT(PZREF(:)/ZL10(:)))
 ZQSR(:) = -ZDQ(:)*XKARMAN/(LOG(PZREF(:)/ZOT10(:))-PSIFCTT(PZREF(:)/ZL10(:)))
 !
-ZCHARN(:) = 0.011  
-!
 ZZL(:) = 0.0
 !
 DO J=1,SIZE(PTA)
@@ -293,7 +297,7 @@ DO J=1,SIZE(PTA)
   ENDIF
   !
   !then modify Charnork for high wind speeds Chris Fairall's data
-  IF (ZDUWG(J)>10.) ZCHARN(J) = 0.011 + (0.018-0.011)*(ZDUWG(J)-10.)/(18-10)
+  IF (ZDUWG(J)>10.) ZCHARN(J) = 0.011 + (0.018-0.011)*(ZDUWG(J)-10.)/(18.-10.)
   IF (ZDUWG(J)>18.) ZCHARN(J) = 0.018
   !
   !                3.  ITERATIVE LOOP TO COMPUTE USR, TSR, QSR 
@@ -359,7 +363,7 @@ DO JLOOP=1,MAXVAL(ITERMAX) ! begin of iterative loop
         ZWG(J) = 0.2
       ENDIF
     ENDIF  
-    ZDUWG(J) = SQRT(ZVMOD(J)**2. + ZWG(J)**2.)
+    ZDUWG(J) = SQRT(ZVMOD(J)**2 + ZWG(J)**2)
     !
   ENDDO
   !
@@ -379,11 +383,8 @@ ZRF(:)   = 0.
 !
 DO J=1,SIZE(PTA)
   !
-  !            4. 0  roughness length over the ocean PZOSEA
   !
-  IF(ZUSR(J)/=0.0) PZ0SEA(J) = 10./EXP(XKARMAN*ZU10(J)/ZUSR(J))
-  !
-  !            4. 1 transfert coefficients PCD, PCH and PCE 
+  !            4. transfert coefficients PCD, PCH and PCE 
   !                 and neutral PCDN, ZCHN, ZCEN 
   !
   PCD(J) = (ZUSR(J)/ZDUWG(J))**2.
@@ -473,7 +474,12 @@ ZDIRCOSZW(:) = 1.
 ZAC(:) = PCH(:)*ZVMOD(:)
 PRESA(:) = 1. / MAX(ZAC(:),XSURF_EPSILON)
 !
+!       5.3 Z0 and Z0H over sea
+!
+PZ0SEA(:) =  ZCHARN(:) * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
+!
 PZ0HSEA(:) = PZ0SEA(:)
+!
 IF (LHOOK) CALL DR_HOOK('COARE30_FLUX',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

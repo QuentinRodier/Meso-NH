@@ -209,12 +209,12 @@ XT_CANYON = XT_CANYON  + XT_CLIM_GRAD  * (XZS - XZS_LS)
 !* estimation of pressure at large-scale orography
 !
 ALLOCATE(ZP_LS(SIZE(XQ_CANYON)))
-ZP_LS = XP00 * EXP(-(XG/XRD/ZT0)*XZS_LS+(XG*XT_CLIM_GRAD/(2.*XRD*ZT0))*XZS_LS**2)
+ZP_LS = XP00 * EXP(-(XG/XRD/ZT0)*XZS_LS +(XG*XT_CLIM_GRAD/(2.*XRD*ZT0**2))*XZS_LS**2)
 !
 !* estimation of pressure at output orography
 !
 ALLOCATE(ZP(SIZE(XQ_CANYON)))
-ZP    = XP00 * EXP(-(XG/XRD/ZT0)*XZS   +(XG*XT_CLIM_GRAD/(2.*XRD*ZT0))*XZS   **2)
+ZP    = XP00 * EXP(-(XG/XRD/ZT0)*XZS   +(XG*XT_CLIM_GRAD/(2.*XRD*ZT0**2))*XZS   **2)
 !
 !* conservation of estimated relative humidity
 !

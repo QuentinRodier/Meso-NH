@@ -33,6 +33,7 @@ SUBROUTINE READ_NAM_GRID_GAUSS(HPROGRAM,KGRID_PAR,KL,PGRID_PAR)
 !!    -------------
 !!      Original    01/2004
 !!      B. Decharme    2008  Comput and save the Mesh size
+!!                     2013  Bug lat and lon for non rotat-strech grid
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -184,9 +185,8 @@ ENDIF
 !
 ALLOCATE(ZLAT_XY(KL))
 ALLOCATE(ZLON_XY(KL))
-
+!
  CALL COMP_GRIDTYPE_GAUSS(INLATI,INLOPA,KL,ITYP,ZLAT_XY,ZLON_XY)
-
 !
 !---------------------------------------------------------------------------
 !
@@ -196,7 +196,13 @@ ALLOCATE(ZLON_XY(KL))
 !* all points are used
 ALLOCATE(ZLAT(KL))
 ALLOCATE(ZLON(KL))
- CALL LATLON_GAUSS(ZLON_XY,ZLAT_XY,KL,ZLOPO,ZLAPO,ZCODIL,ZLON,ZLAT)
+!
+IF(ZCODIL==1.0.AND.ZLAPO==90.0.AND.ZLOPO==0.0)THEN
+  ZLON(:)=ZLON_XY(:)
+  ZLAT(:)=ZLAT_XY(:)
+ELSE
+  CALL LATLON_GAUSS(ZLON_XY,ZLAT_XY,KL,ZLOPO,ZLAPO,ZCODIL,ZLON,ZLAT)
+ENDIF
 !
 !---------------------------------------------------------------------------
 !

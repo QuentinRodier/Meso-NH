@@ -34,6 +34,7 @@
 !!
 !!    Original     13/10/03
 !!      A. Lemonsu      05/2009         Ajout de la clef LGARDEN pour TEB
+!!      J. Escobar      11/2013         Add USE MODI_READ_NAM_PGD_CHEMISTRY
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION

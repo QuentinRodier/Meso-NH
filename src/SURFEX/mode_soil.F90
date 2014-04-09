@@ -36,6 +36,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        3/12/98
+!!
+!!       02/2014       B. Decharme correction for W33 functions
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -196,8 +198,8 @@ CONTAINS
    SELECT CASE (HPEDOTF)
      CASE ('CH78')
        WHERE(PCLAY/=XUNDEF) &
-         W33_FUNC_2D = 0.3005674207-0.4725429691*PSAND+0.2080416963*PCLAY    &
-                     + 0.3055907979*PSAND**(1./3.)-0.1202046909*PCLAY**(1./3.)
+         W33_FUNC_2D = 0.2298915119-0.4062575773*PSAND+0.0874218705*PCLAY    &
+                     + 0.2942558675*PSAND**(1./3.)+0.0413771051*PCLAY**(1./3.)
      CASE ('CO84')
        WHERE(PCLAY/=XUNDEF) &
          W33_FUNC_2D = 0.2016592588-0.5785747196*PSAND+0.1113006987*PCLAY    &
@@ -544,8 +546,8 @@ CONTAINS
    SELECT CASE (HPEDOTF)
      CASE ('CH78')
        WHERE(PCLAY/=XUNDEF) &
-         W33_FUNC_1D = 0.3005674207-0.4725429691*PSAND+0.2080416963*PCLAY    &
-                     + 0.3055907979*PSAND**(1./3.)-0.1202046909*PCLAY**(1./3.)
+         W33_FUNC_1D = 0.2298915119-0.4062575773*PSAND+0.0874218705*PCLAY    &
+                     + 0.2942558675*PSAND**(1./3.)+0.0413771051*PCLAY**(1./3.)                     
      CASE ('CO84')
        WHERE(PCLAY/=XUNDEF) &
          W33_FUNC_1D = 0.2016592588-0.5785747196*PSAND+0.1113006987*PCLAY    &

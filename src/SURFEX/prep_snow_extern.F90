@@ -5,7 +5,39 @@
 !     #########
 SUBROUTINE PREP_SNOW_EXTERN(HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,&
                             KLUOUT,PFIELD,OSNOW_IDEAL,KLAYER)
-!     #################################################################################
+
+!!     ##########################################################################
+!
+!
+!!****  *PREP_SNOW_EXTERN*  
+!!
+!!    PURPOSE
+!!    -------
+!       Read and prepare initial snow fields from external files
+!     
+!!**  METHOD
+!!    ------
+!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------ 
+!!
+!!      
+!!    REFERENCE
+!!    ---------
+!!
+!!    
+!!    AUTHOR
+!!    ------
+!!	   * Meteo-France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    ?
+!!       02/2014 E. Martin : cor. for passing from from multilayer to a single layer
+!-------------------------------------------------------------------------------
 !
 !
 USE MODD_TYPE_SNOW
@@ -161,10 +193,8 @@ ELSE
   CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
 ENDIF
 !
-IF (TZSNOW%NLAYER.GT.KLAYER) THEN
-  TZSNOW%NLAYER=KLAYER
-ELSEIF (TZSNOW%NLAYER.LT.KLAYER) THEN
-  CALL ABOR1_SFX("PREP_SNOW_EXTERN: SNOW NLAYER IN EXTERN FILE MUST BE GROWER THAN CURRENT NLAYER")
+IF (TZSNOW%NLAYER.LT.KLAYER) THEN
+  CALL ABOR1_SFX("PREP_SNOW_EXTERN: SNOW NLAYER IN EXTERN FILE MUST BE HIGHER THAN CURRENT NLAYER")
 ENDIF
 !
 !
@@ -185,7 +215,8 @@ SELECT CASE (HSURF(1:3))
       ZFIELD = 0.
       DO JLAYER=1,TZSNOW%NLAYER
         ZFIELD(:,1,:) = ZFIELD(:,1,:) + TZSNOW%WSNOW(:,JLAYER,:)
-      END DO
+      END DO 
+      WHERE ( ZFIELD(:,1,:)>XUNDEF ) ZFIELD(:,1,:)=XUNDEF
       ALLOCATE(PFIELD(INI,1,IVEGTYPE))
       CALL PUT_ON_ALL_VEGTYPES(INI,1,IPATCH,IVEGTYPE,ZFIELD,PFIELD)
     ENDIF

@@ -26,6 +26,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       26/06/12
+!!      Modified    11/2013 by J.Escobar :add !$ to inhibit completly omp dependency  
+!!-------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -40,7 +42,7 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 #ifndef AIX64
-!$INCLUDE 'omp_lib.h'
+!$ INCLUDE 'omp_lib.h'
 #endif
 !
 INTEGER :: NBLOCKTOT = 1

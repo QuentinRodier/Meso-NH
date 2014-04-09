@@ -36,6 +36,7 @@ SUBROUTINE PREP_OCEAN_ASCLLV(HPROGRAM,HSURF,HFILE, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2011
+!!      J.Escobar   11/2013   Add USE MODI_ABOR1_SFX and USE MODI_GET_SURF_MASK_N
 !!------------------------------------------------------------------
 !
 USE MODD_PREP,       ONLY : CINTERP_TYPE, CINGRID_TYPE
@@ -56,7 +57,7 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
-USE MODI_GET_SURF_MASK_N
+USE MODI_GET_SURF_MASK_n
 !
 IMPLICIT NONE
 !
