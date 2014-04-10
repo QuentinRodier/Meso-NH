@@ -149,6 +149,9 @@ CONTAINS
     INTEGER :: N,NSTOP
     REAL :: CHI0X,CHI1X,CHIX,DX,CHIPX
     COMPLEX :: Y,XBACK,AN,BN,DY
+!
+! Modification (C.Lac) 04/2014 : exclude very small values of x 
+!
     !         -----------------------------------------------------------
     !              del is the inner sphere convergence criterion
     !         -----------------------------------------------------------
@@ -164,8 +167,14 @@ CONTAINS
     qsca = 0.0
     qext = 0.0
     xback = (0.0,0.0)
-n=1
-do while(n<=nstop)
+    n=1
+    IF (x <= 1.E-07) THEN
+     QEXT = 0.
+     QSCA = 0.
+     QBACK = 0.
+     RETURN
+    ELSE
+     do while(n<=nstop)
    ! DO n=1,nstop 
        DX  = 1.0/(n/x-dx) - n/x       
        DY  = 1.0/(n/y-dy) - n/y
@@ -178,15 +187,16 @@ do while(n<=nstop)
        qsca = qsca + (2.0*n+1.0)*(ABS(an)**2+ABS(bn)**2)
        xback = xback + (2.0*n+1.0)*(-1.)**n*(an-bn)
        qext = qext + (2.0*n + 1.0)*(an+bn)
-n=n+1
-    END DO
-    QSCA = (2.0/(X*X))*qsca
-    QEXT = (2.0/(X*X))*qext
-    qback = (1.0/(X*X))*ABS(XBACK)**2
+       n=n+1
+     END DO
+     QSCA = (2.0/(X*X))*qsca
+     QEXT = (2.0/(X*X))*qext
+     qback = (1.0/(X*X))*ABS(XBACK)**2
     !qext=4.*x*AIMAG((REFREL**2-1.)/(REFREL**2+2.)*&
     !     (1+X**2/15.*(REFREL**2-1.)/(REFREL**2+2.)*(REFREL**4+27.*REFREL**2+38.)/(2.*REFREL**2+3.)))&
     !     +8./3.*X**4*REAL(((REFREL**2-1.)/(REFREL**2+2.))**2)
     !qback=4.*X**4*ABS((REFREL**2-1)/(REFREL**2+2))**2
+    END IF
     RETURN
   END SUBROUTINE BHMIE
 !
