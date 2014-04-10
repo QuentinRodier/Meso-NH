@@ -14,7 +14,7 @@ MODULE MODI_RAD_BOUND
 !
 INTERFACE
 !
-      SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB,PRIMKMAX,               &
+      SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB, PCARPKMAX,             &
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
                         PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
@@ -25,7 +25,7 @@ CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC
 CHARACTER(LEN=4),               INTENT(IN) :: HTURB         ! Turbulence scheme
 !
 !
-REAL,                     INTENT(IN) :: PRIMKMAX    ! Rayleigh damping amplitude
+REAL,                     INTENT(INOUT) :: PCARPKMAX    ! Rayleigh damping amplitude
 REAL,                     INTENT(IN) :: PTSTEP      ! time step dt 
 REAL,      DIMENSION(:),  INTENT(IN) :: PDXHAT      ! X-direc. meshlength 
 REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
@@ -55,7 +55,7 @@ END INTERFACE
 END MODULE MODI_RAD_BOUND
 !
 !     #################################################################
-      SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB,PRIMKMAX,               &
+      SUBROUTINE RAD_BOUND (HLBCX,HLBCY,HTURB, PCARPKMAX,             &
                         PTSTEP,PDXHAT,PDYHAT,PZHAT,                   &
                         PUT,PVT,                                      &
                         PLBXUM,PLBYVM,PLBXUS,PLBYVS,                  &
@@ -151,7 +151,8 @@ END MODULE MODI_RAD_BOUND
 !!      Modification   08/10  (V.Masson) Bug correction and add cphase_profile
 !!      Escobar     9/11/2010 : cphas_profile : array bound problem if NO Turb =>  PTKET optional
 !!      Lac.C.       2011     : Adaptation to FIT temporal scheme
-!!      Modification 06/13     (C.Lac)   Introduction of cphase_pbl                                        
+!!      Modification 06/13     (C.Lac)   Introduction of cphase_pbl
+!!      Modification 03/14     (C.Lac)   Replacement of XRIMKMAX by XCARPKMAX                              
 !!      
 !-------------------------------------------------------------------------------
 !
@@ -177,7 +178,7 @@ CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC
 CHARACTER(LEN=4),               INTENT(IN) :: HTURB         ! Turbulence scheme
 !
 !
-REAL,                     INTENT(IN) :: PRIMKMAX    ! Rayleigh damping amplitude
+REAL,                     INTENT(INOUT) :: PCARPKMAX    ! Rayleigh damping amplitude
 REAL,                     INTENT(IN) :: PTSTEP      ! time step dt 
 REAL,      DIMENSION(:),  INTENT(IN) :: PDXHAT      ! X-direc. meshlength 
 REAL,      DIMENSION(:),  INTENT(IN) :: PDYHAT      ! Y-direc. meshlength
@@ -227,7 +228,6 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,3)) :: ZCPHASY! Normalized Phase velocity
 !                                                  ! for V field at Y-boundaries
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,3)) :: ZPHASY ! Phase velocity
 !                                                  ! for V field at Y-boundaries
-REAL                                     :: ZTSTEP ! effective time step
 REAL                                     :: ZALPHA2! implicitness of the damping
 !
 !-------------------------------------------------------------------------------
@@ -245,9 +245,9 @@ IKE = SIZE(PUT,3) - JPVEXT
 !*       1.2  Compute the inverse of the applicable timestep
 !
 !
-ZTSTEP = PTSTEP 
 ZINVTSTEP = 1./PTSTEP
-ZKTSTEP   = PRIMKMAX*ZTSTEP
+IF (PCARPKMAX == XUNDEF) PCARPKMAX = 1./ (10.*PTSTEP)
+ZKTSTEP   = PCARPKMAX*PTSTEP
 ! ZALPHA2 = O : explicit ; ZALPHA2 = 1 : implicit ; ZALPHA2 = 0.5 SI
 ZALPHA2 = 1. 
 !
@@ -282,7 +282,7 @@ SELECT CASE ( HLBCX(1) )
     END IF
 
     ZCPHASX(:,:) = MAX ( 0., MIN ( 1.,                                      & 
-                      (-PUT(IIB,:,:) + ZPHASX(:,:) ) * ZTSTEP / PDXHAT(IIB)  )    )
+                      (-PUT(IIB,:,:) + ZPHASX(:,:) ) * PTSTEP / PDXHAT(IIB)  )    )
                       ! notice that ZCPHASX=0. when ZPHASX  < PUT(IIB,:,:)  
 !
 !
@@ -293,8 +293,8 @@ SELECT CASE ( HLBCX(1) )
     ELSE
       ZLBEU (:,:) = PLBXUS(1,:,:)
       ZLBGU (:,:) = PLBXUM(2,:,:) - PLBXUM(1,:,:) +  &
-                      ZTSTEP * (PLBXUS(2,:,:) - PLBXUS(1,:,:))
-      ZLBXU(:,:)  = PLBXUM(1,:,:) + ZTSTEP * PLBXUS(1,:,:)
+                      PTSTEP * (PLBXUS(2,:,:) - PLBXUS(1,:,:))
+      ZLBXU(:,:)  = PLBXUM(1,:,:) + PTSTEP * PLBXUS(1,:,:)
     END IF
 !  
 !     ============================================================
@@ -311,7 +311,7 @@ SELECT CASE ( HLBCX(1) )
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *               &
             (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2)) * PUT(IIB,:,:) &
                          +  ZCPHASX(:,:)            * PUT(IIB+1  ,:,:)       &
-              + (   ZLBEU (:,:) * ZTSTEP                                     &
+              + (   ZLBEU (:,:) * PTSTEP                                     &
                     -  ZLBGU (:,:) * ZCPHASX(:,:)                            &
                     +  ZKTSTEP*ZLBXU(:,:)   )  )  
 
@@ -351,7 +351,7 @@ SELECT CASE ( HLBCX(2) )
     END IF
 !
     ZCPHASX(:,:) = MAX ( 0., MIN ( 1.,                                  &
-                    ( PUT(IIE+1,:,:) + ZPHASX(:,:) ) * ZTSTEP/PDXHAT(IIE)  )      )
+                    ( PUT(IIE+1,:,:) + ZPHASX(:,:) ) * PTSTEP/PDXHAT(IIE)  )      )
 !
 ! 
     ILBX=SIZE(PLBXUM,1)
@@ -362,8 +362,8 @@ SELECT CASE ( HLBCX(2) )
     ELSE
       ZLBEU (:,:) = PLBXUS(ILBX,:,:)
       ZLBGU (:,:) = PLBXUM(ILBX,:,:) - PLBXUM(ILBX-1,:,:) +  &
-                      ZTSTEP * (PLBXUS(ILBX,:,:) - PLBXUS(ILBX-1,:,:))
-      ZLBXU(:,:)  = PLBXUM(ILBX,:,:) + ZTSTEP * PLBXUS(ILBX,:,:)
+                      PTSTEP * (PLBXUS(ILBX,:,:) - PLBXUS(ILBX-1,:,:))
+      ZLBXU(:,:)  = PLBXUM(ILBX,:,:) + PTSTEP * PLBXUS(ILBX,:,:)
     END IF
 !     
 !     ============================================================
@@ -380,7 +380,7 @@ SELECT CASE ( HLBCX(2) )
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                  &
             (  (1. - ZCPHASX(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PUT(IIE+1,:,:) &
                          +  ZCPHASX(:,:)            * PUT(IIE  ,:,:)            &
-              + (   ZLBEU (:,:) * ZTSTEP                                        &
+              + (   ZLBEU (:,:) * PTSTEP                                        &
                     +  ZLBGU (:,:) * ZCPHASX(:,:)                               &
                     +  ZKTSTEP*ZLBXU(:,:)   )  )   
 !
@@ -421,7 +421,7 @@ SELECT CASE ( HLBCY(1) )
     END IF    
 !
     ZCPHASY(:,:) = MAX ( 0., MIN ( 1.,                                      &
-                    (-PVT(:,IJB,:) + ZPHASY(:,:) ) * ZTSTEP/ PDYHAT(IJB)   )      )
+                    (-PVT(:,IJB,:) + ZPHASY(:,:) ) * PTSTEP/ PDYHAT(IJB)   )      )
 !
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
@@ -430,8 +430,8 @@ SELECT CASE ( HLBCY(1) )
     ELSE
       ZLBEV (:,:) = PLBYVS(:,1,:)
       ZLBGV (:,:) = PLBYVM(:,2,:) - PLBYVM(:,1,:) +  &
-                      ZTSTEP * (PLBYVS(:,2,:) - PLBYVS(:,1,:))
-      ZLBYV(:,:)  = PLBYVM(:,1,:) + ZTSTEP * PLBYVS(:,1,:)
+                      PTSTEP * (PLBYVS(:,2,:) - PLBYVS(:,1,:))
+      ZLBYV(:,:)  = PLBYVM(:,1,:) + PTSTEP * PLBYVS(:,1,:)
     END IF
 !  
 !     ============================================================
@@ -447,7 +447,7 @@ SELECT CASE ( HLBCY(1) )
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *             &
           (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJB,:)&
                          +  ZCPHASY(:,:)            * PVT(:,IJB+1,:)       &
-              + (   ZLBEV (:,:) * ZTSTEP                                   &
+              + (   ZLBEV (:,:) * PTSTEP                                   &
                     -  ZLBGV (:,:) * ZCPHASY(:,:)                          &
                     +  ZKTSTEP*ZLBYV(:,:)   )  )   
 !
@@ -488,7 +488,7 @@ SELECT CASE ( HLBCY(2) )
     END IF    
 !
     ZCPHASY(:,:) = MAX ( 0., MIN ( 1.,                                      &
-                    ( PVT(:,IJE+1,:) + ZPHASY(:,:) ) * ZTSTEP/PDYHAT(IJE)  )      )
+                    ( PVT(:,IJE+1,:) + ZPHASY(:,:) ) * PTSTEP/PDYHAT(IJE)  )      )
 !
     ILBY=SIZE(PLBYVM,2)
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
@@ -498,8 +498,8 @@ SELECT CASE ( HLBCY(2) )
     ELSE
       ZLBEV (:,:) = PLBYVS(:,ILBY,:)
       ZLBGV (:,:) = PLBYVM(:,ILBY,:) - PLBYVM(:,ILBY-1,:) +  &
-                      ZTSTEP * (PLBYVS(:,ILBY,:) - PLBYVS(:,ILBY-1,:))
-      ZLBYV(:,:)  = PLBYVM(:,ILBY,:) + ZTSTEP * PLBYVS(:,ILBY,:)
+                      PTSTEP * (PLBYVS(:,ILBY,:) - PLBYVS(:,ILBY-1,:))
+      ZLBYV(:,:)  = PLBYVM(:,ILBY,:) + PTSTEP * PLBYVS(:,ILBY,:)
     END IF
 !  
 !     ============================================================
@@ -516,7 +516,7 @@ SELECT CASE ( HLBCY(2) )
                        ZINVTSTEP / (1.+ ZKTSTEP * ZALPHA2 )  *                &
            (  (1. - ZCPHASY(:,:) - ZKTSTEP * (1. - ZALPHA2) ) * PVT(:,IJE+1,:)&
                          +  ZCPHASY(:,:)            * PVT(:,IJE,:)            &
-              + (   ZLBEV (:,:) * ZTSTEP                                      &
+              + (   ZLBEV (:,:) * PTSTEP                                      &
                     +  ZLBGV (:,:) * ZCPHASY(:,:)                             &
                     +  ZKTSTEP*ZLBYV(:,:)   )  )   
 ! 

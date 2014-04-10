@@ -245,7 +245,7 @@ USE MODD_NESTING
 USE MODD_FMOUT
 USE MODD_BUDGET
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,        ONLY : LWARM,LSEDIC
+USE MODD_PARAM_ICE,        ONLY : LWARM,LSEDIC,LCONVHG
 USE MODD_FRC
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_STATION_n
@@ -372,8 +372,6 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 USE MODI_GET_HALO
-!
-USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -573,7 +571,6 @@ IF (KTCOUNT == 1) THEN
   ENDDO
   IF (SIZE(XSRCT,1) /= 0) CALL ADD3DFIELD_ll(TZFIELDS_ll, XSRCT)
   !
-!!$  IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) .AND. NHALO==1 ) THEN
   IF ((LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV) ) THEN
   !
   !                 b) LS fields
@@ -604,16 +601,12 @@ IF (KTCOUNT == 1) THEN
   !
     INBVAR = 4+NRR+NSV
     IF (SIZE(XRTKES,1) /= 0) INBVAR=INBVAR+1
-!!$    IF( NHALO==1 ) 
     CALL INIT_HALO2_ll(TZHALO2T_ll,INBVAR,IIU,IJU,IKU)
-!!$    IF( NHALO==1 ) 
     CALL INIT_HALO2_ll(TZLSHALO2_ll,4+MIN(1,NRR),IIU,IJU,IKU)
   !
   !*       1.6   Initialise the 2nd layer of the halo of the LS fields
   !
-!!$    IF ( LSTEADYLS .AND. NHALO==1 ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
     IF ( LSTEADYLS ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
-
   END IF
   !
 !
@@ -1141,10 +1134,8 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
 !
-!!$  IF( NHALO==1 ) THEN
-    CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
-    IF ( .NOT. LSTEADYLS) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
-!!$  ENDIF
+  CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
+  IF ( .NOT. LSTEADYLS) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
   CALL NUM_DIFF ( CLBCX, CLBCY, NRR, NSV,                               &
                   XDK2U, XDK4U, XDK2TH, XDK4TH, XDK2SV, XDK4SV, IMI,    &
                   XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT,                &
@@ -1464,7 +1455,6 @@ XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
 IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
-!!$  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
   IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     NULLIFY(TZFIELDC_ll)
     NULLIFY(TZHALO2C_ll)
@@ -1475,7 +1465,6 @@ IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
       CALL UPDATE_HALO_ll(TZFIELDC_ll,IINFO_ll)
       CALL UPDATE_HALO2_ll(TZFIELDC_ll, TZHALO2C_ll, IINFO_ll)
   END IF
-  CALL MPPDB_CHECK3D(XRUS,"modeln:before adv_uvw_cen:XRUS",PRECISION)                    
  CALL ADVECTION_UVW_CEN(CUVW_ADV_SCHEME,                &
                            CLBCX, CLBCY,                           &
                            XTSTEP, KTCOUNT,                        &
@@ -1484,7 +1473,6 @@ IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
                            XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,   &
                            XRUS,XRVS, XRWS,                        &
                            TZHALO2C_ll                             )
-!!$  IF (NHALO==1 .AND. CUVW_ADV_SCHEME=='CEN4TH') THEN
   IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     CALL CLEANLIST_ll(TZFIELDC_ll)
     NULLIFY(TZFIELDC_ll)
@@ -1527,8 +1515,7 @@ ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
 !
-  CALL MPPDB_CHECK3D(XRUS,"modeln:before rad_bound:XRUS",PRECISION)                    
-  CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XRIMKMAX,            &
+  CALL RAD_BOUND (CLBCX,CLBCY,CTURB,XCARPKMAX,           &
                 XTSTEP,                                  &
                 XDXHAT, XDYHAT, XZHAT,                   &
                 XUT, XVT,                                &
@@ -1559,7 +1546,6 @@ IF(.NOT. L1D) THEN
   XRVS_PRES = XRVS
   XRWS_PRES = XRWS
 !
-  CALL MPPDB_CHECK3D(XRUS,"modeln:before pressurez:XRUS",PRECISION)                    
   CALL PRESSUREZ( CLUOUT,                                                &
                   CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,KTCOUNT, XRELAX,IMI, &
                   XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,XDXHATM,XDYHATM,XRHOM, &
@@ -1627,7 +1613,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
-                          XCF_MF,XRC_MF, XRI_MF,                               &
+                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
                           XINPRS, XINPRG, XINPRH, XSOLORG , XMI, ZSEA, ZTOWN    )
     DEF_NC=.TRUE.
@@ -1642,7 +1628,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
-                          XCF_MF,XRC_MF, XRI_MF,                               &
+                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
                           XINPRS, XINPRG, XINPRH, XSOLORG , XMI, ZSEA, ZTOWN    )
 #endif
@@ -1661,7 +1647,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
-                          XCF_MF,XRC_MF, XRI_MF,                               &
+                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
                           XINPRS, XINPRG, XINPRH, XSOLORG, XMI                 )
     DEF_NC=.TRUE.
@@ -1676,7 +1662,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
-                          XCF_MF,XRC_MF, XRI_MF,                               &
+                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
                           XINPRS, XINPRG, XINPRH, XSOLORG, XMI                 )
 #endif
@@ -1721,7 +1707,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
 !
   XRTHS_CLD = XRTHS
   XRRS_CLD  = XRRS
-  XRSVS_CLD = XRRS
+  XRSVS_CLD = XRSVS
   IF (CSURF=='EXTE') THEN
     ALLOCATE (ZSEA(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))
     ALLOCATE (ZTOWN(SIZE(XRHODJ,1),SIZE(XRHODJ,2)))

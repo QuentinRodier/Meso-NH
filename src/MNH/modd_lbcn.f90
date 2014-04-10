@@ -39,6 +39,8 @@
 !!                  15/06/95  (J.Stein) add EPS related variables                 
 !!                  29/04/02  (P.Jabouille) remove useless variables
 !!                  26/06/13  (C.Lac) Introduction of CPHASE_PBL
+!!                  01/04/14  (C.Lac) Introduction of CARPKMAX different to
+!!                                    RIMKMAX
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -67,6 +69,8 @@ TYPE LBC_t
                                              ! velocity if constant
   REAL                         :: XCPHASE_PBL ! prescribed value of the phase
                                              ! velocity in the PBL if constant
+  REAL                         :: XCARPKMAX   ! relaxation coefficient for
+                                             !Carpenter, different to XRIMKMAX
 END TYPE LBC_t
 
 TYPE(LBC_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: LBC_MODEL
@@ -78,6 +82,7 @@ INTEGER, DIMENSION(:), POINTER :: NLBLX=>NULL()
 INTEGER, DIMENSION(:), POINTER :: NLBLY=>NULL()
 REAL, POINTER :: XCPHASE=>NULL()
 REAL, POINTER :: XCPHASE_PBL=>NULL()
+REAL, POINTER :: XCARPKMAX=>NULL()
 
 CONTAINS
 
@@ -101,6 +106,7 @@ NLBLX=>LBC_MODEL(KTO)%NLBLX
 NLBLY=>LBC_MODEL(KTO)%NLBLY
 XCPHASE=>LBC_MODEL(KTO)%XCPHASE
 XCPHASE_PBL=>LBC_MODEL(KTO)%XCPHASE_PBL
+XCARPKMAX=>LBC_MODEL(KTO)%XCARPKMAX  
 
 END SUBROUTINE LBC_GOTO_MODEL
 
