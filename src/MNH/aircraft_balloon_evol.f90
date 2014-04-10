@@ -655,10 +655,10 @@ IF ( TPFLYER%FLY) THEN
         ZYCOEF = (TPFLYER%Y_CUR - ZYHATM(IJ)) / (ZYHATM(IJ+1) - ZYHATM(IJ))
         ZYCOEF = MAX (0.,MIN(ZYCOEF,1.))
         IF ( TPFLYER%ALT /= XUNDEF ) THEN
-          IK00 = COUNT (TPFLYER%ALT >= ZZM(1,1,:))
-          IK01 = COUNT (TPFLYER%ALT >= ZZM(1,2,:))
-          IK10 = COUNT (TPFLYER%ALT >= ZZM(2,1,:))
-          IK11 = COUNT (TPFLYER%ALT >= ZZM(2,2,:))
+          IK00 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,2,:)), 1)
           ZZCOEF00 = (TPFLYER%ALT - ZZM(1,1,IK00)) / ( ZZM(1,1,IK00+1) - ZZM(1,1,IK00))
           ZZCOEF01 = (TPFLYER%ALT - ZZM(1,2,IK01)) / ( ZZM(1,2,IK01+1) - ZZM(1,2,IK01))
           ZZCOEF10 = (TPFLYER%ALT - ZZM(2,1,IK10)) / ( ZZM(2,1,IK10+1) - ZZM(2,1,IK10))
@@ -666,10 +666,10 @@ IF ( TPFLYER%FLY) THEN
           TPFLYER%RHO = FLYER_INTERP(ZRHO)
         ELSE IF ( TPFLYER%PRES /= XUNDEF ) THEN
           ZFLYER_EXN = (TPFLYER%PRES/XP00)**(XRD/XCPD)
-          IK00 = COUNT (ZFLYER_EXN <= ZEXN(1,1,:))
-          IK01 = COUNT (ZFLYER_EXN <= ZEXN(1,2,:))
-          IK10 = COUNT (ZFLYER_EXN <= ZEXN(2,1,:))
-          IK11 = COUNT (ZFLYER_EXN <= ZEXN(2,2,:))
+          IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
+          IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
+          IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
+          IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
           ZZCOEF00 = (ZFLYER_EXN - ZEXN(1,1,IK00)) / ( ZEXN(1,1,IK00+1) - ZEXN(1,1,IK00))
           ZZCOEF01 = (ZFLYER_EXN - ZEXN(1,2,IK01)) / ( ZEXN(1,2,IK01+1) - ZEXN(1,2,IK01))
           ZZCOEF10 = (ZFLYER_EXN - ZEXN(2,1,IK10)) / ( ZEXN(2,1,IK10+1) - ZEXN(2,1,IK10))
@@ -712,10 +712,10 @@ IF ( TPFLYER%FLY) THEN
 !
       IF (TPFLYER%TYPE=='CVBALL') THEN
         IF ( TPFLYER%ALT /= XUNDEF ) THEN
-          IK00 = COUNT (TPFLYER%ALT >= ZZM(1,1,:))
-          IK01 = COUNT (TPFLYER%ALT >= ZZM(1,2,:))
-          IK10 = COUNT (TPFLYER%ALT >= ZZM(2,1,:))
-          IK11 = COUNT (TPFLYER%ALT >= ZZM(2,2,:))
+          IK00 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%ALT >= ZZM(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%ALT >= ZZM(2,2,:)), 1)
           IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
             TPFLYER%Z_CUR = TPFLYER%ALT
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(1,1,IKB) )
@@ -732,10 +732,10 @@ IF ( TPFLYER%FLY) THEN
           END IF
         ELSE IF ( TPFLYER%PRES /= XUNDEF ) THEN
           ZFLYER_EXN = (TPFLYER%PRES/XP00)**(XRD/XCPD)
-          IK00 = COUNT (ZFLYER_EXN <= ZEXN(1,1,:))
-          IK01 = COUNT (ZFLYER_EXN <= ZEXN(1,2,:))
-          IK10 = COUNT (ZFLYER_EXN <= ZEXN(2,1,:))
-          IK11 = COUNT (ZFLYER_EXN <= ZEXN(2,2,:))
+          IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
+          IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
+          IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
+          IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
           IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
             TPFLYER%Z_CUR = ZZM(1,1,IKB) 
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
@@ -751,10 +751,10 @@ IF ( TPFLYER%FLY) THEN
           END IF
         ELSE
           TPFLYER%RHO = TPFLYER%MASS / TPFLYER%VOLUME
-          IK00 = COUNT (TPFLYER%RHO <= ZRHO(1,1,:))
-          IK01 = COUNT (TPFLYER%RHO <= ZRHO(1,2,:))
-          IK10 = COUNT (TPFLYER%RHO <= ZRHO(2,1,:))
-          IK11 = COUNT (TPFLYER%RHO <= ZRHO(2,2,:))
+          IK00 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,1,:)), 1)
+          IK01 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,2,:)), 1)
+          IK10 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,1,:)), 1)
+          IK11 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,2,:)), 1)
           IF (IK00*IK01*IK10*IK11 .EQ. 0) THEN
             TPFLYER%Z_CUR = ZZM(1,1,IKB) 
             TPFLYER%Z_CUR = MAX ( TPFLYER%Z_CUR , ZZM(2,1,IKB) )
@@ -777,27 +777,27 @@ IF ( TPFLYER%FLY) THEN
 !            -----------------
 !
     IF (TPFLYER%TYPE=='ISODEN') THEN
-      IK00 = COUNT (TPFLYER%RHO <= ZRHO(1,1,:))
-      IK01 = COUNT (TPFLYER%RHO <= ZRHO(1,2,:))
-      IK10 = COUNT (TPFLYER%RHO <= ZRHO(2,1,:))
-      IK11 = COUNT (TPFLYER%RHO <= ZRHO(2,2,:))
+      IK00 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,1,:)), 1)
+      IK01 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(1,2,:)), 1)
+      IK10 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,1,:)), 1)
+      IK11 = MAX ( COUNT (TPFLYER%RHO <= ZRHO(2,2,:)), 1)
     ELSE IF (TPFLYER%TYPE=='RADIOS' .OR. TPFLYER%TYPE=='CVBALL') THEN
-      IK00 = COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:))
-      IK01 = COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:))
-      IK10 = COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:))
-      IK11 = COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:))
+      IK00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:)), 1)
+      IK01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:)), 1)
+      IK10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:)), 1)
+      IK11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:)), 1)
     ELSE IF (TPFLYER%TYPE=='AIRCRA') THEN
             IF (TPFLYER%ALTDEF) THEN
               ZFLYER_EXN = (TPFLYER%P_CUR/XP00)**(XRD/XCPD)
-              IK00 = COUNT (ZFLYER_EXN <= ZEXN(1,1,:))
-              IK01 = COUNT (ZFLYER_EXN <= ZEXN(1,2,:))
-              IK10 = COUNT (ZFLYER_EXN <= ZEXN(2,1,:))
-              IK11 = COUNT (ZFLYER_EXN <= ZEXN(2,2,:))
+              IK00 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,1,:)), 1)
+              IK01 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(1,2,:)), 1)
+              IK10 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,1,:)), 1)
+              IK11 = MAX ( COUNT (ZFLYER_EXN <= ZEXN(2,2,:)), 1)
             ELSE
-              IK00 = COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:))
-              IK01 = COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:))
-              IK10 = COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:))
-              IK11 = COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:))
+              IK00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,1,:)), 1)
+              IK01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(1,2,:)), 1)
+              IK10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,1,:)), 1)
+              IK11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZM(2,2,:)), 1)
             END IF
     END IF
     IK00 = MAX ( IK00, IKB )
@@ -911,10 +911,10 @@ IF ( TPFLYER%FLY) THEN
 !*      7.3  Interpolation coefficients for the 4 suroundings verticals (for U)
 !            ----------------------------------------------------------
 !
-      IU00 = COUNT (TPFLYER%Z_CUR >= ZZU(1,1,:))
-      IU01 = COUNT (TPFLYER%Z_CUR >= ZZU(1,2,:))
-      IU10 = COUNT (TPFLYER%Z_CUR >= ZZU(2,1,:))
-      IU11 = COUNT (TPFLYER%Z_CUR >= ZZU(2,2,:))
+      IU00 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(1,1,:)), 1)
+      IU01 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(1,2,:)), 1)
+      IU10 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(2,1,:)), 1)
+      IU11 = MAX( COUNT (TPFLYER%Z_CUR >= ZZU(2,2,:)), 1)
       ZUCOEF00 = (TPFLYER%Z_CUR - ZZU(1,1,IU00)) / ( ZZU(1,1,IU00+1) - ZZU(1,1,IU00) )
       ZUCOEF01 = (TPFLYER%Z_CUR - ZZU(1,2,IU01)) / ( ZZU(1,2,IU01+1) - ZZU(1,2,IU01) )
       ZUCOEF10 = (TPFLYER%Z_CUR - ZZU(2,1,IU10)) / ( ZZU(2,1,IU10+1) - ZZU(2,1,IU10) )
@@ -925,10 +925,10 @@ IF ( TPFLYER%FLY) THEN
 !            ----------------------------------------------------------
 !
 
-      IV00 = COUNT (TPFLYER%Z_CUR >= ZZV(1,1,:))
-      IV01 = COUNT (TPFLYER%Z_CUR >= ZZV(1,2,:))
-      IV10 = COUNT (TPFLYER%Z_CUR >= ZZV(2,1,:))
-      IV11 = COUNT (TPFLYER%Z_CUR >= ZZV(2,2,:))
+      IV00 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(1,1,:)), 1)
+      IV01 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(1,2,:)), 1)
+      IV10 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(2,1,:)), 1)
+      IV11 = MAX ( COUNT (TPFLYER%Z_CUR >= ZZV(2,2,:)), 1)
       ZVCOEF00 = (TPFLYER%Z_CUR - ZZV(1,1,IV00)) / ( ZZV(1,1,IV00+1) - ZZV(1,1,IV00) )
       ZVCOEF01 = (TPFLYER%Z_CUR - ZZV(1,2,IV01)) / ( ZZV(1,2,IV01+1) - ZZV(1,2,IV01) )
       ZVCOEF10 = (TPFLYER%Z_CUR - ZZV(2,1,IV10)) / ( ZZV(2,1,IV10+1) - ZZV(2,1,IV10) )
