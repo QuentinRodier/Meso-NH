@@ -562,14 +562,14 @@ ENDIF
 !
 !*       3.2    APPLIES THE DAMPING NEAR THE LATERAL BOUNDARIES
 !
+  ZWORK=0.
+!
 ! special treatment is needed to expand LB for U and V because of the C grid 
 IF ( OHORELAX_UVWTH ) THEN
 !
   DO JK=1,IKU
     GMASK3D_RELAX(:,:,JK)=OMASK_RELAX(:,:)
   END DO
-!
-  ZWORK=0.
 !
   IDIMLB = SIZE(PLBXUM,1)
   IF ( IDIMLB /= 0) THEN
