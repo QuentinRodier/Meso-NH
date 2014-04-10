@@ -36,6 +36,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original      14/12/95
+!!      01/04/14 (C.Lac)  Add LCONVHG
 !!
 !-------------------------------------------------------------------------------
 !
@@ -46,7 +47,8 @@ IMPLICIT NONE
 !
 LOGICAL, SAVE :: LWARM       ! When .TRUE. activates the formation of rain by
                              ! the warm microphysical processes
-LOGICAL, SAVE :: LSEDIC                 ! TRUE to enable the droplet sedimentation
+LOGICAL, SAVE :: LSEDIC      ! TRUE to enable the droplet sedimentation
+LOGICAL, SAVE :: LCONVHG     ! TRUE to allow the conversion from hail to graupel 
 !
 CHARACTER(LEN=4), SAVE :: CPRISTINE_ICE ! Pristine ice type PLAT, COLU or BURO
 CHARACTER(LEN=4), SAVE :: CSEDIM        ! Sedimentation calculation mode      

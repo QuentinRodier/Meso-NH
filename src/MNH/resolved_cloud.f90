@@ -17,7 +17,7 @@ INTERFACE
                                   PTHM, PRCM, PPABSM,                                  &
                                   PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
-                                  ORAIN, OWARM, OHHONI,                                &
+                                  ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
                                   PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
                                   PINPRS,PINPRG,PINPRH,PSOLORG,PMI,PSEA,PTOWN          )   
@@ -99,6 +99,8 @@ LOGICAL,                  INTENT(IN)    :: OWARM ! Control of the rain formation
                                                  !  by slow warm microphysical
                                                  !         processes
 LOGICAL,                  INTENT(IN)    :: OHHONI! enable haze freezing
+LOGICAL,                  INTENT(IN)    :: OCONVHG! Switch for conversion from
+                                                  ! hail to graupel
 !
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
@@ -130,7 +132,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PTHM, PRCM, PPABSM,                                  &
                                   PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
-                                  ORAIN, OWARM, OHHONI,                                &
+                                  ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
                                   PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
                                   PINPRS,PINPRG,PINPRH,PSOLORG,PMI,PSEA,PTOWN          )   
@@ -346,6 +348,8 @@ LOGICAL,                  INTENT(IN)    :: OWARM ! Control of the rain formation
                                                  !  by slow warm microphysical
                                                  !         processes
 LOGICAL,                  INTENT(IN)    :: OHHONI! enable haze freezing
+LOGICAL,                  INTENT(IN)    :: OCONVHG! Switch for conversion from
+                                                  ! hail to graupel
 !
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
@@ -838,7 +842,7 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    CALL RAIN_ICE ( OSEDIC, CSEDIM,HSUBG_AUCV, OWARM,1,IKU,1,             &
+    CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,             &
                     KSPLITR, PTSTEP, KMI, KRR,                            &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
@@ -847,8 +851,8 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PSEA, PTOWN,  &
-                    PRT(:,:,:,7), PRS(:,:,:,7), PINPRH )
+                    PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
+                    PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, OCONVHG           )
 
 !
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water

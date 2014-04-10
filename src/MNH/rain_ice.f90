@@ -13,14 +13,14 @@
 !      ####################
 !
 INTERFACE
-      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
-                            KSPLITR, PTSTEP, KMI, KRR,                            &
-                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
-                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
-                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                            PRHT, PRHS, PINPRH                                    )
+      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,          &
+                            KSPLITR, PTSTEP, KMI, KRR,                                &
+                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,    &
+                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                       &
+                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,           &
+                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                        &
+                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                       &
+                            PRHT, PRHS, PINPRH, OCONVHG                               )
 !
 !
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
@@ -79,21 +79,23 @@ REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)    :: PINPRH! Hail instant precip
+LOGICAL, OPTIONAL,                 INTENT(IN)    :: OCONVHG! Switch for conversion from
+                                                  ! hail to graupel
 
 !
 END SUBROUTINE RAIN_ICE
 END INTERFACE
 END MODULE MODI_RAIN_ICE
 !     ######spl
-      SUBROUTINE RAIN_ICE ( OSEDIC, HSEDIM, HSUBG_AUCV, OWARM,KKA,KKU,KKL,        &
-                            KSPLITR, PTSTEP, KMI, KRR,                            &
-                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
-                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
-                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                            PRHT, PRHS, PINPRH                                    )
+      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,          &
+                            KSPLITR, PTSTEP, KMI, KRR,                                &
+                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,    &
+                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                       &
+                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,           &
+                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                        &
+                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                       &
+                            PRHT, PRHS, PINPRH, OCONVHG                               )
 !     ######################################################################
 !
 !!****  * -  compute the explicit microphysical sources
@@ -229,6 +231,7 @@ END MODULE MODI_RAIN_ICE
 !!      (Y. Seity), 02-2012  add possibility to run with reversed vertical levels
 !!      Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
 !!      (C. Lac) FIT temporal scheme : instant M removed
+!!      (JP Pinty), 01-2014 : ICE4 : partial reconversion of hail to graupel
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -310,7 +313,9 @@ REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)    :: PINPRH! Hail instant precip
+LOGICAL, OPTIONAL,                 INTENT(IN)    :: OCONVHG! Switch for conversion from
+                                                  ! hail to graupel
 !
 !*       0.2   Declarations of local variables :
 !
@@ -330,25 +335,25 @@ REAL    :: ZTSPLITR      ! Small time step for rain sedimentation
 !
 INTEGER :: ISEDIMR,ISEDIMC, ISEDIMI, ISEDIMS, ISEDIMG, ISEDIMH, &
   INEGT, IMICRO ! Case number of sedimentation, T>0 (for HEN)
-				 ! and r_x>0 locations
+ ! and r_x>0 locations
 INTEGER :: IGRIM, IGACC, IGDRY ! Case number of riming, accretion and dry growth
                                ! locations
 INTEGER :: IGWET, IHAIL   ! wet growth locations and case number
 LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
     :: GSEDIMR,GSEDIMC, GSEDIMI, GSEDIMS, GSEDIMG, GSEDIMH ! Test where to compute the SED processes
 LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
-			  :: GNEGT  ! Test where to compute the HEN process
+  :: GNEGT  ! Test where to compute the HEN process
 LOGICAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
-			  :: GMICRO ! Test where to compute all processes
+  :: GMICRO ! Test where to compute all processes
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GRIM ! Test where to compute riming
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GACC ! Test where to compute accretion
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GDRY ! Test where to compute dry growth
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GWET  ! Test where to compute wet growth
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GHAIL ! Test where to compute hail growth
 INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1,IVEC2       ! Vectors of indices for
-						        ! interpolations
+        ! interpolations
 REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for 
-						        ! interpolations
+        ! interpolations
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
                                   :: ZW ! work array
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
@@ -398,9 +403,9 @@ REAL, DIMENSION(:), ALLOCATABLE &
                   ZZT,      & ! Temperature
                   ZPRES,    & ! Pressure
                   ZEXNREF,  & ! EXNer Pressure REFerence
-	          ZZW,      & ! Work array
-	          ZLSFACT,  & ! L_s/(Pi_ref*C_ph)
-	          ZLVFACT,  & ! L_v/(Pi_ref*C_ph)
+                  ZZW,      & ! Work array
+                  ZLSFACT,  & ! L_s/(Pi_ref*C_ph)
+                  ZLVFACT,  & ! L_v/(Pi_ref*C_ph)
                   ZUSW,     & ! Undersaturation over water
                   ZSSI,     & ! Supersaturation over ice
                   ZLBDAR,   & ! Slope parameter of the raindrop  distribution
@@ -422,7 +427,7 @@ REAL, DIMENSION(:), ALLOCATABLE &
                   ZRAY1D,   & ! Mean radius
                   ZWLBDA      ! Libre parcours moyen
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZZW1 ! Work arrays
-REAL            :: ZTIMAUTIC,XDUMMY6,XDUMMY7
+REAL            :: ZTIMAUTIC, ZTHRC, ZTHRH
 REAL            :: ZINVTSTEP
 REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
 ! XRTMIN = Minimum value for the mixing ratio
@@ -765,6 +770,8 @@ IF( IMICRO >= 0 ) THEN
    IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),10,'WETH_BU_RRS')
    IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11,'WETH_BU_RRG')
    IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'WETH_BU_RRH')
+   IF (LBUDGET_RH) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11,'COHG_BU_RRG')
+   IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'COHG_BU_RRH')
    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HMLT_BU_RTH')
    IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8,'HMLT_BU_RRR')
    IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'HMLT_BU_RRH')
@@ -1785,7 +1792,7 @@ IF( INEGT >= 1 ) THEN
                  /( (XCPD + XCPV*PRVT(:,:,:) + XCL*(PRCT(:,:,:)+PRRT(:,:,:))   &
                    + XCI*(PRIT(:,:,:)+PRST(:,:,:)+PRGT(:,:,:)))*PEXNREF(:,:,:) )
     END IF
-      						               ! f(L_s*(RVHENI))
+                     ! f(L_s*(RVHENI))
     ZZW(:) = MAX( ZZW(:)+ZCIT(:),ZCIT(:) )
     PCIT(:,:,:) = MAX( UNPACK( ZZW(:),MASK=GNEGT(:,:,:),FIELD=0.0 ) , &
                        PCIT(:,:,:) )
@@ -1917,9 +1924,9 @@ IMPLICIT NONE
   ZZW(:) = 0.0
   WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>0.0) )
     ZZW(:) = MIN( ZRIS(:),XFIAGGS * EXP( XCOLEXIS*(ZZT(:)-XTT) ) &
-  			          * ZRIT(:)                      &
-  		                  * ZLBDAS(:)**XEXIAGGS          &
-  		                  * ZRHODREF(:)**(-XCEXVT)       )
+                   * ZRIT(:)                      &
+                   * ZLBDAS(:)**XEXIAGGS          &
+                   * ZRHODREF(:)**(-XCEXVT)       )
     ZRSS(:)  = ZRSS(:)  + ZZW(:)
     ZRIS(:)  = ZRIS(:)  - ZZW(:)
   END WHERE
@@ -2133,9 +2140,9 @@ IMPLICIT NONE
 !
     WHERE ( GRIM(:) )
       ZZW1(:,1) = MIN( ZRCS(:),                                &
-  	           XCRIMSS * ZZW(:) * ZRCT(:)                & ! RCRIMSS
-  	                            *   ZLBDAS(:)**XEXCRIMSS &
-    			            * ZRHODREF(:)**(-XCEXVT) )
+             XCRIMSS * ZZW(:) * ZRCT(:)                & ! RCRIMSS
+                              *   ZLBDAS(:)**XEXCRIMSS &
+               * ZRHODREF(:)**(-XCEXVT) )
       ZRCS(:) = ZRCS(:) - ZZW1(:,1)
       ZRSS(:) = ZRSS(:) + ZZW1(:,1)
       ZTHS(:) = ZTHS(:) + ZZW1(:,1)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCRIMSS))
@@ -2145,7 +2152,7 @@ IMPLICIT NONE
 !               "XBS"-moment of the incomplete gamma function
 !
     ZVEC1(1:IGRIM) =  XGAMINC_RIM2( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
-    	            - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
+                - XGAMINC_RIM2( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
     ZZW(:) = UNPACK( VECTOR=ZVEC1(:),MASK=GRIM,FIELD=0.0 )
 !
 !        5.1.6  riming-conversion of the large sized aggregates into graupeln
@@ -2153,13 +2160,13 @@ IMPLICIT NONE
 !
     WHERE ( GRIM(:) .AND. (ZRSS(:)>0.0) )
       ZZW1(:,2) = MIN( ZRCS(:),                     &
-    	           XCRIMSG * ZRCT(:)                & ! RCRIMSG
-    	                   *  ZLBDAS(:)**XEXCRIMSG  &
-  	                   * ZRHODREF(:)**(-XCEXVT) &
-    		           - ZZW1(:,1)              )
+               XCRIMSG * ZRCT(:)                & ! RCRIMSG
+                       *  ZLBDAS(:)**XEXCRIMSG  &
+                     * ZRHODREF(:)**(-XCEXVT) &
+               - ZZW1(:,1)              )
       ZZW1(:,3) = MIN( ZRSS(:),                         &
                        XSRIMCG * ZLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
-   	                       * (1.0 - ZZW(:) )/(PTSTEP*ZRHODREF(:)) )
+                          * (1.0 - ZZW(:) )/(PTSTEP*ZRHODREF(:)) )
       ZRCS(:) = ZRCS(:) - ZZW1(:,2)
       ZRSS(:) = ZRSS(:) - ZZW1(:,3)
       ZRGS(:) = ZRGS(:) + ZZW1(:,2)+ZZW1(:,3)
@@ -2189,7 +2196,7 @@ IMPLICIT NONE
   ZZW1(:,2:3) = 0.0
   ALLOCATE(GACC(IMICRO))
    GACC(:) = (ZRRT(:)>XRTMIN(3)) .AND. (ZRST(:)>XRTMIN(5)) .AND.            &
-  	                        (ZRRS(:)>0.0) .AND. (ZZT(:)<XTT)
+                          (ZRRS(:)>0.0) .AND. (ZZT(:)<XTT)
   IGACC = COUNT( GACC(:) )
 !
   IF( IGACC>0 ) THEN
@@ -2227,10 +2234,10 @@ IMPLICIT NONE
     DO JJ = 1,IGACC
       ZVEC3(JJ) =  (  XKER_RACCSS(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_RACCSS(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                				 	           * ZVEC1(JJ) &
+                           * ZVEC1(JJ) &
                  - (  XKER_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_RACCSS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-  	                    			             * (ZVEC1(JJ) - 1.0)
+                                   * (ZVEC1(JJ) - 1.0)
     END DO
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
 !
@@ -2267,10 +2274,10 @@ IMPLICIT NONE
     DO JJ = 1,IGACC
       ZVEC3(JJ) =  (  XKER_SACCRG(IVEC2(JJ)+1,IVEC1(JJ)+1)* ZVEC1(JJ)          &
                     - XKER_SACCRG(IVEC2(JJ)+1,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
-      			 	                                   * ZVEC2(JJ) &
+                                        * ZVEC2(JJ) &
                  - (  XKER_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)+1)* ZVEC1(JJ)          &
                     - XKER_SACCRG(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
-			                                     * (ZVEC2(JJ) - 1.0)
+                                     * (ZVEC2(JJ) - 1.0)
     END DO
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
 !
@@ -2290,7 +2297,7 @@ IMPLICIT NONE
       ZRSS(:) = ZRSS(:) - ZZW1(:,3)
       ZRGS(:) = ZRGS(:) + ZZW1(:,2)+ZZW1(:,3)
       ZTHS(:) = ZTHS(:) + ZZW1(:,2)*(ZLSFACT(:)-ZLVFACT(:)) !
-    					  	             ! f(L_f*(RRACCSG))
+                 ! f(L_f*(RRACCSG))
     END WHERE
     DEALLOCATE(IVEC2)
     DEALLOCATE(IVEC1)
@@ -2318,7 +2325,7 @@ IMPLICIT NONE
   WHERE( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>0.0) .AND. (ZZT(:)>XTT) )
     ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
     ZZW(:) =  ZKA(:)*(XTT-ZZT(:)) +                                 &
-      	     ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
+           ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
                            *(XESTT-ZZW(:))/(XRV*ZZT(:))             )
 !
 ! compute RSMLT
@@ -2327,7 +2334,7 @@ IMPLICIT NONE
                            ( X0DEPS*       ZLBDAS(:)**XEX0DEPS +     &
                              X1DEPS*ZCJ(:)*ZLBDAS(:)**XEX1DEPS ) -   &
                                      ( ZZW1(:,1)+ZZW1(:,4) ) *       &
-      	                    ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
+                          ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
                                              ( ZRHODREF(:)*XLMTT ) ) )
 !
 ! note that RSCVMG = RSMLT*XFSCVMG but no heat is exchanged (at the rate RSMLT)
@@ -2363,11 +2370,11 @@ IMPLICIT NONE
   WHERE( (ZRIT(:)>XRTMIN(4)) .AND. (ZRRT(:)>XRTMIN(3)) .AND.  &
                              (ZRIS(:)>0.0) .AND. (ZRRS(:)>0.0) )
     ZZW1(:,3) = MIN( ZRIS(:),XICFRR * ZRIT(:)                & ! RICFRRG
-  		                  * ZLBDAR(:)**XEXICFRR    &
-  		                  * ZRHODREF(:)**(-XCEXVT) )
+                    * ZLBDAR(:)**XEXICFRR    &
+                    * ZRHODREF(:)**(-XCEXVT) )
     ZZW1(:,4) = MIN( ZRRS(:),XRCFRI * ZCIT(:)                & ! RRCFRIG
-  		                  * ZLBDAR(:)**XEXRCFRI    &
-  		                  * ZRHODREF(:)**(-XCEXVT-1.) )
+                   * ZLBDAR(:)**XEXRCFRI    &
+                   * ZRHODREF(:)**(-XCEXVT-1.) )
     ZRIS(:) = ZRIS(:) - ZZW1(:,3)
     ZRRS(:) = ZRRS(:) - ZZW1(:,4)
     ZRGS(:) = ZRGS(:) + ZZW1(:,3)+ZZW1(:,4)
@@ -2440,10 +2447,10 @@ IMPLICIT NONE
     DO JJ = 1,IGDRY
       ZVEC3(JJ) =  (  XKER_SDRYG(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_SDRYG(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-      			 	                                  * ZVEC1(JJ) &
+                                        * ZVEC1(JJ) &
                  - (  XKER_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_SDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-       			                                    * (ZVEC1(JJ) - 1.0)
+                                           * (ZVEC1(JJ) - 1.0)
     END DO
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
@@ -2451,7 +2458,7 @@ IMPLICIT NONE
       ZZW1(:,3) = MIN( ZRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
                                       * EXP( XCOLEXSG*(ZZT(:)-XTT) )  &
                     *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAG(:)**XCXG )    &
-       	            *( ZRHODREF(:)**(-XCEXVT-1.) )                    &
+                   *( ZRHODREF(:)**(-XCEXVT-1.) )                    &
                          *( XLBSDRYG1/( ZLBDAG(:)**2              ) + &
                             XLBSDRYG2/( ZLBDAG(:)   * ZLBDAS(:)   ) + &
                             XLBSDRYG3/(               ZLBDAS(:)**2) ) )
@@ -2503,17 +2510,17 @@ IMPLICIT NONE
     DO JJ = 1,IGDRY
       ZVEC3(JJ) =  (  XKER_RDRYG(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_RDRYG(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                     			 	                  * ZVEC1(JJ) &
+                                       * ZVEC1(JJ) &
                  - (  XKER_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                     - XKER_RDRYG(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                 			     * (ZVEC1(JJ) - 1.0)
+                                      * (ZVEC1(JJ) - 1.0)
     END DO
     ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
     WHERE( GDRY(:) )
       ZZW1(:,4) = MIN( ZRRS(:),XFRDRYG*ZZW(:)                    & ! RRDRYG
                         *( ZLBDAR(:)**(-4) )*( ZLBDAG(:)**XCXG ) &
-       			        *( ZRHODREF(:)**(-XCEXVT-1.) )   &
+             *( ZRHODREF(:)**(-XCEXVT-1.) )   &
                     *( XLBRDRYG1/( ZLBDAG(:)**2              ) + &
                        XLBRDRYG2/( ZLBDAG(:)   * ZLBDAR(:)   ) + &
                        XLBRDRYG3/(               ZLBDAR(:)**2) ) )
@@ -2540,7 +2547,7 @@ IMPLICIT NONE
 !
     ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
     ZZW(:) =   ZKA(:)*(XTT-ZZT(:)) +                              &
-      	     ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
+           ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
                            *(XESTT-ZZW(:))/(XRV*ZZT(:))           )
 !
 ! compute RWETG
@@ -2550,7 +2557,7 @@ IMPLICIT NONE
                               X1DEPG*ZCJ(:)*ZLBDAG(:)**XEX1DEPG ) +   &
                  ( ZZW1(:,5)+ZZW1(:,6) ) *                            &
                  ( ZRHODREF(:)*(XLMTT+(XCI-XCL)*(XTT-ZZT(:)))   ) ) / &
-         	                 ( ZRHODREF(:)*(XLMTT-XCL*(XTT-ZZT(:))) )   )
+                          ( ZRHODREF(:)*(XLMTT-XCL*(XTT-ZZT(:))) )   )
   END WHERE
 !
 !*       6.4    Select Wet or Dry case
@@ -2634,7 +2641,7 @@ IMPLICIT NONE
     ZRRS(:) = ZRRS(:) - ZZW1(:,4)
     ZRGS(:) = ZRGS(:) + ZRDRYG(:)
     ZTHS(:) = ZTHS(:) + (ZZW1(:,1)+ZZW1(:,4))*(ZLSFACT(:)-ZLVFACT(:)) !
-  						        ! f(L_f*(RCDRYG+RRDRYG))
+      ! f(L_f*(RCDRYG+RRDRYG))
   END WHERE
   IF (LBUDGET_TH) CALL BUDGET (                                                    &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
@@ -2666,7 +2673,7 @@ IMPLICIT NONE
    WHERE( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>0.0) .AND. (ZZT(:)>XTT) )
     ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
     ZZW(:) =  ZKA(:)*(XTT-ZZT(:)) +                                 &
-      	     ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
+           ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
                            *(XESTT-ZZW(:))/(XRV*ZZT(:))             )
 !
 ! compute RGMLTR
@@ -2675,7 +2682,7 @@ IMPLICIT NONE
                            ( X0DEPG*       ZLBDAG(:)**XEX0DEPG +     &
                              X1DEPG*ZCJ(:)*ZLBDAG(:)**XEX1DEPG ) -   &
                                      ( ZZW1(:,1)+ZZW1(:,4) ) *       &
-      	                    ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
+                          ( ZRHODREF(:)*XCL*(XTT-ZZT(:))) ) /    &
                                              ( ZRHODREF(:)*XLMTT ) ) )
     ZRRS(:) = ZRRS(:) + ZZW(:)
     ZRGS(:) = ZRGS(:) - ZZW(:)
@@ -2768,17 +2775,17 @@ IMPLICIT NONE
       DO JJ = 1,IGWET
         ZVEC3(JJ) = (  XKER_SWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                      - XKER_SWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-        		 	                                   * ZVEC1(JJ) &
+                                         * ZVEC1(JJ) &
                    - ( XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                      - XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-         		                                     * (ZVEC1(JJ) - 1.0)
+                                         * (ZVEC1(JJ) - 1.0)
       END DO
       ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
       WHERE( GWET(:) )
         ZZW1(:,3) = MIN( ZRSS(:),XFSWETH*ZZW(:)                       & ! RSWETH
                       *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAH(:)**XCXH )  &
-       	                 *( ZRHODREF(:)**(-XCEXVT-1.) )               &
+                        *( ZRHODREF(:)**(-XCEXVT-1.) )               &
                          *( XLBSWETH1/( ZLBDAH(:)**2              ) + &
                             XLBSWETH2/( ZLBDAH(:)   * ZLBDAS(:)   ) + &
                             XLBSWETH3/(               ZLBDAS(:)**2) ) )
@@ -2830,10 +2837,10 @@ IMPLICIT NONE
       DO JJ = 1,IGWET
         ZVEC3(JJ) = (  XKER_GWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                      - XKER_GWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                       			 	                   * ZVEC1(JJ) &
+                              * ZVEC1(JJ) &
                   - (  XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
                      - XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                   			     * (ZVEC1(JJ) - 1.0)
+                              * (ZVEC1(JJ) - 1.0)
       END DO
       ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
@@ -2892,7 +2899,7 @@ IMPLICIT NONE
       ZRHS(:) = ZRHS(:) + ZZW(:)
       ZRRS(:) = MAX( 0.0,ZRRS(:) - ZZW1(:,4) + ZZW1(:,1) )
       ZTHS(:) = ZTHS(:) + ZZW1(:,4)*(ZLSFACT(:)-ZLVFACT(:)) 
-       						        ! f(L_f*(RCWETH+RRWETH))
+               ! f(L_f*(RCWETH+RRWETH))
     END WHERE
   END IF
     IF (LBUDGET_TH) CALL BUDGET (                                                 &
@@ -2918,34 +2925,41 @@ IMPLICIT NONE
                                                                12,'WETH_BU_RRH')
 !
 !
-! ici LRECONVH et un flag pour autoriser une reconversion partielle de
-!la grele en gresil
 !
-!  IF( IHAIL>0  ) THEN
 !
-!UPG_CD
 !
 !
 !*       7.45   Conversion of the hailstones into graupel
+! Partial reconversion of hail to graupel when rc and rh are small    
 !
-!    XDUMMY6=0.01E-3
-!    XDUMMY7=0.001E-3
-!    WHERE( ZRHT(:)<XDUMMY6 .AND. ZRCT(:)<XDUMMY7 .AND. ZZT(:)<XTT )
-!      ZZW(:) = MIN( 1.0,MAX( 0.0,1.0-(ZRCT(:)/XDUMMY7) ) )
+IF (OCONVHG) THEN
+ IF( IHAIL>0  ) THEN
+     ZTHRH=0.01E-3
+     ZTHRC=0.001E-3
+     WHERE( ZRHT(:)<ZTHRH .AND. ZRCT(:)<ZTHRC .AND. ZZT(:)<XTT )
+       ZZW(:) = MIN( 1.0,MAX( 0.0,1.0-(ZRCT(:)/ZTHRC) ) )
 !
 ! assume a linear percent conversion rate of hail into graupel
 !
-!      ZZW(:)  = ZRHS(:)*ZZW(:)
-!      ZRGS(:) = ZRGS(:) + ZZW(:)                      !   partial conversion
-!      ZRHS(:) = ZRHS(:) - ZZW(:)                      ! of hail into graupel
+       ZZW(:)  = ZRHS(:) * ZZW(:)
+       ZRGS(:) = ZRGS(:) + ZZW(:)                      !   partial conversion
+       ZRHS(:) = ZRHS(:) - ZZW(:)                      ! of hail into graupel
 !
-!    END WHERE
-!  END IF
+     END WHERE
+ END IF
+END IF
+!
+IF (LBUDGET_RG) CALL BUDGET (                                                 &
+                      UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                              11,'COHG_BU_RRG')
+IF (LBUDGET_RH) CALL BUDGET (                                                 &
+                      UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                               12,'COHG_BU_RRH')
+!
 
 
 
-
-  IF( IHAIL>0 ) THEN
+IF( IHAIL>0 ) THEN
 !
 !*       7.5    Melting of the hailstones
 !
@@ -2953,7 +2967,7 @@ IMPLICIT NONE
     WHERE( GHAIL(:) .AND. (ZRHS(:)>0.0) .AND. (ZZT(:)>XTT) )
       ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
       ZZW(:) = ZKA(:)*(XTT-ZZT(:)) +                              &
-       	     ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
+            ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
                              *(XESTT-ZZW(:))/(XRV*ZZT(:))         )
 !
 ! compute RHMLTR
@@ -2967,19 +2981,21 @@ IMPLICIT NONE
       ZRHS(:) = ZRHS(:) - ZZW(:)
       ZTHS(:) = ZTHS(:) - ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(-RHMLTR))
     END WHERE
-  END IF
-  DEALLOCATE(GHAIL)
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
+END IF
+!
+DEALLOCATE(GHAIL)
+!
+IF (LBUDGET_TH) CALL BUDGET (                                                  &
                    UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
                                                                 4,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
+IF (LBUDGET_RR) CALL BUDGET (                                                  &
                        UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                 8,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
+IF (LBUDGET_RH) CALL BUDGET (                                                  &
                        UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                12,'HMLT_BU_RRH')
 !
-  END SUBROUTINE RAIN_ICE_FAST_RH
+END SUBROUTINE RAIN_ICE_FAST_RH
 !
 !-------------------------------------------------------------------------------
 !

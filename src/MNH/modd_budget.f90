@@ -1,7 +1,3 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
 !     ##################
       MODULE MODD_BUDGET
 !     ##################
@@ -448,6 +444,7 @@ INTEGER, SAVE :: NWETGRG    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRG    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NGMLTRG    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRG    ! wet growth of hail      ICE4
+INTEGER, SAVE :: NCOHGRG    ! reconversion from hail to graupel ICE4
 !
 !      Allowed processes for the budget of moist variable RRH (hail)
 !
@@ -465,6 +462,7 @@ INTEGER, SAVE :: NNEGARH    ! negative correction
 INTEGER, SAVE :: NSEDIRH    ! sedimentation
 INTEGER, SAVE :: NWETGRH    ! wet growth of graupel
 INTEGER, SAVE :: NWETHRH    ! wet growth of hail
+INTEGER, SAVE :: NCOHGRH    ! reconversion from hail to graupel ICE4
 INTEGER, SAVE :: NHMLTRH    ! melting                           
 !
 ! Courant namelist: NAM_BURSV
