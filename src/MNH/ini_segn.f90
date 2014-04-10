@@ -231,6 +231,7 @@ LOGICAL            :: GPASPOL
 LOGICAL            :: GFOREFIRE
 #endif
 LOGICAL            :: GCONDSAMP
+LOGICAL            :: GCHTRANS 
                                                   ! These variables
                                                   ! are used to locally store 
 INTEGER            :: ISV                         ! the value read in DESFM 
@@ -339,6 +340,41 @@ IF (CPROGRAM=='MESONH') THEN
   HINIFILE=CINIFILE_n
   CALL FMOPEN_ll(HINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
 END IF
+
+IF (CPROGRAM=='MESONH') THEN
+  IF (IMASDEV > 49) THEN
+    YRECFM='COUPLING' 
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (LCOUPLING) THEN
+    WRITE(ILUOUT,*) 'Error with the initial file'
+    WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
+    WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
+    WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
+    !callabortstop
+    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+    CALL ABORT
+    ENDIF
+  ENDIF
+END IF
+
+IF (CPROGRAM=='SPAWN ') THEN
+  IF (IMASDEV > 49) THEN
+    YRECFM='COUPLING' 
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (LCOUPLING) THEN
+    WRITE(ILUOUT,*) 'Error with the initial file'
+    WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
+    WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
+    WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
+    !callabortstop
+    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+    CALL ABORT
+    ENDIF
+  ENDIF
+END IF
+
 !
 !-------------------------------------------------------------------------------
 !
@@ -405,7 +441,7 @@ YDESFM=TRIM(ADJUSTL(HINIFILE))//'.des'
 CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
                 GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
-                GDEPOS_DST, GORILAM,  &
+                GDEPOS_DST, GCHTRANS, GORILAM,                              &
                 GDEPOS_AER, GLG, GPASPOL, &
 #ifdef MNH_FOREFIRE
                 GFOREFIRE, &
@@ -425,7 +461,7 @@ CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
 CALL READ_EXSEG_n(KMI,YEXSEG,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &
                 GUSECHAQ,GUSECHIC,GCH_PH,                                   &
-                GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,GDEPOS_DST,           &
+                GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,GDEPOS_DST,GCHTRANS,  &
                 GORILAM,GDEPOS_AER,GLG,GPASPOL, &
 #ifdef MNH_FOREFIRE
                 GFOREFIRE, &

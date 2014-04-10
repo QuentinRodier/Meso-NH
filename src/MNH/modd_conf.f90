@@ -48,6 +48,8 @@
 !!      P. Jabouille                  26/06/01   lagrangian variables
 !!      V. Masson                     09/07/01   add LNEUTRAL switch
 !!      P. Jabouille                  18/04/02   add NBUGFIX and CBIBUSER
+!!      C. Lac                        01/04/14   add LCHECK     
+!!      G. Tanguy                     01/04/14   add LCOUPLING
 !!
 !-------------------------------------------------------------------------------
 !
@@ -117,6 +119,8 @@ LOGICAL,SAVE      :: LNOMIXLG    ! to use turbulence for lagrangian variables
 LOGICAL,SAVE      :: LNEUTRAL ! True if ref. theta field is uniform
 !
 LOGICAL,SAVE      :: LCPL_AROME  ! true if coupling file are issued from AROME
+LOGICAL,SAVE      :: LCOUPLING   ! true if coupling file (and not intial file)
+                                 ! (with LCOUPLING=T in PREP_REAL_CASE)
 !
 LOGICAL,SAVE      :: LCHECK ! To test reproducibility
 !

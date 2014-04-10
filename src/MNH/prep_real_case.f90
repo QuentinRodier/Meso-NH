@@ -414,7 +414,6 @@ USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_MNHWRITE_ZS_DUMMY_n
 USE MODI_COMPARE_DAD 
 USE MODI_PREP_SURF_MNH
-USE MODI_ICE_ADJUST_BIS
 !
 USE MODD_CONF            ! declaration modules
 USE MODD_CONF_n
@@ -510,7 +509,7 @@ LOGICAL  :: LUSECHIC
 !              ------------------------
 !
 NAMELIST/NAM_REAL_CONF/ NVERB, CEQNSYS, CPRESOPT, LSHIFT, LDUMMY_REAL, &
-                        LRES, XRES, NITR
+                        LRES, XRES, NITR,LCOUPLING
 ! Filtering and balancing of the large-scale and radar tropical cyclone
 NAMELIST/NAM_HURR_CONF/ LFILTERING, CFILTERING,   &
 XLAMBDA, NK, XLATGUESS, XLONGUESS, XBOXWIND, XRADGUESS, NPHIL, NDIAG_FILT,   &
@@ -583,6 +582,7 @@ ELSE
 END IF
 !                             
 LCPL_AROME=.FALSE.
+LCOUPLING=.FALSE.
 !
 ! GSMONOPROC set by INITIO_ll
 ! NPROC not yet set (done by INI_PARA_ll later)
@@ -954,13 +954,6 @@ IF (ALLOCATED(XZSMT_LS)) DEALLOCATE(XZSMT_LS)
 !
 !-------------------------------------------------------------------------------
 !
-!
-!*      13.    MICROPHYSICAL ADJUSTMENT
-!              ------------------------
-!CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
-!
-!-------------------------------------------------------------------------------
-!
 !*      13.    ANELASTIC CORRECTION
 !              --------------------
 !
@@ -968,13 +961,6 @@ CALL PRESSURE_IN_PREP(XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 CALL SECOND_MNH(ZTIME2)
 ZDYN = ZTIME2 - ZTIME1
-!
-!-------------------------------------------------------------------------------
-!
-!*      13.    MICROPHYSICAL ADJUSTMENT
-!              ------------------------
-!
-!CALL ICE_ADJUST_BIS(XPABST,XTHT,XRT)
 !
 !-------------------------------------------------------------------------------
 !
