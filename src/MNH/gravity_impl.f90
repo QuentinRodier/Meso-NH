@@ -123,6 +123,7 @@ INTEGER :: JR
 !-------------------------------------------------------------------------------
 !
 ZRWS_GRAV = 0.
+ZR = 0.
 !
 ! guess of Theta at future time-step
 ZTH(:,:,:) = (PRTHS(:,:,:) + PRTHS_CLD(:,:,:)) / PRHODJ * PTSTEP
