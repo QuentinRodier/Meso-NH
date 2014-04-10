@@ -205,6 +205,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   13/01/11           add LCH_RET_ICE
 !!                   01/07/11 (F.Couvreux) Add CONDSAMP
 !!                   01/07/11 (B.Aouizerats) Add CAOP    
+!!                   07/2013  (C.Lac) add WENO, LCHECK              
 !!                   07/2013  (Bosseur & Filippi) adds Forefire
 !-------------------------------------------------------------------------------
 !
@@ -441,6 +442,8 @@ CLBCY(2) ='CYCL'
 NLBLX(:) = 1
 NLBLY(:) = 1
 XCPHASE = 20.
+XCPHASE_PBL = 0.
+XCARPKMAX = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
@@ -747,6 +750,7 @@ IF (KMI == 1) THEN
   NDRYGRG  = 0
   NGMLTRG  = 0
   NWETHRG  = 0
+  NCOHGRG  = 0
 !
 !                    Budget of RRH
   LBU_RRH = .FALSE.
@@ -759,6 +763,7 @@ IF (KMI == 1) THEN
   NNEGARH  = 0
   NWETGRH  = 0
   NWETHRH  = 0
+  NCOHGRH  = 0
   NHMLTRH  = 0
 !
 !                    Budget of RSVx
@@ -942,8 +947,9 @@ END IF
 IF (KMI == 1) THEN
   LWARM = .TRUE.
   CPRISTINE_ICE = 'PLAT'
-  LSEDIC = .FALSE.
-  CSEDIM = 'SPLI'
+  LSEDIC  = .FALSE.
+  LCONVHG = .FALSE.
+  CSEDIM  = 'SPLI'
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1196,11 +1202,13 @@ ENDIF
 !*      26.   SET DEFAULT VALUES FOR MODD_LATZ_EDFLX      
 !             ----------------------------------
 !
-LUV_FLX=.FALSE.
-XUV_FLX1=3.E+14
-XUV_FLX2=0.
-LTH_FLX=.FALSE.
-XTH_FLX=0.75
+IF (KMI == 1) THEN 
+  LUV_FLX=.FALSE.
+  XUV_FLX1=3.E+14
+  XUV_FLX2=0.
+  LTH_FLX=.FALSE.
+  XTH_FLX=0.75
+ENDIF  
 #ifdef MNH_FOREFIRE
 !-------------------------------------------------------------------------------
 !
