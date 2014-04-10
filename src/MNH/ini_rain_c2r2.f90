@@ -1,7 +1,3 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
@@ -136,7 +132,7 @@ INTEGER :: IKB                ! Coordinates of the first and last physical
 INTEGER :: J1                 ! Internal loop indexes
 !
 REAL, DIMENSION(6)  :: ZGAMC, ZGAMR ! parameters involving various moments of
-				    ! the generalized gamma law
+    ! the generalized gamma law
 !
 REAL :: ZT                          ! Work variable
 REAL :: ZTT                   ! Temperature in Celsius
@@ -148,7 +144,7 @@ REAL :: ZVTRMAX               ! Raindrop maximal fall velocity
 REAL :: ZRHO00                ! Surface reference air density
 REAL :: ZSURF_TEN             ! Water drop surface tension
 REAL :: ZSMIN, ZSMAX          ! Minimal and maximal supersaturation used to
-			      ! discretize the HYP functions
+      ! discretize the HYP functions
 !
 !
 INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
@@ -298,13 +294,13 @@ ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
 !*       4.2    Constants for sedimentation
 !
 XFSEDRR  = XCR*GAMMA(XNUR+(XDR+3.)/XALPHAR)/GAMMA(XNUR+3./XALPHAR)*     &
-	    (ZRHO00)**XCEXVT
+    (ZRHO00)**XCEXVT
 XFSEDCR  = XCR*GAMMA(XNUR+XDR/XALPHAR)/GAMMA(XNUR)*     &
- 	    (ZRHO00)**XCEXVT
+     (ZRHO00)**XCEXVT
 XFSEDRC  = XCC*GAMMA(XNUC+(XDC+3.)/XALPHAC)/GAMMA(XNUC+3./XALPHAC)*     &
-	    (ZRHO00)**XCEXVT
+    (ZRHO00)**XCEXVT
 XFSEDCC  = XCC*GAMMA(XNUC+XDC/XALPHAC)/GAMMA(XNUC)*     &
-	    (ZRHO00)**XCEXVT
+    (ZRHO00)**XCEXVT
 !
 !
 !-------------------------------------------------------------------------------
@@ -366,11 +362,11 @@ XHYPINTP1 = FLOAT(NHYP-1)/LOG(ZSMAX/ZSMIN)
 XHYPINTP2 = FLOAT(NHYP)-XHYPINTP1*LOG(ZSMAX)
 IF (HPARAM_CCN == 'CPB') THEN ! CPB98's case 
   TAB_HYP : DO J1 = 1,NHYP    ! tabulation using a logarithmic scale for the
-	                      ! supersaturations (0.00001<S<0.1 in "no unit")
+                      ! supersaturations (0.00001<S<0.1 in "no unit")
               ZSS =ZSMAX*(ZSMIN/ZSMAX)**(FLOAT(NHYP-J1)/FLOAT(NHYP-1))
               XHYPF12(J1) = HYPGEO(XMUHEN,XKHEN/2.0,(XKHEN+2.0)/2.0,XBETAHEN, &
                                    100.*ZSS)
-              XHYPF32(J1) = HYPGEO(XMUHEN,XKHEN/2.0,(XKHEN+3.0)/2.0,XBETAHEN, &
+              XHYPF32(J1) = HYPGEO(XMUHEN,XKHEN/2.0,(XKHEN+3.0)/2.0,XBETAHEN*100**2, &
                                    ZSS)
             END DO TAB_HYP
   IF (HINI_CCN == 'CCN') THEN
