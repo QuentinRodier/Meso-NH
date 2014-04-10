@@ -16,7 +16,7 @@ INTERFACE
       SUBROUTINE READ_DESFM_n(KMI,HDESFM,HLUOUT,HCONF,OFLAT,OUSERV,              &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
-                   ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
+                   ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
                    OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
@@ -52,6 +52,7 @@ LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
 #endif
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Orilam flag
+LOGICAL,            INTENT(OUT) :: OCHTRANS ! Deep convection on scalar
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_DST    ! Dust Wet Deposition flag
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_SLT    ! Sea Salt Wet Deposition flag
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_AER    ! Aerosols Wet Deposition flag
@@ -78,7 +79,7 @@ END MODULE MODI_READ_DESFM_n
       SUBROUTINE READ_DESFM_n(KMI,HDESFM,HLUOUT,HCONF,OFLAT,OUSERV,              &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
-                   ODEPOS_SLT,ODUST,ODEPOS_DST,                                  &
+                   ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
                    OORILAM,ODEPOS_AER,OLG,OPASPOL,                               &
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
@@ -281,6 +282,8 @@ LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Dust flag
+LOGICAL,            INTENT(OUT) :: OCHTRANS ! Deep convection on scalar
+                                            ! variables flag 
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_DST    ! Dust Wet Deposition flag
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_SLT    ! Sea Salt Wet Deposition flag
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_AER    ! Aerosols Wet Deposition flag
@@ -498,6 +501,7 @@ ODUST    = LDUST
 ODEPOS_DST(KMI)    = LTEMPDEPOS_DST(KMI)
 ODEPOS_SLT(KMI)    = LTEMPDEPOS_SLT(KMI)
 ODEPOS_AER(KMI)    = LTEMPDEPOS_AER(KMI)
+OCHTRANS = LCHTRANS
 OSALT    = LSALT
 OORILAM  = LORILAM
 OLG      = LLG

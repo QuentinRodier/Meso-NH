@@ -13,7 +13,7 @@ INTERFACE
                                      PDRICONV,PPRCONV,PPRSCONV,PPACCONV,       &
                                      PUMFCONV,PDMFCONV,PMFCONV,PPRLFLXCONV,PPRSFLXCONV,&
                                      PCAPE,KCLTOPCONV,KCLBASCONV,              &
-                                     TPDTDCONV, OCHTRANS, PDSVCONV,            &
+                                     TPDTDCONV, HGETSVCONV, PDSVCONV,          &
                                      OCH_CONV_LINOX, PIC_RATE, PCG_RATE,       &
                                      PIC_TOTAL_NUMBER, PCG_TOTAL_NUMBER        )
 !
@@ -24,7 +24,7 @@ CHARACTER (LEN=*),      INTENT(IN) :: HLUOUT    ! name for output-listing
                                                 !  of nested models
 LOGICAL,                INTENT(IN) :: OINIDCONV ! switch to initialize or read
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR   ! Current date and time
-LOGICAL,                INTENT(IN) :: OCHTRANS  ! flag for chemical tracers
+CHARACTER (LEN=*),      INTENT(IN) :: HGETSVCONV ! GET indicator for SVCONV
 !
 TYPE (DATE_TIME),       INTENT(OUT):: TPDTDCONV ! date and time of the 
                                                 ! last deep convection call
@@ -66,7 +66,7 @@ END MODULE MODI_INI_DEEP_CONVECTION
                                      PDRICONV,PPRCONV,PPRSCONV,PPACCONV,       &
                                      PUMFCONV,PDMFCONV,PMFCONV,PPRLFLXCONV,PPRSFLXCONV,&
                                      PCAPE,KCLTOPCONV,KCLBASCONV,              &
-                                     TPDTDCONV, OCHTRANS, PDSVCONV,            &
+                                     TPDTDCONV, HGETSVCONV, PDSVCONV,          &
                                      OCH_CONV_LINOX, PIC_RATE, PCG_RATE,       &
                                      PIC_TOTAL_NUMBER, PCG_TOTAL_NUMBER        )
 !     ##########################################################################
@@ -142,7 +142,7 @@ CHARACTER (LEN=*),      INTENT(IN) :: HLUOUT    ! name for output-listing
                                                 !  of nested models
 LOGICAL,                INTENT(IN) :: OINIDCONV ! switch to initialize or read
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR   ! Current date and time
-LOGICAL,                INTENT(IN) :: OCHTRANS  ! flag for chemical tracers
+CHARACTER (LEN=*),      INTENT(IN) :: HGETSVCONV ! GET indicator for SVCONV
 !
 TYPE (DATE_TIME),       INTENT(OUT):: TPDTDCONV ! date and time of the 
                                                 ! last deep convection call
@@ -322,7 +322,8 @@ ELSE
   END IF
 !
 !
-  IF ( OCHTRANS .AND. NSV > 0 ) THEN
+ SELECT CASE(HGETSVCONV)
+  CASE('READ')
     IGRID=1      
     DO JSV = 1, NSV_USER
       WRITE(YRECFM,'(A7,I3.3)')'DSVCONV',JSV
@@ -401,7 +402,7 @@ ELSE
       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PDSVCONV(:,:,:,JSV),          &
            IGRID,ILENCH,YCOMMENT,IRESP)
     END DO
-  END IF
+ END SELECT
 !
 !
 END IF
