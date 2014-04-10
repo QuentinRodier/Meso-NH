@@ -113,7 +113,9 @@ INTEGER       :: IINFO_ll                     ! return code of // routines
 !*       1.    INITIALIZATION
 !              --------------
 ! Switch to model 1 variables
-CALL MPPDB_INIT()
+IF (LCHECK) THEN
+ CALL MPPDB_INIT()
+END IF
 CALL GOTO_MODEL(1)
 !
 CALL INITIO_ll()
