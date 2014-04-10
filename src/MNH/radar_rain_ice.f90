@@ -83,6 +83,7 @@ END MODULE MODI_RADAR_RAIN_ICE
 !!                  19/05/04 (JP Pinty) add ZDR and KDP for raindops at 10.71 cm
 !! J.-P. Chaboureau 17/06/10 bug correction in reflectivity calculation of icy hydrometeors
 !! J.-P. Chaboureau 03/02/12 set undef values for radar reflectivities
+!!       O. Caumont 09/04/14 correction of ZDR calculation
 !!
 !-------------------------------------------------------------------------------
 !
@@ -150,9 +151,10 @@ LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
                     ! listing
 !
 REAL     ::   ZR0, ZR1, ZR2 ! r(D) parameters
-REAL     ::   ZREXP, ZSCALE ! parameters to compute Zhh from Zvv
-REAL     ::   Z1, Z2        ! expansion coefficients
-!  
+!REAL     ::   ZREXP, ZSCALE ! parameters to compute Zhh from Zvv
+REAL     ::   Z1, Z2, Z3    ! expansion coefficients
+! 
+INTEGER  :: II, IJ, IK 
 !-------------------------------------------------------------------------------
 !
 !
@@ -199,10 +201,13 @@ IF (SIZE(PRT,4) >= 3) THEN
   ZR1 = -0.144E2
   ZR2 = -1.03E4
 !
-  ZREXP  = 7.0/3.0
-  ZSCALE = ZR0**ZREXP
-  Z1     = ZREXP*(ZR1/ZR0)
-  Z2     = ZREXP*(ZR2/ZR0)+ZREXP*(ZREXP-1.0)*0.5*(ZR1/ZR0)**2
+!  ZREXP  = 7.0/3.0
+!  ZSCALE = ZR0**ZREXP
+!  Z1     = ZREXP*(ZR1/ZR0)
+!  Z2     = ZREXP*(ZR2/ZR0)+ZREXP*(ZREXP-1.0)*0.5*(ZR1/ZR0)**2
+  Z1=.97
+  Z2=.64
+  Z3=7.8
 !
   ZLBDA(:,:,:) = 0.0
   IF( SIZE(PRT,4) == 3 ) THEN
@@ -218,11 +223,13 @@ IF (SIZE(PRT,4) >= 3) THEN
     ZLBDA(:,:,:) = XLBR*( PRHODREF(:,:,:)*PRT(:,:,:,3) )**XLBEXR
     PRARE(:,:,:) = 1.E18*XCCR*(ZLBDA(:,:,:)**(ZCXR-6.0))*MOMG(XALPHAR,XNUR,6.0)
     PVDOP(:,:,:) = 1.E18*XCCR*XCR*(ZLBDA(:,:,:)**(ZCXR-6.0-XDR))              &
-  						  *MOMG(XALPHAR,XNUR,6.0+XDR)
-    PRZDR(:,:,:) = ZSCALE*(1.0                                                 &
-      +Z1*(MOMG(XALPHAR,XNUR,7.0)/MOMG(XALPHAR,XNUR,6.0))*(1.0/ZLBDA(:,:,:))   &
-      +Z2*(MOMG(XALPHAR,XNUR,8.0)/MOMG(XALPHAR,XNUR,6.0))*(1.0/ZLBDA(:,:,:)**2))
-    PRZDR(:,:,:) = -10.0*LOG10( PRZDR(:,:,:) ) ! now in dBZ
+    *MOMG(XALPHAR,XNUR,6.0+XDR)
+!    PRZDR(:,:,:) = ZSCALE*(1.0                                                 &
+!      +Z1*(MOMG(XALPHAR,XNUR,7.0)/MOMG(XALPHAR,XNUR,6.0))*(1.0/ZLBDA(:,:,:))   &
+!      +Z2*(MOMG(XALPHAR,XNUR,8.0)/MOMG(XALPHAR,XNUR,6.0))*(1.0/ZLBDA(:,:,:)**2))
+    PRZDR(:,:,:) = Z1+Z2*(PRHODREF(:,:,:)*PRT(:,:,:,3))**(-XLBEXR)+Z3*(PRHODREF(:,:,:)*PRT(:,:,:,3))**(-2.*XLBEXR)
+!    PRZDR(:,:,:) = -10.0*LOG10( PRZDR(:,:,:) ) ! now in dBZ
+    PRZDR(:,:,:) = 10.0*LOG10( PRZDR(:,:,:) ) ! now in dBZ
     PRKDP(:,:,:) = 6.7E3*( PRHODREF(:,:,:)*PRT(:,:,:,3) )*                     &
     (-ZR1*(MOMG(XALPHAR,XNUR,4.0)/MOMG(XALPHAR,XNUR,3.0))*(1.0/ZLBDA(:,:,:))   &
      -ZR2*(MOMG(XALPHAR,XNUR,5.0)/MOMG(XALPHAR,XNUR,3.0))*(1.0/ZLBDA(:,:,:)**2))
