@@ -174,6 +174,7 @@ END MODULE MODI_RAIN_KHKO
 !!                                     evaporation for reproducibility
 !!      O.Thouron            03/13     Add prognostic supersaturation +
 !!                                     corrections in the sedimentation
+!!      B.Vié                04/14     Corrections in the sedimentation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -299,6 +300,9 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZMVRR,ZVRR,ZVCR
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZMVRC !Cloud water mean volumic radius
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
+                                  :: ZPRCT, ZPCCT, ZPRRT, ZPCRT 
+                                           ! For splitted sedimentation
 REAL, DIMENSION(:), ALLOCATABLE :: ZRVT    ! Water vapor m.r. at t 
 REAL, DIMENSION(:), ALLOCATABLE :: ZRCT    ! Cloud water m.r. at t 
 REAL, DIMENSION(:), ALLOCATABLE :: ZRRT    ! Rain water m.r. at t 
@@ -511,11 +515,15 @@ DO JN = 1 , KSPLITR
 !
     IF( JN==1 ) THEN
       IF( OSEDC ) THEN
-        PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP
-        PRCS(:,:,:) = PRCS(:,:,:) * PTSTEP
+        ZPCCT(:,:,:) = PCCT(:,:,:)
+        ZPRCT(:,:,:) = PRCT(:,:,:)
+        PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP - PCCT(:,:,:)
+        PRCS(:,:,:) = PRCS(:,:,:) * PTSTEP - PRCT(:,:,:)
       END IF
-      PCRS(:,:,:) = PCRS(:,:,:) * PTSTEP
-      PRRS(:,:,:) = PRRS(:,:,:) * PTSTEP
+      ZPCRT(:,:,:) = PCRT(:,:,:)
+      ZPRRT(:,:,:) = PRRT(:,:,:)
+      PCRS(:,:,:) = PCRS(:,:,:) * PTSTEP - PCRT(:,:,:)
+      PRRS(:,:,:) = PRRS(:,:,:) * PTSTEP - PRRT(:,:,:)
       DO JK = IKB , IKE
         ZW(:,:,JK) = ZTSPLITR/(PZZ(:,:,JK+1) -PZZ(:,:,JK))
       END DO
@@ -542,23 +550,23 @@ DO JN = 1 , KSPLITR
     ZZW3(:) = 0.0
 !
     IF( OSEDC.AND.MAXVAL(PRCS(:,:,:))>0.0 ) THEN
-      ALLOCATE(ZRCS(ISEDIM))
-      ALLOCATE(ZCCS(ISEDIM))
+      ALLOCATE(ZRCT(ISEDIM))
+      ALLOCATE(ZCCT(ISEDIM))
       ALLOCATE(ZLBDC(ISEDIM))
       DO JL = 1,ISEDIM
-        ZRCS(JL) = PRCS(I1(JL),I2(JL),I3(JL))
-        ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
+        ZRCT(JL) = ZPRCT(I1(JL),I2(JL),I3(JL))
+        ZCCT(JL) = ZPCCT(I1(JL),I2(JL),I3(JL))
         ZLBDC(JL) = ZWLBDC(I1(JL),I2(JL),I3(JL))
       END DO
-      WHERE( ZRCS(:)>XRTMIN(2) )
+      WHERE( ZRCT(:)>XRTMIN(2) )
         ZZW3(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDC(:)**(-XDC)
-        ZZW1(:) = XFSEDRC * ZRCS(:) * ZZW3(:) * ZRHODREF(:)
-        ZZW2(:) = XFSEDCC * ZCCS(:) * ZZW3(:)
+        ZZW1(:) = XFSEDRC * ZRCT(:) * ZZW3(:) * ZRHODREF(:)
+        ZZW2(:) = XFSEDCC * ZCCT(:) * ZZW3(:)
       END WHERE
       ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
       ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-      DEALLOCATE(ZRCS)
-      DEALLOCATE(ZCCS)
+      DEALLOCATE(ZRCT)
+      DEALLOCATE(ZCCT)
       DEALLOCATE(ZLBDC)
     END IF
 !             
@@ -566,16 +574,16 @@ DO JN = 1 , KSPLITR
 !        
    IF( OSEDC ) THEN
      DO JK = IKB , IKE
-        PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*    &
+        ZPRCT(:,:,JK) = ZPRCT(:,:,JK) + ZW(:,:,JK)*    &
                       (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
-        PCCS(:,:,JK) = PCCS(:,:,JK) + ZW(:,:,JK)*    &
+        ZPCCT(:,:,JK) = ZPCCT(:,:,JK) + ZW(:,:,JK)*    &
                       (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
      END DO
 !             
      IF( JN.EQ.1 ) THEN
         PINPRC(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
      END IF
-   END IF    
+   END IF
 !
 !*       2.22   for drizzle
 !
@@ -586,25 +594,25 @@ DO JN = 1 , KSPLITR
     ZZW2(:) = 0.0
 !
     IF( MAXVAL(PRRS(:,:,:))>0.0 ) THEN
-      ALLOCATE(ZRRS(ISEDIM)) 
-      ALLOCATE(ZCRS(ISEDIM))
+      ALLOCATE(ZRRT(ISEDIM)) 
+      ALLOCATE(ZCRT(ISEDIM))
       ALLOCATE(ZZVRR(ISEDIM))
       ALLOCATE(ZZVCR(ISEDIM))
       DO JL = 1,ISEDIM
-        ZRRS(JL) = PRRS(I1(JL),I2(JL),I3(JL))
-        ZCRS(JL) = PCRS(I1(JL),I2(JL),I3(JL))
+        ZRRT(JL) = ZPRRT(I1(JL),I2(JL),I3(JL))
+        ZCRT(JL) = ZPCRT(I1(JL),I2(JL),I3(JL))
         ZZVRR(JL) = ZVRR(I1(JL),I2(JL),I3(JL))
         ZZVCR(JL) = ZVCR(I1(JL),I2(JL),I3(JL))
       END DO
-      WHERE (ZRRS(:)>XRTMIN(3) )
-        ZZW1(:) = ZZVRR(:) * ZRRS(:) * ZRHODREF(:)
-        ZZW2(:) = ZZVCR(:) * ZCRS(:)
+      WHERE (ZRRT(:)>XRTMIN(3) )
+        ZZW1(:) = ZZVRR(:) * ZRRT(:) * ZRHODREF(:)
+        ZZW2(:) = ZZVCR(:) * ZCRT(:)
       END WHERE
       ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
       ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
 !
-      DEALLOCATE(ZRRS)
-      DEALLOCATE(ZCRS)
+      DEALLOCATE(ZRRT)
+      DEALLOCATE(ZCRT)
       DEALLOCATE(ZZVRR)
       DEALLOCATE(ZZVCR)
 !
@@ -620,9 +628,9 @@ DO JN = 1 , KSPLITR
 !*       2.3     update the rain tendency
 !
   DO JK = IKB , IKE
-        PRRS(:,:,JK) = PRRS(:,:,JK) + ZW(:,:,JK)* &
+        ZPRRT(:,:,JK) = ZPRRT(:,:,JK) + ZW(:,:,JK)* &
                       (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
-        PCRS(:,:,JK) = PCRS(:,:,JK) + ZW(:,:,JK)* &
+        ZPCRT(:,:,JK) = ZPCRT(:,:,JK) + ZW(:,:,JK)* &
                       (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
   END DO
 !
@@ -635,11 +643,11 @@ DO JN = 1 , KSPLITR
 !
   IF( JN==KSPLITR ) THEN
       IF( OSEDC ) THEN
-        PRCS(:,:,:) = PRCS(:,:,:) / PTSTEP
-        PCCS(:,:,:) = PCCS(:,:,:) / PTSTEP
+        PRCS(:,:,:) = ( PRCS(:,:,:) + ZPRCT(:,:,:) ) / PTSTEP
+        PCCS(:,:,:) = ( PCCS(:,:,:) + ZPCCT(:,:,:) ) / PTSTEP
       END IF
-      PRRS(:,:,:) = PRRS(:,:,:) / PTSTEP
-      PCRS(:,:,:) = PCRS(:,:,:) / PTSTEP
+      PRRS(:,:,:) = ( PRRS(:,:,:) + ZPRRT(:,:,:) ) / PTSTEP
+      PCRS(:,:,:) = ( PCRS(:,:,:) + ZPCRT(:,:,:) ) / PTSTEP
   END IF
 END DO
 !
