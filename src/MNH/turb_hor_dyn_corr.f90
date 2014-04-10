@@ -138,6 +138,8 @@ END MODULE MODI_TURB_HOR_DYN_CORR
 !!                     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
 !!                     July 2012     (V.Masson) Implicitness of W
+!!                     March 2014    (V.Masson) tridiag_w : bug between
+!!                                               mass and flux position
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -247,7 +249,7 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GX_U_M_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GY_V_M_PVM
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: GZ_W_M_PWM
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: GZ_W_M_ZWP
-REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: ZMZM_DZZ   ! MZM(PDZZ)
+REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: ZMZF_DZZ   ! MZF(PDZZ)
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: ZDFDDWDZ   ! formal derivative of the 
 !                                                                   ! flux (variable: dW/dz)
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: ZWP        ! W at future   time-step
@@ -284,7 +286,7 @@ GX_U_M_PUM = GX_U_M(1,IKU,1,PUM,PDXX,PDZZ,PDZX)
 IF (.NOT. L2D) GY_V_M_PVM = GY_V_M(1,IKU,1,PVM,PDYY,PDZZ,PDZY)
 GZ_W_M_PWM = GZ_W_M(1,IKU,1,PWM,PDZZ)
 !
-ZMZM_DZZ = MZM(1,IKU,1,PDZZ)
+ZMZF_DZZ = MZF(1,IKU,1,PDZZ)
 !
 CALL ADD3DFIELD_ll(TZFIELDS_ll, ZFLX)
 
@@ -561,7 +563,7 @@ END IF
 ZDFDDWDZ(:,:,:)    = - XCMFS * PK(:,:,:) * (4./3.)
 ZDFDDWDZ(:,:,:IKB) = 0.
 !
-CALL TRIDIAG_W(PWM,ZFLX,ZDFDDWDZ,PTSTEP,ZMZM_DZZ,PRHODJ,ZWP)
+CALL TRIDIAG_W(PWM,ZFLX,ZDFDDWDZ,PTSTEP,ZMZF_DZZ,PRHODJ,ZWP)
 !
 PRWS = PRWS(:,:,:) + MZM(1,IKU,1,PRHODJ(:,:,:))*(ZWP(:,:,:)-PWM(:,:,:))/PTSTEP
 !

@@ -8,13 +8,13 @@
 INTERFACE
 !
        SUBROUTINE TRIDIAG_W(PVARM,PF,PDFDDWDZ,PTSTEP,  &
-                                 PMZM_DZZ,PRHODJ,PVARP )
+                                 PMZF_DZZ,PRHODJ,PVARP )
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARM   ! variable at t-1      at flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PF      ! flux in dT/dt=-dF/dz at mass point
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dT/dz)          at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dW/dz)          at mass point
 REAL,                   INTENT(IN) :: PTSTEP  ! Double time step
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZM_DZZ! Dz                   at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZF_DZZ! Dz                   at mass point
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! (dry rho)*J          at mass point
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT):: PVARP   ! variable at t+1      at flux point
@@ -30,7 +30,7 @@ END MODULE MODI_TRIDIAG_W
 
 !      #################################################
        SUBROUTINE TRIDIAG_W(PVARM,PF,PDFDDWDZ,PTSTEP, &
-                                 PMZM_DZZ,PRHODJ,PVARP)
+                                 PMZF_DZZ,PRHODJ,PVARP)
 !      #################################################
 !
 !
@@ -55,16 +55,16 @@ END MODULE MODI_TRIDIAG_W
 !!    (PRHODJ(k)+PRHODJ(k-1))/2.*PVARP(k)/PTSTEP
 !!              = 
 !!    (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP 
-!!  - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
-!!  + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
-!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k+1)/PMZM_DZZ(k)**2
-!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k)  /PMZM_DZZ(k)**2
-!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k)  /PMZM_DZZ(k-1)**2
-!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k-1)/PMZM_DZZ(k-1)**2
-!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
-!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
-!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
-!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!!  - PRHODJ(k)   * PF(k  )/PMZF_PDZZ(k  )
+!!  + PRHODJ(k-1) * PF(k-1)/PMZF_PDZZ(k-1)
+!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k+1)/PMZF_DZZ(k)**2
+!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k)  /PMZF_DZZ(k)**2
+!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k)  /PMZF_DZZ(k-1)**2
+!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k-1)/PMZF_DZZ(k-1)**2
+!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZF_DZZ(k)**2
+!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZF_DZZ(k)**2
+!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZF_DZZ(k-1)**2
+!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZF_DZZ(k-1)**2
 !!
 !!
 !!    The system to solve is:
@@ -75,12 +75,12 @@ END MODULE MODI_TRIDIAG_W
 !!    The RHS of the linear system in PVARP writes:
 !!
 !! y(k)    = (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP
-!!        - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
-!!        + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
-!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
-!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
-!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
-!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!!        - PRHODJ(k)   * PF(k  )/PMZF_PDZZ(k  )
+!!        + PRHODJ(k-1) * PF(k-1)/PMZF_PDZZ(k-1)
+!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZF_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZF_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZF_DZZ(k-1)**2
+!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZF_DZZ(k-1)**2
 !!
 !!                      
 !!        Then, the classical TRIDIAGonal algorithm is used to invert the 
@@ -98,22 +98,28 @@ END MODULE MODI_TRIDIAG_W
 !!     ikb and ike represent the first and the last inner mass levels of the
 !!     model. The coefficients are:
 !!         
-!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZF_DZZ(k-1)**2
 !! b(k) =   (PRHODJ(k)+PRHODJ(k-1))/2. / PTSTEP
-!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZM_DZZ(k)**2
-!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
-!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZM_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZF_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZF_DZZ(k-1)**2
+!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZF_DZZ(k)**2
 !!
 !!          for all k /= ikb or ike
 !!
+!! with the boundary conditions:
+!!      PVARP(ikb-1) = PVARP(ikb)
+!!      PVARP(ike+1) = 0.
+!!
+!! This induces:
 !!
 !! b(ikb) =   (PRHODJ(ikb)+PRHODJ(ikb-1))/2. / PTSTEP
-!!          - PRHODJ(ikb)   * PDFDDWDZ(ikb)  /PMZM_DZZ(ikb)**2
-!! c(ikb) = + PRHODJ(ikb)   * PDFDDWDZ(ikb)/PMZM_DZZ(ikb)**2
+!!          - PRHODJ(ikb)   * PDFDDWDZ(ikb)  /PMZF_DZZ(ikb)**2
+!! c(ikb) = + PRHODJ(ikb)   * PDFDDWDZ(ikb)/PMZF_DZZ(ikb)**2
 !!
 !! b(ike) =  (PRHODJ(ike)+PRHODJ(ike-1))/2. / PTSTEP
-!!        - PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZM_DZZ(ike-1)**2
-!! a(ike) = + PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZM_DZZ(ike-1)**2
+!!        - PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZF_DZZ(ike-1)**2
+!!        - PRHODJ(ike  ) * PDFDDWDZ(ike  )/PMZF_DZZ(ike  )**2
+!! a(ike) = + PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZF_DZZ(ike-1)**2
 !!
 !!
 !!     EXTERNAL
@@ -135,6 +141,7 @@ END MODULE MODI_TRIDIAG_W
 !!     MODIFICATIONS
 !!     -------------
 !!       Original        04/2011 (from tridiag_thermo.f90)
+!!                       03/2014 modification of upper boundary condition
 !! ---------------------------------------------------------------------
 !
 !*       0. DECLARATIONS
@@ -150,9 +157,9 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARM   ! variable at t-1      at flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PF      ! flux in dT/dt=-dF/dz at mass point
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dT/dz)          at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dW/dz)          at mass point
 REAL,                   INTENT(IN) :: PTSTEP  ! Double time step
-REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZM_DZZ! Dz                   at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZF_DZZ! Dz                   at mass point
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! (dry rho)*J          at mass point
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT):: PVARP   ! variable at t+1      at flux point
@@ -180,7 +187,7 @@ IKE=SIZE(PVARM,3)-JPVEXT
 IKU=SIZE(PVARM,3)
 !
 ZMZM_RHODJ  = MZM(1,IKU,1,PRHODJ)
-ZRHODJ_DFDDWDZ_O_DZ2 = PRHODJ*PDFDDWDZ/PMZM_DZZ**2
+ZRHODJ_DFDDWDZ_O_DZ2 = PRHODJ*PDFDDWDZ/PMZF_DZZ**2
 !
 ZA=0.
 ZB=0.
@@ -192,23 +199,23 @@ ZY=0.
 !           ---------------------------
 !
 !! y(k)    = (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP
-!!        - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
-!!        + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
-!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
-!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
-!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
-!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!!        - PRHODJ(k)   * PF(k  )/PMZF_PDZZ(k  )
+!!        + PRHODJ(k-1) * PF(k-1)/PMZF_PDZZ(k-1)
+!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZF_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZF_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZF_DZZ(k-1)**2
+!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZF_DZZ(k-1)**2
 !
 ZY(:,:,IKB) = ZMZM_RHODJ(:,:,IKB)*PVARM(:,:,IKB)/PTSTEP              &
-    - PRHODJ(:,:,IKB  ) * PF(:,:,IKB  )/PMZM_DZZ(:,:,IKB  )           &
-    + PRHODJ(:,:,IKB-1) * PF(:,:,IKB-1)/PMZM_DZZ(:,:,IKB-1)           &
+    - PRHODJ(:,:,IKB  ) * PF(:,:,IKB  )/PMZF_DZZ(:,:,IKB  )           &
+    + PRHODJ(:,:,IKB-1) * PF(:,:,IKB-1)/PMZF_DZZ(:,:,IKB-1)           &
     + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB+1)&
     - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB  )
 !
 DO JK=IKB+1,IKE-1
   ZY(:,:,JK) = ZMZM_RHODJ(:,:,JK)*PVARM(:,:,JK)/PTSTEP               &
-    - PRHODJ(:,:,JK  ) * PF(:,:,JK  )/PMZM_DZZ(:,:,JK  )              &
-    + PRHODJ(:,:,JK-1) * PF(:,:,JK-1)/PMZM_DZZ(:,:,JK-1)              &
+    - PRHODJ(:,:,JK  ) * PF(:,:,JK  )/PMZF_DZZ(:,:,JK  )              &
+    + PRHODJ(:,:,JK-1) * PF(:,:,JK-1)/PMZF_DZZ(:,:,JK-1)              &
     + ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK+1)  &
     - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK  )  &
     - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1) * PVARM(:,:,JK  )  &
@@ -216,8 +223,9 @@ DO JK=IKB+1,IKE-1
 END DO
 ! 
 ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
-    - PRHODJ(:,:,IKE  ) * PF(:,:,IKE  )/PMZM_DZZ(:,:,IKE  )           &
-    + PRHODJ(:,:,IKE-1) * PF(:,:,IKE-1)/PMZM_DZZ(:,:,IKE-1)           &
+    - PRHODJ(:,:,IKE  ) * PF(:,:,IKE  )/PMZF_DZZ(:,:,IKE  )           &
+    + PRHODJ(:,:,IKE-1) * PF(:,:,IKE-1)/PMZF_DZZ(:,:,IKE-1)           &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE  ) * PVARM(:,:,IKE )  &
     - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1) * PVARM(:,:,IKE  ) &
     + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1) * PVARM(:,:,IKE-1)
 !
@@ -229,26 +237,27 @@ ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
 !*       3.1 arrays A, B, C
 !            --------------
 !
-!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZF_DZZ(k-1)**2
 !! b(k) =   (PRHODJ(k)+PRHODJ(k-1))/2. / PTSTEP
-!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZM_DZZ(k)**2
-!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
-!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZM_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZF_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZF_DZZ(k-1)**2
+!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZF_DZZ(k)**2
 !
-  ZB(:,:,IKB) =   PRHODJ(:,:,IKB)/PTSTEP                   &
+  ZB(:,:,IKB) =   ZMZM_RHODJ(:,:,IKB)/PTSTEP      &
                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
   ZC(:,:,IKB) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
 
   DO JK=IKB+1,IKE-1
     ZA(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
-    ZB(:,:,JK) =   ZMZM_RHODJ(:,:,JK)/PTSTEP                   &
+    ZB(:,:,JK) =   ZMZM_RHODJ(:,:,JK)/PTSTEP      &
                  - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) &
                  - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
     ZC(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  )
   END DO
 
   ZA(:,:,IKE) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1)
-  ZB(:,:,IKE) =   PRHODJ(:,:,IKE)/PTSTEP                   &
+  ZB(:,:,IKE) =   ZMZM_RHODJ(:,:,IKE)/PTSTEP      &
+                - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE  ) &
                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1)
 !
 !*       3.2 going up
@@ -286,7 +295,7 @@ ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
 !            ----------------------------------------
 !
 PVARP(:,:,IKB-1)=PVARP(:,:,IKB)
-PVARP(:,:,IKE+1)=PVARP(:,:,IKE)
+PVARP(:,:,IKE+1)=0.
 !
 !-------------------------------------------------------------------------------
 !
