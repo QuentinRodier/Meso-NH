@@ -1322,6 +1322,22 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
   CALL LES_DIACHRO_SURF("RWP    ",  &
      "Rain Water path","kg/m2",XLES_RWP,HLES_AVG)   
 
+  IF (LUSERI) &
+  CALL LES_DIACHRO_SURF("IWP    ",  &
+     "Ice Water path","kg/m2",XLES_IWP,HLES_AVG)   
+
+  IF (LUSERS) &
+  CALL LES_DIACHRO_SURF("SWP    ",  &
+     "Snow Water path","kg/m2",XLES_SWP,HLES_AVG)   
+
+  IF (LUSERG) &
+  CALL LES_DIACHRO_SURF("GWP    ",  &
+     "Graupel Water path","kg/m2",XLES_GWP,HLES_AVG)   
+
+  IF (LUSERH) &
+  CALL LES_DIACHRO_SURF("HWP    ",  &
+     "Hail Water path","kg/m2",XLES_HWP,HLES_AVG)   
+
   IF (LUSERR) &
   CALL LES_DIACHRO_SURF("PREC_FRAC    ",  &
   "Fract of col where rain at surface","",XLES_PRECFR,HLES_AVG)
