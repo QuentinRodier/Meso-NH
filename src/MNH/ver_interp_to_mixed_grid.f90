@@ -160,6 +160,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                  21/11/97 (V. Masson) bug in rhod computation (since masdev3_1)
 !!                  22/01/01 (D. Gazen)  add MODD_NSV for NSV access
 !!                  20/05/06             Remove EPS
+!!                  10/04/2014 (J.Escobar &  M.Faivre ) add reprod_sum on XEXNTOP
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -191,7 +192,8 @@ USE MODD_PREP_REAL
 USE MODE_ll
 USE MODE_EXTRAPOL
 !JUAN REALZ
-
+USE MODE_REPRO_SUM
+!
 IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
@@ -413,11 +415,13 @@ IF (HFILE=='ATM ') THEN
 !
 !!$  XEXNTOP=SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT((IIE-IIB+1)*(IJE-IJB+1))
 !JUAN REALZ
-
-  XEXNTOP  = SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
+!!$  XEXNTOP  = SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
+!!$  CALL REDUCESUM_ll(XEXNTOP,IINFO_ll)
+  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
+!
   ZCOUNT   = FLOAT((IIE-IIB+1)*(IJE-IJB+1))
-  CALL REDUCESUM_ll(XEXNTOP,IINFO_ll)
   CALL REDUCESUM_ll(ZCOUNT,IINFO_ll)
+!
   XEXNTOP = XEXNTOP / ZCOUNT
 
 !JUAN REALZ
