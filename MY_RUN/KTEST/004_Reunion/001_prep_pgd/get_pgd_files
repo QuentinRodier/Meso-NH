@@ -1,4 +1,8 @@
-PREP_PGD_FILES=$HOME/PREP_PGD_FILES_WWW ; export PREP_PGD_FILES
+#
+#     Modif
+#     J.Escobar 11/04/2014 get PGD files from 'dir_open' directory ( without psswd )
+#
+PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"} ; export PREP_PGD_FILES
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "!!!!            WARNING                  !!!!"
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -12,8 +16,8 @@ read RIEN
 set -x
 mkdir -p $PREP_PGD_FILES
 cd $PREP_PGD_FILES
-PGD_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_interne/dir_LINUX/dir_PGDFILES"
-WGET="wget --http-user=people --http-passwd=people "
+PGD_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_PGDFILES"
+WGET="wget"
 export PGD_URL
 for file in gtopo30.dir gtopo30.hdr \
             SAND_HWSD_MOY.hdr SAND_HWSD_MOY.dir CLAY_HWSD_MOY.hdr CLAY_HWSD_MOY.dir \

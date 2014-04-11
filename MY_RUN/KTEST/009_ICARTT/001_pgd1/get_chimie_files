@@ -1,3 +1,7 @@
+#
+#     Modif
+#     J.Escobar 11/04/2014 get CHIMIE files from 'dir_open' directory ( without psswd )
+#
 CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} ; export CHIMIE_FILES
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 echo "!!!!            WARNING                  !!!!"
@@ -12,8 +16,8 @@ read RIEN
 set -x
 mkdir -p ${CHIMIE_FILES}
 cd ${CHIMIE_FILES}
-CHIMIE_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_interne/dir_LINUX/dir_CHIMIE"
-WGET="wget --http-user=people --http-passwd=people "
+CHIMIE_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_CHIMIE"
+WGET="wget"
 export CHIMIE_URL
 for dir in EMISSIONS tuv50
 do
