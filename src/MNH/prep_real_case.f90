@@ -374,6 +374,7 @@
 !!                  Mar   2012    Add NAM_NCOUT for netcdf output
 !!                  July  2013     (Bosseur & Filippi) Adds Forefire
 !!                  Mars  2014     (J.Escobar) Missing 'full' UPDATE_METRICS for arp2lfi // run
+!!                   April 2014     (G.TANGUY) Add LCOUPLING
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1087,20 +1088,22 @@ IF (YATMFILETYPE=='MESONH'.AND. YATMFILE/=YPGDFILE) CALL FMCLOS_ll(YATMFILE,'KEE
 !*      18.    INTERPOLATION OF SURFACE VARIABLES
 !              ----------------------------------
 !
-ZTIME1 = ZTIME2
+IF (.NOT. LCOUPLING ) THEN
+  ZTIME1 = ZTIME2
 !
-IF (CSURF=="EXTE") THEN
-  IF (YATMFILETYPE/='MESONH') THEN
-    CALL ALLOC_SURFEX(1)
-    CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
+  IF (CSURF=="EXTE") THEN
+    IF (YATMFILETYPE/='MESONH') THEN
+      CALL ALLOC_SURFEX(1)
+      CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
+    ENDIF
+    CALL GOTO_SURFEX(1,.TRUE.)
+    CALL PREP_SURF_MNH(YSURFFILE,YSURFFILETYPE)
+    CALL DEALLOC_SURFEX
   ENDIF
-  CALL GOTO_SURFEX(1,.TRUE.)
-  CALL PREP_SURF_MNH(YSURFFILE,YSURFFILETYPE)
-  CALL DEALLOC_SURFEX
-ENDIF
 !
-CALL SECOND_MNH(ZTIME2)
-ZSURF = ZSURF + ZTIME2 - ZTIME1
+  CALL SECOND_MNH(ZTIME2)
+  ZSURF = ZSURF + ZTIME2 - ZTIME1
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
