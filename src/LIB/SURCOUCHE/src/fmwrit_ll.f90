@@ -217,6 +217,10 @@ CONTAINS
 
   SUBROUTINE FMWRITX0_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
+!
+!  Modification 
+!  J.Escobar 15/04/2014 : add write to all Z files for all FMWRITX0_ll variables
+!
     USE MODD_IO_ll, ONLY : ISP,GSMONOPROC
     USE MODD_FM
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
@@ -250,7 +254,12 @@ CONTAINS
     TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
     TYPE(FMHEADER)               :: TZFMH
-
+    !JUANZIO
+    INTEGER                                  :: IK_FILE,IK_rank
+    CHARACTER(len=5)                         :: YK_FILE  
+    CHARACTER(len=128)                       :: YFILE_IOZ  
+    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    !JUANZIO
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -318,7 +327,28 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
-       END IF
+       END IF ! multiprocessor execution
+       IF (TZFD%nb_procio.gt.1) THEN
+          ! write the data in all Z files
+          DO IK_FILE=1,TZFD%nb_procio
+             write(YK_FILE ,'(".Z",i3.3)')  IK_FILE
+             YFILE_IOZ =  TRIM(HFILEM)//YK_FILE//".lfi"
+             TZFD_IOZ => GETFD(YFILE_IOZ)   
+             IK_RANK = TZFD_IOZ%OWNER
+             IF ( ISP == IK_RANK )  THEN
+                TZFMH%GRID=KGRID
+                TZFMH%COMLEN=KLENCH
+                TZFMH%COMMENT=HCOMMENT
+#ifdef MNH_NCWRIT
+               IF ( DEF_NC .AND. LLFIFM ) THEN
+                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,PFIELD,TZFMH,IRESP)
+               END IF
+#else
+                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,PFIELD,TZFMH,IRESP)
+#endif
+             END IF
+          END DO
+       ENDIF
     ELSE
        IRESP = -61
     END IF
