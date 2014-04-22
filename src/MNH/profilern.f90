@@ -92,7 +92,8 @@ END MODULE MODI_PROFILER_n
 !!    -------------
 !!     Original 15/02/2002
 !!     March 2013 : C.Lac : Corrections for 1D + new fields (RARE,THV,DD,FF)
-!!     April 2014 : C.Lac : Call RADAR only if ICE3                         
+!!     April 2014 : C.Lac : Call RADAR only if ICE3   
+!!
 !!
 !! --------------------------------------------------------------------------
 !       
