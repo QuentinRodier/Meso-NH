@@ -122,6 +122,8 @@ END MODULE MODI_ADVECTION_METSV
 !!                                                   tracer routines
 !!                  08/06    (T.Maric)               PPM scheme
 !!                  04/2011  (V.Masson & C. Lac)     splits the routine and add time splitting
+!!                  04/2014  (C.Lac)                 adaptation of time
+!!                                                   splitting for L1D and L2D
 !!
 !-------------------------------------------------------------------------------
 !
@@ -131,7 +133,7 @@ END MODULE MODI_ADVECTION_METSV
 USE MODE_ll
 USE MODE_IO_ll
 USE MODD_PARAM_n
-USE MODD_CONF,  ONLY : LNEUTRAL,NHALO
+USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
 USE MODD_CTURB, ONLY : XTKEMIN
 USE MODD_BUDGET
 !
@@ -269,14 +271,20 @@ END IF
 !
 !*       2.2 computes CFL numbers
 !
-ZCFLU = ABS(ZRUCPPM * PTSTEP)
-ZCFLV = ABS(ZRVCPPM * PTSTEP)
-ZCFLW = ABS(ZRWCPPM * PTSTEP)
-ZCFL  = SQRT(ZCFLU**2+ZCFLV**2+ZCFLW**2)
+IF (.NOT. L1D) THEN
+  ZCFLU = ABS(ZRUCPPM * PTSTEP)
+  ZCFLV = ABS(ZRVCPPM * PTSTEP)
+  ZCFLW = ABS(ZRWCPPM * PTSTEP)
+  IF (.NOT. L2D) THEN
+    ZCFL  = SQRT(ZCFLU**2+ZCFLV**2+ZCFLW**2)
+  ELSE
+    ZCFL  = SQRT(ZCFLU**2+ZCFLW**2)
+  END IF
+END IF
 !
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
-IF (OCLOSE_OUT .AND. OCFL_WRIT) THEN
+IF (OCLOSE_OUT .AND. OCFL_WRIT .AND. (.NOT. L1D)) THEN
     YRECFM  ='CFLU'
     YCOMMENT='X_Y_Z_CFLU (-)'
     IGRID   = 1
@@ -311,7 +319,7 @@ ZCFLV_MAX = MAX_ll(ZCFLV,IINFO_ll)
 ZCFLW_MAX = MAX_ll(ZCFLW,IINFO_ll)
 ZCFL_MAX  = MAX_ll(ZCFL,IINFO_ll)
 !
-WRITE(ILUOUT,FMT='(A24,F5.2,A5,F5.2,A5,F5.2,A9,F5.2)') &
+WRITE(ILUOUT,FMT='(A24,F10.2,A5,F10.2,A5,F10.2,A9,F10.2)') &
                 'Max. CFL number for U : ',ZCFLU_MAX,  &
                 '  V : ',ZCFLV_MAX,'  W : ', ZCFLW_MAX,&
                 'global : ',ZCFL_MAX
@@ -319,7 +327,7 @@ WRITE(ILUOUT,FMT='(A24,F5.2,A5,F5.2,A5,F5.2,A9,F5.2)') &
 !
 !*       2.3 updates time step splitting loop
 !
-IF (OSPLIT_CFL) THEN
+IF (OSPLIT_CFL .AND. (.NOT.L1D)  ) THEN
 !
  ISPLIT_PPM = INT(ZCFL_MAX/PSPLIT_CFL)+1
  IF ( KSPLIT /= ISPLIT_PPM )                                    &
@@ -331,7 +339,9 @@ IF (OSPLIT_CFL) THEN
 !
 END IF
 ! ---------------------------------------------------------------
-IF ( (ZCFLU_MAX>=3. .OR. ZCFLV_MAX>=3.) .OR. ZCFLW_MAX>=8. ) THEN
+IF (( (ZCFLU_MAX>=3.) .AND. (.NOT.L1D) ) .OR. &
+    ( (ZCFLV_MAX>=3.) .AND. (.NOT.L1D) .AND. (.NOT.L2D) ) .OR. &
+    ( (ZCFLW_MAX>=8.) .AND. (.NOT.L1D) ) ) THEN
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
   WRITE(ILUOUT,*) ' |                   MODEL ERROR                     |'
@@ -356,8 +366,8 @@ IF ( (ZCFLU_MAX>=3. .OR. ZCFLV_MAX>=3.) .OR. ZCFLW_MAX>=8. ) THEN
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
   WRITE(ILUOUT,*) ' |                   MODEL STOPS                     |'
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
-! CALL ABORT
-! STOP
+  CALL ABORT
+  STOP
 END IF
 !
 !
