@@ -188,7 +188,8 @@ END MODULE MODI_ENDSTEP
 !!                 10/2006  (Maric, Lac)  modification for PPM schemes
 !!                 10/2009  (C.Lac)       Correction on FIT temporal scheme for variables
 !!                                         advected with PPM
-!!                 04/2013  (C.Lac)       FIT for all the variables                   
+!!                 04/2013  (C.Lac)       FIT for all the variables     
+!!                 04/2014  (C.Lac)       Check on the positivity of XSVT
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -206,8 +207,11 @@ USE MODD_NSV, ONLY : XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_DUST,       ONLY : LDUST
 USE MODD_PARAM_C2R2, ONLY : LACTIT
+USE MODD_LBC_n, ONLY : CLBCX, CLBCY
 USE MODI_BUDGET
 USE MODI_SHUMAN
+!
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -262,10 +266,17 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBYRM,PLBYSVM            !
 !
 INTEGER:: JSV                  ! loop counters
 INTEGER :: IKU
+INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
+INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 !
 !------------------------------------------------------------------------------
 !
+IIB = 1 + JPHEXT
+IIE = SIZE(PUT,1) - JPHEXT
+IJB = 1 + JPHEXT
+IJE = SIZE(PUT,2) - JPHEXT
 IKU=SIZE(XZHAT)
+!
 !*      1.   ASSELIN FILTER
 !
 IF (HUVW_ADV_SCHEME(1:3)=='CEN') THEN
@@ -304,6 +315,33 @@ IF (SIZE(PTKET,1) /= 0) PTKET(:,:,:)=PTKES(:,:,:)
 !
 PSVT(:,:,:,1:KSV)=PSVS(:,:,:,1:KSV)
 !
+IF (LWEST_ll( ) .AND. CLBCX(1)=='OPEN') THEN
+ DO JSV=1,KSV
+   PSVT(IIB,:,:,JSV)=MAX(PSVT(IIB,:,:,JSV),XSVMIN(JSV))
+   PSVT(IIB-1,:,:,JSV)=MAX(PSVT(IIB-1,:,:,JSV),XSVMIN(JSV))
+ END DO
+END IF
+!
+IF (LEAST_ll( ) .AND. CLBCX(2)=='OPEN') THEN
+ DO JSV=1,KSV
+   PSVT(IIE,:,:,JSV)=MAX(PSVT(IIE,:,:,JSV),XSVMIN(JSV))
+   PSVT(IIE+1,:,:,JSV)=MAX(PSVT(IIE+1,:,:,JSV),XSVMIN(JSV))
+ END DO
+END IF
+!
+IF (LSOUTH_ll( ) .AND. CLBCY(1)=='OPEN') THEN
+ DO JSV=1,KSV
+   PSVT(:,IJB,:,JSV)=MAX(PSVT(:,IJB,:,JSV),XSVMIN(JSV))
+   PSVT(:,IJB-1,:,JSV)=MAX(PSVT(:,IJB-1,:,JSV),XSVMIN(JSV))
+ END DO
+END IF
+!
+IF (LNORTH_ll( ) .AND. CLBCY(2)=='OPEN') THEN
+ DO JSV=1,KSV
+   PSVT(:,IJE,:,JSV)=MAX(PSVT(:,IJE,:,JSV),XSVMIN(JSV))
+   PSVT(:,IJE+1,:,JSV)=MAX(PSVT(:,IJE+1,:,JSV),XSVMIN(JSV))
+ END DO
+END IF
 !------------------------------------------------------------------------------
 !
 !*      4.   TEMPORAL ADVANCE OF THE LARGE SCALE FIELDS

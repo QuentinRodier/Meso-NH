@@ -92,6 +92,7 @@ END MODULE MODI_PROFILER_n
 !!    -------------
 !!     Original 15/02/2002
 !!     March 2013 : C.Lac : Corrections for 1D + new fields (RARE,THV,DD,FF)
+!!     April 2014 : C.Lac : Call RADAR only if ICE3                         
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -184,10 +185,8 @@ INTEGER                    :: ILUOUT      ! logical unit
 INTEGER                    :: IRESP       ! return code
 INTEGER                    :: I           ! loop for stations
 !
-! ++ CL
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZWORK32,ZTHV
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK33,ZWORK34
-! -- CL
 !----------------------------------------------------------------------------
 !
 !*      2.   PRELIMINARIES
@@ -358,7 +357,7 @@ END IF
 !            --------------
 !
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
-CALL RADAR_RAIN_ICE (PR, PCIT, PRHODREF, ZTEMP, ZRARE, ZWORK32, &
+IF (SIZE(PR,4) == 6) CALL RADAR_RAIN_ICE (PR, PCIT, PRHODREF, ZTEMP, ZRARE, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
 ! Theta_v
 ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+XRV/XRD*PR(:,:,:,1))

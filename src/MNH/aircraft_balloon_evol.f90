@@ -127,6 +127,7 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!     Dec,12, 2008 (M. Leriche) move ZTDIST out from if.not.(tpflyer%fly)
 !!     Dec,15, 2008 (V. Masson) correct do while aircraft move
 !!     March, 2013 (O.Caumont) add radar reflectivities
+!!     April, 2014 (C.Lac) allow RARE calculation only if CCLOUD=ICE3
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -292,6 +293,7 @@ INTEGER :: IRESP    ! return code
 REAL, DIMENSION(SIZE(PR,3))    :: ZTEMPZ! vertical profile of temperature
 REAL, DIMENSION(SIZE(PR,3))    :: ZRHODREFZ ! vertical profile of dry air density of the reference state
 REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
+REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR   
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
 REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD   ! generic microphysical parameters
 INTEGER                        :: JJ    ! loop counter for quadrature
@@ -317,6 +319,7 @@ IF(.NOT. ALLOCATED(XSVW_FLUX)) &
 ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
+ZR = 0.
 !
 !*      1.0  initialization of processor test
 !            --------------------------------
@@ -962,12 +965,18 @@ IF ( TPFLYER%FLY) THEN
         !
         DO JLOOP=1,SIZE(PR,4)
           TPFLYER%R   (IN,JLOOP) = FLYER_INTERP(PR(:,:,:,JLOOP))
+          IF (JLOOP>=2) ZR(:,:,:) = ZR(:,:,:) + PR(:,:,:,JLOOP)
         END DO
         DO JLOOP=1,SIZE(PSV,4)
           TPFLYER%SV  (IN,JLOOP) = FLYER_INTERP(PSV(:,:,:,JLOOP))
         END DO
-        TPFLYER%RTZ  (IN,:) = FLYER_INTERPZ(PR(:,:,:,2)+PR(:,:,:,3)+PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))
+        TPFLYER%RTZ  (IN,:) = FLYER_INTERPZ(ZR(:,:,:))
         TPFLYER%FFZ  (IN,:) = FLYER_INTERPZ(SQRT(PU**2+PV**2))                               
+        ! initialization CRARE and CRARE_ATT
+        TPFLYER%CRARE(IN,:) = 0.
+        TPFLYER%CRARE_ATT(IN,:) = 0.
+
+      IF (SIZE(PR,4) == 6 ) THEN ! only for ICE3
         ZTEMPZ(:)=FLYER_INTERPZ(PTH(II:II+1,IJ:IJ+1,:) * ZEXN(:,:,:))
         ZRHODREFZ(:)=FLYER_INTERPZ(PRHODREF(:,:,:))
         ZCIT(:)=FLYER_INTERPZ(PCIT(:,:,:))
@@ -979,9 +988,7 @@ IF ( TPFLYER%FLY) THEN
           ZRZ(JK,7)=FLYER_INTERP_2D(PR(:,:,JK,2)*(1.-PSEA(:,:)))  ! becomes cloud mixing ratio over land
         END DO
         ALLOCATE(ZAELOC(IKU))
-        ! initialization CRARE and CRARE_ATT
-        TPFLYER%CRARE(IN,:) = 0.
-        TPFLYER%CRARE_ATT(IN,:) = 0.
+        !
         ZAELOC(:)=0.
         ! initialization of quadrature points and weights
         ALLOCATE(ZX(JPTS_GAULAG),ZW(JPTS_GAULAG))
@@ -1146,7 +1153,7 @@ IF ( TPFLYER%FLY) THEN
           TPFLYER%CRARE_ATT(IN,:)=XUNDEF
         END WHERE
         DEALLOCATE(ZX,ZW,ZRTMIN)
-
+      END IF ! end LOOP ICE3
         ! vertical wind
         TPFLYER%WZ  (IN,:) = FLYER_INTERPZ(ZWM(:,:,:))
         IF (SIZE(PTKE)>0) TPFLYER%TKE  (IN)    = FLYER_INTERP(PTKE)
