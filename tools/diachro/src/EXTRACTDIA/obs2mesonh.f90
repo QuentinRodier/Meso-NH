@@ -296,12 +296,12 @@ DO JOBS=1,10000
   !*       3.1   Lecture du fichier d obs a traiter
   !              ----------------------
   PRINT*, '- Name of the new field to be created:'
-  PRINT*, '(if the first letter is:'
-  PRINT*, ' W: the field is localised at vertical flux points, ',&
-          'otherwise at mass points '
-  PRINT*, ' U: the field (U-component for zonal) will be converted to ',&
+  PRINT*, '(if it is a wind field you have to name the field : '
+  PRINT*, ' WTxx: the field is localised at vertical flux points, ',&
+          'otherwise at mass points (example : WT10) '
+  PRINT*, ' UTxx: the field (U-component for zonal) will be converted to ',&
           'MesoNH wind components'
-  PRINT*, '    the V-component must be provided immediately after'
+  PRINT*, 'the V-component must be provided immediately after with VTxx'
   PRINT*, '?'
   READ(5,'(A9)',END=88) CGROUP
   CGROUP=ADJUSTL(CGROUP)

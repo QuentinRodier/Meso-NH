@@ -252,14 +252,14 @@ DO JLOOPFILE=1,100000
   YFLAGWRITE='NEW1H'
   !
   IF (YTYPEOUT(1:4)=='LLPV' .OR. YTYPEOUT(1:4)=='llpv') THEN
-    CALL READVAR('PABSM',YFILEIN,YFLAGREADVAR,ilocverbia,iret)
+    CALL READVAR('PABST',YFILEIN,YFLAGREADVAR,ilocverbia,iret)
     IF ( iret /= 0 ) then
-      print *, '- PABSM not found, name of the pressure variable ?'
+      print *, '- PABST not found, name of the pressure variable ?'
       read *,YGROUP
       CALL WRITEDIR(ILUDIR,YGROUP)
       CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret)
       IF ( iret /= 0 ) then
-        print *,' interpolation at P=cst not possible because PABSM and ',TRIM(YGROUP), ' are not available'
+        print *,' interpolation at P=cst not possible because PABST and ',TRIM(YGROUP), ' are not available'
         STOP
       ENDIF
     ENDIF
@@ -280,7 +280,7 @@ DO JLOOPFILE=1,100000
   DO JGR=1,10000
     !
     PRINT*, '-  Name of the group in upper case (13 characters max.)'
-    PRINT*, ' (ex: THM ou DD ou FF ou DD10 ou FF10 )'
+    PRINT*, ' (ex: THT ou DD ou FF ou DD10 ou FF10 )'
     PRINT*, '(GROUP for the list of groups, END to stop)?'
     READ(5,'(A13)',END=88) CGROUP
     CALL WRITEDIR(ILUDIR,CGROUP)
@@ -300,9 +300,9 @@ DO JLOOPFILE=1,100000
         !
         ! Lecture du champ UM et VM apres traitement de UM (voir en 3.2)
         IF (LEN(TRIM(CGROUP)) ==2) THEN
-          YGROUP='UM'
+          YGROUP='UT'
         ELSE IF (LEN(TRIM(CGROUP)) ==4) THEN
-          YGROUP='UM'//CGROUP(3:4)
+          YGROUP='UT'//CGROUP(3:4)
         ELSE
           print*,'** problem with the name of group: ',CGROUP
           CYCLE
@@ -311,14 +311,14 @@ DO JLOOPFILE=1,100000
         IF ( iret /= 0 ) then
           print *,TRIM(CGROUP),': ',TRIM(YGROUP),' not available'
           IF (LEN(TRIM(CGROUP)) ==2) THEN
-            YGROUP='UT'
+            YGROUP='UM'
           ELSE IF (LEN(TRIM(CGROUP)) ==4) THEN
-            YGROUP='UT'//CGROUP(3:4)
+            YGROUP='UM'//CGROUP(3:4)
           ENDIF
           CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret2)
           IF ( iret2 /= 0 ) then
             print *,'** no processing for ',TRIM(CGROUP), &
-                    ' because UM and ',TRIM(YGROUP),' not available'
+                    ' because UT and ',TRIM(YGROUP),' not available'
             CYCLE
           ENDIF
           iret=iret2
@@ -331,27 +331,27 @@ DO JLOOPFILE=1,100000
         ALLOCATE(zwork3d(size(XVAR,1),size(XVAR,2),size(XVAR,3)))
         zwork3d(:,:,:)=XVAR(:,:,:,1,1,1)
         IF (LEN(TRIM(CGROUP)) ==2) THEN
-          YGROUP='VM'
+          YGROUP='VT'
         ELSE IF (LEN(TRIM(CGROUP)) ==4) THEN
-          YGROUP='VM'//CGROUP(3:4)
+          YGROUP='VT'//CGROUP(3:4)
         ENDIF
         CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret)
         if ( iret /= 0 ) then
           print *,TRIM(CGROUP),': ',TRIM(YGROUP),' not available'
           IF (LEN(TRIM(CGROUP)) ==2) THEN
-            YGROUP='VT'
+            YGROUP='VM'
           ELSE IF (LEN(TRIM(CGROUP)) ==4) THEN
-            YGROUP='VT'//CGROUP(3:4)
+            YGROUP='VM'//CGROUP(3:4)
           ENDIF
           CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret2)
           IF ( iret2 /= 0 ) then
             print *,'** traitement of ',TRIM(CGROUP), &
-                    ' not possible because VM and ',TRIM(YGROUP), &
+                    ' not possible because VT and ',TRIM(YGROUP), &
                     ' are not available'
             CYCLE
           ENDIF
           iret=iret2
-          CYCLE
+!          CYCLE
         endif
         ! Allocation des tableaux de calcul
         ALLOCATE(zffvent(size(XVAR,1),size(XVAR,2),size(XVAR,3)))

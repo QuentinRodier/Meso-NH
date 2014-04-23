@@ -436,14 +436,14 @@ YFLAGWRITE='NEW'
 !*       2.4   lecture de la pression pour interpolation
 !              -----------------------------------------
 IF (INDEX(YTYPEOUT(1:4),'p')/=0 .OR. INDEX(YTYPEOUT(1:4),'P')/=0 )THEN
-  CALL READVAR('PABSM',YFILEIN,YFLAGREADVAR,ilocverbia,iret)
+  CALL READVAR('PABST',YFILEIN,YFLAGREADVAR,ilocverbia,iret)
   IF ( iret /= 0 ) then
-    print *, '- PABSM not found, name of the pressure variable ? '
+    print *, '- PABST not found, name of the pressure variable ? '
     read *,YGROUP
     CALL WRITEDIR(ILUDIR,YGROUP)
     CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret)
     IF ( iret /= 0 ) then
-      print *,' interpolation at P=cst not possible because PABSM and ',TRIM(YGROUP),' are not available'
+      print *,' interpolation at P=cst not possible because PABST and ',TRIM(YGROUP),' are not available'
       STOP
     ENDIF
   ENDIF
@@ -464,7 +464,7 @@ DO JGR=1,10000
   ino_init_zoom=0
   IF (IND_GRB==0) THEN
     PRINT*,'- Name of the group in upper case (13 characters max.)'
-    PRINT*,' (ex: THM or DD or FF or DD10 or FF10 or LAT or LON or VLEV)'
+    PRINT*,' (ex: THT or DD or FF or DD10 or FF10 or LAT or LON or VLEV)'
     PRINT*,'(GROUP for the list of groups, END to stop)?'
     READ(5,'(A13)',END=88) CGROUP
     CALL WRITEDIR(ILUDIR,CGROUP)
@@ -475,9 +475,9 @@ DO JGR=1,10000
     LVAR2D=.FALSE. 
     PRINT*,'- Name of the group in upper case (13 characters max.)'
     PRINT*,' MesoNH field name, grib parameter indicator'
-    PRINT*,' (ex: UM 131, VM 132, GROUP for the list of groups, END to stop)'
+    PRINT*,' (ex: UT 131, VT 132, GROUP for the list of groups, END to stop)'
     PRINT*,' optional : you can add FOR 2D FIELDS ONLY the altitude (in meters)'
-    PRINT*,' of the field after  the grib parameter indicator exple : UM10 131 10'
+    PRINT*,' of the field after  the grib parameter indicator exple : UT10 131 10'
     READ(5,'(A)') YINPLINE
     YINPLINE= TRIM(ADJUSTL(YINPLINE))
     IF (LEN_TRIM(YINPLINE) == 0) CYCLE ! skip blank line
@@ -532,12 +532,12 @@ DO JGR=1,10000
   !
   !      3.1.1 Cas particulier pour le vent
   !
-  IF ( CGROUP(1:2) == 'UM' .OR. &
-       CGROUP(1:2) == 'VM' .OR. &
+  IF ( CGROUP(1:2) == 'UT' .OR. &
+       CGROUP(1:2) == 'VT' .OR. &
        CGROUP(1:2) == 'DD' .OR. &
        CGROUP(1:2) == 'FF'      )  THEN
     !
-    IF ( (CGROUP(1:2)=='UM'.OR.CGROUP(1:2)=='VM') .AND. &
+    IF ( (CGROUP(1:2)=='UT'.OR.CGROUP(1:2)=='VT') .AND. &
           YOUTGRID(1:4) /= 'LALO'                       ) THEN
       ! Lecture du champ U ou V sans calcul 
       ! les composantes du vent restent dans le plan conforme
@@ -546,16 +546,16 @@ DO JGR=1,10000
       ! Lecture des 2 composantes du vent  : commence par UM...
       !(stockees dans les tableaux ZWORK3D et ZWORK3D2)
       ! max 13 car.
-      YGROUP='UM'//CGROUP(3:13) 
+      YGROUP='UT'//CGROUP(3:13) 
       CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret)
       IF ( iret /= 0 ) then
         print *,TRIM(CGROUP),': ',TRIM(YGROUP),' not available'
-        ! echec , on tente UT....
-        YGROUP='UT'//CGROUP(3:13)
+        ! echec , on tente UM....
+        YGROUP='UM'//CGROUP(3:13)
         CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret2)
         IF ( iret2 /= 0 ) then
           print *,'** no processing for ',TRIM(CGROUP), &
-                  ' because UM and ',TRIM(YGROUP),' are not available'
+                  ' because UT and ',TRIM(YGROUP),' are not available'
           CYCLE
         ENDIF
       ENDIF
@@ -564,17 +564,17 @@ DO JGR=1,10000
                         size(XVAR,4),size(XVAR,5),size(XVAR,6))   )
       ZVARSAVE=XVAR
       !
-      ! deuxieme composante VM....
-      YGROUP='VM'//CGROUP(3:13)
+      ! deuxieme composante VT....
+      YGROUP='VT'//CGROUP(3:13)
       CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret)
       IF ( iret /= 0 ) then
         print *,TRIM(CGROUP),': ',TRIM(YGROUP),' not available'
-        ! echec , on tente VT....
-        YGROUP='VT'//CGROUP(3:13)
+        ! echec , on tente VM....
+        YGROUP='VM'//CGROUP(3:13)
    CALL READVAR(YGROUP,YFILEIN,YFLAGREADVAR,ilocverbia,iret2)
         IF ( iret2 /= 0 ) then
           print *,'** no processing for ',TRIM(CGROUP), &
-                  ' because VM and ',TRIM(YGROUP),' are not available'
+                  ' because VT and ',TRIM(YGROUP),' are not available'
           CYCLE
         ENDIF
         iret=iret2
@@ -648,7 +648,7 @@ DO JGR=1,10000
           print *,'** processing of ',TRIM(CGROUP),' is not performed for CTYPE= ',CTYPE
           CYCLE
         ENDIF
-      ELSE IF (CGROUP(1:2) == 'UM' .OR. CGROUP(1:2) == 'VM') THEN
+      ELSE IF (CGROUP(1:2) == 'UT' .OR. CGROUP(1:2) == 'VT') THEN
         IF (CTYPE=='CART' .OR. CTYPE=='MASK' .OR. CTYPE=='SPXY') THEN 
         ! Calcul des composantes zonale et meridienne
         !(YOUTGRID(1:4) == 'LALO') avec la routine UV_TO_ZONAL_AND_MERID
