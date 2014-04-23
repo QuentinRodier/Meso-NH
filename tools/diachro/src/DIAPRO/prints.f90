@@ -110,7 +110,7 @@ CHARACTER(LEN=16) :: YRECFM
 CHARACTER(LEN=40) :: YTEM
 ! Aout 99 Longueur YCOMMENT passee de 20 A 100
 CHARACTER(LEN=100) :: YCOMMENT
-CHARACTER(LEN=16),DIMENSION(2000),SAVE    :: YGROUP 
+CHARACTER(LEN=16),DIMENSION(5000),SAVE    :: YGROUP 
 !
 !-------------------------------------------------------------------------------
 IIB=1+JPHEXT; IIE=NIMAX+JPHEXT
