@@ -161,6 +161,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                  22/01/01 (D. Gazen)  add MODD_NSV for NSV access
 !!                  20/05/06             Remove EPS
 !!                  10/04/2014 (J.Escobar &  M.Faivre ) add reprod_sum on XEXNTOP
+!!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -249,6 +250,7 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZZFLUX_MX,ZZMASS_MX
 REAL                                                     :: ZCOUNT
 INTEGER                                                  :: IINFO_ll
 !JUAN REALZ
+INTEGER,DIMENSION(SIZE(PZMASS_LS,1),SIZE(PZMASS_LS,2))   :: IJCOUNT 
 
 !-------------------------------------------------------------------------------
 !
@@ -445,12 +447,11 @@ IF (HFILE=='ATM ') THEN
 !
   IF (NVERB>=1 .AND. ANY(XZHAT>=5000.) ) THEN
     IK4000 = COUNT(XZHAT(:)<4000.)
-    IK4000 = COUNT(XZHAT(:)<4000.)
-    IIJ = MAXLOC(        SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
-                  MASK=COUNT(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
-                             >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
-                        >=1                                                   )           &
-          + JPHEXT
+    IJCOUNT(IIB:IIE,IJB:IJE) = COUNT((ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                 &
+                               >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01),DIM=3 )
+    IIJ = MAXLOC( SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                          &
+                  MASK=(  IJCOUNT(IIB:IIE,IJB:IJE)  >=1 )                      )           &
+        + JPHEXT
     WRITE(ILUOUT0,*) ' '
     WRITE(ILUOUT0,*) 'Altitude and humidity on large-scale grid (I=',IIJ(1),';J=',IIJ(2),')'
     DO JK=1,ILU

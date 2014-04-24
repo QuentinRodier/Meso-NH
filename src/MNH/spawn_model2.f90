@@ -181,6 +181,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification 06/12  (M.Tomasini) Interpolation of the advective forcing (ADVFRC)
 !!                                       and of the turbulent fluxes (EDDY_FLUX)
 !!      Modification 07/13  (Bosseur & Filippi) Adds Forefire
+!!                   24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -351,6 +352,7 @@ INTEGER             :: IJE1           ! indice J End       in y direction
 LOGICAL             :: GNOSON = .TRUE.
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D ! working array
 CHARACTER(LEN=28)   :: YDAD_SON
+INTEGER,DIMENSION(:,:),ALLOCATABLE   :: IJCOUNT 
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -1021,11 +1023,12 @@ IF (.NOT.GNOSON) THEN
 END IF
 !
 IF (NVERB>=2) THEN
-  IK4000 = COUNT(XZHAT(:)<4000.)
-  IIJ = MAXLOC(        SUM(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
-                MASK=COUNT(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
-                           >=MAXVAL(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
-                      >=1                                                   )           &
+   ALLOCATE(IJCOUNT(IIU,IJU))
+   IK4000 = COUNT(XZHAT(:)<4000.)
+   IJCOUNT(IIB:IIE,IJB:IJE) = COUNT((ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)         &
+                              >=MAXVAL(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01),DIM=3 )
+   IIJ = MAXLOC( SUM(ZHUT(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
+        MASK= (  IJCOUNT(IIB:IIE,IJB:IJE) >=1 )                     )           &
         + JPHEXT
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) 'humidity     (I=',IIJ(1),';J=',IIJ(2),')'

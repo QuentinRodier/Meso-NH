@@ -132,6 +132,7 @@ END MODULE MODI_VER_INT_THERMO
 !!                  26/08/97 (V. Masson) call to new linear vertical
 !!                                       interpolation routine
 !!                  26/01/98 (J. Stein)  add the LS fields' treatment
+!!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -251,6 +252,7 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3))&
                             :: ZHU               ! relative humidity of the mass
 !                                                ! points in the MESO-NH grid.
 INTEGER                     :: JRR               ! counter for moist variables
+INTEGER,DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2))   :: IJCOUNT 
 !-------------------------------------------------------------------------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
@@ -457,11 +459,12 @@ END IF
 !
 IF (NVERB>=1) THEN
   IK4000 = COUNT(XZHAT(:)<4000.)
-  IIJ = MAXLOC(        SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
-                MASK=COUNT(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
-                           >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
-                      >=1                                                   )           &
-        + JPHEXT
+  IJCOUNT(IIB:IIE,IJB:IJE) = COUNT((ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                 &
+                             >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01),DIM=3 )
+  IIJ = MAXLOC( SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                          &
+                    MASK=( IJCOUNT(IIB:IIE,IJB:IJE) >=1 )                    )           &
+       + JPHEXT
+ 
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'Altitude and humidity on shifted grid     (I=',IIJ(1),';J=',IIJ(2),')'
   DO JK=IKB,IKE
