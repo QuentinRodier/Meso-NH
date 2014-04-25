@@ -1,6 +1,7 @@
 #
 #     Modif
 #     J.Escobar 11/04/2014 get CHIMIE files from 'dir_open' directory ( without psswd )
+#     J.Escobar 25/04/2013 get LICENCE files
 #
 CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} ; export CHIMIE_FILES
 echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -23,7 +24,8 @@ for dir in EMISSIONS tuv50
 do
 [ -d $dir ] || ( ${WGET} -c -nd $CHIMIE_URL/$dir.tar.gz ; tar xvfz $dir.tar.gz ; rm -f $dir.tar.gz  ) 
 done
-for file in ecmwf.OD.20040810.18-V2 mocage.GLOB22.20040810.18
+for file in Licence_TUV5.txt Licence_EMISSIONS_POET.pdf \
+            ecmwf.OD.20040810.18-V2 mocage.GLOB22.20040810.18
 do
 [ -f $file ] || ( ${WGET} -c -nd $CHIMIE_URL/$file.gz ; gunzip  $file.gz  ) 
 done
