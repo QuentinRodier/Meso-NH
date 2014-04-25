@@ -1,8 +1,8 @@
 #
-# Version of PACKAGE MESONH "stand-alone distribution"
-#              PACK-MNH-V5-1-0
-#              DATE : 12/02/2014
-#              VERSION : MESONH MASDEV5_1 + BUG-0  
+# Version of PACKAGE MESONH "Open distribution"
+#              PACK-MNH-V5-1-2
+#              DATE : 25/04/2014
+#              VERSION : MESONH MASDEV5_1 + BUG-2 
 #
 #  MAP
 #
@@ -19,6 +19,11 @@
 #     VIII) TROUBLE-SHOOTING
 #           a) Segmentation violation -> problem of "stack size" limit
 #           b) Compiler bug with "ifort 10.0.xxx" 
+#
+#       IX) OPTIONAL COMPILATION
+#           a) MNH_NCWRIT for netcdf graphic output file 
+#           b) MNH_FOREFIRE for forefire runs ( external package needed )
+#           c) cleaning previous compiled version
 #
 #
 #  0) TWO WAYS OF DOWNLOADING MESONH
@@ -75,7 +80,7 @@
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V5-1-0"
+#    ---> select "PACK-MNH-V5-1-2"
 #
 # and then download the file "PACK-MNH-VX-Y-Z.tar.gz" by the link 
 #
@@ -93,7 +98,7 @@ tar xvfz PACK-MNH-VX-Y-Z.tar.gz
 # to the right one
 #
  
-mv MNH-VX-Y-Z MNH-V5-1-0
+mv MNH-VX-Y-Z MNH-V5-1-2
       
 #
 #  Process now to the chapter to configure the MesoNH 
@@ -119,7 +124,7 @@ mv MNH-VX-Y-Z MNH-V5-1-0
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V5-1-0"
+#    ---> select "PACK-MNH-V5-1-2"
 #
 #   download the file "anoncvs.key"
 #
@@ -194,19 +199,19 @@ export CVSROOT=:ext:mesonh_anoncvs_www:/home/cvsroot
 #   -------------------------------------
 #
 #   Now, from your "$HOME" directory for example 
-#   extract the version "PACK-MNH-V5-1-0"
+#   extract the version "PACK-MNH-V5-1-2"
 #   of the directory "MNH-VX-Y-Z" from the
 #   cvs repository : 
 
 cd ~
-cvs co -r PACK-MNH-V5-1-0 -d MNH-V5-1-0 MNH-VX-Y-Z
+cvs co -r PACK-MNH-V5-1-2 -d MNH-V5-1-2 MNH-VX-Y-Z
 
 #
 # WARNING : don't use a sub-directory with dot "." in the name
 #            ---> you could have some trouble when compiling mesonh
 #
-#  this will create in your "$HOME" a directory "MNH-V5-1-0" 
-#  which contains of the last revision named "PACK-MNH-V5-1-0" 
+#  this will create in your "$HOME" a directory "MNH-V5-1-2" 
+#  which contains of the last revision named "PACK-MNH-V5-1-2" 
 #  of the MESONH PACKAGE 
 #
 #  The advantage of this way of downloading 
@@ -216,21 +221,21 @@ cvs co -r PACK-MNH-V5-1-0 -d MNH-V5-1-0 MNH-VX-Y-Z
 #  to download entirely the full package
 #
 #  Suppose that a new version for example
-#  "PACK-MNH-V5-1-1" is announced ...
+#  "PACK-MNH-V5-1-3" is announced ...
 #
 #  To see the differences with your working copy
 #  do
 #
 
-cd ~/MNH-V5-1-0
-cvs diff -r PACK-MNH-V5-1-1
+cd ~/MNH-V5-1-2
+cvs diff -r PACK-MNH-V5-1-3
 
 #
 #  And to upgrade your working copy
 #
 
-cd ~/MNH-V5-1-0
-cvs update -r PACK-MNH-V5-1-1 -d -P
+cd ~/MNH-V5-1-2
+cvs update -r PACK-MNH-V5-1-3 -d -P
 
 #
 # At any time you could also check for "uptodate" 
@@ -245,7 +250,7 @@ cvs diff -r MNH410-BUG-branch
 # ( not yet official ) version by
 #
 
-cd ~/MNH-V5-1-0
+cd ~/MNH-V5-1-2
 cvs update -r MNH410-BUG-branch -d -P
 
 #
@@ -265,7 +270,7 @@ cvs update -r MNH410-BUG-branch -d -P
 #    use the "./configure" script like this 
 #
 
-cd ~/MNH-V5-1-0/src
+cd ~/MNH-V5-1-2/src
 ./configure
 . ../conf/profile_mesonh
 
@@ -310,7 +315,7 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 
 #    and then source/load the new generate file
 
-. ../conf/profile_mesonh.LXifort.MNH-V5-1-0.MPIAUTO.O2
+. ../conf/profile_mesonh.LXifort.MNH-V5-1-2.MPIAUTO.O2
 
 #
 #  REM: 
@@ -335,7 +340,7 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 # go to the directory  "src"
 #
 
-cd  ~/MNH-V5-1-0/src
+cd  ~/MNH-V5-1-2/src
 
 #
 # if you have not already configured your MESONH environment
@@ -563,8 +568,8 @@ make examples
 # 
 
 cd $WORKDIR
-cvs co -r PACK-MNH-V5-1-0 -d MNH-V5-1-0 MNH-VX-Y-Z
-cd MNH-V5-1-0/src
+cvs co -r PACK-MNH-V5-1-2 -d MNH-V5-1-2 MNH-VX-Y-Z
+cd MNH-V5-1-2/src
 
 ./configure
  
@@ -593,7 +598,7 @@ llsubmit job_make_mesonh_BGQ
 #   at CINES on JADE( SGI/ICE ) :
 #   ----------------------------
 # 
-#   - install the PACKAGE in your "$WORKDIR" 
+#   - install the PACKAGE in your "/store/${USER}" directory 
 #   - you could compile in interactive mode
 #
 #    BACKUP : /!\ backup your work on "/data/${USER}"
@@ -652,6 +657,8 @@ llsubmit  job_make_examples_cxa
 #  VII) "SCANDOLLAR" = SCRIPTING YOUR OWN PROCEDURES 
 #  ====================================================
 
+REM : not tested on 5-1-X version ...
+
 # A small script 'scandollar' is in test in this version of MESONH.
 # It will help you to build a complete chaining of an experiment. 
 # The idea is to write some "template" scripts with '$VARIABLE' in the 
@@ -691,24 +698,24 @@ $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar
 
 cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/001_pgd1
 
-export CONFEXP=4101
+export CONFEXP=512
 scandollar
 
 ## OUTPUT ::
 
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-0/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-2/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
->#  processes file *.ihm and put them in ./4101/ ::
->#          ---> run_prep_pgd_xyz.ihm =>  ./4101/run_prep_pgd_xyz
+>#  processes file *.ihm and put them in ./512/ ::
+>#          ---> run_prep_pgd_xyz.ihm =>  ./512/run_prep_pgd_xyz
 
 
 #
 # And to run this step 
 #
 
-cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/001_pgd1/4101
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/001_pgd1/512
 (qsub) run_prep_pgd_xyz # qsub on brodie 
 
 # To parse all these steps 
@@ -718,23 +725,23 @@ scandollar 0*
 
 ## OUTPUT ::
 >#
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-0/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-2/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
->#  processes file *.ihm and put them in 001_pgd1/4101/ ::
->#          ---> run_prep_pgd_xyz.ihm =>  001_pgd1/4101/run_prep_pgd_xyz
+>#  processes file *.ihm and put them in 001_pgd1/512/ ::
+>#          ---> run_prep_pgd_xyz.ihm =>  001_pgd1/512/run_prep_pgd_xyz
 ...
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
->#  processes file *.ihm and put them in 008_run2/4101/ ::
->#          ---> run_mesonh_xyz.ihm =>  008_run2/4101/run_mesonh_xyz
+>#  processes file *.ihm and put them in 008_run2/512/ ::
+>#          ---> run_mesonh_xyz.ihm =>  008_run2/512/run_mesonh_xyz
 >#
 ...
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
->#  processes file *.ihm and put them in 011_diaprog/4101/ ::
->#          ---> run_diaprog.ihm =>  011_diaprog/4101/run_diaprog
+>#  processes file *.ihm and put them in 011_diaprog/512/ ::
+>#          ---> run_diaprog.ihm =>  011_diaprog/512/run_diaprog
 
 
 #
@@ -775,7 +782,7 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 
 # 
-# You could also copy only the differents "*/493"  sub-directory
+# You could also copy only the differents "*/512"  sub-directory
 # if you don't when ti use the "scandollar" script  .
 #
 # 
@@ -792,22 +799,22 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use this "profile_mesonh" :
 
-.  /home/rech/mnh/rmnh007/DEV/MNH-V5-1-0/conf/profile_mesonh-SX8-MNH-V5-1-0-MPIAUTO-O4
+.  /home/rech/mnh/rmnh007/DEV/MNH-V5-1-2/conf/profile_mesonh-SX8-MNH-V5-1-2-MPIAUTO-O4
 
 # And the examples are here ( link to my $WORKDIR in actually )  
 
-/home/rech/mnh/rmnh007/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
+/home/rech/mnh/rmnh007/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  On vargas
 #  ---------
 #  use this "profile_mesonh" :
 
-. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-0/conf/profile_mesonh-AIX64-MNH-V5-1-0-MPIAUTO-O2
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-2/conf/profile_mesonh-AIX64-MNH-V5-1-2-MPIAUTO-O2
 
 # and examples here :
 
-/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
 
 # 
 #  - At CINES on JADE :
@@ -815,11 +822,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use 
 
-. /work/escobar/DEV/MNH-V5-1-0/conf/profile_mesonh-LXifort-MNH-V5-1-0-MPIICE-O2
+. /work/escobar/DEV/MNH-V5-1-2/conf/profile_mesonh-LXifort-MNH-V5-1-2-MPIICE-O2
 
 # and the exemples
 
-/work/escobar/DEV/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
+/work/escobar/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  - At ECMWF on cxa :
@@ -827,11 +834,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use
 
-. /c1a/ms_perm/au5/MNH-V5-1-0/conf/profile_mesonh-AIX64-MNH-V5-1-0-MPIAUTO-O2
+. /c1a/ms_perm/au5/MNH-V5-1-2/conf/profile_mesonh-AIX64-MNH-V5-1-2-MPIAUTO-O2
 
 # and the examples
 
-/c1a/ms_perm/au5/MNH-V5-1-0/MY_RUN/KTEST/007_16janvier_scandollar
+/c1a/ms_perm/au5/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
 
 
 #
@@ -882,6 +889,71 @@ ulimit -s unlimited
 #    Solution ---> compile the routine with problem with '-O1' option
 #                  or upgrade to at least "10.1.015" version
 #   
+#
+#
+# IX) OPTIONAL COMPILATION
+===========================
+#
+# a) MNH_NCWRIT for netcdf graphic output file 
+# --------------------------------------------
+#
+#  If you want to use the option of writing directly netcdf file for graphical 
+#  postprocessing ( no restart ) you could compile and use the package
+#  developped by Soline Bielli as exmplained in this mail
+#  http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/mail2html.cgi?file=2012_12_19_18:35:16
+#  and on this wiki 
+#  http://mesonh.aero.obs-mip.fr/mesonh410/UseNCL
+# 
+# So before any compilation you have to set the MNH_NCWRIT variable
+export MNH_NCWRIT=MNH_NCWRIT
+#
+# and then the configure 
 
+./configure
 
+#
+# after this compile as usually
+#
 
+make
+etc ...
+
+# see c) for cleaning previously version if needed
+
+# b) MNH_FOREFIRE for forefire runs ( external package needed )
+# -------------------------------------------------------------
+#
+#  If you want to use coupled(inline) run with FOREFIRE and MESONH
+#  you could compile the interfaced/coupling routine by activating
+#  this variable before any compilation
+
+export MNH_FOREFIRE=1.0
+
+# and then the configure 
+
+./configure
+
+#
+# after this compile as usually
+#
+
+make
+etc ...
+
+# see c) for cleaning previously version if needed
+
+# c) cleaning previous compiled version
+# --------------------------------------
+#
+# If you have already compiled exactly the same version of MesoNH on this computer ( same $XYZ value )
+# you have first to 'clean' this versio with
+#
+
+make cleanmaster
+
+#
+# this will delete the dirobj_${XYZ} directory and all the preprocessed sources contained on it ..
+#
+# I you have also a VER_USER version do
+
+make cleanuser  
