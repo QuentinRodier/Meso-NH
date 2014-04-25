@@ -940,6 +940,19 @@ export MNH_FOREFIRE=1.0
 make
 etc ...
 
+#
+# The FOREFIRE API package himself must be compiled independently from MesoNH
+# The git repository is here https://github.com/forefireAPI/firefront/tree/2014.01
+# it could be cloned by
+
+git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
+
+# it depend on netcdf and scons for is compilation
+# the "libForeFIre.so" generate must by referenced in the LD_LIBRARY_PATH
+# or move/linked to the 'exe' directory of MesoNH
+#    
+
+
 # see c) for cleaning previously version if needed
 
 # c) cleaning previous compiled version
