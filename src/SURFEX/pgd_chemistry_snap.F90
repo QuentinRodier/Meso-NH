@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE PGD_CHEMISTRY_SNAP(HPROGRAM,OCH_EMIS)
 !     ##############################################################
@@ -90,7 +86,7 @@ INTEGER                           :: JSNAP     ! loop counter on SNAP categories
 !            ------------------------
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
- CHARACTER(LEN=6),  DIMENSION(JPEMISMAX_S):: CEMIS_NAME
+ CHARACTER(LEN=12), DIMENSION(JPEMISMAX_S):: CEMIS_NAME
  CHARACTER(LEN=40), DIMENSION(JPEMISMAX_S):: CEMIS_COMMENT
  CHARACTER(LEN=28), DIMENSION(JPEMISMAX_S):: CSNAP_MONTHLY_FILE
  CHARACTER(LEN=28), DIMENSION(JPEMISMAX_S):: CSNAP_DAILY_FILE

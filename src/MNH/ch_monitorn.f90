@@ -102,6 +102,10 @@ END MODULE MODI_CH_MONITOR_n
 !!    30/07/07 (JP Pinty) add Rosenbrock solver
 !!    26/03/08 (M Leriche) add microphysical transfert from collision/coalescence
 !!    10/11/08 (M Leriche) add microphysical transfert from rain sedimentation
+!!    24/04/14 (M Leriche) Bugs in orilam transfert zsvt in xrsvs
+!!                         + supress line transfer H2SO4 from AP to gas phase
+!!                         imply transfer H2SO4 AP in aqueous phase if aq.chem.
+!!    04/2014 (C.Lac) Remove GCENTER with FIT temporal scheme
 !!
 !!    EXTERNAL
 !!    --------
@@ -540,10 +544,6 @@ IF (LORILAM) THEN
   END DO
   ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND) = MAX(ZSVT(:,:,:,NSV_CHEMBEG:NSV_CHEMEND), XMNH_TINY)
   ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND)   = MAX(ZSVT(:,:,:,NSV_AERBEG:NSV_AEREND), XMNH_TINY)
-
-  DO JSV = 1, SIZE(XSVT,4)
-    XRSVS(:,:,:,JSV) = ZSVT(:,:,:,JSV) * XRHODJ(:,:,:) / PTSTEP
-  END DO
 !
 END IF
 !
@@ -640,7 +640,7 @@ ISTCOUNT = ISTCOUNT + 1
 !*       3.    MICROPHYSICS TERM FOR AEROSOL AND AQUEOUS CHEMISTRY
 !              ---------------------------------------------------
 !
-!*       3.1 sedimentation term for aerosols tendency (XSEDA)
+!*       3.1 sedimentation term and wet deposition for aerosols tendency (XSEDA)
 !
 IF (LORILAM) THEN
   XSEDA(:,:,:,:) = 0.
@@ -680,6 +680,10 @@ IF (LORILAM) THEN
                         XSEDA(IIB:IIE,IJB:IJE,IKB:IKE,:))
 
   ENDIF
+! Update aerosol tendency before aerosol solver
+  DO JSV = 1, SIZE(XSVT,4)
+    XRSVS(:,:,:,JSV) = ZSVT(:,:,:,JSV) * XRHODJ(:,:,:) / PTSTEP
+  END DO
 ENDIF
 !
 !*       3.2 check where aqueous concentration>0 + micropĥysics term
@@ -689,8 +693,8 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
   DO JRR = 2, 3
     ZRT_VOL(:,:,:,JRR) = XRT(:,:,:,JRR)*XRHODREF(:,:,:)/1.e3
   END DO
-  CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, &
-                         NRRL, NRR, NEQAQ, XRTMIN_AQ, LUSECHIC  )
+  CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, NRRL, &
+                         NRR, NEQ, NEQAQ, CNAMES, XRTMIN_AQ, LUSECHIC )
   IF (MAXVAL(ZRT_VOL(:,:,:,2))>XRTMIN_AQ) THEN
     SELECT CASE ( CCLOUD )
       CASE ('KESS')
@@ -769,8 +773,8 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
     END SELECT
   END IF
 ELSE IF (LUSECHAQ.AND.(NRRL==1) ) THEN
-  CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, &
-                         NRRL, NRR, NEQAQ, XRTMIN_AQ, LUSECHIC  )
+  CALL CH_AQUEOUS_CHECK (PTSTEP, XRHODREF, XRHODJ, XRRS, XRSVS, NRRL, &
+                         NRR, NEQ, NEQAQ, CNAMES, XRTMIN_AQ, LUSECHIC )
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -818,7 +822,7 @@ DO JL=1,ISVECNMASK
     ZSIG0(JM+1,:)   = LOG(XSIG3D(JI,JJ,JK,:))
     ZRG0(JM+1,:)    =  XRG3D(JI,JJ,JK,:)  
     ZN0(JM+1,:)     =  XN3D(JI,JJ,JK,:)  
-      IF (NSOA > 0) ZSOLORG(JM+1,:) = XSOLORG(JI,JJ,JK,:)
+    IF (NSOA > 0) ZSOLORG(JM+1,:) = XSOLORG(JI,JJ,JK,:)
   ENDDO
   DO JN = 1, NSV_AER
 !Vectorization:
@@ -969,7 +973,9 @@ DO JL=1,ISVECNMASK
                              ZPRESSURE, ZTEMP, ZRC, ZFRAC, ZMI,CCH_SCHEME)
     END IF
 ! transfer non-volatile species from aerosol to gas-phase variables
-    ZCHEM(:,JP_CH_H2SO4) =  ZAERO(:,JP_CH_SO4i) + ZAERO(:,JP_CH_SO4j)
+! this line seems to be useless and transfer all H2SO4 from AP to cloud
+! droplets is LUSECHAQ and LORILAM set to true
+!   ZCHEM(:,JP_CH_H2SO4) = ZAERO(:,JP_CH_SO4i) + ZAERO(:,JP_CH_SO4j)
   END IF
 !
 !*       4.5   solve chemical system for the timestep of the monitor
@@ -1114,7 +1120,7 @@ DO JSV = 1, NEQ
 !
 ! remove the negative values
 !
-    XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX( 0., XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
+    XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX(0., XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
 !
 ! compute the new total mass
 !

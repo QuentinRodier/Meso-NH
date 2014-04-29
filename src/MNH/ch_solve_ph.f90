@@ -151,7 +151,8 @@ SELECT CASE (KRR)
       IF (TRIM(CNAMES(JJ))=='WC_SO2') C2(:) = PCONC(:,JI)/(ZFACT(:))
       IF (TRIM(CNAMES(JJ))=='WC_ORA1') C3(:)= PCONC(:,JI)/(ZFACT(:))
       IF (TRIM(CNAMES(JJ))=='WC_HNO3') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
-      IF (TRIM(CNAMES(JJ))=='WC_SULF') C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
+      IF ((TRIM(CNAMES(JJ))=='WC_SULF') .OR. (TRIM(CNAMES(JJ))=='WC_H2SO4')) &
+          C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WC_A') SOM(:) = SOM(:) + PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WC_B') SOM(:) = SOM(:) + 2.*PCONC(:,JI)/(ZFACT(:))
     END DO
@@ -163,7 +164,8 @@ SELECT CASE (KRR)
       IF (TRIM(CNAMES(JJ))=='WR_SO2') C2(:) = PCONC(:,JI)/(ZFACT(:))
       IF (TRIM(CNAMES(JJ))=='WR_ORA1') C3(:)= PCONC(:,JI)/(ZFACT(:))
       IF (TRIM(CNAMES(JJ))=='WR_HNO3') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
-      IF (TRIM(CNAMES(JJ))=='WR_SULF') C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
+      IF ((TRIM(CNAMES(JJ))=='WR_SULF') .OR. (TRIM(CNAMES(JJ))=='WR_H2SO4')) &
+          C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WR_A') SOM(:) = SOM(:) + PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WR_B') SOM(:) = SOM(:) + 2.*PCONC(:,JI)/(ZFACT(:))
     END DO

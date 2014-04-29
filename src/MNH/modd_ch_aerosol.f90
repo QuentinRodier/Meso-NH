@@ -159,6 +159,7 @@ REAL, SAVE, DIMENSION(:), ALLOCATABLE ::  XFAC   ! conversion factor um3/m3 -> u
 
 ! Molar mass of each aerosols parents (in kg/mol)
 REAL, PARAMETER :: XHNO3=63.01287
+REAL, PARAMETER :: XH2SO4=98.079
 REAL, PARAMETER :: XNH3 =17.03061
 REAL, PARAMETER :: XURG1=88.
 REAL, PARAMETER :: XURG2=1.76981E+02

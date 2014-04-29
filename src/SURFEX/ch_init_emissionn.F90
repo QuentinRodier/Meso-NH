@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE CH_INIT_EMISSION_n(HPROGRAM,KLU,KCH,PRHOA)
 !     #######################################
@@ -62,7 +58,7 @@ INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter
 !
  CHARACTER(LEN=40)                 :: YSPEC_NAME ! species name
- CHARACTER(LEN=6), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! species name
+ CHARACTER(LEN=12), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! offline emitted species name
 INTEGER,DIMENSION(:),ALLOCATABLE  :: INBTIMES! number of emission times array
 INTEGER,DIMENSION(:),ALLOCATABLE  :: ITIMES  ! emission times for a species
 INTEGER,DIMENSION(:),ALLOCATABLE  :: IOFFNDX ! index array of offline emission species
@@ -183,7 +179,7 @@ IF (INBOFF > 0) THEN
   CALL BUILD_EMISSTAB_n(HPROGRAM,KCH,CEMIS_NAME,INBTIMES,NEMIS_TIME,&
          IOFFNDX,TSEMISS,KLU,ILUOUT,IVERB,PRHOA)  
   DO JSPEC = 1,INBOFF ! Loop on the number of species
-    YEMIS_NAME(JSPEC) = TSEMISS(JSPEC)%CNAME(1:6)
+    YEMIS_NAME(JSPEC) = TSEMISS(JSPEC)%CNAME(1:12)
   END DO
   CALL BUILD_PRONOSLIST_n(SIZE(TSEMISS),YEMIS_NAME,TSPRONOSLIST,KCH,ILUOUT,IVERB)
   DEALLOCATE(YEMIS_NAME)

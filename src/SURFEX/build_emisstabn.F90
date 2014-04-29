@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
        SUBROUTINE BUILD_EMISSTAB_n(HPROGRAM,KCH,HEMIS_GR_NAME, KNBTIMES,&
               KEMIS_GR_TIME,KOFFNDX,TPEMISS,KSIZE,KLUOUT, KVERB,PRHODREF)  
@@ -26,6 +22,7 @@
 !!    D.Gazen  01/12/03  change emissions handling for surf. externalization!!
 !!    P.Tulet  01/01/04  change conversion for externalization (flux unit is
 !!                        molec./m2/s)
+!!    M.Leriche  04/14   apply conversion factor if lead = f
 !!
 !!    EXTERNAL
 !!    --------
@@ -146,7 +143,7 @@ DO JSPEC=1,SIZE(TPEMISS) ! loop on offline emission species
     TPEMISS(JSPEC)%LREAD = .FALSE. ! to prevent future reading
     ALLOCATE(TPEMISS(JSPEC)%XEMISDATA(KSIZE,INBTS))
 ! Read file for emission data
-    YRECFM='EMIS_'//TRIM(TPEMISS(JSPEC)%CNAME)
+    YRECFM='E_'//TRIM(TPEMISS(JSPEC)%CNAME)
     CALL READ_SURF(HPROGRAM,YRECFM,TPEMISS(JSPEC)%XEMISDATA(:,:),IRESP)
 !
 ! Correction : Replace 999. with 0. value in the Emission FLUX
@@ -158,11 +155,11 @@ DO JSPEC=1,SIZE(TPEMISS) ! loop on offline emission species
       TPEMISS(JSPEC)%XEMISDATA(:,:) = 0. 
     END WHERE
       DO ITIME=1,INBTS
-      ! XCONVERSION HAS BEEN ALREADY APPLY IN CH_EMISSION_FLUXN 
-      !TPEMISS(JSPEC)%XEMISDATA(:,ITIME) = TPEMISS(JSPEC)%XEMISDATA(:,ITIME) * XCONVERSION(:)
-      TPEMISS(JSPEC)%XEMISDATA(:,ITIME) = TPEMISS(JSPEC)%XEMISDATA(:,ITIME)
+      ! XCONVERSION IS APPLIED IN CH_EMISSION_FLUXN ONLY FOR LREAD = T
+        TPEMISS(JSPEC)%XEMISDATA(:,ITIME) = TPEMISS(JSPEC)%XEMISDATA(:,ITIME) * XCONVERSION(:)
+        !TPEMISS(JSPEC)%XEMISDATA(:,ITIME) = TPEMISS(JSPEC)%XEMISDATA(:,ITIME)
       END DO
-    ELSE
+  ELSE
 ! Read window size is smaller than number of emission times
     TPEMISS(JSPEC)%NWS = IWS_DEFAULT
     TPEMISS(JSPEC)%NDX = IWS_DEFAULT

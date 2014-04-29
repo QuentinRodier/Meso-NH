@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE CH_EMISSION_FLUX_n(HPROGRAM,PSIMTIME,PSFSV, PRHOA, PTSTEP, KNBTS_MAX)
 !     ######################################################################
@@ -201,7 +197,7 @@ DO JI=1,SIZE(TSEMISS)
           IF (IVERB >= 6) WRITE(ILUOUT,*) 'INIT des I/O DONE.'
           LIOINIT=.TRUE.
         END IF
-        YRECFM='EMIS_'//TRIM(TSEMISS(JI)%CNAME)
+        YRECFM='E_'//TRIM(TSEMISS(JI)%CNAME)
         IF (IVERB >= 6)&
                WRITE (ILUOUT,*) 'READ emission :',TRIM(YRECFM),&
                ', SIZE(ZWORK)=',SIZE(ZWORK,1),INBTS 

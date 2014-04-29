@@ -7,8 +7,8 @@
 !      ############################
 !
 INTERFACE
-      SUBROUTINE CH_AQUEOUS_CHECK (PTSTEP, PRHODREF, PRHODJ,PRRS, PRSVS, &
-                                   KRRL, KRR, KEQAQ, PRTMIN_AQ, OUSECHIC )
+      SUBROUTINE CH_AQUEOUS_CHECK (PTSTEP, PRHODREF, PRHODJ,PRRS, PRSVS, KRRL,  &
+                                   KRR, KEQ, KEQAQ, HNAMES, PRTMIN_AQ, OUSECHIC )
 !
 REAL,                     INTENT(IN)    :: PTSTEP    ! Timestep  
 REAL,                     INTENT(IN)    :: PRTMIN_AQ ! LWC threshold liq. chem.
@@ -20,17 +20,19 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS   ! S.V. source
 !
 INTEGER,                  INTENT(IN)    :: KRRL    ! Number of liq. variables
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of water variables
+INTEGER,                  INTENT(IN)    :: KEQ     ! Number of chem. spec.
 INTEGER,                  INTENT(IN)    :: KEQAQ   ! Number of liq. chem. spec.
+CHARACTER(LEN=32), DIMENSION(:), INTENT(IN) :: HNAMES
 LOGICAL,                  INTENT(IN)    :: OUSECHIC ! flag for ice chem.
 !
 END SUBROUTINE CH_AQUEOUS_CHECK
 END INTERFACE
 END MODULE MODI_CH_AQUEOUS_CHECK 
 !
-!     ####################################################################
-      SUBROUTINE CH_AQUEOUS_CHECK (PTSTEP, PRHODREF, PRHODJ,PRRS, PRSVS, &
-                                   KRRL, KRR, KEQAQ, PRTMIN_AQ, OUSECHIC )
-!     ####################################################################
+!     ###########################################################################
+      SUBROUTINE CH_AQUEOUS_CHECK (PTSTEP, PRHODREF, PRHODJ,PRRS, PRSVS, KRRL,  &
+                                   KRR, KEQ, KEQAQ, HNAMES, PRTMIN_AQ, OUSECHIC )
+!     ###########################################################################
 !
 !!****  * -  Check the coherence between the mixing ratio of water and the
 !!           concentrations of aqueous species
@@ -67,6 +69,7 @@ END MODULE MODI_CH_AQUEOUS_CHECK
 !!      Original    08/11/07
 !!      21/11/07 (M. Leriche) correct threshold for aqueous phase chemistry
 !!      20/09/10 (M. Leriche) add ice phase chemical species
+!!      04/11/13 (M. Leriche) add transfer back to the gas phase if evaporation
 !!
 !-------------------------------------------------------------------------------
 !
@@ -75,7 +78,8 @@ END MODULE MODI_CH_AQUEOUS_CHECK
 !
 USE MODD_PARAMETERS,ONLY: JPHEXT,    &! number of horizontal External points
                           JPVEXT      ! number of vertical External points
-USE MODD_NSV,       ONLY : NSV_CHACBEG, NSV_CHACEND, NSV_CHICBEG, NSV_CHICEND
+USE MODD_NSV,       ONLY : NSV_CHACBEG, NSV_CHACEND, NSV_CHICBEG, NSV_CHICEND, &
+                           NSV_CHGSBEG
 !
 IMPLICIT NONE
 !
@@ -92,27 +96,37 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS   ! S.V. source
 !
 INTEGER,                  INTENT(IN)    :: KRRL    ! Number of liq. variables
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of water variables
+INTEGER,                  INTENT(IN)    :: KEQ     ! Number of chem. spec.
 INTEGER,                  INTENT(IN)    :: KEQAQ   ! Number of liq. chem. spec.
+CHARACTER(LEN=32), DIMENSION(:), INTENT(IN) :: HNAMES
 LOGICAL,                  INTENT(IN)    :: OUSECHIC ! flag for ice chem.
 !
 !*       0.2   Declarations of local variables :
 !
 INTEGER :: JRR           ! Loop index for the moist variables
-INTEGER :: JSV           ! Loop index for the aqueous/ice concentrations
+INTEGER :: JSV, JSV2     ! Loop index for the aqueous/ice concentrations
 !
+INTEGER :: INOCLOUD      ! Case number no cloud water
+INTEGER :: INORAIN       ! Case number no rainwater
 INTEGER :: IWATER        ! Case number aqueous species
 INTEGER :: IICE          ! Case number ice phase species
+LOGICAL, DIMENSION(SIZE(PRRS,1),SIZE(PRRS,2),SIZE(PRRS,3)) &
+                                   :: GNOCLOUD ! where to compute
+LOGICAL, DIMENSION(SIZE(PRRS,1),SIZE(PRRS,2),SIZE(PRRS,3)) &
+                                   :: GNORAIN ! where to compute
 LOGICAL, DIMENSION(SIZE(PRRS,1),SIZE(PRRS,2),SIZE(PRRS,3)) &
                                    :: GWATER ! where to compute
 LOGICAL, DIMENSION(SIZE(PRRS,1),SIZE(PRRS,2),SIZE(PRRS,3)) &
                                    :: GICE   ! where to compute
 REAL,    DIMENSION(SIZE(PRRS,1),SIZE(PRRS,2),SIZE(PRRS,3),SIZE(PRRS,4)) &
                                    :: ZRRS
-REAL,    DIMENSION(:), ALLOCATABLE :: ZWORK  ! work array
+REAL,    DIMENSION(:), ALLOCATABLE :: ZWORK, ZWORK2  ! work array
 INTEGER, DIMENSION(3)              :: ISV_BEG, ISV_END
 !
 REAL                               :: ZRTMIN_AQ
 !
+INTEGER , DIMENSION(SIZE(GNOCLOUD)) :: I1NC,I2NC,I3NC ! Used to replace the COUNT
+INTEGER , DIMENSION(SIZE(GNORAIN)) :: I1NR,I2NR,I3NR ! Used to replace the COUNT
 INTEGER , DIMENSION(SIZE(GWATER)) :: I1W,I2W,I3W ! Used to replace the COUNT
 INTEGER , DIMENSION(SIZE(GICE))   :: I1I,I2I,I3I
 INTEGER                           :: JL       ! and PACK intrinsics
@@ -152,7 +166,71 @@ ELSE
   ISV_END(3) = NSV_CHACEND
 END IF
 !
-!*       3.     FILTER OUT THE AQUEOUS SPECIES WHEN MICROPHYSICS<ZRTMIN_AQ
+!*      3.    TRANSFER BACK TO THE GAS PHASE IF EVAPORATION
+!             ---------------------------------------------
+!
+GNOCLOUD(:,:,:)=.FALSE.
+WHERE(ZRRS(:,:,:,2)<=(ZRTMIN_AQ*1.e3/PRHODREF(:,:,:)))  !cloud
+  GNOCLOUD(:,:,:)=.TRUE.
+ENd WHERE
+INOCLOUD = COUNTJV( GNOCLOUD(:,:,:),I1NC(:),I2NC(:),I3NC(:))
+IF (INOCLOUD >=1 ) THEN
+  ALLOCATE(ZWORK(INOCLOUD))
+  ZWORK(:) = 0.
+  ALLOCATE(ZWORK2(INOCLOUD))
+  ZWORK2(:) = 0.
+  DO JSV = 1, KEQ-KEQAQ  ! gas phase species
+    DO JL = 1, INOCLOUD
+      ZWORK(JL) = PRSVS(I1NC(JL),I2NC(JL),I3NC(JL),NSV_CHGSBEG-1+JSV)
+    ENDDO
+    DO JSV2 = KEQ-KEQAQ + 1, KEQ - KEQAQ/2 !cloud
+      DO JL = 1, INOCLOUD
+        ZWORK2(JL) = MAX(PRSVS(I1NC(JL),I2NC(JL),I3NC(JL),NSV_CHGSBEG-1+JSV2),0.)
+      ENDDO
+      IF ((TRIM(HNAMES(JSV))) == (TRIM(HNAMES(JSV2)(4:32))).AND.(ANY(ZWORK2(:)>0))) THEN
+!        print*,'evaporation of cloud for chemistry'
+        ZWORK(:) = ZWORK(:) + ZWORK2(:)   
+      ENDIF
+    END DO
+    PRSVS(:,:,:,NSV_CHGSBEG-1+JSV) = UNPACK( ZWORK(:),MASK=GNOCLOUD(:,:,:), &
+                                            FIELD=PRSVS(:,:,:,NSV_CHGSBEG-1+JSV) )
+  END DO
+  DEALLOCATE(ZWORK)
+  DEALLOCATE(ZWORK2)
+END IF
+IF( KRRL==2 ) THEN
+GNORAIN(:,:,:)=.FALSE.
+WHERE(ZRRS(:,:,:,3)<=(ZRTMIN_AQ*1.e3/PRHODREF(:,:,:)))  !rain
+  GNORAIN(:,:,:)=.TRUE.
+ENd WHERE
+INORAIN = COUNTJV( GNORAIN(:,:,:),I1NR(:),I2NR(:),I3NR(:))
+IF (INORAIN >=1 ) THEN
+  ALLOCATE(ZWORK(INORAIN))
+  ZWORK(:) = 0.
+  ALLOCATE(ZWORK2(INORAIN))
+  ZWORK2(:) = 0.
+  DO JSV = 1, KEQ-KEQAQ  ! gas phase species
+    DO JL = 1, INORAIN
+      ZWORK(JL) = PRSVS(I1NR(JL),I2NR(JL),I3NR(JL),NSV_CHGSBEG-1+JSV)
+    ENDDO
+    DO JSV2 = KEQ-KEQAQ/2 + 1, KEQ !rain
+      DO JL = 1, INORAIN
+        ZWORK2(JL) = MAX(PRSVS(I1NR(JL),I2NR(JL),I3NR(JL),NSV_CHGSBEG-1+JSV2),0.)
+      ENDDO
+      IF ((TRIM(HNAMES(JSV))) == (TRIM(HNAMES(JSV2)(4:32))).AND.(ANY(ZWORK2(:)>0.))) THEN
+!        print*,'evaporation of rain for chemistry'
+        ZWORK(:) = ZWORK(:) + ZWORK2(:)   
+      ENDIF
+    END DO
+    PRSVS(:,:,:,NSV_CHGSBEG-1+JSV) = UNPACK( ZWORK(:),MASK=GNORAIN(:,:,:), &
+                                            FIELD=PRSVS(:,:,:,NSV_CHGSBEG-1+JSV) )
+  END DO
+  DEALLOCATE(ZWORK)
+  DEALLOCATE(ZWORK2)
+END IF
+END IF
+!
+!*       4.     FILTER OUT THE AQUEOUS SPECIES WHEN MICROPHYSICS<ZRTMIN_AQ
 !	        --------------------------------------------------------
 !
 DO JRR = 2, KRRL+1
@@ -180,7 +258,7 @@ DO JRR = 2, KRRL+1
 END DO
 !
 !
-!*       4.     FILTER OUT THE ICE PHASE SPECIES WHEN MICROPHYSICS<ZRTMIN_AQ
+!*       5.     FILTER OUT THE ICE PHASE SPECIES WHEN MICROPHYSICS<ZRTMIN_AQ
 !	        ------------------------------------------------------------
 !
 IF (OUSECHIC) THEN

@@ -45,6 +45,7 @@
 !!                        (for liquid phase chemistry)
 !!    21/09/04 (P. Tulet) update for MASDEV44 bug2
 !!    21/03/06 (P. Tulet) update for MASDEV46 and add ORILAM aerosol scheme
+!!    24/24/14 (M. Leriche) add ReLACS3
 !!
 !!    EXTERNAL
 !!    --------
@@ -219,7 +220,8 @@ IF (LORILAM) THEN
   IF (TRIM(CNAMES(JN)) .EQ. "ALKA") CCH_SCHEME = "RELACS"
   IF (TRIM(CNAMES(JN)) .EQ. "HC3")  CCH_SCHEME = "RACM"
   IF (TRIM(CNAMES(JN)) .EQ. "URG1") CCH_SCHEME = "RELACS2"
-  IF (TRIM(CNAMES(JN)) .EQ. "UR21") CCH_SCHEME = "CACM"
+  IF (TRIM(CNAMES(JN)) .EQ. "GLY")  CCH_SCHEME = "RELACS3"
+  IF (TRIM(CNAMES(JN)) .EQ. "UR29") CCH_SCHEME = "CACM"
   ENDDO
 
 

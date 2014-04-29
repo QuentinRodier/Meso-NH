@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITE_DIAG_CH_SNAP_n(HPROGRAM)
 !     #################################
@@ -54,7 +50,7 @@ IMPLICIT NONE
 !
 
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 !
 INTEGER           :: JSPEC
@@ -74,7 +70,7 @@ IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_CH_SNAP_n',0,ZHOOK_HANDLE)
 IF (LEMIS_FIELDS) THEN
 !
 DO JSPEC=1,NEMIS_NBR
-  YRECFM = "EMIS_"//TRIM(CEMIS_NAME(JSPEC))
+  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))
   YCOMMENT = "Emission data at time t (ppm*m/s)"
   CALL WRITE_SURF(HPROGRAM,YRECFM,XEMIS_FIELDS(:,JSPEC),IRESP,HCOMMENT=YCOMMENT)
 END DO

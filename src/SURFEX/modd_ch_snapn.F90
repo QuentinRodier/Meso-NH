@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     ###########################
       MODULE MODD_CH_SNAP_n
 !     ###########################
@@ -55,7 +51,7 @@ TYPE CH_EMIS_SNAP_t
 !                          !  'LEGAL' : LEGAL time
 !                          !
 
-  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CEMIS_NAME
+  CHARACTER(LEN=12), DIMENSION(:), POINTER :: CEMIS_NAME
 !                          ! name of the chemical fields (emitted species)
   CHARACTER(LEN=40), DIMENSION(:), POINTER :: CEMIS_COMMENT
 !                          ! comment on the chemical fields (emitted species)
@@ -94,7 +90,7 @@ INTEGER, POINTER :: NEMIS_NBR=>NULL()
 !$OMP THREADPRIVATE(CSNAP_TIME_REF)
  CHARACTER(LEN=40), DIMENSION(:), POINTER :: CEMIS_COMMENT=>NULL()
 !$OMP THREADPRIVATE(CEMIS_COMMENT)
- CHARACTER(LEN=6), DIMENSION(:), POINTER :: CEMIS_NAME=>NULL()
+ CHARACTER(LEN=12), DIMENSION(:), POINTER :: CEMIS_NAME=>NULL()
 !$OMP THREADPRIVATE(CEMIS_NAME)
 REAL,              DIMENSION(:,:), POINTER:: XEMIS_FIELDS=>NULL()
 !$OMP THREADPRIVATE(XEMIS_FIELDS)

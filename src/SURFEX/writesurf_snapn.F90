@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITESURF_SNAP_n(HPROGRAM)
 !     #######################################################################
@@ -60,11 +56,11 @@ DO JSPEC=1,NEMIS_NBR
   CALL WRITE_SURF(HPROGRAM,YRECFM,CEMIS_NAME(JSPEC),IRESP,YCOMMENT)
 !
 ! Writes the temporal profiles of all snaps
-  YRECFM = "EMIS_"//TRIM(CEMIS_NAME(JSPEC))//"_M"
+  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_M"
   CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_MONTHLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
-  YRECFM = "EMIS_"//TRIM(CEMIS_NAME(JSPEC))//"_D"
+  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_D"
   CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_DAILY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
-  YRECFM = "EMIS_"//TRIM(CEMIS_NAME(JSPEC))//"_H"
+  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_H"
   CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_HOURLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
 ! Writes the potential emission of species for each snap
   DO JSNAP=1,NEMIS_SNAP

@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE BUILD_PRONOSLIST_n(KEMIS_NBR,HEMIS_NAME,TPPRONOS,KCH,KLUOUT,KVERB)
 !!    #######################################################################
@@ -50,7 +46,7 @@ IMPLICIT NONE
 !*       0.1  declaration of arguments
 !
 INTEGER,                       INTENT(IN)  :: KEMIS_NBR ! number of emitted species
- CHARACTER(LEN=6), DIMENSION(KEMIS_NBR), INTENT(IN) :: HEMIS_NAME ! name of emitted species
+ CHARACTER(LEN=12), DIMENSION(KEMIS_NBR), INTENT(IN) :: HEMIS_NAME ! name of emitted species
 TYPE(PRONOSVAR_T),             POINTER     :: TPPRONOS
 INTEGER,                       INTENT(IN)  :: KCH     ! logical unit of input chemistry file
 INTEGER,                       INTENT(IN)  :: KLUOUT  ! output listing channel
