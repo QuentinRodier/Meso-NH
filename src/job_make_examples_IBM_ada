@@ -19,7 +19,7 @@
 
 cd $LOADL_STEP_INITDIR
 
-. ../conf/profile_mesonh-LXifortI4-MNH-V5-1-0-MPIINTEL-O2
+. ../conf/profile_mesonh-LXifortI4-MNH-V5-1-2-MPIINTEL-O2
 
 # Pour avoir l'echo des commandes
 set -x
