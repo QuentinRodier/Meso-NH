@@ -45,7 +45,7 @@ IMPLICIT NONE
 !*       0.1   declarations of local variables
 !
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE      ! names of the INPUT FM-file
-CHARACTER (LEN=28)               :: YOUTFILE      ! names of the OUTPUT FM-file
+CHARACTER (LEN=50)               :: YOUTFILE      ! names of the OUTPUT FM-file
 INTEGER                          :: IRESP         ! return code in FM routines
 INTEGER                          :: ILUOUT0       ! Logical unit number for the output listing
 INTEGER                          :: ILUNAM        ! Logical unit numbers for the namelist file
