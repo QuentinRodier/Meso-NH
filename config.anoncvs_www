@@ -1,8 +1,0 @@
-Host mesonh_anoncvs_www
-   User anoncvs
-   Hostname mesonh.aero.obs-mip.fr
-   IdentityFile ~/.ssh/anoncvs.key
-   ForwardAgent no
-   ForwardX11 no
-   Compression yes
-
