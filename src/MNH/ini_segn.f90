@@ -159,6 +159,8 @@ END MODULE MODI_INI_SEG_n
 !!                       04/2010   add GUSECHAQ, GCH_PH (M. Leriche)
 !!                       09/2010   add GUSECHIC (M. Leriche)
 !!                       02/2012   add GFOREFIRE (Pialat/Tulet)
+!!                       05/2014   missing reading of IMASDEV before COUPLING
+!!                                 test (Escobar)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -340,6 +342,8 @@ IF (CPROGRAM=='MESONH') THEN
   HINIFILE=CINIFILE_n
   CALL FMOPEN_ll(HINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
 END IF
+
+CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
 
 IF (CPROGRAM=='MESONH') THEN
   IF (IMASDEV > 49) THEN
