@@ -1051,8 +1051,8 @@ DO JGR=1,10000
               CUNITE(1)='hPa'
             ENDIF
           ENDIF
-        ! b. interpolation eventuelle selon la verticale 
-          IF( SIZE(XVAR,3)>1 .AND. SIZE(XVAR,2)>1 .AND. SIZE(XVAR,1)>1 ) THEN
+        ! b. interpolation eventuelle selon la verticale
+          IF( SIZE(XVAR,3)>1 .AND. CGROUP /= 'VLEV' ) THEN
             ! VLEV, LON, LAT et chps 2D ne passent pas cette partie 
             if (ilocverbia >= 0 ) then
               print*,' Interpolations on ',inbvertz,' ', &
