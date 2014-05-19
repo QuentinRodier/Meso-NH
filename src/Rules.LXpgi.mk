@@ -16,7 +16,7 @@ OPT_PERF0  =  -O0 -Kieee
 OPT_PERF2  =  -O2 -Kieee
 #OPT_CUDA  =  -O2 -Mcuda=keepgpu -ta=nvidia,cc20,cuda3.1,host,time -Minfo=accel,intensity,all,ccff  
 #OPT_CUDA  =  -O3 -fast -ta=nvidia,cc20,cuda4.2,keepgpu,host -Minfo=accel,all,intensity,ccff 
-OPT_CUDA  =  -O2 -Kieee -nofma -ta=host,nvidia,nofma,cc20,cuda5.0 -Minfo=ccff,all,intensity -Mprof=ccff 
+OPT_CUDA  =  -O2 -Kieee -nofma -ta=host,nvidia,nofma,cc20,cc35,cuda5.5 -Minfo=ccff,all,intensity -Mprof=ccff 
 #OPT_CUDA  =  -O2 -Kieee -ta=host,nvidia,cc20,cuda4.2 -Minfo=ccff,all,intensity
 
 OPT_CHECK  =  -C 
@@ -129,7 +129,10 @@ include Makefile.MESONH.mk
 #                                                        #
 ##########################################################
 OPT_PERF1  =  -O1 -Kieee
-OBJS_O1= spll_modd_isba_n.o spll_pack_isba_patch_n.o
+OBJS_O1= spll_modd_isba_n.o spll_pack_isba_patch_n.o spll_mode_construct_ll.o \
+         spll_init_surf_atm_n.o spll_mode_scatter_ll.o spll_convert_patch_teb.o \
+         spll_define_mask_n.o spll_del1dfield_ll.o spll_mode_fm.o spll_mode_gather_ll.o \
+	 spll_phys_param_n.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 
 #
