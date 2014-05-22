@@ -7,7 +7,7 @@
 #set -e
 if [ "x$XYZ" = "x" ]
 then
-#
+# 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-1}
 export VERSION_BUG=${VERSION_BUG:-3}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}}
