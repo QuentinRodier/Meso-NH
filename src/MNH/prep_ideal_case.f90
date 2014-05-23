@@ -307,6 +307,7 @@
 !!      USE MODDB_ADVFRC_n for grid-nesting               02*2012 (M. Tomasini)
 !!      LBOUSS in MODD_REF                                07/2013 (C.Lac)
 !!      Correction for ZS in PGD file                     04/2014 (G. TANGUY)
+!!      Bug : remove NC WRITE_HGRID                       05/2014 (S. Bielli via J.Escobar ) 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1732,23 +1733,17 @@ IF (CSURF =='EXTE') THEN
     COUTFMFILE = CINIFILEPGD
     CALL FMOPEN_ll(CINIFILEPGD,'WRITE',CLUOUT,NNPRAR,NTYPE,NVERB,NNINAR,NRESP)  
 #ifdef MNH_NCWRIT
-    NC_FILE='sf1'
-    NC_WRITE=LNETCDF
     CALL FMWRIT(CINIFILEPGD,'PROGRAM     ',CLUOUT,'--',CPROGRAM,0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'SURF        ',CLUOUT,'--','EXTE',0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'L1D         ',CLUOUT,'--',L1D,0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'L2D         ',CLUOUT,'--',L2D,0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'PACK        ',CLUOUT,'--',LPACK,0,1,' ',NRESP)
     CALL WRITE_HGRID(1,CINIFILEPGD,' ')
+    NC_FILE='sf1'
+    NC_WRITE=LNETCDF
     CALL WRITE_PGD_SURF_ATM_n('MESONH')
     IF ( LNETCDF ) THEN
        DEF_NC=.FALSE.
-       CALL FMWRIT(CINIFILEPGD,'PROGRAM     ',CLUOUT,'--',CPROGRAM,0,1,' ',NRESP)
-       CALL FMWRIT(CINIFILEPGD,'SURF        ',CLUOUT,'--','EXTE',0,1,' ',NRESP)
-       CALL FMWRIT(CINIFILEPGD,'L1D         ',CLUOUT,'--',L1D,0,1,' ',NRESP)
-       CALL FMWRIT(CINIFILEPGD,'L2D         ',CLUOUT,'--',L2D,0,1,' ',NRESP)
-       CALL FMWRIT(CINIFILEPGD,'PACK        ',CLUOUT,'--',LPACK,0,1,' ',NRESP)
-       CALL WRITE_HGRID(1,CINIFILEPGD,' ')
        CALL WRITE_PGD_SURF_ATM_n('MESONH')
        DEF_NC=.TRUE.
        NC_WRITE = .FALSE.
