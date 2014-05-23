@@ -31,6 +31,7 @@ SUBROUTINE SSO_Z0_FRICTION_n(PSEA,PUREF,PRHOA,PU,PV,PPEW_A_COEF,PPEW_B_COEF,PSFU
 !!      Original    05/2010
 !!      E. Martin   01/2012 Correction masque (compatibilité XUNDEF)
 !!      B. Decharme 09/2012 new wind implicitation and sea fraction
+!!      J. Escobar  05/2014 for bug with ifort/10, replace WHERE this IF
 !----------------------------------------------------------------
 !
 !
@@ -69,6 +70,8 @@ REAL, DIMENSION(SIZE(PU))    :: ZUSTAR2 ! square of friction velocity
 REAL, DIMENSION(SIZE(PU))    :: ZSSO_SFU! zonal orographic momentum flux
 REAL, DIMENSION(SIZE(PU))    :: ZSSO_SFV! meridian orographic momentum flux
 LOGICAL, DIMENSION(SIZE(PU)) :: GMASK   ! mask where SSO exists
+
+INTEGER                      :: II
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 !-------------------------------------------------------------------------------------
@@ -100,36 +103,38 @@ IF (CROUGH=="Z01D") ZZ0EFF(:) = XZ0REL(:)
 !              -----------------------------
 !
 IF (CROUGH=="Z04D") THEN
-  WHERE(GMASK(:)) 
-    !
-    ZALFA(:) = ZDIR(:) - XZ0EFFJPDIR(:) * XPI/180.
-    !
-    WHERE    (ZALFA(:)<=-XPI)
-      ZALFA(:) = ZALFA(:) + 2.*XPI
-    ELSEWHERE(ZALFA(:)>  XPI)
-      ZALFA(:) = ZALFA(:) - 2.*XPI
-    ENDWHERE
-    !
-    WHERE (ZALFA(:)>=-XPI.AND.ZALFA(:)<=XPI)
-      !
-      ZSIN2(:) = SIN(ZALFA(:))**2
-      ZCOS2(:) = COS(ZALFA(:))**2
-      !
-      WHERE (ZALFA(:)<0.)
-        ZZ0EFF(:)=XZ0EFFIM(:)*ZSIN2(:)
-      ELSEWHERE
-        ZZ0EFF(:)=XZ0EFFIP(:)*ZSIN2(:)
-      ENDWHERE
-      !
-      WHERE (ZALFA(:)>=-XPI/2. .AND. ZALFA(:)<XPI/2.)
-        ZZ0EFF(:) = ZZ0EFF(:) + XZ0EFFJP(:)*ZCOS2(:)
-      ELSEWHERE
-        ZZ0EFF(:) = ZZ0EFF(:) + XZ0EFFJM(:)*ZCOS2(:)
-      END WHERE
-      !
-    END WHERE
-    !    
-  ENDWHERE
+   DO II=1,SIZE(GMASK)
+      IF (GMASK(II)) THEN
+         !
+         ZALFA(II) = ZDIR(II) - XZ0EFFJPDIR(II) * XPI/180.
+         !
+         IF    (ZALFA(II)<=-XPI) THEN
+            ZALFA(II) = ZALFA(II) + 2.*XPI
+         ELSEIF(ZALFA(II)>  XPI) THEN
+            ZALFA(II) = ZALFA(II) - 2.*XPI
+         END IF
+         !
+         IF (ZALFA(II)>=-XPI.AND.ZALFA(II)<=XPI) THEN
+            !
+            ZSIN2(II) = SIN(ZALFA(II))**2
+            ZCOS2(II) = COS(ZALFA(II))**2
+            !
+            IF (ZALFA(II)<0.) THEN
+               ZZ0EFF(II)=XZ0EFFIM(II)*ZSIN2(II)
+            ELSE
+               ZZ0EFF(II)=XZ0EFFIP(II)*ZSIN2(II)
+            END IF
+            !
+            IF (ZALFA(II)>=-XPI/2. .AND. ZALFA(II)<XPI/2.) THEN
+               ZZ0EFF(II) = ZZ0EFF(II) + XZ0EFFJP(II)*ZCOS2(II)
+            ELSE
+               ZZ0EFF(II) = ZZ0EFF(II) + XZ0EFFJM(II)*ZCOS2(II)
+            END IF
+            !
+         END IF
+         !    
+      END IF
+   END DO
 ENDIF
 !
 !*      4.     Friction coefficient
