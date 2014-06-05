@@ -182,6 +182,8 @@ END MODULE MODI_SPAWN_MODEL2
 !!                                       and of the turbulent fluxes (EDDY_FLUX)
 !!      Modification 07/13  (Bosseur & Filippi) Adds Forefire
 !!                   24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
+!!      Modification 06/2014   (C.Lac) Initialization of physical param of
+!!                                      model2 before the call to ini_nsv
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -544,7 +546,14 @@ IF (NSV_CHEM>0) THEN
    CCHEM_INPUT_FILE = HCHEM_INPUT_FILE
    CALL CH_INIT_SCHEME_n(1,LUSECHAQ,LUSECHIC,LCH_PH,ILUOUT,NVERB)
 END IF
-
+!
+CTURB    =  HTURB                 ! for MODD_PARAM2
+CRAD     = 'NONE'                 ! radiation will have to be restarted
+CSURF    =  HSURF                 ! for surface call
+CCLOUD   =  HCLOUD
+CDCONV   = 'NONE'                 ! deep convection will have to be restarted
+CSCONV   = 'NONE'                 ! shallow convection will have to be restarted
+!
 CALL INI_NSV(2) ! NSV* are set equal for model 2 and model 1. 
                 ! NSV is set to the total number of SV for model 2
 !
@@ -556,12 +565,6 @@ IF (NRR>4)  LUSERS=.TRUE.
 IF (NRR>5)  LUSERG=.TRUE.
 IF (NRR>6)  LUSERH=.TRUE.
 !
-CTURB    =  HTURB                 ! for MODD_PARAM2
-CRAD     = 'NONE'                 ! radiation will have to be restarted
-CSURF    =  HSURF                 ! for surface call
-CCLOUD   =  HCLOUD
-CDCONV   = 'NONE'                 ! deep convection will have to be restarted
-CSCONV   = 'NONE'                 ! shallow convection will have to be restarted
 !
 !
 !*       3.5   model 2 configuration in MODD_NESTING to be written
