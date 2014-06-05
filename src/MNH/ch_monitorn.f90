@@ -1106,36 +1106,6 @@ DO JL=1,ISVECNMASK
   ENDIF
 END DO
 !
-!-------------------------------------------------------------------------------
-!
-!*       5.     REMOVE NEGATIVE VALUES
-!               ----------------------
-!
-DO JSV = 1, NEQ
-  IF ( MIN_ll( XRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll) < 0.0 ) THEN
-!
-! compute the total water mass computation
-!
-    ZMASSTOT = MAX( 0. , SUM3D_ll( XRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
-!
-! remove the negative values
-!
-    XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX(0., XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
-!
-! compute the new total mass
-!
-    ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( XRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
-!
-! correct again in such a way to conserve the total mass 
-!
-    ZRATIO = ZMASSTOT / ZMASSPOS
-    XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = XRSVS(:,:,:,NSV_CHEMBEG+JSV-1) * ZRATIO
-!
-    WRITE(KLUOUT,*)'IN CH_MONITORN SCALAIRE',JSV,'HAS NEGATIVE VALUES'
-    WRITE(KLUOUT,*)'SOURCES IS CORRECTED BY RATIO',ZRATIO
-  END IF
-END DO
-!
 !
 IF (LBUDGET_SV) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND

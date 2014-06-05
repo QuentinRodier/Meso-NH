@@ -779,6 +779,7 @@ IF (KMI == 1) THEN
   NVTURBSV = 0
   NHTURBSV = 0
   NCHEMSV  = 0
+  NNEGASV  = 0
 !
 !
 END IF

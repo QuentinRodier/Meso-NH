@@ -149,6 +149,7 @@ END MODULE MODI_INI_BUDGET
 !!      C.Lac           01/07/11  Add vegetation drag        
 !!      P. Peyrille, M. Tomasini : include in the forcing term the 2D forcing
 !!                                terms in term 2DFRC search for modif PP . but Not very clean! 
+!!      C .Lac          27/05/14    add negative corrections for chemical species
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1854,7 +1855,6 @@ IF (LBU_RSV) THEN
     IPROC=IPROC+1
     IF ( HSCONV == 'EDKF' ) IPROACTV(12+JSV,IPROC)= NMAFLSV
     IPROC=IPROC+1
-    IPROACTV(12+JSV,IPROC) = NADVSV
 !
     YWORK2(12+JSV,1) = 'INIF_'
     YWORK2(12+JSV,2) = 'ENDF_'
@@ -1877,8 +1877,6 @@ IF (LBU_RSV) THEN
     YWORK2(12+JSV,IPROC) = 'HTURB_'
     IPROC=IPROC+1
     YWORK2(12+JSV,IPROC) = 'MAFL_'
-    IPROC=IPROC+1
-    YWORK2(12+JSV,IPROC) = 'ADV_'
 !
 ! complete with the budget of other processes
 !
@@ -2414,12 +2412,25 @@ USE MODD_NSV, ONLY : NSV_USER, NSV_C2R2BEG, NSV_C2R2END, &
 ! add budget for hail volumetric charge
     END SELECT
 !
-  ELSEIF (JSV >= NSV_CHEMBEG .AND. JSV <= NSV_CHEMEND) THEN
+  END IF
+  IF (JSV >= NSV_CHEMBEG .AND. JSV <= NSV_CHEMEND) THEN
     ! Chemical Case
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'CHEM_'
       IPROACTV(12+JSV,ILAST_PROC_NBR) = NCHEMSV
-    
+    ! other processes
+      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+      YWORK2(12+JSV,ILAST_PROC_NBR)= 'ADV_'
+      IPROACTV(12+JSV,ILAST_PROC_NBR) = NADVSV
+      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+      YWORK2(12+JSV,ILAST_PROC_NBR)= 'NEGA_'
+      IPROACTV(12+JSV,ILAST_PROC_NBR) = NNEGASV
+ !
+  ELSE
+    ! other processes
+      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+      YWORK2(12+JSV,ILAST_PROC_NBR)= 'ADV_'
+      IPROACTV(12+JSV,ILAST_PROC_NBR) = NADVSV      
   END IF
   !
   END SUBROUTINE BUDGET_OTHERPROC_SV
