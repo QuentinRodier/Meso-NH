@@ -136,7 +136,7 @@ endif
 ##########################################################
 ifdef MNH_RTTOV
 DIR_RTTOV      +=  LIB/RTTOV/src
-#CPPFLAGS_RTTOV =
+CPPFLAGS_RTTOV = -DMNH_RTTOV
 INC_RTTOV      = -I$(B)LIB/RTTOV/src
 #
 DIR_MASTER  += $(DIR_RTTOV)
