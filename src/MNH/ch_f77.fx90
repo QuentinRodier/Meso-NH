@@ -18,6 +18,8 @@ C**MODIFIED:   01/12/03  (Gazen)   change Chemical scheme interface
 C**MODIFIED: 25/03/2008 (M.Leriche & J.P.Pinty):add "MIN(100.,...)" threshold
 C**          in exponential calculation --> problem with "ifort -O2" compiler
 C**MODIFIED: 22/02/2011 (J.Escobar) remove erroneous 'CALL ABORT'
+C**MODIFIED: 19/06/2014 (J.Escobar & M.Leriche) write(kout,...) to OUTPUT_LISTING file
+C                       & correct IN_LUN = 11 => IN_LUN = 78 to avoid fort.11 creation 
 C!
 C!
 C!
@@ -4461,7 +4463,8 @@ c
       subroutine tuvmain (asza, idate,
      +           albnew, dobnew,
      +           nlevel, zin, lwc,
-     +           njout, jout, jlabelout)
+     +           njout, jout, jlabelout,
+     +           kout )
 *-----------------------------------------------------------------------------*
 *=    Tropospheric Ultraviolet-Visible (TUV) radiation model                 =*
 *=    Version 5.0                                                            =*
@@ -4507,7 +4510,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -4894,14 +4897,14 @@ c     $     nt, t, sza, esfact)
 ***** Temperature vertical profile, Kelvin 
 *   can overwrite temperature at altitude z(izout)
 
-      CALL vptmp(nz,z, tlev,tlay)
+      CALL vptmp(nz,z, tlev,tlay,kout)
 c      IF(ztemp .GT. nzero) tlev(izout) = ztemp
 
 *****  Air density (molec cm-3) vertical profile 
 *   can overwrite air density at altitude z(izout)
 
       CALL vpair(psurf, nz, z,
-     $     aircon, aircol)
+     $     aircon, aircol, kout)
 c      IF(zaird .GT. nzero) aircon(izout) = zaird
 
 ***** Correction for air-vacuum wavelength shift:
@@ -4982,13 +4985,13 @@ C      lrefr = .TRUE.
 
        o3_tc = dobnew
       CALL vpo3(ipbl, zpbl, o3pbl, 
-     $       o3_tc, nz, z, aircol, co3)
+     $       o3_tc, nz, z, aircol, co3, kout )
 
 * ___ SECTION 4: READ SPECTRAL DATA ____________________________
 
 * read (and grid) extra terrestrial flux data:
       
-      CALL rdetfl(nw,wl, f)
+      CALL rdetfl(nw,wl, f, kout )
 
 * read cross section data for 
 *    O2 (will overwrite at Lyman-alpha and SRB wavelengths
@@ -5102,13 +5105,13 @@ c       STOP
       CALL setaer(ipbl, zpbl, aod330,
      $     tauaer, ssaaer, alpha,
      $     nz, z, nw, wl,
-     $     dtaer, omaer, gaer)
+     $     dtaer, omaer, gaer, kout )
 
 * Snowpack physical and optical depths, single scattering albedo, asymmetry factor
 
       CALL setsnw(
      $     nz,z,nw,wl,
-     $     dtsnw,omsnw,gsnw)
+     $     dtsnw,omsnw,gsnw,kout)
 
        LFIRSTCALL = .FALSE.
       ENDIF
@@ -5324,7 +5327,7 @@ c 1001    FORMAT(A1)
 c         IF(again .EQ. 'y' .OR. again .EQ. 'Y') GO TO 1000
 c      ENDIF
 
-      CLOSE(iout)
+c     CLOSE(iout)
 C     CLOSE(kout)
       END
 
@@ -5825,7 +5828,7 @@ c      wlabel = 'isaksen.grid'
 
 * check grid for assorted improprieties:
 
-      CALL gridck(kw,nw,wl,ok)
+      CALL gridck(kw,nw,wl,ok,kout)
 
       IF (.NOT. ok) THEN
          WRITE(*,*)'STOP in GRIDW:  The w-grid does not make sense'
@@ -6139,7 +6142,7 @@ c 24   CONTINUE
 * check grid for assorted improprieties:
 
 c 99	CONTINUE
-      CALL gridck(kz,nz,z,ok)
+      CALL gridck(kz,nz,z,ok,kout)
 
       IF (.NOT. ok) THEN
          WRITE(*,*)'STOP in GRIDZ:  The z-grid does not make sense'
@@ -6379,7 +6382,7 @@ c       END
 
 *=============================================================================*
 
-      SUBROUTINE gridck(k,n,x,ok)
+      SUBROUTINE gridck(k,n,x,ok, kout)
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -6408,7 +6411,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -7251,7 +7254,8 @@ C       locals
 	INTEGER  IOST		! i/o status
 	INTEGER  I, J
 
-        IN_LUN = 11
+        !IN_LUN = 11
+	IN_LUN = 78
 
 	OPEN (UNIT=IN_LUN, FILE=
      $       'DATAE1/O2/effxstex.txt',FORM='FORMATTED')
@@ -8880,7 +8884,7 @@ c                   ** distance to sun in A.U. & diameter in degs
 *     read2
 *=============================================================================*
 
-      SUBROUTINE rdetfl(nw,wl,f)
+      SUBROUTINE rdetfl(nw,wl,f, kout)
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -8919,7 +8923,7 @@ c      c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -34612,7 +34616,7 @@ c      INCLUDE 'params'
       SUBROUTINE setaer(ipbl, zpbl, aod330,
      $     tau550, ssaaer, alpha,
      $     nz, z, nw, wl, 
-     $     dtaer, omaer, gaer)
+     $     dtaer, omaer, gaer, kout )
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -34646,7 +34650,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -35524,7 +35528,7 @@ c      INCLUDE 'params'
 
       RETURN
       END
-      SUBROUTINE setsnw(nz,z,nw,wl,dtsnw,omsnw,gsnw)
+      SUBROUTINE setsnw(nz,z,nw,wl,dtsnw,omsnw,gsnw,kout)
 
 *-----------------------------------------------------------------------------*
 *=  PURPOSE:                                                                 =*
@@ -35586,7 +35590,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -37749,7 +37753,7 @@ c      INCLUDE 'params'
 *=============================================================================*
 
       SUBROUTINE vpair(psurf, nz, z,
-     $     con, col)
+     $     con, col,kout)
 
 *-----------------------------------------------------------------------------*
 *=  NAME:  Vertial Profile of AIR
@@ -37778,7 +37782,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -37959,7 +37963,7 @@ c      INCLUDE 'params'
 *=============================================================================*
 
       SUBROUTINE vpo3(ipbl, zpbl, mr_pbl, 
-     $     to3new, nz, z, aircol, col)
+     $     to3new, nz, z, aircol, col, kout)
 
 *-----------------------------------------------------------------------------*
 *=  NAME:  Vertical Profiles of Ozone = vpo3                                 =*
@@ -38000,7 +38004,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________
@@ -38193,7 +38197,7 @@ c      INCLUDE 'params'
       END
 *=============================================================================*
 
-      SUBROUTINE vptmp(nz,z,tlev,tlay)
+      SUBROUTINE vptmp(nz,z,tlev,tlay,kout)
 
 *-----------------------------------------------------------------------------*
 *   NAME: Vertical Profile of TeMPerature
@@ -38218,7 +38222,7 @@ c      INCLUDE 'params'
 * i/o file unit numbers
       INTEGER kout, kin 
 * output
-      PARAMETER(kout=6)
+*      PARAMETER(kout=6)
 * input
       PARAMETER(kin=78)
 *_________________________________________________

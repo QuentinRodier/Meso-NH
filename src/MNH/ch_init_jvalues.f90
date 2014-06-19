@@ -68,6 +68,7 @@ END MODULE MODI_CH_INIT_JVALUES
 !!          01/02/04 (P. Tulet) externalisation , modification of the albedo UV
 !!                              interpolation
 !!          01/12/04 (P. Tulet) update for arome
+!!          19/06/2014(J.Escobar & M.Leriche) write(kout,...) to OUTPUT_LISTING file
 !!
 !!    EXTERNAL
 !!    --------
@@ -157,7 +158,8 @@ IF (.NOT.ALLOCATED(XJDATA)) ALLOCATE(XJDATA(NSZA_INCR,NZZ_JVAL,JPJVMAX,NBALB))
       CALL TUVMAIN(  ZSZALOOP, IDATE,           &
                      ZALBLOOP, ZDOBNEW,         &
                      NZZ_JVAL,XZZ_JVAL, ZLWC,   &
-                     JPJVMAX, ZJOUT, YLABELOUT  )
+                     JPJVMAX, ZJOUT, YLABELOUT, &
+                     KLUOUT )
        DO JKLEV = 1, NZZ_JVAL
          DO JJVAL = 1, JPJVMAX
              XJDATA(JSZA,JKLEV,JJVAL,JALB) = ZJOUT(JKLEV,JJVAL)
