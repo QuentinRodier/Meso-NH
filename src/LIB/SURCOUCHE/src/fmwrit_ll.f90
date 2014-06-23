@@ -220,6 +220,7 @@ CONTAINS
 !
 !  Modification 
 !  J.Escobar 15/04/2014 : add write to all Z files for all FMWRITX0_ll variables
+!  J.Escobar 23/06/2014 : bug , replace .FALSE. to .TRUE. = OREAL type transmetted to FM_WRIT_ll
 !
     USE MODD_IO_ll, ONLY : ISP,GSMONOPROC
     USE MODD_FM
@@ -341,10 +342,10 @@ CONTAINS
                 TZFMH%COMMENT=HCOMMENT
 #ifdef MNH_NCWRIT
                IF ( DEF_NC .AND. LLFIFM ) THEN
-                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,PFIELD,TZFMH,IRESP)
+                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
                END IF
 #else
-                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,PFIELD,TZFMH,IRESP)
+                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
 #endif
              END IF
           END DO
