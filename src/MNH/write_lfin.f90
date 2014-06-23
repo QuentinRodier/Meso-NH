@@ -154,6 +154,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       M.Tomasini    06/12 2D west african monsoon: nesting for ADV forcing writing
 !!       Pialat/Tulet  15/02/2012 add ForeFire variables
 !!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
+!!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -933,7 +934,7 @@ IF (NSV >=1) THEN
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
-    JSA=JSA+1
+    !JSA=JSA+1
   END DO
   ! Passive scalar variables        
  IF (LPASPOL) THEN
@@ -943,7 +944,7 @@ IF (NSV >=1) THEN
       ILENCH=LEN(YCOMMENT)
       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                   YCOMMENT,IRESP)
-      JSA=JSA+1
+      !JSA=JSA+1
     END DO
   END IF
 #ifdef MNH_FOREFIRE
@@ -967,7 +968,7 @@ IF (NSV >=1) THEN
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
-    JSA=JSA+1
+    !JSA=JSA+1
   END DO
 !
  END IF
