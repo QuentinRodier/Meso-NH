@@ -190,6 +190,8 @@ END MODULE MODI_RAIN_C2R2
 !!      C.Lac                11/09     Distinction of the TSTEPs
 !!      C.Lac, V.Masson      09/10     Corrections in sedimentation and
 !!                                     evaporation for reproducibility
+!!      C.Lac                06/14     C2R2_SEDIMENTATION replaced by
+!!                                     KHKO_SEDIMENTATION because of instability
 !!
 !-------------------------------------------------------------------------------
 !
@@ -331,6 +333,11 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                      ZWLBDA,  &  !libre parcours moyen
                                      ZRAY,    &  ! Mean volumic radius
                                      ZCC         ! Terminal vertical velocity
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
+                                  :: ZMVRR,ZVRR,ZVCR
+REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
+                                  :: ZPRCT, ZPCCT, ZPRRT, ZPCRT 
+                                           ! For splitted sedimentation
 REAL,    DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3))   &
      :: ZPRRS,ZPCRS   ! Rain and cloud source for sedim
 REAL, DIMENSION(:), ALLOCATABLE :: ZRVT    ! Water vapor m.r. at t 
@@ -350,6 +357,9 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZCRS    ! rain conc. source
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHS    ! Theta source
 REAL, DIMENSION(:), ALLOCATABLE :: ZCHEN_TMP
 REAL, DIMENSION(:), ALLOCATABLE :: ZCONC_CCN
+!
+REAL,    DIMENSION(:), ALLOCATABLE :: ZZVRR    !terminal velocity for drop concentration
+REAL,    DIMENSION(:), ALLOCATABLE :: ZZVCR    !erminal velocity for rain water
 !
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GSELF(:), GACCR(:), GSCBU(:)
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GENABLE_ACCR_SCBU(:)
@@ -457,11 +467,12 @@ IF (ORAIN) THEN
                                                  (XACCR1/ZWLBDR(:,:,:)/XSPONBUD3)**3)
   END WHERE
 !
+ENDIF
+!
 IF (LBUDGET_SV) &         
   CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
                     &'BRKU_BU_RSV') ! RCR
 !
-ENDIF
 !-------------------------------------------------------------------------------
 !
 !
@@ -471,41 +482,29 @@ ENDIF
 !*       6.1 Calculation of the mean volumic radius (ZRAY) and
 !             the terminal vertical velocity ZCC for precipitating clouds
 !
-IF (OSEDC) THEN
-  ZWLBDA(:,:,:) = 0.
-  ZRAY(:,:,:)   = 0.
-  ZCC(:,:,:) = 1. 
-  DO JK=IKB,IKE
-   ZWLBDA(:,:,JK) = 6.6E-8*(101325./PPABST(:,:,JK))*(ZT(:,:,JK)/293.15)
-  END DO
-  WHERE (PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2))
-    ZRAY(:,:,:) = 0.5*GAMMA(XNUC+1./XALPHAC)/(GAMMA(XNUC)*ZWLBDC(:,:,:))
-     ! ZCC : Corrective Cunningham term for the terminal velocity
-    ZCC(:,:,:)=1.+1.26*ZWLBDA(:,:,:)/ZRAY(:,:,:)
-  END WHERE
-!
-  IF ( OCLOSE_OUT ) THEN
-   YRECFM  ='RAY'
-   YCOMMENT='X_Y_Z_DIAM'
-   ILENCH=LEN(YCOMMENT)
-   IGRID   = 1
-   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',2*ZRAY(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
-   YRECFM  ='TERM_VEL'
-   YCOMMENT='X_Y_Z_TERM_VEL'
-   ILENCH=LEN(YCOMMENT)
-   IGRID   = 1
-   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCC(:,:,:)*XCC,IGRID,ILENCH,YCOMMENT,IRESP)
-  END IF
-END IF
-!
-!
-!*       6.2    time splitting loop initialization        
 !
 ZTSPLITR= PTSTEP / FLOAT(KSPLITR)
 !
-CALL C2R2_SEDIMENTATION
-! 
+!*       6.2    compute the sedimentation velocities for rain
+!   	        --------------------------------------------
 !
+ZMVRR(:,:,:) = 0.
+ZVRR(:,:,:) = 0.
+ZVCR(:,:,:) = 0.
+WHERE (PCRT(:,:,:) > XCTMIN(3) .and. PRRT(:,:,:)>XRTMIN(3) )
+  ZMVRR(:,:,:) = ((3. * PRHODREF(:,:,:)*PRRT(:,:,:))/   &
+                  (4. * XPI *XRHOLW*PCRT(:,:,:)))**0.333 ! in m
+  ZVRR(:,:,:) = 0.012 * 1.0E6 * ZMVRR(:,:,:) - 0.2 ! velocity for mixing ratio
+  ZVCR(:,:,:) = 0.007 * 1.0E6 * ZMVRR(:,:,:) - 0.1 ! velocity for concentration
+END WHERE
+WHERE (ZVRR(:,:,:) .lt. 0.0 .OR. ZVCR(:,:,:) .lt. 0.0)
+  ZVRR(:,:,:) = 0.0
+  ZVCR(:,:,:) = 0.0
+END WHERE
+!
+!
+CALL KHKO_SEDIMENTATION
+! 
 DEALLOCATE(ZRTMIN)
 DEALLOCATE(ZCTMIN)
 !
@@ -722,9 +721,194 @@ END IF
 ! 
 !
   END SUBROUTINE C2R2_SEDIMENTATION
+  SUBROUTINE KHKO_SEDIMENTATION
+!
+!*      0. DECLARATIONS
+!          ------------
+!
+IMPLICIT NONE
+!
+!*       0.2  declaration of local variables
+!
+!
+INTEGER , DIMENSION(SIZE(GSEDIM)) :: I1,I2,I3 ! Used to replace the COUNT
+INTEGER                           :: JL       ! and PACK intrinsics 
 !
 !-------------------------------------------------------------------------------
 !
+!*       2.1    compute the fluxes  
+!
+!  optimization by looking for locations where
+!  the precipitating fields are larger than a minimal value only !!!
+!
+DO JN = 1 , KSPLITR
+  GSEDIM(:,:,:) = .FALSE.
+  IF( OSEDC ) THEN
+    GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) =                               &
+            PRCT(IIB:IIE,IJB:IJE,IKB:IKE)/PTSTEP>ZRTMIN(2) .OR.     &
+            (PRRT(IIB:IIE,IJB:IJE,IKB:IKE)/PTSTEP>ZRTMIN(3) .AND.   &
+            PCRT(IIB:IIE,IJB:IJE,IKB:IKE)/PTSTEP>ZCTMIN(3))
+  ELSE
+    GSEDIM(IIB:IIE,IJB:IJE,IKB:IKE) =                               &
+            PRRT(IIB:IIE,IJB:IJE,IKB:IKE)/PTSTEP>ZRTMIN(3) .AND.    &
+            PCRT(IIB:IIE,IJB:IJE,IKB:IKE)/PTSTEP>ZCTMIN(3)
+  END IF
+!
+  ISEDIM = COUNTJV( GSEDIM(:,:,:),I1(:),I2(:),I3(:))
+!
+    IF( JN==1 ) THEN
+      IF( OSEDC ) THEN
+        ZPCCT(:,:,:) = PCCT(:,:,:)
+        ZPRCT(:,:,:) = PRCT(:,:,:)
+        PCCS(:,:,:) = PCCS(:,:,:) * PTSTEP - PCCT(:,:,:)
+        PRCS(:,:,:) = PRCS(:,:,:) * PTSTEP - PRCT(:,:,:)
+      END IF
+      ZPCRT(:,:,:) = PCRT(:,:,:)
+      ZPRRT(:,:,:) = PRRT(:,:,:)
+      PCRS(:,:,:) = PCRS(:,:,:) * PTSTEP - PCRT(:,:,:)
+      PRRS(:,:,:) = PRRS(:,:,:) * PTSTEP - PRRT(:,:,:)
+      DO JK = IKB , IKE
+        ZW(:,:,JK) = ZTSPLITR/(PZZ(:,:,JK+1) -PZZ(:,:,JK))
+      END DO
+    END IF
+!
+  ZWSEDR(:,:,:) = 0.0
+  ZWSEDC(:,:,:) = 0.0
+!
+  IF( ISEDIM >= 1 ) THEN
+!
+    ALLOCATE(ZRHODREF(ISEDIM))
+    DO JL = 1,ISEDIM
+      ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
+    END DO
+!
+    ALLOCATE(ZZW1(ISEDIM)) 
+    ALLOCATE(ZZW2(ISEDIM)) 
+    ALLOCATE(ZZW3(ISEDIM)) 
+!
+!*       2.21   for cloud
+!
+    ZZW1(:) = 0.0
+    ZZW2(:) = 0.0
+    ZZW3(:) = 0.0
+!
+    IF( OSEDC.AND.MAXVAL(PRCS(:,:,:))>0.0 ) THEN
+      ALLOCATE(ZRCT(ISEDIM))
+      ALLOCATE(ZCCT(ISEDIM))
+      ALLOCATE(ZLBDC(ISEDIM))
+      DO JL = 1,ISEDIM
+        ZRCT(JL) = ZPRCT(I1(JL),I2(JL),I3(JL))
+        ZCCT(JL) = ZPCCT(I1(JL),I2(JL),I3(JL))
+        ZLBDC(JL) = ZWLBDC(I1(JL),I2(JL),I3(JL))
+      END DO
+      WHERE( ZRCT(:)>XRTMIN(2) )
+        ZZW3(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDC(:)**(-XDC)
+        ZZW1(:) = XFSEDRC * ZRCT(:) * ZZW3(:) * ZRHODREF(:)
+        ZZW2(:) = XFSEDCC * ZCCT(:) * ZZW3(:)
+      END WHERE
+      ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+      ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+      DEALLOCATE(ZRCT)
+      DEALLOCATE(ZCCT)
+      DEALLOCATE(ZLBDC)
+    END IF
+!             
+   END IF
+!        
+   IF( OSEDC ) THEN
+     DO JK = IKB , IKE
+        ZPRCT(:,:,JK) = ZPRCT(:,:,JK) + ZW(:,:,JK)*    &
+                      (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+        ZPCCT(:,:,JK) = ZPCCT(:,:,JK) + ZW(:,:,JK)*    &
+                      (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
+     END DO
+!             
+     IF( JN.EQ.1 ) THEN
+        PINPRC(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
+     END IF
+   END IF
+!
+!*       2.22   for drizzle
+!
+  ZWSEDR(:,:,:) = 0.0
+  ZWSEDC(:,:,:) = 0.0
+  IF( ISEDIM >= 1 ) THEN
+    ZZW1(:) = 0.0
+    ZZW2(:) = 0.0
+!
+    IF( MAXVAL(PRRS(:,:,:))>0.0 ) THEN
+      ALLOCATE(ZRRT(ISEDIM)) 
+      ALLOCATE(ZCRT(ISEDIM))
+      ALLOCATE(ZZVRR(ISEDIM))
+      ALLOCATE(ZZVCR(ISEDIM))
+      DO JL = 1,ISEDIM
+        ZRRT(JL) = ZPRRT(I1(JL),I2(JL),I3(JL))
+        ZCRT(JL) = ZPCRT(I1(JL),I2(JL),I3(JL))
+        ZZVRR(JL) = ZVRR(I1(JL),I2(JL),I3(JL))
+        ZZVCR(JL) = ZVCR(I1(JL),I2(JL),I3(JL))
+      END DO
+      WHERE (ZRRT(:)>XRTMIN(3) )
+        ZZW1(:) = ZZVRR(:) * ZRRT(:) * ZRHODREF(:)
+        ZZW2(:) = ZZVCR(:) * ZCRT(:)
+      END WHERE
+      ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+      ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+!
+      DEALLOCATE(ZRRT)
+      DEALLOCATE(ZCRT)
+      DEALLOCATE(ZZVRR)
+      DEALLOCATE(ZZVCR)
+!
+    END IF
+!
+    DEALLOCATE(ZRHODREF)
+    DEALLOCATE(ZZW1)
+    DEALLOCATE(ZZW2)
+    DEALLOCATE(ZZW3)
+!
+  END IF
+!
+!*       2.3     update the rain tendency
+!
+  DO JK = IKB , IKE
+        ZPRRT(:,:,JK) = ZPRRT(:,:,JK) + ZW(:,:,JK)* &
+                      (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
+        ZPCRT(:,:,JK) = ZPCRT(:,:,JK) + ZW(:,:,JK)* &
+                      (ZWSEDC(:,:,JK+1)-ZWSEDC(:,:,JK))
+  END DO
+!
+!*       2.4     compute the explicit accumulated precipitations
+!         
+  IF( JN.EQ.1 ) THEN
+      PINPRR(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                           ! in m/s
+      PINPRR3D(:,:,:) = ZWSEDR(:,:,:)/XRHOLW                           ! in m/s
+  END IF
+!
+  IF( JN==KSPLITR ) THEN
+      IF( OSEDC ) THEN
+        PRCS(:,:,:) = ( PRCS(:,:,:) + ZPRCT(:,:,:) ) / PTSTEP
+        PCCS(:,:,:) = ( PCCS(:,:,:) + ZPCCT(:,:,:) ) / PTSTEP
+      END IF
+      PRRS(:,:,:) = ( PRRS(:,:,:) + ZPRRT(:,:,:) ) / PTSTEP
+      PCRS(:,:,:) = ( PCRS(:,:,:) + ZPCRT(:,:,:) ) / PTSTEP
+  END IF
+END DO
+!
+!*       2.5     budget storage
+!
+IF (LBUDGET_RC.AND.OSEDC)                                              &
+               CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'SEDI_BU_RRC')
+IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'SEDI_BU_RRR')
+IF (LBUDGET_SV) THEN
+  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),&
+                    &'SEDI_BU_RSV') ! RCC
+  CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
+                    &'SEDI_BU_RSV') ! RCR
+END IF
+!
+  END SUBROUTINE KHKO_SEDIMENTATION
+!
+!-------------------------------------------------------------------------------
 !
   SUBROUTINE C2R2_NUCLEATION
 !
