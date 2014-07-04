@@ -72,6 +72,7 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export MVWORK=${MVWORK:-NO}
                 export MNH_NCWRIT=${MNH_NCWRIT:-MNH_NCWRIT}
 		export VER_CDF=${VER_CDF:-CDFBFIX}
+                export NEED_TOOLS=NO
                 export MNHENV=${MNHENV:-"
 module rm intel    ; module load intel/13.1.4.183 ;
 module rm intelmpi ; module load intelmpi/4.1.1.036 ;
