@@ -1019,6 +1019,7 @@ DO JGR=1,10000
                   ZWORK3D(:,:,:)=XVAR(:,:,:,J4,J5,J6)
                   print'(A29,3(X,I4))',' mass point grid for J4,J5,J6=',J4,J5,J6
                   CALL CHANGE_A_GRID(ZWORK3D,IGRID,ZWORK3D2)
+                  NGRIDIA(J6)=IGRID
                   ! IGRID=1 en sortie de change_a_grid
                   XVAR(:,:,:,J4,J5,J6)=ZWORK3D2(:,:,:)               
                 ENDDO
@@ -1436,6 +1437,7 @@ DO JGR=1,10000
                   print'(A29,3(X,I4))',' mass point grid for J4,J5,J6=',J4,J5,J6
                   CALL CHANGE_A_GRID(ZWORK3D,IGRID,ZWORK3D2)
                   ! IGRID=1 en sortie de change_a_grid
+                  NGRIDIA(J6)=IGRID
                   XVAR(:,:,:,J4,J5,J6)=ZWORK3D2(:,:,:)               
                 ENDDO
               ENDDO
