@@ -84,6 +84,9 @@
 !        add ALT 3Dfield if KCDL, add the LAT and LON 3Dfields if CONF and *CDL
 !       04/11/2009 (G. Tanguy) : add case IJHV,IJZV, IJPV , JIHV, JIZV, JIPV
 !       29/03/2011 (G. TANGUY) : add case ZGRB PGRB
+!       11/07/2014 (G. TANGUY) : correction pour les donnees LES de type SSOl
+!                                (vlev et field ne correspondaient pas suite à
+!                                mauvais zoom)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -208,6 +211,7 @@ INTEGER :: ILEVEL2D ! en option : altitude du champ 2D à coder dans le fichier G
 LOGICAL :: LLEVEL2D 
 REAL,DIMENSION(4) :: ZLATLON
 INTEGER :: INX,INY
+REAL,DIMENSION(:,:,:),ALLOCATABLE :: ZALT
 !-------------------------------------------------------------------------------
 !
 !*       1.     INIT
@@ -898,7 +902,7 @@ DO JGR=1,10000
     ENDIF
     IF (ikdeb == 0 .AND. ikfin == 0 ) THEN
       ivarkdeb=NREADKL ; ivarkfin=NREADKH
-      IF (ivarkdeb/=ivarkfin) THEN  ! domK/=1
+      IF (ivarkdeb/=ivarkfin .AND. CTYPE/='SSOL') THEN  ! domK/=1
         ivarkdeb=MAX(1+JPVEXT,NREADKL)
         ivarkfin=min(ivarzmax,SIZE(XVAR,3)-JPVEXT)
       ENDIF
@@ -993,11 +997,21 @@ DO JGR=1,10000
         CLOSE(7)
       !
       CASE('LLHV','llhv','IJHV','jihv')
-        CALL WRITELLHV(ivarideb,ivarifin,ivarjdeb,ivarjfin, &
+        IF (CTYPE == 'SSOL') THEN
+          ALLOCATE(ZALT(1,1,SIZE(XTRAJZ,1)))
+          ZALT(1,1,:)=XTRAJZ(:,1,1)
+          CALL WRITELLHV(ivarideb,ivarifin,ivarjdeb,ivarjfin, &
                        ivarkdeb,ivarkfin,ivartinf,ivartsup, &
                        ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,&
                        CGROUP,YFILEIN,YFLAGWRITE,YTYPEOUT,&
-                       ilocverbia,iret)       
+                       ilocverbia,iret,PALT=ZALT)
+        ELSE
+          CALL WRITELLHV(ivarideb,ivarifin,ivarjdeb,ivarjfin, &
+                       ivarkdeb,ivarkfin,ivartinf,ivartsup, &
+                       ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,&
+                       CGROUP,YFILEIN,YFLAGWRITE,YTYPEOUT,&
+                       ilocverbia,iret)     
+        ENDIF  
         if (ilocverbia > 0 ) then
           print*,' WRITELLHV return= ',iret
         end if
