@@ -108,6 +108,7 @@ END MODULE MODI_WRITELLHV
 !!    MODIFICATIONS
 !!    -------------
 !     04/11/2009 (G. Tanguy) : add case IJHV,IJZV, IJPV , JIHV, JIZV, JIPV
+!     11/07/2014 (G. Tanguy) : correctoin bug IJHV au lieu de JIHV
 !
 !-------------------------------------------------------------------------------
 !
@@ -480,10 +481,10 @@ IF ( HFLAGFILE(1:3) /= 'CLO' ) THEN
               DO JILOOP= kideb,kifin
                 IF (PRESENT (PALT) ) THEN
                   if (KVERBIA > 0 .AND. JILOOP==1 .AND. JJLOOP==1) then
-                    print '(A,I4,X,F10.5)', 'JIHV 3D K,PALT(1,1,K)= ',JKLOOP, &
+                    print '(A,I4,X,F10.5)', 'IJHV 3D K,PALT(1,1,K)= ',JKLOOP, &
                                                       PALT(JILOOP,JJLOOP,JKLOOP)
                   endif
-                  IF (HTYPEOUT(1:4)=='JIHV') THEN
+                  IF (HTYPEOUT(1:4)=='IJHV') THEN
                     WRITE(ILUOUTLL,FMT=1001)JILOOP,       &
                                             JJLOOP,       &
                                             PALT(JILOOP,JJLOOP,JKLOOP), &
