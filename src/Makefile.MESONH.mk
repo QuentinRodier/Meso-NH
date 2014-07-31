@@ -27,9 +27,6 @@ ARCH_XYZ=${ARCH}${MNH_REAL}${MNH_INT}-${VERSION_XYZ}
 ifdef VER_USER
 DIR_USER += ${VER_USER}
 endif
-ifdef MNH_NCWRIT
-CPPFLAGS_MNH += -D${MNH_NCWRIT}
-endif
 ##########################################################
 #           Source MNH                                   #
 ##########################################################
@@ -142,6 +139,7 @@ INC_RTTOV      = -I$(B)LIB/RTTOV/src
 DIR_MASTER  += $(DIR_RTTOV)
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 INC         += $(INC_RTTOV)
+CPPFLAGS_MNH += -DMNH_RTTOV=${MNH_RTTOV}
 #VER_RTTOV      = RTTOV87
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_RAD)
 endif
@@ -173,6 +171,12 @@ INC                 += $(INC_NEWLFI)
 VPATH               += $(DIR_NEWLFI)
 #VER_NEWLFI=
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_NEWLFI)
+endif
+##########################################################
+#           Source NCWRIT                                #
+##########################################################
+ifdef MNH_NCWRIT
+CPPFLAGS_MNH += -DMNH_NCWRIT=${MNH_NCWRIT}
 endif
 ##########################################################
 #           Source FOREFIRE                              #
