@@ -322,7 +322,8 @@ END MODULE MODI_TURB_VER
 !!                              advection schemes
 !!                     Feb. 2012  (Y. Seity) add possibility to run with
 !!                                 reversed vertical levels
-!!                     10/2012 J.Escobar Bypass PGI bug , redefine some allocatable array inplace of automatic
+!!                     10/2012 (J.Escobar) Bypass PGI bug , redefine some allocatable array inplace of automatic
+!!                     08/2014 (J.Escobar) Bypass PGI memory leak bug , replace IF statement with IF THEN ENDIF
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -562,7 +563,9 @@ ZSQRT_TKE = SQRT(PTKEM)
 !
 ZDTH_DZ = GZ_M_W(KKA,KKU,KKL,PTHLM(:,:,:),PDZZ)
 ZDR_DZ  = 0.
-IF (KRR>0) ZDR_DZ  = GZ_M_W(KKA,KKU,KKL,PRM(:,:,:,1),PDZZ)
+IF (KRR>0) THEN
+ZDR_DZ  = GZ_M_W(KKA,KKU,KKL,PRM(:,:,:,1),PDZZ)
+ENDIF
 !
 !
 ! Denominator factor in 3rd order terms
@@ -574,8 +577,9 @@ ZD(:,:,:) = (1.+ZREDTH1+ZREDR1) * (1.+0.5*(ZREDTH1+ZREDR1))
 GUSERV = KRR/=0
 !
 ZPHI3 = PHI3(ZREDTH1,ZREDR1,ZRED2TH3,ZRED2R3,ZRED2THR3,HTURBDIM,GUSERV)
-IF(KRR/=0) &
+IF(KRR/=0) THEN
 ZPSI3 = PSI3(ZREDR1,ZREDTH1,ZRED2R3,ZRED2TH3,ZRED2THR3,HTURBDIM,GUSERV)
+ENDIF
 !
 ! Prandtl numbers for scalars
 !
