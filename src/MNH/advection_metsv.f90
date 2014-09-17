@@ -124,12 +124,14 @@ END MODULE MODI_ADVECTION_METSV
 !!                  04/2011  (V.Masson & C. Lac)     splits the routine and add time splitting
 !!                  04/2014  (C.Lac)                 adaptation of time
 !!                                                   splitting for L1D and L2D
+!!                  09/2014  (G.Delautier)              close OUTPUT_LISTING before STOP
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODE_FM
 USE MODE_ll
 USE MODE_IO_ll
 USE MODD_PARAM_n
@@ -245,17 +247,15 @@ CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER             :: ILUOUT       ! logical unit
 INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
-
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
 !	        --------------
 !
 !
-!
 GTKE=(SIZE(PTKET)/=0)
 !
-!-------------------------------------------------------------------------------
+!-----------------------------------------------------------n--------------------
 !
 !*       2.     COMPUTES THE CONTRAVARIANT COMPONENTS (FOR PPM ONLY)
 !	        --------------------------------------
@@ -366,6 +366,7 @@ IF (( (ZCFLU_MAX>=3.) .AND. (.NOT.L1D) ) .OR. &
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
   WRITE(ILUOUT,*) ' |                   MODEL STOPS                     |'
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
+  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
 END IF
