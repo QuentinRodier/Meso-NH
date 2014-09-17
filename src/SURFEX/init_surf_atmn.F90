@@ -49,6 +49,7 @@ SUBROUTINE INIT_SURF_ATM_n(HPROGRAM,HINIT, OLAND_USE,                   &
 !!     (S. Queguiner)  2011   Modif chemistry (2.4)
 !!     (B. Decharme)   2013   Read grid only once in AROME case
 !!     (G. Tanguy)     2013   Add IF(ALLOCATED(NMASK_FULL))  before deallocate
+!!     (J.Durand)      2014   add activation of chemical deposition if LCH_EMIS=F
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -417,15 +418,21 @@ IF (LCH_EMIS) THEN
         CALL CH_INIT_SNAP_n(HPROGRAM,NSIZE_FULL,HINIT,ICH,PRHOA)
       END IF
     ENDIF
+    CALL CLOSE_NAMELIST(HPROGRAM,ICH)
+  ENDIF
+  !
+END IF
     !
     !*       2.5 Initialization of dry deposition scheme (chemistry)
     !    
-    IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(ICH,ILUOUT,CSV(NSV_CHSBEG:NSV_CHSEND))
-    !
-    CALL CLOSE_NAMELIST(HPROGRAM,ICH)
-    !
-  ENDIF
-  !
+!
+IF (NBEQ .GT. 0) THEN
+ CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=CCHEM_SURF_FILE)
+
+ IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(ICH,ILUOUT,CSV(NSV_CHSBEG:NSV_CHSEND))
+!
+ CALL CLOSE_NAMELIST(HPROGRAM,ICH)
+!
 END IF
 !
 !*       2.5 Subgrid orography
