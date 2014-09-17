@@ -218,7 +218,7 @@ END MODULE MODI_PRESSUREZ
 !!                                             to save it before UPDATE_HALO
 !!                    02/2013 (J.Escobar ) add a test on abs(err) > 100.O for BG without controle of NAN
 !!                    2012    (V.Masson)  Modif update_halo due to CONTRAV
-!!
+!!                    2014    (C.Lac) correction for 3D run with LBOUSS=.TRUE.
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -248,6 +248,8 @@ USE MODE_FM
 !JUANZ
 USE MODI_SUM_ll , ONLY : GMAXLOC_ll
 USE MODD_DYN_n  , ONLY : LRES, XRES
+USE MODD_MPIF
+USE MODD_VAR_ll, ONLY : MPI_PRECISION, NMNH_COMM_WORLD
 !JUANZ
 !
 IMPLICIT NONE
@@ -355,7 +357,7 @@ REAL, DIMENSION(SIZE(PPABST,1),SIZE(PPABST,2),SIZE(PPABST,3)) :: ZTHETAV, &
                         ! LHE       => Exner function perturbation * CPD * THVREF
 !
 REAL            :: ZRV_OV_RD !  XRV / XRD
-REAL                  :: ZMAXVAL, ZMAXRES ! for print
+REAL                  :: ZMAXVAL, ZMAXRES, ZMAX,ZMAX_ll ! for print
 INTEGER, DIMENSION(3) :: IMAXLOC ! purpose
 INTEGER         :: JWATER          ! loop index on water species
 INTEGER         :: IIU,IJU,IKU     ! array sizes in I,J,K
@@ -366,7 +368,7 @@ REAL, DIMENSION(SIZE(PDXX,1),SIZE(PDXX,3)) :: ZPABS_S ! local pressure on southe
 REAL, DIMENSION(SIZE(PDXX,1),SIZE(PDXX,3)) :: ZPABS_N ! local pressure on northern side
 REAL, DIMENSION(SIZE(PDYY,2),SIZE(PDXX,3)) :: ZPABS_E ! local pressure on eastern side
 REAL, DIMENSION(SIZE(PDYY,2),SIZE(PDXX,3)) :: ZPABS_W ! local pressure on western side
-INTEGER :: IINFO_ll
+INTEGER :: IINFO_ll,KINFO
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll, TZFIELDS2_ll  ! list of fields to exchange
 !
 !
@@ -668,9 +670,13 @@ IF (LBUDGET_W) CALL BUDGET (PRWS,3,'PRES_BU_RW')
 !*       8.    ABSOLUTE PRESSURE COMPUTATION
 !              -----------------------------
 !
-!IF (      ABS(PRHODREF(IIB,IJB,IKB)-PRHODREF(IIB,IJB,IKE)) > 1.E-16 &
-!IF (      ABS(MAX_ll(PRHODREF(IIB,IJB,IKB)-PRHODREF(IIB,IJB,IKE),IINFO_ll)) > 1.E-12 
-IF (  KTCOUNT >0 .AND. .NOT.LBOUSS ) THEN
+ZMAX = MAXVAL(ABS ( PRHODREF(:,:,IKB)-PRHODREF(:,:,IKE)) )
+CALL MPI_ALLREDUCE(ZMAX, ZMAX_ll, 1, MPI_PRECISION, MPI_MAX,  &
+                   NMNH_COMM_WORLD, KINFO)
+!IF (      ABS(PRHODREF(IIB,IJB,IKB)-PRHODREF(IIB,IJB,IKE)) > 1.E-12 &
+!  .AND. KTCOUNT >0 ) THEN
+IF ((ZMAX_ll > 1.E-12) .AND. KTCOUNT >0 ) THEN 
+!IF (  KTCOUNT >0 .AND. .NOT.LBOUSS ) THEN
   CALL P_ABS   ( KRR, KRRL, KRRI, PDRYMASST, PREFMASS, PMASS_O_PHI0, &
                  PTHT, PRT, PRHODJ, PRHODREF, ZTHETAV, PTHVREF,      &
                  PRVREF, PEXNREF,  ZPHIT                             )
