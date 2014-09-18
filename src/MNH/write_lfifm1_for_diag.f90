@@ -136,6 +136,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       F. Duffourg 02/2013 : add new fields
 !!      J.Escobar 21/03/2013: for HALOK get correctly local array dim/bound
 !!       J. escobar 27/03/2014 : write LAT/LON only in not CARTESIAN case
+!!       P. Tulet 2014         : modif for DUST and SALT
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1418,7 +1419,7 @@ IF (LSALT) THEN
     WRITE(YRECFM,'(A4,I1)')'SLTMSS',JJ
     WRITE(YCOMMENT,'(A14,I1,A7)')'MASSCONC MODE ',JJ,'(ug/m3)'
     ILENCH=LEN(YCOMMENT)
-    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
+    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.**XPI*XDENSITY_SALT*1e9 & !kg-->ug
        * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
        * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
@@ -1489,7 +1490,7 @@ IF (LSALT.AND.LDEPOS_SLT(IMI)) THEN
        WRITE(YCOMMENT,'(A17,I1,A7)')'DEPMASSCONC MODE ', &
                                  JJ,'(ug/m3)'
        ILENCH=LEN(YCOMMENT)
-       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*XPI *XDENSITY_SALT*1e9 & !kg-->ug
           * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
           * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
@@ -1528,7 +1529,7 @@ IF (LSALT.AND.LDEPOS_SLT(IMI)) THEN
        WRITE(YCOMMENT,'(A17,I1,A7)')'DEPMASSCONC MODE ', &
                                  JJ+NMODE_SLT,'(ug/m3)'
        ILENCH=LEN(YCOMMENT)
-       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*XPI *XDENSITY_SALT*1e9 & !kg-->ug
           * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
           * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
@@ -1588,7 +1589,7 @@ IF (LDUST) THEN
     WRITE(YRECFM,'(A4,I1)')'DSTMSS',JJ
     WRITE(YCOMMENT,'(A14,I1,A7)')'MASSCONC MODE ',JJ,'(ug/m3)'
     ILENCH=LEN(YCOMMENT)
-    ZWORK31(:,:,:)= ZN0_DST(:,:,:,JJ)*4./3.*3.14*2500.*1e9 & !kg-->ug
+    ZWORK31(:,:,:)= ZN0_DST(:,:,:,JJ)*4./3.*XPI *XDENSITY_DUST*1e9 & !kg-->ug
        * (ZRG_DST(:,:,:,JJ)**3)*1.d-18 &  !um-->m
        * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
@@ -1659,7 +1660,7 @@ IF (LDUST.AND.LDEPOS_DST(IMI)) THEN
        WRITE(YCOMMENT,'(A17,I1,A7)')'DEPMASSCONC MODE ', &
                                  JJ,'(ug/m3)'
        ILENCH=LEN(YCOMMENT)
-       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*XPI *XDENSITY_DUST*1e9 & !kg-->ug
           * (ZRG_DST(:,:,:,JJ)**3)*1.d-18 &  !um-->m
           * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
@@ -1698,7 +1699,7 @@ IF (LDUST.AND.LDEPOS_DST(IMI)) THEN
        WRITE(YCOMMENT,'(A17,I1,A7)')'DEPMASSCONC MODE ', &
                                  JJ+NMODE_DST,'(ug/m3)'
        ILENCH=LEN(YCOMMENT)
-       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*3.14*2500.*1e9 & !kg-->ug
+       ZWORK31(:,:,:)= ZWORK31(:,:,:)*4./3.*XPI *XDENSITY_DUST*1e9 & !kg-->ug
           * (ZRG_DST(:,:,:,JJ)**3)*1.d-18 &  !um-->m
           * exp(4.5*log(ZSIG_DST(:,:,:,JJ))*log(ZSIG_DST(:,:,:,JJ)))
        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &

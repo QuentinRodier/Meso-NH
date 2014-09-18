@@ -45,6 +45,7 @@ END MODULE MODI_SALTLFI_n
 !!    -------------
 !!    none
 !!
+!!    2014    P.Tulet  modif calcul ZM
 !!    EXTERNAL
 !!    --------
 !!    None
@@ -56,6 +57,7 @@ END MODULE MODI_SALTLFI_n
 !
 USE MODD_SALT
 USE MODD_NSV
+USE MODD_GRID_n, ONLY: XZZ
 USE MODD_CSTS_SALT
 USE MODD_CST, ONLY :    &
        XPI              & !Definition of pi
@@ -84,11 +86,13 @@ REAL,DIMENSION(:,:,:),   ALLOCATABLE  :: ZSIGMA
 INTEGER,DIMENSION(:),    ALLOCATABLE  :: IM0, IM3, IM6
 REAL,DIMENSION(:),       ALLOCATABLE  :: ZMMIN
 REAL,DIMENSION(:),       ALLOCATABLE  :: ZINIRADIUS, ZINISIGMA
+REAL,DIMENSION(:,:),     ALLOCATABLE  :: ZSEA
 INTEGER :: IKU
-INTEGER :: JJ, JN, JK  ! loop counter
+INTEGER :: JI, JJ, JN, JK  ! loop counter
 INTEGER :: IMODEIDX  ! index mode
-REAL, PARAMETER  :: ZMMR_SALT=1.d-7 !kg_{sea salt}/kg_{air}
-REAL    :: ZMMR_SALTN
+REAL, PARAMETER  :: ZN_SALT=0.1 ! particles of sea salt/cm3 {air}
+REAL, PARAMETER  :: ZCLM=800. ! Marine Salt layer (m)
+REAL    :: ZN_SALTN
 !
 !-------------------------------------------------------------------------------
 !
@@ -108,6 +112,12 @@ ALLOCATE (ZSIGMA(SIZE(PSV,1), SIZE(PSV,2), SIZE(PSV,3)))
 ALLOCATE (ZINIRADIUS(NMODE_SLT))
 ALLOCATE (ZINISIGMA(NMODE_SLT))
 ALLOCATE (ZMMIN(NMODE_SLT*3))
+ALLOCATE (ZSEA(SIZE(PSV,1), SIZE(PSV,2)))
+
+ZSEA(:,:) = 0.
+WHERE ((XZZ(:,:,1) .LT. 0.1).AND.(XZZ(:,:,1) .GE. 0.)) 
+  ZSEA(:,:) = 1.
+END WHERE
 !
 !
 DO JN = 1, NMODE_SLT
@@ -142,28 +152,37 @@ ZMI   = XMOLARWEIGHT_SALT
 ZDEN2MOL = 1E-6 * XAVOGADRO / XMD
 ZFAC=(4./3.)*XPI*ZRHOI*1.e-9
 
-! conversion into mol.cm-3
-DO JJ=1,SIZE(PSV,4)
-  PSV(:,:,:,JJ) =  PSV(:,:,:,JJ) * ZDEN2MOL * PRHODREF(:,:,:)
-END DO
 !
 DO JN=1,NMODE_SLT
 
-!*       1.1    calculate moment 0 from XN0MIN_SLT
+!*       1.1    calculate moment 0 from sea salt number by m3
 !
-! change initial proportion 
-  IF (JN == 1) ZMMR_SALTN = 0.80 *  ZMMR_SALT
-  IF (JN == 2) ZMMR_SALTN = 0.10 *  ZMMR_SALT
-  IF (JN == 3) ZMMR_SALTN = 0.10 *  ZMMR_SALT
-  DO JK=1,IKU
-        ZM(:,:,JK,IM0(JN)) =               &
-                ZMMR_SALTN                 &![kg_{sea salt}/kg_{air}  
-                *PRHODREF(:,:,JK)          &![kg_{air}/m3_{air}]==> kg/m3
-                /XDENSITY_SALT             &![kg__{sea salt}/m3_{sea salt}==>m3_{sea salt}/m3{air}
-                *(6.d0/XPI)                 &
-                /(2.d0*ZINIRADIUS(JN)*1.d-6)**3 &![particle/m_sea salt^{-3}]==> particle/m3
-                *EXP(-4.5*(LOG(XINISIG_SLT(JPSALTORDER(JN))))**2) !Take into account distribution
+! initial vertical profil of sea salt  and convert in  #/m3
+  IF (JN == 1) ZN_SALTN = 1E-4  *  ZN_SALT *1E6
+  IF (JN == 2) ZN_SALTN = 1.   *  ZN_SALT *1E6
+  IF (JN == 3) ZN_SALTN = 10 *  ZN_SALT *1E6
+  DO JK=1, SIZE(XZZ,3) 
+    DO JJ=1, SIZE(XZZ,2) 
+      DO JI=1, SIZE(XZZ,1) 
+        IF (XZZ(JI,JJ,JK) .LT. 600.) THEN
+         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN 
+        ELSE IF ((XZZ(JI,JJ,JK) .GE. 600.).AND.(XZZ(JI,JJ,JK) .LT. 1000.)) THEN 
+         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN - ZN_SALTN*(1.-1E-3)*(XZZ(JI,JJ,JK)-600.) / 400.
+        ELSE IF (XZZ(JI,JJ,JK) .GE. 1000.) THEN
+         ZM(JI,JJ,JK,IM0(JN)) = ZN_SALTN *1E-3
+        END IF
+      END DO
+    END DO
+    ! Over continent value of the free troposphere
+    WHERE (ZSEA(:,:) == 0.)
+      ZM(:,:,JK,IM0(JN)) = ZN_SALTN *1E-3
+    END WHERE
+    WHERE ((ZSEA(:,:) .GT. 0.).AND.(ZSEA(:,:) .LT. 1.))
+      ZM(:,:,JK,IM0(JN)) = ZM(:,:,JK,IM0(JN))-(ZM(:,:,JK,IM0(JN)) -ZN_SALTN *1E-3) * &
+      (1. - ZSEA(:,:))
+    END WHERE
   END DO
+
   ZM(:,:,:,IM0(JN)) = MAX(ZMMIN(IM0(JN)), ZM(:,:,:,IM0(JN)))
 !
 !*       1.2    calculate moment 3 from m0,  RG and SIG 
@@ -188,6 +207,7 @@ DO JN=1,NMODE_SLT
 !
 END DO
 !
+DEALLOCATE(ZSEA)
 DEALLOCATE(ZMMIN)
 DEALLOCATE(ZINISIGMA)
 DEALLOCATE(ZINIRADIUS)

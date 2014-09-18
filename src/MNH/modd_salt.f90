@@ -33,6 +33,8 @@
 !!
 !!     MODIFICATIONS
 !!     -------------
+!! 
+!!     2014 P.Tulet modif XINIRADIUS_SLT and XN0MIN_SLT
 !!
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 !!--------------------------------------------------------------------
@@ -81,10 +83,10 @@ REAL         :: XCOEFRADMIN_SLT  = 0.1    ! maximum decreasement for Rg mode sea
 !Initial, standard deviation from Vignati et al., 2001
 !REAL, DIMENSION(3)          :: XINISIG_SLT =  (/1.9, 2., 3./)
 !Initial dry number median radius (um) from Schultz et al., 2004
-REAL, DIMENSION(3)          :: XINIRADIUS_SLT= 0.5*(/0.28, 2.25, 15.28/)
-!Initial, standard deviation from Vignati et al., 2001
+REAL, DIMENSION(3)          :: XINIRADIUS_SLT= 0.5*(/0.28, 2.25, 15.32/)
+!Initial, standard deviation from  Schultz et al., 2004
 REAL, DIMENSION(3)          :: XINISIG_SLT =  (/1.9, 2., 2./)
 !Minimum allowed number concentration for any mode (#/m3)
-REAL, DIMENSION(3)          :: XN0MIN_SLT  = (/1.e4 , 1.e2 , 1.e-1 /)
+REAL, DIMENSION(3)          :: XN0MIN_SLT  = (/1.e1 , 1. , 1.e-4 /)
 !
 END MODULE MODD_SALT

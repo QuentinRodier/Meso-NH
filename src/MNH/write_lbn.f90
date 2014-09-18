@@ -74,6 +74,7 @@ END MODULE MODI_WRITE_LB_n
 !!     G. Tanguy   10/09    add ILENCH=LEN(YCOMMENT) after
 !!                              change of YCOMMENT
 !!     M. Leriche  07/10    add NSV_* for ice phase chemistry
+!!     P. Tulet    09/14    modif SALT
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -551,8 +552,7 @@ IF (NSV >=1) THEN
         CALL DUSTLFI_n(XLBYSVM(:,:,:,NSV_DSTBEG:NSV_DSTEND), ZRHODREFY)
     END IF
     !
-    IF ((CPROGRAM == 'REAL  ').OR.&
-        (CPROGRAM == 'IDEAL ')) THEN
+    IF ((CPROGRAM == 'REAL  ').OR. (CPROGRAM == 'IDEAL ')) THEN
       ! In this case CDUSTNAMES is not allocated. We will use YPDUST_INI,
       !but remember that this variable does not follow JPDUSTORDER
       IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG + 1)/NMODE_DST
@@ -566,58 +566,55 @@ IF (NSV >=1) THEN
         STOP
       END IF ! Test IMOMENTS
       
- IF (IMOMENTS == 1) THEN
-      DO JMODE=1, NMODE_DST
-      !Index from which names are picked
-      ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + 2
-           JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+      IF (IMOMENTS == 1) THEN
+        DO JMODE=1, NMODE_DST
+          !Index from which names are picked
+          ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + 2
+          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                 +  1              & !Number of moments in this mode
                 + (NSV_DSTBEG -1)      !Previous list of tracers
 
-            IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
-             
-              YRECFM = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
-              ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
-                             IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
-           ENDIF !Check on border points in X direction
-           IF(NSIZELBYSV_ll /= 0) THEN
-              YRECFM = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
-              ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
-                            IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+          IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction             
+            YRECFM = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
+                           IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+          ENDIF !Check on border points in X direction
+          IF(NSIZELBYSV_ll /= 0) THEN
+            YRECFM = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
+                           IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
 
-           ENDIF  !Check on points in Y direction
-      ENDDO ! Loop on mode
-
- ELSE  ! valeur IMOMENTS =/ 1
-   DO JMODE=1,NMODE_DST
-      DO JMOM=1,IMOMENTS
-    ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + JMOM
-           JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+          ENDIF  !Check on points in Y direction
+        ENDDO ! Loop on mode
+      ELSE  ! valeur IMOMENTS =/ 1
+        DO JMODE=1,NMODE_DST
+          DO JMOM=1,IMOMENTS
+            ISV_NAME_IDX = (JPDUSTORDER(JMODE) - 1)*3 + JMOM
+            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                 + JMOM               & !Number of moments in this mode
                 + (NSV_DSTBEG -1)
-
+!
             IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
               YRECFM = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
               WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
               ILENCH=LEN(YCOMMENT)
               CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
                              IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
-           ENDIF !Check on border points in X direction
-           IF(NSIZELBYSV_ll /= 0) THEN
+            ENDIF !Check on border points in X direction
+            IF(NSIZELBYSV_ll /= 0) THEN
               YRECFM = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
               WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
               ILENCH=LEN(YCOMMENT)
               CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
                              IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
-
-           ENDIF  !Check on points in Y direction
-         ENDDO ! Loop on moments
-      ENDDO    ! Loop on modes
-END IF ! valeur IMOMENTS
+            ENDIF  !Check on points in Y direction
+          ENDDO ! Loop on moments
+        ENDDO    ! Loop on modes
+      END IF ! valeur IMOMENTS
 
     ELSE  ! Test CPROGRAM
       ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
@@ -640,32 +637,32 @@ END IF ! valeur IMOMENTS
          END IF            
       END DO
       IF (LDEPOS_DST(IMI)) THEN
-      DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
-        IF(NSIZELBXSV_ll /= 0) THEN
-           YRECFM = 'LBX_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-        END IF             
+        DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
+          IF(NSIZELBXSV_ll /= 0) THEN
+            YRECFM = 'LBX_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+                         & IGRID,ILENCH,YCOMMENT,IRESP)
+          END IF             
         !
-        IF(NSIZELBYSV_ll /= 0) THEN
-           YRECFM = 'LBY_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-        END IF             
-      END DO      
+          IF(NSIZELBYSV_ll /= 0) THEN
+            YRECFM = 'LBY_'//TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+                         & IGRID,ILENCH,YCOMMENT,IRESP)
+          END IF             
+        END DO      
+      END IF  
     END IF  
-
-
-    END IF  
-  ENDIF   
+  ENDIF  
   !
   IF (LSALT) THEN
     DO JK=1,size(XLBXSVM,3)
       ZRHODREFX(:,:,JK) =  XRHODREFZ(JK)
+    ENDDO
+    DO JK=1,size(XLBYSVM,3)
       ZRHODREFY(:,:,JK) =  XRHODREFZ(JK)
     ENDDO
     IF (NSIZELBXSV_ll /= 0) &
@@ -676,100 +673,126 @@ END IF ! valeur IMOMENTS
         XLBXSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND) = MAX(XLBXSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND), 0.)      
     IF (LDEPOS_SLT(IMI).AND.(NSIZELBYSV_ll /= 0)) &
         XLBYSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND) = MAX(XLBYSVM(:,:,:,NSV_SLTDEPBEG:NSV_SLTDEPEND), 0.)      
-    IF (LSLTINIT) THEN ! GRIBEX CASE (aerosols initialization)
-    IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) &
-      CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
-    IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) &
-      CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
-    IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) &
-      CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
-    IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) &
-      CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
+    IF ((LSLTINIT).OR.(LSLTPRES)) THEN ! GRIBEX case (dust initialization)
+      IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) THEN
+        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
+      END IF
+      IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'REAL ').AND.(NSV_SLT > 1)) THEN
+        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
+      END IF
+      IF ((NSIZELBXSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) THEN
+        CALL SALTLFI_n(XLBXSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFX)
+      END IF
+      IF ((NSIZELBYSV_ll /= 0).AND.(CPROGRAM == 'IDEAL ').AND.(NSV_SLT > 1)) THEN
+        CALL SALTLFI_n(XLBYSVM(:,:,:,NSV_SLTBEG:NSV_SLTEND), ZRHODREFY)
+      END IF
     END IF
     !
-    IF ((CPROGRAM == 'REAL  ').OR.&
-        (CPROGRAM == 'IDEAL ')) THEN
+    IF ((CPROGRAM == 'REAL  ').OR. (CPROGRAM == 'IDEAL ')) THEN
       ! In this case CSALTNAMES is not allocated. We will use YPSALT_INI,
       !but remember that this variable does not follow JPSALTORDER
       IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG + 1)/NMODE_SLT
       !Should equal 3 at this point
-      IF (IMOMENTS .NE. 3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lbn: number of moments SLT must be 3'
+      IF (IMOMENTS >  3) THEN
+        WRITE(ILUOUT,*) 'Error in write_lbn: number of moments must be 3'
         WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
  !callabortstop
         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
         CALL ABORT
         STOP
-      END IF
-      DO JMODE=1, NMODE_SLT
-        DO JMOM = 1, IMOMENTS
-           !Index from which names are picked
-           ISV_NAME_IDX = (JPSALTORDER(JMODE)-1)*IMOMENTS + JMOM  
-           !Index which counts in the XLBXSV
-           JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+      END IF ! Test IMOMENTS      
+      IF (IMOMENTS == 1) THEN
+        DO JMODE=1, NMODE_SLT
+          !Index from which names are picked
+          ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + 2
+          JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
+                +  1              & !Number of moments in this mode
+                + (NSV_SLTBEG -1)      !Previous list of tracers
+
+          IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction   
+            YRECFM = 'LBX_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
+                           IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+          ENDIF !Check on border points in X direction
+          IF(NSIZELBYSV_ll /= 0) THEN
+            YRECFM = 'LBY_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
+                           IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+
+          ENDIF  !Check on points in Y direction
+        ENDDO ! Loop on mode
+      ELSE  ! valeur IMOMENTS =/ 1
+        DO JMODE=1,NMODE_SLT
+          DO JMOM=1,IMOMENTS
+            ISV_NAME_IDX = (JPSALTORDER(JMODE) - 1)*3 + JMOM
+            JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
                 + JMOM               & !Number of moments in this mode
-                + (NSV_SLTBEG -1)      !Previous list of tracers  
-           IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
+                + (NSV_SLTBEG -1)
+
+            IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
               YRECFM = 'LBX_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
               WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
               ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
-                   & IGRID,ILENCH,YCOMMENT,IRESP)
-           ENDIF !Check on border points in X direction
-           IF(NSIZELBYSV_ll /= 0) THEN
+              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
+                             IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+            ENDIF !Check on border points in X direction
+            IF(NSIZELBYSV_ll /= 0) THEN
               YRECFM = 'LBY_'//TRIM(YPSALT_INI(ISV_NAME_IDX))
               WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
               ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
-                   & IGRID,ILENCH,YCOMMENT,IRESP)
-        
-           ENDIF  !Check on points in Y direction
-         ENDDO ! Loop on moments
-      ENDDO    ! Loop on modes
-      !    
-    ELSE  
+              CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
+                             IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+
+            ENDIF  !Check on points in Y direction
+          ENDDO ! Loop on moments
+        ENDDO    ! Loop on modes
+      END IF ! valeur IMOMENTS
+    ELSE  ! Test CPROGRAM
       ! We are in the subprogram MESONH, CSALTNAMES are allocated and are 
       !in the same order as the variables in XSVM (i.e. following JPSALTORDER)
       DO JSV = NSV_SLTBEG,NSV_SLTEND
         IF(NSIZELBXSV_ll /= 0) THEN
-           YRECFM = 'LBX_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-        END IF
-             !
-        IF(NSIZELBYSV_ll /= 0) THEN
-           YRECFM = 'LBY_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-        END IF             
-      END DO
-      IF (LDEPOS_SLT(IMI)) THEN
-      DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
-        IF(NSIZELBXSV_ll /= 0) THEN
-           YRECFM = 'LBX_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
+          YRECFM = 'LBX_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+          WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
+          ILENCH=LEN(YCOMMENT)
+          CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+                       & IGRID,ILENCH,YCOMMENT,IRESP)
         END IF             
         !
         IF(NSIZELBYSV_ll /= 0) THEN
-           YRECFM = 'LBY_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-        END IF             
-      END DO      
+          YRECFM = 'LBY_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+          WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
+          ILENCH=LEN(YCOMMENT)
+          CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+                       & IGRID,ILENCH,YCOMMENT,IRESP)
+        END IF            
+      END DO
+      IF (LDEPOS_SLT(IMI)) THEN
+        DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
+          IF(NSIZELBXSV_ll /= 0) THEN
+            YRECFM = 'LBX_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+                         & IGRID,ILENCH,YCOMMENT,IRESP)
+          END IF             
+        !
+          IF(NSIZELBYSV_ll /= 0) THEN
+            YRECFM = 'LBY_'//TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))
+            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
+            ILENCH=LEN(YCOMMENT)
+            CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+                         & IGRID,ILENCH,YCOMMENT,IRESP)
+          END IF             
+        END DO      
       END IF  
-
     END IF  
   ENDIF   
-
+!
   ! lagrangian variables
   DO JSV = NSV_LGBEG,NSV_LGEND
     IF(NSIZELBXSV_ll /= 0) THEN
