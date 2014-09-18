@@ -1419,7 +1419,7 @@ IF (LSALT) THEN
     WRITE(YRECFM,'(A4,I1)')'SLTMSS',JJ
     WRITE(YCOMMENT,'(A14,I1,A7)')'MASSCONC MODE ',JJ,'(ug/m3)'
     ILENCH=LEN(YCOMMENT)
-    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.**XPI*XDENSITY_SALT*1e9 & !kg-->ug
+    ZWORK31(:,:,:)= ZN0_SLT(:,:,:,JJ)*4./3.*XPI*XDENSITY_SALT*1e9 & !kg-->ug
        * (ZRG_SLT(:,:,:,JJ)**3)*1.d-18 &  !um-->m
        * exp(4.5*log(ZSIG_SLT(:,:,:,JJ))*log(ZSIG_SLT(:,:,:,JJ)))
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
