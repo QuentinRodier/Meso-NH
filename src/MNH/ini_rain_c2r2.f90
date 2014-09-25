@@ -72,7 +72,7 @@ END MODULE MODI_INI_RAIN_C2R2
 !!      Module MODD_PARAMETERS
 !!        JPVEXT               !
 !!      Module MODD_RAIN_C2R2_DESCR
-!!      Module MODD_RAIN_C2R2_PARAM
+!!      Module MODD_RAIN_C2R2_KHKO_PARAM
 !!
 !!    REFERENCE
 !!    ---------
@@ -90,6 +90,7 @@ END MODULE MODI_INI_RAIN_C2R2
 !!      J.-P. Pinty 05/04/02  Add computation of the effective radius
 !!      J.-P. Pinty 29/11/02  Add cloud doplet fall speed parameters
 !!      O.Geoffroy  03/2006   Add KHKO scheme
+!!      G.Delautier 09/2014   fusion MODD_RAIN_C2R2_PARAM et MODD_RAIN_KHKO_PARAM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -99,8 +100,7 @@ USE MODD_CST
 USE MODD_REF
 USE MODD_PARAM_C2R2
 USE MODD_RAIN_C2R2_DESCR
-USE MODD_RAIN_C2R2_PARAM
-USE MODD_RAIN_KHKO_PARAM
+USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
@@ -184,7 +184,7 @@ SPLIT : DO
 END DO SPLIT
 !
 IF (ALLOCATED(XRTMIN)) RETURN     ! In case of nesting microphysics constants of
-!                                 ! MODD_RAIN_C2R2_PARAM are computed only once.
+!                                 ! MODD_RAIN_C2R2_KHKO_PARAM are computed only once.
 !
 !-------------------------------------------------------------------------------
 !

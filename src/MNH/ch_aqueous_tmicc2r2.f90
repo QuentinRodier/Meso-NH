@@ -70,6 +70,7 @@ END MODULE MODI_CH_AQUEOUS_TMICC2R2
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/05/08
+!!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!
 !-------------------------------------------------------------------------------
 !
@@ -81,7 +82,7 @@ USE MODD_PARAMETERS,ONLY: JPHEXT,    &! number of horizontal External points
 USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN, &
                                  XLBC, XLBEXC,   &
                                  XLBR, XLBEXR
-USE MODD_RAIN_C2R2_PARAM, ONLY : XAUTO1, XAUTO2,               & 
+USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XAUTO1, XAUTO2,               & 
                                  XLAUTR, XLAUTR_THRESHOLD,     &
                                  XITAUTR, XITAUTR_THRESHOLD,   &
                                  XACCR1, XACCR2, XACCR3,       & 

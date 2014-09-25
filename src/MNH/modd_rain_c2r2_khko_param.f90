@@ -9,16 +9,16 @@
 ! MASDEV4_7 modd 2006/10/16 14:23:23
 !-----------------------------------------------------------------
 !     ###########################
-      MODULE MODD_RAIN_C2R2_PARAM
+      MODULE MODD_RAIN_C2R2_KHKO_PARAM
 !     ###########################
 !
-!!****  *MODD_RAIN_C2R2_PARAM* - declaration of some microphysical factors
+!!****  *MODD_RAIN_C2R2_KHKO_PARAM* - declaration of some microphysical factors
 !!                               extensively used in the warm scheme.
 !!
 !!    PURPOSE
 !!    -------
 !       The purpose of this declarative module is to declare some precomputed
-!     microphysical paramters directly used in routine RAIN_C2R2.
+!     microphysical paramters directly used in routine RAIN_C2R2_KHKO
 !
 !!
 !!**  IMPLICIT ARGUMENTS
@@ -27,16 +27,17 @@
 !!
 !!    REFERENCE
 !!    ---------
-!!      Book2 of documentation of Meso-NH (MODD_RAIN_C2R2_PARAM)
 !!          
 !!    AUTHOR
 !!    ------
 !!	J.-P. Pinty  *Laboratoire d'Aerologie*
+!!	O.Geoffroy (GMEI)
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/12/95                      
 !!       J.-P. Pinty   29/11/02 add cloud droplet cond/eva parameters for C3R5
+!!       G.Delautier 2014 : fusion MODD_RAIN_KHKO_PARAM et MODD_RAIN_C2R2_PARAM
 !!
 !-------------------------------------------------------------------------------
 !
@@ -110,4 +111,10 @@ REAL,SAVE :: XFREFFR  ! Factor to compute the rain drop     effective radius
 REAL,SAVE :: XCREC, XCRER
                       ! Factors to compute reff when cloud and rain are present
 !
-END MODULE MODD_RAIN_C2R2_PARAM 
+REAL,SAVE ::   XR0                               ! new drizzle drops radius
+    	                                         ! autoconversion
+!
+REAL,SAVE :: XCEVAP                              ! Constants for raindrop
+                                                 ! evaporation 
+
+END MODULE MODD_RAIN_C2R2_KHKO_PARAM 

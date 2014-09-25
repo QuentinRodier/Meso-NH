@@ -202,6 +202,7 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         A. Grini          09/04/05 dust direct effect
 !         V.Puygrenier 07/2009 Correction on ice effective radius
 !         B. Aouizerats 09/2010 Explicit aerosol optical properties computation
+!         G.Delautier 9/2014: remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -230,7 +231,7 @@ USE YOERRTWN , ONLY : NG ,NSPA ,NSPB ,WAVENUM1  ,&
 !
 !MESO-NH modules
 USE MODD_PARAMETERS
-USE MODD_RAIN_C2R2_PARAM, ONLY : XCREC, XCRER, XFREFFR
+USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XCREC, XCRER, XFREFFR
 USE MODD_RAIN_C2R2_DESCR, ONLY : XAC, XAR,       &
                                  XLBEXC, XLBEXR, &
                                  XRTMIN, XCTMIN

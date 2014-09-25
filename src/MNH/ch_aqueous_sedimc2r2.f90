@@ -71,6 +71,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIMC2R2
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    30/10/08
+!!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!
 !-------------------------------------------------------------------------------
 !
@@ -81,7 +82,7 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_RAIN_C2R2_DESCR, ONLY : XCEXVT, XRTMIN, XCTMIN, &
                                  XLBR, XLBEXR, XDR
-USE MODD_RAIN_C2R2_PARAM, ONLY : XFSEDRR, XFSEDCR
+USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XFSEDRR, XFSEDCR
 !
 IMPLICIT NONE
 !

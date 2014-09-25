@@ -58,12 +58,14 @@ END MODULE MODI_KHKO_NOTADJUST
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!     2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !
 USE MODD_CST
-USE MODD_RAIN_C2R2_PARAM
+USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_PARAM_C2R2
 USE MODI_GAMMA
 USE MODE_IO_ll

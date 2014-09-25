@@ -68,7 +68,7 @@ END MODULE MODI_SET_CONC_RAIN_C2R2
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!      Module MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN
-!!      Module MODD_RAIN_C2R2_PARAM, ONLY : XCONCC_INI, XCONCR_PARAM_INI
+!!      Module MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XCONCC_INI, XCONCR_PARAM_INI
 !!      Module MODD_CONF,            ONLY : NVERB
 !!
 !!    REFERENCE
@@ -83,6 +83,7 @@ END MODULE MODI_SET_CONC_RAIN_C2R2
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/11/00
+!!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!
 !-------------------------------------------------------------------------------
 !
@@ -90,7 +91,7 @@ END MODULE MODI_SET_CONC_RAIN_C2R2
 !              ------------
 !
 USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN
-USE MODD_RAIN_C2R2_PARAM, ONLY : XCONCC_INI, XCONCR_PARAM_INI
+USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XCONCC_INI, XCONCR_PARAM_INI
 USE MODD_CONF,            ONLY : NVERB
 !
 USE MODE_FM

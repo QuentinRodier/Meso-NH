@@ -256,7 +256,7 @@ USE MODI_SLOW_TERMS
 USE MODI_FAST_TERMS
 USE MODI_ICE_ADJUST
 USE MODI_RAIN_ICE
-USE MODI_RAIN_C2R2
+USE MODI_RAIN_C2R2_KHKO
 USE MODI_ICE_C1R3
 USE MODI_C2R2_ADJUST
 USE MODI_KHKO_NOTADJUST
@@ -264,7 +264,6 @@ USE MODI_C3R5_ADJUST
 USE MODI_SHUMAN
 USE MODI_BUDGET
 !
-USE MODI_RAIN_KHKO
 !
 IMPLICIT NONE
 !
@@ -711,16 +710,16 @@ SELECT CASE ( HCLOUD )
                       PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR                    )
 !
 !
-  CASE ('C2R2')
+  CASE ('C2R2','KHKO')
 !
-!*       7.     2-MOMENT WARM MICROPHYSICAL SCHEME C2R2 
+!*       7.     2-MOMENT WARM MICROPHYSICAL SCHEME C2R2 or KHKO
 !               ---------------------------------------
 !
 !
 !*       7.1    Compute the explicit microphysical sources
 !
 !
-    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
+    CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,          &
                      HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
@@ -748,47 +747,6 @@ SELECT CASE ( HCLOUD )
                        PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
                        PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
                        PSRCS=PSRCS, PCLDFR=PCLDFR, PRRS=PRS(:,:,:,3)           )
-!
-   END IF
-!
-  CASE ('KHKO')                                                                 
-!
-!*       8.   Khairoutdinov and Kogan scheme
-!             ------------------------------
-!
-!
-!*       8.1    Compute the explicit microphysical sources!
-!
-!
-    CALL RAIN_KHKO ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,             &
-                     PZZ, PRHODJ, PRHODREF, PEXNREF,                         &
-                     PPABST, PTHT,                                           &
-                     PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),               &
-                     PTHM, PRCM, PPABSM,                                     &
-                     PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3), &
-                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),            &
-                     ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),            &
-                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                      &
-                     PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN        )
-!
-!*       8.2    Perform the saturation adjustment
-!
-   IF (LSUPSAT) THEN
-    CALL KHKO_NOTADJUST (KRR, KTCOUNT,HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,         &
-                         PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
-                         PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
-                         PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
-                         ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
-                         ZSVS(:,:,:,4), PCLDFR, PSRCS                            )
-!
-   ELSE
-    CALL C2R2_ADJUST ( KRR, HFMFILE, HLUOUT, HRAD,                             &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
-                       PRHODJ, PSIGS, PPABST,                                  &
-                       PTHS=PTHS, PRVS=PRS(:,:,:,1),                           &
-                       PRCS=PRS(:,:,:,2),                                      &
-                       PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
-                       PSRCS=PSRCS, PCLDFR=PCLDFR,  PRRS=PRS(:,:,:,3)          )
 !
    END IF
 !
@@ -879,7 +837,7 @@ SELECT CASE ( HCLOUD )
 !
 !*       11.1   Compute the explicit microphysical sources
 !
-    CALL RAIN_C2R2 ( OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
+    CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
                      HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
                      PPABST, PTHT,                                                &
                      PRT(:,:,:,1), PRT(:,:,:,2),                                  &

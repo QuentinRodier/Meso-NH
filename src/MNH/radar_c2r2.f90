@@ -81,6 +81,7 @@ END MODULE MODI_RADAR_C2R2
 !!      Original    04/05/96
 !!                  03/12/96 change the arg. list
 !!                  13/10/98 remove function statement
+!!                  2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!
 !-------------------------------------------------------------------------------
 !
@@ -93,7 +94,7 @@ USE MODD_REF
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 USE MODD_PARAM_C2R2
-USE MODD_RAIN_C2R2_PARAM
+USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_RAIN_C2R2_DESCR
 !
 USE MODI_GAMMA
