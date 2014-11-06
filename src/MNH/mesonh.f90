@@ -76,6 +76,7 @@
 !!      J.P. Chaboureau             15/03/04  loop limited to 100000 iterations
 !!                                           remplaced by infinite loop
 !!      J.Escobar                 19/03/2008  rename INIT to INIT_MNH --> grib problem
+!!      J.Escobar                  6/11/2014  remove test on LCHECK otherwise never call MPPDB_INIT
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -113,9 +114,7 @@ INTEGER       :: IINFO_ll                     ! return code of // routines
 !*       1.    INITIALIZATION
 !              --------------
 ! Switch to model 1 variables
-IF (LCHECK) THEN
- CALL MPPDB_INIT()
-END IF
+CALL MPPDB_INIT()
 CALL GOTO_MODEL(1)
 !
 CALL INITIO_ll()
