@@ -224,6 +224,7 @@ END MODULE MODI_READ_FIELD
 !!          P. Peyrille   06/12   2D west african monsoon : add reading of ADV forcing and addy fluxes 
 !!          C.Lac       03/13     add prognostic supersaturation for C2R2/KHKO
 !!          Bosseur & Filippi 07/13 Adds Forefire
+!!          M. Leriche  11/14     correct bug in pH initialization
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -243,7 +244,6 @@ USE MODD_PASPOL
 USE MODD_FOREFIRE
 #endif
 USE MODD_CH_AEROSOL
-USE MODD_CH_MNHC_n, ONLY : XCH_PHINIT
 !
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
@@ -987,7 +987,7 @@ SELECT CASE(HGETPHC)             ! pH in cloud water
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPHC,IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
   CASE('INIT')
-    PPHC(:,:,:)=XCH_PHINIT
+    PPHC(:,:,:)=0.
 END SELECT
 !
 SELECT CASE(HGETPHR)             ! pH in rainwater
@@ -997,7 +997,7 @@ SELECT CASE(HGETPHR)             ! pH in rainwater
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPHR,IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
   CASE('INIT')
-    PPHR(:,:,:)=XCH_PHINIT
+    PPHR(:,:,:)=0.
 END SELECT
 !
 IRESP=0

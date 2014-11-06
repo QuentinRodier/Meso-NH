@@ -106,6 +106,7 @@ END MODULE MODI_CH_MONITOR_n
 !!                         + supress line transfer H2SO4 from AP to gas phase
 !!                         imply transfer H2SO4 AP in aqueous phase if aq.chem.
 !!    04/2014 (C.Lac) Remove GCENTER with FIT temporal scheme
+!!    06/11/14 (M Leriche) Bug in pH computing
 !!
 !!    EXTERNAL
 !!    --------
@@ -1085,7 +1086,6 @@ DO JL=1,ISVECNMASK
   IF (LUSECHAQ.AND.LCH_PH) THEN
     SELECT CASE(NRRL)
       CASE(1)
-        XPHC(:,:,:) = 0.0
         DO JM=0,ISVECNPT-1
           JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
           JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
@@ -1093,8 +1093,6 @@ DO JL=1,ISVECNMASK
           XPHC(JI,JJ,JK) = ZPH(JM+1,1)
         END DO
       CASE(2)
-        XPHC(:,:,:) = 0.0
-        XPHR(:,:,:) = 0.0
         DO JM=0,ISVECNPT-1
           JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
           JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
