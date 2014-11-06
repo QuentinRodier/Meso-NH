@@ -132,7 +132,8 @@ OPT_PERF1  =  -O1 -Kieee -g
 OBJS_O1= spll_modd_isba_n.o spll_pack_isba_patch_n.o spll_mode_construct_ll.o \
          spll_init_surf_atm_n.o spll_mode_scatter_ll.o spll_convert_patch_teb.o \
          spll_define_mask_n.o spll_del1dfield_ll.o spll_mode_fm.o spll_mode_gather_ll.o \
-         spll_phys_param_n.o
+	 spll_phys_param_n.o \
+	 spll_convect_updraft.o spll_convect_updraft_shal.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 
 #
