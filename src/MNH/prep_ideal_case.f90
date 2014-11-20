@@ -307,7 +307,8 @@
 !!      USE MODDB_ADVFRC_n for grid-nesting               02*2012 (M. Tomasini)
 !!      LBOUSS in MODD_REF                                07/2013 (C.Lac)
 !!      Correction for ZS in PGD file                     04/2014 (G. TANGUY)
-!!      Bug : remove NC WRITE_HGRID                       05/2014 (S. Bielli via J.Escobar ) 
+!!      Bug : remove NC WRITE_HGRID                       05/2014 (S. Bielli via J.Escobar )
+!!      BUG if ZFRC and ZFRC_ADV or ZFRC_REL are used together  11/2014 (G. Delautier)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1448,7 +1449,7 @@ END IF
 !
 IF (LFORCING) THEN
   WRITE(NLUOUT,FMT=*) 'FORCING IS ENABLED, ATTEMPT TO SET FORCING FIELDS'
-  CALL POSKEY(NLUPRE,NLUOUT,'ZFRC','PFRC')
+  CALL POSKEY(NLUPRE,NLUOUT,'ZFRC ','PFRC')
   CALL SET_FRC(CEXPRE)
 END IF
 !
