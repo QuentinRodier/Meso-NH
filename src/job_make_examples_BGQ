@@ -18,7 +18,7 @@
 
 cd $LOADL_STEP_INITDIR
 
-. ../conf/profile_mesonh-BGQI4-MNH-V5-1-2-MPIAUTO-O2NAN
+. ../conf/profile_mesonh-BGQI4-MNH-V5-1-3-MPIAUTO-O2NAN
 #. ../conf/profile_mesonh-BGQI4-MNH-V4-10-1-MPIAUTO-O2
 
 set -x
