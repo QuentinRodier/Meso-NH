@@ -37,6 +37,7 @@
 !!      Original         07/2006
 !!      P. Aumond        10/2009 Add possibility of user maskS
 !!       F.Couvreux      06/2011 : Conditional sampling
+!!       C.Lac           10/2014 : Correction on user masks   
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -351,7 +352,6 @@ END IF
 !
 IF (LLES_MY_MASK) THEN
   ALLOCATE(LLES_CURRENT_MY_MASKS(IIU,IJU,NLES_K,NLES_MASKS_USER))
-  ALLOCATE(LLES_CURRENT_MY_MASK(IIU,IJU,NLES_K))
   DO JI=1,NLES_MASKS_USER
     LLES_CURRENT_MY_MASKS (:,:,:,JI) = .FALSE.
   END DO

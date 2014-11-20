@@ -44,7 +44,8 @@
 !!       V. Masson  Nov.   6, 2002  LES budgets
 !!       F. Couvreux Oct   1, 2006  LES PDF
 !!       J.Pergaud   Oct    , 2007  MF LES     
-!!       P. Aumond   Oct     , 2009  User multimaskS + 4th order
+!!       P. Aumond   Oct     ,2009  User multimaskS + 4th order
+!!       C.Lac       Oct     ,2014  Correction on user masks
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -125,7 +126,6 @@ LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: LLES_CURRENT_NEB_MASK
 LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: LLES_CURRENT_CORE_MASK
 ! 2D surface precipitations mask of the current model
 !
-LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: LLES_CURRENT_MY_MASK
 ! 2D owner mask of the current model
 LOGICAL, DIMENSION(:,:,:,:), ALLOCATABLE :: LLES_CURRENT_MY_MASKS
 !

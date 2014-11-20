@@ -39,6 +39,7 @@
 !!                06/08    (O.Thouron) Add radiative diagnostics
 !!                12/10    (R.Honnert) Add EDKF mass flux in BL height
 !!                10/09    (P. Aumond) Add possibility of user maskS
+!!                10/14    (C.Lac) Correction on user masks
 !!
 !! --------------------------------------------------------------------------
 !
@@ -888,8 +889,10 @@ END IF
 !            -------------------------------------
 !
 IF (LLES_MY_MASK) THEN
+ DO JI=1,NLES_MASKS_USER
   IMASK=IMASK+1
-  CALL LES(LLES_CURRENT_MY_MASK)
+  CALL LES(LLES_CURRENT_MY_MASKS(:,:,:,JI))
+ END DO
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -1069,7 +1072,9 @@ DEALLOCATE(ZDTHRADLW_LES  )
 DEALLOCATE(LLES_CURRENT_CART_MASK)
 IF (LLES_NEB_MASK)     DEALLOCATE(LLES_CURRENT_NEB_MASK)
 IF (LLES_CORE_MASK)    DEALLOCATE(LLES_CURRENT_CORE_MASK)
-IF (LLES_MY_MASK)      DEALLOCATE(LLES_CURRENT_MY_MASK)
+IF (LLES_MY_MASK)   THEN
+   DEALLOCATE(LLES_CURRENT_MY_MASKS)
+END IF
 IF (LLES_CS_MASK)   THEN
     DEALLOCATE(LLES_CURRENT_CS1_MASK)
     IF (NSV_CS >= 2) DEALLOCATE(LLES_CURRENT_CS2_MASK)

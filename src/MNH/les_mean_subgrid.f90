@@ -67,6 +67,7 @@ END MODULE MODI_LES_MEAN_SUBGRID
 !!    -------------
 !!      Original         07/02/00
 !!      V. Masson        06/11/02 use of 2D masks
+!!       C.Lac           10/2014 : Correction on user masks
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -101,6 +102,7 @@ INTEGER, DIMENSION(SIZE(PA_MEAN,1)) :: IAVG_PTS
 INTEGER, DIMENSION(SIZE(PA_MEAN,1)) :: IUND_PTS
 !
 INTEGER                             :: IMASK     ! mask counter
+INTEGER                             :: JI        ! loop control
 !-------------------------------------------------------------------------------
 !
 IF (.NOT. LLES_CALL) RETURN
@@ -259,9 +261,10 @@ END IF
 !  ---------------------------------
 !
 IF (LLES_MY_MASK) THEN
+ DO JI=1,NLES_MASKS_USER
   IMASK = IMASK + 1
 !
-  GMASK(:,:,:) = LLES_CURRENT_MY_MASK(:,:,:)
+  GMASK(:,:,:) = LLES_CURRENT_MY_MASKS(:,:,:,JI)
 !
 !* averaging on the current processor domain of the subgrid variable
 !
@@ -271,6 +274,7 @@ IF (LLES_MY_MASK) THEN
     IF (OSUM) ZA_MEAN_OLD(:) = PA_MEAN(:,NLES_CURRENT_TCOUNT,IMASK)
   END IF
   PA_MEAN(:,NLES_CURRENT_TCOUNT,IMASK) = ZA_MEAN_OLD(:) + ZA_MEAN(:)
+ END DO
 END IF
 !
 !-------------------------------------------------------------------------------
