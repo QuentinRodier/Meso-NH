@@ -27,6 +27,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 01/06/07
+!!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -43,6 +44,8 @@ TYPE CH_PH_t
 !
   REAL, POINTER, DIMENSION(:,:,:) :: XPHC ! cloud
   REAL, POINTER, DIMENSION(:,:,:) :: XPHR ! rain
+  REAL, POINTER, DIMENSION(:,:,:) :: XACPRAQ ! sum of aqueous chemical species fall at the surface by rain
+                                             ! in moles i / m2 (ratio with XACPRR for concentration
 !
 !-----------------------------------------------------------------------------
 END TYPE CH_PH_t
@@ -51,6 +54,7 @@ TYPE(CH_PH_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: CH_PH_MODEL
 
 REAL, POINTER, DIMENSION(:,:,:) :: XPHC=>NULL()
 REAL, POINTER, DIMENSION(:,:,:) :: XPHR=>NULL()
+REAL, POINTER, DIMENSION(:,:,:) :: XACPRAQ=>NULL()
 
 CONTAINS
 
@@ -60,10 +64,12 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 ! Save current state for allocated arrays
 CH_PH_MODEL(KFROM)%XPHC=>XPHC
 CH_PH_MODEL(KFROM)%XPHR=>XPHR
+CH_PH_MODEL(KFROM)%XACPRAQ=>XACPRAQ
 !
 ! Current model is set to model KTO
 XPHC=>CH_PH_MODEL(KTO)%XPHC
 XPHR=>CH_PH_MODEL(KTO)%XPHR
+XACPRAQ=>CH_PH_MODEL(KTO)%XACPRAQ
 
 END SUBROUTINE CH_PH_GOTO_MODEL
 

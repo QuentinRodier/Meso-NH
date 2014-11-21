@@ -258,6 +258,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   June  2011  (P.Aumond) Drag of the vegetation  
 !!                                         + Mean fields
 !!                   July  2013  (Bosseur & Filippi) Adds Forefire
+!!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1415,6 +1416,8 @@ IF ( (LUSECHAQ.AND.LCH_PH) .AND.  &
   IF (NRRL==2) THEN
     ALLOCATE(XPHR(IIU,IJU,IKU))
   ENDIF
+  ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
+  XACPRAQ(:,:,:) = 0.
 ENDIF
 !
 !-------------------------------------------------------------------------------

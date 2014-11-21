@@ -155,6 +155,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       Pialat/Tulet  15/02/2012 add ForeFire variables
 !!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
 !!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
+!!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -1005,6 +1006,16 @@ IF (NSV >=1) THEN
         YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1) ! without M
       END DO
     ENDIF
+    IF (LUSECHAQ.AND.NRR>=3) THEN ! accumulated moles of aqueous species that fall at the surface (mol i/m2) 
+    DO JSV = NSV_CHACBEG+NSV_CHAC/2,NSV_CHACEND
+    YRECFM='ACPR_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
+    ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
+    YCOMMENT    = 'X_Y_Accumulated moles of aqueous species at the surface (mol i/m2)'
+    IGRID       = 1
+    ILENCH      = LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH,YCOMMENT,IRESP)
+    END DO
+    END IF
     IF (LUSECHAQ.AND.LCH_PH) THEN  ! pH values in cloud
       YRECFM = 'PHC'
       YCOMMENT='X_Y_Z_PHC'

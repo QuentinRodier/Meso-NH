@@ -226,6 +226,7 @@ END MODULE MODI_MODEL_n
 !!                   April 2011 (C.Lac) : Remove instant M 
 !!                   April 2011 (C.Lac, V.Masson) : Time splitting for advection
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -292,6 +293,8 @@ USE MODD_SERIES_n, ONLY: NFREQSERIES
 USE MODD_CH_AERO_n,    ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                              LCH_INIT_FIELD
+USE MODD_CH_PH_n
+USE MODD_CST, ONLY: XMD
 USE MODD_NUDGING_n
 USE MODD_PARAM_MFSHALL_n
 USE MODD_ELEC_DESCR
@@ -1673,10 +1676,20 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
 !
   IF (CCLOUD /= 'REVE' ) THEN
     XACPRR = XACPRR + XINPRR * XTSTEP
+      IF (LUSECHAQ) THEN
+      DO JSV=1,NSV_CHAC/2
+      WHERE(XRT(:,:,IKB,3) .GT. 0.)
+      XACPRAQ(:,:,JSV) = XACPRAQ(:,:,JSV) + &
+              (XSVT(:,:,IKB,JSV+NSV_CHACBEG+NSV_CHAC/2-1))/ (XMD*XRT(:,:,IKB,3))*& ! moles i  / kg eau
+               XINPRR(:,:) * XTSTEP ! moles i / m2
+      END WHERE
+      END DO
+      END IF
     IF ((CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                       &
         ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') &
-                              .AND. LSEDC  )      )                     &
+                              .AND. LSEDC  )      )   THEN                  
       XACPRC = XACPRC + XINPRC * XTSTEP
+    END IF
     IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5') THEN
       XACPRS = XACPRS + XINPRS * XTSTEP
       XACPRG = XACPRG + XINPRG * XTSTEP
