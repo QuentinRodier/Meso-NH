@@ -58,7 +58,7 @@ END MODULE MODI_WRITE_SERIES_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    4/03/2002
-!!      Modification 7/01/2013 Add key MNH_NCWRIT for netcdf writing
+!!      Modification 7/01/2013 Add key for netcdf writing
 !!
 !-------------------------------------------------------------------------------
 !
