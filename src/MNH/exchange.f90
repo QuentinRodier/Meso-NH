@@ -85,7 +85,9 @@ END MODULE MODI_EXCHANGE
 !!                 05/2006   Remove KEPS
 !!                 10/2009 (C.Lac) FIT for variables advected by PPM
 !!                 05/2014 (C.Lac) Correction of negative values of chemical
-!!                   tracers moved from ch_monitor to the end of the time step 
+!!                   tracers moved from ch_monitor to the end of the time step
+!!                 11/2014 (G.Delautier) Call correction of negative values only
+!!                         if LUSECHEM 
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -102,6 +104,7 @@ USE MODD_LUNIT_n,     ONLY : CLUOUT
 USE MODI_SHUMAN
 USE MODI_SUM_ll
 USE MODI_BUDGET
+USE MODD_CH_MNHC_n, ONLY : LUSECHEM
 !
 IMPLICIT NONE
 !
@@ -154,35 +157,37 @@ IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP/PRHODJ
 !
 !      REMOVE NEGATIVE VALUES OF CHEM SCALAR
 !
-DO JSV = 1, KSV
-  IF ( MIN_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll) < 0.0 ) THEN
+IF (LUSECHEM) THEN
+  DO JSV = 1, KSV
+    IF ( MIN_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll) < 0.0 ) THEN
 !
 ! compute the total water mass computation
 !
-    ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
+      ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
 !
 ! remove the negative values
 !
-    PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX(0., PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
+      PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX(0., PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
 !
 ! compute the new total mass
 !
-    ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
+      ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
 !
 ! correct again in such a way to conserve the total mass 
 !
-    ZRATIO = ZMASSTOT / ZMASSPOS
-    PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) * ZRATIO
+      ZRATIO = ZMASSTOT / ZMASSPOS
+      PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) * ZRATIO
 !
-    WRITE(ILUOUT,*)'DUE TO CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
-    WRITE(ILUOUT,*)'SOURCES IS CORRECTED BY RATIO',ZRATIO
-  END IF
-END DO
+      WRITE(ILUOUT,*)'DUE TO CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+      WRITE(ILUOUT,*)'SOURCES IS CORRECTED BY RATIO',ZRATIO
+    END IF
+  END DO
 !
-IF (LBUDGET_SV) THEN
-  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
-    CALL BUDGET(PRSVS(:,:,:,JSV),JSV+12,'NEGA_BU_RSV')
-  ENDDO
+  IF (LBUDGET_SV) THEN
+    DO JSV=NSV_CHEMBEG,NSV_CHEMEND
+      CALL BUDGET(PRSVS(:,:,:,JSV),JSV+12,'NEGA_BU_RSV')
+    ENDDO
+  ENDIF
 ENDIF
 !
 DO JSV=1,KSV
