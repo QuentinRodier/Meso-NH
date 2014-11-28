@@ -21,9 +21,9 @@ TOCASE=${TOCASE-"tolower"}
 export PERL5LIB=$SRC_MESONH/bin
 export FILE_WITHOUT_INTERFACE_NEDEED="\
 rttov.*.F90|rttvi.F90|tstrad.*.F90|\
-ch_f77.fx90|nband_model.fx90|BASIC.f90|^budget.f90|mode_tmat.f90|\
+ch_f77.fx90|nband_model.fx90|BASIC.f90|mode_tmat.f90|\
 ini_cmfshall.f90|mode_double_double.f90|mode_fgau.f90|\
-radar_scattering.f90|rain_ice.f90|extern_usersurc_ll.f90|\
+extern_usersurc_ll.f90|\
 extern_userio.f90|fmreadwrit.f90|fm_read_ll.f90|poub.f90"
 #
 
