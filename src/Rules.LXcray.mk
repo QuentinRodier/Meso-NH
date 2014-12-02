@@ -9,27 +9,24 @@
 ##########################################################
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
-OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout
-OPT_PERF0  =  -O0
-OPT_PERF2  =  -O2
-OPT_PERF3  =  -O3
-OPT_CHECK  =  -CB -ftrapuv 
-OPT_I8     =  -i8
-OPT_R8     =  -r8
+#OPT_BASE   =  -r8 -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout
+OPT_BASE   =  -sreal64 -hpic -em -ef
+OPT_PERF0  =  -O0 -g
+OPT_PERF2  =  -O2 -hflex_mp=intolerant -Ofp0 -hnoomp
+OPT_PERF1  =  -O1 -hflex_mp=intolerant -Ofp0 -hnoomp -hcpu=istanbul -hfp0 -K trap=fp
+# –hcpu=Istanbul –hfp0
+#OPT_CHECK  =  -CB -ftrapuv 
+OPT_CHECK  =  -Rbc
+OPT_I8     =  -sdefault64
 #
-# Real/integer 4/8 option
+# Integer 4/8 option
 #
-MNH_REAL  ?=R8
 MNH_INT   ?=I4
 LFI_RECL  ?=512
 #
-ifneq "$(MNH_REAL)" "R4"
-OPT_BASE           += $(OPT_R8)
-CPPFLAGS_SURCOUCHE += -DMNH_MPI_DOUBLE_PRECISION
-endif
-#
 ifeq "$(MNH_INT)" "I8"
-OPT_BASE         += $(OPT_I8)
+#OPT_BASE         += $(OPT_I8)
+OPT_BASE           = -sdefault64 -hpic -em -ef
 LFI_INT           ?=8
 MNH_MPI_RANK_KIND ?=8
 else
@@ -48,47 +45,28 @@ OPT_NOCB  = $(OPT_BASE) $(OPT_PERF0)
 CFLAGS   += -g
 endif
 ifeq "$(OPTLEVEL)" "O2PAR"
-PAR= -parallel -diag-file -par-report2
+PAR= -homp
 OPT       = $(OPT_BASE) $(OPT_PERF2) $(PAR)
 OPT0      = $(OPT_BASE) $(OPT_PERF0) $(PAR)
 OPT_NOCB  = $(OPT_BASE) $(OPT_PERF2) $(PAR)
 endif
 ifeq "$(OPTLEVEL)" "O2NOVEC"
-OPT       = $(OPT_BASE) $(OPT_PERF2) -no-vec
-OPT0      = $(OPT_BASE) $(OPT_PERF0) -no-vec
-OPT_NOCB  = $(OPT_BASE) $(OPT_PERF2) -no-vec
+OPT       = $(OPT_BASE) $(OPT_PERF2) -O vector0
+OPT0      = $(OPT_BASE) $(OPT_PERF0) -O vector0
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF2) -O vector0
 endif
-ifeq "$(OPTLEVEL)" "O3"
-OPT       = $(OPT_BASE) $(OPT_PERF3)
-OPT0      = $(OPT_BASE) $(OPT_PERF0)
-OPT_NOCB  = $(OPT_BASE) $(OPT_PERF3)
+ifeq "$(OPTLEVEL)" "O1"
+OPT       = $(OPT_BASE) $(OPT_PERF1) 
+OPT0      = $(OPT_BASE) $(OPT_PERF0) 
+OPT_NOCB  = $(OPT_BASE) $(OPT_PERF1) 
 endif
 #
 #
-FC = ifort
-ifeq "$(VER_MPI)" "MPIAUTO"
-ifneq "$(findstring TAU,$(XYZ))" ""
-F90 = tau_f90.sh 
-export TAU_MAKEFILE=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_64/lib/Makefile.tau-mpi
-LIBS += -lz 
-else
-F90 = mpif90
-endif
-else
-ifeq "$(VER_MPI)" "MPIINTEL"
-F90 = mpiifort
-ifeq "$(MNH_INT)" "I8"
-OPT_BASE         += -ilp64
-endif
-else
-ifeq "$(VER_MPI)" "MPICRAY"
+FC = ftn
+FCFLAGS = -em -ef
+CC=gcc
+export FC CC FCFLAGS
 F90 = ftn
-else
-F90 = ifort
-endif
-endif
-endif
-
 F90FLAGS  =  $(OPT)
 F77  = $(F90)
 F77FLAGS  =  $(OPT) 
@@ -98,14 +76,14 @@ FX90FLAGS =  $(OPT)
 # -132 
 #
 #LDFLAGS    =  -Wl,-noinhibit-exec  -Wl,-warn-once $(PAR)
-LDFLAGS    =   -Wl,-warn-once $(PAR)
+LDFLAGS    =   -Wl,-warn-once $(PAR) $(OPT_BASE)
 #
 # preprocessing flags 
 #
 CPP = cpp -P -traditional -Wcomment
 #
 CPPFLAGS_SURFEX    =
-CPPFLAGS_SURCOUCHE += -DMNH_LINUX -DDEV_NULL -DMNH_MPI_RANK_KIND=$(MNH_MPI_RANK_KIND)
+CPPFLAGS_SURCOUCHE = -DMNH_MPI_DOUBLE_PRECISION -DMNH_LINUX -DDEV_NULL -DMNH_MPI_RANK_KIND=$(MNH_MPI_RANK_KIND) 
 CPPFLAGS_RAD       =
 CPPFLAGS_NEWLFI    = -DSWAPIO -DLINUX -DLFI_INT=${LFI_INT} -DLFI_RECL=${LFI_RECL}
 CPPFLAGS_MNH       = -DMNH 
@@ -118,7 +96,7 @@ endif
 # Gribex flags
 #
 TARGET_GRIBEX=linux
-CNAME_GRIBEX=ifort
+CNAME_GRIBEX=_gfortran
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #
@@ -140,12 +118,18 @@ include Makefile.MESONH.mk
 #                                                        #
 ##########################################################
 # Juan & Maud 20/03/2008 --> Ifort 10.1.008 Bug O2 optimization
-OPT_PERF1  =  -O1
+#OPT_PERF1  =  -O1
 OBJS_O1= spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
+OBJS_O0= spll_mode_gridproj.o spll_ini_dynamics.o spll_sunpos_n.o spll_ground_param_n.o
+
+$(OBJS_O0) : OPT = $(OPT_BASE) $(OPT_PERF0)
 
 ifneq "$(findstring 8,$(LFI_INT))" ""
 OBJS_I8=spll_NEWLFI_ALL.o
 $(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
 endif
+
+#mpi.mod : 
+#	ln -sf /opt/cray/mpt/5.6.3/gni/mpich2-cray/74/include/MPI.mod $(OBJDIR_MASTER)/mpi.mod
 

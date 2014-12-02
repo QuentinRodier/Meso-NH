@@ -191,6 +191,31 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                       ;;
                  esac
               ;;
+'Linux cc'*) # ECMWF Cray plateforme
+                export MNH_ARCH=`echo $ARCH | grep LX`
+                export     ARCH=${MNH_ARCH:-LXcray}
+                export  VER_MPI=${VER_MPI:-MPICRAY}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+                export MVWORK=${MVWORK:-NO}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
+                if [ "${ARCH}" == "LXcray" ] 
+                then
+                export MNHENV=${MNHENV:-"
+. /opt/modules/default/init/bash
+module rm grib_api
+"}
+                else
+                if [ "${ARCH}" == "LXifort" ]
+                then
+                export MNHENV=${MNHENV:-"
+. /opt/modules/default/init/bash
+module rm grib_api
+module rm PrgEnv-cray
+module load PrgEnv-intel
+"}
+                fi
+                fi
+;;
 'Linux sxmnh1') #CNRM ifort sur sxmnh1 (diff mandriva)
                 export    OMPI_FC=ifort
                 export       ARCH=${ARCH:-LXifort}
