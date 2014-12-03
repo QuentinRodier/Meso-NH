@@ -2,6 +2,11 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!  J.Escobar 3/12/2014 : typo form -> from
+!!
 MODULE MODE_MNH_WORLD
   IMPLICIT NONE
   CHARACTER(len=*), parameter   :: conf_mnh_world="conf_mnh_world.nam"
@@ -55,7 +60,7 @@ CONTAINS
        ! Read namelist config file
        !
        IF ( irank .EQ. 0 ) THEN
-          PRINT*,"hello world form rank=",irank," nproc=",IPROC
+          PRINT*,"hello world from rank=",irank," nproc=",IPROC
           OPEN(unit=10,form="formatted",file=conf_mnh_world,STATUS='OLD',iostat=IERR)
           ! Read IO parameter
           IF (IERR.EQ.0) THEN
