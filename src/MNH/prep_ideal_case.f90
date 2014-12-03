@@ -309,6 +309,8 @@
 !!      Correction for ZS in PGD file                     04/2014 (G. TANGUY)
 !!      Bug : remove NC WRITE_HGRID                       05/2014 (S. Bielli via J.Escobar )
 !!      BUG if ZFRC and ZFRC_ADV or ZFRC_REL are used together  11/2014 (G. Delautier)
+!!      Bug : detected with cray compiler ,
+!!                  missing '&' in continuation string  3/12/2014 J.Escobar
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -694,7 +696,7 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
   CALL FMREAD(CPGD_FILE,'JMAX',CLUOUT,'--',NJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
   IF ( CPGD_FILE /= CINIFILEPGD) THEN
     WRITE(NLUOUT,FMT=*) ' WARNING : in PRE_IDEA1.nam, in NAM_LUNITn you&
-                          have CINIFILEPGD= ',CINIFILEPGD
+                        & have CINIFILEPGD= ',CINIFILEPGD
     WRITE(NLUOUT,FMT=*) ' whereas in NAM_REAL_PGD you have CPGD_FILE = '&
                           ,CPGD_FILE
     WRITE(NLUOUT,FMT=*) ' '
