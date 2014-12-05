@@ -249,6 +249,15 @@ export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
 export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
 "}
               ;;
+'Linux eos'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+"}
+              ;;
+
 Linux*)
                 export     ARCH=${ARCH:-LXgfortran}
                 export  VER_MPI=${VER_MPI:-MPIVIDE}
@@ -314,6 +323,10 @@ case "$(hostname)" in
         export POSTCONF=confdollar_titane_default
         ;;
 
+  eos*)
+        export POSTCONF=confdollar_eos_default
+        ;;
+
   *)
         export POSTCONF=confdollar_aeropc_default
         ;;
@@ -347,7 +360,7 @@ cp profile_mesonh profile_mesonh-${XYZ}
 #
 #  Do some post-install stuff
 #
-if [ ${MVWORK} == "YES" ] ; then
+if [ "x${MVWORK}" == "xYES" ] ; then
    if [ "x${WORKDIR}" == "x" ] ; then
      echo "ATTENTION :: configure !!!!!"
      echo
