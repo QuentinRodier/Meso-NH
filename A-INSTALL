@@ -1,8 +1,8 @@
 #
 # Version of PACKAGE MESONH "Open distribution"
-#              PACK-MNH-V5-1-2
-#              DATE : 14/05/2014
-#              VERSION : MESONH MASDEV5_1 + BUG-2 
+#              PACK-MNH-V5-1-3
+#              DATE : 20/11/2014
+#              VERSION : MESONH MASDEV5_1 + BUG-3 
 #
 #  MAP
 #
@@ -10,7 +10,7 @@
 #      I-A) DOWNLOAD VIA THE WEB MESONH HOME PAGE
 #      I-B) DOWNLOAD VIA CVS ANONYMOUS 
 #       II) CONFIGURING THE MESONH PACKAGE
-#      III) COMPILING/INSTALLING THE MESONH PACKAGE ON OUR LINUX COMPUTER 
+#      III) COMPILING/INSTALLING THE MESONH PACKAGE ON YOUR LINUX COMPUTER 
 #       IV) RUN SOME "SMALL KTEST" EXAMPLES
 #        V) RECOMPILING YOUR 'OWN' SOURCES ONLY 
 #       VI) COMPILING/INSTALLING MESONH ON GENCI & ECMWF & METEO COMPUTERS
@@ -23,7 +23,8 @@
 #       IX) OPTIONAL COMPILATION
 #           a) MNH_NCWRIT for netcdf graphic output file 
 #           b) MNH_FOREFIRE for forefire runs ( external package needed )
-#           c) cleaning previous compiled version
+#           c) MNH_RTTOV for optional radiative computation
+#           d) cleaning previous compiled version
 #
 #
 #  0) TWO WAYS OF DOWNLOADING MESONH
@@ -80,7 +81,7 @@
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V5-1-2"
+#    ---> select "PACK-MNH-V5-1-3"
 #
 # and then download the file "PACK-MNH-VX-Y-Z.tar.gz" by the link 
 #
@@ -98,7 +99,7 @@ tar xvfz PACK-MNH-VX-Y-Z.tar.gz
 # to the right one
 #
  
-mv MNH-VX-Y-Z MNH-V5-1-2
+mv MNH-VX-Y-Z MNH-V5-1-3
       
 #
 #  Process now to the chapter to configure the MesoNH 
@@ -124,7 +125,7 @@ mv MNH-VX-Y-Z MNH-V5-1-2
 #
 # in the field  "Show files using tag:" 
 #
-#    ---> select "PACK-MNH-V5-1-2"
+#    ---> select "PACK-MNH-V5-1-3"
 #
 #   download the file "anoncvs.key"
 #
@@ -174,7 +175,7 @@ cd ${HOME}/.ssh
 cat config.anoncvs_www_ext >> config
 
 #
-#    OR for ECMWF computer ( c1a ) download this config file 
+#    OR for ECMWF computer ( cca ) download this config file 
 #    ( to bypass the gateway filter ) 
 #
 #      --> "config.anoncvs_www_ecmwf"
@@ -199,19 +200,19 @@ export CVSROOT=:ext:mesonh_anoncvs_www:/home/cvsroot
 #   -------------------------------------
 #
 #   Now, from your "$HOME" directory for example 
-#   extract the version "PACK-MNH-V5-1-2"
+#   extract the version "PACK-MNH-V5-1-3"
 #   of the directory "MNH-VX-Y-Z" from the
 #   cvs repository : 
 
 cd ~
-cvs co -r PACK-MNH-V5-1-2 -d MNH-V5-1-2 MNH-VX-Y-Z
+cvs co -r PACK-MNH-V5-1-3 -d MNH-V5-1-3 MNH-VX-Y-Z
 
 #
 # WARNING : don't use a sub-directory with dot "." in the name
 #            ---> you could have some trouble when compiling mesonh
 #
-#  this will create in your "$HOME" a directory "MNH-V5-1-2" 
-#  which contains of the last revision named "PACK-MNH-V5-1-2" 
+#  this will create in your "$HOME" a directory "MNH-V5-1-3" 
+#  which contains of the last revision named "PACK-MNH-V5-1-3" 
 #  of the MESONH PACKAGE 
 #
 #  The advantage of this way of downloading 
@@ -221,21 +222,21 @@ cvs co -r PACK-MNH-V5-1-2 -d MNH-V5-1-2 MNH-VX-Y-Z
 #  to download entirely the full package
 #
 #  Suppose that a new version for example
-#  "PACK-MNH-V5-1-3" is announced ...
+#  "PACK-MNH-V5-1-4" is announced ...
 #
 #  To see the differences with your working copy
 #  do
 #
 
-cd ~/MNH-V5-1-2
-cvs diff -r PACK-MNH-V5-1-3
+cd ~/MNH-V5-1-3
+cvs diff -r PACK-MNH-V5-1-4
 
 #
 #  And to upgrade your working copy
 #
 
-cd ~/MNH-V5-1-2
-cvs update -r PACK-MNH-V5-1-3 -d -P
+cd ~/MNH-V5-1-3
+cvs update -r PACK-MNH-V5-1-4 -d -P
 
 #
 # At any time you could also check for "uptodate" 
@@ -250,7 +251,7 @@ cvs diff -r MNH410-BUG-branch
 # ( not yet official ) version by
 #
 
-cd ~/MNH-V5-1-2
+cd ~/MNH-V5-1-3
 cvs update -r MNH410-BUG-branch -d -P
 
 #
@@ -270,7 +271,7 @@ cvs update -r MNH410-BUG-branch -d -P
 #    use the "./configure" script like this 
 #
 
-cd ~/MNH-V5-1-2/src
+cd ~/MNH-V5-1-3/src
 ./configure
 . ../conf/profile_mesonh
 
@@ -315,7 +316,7 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 
 #    and then source/load the new generate file
 
-. ../conf/profile_mesonh.LXifort.MNH-V5-1-2.MPIAUTO.O2
+. ../conf/profile_mesonh.LXifort.MNH-V5-1-3.MPIAUTO.O2
 
 #
 #  REM: 
@@ -334,13 +335,13 @@ export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least
 
 ^L
 #   
-# III) COMPILING/INSTALLING THE MESONH PACKAGE ON OUR LINUX COMPUTER 
-# ==================================================================
+# III) COMPILING/INSTALLING THE MESONH PACKAGE ON YOUR LINUX COMPUTER 
+# ===================================================================
 #
 # go to the directory  "src"
 #
 
-cd  ~/MNH-V5-1-2/src
+cd  ~/MNH-V5-1-3/src
 
 #
 # if you have not already configured your MESONH environment
@@ -568,8 +569,8 @@ make examples
 # 
 
 cd $WORKDIR
-cvs co -r PACK-MNH-V5-1-2 -d MNH-V5-1-2 MNH-VX-Y-Z
-cd MNH-V5-1-2/src
+cvs co -r PACK-MNH-V5-1-3 -d MNH-V5-1-3 MNH-VX-Y-Z
+cd MNH-V5-1-3/src
 
 ./configure
  
@@ -590,31 +591,57 @@ llsubmit job_make_mesonh_IBM_ada
 #   - On TURING (IBM BG/Q ) : 
 
 llsubmit job_make_mesonh_BGQ
+
 #
 #
-#   BACKUP : /!\ backup your work on "gaya"
+#   BACKUP : /!\ backup your work on "ergon"
 #
 #   
-#   at CINES on JADE( SGI/ICE ) :
-#   ----------------------------
+#   at CINES on JADE( SGI/ICE ) , OCCIGEN not tested yet  :
+#   -------------------------------------------------------
 # 
 #   - install the PACKAGE in your "/store/${USER}" directory 
 #   - you could compile in interactive mode
 #
 #    BACKUP : /!\ backup your work on "/data/${USER}"
 # 
+
+
 # 
-#   at ECMWF on c2a ( IBM/SP7 ) :
+#   at ECMWF on cca ( CRAY/XC30 ) :
 #   ----------------------------
 #
-#   - to install MESONH you need more disk space than allowed for 'standard' user ( 150 mb only ... )
+#   - to install MESONH go to your $PERM directory
+#     if you need more disk space than allowed for 'standard' user 
 #     Ask to Dominique Lucas, look this email :
 #
 #    http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/mail2html.cgi?file=2009_09_24_15:31:54
 #
 #   - for the compilation use :
 
-llsubmit job_make_mesonh_cxa
+qsub job_make_mesonh_CRAY_cca
+
+#
+# REM : On CRAY computer cca , the default compiler is the CRAY one = crayftn .
+#      I you have trouble with this one , you could compile with the Intel/ifort one .
+#      Use the ifort one do :
+
+export ARCH=LXifort
+./configure
+
+...
+
+création du fichier -->  ../conf/profile_mesonh-LXifortI4-MNH-V5-1-3-MPICRAY-O2
+
+# And for the compilation & example job , switch the ARCH variable to LXiort :
+
+vi  job_make_mesonh_CRAY_cca(job_make_examples_CRAY_cca)
+
+ARCH=LXifort
+#ARCH=LXcray # this is the default one
+. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-1-3-MPICRAY-O2
+
+
 
 #
 #   EXAMPLES ON GENCI & ECMWF PLATFORMS
@@ -644,10 +671,10 @@ export MPIRUN="mpirun -np 4 "
 make examples
 
 #
-#   - At ECMWF on c2a
+#   - At ECMWF on cca
 #
 
-llsubmit  job_make_examples_cxa
+llsubmit  job_make_examples_CRAY_cca
 
 #
 # That's all for the basic INSTALLATION of the "MESONH PACKAGE"
@@ -703,7 +730,7 @@ scandollar
 
 ## OUTPUT ::
 
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-2/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-3/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -725,7 +752,7 @@ scandollar 0*
 
 ## OUTPUT ::
 >#
->#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-2/conf/post/confdollar_aeropc_default
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V5-1-3/conf/post/confdollar_aeropc_default
 >#
 >#  read    user config file :: --->  CONFIG=confdollar
 >#
@@ -799,22 +826,22 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use this "profile_mesonh" :
 
-.  /home/rech/mnh/rmnh007/DEV/MNH-V5-1-2/conf/profile_mesonh-SX8-MNH-V5-1-2-MPIAUTO-O4
+.  /home/rech/mnh/rmnh007/DEV/MNH-V5-1-3/conf/profile_mesonh-SX8-MNH-V5-1-3-MPIAUTO-O4
 
 # And the examples are here ( link to my $WORKDIR in actually )  
 
-/home/rech/mnh/rmnh007/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
+/home/rech/mnh/rmnh007/DEV/MNH-V5-1-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  On vargas
 #  ---------
 #  use this "profile_mesonh" :
 
-. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-2/conf/profile_mesonh-AIX64-MNH-V5-1-2-MPIAUTO-O2
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-3/conf/profile_mesonh-AIX64-MNH-V5-1-3-MPIAUTO-O2
 
 # and examples here :
 
-/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V5-1-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 # 
 #  - At CINES on JADE :
@@ -822,11 +849,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use 
 
-. /work/escobar/DEV/MNH-V5-1-2/conf/profile_mesonh-LXifort-MNH-V5-1-2-MPIICE-O2
+. /work/escobar/DEV/MNH-V5-1-3/conf/profile_mesonh-LXifort-MNH-V5-1-3-MPIICE-O2
 
 # and the exemples
 
-/work/escobar/DEV/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
+/work/escobar/DEV/MNH-V5-1-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 #
 #  - At ECMWF on cxa :
@@ -834,11 +861,11 @@ cp -R  007_16janvier_scandollar /.../your_directory
 #
 # use
 
-. /c1a/ms_perm/au5/MNH-V5-1-2/conf/profile_mesonh-AIX64-MNH-V5-1-2-MPIAUTO-O2
+. /c1a/ms_perm/au5/MNH-V5-1-3/conf/profile_mesonh-AIX64-MNH-V5-1-3-MPIAUTO-O2
 
 # and the examples
 
-/c1a/ms_perm/au5/MNH-V5-1-2/MY_RUN/KTEST/007_16janvier_scandollar
+/c1a/ms_perm/au5/MNH-V5-1-3/MY_RUN/KTEST/007_16janvier_scandollar
 
 
 #
@@ -918,7 +945,7 @@ export MNH_NCWRIT=MNH_NCWRIT
 make
 etc ...
 
-# see c) for cleaning previously version if needed
+# see d) for cleaning previously version if needed
 
 # b) MNH_FOREFIRE for forefire runs ( external package needed )
 # -------------------------------------------------------------
@@ -953,9 +980,45 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 #    
 
 
-# see c) for cleaning previously version if needed
+# see d) for cleaning previously version if needed
 
-# c) cleaning previous compiled version
+# c) MNH_RTTOV for optional radiative computation
+# --------------------------------------
+#
+# The RTTOV package could not be included directly in the Open Source version fo MesoNH
+# because it need a licence agrement .
+#
+# For already(old) Licencied MesoNH user's ( MNH-4-X version with research Licence see here :  http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation )
+#
+# the pacakge could be reloaded in this way  
+#
+# - With cvs access
+#
+
+cd MNH.../src/LIB
+cvs up -rPACK-MNH-V4-10-3 -d -P RTTOV
+
+#
+# - With WEB access ( with WEB login/pass as usually )  the RTTOV package could also be retrieve in tarball with wget like this :
+#
+
+cd MNH.../src/LIB
+wget --http-user=USER  --http-password=PASS 'http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/viewcvs.cgi/MNH-VX-Y-Z/src/LIB/RTTOV/?view=tar&pathrev=PACK-MNH-V4-10-3' -O RTTOV.tar.gz
+tar xvfz RTTOV.tar.gz
+
+# /!\ don't forget the '' or this will not work !!
+
+#
+# And then for the compilation , run the 'configure' script preceded with the setting of the MNH_RTTOV variable :
+#
+
+cd MNH.../src/
+export MNH_RTTOV=1
+./configure
+
+etc ...
+
+# d) cleaning previous compiled version
 # --------------------------------------
 #
 # If you have already compiled exactly the same version of MesoNH on this computer ( same $XYZ value )
