@@ -985,12 +985,12 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # c) MNH_RTTOV for optional radiative computation
 # --------------------------------------
 #
-# The RTTOV package could not be included directly in the Open Source version fo MesoNH
-# because it need a licence agrement .
+# The RTTOV package was not included into the open source version of Meso-NH
+# because it needs a licence agrement .
 #
-# For already(old) Licencied MesoNH user's ( MNH-4-X version with research Licence see here :  http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation )
+# For already(old) licencied MesoNH users (MNH-4-X version with research licence see here: http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation)
 #
-# the pacakge could be reloaded in this way  
+# the package could be reloaded in this way  
 #
 # - With cvs access
 #
@@ -999,17 +999,17 @@ cd MNH.../src/LIB
 cvs up -rPACK-MNH-V4-10-3 -d -P RTTOV
 
 #
-# - With WEB access ( with WEB login/pass as usually )  the RTTOV package could also be retrieve in tarball with wget like this :
+# - With WEB access (with WEB login/pass as usually) the RTTOV package could also be retrieve in tarball with wget like this:
 #
 
 cd MNH.../src/LIB
 wget --http-user=USER  --http-password=PASS 'http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/viewcvs.cgi/MNH-VX-Y-Z/src/LIB/RTTOV/?view=tar&pathrev=PACK-MNH-V4-10-3' -O RTTOV.tar.gz
 tar xvfz RTTOV.tar.gz
 
-# /!\ don't forget the '' or this will not work !!
+# /!\ don't forget the ''.  Otherwise, this will not work!
 
 #
-# And then for the compilation , run the 'configure' script preceded with the setting of the MNH_RTTOV variable :
+# And then for the compilation, run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
 #
 
 cd MNH.../src/
