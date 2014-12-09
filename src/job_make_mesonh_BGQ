@@ -12,7 +12,7 @@
 # @ error      =  $(job_name).$(step_name).$(jobid)
 
 #=========== Step 1 directives ===========
-# ======= CrosscompIlation :: 1 compute node needed for grib_api  ========
+# ======= CompIlation step of grib_api  ========
 # @ step_name = make_gribapi
 # @ job_type  = serial
 # Temps CPU max. en seconde (d'un processus)
@@ -39,7 +39,7 @@ cd $LOADL_STEP_INITDIR
 case $LOADL_STEP_NAME in
 
 #=========== Step 1 directives ===========
-#======= CrosscompIlation :: 1 compute node needed for grib_api compIlation ========
+#======= CompIlation step of grib_api ========
 make_gribapi )
 
 #time gmake gribapi_clean 
