@@ -31,11 +31,11 @@ fi
 # SRC_MESONH : default path to mesonh sources 
 #              MUST BE SET TO YOUR OWN MESONH PATH
 #
-export SRC_MESONH="/home/escj/DEV64/MNH-V5-1-0"   
+export SRC_MESONH="/home/escj/DEV64/MNH-V5-1-3"   
 #
-#  Version MESONH PACKAGE :: PACK-MNH-V5-1-0 : 11/12/2013
+#  Version MESONH PACKAGE :: PACK-MNH-V5-1-3 : 20/11/2014
 #
-export VERSION_XYZ=MNH-V5-1-0
+export VERSION_XYZ=MNH-V5-1-3
 #
 #  Target Architecture/compiler Machine <=> Rules.*.mk files
 #
@@ -65,7 +65,7 @@ export MNH_NCWRIT=
 #
 # 'Scandollar' Post Processing default variables
 #
-export CONF_DOLLAR=/home/escj/DEV64/MNH-V5-1-0/conf/post/confdollar_aeropc_default
+export CONF_DOLLAR=/home/escj/DEV64/MNH-V5-1-3/conf/post/confdollar_aeropc_default
 #
 # Version of NETCDF
 #
@@ -84,6 +84,14 @@ export MNH_INT=I4
 # Version of Def Real
 #
 export MNH_REAL=
+#
+#  FOREFIRE
+#
+export MNH_FOREFIRE=
+#
+#  RTTOV
+#
+export MNH_RTTOV=
 #
 ##########################################################
 ##########################################################
