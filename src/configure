@@ -8,13 +8,16 @@
 if [ "x$XYZ" = "x" ]
 then
 # 
-export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-1}
-export VERSION_BUG=${VERSION_BUG:-3}
+export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-2}
+export VERSION_BUG=${VERSION_BUG:-0}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}}
-export VERSION_DATE=${VERSION_DATE:-"20/11/2014"}
-export VERSION_CDF=${VERSION_CDF-"3.6.3"}
-export VERSION_GRIBAPI=${VERSION_GRIBAPI-"1.9.9"}
-export MNH_INT=${MNH_INT-"I4"}
+export VERSION_DATE=${VERSION_DATE:-"15/04/2015"}
+export VERSION_CDF=${VERSION_CDF:-"4.1.3"}
+export VERSION_HDF=${VERSION_HDF:-"1.8.9"}
+export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.9.9"}
+export MNH_INT=${MNH_INT:-"4"}
+export LFI_INT=${LFI_INT:-8}
+export MNH_IOCDF4=${MNH_IOCDF4:-1}
 #
 export NEED_TOOLS=YES
 #
@@ -355,7 +358,7 @@ fi
 #
 ${LOCAL}/bin/eval_dollar  profile_mesonh.ihm > profile_mesonh
 chmod +x profile_mesonh
-XYZ=${ARCH}${MNH_REAL}${MNH_INT}-${VERSION_XYZ}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
+XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
 cp profile_mesonh profile_mesonh-${XYZ}
 #
 #  Do some post-install stuff
@@ -390,6 +393,7 @@ fi
 #
 if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
 ( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDF} ] && tar xvfz netcdf-${VERSION_CDF}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
 fi
 #
 #  Install GRIBAPI

@@ -1,4 +1,4 @@
-#!/bin/ksh
+#!/bin/bash
 #MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 #MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -67,10 +67,15 @@ export MNH_NCWRIT=${MNH_NCWRIT}
 #
 export CONF_DOLLAR=${CONF_DOLLAR}
 #
-# Version of NETCDF
+# Version of NETCDF / HDF
 #
 export VER_CDF=${VER_CDF}
 export VERSION_CDF=${VERSION_CDF}
+export VERSION_HDF=${VERSION_HDF}
+#
+# NETCDF4  INPUT/OUTPUT
+#
+export MNH_IOCDF4=${MNH_IOCDF4}
 #
 # Version of GRIBAPI
 #
@@ -80,6 +85,7 @@ export VERSION_GRIBAPI=${VERSION_GRIBAPI}
 # Version of Def integer
 #
 export MNH_INT=${MNH_INT}
+export LFI_INT=${LFI_INT}
 #
 # Version of Def Real
 #
@@ -103,7 +109,7 @@ export MNH_RTTOV=${MNH_RTTOV}
 ##########################################################
 ##########################################################
 #
-export XYZ="-\${ARCH}\${MNH_REAL:+\${MNH_REAL}}\${MNH_INT}-\${VERSION_XYZ}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
+export XYZ="-\${ARCH}\${MNH_REAL:+\${MNH_REAL}}I\${MNH_INT}-\${VERSION_XYZ}\${VER_USER:+-\${VER_USER}}-\${VER_MPI}-\${OPTLEVEL}"
 #[ "x\${VER_USER}" != "x" ] && export XYZ="\${XYZ}-\${VER_USER}"
 # PATH to find tools like "makegen, etc ..."
 export BIN_TOOLS=${BIN_TOOLS}

@@ -14,7 +14,7 @@ OBJDIR_ROOT=${PWD}/dir_obj
 endif
 LIB_OBJS_ROOT=lib
 #
-ARCH_XYZ=${ARCH}${MNH_REAL}${MNH_INT}-${VERSION_XYZ}
+ARCH_XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}
 ##########################################################
 #                                                        #
 #            Source DIRECTORY                            #
@@ -207,7 +207,7 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-mpivide.o  : CPPFLAGS += -DFUJI \
+mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT)\
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif
@@ -352,21 +352,27 @@ VPATH         += $(GRIBAPI_PATH)/include
 R64_GRIBAPI=R64
 endif
 ##########################################################
-#           Librairie NETCDF                             #
+#           Librairie NETCDF4                            #
 ##########################################################
+# NETCDF4 INPUT/OUTPUT in MesoNH 
+ifdef MNH_IOCDF4
+CPPFLAGS_MNH += -DMNH_IOCDF4
+endif
 #
-# NetCDF  : AUTO install of netcdf-3.6.X on PC linux to avoid problem with compiler
+# NetCDF  : AUTO install of netcdf-4.X.X on PC linux to avoid problem with compiler
 #  
 #
 ifeq "$(VER_CDF)" "CDFAUTO"
 DIR_CDF?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDF}
-CDF_PATH?=${DIR_CDF}-${ARCH}${MNH_INT}
+CDF_PATH?=${DIR_CDF}-${ARCH}I${MNH_INT}
 CDF_INC?=${CDF_PATH}/include/netcdf.inc
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdf_c++ -lnetcdf
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
+#
+DIR_HDF?=${SRC_MESONH}/src/LIB/hdf5-${VERSION_HDF}
 endif
 #
 # NetCDF in beaufix (bull meteo-france)
