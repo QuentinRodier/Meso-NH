@@ -20,7 +20,7 @@ MNH_LIC for details. version 1.
 /* MPI_INTEGER is defined in mpi.h */
 
 #ifdef FUJI
-#if LFI_INT == 8 
+#if MNH_INT == 8 
 #define SIZEINTEGER 8
 #else
 #define SIZEINTEGER 4
@@ -36,7 +36,7 @@ MNH_LIC for details. version 1.
 #define MPI_DOUBLEDOUBLE 999
 #define SIZE_DOUBLEDOUBLE SIZE2PRECISION
 
-#if LFI_INT == 8 
+#if MNH_INT == 8 
 #define int long long
 #endif
  

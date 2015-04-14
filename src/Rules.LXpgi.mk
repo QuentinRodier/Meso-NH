@@ -29,7 +29,7 @@ IGNORE_OBJS += pgprof.o
 # Real/integer 4/8 option
 #
 MNH_REAL  ?=R8
-MNH_INT   ?=I4
+MNH_INT   ?=4
 LFI_RECL  ?=512
 #
 ifneq "$(MNH_REAL)" "R4"
@@ -37,7 +37,7 @@ OPT_BASE           += $(OPT_R8)
 CPPFLAGS_SURCOUCHE += -DMNH_MPI_DOUBLE_PRECISION
 endif
 #
-ifeq "$(MNH_INT)" "I8"
+ifeq "$(MNH_INT)" "8"
 OPT_BASE         += $(OPT_I8)
 LFI_INT           ?=8
 MNH_MPI_RANK_KIND ?=8

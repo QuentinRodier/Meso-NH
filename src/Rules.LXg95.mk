@@ -17,10 +17,10 @@ OPT_I8     =  -i8
 #
 # Integer 4/8 option
 #
-MNH_INT   ?=I4
+MNH_INT   ?=4
 LFI_RECL  ?=512
 #
-ifeq "$(MNH_INT)" "I8"
+ifeq "$(MNH_INT)" "8"
 OPT_BASE         += $(OPT_I8)
 LFI_INT           ?=8
 MNH_MPI_RANK_KIND ?=8
