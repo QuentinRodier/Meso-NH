@@ -261,6 +261,19 @@ export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
 "}
               ;;
 
+'Linux occigen'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+ulimit -s unlimited
+module load intel/15.0.0.090
+module load intelmpi/5.0.1.035
+export SLURM_CPU_BIND=none
+"}
+              ;;
+
 Linux*)
                 export     ARCH=${ARCH:-LXgfortran}
                 export  VER_MPI=${VER_MPI:-MPIVIDE}
@@ -328,6 +341,10 @@ case "$(hostname)" in
 
   eos*)
         export POSTCONF=confdollar_eos_default
+        ;;
+
+  occigen*)
+        export POSTCONF=confdollar_occigen_default
         ;;
 
   *)
