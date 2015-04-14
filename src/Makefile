@@ -108,7 +108,7 @@ endif
 #
 ifdef DO_COMP_USER
 VPATH += $(OBJDIR_USER) $(OBJDIR_USER)/MOD $(OBJDIR_MASTER) $(OBJDIR_MASTER)/MOD
-INC += -I $(OBJDIR_USER)/MOD -I $(OBJDIR_MASTER)/MOD
+INC += -I$(B)$(OBJDIR_USER)/MOD -I$(B)$(OBJDIR_MASTER)/MOD
 endif
 #
 endif
@@ -173,7 +173,7 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 #                                                        #
 ##########################################################
 ifeq "$(VER_CDF)" "CDFAUTO"
-all : gribapi cdf progmaster
+all : gribapi progmaster
 else
 all : gribapi progmaster
 endif
@@ -184,8 +184,13 @@ $(OBJDIR_MASTER)/.dummy :
 	-mkdir -p $(OBJDIR_MASTER)/.dummy
 	-mkdir -p $(OBJDIR_MASTER)/MOD
 
-depmaster : objdirmaster
+depmaster : objdirmaster 
 	@$(MAKE) DO_DEP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) filedepallmaster
+
+ifeq "$(VER_CDF)" "CDFAUTO"
+depmaster : cdf
+endif
+
 
 filedepallmaster :  $(DEP_ALL_MASTER)
 	find  $(OBJDIR_MASTER) -follow -name "*.D" >  $(OBJDIR_MASTER)/filemaster
@@ -193,11 +198,10 @@ filedepallmaster :  $(DEP_ALL_MASTER)
 	cat $(OBJDIR_MASTER)/filemaster  | xargs cat  >>  $(OBJDIR_MASTER)/filedepallmaster
 
 libmaster :  depmaster
-	@$(MAKE)  -I $(OBJDIR_MASTER)  DO_COMP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) objmaster
-
+	@$(MAKE)  -I$(B)$(OBJDIR_MASTER)  DO_COMP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) objmaster
 
 bibmaster :  libmaster
-	@$(MAKE)  -I $(OBJDIR_MASTER)  DO_COMP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) $(LIB_MASTER)
+	@$(MAKE)  -I$(B)$(OBJDIR_MASTER)  DO_COMP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) $(LIB_MASTER)
 	mv $(LIB_MASTER)  $(subst lib-,bib-,$(LIB_MASTER))
 
 
@@ -207,14 +211,14 @@ $(LIB_MASTER) :  $(OBJS_LISTE_MASTER)
 	cd $(OBJDIR_MASTER) ; find . -follow -name '*.o'| xargs $(AR) r $(LIB_MASTER) 
 
 progmaster : libmaster
-	@$(MAKE) -I $(OBJDIR_MASTER)  DO_COMP_MASTER=YES  \
+	@$(MAKE) -I$(B)$(OBJDIR_MASTER)  DO_COMP_MASTER=YES  \
 	OBJDIR=$(OBJDIR_MASTER) \
 	LIB_MNH=$(LIB_MASTER) \
 	PROG_DIR=$(OBJDIR_MASTER) \
 	$(PROG_LIST) cleanlibmaster
 
 installmaster : libmaster
-	@$(MAKE) -I $(OBJDIR_MASTER)  DO_COMP_MASTER=YES  OBJDIR=$(OBJDIR_MASTER) install
+	@$(MAKE) -I$(B)$(OBJDIR_MASTER)  DO_COMP_MASTER=YES  OBJDIR=$(OBJDIR_MASTER) install
 
 cleanlibmaster :
 	rm -f  $(LIB_MASTER) 
@@ -254,7 +258,7 @@ filedepalluser : $(DEP_ALL_USER)
 
 
 libuser :   depuser 
-	@$(MAKE) -I $(OBJDIR_USER) DO_COMP_USER=YES OBJDIR=$(OBJDIR_USER) objuser
+	@$(MAKE) -I$(B)$(OBJDIR_USER) DO_COMP_USER=YES OBJDIR=$(OBJDIR_USER) objuser
 
 objuser :  $(OBJS_LISTE_USER)
 
@@ -264,7 +268,7 @@ $(LIB_USER) :  $(OBJS_LISTE_USER)
 	cd $(OBJDIR_USER)   ; find . -name "*.o" | xargs $(AR) r $(LIB_USER) 
 
 proguser : libuser
-	@$(MAKE) -I $(OBJDIR_USER)  DO_COMP_USER=YES \
+	@$(MAKE) -I$(B)$(OBJDIR_USER)  DO_COMP_USER=YES \
 	OBJDIR=$(OBJDIR_USER) \
 	LIB_MNH=$(LIB_USER) \
 	PROG_DIR="$(OBJDIR_USER) $(OBJDIR_MASTER)" \
@@ -274,7 +278,7 @@ cleanlibuser :
 	rm -f  $(LIB_USER) 
 
 installuser : 
-	@$(MAKE)  -I $(OBJDIR_USER) DO_COMP_USER=YES  OBJDIR=$(OBJDIR_USER) install	
+	@$(MAKE)  -I$(B)$(OBJDIR_USER) DO_COMP_USER=YES  OBJDIR=$(OBJDIR_USER) install	
 
 cleanproguser :
 	test -d $(OBJDIR_USER) && cd $(OBJDIR_USER) && rm -f $(PROG_LIST)
@@ -331,7 +335,10 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 #
 cdf : $(CDF_INC)
 $(CDF_INC) : 
-	cd ${DIR_CDF} && ./configure --prefix=${CDF_PATH} FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran" && make && make install && make clean
+	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
+	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran" && make && make install 
+	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-f90 --disable-dap \
+	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install 
 
 cleanmaster : cleancdf
 cleancdf :
@@ -345,7 +352,7 @@ endif
 ifdef PROG_LIST
 
 prog :   lib $(LIB_GRIBEX)
-	@$(MAKE) -I $(OBJDIR) DEP=YES  $(PROG_LIST)  
+	@$(MAKE) -I$(B)$(OBJDIR) DEP=YES  $(PROG_LIST)  
 
 install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST))
 
