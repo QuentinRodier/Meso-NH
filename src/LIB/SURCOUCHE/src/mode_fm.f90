@@ -21,7 +21,6 @@ IMPLICIT NONE
 PRIVATE 
 
 INTEGER, PARAMETER :: JPPIPE = 10
-
 !INCLUDE 'mpif.h'
 
 PUBLIC SET_FMPACK_ll,FMATTR_ll,FMLOOK_ll,FMOPEN_ll,FMCLOS_ll
@@ -129,12 +128,15 @@ END SUBROUTINE FMLOOK_ll
 
 SUBROUTINE FMOPEN_ll(HFILEM,HACTION,HFIPRI,KNPRAR,KFTYPE,KVERB,KNINAR&
      & ,KRESP)
-USE MODD_IO_ll, ONLY : ISP,ISTDOUT,LFIPARAM
+USE MODD_IO_ll, ONLY : ISP,ISTDOUT,LFIPARAM,LIOCDF4,LLFIOUT,LLFIREAD
 USE MODE_FD_ll, ONLY : FD_ll,GETFD,JPFINL
-USE MODE_IO_ll, ONLY : OPEN_ll
+USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO
 !JUANZ
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
+#if defined(MNH_IOCDF4)
+USE MODE_NETCDF
+#endif
 CHARACTER(LEN=*),INTENT(IN) ::HFILEM  ! name of the file.
 CHARACTER(LEN=*),INTENT(IN) ::HACTION ! Action upon the file
 ! 'READ' or 'WRITE'
@@ -165,6 +167,12 @@ INTEGER(KIND=LFI_INT) :: IMELEV,INPRAR, ININAR8
 LOGICAL               :: GNAMFI8,GFATER8,GSTATS8
 INTEGER               :: INB_PROCIO
 !JUAN
+
+IF (.NOT. GCONFIO) THEN
+   PRINT *, 'FMOPEN_ll Aborting... Please, ensure to call SET_CONFIO_ll before &
+        &the first FMOPEN_ll call.'
+   STOP
+END IF
 
 INPRAR = KNPRAR+0 
 KNINAR = 0
@@ -228,33 +236,63 @@ IF (ISP == TZFDLFI%OWNER) THEN
     GSFIRST = .FALSE.
     OPEN(UNIT=JPPIPE,FILE='pipe_name',FORM='FORMATTED')
   END IF
+
+#if defined(MNH_IOCDF4)
+  IF (LIOCDF4) THEN
+     IF (HACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
+        !! Open NetCDF File for reading
+        TZFDLFI%CDF => NEWIOCDF()
+        IRESOU = NF_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF_NOWRITE, TZFDLFI%CDF%NCID)
+        IF (IRESOU /= NF_NOERR) THEN
+           PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(IRESOU)
+           STOP
+        END IF
+        PRINT *, 'NF_OPEN: ', TRIM(HFILEM)//'.nc4'
+     END IF
+     
+     IF (HACTION == 'WRITE') THEN
+        ! HACTION == 'WRITE'
+        TZFDLFI%CDF => NEWIOCDF()
+        IRESOU = NF_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
+             &IOR(NF_CLOBBER,NF_NETCDF4), TZFDLFI%CDF%NCID)
+        IF (IRESOU /= NF_NOERR) THEN
+           PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(IRESOU)
+           STOP
+        END IF
+        PRINT *, 'NF_CREATE: ', TRIM(HFILEM)//'.nc4'
+     END IF
+  END IF
+#endif
   
-  !! LFI-File case
-  IRESOU = 0
-  GNAMFI = .TRUE.
-  GFATER = .TRUE.
-  !
-  INUMBR8 = INUMBR
-  GNAMFI8 = GNAMFI
-  GFATER8 = GFATER
-  GSTATS8 = GSTATS
-  !
-  CALL LFIOUV(IRESOU,     &
-       INUMBR8,           &
-       GNAMFI8,           &
-       YFNLFI,            &
-       "UNKNOWN",         &
-       GFATER8,           &
-       GSTATS8,           &
-       IMELEV,            &
-       INPRAR,            &
-       ININAR8)
-  KNINAR = ININAR8
-  
-  IF (IRESOU /= 0 .AND. IRESOU /= -11) THEN
-    IRESP = IRESOU
-  ENDIF
-  
+  IF (.NOT. LIOCDF4 .OR. (HACTION=='WRITE' .AND. LLFIOUT) &
+       &            .OR. (HACTION=='READ'  .AND. LLFIREAD)) THEN
+     ! LFI Case
+     IRESOU = 0
+     GNAMFI = .TRUE.
+     GFATER = .TRUE.
+     !
+     INUMBR8 = INUMBR
+     GNAMFI8 = GNAMFI
+     GFATER8 = GFATER
+     GSTATS8 = GSTATS
+     !
+     CALL LFIOUV(IRESOU,     &
+          INUMBR8,           &
+          GNAMFI8,           &
+          YFNLFI,            &
+          "UNKNOWN",         &
+          GFATER8,           &
+          GSTATS8,           &
+          IMELEV,            &
+          INPRAR,            &
+          ININAR8)
+     KNINAR = ININAR8
+     
+     IF (IRESOU /= 0 .AND. IRESOU /= -11) THEN
+        IRESP = IRESOU
+     ENDIF
+  END IF
+
   !
   !*      6.    TEST IF FILE IS NEWLY DEFINED
   !
@@ -295,6 +333,9 @@ USE MODE_FD_ll, ONLY : FD_ll,GETFD,JPFINL
 USE MODE_IO_ll, ONLY : CLOSE_ll,UPCASE
 #if !defined(MNH_SGI)
 USE MODI_SYSTEM_MNH
+#endif
+#if defined(MNH_IOCDF4)
+USE MODE_NETCDF
 #endif
 CHARACTER(LEN=*),     INTENT(IN) ::HFILEM  ! file name
 CHARACTER(LEN=*),     INTENT(IN) ::HSTATU  ! status for the closed file
@@ -352,10 +393,12 @@ YFNLFI=ADJUSTL(TRIM(HFILEM)//'.lfi')
 TZFDLFI=>GETFD(YFNLFI)
 
 IF (ISP == TZFDLFI%OWNER) THEN
-  INUM8=TZFDLFI%FLU
-  CALL LFIFER(IRESP8,INUM8,YSTATU)
-  IRESP = IRESP8
-  
+  IF (TZFDLFI%FLU > 0) THEN
+     INUM8=TZFDLFI%FLU
+     CALL LFIFER(IRESP8,INUM8,YSTATU)
+     IRESP = IRESP8
+  END IF
+  IF (ASSOCIATED(TZFDLFI%CDF)) CALL CLEANIOCDF(TZFDLFI%CDF)
   IF (IRESP == 0) THEN
     !! Write in pipe
 #if defined(MNH_LINUX) || defined(MNH_SP4)

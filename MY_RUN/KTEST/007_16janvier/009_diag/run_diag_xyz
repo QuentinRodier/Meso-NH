@@ -15,6 +15,7 @@ ln -sf ../003_nest/16JAN98_36km.neste1.* .
 
 cp  DIAG1.nam1 DIAG1.nam
 time ${MPIRUN} DIAG${XYZ}
+#exit
 #
 # 2nd modele
 #

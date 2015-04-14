@@ -23,7 +23,6 @@
 MODULE MODE_IO_ll
 
   USE MODD_ERRCODES
-  USE MODD_IO_ll
   USE MODE_FD_ll
   USE MODD_MPIF
   !JUANZ
@@ -47,8 +46,12 @@ MODULE MODE_IO_ll
   !! Provisoire
   CHARACTER(LEN=*),PARAMETER :: GLOBAL='GLOBAL'
   CHARACTER(LEN=*),PARAMETER :: SPECIFIC='SPECIFIC'
+  !!
+  LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
+
   !! Provisoire
   PUBLIC IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll,FLUSH_ll,GLOBAL,SPECIFIC
+  PUBLIC SET_CONFIO_ll,GCONFIO
   !JUANZ
   PUBLIC  io_file,io_rank
   !JUANZ
@@ -111,9 +114,46 @@ CONTAINS
 
   END FUNCTION UPCASE
 
+  SUBROUTINE SET_CONFIO_ll(OIOCDF4, OFORCELFIOUT, OFORCELFIREAD)
+    USE MODD_IO_ll, ONLY : LIOCDF4, LLFIOUT, LLFIREAD
+    LOGICAL, INTENT(IN)           :: OIOCDF4
+    LOGICAL, INTENT(IN), OPTIONAL :: OFORCELFIOUT, OFORCELFIREAD
 
+    LOGICAL :: GFORCELFIOUT, GFORCELFIREAD
+
+    IF (GCONFIO) THEN
+       PRINT *, 'SET_CONFIO_ll already called (ignoring this call).' 
+    ELSE
+       IF (PRESENT(OFORCELFIOUT)) THEN
+          GFORCELFIOUT = OFORCELFIOUT
+       ELSE
+          GFORCELFIOUT = .FALSE.
+       END IF
+       IF (PRESENT(OFORCELFIREAD)) THEN
+          GFORCELFIREAD = OFORCELFIREAD
+       ELSE
+          GFORCELFIREAD = .FALSE.
+       END IF
+
+#if defined(MNH_IOCDF4)
+       !PRINT *, 'SET_CONFIO_ll : sources compiled WITH IOCDF4 support.'       
+       LIOCDF4  = OIOCDF4
+       LLFIOUT  = (.NOT. OIOCDF4 .OR. GFORCELFIOUT)
+       LLFIREAD = GFORCELFIREAD
+#else
+       !PRINT *, 'SET_CONFIO_ll : sources compiled WITHOUT IOCDF4 support.'       
+       LIOCDF4 = .FALSE.
+       LLFIOUT = .TRUE.
+       LLFIREAD = .TRUE.
+#endif       
+       GCONFIO = .TRUE.
+    END IF
+    
+  END SUBROUTINE SET_CONFIO_ll
+  
   SUBROUTINE INITIO_ll()
     USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
+    USE MODD_IO_ll
     IMPLICIT NONE
 
     INTEGER :: IERR, IOS
@@ -179,7 +219,10 @@ CONTAINS
        PAD,      &
        KNB_PROCIO,& 
        KMELEV)
-
+#if defined(MNH_IOCDF4)
+  USE MODE_NETCDF
+#endif
+  USE MODD_IO_ll
     INTEGER,         INTENT(OUT)           :: UNIT  !! Different from fortran OPEN
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: FILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
@@ -541,10 +584,15 @@ CONTAINS
        ENDIF
        TZFD%COMM = NMNH_COMM_WORLD
        TZFD%PARAM     =>LFIPAR
-       IF (ISP == TZFD%OWNER) THEN 
-          TZFD%FLU = IONEWFLU()
+#if defined(MNH_IOCDF4)
+       IF (ISP == TZFD%OWNER .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
+            &                                     .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
+#else
+       IF (ISP == TZFD%OWNER) THEN
+#endif
+             TZFD%FLU = IONEWFLU()
        ELSE 
-          !! NON I/O processors case
+          !! NON I/O processors OR NetCDF read case 
           IOS = 0
           TZFD%FLU = -1
        END IF
@@ -561,35 +609,72 @@ CONTAINS
              TZFD_IOZ%NB_PROCIO = TZFD%NB_PROCIO
              TZFD_IOZ%FLU       = -1
              TZFD_IOZ%PARAM     =>LFIPAR
+
              IF ( irank_procio .EQ. ISP ) THEN
-                !this proc must write on this file open it ...    
-                TZFD_IOZ%FLU       = IONEWFLU()
-                !! LFI-File case
-                IRESOU = 0
-                GNAMFI8 = .TRUE.
-                GFATER8 = .TRUE.
-                GSTATS8 = .FALSE.
-                IF (PRESENT(KMELEV)) THEN
-                   IMELEV = KMELEV
-                ELSE
-                   IMELEV = 0
-                ENDIF
-                INPRAR = 49
-                !
-                ! JUAN open lfi file temporary modif
-                !
-                INUMBR8 = TZFD_IOZ%FLU
-                CALL LFIOUV(IRESOU,     &
-                     INUMBR8,           &
-                     GNAMFI8,           &
-                     TZFD_IOZ%NAME,     &
-                     "UNKNOWN",         &
-                     GFATER8,           &
-                     GSTATS8,           &
-                     IMELEV,            &
-                     INPRAR,            &
-                     ININAR8)
-                !KNINAR = ININAR8
+#if defined(MNH_IOCDF4)                   
+                IF (LIOCDF4) THEN
+                   IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
+                      ! Open NetCDF File for reading
+                      TZFD_IOZ%CDF => NEWIOCDF()
+                      IOS = NF_OPEN(TRIM(FILE)//cfile//".nc4", NF_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      IF (IOS /= NF_NOERR) THEN
+                         PRINT *, 'NF_OPEN error : ', NF_STRERROR(IOS)
+                         STOP
+                      ELSE
+                         IOS = 0
+                      END IF
+                      PRINT *, 'NF_OPEN(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                   END IF
+                   
+                   IF (YACTION == 'WRITE') THEN
+                      ! YACTION == 'WRITE'
+                      ! Create NetCDF File for writing
+                      TZFD_IOZ%CDF => NEWIOCDF()
+                      IOS = NF_CREATE(TRIM(FILE)//cfile//".nc4", &
+                           &IOR(NF_CLOBBER,NF_NETCDF4), TZFD_IOZ%CDF%NCID)
+                      IF (IOS /= NF_NOERR) THEN
+                         PRINT *, 'NF_CREATE error : ', NF_STRERROR(IOS)
+                         STOP
+                      ELSE
+                         IOS = 0
+                      END IF
+                      PRINT *, 'NF_CREATE(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                   END IF
+                END IF
+#endif
+                IF (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT)&
+                     &            .OR. (YACTION=='READ'  .AND. LLFIREAD)) THEN
+                   ! LFI case
+                   ! Open LFI File for reading
+                   !this proc must write on this file open it ...    
+                   TZFD_IOZ%FLU       = IONEWFLU()
+                   !! LFI-File case
+                   IRESOU = 0
+                   GNAMFI8 = .TRUE.
+                   GFATER8 = .TRUE.
+                   GSTATS8 = .FALSE.
+                   IF (PRESENT(KMELEV)) THEN
+                      IMELEV = KMELEV
+                   ELSE
+                      IMELEV = 0
+                   ENDIF
+                   INPRAR = 49
+                   !
+                   ! JUAN open lfi file temporary modif
+                   !
+                   INUMBR8 = TZFD_IOZ%FLU
+                   CALL LFIOUV(IRESOU,     &
+                        INUMBR8,           &
+                        GNAMFI8,           &
+                        TZFD_IOZ%NAME,     &
+                        "UNKNOWN",         &
+                        GFATER8,           &
+                        GSTATS8,           &
+                        IMELEV,            &
+                        INPRAR,            &
+                        ININAR8)
+                   !KNINAR = ININAR8
+                END IF
              ENDIF
           ENDDO
        END IF
@@ -622,7 +707,7 @@ CONTAINS
 !!$    END IF
 
     IOSTAT = IOS
-    UNIT = TZFD%FLU 
+    UNIT = TZFD%FLU
 
   CONTAINS
     FUNCTION SUFFIX(HEXT)
@@ -637,7 +722,10 @@ CONTAINS
   END SUBROUTINE OPEN_ll
 
   SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS)
-
+  USE MODD_IO_ll
+#if defined(MNH_IOCDF4)
+  USE MODE_NETCDF
+#endif
     CHARACTER(LEN=*), INTENT(IN)            :: HFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: STATUS
@@ -698,10 +786,13 @@ CONTAINS
              YFILE_IOZ   = TRIM(TZFD%NAME(1:ilen-4))//yfile//".lfi"
              TZFD_IOZ => GETFD(YFILE_IOZ)
              IF (ISP == TZFD_IOZ%OWNER) THEN
-                INUM8=TZFD_IOZ%FLU
-                CALL LFIFER(IRESP8,INUM8,YSTATU)
-                CALL IOFREEFLU(TZFD_IOZ%FLU)
-                IRESP = IRESP8
+                IF (TZFD_IOZ%FLU > 0) THEN
+                   INUM8=TZFD_IOZ%FLU
+                   CALL LFIFER(IRESP8,INUM8,YSTATU)
+                   CALL IOFREEFLU(TZFD_IOZ%FLU)
+                   IRESP = IRESP8
+                END IF
+                IF (ASSOCIATED(TZFD_IOZ%CDF)) CALL CLEANIOCDF(TZFD_IOZ%CDF)
              END IF
           END DO
        END IF
@@ -730,6 +821,7 @@ CONTAINS
 #if defined(NAGf95)
     USE F90_UNIX
 #endif
+    USE MODD_IO_ll
     CHARACTER(LEN=*), INTENT(IN)            :: HFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IRESP
 

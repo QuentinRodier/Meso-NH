@@ -31,4 +31,8 @@ LOGICAL, SAVE :: L1D   = .FALSE. ! TRUE if 1D model version
 LOGICAL, SAVE :: L2D   = .FALSE. ! TRUE if 2D model version
 LOGICAL, SAVE :: LPACK = .FALSE. ! TRUE if FM compression occurs in 1D or 2D model version
 
+LOGICAL, SAVE :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
+LOGICAL, SAVE :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)  
+LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)  
+LOGICAL, SAVE :: LDEFLATEX2 = .FALSE. ! TRUE to enable Zlib deflate compression on X2 fields  
 END MODULE MODD_IO_ll
