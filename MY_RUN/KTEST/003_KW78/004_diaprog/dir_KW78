@@ -7,7 +7,7 @@ LCOLAREA=T LISO=F
 ! gestion des vecteurs (1 vecteur sur 4)
 NISKIP=4 XVRL=0.15                                                              
 ! 1er fichier a ouvrir
-_file1_'KWRAI.1.SG410.004dg'                                                    
+_file1_'KWRAI.1.SG520.004dg'                                                    
 !visu                     
 ! couleur de fond pour le 1er intervalle
 LCOLZERO=T NCOLZERO=1                                                           

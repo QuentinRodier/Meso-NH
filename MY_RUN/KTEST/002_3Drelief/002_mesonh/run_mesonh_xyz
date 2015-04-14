@@ -4,6 +4,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../001_prep_ideal_case/RELIEF3D.410.*??? .
+ln -fs ../001_prep_ideal_case/RELIEF3D.520.*??? .
 rm -f REL3D.1* OUT*
 time ${MPIRUN} MESONH${XYZ}
