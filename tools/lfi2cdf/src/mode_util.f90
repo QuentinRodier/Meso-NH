@@ -78,14 +78,16 @@ CONTAINS
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
+    !JUAN CYCCL3
+    INTEGER,PARAMETER                        :: JPHEXT=1 ! 3
 
     ! First check if IMAX,JMAX,KMAX exist in LFI file
     ! to handle 3D, 2D variables -> update IDIMX,IDIMY,IDIMZ
     CALL FMREADLFIN1(klu,'IMAX',IDIMX,iresp)
-    IF (iresp == 0) IDIMX = IDIMX+2  ! IMAX + 2*JPHEXT
+    IF (iresp == 0) IDIMX = IDIMX+2*JPHEXT  ! IMAX + 2*JPHEXT
     !
     CALL FMREADLFIN1(klu,'JMAX',IDIMY,iresp)
-    IF (iresp == 0) IDIMY = IDIMY+2  ! JMAX + 2*JPHEXT
+    IF (iresp == 0) IDIMY = IDIMY+2*JPHEXT  ! JMAX + 2*JPHEXT
     !
     CALL FMREADLFIN1(klu,'KMAX',IDIMZ,iresp)
     IF (iresp == 0) IDIMZ = IDIMZ+2  ! KMAX + 2*JPVEXT
@@ -632,7 +634,9 @@ CONTAINS
        CALL LFIOUV(status,ilu,.TRUE.,filename,'UNKNOWN',.FALSE.&
             & ,.FALSE.,iverb,inap,knaf)
     
-       status = NF_CREATE(TRIM(basename)//ypextdest, NF_CLOBBER, kcdf_id)
+       status = NF_CREATE(TRIM(basename)//ypextdest,&
+                IOR(NF_CLOBBER,NF_64BIT_OFFSET), kcdf_id)
+
        IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        status = NF_SET_FILL(kcdf_id,NF_NOFILL,omode)
