@@ -97,21 +97,21 @@ export JOBMULTI="\
 #SBATCH -J  R`basename  $PWD | cut -c -14 `
 #SBATCH -e ${JOBOUT} -o  ${JOBOUT}
 # concatene la sortie standard avec l erreur standard
-#PBS -j oe 
 # réservation de ${NBP} processeurs 
 #SBATCH -N ${NBNODES} -n ${NBP} 
 #SBATCH -t ${TIME}
+#SBATCH --export=NONE
 "
 
 export JOBMONO="\
 #!/bin/bash
 #SBATCH -J  R`basename  $PWD | cut -c -14 `
-#SBATCH -eo ${JOBOUT} 
 # concatene la sortie standard avec l erreur standard
-#PBS -j oe 
+#SBATCH -e ${JOBOUT} -o  ${JOBOUT}
 # réservation de ${NBP} processeurs 
 #SBATCH -N ${NBNODES} -n ${NBP} 
-#PBS -t ${TIME}
+#SBATCH -t ${TIME}
+#SBATCH --export=NONE
 "
 
 export JOBSTAT=${JOBSTAT-"squeue \${SLURM_JOBID} "}
