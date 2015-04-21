@@ -31,7 +31,7 @@ fi
 # SRC_MESONH : default path to mesonh sources 
 #              MUST BE SET TO YOUR OWN MESONH PATH
 #
-export SRC_MESONH="/home/escj/DEV64/MNH-V5-2-0"   
+export SRC_MESONH="/home/rchi421/DEV/MNH-V5-2-0"   
 #
 #  Version MESONH PACKAGE :: PACK-MNH-V5-2-0 : 15/04/2015
 #
@@ -41,19 +41,19 @@ export VERSION_XYZ=MNH-V5-2-0
 #
 #export ARCH=LXgfortran,LXifort,LXpgi,AIX64,SX8,BGQ
 #
-export ARCH=LXgfortran
+export ARCH=LXifort
 #
 #  Version of MPI
 #
 #export VER_MPI=MPIVIDE,MPIAUTO,MPIICE,MPIINTEL
 #
-export VER_MPI=MPIVIDE
+export VER_MPI=MPIINTEL
 #
 # OPTIMIZATION LEVEL
 #
 #export OPTLEVEL=DEBUG,O2
 #
-export OPTLEVEL=DEBUG
+export OPTLEVEL=O2
 #
 #  USER VERSION
 #
@@ -65,7 +65,7 @@ export MNH_NCWRIT=
 #
 # 'Scandollar' Post Processing default variables
 #
-export CONF_DOLLAR=/home/escj/DEV64/MNH-V5-2-0/conf/post/confdollar_aeropc_default
+export CONF_DOLLAR=/home/rchi421/DEV/MNH-V5-2-0/conf/post/confdollar_occigen_default
 #
 # Version of NETCDF / HDF
 #
@@ -138,4 +138,9 @@ export VARTTY=`tty`
 #
 # Optional Environnement variable/Module  Env
 #
+
+ulimit -s unlimited
+module load intel/15.0.0.090
+module load intelmpi/5.0.1.035
+export SLURM_CPU_BIND=none
  
