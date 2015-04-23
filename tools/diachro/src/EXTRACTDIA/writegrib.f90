@@ -440,6 +440,10 @@ IF ( HFLAGFILE(1:3) /= 'CLO' ) THEN
         ISEC1(7)=100 ! type of level  : isobaric surfac
         ISEC1(8)=NINT(PLEV(JK)) ! value of level
         ISEC1(9)=0 ! bottom level if layer 
+      ELSEIF (HTYPEOUT(1:1) == 'A') THEN
+        ISEC1(7)=105 ! type of level  : isobaric surfac
+        ISEC1(8)=NINT(PLEV(JK)) ! value of level
+        ISEC1(9)=0 ! bottom level if layer 
       ELSE     ! code as height levels
         ISEC1(7)=103 ! type of level  : altitude
         ISEC1(8)=NINT(PLEV(JK)) ! value of level

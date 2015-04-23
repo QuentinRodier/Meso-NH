@@ -212,12 +212,12 @@ endif
 !
 SELECT CASE ( HTYPEOUT(1:4) )
  CASE ('LLHV','llhv','LLZV','llzv','LLPV','llpv','jihv','IJHV',&
-         'IJZV','jizv','IJPV','jipv') 
+         'IJZV','jizv','IJPV','jipv','llav','LLAV') 
    YFILEOUT=ADJUSTL(ADJUSTR(HFILENAME(1:LEN(HFILENAME)-1))//HTYPEOUT(1:4))
  CASE DEFAULT
    PRINT*,' ****WRITELLHV: type ', TRIM(HTYPEOUT),' non prevu'
    PRINT*,'types possibles: LLHV/llhv, LLZV/llzv, LLPV/llpv, IJHV/jihv'
-   PRINT*,'IJZV/jizv, IJPV/jipv'
+   PRINT*,'IJZV/jizv, IJPV/jipv,LLAV/llav'
    KRETCODE=1
    RETURN
 END SELECT
@@ -512,7 +512,7 @@ IF ( HFLAGFILE(1:3) /= 'CLO' ) THEN
               END DO
             ENDIF
   
-          CASE ('LLZV','llzv','LLPV','llpv') 
+          CASE ('LLZV','llzv','LLPV','llpv','LLAV','llav')
             IF (PRESENT (PALT) ) THEN
             !altitude des niveaux donnee par PALT
               if (KVERBIA > 0) then

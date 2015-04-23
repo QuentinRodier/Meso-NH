@@ -87,7 +87,13 @@
 !       11/07/2014 (G. TANGUY) : correction pour les donnees LES de type SSOl
 !                                (vlev et field ne correspondaient pas suite à
 !                                mauvais zoom)
-!-------------------------------------------------------------------------------
+!       16/12/2014 (G.DELAUTIER) : ajout cas LLAV llav : altitude au dessus du
+!       sol
+!       18/02/2015 (G.DELAUTIER) : ajout cas AGRB : altitude au dessus du
+!       sol
+!       Avril 2015 (G.DELAUTIER) : ajout CFIXRESOL pour car GRIB +correction
+!       pour FF10MAX
+! -----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -210,8 +216,13 @@ LOGICAL :: LVAR2D
 INTEGER :: ILEVEL2D ! en option : altitude du champ 2D à coder dans le fichier GRIB
 LOGICAL :: LLEVEL2D 
 REAL,DIMENSION(4) :: ZLATLON
+INTEGER,DIMENSION(4) :: ILATLON
 INTEGER :: INX,INY
 REAL,DIMENSION(:,:,:),ALLOCATABLE :: ZALT
+REAL,DIMENSION(:,:,:),ALLOCATABLE :: zlistevert3D
+INTEGER :: IZLIST
+CHARACTER(LEN=1) :: CFIXRESOL
+REAL :: ZDX_GRB,ZDY_GRB,ZCONTROL
 !-------------------------------------------------------------------------------
 !
 !*       1.     INIT
@@ -262,7 +273,7 @@ READ(5,'(A28)') YFILEIN
 CALL WRITEDIR(ILUDIR,YFILEIN)
 !
 PRINT*, '- type of the output file ?'
-PRINT*, '(DIAC/llhv/llzv/llpv/LLHV/LLZV/LLPV/IJHV/IJZV/IJPV/jihv/jizv/jipv/FREE/KCDL/ZCDL/PCDL/ZGRB/PGRB)'
+PRINT*, '(DIAC/llhv/llzv/llpv/llav/LLHV/LLZV/LLPV/LLAV/IJHV/IJZV/IJPV/jihv/jizv/jipv/FREE/KCDL/ZCDL/PCDL/ZGRB/PGRB/AGRB)'
 READ(5,'(A4)')YTYPEOUT
 CALL WRITEDIR(ILUDIR,YTYPEOUT)
 PRINT*,'the file ',TRIM(YFILEIN),' will be converted in type ',YTYPEOUT
@@ -281,7 +292,8 @@ NVERB=ilocverbia                          ! verbosity of mesonh routines
 !
 SELECT CASE (YTYPEOUT)                                   
   CASE('LLHV','llhv','DIAC','FREE','KCDL','ZCDL','PCDL','llzv','LLZV',&
-          &'llpv','LLPV','IJHV','IJZV','IJPV','jihv','jizv','jipv','ZGRB','PGRB') ! lecture des choix de l utilisateur
+          &'llpv','LLPV','IJHV','IJZV','IJPV','jihv','jizv','jipv','ZGRB','PGRB','AGRB',&
+          &'llav','LLAV') ! lecture des choix de l utilisateur
     IF ( YTYPEOUT == 'FREE' ) THEN
       PRINT*, '- format of writing for fields ? '
       PRINT*, '    (fortran syntaxe of FMT in WRITE)'
@@ -293,7 +305,8 @@ SELECT CASE (YTYPEOUT)
     ENDIF
     ! lecture du zoom
     IND_VERT= INDEX(YTYPEOUT(1:4),'Z') + INDEX(YTYPEOUT(1:4),'P') + &
-              INDEX(YTYPEOUT(1:4),'z') + INDEX(YTYPEOUT(1:4),'p')
+              INDEX(YTYPEOUT(1:4),'z') + INDEX(YTYPEOUT(1:4),'p') + &
+              INDEX(YTYPEOUT(1:4),'a') + INDEX(YTYPEOUT(1:4),'A')
     IND_LL= INDEX(YTYPEOUT(1:2),'L') + INDEX(YTYPEOUT(1:2),'l') 
     IND_IJ= INDEX(YTYPEOUT(1:2),'IJ') + INDEX(YTYPEOUT(1:2),'ji') 
     IND_GRB=INDEX(YTYPEOUT(1:4),'GRB')
@@ -327,8 +340,8 @@ print*,YTYPEOUT,IND_IJ
         CALL WRITEDIR(ILUDIR,ikfin)
       END IF
     ELSE
-      ! cas 'llzv','LLZV','llpv','LLPV','llhv','LLHV'
-      !      'ZGRB','PGRB'
+      ! cas 'llzv','LLZV','llpv','LLPV','llhv','LLHV','llav' 'LLAV'
+      !      'ZGRB','PGRB','AGRB'
       PRINT*, '- zoom on the 2 first directions: '
       PRINT*, '              lonmin,lonmax,latmin,latmax'
       PRINT*, '0.,0.,0.,0. for the whole physical domain'
@@ -353,6 +366,21 @@ print*,YTYPEOUT,IND_IJ
       else
         ijdeb=-2 ; ijfin=-2
       endif
+      IF (IND_GRB/=0) THEN
+        PRINT*,'Do you want to fix resolution in x and y ? (y/n)'
+        PRINT*,'(only available with LALO)'
+        READ(5,*) CFIXRESOL
+        CALL WRITEDIR(ILUDIR,CFIXRESOL)
+        IF (CFIXRESOL=='y') THEN
+          PRINT*,'Enter x resolution (in millidegrees)'
+          READ(5,*) ZDX_GRB
+          PRINT*,'Enter y resolution (in millidegrees)'
+          READ(5,*) ZDY_GRB
+          CALL WRITEDIR(ILUDIR,ZDX_GRB)
+          CALL WRITEDIR(ILUDIR,ZDY_GRB)
+        ENDIF
+
+      ENDIF
       IF (IND_VERT==0) THEN
         ! cas 'llhv','LLHV'
         PRINT*, '- zoom on the 3rd dimension: '
@@ -425,8 +453,9 @@ print*,YTYPEOUT,IND_IJ
     ENDIF
   CASE DEFAULT
     PRINT*, 'Incorrect value for the output type:',YTYPEOUT
-    PRINT*, ' the following ones are currently available : DIAC,LLHV,llhv,FREE,KCDL,ZCDL,PCDL,llzv,LLZV,llpv,LLPV'
-    PRINT*, 'IJHV,IJZV,IJPV,jihv,jizv,jipv'
+    PRINT*, 'the following ones are currently available :'
+    PRINT*, 'DIAC,LLHV,llhv,FREE,KCDL,ZCDL,PCDL,llzv,LLZV,llpv,LLPV,llav,LLAV'
+    PRINT*, 'IJHV,IJZV,IJPV,jihv,jizv,jipv,ZGRB,PGRB,AGRB'
     STOP
 END SELECT
 ! 
@@ -539,7 +568,7 @@ DO JGR=1,10000
   IF ( CGROUP(1:2) == 'UT' .OR. &
        CGROUP(1:2) == 'VT' .OR. &
        CGROUP(1:2) == 'DD' .OR. &
-       CGROUP(1:2) == 'FF'      )  THEN
+       CGROUP(1:2) == 'FF' .AND. CGROUP(1:7) /= 'FF10MAX'     )  THEN
     !
     IF ( (CGROUP(1:2)=='UT'.OR.CGROUP(1:2)=='VT') .AND. &
           YOUTGRID(1:4) /= 'LALO'                       ) THEN
@@ -1017,7 +1046,7 @@ DO JGR=1,10000
         end if
       !
       CASE('KCDL','ZCDL','PCDL','LLZV','LLPV','llpv','llzv',&
-             & 'IJZV','jizv','IJPV','jipv')
+             & 'IJZV','jizv','IJPV','jipv','llav','LLAV')
         ! replace field at mass points
         IF ( CGROUP /= 'VLEV' ) THEN
           If (ALLOCATED(ZWORK3D))DEALLOCATE(ZWORK3D)
@@ -1094,6 +1123,14 @@ DO JGR=1,10000
                   ikdebzint=2
                   IF (INDEX(YTYPEOUT(1:4),'Z')/=0 .OR. INDEX(YTYPEOUT(1:4),'z')/=0) THEN
                     CALL ZINTER(ZWORK3D,XZZ,ZVARZCST,zlistevert,ikdebzint,XSPVAL)
+                  ELSE IF (INDEX(YTYPEOUT(1:4),'A')/=0 .OR. INDEX(YTYPEOUT(1:4),'a')/=0) THEN
+                    IF (.NOT. ALLOCATED(zlistevert3D)) THEN
+                      ALLOCATE(zlistevert3D(SIZE(XZS,1),SIZE(XZS,2),SIZE(zlistevert)))
+                      DO IZLIST=1,SIZE(zlistevert)
+                        zlistevert3D(:,:,IZLIST)=XZS(:,:)+zlistevert(IZLIST)
+                      ENDDO
+                    ENDIF     
+                    CALL SINTER(ZWORK3D,XZZ,ZVARZCST,zlistevert3D,ikdebzint,XSPVAL)
                   ELSE IF (INDEX(YTYPEOUT(1:4),'P')/=0 .OR. INDEX(YTYPEOUT(1:4),'p')/=0) THEN
                     CALL PINTER(ZWORK3D,0,XSPVAL,zlistevert,ZVARZCST,ZPABS)
                   ELSE IF (INDEX(YTYPEOUT(1:4),'H')/=0 .OR. INDEX(YTYPEOUT(1:4),'h')/=0) THEN
@@ -1295,7 +1332,7 @@ DO JGR=1,10000
             ivarjfin=IZOOMJFIN
           ENDIF
           SELECT CASE(YTYPEOUT(1:4))
-          CASE('LLZV','llzv','LLPV','llpv')
+          CASE('LLZV','llzv','LLPV','llpv','LLAV','llav')
             IF (allocated(ZWORK3D)) DEALLOCATE(ZWORK3D)
             ALLOCATE(ZWORK3D(size(XVAR,1),size(XVAR,2),size(XVAR,3)))
             IF (SIZE(XVAR,3)==inbvertz) THEN
@@ -1356,7 +1393,7 @@ DO JGR=1,10000
           END SELECT
         ELSE ! pas d interpolation horizontale
           SELECT CASE(YTYPEOUT(1:4))
-          CASE('LLZV','llzv','LLPV','llpv','IJZV','jizv','IJPV','jipv')
+          CASE('LLZV','llzv','LLPV','llpv','IJZV','jizv','IJPV','jipv','LLAV','llav')
             IF (SIZE(XVAR,3)==inbvertz) THEN  ! champ 3D
               IF (allocated(ZWORK3D)) DEALLOCATE(ZWORK3D)
               ALLOCATE(ZWORK3D(size(XVAR,1),size(XVAR,2),size(XVAR,3)))
@@ -1370,6 +1407,7 @@ DO JGR=1,10000
             ELSE                              ! champ 2D
               IF((YTYPEOUT(3:3)=='z').OR.(YTYPEOUT(3:3)=='p')) YTYPEOUT3='h'
               IF((YTYPEOUT(3:3)=='Z').OR.(YTYPEOUT(3:3)=='P')) YTYPEOUT3='H'
+              IF((YTYPEOUT(3:3)=='a').OR.(YTYPEOUT(3:3)=='A')) YTYPEOUT3='H'
               CALL WRITELLHV(ivarideb,ivarifin,ivarjdeb,ivarjfin, &
                        ivarkdeb,ivarkfin,ivartinf,ivartsup, &
                        ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup, &
@@ -1431,7 +1469,7 @@ DO JGR=1,10000
         ! retour a XZZ pour NGRID a 4 (cf readvar)
         CALL COMPCOORD_FORDIACHRO(4)
 !============================================   
-   CASE('ZGRB','PGRB')
+   CASE('ZGRB','PGRB','AGRB')
         IF(SIZE(XVAR,3)==1) THEN
            LVAR2D=.TRUE.
         ENDIF
@@ -1492,6 +1530,14 @@ DO JGR=1,10000
                   ikdebzint=2
                   IF (INDEX(YTYPEOUT(1:4),'Z')/=0 .OR. INDEX(YTYPEOUT(1:4),'z')/=0) THEN
                     CALL ZINTER(ZWORK3D,XZZ,ZVARZCST,zlistevert,ikdebzint,XSPVAL)
+                  ELSE IF (INDEX(YTYPEOUT(1:4),'A')/=0 .OR. INDEX(YTYPEOUT(1:4),'a')/=0) THEN
+                    IF (.NOT. ALLOCATED(zlistevert3D)) THEN
+                      ALLOCATE(zlistevert3D(SIZE(XZS,1),SIZE(XZS,2),SIZE(zlistevert)))
+                      DO IZLIST=1,SIZE(zlistevert)
+                        zlistevert3D(:,:,IZLIST)=XZS(:,:)+zlistevert(IZLIST)
+                      ENDDO
+                    ENDIF     
+                    CALL SINTER(ZWORK3D,XZZ,ZVARZCST,zlistevert3D,ikdebzint,XSPVAL)
                   ELSE IF (INDEX(YTYPEOUT(1:4),'P')/=0 .OR. INDEX(YTYPEOUT(1:4),'p')/=0) THEN
                     CALL PINTER(ZWORK3D,0,XSPVAL,zlistevert,ZVARZCST,ZPABS)
                   ELSE IF (INDEX(YTYPEOUT(1:4),'H')/=0 .OR. INDEX(YTYPEOUT(1:4),'h')/=0) THEN
@@ -1525,8 +1571,38 @@ DO JGR=1,10000
           IF (ZJDEB /=0 .AND. ZJDEB/=-1) ZLATLON(2)=zjdeb*1000.
           IF (ZIDEB /=0 .AND. ZIDEB/=-1) ZLATLON(3)=zideb*1000.
           IF (ZIFIN /=0 .AND. ZIFIN/=-1) ZLATLON(4)=zifin*1000.
-
-          CALL INI2LALO(ZLATLON,INX,INY)
+         
+          ILATLON(:)=ZLATLON(:)
+          
+          IF (ILATLON(1)>  ZLATLON(1)) ILATLON(1)=ILATLON(1)-1
+          IF (ILATLON(2)<  ZLATLON(2)) ILATLON(2)=ILATLON(2)+1
+          IF (ILATLON(3)<  ZLATLON(3)) ILATLON(3)=ILATLON(3)+1
+          IF (ILATLON(4)>  ZLATLON(4)) ILATLON(4)=ILATLON(4)-1
+ 
+          ZLATLON=ILATLON
+          IF (CFIXRESOL=="y") THEN
+            INX=(ZLATLON(4)-ZLATLON(3))/ZDX_GRB +1 
+            INY=(ZLATLON(1)-ZLATLON(2))/ZDY_GRB +1 
+            ZCONTROL=ZLATLON(3)+(INX-1)*ZDX_GRB
+            IF (ZCONTROL/=ZLATLON(4)) THEN
+              print*,"warning : need to change E longitude"
+              ZLATLON(4)=ZCONTROL
+              print*,"lon min" ,ZLATLON(3)
+              print*,"lon max" ,ZLATLON(4)
+              print*,"dx",ZDX_GRB
+            ENDIF
+            ZCONTROL=ZLATLON(2)+(INY-1)*ZDY_GRB
+            IF (ZCONTROL/=ZLATLON(1)) THEN
+              print*,"warning : need to change N latitude"
+              ZLATLON(1)=ZCONTROL
+              print*,"lat min" ,ZLATLON(2)
+              print*,"lat max" ,ZLATLON(1)
+              print*,"dy",ZDY_GRB
+            ENDIF
+            print*,INX,INY,ZLATLON,ZDX_GRB,ZDY_GRB
+          ELSE
+            CALL INI2LALO(ZLATLON,INX,INY)
+          ENDIF
           ALLOCATE(ZVARSAVE(size(XVAR,1),size(XVAR,2),size(XVAR,3),   &
                               size(XVAR,4),size(XVAR,5),size(XVAR,6))   )
           ZVARSAVE=XVAR
@@ -1629,7 +1705,7 @@ SELECT CASE(YTYPEOUT(1:4))
     CALL WRITEVAR(ivarideb,ivarifin,ivarjdeb,ivarjfin,ivarkdeb,ivarkfin,&
                   ivartinf,ivartsup,ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,  &
                  CGROUP,YFILEIN,YFLAGWRITE,'2  ',ilocverbia,iret)
-  CASE('LLHV','llhv','LLZV','llzv','LLPV','llpv',&
+  CASE('LLHV','llhv','LLZV','llzv','LLPV','llpv','LLAV','llav',&
           'IJHV','IJZV','IJPV','jihv','jizv','jipv')             
     CALL WRITELLHV(ivarideb,ivarifin,ivarjdeb,ivarjfin,ivarkdeb,ivarkfin,&
                  ivartinf,ivartsup,ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,&
@@ -1639,7 +1715,7 @@ SELECT CASE(YTYPEOUT(1:4))
                   ivartinf,ivartsup,ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,&
                   CGROUP,YFILEIN,YFLAGWRITE,YOUTGRID,YSUFFIX_file,      &
                   ilocverbia,iret,PGRIDX=XXX(:,IGRID),PGRIDY=XXY(:,IGRID))
-  CASE('ZGRB','PGRB')
+  CASE('ZGRB','PGRB','AGRB')
     CALL WRITEGRIB(ivarideb,ivarifin,ivarjdeb,ivarjfin, &
                    ivarkdeb,ivarkfin,ivartinf,ivartsup, &
                    ivartrajinf,ivartrajsup,ivarprocinf,ivarprocsup,&
