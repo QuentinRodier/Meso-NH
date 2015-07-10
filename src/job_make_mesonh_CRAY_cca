@@ -21,7 +21,7 @@ pwd
 
 #ARCH=LXifort
 ARCH=LXcray
-. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-1-4-MPICRAY-O2
+. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-2-0-MPICRAY-O2
 
 
 time gmake -j 4 2>&1 | tee sortie_compile_cray.$$
