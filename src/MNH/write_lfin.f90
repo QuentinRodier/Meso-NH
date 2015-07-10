@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/20 16:58:20
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_WRITE_LFIFM_n
@@ -156,6 +155,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
 !!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
+!!       C.Lac         Dec.2014 writing past wind fields for centred advection
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -213,6 +213,8 @@ USE MODD_FOREFIRE
 #endif
 USE MODD_CONDSAMP
 USE MODD_CH_AEROSOL
+USE MODD_PAST_FIELD_n
+USE MODD_ADV_n, ONLY: CUVW_ADV_SCHEME,XRTKEMS
 !
 USE MODE_FMWRIT
 USE MODE_ll
@@ -652,6 +654,49 @@ IGRID=1
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
+!*       1.4.2  Time t-dt:
+
+IF ( CUVW_ADV_SCHEME == 'CEN4TH' ) THEN
+  YRECFM='UM'
+  YCOMMENT='X_Y_Z_U component of wind (m/s)'
+  IGRID=2
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XUM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  YRECFM='VM'
+  YCOMMENT='X_Y_Z_V component of wind (m/s)'
+  IGRID=3
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XVM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  YRECFM='WM'
+  YCOMMENT='X_Y_Z_vertical wind (m/s)'
+  IGRID=4
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XWM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+   YRECFM='DUM'
+  YCOMMENT='X_Y_Z_U component of wind (m/s)'
+  IGRID=2
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XDUM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  YRECFM='DVM'
+  YCOMMENT='X_Y_Z_V component of wind (m/s)'
+  IGRID=3
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XDVM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  YRECFM='DWM'
+  YCOMMENT='X_Y_Z_vertical wind (m/s)'
+  IGRID=4
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XDWM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+END IF
+
+
+
 IF (MEAN_COUNT /= 0) THEN
 !
   YRECFM='UMMEAN'
@@ -754,6 +799,12 @@ IF (CTURB /= 'NONE') THEN
   IGRID=1
   ILENCH=LEN(YCOMMENT)
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTKET,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  YRECFM='TKEMS'
+  YCOMMENT='X_Y_Z_Turbulent Kinetic Energy adv source (M**2/S**3)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XRTKEMS,IGRID,ILENCH,YCOMMENT,IRESP)  
 END IF
 !
 !

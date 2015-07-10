@@ -15,8 +15,9 @@ INTERFACE
             KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
-            PUM,PVM,PWM,                                                     &
-            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRT,PSVT,PCIT,PDRYMASST,    &
+            PUM,PVM,PWM,PDUM,PDVM,PDWM,                                                     &
+            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRTKEMS,                    &
+            PRT,PSVT,PCIT,PDRYMASST,    &
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
@@ -63,13 +64,15 @@ INTEGER, INTENT(IN) :: KSIZELBY_ll,KSIZELBYV_ll      ! for T,U,W  and v
 INTEGER, INTENT(IN):: KSIZELBYTKE_ll                ! for TKE
 INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PDUM,PDVM,PDWM  ! Difference on U,V,W 
+                                                          ! between t+dt and t-dt
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PSBL_DEPTH      ! SBL depth
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PWTHVMF         ! MassFlux buoyancy flux
 !
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
-                                                          ! eps at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-1
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
@@ -128,8 +131,9 @@ END MODULE MODI_READ_FIELD
             KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
-            PUM,PVM,PWM,                                                     &
-            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRT,PSVT,PCIT,PDRYMASST,    &
+            PUM,PVM,PWM,PDUM,PDVM,PDWM,                                                     &
+            PUT,PVT,PWT,PTHT,PPABST,PPABSM,PTKET,PRTKEMS,                    &
+            PRT,PSVT,PCIT,PDRYMASST,    &
             PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
             PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
             PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
@@ -225,6 +229,7 @@ END MODULE MODI_READ_FIELD
 !!          C.Lac       03/13     add prognostic supersaturation for C2R2/KHKO
 !!          Bosseur & Filippi 07/13 Adds Forefire
 !!          M. Leriche  11/14     correct bug in pH initialization
+!!          C.Lac       12/14     correction for reproducibility START/RESTA
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -299,13 +304,15 @@ INTEGER, INTENT(IN):: KSIZELBYTKE_ll                ! for TKE
 INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
 !
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PDUM,PDVM,PDWM  ! Difference on U,V,W 
+                                                          ! between t+dt and t-dt
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
 REAL, DIMENSION(:,:),      INTENT(OUT) :: PSBL_DEPTH      ! SBL depth
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PWTHVMF         ! MassFlux buoyancy flux
 !
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
-                                                          ! eps at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PRTKEMS         ! tke adv source
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
 REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-1
 REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
@@ -455,8 +462,14 @@ SELECT CASE(HGETTKET)
     END IF
     YDIR='XY'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PTKET,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (KMASDEV>50) THEN
+      YRECFM = 'TKEMS'
+      YDIR='XY'
+      CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PRTKEMS,IGRID,ILENCH,YCOMMENT,IRESP)
+    END IF
   CASE('INIT')
     PTKET(:,:,:)=XTKEMIN
+    PRTKEMS(:,:,:)=0.               
 END SELECT 
 !
 IRR=0
@@ -908,7 +921,7 @@ END IF
 !
 !*       2.1  Time t-dt:
 !
-IF (CPROGRAM=='MODEL' .AND. HUVW_ADV_SCHEME(1:3)=='CEN') THEN
+IF (CPROGRAM=='MESONH' .AND. HUVW_ADV_SCHEME(1:3)=='CEN') THEN
   IF (CCONF=='RESTA') THEN
     YRECFM = 'UM'
     YDIR='XY'
@@ -921,6 +934,18 @@ IF (CPROGRAM=='MODEL' .AND. HUVW_ADV_SCHEME(1:3)=='CEN') THEN
     YRECFM = 'WM'
     YDIR='XY'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PWM,IGRID,ILENCH,YCOMMENT,IRESP)
+    !
+    YRECFM = 'DUM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PDUM,IGRID,ILENCH,YCOMMENT,IRESP)
+    !
+    YRECFM = 'DVM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PDVM,IGRID,ILENCH,YCOMMENT,IRESP)
+    !
+    YRECFM = 'DWM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PDWM,IGRID,ILENCH,YCOMMENT,IRESP)
   ELSE
     PUM = PUT
     PVM = PVT

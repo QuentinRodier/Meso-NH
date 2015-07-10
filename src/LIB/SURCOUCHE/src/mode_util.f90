@@ -680,12 +680,16 @@ CONTAINS
       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 !!! Status for dim creation
+      CREATET = .TRUE.
       CREATEX = .TRUE.
       CREATEY = .TRUE.
       CREATEZ = .TRUE.
       CREATEXR = .TRUE.
+      CREATEZR = .TRUE.
+      CREATEN = .TRUE.
       CREATEDATE = .TRUE.
       CREATEWL = .TRUE.
+      CREATED = .TRUE.
       WRITETIME = .TRUE.
       NUMDIM = 0
       first_var=hvnam

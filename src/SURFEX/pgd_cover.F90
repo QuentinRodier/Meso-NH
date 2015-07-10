@@ -143,6 +143,7 @@ INTEGER                  :: ICOVER      ! 0 if cover is not present, >1 if prese
 !                                       ! (even on another processor)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
+INTEGER :: JI, JX, JY
 !---------------------------------------------------------------
 !
 !*    1.      Initializations
@@ -195,6 +196,15 @@ IF (ANY(XUNIF_COVER/=0.)) THEN
        XCOVER(:,JCOVER) = XUNIF_COVER(JCOVER)
     END DO
     XCOVER(:,:)=XCOVER(:,:)/SPREAD(SUM(XCOVER(:,:),2),2,JPCOVER)
+  DO JI=1,NL
+    JY = (JI-1)/20+1
+    JX =  JI -(JY-1)*20
+    IF (JX>=2 .AND. JX<4) THEN
+      XCOVER(JI,:) = 0.   !JI->JX
+      XCOVER(JI,202)= 1.  !JI->JX
+    END IF
+  END DO
+! inclusion d'arbres 
   END IF
 !
 !*    3.3     No data

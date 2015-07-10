@@ -1,3 +1,4 @@
+
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -259,6 +260,8 @@ END MODULE MODI_INI_MODEL_n
 !!                                         + Mean fields
 !!                   July  2013  (Bosseur & Filippi) Adds Forefire
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
+!!                   JAn.  2015  (F. Brosse) bug in allocate XACPRAQ
+!!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -661,12 +664,20 @@ IF (LMEAN_FIELD) THEN
 END IF
 !
 IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
-  ALLOCATE(XUM(IIU,IJU,IKU))      ; XUM  = 0.0
-  ALLOCATE(XVM(IIU,IJU,IKU))      ; XVM  = 0.0
-  ALLOCATE(XWM(IIU,IJU,IKU))      ; XWM  = 0.0
-  ALLOCATE(XDUM(IIU,IJU,IKU))     ; XDUM  = 0.0
-  ALLOCATE(XDVM(IIU,IJU,IKU))     ; XDVM  = 0.0
-  ALLOCATE(XDWM(IIU,IJU,IKU))     ; XDWM  = 0.0
+  ALLOCATE(XUM(IIU,IJU,IKU))
+  ALLOCATE(XVM(IIU,IJU,IKU))
+  ALLOCATE(XWM(IIU,IJU,IKU))
+  ALLOCATE(XDUM(IIU,IJU,IKU))
+  ALLOCATE(XDVM(IIU,IJU,IKU))
+  ALLOCATE(XDWM(IIU,IJU,IKU))
+  IF (CCONF == 'START') THEN
+    XUM  = 0.0
+    XVM  = 0.0
+    XWM  = 0.0
+    XDUM  = 0.0
+    XDVM  = 0.0
+    XDWM  = 0.0
+  END IF
 END IF
 !
 ALLOCATE(XUT(IIU,IJU,IKU))      ; XUT  = 0.0
@@ -1410,11 +1421,12 @@ ENDIF
 !
 !*      3.13  Module MODD_CH_PH_n
 !
-IF ( (LUSECHAQ.AND.LCH_PH) .AND.  &     
-     (CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
-  ALLOCATE(XPHC(IIU,IJU,IKU))
-  IF (NRRL==2) THEN
-    ALLOCATE(XPHR(IIU,IJU,IKU))
+IF (LUSECHAQ.AND.(CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
+  IF (LCH_PH) THEN
+    ALLOCATE(XPHC(IIU,IJU,IKU))
+    IF (NRRL==2) THEN
+      ALLOCATE(XPHR(IIU,IJU,IKU))
+    ENDIF
   ENDIF
   ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
   XACPRAQ(:,:,:) = 0.
@@ -1509,8 +1521,9 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,            &
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
-                XUM,XVM,XWM,                                                  &
-                XUT,XVT,XWT,XTHT,XPABST,XPABSM,XTKET,XRT,XSVT,XCIT,XDRYMASST, &
+                XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &
+                XUT,XVT,XWT,XTHT,XPABST,XPABSM,XTKET,XRTKEMS,                 &
+                XRT,XSVT,XCIT,XDRYMASST,                                      &
                 XSIGS,XSRCT,XCLDFR,XBL_DEPTH,XSBL_DEPTH,XWTHVMF,XPHC,XPHR,    &
                 XLSUM,XLSVM,XLSWM,XLSTHM,XLSRVM,                              &
                 XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,                        &

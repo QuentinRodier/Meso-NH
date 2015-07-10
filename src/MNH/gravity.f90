@@ -104,18 +104,17 @@ END MODULE MODI_GRAVITY
 !!    MODIFICATIONS
 !!    -------------
 !!      C.Lac - March 2011 - Splitted  from dyn_sources
+!!      Q.Rodier 06/15 correction on budget
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CST
 !
 USE MODI_SHUMAN
-USE MODI_BUDGET
 !  
 IMPLICIT NONE
 !  
@@ -179,7 +178,6 @@ IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
 !    the extrapolation for the PTHT and the THVREF must be the same at the
 !    ground
 !
-  IF (LBUDGET_W) CALL BUDGET (PRWS,3,'GRAV_BU_RW')
 !
 END IF
 !

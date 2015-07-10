@@ -23,6 +23,7 @@ MODULE MODE_FMREAD
 !Correction :
 !  J.Escobar : 22/08/2005 : BUG : manque un "GOTO 1000" si champs
 !              lue non trouvé !!!
+!  J.Escobar : 13/01/2015 : remove comment on BCAST(IRESP in FMREADX2_ll
 !
 USE MODD_MPIF
 #if defined(MNH_IOCDF4)

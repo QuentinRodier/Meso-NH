@@ -70,6 +70,7 @@ END MODULE MODI_GRAVITY_IMPL
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/2011 
+!!      Q.Rodier 06/15 correction on budget
 !!
 !-------------------------------------------------------------------------------
 !
@@ -78,6 +79,8 @@ END MODULE MODI_GRAVITY_IMPL
 !
 USE MODI_GRAVITY  
 USE MODI_ADV_BOUNDARIES
+USE MODD_BUDGET
+USE MODI_BUDGET
 !
 !-------------------------------------------------------------------------------
 !
@@ -144,6 +147,7 @@ CALL GRAVITY ( KRR,KRRL, KRRI, ZTH, ZR, PRHODJ, PTHVREF, ZRWS_GRAV(:,:,:) )
 !
 PRWS(:,:,:) = PRWS(:,:,:) + ZRWS_GRAV(:,:,:)
 !
+IF (LBUDGET_W) CALL BUDGET (PRWS,3,'GRAV_BU_RW')
 !
 !-------------------------------------------------------------------------------
 !

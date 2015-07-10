@@ -12,7 +12,7 @@
 OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout
 OPT_PERF0  =  -O0
 OPT_PERF2  =  -O2
-OPT_PERF3  =  -O3
+OPT_PERF3  =  -O3 -xHost
 OPT_CHECK  =  -CB -ftrapuv 
 OPT_I8     =  -i8
 OPT_R8     =  -r8
@@ -69,15 +69,21 @@ FC = ifort
 ifeq "$(VER_MPI)" "MPIAUTO"
 ifneq "$(findstring TAU,$(XYZ))" ""
 F90 = tau_f90.sh 
-export TAU_MAKEFILE=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_64/lib/Makefile.tau-mpi
+export TAU_MAKEFILE?=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_64/lib/Makefile.tau-mpi
 LIBS += -lz 
 else
 F90 = mpif90
 endif
 else
 ifeq "$(VER_MPI)" "MPIINTEL"
+ifneq "$(findstring TAU,$(XYZ))" ""
+F90 = tau_f90.sh 
+export TAU_MAKEFILE?=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_64/lib/Makefile.tau-mpi
+LIBS += -lz 
+else
 F90 = mpiifort
-ifeq "$(MNH_INT)" "8"
+endif
+ifeq "$(MNH_INT)" "I8"
 OPT_BASE         += -ilp64
 endif
 else
@@ -98,7 +104,7 @@ FX90FLAGS =  $(OPT)
 # -132 
 #
 #LDFLAGS    =  -Wl,-noinhibit-exec  -Wl,-warn-once $(PAR)
-LDFLAGS    =   -Wl,-warn-once $(PAR)
+LDFLAGS    =   -Wl,-warn-once $(PAR) $(OPT_BASE)
 #
 # preprocessing flags 
 #

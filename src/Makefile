@@ -172,11 +172,7 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 # MASTER RULES                                           #
 #                                                        #
 ##########################################################
-ifeq "$(VER_CDF)" "CDFAUTO"
 all : gribapi progmaster
-else
-all : gribapi progmaster
-endif
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
 
@@ -191,6 +187,7 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 depmaster : cdf
 endif
 
+depmaster : gribapi
 
 filedepallmaster :  $(DEP_ALL_MASTER)
 	find  $(OBJDIR_MASTER) -follow -name "*.D" >  $(OBJDIR_MASTER)/filemaster
@@ -203,7 +200,6 @@ libmaster :  depmaster
 bibmaster :  libmaster
 	@$(MAKE)  -I$(B)$(OBJDIR_MASTER)  DO_COMP_MASTER=YES OBJDIR=$(OBJDIR_MASTER) $(LIB_MASTER)
 	mv $(LIB_MASTER)  $(subst lib-,bib-,$(LIB_MASTER))
-
 
 objmaster :  $(OBJS_LISTE_MASTER)
 

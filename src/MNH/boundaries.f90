@@ -167,6 +167,8 @@ END MODULE MODI_BOUNDARIES
 !!                                          (fair weather profiles)
 !!      Modification    07/2013  (Bosseur & Filippi) adds Forefire
 !!      Modification    04/2013  (C.Lac)    Remove instant M               
+!!      Modification    01/2015  (JL Redelsperger) Introduction of ponderation
+!!                                 for non normal velocity and potential temp
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -252,6 +254,7 @@ INTEGER             :: JRR       ! Loop index for RR variables (water)
 INTEGER             :: JSV       ! Loop index for Scalar Variables
 INTEGER             :: IMI       ! Model Index
 REAL                :: ZTSTEP    ! effective time step
+REAL                :: ZPOND      !  Coeff PONDERATION LS 
 INTEGER             :: ILBX,ILBY ! size of LB fields' arrays
 LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE :: GCHBOUNDARY, GAERBOUNDARY,&
                     GDSTBOUNDARY, GSLTBOUNDARY, GPPBOUNDARY,          &
@@ -431,6 +434,9 @@ END IF
 !
 !
 !-------------------------------------------------------------------------------
+! PONDERATION COEFF for  Non-Normal velocities and pot temperature
+!
+ZPOND = 0.2
 !
 !*       4.    LBC FILLING IN THE X DIRECTION (LEFT WEST SIDE):   
 !              ------------------------------------------------
@@ -472,9 +478,9 @@ SELECT CASE ( HLBCX(1) )
         PTHT (IIB-1,:,:) = 2.*PTHT (IIB,:,:)   -PTHT (IIB+1,:,:)
 !
       ELSEWHERE                                   !  INFLOW  condition
-        PVT  (IIB-1,:,:) = ZLBXVT   (1,:,:)
-        PWT  (IIB-1,:,:) = ZLBXWT   (1,:,:) 
-        PTHT (IIB-1,:,:) = ZLBXTHT  (1,:,:)
+        PVT  (IIB-1,:,:) = ZPOND*ZLBXVT  (1,:,:) + (1.-ZPOND)* PVT(IIB,:,:)
+        PWT  (IIB-1,:,:) = ZPOND*ZLBXWT  (1,:,:) + (1.-ZPOND)* PWT(IIB,:,:)
+        PTHT (IIB-1,:,:) = ZPOND*ZLBXTHT (1,:,:) + (1.-ZPOND)* PTHT(IIB,:,:)
       ENDWHERE
     ENDIF
 !
@@ -562,9 +568,9 @@ SELECT CASE ( HLBCX(2) )
         PTHT (IIE+1,:,:) = 2.*PTHT (IIE,:,:)   -PTHT (IIE-1,:,:)
 !
       ELSEWHERE                                   !  INFLOW  condition
-        PVT  (IIE+1,:,:) = ZLBXVT   (ILBX,:,:)
-        PWT  (IIE+1,:,:) = ZLBXWT   (ILBX,:,:) 
-        PTHT (IIE+1,:,:) = ZLBXTHT  (ILBX,:,:)
+        PVT  (IIE+1,:,:) = ZPOND*ZLBXVT  (ILBX,:,:) + (1.-ZPOND)* PVT(IIE,:,:)
+        PWT  (IIE+1,:,:) = ZPOND*ZLBXWT  (ILBX,:,:) + (1.-ZPOND)* PWT(IIE,:,:)
+        PTHT (IIE+1,:,:) = ZPOND*ZLBXTHT (ILBX,:,:) + (1.-ZPOND)* PTHT(IIE,:,:)
       ENDWHERE
     ENDIF
 !
@@ -652,9 +658,9 @@ SELECT CASE ( HLBCY(1) )
         PWT  (:,IJB-1,:) = 2.*PWT  (:,IJB,:)   -PWT  (:,IJB+1,:)
         PTHT (:,IJB-1,:) = 2.*PTHT (:,IJB,:)   -PTHT (:,IJB+1,:)
       ELSEWHERE                                   !  INFLOW  condition
-        PUT  (:,IJB-1,:) = ZLBYUT   (:,1,:)
-        PWT  (:,IJB-1,:) = ZLBYWT   (:,1,:) 
-        PTHT (:,IJB-1,:) = ZLBYTHT  (:,1,:)
+        PUT  (:,IJB-1,:) = ZPOND*ZLBYUT  (:,1,:) + (1.-ZPOND)* PUT(:,IJB,:)
+        PWT  (:,IJB-1,:) = ZPOND*ZLBYWT  (:,1,:) + (1.-ZPOND)* PWT(:,IJB,:)
+        PTHT (:,IJB-1,:) = ZPOND*ZLBYTHT (:,1,:) + (1.-ZPOND)* PTHT(:,IJB,:)
       ENDWHERE
     ENDIF
 !
@@ -742,9 +748,9 @@ SELECT CASE ( HLBCY(2) )
         PWT  (:,IJE+1,:) = 2.*PWT  (:,IJE,:)   -PWT  (:,IJE-1,:)
         PTHT (:,IJE+1,:) = 2.*PTHT (:,IJE,:)   -PTHT (:,IJE-1,:)
       ELSEWHERE                                   !  INFLOW  condition
-        PUT  (:,IJE+1,:) = ZLBYUT   (:,ILBY,:)
-        PWT  (:,IJE+1,:) = ZLBYWT   (:,ILBY,:) 
-        PTHT (:,IJE+1,:) = ZLBYTHT  (:,ILBY,:)
+        PUT  (:,IJE+1,:) = ZPOND*ZLBYUT  (:,ILBY,:) + (1.-ZPOND)* PUT(:,IJE,:)
+        PWT  (:,IJE+1,:) = ZPOND*ZLBYWT  (:,ILBY,:) + (1.-ZPOND)* PWT(:,IJE,:)
+        PTHT (:,IJE+1,:) = ZPOND*ZLBYTHT (:,ILBY,:) + (1.-ZPOND)* PTHT(:,IJE,:)
       ENDWHERE
     ENDIF
 !

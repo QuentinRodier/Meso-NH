@@ -62,6 +62,7 @@ END MODULE MODI_INI_RADAR
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    27/10/2009
+!!      P.Scheffknecht 22/04/2015: test missing on already allocated XRTMIN 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -187,7 +188,7 @@ XLBH   = ( XAH*XCCH*MOMG(XALPHAH,XNUH,XBH) )**(-XLBEXH)
 !
 !*       2.4    Minimal values allowed for the mixing ratios
 ! ICE3
-ALLOCATE( XRTMIN(6) )
+IF(.NOT.ALLOCATED(XRTMIN)) ALLOCATE( XRTMIN(6) )
 !
 XRTMIN(1) = 1.0E-20
 XRTMIN(2) = 1.0E-20

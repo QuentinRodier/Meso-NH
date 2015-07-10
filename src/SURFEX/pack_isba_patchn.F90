@@ -528,6 +528,8 @@ ELSE
   XP_RSMIN      => XBLOCK_0(:,ISIZE_0)
 END IF
 !
+ISIZE_SIMPLE = ISIZE_SIMPLE + 1
+ XP_H_TREE     => XBLOCK_SIMPLE(:,ISIZE_SIMPLE)
 !
 IF (CPHOTO/='NON') THEN
   ISIZE_SIMPLE = ISIZE_SIMPLE + 1
@@ -536,8 +538,6 @@ IF (CPHOTO/='NON') THEN
    XP_LAIMIN     => XBLOCK_SIMPLE(:,ISIZE_SIMPLE)
   ISIZE_SIMPLE = ISIZE_SIMPLE + 1
    XP_SEFOLD     => XBLOCK_SIMPLE(:,ISIZE_SIMPLE)
-  ISIZE_SIMPLE = ISIZE_SIMPLE + 1
-   XP_H_TREE     => XBLOCK_SIMPLE(:,ISIZE_SIMPLE)
   ISIZE_SIMPLE = ISIZE_SIMPLE + 1
    XP_ANF        => XBLOCK_SIMPLE(:,ISIZE_SIMPLE)
   ISIZE_SIMPLE = ISIZE_SIMPLE + 1
@@ -587,8 +587,6 @@ ELSE
   XP_LAIMIN     => XBLOCK_0(:,ISIZE_0)
   ISIZE_0 = ISIZE_0 + 1
   XP_SEFOLD     => XBLOCK_0(:,ISIZE_0)
-  ISIZE_0 = ISIZE_0 + 1
-  XP_H_TREE     => XBLOCK_0(:,ISIZE_0)
   ISIZE_0 = ISIZE_0 + 1
   XP_ANF        => XBLOCK_0(:,ISIZE_0)
   ISIZE_0 = ISIZE_0 + 1
@@ -967,11 +965,12 @@ IF (NPATCH==1) THEN
     XP_RSMIN      (:)    =    XRSMIN      (:, 1) 
   END IF
   !
+  XP_H_TREE     (:)    =    XH_TREE     (:, 1)
+  !
   IF (CPHOTO/='NON') THEN
     XP_BSLAI      (:)    =    XBSLAI      (:, 1)
     XP_LAIMIN     (:)    =    XLAIMIN     (:, 1)
     XP_SEFOLD     (:)    =    XSEFOLD     (:, 1)
-    XP_H_TREE     (:)    =    XH_TREE     (:, 1)
     XP_ANMAX      (:)    =    XANMAX      (:, 1)
     XP_FZERO      (:)    =    XFZERO      (:, 1)
     XP_EPSO       (:)    =    XEPSO       (:, 1)
@@ -1100,6 +1099,7 @@ ELSE
     XP_LAT          (JJ)    =    XLAT          (JI)
     XP_LON          (JJ)    =    XLON          (JI)    
     XP_FSAT         (JJ)    =    XFSAT         (JI)
+    XP_H_TREE       (JJ)    =    XH_TREE       (JI, KPATCH)
   ENDDO
   !  
   DO JK=1,NGROUND_LAYER
@@ -1300,7 +1300,6 @@ ELSE
       XP_BSLAI      (JJ)    =    XBSLAI      (JI, KPATCH)
       XP_LAIMIN     (JJ)    =    XLAIMIN     (JI, KPATCH)
       XP_SEFOLD     (JJ)    =    XSEFOLD     (JI, KPATCH)
-      XP_H_TREE     (JJ)    =    XH_TREE     (JI, KPATCH)
       XP_ANMAX      (JJ)    =    XANMAX      (JI, KPATCH)
       XP_FZERO      (JJ)    =    XFZERO      (JI, KPATCH)
       XP_EPSO       (JJ)    =    XEPSO       (JI, KPATCH)

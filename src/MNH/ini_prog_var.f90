@@ -94,6 +94,7 @@ END MODULE MODI_INI_PROG_VAR
 !!                                      and sea salts concentration from 
 !!                                      another MesoNH simulation
 !!                  Aug 2012 (J.-P. Chaboureau) read the chem-file descriptor
+!!                  Fev 2015  (J.-P. Chaboureau) read instant T insteed of M
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -311,7 +312,7 @@ IF(PRESENT(HCHEMFILE)) THEN
         JSV = (JMODE-1)*IMOMENTS  & !Number of moments previously counted
              +  1                 & !Number of moments in this mode
              + (NSV_DSTBEG -1)      !Previous list of tracers  
-        YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'M'
+        YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
         YDIR='XY'
         CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                     YCOMMENT,IRESP)
@@ -332,7 +333,6 @@ IF(PRESENT(HCHEMFILE)) THEN
                + (NSV_DSTBEG -1)      !Previous list of tracers
           YRECFM = TRIM(YPDUST_INI(ISV_NAME_IDX))//'T'
           YDIR='XY'
-          WRITE(ILUOUT,*) 'JPC titi ',YRECFM
           CALL FMREAD(HCHEMFILE,YRECFM,HLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,  &
                       YCOMMENT,IRESP)
           IF (IRESP/=0) THEN

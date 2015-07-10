@@ -150,6 +150,7 @@ END MODULE MODI_INI_BUDGET
 !!      P. Peyrille, M. Tomasini : include in the forcing term the 2D forcing
 !!                                terms in term 2DFRC search for modif PP . but Not very clean! 
 !!      C .Lac          27/05/14    add negative corrections for chemical species
+!!      C.Lac           29/01/15  Correction for NSV_USER
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2147,22 +2148,22 @@ USE MODD_NSV, ONLY : NSV_USER, NSV_C2R2BEG, NSV_C2R2END, &
 !
   IF (JSV <= NSV_USER) THEN
     ! NSV_USER Case
-    SELECT CASE(JSV)
-    CASE (1)
-      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
-      YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC1_'
-      IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
-      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
-      YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC2_'
-      IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
-    CASE (2)
-      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
-      YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC3_'
-      IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
-      ILAST_PROC_NBR = ILAST_PROC_NBR + 1
-      YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC4_'
-      IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
-    END SELECT
+!   SELECT CASE(JSV)
+!   CASE (1)
+!     ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+!     YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC1_'
+!     IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
+!     ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+!     YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC2_'
+!     IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
+!   CASE (2)
+!     ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+!     YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC3_'
+!     IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
+!     ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+!     YWORK2(12+JSV,ILAST_PROC_NBR)= 'PROC4_'
+!     IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
+!   END SELECT
     !
   ELSEIF (JSV >= NSV_C2R2BEG .AND. JSV <= NSV_C2R2END) THEN  
     ! C2R2 or KHKO Case

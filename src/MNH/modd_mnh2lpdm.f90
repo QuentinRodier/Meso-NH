@@ -42,16 +42,16 @@ INTEGER, SAVE :: NIB,NIE,NJB,NJE,NKB,NKE ! Bornes du domaine physiques.
 !
 !*	Champs Meso-NH a extraire.
 !
-REAL, DIMENSION(:,:,:),ALLOCATABLE :: XUM,XVM,XWM  ! Vent.
-REAL, DIMENSION(:,:,:),ALLOCATABLE :: XTHM         ! Tempe potentielle.
-REAL, DIMENSION(:,:,:),ALLOCATABLE :: XTKEM  ! m2/s2
+REAL, DIMENSION(:,:,:),ALLOCATABLE :: XUT,XVT,XWT  ! Vent.
+REAL, DIMENSION(:,:,:),ALLOCATABLE :: XTHT         ! Tempe potentielle.
+REAL, DIMENSION(:,:,:),ALLOCATABLE :: XTKET  ! m2/s2
 REAL, DIMENSION(:,:),  ALLOCATABLE :: XINRT ! Taux de precipitation en mm/h
 REAL, DIMENSION(:,:,:),ALLOCATABLE :: XLM  ! m
 REAL, DIMENSION(:,:,:),ALLOCATABLE :: XDISSIP  ! J/Kg
-REAL, DIMENSION(:,:,:),ALLOCATABLE :: XRMVM ! Rapport de melange en vapeur d eau
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: XRMCM ! Rapport de melange en eau liquide
+REAL, DIMENSION(:,:,:),ALLOCATABLE :: XRMVT ! Rapport de melange en vapeur d eau
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XRMCT ! Rapport de melange en eau liquide
                                             ! nuageuse
-REAL, DIMENSION(:,:,:),ALLOCATABLE :: XRMRM ! Rapport de melange en eau liquide
+REAL, DIMENSION(:,:,:),ALLOCATABLE :: XRMRT ! Rapport de melange en eau liquide
                                             ! pluie
 REAL, DIMENSION(:,:),ALLOCATABLE :: XSFU, XSFV ! flux cinematiques w'u' et w'v'
 REAL, DIMENSION(:,:,:),ALLOCATABLE :: XWPTHP ! flux de chaleur sensible 

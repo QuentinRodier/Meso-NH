@@ -227,7 +227,9 @@ END MODULE MODI_MODEL_n
 !!                   April 2011 (C.Lac, V.Masson) : Time splitting for advection
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
-!-------------------------------------------------------------------------------
+!!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
+!!      J.Escobar 20/04/2015: missing UPDATE_HALO before UPDATE_HALO2
+!!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
@@ -375,6 +377,7 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 USE MODI_GET_HALO
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -609,7 +612,10 @@ IF (KTCOUNT == 1) THEN
   !
   !*       1.6   Initialise the 2nd layer of the halo of the LS fields
   !
-    IF ( LSTEADYLS ) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+    IF ( LSTEADYLS ) THEN
+       CALL UPDATE_HALO_ll(TZLSFIELD_ll, IINFO_ll)
+       CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+    END IF
   END IF
   !
 !
@@ -814,7 +820,8 @@ ZTIME1=ZTIME2
 !
 IF( LLG .AND. IMI==1 ) CALL SETLB_LG
 !
-CALL BOUNDARIES (                                                   &
+IF (CCONF == "START" .OR. (CCONF == "RESTA" .AND. KTCOUNT /= 1 )) THEN
+        CALL BOUNDARIES (                                                   &
             XTSTEP,CLBCX,CLBCY,NRR,NSV,KTCOUNT,                     &
             XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
@@ -822,6 +829,7 @@ CALL BOUNDARIES (                                                   &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
             XRHODJ,                                                 &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
+END IF    
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1137,8 +1145,12 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF ( LNUMDIFU .OR. LNUMDIFTH .OR. LNUMDIFSV ) THEN
 !
+  CALL UPDATE_HALO_ll(TZFIELDT_ll, IINFO_ll)
   CALL UPDATE_HALO2_ll(TZFIELDT_ll, TZHALO2T_ll, IINFO_ll)
-  IF ( .NOT. LSTEADYLS) CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+  IF ( .NOT. LSTEADYLS ) THEN
+     CALL UPDATE_HALO_ll(TZLSFIELD_ll, IINFO_ll)
+     CALL UPDATE_HALO2_ll(TZLSFIELD_ll, TZLSHALO2_ll, IINFO_ll)
+  END IF
   CALL NUM_DIFF ( CLBCX, CLBCY, NRR, NSV,                               &
                   XDK2U, XDK4U, XDK2TH, XDK4TH, XDK2SV, XDK4SV, IMI,    &
                   XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT,                &
@@ -1514,6 +1526,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
+CALL MPPDB_CHECK3DM("before RAD_BOUND :XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
 ZRUS=XRUS
 ZRVS=XRVS
 ZRWS=XRWS
@@ -1545,6 +1558,7 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF(.NOT. L1D) THEN
 !
+CALL MPPDB_CHECK3DM("before pressurez:XRU/V/WS",PRECISION,XRUS,XRVS,XRWS)
   XRUS_PRES = XRUS
   XRVS_PRES = XRVS
   XRWS_PRES = XRWS

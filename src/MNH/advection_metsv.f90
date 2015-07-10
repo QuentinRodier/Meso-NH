@@ -125,6 +125,7 @@ END MODULE MODI_ADVECTION_METSV
 !!                  04/2014  (C.Lac)                 adaptation of time
 !!                                                   splitting for L1D and L2D
 !!                  09/2014  (G.Delautier)              close OUTPUT_LISTING before STOP
+!!                  04/2015  (J.Escoabar) remove/commente some NHALO=1 test
 !!
 !-------------------------------------------------------------------------------
 !
@@ -255,7 +256,7 @@ INTEGER             :: ISPLIT_PPM   ! temporal time splitting
 !
 GTKE=(SIZE(PTKET)/=0)
 !
-!-----------------------------------------------------------n--------------------
+!-------------------------------------------------------------------------------
 !
 !*       2.     COMPUTES THE CONTRAVARIANT COMPONENTS (FOR PPM ONLY)
 !	        --------------------------------------
@@ -415,7 +416,7 @@ END DO
 ! Exchanges on processors
 !
 NULLIFY(TZFIELDS0_ll)
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRTHS_OTHER)
   IF (GTKE) CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRTKES_OTHER)
   DO JR=1,KRR
@@ -426,7 +427,7 @@ IF(NHALO == 1) THEN
   END DO
   CALL UPDATE_HALO_ll(TZFIELDS0_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS0_ll)
-END IF
+!!$END IF
 !
 !
 
@@ -501,7 +502,7 @@ DO JSPL=1,KSPLIT
 !  Exchanges fields between processors
 !
    NULLIFY(TZFIELDS1_ll)
-   IF(NHALO == 1) THEN
+!!$   IF(NHALO == 1) THEN
     CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZTH)
     IF (GTKE) CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZTKE)
     DO JR=1,KRR
@@ -512,7 +513,7 @@ DO JSPL=1,KSPLIT
     END DO
     CALL UPDATE_HALO_ll(TZFIELDS1_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS1_ll)
-   END IF
+!!$   END IF
 !
 END DO
 !

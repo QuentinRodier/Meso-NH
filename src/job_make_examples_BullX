@@ -19,7 +19,7 @@ set -e
 # Nom de la machine
 hostname 
 
-. ../conf/profile_mesonh-LXifortI4-MNH-V5-1-3-MPIINTEL-O3
+. ../conf/profile_mesonh-LXifortI4-MNH-V5-1-4-MPIINTEL-O3
 export MONORUN="mpirun -np 1 "
 export MPIRUN="mpirun -np 2 "
 export POSTRUN="time "

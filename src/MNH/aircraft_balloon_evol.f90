@@ -128,6 +128,9 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!     Dec,15, 2008 (V. Masson) correct do while aircraft move
 !!     March, 2013 (O.Caumont) add radar reflectivities
 !!     April, 2014 (C.Lac) allow RARE calculation only if CCLOUD=ICE3
+!!     May, 2014 (O.Caumont) modify RARE for hydrometeors containing ice
+!!                           add bright band calculation for RARE
+!!     Feb, 2015 (C.Lac) Correction to prevent aircraft crash
 !!
 !!
 !! --------------------------------------------------------------------------
@@ -146,7 +149,7 @@ USE MODD_CONF
 USE MODD_DIAG_IN_RUN
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
 USE MODD_RAIN_ICE_DESCR
-USE MODE_FSCATTER,ONLY : QEPSW,QEPSI,BHMIE,MOMG
+USE MODE_FSCATTER,ONLY : QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODE_FGAU,    ONLY : GAULAG
 USE MODD_REF_n,   ONLY : XRHODREF
 USE MODI_GAMMA,   ONLY : GAMMA
@@ -298,13 +301,15 @@ REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
 REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD   ! generic microphysical parameters
 INTEGER                        :: JJ    ! loop counter for quadrature
-COMPLEX                        :: QMW,QMI,QM,QB   ! dielectric parameter
+COMPLEX                        :: QMW,QMI,QM,QB,QEPSIW,QEPSWI   ! dielectric parameter
 REAL                           :: ZAETOT,ZAETMP,ZREFLOC,ZQSCA,ZQBACK,ZQEXT ! temporary scattering parameters
 REAL,DIMENSION(:),ALLOCATABLE  :: ZAELOC,ZZMZ ! temporary arrays
 INTEGER                        :: JPTS_GAULAG=7 ! number of points for Gauss-Laguerre quadrature
 REAL                           :: ZLBDA   ! slope distribution parameter
 REAL                           :: ZFRAC_ICE  ! ice water fraction
 REAL                           :: ZDELTA_EQUIV ! mass-equivalent Gauss-Laguerre point
+REAL                           :: ZFW ! liquid fraction
+REAL                           :: ZFPW ! weight for mixed-phase reflectivity
 REAL,DIMENSION(:),ALLOCATABLE  :: ZX,ZW ! Gauss-Laguerre points and weights
 REAL,DIMENSION(:),ALLOCATABLE  :: ZRTMIN ! local values for XRTMIN
 !----------------------------------------------------------------------------
@@ -1003,6 +1008,7 @@ IF ( TPFLYER%FLY) THEN
         ZRTMIN(6)=XRTMIN(6)
         ZRTMIN(7)=XRTMIN(2) ! cloud water over land
         ! compute cloud radar reflectivity from vertical profiles of temperature and mixing ratios
+!        print *,"cest parti !!!"
         DO JK=1,IKU
           QMW=SQRT(QEPSW(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
           QMI=SQRT(QEPSI(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
@@ -1018,10 +1024,8 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUC2
                   ZLBEX=1.0/(ZCX-ZB)
                   ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
-                  ZRHOHYD=XRHOLW
-                  QM=QMW
                 CASE(3) ! rain water
-                        ZA=XAR
+                  ZA=XAR
                   ZB=XBR
                   ZCC=XCCR
                   ZCX=-1.
@@ -1029,8 +1033,6 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUR
                   ZLB=XLBR
                   ZLBEX=XLBEXR
-                  ZRHOHYD=XRHOLW
-                  QM=QMW
                 CASE(4) ! pristine ice
                   ZA=XAI
                   ZB=XBI
@@ -1040,8 +1042,7 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUI
                   ZLBEX=XLBEXI
                   ZLB=XLBI*ZCC**(-ZLBEX) ! because ZCC not included in XLBI
-                  ZRHOHYD=.92*XRHOLW
-                  QM=QMI
+                  ZFW=0
                 CASE(5) ! snow
                   ZA=XAS
                   ZB=XBS
@@ -1051,14 +1052,16 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUS
                   ZLB=XLBS
                   ZLBEX=XLBEXS
-                  ZRHOHYD=.92*XRHOLW
-                  QM=QMI
+                  ZFW=0
                 CASE(6) ! graupel
-                  IF(ZTEMPZ(JK) > XTT) THEN ! mixture of ice and water
-                    ZFRAC_ICE = .85
-                  ELSE ! only ice
-                    ZFRAC_ICE=1.
-                  END IF
+                  !If temperature between -10 and 10°C and Mr and Mg over min threshold: melting graupel
+                  ! with liquid water fraction Fw=Mr/(Mr+Mg) else dry graupel (Fw=0)    
+                  IF( ZTEMPZ(JK) > XTT-10 .AND. ZTEMPZ(JK) < XTT+10 &
+                    .AND. ZRZ(JK,3) > XRTMIN(3) ) THEN
+                    ZFW=ZRZ(JK,3)/(ZRZ(JK,3)+ZRZ(JK,JLOOP))
+                  ELSE
+                    ZFW=0
+                  ENDIF
                   ZA=XAG
                   ZB=XBG
                   ZCC=XCCG
@@ -1067,9 +1070,6 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUG
                   ZLB=XLBG
                   ZLBEX=XLBEXG
-                  ZRHOHYD=((1.-ZFRAC_ICE)+ZFRAC_ICE*0.92)*XRHOLW
-                  QB=2.*QMW**2*(2.*QMI**2*LOG(QMI/QMW)/(QMI**2-QMW**2)-1.)/(QMI**2-QMW**2)
-                  QM=SQRT(((1.-ZFRAC_ICE)*QMW**2+ZFRAC_ICE*QB*QMI**2)/(1.-ZFRAC_ICE+ZFRAC_ICE*QB)) ! Bohren & Battan (1982)
                 CASE(7) ! cloud water over land
                   ZA=XAC
                   ZB=XBC
@@ -1079,14 +1079,35 @@ IF ( TPFLYER%FLY) THEN
                   ZNU=XNUC
                   ZLBEX=1.0/(ZCX-ZB)
                   ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
-                  ZRHOHYD=XRHOLW
-                  QM=QMW
               END SELECT
               ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
               ZREFLOC=0.
               ZAETMP=0.
               DO JJ=1,JPTS_GAULAG ! Gauss-Laguerre quadrature
-                ZDELTA_EQUIV=( 6.*ZA/XPI/ZRHOHYD * (ZX(JJ)**(1./ZALPHA)/ZLBDA)**ZB )**(1./3.)
+                ZDELTA_EQUIV=ZX(JJ)**(1./ZALPHA)/ZLBDA
+                SELECT CASE(JLOOP)
+                  CASE(2,3,7)
+                    QM=QMW
+                  CASE(4,5,6)
+                    ! pristine ice, snow, dry graupel
+                    ZRHOHYD=MIN(6.*ZA*ZDELTA_EQUIV**(ZB-3.)/XPI,.92*XRHOLW)
+                    QM=sqrt(MG(QMI**2,CMPLX(1,0),ZRHOHYD/.92/XRHOLW))
+                    
+                    ! water inclusions in ice in air
+                    QEPSWI=MG(QMW**2,QM**2,ZFW)
+                    ! ice in air inclusions in water
+                    QEPSIW=MG(QM**2,QMW**2,1.-ZFW)
+                  
+                    !MG weighted rule (Matrosov 2008)
+                    IF(ZFW .LT. 0.37) THEN
+                      ZFPW=0
+                    ELSE IF(ZFW .GT. 0.63) THEN
+                      ZFPW=1
+                    ELSE
+                      ZFPW=(ZFW-0.37)/(0.63-0.37)
+                    ENDIF  
+                    QM=sqrt(QEPSWI*(1.-ZFPW)+QEPSIW*ZFPW)
+                END SELECT
                 CALL BHMIE(XPI/XLAM_CRAD*ZDELTA_EQUIV,QM,ZQEXT,ZQSCA,ZQBACK)
                 ZREFLOC=ZREFLOC+ZQBACK*ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
                 ZAETMP =ZAETMP +ZQEXT *ZX(JJ)**(ZNU-1)*ZDELTA_EQUIV**2*ZW(JJ)
@@ -1124,8 +1145,8 @@ IF ( TPFLYER%FLY) THEN
         END DO
         ! zenith
         ZAETOT=1.
-        DO JK=COUNT(TPFLYER%Z_CUR >= ZZMZ(:))+1,IKU
-          IF(JK.EQ.COUNT(TPFLYER%Z_CUR >= ZZMZ(:))+1) THEN
+        DO JK = MAX(COUNT(TPFLYER%Z_CUR >= ZZMZ(:)),1)+1,IKU
+          IF ( JK .EQ. (MAX(COUNT(TPFLYER%Z_CUR >= ZZMZ(:)),1)+1) ) THEN        
             IF(TPFLYER%Z_CUR>=ZZMZ(JK)-.5*(ZZMZ(JK)-ZZMZ(JK-1))) THEN
               ! only attenuation from ZAELOC(JK)
               ZAETOT=ZAETOT*EXP(-2.*(ZAELOC(JK)*(ZZMZ(JK)-TPFLYER%Z_CUR)))

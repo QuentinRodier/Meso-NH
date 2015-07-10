@@ -64,6 +64,7 @@ END MODULE MODI_CALCSOUND
 !!    -------------
 !!     Original  from K. Emanuel
 !!     J. Stein  Jan. 2001  optimisation by splitting arrays in 1000 columns
+!!     C.Lac     May 2015 correction in downdraft loop 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -459,14 +460,18 @@ DO  JKLOOP=1,KKU     !  loop 2 on vertical levels
     ! downdraft temperature
     !
     DO  K=1,NBITER
-      ZCPW=ZSUM2+XCL*0.5*(ZRGD0+ZRG)*(LOG(ZTG)-LOG(ZTGD0))
-      ZEM=ZRG*PP(:,J)/(ZEPS+ZRG)
-      ZALV=XLVTT-ZCPVMCL*(ZTG-XTT)
-      ZSPG=XCPD*LOG(ZTG)-XRD*LOG(PP(:,J)-ZEM)+ZCPW+ZALV*ZRG/ZTG
-      ZTG=ZTG+(ZSPD-ZSPG)/ZSLP
-      ZTC=ZTG-XTT
-      ZENEW=6.112*EXP(17.67*ZTC/(243.5+ZTC))
-      ZRG=ZEPS*ZENEW/(PP(:,J)-ZENEW)
+     DO JH=1,KIU
+      ZEM(JH)=ZRG(JH)*PP(JH,J)/(ZEPS+ZRG(JH))
+      IF (PP(JH,J) >= ZEM(JH)) THEN
+       ZCPW(JH)=ZSUM2(JH)+XCL*0.5*(ZRGD0(JH)+ZRG(JH))*(LOG(ZTG(JH))-LOG(ZTGD0(JH)))
+       ZALV(JH)=XLVTT-ZCPVMCL*(ZTG(JH)-XTT)
+       ZSPG(JH)=XCPD*LOG(ZTG(JH))-XRD*LOG(PP(JH,J)-ZEM(JH))+ZCPW(JH)+ZALV(JH)*ZRG(JH)/ZTG(JH)
+       ZTG(JH)=ZTG(JH)+(ZSPD(JH)-ZSPG(JH))/ZSLP(JH)
+       ZTC(JH)=ZTG(JH)-XTT
+       ZENEW(JH)=6.112*EXP(17.67*ZTC(JH)/(243.5+ZTC(JH)))
+       ZRG(JH)=ZEPS*ZENEW(JH)/(PP(JH,J)-ZENEW(JH))
+      END IF
+     END DO
     END DO
     ZSUM2=ZCPW
     ZTGD0=ZTG

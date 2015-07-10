@@ -100,10 +100,11 @@ ALLOCATE(PALBNIR_VEG             (KLU,KPATCH              ))
 ALLOCATE(PALBVIS_VEG             (KLU,KPATCH              )) 
 ALLOCATE(PALBUV_VEG              (KLU,KPATCH              )) 
 !
+ALLOCATE(PH_TREE                 (KLU,KPATCH              )) 
+!
 ! - vegetation: Ags parameters ('AGS', 'LAI', 'AST', 'LST', 'NIT' options)
 !
 IF (HPHOTO/='NON') THEN
-  ALLOCATE(PH_TREE                 (KLU,KPATCH              )) 
   ALLOCATE(PRE25                   (KLU,KPATCH              )) 
   ALLOCATE(PLAIMIN                 (KLU,KPATCH              )) 
   ALLOCATE(PBSLAI                  (KLU,KPATCH              )) 
@@ -132,7 +133,6 @@ IF (HPHOTO/='NON') THEN
     ALLOCATE(PCNA_NITRO   (0,0))
   ENDIF
 ELSE
-  ALLOCATE(PH_TREE    (0,0)) 
   ALLOCATE(PRE25      (0,0))
   ALLOCATE(PLAIMIN    (0,0))
   ALLOCATE(PBSLAI     (0,0))  

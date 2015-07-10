@@ -87,7 +87,8 @@ if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !     &'has a length of',NVARDIMLEN(NDIMS)
 !
 HACTION='get attributs'
-status=nf_inq_natts(KCDF_ID,NGATTS)
+!status=nf_inq_natts(KCDF_ID,NGATTS)
+status=nf_inq_varnatts(KCDF_ID,IDVAR,NGATTS)
 if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'number of attributes = ',NGATTS
 allocate(hname(1:NGATTS))
@@ -168,7 +169,8 @@ status=nf_inq_vardimid(KCDF_ID,IDVAR,NVARDIMID)
 if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !
 HACTION='get attributs'
-status=nf_inq_natts(KCDF_ID,NGATTS)
+!status=nf_inq_natts(KCDF_ID,NGATTS)
+status=nf_inq_varnatts(KCDF_ID,IDVAR,NGATTS)
 if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'number of attributes = ',NGATTS
 allocate(hname(1:NGATTS))
@@ -439,11 +441,9 @@ include 'netcdf.inc'
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:READ_DIM_CDF',0,ZHOOK_HANDLE)
 HACTION='open netcdf'
 status=NF_OPEN(HFILENAME,nf_nowrite,kcdf_id)
-!write(0,*) 'identifiant de ',HFILENAME,'=',kcdf_id
 if (status/=NF_NOERR) then 
   CALL HANDLE_ERR_CDF(status,HACTION)
 !else
-!  write(0,*) 'netcdf file opened: ',HFILENAME
 endif
 !
 !-----------

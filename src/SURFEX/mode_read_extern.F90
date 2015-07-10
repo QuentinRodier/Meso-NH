@@ -2,6 +2,9 @@
 !SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
+! Modifications :
+! P.Marguinaud : 11-09-2012 : shorten field name
+! G.Delautier : 24-06-2015 : bug for arome compressed files
 !     #####################
 MODULE MODE_READ_EXTERN
 !     #####################
@@ -31,9 +34,6 @@ USE MODI_READ_SURF_ISBA_PAR_n
 USE MODI_READ_SURF
 USE MODI_CONVERT_COVER_ISBA
 USE MODI_GARDEN_SOIL_DEPTH
-
-! Modifications :
-! P.Marguinaud : 11-09-2012 : shorten field name
 
 !
 IMPLICIT NONE
@@ -160,6 +160,7 @@ IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
     !
   ENDIF
   !
+    GDATA_GROUND_DEPTH=.FALSE.
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=2) THEN
     !
     YRECFM2='L_GROUND_DEPTH'
@@ -332,6 +333,7 @@ REAL,  DIMENSION(:),   ALLOCATABLE   :: ZWWILT    ! wilting point
 REAL,  DIMENSION(:),   ALLOCATABLE   :: ZWFC      ! field capacity
 REAL,  DIMENSION(:),   ALLOCATABLE   :: ZWSAT     ! saturation
 REAL,  DIMENSION(:),   ALLOCATABLE   :: ZSOILGRID
+REAL,  DIMENSION(:),   ALLOCATABLE   :: ZNAT      ! natural surface fraction 
 !
 INTEGER :: IVERSION   ! surface version
 INTEGER :: IBUGFIX
@@ -470,6 +472,15 @@ END IF
 !
 DEALLOCATE(ZSOILGRID)
 !
+! *.  Read fraction of nature
+!     --------------
+!
+ALLOCATE(ZNAT(KNI))
+IF (IVERSION>=7) THEN
+  CALL READ_SURF(HFILEPGDTYPE,'FRAC_NATURE',ZNAT,IRESP,HDIR='A')
+ENDIF
+
+!
  CALL CLOSE_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE)
 !
 !* Allocate soil variable profile
@@ -550,7 +561,7 @@ IF (HFIELD=='WG    ' .OR. HFIELD=='WGI   ') THEN
   IF (HFIELD=='WG    ') THEN
     DO JPATCH=1,IPATCH
       DO JLAYER=1,ILAYER
-        WHERE(ZVAR(:,JLAYER,JPATCH)/=XUNDEF)
+        WHERE(ZNAT(:)>0.0)
           ZVAR(:,JLAYER,JPATCH) = MAX(MIN(ZVAR(:,JLAYER,JPATCH),ZWSAT(:)),0.)
           !
           ZFIELD(:,JLAYER,JPATCH) = (ZVAR(:,JLAYER,JPATCH) - ZWWILT(:)) / (ZWFC(:) - ZWWILT(:))
@@ -560,12 +571,14 @@ IF (HFIELD=='WG    ' .OR. HFIELD=='WGI   ') THEN
   ELSE IF (HFIELD=='WGI   ') THEN
     DO JPATCH=1,IPATCH
       DO JLAYER=1,ILAYER
-        WHERE(ZVAR(:,JLAYER,JPATCH)/=XUNDEF) &
+        WHERE(ZNAT(:)>0.0)
           ZFIELD(:,JLAYER,JPATCH) = ZVAR(:,JLAYER,JPATCH) / ZWSAT(:)  
+        END WHERE 
       END DO
     END DO
   END IF
 !
+  DEALLOCATE (ZNAT)
   DEALLOCATE (ZWSAT)
   DEALLOCATE (ZWWILT)
   DEALLOCATE (ZWFC)

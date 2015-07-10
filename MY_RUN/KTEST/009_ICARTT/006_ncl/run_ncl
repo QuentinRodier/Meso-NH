@@ -7,4 +7,4 @@ set -e
 
 rm -f *.ps 
 ncl plot_ICARTT_SEG1.ncl
-gv zsection_1000.ps
+gs zsection_1000.ps

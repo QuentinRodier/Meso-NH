@@ -37,6 +37,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original  26/03/2004  
+!!      27/05/2014 (O. Caumont) Added Maxwell Garnett equation
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -202,7 +203,7 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
 !
-!*       4.   SUBROUTINE BHCOAT
+!*       5.   SUBROUTINE BHCOAT
 !             -----------------
 !-------------------------------------------------------------------------------
 !   ######################################################
@@ -324,4 +325,28 @@ CONTAINS
     RETURN
   END SUBROUTINE BHCOAT
 !
+!-------------------------------------------------------------------------------
+!
+!*       6.   FUNCTION MG
+!             -------------------
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!   ##########################################
+    FUNCTION MG(QEPSINC,QEPSMAT,PF) RESULT(PQEPS)
+!   ##########################################
+    ! Maxwell Garnett (1904) equation for dielectric function of effective medium (sphere inclusions in a matrix)
+    
+    IMPLICIT NONE
+    COMPLEX, INTENT(IN)  :: QEPSINC ! dielectric function of inclusions
+    COMPLEX, INTENT(IN)  :: QEPSMAT ! dielectric function of matrix
+    REAL,    INTENT(IN)  :: PF      ! volume fraction of the inclusions
+    COMPLEX              :: PQEPS   ! dielectric function of effective medium
+    COMPLEX              :: QEPSF
+
+    QEPSF=(QEPSINC-QEPSMAT)/(QEPSINC+2.*QEPSMAT)
+    PQEPS=(1.+2.*PF*QEPSF)/(1.-PF*QEPSF)*QEPSMAT
+!
+  END FUNCTION MG
+!
+!-------------------------------------------------------------------------------
 END MODULE MODE_FSCATTER
