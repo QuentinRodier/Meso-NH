@@ -138,6 +138,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       J. escobar 27/03/2014 : write LAT/LON only in not CARTESIAN case
 !!       G.Delautier    2014 : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!       C. Augros 2014 : new radar simulator (T matrice)
+!!       D.Ricard 2015 : add THETAES + POVOES  (LMOIST_ES=T)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -280,6 +281,7 @@ REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42 ! reflectivit
 REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42_BIS
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZWORK43 ! latlon coordinates of cartesian grid points (PLATLON)
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZPHI,ZTHETAE,ZTHETAV
+REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZTHETAES
 INTEGER, DIMENSION(:,:), ALLOCATABLE                    :: IWORK1
 integer :: ICURR,INBOUT,IERR
 !
@@ -2139,6 +2141,25 @@ IF (( LMOIST_E .OR. LBV_FR ) .AND. (NRR>0)) THEN
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZTHETAE,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
 END IF
+!-------------------------------------------------------------------------------
+!
+!* Thetaes computation 
+!
+IF (LMOIST_ES .AND. (NRR>0)) THEN
+  ALLOCATE(ZTHETAES(IIU,IJU,IKU))
+  ZWORK31(:,:,:) = MAX(QSAT(ZTEMP(:,:,:),XPABST(:,:,:)),1.E-10)
+  ZTHETAES(:,:,:)= (    2840./                                          &
+       (3.5*ALOG(XTHT(:,:,:)*( XPABST(:,:,:)/XP00 )**(XRD/XCPD)  )   &
+       - ALOG( XPABST(:,:,:)*0.01*ZWORK31(:,:,:) / ( 0.622+ZWORK31(:,:,:) ) ) &
+       -4.805   )    ) + 55.
+  ZTHETAES(:,:,:)= XTHT(:,:,:) * EXP( (3376. / ZTHETAE(:,:,:) - 2.54)  &
+               *ZWORK31(:,:,:) *(1. +0.81 *ZWORK31(:,:,:)) )
+  YRECFM='THETAES'
+  YCOMMENT='X_Y_Z_Equivalent Saturated potential Temperature(K)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZTHETAES,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -2278,6 +2299,23 @@ IF (LMOIST_E .AND. (NRR>0) ) THEN
   END IF 
   !
 END IF
+!
+! Equivalent Saturated Potential Vorticity in PV units
+IF (LMOIST_ES .AND. (NRR>0) ) THEN
+  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,ZTHETAES,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,ZTHETAES,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,ZTHETAES,XDZZ)
+  ZWORK34(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
+                + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+                + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
+  ZWORK34(:,:,:)=ZWORK34(:,:,:)*1E6/XRHODREF(:,:,:)
+  YRECFM='POVOES'
+  YCOMMENT='X_Y_Z_Equivalent Saturated POtential VOrticity (PVU)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK34,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -2742,6 +2780,7 @@ IF (LBV_FR) THEN
 END IF
 !
 IF(ALLOCATED(ZTHETAE)) DEALLOCATE(ZTHETAE)
+IF(ALLOCATED(ZTHETAES)) DEALLOCATE(ZTHETAES)
 !-------------------------------------------------------------------------------
 !
 !* GPS synthetic ZTD, ZHD, ZWD 

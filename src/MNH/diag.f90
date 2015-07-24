@@ -67,6 +67,7 @@
 !!  03/2013     (O.Caumont)    Modif call aircraft_balloon
 !!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
 !!                             NBAZIM,LSNRT,XSNRMIN
+!!       D.Ricard 2015 : add LMOIST_ES
 !
 !
 !-------------------------------------------------------------------------------
@@ -195,7 +196,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
                    LVAR_TURB,LTURBFLX,LTURBDIAG,LMFFLX,XDTSTEP,  &
                    LVAR_MRW, LVAR_MRSV, LVAR_FRC, &
-                   LTPZH, LMOIST_V, LMOIST_E, LCOREF, &
+                   LTPZH, LMOIST_V, LMOIST_E,LMOIST_ES, LCOREF, &
                    LVORT, LDIV, LMEAN_POVO, XMEAN_POVO, &
                    LGEO, LAGEO, LWIND_ZM, LMSLP, LTHW, &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
@@ -252,6 +253,7 @@ LVAR_MRSV=.FALSE.
 LTPZH=.FALSE.
 LMOIST_V=.FALSE.
 LMOIST_E=.FALSE.
+LMOIST_ES=.FALSE.
 LCOREF=.FALSE.
 LVORT=.FALSE.
 LDIV=.FALSE.

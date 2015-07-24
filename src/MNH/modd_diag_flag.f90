@@ -36,6 +36,7 @@
 !!       J.-P. Pinty   29/11/02 add C3R5, ICE2, ICE4, ELEC
 !!       J.-P. Chaboureau 15/04/03  add LRAD_SUBG_COND
 !!       L. Leriche 21/04/06 add aqueous phase chemistry LCHAQDIAG
+!!       D.Ricard 2015 : add LMOIST_ES
 !!
 !-------------------------------------------------------------------------------
 !
@@ -70,6 +71,7 @@ LOGICAL     :: LVAR_FRC
 LOGICAL     :: LTPZH
 LOGICAL     :: LMOIST_V
 LOGICAL     :: LMOIST_E
+LOGICAL     :: LMOIST_ES
 LOGICAL     :: LCOREF
 LOGICAL     :: LVORT, LDIV 
 LOGICAL     :: LMEAN_POVO
