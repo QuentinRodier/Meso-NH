@@ -79,6 +79,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!                                              change of YCOMMENT
 !!      October 2011 (C.Lac) FF10MAX  : interpolation of 10m wind
 !!        between 2 Meso-NH levels if 10m is above the first atmospheric level
+!!      2015 : D.Ricard add UM10/VM10 for LCARTESIAN=T cases
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -727,9 +728,21 @@ IF (CSURF=='EXTE') THEN
     IGRID=0
     ! in this case (argument IGRID=0), input winds are ZONal and MERidien 
     !          and, output ones are in MesoNH grid   
-    IF (.NOT. LCARTESIAN)                                                 &
-    CALL UV_TO_ZONAL_AND_MERID(XCURRENT_ZON10M,XCURRENT_MER10M,IGRID,     &
+    IF (.NOT. LCARTESIAN) THEN                                                 
+      CALL UV_TO_ZONAL_AND_MERID(XCURRENT_ZON10M,XCURRENT_MER10M,IGRID,     &
             HFMFILE=HFMFILE,HRECU='UM10',HRECV='VM10',HCOMMENT=YCOMMENT)
+    ELSE
+     YRECFM      ='UM10'
+     YCOMMENT    ='X_Y_UM10 (m/s)'
+     IGRID       =1
+     ILENCH      =LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XCURRENT_ZON10M,IGRID,ILENCH,YCOMMENT,IRESP)
+     YRECFM      ='VM10'
+     YCOMMENT    ='X_Y_VM10 (m/s)'
+     IGRID       =1
+     ILENCH      =LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XCURRENT_MER10M,IGRID,ILENCH,YCOMMENT,IRESP)
+    ENDIF
       !
     IF (SIZE(XTKET)>0) THEN
      ZWORK21(:,:)= 0.    
