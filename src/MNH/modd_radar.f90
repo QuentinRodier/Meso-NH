@@ -30,7 +30,8 @@
 !!      Original       20/11/03 
 !!      O. Caumont     14/09/09 Removal of XAZIM
 !!      O. Caumont     14/09/09 Possibility to use polar coordinates
-!-------------------------------------------------------------------------------
+!!      C. Augros      2013 Simulator RADAR : add LSNRT XSNRMIN 
+!!-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -74,6 +75,10 @@ LOGICAL :: LWBSCS ! weighting by backscattering cross sections
 LOGICAL :: LWREFL ! weighting by reflectivities
 REAL :: XREFLMIN ! min val for reflectivities
 REAL :: XREFLVDOPMIN ! min val for Doppler velocities
+LOGICAL :: LSNRT !if .TRUE. the threshold on Z and V is function of SNR
+REAL :: XSNRMIN !SNR threshold under which reflectivity is set to -XUNDEF if (LSNRT=.TRUE.)
+
+
 
 END MODULE MODD_RADAR
 

@@ -65,6 +65,8 @@
 !!  05/2010                    Add lidar
 !!!  03/2012     (S. Bielli)    Add NAM_NCOUT for netcdf output
 !!  03/2013     (O.Caumont)    Modif call aircraft_balloon
+!!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
+!!                             NBAZIM,LSNRT,XSNRMIN
 !
 !
 !-------------------------------------------------------------------------------
@@ -206,9 +208,9 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NGPS,XLAT_GPS,XLON_GPS,XZS_GPS,CNAM_GPS,XDIFFORO, &
                    NVERSION_RAD, NCURV_INTERPOL, LCART_RAD, CARF,LREFR,LDNDZ,&
                    XLON_RAD,XLAT_RAD,XALT_RAD,CNAME_RAD,XLAM_RAD,XDT_RAD, &
-                   NDIFF,LATT,NPTS_GAULAG,NPTS_H,NPTS_V,XSTEP_RAD,NBSTEPMAX, &
+                   NDIFF,LATT,NPTS_GAULAG,NPTS_H,NPTS_V,XSTEP_RAD,NBSTEPMAX,NBAZIM, &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
-                   XREFLMIN,XREFLVDOPMIN,&
+                   XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
                    LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX
 !
@@ -297,6 +299,7 @@ NVERSION_RAD=1
 XSTEP_RAD=XUNDEF
 NCURV_INTERPOL=0
 LCART_RAD=.TRUE.
+NBAZIM=720
 XLON_RAD(:)=XUNDEF
 XLAT_RAD(:)=XUNDEF
 XALT_RAD(:)=XUNDEF
@@ -324,6 +327,8 @@ LWREFL=.FALSE.
 LWBSCS=.FALSE.
 XREFLMIN=-30.
 XREFLVDOPMIN=-990.
+LSNRT=.TRUE.
+XSNRMIN=0
 !
 LDIAG(:)=.FALSE.
 XDIAG(:)=XUNDEF

@@ -136,7 +136,8 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       F. Duffourg 02/2013 : add new fields
 !!      J.Escobar 21/03/2013: for HALOK get correctly local array dim/bound
 !!       J. escobar 27/03/2014 : write LAT/LON only in not CARTESIAN case
-!!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!       G.Delautier    2014 : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!       C. Augros 2014 : new radar simulator (T matrice)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -158,6 +159,7 @@ USE MODD_PARAM_n
 USE MODD_CURVCOR_n
 USE MODD_REF
 USE MODD_REF_n
+USE MODD_LUNIT, ONLY : CLUOUT0
 USE MODD_LUNIT_n
 USE MODD_TURB_n
 USE MODD_RADIATIONS_n
@@ -178,8 +180,8 @@ USE MODD_ELEC_DESCR, ONLY : CELECNAMES
 USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_ICE_C1R3_PARAM
 USE MODD_PARAM_ICE,       ONLY : LSEDIC
-USE MODD_PARAM_C2R2,      ONLY : LSEDC
-USE MODD_PARAM_C1R3
+!USE MODD_PARAM_C2R2,      ONLY : LSEDC
+!USE MODD_PARAM_C1R3
 USE MODD_LG,              ONLY : CLGNAMES
 USE MODD_PASPOL,          ONLY : LPASPOL
 USE MODD_CONDSAMP,        ONLY : LCONDSAMP
@@ -188,7 +190,7 @@ USE MODD_DIAG_FLAG
 USE MODD_RADAR, ONLY: XLAT_RAD,XELEV,&
      XSTEP_RAD,NBRAD,NBELEV,NBAZIM,NBSTEPMAX,&
      NCURV_INTERPOL,LATT,LCART_RAD,NPTS_H,NPTS_V,XGRID,&
-     LREFR,LDNDZ,NMAX,CNAME_RAD,&
+     LREFR,LDNDZ,NMAX,CNAME_RAD,NDIFF,&
      XLON_RAD,XALT_RAD,XLAM_RAD,XDT_RAD,LWBSCS,LWREFL
 !
 USE MODI_RADAR_SIMULATOR
@@ -223,6 +225,9 @@ USE MODE_IO_ll
 USE MODE_THERMO
 USE MODE_MODELN_HANDLER
 USE MODI_LIDAR
+!
+USE MODD_MPIF
+USE MODD_VAR_ll
 !
 IMPLICIT NONE
 !
@@ -272,10 +277,11 @@ REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZWORK33,ZWORK34
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2))               :: ZWORK21,ZWORK22
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2))               :: ZWORK23,ZWORK24
 REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42 ! reflectivity on a cartesian grid (PREFL_CART)
+REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42_BIS
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZWORK43 ! latlon coordinates of cartesian grid points (PLATLON)
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZPHI,ZTHETAE,ZTHETAV
 INTEGER, DIMENSION(:,:), ALLOCATABLE                    :: IWORK1
-integer :: ICURR,INBOUT
+integer :: ICURR,INBOUT,IERR
 !
 REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSP+NCARB+NSOA,JPMODE):: ZPTOTA
 REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NMODE_DST*2):: ZSDSTDEP
@@ -297,13 +303,16 @@ INTEGER :: IEL,IIELV
 CHARACTER(LEN=5)  :: YVIEW   ! Upward or Downward integration
 INTEGER           :: IACCMODE
 !-------------------------------------------------------------------------------
-INTEGER :: IAUX									 ! work variable 
+INTEGER :: IAUX ! work variable 
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZWORK35,ZWORK36
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2))              :: ZWORK25,ZWORK26
-REAL    :: ZEAU									 ! Mean precipitable water
+REAL    :: ZEAU ! Mean precipitable water
 INTEGER, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2))          ::IKTOP ! level in which is the altitude 3000m
 REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) :: ZDELTAZ ! interval (m) between two levels K
-
+INTEGER :: ILUOUT0 ! Logical unit number for output-listing
+!
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
 !
 !-------------------------------------------------------------------------------
 !
@@ -322,7 +331,7 @@ IKB=1+JPVEXT
 IKE=IKU-JPVEXT
 
 IMI = GET_CURRENT_MODEL_INDEX()
-
+CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !-------------------------------------------------------------------------------
 !
 !*       1.     WRITES IN THE LFI FILE
@@ -2783,7 +2792,7 @@ IF(LRADAR .AND. LUSERR) THEN
 !       
   IF (NVERSION_RAD == 1) THEN 
 ! original version of radar diagnostics 
-      WRITE(0,*) 'radar diagnostics from RADAR_RAIN_ICE routine'
+      WRITE(ILUOUT0,*) 'radar diagnostics from RADAR_RAIN_ICE routine'
   CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
 !
@@ -2812,158 +2821,169 @@ IF(LRADAR .AND. LUSERR) THEN
   CALL FMWRIT (HFMFILE,YRECFM,CLUOUT,'XY',ZWORK34,IGRID,ILENCH,YCOMMENT,IRESP)
 !
    ELSE 
-      !
-      WRITE(0,*) 'radar diagnostics from RADAR_SIMULATOR routine'
-      
-      NBRAD=COUNT(XLAT_RAD(:) /= XUNDEF)
-      NMAX=INT(NBSTEPMAX*XSTEP_RAD/XGRID)
-      IF(NBSTEPMAX*XSTEP_RAD/XGRID/=NMAX) THEN
-        WRITE(0,*) 'NBSTEPMAX*XSTEP_RAD/XGRID is not an integer; please choose another combination'
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
-      ENDIF
-      DO JI=1,NBRAD
-         NBELEV(JI)=COUNT(XELEV(JI,:) /= XUNDEF)
-         WRITE(0,*) 'Number of ELEVATIONS : ', NBELEV(JI), 'FOR RADAR:', JI
-      END DO
-      IIELV=MAXVAL(NBELEV(1:NBRAD))
-      WRITE(0,*) 'Maximum number of ELEVATIONS',IIELV
-      WRITE(0,*) 'YOU HAVE ASKED FOR ', NBRAD, 'RADARS'
-      !
-      NBAZIM=8*NMAX  ! number of azimuths   
-      WRITE(0,*) ' Number of AZIMUTHS : ', NBAZIM
-      IF (LCART_RAD) THEN
-         ALLOCATE(ZWORK43(NBRAD,4*NMAX,2*NMAX))
-      ELSE
-         ALLOCATE(ZWORK43(1,NBAZIM,1))
-      END IF
+    !
+    WRITE(ILUOUT0,*) 'radar diagnostics from RADAR_SIMULATOR routine'
+    
+    NBRAD=COUNT(XLAT_RAD(:) /= XUNDEF)
+    NMAX=INT(NBSTEPMAX*XSTEP_RAD/XGRID)
+    IF(NBSTEPMAX*XSTEP_RAD/XGRID/=NMAX .AND. (LCART_RAD)) THEN
+      WRITE(ILUOUT0,*) 'NBSTEPMAX*XSTEP_RAD/XGRID is not an integer; please choose another combination'
+      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+      CALL ABORT
+      STOP
+    ENDIF
+    DO JI=1,NBRAD
+       NBELEV(JI)=COUNT(XELEV(JI,:) /= XUNDEF)
+       WRITE(ILUOUT0,*) 'Number of ELEVATIONS : ', NBELEV(JI), 'FOR RADAR:', JI
+    END DO
+    IIELV=MAXVAL(NBELEV(1:NBRAD))
+    WRITE(ILUOUT0,*) 'Maximum number of ELEVATIONS',IIELV
+    WRITE(ILUOUT0,*) 'YOU HAVE ASKED FOR ', NBRAD, 'RADARS'
+    !
+    IF (LCART_RAD) NBAZIM=8*NMAX  ! number of azimuths 
+    WRITE(ILUOUT0,*) ' Number of AZIMUTHS : ', NBAZIM
+    IF (LCART_RAD) THEN
+      ALLOCATE(ZWORK43(NBRAD,4*NMAX,2*NMAX))
+    ELSE
+      ALLOCATE(ZWORK43(1,NBAZIM,1))
+    END IF
 !! Some controls...
-      IF(NBRAD/=COUNT(XLON_RAD(:) /= XUNDEF).OR.NBRAD/=COUNT(XALT_RAD(:) /= XUNDEF).OR. &
-           NBRAD/=COUNT(XLAM_RAD(:) /= XUNDEF).OR.NBRAD/=COUNT(XDT_RAD(:) /= XUNDEF).OR. &
-           NBRAD/=COUNT(CNAME_RAD(:) /= "UNDEF")) THEN
-         WRITE(0,*) "Error: inconsistency in DIAG1.nam."
+    IF(NBRAD/=COUNT(XLON_RAD(:) /= XUNDEF).OR.NBRAD/=COUNT(XALT_RAD(:) /= XUNDEF).OR. &
+       NBRAD/=COUNT(XLAM_RAD(:) /= XUNDEF).OR.NBRAD/=COUNT(XDT_RAD(:) /= XUNDEF).OR. &
+       NBRAD/=COUNT(CNAME_RAD(:) /= "UNDEF")) THEN
+      WRITE(ILUOUT0,*) "Error: inconsistency in DIAG1.nam."
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
-      END IF
-      IF(NCURV_INTERPOL==0.AND.(LREFR.OR.LDNDZ)) THEN
-         LREFR=.FALSE.
-         LDNDZ=.FALSE.
-         WRITE(0,*) "Warning: cannot output refractivity nor its vertical gradient when NCURV_INTERPOL=0"
-      END IF
-      IF(MOD(NPTS_H,2)==0) THEN
-         NPTS_H=NPTS_H+1
-         WRITE(0,*) "Warning: NPTS_H has to be ODD. Setting it to ",NPTS_H
-      END IF
-      IF(MOD(NPTS_V,2)==0) THEN
-         NPTS_V=NPTS_V+1
-         WRITE(0,*) "Warning: NPTS_V has to be ODD. Setting it to ",NPTS_V
-      END IF
-      IF(LWBSCS.AND.LWREFL) THEN
-         LWREFL=.FALSE.
-         WRITE(0,*) "Warning: LWREFL cannot be set to .TRUE. if LWBSCS is also set to .TRUE.. Setting LWREFL to .FALSE.."
-      END IF
+      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+      CALL ABORT
+      STOP
+    END IF
+    IF(NCURV_INTERPOL==0.AND.(LREFR.OR.LDNDZ)) THEN
+      LREFR=.FALSE.
+      LDNDZ=.FALSE.
+      WRITE(ILUOUT0,*) "Warning: cannot output refractivity nor its vertical gradient when NCURV_INTERPOL=0"
+    END IF
+    IF(MOD(NPTS_H,2)==0) THEN
+      NPTS_H=NPTS_H+1
+      WRITE(ILUOUT0,*) "Warning: NPTS_H has to be ODD. Setting it to ",NPTS_H
+    END IF
+    IF(MOD(NPTS_V,2)==0) THEN
+      NPTS_V=NPTS_V+1
+      WRITE(ILUOUT0,*) "Warning: NPTS_V has to be ODD. Setting it to ",NPTS_V
+    END IF
+    IF(LWBSCS.AND.LWREFL) THEN
+      LWREFL=.FALSE.
+      WRITE(ILUOUT0,*) "Warning: LWREFL cannot be set to .TRUE. if LWBSCS is also set to .TRUE.. Setting LWREFL to .FALSE.."
+    END IF
+    IF(CCLOUD=="LIMA" .AND. NDIFF/=7) THEN
+      WRITE(ILUOUT0,*) " ERROR : NDIFF=",NDIFF," not available with CCLOUD=LIMA"
+      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+      CALL ABORT
+      STOP
+    END IF
+    INBOUT=28 !28: Temperature + RHR, RHS, RHG, ZDA, ZDS, ZDG, KDR, KDS, KDG      
+    IF (CCLOUD=='LIMA') INBOUT=INBOUT+1 ! rain concentration CRT
+    IF(LREFR) INBOUT=INBOUT+1 !+refractivity
+    IF(LDNDZ) INBOUT=INBOUT+1 !+refractivity vertical gradient 
+    IF(LATT)  INBOUT=INBOUT+12 !+AER-AEG AVR-AVG (vertical specific attenuation) and ATR-ATG  
+    WRITE(ILUOUT0,*) "Nombre de variables dans ZWORK42 en sortie de radar_simulator:",INBOUT
 
-      INBOUT=15
-      IF(LREFR) INBOUT=INBOUT+1
-      IF(LDNDZ) INBOUT=INBOUT+1
-      IF(LATT)  INBOUT=INBOUT+8
-      IF (LCART_RAD) THEN
-         ALLOCATE(ZWORK42(NBRAD,IIELV,2*NMAX,2*NMAX,INBOUT))
-      ELSE
-         ALLOCATE(ZWORK42(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,INBOUT))
-      END IF
-      !
-      CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XCIT,XRHODREF,ZTEMP,XPABST,ZWORK42,ZWORK43)
-      ALLOCATE(YRAD(INBOUT))
-      YRAD(1:9)=(/"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"/)
-      ICURR=10
-      IF(LATT) THEN
-         YRAD(ICURR:ICURR+7)=(/"AER","AEI","AES","AEG","ATR","ATI","ATS","ATG"/)
-         ICURR=ICURR+8
-      END IF
-      YRAD(ICURR:ICURR+5)=(/"HAS","M_R","M_I","M_S","M_G","CIT"/)
-      ICURR=ICURR+6
-      IF(LREFR) THEN
-         YRAD(ICURR)="RFR"
-         ICURR=ICURR+1
-      END IF
-      IF(LDNDZ) THEN
-         YRAD(ICURR)="DNZ"
-         ICURR=ICURR+1
-      END IF
-      
-      IF (LCART_RAD) THEN
-         PRINT*, "Writing Cartesian output"
-         DO JI=1,NBRAD
-            IEL=NBELEV(JI)
-            !           print*,'nb d élévations',IEL
-            ! writing latlon in internal files 
-            ALLOCATE(CLATLON(2*NMAX))
-            CLATLON=""
-            DO JV=2*NMAX,1,-1
-               DO JH=1,2*NMAX
-                  WRITE(CBUFFER,'(2(f8.3,1X))') ZWORK43(JI,2*JH-1,JV),ZWORK43(JI,2*JH,JV)
+    IF (LCART_RAD) THEN
+      ALLOCATE(ZWORK42(NBRAD,IIELV,2*NMAX,2*NMAX,INBOUT))
+    ELSE
+      ALLOCATE(ZWORK42(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,INBOUT))
+      ALLOCATE(ZWORK42_BIS(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,INBOUT))
+    END IF
+    !
+!    IF (CCLOUD=='LIMA') THEN
+!      CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XSVT(:,:,:,NSV_LIMA_NI),XRHODREF,&
+!                      ZTEMP,XPABST,ZWORK42,ZWORK43,XSVT(:,:,:,NSV_LIMA_NR))
+!    ELSE ! ICE3
+      CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XCIT,XRHODREF,ZTEMP,XPABSM,ZWORK42,ZWORK43)      
+!    ENDIF
+    ALLOCATE(YRAD(INBOUT))
+    YRAD(1:9)=(/"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"/)
+    ICURR=10
+    IF(LATT) THEN
+      YRAD(ICURR:ICURR+11)=(/"AER","AEI","AES","AEG","AVR","AVI","AVS","AVG","ATR","ATI","ATS","ATG"/)
+      ICURR=ICURR+12
+    END IF
+    YRAD(ICURR:ICURR+2)=(/"RHV","PDP","DHV"/)
+    ICURR=ICURR+3
+    YRAD(ICURR:ICURR+8)=(/"RHR","RHS","RHG","ZDA","ZDS","ZDG","KDR","KDS","KDG"/)
+    ICURR=ICURR+9
+    YRAD(ICURR:ICURR+6)=(/"HAS","M_R","M_I","M_S","M_G","CIT","TEM"/)
+    ICURR=ICURR+7
+    IF (CCLOUD=='LIMA') THEN
+      YRAD(ICURR)="CRT"
+      ICURR=ICURR+1
+    ENDIF
+    IF(LREFR) THEN
+      YRAD(ICURR)="RFR"
+      ICURR=ICURR+1
+    END IF
+    IF(LDNDZ) THEN
+      YRAD(ICURR)="DNZ"
+      ICURR=ICURR+1
+    END IF
+    IF (LCART_RAD) THEN
+      DO JI=1,NBRAD
+        IEL=NBELEV(JI)
+        ! writing latlon in internal files 
+        ALLOCATE(CLATLON(2*NMAX))
+        CLATLON=""
+        DO JV=2*NMAX,1,-1
+          DO JH=1,2*NMAX
+            WRITE(CBUFFER,'(2(f8.3,1X))') ZWORK43(JI,2*JH-1,JV),ZWORK43(JI,2*JH,JV)
                   CLATLON(JV)=TRIM(CLATLON(JV)) // " " // TRIM(CBUFFER)
-               END DO
-               CLATLON(JV)=TRIM(ADJUSTL(CLATLON(JV)))
+          END DO
+          CLATLON(JV)=TRIM(ADJUSTL(CLATLON(JV)))
+        END DO            
+        DO JEL=1,IEL
+          WRITE(YELEV,'(I2.2,A1,I1.1)') FLOOR(XELEV(JI,JEL)),'.',&
+                 INT(ANINT(10.*XELEV(JI,JEL))-10*INT(XELEV(JI,JEL)))
+          WRITE(YGRID_SIZE,'(I3.3)') 2*NMAX
+          DO JJ=1,SIZE(ZWORK42(:,:,:,:,:),5)
+            YRS=YRAD(JJ)//CNAME_RAD(JI)(1:3)//YELEV//YGRID_SIZE//HFMFILE
+            CALL OPEN_ll(UNIT=ILURS,FILE=YRS,IOSTAT=IRESP,STATUS="NEW",ACTION='WRITE', &
+                         FORM="FORMATTED",RECL=8192)
+            WRITE(ILURS,'(A,4F12.6,2I5)') '**domaine LATLON ',ZWORK43(JI,1,1),ZWORK43(JI,4*NMAX-1,2*NMAX), &
+                  ZWORK43(JI,2,1),ZWORK43(JI,4*NMAX,2*NMAX),2*NMAX,2*NMAX !! HEADER
+            DO JV=2*NMAX,1,-1
+              DO JH=1,2*NMAX
+                WRITE(ILURS,'(E11.5,1X)',ADVANCE='NO') ZWORK42(JI,JEL,JH,JV,JJ)
+              END DO
+              WRITE(ILURS,*) ''
             END DO
-            
-            DO JEL=1,IEL
-               WRITE(YELEV,'(I2.2,A1,I1.1)') FLOOR(XELEV(JI,JEL)),'.',&
-                    INT(ANINT(10.*XELEV(JI,JEL))-10*INT(XELEV(JI,JEL)))
-               WRITE(YGRID_SIZE,'(I3.3)') 2*NMAX
-               DO JJ=1,SIZE(ZWORK42(:,:,:,:,:),5)
-                  YRS=YRAD(JJ)//CNAME_RAD(JI)(1:3)//YELEV//YGRID_SIZE//HFMFILE
-                  CALL OPEN_ll(UNIT=ILURS,FILE=YRS,IOSTAT=IRESP,STATUS="NEW",ACTION='WRITE', &
-                       FORM="FORMATTED",RECL=8192)
-                  WRITE(ILURS,'(A,4F12.6,2I5)') '**domaine LATLON ',ZWORK43(JI,1,1),ZWORK43(JI,4*NMAX-1,2*NMAX), &
-                       ZWORK43(JI,2,1),ZWORK43(JI,4*NMAX,2*NMAX),2*NMAX,2*NMAX !! HEADER
-                  DO JV=2*NMAX,1,-1
-                     DO JH=1,2*NMAX
-                        WRITE(ILURS,'(E11.5,1X)',ADVANCE='NO') ZWORK42(JI,JEL,JH,JV,JJ)
-                     END DO
-                     WRITE(ILURS,*) ''
-                  END DO
                   
-                  DO JV=2*NMAX,1,-1
-                     WRITE(ILURS,*) CLATLON(JV)
-                  END DO
-                  
-                  CALL CLOSE_ll(HFILE=YRS)
-               END DO
-               
-            END DO
-            DEALLOCATE(CLATLON)
-         END DO
-      ELSE ! polar output
-         PRINT*, "Writing polar output"
-         DO JI=1,NBRAD
-            IEL=NBELEV(JI)
-            DO JEL=1,IEL
-               WRITE(YELEV,'(I2.2,A1,I1.1)') FLOOR(XELEV(JI,JEL)),'.',&
-                    INT(ANINT(10.*XELEV(JI,JEL))-10*INT(XELEV(JI,JEL)))
-!               WRITE(YGRID_SIZE,'(I3.3)') 2*NMAX
-               
-               DO JJ=1,SIZE(ZWORK42(:,:,:,:,:),5)
-                  YRS="P"//YRAD(JJ)//CNAME_RAD(JI)(1:3)//YELEV//HFMFILE
-                  CALL OPEN_ll(UNIT=ILURS,FILE=YRS,IOSTAT=IRESP,STATUS="NEW",ACTION='WRITE', &
-                       FORM="FORMATTED",RECL=8192)
-                  WRITE(ILURS,*) '# FORMAT : R (m),THETA (rad),VAL ; azimuths 0°=N 90°=E; NBSTEPMAX=',NBSTEPMAX !! HEADER
-                  DO JH=1,NBAZIM
-                     DO JV=1,NBSTEPMAX+1
-                        WRITE(ILURS,'(3(E11.5,1X))') JV*XSTEP_RAD,ZWORK43(1,JH,1),ZWORK42(JI,JEL,JH,JV,JJ)
-                     END DO
-                  END DO
-                                    
-                  CALL CLOSE_ll(HFILE=YRS)
-               END DO
-            END DO
-         END DO
-      END IF
-      DEALLOCATE(ZWORK42,ZWORK43)
+            DO JV=2*NMAX,1,-1
+              WRITE(ILURS,*) CLATLON(JV)
+            END DO                  
+            CALL CLOSE_ll(HFILE=YRS)
+          END DO               
+        END DO
+        DEALLOCATE(CLATLON)
+      END DO
+    ELSE ! polar output
+       CALL MPI_ALLREDUCE(ZWORK42, ZWORK42_BIS, SIZE(ZWORK42), MPI_PRECISION, MPI_MAX, NMNH_COMM_WORLD, IERR)
+      DO JI=1,NBRAD
+        IEL=NBELEV(JI)
+        DO JEL=1,IEL
+          WRITE(YELEV,'(I2.2,A1,I1.1)') FLOOR(XELEV(JI,JEL)),'.',&
+                INT(ANINT(10.*XELEV(JI,JEL))-10*INT(XELEV(JI,JEL)))
+          DO JJ=1,SIZE(ZWORK42(:,:,:,:,:),5)
+            YRS="P"//YRAD(JJ)//CNAME_RAD(JI)(1:3)//YELEV//HFMFILE
+            CALL OPEN_ll(UNIT=ILURS,FILE=YRS,IOSTAT=IRESP,ACTION='WRITE',MODE=GLOBAL)
+            DO JH=1,NBAZIM
+              DO JV=1,NBSTEPMAX+1
+                WRITE(ILURS,"(F15.7)") ZWORK42_BIS(JI,JEL,JH,JV,JJ)
+              END DO
+            END DO                                    
+            CALL CLOSE_ll(HFILE=YRS)
+          END DO
+        END DO
+      END DO
+    END IF !polar output
+    DEALLOCATE(ZWORK42,ZWORK43)
    END IF
 END IF
 !

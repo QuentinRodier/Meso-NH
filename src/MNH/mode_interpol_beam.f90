@@ -309,6 +309,7 @@ CONTAINS
 
     USE MODD_PARAMETERS
     USE MODD_GRID_n
+    USE MODE_ll
 !
     IMPLICIT NONE
 !
@@ -342,14 +343,9 @@ CONTAINS
 !
     IPAS=0
 !
-    IIU=SIZE(PZM,1)
-    IJU=SIZE(PZM,2)
+    CALL GET_INDICE_ll( IIB,IJB,IIE,IJE)
     IKU=SIZE(PZM,3)
-    IIB = JPHEXT + 1
-    IJB = JPHEXT + 1
     IKB = JPVEXT + 1
-    IIE = IIU - JPHEXT
-    IJE = IJU - JPHEXT
     IKE = IKU - JPVEXT
 ! 
     
@@ -363,7 +359,7 @@ CONTAINS
             IPAS=0
             II=COUNT(PXHATM(:) <= PX_RAY(JI,JEL,JAZ,JL,JH,JV)) ! number of mass points x-coordinates less than x-position of current ray point
             IJ=COUNT(PYHATM(:) <= PY_RAY(JI,JEL,JAZ,JL,JH,JV))
-            IF ( (II  <= IIE-1) .AND. (II >= IIB) .AND. (IJ <= IJE-1) .AND. (IJ >= IJB) ) THEN
+            IF ( (II  <= IIE) .AND. (II >= IIB) .AND. (IJ <= IJE) .AND. (IJ >= IJB) ) THEN
        !          WRITE(ILUOUT0,*) 'inside the horizontal domain '
               ZXCOEF=(PX_RAY(JI,JEL,JAZ,JL,JH,JV)-PXHATM(II))/(PXHATM(II+1)-PXHATM(II))
               ZYCOEF=(PY_RAY(JI,JEL,JAZ,JL,JH,JV)-PYHATM(IJ))/(PYHATM(IJ+1)-PYHATM(IJ))
@@ -402,7 +398,7 @@ CONTAINS
                   END DO
                 ENDIF
               ELSE
-                IF ((IK00 <= IKE-1).AND.  (IK01 <= IKE-1) .AND. (IK10 <= IKE-1) .AND. (IK11 <= IKE-1) ) THEN
+                IF ((IK00 <= IKE).AND.  (IK01 <= IKE) .AND. (IK10 <= IKE) .AND. (IK11 <= IKE) ) THEN
          ! We are above below the lowest mass level and below the upper mass level
                   IPAS=2
                   ZZCOEF00=(PZ_RAY(JI,JEL,JAZ,JL,JH,JV) -PZM(II,IJ,IK00))    /(PZM(II,IJ,IK00+1)-PZM(II,IJ,IK00))
