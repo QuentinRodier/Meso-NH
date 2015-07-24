@@ -73,6 +73,7 @@
 !!      P. Jabouille 7/07/99  split ini_modeln in 2 parts+ cleaning
 !!      V. Masson   15/03/99  call to ini_data_cover
 !!      P.Jabouille 15/07/99  special initialisation for spawning
+!!      J.P Chaboureau 2015   add ini_spectre_n
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -91,13 +92,14 @@ USE MODI_INI_CST
 USE MODI_INI_CTURB
 USE MODI_INI_SEG_n
 USE MODI_INI_MODEL_n
+USE MODI_INI_SPECTRE_n
 USE MODI_INI_SIZE_n
 USE MODI_INI_SIZE_SPAWN
 USE MODI_RESET_EXSEG
 USE MODE_MODELN_HANDLER
 USE MODI_READ_ALL_NAMELISTS
 USE MODI_ALLOC_SURFEX
-!
+USE MODI_INI_SPECTRE_n
 !JUAN
 USE MODE_SPLITTINGZ_ll
 !JUAN
@@ -214,7 +216,11 @@ ENDIF
 DO JMI=1,NMODEL
   CALL GO_TOMODEL_ll(JMI,IINFO_ll)
   CALL GOTO_MODEL(JMI)
-  CALL INI_MODEL_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI))
+  IF (CPROGRAM/='SPEC  ') THEN
+    CALL INI_MODEL_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI))
+  ELSE
+    CALL INI_SPECTRE_n(JMI,YLUOUT(JMI),YINIFILE(JMI))
+  END IF  
 END DO
 !
 !-------------------------------------------------------------------------------
