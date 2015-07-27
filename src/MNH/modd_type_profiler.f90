@@ -36,7 +36,9 @@ IMPLICIT NONE
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/01/02
-!-------------------------------------------------------------------------------
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profile
+r!-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -66,16 +68,29 @@ REAL, DIMENSION(:),       POINTER :: X=>NULL()        ! X(n)
 REAL, DIMENSION(:),       POINTER :: Y=>NULL()        ! Y(n)
 REAL, DIMENSION(:),       POINTER :: LON=>NULL()      ! longitude(n)
 REAL, DIMENSION(:),       POINTER :: LAT=>NULL()      ! latitude (n)
+REAL, DIMENSION(:),       POINTER :: ALT=>NULL()      ! altitude (n)
 REAL, DIMENSION(:,:,:),   POINTER :: ZON=>NULL()      ! zonal wind(n)
 REAL, DIMENSION(:,:,:),   POINTER :: MER=>NULL()      ! meridian wind(n)
 REAL, DIMENSION(:,:,:),   POINTER :: FF=>NULL()       ! wind intensity  
 REAL, DIMENSION(:,:,:),   POINTER :: DD=>NULL()       ! wind direction
 REAL, DIMENSION(:,:,:),   POINTER :: W=>NULL()        ! w(n)  (air vertical speed)
 REAL, DIMENSION(:,:,:),   POINTER :: P=>NULL()        ! p(n)
+REAL, DIMENSION(:,:,:),   POINTER :: ZZ=>NULL()       ! altitude(n)
 REAL, DIMENSION(:,:,:),   POINTER :: TKE=>NULL()      ! tke(n)
 REAL, DIMENSION(:,:,:),   POINTER :: TH=>NULL()       ! th(n)
 REAL, DIMENSION(:,:,:),   POINTER :: THV=>NULL()      ! thv(n)
 REAL, DIMENSION(:,:,:),   POINTER :: RARE=>NULL()     ! radar reflectivity (n)
+REAL, DIMENSION(:,:,:),   POINTER :: SPEEDC=>NULL()   ! cloud sedim speed  (n)
+REAL, DIMENSION(:,:,:),   POINTER :: SPEEDR=>NULL()   ! rain  sedim speed  (n)
+REAL, DIMENSION(:,:,:),   POINTER :: SPEEDS=>NULL()   ! snow  sedim speed  (n)
+REAL, DIMENSION(:,:,:),   POINTER :: SPEEDG=>NULL()   ! graup sedim speed  (n)
+REAL, DIMENSION(:,:,:),   POINTER :: SPEEDH=>NULL()   ! hail sedim speed  (n)
+REAL, DIMENSION(:,:,:),   POINTER :: INPRC3D=>NULL()  ! sedimentation rate(n)
+REAL, DIMENSION(:,:,:),   POINTER :: INPRR3D=>NULL()  ! sedimentation rate(n)
+REAL, DIMENSION(:,:,:),   POINTER :: INPRS3D=>NULL()  ! sedimentation rate(n)
+REAL, DIMENSION(:,:,:),   POINTER :: INPRG3D=>NULL()  ! sedimentation rate(n)
+REAL, DIMENSION(:,:,:),   POINTER :: INPRH3D=>NULL()  ! sedimentation rate(n)
+REAL, DIMENSION(:,:,:),   POINTER :: RHOD=>NULL()     ! density of dry air/moist air
 REAL, DIMENSION(:,:,:,:), POINTER :: R=>NULL()        ! r*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: SV=>NULL()       ! Sv*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: AER=>NULL()      ! AER*(n) aerosol extinction
@@ -93,6 +108,10 @@ REAL, DIMENSION(:,:),     POINTER :: LEI=>NULL()      ! Solid latent heat flux (
 REAL, DIMENSION(:,:),     POINTER :: GFLUX=>NULL()    ! storage heat flux (W m2)
 REAL, DIMENSION(:,:),     POINTER :: LW=>NULL()       ! IR downward radiation (W m2)
 REAL, DIMENSION(:,:),     POINTER :: SW=>NULL()       ! solar downward radiation (W m2)
+REAL, DIMENSION(:,:),   POINTER :: IWV=>NULL()      ! integrated water vpour(n)
+REAL, DIMENSION(:,:),   POINTER :: ZTD=>NULL()      ! GPS zenith tropo delay(n)
+REAL, DIMENSION(:,:),   POINTER :: ZWD=>NULL()      ! GPS zenith wet delay(n)
+REAL, DIMENSION(:,:),   POINTER :: ZHD=>NULL()      ! GPS zenith hydro delay(n)
 !
 REAL, DIMENSION(:,:,:),   POINTER :: TKE_DISS=>NULL() ! TKE dissipation rate
 !

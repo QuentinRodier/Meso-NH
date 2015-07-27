@@ -36,6 +36,8 @@
 !!      Original    15/05/00
 !!              Apr,19, 2001 (G.Jaubert) add CVBALL type
 !!              March, 2013 : O.Caumont, C.Lac : add vertical profiles
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -128,10 +130,19 @@ REAL, DIMENSION(:),   POINTER :: TH       ! th(n)
 REAL, DIMENSION(:,:), POINTER :: R        ! r*(n)
 REAL, DIMENSION(:,:), POINTER :: SV       ! Sv*(n)
 REAL, DIMENSION(:,:), POINTER :: RTZ      ! tot hydrometeor mixing ratio
+REAL, DIMENSION(:,:,:), POINTER :: RZ      ! water vapour mixing ratio
 REAL, DIMENSION(:,:), POINTER :: FFZ      ! horizontal wind                
+REAL, DIMENSION(:,:), POINTER :: IWCZ     ! ice water content              
+REAL, DIMENSION(:,:), POINTER :: LWCZ     ! liquid water content              
+REAL, DIMENSION(:,:), POINTER :: CIZ      ! Ice concentration
+REAL, DIMENSION(:,:), POINTER :: SPEEDCZ  ! Cloud fall velocity 
+REAL, DIMENSION(:,:), POINTER :: SPEEDRZ  ! Rain fall velocity
+REAL, DIMENSION(:,:), POINTER :: SPEEDSZ  ! Snow fall velocity
+REAL, DIMENSION(:,:), POINTER :: SPEEDGZ  ! Graupel fall velocity
 REAL, DIMENSION(:,:), POINTER :: CRARE     ! cloud radar reflectivity
 REAL, DIMENSION(:,:), POINTER :: CRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
 REAL, DIMENSION(:,:), POINTER :: WZ        ! vertical profile of vertical velocity
+REAL, DIMENSION(:,:), POINTER :: ZZ        ! vertical profile of mass point altitude (above sea)
 REAL, DIMENSION(:,:), POINTER :: AER      ! Extinction at 550 nm
 REAL, DIMENSION(:,:), POINTER :: DST_WL   ! Extinction by wavelength
 REAL, DIMENSION(:),   POINTER :: ZS       ! zs(n)

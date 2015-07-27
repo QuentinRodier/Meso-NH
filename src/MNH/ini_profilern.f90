@@ -64,6 +64,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/01/2002
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -94,11 +96,13 @@ NUMBPROFILER             = 0
 IF (NUMBPROFILER > 0) THEN
 ALLOCATE(TPROFILER%LAT (NUMBPROFILER))
 ALLOCATE(TPROFILER%LON (NUMBPROFILER))
+ALLOCATE(TPROFILER%ALT (NUMBPROFILER))
 ALLOCATE(TPROFILER%NAME(NUMBPROFILER))
 ALLOCATE(TPROFILER%TYPE(NUMBPROFILER))
 !
 TPROFILER%LON = XUNDEF
 TPROFILER%LAT = XUNDEF
+TPROFILER%ALT = XUNDEF
 TPROFILER%NAME = "    "
 TPROFILER%TYPE = "         "
 !
@@ -130,6 +134,17 @@ TPROFILER%LON                = (/ 5.3790, 4.8200, 5.2000, 6.0986, 5.4100, &
                                   5.3951, 5.4842, 5.4054, 5.4253, 5.4113, &
                                   5.4369, 5.3893, 5.5114, 5.3788, 5.4611, &
                                   5.3994, 5.3538, 5.3674 /)
+TPROFILER%ALT                = (/ 2.,2.,2.,2.,2.,&
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,         &
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,2.,2.,2.,&
+                                  2.,            &
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,2.,2.,2.,&
+                                  2.,2.,2.       /)                          
 !
 TPROFILER%NAME               = (/ 'CAAM    ', 'CRAU    ', 'BARD    ', 'MONT    ', 'IUTF    ', &
                                   'OBSF    ', 'VALF    ', 'LUBE    ', 'VENT    ', 'DENT    ', &

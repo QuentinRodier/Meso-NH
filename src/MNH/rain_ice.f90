@@ -13,14 +13,16 @@
 !      ####################
 !
 INTERFACE
-      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,          &
-                            KSPLITR, PTSTEP, KMI, KRR,                                &
-                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,    &
-                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                       &
-                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,           &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                        &
-                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                       &
-                            PRHT, PRHS, PINPRH, OCONVHG                               )
+      SUBROUTINE RAIN_ICE ( OSEDIC,HSEDIM, HSUBG_AUCV, OWARM, KKA, KKU, KKL,      &
+                            KSPLITR, PTSTEP, KMI, KRR,                            &
+                            PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
+                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
+                            PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
+                            PINPRC,PINPRC3D, PINPRR, PINPRR3D, PEVAP3D,           &
+                            PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,              &
+                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,          &
+                            PSEA, PTOWN,                                          &
+                            PRHT,  PRHS, PINPRH,PINPRH3D,OCONVHG             )
 !
 !
 LOGICAL,                  INTENT(IN)    :: OSEDIC ! Switch for droplet sedim.
@@ -68,18 +70,27 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D! Cloud inst precip 3D
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D! Snow inst precip 3D
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D! Graupel inst precip 3D
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)    :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH3D! Hail instant precip 3D
 LOGICAL, OPTIONAL,                 INTENT(IN)    :: OCONVHG! Switch for conversion from
                                                   ! hail to graupel
 
@@ -93,10 +104,12 @@ END MODULE MODI_RAIN_ICE
                             PDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,    &
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                       &
                             PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,           &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D,                        &
-                            PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                       &
-                            PRHT, PRHS, PINPRH, OCONVHG                               )
-!     ######################################################################
+                            PINPRC,PINPRC3D, PINPRR, PINPRR3D, PEVAP3D,               &
+                            PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,                  &
+                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,              &
+                            PSEA, PTOWN,                                              &
+                            PRHT,  PRHS, PINPRH,PINPRH3D,OCONVHG                 )
+!     #####################################################################
 !
 !!****  * -  compute the explicit microphysical sources
 !!
@@ -232,6 +245,8 @@ END MODULE MODI_RAIN_ICE
 !!      Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
 !!      (C. Lac) FIT temporal scheme : instant M removed
 !!      (JP Pinty), 01-2014 : ICE4 : partial reconversion of hail to graupel
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -303,17 +318,27 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRIS    ! Pristine ice m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRSS    ! Snow/aggregate m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 !
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
+!
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D! Cloud inst precip 3D
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D! Snow inst precip 3D
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D! Graupel inst precip 3D
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PSEA
 REAL, DIMENSION(:,:),OPTIONAL,INTENT(IN)         :: PTOWN
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(IN)    :: PRHT    ! Hail m.r. at t
 REAL, DIMENSION(:,:,:), OPTIONAL,  INTENT(INOUT) :: PRHS    ! Hail m.r. source
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(INOUT)    :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(INOUT)     :: PINPRH3D! Hail instant precip 3D
 LOGICAL, OPTIONAL,                 INTENT(IN)    :: OCONVHG! Switch for conversion from
                                                   ! hail to graupel
 !
@@ -861,11 +886,20 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !        O. Initialization of for sedimentation                  
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
+IF (OSEDIC) PINPRC3D (:,:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
+PINPRS3D (:,:,:) = 0.
 PINPRG (:,:) = 0.
-IF ( KRR == 7 ) PINPRH (:,:) = 0.          
+PINPRG3D (:,:,:) = 0.
+IF ( KRR == 7 ) PINPRH (:,:) = 0.   
+IF ( KRR == 7 ) PINPRH3D (:,:,:) = 0.
+PSPEEDC(:,:,:) = 0.
+PSPEEDR(:,:,:) = 0.
+PSPEEDS(:,:,:) = 0.
+PSPEEDG(:,:,:) = 0.
+PSPEEDH(:,:,:) = 0.
 !
 !*       1. Parameters for cloud sedimentation
 !
@@ -1033,6 +1067,9 @@ DO JN = 1 , KSPLITR
          PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
       PINPRC(:,:) = PINPRC(:,:) + ZWSED(:,:,IKB) / XRHOLW / KSPLITR 
+      PINPRC3D(:,:,:) = PINPRC3D(:,:,:) + ZWSED(:,:,:) / XRHOLW / KSPLITR 
+      WHERE (PRCT(:,:,:) > 1.E-04 ) &
+           PSPEEDC(:,:,:) = ZWSED(:,:,:) / (PRCT(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRCS(:,:,:) = PRCS(:,:,:) * ZINVTSTEP
       END IF
@@ -1075,6 +1112,8 @@ DO JN = 1 , KSPLITR
        END DO
        PINPRR(:,:) = PINPRR(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
        PINPRR3D(:,:,:) = PINPRR3D(:,:,:) + ZWSED(:,:,1:IKT)/XRHOLW/KSPLITR 
+      WHERE (PRRT(:,:,:) > 1.E-04 ) &
+           PSPEEDR(:,:,:) = ZWSED(:,:,:) / (PRRT(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRRS(:,:,:) = PRRS(:,:,:) * ZINVTSTEP
       END IF
@@ -1156,6 +1195,9 @@ DO JN = 1 , KSPLITR
          PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRS(:,:) = PINPRS(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
+       PINPRS3D(:,:,:) = PINPRS3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR
+      WHERE (PRST(:,:,:) > 1.E-04 ) &
+           PSPEEDS(:,:,:) = ZWSED(:,:,:) / (PRST(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRSS(:,:,:) = PRSS(:,:,:) * ZINVTSTEP
       END IF
@@ -1196,7 +1238,10 @@ END IF
          PRGS(:,:,JK) = PRGS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRG(:,:) = PINPRG(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR                             
-      IF( JN==KSPLITR ) THEN
+       PINPRG3D(:,:,:) = PINPRG3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR                             
+       WHERE (PRGT(:,:,:) > 1.E-04 ) &
+           PSPEEDG(:,:,:) = ZWSED(:,:,:) / (PRGT(:,:,:) * PRHODREF(:,:,:))
+       IF( JN==KSPLITR ) THEN
         PRGS(:,:,:) = PRGS(:,:,:) * ZINVTSTEP
       END IF
 !
@@ -1237,7 +1282,10 @@ END IF
          PRHS(:,:,JK) = PRHS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRH(:,:) = PINPRH(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
-      IF( JN==KSPLITR ) THEN
+       PINPRH3D(:,:,:) = PINPRH3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR
+       WHERE (PRHT(:,:,:) > 1.E-04 ) &
+           PSPEEDH(:,:,:) = ZWSED(:,:,:) / (PRHT(:,:,:) * PRHODREF(:,:,:))
+       IF( JN==KSPLITR ) THEN
         PRHS(:,:,:) = PRHS(:,:,:) * ZINVTSTEP
       END IF
  END IF
@@ -1289,6 +1337,21 @@ INTEGER, DIMENSION(SIZE(PRHODREF,1)*SIZE(PRHODREF,2)) :: I1, I2
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !  droplet condensation
 !-------------------------------------------------------------------------------
 !
+PSPEEDC(:,:,:) = 0.
+PSPEEDR(:,:,:) = 0.
+PSPEEDS(:,:,:) = 0.
+PSPEEDG(:,:,:) = 0.
+PSPEEDH(:,:,:) = 0.
+IF (OSEDIC) PINPRC (:,:) = 0.
+IF (OSEDIC) PINPRC3D (:,:,:) = 0.
+PINPRR (:,:) = 0.
+PINPRR3D (:,:,:) = 0.
+PINPRS (:,:) = 0.
+PINPRS3D (:,:,:) = 0.
+PINPRG (:,:) = 0.
+PINPRG3D (:,:,:) = 0.
+IF ( KRR == 7 ) PINPRH (:,:) = 0.          
+IF ( KRR == 7 ) PINPRH3D (:,:,:) = 0.   
 ! 
 !
 !*       1. Parameters for cloud sedimentation
@@ -1414,8 +1477,11 @@ END DO
      DO JK = IKTB , IKTE
        PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
      END DO
+     WHERE (PRCT(:,:,:) > 1.E-04 ) &
+              PSPEEDC(:,:,:) = ZWSED(:,:,:) / (PRCT(:,:,:) * PRHODREF(:,:,:))      
 
      PINPRC(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
+     PINPRC3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
      PRCS(:,:,:) = PRCS(:,:,:) * ZINVTSTEP
  ENDIF
 
@@ -1468,6 +1534,8 @@ END DO
    DO JK = IKTB , IKTE
      PRRS(:,:,JK) = PRRS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
    ENDDO
+   WHERE (PRRT(:,:,:) > 1.E-04 ) &
+           PSPEEDR(:,:,:) = ZWSED(:,:,:) / (PRRT(:,:,:) * PRHODREF(:,:,:)) 
    PINPRR(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
    PINPRR3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
    PRRS(:,:,:) = PRRS(:,:,:) * ZINVTSTEP
@@ -1577,9 +1645,11 @@ END DO
    DO JK = IKTB , IKTE
      PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
    ENDDO
+   WHERE (PRST(:,:,:) > 1.E-04 ) &
+     PSPEEDS(:,:,:) = ZWSED(:,:,:) / (PRST(:,:,:) * PRHODREF(:,:,:)) 
 
    PINPRS(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-
+   PINPRS3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
    PRSS(:,:,:) = PRSS(:,:,:) * ZINVTSTEP
 
 
@@ -1633,8 +1703,10 @@ END DO
          PRGS(:,:,JK) = PRGS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
    ENDDO
 
+   WHERE (PRGT(:,:,:) > 1.E-04 ) &
+     PSPEEDG(:,:,:) = ZWSED(:,:,:) / (PRGT(:,:,:) * PRHODREF(:,:,:)) 
    PINPRG(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-
+   PINPRG3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
    PRGS(:,:,:) = PRGS(:,:,:) * ZINVTSTEP
 
 !
@@ -1686,8 +1758,10 @@ END DO
        PRHS(:,:,JK) = PRHS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
      ENDDO
 
+     WHERE (PRHT(:,:,:) > 1.E-04 ) &
+       PSPEEDH(:,:,:) = ZWSED(:,:,:) / (PRHT(:,:,:) * PRHODREF(:,:,:)) 
      PINPRH(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-
+     PINPRH3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
      PRHS(:,:,:) = PRHS(:,:,:) * ZINVTSTEP
 
  ENDIF

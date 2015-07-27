@@ -61,6 +61,8 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!     10/01/2011 adding IMI, the model number
 !!     March, 2013 :  C.Lac : add vertical profiles
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -191,6 +193,9 @@ INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
 INTEGER :: JPT      ! loop counter
 INTEGER :: IKU, IK
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
+INTEGER :: JLOOP
 !
 !----------------------------------------------------------------------------
 !
@@ -203,8 +208,12 @@ IF ( IMI /= TPFLYER%NMODEL ) RETURN
 !
 IPROC = 20 + SIZE(TPFLYER%R,2) + SIZE(TPFLYER%SV,2) &
        + 2 + SIZE(TPFLYER%SVW_FLUX,2)
-IPROCZ = SIZE(TPFLYER%RTZ,2)+SIZE(TPFLYER%CRARE,2)+SIZE(TPFLYER%CRARE_ATT,2)+ &
-         SIZE(TPFLYER%WZ,2) + SIZE(TPFLYER%FFZ,2)
+IPROCZ = SIZE(TPFLYER%RTZ,2)+ SIZE(TPFLYER%RZ,2)+ SIZE(TPFLYER%RZ,3)+  SIZE(TPFLYER%CRARE,2)+ &
+         SIZE(TPFLYER%CRARE_ATT,2)+ SIZE(TPFLYER%WZ,2) + SIZE(TPFLYER%FFZ,2)+ &
+         SIZE(TPFLYER%IWCZ,2)+ SIZE(TPFLYER%LWCZ,2) + SIZE(TPFLYER%CIZ,2) + &
+         SIZE(TPFLYER%ZZ,2) + SIZE(TPFLYER%SPEEDCZ,2) + &
+         SIZE(TPFLYER%SPEEDRZ,2) + SIZE(TPFLYER%SPEEDSZ,2)+ &
+         SIZE(TPFLYER%SPEEDGZ,2)
 IF (SIZE(TPFLYER%TKE  )>0) IPROC = IPROC + 1
 IF (LDIAG_IN_RUN) IPROC = IPROC + 1
 IF (LORILAM) IPROC = IPROC + JPMODE*3
@@ -567,12 +576,82 @@ DO IK=1, IKU
   YCOMMENTZ(JPROCZ) = '1D Total hydrometeor mixing ratio'
   ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%RTZ(:,IK)
 !
+  DO JRR=1,SIZE(TPFLYER%RZ,3)
+    JPROCZ = JPROCZ+1
+    YUNITZ    (JPROCZ) = 'kg/kg'
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%RZ(:,IK,JRR)
+    IF (JRR==1) THEN
+      YTITLEZ   (JPROCZ) = 'Rv'
+      YCOMMENTZ (JPROCZ) = '1D water vapor mixing ratio' 
+    ELSE IF (JRR==2) THEN
+      YTITLEZ   (JPROCZ) = 'Rc'
+      YCOMMENTZ (JPROCZ) = '1D liquid cloud water mixing ratio' 
+    ELSE IF (JRR==3) THEN
+      YTITLEZ   (JPROCZ) = 'Rr'
+      YCOMMENTZ (JPROCZ) = '1D Rain water mixing ratio' 
+    ELSE IF (JRR==4) THEN
+      YTITLEZ   (JPROCZ) = 'Ri'
+      YCOMMENTZ (JPROCZ) = '1D Ice cloud water mixing ratio' 
+    ELSE IF (JRR==5) THEN
+      YTITLEZ   (JPROCZ) = 'Rs'
+      YCOMMENTZ (JPROCZ) = '1D Snow mixing ratio' 
+    ELSE IF (JRR==6) THEN
+      YTITLEZ   (JPROCZ) = 'Rg'
+      YCOMMENTZ (JPROCZ) = '1D Graupel mixing ratio' 
+    ELSE IF (JRR==7) THEN
+      YTITLEZ   (JPROCZ) = 'Rh'
+      YCOMMENTZ (JPROCZ) = '1D Hail mixing ratio' 
+    END IF
+  END DO
+!
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'FF'
   YUNITZ   (JPROCZ) = 'm/s'         
   YCOMMENTZ(JPROCZ) = 'Horizontal wind'                     
   ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%FFZ(:,IK)
-! ++ OC
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'IWC'
+  YUNITZ   (JPROCZ) = 'kg/m3'         
+  YCOMMENTZ(JPROCZ) = 'Ice water content'                   
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%IWCZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'LWC'
+  YUNITZ   (JPROCZ) = 'kg/m3'         
+  YCOMMENTZ(JPROCZ) = 'Liquid water content'                
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%LWCZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'CIT'
+  YUNITZ   (JPROCZ) = '/m3'         
+  YCOMMENTZ(JPROCZ) = 'Ice concentration'                   
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'SPEEDC'
+  YUNITZ   (JPROCZ) = 'm/s'         
+  YCOMMENTZ(JPROCZ) = 'Cloud fall speed'                    
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDCZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'SPEEDR'
+  YUNITZ   (JPROCZ) = 'm/s'         
+  YCOMMENTZ(JPROCZ) = 'Rain fall speed'                    
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDRZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'SPEEDS'
+  YUNITZ   (JPROCZ) = 'm/s'         
+  YCOMMENTZ(JPROCZ) = 'Snow  fall speed'                    
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDSZ(:,IK)
+!
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'SPEEDG'
+  YUNITZ   (JPROCZ) = 'm/s'         
+  YCOMMENTZ(JPROCZ) = 'Graupel fall speed'                    
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDGZ(:,IK)
+!
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'RARE'
   YUNITZ   (JPROCZ) = 'dBZ'
@@ -588,6 +667,11 @@ DO IK=1, IKU
   YUNITZ   (JPROCZ) = 'm/s'
   YCOMMENTZ(JPROCZ) = '1D vertical velocity' 
   ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%WZ(:,IK)
+  JPROCZ = JPROCZ + 1
+  YTITLEZ  (JPROCZ) = 'Z'
+  YUNITZ   (JPROCZ) = 'm'
+  YCOMMENTZ(JPROCZ) = '1D altitude above sea'
+  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%ZZ(:,IK)
 END DO
 !----------------------------------------------------------------------------
 !

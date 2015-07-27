@@ -68,6 +68,8 @@
 !!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
 !!                             NBAZIM,LSNRT,XSNRMIN
 !!       D.Ricard 2015 : add LMOIST_ES
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !
 !
 !-------------------------------------------------------------------------------
@@ -191,6 +193,7 @@ LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
 INTEGER :: IIU, IJU, IKU
 INTEGER :: IINFO_ll               ! return code for _ll routines 
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
+REAL, DIMENSION(:,:,:),ALLOCATABLE        :: ZWORK
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
@@ -539,8 +542,9 @@ IF ( LAIRCRAFT_BALLOON ) THEN
                       TDTEXP, TDTMOD, TDTCUR, TXDTBAL, &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI, &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT,    &
-                      XTKET, XTSRAD, XRHODREF,XCIT,ZSEA)
-  DEALLOCATE (ZSEA,ZTOWN)
+                      XTKET, XTSRAD, XRHODREF,XCIT,    &
+                      ZWORK,ZWORK,ZWORK,ZWORK,ZWORK,ZSEA)
+  DEALLOCATE (ZSEA,ZTOWN,ZWORK)
 !
 !-----------------------------
 !

@@ -229,6 +229,8 @@ END MODULE MODI_MODEL_n
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
 !!      J.Escobar 20/04/2015: missing UPDATE_HALO before UPDATE_HALO2
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -482,6 +484,17 @@ REAL, DIMENSION(:,:,:,:), POINTER :: DPTR_XRM,DPTR_XSVM,DPTR_XRRS,DPTR_XRSVS
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRC,DPTR_XINPRR,DPTR_XINPRS,DPTR_XINPRG
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRH,DPTR_XPRCONV,DPTR_XPRSCONV
 LOGICAL, DIMENSION(:,:),POINTER :: DPTR_GMASKkids
+!
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDC
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDR
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDS
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDG
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDH
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRC3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRS3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRG3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRH3D
+!
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
 !
 ! for various testing
@@ -1631,8 +1644,11 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI, ZSEA, ZTOWN    )
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D,                    &
+                          XINPRH,ZINPRH3D, XSOLORG , XMI,                      &
+                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,         &
+                          ZSEA, ZTOWN    )
     DEF_NC=.TRUE.
 #else    
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
@@ -1646,8 +1662,11 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI, ZSEA, ZTOWN    )
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
+                          XSOLORG , XMI,                                       &
+                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,         &
+                          ZSEA, ZTOWN    )
 #endif
     DEALLOCATE(ZTOWN)
   ELSE
@@ -1665,8 +1684,9 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS, XINPRG, XINPRH, XSOLORG, XMI                 )
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
+                          XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH)
     DEF_NC=.TRUE.
 #else
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
@@ -1680,8 +1700,10 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS, XINPRG, XINPRH, XSOLORG, XMI                 )
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
+                          XSOLORG, XMI,                             &
+                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH          )
 #endif
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
@@ -1866,7 +1888,8 @@ IF (LFLYER)                                                                   &
                       TDTEXP, TDTMOD, TDTSEG, TDTCUR,                         &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
-                      XRHODREF,XCIT,PSEA=ZSEA(:,:))
+                      XRHODREF,XCIT,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG,       &
+                      ZSPEEDH,PSEA=ZSEA(:,:))
 
 
 !-------------------------------------------------------------------------------
@@ -1890,7 +1913,9 @@ IF (LPROFILER)                                                           &
                   TDTEXP, TDTMOD, TDTSEG, TDTCUR,                        &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT                                     )
+                  XAER, XCLDFR, XCIT ,                                   &
+                  ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,           &
+                  ZINPRC3D,XINPRR3D,ZINPRS3D,ZINPRG3D,ZINPRH3D           )
 !
 !
 CALL SECOND_MNH2(ZTIME2)

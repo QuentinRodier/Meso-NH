@@ -19,8 +19,11 @@ INTERFACE
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
-                                  PINPRS,PINPRG,PINPRH,PSOLORG,PMI,PSEA,PTOWN          )   
+                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
+                                  PSOLORG,PMI,                                         &
+                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
+                                  PSEA,PTOWN          )   
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
 CHARACTER(LEN=4),         INTENT(IN)   :: HACTCCN  ! kind of CCN activation scheme
@@ -113,8 +116,17 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -134,8 +146,11 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
-                                  PINPRS,PINPRG,PINPRH,PSOLORG,PMI,PSEA,PTOWN          )   
+                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
+                                  PSOLORG,PMI,                                         &
+                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
+                                  PSEA,PTOWN          )   
 !     ##########################################################################
 !
 !!****  * -  compute the  resolved clouds and precipitation
@@ -232,6 +247,8 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                                  Add KHKO scheme
 !!      Modifications : March 2013  (O.Thouron)
 !!                                  Add prognostic supersaturation
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -361,8 +378,17 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -770,8 +796,10 @@ SELECT CASE ( HCLOUD )
                     PRT(:,:,:,5), PRT(:,:,:,6),                          &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
-                    PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PSEA,PTOWN)
+                    PINPRC,PINPRC3D,PINPRR, PINPRR3D, PEVAP3D,           &
+                    PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,             &
+                    PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
+                    PSEA,PTOWN)
 !
 !*       9.2    Perform the saturation adjustment over cloud ice and cloud water
 !
@@ -808,9 +836,11 @@ SELECT CASE ( HCLOUD )
                     PRT(:,:,:,5), PRT(:,:,:,6),                           &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
-                    PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
-                    PINPRS, PINPRG, PSIGS, PSEA, PTOWN,                   &
-                    PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, OCONVHG           )
+                    PINPRC,PINPRC3D, PINPRR, PINPRR3D, PEVAP3D,           &
+                    PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,              &
+                    PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,          &
+                    PSEA, PTOWN,                                          &
+                    PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,PINPRH3D,OCONVHG  )
 
 !
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water

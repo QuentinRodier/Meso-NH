@@ -18,7 +18,9 @@ INTERFACE
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS,PP, PAER, PCLDFR, PCIT ) 
+                            PTS,PP, PAER, PCLDFR, PCIT,                 &
+                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,&
+                            PINPRC3D,PINPRR3D,PINPRS3D,PINPRG3D,PINPRH3D)
 !
 USE MODD_TYPE_DATE
 !
@@ -44,6 +46,16 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRC3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRR3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRS3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRG3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRH3D! 3D sedimentation rate     
 !
 !-------------------------------------------------------------------------------
 !
@@ -58,7 +70,9 @@ END MODULE MODI_PROFILER_n
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS, PP, PAER, PCLDFR, PCIT           )
+                            PTS, PP, PAER, PCLDFR, PCIT,          &
+                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,&
+                            PINPRC3D,PINPRR3D,PINPRS3D,PINPRG3D,PINPRH3D)
 !     ########################################################
 !
 !
@@ -93,6 +107,8 @@ END MODULE MODI_PROFILER_n
 !!     Original 15/02/2002
 !!     March 2013 : C.Lac : Corrections for 1D + new fields (RARE,THV,DD,FF)
 !!     April 2014 : C.Lac : Call RADAR only if ICE3   
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!
 !!
 !! --------------------------------------------------------------------------
@@ -115,7 +131,10 @@ USE MODE_ll
 USE MODI_WATER_SUM
 USE MODI_TEMPORAL_DIST
 USE MODI_RADAR_RAIN_ICE
+USE MODI_LIDAR
 USE MODI_WATER_SUM
+USE MODI_GPS_ZENITH_GRID
+USE MODD_PARAM_n, ONLY : CCLOUD
 !
 !
 IMPLICIT NONE
@@ -146,6 +165,16 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRC3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRR3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRS3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRG3D! 3D sedimentation rate     
+REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRH3D! 3D sedimentation rate  
 !
 !-------------------------------------------------------------------------------
 !
@@ -154,8 +183,10 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
 !
 INTEGER :: IIB        ! current processor domain sizes
 INTEGER :: IJB
+INTEGER :: IKB
 INTEGER :: IIE
 INTEGER :: IJE
+INTEGER :: IKE
 INTEGER :: IIU
 INTEGER :: IJU
 INTEGER :: IKU
@@ -175,19 +206,43 @@ INTEGER :: JSV    ! loop counter
 INTEGER :: JK     ! loop
 INTEGER :: IKRAD
 !
-REAL,DIMENSION(SIZE(PZ,3)) :: ZU_PROFILER ! horizontal wind speed at station location (along x)
-REAL,DIMENSION(SIZE(PZ,3)) :: ZV_PROFILER ! horizontal wind speed at station location (along y)
-REAL,DIMENSION(SIZE(PZ,3)) :: ZFF         ! horizontal wind speed at station location 
-REAL,DIMENSION(SIZE(PZ,3)) :: ZDD         ! horizontal wind speed at station location 
+REAL,DIMENSION(SIZE(PZ,3)) :: ZU_PROFILER ! horizontal wind speed profile at station location (along x)
+REAL,DIMENSION(SIZE(PZ,3)) :: ZV_PROFILER ! horizontal wind speed profile at station location (along y)
+REAL,DIMENSION(SIZE(PZ,3)) :: ZFF         ! horizontal wind speed profile at station location 
+REAL,DIMENSION(SIZE(PZ,3)) :: ZDD         ! horizontal wind speed profile at station location 
+REAL,DIMENSION(SIZE(PZ,3)) :: ZRHOD       ! dry air density in moist mixing profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZRV         ! water vapour mixing ratio profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZT          ! temperature profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZTV         ! virtual temperature profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZPRES       ! pressure profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZE          ! water vapour partial pressure profile at station location
+REAL,DIMENSION(SIZE(PZ,3)) :: ZZ          ! altitude of model levels at station location
+REAL,DIMENSION(SIZE(PZ,3)-1) :: ZZHATM      ! altitude of mass point levels at station location
 REAL                       :: ZGAM        ! rotation between meso-nh base and spherical lat-lon base.
+!
+REAL                       :: XZS_GPS       ! GPS station altitude
+REAL                       :: ZIWV        ! integrated water vapour at station location
+REAL                       :: ZZM_STAT      ! altitude at station location
+REAL                       :: ZTM_STAT      ! temperature at station location
+REAL                       :: ZTV_STAT      ! virtual temperature at station location
+REAL                       :: ZPM_STAT      ! pressure at station location
+REAL                       :: ZEM_STAT      ! water vapour partial pressure at station location
+REAL                       :: ZZTD_PROFILER ! ZTD at station location
+REAL                       :: ZZHD_PROFILER ! ZHD at station location
+REAL                       :: ZZWD_PROFILER ! ZWD at station location
+REAL                       :: ZZHDR         ! ZHD correction at station location
+REAL                       :: ZZWDR         ! ZWD correction at station location
 !
 INTEGER                    :: IINFO_ll    ! return code
 INTEGER                    :: ILUOUT      ! logical unit
 INTEGER                    :: IRESP       ! return code
 INTEGER                    :: I           ! loop for stations
 !
-REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZWORK32,ZTHV
-REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK33,ZWORK34
+REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2))              :: ZZTD,ZZHD,ZZWD
+REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZTHV,ZTEMPV
+REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK32,ZWORK33,ZWORK34,ZCIT
+REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
+REAL  :: ZRDSRV                 ! XRD/XRV
 !----------------------------------------------------------------------------
 !
 !*      2.   PRELIMINARIES
@@ -195,11 +250,20 @@ REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK33,ZWORK34
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
+!*      2.0   Refractivity coeficients
+!             ------------------------
+! Bevis et al. (1994)
+ZK1 = 0.776       ! K/Pa
+ZK2 = 0.704       ! K/Pa
+ZK3 = 3739.       ! K2/Pa
+ZRDSRV=XRD/XRV
 !*      2.1  Indices
 !            -------
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU =   SIZE(PZ,3)     ! nombre de niveaux sur la verticale
+IKB = JPVEXT+1
+IKE = IKU-JPVEXT
 !
 !
 !*      2.2  Interpolations of model variables to mass points
@@ -358,15 +422,21 @@ END IF
 !            --------------
 !
 ZTEMP(:,:,:)=PTH(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
-IF (SIZE(PR,4) == 6) CALL RADAR_RAIN_ICE (PR, PCIT, PRHODREF, ZTEMP, ZRARE, ZWORK32, &
+IF (CCLOUD(1:3)=="ICE") CALL RADAR_RAIN_ICE (PR, PCIT, PRHODREF, ZTEMP, ZRARE, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
 ! Theta_v
-ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+XRV/XRD*PR(:,:,:,1))
+ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)
+! virtual temperature
+ZTEMPV(:,:,:)=ZTHV(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
+CALL GPS_ZENITH_GRID(PR(:,:,:,1),ZTEMP,PP,ZZTD,ZZHD,ZZWD)
 IF (GSTORE) THEN
  IF (TPROFILER%TIME(IN) /= XUNDEF) THEN
   DO I=1,NUMBPROFILER
     IF ((ZTHIS_PROCS(I)==1.).AND.(.NOT. TPROFILER%ERROR(I))) THEN
       !
+      ZZ(:)                  = PROFILER_INTERP(PZ)
+      ZRHOD(:)               = PROFILER_INTERP(PRHODREF)
+      ZPRES(:)               = PROFILER_INTERP(PP)
       ZU_PROFILER(:)         = PROFILER_INTERP_U(PU)
       ZV_PROFILER(:)         = PROFILER_INTERP_V(PV)
       ZGAM                   = (XRPK * (TPROFILER%LON(I) - XLON0) - XBETA)*(XPI/180.)
@@ -381,9 +451,66 @@ IF (GSTORE) THEN
        IF (ZU_PROFILER(JK) <0. .AND. ZV_PROFILER(JK) >= 0.) &
          ZDD(JK) = ATAN(ABS(ZV_PROFILER(JK)/ZU_PROFILER(JK))) * 180./XPI + 90.
        IF (ZU_PROFILER(JK) == 0. .AND. ZV_PROFILER(JK) == 0.) &
-         ZDD(JK) = XUNDEF                                                         
+         ZDD(JK) = XUNDEF
       END DO
-      !
+      ! GPS IWV and ZTD
+      XZS_GPS=TPROFILER%ALT(I)
+      IF ( ABS( ZZ(IKB)-XZS_GPS ) < 150 ) THEN ! distance between real and model orography ok
+        ZRV(:)                 = PROFILER_INTERP(PR(:,:,:,1))
+        ZT(:)                  = PROFILER_INTERP(ZTEMP)
+        ZE(:)                  = ZPRES(:)*ZRV(:)/(ZRDSRV+ZRV(:))
+        ZTV(:)                 = PROFILER_INTERP(ZTEMPV)
+        ZZTD_PROFILER          = PROFILER_INTERP_2D(ZZTD)
+        ZZHD_PROFILER          = PROFILER_INTERP_2D(ZZHD)
+        ZZWD_PROFILER          = PROFILER_INTERP_2D(ZZWD)
+        ZIWV = 0.
+        DO JK=IKB,IKE
+         ZIWV=ZIWV+ZRHOD(JK)*ZRV(JK)*(ZZ(JK+1)-ZZ(JK))
+        END DO
+        IF (ZZ(IKB) < XZS_GPS) THEN ! station above the model orography     
+          DO JK=IKB+1,IKE
+            IF ( ZZ(JK) < XZS_GPS) THEN ! whole layer to remove
+              ZZHDR=( 1.E-6 * ZK1 * ZPRES(JK-1) * ( ZZ(JK) - ZZ(JK-1) ) / ZTV(JK-1))
+              ZZWDR=( 1.E-6 *  ( (ZK2-ZRDSRV*ZK1) + ( ZK3/ZT(JK-1) ) ) * &
+                 ZE(JK-1)* ( ZZ(JK) - ZZ(JK-1) ) / ZT(JK-1) )
+              ZZHD_PROFILER=ZZHD_PROFILER-ZZHDR
+              ZZWD_PROFILER=ZZWD_PROFILER-ZZWDR
+              ZZTD_PROFILER=ZZTD_PROFILER-ZZHDR-ZZWDR
+            ELSE                       ! partial layer to remove
+              ZZHDR=( 1.E-6 * ZK1 * ZPRES(JK-1) * ( XZS_GPS - ZZ(JK-1) ) / ZTV(JK-1)) 
+              ZZWDR=( 1.E-6 *  ( (ZK2-ZRDSRV*ZK1) + ( ZK3/ZT(JK-1) ) ) * &
+                 ZE(JK-1)* ( XZS_GPS - ZZ(JK-1) ) / ZT(JK-1) ) 
+              ZZHD_PROFILER=ZZHD_PROFILER-ZZHDR
+              ZZWD_PROFILER=ZZWD_PROFILER-ZZWDR
+              ZZTD_PROFILER=ZZTD_PROFILER-ZZHDR-ZZWDR
+              EXIT
+            END IF
+          END DO 
+        ELSE ! station below the model orography
+! Extrapolate variables below the model orography assuming constant T&Tv gradients,
+! constant rv and hydrostatic law
+          ZZHATM(:)=0.5*(ZZ(1:IKU-1)+ZZ(2:IKU))
+          ZZM_STAT=0.5*(XZS_GPS+ZZ(IKB))
+          ZTM_STAT=ZT(IKB) + ( (ZZM_STAT-ZZHATM(IKB))*&
+             ( ZT(IKB)- ZT(IKB+1) )/(ZZHATM(IKB)-ZZHATM(IKB+1)) )
+          ZTV_STAT=ZTV(IKB) + ( (ZZM_STAT-ZZHATM(IKB))*&
+             ( ZTV(IKB)- ZTV(IKB+1) )/(ZZHATM(IKB)-ZZHATM(IKB+1)) )
+          ZPM_STAT = ZPRES(IKB) * EXP(XG *(ZZM_STAT-ZZHATM(IKB))&
+             /(XRD* 0.5 *(ZTV_STAT+ZTV(IKB))))
+          ZEM_STAT = ZPM_STAT * ZRV(IKB) / ( ZRDSRV + ZRV(IKB) )
+! add contribution below the model orography        
+          ZZHDR=( 1.E-6 * ZK1 * ZPM_STAT * ( ZZ(IKB) - XZS_GPS ) / ZTV_STAT )
+          ZZWDR=( 1.E-6 * ( (ZK2-ZRDSRV*ZK1) + (ZK3/ZTM_STAT) )&
+             * ZEM_STAT* ( ZZ(IKB) - XZS_GPS ) / ZTM_STAT )
+          ZZHD_PROFILER=ZZHD_PROFILER+ZZHDR
+          ZZWD_PROFILER=ZZWD_PROFILER+ZZWDR
+          ZZTD_PROFILER=ZZTD_PROFILER+ZZHDR+ZZWDR
+        END IF
+        TPROFILER%IWV(IN,I)= ZIWV
+        TPROFILER%ZTD(IN,I)= ZZTD_PROFILER
+        TPROFILER%ZWD(IN,I)= ZZWD_PROFILER
+        TPROFILER%ZHD(IN,I)= ZZHD_PROFILER
+      END IF
       TPROFILER%ZON (IN,:,I) = ZU_PROFILER(:) * COS(ZGAM) + ZV_PROFILER(:) * SIN(ZGAM)
       TPROFILER%MER (IN,:,I) = - ZU_PROFILER(:) * SIN(ZGAM) + ZV_PROFILER(:) * COS(ZGAM)
       TPROFILER%FF  (IN,:,I) = ZFF(:)                                                     
@@ -391,7 +518,19 @@ IF (GSTORE) THEN
       TPROFILER%W   (IN,:,I) = PROFILER_INTERP(PW)
       TPROFILER%TH  (IN,:,I) = PROFILER_INTERP(PTH)
       TPROFILER%THV (IN,:,I) = PROFILER_INTERP(ZTHV)
-      TPROFILER%RARE(IN,:,I) = PROFILER_INTERP(ZRARE)
+      TPROFILER%ZZ  (IN,:,I) = ZZ(:)
+      TPROFILER%RHOD(IN,:,I) = ZRHOD(:)
+      IF (SIZE(PR,4) == 6) TPROFILER%RARE(IN,:,I) = PROFILER_INTERP(ZRARE)
+      TPROFILER%SPEEDC(IN,:,I) = PROFILER_INTERP(PSPEEDC)
+      TPROFILER%SPEEDR(IN,:,I) = PROFILER_INTERP(PSPEEDR)
+      TPROFILER%SPEEDS(IN,:,I) = PROFILER_INTERP(PSPEEDS)
+      TPROFILER%SPEEDG(IN,:,I) = PROFILER_INTERP(PSPEEDG)
+      TPROFILER%SPEEDH(IN,:,I) = PROFILER_INTERP(PSPEEDH)
+      TPROFILER%INPRC3D(IN,:,I) = PROFILER_INTERP(PINPRC3D)*3.6E6
+      TPROFILER%INPRR3D(IN,:,I) = PROFILER_INTERP(PINPRR3D)*3.6E6
+      TPROFILER%INPRS3D(IN,:,I) = PROFILER_INTERP(PINPRS3D)*3.6E6
+      TPROFILER%INPRG3D(IN,:,I) = PROFILER_INTERP(PINPRG3D)*3.6E6
+      TPROFILER%INPRH3D(IN,:,I) = PROFILER_INTERP(PINPRH3D)*3.6E6
       IF (.NOT. L1D) THEN
         TPROFILER%P   (IN,:,I) = PROFILER_INTERP(PP(II(I):II(I)+1,IJ(I):IJ(I)+1,:))
       ELSE
@@ -407,7 +546,7 @@ IF (GSTORE) THEN
         TPROFILER%SV  (IN,:,I,JSV) = PROFILER_INTERP(ZWORK(:,:,:,JSV))
       END DO
       ZWORK2(:,:,:,:) = 0.
-      DO JK=1+JPVEXT,IKU-JPVEXT
+      DO JK=IKB,IKE
         IKRAD = JK - JPVEXT
         ZWORK2(:,:,JK,:)=PAER(:,:,IKRAD,:)
       ENDDO
@@ -467,9 +606,25 @@ IF (GSTORE) THEN
   CALL DISTRIBUTE_PROFILER(TPROFILER%DD  (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%W   (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%P   (IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZZ  (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%TH  (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%THV (IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%RHOD(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RARE(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDC(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDR(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDS(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDG(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDH(IN,JK,I))  
+  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRC3D(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRR3D(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRS3D(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRG3D(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRH3D(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZTD(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZHD(IN,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%ZWD(IN,I))
   !
   IF (LDIAG_IN_RUN) CALL DISTRIBUTE_PROFILER(TPROFILER%TKE_DISS(IN,JK,I))
   !

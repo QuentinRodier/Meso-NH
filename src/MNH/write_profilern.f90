@@ -59,6 +59,8 @@ END MODULE MODI_WRITE_PROFILER_n
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/02/2002
+!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -147,7 +149,7 @@ IF (TPROFILER%X(II)==XUNDEF) RETURN
 IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
-IPROC = 11 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 27 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 13
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -190,10 +192,76 @@ YCOMMENT (JPROC) = 'Radar reflectivity'
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RARE(:,IK,II)
 !
 JPROC = JPROC + 1
+YTITLE   (JPROC) = 'SPEEDC'
+YUNIT    (JPROC) = 'm/s'
+YCOMMENT (JPROC) = 'Cloud sedimentation speed'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDC(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'SPEEDR'
+YUNIT    (JPROC) = 'm/s'
+YCOMMENT (JPROC) = 'Rain sedimentation speed'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDR(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'SPEEDS'
+YUNIT    (JPROC) = 'm/s'
+YCOMMENT (JPROC) = 'Snow sedimentation speed'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDS(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'SPEEDG'
+YUNIT    (JPROC) = 'm/s'
+YCOMMENT (JPROC) = 'Graupel sedimentation speed'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDG(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'SPEEDH'
+YUNIT    (JPROC) = 'm/s'
+YCOMMENT (JPROC) = 'Hail sedimentation speed'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDH(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'INPRC3D'
+YUNIT    (JPROC) = 'mm/h'
+YCOMMENT (JPROC) = 'Cloud sedimentation rate'   
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRC3D(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'INPRR3D'
+YUNIT    (JPROC) = 'mm/h'
+YCOMMENT (JPROC) = 'Rain sedimentation rate'   
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRR3D(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'INPRS3D'
+YUNIT    (JPROC) = 'mm/h'
+YCOMMENT (JPROC) = 'Snow sedimentation rate'   
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRS3D(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'INPRG3D'
+YUNIT    (JPROC) = 'mm/h'
+YCOMMENT (JPROC) = 'Graupel sedimentation rate'   
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRG3D(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'INPRH3D'
+YUNIT    (JPROC) = 'mm/h'
+YCOMMENT (JPROC) = 'Hail sedimentation rate'   
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRH3D(:,IK,II)
+!
+JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
 YUNIT    (JPROC) = 'Pascal'
 YCOMMENT (JPROC) = 'Pressure' 
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%P(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'ALT'
+YUNIT    (JPROC) = 'm'
+YCOMMENT (JPROC) = 'Altitude' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZZ(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'LON'
@@ -346,6 +414,11 @@ DO JRR=1,SIZE(TPROFILER%R,4)
     YCOMMENT (JPROC) = 'Hail mixing ratio' 
   END IF
 END DO
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'Rhod'
+YUNIT    (JPROC) = 'kg/m3'
+YCOMMENT (JPROC) = 'Density of dry air in moist' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RHOD(:,IK,II)
 !
 IF (SIZE(TPROFILER%TKE,1)>0) THEN
   JPROC = JPROC+1
@@ -354,6 +427,30 @@ IF (SIZE(TPROFILER%TKE,1)>0) THEN
   YCOMMENT (JPROC) = 'Turbulent kinetic energy' 
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%TKE(:,IK,II)
 END IF
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'IWV'
+YUNIT    (JPROC) = 'kg/m2'
+YCOMMENT (JPROC) = 'Integrated Water Vapour' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%IWV(:,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'ZTD'
+YUNIT    (JPROC) = 'm'
+YCOMMENT (JPROC) = 'Zenith Tropospheric Delay' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZTD(:,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'ZWD'
+YUNIT    (JPROC) = 'm'
+YCOMMENT (JPROC) = 'Zenith Wet Delay' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZWD(:,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'ZHD'
+YUNIT    (JPROC) = 'm'
+YCOMMENT (JPROC) = 'Zenith Hydrostatic Delay' 
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%ZHD(:,II)
 !
 IF (SIZE(TPROFILER%SV,4)>=1) THEN
   ! User scalar variables
