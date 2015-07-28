@@ -38,7 +38,7 @@ IMPLICIT NONE
 !!      Original    15/01/02
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profile
-r!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
