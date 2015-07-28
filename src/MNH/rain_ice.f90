@@ -1067,9 +1067,9 @@ DO JN = 1 , KSPLITR
          PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
       PINPRC(:,:) = PINPRC(:,:) + ZWSED(:,:,IKB) / XRHOLW / KSPLITR 
-      PINPRC3D(:,:,:) = PINPRC3D(:,:,:) + ZWSED(:,:,:) / XRHOLW / KSPLITR 
+      PINPRC3D(:,:,:) = PINPRC3D(:,:,:) + ZWSED(:,:,1:IKT) / XRHOLW / KSPLITR 
       WHERE (PRCT(:,:,:) > 1.E-04 ) &
-           PSPEEDC(:,:,:) = ZWSED(:,:,:) / (PRCT(:,:,:) * PRHODREF(:,:,:))
+           PSPEEDC(:,:,:) = ZWSED(:,:,1:IKT) / (PRCT(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRCS(:,:,:) = PRCS(:,:,:) * ZINVTSTEP
       END IF
@@ -1113,7 +1113,7 @@ DO JN = 1 , KSPLITR
        PINPRR(:,:) = PINPRR(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
        PINPRR3D(:,:,:) = PINPRR3D(:,:,:) + ZWSED(:,:,1:IKT)/XRHOLW/KSPLITR 
       WHERE (PRRT(:,:,:) > 1.E-04 ) &
-           PSPEEDR(:,:,:) = ZWSED(:,:,:) / (PRRT(:,:,:) * PRHODREF(:,:,:))
+           PSPEEDR(:,:,:) = ZWSED(:,:,1:IKT) / (PRRT(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRRS(:,:,:) = PRRS(:,:,:) * ZINVTSTEP
       END IF
@@ -1195,9 +1195,9 @@ DO JN = 1 , KSPLITR
          PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRS(:,:) = PINPRS(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
-       PINPRS3D(:,:,:) = PINPRS3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR
+       PINPRS3D(:,:,:) = PINPRS3D(:,:,:) + ZWSED(:,:,1:IKT)/XRHOLW/KSPLITR
       WHERE (PRST(:,:,:) > 1.E-04 ) &
-           PSPEEDS(:,:,:) = ZWSED(:,:,:) / (PRST(:,:,:) * PRHODREF(:,:,:))
+           PSPEEDS(:,:,:) = ZWSED(:,:,1:IKT) / (PRST(:,:,:) * PRHODREF(:,:,:))
       IF( JN==KSPLITR ) THEN
         PRSS(:,:,:) = PRSS(:,:,:) * ZINVTSTEP
       END IF
@@ -1238,9 +1238,9 @@ END IF
          PRGS(:,:,JK) = PRGS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRG(:,:) = PINPRG(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR                             
-       PINPRG3D(:,:,:) = PINPRG3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR                             
+       PINPRG3D(:,:,:) = PINPRG3D(:,:,:) + ZWSED(:,:,1:IKT)/XRHOLW/KSPLITR                             
        WHERE (PRGT(:,:,:) > 1.E-04 ) &
-           PSPEEDG(:,:,:) = ZWSED(:,:,:) / (PRGT(:,:,:) * PRHODREF(:,:,:))
+           PSPEEDG(:,:,:) = ZWSED(:,:,1:IKT) / (PRGT(:,:,:) * PRHODREF(:,:,:))
        IF( JN==KSPLITR ) THEN
         PRGS(:,:,:) = PRGS(:,:,:) * ZINVTSTEP
       END IF
@@ -1282,9 +1282,9 @@ END IF
          PRHS(:,:,JK) = PRHS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
        END DO
        PINPRH(:,:) = PINPRH(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
-       PINPRH3D(:,:,:) = PINPRH3D(:,:,:) + ZWSED(:,:,:)/XRHOLW/KSPLITR
+       PINPRH3D(:,:,:) = PINPRH3D(:,:,:) + ZWSED(:,:,1:IKT)/XRHOLW/KSPLITR
        WHERE (PRHT(:,:,:) > 1.E-04 ) &
-           PSPEEDH(:,:,:) = ZWSED(:,:,:) / (PRHT(:,:,:) * PRHODREF(:,:,:))
+           PSPEEDH(:,:,:) = ZWSED(:,:,1:IKT) / (PRHT(:,:,:) * PRHODREF(:,:,:))
        IF( JN==KSPLITR ) THEN
         PRHS(:,:,:) = PRHS(:,:,:) * ZINVTSTEP
       END IF
@@ -1478,10 +1478,10 @@ END DO
        PRCS(:,:,JK) = PRCS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
      END DO
      WHERE (PRCT(:,:,:) > 1.E-04 ) &
-              PSPEEDC(:,:,:) = ZWSED(:,:,:) / (PRCT(:,:,:) * PRHODREF(:,:,:))      
+              PSPEEDC(:,:,:) = ZWSED(:,:,1:IKT) / (PRCT(:,:,:) * PRHODREF(:,:,:))      
 
      PINPRC(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-     PINPRC3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
+     PINPRC3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
      PRCS(:,:,:) = PRCS(:,:,:) * ZINVTSTEP
  ENDIF
 
@@ -1535,7 +1535,7 @@ END DO
      PRRS(:,:,JK) = PRRS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
    ENDDO
    WHERE (PRRT(:,:,:) > 1.E-04 ) &
-           PSPEEDR(:,:,:) = ZWSED(:,:,:) / (PRRT(:,:,:) * PRHODREF(:,:,:)) 
+           PSPEEDR(:,:,:) = ZWSED(:,:,1:IKT) / (PRRT(:,:,:) * PRHODREF(:,:,:)) 
    PINPRR(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
    PINPRR3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
    PRRS(:,:,:) = PRRS(:,:,:) * ZINVTSTEP
@@ -1646,10 +1646,10 @@ END DO
      PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)*(ZWSED(:,:,JK+KKL)-ZWSED(:,:,JK))
    ENDDO
    WHERE (PRST(:,:,:) > 1.E-04 ) &
-     PSPEEDS(:,:,:) = ZWSED(:,:,:) / (PRST(:,:,:) * PRHODREF(:,:,:)) 
+     PSPEEDS(:,:,:) = ZWSED(:,:,1:IKT) / (PRST(:,:,:) * PRHODREF(:,:,:)) 
 
    PINPRS(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-   PINPRS3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
+   PINPRS3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
    PRSS(:,:,:) = PRSS(:,:,:) * ZINVTSTEP
 
 
@@ -1704,9 +1704,9 @@ END DO
    ENDDO
 
    WHERE (PRGT(:,:,:) > 1.E-04 ) &
-     PSPEEDG(:,:,:) = ZWSED(:,:,:) / (PRGT(:,:,:) * PRHODREF(:,:,:)) 
+     PSPEEDG(:,:,:) = ZWSED(:,:,1:IKT) / (PRGT(:,:,:) * PRHODREF(:,:,:)) 
    PINPRG(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-   PINPRG3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
+   PINPRG3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
    PRGS(:,:,:) = PRGS(:,:,:) * ZINVTSTEP
 
 !
@@ -1759,9 +1759,9 @@ END DO
      ENDDO
 
      WHERE (PRHT(:,:,:) > 1.E-04 ) &
-       PSPEEDH(:,:,:) = ZWSED(:,:,:) / (PRHT(:,:,:) * PRHODREF(:,:,:)) 
+       PSPEEDH(:,:,:) = ZWSED(:,:,1:IKT) / (PRHT(:,:,:) * PRHODREF(:,:,:)) 
      PINPRH(:,:) = ZWSED(:,:,IKB)/XRHOLW                        ! in m/s
-     PINPRH3D(:,:,:) = ZWSED(:,:,:)/XRHOLW                        ! in m/s
+     PINPRH3D(:,:,:) = ZWSED(:,:,1:IKT)/XRHOLW                        ! in m/s
      PRHS(:,:,:) = PRHS(:,:,:) * ZINVTSTEP
 
  ENDIF
