@@ -1,3 +1,4 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
 &NAM_LUNITn 
             CINIFILE = "S7020000924.00",
             CINIFILEPGD = "pgd_dust_30km",

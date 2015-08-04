@@ -5,8 +5,8 @@ set -e
 #
 # Get the ecmwf files form the Mesonh WEB if needed
 #
-ECMWF_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_interne/dir_LINUX/dir_ECMWF"
-WGET="wget --http-user=people --http-passwd=people "
+ECMWF_URL="http://mesonh.aero.obs-mip.fr/mesonh/dir_open/dir_LINUX/dir_ECMWF"
+WGET="wget"
 for file in ecmwf.OD.20000924.00 ecmwf.OD.20000924.12 ecmwf.OD.20000925.00
 do
 [ -f $file ] || ( ${WGET} -c -nd ${ECMWF_URL}/$file.gz ; gunzip $file.gz ; ) 
