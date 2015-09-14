@@ -199,6 +199,7 @@ module rm grib_api
                 export MNHENV=${MNHENV:-"
 . /opt/modules/default/init/bash
 module switch PrgEnv-cray PrgEnv-intel
+module rm grib_api
 "}
                 fi
                 fi
