@@ -318,7 +318,7 @@ A64=A64
 endif
 gribapi : $(GRIBAPI_INC)
 $(GRIBAPI_INC) : 
-	cd ${DIR_GRIBAPI} && ./configure --disable-jpeg --prefix=${GRIBAPI_PATH} FC="$(FC)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && $(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
+	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} FC="$(FC)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && $(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
 
 gribapi_clean :
 	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH} 
