@@ -17,10 +17,10 @@ DIR_COMP = $(DIR_LIB)/COMPRESS
 LIBCOMP  = $(DIR_COMP)/$(ARCH)/liblficomp.a
 
 
-OBJS = lfi2cdf.o modd_ncparam.o mode_dimlist.o fieldtype.o mode_util.o
+OBJS = newmain.o lfi2cdf.o modd_ncparam.o mode_dimlist.o fieldtype.o mode_util.o
 PROGS = lfi2cdf 
 
-INC = -I$(DIR_OBJ)
+INC = -I$(DIR_OBJ) -DLFI_INT=$(LFI_INT)
 
 DIR_CONF:=$(SRC_MESONH)/conf
 
@@ -32,6 +32,9 @@ include Rules.$(ARCH)
 	$(F90) $(INC) -c $(F90FLAGS) $(DIR_OBJ)/cpp_$(*F).f90 -o $(DIR_OBJ)/$(*F).o
 	-@mv  *.mod $(DIR_OBJ)/. 2> /dev/null || echo pas de module dans $*.f90
 
+%.o:%.c $(DIR_OBJ)/.dummy
+	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS) -c $< -o $(DIR_OBJ)/$(*F).o
+
 all : $(PROGS) cdf2lfi
 
 cdf2lfi: $(PROGS) 
@@ -40,7 +43,8 @@ cdf2lfi: $(PROGS)
 $(PROGS): $(OBJS) $(LIBLFI) $(LIBCOMP)
 	cd $(DIR_OBJ); $(F90) $(LDFLAGS) -o $@ $(OBJS) $(LIBLFI) $(LIBCOMP) $(LIBCDF)
 
-$(OBJS): $(LIBCDF)
+#$(OBJS): $(LIBCDF)
+$(OBJS): 
 
 $(DIR_OBJ)/.dummy :
 	mkdir -p $(DIR_OBJ)
@@ -76,3 +80,4 @@ modd_ncparam.o: modd_ncparam.f90
 mode_dimlist.o: mode_dimlist.f90
 mode_util.o: mode_util.f90 modd_ncparam.o fieldtype.o mode_dimlist.o
 fieldtype.o: fieldtype.f90 modd_ncparam.o
+

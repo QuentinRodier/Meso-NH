@@ -1,7 +1,7 @@
 B ?= 32
 
 ifeq ($(origin MNH_LIBTOOLS), undefined)
-dummy %:
+dummy :
 	@echo "ERROR : MNH_LIBTOOLS variable is not set !";echo
 else
 include $(MNH_LIBTOOLS)/tools/where.Libs

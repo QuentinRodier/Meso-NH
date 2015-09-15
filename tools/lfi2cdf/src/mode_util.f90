@@ -20,7 +20,10 @@ MODULE mode_util
   END TYPE lfidata
   TYPE(lfidata), DIMENSION(:), ALLOCATABLE :: lfiart
 #endif
-  
+
+  LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
+  LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
+
   INCLUDE 'netcdf.inc'
 
 CONTAINS 
@@ -40,13 +43,14 @@ CONTAINS
   END FUNCTION str_replace
 
   SUBROUTINE FMREADLFIN1(klu,hrecfm,kval,kresp)
-  INTEGER, INTENT(IN)         :: klu ! logical fortran unit au lfi file
-  CHARACTER(LEN=*),INTENT(IN) :: hrecfm ! article name to be read
+  INTEGER(KIND=LFI_INT), INTENT(IN) :: klu ! logical fortran unit au lfi file
+  CHARACTER(LEN=*),INTENT(IN)       :: hrecfm ! article name to be read
   INTEGER, INTENT(OUT)        :: kval ! integer value for hrecfm article
-  INTEGER, INTENT(OUT)        :: kresp! return code null if OK
+  INTEGER(KIND=LFI_INT), INTENT(OUT):: kresp! return code null if OK
   !
   INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE::iwork
-  INTEGER :: iresp,ilenga,iposex,icomlen
+  INTEGER :: icomlen
+  INTEGER(KIND=LFI_INT) :: iresp,ilenga,iposex
   !
   CALL LFINFO(iresp,klu,hrecfm,ilenga,iposex)
   IF (iresp /=0 .OR. ilenga == 0) THEN
@@ -62,24 +66,29 @@ CONTAINS
   END IF
   END SUBROUTINE FMREADLFIN1
 
-  SUBROUTINE parse_lfi(klu, knaf, tpreclist, kbuflen)
+  SUBROUTINE parse_lfi(klu, hvarlist, knaf, tpreclist, kbuflen)
     INTEGER, INTENT(IN)                    :: klu
-    INTEGER, INTENT(IN)                    :: knaf
+    INTEGER, INTENT(INOUT)                 :: knaf
+    CHARACTER(LEN=*), intent(IN)           :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist    
     INTEGER, INTENT(OUT)                   :: kbuflen
 
     INTEGER                                  :: ji,jj
-    INTEGER                                  :: ileng,ipos
+    INTEGER                                  :: ndb, nde
+    INTEGER                                  :: inaf
     LOGICAL                                  :: ladvan
-    INTEGER                                  :: iresp
     INTEGER                                  :: ich
     INTEGER                                  :: fsize,sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
+    INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
     !JUAN CYCCL3
     INTEGER                        :: JPHEXT
+
+    ilu = klu
+
     CALL FMREADLFIN1(klu,'JPHEXT',JPHEXT,iresp)
     IF (iresp /= 0) JPHEXT=1
     ! First check if IMAX,JMAX,KMAX exist in LFI file
@@ -90,7 +99,7 @@ CONTAINS
     CALL FMREADLFIN1(klu,'JMAX',IDIMY,iresp)
     IF (iresp == 0) IDIMY = IDIMY+2*JPHEXT  ! JMAX + 2*JPHEXT
     !
-    CALL FMREADLFIN1(klu,'KMAX',IDIMZ,iresp)
+    CALL FMREADLFIN1(ilu,'KMAX',IDIMZ,iresp)
     IF (iresp == 0) IDIMZ = IDIMZ+2  ! KMAX + 2*JPVEXT
     GUSEDIM = (IDIMX*IDIMY > 0)
     IF (GUSEDIM) THEN
@@ -108,9 +117,6 @@ CONTAINS
     ALLOCATE(tpreclist(knaf))
     sizemax = 0
 
-    CALL LFIPOS(iresp,klu)
-    ladvan = .TRUE.
-
     ! Phase 1 : build articles list to convert.
     !
     !    Pour l'instant tous les articles du fichier LFI sont
@@ -118,28 +124,60 @@ CONTAINS
     !    compte un sous-ensemble d'article (liste definie par
     !    l'utilisateur par exemple)  
     !
-    DO ji=1,knaf
-       CALL LFICAS(iresp,klu,yrecfm,ileng,ipos,ladvan)
-       ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
-       tpreclist(ji)%name = yrecfm
-       IF (ileng > sizemax) sizemax = ileng        
+    IF (LEN_TRIM(hvarlist) > 0) THEN
+       ! A variable list is provided with -v var1,...
+       ndb  = 1
+       inaf = 0
+       DO ji=1,knaf
+          nde = INDEX(TRIM(hvarlist(ndb:)),',')
+          yrecfm = hvarlist(ndb:ndb+nde-2)
+          ndb = nde+ndb
+
+          CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
+          
+          IF (iresp /= 0 .OR. ileng == 0) THEN
+             PRINT *,'Article ',TRIM(yrecfm), ' not found!'
+          ELSE
+             inaf = inaf+1
+             ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
+             tpreclist(inaf)%name = yrecfm
+             IF (ileng > sizemax) sizemax = ileng        
 #ifndef LOWMEM       
-       ALLOCATE(lfiart(ji)%iwtab(ileng))
+             ALLOCATE(lfiart(inaf)%iwtab(ileng))
 #endif
-    END DO
+          end IF
+       END DO
+    ELSE
+       ! Entire file is converted
+       CALL LFIPOS(iresp,ilu)
+       ladvan = .TRUE.
+       
+       DO ji=1,knaf
+          CALL LFICAS(iresp,ilu,yrecfm,ileng,ipos,ladvan)
+          ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
+          tpreclist(ji)%name = yrecfm
+          IF (ileng > sizemax) sizemax = ileng        
+#ifndef LOWMEM       
+          ALLOCATE(lfiart(ji)%iwtab(ileng))
+#endif
+       END DO
+       inaf = knaf
+    END IF
+
     kbuflen = sizemax
 #ifdef LOWMEM
     WRITE(*,'("Taille maximale du buffer :",f10.3," Mo")') sizemax*8./1048576.
     ALLOCATE(iwork(sizemax))
 #endif
+    
     ! Phase 2 : Extract comments and dimensions for valid articles.
     !           Infos are put in tpreclist.
     CALL init_dimCDF()
-    DO ji=1,knaf
+    DO ji=1,inaf
        yrecfm = tpreclist(ji)%name
-       CALL LFINFO(iresp,klu,yrecfm,ileng,ipos)
+       CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
-       CALL LFILEC(iresp,klu,yrecfm,iwork,ileng)
+       CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
        tpreclist(ji)%TYPE = get_ftype(yrecfm)               
        tpreclist(ji)%grid = iwork(1)
 
@@ -150,7 +188,7 @@ CONTAINS
        END DO
        fsize = ileng-(2+iwork(2))
 #else
-       CALL LFILEC(iresp,klu,yrecfm,lfiart(ji)%iwtab,ileng)
+       CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
        tpreclist(ji)%TYPE = get_ftype(yrecfm)               
        tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
 
@@ -168,6 +206,7 @@ CONTAINS
 #ifdef LOWMEM
     DEALLOCATE(iwork)
 #endif
+    knaf = inaf
   END SUBROUTINE parse_lfi
   
   SUBROUTINE HANDLE_ERR(status,line)
@@ -179,8 +218,9 @@ CONTAINS
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,kcdf_id)
+  SUBROUTINE def_ncdf(tpreclist,knaf,kcdf_id)
     TYPE(workfield),DIMENSION(:),INTENT(IN) :: tpreclist    
+    INTEGER,                     INTENT(IN) :: knaf
     INTEGER,                     INTENT(OUT):: kcdf_id
 
     INTEGER :: status
@@ -209,7 +249,7 @@ CONTAINS
     PRINT *,'------------- NetCDF DEFINITION ---------------'
 
     ! define VARIABLES and ATTRIBUTES
-    DO ji=1,SIZE(tpreclist)
+    DO ji=1,knaf
       
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
          IF (tpreclist(ji)%dim%create) THEN
@@ -296,10 +336,11 @@ CONTAINS
     
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(klu,kcdf_id,tpreclist,kbuflen)
+  SUBROUTINE fill_ncdf(klu,kcdf_id,tpreclist,knaf,kbuflen)
     INTEGER,                      INTENT(IN):: klu
     INTEGER,                      INTENT(IN):: kcdf_id
-    TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist    
+    TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist
+    INTEGER,                      INTENT(IN):: knaf
     INTEGER,                      INTENT(IN):: kbuflen
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
@@ -309,11 +350,11 @@ CONTAINS
     REAL   (KIND=8),DIMENSION(:),ALLOCATABLE :: xtab
     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     INTEGER                                  :: status
-    INTEGER                                  :: iresp
-    INTEGER                                  :: ileng
-    INTEGER                                  :: ipos
     INTEGER                                  :: extent
     INTEGER                                  :: ich
+    INTEGER(KIND=LFI_INT) :: iresp,ilu,ileng,ipos
+    !
+    ilu = klu
     !
 #if LOWMEM
     ALLOCATE(iwork(kbuflen))
@@ -321,10 +362,10 @@ CONTAINS
     ALLOCATE(itab(kbuflen))
     ALLOCATE(xtab(kbuflen))
 
-    DO ji=1,SIZE(tpreclist)
+    DO ji=1,knaf
 #if LOWMEM
-       CALL LFINFO(iresp,klu,tpreclist(ji)%name,ileng,ipos)
-       CALL LFILEC(iresp,klu,tpreclist(ji)%name,iwork,ileng)
+       CALL LFINFO(iresp,ilu,tpreclist(ji)%name,ileng,ipos)
+       CALL LFILEC(iresp,ilu,tpreclist(ji)%name,iwork,ileng)
 #endif
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
           extent = tpreclist(ji)%dim%len
@@ -483,7 +524,6 @@ CONTAINS
     TYPE(workfield), DIMENSION(:), INTENT(IN) :: tpreclist
     INTEGER,                       INTENT(IN) :: kbuflen
     
-    INTEGER :: iresp
     INTEGER :: status
     INTEGER :: ivar,jj
     INTEGER(KIND=8), DIMENSION(:), POINTER  :: iwork
@@ -494,6 +534,7 @@ CONTAINS
     CHARACTER(LEN=FM_FIELD_SIZE)            :: yrecfm
 
     INTEGER :: iartlen, idlen, icomlen
+    INTEGER(KIND=LFI_INT) :: iresp,ilu,iartlen8
 
     ! Un article LFI est compose de :
     !   - 1 entier identifiant le numero de grille
@@ -575,69 +616,50 @@ CONTAINS
        yrecfm = str_replace(tpreclist(ivar)%name,'__','%')
        ! et des '.'
        yrecfm = str_replace(yrecfm,'--','.')
-       CALL LFIECR(iresp,klu,yrecfm,iwork,iartlen)
+       ilu = klu
+       iartlen8 = iartlen
+       CALL LFIECR(iresp,ilu,yrecfm,iwork,iartlen8)
 
     END DO
     DEALLOCATE(iwork,itab,xtab)
 
   END SUBROUTINE build_lfi
 
-  SUBROUTINE OPEN_FILES(olfi2cdf,hfnam,kcdf_id,klu,knaf)
-    LOGICAL,          INTENT(IN)  :: olfi2cdf
-    CHARACTER(LEN=*), INTENT(IN)  :: hfnam
+  SUBROUTINE OPEN_FILES(hinfile,houtfile,olfi2cdf,olfilist,ohdf5,kcdf_id,klu,knaf)
+    LOGICAL,          INTENT(IN)  :: olfi2cdf, olfilist, ohdf5
+    CHARACTER(LEN=*), INTENT(IN)  :: hinfile
+    CHARACTER(LEN=*), INTENT(IN)  :: houtfile
     INTEGER         , INTENT(OUT) :: kcdf_id,klu,knaf
 
-    INTEGER :: iverb,inap
     INTEGER                     :: extindex
+    INTEGER(KIND=LFI_INT)       :: ilu,iresp,iverb,inap,inaf
     INTEGER                     :: status
     CHARACTER(LEN=4)            :: ypextsrc, ypextdest
-    INTEGER, PARAMETER          :: ilu=11
-    CHARACTER(LEN(hfnam))       :: filename, basename
     LOGICAL                     :: fexist
     INTEGER                     :: omode
-    filename = hfnam
 
-    IF (olfi2cdf) THEN 
-       ypextsrc  = '.lfi'
-       ypextdest = '.cdf'
-    ELSE 
-       ypextsrc  = '.cdf'
-       ypextdest = '.lfi'
-    END IF
-
-    extindex = INDEX(filename,ypextsrc,.TRUE.)
-    IF (extindex /= 0) THEN
-       basename = filename(1:extindex-1)
-    ELSE
-       basename = filename
-    END IF
-    
-    INQUIRE(FILE=filename,EXIST=fexist)
-    IF (.NOT. fexist) THEN
-       filename = TRIM(basename)//ypextsrc
-       INQUIRE(FILE=filename,EXIST=fexist)     
-    END IF
-    
-    IF (.NOT. fexist) THEN
-       PRINT *, 'Erreur, le fichier ',TRIM(filename),' n''existe&
-            & pas...'
-       STOP
-    END IF
-    
-    PRINT *,'--> Fichier converti : ',TRIM(basename)//ypextdest
-    
     iverb = 0
-    
+    ilu   = 11
+
     CALL init_sysfield()
 
     IF (olfi2cdf) THEN 
        ! Cas LFI -> NetCDF
-       CALL LFIOUV(status,ilu,.TRUE.,filename,'UNKNOWN',.FALSE.&
-            & ,.FALSE.,iverb,inap,knaf)
-    
-       status = NF_CREATE(TRIM(basename)//ypextdest,&
-                IOR(NF_CLOBBER,NF_64BIT_OFFSET), kcdf_id)
+       CALL LFIOUV(iresp,ilu,ltrue,hinfile,'OLD',lfalse&
+            & ,lfalse,iverb,inap,inaf)
 
+       IF (olfilist) THEN
+          CALL LFILAF(iresp,ilu,lfalse)
+          CALL LFIFER(iresp,ilu,'KEEP')
+          return
+       end IF
+
+       IF (ohdf5) THEN
+          status = NF_CREATE(houtfile, IOR(NF_CLOBBER,NF_NETCDF4), kcdf_id)
+       ELSE
+          status = NF_CREATE(houtfile, IOR(NF_CLOBBER,NF_64BIT_OFFSET), kcdf_id) 
+       end IF
+       
        IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        status = NF_SET_FILL(kcdf_id,NF_NOFILL,omode)
@@ -653,25 +675,30 @@ CONTAINS
        
     ELSE
        ! Cas NetCDF -> LFI
-       status = NF_OPEN(filename,NF_NOWRITE,kcdf_id)
+       status = NF_OPEN(hinfile,NF_NOWRITE,kcdf_id)
        IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
        
        inap = 100
-       CALL LFIOUV(status,ilu,.TRUE.,TRIM(basename)//ypextdest,'NEW'&
-            & ,.FALSE.,.FALSE.,iverb,inap,knaf)
+       CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW'&
+            & ,lfalse,lfalse,iverb,inap,inaf)
     END IF
 
-    klu = ilu
+    klu  = ilu
+    knaf = inaf
+
+    PRINT *,'--> Fichier converti : ', houtfile
 
   END SUBROUTINE OPEN_FILES
   
   SUBROUTINE CLOSE_FILES(klu,kcdf_id)
     INTEGER, INTENT(IN) :: klu, kcdf_id
     
-    INTEGER :: status
+    INTEGER(KIND=LFI_INT) :: iresp,ilu
+    INTEGER               :: status
 
+    ilu = klu
     ! close LFI file
-    CALL LFIFER(status,klu,'KEEP')
+    CALL LFIFER(iresp,ilu,'KEEP')
 
     ! close NetCDF file
     status = NF_CLOSE(kcdf_id)
