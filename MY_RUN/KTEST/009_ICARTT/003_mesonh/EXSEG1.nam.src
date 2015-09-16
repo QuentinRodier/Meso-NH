@@ -1,3 +1,4 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
 &NAM_CONFZ
  ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
 /
@@ -47,7 +48,9 @@
                 XATOL    = 1.E2 /
 &NAM_CONF  CCONF = "START", LFLAT = F, CEQNSYS = "DUR",
             NMODEL = 1, NVERB = 1, CEXP = "ICART", CSEG = "SEG01" ,
-            CSPLIT="BSPLITTING" /
+            CSPLIT="BSPLITTING"
+            !NHALO=3 JPHEXT=3  
+            /
 &NAM_DYN  XSEGLEN = 7200, XASSELIN = 0.2, LCORIO = T, LNUMDIFU = T,
           XALKTOP = 0.005, XALZBOT = 14000. /
 &NAM_NESTING   /
