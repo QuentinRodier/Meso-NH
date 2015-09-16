@@ -6,7 +6,8 @@
 &NAM_REAL_CONF  NVERB=5,
 		CEQNSYS='DUR',
 		CPRESOPT='RICHA' 
-                JPHEXT=3 , NHALO=3 /
+                !JPHEXT=3 , NHALO=3 
+                /
 &NAM_VER_GRID   NKMAX=30,
                 YZGRID_TYPE='FUNCTN',
                 ZDZGRD=100.,

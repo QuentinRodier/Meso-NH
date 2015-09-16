@@ -53,7 +53,9 @@
             NMODEL = 1, 
             NVERB = 5,
             CEXP = "DUST7",
-            CSEG = "SEG02" /
+            CSEG = "SEG02" 
+            !JPHEXT=3 NHALO=3
+            /
 &NAM_DYN 
             XSEGLEN = 43200,
             XASSELIN = 0.2,

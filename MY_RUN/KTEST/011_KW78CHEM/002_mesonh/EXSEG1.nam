@@ -1,3 +1,4 @@
+&NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
 &NAM_LUNITn CINIFILE = "KWRAIN.410" /
 &NAM_CONFn  LUSERV=T LUSERC=T LUSERR=T,
             LUSERS = T, LUSERG = T /
@@ -37,7 +38,9 @@
 &NAM_CONF  CCONF = "START", NMODEL = 1,
            LFLAT = T, NVERB = 5,
            CEXP = "KWRAI", CSEG = "CH410" ,
-           CSPLIT='BSPLITTING' /
+           CSPLIT='BSPLITTING' 
+           !JPHEXT=3 NHALO=3
+           /
 &NAM_DYN  XSEGLEN = 1800.,
           XASSELIN = 0.2, LCORIO = F,
           LNUMDIFU = T /
