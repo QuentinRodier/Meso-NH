@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 turb 2006/06/06 09:58:33
 !-----------------------------------------------------------------
 !    #########################  
      MODULE MODI_TURB_HOR_SPLT
@@ -253,6 +252,7 @@ END MODULE MODI_TURB_HOR_SPLT
 !!                     Feb  20, 2003 (JP Pinty)  Add PFRAC_ICE
 !!                     Oct.2009  (C.Lac) Introduction of different PTSTEP according to the
 !!                              advection schemes
+!!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -382,10 +382,7 @@ TYPE(LIST_ll), POINTER, SAVE :: TZFIELDS_ll
 IKB = 1.+JPVEXT
 IKE = SIZE(PUM,3) - JPVEXT
 IKU = SIZE(PUM,3)
-IIB = 1.+JPHEXT
-IJB = 1.+JPHEXT
-IIE = SIZE(PUM,1) - JPHEXT
-IJE = SIZE(PUM,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 ISV=SIZE(PSVM,4)
 !
 ALLOCATE(ZK(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3)))

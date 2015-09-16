@@ -249,11 +249,11 @@ END MODULE MODI_RESOLVED_CLOUD
 !!                                  Add prognostic supersaturation
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODE_ll
 USE MODE_ll
 USE MODE_FM
 !
@@ -280,6 +280,7 @@ USE MODI_KHKO_NOTADJUST
 USE MODI_C3R5_ADJUST
 USE MODI_SHUMAN
 USE MODI_BUDGET
+USE MODI_GET_HALO
 !
 !
 IMPLICIT NONE
@@ -404,7 +405,7 @@ INTEGER :: IKB           !
 INTEGER :: IKE           !
 INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
-INTEGER :: JK
+INTEGER :: JK,JI
 !
 !
 !
@@ -430,10 +431,7 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysi
 !*       1.     PRELIMINARY COMPUTATIONS
 !               ------------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 IKU=SIZE(PZZ,3)
@@ -472,35 +470,39 @@ ENDIF
 !
 !  complete the lateral boundaries to avoid possible problems
 !
-PTHS(IIB-1,:,:) = PTHS(IIB,:,:)
-PTHS(IIE+1,:,:) = PTHS(IIE,:,:)
-PTHS(:,IJB-1,:) = PTHS(:,IJB,:)
-PTHS(:,IJE+1,:) = PTHS(:,IJE,:)
+DO JI=1,JPHEXT
+PTHS(JI,:,:) = PTHS(IIB,:,:)
+PTHS(IIE+JI,:,:) = PTHS(IIE,:,:)
+PTHS(:,JI,:) = PTHS(:,IJB,:)
+PTHS(:,IJE+JI,:) = PTHS(:,IJE,:)
 !
-PRS(IIB-1,:,:,:) = PRS(IIB,:,:,:)
-PRS(IIE+1,:,:,:) = PRS(IIE,:,:,:)
-PRS(:,IJB-1,:,:) = PRS(:,IJB,:,:)
-PRS(:,IJE+1,:,:) = PRS(:,IJE,:,:)
+PRS(JI,:,:,:) = PRS(IIB,:,:,:)
+PRS(IIE+JI,:,:,:) = PRS(IIE,:,:,:)
+PRS(:,JI,:,:) = PRS(:,IJB,:,:)
+PRS(:,IJE+JI,:,:) = PRS(:,IJE,:,:)
+END DO
 !
 !  complete the physical boundaries to avoid some computations
 !
-IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  PRT(IIB-1,:,:,2:) = 0.0
-IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1,:,:,2:) = 0.0
-IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  PRT(:,IJB-1,:,2:) = 0.0
-IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1,:,2:) = 0.0
+IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  PRT(:IIB-1,:,:,2:) = 0.0
+IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1:,:,:,2:) = 0.0
+IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  PRT(:,:IJB-1,:,2:) = 0.0
+IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1:,:,2:) = 0.0
 !
 IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
-  ZSVS(IIB-1,:,:,:) = ZSVS(IIB,:,:,:)
-  ZSVS(IIE+1,:,:,:) = ZSVS(IIE,:,:,:)
-  ZSVS(:,IJB-1,:,:) = ZSVS(:,IJB,:,:)
-  ZSVS(:,IJE+1,:,:) = ZSVS(:,IJE,:,:)
+DO JI=1,JPHEXT
+  ZSVS(JI,:,:,:) = ZSVS(IIB,:,:,:)
+  ZSVS(IIE+JI,:,:,:) = ZSVS(IIE,:,:,:)
+  ZSVS(:,JI,:,:) = ZSVS(:,IJB,:,:)
+  ZSVS(:,IJE+JI,:,:) = ZSVS(:,IJE,:,:)
+END DO
 !
 !  complete the physical boundaries to avoid some computations
 !
-  IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  ZSVT(IIB-1,:,:,:) = 0.0
-  IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  ZSVT(IIE+1,:,:,:) = 0.0
-  IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  ZSVT(:,IJB-1,:,:) = 0.0
-  IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  ZSVT(:,IJE+1,:,:) = 0.0
+  IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  ZSVT(:IIB-1,:,:,:) = 0.0
+  IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  ZSVT(IIE+1:,:,:,:) = 0.0
+  IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  ZSVT(:,:IJB-1,:,:) = 0.0
+  IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  ZSVT(:,IJE+1:,:,:) = 0.0
 ENDIF
 !
 !  complete the vertical boundaries
@@ -581,6 +583,8 @@ SELECT CASE ( HCLOUD )
 !
 !
   CASE('C2R2','KHKO')                                 
+    CALL GET_HALO(PRS(:,:,:,2))
+    CALL GET_HALO(ZSVS(:,:,:,2))
     WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
       ZSVS(:,:,:,1) = 0.0
     END WHERE

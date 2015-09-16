@@ -69,6 +69,7 @@ END MODULE MODI_SET_RELFRC
 !!    MODIFICATIONS
 !!    -------------
 !!      03/02/10 (Tomasini) USE MODD_RELFRC_n for grid-nesting
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -177,10 +178,7 @@ IIU=SIZE(XXHAT)
 IJU=SIZE(XYHAT)
 IKU=SIZE(XZHAT)
 
-IIB= 1+ JPHEXT 
-IIE= IIU-JPHEXT
-IJB= 1+ JPHEXT
-IJE= IJU-JPHEXT 
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 ! allocation !
 !
 print*,"! temporary forcing alloation"

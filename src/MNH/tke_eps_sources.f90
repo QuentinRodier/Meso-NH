@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 turb 2006/06/06 10:02:03
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_TKE_EPS_SOURCES
@@ -169,6 +168,8 @@ END MODULE MODI_TKE_EPS_SOURCES
 !!                                              change of YCOMMENT
 !!                     2012-02 Y. Seity,  add possibility to run with reversed 
 !!                                    vertical levels
+!!                     2015-01 (J. Escobar) missing get_halo(ZRES) for JPHEXT<> 1 
+!!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !! --------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -195,6 +196,8 @@ USE MODI_LES_MEAN_SUBGRID
 !
 USE MODE_ll          
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+!
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -272,12 +275,9 @@ NULLIFY(TZFIELDDISS_ll)
 !             ------------------------
 !
 !
-IIB=1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PTKEM,1)
-IIE=IIU-JPHEXT
-IJB=1+JPHEXT
 IJU=SIZE(PTKEM,2)
-IJE=IJU-JPHEXT
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
 !
@@ -329,6 +329,8 @@ ZA(:,:,:)     = - PTSTEP * XCET * &
 !
 CALL TRIDIAG_TKE(KKA,KKU,KKL,PTKEM,ZA,PTSTEP,PEXPL,PIMPL,PRHODJ,&
             & ZSOURCE,PTSTEP*ZFLX,ZRES)
+!JUAN
+CALL GET_HALO(ZRES)
 !
 !* diagnose the dissipation
 !

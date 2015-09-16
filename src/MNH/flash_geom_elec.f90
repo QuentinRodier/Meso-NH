@@ -72,6 +72,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      Original : Jan. 2010
 !!      Modifications:
 !!      M. Chong  * LA *  Juin 2010 : add small ions
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -79,7 +80,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !               ------------
 !
 USE MODD_CONF, ONLY : CEXP
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
+USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_GRID_n, ONLY : XXHAT, XYHAT, XZHAT
 USE MODD_DYN_n, ONLY : XDXHATM, XDYHATM, NSTOP
 USE MODD_ELEC_DESCR 
@@ -274,10 +275,7 @@ CALL MYPROC_ELEC_ll(IPROC)
 !*      1.1     subdomains indexes
 !
 ! beginning and end indexes of the physical subdomain
-IIB = 1 + JPHEXT
-IIE = SIZE(PRT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PRT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PRT,3) - JPVEXT
 IKU = SIZE(PRT,3)

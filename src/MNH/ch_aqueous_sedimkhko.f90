@@ -69,6 +69,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIMKHKO
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/11/08
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -150,10 +151,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 !

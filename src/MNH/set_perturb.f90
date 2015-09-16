@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_ideal 2007/02/19 15:33:24
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_SET_PERTURB
@@ -94,6 +93,7 @@ END MODULE MODI_SET_PERTURB
 !!      I. Mallet                06/06 cleaning (namelist inside the routine)
 !!      J.Escobar             25/03/2012 optim. parallelization of White noise
 !!      J.Escobar             27/03/2012 force identical random seed & correct XOR/YOR global shift 
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -410,9 +410,9 @@ SELECT CASE(CPERT_KIND)
         END IF
 !
         DO JJ = IJB,IJE
-           JJ_ll = JJ  + IYOR-JPHEXT
+           JJ_ll = JJ  + IYOR-1
           DO JI = IIB,IIE
-             JI_ll = JI + IXOR-JPHEXT
+             JI_ll = JI + IXOR-1
             ZWHITE(JI,JJ) = ZWHITE(JI,JJ)+             &
                (ZBL+ZDL)*ZSX_ll(JI_ll,JX)*ZCY_ll(JJ_ll,JY) +       &
                (ZAL+ZCL)*ZCX_ll(JI_ll,JX)*ZCY_ll(JJ_ll,JY) +       &

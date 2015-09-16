@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_UPDATE_LM
@@ -59,6 +58,7 @@ END MODULE MODI_UPDATE_LM
 !!    -------------
 !!      Original    april 2006
 !!       V.Masson : Exchange of East and North sides
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -95,11 +95,7 @@ INTEGER                :: IINFO_ll       ! return code of parallel routine
 !
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS :
 !              ----------------------------
-IIB = 1 + JPHEXT
-IJB = 1 + JPHEXT
-!
-IIE = SIZE(PLM,1) - JPHEXT
-IJE = SIZE(PLM,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 NULLIFY(TZLM_ll)
 !
 !-------------------------------------------------------------------------------
@@ -108,12 +104,12 @@ NULLIFY(TZLM_ll)
 !            -------------
 !
 !
-IF(NHALO == 1) THEN
+!!$IF(NHALO == 1) THEN
   CALL ADD3DFIELD_ll(TZLM_ll,PLM)
   CALL ADD3DFIELD_ll(TZLM_ll,PLEPS)
   CALL UPDATE_HALO_ll(TZLM_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZLM_ll)
-END IF
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !

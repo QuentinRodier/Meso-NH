@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG3 2007/11/20 12:25:23
 !-----------------------------------------------------------------
 !    ######################
      MODULE MODI_CALL_RTTOV
@@ -85,6 +84,7 @@ SUBROUTINE CALL_RTTOV(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
 !!      Original    11/12/03
 !!      JP Chaboureau 27/03/2008 Vectorization
 !!      JP Chaboureau 02/11/2009 move GANGL deallocation outside the sensor loop
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!----------------------------------------------------------------------------
 !!
 !!*       0.    DECLARATIONS
@@ -749,11 +749,8 @@ PRINT *,' RADIANCE OR TB CALCULATION: INRAD=',INRAD,' switchrad=',switchrad
 IIU = SIZE(PTHT,1)
 IJU = SIZE(PTHT,2)
 IKU = SIZE(PTHT,3)
-IIB = 1 + JPHEXT
-IJB = 1 + JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
-IIE = IIU - JPHEXT
-IJE = IJU - JPHEXT
 IKE = IKU - JPVEXT
 IKR = IKE - IKB +1
                               

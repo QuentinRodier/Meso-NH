@@ -157,7 +157,8 @@ END MODULE MODI_FAST_TERMS
 !!                     November 6, 2002 (S. Malardel,J.Pergaud) Cloud Fract + Rc of 
 !!                                                              Mass flux convection
 !!                                                              Scheme
-!!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!                     J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -172,6 +173,7 @@ USE MODI_CONDENS
 USE MODI_BUDGET
 USE MODE_FM
 USE MODE_FMWRIT
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -314,6 +316,7 @@ DO JITER =1,ITERMAX
 !
 !*       2.6    compute the saturation vapor pressure at t+1
 !
+  CALL GET_HALO(ZT)
   ZW1(:,:,:) = EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG( ZT(:,:,:) ) )
 !
 !*       2.7    compute the saturation mixing ratio at t+1

@@ -111,6 +111,7 @@ END MODULE MODI_SET_MASS
 !!    Tout a été modifié pour se rapprocher de PREP_REAL_CASE
 !!    J. Escobar  27/03/2012 modif for reprod sum
 !!    V.Masson    12/08/13  Parallelization of the initilization profile
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    
 !-------------------------------------------------------------------------------
 !!
@@ -139,6 +140,7 @@ USE MODI_COMPUTE_EXNER_FROM_TOP
 USE MODI_SET_GEOSBAL
 USE MODE_REPRO_SUM
 USE MODE_MPPDB
+USE MODE_SUM_ll, ONLY : SUM_DIM1_DD_ll
 
 IMPLICIT NONE
 !
@@ -189,9 +191,9 @@ REAL                                                   :: ZDIAG         ! diagno
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZTHV3D        ! virtual potential temperature on MESONH grid
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPMHP         ! pressure minus hyd. pressure on MNH grid with orography (mass level)
 !* 0.2.3 for wind (application of HFUNU/HFUNV)
-REAL, DIMENSION(SIZE(XXHAT),1,1)                       :: ZNFLX_TOT     ! total normalized mass flux
+!!$REAL, DIMENSION(SIZE(XXHAT),1,1)                       :: ZNFLX_TOT     ! total normalized mass flux
 REAL, DIMENSION(SIZE(XYHAT),SIZE(XZHAT))               :: ZUYZ          ! vertical variations for U
-REAL, DIMENSION(1,SIZE(XYHAT),1)                       :: ZNFLY_TOT     ! total normalized mass flux
+!!$REAL, DIMENSION(1,SIZE(XYHAT),1)                       :: ZNFLY_TOT     ! total normalized mass flux
 REAL, DIMENSION(SIZE(XXHAT),SIZE(XZHAT))               :: ZVXZ          ! vertical variations for V
 REAL, DIMENSION(:,:), ALLOCATABLE                      :: ZNFLX_TOT_ll,ZNFLY_TOT_ll
 INTEGER                                                :: IXOR_ll,IYOR_ll! origin's coordinates of extended subdomain
@@ -213,6 +215,10 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHODJV        ! the M
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNFLUX      ! local hyd. Exner function at flux points (MNH grid)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZHEXNMASS      ! local hyd. Exner function at mass points (MNH grid)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD          ! dry density on MESO-NH grid
+!
+!!$INTEGER                                                :: IIBP,IIEP,IJBP,IJEP
+REAL, DIMENSION(:,:), ALLOCATABLE                      :: ZNFLXZ_TOT,ZNFLYZ_TOT
+REAL, DIMENSION(:)  , ALLOCATABLE                      :: ZNFLXZ_TOT_ll,ZNFLYZ_TOT_ll ! total normalized mass flux
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
@@ -223,10 +229,8 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD          ! dry d
 IIU=SIZE(XXHAT)
 IJU=SIZE(XYHAT)
 IKU=SIZE(XZHAT)
-IIB=JPHEXT+1
-IIE=IIU-JPHEXT
-IJB=JPHEXT+1
-IJE=IJU-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+!!$CALL GET_PHYSICAL_ll(IIBP,IJBP,IIEP,IJEP)
 IKE=IKU-JPVEXT
 ZRADSDG = XPI/180.
 !
@@ -280,7 +284,6 @@ XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT(NIMAX_ll*NJMAX_l
 !
 CALL GET_OR_ll('B',IXOR_ll,IYOR_ll)
 !
-
 IF (OPROFILE_IN_PROC) THEN
   ZRHOD_PROFILE(:) = ZRHOD_MX(KILOC-IXOR_ll+1,KJLOC-IYOR_ll+1,:)
 ELSE
@@ -338,22 +341,38 @@ END SELECT
 ZDZZFLUX_MX(2:IKU) = PZFLUX_PROFILE(2:IKU)-PZFLUX_PROFILE(1:IKU-1)
 ZDZZFLUX_MX(1) = ZDZZFLUX_MX(2)
 !
-ZNFLX_TOT  = 0.
+!!$ZNFLX_TOT  = 0.
+!!$DO JK = 2,IKU-1
+!!$  DO JJ=IJB,IJE
+!!$    ZNFLX_TOT(:,1,1)=ZNFLX_TOT(:,1,1)+ZDYY(:,JJ,JK)*ZUYZ(JJ,JK)*ZDZZFLUX_MX(JK)* &
+!!$                   ZRHOD_PROFILE(JK)
+!!$  END DO
+!!$END DO
+!JUAN
+ALLOCATE(ZNFLXZ_TOT(IIU,IJU))
+ZNFLXZ_TOT  = 0.
 DO JK = 2,IKU-1
-  DO JJ=2,IJU-1
-    ZNFLX_TOT(:,1,1)=ZNFLX_TOT(:,1,1)+ZDYY(:,JJ,JK)*ZUYZ(JJ,JK)*ZDZZFLUX_MX(JK)* &
+  DO JJ=IJB,IJE
+    ZNFLXZ_TOT(:,JJ)=ZNFLXZ_TOT(:,JJ)+ZDYY(:,JJ,JK)*ZUYZ(JJ,JK)*ZDZZFLUX_MX(JK)* &
                    ZRHOD_PROFILE(JK)
   END DO
 END DO
 !
-ALLOCATE(ZNFLX_TOT_ll(IIU_ll,1))
-CALL SUM_DIM1_ll(ZNFLX_TOT,ZNFLX_TOT_ll,IINFO_ll)
-ZNFLX_TOT_ll=SIGN(1.,ZNFLX_TOT_ll)*MAX(ABS(ZNFLX_TOT_ll),TINY(ZNFLX_TOT_ll))
+!!$ALLOCATE(ZNFLX_TOT_ll(IIU_ll,1))
+!!$CALL SUM_DIM1_ll(ZNFLX_TOT,ZNFLX_TOT_ll,IINFO_ll)
+!!$ZNFLX_TOT_ll=SIGN(1.,ZNFLX_TOT_ll)*MAX(ABS(ZNFLX_TOT_ll),TINY(ZNFLX_TOT_ll))
 !
+ALLOCATE(ZNFLXZ_TOT_ll(IIU_ll))
+CALL SUM_DIM1_DD_ll(ZNFLXZ_TOT,ZNFLXZ_TOT_ll,KDIM=2,KINFO=IINFO_ll)
+ZNFLXZ_TOT_ll=SIGN(1.,ZNFLXZ_TOT_ll)*MAX(ABS(ZNFLXZ_TOT_ll),TINY(ZNFLXZ_TOT_ll))
+
 DO JI=1,IIU
-  ZUW3D_MX(JI,:,:)=ZUYZ(:,:)* ( ZNFLX_TOT_ll(KILOC,1)/ZNFLX_TOT_ll(IXOR_ll-1+JI,1) ) ! add () for reproductibility
+!!$  ZUW3D_MX(JI,:,:)=ZUYZ(:,:)* ( ZNFLX_TOT_ll(KILOC,1)/ZNFLX_TOT_ll(IXOR_ll-1+JI,1) ) ! add () for reproductibility
+  ZUW3D_MX(JI,:,:)=ZUYZ(:,:)* ( ZNFLXZ_TOT_ll(KILOC)/ZNFLXZ_TOT_ll(IXOR_ll-1+JI) ) 
 END DO
-DEALLOCATE(ZNFLX_TOT_ll)
+
+!!$DEALLOCATE(ZNFLX_TOT_ll)
+DEALLOCATE(ZNFLXZ_TOT,ZNFLXZ_TOT_ll)
 !
 !
 SELECT CASE(HFUNV)
@@ -371,23 +390,42 @@ SELECT CASE(HFUNV)
     ZVXZ(:,:)=FUNVXZ(IIU,IKU,PZFLUX_PROFILE(:))
 END SELECT
 !
-ZNFLY_TOT  = 0.
+!!$ZNFLY_TOT  = 0.
+!!$DO JK = 2,IKU-1
+!!$  DO JI=IIB,IIE
+!!$    ZNFLY_TOT(1,:,1) = ZNFLY_TOT(1,:,1) + ZDXX(JI,:,JK)*ZVXZ(JI,JK)* ZDZZFLUX_MX(JK)* &
+!!$                   ZRHOD_PROFILE(JK)
+!!$  END DO
+!!$END DO
+!
+ALLOCATE(ZNFLYZ_TOT(IIU,IJU))
+ZNFLYZ_TOT  = 0.
 DO JK = 2,IKU-1
-  DO JI=2,IIU-1
-    ZNFLY_TOT(1,:,1) = ZNFLY_TOT(1,:,1) + ZDXX(JI,:,JK)*ZVXZ(JI,JK)* ZDZZFLUX_MX(JK)* &
+  DO JI=IIB,IIE
+    ZNFLYZ_TOT(JI,:) = ZNFLYZ_TOT(JI,:) + ZDXX(JI,:,JK)*ZVXZ(JI,JK)* ZDZZFLUX_MX(JK)* &
                    ZRHOD_PROFILE(JK)
   END DO
 END DO
 !
-ALLOCATE(ZNFLY_TOT_ll(IJU_ll,1))
-CALL SUM_DIM1_ll(ZNFLY_TOT,ZNFLY_TOT_ll,IINFO_ll)
-ZNFLY_TOT_ll=SIGN(1.,ZNFLY_TOT_ll)*MAX(ABS(ZNFLY_TOT_ll),TINY(ZNFLY_TOT_ll))
+!!$ALLOCATE(ZNFLY_TOT_ll(IJU_ll,1))
+!!$CALL SUM_DIM1_ll(ZNFLY_TOT,ZNFLY_TOT_ll,IINFO_ll)
+!!$ZNFLY_TOT_ll=SIGN(1.,ZNFLY_TOT_ll)*MAX(ABS(ZNFLY_TOT_ll),TINY(ZNFLY_TOT_ll))
+!
+ALLOCATE(ZNFLYZ_TOT_ll(IJU_ll))
+CALL SUM_DIM1_DD_ll(ZNFLYZ_TOT,ZNFLYZ_TOT_ll,KDIM=1,KINFO=IINFO_ll)
+ZNFLYZ_TOT_ll=SIGN(1.,ZNFLYZ_TOT_ll)*MAX(ABS(ZNFLYZ_TOT_ll),TINY(ZNFLYZ_TOT_ll))
 !
 !
 DO JJ=1,IJU
-    ZVW3D_MX(:,JJ,:)= ZVXZ(:,:) * ( ZNFLY_TOT_ll(KJLOC,1)/ZNFLY_TOT_ll(IYOR_ll-1+JJ,1) ) ! add () for reproductibility
+!!$    ZVW3D_MX(:,JJ,:)= ZVXZ(:,:) * ( ZNFLY_TOT_ll(KJLOC,1)/ZNFLY_TOT_ll(IYOR_ll-1+JJ,1) ) ! add () for reproductibility
+    ZVW3D_MX(:,JJ,:)= ZVXZ(:,:) * ( ZNFLYZ_TOT_ll(KJLOC)/ZNFLYZ_TOT_ll(IYOR_ll-1+JJ) )
 END DO
-DEALLOCATE(ZNFLY_TOT_ll)
+
+  CALL MPPDB_CHECK3DM("SET_MASS:ZUW3D_MX,ZVW3D_MX",PRECISION,&
+                   & ZUW3D_MX,ZVW3D_MX   )
+
+!!$DEALLOCATE(ZNFLY_TOT_ll)
+DEALLOCATE(ZNFLYZ_TOT,ZNFLYZ_TOT_ll)
 !
 !-------------------------------------------------------------------------------
 !*                     3. INTERPOLATION ON MNH GRID
@@ -428,6 +466,8 @@ ELSE
 !
   ZRHODU_MX=ZUW3D_MX*ZRHOD_MX
   ZRHODV_MX=ZVW3D_MX*ZRHOD_MX
+  CALL MPPDB_CHECK3DM("SET_MASS:ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX",PRECISION,&
+                   &  ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX  )
   CALL VER_INT_DYN(OSHIFT,ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX,PZS_MX,ZRHODUA,ZRHODVA)
   ZRHODJU(:,:,:)=MXM(ZRHODUA(:,:,:)*PJ(:,:,:))
   ZRHODJV(:,:,:)=MYM(ZRHODVA(:,:,:)*PJ(:,:,:))
@@ -438,7 +478,9 @@ ELSE
   XUT(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
   XVT(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
   XWT(:,:,:)=0
-ENDIF
+  CALL MPPDB_CHECK3DM("SET_MASS:XVT,ZRHODJV,PJ,ZRHODVA",PRECISION,&
+                   &    XVT,ZRHODJV,PJ,ZRHODVA )
+  ENDIF
 
 !
 !-------------------------------------------------------------------------------

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_POLAR_CALC
@@ -73,6 +72,7 @@ END MODULE MODI_POLAR_CALC
 !!    MODIFICATIONS
 !!    -------------
 !!      Original              01/12/01
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -82,11 +82,11 @@ END MODULE MODI_POLAR_CALC
 USE MODD_CONF, ONLY: NVERB
 USE MODD_CST, ONLY: XPI
 USE MODD_LUNIT, ONLY: CLUOUT0
-USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_DIM_n,  ONLY: NIMAX,NJMAX
 USE MODD_GRID_n, ONLY: XXHAT,XYHAT
 !
 USE MODE_FM
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -130,10 +130,7 @@ ZDELTAY = XYHAT(3) - XYHAT(2)
 ZDELTAR = MAX(ZDELTAX,ZDELTAY)
 ZDPHI = 2.*XPI/IPHI
 !
-IIB=1+JPHEXT
-IJB=1+JPHEXT
-IIE=NIMAX+JPHEXT
-IJE=NJMAX+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IF (NVERB>=5) &
   WRITE(ILUOUT0,'(A,4I4)')'routine polar_calc: indexes of MesoNH domain ', &
                           IIB,IIE,IJB,IJE

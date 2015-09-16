@@ -125,7 +125,8 @@ END MODULE MODI_ADVECTION_METSV
 !!                  04/2014  (C.Lac)                 adaptation of time
 !!                                                   splitting for L1D and L2D
 !!                  09/2014  (G.Delautier)              close OUTPUT_LISTING before STOP
-!!                  04/2015  (J.Escoabar) remove/commente some NHALO=1 test
+!!                  04/2015  (J.Escobar) remove/commente some NHALO=1 test
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -248,11 +249,13 @@ CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER             :: ILUOUT       ! logical unit
 INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
+INTEGER         :: IIB, IIE, IJB, IJE
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
 !	        --------------
 !
+CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 GTKE=(SIZE(PTKET)/=0)
 !
@@ -273,9 +276,10 @@ END IF
 !*       2.2 computes CFL numbers
 !
 IF (.NOT. L1D) THEN
-  ZCFLU = ABS(ZRUCPPM * PTSTEP)
-  ZCFLV = ABS(ZRVCPPM * PTSTEP)
-  ZCFLW = ABS(ZRWCPPM * PTSTEP)
+  ZCFLU = 0.0 ; ZCFLV = 0.0 ;  ZCFLW = 0.0
+  ZCFLU(IIB:IIE,IJB:IJE,:) = ABS(ZRUCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
+  ZCFLV(IIB:IIE,IJB:IJE,:) = ABS(ZRVCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
+  ZCFLW(IIB:IIE,IJB:IJE,:) = ABS(ZRWCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
   IF (.NOT. L2D) THEN
     ZCFL  = SQRT(ZCFLU**2+ZCFLV**2+ZCFLW**2)
   ELSE

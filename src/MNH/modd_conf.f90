@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:27
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_CONF
@@ -50,6 +49,7 @@
 !!      P. Jabouille                  18/04/02   add NBUGFIX and CBIBUSER
 !!      C. Lac                        01/04/14   add LCHECK     
 !!      G. Tanguy                     01/04/14   add LCOUPLING
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -108,6 +108,8 @@ CHARACTER(LEN=6),SAVE :: CPROGRAM ! CPROGRAM is the program currently running:
 !                                 ! 'MESONH','SPAWN ','DIAG  '
 !
 INTEGER,SAVE      :: NHALO        ! Size of the halo for parallel distribution
+!
+!INTEGER,SAVE      :: JPHEXT = 1     ! Horizontal External points number
 !
 CHARACTER (LEN=10),SAVE :: CSPLIT ! kind of domain splitting for parallel distribution
                                   !  "BSPLITTING","XSPLITTING","YSPLITTING"

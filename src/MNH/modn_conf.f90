@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 modn 2006/06/23 10:47:05
 !-----------------------------------------------------------------
 !     ################
       MODULE MODN_CONF
@@ -72,16 +71,19 @@
 !!      P Jabouille (21/07/99)     add NHALO and CSPLIT
 !!      P Jabouille (26/06/01)     lagrangian variable management
 !!      V Masson    (03/01/05)     suppress L1D,L2D,LPACK
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 USE MODD_CONF
+USE MODD_PARAMETERS, ONLY : JPHEXT
 !
 IMPLICIT NONE
 !
 NAMELIST/NAM_CONF/CCONF,LFLAT,NMODEL,CEQNSYS,NVERB,CEXP,CSEG,LFORCING, &
-                  NHALO,CSPLIT,LLG,LINIT_LG,CINIT_LG,LNOMIXLG,LCHECK
+                  NHALO,CSPLIT,LLG,LINIT_LG,CINIT_LG,LNOMIXLG,LCHECK, &
+                  JPHEXT
 !
 END MODULE MODN_CONF

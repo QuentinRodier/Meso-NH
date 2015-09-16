@@ -5,6 +5,12 @@
 !     ###############################
       MODULE MODI_ADVEC_3RD_ORDER_AUX
 !     ###############################
+!!    AUTHOR
+!!    ------
+!!
+!! Correction :	
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!-------------------------------------------------------------------------------
 !
 INTERFACE
 !
@@ -183,16 +189,16 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF  
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF  
 !
   IWF=IW-1
   IEF=IE-1
@@ -221,13 +227,14 @@ CASE ('OPEN','WALL','NEST')
   IF (LWEST_ll()) THEN
       IW=IIB+2          ! special case of C grid
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IW=IIB+1
-    ELSE
-      IW=IIB
-    ENDIF
+!!$    ELSE
+!!$      IW=IIB
+!!$    ENDIF
   ENDIF
-  IF (LEAST_ll() .OR. NHALO == 1) THEN
+!!$  IF (LEAST_ll() .OR. NHALO == 1) THEN
+  IF (LEAST_ll()) THEN
     IE=IIE
   ELSE
     IE=IIE
@@ -239,7 +246,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LWEST_ll()) THEN
     PR(IWF-1,:,:) = PSRC(IW-2,:,:) * (0.5+SIGN(0.5,PRUCT(IW-2,:,:))) &
                   + PSRC(IW-1,:,:) * (0.5-SIGN(0.5,PRUCT(IW-2,:,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(IWF-1,:,:) = 1./6. * ( (2.*PSRC(IW-1,:,:) + 5.*PSRC(IW-2,:,:) -         &
                           TPHALO2%WEST(:,:)) * (0.5+SIGN(0.5,PRUCT(IW-2,:,:))) &
                           + (5.*PSRC(IW-1,:,:) + 2.*PSRC(IW-2,:,:) -           &
@@ -249,7 +257,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LEAST_ll()) THEN
     PR(IEF+1,:,:) = PSRC(IE,:,:)   * (0.5+SIGN(0.5,PRUCT(IE,:,:))) &
                   + PSRC(IE+1,:,:) * (0.5-SIGN(0.5,PRUCT(IE,:,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(IEF+1,:,:) = 1./6. * ( (2.*PSRC(IE+1,:,:) + 5.*PSRC(IE,:,:) -           &
                                PSRC(IE-1,:,:)) * (0.5+SIGN(0.5,PRUCT(IE,:,:))) &
                           + (5.*PSRC(IE+1,:,:) + 2.*PSRC(IE,:,:) -             &
@@ -336,16 +345,16 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF  
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF  
 !
   IWF=IW
   IEF=IE
@@ -374,13 +383,14 @@ CASE ('OPEN','WALL','NEST')
   IF (LWEST_ll()) THEN
     IW=IIB+1
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IW=IIB+1
-    ELSE
-      IW=IIB
-    ENDIF
+!!$    ELSE
+!!$      IW=IIB
+!!$    ENDIF
   ENDIF
-  IF (LEAST_ll() .OR. NHALO == 1) THEN
+!!$  IF (LEAST_ll() .OR. NHALO == 1) THEN
+  IF (LEAST_ll()) THEN
     IE=IIE
   ELSE
     IE=IIE
@@ -392,7 +402,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LWEST_ll()) THEN
     PR(IWF-1,:,:) = PSRC(IW-2,:,:) * (0.5+SIGN(0.5,PRUCT(IW-1,:,:))) &
                   + PSRC(IW-1,:,:) * (0.5-SIGN(0.5,PRUCT(IW-1,:,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(IWF-1,:,:) = 1./6. * ( (2.*PSRC(IW-1,:,:) + 5.*PSRC(IW-2,:,:) -         &
                           TPHALO2%WEST(:,:)) * (0.5+SIGN(0.5,PRUCT(IW-1,:,:))) &
                           + (5.*PSRC(IW-1,:,:) + 2.*PSRC(IW-2,:,:) -           &
@@ -402,7 +413,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LEAST_ll()) THEN
     PR(IEF+1,:,:) = PSRC(IE,:,:)   * (0.5+SIGN(0.5,PRUCT(IE+1,:,:))) &
                   + PSRC(IE+1,:,:) * (0.5-SIGN(0.5,PRUCT(IE+1,:,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(IEF+1,:,:) = 1./6. * ( (2.*PSRC(IE+1,:,:) + 5.*PSRC(IE,:,:) -           &
                              PSRC(IE-1,:,:)) * (0.5+SIGN(0.5,PRUCT(IE+1,:,:))) &
                           + (5.*PSRC(IE+1,:,:) + 2.*PSRC(IE,:,:) -             &
@@ -488,16 +500,16 @@ SELECT CASE ( HLBCY(1) ) !
 !
 CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IS=IJB+1
     IN=IJE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF
 !
   ISF=IS-1
   INF=IN-1
@@ -526,13 +538,14 @@ CASE ('OPEN','WALL','NEST')
   IF (LSOUTH_ll()) THEN
     IS=IJB+2
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IS=IJB+1
-    ELSE
-      IS=IJB
-    ENDIF
+!!$    ELSE
+!!$      IS=IJB
+!!$    ENDIF
   ENDIF
-  IF (LNORTH_ll() .OR. NHALO == 1) THEN
+!!$  IF (LNORTH_ll() .OR. NHALO == 1) THEN
+  IF (LNORTH_ll()) THEN
     IN=IJE
   ELSE
     IN=IJE
@@ -544,7 +557,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LSOUTH_ll()) THEN
     PR(:,ISF-1,:) = PSRC(:,IS-2,:) * (0.5+SIGN(0.5,PRVCT(:,IS-2,:))) &
                   + PSRC(:,IS-1,:) * (0.5-SIGN(0.5,PRVCT(:,IS-2,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(:,ISF-1,:) = 1./6. * ( (2.*PSRC(:,IS-1,:) + 5.*PSRC(:,IS-2,:) -         &
                          TPHALO2%SOUTH(:,:)) * (0.5+SIGN(0.5,PRVCT(:,IS-2,:))) &
                           + (5.*PSRC(:,IS-1,:) + 2.*PSRC(:,IS-2,:) -           &
@@ -554,7 +568,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LNORTH_ll()) THEN
     PR(:,INF+1,:) = PSRC(:,IN,:)   * (0.5+SIGN(0.5,PRVCT(:,IN,:))) &
                   + PSRC(:,IN+1,:) * (0.5-SIGN(0.5,PRVCT(:,IN,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(:,INF+1,:) = 1./6. * ( (2.*PSRC(:,IN+1,:) + 5.*PSRC(:,IN,:) -           &
                                PSRC(:,IN-1,:)) * (0.5+SIGN(0.5,PRVCT(:,IN,:))) &
                           + (5.*PSRC(:,IN+1,:) + 2.*PSRC(:,IN,:) -             &
@@ -641,16 +656,16 @@ SELECT CASE ( HLBCY(1) ) ! Y direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IS=IJB+1
     IN=IJE
-  ELSE
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-    CALL ABORT
-    STOP
-  END IF
+!!$  ELSE
+!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
+!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
+!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
+!!$    CALL ABORT
+!!$    STOP
+!!$  END IF
 !
   ISF=IS
   INF=IN
@@ -679,13 +694,14 @@ CASE ('OPEN','WALL','NEST')
   IF (LSOUTH_ll()) THEN
     IS=IJB+1
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IS=IJB+1
-    ELSE
-      IS=IJB
-    ENDIF
+!!$    ELSE
+!!$      IS=IJB
+!!$    ENDIF
   ENDIF
-  IF (LNORTH_ll() .OR. NHALO == 1) THEN
+!!$  IF (LNORTH_ll() .OR. NHALO == 1) THEN
+  IF (LNORTH_ll()) THEN
     IN=IJE
   ELSE
     IN=IJE
@@ -697,7 +713,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LSOUTH_ll()) THEN
     PR(:,ISF-1,:) = PSRC(:,IS-2,:) * (0.5+SIGN(0.5,PRVCT(:,IS-1,:))) &
                   + PSRC(:,IS-1,:) * (0.5-SIGN(0.5,PRVCT(:,IS-1,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(:,ISF-1,:) = 1./6. * ( (2.*PSRC(:,IS-1,:) + 5.*PSRC(:,IS-2,:) -         &
                          TPHALO2%SOUTH(:,:)) * (0.5+SIGN(0.5,PRVCT(:,IS-1,:))) &
                           + (5.*PSRC(:,IS-1,:) + 2.*PSRC(:,IS-2,:) -           &
@@ -707,7 +724,8 @@ CASE ('OPEN','WALL','NEST')
   IF(LNORTH_ll()) THEN
     PR(:,INF+1,:) = PSRC(:,IN,:)   * (0.5+SIGN(0.5,PRVCT(:,IN+1,:))) &
                   + PSRC(:,IN+1,:) * (0.5-SIGN(0.5,PRVCT(:,IN+1,:)))
-  ELSEIF (NHALO == 1) THEN
+!!$  ELSEIF (NHALO == 1) THEN
+  ELSE
     PR(:,INF+1,:) = 1./6. * ( (2.*PSRC(:,IN+1,:) + 5.*PSRC(:,IN,:) -           &
                              PSRC(:,IN-1,:)) * (0.5+SIGN(0.5,PRVCT(:,IN+1,:))) &
                           + (5.*PSRC(:,IN+1,:) + 2.*PSRC(:,IN,:) -             &

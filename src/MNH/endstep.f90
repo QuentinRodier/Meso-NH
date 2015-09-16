@@ -190,6 +190,7 @@ END MODULE MODI_ENDSTEP
 !!                                         advected with PPM
 !!                 04/2013  (C.Lac)       FIT for all the variables     
 !!                 04/2014  (C.Lac)       Check on the positivity of XSVT
+!!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !------------------------------------------------------------------------------
 !
@@ -272,10 +273,7 @@ INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 !
 !------------------------------------------------------------------------------
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PUT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PUT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU=SIZE(XZHAT)
 !
 !*      1.   ASSELIN FILTER

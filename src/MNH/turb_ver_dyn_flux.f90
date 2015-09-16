@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 turb 2006/06/23 15:58:57
 !-----------------------------------------------------------------
 !    #################### 
      MODULE MODI_TURB_VER_DYN_FLUX 
@@ -286,6 +285,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 !!                     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -310,6 +310,7 @@ USE MODE_FMWRIT
 USE MODI_LES_MEAN_SUBGRID
 !
 USE MODI_SECOND_MNH
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -418,11 +419,8 @@ REAL :: ZTIME1, ZTIME2
 !             -------------
 !
 IIU=SIZE(PUM,1)
-IIE=IIU-JPHEXT
-IIB=1+JPHEXT
 IJU=SIZE(PUM,2)
-IJE=IJU-JPHEXT
-IJB=1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
 IKT=SIZE(PUM,3)          

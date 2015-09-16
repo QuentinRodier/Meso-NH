@@ -40,6 +40,7 @@ END MODULE MODI_ION_DRIFT
 !!    AUTHOR
 !!    ------
 !!          M. Chong      01/2010
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -118,10 +119,7 @@ CALL MYPROC_ELEC_ll (IPROC)
 !              ----------------------------------------------
 !
 ! beginning and end indexes of the physical subdomain
-IIB = 1 + JPHEXT
-IIE = SIZE(PSVT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PSVT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PSVT,3) - JPVEXT
 IKU = SIZE(PSVT,3)

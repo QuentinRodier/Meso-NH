@@ -41,6 +41,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    29/03/04
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-----------------------------------------------------------------
 USE MODD_RADAR, ONLY: NBRAD,NBELEV,NBAZIM,NBSTEPMAX,NPTS_H,NPTS_V
@@ -70,6 +71,7 @@ CONTAINS
 
     USE MODD_PARAMETERS
     USE MODD_GRID_n
+    USE MODE_ll
 !
     IMPLICIT NONE
 !
@@ -102,11 +104,8 @@ CONTAINS
     IIU=SIZE(PZM,1)
     IJU=SIZE(PZM,2)
     IKU=SIZE(PZM,3)
-    IIB = JPHEXT + 1
-    IJB = JPHEXT + 1
+    CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
     IKB = JPVEXT + 1
-    IIE = IIU - JPHEXT
-    IJE = IJU - JPHEXT
     IKE = IKU - JPVEXT
 ! 
     
@@ -180,6 +179,7 @@ CONTAINS
 
     USE MODD_PARAMETERS
     USE MODD_GRID_n
+    USE MODE_ll
 !
     IMPLICIT NONE
 !
@@ -219,11 +219,8 @@ CONTAINS
     IIU=SIZE(PZM,1)
     IJU=SIZE(PZM,2)
     IKU=SIZE(PZM,3)
-    IIB = JPHEXT + 1
-    IJB = JPHEXT + 1
+    CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
     IKB = JPVEXT + 1
-    IIE = IIU - JPHEXT
-    IJE = IJU - JPHEXT
     IKE = IKU - JPVEXT
 ! 
     DO JAZ=1, INBAZIM

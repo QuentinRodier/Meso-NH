@@ -72,6 +72,7 @@ END MODULE MODI_READ_HGRID_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        26/09/96
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -117,6 +118,7 @@ REAL :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
 INTEGER             :: IIU,IJU
 INTEGER             :: NIMAX2,NJMAX2
 !JUAN REALZ
+INTEGER             :: IJPHEXT
 !
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
@@ -203,6 +205,22 @@ IF (CPROGRAM/='IDEAL ') THEN
   !               routine (as in ini_size_spawn.f90)
   CALL FMREAD(HFMFILE,'IMAX',CLUOUT,'--',NIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
   CALL FMREAD(HFMFILE,'JMAX',CLUOUT,'--',NJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(HFMFILE,'JPHEXT',CLUOUT,'--',IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
+  IF ( IJPHEXT .NE. JPHEXT ) THEN
+     IF (CPROGRAM == 'REAL' ) THEN
+        WRITE(ILUOUT,FMT=*) ' READ_HGRID_N : JPHEXT in PRE_REAL1.nam/NAM_REAL_CONF ( or default value )&
+             JPHEXT=',JPHEXT
+     ELSE
+        WRITE(ILUOUT,FMT=*) ' READ_HGRID_N : JPHEXT in PRE_NEST_PGD1.nam/NAM_CONF_NEST ( or default value )&
+             JPHEXT=',JPHEXT
+     END IF
+
+     WRITE(ILUOUT,FMT=*) ' different from PGD files=',HFMFILE ,' value JPHEXT=',IJPHEXT
+     WRITE(ILUOUT,FMT=*) '-> JOB ABORTED'
+     CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+     CALL ABORT  
+     STOP   
+  END IF
 END IF
 !
 !*       2.1  Read the configuration (MODD_CONF)

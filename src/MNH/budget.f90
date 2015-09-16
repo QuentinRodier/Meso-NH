@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 budget 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !##################
  MODULE MODI_BUDGET
@@ -80,6 +79,7 @@ END MODULE MODI_BUDGET
 !!      J. Stein    26/06/96  add the 'OF','NO' option  
 !!      J.-P. Pinty 12/12/96  simplifies the coding
 !!      V. Masson   06/10/02  add LES budgets
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      
 !-------------------------------------------------------------------------------
 !
@@ -131,6 +131,7 @@ REAL     :: XPRECISION ! for reproductibility checks
 !
 XPRECISION = 1E-10
 IF (LCHECK) THEN
+  print*,'BUDGET :',HBUVAR
   CALL MPPDB_CHECK3D(PVARS,HBUVAR,XPRECISION)
 END IF
 !

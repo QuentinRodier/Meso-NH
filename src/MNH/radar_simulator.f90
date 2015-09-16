@@ -126,6 +126,7 @@ END MODULE MODI_RADAR_SIMULATOR
 !!    for polar output:
 !!    NBAZIM set in nameliste (720) 
 !!    ZAZIM_BASE(JAZ)=(0.5+JAZ-1)*ZZSTEP
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!       
 !-------------------------------------------------------------------------------
 !
@@ -270,11 +271,8 @@ CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 IIU=SIZE(PTEMP,1)
 IJU=SIZE(PTEMP,2)
 IKU=SIZE(PTEMP,3)
-IIB = JPHEXT + 1
-IJB = JPHEXT + 1
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = JPVEXT + 1
-IIE = IIU - JPHEXT
-IJE = IJU - JPHEXT
 IKE = IKU - JPVEXT
 ! convective/stratiform
 ALLOCATE(GBU_MSK(IIU,IJU,4))

@@ -252,6 +252,7 @@ END MODULE MODI_RELAXATION
 !!                 05/2006               Remove EPS
 !!                 06/2011 (M.Chong)     Case of ELEC
 !!                 11/2011 (C.Lac)       Adaptation to FIT temporal scheme
+!!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -267,7 +268,10 @@ USE MODD_ELEC_DESCR, ONLY: LRELAX2FW_ION
 USE MODE_ll
 !
 USE MODI_SHUMAN     
-USE MODI_BUDGET     
+USE MODI_BUDGET
+USE MODE_EXTRAPOL
+!
+USE MODE_MPPDB
 !
 !
 IMPLICIT NONE
@@ -573,62 +577,64 @@ IF ( OHORELAX_UVWTH ) THEN
 !
   IDIMLB = SIZE(PLBXUM,1)
   IF ( IDIMLB /= 0) THEN
-    CALL GET_INTERSECTION_ll (1,1,KRIMX+2,IJU_ll,                 &
+    CALL GET_INTERSECTION_ll (1,1,KRIMX+JPHEXT+1,IJU_ll,                 &   ! +2
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
       ZWORK(2:IIEINT,:,:) = PLBXUM(1:IIEINT-1,:,:)
     END IF
-    CALL GET_INTERSECTION_ll (IIU_ll-KRIMX,1,IIU_ll,IJU_ll,       &
+    CALL GET_INTERSECTION_ll (IIU_ll-KRIMX-JPHEXT+1,1,IIU_ll,IJU_ll,       &          ! -KRIMX 
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
-      ZWORK(IIBINT:IIE+1,:,:) =  PLBXUM(IDIMLB-(IIE+1-IIBINT):IDIMLB,:,:)
+      ZWORK(IIBINT:IIE+JPHEXT,:,:) =  PLBXUM(IDIMLB-(IIE+JPHEXT-IIBINT):IDIMLB,:,:) ! +1
     END IF
   ENDIF
 !
   IDIMLB = SIZE(PLBYUM,2)
   IF ( IDIMLB /= 0) THEN
-    CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+1,                 &
+    CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+JPHEXT,                 &    ! +1
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
       ZWORK(:,1:IJEINT,:) = PLBYUM(:,1:IJEINT,:)
     END IF
-    CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY,IIU_ll,IJU_ll,          &
+    CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY-JPHEXT+1,IIU_ll,IJU_ll,   &  ! -KRIMY
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
-      ZWORK(:,IJBINT:IJE+1,:) =  PLBYUM(:,IDIMLB-(IJE+1-IJBINT):IDIMLB,:)
+      ZWORK(:,IJBINT:IJE+JPHEXT,:) =  PLBYUM(:,IDIMLB-(IJE+JPHEXT-IJBINT):IDIMLB,:) ! +1
     END IF
   END IF
   !
+  CALL MPPDB_CHECK3DM("before PRUS relax:ZWORK",PRECISION,ZWORK)
   WHERE (GMASK3D_RELAX)
     PRUS(:,:,:)  = PRUS(:,:,:) - ZKHU(:,:,:)*(PUT(:,:,:)-ZWORK(:,:,:)) &
                        * ZRHODJU(:,:,:)
   END WHERE
+ CALL MPPDB_CHECK3DM("after  PRUS relax:ZWORK",PRECISION,ZWORK)
 !
   IDIMLB =  SIZE(PLBXVM,1)
   IF ( IDIMLB /= 0) THEN
-    CALL GET_INTERSECTION_ll (1,1,KRIMX+1,IJU_ll,                 &
+    CALL GET_INTERSECTION_ll (1,1,KRIMX+JPHEXT,IJU_ll,                 &     ! +1
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
       ZWORK(1:IIEINT,:,:) = PLBXVM(1:IIEINT,:,:)
     END IF
-    CALL GET_INTERSECTION_ll (IIU_ll-KRIMX,1,IIU_ll,IJU_ll,       &
+    CALL GET_INTERSECTION_ll (IIU_ll-KRIMX-JPHEXT+1,1,IIU_ll,IJU_ll,       & ! -KRIMX   
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
-      ZWORK(IIBINT:IIE+1,:,:) = PLBXVM(IDIMLB-(IIE+1-IIBINT):IDIMLB,:,:)
+      ZWORK(IIBINT:IIE+JPHEXT,:,:) = PLBXVM(IDIMLB-(IIE+JPHEXT-IIBINT):IDIMLB,:,:)     ! +1
     END IF
   ENDIF
 !
   IDIMLB =  SIZE(PLBYVM,2)
   IF ( IDIMLB /= 0) THEN
-    CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+2,                 &
+    CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+JPHEXT+1,                 & ! +2
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
       ZWORK(:,2:IJEINT,:) = PLBYVM(:,1:IJEINT-1,:)
     END IF
-    CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY,IIU_ll,IJU_ll,       &
+    CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY-JPHEXT+1,IIU_ll,IJU_ll,     & ! -KRIMY
                                IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
     IF ( IINFO_ll == 0 ) THEN
-      ZWORK(:,IJBINT:IJE+1,:) = PLBYVM(:,IDIMLB-(IJE+1-IJBINT):IDIMLB,:) 
+      ZWORK(:,IJBINT:IJE+JPHEXT,:) = PLBYVM(:,IDIMLB-(IJE+JPHEXT-IJBINT):IDIMLB,:) ! +1
     END IF
   ENDIF
   !
@@ -694,6 +700,7 @@ END DO
 !*       3.     STORES FIELDS IN BUDGET ARRAYS
 !	        ------------------------------
 !
+CALL EXTRAPOL('W ', PRUS)
 IF (LBUDGET_U) CALL BUDGET  (PRUS,1,'REL_BU_RU')
 IF (LBUDGET_V) CALL BUDGET  (PRVS,2,'REL_BU_RV')
 IF (LBUDGET_W) CALL BUDGET  (PRWS,3,'REL_BU_RW')
@@ -788,15 +795,15 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PWORK  !work array used to
                                                 !expand the LB fields
 IDIMLB = SIZE(PLBX,1)
 IF ( IDIMLB /= 0) THEN
-  CALL GET_INTERSECTION_ll (1,1,KRIMX+1,IJU_ll,                 &
+  CALL GET_INTERSECTION_ll (1,1,KRIMX+JPHEXT,IJU_ll,                 & ! +1
                              IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
   IF ( IINFO_ll == 0 ) THEN
     PWORK(1:IIEINT,:,:) = PLBX(1:IIEINT,:,:)
   END IF
-  CALL GET_INTERSECTION_ll (IIU_ll-KRIMX,1,IIU_ll,IJU_ll,       &
+  CALL GET_INTERSECTION_ll (IIU_ll-KRIMX-JPHEXT+1,1,IIU_ll,IJU_ll,       & ! -KRIMX
                              IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
   IF ( IINFO_ll == 0 ) THEN
-    PWORK(IIBINT:IIE+1,:,:) = PLBX(IDIMLB-(IIE+1-IIBINT):IDIMLB,:,:)
+    PWORK(IIBINT:IIE+JPHEXT,:,:) = PLBX(IDIMLB-(IIE+JPHEXT-IIBINT):IDIMLB,:,:)  ! +1
   END IF
 ENDIF
 !
@@ -826,15 +833,15 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PWORK  !work array used to
                                                 !expand the LB fields
 IDIMLB = SIZE(PLBY,2)
 IF ( IDIMLB /= 0) THEN
-  CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+1                 ,&
+  CALL GET_INTERSECTION_ll (1,1,IIU_ll,KRIMY+JPHEXT                 ,& ! +1
                              IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
   IF ( IINFO_ll == 0 ) THEN
     PWORK(:,1:IJEINT,:) = PLBY(:,1:IJEINT,:)
   END IF
-  CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY,IIU_ll,IJU_ll,       &
+  CALL GET_INTERSECTION_ll (1,IJU_ll-KRIMY-JPHEXT+1,IIU_ll,IJU_ll,       & ! -KRIMY
                              IIBINT,IJBINT,IIEINT,IJEINT,"EXTE",IINFO_ll)
   IF ( IINFO_ll == 0 ) THEN
-    PWORK(:,IJBINT:IJE+1,:) = PLBY(:,IDIMLB-(IJE+1-IJBINT):IDIMLB,:)
+    PWORK(:,IJBINT:IJE+JPHEXT,:) = PLBY(:,IDIMLB-(IJE+JPHEXT-IJBINT):IDIMLB,:) ! +1
   END IF
 END IF
 

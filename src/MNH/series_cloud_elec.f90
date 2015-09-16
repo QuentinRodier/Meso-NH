@@ -71,7 +71,7 @@ END MODULE MODI_SERIES_CLOUD_ELEC
 !!      Original : Avril 2010
 !!      Modifications:
 !!      C. Barthe  * LACy *  Dec. 2010    add some parameters
-
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -199,10 +199,7 @@ JCOUNT_STOP = INT(NTSAVE_SERIES/PTSTEP)
 !
 !*       1.1     beginning and end indexes of the physical subdomain
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PZZ,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 !

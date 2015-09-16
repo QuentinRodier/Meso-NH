@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:27
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_INI_SEG_n
@@ -161,6 +160,7 @@ END MODULE MODI_INI_SEG_n
 !!                       02/2012   add GFOREFIRE (Pialat/Tulet)
 !!                       05/2014   missing reading of IMASDEV before COUPLING
 !!                                 test (Escobar)
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

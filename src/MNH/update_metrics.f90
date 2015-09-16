@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_UPDATE_METRICS
@@ -61,6 +60,7 @@ END MODULE MODI_UPDATE_METRICS
 !!    -------------
 !!      Original    april 2006
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -105,22 +105,6 @@ NULLIFY(TZMETRICS_ll)
 !
 !-------------------------------------------------------------------------------
 !
-!*       2.  UPDATE HALOs :
-!            -------------
-!
-!
-!!$IF(NHALO == 1) THEN
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDXX)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDYY)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZX)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZY)
-  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZZ)
-  CALL UPDATE_HALO_ll(TZMETRICS_ll,IINFO_ll)
-  CALL CLEANLIST_ll(TZMETRICS_ll)
-!!$END IF
-!
-!-------------------------------------------------------------------------------
-!
 !*       3.  UPDATE EXTERNAL POINTS OF GLOBAL DOMAIN:
 !            ---------------------------------------
 !
@@ -134,5 +118,22 @@ IF ( HLBCY(1) /= "CYCL" .AND. LSOUTH_ll()) THEN
     PDZY(JI,IJB-1,:) = PDZY(JI,IJB,:)
   END DO
 END IF
+
+!-------------------------------------------------------------------------------
+!
+!*       2.  UPDATE HALOs :
+!            -------------
+!
+!
+!!$IF(NHALO == 1) THEN
+  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDXX)
+  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDYY)
+  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZX)
+  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZY)
+  CALL ADD3DFIELD_ll(TZMETRICS_ll,PDZZ)
+  CALL UPDATE_HALO_ll(TZMETRICS_ll,IINFO_ll)
+  CALL CLEANLIST_ll(TZMETRICS_ll)
+!!$END IF
+
 !-----------------------------------------------------------------------------
 END SUBROUTINE UPDATE_METRICS

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     #######################
       PROGRAM PREP_IDEAL_CASE
@@ -311,6 +310,7 @@
 !!      BUG if ZFRC and ZFRC_ADV or ZFRC_REL are used together  11/2014 (G. Delautier)
 !!      Bug : detected with cray compiler ,
 !!                  missing '&' in continuation string  3/12/2014 J.Escobar
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -424,6 +424,10 @@ USE MODI_INI_CST
 USE MODI_INI_NEB
 USE MODE_FMWRIT
 USE MODI_WRITE_HGRID
+USE MODD_MPIF
+USE MODD_VAR_ll
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -564,6 +568,9 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZZS_ll
 INTEGER                           :: IJ 
 INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
 !
+REAL              :: ZZS_MAX, ZZS_MAX_ll
+INTEGER           :: IJPHEXT
+!
 !
 !*       0.2  Namelist declarations
 !
@@ -572,7 +579,8 @@ NAMELIST/NAM_CONF_PRE/ LTHINSHELL,LCARTESIAN,    &! Declarations in MODD_CONF
                        NVERB,CIDEAL,CZS,         &!+global variables initialized
                        LBOUSS,LPERTURB,LPV_PERT, &! at their declarations
                        LRMV_BL,LFORCING,CEQNSYS, &! at their declarations
-                       LSHIFT,L2D_ADV_FRC,L2D_REL_FRC
+                       LSHIFT,L2D_ADV_FRC,L2D_REL_FRC, &
+                       NHALO , JPHEXT
 NAMELIST/NAM_GRID_PRE/ XLON0,XLAT0,            & ! Declarations in MODD_GRID
                        XBETA,XRPK,             & 
                        XLONORI,XLATORI
@@ -603,6 +611,7 @@ NAMELIST/NAM_AERO_PRE/ LORILAM, LINITPM, XINIRADIUSI, XINIRADIUSJ, &
 !
 !*       0.    PROLOGUE
 !              --------
+CALL MPPDB_INIT()
 !
 CALL GOTO_MODEL(1)
 !
@@ -698,15 +707,28 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
   ! read the grid in the PGD file
   CALL FMREAD(CPGD_FILE,'IMAX',CLUOUT,'--',NIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
   CALL FMREAD(CPGD_FILE,'JMAX',CLUOUT,'--',NJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD_FILE,'JPHEXT',CLUOUT,'--',IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
+
   IF ( CPGD_FILE /= CINIFILEPGD) THEN
-    WRITE(NLUOUT,FMT=*) ' WARNING : in PRE_IDEA1.nam, in NAM_LUNITn you&
-                        & have CINIFILEPGD= ',CINIFILEPGD
-    WRITE(NLUOUT,FMT=*) ' whereas in NAM_REAL_PGD you have CPGD_FILE = '&
-                          ,CPGD_FILE
-    WRITE(NLUOUT,FMT=*) ' '
-    WRITE(NLUOUT,FMT=*) ' CINIFILEPGD HAS BEEN SET TO  ',CPGD_FILE        
-    CINIFILEPGD=CPGD_FILE
-  ENDIF
+     WRITE(NLUOUT,FMT=*) ' WARNING : in PRE_IDEA1.nam, in NAM_LUNITn you&
+          & have CINIFILEPGD= ',CINIFILEPGD
+     WRITE(NLUOUT,FMT=*) ' whereas in NAM_REAL_PGD you have CPGD_FILE = '&
+          ,CPGD_FILE
+     WRITE(NLUOUT,FMT=*) ' '
+     WRITE(NLUOUT,FMT=*) ' CINIFILEPGD HAS BEEN SET TO  ',CPGD_FILE        
+     CINIFILEPGD=CPGD_FILE
+  END IF
+  IF ( IJPHEXT .NE. JPHEXT ) THEN
+     WRITE(NLUOUT,FMT=*) ' PREP_IDEAL_CASE : JPHEXT in PRE_IDEA1.nam/NAM_CONF_PRE ( or default value )&
+          JPHEXT=',JPHEXT
+     WRITE(NLUOUT,FMT=*) ' different from PGD files=', CINIFILEPGD,' value JPHEXT=',IJPHEXT
+     WRITE(NLUOUT,FMT=*) '-> JOB ABORTED'
+     CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+     CALL ABORT  
+     STOP   
+     !WRITE(NLUOUT,FMT=*) ' JPHEXT HAS BEEN SET TO ', IJPHEXT
+     !IJPHEXT = JPHEXT
+  END IF
 END IF
 !
 NIMAX_ll=NIMAX   !! _ll variables are global variables
@@ -993,30 +1015,30 @@ ELSEIF( L2D ) THEN             ! 2D case (not yet parallelized)
   ALLOCATE(XLBYSVM(0,0,0,0))
   !
   IF ( LHORELAX_UVWTH ) THEN
-    NSIZELBX_ll=2*NRIMX+2
-    NSIZELBXU_ll=2*NRIMX+2
-    ALLOCATE(XLBXUM(2*NRIMX+2,NJU,NKU))
-    ALLOCATE(XLBXVM(2*NRIMX+2,NJU,NKU))
-    ALLOCATE(XLBXWM(2*NRIMX+2,NJU,NKU))
-    ALLOCATE(XLBXTHM(2*NRIMX+2,NJU,NKU))
+    NSIZELBX_ll=2*NRIMX+2*JPHEXT
+    NSIZELBXU_ll=2*NRIMX+2*JPHEXT
+    ALLOCATE(XLBXUM(2*NRIMX+2*JPHEXT,NJU,NKU))
+    ALLOCATE(XLBXVM(2*NRIMX+2*JPHEXT,NJU,NKU))
+    ALLOCATE(XLBXWM(2*NRIMX+2*JPHEXT,NJU,NKU))
+    ALLOCATE(XLBXTHM(2*NRIMX+2*JPHEXT,NJU,NKU))
   ELSE
-    NSIZELBX_ll=2
-    NSIZELBXU_ll=4 
-    ALLOCATE(XLBXUM(4,NJU,NKU))
-    ALLOCATE(XLBXVM(2,NJU,NKU))
-    ALLOCATE(XLBXWM(2,NJU,NKU))
-    ALLOCATE(XLBXTHM(2,NJU,NKU))
+    NSIZELBX_ll= 2*JPHEXT     ! 2
+    NSIZELBXU_ll=2*(JPHEXT+1) ! 4 
+    ALLOCATE(XLBXUM(NSIZELBXU_ll,NJU,NKU))
+    ALLOCATE(XLBXVM(NSIZELBX_ll,NJU,NKU))
+    ALLOCATE(XLBXWM(NSIZELBX_ll,NJU,NKU))
+    ALLOCATE(XLBXTHM(NSIZELBX_ll,NJU,NKU))
   END IF  
   !
   IF ( NRR > 0 ) THEN
     IF (       LHORELAX_RV .OR. LHORELAX_RC .OR. LHORELAX_RR .OR. LHORELAX_RI    &
           .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. LHORELAX_RH                     &
        ) THEN 
-      NSIZELBXR_ll=2* NRIMX+2
-      ALLOCATE(XLBXRM(2*NRIMX+2,NJU,NKU,NRR))
+      NSIZELBXR_ll=2*NRIMX+2*JPHEXT
+      ALLOCATE(XLBXRM(2*NRIMX+2*JPHEXT,NJU,NKU,NRR))
     ELSE
-      NSIZELBXR_ll=2
-      ALLOCATE(XLBXRM(2,NJU,NKU,NRR))
+      NSIZELBXR_ll=2*JPHEXT ! 2
+      ALLOCATE(XLBXRM(NSIZELBXR_ll,NJU,NKU,NRR))
     ENDIF
   ELSE
     NSIZELBXR_ll=0
@@ -1025,11 +1047,11 @@ ELSEIF( L2D ) THEN             ! 2D case (not yet parallelized)
   !
   IF ( NSV > 0 ) THEN 
     IF ( ANY( LHORELAX_SV(:)) ) THEN
-      NSIZELBXSV_ll=2* NRIMX+2
-      ALLOCATE(XLBXSVM(2*NRIMX+2,NJU,NKU,NSV))
+      NSIZELBXSV_ll=2*NRIMX+2*JPHEXT
+      ALLOCATE(XLBXSVM(2*NRIMX+2*JPHEXT,NJU,NKU,NSV))
     ELSE
-      NSIZELBXSV_ll=2
-      ALLOCATE(XLBXSVM(2,NJU,NKU,NSV))
+      NSIZELBXSV_ll=2*JPHEXT ! 2
+      ALLOCATE(XLBXSVM(NSIZELBXSV_ll,NJU,NKU,NSV))
     END IF
   ELSE
     NSIZELBXSV_ll=0
@@ -1046,10 +1068,10 @@ ELSE                                   ! 3D case
        IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
 !
   IF ( LHORELAX_UVWTH ) THEN
-    NSIZELBX_ll=2*NRIMX+2
-    NSIZELBXU_ll=2*NRIMX+2
-    NSIZELBY_ll=2*NRIMY+2
-    NSIZELBYV_ll=2*NRIMY+2
+    NSIZELBX_ll=2*NRIMX+2*JPHEXT
+    NSIZELBXU_ll=2*NRIMX+2*JPHEXT
+    NSIZELBY_ll=2*NRIMY+2*JPHEXT
+    NSIZELBYV_ll=2*NRIMY+2*JPHEXT
     ALLOCATE(XLBXUM(IISIZEXFU,IJSIZEXFU,NKU))
     ALLOCATE(XLBYUM(IISIZEYF,IJSIZEYF,NKU))
     ALLOCATE(XLBXVM(IISIZEXF,IJSIZEXF,NKU))
@@ -1059,10 +1081,10 @@ ELSE                                   ! 3D case
     ALLOCATE(XLBXTHM(IISIZEXF,IJSIZEXF,NKU))
     ALLOCATE(XLBYTHM(IISIZEYF,IJSIZEYF,NKU))
   ELSE
-    NSIZELBX_ll=2
-    NSIZELBXU_ll=4
-    NSIZELBY_ll=2
-    NSIZELBYV_ll=4
+    NSIZELBX_ll=2*JPHEXT      ! 2
+    NSIZELBXU_ll=2*(JPHEXT+1) ! 4
+    NSIZELBY_ll=2*JPHEXT      ! 2
+    NSIZELBYV_ll=2*(JPHEXT+1) ! 4
     ALLOCATE(XLBXUM(IISIZEX4,IJSIZEX4,NKU))
     ALLOCATE(XLBYUM(IISIZEY2,IJSIZEY2,NKU))
     ALLOCATE(XLBXVM(IISIZEX2,IJSIZEX2,NKU))
@@ -1077,13 +1099,13 @@ ELSE                                   ! 3D case
     IF (       LHORELAX_RV .OR. LHORELAX_RC .OR. LHORELAX_RR .OR. LHORELAX_RI    &
           .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. LHORELAX_RH                     &
        ) THEN 
-      NSIZELBXR_ll=2*NRIMX+2
-      NSIZELBYR_ll=2*NRIMY+2
+      NSIZELBXR_ll=2*NRIMX+2*JPHEXT
+      NSIZELBYR_ll=2*NRIMY+2*JPHEXT
       ALLOCATE(XLBXRM(IISIZEXF,IJSIZEXF,NKU,NRR))
       ALLOCATE(XLBYRM(IISIZEYF,IJSIZEYF,NKU,NRR))
     ELSE
-      NSIZELBXR_ll=2
-      NSIZELBYR_ll=2
+      NSIZELBXR_ll=2*JPHEXT    ! 2
+      NSIZELBYR_ll=2*JPHEXT    ! 2
       ALLOCATE(XLBXRM(IISIZEX2,IJSIZEX2,NKU,NRR))
       ALLOCATE(XLBYRM(IISIZEY2,IJSIZEY2,NKU,NRR))
     ENDIF
@@ -1096,13 +1118,13 @@ ELSE                                   ! 3D case
   !
   IF ( NSV > 0 ) THEN 
     IF ( ANY( LHORELAX_SV(:)) ) THEN
-      NSIZELBXSV_ll=2*NRIMX+2
-      NSIZELBYSV_ll=2*NRIMY+2
+      NSIZELBXSV_ll=2*NRIMX+2*JPHEXT
+      NSIZELBYSV_ll=2*NRIMY+2*JPHEXT
       ALLOCATE(XLBXSVM(IISIZEXF,IJSIZEXF,NKU,NSV))
       ALLOCATE(XLBYSVM(IISIZEYF,IJSIZEYF,NKU,NSV))
     ELSE
-      NSIZELBXSV_ll=2
-      NSIZELBYSV_ll=2
+      NSIZELBXSV_ll=2*JPHEXT    ! 2
+      NSIZELBYSV_ll=2*JPHEXT    ! 2
       ALLOCATE(XLBXSVM(IISIZEX2,IJSIZEX2,NKU,NSV))
       ALLOCATE(XLBYSVM(IISIZEY2,IJSIZEY2,NKU,NSV))
     END IF
@@ -1143,7 +1165,10 @@ IF( LEN_TRIM(CPGD_FILE) /= 0 ) THEN
 !
 ! determine whether the model is flat or no
 !
-  IF( ABS( MAXVAL(XZS(NIB:NIU-JPHEXT,NJB:NJU-JPHEXT)) ) < 1.E-10 ) THEN
+  ZZS_MAX = ABS( MAXVAL(XZS(NIB:NIU-JPHEXT,NJB:NJU-JPHEXT)))
+  CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MPI_PRECISION, MPI_MAX,  &
+                     NMNH_COMM_WORLD,IINFO_ll)
+  IF( ABS(ZZS_MAX_ll)  < 1.E-10 ) THEN
     LFLAT=.TRUE.
   ELSE
     LFLAT=.FALSE.
@@ -1265,6 +1290,20 @@ IF (    LEN_TRIM(CPGD_FILE) == 0  .OR. .NOT. LREAD_ZS) THEN
         ENDIF
       END DO
     ENDIF
+  CASE('AGNE')       ! h*a**2/(x**2+a**2) shape
+    LFLAT = .FALSE.
+    IF(L2D) THEN                     ! two-dimensional case
+      DO JILOOP = 1, NIU
+        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+          XZS(JILOOP,:) = XHMAX*(XAX**2)/(XAX**2+ZDIST**2)
+      END DO
+		ELSE		! three dimensionnal case - infinite profile in y direction
+			DO JILOOP = 1, NIU
+        ZDIST = XXHAT(JILOOP)-FLOAT(NIZS)*XDELTAX
+          XZS(JILOOP,:) = XHMAX*(XAX**2)/(XAX**2+ZDIST**2)
+      END DO
+    ENDIF
+
   CASE('DATA')       ! discretized orography
     LFLAT    =.FALSE.
     WRITE(NLUOUT,FMT=*) 'CZS="DATA",   ATTEMPT TO READ ARRAY     &
@@ -1372,20 +1411,17 @@ IF (CTYPELOC /= 'IJGRID') THEN
   NJLOC = MINLOC(ABS(XYHATLOC-ZYHAT_ll(:)))
 END IF
 !
-IF ( NILOC(1) == 1 )  NILOC = 2
-IF ( NJLOC(1) == 1 )  NJLOC = 2
-!
-IF ( L1D .AND. (NILOC(1) /= NIB .OR. NJLOC(1) /= NJB) ) THEN
-  NILOC = NIB
-  NJLOC = NJB
+IF ( L1D .AND. ( NILOC(1) /= 1 .OR. NJLOC(1) /= 1 ) ) THEN
+  NILOC = 1
+  NJLOC = 1
   WRITE(NLUOUT,FMT=*) 'FOR 1D CONFIGURATION, THE RS INFORMATIONS ARE TAKEN AT &
-                      & I=NIB AND J=NJB (CENTRAL VERTICAL)'
+                      & I=1 AND J=1 (CENTRAL VERTICAL WITHOUT HALO)'
 END IF
 !
-IF ( L2D .AND. ( NJLOC(1) /= NJB) ) THEN
-  NJLOC = NJB
+IF ( L2D .AND. ( NJLOC(1) /= 1 ) ) THEN
+  NJLOC = 1
   WRITE(NLUOUT,FMT=*) 'FOR 2D CONFIGURATION, THE RS INFORMATIONS ARE TAKEN AT &
-                      & J=NJB (CENTRAL PLANE)'
+                      & J=1 (CENTRAL PLANE WITHOUT HALO)'
 END IF
 !
 !*       5.2    Prognostic variables (not multiplied by  rhoJ) : u,v,w,theta,r
@@ -1538,42 +1574,42 @@ END IF
 ILBX=SIZE(XLBXUM,1)
 ILBY=SIZE(XLBYUM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(1:NRIMX+1,        :,:)     = XUT(2:NRIMX+2,        :,:)
-  XLBXVM(1:NRIMX+1,        :,:)     = XVT(1:NRIMX+1,        :,:)
-  XLBXWM(1:NRIMX+1,        :,:)     = XWT(1:NRIMX+1,        :,:)
-  XLBXTHM(1:NRIMX+1,        :,:)   = XTHT(1:NRIMX+1,        :,:)
-  XLBXRM(1:NRIMX+1,        :,:,:)   = XRT(1:NRIMX+1,        :,:,:)
+  XLBXUM(1:NRIMX+JPHEXT,        :,:)     = XUT(2:NRIMX+JPHEXT+1,        :,:)
+  XLBXVM(1:NRIMX+JPHEXT,        :,:)     = XVT(1:NRIMX+JPHEXT,        :,:)
+  XLBXWM(1:NRIMX+JPHEXT,        :,:)     = XWT(1:NRIMX+JPHEXT,        :,:)
+  XLBXTHM(1:NRIMX+JPHEXT,        :,:)   = XTHT(1:NRIMX+JPHEXT,        :,:)
+  XLBXRM(1:NRIMX+JPHEXT,        :,:,:)   = XRT(1:NRIMX+JPHEXT,        :,:,:)
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUT(NIU-NRIMX:NIU,    :,:)
-  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVT(NIU-NRIMX:NIU,    :,:)
-  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWT(NIU-NRIMX:NIU,    :,:)
-  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHT(NIU-NRIMX:NIU,    :,:)
-  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRT(NIU-NRIMX:NIU,    :,:,:)
+  XLBXUM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XUT(NIU-NRIMX-JPHEXT+1:NIU,    :,:)
+  XLBXVM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XVT(NIU-NRIMX-JPHEXT+1:NIU,    :,:)
+  XLBXWM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XWT(NIU-NRIMX-JPHEXT+1:NIU,    :,:)
+  XLBXTHM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)   = XTHT(NIU-NRIMX-JPHEXT+1:NIU,    :,:)
+  XLBXRM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:,:)   = XRT(NIU-NRIMX-JPHEXT+1:NIU,    :,:,:)
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,1:NRIMY+1,        :)     = XUT(:,1:NRIMY+1,      :)
-  XLBYVM(:,1:NRIMY+1,        :)     = XVT(:,2:NRIMY+2,      :)
-  XLBYWM(:,1:NRIMY+1,        :)     = XWT(:,1:NRIMY+1,  :)
-  XLBYTHM(:,1:NRIMY+1,        :)    = XTHT(:,1:NRIMY+1,      :)
-  XLBYRM(:,1:NRIMY+1,        :,:)   = XRT(:,1:NRIMY+1,      :,:)
+  XLBYUM(:,1:NRIMY+JPHEXT,        :)     = XUT(:,1:NRIMY+JPHEXT,      :)
+  XLBYVM(:,1:NRIMY+JPHEXT,        :)     = XVT(:,2:NRIMY+JPHEXT+1,      :)
+  XLBYWM(:,1:NRIMY+JPHEXT,        :)     = XWT(:,1:NRIMY+JPHEXT,  :)
+  XLBYTHM(:,1:NRIMY+JPHEXT,        :)    = XTHT(:,1:NRIMY+JPHEXT,      :)
+  XLBYRM(:,1:NRIMY+JPHEXT,        :,:)   = XRT(:,1:NRIMY+JPHEXT,      :,:)
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUT(:,NJU-NRIMY:NJU,  :)
-  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVT(:,NJU-NRIMY:NJU,  :)
-  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWT(:,NJU-NRIMY:NJU,  :)
-  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHT(:,NJU-NRIMY:NJU,  :)
-  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRT(:,NJU-NRIMY:NJU,  :,:)
+  XLBYUM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XUT(:,NJU-NRIMY-JPHEXT+1:NJU,  :)
+  XLBYVM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XVT(:,NJU-NRIMY-JPHEXT+1:NJU,  :)
+  XLBYWM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XWT(:,NJU-NRIMY-JPHEXT+1:NJU,  :)
+  XLBYTHM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)    = XTHT(:,NJU-NRIMY-JPHEXT+1:NJU,  :)
+  XLBYRM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:,:)   = XRT(:,NJU-NRIMY-JPHEXT+1:NJU,  :,:)
 ENDIF
 DO JSV = 1, NSV
   IF(LWEST_ll() .AND. .NOT. L1D) &
-  XLBXSVM(1:NRIMX+1,        :,:,JSV)   = XSVT(1:NRIMX+1,        :,:,JSV)
+  XLBXSVM(1:NRIMX+JPHEXT,        :,:,JSV)   = XSVT(1:NRIMX+JPHEXT,        :,:,JSV)
   IF(LEAST_ll() .AND. .NOT. L1D) &
-  XLBXSVM(ILBX-NRIMX:ILBX,:,:,JSV)   = XSVT(NIU-NRIMX:NIU,    :,:,JSV)
+  XLBXSVM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:,JSV)   = XSVT(NIU-NRIMX-JPHEXT+1:NIU,    :,:,JSV)
   IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) &
-  XLBYSVM(:,1:NRIMY+1,        :,JSV)   = XSVT(:,1:NRIMY+1,      :,JSV)
+  XLBYSVM(:,1:NRIMY+JPHEXT,        :,JSV)   = XSVT(:,1:NRIMY+JPHEXT,      :,JSV)
   IF(LNORTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) &
-  XLBYSVM(:,ILBY-NRIMY:ILBY,:,JSV)   = XSVT(:,NJU-NRIMY:NJU,  :,JSV)
+  XLBYSVM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:,JSV)   = XSVT(:,NJU-NRIMY-JPHEXT+1:NJU,  :,JSV)
 END DO
 !
 !

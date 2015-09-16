@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 lbc 2006/06/06 15:29:52
 !-----------------------------------------------------------------
 !####################
 MODULE MODI_RAD_BOUND
@@ -152,7 +151,8 @@ END MODULE MODI_RAD_BOUND
 !!      Escobar     9/11/2010 : cphas_profile : array bound problem if NO Turb =>  PTKET optional
 !!      Lac.C.       2011     : Adaptation to FIT temporal scheme
 !!      Modification 06/13     (C.Lac)   Introduction of cphase_pbl
-!!      Modification 03/14     (C.Lac)   Replacement of XRIMKMAX by XCARPKMAX                              
+!!      Modification 03/14     (C.Lac)   Replacement of XRIMKMAX by XCARPKMAX 
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1                             
 !!      
 !-------------------------------------------------------------------------------
 !
@@ -288,13 +288,13 @@ SELECT CASE ( HLBCX(1) )
 !
     IF ( SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
-      ZLBGU (:,:) = PLBXUM(2,:,:) - PLBXUM(1,:,:) 
-      ZLBXU(:,:)  = PLBXUM(1,:,:)
+      ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:)  ! 2 - 1
+      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:) ! 1
     ELSE
-      ZLBEU (:,:) = PLBXUS(1,:,:)
-      ZLBGU (:,:) = PLBXUM(2,:,:) - PLBXUM(1,:,:) +  &
-                      PTSTEP * (PLBXUS(2,:,:) - PLBXUS(1,:,:))
-      ZLBXU(:,:)  = PLBXUM(1,:,:) + PTSTEP * PLBXUS(1,:,:)
+      ZLBEU (:,:) = PLBXUS(JPHEXT,:,:) ! 1
+      ZLBGU (:,:) = PLBXUM(JPHEXT+1,:,:) - PLBXUM(JPHEXT,:,:) +  & ! 2 -  1
+                      PTSTEP * (PLBXUS(JPHEXT+1,:,:) - PLBXUS(JPHEXT,:,:)) ! 2 - 1
+      ZLBXU(:,:)  = PLBXUM(JPHEXT,:,:) + PTSTEP * PLBXUS(JPHEXT,:,:) ! 1  + 1
     END IF
 !  
 !     ============================================================
@@ -357,13 +357,13 @@ SELECT CASE ( HLBCX(2) )
     ILBX=SIZE(PLBXUM,1)
     IF (SIZE(PLBXUS,1) == 0 ) THEN
       ZLBEU (:,:) = 0.
-      ZLBGU (:,:) = PLBXUM(ILBX,:,:) - PLBXUM(ILBX-1,:,:) 
-      ZLBXU(:,:)  = PLBXUM(ILBX,:,:)
+      ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) ! ILBX / (ILBX-1
+      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:)
     ELSE
-      ZLBEU (:,:) = PLBXUS(ILBX,:,:)
-      ZLBGU (:,:) = PLBXUM(ILBX,:,:) - PLBXUM(ILBX-1,:,:) +  &
-                      PTSTEP * (PLBXUS(ILBX,:,:) - PLBXUS(ILBX-1,:,:))
-      ZLBXU(:,:)  = PLBXUM(ILBX,:,:) + PTSTEP * PLBXUS(ILBX,:,:)
+      ZLBEU (:,:) = PLBXUS(ILBX-JPHEXT+1,:,:)
+      ZLBGU (:,:) = PLBXUM(ILBX-JPHEXT+1,:,:) - PLBXUM(ILBX-JPHEXT,:,:) +  &
+                      PTSTEP * (PLBXUS(ILBX-JPHEXT+1,:,:) - PLBXUS(ILBX-JPHEXT,:,:))
+      ZLBXU(:,:)  = PLBXUM(ILBX-JPHEXT+1,:,:) + PTSTEP * PLBXUS(ILBX-JPHEXT+1,:,:)
     END IF
 !     
 !     ============================================================
@@ -425,13 +425,13 @@ SELECT CASE ( HLBCY(1) )
 !
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
-      ZLBGV (:,:) = PLBYVM(:,2,:) - PLBYVM(:,1,:) 
-      ZLBYV(:,:)  = PLBYVM(:,1,:)
+      ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) 
+      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:)
     ELSE
-      ZLBEV (:,:) = PLBYVS(:,1,:)
-      ZLBGV (:,:) = PLBYVM(:,2,:) - PLBYVM(:,1,:) +  &
-                      PTSTEP * (PLBYVS(:,2,:) - PLBYVS(:,1,:))
-      ZLBYV(:,:)  = PLBYVM(:,1,:) + PTSTEP * PLBYVS(:,1,:)
+      ZLBEV (:,:) = PLBYVS(:,JPHEXT,:)
+      ZLBGV (:,:) = PLBYVM(:,JPHEXT+1,:) - PLBYVM(:,JPHEXT,:) +  &
+                      PTSTEP * (PLBYVS(:,JPHEXT+1,:) - PLBYVS(:,JPHEXT,:))
+      ZLBYV(:,:)  = PLBYVM(:,JPHEXT,:) + PTSTEP * PLBYVS(:,JPHEXT,:)
     END IF
 !  
 !     ============================================================
@@ -493,13 +493,13 @@ SELECT CASE ( HLBCY(2) )
     ILBY=SIZE(PLBYVM,2)
     IF ( SIZE(PLBYVS,1) == 0 ) THEN
       ZLBEV (:,:) = 0.
-      ZLBGV (:,:) = PLBYVM(:,ILBY,:) - PLBYVM(:,ILBY-1,:) 
-      ZLBYV(:,:)  = PLBYVM(:,ILBY,:)
+      ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) 
+      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:)
     ELSE
-      ZLBEV (:,:) = PLBYVS(:,ILBY,:)
-      ZLBGV (:,:) = PLBYVM(:,ILBY,:) - PLBYVM(:,ILBY-1,:) +  &
-                      PTSTEP * (PLBYVS(:,ILBY,:) - PLBYVS(:,ILBY-1,:))
-      ZLBYV(:,:)  = PLBYVM(:,ILBY,:) + PTSTEP * PLBYVS(:,ILBY,:)
+      ZLBEV (:,:) = PLBYVS(:,ILBY-JPHEXT+1,:)
+      ZLBGV (:,:) = PLBYVM(:,ILBY-JPHEXT+1,:) - PLBYVM(:,ILBY-JPHEXT,:) +  &
+                      PTSTEP * (PLBYVS(:,ILBY-JPHEXT+1,:) - PLBYVS(:,ILBY-JPHEXT,:))
+      ZLBYV(:,:)  = PLBYVM(:,ILBY-JPHEXT+1,:) + PTSTEP * PLBYVS(:,ILBY-JPHEXT+1,:)
     END IF
 !  
 !     ============================================================

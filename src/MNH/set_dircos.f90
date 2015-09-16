@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################  
       MODULE MODI_SET_DIRCOS
@@ -118,6 +117,7 @@ END MODULE MODI_SET_DIRCOS
 !!      Original         14/02/95
 !!      (J.Stein)        15/11/95  add the slope angle
 !!      V. DUCROCQ       14/08/98  //
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/07/07 11:58:36
 !-----------------------------------------------------------------
 !     ######################
 MODULE MODI_PRESSURE_IN_PREP
@@ -66,6 +65,7 @@ END MODULE MODI_PRESSURE_IN_PREP
 !!    -------------
 !!      Original    22/12/98
 !!      parallelization                                   18/06/00 (Jabouille)
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -118,8 +118,6 @@ REAL,DIMENSION(SIZE(PDXX,1),SIZE(PDXX,2),SIZE(PDXX,3)):: ZDIV ! residual diverge
 !
 INTEGER      :: ILUOUT0  ! logical unit for listing file
 INTEGER      :: IRESP    ! error code
-INTEGER      :: IIB, IIE ! inner limits in X direction
-INTEGER      :: IJB, IJE ! inner limits in Y direction
 INTEGER      :: IKB, IKE ! inner limits in Z direction
 INTEGER      :: IKU
 INTEGER      :: IINFO_ll
@@ -135,10 +133,6 @@ INTEGER               :: I,J,K
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
-IIB=1+JPHEXT
-IIE=NIMAX+JPHEXT
-IJB=1+JPHEXT
-IJE=NJMAX+JPHEXT
 IKB=1+JPVEXT
 IKE=NKMAX+JPVEXT
 IKU=IKE+JPVEXT

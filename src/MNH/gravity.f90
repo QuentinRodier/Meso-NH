@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/06/06 15:20:45
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_GRAVITY    
@@ -105,6 +104,7 @@ END MODULE MODI_GRAVITY
 !!    -------------
 !!      C.Lac - March 2011 - Splitted  from dyn_sources
 !!      Q.Rodier 06/15 correction on budget
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -115,6 +115,8 @@ USE MODD_CONF
 USE MODD_CST
 !
 USE MODI_SHUMAN
+USE MODI_BUDGET
+USE MODI_GET_HALO
 !  
 IMPLICIT NONE
 !  
@@ -158,11 +160,15 @@ IF( .NOT.L1D ) THEN     ! no buoyancy for 1D case
     ZRV_OV_RD = XRV / XRD
     ZWORK1(:,:,:) = 1.
     DO JWATER = 1 , 1+KRRL+KRRI                
+      CALL GET_HALO(PRT(:,:,:,JWATER))
       ZWORK1(:,:,:) = ZWORK1(:,:,:) + PRT(:,:,:,JWATER)
     END DO
 !
 !   compute the virtual potential temperature when water is present in any form
 !
+    CALL GET_HALO(PTHT)
+!
+    
     ZWORK2(:,:,:) = PTHT(:,:,:) * (1. + PRT(:,:,:,1)*ZRV_OV_RD) / ZWORK1(:,:,:)
   ELSE
 !

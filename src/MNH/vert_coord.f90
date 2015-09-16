@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/07/27 17:27:30
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_VERT_COORD
@@ -64,6 +63,7 @@ END MODULE MODI_VERT_COORD
 !!      Original        nov 2005
 !!      J.-P. Pinty     jan 2011 Optimisation according to Leuenberger et al,
 !!                               MWR (2010) in the case of SLEVE coord.
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -159,6 +159,9 @@ REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZZSMALL ! small-scale topography
 REAL                                     :: ZH      ! model top
 REAL                                     :: ZEXP    ! Exponent (1.35 is the
                                                     ! optimal value)
+!
+INTEGER :: II,IJ,IK ! loop indices
+!
 !-------------------------------------------------------------------------------
 !
 IIU = SIZE(PZZ,1)
@@ -174,13 +177,24 @@ ZZSMALL(:,:) = PZS(:,:) - PZSMT(:,:)   ! Small-scale topography deviation
 ! Sleve coordinate
 !
 ZEXP = 1.35
-PZZ(:,:,IKB:IKU) = SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU) + &
-             SPREAD(PZSMT(1:IIU,1:IJU),3,IKU-IKB+1) * SINH( (ZH/PLEN1)**ZEXP     &
-            - (SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU)/PLEN1)**ZEXP ) / &
-                                                SINH( (ZH/PLEN1)**ZEXP ) + &
-           SPREAD(ZZSMALL(1:IIU,1:IJU),3,IKU-IKB+1) * SINH( (ZH/PLEN2)**ZEXP     & 
-            - (SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU)/PLEN2)**ZEXP ) / &
-                                                SINH( (ZH/PLEN2)**ZEXP )
+
+DO IK=IKB,IKU ; DO IJ=1,IJU ; DO II=1,IIU
+PZZ(II,IJ,IK) = PZHAT(IK) + PZSMT(II,IJ) * & 
+                     SINH( (ZH/PLEN1)**ZEXP - (PZHAT(IK)/PLEN1)**ZEXP ) / &
+                     SINH( (ZH/PLEN1)**ZEXP ) + &
+                     ZZSMALL(II,IJ) * &
+                     SINH( (ZH/PLEN2)**ZEXP - (PZHAT(IK)/PLEN2)**ZEXP ) / &
+                     SINH( (ZH/PLEN2)**ZEXP )
+END DO ; END DO ; END DO
+
+!!$PZZ(:,:,IKB:IKU) = SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU) + &
+!!$             SPREAD(PZSMT(1:IIU,1:IJU),3,IKU-IKB+1) * SINH( (ZH/PLEN1)**ZEXP     &
+!!$            - (SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU)/PLEN1)**ZEXP ) / &
+!!$                                                SINH( (ZH/PLEN1)**ZEXP ) + &
+!!$           SPREAD(ZZSMALL(1:IIU,1:IJU),3,IKU-IKB+1) * SINH( (ZH/PLEN2)**ZEXP     & 
+!!$            - (SPREAD(SPREAD(PZHAT(IKB:IKU),1,IIU),2,IJU)/PLEN2)**ZEXP ) / &
+!!$                                                SINH( (ZH/PLEN2)**ZEXP )
+
 !
 ! Ensure symmetry of layer depths below/above the true surface level
 ! This is essential (!) for a correct surface pressure gradient computation over sloping topography
@@ -249,6 +263,8 @@ INTEGER :: IKE        ! upper physical point
 REAL                                     :: ZH       ! model top
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)) :: ZCOEF    ! 1-zs/H 
 !
+INTEGER :: II,IJ,IK ! loop indices
+!
 !-------------------------------------------------------------------------------
 !
 IIU = SIZE(PZZ,1)
@@ -259,9 +275,14 @@ IKE = IKU - JPVEXT
 ZH = PZHAT(IKE+1)
 !
 ZCOEF(:,:) = 1.-PZS(:,:)/ZH
-PZZ(:,:,:) = SPREAD(SPREAD(PZHAT(1:IKU),1,IIU),2,IJU)  &
-           * SPREAD(ZCOEF(1:IIU,1:IJU),3,IKU)          &
-           + SPREAD(PZS(1:IIU,1:IJU),3,IKU)
+
+!!$PZZ(:,:,:) = SPREAD(SPREAD(PZHAT(1:IKU),1,IIU),2,IJU)  &
+!!$           * SPREAD(ZCOEF(1:IIU,1:IJU),3,IKU)          &
+!!$           + SPREAD(PZS(1:IIU,1:IJU),3,IKU)
+
+DO IK=1,IKU ; DO IJ=1,IJU ; DO II=1,IIU
+   PZZ(II,IJ,IK) = PZHAT(IK) * ZCOEF(II,IJ) + PZS(II,IJ)
+END DO ; END DO ; END DO
 !
 ! This is essential (!) for a correct surface pressure gradient computation over sloping topography
 PZZ(:,:,1) = 2.*PZZ(:,:,2)-PZZ(:,:,3)

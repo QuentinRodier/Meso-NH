@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/29 16:49:15
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODE_GRIDCART
@@ -37,6 +36,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/05/94 
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -164,12 +164,9 @@ CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 IIU = UBOUND(PXHAT,1)         
 IJU = UBOUND(PYHAT,1)        
-IKU = UBOUND(PZHAT,1)          
-IIE = IIU-JPHEXT
-IJE = IJU-JPHEXT
+IKU = UBOUND(PZHAT,1)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKE = IKU-JPVEXT
-IIB = 1+JPHEXT
-IJB = 1+JPHEXT
 IKB = 1+JPVEXT
 NULLIFY(TZHALO1_ll)
 !

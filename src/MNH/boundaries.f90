@@ -169,6 +169,7 @@ END MODULE MODI_BOUNDARIES
 !!      Modification    04/2013  (C.Lac)    Remove instant M               
 !!      Modification    01/2015  (JL Redelsperger) Introduction of ponderation
 !!                                 for non normal velocity and potential temp
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -291,6 +292,8 @@ LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE ::  GFFBOUNDARY
 LOGICAL, SAVE        :: GFIRSTCALLFF = .TRUE.                         
 LOGICAL              :: GFFTMP
 #endif
+!
+INTEGER              :: JI,JJ
 !
 !-------------------------------------------------------------------------------
 !
@@ -471,26 +474,30 @@ SELECT CASE ( HLBCX(1) )
   CASE ('OPEN')
 !
     IF(SIZE(PUT) /= 0) THEN
-      PUT(IIB-JPHEXT,:,:)=0.
-      WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
-        PVT  (IIB-1,:,:) = 2.*PVT  (IIB,:,:)   -PVT  (IIB+1,:,:)
-        PWT  (IIB-1,:,:) = 2.*PWT  (IIB,:,:)   -PWT  (IIB+1,:,:)
-        PTHT (IIB-1,:,:) = 2.*PTHT (IIB,:,:)   -PTHT (IIB+1,:,:)
-!
-      ELSEWHERE                                   !  INFLOW  condition
-        PVT  (IIB-1,:,:) = ZPOND*ZLBXVT  (1,:,:) + (1.-ZPOND)* PVT(IIB,:,:)
-        PWT  (IIB-1,:,:) = ZPOND*ZLBXWT  (1,:,:) + (1.-ZPOND)* PWT(IIB,:,:)
-        PTHT (IIB-1,:,:) = ZPOND*ZLBXTHT (1,:,:) + (1.-ZPOND)* PTHT(IIB,:,:)
-      ENDWHERE
+       DO JI=JPHEXT,1,-1
+          PUT(JI,:,:)=0.
+          WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
+             PVT  (JI,:,:) = 2.*PVT  (JI+1,:,:)  -PVT  (JI+2,:,:)
+             PWT  (JI,:,:) = 2.*PWT  (JI+1,:,:)  -PWT  (JI+2,:,:)
+             PTHT (JI,:,:) = 2.*PTHT (JI+1,:,:)  -PTHT (JI+2,:,:)
+             !
+          ELSEWHERE                                   !  INFLOW  condition
+             PVT  (JI,:,:) = ZPOND*ZLBXVT   (JI,:,:) + (1.-ZPOND)* PVT(JI+1,:,:) ! 1 
+             PWT  (JI,:,:) = ZPOND*ZLBXWT   (JI,:,:) + (1.-ZPOND)* PWT(JI+1,:,:) ! 1
+             PTHT (JI,:,:) = ZPOND*ZLBXTHT  (JI,:,:) + (1.-ZPOND)* PTHT(JI+1,:,:)! 1
+          ENDWHERE
+       ENDDO
     ENDIF
 !
 !
   IF(SIZE(PTKET) /= 0) THEN
-    WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
-      PTKET(IIB-1,:,:) = MAX(XTKEMIN, 2.*PTKET(IIB,:,:)-PTKET(IIB+1,:,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKET(IIB-1,:,:) = MAX(XTKEMIN,ZLBXTKET(1,:,:))  
-    ENDWHERE
+     DO JI=JPHEXT,1,-1
+        WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
+           PTKET(JI,:,:) = MAX(XTKEMIN, 2.*PTKET(JI+1,:,:)-PTKET(JI+2,:,:))  
+        ELSEWHERE                                  !  INFLOW  condition
+           PTKET(JI,:,:) = MAX(XTKEMIN,ZLBXTKET(JI,:,:))  ! 1
+        ENDWHERE
+     ENDDO
   END IF
     !
 !                      Case with KRR moist variables 
@@ -498,27 +505,35 @@ SELECT CASE ( HLBCX(1) )
 ! 
 !
   DO JRR =1 ,KRR
-    IF(SIZE(PUT) /= 0) THEN
-      WHERE ( PUT(IIB,:,:) <= 0. )         !  OUTFLOW condition
-        PRT(IIB-1,:,:,JRR) = MAX(0.,2.*PRT(IIB,:,:,JRR) -PRT(IIB+1,:,:,JRR))
-      ELSEWHERE                            !  INFLOW  condition
-        PRT(IIB-1,:,:,JRR) = MAX(0.,ZLBXRT(1,:,:,JRR))
-      END WHERE
-    END IF
-    !
+     IF(SIZE(PUT) /= 0) THEN
+        DO JI=JPHEXT,1,-1
+           WHERE ( PUT(IIB,:,:) <= 0. )         !  OUTFLOW condition
+              PRT(JI,:,:,JRR) = MAX(0.,2.*PRT(JI+1,:,:,JRR) -PRT(JI+2,:,:,JRR))
+           ELSEWHERE                            !  INFLOW  condition
+              PRT(JI,:,:,JRR) = MAX(0.,ZLBXRT(JI,:,:,JRR)) ! 1
+           END WHERE
+        END DO
+     END IF
+     !
   END DO
 !
-  IF(SIZE(PSRCT) /= 0) PSRCT (IIB-1,:,:)   = PSRCT (IIB,:,:)
+  IF(SIZE(PSRCT) /= 0) THEN
+     DO JI=JPHEXT,1,-1
+        PSRCT (JI,:,:)   = PSRCT (JI+1,:,:)
+     END DO
+  END IF
 !
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
     IF(SIZE(PUT) /= 0) THEN
-      WHERE ( PUT(IIB,:,:) <= 0. )         !  OUTFLOW condition
-        PSVT(IIB-1,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(IIB,:,:,JSV) - &
-                                               PSVT(IIB+1,:,:,JSV))
-      ELSEWHERE                            !  INFLOW  condition
-        PSVT(IIB-1,:,:,JSV) = MAX(XSVMIN(JSV),ZLBXSVT(1,:,:,JSV))
-      END WHERE
+       DO JI=JPHEXT,1,-1
+          WHERE ( PUT(IIB,:,:) <= 0. )         !  OUTFLOW condition
+             PSVT(JI,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(JI+1,:,:,JSV) - &
+                  PSVT(JI+2,:,:,JSV))
+          ELSEWHERE                            !  INFLOW  condition
+             PSVT(JI,:,:,JSV) = MAX(XSVMIN(JSV),ZLBXSVT(JI,:,:,JSV)) ! 1
+          END WHERE
+       END DO
     END IF
     !
   END DO
@@ -560,28 +575,32 @@ SELECT CASE ( HLBCX(2) )
 !
   CASE ('OPEN')
 !
-    ILBX = SIZE(PLBXVM,1)
-    IF(SIZE(PUT) /= 0) THEN
-      WHERE ( PUT(IIE+1,:,:) >= 0. )               !  OUTFLOW condition
-        PVT  (IIE+1,:,:) = 2.*PVT  (IIE,:,:)   -PVT  (IIE-1,:,:)
-        PWT  (IIE+1,:,:) = 2.*PWT  (IIE,:,:)   -PWT  (IIE-1,:,:)
-        PTHT (IIE+1,:,:) = 2.*PTHT (IIE,:,:)   -PTHT (IIE-1,:,:)
-!
-      ELSEWHERE                                   !  INFLOW  condition
-        PVT  (IIE+1,:,:) = ZPOND*ZLBXVT  (ILBX,:,:) + (1.-ZPOND)* PVT(IIE,:,:)
-        PWT  (IIE+1,:,:) = ZPOND*ZLBXWT  (ILBX,:,:) + (1.-ZPOND)* PWT(IIE,:,:)
-        PTHT (IIE+1,:,:) = ZPOND*ZLBXTHT (ILBX,:,:) + (1.-ZPOND)* PTHT(IIE,:,:)
-      ENDWHERE
-    ENDIF
-!
-  IF(SIZE(PTKET) /= 0) THEN
-    ILBX = SIZE(PLBXTKEM,1)
-    WHERE ( PUT(IIE+1,:,:) >= 0. )             !  OUTFLOW condition
-      PTKET(IIE+1,:,:) = MAX(XTKEMIN, 2.*PTKET(IIE,:,:)-PTKET(IIE-1,:,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKET(IIE+1,:,:) = MAX(XTKEMIN,ZLBXTKET(ILBX,:,:))  
-    ENDWHERE
-  END IF
+     ILBX = SIZE(PLBXVM,1)
+     IF(SIZE(PUT) /= 0) THEN
+        DO JI=1,JPHEXT
+           WHERE ( PUT(IIE+1,:,:) >= 0. )               !  OUTFLOW condition
+              PVT  (IIE+JI,:,:) = 2.*PVT  (IIE+JI-1,:,:)   -PVT  (IIE+JI-2,:,:)
+              PWT  (IIE+JI,:,:) = 2.*PWT  (IIE+JI-1,:,:)   -PWT  (IIE+JI-2,:,:)
+              PTHT (IIE+JI,:,:) = 2.*PTHT (IIE+JI-1,:,:)   -PTHT (IIE+JI-2,:,:)
+              !
+           ELSEWHERE                                   !  INFLOW  condition
+              PVT  (IIE+JI,:,:) = ZPOND*ZLBXVT   (ILBX-JPHEXT+JI,:,:) + (1.-ZPOND)* PVT(IIE+JI-1,:,:)
+              PWT  (IIE+JI,:,:) = ZPOND*ZLBXWT   (ILBX-JPHEXT+JI,:,:) + (1.-ZPOND)* PWT(IIE+JI-1,:,:)
+              PTHT (IIE+JI,:,:) = ZPOND*ZLBXTHT  (ILBX-JPHEXT+JI,:,:) + (1.-ZPOND)* PTHT(IIE+JI-1,:,:)
+           ENDWHERE
+        END DO
+     ENDIF
+     !
+     IF(SIZE(PTKET) /= 0) THEN
+        ILBX = SIZE(PLBXTKEM,1)
+        DO JI=1,JPHEXT
+           WHERE ( PUT(IIE+1,:,:) >= 0. )             !  OUTFLOW condition
+              PTKET(IIE+JI,:,:) = MAX(XTKEMIN, 2.*PTKET(IIE+JI-1,:,:)-PTKET(IIE+JI-2,:,:))  
+           ELSEWHERE                                  !  INFLOW  condition
+              PTKET(IIE+JI,:,:) = MAX(XTKEMIN,ZLBXTKET(ILBX-JPHEXT+JI,:,:))  
+           ENDWHERE
+        END DO
+     END IF
     !
 !
 !                      Case with KRR moist variables 
@@ -591,26 +610,34 @@ SELECT CASE ( HLBCX(2) )
     ILBX=SIZE(PLBXRM,1)
     !
     IF(SIZE(PUT) /= 0) THEN
-      WHERE ( PUT(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
-        PRT(IIE+1,:,:,JRR) = MAX(0.,2.*PRT(IIE,:,:,JRR) -PRT(IIE-1,:,:,JRR))
-      ELSEWHERE                            !  INFLOW  condition
-        PRT(IIE+1,:,:,JRR) = MAX(0.,ZLBXRT(ILBX,:,:,JRR))
-      END WHERE
+       DO JI=1,JPHEXT  
+          WHERE ( PUT(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
+             PRT(IIE+JI,:,:,JRR) = MAX(0.,2.*PRT(IIE+JI-1,:,:,JRR) -PRT(IIE+JI-2,:,:,JRR))
+          ELSEWHERE                            !  INFLOW  condition
+             PRT(IIE+JI,:,:,JRR) = MAX(0.,ZLBXRT(ILBX-JPHEXT+JI,:,:,JRR))
+          END WHERE
+       END DO
     END IF
     !
   END DO
 !
-  IF(SIZE(PSRCT) /= 0) PSRCT (IIE+1,:,:)   = PSRCT (IIE,:,:)
+  IF(SIZE(PSRCT) /= 0) THEN
+     DO JI=1,JPHEXT 
+        PSRCT (IIE+JI,:,:)   = PSRCT (IIE+JI-1,:,:)
+     END DO
+  END IF
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
     ILBX=SIZE(PLBXSVM,1)
     IF(SIZE(PUT) /= 0) THEN
-      WHERE ( PUT(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
-        PSVT(IIE+1,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(IIE,:,:,JSV) - &
-                                               PSVT(IIE-1,:,:,JSV))
-      ELSEWHERE                            !  INFLOW  condition
-        PSVT(IIE+1,:,:,JSV) = MAX(XSVMIN(JSV),ZLBXSVT(ILBX,:,:,JSV))
-      END WHERE
+       DO JI=1,JPHEXT 
+          WHERE ( PUT(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
+             PSVT(IIE+JI,:,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(IIE+JI-1,:,:,JSV) - &
+                  PSVT(IIE+JI-2,:,:,JSV))
+          ELSEWHERE                            !  INFLOW  condition
+             PSVT(IIE+JI,:,:,JSV) = MAX(XSVMIN(JSV),ZLBXSVT(ILBX-JPHEXT+JI,:,:,JSV))
+          END WHERE
+       END DO
     END IF
     !
   END DO
@@ -652,24 +679,28 @@ SELECT CASE ( HLBCY(1) )
   CASE ('OPEN')
 !
     IF(SIZE(PVT) /= 0) THEN
-      PVT(:,IJB-JPHEXT,:)=0.
-      WHERE ( PVT(:,IJB,:) <= 0. )               !  OUTFLOW condition
-        PUT  (:,IJB-1,:) = 2.*PUT  (:,IJB,:)   -PUT  (:,IJB+1,:)
-        PWT  (:,IJB-1,:) = 2.*PWT  (:,IJB,:)   -PWT  (:,IJB+1,:)
-        PTHT (:,IJB-1,:) = 2.*PTHT (:,IJB,:)   -PTHT (:,IJB+1,:)
-      ELSEWHERE                                   !  INFLOW  condition
-        PUT  (:,IJB-1,:) = ZPOND*ZLBYUT  (:,1,:) + (1.-ZPOND)* PUT(:,IJB,:)
-        PWT  (:,IJB-1,:) = ZPOND*ZLBYWT  (:,1,:) + (1.-ZPOND)* PWT(:,IJB,:)
-        PTHT (:,IJB-1,:) = ZPOND*ZLBYTHT (:,1,:) + (1.-ZPOND)* PTHT(:,IJB,:)
-      ENDWHERE
+       DO JJ=JPHEXT,1,-1
+          PVT(:,JJ,:)=0.
+          WHERE ( PVT(:,IJB,:) <= 0. )               !  OUTFLOW condition
+             PUT  (:,JJ,:) = 2.*PUT  (:,JJ+1,:)   -PUT  (:,JJ+2,:)
+             PWT  (:,JJ,:) = 2.*PWT  (:,JJ+1,:)   -PWT  (:,JJ+2,:)
+             PTHT (:,JJ,:) = 2.*PTHT (:,JJ+1,:)   -PTHT (:,JJ+2,:)
+          ELSEWHERE                                   !  INFLOW  condition
+             PUT  (:,JJ,:) = ZPOND*ZLBYUT   (:,JJ,:) + (1.-ZPOND)* PUT(:,JJ+1,:)
+             PWT  (:,JJ,:) = ZPOND*ZLBYWT   (:,JJ,:) + (1.-ZPOND)* PWT(:,JJ+1,:)
+             PTHT (:,JJ,:) = ZPOND*ZLBYTHT  (:,JJ,:) + (1.-ZPOND)* PTHT(:,JJ+1,:)
+          ENDWHERE
+       END DO
     ENDIF
 !
   IF(SIZE(PTKET) /= 0) THEN
-    WHERE ( PVT(:,IJB,:) <= 0. )             !  OUTFLOW condition
-      PTKET(:,IJB-1,:) = MAX(XTKEMIN, 2.*PTKET(:,IJB,:)-PTKET(:,IJB+1,:))  
-    ELSEWHERE                                !  INFLOW  condition
-      PTKET(:,IJB-1,:) = MAX(XTKEMIN,ZLBYTKET(:,1,:))  
-    ENDWHERE
+     DO JJ=JPHEXT,1,-1
+        WHERE ( PVT(:,IJB,:) <= 0. )             !  OUTFLOW condition
+           PTKET(:,JJ,:) = MAX(XTKEMIN, 2.*PTKET(:,JJ+1,:)-PTKET(:,JJ+2,:))  
+        ELSEWHERE                                !  INFLOW  condition
+           PTKET(:,JJ,:) = MAX(XTKEMIN,ZLBYTKET(:,JJ,:))  
+        ENDWHERE
+     END DO
   END IF
     !
 !
@@ -678,27 +709,35 @@ SELECT CASE ( HLBCY(1) )
 ! 
   DO JRR =1 ,KRR
     IF(SIZE(PVT) /= 0) THEN
-      WHERE ( PVT(:,IJB,:) <= 0. )         !  OUTFLOW condition
-        PRT(:,IJB-1,:,JRR) = MAX(0.,2.*PRT(:,IJB,:,JRR) -PRT(:,IJB+1,:,JRR))
-      ELSEWHERE                            !  INFLOW  condition
-        PRT(:,IJB-1,:,JRR) = MAX(0.,ZLBYRT(:,1,:,JRR))
-      END WHERE
+       DO JJ=JPHEXT,1,-1
+          WHERE ( PVT(:,IJB,:) <= 0. )         !  OUTFLOW condition
+             PRT(:,JJ,:,JRR) = MAX(0.,2.*PRT(:,JJ+1,:,JRR) -PRT(:,JJ+2,:,JRR))
+          ELSEWHERE                            !  INFLOW  condition
+             PRT(:,JJ,:,JRR) = MAX(0.,ZLBYRT(:,JJ,:,JRR))
+          END WHERE
+       END DO
     END IF
     !
   END DO
 !
-  IF(SIZE(PSRCT) /= 0) PSRCT(:,IJB-1,:)   = PSRCT(:,IJB,:)
+  IF(SIZE(PSRCT) /= 0) THEN
+     DO JJ=JPHEXT,1,-1
+        PSRCT(:,JJ,:)   = PSRCT(:,JJ+1,:)
+     END DO
+  END IF
 !
 !                       Case with KSV scalar variables  
 !
   DO JSV=1 ,KSV
     IF(SIZE(PVT) /= 0) THEN
-      WHERE ( PVT(:,IJB,:) <= 0. )         !  OUTFLOW condition
-        PSVT(:,IJB-1,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(:,IJB,:,JSV) - &
-                                               PSVT(:,IJB+1,:,JSV))
-      ELSEWHERE                            !  INFLOW  condition
-        PSVT(:,IJB-1,:,JSV) = MAX(XSVMIN(JSV),ZLBYSVT(:,1,:,JSV))
-      END WHERE
+       DO JJ=JPHEXT,1,-1
+          WHERE ( PVT(:,IJB,:) <= 0. )         !  OUTFLOW condition
+             PSVT(:,JJ,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(:,JJ+1,:,JSV) - &
+                  PSVT(:,JJ+2,:,JSV))
+          ELSEWHERE                            !  INFLOW  condition
+             PSVT(:,JJ,:,JSV) = MAX(XSVMIN(JSV),ZLBYSVT(:,JJ,:,JSV))
+          END WHERE
+       END DO
     END IF
     !
   END DO
@@ -743,24 +782,28 @@ SELECT CASE ( HLBCY(2) )
 !
     ILBY=SIZE(PLBYUM,2)
     IF(SIZE(PVT) /= 0) THEN
-      WHERE ( PVT(:,IJE+1,:) >= 0. )               !  OUTFLOW condition
-        PUT  (:,IJE+1,:) = 2.*PUT  (:,IJE,:)   -PUT  (:,IJE-1,:)
-        PWT  (:,IJE+1,:) = 2.*PWT  (:,IJE,:)   -PWT  (:,IJE-1,:)
-        PTHT (:,IJE+1,:) = 2.*PTHT (:,IJE,:)   -PTHT (:,IJE-1,:)
-      ELSEWHERE                                   !  INFLOW  condition
-        PUT  (:,IJE+1,:) = ZPOND*ZLBYUT  (:,ILBY,:) + (1.-ZPOND)* PUT(:,IJE,:)
-        PWT  (:,IJE+1,:) = ZPOND*ZLBYWT  (:,ILBY,:) + (1.-ZPOND)* PWT(:,IJE,:)
-        PTHT (:,IJE+1,:) = ZPOND*ZLBYTHT (:,ILBY,:) + (1.-ZPOND)* PTHT(:,IJE,:)
-      ENDWHERE
+       DO JJ=1,JPHEXT
+          WHERE ( PVT(:,IJE+1,:) >= 0. )               !  OUTFLOW condition
+             PUT  (:,IJE+JJ,:) = 2.*PUT  (:,IJE+JJ-1,:)   -PUT  (:,IJE+JJ-2,:)
+             PWT  (:,IJE+JJ,:) = 2.*PWT  (:,IJE+JJ-1,:)   -PWT  (:,IJE+JJ-2,:)
+             PTHT (:,IJE+JJ,:) = 2.*PTHT (:,IJE+JJ-1,:)   -PTHT (:,IJE+JJ-2,:)
+          ELSEWHERE                                   !  INFLOW  condition
+             PUT  (:,IJE+JJ,:) = ZPOND*ZLBYUT   (:,ILBY-JPHEXT+JJ,:) + (1.-ZPOND)* PUT(:,IJE+JJ-1,:)
+             PWT  (:,IJE+JJ,:) = ZPOND*ZLBYWT   (:,ILBY-JPHEXT+JJ,:) + (1.-ZPOND)* PWT(:,IJE+JJ-1,:)
+             PTHT (:,IJE+JJ,:) = ZPOND*ZLBYTHT  (:,ILBY-JPHEXT+JJ,:) + (1.-ZPOND)* PTHT(:,IJE+JJ-1,:)
+          ENDWHERE
+       END DO
     ENDIF
 !
   IF(SIZE(PTKET) /= 0) THEN
     ILBY=SIZE(PLBYTKEM,2)
-    WHERE ( PVT(:,IJE+1,:) >= 0. )             !  OUTFLOW condition
-      PTKET(:,IJE+1,:) = MAX(XTKEMIN, 2.*PTKET(:,IJE,:)-PTKET(:,IJE-1,:))  
-    ELSEWHERE                                  !  INFLOW  condition
-      PTKET(:,IJE+1,:) = MAX(XTKEMIN,ZLBYTKET(:,ILBY,:))  
-    ENDWHERE
+    DO JJ=1,JPHEXT
+       WHERE ( PVT(:,IJE+1,:) >= 0. )             !  OUTFLOW condition
+          PTKET(:,IJE+JJ,:) = MAX(XTKEMIN, 2.*PTKET(:,IJE+JJ-1,:)-PTKET(:,IJE+JJ-2,:))  
+       ELSEWHERE                                  !  INFLOW  condition
+          PTKET(:,IJE+JJ,:) = MAX(XTKEMIN,ZLBYTKET(:,ILBY-JPHEXT+JJ,:))  
+       ENDWHERE
+    END DO
   ENDIF
     !
 !                      Case with KRR moist variables 
@@ -770,28 +813,36 @@ SELECT CASE ( HLBCY(2) )
     ILBY=SIZE(PLBYRM,2)
     !
     IF(SIZE(PVT) /= 0) THEN
-      WHERE ( PVT(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
-        PRT(:,IJE+1,:,JRR) = MAX(0.,2.*PRT(:,IJE,:,JRR) -PRT(:,IJE-1,:,JRR))
-      ELSEWHERE                            !  INFLOW  condition
-        PRT(:,IJE+1,:,JRR) = MAX(0.,ZLBYRT(:,ILBY,:,JRR))
-      END WHERE
+       DO JJ=1,JPHEXT
+          WHERE ( PVT(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
+             PRT(:,IJE+JJ,:,JRR) = MAX(0.,2.*PRT(:,IJE+JJ-1,:,JRR) -PRT(:,IJE+JJ-2,:,JRR))
+          ELSEWHERE                            !  INFLOW  condition
+             PRT(:,IJE+JJ,:,JRR) = MAX(0.,ZLBYRT(:,ILBY-JPHEXT+JJ,:,JRR))
+          END WHERE
+       END DO
     END IF
     !
   END DO
 !
-  IF(SIZE(PSRCT) /= 0) PSRCT(:,IJE+1,:)   = PSRCT(:,IJE,:)
+  IF(SIZE(PSRCT) /= 0) THEN
+      DO JJ=1,JPHEXT
+         PSRCT(:,IJE+JJ,:)   = PSRCT(:,IJE+JJ-1,:)
+      END DO
+  END IF
 !
 !                       Case with KSV scalar variables  
   DO JSV=1 ,KSV
     ILBY=SIZE(PLBYSVM,2)
     !
     IF(SIZE(PVT) /= 0) THEN
-      WHERE ( PVT(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
-        PSVT(:,IJE+1,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(:,IJE,:,JSV) - &
-                                               PSVT(:,IJE-1,:,JSV))
-      ELSEWHERE                            !  INFLOW  condition
-        PSVT(:,IJE+1,:,JSV) = MAX(XSVMIN(JSV),ZLBYSVT(:,ILBY,:,JSV))
-      END WHERE
+       DO JJ=1,JPHEXT
+          WHERE ( PVT(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
+             PSVT(:,IJE+JJ,:,JSV) = MAX(XSVMIN(JSV),2.*PSVT(:,IJE+JJ-1,:,JSV) - &
+                  PSVT(:,IJE+JJ-2,:,JSV))
+          ELSEWHERE                            !  INFLOW  condition
+             PSVT(:,IJE+JJ,:,JSV) = MAX(XSVMIN(JSV),ZLBYSVT(:,ILBY-JPHEXT+JJ,:,JSV))
+          END WHERE
+       END DO
     END IF
     !
   END DO
@@ -807,10 +858,10 @@ IF (LUSECHEM .AND. IMI == 1) THEN
     GFIRSTCALL1 = .FALSE.
     DO JSV=NSV_CHEMBEG,NSV_CHEMEND
        GCHTMP = .FALSE.
-       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GCHBOUNDARY(JSV-NSV_CHEMBEG+1) = GCHTMP
     ENDDO
   ENDIF
@@ -830,10 +881,10 @@ IF (LUSECHIC .AND. IMI == 1) THEN
     GFIRSTCALLIC = .FALSE.
     DO JSV=NSV_CHICBEG,NSV_CHICEND
        GCHTMP = .FALSE.
-       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GICBOUNDARY(JSV-NSV_CHICBEG+1) = GCHTMP
     ENDDO
   ENDIF
@@ -852,10 +903,10 @@ IF (LORILAM .AND. IMI == 1) THEN
     GFIRSTCALL2 = .FALSE.
     DO JSV=NSV_AERBEG,NSV_AEREND
        GCHTMP = .FALSE.
-       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GAERBOUNDARY(JSV-NSV_AERBEG+1) = GCHTMP
     ENDDO
   ENDIF
@@ -875,10 +926,10 @@ IF (LDUST .AND. IMI == 1) THEN
     GFIRSTCALL3 = .FALSE.
     DO JSV=NSV_DSTBEG,NSV_DSTEND
        GCHTMP = .FALSE.
-       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GDSTBOUNDARY(JSV-NSV_DSTBEG+1) = GCHTMP
     ENDDO
     ENDIF
@@ -898,10 +949,10 @@ IF (LSALT .AND. IMI == 1) THEN
     GFIRSTCALL5 = .FALSE.
     DO JSV=NSV_SLTBEG,NSV_SLTEND
        GCHTMP = .FALSE.
-       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
        GSLTBOUNDARY(JSV-NSV_SLTBEG+1) = GCHTMP
     ENDDO
   ENDIF
@@ -921,10 +972,10 @@ IF ( LPASPOL .AND. IMI == 1) THEN
     GFIRSTCALLPP = .FALSE.
     DO JSV=NSV_PPBEG,NSV_PPEND
       GPPTMP = .FALSE.
-      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GPPTMP = GPPTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
       GPPBOUNDARY(JSV-NSV_PPBEG+1) = GPPTMP
     ENDDO
   ENDIF
@@ -944,10 +995,10 @@ IF ( LCONDSAMP .AND. IMI == 1) THEN
     GFIRSTCALLCS = .FALSE.
     DO JSV=NSV_CSBEG,NSV_CSEND
       GCSTMP = .FALSE.
-      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCSTMP = GCSTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
       GCSBOUNDARY(JSV-NSV_CSBEG+1) = GCSTMP
     ENDDO
   ENDIF
@@ -968,10 +1019,10 @@ IF ( LFOREFIRE .AND. IMI == 1) THEN
     GFIRSTCALLFF = .FALSE.
     DO JSV=NSV_FFBEG,NSV_FFEND
       GFFTMP = .FALSE.
-      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
-      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
-      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
-      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+      IF (LWEST_ll().AND.HLBCX(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+      IF (LEAST_ll().AND.HLBCX(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+      IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+      IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GFFTMP = GFFTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
       GFFBOUNDARY(JSV-NSV_FFBEG+1) = GFFTMP
     ENDDO
   ENDIF

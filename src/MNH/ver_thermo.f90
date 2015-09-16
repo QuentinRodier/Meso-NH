@@ -6,9 +6,8 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/07/07 12:04:57
 !-----------------------------------------------------------------
-!     ######spl
+!     ######################
       MODULE MODI_VER_THERMO
 !     ######################
 INTERFACE
@@ -146,6 +145,7 @@ END MODULE MODI_VER_THERMO
 !!                  Jun.  06, 2006  (Mallet) replace DRY_MASS by TOTAL_DMASS
 !!                     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
+!!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -231,11 +231,8 @@ INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 
 !-------------------------------------------------------------------------------
 !
-IIB=JPHEXT+1
-IIE=SIZE(PJ,1)-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PJ,1)
-IJB=JPHEXT+1
-IJE=SIZE(PJ,2)-JPHEXT
 IJU=SIZE(PJ,2)
 IKB=JPVEXT+1
 IKE=SIZE(PJ,3)-JPVEXT
@@ -395,17 +392,17 @@ XLSRVM(:,:,IKE+1)=XLSRVM(:,:,IKE)
 CALL EXTRAPOL('E',XLSTHM,XLSRVM)
 !
 IF ( LHORELAX_UVWTH ) THEN
-    NSIZELBX_ll=2*NRIMX+2
-    NSIZELBXU_ll=2*NRIMX+2
-    NSIZELBY_ll=2*NRIMY+2
-    NSIZELBYV_ll=2*NRIMY+2
+    NSIZELBX_ll=2*NRIMX+2*JPHEXT
+    NSIZELBXU_ll=2*NRIMX+2*JPHEXT
+    NSIZELBY_ll=2*NRIMY+2*JPHEXT
+    NSIZELBYV_ll=2*NRIMY+2*JPHEXT
    ALLOCATE(XLBXTHM(IISIZEXF,IJSIZEXF,IKU))
    ALLOCATE(XLBYTHM(IISIZEYF,IJSIZEYF,IKU))
 ELSE
-    NSIZELBX_ll=2
-    NSIZELBXU_ll=4
-    NSIZELBY_ll=2
-    NSIZELBYV_ll=4
+    NSIZELBX_ll=2*JPHEXT     ! 2
+    NSIZELBXU_ll=2*(JPHEXT+1) ! 4
+    NSIZELBY_ll=2*JPHEXT     ! 2
+    NSIZELBYV_ll=2*(JPHEXT+1) ! 4
    ALLOCATE(XLBXTHM(IISIZEX2,IJSIZEX2,IKU))
    ALLOCATE(XLBYTHM(IISIZEY2,IJSIZEY2,IKU))
 END IF
@@ -421,31 +418,31 @@ IF ( NRR > 0 ) THEN
   IF (       LHORELAX_RV .OR. LHORELAX_RC .OR. LHORELAX_RR .OR. LHORELAX_RI    &
         .OR. LHORELAX_RS .OR. LHORELAX_RG .OR. LHORELAX_RH                     &
      ) THEN
-!   ALLOCATE(XLBXRM(2*NRIMX+2,IJU,IKU,NRR))
-!   ALLOCATE(XLBYRM(IIU,2*NRIMY+2,IKU,NRR))
+!   ALLOCATE(XLBXRM(2*NRIMX+2*JPHEXT,IJU,IKU,NRR))
+!   ALLOCATE(XLBYRM(IIU,2*NRIMY+2*JPHEXT,IKU,NRR))
 ! ELSE
 !   ALLOCATE(XLBXRM(2,IJU,IKU,NRR))
 !   ALLOCATE(XLBYRM(IIU,2,IKU,NRR))
-      NSIZELBXR_ll=2*NRIMX+2
-      NSIZELBYR_ll=2*NRIMY+2
+      NSIZELBXR_ll=2*NRIMX+2*JPHEXT
+      NSIZELBYR_ll=2*NRIMY+2*JPHEXT
       ALLOCATE(XLBXRM(IISIZEXF,IJSIZEXF,IKU,NRR))
       ALLOCATE(XLBYRM(IISIZEYF,IJSIZEYF,IKU,NRR))
     ELSE
-      NSIZELBXR_ll=2
-      NSIZELBYR_ll=2
+      NSIZELBXR_ll=2*JPHEXT     !2
+      NSIZELBYR_ll=2*JPHEXT     !2
       ALLOCATE(XLBXRM(IISIZEX2,IJSIZEX2,IKU,NRR))
       ALLOCATE(XLBYRM(IISIZEY2,IJSIZEY2,IKU,NRR))
   ENDIF
   !
   IF (SIZE(XLBXRM) .NE. 0 ) THEN
-     ILBX=SIZE(XLBXRM,1)/2-1
-     XLBXRM(1:ILBX+1,:,:,:)         = XRT(IIB-1:IIB-1+ILBX,:,:,:)
-     XLBXRM(ILBX+2:2*ILBX+2,:,:,:)  = XRT(IIE+1-ILBX:IIE+1,:,:,:)
+     ILBX=SIZE(XLBXRM,1)/2-JPHEXT
+     XLBXRM(1:ILBX+JPHEXT,:,:,:)                  = XRT(1:ILBX+JPHEXT,:,:,:)
+     XLBXRM(ILBX+JPHEXT+1:2*ILBX+2*JPHEXT,:,:,:)  = XRT(IIE+1-ILBX:IIE+JPHEXT,:,:,:)
   ENDIF
   IF (SIZE(XLBYRM) .NE. 0 ) THEN
-     ILBY=SIZE(XLBYRM,2)/2-1
-     XLBYRM(:,1:ILBY+1,:,:)        = XRT(:,IJB-1:IJB-1+ILBY,:,:)
-     XLBYRM(:,ILBY+2:2*ILBY+2,:,:) = XRT(:,IJE+1-ILBY:IJE+1,:,:)
+     ILBY=SIZE(XLBYRM,2)/2-JPHEXT
+     XLBYRM(:,1:ILBY+JPHEXT,:,:)        = XRT(:,1:ILBY+JPHEXT,:,:)
+     XLBYRM(:,ILBY+JPHEXT+1:2*ILBY+2*JPHEXT,:,:) = XRT(:,IJE+1-ILBY:IJE+JPHEXT,:,:)
   ENDIF
 ELSE
    NSIZELBXR_ll=0
@@ -460,20 +457,20 @@ END IF
 ILBX=SIZE(XLBXTHM,1)
 ILBY=SIZE(XLBYTHM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXTHM(1:NRIMX+1,        :,:)   = XTHT(1:NRIMX+1,        :,:)
-  XLBXRM(1:NRIMX+1,        :,:,:)   = XRT(1:NRIMX+1,        :,:,:)
+  XLBXTHM(1:NRIMX+JPHEXT,        :,:)   = XTHT(1:NRIMX+JPHEXT,        :,:)
+  XLBXRM(1:NRIMX+JPHEXT,        :,:,:)   = XRT(1:NRIMX+JPHEXT,        :,:,:)
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXTHM(ILBX-NRIMX:ILBX,:,:)   = XTHT(IIU-NRIMX:IIU,    :,:)
-  XLBXRM(ILBX-NRIMX:ILBX,:,:,:)   = XRT(IIU-NRIMX:IIU,    :,:,:)
+  XLBXTHM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)   = XTHT(IIU-NRIMX-JPHEXT+1:IIU,    :,:)
+  XLBXRM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:,:)   = XRT(IIU-NRIMX-JPHEXT+1:IIU,    :,:,:)
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYTHM(:,1:NRIMY+1,        :)    = XTHT(:,1:NRIMY+1,      :)
-  XLBYRM(:,1:NRIMY+1,        :,:)   = XRT(:,1:NRIMY+1,      :,:)
+  XLBYTHM(:,1:NRIMY+JPHEXT,        :)    = XTHT(:,1:NRIMY+JPHEXT,      :)
+  XLBYRM(:,1:NRIMY+JPHEXT,        :,:)   = XRT(:,1:NRIMY+JPHEXT,      :,:)
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYTHM(:,ILBY-NRIMY:ILBY,:)    = XTHT(:,IJU-NRIMY:IJU,  :)
-  XLBYRM(:,ILBY-NRIMY:ILBY,:,:)   = XRT(:,IJU-NRIMY:IJU,  :,:)
+  XLBYTHM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)    = XTHT(:,IJU-NRIMY-JPHEXT+1:IJU,  :)
+  XLBYRM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:,:)   = XRT(:,IJU-NRIMY-JPHEXT+1:IJU,  :,:)
 ENDIF
 !
 !-------------------------------------------------------------------------------

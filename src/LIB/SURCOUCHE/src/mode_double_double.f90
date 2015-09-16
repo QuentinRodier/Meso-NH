@@ -2,6 +2,10 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!-----------------------------------------------------------------
 MODULE modd_repro_sum
   TYPE DOUBLE_DOUBLE
      SEQUENCE
@@ -177,56 +181,56 @@ CONTAINS
     ddb%R = 0.0
     ddb%E = 0.0
 
-    ddc(1:nx)%R = dda(1:nx)%R
-    ddc(1:nx)%E = dda(1:nx)%E
-    !
-    ! copie directly the contribution corresponding
-    ! to ddd(i) = dda(i) + 0 when not a power of 2 size
-    !
-    ipas  = 2**(lnxb2-1)
-    ipasm = nx - ipas
-    ddd(ipasm+1:ipas)%R = dda(ipasm+1:ipas)%R
-    ddd(ipasm+1:ipas)%E = dda(ipasm+1:ipas)%E
-    DO j=lnxb2-1,0,-1
-       ! 
-       ! test for nx not power of 2 
-       ! 
-       ipas  = 2**j
-       ipasm = min(ipas,nx-ipas) 
+!!$    ddc(1:nx)%R = dda(1:nx)%R
+!!$    ddc(1:nx)%E = dda(1:nx)%E
+!!$    !
+!!$    ! copie directly the contribution corresponding
+!!$    ! to ddd(i) = dda(i) + 0 when not a power of 2 size
+!!$    !
+!!$    ipas  = 2**(lnxb2-1)
+!!$    ipasm = nx - ipas
+!!$    ddd(ipasm+1:ipas)%R = dda(ipasm+1:ipas)%R
+!!$    ddd(ipasm+1:ipas)%E = dda(ipasm+1:ipas)%E
+!!$    DO j=lnxb2-1,0,-1
+!!$       ! 
+!!$       ! test for nx not power of 2 
+!!$       ! 
+!!$       ipas  = 2**j
+!!$       ipasm = min(ipas,nx-ipas) 
+!!$
+!!$       DO i = 1, ipasm
+!!$          !
+!!$          !   Compute dda + ddb using Knuth's trick.
+!!$          !
+!!$          t1(i) = ddc(i)%R + ddc(i+ipas)%R
+!!$          e(i)  = t1(i) - ddc(i)%R
+!!$          t2(i) = ((ddc(i+ipas)%R - e(i)) + (ddc(i)%R - (t1(i) - e(i)))) &
+!!$               + ddc(i)%E + ddc(i+ipas)%E
+!!$          !
+!!$          !   The result is t1 + t2, after normalization.
+!!$          !
+!!$          ddd(i)%R = t1(i) + t2(i)
+!!$          ddd(i)%E = t2(i) - ((t1(i) + t2(i)) - t1(i)) 
+!!$       ENDDO
+!!$       ddc(1:ipas)%R = ddd(1:ipas)%R
+!!$       ddc(1:ipas)%E = ddd(1:ipas)%E
+!!$    END DO
+!!$    ddb = ddc(1)
 
-       DO i = 1, ipasm
-          !
-          !   Compute dda + ddb using Knuth's trick.
-          !
-          t1(i) = ddc(i)%R + ddc(i+ipas)%R
-          e(i)  = t1(i) - ddc(i)%R
-          t2(i) = ((ddc(i+ipas)%R - e(i)) + (ddc(i)%R - (t1(i) - e(i)))) &
-               + ddc(i)%E + ddc(i+ipas)%E
-          !
-          !   The result is t1 + t2, after normalization.
-          !
-          ddd(i)%R = t1(i) + t2(i)
-          ddd(i)%E = t2(i) - ((t1(i) + t2(i)) - t1(i)) 
-       ENDDO
-       ddc(1:ipas)%R = ddd(1:ipas)%R
-       ddc(1:ipas)%E = ddd(1:ipas)%E
-    END DO
-    ddb = ddc(1)
-
-!!$    DO i = 1, SIZE(dda,1)
-!!$       !
-!!$       !   Compute dda + ddb using Knuth's trick.
-!!$       !
-!!$       t1(i) = dda(i)%R + ddb%R
-!!$       e(i)  = t1(i) - dda(i)%R
-!!$       t2(i) = ((ddb%R - e(i)) + (dda(i)%R - (t1(i) - e(i)))) &
-!!$            + dda(i)%E + ddb%E
-!!$       !
-!!$       !   The result is t1 + t2, after normalization.
-!!$       !
-!!$       ddb%R = t1(i) + t2(i)
-!!$       ddb%E = t2(i) - ((t1(i) + t2(i)) - t1(i)) 
-!!$    ENDDO
+    DO i = 1, SIZE(dda,1)
+       !
+       !   Compute dda + ddb using Knuth's trick.
+       !
+       t1(i) = dda(i)%R + ddb%R
+       e(i)  = t1(i) - dda(i)%R
+       t2(i) = ((ddb%R - e(i)) + (dda(i)%R - (t1(i) - e(i)))) &
+            + dda(i)%E + ddb%E
+       !
+       !   The result is t1 + t2, after normalization.
+       !
+       ddb%R = t1(i) + t2(i)
+       ddb%E = t2(i) - ((t1(i) + t2(i)) - t1(i)) 
+    ENDDO
 
   END FUNCTION SUM_DD_DD1
 

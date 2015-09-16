@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 les 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !#############################
 MODULE MODI_INI_LES_CART_MASKn
@@ -62,6 +61,7 @@ END MODULE MODI_INI_LES_CART_MASKn
 !!    -------------
 !!      Original         07/02/00
 !!      Modification     01/02/01 (D.Gazen) add module MODD_NSV for NSV variable
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !! --------------------------------------------------------------------------
 !

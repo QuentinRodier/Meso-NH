@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_8 2008/07/09 16:40:30
 !-----------------------------------------------------------------
 !     ###################### 
       MODULE MODI_READ_EXSEG_n
@@ -273,6 +272,8 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   12/2011   (C.Lac) Adaptation to FIT temporal scheme 
 !!      Modification   12/2012   (S.Bielli) add NAM_NCOUT for netcdf output
 !!      Modification   02/2012   (Pialat/Tulet) add ForeFire
+!!      Modification   02/2012   (T.Lunet) add of new Runge-Kutta methods
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -281,6 +282,7 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_CONFZ
 USE MODD_CONF_n, ONLY : CSTORAGE_TYPE
+USE MODD_VAR_ll,    ONLY:  NPROC
 !
 #ifdef MNH_NCWRIT
 USE MODD_NCOUT
@@ -569,7 +571,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CMET_ADV_SCHEME',CMET_ADV_SCHEME, &
 CALL TEST_NAM_VAR(ILUOUT,'CSV_ADV_SCHEME',CSV_ADV_SCHEME,   &
       &'PPM_00','PPM_01','PPM_02')
 CALL TEST_NAM_VAR(ILUOUT,'CTEMP_SCHEME',CTEMP_SCHEME,       &
-      & 'RK11','RK21','RK33','RK53' )
+      & 'RK11','RK21','RK33','RKC4','RK53','RK4B','RK62','RK65','NP32','SP32')
 !
 CALL TEST_NAM_VAR(ILUOUT,'CTURB',CTURB,'NONE','TKEL')
 CALL TEST_NAM_VAR(ILUOUT,'CRAD',CRAD,'NONE','FIXE','ECMW','TOPA')
@@ -633,6 +635,9 @@ END IF
 !*       2.    FIRST INITIALIZATIONS
 !              ---------------------
 !
+!!!!!!!!!!!!!!!!!!!!  TEST CL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!IF (NPROC==1) JPHEXT=1
+!!!!!!!!!!!!!!!!!!!!  TEST CL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !*       2.1   Time step in gridnesting case
 !
 IF (KMI /= 1 .AND. NDAD(KMI) /= KMI)  THEN

@@ -10,6 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -2544,7 +2546,7 @@ CONTAINS
     IRESP = 0
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article LB ' , HRECFM
-    IF (KL3D /= 2*(KRIM+1)) THEN
+    IF (KL3D /= 2*(KRIM+JPHEXT)) THEN
        IRESP = -30
        GOTO 1000
     END IF
@@ -2557,7 +2559,7 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           IF (LPACK .AND. L2D) THEN
-             TX3DP=>PLB(:,2:2,:)
+             TX3DP=>PLB(:,JPHEXT+1:JPHEXT+1,:)
 #ifdef MNH_NCWRIT
                IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(TX3DP),TX3DP,TZFMH,IRESP)
@@ -2581,9 +2583,9 @@ CONTAINS
              ! I/O proc case
              CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
              IF (HLBTYPE == 'LBX' .OR. HLBTYPE == 'LBXU') THEN 
-                ALLOCATE(Z3D((KRIM+1)*2,IJMAX_ll+2*JPHEXT,SIZE(PLB,3)))
+                ALLOCATE(Z3D((KRIM+JPHEXT)*2,IJMAX_ll+2*JPHEXT,SIZE(PLB,3)))
              ELSE ! HLBTYPE == 'LBY' .OR. HLBTYPE == 'LBYV' 
-                ALLOCATE(Z3D(IIMAX_ll+2*JPHEXT,(KRIM+1)*2,SIZE(PLB,3)))
+                ALLOCATE(Z3D(IIMAX_ll+2*JPHEXT,(KRIM+JPHEXT)*2,SIZE(PLB,3)))
              END IF
              DO JI = 1,ISNPROC
                 CALL GET_DISTRIB_LB(HLBTYPE,JI,'FM','WRITE',KRIM,IIB,IIE,IJB,IJE)

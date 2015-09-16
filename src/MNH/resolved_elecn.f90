@@ -168,6 +168,7 @@ END MODULE MODI_RESOLVED_ELEC_n
 !!      Original    06/11/09
 !!      Modifications: 
 !!      M. Chong      26/01/10  Add Small ions parameters
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -182,7 +183,7 @@ USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ
 USE MODD_FIELD_n, ONLY : XRSVS
 USE MODD_CONF, ONLY : L1D, L2D, CEXP
 USE MODD_CST
-USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
+USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n          
 USE MODD_BUDGET
@@ -346,10 +347,7 @@ NULLIFY(TZFIELDS_ll)
 !*       1.     PRELIMINARY COMPUTATIONS
 !               ------------------------
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PZZ,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 IKU = SIZE(PZZ,3)

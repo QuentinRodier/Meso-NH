@@ -80,11 +80,13 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      October 2011 (C.Lac) FF10MAX  : interpolation of 10m wind
 !!        between 2 Meso-NH levels if 10m is above the first atmospheric level
 !!      2015 : D.Ricard add UM10/VM10 for LCARTESIAN=T cases
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODE_ll
 USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_CONF_n
@@ -198,11 +200,8 @@ REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZCORIOZ
 IIU=NIMAX+2*JPHEXT
 IJU=NJMAX+2*JPHEXT
 IKU=NKMAX+2*JPVEXT
-IIB=1+JPHEXT
-IJB=1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
-IIE=IIU-JPHEXT
-IJE=IJU-JPHEXT
 IKE=IKU-JPVEXT
 !
 ALLOCATE(ZWORK21(IIU,IJU))

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/22 12:37:08
 !-----------------------------------------------------------------
 !     #####################
       PROGRAM PREP_NEST_PGD
@@ -89,6 +88,7 @@
 !!    -------------
 !!      Original    26/09/95
 !!                  30/07/97 (Masson) split of mode_lfifm_pgd
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -132,6 +132,9 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 !
+USE MODE_SPLITTINGZ_ll, ONLY : INI_PARAZ_ll
+USE MODE_MPPDB
+!
 IMPLICIT NONE
 !
 !*       0.1   Declaration of local variables
@@ -160,12 +163,13 @@ INTEGER                        :: JTIME,ITIME
 !
 !-------------------------------------------------------------------------------
 !
+CALL MPPDB_INIT()
 !
 CALL VERSION
 CPROGRAM='NESPGD'
 !
 CALL INITIO_ll()
-CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
+!!$CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 !
 !*       1.    INITIALIZATION OF PHYSICAL CONSTANTS
 !              ------------------------------------
@@ -180,6 +184,8 @@ CALL INI_CST
 NVERB=1
 !
 CALL OPEN_NESTPGD_FILES(CPGD,CNESTPGD)
+CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
+!
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 CALL ALLOC_SURFEX(NMODEL)
@@ -216,6 +222,21 @@ NYSIZE(:)=0
 NDXRATIO_ALL(:)=0
 NDYRATIO_ALL(:)=0
 !
+!MODEL1
+  ! read the grid in the PGD file
+CALL FMREAD(CPGD(1),'IMAX',CLUOUT0,'--',NXSIZE(1),IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(CPGD(1),'JMAX',CLUOUT0,'--',NYSIZE(1),IGRID,ILENCH,YCOMMENT,IRESP)
+!
+CALL SET_DAD0_ll()
+CALL SET_DIM_ll(NXSIZE(1),NYSIZE(1),1)
+CALL SET_XRATIO_ll(1, 1)
+CALL SET_YRATIO_ll(1, 1)
+CALL SET_XOR_ll(1, 1)
+CALL SET_XEND_ll(NXSIZE(1)+2*JPHEXT, 1)
+CALL SET_YOR_ll(1, 1)
+CALL SET_YEND_ll(NYSIZE(1)+2*JPHEXT, 1)
+CALL SET_DAD_ll(0, 1)
+!
 !* loop in this order, to make coherent all the coordinate arrays with model 1
 !
 DO JPGD=2,NMODEL
@@ -223,9 +244,24 @@ DO JPGD=2,NMODEL
                           NXOR_ALL(JPGD),NYOR_ALL(JPGD),                 &
                           NXSIZE(JPGD),NYSIZE(JPGD),                     &
                           NDXRATIO_ALL(JPGD),NDYRATIO_ALL(JPGD))
-  NXEND_ALL(JPGD)=NXOR_ALL(JPGD)+NXSIZE(JPGD)+1
-  NYEND_ALL(JPGD)=NYOR_ALL(JPGD)+NYSIZE(JPGD)+1
+
+  NXEND_ALL(JPGD)=NXOR_ALL(JPGD)+NXSIZE(JPGD)+2*JPHEXT -1
+  NYEND_ALL(JPGD)=NYOR_ALL(JPGD)+NYSIZE(JPGD)+2*JPHEXT -1
+
+!!$  CALL SET_LBX_ll(CLBCX(1), JPGD)
+!!$  CALL SET_LBY_ll(CLBCY(1), JPGD)
+  CALL SET_XRATIO_ll(NDXRATIO_ALL(JPGD), JPGD)
+  CALL SET_YRATIO_ll(NDYRATIO_ALL(JPGD), JPGD)
+  CALL SET_XOR_ll(NXOR_ALL(JPGD), JPGD)
+  CALL SET_XEND_ll(NXEND_ALL(JPGD), JPGD)
+  CALL SET_YOR_ll(NYOR_ALL(JPGD), JPGD)
+  CALL SET_YEND_ll(NYEND_ALL(JPGD), JPGD)
+  CALL SET_DAD_ll(NDAD(JPGD), JPGD )
+
+!!$CALL SET_DIM_ll(NXSIZE(JPGD),NYSIZE(JPGD),1)
+
 END DO
+CALL INI_PARAZ_ll(IINFO_ll)
 !
 !-------------------------------------------------------------------------------
 !
@@ -235,7 +271,7 @@ END DO
 DO JPGD=1,NMODEL
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL GOTO_MODEL(JPGD)
-  CALL INIT_HORGRID_ll_n()
+!!$  CALL INIT_HORGRID_ll_n()
   CALL DEFINE_MASK_n()
 END DO
 !
@@ -248,6 +284,7 @@ WRITE(ILUOUT0,FMT=*)
 WRITE(ILUOUT0,FMT=*) 'field ZS   of all models'
 DO JPGD=NMODEL,1,-1
   CALL GOTO_MODEL(JPGD)
+!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL NEST_FIELD_n('ZS    ')
 END DO
@@ -258,6 +295,7 @@ WRITE(ILUOUT0,FMT=*)
 WRITE(ILUOUT0,FMT=*) 'field ZSMT of all models'
 DO JPGD=1,NMODEL
   CALL GOTO_MODEL(JPGD)
+!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL NEST_ZSMT_n('ZSMT  ')
 END DO
@@ -286,6 +324,7 @@ END DO
 !              -------------------------
 !
 DO JPGD=1,NMODEL
+!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_MODEL(JPGD)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL MNHPUT_ZS_n
@@ -354,6 +393,7 @@ DO JPGD=1,NMODEL
   CALL FMWRIT(CNESTPGD(JPGD),'L1D         ',CLUOUT0,'--',L1D_ALL(JPGD),0,1,' ',IRESP)
   CALL FMWRIT(CNESTPGD(JPGD),'L2D         ',CLUOUT0,'--',L2D_ALL(JPGD),0,1,' ',IRESP)
   CALL FMWRIT(CNESTPGD(JPGD),'PACK        ',CLUOUT0,'--',LPACK_ALL(JPGD),0,1,' ',IRESP)
+  CALL FMWRIT(CNESTPGD(JPGD),'JPHEXT      ',CLUOUT0,'--',JPHEXT,0,1,' ',IRESP)
 END DO
 !
 !-------------------------------------------------------------------------------

@@ -175,6 +175,7 @@ END MODULE MODI_ICE_ADJUST_ELEC
 !!      Original    2002 
 !!      C. Barthe   19/11/09   update to version 4.8.1
 !!      M. Chong    Mar. 2010  Add small ions
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -192,6 +193,7 @@ USE MODD_RAIN_ICE_DESCR, ONLY : XRTMIN, XBI
 USE MODI_CONDENSATION
 USE MODI_BUDGET
 USE MODE_FMWRIT
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -316,10 +318,7 @@ LOGICAL             :: LPRETREATMENT, LNEW_ADJUST
 IIU = SIZE(PEXNREF,1)
 IJU = SIZE(PEXNREF,2)
 IKU = SIZE(PEXNREF,3)
-IIB = 1 + JPHEXT
-IIE = IIU - JPHEXT
-IJB = 1 + JPHEXT
-IJE = IJU - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 !
@@ -415,6 +414,7 @@ DO JITER = 1, ITERMAX
 !
 !     compute the saturation vapor pressures at t+1
 !
+      CALL GET_HALO(ZT)
       ZW1(:,:,:) = EXP(XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:))) ! e_sw
       ZW2(:,:,:) = EXP(XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:))) ! e_si
       ZW1(:,:,:) = MIN(PPABST(:,:,:)/2.,ZW1(:,:,:))   ! safety limitation

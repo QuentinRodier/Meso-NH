@@ -173,6 +173,7 @@ END MODULE MODI_TRIDZ
 !!                                        PBFY transposition
 !!                  14/03/02 (P. Jabouille) set values for meaningless spectral coefficients
 !!                                       (to avoid problem in bouissinesq configuration)
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -191,6 +192,7 @@ USE MODE_SPLITTINGZ_ll , ONLY : GET_DIM_EXTZ_ll,GET_ORZ_ll,LWESTZ_ll,LSOUTHZ_ll
 !JUAN
 USE MODE_REPRO_SUM
 !JUAN
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -337,8 +339,9 @@ IJE_ll = IJMAX_ll + JPHEXT
 !
 !     the use of local array ZEIGENX and ZEIGEN would require some technical modifications
 !
-ALLOCATE (ZEIGENX_ll(IIMAX_ll + 2*JPHEXT))
-ALLOCATE (ZEIGEN_ll(IIMAX_ll  + 2*JPHEXT, IJMAX_ll + 2*JPHEXT))
+ALLOCATE (ZEIGENX_ll(IIMAX_ll+2*JPHEXT))
+ALLOCATE (ZEIGEN_ll(IIMAX_ll+2*JPHEXT,IJMAX_ll+2*JPHEXT))
+
 ZEIGEN_ll = 0.0
 !  Get the origin coordinates of the extended sub-domain in global landmarks
 CALL GET_OR_ll('Y',IORXY_ll,IORYY_ll)
@@ -491,7 +494,7 @@ SELECT CASE (HLBCX(1))
 ! in the cyclic case, the eigenvalues are the same for two following JM values:
 ! it corresponds to the real and complex parts of the FFT
   CASE('CYCL')                     ! cyclic case
-    IXMODE_ll = IIMAX_ll+2
+    IXMODE_ll = IIMAX_ll+2*JPHEXT ! +2
     IXMODEY_ll = IIUY_ll
     IXMODEB_ll = IIUB_ll !JUAN Z_SPLITTING
 !
@@ -503,13 +506,13 @@ SELECT CASE (HLBCX(1))
 !
 !
     IF (LEAST_ll(HSPLITTING='Y')) THEN
-      IXMODEY_ll = IIUY_ll - 2
+      IXMODEY_ll = IIUY_ll - 2*JPHEXT  ! -2
     ELSE
       IXMODEY_ll = IIUY_ll
     END IF
 !JUAN Z_SPLITTING
     IF (LEAST_ll(HSPLITTING='B')) THEN
-      IXMODEB_ll = IIUB_ll - 2
+      IXMODEB_ll = IIUB_ll - 2*JPHEXT  ! -2
     ELSE
       IXMODEB_ll = IIUB_ll
     END IF
@@ -532,7 +535,7 @@ IF (.NOT. L2D) THEN
 ! it corresponds to the real and complex parts of the FFT result
 !
     CASE('CYCL')                      ! 3D cyclic case
-      IYMODE_ll = IJMAX_ll+2
+      IYMODE_ll = IJMAX_ll+2*JPHEXT ! +2
       IYMODEY_ll = IJUY_ll
       IYMODEB_ll = IJUB_ll !JUAN Z_SPLITTING
 !
@@ -545,8 +548,8 @@ IF (.NOT. L2D) THEN
 !
     CASE DEFAULT                      ! 3D non-cyclic cases
       IYMODE_ll = IJMAX_ll
-      IYMODEY_ll = IJUY_ll - 2
-      IYMODEB_ll = IJUB_ll - 2 !JUAN Z_SPLITTING
+      IYMODEY_ll = IJUY_ll - 2*JPHEXT ! -2
+      IYMODEB_ll = IJUB_ll - 2*JPHEXT ! -2 JUAN Z_SPLITTING
 !
       DO JJ = 1,IYMODE_ll
         DO JI = 1,IXMODE_ll
@@ -567,6 +570,9 @@ ELSE
 END IF
 !
 DEALLOCATE(ZEIGENX_ll)
+!
+!CALL MPPDB_CHECK2D(ZEIGEN_ll,"TRIDZ::ZEIGEN_ll",PRECISION)
+!
 !
 !*       7.2   compute the matrix diagonal elements
 !

@@ -6,9 +6,8 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/07/07 12:19:27
 !-----------------------------------------------------------------
-!     ######spl
+!     ###################
       MODULE MODI_VER_DYN
 !     ###################
 INTERFACE
@@ -132,6 +131,7 @@ END MODULE MODI_VER_DYN
 !!                                          interpolation routine
 !!      V.Masson                  24/11/97  use of the 3D dry density
 !!      J.Stein                   20:01/98  add the LS field interpolation
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -217,11 +217,8 @@ INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 !-------------------------------------------------------------------------------
 !
-IIB=JPHEXT+1
-IIE=SIZE(PJ,1)-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PJ,1)
-IJB=JPHEXT+1
-IJE=SIZE(PJ,2)-JPHEXT
 IJU=SIZE(PJ,2)
 IKB=JPVEXT+1
 IKE=SIZE(PJ,3)-JPVEXT
@@ -366,10 +363,10 @@ CALL EXTRAPOL('E',XLSVM)
        IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
 
   IF ( LHORELAX_UVWTH ) THEN
-    NSIZELBX_ll=2*NRIMX+2
-    NSIZELBXU_ll=2*NRIMX+2
-    NSIZELBY_ll=2*NRIMY+2
-    NSIZELBYV_ll=2*NRIMY+2
+    NSIZELBX_ll=2*NRIMX+2*JPHEXT
+    NSIZELBXU_ll=2*NRIMX+2*JPHEXT
+    NSIZELBY_ll=2*NRIMY+2*JPHEXT
+    NSIZELBYV_ll=2*NRIMY+2*JPHEXT
     ALLOCATE(XLBXUM(IISIZEXFU,IJSIZEXFU,IKU))
     ALLOCATE(XLBYUM(IISIZEYF,IJSIZEYF,IKU))
     ALLOCATE(XLBXVM(IISIZEXF,IJSIZEXF,IKU))
@@ -379,10 +376,10 @@ CALL EXTRAPOL('E',XLSVM)
     !ALLOCATE(XLBXTHM(IISIZEXF,IJSIZEXF,IKU))
     !ALLOCATE(XLBYTHM(IISIZEYF,IJSIZEYF,IKU))
   ELSE
-    NSIZELBX_ll=2
-    NSIZELBXU_ll=4
-    NSIZELBY_ll=2
-    NSIZELBYV_ll=4
+    NSIZELBX_ll= 2*JPHEXT  ! 2
+    NSIZELBXU_ll= 2*(JPHEXT+1) ! 4
+    NSIZELBY_ll=2*JPHEXT  !  2
+    NSIZELBYV_ll= 2*(JPHEXT+1) ! 4
     ALLOCATE(XLBXUM(IISIZEX4,IJSIZEX4,IKU))
     ALLOCATE(XLBYUM(IISIZEY2,IJSIZEY2,IKU))
     ALLOCATE(XLBXVM(IISIZEX2,IJSIZEX2,IKU))
@@ -396,27 +393,27 @@ CALL EXTRAPOL('E',XLSVM)
 ILBX=SIZE(XLBXUM,1)
 ILBY=SIZE(XLBYUM,2)
 IF(LWEST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(1:NRIMX+1,        :,:)     = XUT(2:NRIMX+2,        :,:)
-  XLBXVM(1:NRIMX+1,        :,:)     = XVT(1:NRIMX+1,        :,:)
-  XLBXWM(1:NRIMX+1,        :,:)     = XWT(1:NRIMX+1,        :,:)
+  XLBXUM(1:NRIMX+JPHEXT,        :,:)     = XUT(2:NRIMX+JPHEXT+1,        :,:)
+  XLBXVM(1:NRIMX+JPHEXT,        :,:)     = XVT(1:NRIMX+JPHEXT,        :,:)
+  XLBXWM(1:NRIMX+JPHEXT,        :,:)     = XWT(1:NRIMX+JPHEXT,        :,:)
 
 ENDIF
 IF(LEAST_ll() .AND. .NOT. L1D) THEN
-  XLBXUM(ILBX-NRIMX:ILBX,:,:)     = XUT(IIU-NRIMX:IIU,    :,:)
-  XLBXVM(ILBX-NRIMX:ILBX,:,:)     = XVT(IIU-NRIMX:IIU,    :,:)
-  XLBXWM(ILBX-NRIMX:ILBX,:,:)     = XWT(IIU-NRIMX:IIU,    :,:)
+  XLBXUM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XUT(IIU-NRIMX-JPHEXT+1:IIU,    :,:)
+  XLBXVM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XVT(IIU-NRIMX-JPHEXT+1:IIU,    :,:)
+  XLBXWM(ILBX-NRIMX-JPHEXT+1:ILBX,:,:)     = XWT(IIU-NRIMX-JPHEXT+1:IIU,    :,:)
 
 ENDIF
 IF(LSOUTH_ll() .AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,1:NRIMY+1,        :)     = XUT(:,1:NRIMY+1,      :)
-  XLBYVM(:,1:NRIMY+1,        :)     = XVT(:,2:NRIMY+2,      :)
-  XLBYWM(:,1:NRIMY+1,        :)     = XWT(:,1:NRIMY+1,  :)
+  XLBYUM(:,1:NRIMY+JPHEXT,        :)     = XUT(:,1:NRIMY+JPHEXT,      :)
+  XLBYVM(:,1:NRIMY+JPHEXT,        :)     = XVT(:,2:NRIMY+JPHEXT+1,      :)
+  XLBYWM(:,1:NRIMY+JPHEXT,        :)     = XWT(:,1:NRIMY+JPHEXT,  :)
 
 ENDIF
 IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
-  XLBYUM(:,ILBY-NRIMY:ILBY,:)     = XUT(:,IJU-NRIMY:IJU,  :)
-  XLBYVM(:,ILBY-NRIMY:ILBY,:)     = XVT(:,IJU-NRIMY:IJU,  :)
-  XLBYWM(:,ILBY-NRIMY:ILBY,:)     = XWT(:,IJU-NRIMY:IJU,  :)
+  XLBYUM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XUT(:,IJU-NRIMY-JPHEXT+1:IJU,  :)
+  XLBYVM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XVT(:,IJU-NRIMY-JPHEXT+1:IJU,  :)
+  XLBYWM(:,ILBY-NRIMY-JPHEXT+1:ILBY,:)     = XWT(:,IJU-NRIMY-JPHEXT+1:IJU,  :)
 
 ENDIF
 

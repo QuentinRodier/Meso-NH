@@ -213,6 +213,7 @@ END MODULE MODI_NUM_DIFF
 !!                 05/06    (C.Lac)        Remove EPS
 !!                 05/07    (C.Lac)        Separation between variables
 !!                 07/09    (C.Lac)        Correction on budget calls
+!!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -305,52 +306,52 @@ GTKEALLOC = SIZE(PTKEM,1) /= 0
 !
 IF (ONUMDIFU) THEN
  IGRID = 2
- IF(NHALO == 1) THEN
+!!$ IF(NHALO == 1) THEN
   TZHALO2LIST => TPHALO2LIST
   TZHALO2LSLIST => TPHALO2LSLIST
   CALL NUM_DIFF_ALGO(PRUS, PUM, IGRID, MXM(PRHODJ), PDK2U, PDK4U, &
                      PLSUM,TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
- ELSE
-  CALL NUM_DIFF_ALGO(PRUS, PUM, IGRID, MXM(PRHODJ), PDK2U, PDK4U, PLSUM )
- ENDIF
+!!$ ELSE
+!!$  CALL NUM_DIFF_ALGO(PRUS, PUM, IGRID, MXM(PRHODJ), PDK2U, PDK4U, PLSUM )
+!!$ ENDIF
 !
  IGRID = 3
- IF(NHALO == 1) THEN
+!!$ IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   TZHALO2LSLIST => TZHALO2LSLIST%NEXT
   CALL NUM_DIFF_ALGO(PRVS, PVM, IGRID, MYM(PRHODJ), PDK2U, PDK4U, &
                      PLSVM, TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
- ELSE
-  CALL NUM_DIFF_ALGO(PRVS, PVM, IGRID, MYM(PRHODJ), PDK2U, PDK4U, PLSVM )
- ENDIF
+!!$ ELSE
+!!$  CALL NUM_DIFF_ALGO(PRVS, PVM, IGRID, MYM(PRHODJ), PDK2U, PDK4U, PLSVM )
+!!$ ENDIF
 !
  IGRID = 4
 !
- IF(NHALO == 1) THEN
+!!$ IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   TZHALO2LSLIST => TZHALO2LSLIST%NEXT
   CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(1,IKU,1,PRHODJ), PDK2U, PDK4U, &
                      PLSWM, TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
- ELSE
-  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(1,IKU,1,PRHODJ), PDK2U, PDK4U, PLSWM )
- ENDIF
+!!$ ELSE
+!!$  CALL NUM_DIFF_ALGO(PRWS, PWM, IGRID, MZM(1,IKU,1,PRHODJ), PDK2U, PDK4U, PLSWM )
+!!$ ENDIF
 ENDIF
 !
 IF (ONUMDIFTH) THEN
  IGRID = 1
 !
- IF(NHALO == 1) THEN
+!!$ IF(NHALO == 1) THEN
   TZHALO2LIST => TZHALO2LIST%NEXT
   TZHALO2LSLIST => TZHALO2LSLIST%NEXT
   IF (OZDIFFU) THEN   ! call z-diffusion for potential temperature
    CALL NUM_DIFF_ALGO_Z(PRTHS, PTHM, IGRID, PRHODJ,            &
                          PDK2TH, PDK4TH, PLSTHM,               &
                          TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-  ELSE
-   CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ,              &
-                      PDK2TH, PDK4TH, PLSTHM,                  &
-                     TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-  ENDIF
+!!$  ELSE
+!!$   CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ,              &
+!!$                      PDK2TH, PDK4TH, PLSTHM,                  &
+!!$                     TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
+!!$  ENDIF
  ELSE
   IF (OZDIFFU) THEN   ! call z-diffusion for potential temperature
     CALL NUM_DIFF_ALGO_Z(PRTHS, PTHM, IGRID, PRHODJ, &
@@ -362,31 +363,31 @@ IF (ONUMDIFTH) THEN
  ENDIF
 !
  IF ( GTKEALLOC ) THEN
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     TZHALO2LIST => TZHALO2LIST%NEXT
     CALL NUM_DIFF_ALGO(PRTKES, PTKEM, IGRID, PRHODJ, &
                        PDK2TH, PDK4TH, TPHALO2=TZHALO2LIST%HALO2)
-  ELSE
-    CALL NUM_DIFF_ALGO(PRTKES, PTKEM, IGRID, PRHODJ, PDK2TH, PDK4TH)
-  ENDIF
+!!$  ELSE
+!!$    CALL NUM_DIFF_ALGO(PRTKES, PTKEM, IGRID, PRHODJ, PDK2TH, PDK4TH)
+!!$  ENDIF
  ENDIF
 !
 
 ! Case with KRR moist variables
 !
  IF(KRR >= 1) THEN
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     TZHALO2LIST => TZHALO2LIST%NEXT
     TZHALO2LSLIST => TZHALO2LSLIST%NEXT
     IF (OZDIFFU) THEN   ! call z-diffusion for wv mixing ratio
       CALL NUM_DIFF_ALGO_Z(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
                            PDK2TH, PDK4TH,                             &
                            PLSRVM, TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-    ELSE
-      CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, & 
-                         PDK2TH, PDK4TH, PLSRVM,                     &
-                         TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-    ENDIF
+!!$    ELSE
+!!$      CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, & 
+!!$                         PDK2TH, PDK4TH, PLSRVM,                     &
+!!$                         TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
+!!$    ENDIF
   ELSE
     IF (OZDIFFU) THEN   ! call z-diffusion for wv mixing ratio
       CALL NUM_DIFF_ALGO_Z(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
@@ -403,14 +404,14 @@ IF (ONUMDIFTH) THEN
 ! This might be added later (is CLW stored in JRR = 2?)
 !
  DO JRR=2, KRR
-  IF(NHALO == 1) THEN 
+!!$  IF(NHALO == 1) THEN 
     TZHALO2LIST => TZHALO2LIST%NEXT
     CALL NUM_DIFF_ALGO(PRRS(:,:,:,JRR), PRM(:,:,:,JRR), IGRID, PRHODJ, &
                        PDK2TH, PDK4TH, TPHALO2=TZHALO2LIST%HALO2)
-  ELSE
-    CALL NUM_DIFF_ALGO(PRRS(:,:,:,JRR), PRM(:,:,:,JRR), IGRID, PRHODJ, &
-                       PDK2TH, PDK4TH )
-  ENDIF
+!!$  ELSE
+!!$    CALL NUM_DIFF_ALGO(PRRS(:,:,:,JRR), PRM(:,:,:,JRR), IGRID, PRHODJ, &
+!!$                       PDK2TH, PDK4TH )
+!!$  ENDIF
  ENDDO
 !
 ENDIF
@@ -418,14 +419,14 @@ ENDIF
 !
 IF (ONUMDIFSV) THEN
  DO JSV=1,KSV
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     TZHALO2LIST => TZHALO2LIST%NEXT
     CALL NUM_DIFF_ALGO(PRSVS(:,:,:,JSV), PSVM(:,:,:,JSV), IGRID, PRHODJ,&
                        PDK2SV, PDK4SV, TPHALO2=TZHALO2LIST%HALO2)
-  ELSE
-    CALL NUM_DIFF_ALGO(PRSVS(:,:,:,JSV), PSVM(:,:,:,JSV), IGRID, PRHODJ, &
-                       PDK2SV, PDK4SV )
-  ENDIF
+!!$  ELSE
+!!$    CALL NUM_DIFF_ALGO(PRSVS(:,:,:,JSV), PSVM(:,:,:,JSV), IGRID, PRHODJ, &
+!!$                       PDK2SV, PDK4SV )
+!!$  ENDIF
  ENDDO
 END IF
 !
@@ -586,28 +587,28 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE-1
-  ELSE
-    IW=IIB
-    IE=IIE
-  END IF  
+!!$  ELSE
+!!$    IW=IIB
+!!$    IE=IIE
+!!$  END IF  
 !
 
 
 IF (PRESENT(PLSFIELD)) THEN
   ZPTBFIELD(IW-2:IE+2,IJB-1:IJE+1,:) = PFIELDM(IW-2:IE+2,IJB-1:IJE+1,:) - PLSFIELD(IW-2:IE+2,IJB-1:IJE+1,:)
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     ZPTBFIELD(IW-3,IJB-1:IJE+1,:) = TPHALO2%WEST(IJB-1:IJE+1,:) - TPHALO2LS%WEST(IJB-1:IJE+1,:)
     ZPTBFIELD(IE+3,IJB-1:IJE+1,:) = TPHALO2%EAST(IJB-1:IJE+1,:) - TPHALO2LS%EAST(IJB-1:IJE+1,:)
-  ENDIF
+!!$  ENDIF
 ELSE
   ZPTBFIELD(IW-2:IE+2,IJB-1:IJE+1,:) = PFIELDM(IW-2:IE+2,IJB-1:IJE+1,:)
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     ZPTBFIELD(IW-3,IJB-1:IJE+1,:) = TPHALO2%WEST(IJB-1:IJE+1,:)
     ZPTBFIELD(IE+3,IJB-1:IJE+1,:) = TPHALO2%EAST(IJB-1:IJE+1,:)
-  ENDIF
+!!$  ENDIF
 ENDIF
 
 !
@@ -623,33 +624,37 @@ CASE ('OPEN','WALL','NEST')
       IW=IIB+1
     END IF
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IW=IIB+1
-    ELSE
-      IW=IIB
-    ENDIF
+!!$    ELSE
+!!$      IW=IIB
+!!$    ENDIF
   ENDIF
-  IF (LEAST_ll() .OR. NHALO == 1) THEN
+!!$  IF (LEAST_ll() .OR. NHALO == 1) THEN
     IE=IIE-1
-  ELSE
-    IE=IIE
-  END IF  
+!!$  ELSE
+!!$    IE=IIE
+!!$  END IF  
 
 
 IF (PRESENT(PLSFIELD)) THEN
   ZPTBFIELD(IW-2:IE+2,IJB-1:IJE+1,:) = PFIELDM(IW-2:IE+2,IJB-1:IJE+1,:) - PLSFIELD(IW-2:IE+2,IJB-1:IJE+1,:)
-  IF((NHALO == 1).AND.(.NOT.LWEST_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LWEST_ll())) THEN
+  IF(.NOT.LWEST_ll()) THEN
     ZPTBFIELD(IW-3,IJB-1:IJE+1,:) = TPHALO2%WEST(IJB-1:IJE+1,:) - TPHALO2LS%WEST(IJB-1:IJE+1,:)
   ENDIF
-  IF((NHALO == 1).AND.(.NOT.LEAST_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LEAST_ll())) THEN
+  IF(.NOT.LEAST_ll()) THEN
     ZPTBFIELD(IE+3,IJB-1:IJE+1,:) = TPHALO2%EAST(IJB-1:IJE+1,:) - TPHALO2LS%EAST(IJB-1:IJE+1,:)
   ENDIF
 ELSE
   ZPTBFIELD(IW-2:IE+2,IJB-1:IJE+1,:) = PFIELDM(IW-2:IE+2,IJB-1:IJE+1,:)
-  IF((NHALO == 1).AND.(.NOT.LWEST_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LWEST_ll())) THEN
+  IF(.NOT.LWEST_ll()) THEN
     ZPTBFIELD(IW-3,IJB-1:IJE+1,:) = TPHALO2%WEST(IJB-1:IJE+1,:)
   ENDIF
-  IF((NHALO == 1).AND.(.NOT.LEAST_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LEAST_ll())) THEN
+  IF(.NOT.LEAST_ll()) THEN
     ZPTBFIELD(IE+3,IJB-1:IJE+1,:) = TPHALO2%EAST(IJB-1:IJE+1,:)
   ENDIF
 ENDIF
@@ -677,13 +682,15 @@ END SELECT
 
 ! a) Determine E/W boundaries
 
-IF ((NHALO == 1).AND.(HLBCX(1) == 'CYCL').OR.((.NOT.LWEST_ll()).AND.(NHALO == 1)) ) THEN
+!!$IF ((NHALO == 1).AND.(HLBCX(1) == 'CYCL').OR.((.NOT.LWEST_ll()).AND.(NHALO == 1)) ) THEN
+IF ( (HLBCX(1) == 'CYCL') .OR. (.NOT.LWEST_ll()) ) THEN
   IWZ = IW-1
 ELSE
   IWZ = IW
 ENDIF
 
-IF ((NHALO == 1).AND.(HLBCX(1) == 'CYCL').OR.((.NOT.LEAST_ll()).AND.(NHALO == 1)) ) THEN
+!!$IF ((NHALO == 1).AND.(HLBCX(1) == 'CYCL').OR.((.NOT.LEAST_ll()).AND.(NHALO == 1)) ) THEN
+IF ((HLBCX(1) == 'CYCL').OR.(.NOT.LEAST_ll()) ) THEN
   IEZ = IE+1
 ELSE
   IEZ = IE
@@ -772,27 +779,27 @@ IF ( .NOT. L2D ) THEN
   CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 !
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IS=IJB+1
       IN=IJE-1
-    ELSE
-      IS=IJB
-      IN=IJE
-    END IF
+!!$    ELSE
+!!$      IS=IJB
+!!$      IN=IJE
+!!$    END IF
 
 
 IF (PRESENT(PLSFIELD)) THEN
   ZPTBFIELD(IIB-1:IIE+1,IS-2:IN+2,:) = PFIELDM(IIB-1:IIE+1,IS-2:IN+2,:) - PLSFIELD(IIB-1:IIE+1,IS-2:IN+2,:)
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     ZPTBFIELD(IIB-1:IIE+1,IS-3,:) = TPHALO2%SOUTH(IIB-1:IIE+1,:) - TPHALO2LS%SOUTH(IIB-1:IIE+1,:)
     ZPTBFIELD(IIB-1:IIE+1,IN+3,:) = TPHALO2%NORTH(IIB-1:IIE+1,:) - TPHALO2LS%NORTH(IIB-1:IIE+1,:)
-  ENDIF
+!!$  ENDIF
 ELSE
   ZPTBFIELD(IIB-1:IIE+1,IS-2:IN+2,:) = PFIELDM(IIB-1:IIE+1,IS-2:IN+2,:)
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     ZPTBFIELD(IIB-1:IIE+1,IS-3,:) = TPHALO2%SOUTH(IIB-1:IIE+1,:)
     ZPTBFIELD(IIB-1:IIE+1,IN+3,:) = TPHALO2%NORTH(IIB-1:IIE+1,:)
-  ENDIF
+!!$  ENDIF
 ENDIF
 
 !!! HALOS ARE PROBABLY ALSO NEEDED FOR THE INTERPOLATION COEFFICIENTS??!!
@@ -811,33 +818,36 @@ ENDIF
         IS=IJB+1
       END IF
     ELSE
-      IF(NHALO == 1) THEN
+!!$      IF(NHALO == 1) THEN
         IS=IJB+1
-      ELSE
-        IS=IJB
-      ENDIF
+!!$      ELSE
+!!$        IS=IJB
+!!$      ENDIF
     ENDIF
-    IF (LNORTH_ll() .OR. NHALO == 1) THEN
+!!$    IF (LNORTH_ll() .OR. NHALO == 1) THEN
       IN=IJE-1
-    ELSE
-      IN=IJE
-    END IF
-
+!!$    ELSE
+!!$      IN=IJE
+!!$    END IF
 
 IF (PRESENT(PLSFIELD)) THEN
   ZPTBFIELD(IIB-1:IIE+1,IS-2:IN+2,:) = PFIELDM(IIB-1:IIE+1,IS-2:IN+2,:) - PLSFIELD(IIB-1:IIE+1,IS-2:IN+2,:)
-  IF((NHALO == 1).AND.(.NOT.LSOUTH_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LSOUTH_ll())) THEN
+  IF(.NOT.LSOUTH_ll()) THEN
     ZPTBFIELD(IIB-1:IIE+1,IS-3,:) = TPHALO2%SOUTH(IIB-1:IIE+1,:) - TPHALO2LS%SOUTH(IIB-1:IIE+1,:)
   ENDIF
-  IF((NHALO == 1).AND.(.NOT.LNORTH_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LNORTH_ll())) THEN
+  IF(.NOT.LNORTH_ll()) THEN
     ZPTBFIELD(IIB-1:IIE+1,IN+3,:) = TPHALO2%NORTH(IIB-1:IIE+1,:) - TPHALO2LS%NORTH(IIB-1:IIE+1,:)
   ENDIF
 ELSE
   ZPTBFIELD(IIB-1:IIE+1,IS-2:IN+2,:) = PFIELDM(IIB-1:IIE+1,IS-2:IN+2,:)
-  IF((NHALO == 1).AND.(.NOT.LSOUTH_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LSOUTH_ll())) THEN
+  IF(.NOT.LSOUTH_ll()) THEN
     ZPTBFIELD(IIB-1:IIE+1,IS-3,:) = TPHALO2%SOUTH(IIB-1:IIE+1,:)
   ENDIF
-  IF((NHALO == 1).AND.(.NOT.LNORTH_ll())) THEN
+!!$  IF((NHALO == 1).AND.(.NOT.LNORTH_ll())) THEN
+  IF(.NOT.LNORTH_ll()) THEN
     ZPTBFIELD(IIB-1:IIE+1,IN+3,:) = TPHALO2%NORTH(IIB-1:IIE+1,:)
   ENDIF
 ENDIF
@@ -865,13 +875,15 @@ ENDIF
 
 ! a) Determine E/W boundaries
 
-IF ((NHALO == 1).AND.(HLBCY(1) == 'CYCL').OR.((.NOT.LSOUTH_ll()).AND.(NHALO == 1)) ) THEN
+!!$IF ((NHALO == 1).AND.(HLBCY(1) == 'CYCL').OR.((.NOT.LSOUTH_ll()).AND.(NHALO == 1)) ) THEN
+IF ((HLBCY(1) == 'CYCL').OR.(.NOT.LSOUTH_ll()) ) THEN
   ISZ = IS-1
 ELSE
   ISZ = IS
 ENDIF
 
-IF ((NHALO == 1).AND.(HLBCY(1) == 'CYCL').OR.((.NOT.LNORTH_ll()).AND.(NHALO == 1)) ) THEN
+!!$IF ((NHALO == 1).AND.(HLBCY(1) == 'CYCL').OR.((.NOT.LNORTH_ll()).AND.(NHALO == 1)) ) THEN
+IF ((HLBCY(1) == 'CYCL').OR.( .NOT.LNORTH_ll() ) ) THEN
   INZ = IN+1
 ELSE
   INZ = IN
@@ -1061,19 +1073,19 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE-1
-  ELSE
-    IW=IIB
-    IE=IIE
-  END IF  
+!!$  ELSE
+!!$    IW=IIB
+!!$    IE=IIE
+!!$  END IF  
 !
   IF (PRESENT(PLSFIELD)) THEN
 !
 !*       1.1.1  Case with LS fields
 !
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
 !
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) - PRHODJ(IW-1,:,:) *       &
       PDK4*(                                                             &
@@ -1093,7 +1105,7 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
           +4.*( PLSFIELD(IE,:,:)    +  PLSFIELD(IE+2,:,:)  )             &
           -6.*  PLSFIELD(IE+1,:,:)  )
 !
-    ENDIF
+!!$    ENDIF
 !
 !!$    PRFIELDS(IW:IE,:,:) = PRFIELDS(IW:IE,:,:)-PRHODJ(IW:IE,:,:) *   &
 !!$          PDK4*DX4(PFIELDM(IW-2:IE+2,:,:)-PLSFIELD(IW-2:IE+2,:,:))
@@ -1111,7 +1123,7 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
 !*       1.1.2  Case without LS fields
 !
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
 !
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) - PRHODJ(IW-1,:,:) *       &
       PDK4*(                                                             &
@@ -1125,7 +1137,7 @@ CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
          -4.*(  PFIELDM(IE,:,:)    +  PFIELDM(IE+2,:,:)    )             &
          +6.*   PFIELDM(IE+1,:,:)  )
 !
-    ENDIF
+!!$    ENDIF
 !
 !!$    PRFIELDS(IW:IE,:,:) = PRFIELDS(IW:IE,:,:)-PRHODJ(IW:IE,:,:) *   &
 !!$          PDK4*DX4(PFIELDM(IW-2:IE+2,:,:))
@@ -1152,17 +1164,17 @@ CASE ('OPEN','WALL','NEST')
       IW=IIB+1
     END IF
   ELSE
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IW=IIB+1
-    ELSE
-      IW=IIB
-    ENDIF
+!!$    ELSE
+!!$      IW=IIB
+!!$    ENDIF
   ENDIF
-  IF (LEAST_ll() .OR. NHALO == 1) THEN
+!!$  IF (LEAST_ll() .OR. NHALO == 1) THEN
     IE=IIE-1
-  ELSE
-    IE=IIE
-  END IF  
+!!$  ELSE
+!!$    IE=IIE
+!!$  END IF  
 !
   IF (PRESENT(PLSFIELD)) THEN
 !
@@ -1177,7 +1189,8 @@ CASE ('OPEN','WALL','NEST')
                  PFIELDM(IW-2,:,:)  -2.*PFIELDM(IW-1,:,:)  + PFIELDM(IW,:,:)    &
                 -PLSFIELD(IW-2,:,:) +2.*PLSFIELD(IW-1,:,:) - PLSFIELD(IW,:,:)   )
 !
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) - PRHODJ(IW-1,:,:) *        &
       PDK4*(                                                              &
@@ -1197,7 +1210,8 @@ CASE ('OPEN','WALL','NEST')
                 PFIELDM(IE,:,:)  -2.*PFIELDM(IE+1,:,:)  + PFIELDM(IE+2,:,:)   &
               - PLSFIELD(IE,:,:) +2.*PLSFIELD(IE+1,:,:) - PLSFIELD(IE+2,:,:)  )
 !
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !
       PRFIELDS(IE+1,:,:) = PRFIELDS(IE+1,:,:) - PRHODJ(IE+1,:,:) *      &
       PDK4*(                                                            &
@@ -1235,7 +1249,8 @@ CASE ('OPEN','WALL','NEST')
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) + PRHODJ(IW-1,:,:) *       &
         PDK2*( PFIELDM(IW-2,:,:) -2.*PFIELDM(IW-1,:,:) + PFIELDM(IW,:,:) )
 !
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !
       PRFIELDS(IW-1,:,:) = PRFIELDS(IW-1,:,:) - PRHODJ(IW-1,:,:) *       &
       PDK4*(                                                             & 
@@ -1250,7 +1265,8 @@ CASE ('OPEN','WALL','NEST')
       PRFIELDS(IE+1,:,:) = PRFIELDS(IE+1,:,:) + PRHODJ(IE+1,:,:) *       &
         PDK2*( PFIELDM(IE,:,:) -2.*PFIELDM(IE+1,:,:) + PFIELDM(IE+2,:,:) )
 !
-    ELSEIF (NHALO == 1) THEN
+!!$    ELSEIF (NHALO == 1) THEN
+    ELSE
 !
       PRFIELDS(IE+1,:,:) = PRFIELDS(IE+1,:,:) - PRHODJ(IE+1,:,:) *       &
       PDK4*(                                                             &
@@ -1290,19 +1306,19 @@ IF ( .NOT. L2D ) THEN
   CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 !
-    IF(NHALO == 1) THEN
+!!$    IF(NHALO == 1) THEN
       IS=IJB+1
       IN=IJE-1
-    ELSE
-      IS=IJB
-      IN=IJE
-    END IF
+!!$    ELSE
+!!$      IS=IJB
+!!$      IN=IJE
+!!$    END IF
 !
     IF (PRESENT(PLSFIELD)) THEN
 !
 !*       2.1.1  Case with LS fields
 !
-      IF(NHALO == 1) THEN
+!!$      IF(NHALO == 1) THEN
 !
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) - PRHODJ(:,IS-1,:) *      &
         PDK4*(                                                            &
@@ -1322,7 +1338,7 @@ IF ( .NOT. L2D ) THEN
             +4.*( PLSFIELD(:,IN,:)     +  PLSFIELD(:,IN+2,:) )            &
             -6.*  PLSFIELD(:,IN+1,:)   )
 !
-      ENDIF
+!!$      ENDIF
 !
 !!$      PRFIELDS(:,IS:IN,:) = PRFIELDS(:,IS:IN,:)-PRHODJ(:,IS:IN,:) *   &
 !!$            PDK4*DY4(PFIELDM(:,IS-2:IN+2,:)-PLSFIELD(:,IS-2:IN+2,:))
@@ -1341,7 +1357,7 @@ IF ( .NOT. L2D ) THEN
 !*       2.1.2  Case without LS fields
 !
 !
-      IF(NHALO == 1) THEN
+!!$      IF(NHALO == 1) THEN
 !
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) - PRHODJ(:,IS-1,:) *      &
         PDK4*(                                                            &
@@ -1355,7 +1371,7 @@ IF ( .NOT. L2D ) THEN
             -4.*( PFIELDM(:,IN,:)      +  PFIELDM(:,IN+2,:)  )            &
             +6.*  PFIELDM(:,IN+1,:)    )
 !
-      ENDIF
+!!$      ENDIF
 !
 !!$      PRFIELDS(:,IS:IN,:) = PRFIELDS(:,IS:IN,:)-PRHODJ(:,IS:IN,:) *   &
 !!$            PDK4*DY4(PFIELDM(:,IS-2:IN+2,:))
@@ -1381,17 +1397,17 @@ IF ( .NOT. L2D ) THEN
         IS=IJB+1
       END IF
     ELSE
-      IF(NHALO == 1) THEN
+!!$      IF(NHALO == 1) THEN
         IS=IJB+1
-      ELSE
-        IS=IJB
-      ENDIF
+!!$      ELSE
+!!$        IS=IJB
+!!$      ENDIF
     ENDIF
-    IF (LNORTH_ll() .OR. NHALO == 1) THEN
+!!$    IF (LNORTH_ll() .OR. NHALO == 1) THEN
       IN=IJE-1
-    ELSE
-      IN=IJE
-    END IF  
+!!$    ELSE
+!!$      IN=IJE
+!!$    END IF  
 !*       2.2.1  Case with LS fields
 !
     IF (PRESENT(PLSFIELD)) THEN
@@ -1407,7 +1423,8 @@ IF ( .NOT. L2D ) THEN
                  PFIELDM(:,IS-2,:)  -2.*PFIELDM(:,IS-1,:)  + PFIELDM(:,IS,:)    &
                 -PLSFIELD(:,IS-2,:) +2.*PLSFIELD(:,IS-1,:) - PLSFIELD(:,IS,:)   )
 !
-      ELSEIF (NHALO == 1) THEN
+!!$      ELSEIF (NHALO == 1) THEN
+      ELSE
 !
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) - PRHODJ(:,IS-1,:) *            &
         PDK4*(                                                                  &
@@ -1427,7 +1444,8 @@ IF ( .NOT. L2D ) THEN
                    PFIELDM(:,IN,:)  -2.*PFIELDM(:,IN+1,:)   + PFIELDM(:,IN+2,:)  &
                   -PLSFIELD(:,IN,:) +2.*PLSFIELD(:,IN+1,:)  - PLSFIELD(:,IN+2,:) )
 !
-      ELSEIF (NHALO == 1) THEN
+!!$      ELSEIF (NHALO == 1) THEN
+      ELSE
 !
         PRFIELDS(:,IN+1,:) = PRFIELDS(:,IN+1,:) - PRHODJ(:,IN+1,:) *         &
         PDK4*(                                                               &
@@ -1466,7 +1484,8 @@ IF ( .NOT. L2D ) THEN
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) + PRHODJ(:,IS-1,:) *       &
           PDK2*( PFIELDM(:,IS-2,:) -2.*PFIELDM(:,IS-1,:) + PFIELDM(:,IS,:) )
 !
-      ELSEIF (NHALO == 1) THEN
+!!$      ELSEIF (NHALO == 1) THEN
+      ELSE
 !
         PRFIELDS(:,IS-1,:) = PRFIELDS(:,IS-1,:) - PRHODJ(:,IS-1,:) *      &
         PDK4*(                                                            &
@@ -1481,7 +1500,8 @@ IF ( .NOT. L2D ) THEN
         PRFIELDS(:,IN+1,:) = PRFIELDS(:,IN+1,:) + PRHODJ(:,IN+1,:) *       &
           PDK2*( PFIELDM(:,IN,:) -2.*PFIELDM(:,IN+1,:) + PFIELDM(:,IN+2,:) )
 !
-      ELSEIF (NHALO == 1) THEN
+!!$      ELSEIF (NHALO == 1) THEN
+      ELSE
 !
         PRFIELDS(:,IN+1,:) = PRFIELDS(:,IN+1,:) - PRHODJ(:,IN+1,:) *      &
         PDK4*(                                                            &

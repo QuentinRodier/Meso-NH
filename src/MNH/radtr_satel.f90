@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 diag 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !    #######################
      MODULE MODI_RADTR_SATEL 
@@ -104,6 +103,7 @@ END MODULE MODI_RADTR_SATEL
 !!    -------------
 !!      Original    29/03/00
 !!      J.-P. Chaboureau 15/04/03  add call to the subgrid condensation scheme
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -114,6 +114,7 @@ USE MODD_PARAMETERS
 USE MODD_GRID_n
 !
 USE MODD_RAD_TRANSF
+USE MODE_ll
 !
 USE MODI_INIT_NBMOD
 USE MODI_DETER_ANGLE
@@ -274,11 +275,8 @@ X1CO2 = PCCO2 / 44.0 * XMD
 IIU = SIZE(PTHT,1)
 IJU = SIZE(PTHT,2)
 IKU = SIZE(PTHT,3)
-IIB = 1 + JPHEXT
-IJB = 1 + JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
-IIE = IIU - JPHEXT
-IJE = IJU - JPHEXT
 IKE = IKU - JPVEXT
 !
 IKSTAE = SIZE(PSTATM,1)

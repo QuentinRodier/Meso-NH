@@ -70,7 +70,8 @@ END MODULE MODI_CH_AQUEOUS_TMICC2R2
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/05/08
-!!                        2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!      2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -172,10 +173,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PRCT,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PRCT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PRCT,3) - JPVEXT
 !

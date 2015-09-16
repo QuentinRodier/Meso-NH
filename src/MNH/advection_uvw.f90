@@ -89,6 +89,7 @@ END MODULE MODI_ADVECTION_UVW
 !!                  04/2011  (V. Masson & C. Lac)    splits the routine and adds
 !!                                                   time splitting
 !!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -100,6 +101,7 @@ USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
 USE MODD_PARAMETERS,  ONLY : JPVEXT
 USE MODD_CONF,        ONLY : NHALO
 USE MODD_BUDGET
+USE MODD_BLANK,       ONLY : NDUMMY1
 !
 USE MODI_SHUMAN
 USE MODI_CONTRAV
@@ -254,8 +256,8 @@ NULLIFY(TZFIELDS0_ll)
 !
 !-------------------------------------------------------------------------------
 !
-ISPLIT = 2 * KSPLIT_PPM
-ZTSTEP     = PTSTEP / REAL(ISPLIT)
+ISPLIT = 1 + NDUMMY1
+ZTSTEP = PTSTEP / REAL(ISPLIT)
 !
 !-------------------------------------------------------------------------------
 !

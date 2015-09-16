@@ -74,6 +74,7 @@ END MODULE MODI_ION_ATTACH_ELEC
 !!    -------------
 !!      Original    2010
 !!      Modifications:
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -91,6 +92,7 @@ USE MODD_RAIN_ICE_PARAM
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELEC
 USE MODD_BUDGET, ONLY : LBU_RSV
 USE MODD_REF,    ONLY : XTHVREFZ
+USE MODE_ll
 !
 USE MODI_BUDGET
 USE MODI_MOMG
@@ -149,10 +151,7 @@ REAL    :: ZCOMB         ! Recombination
 ZCQD = 4 * XPI * XEPSILON * XBOLTZ / XECHARGE
 ZCDIF = XBOLTZ /XECHARGE
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PTHT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PTHT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PTHT,3) - JPVEXT
 !

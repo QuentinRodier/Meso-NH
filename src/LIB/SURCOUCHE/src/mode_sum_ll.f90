@@ -10,6 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 
 !     ##################
@@ -2077,6 +2079,175 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
       END SUBROUTINE SUM_DIM2_ll
 !
 !     #####################################################
+      SUBROUTINE SUM_DIM1_DD_ll(PFIELD, PRES, KDIM, KINFO)
+!     #####################################################
+!
+!!****  *SUM_DIM1_DD_ll*-
+!
+!!    Purpose
+!!    -------
+!     The PFIELD argument is a local 1D array according the y-direction,
+!     result of local summations in x-direction.
+!     The purpose of this routine is to merge all the local sum arrays in a
+!     global one PRES.
+! 
+!!    Method
+!!    ------
+!     Each processor fills its part of PRES array in an intermediate buffer
+!     ZBUF with its local PFIELD, then we reduce the buffer in the result PRES.
+! 
+!!    External
+!!    --------
+!
+!     Module MODE_TOOLS_ll
+!       LEAST_ll, LWEST_ll, LNORTH_ll, LSOUTH_ll
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!     Module MODD_STRUCTURE_ll
+!       type MODELSPLITTING_ll
+!
+!     Module MODD_VAR_ll
+!       TCRRT_COMDATA - Current communication data structure for current model
+!                       and local processor
+!       TCRRT_PROCONF - Current configuration for current model
+!       IP -
+!       MPI_PRECISION -
+!       JPHALO -
+!
+!!    Author
+!!    ------
+!     Ph. Kloos      * CNRM - CERFACS *
+!
+!!    Modifications
+!!    -------------
+!     Original 27/06/98
+!              05/99 : P. Jabouille - N. Gicquel
+!
+!-------------------------------------------------------------------------------
+!
+!*        0.    DECLARATIONS
+!
+  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll
+!
+  USE MODD_VAR_ll, ONLY : IP, TCRRT_COMDATA, TCRRT_PROCONF, JPHALO, &
+                          MPI_PRECISION
+!
+  USE MODE_TOOLS_ll, ONLY : LWEST_ll, LEAST_ll, LNORTH_ll, LSOUTH_ll
+!
+ USE MODE_REPRO_SUM
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+  IMPLICIT NONE
+!
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+!
+!*       0.1   Declarations of dummy arguments :
+!
+  REAL, DIMENSION(:,:), INTENT(IN)   :: PFIELD
+  REAL, DIMENSION(:), INTENT(OUT)    :: PRES
+  INTEGER              , INTENT(IN)  :: KDIM
+!
+  INTEGER, INTENT(OUT) :: KINFO ! MPI return status
+!
+!*       0.2   Declarations of local variables :
+!
+  INTEGER :: IXB, IXE, IXBG, IXEG, IJB, IJE, IJBG, IJEG ! local and global displacements
+!
+   TYPE(DOUBLE_DOUBLE), DIMENSION(SIZE(PFIELD,1),SIZE(PFIELD,2)) :: ZBUF
+   TYPE(DOUBLE_DOUBLE), DIMENSION(SIZE(PRES))                    :: ZBUF1D_ll
+!
+  TYPE(MODELSPLITTING_ll), POINTER :: TZSPLIT ! Intermediate model splitting
+!
+  INTEGER :: JI,JJ
+!
+!-----------------------------------------------------------------
+!
+!*       1.    Get the current splitting configuration and compute displacements
+!
+  TZSPLIT => TCRRT_PROCONF%TSPLITS_B(IP)
+!
+  ZBUF%R      = 0.0   ; ZBUF%E      = 0.0
+  ZBUF1D_ll%R = 0.0   ; ZBUF1D_ll%E = 0.0
+!
+  IF (KDIM.EQ.1) THEN
+     IF (LSOUTH_ll()) THEN
+        IJB  = 1
+        IJBG = TZSPLIT%NYORE
+     ELSE
+        IJB  = 1+JPHALO
+        IJBG = TZSPLIT%NYORP
+     ENDIF
+!
+     IF (LNORTH_ll()) THEN
+        IJE  = SIZE(PFIELD, 2)
+        IJEG = TZSPLIT%NYENDE
+     ELSE
+        IJE  = SIZE(PFIELD, 2)-JPHALO
+        IJEG = TZSPLIT%NYENDP
+     ENDIF
+!
+!-----------------------------------------------------------------
+!
+!*       2.    Fill the intermediate buffer
+!
+     ZBUF(:,IJB:IJE)%R = PFIELD(:,IJB:IJE)
+     DO JJ=IJBG,IJEG
+        ZBUF1D_ll(JJ) = SUM_DD_DD1 (ZBUF(:,JJ-IJBG+IJB))
+     END DO
+!
+!-----------------------------------------------------------------
+!
+!*       3.    Merge local sums
+!
+    CALL  REDUCE_SUM_1DD_ll(ZBUF1D_ll, KINFO)
+    PRES = ZBUF1D_ll%R
+!
+!-----------------------------------------------------------------
+  ELSE
+     IF (KDIM.EQ.2) THEN
+        IF (LWEST_ll()) THEN
+           IXB  = 1
+           IXBG = TZSPLIT%NXORE
+        ELSE
+           IXB  = 1+JPHALO
+           IXBG = TZSPLIT%NXORP
+        ENDIF
+!
+        IF (LEAST_ll()) THEN
+           IXE  = SIZE(PFIELD, 1)
+           IXEG = TZSPLIT%NXENDE
+        ELSE
+           IXE  = SIZE(PFIELD, 1)-JPHALO
+           IXEG = TZSPLIT%NXENDP
+        ENDIF
+!
+!-----------------------------------------------------------------
+!
+!*       2.    Fill the intermediate buffer
+!
+        ZBUF(IXB:IXE,:)%R = PFIELD(IXB:IXE,:)
+        DO JI=IXBG,IXEG
+           ZBUF1D_ll(JI) = SUM_DD_DD1 (ZBUF(JI-IXBG+IXB,:))
+        END DO
+!
+!-----------------------------------------------------------------
+!
+!*       2.    Merge local sums
+!
+        CALL  REDUCE_SUM_1DD_ll(ZBUF1D_ll, KINFO)     
+        PRES = ZBUF1D_ll%R
+     ENDIF
+  ENDIF
+  
+      END SUBROUTINE SUM_DIM1_DD_ll
+!     #####################################################
       SUBROUTINE SUM_DIM1_ll(PFIELD, PRES, KINFO)
 !     #####################################################
 !
@@ -2294,7 +2465,8 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSUM_ll
 !           ------------------------------
 !
   IF (FIRST_CALL_DD) CALL INIT_DD(KINFO)
-  CALL MPI_ALLREDUCE(PRES%R, ZRES%R, 1, MNH_DOUBLE_DOUBLE , &
+  ZRES%R = 0.0 ;  ZRES%E = 0.0
+  CALL MPI_ALLREDUCE(PRES, ZRES, 1, MNH_DOUBLE_DOUBLE , &
                      MNH_SUM_DD, NMNH_COMM_WORLD, KINFO)
 
   PRES = ZRES
@@ -2410,7 +2582,8 @@ END SUBROUTINE REDUCE_SUM_0DD_ll
 !           ------------------------------
 !
   IF (FIRST_CALL_DD) CALL INIT_DD(KINFO)
-  CALL MPI_ALLREDUCE(PRES%R, ZRES%R, SIZE(PRES), MNH_DOUBLE_DOUBLE , &
+  ZRES%R = 0.0 ;  ZRES%E = 0.0
+  CALL MPI_ALLREDUCE(PRES, ZRES, SIZE(PRES), MNH_DOUBLE_DOUBLE , &
                      MNH_SUM_DD, NMNH_COMM_WORLD, KINFO)
 PRES = ZRES
 !

@@ -99,6 +99,7 @@ END MODULE MODI_CH_AQUEOUS_TMICICE
 !!    M. Leriche 19/07/2010 add riming, freezing and melting for ice phase(ICE3)
 !!    M. Leriche 17/09/2010 add OUSECHIC flag
 !!    Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -275,10 +276,7 @@ ZT(:,:,:) = PTHT(:,:,:) * ( PPABST(:,:,:) / XP00 ) ** (XRD/XCPD)
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PRCT,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PRCT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PRCT,3) - JPVEXT
 !

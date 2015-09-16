@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_RETRIEVE2_NEST_INFO_n
@@ -92,6 +91,7 @@ END MODULE MODI_RETRIEVE2_NEST_INFO_n
 !!      Original        25/09/96
 !!                      22/09/99 PGD modules for dad, and _n module for son
 !!      J Stein         04/07/01 add cartesian case
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -290,13 +290,13 @@ ZPGDYHAT(0)        = 2.* XPGDYHAT(1) - XPGDYHAT(2)
 DO JI=1,NIMAX+2*JPHEXT
   JIBOX=(JI+KDXRATIO-1-JPHEXT)/KDXRATIO + KXOR
   ZCOEF= FLOAT(MOD(JI+KDXRATIO-1-JPHEXT,KDXRATIO))/FLOAT(KDXRATIO)
-  ZXHAT(JI)=(1.-ZCOEF)*ZPGDXHAT(JIBOX)+ZCOEF*ZPGDXHAT(JIBOX+1)
+  ZXHAT(JI)=(1.-ZCOEF)*ZPGDXHAT(JIBOX+JPHEXT-1)+ZCOEF*ZPGDXHAT(JIBOX+JPHEXT) ! +1
 END DO
 !
 DO JJ=1,NJMAX+2*JPHEXT
   JJBOX=(JJ+KDYRATIO-1-JPHEXT)/KDYRATIO + KYOR
   ZCOEF= FLOAT(MOD(JJ+KDYRATIO-1-JPHEXT,KDYRATIO))/FLOAT(KDYRATIO)
-  ZYHAT(JJ)=(1.-ZCOEF)*ZPGDYHAT(JJBOX)+ZCOEF*ZPGDYHAT(JJBOX+1)
+  ZYHAT(JJ)=(1.-ZCOEF)*ZPGDYHAT(JJBOX+JPHEXT-1)+ZCOEF*ZPGDYHAT(JJBOX+JPHEXT) ! +1
 END DO
 !
 IF (     ANY(ABS(XXHAT(:)-ZXHAT(:))>ZEPS)            &

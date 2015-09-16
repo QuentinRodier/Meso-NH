@@ -162,6 +162,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                  20/05/06             Remove EPS
 !!                  10/04/2014 (J.Escobar &  M.Faivre ) add reprod_sum on XEXNTOP
 !!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -256,13 +257,10 @@ INTEGER,DIMENSION(SIZE(PZMASS_LS,1),SIZE(PZMASS_LS,2))   :: IJCOUNT
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PZMASS_LS,1)
 IJU=SIZE(PZMASS_LS,2)
 IKU=SIZE(XZHAT)
-IIB=JPHEXT+1
-IIE=IIU-JPHEXT
-IJB=JPHEXT+1
-IJE=IJU-JPHEXT
 IKE=IKU-JPVEXT
 ILU=SIZE(PZMASS_LS,3)
 !

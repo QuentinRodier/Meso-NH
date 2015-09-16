@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_GRADIENT_M
@@ -160,6 +159,7 @@ END MODULE MODI_GRADIENT_M
 !!    -------------
 !!      Original    18/07/94
 !!                  19/07/00  add the LFLAT switch (J. Stein)
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -525,14 +525,14 @@ IF (.NOT. LFLAT) THEN
 !
   DO JI=1+JPHEXT,IIU
     PGX_M_U(JI,:,KKU)=  ( PY(JI,:,KKU)-PY(JI-1,:,KKU)  )  / PDXX(JI,:,KKU) 
-    PGX_M_U(JI,:,KKA)=  -999.
+    PGX_M_U(JI,:,KKA)=   PGX_M_U(JI,:,KKU) ! -999.
   END DO
 !
   PGX_M_U(1,:,:)=PGX_M_U(IIU-2*JPHEXT+1,:,:)
 ELSE
 !  PGX_M_U = DXM(PY) / PDXX
-  PGX_M_U(1+JPHEXT:IIU,:,:) = ( PY(1+JPHEXT:IIU,:,:)-PY(JPHEXT:IIU-1,:,:) ) &
-                             / PDXX(1+JPHEXT:IIU,:,:)
+  PGX_M_U(1+1:IIU,:,:) = ( PY(1+1:IIU,:,:)-PY(1:IIU-1,:,:) ) & ! +JPHEXT
+                             / PDXX(1+1:IIU,:,:)
 !
   PGX_M_U(1,:,:)=PGX_M_U(IIU-2*JPHEXT+1,:,:)
 ENDIF  
@@ -650,14 +650,14 @@ IF (.NOT. LFLAT) THEN
 !
   DO JJ=1+JPHEXT,IJU
     PGY_M_V(:,JJ,KKU)=  ( PY(:,JJ,KKU)-PY(:,JJ-1,KKU)  )  / PDYY(:,JJ,KKU) 
-    PGY_M_V(:,JJ,KKA)=  -999.
+    PGY_M_V(:,JJ,KKA)=  PGY_M_V(:,JJ,KKU) ! -999.
   END DO
 !
   PGY_M_V(:,1,:)=PGY_M_V(:,IJU-2*JPHEXT+1,:)
 ELSE
 !  PGY_M_V = DYM(PY)/PDYY
-  PGY_M_V(:,1+JPHEXT:IJU,:) = ( PY(:,1+JPHEXT:IJU,:)-PY(:,JPHEXT:IJU-1,:) ) & 
-                               / PDYY(:,1+JPHEXT:IJU,:)
+  PGY_M_V(:,1+1:IJU,:) = ( PY(:,1+1:IJU,:)-PY(:,1:IJU-1,:) ) & ! +JPHEXT
+                               / PDYY(:,1+1:IJU,:)
 !
   PGY_M_V(:,1,:)=PGY_M_V(:,IJU-2*JPHEXT+1,:)
 ENDIF  
@@ -752,7 +752,7 @@ PGZ_M_W(:,:,IKTB:IKTE) =  (PY(:,:,IKTB:IKTE)-PY(:,:,IKTB-KL:IKTE-KL))  &
                            / PDZZ(:,:,IKTB:IKTE)
 PGZ_M_W(:,:,KKU)=  (PY(:,:,KKU)-PY(:,:,KKU-KL))  &
                            / PDZZ(:,:,KKU)
-PGZ_M_W(:,:,KKA)=-999.
+PGZ_M_W(:,:,KKA)= PGZ_M_W(:,:,KKU) ! -999.
 !
 !-------------------------------------------------------------------------------
 !

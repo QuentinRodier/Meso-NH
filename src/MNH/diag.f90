@@ -70,8 +70,8 @@
 !!       D.Ricard 2015 : add LMOIST_ES
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
-!
-!
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -156,6 +156,8 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 !
+USE MODN_CONF, ONLY : JPHEXT , NHALO
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of local variables
@@ -220,6 +222,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
 NAMELIST/NAM_STO_FILE/ CFILES, NSTART_SUPP
+NAMELIST/NAM_CONF_DIAG/JPHEXT, NHALO 
 !
 !-------------------------------------------------------------------------------
 !

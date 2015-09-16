@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_8 microph 2008/06/27 17:38:00
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_RAIN_C2R2_KHKO
@@ -207,6 +206,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      C.Lac                06/14     C2R2_SEDIMENTATION replaced by
 !!                                     KHKO_SEDIMENTATION because of instability
 !!      G.Tanguy             07/14     FUSION C2R2 and KHKO
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -227,6 +227,7 @@ USE MODD_SALT
 USE MODI_BUDGET
 !
 USE MODE_FM
+USE MODE_ll
 USE MODE_FMWRIT
 USE MODI_GAMMA
 !
@@ -417,10 +418,7 @@ CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !*       1.     COMPUTE THE SLOPE PARAMETERS ZLBDC,ZLBDR
 !   	        ----------------------------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 !
@@ -556,6 +554,8 @@ CONTAINS
 !
 !*      0. DECLARATIONS
 !          ------------
+!JUAN
+USE MODI_GET_HALO
 !
 IMPLICIT NONE
 !
@@ -595,7 +595,7 @@ INTEGER                           :: J1
 !          the radiative tendency and
 !          the latent heat of vaporization Lv(T) and 
 !          the specific heat for moist air Cph
-!                    
+!  
 ZEPS= XMV / XMD
 ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:) * &
                    EXP(-XALPW+XBETAW/ZT(:,:,:)+XGAMW*ALOG(ZT(:,:,:))) - 1.0)
@@ -798,6 +798,7 @@ IF( INUCT >= 1 ) THEN
     ZZW1(:) = MIN( XCSTDCRIT * ZZW2(:) / ( ((ZZT(:)*ZSMAX(:))**3.)*ZRHODREF(:) ),&
                 1.E-5 )
   END WHERE
+  CALL GET_HALO(PRVS)
   ZW(:,:,:) = MIN( UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ),PRVS(:,:,:) )
 !
   PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
@@ -805,6 +806,9 @@ IF( INUCT >= 1 ) THEN
   ZW(:,:,:) = ZW(:,:,:)*(XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))/                      &
                    (PEXNREF(:,:,:)*( XCPD+XCPV*PRVT(:,:,:)+XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
   PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)
+!JUAN
+  CALL GET_HALO(PTHS)
+  CALL GET_HALO(PRCS)
 !  
   ZW(:,:,:)   = PCCS(:,:,:)
   PCCS(:,:,:) = UNPACK( ZZW2(:)+ZCCS(:),MASK=GNUCT(:,:,:),FIELD=ZW(:,:,:) )

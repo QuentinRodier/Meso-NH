@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 conv 2006/09/21 11:03:24
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_CONVECTION
@@ -159,6 +158,7 @@ END MODULE MODI_CONVECTION
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    11/12/98 
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -305,10 +305,7 @@ IIU = SIZE(PTHT,1)
 IJU = SIZE(PTHT,2)
 IKU = SIZE(PTHT,3)
 ICH1= SIZE(PCH1,4)
-IIB = 1 + JPHEXT
-IIE = IIU - JPHEXT
-IJB = 1 + JPHEXT
-IJE = IJU - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 ILON = (IIE-IIB+1) * (IJE-IJB+1)

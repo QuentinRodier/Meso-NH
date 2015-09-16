@@ -10,6 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 
 !     #############################
@@ -171,20 +173,20 @@ IF (KRIMX /=0) THEN
   IF (OLU) THEN
 ! full LB zone for u grid point  : 2:NRIMX+2,1:NJMAX_ll+ 2 * JPHEXT
     IXOR=2
-    IXEND=KRIMX+2
+    IXEND=KRIMX+JPHEXT+1 ! +2
     IYOR=1 
     IYEND=IJMAX_ll+ 2 * JPHEXT
   ELSE
 ! full LB zone, mass point  : 1:NRIMX+1,1:NJMAX_ll+ 2 * JPHEXT
     IXOR=1
-    IXEND=KRIMX+1
+    IXEND=KRIMX+JPHEXT  ! +1
     IYOR=1 
     IYEND=IJMAX_ll+ 2 * JPHEXT
   ENDIF
 ELSE
 ! 1 point LB zone : 1:1,1:NJMAX_ll+ 2 * JPHEXT
   IXOR=1
-  IXEND=1
+  IXEND=JPHEXT ! 1
   IYOR=1
   IYEND=IJMAX_ll+ 2 * JPHEXT
 ENDIF
@@ -228,14 +230,14 @@ END IF
 !     
 IF (KRIMX /=0) THEN 
 !  full LB zone : NIMAX_ll+JPHEXT-NRIMX +1:NIMAX_ll+ 2 *JPHEXT,1:NJMAX_ll+2 *JPHEXT
-  IXOR =IIMAX_ll+ 2 * JPHEXT - KRIMX
+  IXOR =IIMAX_ll+ 2 * JPHEXT - KRIMX-JPHEXT +1 ! -KRIMX
   IXEND=IIMAX_ll+ 2 * JPHEXT
   IYOR=1
   IYEND=IJMAX_ll+ 2 * JPHEXT
 ELSE
 !    1 point LB zone : NIMAX_ll+ 2 * JPHEXT:NIMAX_ll+ 2 *JPHEXT,1:NJMAX_ll+2 *JPHEXT
-  IXOR=IIMAX_ll + 2 * JPHEXT 
-  IXEND=IIMAX_ll + 2 * JPHEXT
+  IXOR=IIMAX_ll + 2 * JPHEXT  -JPHEXT +1      ! + 2 * JPHEXT
+  IXEND=IIMAX_ll + 2 * JPHEXT -JPHEXT +JPHEXT ! + 2 * JPHEXT
   IYOR=1
   IYEND=IJMAX_ll+ 2 * JPHEXT
 ENDIF
@@ -251,7 +253,7 @@ IF (IINFO /=1) THEN
     IXOR3DX = TZSPLIT%NXORE
     IYOR3DX = TZSPLIT%NYORE
 !
-    IL3DX = 2*(KRIMX+1)
+    IL3DX = 2*(KRIMX+JPHEXT) ! +1
     
     IF (KIB == 0) KIB = IL3DX - (IIMAX_ll+2*JPHEXT - IXORI - IXOR3DX  +1)
     KIE=IL3DX - (IIMAX_ll + 2 *JPHEXT - IXENDI- IXOR3DX  +1)
@@ -378,20 +380,20 @@ IF (KRIMY /=0) THEN
     IXOR=1
     IXEND=IIMAX_ll+ 2 * JPHEXT
     IYOR=2 
-    IYEND=KRIMY+2
+    IYEND=KRIMY+JPHEXT+1   !+2
   ELSE
 ! full LB zone, mass point  : 1:NIMAX_ll+ 2 * JPHEXT,1:NRIMY+1
     IXOR=1
     IXEND=IIMAX_ll+ 2 * JPHEXT
     IYOR=1 
-    IYEND=KRIMY+1
+    IYEND=KRIMY+JPHEXT  !+1 
   ENDIF
 ELSE
 ! 1 point LB zone : 1:NIMAX_ll+ 2 * JPHEXT,1:1
   IXOR=1
   IXEND=IIMAX_ll+ 2 * JPHEXT
   IYOR=1
-  IYEND=1
+  IYEND=JPHEXT !1
 ENDIF
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,YMODE,IINFO,KIP)
 IF (IINFO /= 1) THEN  ! no empty intersection
@@ -430,14 +432,14 @@ IF (KRIMY /=0) THEN
 !  full LB zone :1:NIMAX_ll+2 *JPHEXT, NJMAX_ll+JPHEXT-NRIMY +1:NJMAX_ll+ 2 *JPHEXT,
   IXOR =1
   IXEND=IIMAX_ll+ 2 * JPHEXT
-  IYOR = IJMAX_ll+ 2 * JPHEXT - KRIMY
+  IYOR = IJMAX_ll+ 2 * JPHEXT -KRIMY-JPHEXT +1 ! - KRIMY
   IYEND=IJMAX_ll+ 2 * JPHEXT
 ELSE
 !    1 point LB zone : 1:NJMAX_ll+2 *JPHEXT,NJMAX_ll+ 2 * JPHEXT:NJMAX_ll+ 2 *JPHEXT
   IXOR=1
   IXEND=IIMAX_ll+ 2 * JPHEXT
-  IYOR=IJMAX_ll + 2 * JPHEXT 
-  IYEND=IJMAX_ll + 2 * JPHEXT
+  IYOR=IJMAX_ll + 2 * JPHEXT  - JPHEXT + 1       ! + 2 * JPHEXT 
+  IYEND=IJMAX_ll + 2 * JPHEXT - JPHEXT + JPHEXT  ! + 2 * JPHEXT 
 ENDIF
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,YMODE,IINFO,KIP)
 IF (IINFO /=1) THEN
@@ -451,7 +453,7 @@ IF (IINFO /=1) THEN
     IXOR3DY = TZSPLIT%NXORE
     IYOR3DY = TZSPLIT%NYORE
 !
-    IL3DY = 2*(KRIMY+1)
+    IL3DY = 2*(KRIMY+JPHEXT ) ! +1
     KIB=IXORI  + IXOR3DY -1
     KIE=IXENDI + IXOR3DY -1
     IF (KJB == 0) KJB = IL3DY - (IJMAX_ll + 2 *JPHEXT - IYORI - IYOR3DY  +1)

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/09/25 14:23:42
 !-----------------------------------------------------------------
 !     ########################
       MODULE MODI_INI_PROG_VAR
@@ -95,6 +94,7 @@ END MODULE MODI_INI_PROG_VAR
 !!                                      another MesoNH simulation
 !!                  Aug 2012 (J.-P. Chaboureau) read the chem-file descriptor
 !!                  Fev 2015  (J.-P. Chaboureau) read instant T insteed of M
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -165,11 +165,8 @@ LOGICAL :: GFOUND                         ! Return code when searching namelist
 CALL GET_MODEL_NUMBER_ll(IMI)
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
-IIB=JPHEXT+1
-IIE=SIZE(XWT,1)-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(XWT,1)
-IJB=JPHEXT+1
-IJE=SIZE(XWT,2)-JPHEXT
 IJU=SIZE(XWT,2)
 IKU=SIZE(XWT,3)
 IIU_ll=NIMAX_ll + 2 * JPHEXT
@@ -424,19 +421,19 @@ ENDIF ! HCHEMFILE
 !
 IF (CTURB /= 'NONE') THEN
   IF ( LHORELAX_TKE) THEN
-    ALLOCATE(XLBXTKEM(2*NRIMX+2,IJU,IKU))
-    ALLOCATE(XLBYTKEM(IIU,2*NRIMY+2,IKU))
+    ALLOCATE(XLBXTKEM(2*NRIMX+2*JPHEXT,IJU,IKU))
+    ALLOCATE(XLBYTKEM(IIU,2*NRIMY+2*JPHEXT,IKU))
   ELSE
-    ALLOCATE(XLBXTKEM(2,IJU,IKU))
-    ALLOCATE(XLBYTKEM(IIU,2,IKU))
+    ALLOCATE(XLBXTKEM(2*JPHEXT,IJU,IKU))
+    ALLOCATE(XLBYTKEM(IIU,2*JPHEXT,IKU))
   END IF 
   !       
-  ILBX=SIZE(XLBXTKEM,1)/2-1     
-  XLBXTKEM(1:ILBX+1,:,:)         = XTKET(IIB-1:IIB-1+ILBX,:,:)
-  XLBXTKEM(ILBX+2:2*ILBX+2,:,:)  = XTKET(IIE+1-ILBX:IIE+1,:,:)
-  ILBY=SIZE(XLBYTKEM,2)/2-1
-  XLBYTKEM(:,1:ILBY+1,:)        = XTKET(:,IJB-1:IJB-1+ILBY,:)
-  XLBYTKEM(:,ILBY+2:2*ILBY+2,:) = XTKET(:,IJE+1-ILBY:IJE+1,:)
+  ILBX=SIZE(XLBXTKEM,1)/2-JPHEXT     
+  XLBXTKEM(1:ILBX+JPHEXT,:,:)                  = XTKET(1:ILBX+JPHEXT,:,:)
+  XLBXTKEM(ILBX+JPHEXT+1:2*ILBX+2*JPHEXT,:,:)  = XTKET(IIE+1-ILBX:IIE+JPHEXT,:,:)
+  ILBY=SIZE(XLBYTKEM,2)/2-JPHEXT
+  XLBYTKEM(:,1:ILBY+JPHEXT,:)                  = XTKET(:,1:ILBY+JPHEXT,:)
+  XLBYTKEM(:,ILBY+JPHEXT+1:2*ILBY+2*JPHEXT,:)  = XTKET(:,IJE+1-ILBY:IJE+JPHEXT,:)
 ELSE
   ALLOCATE(XLBXTKEM(0,0,0))
   ALLOCATE(XLBYTKEM(0,0,0))
@@ -444,19 +441,19 @@ END IF
 !
 IF ( NSV > 0 ) THEN 
   IF ( ANY( LHORELAX_SV(:)) ) THEN
-    ALLOCATE(XLBXSVM(2*NRIMX+2,IJU,IKU,NSV))
-    ALLOCATE(XLBYSVM(IIU,2*NRIMY+2,IKU,NSV))
+    ALLOCATE(XLBXSVM(2*NRIMX+2*JPHEXT,IJU,IKU,NSV))
+    ALLOCATE(XLBYSVM(IIU,2*NRIMY+2*JPHEXT,IKU,NSV))
   ELSE
-    ALLOCATE(XLBXSVM(2,IJU,IKU,NSV))
-    ALLOCATE(XLBYSVM(IIU,2,IKU,NSV))
+    ALLOCATE(XLBXSVM(2*JPHEXT,IJU,IKU,NSV))
+    ALLOCATE(XLBYSVM(IIU,2*JPHEXT,IKU,NSV))
   END IF
   !       
-  ILBX=SIZE(XLBXSVM,1)/2-1     
-  XLBXSVM(1:ILBX+1,:,:,:)         = XSVT(IIB-1:IIB-1+ILBX,:,:,:)
-  XLBXSVM(ILBX+2:2*ILBX+2,:,:,:)  = XSVT(IIE+1-ILBX:IIE+1,:,:,:)
-  ILBY=SIZE(XLBYSVM,2)/2-1
-  XLBYSVM(:,1:ILBY+1,:,:)        = XSVT(:,IJB-1:IJB-1+ILBY,:,:)
-  XLBYSVM(:,ILBY+2:2*ILBY+2,:,:) = XSVT(:,IJE+1-ILBY:IJE+1,:,:)
+  ILBX=SIZE(XLBXSVM,1)/2-JPHEXT     
+  XLBXSVM(1:ILBX+JPHEXT,:,:,:)                  = XSVT(1:ILBX+JPHEXT,:,:,:)
+  XLBXSVM(ILBX+JPHEXT+1:2*ILBX+2*JPHEXT,:,:,:)  = XSVT(IIE+1-ILBX:IIE+JPHEXT,:,:,:)
+  ILBY=SIZE(XLBYSVM,2)/2-JPHEXT
+  XLBYSVM(:,1:ILBY+JPHEXT,:,:)                  = XSVT(:,1:ILBY+JPHEXT,:,:)
+  XLBYSVM(:,ILBY+JPHEXT+1:2*ILBY+2*JPHEXT,:,:)  = XSVT(:,IJE+1-ILBY:IJE+JPHEXT,:,:)
 ELSE
   ALLOCATE(XLBXSVM(0,0,0,0))
   ALLOCATE(XLBYSVM(0,0,0,0))

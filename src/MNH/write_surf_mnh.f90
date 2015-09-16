@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:30
 !-----------------------------------------------------------------
 !     #############################################################
       SUBROUTINE WRITE_SURFX0_MNH(HREC,PFIELD,KRESP,HCOMMENT)
@@ -48,6 +47,7 @@
 !!                                       YY, XY, DX, DY in 1D or 2D configuration
 !!        03/09, G.Tanguy              : add write_surft1_mnh
 !!                                       replace ZUNDEF(surfex) by XUNDEF(MNH)
+!!        J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -747,6 +747,8 @@ USE MODD_CONF_n,           ONLY : CSTORAGE_TYPE
 !
 USE MODI_UNPACK_1D_2D
 !
+USE MODD_PARAMETERS, ONLY : JPHEXT
+!
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
@@ -775,8 +777,8 @@ IF( (HREC=='IMAX' .OR. HREC=='JMAX' .OR. HREC=='KMAX') .AND.  &
 !
 ELSE
   IFIELD = KFIELD
-  IF (HREC=='IMAX') IFIELD = NIU_ALL-2
-  IF (HREC=='JMAX') IFIELD = NJU_ALL-2
+  IF (HREC=='IMAX') IFIELD = NIU_ALL-2*JPHEXT
+  IF (HREC=='JMAX') IFIELD = NJU_ALL-2*JPHEXT
   CALL FMWRIT(COUTFILE,HREC,COUT,'--',IFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
 
   IF (KRESP /=0) THEN

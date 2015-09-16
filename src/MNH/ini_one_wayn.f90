@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 init 2006/10/16 14:23:23
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_INI_ONE_WAY_n
@@ -141,6 +140,7 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                 &
 !!    M. Leriche     11/2009  modify the LB*SVS for the aqueous phase chemistry
 !!                   07/2010  idem for ice phase chemical species
 !!    Bosseur & Filippi 07/2013 Adds Forefire
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !------------------------------------------------------------------------------
 !
@@ -240,10 +240,10 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMMI  ! chemical ice phase concentra
 CALL GOTO_MODEL(KDAD)
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-1
-IIE=IIE+1
-IJB=IJB-1
-IJE=IJE+1
+IIB=IIB-JPHEXT
+IIE=IIE+JPHEXT
+IJB=IJB-JPHEXT
+IJE=IJE+JPHEXT
 ALLOCATE(ZWORK(IIB:IIE,IJB:IJE,SIZE(PLBXTHM,3)))  ! can be smaller than child extended subdomain
 ! LS_FORCING routine can not correctly manage extra halo zone
 ! LB will be filled only with one layer halo zone for the moment
@@ -818,7 +818,7 @@ ENDIF
 !*    Vertical interpolation
 !
 IF ( SIZE(PLBX,1) /= 0 .AND. GVERT_INTERP) THEN
-  IF ( ILBX == KRIMX+1 ) THEN
+  IF ( ILBX == KRIMX+JPHEXT ) THEN
     PLBX(:,:,:) = VER_INTERP_LIN(PLBX(:,:,:),   &
                              KKLIN_LBXM(:,:,:),PCOEFLIN_LBXM(:,:,:))
   ELSE
@@ -828,7 +828,7 @@ IF ( SIZE(PLBX,1) /= 0 .AND. GVERT_INTERP) THEN
 END IF
 !
 IF ( SIZE(PLBY,1) /= 0 .AND. GVERT_INTERP) THEN
-  IF ( ILBY == KRIMY+1 ) THEN
+  IF ( ILBY == KRIMY+JPHEXT ) THEN
     PLBY(:,:,:) = VER_INTERP_LIN(PLBY(:,:,:),   &
                                    KKLIN_LBYM(:,:,:),PCOEFLIN_LBYM(:,:,:))
   ELSE

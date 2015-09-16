@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_nest_pgd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_FILL_SONFIELD_n
@@ -59,6 +58,7 @@ END MODULE MODI_FILL_SONFIELD_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        27/09/96
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -98,10 +98,10 @@ CALL GOTO_MODEL(KMI)
 !
 !* correct only if JPHEXT = 1
 !
-IIB1 = NXOR_ALL (KMI)+1
-IIE1 = NXEND_ALL(KMI)-1
-IJB1 = NYOR_ALL (KMI)+1
-IJE1 = NYEND_ALL(KMI)-1
+IIB1 = NXOR_ALL (KMI)+JPHEXT
+IIE1 = NXEND_ALL(KMI)-JPHEXT
+IJB1 = NYOR_ALL (KMI)+JPHEXT
+IJE1 = NYEND_ALL(KMI)-JPHEXT
 !
 DO JLAYER=1,SIZE(PNESTFIELD,4)
   PNESTFIELD(:,:,KLSON,JLAYER) = XUNDEF

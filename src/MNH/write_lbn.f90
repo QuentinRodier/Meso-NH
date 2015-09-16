@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_8 init 2008/06/30 12:13:35
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_WRITE_LB_n
@@ -75,6 +74,7 @@ END MODULE MODI_WRITE_LB_n
 !!                              change of YCOMMENT
 !!     M. Leriche  07/10    add NSV_* for ice phase chemistry
 !!     P. Tulet    09/14    modif SALT
+!!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -109,6 +109,7 @@ USE MODD_DUST
 USE MODD_SALT
 USE MODI_DUSTLFI_n
 USE MODI_SALTLFI_n
+USE MODD_PARAMETERS,      ONLY: JPHEXT
 
 
 !
@@ -173,10 +174,10 @@ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,LHORELAX_UVWTH,IGRID,ILENCH,YCOMMENT,IRES
 !
 !
 ! compute the size of riming zone
-IRIMX =(NSIZELBX_ll-1)/2
-IRIMXU=(NSIZELBXU_ll-1)/2
-IRIMY =(NSIZELBY_ll-1)/2
-IRIMYV=(NSIZELBYV_ll-1)/2
+IRIMX =(NSIZELBX_ll-2*JPHEXT)/2
+IRIMXU=(NSIZELBXU_ll-2*JPHEXT)/2
+IRIMY =(NSIZELBY_ll-2*JPHEXT)/2
+IRIMYV=(NSIZELBYV_ll-2*JPHEXT)/2
 !
 !gathering and writing of the LB fields
 IF(NSIZELBXU_ll /= 0) THEN 
@@ -259,8 +260,8 @@ IF(CTURB/='NONE') THEN
   YRECFM = 'HORELAX_TKE'
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,LHORELAX_TKE,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-  IRIMX =(NSIZELBXTKE_ll-1)/2
-  IRIMY =(NSIZELBYTKE_ll-1)/2
+  IRIMX =(NSIZELBXTKE_ll-2*JPHEXT)/2
+  IRIMY =(NSIZELBYTKE_ll-2*JPHEXT)/2
 
   IF(NSIZELBXTKE_ll /= 0) THEN
     YRECFM='LBXTKEM'
@@ -297,8 +298,8 @@ IF (NRR >=1) THEN
 !
   GUSER(:)=(/LUSERV,LUSERC,LUSERR,LUSERI,LUSERS,LUSERG,LUSERH/)
   YC(:)=(/"V","C","R","I","S","G","H"/)
-  IRIMX =(NSIZELBXR_ll-1)/2
-  IRIMY =(NSIZELBYR_ll-1)/2
+  IRIMX =(NSIZELBXR_ll-2*JPHEXT)/2
+  IRIMY =(NSIZELBYR_ll-2*JPHEXT)/2
   IRR=0
 ! Loop on moist variables
   DO JRR=1,7
@@ -334,8 +335,8 @@ IF (NSV >=1) THEN
   GHORELAX_SV=ANY ( LHORELAX_SV ) 
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,GHORELAX_SV,IGRID,ILENCH,YCOMMENT,IRESP)  
   IGRID=1
-  IRIMX =(NSIZELBXSV_ll-1)/2
-  IRIMY =(NSIZELBYSV_ll-1)/2
+  IRIMX =(NSIZELBXSV_ll-2*JPHEXT)/2
+  IRIMY =(NSIZELBYSV_ll-2*JPHEXT)/2
   DO JSV = 1,NSV_USER
     IF(NSIZELBXSV_ll /= 0) THEN
       WRITE(YRECFM,'(A6,I3.3)')'LBXSVM',JSV

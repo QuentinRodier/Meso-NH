@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2007/03/22 18:26:29
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_READ_PRC_FMFILE
@@ -96,6 +95,7 @@ END MODULE MODI_READ_PRC_FMFILE
 !!                      29/11/02 (JP Pinty)  add C3R5, ICE2, ICE4
 !!                      01/2004  (V. Masson) removes surface (externalization)
 !!                      05/2006              Remove EPS
+!!                      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -161,18 +161,20 @@ REAL, DIMENSION(:),     ALLOCATABLE :: ZXHAT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZYHAT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZZHAT
 INTEGER  :: IMI
-
+INTEGER         :: IIB, IIE, IJB, IJE
 !-------------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATIONS
 !              ---------------
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(1)
+
 !
 IIU=KISUP-KIINF+1
 IJU=KJSUP-KJINF+1
 !
 ILU=SIZE(XTHT,3)
+CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
@@ -362,48 +364,48 @@ END IF
 !*       7.    ERASES LATERAL BOUNDARIES
 !              -------------------------
 !
-IF (JPHEXT>1) THEN
-  WRITE (ILUOUT0,*) 'READ_PRC_FMFILE: abort (JPHEXT= ',JPHEXT,' )'
- !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
-END IF
+!!$IF (JPHEXT>1) THEN
+!!$  WRITE (ILUOUT0,*) 'READ_PRC_FMFILE: abort (JPHEXT= ',JPHEXT,' )'
+!!$ !callabortstop
+!!$  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+!!$  CALL ABORT
+!!$  STOP
+!!$END IF
 !
 !*       7.1   left boundary I=1+JPHEXT for U
 !              ------------------------------
 !
-IF (IIU>3) XU_LS(2  ,:,:)=2.*XU_LS(  3  ,:,:)-XU_LS(  4  ,:,:)
+IF (IIU>3) XU_LS(IIB  ,:,:)=2.*XU_LS(  IIB+1  ,:,:)-XU_LS(  IIB+2  ,:,:)
 !
 !*       7.2   bottom boundary J=1+JPHEXT for V
 !              --------------------------------
 !
-IF (IJU>3) XV_LS(:,  2,:)=2.*XV_LS(:,  3  ,:)-XV_LS(:,  4  ,:)
+IF (IJU>3) XV_LS(:,  IJB,:)=2.*XV_LS(:,  IJB+1  ,:)-XV_LS(:,  IJB+2  ,:)
 !
 !*       7.3   all boundaries for all fields except vapor
 !              ------------------------------------------
 !
-XU_LS(1  ,:,:)=2.*XU_LS(  2  ,:,:)-XU_LS(  3  ,:,:)
-XU_LS(IIU,:,:)=2.*XU_LS(IIU-1,:,:)-XU_LS(IIU-2,:,:)
-XV_LS(1  ,:,:)=2.*XV_LS(  2  ,:,:)-XV_LS(  3  ,:,:)
-XV_LS(IIU,:,:)=2.*XV_LS(IIU-1,:,:)-XV_LS(IIU-2,:,:)
-XW_LS(1  ,:,:)=2.*XW_LS(  2  ,:,:)-XW_LS(  3  ,:,:)
-XW_LS(IIU,:,:)=2.*XW_LS(IIU-1,:,:)-XW_LS(IIU-2,:,:)
-XTH_LS(1  ,:,:)=2.*XTH_LS(  2  ,:,:)-XTH_LS(  3  ,:,:)
-XTH_LS(IIU,:,:)=2.*XTH_LS(IIU-1,:,:)-XTH_LS(IIU-2,:,:)
-XR_LS(1  ,:,:,:)=MAX(2.*XR_LS(  2  ,:,:,:)-XR_LS(  3  ,:,:,:),0.)
-XR_LS(IIU,:,:,:)=MAX(2.*XR_LS(IIU-1,:,:,:)-XR_LS(IIU-2,:,:,:),0.)
+XU_LS(IIB-1  ,:,:)=2.*XU_LS(  IIB  ,:,:)-XU_LS(  IIB+1  ,:,:)
+XU_LS(IIE+1,:,:)=2.*XU_LS(IIE,:,:)-XU_LS(IIE-1,:,:)
+XV_LS(IIB-1  ,:,:)=2.*XV_LS(  IIB  ,:,:)-XV_LS(  IIB+1  ,:,:)
+XV_LS(IIE+1,:,:)=2.*XV_LS(IIE,:,:)-XV_LS(IIE-1,:,:)
+XW_LS(IIB-1  ,:,:)=2.*XW_LS(  IIB  ,:,:)-XW_LS(  IIB+1  ,:,:)
+XW_LS(IIE+1,:,:)=2.*XW_LS(IIE,:,:)-XW_LS(IIE-1,:,:)
+XTH_LS(IIB-1  ,:,:)=2.*XTH_LS(  IIB  ,:,:)-XTH_LS(  IIB+1  ,:,:)
+XTH_LS(IIE+1,:,:)=2.*XTH_LS(IIE,:,:)-XTH_LS(IIE-1,:,:)
+XR_LS(IIB-1  ,:,:,:)=MAX(2.*XR_LS(  IIB  ,:,:,:)-XR_LS(  IIB+1  ,:,:,:),0.)
+XR_LS(IIE+1,:,:,:)=MAX(2.*XR_LS(IIE,:,:,:)-XR_LS(IIE-1,:,:,:),0.)
 !
-XU_LS(:,  1,:)=2.*XU_LS(:,  2  ,:)-XU_LS(:,  3  ,:)
-XU_LS(:,IJU,:)=2.*XU_LS(:,IJU-1,:)-XU_LS(:,IJU-2,:)
-XV_LS(:,  1,:)=2.*XV_LS(:,  2  ,:)-XV_LS(:,  3  ,:)
-XV_LS(:,IJU,:)=2.*XV_LS(:,IJU-1,:)-XV_LS(:,IJU-2,:)
-XW_LS(:,  1,:)=2.*XW_LS(:,  2  ,:)-XW_LS(:,  3  ,:)
-XW_LS(:,IJU,:)=2.*XW_LS(:,IJU-1,:)-XW_LS(:,IJU-2,:)
-XTH_LS(:,  1,:)=2.*XTH_LS(:,  2  ,:)-XTH_LS(:,  3  ,:)
-XTH_LS(:,IJU,:)=2.*XTH_LS(:,IJU-1,:)-XTH_LS(:,IJU-2,:)
-XR_LS(:,  1,:,:)=MAX(2.*XR_LS(:,  2  ,:,:)-XR_LS(:,  3  ,:,:),0.)
-XR_LS(:,IJU,:,:)=MAX(2.*XR_LS(:,IJU-1,:,:)-XR_LS(:,IJU-2,:,:),0.)
+XU_LS(:,  IJB-1,:)=2.*XU_LS(:,  IJB  ,:)-XU_LS(:,  IJB+1  ,:)
+XU_LS(:,IJE+1,:)=2.*XU_LS(:,IJE,:)-XU_LS(:,IJE-1,:)
+XV_LS(:,  IJB-1,:)=2.*XV_LS(:,  IJB  ,:)-XV_LS(:,  IJB+1  ,:)
+XV_LS(:,IJE+1,:)=2.*XV_LS(:,IJE,:)-XV_LS(:,IJE-1,:)
+XW_LS(:,  IJB-1,:)=2.*XW_LS(:,  IJB  ,:)-XW_LS(:,  IJB+1  ,:)
+XW_LS(:,IJE+1,:)=2.*XW_LS(:,IJE,:)-XW_LS(:,IJE-1,:)
+XTH_LS(:,  IJB-1,:)=2.*XTH_LS(:,  IJB  ,:)-XTH_LS(:,  IJB+1  ,:)
+XTH_LS(:,IJE+1,:)=2.*XTH_LS(:,IJE,:)-XTH_LS(:,IJE-1,:)
+XR_LS(:,  IJB-1,:,:)=MAX(2.*XR_LS(:,  IJB  ,:,:)-XR_LS(:,  IJB+1  ,:,:),0.)
+XR_LS(:,IJE+1,:,:)=MAX(2.*XR_LS(:,IJE,:,:)-XR_LS(:,IJE-1,:,:),0.)
 !
 !*       7.4   all boundaries for vapor (using relative humidity)
 !              ------------------------
@@ -417,23 +419,23 @@ ELSEWHERE
   ZHU_LS(:,:,:)=0.
 END WHERE
 !
-ZHU_LS(1  ,:,:)=ZHU_LS(  2  ,:,:)
-ZHU_LS(IIU,:,:)=ZHU_LS(IIU-1,:,:)
-ZHU_LS(:,  1,:)=ZHU_LS(:,  2  ,:)
-ZHU_LS(:,IJU,:)=ZHU_LS(:,IJU-1,:)
+ZHU_LS(IIB-1  ,:,:)=ZHU_LS(  IIB  ,:,:)
+ZHU_LS(IIE+1,:,:)=ZHU_LS(IIE,:,:)
+ZHU_LS(:,  IJB-1,:)=ZHU_LS(:,  IJB  ,:)
+ZHU_LS(:,IJE+1,:)=ZHU_LS(:,IJE,:)
 !
 IF (NRR>1) THEN
-  WHERE (XR_LS(1  ,:,:,2)>0.)
-    ZHU_LS(1  ,:,:)=100.
+  WHERE (XR_LS(IIB-1  ,:,:,2)>0.)
+    ZHU_LS(IIB-1  ,:,:)=100.
   END WHERE
-  WHERE (XR_LS(IIU,:,:,2)>0.)
-    ZHU_LS(IIU,:,:)=100.
+  WHERE (XR_LS(IIE+1,:,:,2)>0.)
+    ZHU_LS(IIE+1,:,:)=100.
   END WHERE
-  WHERE (XR_LS(:,  1,:,2)>0.)
-    ZHU_LS(:,  1,:)=100.
+  WHERE (XR_LS(:,  IJB-1,:,2)>0.)
+    ZHU_LS(:,  IJB-1,:)=100.
   END WHERE
-  WHERE (XR_LS(:,IJU,:,2)>0.)
-    ZHU_LS(:,IJU,:)=100.
+  WHERE (XR_LS(:,IJE+1,:,2)>0.)
+    ZHU_LS(:,IJE+1,:)=100.
   END WHERE
 END IF
 !

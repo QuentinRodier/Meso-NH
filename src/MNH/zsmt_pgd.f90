@@ -53,6 +53,7 @@ END MODULE MODI_ZSMT_PGD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        nov 2005
+!!      J.Escobar  23/06/2015 : correction for JPHEXT<>1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -103,6 +104,7 @@ INTEGER                           :: JIM, JIP, JJM, JJP
 
 TYPE(LIST_ll)     , POINTER      :: THALO_ll => NULL()     ! halo
 INTEGER                          :: INFO_ll                ! error return code
+INTEGER :: IIB,IIE,IJB,IJE
 !-------------------------------------------------------------------------------
 !
 !*       1.    Read orography in the file
@@ -112,6 +114,7 @@ INTEGER                          :: INFO_ll                ! error return code
 !            ----------
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !
 !*       1.2 orography
@@ -126,20 +129,24 @@ ALLOCATE(ZMASK(IIU,IJU))
 YRECFM = 'ZS              '
 CALL FMREAD(HFILE,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-ZZS(1  ,:) = ZZS(2    ,:)
-ZZS(IIU,:) = ZZS(IIU-1,:)
-ZZS(:,1  ) = ZZS(:,2    )
-ZZS(:,IJU) = ZZS(:,IJU-1)
+DO JI=1,JPHEXT
+ZZS(JI,:) = ZZS(IIB,:)
+ZZS(IIE+JI,:) = ZZS(IIE,:)
+ZZS(:,JI ) = ZZS(:,IJB)
+ZZS(:,IJE+JI) = ZZS(:,IJE)
+ENDDO
 !
 ZFINE_ZS = ZZS
 ZSLEVE_ZS= ZZS
 !
 CALL MNHGET_SURF_PARAM_n(PSEA=ZMASK)
 !
-ZMASK(1  ,:) = ZMASK(2    ,:)
-ZMASK(IIU,:) = ZMASK(IIU-1,:)
-ZMASK(:,1  ) = ZMASK(:,2    )
-ZMASK(:,IJU) = ZMASK(:,IJU-1)
+DO JI=1,JPHEXT
+ZMASK(JI  ,:) = ZMASK(IIB,:)
+ZMASK(IIE+JI,:) = ZMASK(IIE,:)
+ZMASK(:,JI  ) = ZMASK(:,IJB)
+ZMASK(:,IJE+JI) = ZMASK(:,IJE)
+ENDDO
 !
 ZMASK= 1.-ZMASK
 CALL ADD2DFIELD_ll(THALO_ll,ZMASK)
@@ -161,12 +168,12 @@ CALL UPDATE_HALO_ll(THALO_ll,INFO_ll)
 
   DO JN = 1,MAX(KSLEVE,KZSFILTER)
   !
-    DO JJ = 1,IJU
-      DO JI = 1,IIU
-        JIP = MIN(JI+1,IIU)
-        JIM = MAX(JI-1,1  )
-        JJP = MIN(JJ+1,IJU)
-        JJM = MAX(JJ-1,1  )
+   DO JJ = IJB-1,IJE+1
+      DO JI = IIB-1,IIE+1
+        JIP = MIN(JI+1,IIE+1)
+        JIM = MAX(JI-1,IIB-1  )
+        JJP = MIN(JJ+1,IJE+1)
+        JJM = MAX(JJ-1,IJB-1  )
         ZSMOOTH_ZS(JI,JJ) =  ZZS(JI,JJ)                &
            + 0.125* ZMASK(JI,JJ)                       &
             * (     ZMASK(JIM,JJ)   * ZZS(JIM,JJ)      &

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/05/29 13:03:00
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_VER_PREP_MESONH_CASE
@@ -83,6 +82,7 @@ END MODULE MODI_VER_PREP_MESONH_CASE
 !!                  Jun, 10 1997 (V. Masson) add non-hydrostatic pressure
 !!                  Jul, 10 1997 (V. Masson) add epsilon
 !!                  Jul, 11 1997 (V. Masson) add scalar variables
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,6 +106,7 @@ USE MODD_PARAMETERS
 USE MODD_PREP_REAL
 !
 USE MODI_SECOND_MNH
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -132,10 +133,14 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZHEXNFLUX_MX! hyd. pressure function
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZHEXNMASS_MX! hyd. pressure function
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZPMASS_MX   ! pressure
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK       ! work array
+!
+INTEGER                           :: IIB,IJB,IIE,IJE
 !-------------------------------------------------------------------------------
 !
 !*       1.    CHANGING OF VARIABLES
 !              ---------------------
+!
+CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 IIU=SIZE(XZS_LS,1)
 IJU=SIZE(XZS_LS,2)
@@ -166,15 +171,23 @@ ALLOCATE(ZWORK(IIU,IJU,ILU))
 ZWORK = XU_LS
 XU_LS(1:IIU-1,:,:)=0.5*ZWORK(2:IIU,:,:)+0.5*ZWORK(1:IIU-1,:,:)
 XU_LS(IIU    ,:,:)=1.5*ZWORK(IIU  ,:,:)-0.5*ZWORK(IIU-1  ,:,:)
+XU_LS(IIE+1    ,:,:)=1.5*ZWORK(IIE+1  ,:,:)-0.5*ZWORK(IIE  ,:,:) ! for JPHEXT <> 1 
+
 ZWORK = XV_LS
 XV_LS(:,1:IJU-1,:)=0.5*ZWORK(:,2:IJU,:)+0.5*ZWORK(:,1:IJU-1,:)
 XV_LS(:,IJU    ,:)=1.5*ZWORK(:,IJU  ,:)-0.5*ZWORK(:,IJU-1  ,:)
+XV_LS(:,IJE+1    ,:)=1.5*ZWORK(:,IJE+1  ,:)-0.5*ZWORK(:,IJE  ,:) ! for JPHEXT <> 1 
+
 ZWORK = XLSU_LS
 XLSU_LS(1:IIU-1,:,:)=0.5*ZWORK(2:IIU,:,:)+0.5*ZWORK(1:IIU-1,:,:)
 XLSU_LS(IIU    ,:,:)=1.5*ZWORK(IIU  ,:,:)-0.5*ZWORK(IIU-1  ,:,:)
+XLSU_LS(IIE+1    ,:,:)=1.5*ZWORK(IIE+1  ,:,:)-0.5*ZWORK(IIE  ,:,:) ! for JPHEXT <> 1 
+
 ZWORK = XLSV_LS
 XLSV_LS(:,1:IJU-1,:)=0.5*ZWORK(:,2:IJU,:)+0.5*ZWORK(:,1:IJU-1,:)
 XLSV_LS(:,IJU    ,:)=1.5*ZWORK(:,IJU  ,:)-0.5*ZWORK(:,IJU-1  ,:)
+XLSV_LS(:,IJE+1    ,:)=1.5*ZWORK(:,IJE+1  ,:)-0.5*ZWORK(:,IJE  ,:) ! for JPHEXT <> 1 
+
 DEALLOCATE(ZWORK)
 !
 !*       1.5   Difference between pressure and hydrostatic pressure

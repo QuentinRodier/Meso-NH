@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODD_PARAMETERS
@@ -42,6 +41,7 @@
 !!      Modification 22/01/01 (D.Gazen) change JPSVMAX from 100 to 200
 !!                                         and JPBUMAX from 120 to 250
 !!      Modification 17/05/04 (P.Jabouille) add JPOUTMAX
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -49,7 +49,11 @@
 !
 IMPLICIT NONE
 !
-INTEGER, PARAMETER :: JPHEXT = 1      ! Horizontal External points number
+!JUAN CYCLK
+!INTEGER, PARAMETER :: JPHEXT = 3     ! Horizontal External points number
+INTEGER,SAVE      :: JPHEXT = 1     ! Horizontal External points number
+!
+!JUAN CYCLK
 INTEGER, PARAMETER :: JPVEXT = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPVEXT_TURB = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPMODELMAX = 8  ! Maximum allowed number of nested models 

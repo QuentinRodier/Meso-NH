@@ -156,6 +156,7 @@ END MODULE MODI_CHANGE_GRIBEX_VAR
 !!         Masson   06/12/96 add air temperature at ground
 !!         Masson   12/12/96 add vertical wind component
 !!         Masson   12/06/97 add relative humidity
+!!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -226,11 +227,15 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE                       :: ZRHO_LS
 !                        ! mass density at pressure points
 REAL,DIMENSION(:,:,:), ALLOCATABLE                       :: ZRHOMASS_LS
 !                        ! mass density at mass points
+!
+INTEGER             :: IIB,IIE,IJB,IJE ! interior domaine bound
+INTEGER             :: JI
 !-------------------------------------------------------------------------------
 !
 IIU=SIZE(PT_LS,1)
 IJU=SIZE(PT_LS,2)
 ILU=SIZE(PT_LS,3)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -337,23 +342,29 @@ IF (PRESENT(PW_LS)) THEN
 !              -------------------------------
 !
   ZSURFCOR_LS(:,:,:)=0.
-  ZSURFCOR_LS(2:IIU-1,2:IJU-1,:)= PU_LS(2:IIU-1,2:IJU-1,:)                     &
+  ZSURFCOR_LS(IIB:IIE,IJB:IJE,:)= PU_LS(IIB:IIE,IJB:IJE,:)                     &
                            *SPREAD(                                            &
-                            (PZS_LS(3:IIU,2:IJU-1)-PZS_LS(1:IIU-2,2:IJU-1))    &
-                            /SPREAD(XXHAT(3:IIU)-XXHAT(1:IIU-2),2,IJU-2)       &
-                            *XMAP(2:IIU-1,2:IJU-1)                             &
+                            (PZS_LS(IIB+1:IIE+1,IJB:IJE)-PZS_LS(IIB-1:IIE-1,IJB:IJE))    &
+                            /SPREAD(XXHAT(IIB+1:IIE+1)-XXHAT(IIB-1:IIE-1),2,IJE-IJB+1)       &
+                            *XMAP(IIB:IIE,IJB:IJE)                             &
                             ,3,ILU)                                            &
-                          + PV_LS(2:IIU-1,2:IJU-1,:)                           &
+                          + PV_LS(IIB:IIE,IJB:IJE,:)                           &
                            *SPREAD(                                            &
-                            (PZS_LS(2:IIU-1,3:IJU)-PZS_LS(2:IIU-1,1:IJU-2))    &
-                           /SPREAD(XYHAT(3:IJU)-XYHAT(1:IJU-2),1,IIU-2)        &
-                           *XMAP(2:IIU-1,2:IJU-1)                              &
+                            (PZS_LS(IIB:IIE,IJB+1:IJE+1)-PZS_LS(IIB:IIE,IJB-1:IJE-1))    &
+                           /SPREAD(XYHAT(IJB+1:IJE+1)-XYHAT(IJB-1:IJE-1),1,IIE-IIB+1)        &
+                           *XMAP(IIB:IIE,IJB:IJE)                              &
                             ,3,ILU)
 !
-  ZSURFCOR_LS( 1 , : ,1)=2.*ZSURFCOR_LS(  2  ,  :  ,1)-ZSURFCOR_LS(  3  ,  :  ,1)
-  ZSURFCOR_LS(IIU, : ,1)=2.*ZSURFCOR_LS(IIU-1,  :  ,1)-ZSURFCOR_LS(IIU-2,  :  ,1)
-  ZSURFCOR_LS( : , 1 ,1)=2.*ZSURFCOR_LS(  :  ,  2  ,1)-ZSURFCOR_LS(  :  ,  3  ,1)
-  ZSURFCOR_LS( : ,IJU,1)=2.*ZSURFCOR_LS(  :  ,IJU-1,1)-ZSURFCOR_LS(  :  ,IJU-2,1)
+  DO JI=1,JPHEXT
+     ZSURFCOR_LS(IIB-JI,:,1)=2.*ZSURFCOR_LS(IIB-JI+1,:,1)-ZSURFCOR_LS(IIB-JI+2,:,1)
+     ZSURFCOR_LS(IIE+JI,:,1)=2.*ZSURFCOR_LS(IIE+JI-1,:,1)-ZSURFCOR_LS(IIE+JI-2,:,1)
+     ZSURFCOR_LS(:,IJB-JI,1)=2.*ZSURFCOR_LS(:,IJB-JI+1,1)-ZSURFCOR_LS(:,IJB-JI+2,1)
+     ZSURFCOR_LS(:,IJE+JI,1)=2.*ZSURFCOR_LS(:,IJE+JI-1,1)-ZSURFCOR_LS(:,IJE+JI-2,1)
+  END DO
+!!$  ZSURFCOR_LS( 1 , : ,1)=2.*ZSURFCOR_LS(  2  ,  :  ,1)-ZSURFCOR_LS(  3  ,  :  ,1)
+!!$  ZSURFCOR_LS(IIU, : ,1)=2.*ZSURFCOR_LS(IIU-1,  :  ,1)-ZSURFCOR_LS(IIU-2,  :  ,1)
+!!$  ZSURFCOR_LS( : , 1 ,1)=2.*ZSURFCOR_LS(  :  ,  2  ,1)-ZSURFCOR_LS(  :  ,  3  ,1)
+!!$  ZSURFCOR_LS( : ,IJU,1)=2.*ZSURFCOR_LS(  :  ,IJU-1,1)-ZSURFCOR_LS(  :  ,IJU-2,1)
 !
 !*       8.2   mass density
 !              ------------
@@ -383,19 +394,25 @@ IF (PRESENT(PW_LS)) THEN
 !              ---------------------
 !
   ZHDIV_LS(:,:,:)=0.
-  ZHDIV_LS(2:IIU-1,2:IJU-1,:)=(ZDPDETA_LS(3:IIU,2:IJU-1,:)*PU_LS(3:IIU,2:IJU-1,:)       &
-                              -ZDPDETA_LS(1:IIU-2,2:IJU-1,:)*PU_LS(1:IIU-2,2:IJU-1,:))  &
-                             /SPREAD(SPREAD(XXHAT(3:IIU)-XXHAT(1:IIU-2),2,IJU-2),3,ILU)  &
-                             *SPREAD(XMAP(2:IIU-1,2:IJU-1),3,ILU)                        &
-                            +(ZDPDETA_LS(2:IIU-1,3:IJU,:)*PV_LS(2:IIU-1,3:IJU,:)        &
-                             -ZDPDETA_LS(2:IIU-1,1:IJU-2,:)*PV_LS(2:IIU-1,1:IJU-2,:))   &
-                            /SPREAD(SPREAD(XYHAT(3:IJU)-XYHAT(1:IJU-2),1,IIU-2),3,ILU)   &
-                            *SPREAD(XMAP(2:IIU-1,2:IJU-1),3,ILU)
+  ZHDIV_LS(IIB:IIE,IJB:IJE,:)=(ZDPDETA_LS(IIB+1:IIE+1,IJB:IJE,:)*PU_LS(IIB+1:IIE+1,IJB:IJE,:)       &
+                              -ZDPDETA_LS(IIB-1:IIE-1,IJB:IJE,:)*PU_LS(IIB-1:IIE-1,IJB:IJE,:))  &
+                             /SPREAD(SPREAD(XXHAT(IIB+1:IIE+1)-XXHAT(IIB-1:IIE-1),2,IJE-IJB+1),3,ILU)  &
+                             *SPREAD(XMAP(IIB:IIE,IJB:IJE),3,ILU)                        &
+                            +(ZDPDETA_LS(IIB:IIE,IJB+1:IJE+1,:)*PV_LS(IIB:IIE,IJB+1:IJE+1,:)        &
+                             -ZDPDETA_LS(IIB:IIE,IJB-1:IJE-1,:)*PV_LS(IIB:IIE,IJB-1:IJE-1,:))   &
+                            /SPREAD(SPREAD(XYHAT(IJB+1:IJE+1)-XYHAT(IJB-1:IJE-1),1,IIE-IIB+1),3,ILU)   &
+                            *SPREAD(XMAP(IIB:IIE,IJB:IJE),3,ILU)
 !
-  ZHDIV_LS( 1 , : ,:)=2.*ZHDIV_LS(  2  ,  :  ,:)-ZHDIV_LS(  3  ,  :  ,:)
-  ZHDIV_LS(IIU, : ,:)=2.*ZHDIV_LS(IIU-1,  :  ,:)-ZHDIV_LS(IIU-2,  :  ,:)
-  ZHDIV_LS( : , 1 ,:)=2.*ZHDIV_LS(  :  ,  2  ,:)-ZHDIV_LS(  :  ,  3  ,:)
-  ZHDIV_LS( : ,IJU,:)=2.*ZHDIV_LS(  :  ,IJU-1,:)-ZHDIV_LS(  :  ,IJU-2,:)
+  DO JI=1,JPHEXT
+     ZHDIV_LS(IIB-JI,:,:)=2.*ZHDIV_LS(IIB-JI+1,:,:)-ZHDIV_LS(IIB-JI+2,:,:)
+     ZHDIV_LS(IIE+JI,:,:)=2.*ZHDIV_LS(IIE+JI-1,:,:)-ZHDIV_LS(IIE+JI-2,:,:)
+     ZHDIV_LS(:,IJB-JI,:)=2.*ZHDIV_LS(:,IJB-JI+1,:)-ZHDIV_LS(:,IJB-JI+2,:)
+     ZHDIV_LS(:,IJE+JI,:)=2.*ZHDIV_LS(:,IJE+JI-1,:)-ZHDIV_LS(:,IJE+JI-2,:)
+  END DO
+!!$  ZHDIV_LS( 1 , : ,:)=2.*ZHDIV_LS(  2  ,  :  ,:)-ZHDIV_LS(  3  ,  :  ,:)
+!!$  ZHDIV_LS(IIU, : ,:)=2.*ZHDIV_LS(IIU-1,  :  ,:)-ZHDIV_LS(IIU-2,  :  ,:)
+!!$  ZHDIV_LS( : , 1 ,:)=2.*ZHDIV_LS(  :  ,  2  ,:)-ZHDIV_LS(  :  ,  3  ,:)
+!!$  ZHDIV_LS( : ,IJU,:)=2.*ZHDIV_LS(  :  ,IJU-1,:)-ZHDIV_LS(  :  ,IJU-2,:)
 !
 !*       8.6   Integration of horizontal divergence
 !              ------------------------------------

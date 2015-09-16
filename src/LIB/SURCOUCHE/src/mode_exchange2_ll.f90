@@ -10,6 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 
 !     ########################
@@ -215,6 +217,9 @@
 !
   TYPE(LIST_ll), POINTER :: TZFIELD
 !
+  INTEGER                :: ICOUNT
+  CHARACTER*2            :: YCOUNT
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.   SEND / RECV THE INTERNAL HALO TO/FROM THE NEIGHBORING PROCESSORS
@@ -235,11 +240,14 @@
 !
    IF (MPPDB_INITIALIZED) THEN
       TZFIELD => TPLIST
+      ICOUNT=0
       DO WHILE (ASSOCIATED(TZFIELD))
+         ICOUNT=ICOUNT+1
+         WRITE(YCOUNT,'(I2)') ICOUNT
          IF (TZFIELD%L2D) THEN
-            CALL MPPDB_CHECK2D(TZFIELD%ARRAY2D,"UPDATE_HALO2_ll",PRECISION)
+            CALL MPPDB_CHECK2D(TZFIELD%ARRAY2D,"UPDATE_HALO2_ll::TAB2D("//YCOUNT//")",PRECISION)
          ELSEIF(TZFIELD%L3D) THEN
-            CALL MPPDB_CHECK3D(TZFIELD%ARRAY3D,"UPDATE_HALO2_ll",PRECISION)
+            CALL MPPDB_CHECK3D(TZFIELD%ARRAY3D,"UPDATE_HALO2_ll::TAB2D("//YCOUNT//")",PRECISION)
          END IF
          TZFIELD => TZFIELD%NEXT
       END DO

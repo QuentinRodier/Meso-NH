@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 microph 2006/10/17 17:03:56
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_SLOW_TERMS
@@ -154,6 +153,7 @@ END MODULE MODI_SLOW_TERMS
 !!                                             of the number of exponentiations
 !!                     14/09/97 (V. Masson) removes low rr non-physical values
 !!                     06/11/02 (V. Masson) update the budget calls
+!!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -279,7 +279,8 @@ DO JN=1,KSPLITR
     IC = 0
     DO JJ = 1,SIZE( ZW1,2)
       DO JI = 1,SIZE( ZW1,1)
-        IF (ZW1(JI,JJ,JK)+ZW1(JI,JJ,JK+1)>0.) THEN
+        IF ( ( ZW1(JI,JJ,JK+1)>0. ) .AND. ( ZW1(JI,JJ,JK)>0. ) )  THEN
+!!$       IF ( (ZW1(JI,JJ,JK)+ZW1(JI,JJ,JK+1)>0.) )  THEN
           IC = IC +1
           I1(IC) = JI
           I2(IC) = JJ

@@ -12,8 +12,9 @@
 &NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
 &NAM_CONF  CCONF = "START", NMODEL = 1,
            CSPLIT='BSPLITTING' ,
-           NVERB = 5, CEXP = "REL3D", CSEG = "EXP01" ,
-             /
+           NVERB = 5, CEXP = "REL3D", CSEG = "EXP01"  
+           !JPHEXT=3 NHALO=3
+           /
 &NAM_DYN  XSEGLEN = 1000., XASSELIN = 0.2, LCORIO = F,
           XALKTOP = 0.005, XALZBOT = 12570.,
           LNUMDIFU =.F. /

@@ -6,6 +6,7 @@ MODULE MODE_MPPDB
 !
 !       Modifs :
 !!      J.Escobar 23/10/2012: correct CHECK_LB & format print output 
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !
   IMPLICIT NONE
 
@@ -254,12 +255,13 @@ CONTAINS
 
   SUBROUTINE MPPDB_CHECK3D(PTAB,MESSAGE,PRECISION)
 
-    USE MODD_PARAMETERS, ONLY : JPHEXT
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
     USE MODI_GATHER_ll
     USE MODD_VAR_ll    , ONLY : MPI_PRECISION
-
+    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE
 
     IMPLICIT NONE
+
 
     REAL, DIMENSION(:,:,:)               :: PTAB
     CHARACTER(len=*)                     :: MESSAGE
@@ -273,14 +275,18 @@ CONTAINS
     INTEGER                              :: IIU,IJU,IIU_ll,IJU_ll,IKU_ll
     INTEGER                              :: IINFO_ll
 
-    INTEGER,PARAMETER                    :: ITAG = 12345
+    INTEGER,PARAMETER                    :: ITAG1  = 12345 , ITAG2 = 123456
 
-    INTEGER                              :: I_FIRST_SON, IRECVSTATUS
+    INTEGER                              :: I_FIRST_SON
     INTEGER                              :: I_FIRST_FATHER
     REAL                                 :: MAX_DIFF , MAX_VAL
     INTEGER                              :: IIB_ll,IIE_ll,IJB_ll,IJE_ll
 
     REAL,POINTER, DIMENSION(:,:,:)   :: TAB_INTERIOR_ll ! for easy debug
+
+    INTEGER                              :: IIU_SON_ll,IJU_SON_ll,IKU_SON_ll
+    INTEGER                              :: IIB_SON_ll,IIE_SON_ll,IJB_SON_ll,IJE_SON_ll
+    INTEGER                              :: IHEXT_SON_ll , IDIFF_HEXT
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
@@ -306,29 +312,51 @@ CONTAINS
           !
           ! I'm the first FATHER => recieve the correct globale ARRAY from first son
           !
-          ALLOCATE(TAB_SON_ll(IIU_ll,IJU_ll,IKU_ll))
           !
           ! the first son , is the next processus after this 'world' so
           !
-          I_FIRST_SON = MPPDB_NBPROC_WORLD
+          I_FIRST_SON = MPPDB_NBPROC_WORLD         
+          !
+          ! recieve JPHEXT from son if different
+          !
+          CALL MPI_RECV(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_SON, &
+               ITAG1, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
+
+          !IHEXT_SON_ll = JPHEXT
+
+          IIU_SON_ll = IIMAX_ll+2*IHEXT_SON_ll
+          IJU_SON_ll = IJMAX_ll+2*IHEXT_SON_ll
+          IKU_SON_ll = SIZE(PTAB,3)
+    
+          ALLOCATE(TAB_SON_ll(IIU_SON_ll,IJU_SON_ll,IKU_SON_ll))
           !
           CALL MPI_RECV(TAB_SON_ll,SIZE(TAB_SON_ll),MPI_PRECISION,I_FIRST_SON, &
-               ITAG, MPPDB_INTRA_COMM, IRECVSTATUS, IINFO_ll)
+               ITAG2, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
+          !
+
+          !
+
+          IF (MPPDB_CHECK_LB) THEN
+             IDIFF_HEXT = MIN(JPHEXT,IHEXT_SON_ll)
+          ELSE
+             IDIFF_HEXT = 0
+          ENDIF
+          IIB_ll   = 1 + JPHEXT    ; IJB_ll = 1 + JPHEXT
+          IIE_ll   = IIU_ll-JPHEXT ; IJE_ll = IJU_ll-JPHEXT
+          
+          IIB_SON_ll   = 1 + IHEXT_SON_ll    ; IJB_SON_ll = 1 + IHEXT_SON_ll
+          IIE_SON_ll   = IIU_SON_ll-IHEXT_SON_ll ; IJE_SON_ll = IJU_SON_ll-IHEXT_SON_ll
           !
           TAB_SAVE_ll = TAB_ll
-          TAB_ll      = ABS ( TAB_ll - TAB_SON_ll )
-          !
-          IF (MPPDB_CHECK_LB) THEN
-             IIB_ll   = 1      ; IJB_ll = 1 
-             IIE_ll   = IIU_ll ; IJE_ll = IJU_ll
-          ELSE
-             IIB_ll   = 1 + JPHEXT    ; IJB_ll = 1 + JPHEXT
-             IIE_ll   = IIU_ll-JPHEXT ; IJE_ll = IJU_ll-JPHEXT
-          END IF
+          TAB_ll      = 0.0
+          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)   &
+            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll) & 
+            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IIB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT,1:IKU_SON_ll) )
+
           MAX_VAL  = MAXVAL( ABS (TAB_SON_ll) )
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
-          MAX_DIFF = MAXVAL( TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll,1:IKU_ll) / MAX_VAL)
-          TAB_INTERIOR_ll =>  TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll,1:IKU_ll)
+          MAX_DIFF = MAXVAL( TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll) / MAX_VAL)
+          TAB_INTERIOR_ll =>  TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)
           !
           IF (MAX_DIFF > PRECISION ) THEN
              write(6, '(" MPPDB_CHECK3D :: PB MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
@@ -358,10 +386,13 @@ CONTAINS
           ! first son --> send the good array to the first father
           !
           I_FIRST_FATHER = 0
+          IHEXT_SON_ll = JPHEXT
+          CALL MPI_BSEND(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_FATHER, &
+               ITAG1, MPPDB_INTRA_COMM, IINFO_ll)
+
           CALL MPI_BSEND(TAB_ll,SIZE(TAB_ll),MPI_PRECISION,I_FIRST_FATHER, &
-               ITAG, MPPDB_INTRA_COMM, IINFO_ll)
-          !CALL MPI_BSEND(PTAB,SIZE(PTAB),MPI_PRECISION,I_FIRST_FATHER, &
-          !     ITAG, MPPDB_INTRA_COMM, IINFO_ll)
+               ITAG2, MPPDB_INTRA_COMM, IINFO_ll)
+ 
        END IF
     END IF
 
@@ -377,7 +408,7 @@ CONTAINS
                            ,PTAB11,PTAB12,PTAB13,PTAB14,PTAB15,PTAB16,PTAB17,PTAB18,PTAB19,PTAB20 &
                            )
 
-    USE MODD_PARAMETERS, ONLY : JPHEXT
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
     USE MODI_GATHER_ll
     USE MODD_VAR_ll    , ONLY : MPI_PRECISION
 
@@ -416,10 +447,10 @@ CONTAINS
 
   SUBROUTINE MPPDB_CHECK2D(PTAB,MESSAGE,PRECISION)
 
-    USE MODD_PARAMETERS, ONLY : JPHEXT
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
     USE MODI_GATHER_ll
     USE MODD_VAR_ll    , ONLY : MPI_PRECISION
-
+    USE MODD_MPIF      , ONLY : MPI_INTEGER, MPI_STATUS_IGNORE
 
     IMPLICIT NONE
 
@@ -430,19 +461,23 @@ CONTAINS
     !
     ! local var
     !
-    REAL,ALLOCATABLE,TARGET, DIMENSION(:,:)     :: TAB_ll,TAB_SON_ll
+    REAL,ALLOCATABLE,TARGET, DIMENSION(:,:)     :: TAB_ll,TAB_SON_ll,TAB_SAVE_ll
     INTEGER                              :: IIMAX_ll,IJMAX_ll
     INTEGER                              :: IIU,IJU,IIU_ll,IJU_ll
     INTEGER                              :: IINFO_ll
 
     INTEGER,PARAMETER                    :: ITAG = 12345
 
-    INTEGER                              :: I_FIRST_SON, IRECVSTATUS
+    INTEGER                              :: I_FIRST_SON
     INTEGER                              :: I_FIRST_FATHER
     REAL                                 :: MAX_DIFF , MAX_VAL
     INTEGER                              :: IIB_ll,IIE_ll,IJB_ll,IJE_ll
 
     REAL,POINTER, DIMENSION(:,:)   :: TAB_INTERIOR_ll ! for easy debug
+
+    INTEGER                              :: IIU_SON_ll,IJU_SON_ll
+    INTEGER                              :: IIB_SON_ll,IIE_SON_ll,IJB_SON_ll,IJE_SON_ll
+    INTEGER                              :: IHEXT_SON_ll , IDIFF_HEXT
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
@@ -460,34 +495,55 @@ CONTAINS
        IIU_ll = IIMAX_ll+2*JPHEXT
        IJU_ll = IJMAX_ll+2*JPHEXT
        ALLOCATE(TAB_ll(IIU_ll,IJU_ll))
+       ALLOCATE(TAB_SAVE_ll(IIU_ll,IJU_ll))
        CALL GATHERALL_FIELD_ll('XY',PTAB,TAB_ll,IINFO_ll)
 
        IF (MPPDB_IRANK_WORLD.EQ.0) THEN
           !
           ! I'm the first FATHER => recieve the correct globale ARRAY from first son
           !
-          ALLOCATE(TAB_SON_ll(IIU_ll,IJU_ll))
           !
           ! the first son , is the next processus after this 'world' so
           !
           I_FIRST_SON = MPPDB_NBPROC_WORLD
           !
+          ! recieve JPHEXT from son if different
+          !
+          CALL MPI_RECV(IHEXT_SON_ll,1,MPI_INTEGER,I_FIRST_SON, &
+               ITAG, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
+
+          IIU_SON_ll = IIMAX_ll+2*IHEXT_SON_ll
+          IJU_SON_ll = IJMAX_ll+2*IHEXT_SON_ll
+          
+          ALLOCATE(TAB_SON_ll(IIU_SON_ll,IJU_SON_ll))
+
+          !
           CALL MPI_RECV(TAB_SON_ll,SIZE(TAB_SON_ll),MPI_PRECISION,I_FIRST_SON, &
-               ITAG, MPPDB_INTRA_COMM, IRECVSTATUS, IINFO_ll)
+               ITAG, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
           !
-          TAB_ll = ABS(TAB_ll - TAB_SON_ll)
-          !
+ 
           IF (MPPDB_CHECK_LB) THEN
-             IIB_ll   = 1      ; IJB_ll = 1 
-             IIE_ll   = IIU_ll ; IJE_ll = IJU_ll
+             IDIFF_HEXT = MIN(JPHEXT,IHEXT_SON_ll)
           ELSE
-             IIB_ll   = 1 + JPHEXT    ; IJB_ll = 1 + JPHEXT
-             IIE_ll   = IIU_ll-JPHEXT ; IJE_ll = IJU_ll-JPHEXT
-          END IF
+             IDIFF_HEXT = 0
+          ENDIF
+
+          IIB_ll   = 1 + JPHEXT    ; IJB_ll = 1 + JPHEXT
+          IIE_ll   = IIU_ll-JPHEXT ; IJE_ll = IJU_ll-JPHEXT
+          IIB_SON_ll   = 1 + IHEXT_SON_ll    ; IJB_SON_ll = 1 + IHEXT_SON_ll
+          IIE_SON_ll   = IIU_SON_ll-IHEXT_SON_ll ; IJE_SON_ll = IJU_SON_ll-IHEXT_SON_ll
+       
+          !
+          TAB_SAVE_ll = TAB_ll
+          TAB_ll      = 0.0
+          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)   &
+            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) & 
+            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IIB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT) )         
+
           MAX_VAL  = MAXVAL( ABS (TAB_SON_ll) )
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
-          MAX_DIFF = MAXVAL( TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll) / MAX_VAL )
-          TAB_INTERIOR_ll => TAB_ll(IIB_ll:IIE_ll,IIB_ll:IJE_ll)
+          MAX_DIFF = MAXVAL( TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) / MAX_VAL )
+          TAB_INTERIOR_ll => TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)
           IF (MAX_DIFF > PRECISION ) THEN
              write(6, '(" MPPDB_CHECK2D :: PB MPPDB_CHECK2D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
           ELSE
@@ -516,10 +572,11 @@ CONTAINS
           ! first son --> send the good array to the first father
           !
           I_FIRST_FATHER = 0
+          CALL MPI_BSEND(JPHEXT,1,MPI_INTEGER,I_FIRST_FATHER, &
+               ITAG, MPPDB_INTRA_COMM, IINFO_ll)
           CALL MPI_BSEND(TAB_ll,SIZE(TAB_ll),MPI_PRECISION,I_FIRST_FATHER, &
                ITAG, MPPDB_INTRA_COMM, IINFO_ll)
-          !CALL MPI_BSEND(PTAB,SIZE(PTAB),MPI_PRECISION,I_FIRST_FATHER, &
-          !     ITAG, MPPDB_INTRA_COMM, IINFO_ll)
+
        END IF
     END IF
 
@@ -534,11 +591,11 @@ CONTAINS
 
   SUBROUTINE MPPDB_CHECKLB(PLB,MESSAGE,PRECISION,HLBTYPE,KRIM)
 
-    USE MODD_PARAMETERS, ONLY : JPHEXT
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
     USE MODI_GATHER_ll
     USE MODD_VAR_ll    , ONLY : MPI_PRECISION ,  NMNH_COMM_WORLD
     USE MODD_IO_ll,        ONLY : ISP,ISNPROC,GSMONOPROC,LPACK,L2D
-    USE MODD_MPIF
+    USE MODD_MPIF      , ONLY   : MPI_INTEGER, MPI_STATUS_IGNORE
 
     USE MODE_DISTRIB_LB
     USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
@@ -562,13 +619,12 @@ CONTAINS
 
     INTEGER,PARAMETER                    :: ITAG = 12345
 
-    INTEGER                              :: I_FIRST_SON, IRECVSTATUS
+    INTEGER                              :: I_FIRST_SON
     INTEGER                              :: I_FIRST_FATHER
     REAL                                 :: MAX_DIFF , MAX_VAL
     INTEGER                              :: IIB_ll,IIE_ll,IJB_ll,IJE_ll
     INTEGER                                  :: JI
     INTEGER :: IIB,IIE,IJB,IJE
-    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
 
 #ifdef MNH_SP4
     !pas de mpi_spawn sur IBM-SP ni MPI_ARGV_NULL etc ...
@@ -600,7 +656,8 @@ CONTAINS
              IF (IIB /= 0) THEN
                 TX3DP=>Z3D(IIB:IIE,IJB:IJE,:)
                 IF (ISP /= JI) THEN
-                   CALL MPI_RECV(TX3DP,SIZE(TX3DP),MPI_PRECISION,JI-1,99,NMNH_COMM_WORLD,STATUS,IINFO_ll) 
+                   CALL MPI_RECV(TX3DP,SIZE(TX3DP),MPI_PRECISION,JI-1 &
+                        ,99,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll) 
                 ELSE
                    CALL GET_DISTRIB_LB(HLBTYPE,JI,'LOC','WRITE',KRIM,IIB,IIE,IJB,IJE)
                    TX3DP = PLB(IIB:IIE,IJB:IJE,:)
@@ -631,7 +688,7 @@ CONTAINS
           I_FIRST_SON = MPPDB_NBPROC_WORLD
           !
           CALL MPI_RECV(TAB_SON_ll,SIZE(TAB_SON_ll),MPI_PRECISION,I_FIRST_SON, &
-               ITAG, MPPDB_INTRA_COMM, IRECVSTATUS, IINFO_ll)
+               ITAG, MPPDB_INTRA_COMM,MPI_STATUS_IGNORE, IINFO_ll)
           !
 
           ALLOCATE(TAB_SAVE_ll(SIZE(Z3D,1),SIZE(Z3D,2),SIZE(Z3D,3)))

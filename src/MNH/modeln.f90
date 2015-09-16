@@ -231,6 +231,7 @@ END MODULE MODI_MODEL_n
 !!      J.Escobar 20/04/2015: missing UPDATE_HALO before UPDATE_HALO2
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -834,7 +835,9 @@ ZTIME1=ZTIME2
 IF( LLG .AND. IMI==1 ) CALL SETLB_LG
 !
 IF (CCONF == "START" .OR. (CCONF == "RESTA" .AND. KTCOUNT /= 1 )) THEN
-        CALL BOUNDARIES (                                                   &
+CALL MPPDB_CHECK3DM("before BOUNDARIES:XUT, XVT, XWT, XTHT, XTKET",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET)
+CALL BOUNDARIES (                                                   &
             XTSTEP,CLBCX,CLBCY,NRR,NSV,KTCOUNT,                     &
             XLBXUM,XLBXVM,XLBXWM,XLBXTHM,XLBXTKEM,XLBXRM,XLBXSVM,   &
             XLBYUM,XLBYVM,XLBYWM,XLBYTHM,XLBYTKEM,XLBYRM,XLBYSVM,   &
@@ -842,7 +845,9 @@ IF (CCONF == "START" .OR. (CCONF == "RESTA" .AND. KTCOUNT /= 1 )) THEN
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
             XRHODJ,                                                 &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
-END IF    
+CALL MPPDB_CHECK3DM("after  BOUNDARIES:XUT, XVT, XWT, XTHT, XTKET",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET)
+END IF
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1445,6 +1450,8 @@ XTIME_LES_BU_PROCESS = 0.
 !
 !
 !
+CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
  CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
                  CMET_ADV_SCHEME, CSV_ADV_SCHEME, NSPLIT,            &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
@@ -1453,6 +1460,8 @@ XTIME_LES_BU_PROCESS = 0.
                  XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
                  XRTHS, XRRS, XRTKES, XRSVS,                         &
                  XRTHS_CLD, XRRS_CLD, XRSVS_CLD, XRTKEMS             )
+CALL MPPDB_CHECK3DM("after  ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ ",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1482,6 +1491,9 @@ ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
+!MPPDB_CHECK_LB=.TRUE.
+CALL MPPDB_CHECK3DM("before ADVEC_UVW:XU/V/W/TH/TKE/T,XRHODJ,XRU/V/Ws",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ,XRUS,XRVS,XRWS)
 IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
   IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     NULLIFY(TZFIELDC_ll)
@@ -1518,6 +1530,9 @@ ELSE
                  XRUS_PRES, XRVS_PRES, XRWS_PRES                     )
 END IF
 !
+CALL MPPDB_CHECK3DM("after  ADVEC_UVW:XU/V/W/TH/TKE/T,XRHODJ,XRU/V/Ws",PRECISION,&
+                   &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ,XRUS,XRVS,XRWS)
+!MPPDB_CHECK_LB=.FALSE.
 !
 CALL SECOND_MNH2(ZTIME2)
 !

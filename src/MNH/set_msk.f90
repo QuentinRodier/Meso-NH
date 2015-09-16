@@ -71,6 +71,7 @@ END MODULE MODI_SET_MSK
 !!      Biju Thomas 29/03/99  Identified nonprecipitating convective cells and only
 !!                            precipitating anvils as stratiform part
 !!      O. Caumont  09/04/08  Use in RADAR_SIMULATOR
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -133,11 +134,7 @@ IKB = 1 + JPVEXT
 IKE = SIZE(PRT,3) - JPVEXT
 IIU = SIZE(PRT,1)
 IJU = SIZE(PRT,2)
-IIB= 1+ JPHEXT
-IJB=1+JPHEXT
-IIE=IIU- JPHEXT
-IJE=IJU- JPHEXT
-
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !               ----------------------
 ALLOCATE( ZMASK(IIU,IJU,4) )

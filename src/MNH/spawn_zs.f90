@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/23 15:39:51
 !-----------------------------------------------------------------
 !###################
 MODULE MODI_SPAWN_ZS
@@ -99,6 +98,7 @@ END MODULE MODI_SPAWN_ZS
 !!
 !!      Original     12/01/05
 !!      Modification    20/05/06 Remove Clark and Farley interpolation
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -113,6 +113,8 @@ USE MODI_BIKHARDT
 USE MODI_ZS_BOUNDARY
 !
 USE MODE_MODELN_HANDLER
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -150,6 +152,9 @@ INTEGER             :: JMAXITER = 2000    ! maximum number of iterations
 !
 INTEGER, DIMENSION(2) :: IZSMAX
 INTEGER               :: IMI     ! current model index
+!
+INTEGER               :: IXSIZE,IYSIZE
+INTEGER                          :: INFO_ll                ! error return code
 !-------------------------------------------------------------------------------
 !
 !*       1.    PROLOGUE:
@@ -157,6 +162,7 @@ INTEGER               :: IMI     ! current model index
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
+CALL GO_TOMODEL_ll(2,INFO_ll)
 !
 !
 !*       1.2  recovers logical unit number of output listing
@@ -177,6 +183,7 @@ ALLOCATE(ZZS2_LS(SIZE(PZS2,1),SIZE(PZS2,2)))
                  XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
                  KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,1,       &
                  HLBCX,HLBCY,PZS1,ZZS2_LS)
+  CALL MPPDB_CHECK2D(ZZS2_LS,"SPAWN_ZS::ZZS2_LS",PRECISION)
 !
 !*       4.2   New zs:
 !              -------
@@ -190,8 +197,10 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
 !
 !* allocations
 !
-  ALLOCATE(ZZS2(KXEND-KXOR-1,KYEND-KYOR-1))
-  ALLOCATE(ZDZS(KXEND-KXOR-1,KYEND-KYOR-1))
+  IXSIZE = KXEND-KXOR - 2*JPHEXT + 1
+  IYSIZE = KYEND-KYOR - 2*JPHEXT + 1
+  ALLOCATE(ZZS2(IXSIZE,IYSIZE))
+  ALLOCATE(ZDZS(IXSIZE,IYSIZE))
   ALLOCATE(ZZS1(SIZE(PZS1,1),SIZE(PZS1,2)))
 !
 !* constants
@@ -214,12 +223,13 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
                      XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
                      KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,1,       &
                      HLBCX,HLBCY,ZZS1,PZS2)
+      CALL MPPDB_CHECK2D(PZS2,"SPAWN_ZS::PZS2",PRECISION)
     JCOUNTER=JCOUNTER+1
 !
 !* if orography is positive, it stays positive
 !
-    DO JI=1,KXEND-KXOR-1
-      DO JJ=1,KYEND-KYOR-1
+    DO JI=1,IXSIZE
+      DO JJ=1,IYSIZE
         IF (PZS1(JI+KXOR,JJ+KYOR)>-1.E-15)                            &
           PZS2((JI-1)*KDXRATIO+1+JPHEXT:JI*KDXRATIO+JPHEXT,             &
                (JJ-1)*KDYRATIO+1+JPHEXT:JJ*KDYRATIO+JPHEXT)  =          &
@@ -227,12 +237,13 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
                       (JJ-1)*KDYRATIO+1+JPHEXT:JJ*KDYRATIO+JPHEXT), 0.)
       END DO
     END DO
+    CALL MPPDB_CHECK2D(PZS2,"SPAWN_ZS::PZS2",PRECISION)
 !
 !* computation of new averaged orography
 !
     ZZS2(:,:) = 0.
-    DO JI=1,KXEND-KXOR-1
-      DO JJ=1,KYEND-KYOR-1
+    DO JI=1,IXSIZE
+      DO JJ=1,IYSIZE
         DO JEPSX = (JI-1)*KDXRATIO+1+JPHEXT, JI*KDXRATIO+JPHEXT
           DO JEPSY = (JJ-1)*KDYRATIO+1+JPHEXT, JJ*KDYRATIO+JPHEXT
             ZZS2(JI,JJ) = ZZS2(JI,JJ) + PZS2(JEPSX,JEPSY)
@@ -242,7 +253,7 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
     END DO
     ZZS2(:,:) = ZZS2(:,:) / (KDXRATIO*KDYRATIO)
     !
-    ZDZS(:,:)=PZS1(KXOR+1:KXEND-1,KYOR+1:KYEND-1)-ZZS2(:,:)
+    ZDZS(:,:)=PZS1(KXOR+JPHEXT:KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)-ZZS2(:,:)
 !
 !* test to end the iterative process
 !
@@ -253,8 +264,8 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
                           ' NOT obtained after',JCOUNTER,' iterations'
       WRITE(ILUOUT,FMT=*) TRIM(HFIELD),                             &
          ' is modified to insure egality of large scale and averaged fine field'
-      DO JI=1,KXEND-KXOR-1
-        DO JJ=1,KYEND-KYOR-1
+      DO JI=1,IXSIZE
+        DO JJ=1,IYSIZE
           DO JEPSX = (JI-1)*KDXRATIO+1+JPHEXT, JI*KDXRATIO+JPHEXT
             DO JEPSY = (JJ-1)*KDYRATIO+1+JPHEXT, JJ*KDYRATIO+JPHEXT
               PZS2(JEPSX,JEPSY) = PZS2(JEPSX,JEPSY) + ZDZS(JI,JJ)
@@ -283,25 +294,25 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
 !
 !* correction of coarse orography
 !
-    ZZS1(KXOR+1:KXEND-1,KYOR+1:KYEND-1) =                             &
-         ZZS1(KXOR+1:KXEND-1,KYOR+1:KYEND-1) + ZRELAX * ZDZS(:,:)
+    ZZS1(KXOR+JPHEXT:KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT) =                             &
+         ZZS1(KXOR+JPHEXT:KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT) + ZRELAX * ZDZS(:,:)
     !
     ! extrapolations (X direction)
     !
     IF(KXOR==1 .AND. KXEND==SIZE(PZS1,1) .AND. HLBCX(1)=='CYCL' ) THEN
-      ZZS1(KXOR,KYOR+1:KYEND-1) = ZZS1(KXEND-1,KYOR+1:KYEND-1)
-      ZZS1(KXEND,KYOR+1:KYEND-1) = ZZS1(KXOR+1,KYOR+1:KYEND-1)
+      ZZS1(KXOR,KYOR+JPHEXT:KYEND-JPHEXT)  = ZZS1(KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)
+      ZZS1(KXEND,KYOR+JPHEXT:KYEND-JPHEXT) = ZZS1(KXOR+JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)
     ELSE
-      ZZS1(KXOR,KYOR+1:KYEND-1) =                                       &
-        2. * ZZS1(KXOR+1,KYOR+1:KYEND-1)  - ZZS1(KXOR+2,KYOR+1:KYEND-1)
+      ZZS1(KXOR+JPHEXT-1,KYOR+JPHEXT:KYEND-JPHEXT) =                                       &
+        2. * ZZS1(KXOR+JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)  - ZZS1(KXOR+JPHEXT+1,KYOR+JPHEXT:KYEND-JPHEXT)
       IF(KXOR>1)                                                        &
-      ZZS1(KXOR-1,KYOR+1:KYEND-1) =                                     &
-        2. * ZZS1(KXOR  ,KYOR+1:KYEND-1)  - ZZS1(KXOR+1,KYOR+1:KYEND-1)
-      ZZS1(KXEND,KYOR+1:KYEND-1) =                                      &
-        2. * ZZS1(KXEND-1,KYOR+1:KYEND-1) - ZZS1(KXEND-2,KYOR+1:KYEND-1)
+      ZZS1(KXOR+JPHEXT-2,KYOR+JPHEXT:KYEND-JPHEXT) =                                     &
+        2. * ZZS1(KXOR+JPHEXT-1,KYOR+JPHEXT:KYEND-JPHEXT)  - ZZS1(KXOR+JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)
+      ZZS1(KXEND-JPHEXT+1,KYOR+JPHEXT:KYEND-JPHEXT) =                                      &
+        2. * ZZS1(KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT) - ZZS1(KXEND-JPHEXT-1,KYOR+JPHEXT:KYEND-JPHEXT)
       IF(KXEND<SIZE(PZS1,1))                                             &
-      ZZS1(KXEND+1,KYOR+1:KYEND-1) =                                    &
-        2. * ZZS1(KXEND  ,KYOR+1:KYEND-1) - ZZS1(KXEND-1,KYOR+1:KYEND-1)
+      ZZS1(KXEND-JPHEXT+2,KYOR+JPHEXT:KYEND-JPHEXT) =                                    &
+        2. * ZZS1(KXEND-JPHEXT+1,KYOR+JPHEXT:KYEND-JPHEXT) - ZZS1(KXEND-JPHEXT,KYOR+JPHEXT:KYEND-JPHEXT)
     END IF
     !
     ! extrapolations (Y direction)
@@ -309,19 +320,19 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
     IXMIN=MAX(KXOR-1,1)
     IXMAX=MIN(KXEND+1,SIZE(PZS1,1))
     IF(KYOR==1 .AND. KYEND==SIZE(PZS1,2) .AND. HLBCY(1)=='CYCL' ) THEN
-      ZZS1(IXMIN:IXMAX,KYOR)  = ZZS1(IXMIN:IXMAX,KYEND-1)
-      ZZS1(IXMIN:IXMAX,KYEND) = ZZS1(IXMIN:IXMAX,KYOR+1)
+      ZZS1(IXMIN:IXMAX,KYOR)  = ZZS1(IXMIN:IXMAX,KYEND-JPHEXT)
+      ZZS1(IXMIN:IXMAX,KYEND) = ZZS1(IXMIN:IXMAX,KYOR+JPHEXT)
     ELSE
-      ZZS1(IXMIN:IXMAX,KYOR) =                                       &
-        2. * ZZS1(IXMIN:IXMAX,KYOR+1)  - ZZS1(IXMIN:IXMAX,KYOR+2)
+      ZZS1(IXMIN:IXMAX,KYOR+JPHEXT-1) =                                       &
+        2. * ZZS1(IXMIN:IXMAX,KYOR+JPHEXT)  - ZZS1(IXMIN:IXMAX,KYOR+JPHEXT+1)
       IF(KYOR>1)                                                     &
-      ZZS1(IXMIN:IXMAX,KYOR-1) =                                     &
-        2. * ZZS1(IXMIN:IXMAX,KYOR)    - ZZS1(IXMIN:IXMAX,KYOR+1)
-      ZZS1(IXMIN:IXMAX,KYEND) =                                      &
-        2. * ZZS1(IXMIN:IXMAX,KYEND-1) - ZZS1(IXMIN:IXMAX,KYEND-2)
+      ZZS1(IXMIN:IXMAX,KYOR+JPHEXT-2) =                                     &
+        2. * ZZS1(IXMIN:IXMAX,KYOR+JPHEXT-1)    - ZZS1(IXMIN:IXMAX,KYOR+JPHEXT)
+      ZZS1(IXMIN:IXMAX,KYEND-JPHEXT+1) =                                      &
+        2. * ZZS1(IXMIN:IXMAX,KYEND-JPHEXT) - ZZS1(IXMIN:IXMAX,KYEND-JPHEXT-1)
       IF(KYEND<SIZE(PZS1,2))                                          &
-      ZZS1(IXMIN:IXMAX,KYEND+1) =                                    &
-        2. * ZZS1(IXMIN:IXMAX,KYEND)   - ZZS1(IXMIN:IXMAX,KYEND-1)
+      ZZS1(IXMIN:IXMAX,KYEND-JPHEXT+2) =                                    &
+        2. * ZZS1(IXMIN:IXMAX,KYEND-JPHEXT+1)   - ZZS1(IXMIN:IXMAX,KYEND-JPHEXT)
     END IF
 !
 !* next iteration
@@ -342,6 +353,7 @@ IF (PRESENT(PZS2_LS)) PZS2_LS(:,:)=ZZS2_LS(:,:)
 DEALLOCATE(ZZS2_LS)
 !
 CALL GOTO_MODEL(IMI)
+CALL GO_TOMODEL_ll(IMI,INFO_ll)
 !-------------------------------------------------------------------------------
 END SUBROUTINE SPAWN_ZS
 !

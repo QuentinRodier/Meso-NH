@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_QLAP
@@ -112,7 +111,8 @@ END MODULE MODI_QLAP
 !!                     14/01/97 New anelastic equation ( Stein )
 !!                     17/12/97 include the case of non-vanishing orography
 !!                              at the lbc ( Stein )
-!!                     06/12 V.Masson : update_halo due to CONTRAV changes 
+!!                     06/12 V.Masson : update_halo due to CONTRAV changes
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -126,6 +126,8 @@ USE MODD_CST
 USE MODI_GDIV
 USE MODI_GRADIENT_M
 USE MODI_SHUMAN
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -161,6 +163,7 @@ INTEGER                          :: IIU,IJU,IKU         ! I,J,K array sizes
 INTEGER                          :: JK,JJ,JI            ! vertical loop index
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 INTEGER :: IINFO_ll
+INTEGER :: IIB,IIE,IJB,IJE
 !-------------------------------------------------------------------------------
 !
 !
@@ -168,57 +171,64 @@ INTEGER :: IINFO_ll
 !              -------------------------------
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU=SIZE(PY,3)
 !
 ZU = GX_M_U(1,IKU,1,PY,PDXX,PDZZ,PDZX)
+CALL MPPDB_CHECK3D(ZU,'QLAP::ZU',PRECISION)
 !
 IF ( HLBCX(1) /= 'CYCL' .AND. LWEST_ll() ) THEN
   DO JK=2,IKU-1
     DO JJ=1,IJU
-      ZU(2,JJ,JK)=  (PY(2,JJ,JK) - PY(1,JJ,JK) - 0.5 * (                  &
-       PDZX(2,JJ,JK)   * (PY(2,JJ,JK)-PY(2,JJ,JK-1)) / PDZZ(2,JJ,JK)      &
-      +PDZX(2,JJ,JK+1) * (PY(2,JJ,JK+1)-PY(2,JJ,JK)) / PDZZ(2,JJ,JK+1)    &  
-                                      )    ) / PDXX(2,JJ,JK)
+      ZU(IIB,JJ,JK)=  (PY(IIB,JJ,JK) - PY(IIB-1,JJ,JK) - 0.5 * (                  &
+       PDZX(IIB,JJ,JK)   * (PY(IIB,JJ,JK)-PY(IIB,JJ,JK-1)) / PDZZ(IIB,JJ,JK)      &
+      +PDZX(IIB,JJ,JK+1) * (PY(IIB,JJ,JK+1)-PY(IIB,JJ,JK)) / PDZZ(IIB,JJ,JK+1)    &  
+                                      )    ) / PDXX(IIB,JJ,JK)
     END DO
   END DO
 END IF
+CALL MPPDB_CHECK3D(ZU,'QLAP::ZU/W',PRECISION)
 !
 IF ( HLBCX(1) /= 'CYCL' .AND. LEAST_ll() ) THEN
   DO JK=2,IKU-1
     DO JJ=1,IJU
-      ZU(IIU,JJ,JK)=  (PY(IIU,JJ,JK) - PY(IIU-1,JJ,JK) - 0.5 * (                    &
-        PDZX(IIU,JJ,JK)   * (PY(IIU-1,JJ,JK)-PY(IIU-1,JJ,JK-1)) / PDZZ(IIU-1,JJ,JK)  &
-       +PDZX(IIU,JJ,JK+1) * (PY(IIU-1,JJ,JK+1)-PY(IIU-1,JJ,JK)) / PDZZ(IIU-1,JJ,JK+1)&  
-                                            ) ) / PDXX(IIU,JJ,JK)
+      ZU(IIE+1,JJ,JK)=  (PY(IIE+1,JJ,JK) - PY(IIE+1-1,JJ,JK) - 0.5 * (                    &
+        PDZX(IIE+1,JJ,JK)   * (PY(IIE+1-1,JJ,JK)-PY(IIE+1-1,JJ,JK-1)) / PDZZ(IIE+1-1,JJ,JK)  &
+       +PDZX(IIE+1,JJ,JK+1) * (PY(IIE+1-1,JJ,JK+1)-PY(IIE+1-1,JJ,JK)) / PDZZ(IIE+1-1,JJ,JK+1)&  
+                                            ) ) / PDXX(IIE+1,JJ,JK)
     END DO
   END DO
 END IF
+CALL MPPDB_CHECK3D(ZU,'QLAP::ZU/E',PRECISION)
 !
 IF(.NOT. L2D) THEN 
 !
   ZV = GY_M_V(1,IKU,1,PY,PDYY,PDZZ,PDZY)
+  CALL MPPDB_CHECK3D(ZV,'QLAP::ZV',PRECISION)
 !
   IF ( HLBCY(1) /= 'CYCL' .AND. LSOUTH_ll() ) THEN 
     DO JK=2,IKU-1
       DO JI=1,IIU
-        ZV(JI,2,JK)=   (PY(JI,2,JK) - PY(JI,1,JK) - 0.5 * (                  &
-          PDZY(JI,2,JK)   * (PY(JI,2,JK)-PY(JI,2,JK-1)) / PDZZ(JI,2,JK)      &
-         +PDZY(JI,2,JK+1) * (PY(JI,2,JK+1)-PY(JI,2,JK)) / PDZZ(JI,2,JK+1)    &  
-                                            )   ) / PDYY(JI,2,JK) 
+        ZV(JI,IJB,JK)=   (PY(JI,IJB,JK) - PY(JI,IJB-1,JK) - 0.5 * (                  &
+          PDZY(JI,IJB,JK)   * (PY(JI,IJB,JK)-PY(JI,IJB,JK-1)) / PDZZ(JI,IJB,JK)      &
+         +PDZY(JI,IJB,JK+1) * (PY(JI,IJB,JK+1)-PY(JI,IJB,JK)) / PDZZ(JI,IJB,JK+1)    &  
+                                            )   ) / PDYY(JI,IJB,JK) 
       END DO
     END DO
   END IF
+  CALL MPPDB_CHECK3D(ZV,'QLAP::ZV/S',PRECISION)
   IF ( HLBCY(1) /= 'CYCL' .AND. LNORTH_ll() ) THEN
 !
     DO JK=2,IKU-1
       DO JI=1,IIU
-        ZV(JI,IJU,JK)=    (PY(JI,IJU,JK) - PY(JI,IJU-1,JK) - 0.5 * (                  &
-          PDZY(JI,IJU,JK)   * (PY(JI,IJU-1,JK)-PY(JI,IJU-1,JK-1)) / PDZZ(JI,IJU-1,JK)  &
-         +PDZY(JI,IJU,JK+1) * (PY(JI,IJU-1,JK+1)-PY(JI,IJU-1,JK)) / PDZZ(JI,IJU-1,JK+1)&
-                                                )  ) / PDYY(JI,IJU,JK) 
+        ZV(JI,IJE+1,JK)=    (PY(JI,IJE+1,JK) - PY(JI,IJE+1-1,JK) - 0.5 * (                  &
+          PDZY(JI,IJE+1,JK)   * (PY(JI,IJE+1-1,JK)-PY(JI,IJE+1-1,JK-1)) / PDZZ(JI,IJE+1-1,JK)  &
+         +PDZY(JI,IJE+1,JK+1) * (PY(JI,IJE+1-1,JK+1)-PY(JI,IJE+1-1,JK)) / PDZZ(JI,IJE+1-1,JK+1)&
+                                                )  ) / PDYY(JI,IJE+1,JK) 
       END DO
     END DO
   END IF
+ CALL MPPDB_CHECK3D(ZV,'QLAP::ZV/N',PRECISION)
 !
 ELSE
   ZV=0.

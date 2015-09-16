@@ -7,7 +7,9 @@
 	      CIDEAL='RSOU' CZS='FLAT' 
               LBOUSS=.FALSE.  LPERTURB=.TRUE. 
 	      CEQNSYS='LHE',LSHIFT=.TRUE.,
-	      NVERB=5 /
+	      NVERB=5 
+              !JPHEXT = 3 , NHALO = 3 
+              /
 &NAM_PERT_PRE CPERT_KIND= 'TH' , XAMPLITH= 1.5 ,
               LSET_RHU= .FALSE. , XAMPLIRV= 0. ,
               XCENTERZ= 1692.31

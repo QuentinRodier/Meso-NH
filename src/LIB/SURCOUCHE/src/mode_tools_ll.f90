@@ -10,6 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !-----------------------------------------------------------------
+!Correction :
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-----------------------------------------------------------------
 
 !     ####################
@@ -777,6 +779,8 @@
                           NXOR_ALL, NYOR_ALL,         &
                           NXEND_ALL, NYEND_ALL
   USE MODD_VAR_ll, ONLY : TCRRT_PROCONF
+
+  USE MODD_PARAMETERS_ll, ONLY : JPHEXT
 !
   IMPLICIT NONE
 !
@@ -797,8 +801,8 @@
 !
 !*       2.    Compute the dimensions of the model
 !
-  KIMAX = NDXRATIO_ALL(IMODEL) * (NXEND_ALL(IMODEL)-NXOR_ALL(IMODEL) - 1)
-  KJMAX = NDYRATIO_ALL(IMODEL) * (NYEND_ALL(IMODEL)-NYOR_ALL(IMODEL) - 1)
+  KIMAX = NDXRATIO_ALL(IMODEL) * (NXEND_ALL(IMODEL)-NXOR_ALL(IMODEL) -2*JPHEXT + 1)
+  KJMAX = NDYRATIO_ALL(IMODEL) * (NYEND_ALL(IMODEL)-NYOR_ALL(IMODEL) -2*JPHEXT + 1)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1843,10 +1847,10 @@
 !
 !*       1.1   Get current splitting
 !
-  IF (LWEST_ll())  IWEST=-1
-  IF (LEAST_ll())  IEAST=1
-  IF (LNORTH_ll()) INORTH=1
-  IF (LSOUTH_ll()) ISOUTH=-1
+  IF (LWEST_ll())  IWEST=-JPHEXT      ! -1
+  IF (LEAST_ll())  IEAST=JPHEXT       ! 1
+  IF (LNORTH_ll()) INORTH=JPHEXT      ! 1
+  IF (LSOUTH_ll()) ISOUTH=-JPHEXT     ! -1
   TZSPLIT => TCRRT_PROCONF%TSPLITS_B(IP)
   IOR(1)  = TZSPLIT%NXORP+IWEST
   IOR(2)  = TZSPLIT%NYORP+ISOUTH 

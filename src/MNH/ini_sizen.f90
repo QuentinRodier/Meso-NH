@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:27
 !-----------------------------------------------------------------
 !     #################
       MODULE MODI_INI_SIZE_n
@@ -100,6 +99,7 @@ END MODULE MODI_INI_SIZE_n
 !!             Oct. 10 2001 (I. Mallet)  allow namelists in different orders
 !!             Jan. 2004   (V. Masson)  externalization of surface
 !!             June 2006   (D. Gazen) _n: no more read of updated var. 
+!!             J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !-------------------------------------------------------------------------------
 !
@@ -151,6 +151,7 @@ INTEGER             :: IGRID   ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH  ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM  ! Name of the desired field in LFIFM file
+INTEGER             :: IJPHEXT
 !
 !-------------------------------------------------------------------------------
 !
@@ -226,6 +227,22 @@ YRECFM='KMAX'
 YDIR='--'
 CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NKMAX,IGRID,ILENCH,YCOMMENT,IRESP)
 !
+YRECFM='JPHEXT'
+YDIR='--'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+IF ( IJPHEXT .NE. JPHEXT ) THEN
+   WRITE(ILUOUT,FMT=*) ' INI_SIZE_N : JPHEXT in namelist NAM_CONF ( or default or .des value )&
+        & JPHEXT=',JPHEXT
+   WRITE(ILUOUT,FMT=*)' different from LFI file=',HINIFILE ,' value JPHEXT=',IJPHEXT
+   WRITE(ILUOUT,FMT=*) '-> JOB ABORTED'
+   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+   CALL ABORT   
+   STOP  
+   !WRITE(NLUOUT,FMT=*) ' JPHEXT HAS BEEN SET TO ', IJPHEXT
+   !IJPHEXT = JPHEXT
+END IF
+!
 IF (KMI == 1) THEN   ! special initialisation for the outer model
   NDXRATIO_ALL(KMI) = 1
   NDYRATIO_ALL(KMI) =  1
@@ -249,8 +266,8 @@ IF (LEN_TRIM(CDAD_NAME(KMI))>0) THEN
   CALL FMREAD(HINIFILE,'DYRATIO',HLUOUT,YDIR,NDYRATIO_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
   CALL FMREAD(HINIFILE,'XOR',HLUOUT,YDIR,NXOR_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
   CALL FMREAD(HINIFILE,'YOR',HLUOUT,YDIR,NYOR_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
-  NXEND_ALL(KMI)=NXOR_ALL(KMI)+NIMAX_ll/NDXRATIO_ALL(KMI)+JPHEXT
-  NYEND_ALL(KMI)=NYOR_ALL(KMI)+NJMAX_ll/NDYRATIO_ALL(KMI)+JPHEXT
+  NXEND_ALL(KMI)=NXOR_ALL(KMI)-1 + NIMAX_ll/NDXRATIO_ALL(KMI) +2*JPHEXT
+  NYEND_ALL(KMI)=NYOR_ALL(KMI)-1 + NJMAX_ll/NDYRATIO_ALL(KMI) +2*JPHEXT
 ELSE
   NDXRATIO_ALL(KMI)=1
   NDYRATIO_ALL(KMI)=1

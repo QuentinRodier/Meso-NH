@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 diachro 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #############################################
       SUBROUTINE WRITE_LFIFMN_FORDIACHRO_n(HFMFILE)
@@ -81,6 +80,7 @@
 !!       J. DURON      24/06/99 add GPACK varaible to disable pack option
 !!       October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
+!!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -225,6 +225,13 @@ YCOMMENT=' '
 IGRID=0
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'--',NKMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM='JPHEXT'
+!CALL ELIM(YRECFM)
+YCOMMENT=' '
+IGRID=0
+ILENCH=LEN(YCOMMENT)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'--',JPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 !*       1.2    Grid variables :
 !

@@ -219,6 +219,7 @@ END MODULE MODI_PRESSUREZ
 !!                    02/2013 (J.Escobar ) add a test on abs(err) > 100.O for BG without controle of NAN
 !!                    2012    (V.Masson)  Modif update_halo due to CONTRAV
 !!                    2014    (C.Lac) correction for 3D run with LBOUSS=.TRUE.
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -251,6 +252,7 @@ USE MODD_DYN_n  , ONLY : LRES, XRES
 USE MODD_MPIF
 USE MODD_VAR_ll, ONLY : MPI_PRECISION, NMNH_COMM_WORLD
 !JUANZ
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -370,6 +372,8 @@ REAL, DIMENSION(SIZE(PDYY,2),SIZE(PDXX,3)) :: ZPABS_E ! local pressure on easter
 REAL, DIMENSION(SIZE(PDYY,2),SIZE(PDXX,3)) :: ZPABS_W ! local pressure on western side
 INTEGER :: IINFO_ll,KINFO
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll, TZFIELDS2_ll  ! list of fields to exchange
+!
+INTEGER :: IIB_I,IIE_I,IJB_I,IJE_I
 !
 !
 !------------------------------------------------------------------------------
@@ -527,29 +531,30 @@ IF ( HLBCX(1) /= 'CYCL' ) THEN
 !!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
 !!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
     DO JK=2,IKU-1
-      ZDV_SOURCE(2,:,JK)=                                                    &
-       (ZPHIT(2,:,JK) - ZPHIT(1,:,JK) - 0.5 * (                              &
-        PDZX(2,:,JK)   * (ZPHIT(2,:,JK)-ZPHIT(2,:,JK-1)) / PDZZ(2,:,JK)      &
-       +PDZX(2,:,JK+1) * (ZPHIT(2,:,JK+1)-ZPHIT(2,:,JK)) / PDZZ(2,:,JK+1)    &
+      ZDV_SOURCE(IIB,:,JK)=                                                    &
+       (ZPHIT(IIB,:,JK) - ZPHIT(IIB-1,:,JK) - 0.5 * (                              &
+        PDZX(IIB,:,JK)   * (ZPHIT(IIB,:,JK)-ZPHIT(IIB,:,JK-1)) / PDZZ(IIB,:,JK)      &
+       +PDZX(IIB,:,JK+1) * (ZPHIT(IIB,:,JK+1)-ZPHIT(IIB,:,JK)) / PDZZ(IIB,:,JK+1)    &
                                               )                              &
-       ) / PDXX(2,:,JK)
+       ) / PDXX(IIB,:,JK)
     END DO
   ENDIF
   !
   IF(LEAST_ll()) THEN
     DO JK=2,IKU-1
-      ZDV_SOURCE(IIU,:,JK)=                                                   &
-        (ZPHIT(IIU,:,JK) - ZPHIT(IIU-1,:,JK) - 0.5 * (                        &
-         PDZX(IIU,:,JK)   * (ZPHIT(IIU-1,:,JK)-ZPHIT(IIU-1,:,JK-1))           &
-                          / PDZZ(IIU-1,:,JK)                                  &
-        +PDZX(IIU,:,JK+1) * (ZPHIT(IIU-1,:,JK+1)-ZPHIT(IIU-1,:,JK))           &
-                          / PDZZ(IIU-1,:,JK+1)                                &
+      ZDV_SOURCE(IIE+1,:,JK)=                                                   &
+        (ZPHIT(IIE+1,:,JK) - ZPHIT(IIE+1-1,:,JK) - 0.5 * (                        &
+         PDZX(IIE+1,:,JK)   * (ZPHIT(IIE+1-1,:,JK)-ZPHIT(IIE+1-1,:,JK-1))           &
+                          / PDZZ(IIE+1-1,:,JK)                                  &
+        +PDZX(IIE+1,:,JK+1) * (ZPHIT(IIE+1-1,:,JK+1)-ZPHIT(IIE+1-1,:,JK))           &
+                          / PDZZ(IIE+1-1,:,JK+1)                                &
                                                      )                        &
-        ) / PDXX(IIU,:,JK)
+        ) / PDXX(IIE+1,:,JK)
     END DO
   END IF
 END IF
 !
+CALL MPPDB_CHECK3DM("before MXM PRESSUREZ :PRU/V/WS",PRECISION,PRUS,PRVS,PRWS)
 IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
   PRUS = PRUS - MXM(PRHODJ * XCPD * ZTHETAV) * ZDV_SOURCE
   PRWS = PRWS - MZM(1,IKU,1,PRHODJ * XCPD * ZTHETAV) * GZ_M_W(1,IKU,1,ZPHIT,PDZZ)
@@ -567,29 +572,30 @@ IF(.NOT. L2D) THEN
 !!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
 !!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
       DO JK=2,IKU-1
-        ZDV_SOURCE(:,2,JK)=                                                  &
-         (ZPHIT(:,2,JK) - ZPHIT(:,1,JK) - 0.5 * (                            &
-          PDZY(:,2,JK)   * (ZPHIT(:,2,JK)-ZPHIT(:,2,JK-1)) / PDZZ(:,2,JK)    &
-         +PDZY(:,2,JK+1) * (ZPHIT(:,2,JK+1)-ZPHIT(:,2,JK)) / PDZZ(:,2,JK+1)  &
+        ZDV_SOURCE(:,IJB,JK)=                                                  &
+         (ZPHIT(:,IJB,JK) - ZPHIT(:,IJB-1,JK) - 0.5 * (                            &
+          PDZY(:,IJB,JK)   * (ZPHIT(:,IJB,JK)-ZPHIT(:,IJB,JK-1)) / PDZZ(:,IJB,JK)    &
+         +PDZY(:,IJB,JK+1) * (ZPHIT(:,IJB,JK+1)-ZPHIT(:,IJB,JK)) / PDZZ(:,IJB,JK+1)  &
                                                 )                            &
-         ) / PDYY(:,2,JK)
+         ) / PDYY(:,IJB,JK)
       END DO
     END IF
     !
     IF (LNORTH_ll()) THEN
       DO JK=2,IKU-1
-        ZDV_SOURCE(:,IJU,JK)=                                                &
-         (ZPHIT(:,IJU,JK) - ZPHIT(:,IJU-1,JK) - 0.5 * (                      &
-          PDZY(:,IJU,JK)   * (ZPHIT(:,IJU-1,JK)-ZPHIT(:,IJU-1,JK-1))         &
-                           / PDZZ(:,IJU-1,JK)                                &
-         +PDZY(:,IJU,JK+1) * (ZPHIT(:,IJU-1,JK+1)-ZPHIT(:,IJU-1,JK))         &
-                           / PDZZ(:,IJU-1,JK+1)                              &
+        ZDV_SOURCE(:,IJE+1,JK)=                                                &
+         (ZPHIT(:,IJE+1,JK) - ZPHIT(:,IJE+1-1,JK) - 0.5 * (                      &
+          PDZY(:,IJE+1,JK)   * (ZPHIT(:,IJE+1-1,JK)-ZPHIT(:,IJE+1-1,JK-1))         &
+                           / PDZZ(:,IJE+1-1,JK)                                &
+         +PDZY(:,IJE+1,JK+1) * (ZPHIT(:,IJE+1-1,JK+1)-ZPHIT(:,IJE+1-1,JK))         &
+                           / PDZZ(:,IJE+1-1,JK+1)                              &
                                                       )                      &
-        ) / PDYY(:,IJU,JK)
+        ) / PDYY(:,IJE+1,JK)
       END DO
     END IF
   END IF
 !
+  CALL MPPDB_CHECK3DM("before MYM PRESSUREZ :PRU/V/WS",PRECISION,PRUS,PRVS,PRWS)
   IF(CEQNSYS=='MAE' .OR. CEQNSYS=='DUR') THEN
     PRVS = PRVS - MYM(PRHODJ * XCPD * ZTHETAV) * ZDV_SOURCE
   ELSEIF(CEQNSYS=='LHE') THEN

@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_POLAR_MEAN
@@ -80,6 +79,7 @@ END MODULE MODI_POLAR_MEAN
 !!    MODIFICATIONS
 !!    -------------
 !!      Original              01/12/01
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -87,8 +87,8 @@ END MODULE MODI_POLAR_MEAN
 !              ------------
 !
 USE MODD_CST, ONLY: XPI
-USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_GRID_n, ONLY: XXHAT,XYHAT
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -127,10 +127,7 @@ IPHI= SIZE(PR0,1)
 !
 IIU=SIZE(PVARIN,1)
 IJU=SIZE(PVARIN,2)
-IIB=1+JPHEXT
-IJB=1+JPHEXT
-IIE=IIU-JPHEXT
-IJE=IJU-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 ZDELTAX = XXHAT(3) - XXHAT(2)
 ZDELTAY = XYHAT(3) - XYHAT(2)
@@ -219,8 +216,8 @@ END SUBROUTINE POLAR_MEAN_P
 !              ------------
 !
 USE MODD_CST, ONLY: XPI
-USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_GRID_n, ONLY: XXHAT,XYHAT
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -257,10 +254,7 @@ IPHI= SIZE(PR0,2)
 !
 IIU=SIZE(PVARIN,1)
 IJU=SIZE(PVARIN,2)
-IIB=1+JPHEXT
-IJB=1+JPHEXT
-IIE=IIU-JPHEXT
-IJE=IJU-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 ZDELTAX = XXHAT(3) - XXHAT(2)
 ZDELTAY = XYHAT(3) - XYHAT(2)

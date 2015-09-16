@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/06/08 15:57:16
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_DFLUX_CORR 
@@ -112,6 +111,7 @@ END MODULE MODI_DFLUX_CORR
 !!      J Escobar 
 !!    J. Stein &    20/03/01 : bug for the open case at the boundary
 !!      P. Jabouille 
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -242,14 +242,15 @@ ZBETAOUT(:,:,IKU) = 1.      ! because no velocity is available
 ! 
 ! Update halo and apply possible cyclic boundary conditions
 !
-IF(NHALO == 1 .OR. HLBCX(1)=='CYCL' .OR. HLBCY(1)=='CYCL') THEN
+!!$IF(NHALO == 1 .OR. HLBCX(1)=='CYCL' .OR. HLBCY(1)=='CYCL') THEN
+IF(HLBCX(1)=='CYCL' .OR. HLBCY(1)=='CYCL') THEN
   CALL ADD3DFIELD_ll(TZFIELDS_ll, ZBETAOUT)
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
-  ELSE
-    IF(HLBCX(1)=='CYCL') CALL UPDATE_BOUNDARIES_ll('XX',TZFIELDS_ll,IINFO_ll)
-    IF(HLBCY(1)=='CYCL') CALL UPDATE_BOUNDARIES_ll('YY',TZFIELDS_ll,IINFO_ll)
-  END IF
+!!$  ELSE
+!!$    IF(HLBCX(1)=='CYCL') CALL UPDATE_BOUNDARIES_ll('XX',TZFIELDS_ll,IINFO_ll)
+!!$    IF(HLBCY(1)=='CYCL') CALL UPDATE_BOUNDARIES_ll('YY',TZFIELDS_ll,IINFO_ll)
+!!$  END IF
   CALL CLEANLIST_ll(TZFIELDS_ll)
 ENDIF
 !

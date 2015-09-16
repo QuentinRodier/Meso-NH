@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_EXTRACT_VORTEX
@@ -93,6 +92,7 @@ END MODULE MODI_EXTRACT_VORTEX
 !!    MODIFICATIONS
 !!    -------------
 !!      Original              01/12/01
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -100,9 +100,10 @@ END MODULE MODI_EXTRACT_VORTEX
 !              ------------
 !
 USE MODD_CST, ONLY: XPI
-USE MODD_PARAMETERS, ONLY: JPHEXT,XUNDEF
+USE MODD_PARAMETERS, ONLY: XUNDEF
 USE MODD_DIM_n,      ONLY: NIMAX,NJMAX
 USE MODD_GRID_n,     ONLY: XXHAT,XYHAT
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -139,10 +140,7 @@ IX= SIZE(PVARIN,1)
 IY= SIZE(PVARIN,2)
 IPHI=SIZE(PR0,1)
 !
-IIB=1+JPHEXT
-IJB=1+JPHEXT
-IIE=NIMAX+JPHEXT
-IJE=NJMAX+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 ZDELTAX = XXHAT(3) - XXHAT(2)
 ZDELTAY = XYHAT(3) - XYHAT(2)

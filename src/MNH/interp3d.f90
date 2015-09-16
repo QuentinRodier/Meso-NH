@@ -6,9 +6,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 convert 2006/05/18 13:07:25
 !-----------------------------------------------------------------
-!     ######spl
 MODULE MODI_INTERP3D
 !#################################
 !
@@ -59,6 +57,7 @@ END MODULE MODI_INTERP3D
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    21/03/97
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -94,13 +93,10 @@ INTEGER :: IKU
 !
 !*         1.    
 !                 ------------
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IPU=SIZE(PFIELDAP,3)
 IKB=1 +JPVEXT
 IKU=SIZE(XZHAT)
-IIB=JPHEXT+1
-IIE=NIMAX+JPHEXT
-IJB=JPHEXT+1
-IJE=NJMAX+JPHEXT
 ZDIXEPS=10.*EPSILON(1.)
 !
 SELECT CASE (KGRID)

@@ -54,6 +54,7 @@ END MODULE MODI_ION_BOUND4DRIFT
 !!    AUTHOR
 !!    ------
 !!          M. Chong     12/2010
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!	
 !-------------------------------------------------------------------------------
 !
@@ -89,10 +90,7 @@ INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 !              ----------------------------------------------
 !
 ! beginning and end indexes of the physical subdomain
-IIB = 1 + JPHEXT
-IIE = SIZE(PEFIELDU,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PEFIELDU,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !-------------------------------------------------------------------------------
 !

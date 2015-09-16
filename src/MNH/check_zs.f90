@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !###################
 MODULE MODI_CHECK_ZS
@@ -77,6 +76,7 @@ END MODULE MODI_CHECK_ZS
 !!      Original    24/09/96
 !!                  20/05/98  (V. Masson and J. Stein) include the case where
 !!                             the domain is reduced 
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -200,12 +200,12 @@ IF ( MOD(NIMAX,IDXRATIO) /= 0 .OR. MOD(NJMAX,IDYRATIO) /= 0 ) THEN
   RETURN
 END IF
 !
-IF ( MOD(KIINF-JPHEXT,IDXRATIO) /= 0 .OR. MOD(KJINF-JPHEXT,IDYRATIO) /= 0 ) THEN
+IF ( MOD(KIINF-1,IDXRATIO) /= 0 .OR. MOD(KJINF-1,IDYRATIO) /= 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'Your truncated domain does not start on an grid mesh'
   WRITE (ILUOUT0,*) 'border of its father domain; no nesting allowed'
-  WRITE (ILUOUT0,*) 'KIINF-JPHEXT=',KIINF-JPHEXT,' IDXRATIO=',IDXRATIO
-  WRITE (ILUOUT0,*) 'KIINF-JPHEXT=',KJINF-JPHEXT,' IDYRATIO=',IDYRATIO
+  WRITE (ILUOUT0,*) 'KIINF-1=',KIINF-1,' IDXRATIO=',IDXRATIO
+  WRITE (ILUOUT0,*) 'KIINF-1=',KJINF-1,' IDYRATIO=',IDYRATIO
   WRITE (ILUOUT0,*) '********************************************************'
   HDAD_NAME='                         '
   RETURN

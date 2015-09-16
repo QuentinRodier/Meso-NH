@@ -59,6 +59,7 @@ END MODULE MODI_PGDFILTER
 !!    Modification
 !!        25/05/96 (V Masson) remove useless ZMASKIJ
 !!        28/11/96 (V Masson) test on point localisation itself
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -98,10 +99,6 @@ INTEGER                :: IIB,IJB,IIE,IJE
 !*       1.     Initialisations
 !               ---------------
 !
-!RETURN
-!!$IIU=SIZE(PPGDARRAY,1)
-!!$IJU=SIZE(PPGDARRAY,2)
-
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 
@@ -125,20 +122,20 @@ CALL ADD2DFIELD_ll(TZFIELDS_ll,ZARRAY_ll )
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 ZARRAY(1:IIU,1:IJU) = ZARRAY_ll(1:IIU,1:IJU)
 DO JITER=1,KPGDFILTER
-  DO JI=1,IIU
-    DO JJ=1,IJU
+  DO JI= IIB-1,IIE+1
+    DO JJ= IJB-1,IJE+1
       IF ( ZARRAY(JI,JJ)==XUNDEF ) CYCLE
       ICOEF(:,:)=0
-      IF (JI>1  ) THEN
+      IF (JI>IIB-1  ) THEN
         IF(PPGDARRAY(JI-1,JJ)/=XUNDEF)   ICOEF(1,1)=1
       END IF
-      IF (JI<IIU) THEN
+      IF (JI<IIE+1) THEN
         IF(PPGDARRAY(JI+1,JJ)/=XUNDEF)   ICOEF(2,1)=1
       END IF
-      IF (JJ>1  ) THEN
+      IF (JJ>IJB-1  ) THEN
         IF(PPGDARRAY(JI,JJ-1)/=XUNDEF)   ICOEF(1,2)=1
       END IF
-      IF (JJ<IJU) THEN
+      IF (JJ<IJE+1) THEN
         IF(PPGDARRAY(JI,JJ+1)/=XUNDEF)   ICOEF(2,2)=1
       END IF
       IF (ANY( ICOEF == 1 ) )  THEN

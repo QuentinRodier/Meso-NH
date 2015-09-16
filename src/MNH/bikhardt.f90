@@ -170,6 +170,7 @@ END MODULE MODI_BIKHARDT4D
 !!      J.P. Lafore  22/10/96  interpolation coefficients added to the arguments
 !!                             list to avoid duplication. 
 !!     V. Masson and F. Gheusi (10/10/97) bug in cyclic case
+!!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -212,8 +213,8 @@ REAL :: ZBFY1,ZBFY2,ZBFY3,ZBFY4     ! at Flux points in Y-direc.
 ! 
 INTEGER             :: IIU       ! Upper dimension in x direction (inner model)
 INTEGER             :: IJU       ! Upper dimension in y direction (inner model)
-INTEGER             :: IIB
-INTEGER             :: IJB
+INTEGER             :: IIB, IIE
+INTEGER             :: IJB, IJE
 INTEGER             :: IIU1      ! Upper dimension in x direction (outer model)
 INTEGER             :: IJU1      ! Upper dimension in y direction (outer model)
 INTEGER             :: IIS,IJS   ! indices I and J in x and y dir. for scalars
@@ -231,8 +232,7 @@ IIU = SIZE(PFIELD2,1)
 IJU = SIZE(PFIELD2,2)
 IIU1= SIZE(PFIELD1,1)
 IJU1= SIZE(PFIELD1,2)
-IIB = 1+JPHEXT
-IJB = 1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !*       1.2   extrapolates field of outer model
 !
@@ -268,6 +268,7 @@ IF ( HLBCY(1) == 'CYCL' ) THEN
 END IF
 !-------------------------------------------------------------------------------
 !
+PFIELD2 = 0.0
 SELECT CASE (KGRID)
 !
 !*      2.1    Mass points
@@ -285,11 +286,11 @@ SELECT CASE (KGRID)
       ZBMY3 = PBMY3(JEPSY)
       ZBMY4 = PBMY4(JEPSY)
       DO JI = KXOR,KXEND
-        IIF = IIB+JEPSX-1           +(JI-KXOR-1)*KDXRATIO
-        IIS = IIB+JEPSX-1+KDXRATIO/2+(JI-KXOR-1)*KDXRATIO
+!!$        IIF = IIB+JEPSX-1           +(JI-KXOR-JPHEXT)*KDXRATIO
+        IIS = IIB+JEPSX-1+KDXRATIO/2+(JI-KXOR-JPHEXT)*KDXRATIO
         DO JJ = KYOR,KYEND
-          IJF = IJB+JEPSY-1           +(JJ-KYOR-1)*KDYRATIO
-          IJS = IJB+JEPSY-1+KDYRATIO/2+(JJ-KYOR-1)*KDYRATIO
+!!$          IJF = IJB+JEPSY-1           +(JJ-KYOR-JPHEXT)*KDYRATIO
+          IJS = IJB+JEPSY-1+KDYRATIO/2+(JJ-KYOR-JPHEXT)*KDYRATIO
 !
           IF (1 <= IIS .AND. IIS <= IIU .AND. 1 <= IJS .AND. IJS <= IJU) THEN
 !
@@ -326,9 +327,9 @@ SELECT CASE (KGRID)
       ZBMY3 = PBMY3(JEPSY)
       ZBMY4 = PBMY4(JEPSY)
       DO JI = KXOR,KXEND
-        IIF = IIB+JEPSX-1           +(JI-KXOR-1)*KDXRATIO
+        IIF = IIB+JEPSX-1           +(JI-KXOR-JPHEXT)*KDXRATIO
         DO JJ = KYOR,KYEND
-          IJS = IJB+JEPSY-1+KDYRATIO/2+(JJ-KYOR-1)*KDYRATIO
+          IJS = IJB+JEPSY-1+KDYRATIO/2+(JJ-KYOR-JPHEXT)*KDYRATIO
 
           IF (1 <= IIF .AND. IIF <= IIU .AND. 1 <= IJS .AND. IJS <= IJU) THEN 
 !
@@ -365,9 +366,9 @@ SELECT CASE (KGRID)
       ZBFY3 = PBFY3(JEPSY)
       ZBFY4 = PBFY4(JEPSY)
       DO JI = KXOR,KXEND
-        IIS = IIB+JEPSX-1+KDXRATIO/2+(JI-KXOR-1)*KDXRATIO
+        IIS = IIB+JEPSX-1+KDXRATIO/2+(JI-KXOR-JPHEXT)*KDXRATIO
         DO JJ = KYOR,KYEND
-          IJF = IJB+JEPSY-1           +(JJ-KYOR-1)*KDYRATIO
+          IJF = IJB+JEPSY-1           +(JJ-KYOR-JPHEXT)*KDYRATIO
 
           IF (1 <= IIS .AND. IIS <= IIU .AND. 1 <= IJF .AND. IJF <= IJU) THEN 
 !
@@ -405,9 +406,9 @@ SELECT CASE (KGRID)
       ZBFY3 = PBFY3(JEPSY)
       ZBFY4 = PBFY4(JEPSY)
       DO JI = KXOR,KXEND
-        IIF = IIB+JEPSX-1           +(JI-KXOR-1)*KDXRATIO
+        IIF = IIB+JEPSX-1           +(JI-KXOR-JPHEXT)*KDXRATIO
         DO JJ = KYOR,KYEND
-          IJF = IJB+JEPSY-1           +(JJ-KYOR-1)*KDYRATIO
+          IJF = IJB+JEPSY-1           +(JJ-KYOR-JPHEXT)*KDYRATIO
 
           IF (1 <= IIF .AND. IIF <= IIU .AND. 1 <= IJF .AND. IJF <= IJU) THEN 
 !

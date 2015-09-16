@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_nest_pgd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ########################
       MODULE MODI_DEFINE_MASK_n
@@ -54,6 +53,7 @@ END MODULE MODI_DEFINE_MASK_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        26/09/96
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -97,8 +97,8 @@ DO JLOOP=1,NMODEL
   IF (NDAD(JLOOP)/=IMI) CYCLE
   ISON=ISON+1
   NSON(ISON)=JLOOP
-  NNESTMASK(NXOR_ALL(JLOOP)+1:NXEND_ALL(JLOOP)-1,     &
-            NYOR_ALL(JLOOP)+1:NYEND_ALL(JLOOP)-1, ISON) = 1
+  NNESTMASK(NXOR_ALL(JLOOP)+JPHEXT:NXEND_ALL(JLOOP)-JPHEXT,     &
+            NYOR_ALL(JLOOP)+JPHEXT:NYEND_ALL(JLOOP)-JPHEXT, ISON) = 1
 END DO
 !
 IF (ANY (SUM(NNESTMASK(:,:,:),DIM=3)>1) ) THEN

@@ -31,8 +31,7 @@ REAL,                     INTENT(IN)    :: PTSTEP
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PU , PV  , PW
                                                   ! Variables to advect
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT , PWT
-                                                  ! Variables for boundary
-                                                  ! conditions
+                                                  ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMXM_RHODJ
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMYM_RHODJ
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMZM_RHODJ
@@ -101,6 +100,7 @@ END MODULE MODI_ADVECUVW_RK
 !!                  04/2011  (V. Masson & C. Lac)    splits the routine and adds
 !!                                                   time splitting
 !!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -116,6 +116,7 @@ USE MODI_SHUMAN
 USE MODI_ADVECUVW_WENO_K
 USE MODI_ADV_BOUNDARIES
 USE MODI_GET_HALO
+USE MODE_MPPDB
 !
 !-------------------------------------------------------------------------------
 !
@@ -136,8 +137,7 @@ REAL,                     INTENT(IN)    :: PTSTEP
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PU , PV  , PW
                                                   ! Variables to advect
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT , PWT
-                                                  ! Variables for boundary
-                                                  ! conditions
+                                                  ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMXM_RHODJ
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMYM_RHODJ
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PMZM_RHODJ
@@ -203,35 +203,111 @@ SELECT CASE (HTEMP_SCHEME)
   ISPL = 1
  CASE('RK21')
   ISPL = 2
+ CASE('NP32')
+  ISPL = 3
+ CASE('SP32')
+  ISPL = 3
  CASE('RK33')
   ISPL = 3
+ CASE('RKC4')
+  ISPL = 4
+ CASE('RK4B')
+  ISPL = 4
  CASE('RK53')
   ISPL = 5
+ CASE('RK62')
+  ISPL = 6
+ CASE('RK65')
+  ISPL = 6
 END SELECT
 !
 !
 ALLOCATE(ZBUT(ISPL-1,ISPL-1))
 ALLOCATE(ZBUTS(ISPL))
 !
-IF (ISPL == 1 ) ZBUTS = (/ 1. /)
-IF (ISPL == 2 ) THEN
-   ZBUTS     = (/ 0. , 1. /)
-   ZBUT(1,1)   = 3./4.
-END IF
-IF (ISPL == 3 ) THEN
-   ZBUTS     = (/ 1./6. , 1./6. , 2./3. /)
-   ZBUT(1,1) = 1.
-   ZBUT(1,2) = 0.
-   ZBUT(2,:) = 1./4.
-END IF
-IF (ISPL == 5 ) THEN
-   ZBUTS     = (/ 1./4. , 0., 0., 0., 3./4. /)
-   ZBUT      = 0.
-   ZBUT(1,1) = 1./7.
-   ZBUT(2,2) = 3./16.
-   ZBUT(3,3) = 1./3.
-   ZBUT(4,4) = 2./3.
-END IF
+SELECT CASE (HTEMP_SCHEME)
+  CASE('RK11')
+    ZBUTS = (/ 1. /)
+  CASE('RK21')
+    ZBUTS     = (/ 0. , 1. /)
+    ZBUT(1,1)   = 3./4.
+  CASE('RK33')
+    ZBUTS     = (/ 1./6. , 1./6. , 2./3. /)
+    ZBUT(1,1) = 1.
+    ZBUT(1,2) = 0.
+    ZBUT(2,1) = 1./4.
+    ZBUT(2,2) = 1./4.
+  CASE('NP32')
+    ZBUTS     = (/ 1./2. , 0., 1./2. /)
+    ZBUT(1,1) = 1./3.
+    ZBUT(1,2) = 0.
+    ZBUT(2,1) = 0.
+    ZBUT(2,2) = 1.
+  CASE('SP32')
+    ZBUTS     = (/ 1./3. , 1./3. , 1./3. /)
+    ZBUT(1,1) = 1./2.
+    ZBUT(1,2) = 0.
+    ZBUT(2,1) = 1./2.
+    ZBUT(2,2) = 1./2.
+  CASE('RKC4')
+    ZBUTS     = (/ 1./6. , 1./3. , 1./3. , 1./6./)
+    ZBUT      = 0.
+    ZBUT(1,1) = 1./2.
+    ZBUT(2,2) = 1./2.
+    ZBUT(3,3) = 1.
+  CASE('RK4B')
+    ZBUTS     = (/ 1./8. , 3./8. , 3./8. , 1./8./)
+    ZBUT      = 0.
+    ZBUT(1,1) = 1./3.
+    ZBUT(2,1) = -1./3.
+    ZBUT(2,2) = 1.
+    ZBUT(3,1) = 1.
+    ZBUT(3,2) = -1.
+    ZBUT(3,3) = 1.
+  CASE('RK53')
+    ZBUTS     = (/ 1./4. , 0. , 0. , 0. , 3./4. /)
+    ZBUT      = 0.
+    ZBUT(1,1) = 1./7.
+    ZBUT(2,2) = 3./16.
+    ZBUT(3,3) = 1./3.
+    ZBUT(4,4) = 2./3.
+  CASE('RK62')
+    ZBUTS     = (/ 1./6. , 1./6. , 1./6. , 1./6. , 1./6. , 1./6. /)
+    ZBUT      = 0.
+    ZBUT(1,1) = 1./5.
+    ZBUT(2,1) = 1./5.
+    ZBUT(2,2) = 1./5.
+    ZBUT(3,1) = 1./5.
+    ZBUT(3,2) = 1./5.
+    ZBUT(3,3) = 1./5.
+    ZBUT(4,1) = 1./5.
+    ZBUT(4,2) = 1./5.
+    ZBUT(4,3) = 1./5.
+    ZBUT(4,4) = 1./5.
+    ZBUT(5,1) = 1./5.
+    ZBUT(5,2) = 1./5.
+    ZBUT(5,3) = 1./5.
+    ZBUT(5,4) = 1./5.
+    ZBUT(5,5) = 1./5.
+CASE('RK65')
+    ZBUTS= (/ 7./90. , 0. , 16./45. , 2./15. , 16./45. , 7./90. /)
+    ZBUT= 0.
+    ZBUT(1,1) = 1./4.
+    ZBUT(2,1) = 1./8.
+    ZBUT(2,2) = 1./8.
+    ZBUT(3,1) = 0
+    ZBUT(3,2) = -1./2.
+    ZBUT(3,3) = 1
+    ZBUT(4,1) = 3./16.
+    ZBUT(4,2) = 0
+    ZBUT(4,3) = 0
+    ZBUT(4,4) = 9./16.
+    ZBUT(5,1) = -3./7.
+    ZBUT(5,2) = 2./7.
+    ZBUT(5,3) = 12./7.
+    ZBUT(5,4) = -12./7.
+    ZBUT(5,5) = 8./7.
+END SELECT
 !
 ALLOCATE(ZRUS(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),ISPL))
 ALLOCATE(ZRVS(SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3),ISPL))
@@ -259,18 +335,12 @@ ZU = PU
 ZV = PV
 ZW = PW
 !
-NULLIFY(TZFIELDMT_ll)
-!!$IF( NHALO==1 ) THEN      
-!
-   CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZUT)
-   CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZVT)
-   CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZWT)
-!
-   INBVAR = 3
-!!$   IF( NHALO==1 ) 
-   CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3))
-!
-!!$ END IF
+NULLIFY(TZFIELDMT_ll)    
+CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZUT)
+CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZVT)
+CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZWT)
+INBVAR = 3
+CALL INIT_HALO2_ll(TZHALO2MT_ll,INBVAR,SIZE(PUT,1),SIZE(PUT,2),SIZE(PWT,3))
 !
 ZRUS = 0.
 ZRVS = 0.
@@ -281,71 +351,65 @@ ZRWS = 0.
 !	        -----------------------------
 !
  DO JS = 1, ISPL
-!
-!
-      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )    
-      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
-      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
-      ZW (:,:,IKE+1 ) = 0.
-     !JUAN
-!!$     IF ( NHALO == 1 ) THEN   
-        CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)        
-        CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
-!!$     ENDIF
-     !JUAN
+!		
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )    
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
+!    
+    ZW (:,:,IKE+1 ) = 0.
+! 
+    CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)        
+    CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
 !
 !*       4.     Advection with WENO
 !	        -------------------
 !
-     CALL ADVECUVW_WENO_K (HLBCX, HLBCY, KWENO_ORDER, ZUT, ZVT, ZWT,      &
-                          PRUCT, PRVCT, PRWCT,                            &
-                          ZRUS(:,:,:,JS), ZRVS(:,:,:,JS), ZRWS(:,:,:,JS), &
-                          TZHALO2MT_ll                                    )
-!
-!
-! ==> verifier si c'est utile !
-!
+    CALL ADVECUVW_WENO_K (HLBCX, HLBCY, KWENO_ORDER, ZUT, ZVT, ZWT,     &
+                        PRUCT, PRVCT, PRWCT,                            &
+                        ZRUS(:,:,:,JS), ZRVS(:,:,:,JS), ZRWS(:,:,:,JS), &
+                        TZHALO2MT_ll                                    )
+!			
      NULLIFY(TZFIELDS4_ll)
-!!$     IF(NHALO == 1) THEN
-          CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRUS(:,:,:,JS))
-          CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRVS(:,:,:,JS))
-          CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRWS(:,:,:,JS))
-          CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
-          CALL CLEANLIST_ll(TZFIELDS4_ll)
-!!$     END IF
-
-    IF ( JS /= ISPL ) THEN
 !
+    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRUS(:,:,:,JS))
+    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRVS(:,:,:,JS))
+    CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRWS(:,:,:,JS))
+    CALL UPDATE_HALO_ll(TZFIELDS4_ll,IINFO_ll)
+    CALL CLEANLIST_ll(TZFIELDS4_ll)
+!		
+  IF ( JS /= ISPL ) THEN
+!
+   DO JI = 1, JS
 
-     DO JI = 1, JS
-
+      ZUT = ZU
+      ZVT = ZV
+      ZWT = ZW
 !
 ! Intermediate guesses inside the RK loop
 !
-        ZUT(:,:,:) = ZU(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-         ( ZRUS(:,:,:,JI) + PRUS_OTHER(:,:,:) ) / PMXM_RHODJ
-        ZVT(:,:,:) = ZV(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-         ( ZRVS(:,:,:,JI) + PRVS_OTHER(:,:,:) ) / PMYM_RHODJ
-        ZWT(:,:,:) = ZW(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
-         ( ZRWS(:,:,:,JI) + PRWS_OTHER(:,:,:) ) / PMZM_RHODJ
+      ZUT(:,:,:) = ZUT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+       ( ZRUS(:,:,:,JI) + PRUS_OTHER(:,:,:) ) / PMXM_RHODJ
+      ZVT(:,:,:) = ZVT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+       ( ZRVS(:,:,:,JI) + PRVS_OTHER(:,:,:) ) / PMYM_RHODJ
+      ZWT(:,:,:) = ZWT(:,:,:) + ZBUT(JS,JI) *  PTSTEP *  &
+       ( ZRWS(:,:,:,JI) + PRWS_OTHER(:,:,:) ) / PMZM_RHODJ
 !
-      END DO
+    END DO
 !
-    ELSE  
+  ELSE  
 !
 ! Guesses at the end of the RK loop
 !
-      DO JI = 1, ISPL
-       PRUS_ADV(:,:,:) = PRUS_ADV(:,:,:) + ZBUTS(JI) * ZRUS(:,:,:,JI) 
-       PRVS_ADV(:,:,:) = PRVS_ADV(:,:,:) + ZBUTS(JI) * ZRVS(:,:,:,JI) 
-       PRWS_ADV(:,:,:) = PRWS_ADV(:,:,:) + ZBUTS(JI) * ZRWS(:,:,:,JI) 
-      END DO
+    DO JI = 1, ISPL
+     PRUS_ADV(:,:,:) = PRUS_ADV(:,:,:) + ZBUTS(JI) * ZRUS(:,:,:,JI) 
+     PRVS_ADV(:,:,:) = PRVS_ADV(:,:,:) + ZBUTS(JI) * ZRVS(:,:,:,JI) 
+     PRWS_ADV(:,:,:) = PRWS_ADV(:,:,:) + ZBUTS(JI) * ZRWS(:,:,:,JI) 
+    END DO
 !
-    END IF
+  END IF
 !
 ! End of the RK loop
  END DO
-
 !
 !
 DEALLOCATE(ZBUT, ZBUTS, ZRUS, ZRVS, ZRWS)

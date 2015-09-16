@@ -133,6 +133,7 @@ END MODULE MODI_VER_INT_THERMO
 !!                                       interpolation routine
 !!                  26/01/98 (J. Stein)  add the LS fields' treatment
 !!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -257,13 +258,10 @@ INTEGER,DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2))   :: IJCOUNT
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=JPVEXT+1
 IKE=SIZE(XZZ,3)-JPVEXT
 IKU=SIZE(XZZ,3)
-IIB=JPHEXT+1
-IJB=JPHEXT+1
-IIE=SIZE(XZZ,1)-JPHEXT
-IJE=SIZE(XZZ,2)-JPHEXT
 !
 !
 !-------------------------------------------------------------------------------

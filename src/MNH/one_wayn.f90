@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_ONE_WAY_n
@@ -189,6 +188,7 @@ SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                     &
 !!    M. Leriche     11/2009  modify the LB*SVS for the aqueous phase chemistry
 !!                   07/2010  idem for ice phase chemical species
 !!    Bosseur & Filippi 07/2013 Adds Forefire
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -307,10 +307,10 @@ ALLOCATE(ZJ(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)))
 ALLOCATE(ZRHOD(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)))
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-1
-IIE=IIE+1
-IJB=IJB-1
-IJE=IJE+1
+IIB=IIB-JPHEXT
+IIE=IIE+JPHEXT
+IJB=IJB-JPHEXT
+IJE=IJE+JPHEXT
 ALLOCATE(ZWORK(IIB:IIE,IJB:IJE,SIZE(PLBXTHM,3)))  ! can be smaller than child extended subdomain
 ! LS_FORCING routine can not correctly manage extra halo zone
 ! LB will be filled only with one layer halo zone for the moment
@@ -822,8 +822,8 @@ IF(.NOT. OSTEADY_DMASS) THEN
 !*       4.3 computing of the dry mass at t
 !
 !
-  ZDRYMASST = SUM3D_ll (ZJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll,NXOR_ALL(KMI)+1,NYOR_ALL(KMI)+1, &
-            1+JPVEXT,NXEND_ALL(KMI)-1,NYEND_ALL(KMI)-1,SIZE(XRHODJ,3)-JPVEXT)
+  ZDRYMASST = SUM3D_ll (ZJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll,NXOR_ALL(KMI)+JPHEXT,NYOR_ALL(KMI)+JPHEXT, &
+            1+JPVEXT,NXEND_ALL(KMI)-JPHEXT,NYEND_ALL(KMI)-JPHEXT,SIZE(XRHODJ,3)-JPVEXT)
 !
 !
 !*       4.4 normal processing (not at the segment beginning)
@@ -848,8 +848,8 @@ IF(.NOT. OSTEADY_DMASS) THEN
     ENDIF
 !
 !
-    ZDRYMASSM = SUM3D_ll (ZJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll,NXOR_ALL(KMI)+1,NYOR_ALL(KMI)+1, &
-            1+JPVEXT,NXEND_ALL(KMI)-1,NYEND_ALL(KMI)-1,SIZE(XRHODJ,3)-JPVEXT)
+    ZDRYMASSM = SUM3D_ll (ZJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll,NXOR_ALL(KMI)+JPHEXT,NYOR_ALL(KMI)+JPHEXT, &
+            1+JPVEXT,NXEND_ALL(KMI)-JPHEXT,NYEND_ALL(KMI)-JPHEXT,SIZE(XRHODJ,3)-JPVEXT)
 !
     PDRYMASST =  ZDRYMASST
     PDRYMASSS = (PDRYMASST - ZDRYMASSM) / (PTSTEP*KDTRATIO)
@@ -992,7 +992,7 @@ ENDIF
 !
 IF ( SIZE(PLBXS,1) /= 0 ) THEN
   IF( GVERT_INTERP ) THEN
-    IF ( ILBX == KRIMX+1 ) THEN
+    IF ( ILBX == KRIMX+JPHEXT ) THEN
       PLBXS(:,:,:) = VER_INTERP_LIN(PLBXS(:,:,:),  &
                           KKLIN_LBXM(:,:,:),PCOEFLIN_LBXM(:,:,:))
     ELSE
@@ -1006,7 +1006,7 @@ END IF
 !
 IF ( SIZE(PLBYS,1) /= 0 ) THEN
   IF( GVERT_INTERP ) THEN
-    IF ( ILBY == KRIMY+1 ) THEN
+    IF ( ILBY == KRIMY+JPHEXT ) THEN
       PLBYS(:,:,:) = VER_INTERP_LIN(PLBYS(:,:,:),  &
                           KKLIN_LBYM(:,:,:),PCOEFLIN_LBYM(:,:,:))
     ELSE

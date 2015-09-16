@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 turb 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 MODULE MODI_TURB_HOR_DYN_CORR
 !
@@ -140,6 +139,7 @@ END MODULE MODI_TURB_HOR_DYN_CORR
 !!                     July 2012     (V.Masson) Implicitness of W
 !!                     March 2014    (V.Masson) tridiag_w : bug between
 !!                                               mass and flux position
+!!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -167,6 +167,7 @@ USE MODI_LES_MEAN_SUBGRID
 USE MODI_TRIDIAG_W
 !
 USE MODI_SECOND_MNH
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -393,9 +394,14 @@ END IF
 !
 ! Complete the U tendency
 IF (.NOT. LFLAT) THEN
+CALL MPPDB_CHECK3DM("before turb_corr:PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ",PRECISION,&
+                   & PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ )
+
   PRUS(:,:,:)=PRUS                                            &
               -DXM(PRHODJ * ZFLX / MXF(PDXX) )                &
               +DZF(1,IKU,1, PDZX / MZM(1,IKU,1,PDXX) * MXM( MZM(1,IKU,1,PRHODJ*ZFLX) * PINV_PDZZ ) )
+CALL MPPDB_CHECK3DM("after  turb_corr:PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ",PRECISION,&
+                   & PRUS,PRHODJ,ZFLX,PDXX,PDZX,PINV_PDZZ )
 ELSE
   PRUS(:,:,:)=PRUS -DXM(PRHODJ * ZFLX / MXF(PDXX) )
 END IF

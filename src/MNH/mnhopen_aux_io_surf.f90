@@ -47,6 +47,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2003 
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -91,6 +92,7 @@ INTEGER           :: IJMAX          ! number of points in Y direction
 !
 INTEGER           :: ILU            ! 1D physical dimension of XCOVER
 REAL, DIMENSION(:),   ALLOCATABLE :: ZFULL  ! total cover
+INTEGER           :: IJPHEXT
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 ! WARNING : this routine works only on ONE processor jobs
@@ -129,6 +131,17 @@ COUTFILE = HFILE
 ! 
 CALL FMREAD(HFILE,'IMAX',COUT,'--',IIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
 CALL FMREAD(HFILE,'JMAX',COUT,'--',IJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(HFILE,'JPHEXT',COUT,'--',IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
+IF ( IJPHEXT .NE. JPHEXT ) THEN
+   WRITE(NLUOUT,FMT=*) ' MNHOPEN_AUX_IO : JPHEXT in PRE_PGD1.nam/NAM_CONF_PGD ( or default value )&
+        JPHEXT=',JPHEXT
+   WRITE(NLUOUT,FMT=*) ' different from PGD files=',HFILE ,' value JPHEXT=',IJPHEXT
+   WRITE(NLUOUT,FMT=*) '-> JOB ABORTED'
+   CALL CLOSE_ll(COUT,IOSTAT=IRESP)
+   CALL ABORT  
+   STOP   
+END IF
+!
 NIU_ALL = (IIMAX+2*JPHEXT)
 NJU_ALL = (IJMAX+2*JPHEXT)
 NIB_ALL = 1 + JPHEXT

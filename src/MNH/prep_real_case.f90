@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/11/30 10:44:37
 !-----------------------------------------------------------------
 !     ######################
       PROGRAM PREP_REAL_CASE
@@ -375,6 +374,7 @@
 !!                  July  2013     (Bosseur & Filippi) Adds Forefire
 !!                  Mars  2014     (J.Escobar) Missing 'full' UPDATE_METRICS for arp2lfi // run
 !!                   April 2014     (G.TANGUY) Add LCOUPLING
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -459,6 +459,8 @@ USE MODI_DEALLOC_SURFEX
 !
 USE MODE_MPPDB
 !
+USE MODN_CONF, ONLY : JPHEXT , NHALO
+!
 IMPLICIT NONE
 !
 !*       0.1   Declaration of local variables
@@ -510,7 +512,7 @@ LOGICAL  :: LUSECHIC
 !              ------------------------
 !
 NAMELIST/NAM_REAL_CONF/ NVERB, CEQNSYS, CPRESOPT, LSHIFT, LDUMMY_REAL, &
-                        LRES, XRES, NITR,LCOUPLING
+                        LRES, XRES, NITR,LCOUPLING, NHALO , JPHEXT
 ! Filtering and balancing of the large-scale and radar tropical cyclone
 NAMELIST/NAM_HURR_CONF/ LFILTERING, CFILTERING,   &
 XLAMBDA, NK, XLATGUESS, XLONGUESS, XBOXWIND, XRADGUESS, NPHIL, NDIAG_FILT,   &
@@ -613,6 +615,10 @@ CALL INI_CST
 !*       4.1   reading of configuration variables
 !
 CALL FMLOOK_ll(YPRE_REAL1,CLUOUT0,IPRE_REAL1,IRESP)
+!
+CALL INIT_NMLVAR
+CALL POSNAM(IPRE_REAL1,'NAM_REAL_CONF',GFOUND,ILUOUT0)
+IF (GFOUND) READ(IPRE_REAL1,NAM_REAL_CONF)
 !
 !*       4.2   reading of values of some configuration variables in namelist
 !

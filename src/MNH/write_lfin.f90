@@ -156,6 +156,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
 !!       C.Lac         Dec.2014 writing past wind fields for centred advection
+!!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -310,11 +311,8 @@ ALLOCATE(ZWORK3D(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
 IIU=NIMAX+2*JPHEXT
 IJU=NJMAX+2*JPHEXT
 IKU=NKMAX+2*JPVEXT
-IIB=1+JPHEXT
-IJB=1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
-IIE=IIU-JPHEXT
-IJE=IJU-JPHEXT
 IKE=IKU-JPVEXT
 !
 !*       1.     WRITES IN THE LFI FILE
@@ -387,6 +385,12 @@ YCOMMENT=' '
 IGRID=0
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,NJMAX_ll,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM='JPHEXT'
+YCOMMENT=' '
+IGRID=0
+ILENCH=LEN(YCOMMENT)
+CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,JPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 YRECFM='KMAX'
 YCOMMENT=' '
@@ -476,6 +480,9 @@ IGRID=3
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XYHAT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
+!print*,'XXHAT=',XXHAT
+!print*,'XYHAT=',XYHAT
+!print*,'XZHAT=',XZHAT
 YRECFM='ZHAT'
 YDIR='--'
 YCOMMENT='height level without orography (METERS)'

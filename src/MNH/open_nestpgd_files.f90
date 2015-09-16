@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_nest_pgd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !#############################
 MODULE MODI_OPEN_NESTPGD_FILES
@@ -64,6 +63,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!                   15/10/01 (I.Mallet) allow namelists in different orders
 !!                   07/06/2010 (J.escobar from Ivan Ristic) bug PGI
 !!                   30/12/2012 (S.Bielli) Add NAM_NCOUT for netcdf output
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,6 +86,8 @@ USE MODE_MODELN_HANDLER
 USE MODN_NCOUT
 #endif
 USE MODN_CONFIO
+!
+USE MODN_CONF, ONLY : JPHEXT , NHALO_MNH => NHALO
 !
 IMPLICIT NONE
 !
@@ -130,6 +132,7 @@ NAMELIST/NAM_PGD6/ YPGD6, IDAD
 NAMELIST/NAM_PGD7/ YPGD7, IDAD
 NAMELIST/NAM_PGD8/ YPGD8, IDAD
 NAMELIST/NAM_NEST_PGD/ YNEST
+NAMELIST/NAM_CONF_NEST/JPHEXT, NHALO_MNH
 !-------------------------------------------------------------------------------
 !
 !*       1.    SET DEFAULT NAMES
@@ -158,6 +161,11 @@ CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRI
 !
 CALL OPEN_ll(UNIT=IPRE_NEST_PGD,FILE=HPRE_NEST_PGD,IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
      MODE=GLOBAL)
+!
+!JUAN
+CALL POSNAM(IPRE_NEST_PGD,'NAM_CONF_NEST',GFOUND)
+IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONF_NEST)
+!JUAN
 !
 !-------------------------------------------------------------------------------
 !

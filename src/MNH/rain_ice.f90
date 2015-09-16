@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !      ####################
        MODULE MODI_RAIN_ICE
@@ -247,6 +246,7 @@ END MODULE MODI_RAIN_ICE
 !!      (JP Pinty), 01-2014 : ICE4 : partial reconversion of hail to graupel
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -263,6 +263,7 @@ USE MODD_LES
 USE MODI_BUDGET
 USE MODI_GAMMA
 USE MODE_FMWRIT
+USE MODE_ll
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -466,10 +467,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PDZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PDZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=KKA+JPVEXT*KKL
 IKE=KKU-JPVEXT*KKL
 IKT=SIZE(PDZZ,3)          

@@ -150,6 +150,9 @@ END MODULE MODI_ADVECMET_4TH
 !!    -------------
 !!      Original   25/10/05
 !!
+!! Correction :	
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -222,13 +225,13 @@ IKU=SIZE(XZHAT)
 !
 IGRID = 1
 !
-IF (NHALO == 1) THEN
+!!$IF (NHALO == 1) THEN
    TZHALO2LIST => TPHALO2LIST
    CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTHT, IGRID, ZMEANX, ZMEANY, &
                              TZHALO2LIST%HALO2 )
-ELSE
-   CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTHT, IGRID, ZMEANX, ZMEANY)
-ENDIF
+!!$ELSE
+!!$   CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTHT, IGRID, ZMEANX, ZMEANY)
+!!$ENDIF
 !
 ! Thermodynamical variable
 !
@@ -247,13 +250,13 @@ IF (LBUDGET_TH) CALL BUDGET (PRTHS,4,'ADVZ_BU_RTH')
 ! Turbulence variables
 !
 IF ( GTKEALLOC ) THEN
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
     TZHALO2LIST => TZHALO2LIST%NEXT
     CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTKET, IGRID, &
                             ZMEANX, ZMEANY, TPHALO2=TZHALO2LIST%HALO2)
-  ELSE
-    CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTKET, IGRID, ZMEANX, ZMEANY)
-  ENDIF
+!!$  ELSE
+!!$    CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PTKET, IGRID, ZMEANX, ZMEANY)
+!!$  ENDIF
 !
   PRTKES(:,:,:) = PRTKES(:,:,:) 	            &
                  -DXF( PRUCT(:,:,:) * ZMEANX(:,:,:) ) 
@@ -272,13 +275,13 @@ ENDIF
 ! Case with KRR moist variables
 !
 DO JRR=1, KRR
-  IF(NHALO == 1) THEN 
+!!$  IF(NHALO == 1) THEN 
     TZHALO2LIST => TZHALO2LIST%NEXT
     CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PRT(:,:,:,JRR), IGRID, &
                               ZMEANX, ZMEANY,TPHALO2=TZHALO2LIST%HALO2 )
-  ELSE
-    CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PRT(:,:,:,JRR), IGRID, ZMEANX, ZMEANY)
-  ENDIF
+!!$  ELSE
+!!$    CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PRT(:,:,:,JRR), IGRID, ZMEANX, ZMEANY)
+!!$  ENDIF
 !
   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR)                            &
                      -DXF( PRUCT(:,:,:) * ZMEANX(:,:,:) ) 

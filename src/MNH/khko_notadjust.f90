@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 microph 2007/03/23 11:52:41
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_KHKO_NOTADJUST
@@ -92,6 +91,7 @@ END MODULE MODI_KHKO_NOTADJUST
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -192,10 +192,7 @@ INTEGER :: JK            ! For loop
 !               -------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 !

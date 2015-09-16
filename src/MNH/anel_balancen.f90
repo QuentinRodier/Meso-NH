@@ -106,6 +106,7 @@ END MODULE MODI_ANEL_BALANCE_n
 !!      J.Stein and J.P. lafore 17/04/96 new version including the way to choose
 !!            the model number and the instant where the projection is performed
 !!      Stein,Lafore 14/01/97 new anelastic equations
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -214,8 +215,6 @@ ALLOCATE(ZBF_SXP2_YP1_Z(IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IKU_SXP2_YP1_Z_ll))
 !
 
 !
-!!$CALL TRID(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
-!!$          ZAF,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,XRHODJ,XTHVREF,XZZ,ZBFY )
 CALL TRIDZ(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
           ZAF,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,XRHODJ,XTHVREF,XZZ,ZBFY,&
           ZBFB,ZBF_SXP2_YP1_Z) 

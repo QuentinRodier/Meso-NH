@@ -76,6 +76,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !!    Original    22/07/07
 !!    04/11/08 (M Leriche) add ICE3    
 !!    17/09/10 (M Leriche) add LUSECHIC flag
+!!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -176,10 +177,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PZZ,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
 !

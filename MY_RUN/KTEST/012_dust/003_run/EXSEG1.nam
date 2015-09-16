@@ -1,8 +1,9 @@
 &NAM_CONFIO  LCDF4=T, LLFIOUT=T, LLFIREAD=F /
 &NAM_LUNITn 
             CINIFILE = "S7020000924.00",
-            CINIFILEPGD = "pgd_dust_30km",
-            CCPLFILE(1) = "S7020000924.12" /
+            CINIFILEPGD = "pgd_dust_30km" 
+            CCPLFILE(1) = "S7020000924.12" 
+            /
 &NAM_DYNn   
             XTSTEP = 40.,
             CPRESOPT = "CRESI",
@@ -53,7 +54,8 @@
             NMODEL = 1, 
             NVERB = 5,
             CEXP = "DUST7",
-            CSEG = "SEG01" /
+            CSEG = "SEG01" 
+            JPHEXT=3 , NHALO=3 /
 &NAM_DYN 
             XSEGLEN = 43200,
             XASSELIN = 0.2,

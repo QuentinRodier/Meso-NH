@@ -8,7 +8,9 @@
                           CEQNSYS='LHE'
                           CZS='BELL'
                           CIDEAL='CSTN'
-                          NVERB=1 /
+                          NVERB=1 
+                          !JPHEXT = 3 , NHALO = 3 
+                          /
 &NAM_CONFn LUSERV=.FALSE. LUSERC=.FALSE. LUSERR=.FALSE.
            LUSERI=.FALSE. LUSERS=.FALSE. LUSERG=.FALSE. LUSERH=.FALSE. /
 &NAM_GRID_PRE XLAT0=43.29 /

@@ -24,6 +24,7 @@ MODULE MODE_FMREAD
 !  J.Escobar : 22/08/2005 : BUG : manque un "GOTO 1000" si champs
 !              lue non trouvé !!!
 !  J.Escobar : 13/01/2015 : remove comment on BCAST(IRESP in FMREADX2_ll
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !
 USE MODD_MPIF
 #if defined(MNH_IOCDF4)
@@ -1858,8 +1859,8 @@ IF (ASSOCIATED(TZFD)) THEN
             CALL FM_READ_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(Z3D),Z3D,TZFMH,IRESP)
          END IF
       END IF
-      PLB(1:KRIM+1,:,:)          = Z3D(1:KRIM+1,:,:)
-      PLB(KRIM+2:2*(KRIM+1),:,:) = Z3D(KL3D-KRIM:KL3D,:,:)
+      PLB(1:KRIM+JPHEXT,:,:)          = Z3D(1:KRIM+JPHEXT,:,:)
+      PLB(KRIM+JPHEXT+1:2*(KRIM+JPHEXT),:,:) = Z3D(KL3D-KRIM-JPHEXT+1:KL3D,:,:)
     ELSE !(HLBTYPE == 'LBY' .OR. HLBTYPE == 'LBYV') 
       ALLOCATE(Z3D(SIZE(PLB,1),KL3D,SIZE(PLB,3)))
       Z3D = 0.0
@@ -1895,7 +1896,7 @@ IF (ASSOCIATED(TZFD)) THEN
            END IF
         END IF
         ! erase gap in LB field
-        Z3D(KRIM+2:2*(KRIM+1),:,:) = Z3D(KL3D-KRIM:KL3D,:,:)
+        Z3D(KRIM+JPHEXT+1:2*(KRIM+JPHEXT),:,:) = Z3D(KL3D-KRIM-JPHEXT+1:KL3D,:,:)
       ELSE !(HLBTYPE == 'LBY' .OR. HLBTYPE == 'LBYV') 
         ALLOCATE(Z3D(IIMAX_ll+2*JPHEXT,KL3D,SIZE(PLB,3)))
         Z3D = 0.0
@@ -1905,7 +1906,7 @@ IF (ASSOCIATED(TZFD)) THEN
            CALL FM_READ_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(Z3D),Z3D,TZFMH,IRESP)
         END IF
         ! erase gap in LB field
-        Z3D(:,KRIM+2:2*(KRIM+1),:) = Z3D(:,KL3D-KRIM:KL3D,:)
+        Z3D(:,KRIM+JPHEXT+1:2*(KRIM+JPHEXT),:) = Z3D(:,KL3D-KRIM-JPHEXT+1:KL3D,:)
       END IF
       CALL SECOND_MNH2(T1)
       TIMEZ%T_READLB_READ=TIMEZ%T_READLB_READ + T1 - T0

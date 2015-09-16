@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/06/06 15:20:45
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_DYN_SOURCES
@@ -151,6 +150,7 @@ END MODULE MODI_DYN_SOURCES
 !!  Corrections 03/12/02  (P. Jabouille)  add no thinshell condition
 !!  Correction     06/10  (C.Lac) Exclude L1D for Coriolis term 
 !!  Modification   03/11  (C.Lac) Split the gravity term due to buoyancy
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -164,6 +164,8 @@ USE MODD_DYN
 USE MODI_SHUMAN
 USE MODI_GRADIENT_M
 USE MODI_BUDGET
+!
+USE MODE_MPPDB
 !  
 IMPLICIT NONE
 !  
@@ -241,6 +243,14 @@ IF ((.NOT.L1D).AND.(.NOT.LCARTESIAN) )  THEN
     ZWORK3(:,:,:) = 1.0 / ( XRADIUS + MZF(1,IKU,1,PZZ(:,:,:)) )
     ZWORK1(:,:,:) = SPREAD( PCURVX(:,:),DIM=3,NCOPIES=IKU )
     ZWORK2(:,:,:) = SPREAD( PCURVY(:,:),DIM=3,NCOPIES=IKU )
+    CALL MPPDB_CHECK3DM("DYN_SOOURCES:ZWORK3,ZWORK1,ZWORK2",PRECISION,&
+                      & ZWORK3,ZWORK1,ZWORK2,&
+                      & MXM( MYF(ZRVT*PVT) * ZWORK2 * ZWORK3 ) , &
+                      & MXM( ( MYF(PVT) * ZWORK1 - MZF(1,IKU,1,PWT) ) * ZWORK3 ) ,&
+                      & MYF(PVT) * ZWORK1 - MZF(1,IKU,1,PWT) , &
+                      & MYF(PVT) , MZF(1,IKU,1,PWT) , MXM(PWT) , MYM(PWT) )
+    CALL MPPDB_CHECK3DM("DYN_SOOURCES:SUITE",PRECISION,&
+         &  MXM(ZRVT),MXM(PVT),MXM(PWT),MXM(ZWORK1),MXM(ZWORK2),MXM(ZWORK3)  )
 !
     PRUS(:,:,:) = PRUS                                              &
     + MXM( MYF(ZRVT*PVT) * ZWORK2 * ZWORK3 )                        &

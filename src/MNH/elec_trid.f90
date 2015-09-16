@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODI_ELEC_TRID
@@ -179,6 +178,7 @@ END MODULE MODI_ELEC_TRID
 !!                                       (to avoid problem in bouissinesq configuration)
 !!                  01/07/12 (J-P. Pinty)  add a non-homogeneous fair-weather 
 !!                                         top boundary condition (Neuman)
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

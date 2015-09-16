@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/22 10:53:31
 !-----------------------------------------------------------------
 !     ##############
       PROGRAM MESONH
@@ -77,6 +76,7 @@
 !!                                           remplaced by infinite loop
 !!      J.Escobar                 19/03/2008  rename INIT to INIT_MNH --> grib problem
 !!      J.Escobar                  6/11/2014  remove test on LCHECK otherwise never call MPPDB_INIT
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -165,7 +165,6 @@ END DO
 !              -----------------------------
 !
 IF (LCHECK) THEN
-  CALL MPPDB_BARRIER()
   CALL MPPDB_BARRIER()
 ELSE
   CALL END_PARA_ll(IINFO_ll)

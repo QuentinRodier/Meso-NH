@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !      #########################
        MODULE MODI_RAIN_ICE_ELEC
@@ -103,7 +102,6 @@ END SUBROUTINE RAIN_ICE_ELEC
 END INTERFACE
 END MODULE MODI_RAIN_ICE_ELEC
 !
-!     ######spl
       SUBROUTINE RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
                                 KSPLITR, PTSTEP, KMI, KRR,                            &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
@@ -213,6 +211,7 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         C. Lac        2011 : Adaptation to FIT temporal scheme
 !!         B. Tsenova    June 2012 Add new NI parameterizations
 !!         C. Barthe     June 2012 Dependance of RAR on the RELATIVE terminal velocity
+!!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -228,6 +227,7 @@ USE MODD_RAIN_ICE_PARAM
 USE MODD_PARAM_ICE
 USE MODD_BUDGET
 USE MODD_LES
+USE MODE_ll
 !
 USE MODD_ELEC_PARAM
 USE MODD_ELEC_DESCR
@@ -557,10 +557,7 @@ REAL :: ZRHO00    ! Surface reference air density
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PZZ,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PZZ,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 !

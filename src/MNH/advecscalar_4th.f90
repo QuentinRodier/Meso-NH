@@ -109,6 +109,9 @@ END MODULE MODI_ADVECSCALAR_4TH
 !!    -------------
 !!      Original   25/10/05
 !!
+!! Correction :	
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -180,13 +183,13 @@ IGRID = 1
 !
 DO JSV=1,KSV
 !
-  IF(NHALO == 1) THEN
+!!$  IF(NHALO == 1) THEN
      TZHALO2LIST => TPHALO2LIST     
      CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PSVT(:,:,:,JSV), IGRID, &
                                ZMEANX, ZMEANY,TZHALO2LIST%HALO2 )
-  ELSE
-     CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PSVT(:,:,:,JSV), IGRID, ZMEANX, ZMEANY)
-  ENDIF
+!!$  ELSE
+!!$     CALL ADVEC_4TH_ORDER_ALGO(HLBCX, HLBCY, PSVT(:,:,:,JSV), IGRID, ZMEANX, ZMEANY)
+!!$  ENDIF
 !
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)                            &
                     -DXF( PRUCT(:,:,:) * ZMEANX(:,:,:) )

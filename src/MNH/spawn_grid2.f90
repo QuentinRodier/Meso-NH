@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/05/23 15:34:13
 !-----------------------------------------------------------------
 !######################
 MODULE MODI_SPAWN_GRID2
@@ -148,6 +147,7 @@ END MODULE MODI_SPAWN_GRID2
 !!                             to avoid problem when Input parameter and GRID1 parameter
 !!                             are exactly the same !!!
 !!      Modification 20/05/06 Remove Clark and Farley interpolation
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -208,8 +208,8 @@ REAL :: ZPOND1,ZPOND2               ! interpolation coefficients
 !
 INTEGER             :: IIU       ! Upper dimension in x direction
 INTEGER             :: IJU       ! Upper dimension in y direction
-INTEGER             :: IIB       ! indice I Beginning in x direction
-INTEGER             :: IJB       ! indice J Beginning in y direction
+INTEGER             :: IIB,IIE   ! indice I Beginning/End in x direction
+INTEGER             :: IJB,IJE   ! indice J Beginning/End in y direction
 INTEGER             :: IIS,IJS   ! indices I and J in x and y dir. for scalars
 INTEGER             :: JI,JEPSX  ! Loop index in x direction
 INTEGER             :: JJ,JEPSY  ! Loop index in y direction
@@ -234,8 +234,7 @@ CALL GOTO_MODEL(2)
 !
 IIU = SIZE(PXHAT)
 IJU = SIZE(PYHAT)
-IIB = 1+JPHEXT
-IJB = 1+JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !*       1.2  recovers logical unit number of output listing
 !
@@ -297,7 +296,7 @@ ELSE
     ZPOND2 = FLOAT(JEPSX-1)/FLOAT(KDXRATIO)
     ZPOND1 = 1.-ZPOND2
     DO JI = KXOR,KXEND
-      IIS = IIB+JEPSX-1+(JI-KXOR-1)*KDXRATIO
+      IIS = IIB+JEPSX-1+(JI-KXOR-JPHEXT)*KDXRATIO
 !
       IF (1 <= IIS .AND. IIS <= IIU)                   &
       PXHAT(IIS) = ZPOND1*ZXHAT_EXTENDED(JI) +ZPOND2*ZXHAT_EXTENDED(JI+1)
@@ -313,7 +312,7 @@ ELSE
     ZPOND2 = FLOAT(JEPSY-1)/FLOAT(KDYRATIO)
     ZPOND1 = 1.-ZPOND2
     DO JJ = KYOR,KYEND
-      IJS = IJB+JEPSY-1+(JJ-KYOR-1)*KDYRATIO
+      IJS = IJB+JEPSY-1+(JJ-KYOR-JPHEXT)*KDYRATIO
 !
       IF (1 <= IJS .AND. IJS <= IJU)                   &
       PYHAT(IJS) = ZPOND1*ZYHAT_EXTENDED(JJ) +ZPOND2*ZYHAT_EXTENDED(JJ+1)

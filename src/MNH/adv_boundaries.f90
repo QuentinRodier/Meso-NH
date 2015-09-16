@@ -32,8 +32,9 @@ END MODULE MODI_ADV_BOUNDARIES
 !!
 !!    AUTHOR
 !!    ------
-!!	
 !!
+!! Correction :	
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -58,11 +59,13 @@ CHARACTER(LEN=1),         INTENT(IN), OPTIONAL  :: HFIELD  ! Field type
 INTEGER             :: IKB       ! indice K Beginning in z direction
 INTEGER             :: IKE       ! indice K End       in z direction 
 INTEGER             :: IIU, IJU  ! Index End in X and Y directions
+INTEGER             :: IIB,IIE,IJB,IJE ! interior domaine bound
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS AND OTHER INDICES:
 !              ----------------------------------------------
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PFIELD,3) - JPVEXT
 IIU=SIZE(PFIELD,1)
@@ -95,24 +98,24 @@ IF (SIZE(PFIELD)==0) RETURN
 !
 IF( PRESENT(PFIELDI) )  THEN
   IF (HLBCX(1)=='OPEN' .AND. LWEST_ll()) THEN
-     PFIELD(1,:,:) = PFIELDI(1,:,:)
+     PFIELD(:IIB-1,:,:) = PFIELDI(:IIB-1,:,:) ! 1
      IF (PRESENT(HFIELD)) THEN
        IF (HFIELD=='U') &
-       PFIELD(2,:,:) = PFIELDI(2,:,:)
+       PFIELD(:IIB,:,:) = PFIELDI(:IIB,:,:)   ! 2
      END IF
   END IF
   IF (HLBCX(2)=='OPEN' .AND. LEAST_ll()) THEN
-     PFIELD(IIU,:,:) = PFIELDI(IIU,:,:)
+     PFIELD(IIE+1:,:,:) = PFIELDI(IIE+1:,:,:) ! IIU
   END IF
   IF (HLBCY(1)=='OPEN' .AND. LSOUTH_ll()) THEN
-     PFIELD(:,1,:) = PFIELDI(:,1,:)
+     PFIELD(:,:IJB-1,:) = PFIELDI(:,:IJB-1,:) ! 1
      IF (PRESENT(HFIELD)) THEN
        IF (HFIELD=='V') &
-       PFIELD(:,2,:) = PFIELDI(:,2,:)
+       PFIELD(:,:IJB,:) = PFIELDI(:,:IJB,:) ! 2
      END IF
   END IF
   IF (HLBCY(2)=='OPEN' .AND. LNORTH_ll()) THEN
-     PFIELD(:,IJU,:) = PFIELDI(:,IJU,:)
+     PFIELD(:,IJE+1:,:) = PFIELDI(:,IJE+1:,:) ! IJU
   END IF
 END IF
 !

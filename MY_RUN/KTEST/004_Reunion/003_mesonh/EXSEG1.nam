@@ -19,7 +19,9 @@
              NBJSLICE=1 NJSLICEL(1)=30 NJSLICEH(1)=35 /
 &NAM_CONF  CCONF = "START", NMODEL = 1,
            NVERB = 5, CEXP = "REUNI", CSEG = "00A20" ,
-           CSPLIT="BSPLITTING" /
+           CSPLIT="BSPLITTING" 
+           !JPHEXT =3 , NHALO = 3 
+           /
 &NAM_DYN  XSEGLEN = 40.,
           LCORIO = F, LNUMDIFU = F,
           XALKTOP = 0.01, XALZBOT = 14000. /

@@ -83,6 +83,7 @@ END MODULE MODI_LIDAR
 !!      Original      04/10/07
 !!      JP Chaboureau 12/02/10 change dust refraction index
 !!                             add inputs (lidar charact. and cloud fraction)
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -104,6 +105,7 @@ USE MODD_ICE_C1R3_DESCR,  ONLY : XLBEXI,                      &
 !
 USE MODI_BHMIE_WATER    ! Gamma or mono dispersed size distributions
 USE MODI_BHMIE_AEROSOLS ! Lognormal or mono dispersed size distributions
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -203,10 +205,7 @@ REAL                :: ZLBEXR
 !*       1.     COMPUTE THE LOOP BOUNDS
 !   	        -----------------------
 !
-IIB=1+JPHEXT
-IIE=SIZE(PRHO,1) - JPHEXT
-IJB=1+JPHEXT
-IJE=SIZE(PRHO,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PRHO,3) - JPVEXT
 !

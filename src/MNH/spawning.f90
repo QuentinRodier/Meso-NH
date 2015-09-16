@@ -70,6 +70,7 @@
 !!                                      to keep finest fields of son1
 !!      Modification 05/06     Remove EPS
 !!      Modification 19/03/2008 (J.Escobar) rename INIT to INIT_MNH --> grib problem
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -118,6 +119,10 @@ USE MODI_VERSION
 USE MODI_INIT_MNH
 USE MODI_DEALLOC_SURFEX
 !
+USE MODN_CONF, ONLY : JPHEXT , NHALO
+!
+USE MODE_MPPDB
+!
 IMPLICIT NONE
 !
 !*       0.3    Local variables
@@ -136,9 +141,11 @@ LOGICAL :: LSPAWN_SURF = .TRUE.  ! .TRUE. : surface fields are spawned
 LOGICAL                           :: LRES
 REAL                              :: XRES
 NAMELIST/NAM_SPAWN_SURF/LSPAWN_SURF, LRES, XRES  
+NAMELIST/NAM_CONF_SPAWN/JPHEXT, NHALO
 !
 !-------------------------------------------------------------------------------
 !
+CALL MPPDB_INIT()
 ! First Switch to model 1 variables
 CALL GOTO_MODEL(1)
 !
@@ -181,6 +188,8 @@ IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_SPAWN_SURF)
 CALL UPDATE_MODD_FROM_NMLVAR
 CALL POSNAM(ILUSPA,'NAM_BLANK',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_BLANK)
+CALL POSNAM(ILUSPA,'NAM_CONF_SPAWN',GFOUND)
+IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONF_SPAWN)
 !!CALL CLOSE_ll(YEXSPA)
 !
 !-------------------------------------------------------------------------------

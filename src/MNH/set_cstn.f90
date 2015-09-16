@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 prep_ideal 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_SET_CSTN
@@ -164,6 +163,7 @@ END MODULE MODI_SET_CSTN
 !!      G. Tanguy   26/10/10  change the interpolation of the RS : we use now a
 !!                            mixed grid (PREP_REAL_CASE method)
 !!      V.Masson    12/08/13  Parallelization of the initilization profile
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -183,6 +183,9 @@ USE MODI_VERT_COORD
 USE MODI_SHUMAN
 !
 USE MODE_ll
+USE MODD_PARAMETERS, ONLY : JPHEXT
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !  
@@ -323,12 +326,15 @@ CALL VERT_COORD(LSLEVE,ZZS_LS,ZZS_LS,XLEN1,XLEN2,XZHAT,ZZFLUX_MX)
 ZZMASS_MX(:,:,:)=MZF(1,IKU,1,ZZFLUX_MX)
 ZZMASS_MX(:,:,IKU)=1.5*ZZFLUX_MX(:,:,IKU)-0.5*ZZFLUX_MX(:,:,IKU-1)
 !
+CALL MPPDB_CHECK3D(ZZMASS_MX,"SET_CSTN::ZZMASS_MX",PRECISION)
+!
 !* vertical grid at initialization profile location
-GPROFILE_IN_PROC=(KILOC-IXOR_ll+1>=IIB .AND. KILOC-IXOR_ll+1<=IIE .AND.  KJLOC-IYOR_ll+1>=IJB .AND. KJLOC-IYOR_ll+1 <=IJE)
+GPROFILE_IN_PROC=(KILOC+JPHEXT-IXOR_ll+1>=IIB .AND. KILOC+JPHEXT-IXOR_ll+1<=IIE ) &
+         & .AND. (KJLOC+JPHEXT-IYOR_ll+1>=IJB .AND. KJLOC+JPHEXT-IYOR_ll+1<=IJE)
 !
 IF (GPROFILE_IN_PROC) THEN
-  ZZMASS_PROFILE(:) = ZZMASS_MX(KILOC-IXOR_ll+1,KJLOC-IYOR_ll+1,:)
-  ZZFLUX_PROFILE(:) = ZZFLUX_MX(KILOC-IXOR_ll+1,KJLOC-IYOR_ll+1,:)
+  ZZMASS_PROFILE(:) = ZZMASS_MX(KILOC+JPHEXT-IXOR_ll+1,KJLOC+JPHEXT-IYOR_ll+1,:)
+  ZZFLUX_PROFILE(:) = ZZFLUX_MX(KILOC+JPHEXT-IXOR_ll+1,KJLOC+JPHEXT-IYOR_ll+1,:)
 ELSE
   ZZMASS_PROFILE(:) = 0.
   ZZFLUX_PROFILE(:) = 0.
@@ -413,11 +419,11 @@ ZMRM(:) = SM_PMR_HU(CLUOUT,ZPM(:),ZTVM(:),ZHUM(:), &
 !
 IF (PRESENT(PCORIOZ)) THEN
     CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-              KILOC,KJLOC,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
+              KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
               ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PCORIOZ=PCORIOZ)
 ELSE
     CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-              KILOC,KJLOC,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
+              KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
               ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV)
 ENDIF
 !-------------------------------------------------------------------------------

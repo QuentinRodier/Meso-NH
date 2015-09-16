@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_GET_SIZEY_LB
@@ -89,6 +88,7 @@ END MODULE MODI_GET_SIZEY_LB
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    23/09/98
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -150,7 +150,7 @@ IF (KRIMY /=0) THEN
   IXOR=1
   IXEND=KIMAX_ll+ 2 * JPHEXT
   IYOR=1 
-  IYEND=KRIMY+1
+  IYEND=KRIMY+JPHEXT ! +1
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
   IF (IINFO/=1) THEN  ! no empty intersection
     KISIZEYF= IXENDI - IXORI +1
@@ -160,7 +160,7 @@ IF (KRIMY /=0) THEN
 !            1:NIMAX_ll+2 *JPHEXT,NJMAX_ll+JPHEXT-NRIMY +1:NJMAX_ll+ 2 *JPHEXT,
   IXOR=1
   IXEND=KIMAX_ll+ 2 * JPHEXT
-  IYOR=KJMAX_ll+ 2 * JPHEXT-KRIMY
+  IYOR=KJMAX_ll + 2 * JPHEXT-KRIMY-JPHEXT+1  ! -KRIMY
   IYEND=KJMAX_ll+ 2 * JPHEXT
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
   IF (IINFO/=1) THEN ! no empty intersection
@@ -173,7 +173,7 @@ IF (KRIMY /=0) THEN
   IXOR=1 
   IXEND=KIMAX_ll+ 2 * JPHEXT
   IYOR=2
-  IYEND=KRIMY+2
+  IYEND=KRIMY+JPHEXT+1   !+2
   CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
   IF (IINFO /= 1) THEN ! no empty intersection
     KISIZEYFV= IXENDI - IXORI +1
@@ -186,8 +186,8 @@ ENDIF
 !   Southern  side : 1:NIMAX_ll+ 2 * JPHEXT,2:3
 IXOR=1
 IXEND=KIMAX_ll+ 2 * JPHEXT
-IYOR=2
-IYEND=3
+IYOR=2  !2
+IYEND=JPHEXT+2 !3
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
 IF (IINFO /=1 ) THEN ! no empty intersection
   KISIZEY4= IXENDI - IXORI +1
@@ -196,8 +196,8 @@ ENDIF
 !   Northern side,  : 1:NIMAX_ll+2 *JPHEXT,NJMAX_ll+JPHEXT:NJMAX_ll+ 2 *JPHEXT
 IXOR= 1
 IXEND=KIMAX_ll+ 2 * JPHEXT
-IYOR=KJMAX_ll+JPHEXT
-IYEND=KJMAX_ll+ 2 * JPHEXT
+IYOR=KJMAX_ll + 2 * JPHEXT - JPHEXT      ! + JPHEXT
+IYEND=KJMAX_ll+ 2 * JPHEXT - JPHEXT + JPHEXT  ! + 2*JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
 IF (IINFO/=1) THEN ! no empty intersection
   KISIZEY4=IXENDI - IXORI +1
@@ -209,8 +209,8 @@ ENDIF
 !   Southern  side : 1:NIMAX_ll+ 2 * JPHEXT,1:1
 IXOR=1
 IXEND=KIMAX_ll+ 2 * JPHEXT
-IYOR=1
-IYEND=1
+IYOR=1   ! 1
+IYEND=JPHEXT  ! 1
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
 IF (IINFO /=1) THEN   ! no empty intersection
   KISIZEY2= IXENDI - IXORI +1
@@ -219,8 +219,8 @@ ENDIF
 !   Northern boundary, 1 point LB zone :1:NIMAX_ll+2 *JPHEXT, NJMAX_ll+ 2 * JPHEXT:NJMAX_ll+ 2 *JPHEXT,
 IXOR=1
 IXEND=KIMAX_ll + 2 * JPHEXT
-IYOR=KJMAX_ll + 2 * JPHEXT 
-IYEND=KJMAX_ll+ 2 * JPHEXT
+IYOR=KJMAX_ll + 2 * JPHEXT - JPHEXT + 1 !  + 2 * JPHEXT
+IYEND=KJMAX_ll+ 2 * JPHEXT - JPHEXT + JPHEXT !  + 2 * JPHEXT
 CALL GET_INTERSECTION_ll(IXOR,IYOR,IXEND,IYEND,IXORI,IYORI,IXENDI,IYENDI,"EXTE",IINFO)
 IF (IINFO /=1) THEN    ! no empty intersection
   KISIZEY2=  IXENDI - IXORI +1

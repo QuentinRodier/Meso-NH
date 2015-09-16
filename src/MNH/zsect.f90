@@ -62,6 +62,7 @@ END MODULE MODI_ZSECT
 !!    -------------
 !!      Original    08/12/94
 !!      J. Escobar  24/03/2012 modif for reprod sum
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -102,10 +103,7 @@ INTEGER                                                  :: IINFO_ll
 !*       1.    Determination of the inner points of the horizontal domain
 !              ----------------------------------------------------------
 !
-IIB=JPHEXT+1
-IIE=SIZE(PVAR,1)-JPHEXT
-IJB=JPHEXT+1
-IJE=SIZE(PVAR,2)-JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 GMASK2D=RESHAPE((/ ((JI>=IIB.AND.JI<=IIE.AND.JJ>=IJB.AND.JJ<=IJE             &
                     ,JI=1,SIZE(PVAR,1)),JJ=1,SIZE(PVAR,2)) /),               &
                     (/ SIZE(PVAR,1),SIZE(PVAR,2) /) )

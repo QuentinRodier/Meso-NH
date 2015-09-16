@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/05/23 15:45:38
 !-----------------------------------------------------------------
 !#########################
 MODULE MODI_INI_SIZE_SPAWN
@@ -65,6 +64,7 @@ END MODULE MODI_INI_SIZE_SPAWN
 !!    -------------
 !!
 !!      Original     13/07/99
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -272,20 +272,20 @@ END IF
 !
 !*     1.5   Position of model 2 domain relative to model 1 
 !
-NXEND = NXOR + JPHEXT + NXSIZE
-NYEND = NYOR + JPHEXT + NYSIZE
+NXEND = NXOR + NXSIZE +2*JPHEXT -1
+NYEND = NYOR + NYSIZE +2*JPHEXT -1
 !
 !*     1.6  model 2 LBC   (caution: implicitely JPHEXT = 1)
 !
 CLBCX(:) = 'OPEN'
-IF (NXOR  == 1          .AND. NXEND    == DIM_MODEL(1)%NIMAX_ll+2) CLBCX(:) = HLBCX(:)
+IF (NXOR  == 1          .AND. NXEND    == DIM_MODEL(1)%NIMAX_ll+2*JPHEXT) CLBCX(:) = HLBCX(:)
 IF (NXOR  == 1          .AND. HLBCX(1) == 'WALL')     CLBCX(1) = 'WALL'
-IF (NXEND == DIM_MODEL(1)%NIMAX_ll+2 .AND. HLBCX(2) == 'WALL')     CLBCX(2) = 'WALL'
+IF (NXEND == DIM_MODEL(1)%NIMAX_ll+2*JPHEXT .AND. HLBCX(2) == 'WALL')     CLBCX(2) = 'WALL'
 !
 CLBCY(:) = 'OPEN'
-IF (NYOR  == 1          .AND. NYEND    == DIM_MODEL(1)%NJMAX_ll+2) CLBCY(:) = HLBCY(:)
+IF (NYOR  == 1          .AND. NYEND    == DIM_MODEL(1)%NJMAX_ll+2*JPHEXT) CLBCY(:) = HLBCY(:)
 IF (NYOR  == 1          .AND. HLBCY(1) == 'WALL')     CLBCY(1) = 'WALL'
-IF (NYEND == DIM_MODEL(1)%NJMAX_ll+2 .AND. HLBCY(2) == 'WALL')     CLBCY(2) = 'WALL'
+IF (NYEND == DIM_MODEL(1)%NJMAX_ll+2*JPHEXT .AND. HLBCY(2) == 'WALL')     CLBCY(2) = 'WALL'
 !
 !
 !*   2    CALL OF INITIALIZATION PARALLEL ROUTINES

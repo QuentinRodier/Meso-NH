@@ -6,7 +6,6 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
-! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_INI_SPAWN_LS_n
@@ -139,6 +138,7 @@ END MODULE MODI_INI_SPAWN_LS_n
 !!                   22/01/98  ( J. Stein ) add the vertical interpolation
 !!                   09/07/98  ( J. Stein ) bug in the storage of the interp
 !!                                          coeff for U
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -159,6 +159,8 @@ USE MODI_SHUMAN
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
 USE MODI_VERT_COORD
+!
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -236,10 +238,10 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTZSMT,ZZSMT
 CALL GOTO_MODEL(KDAD)
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-1
-IIE=IIE+1
-IJB=IJB-1
-IJE=IJE+1
+IIB=IIB-JPHEXT
+IIE=IIE+JPHEXT
+IJB=IJB-JPHEXT
+IJE=IJE+JPHEXT
 !
 !*      1 GATHER LS FIELD FOR THE CHILD MODEL KMI
 !
@@ -320,6 +322,7 @@ IF ( GVERT_INTERP ) THEN
                  PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
                  2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,         &
                  HLBCX,HLBCY,ZTZS,ZZSLS(IIB:IIE,IJB:IJE,:)        )
+  CALL MPPDB_CHECK3D(ZZSLS,"INI_SPAWN_LS::ZZSLS",PRECISION)
   !
   ZZSMTLS=0.
   CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
@@ -560,6 +563,8 @@ CALL BIKHARDT (PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4, &
                PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4, &
                2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,2,         &
                HLBCX,HLBCY,ZTLSUM,PLSUM(IIB:IIE,IJB:IJE,:))
+CALL MPPDB_CHECK3D(PLSUM,"INI_SPAWN_LS::PLSUM",PRECISION)
+
 !
 IF ( SIZE(PLSUS,1) /= 0 ) THEN
   !

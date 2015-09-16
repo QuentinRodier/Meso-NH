@@ -7,7 +7,9 @@
 &NAM_CONF_PRE LCARTESIAN= F
               LBOUSS= F  CEQNSYS='LHE'
               CIDEAL='CSTN'
-              NVERB=5 /
+              NVERB=5 
+              !JPHEXT = 3 , NHALO = 3 
+              /
 &NAM_CONFn LUSERV=T /
 &NAM_LUNITn CINIFILE = 'REUNION_IDEA_520',CINIFILEPGD = 'REUNION_PGD_1km5_520' /
 &NAM_DYNn_PRE 
