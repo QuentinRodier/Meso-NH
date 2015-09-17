@@ -2,13 +2,14 @@ MODULE mode_util
   USE MODE_FIELDTYPE
   USE mode_dimlist
   USE MODD_PARAM
+  USE netcdf
 
   IMPLICIT NONE 
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)            :: name   ! nom du champ
      INTEGER                                 :: TYPE   ! type (entier ou reel)    
-     CHARACTER(LEN=1), DIMENSION(:), POINTER :: comment
+     CHARACTER(LEN=:), POINTER               :: comment
      TYPE(dimCDF),                   POINTER :: dim
      INTEGER                                 :: id
      INTEGER                                 :: grid
@@ -23,8 +24,6 @@ MODULE mode_util
 
   LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
   LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
-
-  INCLUDE 'netcdf.inc'
 
 CONTAINS 
   FUNCTION str_replace(hstr, hold, hnew)
@@ -181,7 +180,7 @@ CONTAINS
        tpreclist(ji)%TYPE = get_ftype(yrecfm)               
        tpreclist(ji)%grid = iwork(1)
 
-       ALLOCATE(tpreclist(ji)%comment(iwork(2)))
+       ALLOCATE(character(len=iwork(2)) :: tpreclist(ji)%comment)
        DO jj=1,iwork(2)
           ich = iwork(2+jj)
           tpreclist(ji)%comment(jj:jj) = CHAR(ich)
@@ -192,7 +191,7 @@ CONTAINS
        tpreclist(ji)%TYPE = get_ftype(yrecfm)               
        tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
 
-       ALLOCATE(tpreclist(ji)%comment(lfiart(ji)%iwtab(2)))
+       ALLOCATE(character(len=lfiart(ji)%iwtab(2)) :: tpreclist(ji)%comment)
        DO jj=1,lfiart(ji)%iwtab(2)
           ich = lfiart(ji)%iwtab(2+jj)
           tpreclist(ji)%comment(jj:jj) = CHAR(ich)
@@ -212,14 +211,14 @@ CONTAINS
   SUBROUTINE HANDLE_ERR(status,line)
     INTEGER :: status,line
 
-    IF (status /= NF_NOERR) THEN
-       PRINT *, 'line ',line,': ',NF_STRERROR(status)
+    IF (status /= NF90_NOERR) THEN
+       PRINT *, 'line ',line,': ',NF90_STRERROR(status)
        STOP
     END IF
   END SUBROUTINE HANDLE_ERR
 
   SUBROUTINE def_ncdf(tpreclist,knaf,kcdf_id)
-    TYPE(workfield),DIMENSION(:),INTENT(IN) :: tpreclist    
+    TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: knaf
     INTEGER,                     INTENT(OUT):: kcdf_id
 
@@ -231,17 +230,16 @@ CONTAINS
     CHARACTER(LEN=20)     :: ycdfvar
 
 
-    ! global attributes
-    status = NF_PUT_ATT_TEXT(kcdf_id,NF_GLOBAL,'Title'&
-         & ,LEN(VERSION_ID),VERSION_ID)
-    IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+      ! global attributes
+      status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'Title',VERSION_ID)
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
     ! define DIMENSIONS
     tzdim=>first_DimCDF()
     DO WHILE(ASSOCIATED(tzdim))
       IF (tzdim%create) THEN
-        status = NF_DEF_DIM(kcdf_id,tzdim%name,tzdim%len,tzdim%id)
-        IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+        status = NF90_DEF_DIM(kcdf_id,tzdim%name,tzdim%len,tzdim%id)
+        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
       END IF
       tzdim=>tzdim%next
     END DO
@@ -291,47 +289,45 @@ CONTAINS
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (TEXT)
 !          PRINT *,'TEXT : ',tpreclist(ji)%name
-          status = NF_DEF_VAR(kcdf_id,ycdfvar,NF_CHAR,&
-                   invdims,ivdims,tpreclist(ji)%id)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__) 
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_CHAR,&
+                   ivdims(:invdims),tpreclist(ji)%id)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        CASE (INT,BOOL)
 !          PRINT *,'INT,BOOL : ',tpreclist(ji)%name
-          status = NF_DEF_VAR(kcdf_id,ycdfvar,NF_INT,&
-                   invdims,ivdims,tpreclist(ji)%id)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__) 
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_INT,&
+                   ivdims(:invdims),tpreclist(ji)%id)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        CASE(FLOAT)
 !          PRINT *,'FLOAT : ',tpreclist(ji)%name
-          status = NF_DEF_VAR(kcdf_id,ycdfvar,NF_DOUBLE,&
-                   invdims,ivdims,tpreclist(ji)%id)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__) 
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_DOUBLE,&
+                   ivdims(:invdims),tpreclist(ji)%id)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
           
        CASE default
           PRINT *,'ATTENTION : ',TRIM(tpreclist(ji)%name),' est de&
                & TYPE inconnu --> force a REAL'
-          status = NF_DEF_VAR(kcdf_id,ycdfvar,NF_DOUBLE,&
-                   invdims,ivdims,tpreclist(ji)%id)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__) 
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_DOUBLE,&
+                   ivdims(:invdims),tpreclist(ji)%id)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
           
 
        END SELECT
 
        ! GRID attribute definition
-       status = NF_PUT_ATT_INT(kcdf_id,tpreclist(ji)%id,'GRID',NF_INT,&
-                               1,tpreclist(ji)%grid)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id,'GRID',tpreclist(ji)%grid)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        ! COMMENT attribute definition
-       status = NF_PUT_ATT_TEXT(kcdf_id,tpreclist(ji)%id,'COMMENT',&
-            SIZE(tpreclist(ji)%comment),tpreclist(ji)%comment(1))
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
-       
+       status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id,'COMMENT',trim(tpreclist(ji)%comment))
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
     END DO
     
-    status = NF_ENDDEF(kcdf_id)
-    IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_ENDDEF(kcdf_id)
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
     
   END SUBROUTINE def_ncdf
@@ -350,7 +346,7 @@ CONTAINS
     REAL   (KIND=8),DIMENSION(:),ALLOCATABLE :: xtab
     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     INTEGER                                  :: status
-    INTEGER                                  :: extent
+    INTEGER                                  :: extent, ndims
     INTEGER                                  :: ich
     INTEGER(KIND=LFI_INT) :: iresp,ilu,ileng,ipos
     !
@@ -369,51 +365,95 @@ CONTAINS
 #endif
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
           extent = tpreclist(ji)%dim%len
+          ndims = tpreclist(ji)%dim%ndims
        ELSE
           extent = 1
+          ndims = 0
        END IF
 
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (INT,BOOL)
 #if LOWMEM
+***
+print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          itab(1:extent) = iwork(3+iwork(2):)
 #else
          itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
 #endif
-         status = NF_PUT_VAR_INT(kcdf_id,tpreclist(ji)%id,itab)
-         IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+!TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
+         SELECT CASE(ndims)
+         CASE (0)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,itab(1))
+         CASE (1)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,itab(1:extent),count=(/extent/))
+         CASE (2)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(itab,(/ptdimx%len,ptdimy%len/)))
+         CASE (3)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(itab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
+         CASE DEFAULT
+           print *,'Error: arrays with ',tpreclist(ji)%dim%ndims,' dimensions are not supported'
+         END SELECT
          
        CASE (FLOAT)
 #if LOWMEM
+***
+print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
 #else
          xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
 #endif
-         status = NF_PUT_VAR_DOUBLE(kcdf_id,tpreclist(ji)%id,xtab)
-         IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+!TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
+         SELECT CASE(ndims)
+         CASE (0)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1))
+         CASE (1)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1:extent),count=(/extent/))
+         CASE (2)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)))
+         CASE (3)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
+         CASE DEFAULT
+           print *,'Error: arrays with ',tpreclist(ji)%dim%ndims,' dimensions are not supported'
+         END SELECT
 
        CASE (TEXT)
          ALLOCATE(ytab(extent))
          DO jj=1,extent
 #if LOWMEM
+***
+print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
            ich = iwork(2+iwork(2)+jj)
 #else
            ich = lfiart(ji)%iwtab(2+lfiart(ji)%iwtab(2)+jj)
 #endif
            ytab(jj) = CHAR(ich)
          END DO
-
-         status = NF_PUT_VAR_TEXT(kcdf_id,tpreclist(ji)%id,ytab)
-         IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,ytab,count=(/extent/))
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
          DEALLOCATE(ytab)
        CASE default
 #if LOWMEM
+***
+print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
 #else         
          xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
 #endif
-         status = NF_PUT_VAR_DOUBLE(kcdf_id,tpreclist(ji)%id,xtab)
-         IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+!TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
+         SELECT CASE(ndims)
+         CASE (0)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1))
+         CASE (1)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1:extent),count=(/extent/))
+         CASE (2)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)))
+         CASE (3)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
+         CASE DEFAULT
+           print *,'Error: arrays with ',tpreclist(ji)%dim%ndims,' dimensions are not supported'
+         END SELECT
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
        END SELECT
 
     END DO
@@ -437,8 +477,8 @@ CONTAINS
     INTEGER, DIMENSION(10) :: idim_id
     INTEGER :: icomlen,idimlen,idims,idimtmp
     
-    status = NF_INQ_NVARS(kcdf_id, nvars)
-    IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_INQUIRE(kcdf_id, nvariables = nvars)
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     ALLOCATE(tpreclist(nvars))
 
     sizemax = 0
@@ -453,20 +493,17 @@ CONTAINS
        ! Pour la forme
        tpreclist(var_id)%id = var_id  
        
-       ! Nom de la variable
-       status = NF_INQ_VARNAME(kcdf_id, var_id, tpreclist(var_id)%name)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       ! Nom, type et dimensions de la variable
+       status = NF90_INQUIRE_VARIABLE(kcdf_id, var_id, name = tpreclist(var_id)%name, xtype = itype, ndims = idims, &
+                                      dimids = idim_id)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        
-       ! Type de la variable
-       status = NF_INQ_VARTYPE(kcdf_id, var_id, itype)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
        SELECT CASE(itype)
-       CASE(NF_CHAR)
+       CASE(NF90_CHAR)
           tpreclist(var_id)%TYPE = TEXT
-       CASE(NF_INT)
+       CASE(NF90_INT)
           tpreclist(var_id)%TYPE = INT
-       CASE(NF_FLOAT,NF_DOUBLE)
+       CASE(NF90_FLOAT,NF90_DOUBLE)
           tpreclist(var_id)%TYPE = FLOAT
        CASE default 
           PRINT *, 'Attention : variable ',TRIM(tpreclist(var_id)&
@@ -474,23 +511,16 @@ CONTAINS
           PRINT *, '--> TYPE force a REAL(KIND 8) dans LFI !'
        END SELECT
       
-       ! Dimension de la variable
-       status = NF_INQ_VARNDIMS(kcdf_id, var_id, idims)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
        IF (idims == 0) THEN
           ! variable scalaire
           NULLIFY(tpreclist(var_id)%dim)
 	  idimlen = 1
        ELSE
           ! infos sur dimensions
-          status = NF_INQ_VARDIMID(kcdf_id, var_id, idim_id)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
           idimlen = 1
           DO jdim=1,idims
-            status = NF_INQ_DIMLEN(kcdf_id,idim_id(jdim),idimtmp)
-            IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+            status = NF90_INQUIRE_DIMENSION(kcdf_id,idim_id(jdim),len = idimtmp)
+            IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
             idimlen = idimlen*idimtmp
           END DO
           
@@ -499,15 +529,15 @@ CONTAINS
        END IF
        
        ! GRID et COMMENT attributes
-       status = NF_GET_ATT_INT(kcdf_id,var_id,'GRID',tpreclist(var_id)%grid)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       status = NF90_GET_ATT(kcdf_id,var_id,'GRID',tpreclist(var_id)%grid)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-       status = NF_INQ_ATTLEN(kcdf_id,var_id,'COMMENT',icomlen)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       status = NF90_INQUIRE_ATTRIBUTE(kcdf_id,var_id,'COMMENT',len = icomlen)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        
-       ALLOCATE(tpreclist(var_id)%comment(icomlen))
-       status = NF_GET_ATT_TEXT(kcdf_id,var_id,'COMMENT',tpreclist(var_id)%comment)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       ALLOCATE(character(len=icomlen) :: tpreclist(var_id)%comment)
+       status = NF90_GET_ATT(kcdf_id,var_id,'COMMENT',tpreclist(var_id)%comment)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        
        IF (sizemax < icomlen+idimlen) sizemax = icomlen+idimlen 
@@ -549,13 +579,13 @@ CONTAINS
     ALLOCATE(xtab(2+kbuflen))
 
     DO ivar=1,SIZE(tpreclist)
-       icomlen = SIZE(tpreclist(ivar)%comment)
+       icomlen = LEN(tpreclist(ivar)%comment)
 
        ! traitement Grille et Commentaire
        iwork(1) = tpreclist(ivar)%grid
        iwork(2) = icomlen
        DO jj=1,iwork(2)
-          iwork(2+jj)=ICHAR(tpreclist(ivar)%comment(jj))
+          iwork(2+jj)=ICHAR(tpreclist(ivar)%comment(jj:jj))
        END DO
 
        IF (ASSOCIATED(tpreclist(ivar)%dim)) THEN
@@ -570,15 +600,15 @@ CONTAINS
 
        SELECT CASE(tpreclist(ivar)%TYPE)
        CASE(INT,BOOL)
-          status = NF_GET_VAR_INT(kcdf_id,tpreclist(ivar)%id,itab)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,itab)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 !          PRINT *,'INT,BOOL --> ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = itab(1:idlen)
 
        CASE(FLOAT)
-          status = NF_GET_VAR_DOUBLE(kcdf_id,tpreclist(ivar)%id,xtab)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
           
 !          PRINT *,'FLOAT    --> ',tpreclist(ivar)%name,',len = ',idlen
           ! La ligne suivante ne pose aucun pb sur Cray alors que sur
@@ -592,8 +622,8 @@ CONTAINS
 
        CASE(TEXT)
           ALLOCATE(ytab(idlen))
-          status = NF_GET_VAR_TEXT(kcdf_id,tpreclist(ivar)%id,ytab)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,ytab)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 !          PRINT *,'TEXT -->     ',tpreclist(ivar)%name,',len = ',idlen
 
@@ -604,8 +634,8 @@ CONTAINS
           DEALLOCATE(ytab)
 
        CASE default
-          status = NF_GET_VAR_DOUBLE(kcdf_id,tpreclist(ivar)%id,xtab)
-          IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
           PRINT *,'Default (ERROR) -->',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = TRANSFER(xtab,(/ 0_8 /),idlen)
@@ -655,28 +685,28 @@ CONTAINS
        end IF
 
        IF (ohdf5) THEN
-          status = NF_CREATE(houtfile, IOR(NF_CLOBBER,NF_NETCDF4), kcdf_id)
+          status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), kcdf_id)
        ELSE
-          status = NF_CREATE(houtfile, IOR(NF_CLOBBER,NF_64BIT_OFFSET), kcdf_id) 
+          status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), kcdf_id) 
        end IF
        
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-       status = NF_SET_FILL(kcdf_id,NF_NOFILL,omode)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       status = NF90_SET_FILL(kcdf_id,NF90_NOFILL,omode)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 !!$       SELECT CASE(omode)
-!!$       CASE (NF_FILL)
-!!$          PRINT *,'Ancien mode : NF_FILL'
-!!$       CASE (NF_NOFILL)
-!!$          PRINT *,'Ancien mode : NF_NOFILL'
+!!$       CASE (NF90_FILL)
+!!$          PRINT *,'Ancien mode : NF90_FILL'
+!!$       CASE (NF90_NOFILL)
+!!$          PRINT *,'Ancien mode : NF90_NOFILL'
 !!$       CASE default
 !!$          PRINT *, 'Ancien mode : inconnu'
 !!$       END SELECT
        
     ELSE
        ! Cas NetCDF -> LFI
-       status = NF_OPEN(hinfile,NF_NOWRITE,kcdf_id)
-       IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       status = NF90_OPEN(hinfile,NF90_NOWRITE,kcdf_id)
+       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        
        inap = 100
        CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW'&
@@ -701,8 +731,8 @@ CONTAINS
     CALL LFIFER(iresp,ilu,'KEEP')
 
     ! close NetCDF file
-    status = NF_CLOSE(kcdf_id)
-    IF (status /= NF_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_CLOSE(kcdf_id)
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     
   END SUBROUTINE CLOSE_files
   
