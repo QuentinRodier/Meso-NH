@@ -5,7 +5,7 @@
 
 #define BUFSIZE 4096
 
-extern lfi2cdfmain_(char*, int*, char*, int*, char*, int*, int*, int*, int*);
+extern lfi2cdfmain_(char*, int*, int *, char*, int*, char*, int*, int*, int*, int*, int*, int*);
 
 char *cleancomma(char *varlist)
 {
@@ -30,6 +30,8 @@ int main(int argc, char **argv)
   int list_flag;
   int l2c_flag;
   int hdf5_flag;
+  int merge_flag, nb_levels;
+  int outname_flag;
   char *cmd, *infile;
   int c;
   char buff[BUFSIZE];
@@ -52,17 +54,23 @@ int main(int argc, char **argv)
   p = buff;
   *p = '\0';
 
+  /* Default values for merging of LFI splitted files */
+  merge_flag = 0;
+  nb_levels = 1;
+
   while (1) {
     int option_index = 0;
 
     static struct option long_options[] = {
-      {"cdf4",    no_argument,       0,  '4'},
-      {"list",  no_argument,       0,  'l' },
-      {"var",   required_argument, 0,  'v' },
-      {0,         0,                 0,  0 }
+      {"cdf4",             no_argument,       0, '4' },
+      {"list",             no_argument,       0, 'l' },
+      {"merge",            required_argument, 0, 'm' },
+      {"output",           required_argument, 0, 'o' },
+      {"var",              required_argument, 0, 'v' },
+      {0,                  0,                 0,  0  }
     };
 
-    c = getopt_long(argc, argv, "lo:v:4",
+    c = getopt_long(argc, argv, "4lm:o:v:",
 		    long_options, &option_index);
     if (c == -1)
       break;
@@ -80,7 +88,12 @@ int main(int argc, char **argv)
     case 'l':
       list_flag = 1;
       break;
+    case 'm':
+      merge_flag = 1;
+      nb_levels = atoi(optarg);
+      break;
     case 'o':
+      outname_flag = 1;
       outfile = optarg;
       olen = strlen(outfile);
       break;
@@ -105,8 +118,8 @@ int main(int argc, char **argv)
   }
 
   if (optind == argc) {
-    printf("usage : lfi2cdf [--cdf4 -4] [-l] [-v var1[,...]] [-o output-file.nc] input-file.lfi\n");
-    printf("        cdf2lfi [-o output-file.lfi] input-file.nc\n");
+    printf("usage : lfi2cdf [--cdf4 -4] [-l] [-v --var var1[,...]] [-m --merge number_of_z_levels] [-o --output output-file.nc] input-file.lfi\n");
+    printf("        cdf2lfi [-o --output output-file.lfi] input-file.nc\n");
     exit(EXIT_FAILURE);
   } 
 
@@ -142,7 +155,8 @@ int main(int argc, char **argv)
          infile, ilen, outfile, olen, varlist, varlistlen);
   */
 
-  lfi2cdfmain_(infile, &ilen, outfile, &olen, varlist, &varlistlen, &l2c_flag, &list_flag, &hdf5_flag);
+  lfi2cdfmain_(infile, &ilen, &outname_flag, outfile, &olen, varlist, &varlistlen, &l2c_flag, &list_flag, &hdf5_flag, &merge_flag,
+		       &nb_levels);
 
   exit(EXIT_SUCCESS);
 }

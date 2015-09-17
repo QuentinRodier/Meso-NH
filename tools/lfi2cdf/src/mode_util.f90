@@ -65,12 +65,13 @@ CONTAINS
   END IF
   END SUBROUTINE FMREADLFIN1
 
-  SUBROUTINE parse_lfi(klu, hvarlist, knaf, tpreclist, kbuflen)
+  SUBROUTINE parse_lfi(klu, hvarlist, knaf, tpreclist, kbuflen, current_level)
     INTEGER, INTENT(IN)                    :: klu
     INTEGER, INTENT(INOUT)                 :: knaf
     CHARACTER(LEN=*), intent(IN)           :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist    
     INTEGER, INTENT(OUT)                   :: kbuflen
+    INTEGER, INTENT(IN), OPTIONAL          :: current_level
 
     INTEGER                                  :: ji,jj
     INTEGER                                  :: ndb, nde
@@ -79,6 +80,7 @@ CONTAINS
     INTEGER                                  :: ich
     INTEGER                                  :: fsize,sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
+    CHARACTER(LEN=4)                         :: suffix
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
@@ -116,6 +118,12 @@ CONTAINS
     ALLOCATE(tpreclist(knaf))
     sizemax = 0
 
+    IF (present(current_level)) THEN
+      write(suffix,'(I4.4)') current_level
+    ElSE
+      suffix=''
+    END IF
+
     ! Phase 1 : build articles list to convert.
     !
     !    Pour l'instant tous les articles du fichier LFI sont
@@ -132,7 +140,7 @@ CONTAINS
           yrecfm = hvarlist(ndb:ndb+nde-2)
           ndb = nde+ndb
 
-          CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
+          CALL LFINFO(iresp,ilu,trim(yrecfm)//trim(suffix),ileng,ipos)
           
           IF (iresp /= 0 .OR. ileng == 0) THEN
              PRINT *,'Article ',TRIM(yrecfm), ' not found!'
@@ -173,7 +181,7 @@ CONTAINS
     !           Infos are put in tpreclist.
     CALL init_dimCDF()
     DO ji=1,inaf
-       yrecfm = tpreclist(ji)%name
+       yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
        CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
@@ -208,6 +216,55 @@ CONTAINS
     knaf = inaf
   END SUBROUTINE parse_lfi
   
+  SUBROUTINE read_data_lfi(klu, hvarlist, nbvar, tpreclist, kbuflen, current_level)
+    INTEGER, INTENT(IN)                    :: klu
+    INTEGER, INTENT(INOUT)                 :: nbvar
+    CHARACTER(LEN=*), intent(IN)           :: hvarlist
+    TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
+    INTEGER, INTENT(IN)                    :: kbuflen
+    INTEGER, INTENT(IN), OPTIONAL          :: current_level
+
+    INTEGER                                  :: ji,jj
+    INTEGER                                  :: ndb, nde
+    LOGICAL                                  :: ladvan
+    INTEGER                                  :: ich
+    INTEGER                                  :: fsize,sizemax
+    CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
+    CHARACTER(LEN=4)                         :: suffix
+#ifdef LOWMEM
+    INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
+#endif
+    INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
+
+    ilu = klu
+
+    IF (present(current_level)) THEN
+      write(suffix,'(I4.4)') current_level
+    ElSE
+      suffix=''
+    END IF
+
+#ifdef LOWMEM
+    ALLOCATE(iwork(kbuflen))
+#endif
+
+    DO ji=1,nbvar
+       yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
+       CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
+#ifdef LOWMEM
+       CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
+       tpreclist(ji)%grid = iwork(1)
+#else
+       CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
+       tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
+#endif
+    END DO
+
+#ifdef LOWMEM
+    DEALLOCATE(iwork)
+#endif
+  END SUBROUTINE read_data_lfi
+
   SUBROUTINE HANDLE_ERR(status,line)
     INTEGER :: status,line
 
@@ -217,10 +274,11 @@ CONTAINS
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,knaf,kcdf_id)
+  SUBROUTINE def_ncdf(tpreclist,knaf,kcdf_id,omerge)
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: knaf
     INTEGER,                     INTENT(OUT):: kcdf_id
+    LOGICAL,                     INTENT(IN) :: omerge
 
     INTEGER :: status
     INTEGER :: ji
@@ -255,6 +313,7 @@ CONTAINS
            ivdims(1) = tpreclist(ji)%dim%id
          ELSE
            invdims = tpreclist(ji)%dim%ndims
+           IF(omerge) invdims=invdims+1 !when merging variables from LFI splitted files
            SELECT CASE(invdims)
            CASE(2)
               ivdims(1)=ptdimx%id
@@ -332,26 +391,40 @@ CONTAINS
     
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(klu,kcdf_id,tpreclist,knaf,kbuflen)
+  SUBROUTINE fill_ncdf(klu,kcdf_id,tpreclist,knaf,kbuflen,current_level)
     INTEGER,                      INTENT(IN):: klu
     INTEGER,                      INTENT(IN):: kcdf_id
     TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist
     INTEGER,                      INTENT(IN):: knaf
     INTEGER,                      INTENT(IN):: kbuflen
+    INTEGER, INTENT(IN), OPTIONAL           :: current_level
+
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
     INTEGER                                  :: ji,jj
-    INTEGER,DIMENSION(:),ALLOCATABLE :: itab
+    INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
     REAL   (KIND=8),DIMENSION(:),ALLOCATABLE :: xtab
     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     INTEGER                                  :: status
     INTEGER                                  :: extent, ndims
     INTEGER                                  :: ich
-    INTEGER(KIND=LFI_INT) :: iresp,ilu,ileng,ipos
+    INTEGER                                  :: level
+    INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
+    CHARACTER(LEN=4)                         :: suffix
+
     !
     ilu = klu
     !
+
+    IF (present(current_level)) THEN
+      write(suffix,'(I4.4)') current_level
+      level = current_level
+    ElSE
+      suffix=''
+      level = 1
+    END IF
+
 #if LOWMEM
     ALLOCATE(iwork(kbuflen))
 #endif
@@ -360,8 +433,8 @@ CONTAINS
 
     DO ji=1,knaf
 #if LOWMEM
-       CALL LFINFO(iresp,ilu,tpreclist(ji)%name,ileng,ipos)
-       CALL LFILEC(iresp,ilu,tpreclist(ji)%name,iwork,ileng)
+       CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+       CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
 #endif
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
           extent = tpreclist(ji)%dim%len
@@ -387,7 +460,8 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,itab(1:extent),count=(/extent/))
          CASE (2)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(itab,(/ptdimx%len,ptdimy%len/)))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(itab,(/ptdimx%len,ptdimy%len/)), &
+                                 start = (/1,1,level/) )
          CASE (3)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(itab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
          CASE DEFAULT
@@ -409,7 +483,8 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1:extent),count=(/extent/))
          CASE (2)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)), &
+                                 start = (/1,1,level/) )
          CASE (3)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
          CASE DEFAULT
@@ -446,7 +521,8 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,xtab(1:extent),count=(/extent/))
          CASE (2)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len/)), &
+                                 start = (/1,1,level/) )
          CASE (3)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
          CASE DEFAULT
