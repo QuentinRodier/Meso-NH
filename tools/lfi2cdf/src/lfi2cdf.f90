@@ -18,19 +18,41 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
   INTEGER :: nbvar_calc ! number of variables to be computed from others
   INTEGER :: nbvar_tbw  ! number of variables to be written
   INTEGER :: nbvar      ! number of defined variables
-  INTEGER :: icdf_id
   INTEGER :: first_level, current_level, last_level
   INTEGER(KIND=LFI_INT) :: iresp,iverb,inap
   CHARACTER(LEN=3)      :: suffix
   CHARACTER(LEN=iiflen) :: filename
+  TYPE(cdf_files) :: cdffiles
   TYPE(workfield), DIMENSION(:), POINTER :: tzreclist
 
+
+  cdffiles%nbfiles = 0
+  cdffiles%opened  = .FALSE.
+
   !Remove level in the filename if merging LFI splitted files
-  if (omerge .AND. .NOT.ooutname) then
+  if (.NOT.ooutname) then
+    if (omerge .AND. .NOT.osplit) then
        houtfile=houtfile(1:len(houtfile)-9)//houtfile(len(houtfile)-3:)
+    end if
+    if (.NOT.omerge .AND. osplit) then
+       if (ohdf5) then
+         ji=4
+       else
+         ji=3
+       end if
+       houtfile=houtfile(1:len(houtfile)-ji)
+    end if
+    if (omerge .AND. osplit) then
+       if (ohdf5) then
+         ji=9
+       else
+         ji=8
+       end if
+       houtfile=houtfile(1:len(houtfile)-ji)
+    end if
   end if
 
-  CALL OPEN_FILES(hinfile, houtfile, olfi2cdf, olfilist, ohdf5, icdf_id, ilu, nbvar_lfi)
+  CALL OPEN_FILES(hinfile, houtfile, olfi2cdf, olfilist, ohdf5, cdffiles, ilu, nbvar_lfi, osplit)
   IF (olfilist) return
 
   IF (olfi2cdf) THEN
@@ -59,8 +81,10 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
      !Standard treatment (one LFI file only)
      IF (.not.omerge) THEN
        CALL parse_lfi(ilu,hvarlist,nbvar_lfi,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen)
-       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
-       CALL fill_ncdf(ilu,icdf_id,tzreclist,nbvar,ibuflen)
+       IF (osplit) call open_split_ncfiles(houtfile,nbvar,tzreclist,cdffiles,ohdf5)
+       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,cdffiles,omerge,ocompress,compress_level)
+       CALL fill_ncdf(ilu,tzreclist,nbvar,ibuflen,cdffiles)
+
      ELSE
      !Treat several LFI files and merge into 1 NC file
        iverb = 0 !Verbosity level for LFI
@@ -72,7 +96,9 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
 
        !Read 1st LFI file
        CALL parse_lfi(ilu,hvarlist,nbvar_lfi,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,current_level)
-       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
+       IF (osplit) call open_split_ncfiles(houtfile,nbvar,tzreclist,cdffiles,ohdf5)
+       !Define NC variables
+       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,cdffiles,omerge,ocompress,compress_level)
 
        DO current_level = first_level,last_level
          print *,'Treating level ',current_level
@@ -82,18 +108,18 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
            CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar_lfi)
            CALL read_data_lfi(ilu,hvarlist,nbvar,tzreclist,ibuflen,current_level)
          END IF
-         CALL fill_ncdf(ilu,icdf_id,tzreclist,nbvar,ibuflen,current_level)
+         CALL fill_ncdf(ilu,tzreclist,nbvar,ibuflen,cdffiles,current_level)
          IF (current_level/=last_level) CALL LFIFER(iresp,ilu,'KEEP')
        END DO
      END IF
 
   ELSE
      ! Conversion NetCDF -> LFI
-     CALL parse_cdf(icdf_id,tzreclist,ibuflen)
-     CALL build_lfi(icdf_id,ilu,tzreclist,ibuflen)
+     CALL parse_cdf(cdffiles%cdf_id(1),tzreclist,ibuflen)
+     CALL build_lfi(cdffiles%cdf_id(1),ilu,tzreclist,ibuflen)
   END IF
   
-  CALL CLOSE_FILES(ilu,icdf_id)
+  CALL CLOSE_FILES(ilu,cdffiles,osplit)
   
 end subroutine LFI2CDFMAIN
 

@@ -7,6 +7,15 @@ MODULE mode_util
   IMPLICIT NONE 
 
   INTEGER,PARAMETER :: MAXRAW=10
+  INTEGER,PARAMETER :: MAXLEN=512
+
+  TYPE cdf_files
+    INTEGER :: nbfiles
+    LOGICAL :: opened
+    INTEGER,DIMENSION(:),ALLOCATABLE :: cdf_id !ID of the netCDF file
+    INTEGER,DIMENSION(:),ALLOCATABLE :: var_id !position of the variable in the workfield structure
+  END TYPE cdf_files
+
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)            :: name   ! nom du champ
@@ -388,17 +397,18 @@ END DO
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,nbvar,oreduceprecision,kcdf_id,omerge,ocompress,compress_level)
+  SUBROUTINE def_ncdf(tpreclist,nbvar,oreduceprecision,cdffiles,omerge,ocompress,compress_level)
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: nbvar
     LOGICAL,                     INTENT(IN) :: oreduceprecision
-    INTEGER,                     INTENT(OUT):: kcdf_id
+    TYPE(cdf_files),             INTENT(IN) :: cdffiles
     LOGICAL,                     INTENT(IN) :: omerge
     LOGICAL,                     INTENT(IN) :: ocompress
     INTEGER,                     INTENT(IN) :: compress_level
 
     INTEGER :: status
-    INTEGER :: ji
+    INTEGER :: idx, ji, nbfiles
+    INTEGER:: kcdf_id
     TYPE(dimCDF), POINTER :: tzdim
     INTEGER               :: invdims
     INTEGER               :: type_float
@@ -406,29 +416,36 @@ END DO
     CHARACTER(LEN=20)     :: ycdfvar
 
 
+    nbfiles = cdffiles%nbfiles
+
     IF (oreduceprecision) THEN
       type_float = NF90_REAL
     ELSE
       type_float = NF90_DOUBLE
     END IF
 
+    DO ji = 1,nbfiles
+      kcdf_id = cdffiles%cdf_id(ji)
+
       ! global attributes
       status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'Title',VERSION_ID)
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-    ! define DIMENSIONS
-    tzdim=>first_DimCDF()
-    DO WHILE(ASSOCIATED(tzdim))
-      IF (tzdim%create) THEN
-        status = NF90_DEF_DIM(kcdf_id,tzdim%name,tzdim%len,tzdim%id)
-        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-      END IF
-      tzdim=>tzdim%next
+      ! define DIMENSIONS
+      tzdim=>first_DimCDF()
+      DO WHILE(ASSOCIATED(tzdim))
+        IF (tzdim%create) THEN
+          status = NF90_DEF_DIM(kcdf_id,tzdim%name,tzdim%len,tzdim%id)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+        END IF
+        tzdim=>tzdim%next
+      END DO
     END DO
 
     PRINT *,'------------- NetCDF DEFINITION ---------------'
 
     ! define VARIABLES and ATTRIBUTES
+    idx = 1
     DO ji=1,nbvar
        IF (.NOT.tpreclist(ji)%tbw) CYCLE
 
@@ -469,6 +486,8 @@ END DO
        ycdfvar = str_replace(tpreclist(ji)%name,'%','__')
        !! ni les '.' remplaces par '--'
        ycdfvar = str_replace(ycdfvar,'.','--')
+
+       if (nbfiles > 1) kcdf_id = cdffiles%cdf_id(idx)
 
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (TEXT)
@@ -514,29 +533,30 @@ END DO
        status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id,'COMMENT',trim(tpreclist(ji)%comment))
        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
+       idx = idx + 1
     END DO
     
-    status = NF90_ENDDEF(kcdf_id)
-    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
+    DO ji = 1,nbfiles
+      kcdf_id = cdffiles%cdf_id(ji)
+      status = NF90_ENDDEF(kcdf_id)
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    END DO
     
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(klu,kcdf_id,tpreclist,knaf,kbuflen,current_level)
+  SUBROUTINE fill_ncdf(klu,tpreclist,knaf,kbuflen,cdffiles,current_level)
     INTEGER,                      INTENT(IN):: klu
-    INTEGER,                      INTENT(IN):: kcdf_id
     TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist
     INTEGER,                      INTENT(IN):: knaf
     INTEGER,                      INTENT(IN):: kbuflen
+    TYPE(cdf_files),              INTENT(IN):: cdffiles
     INTEGER, INTENT(IN), OPTIONAL           :: current_level
 
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
-    INTEGER                                  :: ji,jj
-    INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
-    REAL   (KIND=8),DIMENSION(:),ALLOCATABLE :: xtab
-    CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
+    INTEGER                                  :: idx, ji,jj
+    INTEGER                                  :: kcdf_id
     INTEGER                                  :: status
     INTEGER                                  :: extent, ndims
     INTEGER                                  :: ich
@@ -544,7 +564,12 @@ END DO
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
     CHARACTER(LEN=4)                         :: suffix
+    INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
+    REAL(KIND=8),DIMENSION(:),ALLOCATABLE    :: xtab
+    CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
 
+
+    kcdf_id = cdffiles%cdf_id(1)
     !
     ilu = klu
     !
@@ -563,8 +588,11 @@ END DO
     ALLOCATE(itab(kbuflen))
     ALLOCATE(xtab(kbuflen))
 
+    idx = 1
     DO ji=1,knaf
        IF (.NOT.tpreclist(ji)%tbw) CYCLE
+
+       IF (cdffiles%nbfiles > 1) kcdf_id = cdffiles%cdf_id(idx)
 
 #if LOWMEM
        CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
@@ -701,6 +729,7 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 
        END SELECT
 
+       idx = idx + 1
     END DO
     DEALLOCATE(itab,xtab)
 #if LOWMEM
@@ -900,11 +929,12 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 
   END SUBROUTINE build_lfi
 
-  SUBROUTINE OPEN_FILES(hinfile,houtfile,olfi2cdf,olfilist,ohdf5,kcdf_id,klu,knaf)
-    LOGICAL,          INTENT(IN)  :: olfi2cdf, olfilist, ohdf5
+  SUBROUTINE OPEN_FILES(hinfile,houtfile,olfi2cdf,olfilist,ohdf5,cdffiles,klu,knaf,osplit)
+    LOGICAL,          INTENT(IN)  :: olfi2cdf, olfilist, ohdf5, osplit
     CHARACTER(LEN=*), INTENT(IN)  :: hinfile
     CHARACTER(LEN=*), INTENT(IN)  :: houtfile
-    INTEGER         , INTENT(OUT) :: kcdf_id,klu,knaf
+    TYPE(cdf_files) , INTENT(OUT) :: cdffiles
+    INTEGER         , INTENT(OUT) :: klu,knaf
 
     INTEGER                     :: extindex
     INTEGER(KIND=LFI_INT)       :: ilu,iresp,iverb,inap,inaf
@@ -927,18 +957,23 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
           CALL LFILAF(iresp,ilu,lfalse)
           CALL LFIFER(iresp,ilu,'KEEP')
           return
-       end IF
+       END IF
 
-       IF (ohdf5) THEN
-          status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), kcdf_id)
-       ELSE
-          status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), kcdf_id) 
-       end IF
+       IF (.NOT.osplit) THEN
+         cdffiles%nbfiles = 1
+         allocate(cdffiles%cdf_id(1))
+
+         IF (ohdf5) THEN
+            status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), cdffiles%cdf_id(1))
+         ELSE
+            status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), cdffiles%cdf_id(1))
+         END IF
        
-       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         cdffiles%opened  = .TRUE.
 
-       status = NF90_SET_FILL(kcdf_id,NF90_NOFILL,omode)
-       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         status = NF90_SET_FILL(cdffiles%cdf_id(1),NF90_NOFILL,omode)
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 !!$       SELECT CASE(omode)
 !!$       CASE (NF90_FILL)
 !!$          PRINT *,'Ancien mode : NF90_FILL'
@@ -947,11 +982,15 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 !!$       CASE default
 !!$          PRINT *, 'Ancien mode : inconnu'
 !!$       END SELECT
+         END IF ! .NOT.osplit
        
     ELSE
        ! Cas NetCDF -> LFI
-       status = NF90_OPEN(hinfile,NF90_NOWRITE,kcdf_id)
+       cdffiles%nbfiles = 1
+       allocate(cdffiles%cdf_id(1))
+       status = NF90_OPEN(hinfile,NF90_NOWRITE,cdffiles%cdf_id(1))
        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       cdffiles%opened  = .TRUE.
        
        inap = 100
        CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW'&
@@ -964,21 +1003,72 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
     PRINT *,'--> Fichier converti : ', houtfile
 
   END SUBROUTINE OPEN_FILES
+
+  SUBROUTINE OPEN_SPLIT_NCFILES(houtfile,nbvar,tpreclist,cdffiles,ohdf5)
+    CHARACTER(LEN=*),              INTENT(IN)    :: houtfile
+    INTEGER,                       INTENT(IN)    :: nbvar
+    TYPE(workfield), DIMENSION(:), INTENT(IN)    :: tpreclist
+    TYPE(cdf_files),               INTENT(INOUT) :: cdffiles
+    LOGICAL,                       INTENT(IN)    :: ohdf5
+
+    INTEGER :: ji, idx
+    INTEGER :: status
+    INTEGER :: omode
+    CHARACTER(LEN=MAXLEN) :: filename
+
+
+    cdffiles%nbfiles = 0
+    DO ji = 1,nbvar
+      IF (tpreclist(ji)%tbw) cdffiles%nbfiles = cdffiles%nbfiles + 1
+    END DO
+    allocate(cdffiles%cdf_id(cdffiles%nbfiles))
+    allocate(cdffiles%var_id(cdffiles%nbfiles))
+
+    idx = 1
+    DO ji = 1,nbvar
+      IF (.NOT.tpreclist(ji)%tbw) CYCLE
+
+      cdffiles%var_id(idx) = ji
+
+      IF (ohdf5) THEN
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
+        status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), cdffiles%cdf_id(idx))
+      ELSE
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
+        status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), cdffiles%cdf_id(idx))
+      END IF
+
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
+      status = NF90_SET_FILL(cdffiles%cdf_id(idx),NF90_NOFILL,omode)
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
+      idx = idx + 1
+    END DO
+
+    cdffiles%opened  = .TRUE.
+
+  END SUBROUTINE OPEN_SPLIT_NCFILES
   
-  SUBROUTINE CLOSE_FILES(klu,kcdf_id)
-    INTEGER, INTENT(IN) :: klu, kcdf_id
+  SUBROUTINE CLOSE_FILES(klu,cdffiles,osplit)
+    INTEGER, INTENT(IN) :: klu
+    TYPE(cdf_files),INTENT(INOUT) :: cdffiles
+    LOGICAl, INTENT(IN) :: osplit
     
     INTEGER(KIND=LFI_INT) :: iresp,ilu
-    INTEGER               :: status
+    INTEGER               :: ji,status
 
     ilu = klu
     ! close LFI file
     CALL LFIFER(iresp,ilu,'KEEP')
 
-    ! close NetCDF file
-    status = NF90_CLOSE(kcdf_id)
-    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    ! close NetCDF files
+    DO ji=1,cdffiles%nbfiles
+      status = NF90_CLOSE(cdffiles%cdf_id(ji))
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    END DO
+    cdffiles%opened=.false.
     
   END SUBROUTINE CLOSE_files
-  
+
 END MODULE mode_util
