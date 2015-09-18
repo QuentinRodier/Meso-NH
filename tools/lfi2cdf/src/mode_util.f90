@@ -274,9 +274,10 @@ CONTAINS
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,knaf,kcdf_id,omerge)
+  SUBROUTINE def_ncdf(tpreclist,knaf,oreduceprecision,kcdf_id,omerge)
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: knaf
+    LOGICAL,                     INTENT(IN) :: oreduceprecision
     INTEGER,                     INTENT(OUT):: kcdf_id
     LOGICAL,                     INTENT(IN) :: omerge
 
@@ -284,9 +285,16 @@ CONTAINS
     INTEGER :: ji
     TYPE(dimCDF), POINTER :: tzdim
     INTEGER               :: invdims
+    INTEGER               :: type_float
     INTEGER, DIMENSION(10) :: ivdims
     CHARACTER(LEN=20)     :: ycdfvar
 
+
+    IF (oreduceprecision) THEN
+      type_float = NF90_REAL
+    ELSE
+      type_float = NF90_DOUBLE
+    END IF
 
       ! global attributes
       status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'Title',VERSION_ID)
@@ -360,7 +368,7 @@ CONTAINS
 
        CASE(FLOAT)
 !          PRINT *,'FLOAT : ',tpreclist(ji)%name
-          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_DOUBLE,&
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,type_float,&
                    ivdims(:invdims),tpreclist(ji)%id)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
@@ -368,7 +376,7 @@ CONTAINS
        CASE default
           PRINT *,'ATTENTION : ',TRIM(tpreclist(ji)%name),' est de&
                & TYPE inconnu --> force a REAL'
-          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_DOUBLE,&
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,type_float,&
                    ivdims(:invdims),tpreclist(ji)%id)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
           
