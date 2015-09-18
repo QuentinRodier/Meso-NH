@@ -12,8 +12,12 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
 
   INTEGER :: ibuflen
   INTEGER :: ilu
-  INTEGER :: inaf, ji
+  INTEGER :: ji
   INTEGER :: nbvar_lfi  ! number of variables available in the LFI file
+  INTEGER :: nbvar_tbr  ! number of variables to be read
+  INTEGER :: nbvar_calc ! number of variables to be computed from others
+  INTEGER :: nbvar_tbw  ! number of variables to be written
+  INTEGER :: nbvar      ! number of defined variables
   INTEGER :: icdf_id
   INTEGER :: first_level, current_level, last_level
   INTEGER(KIND=LFI_INT) :: iresp,iverb,inap
@@ -26,27 +30,37 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
        houtfile=houtfile(1:len(houtfile)-9)//houtfile(len(houtfile)-3:)
   end if
 
-  CALL OPEN_FILES(hinfile, houtfile, olfi2cdf, olfilist, ohdf5, icdf_id, ilu, inaf)
+  CALL OPEN_FILES(hinfile, houtfile, olfi2cdf, olfilist, ohdf5, icdf_id, ilu, nbvar_lfi)
   IF (olfilist) return
 
   IF (olfi2cdf) THEN
      ! Conversion LFI -> NetCDF
      IF (ivlen > 0) THEN
-        ! inaf is computed from number of requested variables
-        ! by counting commas.
-        inaf = 0
+        ! nbvar_tbr is computed from number of requested variables
+        ! by counting commas, = and +
+        nbvar_tbr  = 0
+        nbvar_calc = 0
         DO ji=1,ivlen
-           if (hvarlist(ji:ji) == ',') THEN
-              inaf = inaf+1
+           IF (hvarlist(ji:ji) == ',' .OR.hvarlist(ji:ji) == '+') THEN
+              nbvar_tbr = nbvar_tbr+1
+           END IF
+           IF (hvarlist(ji:ji) == ',') THEN
+              nbvar_tbw = nbvar_tbw+1
+           END IF
+           IF (hvarlist(ji:ji) == '=') THEN
+              nbvar_calc = nbvar_calc+1
            END IF
         END DO
+        nbvar = nbvar_calc + nbvar_tbr
+     ELSE
+        nbvar = nbvar_lfi
      END IF
      
      !Standard treatment (one LFI file only)
      IF (.not.omerge) THEN
-       CALL parse_lfi(ilu,hvarlist,inaf,tzreclist,ibuflen)
-       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
-       CALL fill_ncdf(ilu,icdf_id,tzreclist,inaf,ibuflen)
+       CALL parse_lfi(ilu,hvarlist,nbvar_lfi,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen)
+       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
+       CALL fill_ncdf(ilu,icdf_id,tzreclist,nbvar,ibuflen)
      ELSE
      !Treat several LFI files and merge into 1 NC file
        iverb = 0 !Verbosity level for LFI
@@ -57,8 +71,8 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
        last_level    = first_level + nb_levels - 1
 
        !Read 1st LFI file
-       CALL parse_lfi(ilu,hvarlist,inaf,tzreclist,ibuflen,current_level)
-       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
+       CALL parse_lfi(ilu,hvarlist,nbvar_lfi,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,current_level)
+       CALL def_ncdf(tzreclist,nbvar,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
 
        DO current_level = first_level,last_level
          print *,'Treating level ',current_level
@@ -66,9 +80,9 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
            write(suffix,'(I3.3)') current_level
            filename=hinfile(1:len(hinfile)-7)//suffix//'.lfi'
            CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar_lfi)
-           CALL read_data_lfi(ilu,hvarlist,inaf,tzreclist,ibuflen,current_level)
+           CALL read_data_lfi(ilu,hvarlist,nbvar,tzreclist,ibuflen,current_level)
          END IF
-         CALL fill_ncdf(ilu,icdf_id,tzreclist,inaf,ibuflen,current_level)
+         CALL fill_ncdf(ilu,icdf_id,tzreclist,nbvar,ibuflen,current_level)
          IF (current_level/=last_level) CALL LFIFER(iresp,ilu,'KEEP')
        END DO
      END IF

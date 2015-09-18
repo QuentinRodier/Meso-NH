@@ -6,6 +6,8 @@ MODULE mode_util
 
   IMPLICIT NONE 
 
+  INTEGER,PARAMETER :: MAXRAW=10
+
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)            :: name   ! nom du champ
      INTEGER                                 :: TYPE   ! type (entier ou reel)    
@@ -13,6 +15,12 @@ MODULE mode_util
      TYPE(dimCDF),                   POINTER :: dim
      INTEGER                                 :: id
      INTEGER                                 :: grid
+     LOGICAL                                 :: found  ! T if found in the input file
+     LOGICAL                                 :: calc   ! T if computed from other variables
+     LOGICAL                                 :: tbw    ! to be written or not
+     LOGICAL                                 :: tbr    ! to be read or not
+     INTEGER,DIMENSION(MAXRAW)               :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
+     INTEGER                                 :: tgt    ! Target: id of the variable that use it (calc variable)
   END TYPE workfield
 
 #ifndef LOWMEM
@@ -65,17 +73,16 @@ CONTAINS
   END IF
   END SUBROUTINE FMREADLFIN1
 
-  SUBROUTINE parse_lfi(klu, hvarlist, knaf, tpreclist, kbuflen, current_level)
+  SUBROUTINE parse_lfi(klu, hvarlist, nbvar_lfi, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, current_level)
     INTEGER, INTENT(IN)                    :: klu
-    INTEGER, INTENT(INOUT)                 :: knaf
+    INTEGER, INTENT(IN)                    :: nbvar_lfi, nbvar_tbr, nbvar_calc, nbvar_tbw
     CHARACTER(LEN=*), intent(IN)           :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist    
     INTEGER, INTENT(OUT)                   :: kbuflen
     INTEGER, INTENT(IN), OPTIONAL          :: current_level
 
     INTEGER                                  :: ji,jj
-    INTEGER                                  :: ndb, nde
-    INTEGER                                  :: inaf
+    INTEGER                                  :: ndb, nde, ndey, idx, idx_var, maxvar
     LOGICAL                                  :: ladvan
     INTEGER                                  :: ich
     INTEGER                                  :: fsize,sizemax
@@ -112,10 +119,6 @@ CONTAINS
       PRINT *,'BEWARE : ALL MesoNH arrays are handled as 1D arrays !'
     END IF
 
-#ifndef LOWMEM
-    ALLOCATE(lfiart(knaf))
-#endif
-    ALLOCATE(tpreclist(knaf))
     sizemax = 0
 
     IF (present(current_level)) THEN
@@ -132,55 +135,141 @@ CONTAINS
     !    l'utilisateur par exemple)  
     !
     IF (LEN_TRIM(hvarlist) > 0) THEN
+#ifndef LOWMEM
+      IF(.NOT.ALLOCATED(lfiart)) ALLOCATE(lfiart(nbvar_tbr+nbvar_calc))
+#endif
+      ALLOCATE(tpreclist(nbvar_tbr+nbvar_calc))
+      DO ji=1,nbvar_tbr+nbvar_calc
+        tpreclist(ji)%found  = .FALSE.
+        tpreclist(ji)%calc   = .FALSE. !By default variables are not computed from others
+        tpreclist(ji)%tbw    = .TRUE.  !By default variables are written
+        tpreclist(ji)%tbr    = .TRUE.  !By default variables are written
+        tpreclist(ji)%src(:) = -1
+        tpreclist(ji)%tgt    = -1
+      END DO
+
        ! A variable list is provided with -v var1,...
        ndb  = 1
-       inaf = 0
-       DO ji=1,knaf
+       idx_var = 1
+       DO ji=1,nbvar_tbw
           nde = INDEX(TRIM(hvarlist(ndb:)),',')
           yrecfm = hvarlist(ndb:ndb+nde-2)
-          ndb = nde+ndb
 
+          !Detect operations on variables (only + is supported now)
+          ndey = INDEX(TRIM(yrecfm),'=')
+          idx = 1
+          IF (ndey /= 0) THEN
+            var_calc = yrecfm(1:ndey-1)
+            DO WHILE (ndey /= 0)
+              IF (idx>MAXRAW) THEN
+                print *,'Error: MAXRAW exceeded (too many raw variables for 1 computed one)'
+                STOP
+              END IF
+              yrecfm = yrecfm(ndey+1:)
+              ndey = INDEX(TRIM(yrecfm),'+')
+              IF (ndey /= 0) THEN
+                var_raw(idx) = yrecfm(1:ndey-1)
+              ELSE
+                var_raw(idx) = TRIM(yrecfm)
+              END IF
+              idx = idx + 1
+            END DO
+
+            tpreclist(idx_var)%name = trim(var_calc)
+            tpreclist(idx_var)%calc = .TRUE.
+            tpreclist(idx_var)%tbw  = .TRUE.
+            tpreclist(idx_var)%tbr  = .FALSE.
+            idx_var=idx_var+1
+            DO jj = 1, idx-1
+              tpreclist(idx_var-jj)%src(jj) = idx_var
+              tpreclist(idx_var)%name = trim(var_raw(jj))
+              tpreclist(idx_var)%calc = .FALSE.
+              tpreclist(idx_var)%tbw  = .FALSE.
+              tpreclist(idx_var)%tbr  = .TRUE.
+              tpreclist(idx_var)%tgt  = idx_var-jj
+              idx_var=idx_var+1
+            END DO
+
+          ELSE
+            tpreclist(idx_var)%name = trim(yrecfm)
+            tpreclist(idx_var)%calc = .FALSE.
+            tpreclist(idx_var)%tbw  = .TRUE.
+            idx_var=idx_var+1
+
+          END IF
+
+          ndb = nde+ndb
+       END DO
+
+!TODO: merge loop?
+       DO ji=1,nbvar_tbr+nbvar_calc
+          IF (tpreclist(ji)%calc) CYCLE
+          yrecfm = TRIM(tpreclist(ji)%name)
           CALL LFINFO(iresp,ilu,trim(yrecfm)//trim(suffix),ileng,ipos)
           
           IF (iresp /= 0 .OR. ileng == 0) THEN
              PRINT *,'Article ',TRIM(yrecfm), ' not found!'
+             tpreclist(ji)%found = .FAlSE.
+             tpreclist(ji)%tbw   = .FAlSE.
+             tpreclist(ji)%tbr   = .FAlSE.
           ELSE
-             inaf = inaf+1
+             tpreclist(ji)%found = .TRUE.
              ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
-             tpreclist(inaf)%name = yrecfm
              IF (ileng > sizemax) sizemax = ileng        
-#ifndef LOWMEM       
-             ALLOCATE(lfiart(inaf)%iwtab(ileng))
+#ifndef LOWMEM
+             ALLOCATE(lfiart(ji)%iwtab(ileng))
 #endif
           end IF
        END DO
+
+       maxvar = nbvar_tbr+nbvar_calc
+
+DO ji=1,nbvar_tbr+nbvar_calc
+  print *,ji,'name=',trim(tpreclist(ji)%name),' calc=',tpreclist(ji)%calc,' tbw=',tpreclist(ji)%tbw,&
+          ' tbr=',tpreclist(ji)%tbr,' found=',tpreclist(ji)%found
+END DO
+
     ELSE
        ! Entire file is converted
+#ifndef LOWMEM
+       IF(.NOT.ALLOCATED(lfiart)) ALLOCATE(lfiart(nbvar_lfi))
+#endif
+       ALLOCATE(tpreclist(nbvar_lfi))
+       DO ji=1,nbvar_lfi
+         tpreclist(ji)%calc   = .FALSE. !By default variables are not computed from others
+         tpreclist(ji)%tbw    = .TRUE.  !By default variables are written
+         tpreclist(ji)%src(:) = -1
+       END DO
+
        CALL LFIPOS(iresp,ilu)
        ladvan = .TRUE.
        
-       DO ji=1,knaf
+       DO ji=1,nbvar_lfi
           CALL LFICAS(iresp,ilu,yrecfm,ileng,ipos,ladvan)
           ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
-          tpreclist(ji)%name = yrecfm
+          tpreclist(ji)%name = trim(yrecfm)
+          tpreclist(ji)%found  = .TRUE.
           IF (ileng > sizemax) sizemax = ileng        
 #ifndef LOWMEM       
           ALLOCATE(lfiart(ji)%iwtab(ileng))
 #endif
        END DO
-       inaf = knaf
+       maxvar = nbvar_lfi
     END IF
 
     kbuflen = sizemax
+
 #ifdef LOWMEM
-    WRITE(*,'("Taille maximale du buffer :",f10.3," Mo")') sizemax*8./1048576.
+    WRITE(*,'("Taille maximale du buffer :",f10.3," Mio")') sizemax*8./1048576.
     ALLOCATE(iwork(sizemax))
 #endif
     
     ! Phase 2 : Extract comments and dimensions for valid articles.
     !           Infos are put in tpreclist.
     CALL init_dimCDF()
-    DO ji=1,inaf
+    DO ji=1,maxvar
+       IF (tpreclist(ji)%calc .OR. .NOT.tpreclist(ji)%found) CYCLE
+
        yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
@@ -208,12 +297,34 @@ CONTAINS
 #endif
        tpreclist(ji)%dim=>get_dimCDF(fsize)
     END DO
+
+    !Complete info for calculated variables
+    IF (nbvar_calc>0) THEN
+    DO ji=1,maxvar
+       IF (.NOT.tpreclist(ji)%calc) CYCLE
+       tpreclist(ji)%TYPE = tpreclist(tpreclist(ji)%src(1))%TYPE
+       tpreclist(ji)%grid = tpreclist(tpreclist(ji)%src(1))%grid
+       tpreclist(ji)%dim  => tpreclist(tpreclist(ji)%src(1))%dim
+
+!TODO: cleaner length!
+       ALLOCATE(character(len=256) :: tpreclist(ji)%comment)
+       tpreclist(ji)%comment='Constructed from'
+       jj = 1
+       DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+         tpreclist(ji)%comment = trim(tpreclist(ji)%comment)//' '//trim(tpreclist(tpreclist(ji)%src(jj))%name)
+         IF (jj<MAXRAW .AND. tpreclist(ji)%src(jj+1)>0) THEN
+           tpreclist(ji)%comment = trim(tpreclist(ji)%comment)//' +'
+         END IF
+         jj=jj+1
+       END DO
+    END DO
+    END IF
+
   
     PRINT *,'Nombre de dimensions = ', size_dimCDF()
 #ifdef LOWMEM
     DEALLOCATE(iwork)
 #endif
-    knaf = inaf
   END SUBROUTINE parse_lfi
   
   SUBROUTINE read_data_lfi(klu, hvarlist, nbvar, tpreclist, kbuflen, current_level)
@@ -235,6 +346,8 @@ CONTAINS
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
+    CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
+    CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
 
     ilu = klu
 
@@ -249,6 +362,7 @@ CONTAINS
 #endif
 
     DO ji=1,nbvar
+       IF (.NOT.tpreclist(ji)%tbr) CYCLE
        yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
@@ -274,9 +388,9 @@ CONTAINS
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,knaf,oreduceprecision,kcdf_id,omerge,ocompress,compress_level)
+  SUBROUTINE def_ncdf(tpreclist,nbvar,oreduceprecision,kcdf_id,omerge,ocompress,compress_level)
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
-    INTEGER,                     INTENT(IN) :: knaf
+    INTEGER,                     INTENT(IN) :: nbvar
     LOGICAL,                     INTENT(IN) :: oreduceprecision
     INTEGER,                     INTENT(OUT):: kcdf_id
     LOGICAL,                     INTENT(IN) :: omerge
@@ -315,8 +429,9 @@ CONTAINS
     PRINT *,'------------- NetCDF DEFINITION ---------------'
 
     ! define VARIABLES and ATTRIBUTES
-    DO ji=1,knaf
-      
+    DO ji=1,nbvar
+       IF (.NOT.tpreclist(ji)%tbw) CYCLE
+
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
          IF (tpreclist(ji)%dim%create) THEN
            invdims   = 1
@@ -425,6 +540,7 @@ CONTAINS
     INTEGER                                  :: status
     INTEGER                                  :: extent, ndims
     INTEGER                                  :: ich
+    INTEGER                                  :: src
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
     CHARACTER(LEN=4)                         :: suffix
@@ -448,6 +564,8 @@ CONTAINS
     ALLOCATE(xtab(kbuflen))
 
     DO ji=1,knaf
+       IF (.NOT.tpreclist(ji)%tbw) CYCLE
+
 #if LOWMEM
        CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
        CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
@@ -467,6 +585,18 @@ CONTAINS
 print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          itab(1:extent) = iwork(3+iwork(2):)
 #else
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
+         ELSE
+           src=tpreclist(ji)%src(1)
+           xtab(1:extent) = lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             xtab(1:extent) = xtab(1:extent) + lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
+             jj=jj+1
+           END DO
+         END IF
          itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
 #endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
@@ -490,7 +620,18 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
 #else
-         xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
+         ELSE
+           src=tpreclist(ji)%src(1)
+           xtab(1:extent) = TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             xtab(1:extent) = xtab(1:extent) + TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
+             jj=jj+1
+           END DO
+         END IF
 #endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
@@ -522,13 +663,25 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id,ytab,count=(/extent/))
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
          DEALLOCATE(ytab)
+
        CASE default
 #if LOWMEM
 ***
 print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
 #else         
-         xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
+         ELSE
+           src=tpreclist(ji)%src(1)
+           xtab(1:extent) = TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             xtab(1:extent) = xtab(1:extent) + TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
+             jj=jj+1
+           END DO
+         END IF
 #endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
