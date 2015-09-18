@@ -1,5 +1,5 @@
 subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,olfi2cdf,olfilist,ohdf5,omerge,nb_levels,&
-                        oreduceprecision)
+                        oreduceprecision,ocompress,compress_level)
   USE mode_util
   IMPLICIT NONE 
   INTEGER :: iiflen, ioflen, ivlen
@@ -7,8 +7,9 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
   CHARACTER(LEN=iiflen) :: hinfile
   CHARACTER(LEN=ioflen) :: houtfile
   CHARACTER(LEN=ivlen)  :: hvarlist
-  LOGICAL :: ooutname, olfi2cdf, olfilist, ohdf5, omerge, oreduceprecision
-  
+  LOGICAL :: ooutname, olfi2cdf, olfilist, ohdf5, omerge, oreduceprecision, ocompress
+  INTEGER :: compress_level
+
   INTEGER :: ibuflen
   INTEGER :: ilu
   INTEGER :: inaf, ji
@@ -44,7 +45,7 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
      !Standard treatment (one LFI file only)
      IF (.not.omerge) THEN
        CALL parse_lfi(ilu,hvarlist,inaf,tzreclist,ibuflen)
-       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge)
+       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
        CALL fill_ncdf(ilu,icdf_id,tzreclist,inaf,ibuflen)
      ELSE
      !Treat several LFI files and merge into 1 NC file
@@ -57,7 +58,7 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
 
        !Read 1st LFI file
        CALL parse_lfi(ilu,hvarlist,inaf,tzreclist,ibuflen,current_level)
-       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge)
+       CALL def_ncdf(tzreclist,inaf,oreduceprecision,icdf_id,omerge,ocompress,compress_level)
 
        DO current_level = first_level,last_level
          print *,'Treating level ',current_level

@@ -5,7 +5,7 @@
 
 #define BUFSIZE 4096
 
-extern lfi2cdfmain_(char*, int*, int *, char*, int*, char*, int*, int*, int*, int*, int*, int*, int*);
+extern lfi2cdfmain_(char*, int*, int *, char*, int*, char*, int*, int*, int*, int*, int*, int*, int*, int*, int*);
 
 char *cleancomma(char *varlist)
 {
@@ -33,6 +33,7 @@ int main(int argc, char **argv)
   int merge_flag, nb_levels;
   int reduceprecision_flag;
   int outname_flag;
+  int compress_flag, compress_level;
   char *cmd, *infile;
   int c;
   char buff[BUFSIZE];
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
   list_flag = 0;
   hdf5_flag = 0;
   reduceprecision_flag = 0;
+  compress_flag = 0;
   p = buff;
   *p = '\0';
 
@@ -65,6 +67,7 @@ int main(int argc, char **argv)
 
     static struct option long_options[] = {
       {"cdf4",             no_argument,       0, '4' },
+      {"compress",         required_argument, 0, 'c' },
       {"list",             no_argument,       0, 'l' },
       {"merge",            required_argument, 0, 'm' },
       {"output",           required_argument, 0, 'o' },
@@ -73,7 +76,7 @@ int main(int argc, char **argv)
       {0,                  0,                 0,  0  }
     };
 
-    c = getopt_long(argc, argv, "4lm:o:rv:",
+    c = getopt_long(argc, argv, "4c:lm:o:rv:",
 		    long_options, &option_index);
     if (c == -1)
       break;
@@ -84,6 +87,14 @@ int main(int argc, char **argv)
       if (optarg)
 	printf(" with arg %s", optarg);
       printf("\n");
+      break;
+    case 'c':
+      compress_flag = 1;
+      compress_level = atoi(optarg);
+      if(compress_level<1 || compress_level>9) {
+        printf("Error: compression level should in the 1 to 9 interval\n");
+        exit(EXIT_FAILURE);
+      }
       break;
     case '4':
       hdf5_flag = 1;
@@ -124,7 +135,7 @@ int main(int argc, char **argv)
   }
 
   if (optind == argc) {
-    printf("usage : lfi2cdf [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-o --output output-file.nc] input-file.lfi\n");
+    printf("usage : lfi2cdf [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-o --output output-file.nc] [-c --compress compression_level] input-file.lfi\n");
     printf("        cdf2lfi [-o --output output-file.lfi] input-file.nc\n");
     exit(EXIT_FAILURE);
   } 
@@ -156,13 +167,19 @@ int main(int argc, char **argv)
     olen = strlen(outfile);
   }
 
+  /* Compression flag only supported if using netCDF4 */
+  if (hdf5_flag==0 && compress_flag==1) {
+	  compress_flag = 0;
+	  printf("Warning: compression is forced to disable (only supported from netCDF4).\n");
+  }
+
   /*
   printf("cmd=%s; inputfile=%s(%d); outputfile=%s(%d); varlistclean=%s with size : %d\n", cmd, 
          infile, ilen, outfile, olen, varlist, varlistlen);
   */
 
   lfi2cdfmain_(infile, &ilen, &outname_flag, outfile, &olen, varlist, &varlistlen, &l2c_flag, &list_flag, &hdf5_flag, &merge_flag,
-		       &nb_levels, &reduceprecision_flag);
+		       &nb_levels, &reduceprecision_flag, &compress_flag, &compress_level);
 
   exit(EXIT_SUCCESS);
 }

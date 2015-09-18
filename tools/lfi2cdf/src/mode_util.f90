@@ -274,12 +274,14 @@ CONTAINS
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(tpreclist,knaf,oreduceprecision,kcdf_id,omerge)
+  SUBROUTINE def_ncdf(tpreclist,knaf,oreduceprecision,kcdf_id,omerge,ocompress,compress_level)
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: knaf
     LOGICAL,                     INTENT(IN) :: oreduceprecision
     INTEGER,                     INTENT(OUT):: kcdf_id
     LOGICAL,                     INTENT(IN) :: omerge
+    LOGICAL,                     INTENT(IN) :: ocompress
+    INTEGER,                     INTENT(IN) :: compress_level
 
     INTEGER :: status
     INTEGER :: ji
@@ -382,6 +384,12 @@ CONTAINS
           
 
        END SELECT
+
+       ! Compress data (costly operation for the CPU)
+       IF (ocompress .AND. invdims>0) THEN
+         status = NF90_DEF_VAR_DEFLATE(kcdf_id,tpreclist(ji)%id,1,1,compress_level)
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       END IF
 
        ! GRID attribute definition
        status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id,'GRID',tpreclist(ji)%grid)
