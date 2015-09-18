@@ -1,5 +1,5 @@
 subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,olfi2cdf,olfilist,ohdf5,omerge,nb_levels,&
-                        oreduceprecision,ocompress,compress_level)
+                        oreduceprecision,osplit,ocompress,compress_level)
   USE mode_util
   IMPLICIT NONE 
   INTEGER :: iiflen, ioflen, ivlen
@@ -7,7 +7,7 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
   CHARACTER(LEN=iiflen) :: hinfile
   CHARACTER(LEN=ioflen) :: houtfile
   CHARACTER(LEN=ivlen)  :: hvarlist
-  LOGICAL :: ooutname, olfi2cdf, olfilist, ohdf5, omerge, oreduceprecision, ocompress
+  LOGICAL :: ooutname, olfi2cdf, olfilist, ohdf5, omerge, oreduceprecision, osplit, ocompress
   INTEGER :: compress_level
 
   INTEGER :: ibuflen
