@@ -35,6 +35,7 @@ int main(int argc, char **argv)
   int outname_flag;
   int compress_flag, compress_level;
   int split_flag;
+  int help_flag;
   char *cmd, *infile;
   int c;
   char buff[BUFSIZE];
@@ -69,6 +70,7 @@ int main(int argc, char **argv)
     static struct option long_options[] = {
       {"cdf4",             no_argument,       0, '4' },
       {"compress",         required_argument, 0, 'c' },
+      {"help",             no_argument,       0, 'h' },
       {"list",             no_argument,       0, 'l' },
       {"merge",            required_argument, 0, 'm' },
       {"output",           required_argument, 0, 'o' },
@@ -78,7 +80,7 @@ int main(int argc, char **argv)
       {0,                  0,                 0,  0  }
     };
 
-    c = getopt_long(argc, argv, "4c:lm:o:rsv:",
+    c = getopt_long(argc, argv, "4c:hlm:o:rsv:",
 		    long_options, &option_index);
     if (c == -1)
       break;
@@ -100,6 +102,9 @@ int main(int argc, char **argv)
       break;
     case '4':
       hdf5_flag = 1;
+      break;
+    case 'h':
+      help_flag = 1;
       break;
     case 'l':
       list_flag = 1;
@@ -139,9 +144,34 @@ int main(int argc, char **argv)
     }
   }
 
-  if (optind == argc) {
-    printf("usage : lfi2cdf [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc] [-c --compress compression_level] input-file.lfi\n");
+  if (optind == argc || help_flag) {
+    printf("usage : lfi2cdf [-h --help] [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc] [-c --compress compression_level] input-file.lfi\n");
     printf("        cdf2lfi [-o --output output-file.lfi] input-file.nc\n");
+    printf("Usage: lfi2cdf [OPTION] ... lfi_file\n");
+    printf("       cdf2lfi [OPTION] ... nc_file\n");
+    printf("\nOptions:\n");
+    printf("  --cdf4, -4\n");
+    printf("     Write netCDF file in netCDF-4 format (HDF5 compatible) (lfi2cdf only)\n");
+    printf("  --compress, -c compression_level\n");
+    printf("     Compress data. The compression level should be in the 1 to 9 interval.\n");
+    printf("     Only supported with the netCDF-4 format (lfi2cdf only)\n");
+    printf("  --help, -h\n");
+    printf("     Print this text\n");
+    printf("  --list, -l\n");
+    printf("     List all the fields of the LFI file and returns (lfi2cdf only)\n");
+    printf("  --merge, -m number_of_z_levels\n");
+    printf("     Merge LFI files which are split by vertical level (lfi2cdf only)\n");
+    printf("  --output, -o\n");
+    printf("     Name of file for the output\n");
+    printf("  --reduce-precision, -r\n");
+    printf("     Reduce the precision of the floating point variables to single precision (lfi2cdf only)\n");
+    printf("  --split, -s\n");
+    printf("     Split variables specified with the -v option (one per file) (lfi2cdf only)\n");
+    printf("  --var, -v var1[,...]\n");
+    printf("     List of the variable to write in the output file. Variables names have to be separated by commas (,).\n");
+    printf("     A variable can be computed from the sum of existing variables (format: new_var=var1+var2[+...])\n");
+    printf("     (lfi2cdf only)\n");
+    printf("\n");
     exit(EXIT_FAILURE);
   } 
 
