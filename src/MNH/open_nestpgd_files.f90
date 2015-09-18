@@ -87,7 +87,8 @@ USE MODN_NCOUT
 #endif
 USE MODN_CONFIO
 !
-USE MODN_CONF, ONLY : JPHEXT , NHALO_MNH => NHALO
+USE MODD_PARAMETERS, ONLY : JPHEXT  
+USE MODD_CONF, ONLY       : NHALO_CONF_MNH => NHALO
 !
 IMPLICIT NONE
 !
@@ -119,6 +120,7 @@ INTEGER                        :: IDAD    ! father of one model
 INTEGER                        :: JPGD    ! loop counter
 LOGICAL                        :: GADD    !
 CHARACTER(LEN=21), DIMENSION(JPMODELMAX) :: YSHORTPGD 
+INTEGER                                  :: NHALO_MNH
 !
 !*       0.3   Declaration of namelists
 !              ------------------------
@@ -164,7 +166,11 @@ CALL OPEN_ll(UNIT=IPRE_NEST_PGD,FILE=HPRE_NEST_PGD,IOSTAT=IRESP,FORM='FORMATTED'
 !
 !JUAN
 CALL POSNAM(IPRE_NEST_PGD,'NAM_CONF_NEST',GFOUND)
-IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONF_NEST)
+IF (GFOUND) THEN
+   NHALO_MNH = NHALO_CONF_MNH
+   READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONF_NEST)
+   NHALO_CONF_MNH = NHALO_MNH
+END IF
 !JUAN
 !
 !-------------------------------------------------------------------------------
