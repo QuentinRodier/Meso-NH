@@ -19,9 +19,6 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
   INTEGER :: nbvar_tbw  ! number of variables to be written
   INTEGER :: nbvar      ! number of defined variables
   INTEGER :: first_level, current_level, last_level
-  INTEGER(KIND=LFI_INT) :: iresp,iverb,inap
-  CHARACTER(LEN=3)      :: suffix
-  CHARACTER(LEN=iiflen) :: filename
   TYPE(cdf_files) :: cdffiles
   TYPE(workfield), DIMENSION(:), POINTER :: tzreclist
 
@@ -87,7 +84,6 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
 
      ELSE
      !Treat several LFI files and merge into 1 NC file
-       iverb = 0 !Verbosity level for LFI
 
        !Determine first level (eg needed to find suffix of the variable name)
        read( hinfile(len(hinfile)-6:len(hinfile)-4) , "(I3)" ) first_level
@@ -103,13 +99,11 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
        DO current_level = first_level,last_level
          print *,'Treating level ',current_level
          IF (current_level/=first_level) THEN
-           write(suffix,'(I3.3)') current_level
-           filename=hinfile(1:len(hinfile)-7)//suffix//'.lfi'
-           CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar_lfi)
+           CALL open_split_lfifile(ilu,hinfile,current_level)
            CALL read_data_lfi(ilu,hvarlist,nbvar,tzreclist,ibuflen,current_level)
          END IF
          CALL fill_ncdf(ilu,tzreclist,nbvar,ibuflen,cdffiles,current_level)
-         IF (current_level/=last_level) CALL LFIFER(iresp,ilu,'KEEP')
+         IF (current_level/=last_level) CALL close_split_lfifile(ilu)
        END DO
      END IF
 

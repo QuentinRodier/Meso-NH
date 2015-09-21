@@ -1006,6 +1006,27 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 
   END SUBROUTINE OPEN_FILES
 
+  SUBROUTINE OPEN_SPLIT_LFIFILE(ilu,hinfile,current_level)
+    INTEGER,          INTENT(IN) :: ilu
+    CHARACTER(LEN=*), INTENT(IN) :: hinfile
+    INTEGER,          INTENT(IN) :: current_level
+
+    INTEGER(KIND=LFI_INT) :: iresp,iverb,inap,nbvar
+
+    CHARACTER(LEN=3)      :: suffix
+    CHARACTER(LEN=:),ALLOCATABLE :: filename
+
+    iverb = 0 !Verbosity level for LFI
+
+    ALLOCATE(character(len=len(hinfile)) :: filename)
+
+    write(suffix,'(I3.3)') current_level
+    filename=hinfile(1:len(hinfile)-7)//suffix//'.lfi'
+    CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar)
+
+    DEALLOCATE(filename)
+  END SUBROUTINE OPEN_SPLIT_LFIFILE
+
   SUBROUTINE OPEN_SPLIT_NCFILES(houtfile,nbvar,tpreclist,cdffiles,ohdf5)
     CHARACTER(LEN=*),              INTENT(IN)    :: houtfile
     INTEGER,                       INTENT(IN)    :: nbvar
@@ -1072,5 +1093,13 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
     cdffiles%opened=.false.
     
   END SUBROUTINE CLOSE_files
+
+  SUBROUTINE CLOSE_SPLIT_LFIFILE(ilu)
+    INTEGER, INTENT(IN) :: ilu
+
+    INTEGER(KIND=LFI_INT) :: iresp
+
+    CALL LFIFER(iresp,ilu,'KEEP')
+  END SUBROUTINE CLOSE_SPLIT_LFIFILE
 
 END MODULE mode_util
