@@ -349,15 +349,16 @@ CONTAINS
           !
           TAB_SAVE_ll = TAB_ll
           TAB_ll      = 0.0
-          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)   &
-            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll) & 
-            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IIB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT &
+          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)   &
+            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll) & 
+            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IJB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT &
                               ,1:IKU_SON_ll) )
 
-          MAX_VAL  = MAXVAL( ABS (TAB_SON_ll) )
+          MAX_VAL  = MAXVAL( ABS (TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,&
+                                             IJB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT,1:IKU_SON_ll) ) )
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
-          MAX_DIFF=MAXVAL(TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)/MAX_VAL)
-          TAB_INTERIOR_ll=> TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)
+          MAX_DIFF=MAXVAL(TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)/MAX_VAL)
+          TAB_INTERIOR_ll=> TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT,1:IKU_ll)
           !
           IF (MAX_DIFF > PRECISION ) THEN
              write(6, '(" MPPDB_CHECK3D :: PB MPPDB_CHECK3D =",A40," ERROR=",e15.8," MAXVAL=",e15.8)' ) MESSAGE,MAX_DIFF , MAX_VAL
