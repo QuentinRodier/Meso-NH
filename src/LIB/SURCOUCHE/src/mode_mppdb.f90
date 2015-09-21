@@ -538,11 +538,12 @@ CONTAINS
           !
           TAB_SAVE_ll = TAB_ll
           TAB_ll      = 0.0
-          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)   &
-            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) & 
-            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IIB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT) )         
+          TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)   &
+            = ABS ( TAB_SAVE_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IJB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) & 
+            -       TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT,IJB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT) )         
 
-          MAX_VAL  = MAXVAL( ABS (TAB_SON_ll) )
+          MAX_VAL  = MAXVAL( ABS (TAB_SON_ll(IIB_SON_ll-IDIFF_HEXT:IIE_SON_ll+IDIFF_HEXT, &
+                                             IJB_SON_ll-IDIFF_HEXT:IJE_SON_ll+IDIFF_HEXT) ) ) 
           IF ( MAX_VAL .EQ. 0.0 ) MAX_VAL = 1.0
           MAX_DIFF = MAXVAL( TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT) / MAX_VAL )
           TAB_INTERIOR_ll => TAB_ll(IIB_ll-IDIFF_HEXT:IIE_ll+IDIFF_HEXT,IIB_ll-IDIFF_HEXT:IJE_ll+IDIFF_HEXT)
