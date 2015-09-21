@@ -94,7 +94,7 @@ CONTAINS
     INTEGER                                  :: ndb, nde, ndey, idx, idx_var, maxvar
     LOGICAL                                  :: ladvan
     INTEGER                                  :: ich, current_level
-    INTEGER                                  :: fsize,sizemax
+    INTEGER                                  :: comment_size, fsize, sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
     CHARACTER(LEN=4)                         :: suffix
 #ifdef LOWMEM
@@ -212,7 +212,6 @@ CONTAINS
           ndb = nde+ndb
        END DO
 
-!TODO: merge loop?
        DO ji=1,nbvar_tbr+nbvar_calc
           IF (tpreclist(ji)%calc) CYCLE
           yrecfm = TRIM(tpreclist(ji)%name)
@@ -285,27 +284,26 @@ END DO
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
        CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
-       tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
        tpreclist(ji)%grid = iwork(1)
-
-       ALLOCATE(character(len=iwork(2)) :: tpreclist(ji)%comment)
-       DO jj=1,iwork(2)
-          ich = iwork(2+jj)
-          tpreclist(ji)%comment(jj:jj) = CHAR(ich)
-       END DO
-       fsize = ileng-(2+iwork(2))
+       comment_size = iwork(2)
 #else
        CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
-       tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
        tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
+       comment_size = lfiart(ji)%iwtab(2)
+#endif
+       tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
 
-       ALLOCATE(character(len=lfiart(ji)%iwtab(2)) :: tpreclist(ji)%comment)
-       DO jj=1,lfiart(ji)%iwtab(2)
+       ALLOCATE(character(len=comment_size) :: tpreclist(ji)%comment)
+       DO jj=1,comment_size
+#ifdef LOWMEM
+          ich = iwork(2+jj)
+#else
           ich = lfiart(ji)%iwtab(2+jj)
+#endif
           tpreclist(ji)%comment(jj:jj) = CHAR(ich)
        END DO
-       fsize = ileng-(2+lfiart(ji)%iwtab(2))
-#endif
+
+       fsize = ileng-(2+comment_size)
        tpreclist(ji)%dim=>get_dimCDF(fsize)
     END DO
 
@@ -596,10 +594,6 @@ END DO
 
        IF (cdffiles%nbfiles > 1) kcdf_id = cdffiles%cdf_id(idx)
 
-#if LOWMEM
-       CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-       CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
-#endif
        IF (ASSOCIATED(tpreclist(ji)%dim)) THEN
           extent = tpreclist(ji)%dim%len
           ndims = tpreclist(ji)%dim%ndims
@@ -611,23 +605,36 @@ END DO
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (INT,BOOL)
 #if LOWMEM
-***
-print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
-         itab(1:extent) = iwork(3+iwork(2):)
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           itab(1:extent) = iwork(3+iwork(2):)
+         ELSE
+           src=tpreclist(ji)%src(1)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           itab(1:extent) = iwork(3+iwork(2):)
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):)
+             jj=jj+1
+           END DO
+         ENDIF
 #else
          IF (.NOT.tpreclist(ji)%calc) THEN
            itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
          ELSE
            src=tpreclist(ji)%src(1)
-           xtab(1:extent) = lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
+           itab(1:extent) = lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
-             xtab(1:extent) = xtab(1:extent) + lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
+             itab(1:extent) = xtab(1:extent) + lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
              jj=jj+1
            END DO
          END IF
-         itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
 #endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
@@ -646,9 +653,23 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          
        CASE (FLOAT)
 #if LOWMEM
-***
-print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
-         xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+         ELSE
+           src=tpreclist(ji)%src(1)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+             jj=jj+1
+           END DO
+         ENDIF
 #else
          IF (.NOT.tpreclist(ji)%calc) THEN
            xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
@@ -682,8 +703,6 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
          ALLOCATE(ytab(extent))
          DO jj=1,extent
 #if LOWMEM
-***
-print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
            ich = iwork(2+iwork(2)+jj)
 #else
            ich = lfiart(ji)%iwtab(2+lfiart(ji)%iwtab(2)+jj)
@@ -696,9 +715,23 @@ print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
 
        CASE default
 #if LOWMEM
-***
-print *,'lowmem: not tested!!!!!' (to be compared with no low mem version)
-         xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+         ELSE
+           src=tpreclist(ji)%src(1)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
+             xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+             jj=jj+1
+           END DO
+         ENDIF
 #else         
          IF (.NOT.tpreclist(ji)%calc) THEN
            xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
