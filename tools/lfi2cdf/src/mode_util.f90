@@ -82,18 +82,18 @@ CONTAINS
   END IF
   END SUBROUTINE FMREADLFIN1
 
-  SUBROUTINE parse_lfi(klu, hvarlist, nbvar_lfi, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, current_level)
+  SUBROUTINE parse_lfi(klu, hvarlist, nbvar_lfi, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, icurrent_level)
     INTEGER, INTENT(IN)                    :: klu
     INTEGER, INTENT(IN)                    :: nbvar_lfi, nbvar_tbr, nbvar_calc, nbvar_tbw
     CHARACTER(LEN=*), intent(IN)           :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist    
     INTEGER, INTENT(OUT)                   :: kbuflen
-    INTEGER, INTENT(IN), OPTIONAL          :: current_level
+    INTEGER, INTENT(IN), OPTIONAL          :: icurrent_level
 
     INTEGER                                  :: ji,jj
     INTEGER                                  :: ndb, nde, ndey, idx, idx_var, maxvar
     LOGICAL                                  :: ladvan
-    INTEGER                                  :: ich
+    INTEGER                                  :: ich, current_level
     INTEGER                                  :: fsize,sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
     CHARACTER(LEN=4)                         :: suffix
@@ -130,10 +130,12 @@ CONTAINS
 
     sizemax = 0
 
-    IF (present(current_level)) THEN
-      write(suffix,'(I4.4)') current_level
+    IF (present(icurrent_level)) THEN
+      write(suffix,'(I4.4)') icurrent_level
+      current_level = icurrent_level
     ElSE
       suffix=''
+      current_level = -1
     END IF
 
     ! Phase 1 : build articles list to convert.
@@ -283,7 +285,7 @@ END DO
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
        CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
-       tpreclist(ji)%TYPE = get_ftype(yrecfm)               
+       tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
        tpreclist(ji)%grid = iwork(1)
 
        ALLOCATE(character(len=iwork(2)) :: tpreclist(ji)%comment)
@@ -294,7 +296,7 @@ END DO
        fsize = ileng-(2+iwork(2))
 #else
        CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
-       tpreclist(ji)%TYPE = get_ftype(yrecfm)               
+       tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
        tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
 
        ALLOCATE(character(len=lfiart(ji)%iwtab(2)) :: tpreclist(ji)%comment)

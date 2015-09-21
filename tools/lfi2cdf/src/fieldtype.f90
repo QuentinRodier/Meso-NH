@@ -248,9 +248,10 @@ sysfield(218) =  field('BIBUSER', TEXT, D0)
 sysfield(219) =  field('LFI_COMPRESSED', INT, D0)
 END SUBROUTINE init_sysfield
 
-  FUNCTION get_ftype(hfname)
+  FUNCTION get_ftype(hfname,level)
     CHARACTER(LEN=*) :: hfname
     INTEGER          :: get_ftype
+    INTEGER,INTENT(IN) :: level
 
     TYPE(field) :: tzf
 
@@ -266,7 +267,7 @@ END SUBROUTINE init_sysfield
          &   INDEX(hfname,".TR",.TRUE.)/= 0 .OR.&
          &   INDEX(hfname,".DA",.TRUE.)/= 0) THEN
       get_ftype = FLOAT
-    ELSE IF (searchfield(hfname,tzf)) THEN
+    ELSE IF (searchfield(hfname,tzf,level)) THEN
     ! search in databases  
       get_ftype = tzf%TYPE
     ELSE
@@ -275,13 +276,15 @@ END SUBROUTINE init_sysfield
     
   END FUNCTION get_ftype
   
-  FUNCTION searchfield(hfname, tpf)
+  FUNCTION searchfield(hfname, tpf, level)
     CHARACTER(LEN=*), INTENT(IN) :: hfname
     TYPE(field), INTENT(OUT)     :: tpf
+    INTEGER,INTENT(IN)           :: level
     LOGICAL                      :: searchfield
 
     INTEGER :: ji,iposx
     LOGICAL :: found
+    CHARACTER(LEN=4) :: clevel
 
     found = .FALSE.
     
@@ -293,6 +296,8 @@ END SUBROUTINE init_sysfield
           EXIT
        END IF
     END DO
+
+    write(clevel,'(I4.4)') level
 
     IF (.NOT. found) THEN
        ! Next, search in user field tab
@@ -323,6 +328,17 @@ END SUBROUTINE init_sysfield
                       tpf = sysfield(ji)
                       EXIT
                    END IF
+                ELSE IF (level>-1) THEN
+                  !Maybe it is a z-level splitted field
+                  !Warning: false positives are possible (but should be rare)
+                  iposx = INDEX(hfname,clevel)
+                  IF (iposx /= 0) THEN
+                    IF (hfname(:iposx-1)==sysfield(ji)%name) THEN
+                      found = .TRUE.
+                      tpf = sysfield(ji)
+                      EXIT
+                    END IF
+                  END IF
                 END IF
              END IF
           END DO
