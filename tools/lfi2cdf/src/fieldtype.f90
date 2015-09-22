@@ -297,8 +297,6 @@ END SUBROUTINE init_sysfield
        END IF
     END DO
 
-    write(clevel,'(I4.4)') level
-
     IF (.NOT. found) THEN
        ! Next, search in user field tab
        IF (ALLOCATED(userfield)) THEN
@@ -331,6 +329,7 @@ END SUBROUTINE init_sysfield
                 ELSE IF (level>-1) THEN
                   !Maybe it is a z-level splitted field
                   !Warning: false positives are possible (but should be rare)
+                  write(clevel,'(I4.4)') level
                   iposx = INDEX(hfname,clevel)
                   IF (iposx /= 0) THEN
                     IF (hfname(:iposx-1)==sysfield(ji)%name) THEN

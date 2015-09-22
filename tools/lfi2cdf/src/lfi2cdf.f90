@@ -59,6 +59,7 @@ subroutine  LFI2CDFMAIN(hinfile,iiflen,ooutname,houtfile,ioflen,hvarlist,ivlen,o
         ! by counting commas, = and +
         nbvar_tbr  = 0
         nbvar_calc = 0
+        nbvar_tbw = 0
         DO ji=1,ivlen
            IF (hvarlist(ji:ji) == ',' .OR.hvarlist(ji:ji) == '+') THEN
               nbvar_tbr = nbvar_tbr+1

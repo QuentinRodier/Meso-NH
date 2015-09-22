@@ -53,10 +53,13 @@ int main(int argc, char **argv)
     cmd++;
   l2c_flag = strcmp(cmd, "lfi2cdf") == 0 ? 1 : 0;
 
+  compress_flag = 0;
   list_flag = 0;
   hdf5_flag = 0;
+  help_flag = 0;
+  outname_flag = 0;
   reduceprecision_flag = 0;
-  compress_flag = 0;
+  split_flag = 0;
   p = buff;
   *p = '\0';
 

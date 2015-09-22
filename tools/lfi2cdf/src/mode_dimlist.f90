@@ -72,6 +72,7 @@ CONTAINS
     !
     IF (len /= 1) THEN 
        IF (gforce) THEN
+         count = 0
          NULLIFY(tmp)
        ELSE 
          count = 1
