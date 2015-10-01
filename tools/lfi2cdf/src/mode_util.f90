@@ -79,8 +79,9 @@ CONTAINS
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
     !JUAN CYCCL3
-    INTEGER,PARAMETER                        :: JPHEXT=1 ! 3
-
+    INTEGER                        :: JPHEXT
+    CALL FMREADLFIN1(klu,'JPHEXT',JPHEXT,iresp)
+    IF (iresp /= 0) JPHEXT=1
     ! First check if IMAX,JMAX,KMAX exist in LFI file
     ! to handle 3D, 2D variables -> update IDIMX,IDIMY,IDIMZ
     CALL FMREADLFIN1(klu,'IMAX',IDIMX,iresp)

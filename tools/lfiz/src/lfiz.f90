@@ -18,6 +18,7 @@ CHARACTER(LEN=50) :: yexe
 INTEGER, PARAMETER :: FM_FIELD_SIZE = 16
 INTEGER, PARAMETER :: ISRCLU  = 11
 INTEGER, PARAMETER :: IDESTLU = 12
+INTEGER :: JPHEXT
 INTEGER :: iverb
 INTEGER :: inap ! nb d'articles prevus (utile a la creation)
 INTEGER :: inaf ! nb d'articles presents dans un fichier existant
@@ -107,15 +108,16 @@ IF (iresp == 0) THEN
     STOP 9
 END IF
 
-
+CALL FMREADLFIN1(ISRCLU,'JPHEXT',JPHEXT,iresp)
+IF (iresp /= 0) JPHEXT = 1
 
 ! First check if IMAX,JMAX,KMAX exist in LFI file
 ! to handle 3D, 2D variables -> update IDIMX,IDIMY,IDIMZ
 CALL FMREADLFIN1(ISRCLU,'IMAX',IDIMX,iresp)
-IF (iresp == 0) IDIMX = IDIMX+2  ! IMAX + 2*JPHEXT
+IF (iresp == 0) IDIMX = IDIMX+2*JPHEXT  ! IMAX + 2*JPHEXT
 !
 CALL FMREADLFIN1(ISRCLU,'JMAX',IDIMY,iresp)
-IF (iresp == 0) IDIMY = IDIMY+2  ! JMAX + 2*JPHEXT
+IF (iresp == 0) IDIMY = IDIMY+2*JPHEXT  ! JMAX + 2*JPHEXT
 !
 CALL FMREADLFIN1(ISRCLU,'KMAX',IDIMZ,iresp)
 IF (iresp == 0) IDIMZ = IDIMZ+2  ! KMAX + 2*JPVEXT
