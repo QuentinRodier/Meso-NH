@@ -527,15 +527,14 @@ IF (.NOT. LFLAT) THEN
     PGX_M_U(JI,:,KKU)=  ( PY(JI,:,KKU)-PY(JI-1,:,KKU)  )  / PDXX(JI,:,KKU) 
     PGX_M_U(JI,:,KKA)=   PGX_M_U(JI,:,KKU) ! -999.
   END DO
-!
-  PGX_M_U(1,:,:)=PGX_M_U(IIU-2*JPHEXT+1,:,:)
 ELSE
 !  PGX_M_U = DXM(PY) / PDXX
   PGX_M_U(1+1:IIU,:,:) = ( PY(1+1:IIU,:,:)-PY(1:IIU-1,:,:) ) & ! +JPHEXT
                              / PDXX(1+1:IIU,:,:)
-!
-  PGX_M_U(1,:,:)=PGX_M_U(IIU-2*JPHEXT+1,:,:)
-ENDIF  
+ENDIF
+DO JI=1,JPHEXT
+  PGX_M_U(JI,:,:)=PGX_M_U(IIU-2*JPHEXT+JI,:,:) ! for reprod JPHEXT <> 1
+END DO  
 !
 !-------------------------------------------------------------------------------
 !
@@ -652,15 +651,14 @@ IF (.NOT. LFLAT) THEN
     PGY_M_V(:,JJ,KKU)=  ( PY(:,JJ,KKU)-PY(:,JJ-1,KKU)  )  / PDYY(:,JJ,KKU) 
     PGY_M_V(:,JJ,KKA)=  PGY_M_V(:,JJ,KKU) ! -999.
   END DO
-!
-  PGY_M_V(:,1,:)=PGY_M_V(:,IJU-2*JPHEXT+1,:)
 ELSE
 !  PGY_M_V = DYM(PY)/PDYY
   PGY_M_V(:,1+1:IJU,:) = ( PY(:,1+1:IJU,:)-PY(:,1:IJU-1,:) ) & ! +JPHEXT
                                / PDYY(:,1+1:IJU,:)
-!
-  PGY_M_V(:,1,:)=PGY_M_V(:,IJU-2*JPHEXT+1,:)
 ENDIF  
+DO JJ=1,JPHEXT
+  PGY_M_V(:,JJ,:)=PGY_M_V(:,IJU-2*JPHEXT+JJ,:)
+END DO
 !
 !-------------------------------------------------------------------------------
 !

@@ -187,7 +187,7 @@ IIU = SIZE(PA,1)
 IJU = SIZE(PA,2)
 IKU = SIZE(PA,3)
 !
-JIJKOR  = 1 + 1 ! JPHEXT
+JIJKOR  = 1 + 1 
 JIJKEND = IIU*IJU*IKU
 !
 !CDIR NODEP
@@ -198,9 +198,10 @@ END DO
 !
 !CDIR NODEP
 !OCL NOVREC
-DO JJK=1,IJU*IKU
-   PMXF(IIU,JJK,1)          = PMXF(2*JPHEXT,JJK,1) 
-   PMXF(IIU-JPHEXT+1,JJK,1) = PMXF(JPHEXT+1,JJK,1) ! for reprod JPHEXT <> 1
+DO JI=1,JPHEXT
+   DO JJK=1,IJU*IKU
+      PMXF(IIU-JPHEXT+JI,JJK,1) = PMXF(JPHEXT+JI,JJK,1) ! for reprod JPHEXT <> 1
+   END DO
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -287,7 +288,7 @@ IIU = SIZE(PA,1)
 IJU = SIZE(PA,2)
 IKU = SIZE(PA,3)
 !
-JIJKOR  = 1 + 1 ! JPHEXT
+JIJKOR  = 1 + 1 
 JIJKEND = IIU*IJU*IKU
 !
 !CDIR NODEP
@@ -298,9 +299,10 @@ END DO
 !
 !CDIR NODEP
 !OCL NOVREC
-DO JJK=1,IJU*IKU
-   PMXM(1,JJK,1)      = PMXM(IIU-2*JPHEXT+1,JJK,1) 
-   PMXM(JPHEXT,JJK,1) = PMXM(IIU-JPHEXT,JJK,1) ! for reprod JPHEXT <> 1
+DO JI=1,JPHEXT
+   DO JJK=1,IJU*IKU
+      PMXM(JI,JJK,1) = PMXM(IIU-2*JPHEXT+JI,JJK,1) ! for reprod JPHEXT <> 1
+   END DO
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -398,8 +400,9 @@ DO JIJK=JIJKOR , JIJKEND
    PMYF(JIJK-IIU,1,1) = 0.5*( PA(JIJK-IIU,1,1)+PA(JIJK,1,1) )
 END DO
 !
-PMYF(:,IJU,:)           = PMYF(:,2*JPHEXT,:)
-PMYF(:,IJU-JPHEXT+1,:)  = PMYF(:,JPHEXT+1,:) ! for reprod JPHEXT <> 1
+DO JJ=1,JPHEXT
+   PMYF(:,IJU-JPHEXT+JJ,:) = PMYF(:,JPHEXT+JJ,:) ! for reprod JPHEXT <> 1
+END DO
 !
 !
 !-------------------------------------------------------------------------------
@@ -494,8 +497,9 @@ DO JIJK=JIJKOR , JIJKEND
    PMYM(JIJK,1,1) = 0.5*( PA(JIJK,1,1)+PA(JIJK-IIU,1,1) )
 END DO
 !
-PMYM(:,1,:)      = PMYM(:,IJU-2*JPHEXT+1,:)
-PMYM(:,JPHEXT,:) = PMYM(:,IJU-JPHEXT,:) ! for reprod JPHEXT <> 1
+DO JJ=1,JPHEXT
+   PMYM(:,JJ,:)  = PMYM(:,IJU-2*JPHEXT+JJ,:) ! for reprod JPHEXT <> 1
+END DO
 !
 !-------------------------------------------------------------------------------
 !
@@ -773,7 +777,7 @@ IIU = SIZE(PA,1)
 IJU = SIZE(PA,2)
 IKU = SIZE(PA,3)
 !
-JIJKOR  = 1 + 1 ! JPHEXT
+JIJKOR  = 1 + 1
 JIJKEND = IIU*IJU*IKU
 !
 !CDIR NODEP
@@ -784,9 +788,10 @@ END DO
 !
 !CDIR NODEP
 !OCL NOVREC
-DO JJK=1,IJU*IKU
-   PDXF(IIU,JJK,1)           = PDXF(2*JPHEXT,JJK,1) 
-   PDXF(IIU-JPHEXT+1,JJK,1)  = PDXF(JPHEXT+1,JJK,1) ! for reprod JPHEXT <> 1
+DO JI=1,JPHEXT
+   DO JJK=1,IJU*IKU
+      PDXF(IIU-JPHEXT+JI,JJK,1) = PDXF(JPHEXT+JI,JJK,1) ! for reprod JPHEXT <> 1
+   END DO
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -884,9 +889,10 @@ END DO
 !
 !CDIR NODEP
 !OCL NOVREC
-DO JJK=1,IJU*IKU
-   PDXM(1,JJK,1)      = PDXM(IIU-2*JPHEXT+1,JJK,1) 
-   PDXM(JPHEXT,JJK,1) = PDXM(IIU-JPHEXT,JJK,1) ! for reprod JPHEXT <> 1
+DO JI=1,JPHEXT
+   DO JJK=1,IJU*IKU
+      PDXM(JI,JJK,1) = PDXM(IIU-2*JPHEXT+JI,JJK,1) ! for reprod JPHEXT <> 1
+   END DO
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -984,8 +990,9 @@ DO JIJK=JIJKOR , JIJKEND
    PDYF(JIJK-IIU,1,1)         = PA(JIJK,1,1)  -  PA(JIJK-IIU,1,1) 
 END DO
 !
-PDYF(:,IJU,:)           = PDYF(:,2*JPHEXT,:)
-PDYF(:,IJU-JPHEXT+1,:)  = PDYF(:,JPHEXT+1,:) ! for reprod JPHEXT <> 1
+DO JJ=1,JPHEXT
+   PDYF(:,IJU-JPHEXT+JJ,:) = PDYF(:,JPHEXT+JJ,:) ! for reprod JPHEXT <> 1
+END DO
 !
 !-------------------------------------------------------------------------------
 !
@@ -1082,8 +1089,9 @@ DO JIJK=JIJKOR , JIJKEND
    PDYM(JIJK,1,1)           = PA(JIJK,1,1)  -  PA(JIJK-IIU,1,1) 
 END DO
 !
-PDYM(:,1,:)      = PDYM(:,IJU-2*JPHEXT+1,:)
-PDYM(:,JPHEXT,:) = PDYM(:,IJU-JPHEXT,:) ! for reprod JPHEXT <> 1
+DO JJ=1,JPHEXT
+   PDYM(:,JJ,:) = PDYM(:,IJU-2*JPHEXT+JJ,:) ! for reprod JPHEXT <> 1
+END DO
 !
 !
 !-------------------------------------------------------------------------------
