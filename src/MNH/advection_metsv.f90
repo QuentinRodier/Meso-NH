@@ -127,6 +127,7 @@ END MODULE MODI_ADVECTION_METSV
 !!                  09/2014  (G.Delautier)              close OUTPUT_LISTING before STOP
 !!                  04/2015  (J.Escobar) remove/commente some NHALO=1 test
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                  J.Escobar : 01/10/2015 : add computation of CFL for L1D case
 !!
 !-------------------------------------------------------------------------------
 !
@@ -275,6 +276,7 @@ END IF
 !
 !*       2.2 computes CFL numbers
 !
+
 IF (.NOT. L1D) THEN
   ZCFLU = 0.0 ; ZCFLV = 0.0 ;  ZCFLW = 0.0
   ZCFLU(IIB:IIE,IJB:IJE,:) = ABS(ZRUCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
@@ -285,6 +287,10 @@ IF (.NOT. L1D) THEN
   ELSE
     ZCFL  = SQRT(ZCFLU**2+ZCFLW**2)
   END IF
+ELSE
+   ZCFLU = 0.0 ; ZCFLV = 0.0 ;  ZCFLW = 0.0 
+   ZCFLW(IIB:IIE,IJB:IJE,:) = ABS(ZRWCPPM(IIB:IIE,IJB:IJE,:) * PTSTEP)
+   ZCFL = SQRT(ZCFLW**2)
 END IF
 !
 !* prints in the file the 3D Courant numbers (one should flag this)
