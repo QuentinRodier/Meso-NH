@@ -72,7 +72,7 @@
 !              ------------
 !
 ! modules MesoNH
-USE MODD_PARAMETERS, ONLY: XUNDEF
+USE MODD_PARAMETERS, ONLY: XUNDEF,JPHEXT
 USE MODD_DIM1, ONLY: NIMAX,NJMAX,NKMAX
 USE MODD_GRID1, ONLY: XZZ
 ! modules DIACHRO
@@ -267,6 +267,9 @@ IF ( HFLAGFILE(1:3) == 'OPE' ) THEN
 !! ne pas relacher unite logique car compute_r00_pc doit fermer (avec FMCLOS)
 !!le fic.  d entree qui a ete amende des var. Lag.
 !
+! READ JPHEXT
+    CALL FMREAD(CFILEDIAS(NBFILES),'JPHEXT',CLUOUTDIAS(NBFILES),1,JPHEXT,IGRID,ILENCH,YCOMMENT,NRESPDIAS(NBFILES))
+
 !*       3.1   Reading head of file
 !              --------------------
 !      

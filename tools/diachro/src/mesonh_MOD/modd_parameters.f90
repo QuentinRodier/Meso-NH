@@ -38,7 +38,7 @@
 !
 IMPLICIT NONE
 !
-INTEGER, PARAMETER :: JPHEXT = 1      ! Horizontal External points number
+INTEGER, SAVE :: JPHEXT = 1      ! Horizontal External points number
 INTEGER, PARAMETER :: JPVEXT = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPMODELMAX = 8  ! Maximum allowed number of nested models 
 INTEGER, PARAMETER :: JPCPLFILEMAX = 8 ! Maximum allowed number of CouPLing FILEs 

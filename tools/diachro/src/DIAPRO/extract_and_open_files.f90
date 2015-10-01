@@ -55,11 +55,13 @@ END MODULE MODI_EXTRACT_AND_OPEN_FILES
 !
 USE MODD_FILES_DIACHRO ! NBGUIL
 USE MODD_ALLOC_FORDIACHRO
-USE MODD_RESOLVCAR 
+USE MODD_RESOLVCAR
+USE MODD_PARAMETERS,ONLY:JPHEXT
 !USE MODD_DIM1
 !USE MODN_PARA
 !USE MODN_NCAR
 USE MODI_CREATLINK
+USE MODI_FMREAD
 !
 IMPLICIT NONE
 !
@@ -89,6 +91,8 @@ INTEGER   ::   ILU, INUM, IRESP2
 LOGICAL   ::   GPLUS
 !INTEGER           :: IIINF, IJINF, IISUP, IJSUP
 !REAL              :: ZIDEBCOU, ZJDEBCOU
+CHARACTER(LEN=20) :: YCOMMENT
+INTEGER           ::  ILENCH,ILENG,IGRID
 !------------------------------------------------------------------------------
 !
 YCARIN = HCARIN
@@ -362,16 +366,9 @@ DO J=1,NBGUIL,2 !***********************************************************
 	NUMFILECUR=NUMFILES(NBFILES)
 
 ! ouverture du listing
-        !CALL FMLOOK(CLUOUTDIAS(NBFILES),CLUOUTDIAS(NBFILES),&
-        !            NLUOUTDIAS(NBFILES),NRESPDIAS(NBFILES)  )
-        !IF (NRESPDIAS(NBFILES) .NE. 0) THEN
-        !WRITE(YC,'(I2.2)')NBFILES
-        !CLUOUTDIAS(NBFILES)=ADJUSTL(ADJUSTR(CLUOUTDIAS(NBFILES))//YC)
-        !print *,'NBFILES CLUOUTDIAS(NBFILES) YC',NBFILES,CLUOUTDIAS(NBFILES),YC
         CALL FMATTR(CLUOUTDIAS(NBFILES),CLUOUTDIAS(NBFILES), &
                     NLUOUTDIAS(NBFILES),NRESPDIAS(NBFILES))
         OPEN(UNIT=NLUOUTDIAS(NBFILES),FILE=CLUOUTDIAS(NBFILES),FORM='FORMATTED')
-        !ENDIF
         WRITE(UNIT=NLUOUTDIAS(NBFILES),FMT=1)NBFILES,' ',CFILEDIAS(NBFILES)
 	1 FORMAT(' OPEN DIACHRONIC FILE ',I2.2,A,A28)
 
@@ -397,12 +394,10 @@ DO J=1,NBGUIL,2 !***********************************************************
 
 ! Modif le 3/1/96. Pour conserver la chaine _FILEx_
 	IF(JM>=1)THEN
-!       IF(JM>1)THEN
 	  HCAROUT(1:NMGUIL(J)-1)=YCARIN(1:NMGUIL(J)-1)
-!         HCAROUT(1:JM-1)=YCARIN(1:JM-1)
-!         print *,' HCAROUT 1 ',HCAROUT
         ENDIF
-
+! READ JPHEXT
+        CALL FMREAD(CFILEDIAS(NBFILES),'JPHEXT',CLUOUTDIAS(NBFILES),ILENG,JPHEXT,IGRID,ILENCH,YCOMMENT,NRESPDIAS(NBFILES))
       ELSE    ! NBFILES/=0
 !
 ! Fichiers autres que le premier
@@ -464,8 +459,6 @@ DO J=1,NBGUIL,2 !***********************************************************
           CFILEDIAS(NBFILES)=ADJUSTL(YNAMFILE)
 
 ! Ouverture du fichier lfi et fermeture du fichier des correspondant
-          !WRITE(YC,'(I2.2)')NBFILES
-	  !CLUOUTDIAS(NBFILES)=ADJUSTL(ADJUSTR(CLUOUTDIAS(NBFILES))//YC)
           CALL FMLOOK(CLUOUTDIAS(NBFILES),CLUOUTDIAS(NBFILES), &
                       NLUOUTDIAS(NBFILES),NRESPDIAS(NBFILES))
           IF (NRESPDIAS(NBFILES) .NE. 0) THEN
@@ -473,7 +466,6 @@ DO J=1,NBGUIL,2 !***********************************************************
             LPBREAD=.TRUE.
             RETURN
           ENDIF
-          !OPEN(UNIT=NLUOUTDIAS(NBFILES),FILE=CLUOUTDIAS(NBFILES),FORM='FORMATTED')
           WRITE(UNIT=NLUOUTDIAS(NBFILES),FMT=1)NBFILES,' ',CFILEDIAS(NBFILES)
 
       IF(NVERBIA>0) THEN
@@ -501,24 +493,18 @@ DO J=1,NBGUIL,2 !***********************************************************
 	IF(MAX(1,J-1) == 1)THEN
 ! Modif le 3/1/96. Pour conserver la chaine _FILEx_
 	  IDIF=NMGUIL(J)-1-1
-!         IDIF=JM-1-1
 	  IF(IDIF >0)THEN
 	    JMM=LEN_TRIM(HCAROUT)+1
 ! Modif le 3/1/96. Pour conserver la chaine _FILEx_
 	    HCAROUT(JMM:JMM+IDIF)=YCARIN(1:NMGUIL(J)-1)
-!           HCAROUT(JMM:JMM+IDIF)=YCARIN(1:JM-1)
-!           print *,' HCAROUT 2 ',HCAROUT
           ENDIF
 	ELSE
 ! Modif le 3/1/96. Pour conserver la chaine _FILEx_
 	  IDIF=NMGUIL(J)-1-(NMGUIL(MAX(1,J-1))+1)
-!         IDIF=JM-1-(NMGUIL(MAX(1,J-1))+1)
           IF(IDIF >0)THEN
 	    JMM=LEN_TRIM(HCAROUT)+1
 ! Modif le 3/1/96. Pour conserver la chaine _FILEx_
 	    HCAROUT(JMM:JMM+IDIF)=YCARIN(NMGUIL(MAX(1,J-1))+1:NMGUIL(J)-1)
-!           HCAROUT(JMM:JMM+IDIF)=YCARIN(NMGUIL(MAX(1,J-1))+1:JM-1)
-!           print *,' HCAROUT 2 ',HCAROUT
           ENDIF
 	ENDIF
 
@@ -532,16 +518,6 @@ DO J=1,NBGUIL,2 !***********************************************************
       IF(NVERBIA>0) THEN
         print *,' ** EXTRACT avant lecture de l entete de ',TRIM(CFILEDIAS(JME))
       ENDIF
-!   IIINF=NIINF; IJINF=NJINF; IISUP=NISUP; IJSUP=NJSUP
-!   ZIDEBCOU=XIDEBCOU; ZJDEBCOU=XJDEBCOU
-!   CALL INI_CST
-!   CALL READ_DIMGRIDREF(JME,CFILEDIAS(JME),CLUOUTDIAS(JME))
-!   CALL INIDEF
-!   NIMNMX=-1
-!   LMINMAX=.TRUE.
-!   CALL COMPCOORD_FORDIACHRO(0)
-!   NIINF=IIINF; NJINF=IJINF; NISUP=IISUP; NJSUP=IJSUP
-!   XIDEBCOU=ZIDEBCOU; XJDEBCOU=ZJDEBCOU
     CALL READ_FILEHEAD(JME,CFILEDIAS(JME),CLUOUTDIAS(JME))
     LFIC1=.TRUE.
 
