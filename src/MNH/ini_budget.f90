@@ -151,6 +151,7 @@ END MODULE MODI_INI_BUDGET
 !!                                terms in term 2DFRC search for modif PP . but Not very clean! 
 !!      C .Lac          27/05/14    add negative corrections for chemical species
 !!      C.Lac           29/01/15  Correction for NSV_USER
+!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -293,7 +294,7 @@ IF (CBUTYPE=='CART') THEN              ! cartesian case only
     NBUJMAX_ll = NBUJH - NBUJL +1
   END IF
 !
-  CALL GET_INTERSECTION_ll(NBUIL,NBUJL,NBUIH,NBUJH, &
+  CALL GET_INTERSECTION_ll(NBUIL+JPHEXT,NBUJL+JPHEXT,NBUIH+JPHEXT,NBUJH+JPHEXT, &
       NBUSIL,NBUSJL,NBUSIH,NBUSJH,"PHYS",IINFO_ll)
   IF ( IINFO_ll /= 1 ) THEN ! 
     IF (LBU_ICP) THEN 

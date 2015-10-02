@@ -83,6 +83,7 @@ END MODULE MODI_MASK_COMPRESS
 !!                                               sub-domain in x and y directions
 !!                                            permutation of the two dimensions of the
 !!                                            ZCOMP array : first is K, second is mask number
+!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
 !----------------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -126,7 +127,7 @@ CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 ZVARS=0.
 DO IK=1, NBUKH-NBUKL+1
-  ZVARS(IIB:IIE,IJB:IJE,IK)=PVARS(IIB:IIE, IJB:IJE , IK+NBUKL-1)
+  ZVARS(IIB:IIE,IJB:IJE,IK)=PVARS(IIB:IIE, IJB:IJE , IK+NBUKL+JPVEXT-1)
 END DO
 !
 !-------------------------------------------------------------------------------

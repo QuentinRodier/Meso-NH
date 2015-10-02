@@ -68,6 +68,7 @@
 !!                                            add the initialization of the dimensions of
 !!                                          MASK array in MASK case with write outside the 
 !!                                          routine.
+!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -439,7 +440,7 @@ DO J = 1,IP
 IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
   IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
     CALL FMWRITBOX(HFILEDIA,YRECFM,HLUOUTDIA,'BUDGET',PVAR(:,:,:,:,:,J),KGRID(J), &
-                   YCOMMENT,KIL,KIH,KJL,KJH,IRESPDIA)
+                   YCOMMENT,KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT,IRESPDIA)
   ELSE
     CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',PVAR(:,:,:,:,:,J),KGRID(J),   &
                 ILENCH,YCOMMENT,IRESPDIA)

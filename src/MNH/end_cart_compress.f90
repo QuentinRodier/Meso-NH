@@ -94,6 +94,7 @@ END MODULE MODI_END_CART_COMPRESS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     4/06/99 
+!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -159,7 +160,7 @@ ELSE IF (LBU_ICP.AND..NOT.LBU_JCP) THEN ! compress along x direction,
     ZVAR2D(1,NBUSJL:NBUSJH,:)=PVARS(1,:,:)
   ENDIF 
   CALL SUM_DIM1_ll(ZVAR2D,ZWORK2D,IINFO_ll)
-  PCOMPRESS(1,:,:)=ZWORK2D(NBUJL:NBUJH,:)
+  PCOMPRESS(1,:,:)=ZWORK2D(NBUJL+JPHEXT:NBUJH+JPHEXT,:)
   DEALLOCATE(ZVAR2D,ZWORK2D)
 !
 ELSE IF (.NOT.LBU_ICP.AND.LBU_JCP) THEN  ! compress along y direction,
@@ -177,7 +178,7 @@ ELSE IF (.NOT.LBU_ICP.AND.LBU_JCP) THEN  ! compress along y direction,
     ZVAR2D(NBUSIL:NBUSIH,1,:)=PVARS(:,1,:)
   ENDIF
   CALL SUM_DIM1_ll(ZVAR2D,ZWORK2D,IINFO_ll)
-  PCOMPRESS(:,1,:)=ZWORK2D(NBUIL:NBUIH,:)
+  PCOMPRESS(:,1,:)=ZWORK2D(NBUIL+JPHEXT:NBUIH+JPHEXT,:)
   DEALLOCATE(ZVAR2D,ZWORK2D)
 !
 END IF
