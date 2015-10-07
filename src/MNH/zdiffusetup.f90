@@ -54,6 +54,7 @@ END MODULE MODI_ZDIFFUSETUP
 !!    ------
 !!
 !!      G. Zängl       * University of Munich*
+!!      J.Escobar 7/10/2015 : remove print
 !!
 !
 !*       0.    DECLARATIONS
@@ -132,7 +133,7 @@ IIU = SIZE(PZZ,1)
 IJU = SIZE(PZZ,2)
 IKU = SIZE(PZZ,3)
 
-PRINT*,'Interpolation coefficients for truly horizontal diffusion are computed'
+!PRINT*,'Interpolation coefficients for truly horizontal diffusion are computed'
 ALLOCATE (ZZMASS(IIU,IJU,IKU))
 
 !JUAN
@@ -162,10 +163,10 @@ PZDIFFU_HALO2%XZZ(IIE+2,IJB:IJE,:)   = TZHGTHALO2_ll%HALO2%EAST(IJB:IJE,:)
 PZDIFFU_HALO2%XZZ(IIB:IIE,IJB-2,:)   = TZHGTHALO2_ll%HALO2%SOUTH(IIB:IIE,:)
 PZDIFFU_HALO2%XZZ(IIB:IIE,IJE+2,:)   = TZHGTHALO2_ll%HALO2%NORTH(IIB:IIE,:)
 PZDIFFU_HALO2%XZZ(1:IIU,1:IJU,1:IKU) = ZZMASS
-print *,"zdiffu :: IIB-2",IIB-2
-print *,"zdiffu :: IIE+2",IIE+2
-print *,"zdiffu :: IJB-2",IJB-2
-print *,"zdiffu :: IJE+2",IJE+2
+!print *,"zdiffu :: IIB-2",IIB-2
+!print *,"zdiffu :: IIE+2",IIE+2
+!print *,"zdiffu :: IJB-2",IJB-2
+!print *,"zdiffu :: IJE+2",IJE+2
 
 !DO JI=IIB-2,IIE+2
 !print *,"zdiffu :: PZDIFFU_HALO2%X=JI=",JI,(PZDIFFU_HALO2%XZZ(JI,JJ,2),JJ=IJB-2,IJE+2)
@@ -222,7 +223,7 @@ PZDIFFU_HALO2%NZDLB = MAXVAL(IKMAX_HALO2) ! Model level, above which a truly hor
 !JUAN
 CALL MPI_ALLREDUCE(PZDIFFU_HALO2%NZDLB ,KZDLB_ll, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, IERR)
 
-print*,"zdiffusetup:: PZDIFFU_HALO2%NZDLB=",PZDIFFU_HALO2%NZDLB,KZDLB_ll
+!print*,"zdiffusetup:: PZDIFFU_HALO2%NZDLB=",PZDIFFU_HALO2%NZDLB,KZDLB_ll
 PZDIFFU_HALO2%NZDLB = KZDLB_ll
 !JUAN
 
@@ -373,15 +374,17 @@ ENDDO
 IF (MINVAL(KKMIN) .EQ. 0 ) THEN
 print *," zdiffusetup::PROBLEME MINVAL(KKMIN) .EQ. 0 "
 call abort()
+STOP
 ELSE
-print *," zdiffusetup:: OK "
+!print *," zdiffusetup:: OK "
 ENDIF
 IF (MINVAL(INT(PKIND)) .EQ. 0 ) THEN
 print *," zdiffusetup::PROBLEME MINVAL(INT(PKIND)) .EQ. 0 "
 !PKIND = MAX (1.00001,PKIND)
 call abort()
+STOP
 ELSE
-print *," zdiffusetup:: OK "
+!print *," zdiffusetup:: OK "
 ENDIF
 END SUBROUTINE INDINT_HALO2
 
