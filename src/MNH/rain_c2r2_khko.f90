@@ -207,6 +207,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!                                     KHKO_SEDIMENTATION because of instability
 !!      G.Tanguy             07/14     FUSION C2R2 and KHKO
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 07/10/2015 , Bug in parallel run , => comment test on INUCT>1 containing GET_HALO  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -624,7 +625,7 @@ ELSE
 END IF
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 
-IF( INUCT >= 1 ) THEN
+! IF( INUCT >= 1 ) THEN
   ALLOCATE(ZRVT(INUCT))
   ALLOCATE(ZRCT(INUCT))
   ALLOCATE(ZRRT(INUCT))
@@ -834,7 +835,7 @@ IF( INUCT >= 1 ) THEN
 !  DEALLOCATE(ZCHEN_TMP)
 !  DEALLOCATE(ZCONC_CCN)
 !-------------------------------------------------------------------------------
-END IF
+! END IF
 !                      
 IF ( OCLOSE_OUT ) THEN
   YRECFM  ='SURSAT'
