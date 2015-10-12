@@ -792,6 +792,20 @@ END DO
 
     sizemax = 0
 
+    status = NF90_INQ_DIMID(kcdf_id, "DIMX", idim_id(1))
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_INQUIRE_DIMENSION(kcdf_id,idim_id(1),len = IDIMX)
+
+    status = NF90_INQ_DIMID(kcdf_id, "DIMY", idim_id(2))
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_INQUIRE_DIMENSION(kcdf_id,idim_id(2),len = IDIMY)
+
+    status = NF90_INQ_DIMID(kcdf_id, "DIMZ", idim_id(3))
+    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+    status = NF90_INQUIRE_DIMENSION(kcdf_id,idim_id(3),len = IDIMZ)
+
+    GUSEDIM = (IDIMX*IDIMY > 0)
+
     CALL init_dimCDF()
     
     ! Parcours de toutes les variables et extraction des infos
@@ -823,7 +837,7 @@ END DO
        IF (idims == 0) THEN
           ! variable scalaire
           NULLIFY(tpreclist(var_id)%dim)
-	  idimlen = 1
+          idimlen = 1
        ELSE
           ! infos sur dimensions
           idimlen = 1
@@ -832,9 +846,8 @@ END DO
             IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
             idimlen = idimlen*idimtmp
           END DO
-          
           tpreclist(var_id)%dim=>get_dimCDF(idimlen)
-          ! seul le champ 'len' de dimCDF sera utilise par la suite
+          tpreclist(var_id)%dim%ndims=idims
        END IF
        
        ! GRID et COMMENT attributes
@@ -864,11 +877,12 @@ END DO
     INTEGER,                       INTENT(IN) :: kbuflen
     
     INTEGER :: status
-    INTEGER :: ivar,jj
+    INTEGER :: ivar,jj,ndims
+    INTEGER,DIMENSION(3) :: idims
     INTEGER(KIND=8), DIMENSION(:), POINTER  :: iwork
     INTEGER(KIND=8), DIMENSION(:), POINTER  :: idata
-    REAL(KIND=8), DIMENSION(:), ALLOCATABLE :: xtab
-    INTEGER,      DIMENSION(:), ALLOCATABLE :: itab
+    REAL(KIND=8), DIMENSION(:,:,:), ALLOCATABLE :: xtab3d
+    INTEGER,      DIMENSION(:,:,:), ALLOCATABLE :: itab3d
     CHARACTER,    DIMENSION(:), ALLOCATABLE :: ytab
     CHARACTER(LEN=FM_FIELD_SIZE)            :: yrecfm
 
@@ -884,8 +898,6 @@ END DO
     PRINT *,'Taille buffer = ',2+kbuflen
 
     ALLOCATE(iwork(2+kbuflen))
-    ALLOCATE(itab(2+kbuflen))
-    ALLOCATE(xtab(2+kbuflen))
 
     DO ivar=1,SIZE(tpreclist)
        icomlen = LEN(tpreclist(ivar)%comment)
@@ -899,35 +911,45 @@ END DO
 
        IF (ASSOCIATED(tpreclist(ivar)%dim)) THEN
           idlen = tpreclist(ivar)%dim%len
+          ndims = tpreclist(ivar)%dim%ndims
        ELSE 
           idlen = 1
+          ndims = 0
        END IF
        
+       idims(:) = 1
+       if(ndims>0) idims(1) = ptdimx%len
+       if(ndims>1) idims(2) = ptdimy%len
+       if(ndims>2) idims(3) = ptdimz%len
+       if(ndims>3) then
+         PRINT *,'Too many dimensions'
+         STOP
+       endif
+
        iartlen = 2+icomlen+idlen
        idata=>iwork(3+icomlen:iartlen)
 
 
        SELECT CASE(tpreclist(ivar)%TYPE)
        CASE(INT,BOOL)
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,itab)
+          ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,itab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 !          PRINT *,'INT,BOOL --> ',tpreclist(ivar)%name,',len = ',idlen
-          idata(1:idlen) = itab(1:idlen)
+          idata(1:idlen) = RESHAPE( itab3d , (/ idims(1)*idims(2)*idims(3) /) )
+
+          DEALLOCATE(itab3d)
 
        CASE(FLOAT)
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab)
+          ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-          
-!          PRINT *,'FLOAT    --> ',tpreclist(ivar)%name,',len = ',idlen
-          ! La ligne suivante ne pose aucun pb sur Cray alors que sur
-          ! fuji, elle genere une erreur d'execution
-!          idata(1:idlen) = TRANSFER(xtab(1:idlen),(/ 0_8 /))
-          
-          ! la correction pour Fuji (valable sur CRAY) est :
-          idata(1:idlen) = TRANSFER(xtab,(/ 0_8 /),idlen)
 
-!          IF (idlen < 10) PRINT *,'xtab = ',xtab(1:idlen)
+!          PRINT *,'FLOAT -->    ',tpreclist(ivar)%name,',len = ',idlen
+          idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
+
+          DEALLOCATE(xtab3d)
 
        CASE(TEXT)
           ALLOCATE(ytab(idlen))
@@ -935,7 +957,6 @@ END DO
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 !          PRINT *,'TEXT -->     ',tpreclist(ivar)%name,',len = ',idlen
-
           DO jj=1,idlen
              idata(jj) = ICHAR(ytab(jj))
           END DO
@@ -943,11 +964,14 @@ END DO
           DEALLOCATE(ytab)
 
        CASE default
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab)
+          ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
+          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id,xtab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
           PRINT *,'Default (ERROR) -->',tpreclist(ivar)%name,',len = ',idlen
-          idata(1:idlen) = TRANSFER(xtab,(/ 0_8 /),idlen)
+          idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
+
+          DEALLOCATE(xtab3d)
 
        END SELECT
        
@@ -960,7 +984,7 @@ END DO
        CALL LFIECR(iresp,ilu,yrecfm,iwork,iartlen8)
 
     END DO
-    DEALLOCATE(iwork,itab,xtab)
+    DEALLOCATE(iwork)
 
   END SUBROUTINE build_lfi
 
