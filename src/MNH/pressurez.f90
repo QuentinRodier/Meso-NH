@@ -220,6 +220,7 @@ END MODULE MODI_PRESSUREZ
 !!                    2012    (V.Masson)  Modif update_halo due to CONTRAV
 !!                    2014    (C.Lac) correction for 3D run with LBOUSS=.TRUE.
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!   J.escobar : check nb proc versus ZRESI & min(DIMX,DIMY)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -250,9 +251,10 @@ USE MODE_FM
 USE MODI_SUM_ll , ONLY : GMAXLOC_ll
 USE MODD_DYN_n  , ONLY : LRES, XRES
 USE MODD_MPIF
-USE MODD_VAR_ll, ONLY : MPI_PRECISION, NMNH_COMM_WORLD
+USE MODD_VAR_ll, ONLY : MPI_PRECISION, NMNH_COMM_WORLD , NPROC
 !JUANZ
 USE MODE_MPPDB
+USE MODE_IO_ll, ONLY: CLOSE_ll
 !
 IMPLICIT NONE
 !
@@ -374,6 +376,7 @@ INTEGER :: IINFO_ll,KINFO
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll, TZFIELDS2_ll  ! list of fields to exchange
 !
 INTEGER :: IIB_I,IIE_I,IJB_I,IJE_I
+INTEGER :: IIMAX_ll,IJMAX_ll
 !
 !
 !------------------------------------------------------------------------------
@@ -384,6 +387,15 @@ INTEGER :: IIB_I,IIE_I,IJB_I,IJE_I
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
+CALL GET_GLOBALDIMS_ll (IIMAX_ll,IJMAX_ll)
+IF ( ( MIN(IIMAX_ll,IJMAX_ll) < NPROC  ) .AND. ( HPRESOPT /= 'ZRESI' ) ) THEN
+   WRITE(UNIT=ILUOUT,FMT=*) 'ERROR IN PRESSUREZ:: YOU WANT TO USE TO MANY PROCESSOR WITHOUT CPRESOPT="ZRESI" '
+   WRITE(UNIT=ILUOUT,FMT=*) 'MIN(IIMAX_ll,IJMAX_ll)=',MIN(IIMAX_ll,IJMAX_ll),' < NPROC =', NPROC
+   WRITE(UNIT=ILUOUT,FMT=*) 'YOU HAVE TO SET CPRESOPT="ZRESI => JOB ABORTED '
+   CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+   CALL ABORT
+   STOP
+ENDIF
 CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 !
