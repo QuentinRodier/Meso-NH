@@ -35,7 +35,10 @@ include Rules.$(ARCH)
 %.o:%.c $(DIR_OBJ)/.dummy
 	$(CC) $(INC) $(CFLAGS) $(CPPFLAGS) -c $< -o $(DIR_OBJ)/$(*F).o
 
-all : $(PROGS) cdf2lfi
+all : $(PROGS) cdf2cdf cdf2lfi
+
+cdf2cdf: $(PROGS) 
+	cd $(DIR_OBJ); rm -f cdf2cdf; ln -s $(PROGS) cdf2cdf
 
 cdf2lfi: $(PROGS) 
 	cd $(DIR_OBJ); rm -f cdf2lfi; ln -s $(PROGS) cdf2lfi

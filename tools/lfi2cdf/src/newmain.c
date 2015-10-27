@@ -5,7 +5,7 @@
 
 #define BUFSIZE 4096
 
-extern lfi2cdfmain_(char*, int*, int *, char*, int*, char*, int*, int*, int*, int*, int*, int*, int*, int*, int*, int*);
+extern lfi2cdfmain_(char*, int*, int *, char*, int*, char*, int*, int*, int*, int*, int*, int*, int*, int*, int*, int*, int*);
 
 char *cleancomma(char *varlist)
 {
@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 {
   int ilen;
   int list_flag;
+  int c2c_flag;
   int l2c_flag;
   int hdf5_flag;
   int merge_flag, nb_levels;
@@ -52,10 +53,11 @@ int main(int argc, char **argv)
   else
     cmd++;
   l2c_flag = strcmp(cmd, "lfi2cdf") == 0 ? 1 : 0;
+  c2c_flag = strcmp(cmd, "cdf2cdf") == 0 ? 1 : 0;
 
   compress_flag = 0;
   list_flag = 0;
-  hdf5_flag = 0;
+  hdf5_flag = 1;
   help_flag = 0;
   outname_flag = 0;
   reduceprecision_flag = 0;
@@ -71,6 +73,7 @@ int main(int argc, char **argv)
     int option_index = 0;
 
     static struct option long_options[] = {
+      {"cdf3",             no_argument,       0, '3' },
       {"cdf4",             no_argument,       0, '4' },
       {"compress",         required_argument, 0, 'c' },
       {"help",             no_argument,       0, 'h' },
@@ -83,7 +86,7 @@ int main(int argc, char **argv)
       {0,                  0,                 0,  0  }
     };
 
-    c = getopt_long(argc, argv, "4c:hlm:o:rsv:",
+    c = getopt_long(argc, argv, "34c:hlm:o:rsv:",
 		    long_options, &option_index);
     if (c == -1)
       break;
@@ -102,6 +105,9 @@ int main(int argc, char **argv)
         printf("Error: compression level should in the 1 to 9 interval\n");
         exit(EXIT_FAILURE);
       }
+      break;
+    case '3':
+      hdf5_flag = 0;
       break;
     case '4':
       hdf5_flag = 1;
@@ -128,7 +134,7 @@ int main(int argc, char **argv)
       split_flag = 1;
       break;
     case 'v':
-      if (l2c_flag) {
+      if (l2c_flag || c2c_flag) {
 	lenopt = strlen(optarg);
 	//	printf("option v with value '%s'\n", optarg);
 	if (p+lenopt > buff+BUFSIZE)
@@ -148,32 +154,34 @@ int main(int argc, char **argv)
   }
 
   if (optind == argc || help_flag) {
+//TODO: -l option for cdf2cdf and cdf2lfi
     printf("usage : lfi2cdf [-h --help] [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc] [-c --compress compression_level] input-file.lfi\n");
+    printf("        cdf2cdf [-h --help] [--cdf4 -4] [-v --var var1[,...]] [-r --reduce-precision] [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc] [-c --compress compression_level] input-file.nc\n");
     printf("        cdf2lfi [-o --output output-file.lfi] input-file.nc\n");
-    printf("Usage: lfi2cdf [OPTION] ... lfi_file\n");
-    printf("       cdf2lfi [OPTION] ... nc_file\n");
     printf("\nOptions:\n");
-    printf("  --cdf4, -4\n");
-    printf("     Write netCDF file in netCDF-4 format (HDF5 compatible) (lfi2cdf only)\n");
+    printf("  --cdf3, -3\n");
+    printf("     Write netCDF file in netCDF-3 format (cdf2cdf and lfi2cdf only)\n");
+    printf("  --cdf4, -4 (by default)\n");
+    printf("     Write netCDF file in netCDF-4 format (HDF5 compatible) (cdf2cdf and lfi2cdf only)\n");
     printf("  --compress, -c compression_level\n");
     printf("     Compress data. The compression level should be in the 1 to 9 interval.\n");
-    printf("     Only supported with the netCDF-4 format (lfi2cdf only)\n");
+    printf("     Only supported with the netCDF-4 format (cdf2cdf and lfi2cdf only)\n");
     printf("  --help, -h\n");
     printf("     Print this text\n");
     printf("  --list, -l\n");
     printf("     List all the fields of the LFI file and returns (lfi2cdf only)\n");
     printf("  --merge, -m number_of_z_levels\n");
-    printf("     Merge LFI files which are split by vertical level (lfi2cdf only)\n");
+    printf("     Merge LFI files which are split by vertical level (cdf2cdf and lfi2cdf only)\n");
     printf("  --output, -o\n");
     printf("     Name of file for the output\n");
     printf("  --reduce-precision, -r\n");
-    printf("     Reduce the precision of the floating point variables to single precision (lfi2cdf only)\n");
+    printf("     Reduce the precision of the floating point variables to single precision (cdf2cdf and lfi2cdf only)\n");
     printf("  --split, -s\n");
-    printf("     Split variables specified with the -v option (one per file) (lfi2cdf only)\n");
+    printf("     Split variables specified with the -v option (one per file) (cdf2cdf and lfi2cdf only)\n");
     printf("  --var, -v var1[,...]\n");
     printf("     List of the variable to write in the output file. Variables names have to be separated by commas (,).\n");
     printf("     A variable can be computed from the sum of existing variables (format: new_var=var1+var2[+...])\n");
-    printf("     (lfi2cdf only)\n");
+    printf("     (cdf2cdf and lfi2cdf only)\n");
     printf("\n");
     exit(EXIT_FAILURE);
   } 
@@ -196,7 +204,7 @@ int main(int argc, char **argv)
     (void) strncpy(outfile, cp, strlen(cp) + 1);
     if ((sp = strrchr(outfile, '.')) != NULL)
       *sp = '\0';
-    if (l2c_flag){
+    if (l2c_flag || c2c_flag){
       char *ncext;
       ncext = hdf5_flag ? ".nc4" : ".nc"; 
       strcat(outfile,ncext);
@@ -217,13 +225,13 @@ int main(int argc, char **argv)
   */
 
   /* Split flag only supported if -v is set */
-  if (varlistlen==0) {
+  if (varlistlen==0 && split_flag!=0) {
 	  split_flag = 0;
 	  printf("Warning: split option is forced to disable.\n");
   }
 
 
-  lfi2cdfmain_(infile, &ilen, &outname_flag, outfile, &olen, varlist, &varlistlen, &l2c_flag, &list_flag, &hdf5_flag, &merge_flag,
+  lfi2cdfmain_(infile, &ilen, &outname_flag, outfile, &olen, varlist, &varlistlen, &c2c_flag, &l2c_flag, &list_flag, &hdf5_flag, &merge_flag,
 		       &nb_levels, &reduceprecision_flag, &split_flag, &compress_flag, &compress_level);
 
   exit(EXIT_SUCCESS);
