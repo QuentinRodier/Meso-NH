@@ -1,6 +1,7 @@
 MODULE mode_util
   USE MODE_FIELDTYPE
   USE mode_dimlist
+  USE mode_options
   USE MODD_PARAM
   USE netcdf
 
@@ -93,12 +94,12 @@ CONTAINS
   END IF
   END SUBROUTINE FMREADLFIN1
 
-  SUBROUTINE parse_infiles(infiles, hvarlist, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, icurrent_level)
+  SUBROUTINE parse_infiles(infiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options, icurrent_level)
     TYPE(filelist_struct),      INTENT(IN) :: infiles
     INTEGER,                    INTENT(IN) :: nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw
-    CHARACTER(LEN=*),           INTENT(IN) :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
     INTEGER,                   INTENT(OUT) :: kbuflen
+    TYPE(option),DIMENSION(:), INTENT(IN)  :: options
     INTEGER,          INTENT(IN), OPTIONAL :: icurrent_level
 
     INTEGER                                  :: ji,jj, kcdf_id, itype
@@ -118,7 +119,6 @@ CONTAINS
     INTEGER, DIMENSION(10)                   :: idim_id
     !JUAN CYCCL3
     INTEGER                        :: JPHEXT
-
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
@@ -179,7 +179,7 @@ CONTAINS
     !    compte un sous-ensemble d'article (liste definie par
     !    l'utilisateur par exemple)
     !
-    IF (LEN_TRIM(hvarlist) > 0) THEN
+    IF (options(OPTVAR)%set) THEN
 #ifndef LOWMEM
       IF(.NOT.ALLOCATED(lfiart) .AND. infiles%files(1)%format == LFI_FORMAT) ALLOCATE(lfiart(nbvar_tbr+nbvar_calc))
 #endif
@@ -197,8 +197,9 @@ CONTAINS
        ndb  = 1
        idx_var = 1
        DO ji=1,nbvar_tbw
-          nde = INDEX(TRIM(hvarlist(ndb:)),',')
-          yrecfm = hvarlist(ndb:ndb+nde-2)
+          !crash compiler GCC 4.2.0: nde = INDEX(TRIM(options(OPTVAR)%cvalue(ndb:)),',')
+          nde = INDEX(TRIM(options(OPTVAR)%cvalue(ndb:len(trim(options(OPTVAR)%cvalue)))),',')
+          yrecfm = options(OPTVAR)%cvalue(ndb:ndb+nde-2)
 
           !Detect operations on variables (only + is supported now)
           ndey = INDEX(TRIM(yrecfm),'=')
@@ -470,10 +471,9 @@ END DO
 #endif
   END SUBROUTINE parse_infiles
   
-  SUBROUTINE read_data_lfi(infiles, hvarlist, nbvar, tpreclist, kbuflen, current_level)
+  SUBROUTINE read_data_lfi(infiles, nbvar, tpreclist, kbuflen, current_level)
     TYPE(filelist_struct),      INTENT(IN) :: infiles
     INTEGER, INTENT(INOUT)                 :: nbvar
-    CHARACTER(LEN=*), intent(IN)           :: hvarlist
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
     INTEGER, INTENT(IN)                    :: kbuflen
     INTEGER, INTENT(IN), OPTIONAL          :: current_level
@@ -532,17 +532,13 @@ END DO
     END IF
   END SUBROUTINE HANDLE_ERR
 
-  SUBROUTINE def_ncdf(outfiles,tpreclist,nbvar,oreduceprecision,omerge,osplit,ocompress,compress_level)
+  SUBROUTINE def_ncdf(outfiles,tpreclist,nbvar,options)
     TYPE(filelist_struct),       INTENT(IN) :: outfiles
     TYPE(workfield),DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                     INTENT(IN) :: nbvar
-    LOGICAL,                     INTENT(IN) :: oreduceprecision
-    LOGICAL,                     INTENT(IN) :: omerge
-    LOGICAl,                     INTENT(IN) :: osplit
-    LOGICAL,                     INTENT(IN) :: ocompress
-    INTEGER,                     INTENT(IN) :: compress_level
+    TYPE(option),DIMENSION(:),   INTENT(IN) :: options
 
-    INTEGER :: status
+    INTEGER :: compress_level, status
     INTEGER :: idx, ji, nbfiles
     INTEGER:: kcdf_id
     TYPE(dimCDF), POINTER :: tzdim
@@ -554,7 +550,7 @@ END DO
 
     nbfiles = outfiles%nbfiles
 
-    IF (oreduceprecision) THEN
+    IF (options(OPTREDUCE)%set) THEN
       type_float = NF90_REAL
     ELSE
       type_float = NF90_DOUBLE
@@ -591,7 +587,7 @@ END DO
            ivdims(1) = tpreclist(ji)%dim%id
          ELSE
            invdims = tpreclist(ji)%dim%ndims
-           IF(omerge) invdims=invdims+1 !when merging variables from LFI splitted files
+           IF(options(OPTMERGE)%set) invdims=invdims+1 !when merging variables from LFI splitted files
            SELECT CASE(invdims)
            CASE(2)
               ivdims(1)=ptdimx%id
@@ -656,7 +652,8 @@ END DO
        END SELECT
 
        ! Compress data (costly operation for the CPU)
-       IF (ocompress .AND. invdims>0) THEN
+       IF (options(OPTCOMPRESS)%set .AND. invdims>0) THEN
+         compress_level = options(OPTCOMPRESS)%ivalue
          status = NF90_DEF_VAR_DEFLATE(kcdf_id,tpreclist(ji)%id_out,1,1,compress_level)
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        END IF
@@ -669,7 +666,7 @@ END DO
        status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id_out,'COMMENT',trim(tpreclist(ji)%comment))
        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-       IF (osplit) idx = idx + 1
+       IF (options(OPTSPLIT)%set) idx = idx + 1
     END DO
     
     DO ji = 1,nbfiles
@@ -680,12 +677,12 @@ END DO
 
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,osplit,current_level)
+  SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,options,current_level)
     TYPE(filelist_struct),        INTENT(IN):: infiles, outfiles
     TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist
     INTEGER,                      INTENT(IN):: knaf
     INTEGER,                      INTENT(IN):: kbuflen
-    LOGICAl,                      INTENT(IN):: osplit
+    TYPE(option),DIMENSION(:),    INTENT(IN):: options
     INTEGER, INTENT(IN), OPTIONAL           :: current_level
 
 #ifdef LOWMEM
@@ -994,7 +991,7 @@ END DO
 
        END SELECT
 
-       if (osplit) idx = idx + 1
+       if (options(OPTSPLIT)%set) idx = idx + 1
     END DO
     DEALLOCATE(itab,xtab)
 #if LOWMEM
@@ -1150,12 +1147,13 @@ END DO
     END DO
   END SUBROUTINE UPDATE_VARID_IN
 
-  SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,ocdf2cdf,olfi2cdf,olfilist,ohdf5,nbvar_infile,osplit)
+  SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,nbvar_infile,options,runmode)
     TYPE(filelist_struct),INTENT(OUT) :: infiles, outfiles
-    LOGICAL,          INTENT(IN)  :: ocdf2cdf, olfi2cdf, olfilist, ohdf5, osplit
     CHARACTER(LEN=*), INTENT(IN)  :: hinfile
     CHARACTER(LEN=*), INTENT(IN)  :: houtfile
     INTEGER         , INTENT(OUT) :: nbvar_infile
+    TYPE(option),DIMENSION(:),INTENT(IN) :: options
+    INTEGER         , INTENT(IN)  :: runmode
 
     INTEGER                     :: extindex
     INTEGER(KIND=LFI_INT)       :: iresp,iverb,inap,inaf
@@ -1168,7 +1166,7 @@ END DO
 
     CALL init_sysfield()
 
-    IF (olfi2cdf) THEN 
+    IF (runmode == MODELFI2CDF) THEN
        ! Cas LFI -> NetCDF
        infiles%nbfiles = infiles%nbfiles + 1
        idx = infiles%nbfiles
@@ -1181,19 +1179,19 @@ END DO
 
        nbvar_infile = inaf
 
-       IF (olfilist) THEN
+       IF (options(OPTLIST)%set) THEN
           CALL LFILAF(iresp,infiles%files(idx)%lun_id,lfalse)
           CALL LFIFER(iresp,infiles%files(idx)%lun_id,'KEEP')
           return
        END IF
 
-       IF (.NOT.osplit) THEN
+       IF (.NOT.options(OPTSPLIT)%set) THEN
          outfiles%nbfiles = outfiles%nbfiles + 1
 
          idx = outfiles%nbfiles
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
-         IF (ohdf5) THEN
+         IF (options(OPTCDF4)%set) THEN
             status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
             status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
@@ -1214,7 +1212,7 @@ END DO
 !!$       END SELECT
          END IF ! .NOT.osplit
        
-    ELSE IF (ocdf2cdf) THEN
+    ELSE IF (runmode == MODECDF2CDF) THEN
        ! Cas netCDF -> netCDF
 
        infiles%nbfiles = infiles%nbfiles + 1
@@ -1229,11 +1227,11 @@ END DO
        IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
 
-       IF (.NOT.osplit) THEN
+       IF (.NOT.options(OPTSPLIT)%set) THEN
          outfiles%nbfiles = outfiles%nbfiles + 1
          idx = outfiles%nbfiles
 
-         IF (ohdf5) THEN
+         IF (options(OPTCDF4)%set) THEN
             status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
             status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
@@ -1322,12 +1320,12 @@ END DO
     DEALLOCATE(filename)
   END SUBROUTINE OPEN_SPLIT_NCFILE_IN
 
-  SUBROUTINE OPEN_SPLIT_NCFILES_OUT(outfiles,houtfile,nbvar,tpreclist,ohdf5)
+  SUBROUTINE OPEN_SPLIT_NCFILES_OUT(outfiles,houtfile,nbvar,tpreclist,options)
     TYPE(filelist_struct),         INTENT(INOUT) :: outfiles
     CHARACTER(LEN=*),              INTENT(IN)    :: houtfile
     INTEGER,                       INTENT(IN)    :: nbvar
     TYPE(workfield), DIMENSION(:), INTENT(IN)    :: tpreclist
-    LOGICAL,                       INTENT(IN)    :: ohdf5
+    TYPE(option),DIMENSION(:),     INTENT(IN)    :: options
 
     INTEGER :: ji, idx
     INTEGER :: status
@@ -1344,7 +1342,7 @@ END DO
       IF (.NOT.tpreclist(ji)%tbw) CYCLE
       outfiles%files(idx)%var_id = ji
 
-      IF (ohdf5) THEN
+      IF (options(OPTCDF4)%set) THEN
         filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
       ELSE

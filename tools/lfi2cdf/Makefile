@@ -17,7 +17,7 @@ DIR_COMP = $(DIR_LIB)/COMPRESS
 LIBCOMP  = $(DIR_COMP)/$(ARCH)/liblficomp.a
 
 
-OBJS = newmain.o lfi2cdf.o modd_ncparam.o mode_dimlist.o fieldtype.o mode_util.o
+OBJS = mode_options.o lfi2cdf.o modd_ncparam.o mode_dimlist.o fieldtype.o mode_util.o
 PROGS = lfi2cdf 
 
 INC = -I$(DIR_OBJ) -DLFI_INT=$(LFI_INT)
