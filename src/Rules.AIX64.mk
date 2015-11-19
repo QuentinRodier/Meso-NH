@@ -120,4 +120,8 @@ $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 OBJS_O0 += spll_compute_exner_from_ground1d.o 
 $(OBJS_O0) : OPT = $(OPT_BASE) $(OPT_PERF0)
 
+ifneq "$(findstring 8,$(LFI_INT))" ""
+OBJS_I8=spll_NEWLFI_ALL.o
+$(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
 

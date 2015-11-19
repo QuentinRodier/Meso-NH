@@ -126,8 +126,8 @@ module load netcdf/3.6.3
 source /bglocal/fe/pub/Modules/default/init/bash
 export MODULEPATH=/bghome/rech/mnh/rmnh007/my_modules:\$MODULEPATH
 module purge
-module load ibmcmp/V1R2M2/14.01.0000.0006/xl.ndebug
-export VER_GA=ga-mpi-5-0-3
+module load ibmcmp/V1R2M2/14.01.0000.0011/gcc.legacy
+export VER_GA=ga-mpi-5-0-3-v1r2m2-gcc-legacy
 module load ga/\${VER_GA}
 "}
               ;;
@@ -255,7 +255,7 @@ export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
 ulimit -s unlimited
-module load intel/15.0.0.090
+module load intel/15.0.3.187
 module load intelmpi/5.0.1.035
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread

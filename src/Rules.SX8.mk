@@ -117,3 +117,9 @@ include Makefile.MESONH.mk
 OBJS0 += spll_ch_jac.o spll_ch_terms.o  \
          spll_fm_writ_ll.o spll_NEWLFI_ALL.o spll_fm_read_ll.o
 $(OBJS0) : OPT_CHECK = 
+
+ifneq "$(findstring 8,$(LFI_INT))" ""
+OBJS_I8=spll_NEWLFI_ALL.o
+$(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
+

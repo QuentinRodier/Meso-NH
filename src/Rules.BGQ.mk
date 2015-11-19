@@ -127,8 +127,9 @@ FX90FLAGS     =  $(OPT) -qfixed
 #
 FC = mpixlf95_r
 FCFLAGS = -qfloat=nomaf
-CC = mpixlc_r
-CFLAGS =  $(FCFLAGS)
+#CC = mpixlc_r
+#CFLAGS =  $(FCFLAGS)
+CC = powerpc64-bgq-linux-gcc
 export CC FCFLAGS CFLAGS
 #
 LDFLAGS   =  $(OPT) -Wl,--relax   
@@ -190,4 +191,9 @@ $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 #spll_prep_surfex.o spll_rad1driv.o spll_rttov_ascii2bin_coef.o spll_rttovcld_testad.o spll_rttovcld_test.o \
 #spll_rttovscatt_test.o spll_spawning.o spll_test_2_coef.o spll_test_coef.o spll_test_errorhandling.o \
 #spll_test_q2v.o spll_xy_to_latlon.o spll_zoom_pgd.o 
+
+ifneq "$(findstring 8,$(LFI_INT))" ""
+OBJS_I8=spll_NEWLFI_ALL.o
+$(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
 

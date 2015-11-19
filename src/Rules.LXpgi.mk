@@ -141,5 +141,8 @@ $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 #VPATH += $(MODULE_SYSTEM)
 #
 
-
+ifneq "$(findstring 8,$(LFI_INT))" ""
+OBJS_I8=spll_NEWLFI_ALL.o
+$(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
 
