@@ -1,0 +1,78 @@
+!SURFEX_LIC Copyright 1994-2014 Meteo-France 
+!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
+!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
+!SURFEX_LIC for details. version 1.
+!     #########
+SUBROUTINE HOR_INTERPOL_NONE_1COV(KLUOUT,PFIELDIN,PFIELDOUT)
+!     #################################################################################
+!
+!!****  *HOR_INTERPOL_NONE_1COV * - Only extrapolation on 1 vertical level only
+!!
+!!    PURPOSE
+!!    -------
+!
+!!**  METHOD
+!!    ------
+!!
+!!    REFERENCE
+!!    ---------
+!!      
+!!
+!!    AUTHOR
+!!    ------
+!!     M.Moge (adapted from  HOR_INTERPOL_NONE)
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original     06/2015
+!!------------------------------------------------------------------
+!
+!
+!
+USE MODD_PREP,       ONLY : XLAT_OUT, XLON_OUT, CMASK
+!
+USE MODD_GRID_BUFFER,  ONLY : NNI
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+!
+USE MODI_PACK_SAME_RANK
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODI_GET_SURF_MASK_n
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
+REAL, POINTER, DIMENSION(:)   :: PFIELDIN  ! field to interpolate horizontally
+REAL, DIMENSION(:), INTENT(OUT) :: PFIELDOUT ! interpolated field
+!
+!*      0.2    declarations of local variables
+!
+INTEGER, DIMENSION(:), ALLOCATABLE :: IMASKOUT ! output mask
+INTEGER                         :: INO      ! output number of points
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!------------------------------------------------------------------------------
+!
+!*      1.    Initialisation of the output mask
+!
+IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_NONE_1COV',0,ZHOOK_HANDLE)
+INO = SIZE(XLAT_OUT)
+ALLOCATE(IMASKOUT(INO))
+ CALL GET_SURF_MASK_n(CMASK,INO,IMASKOUT,NNI,KLUOUT)
+!
+!*      2.    Mask the input field with the output mask
+!!mask du tableau de taille FULL en fonction du type de surface
+ CALL PACK_SAME_RANK(IMASKOUT,PFIELDIN,PFIELDOUT)
+!
+!*      6.    Deallocations
+!
+DEALLOCATE(IMASKOUT)
+IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_NONE_1COV',1,ZHOOK_HANDLE)
+
+!-------------------------------------------------------------------------------------
+END SUBROUTINE HOR_INTERPOL_NONE_1COV
