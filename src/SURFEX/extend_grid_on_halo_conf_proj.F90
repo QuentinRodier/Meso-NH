@@ -63,7 +63,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !* original grid
 REAL                            :: ZLAT0, ZLON0, ZRPK, ZBETA, ZLATOR, ZLONOR
 INTEGER                         :: IIMAX, IJMAX
-REAL, DIMENSION(PGRID_PAR(11))      :: ZX, ZY, ZDX, ZDY
+REAL, DIMENSION(INT(PGRID_PAR(11)))      :: ZX, ZY, ZDX, ZDY
 !
 !* extended grid
 INTEGER                         :: IIMAX_EXTENDED, IJMAX_EXTENDED
