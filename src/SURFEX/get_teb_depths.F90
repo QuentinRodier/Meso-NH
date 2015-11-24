@@ -52,6 +52,8 @@ USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
 !
+USE MODI_READ_COVERS_AND_AV_PGD_1D_ON_LAYERS
+!
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -175,6 +177,9 @@ ELSE
   ALLOCATE(ZPAR_D(ILU,IDATA_LAYER))
   !* reading of the cover to obtain the thickness of layers
   CALL OLD_NAME(HFILEPGDTYPE,'COVER_LIST      ',YRECFM)
+#ifdef MNH_PARALLEL
+  CALL READ_COVERS_AND_AV_PGD_1D_ON_LAYERS( HFILEPGDTYPE, YRECFM, ILU, IDATA_LAYER, ZPAR_D, ZDATA, YAREA,'ARI' )
+#else
   CALL READ_SURF(HFILEPGDTYPE,YRECFM,GCOVER(:),IRESP,HDIR='-')
   !* reading of the cover fractions
   ALLOCATE(ZCOVER(ILU,JPCOVER))
@@ -186,6 +191,7 @@ ELSE
     CALL AV_PGD (ZPAR_D(:,JLAYER), ZCOVER, ZDATA(:,JLAYER),YAREA,'ARI')
   END DO
   DEALLOCATE(ZCOVER)
+#endif
 ENDIF
 !
 !* recomputes the grid from the available data

@@ -48,6 +48,7 @@
 !
 !     Original 04/05/98
 !     Juan     19/08/2005: distinction Halo NORD/SUD & EST/WEST
+!     M.Moge   05/02/2015: extended HALO (halo size + 1)
 !
 !-------------------------------------------------------------------------------
 !
@@ -496,7 +497,12 @@ END INTERFACE
 ! subsets of correspondants for the halos communications
 !
   TYPE(CRSPD_ll), POINTER  :: TSEND_HALO1, TRECV_HALO1, &
-                              TSEND_HALO2, TRECV_HALO2
+                              TSEND_HALO2, TRECV_HALO2, &
+                              TSEND_HALO_EXTENDED, TRECV_HALO_EXTENDED
+!
+! size of the halo used with TSEND_HALO_EXTENDED, TRECV_HALO_EXTENDED
+!
+  INTEGER :: HALOSIZE_EXTENDED
 !
 ! subsets of correspondants for the transpositions communications
 !
@@ -673,6 +679,8 @@ END INTERFACE
   NULLIFY(TP%TRECV_HALO1)
   NULLIFY(TP%TSEND_HALO2)
   NULLIFY(TP%TRECV_HALO2)
+  NULLIFY(TP%TSEND_HALO_EXTENDED)
+  NULLIFY(TP%TRECV_HALO_EXTENDED)
   NULLIFY(TP%TSEND_TRANS_BX)
   NULLIFY(TP%TRECV_TRANS_BX)
   NULLIFY(TP%TSEND_TRANS_XY)

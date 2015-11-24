@@ -54,6 +54,7 @@ END MODULE MODI_MNHGET_SIZE_FULL_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2003 
+!!                  02/2015 (M.Moge) case('PGD') to compute KSIZE_FULL
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -93,7 +94,12 @@ SELECT CASE(CPROGRAM)
     CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 END SELECT
 ! 
-KSIZE_FULL = (IIE-IIB+1+2*NHALO)*(IJE-IJB+1+2*NHALO)
+SELECT CASE(CPROGRAM)
+  CASE ('PGD')
+    KSIZE_FULL = (IIE-IIB+1)*(IJE-IJB+1)
+  CASE DEFAULT
+    KSIZE_FULL = (IIE-IIB+1+2*NHALO)*(IJE-IJB+1+2*NHALO)
+END SELECT
 !
 !-------------------------------------------------------------------------------
 !

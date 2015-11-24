@@ -122,6 +122,7 @@ END MODULE MODI_SET_REFZ
 !!                  26/10/10 (G. Tanguy) add control on rv : if equal to 0
 !!                                       at MINLEVEL, keep 0 for lower levels
 !!                                       (for ideal case)
+!!                  2014 (M.Faivre)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -138,6 +139,9 @@ USE MODD_CST
 USE MODD_GRID_n
 USE MODD_REF
 USE MODD_PARAMETERS
+!
+!20131024 mppdb
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -179,6 +183,10 @@ IKE=IKU-JPVEXT
 !
 ZZMASS(:,:,:)=MZF(1,IKU,1,XZZ(:,:,:))
 ZZMASS(:,:,IKU)=1.5*XZZ(:,:,IKU)-0.5*XZZ(:,:,IKU-1)
+!
+!20131024 check zzmass and pthv
+CALL MPPDB_CHECK3D(PTHV,"SET_REFZ:PTHV",PRECISION)
+CALL MPPDB_CHECK3D(ZZMASS,"SET_REFZ:ZZMASS",PRECISION)
 !                                                         
 !-------------------------------------------------------------------------------
 !

@@ -28,6 +28,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003
+!!      M. Moge     02/2015 parallelization using WRITE_LCOVER
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -39,6 +40,7 @@ USE MODD_SURF_ATM_n,     ONLY : XSEA, XWATER, XNATURE, XTOWN, XCOVER, LCOVER, &
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 !
 USE MODI_WRITE_SURF
+USE MODI_WRITE_LCOVER
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,6 +59,8 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER :: IINFO
+LOGICAL, DIMENSION(JPCOVER)    :: OCOVER   ! tmp list of covers
 !
 !-------------------------------------------------------------------------------
 !
@@ -71,12 +75,10 @@ YCOMMENT = '(-)'
  CALL WRITE_SURF(HPROGRAM,'FRAC_WATER ',XWATER, IRESP,HCOMMENT=YCOMMENT)
  CALL WRITE_SURF(HPROGRAM,'FRAC_TOWN  ',XTOWN,  IRESP,HCOMMENT=YCOMMENT)
 !
-YRECFM='COVER_LIST'
-YCOMMENT='(LOGICAL LIST)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+CALL WRITE_LCOVER(HPROGRAM,LCOVER)
 !
 YCOMMENT='COVER FIELDS'
- CALL WRITE_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HCOMMENT=YCOMMENT,HDIR='H')
 !
 !-------------------------------------------------------------------------------
 !

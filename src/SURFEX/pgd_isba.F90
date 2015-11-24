@@ -55,7 +55,8 @@ USE MODD_ISBA_n,         ONLY : NPATCH, NGROUND_LAYER, NNBIOMASS, CISBA, &
                                 XZ0EFFJPDIR, CPHOTO, LTR_ML, XRM_PATCH,  &
                                 XCLAY, XSAND, XSOC, LSOCP, LNOF,         &
                                 XRUNOFFB, XWDRAIN, LECOCLIMAP,           &
-                                XSOILGRID, LPERM, XPERM, XPH, XFERT 
+                                XSOILGRID, LPERM, XPERM, XPH, XFERT,     &
+                                XDG, NWG_LAYER 
 USE MODD_ISBA_GRID_n,    ONLY : CGRID, XGRID_PAR, XLAT, XLON, XMESH_SIZE
 !
 USE MODD_ISBA_PAR,       ONLY : NOPTIMLAYER, XOPTIMGRID
@@ -75,6 +76,7 @@ USE MODI_WRITE_COVER_TEX_ISBA_PAR
 USE MODI_PGD_TOPO_INDEX
 USE MODI_PGD_ISBA_PAR
 USE MODI_PGD_TOPD
+USE MODI_CONVERT_COVER_ISBA
 !
 USE MODI_READ_SURF
 USE MODI_INIT_IO_SURF_n
@@ -214,6 +216,7 @@ SELECT CASE (CISBA)
 !          
     NGROUND_LAYER = 2
     CPEDOTF       ='CH78'   
+    ALLOCATE(XSOILGRID(0))
     WRITE(ILUOUT,*) '*****************************************'
     WRITE(ILUOUT,*) '* With option CISBA = ',CISBA,'         *'
     WRITE(ILUOUT,*) '* the number of soil layers is set to 2 *'
@@ -224,6 +227,7 @@ SELECT CASE (CISBA)
 !          
     NGROUND_LAYER = 3
     CPEDOTF       ='CH78'    
+    ALLOCATE(XSOILGRID(0))
     WRITE(ILUOUT,*) '*****************************************'
     WRITE(ILUOUT,*) '* With option CISBA = ',CISBA,'         *'
     WRITE(ILUOUT,*) '* the number of soil layers is set to 3 *'
@@ -587,11 +591,29 @@ LECOCLIMAP = OECOCLIMAP
 !
 !-------------------------------------------------------------------------------
 !
+!*   15.      TOPODYN fields
+!             --------------
+!
  CALL PGD_TOPD(HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !
-!*   15.     Prints of cover parameters in a tex file
+!*   16.      ISBA diagnostic PGD fields stored in PGD file for improved efficiency in PREP step
+!             ----------------------------------------------------------------------------------
+!
+IF (LECOCLIMAP) THEN
+  ALLOCATE(XDG(ILU,NGROUND_LAYER,NPATCH))
+  IF (CISBA=='DIF') THEN
+    ALLOCATE(NWG_LAYER(ILU,NPATCH))
+  ELSE
+    ALLOCATE(NWG_LAYER(0,0))
+  END IF
+  CALL CONVERT_COVER_ISBA(CISBA,NUNDEF,XCOVER,'   ','NAT',PSOILGRID=XSOILGRID,PDG=XDG,KWG_LAYER=NWG_LAYER)
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*   17.     Prints of cover parameters in a tex file
 !            ----------------------------------------
 !
 IF (OECOCLIMAP) THEN

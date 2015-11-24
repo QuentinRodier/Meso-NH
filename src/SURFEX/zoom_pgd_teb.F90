@@ -39,6 +39,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
+USE MODD_SURF_PAR,        ONLY : XUNDEF
 !
 USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER
 USE MODD_TEB_GRID_n,      ONLY : XLAT, XLON, CGRID, XGRID_PAR,          &
@@ -208,11 +209,13 @@ SUBROUTINE ZOOM_PGD_TEB_GARDEN
 !
 USE MODI_HOR_INTERPOL
 !
-USE MODD_TEB_VEG_n,    ONLY : CPHOTO, CISBA,                &
+USE MODD_ISBA_PAR,     ONLY : XOPTIMGRID
+USE MODD_TEB_VEG_n,    ONLY : CPHOTO, CISBA,                 &
                               CPEDOTF, NNBIOMASS
-USE MODD_TEB_GARDEN_n, ONLY : NGROUND_LAYER,                &
-                              XSAND, XCLAY,                 &
-                              XWDRAIN, XRUNOFFB, LPAR_GARDEN
+USE MODD_TEB_GARDEN_n, ONLY : NGROUND_LAYER,                 &
+                              XSAND, XCLAY,                  &
+                              XWDRAIN, XRUNOFFB, LPAR_GARDEN,&
+                              XSOILGRID
 !
 IMPLICIT NONE
 !
@@ -292,6 +295,19 @@ ELSE
 ENDIF
 !
 DEALLOCATE(ZIN)
+!
+IF(CISBA=='DIF') THEN
+  ALLOCATE(XSOILGRID(NGROUND_LAYER))
+  XSOILGRID=XUNDEF
+  IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=2) THEN
+    CALL READ_SURF(HPROGRAM,'GD_SOILGRID',XSOILGRID,IRESP,HDIR='-')
+  ELSE
+    XSOILGRID(1:NGROUND_LAYER)=XOPTIMGRID(1:NGROUND_LAYER)
+  ENDIF
+ELSE
+  ALLOCATE(XSOILGRID(0))
+ENDIF
+!
 !
 !* other garden parameters
 !

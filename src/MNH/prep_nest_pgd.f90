@@ -88,6 +88,8 @@
 !!    -------------
 !!      Original    26/09/95
 !!                  30/07/97 (Masson) split of mode_lfifm_pgd
+!!                  2014 (M.Faivre)
+!!                  06/2015 (M.Moge) parallelization 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -133,6 +135,8 @@ USE MODE_UTIL
 #endif
 !
 USE MODE_SPLITTINGZ_ll, ONLY : INI_PARAZ_ll
+USE MODD_VAR_ll, ONLY : NPROC, IP, NMNH_COMM_WORLD
+USE MODE_MNH_WORLD, ONLY : INIT_NMNH_COMM_WORLD
 USE MODE_MPPDB
 !
 IMPLICIT NONE
@@ -160,8 +164,15 @@ LOGICAL, DIMENSION(JPMODELMAX) :: LPACK_ALL! Flag for packing conf. for each PGD
 
 !
 INTEGER                        :: JTIME,ITIME
+INTEGER                        :: IIMAX,IJMAX,IKMAX
+INTEGER                        :: IDXRATIO,IDYRATIO
+INTEGER                        :: IDAD
+INTEGER                        :: II
+LOGICAL     :: GISINIT
 !
 !-------------------------------------------------------------------------------
+!
+CALL MPPDB_INIT()
 !
 CALL MPPDB_INIT()
 !
@@ -196,8 +207,60 @@ CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
 !*       3.    READING OF THE GRIDS
 !              --------------------
 !
+! INITIALIZE MPI :
+IINFO_ll = 0
+CALL MPI_INITIALIZED(GISINIT, IINFO_ll)
+IF (.NOT. GISINIT) THEN
+  CALL INIT_NMNH_COMM_WORLD(IINFO_ll)
+END IF
+CALL MPI_COMM_RANK(NMNH_COMM_WORLD, IP, IINFO_ll)
+IP = IP+1
+CALL MPI_COMM_SIZE(NMNH_COMM_WORLD, NPROC, IINFO_ll)
+!
+CALL SET_DAD0_ll()
+DO JPGD=1,NMODEL
+  ! read and set dimensions and ratios of model JPGD
+  CALL FMREAD(CPGD(JPGD),'IMAX',CLUOUT0,'--',IIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'JMAX',CLUOUT0,'--',IJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'DXRATIO',CLUOUT0,'--',NDXRATIO_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'DYRATIO',CLUOUT0,'--',NDYRATIO_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'XSIZE',CLUOUT0,'--',NXSIZE(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'YSIZE',CLUOUT0,'--',NYSIZE(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'XOR',CLUOUT0,'--',NXOR_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CPGD(JPGD),'YOR',CLUOUT0,'--',NYOR_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL SET_DIM_ll(IIMAX, IJMAX, 1)
+  ! compute origin and end of local subdomain of model JPGD
+  ! initialize variables from MODD_NESTING, origin and end of global model JPGD in coordinates of its father
+  IF ( NDAD(JPGD) > 0 ) THEN
+    NXEND_ALL(JPGD) = NXOR_ALL(JPGD) + NXSIZE(JPGD) - 1 + 2*JPHEXT
+    NYEND_ALL(JPGD) = NYOR_ALL(JPGD) + NYSIZE(JPGD) - 1 + 2*JPHEXT
+  ELSE  ! this is not a son model
+    NXOR_ALL(JPGD) = 1
+    NXEND_ALL(JPGD) = IIMAX+2*JPHEXT
+    NYOR_ALL(JPGD) = 1
+    NYEND_ALL(JPGD) = IJMAX+2*JPHEXT
+  ENDIF
+  ! initialize variables from MODD_DIM_ll, origin and end of global model JPGD in coordinates of its father
+  CALL SET_XOR_ll(NXOR_ALL(JPGD), JPGD)
+  CALL SET_XEND_ll(NXEND_ALL(JPGD), JPGD)
+  CALL SET_YOR_ll(NYOR_ALL(JPGD), JPGD)
+  CALL SET_YEND_ll(NYEND_ALL(JPGD), JPGD)
+  ! set the father model of model JPGD
+! set MODD_NESTING::NDAD using MODD_DIM_ll::NDAD
+! MODD_DIM_ll::NDAD was filled in OPEN_NESTPGD_FILES
+  CALL SET_DAD_ll(NDAD(JPGD), JPGD)
+  ! set the ratio of model JPGD in MODD_DIM_ll
+  CALL SET_XRATIO_ll(NDXRATIO_ALL(JPGD), JPGD)
+  CALL SET_YRATIO_ll(NDYRATIO_ALL(JPGD), JPGD)
+END DO
+!
+! reading of the grids
+!
+  CALL SET_DIM_ll(NXEND_ALL(1)-NXOR_ALL(1)+1-2*JPHEXT, NYEND_ALL(1)-NYOR_ALL(1)+1-2*JPHEXT, 1) 
+  CALL INI_PARAZ_ll(IINFO_ll)
 DO JPGD=1,NMODEL
   CALL GOTO_MODEL(JPGD)
+  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL FMREAD(CPGD(JPGD),'L1D         ',CLUOUT0,'--',L1D_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
   CALL FMREAD(CPGD(JPGD),'L2D         ',CLUOUT0,'--',L2D_ALL(JPGD),IGRID,ILENCH,YCOMMENT,IRESP)
@@ -206,71 +269,18 @@ DO JPGD=1,NMODEL
   CALL READ_HGRID(JPGD,CPGD(JPGD),YMY_NAME,YDAD_NAME,YSTORAGE_TYPE)
   CSTORAGE_TYPE='PG'
 END DO
-!
-!
-!-------------------------------------------------------------------------------
-!
-!*       4.    TESTS ON THE GRIDS
-!              ------------------
-!
-NXOR_ALL(:)=0
-NYOR_ALL(:)=0
-NXEND_ALL(:)=0
-NYEND_ALL(:)=0
-NXSIZE(:)=0
-NYSIZE(:)=0
-NDXRATIO_ALL(:)=0
-NDYRATIO_ALL(:)=0
-!
-!MODEL1
-  ! read the grid in the PGD file
-CALL FMREAD(CPGD(1),'IMAX',CLUOUT0,'--',NXSIZE(1),IGRID,ILENCH,YCOMMENT,IRESP)
-CALL FMREAD(CPGD(1),'JMAX',CLUOUT0,'--',NYSIZE(1),IGRID,ILENCH,YCOMMENT,IRESP)
-!
-CALL SET_DAD0_ll()
-CALL SET_DIM_ll(NXSIZE(1),NYSIZE(1),1)
-CALL SET_XRATIO_ll(1, 1)
-CALL SET_YRATIO_ll(1, 1)
-CALL SET_XOR_ll(1, 1)
-CALL SET_XEND_ll(NXSIZE(1)+2*JPHEXT, 1)
-CALL SET_YOR_ll(1, 1)
-CALL SET_YEND_ll(NYSIZE(1)+2*JPHEXT, 1)
-CALL SET_DAD_ll(0, 1)
-!
-!* loop in this order, to make coherent all the coordinate arrays with model 1
-!
-DO JPGD=2,NMODEL
-  CALL RETRIEVE1_NEST_INFO_n(NDAD(JPGD),JPGD,                               &
-                          NXOR_ALL(JPGD),NYOR_ALL(JPGD),                 &
-                          NXSIZE(JPGD),NYSIZE(JPGD),                     &
-                          NDXRATIO_ALL(JPGD),NDYRATIO_ALL(JPGD))
-
-  NXEND_ALL(JPGD)=NXOR_ALL(JPGD)+NXSIZE(JPGD)+2*JPHEXT -1
-  NYEND_ALL(JPGD)=NYOR_ALL(JPGD)+NYSIZE(JPGD)+2*JPHEXT -1
-
-!!$  CALL SET_LBX_ll(CLBCX(1), JPGD)
-!!$  CALL SET_LBY_ll(CLBCY(1), JPGD)
-  CALL SET_XRATIO_ll(NDXRATIO_ALL(JPGD), JPGD)
-  CALL SET_YRATIO_ll(NDYRATIO_ALL(JPGD), JPGD)
-  CALL SET_XOR_ll(NXOR_ALL(JPGD), JPGD)
-  CALL SET_XEND_ll(NXEND_ALL(JPGD), JPGD)
-  CALL SET_YOR_ll(NYOR_ALL(JPGD), JPGD)
-  CALL SET_YEND_ll(NYEND_ALL(JPGD), JPGD)
-  CALL SET_DAD_ll(NDAD(JPGD), JPGD )
-
-!!$CALL SET_DIM_ll(NXSIZE(JPGD),NYSIZE(JPGD),1)
-
-END DO
-CALL INI_PARAZ_ll(IINFO_ll)
+  CALL INI_PARAZ_ll(IINFO_ll)
 !
 !-------------------------------------------------------------------------------
 !
 !*       5.    MASKS DEFINITIONS
 !              -----------------
 !
+
 DO JPGD=1,NMODEL
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL GOTO_MODEL(JPGD)
+  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
 !!$  CALL INIT_HORGRID_ll_n()
   CALL DEFINE_MASK_n()
 END DO
@@ -284,7 +294,7 @@ WRITE(ILUOUT0,FMT=*)
 WRITE(ILUOUT0,FMT=*) 'field ZS   of all models'
 DO JPGD=NMODEL,1,-1
   CALL GOTO_MODEL(JPGD)
-!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
+  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL NEST_FIELD_n('ZS    ')
 END DO
@@ -295,7 +305,7 @@ WRITE(ILUOUT0,FMT=*)
 WRITE(ILUOUT0,FMT=*) 'field ZSMT of all models'
 DO JPGD=1,NMODEL
   CALL GOTO_MODEL(JPGD)
-!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
+  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL NEST_ZSMT_n('ZSMT  ')
 END DO
@@ -324,8 +334,8 @@ END DO
 !              -------------------------
 !
 DO JPGD=1,NMODEL
-!!$  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_MODEL(JPGD)
+  CALL GO_TOMODEL_ll(JPGD,IINFO_ll)
   CALL GOTO_SURFEX(JPGD,.TRUE.)
   CALL MNHPUT_ZS_n
 END DO

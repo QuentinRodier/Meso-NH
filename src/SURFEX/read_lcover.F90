@@ -36,6 +36,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2008
+!!      M. Moge     02/2015 parallelization
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -51,6 +52,10 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+#ifndef NOMPI
+INCLUDE "mpif.h"
+#endif
+!
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
@@ -65,6 +70,7 @@ INTEGER           :: IRESP          ! Error code after redding
 INTEGER           :: IVERSION       ! version of surfex file being read
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GCOVER ! cover list in the file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER   :: IINFO
 !-------------------------------------------------------------------------------
 !
 !
@@ -80,9 +86,11 @@ END IF
  CALL OLD_NAME(HPROGRAM,'COVER_LIST      ',YRECFM)
  CALL READ_SURF(HPROGRAM,YRECFM,GCOVER(:),IRESP,HDIR='-')
 !
-OCOVER=.FALSE.
-OCOVER(:SIZE(GCOVER))=GCOVER(:)
+#ifndef NOMPI
+CALL MPI_ALLREDUCE(GCOVER, OCOVER, SIZE(GCOVER),MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, IINFO)
+#endif
 DEALLOCATE(GCOVER)
+!
 IF (LHOOK) CALL DR_HOOK('READ_LCOVER',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

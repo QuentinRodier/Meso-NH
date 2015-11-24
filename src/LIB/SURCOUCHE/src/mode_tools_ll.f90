@@ -34,6 +34,7 @@
 !                     (GET_1DGLOBALSLICE_ll, GET_2DGLOBALSLICE_ll),
 !                   GET_SLICE_ll
 !                     (GET_1DSLICE_ll, GET_2DSLICE_ll)
+!                   GET_L2_NORM_ll
 !
 !!    Reference
 !!    ---------
@@ -736,7 +737,7 @@
       END SUBROUTINE GET_INDICE_ll
 !
 !     ##########################################
-      SUBROUTINE GET_GLOBALDIMS_ll(KIMAX, KJMAX)
+      SUBROUTINE GET_GLOBALDIMS_ll(KIMAX, KJMAX, KMODEL)
 !     ##########################################
 !
 !!****  *GET_GLOBALDIMS_ll* - returns the global horizontal dimensions
@@ -788,6 +789,7 @@
 !*       0.1   declarations of arguments
 !
   INTEGER, INTENT(OUT) :: KIMAX, KJMAX ! current model dimensions
+  INTEGER, OPTIONAL, INTENT(IN) :: KMODEL  ! number of the current model
 !
 !*       0.2   declarations of local variables
 !
@@ -797,7 +799,11 @@
 !
 !*       1.    Extract the number of the current model.
 !
+IF ( PRESENT(KMODEL) ) THEN
+  IMODEL = KMODEL
+ELSE
   IMODEL = TCRRT_PROCONF%NUMBER
+ENDIF
 !
 !*       2.    Compute the dimensions of the model
 !
@@ -2781,6 +2787,99 @@
 !
       END SUBROUTINE EXTRACT_ZONE
 !
+!     #################################################
+      SUBROUTINE EXTRACT_ZONE_EXTENDED( TPSPLITS, TPPZS, TPEZS_EXTENDED, HALOSIZE )
+!     #################################################
+!
+!!****  *EXTRACT_ZONE* - routine to construct two splittings variables
+!!                       from a MODELSPLITTING_ll variable
+!
+!!    Purpose
+!!    -------
+!     the Purpose of this routine is to extract two splittings TPPZS,
+!     physical zone splitting and TPEZS_EXTENDED, extended zone splitting with halo of size HALOSIZE
+!     from a MODELSPLITTING_ll TPSPLITS
+!
+!!**  Method
+!!    ------
+!
+!!    External
+!!    --------
+!
+!!    Implicit Arguments
+!!    ------------------
+!     Module MODD_STRUCTURE_ll
+!       types MODELSPLITTING_ll, ZONE_ll
+!
+!     Module MODD_VAR_ll
+!        NPROC - Number of processors
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     R. Guivarch
+!
+!!    Modifications
+!!    -------------
+!     Original 01/05/98
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_STRUCTURE_ll, ONLY : MODELSPLITTING_ll, ZONE_ll
+  USE MODD_VAR_ll, ONLY : NPROC
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  TYPE(MODELSPLITTING_ll), DIMENSION(:), POINTER :: TPSPLITS
+!
+  TYPE(ZONE_ll), DIMENSION(:), INTENT(OUT) :: TPPZS, TPEZS_EXTENDED
+!
+  INTEGER, INTENT(IN) :: HALOSIZE
+!
+!*       0.2   declarations of local variables
+!
+    INTEGER :: J ! loop control variable
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.    FILL TPPZS AND TPEZS FOR EACH J :
+!              -------------------------------
+!
+  DO J = 1, NPROC
+!
+    TPPZS(J) = ZONE_ll( 0, 0, 0, 0, 0, 0, 0, 0 )
+    TPEZS_EXTENDED(J) = ZONE_ll( 0, 0, 0, 0, 0, 0, 0, 0 )
+!
+    TPPZS(J)%NUMBER = TPSPLITS(J)%NUMBER
+    TPPZS(J)%NXOR   = TPSPLITS(J)%NXORP+1
+    TPPZS(J)%NYOR   = TPSPLITS(J)%NYORP+1
+    TPPZS(J)%NXEND  = TPSPLITS(J)%NXENDP+1
+    TPPZS(J)%NYEND  = TPSPLITS(J)%NYENDP+1
+!
+    IF (  TPSPLITS(J)%NDIMXP < HALOSIZE .OR. TPSPLITS(J)%NDIMYP < HALOSIZE ) THEN
+      WRITE(*,*) "WARNING : HALOSIZE is greater than model dimension"
+      WRITE(*,*) "HALOSIZE = ", HALOSIZE
+      WRITE(*,*) "model dimensions : ", TPSPLITS(J)%NDIMXP, "x", TPSPLITS(J)%NDIMYP
+    ENDIF
+!
+    TPEZS_EXTENDED(J)%NUMBER = TPSPLITS(J)%NUMBER
+    TPEZS_EXTENDED(J)%NXOR   = TPSPLITS(J)%NXORP+1-HALOSIZE
+    TPEZS_EXTENDED(J)%NYOR   = TPSPLITS(J)%NYORP+1-HALOSIZE
+    TPEZS_EXTENDED(J)%NXEND  = TPSPLITS(J)%NXENDP+1+HALOSIZE
+    TPEZS_EXTENDED(J)%NYEND  = TPSPLITS(J)%NYENDP+1+HALOSIZE
+!
+  ENDDO
+!
+!-----------------------------------------------------------------------
+!
+      END SUBROUTINE EXTRACT_ZONE_EXTENDED
+!
 !     ###########################################
       SUBROUTINE GLOBAL2LOCAL(TPPROCONF, TPCRSPD)
 !     ###########################################
@@ -2958,6 +3057,274 @@
 !-------------------------------------------------------------------------------
 !
       END SUBROUTINE G2LX
+!
+!     #################################################
+      SUBROUTINE GET_OR_SURFEX_ll( HSPLIT, KOR )
+!     #################################################
+!
+!!****  *GET_LOCAL_PORTION_OF_SURFEX_FIELD2D* - returns the origin index of the extended
+!                     2way subdomain or of the x-slices subdomain
+!                     or of the y-slices
+!                     subdomain of the local processor in a surfex field (global indices)
+!
+!!    Purpose
+!!    -------
+!!     returns the origin index of the extended
+!!                     2way subdomain or of the x-slices subdomain
+!!                     or of the y-slices
+!!                     subdomain of the local processor in a surfex field (global indices)
+!
+!!**  Method
+!!    ------
+!
+!!    External
+!!    --------
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M.Moge
+!
+!!    Modifications
+!!    -------------
+!     Original 16/12/14
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_PARAMETERS, ONLY : JPHEXT
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  CHARACTER*1, INTENT(IN) :: HSPLIT
+  INTEGER, INTENT(OUT) :: KOR
+!
+!*       0.2   declarations of local variables
+!
+  INTEGER :: IXOR_ll, IYOR_ll ! beginning of local subdomain in global coordinates
+!
+!-------------------------------------------------------------------------------
+!
+  CALL GET_OR_ll( HSPLIT, IXOR_ll, IYOR_ll )
+  KOR = (IXOR_ll-JPHEXT)*(IYOR_ll-JPHEXT)
+!
+!-----------------------------------------------------------------------
+!
+      END SUBROUTINE GET_OR_SURFEX_ll
+!
+!
+!     #################################################
+      SUBROUTINE GET_LOCAL_PORTION_OF_SURFEX_FIELD2D( PSURFEXFIELDGLB, POUTPUTFIELDLCL )
+!     #################################################
+!
+!!****  *GET_LOCAL_PORTION_OF_SURFEX_FIELD2D* - extracts local portion of a global
+!!                       surfex field (2D field stored in 1D array)
+!
+!!    Purpose
+!!    -------
+!     extract local portion of a global
+!!    surfex field (2D field stored in 1D array)
+!
+!!**  Method
+!!    ------
+!
+!!    External
+!!    --------
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M.Moge
+!
+!!    Modifications
+!!    -------------
+!     Original 08/12/14
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
+  USE MODD_PARAMETERS, ONLY : JPHEXT
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  REAL, DIMENSION(:), INTENT(IN) :: PSURFEXFIELDGLB
+!
+  REAL, DIMENSION(:), INTENT(OUT) :: POUTPUTFIELDLCL
+!
+!*       0.2   declarations of local variables
+!
+  INTEGER :: JI,JJ ! loop control variables
+  INTEGER :: IXOR, IYOR, IXEND, IYEND ! beginning and end of local subdomain in local coordinates
+  INTEGER :: IXOR_ll, IYOR_ll ! beginning of local subdomain in global coordinates
+  INTEGER :: ICOUNT
+!
+!-------------------------------------------------------------------------------
+!
+  CALL GET_INDICE_ll( IXOR, IYOR, IXEND, IYEND )
+  CALL GET_OR_ll( 'B', IXOR_ll, IYOR_ll )
+!
+  ICOUNT = 1
+  DO JJ=IYOR_ll+IYOR-1-JPHEXT,IYOR_ll+IYEND-1-JPHEXT
+    DO JI=IXOR_ll+IXOR-1-JPHEXT,IXOR_ll+IXEND-1-JPHEXT
+      POUTPUTFIELDLCL(ICOUNT) = PSURFEXFIELDGLB(JI+(NIMAX_ll)*(JJ-1))
+      ICOUNT = ICOUNT+1
+    ENDDO
+  ENDDO
+!
+!-----------------------------------------------------------------------
+!
+      END SUBROUTINE GET_LOCAL_PORTION_OF_SURFEX_FIELD2D
+!
+!
+!     #################################################
+      SUBROUTINE SET_LOCAL_PORTION_OF_SURFEX_FIELD2D( PFIELDLCL, PSURFEXFIELDGLB )
+!     #################################################
+!
+!!****  *GET_LOCAL_PORTION_OF_SURFEX_FIELD2D* - sets values of local portion of a global
+!!                       surfex field (2D field stored in 1D array)
+!
+!!    Purpose
+!!    -------
+!     sets values of local portion of a global
+!!    surfex field (2D field stored in 1D array)
+!
+!!**  Method
+!!    ------
+!
+!!    External
+!!    --------
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M.Moge
+!
+!!    Modifications
+!!    -------------
+!     Original 09/12/14
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
+  USE MODD_PARAMETERS, ONLY : JPHEXT
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  REAL, DIMENSION(:), INTENT(IN) :: PFIELDLCL
+!
+  REAL, DIMENSION(:), INTENT(OUT) :: PSURFEXFIELDGLB
+!
+!*       0.2   declarations of local variables
+!
+  INTEGER :: JI,JJ ! loop control variables
+  INTEGER :: IXOR, IYOR, IXEND, IYEND ! beginning and end of local subdomain in local coordinates
+  INTEGER :: IXOR_ll, IYOR_ll ! beginning of local subdomain in global coordinates
+  INTEGER :: ICOUNT
+!
+!-------------------------------------------------------------------------------
+!
+  CALL GET_INDICE_ll( IXOR, IYOR, IXEND, IYEND )
+  CALL GET_OR_ll( 'B', IXOR_ll, IYOR_ll )
+!
+  ICOUNT = 1
+  DO JJ=IYOR_ll+IYOR-1-JPHEXT,IYOR_ll+IYEND-1-JPHEXT
+    DO JI=IXOR_ll+IXOR-1-JPHEXT,IXOR_ll+IXEND-1-JPHEXT
+      PSURFEXFIELDGLB(JI+(NIMAX_ll)*(JJ-1)) = PFIELDLCL(ICOUNT)
+      ICOUNT = ICOUNT+1
+    ENDDO
+  ENDDO
+!
+!-----------------------------------------------------------------------
+!
+      END SUBROUTINE SET_LOCAL_PORTION_OF_SURFEX_FIELD2D
+!
+!
+!     #################################################
+      SUBROUTINE GET_MEAN_OF_COORD_SQRT_ll(PARRAY,KSIZELOC,KSIZEGLB,PMEANSQRT)
+!     #################################################
+!
+!!****  *GET_L2_NORM_ll* - computes the L2 norm of 1D array PARRAY accross all processes
+!
+!!    Purpose
+!!    -------
+!     computes the L2 norm of 1D array PARRAY accross all processes
+!
+!!**  Method
+!!    ------
+!
+!!    External
+!!    --------
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M.Moge
+!
+!!    Modifications
+!!    -------------
+!     Original 10/12/14
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_VAR_ll, ONLY : MPI_PRECISION
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  REAL, DIMENSION(:), INTENT(IN)  :: PARRAY
+  INTEGER,            INTENT(IN)  :: KSIZELOC
+  INTEGER,            INTENT(IN)  :: KSIZEGLB
+!
+  REAL,               INTENT(OUT) :: PMEANSQRT
+!
+!*       0.2   declarations of local variables
+!
+  REAL    :: IMEANSQRTLOC
+  INTEGER :: IINFO
+!
+!-------------------------------------------------------------------------------
+!
+IMEANSQRTLOC = SUM(SQRT(PARRAY))
+CALL MPI_ALLREDUCE(IMEANSQRTLOC, PMEANSQRT, 1, MPI_PRECISION, MPI_SUM, NMNH_COMM_WORLD,IINFO)
+PMEANSQRT = PMEANSQRT / KSIZEGLB
+!
+!-----------------------------------------------------------------------
+!
+      END SUBROUTINE GET_MEAN_OF_COORD_SQRT_ll
 !
 !     ##########################################################################
       FUNCTION SPREAD_X_ll(HSPLIT, PSOURCE, KDIM, KX, KCOPIES) RESULT(PSPREAD_X)

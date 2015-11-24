@@ -35,7 +35,7 @@ INTEGER,          INTENT(OUT) :: KRESP
 END SUBROUTINE FMLOOK_ll
 
 SUBROUTINE FMOPEN_ll(HFILEM,HACTION,HFIPRI,KNPRAR,KFTYPE,KVERB,KNINAR&
-     & ,KRESP)
+     & ,KRESP,OPARALLELIO)
 CHARACTER(LEN=*),INTENT(IN) ::HFILEM  ! name of the file.
 CHARACTER(LEN=*),INTENT(IN) ::HACTION ! Action upon the file
                                       ! 'READ' or 'WRITE'
@@ -46,13 +46,15 @@ INTEGER,         INTENT(IN) ::KFTYPE  ! type of FM-file.
 INTEGER,         INTENT(IN) ::KVERB   ! level of verbose.
 INTEGER,         INTENT(OUT)::KNINAR  ! number of articles initially present in the file.
 INTEGER,         INTENT(OUT)::KRESP   ! return-code if a problem araised.
+LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
 END SUBROUTINE FMOPEN_ll
 
-SUBROUTINE FMCLOS_ll(HFILEM,HSTATU,HFIPRI,KRESP)
+SUBROUTINE FMCLOS_ll(HFILEM,HSTATU,HFIPRI,KRESP,OPARALLELIO)
 CHARACTER(LEN=*),     INTENT(IN) ::HFILEM  ! file name
 CHARACTER(LEN=*),     INTENT(IN) ::HSTATU  ! status for the closed file
 CHARACTER(LEN=*),     INTENT(IN) ::HFIPRI  ! file for prints in FM
 INTEGER,              INTENT(OUT)::KRESP   ! return-code if problems araised
+LOGICAL,              INTENT(IN),  OPTIONAL :: OPARALLELIO
 END SUBROUTINE FMCLOS_ll
 !
 END INTERFACE

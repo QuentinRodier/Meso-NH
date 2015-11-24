@@ -151,6 +151,8 @@ END MODULE MODI_SET_REF
 !!      Modification    03/12/02  (P. Jabouille)  add no thinshell condition
 !!      Modification    05/06     Remove the 'DAVI' type of lbc
 !!      Modification    07/13     (J.Colin) Special case for LBOUSS=T 
+!!      Modification    07/13     (M.Moge) calling UPDATE_HALO_ll on PRHODJ, PRVREF, 
+!!                                PRHODREF, PEXNREF, PTHVREF after computation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -249,6 +251,7 @@ REAL, ALLOCATABLE, DIMENSION (:,:) :: ZREFMASS_2D , ZMASS_O_PHI0_2D
 REAL, ALLOCATABLE, DIMENSION (:,:) :: ZLINMASS_W_2D , ZLINMASS_E_2D ,  ZLINMASS_S_2D ,  ZLINMASS_N_2D
 !REAL                              :: ZREFMASS , ZMASS_O_PHI0   , ZLINMASS     ! total leak of mass
 !JUAN16
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 !
 !
 !-------------------------------------------------------------------------------
@@ -408,6 +411,17 @@ ELSEIF ( CEQNSYS == 'MAE' .OR. CEQNSYS == 'LHE' ) THEN
   PRHODJ(:,:,:) =  PRHODREF(:,:,:)* PJ(:,:,:)
 END IF
 !
+! update halo of PRHODJ and PRVREF for future use ( notably in anel_balance_n )
+!
+NULLIFY( TZFIELDS_ll )
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PRHODJ)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PRVREF)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PRHODREF)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PEXNREF)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PTHVREF)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!
 CALL MPPDB_CHECK3D(ZRHOREF,"SET_REF::ZRHOREF",PRECISION)
 CALL MPPDB_CHECK3D(PRVREF,"SET_REF::PRVREF",PRECISION)
 CALL MPPDB_CHECK3D(PRHODJ,"SET_REF::PRHODJ",PRECISION)
@@ -504,6 +518,11 @@ IF ( HLBCY(1)=='OPEN' ) THEN
 !
 END IF
 !
+CALL MPPDB_CHECK3D(PRHODREF,"SET_REF::PRHODREF",PRECISION)
+CALL MPPDB_CHECK3D(PTHVREF,"SET_REF::PTHVREF",PRECISION)
+CALL MPPDB_CHECK3D(PRVREF,"SET_REF::PRVREF",PRECISION)
+CALL MPPDB_CHECK3D(PEXNREF,"SET_REF::PEXNREF",PRECISION)
+CALL MPPDB_CHECK3D(PRHODJ,"SET_REF::PRHODJ",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !

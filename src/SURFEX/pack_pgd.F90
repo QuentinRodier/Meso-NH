@@ -37,6 +37,7 @@
 !!
 !!    Original    03/2004
 !!    Escobar J.  08/02/2005 : bug declare ILU local variable
+!!    M.Moge      10/02/2015 parallelization : changes in the calls to GET_COVER_n and GET_ZS_n, use NSIE_FULL instead of NL
 !!
 !----------------------------------------------------------------------------
 !
@@ -63,6 +64,9 @@ USE MODI_GET_SURF_MASK_n
 USE MODI_GET_TYPE_DIM_n
 !
 USE MODI_GET_LUOUT
+!
+USE MODD_SURF_ATM_n, ONLY : NSIZE_FULL
+!
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -92,9 +96,9 @@ INTEGER                        :: JCOVER
 INTEGER, DIMENSION(:), POINTER :: IMASK  ! mask for packing from complete field to nature field
 REAL,    DIMENSION(SIZE(PLAT)) :: ZDIR
 !
-REAL, DIMENSION(NL)    :: ZCOVER ! cover  on all surface points
+REAL, DIMENSION(NSIZE_FULL)    :: ZCOVER ! cover  on all surface points
 LOGICAL, DIMENSION(JPCOVER)    :: GCOVER ! list of existing cover
-REAL, DIMENSION(NL)            :: ZZS    ! zs     on all surface points
+REAL, DIMENSION(NSIZE_FULL)    :: ZZS    ! zs     on all surface points
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
@@ -131,12 +135,12 @@ IF (PRESENT(PDIR)) PDIR = ZDIR
 !             -----------------
 !
 DO JCOVER=1,JPCOVER
-  CALL GET_COVER_n(HPROGRAM,NL,JCOVER,ZCOVER)
+  CALL GET_COVER_n(HPROGRAM,NSIZE_FULL,JCOVER,ZCOVER)
   CALL PACK_SAME_RANK(IMASK,ZCOVER(:),PCOVER(:,JCOVER))
 ENDDO
 
  CALL GET_LCOVER_n(HPROGRAM,JPCOVER,GCOVER)
- CALL GET_ZS_n(HPROGRAM,NL,ZZS)
+ CALL GET_ZS_n(HPROGRAM,NSIZE_FULL,ZZS)
 !
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !

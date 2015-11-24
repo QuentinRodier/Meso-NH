@@ -139,31 +139,15 @@ END IF
 !
 !*       3.    initialisation of 2D arrays
 ! 
-SELECT CASE(CPROGRAM)
-  CASE('NESPGD')
-    NIB = 1 + JPHEXT
-    NIE = NIMAX + JPHEXT
-    NJB = 1 + JPHEXT
-    NJE = NJMAX + JPHEXT
-    NIU = NIMAX + 2* JPHEXT
-    NJU = NJMAX + 2* JPHEXT
-    NIB_ALL = NIB
-    NJB_ALL = NJB
-    NIE_ALL = NIE
-    NJE_ALL = NJE
-    NIU_ALL = NIU
-    NJU_ALL = NJU
-  CASE DEFAULT
-    CALL GET_DIM_EXT_ll('B',NIU,NJU)
-    CALL GET_INDICE_ll (NIB,NJB,NIE,NJE)
-    CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
-    NIB_ALL = 1 + JPHEXT
-    NIE_ALL = NIMAX_ll + JPHEXT
-    NJB_ALL = 1 + JPHEXT
-    NJE_ALL = NJMAX_ll + JPHEXT
-    NIU_ALL = NIMAX_ll + 2* JPHEXT
-    NJU_ALL = NJMAX_ll + 2* JPHEXT
-END SELECT
+CALL GET_DIM_EXT_ll('B',NIU,NJU)
+CALL GET_INDICE_ll (NIB,NJB,NIE,NJE)
+CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
+NIB_ALL = 1 + JPHEXT
+NIE_ALL = NIMAX_ll + JPHEXT
+NJB_ALL = 1 + JPHEXT
+NJE_ALL = NJMAX_ll + JPHEXT
+NIU_ALL = NIMAX_ll + 2* JPHEXT
+NJU_ALL = NJMAX_ll + 2* JPHEXT
 !
 !
 !*       4.    initialisation 1D physical dimension and mask

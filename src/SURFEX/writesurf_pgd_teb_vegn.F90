@@ -38,9 +38,12 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_PAR,          ONLY : XUNDEF, NUNDEF
+USE MODD_TEB_n,             ONLY : LECOCLIMAP, XGARDEN
 USE MODD_TEB_VEG_n,         ONLY : CISBA
 USE MODD_TEB_GARDEN_n,      ONLY : NGROUND_LAYER, XSOILGRID,         &
-                                   XCLAY, XSAND, XRUNOFFB, XWDRAIN  
+                                   XCLAY, XSAND, XRUNOFFB, XWDRAIN,  &
+                                   XDG, NWG_LAYER
 USE MODD_DATA_TEB_GARDEN_n, ONLY : NTIME
 !
 USE MODI_WRITE_SURF
@@ -63,7 +66,10 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 !
+INTEGER :: JL ! loop counter
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL, DIMENSION(:), ALLOCATABLE :: ZWORK
 !
 !-------------------------------------------------------------------------------
 !
@@ -119,6 +125,44 @@ YRECFM='GD_WDRAIN'
 YCOMMENT='X_Y_GD_WDRAIN'
  CALL WRITE_SURF(HPROGRAM,YRECFM,XWDRAIN,IRESP,HCOMMENT=YCOMMENT)
 !
+!-------------------------------------------------------------------------------
+!
+!*    3.      ISBA diagnostic PGD fields stored in PGD file for improved efficiency in PREP step
+!             ----------------------------------------------------------------------------------
+!
+IF (LECOCLIMAP .AND. ASSOCIATED(XDG)) THEN
+  ALLOCATE(ZWORK(SIZE(XDG,1)))
+!
+!* Soil depth for each patch
+!
+  DO JL=1,SIZE(XDG,2)
+    IF (JL<10) THEN
+      WRITE(YRECFM,FMT='(A9,I1)') 'GD_ECO_DG',JL
+    ELSE
+      WRITE(YRECFM,FMT='(A9,I2)') 'GD_ECO_DG',JL          
+    ENDIF
+    YCOMMENT='soil depth from ecoclimap'//' (M)'
+    ZWORK(:) = XDG(:,JL)
+    IF (ASSOCIATED(XGARDEN)) THEN  ! in PGD step, XGARDEN is not associated. In other steps, it is.
+      WHERE (XGARDEN==0.) ZWORK=XUNDEF
+    END IF
+    CALL WRITE_SURF(HPROGRAM,YRECFM,ZWORK(:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+!* Number of soil layers for moisture
+!
+  IF (CISBA=='DIF') THEN
+    YRECFM='GD_ECO_WG_L'
+    YCOMMENT='Number of soil layers for moisture in ISBA-DIF'
+    ZWORK=FLOAT(NWG_LAYER(:))
+    IF (ASSOCIATED(XGARDEN)) THEN
+      WHERE (XGARDEN==0.) ZWORK=FLOAT(NUNDEF)
+    END IF
+    CALL WRITE_SURF(HPROGRAM,YRECFM,ZWORK(:),IRESP,HCOMMENT=YCOMMENT)
+  END IF
+
+  DEALLOCATE(ZWORK)
+END IF
+
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_TEB_VEG_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

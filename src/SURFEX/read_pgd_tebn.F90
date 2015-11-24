@@ -33,6 +33,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
+!!      M. Moge     02/2015 READ_SURF
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -161,7 +162,7 @@ ALLOCATE(LCOVER(JPCOVER))
  CALL READ_LCOVER(HPROGRAM,LCOVER)
 !
 ALLOCATE(XCOVER(NDIM,JPCOVER))
- CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP)
+ CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HDIR='H')
 !
 !* orography
 !

@@ -85,6 +85,7 @@ END MODULE MODI_VER_INTERP_FIELD
 !!      Original    17/07/97
 !!                  14/09/97 (V. Masson) Interpolation of relative humidity
 !!                  05/06     Remobe KEPS
+!!                  2014  (M.Faivre)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -98,6 +99,14 @@ USE MODD_VER_INTERP_LIN
 USE MODI_SHUMAN
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
+!$20140709
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_FIELD_n     ! modules relative to the outer model $n
+USE MODD_LSFIELD_n
+USE MODE_MPPDB
+!$20140710
+USE MODE_ll
+USE MODD_LBC_n
 !
 IMPLICIT NONE
 !
@@ -126,6 +135,12 @@ INTEGER :: JRR, JSV
 INTEGER :: IKU
 INTEGER :: IKB
 REAL, DIMENSION(SIZE(PZZ_LS,1),SIZE(PZZ_LS,2),SIZE(PZZ_LS,3)) :: ZGRID1, ZGRID2
+!$20140709
+TYPE(LIST_ll), POINTER :: TZLSFIELD_ll   ! list of LS fields
+INTEGER :: IINFO_ll
+!$20140710
+INTEGER JI,JJ,IIB,IJB,IIE,IJE
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.     Prologue
@@ -134,6 +149,8 @@ REAL, DIMENSION(SIZE(PZZ_LS,1),SIZE(PZZ_LS,2),SIZE(PZZ_LS,3)) :: ZGRID1, ZGRID2
 IKU=SIZE(PZZ,3)
 !
 IKB=1+JPVEXT
+!$20140710
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -150,16 +167,37 @@ ZGRID2(:,:,:)=MZF(1,IKU,1,PZZ(:,:,:))
 ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !* move the first physical level if above the target grid
 ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
+!$20140710
+CALL MPPDB_CHECK3D(ZGRID1,"VERINTERPFIELDbefMXM:ZGRID1",PRECISION)
+CALL MPPDB_CHECK3D(ZGRID2,"VERINTERPFIELDbefMXM:ZGRID2",PRECISION)
 !* shift to U points
+!$20140710pb with MXM,MYM: MPPDB pb
+!$if cancel MXM, MYM then PUM,PVM are ok
 ZGRID1(:,:,:)=MXM(ZGRID1(:,:,:))
-ZGRID1(1,:,:)=2.*ZGRID1(2,:,:)-ZGRID1(3,:,:)
 ZGRID2(:,:,:)=MXM(ZGRID2(:,:,:))
-ZGRID2(1,:,:)=2.*ZGRID2(2,:,:)-ZGRID2(3,:,:)
+DO JI=JPHEXT,1,-1
+   ZGRID1(JI,:,:)=2.*ZGRID1(JI+1,:,:)-ZGRID1(JI+2,:,:)
+   ZGRID2(JI,:,:)=2.*ZGRID2(JI+1,:,:)-ZGRID2(JI+2,:,:)
+ENDDO
+!$20140710 update_halo
+NULLIFY(TZLSFIELD_ll)
+CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID1)
+CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID2)
+CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZLSFIELD_ll)
 !
+!$20140710
+CALL MPPDB_CHECK3D(ZGRID1,"VERINTERPFIELDaftMXM:ZGRID1",PRECISION)
+CALL MPPDB_CHECK3D(ZGRID2,"VERINTERPFIELDaftMXM:ZGRID2",PRECISION)
+!
+!$20140710 add NKLIN and XCOEFLIN in COEF_VER_INTERP
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
 PUT  (:,:,:)   =  VER_INTERP_LIN(PUT   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSUM (:,:,:)  =  VER_INTERP_LIN(PLSUM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
+!$20140709
+CALL MPPDB_CHECK3D(PUT,"VERINTERPFIELD:PUT",PRECISION)
+!$
 !
 !*       2.2    V component
 !               -----------
@@ -172,15 +210,28 @@ ZGRID2(:,:,IKU)=2.*ZGRID2(:,:,IKU-1)-ZGRID2(:,:,IKU-2)
 !* move the first physical level if above the target grid
 ZGRID1(:,:,1:IKB)=MIN(ZGRID1(:,:,1:IKB),ZGRID2(:,:,1:IKB))
 !* shift to V points
+
 ZGRID1(:,:,:)=MYM(ZGRID1(:,:,:))
-ZGRID1(:,1,:)=2.*ZGRID1(:,2,:)-ZGRID1(:,3,:)
 ZGRID2(:,:,:)=MYM(ZGRID2(:,:,:))
-ZGRID2(:,1,:)=2.*ZGRID2(:,2,:)-ZGRID2(:,3,:)
-!
+DO JJ=JPHEXT,1,-1
+   ZGRID1(:,JJ,:)=2.*ZGRID1(:,JJ+1,:)-ZGRID1(:,JJ+2,:)
+   ZGRID2(:,JJ,:)=2.*ZGRID2(:,JJ+1,:)-ZGRID2(:,JJ+2,:)
+ENDDO
+!$20140711 updatehalo(zg1,2) also here
+NULLIFY(TZLSFIELD_ll)
+CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID1)
+CALL ADD3DFIELD_ll(TZLSFIELD_ll,ZGRID2)
+CALL UPDATE_HALO_ll(TZLSFIELD_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZLSFIELD_ll)
+!$
 CALL COEF_VER_INTERP_LIN(ZGRID1(:,:,:),ZGRID2(:,:,:))
 !
+!$20140710
+CALL MPPDB_CHECK3D(XCOEFLIN,"VERINTERPFIELDaftVerinterplin:XCOEFLIN",PRECISION)
 PVT  (:,:,:)   =  VER_INTERP_LIN(PVT   (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 PLSVM (:,:,:)  =  VER_INTERP_LIN(PLSVM (:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
+!$20140710
+CALL MPPDB_CHECK3D(PVT,"VERINTERPFIELDaftVerinterplin:PVT",PRECISION)
 !
 !*       2.3    W component
 !               -----------

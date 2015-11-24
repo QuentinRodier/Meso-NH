@@ -32,12 +32,18 @@ CONTAINS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004 
+!!        M.Moge    06/2015 broadcast the space step to all MPI processes (necessary for reproductibility)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
+#ifdef MNH_PARALLEL
+USE MODD_VAR_ll, ONLY : NPROC, IP, MPI_PRECISION, NMNH_COMM_WORLD, YSPLITTING
+USE MODD_MPIF
+USE MODE_TOOLS_ll, ONLY : GET_OR_ll
+#endif
 !
 IMPLICIT NONE
 !
@@ -72,6 +78,12 @@ LOGICAL                         :: GFULL    ! T : entire grid is stored
 INTEGER                         :: IL       ! number of points
 INTEGER                         :: JJ       ! loop counter
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+#ifdef MNH
+INTEGER                         :: IINFO_ll
+INTEGER                         :: IXOR, IYOR
+INTEGER                         :: IXORMIN, IYORMIN
+INTEGER                         :: IROOT, IROOTPROC
+#endif
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:PUT_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
 !
@@ -98,7 +110,41 @@ PGRID_PAR(8) = FLOAT(KJMAX)
 IF (IL>0) THEN
   PGRID_PAR(9) = PDX(1)
   PGRID_PAR(10)= PDY(1)
-ELSE
+END IF
+#ifdef MNH_PARALLEL
+!get the index of the process with IL>0 that own the southmost and the westmost point
+!then broadcast the value of PDX and PDY at these points
+IF ( NPROC > 1 ) THEN
+! we need to determine wich processes own the southmost and the westmost point
+  CALL GET_OR_ll( YSPLITTING, IXOR, IYOR )
+  IF ( IL==0 ) THEN ! we don't consider processes with IL==0
+    IXOR = NUNDEF
+    IYOR = NUNDEF
+  ENDIF
+  ! get the processes with IL>0 with the westmost points
+  CALL MPI_ALLREDUCE(IXOR, IXORMIN, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  IF ( IXOR == IXORMIN ) THEN
+    IROOT = IP-1
+  ELSE
+    IROOT = NPROC
+  ENDIF
+  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+! Then this process broadcasts the space steps in X direction in order to have the same space steps on all processes
+  CALL MPI_BCAST(PGRID_PAR(9), 1, MPI_PRECISION, IROOTPROC, NMNH_COMM_WORLD, IINFO_ll)
+  !
+  ! get the processes with IL>0 with the southmost points
+  CALL MPI_ALLREDUCE(IYOR, IYORMIN, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+  IF ( IYOR == IYORMIN ) THEN
+    IROOT = IP-1
+  ELSE
+    IROOT = NPROC
+  ENDIF
+  CALL MPI_ALLREDUCE(IROOT, IROOTPROC, 1, MPI_INTEGER, MPI_MIN, NMNH_COMM_WORLD, IINFO_ll) 
+! Then this process broadcasts the space steps in Y direction in order to have the same space steps on all processes
+  CALL MPI_BCAST(PGRID_PAR(10), 1, MPI_PRECISION, IROOTPROC, NMNH_COMM_WORLD, IINFO_ll)
+ENDIF
+#endif
+IF (IL<=0) THEN
   PGRID_PAR(9) = XUNDEF
   PGRID_PAR(10)= XUNDEF
 END IF

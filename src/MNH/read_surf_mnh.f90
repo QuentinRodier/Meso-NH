@@ -698,6 +698,172 @@ DEALLOCATE(IMASK)
 END SUBROUTINE READ_SURFX2COV_MNH
 !
 !     #############################################################
+      SUBROUTINE READ_SURFX2COV_1COV_MNH(HREC,KL1,KCOVER,PFIELD,KRESP,HCOMMENT,HDIR)
+!     #############################################################
+!
+!!****  *READX1* - routine to fill a real 2D array for the externalised surface
+!!                 with Logical mask on one specified vertical level
+!!
+!!    PURPOSE
+!!    -------
+!
+!       The purpose of READ_SURFX1 is
+!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!      S.Malardel      *METEO-FRANCE*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!      original                                                     01/08/03
+!----------------------------------------------------------------------------
+!
+!*      0.    DECLARATIONS
+!             ------------
+!
+USE MODE_FM
+USE MODE_FMREAD
+USE MODE_ll
+USE MODE_IO_ll
+!
+USE MODD_CST,         ONLY : XPI
+!
+USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE , NLUOUT,  NMASK, &
+                             NIU, NJU, NIB, NJB, NIE, NJE, &
+                             NIU_ALL, NJU_ALL, NIB_ALL,    &
+                             NJB_ALL, NIE_ALL, NJE_ALL,    &
+                             NMASK_ALL
+!
+USE MODI_PACK_2D_1D
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+CHARACTER(LEN=16),   INTENT(IN) :: HREC     ! name of the article to be read
+INTEGER,             INTENT(IN) :: KL1  !  number of points
+INTEGER,             INTENT(IN) :: KCOVER ! index of the vertical level, it should be a index such that LCOVER(KCOVER)=.TRUE.
+REAL, DIMENSION(KL1), INTENT(OUT):: PFIELD   ! array containing the data field
+INTEGER,             INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
+CHARACTER(LEN=100),  INTENT(OUT):: HCOMMENT ! comment
+CHARACTER(LEN=1),    INTENT(IN) :: HDIR     ! type of field :
+!                                           ! 'H' for HOR : with hor. dim.; and  distributed.
+!                                           ! 'A' for ALL : with hor. dim.; and not distributed.
+!                                           ! '-' : no horizontal dim.
+
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER           :: IGRID          ! IGRID : grid indicator
+INTEGER           :: ILENCH         ! ILENCH : length of comment string
+
+INTEGER           :: IMASDEV
+CHARACTER(LEN=20) :: YREC
+CHARACTER(LEN=2)  :: YDIR
+CHARACTER(LEN=2)  :: YSTORAGE_TYPE
+!
+INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
+INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for packing
+!JUANZ
+INTEGER           :: NCOVER,ICOVER,JL2
+REAL,DIMENSION(:,:), ALLOCATABLE :: ZWORK2D
+!JUANZ
+INTEGER  :: IVERSION, IBUGFIX
+LOGICAL  :: GCOVER_PACKED ! .T. if COVER are all packed into one field
+ CHARACTER(LEN=1)   :: YDIR1
+!-------------------------------------------------------------------------------
+!
+KRESP = 0
+!YDIR1 = 'H'
+!IF (PRESENT(HDIR)) YDIR1 = HDIR
+YDIR1 = HDIR
+!
+IF (YDIR1=='A') THEN
+  YDIR="--"
+  IIU = NIU_ALL
+  IJU = NJU_ALL
+  IIB = NIB_ALL
+  IJB = NJB_ALL
+  IIE = NIE_ALL
+  IJE = NJE_ALL
+  ALLOCATE(IMASK(SIZE(NMASK_ALL)))
+  IMASK = NMASK_ALL
+ELSE
+  YDIR="XY"
+  IIU = NIU
+  IJU = NJU
+  IIB = NIB
+  IJB = NJB
+  IIE = NIE
+  IJE = NJE
+  ALLOCATE(IMASK(SIZE(NMASK)))
+  IMASK = NMASK
+END IF
+!
+!! Reading of a 2D fields, masked and packed into 1D vector
+!
+!
+ALLOCATE (ZWORK2D(IIU,IJU))
+ZWORK2D(:,:) =  0.0
+!
+ 
+CALL FMREAD(CFILE,'VERSION',COUT,'--',IVERSION,IGRID,ILENCH,HCOMMENT,KRESP)
+!GAELLE CALL FMREAD(CFILE,'BUGFIX',COUT,'--',IBUGFIX,IGRID,ILENCH,HCOMMENT,KRESP)
+CALL FMREAD(CFILE,'BUG   ',COUT,'--',IBUGFIX,IGRID,ILENCH,HCOMMENT,KRESP)
+
+IF (IVERSION<7 .OR. (IVERSION==7 .AND. IBUGFIX==0)) THEN
+  GCOVER_PACKED = .FALSE.
+ELSE
+  CALL FMREAD(CFILE,'COVER_PACKED',COUT,'--',GCOVER_PACKED,IGRID,ILENCH,HCOMMENT,KRESP)
+END IF
+!
+IF (.NOT. GCOVER_PACKED) THEN
+  WRITE(YREC,'(A5,I3.3)') 'COVER',KCOVER
+  CALL FMREAD(CFILE,YREC,COUT,YDIR1,ZWORK2D(:,:),IGRID,ILENCH,HCOMMENT,KRESP)
+ELSE
+  WRITE(NLUOUT,*) 'WARNING'
+  WRITE(NLUOUT,*) '-------'
+  WRITE(NLUOUT,*) 'error : GCOVER_PACKED = ', GCOVER_PACKED, ' and we try to read the covers one by one '
+  WRITE(NLUOUT,*) ' '
+  CALL ABORT
+!  CALL FMREAD(CFILE,HREC,COUT,YDIR,ZWORK2D(:,:,:),IGRID,ILENCH,HCOMMENT,KRESP)
+END IF
+!
+IF (KRESP /=0) THEN
+  WRITE(NLUOUT,*) 'WARNING'
+  WRITE(NLUOUT,*) '-------'
+  WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+  WRITE(NLUOUT,*) ' '
+ELSE IF (YDIR1=='H' .OR. YDIR1=='A') THEN
+   CALL PACK_2D_1D(IMASK,ZWORK2D(IIB:IIE,IJB:IJE),PFIELD(:))
+END IF
+!
+DEALLOCATE(ZWORK2D)
+
+
+DEALLOCATE(IMASK)
+!-------------------------------------------------------------------------------
+END SUBROUTINE READ_SURFX2COV_1COV_MNH
+!
+!     #############################################################
       SUBROUTINE READ_SURFN0_MNH(HREC,KFIELD,KRESP,HCOMMENT)
 !     #############################################################
 !

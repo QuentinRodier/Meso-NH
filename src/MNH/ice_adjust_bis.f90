@@ -56,6 +56,7 @@ END MODULE MODI_ICE_ADJUST_BIS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original         09/2012
+!!      M.Moge           08/2015 UPDATE_HALO_ll on PTH, ZRV, ZRC, ZRI
 !!
 !! --------------------------------------------------------------------------
 !
@@ -67,6 +68,8 @@ USE MODD_CST, ONLY : XCPD, XRD, XP00
 USE MODI_COMPUTE_FUNCTION_THERMO
 USE MODI_TH_R_FROM_THL_RT_3D
 USE MODI_THLRT_FROM_THRVRCRI
+!
+USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -86,6 +89,9 @@ REAL, DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)) :: ZFRAC_ICE, ZRSATW, ZRSAT
 REAL, DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)) :: ZT, ZEXN, ZLVOCPEXN,ZLSOCPEXN
 INTEGER :: IRR
 CHARACTER(LEN=1) :: YFRAC_ICE
+!
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 !----------------------------------------------------------------------------
 !
 !*      1 Initialisation
@@ -123,6 +129,18 @@ CALL TH_R_FROM_THL_RT_3D(YFRAC_ICE,ZFRAC_ICE(:,:,:),PP(:,:,:), &
                          ZTHL(:,:,:), ZRW(:,:,:), PTH(:,:,:),  &
                          ZRV(:,:,:), ZRC(:,:,:), ZRI(:,:,:),   &
                          ZRSATW(:,:,:), ZRSATI(:,:,:)          )
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PTH)
+IF (IRR>=1) THEN
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRV)
+ENDIF
+IF (IRR>=2) THEN
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRC)
+ENDIF
+IF (IRR>=4) THEN
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRI)
+ENDIF
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 
 IF (IRR>=1) &

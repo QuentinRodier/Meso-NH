@@ -32,6 +32,7 @@ SUBROUTINE HOR_INTERPOL_CONF_PROJ(KLUOUT,PFIELDIN,PFIELDOUT)
 !!                          not bug in case 2D (this is not the more beautiful
 !!                          method; the BILIN routine should better be adapted)
 !!                          Search  ! Ajout MT
+!!    10/02/15 M.Moge  using SIZE(PFIELDOUT,1) instead of SIZE(XLAT_OUT)
 !-------------------------------------------------------------------------------
 !
 !
@@ -65,8 +66,8 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFIELDIN           ! input field
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFIELDIN_DUPLIQUE  ! input field               ! Ajout MT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZFIELDOUT_DUPLIQUE ! interpolated output field ! Ajout MT
 !
-INTEGER                           :: INO      ! output number of points
-INTEGER                         :: JI,JJ,JL     ! loop index
+INTEGER                           :: INO          ! output number of points
+INTEGER                           :: JI,JJ,JL     ! loop index
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -76,7 +77,7 @@ LOGICAL, DIMENSION(:), ALLOCATABLE :: GINTERP_DUPLIQUE ! .true. where physical v
 !*      1.    Allocations
 !
 IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_CONF_PROJ',0,ZHOOK_HANDLE)
-INO = SIZE(XLAT_OUT)
+INO = SIZE(PFIELDOUT,1)
 !
 ALLOCATE(ZX      (INO))
 ALLOCATE(ZY      (INO))
@@ -90,7 +91,7 @@ END IF
 !*      2.    Transformation of latitudes/longitudes into metric coordinates of output grid
 !
  CALL XY_CONF_PROJ(XLAT0,XLON0,XRPK,XBETA,XLATORI,XLONORI, &
-                    ZX,ZY,XLAT_OUT,XLON_OUT          )  
+                    ZX,ZY,XLAT_OUT,XLON_OUT          )
 !
 !*      3.    Put input field on its squared grid
 !

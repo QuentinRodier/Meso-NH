@@ -133,6 +133,8 @@ END MODULE MODI_VER_INT_THERMO
 !!                                       interpolation routine
 !!                  26/01/98 (J. Stein)  add the LS fields' treatment
 !!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
+!!                      2014 (M.Faivre)
+!!                   08/2015 (M.Moge)    add UPDATE_HALO_ll(PR(:,:,:,1)) in part 6.3
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -162,6 +164,9 @@ USE MODE_MPPDB
 USE MODE_EXTRAPOL
 !JUAN REALZ
 USE MODI_SECOND_MNH
+!
+USE MODE_ll
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 IMPLICIT NONE
 !
@@ -254,7 +259,12 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3))&
 !                                                ! points in the MESO-NH grid.
 INTEGER                     :: JRR               ! counter for moist variables
 INTEGER,DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2))   :: IJCOUNT 
-!-------------------------------------------------------------------------------
+!
+!20131113 add vars related to ADD3DFIELD and UPDATE_HALO
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
+!
+!------------------------------------------------------------------------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
@@ -289,7 +299,15 @@ END IF
 CALL COMPUTE_EXNER_FROM_TOP(PTHV_MX,PZFLUX_MX,PEXNTOP2D,ZHEXN_MX,ZHEXNMASS_MX)
 !
 ZP_MX(:,:,:)=PPMHP_MX(:,:,:) + XP00 * ZHEXNMASS_MX(:,:,:) ** (XCPD/XRD)
-
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZP_MX,"ver_int_thermo2a::ZP_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZP_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZP_MX,"ver_int_thermo2a::ZP_MX",PRECISION)
+!
 CALL EXTRAPOL('E',ZP_MX)
 CALL MPPDB_CHECK3D(ZP_MX,"VER_INT_THERMO:ZP_MX",PRECISION)
 !
@@ -298,10 +316,26 @@ CALL MPPDB_CHECK3D(ZP_MX,"VER_INT_THERMO:ZP_MX",PRECISION)
 !
 ZEXNMASS_MX(:,:,:)= (ZP_MX(:,:,:)/XP00) ** (XRD/XCPD)
 !
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZEXNMASS_MX,"ver_int_thermo2a::ZEXNMASS_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZEXNMASS_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZEXNMASS_MX,"ver_int_thermo2a::ZEXNMASS_MX",PRECISION)
+!
 !*       2.3   shift
 !              -----
 !
 ZPMHPOHP_SH(:,:,:) = PPMHP_MX(:,:,:) / (XP00*ZHEXNMASS_MX(:,:,:) ** (XCPD/XRD))
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZPMHPOHP_SH,"ver_int_thermo2a::ZPMHPOHP_SH",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZPMHPOHP_SH)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZPMHPOHP_SH,"ver_int_thermo2a::ZPMHPOHP_SH",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -322,14 +356,36 @@ CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),PZMASS_MX(:,:,:))
 ZTHV_FREE_MX(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"VER_INT_THERMO:ZTHV_FREE_MX",PRECISION)
 !
-
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo3a::ZTHV_FREE_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHV_FREE_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll) 
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZTHV_FREE_MX,"ver_int_thermo2a::ZTHV_FREE_MX",PRECISION)
+!
 CALL COEF_VER_INTERP_LIN(ZZ_FREE(:,:,:),ZZMASS_SH(:,:,:))
 ZTHV_FREE_SH(:,:,:)=VER_INTERP_LIN(ZTHV_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"VER_INT_THERMO:ZTHV_FREE_SH",PRECISION)
 !
-!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo3a::ZTHV_FREE_SH",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHV_FREE_SH)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZTHV_FREE_SH,"ver_int_thermo2a::ZTHV_FREE_SH",PRECISION)
 !
 ZTHV_SH(:,:,:) = PTHV_MX(:,:,:) - ZTHV_FREE_MX(:,:,:) + ZTHV_FREE_SH(:,:,:)
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZTHV_SH,"ver_int_thermo3a::ZTHV_SH",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHV_SH)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZTHV_SH,"ver_int_thermo2a::ZTHV_SH",PRECISION)
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -341,9 +397,35 @@ ZTHV_SH(:,:,:) = PTHV_MX(:,:,:) - ZTHV_FREE_MX(:,:,:) + ZTHV_FREE_SH(:,:,:)
 !
 ZRV_MX(:,:,:)=MAX(PR_MX(:,:,:,1),1.E-10)
 ZTH_MX(:,:,:)=PTHV_MX(:,:,:)*(1.+WATER_SUM(PR_MX(:,:,:,:)))/(1.+XRV/XRD*ZRV_MX(:,:,:))
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4a::ZTH_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTH_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZTH_MX,"ver_int_thermo4b::ZTH_MX",PRECISION)
+!
 ZT_MX(:,:,:)=ZTH_MX(:,:,:)*ZEXNMASS_MX(:,:,:)
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4a::ZT_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZT_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZT_MX,"ver_int_thermo4b::ZT_MX",PRECISION)
+!
 ZES_MX(:,:,:)=SM_FOES(ZT_MX(:,:,:))
 ZHU_MX(:,:,:)=100.*ZP_MX(:,:,:)/(XRD/XRV/ZRV_MX(:,:,:)+1.)/ZES_MX(:,:,:)
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZHU_MX,"ver_int_thermo4a::ZHU_MX",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZHU_MX)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZHU_MX,"ver_int_thermo4b::ZHU_MX",PRECISION)
 !
 !*       4.2   Computation of the relative humidity on the shifted grid
 !              --------------------------------------------------------
@@ -362,6 +444,15 @@ CALL COMPUTE_EXNER_FROM_TOP(ZTHV_SH,ZZFLUX_SH,PEXNTOP2D,ZHEXNFLUX_SH,ZHEXNMASS_S
 CALL EXTRAPOL('E',ZHEXNMASS_SH)
 !
 ZPMASS_SH(:,:,:)= (ZPMHPOHP_SH(:,:,:)+1.) * XP00 * ZHEXNMASS_SH(:,:,:)**(XCPD/XRD)
+!
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZPMASS_SH,"ver_int_thermo4a::ZPMASS_SH",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZPMASS_SH)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZPMASS_SH,"ver_int_thermo4b::ZPMASS_SH",PRECISION)
+!
 CALL EXTRAPOL('E',ZPMASS_SH)
 CALL MPPDB_CHECK3D(ZPMASS_SH,"VER_INT_THERMO:ZPMASS_SH",PRECISION)
 !
@@ -369,6 +460,13 @@ CALL MPPDB_CHECK3D(ZPMASS_SH,"VER_INT_THERMO:ZPMASS_SH",PRECISION)
 ZPMHP_SH(:,:,:) = ZPMASS_SH(:,:,:) - XP00 * ZHEXNMASS_SH(:,:,:) ** (XCPD/XRD)
 CALL MPPDB_CHECK3D(ZPMHP_SH,"VER_INT_THERMO:ZPMHP_SH",PRECISION)
 !
+!20131113 add update_halo here
+CALL MPPDB_CHECK3D(ZPMHP_SH,"ver_int_thermo4a::ZPMHP_SH",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZPMHP_SH)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZPMHP_SH,"ver_int_thermo4b::ZPMHP_SH",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -387,6 +485,15 @@ CALL SECOND_MNH(ZTIME1)
 !
 IF (NVERB>4) THEN
   ZTV_SH(:,:,:)=ZTHV_SH(:,:,:)*(ZPMASS_SH(:,:,:)/XP00)**(XRD/XCPD)
+  !
+  !20131113 add update_halo here
+  CALL MPPDB_CHECK3D(ZTV_SH,"ver_int_thermo5a::ZTV_SH",PRECISION)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTV_SH)
+     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+        CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131113 check3d
+  CALL MPPDB_CHECK3D(ZTV_SH,"ver_int_thermo5b::ZTV_SH",PRECISION)
+!
   ZR_SH(:,:,:,1)=SM_PMR_HU(CLUOUT0,ZPMASS_SH(:,:,:),ZTV_SH(:,:,:),ZHU_SH(:,:,:),&
                            ZR_SH(:,:,:,:),KITERMAX=100)
   CALL RMS_AT_Z(PTHV_MX/(1.+XRV/XRD*PR_MX(:,:,:,1))*(1.+WATER_SUM(PR_MX(:,:,:,:))),          &
@@ -407,11 +514,19 @@ PDIAG = ZTIME2 - ZTIME1
 !*       6.1   Altitude of the mass points on the MESO-NH grid
 !              -----------------------------------------------
 !
+!20140217 upgrade shuman fct MZF
+!$ZZMASS(:,:,:)=MZF(XZZ(:,:,:))
 ZZMASS(:,:,:)=MZF(1,IKU,1,XZZ(:,:,:))
+!20131113 check
+CALL MPPDB_CHECK3D(ZZMASS,"ver_int_thermo6::ZZMASS",PRECISION)
 ZZMASS(:,:,SIZE(XZZ,3))=1.5*XZZ(:,:,SIZE(XZZ,3))-0.5*XZZ(:,:,SIZE(XZZ,3)-1)
 !
 !*       6.2   Interpolation on the MESO-NH grid
 !              ---------------------------------
+!
+!20131113 check 2VARS
+CALL MPPDB_CHECK3D(ZZMASS_SH,"ver_int_thermo6::ZZMASS_SH",PRECISION)
+CALL MPPDB_CHECK3D(ZZMASS,"ver_int_thermo6::ZZMASS",PRECISION)
 !
 CALL COEF_VER_INTERP_LIN(ZZMASS_SH(:,:,:),ZZMASS(:,:,:))
 !
@@ -436,9 +551,20 @@ END DO
 CALL COMPUTE_EXNER_FROM_TOP(PTHV,XZZ,PEXNTOP2D,ZHEXN,ZHEXNMASS)
 ZP(:,:,:) = PPMHP(:,:,:) + XP00 * ZHEXNMASS(:,:,:) ** (XCPD/XRD)
 !
+!20131113 add update_halo here
+!CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6a::ZP",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZP)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131112 check3d
+CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6b::ZP",PRECISION)
+!
 PR(:,:,:,1)=SM_PMR_HU(CLUOUT0,ZP(:,:,:),                        &
                       PTHV(:,:,:)*(ZP(:,:,:)/XP00)**(XRD/XCPD), &
                       ZHU(:,:,:),PR(:,:,:,:),KITERMAX=100)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PR(:,:,:,1))
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 !*       6.4   Interpolate the Large Scale fields
 !              ----------------------------------

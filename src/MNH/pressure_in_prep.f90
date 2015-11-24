@@ -65,6 +65,8 @@ END MODULE MODI_PRESSURE_IN_PREP
 !!    -------------
 !!      Original    22/12/98
 !!      parallelization                                   18/06/00 (Jabouille)
+!!                  2014 M.Faivre
+!!               08/2015 M.Moge    removing UPDATE_HALO_ll on XUT, XVT, XRHODJ in part 4
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -91,6 +93,7 @@ USE MODD_DYN_n
 USE MODD_REF_n
 USE MODD_CST
 USE MODE_MPPDB
+USE MODE_EXTRAPOL
 !
 IMPLICIT NONE
 !
@@ -180,6 +183,15 @@ DO
 !
 !*       4.    compute the residual divergence
 !              -------------------------------
+!20140225 forgot this update_halo
+!20131112 check 1st XUT
+CALL MPPDB_CHECK3D(XUT,"PressInP4-beforeupdhalo::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XVT,"PressInP4-beforeupdhalo::XVT",PRECISION)
+!CALL ADD3DFIELD_ll(TZFIELDS_ll, XUT)
+!CALL ADD3DFIELD_ll(TZFIELDS_ll, XVT)
+!CALL ADD3DFIELD_ll(TZFIELDS_ll, XRHODJ)
+!  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!    CALL CLEANLIST_ll(TZFIELDS_ll)
 !
   ZRU(:,:,:) = XUT(:,:,:) * MXM(XRHODJ)
   ZRV(:,:,:) = XVT(:,:,:) * MYM(XRHODJ)
@@ -191,6 +203,15 @@ DO
   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS_ll)
   CALL GDIV(CLBCX,CLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,ZRU,ZRV,ZRW,ZDIV)
+CALL MPPDB_CHECK3D(XUT,"PressInP4-afterupdhalo::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XVT,"PressInP4-afterupdhalo::XVT",PRECISION)
+!
+!20131125 add extrapol on ZRU
+CALL EXTRAPOL('W',ZRU)
+CALL MPPDB_CHECK3D(ZRU,"PressInP4-afterextrapol W::ZRU",PRECISION)
+!
+!20131126 add extrapol on ZRV
+CALL EXTRAPOL('S',ZRV)
 !
   IF ( CEQNSYS=='DUR' ) THEN
     IF ( SIZE(XRVREF,1) == 0 ) THEN

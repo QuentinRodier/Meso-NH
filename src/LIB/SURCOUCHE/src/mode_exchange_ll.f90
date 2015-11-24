@@ -28,7 +28,7 @@
 !!    Routines Of The User Interface
 !!    ------------------------------
 ! 
-!     SUBROUTINES : UPDATE_HALO_ll, UPDATE_1DHALO_ll, REMAP_2WAY_X_ll,
+!     SUBROUTINES : UPDATE_HALO_ll, UPDATE_HALO_EXTENDED_ll, UPDATE_1DHALO_ll, REMAP_2WAY_X_ll,
 !                   REMAP_X_2WAY_ll, REMAP_X_Y_ll, REMAP_Y_X_ll
 ! 
 !!    Implicit Arguments
@@ -77,6 +77,7 @@
 !       R. Guivarch June 29, 1998 MPI_PRECISION
 !       N. Gicquel, P. Kloos - October 01, 1998 - COPY_CRSPD, 
 !                 COPY_ZONE, COPY_CRSPD_TRANS, COPY_ZONE_TRANS
+!       M. Moge  01/12/14   UPDATE_HALO_EXTENDED
 ! 
 !-------------------------------------------------------------------------------
 !
@@ -199,6 +200,102 @@
 !-------------------------------------------------------------------------------
 !
       END SUBROUTINE UPDATE_HALO_ll
+!
+!     ########################################
+      SUBROUTINE UPDATE_HALO_EXTENDED_ll(TPLIST, KINFO)
+!     ########################################
+!
+!!****  *UPDATE_HALO_EXTENDED_ll* - routine to update EXTENDED halo (halo + * point = HALOSIZE_EXTENDED)
+!
+!!    Purpose
+!!    -------
+!       This routine updates the extended halo of size HALOSIZE_EXTENDED with the values computed by the
+!     neighbor subdomains. The fields to be updated are in the
+!     TPLIST list of fields. Before UPDATE_HALO_EXTENDED_ll is called, TPLIST
+!     has been filled with the fields to be communicated
+!
+!!**  Method
+!!    ------
+!       We treat first the zones the processor sends or received
+!     from the others processors and then the zones it sents or
+!     received from itself.
+!
+!!    External
+!!    --------
+!     Module MODE_EXCHANGE_ll
+!       SEND_RECV_CRSPD, COPY_CRSPD
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!     Module MODD_ARGSLIST_ll
+!        type LIST_ll
+!
+!     Module MODD_VAR_ll
+!       NHALO_COM - mpi communicator
+!       TCRRT_COMDATA - Current communication data structure for current model
+!                       and local processor
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M. Moge  01/12/14       * LA - CNRS *
+!     (based on UPDATE_HALO_ll)
+!
+!!    Modifications
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+  USE MODD_VAR_ll, ONLY : NHALO_COM, TCRRT_COMDATA
+!
+  USE MODE_MPPDB
+!
+!*       0.1   declarations of arguments
+!
+  TYPE(LIST_ll), POINTER :: TPLIST ! pointer to the list of fields to be updated
+  INTEGER                :: KINFO  ! return status
+!
+!*       0.2   declarations of local variables
+  TYPE(LIST_ll), POINTER :: TZFIELD
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.     UPDATE THE ZONES NOT SENT OR RECEIVED BY THE PROCESSOR ITSELF
+!               -------------------------------------------------------------
+!
+  CALL SEND_RECV_CRSPD(TCRRT_COMDATA%TSEND_HALO_EXTENDED, TCRRT_COMDATA%TRECV_HALO_EXTENDED, &
+                       TPLIST, TPLIST, NHALO_COM, KINFO)
+!
+!*       2.     UPDATE THE ZONES THE PROCESSOR SENDS OR RECEIVED FROM ITSELF
+!               ------------------------------------------------------------
+!
+  CALL COPY_CRSPD(TCRRT_COMDATA%TSEND_HALO_EXTENDED, TCRRT_COMDATA%TRECV_HALO_EXTENDED, &
+                  TPLIST, TPLIST, KINFO)
+!
+! Warning: For now (01/12/14) the only field updated with UPDATE_HALO_EXTENDED_ll is ZZCHILDGRID_C, from SPAWN_ZS
+!          and it is not a 'real' field. It is just a temporary field to update ZZS1_C.
+!          Hence MPPDB_CHECK is irrelevant in this case and will always find a problem.
+!  IF (MPPDB_INITIALIZED) THEN
+!     TZFIELD => TPLIST
+!     DO WHILE (ASSOCIATED(TZFIELD))
+!        IF (TZFIELD%L2D) THEN
+!!           CALL MPPDB_CHECK2D(TZFIELD%ARRAY2D,"UPDATE_HALO_EXTENDED_ll",PRECISION)
+!        ELSEIF(TZFIELD%L3D) THEN
+!!           CALL MPPDB_CHECK3D(TZFIELD%ARRAY3D,"UPDATE_HALO_EXTENDED_ll",PRECISION)
+!        END IF
+!        TZFIELD => TZFIELD%NEXT
+!     END DO
+!  END IF
+!
+!-------------------------------------------------------------------------------
+!
+      END SUBROUTINE UPDATE_HALO_EXTENDED_ll
 !
 !     ##########################################
       SUBROUTINE UPDATE_1DHALO_ll(TPLIST, KINFO)

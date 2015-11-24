@@ -40,7 +40,7 @@
 !            -----------
 !
 USE MODD_DATA_COVER_PAR,   ONLY : JPCOVER
-USE MODD_SURF_ATM_n,       ONLY : XZS
+USE MODD_SURF_ATM_n,       ONLY : XZS, NSIZE_FULL!, XSEA, XWATER
 USE MODD_SURF_ATM_GRID_n,  ONLY : XLAT, XLON, CGRID, XGRID_PAR
 USE MODD_SURF_ATM_SSO_n,   ONLY : XSSO_STDEV, XAVG_ZS, XSIL_ZS, XMIN_ZS, XMAX_ZS,&
                                     XSSO_ANIS, XSSO_DIR, XSSO_SLOPE,               &
@@ -56,6 +56,7 @@ USE MODI_PREP_GRID_EXTERN
 USE MODI_HOR_INTERPOL
 USE MODI_PREP_OUTPUT_GRID
 !
+USE MODI_GOTO_MODEL_MNH
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -69,8 +70,8 @@ IMPLICIT NONE
 !            ------------------------------
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
-REAL, DIMENSION(:),   INTENT(IN)  :: PSEA        ! sea fraction
-REAL, DIMENSION(:),   INTENT(IN)  :: PWATER      ! inland water fraction
+ REAL, DIMENSION(:),   INTENT(IN)  :: PSEA        ! sea fraction
+ REAL, DIMENSION(:),   INTENT(IN)  :: PWATER      ! inland water fraction
  CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
  CHARACTER(LEN=6),     INTENT(IN)  :: HINIFILETYPE! input atmospheric file type
 !
@@ -101,6 +102,7 @@ REAL, DIMENSION(:), POINTER :: ZHO2JP
 REAL, DIMENSION(:), POINTER :: ZHO2JM
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER :: IINFO_ll
 !------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_OROGRAPHY',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
@@ -112,6 +114,9 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_OROGRAPHY',0,ZHOOK_HANDLE)
 !  These points will not be used during the horizontal interpolation step.
 !  Their value must be defined as XUNDEF.
 !
+! get the local sizes of model 1
+CALL GOTO_MODEL_MNH(HPROGRAM, 1, IINFO_ll)
+!CALL GOTO_MODEL_SURFEX(1, .TRUE.)   ! cette routine plante don je me demerde sans
  CALL OPEN_AUX_IO_SURF(HINIFILE,HINIFILETYPE,'FULL  ')
 !
 !------------------------------------------------------------------------------
@@ -193,7 +198,7 @@ YRECFM='HO2JM'
 !*      4.     Interpolations
 !              --------------
 !
-IL = SIZE(XLAT)
+IL = SIZE(XLAT)   !size of local child model
 !
 ALLOCATE(XZS        (IL))
 !
@@ -277,6 +282,10 @@ WHERE (PWATER(:)==1.)
   XAOSJP(:) = 0.
   XAOSJM(:) = 0.
 END WHERE
+!
+! go back to child model
+!CALL GOTO_MODEL_SURFEX(2, .TRUE.)   ! cette routine plante
+CALL GOTO_MODEL_MNH(HPROGRAM, 2, IINFO_ll)
 !_______________________________________________________________________________
 DEALLOCATE(ZZS        )
 !

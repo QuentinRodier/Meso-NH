@@ -64,6 +64,8 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!                   07/06/2010 (J.escobar from Ivan Ristic) bug PGI
 !!                   30/12/2012 (S.Bielli) Add NAM_NCOUT for netcdf output
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                   11/2015 (M.Moge) disable the creation of files on multiple 
+!!                                 Z-levels when using parallel IO for PREP_PGD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -89,6 +91,8 @@ USE MODN_CONFIO
 !
 USE MODD_PARAMETERS, ONLY : JPHEXT  
 USE MODD_CONF, ONLY       : NHALO_CONF_MNH => NHALO
+!
+USE  MODN_CONFZ
 !
 IMPLICIT NONE
 !
@@ -121,6 +125,8 @@ INTEGER                        :: JPGD    ! loop counter
 LOGICAL                        :: GADD    !
 CHARACTER(LEN=21), DIMENSION(JPMODELMAX) :: YSHORTPGD 
 INTEGER                                  :: NHALO_MNH
+!
+INTEGER :: ILUNAM,ILUOUT              ! Logical unit number for the EXSPA file
 !
 !*       0.3   Declaration of namelists
 !              ------------------------
@@ -163,6 +169,10 @@ CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRI
 !
 CALL OPEN_ll(UNIT=IPRE_NEST_PGD,FILE=HPRE_NEST_PGD,IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
      MODE=GLOBAL)
+!reading of NAM_CONFZ
+CALL FMLOOK_ll(HPRE_NEST_PGD,HPRE_NEST_PGD,ILUOUT,IRESP)
+CALL POSNAM(IPRE_NEST_PGD,'NAM_CONFZ',GFOUND)
+IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONFZ)
 !
 !JUAN
 CALL POSNAM(IPRE_NEST_PGD,'NAM_CONF_NEST',GFOUND)
@@ -302,8 +312,8 @@ CALL CLOSE_ll(HPRE_NEST_PGD)
 !              -------------------------------------
 !
 DO JPGD=1,NMODEL
-  CALL FMOPEN_ll(HPGD(JPGD),'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP)
-  CALL FMOPEN_ll(HNESTPGD(JPGD),'WRITE',CLUOUT0,0,1,NVERB,ININAR,IRESP)
+  CALL FMOPEN_ll(HPGD(JPGD),'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
+  CALL FMOPEN_ll(HNESTPGD(JPGD),'WRITE',CLUOUT0,0,1,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
 END DO
 !
 !-------------------------------------------------------------------------------

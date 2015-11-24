@@ -65,6 +65,10 @@ USE MODD_GRID_n,     ONLY : XZS
 !
 USE MODI_PUT_ZS_N
 !
+USE MODI_GET_LUOUT
+!
+USE MODE_MPPDB
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -78,8 +82,10 @@ IMPLICIT NONE
 INTEGER                         :: IIB, IIE, IJB, IJE
 INTEGER                         :: IL
 REAL, DIMENSION(:), ALLOCATABLE :: ZZS
+INTEGER :: ILUOUT
 !-------------------------------------------------------------------------------
 !
+CALL GET_LUOUT(CPROGRAM,ILUOUT)
 SELECT CASE(CPROGRAM)
   CASE ('NESPGD')
     IIB = JPHEXT + 1
@@ -96,6 +102,8 @@ ALLOCATE(ZZS(IL))
 ZZS(:) = RESHAPE (XZS(IIB:IIE,IJB:IJE), (/ IL /) )
 !
 CALL PUT_ZS_n('MESONH',IL,ZZS(:))
+CALL MPPDB_CHECK_SURFEX2D(ZZS,"mnhput_zs_n:ZZS",PRECISION,ILUOUT)
+CALL MPPDB_CHECK2D(XZS,"mnhput_zs_n:MODD_GRID_n::XZS",PRECISION)
 !
 DEALLOCATE(ZZS)
 !

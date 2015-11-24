@@ -33,6 +33,7 @@
 !!    ------------
 !!
 !!    Original     13/10/03
+!!      M.Moge     10/02/15 change in the input parameters of PGD_GRID_IO_INIT
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -50,7 +51,7 @@ USE MODI_INI_CSTS
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-USE MODI_PGD_GRID_IO_INIT
+!USE MODI_PGD_GRID_IO_INIT
 USE MODI_SURF_VERSION
 !
 IMPLICIT NONE
@@ -94,7 +95,12 @@ CPROGNAME=HPROGRAM
 !
 !*    3.      Additional actions for I/O
 !
- CALL PGD_GRID_IO_INIT(HPROGRAM)
+!#ifdef MNH_PARALLEL
+! CALL PGD_GRID_IO_INIT(HPROGRAM,NGRID_PAR,XGRID_PAR)
+!#else
+! CALL PGD_GRID_IO_INIT(HPROGRAM)
+!#endif
+!we already called PGD_GRID_IO_INIT in subroutine PGD_GRID
 !
 IF (LHOOK) CALL DR_HOOK('PGD_GRID_SURF_ATM',1,ZHOOK_HANDLE)
 !_______________________________________________________________________________

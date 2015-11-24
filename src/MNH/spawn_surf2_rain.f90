@@ -106,6 +106,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!      Original     19/07/04 after surface externalisation
 !!      Modification 07/07/05 (D.Barbary) spawn with 2 input files (father+son1)
 !!      Modification    20/05/06 Remove Clark and Farley interpolation
+!!      Modification    2014 (M.Faivre)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

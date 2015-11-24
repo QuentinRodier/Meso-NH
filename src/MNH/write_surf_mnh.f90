@@ -47,6 +47,8 @@
 !!                                       YY, XY, DX, DY in 1D or 2D configuration
 !!        03/09, G.Tanguy              : add write_surft1_mnh
 !!                                       replace ZUNDEF(surfex) by XUNDEF(MNH)
+!!        08/2015 M.Moge    write the COVERS as 2D fields because SURFEX cannot write/read 3D fields 
+!!                          with Z-splitting using NB_PROC_IO_W / NB_PROC_IO_W
 !!        J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !----------------------------------------------------------------------------
 !
@@ -485,7 +487,10 @@ ELSE
   IMASK = NMASK
 END IF
 !
-GCOVER_PACKED = ( NB_PROCIO_W /= 1 )
+! we write the COVERS as 2D fields because SURFEX cannot write/read 3D fields 
+! with Z-splitting using NB_PROC_IO_W / NB_PROC_IO_W, so we do not use GCOVER_PACKED 
+!GCOVER_PACKED = ( NB_PROCIO_W /= 1 )
+GCOVER_PACKED = .FALSE.
 IGRID=0
 YREC='COVER_PACKED'
 YCOMMENT=''

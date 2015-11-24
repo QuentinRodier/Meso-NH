@@ -40,13 +40,16 @@
 !!      MODIFICATION
 !!      ------------
 !!          Original  24/05/94
+!!                    05/02/15   M.Moge (LA-CNRS)
 !!
 !!    
 !------------------------------------------------------------------------------
 !
 !*                0.  DECLARATIONS
 USE MODE_FM
-!                     ------------
+USE MODE_MPPDB
+USE MODD_CONF
+!------------
 !------------------------------------------------------------------------------
 !
 INTERFACE SM_LATLON
@@ -168,6 +171,7 @@ CONTAINS
 !!                      14/03/96  (Masson) enforce  -180<LONOR<+180     
 !!                      01/11/96  (Mallet) bug for the MAP FACTOR computation
 !!      Sleve coordinate        G. Zangler  *LA*             nov 2005
+!!      MPPDB_CHECK     05/02/15   M.Moge (LA-CNRS)
 !!
 !-------------------------------------------------------------------------------
 !
@@ -281,6 +285,9 @@ IF(NVERB >= 10) THEN                               !Value control
     WRITE(ILUOUT,*) PZZ(1,1,JKLOOP),PZZ(IIU/2,IJU/2,JKLOOP), &
                     PZZ(IIU,IJU,JKLOOP)  
   END DO
+  ! cancel MPPDB_CHECK if cprog=='SPAWN  '
+  IF(CPROGRAM/='SPAWN ')&
+  CALL MPPDB_CHECK3D(PZZ,"GRIDPROJ:PZZ",PRECISION)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -325,11 +332,17 @@ ZYHATM(:,:) = 0.
 ZXHATM(1:IIU-1,1) = .5*(PXHAT(1:IIU-1)+PXHAT(2:IIU))
 ZXHATM(IIU,1)     = 2.*PXHAT(IIU)-ZXHATM(IIU-1,1)
 ZXHATM(:,2:IJU)   = SPREAD(ZXHATM(:,1),2,IJU-1)
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+IF(CPROGRAM/='SPAWN ')&
+CALL MPPDB_CHECK2D(ZXHATM,"GRIDPROJ:ZXHATM",PRECISION)
 !
 ZYHATM(1,1:IJU-1) = .5*(PYHAT(1:IJU-1)+PYHAT(2:IJU))
 ZYHATM(1,IJU)     = 2.*PYHAT(IJU)-ZYHATM(1,IJU-1)
 ZYHATM(2:IIU,:)   = SPREAD(ZYHATM(1,:),1,IIU-1)
-!  ZXHATM and ZXHATM have to be updated
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+IF(CPROGRAM/='SPAWN ')&
+CALL MPPDB_CHECK2D(ZYHATM,"GRIDPROJ:ZYHATM",PRECISION)
+! ZXHATM and ZXHATM have to be updated
 CALL ADD2DFIELD_ll(TZHALO_ll,ZXHATM)
 CALL ADD2DFIELD_ll(TZHALO_ll,ZYHATM)
 CALL UPDATE_HALO_ll(TZHALO_ll,IINFO_ll)
@@ -353,6 +366,7 @@ CALL ADD1DFIELD_ll("X",TZHALO1_ll,PDXHAT)
 CALL ADD1DFIELD_ll("Y",TZHALO1_ll,PDYHAT)
 CALL UPDATE_1DHALO_ll(TZHALO1_ll,IINFO_ll)
 DEALLOCATE(TZHALO1_ll)
+CALL MPPDB_CHECK3D(ZDZ,"GRIDPROJ:ZDZ",PRECISION)
 !
 !-----------------------------------------------------------------------------
 !
@@ -399,6 +413,8 @@ ELSE
   ENDWHERE
 END IF
 !
+CALL MPPDB_CHECK2D(PMAP,"GRIDPROJ:PMAP",PRECISION)
+!
 IF(NVERB >= 10) THEN                               !Value control
   WRITE(ILUOUT,*) 'Some PMAP values:'
   WRITE(ILUOUT,*) PMAP(1,1),PMAP(IIU/2,IJU/2),PMAP(IIU,IJU)  
@@ -414,6 +430,9 @@ DO JK=1,IKU ; DO JJ=1,IJU ; DO JI=1,IIU
   PJ(JI,JJ,JK)  = ZAPZOA2(JI,JJ,JK) * (1.0/PMAP(JI,JJ)**2)  &
                 * PDXHAT(JI) * PDYHAT(JJ) * ZDZ(JI,JJ,JK) 
 ENDDO ; ENDDO ; ENDDO
+!
+  CALL MPPDB_CHECK3D(PJ,"GRIDPROJ:PJ",PRECISION)
+!
 RETURN
 !-----------------------------------------------------------------------------
 END SUBROUTINE SM_GRIDPROJ
@@ -742,6 +761,7 @@ END SUBROUTINE SM_LATLON_S
 !!       Updated   VM  24/10/95 projection from north pole (XRPK<0) and 
 !!                              longitudes set between XLON0-180. and XLON0+180.
 !!       Updated   VM     01/04 LONOR,LATOR refer to the x=0,y=0 point
+!!       MPPDB_CHECK      05/02/15   M.Moge (LA-CNRS)
 !!
 !-------------------------------------------------------------------------------
 !
@@ -838,11 +858,19 @@ IF(XRPK /= 0.) THEN
     ZATA(:,:) = ATAN2(-(ZXP-PXHATM(:,:)),(ZYP-ZYHATM(:,:)))/ZRDSDG
   END WHERE
   !
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+  IF(CPROGRAM/='SPAWN ')&
+  CALL MPPDB_CHECK2D(ZATA,"GRIDPROJ:ZATA",PRECISION)
+!
   PLON(:,:) = (ZBETA+ZATA(:,:))/ZRPK+ZLON0
 !
 !*   2.3     Latitude
 !
   ZRO2(:,:) = (PXHATM(:,:)-ZXP)**2+(ZYHATM(:,:)-ZYP)**2
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+  IF(CPROGRAM/='SPAWN ')&
+  CALL MPPDB_CHECK2D(ZRO2,"GRIDPROJ:ZRO2",PRECISION)
+!
   ZT1       = (XRADIUS*(ABS(ZCLAT0))**(1.-ZRPK))**(2./ZRPK)   &
             * (1+ZSLAT0)**2
   ZT2(:,:)  = (ZRPK**2*ZRO2(:,:))**(1./ZRPK)
@@ -871,7 +899,14 @@ ELSE
 !*  3.2       Longitude
 !
   ZXMI0(:,:) = PXHATM(:,:)-ZXBM0
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+  IF(CPROGRAM/='SPAWN ')&
+  CALL MPPDB_CHECK2D(ZXMI0,"GRIDPROJ:ZXMI0",PRECISION)
+  !
   ZYMI0(:,:) = PYHATM(:,:)-ZYBM0
+! cancel MPPDB_CHECK if cprog=='SPAWN  '
+  IF(CPROGRAM/='SPAWN ')&
+  CALL MPPDB_CHECK2D(ZYMI0,"GRIDPROJ:ZYMI0",PRECISION)
   !
   PLON(:,:) = (ZXMI0(:,:)*ZCGAM+ZYMI0(:,:)*ZSGAM)     &
             / (ZRACLAT0*ZRDSDG)+PLONOR

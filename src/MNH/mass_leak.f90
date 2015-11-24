@@ -217,7 +217,7 @@ IF( HLBCY(1) /= 'CYCL' ) THEN
    !
 END IF
 !
-!CALL REDUCESUM_ll(ZLEAK,IINFO_ll)
+!CALL REDUCESUM_ll(ZLEAK,IINFO_ll)	! we do the reducesum_ll in SUM_DD_R2_ll so we do not do it here
 !
 !-------------------------------------------------------------------------------
 !

@@ -160,6 +160,7 @@ END MODULE MODI_INI_SEG_n
 !!                       02/2012   add GFOREFIRE (Pialat/Tulet)
 !!                       05/2014   missing reading of IMASDEV before COUPLING
 !!                                 test (Escobar)
+!!                       10/02/15  remove ABORT in parallel case for SPAWNING 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -280,18 +281,6 @@ ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
   YEXSEG=TRIM(ADJUSTL(CINIFILE_n))//'.des'
   CALL FMOPEN_ll(CINIFILE_n,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
   CALL FMLOOK_ll(YEXSEG,CLUOUT0,ILUSEG,IRESP)
-!
-  IF (CPROGRAM=='SPAWN ') THEN
-    IF (.NOT.GSMONOPROC) THEN
-      WRITE(ILUOUT,FMT=*) 'SPAWNING : THIS PROGRAM HAS TO BE &
-                      & PERFORMED WITH MONOPROCESSOR MODE'
-      WRITE(ILUOUT,FMT=*) '-> JOB ABORTED'
-!callabortstop
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
-    ENDIF
-  ENDIF
 !
 !*       1.3bis   DIAG program case
 !

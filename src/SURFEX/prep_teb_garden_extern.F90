@@ -25,6 +25,7 @@ SUBROUTINE PREP_TEB_GARDEN_EXTERN(HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEP
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      M. Moge     09/2015 reading SURFEX fields as 1D fields for each patch for Z-parallel IO with Meso-NH
 !!------------------------------------------------------------------
 !
 
@@ -67,7 +68,7 @@ REAL,DIMENSION(:,:,:), POINTER  :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=12) :: YRECFM        ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: INI            ! total 1D dimension
 INTEGER           :: IPATCH         ! number of patch
@@ -85,6 +86,7 @@ INTEGER                             :: IBUGFIX        ! SURFEX bug version
 LOGICAL                             :: GOLD_NAME      ! old name flag for temperatures
  CHARACTER(LEN=12)                   :: YSURF     ! type of field
  CHARACTER(LEN=3)                    :: YPATCH    ! indentificator for TEB patch
+ CHARACTER(LEN=4)                    :: YPATCH2   ! number of the patch
 LOGICAL                         :: GTEB      ! flag if TEB fields are present
 LOGICAL                         :: GGARDEN   ! T if gardens are present in the file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -208,7 +210,15 @@ SELECT CASE(HSURF)
      YRECFM=ADJUSTL(YRECFM)
      
      ALLOCATE(ZFIELD(INI,1,IPATCH))
+#ifdef MNH_PARALLEL
+     DO JPATCH=1,IPATCH
+       WRITE(YPATCH2,'(I4.4)') JPATCH
+       YRECFM=ADJUSTL(YRECFM)//YPATCH2
+       CALL READ_SURF(HFILETYPE,YRECFM,ZFIELD(:,1,JPATCH),IRESP,HDIR='A')
+     END DO
+#else
      CALL READ_SURF(HFILETYPE,YRECFM,ZFIELD(:,1,:),IRESP,HDIR='A')
+#endif
      CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
      CALL PUT_ON_ALL_VEGTYPES(INI,1,1,NVEGTYPE,ZFIELD,PFIELD)
      DEALLOCATE(ZFIELD)

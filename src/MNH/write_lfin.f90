@@ -155,6 +155,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J. Escobar    Mars 2014 , missing YDIR="XY" in 1.6 for tendencies fields 
 !!       J.escobar & M.Leriche 23/06/2014 Pb with JSA increment versus ini_nsv order initialization 
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface
+!!       M.Faivre      2014
 !!       C.Lac         Dec.2014 writing past wind fields for centred advection
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                   
@@ -235,6 +236,9 @@ USE MODN_NCOUT
 USE MODE_UTIL
 #endif
 !
+!20131128
+USE MODE_MPPDB
+USE MODE_EXTRAPOL
 ! Modif Eddy fluxes
 USE MODD_DEF_EDDY_FLUX_n       ! Ajout PP
 USE MODD_DEF_EDDYUV_FLUX_n     ! Ajout PP
@@ -636,12 +640,23 @@ CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
 YDIR='XY'
 !
 !*       1.4.1  Time t:
-!   
+!
+!20131128 check XUT-> X_Y_W_U wind component for PRC
+!  CALL EXTRAPOL('W',XUT)
+!  CALL EXTRAPOL('E',XUT)
+!  CALL EXTRAPOL('N',XUT)
+!  CALL EXTRAPOL('S',XUT)
+CALL MPPDB_CHECK3D(XUT,"write_lfifmn before FMWRIT::XUT",PRECISION)
+!
 YRECFM='UT'
 YCOMMENT='X_Y_Z_U component of wind (m/s)'
 IGRID=2
 ILENCH=LEN(YCOMMENT)
 CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL MPPDB_CHECK3D(XUT,"write_lfifmn after FMWRIT::XUT",PRECISION)
+!
+!20131128 check XVT-> X_Y_W_V wind component for PRC
+CALL MPPDB_CHECK3D(XVT,"write_lfifmn::XVT",PRECISION)
 !
 YRECFM='VT'
 YCOMMENT='X_Y_Z_V component of wind (m/s)'

@@ -32,6 +32,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004 
+!!         M.Moge   02/2015 parallelization : using local fields
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -46,6 +47,10 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
+!
+#ifdef MNH_PARALLEL
+USE MODE_TOOLS_ll, ONLY : GET_DIM_PHYS_ll
+#endif
 !
 IMPLICIT NONE
 !
@@ -83,6 +88,11 @@ REAL, DIMENSION(KLU)              :: ZX       ! X conformal coordinate of grid m
 REAL, DIMENSION(KLU)              :: ZY       ! Y conformal coordinate of grid mesh
 REAL, DIMENSION(KLU)              :: ZDX      ! X grid mesh size
 REAL, DIMENSION(KLU)              :: ZDY      ! Y grid mesh size
+#ifdef MNH
+INTEGER                           :: IIMAX_LOC    ! number of points in I direction local
+INTEGER                           :: IJMAX_LOC    ! number of points in J direction local
+INTEGER                           :: IINFO
+#endif
 !
 INTEGER                           :: ILUOUT
 !---------------------------------------------------------------------------
@@ -110,6 +120,11 @@ IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
  CALL READ_SURF(HPROGRAM,'IMAX ',IIMAX, KRESP,HDIR=HDIR)
  CALL READ_SURF(HPROGRAM,'JMAX ',IJMAX, KRESP,HDIR=HDIR)
 !
+#ifdef MNH_PARALLEL
+ CALL GET_DIM_PHYS_ll('B',IIMAX_LOC,IJMAX_LOC)
+#endif
+!
+!
  CALL READ_SURF(HPROGRAM,'XX',ZX,KRESP,HDIR=HDIR)
  CALL READ_SURF(HPROGRAM,'YY',ZY,KRESP,HDIR=HDIR)
 !
@@ -118,12 +133,18 @@ IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
 !
 !---------------------------------------------------------------------------
 !
-!*       4.    All this information stored into pointer PGRID_PAR
+!*       3.    All this information stored into pointer PGRID_PAR
 !              --------------------------------------------------
 !
+#ifdef MNH_PARALLEL
+ CALL PUT_GRIDTYPE_CONF_PROJ(ZGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
+                              ZLATORI,ZLONORI,IIMAX_LOC,IJMAX_LOC,     &
+                              ZX,ZY,ZDX,ZDY                    )
+#else
  CALL PUT_GRIDTYPE_CONF_PROJ(ZGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
                               ZLATORI,ZLONORI,IIMAX,IJMAX,     &
                               ZX,ZY,ZDX,ZDY                    )  
+#endif
 !
 !---------------------------------------------------------------------------
 IF (OREAD) THEN

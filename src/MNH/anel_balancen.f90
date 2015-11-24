@@ -106,6 +106,8 @@ END MODULE MODI_ANEL_BALANCE_n
 !!      J.Stein and J.P. lafore 17/04/96 new version including the way to choose
 !!            the model number and the instant where the projection is performed
 !!      Stein,Lafore 14/01/97 new anelastic equations
+!!      M.Faivre    2014
+!!      M.Moge      08/2015   removing UPDATE_HALO_ll(XRHODJ) + EXTRAPOL on ZRU and ZRV in part 3.1
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -135,12 +137,15 @@ USE MODI_PRESSUREZ
 USE MODE_SPLITTINGZ_ll
 USE MODI_SHUMAN
 !
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODE_MPPDB
+USE MODE_EXTRAPOL
+!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments :
 !
 REAL, OPTIONAL                 :: PRESIDUAL
-!
 !
 !*       0.2   Declarations of local variables :
 !
@@ -185,6 +190,9 @@ INTEGER                               ::  IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IK
 REAL, DIMENSION(:,:,:), ALLOCATABLE   ::  ZBFB,ZBF_SXP2_YP1_Z                         
 !JUAN
 !
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.     PROLOGUE  :
@@ -207,17 +215,19 @@ ALLOCATE(ZBFB(IIU_B,IJU_B,IKU))
 CALL GET_DIM_EXTZ_ll('SXP2_YP1_Z',IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IKU_SXP2_YP1_Z_ll)
 ALLOCATE(ZBF_SXP2_YP1_Z(IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IKU_SXP2_YP1_Z_ll))
 !JUAN Z_SPLITING
+CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen1-::XRHODJ",PRECISION)
+CALL MPPDB_CHECK3D(XUT,"anel_balancen1-::XUT",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
 !*       2.     PRESSURE SOLVER INITIALIZATION :
 !               -------------------------------
 !
-
 !
 CALL TRIDZ(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
           ZAF,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,XRHODJ,XTHVREF,XZZ,ZBFY,&
           ZBFB,ZBF_SXP2_YP1_Z) 
+CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen1-after TRIDZ::XRHODJ",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -227,12 +237,35 @@ CALL TRIDZ(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
 !
 !*       3.1     multiplication by RHODJ
 !
+!$20140710 UPHALO on XRHODJ
+!CALL ADD3DFIELD_ll(TZFIELDS_ll,XRHODJ)
+!CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen3.1-after update halo::XRHODJ",PRECISION)
+CALL MPPDB_CHECK3D(XUT,"anel_balancen3.1-after update halo::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XWT,"anel_balancen3.1-after update halo::XWT",PRECISION)
+!
 ZRU(:,:,:) = MXM(XRHODJ) * XUT(:,:,:)
 ZRV(:,:,:) = MYM(XRHODJ) * XVT(:,:,:)
 ZRW(:,:,:) = MZM(1,IKU,1,XRHODJ) * XWT(:,:,:)
 ZTH(:,:,:) = XTHT(:,:,:)
 ALLOCATE(ZRR(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),SIZE(XRT,4)))
 ZRR(:,:,:,:) = XRT(:,:,:,:)
+!20131112 appli update_halo_ll
+CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRU)
+CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRV)
+CALL ADD3DFIELD_ll(TZFIELDS_ll, ZRW)
+CALL ADD3DFIELD_ll(TZFIELDS_ll, ZTH)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK3D(ZRU,"anel_balancen3.1-after1stupdhalo::ZRU",PRECISION)
+!$20131125 add extrapol on ZRU to have correct boundaries
+!CALL EXTRAPOL('W',ZRU)  ! ZRU boundaries now correct
+CALL MPPDB_CHECK3D(ZRU,"anel_balancen3.1-afterextrapol W::ZRU",PRECISION)
+!20131126 add extrapol on ZRV to have correct boundaries
+!CALL EXTRAPOL('S',ZRV)  ! ZRV boundaries now correct
+CALL MPPDB_CHECK3D(ZRV,"anel_balancen3.1-afterextrapol S::ZRV",PRECISION)
+CALL MPPDB_CHECK3D(ZRW,"anel_balancen3.1-afterextrapol S::ZRW",PRECISION)
 !
 !
 !
@@ -260,12 +293,30 @@ CALL PRESSUREZ(CLUOUT,                                               &
               ZRU,ZRV,ZRW,ZPABST,                                    &
               ZBFB,ZBF_SXP2_YP1_Z,PRESIDUAL                          )
 !
+CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen3.2-after pressurez halo::XRHODJ",PRECISION)
+CALL MPPDB_CHECK3D(ZRU,"anel_balancen3.2-after pressurez::ZRU",PRECISION)
+CALL MPPDB_CHECK3D(ZRV,"anel_balancen3.2-after pressurez::ZRV",PRECISION)
+!
 DEALLOCATE(ZBFY,ZTRIGSX,ZTRIGSY,ZRR,ZBF_SXP2_YP1_Z)
 !*       3.2     return to the historical variables
 !
+!20131112 appli update_halo_ll and associated operations
 XUT(:,:,:) = ZRU(:,:,:) / MXM(XRHODJ)
 XVT(:,:,:) = ZRV(:,:,:) / MYM(XRHODJ)
 XWT(:,:,:) = ZRW(:,:,:) / MZM(1,IKU,1,XRHODJ)
+!20131112 appli update_halo_ll to XUT,XVT,XWT
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XUT)
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XVT)
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XWT)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK3D(XUT,"anel_balancen3.2-afterupdhalo::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XVT,"anel_balancen3.2-afterupdhalo::XVT",PRECISION)
+!20131125 apply extrapol to fix boundary issue in //
+CALL EXTRAPOL('W',XUT)
+CALL EXTRAPOL('S',XVT)
+CALL MPPDB_CHECK3D(XUT,"anel_balancen3.2-after extrapolW::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XVT,"anel_balancen3.2-after extrapolS::XVT",PRECISION)
 !
 !
 !-------------------------------------------------------------------------------

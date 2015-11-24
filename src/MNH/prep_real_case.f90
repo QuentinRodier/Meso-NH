@@ -374,6 +374,9 @@
 !!                  July  2013     (Bosseur & Filippi) Adds Forefire
 !!                  Mars  2014     (J.Escobar) Missing 'full' UPDATE_METRICS for arp2lfi // run
 !!                   April 2014     (G.TANGUY) Add LCOUPLING
+!!                        2014     (M.Faivre)
+!!                  Fevr  2015     (M.Moge) Cleaning up
+!!                  Aug   2015     (M.Moge) removing EXTRAPOL on XDXX and XDYY in part 8
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
@@ -400,6 +403,7 @@ USE MODI_READ_ALL_DATA_MESONH_CASE
 USE MODI_READ_ALL_DATA_GRIB_CASE
 USE MODI_METRICS
 USE MODI_UPDATE_METRICS
+USE MODI_SET_REF
 USE MODI_VER_PREP_GRIBEX_CASE
 USE MODI_VER_PREP_MESONH_CASE
 USE MODI_VER_THERMO
@@ -587,19 +591,6 @@ END IF
 LCPL_AROME=.FALSE.
 LCOUPLING=.FALSE.
 !
-! GSMONOPROC set by INITIO_ll
-! NPROC not yet set (done by INI_PARA_ll later)
-IF ( (.NOT.GSMONOPROC) .AND. (YATMFILETYPE=='MESONH') ) THEN
-  WRITE(ILUOUT0,FMT=*) 'PREP_REAL_CASE : THIS PROGRAM HAS TO BE &
-                      & PERFORMED WITH MONOPROCESSOR MODE &
-                      & FOR MESONH INPUT FILE FOR THE MOMENT '
-  WRITE(ILUOUT0,FMT=*) '-> JOB ABORTED'
- !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
-ENDIF
-!
 !-------------------------------------------------------------------------------
 !
 !*       3.    INITIALIZATION OF PHYSICAL CONSTANTS
@@ -640,7 +631,9 @@ NJMAX_ll=NJMAX   !! but the old names are kept in PRE_IDEA1.nam file
 !
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 CALL SET_DAD0_ll()
-CALL SET_DIM_ll(NIMAX_ll, NJMAX_ll, 128)
+!JUAN 4/04/2014 correction for PREP_REAL_CASE on Gribex files 
+!CALL SET_DIM_ll(NIMAX_ll, NJMAX_ll, 128)
+CALL SET_DIM_ll(NIMAX_ll, NJMAX_ll, NKMAX)
 CALL SET_LBX_ll('OPEN',1)
 CALL SET_LBY_ll('OPEN', 1)
 CALL SET_XRATIO_ll(1, 1)
@@ -798,49 +791,6 @@ END IF
 !
 !
 CSTORAGE_TYPE='TT'
-!
-!-------------------------------------------------------------------------------
-!
-!*       7.    INITIALIZE  parallel variables
-!             -------------------------------
-!
-!!$NIMAX_ll=NIMAX   !! coding for one processor
-!!$NJMAX_ll=NJMAX
-!
-IF (YATMFILETYPE=='MESONH') THEN
-!  CALL DEALLOC_PARA_ll
-!
-!JUAN REALZ : TEMPOARRY CODING , ONLY FOR PREP_REAL FATER SPAWNING
-!     IN MONO-PROCESSOR 
-NIMAX_ll=NIMAX   !! coding for one processor
-NJMAX_ll=NJMAX
-!
-END IF
-!
-!JUAN REALZ , already done ?!
-  CALL DEALLOC_PARA_ll
-CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
-CALL SET_DAD0_ll()
-CALL SET_DIM_ll(NIMAX_ll, NJMAX_ll, NKMAX)
-CALL SET_LBX_ll(CLBCX(1), 1)
-CALL SET_LBY_ll(CLBCY(1), 1)
-CALL SET_XRATIO_ll(1, 1)
-CALL SET_YRATIO_ll(1, 1)
-CALL SET_XOR_ll(1, 1)
-CALL SET_XEND_ll(NIMAX_ll+2*JPHEXT, 1)
-CALL SET_YOR_ll(1, 1)
-CALL SET_YEND_ll(NJMAX_ll+2*JPHEXT, 1)
-CALL SET_DAD_ll(0, 1)
-!JUANZ
-!CALL INI_PARA_ll(IINFO_ll)
-CALL INI_PARAZ_ll(IINFO_ll)
-!JUANZ
-!JUAN REALZ
-!
-!
-CALL SECOND_MNH(ZTIME2)
-
-ZMISC = ZMISC + ZTIME2 - ZTIME1
 !-------------------------------------------------------------------------------
 !
 !*       8.    COMPUTATION OF GEOMETRIC VARIABLES
@@ -865,6 +815,12 @@ ELSE
                    XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,ZJ       )
 END IF
 !
+CALL MPPDB_CHECK2D(XZS,"prep_real_case8:XZS",PRECISION)
+CALL MPPDB_CHECK2D(XMAP,"prep_real_case8:XMAP",PRECISION)
+CALL MPPDB_CHECK2D(XLAT,"prep_real_case8:XLAT",PRECISION)
+CALL MPPDB_CHECK2D(XLON,"prep_real_case8:XLON",PRECISION)
+CALL MPPDB_CHECK3D(XZZ,"prep_real_case8:XZZ",PRECISION)
+CALL MPPDB_CHECK3D(ZJ,"prep_real_case8:ZJ",PRECISION)
 !
 ALLOCATE(XDXX(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
 ALLOCATE(XDYY(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
@@ -872,13 +828,31 @@ ALLOCATE(XDZX(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
 ALLOCATE(XDZY(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
 ALLOCATE(XDZZ(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)))
 !
+!20131024 add update halo
+!=> corrects on PDXX calculation in metrics and XDXX !!
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XZZ)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
+CALL MPPDB_CHECK3D(XDXX,"prc8-beforeupdate_metrics:PDXX",PRECISION)
+CALL MPPDB_CHECK3D(XDYY,"prc8-beforeupdate_metrics:PDYY",PRECISION)
+CALL MPPDB_CHECK3D(XDZX,"prc8-beforeupdate_metrics:PDZX",PRECISION)
+CALL MPPDB_CHECK3D(XDZY,"prc8-beforeupdate_metrics:PDZY",PRECISION)
+!
 CALL UPDATE_METRICS(CLBCX,CLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ)
+!
+!20131112 add update_halo for XDYY and XDZY!!
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XDXX)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XDZX)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XDYY)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XDZY)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 
-!!$CALL EXTRAPOL('W',XDXX,XDZX)
-!!$CALL EXTRAPOL('S',XDYY,XDZY)
+!CALL EXTRAPOL('W',XDXX,XDZX)
+!CALL EXTRAPOL('S',XDYY,XDZY)
 
 CALL SECOND_MNH(ZTIME2)
 
@@ -1193,9 +1167,6 @@ END IF
 CALL CLOSE_ll(CLUOUT0, IOSTAT=IRESP)
 CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT0,IRESP)
 !
-  CALL MPPDB_BARRIER()
-  CALL MPPDB_BARRIER()
-
 !
 CALL END_PARA_ll(IINFO_ll)
 !-------------------------------------------------------------------------------

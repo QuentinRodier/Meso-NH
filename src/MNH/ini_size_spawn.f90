@@ -64,6 +64,9 @@ END MODULE MODI_INI_SIZE_SPAWN
 !!    -------------
 !!
 !!      Original     13/07/99
+!!         M.Faivre  2014
+!!         M.Moge    07/2015  bug fix : files opened multiple times
+!!         M.Moge    08/2015  bug fix : turning the special case for // case into general case in part 1.4
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
@@ -96,7 +99,16 @@ USE MODI_RETRIEVE1_NEST_INFO_n
 USE MODI_COMPARE_DAD
 USE MODE_MODELN_HANDLER
 !
+!$20140602 for NPROC
+!USE MODD_VAR_ll
+USE MODD_IO_ll, ONLY : ISNPROC, ISP
+!20140602 for INI_PARAZ_ll
+USE MODE_SPLITTINGZ_ll
 !
+USE MODE_SPLITTING_ll, ONLY : SPLIT2
+USE MODD_VAR_ll, ONLY : YSPLITTING, NMNH_COMM_WORLD
+USE MODD_STRUCTURE_ll, ONLY : ZONE_ll
+!$
 IMPLICIT NONE
 !
 !*       0.1  Declarations of dummy arguments :
@@ -124,9 +136,22 @@ INTEGER            :: ILENCH, IGRID
 CHARACTER (LEN=100):: YCOMMENT
 INTEGER            :: IMI
 !
+!$20140602
+INTEGER            :: IIU, IJU
+INTEGER            :: IINFO_ll    ! return code of // routines
+INTEGER            :: NIMAX, NJMAX
+CHARACTER(LEN=28), DIMENSION(JPMODELMAX) :: CPGD     ! name of input  pgd files
+LOGICAL, DIMENSION(JPMODELMAX) :: L1D_ALL  ! Flag for      1D conf. for each PGD
+LOGICAL, DIMENSION(JPMODELMAX) :: L2D_ALL  ! Flag for      2D conf. for each PGD
+LOGICAL, DIMENSION(JPMODELMAX) :: LPACK_ALL! Flag for packing conf. for each PGD
+INTEGER            :: IDIMX, IDIMY, IIB, IJB, IIE, IJE
+!$
 !-------------------------------------------------------------------------------
 REAL :: ZLATOR, ZLONOR, ZXHATM, ZYHATM
+INTEGER :: IIMAX_ll,IJMAX_ll
+TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZSPLITTING
 !-------------------------------------------------------------------------------
+!
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
@@ -235,14 +260,68 @@ IF (LEN_TRIM(CDOMAIN)>0) THEN
   YDIR='--'
   CALL FMREAD(HINIFILE,YRECFM,CLUOUT,YDIR,XPGDLATOR,IGRID,ILENCH,YCOMMENT,IRESP)
   !
-  ALLOCATE(XPGDXHAT(DIM_MODEL(1)%NIMAX_ll+2*JPHEXT))
+  !$20140602 INSERT BIG MODIF JUAN May27
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+!*     1.4   read grid in file CDOMAIN if available :
+! initialize grid2 dims, xor, xend and ratio so to initialize in INI_CHILD 
+! structures TCRRT_COMDATA%T_CHILDREN%T_SPLITB and TCRRT_PROCONF%T_CHILDREN
+!$20140602 add condition on npproc
+  CALL FMOPEN_ll(CDOMAIN,'READ',CLUOUT,0,2,NVERB,ININAR,IRESP)
+  !
+  YDIR='--'
+  CALL FMREAD(CDOMAIN,'DXRATIO',CLUOUT,YDIR,NDXRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CDOMAIN,'DYRATIO',CLUOUT,YDIR,NDYRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CDOMAIN,'XOR',CLUOUT,YDIR,NXOR,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CDOMAIN,'YOR',CLUOUT,YDIR,NYOR,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CDOMAIN,'IMAX',CLUOUT,YDIR,IIMAX_ll,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(CDOMAIN,'JMAX',CLUOUT,YDIR,IJMAX_ll,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMCLOS_ll(CDOMAIN,'KEEP',CLUOUT,IRESP)
+  NXEND=NXOR+IIMAX_ll/NDXRATIO+2*JPHEXT-1
+  NYEND=NYOR+IJMAX_ll/NDYRATIO+2*JPHEXT-1
+  !
+  !*   1.5    CALL OF INITIALIZATION PARALLEL ROUTINES
+  !
+  CALL SET_LBX_ll(CLBCX(1), 2)
+  CALL SET_LBY_ll(CLBCY(1), 2)
+  CALL SET_XRATIO_ll(NDXRATIO, 2)
+  CALL SET_YRATIO_ll(NDYRATIO, 2)
+  CALL SET_XOR_ll(NXOR, 2)
+  CALL SET_XEND_ll(NXEND, 2)
+  CALL SET_YOR_ll(NYOR, 2)
+  CALL SET_YEND_ll(NYEND, 2)
+  CALL SET_DAD_ll(1, 2)
+  !
+  CALL INI_PARAZ_ll(IINFO_ll)
+  ! get dimensions of father model
+  CALL GET_DIM_PHYS_ll( YSPLITTING, DIM_MODEL(1)%NIMAX, DIM_MODEL(1)%NJMAX )
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  !$
+  ALLOCATE(XPGDXHAT(DIM_MODEL(1)%NIMAX+2*JPHEXT))
+  !ALLOCATE(XPGDXHAT(15+2*JPHEXT))
   YRECFM='XHAT'
-  YDIR='XX'
+  !$20140505 test '--'
+  !YDIR='XX'
+  !YDIR='--'
+  !$20140520 retour a 'XX'
+  !$then np1 works, but np4 stops here
+  !$20140602 use NPROC
+  IF (ISNPROC.EQ.1) YDIR='XX'
+  IF (ISNPROC.GT.1) YDIR='XX'!'--'
+  !$
   CALL FMREAD(HINIFILE,YRECFM,CLUOUT,YDIR,XPGDXHAT,IGRID,ILENCH,YCOMMENT,IRESP)
   !
-  ALLOCATE(XPGDYHAT(DIM_MODEL(1)%NJMAX_ll+2*JPHEXT))
+  ALLOCATE(XPGDYHAT(DIM_MODEL(1)%NJMAX+2*JPHEXT))
   YRECFM='YHAT'
-  YDIR='YY'
+  !$20140506 test '--'
+  !YDIR='YY'
+  !YDIR='--'
+  !$20140520 retour a 'YY'
+  !$20140602 use NPROC
+  IF (ISNPROC.EQ.1) YDIR='YY'
+  IF (ISNPROC.GT.1) YDIR='YY'!'--'
   CALL FMREAD(HINIFILE,YRECFM,CLUOUT,YDIR,XPGDYHAT,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM='MASDEV' 

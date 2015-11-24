@@ -111,6 +111,7 @@ END MODULE MODI_SET_MASS
 !!    Tout a été modifié pour se rapprocher de PREP_REAL_CASE
 !!    J. Escobar  27/03/2012 modif for reprod sum
 !!    V.Masson    12/08/13  Parallelization of the initilization profile
+!!    M.Moge      08/2015   add UPDATE_HALO_ll on XTHT, ZTHV3D, XRT(:,:,1,:) after computation
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    
 !-------------------------------------------------------------------------------
@@ -219,6 +220,8 @@ REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD          ! dry d
 !!$INTEGER                                                :: IIBP,IIEP,IJBP,IJEP
 REAL, DIMENSION(:,:), ALLOCATABLE                      :: ZNFLXZ_TOT,ZNFLYZ_TOT
 REAL, DIMENSION(:)  , ALLOCATABLE                      :: ZNFLXZ_TOT_ll,ZNFLYZ_TOT_ll ! total normalized mass flux
+!
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
@@ -454,6 +457,12 @@ ELSE
   ZTHV3D(:,:,1)=ZTHV3D(:,:,2)
   XTHT(:,:,1)=XTHT(:,:,2)
   XRT(:,:,1,:)=XRT(:,:,2,:)
+NULLIFY( TZFIELDS_ll )
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XTHT)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZTHV3D)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XRT(:,:,1,:))
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+CALL CLEANLIST_ll(TZFIELDS_ll)
 
 !
   IF (NRR>=3) THEN

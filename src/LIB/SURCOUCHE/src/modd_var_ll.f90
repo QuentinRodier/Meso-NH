@@ -1,3 +1,4 @@
+
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -47,6 +48,7 @@
 !-------------------------------------------------------------------------------
 !  
   USE MODD_STRUCTURE_ll
+  !USE MODD_MPIF, ONLY : MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE
 ! 
   IMPLICIT NONE
 !
@@ -135,5 +137,7 @@ INTEGER,SAVE      :: NZ_PROC_ll = 0  ! Number of proc to use in the Z splitting
   INTEGER, PARAMETER :: NNEXTTAG = 50
 !
   INTEGER, PARAMETER :: NMODULO_MSSGTAG = 10
+!
+  INTEGER, POINTER, DIMENSION(:,:) :: MNH_STATUSES_IGNORE 
 !
 END MODULE MODD_VAR_ll

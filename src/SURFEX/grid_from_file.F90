@@ -33,6 +33,8 @@
 !!    ------------
 !!
 !!    Original     01/2004
+!!      M.Moge     02/2015  Parallelization of spawning
+!!      M.Moge     04/2015  Parallelization of prep_pgd on son model
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -50,6 +52,11 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_GET_LUOUT
+USE MODD_SURF_ATM_n, ONLY : NDIM_FULL, NSIZE_FULL, NIMAX_SURF_ll, NJMAX_SURF_ll
+!
+#ifdef MNH_PARALLEL
+USE MODE_TOOLS_ll, ONLY : GET_DIM_PHYS_ll
+#endif
 IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
@@ -71,6 +78,10 @@ INTEGER,           INTENT(OUT)  :: KL         ! number of points on processor
 INTEGER           :: ILUOUT ! listing  file  logical unit
 INTEGER           :: ILUNAM ! namelist file  logical unit
 INTEGER           :: IRESP  ! return code
+INTEGER           :: IIMAX
+INTEGER           :: IJMAX
+INTEGER           :: IIMAX_LOC
+INTEGER           :: IJMAX_LOC
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*    0.3    Declaration of namelists
@@ -97,6 +108,7 @@ IF (LHOOK) CALL DR_HOOK('GRID_FROM_FILE',0,ZHOOK_HANDLE)
 !              -----------------------------
 !
  CALL READ_SURF(HFILETYPE,'DIM_FULL  ',KL,IRESP)
+ NDIM_FULL = KL
 !
 !---------------------------------------------------------------------------
 !
@@ -110,10 +122,24 @@ IF (LHOOK) CALL DR_HOOK('GRID_FROM_FILE',0,ZHOOK_HANDLE)
 !*       5.    Reading parameters of the grid
 !              ------------------------------
 !
+ CALL READ_SURF(HPROGRAM,'IMAX ',IIMAX, IRESP,HDIR='H')
+ CALL READ_SURF(HPROGRAM,'JMAX ',IJMAX, IRESP,HDIR='H')
+ NIMAX_SURF_ll = IIMAX
+ NJMAX_SURF_ll = IJMAX
+#ifdef MNH_PARALLEL
+ CALL GET_DIM_PHYS_ll('B',IIMAX_LOC,IJMAX_LOC)
+ NSIZE_FULL = IIMAX_LOC*IJMAX_LOC
+ KL = NSIZE_FULL
+ CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,NSIZE_FULL,.FALSE.,HDIR='H')
+!
+ALLOCATE(PGRID_PAR(KGRID_PAR))
+ CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,NSIZE_FULL,.TRUE.,PGRID_PAR,IRESP,HDIR='H')
+#else
  CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,KL,.FALSE.,HDIR='A')
 !
 ALLOCATE(PGRID_PAR(KGRID_PAR))
  CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,KL,.TRUE.,PGRID_PAR,IRESP,HDIR='A')
+#endif
 !
 !---------------------------------------------------------------------------
 !

@@ -424,12 +424,18 @@ END IF
 !              --------------------------------------------------
 !
 !
+CALL MPPDB_CHECK3D(PRUS,"pressurez 4-before update_halo_ll::PRUS",PRECISION)
+CALL MPPDB_CHECK3D(PRVS,"pressurez 4-before update_halo_ll::PRVS",PRECISION)
+CALL MPPDB_CHECK3D(PRWS,"pressurez 4-before update_halo_ll::PRWS",PRECISION)
 NULLIFY(TZFIELDS_ll)
 CALL ADD3DFIELD_ll(TZFIELDS_ll, PRUS)
 CALL ADD3DFIELD_ll(TZFIELDS_ll, PRVS)
 CALL ADD3DFIELD_ll(TZFIELDS_ll, PRWS)
 CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK3D(PRUS,"pressurez 4-after update_halo_ll::PRUS",PRECISION)
+CALL MPPDB_CHECK3D(PRVS,"pressurez 4-after update_halo_ll::PRVS",PRECISION)
+CALL MPPDB_CHECK3D(PRWS,"pressurez 4-after update_halo_ll::PRWS",PRECISION)
 !
 CALL GDIV(HLBCX,HLBCY,PDXX,PDYY,PDZX,PDZY,PDZZ,PRUS,PRVS,PRWS,ZDV_SOURCE)
 !

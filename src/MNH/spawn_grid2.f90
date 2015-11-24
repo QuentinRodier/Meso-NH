@@ -147,6 +147,8 @@ END MODULE MODI_SPAWN_GRID2
 !!                             to avoid problem when Input parameter and GRID1 parameter
 !!                             are exactly the same !!!
 !!      Modification 20/05/06 Remove Clark and Farley interpolation
+!!      Modification 24/02/15 (M.Moge) parallelization
+!!      Modification 10/06/15 (M.Moge) bug fix for reproductibility
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -163,7 +165,8 @@ USE MODD_LBC_n,     ONLY: LBC_MODEL
 !
 USE MODD_LUNIT_n
 USE MODD_BIKHARDT_n
-!
+USE MODD_VAR_ll
+USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
 USE MODE_TIME
@@ -173,6 +176,7 @@ USE MODI_BIKHARDT
 USE MODI_SPAWN_ZS
 !
 USE MODE_MODELN_HANDLER
+USE MODE_MPPDB  
 !
 IMPLICIT NONE
 !
@@ -190,10 +194,10 @@ REAL, DIMENSION(:),   INTENT(INOUT) :: PXHAT,PYHAT,PZHAT ! positions x,y,z in th
 LOGICAL,              INTENT(OUT)   :: OSLEVE            ! flag for SLEVE coordinate
 REAL,                 INTENT(OUT)   :: PLEN1             ! Decay scale for smooth topography
 REAL,                 INTENT(OUT)   :: PLEN2             ! Decay scale for small-scale topography deviation
-REAL, DIMENSION(:,:), INTENT(OUT) :: PZS               ! orography
-REAL, DIMENSION(:,:), INTENT(OUT) :: PZSMT             ! smooth orography
-REAL, DIMENSION(:,:), INTENT(OUT) :: PZS_LS            ! interpolated orography
-REAL, DIMENSION(:,:), INTENT(OUT) :: PZSMT_LS          ! interpolated smooth orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZS               ! orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT             ! smooth orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZS_LS            ! interpolated orography
+REAL, DIMENSION(:,:), INTENT(OUT)   :: PZSMT_LS          ! interpolated smooth orography
 !
 !
 TYPE (DATE_TIME),     INTENT(INOUT) :: TPDTMOD  ! Date and Time of MODel beginning
@@ -205,6 +209,10 @@ INTEGER :: ILUOUT   ! Logical unit number for the output listing
 INTEGER :: IRESP    ! Return codes in FM routines
 !
 REAL :: ZPOND1,ZPOND2               ! interpolation coefficients
+INTEGER             :: IIU_C       ! Upper dimension in x direction
+INTEGER             :: IJU_C       ! Upper dimension in y direction
+INTEGER             :: IIB_C       ! indice I Beginning in x direction
+INTEGER             :: IJB_C       ! indice J Beginning in y direction
 !
 INTEGER             :: IIU       ! Upper dimension in x direction
 INTEGER             :: IJU       ! Upper dimension in y direction
@@ -214,10 +222,23 @@ INTEGER             :: IIS,IJS   ! indices I and J in x and y dir. for scalars
 INTEGER             :: JI,JEPSX  ! Loop index in x direction
 INTEGER             :: JJ,JEPSY  ! Loop index in y direction
 REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_EXTENDED, ZYHAT_EXTENDED
-INTEGER             :: IXSIZE1,IYSIZE1    ! sizes of the XHAT and YHAT arrays
+INTEGER             :: IXSIZE1_F,IYSIZE1_F    ! sizes of the XHAT and YHAT arrays
 !
 CHARACTER (LEN=40)  :: YTITLE    ! Title for time print
-INTEGER  :: IMI
+INTEGER             :: IMI
+INTEGER             :: IINFO_ll
+INTEGER             :: IXOR_F, IYOR_F, IXEND_F, IYEND_F
+INTEGER             :: IXOR_ll, IYOR_ll
+INTEGER             :: IXDIM, IYDIM
+REAL, DIMENSION(1)  :: PXMAX, PYMAX, PXMIN, PYMIN
+INTEGER             :: DELTA_JI,JI_MIN,JI_MAX,  DELTA_JJ,JJ_MIN,JJ_MAX
+REAL                :: ZMIN
+INTEGER             :: IDIMX_C, IDIMY_C
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZXHAT_2D_EXTENDED_F, ZYHAT_2D_EXTENDED_F
+REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT_EXTENDED_C, ZYHAT_EXTENDED_C
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZXHAT_2D_C, ZYHAT_2D_C
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZXHAT_2D_F, ZYHAT_2D_F
+LOGICAL             :: GCYCLIC_EXTRAPOL
 !-------------------------------------------------------------------------------
 !
 !
@@ -232,28 +253,50 @@ CALL GOTO_MODEL(2)
 !
 !*       1.1   computes dimensions of arrays and other indices
 !
-IIU = SIZE(PXHAT)
-IJU = SIZE(PYHAT)
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IIU_C = SIZE(PXHAT)
+IJU_C = SIZE(PYHAT)
+IIB_C = 1+JPHEXT
+IJB_C = 1+JPHEXT
+!
+CALL GO_TOMODEL_ll(IMI, IINFO_ll)
+CALL GET_FEEDBACK_COORD_ll(IXOR_F,IYOR_F,IXEND_F,IYEND_F,IINFO_ll)
+!
+CALL GO_TOMODEL_ll(1,IINFO_ll)
+CALL GET_OR_ll('B',IXOR_ll,IYOR_ll)
+CALL GET_DIM_EXT_ll('B',IXDIM,IYDIM)
+CALL GO_TOMODEL_ll(IMI, IINFO_ll)
+!
+IF (IXOR_F>0 .and. IYOR_F>0 .and. &
+    IXEND_F>0 .and. IYEND_F>0) THEN
+   IXOR_F = IXOR_F-JPHEXT
+   IYOR_F = IYOR_F-JPHEXT
+   IXEND_F= IXEND_F+JPHEXT
+   IYEND_F= IYEND_F+JPHEXT
+ELSE
+   IXOR_F = 1!4!2
+   IXEND_F= 1!4!10
+   IYOR_F = -10!4!2
+   IYEND_F= -10!4!10
+ENDIF
+!$
 !
 !*       1.2  recovers logical unit number of output listing
 !
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 !*       1.3  checks that model 2 domain is included in the one of model 1
-!
-IF ( (KXEND) > SIZE(GRID_MODEL(1)%XXHAT) )  THEN   
-  WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ', &
-                  ' KXOR = ', KXOR,' KXEND = ', KXEND,                         &
+IF ( (IXEND_F) > SIZE(GRID_MODEL(1)%XXHAT) )  THEN   
+  WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
+                  ' IXOR_F = ', IXOR_F,' IXEND_F = ', IXEND_F,                      &
                   ' IIU of model1 = ',SIZE(GRID_MODEL(1)%XXHAT)
  !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
 END IF 
-IF ( (KYEND) > SIZE(GRID_MODEL(1)%XYHAT) )  THEN  
-  WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ', &
-                  ' KYOR = ', KYOR,' KYEND = ', KYEND,                         &
+IF ( (IYEND_F) > SIZE(GRID_MODEL(1)%XYHAT) )  THEN  
+  WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
+                  ' IYOR_F = ', IYOR_F,' IYEND_F = ', IYEND_F,                  &
                   ' IJU of model1 = ',SIZE(GRID_MODEL(1)%XYHAT)
  !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
@@ -274,7 +317,7 @@ PLEN2    = GRID_MODEL(1)%XLEN2
 IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
 !
 !*       2.1   special case of spawning - no change of resolution :
-!
+!$ in our case we don't get them here !
   PXHAT(:) = GRID_MODEL(1)%XXHAT(KXOR:KXEND)
   PYHAT(:) = GRID_MODEL(1)%XYHAT(KYOR:KYEND)
   PZS  (:,:) = GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
@@ -287,38 +330,157 @@ ELSE
 !*       2.2  general case - change of resolution :
 !
 !*       2.2.1 linear interpolation for XHAT and YHAT
+  GCYCLIC_EXTRAPOL = .FALSE.
 !
-  IXSIZE1=SIZE(GRID_MODEL(1)%XXHAT)
-  ALLOCATE(ZXHAT_EXTENDED(IXSIZE1+1))
-  ZXHAT_EXTENDED(1:IXSIZE1)=GRID_MODEL(1)%XXHAT(:)
-  ZXHAT_EXTENDED(IXSIZE1+1)=2.*GRID_MODEL(1)%XXHAT(IXSIZE1)-GRID_MODEL(1)%XXHAT(IXSIZE1-1)
-  DO JEPSX = 1,KDXRATIO
-    ZPOND2 = FLOAT(JEPSX-1)/FLOAT(KDXRATIO)
-    ZPOND1 = 1.-ZPOND2
-    DO JI = KXOR,KXEND
-      IIS = IIB+JEPSX-1+(JI-KXOR-JPHEXT)*KDXRATIO
+!     XHAT
 !
-      IF (1 <= IIS .AND. IIS <= IIU)                   &
-      PXHAT(IIS) = ZPOND1*ZXHAT_EXTENDED(JI) +ZPOND2*ZXHAT_EXTENDED(JI+1)
-    END DO
-  END DO
-  DEALLOCATE(ZXHAT_EXTENDED)
+!JUAN A REVOIR TODO_JPHEXT
+! <<<<<<< spawn_grid2.f90
+  IXSIZE1_F=SIZE(GRID_MODEL(1)%XXHAT)
+  IYSIZE1_F=SIZE(GRID_MODEL(1)%XYHAT)
+! before the interpolation of XXHAT into PXHAT, we need to use LS_FORCING_ll
+! to communicate the values on the subdomains of the son grid to the appropriate processes
+! LS_FORCING_ll does not work on 1D arrays, so we have to construct a temporary pseudo-2D array
+  ALLOCATE(ZXHAT_2D_F(IXSIZE1_F,IYSIZE1_F))
+  ZXHAT_2D_F(:,:) = SPREAD(GRID_MODEL(1)%XXHAT(:),DIM=2,NCOPIES=IYSIZE1_F)
+  CALL GOTO_MODEL(1)
+  CALL GO_TOMODEL_ll(1, IINFO_ll)
+  CALL GET_CHILD_DIM_ll(IMI, IDIMX_C, IDIMY_C, IINFO_ll)
+  !allocation of the 1D and pseudo-2D arrays on child grid
+  ALLOCATE(ZXHAT_EXTENDED_C(IDIMX_C+1))
+  ALLOCATE(ZXHAT_2D_C(IDIMX_C,IDIMY_C))
+  CALL SET_LSFIELD_1WAY_ll(ZXHAT_2D_F, ZXHAT_2D_C, IMI)
+  CALL LS_FORCING_ll(IMI, IINFO_ll,.TRUE.,GCYCLIC_EXTRAPOL)
+  CALL GO_TOMODEL_ll(IMI, IINFO_ll)
+  CALL GOTO_MODEL(IMI)
+  CALL UNSET_LSFIELD_1WAY_ll()
+! initialization of ZXHAT_EXTENDED_C
+! Remark : we take the 2nd row of ZXHAT_2D_C because the first one is the "pseudo halo" added for spawning
+!          and may be uninitialized or an extrapolation of the second row
+  ZXHAT_EXTENDED_C(1:IDIMX_C)=ZXHAT_2D_C(:,2)
+! extrapolation on the extra point
+  ZXHAT_EXTENDED_C(IDIMX_C+1)= 2.*ZXHAT_EXTENDED_C(IDIMX_C)-ZXHAT_EXTENDED_C(IDIMX_C-1)     !TODO : faire un update_nhalo1D
+! interpolation on the child grid
+  PXHAT(:)=0.
+  !on the west halo of the son model
+  DO JI = 1,JPHEXT
+    DO JEPSX=1,KDXRATIO
+      ZPOND2 = FLOAT(KDXRATIO-JEPSX)/FLOAT(KDXRATIO)
+      ZPOND1 = 1.-ZPOND2
+      IF( JPHEXT+1-(JI-1)*KDXRATIO-JEPSX > 0 ) THEN
+        PXHAT(JPHEXT+1-(JI-1)*KDXRATIO-JEPSX) = ZPOND1*ZXHAT_EXTENDED_C(JPHEXT+1-JI+1)+ ZPOND2*ZXHAT_EXTENDED_C(JPHEXT+1-JI+2)
+      ENDIF
+    ENDDO
+  ENDDO
+  !on the physical domain of the son model
+  DO JI = 1,IDIMX_C-2*(JPHEXT+1)  !the physical size of the son model in the father grid
+    DO JEPSX = 1,KDXRATIO
+      ZPOND2 = FLOAT(JEPSX-1)/FLOAT(KDXRATIO)
+      ZPOND1 = 1.-ZPOND2
+      PXHAT(JPHEXT+JEPSX+(JI-1)*KDXRATIO) = ZPOND1*ZXHAT_EXTENDED_C(JI+IIB_C)+ ZPOND2*ZXHAT_EXTENDED_C(JI+IIB_C+1)
+    ENDDO
+  ENDDO
+  !on the east halo of the son model
+  DO JI = 1,JPHEXT
+    DO JEPSX=1,KDXRATIO
+      ZPOND1 = FLOAT(KDXRATIO-JEPSX+1)/FLOAT(KDXRATIO)
+      ZPOND2 = 1.-ZPOND1
+      IF( SIZE(PXHAT)-JPHEXT+(JI-1)*KDXRATIO+JEPSX <= SIZE(PXHAT) ) THEN
+        PXHAT(SIZE(PXHAT)-JPHEXT+(JI-1)*KDXRATIO+JEPSX) = ZPOND1*ZXHAT_EXTENDED_C(IDIMX_C-JPHEXT+JI-1)+ ZPOND2*ZXHAT_EXTENDED_C(IDIMX_C-JPHEXT+JI)
+      ENDIF
+    ENDDO
+  ENDDO
+  DEALLOCATE(ZXHAT_2D_F)
+  DEALLOCATE(ZXHAT_EXTENDED_C)
+  DEALLOCATE(ZXHAT_2D_C)
 !
-  IYSIZE1=SIZE(GRID_MODEL(1)%XYHAT)
-  ALLOCATE(ZYHAT_EXTENDED(IYSIZE1+1))
-  ZYHAT_EXTENDED(1:IYSIZE1)=GRID_MODEL(1)%XYHAT(:)
-  ZYHAT_EXTENDED(IYSIZE1+1)=2.*GRID_MODEL(1)%XYHAT(IYSIZE1)-GRID_MODEL(1)%XYHAT(IYSIZE1-1)
-  DO JEPSY = 1,KDYRATIO
-    ZPOND2 = FLOAT(JEPSY-1)/FLOAT(KDYRATIO)
-    ZPOND1 = 1.-ZPOND2
-    DO JJ = KYOR,KYEND
-      IJS = IJB+JEPSY-1+(JJ-KYOR-JPHEXT)*KDYRATIO
+!     YHAT
 !
-      IF (1 <= IJS .AND. IJS <= IJU)                   &
-      PYHAT(IJS) = ZPOND1*ZYHAT_EXTENDED(JJ) +ZPOND2*ZYHAT_EXTENDED(JJ+1)
-    END DO
-  END DO
-  DEALLOCATE(ZYHAT_EXTENDED)
+! before the interpolation of XXHAT into PXHAT, we need to use LS_FORCING_ll
+! to communicate the values on the subdomains of the son grid to the appropriate processes
+! LS_FORCING_ll does not work on 1D arrays, so we have to construct a temporary pseudo-2D array
+  ALLOCATE(ZYHAT_2D_F(IXSIZE1_F,IYSIZE1_F))
+  ZYHAT_2D_F(:,:) = SPREAD(GRID_MODEL(1)%XYHAT(:),DIM=1,NCOPIES=IXSIZE1_F)
+  CALL GOTO_MODEL(1)
+  CALL GO_TOMODEL_ll(1, IINFO_ll)
+  CALL GET_CHILD_DIM_ll(IMI, IDIMX_C, IDIMY_C, IINFO_ll)
+  !allocation of the 1D and pseudo-2D arrays on child grid
+  ALLOCATE(ZYHAT_EXTENDED_C(IDIMY_C+1))
+  ALLOCATE(ZYHAT_2D_C(IDIMX_C,IDIMY_C))
+  CALL SET_LSFIELD_1WAY_ll(ZYHAT_2D_F, ZYHAT_2D_C, IMI)
+  CALL LS_FORCING_ll(IMI, IINFO_ll,.TRUE.,GCYCLIC_EXTRAPOL)
+  CALL GO_TOMODEL_ll(IMI, IINFO_ll)
+  CALL GOTO_MODEL(IMI)
+  CALL UNSET_LSFIELD_1WAY_ll()
+! initialization of ZXHAT_EXTENDED_C
+  ZYHAT_EXTENDED_C(1:IDIMY_C)=ZYHAT_2D_C(1,:)
+! extrapolation on the extra point
+  ZYHAT_EXTENDED_C(IDIMY_C+1)= 2.*ZYHAT_EXTENDED_C(IDIMY_C)-ZYHAT_EXTENDED_C(IDIMY_C-1)
+  PYHAT(:)=0.
+  !on the south halo of the son model
+  DO JJ = 1,JPHEXT
+    DO JEPSY=1,KDYRATIO
+      ZPOND2 = FLOAT(KDXRATIO-JEPSY)/FLOAT(KDYRATIO)
+      ZPOND1 = 1.-ZPOND2
+      IF( JPHEXT+1-(JJ-1)*KDYRATIO-JEPSY > 0 ) THEN
+        PYHAT(JPHEXT+1-(JJ-1)*KDYRATIO-JEPSY) = ZPOND1*ZYHAT_EXTENDED_C(JPHEXT+1-JJ+1)+ ZPOND2*ZYHAT_EXTENDED_C(JPHEXT+1-JJ+2)
+      ENDIF
+    ENDDO
+  ENDDO
+  !on the physical domain of the son model
+  DO JJ = 1,IDIMY_C-2*(JPHEXT+1)  !the physical size of the son model in the father grid
+    DO JEPSY = 1,KDYRATIO
+      ZPOND2 = FLOAT(JEPSY-1)/FLOAT(KDYRATIO)
+      ZPOND1 = 1.-ZPOND2
+      PYHAT(JPHEXT+JEPSY+(JJ-1)*KDYRATIO) = ZPOND1*ZYHAT_EXTENDED_C(JJ+JPHEXT+1)+ ZPOND2*ZYHAT_EXTENDED_C(JJ+JPHEXT+1+1)
+    ENDDO
+  ENDDO
+  !on the north halo of the son model
+  DO JJ = 1,JPHEXT
+    DO JEPSY=1,KDYRATIO
+      ZPOND1 = FLOAT(KDYRATIO-JEPSY+1)/FLOAT(KDYRATIO)
+      ZPOND2 = 1.-ZPOND1
+      IF( SIZE(PYHAT)-JPHEXT+(JJ-1)*KDYRATIO+JEPSY <= SIZE(PYHAT) ) THEN
+        PYHAT(SIZE(PYHAT)-JPHEXT+(JJ-1)*KDYRATIO+JEPSY) = ZPOND1*ZYHAT_EXTENDED_C(IDIMY_C-JPHEXT+JJ-1)+ ZPOND2*ZYHAT_EXTENDED_C(IDIMY_C-JPHEXT+JJ)
+      ENDIF
+    ENDDO
+  ENDDO
+  DEALLOCATE(ZYHAT_2D_F)
+  DEALLOCATE(ZYHAT_EXTENDED_C)
+  DEALLOCATE(ZYHAT_2D_C)
+!!$=======
+!!$  IXSIZE1=SIZE(GRID_MODEL(1)%XXHAT)
+!!$  ALLOCATE(ZXHAT_EXTENDED(IXSIZE1+1))
+!!$  ZXHAT_EXTENDED(1:IXSIZE1)=GRID_MODEL(1)%XXHAT(:)
+!!$  ZXHAT_EXTENDED(IXSIZE1+1)=2.*GRID_MODEL(1)%XXHAT(IXSIZE1)-GRID_MODEL(1)%XXHAT(IXSIZE1-1)
+!!$  DO JEPSX = 1,KDXRATIO
+!!$    ZPOND2 = FLOAT(JEPSX-1)/FLOAT(KDXRATIO)
+!!$    ZPOND1 = 1.-ZPOND2
+!!$    DO JI = KXOR,KXEND
+!!$      IIS = IIB+JEPSX-1+(JI-KXOR-JPHEXT)*KDXRATIO
+!!$!
+!!$      IF (1 <= IIS .AND. IIS <= IIU)                   &
+!!$      PXHAT(IIS) = ZPOND1*ZXHAT_EXTENDED(JI) +ZPOND2*ZXHAT_EXTENDED(JI+1)
+!!$    END DO
+!!$  END DO
+!!$  DEALLOCATE(ZXHAT_EXTENDED)
+!!$!
+!!$  IYSIZE1=SIZE(GRID_MODEL(1)%XYHAT)
+!!$  ALLOCATE(ZYHAT_EXTENDED(IYSIZE1+1))
+!!$  ZYHAT_EXTENDED(1:IYSIZE1)=GRID_MODEL(1)%XYHAT(:)
+!!$  ZYHAT_EXTENDED(IYSIZE1+1)=2.*GRID_MODEL(1)%XYHAT(IYSIZE1)-GRID_MODEL(1)%XYHAT(IYSIZE1-1)
+!!$  DO JEPSY = 1,KDYRATIO
+!!$    ZPOND2 = FLOAT(JEPSY-1)/FLOAT(KDYRATIO)
+!!$    ZPOND1 = 1.-ZPOND2
+!!$    DO JJ = KYOR,KYEND
+!!$      IJS = IJB+JEPSY-1+(JJ-KYOR-JPHEXT)*KDYRATIO
+!!$!
+!!$      IF (1 <= IJS .AND. IJS <= IJU)                   &
+!!$      PYHAT(IJS) = ZPOND1*ZYHAT_EXTENDED(JJ) +ZPOND2*ZYHAT_EXTENDED(JJ+1)
+!!$    END DO
+!!$  END DO
+!!$  DEALLOCATE(ZYHAT_EXTENDED)
+!!$>>>>>>> 1.3.4.2.18.2.2.1
 !
 !
 !*       2.2.2  interpolation of ZS performed later
@@ -332,12 +494,14 @@ PLATOR = XLATORI
 !
 !*       3.    INITIALIZATION OF ZS and ZSMT:
 !              ------------------------------
-!
-CALL SPAWN_ZS(KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
+CALL SPAWN_ZS(IXOR_F,IXEND_F,IYOR_F,IYEND_F,KDXRATIO,KDYRATIO,IDIMX_C,IDIMY_C,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
               GRID_MODEL(1)%XZS,  PZS,  'ZS    ',PZS_LS)
-CALL SPAWN_ZS(KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
+CALL SPAWN_ZS(IXOR_F,IXEND_F,IYOR_F,IYEND_F,KDXRATIO,KDYRATIO,IDIMX_C,IDIMY_C,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
               GRID_MODEL(1)%XZSMT,PZSMT,'ZSMT  ',PZSMT_LS)
 !
+CALL MPPDB_CHECK2D(PZS,"SPAWN_GRID2:PZS",PRECISION)
+CALL MPPDB_CHECK2D(PZSMT,"SPAWN_GRID2:PZSMT",PRECISION)
+!$
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF MODEL 2 DATE AND TIME:

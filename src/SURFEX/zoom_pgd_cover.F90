@@ -37,6 +37,7 @@
 !     Modification 17/04/12 M.Tomasini All COVER physiographic fields are now 
 !!                                     interpolated for spawning => 
 !!                                     ABOR1_SFX if (.NOT.OECOCLIMAP) in comment
+!     Modification 05/02/15 M.Moge : use NSIZE_FULL instead of SIZE(XLAT) (for clarity)
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -57,6 +58,7 @@ USE MODI_READ_SURF
 USE MODI_CLOSE_AUX_IO_SURF
 USE MODI_PREP_GRID_EXTERN
 USE MODI_HOR_INTERPOL
+USE MODI_HOR_INTERPOL_1COV
 USE MODI_PREP_OUTPUT_GRID
 USE MODI_OLD_NAME
 USE MODI_SUM_ON_ALL_PROCS
@@ -87,11 +89,16 @@ INTEGER :: INI     ! total 1D dimension (input grid)
 INTEGER :: IL      ! total 1D dimension (output grid)
 INTEGER :: JCOVER  ! loop counter
 INTEGER :: IVERSION       ! surface version
+#ifdef MNH_PARALLEL
+REAL, DIMENSION(:), POINTER     :: ZCOVER
+#else
 REAL, DIMENSION(:,:), POINTER     :: ZCOVER
+#endif
 REAL, DIMENSION(:,:), POINTER :: ZSEA1, ZWATER1, ZNATURE1, ZTOWN1
 REAL, DIMENSION(:,:), POINTER :: ZSEA2, ZWATER2, ZNATURE2, ZTOWN2
 REAL, DIMENSION(:),   ALLOCATABLE :: ZSUM
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=100) :: YCOMMENT
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_COVER',0,ZHOOK_HANDLE)
@@ -123,15 +130,9 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_COVER',0,ZHOOK_HANDLE)
 !              ----------------
 !
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 ALLOCATE(LCOVER(JPCOVER))
- CALL OLD_NAME(HPROGRAM,'COVER_LIST      ',YRECFM)
- CALL READ_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HDIR='-')
-!
-ALLOCATE(ZCOVER(INI,JPCOVER))
- CALL READ_SURF(HPROGRAM,YRECFM,ZCOVER(:,:),LCOVER,IRESP,HDIR='A')
-!
 ALLOCATE(ZSEA1   (INI,1))
 ALLOCATE(ZNATURE1(INI,1))
 ALLOCATE(ZWATER1 (INI,1))
@@ -143,20 +144,73 @@ IF (IVERSION>=7) THEN
   CALL READ_SURF(HPROGRAM,'FRAC_WATER ',ZWATER1(:,1), IRESP,HDIR='A')
   CALL READ_SURF(HPROGRAM,'FRAC_TOWN  ',ZTOWN1(:,1),  IRESP,HDIR='A')
   !
+  CALL OLD_NAME(HPROGRAM,'COVER_LIST      ',YRECFM)
+!  CALL READ_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HDIR='-')
+  CALL READ_LCOVER(HPROGRAM,LCOVER)
+  !
+#ifdef MNH_PARALLEL
+  ALLOCATE(ZCOVER(INI))
+#else
+  ALLOCATE(ZCOVER(INI,JPCOVER))
+#endif
+  !
 ELSE
+#ifdef MNH_PARALLEL
+  ! we assume that IVERSION>=7
+#else
+  CALL OLD_NAME(HPROGRAM,'COVER_LIST      ',YRECFM)
+!  CALL READ_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HDIR='-')
+  CALL READ_LCOVER(HPROGRAM,LCOVER)
+  !
+  ALLOCATE(ZCOVER(INI,JPCOVER))
+  CALL READ_SURF(HPROGRAM,YRECFM,ZCOVER(:,:),LCOVER,IRESP,HDIR='A')
+  !
   CALL CONVERT_COVER_FRAC(ZCOVER,ZSEA1(:,1),ZNATURE1(:,1),ZTOWN1(:,1),ZWATER1(:,1))
+#endif
 ENDIF
 !
- CALL CLOSE_AUX_IO_SURF(HINIFILE,HINIFILETYPE)
 !------------------------------------------------------------------------------
 !
-!*      4.     Interpolations
+!*      4.     Reading of cover & Interpolations
 !              --------------
 !
-IL = SIZE(XLAT)
+IL = NSIZE_FULL
 ALLOCATE(XCOVER(IL,JPCOVER))
+ALLOCATE(ZSUM(IL))
+ZSUM = 0.
 !
+! on lit les cover une apres l'autre, et on appelle hor_interpol sur chaque cover separement
+!
+#ifdef MNH_PARALLEL
+IF ( HPROGRAM == 'MESONH' ) THEN
+  DO JCOVER=1,JPCOVER
+    IF ( LCOVER( JCOVER ) ) THEN
+      CALL READ_SURFX2COV_1COV_MNH(YRECFM,INI,JCOVER,ZCOVER(:),IRESP,YCOMMENT,'A')
+    ELSE
+      ZCOVER(:) = 0.
+    ENDIF
+    !
+    CALL HOR_INTERPOL_1COV(ILUOUT,ZCOVER,XCOVER(:,JCOVER))
+    !
+    ZSUM(:) = ZSUM(:) + XCOVER(:,JCOVER)
+    !
+  ENDDO
+ELSE
+  
+ENDIF
+#else
  CALL HOR_INTERPOL(ILUOUT,ZCOVER,XCOVER)
+#endif
+!
+!  Coherence check
+!
+DO JCOVER=1,JPCOVER
+  XCOVER(:,JCOVER) = XCOVER(:,JCOVER)/ZSUM(:)
+  IF (ALL(XCOVER(:,JCOVER)==0.)) LCOVER(JCOVER) = .FALSE.
+END DO
+!
+CALL CLOSE_AUX_IO_SURF(HINIFILE,HINIFILETYPE)
+!
 !
 DEALLOCATE(ZCOVER)
 !
@@ -191,24 +245,6 @@ DEALLOCATE(ZWATER2)
 DEALLOCATE(ZTOWN2)
 !
  CALL CLEAN_PREP_OUTPUT_GRID
-!------------------------------------------------------------------------------
-!
-!*      5.     Coherence check
-!              ---------------
-! 
-ALLOCATE(ZSUM(IL))
-ZSUM = 0.
-DO JCOVER=1,JPCOVER
-  ZSUM(:) = ZSUM(:) + XCOVER(:,JCOVER)
-END DO
-!
-DO JCOVER=1,JPCOVER
-  XCOVER(:,JCOVER) = XCOVER(:,JCOVER)/ZSUM(:)
-END DO
-!
-DO JCOVER=1,JPCOVER
-  IF (ALL(XCOVER(:,JCOVER)==0.)) LCOVER(JCOVER) = .FALSE.
-END DO
 !------------------------------------------------------------------------------
 !
 !*      6.     Fractions

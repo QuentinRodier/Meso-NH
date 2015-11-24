@@ -70,6 +70,7 @@
 !!                                      to keep finest fields of son1
 !!      Modification 05/06     Remove EPS
 !!      Modification 19/03/2008 (J.Escobar) rename INIT to INIT_MNH --> grib problem
+!!      Modification 05/02/2015 (M.Moge) read namelist NAM_CONFZ, before INIT_MNH
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -89,6 +90,7 @@ USE MODD_REF
 USE MODD_SPAWN
 USE MODN_BLANK
 USE MODD_NSV
+USE MODN_CONFZ
 !  
 !*       0.2    Declarative modules of model 1
 !
@@ -118,6 +120,8 @@ USE MODI_BOUNDARIES
 USE MODI_VERSION
 USE MODI_INIT_MNH
 USE MODI_DEALLOC_SURFEX
+USE MODE_MPPDB
+!
 !
 USE MODN_CONF, ONLY : JPHEXT , NHALO
 !
@@ -146,6 +150,7 @@ NAMELIST/NAM_CONF_SPAWN/JPHEXT, NHALO
 !-------------------------------------------------------------------------------
 !
 CALL MPPDB_INIT()
+!
 ! First Switch to model 1 variables
 CALL GOTO_MODEL(1)
 !
@@ -164,17 +169,8 @@ CALL READ_EXSPA(CINIFILE,CINIFILEPGD,&
                 LBAL_ONLY, &
                 CDOMAIN,YSPAFILE,YSPANBR,CDADINIFILE,CDADSPAFILE,YSONFILE)
 !
-!-------------------------------------------------------------------------------
 !
-!*       2.    MODEL 1 INITIALIZATION
-!              ----------------------
-!
-CALL INIT_MNH
-!
-CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT,IRESP)
-CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP)
-!
-!*       3.    NAM_BLANK READING AND EXSPA file CLOSURE
+!*       2.    NAM_BLANK, NAM_SPAWN_SURF and NAM_CONFZ READING AND EXSPA file CLOSURE
 !              ----------------------------------------
 !
 YEXSPA  = 'SPAWN1.nam'
@@ -188,10 +184,21 @@ IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_SPAWN_SURF)
 CALL UPDATE_MODD_FROM_NMLVAR
 CALL POSNAM(ILUSPA,'NAM_BLANK',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_BLANK)
+CALL POSNAM(ILUSPA,'NAM_CONFZ',GFOUND)
+IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONFZ)
 CALL POSNAM(ILUSPA,'NAM_CONF_SPAWN',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONF_SPAWN)
-!!CALL CLOSE_ll(YEXSPA)
+CALL CLOSE_ll(YEXSPA)
 !
+!-------------------------------------------------------------------------------
+!
+!*       3.    MODEL 1 INITIALIZATION
+!              ----------------------
+!
+CALL INIT_MNH
+!
+CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT,IRESP)
+CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP)
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF OUTER POINTS OF MODEL 1
@@ -205,12 +212,16 @@ CALL BOUNDARIES                                                     &
             XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS,   &
             XRHODJ,                                                 &
             XUT, XVT, XWT, XTHT, XTKET, XRT, XSVT, XSRCT            )
+CALL MPPDB_CHECK3D(XUT,"SPAWNING-after boundaries::XUT",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
 !*       5.    SPAWNING OF MODEL 2 FROM MODEL 1
 !              --------------------------------
 !
+CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
+             form='FORMATTED',position="REWIND",mode=GLOBAL)
+CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 CALL GOTO_MODEL(2)
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 CALL INIT_NMLVAR
@@ -227,7 +238,6 @@ CALL SPAWN_MODEL2 (NRR,NSV_USER,CTURB,CSURF,CCLOUD,                     &
                    CINIFILE, CINIFILEPGD, LSPAWN_SURF                   )
 !
 CALL DEALLOC_SURFEX
- !callabortstop
 CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
 CALL END_PARA_ll(IINFO_ll)
 !JUAN CALL ABORT

@@ -43,6 +43,7 @@
 !!    -------------
 !     Original 01/05/98
 !     Juan 19/08/2005: distinction Halo NORD/SUD & EST/WEST
+!     M.Moge 10/02/2015 CONSTRUCT_HALO_EXTENDED
 !
 !!    Implicit Arguments
 !!    ------------------
@@ -1302,6 +1303,321 @@
 !-------------------------------------------------------------------------------
 !
       END SUBROUTINE CONSTRUCT_HALO1
+!
+!     ##################################################
+      SUBROUTINE CONSTRUCT_HALO_EXTENDED( TPCOMDATA, TPPROCONF, HALOSIZE )
+!     ##################################################
+!
+!!****  *CONSTRUCT_HALO_EXTENDED* - routine to construct the extended halo of size HALOSIZE correspondants
+!
+!!    Purpose
+!!    -------
+!     the purpose of the routine is to fill the structured type variable
+!     TPCOMDATA with informations concerning the communications of
+!     halo of size HALOSIZE
+!
+!!**  Method
+!!    ------
+!     we compute for the local processor,
+!      - intersections between extended zones of the global domain
+!        and local physical zone to find the send correspondant
+!        of the local processor
+!      - intersections between physical zones of the global domain
+!        and local extended zone to find the receive correspondant
+!        of the local processor
+!
+!     we complete these correspondants in case of cyclic conditions
+!
+!!    External
+!!    --------
+!
+!     Module MODE_TOOLS_ll
+!        ADD_ZONE, INTERSECTION, GLOBAL2LOCAL, EXTRACT_ZONE
+!        LWEST_ll, LSOUTH_ll, LEAST_ll, LNORTH_ll
+!
+!     Module MODE_CONSTRUCT_ll
+!        INI_CYCLIC
+!
+!!    Implicit Arguments
+!!    ------------------
+!
+!     Module MODD_STRUCTURE_ll
+!        types ZONE_ll, PROC_COM_DATA_ll, PROCONF_ll
+!
+!     Module MODD_PARAMETERS_ll
+!        JPHEXT - Horizontal External points number
+!
+!     Module MODD_VAR_ll
+!        IP - Number of local processor=subdomain
+!        NPROC - Number of processors
+!        TCRRT_COMDATA - Current communication data structure for current model
+!                        and local processor
+!
+!     Module MODD_DIM_ll
+!        CLBCX - X-direction LBC type at left(1) and right(2) boundaries
+!        CLBCY - Y-direction LBC type at left(1) and right(2) boundaries
+!
+!!    Reference
+!!    ---------
+!
+!!    Author
+!!    ------
+!     M.Moge               * CNRS - LA * (adaptation of subroutine CONSTRUCT_HALO1)
+!!
+!!    Modifications
+!!    -------------
+!     Original 10/02/2015
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!
+  USE MODE_TOOLS_ll, ONLY      : LNORTH_ll, LSOUTH_ll, LEAST_ll, LWEST_ll, &
+                                 INTERSECTION, GLOBAL2LOCAL, ADD_ZONE,     &
+                                 EXTRACT_ZONE_EXTENDED
+!
+  IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+  TYPE(PROC_COM_DATA_ll), POINTER :: TPCOMDATA ! communications data structure
+  TYPE(PROCONF_ll), POINTER       :: TPPROCONF ! splitting data structure
+  INTEGER, INTENT(IN)             :: HALOSIZE  ! size of the halo
+!
+!*       0.2   declarations of local variables
+!
+  TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZPZS ! Physical zone splitting
+  TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZEZS_EXTENDED ! Extended zone splitting with halo of size HALOSIZE
+!
+  TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZINTER ! Intermediate zone
+!
+  INTEGER                                  :: JI ! loop control variable
+
+  INTEGER                                  :: ICURMODEL
+  INTEGER                                  :: ISHIFTS, ISHIFTN,   &
+                                              ISHIFTE, ISHIFTW
+  INTEGER                                  :: ISHIFTSI, ISHIFTNI, &
+                                              ISHIFTEI, ISHIFTWI
+  INTEGER                                  :: IS, IE, IW ,IN
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.    ALLOCATE OF THE LOCAL VARIABLES :
+!              -------------------------------
+!
+  ALLOCATE( TZPZS(NPROC), TZEZS_EXTENDED(NPROC), TZINTER(NPROC) )
+!
+!-------------------------------------------------------------------------------
+!
+!*       2.    EXTRACTION OF PHYSICAL AND EXTENDED 2WAY SPLITTING :
+!              --------------------------------------------------
+!
+  CALL EXTRACT_ZONE_EXTENDED( TPPROCONF%TSPLITS_B, TZPZS, TZEZS_EXTENDED, HALOSIZE )
+!
+!-------------------------------------------------------------------------------
+!
+!*       3.    COMPUTATION OF INTERSECTION BETWEEN LOCAL PHYSICAL ZONE
+!*             AND EXTENDED SPLITTING -> SEND CORRESPONDANT :
+!              --------------------------------------------
+!
+  CALL INTERSECTION( TZEZS_EXTENDED, NPROC, TZPZS(IP), TZINTER )
+!
+  ICURMODEL = TCRRT_COMDATA%NUMBER
+  ICURMODEL = TPCOMDATA%NUMBER
+!
+  ISHIFTS = 0
+  ISHIFTW = 0
+  ISHIFTN = 0
+  ISHIFTE = 0
+!
+  IF (TPPROCONF%TBOUND(IP)%SOUTH) ISHIFTS = 1
+  IF (TPPROCONF%TBOUND(IP)%WEST)  ISHIFTW = 1
+  IF (TPPROCONF%TBOUND(IP)%NORTH) ISHIFTN = 1
+  IF (TPPROCONF%TBOUND(IP)%EAST)  ISHIFTE = 1
+!
+  IF ((ISHIFTS.NE.0).OR.(ISHIFTW.NE.0).OR.(ISHIFTN.NE.0).OR. &
+      (ISHIFTE.NE.0)) THEN
+!
+    DO JI = 1, NPROC
+!
+!     if intersection not void and intersected zone is zone itself
+!
+      IF ((TZINTER(JI)%NUMBER.NE.0).AND.(TZINTER(JI)%NUMBER.NE.IP)) THEN
+        ISHIFTSI = 2
+        ISHIFTWI = 2
+        ISHIFTNI = 2
+        ISHIFTEI = 2
+!
+        IF (TPPROCONF%TBOUND(JI)%SOUTH) ISHIFTSI = 1
+        IF (TPPROCONF%TBOUND(JI)%WEST)  ISHIFTWI = 1
+        IF (TPPROCONF%TBOUND(JI)%NORTH) ISHIFTNI = 1
+        IF (TPPROCONF%TBOUND(JI)%EAST)  ISHIFTEI = 1
+!
+        IS = 0
+        IN = 0
+        IW = 0
+        IE = 0
+!
+!     if intersected zone is on a border too
+!
+        IF ((ISHIFTS == ISHIFTSI).AND.(CLBCX(ICURMODEL, 1) /= 'CYCL')) THEN
+          IS = -HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTN == ISHIFTNI).AND.(CLBCX(ICURMODEL, 2) /= 'CYCL')) THEN
+          IN = HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTW == ISHIFTWI).AND.(CLBCY(ICURMODEL, 1) /= 'CYCL')) THEN
+          IW = -HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTE == ISHIFTEI).AND.(CLBCY(ICURMODEL, 2) /= 'CYCL')) THEN
+          IE = HALOSIZE
+        ENDIF
+!
+        TZINTER(JI) = ZONE_ll(&
+             TZINTER(JI)%NUMBER         ,&
+             TZINTER(JI)%MSSGTAG        ,&
+             TZINTER(JI)%NXOR + IW      ,&
+             TZINTER(JI)%NXEND + IE     ,&
+             TZINTER(JI)%NYOR + IS      ,&
+             TZINTER(JI)%NYEND + IN     ,&
+             TZINTER(JI)%NZOR           ,&
+             TZINTER(JI)%NZEND           )
+      ENDIF
+!
+    ENDDO
+!
+  ENDIF
+!
+  TPCOMDATA%HALOSIZE_EXTENDED = HALOSIZE
+  NULLIFY(TPCOMDATA%TSEND_HALO_EXTENDED)
+  DO JI = 1, NPROC
+    IF((TZINTER(JI)%NUMBER.NE.0).AND.(TZINTER(JI)%NUMBER.NE.IP)) THEN
+      TZINTER(JI)%MSSGTAG = 1
+      CALL ADD_ZONE( TPCOMDATA%TSEND_HALO_EXTENDED, TZINTER(JI) )
+    ENDIF
+  ENDDO
+!
+!-------------------------------------------------------------------------------
+!
+!*       4.    COMPUTATION OF INTERSECTION BETWEEN LOCAL EXTENDED ZONE
+!              AND PHYSICAL SPLITTING -> RECV CORRESPONDANT :
+!              --------------------------------------------
+!
+  CALL INTERSECTION( TZPZS, NPROC, TZEZS_EXTENDED(IP), TZINTER )
+!
+  IF ((ISHIFTS.NE.0).OR.(ISHIFTW.NE.0).OR.(ISHIFTN.NE.0).OR. &
+      (ISHIFTE.NE.0)) THEN
+!
+    DO JI = 1, NPROC
+!
+!     if intersection not void and intersected zone is zone itself
+!
+      IF ((TZINTER(JI)%NUMBER.NE.0).AND.(TZINTER(JI)%NUMBER.NE.IP)) THEN
+        ISHIFTSI = 2
+        ISHIFTWI = 2
+        ISHIFTNI = 2
+        ISHIFTEI = 2
+!
+        IF (TPPROCONF%TBOUND(JI)%SOUTH) ISHIFTSI = 1
+        IF (TPPROCONF%TBOUND(JI)%WEST)  ISHIFTWI = 1
+        IF (TPPROCONF%TBOUND(JI)%NORTH) ISHIFTNI = 1
+        IF (TPPROCONF%TBOUND(JI)%EAST)  ISHIFTEI = 1
+!
+        IS = 0
+        IN = 0
+        IW = 0
+        IE = 0
+!
+!     if intersected zone is on a border too
+!
+        IF ((ISHIFTS == ISHIFTSI).AND.(CLBCX(ICURMODEL, 1) /= 'CYCL')) THEN
+          IS = -HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTN == ISHIFTNI).AND.(CLBCX(ICURMODEL, 2) /= 'CYCL')) THEN
+          IN = HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTW == ISHIFTWI).AND.(CLBCY(ICURMODEL, 1) /= 'CYCL')) THEN
+          IW = -HALOSIZE
+        ENDIF
+!
+        IF ((ISHIFTE == ISHIFTEI).AND.(CLBCY(ICURMODEL, 2) /= 'CYCL')) THEN
+          IE = HALOSIZE
+        ENDIF
+!
+        TZINTER(JI) = ZONE_ll(TZINTER(JI)%NUMBER, &
+                              TZINTER(JI)%MSSGTAG, &
+                              TZINTER(JI)%NXOR + IW,&
+                              TZINTER(JI)%NXEND + IE, &
+                              TZINTER(JI)%NYOR + IS, &
+                              TZINTER(JI)%NYEND + IN,&
+                              TZINTER(JI)%NZOR,&
+                              TZINTER(JI)%NZEND)
+      ENDIF
+!
+    ENDDO
+!
+  ENDIF
+!
+  NULLIFY(TPCOMDATA%TRECV_HALO_EXTENDED)
+  DO JI = 1, NPROC
+    IF((TZINTER(JI)%NUMBER.NE.0).AND.(TZINTER(JI)%NUMBER.NE.IP)) THEN
+      TZINTER(JI)%MSSGTAG = 1
+      CALL ADD_ZONE( TPCOMDATA%TRECV_HALO_EXTENDED, TZINTER(JI) )
+    ENDIF
+  ENDDO
+!
+!-------------------------------------------------------------------------------
+!
+!*       5.    MODIFICATIONS IN CASE OF CYCLIC CONDITIONS :
+!              ------------------------------------------
+!
+  NULLIFY(TPCOMDATA%TSEND_BOUNDX)
+  NULLIFY(TPCOMDATA%TRECV_BOUNDX)
+  NULLIFY(TPCOMDATA%TSEND_BOUNDY)
+  NULLIFY(TPCOMDATA%TRECV_BOUNDY)
+  NULLIFY(TPCOMDATA%TSEND_BOUNDXY)
+  NULLIFY(TPCOMDATA%TRECV_BOUNDXY)
+!
+  CALL INI_CYCLIC( TPPROCONF, &
+                   TPCOMDATA%TSEND_HALO_EXTENDED, &
+                   TPCOMDATA%TRECV_HALO_EXTENDED, &
+                   TPCOMDATA%TSEND_BOUNDX, &
+                   TPCOMDATA%TRECV_BOUNDX, &
+                   TPCOMDATA%TSEND_BOUNDY, &
+                   TPCOMDATA%TRECV_BOUNDY, &
+                   TPCOMDATA%TSEND_BOUNDXY, &
+                   TPCOMDATA%TRECV_BOUNDXY, &
+                   TZPZS ,TZEZS_EXTENDED, HALOSIZE )
+!
+!-------------------------------------------------------------------------------
+!
+!*       6.    SWITCH FROM GLOBAL COORDINATES TO LOCAL COORDINATES :
+!              ---------------------------------------------------
+!
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TSEND_HALO_EXTENDED)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TRECV_HALO_EXTENDED)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TSEND_BOUNDX)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TRECV_BOUNDX)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TSEND_BOUNDY)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TRECV_BOUNDY)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TSEND_BOUNDXY)
+  CALL GLOBAL2LOCAL(TPPROCONF, TPCOMDATA%TRECV_BOUNDXY)
+!
+!-------------------------------------------------------------------------------
+!
+!*       7.    DEALLOCATION OF LOCAL VARIABLES :
+!              -------------------------------
+!
+  DEALLOCATE( TZPZS, TZEZS_EXTENDED, TZINTER )
+!
+!-------------------------------------------------------------------------------
+!
+      END SUBROUTINE CONSTRUCT_HALO_EXTENDED
 !
 !     ################################################
       SUBROUTINE CONSTRUCT_1DX( TPCOMDATA, TPPROCONF )

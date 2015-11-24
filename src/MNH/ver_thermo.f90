@@ -145,6 +145,10 @@ END MODULE MODI_VER_THERMO
 !!                  Jun.  06, 2006  (Mallet) replace DRY_MASS by TOTAL_DMASS
 !!                     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
+!!                            2014  (M.Faivre)
+!!                         08/2015  (M.Moge)    removing UPDATE_HALO_ll on 
+!!                                              XRHODREF, XTHVREF, XRVREF, XEXNREF, XRHODJ
+!!                                              because we now do it in SET_REF
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !-------------------------------------------------------------------------------
 !
@@ -179,6 +183,8 @@ USE MODE_MPPDB
 USE MODE_ll
 USE MODE_EXTRAPOL
 !
+!20131113
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 IMPLICIT NONE
 !
@@ -271,6 +277,12 @@ END IF
 !
 XTHT(:,:,:)=ZTHV(:,:,:)*(1.+WATER_SUM(XRT(:,:,:,:)))/(1.+XRV/XRD*XRT(:,:,:,1))
 !
+!20131113 add update_halo here
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XTHT )
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK3D(XTHT,"PGDFILTER9:XTHT",PRECISION)
+!
 ZTHV(:,:,1)=ZTHV(:,:,2)
 XTHT(:,:,1)=XTHT(:,:,2)
 XRT(:,:,1,:)=XRT(:,:,2,:)
@@ -299,10 +311,13 @@ END IF
 !*       2.    COMPUTATION OF 1D REFERENCE STATE VARIABLES
 !              -------------------------------------------
 !
+CALL MPPDB_CHECK3D(ZTHV,"VERTHERMO bef set_refz::ZTHV",PRECISION)
+CALL MPPDB_CHECK3D(XRT(:,:,:,1),"VERTHERMO bef set_refz::XRT",PRECISION)
+!
 CALL SET_REFZ(ZTHV,XRT(:,:,:,1))
 
-CALL MPPDB_CHECK3D(ZTHV,"VERTHERMO::ZTHV",PRECISION)
-CALL MPPDB_CHECK3D(XRT(:,:,:,1),"VERTHERMO::XRT",PRECISION)
+CALL MPPDB_CHECK3D(ZTHV,"VERTHERMO aft set_refz::ZTHV",PRECISION)
+CALL MPPDB_CHECK3D(XRT(:,:,:,1),"VERTHERMO: aft set_refz:XRT",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -314,17 +329,10 @@ ALLOCATE(XTHVREF(IIU,IJU,IKU))
 ALLOCATE(XRVREF(IIU,IJU,IKU))
 ALLOCATE(XEXNREF(IIU,IJU,IKU))
 ALLOCATE(XRHODJ(IIU,IJU,IKU))
+XRVREF(:,:,:) = 0.
 CALL SET_REF(0,'NIL',CLUOUT0,XZZ,XZHAT,PJ,PDXX,PDYY,CLBCX,CLBCY,     &
              XREFMASS,XMASS_O_PHI0,XLINMASS,XRHODREF,XTHVREF,XRVREF, &
              XEXNREF,XRHODJ)
-
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XRHODREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XTHVREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XRVREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XEXNREF)
-CALL ADD3DFIELD_ll(TZFIELDS_ll, XRHODJ)
-CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-CALL CLEANLIST_ll(TZFIELDS_ll)
 
 CALL MPPDB_CHECK3D(XRHODREF,"VERTHERMO::XRHODREF",PRECISION)
 CALL MPPDB_CHECK3D(XTHVREF,"VERTHERMO::XTHVREF",PRECISION)

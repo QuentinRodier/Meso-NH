@@ -162,6 +162,7 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!                  20/05/06             Remove EPS
 !!                  10/04/2014 (J.Escobar &  M.Faivre ) add reprod_sum on XEXNTOP
 !!                  24/04/2014 (J.escobar) bypass CRAY internal compiler error on IIJ computation
+!!                      2014 (M.Faivre)
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -190,6 +191,11 @@ USE MODD_PARAMETERS
 USE MODD_PARAM_n
 USE MODD_VER_INTERP_LIN
 USE MODD_PREP_REAL
+!20131028 add MODD_DIMn to use NIMAX,JMAX
+USE MODD_DIM_n
+USE MODD_PGDDIM
+!20131028 add REPRO_SUM
+USE MODE_REPRO_SUM
 !JUAN REALZ
 USE MODE_ll
 USE MODE_EXTRAPOL
@@ -251,7 +257,6 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZZFLUX_MX,ZZMASS_MX
 REAL                                                     :: ZCOUNT
 INTEGER                                                  :: IINFO_ll
 !JUAN REALZ
-INTEGER,DIMENSION(SIZE(PZMASS_LS,1),SIZE(PZMASS_LS,2))   :: IJCOUNT 
 
 !-------------------------------------------------------------------------------
 !
@@ -415,13 +420,13 @@ IF (HFILE=='ATM ') THEN
 !
 !!$  XEXNTOP=SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT((IIE-IIB+1)*(IJE-IJB+1))
 !JUAN REALZ
-!!$  XEXNTOP  = SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
-!!$  CALL REDUCESUM_ll(XEXNTOP,IINFO_ll)
-  XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
-!
-  ZCOUNT   = FLOAT((IIE-IIB+1)*(IJE-IJB+1))
+!!!  XEXNTOP  = SUM(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
+!20131028 in Mymodif --> 20131129 in MNHorig
+XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))
+ZCOUNT   = FLOAT((IIE-IIB+1)*(IJE-IJB+1))
+!$20140227 disable reduce no xexntop !!
+!$ CALL REDUCESUM_ll(XEXNTOP,IINFO_ll)
   CALL REDUCESUM_ll(ZCOUNT,IINFO_ll)
-!
   XEXNTOP = XEXNTOP / ZCOUNT
 
 !JUAN REALZ
@@ -445,11 +450,12 @@ IF (HFILE=='ATM ') THEN
 !
   IF (NVERB>=1 .AND. ANY(XZHAT>=5000.) ) THEN
     IK4000 = COUNT(XZHAT(:)<4000.)
-    IJCOUNT(IIB:IIE,IJB:IJE) = COUNT((ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                 &
-                               >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01),DIM=3 )
-    IIJ = MAXLOC( SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                          &
-                  MASK=(  IJCOUNT(IIB:IIE,IJB:IJE)  >=1 )                      )           &
-        + JPHEXT
+    IK4000 = COUNT(XZHAT(:)<4000.)
+    IIJ = MAXLOC(        SUM(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IK4000),3),                  &
+                  MASK=COUNT(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE)                         &
+                             >=MAXVAL(ZHU_MX(IIB:IIE,IJB:IJE,JPVEXT+1:IKE))-0.01,DIM=3 )  &
+                        >=1                                                   )           &
+          + JPHEXT
     WRITE(ILUOUT0,*) ' '
     WRITE(ILUOUT0,*) 'Altitude and humidity on large-scale grid (I=',IIJ(1),';J=',IIJ(2),')'
     DO JK=1,ILU

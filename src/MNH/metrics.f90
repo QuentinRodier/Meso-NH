@@ -85,6 +85,8 @@ END MODULE MODI_METRICS
 !!                  14/02/01 (V. Masson and J. Stein) PDZZ initialized below the surface
 !!                           (influences the 3D turbulence of W) and PDXX,PDYY,PDZZ at the top
 !!                  19/03/2008 (J.Escobar) remove spread !!!
+!!		    2014 (M.Faivre)
+!!		    25/02/2015 (M.Moge) minor bug fix with MPPDB_CHECK
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -93,6 +95,9 @@ USE MODD_CONF
 USE MODD_CST
 !
 USE MODI_SHUMAN
+!
+!20131024
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -119,6 +124,10 @@ REAL                :: ZD1      ! DELTA1 (switch 0/1) for thinshell
                                 ! approximation
 INTEGER :: JI,JJ,JK
 REAL, DIMENSION(SIZE(PDXHAT),SIZE(PDYHAT),SIZE(PZZ,3)) :: ZDZZ
+!20131024
+REAL, DIMENSION(SIZE(PDXHAT),SIZE(PDYHAT)) :: TEMP2D_PDXHAT
+REAL, DIMENSION(SIZE(PDXHAT),SIZE(PDYHAT)) :: TEMP2D_PDYHAT
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS :
@@ -131,7 +140,22 @@ IKU = SIZE(PZZ,3)
 !
 !*       2.   COMPUTE PDXX and PDYY  : 
 !            --------------------
-! 
+!
+!20131024
+CALL MPPDB_CHECK3D(PZZ,"METRICS::PZZ",PRECISION)
+IF (.NOT.LCARTESIAN) THEN
+  CALL MPPDB_CHECK2D(PMAP,"METRICS::PMAP",PRECISION)
+ENDIF
+!20131024
+DO JI=1,IIU
+TEMP2D_PDXHAT(JI,:) = PDXHAT(JI)
+END DO
+DO JJ=1,IJU
+TEMP2D_PDYHAT(:,JJ) = PDYHAT(JJ)
+END DO
+CALL MPPDB_CHECK2D(TEMP2D_PDXHAT,"METRICS::PDXHAT",PRECISION)
+CALL MPPDB_CHECK2D(TEMP2D_PDYHAT,"METRICS::PDYHAT",PRECISION)
+!
 IF (LTHINSHELL) THEN
   ZD1=0.
 ELSE
@@ -143,6 +167,9 @@ IF (.NOT.LCARTESIAN) THEN
     PDXX(JI,JJ,JK) = ZDZZ(JI,JJ,JK) * PDXHAT(JI) /PMAP(JI,JJ)
     PDYY(JI,JJ,JK) = ZDZZ(JI,JJ,JK) * PDYHAT(JJ) /PMAP(JI,JJ)
   ENDDO ; ENDDO ; ENDDO
+  !20140710
+  CALL MPPDB_CHECK3D(PDXX,"METRICSbefMXM::PDXX",PRECISION)
+  CALL MPPDB_CHECK3D(PDYY,"METRICSbefMYM::PDYY",PRECISION)
   PDXX(:,:,:)=MXM(PDXX(:,:,:))
   PDXX(:,:,IKU)=PDXX(:,:,IKU-1)
   PDYY(:,:,:)=MYM(PDYY(:,:,:))
@@ -155,6 +182,10 @@ ELSE
   PDXX(:,:,:)=MXM(PDXX(:,:,:))
   PDYY(:,:,:)=MYM(PDYY(:,:,:))
 END IF
+!
+!20131024
+CALL MPPDB_CHECK3D(PDXX,"METRICSaftMXM::PDXX",PRECISION)
+CALL MPPDB_CHECK3D(PDYY,"METRICSaftMYM::PDYY",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -173,6 +204,8 @@ PDZY(:,:,:) = DYM(PZZ(:,:,:))
 PDZZ(:,:,:) = DZM(1,IKU,1,MZF(1,IKU,1,PZZ(:,:,:)))
 PDZZ(:,:,IKU) = PZZ(:,:,IKU) - PZZ(:,:,IKU-1)  ! same delta z in IKU and IKU -1
 PDZZ(:,:,1)   = PDZZ(:,:,2)                    ! same delta z in 1   and 2
+!20131024
+CALL MPPDB_CHECK3D(PDZZ,"METRICS::PDZZ",PRECISION)
 !-----------------------------------------------------------------------------
 !
 END SUBROUTINE METRICS

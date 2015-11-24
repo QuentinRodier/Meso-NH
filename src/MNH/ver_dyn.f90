@@ -131,6 +131,7 @@ END MODULE MODI_VER_DYN
 !!                                          interpolation routine
 !!      V.Masson                  24/11/97  use of the 3D dry density
 !!      J.Stein                   20:01/98  add the LS field interpolation
+!!      M.Faivre                  2014
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -144,6 +145,7 @@ USE MODI_VER_INTERP_LIN
 USE MODI_WGUESS
 USE MODI_VER_SHIFT
 USE MODI_VER_INT_DYN
+USE MODI_ANEL_BALANCE_n
 USE MODI_SHUMAN
 !
 USE MODD_CONF           ! declaration modules
@@ -161,6 +163,7 @@ USE MODD_DIM_n
 USE MODE_MPPDB
 USE MODE_ll
 USE MODE_EXTRAPOL
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 IMPLICIT NONE
 !
@@ -215,6 +218,11 @@ INTEGER :: IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU     ! dimensions of the
 INTEGER :: IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2       ! West-east LB arrays
 INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
+!
+!20131105 declare vars related to add3dfield and update_halo_ll
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()  ! list of fields to exchange
+!
 !-------------------------------------------------------------------------------
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
@@ -250,15 +258,36 @@ CALL MPPDB_CHECK3D(ZRHODVA,"VERDYN::ZRHODVA",PRECISION)
 !*       3.    CHANGE TO ARAKAWA C-GRID
 !              ------------------------
 !
+!20131105 add UPDATE_HALO on ZRHODUA, ZRHODVA and PJ(needed) : ok ZRHODJU,V
+!20131112 impact of PJ update_halo =>ZRHODJU,V error => XUM,XVM error
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODUA)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODVA)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,PJ)
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!
 ZRHODJU(:,:,:)=MXM(ZRHODUA(:,:,:)*PJ(:,:,:))
 ZRHODJV(:,:,:)=MYM(ZRHODVA(:,:,:)*PJ(:,:,:))
-
+!
+!20131112 add update_halo_ll though checking on vars is correct
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODJU)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODJV)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!
+!20131105 add check
+CALL MPPDB_CHECK3D(ZRHODJU,"VERDYN3-before extrapol::ZRHODJU",PRECISION)
+CALL MPPDB_CHECK3D(ZRHODJV,"VERDYN3-before extrapol::ZRHODJV",PRECISION)
+!
 CALL EXTRAPOL('W',ZRHODJU)
 CALL EXTRAPOL('S',ZRHODJV)
-
-CALL MPPDB_CHECK3D(ZRHODJU,"VERDYN::ZRHODJU",PRECISION)
-CALL MPPDB_CHECK3D(ZRHODJV,"VERDYN::ZRHODJV",PRECISION)
-
+!
+!CALL MPPDB_CHECK3D(ZRHODJU,"VERDYN::ZRHODJU",PRECISION)
+!CALL MPPDB_CHECK3D(ZRHODJV,"VERDYN::ZRHODJV",PRECISION)
+!
+!20131104 add check
+CALL MPPDB_CHECK3D(ZRHODJU,"VERDYN3-after extrapol::ZRHODJU",PRECISION)
+CALL MPPDB_CHECK3D(ZRHODJV,"VERDYN3-after extrapol::ZRHODJV",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -269,16 +298,30 @@ ALLOCATE(XUT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
 ALLOCATE(XVT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
 ALLOCATE(XWT(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
 !
+!20131104 add check on xpabsm
+CALL MPPDB_CHECK3D(XPABST,"VER_DYN4::XPABST",PRECISION)
+CALL MPPDB_CHECK3D(XTHT,"VER_DYN4::XTHT",PRECISION)
+!
 ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
             /(XRD*XTHT(:,:,:)*(1.+XRV/XRD*XRT(:,:,:,1)))
+!
+CALL MPPDB_CHECK3D(ZRHOD,"VER_DYN4::ZRHOD",PRECISION)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHOD)
+  CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 XUT(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
 XVT(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
 
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XUT)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XVT)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
 CALL EXTRAPOL('W',XUT)
 CALL EXTRAPOL('S',XVT)
 
-!
+CALL MPPDB_CHECK3D(XUT,"VER_DYN4-after extrapol::XUT",PRECISION)
+CALL MPPDB_CHECK3D(XVT,"VER_DYN4-after extrapol::XVT",PRECISION)
 !
 !-------------------------------------------------------------------------------
 !
@@ -294,11 +337,42 @@ IF( HATMFILETYPE == 'MESONH' ) THEN
   ALLOCATE(XLSUM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
   ALLOCATE(XLSVM(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)))
   !
+  !20131104 add check on zrhodua, zrhodju
+  CALL MPPDB_CHECK3D(ZRHODUA,"VER_DYN5::ZRHODUA",PRECISION)
+  CALL MPPDB_CHECK3D(ZRHODJU,"VER_DYN5::ZRHODJU",PRECISION)
+  !
+  !20131105 add UPDATE_HALO on ZRHODUA, ZRHODVA and PJ(needed): ok ZRHODJU,V
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODUA)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODVA)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,PJ)
+     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+        CALL CLEANLIST_ll(TZFIELDS_ll)  
+  !
   ZRHODJU(:,:,:)=MXM(ZRHODUA(:,:,:)*PJ(:,:,:))
   ZRHODJV(:,:,:)=MYM(ZRHODVA(:,:,:)*PJ(:,:,:))
   !
+  !20131112 add update_halo_ll though checking on vars is correct
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODJU)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHODJV)
+     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+        CALL CLEANLIST_ll(TZFIELDS_ll)
+  !
+  !20131105 add UPDATE_HALO on ZRHOD
+    CALL ADD3DFIELD_ll(TZFIELDS_ll,ZRHOD)
+       CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+          CALL CLEANLIST_ll(TZFIELDS_ll)
+  !
   XLSUM(:,:,:)=ZRHODJU(:,:,:)/MXM(ZRHOD(:,:,:)*PJ(:,:,:))
   XLSVM(:,:,:)=ZRHODJV(:,:,:)/MYM(ZRHOD(:,:,:)*PJ(:,:,:))
+  !
+  !20131112 add update_halo_ll though checking on vars is correct
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,XLSUM)
+  CALL ADD3DFIELD_ll(TZFIELDS_ll,XLSVM)
+     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+        CALL CLEANLIST_ll(TZFIELDS_ll)
+  !20131126 add check on XLSUN, XLSVM
+  CALL MPPDB_CHECK3D(XLSUM,"VER_DYN5-beforeextrapol::XLSUM",PRECISION)
+  CALL MPPDB_CHECK3D(XLSVM,"VER_DYN5-beforeextrapol::XLSVM",PRECISION)
   !
 END IF
 !
@@ -316,6 +390,10 @@ IF ( HATMFILETYPE == 'MESONH' ) THEN
   XLSWM(:,:,:)=VER_INTERP_LIN(PLSW_MX(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 END IF
 !
+!20131126 add check on XWM,XLSWM
+CALL MPPDB_CHECK3D(XWT,"VER_DYN5::XWT",PRECISION)
+CALL MPPDB_CHECK3D(XLSWM,"VER_DYN5::XLSWM",PRECISION)
+!
 DEALLOCATE(NKLIN)
 DEALLOCATE(XCOEFLIN)
 !
@@ -325,6 +403,14 @@ ZCOEF(:,:,:)=(       XZZ(:,:,:)           -SPREAD(XZZ(:,:,IKB),3,IKU)) &
             /(SPREAD(XZZ(:,:,IKE+1),3,IKU)-SPREAD(XZZ(:,:,IKB),3,IKU))
 XWT(:,:,:)=XWT(:,:,:)*MAX(MIN( (4.-4.*ZCOEF(:,:,:)) ,1.),0.)
 !-------------------------------------------------------------------------------
+!
+!20131112 add update_halo_ll though checking on vars is correct
+CALL ADD3DFIELD_ll(TZFIELDS_ll,ZCOEF)
+CALL ADD3DFIELD_ll(TZFIELDS_ll,XWT)
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+!
+!------------------------------------------------------------------------------
 !
 !*       6.    STORAGE OF LARGE SCALE FIELDS
 !              ------------------------------
@@ -350,7 +436,11 @@ CALL EXTRAPOL('W',XLSUM)
 CALL EXTRAPOL('E',XLSUM)
 CALL EXTRAPOL('S',XLSVM)
 CALL EXTRAPOL('E',XLSVM)
-
+!
+!20131126 add check on XLSUN, XLSVM
+CALL MPPDB_CHECK3D(XLSUM,"VER_DYN5-afterextrapol::XLSUM",PRECISION)
+CALL MPPDB_CHECK3D(XLSVM,"VER_DYN5-afterextrapol::XLSVM",PRECISION)
+!
 ! FROM PREP_IDEAL_CASE
 !
 ! 3D case
@@ -418,6 +508,15 @@ IF(LNORTH_ll().AND. .NOT. L1D .AND. .NOT. L2D) THEN
 ENDIF
 
 !
+
+CALL  MPPDB_CHECKLB(XLBXUM,"ver_dyn::XLBXUM::",PRECISION,'LBXU',NRIMX)
+CALL  MPPDB_CHECKLB(XLBXVM,"ver_dyn::XLBXVM::",PRECISION,'LBXU',NRIMX)
+CALL  MPPDB_CHECKLB(XLBXWM,"ver_dyn::XLBXWM::",PRECISION,'LBXU',NRIMX)
+
+
+CALL  MPPDB_CHECKLB(XLBYUM,"ver_dyn::XLBYUM::",PRECISION,'LBYV',NRIMY)
+CALL  MPPDB_CHECKLB(XLBYVM,"ver_dyn::XLBYVM::",PRECISION,'LBYV',NRIMY)
+CALL  MPPDB_CHECKLB(XLBYWM,"ver_dyn::XLBYWM::",PRECISION,'LBYV',NRIMY)
 !
 !-------------------------------------------------------------------------------
 !

@@ -74,6 +74,10 @@ USE MODI_INI_BIKHARDT_n
 USE MODI_SPAWN_ZS
 USE MODE_MODELN_HANDLER
 !
+USE MODE_SPLITTING_ll, ONLY : SPLIT2
+USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
+USE MODD_STRUCTURE_ll, ONLY : ZONE_ll
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -89,14 +93,37 @@ INTEGER :: IMI ! current model index (DAD index)
 ! Dummy pointers needed to correct an ifort Bug
 CHARACTER(LEN=4), DIMENSION(:), POINTER :: DPTR_CLBCX,DPTR_CLBCY
 REAL, DIMENSION(:,:),  POINTER          :: DPTR_XZSMT
+INTEGER :: IINFO_ll
+INTEGER :: IXSIZE, IYSIZE  ! sizes of global son domain in father grid
+TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZSPLITTING
+INTEGER :: IXOR,IXEND,IYOR,IYEND ! limits of extended  domain of KSON model in its father's grid
+INTEGER :: IDIMX, IDIMY  ! dimensions of extended son subdomain in father's grid + one point in each direction
 !
 !*       1.    initializations
 !              ---------------
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(KSON)
+CALL GO_TOMODEL_ll(KSON, IINFO_ll)
 !
-CALL INI_BIKHARDT_n(NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),2)
+! get sizes of global son domain in father grid
+IXSIZE = NXEND_ALL(KSON) - NXOR_ALL (KSON) + 1 - 2*JPHEXT
+IYSIZE = NYEND_ALL(KSON) - NYOR_ALL (KSON) + 1 - 2*JPHEXT
+! get splitting of current model KMI in father grid
+ALLOCATE(TZSPLITTING(NPROC))
+CALL SPLIT2 ( IXSIZE, IYSIZE, 1, NPROC, TZSPLITTING, YSPLITTING )
+! get coords of extended domain of KSON in its father's grid
+IXOR  = NXOR_ALL(KSON) + TZSPLITTING(IP)%NXOR  -1 - JPHEXT 
+IXEND = NXOR_ALL(KSON) + TZSPLITTING(IP)%NXEND -1 + JPHEXT 
+IYOR  = NYOR_ALL(KSON) + TZSPLITTING(IP)%NYOR  -1 - JPHEXT 
+IYEND = NYOR_ALL(KSON) + TZSPLITTING(IP)%NYEND -1 + JPHEXT
+!
+!IDIMX = IXEND - IXOR - 1
+!IDIMY = IYEND - IYOR - 1
+IDIMX = IXEND - IXOR + 1 +2*1 ! + 2*JPHEXT
+IDIMY = IYEND - IYOR + 1 +2*1 ! + 2*JPHEXT
+!
+CALL INI_BIKHARDT_n(NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),KSON)
 !
 !-------------------------------------------------------------------------------
 !
@@ -106,11 +133,15 @@ CALL INI_BIKHARDT_n(NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),2)
 DPTR_CLBCX=>CLBCX
 DPTR_CLBCY=>CLBCY
 DPTR_XZSMT=>XZSMT
+!CALL SPAWN_ZS(IXOR,IXEND,IYOR,IYEND, &
+!              NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),DPTR_CLBCX,DPTR_CLBCY,         &
+!              CLUOUT,PFIELD,DPTR_XZSMT,HFIELD                             )
 CALL SPAWN_ZS(NXOR_ALL(KSON),NXEND_ALL(KSON),NYOR_ALL(KSON),NYEND_ALL(KSON), &
-              NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),DPTR_CLBCX,DPTR_CLBCY,         &
+              NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),IDIMX,IDIMY,DPTR_CLBCX,DPTR_CLBCY,         &
               CLUOUT,PFIELD,DPTR_XZSMT,HFIELD                             )
 !-------------------------------------------------------------------------------
 !
 CALL GOTO_MODEL(IMI)
+CALL GO_TOMODEL_ll(IMI, IINFO_ll)
 !
 END SUBROUTINE FILL_ZSMT_n

@@ -71,7 +71,7 @@ CONTAINS
     !
     !     Module MODE_CONSTRUCT_ll
     !       INI_PZ, INI_EZ, INI_BOUNDARIES, INI_TRANS,
-    !       CONSTRUCT_HALO1, CONSTRUCT_HALO2,
+    !       CONSTRUCT_HALO1, CONSTRUCT_HALO2, CONSTRUCT_HALO_EXTENDED,
     !       CONSTRUCT_TRANS, CONSTRUCT_1DX, CONSTRUCT_1DY,
     !       COMPUTE_HALO_MAX, COMPUTE_TRANS_MAX
     !
@@ -103,6 +103,7 @@ CONTAINS
     !     R. Guivarch 01/01/98  Grid-Nesting
     !     R. Guivarch 29/11/99  x and y splitting -> YSPLITTING 
     !     J. Escobar  24/09/2013 : temp patch for problem of gridnesting with different SHAPE
+    !     M.Moge      10/02/2015 construct halo extended (needed for an interpolation in SPAWNING)
     !
     !-------------------------------------------------------------------------------
     !
@@ -116,7 +117,7 @@ CONTAINS
     USE MODE_SPLITTING_ll, ONLY : SPLIT2
     !
     USE MODE_CONSTRUCT_ll, ONLY : INI_PZ, INI_EZ, INI_BOUNDARIES, INI_TRANS, &
-         CONSTRUCT_HALO1, CONSTRUCT_HALO2, &
+         CONSTRUCT_HALO1, CONSTRUCT_HALO2, CONSTRUCT_HALO_EXTENDED, &
          CONSTRUCT_TRANS, CONSTRUCT_1DX, CONSTRUCT_1DY, &
          COMPUTE_HALO_MAX, COMPUTE_TRANS_MAX
     !
@@ -195,6 +196,11 @@ CONTAINS
     !
     MPI_PRECISION  = MNH_MPI_REAL
     MPI_2PRECISION = MNH_MPI_2REAL
+    !
+    ! For bug with intelmpi+ilp64+i8 declare MNH_STATUSES_INGORE
+    !
+    ALLOCATE(MNH_STATUSES_IGNORE(MPI_STATUS_SIZE,NPROC))
+    !MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE
     !
     !-------------------------------------------------------------------------------
     !
@@ -408,6 +414,7 @@ CONTAINS
     !
     CALL CONSTRUCT_HALO1(TCRRT_COMDATA, TCRRT_PROCONF)
     CALL CONSTRUCT_HALO2(TCRRT_COMDATA, TCRRT_PROCONF)
+    CALL CONSTRUCT_HALO_EXTENDED(TCRRT_COMDATA, TCRRT_PROCONF, JPHEXT+1)
     !
     !
     !*       6.6   Construction of 1D communication data
@@ -472,6 +479,421 @@ CONTAINS
     !-------------------------------------------------------------------------------
     !
   END SUBROUTINE INI_PARAZ_ll
+  !
+  !       ################################
+  SUBROUTINE INI_PARAZ_CHILD_ll(KINFO_ll)
+    !     ################################
+    !
+    !!****  *INI_PARAZ_CHILD_ll* - routine to initialize the parallel variables for a child model
+    !!                             constructed from a father model in PREP_PGD.
+    !!                             Should be called after INI_PARAZ_ll on the father model
+    !!                             Similar to INI_PARAZ_ll and INI_CHILD
+    !!
+    !!    Purpose
+    !!    -------
+    !     the purpose of the routine is to fill the structured type variables
+    !     TCRRT_PROCONF and TCRRT_COMDATA
+    !
+    !!**  Method
+    !!    ------
+    !!
+    !!    External
+    !!    --------
+    !     Module MODE_SPLITTING_ll
+    !      SPLIT2
+    !
+    !     Module MODE_CONSTRUCT_ll
+    !       INI_PZ, INI_EZ, INI_BOUNDARIES, INI_TRANS,
+    !       CONSTRUCT_HALO1, CONSTRUCT_HALO2, CONSTRUCT_HALO_EXTENDED,
+    !       CONSTRUCT_TRANS, CONSTRUCT_1DX, CONSTRUCT_1DY,
+    !       COMPUTE_HALO_MAX, COMPUTE_TRANS_MAX
+    !
+    !!    Implicit Arguments
+    !!    ------------------
+    !     Module MODD_DIM_ll
+    !       JPHEXT - Horizontal External points number
+    !       NDXRATIO_ALL, NDYRATIO_ALL, NXOR_ALL, NYOR_ALL,
+    !       NXEND_ALL, NYEND_ALL,...
+    ! 
+    !     Module MODD_PARALLEL
+    !       TCRRT_PROCONF - Current configuration for current model
+    !       TCRRT_COMDATA - Current communication data structure for current model
+    !                       and local processor
+    ! 
+    !     Reference
+    !!    ---------
+    ! 
+    !!    AUTHOR
+    !!    ------
+    !       M. Moge
+    ! 
+    !!    MODIFICATIONS
+    !!    -------------
+    !     Original 21/07/15
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       0.    DECLARATIONS
+    !
+    USE MODD_DIM_ll
+    USE MODD_PARAMETERS_ll
+    USE MODD_STRUCTURE_ll
+    USE MODD_VAR_ll
+    !
+    USE MODE_SPLITTING_ll, ONLY : SPLIT2
+    !
+    USE MODE_CONSTRUCT_ll, ONLY : INI_PZ, INI_EZ, INI_BOUNDARIES, INI_TRANS, &
+         CONSTRUCT_HALO1, CONSTRUCT_HALO2, CONSTRUCT_HALO_EXTENDED, &
+         CONSTRUCT_TRANS, CONSTRUCT_1DX, CONSTRUCT_1DY, &
+         COMPUTE_HALO_MAX, COMPUTE_TRANS_MAX
+    !
+    USE MODE_TOOLSZ_ll, ONLY : SPLITZ, ini_pzz, ini_boundariesz, ini_ezz, construct_transz
+    !
+    !JUANZ
+    USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
+    USE  MODD_CONFZ     , ONLY :  NZ_VERB,NZ_PROC,MPI_BUFFER_SIZE,LMNH_MPI_ALLTOALLV_REMAP,NZ_SPLITTING
+    !JUANZ
+    IMPLICIT NONE
+    !
+    !*       0.1   declarations of arguments
+    !
+    INTEGER, INTENT(OUT) :: KINFO_ll
+    !
+    !*       0.2   declarations of local variables
+    !
+    !INTEGER  ,PARAMETER                      :: MPI_BUFFER_SIZE = 140000000
+    CHARACTER,SAVE,ALLOCATABLE,DIMENSION(:)  :: MPI_BUFFER
+    !JUAN
+    LOGICAL,SAVE                             :: GFIRSTCALL = .TRUE.
+    !JUAN
+
+    TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZDZP ! intermediate zone
+    !
+    TYPE(MODELSPLITTING_ll), POINTER :: TZSPLIT
+    TYPE(PROCONF_ll), POINTER :: TZPROCONF
+    INTEGER :: JMODEL
+    INTEGER     :: IRESP
+    LOGICAL     :: GISINIT
+    !
+    !JUAN
+    TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZDZP_SXP1_YP2_Z ! intermediate Full Z = B splitting  without halo zone
+    TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZDZP_SX_YP2_ZP1 ! intermediate Full X     splitting zone
+    TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZDZP_SXP2_Y_ZP1 ! intermediate Full Y     splitting zone
+    TYPE(ZONE_ll), ALLOCATABLE, DIMENSION(:) :: TZDZP_SXP2_YP1_Z ! intermediate Full Z = B transposed splitting  without halo zone
+
+    INTEGER :: JX_DOMAINS,JY_DOMAINS
+    LOGICAL :: LPREM
+    INTEGER :: P1,P2
+    !JUANZ
+    INTEGER :: P1P2(2), P1P2COORD(2) , IROW , ICOL, NROW, NCOL
+    LOGICAL :: Lperiodic(2), remain_dims(2) , Lreorder
+    INTEGER :: JI
+    INTEGER :: IXSIZE_ll	! global sizes of son domain in father grid
+    INTEGER :: IYSIZE_ll
+    !JUANZ
+    !JUAN
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       1.    INITIALIZE MPI :
+    !              --------------
+    !
+    ! MPI should already be initialized
+    !
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       2.    SET OUTPUT FILE :
+    !              ---------------
+
+    !  CALL OPEN_ll(UNIT=NIOUNIT,FILE=YOUTPUTFILE,ACTION='write',form&
+    !       &='FORMATTED',MODE=SPECIFIC,IOSTAT=IRESP)
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       3.    ALLOCATION :
+    !              ----------
+    !
+    ! buffer has already been alloacated in the call to INI_PARAZ_ll on the father model
+
+    ALLOCATE(TZDZP(NPROC))
+    !JUAN
+    ALLOCATE(TZDZP_SXP1_YP2_Z(NPROC))
+    ALLOCATE(TZDZP_SXP2_YP1_Z(NPROC))
+    ALLOCATE(TZDZP_SX_YP2_ZP1(NPROC))
+    ALLOCATE(TZDZP_SXP2_Y_ZP1(NPROC))
+    !JUAN
+    !
+    ALLOCATE(TCRRT_PROCONF)
+    CALL ALLOC(TCRRT_COMDATA)
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_B(NPROC))
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_X(NPROC))
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_Y(NPROC))
+    !JUAN
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_SXP1_YP2_Z(NPROC))
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_SXP2_YP1_Z(NPROC))
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_SX_YP2_ZP1(NPROC))
+    ALLOCATE(TCRRT_PROCONF%TSPLITS_SXP2_Y_ZP1(NPROC))
+    !JUAN
+    ALLOCATE(TCRRT_PROCONF%TBOUND(NPROC))
+    NULLIFY(TCRRT_PROCONF%TPARENT)
+    NULLIFY(TCRRT_COMDATA%TPARENT)
+    NULLIFY(TCRRT_PROCONF%TCHILDREN)
+    NULLIFY(TCRRT_COMDATA%TCHILDREN)
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       4.    SPLITTING OF THE DOMAIN :
+    !              -----------------------
+    !
+    IXSIZE_ll = NIMAX_ll/NDXRATIO_ALL(1)
+    IYSIZE_ll = NJMAX_ll/NDYRATIO_ALL(1)
+    DIMX = IXSIZE_ll*NDXRATIO_ALL(1) + 2*JPHEXT
+    DIMY = IYSIZE_ll*NDYRATIO_ALL(1) + 2*JPHEXT
+    DIMZ = NKMAX_ll + 2*JPVEXT
+    !
+    TCRRT_PROCONF%NUMBER = 1
+    !
+
+    !JUAN CALL SPLITZ(NIMAX_ll,NJMAX_ll,NKMAX_ll,NPROC,TZDZP_SXP2_YP1_Z,'BSPLITTING',NZ_PROC)
+!!$    CALL SPLITZ(NIMAX_ll,NJMAX_ll,NKMAX_ll,NPROC,TZDZP_SXP2_YP1_Z,'BSPLITTING',1)
+!!$    CALL SPLITZ(NIMAX_ll,NJMAX_ll,NKMAX_ll,NPROC,TZDZP_SX_YP2_ZP1,'YSPLITTING',NZ_PROC)
+!!$    CALL SPLITZ(NIMAX_ll,NJMAX_ll,NKMAX_ll,NPROC,TZDZP_SXP2_Y_ZP1,'XSPLITTING',NZ_PROC)
+    ! Add halo directly in Z direction 
+
+
+
+    !
+    ! find the B spltting
+    !
+    CALL DEF_SPLITTING2(JX_DOMAINS,JY_DOMAINS,IXSIZE_ll,IYSIZE_ll,NPROC,LPREM)
+    !
+    P1 = JX_DOMAINS
+    IF (DIMZ .NE. 3 )    P1 = MIN(DIMZ,JX_DOMAINS)
+    IF (NZ_PROC .GT. 0 ) P1 = NZ_PROC
+    P2 = NPROC / P1
+    !JUAN PATCH NESTING DIFFERENT SHAPE
+    NZ_PROC = P1
+    IF (NZ_VERB .GE. 5 ) THEN
+       IF ( IP .EQ. 1 )THEN
+          print*," INI_PARAZ_ll:: NZ_PROC   =",NZ_PROC
+          print*," INI_PARAZ_ll:: JX_DOMAINS=",JX_DOMAINS
+          print*," INI_PARAZ_ll:: JY_DOMAINS=",JY_DOMAINS
+          print*
+          !
+          print*," INI_PARAZ_ll:: P1=MIN(NZ_PROC,DIMZ) > 0 .OR. MIN(DIMZ,MAX(JX_DOMAINS,JY_DOMAINS))=",  P1
+          !
+          print*," INI_PARAZ_ll:: P2=NPROC/P1/                                            =",  P2
+       END IF
+    END IF
+    NP1 = P1
+    NP2 = P2
+    !
+    !JUANZ
+    P1P2(1) = NP2
+    P1P2(2) = NP1
+    Lperiodic(1) = .false.
+    Lperiodic(2) = .false.
+    Lreorder=.false.
+    ! creating cartesian processor grid
+    call MPI_Cart_create(NMNH_COMM_WORLD,2,P1P2,Lperiodic,Lreorder,NMNH_P1P2_WORLD,KINFO_ll)
+    ! Obtaining process ids with in the cartesian grid
+    call MPI_Cart_coords(NMNH_P1P2_WORLD,IP-1,2,P1P2COORD,KINFO_ll)
+   
+    ! using cart comworld create east-west(row) sub comworld
+    remain_dims(1) = .false.
+    remain_dims(2) = .true.
+    call MPI_Cart_sub(NMNH_P1P2_WORLD,remain_dims,NMNH_ROW_WORLD,KINFO_ll)
+    CALL MPI_COMM_RANK(NMNH_ROW_WORLD, IROW, KINFO_ll)
+    CALL MPI_COMM_SIZE(NMNH_ROW_WORLD, NROW, KINFO_ll)
+
+    ! using cart comworld create north-south(column) sub comworld
+    remain_dims(1) = .true.
+    remain_dims(2) = .false.
+    call MPI_Cart_sub(NMNH_P1P2_WORLD,remain_dims,NMNH_COL_WORLD,KINFO_ll)
+    CALL MPI_COMM_RANK(NMNH_COL_WORLD, ICOL, KINFO_ll)
+    CALL MPI_COMM_SIZE(NMNH_COL_WORLD, NCOL, KINFO_ll)
+    !JUANZ 
+
+    
+    ! split the child model according to the father grid elements (coarse)
+    CALL SPLIT2(IXSIZE_ll,IYSIZE_ll,NKMAX_ll,NPROC,TZDZP,YSPLITTING,P1,P2)
+    CALL SPLITZ(IXSIZE_ll,IYSIZE_ll,DIMZ,NPROC,TZDZP_SXP1_YP2_Z,'P1P2SPLITT', 1 ,P1,P2)
+    CALL SPLITZ(IXSIZE_ll,IYSIZE_ll,DIMZ,NPROC,TZDZP_SX_YP2_ZP1,'YSPLITTING', P1,P1,P2)
+    CALL SPLITZ(IXSIZE_ll,IYSIZE_ll,DIMZ,NPROC,TZDZP_SXP2_Y_ZP1,'XSPLITTING', P1,P1,P2)
+    CALL SPLITZ(IXSIZE_ll,IYSIZE_ll,DIMZ,NPROC,TZDZP_SXP2_YP1_Z,'P2P1SPLITT', 1 ,P1,P2)
+
+    ! 'convert' the splitting from coarse (father) to fine (son) grid using NDXRATIO_ALL(1), NDYRATIO_ALL(1)
+    CALL COARSE_TO_FINE(TZDZP)
+    CALL COARSE_TO_FINE(TZDZP_SXP1_YP2_Z)
+    CALL COARSE_TO_FINE(TZDZP_SX_YP2_ZP1)
+    CALL COARSE_TO_FINE(TZDZP_SXP2_Y_ZP1)
+    CALL COARSE_TO_FINE(TZDZP_SXP2_YP1_Z)
+
+    !    
+    !-------------------------------------------------------------------------------
+    !
+    !*       5.    INITIALIZATION OF TCRRT_PROCONF :
+    !              -------------------------------
+    !
+    CALL INI_PZ(TCRRT_PROCONF,TZDZP)
+    !JUAN
+    CALL INI_PZZ(TCRRT_PROCONF%TSPLITS_SXP1_YP2_Z,TZDZP_SXP1_YP2_Z)
+    CALL INI_PZZ(TCRRT_PROCONF%TSPLITS_SXP2_YP1_Z,TZDZP_SXP2_YP1_Z)
+    CALL INI_PZZ(TCRRT_PROCONF%TSPLITS_SX_YP2_ZP1,TZDZP_SX_YP2_ZP1)
+    CALL INI_PZZ(TCRRT_PROCONF%TSPLITS_SXP2_Y_ZP1,TZDZP_SXP2_Y_ZP1)
+    !JUAN
+    !
+    CALL INI_BOUNDARIES(TCRRT_PROCONF)
+    !JUAN
+    CALL INI_BOUNDARIESZ(TCRRT_PROCONF)
+    !JUAN
+    !
+    CALL INI_EZ(TCRRT_PROCONF)
+    !JUAN
+    CALL INI_EZZ(TCRRT_PROCONF)
+    !JUAN
+    !
+    CALL INI_TRANS(TCRRT_PROCONF)
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*       6.    INITIALIZATION OF TCRRT_COMDATA :
+    !              -------------------------------
+    !
+    !*       6.1    Model Number
+    !
+    TCRRT_COMDATA%NUMBER = 1
+    !
+    !*       6.2    Pointer from TCRRT_COMDATA to TCRRT_PROCONF for 2Way splitting
+    !
+    TCRRT_COMDATA%TSPLIT_B => TCRRT_PROCONF%TSPLITS_B(IP)
+
+    !TZSPLIT => TCRRT_COMDATA%TSPLIT_B
+    !
+    !
+    !*       6.3   Pointer from TCRRT_COMDATA to TCRRT_PROCONF
+    !        for x-slices splitting
+
+    TCRRT_COMDATA%TSPLIT_X => TCRRT_PROCONF%TSPLITS_X(IP)
+    !
+    !TZSPLIT => TCRRT_COMDATA%TSPLIT_X
+    !
+    !
+    !*       6.4   Pointer from TCRRT_COMDATA to TCRRT_PROCONF
+    !              for y-slices splitting
+    !
+    TCRRT_COMDATA%TSPLIT_Y => TCRRT_PROCONF%TSPLITS_Y(IP)
+    !
+    !TZSPLIT => TCRRT_COMDATA%TSPLIT_Y
+    !
+    !JUAN
+    DO JI=1, NPROC
+       IF ( TCRRT_PROCONF%TSPLITS_SXP1_YP2_Z(JI)%NUMBER .EQ. IP ) THEN 
+          TCRRT_COMDATA%TSPLIT_SXP1_YP2_Z => TCRRT_PROCONF%TSPLITS_SXP1_YP2_Z(JI)
+       ENDIF
+       IF ( TCRRT_PROCONF%TSPLITS_SXP2_YP1_Z(JI)%NUMBER .EQ. IP ) THEN 
+          TCRRT_COMDATA%TSPLIT_SXP2_YP1_Z => TCRRT_PROCONF%TSPLITS_SXP2_YP1_Z(JI)
+       ENDIF
+       IF (  TCRRT_PROCONF%TSPLITS_SX_YP2_ZP1(JI)%NUMBER .EQ. IP ) THEN 
+          TCRRT_COMDATA%TSPLIT_SX_YP2_ZP1 => TCRRT_PROCONF%TSPLITS_SX_YP2_ZP1(JI)
+       ENDIF
+       IF ( TCRRT_PROCONF%TSPLITS_SXP2_Y_ZP1(JI)%NUMBER .EQ. IP ) THEN
+          TCRRT_COMDATA%TSPLIT_SXP2_Y_ZP1 => TCRRT_PROCONF%TSPLITS_SXP2_Y_ZP1(JI)
+       END IF
+    END DO
+    !JUAN
+    !
+    !*       6.5   Construction of HALO1 communication data
+    !
+    CALL CONSTRUCT_HALO1(TCRRT_COMDATA, TCRRT_PROCONF)
+    CALL CONSTRUCT_HALO2(TCRRT_COMDATA, TCRRT_PROCONF)
+    CALL CONSTRUCT_HALO_EXTENDED(TCRRT_COMDATA, TCRRT_PROCONF, JPHEXT+1)
+    !
+    !
+    !*       6.6   Construction of 1D communication data
+    !
+    ALLOCATE(TCRRT_COMDATA%HALO1DX)
+    ALLOCATE(TCRRT_COMDATA%HALO1DX%NSEND_WEST(NPROC))
+    ALLOCATE(TCRRT_COMDATA%HALO1DX%NSEND_EAST(NPROC))
+    CALL CONSTRUCT_1DX(TCRRT_COMDATA, TCRRT_PROCONF)
+    !
+    ALLOCATE(TCRRT_COMDATA%HALO1DY)
+    ALLOCATE(TCRRT_COMDATA%HALO1DY%NSEND_SOUTH(NPROC))
+    ALLOCATE(TCRRT_COMDATA%HALO1DY%NSEND_NORTH(NPROC))
+    CALL CONSTRUCT_1DY(TCRRT_COMDATA, TCRRT_PROCONF)
+    !
+    !
+    !*       6.7   Construction of Transposition communication data
+    !
+    CALL CONSTRUCT_TRANS(TCRRT_COMDATA, TCRRT_PROCONF)
+    CALL CONSTRUCT_TRANSZ(TCRRT_COMDATA, TCRRT_PROCONF)
+    !
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !        7.    GRID NESTING :
+    !              ------------
+    !
+    ! No grid nesting in this case : We are initializing a child domain directly in PREP_PGD, 
+    ! after having called INI_PARAZ_ll on father grid alone
+    !
+    NULLIFY(TCRRT_PROCONF%TCHILDREN)
+    NULLIFY(TCRRT_COMDATA%TCHILDREN)
+    NULLIFY(TCRRT_COMDATA%TP2C_DATA)
+    !
+    !-------------------------------------------------------------------------------
+    !
+    TZPROCONF => TCRRT_PROCONF
+    !
+    CALL COMPUTE_TRANS_MAX(NBUFFERSIZE_3D, TCRRT_COMDATA)
+    IF (NZ_VERB .GE. 5 ) THEN
+       IF (IP.EQ.1) print*,"INI_PARAZ_ll::COMPUTE_TRANS_MAX(NBUFFERSIZE_3D, TCRRT_COMDATA)=",NBUFFERSIZE_3D
+    END IF
+    !JUAN NCOMBUFFSIZE1 = NBUFFERSIZE_3D
+    !NCOMBUFFSIZE1 = NBUFFERSIZE_3D*2
+    NCOMBUFFSIZE1 = NBUFFERSIZE_3D
+    !JUAN NCOMBUFFSIZE1 = 10000000
+    !
+    CALL COMPUTE_HALO_MAX(NMAXSIZEHALO, TCRRT_COMDATA)
+    !
+    !NAG4.0 boom avec le 50 lorsqu'on active les scalaires 
+    !  NBUFFERSIZE_2D = 50*NMAXSIZEHALO
+    NBUFFERSIZE_2D = 150*NMAXSIZEHALO
+    !NAG4.0
+    NCOMBUFFSIZE2 = NBUFFERSIZE_2D
+    !
+    DEALLOCATE(TZDZP)
+    !
+    !-------------------------------------------------------------------------------
+    !
+    CONTAINS
+      SUBROUTINE COARSE_TO_FINE(TZ)
+
+	IMPLICIT NONE
+	
+	TYPE(ZONE_ll), DIMENSION(:) :: TZ   ! grid splitting to transform from coarse (father) resolution/grid
+					    ! to fien ( son ) resolution/grid    
+
+	INTEGER :: J
+
+	DO J = 1, NPROC
+	  !
+	  TZ(J)%NUMBER = TZ(J)%NUMBER
+	  TZ(J)%NXOR  = (TZ(J)%NXOR - JPHEXT -1 ) * NDXRATIO_ALL(1) + JPHEXT +1 
+	  TZ(J)%NYOR  = (TZ(J)%NYOR - JPHEXT -1 ) * NDYRATIO_ALL(1) + JPHEXT +1 
+	  TZ(J)%NXEND = (TZ(J)%NXEND - JPHEXT   ) * NDXRATIO_ALL(1) + JPHEXT
+	  TZ(J)%NYEND = (TZ(J)%NYEND - JPHEXT   ) * NDYRATIO_ALL(1) + JPHEXT
+	  !JUAN Z_SPLITTING
+	  TZ(J)%NZOR  = TZ(J)%NZOR
+	  TZ(J)%NZEND = TZ(J)%NZEND
+	  !JUAN Z_SPLITTING
+	  !
+	ENDDO
+
+      END SUBROUTINE COARSE_TO_FINE
+  
+  END SUBROUTINE INI_PARAZ_CHILD_ll
   !
   !     #######################################
 !!$  SUBROUTINE SET_NZ_PROC_ll(KZ_PROC)

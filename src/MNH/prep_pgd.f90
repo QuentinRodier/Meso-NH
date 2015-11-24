@@ -60,8 +60,13 @@
 !!    Modification 30/03/2012     Add NAM_NCOUT for netcdf output (S.Bielli)
 !!    S.Bielli     23/04/2014     supress writing of LAt and LON in NETCDF case
 !!    S.Bielli     20/11/2014     add writing of LAt and LON in NETCDF case
+!!    M.Moge       01/03/2015     use MPPDB + SPLIT_GRID is now called in PGD_GRID. Here we extend 
+!!                                the new grid on the halo with EXTEND_GRID_ON_HALO (M.Moge)
+!!    M.Moge          06/2015     write NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR in .lfi output file
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!    J.Escobar : 05/10/2015 : missing JPHEXT for LAT/LON/ZS/ZSMT writing
+!!    M.Moge          11/2015     disable the creation of files on multiple 
+!!                                Z-levels when using parallel IO for PREP_PGD
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -74,10 +79,12 @@ USE MODD_LUNIT,  ONLY : CLUOUT0, COUTFMFILE
 USE MODD_PARAMETERS, ONLY : XUNDEF
 USE MODD_IO_ll,   ONLY : GSMONOPROC
 USE MODD_IO_SURF_MNH, ONLY : NHALO
+USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
 !
 USE MODE_POS
 USE MODE_FMWRIT
 USE MODE_IO_ll
+USE MODE_FM
 USE MODE_MODELN_HANDLER
 !
 USE MODI_ZSMT_PGD
@@ -105,8 +112,9 @@ USE MODN_NCOUT
 USE MODE_UTIL
 USE MODE_FMREAD
 #endif
-
+USE MODD_SURF_ATM_GRID_n, ONLY : NGRID_PAR, XGRID_PAR
 USE MODE_MPPDB
+USE MODI_EXTEND_GRID_ON_HALO
 !
 IMPLICIT NONE
 !
@@ -149,6 +157,7 @@ CALL MPPDB_INIT()
 CPROGRAM='PGD   '
 !
 !
+CALL MPPDB_INIT()
 !*    1.      Set default names and parallelized I/O
 !             --------------------------------------
 !
@@ -221,7 +230,7 @@ CALL INI_CST
 ! 
 CALL PGD_GRID_SURF_ATM('MESONH','                            ','      ',.FALSE.)
 !
-CALL SPLIT_GRID('MESONH')
+CALL EXTEND_GRID_ON_HALO('MESONH',NGRID_PAR, XGRID_PAR)
 !
 !
 !*            Initializes all physiographic fields
@@ -234,7 +243,7 @@ CALL PGD_SURF_ATM('MESONH','                            ','      ',.FALSE.)
 !             -------------------------------
 !
 COUTFMFILE = CPGDFILE
-CALL FMOPEN_ll(COUTFMFILE,'WRITE',CLUOUT0,1,1,5,ININAR,IRESP)
+CALL FMOPEN_ll(COUTFMFILE,'WRITE',CLUOUT0,1,1,5,ININAR,IRESP,OPARALLELIO=.FALSE.)
 !
 CALL FMWRIT(COUTFMFILE,'MASDEV      ',CLUOUT0,'--',NMASDEV,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'BUGFIX      ',CLUOUT0,'--',NBUGFIX,0,1,' ',IRESP)
@@ -247,6 +256,24 @@ CALL FMWRIT(COUTFMFILE,'SURF        ',CLUOUT0,'--','EXTE',0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'L1D         ',CLUOUT0,'--',L1D,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'L2D         ',CLUOUT0,'--',L2D,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'PACK        ',CLUOUT0,'--',LPACK,0,1,' ',IRESP)
+IF ( NDXRATIO <= 0 .AND. NDYRATIO <= 0 ) THEN
+  NDXRATIO = 1
+  NDYRATIO = 1
+ENDIF
+IF ( NXSIZE < 0 .AND. NYSIZE < 0 ) THEN
+  NXSIZE = 0
+  NYSIZE = 0
+ENDIF
+IF ( NXOR <= 0 .AND. NYOR <= 0 ) THEN
+  NXOR = 1
+  NYOR = 1
+ENDIF
+CALL FMWRIT(COUTFMFILE,'DXRATIO     ',CLUOUT0,'--',NDXRATIO,0,1,' ',IRESP)
+CALL FMWRIT(COUTFMFILE,'DYRATIO     ',CLUOUT0,'--',NDYRATIO,0,1,' ',IRESP)
+CALL FMWRIT(COUTFMFILE,'XSIZE       ',CLUOUT0,'--',NXSIZE,0,1,' ',IRESP)
+CALL FMWRIT(COUTFMFILE,'YSIZE       ',CLUOUT0,'--',NYSIZE,0,1,' ',IRESP)
+CALL FMWRIT(COUTFMFILE,'XOR         ',CLUOUT0,'--',NXOR,0,1,' ',IRESP)
+CALL FMWRIT(COUTFMFILE,'YOR         ',CLUOUT0,'--',NYOR,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'JPHEXT      ',CLUOUT0,'--',JPHEXT,0,1,' ',IRESP)
 !
 #ifdef MNH_NCWRIT
@@ -331,8 +358,8 @@ WRITE(ILUOUT0,*) '***************************'
 !*    6.      Close parallelized I/O
 !             ----------------------
 !
-CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-CALL FMCLOS_ll(COUTFMFILE,'KEEP',CLUOUT0,IRESP)
+CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP,OPARALLELIO=.FALSE.)
+CALL FMCLOS_ll(COUTFMFILE,'KEEP',CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
 !
 CALL END_PARA_ll(IINFO_ll)
 !

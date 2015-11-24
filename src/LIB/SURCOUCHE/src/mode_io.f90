@@ -218,7 +218,8 @@ CONTAINS
        DELIM,    &
        PAD,      &
        KNB_PROCIO,& 
-       KMELEV)
+       KMELEV,&
+       OPARALLELIO)
 #if defined(MNH_IOCDF4)
   USE MODE_NETCDF
 #endif
@@ -241,6 +242,7 @@ CONTAINS
     !JUANZ
     INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
+    LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     !JUANZ
     !
     ! local var
@@ -279,6 +281,13 @@ CONTAINS
     ! didier
     !JUAN SX5 : probleme function retournant un pointer
     TYPE(FD_ll), POINTER :: TZJUAN
+    LOGICAL               :: GPARALLELIO
+
+    IF ( PRESENT(OPARALLELIO) ) THEN
+      GPARALLELIO = OPARALLELIO
+    ELSE  !par defaut on active les IO paralleles en Z si possible
+      GPARALLELIO = .TRUE.
+    ENDIF
 
 #ifdef MNH_VPP
     !! BUG Fuji avec RECL non fourni en argument de MYOPEN
@@ -582,6 +591,9 @@ CONTAINS
        ELSE
           TZFD%NB_PROCIO = 1
        ENDIF
+       IF( GPARALLELIO /= .TRUE. ) THEN
+         TZFD%NB_PROCIO = 1
+       ENDIF
        TZFD%COMM = NMNH_COMM_WORLD
        TZFD%PARAM     =>LFIPAR
 #if defined(MNH_IOCDF4)
@@ -721,7 +733,7 @@ CONTAINS
 
   END SUBROUTINE OPEN_ll
 
-  SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS)
+  SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS,OPARALLELIO)
   USE MODD_IO_ll
 #if defined(MNH_IOCDF4)
   USE MODE_NETCDF
@@ -729,6 +741,7 @@ CONTAINS
     CHARACTER(LEN=*), INTENT(IN)            :: HFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: STATUS
+    LOGICAL,          INTENT(IN),  OPTIONAL :: OPARALLELIO
 
     TYPE(FD_ll), POINTER :: TZFD
     INTEGER :: OLDCOMM
@@ -743,7 +756,13 @@ CONTAINS
     CHARACTER(len=128)                    :: YFILE_IOZ
     INTEGER(KIND=LFI_INT)                 :: IRESP8,INUM8
     CHARACTER(LEN=7)                      :: YSTATU  
+    LOGICAL                               :: GPARALLELIO
 
+    IF ( PRESENT(OPARALLELIO) ) THEN
+      GPARALLELIO = OPARALLELIO
+    ELSE  !par defaut on active les IO paralleles en Z si possible
+      GPARALLELIO = .TRUE.
+    ENDIF
     !JUANZ
 
     TZFD=>GETFD(HFILE)
@@ -778,6 +797,9 @@ CONTAINS
        !
        ! close LFI file in the different PROC
        !
+       IF( GPARALLELIO /= .TRUE. ) THEN
+         TZFD%NB_PROCIO = 1
+       ENDIF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)

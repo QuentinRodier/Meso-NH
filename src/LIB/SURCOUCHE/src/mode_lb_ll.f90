@@ -1656,4 +1656,219 @@
 !
       END SUBROUTINE INIT_LB_ll
 !
+!
+!
+      SUBROUTINE SET_LB_FIELD_ll( HLBTYPE, PFIELD, PLBXFIELD, PLBYFIELD, IIB, IJB, IIE, IJE, SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH )
+!     #######################################################################
+!
+!!****  *SET_LB_FIELD_ll * - subroutine to copy the values associated with the
+!!                           Lateral Boundaries to the corresoponding LB field
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!       M. Moge     * LA, CNRS *
+!!
+!!      Original     28/11/14
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
+!
+  USE MODD_CONF
+!  USE MODD_DIM_n
+  USE MODD_DYN_n
+  USE MODD_IO_ll, ONLY : ISP,GSMONOPROC
+!  USE MODE_ll
+  USE MODE_IO_ll
+  USE MODE_MPPDB
+  USE MODE_DISTRIB_LB
+  USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+  !
+  IMPLICIT NONE
+  !
+  CHARACTER(LEN=*),INTENT(IN) :: HLBTYPE ! LB type : 'LB','LBU'
+  REAL, DIMENSION(:,:,:), INTENT(IN)  :: PFIELD      ! field on the whole domain (or subdomain)
+  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLBXFIELD    ! LB field - X direction
+  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLBYFIELD    ! LB field - Y direction
+  !beginning and end of the local physical subdomain
+  INTEGER, INTENT(IN)   :: IIB            ! indice I Beginning in x direction
+  INTEGER, INTENT(IN)   :: IJB            ! indice J Beginning in y direction
+  INTEGER, INTENT(IN)   :: IIE            ! indice I End       in x direction
+  INTEGER, INTENT(IN)   :: IJE            ! indice J End       in y direction
+  INTEGER, INTENT(IN)   :: SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH ! shifting applied to the indices copied from PFIELD in each direction
+                                                                        ! it is used for LBXUM et LBXVM
+                                                                        ! I do not know why...
+  !
+  ! LOCAL VARIABLES
+  CHARACTER(4) :: YLBTYPEX ! LB type : 'LBX','LBXU'
+  CHARACTER(4) :: YLBTYPEY ! LB type : 'LBY','LBYV'
+  ! local indices for the intersection of the local subdomain and the LB zone
+  INTEGER             :: IIB_LOCLB           ! indice I Beginning in x direction
+  INTEGER             :: IJB_LOCLB           ! indice J Beginning in y direction
+  INTEGER             :: IIE_LOCLB           ! indice I End       in x direction
+  INTEGER             :: IJE_LOCLB           ! indice J End       in y direction
+  ! global indices for the intersection of the local subdomain and the LB zone
+  INTEGER             :: IIB_GLBLB           ! indice I Beginning in x direction
+  INTEGER             :: IJB_GLBLB           ! indice J Beginning in y direction
+  INTEGER             :: IIE_GLBLB           ! indice I End       in x direction
+  INTEGER             :: IJE_GLBLB           ! indice J End       in y direction
+  INTEGER             :: LOCLBSIZEE, LOCLBSIZEW, LOCLBSIZEN, LOCLBSIZES ! size of the local portion of the LB zone in each direction (East, West, North, South)
+  INTEGER             :: GLBLBBEGIN,GLBLBEND
+  !
+  ! SET LB TYPE
+  IF ( HLBTYPE == 'LB' ) THEN
+    YLBTYPEX = 'LBX'
+    YLBTYPEY = 'LBY'
+  ELSE IF ( HLBTYPE == 'LBU' ) THEN
+    YLBTYPEX = 'LBXU'
+    YLBTYPEY = 'LBYV'
+  ELSE
+    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, UNKNOWN LB TYPE", HLBTYPE
+    CALL ABORT
+  ENDIF
+!
+! get the local indices of the West-East LB arrays for the local subdomain
+  CALL GET_DISTRIB_LB(YLBTYPEX,ISP,'LOC','WRITE',NRIMX,IIB_LOCLB,IIE_LOCLB,IJB_LOCLB,IJE_LOCLB)
+! and the corresponding indices for the LB global arrays
+  CALL GET_DISTRIB_LB(YLBTYPEX,ISP,'FM','WRITE',NRIMX,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
+  IF ( IIE_LOCLB-IIB_LOCLB /= IIE_GLBLB-IIB_GLBLB ) THEN
+    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, West-East IIE_LOCLB-IIB_LOCLB =", IIE_LOCLB-IIB_LOCLB, " /= IIE_GLBLB-IIB_GLBLB =", IIE_GLBLB-IIB_GLBLB
+    CALL ABORT
+  ENDIF
+  LOCLBSIZEW = 0
+  LOCLBSIZEE = 0
+  IF ( IIB_LOCLB /= 0 ) THEN  ! if the LB zone of the local subdomain is non-empty
+    ! WARNING : The size of the local portion of the LB zone can be less than NRIMX
+    ! Example : if the size of the subdomain is 4 and NRIMX=6, the LB zone will be divided between 2 processes
+    !           and LOCLBSIZEW will be 5 on the first process, and 2 on the second process
+    IF ( IIB_GLBLB <= NRIMX+JPHEXT .AND. IIE_GLBLB >= NRIMX+JPHEXT+1 ) THEN ! the local west and east LB zones are both non empty
+      LOCLBSIZEW = NRIMX+JPHEXT-IIB_GLBLB
+      PLBXFIELD(IIB_LOCLB:IIB_LOCLB+LOCLBSIZEW,:,:)  = PFIELD(IIB_GLBLB+SHIFTWEST:IIB_GLBLB+SHIFTWEST+LOCLBSIZEW,:,:)
+      PLBXFIELD(IIE_LOCLB-LOCLBSIZEW:IIE_LOCLB,:,:)  = PFIELD(IIE+JPHEXT-LOCLBSIZEW+SHIFTEAST:IIE+JPHEXT+SHIFTEAST,:,:)
+    ELSE IF ( IIB_GLBLB <= NRIMX+JPHEXT ) THEN  ! the local west LB zone only is non empty
+      LOCLBSIZEW = NRIMX+JPHEXT-IIB_GLBLB
+      PLBXFIELD(IIB_LOCLB:IIE_LOCLB,:,:)  = PFIELD(IIB_GLBLB+SHIFTWEST:IIE_GLBLB+SHIFTWEST,:,:)
+    ELSE IF ( IIB_GLBLB >= NRIMX+JPHEXT+1 ) THEN  ! the local east LB zone only is non empty
+!      LOCLBSIZEE = IIE_LOCLB-IIB_LOCLB
+      GLBLBBEGIN = IIE+JPHEXT-(2*NRIMX+2*JPHEXT-IIB_GLBLB)+SHIFTEAST
+      GLBLBEND = IIE+JPHEXT-(2*NRIMX+2*JPHEXT-IIE_GLBLB)+SHIFTEAST
+      PLBXFIELD(IIB_LOCLB:IIE_LOCLB,:,:)  = PFIELD(GLBLBBEGIN:GLBLBEND,:,:)
+!      PLBXFIELD(NRIMX+1+IIB_LOCLB:NRIMX+1+IIE_LOCLB,:,:)  = PFIELD(GLBLBBEGIN:GLBLBEND,:,:)
+    ELSE
+      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, This type of partition is not allowed !"
+      CALL ABORT
+    ENDIF
+  ENDIF !( IIB_LOCLB /= 0 )
+!
+!*       5.9.1.8  Y-direction variables
+!
+  IF( .NOT. L2D ) THEN
+    LOCLBSIZES = 0
+    LOCLBSIZEN = 0
+  ! get the local indices of the South-North LB arrays for the local subdomain
+    CALL GET_DISTRIB_LB(YLBTYPEY,ISP,'LOC','WRITE',NRIMY,IIB_LOCLB,IIE_LOCLB,IJB_LOCLB,IJE_LOCLB)
+  ! and the corresponding indices for the LB global arrays
+    CALL GET_DISTRIB_LB(YLBTYPEY,ISP,'FM','WRITE',NRIMY,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
+    IF ( IJE_LOCLB-IJB_LOCLB /= IJE_GLBLB-IJB_GLBLB ) THEN
+      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, South-North IJE_LOCLB-IJB_LOCLB =", IJE_LOCLB-IJB_LOCLB, " /= IJE_GLBLB-IJB_GLBLB =", IJE_GLBLB-IJB_GLBLB
+      CALL ABORT
+    ENDIF
+    IF ( IJB_LOCLB /= 0 ) THEN  ! if the LB zone of the local subdomain is non-empty
+      IF ( IJB_GLBLB <= NRIMY+JPHEXT .AND. IJE_GLBLB >= NRIMY+JPHEXT+1 ) THEN ! the local south and north LB zones are non empty
+        LOCLBSIZES = NRIMY+JPHEXT-IJB_GLBLB
+        PLBYFIELD(:,IJB_LOCLB:IJB_LOCLB+LOCLBSIZES,:)  = PFIELD(:,IJB_GLBLB+SHIFTSOUTH:IJB_GLBLB+LOCLBSIZES+SHIFTSOUTH,:)
+        PLBYFIELD(:,IJE_LOCLB-LOCLBSIZES:IJE_LOCLB,:)  = PFIELD(:,IJE+JPHEXT-LOCLBSIZES+SHIFTNORTH:IJE+JPHEXT+SHIFTNORTH,:)
+      ELSE IF ( IJB_GLBLB <= NRIMY+JPHEXT ) THEN  ! the local south LB zone only is non empty
+        LOCLBSIZES = NRIMY+JPHEXT-IJB_GLBLB
+        PLBYFIELD(:,IJB_LOCLB:IJE_LOCLB,:)  = PFIELD(:,IJB_GLBLB+SHIFTSOUTH:IJE_GLBLB+SHIFTSOUTH,:)
+      ELSE IF ( IJB_GLBLB >= NRIMY+JPHEXT+1 ) THEN  ! the local north LB zone only is non empty
+        GLBLBBEGIN = IJE+JPHEXT-(2*NRIMY+2*JPHEXT-IJB_GLBLB)+SHIFTNORTH
+        GLBLBEND = IJE+JPHEXT-(2*NRIMY+2*JPHEXT-IJE_GLBLB)+SHIFTNORTH
+        PLBYFIELD(:,IJB_LOCLB:IJE_LOCLB,:)  = PFIELD(:,GLBLBBEGIN:GLBLBEND,:)
+!        PLBYFIELD(:,NRIMY+1+IJB_LOCLB:NRIMY+1+IJE_LOCLB,:)  = PFIELD(:,GLBLBBEGIN:GLBLBEND,:)
+      ELSE
+        WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, This type of partition is not allowed !"
+        CALL ABORT
+      ENDIF
+
+    ENDIF !( IJB_LOCLB /= 0 )
+  ENDIF !( .NOT. L2D )
+!
+      END SUBROUTINE SET_LB_FIELD_ll
+!
+!
+!
+      FUNCTION GET_LOCAL_LB_SIZE_X_ll( KRIMX  ) RESULT( LBSIZEX )
+!     #######################################################################
+!
+!!****  *GET_LOCAL_LB_SIZE_X_ll * - get the local LB size in X direction,
+!!       i.e. the size of the array containing the local portion of the LB zone
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!       M. Moge     * LA, CNRS *
+!!
+!!      Original     01/12/14
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
+!
+  USE MODE_ll
+  !
+  IMPLICIT NONE
+  !
+
+  INTEGER, INTENT(IN) :: KRIMX               ! global LB size in X direction (input)
+  INTEGER             :: LBSIZEX             ! local LB size in X direction (output)
+                                             ! Size of the array containing the local portion of the LB zone
+  LBSIZEX = 0
+  IF( LWEST_ll() ) THEN
+    LBSIZEX = LBSIZEX + KRIMX+1
+  ENDIF
+  IF( LEAST_ll() ) THEN
+    LBSIZEX = LBSIZEX + KRIMX+1
+  ENDIF
+!
+      END FUNCTION GET_LOCAL_LB_SIZE_X_ll
+!
+!
+!
+      FUNCTION GET_LOCAL_LB_SIZE_Y_ll( KRIMY  ) RESULT( LBSIZEY )
+!     #######################################################################
+!
+!!****  *GET_LOCAL_LB_SIZE_Y_ll * - get the local LB size in Y direction,
+!!       i.e. the size of the array containing the local portion of the LB zone
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!       M. Moge     * LA, CNRS *
+!!
+!!      Original     01/12/14
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
+!
+  USE MODE_ll
+  !
+  IMPLICIT NONE
+  !
+
+  INTEGER, INTENT(IN) :: KRIMY               ! global LB size in Y direction (input)
+  INTEGER             :: LBSIZEY             ! local LB size in Y direction (output)
+                                             ! Size of the array containing the local portion of the LB zone
+  LBSIZEY = 0
+  IF( LSOUTH_ll() ) THEN
+    LBSIZEY = LBSIZEY + KRIMY+1
+  ENDIF
+  IF( LNORTH_ll() ) THEN
+    LBSIZEY = LBSIZEY + KRIMY+1
+  ENDIF
+!
+      END FUNCTION GET_LOCAL_LB_SIZE_Y_ll
+!
 END MODULE MODE_LB_ll

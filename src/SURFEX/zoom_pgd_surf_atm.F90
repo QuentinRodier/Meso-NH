@@ -65,6 +65,10 @@ USE MODI_ZOOM_PGD_NATURE
 USE MODI_ZOOM_PGD_SEA
 USE MODI_ZOOM_PGD_TOWN
 USE MODI_READ_COVER_GARDEN
+!USE MODE_MODELN_SURFEX_HANDLER
+USE MODI_GOTO_WRAPPER_SURFATM
+!
+USE MODI_GOTO_MODEL_MNH
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -86,6 +90,7 @@ IMPLICIT NONE
 !
 INTEGER :: IRESP
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER :: IINFO_ll
 !------------------------------------------------------------------------------
 !
 !*    1.      Set default constant values 
@@ -103,8 +108,14 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',0,ZHOOK_HANDLE)
 !*    2.      Initialisation of output grid and schemes
 !             -----------------------------------------
 !
+! intialization of output (child) grid, so we need to get the local sizes of child model
+ CALL GOTO_MODEL_MNH(HPROGRAM,2,IINFO_ll)
+!
  CALL PGD_GRID(HPROGRAM,HFILE,HFILETYPE,.TRUE.,CGRID,NGRID_PAR,XGRID_PAR)
 !
+! we read fields from father model, so we need to get the local sizes of father model
+ CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
+ !
  CALL OPEN_AUX_IO_SURF(HINIFILE,HINIFILETYPE,'FULL  ')
  CALL READ_SURF(HINIFILETYPE,'SEA',   CSEA,   IRESP)
  CALL READ_SURF(HINIFILETYPE,'NATURE',CNATURE,IRESP)
@@ -120,6 +131,8 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',0,ZHOOK_HANDLE)
 !*    3.      surface cover
 !             -------------
 !
+! stay on father model
+! CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
  CALL ZOOM_PGD_COVER(HPROGRAM,HINIFILE,HINIFILETYPE,LECOCLIMAP)
 !
 !-------------------------------------------------------------------------------
@@ -127,6 +140,9 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',0,ZHOOK_HANDLE)
 !*    4.      Orography
 !             ---------
 !
+! stay on father model
+!CALL GOTO_MODEL_SURFEX(1, .TRUE.)
+! CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
  CALL ZOOM_PGD_OROGRAPHY(HPROGRAM,XSEA,XWATER,HINIFILE,HINIFILETYPE)
 !
 !_______________________________________________________________________________

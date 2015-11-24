@@ -77,4 +77,29 @@ CHARACTER(LEN=28),SAVE,   DIMENSION(JPMODELMAX) :: CMY_NAME,CDAD_NAME
 INTEGER,SAVE,  DIMENSION(JPMODELMAX) :: NDT_2_WAY ! number of times the time step
               ! of model n used for the relaxation time of the 2_WAY grid-nesting
               ! interaction  i.e. Tau = NDT_2_WAY * XTSTEP
+
+
+INTEGER,SAVE,  DIMENSION(JPMODELMAX) :: NIMAX_NEST, NJMAX_NEST  ! local sizes of model m
+INTEGER,SAVE,  DIMENSION(JPMODELMAX) :: NIMAX_NEST_ll, NJMAX_NEST_ll  ! globcal sizes of model m
+LOGICAL,SAVE,  DIMENSION(JPMODELMAX) :: L1D_NEST         ! Logical for 1D model version of model m
+LOGICAL,SAVE,  DIMENSION(JPMODELMAX) :: L2D_NEST         ! Logical for 2D model version of model m
+LOGICAL,SAVE,  DIMENSION(JPMODELMAX) :: LPACK_NEST       ! Logical to compress 1D or 2D FM files of model m
+!
+TYPE REAL_FIELD2D_ALL
+    REAL, DIMENSION(:,:), POINTER :: XFIELD2D
+END TYPE REAL_FIELD2D_ALL
+
+TYPE REAL_FIELD1D_ALL
+    REAL, DIMENSION(:), POINTER :: XFIELD1D
+END TYPE REAL_FIELD1D_ALL
+!
+TYPE(REAL_FIELD2D_ALL), DIMENSION(JPMODELMAX), TARGET :: TXZS   ! orography of model m
+TYPE(REAL_FIELD2D_ALL), DIMENSION(JPMODELMAX), TARGET :: TXZSMT   ! smooth orography for SLEVE coordinate of model m
+TYPE(REAL_FIELD1D_ALL), DIMENSION(JPMODELMAX), TARGET :: TXXHAT   ! Position x in the
+                                         ! conformal or cartesian plane of model m
+TYPE(REAL_FIELD1D_ALL), DIMENSION(JPMODELMAX), TARGET :: TXYHAT   ! Position y in the
+                                         ! conformal or cartesian plane of model m
+
+
+
 END MODULE MODD_NESTING

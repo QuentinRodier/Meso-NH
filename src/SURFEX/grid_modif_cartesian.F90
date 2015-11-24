@@ -33,12 +33,16 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004 
+!!         M.Moge   06/2015 Initialization of MODD_SPAWN variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
 USE MODD_SURF_PAR, ONLY : NUNDEF
+#ifdef MNH
+USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
+#endif
 
 USE MODE_POS_SURF
 USE MODE_GRIDTYPE_CARTESIAN
@@ -112,6 +116,15 @@ NAMELIST/NAM_INIFILE_CARTESIAN/IXOR,IYOR,IXSIZE,IYSIZE,IDXRATIO,IDYRATIO
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF_CARTESIAN',0,ZHOOK_HANDLE)
  CALL POSNAM(KLUNAM,'NAM_INIFILE_CARTESIAN',GFOUND,KLUOUT)
 IF (GFOUND) READ(UNIT=KLUNAM,NML=NAM_INIFILE_CARTESIAN)
+#ifdef MNH
+! store the parameter in MODD_SPAWN
+NXOR = IXOR
+NYOR = IYOR
+NXSIZE = IXSIZE
+NYSIZE = IYSIZE
+NDXRATIO = IDXRATIO
+NDYRATIO = IDYRATIO
+#endif
 !
 !---------------------------------------------------------------------------
 !

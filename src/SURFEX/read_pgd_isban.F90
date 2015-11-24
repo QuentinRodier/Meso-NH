@@ -37,6 +37,7 @@
 !!      B. Decharme   06/2009 : add topographic index statistics
 !!      A.L. Gibelin 04/2009 : dimension NBIOMASS for ISBA-A-gs
 !!      B. Decharme  07/2012  : files of data for permafrost area and for SOC top and sub soil
+!!      M. Moge      02/2015 READ_SURF
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -223,7 +224,7 @@ ALLOCATE(LCOVER(JPCOVER))
  CALL READ_LCOVER(HPROGRAM,LCOVER)
 !
 ALLOCATE(XCOVER(NDIM,JPCOVER))
- CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP)
+ CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HDIR='H')
 !
 !*       3.2    Orography :
 !               ---------

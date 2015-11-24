@@ -797,6 +797,7 @@ CONTAINS
 #ifdef MNH_GA
     USE MODE_GA
 #endif
+    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
     !
     !
     !*      0.1   Declarations of arguments
@@ -1199,7 +1200,7 @@ CONTAINS
              CALL SECOND_MNH2(T0) 
              IF (NB_REQ .GT.0 ) THEN
                 !ALLOCATE(STATUSES(MPI_STATUS_SIZE,NB_REQ))
-                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MPI_STATUSES_IGNORE,IERR)
+                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
                 !CALL MPI_WAITALL(NB_REQ,REQ_TAB,STATUSES,IERR)
                 !DEALLOCATE(STATUSES)
                 DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
@@ -2507,6 +2508,8 @@ CONTAINS
     USE MODE_UTIL
 #endif
 !!!! MOD SB
+    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    !
     !*      0.1   Declarations of arguments
     !
     CHARACTER(LEN=*),       INTENT(IN) ::HFILEM ! file name
@@ -2631,7 +2634,7 @@ CONTAINS
                 !CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MPI_FLOAT,TZFD%OWNER-1,99,TZFD%COMM,IERR)
              END IF
              IF (NB_REQ .GT.0 ) THEN
-                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MPI_STATUSES_IGNORE,IERR)
+                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
                 DEALLOCATE(T_TX3DP(1)%X) 
              END IF
              DEALLOCATE(T_TX3DP,REQ_TAB)

@@ -109,6 +109,7 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !!                  01/06/02 (O.Nuissier) bogussing of tropical cyclone
 !!                  Aou   09, 2005 (D.Barbary) call to compare_dad
 !!                  19/03/2008 (J.Escobar) rename INIT to INIT_MNH --> grib problem
+!!                  2014 (M.Faivre)
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -148,6 +149,11 @@ USE MODD_HURR_CONF, ONLY: LBOGUSSING, CDADATMFILE,CDADBOGFILE
 USE MODD_PREP_REAL
 !
 USE MODI_INIT_MNH
+!
+!20131113 add modules for update_halo and check
+USE MODE_ll
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -193,7 +199,12 @@ CHARACTER(LEN=5)                  :: YPRESOPT   ! PRESsure OPTion
 LOGICAL                           :: GRES
 REAL                              :: ZRES
 INTEGER                           :: IPRE_REAL1
-!-------------------------------------------------------------------------------
+!
+!20131113 add vars related to ADD3DFIELD and UPDATE_HALO
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
+!
+!------------------------------------------------------------------------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
@@ -336,12 +347,20 @@ XPS_LS(:,:) = XP00* (                                                     &
                             )                                             &
                      )**(XCPD/XRD)
 !
+!20131113 add update_halo
+CALL ADD2DFIELD_ll(TZFIELDS_ll,XPS_LS )
+   CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+      CALL CLEANLIST_ll(TZFIELDS_ll)
+CALL MPPDB_CHECK2D(XPS_LS,"PGDFILTER9:XPS_LS",PRECISION)
+!
 !
 !*           10. Check coherence between the 2 orographies
 !                -----------------------------------------
 !
-IF (LEN_TRIM(HDAD_NAME)>0) CALL CHECK_ZS(HFMFILE,HDAD_NAME,IIINF_LS,IJINF_LS)
-IF (LEN_TRIM(HDAD_NAME)>0) CALL CHECK_ZHAT(HFMFILE,HDAD_NAME)
+!20131023 mise en commentaire du check_zs et zhat
+!
+!IF (LEN_TRIM(HDAD_NAME)>0) CALL CHECK_ZS(HFMFILE,HDAD_NAME,IIINF_LS,IJINF_LS)
+!IF (LEN_TRIM(HDAD_NAME)>0) CALL CHECK_ZHAT(HFMFILE,HDAD_NAME)
 !
 !-------------------------------------------------------------------------------
 !

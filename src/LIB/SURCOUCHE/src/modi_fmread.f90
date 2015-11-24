@@ -29,7 +29,7 @@ INTERFACE FMREAD
   END SUBROUTINE FMREADX0_ll
 
   SUBROUTINE FMREADX1_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
-       KLENCH,HCOMMENT,KRESP)
+       KLENCH,HCOMMENT,KRESP, KIMAX_ll, KJMAX_ll)
   CHARACTER(LEN=*),        INTENT(IN) ::HFILEM   ! FM-file name
   CHARACTER(LEN=*),        INTENT(IN) ::HRECFM   ! name of the article to read
   CHARACTER(LEN=*),        INTENT(IN) ::HFIPRI   ! output file for error messages
@@ -39,10 +39,12 @@ INTERFACE FMREAD
   INTEGER,                 INTENT(OUT)::KLENCH   ! length of comment string
   CHARACTER(LEN=*),        INTENT(OUT)::HCOMMENT ! comment string
   INTEGER,                 INTENT(OUT)::KRESP    ! return-code
+  INTEGER, OPTIONAL, INTENT(IN) ::KIMAX_ll
+  INTEGER, OPTIONAL, INTENT(IN) ::KJMAX_ll
   END SUBROUTINE FMREADX1_ll
   
   SUBROUTINE FMREADX2_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
-       KLENCH,HCOMMENT,KRESP)
+       KLENCH,HCOMMENT,KRESP, KIMAX_ll, KJMAX_ll)
   CHARACTER(LEN=*),           INTENT(IN) ::HFILEM   ! FM-file name
   CHARACTER(LEN=*),           INTENT(IN) ::HRECFM   ! name of the article to read
   CHARACTER(LEN=*),           INTENT(IN) ::HFIPRI   ! output file for error messages
@@ -52,6 +54,8 @@ INTERFACE FMREAD
   INTEGER,                    INTENT(OUT)::KLENCH   ! length of comment string
   CHARACTER(LEN=*),           INTENT(OUT)::HCOMMENT ! comment string
   INTEGER,                   INTENT(OUT)::KRESP     ! return-code
+  INTEGER, OPTIONAL, INTENT(IN) ::KIMAX_ll
+  INTEGER, OPTIONAL, INTENT(IN) ::KJMAX_ll
   END SUBROUTINE FMREADX2_ll
   
   SUBROUTINE FMREADX3_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&

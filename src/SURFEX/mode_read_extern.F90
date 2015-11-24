@@ -100,6 +100,13 @@ ELSE
   GECOCLIMAP = .NOT. GPAR_GARDEN
 END IF
 !
+!
+YRECFM='VERSION'
+ CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+!
+YRECFM='BUG'
+ CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
+!
 !------------------------------------------------------------------------------
 !
 ALLOCATE(ZDG   (KNI,KLAYER,KPATCH))
@@ -108,6 +115,8 @@ IWG_LAYER(:,:) = NUNDEF
 IHYDRO_LAYER = KLAYER
 !
 IF (GECOCLIMAP) THEN
+
+ IF (IVERSION<7 .OR. IVERSION==7 .AND. IBUGFIX<=3) THEN
   !
   !* reading of the cover to obtain the depth of inter-layers
   !
@@ -121,18 +130,69 @@ IF (GECOCLIMAP) THEN
   !* computes soil layers
   !  
   CALL CONVERT_COVER_ISBA(HISBA,NUNDEF,ZCOVER,'   ',HNAT,PSOILGRID=PSOILGRID,PDG=ZDG,KWG_LAYER=IWG_LAYER)
-  IF (HISBA=='DIF') IHYDRO_LAYER = MAXVAL(IWG_LAYER(:,:),IWG_LAYER(:,:)/=NUNDEF)
   !
   DEALLOCATE(ZCOVER)
+ ELSE
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+print*, 'MODE_READ_EXTERN : ==> ON NE LIT PAS LES COVERS'
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+print*, '-----------------------------------------------'
+#ifdef MNH_PARALLEL
+DO JPATCH=1,SIZE(ZDG,3)
+  DO JLAYER=1,SIZE(ZDG,2)
+    IF (JLAYER<10) THEN
+      IF (HNAT=='NAT') THEN
+        WRITE(YRECFM,FMT='(A6,I1,I4.4)') 'ECO_DG',JLAYER,JPATCH
+      ELSE
+        WRITE(YRECFM,FMT='(A9,I1,I4.4)') 'GD_ECO_DG',JLAYER,JPATCH
+      END IF
+    ELSE
+      IF (HNAT=='NAT') THEN
+        WRITE(YRECFM,FMT='(A6,I2,I4.4)') 'ECO_DG',JLAYER,JPATCH
+      ELSE
+        WRITE(YRECFM,FMT='(A9,I2,I4.4)') 'GD_ECO_DG',JLAYER,JPATCH
+      END IF
+    ENDIF
+    CALL READ_SURF(HPROGRAM,YRECFM,ZDG(:,JLAYER,JPATCH),IRESP,HDIR='A')
+  END DO
+END DO
+#else
+  DO JLAYER=1,SIZE(ZDG,2)
+    IF (JLAYER<10) THEN
+      IF (HNAT=='NAT') THEN
+        WRITE(YRECFM,FMT='(A6,I1)') 'ECO_DG',JLAYER
+      ELSE
+        WRITE(YRECFM,FMT='(A9,I1)') 'GD_ECO_DG',JLAYER
+      END IF
+    ELSE
+      IF (HNAT=='NAT') THEN
+        WRITE(YRECFM,FMT='(A6,I2)') 'ECO_DG',JLAYER
+      ELSE
+        WRITE(YRECFM,FMT='(A9,I2)') 'GD_ECO_DG',JLAYER
+      END IF
+    ENDIF
+    CALL READ_SURF(HPROGRAM,YRECFM,ZDG(:,JLAYER,:),IRESP,HDIR='A')
+  END DO
+#endif
+  IF (HISBA=='DIF') THEN
+    YRECFM='ECO_WG_L'
+    IF (HNAT=='GRD') YRECFM='GD_ECO_WG_L'
+    ALLOCATE(ZWORK(KNI,KPATCH))
+    CALL READ_SURF(HPROGRAM,YRECFM,ZWORK(:,:),IRESP,HDIR='A')  
+    WHERE (ZWORK==XUNDEF) ZWORK=NUNDEF
+    IWG_LAYER=NINT(ZWORK)
+    DEALLOCATE(ZWORK)
+  END IF
+ END IF
   !
+  IF (HISBA=='DIF') IHYDRO_LAYER = MAXVAL(IWG_LAYER(:,:),IWG_LAYER(:,:)/=NUNDEF)
 ENDIF
-!
-YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
-!
-YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
-!
+
 !-------------------------------------------------------------------
 IF (HNAT=='NAT' .AND. (IVERSION>=7 .OR. .NOT.GECOCLIMAP)) THEN
   !
@@ -312,6 +372,9 @@ REAL, DIMENSION(:,:,:), POINTER       :: PDEPTH    ! middle depth of each layer
 !
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4)  :: YLVL
+#ifdef MNH_PARALLEL
+ CHARACTER(LEN=8)  :: YPATCH
+#endif
  CHARACTER(LEN=3)  :: YISBA          ! type of ISBA soil scheme
  CHARACTER(LEN=3)  :: YNAT           ! type of surface (nature, garden)
  CHARACTER(LEN=4)  :: YPEDOTF        ! type of pedo-transfert function
@@ -502,11 +565,21 @@ ENDIF
 !
 DO JLAYER=1,ILAYER
   WRITE(YLVL,'(I4)') JLAYER
+#ifdef MNH_PARALLEL
+  DO JPATCH=1,IPATCH
+    IF (JLAYER >= 10) WRITE(YPATCH,'(I2,I4.4)') JLAYER,JPATCH
+    IF (JLAYER < 10)  WRITE(YPATCH,FMT='(I1,I4.4)') JLAYER,JPATCH
+    YRECFM=TRIM(HNAME)//ADJUSTL(YPATCH(:LEN_TRIM(YPATCH)))
+    CALL READ_SURF(HFILETYPE,YRECFM,ZWORK(:,JPATCH),IRESP,HDIR='A')
+    ZVAR(:,JLAYER,JPATCH)=ZWORK(:,JPATCH)
+  END DO
+#else
   YRECFM=TRIM(HNAME)//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
   CALL READ_SURF(HFILETYPE,YRECFM,ZWORK(:,:),IRESP,HDIR='A')
   DO JPATCH=1,IPATCH
     ZVAR(:,JLAYER,JPATCH)=ZWORK(:,JPATCH)
   END DO
+#endif
 END DO
 !
  CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)

@@ -214,12 +214,13 @@ END MODULE MODI_PHYS_PARAM_n
 !!                    06/2010    (P.Peyrille)  add Call to aerozon.f90 if LAERO_FT=T
 !!                                to update 
 !!                                aerosols and ozone climatology at each call to
-!!                                phys_param otherwise it is constant to monthly average
+!!                                phys_param otherwise it is constant to monthly average 
 !!                    03/2013  (C.Lac) FIT temporal scheme
 !!                    01/2014 (C.Lac) correction for the nesting of 2D surface
 !!                           fields if the number of the son model does not
 !!                           follow the number of the dad model
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
+!!                       2014  (M.Faivre)
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -323,6 +324,9 @@ USE MODD_LATZ_EDFLX
 USE MODI_GOTO_SURFEX
 USE MODI_SWITCH_SBG_LES_N
 !
+!20130918
+USE MODE_MPPDB
+
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
@@ -394,7 +398,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC, ZRI, ZWT ! additional dummies
 REAL, DIMENSION(:,:),   ALLOCATABLE  :: ZDXDY         ! grid area
                     ! for rc, ri, w required if main variables not allocated
 !
-INTEGER :: IIU, IJU, IKU                              ! dimensional indexes
+INTEGER :: IIU, IJU, IKU, II                              ! dimensional indexes
 !
 INTEGER     :: JSV              ! Loop index for Scalar Variables
 INTEGER     :: JSWB             ! loop on SW spectral bands
@@ -1259,7 +1263,9 @@ IF ( CTURB == 'TKEL' ) THEN
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$  END IF
-!
+  !20130918 use MPPDB for simultaneous runs np4 and np1
+  CALL MPPDB_CHECK2D(ZSFU,"phys_param::ZSFU",PRECISION)
+  !
   IF ( CLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
     ZSFTH(IIB-1,:)=ZSFTH(IIB,:)
     ZSFRV(IIB-1,:)=ZSFRV(IIB,:)
@@ -1364,6 +1370,14 @@ IF (CSCONV == 'EDKF') THEN
      ALLOCATE(ZSIGMF (IIU,IJU,IKU))
      ZSIGMF(:,:,:)=0.    
      ZEXN(:,:,:)=(XPABST(:,:,:)/XP00)**(XRD/XCPD)  
+     !$20131113 check3d on ZEXN
+     CALL MPPDB_CHECK3D(ZEXN,"physparan.7::ZEXN",PRECISION)
+     CALL ADD3DFIELD_ll(TZFIELDS_ll, ZEXN)
+     !$20131113 add update_halo_ll
+        CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+           CALL CLEANLIST_ll(TZFIELDS_ll)
+     CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
+ !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
                    OCLOSE_OUT,LMF_FLX,HFMFILE,CLUOUT,ZTIME_LES_MF,        &
                    XIMPL_MF, XTSTEP,                                      &

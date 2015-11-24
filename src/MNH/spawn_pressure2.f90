@@ -104,6 +104,8 @@ END MODULE MODI_SPAWN_PRESSURE2
 !!      Original    10/07/97
 !!                  14/09/97 (V. Masson) use of thv as dummy argument
 !!      Modification 20/05/06 Remove Clark and Farley interpolation
+!!                  2014     (M.Faivre) parallelization
+!!                  10/02/15 (M.Moge) correction of M.Faivre's parallelization attempt
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -130,6 +132,8 @@ USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
 !
 USE MODE_MODELN_HANDLER
+USE MODE_ll
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -165,6 +169,10 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: & ! MODEL 1 VARIABLES
  ZSUMR          ! sum of water mixing ratios (at t-dt or t)  
 REAL, DIMENSION(SIZE(FIELD_MODEL(1)%XTHT,1),SIZE(FIELD_MODEL(1)%XTHT,2)) ::              & ! MODEL 1 VARIABLES
  ZHYDEXNTOP1    ! model top Exner functions                    at t or t-dt
+!$20140709
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZHYDEXNTOP1_C
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZHYDEXN1_C
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZEXN1_C
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: & ! MODEL 2 VARIABLES
  ZGRIDA,      & ! mass point altitudes with purely interpoled orography
@@ -177,6 +185,8 @@ REAL, DIMENSION(SIZE(PTHVT,1),SIZE(PTHVT,2)) ::            & ! MODEL 2 VARIABLES
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK
 INTEGER  :: IMI
+INTEGER  :: JI, IDIMX_C,IDIMY_C
+INTEGER  :: IINFO_ll
 !
 !-------------------------------------------------------------------------------
 !
@@ -262,14 +272,54 @@ END IF
 !
   DEALLOCATE(ZTHV1)
   DEALLOCATE(ZWORK)
+  !
+  CALL GOTO_MODEL(1)
+  CALL GO_TOMODEL_ll(1, IINFO_ll)
+  CALL GET_CHILD_DIM_ll(2, IDIMX_C, IDIMY_C, IINFO_ll)
+  ! 2D
+  ALLOCATE(ZHYDEXNTOP1_C(IDIMX_C,IDIMY_C))
+  ZHYDEXNTOP1_C=0.
+  ! 3D
+  ALLOCATE(ZHYDEXN1_C(IDIMX_C,IDIMY_C,SIZE(ZHYDEXN1,3)))
+  ALLOCATE(ZEXN1_C(IDIMX_C,IDIMY_C,SIZE(ZEXN1,3)))
+  ZHYDEXN1_C =0.
+  ZEXN1_C    =0.
+  !
+  CALL SET_LSFIELD_1WAY_ll(ZHYDEXNTOP1,ZHYDEXNTOP1_C,2)
+  !
+  CALL LS_FORCING_ll(2, IINFO_ll, .TRUE.)
+  CALL GO_TOMODEL_ll(2, IINFO_ll)
+  CALL GOTO_MODEL(2)
+  CALL UNSET_LSFIELD_1WAY_ll()
+  ! 3D
+  DO JI=1,SIZE(ZEXN1,3)
+    CALL GOTO_MODEL(1)
+    CALL GO_TOMODEL_ll(1, IINFO_ll)
+    !
+    CALL SET_LSFIELD_1WAY_ll(ZHYDEXN1(:,:,JI),ZHYDEXN1_C(:,:,JI),2)
+    CALL SET_LSFIELD_1WAY_ll(ZEXN1(:,:,JI),ZEXN1_C(:,:,JI),2)
+    !
+    CALL LS_FORCING_ll(2, IINFO_ll, .TRUE.)
+    CALL GO_TOMODEL_ll(2, IINFO_ll)
+    CALL GOTO_MODEL(2)
+    CALL UNSET_LSFIELD_1WAY_ll()
+  ENDDO
+!
+!if the child grid is the whole father grid, we first need to extrapolate
+!the data on a "pseudo halo" before doing BIKHARDT interpolation
+!  CALL EXTRAPOL_ON_PSEUDO_HALO(ZHYDEXNTOP1_C)
+!  CALL EXTRAPOL_ON_PSEUDO_HALO(ZHYDEXN1_C)
+!  CALL EXTRAPOL_ON_PSEUDO_HALO(ZEXN1_C)
 !
 !*       2.4      model top Exner function interpolation
 !                 --------------------------------------
 !
-    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
-                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
-                   KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,4,       &
-                   LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZHYDEXNTOP1,ZHYDEXNTOP2)
+     CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
+                    XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
+                    2,2,IDIMX_C-1,IDIMY_C-1,KDXRATIO,KDYRATIO,4,     &
+                    LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZHYDEXNTOP1_C,ZHYDEXNTOP2)
+     CALL MPPDB_CHECK2D(ZHYDEXNTOP2,"SPAWN_PRESS2:ZHYDEXNTOP2",PRECISION)
+!
 !
 !*       2.5      interpolation of pi-hyd pi
 !                 --------------------------
@@ -278,11 +328,16 @@ END IF
 !
     CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
                    XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
-                   KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,1,       &
-                   LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,ZEXN1(:,:,:)-ZHYDEXN1(:,:,:),ZEXNMHEXN2)
+                   2,2,IDIMX_C-1,IDIMY_C-1,KDXRATIO,KDYRATIO,1,     &
+                   LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,           &
+                   ZEXN1_C-ZHYDEXN1_C,ZEXNMHEXN2)
+    CALL MPPDB_CHECK3D(ZEXNMHEXN2,"SPAWN_PRESS2:ZEXNMHEXN2",PRECISION)
 !
   DEALLOCATE(ZEXN1)
   DEALLOCATE(ZHYDEXN1)
+  DEALLOCATE(ZEXN1_C)
+  DEALLOCATE(ZHYDEXN1_C)
+  DEALLOCATE(ZHYDEXNTOP1_C)
 !
 !* vertical interpolation
 !

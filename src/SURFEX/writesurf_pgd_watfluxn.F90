@@ -33,6 +33,7 @@
 !!    -------------
 !!      Original    01/2003 
 !!      B. Decharme 07/2011 : delete argument HWRITE
+!!      M. Moge     02/2015 parallelization using WRITE_LCOVER
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -41,11 +42,9 @@
 USE MODD_WATFLUX_n,      ONLY : XZS,XCOVER,LCOVER
 USE MODD_WATFLUX_GRID_n, ONLY : XLAT, XLON, XMESH_SIZE, CGRID, XGRID_PAR
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-!
 USE MODI_WRITE_SURF
 USE MODI_WRITE_GRID
-!
+USE MODI_WRITE_LCOVER
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -63,7 +62,6 @@ IMPLICIT NONE
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-INTEGER           :: JCOVER         ! loop index
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -75,9 +73,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !* cover classes
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_WATFLUX_N',0,ZHOOK_HANDLE)
-YRECFM='COVER_LIST'
-YCOMMENT='(LOGICAL LIST)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+!
+CALL WRITE_LCOVER(HPROGRAM,LCOVER)
 !
 YCOMMENT='COVER FIELDS'
  CALL WRITE_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HCOMMENT=YCOMMENT)

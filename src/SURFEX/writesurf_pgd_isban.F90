@@ -37,6 +37,8 @@
 !!      B. Decharme  06/2009 : add topographic index statistics
 !!      A.L. Gibelin 04/2009 : dimension NBIOMASS for ISBA-A-gs
 !!      B. Decharme  07/2011 : delete argument HWRITE
+!!      M. Moge      02/2015 parallelization using WRITE_LCOVER
+!!      M. Moge      08/2015 writing ECO_DG fields as 2D fields with WRITE_SURF
 !!
 !-------------------------------------------------------------------------------
 !
@@ -55,16 +57,17 @@ USE MODD_ISBA_n, ONLY : NPATCH, NGROUND_LAYER, NNBIOMASS, CISBA,&
                         XTI_SKEW, XZS,XCOVER,                   &
                         XZ0EFFJPDIR,                            &
                         LCOVER, LECOCLIMAP, LCTI, LSOCP, LNOF,  &
-                        XSOILGRID, XPH, XFERT, LPERM, XPERM
+                        XSOILGRID, XPH, XFERT, LPERM, XPERM,    &
+                        XDG, NWG_LAYER
 !
 USE MODD_ISBA_GRID_n, ONLY : XLAT, XLON, XMESH_SIZE, CGRID, XGRID_PAR
-!
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 !
 USE MODI_WRITE_SURF
 USE MODI_WRITE_GRID
 USE MODI_WRITESURF_PGD_ISBA_PAR_n
 USE MODI_WRITESURF_PGD_TSZ0_PAR_n
+!
+USE MODI_WRITE_LCOVER
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -84,6 +87,8 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
+INTEGER :: JL     ! loop counter
+INTEGER :: JPATCH ! loop counter
 !
 !-------------------------------------------------------------------------------
 !
@@ -157,9 +162,7 @@ YCOMMENT=YRECFM
 !
 !* cover classes
 !
-YRECFM='COVER_LIST'
-YCOMMENT='(LOGICAL LIST)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,LCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+CALL WRITE_LCOVER(HPROGRAM,LCOVER)
 !
 YCOMMENT='COVER FIELDS'
  CALL WRITE_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP,HCOMMENT=YCOMMENT)
@@ -313,6 +316,38 @@ YCOMMENT='X_Y_TI_SKEW'
  CALL WRITE_SURF(HPROGRAM,YRECFM,XTI_SKEW,IRESP,HCOMMENT=YCOMMENT)
 !
 ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*    3.      ISBA diagnostic PGD fields stored in PGD file for improved efficiency in PREP step
+!             ----------------------------------------------------------------------------------
+!
+IF (LECOCLIMAP .AND. ASSOCIATED(XDG)) THEN
+        ! note XDG is not associated only in the zoom_pgd step. This is not a
+        ! problem because an initialization of the model is redone just after.
+        ! In all other cases, the fileds are associated and initialized.
+!
+!* Soil depth for each patch
+!
+DO JPATCH = 1,SIZE(XDG,3)
+  DO JL=1,SIZE(XDG,2)
+    IF (JL<10) THEN
+      WRITE(YRECFM,FMT='(A6,I1,I4.4)') 'ECO_DG',JL,JPATCH
+    ELSE
+      WRITE(YRECFM,FMT='(A6,I2,I4.4)') 'ECO_DG',JL,JPATCH
+    ENDIF
+    YCOMMENT='soil depth from ecoclimap'//' (M)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XDG(:,JL,JPATCH),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+END DO
+!* Total soil depth for moisture
+!
+  IF (CISBA=='DIF') THEN
+    YRECFM='ECO_WG_L'
+    YCOMMENT='Number of soil layers for moisture in ISBA-DIF'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,FLOAT(NWG_LAYER(:,:)),IRESP,HCOMMENT=YCOMMENT)
+  END IF
+END IF
 !
 !-------------------------------------------------------------------------------
  CALL WRITESURF_PGD_ISBA_PAR_n(HPROGRAM)

@@ -48,7 +48,8 @@ USE MODD_TEB_n,             ONLY : XCOVER, LCOVER, XZS,                     &
 USE MODD_TEB_VEG_n,         ONLY : NNBIOMASS,                               &
                                    CISBA, CPHOTO, CPEDOTF, LTR_ML
 USE MODD_TEB_GARDEN_n,      ONLY : NGROUND_LAYER, XSOILGRID,                &
-                                   XCLAY, XSAND, XRUNOFFB, XWDRAIN
+                                   XCLAY, XSAND, XRUNOFFB, XWDRAIN,         &
+                                   XDG, NWG_LAYER
 USE MODD_TEB_GRID_n,        ONLY : CGRID, XGRID_PAR, XLAT, XLON, XMESH_SIZE, NDIM
 USE MODD_DATA_TEB_GARDEN_n, ONLY : NTIME
 !
@@ -61,6 +62,7 @@ USE MODI_PGD_FIELD
 USE MODI_TEST_NAM_VAR_SURF
 !
 USE MODI_PGD_TEB_GARDEN_PAR
+USE MODI_CONVERT_COVER_ISBA
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -111,6 +113,9 @@ LOGICAL                  :: LIMP_SAND        ! Imposed maps of Sand
 LOGICAL                  :: LIMP_CLAY        ! Imposed maps of Clay
 LOGICAL                  :: LIMP_CTI         ! Imposed maps of topographic index statistics
 REAL, DIMENSION(150)     :: ZSOILGRID        ! Soil layer thickness for DIF
+!
+REAL,    DIMENSION(:,:,:), ALLOCATABLE :: ZDG       ! ground layers
+INTEGER, DIMENSION(:,:),   ALLOCATABLE :: IWG_LAYER ! number of layers for DIF option
 !
 ! Not used in TEB garden
 !
@@ -323,6 +328,25 @@ IF (LGREENROOF) CALL PGD_TEB_GREENROOF(HPROGRAM)
 !
 IF (LHYDRO) print*," CALL PGD_TEB_URBHYDRO(HPROGRAM,LECOCLIMAP)"
 !
+!-------------------------------------------------------------------------------
+!
+!*   10.      GARDEN diagnostic PGD fields stored in PGD file for improved efficiency in PREP step
+!             ------------------------------------------------------------------------------------
+!
+IF (LECOCLIMAP) THEN
+  ALLOCATE(ZDG(NDIM,NGROUND_LAYER,1))
+  ALLOCATE(IWG_LAYER(NDIM,1))
+  CALL CONVERT_COVER_ISBA(CISBA,NUNDEF,XCOVER,'   ','GRD',PSOILGRID=XSOILGRID,PDG=ZDG,KWG_LAYER=IWG_LAYER)
+  !
+  ALLOCATE(XDG(NDIM,NGROUND_LAYER))
+  XDG(:,:) = ZDG(:,:,1)
+  IF (CISBA=='DIF') THEN
+    ALLOCATE(NWG_LAYER(NDIM))
+    NWG_LAYER(:) = IWG_LAYER(:,1)
+  ELSE
+    ALLOCATE(NWG_LAYER(0))
+  END IF
+END IF
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PGD_TEB_GARDEN',1,ZHOOK_HANDLE)

@@ -406,6 +406,8 @@ USE MODD_ADVFRC_n
 USE MODD_RELFRC_n
 USE MODD_2D_FRC
 !
+USE MODE_MPPDB
+!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -1515,6 +1517,7 @@ END IF
 !*       8.    INITIALIZE THE PROGNOSTIC FIELDS
 !              --------------------------------
 !
+CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
 CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
@@ -1557,9 +1560,11 @@ CALL SET_REF(KMI,HINIFILE,HLUOUT,                                &
 !               -----------------------------------
 !
 IF ((CTURB == 'TKEL').AND.(CCONF=='START')) THEN
+  CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before ini_tke_eps::XUT",PRECISION)
   CALL INI_TKE_EPS(CGETTKET,XTHVREF,XZZ, &
                    XUT,XVT,XTHT,                  &
                    XTKET,TZINITHALO3D_ll    )
+  CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-after ini_tke_eps::XUT",PRECISION)
 END IF
 !
 !
@@ -1617,6 +1622,7 @@ END IF
 !              ----------------------------------
 !
 IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
+  CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before ini_cpl::XUT",PRECISION)
   CALL INI_CPL(HLUOUT,NSTOP,XTSTEP,LSTEADYLS,CCONF,                           &
                CGETTKET,                                                      &
                CGETRVT,CGETRCT,CGETRRT,CGETRIT,                               &
@@ -1631,6 +1637,7 @@ IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
                XLSUS,XLSVS,XLSWS,XLSTHS,XLSRVS,XDRYMASSS,                     &
                XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,          &
                XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS           )
+  CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-after ini_cpl::XUT",PRECISION)
 END IF
 !
 IF ( KMI > 1) THEN

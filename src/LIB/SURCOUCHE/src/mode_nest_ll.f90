@@ -1119,6 +1119,7 @@
 !     Original 22/07/98
 !     R. Guivarch 29/11/99  x and y splitting -> YSPLITTING 
 !     J. Escobar  24/09/2013 : temp patch for problem of gridnesting with different SHAPE
+!     M.Moge      10/02/2015 construct halo extended (needed for an interpolation in SPAWNING)
 !
 !-------------------------------------------------------------------------------
 !
@@ -1145,7 +1146,7 @@
         INTERSECTION, GLOBAL2LOCAL, ADD_ZONE, EXTRACT_ZONE
 !
   USE MODE_CONSTRUCT_ll, ONLY : INI_PZ, INI_EZ, INI_BOUNDARIES, INI_TRANS, &
-                                CONSTRUCT_HALO1, CONSTRUCT_HALO2, &
+                                CONSTRUCT_HALO1, CONSTRUCT_HALO2, CONSTRUCT_HALO_EXTENDED, &
                                 CONSTRUCT_TRANS, CONSTRUCT_1DX, CONSTRUCT_1DY
 !
   USE MODE_SPLITTING_ll , ONLY : SPLIT2, def_splitting2
@@ -1601,6 +1602,7 @@
 
   CALL CONSTRUCT_HALO1(TZCHILD_COMDATA, TZCHILD_PROCONF)
   CALL CONSTRUCT_HALO2(TZCHILD_COMDATA, TZCHILD_PROCONF)
+  CALL CONSTRUCT_HALO_EXTENDED(TZCHILD_COMDATA, TZCHILD_PROCONF, JPHEXT+1)
 !
   CALL CONSTRUCT_TRANS(TZCHILD_COMDATA, TZCHILD_PROCONF)
 !JUAN Z_SPLITTING

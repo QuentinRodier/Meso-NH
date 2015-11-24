@@ -95,6 +95,7 @@ END MODULE MODI_READ_PRC_FMFILE
 !!                      29/11/02 (JP Pinty)  add C3R5, ICE2, ICE4
 !!                      01/2004  (V. Masson) removes surface (externalization)
 !!                      05/2006              Remove EPS
+!!                      2014     (M.Faivre)
 !!                      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -126,6 +127,15 @@ USE MODI_DEALLOCATE_MODEL1
 !
 USE MODE_THERMO
 USE MODE_MODELN_HANDLER
+!
+!20131105 use of ADD3DFIELD& UPDATE_HALO
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+!
+!20131105 add MODE_ll
+USE MODE_ll
+!
+!20131104 add MPPDB
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -161,6 +171,11 @@ REAL, DIMENSION(:),     ALLOCATABLE :: ZXHAT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZYHAT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZZHAT
 INTEGER  :: IMI
+!
+!20131105 add vars related to ADD3DFIELD and UPDATE_HALO
+INTEGER :: IINFO_ll
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
+!
 INTEGER         :: IIB, IIE, IJB, IJE
 !-------------------------------------------------------------------------------
 !
@@ -177,6 +192,9 @@ ILU=SIZE(XTHT,3)
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+!
+!20131105 nullify tzfield
+NULLIFY(TZFIELDS_ll)
 !
 !-------------------------------------------------------------------------------
 !
@@ -331,6 +349,11 @@ IF (ALLOCATED(ZINPRR_LS)) THEN
   DEALLOCATE(ZINPRR3D_LS)
   DEALLOCATE(ZEVAP3D_LS)
   DEALLOCATE(ZACPRR_LS)
+  !
+  !20131112 check 3D vars
+  CALL MPPDB_CHECK3D(XINPRR3D,"read_prc_fmfile6::XINPRR3D",PRECISION)
+  CALL MPPDB_CHECK3D(XEVAP3D,"read_prc_fmfile6::XEVAP3D",PRECISION)
+  !
 END IF
 !
 IF (ALLOCATED(ZINPRS_LS)) THEN
@@ -375,41 +398,92 @@ END IF
 !*       7.1   left boundary I=1+JPHEXT for U
 !              ------------------------------
 !
-IF (IIU>3) XU_LS(IIB  ,:,:)=2.*XU_LS(  IIB+1  ,:,:)-XU_LS(  IIB+2  ,:,:)
+!20131104
+CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.1::XU_LS",PRECISION)  !ok calculated in 3. using trunc_field
+!
+!20131105 use ADD3DFIELD and UPDATE_HALO
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XU_LS)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!20131112 add cleanlist
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!
+!20131105 use LWEST_ll() as in pressurez or phys_paramn
+IF (IIU>3 .AND. LWEST_ll()) XU_LS(IIB  ,:,:)=2.*XU_LS(  IIB+1  ,:,:)-XU_LS(  IIB+2  ,:,:)
+!then XU_LS is
+!correct all along with update_halo_ll
+!20131105 use UPDATE_HALO
+!20131112 disable update_halo here
+!CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!
+!20131104
+CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.1::XU_LS",PRECISION)
+!
 !
 !*       7.2   bottom boundary J=1+JPHEXT for V
 !              --------------------------------
 !
-IF (IJU>3) XV_LS(:,  IJB,:)=2.*XV_LS(:,  IJB+1  ,:)-XV_LS(:,  IJB+2  ,:)
+!20131112 update_halo_ll for XV_LS
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XV_LS)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!20131112 add cleanlist
+CALL CLEANLIST_ll(TZFIELDS_ll)
+!
+!20131105 use LSOUTH_ll() as in pressurez or phys_paramn
+!IF (IJU>3) XV_LS(:,  2,:)=2.*XV_LS(:,  3  ,:)-XV_LS(:,  4  ,:)
+IF (IJU>3 .AND. LSOUTH_ll()) XV_LS(:,  IJB,:)=2.*XV_LS(:,  IJB+1  ,:)-XV_LS(:,  IJB+2  ,:)
+!20131105
+CALL MPPDB_CHECK3D(XV_LS,"read_prc_fmfile7.2::XV_LS",PRECISION)
 !
 !*       7.3   all boundaries for all fields except vapor
 !              ------------------------------------------
 !
-XU_LS(IIB-1  ,:,:)=2.*XU_LS(  IIB  ,:,:)-XU_LS(  IIB+1  ,:,:)
-XU_LS(IIE+1,:,:)=2.*XU_LS(IIE,:,:)-XU_LS(IIE-1,:,:)
-XV_LS(IIB-1  ,:,:)=2.*XV_LS(  IIB  ,:,:)-XV_LS(  IIB+1  ,:,:)
-XV_LS(IIE+1,:,:)=2.*XV_LS(IIE,:,:)-XV_LS(IIE-1,:,:)
-XW_LS(IIB-1  ,:,:)=2.*XW_LS(  IIB  ,:,:)-XW_LS(  IIB+1  ,:,:)
-XW_LS(IIE+1,:,:)=2.*XW_LS(IIE,:,:)-XW_LS(IIE-1,:,:)
-XTH_LS(IIB-1  ,:,:)=2.*XTH_LS(  IIB  ,:,:)-XTH_LS(  IIB+1  ,:,:)
-XTH_LS(IIE+1,:,:)=2.*XTH_LS(IIE,:,:)-XTH_LS(IIE-1,:,:)
-XR_LS(IIB-1  ,:,:,:)=MAX(2.*XR_LS(  IIB  ,:,:,:)-XR_LS(  IIB+1  ,:,:,:),0.)
-XR_LS(IIE+1,:,:,:)=MAX(2.*XR_LS(IIE,:,:,:)-XR_LS(IIE-1,:,:,:),0.)
+!20131106 : also here
+IF (LWEST_ll()) XU_LS(IIB-1  ,:,:)=2.*XU_LS(  IIB  ,:,:)-XU_LS(  IIB+1  ,:,:)
+!20131105 use UPDATE_HALO
+CALL ADD3DFIELD_ll(TZFIELDS_ll, XU_LS)
+CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!20131105 use LEAST_ll() as in pressurez or phys_paramn
+IF (LEAST_ll()) XU_LS(IIE+1,:,:)=2.*XU_LS(IIE,:,:)-XU_LS(IIE-1,:,:)
+!20131105 use UPDATE_HALO
+!20131112 disable update_halo
+!CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!20131104 add check on xu_ls
+CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.3::XU_LS",PRECISION)
+
+!20131105 add condition on WEST,EAST
+!20131128 correct condition on XTH_LS(IIU,:,:) use LEAST_ll not LWEST_ll
+IF (LWEST_ll()) XV_LS(IIB-1  ,:,:)=2.*XV_LS(  IIB  ,:,:)-XV_LS(  IIB+1  ,:,:)
+IF (LEAST_ll()) XV_LS(IIE+1,:,:)=2.*XV_LS(IIE,:,:)-XV_LS(IIE-1,:,:)
+IF (LWEST_ll()) XW_LS(IIB-1  ,:,:)=2.*XW_LS(  IIB  ,:,:)-XW_LS(  IIB+1  ,:,:)
+IF (LEAST_ll()) XW_LS(IIE+1,:,:)=2.*XW_LS(IIE,:,:)-XW_LS(IIE-1,:,:)
+IF (LWEST_ll()) XTH_LS(IIB-1  ,:,:)=2.*XTH_LS(  IIB  ,:,:)-XTH_LS(  IIB+1  ,:,:)
+IF (LEAST_ll()) XTH_LS(IIE+1,:,:)=2.*XTH_LS(IIE,:,:)-XTH_LS(IIE-1,:,:)
+IF (LWEST_ll()) XR_LS(IIB-1  ,:,:,:)=MAX(2.*XR_LS(  IIB  ,:,:,:)-XR_LS(  IIB+1  ,:,:,:),0.)
+IF (LEAST_ll()) XR_LS(IIE+1,:,:,:)=MAX(2.*XR_LS(IIE,:,:,:)-XR_LS(IIE-1,:,:,:),0.)
 !
-XU_LS(:,  IJB-1,:)=2.*XU_LS(:,  IJB  ,:)-XU_LS(:,  IJB+1  ,:)
-XU_LS(:,IJE+1,:)=2.*XU_LS(:,IJE,:)-XU_LS(:,IJE-1,:)
-XV_LS(:,  IJB-1,:)=2.*XV_LS(:,  IJB  ,:)-XV_LS(:,  IJB+1  ,:)
-XV_LS(:,IJE+1,:)=2.*XV_LS(:,IJE,:)-XV_LS(:,IJE-1,:)
-XW_LS(:,  IJB-1,:)=2.*XW_LS(:,  IJB  ,:)-XW_LS(:,  IJB+1  ,:)
-XW_LS(:,IJE+1,:)=2.*XW_LS(:,IJE,:)-XW_LS(:,IJE-1,:)
-XTH_LS(:,  IJB-1,:)=2.*XTH_LS(:,  IJB  ,:)-XTH_LS(:,  IJB+1  ,:)
-XTH_LS(:,IJE+1,:)=2.*XTH_LS(:,IJE,:)-XTH_LS(:,IJE-1,:)
-XR_LS(:,  IJB-1,:,:)=MAX(2.*XR_LS(:,  IJB  ,:,:)-XR_LS(:,  IJB+1  ,:,:),0.)
-XR_LS(:,IJE+1,:,:)=MAX(2.*XR_LS(:,IJE,:,:)-XR_LS(:,IJE-1,:,:),0.)
+!20131105 add condition on SOUTH,NORTH
+IF (LSOUTH_ll()) XU_LS(:,  IJB-1,:)=2.*XU_LS(:,  IJB  ,:)-XU_LS(:,  IJB+1  ,:)
+IF (LNORTH_ll()) XU_LS(:,IJE+1,:)=2.*XU_LS(:,IJE,:)-XU_LS(:,IJE-1,:)
+!
+!20131105 use UPDATE_HALO
+!20131112 disable update_halo here
+!CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+!CALL CLEANLIST_ll(TZFIELDS_ll)
+!20131104
+CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile7.3::XU_LS",PRECISION)
+!
+!20131105 add condition on NORTH,SOUTH
+IF (LSOUTH_ll()) XV_LS(:,  IJB-1,:)=2.*XV_LS(:,  IJB  ,:)-XV_LS(:,  IJB+1  ,:)
+IF (LNORTH_ll()) XV_LS(:,IJE+1,:)=2.*XV_LS(:,IJE,:)-XV_LS(:,IJE-1,:)
+IF (LSOUTH_ll()) XW_LS(:,  IJB-1,:)=2.*XW_LS(:,  IJB  ,:)-XW_LS(:,  IJB+1  ,:)
+IF (LNORTH_ll()) XW_LS(:,IJE+1,:)=2.*XW_LS(:,IJE,:)-XW_LS(:,IJE-1,:)
+IF (LSOUTH_ll()) XTH_LS(:,  IJB-1,:)=2.*XTH_LS(:,  IJB  ,:)-XTH_LS(:,  IJB+1  ,:)
+IF (LNORTH_ll()) XTH_LS(:,IJE+1,:)=2.*XTH_LS(:,IJE,:)-XTH_LS(:,IJE-1,:)
+IF (LSOUTH_ll()) XR_LS(:,  IJB-1,:,:)=MAX(2.*XR_LS(:,  IJB  ,:,:)-XR_LS(:,  IJB+1  ,:,:),0.)
+IF (LNORTH_ll()) XR_LS(:,IJE+1,:,:)=MAX(2.*XR_LS(:,IJE,:,:)-XR_LS(:,IJE-1,:,:),0.)
 !
 !*       7.4   all boundaries for vapor (using relative humidity)
 !              ------------------------
-!
 !
 ALLOCATE(ZHU_LS(IIU,IJU,ILU))
 WHERE (XR_LS(:,:,:,1)>0.)
@@ -419,10 +493,10 @@ ELSEWHERE
   ZHU_LS(:,:,:)=0.
 END WHERE
 !
-ZHU_LS(IIB-1  ,:,:)=ZHU_LS(  IIB  ,:,:)
-ZHU_LS(IIE+1,:,:)=ZHU_LS(IIE,:,:)
-ZHU_LS(:,  IJB-1,:)=ZHU_LS(:,  IJB  ,:)
-ZHU_LS(:,IJE+1,:)=ZHU_LS(:,IJE,:)
+IF (LWEST_ll()) ZHU_LS(IIB-1  ,:,:)=ZHU_LS(  IIB  ,:,:)
+IF (LEAST_ll()) ZHU_LS(IIE+1,:,:)=ZHU_LS(IIE,:,:)
+IF (LSOUTH_ll()) ZHU_LS(:,  IJB-1,:)=ZHU_LS(:,  IJB  ,:)
+IF (LNORTH_ll()) ZHU_LS(:,IJE+1,:)=ZHU_LS(:,IJE,:)
 !
 IF (NRR>1) THEN
   WHERE (XR_LS(IIB-1  ,:,:,2)>0.)
@@ -454,10 +528,27 @@ DEALLOCATE(ZHU_LS)
 !              --------------------------
 !
 XU_LS(:,:,1:JPVEXT)=-SPREAD(XU_LS(:,:,JPVEXT+1),3,JPVEXT)
+!20131104
+!CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile8::XU_LS",PRECISION)  !
 XV_LS(:,:,1:JPVEXT)=-SPREAD(XV_LS(:,:,JPVEXT+1),3,JPVEXT)
 !
 XU_LS(:,:,ILU-JPVEXT+1:ILU)=SPREAD(XU_LS(:,:,ILU-JPVEXT),3,JPVEXT)
+!20131104
+!CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile8::XU_LS",PRECISION)
 XV_LS(:,:,ILU-JPVEXT+1:ILU)=SPREAD(XV_LS(:,:,ILU-JPVEXT),3,JPVEXT)
+!
+!20131112 final checking on _LS vars still allocated
+CALL MPPDB_CHECK3D(XU_LS,"read_prc_fmfile8::XU_LS",PRECISION)
+CALL MPPDB_CHECK3D(XV_LS,"read_prc_fmfile8::XV_LS",PRECISION)
+CALL MPPDB_CHECK3D(XW_LS,"read_prc_fmfile8::XW_LS",PRECISION)
+CALL MPPDB_CHECK3D(XR_LS(:,:,:,1),"read_prc_fmfile8::XR_LS(:,:,:,1)",PRECISION)
+CALL MPPDB_CHECK3D(XTH_LS,"read_prc_fmfile8::XTH_LS",PRECISION)
+!
+!XU_LS(:,:,1:JPVEXT)=-SPREAD(XU_LS(:,:,JPVEXT+1),3,JPVEXT)
+!XV_LS(:,:,1:JPVEXT)=-SPREAD(XV_LS(:,:,JPVEXT+1),3,JPVEXT)
+!!
+!XU_LS(:,:,ILU-JPVEXT+1:ILU)=SPREAD(XU_LS(:,:,ILU-JPVEXT),3,JPVEXT)
+!XV_LS(:,:,ILU-JPVEXT+1:ILU)=SPREAD(XV_LS(:,:,ILU-JPVEXT),3,JPVEXT)
 !
 !-------------------------------------------------------------------------------
 !

@@ -67,7 +67,9 @@ USE MODD_ISBA_n,   ONLY : CROUGH ,CISBA, CPHOTO, CRUNOFF, CALBEDO, CSCOND,    &
                           CCPSURF, CHORT, XCGMAX, XCDRAG, CKSAT,              &
                           CSOC, CTOPREG, CRAIN, LSPINUPCARBS,                 &
                           LSPINUPCARBW, NNBYEARSOLD, NSPINS, NSPINW,          &
-                          XSPINMAXS, XSPINMAXW, NNBYEARSPINS, NNBYEARSPINW
+                          XSPINMAXS, XSPINMAXW, NNBYEARSPINS, NNBYEARSPINW,   &
+                          XSOILGRID, XDG, NWG_LAYER, LECOCLIMAP, XCOVER,      &
+                          NGROUND_LAYER
 !
 USE MODD_CH_ISBA_n,      ONLY : LCH_BIO_FLUX, CCH_DRY_DEP  
 
@@ -102,6 +104,7 @@ USE MODI_PREP_CTRL_ISBA
 USE MODI_READ_ISBA_DATE
 USE MODI_READ_PGD_ISBA_n
 USE MODI_COMPUTE_ISBA_PARAMETERS
+USE MODI_CONVERT_COVER_ISBA
 USE MODI_READ_NAM_PREP_ISBA_n
 !
 USE MODI_SET_SURFEX_FILEIN
@@ -326,6 +329,17 @@ ENDIF
 !-----------------------------------------------------------------------------------------------------
 !
 IF (OLAND_USE .OR. HINIT=='PGD') THEN
+  ! ISBA diagnostic PGD fields to improve efficiency in further PREP steps
+  IF (LECOCLIMAP) THEN
+    ALLOCATE(XDG(KI,NGROUND_LAYER,NPATCH))
+    IF (CISBA=='DIF') THEN
+      ALLOCATE(NWG_LAYER(KI,NPATCH))
+    ELSE
+      ALLOCATE(NWG_LAYER(0,0))
+    END IF
+    CALL CONVERT_COVER_ISBA(CISBA,NUNDEF,XCOVER,'   ','NAT',PSOILGRID=XSOILGRID,PDG=XDG,KWG_LAYER=NWG_LAYER)
+  END IF
+! end of initialization
   IF (LHOOK) CALL DR_HOOK('INIT_ISBA_N',1,ZHOOK_HANDLE)
   RETURN
 END IF

@@ -47,6 +47,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2003 
+!!         M.Moge   04/2015  parallelization og PREP_PGD on son model
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !-------------------------------------------------------------------------------
 !
@@ -67,6 +68,7 @@ USE MODE_FMREAD
 USE MODE_IO_ll
 !
 USE MODI_GET_1D_MASK
+USE MODI_MNH_SURF_GRID_IO_INIT
 !
 IMPLICIT NONE
 !
@@ -131,6 +133,7 @@ COUTFILE = HFILE
 ! 
 CALL FMREAD(HFILE,'IMAX',COUT,'--',IIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
 CALL FMREAD(HFILE,'JMAX',COUT,'--',IJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL MNH_SURF_GRID_IO_INIT(IIMAX,IJMAX)
 CALL FMREAD(HFILE,'JPHEXT',COUT,'--',IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
 IF ( IJPHEXT .NE. JPHEXT ) THEN
    WRITE(NLUOUT,FMT=*) ' MNHOPEN_AUX_IO : JPHEXT in PRE_PGD1.nam/NAM_CONF_PGD ( or default value )&
@@ -167,19 +170,9 @@ CMASK=HMASK
 !
 !
 !*       5.    initialisation of 2D arrays for current processor
-! 
-IF (CPROGRAM=='PGD   ' .AND. HFILE/=COUTFMFILE) THEN
-    ! this is the case when one defines the grid from another MesoNH file.
-    NIU = (IIMAX+2*JPHEXT)
-    NJU = (IJMAX+2*JPHEXT)
-    NIB = 1 + JPHEXT
-    NJB = 1 + JPHEXT
-    NIE = IIMAX + JPHEXT
-    NJE = IJMAX + JPHEXT
-ELSE
+!
     CALL GET_DIM_EXT_ll('B',NIU,NJU)
     CALL GET_INDICE_ll (NIB,NJB,NIE,NJE)
-END IF
 !
 !
 !*       6.    initialisation 1D physical dimension and mask for current processor
