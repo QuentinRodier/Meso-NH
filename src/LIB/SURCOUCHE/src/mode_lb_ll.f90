@@ -1658,7 +1658,8 @@
 !
 !
 !
-      SUBROUTINE SET_LB_FIELD_ll( HLBTYPE, PFIELD, PLBXFIELD, PLBYFIELD, IIB, IJB, IIE, IJE, SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH )
+      SUBROUTINE SET_LB_FIELD_ll( HLBTYPE, PFIELD, PLBXFIELD, PLBYFIELD, IIB, IJB,&
+                     IIE, IJE, SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH )
 !     #######################################################################
 !
 !!****  *SET_LB_FIELD_ll * - subroutine to copy the values associated with the
@@ -1733,7 +1734,8 @@
 ! and the corresponding indices for the LB global arrays
   CALL GET_DISTRIB_LB(YLBTYPEX,ISP,'FM','WRITE',NRIMX,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
   IF ( IIE_LOCLB-IIB_LOCLB /= IIE_GLBLB-IIB_GLBLB ) THEN
-    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, West-East IIE_LOCLB-IIB_LOCLB =", IIE_LOCLB-IIB_LOCLB, " /= IIE_GLBLB-IIB_GLBLB =", IIE_GLBLB-IIB_GLBLB
+    WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, West-East IIE_LOCLB-IIB_LOCLB =",&
+        IIE_LOCLB-IIB_LOCLB, " /= IIE_GLBLB-IIB_GLBLB =", IIE_GLBLB-IIB_GLBLB
     CALL ABORT
   ENDIF
   LOCLBSIZEW = 0
@@ -1771,7 +1773,8 @@
   ! and the corresponding indices for the LB global arrays
     CALL GET_DISTRIB_LB(YLBTYPEY,ISP,'FM','WRITE',NRIMY,IIB_GLBLB,IIE_GLBLB,IJB_GLBLB,IJE_GLBLB)
     IF ( IJE_LOCLB-IJB_LOCLB /= IJE_GLBLB-IJB_GLBLB ) THEN
-      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, South-North IJE_LOCLB-IJB_LOCLB =", IJE_LOCLB-IJB_LOCLB, " /= IJE_GLBLB-IJB_GLBLB =", IJE_GLBLB-IJB_GLBLB
+      WRITE(*,*) "ERROR: from SET_LB_FIELD_ll, South-North IJE_LOCLB-IJB_LOCLB =",&
+           IJE_LOCLB-IJB_LOCLB, " /= IJE_GLBLB-IJB_GLBLB =", IJE_GLBLB-IJB_GLBLB
       CALL ABORT
     ENDIF
     IF ( IJB_LOCLB /= 0 ) THEN  ! if the LB zone of the local subdomain is non-empty

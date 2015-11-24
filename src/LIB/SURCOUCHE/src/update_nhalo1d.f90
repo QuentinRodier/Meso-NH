@@ -133,7 +133,7 @@ INTEGER , DIMENSION(NPROC) :: IRECVCOUNTS !nteger array containing the number of
 ! Donc on fait un WARNING et un ABORT
 !
 IF ( NHALO > KXEND - KXOR + 1 .OR. NHALO > KYEND - KYOR + 1 ) THEN
-  WRITE(*,*) "ERROR in UPDATE_NHALO1D : size of local subdomain is (", KXEND - KXOR + 1,",",KYEND - KYOR + 1, \
+  WRITE(*,*) "ERROR in UPDATE_NHALO1D : size of local subdomain is (", KXEND - KXOR + 1,",",KYEND - KYOR + 1, &
        ") which is less than NHALO=",NHALO
   WRITE(*,*) "Try with less MPI processes or a larger domain"
   CALL ABORT

@@ -505,7 +505,8 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
     ! cause errors on the south-east and north-west internal border of the neigbouring processes
     DO JI=1,JPHEXT+1
       DO JJ=1,JPHEXT+1
-        ZZS1CHILDGRID_C(SIZE(PZS2_C,1)+2-JI+1-JPHEXT-1,SIZE(PZS2_C,2)+2-JJ+1-JPHEXT-1) = ZZS1_C(IDIMX_C-JI+1-JPHEXT-1,IDIMY_C-JJ+1-JPHEXT-1) ! local value, on local physical domain
+        ZZS1CHILDGRID_C(SIZE(PZS2_C,1)+2-JI+1-JPHEXT-1,SIZE(PZS2_C,2)+2-JJ+1-JPHEXT-1) &
+         = ZZS1_C(IDIMX_C-JI+1-JPHEXT-1,IDIMY_C-JJ+1-JPHEXT-1) ! local value, on local physical domain
       END DO
     END DO
     !
