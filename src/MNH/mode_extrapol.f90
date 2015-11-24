@@ -197,7 +197,8 @@ CONTAINS
     ! if the child domain has the same size as the father domain in X or Y
     ! AND the boundary conditions are CYCLIC in the corresponding direction
     ! we perform an UPDATE_HALO_ll instead of an extrapolation
-    IF ( GCYCLIC_EXTRAPOL .AND. ( ((IDIMX_C > IIE - IIB + 1 + 2*JPHEXT) .AND. CLBCX(1)=='CYCL' ) .OR. ((IDIMY_C > IJE - IJB + 1 + 2*JPHEXT) .AND. CLBCY(1)=='CYCL') ) ) THEN
+    IF ( GCYCLIC_EXTRAPOL .AND. ( ((IDIMX_C > IIE - IIB + 1 + 2*JPHEXT) .AND. CLBCX(1)=='CYCL' )&
+            .OR. ((IDIMY_C > IJE - IJB + 1 + 2*JPHEXT) .AND. CLBCY(1)=='CYCL') ) ) THEN
       CALL GOTO_MODEL(1)
       CALL GO_TOMODEL_ll(1, IINFO_ll)
       DO II=1,SIZE(PTAB,3)
@@ -220,7 +221,8 @@ CONTAINS
           PTAB(IDIMX_C,:,:) = 2. * PTAB(IDIMX_C-1,:,:) - PTAB(IDIMX_C-2,:,:)
         ENDIF
       ELSEIF ( IDIMX_C == IIE - IIB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported : the child grid has to be one point larger or one point smaller in X dim"
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported : &
+                the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:,:) = 2. * PTAB(2,:,:) - PTAB(3,:,:)
@@ -233,7 +235,8 @@ CONTAINS
 !          PTAB(IDIMX_C,:,:) = PTAB(2,:,:)
 !        ENDIF
       ELSE !Error, this should not happen
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMX_C = ", IDIMX_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMX_C = ",  &
+                IDIMX_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
       ENDIF
     ENDIF
@@ -246,7 +249,8 @@ CONTAINS
           PTAB(:,IDIMY_C,:) = 2. * PTAB(:,IDIMY_C-1,:) - PTAB(:,IDIMY_C-2,:)
         ENDIF
       ELSEIF ( IDIMY_C == IJE - IJB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported : the child grid has to be one point larger or one point smaller in Y dim"
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported :  &
+        the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1,:) = 2. * PTAB(:,2,:) - PTAB(:,3,:)
@@ -259,7 +263,8 @@ CONTAINS
 !          PTAB(:,IDIMY_C,:) = PTAB(:,2,:)
 !        ENDIF
       ELSE !Error, this should not happen
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMY_C = ", IDIMY_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMY_C = ",  &
+                IDIMY_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
       ENDIF
     ENDIF
@@ -328,7 +333,8 @@ CONTAINS
     ! if the child domain has the same size as the father domain in X or Y
     ! AND the boundary conditions are CYCLIC in the corresponding direction
     ! we perform an UPDATE_HALO_ll instead of an extrapolation
-    IF ( GCYCLIC_EXTRAPOL .AND. ( ((IDIMX_C > IIE - IIB + 1 + 2*JPHEXT) .AND. CLBCX(1)=='CYCL' ) .OR. ((IDIMY_C > IJE - IJB + 1 + 2*JPHEXT) .AND. CLBCY(1)=='CYCL') ) ) THEN
+    IF ( GCYCLIC_EXTRAPOL .AND. ( ((IDIMX_C > IIE - IIB + 1 + 2*JPHEXT) .AND. CLBCX(1)=='CYCL' )&
+            .OR. ((IDIMY_C > IJE - IJB + 1 + 2*JPHEXT) .AND. CLBCY(1)=='CYCL') ) ) THEN
       CALL GOTO_MODEL(1)
       CALL GO_TOMODEL_ll(1, IINFO_ll)
       NULLIFY(TZZSFIELD_ll)
@@ -349,7 +355,8 @@ CONTAINS
           PTAB(IDIMX_C,:) = 2. * PTAB(IDIMX_C-1,:) - PTAB(IDIMX_C-2,:)
         ENDIF
       ELSEIF ( IDIMX_C == IIE - IIB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported : the child grid has to be one point larger or one point smaller in X dim"
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported :  &
+                the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:) = 2. * PTAB(2,:) - PTAB(3,:)
@@ -362,7 +369,8 @@ CONTAINS
 !          PTAB(IDIMX_C,:) = PTAB(2,:)
 !        ENDIF
       ELSE !Error, this should not happen
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMX_C = ", IDIMX_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMX_C = ", IDIMX_C, &
+                ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
       ENDIF
     ENDIF
@@ -379,7 +387,8 @@ CONTAINS
 !          PTAB(:,IDIMY_C) = PTAB(:,2)
         ENDIF
       ELSEIF ( IDIMY_C == IJE - IJB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported : the child grid has to be one point larger or one point smaller in Y dim"
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported : &
+                the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1) = 2. * PTAB(:,2) - PTAB(:,3)
@@ -392,7 +401,8 @@ CONTAINS
 !          PTAB(:,IDIMY_C) = PTAB(:,2)
 !        ENDIF
       ELSE !Error, this should not happen
-        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMY_C = ", IDIMY_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
+        WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMY_C = ", IDIMY_C, &
+                ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
       ENDIF
     ENDIF
