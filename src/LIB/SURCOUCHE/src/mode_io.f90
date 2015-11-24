@@ -591,7 +591,7 @@ CONTAINS
        ELSE
           TZFD%NB_PROCIO = 1
        ENDIF
-       IF( GPARALLELIO /= .TRUE. ) THEN
+       IF( .NOT. GPARALLELIO ) THEN
          TZFD%NB_PROCIO = 1
        ENDIF
        TZFD%COMM = NMNH_COMM_WORLD
@@ -797,7 +797,7 @@ CONTAINS
        !
        ! close LFI file in the different PROC
        !
-       IF( GPARALLELIO /= .TRUE. ) THEN
+       IF( .NOT. GPARALLELIO ) THEN
          TZFD%NB_PROCIO = 1
        ENDIF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
