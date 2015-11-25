@@ -544,6 +544,31 @@
 !
        END SUBROUTINE INIT_LB_ll
 !
+!     #######################
+      SUBROUTINE SET_LB_FIELD_ll(HLBTYPE, PFIELD, PLBXFIELD, PLBYFIELD, IIB, IJB, IIE, IJE, &
+        SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH )
+!     #######################
+!
+  USE MODE_LB_ll, ONLY : E_SET_LB_FIELD_ll => SET_LB_FIELD_ll
+!
+  CHARACTER(LEN=*),INTENT(IN) :: HLBTYPE ! LB type : 'LB','LBU'
+  REAL, DIMENSION(:,:,:), INTENT(IN)  :: PFIELD      ! field on the whole domain (or subdomain)
+  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLBXFIELD    ! LB field - X direction
+  REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLBYFIELD    ! LB field - Y direction
+  !beginning and end of the local physical subdomain
+  INTEGER, INTENT(IN)   :: IIB            ! indice I Beginning in x direction
+  INTEGER, INTENT(IN)   :: IJB            ! indice J Beginning in y direction
+  INTEGER, INTENT(IN)   :: IIE            ! indice I End       in x direction
+  INTEGER, INTENT(IN)   :: IJE            ! indice J End       in y direction
+  INTEGER, INTENT(IN)   :: SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH ! shifting applied to the indices copied from PFIELD in each direction
+                                                                        ! it is used for LBXUM et LBXVM
+                                                                        ! I do not know why...
+!
+  CALL E_SET_LB_FIELD_ll(HLBTYPE, PFIELD, PLBXFIELD, PLBYFIELD, IIB, IJB, IIE, IJE, &
+        SHIFTWEST, SHIFTEAST, SHIFTSOUTH, SHIFTNORTH )
+!
+       END SUBROUTINE SET_LB_FIELD_ll
+!
 !!     ###################################
        FUNCTION LNORTH_ll( K, HSPLITTING )
 !!     ###################################
