@@ -170,6 +170,7 @@ END MODULE MODI_BOUNDARIES
 !!      Modification    01/2015  (JL Redelsperger) Introduction of ponderation
 !!                                 for non normal velocity and potential temp
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      Redelsperger & Pianezze : 08/2015 : add XPOND coefficient
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -188,9 +189,11 @@ USE MODD_ELEC_DESCR
 USE MODD_ELEC_n                 
 USE MODD_REF_n    
 USE MODD_PARAM_n,    ONLY : CELEC 
+USE MODD_LBC_n,      ONLY : XPOND
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE,   ONLY : LFOREFIRE
 #endif
+USE MODD_NESTING,      ONLY : NDAD
 !
 USE MODE_MODELN_HANDLER
 !
@@ -439,7 +442,7 @@ END IF
 !-------------------------------------------------------------------------------
 ! PONDERATION COEFF for  Non-Normal velocities and pot temperature
 !
-ZPOND = 0.2
+ZPOND = XPOND
 !
 !*       4.    LBC FILLING IN THE X DIRECTION (LEFT WEST SIDE):   
 !              ------------------------------------------------
@@ -1039,7 +1042,7 @@ IF ( LFOREFIRE .AND. IMI == 1) THEN
 ENDIF
 #endif
 !
-IF ( CELEC /= 'NONE' .AND. IMI == 1) THEN
+IF ( CELEC /= 'NONE' .AND. (NSV_ELEC_A(NDAD(IMI)) == 0 .OR. IMI == 1)) THEN
   CALL ION_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT)
 ENDIF
 !

@@ -31,6 +31,7 @@
 !!                  right(2) boundaries ( number of delta y)
 !!        XCPHASE : prescribed value of the phase velocity if constant
 !!        XCPHASE_PBL : prescribed value of the phase velocity in the PBL if constant
+!!        XPOND : prescribed value for relaxation of LBC
 !!
 !!    REFERENCE
 !!    ---------
@@ -44,6 +45,7 @@
 !!    -------------
 !!      Original    13/09/94                      
 !!      Modification : 26/06/13 (C.Lac) Introduction of CPHASE_PBL
+!!                     25/08/2015 (Redelsperger & Pianezze) Introduction of ponderation coefficient for LBC
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -56,7 +58,8 @@ USE MODD_LBC_n, ONLY: &
          NLBLY_n => NLBLY, &
          XCPHASE_n => XCPHASE, &
          XCPHASE_PBL_n => XCPHASE_PBL, &
-         XCARPKMAX_n => XCARPKMAX
+         XCARPKMAX_n => XCARPKMAX, &
+         XPOND_n => XPOND
 !
 IMPLICIT NONE
 !
@@ -67,8 +70,9 @@ INTEGER,SAVE, DIMENSION(2)  :: NLBLY
 REAL,SAVE  :: XCPHASE
 REAL,SAVE  :: XCPHASE_PBL
 REAL,SAVE  :: XCARPKMAX  
+REAL,SAVE  :: XPOND
 !
-NAMELIST/NAM_LBCn/CLBCX,CLBCY,NLBLX,NLBLY,XCPHASE,XCPHASE_PBL,XCARPKMAX
+NAMELIST/NAM_LBCn/CLBCX,CLBCY,NLBLX,NLBLY,XCPHASE,XCPHASE_PBL,XCARPKMAX,XPOND
 !
 CONTAINS
 !
@@ -80,6 +84,7 @@ SUBROUTINE INIT_NAM_LBCn
   XCPHASE = XCPHASE_n
   XCPHASE_PBL = XCPHASE_PBL_n
   XCARPKMAX   = XCARPKMAX_n
+  XPOND = XPOND_n
 END SUBROUTINE INIT_NAM_LBCn
 
 SUBROUTINE UPDATE_NAM_LBCn
@@ -90,6 +95,7 @@ SUBROUTINE UPDATE_NAM_LBCn
   XCPHASE_n = XCPHASE
   XCPHASE_PBL_n = XCPHASE_PBL
   XCARPKMAX_n   = XCARPKMAX
+  XPOND_n   = XPOND
 END SUBROUTINE UPDATE_NAM_LBCn
 
 END MODULE MODN_LBC_n
