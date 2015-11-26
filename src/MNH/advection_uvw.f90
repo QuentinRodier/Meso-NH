@@ -101,7 +101,6 @@ USE MODD_ARGSLIST_ll, ONLY : LIST_ll, HALO2LIST_ll
 USE MODD_PARAMETERS,  ONLY : JPVEXT
 USE MODD_CONF,        ONLY : NHALO
 USE MODD_BUDGET
-USE MODD_BLANK,       ONLY : NDUMMY1
 !
 USE MODI_SHUMAN
 USE MODI_CONTRAV
@@ -256,7 +255,7 @@ NULLIFY(TZFIELDS0_ll)
 !
 !-------------------------------------------------------------------------------
 !
-ISPLIT = 1 + NDUMMY1
+ISPLIT = 2                
 ZTSTEP = PTSTEP / REAL(ISPLIT)
 !
 !-------------------------------------------------------------------------------
