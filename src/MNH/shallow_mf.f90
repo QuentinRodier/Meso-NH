@@ -1,7 +1,3 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
 !     ######spl
      MODULE MODI_SHALLOW_MF
 !    ######################
@@ -16,13 +12,14 @@ INTERFACE
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXNM,                                        &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                      &
                 PDUDT_MF,PDVDT_MF,                                    &
                 PDTHLDT_MF,PDRTDT_MF,PDSVDT_MF,                       &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF,               &
                 PFLXZTHMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,                 &
                 PTHL_UP,PRT_UP,PRV_UP,PRC_UP,PRI_UP,                  &
                 PU_UP, PV_UP, PTHV_UP, PW_UP,                         &
+                PTHL_DO,PTHV_DO,PRT_DO,PU_DO, PV_DO,                  &
                 PFRAC_UP,PEMF,PDETR,PENTR,                            &
                 KKLCL,KKETL,KKCTL                                     )
 !     #################################################################
@@ -60,7 +57,7 @@ REAL, DIMENSION(:,:),   INTENT(IN) ::  PEXNM       ! Exner function at t-dt
 REAL, DIMENSION(:),     INTENT(IN) ::  PSFTH,PSFRV ! normal surface fluxes of theta and Rv 
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PTHM        ! Theta at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PRM         ! water var. at t-dt
-REAL, DIMENSION(:,:),   INTENT(IN) ::  PUM,PVM     ! wind components at t-dt
+REAL, DIMENSION(:,:),   INTENT(IN) ::  PUM,PVM,PWM ! wind components at t-dt
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PTKEM       ! tke at t-dt
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PSVM        ! scalar variable a t-dt
@@ -82,6 +79,13 @@ REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_UP    ! Rt  updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRV_UP    ! Vapor updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_UP     ! U wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_UP     ! V wind updraft characteristics
+
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHL_DO   ! Thl environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHV_DO    ! Thv environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_DO    ! Rt  environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_DO     ! U wind environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_DO     ! V wind environment characteristics
+
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRC_UP    ! cloud content updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRI_UP    ! ice content   updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHV_UP   ! Thv   updraft characteristics
@@ -98,7 +102,7 @@ END SUBROUTINE SHALLOW_MF
 END INTERFACE
 !
 END MODULE MODI_SHALLOW_MF
-!     ######spl
+!     ################################################################
       SUBROUTINE SHALLOW_MF(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                 HMF_UPDRAFT, HMF_CLOUD, HFRAC_ICE, OMIXUV,            &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                         &
@@ -107,13 +111,14 @@ END MODULE MODI_SHALLOW_MF
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXNM,                                        &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                      &
                 PDUDT_MF,PDVDT_MF,                                    &
                 PDTHLDT_MF,PDRTDT_MF,PDSVDT_MF,                       &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF,               &
                 PFLXZTHMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,                 &
                 PTHL_UP,PRT_UP,PRV_UP,PRC_UP,PRI_UP,                  &
                 PU_UP, PV_UP, PTHV_UP, PW_UP,                         &
+                PTHL_DO,PTHV_DO,PRT_DO,PU_DO, PV_DO,                  &
                 PFRAC_UP,PEMF,PDETR,PENTR,                            &
                 KKLCL,KKETL,KKCTL                                     )
 
@@ -151,6 +156,8 @@ END MODULE MODI_SHALLOW_MF
 !!      S. Riette 18 May 2010 interface changed due to ice correction
 !!      S.Riette DUAL case
 !!      S. Riette Jan 2012: support for both order of vertical levels
+!!      R.Honnert 07/2012 : elemnts of Rio according to Bouteloup
+!!      R.Honnert 07/2012 : EDKF gray zone 
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -163,9 +170,16 @@ USE MODD_PARAM_MFSHALL_n
 USE MODI_THL_RT_FROM_TH_R_MF
 USE MODI_COMPUTE_UPDRAFT
 USE MODI_COMPUTE_UPDRAFT_RHCJ10
+USE MODI_COMPUTE_UPDRAFT_HRIO
 USE MODI_MF_TURB
+USE MODI_MF_TURB_GREYZONE
 USE MODI_COMPUTE_MF_CLOUD
 USE MODI_COMPUTE_FRAC_ICE
+!
+!
+USE MODI_COMPUTE_BL89_ML
+USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
+USE MODD_REF_n, ONLY : XTHVREF
 !
 IMPLICIT NONE
 
@@ -189,7 +203,7 @@ LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangia
 INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
 REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
-REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
+REAL,                   INTENT(IN)   :: PTSTEP    ! Dynamical timestep 
 
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -202,7 +216,7 @@ REAL, DIMENSION(:,:),   INTENT(IN) ::  PEXNM       ! Exner function at t-dt
 REAL, DIMENSION(:),   INTENT(IN)   ::  PSFTH,PSFRV ! normal surface fluxes of theta and Rv 
 REAL, DIMENSION(:,:), INTENT(IN)   ::  PTHM        ! Theta at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PRM         ! water var. at t-dt
-REAL, DIMENSION(:,:),   INTENT(IN) ::  PUM,PVM     ! wind components at t-dt
+REAL, DIMENSION(:,:),   INTENT(IN) ::  PUM,PVM,PWM ! wind components at t-dt
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PTKEM       ! tke at t-dt
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PSVM        ! scalar variable a t-dt
@@ -224,6 +238,13 @@ REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_UP    ! Rt  updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRV_UP    ! Vapor updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_UP     ! U wind updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_UP     ! V wind updraft characteristics
+
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHL_DO   ! Thl environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHV_DO    ! Thv environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRT_DO    ! Rt  environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PU_DO     ! U wind environment characteristics
+REAL, DIMENSION(:,:), INTENT(INOUT) ::  PV_DO     ! V wind environment characteristics
+
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRC_UP    ! cloud content updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PRI_UP    ! ice content   updraft characteristics
 REAL, DIMENSION(:,:), INTENT(INOUT) ::  PTHV_UP   ! Thv   updraft characteristics
@@ -246,6 +267,7 @@ REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZFRAC_ICE
 
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3)) ::  &
                                           ZSV_UP,&  ! updraft scalar var.
+                                          ZSV_DO,&  ! updraft scalar var.
                                           ZFLXZSVMF ! Flux     
 REAL, DIMENSION(SIZE(PTHM,1)) :: ZDEPTH             ! Deepness of cloud
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZFRAC_ICE_UP ! liquid/solid fraction in updraft
@@ -254,6 +276,11 @@ REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: ZRSAT_UP ! Rsat in updraft
 LOGICAL :: GENTR_DETR  ! flag to recompute entrainment, detrainment and mass flux
 INTEGER :: IKB         ! near ground physical index
 INTEGER :: IKE         ! uppest atmosphere physical index
+! pour bouttle et al.
+REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) ::  ZG_O_THVREF,PTHVREF  
+REAL, DIMENSION(SIZE(PTHM,1)) ::  ZRESOL_NORM, ZRESOL_GRID,& ! normalized grid
+                                  ZLUP, ZPLAW
+    INTEGER :: JI,JJ,JK         ! loop counter
 !------------------------------------------------------------------------
 
 !!! 1. Initialisation
@@ -263,7 +290,8 @@ IKB=KKA+KKL*JPVEXT
 IKE=KKU-KKL*JPVEXT
 
 ! updraft governing variables
-IF (HMF_UPDRAFT == 'EDKF') THEN
+IF (HMF_UPDRAFT == 'EDKF'.OR. HMF_UPDRAFT == 'HRIO' .OR. &
+    HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT'  ) THEN
   PENTR      = 1.E20
   PDETR      = 1.E20
   PEMF       = 1.E20
@@ -285,7 +313,7 @@ ZTHVM(:,:) = PTHM(:,:)*((1.+XRV / XRD *PRM(:,:,1))/(1.+ZRTM(:,:)))
 !!! 2. Compute updraft
 !!!    ---------------
 !
-IF (HMF_UPDRAFT == 'EDKF') THEN
+IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT') THEN
   GENTR_DETR = .TRUE.
   CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,&
                        ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
@@ -311,6 +339,22 @@ ELSEIF (HMF_UPDRAFT == 'RHCJ') THEN
                        PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
 ELSEIF (HMF_UPDRAFT == 'DUAL') THEN
   !Updraft characteristics are already computed and received by interface
+ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
+  GENTR_DETR = .TRUE.
+  ! ma version avec l'entrainement de Rio et al.
+  CALL COMPUTE_UPDRAFT_HRIO(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,                   &
+                       ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
+                       PZZ,PDZZ,                                 &
+                       PSFTH,PSFRV,PPABSM,PRHODREF,              &
+                       PUM,PVM,PTKEM,PWM,                        &                                                 
+                       PTHM,PRM(:,:,1),ZTHLM,ZRTM, PSVM,         &
+                       PTHL_UP,PRT_UP,PRV_UP,PRC_UP,PRI_UP,      &
+                       PTHV_UP,PW_UP, PU_UP, PV_UP, ZSV_UP,      &
+                       PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,           &
+                       PTHL_DO, PTHV_DO, PRT_DO,                 &
+                       PU_DO, PV_DO, ZSV_DO,                     &
+                       PEMF,PDETR,                               &
+                       PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
 ELSE
   WRITE(*,*) ' STOP'                                                     
   WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
@@ -337,17 +381,65 @@ CALL COMPUTE_MF_CLOUD(KKA,IKB,IKE,KKU,KKL,KRR,KRRL,KRRI,&
 !!!    ------------------------------------------------------------------------
 !
 ZEMF_O_RHODREF=PEMF/PRHODREF
-CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                         &
-             ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
-             PIMPL_MF, PTSTEP,                                        &
-             PDZZ,                                                    &
-             PRHODJ,                                                  &
-             ZTHLM,ZTHVM,ZRTM,PUM,PVM,PSVM,                           &
-             PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,PDSVDT_MF,        &
-             ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
-             PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
-             ZFLXZSVMF                                                )
+      IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT') THEN
+       CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
+                ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
+                PIMPL_MF, PTSTEP,                                        &
+                PDZZ,                                                    &
+                PRHODJ,                                                  &
+                ZTHLM,ZTHVM,ZRTM,PUM,PVM,PSVM,                           &
+                PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,PDSVDT_MF,        &
+                ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
+                PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
+                ZFLXZSVMF                                                )
+      ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
+       CALL MF_TURB_GREYZONE(KKA, IKB, IKE, KKU, KKL,OMIXUV,             &
+                ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
+                PIMPL_MF, PTSTEP,                                        &
+                PDZZ,                                                    &
+                PRHODJ,                                                  &
+                ZTHLM,ZTHVM,ZRTM,PUM,PVM,PSVM,                           &
+                PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,PDSVDT_MF,        &
+                ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
+                PTHL_DO,PTHV_DO,PRT_DO,PU_DO,PV_DO,ZSV_DO,               &
+                PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
+                ZFLXZSVMF                                                )
+       ELSE
+         WRITE(*,*) ' STOP'                                                     
+         WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
+         CALL ABORT
+         STOP
+      ENDIF  
 
+     IF (HMF_UPDRAFT == 'BOUT') THEN
+      !! calcul de la hauteur de la couche limite ou de L_up
+      DO JK=1,IKE-KKL
+       PTHVREF(:,JK)=RESHAPE(XTHVREF(:,:,JK),(/SIZE(PTHM,1)*SIZE(PTHM,2)/) )
+      ENDDO
+      ZG_O_THVREF=XG/PTHVREF
+      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM,ZG_O_THVREF,ZTHVM,IKB,.TRUE.,ZLUP)
+      !! calcul de Dx/(h+hc)
+      DO JI=1,SIZE(XDXHAT)
+       DO JJ=1,SIZE(XDYHAT)
+          ZRESOL_GRID((JJ-1)*SIZE(XDXHAT)+JI)=SQRT(XDXHAT(JI)*XDYHAT(JJ))
+       ENDDO
+      ENDDO
+      ZRESOL_NORM=ZRESOL_GRID/ZLUP
+      !! P=loi pour MF, on utilise la même loi à chaque fois
+      ZPLAW=(ZRESOL_NORM*ZRESOL_NORM+0.19*ZRESOL_NORM**(2/3))/ &
+      (ZRESOL_NORM*ZRESOL_NORM+0.15*ZRESOL_NORM**(2/3)+0.33)
+      !! reduction des flux a posteriori
+      !! MF=P*MF en première approximation, on oublie w'f' (Kgrad) et w'f'resol (nul avec ce flux)
+      !  
+      DO JK=1,IKE-KKL
+       PFLXZTHMF(:,JK)=PFLXZTHMF(:,JK)*ZPLAW
+       PFLXZTHVMF(:,JK)=PFLXZTHVMF(:,JK)*ZPLAW
+       PFLXZRMF(:,JK)=PFLXZRMF(:,JK)*ZPLAW
+       PFLXZUMF(:,JK)=PFLXZUMF(:,JK)*ZPLAW
+       PFLXZVMF(:,JK)=PFLXZVMF(:,JK)*ZPLAW
+      ENDDO
+     END IF
+  
 ! security in the case HMF_UPDRAFT = 'DUAL'
 ! to be modified if 'DUAL' is evolving (momentum mixing for example)
 IF( HMF_UPDRAFT == 'DUAL') THEN

@@ -16,7 +16,7 @@ INTERFACE
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                          &
                 PRTHS,PRRS,PRUS,PRVS,PRSVS,                           &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
@@ -56,7 +56,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN) ::  PEXN        ! Exner function at t-dt
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PSFTH,PSFRV ! normal surface fluxes of theta and Rv 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PTHM        ! Theta at t-dt
 REAL, DIMENSION(:,:,:,:),INTENT(IN)::  PRM         ! water var. at t-dt
-REAL, DIMENSION(:,:,:), INTENT(IN) ::  PUM,PVM     ! wind components at t-dt
+REAL, DIMENSION(:,:,:), INTENT(IN) ::  PUM,PVM,PWM ! wind components at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PTKEM       ! tke at t-dt
 
 REAL, DIMENSION(:,:,:,:), INTENT(IN) ::  PSVM        ! scalar variable a t-dt
@@ -83,7 +83,7 @@ END MODULE MODI_SHALLOW_MF_PACK
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                          &
                 PRTHS,PRRS,PRUS,PRVS,PRSVS,                           &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
@@ -112,6 +112,8 @@ END MODULE MODI_SHALLOW_MF_PACK
 !!     AUTHOR
 !!     ------
 !!      V.Masson 09/2010
+!!      Modification R. Honnert 07/2012 : introduction of vertical wind 
+!!                                        for the height of the thermal
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -169,7 +171,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN) ::  PEXN        ! Exner function at t-dt
 REAL, DIMENSION(:,:),   INTENT(IN) ::  PSFTH,PSFRV ! normal surface fluxes of theta and Rv 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PTHM        ! Theta at t-dt
 REAL, DIMENSION(:,:,:,:),INTENT(IN)::  PRM         ! water var. at t-dt
-REAL, DIMENSION(:,:,:), INTENT(IN) ::  PUM,PVM     ! wind components at t-dt
+REAL, DIMENSION(:,:,:), INTENT(IN) ::  PUM,PVM,PWM ! wind components at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PTKEM       ! tke at t-dt
 
 REAL, DIMENSION(:,:,:,:), INTENT(IN) ::  PSVM        ! scalar variable a t-dt
@@ -192,7 +194,7 @@ REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZEXN        ! Exner 
 
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZTHM        ! Theta at t-dt
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3),SIZE(PRM,4)) ::  ZRM         ! water var. at t-dt
-REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZUM,ZVM     ! wind components at t-dt
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZUM,ZVM,ZWM ! wind components at t-dt
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZTKEM       ! tke at t-dt
 
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3),SIZE(PSVM,4)) ::  ZSVM        ! scalar variable a t-dt
@@ -221,6 +223,13 @@ REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZV_UP     ! updraft 
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZRC_UP    ! updraft characteristics
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZRI_UP    ! updraft characteristics
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZTHV_UP   ! updraft characteristics
+
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZTHL_DO   ! downdraft characteristics
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZTHV_DO   ! downdraft characteristics
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZRT_DO    ! downdraft characteristics
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZU_DO     ! downdraft characteristics
+REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZV_DO     ! downdraft characteristics
+
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZW_UP     ! updraft characteristics
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZFRAC_UP  ! updraft characteristics
 REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZEMF      ! updraft characteristics
@@ -235,6 +244,7 @@ REAL, DIMENSION(SIZE(PTHM,1)*SIZE(PTHM,2)) ::  ZSFRV    ! Surface latent   heat 
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZWORK    ! work array
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZUMM     ! wind on mass point
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZVMM     ! wind on mass point
+REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZWMM     ! wind on mass point
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZDUDT    ! tendency of U   by massflux scheme
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZDVDT    ! tendency of V   by massflux scheme
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) ::  ZDTHLDT  ! tendency of thl by massflux scheme
@@ -271,6 +281,7 @@ ZSVM(:,:,:) = 0.
 ! wind on mass points
 ZUMM=MXF(PUM)
 ZVMM=MYF(PVM)
+ZWMM=MZF(1,IKU,1,PWM)
 !
 !!! 2. Pack input variables
 !
@@ -286,6 +297,7 @@ DO JK=1,IKU
   ZRHODREF(:,JK) = RESHAPE(PRHODREF(:,:,JK),(/ IIU*IJU /) )  
   ZUM    (:,JK) = RESHAPE(ZUMM   (:,:,JK),(/ IIU*IJU /) )
   ZVM    (:,JK) = RESHAPE(ZVMM   (:,:,JK),(/ IIU*IJU /) )
+  ZWM    (:,JK) = RESHAPE(ZWMM   (:,:,JK),(/ IIU*IJU /) )
   DO JRR=1,IRR
     ZRM   (:,JK,JRR) = RESHAPE(PRM    (:,:,JK,JRR),(/ IIU*IJU /) ) 
   END DO
@@ -308,13 +320,14 @@ CALL SHALLOW_MF(1,IKU,1,KRR,KRRL,KRRI,                              &
                 ZRHODJ,ZRHODREF,                                      &
                 ZPABSM, ZEXN,                                         &
                 ZSFTH,ZSFRV,                                          &
-                ZTHM,ZRM,ZUM,ZVM,ZTKEM,ZSVM,                          &
+                ZTHM,ZRM,ZUM,ZVM,ZWM,ZTKEM,ZSVM,                      &
                 ZDUDT_MF,ZDVDT_MF,                                    &
                 ZDTHLDT_MF,ZDRTDT_MF,ZDSVDT_MF,                       &
                 ZSIGMF,ZRC_MF,ZRI_MF,ZCF_MF,ZFLXZTHVMF,               &
                 ZFLXZTHMF,ZFLXZRMF,ZFLXZUMF,ZFLXZVMF,                 &
                 ZTHL_UP,ZRT_UP,ZRV_UP,ZRC_UP,ZRI_UP,                  &
                 ZU_UP, ZV_UP, ZTHV_UP, ZW_UP,                         &
+                ZTHL_DO,ZTHV_DO,ZRT_DO,ZU_DO, ZV_DO,                  &
                 ZFRAC_UP,ZEMF,ZDETR,ZENTR,                            &
                 IKLCL,IKETL,IKCTL                                     )
 
