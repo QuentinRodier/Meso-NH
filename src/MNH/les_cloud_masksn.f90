@@ -355,6 +355,9 @@ IF (LLES_MY_MASK) THEN
   DO JI=1,NLES_MASKS_USER
     LLES_CURRENT_MY_MASKS (:,:,:,JI) = .FALSE.
   END DO
+! WHERE ((ZRC_LES + ZRI_LES) > 1.E-06) 
+!    LLES_CURRENT_MY_MASKS (:,:,:,1) = .TRUE.
+! END WHERE
 !
 END IF
 !-------------------------------------------------------------------------------

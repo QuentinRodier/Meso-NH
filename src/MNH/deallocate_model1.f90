@@ -103,6 +103,7 @@ USE MODD_ADVFRC_n                  ! For ADVFRC and EDDY FLUXES
 USE MODD_RELFRC_n
 USE MODD_ADV_n
 USE MODD_PAST_FIELD_n
+USE MODD_TURB_n
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -526,6 +527,16 @@ END IF
 !
 IF ( ASSOCIATED(XATC) .AND. KCALL == 3 ) THEN
   DEALLOCATE(XATC)
+END IF
+!
+!*     16.     Module TURBn           
+!
+IF ( KCALL==3 ) THEN
+  IF (ASSOCIATED(XDYP)) DEALLOCATE(XDYP)
+  IF (ASSOCIATED(XTHP)) DEALLOCATE(XTHP)
+  IF (ASSOCIATED(XTR)) DEALLOCATE(XTR)
+  IF (ASSOCIATED(XDISS)) DEALLOCATE(XDISS)
+  IF (ASSOCIATED(XLEM)) DEALLOCATE(XLEM)
 END IF
 !-------------------------------------------------------------------------------
 !

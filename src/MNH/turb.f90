@@ -21,7 +21,7 @@ INTERFACE
                 PCEI,PCEI_MIN,PCEI_MAX,PCOEF_AMPL_SAT,                &
                 PTHLT,PRT,                                            &
                 PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,PRTKES,PRTKEMS,PSIGS,&
-                PFLXZTHVMF,PWTH,PWRC,PWSV                             )
+                PFLXZTHVMF,PWTH,PWRC,PWSV,PDYP,PTHP,PTR,PDISS,PLEM    )
 
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
@@ -120,6 +120,11 @@ REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PFLXZTHVMF
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWTH       ! heat flux
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWRC       ! cloud water flux
 REAL, DIMENSION(:,:,:,:),INTENT(OUT) :: PWSV       ! scalar flux
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PDYP  ! Dynamical production of TKE
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PTHP  ! Thermal production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PTR   ! Transport production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PDISS ! Dissipation of TKE
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PLEM  ! Mixing length                   
 
 !
 !-------------------------------------------------------------------------------
@@ -143,7 +148,7 @@ END MODULE MODI_TURB
                 PCEI,PCEI_MIN,PCEI_MAX,PCOEF_AMPL_SAT,                &
                 PTHLT,PRT,                                            &
                 PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,PRTKES,PRTKEMS,PSIGS,&
-                PFLXZTHVMF,PWTH,PWRC,PWSV                             )
+                PFLXZTHVMF,PWTH,PWRC,PWSV,PDYP,PTHP,PTR,PDISS,PLEM    )
 !     #################################################################
 !
 !
@@ -470,6 +475,11 @@ REAL, DIMENSION(:,:,:), INTENT(IN)      ::  PFLXZTHVMF
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWTH       ! heat flux
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PWRC       ! cloud water flux
 REAL, DIMENSION(:,:,:,:),INTENT(OUT) :: PWSV       ! scalar flux
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PDYP  ! Dynamical production of TKE
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PTHP  ! Thermal production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PTR   ! Transport production of TKE
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PDISS ! Dissipation of TKE
+REAL, DIMENSION(:,:,:), INTENT(INOUT):: PLEM  ! Mixing length                   
 !
 !
 !-------------------------------------------------------------------------------
@@ -489,7 +499,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:) ::&
           ZFRAC_ICE,                  &  ! ri fraction of rc+ri
           ZMWTH,ZMWR,ZMTH2,ZMR2,ZMTHR,&  ! 3rd order moments
           ZFWTH,ZFWR,ZFTH2,ZFR2,ZFTHR,&  ! opposite of verticale derivate of 3rd order moments
-          ZTHLM                          ! initial potential temp.
+          ZTHLM, ZTR, ZDISS              ! initial potential temp.
 REAL, ALLOCATABLE, DIMENSION(:,:,:,:) ::     &
           ZRM                            ! initial mixing ratio 
 REAL, ALLOCATABLE, DIMENSION(:,:) ::  ZTAU11M,ZTAU12M,  &
@@ -989,7 +999,11 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,ZLM,ZLEPS,ZDP,ZTRH,       &
                      PTSTEP,PIMPL,ZEXPL,                             &
                      HTURBLEN,HTURBDIM,                              &
                      HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,           &
-                     ZTP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS            )
+                     ZTP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS  )
+!
+PDYP = ZDP
+PTHP = ZTP
+!
 IF (LBUDGET_TH)  THEN
   IF ( KRRI >= 1 .AND. KRRL >= 1 ) THEN
     CALL BUDGET (PRTHLS+ZLVOCPEXNM*PRRS(:,:,:,2)+ZLSOCPEXNM*PRRS(:,:,:,4) &
@@ -1005,6 +1019,8 @@ END IF
 !
 !*      7. STORES SOME INFORMATIONS RELATED TO THE TURBULENCE SCHEME
 !          ---------------------------------------------------------
+!
+PLEM = ZLM
 !
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT=' '

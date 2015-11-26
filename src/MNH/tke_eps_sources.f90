@@ -6,6 +6,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! MASDEV4_7 turb 2006/06/06 10:02:03
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_TKE_EPS_SOURCES
@@ -17,7 +18,7 @@ INTERFACE
                       PTSTEP,PIMPL,PEXPL,                                   &
                       HTURBLEN,HTURBDIM,                                    &
                       HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,                 &
-                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS                 )
+                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
 !
 INTEGER,                 INTENT(IN)   ::  KKA          !near ground array index  
 INTEGER,                 INTENT(IN)   ::  KKU          !uppest atmosphere array index
@@ -50,6 +51,8 @@ REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
+REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PTR          ! Transport prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PDISS        ! Dissipati prod. of TKE
 !
 !
 !
@@ -65,7 +68,7 @@ END MODULE MODI_TKE_EPS_SOURCES
                       PTSTEP,PIMPL,PEXPL,                              &
                       HTURBLEN,HTURBDIM,                               &
                       HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
-                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS            )
+                      PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS  )
 !     ##################################################################
 !
 !
@@ -237,6 +240,8 @@ REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTHLS       ! Source of Theta_l
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PCOEF_DISS   ! 1/(Cph*Exner)
 REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRTKESM      ! Advection source 
+REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PTR          ! Transport prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(OUT)  ::  PDISS        ! Dissipati prod. of TKE
 !
 !
 !
@@ -329,7 +334,6 @@ ZA(:,:,:)     = - PTSTEP * XCET * &
 !
 CALL TRIDIAG_TKE(KKA,KKU,KKL,PTKEM,ZA,PTSTEP,PEXPL,PIMPL,PRHODJ,&
             & ZSOURCE,PTSTEP*ZFLX,ZRES)
-!JUAN
 CALL GET_HALO(ZRES)
 !
 !* diagnose the dissipation
@@ -461,7 +465,11 @@ IF (LLES_CALL ) THEN
   ZFLX(:,:,:) =-XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:) 
   CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_DISS_Tke )
 END IF
-! 
+!
+PTR=0.
+PDISS=0.
+PTR(:,:,:)   = ZTR(:,:,:)
+PDISS(:,:,:) =  -XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:)
 !----------------------------------------------------------------------------
 ! 
 !

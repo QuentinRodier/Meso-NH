@@ -51,6 +51,7 @@ END MODULE MODI_WRITE_LES_n
 !!                       06/11/02 (V. Masson) some minor bugs
 !!                       01/04/03 (V. Masson) idem
 !!                       10/10/09 (P. Aumond) Add user multimaskS
+!!                          11/15 (C.Lac) Add production terms of TKE
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -304,6 +305,21 @@ CALL LES_DIACHRO_MASKS("MEAN_W  ",YSUBTITLE(:), &
 
 CALL LES_DIACHRO_MASKS("MEAN_PRE",YSUBTITLE(:), &
   "Mean pressure Profile"//YSUBTITLE(:)," Pa",XLES_MEAN_P,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_DP",YSUBTITLE(:), &
+  "Mean Dyn production TKE Profile"//YSUBTITLE(:)," m2/s3",XLES_MEAN_DP,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_TP",YSUBTITLE(:), &
+  "Mean Thermal  production TKE Profile "//YSUBTITLE(:)," m2/s3",XLES_MEAN_TP,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_TR",YSUBTITLE(:), &
+  "Mean transport production TKE Profile"//YSUBTITLE(:)," m2/s3",XLES_MEAN_TR,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_DISS",YSUBTITLE(:), &
+  "Mean Dissipation TKE Profile"//YSUBTITLE(:)," m2/s3",XLES_MEAN_DISS,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_LM",YSUBTITLE(:), &
+  "Mean mixing length Profile"//YSUBTITLE(:)," m",XLES_MEAN_LM,HLES_AVG)
 
 CALL LES_DIACHRO_MASKS("MEAN_RHO",YSUBTITLE(:), &
   "Mean density Profile"//YSUBTITLE(:)," kg/m3",XLES_MEAN_RHO,HLES_AVG)

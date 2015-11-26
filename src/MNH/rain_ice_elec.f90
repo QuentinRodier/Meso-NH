@@ -6,6 +6,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !      #########################
        MODULE MODI_RAIN_ICE_ELEC
@@ -102,6 +103,7 @@ END SUBROUTINE RAIN_ICE_ELEC
 END INTERFACE
 END MODULE MODI_RAIN_ICE_ELEC
 !
+!     ######spl
       SUBROUTINE RAIN_ICE_ELEC (OSEDIC, HSUBG_AUCV, OWARM,                            &
                                 KSPLITR, PTSTEP, KMI, KRR,                            &
                                 PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR, &
@@ -211,6 +213,20 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         C. Lac        2011 : Adaptation to FIT temporal scheme
 !!         B. Tsenova    June 2012 Add new NI parameterizations
 !!         C. Barthe     June 2012 Dependance of RAR on the RELATIVE terminal velocity
+!!         M. Chong      06/08/13  Add "Beard" effect (ELEC=>MICROPHYSICS) 
+!!         J-P Pinty     21/08/13  Correction of the process limitation algo.
+!!                                 SIGN(MIN(ABS ...
+!!                                 Correction in elec_update_qd
+!!                                 Correction of hail charge transfer
+!!                                 Add hail growth charging processes
+!!         J-P Pinty     26/08/13  Add "Beard" effect control (ELEC=>MICROPHYS)
+!!                                 for sedimentation
+!!         J-P Pinty     26/09/13  Add tabulated treatment of SAUN1 and SAUN2
+!!         J-P Pinty     30/09/13  Remove call to MOMG function
+!!         J-P Pinty     25/10/13  Add "Latham" effect for aggregation process
+!!         M. Chong      31/10/13  Add other tabulated treatment and recode
+!!         M. Chong      15/11/13  Bug in the computation of RGWETH (wrong sign)
+!!         J-P Pinty     25/04/14  Many bugs with ZWQ1(:,...) = 0.0
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
@@ -492,65 +508,60 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZFT       ! Fct depending on temperature
 !
 ! Non-inductive charging process following Saunders et al. (1991) / EW
 REAL, DIMENSION(:), ALLOCATABLE :: ZEW      ! Effective liquid water content
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNQ   ! q=f(LWC,T) in Saunders's equation
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIK  ! constant B _______________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSK  ! constant B _______________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIM  !  d_i exponent ____________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIN  !  v_g/s-v_i________________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSM  !  d_s exponent ____________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSN  !  v_g-v_s _________________________
+REAL, DIMENSION(:), ALLOCATABLE :: ZFQIAGGS, ZFQIDRYGBS
+REAL, DIMENSION(:), ALLOCATABLE :: ZLBQSDRYGB1S, ZLBQSDRYGB2S, ZLBQSDRYGB3S
 !
 ! Non-inductive charging process following Saunders and Peck (1998) / RAR
 REAL, DIMENSION(:), ALLOCATABLE :: ZVGMEAN  ! Mean velocity of graupel
 REAL, DIMENSION(:), ALLOCATABLE :: ZVSMEAN  ! Mean velocity of snow
+REAL, DIMENSION(:), ALLOCATABLE :: ZRHOCOR  ! Density correction for fallspeed
 REAL, DIMENSION(:), ALLOCATABLE :: ZRAR     ! Rime accretion rate
 REAL, DIMENSION(:), ALLOCATABLE :: ZRAR_CRIT  ! Critical RAR
-REAL, DIMENSION(:), ALLOCATABLE :: ZPECKQ_IS   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIK_IS  ! constant B _______________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSK_IS  ! constant B _______________________
+REAL, DIMENSION(:), ALLOCATABLE :: ZDQRAR_IS   ! q= f(RAR,T) in Saunders and Peck's equation
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIM_IS  !  d_i exponent ____________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIN_IS  !  v_g/s-v_i________________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSM_IS  !  d_s exponent ____________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSN_IS  !  v_g-v_s _________________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZPECKQ_IG   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIK_IG  ! constant B _______________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSK_IG  ! constant B _______________________
+REAL, DIMENSION(:), ALLOCATABLE :: ZDQRAR_IG   ! q= f(RAR,T) in Saunders and Peck's equation
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIM_IG  !  d_i exponent ____________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIN_IG  !  v_g/s-v_i________________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSM_IG  !  d_s exponent ____________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSN_IG  !  v_g-v_s _________________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZPECKQ_SG   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIK_SG  ! constant B _______________________
+REAL, DIMENSION(:), ALLOCATABLE :: ZDQRAR_SG   ! q= f(RAR,T) in Saunders and Peck's equation
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSK_SG  ! constant B _______________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIM_SG  !  d_i exponent ____________________
-REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNIN_SG  !  v_g/s-v_i________________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSM_SG  !  d_s exponent ____________________
 REAL, DIMENSION(:), ALLOCATABLE :: ZSAUNSN_SG  !  v_g-v_s _________________________
 !
-! Non-inductive charging process following Tsenova and Mitzeva (2009, 2011)
-REAL, DIMENSION(:), ALLOCATABLE :: ZBTRMQ     ! param. with EW
-REAL, DIMENSION(:), ALLOCATABLE :: ZBTRMQ_IS  ! param. with RAR
-REAL, DIMENSION(:), ALLOCATABLE :: ZBTRMQ_IG  ! param. with RAR
-REAL, DIMENSION(:), ALLOCATABLE :: ZBTRMQ_SG  ! param. with RAR
-!
 ! Non-inductive charging process following Takahashi (1978)
 INTEGER :: IGTAKA ! Case number of charge separation for Takahashi param.
-INTEGER, DIMENSION(:), ALLOCATABLE :: ITEST_TAK  ! Test if EW index already computed
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GTAKA      ! Test where to compute charge
                                                  ! separation for Takahashi param.
 REAL,    DIMENSION(:), ALLOCATABLE :: ZDQTAKA_OPT ! Optimized array of separated charge
-REAL,    DIMENSION(:), ALLOCATABLE :: ZDQTAKA     ! q=f(LWC,T) in Takahashi's equation
+!
+INTEGER :: IGSAUN ! Case number of charge separation for Saunders param.
+LOGICAL, DIMENSION(:), ALLOCATABLE :: GSAUN      ! Test where to compute charge
+                                                 ! separation for Saunders param.
+REAL,    DIMENSION(:), ALLOCATABLE :: ZDQLWC_OPT ! Optimized array of separated charge
+REAL,    DIMENSION(:), ALLOCATABLE :: ZDQLWC     ! q=f(LWC,T)
 !
 ! Inductive charging process (Ziegler et al., 1991)
 INTEGER                            :: IIND      ! Case number of inductive process
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GIND      ! Test where to compute inductive process
 REAL,    DIMENSION(:), ALLOCATABLE :: ZRATE_IND ! Charge transfer rate during inductive process
 REAL,    DIMENSION(:), ALLOCATABLE :: ZEFIELDW  ! Vertical component of the electric field
+!
+! Latham's effect
+REAL,    DIMENSION(:), ALLOCATABLE :: ZLATHAMIAGGS ! E Function to simulate
+                                                   ! enhancement of IAGGS
+REAL,    DIMENSION(:), ALLOCATABLE :: ZEFIELDU  ! Horiz. component of the electric field
+REAL,    DIMENSION(:), ALLOCATABLE :: ZEFIELDV  ! Horiz. component of the electric field
+!
 REAL, DIMENSION(:), ALLOCATABLE :: ZLIMIT, ZAUX, ZAUX1
 REAL, DIMENSION(:), ALLOCATABLE :: ZCOLIS   ! Collection efficiency between ice and snow
 REAL, DIMENSION(:), ALLOCATABLE :: ZCOLIG   ! Collection efficiency between ice and graupeln
 REAL, DIMENSION(:), ALLOCATABLE :: ZCOLSG   ! Collection efficiency between snow and graupeln
-REAL :: ZRHO00    ! Surface reference air density
+REAL :: ZRHO00, ZCOR00    ! Surface reference air density
 !
 !-------------------------------------------------------------------------------
 !
@@ -562,6 +573,7 @@ IKB = 1 + JPVEXT
 IKE = SIZE(PZZ,3) - JPVEXT
 !
 ZRHO00 = XP00 / (XRD * XTHVREFZ(IKB))
+ZCOR00 = ZRHO00**XCEXVT
 !
 !
 !*       2.     COMPUTES THE SLOW COLD PROCESS SOURCES
@@ -580,7 +592,7 @@ CALL RAIN_ICE_ELEC_NUCLEATION
 GMICRO(:,:,:) = .FALSE.
 
 IF ( KRR == 7 ) THEN
-  GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =                          &
+  GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =                            &
                 PRCT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(2) .OR. &
                 PRRT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(3) .OR. &
                 PRIT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(4) .OR. &
@@ -588,7 +600,7 @@ IF ( KRR == 7 ) THEN
                 PRGT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(6) .OR. &
                 PRHT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(7)
 ELSE IF( KRR == 6 ) THEN
-  GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =                          &
+  GMICRO(IIB:IIE,IJB:IJE,IKB:IKE) =                            &
                 PRCT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(2) .OR. &
                 PRRT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(3) .OR. &
                 PRIT(IIB:IIE,IJB:IJE,IKB:IKE) > XRTMIN(4) .OR. &
@@ -650,6 +662,9 @@ IF (IMICRO > 0) THEN
     ZPRES(JL)    = PPABST(I1(JL),I2(JL),I3(JL))
     ZEXNREF(JL)  = PEXNREF(I1(JL),I2(JL),I3(JL))
   ENDDO
+!
+  ALLOCATE(ZRHOCOR(IMICRO))
+  ZRHOCOR(:) = (ZRHO00 / ZRHODREF(:))**XCEXVT
 !
   ALLOCATE(ZZW(IMICRO))
   ALLOCATE(ZLSFACT(IMICRO))
@@ -729,58 +744,65 @@ IF (IMICRO > 0) THEN
     ALLOCATE( ZDELTALWC(IMICRO) )
     ALLOCATE( ZFT(IMICRO) )
   END IF
+!
   IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
-      CNI_CHARGING == 'TAKAH' .OR. CNI_CHARGING == 'TEEWC') &
+      CNI_CHARGING == 'TAKAH' .OR.                              &
+      CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2' .OR. &
+      CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
     ALLOCATE( ZEW(IMICRO) )
+  END IF
+
   IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2') THEN
-    ALLOCATE( ZSAUNQ(IMICRO) )
     ALLOCATE( ZLWCC(IMICRO) )
-    ALLOCATE( ZSAUNIK(IMICRO) )
+  END IF
+!
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'TAKAH' .OR. CNI_CHARGING == 'TEEWC') THEN
+    ALLOCATE( ZDQLWC(IMICRO) )
+  END IF
+!
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'TEEWC' )  THEN
     ALLOCATE( ZSAUNSK(IMICRO) )
     ALLOCATE( ZSAUNIM(IMICRO) )
     ALLOCATE( ZSAUNIN(IMICRO) )
     ALLOCATE( ZSAUNSM(IMICRO) )
     ALLOCATE( ZSAUNSN(IMICRO) )
   END IF
-  IF (CNI_CHARGING == 'TAKAH') ALLOCATE( ZDQTAKA(IMICRO) )
-  IF (CNI_CHARGING == 'SAP98' .OR.                              &
+!
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'SAP98' .OR.                              &
       CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2' .OR. &
-      CNI_CHARGING == 'TERAR') THEN
-    ALLOCATE( ZVGMEAN(IMICRO) )
-    ALLOCATE( ZVSMEAN(IMICRO) )
-    ALLOCATE( ZRAR(IMICRO) )
+      CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
+    ALLOCATE( ZFQIAGGS(IMICRO) )
+    ALLOCATE( ZFQIDRYGBS(IMICRO) )
+    ALLOCATE( ZLBQSDRYGB1S(IMICRO) )
+    ALLOCATE( ZLBQSDRYGB2S(IMICRO) )
+    ALLOCATE( ZLBQSDRYGB3S(IMICRO) )
   END IF
+!
   IF (CNI_CHARGING == 'SAP98' .OR.                              &
       CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2') THEN
     ALLOCATE( ZRAR_CRIT(IMICRO) )
-    ALLOCATE( ZPECKQ_IS(IMICRO) )
-    ALLOCATE( ZSAUNIK_IS(IMICRO) )
-    ALLOCATE( ZSAUNSK_IS(IMICRO) )
+  END IF
+!
+  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'TERAR' .OR. &
+      CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2') THEN
+    ALLOCATE( ZVGMEAN(IMICRO) )
+    ALLOCATE( ZVSMEAN(IMICRO) )
+    ALLOCATE( ZRAR(IMICRO) )
+    ALLOCATE( ZDQRAR_IS(IMICRO) )
+    ALLOCATE( ZDQRAR_IG(IMICRO) )
+    ALLOCATE( ZDQRAR_SG(IMICRO) )
     ALLOCATE( ZSAUNIM_IS(IMICRO) )
     ALLOCATE( ZSAUNIN_IS(IMICRO) )
-    ALLOCATE( ZSAUNSM_IS(IMICRO) )
-    ALLOCATE( ZSAUNSN_IS(IMICRO) )
-    ALLOCATE( ZPECKQ_IG(IMICRO) )
-    ALLOCATE( ZSAUNIK_IG(IMICRO) )
-    ALLOCATE( ZSAUNSK_IG(IMICRO) )
     ALLOCATE( ZSAUNIM_IG(IMICRO) )
     ALLOCATE( ZSAUNIN_IG(IMICRO) )
-    ALLOCATE( ZSAUNSM_IG(IMICRO) )
-    ALLOCATE( ZSAUNSN_IG(IMICRO) )
-    ALLOCATE( ZPECKQ_SG(IMICRO) )
-    ALLOCATE( ZSAUNIK_SG(IMICRO) )
     ALLOCATE( ZSAUNSK_SG(IMICRO) )
-    ALLOCATE( ZSAUNIM_SG(IMICRO) )
-    ALLOCATE( ZSAUNIN_SG(IMICRO) )
     ALLOCATE( ZSAUNSM_SG(IMICRO) )
     ALLOCATE( ZSAUNSN_SG(IMICRO) )
   END IF
-  IF (CNI_CHARGING == 'BSMP2') THEN
-    ALLOCATE( ZBTRMQ_IS(IMICRO) )
-    ALLOCATE( ZBTRMQ_IG(IMICRO) )
-    ALLOCATE( ZBTRMQ_SG(IMICRO) )
-  END IF
-  IF (CNI_CHARGING == 'TEEWC') ALLOCATE( ZBTRMQ(IMICRO) )
+!
   IF (CNI_CHARGING == 'TAKAH' .OR. CNI_CHARGING == 'SAP98' .OR. &
       CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
       CNI_CHARGING == 'GARDI' .OR. CNI_CHARGING == 'BSMP1' .OR. &
@@ -796,6 +818,13 @@ IF (IMICRO > 0) THEN
     ALLOCATE( GIND(IMICRO) )
   END IF
 !
+  IF (LIAGGS_LATHAM) THEN
+    ALLOCATE( ZEFIELDU(IMICRO) )
+    ALLOCATE( ZEFIELDV(IMICRO) )
+    IF (.NOT.ALLOCATED(ZEFIELDW)) ALLOCATE( ZEFIELDW(IMICRO) )
+  END IF
+  ALLOCATE( ZLATHAMIAGGS(IMICRO) )
+!
   ALLOCATE( ZWQ1(IMICRO,10) )
   ALLOCATE( ZWQ3(IMICRO) )
   ALLOCATE( ZWQ4(IMICRO) )
@@ -807,6 +836,11 @@ IF (IMICRO > 0) THEN
 !
   DO JL = 1, IMICRO
     IF (LINDUCTIVE) ZEFIELDW(JL) = XEFIELDW(I1(JL), I2(JL), I3(JL))
+    IF (LIAGGS_LATHAM) THEN
+      ZEFIELDU(JL) = XEFIELDU(I1(JL), I2(JL), I3(JL))
+      ZEFIELDV(JL) = XEFIELDV(I1(JL), I2(JL), I3(JL))
+      IF (.NOT.LINDUCTIVE ) ZEFIELDW(JL) = XEFIELDW(I1(JL), I2(JL), I3(JL))
+    END IF
 !
     ZQPIT(JL) = PQPIT(I1(JL), I2(JL), I3(JL))
     ZQNIT(JL) = PQNIT(I1(JL), I2(JL), I3(JL))
@@ -972,6 +1006,7 @@ IF (IMICRO > 0) THEN
   DEALLOCATE(ZEXNREF)
   DEALLOCATE(ZPRES)
   DEALLOCATE(ZRHODREF)
+  DEALLOCATE(ZRHOCOR)
   DEALLOCATE(ZZT)
   IF(LBU_ENABLE .OR. LLES_CALL) DEALLOCATE(ZRHODJ)
   DEALLOCATE(ZTHS)
@@ -1030,52 +1065,43 @@ IF (IMICRO > 0) THEN
   DEALLOCATE( ZCOLIG )
   DEALLOCATE( ZCOLSG )
   DEALLOCATE( ZRSMIN_ELEC)
+  DEALLOCATE( GELEC )
   IF (ALLOCATED( ZDELTALWC )) DEALLOCATE( ZDELTALWC )   
   IF (ALLOCATED( ZLWCC ))     DEALLOCATE( ZLWCC )
   IF (ALLOCATED( ZFT ))       DEALLOCATE( ZFT )
   IF (ALLOCATED( ZEW ))       DEALLOCATE( ZEW )
-  IF (ALLOCATED( ZSAUNQ ))    DEALLOCATE( ZSAUNQ )
-  IF (ALLOCATED( ZSAUNIK ))   DEALLOCATE( ZSAUNIK )
   IF (ALLOCATED( ZSAUNSK ))   DEALLOCATE( ZSAUNSK )
   IF (ALLOCATED( ZSAUNIM ))   DEALLOCATE( ZSAUNIM )
   IF (ALLOCATED( ZSAUNIN ))   DEALLOCATE( ZSAUNIN )
   IF (ALLOCATED( ZSAUNSM ))   DEALLOCATE( ZSAUNSM )
   IF (ALLOCATED( ZSAUNSN ))   DEALLOCATE( ZSAUNSN )
-  IF (ALLOCATED( ZDQTAKA ))   DEALLOCATE( ZDQTAKA )
   IF (ALLOCATED( ZVGMEAN ))   DEALLOCATE( ZVGMEAN )
   IF (ALLOCATED( ZRAR ))      DEALLOCATE( ZRAR )
   IF (ALLOCATED( ZRAR_CRIT )) DEALLOCATE( ZRAR_CRIT )
-  IF (ALLOCATED( ZSAUNIK_IS ))   DEALLOCATE( ZSAUNIK_IS )
-  IF (ALLOCATED( ZSAUNSK_IS ))   DEALLOCATE( ZSAUNSK_IS )
   IF (ALLOCATED( ZSAUNIM_IS ))   DEALLOCATE( ZSAUNIM_IS )
   IF (ALLOCATED( ZSAUNIN_IS ))   DEALLOCATE( ZSAUNIN_IS )
-  IF (ALLOCATED( ZSAUNSM_IS ))   DEALLOCATE( ZSAUNSM_IS )
-  IF (ALLOCATED( ZSAUNSN_IS ))   DEALLOCATE( ZSAUNSN_IS )
-  IF (ALLOCATED( ZPECKQ_IS ))    DEALLOCATE( ZPECKQ_IS )
-  IF (ALLOCATED( ZSAUNIK_IG ))   DEALLOCATE( ZSAUNIK_IG )
-  IF (ALLOCATED( ZSAUNSK_IG ))   DEALLOCATE( ZSAUNSK_IG )
+  IF (ALLOCATED( ZFQIAGGS ))   DEALLOCATE( ZFQIAGGS )
+  IF (ALLOCATED( ZFQIDRYGBS ))   DEALLOCATE( ZFQIDRYGBS )
+  IF (ALLOCATED( ZLBQSDRYGB1S ))   DEALLOCATE( ZLBQSDRYGB1S )
+  IF (ALLOCATED( ZLBQSDRYGB2S ))   DEALLOCATE( ZLBQSDRYGB2S )
+  IF (ALLOCATED( ZLBQSDRYGB3S ))   DEALLOCATE( ZLBQSDRYGB3S )
   IF (ALLOCATED( ZSAUNIM_IG ))   DEALLOCATE( ZSAUNIM_IG )
   IF (ALLOCATED( ZSAUNIN_IG ))   DEALLOCATE( ZSAUNIN_IG )
-  IF (ALLOCATED( ZSAUNSM_IG ))   DEALLOCATE( ZSAUNSM_IG )
-  IF (ALLOCATED( ZSAUNSN_IG ))   DEALLOCATE( ZSAUNSN_IG )
-  IF (ALLOCATED( ZPECKQ_IG ))    DEALLOCATE( ZPECKQ_IG )
-  IF (ALLOCATED( ZSAUNIK_SG ))   DEALLOCATE( ZSAUNIK_SG )
   IF (ALLOCATED( ZSAUNSK_SG ))   DEALLOCATE( ZSAUNSK_SG )
-  IF (ALLOCATED( ZSAUNIM_SG ))   DEALLOCATE( ZSAUNIM_SG )
-  IF (ALLOCATED( ZSAUNIN_SG ))   DEALLOCATE( ZSAUNIN_SG )
   IF (ALLOCATED( ZSAUNSM_SG ))   DEALLOCATE( ZSAUNSM_SG )
   IF (ALLOCATED( ZSAUNSN_SG ))   DEALLOCATE( ZSAUNSN_SG )
-  IF (ALLOCATED( ZPECKQ_SG ))    DEALLOCATE( ZPECKQ_SG )
-  IF (ALLOCATED( ZBTRMQ ))       DEALLOCATE( ZBTRMQ )
-  IF (ALLOCATED( ZBTRMQ_IS ))    DEALLOCATE( ZBTRMQ_IS )
-  IF (ALLOCATED( ZBTRMQ_IG ))    DEALLOCATE( ZBTRMQ_IG )
-  IF (ALLOCATED( ZBTRMQ_SG ))    DEALLOCATE( ZBTRMQ_SG )
+  IF (ALLOCATED( ZDQLWC ))       DEALLOCATE( ZDQLWC )
+  IF (ALLOCATED( ZDQRAR_IS ))    DEALLOCATE( ZDQRAR_IS )
+  IF (ALLOCATED( ZDQRAR_IG ))    DEALLOCATE( ZDQRAR_IG )
+  IF (ALLOCATED( ZDQRAR_SG ))    DEALLOCATE( ZDQRAR_SG )
   IF (ALLOCATED( ZAUX1 ))     DEALLOCATE( ZAUX1 )
   IF (ALLOCATED( ZLIMIT ))    DEALLOCATE( ZLIMIT )
-  DEALLOCATE( GELEC )
   IF (ALLOCATED( ZEFIELDW ))  DEALLOCATE( ZEFIELDW )
   IF (ALLOCATED( ZRATE_IND )) DEALLOCATE( ZRATE_IND )
   IF (ALLOCATED( GIND ))      DEALLOCATE( GIND )
+  IF (ALLOCATED( ZEFIELDU ))  DEALLOCATE( ZEFIELDU )
+  IF (ALLOCATED( ZEFIELDV ))  DEALLOCATE( ZEFIELDV )
+  DEALLOCATE( ZLATHAMIAGGS )
 !
 ELSE
 !
@@ -1284,6 +1310,12 @@ INTEGER, SAVE :: IOLDALLOCH = 6000
 !
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !  droplet condensation
 INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
+REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZF0, ZF1, ZCOR
+REAL :: ZBEARDCOEFR, ZBEARDCOEFI, ZBEARDCOEFS, ZBEARDCOEFG
+REAL :: ZVR, ZVI, ZVS, ZVG, ZETA0, ZK, ZRE0
+! For rain, ice, snow and graupel particles, Take into account the 
+! effects of altitude and electrical force on terminal fallspeed
+! (from Beard, JAS 1980, 37,1363-1374) 
 !
 !-------------------------------------------------------------------------------
 !
@@ -1296,6 +1328,21 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
   PINPRG (:,:) = 0.
   IF ( KRR == 7 ) PINPRH (:,:) = 0.
 !
+  ZT (:,:,:) = ZT (:,:,:) - XTT    !ZT from RAIN_ICE_ELEC_NUCLEATION
+  ZETA0 = (1.718 + 0.0049*(XTHVREFZ(IKB) -XTT))
+  WHERE (ZT (:,:,:) >= 0.0)
+    ZF0(:,:,:) = ZETA0 / (1.718 + 0.0049*ZT(:,:,:))
+  ELSEWHERE
+    ZF0(:,:,:) = ZETA0 / (1.718 + 0.0049*ZT(:,:,:) - 1.2E-5*ZT(:,:,:)*ZT(:,:,:))
+  END WHERE
+!
+  ZF1(:,:,:) = SQRT(ZRHO00/PRHODREF(:,:,:))
+  ZCOR(:,:,:) = (PRHODREF(:,:,:)/ZRHO00)**XCEXVT   ! to eliminate Foote-duToit correction
+!
+  ZVR = (ZRHO00/ZETA0) * XCR * MOMG(XALPHAR,XNUR,XBR+XDR) / MOMG(XALPHAR,XNUR,XBR)
+  ZVI = (ZRHO00/ZETA0) * 2.1E5 * MOMG(XALPHAI,XNUI,3.285) / MOMG(XALPHAI,XNUI,1.7)  ! Columns
+  ZVS = (ZRHO00/ZETA0) * XCS * MOMG(XALPHAS,XNUS,XBS+XDS) / MOMG(XALPHAS,XNUS,XBS)
+  ZVG = (ZRHO00/ZETA0) * XCG * MOMG(XALPHAG,XNUG,XBG+XDG) / MOMG(XALPHAG,XNUG,XBG)
 !
 !*       1. Parameters for cloud sedimentation
 !
@@ -1506,6 +1553,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
         ALLOCATE(ZRRS(ILENALLOCR), ZRHODREFR(ILENALLOCR), ILISTR(ILENALLOCR))
         ALLOCATE(ZQRS(ILENALLOCR), ZLBDAR(ILENALLOCR), ZERS(ILENALLOCR))
       END IF
+      ZERS(:) = 0.
 !
       DO JL = 1, ISEDIMR
         ZRRS(JL)      = PRRS(IR1(JL),IR2(JL),IR3(JL))
@@ -1530,11 +1578,36 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
       END DO
       DO JJ = 1, ILISTLENR
         JL = ILISTR(JJ)
-        ZWSED(IR1(JL),IR2(JL),IR3(JL)) = XFSEDR  * ZRRS(JL)**XEXSEDR *   &
+        IF (ZRRS(JL) > 0. .AND. LSEDIM_BEARD) THEN
+          ZK = 1. - ZQRS(JL) * XEFIELDW(IR1(JL),IR2(JL),IR3(JL)) / (ZRRS(JL)*XG)
+          IF (ZK <= 0.0) THEN
+            ZBEARDCOEFR = 0.
+          ELSE
+            ZRE0 = ZVR / ZLBDAR(JL)**(1.+XDR)
+            IF (ZRE0 <= 0.2) THEN
+              ZBEARDCOEFR = ZF0(IR1(JL),IR2(JL),IR3(JL)) * ZK
+            ELSE IF (ZRE0 >= 1000.) THEN
+              ZBEARDCOEFR = ZF1(IR1(JL),IR2(JL),IR3(JL)) * SQRT(ZK)
+            ELSE
+              ZBEARDCOEFR = ZF0(IR1(JL),IR2(JL),IR3(JL)) * ZK +         &
+                            (ZF1(IR1(JL),IR2(JL),IR3(JL)) *             &
+                            SQRT(ZK)-ZF0(IR1(JL),IR2(JL),IR3(JL))*ZK) * &
+                            (1.61+LOG(ZRE0)) / 8.52
+            END IF
+            ZBEARDCOEFR = ZBEARDCOEFR * ZCOR(IR1(JL),IR2(JL),IR3(JL))
+          END IF
+        ELSE
+          ZBEARDCOEFR = 1.0 ! No "Beard" effect
+        END IF
+!
+        ZWSED(IR1(JL),IR2(JL),IR3(JL)) = ZBEARDCOEFR *                   &
+                                         XFSEDR  * ZRRS(JL)**XEXSEDR *   &
                                          ZRHODREFR(JL)**(XEXSEDR-XCEXVT)
+!
         IF (ZRRS(JL) > ZRTMIN(3) .AND. ABS(ZERS(JL)) > XERMIN) THEN
-          ZWSEDQ(IR1(JL),IR2(JL),IR3(JL)) = XFQSEDR * ZERS(JL) *  &
-                                            ZRRS(JL)**XEXQSEDR * &
+          ZWSEDQ(IR1(JL),IR2(JL),IR3(JL)) = ZBEARDCOEFR *                &
+                                            XFQSEDR * ZERS(JL) *         &
+                                            ZRRS(JL)**XEXQSEDR *         &
                                             ZRHODREFR(JL)**(XEXQSEDR-XCEXVT)
         END IF
       END DO
@@ -1571,7 +1644,6 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
                  ZCIT(ILENALLOCI),       &
                  ZCIS(ILENALLOCI),       &
                  ZLBDAI(ILENALLOCI))
-        ZEIS(:) = 0.
       END IF
 !
       DO JL = 1, ISEDIMI
@@ -1579,11 +1651,17 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
         ZRHODREFI(JL) = PRHODREF(II1(JL),II2(JL),II3(JL))
         ZQIS(JL)       = PQIS(II1(JL),II2(JL),II3(JL))
         ZCIT(JL)       = PCIT(II1(JL),II2(JL),II3(JL))
+        ZEIS(JL) = 0.
 ! compute e_i
         IF (ZRIS(JL) > ZRTMIN(4) .AND. ZCIT(JL) > 0.0) THEN
           ZEIS(JL) = ZRHODREFI(JL) * ZQIS(JL) / ((ZCIT(JL)**(1 - XEXFQUPDI)) * &
                      XFQUPDI * (ZRHODREFI(JL) * ZRIS(JL))**XEXFQUPDI)
           ZEIS(JL) = SIGN( MIN(ABS(ZEIS(JL)), XEIMAX), ZEIS(JL))
+          ZCIS(JL) = XFCI * ZRHODREFI(JL) * ZRIS(JL) * &
+                     MAX(0.05E6,                       &
+                        -0.15319E6 - 0.021454E6 * ALOG(ZRHODREFI(JL) * ZRIS(JL)))**3
+          ZLBDAI(JL) = (2.14E-3 * MOMG(XALPHAI,XNUI,1.7) *     &
+                        ZCIS(JL) / (ZRHODREFI(JL) * ZRIS(JL)))**0.588235
         END IF
       END DO
 !
@@ -1596,16 +1674,37 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
       END DO
       DO JJ = 1, ILISTLENI
         JL = ILISTI(JJ)
-        ZWSED(II1(JL),II2(JL),II3(JL))= XFSEDI * ZRIS(JL) *  &
+        IF (ZRIS(JL) > ZRTMIN(4) .AND. ZCIT(JL) > 0.0 .AND. LSEDIM_BEARD) THEN
+          ZK = 1. - ZQIS(JL) * XEFIELDW(II1(JL),II2(JL),II3(JL)) / (ZRIS(JL)*XG)
+          IF (ZK <= 0.0) THEN
+            ZBEARDCOEFI = 0.
+          ELSE
+            ZRE0 = ZVI / ZLBDAI(JL)**2.585
+            IF (ZRE0 <= 0.2) THEN
+              ZBEARDCOEFI = ZF0(II1(JL),II2(JL),II3(JL)) * ZK
+            ELSE IF (ZRE0 >= 1000.) THEN
+              ZBEARDCOEFI = ZF1(II1(JL),II2(JL),II3(JL)) * SQRT(ZK)
+            ELSE
+              ZBEARDCOEFI = ZF0(II1(JL),II2(JL),II3(JL)) * ZK +             &
+                            (ZF1(II1(JL),II2(JL),II3(JL)) *                 &
+                            SQRT(ZK) - ZF0(II1(JL),II2(JL),II3(JL)) * ZK) * &
+                            (1.61 + LOG(ZRE0)) / 8.52
+            END IF
+            ZBEARDCOEFI = ZBEARDCOEFI * ZCOR(II1(JL),II2(JL),II3(JL))
+          END IF
+        ELSE
+          ZBEARDCOEFI = 1.0 ! No "Beard" effect
+        END IF
+!
+        ZWSED(II1(JL),II2(JL),II3(JL))= ZBEARDCOEFI *      &
+                             XFSEDI * ZRIS(JL) *           &
                              ZRHODREFI(JL)**(1.0-XCEXVT) * & !    McF&H
                              MAX( 0.05E6,-0.15319E6-0.021454E6* &
                              ALOG(ZRHODREFI(JL)*ZRIS(JL)) )**XEXCSEDI
         IF (ZRIS(JL) .GT. MAX(ZRTMIN(4),1.0E-7) .AND. ABS(ZEIS(JL)) .GT. XEIMIN .AND. &
             ZCIT(JL) .GT. 0. ) THEN
-          ZCIS(JL) = XFCI * ZRHODREFI(JL) * ZRIS(JL) * &
-                     MAX(0.05E6,                       &
-                        -0.15319E6 - 0.021454E6 * ALOG(ZRHODREFI(JL) * ZRIS(JL)))**3
-          ZWSEDQ(II1(JL),II2(JL),II3(JL)) = ZCIS(JL)**(1 - XEXQSEDI) * XFQSEDI * &
+          ZWSEDQ(II1(JL),II2(JL),II3(JL)) = ZBEARDCOEFI *                      &
+                     ZCIS(JL)**(1 - XEXQSEDI) * XFQSEDI *                      &
                      ZRIS(JL)**XEXQSEDI * ZRHODREFI(JL)**(XEXQSEDI - XCEXVT) * &
                      ZEIS(JL) * (ZCIT(JL) / ZCIS(JL))**(1.-XFI/XBI)
         END IF
@@ -1643,6 +1742,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
         ZRSS(JL)      = PRSS(IS1(JL),IS2(JL),IS3(JL))
         ZRHODREFS(JL) = PRHODREF(IS1(JL),IS2(JL),IS3(JL))
         ZQSS(JL)       = PQSS(IS1(JL),IS2(JL),IS3(JL))
+        ZESS(JL) = 0.
 ! compute lambda_s and e_s
         IF (ZRSS(JL) > 0.) THEN
           ZLBDAS(JL) = MIN(XLBDAS_MAX, &
@@ -1663,11 +1763,35 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
       END DO
       DO JJ = 1, ILISTLENS
         JL = ILISTS(JJ)
-        ZWSED (IS1(JL),IS2(JL),IS3(JL)) = XFSEDS * ZRSS(JL)**XEXSEDS *  &
+        IF (ZRSS(JL) > 0. .AND. LSEDIM_BEARD) THEN
+          ZK = 1. - ZQSS(JL) * XEFIELDW(IS1(JL),IS2(JL),IS3(JL)) / (ZRSS(JL)*XG)
+          IF (ZK <= 0.0) THEN
+            ZBEARDCOEFS = 0.
+          ELSE
+            ZRE0 = ZVS / ZLBDAS(JL)**(1.+XDS)
+            IF (ZRE0 <= 0.2) THEN
+              ZBEARDCOEFS = ZF0(IS1(JL),IS2(JL),IS3(JL)) * ZK
+            ELSE IF (ZRE0 >= 1000.) THEN
+              ZBEARDCOEFS = ZF1(IS1(JL),IS2(JL),IS3(JL)) * SQRT(ZK)
+            ELSE
+              ZBEARDCOEFS = ZF0(IS1(JL),IS2(JL),IS3(JL)) * ZK +            &
+                            (ZF1(IS1(JL),IS2(JL),IS3(JL)) *                &
+                            SQRT(ZK) -ZF0(IS1(JL),IS2(JL),IS3(JL)) * ZK) * &
+                            (1.61 + LOG(ZRE0)) / 8.52
+            END IF
+            ZBEARDCOEFS = ZBEARDCOEFS * ZCOR(IS1(JL),IS2(JL),IS3(JL))
+          END IF
+        ELSE
+          ZBEARDCOEFS = 1.0 ! No "Beard" effect
+        END IF
+!
+        ZWSED (IS1(JL),IS2(JL),IS3(JL)) = ZBEARDCOEFS *             &
+                                      XFSEDS * ZRSS(JL)**XEXSEDS *  &
                                       ZRHODREFS(JL)**(XEXSEDS-XCEXVT)
         IF (ZRSS(JL) .GT. ZRTMIN(5) .AND. ABS(ZESS(JL)) > XESMIN) THEN
-          ZWSEDQ(IS1(JL),IS2(JL),IS3(JL)) = XFQSEDS * ZESS(JL) *  &
-                                            ZRSS(JL)**XEXQSEDS * &
+          ZWSEDQ(IS1(JL),IS2(JL),IS3(JL)) = ZBEARDCOEFS *         &
+                                            XFQSEDS * ZESS(JL) *  &
+                                            ZRSS(JL)**XEXQSEDS *  &
                                             ZRHODREFS(JL)**(XEXQSEDS - XCEXVT)
         END IF
       END DO
@@ -1705,6 +1829,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
         ZRGS(JL)      = PRGS(IG1(JL),IG2(JL),IG3(JL))
         ZRHODREFG(JL) = PRHODREF(IG1(JL),IG2(JL),IG3(JL))
         ZQGS(JL)      = PQGS(IG1(JL),IG2(JL),IG3(JL))
+        ZEGS(JL) = 0.
 ! compute lambda_g and e_g
         IF (ZRGS(JL) > 0.) THEN
           ZLBDAG(JL) = XLBG * (ZRHODREFG(JL) * MAX(ZRGS(JL), ZRTMIN(6)))**XLBEXG
@@ -1724,11 +1849,35 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
       END DO
       DO JJ = 1, ILISTLENG
         JL = ILISTG(JJ)
-        ZWSED (IG1(JL),IG2(JL),IG3(JL))= XFSEDG  * ZRGS(JL)**XEXSEDG *   &
+        IF (ZRGS(JL) > 0. .AND. LSEDIM_BEARD) THEN
+          ZK = 1. - ZQGS(JL) * XEFIELDW(IG1(JL),IG2(JL),IG3(JL)) / (ZRGS(JL)*XG)
+          IF (ZK <= 0.0) THEN
+            ZBEARDCOEFG = 0.
+          ELSE
+            ZRE0 = ZVG / ZLBDAG(JL)**(1.+XDG)
+            IF (ZRE0 <= 0.2) THEN
+              ZBEARDCOEFG = ZF0(IG1(JL),IG2(JL),IG3(JL)) * ZK
+            ELSE IF (ZRE0 >= 1000.) THEN
+              ZBEARDCOEFG = ZF1(IG1(JL),IG2(JL),IG3(JL)) * SQRT(ZK)
+            ELSE
+              ZBEARDCOEFG = ZF0(IG1(JL),IG2(JL),IG3(JL)) * ZK +             &
+                            (ZF1(IG1(JL),IG2(JL),IG3(JL)) *                 &
+                            SQRT(ZK) - ZF0(IG1(JL),IG2(JL),IG3(JL)) * ZK) * &
+                            (1.61 + LOG(ZRE0)) / 8.52
+            END IF
+            ZBEARDCOEFG = ZBEARDCOEFG * ZCOR(IG1(JL),IG2(JL),IG3(JL))
+          END IF
+        ELSE
+          ZBEARDCOEFG = 1.0 ! No "Beard" effect
+        END IF
+!
+        ZWSED (IG1(JL),IG2(JL),IG3(JL))= ZBEARDCOEFG *               &
+                                      XFSEDG * ZRGS(JL)**XEXSEDG *   &
                                       ZRHODREFG(JL)**(XEXSEDG-XCEXVT)
         IF (ZRGS(JL) .GT. ZRTMIN(6) .AND. ABS(ZEGS(JL)) > XEGMIN) THEN
-          ZWSEDQ(IG1(JL),IG2(JL),IG3(JL)) = XFQSEDG * ZEGS(JL) *  &
-                                            ZRGS(JL)**XEXQSEDG * &
+          ZWSEDQ(IG1(JL),IG2(JL),IG3(JL)) = ZBEARDCOEFG *         &
+                                            XFQSEDG * ZEGS(JL) *  &
+                                            ZRGS(JL)**XEXQSEDG *  &
                                             ZRHODREFG(JL)**(XEXQSEDG - XCEXVT)
         END IF
       END DO
@@ -1767,6 +1916,7 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: ZCIS
           ZRHS(JL)      = PRHS(IH1(JL),IH2(JL),IH3(JL))
           ZRHODREFH(JL) = PRHODREF(IH1(JL),IH2(JL),IH3(JL))
           ZQHS(JL)      = PQHS(IH1(JL),IH2(JL),IH3(JL))
+          ZEHS(JL) = 0.
 ! compute lambda_h and e_h
           IF (ZRHS(JL) > 0.) THEN
             ZLBDAH(JL) = XLBH * (ZRHODREFH(JL) * MAX(ZRHS(JL), ZRTMIN(7)))**XLBEXH
@@ -2346,7 +2496,6 @@ IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HENU_BU_RRI')
 !
 !-------------------------------------------------------------------------------
 !
-!
   SUBROUTINE RAIN_ICE_ELEC_SLOW
 !
 !*      0. DECLARATIONS
@@ -2378,11 +2527,9 @@ IMPLICIT NONE
   WHERE (ZZT(:) < (XTT - 35.)     .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
          ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRCS(:) > ZRSMIN_ELEC(2) .AND. &
          ABS(ZQCS(:)) > XQTMIN(2) .AND. ABS(ZECT(:)) > XECMIN)                    
-    ZWQ1(:,1) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,1))), ZQCS(:))
+    ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
     ZQIS(:) = ZQIS(:) + ZWQ1(:,1)
     ZQCS(:) = ZQCS(:) - ZWQ1(:,1) 
-  ELSEWHERE
-    ZWQ1(:,1) = 0.
   END WHERE
 !
   IF (LBUDGET_TH) CALL BUDGET (                                                &
@@ -2416,11 +2563,9 @@ IMPLICIT NONE
   WHERE (ZZT(:) < (XTT - 35.) .AND.                                    &
          ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
          ZRGS(:) > ZRSMIN_ELEC(6) .AND. ABS(ZQRT(:)) > XQTMIN(3))
-    ZWQ1(:,2) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZQRT(:) / PTSTEP)), ZQRS(:)) ! QRHONG
+    ZWQ1(:,2) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZQRT(:)/PTSTEP) ),ZQRS(:) ) ! QRHONG
     ZQGS(:) = ZQGS(:) + ZWQ1(:,2)
     ZQRS(:) = ZQRS(:) - ZWQ1(:,2)
-  ELSEWHERE
-    ZWQ1(:,2) = 0.
   ENDWHERE
 !
   IF (LBUDGET_TH) CALL BUDGET (                                                &
@@ -2454,7 +2599,7 @@ IMPLICIT NONE
                                  + ( XRV*ZZT(:) ) / (ZDV(:)*ZAI(:))
   ZCJ(:) = XSCFAC * ZRHODREF(:)**0.3 / SQRT( 1.718E-5+0.0049E-5*(ZZT(:)-XTT) )
 !
-!*       3.5.3.2  compute the riming-conversion of r_c for r_i production: RCAUTI
+!*      3.5.3.2  compute the riming-conversion of r_c for r_i production: RCAUTI
 !
   ZZW(:) = 0.0
 !
@@ -2472,13 +2617,10 @@ IMPLICIT NONE
   WHERE (ZRST(:) > XRTMIN_ELEC(5) .AND. ZRSS(:) > ZRSMIN_ELEC(5) .AND. &
          ZRVS(:) > ZRSMIN_ELEC(1) .AND. ABS(ZQST(:)) > XQTMIN(5) .AND. &
          ZZW(:) < 0. .AND. (-ZZW(:) <= ZRSS(:)))
-    ZWQ1(:,5) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,5))), ZQSS(:))
+    ZWQ1(:,5) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,5)) ),ZQSS(:) )
     ZQSS(:) = ZQSS(:) - ZWQ1(:,5)
-    WHERE (ZWQ1(:,5) > 0.0)
-      ZQPIS(:) = ZQPIS(:) + ZWQ1(:,5) / XECHARGE
-    ELSEWHERE
-      ZQNIS(:) = ZQNIS(:) - ZWQ1(:,5) / XECHARGE
-    ENDWHERE
+    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:,5)/XECHARGE )
+    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,5)/XECHARGE )
   ENDWHERE
 !
   IF (LBUDGET_TH) CALL BUDGET (                                                &
@@ -2503,32 +2645,35 @@ IMPLICIT NONE
 !*       3.5.3.4  compute the aggregation on r_s: RIAGGS & QIAGGS
 !
   ZZW(:) = 0.0
-  ZWQ1(:,3) = 0.
+  ZLATHAMIAGGS(:) = 1.0
+  IF (LIAGGS_LATHAM) THEN
+    ZLATHAMIAGGS(:) = 1.0 + 0.4E-10 * MIN( 2.25E10,                &
+                      ZEFIELDU(:)**2+ZEFIELDV(:)**2+ZEFIELDW(:)**2 )
+  ENDIF
 !
   WHERE (ZRIT(:) > XRTMIN(4) .AND. ZRST(:) > XRTMIN(5) .AND. ZRIS(:) > 0.0)
     ZZW(:) = MIN( ZRIS(:),XFIAGGS * EXP( XCOLEXIS*(ZZT(:)-XTT) ) &
-                    * ZRIT(:)                      &
-                    * ZLBDAS(:)**XEXIAGGS          &
-                    * ZRHODREF(:)**(-XCEXVT)       )
-    ZRSS(:)  = ZRSS(:)  + ZZW(:)
-    ZRIS(:)  = ZRIS(:)  - ZZW(:)
+                    * ZLATHAMIAGGS(:)                            &
+                    * ZRIT(:)                                    &
+                    * ZLBDAS(:)**XEXIAGGS                        &
+                    * ZRHOCOR(:) / ZCOR00                        )
+    ZRSS(:)  = ZRSS(:) + ZZW(:)
+    ZRIS(:)  = ZRIS(:) - ZZW(:)
     ZWQ1(:,3) = XCOEF_RQ_I * ZZW(:) * ZQIT(:) / ZRIT(:) ! QIAGGS_coal
   END WHERE
 !
   WHERE (ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
          ZRSS(:) > ZRSMIN_ELEC(5) .AND. ABS(ZQIT(:)) > XQTMIN(4))
-    ZWQ1(:,3) = SIGN(MIN(ABS(ZQIS(:)), ABS(ZWQ1(:,3))), ZQIS(:))
+    ZWQ1(:,3) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,3)) ),ZQIS(:) )
     ZQSS(:) = ZQSS(:) + ZWQ1(:,3)
     ZQIS(:) = ZQIS(:) - ZWQ1(:,3)
-  ELSEWHERE
-    ZWQ1(:,3) = 0.
   END WHERE
 !
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'AGGS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                &
+                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              10,'AGGS_BU_RRS')
 !
   IF (LBUDGET_SV) THEN
@@ -2568,26 +2713,24 @@ IMPLICIT NONE
 !
   WHERE (ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
          ZRSS(:) > ZRSMIN_ELEC(5) .AND. ABS(ZQIT(:)) > XQTMIN(4))
-    ZWQ1(:,4) = SIGN(MIN(ABS(ZQIS(:)), ABS(ZWQ1(:,4))), ZQIS(:))
+    ZWQ1(:,4) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,4)) ),ZQIS(:) )
     ZQSS(:) = ZQSS(:) + ZWQ1(:,4)
     ZQIS(:) = ZQIS(:) - ZWQ1(:,4)
-  ELSEWHERE
-    ZWQ1(:,4) = 0.
   END WHERE
 !
   DEALLOCATE(ZCRIAUTI)
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'AUTS_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                &
+                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              10,'AUTS_BU_RRS')
 !
   IF (LBU_RSV) THEN
     CALL BUDGET (UNPACK(ZQIS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
                                          12+NSV_ELECBEG+3,'AUTS_BU_RSV')
     CALL BUDGET (UNPACK(ZQSS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                          12+NSV_ELECBEG+4,'AUTS_BU_RSV')
+                                         12+NSV_ELECBEG+4,'AUTS_BU_RSV')
   END IF
 !
 !*       3.5.3.6  compute the deposition on r_g: RVDEPG & QVDEPG
@@ -2595,7 +2738,7 @@ IMPLICIT NONE
   ZZW(:) = 0.0
 !
   WHERE ((ZRGT(:) > XRTMIN(6)) .AND. (ZRGS(:) > 0.0))
-    ZZW(:) = (ZSSI(:) / (ZRHODREF(:) * ZAI(:))) *                               &
+    ZZW(:) = (ZSSI(:) / (ZRHODREF(:) * ZAI(:))) *                              &
              (X0DEPG * ZLBDAG(:)**XEX0DEPG + X1DEPG * ZCJ(:) * ZLBDAG(:)**XEX1DEPG)
     ZZW(:) =         MIN( ZRVS(:),ZZW(:)      )*(0.5+SIGN(0.5,ZZW(:))) &
                    - MIN( ZRGS(:),ABS(ZZW(:)) )*(0.5-SIGN(0.5,ZZW(:)))
@@ -2608,26 +2751,20 @@ IMPLICIT NONE
   WHERE (ZRGT(:) > XRTMIN_ELEC(6) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
          ZRVS(:) > ZRSMIN_ELEC(1) .AND. ABS(ZQGT(:)) > XQTMIN(6) .AND. &
          ZZW(:) < 0. .AND. (-ZZW(:)) <= ZRGS(:))
-    ZWQ1(:,6) = SIGN(MIN(ABS(ZQGS(:)), ABS(ZWQ1(:,6))), ZQGS(:))
+    ZWQ1(:,6) = SIGN( MIN( ABS(ZQGS(:)),ABS(ZWQ1(:,6)) ),ZQGS(:) )
     ZQGS(:) = ZQGS(:) - ZWQ1(:,6) 
-!
-    WHERE (ZWQ1(:,6) > 0.0)
-      ZQPIS(:) = ZQPIS(:) + ZWQ1(:,6) / XECHARGE
-    ELSEWHERE
-      ZQNIS(:) = ZQNIS(:) - ZWQ1(:,6) / XECHARGE
-    ENDWHERE
-  ELSEWHERE
-   ZWQ1(:,6) = 0.
+    ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:,6)/XECHARGE )
+    ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,6)/XECHARGE )
   END WHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'DEPG_BU_RTH')
-  IF (LBUDGET_RV) CALL BUDGET (                                                 &
-                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_RV) CALL BUDGET (                                                &
+                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
                                                               6,'DEPG_BU_RRV')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                &
+                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              11,'DEPG_BU_RRG')
 !
   IF (LBU_RSV) THEN
@@ -2698,18 +2835,16 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
 !
     WHERE (ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRCS(:) > ZRSMIN_ELEC(2) .AND. &
            ZRRS(:) > ZRSMIN_ELEC(3) .AND. ABS(ZQCT(:)) > XQTMIN(2))
-      ZWQ1(:,1) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,1))), ZQCS(:))
+      ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
       ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
       ZQRS(:) = ZQRS(:) + ZWQ1(:,1)
-    ELSEWHERE
-      ZWQ1(:,1) = 0.
     END WHERE
 !
-      IF (LBUDGET_RC) CALL BUDGET (                                               &
-                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+      IF (LBUDGET_RC) CALL BUDGET (                                            &
+                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                 7,'AUTO_BU_RRC')
-      IF (LBUDGET_RR) CALL BUDGET (                                               &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+      IF (LBUDGET_RR) CALL BUDGET (                                            &
+                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                 8,'AUTO_BU_RRR')
 !
       IF (LBUDGET_SV) THEN
@@ -2724,9 +2859,9 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
 !
     ZZW(:) = 0.0
     WHERE ((ZRCT(:) > XRTMIN(2)) .AND. (ZRRT(:) > XRTMIN(3)) .AND. (ZRCS(:) > 0.0))
-      ZZW(:) = MIN( ZRCS(:),XFCACCR * ZRCT(:)                &
-                                    * ZLBDAR(:)**XEXCACCR    &
-                                    * ZRHODREF(:)**(-XCEXVT) )
+      ZZW(:) = MIN( ZRCS(:),XFCACCR * ZRCT(:)             &
+                                    * ZLBDAR(:)**XEXCACCR &
+                                    * ZRHOCOR(:)/ZCOR00 )
       ZRCS(:) = ZRCS(:) - ZZW(:)
       ZRRS(:) = ZRRS(:) + ZZW(:)
       ZWQ1(:,2) = XCOEF_RQ_C * ZQCT(:) * ZZW(:) / ZRCT(:)          ! QCACCR
@@ -2734,11 +2869,9 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
 !
     WHERE (ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
            ZRCS(:) > ZRSMIN_ELEC(2) .AND. ABS(ZQCT(:)) > XQTMIN(2))
-      ZWQ1(:,2) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,2))), ZQCS(:))
+      ZWQ1(:,2) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,2)) ),ZQCS(:) )
       ZQCS(:) = ZQCS(:) - ZWQ1(:,2)
       ZQRS(:) = ZQRS(:) + ZWQ1(:,2)
-    ELSEWHERE
-      ZWQ1(:,2) = 0.
     ENDWHERE
 !
     IF (LBUDGET_RC) CALL BUDGET (                                            &
@@ -2777,36 +2910,31 @@ REAL :: ZCRIAUTC             ! Critical cloud mixing ratio
     WHERE (ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
            ZRVS(:) > ZRSMIN_ELEC(1) .AND. ZRCT(:) <= 0.0           .AND. &
            ABS(ZQRT(:)) > XQTMIN(3)) 
-      ZWQ1(:,3) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,3))), ZQRS(:))
+      ZWQ1(:,3) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,3)) ),ZQRS(:) )
       ZQRS(:) = ZQRS(:) - ZWQ1(:,3)
-      WHERE (ZWQ1(:,3) > 0.0)
-        ZQPIS(:) = ZQPIS(:) + ZWQ1(:,3)/XECHARGE
-      ELSEWHERE
-        ZQNIS(:) = ZQNIS(:) - ZWQ1(:,3)/XECHARGE
-      ENDWHERE
-    ELSEWHERE
-      ZWQ1(:,3) = 0.
+      ZQPIS(:) = ZQPIS(:) + MAX( 0.0,ZWQ1(:,3)/XECHARGE )
+      ZQNIS(:) = ZQNIS(:) - MIN( 0.0,ZWQ1(:,3)/XECHARGE )
     ENDWHERE
 !
-    IF (LBUDGET_TH) CALL BUDGET (                                               &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+    IF (LBUDGET_TH) CALL BUDGET (                                              &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'REVA_BU_RTH')
-    IF (LBUDGET_RV) CALL BUDGET (                                               &
-                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),   &
+    IF (LBUDGET_RV) CALL BUDGET (                                              &
+                 UNPACK(ZRVS(:),MASK=GMICRO(:,:,:),FIELD=PRVS)*PRHODJ(:,:,:),  &
                                                               6,'REVA_BU_RRV')
-    IF (LBUDGET_RR) CALL BUDGET (                                               &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RR) CALL BUDGET (                                              &
+                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               8,'REVA_BU_RRR')
     ZW(:,:,:)=PEVAP3D(:,:,:)
     PEVAP3D(:,:,:)=UNPACK(ZZW(:),MASK=GMICRO(:,:,:),FIELD=ZW(:,:,:))
 !
     IF (LBUDGET_SV) THEN
-    CALL BUDGET (UNPACK(ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=PQPIS)          &
-                        *PRHODJ(:,:,:), 12+NSV_ELECBEG ,'REVA_BU_RSV')
-    CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
-                        *PRHODJ(:,:,:), 12+NSV_ELECEND ,'REVA_BU_RSV')
-    CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
-                                        12+NSV_ELECBEG+2,'REVA_BU_RSV')
+      CALL BUDGET (UNPACK(ZQPIS(:), MASK=GMICRO(:,:,:), FIELD=PQPIS)          &
+                          *PRHODJ(:,:,:), 12+NSV_ELECBEG ,'REVA_BU_RSV')
+      CALL BUDGET (UNPACK(ZQNIS(:), MASK=GMICRO(:,:,:), FIELD=PQNIS)          &
+                          *PRHODJ(:,:,:), 12+NSV_ELECEND ,'REVA_BU_RSV')
+      CALL BUDGET (UNPACK(ZQRS(:)*ZRHODJ(:), MASK=GMICRO(:,:,:), FIELD=0.0), &
+                                          12+NSV_ELECBEG+2,'REVA_BU_RSV')
     END IF
 !
   END SUBROUTINE RAIN_ICE_ELEC_WARM
@@ -2829,7 +2957,6 @@ IMPLICIT NONE
   ZWQ1(:,1:7) = 0.0
 !
   ALLOCATE( GRIM(IMICRO) )
-! GRIM(:) = (ZRCT(:)>0.0) .AND. (ZRST(:)>0.0) .AND.            &
   GRIM(:) = (ZRCT(:) > XRTMIN(2)) .AND. (ZRST(:) > XRTMIN(5)) .AND. &
             (ZRCS(:) > 0.0) .AND. (ZZT(:) < XTT)
   IGRIM = COUNT( GRIM(:) )
@@ -2868,7 +2995,7 @@ IMPLICIT NONE
     WHERE (GRIM(:) .AND. ZRCS(:) > 0.0) 
       ZZW1(:,1) = MIN( ZRCS(:),                      &
                        XCRIMSS * ZZW(:) * ZRCT(:) *  & ! RCRIMSS
-                       ZLBDAS(:)**XEXCRIMSS * ZRHODREF(:)**(-XCEXVT) )
+                       ZLBDAS(:)**XEXCRIMSS * ZRHOCOR(:)/ZCOR00 )
       ZRCS(:) = ZRCS(:) - ZZW1(:,1)
       ZRSS(:) = ZRSS(:) + ZZW1(:,1)
       ZTHS(:) = ZTHS(:) + ZZW1(:,1) * (ZLSFACT(:) - ZLVFACT(:)) ! f(L_f*(RCRIMSS))
@@ -2878,11 +3005,9 @@ IMPLICIT NONE
     WHERE (ZZT(:) < XTT .AND.                                            &
            ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRSS(:) > ZRSMIN_ELEC(5) .AND. &
            ABS(ZQCT(:)) > XQTMIN(2) .AND. ZRCS(:) > ZRSMIN_ELEC(2)) 
-      ZWQ1(:,1) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,1))), ZQCS(:))
+      ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
       ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
       ZQSS(:) = ZQSS(:) + ZWQ1(:,1)
-    ELSEWHERE
-      ZWQ1(:,1) = 0.
     ENDWHERE
 !
 !*       5.1.5  perform the linear interpolation of the normalized
@@ -2904,11 +3029,10 @@ IMPLICIT NONE
 !*              RSRIMCG & QSRIMCG and RCRIMSG & QCRIMSG
 !
     WHERE (GRIM(:) .AND. ZRSS(:) > 0.0 .AND. ZRCS(:) > 0.0 .AND. ZZW(:) < 1.) 
-      ZZW1(:,2) = MIN( ZRCS(:),                     &
+      ZZW1(:,2) = MIN( ZRCS(:),                         &
                        XCRIMSG * ZRCT(:)                & ! RCRIMSG
                                * ZLBDAS(:)**XEXCRIMSG   &
-                               * ZRHODREF(:)**(-XCEXVT) &
-                               - ZZW1(:,1)              )
+                               * ZRHOCOR(:)/ZCOR00 - ZZW1(:,1) )
       ZZW1(:,3) = MIN( ZRSS(:),                         &
                        XSRIMCG * ZLBDAS(:)**XEXSRIMCG   & ! RSRIMCG
                                * (1.0 - ZZW(:) )/(PTSTEP*ZRHODREF(:)) )
@@ -2925,22 +3049,18 @@ IMPLICIT NONE
     WHERE (ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZRCS(:) > ZRSMIN_ELEC(2) .AND. &
            ZZT(:) < XTT             .AND. ABS(ZQCT(:)) > XQTMIN(2))
-      ZWQ1(:,2) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,2))), ZQCS(:))
+      ZWQ1(:,2) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,2)) ),ZQCS(:) )
       ZQGS(:) = ZQGS(:) + ZWQ1(:,2)
       ZQCS(:) = ZQCS(:) - ZWQ1(:,2)
-    ELSEWHERE
-      ZWQ1(:,2) = 0.
     ENDWHERE
 !
     WHERE (ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZRCS(:) > ZRSMIN_ELEC(2) .AND. &
            ZZT(:) < XTT             .AND. ABS(ZQCT(:)) > XQTMIN(2) .AND. &
            ABS(ZEST) > XESMIN)
-      ZWQ1(:,3) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,3))), ZQSS(:))
+      ZWQ1(:,3) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,3)) ),ZQSS(:) )
       ZQGS(:) = ZQGS(:) + ZWQ1(:,3) 
       ZQSS(:) = ZQSS(:) - ZWQ1(:,3)
-    ELSEWHERE
-      ZWQ1(:,3) = 0.
     ENDWHERE
 !
     DEALLOCATE(IVEC2)
@@ -2948,6 +3068,7 @@ IMPLICIT NONE
     DEALLOCATE(ZVEC2)
     DEALLOCATE(ZVEC1)
   END IF
+!
   IF (LBUDGET_TH) CALL BUDGET (                                               &
                UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
                                                              4,'RIM_BU_RTH')
@@ -2980,7 +3101,8 @@ IMPLICIT NONE
   ZWQ4(:)     = 0.0
 !
   ALLOCATE(GACC(IMICRO))
-  GACC(:) = ZRRT(:)>XRTMIN(3) .AND. ZRST(:)>XRTMIN(5) .AND. ZZT(:)<XTT
+  GACC(:) = ZRRT(:)>XRTMIN(3) .AND. ZRST(:)>XRTMIN(5) .AND. &
+            ZRRS(:) > 0.0 .AND. ZZT(:) < XTT
   IGACC = COUNT( GACC(:) )
 !
   IF( IGACC>0 ) THEN
@@ -3029,9 +3151,9 @@ IMPLICIT NONE
 !        5.2.4  raindrop accretion on the small sized aggregates:
 ! 		RRACCSS & QRACCSS
 !
-    WHERE ( GACC(:) .AND. ZRRS(:) > 0.) 
+    WHERE ( GACC(:) ) 
       ZZW1(:,2) =                                            & !! coef of RRACCS
-              XFRACCSS*( ZLBDAS(:)**XCXS )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
+              XFRACCSS*( ZLBDAS(:)**XCXS )*ZRHOCOR(:)/(ZCOR00* ZRHODREF(:))  &
          *( XLBRACCS1/((ZLBDAS(:)**2)               ) +                  &
             XLBRACCS2/( ZLBDAS(:)    * ZLBDAR(:)    ) +                  &
             XLBRACCS3/(               (ZLBDAR(:)**2)) )/ZLBDAR(:)**4
@@ -3039,7 +3161,7 @@ IMPLICIT NONE
       ZRRS(:) = ZRRS(:) - ZZW1(:,4)
       ZRSS(:) = ZRSS(:) + ZZW1(:,4)
       ZTHS(:) = ZTHS(:) + ZZW1(:,4)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RRACCSS))
-      ZWQ4(:) = XFQRACCS * ZERT(:) * ZRHODREF(:)**(-XCEXVT-1.)            * &
+      ZWQ4(:) = XFQRACCS * ZERT(:) * ZRHOCOR(:)/(ZCOR00* ZRHODREF(:))     * &
                 ZLBDAR(:)**XCXR * ZLBDAS(:)**XCXS                         * &
                (XLBQRACCS1 * ZLBDAR(:)**(-2.0 - XFR)                      + &
                 XLBQRACCS2 * ZLBDAR(:)**(-1.0 - XFR) * ZLBDAS(:)**(-1.0)  + &
@@ -3050,11 +3172,9 @@ IMPLICIT NONE
     WHERE (ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRRS(:) > ZRSMIN_ELEC(3) .AND. ZZT(:) < XTT             .AND. &
            ABS(ZQRS(:)) > XQTMIN(3) .AND. ABS(ZERT) > XERMIN) 
-      ZWQ1(:,5) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,5))), ZQRS(:))
+      ZWQ1(:,5) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,5)) ),ZQRS(:) )
       ZQRS(:) = ZQRS(:) - ZWQ1(:,5)
       ZQSS(:) = ZQSS(:) + ZWQ1(:,5)
-    ELSEWHERE
-      ZWQ1(:,5) = 0.
     ENDWHERE
 !
 !        5.2.5  perform the bilinear interpolation of the normalized
@@ -3080,10 +3200,10 @@ IMPLICIT NONE
 !        5.2.7  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln: RRACCSG & QRACCSG and RSACCRG & QSACCRG
 !
-    WHERE ( GACC(:) .AND. (ZRSS(:)>0.0)  .AND. ZRRS(:) > 0.) 
+    WHERE ( GACC(:) .AND. (ZRSS(:)>0.0) ) 
       ZZW1(:,2) = MIN( ZRRS(:),ZZW1(:,2)-ZZW1(:,4) )                  ! RRACCSG
       ZZW1(:,3) = MIN( ZRSS(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
-            ( ZLBDAS(:)**(XCXS-XBS) )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
+            ( ZLBDAS(:)**(XCXS-XBS) )*ZRHOCOR(:)/(ZCOR00* ZRHODREF(:))  &
            *( XLBSACCR1/((ZLBDAR(:)**2)               ) +           &
               XLBSACCR2/( ZLBDAR(:)    * ZLBDAS(:)    ) +           &
               XLBSACCR3/(               (ZLBDAS(:)**2)) )/ZLBDAR(:) )
@@ -3092,7 +3212,8 @@ IMPLICIT NONE
       ZRGS(:) = ZRGS(:) + ZZW1(:,2)+ZZW1(:,3)
       ZTHS(:) = ZTHS(:) + ZZW1(:,2)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RRACCSG))
       ZWQ1(:,4) = ZWQ1(:,4) - ZWQ1(:,5)         ! QRACCSG
-      ZWQ1(:,6) = ZWQ1(:,6) * XFQRACCS * ZEST(:) * ZRHODREF(:)**(-XCEXVT-1.) * &
+      ZWQ1(:,6) = ZWQ1(:,6) * XFQRACCS * ZEST(:) *                             &
+                  ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) *                        &
                   ZLBDAR(:)**XCXR * ZLBDAS(:)**XCXS *                          &
                  (XLBQSACCRG1 * ZLBDAS(:)**(-2.0 - XFS) +                      &
                   XLBQSACCRG2 * ZLBDAS(:)**(-1.0 - XFS) * ZLBDAR(:)**(-1.0) +  &
@@ -3102,22 +3223,18 @@ IMPLICIT NONE
     WHERE (ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
            ZZT(:) < XTT             .AND. ABS(ZQGS(:)) > XQTMIN(6)) 
-      ZWQ1(:,4) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,4))), ZQRS(:))
+      ZWQ1(:,4) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,4)) ),ZQRS(:) )
       ZQRS(:) = ZQRS(:) - ZWQ1(:,4)
       ZQGS(:) = ZQGS(:) + ZWQ1(:,4)
-    ELSEWHERE
-      ZWQ1(:,4) = 0.
     ENDWHERE
 !
     WHERE (ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
            ZZT(:) < XTT             .AND. ABS(ZQGS(:)) > XQTMIN(6) .AND. &
            ABS(ZEST) > XESMIN) 
-      ZWQ1(:,6) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,6))), ZQSS(:))
+      ZWQ1(:,6) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,6)) ),ZQSS(:) )
       ZQSS(:) = ZQSS(:) - ZWQ1(:,6)
       ZQGS(:) = ZQGS(:) + ZWQ1(:,6)
-    ELSEWHERE
-      ZWQ1(:,6) = 0.
     ENDWHERE
 !
     DEALLOCATE(IVEC2)
@@ -3181,18 +3298,16 @@ IMPLICIT NONE
   WHERE (ZRST(:) > XRTMIN_ELEC(5) .AND. ZRSS(:) > ZRSMIN_ELEC(5) .AND. &
          ZRGT(:) > XRTMIN_ELEC(6) .AND. ABS(ZQST(:)) > XQTMIN(5) .AND. &
          ZZT(:) > XTT             .AND. ZRHODREF(:)*XLMTT > 0.) 
-    ZWQ1(:,7) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,7))), ZQSS(:))
+    ZWQ1(:,7) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,7)) ),ZQSS(:) )
     ZQGS(:) = ZQGS(:) + ZWQ1(:,7)
     ZQSS(:) = ZQSS(:) - ZWQ1(:,7)
-  ELSEWHERE
-    ZWQ1(:,7) = 0.
   ENDWHERE
 !
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                &
+                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              10,'CMEL_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                &
+                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              11,'CMEL_BU_RRG')
 !
   IF (LBUDGET_SV) THEN
@@ -3224,50 +3339,46 @@ IMPLICIT NONE
          (ZRIS(:) > 0.0)       .AND. (ZRRS(:) > 0.0))
     ZZW1(:,3) = MIN( ZRIS(:),XICFRR * ZRIT(:)                & ! RICFRRG
                                     * ZLBDAR(:)**XEXICFRR    &
-                                    * ZRHODREF(:)**(-XCEXVT) )
+                                    * ZRHOCOR(:) / ZCOR00 )
     ZZW1(:,4) = MIN( ZRRS(:),XRCFRI * ZCIT(:)                & ! RRCFRIG
                                     * ZLBDAR(:)**XEXRCFRI    &
-                                    * ZRHODREF(:)**(-XCEXVT-1.) )
+                                    * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) )
     ZRIS(:) = ZRIS(:) - ZZW1(:,3)
     ZRRS(:) = ZRRS(:) - ZZW1(:,4)
     ZRGS(:) = ZRGS(:) + ZZW1(:,3) + ZZW1(:,4)
     ZTHS(:) = ZTHS(:) + ZZW1(:,4) * (ZLSFACT(:) - ZLVFACT(:)) ! f(L_f*RRCFRIG)
     ZWQ1(:,4) = XQRCFRIG * ZLBDAR(:)**XEXQRCFRIG * ZCIT(:) * &
-                ZERT(:) * ZRHODREF(:)**(-XCEXVT-1.)            ! QRCFRIG
+                ZERT(:) * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:))  ! QRCFRIG
     ZWQ1(:,3) = XCOEF_RQ_I * ZQIT(:) * ZZW1(:,3) / ZRIT(:)     ! QICFRRG
   END WHERE
 !
   WHERE (ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRRT(:) > XRTMIN_ELEC(3) .AND. &
          ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
          ABS(ZERT) > XERMIN       .AND. ABS(ZQRT(:)) > XQTMIN(3))
-    ZWQ1(:,4) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,4))), ZQRS(:))
+    ZWQ1(:,4) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,4)) ),ZQRS(:) )
     ZQGS(:) = ZQGS(:) + ZWQ1(:,4)
     ZQRS(:) = ZQRS(:) - ZWQ1(:,4)
-  ELSEWHERE
-    ZWQ1(:,4) = 0.
   ENDWHERE
 !
   WHERE (ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRRT(:) > XRTMIN_ELEC(3) .AND. &
          ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRRS(:) > ZRSMIN_ELEC(3) .AND. &
          ABS(ZQIT(:)) > XQTMIN(4)) 
-    ZWQ1(:,3) = SIGN(MIN(ABS(ZQIS(:)), ABS(ZWQ1(:,3))), ZQIS(:))
+    ZWQ1(:,3) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,3)) ),ZQIS(:) )
     ZQGS(:) = ZQGS(:) + ZWQ1(:,3)
     ZQIS(:) = ZQIS(:) - ZWQ1(:,3)
-  ELSEWHERE
-    ZWQ1(:,3) = 0.
   ENDWHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'CFRZ_BU_RTH')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                &
+                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               8,'CFRZ_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'CFRZ_BU_RRI')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                &
+                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              11,'CFRZ_BU_RRG')
 !
   IF (LBU_RSV) THEN
@@ -3290,14 +3401,14 @@ IMPLICIT NONE
 !*       6.2.1  compute RCDRYG & QCDRYG
 !
   WHERE ((ZRGT(:) > XRTMIN(6)) .AND. ((ZRCT(:) > XRTMIN(2) .AND. ZRCS(:) > 0.0)))
-    ZZW(:) = ZLBDAG(:)**(XCXG-XDG-2.0) * ZRHODREF(:)**(-XCEXVT)
+    ZZW(:) = ZLBDAG(:)**(XCXG-XDG-2.0) * ZRHOCOR(:) / ZCOR00
     ZZW1(:,1) = MIN( ZRCS(:),XFCDRYG * ZRCT(:) * ZZW(:) )             ! RCDRYG
     ZWQ1(:,1) = XCOEF_RQ_C * ZQCT(:) * ZZW1(:,1) / ZRCT(:)            ! QCDRYG
   END WHERE
 !
   WHERE (ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
          ABS(ZQCT(:)) > XQTMIN(2) .AND. ZRCS(:) > ZRSMIN_ELEC(2)) 
-    ZWQ1(:,1) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,1))), ZQCS(:))
+    ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
   ELSEWHERE
     ZWQ1(:,1) = 0.
   ENDWHERE
@@ -3305,14 +3416,14 @@ IMPLICIT NONE
 !*       6.2.2  compute RIDRYG & QIDRYG
 !
   WHERE ((ZRGT(:) > XRTMIN(6)) .AND. ((ZRIT(:) > XRTMIN(4) .AND. ZRIS(:) > 0.0)) )
-    ZZW(:) = ZLBDAG(:)**(XCXG-XDG-2.0) * ZRHODREF(:)**(-XCEXVT)
+    ZZW(:) = ZLBDAG(:)**(XCXG-XDG-2.0) * ZRHOCOR(:)/ZCOR00
     ZZW1(:,2) = MIN( ZRIS(:),XFIDRYG * EXP( XCOLEXIG*(ZZT(:)-XTT) ) &
                                      * ZRIT(:) * ZZW(:) )             ! RIDRYG
    ZWQ1(:,2) = XCOEF_RQ_I * ZQIT(:) * ZZW1(:,2) / ZRIT(:)         ! QIDRYG_coal
   END WHERE
 !
   WHERE (GELEC(:,2)) 
-    ZWQ1(:,2) = SIGN(MIN(ABS(ZQIS(:)), ABS(ZWQ1(:,2))), ZQIS(:)) 
+    ZWQ1(:,2) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,2)) ),ZQIS(:) ) 
   ELSEWHERE
     ZWQ1(:,2) = 0.
   ENDWHERE
@@ -3409,13 +3520,13 @@ IMPLICIT NONE
       ZZW1(:,3) = MIN( ZRSS(:),XFSDRYG*ZZW(:)                         & ! RSDRYG
                                       * EXP( XCOLEXSG*(ZZT(:)-XTT) )  &
                     *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAG(:)**XCXG )    &
-                    *( ZRHODREF(:)**(-XCEXVT-1.) )                    &
+                    * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:))             &
                          *( XLBSDRYG1/( ZLBDAG(:)**2              ) + &
                             XLBSDRYG2/( ZLBDAG(:)   * ZLBDAS(:)   ) + &
                             XLBSDRYG3/(               ZLBDAS(:)**2) ) )
       ZWQ1(:,4) = ZWQ1(:,4) * XFQSDRYG *                                 &
                 XCOLSG * EXP(XCOLEXSG * (ZZT(:) - XTT)) *                &
-                ZEST(:) * ZRHODREF(:)**(-XCEXVT-1.) *                    &
+                ZEST(:) * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) *          & 
                 ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                      &
                (XLBQSDRYG1 * ZLBDAS(:)**(-2.0-XFS) +                     &
                 XLBQSDRYG2 * ZLBDAS(:)**(-1.0-XFS) * ZLBDAG(:)**(-1.0) + &
@@ -3425,7 +3536,7 @@ IMPLICIT NONE
     WHERE (ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
            ZRGS(:) > ZRSMIN_ELEC(6) .AND. ABS(ZQST(:)) > XQTMIN(5) .AND. &
            ABS(ZEST) > XESMIN)
-      ZWQ1(:,4) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,4))), ZQSS(:))
+      ZWQ1(:,4) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,4)) ),ZQSS(:) )
     ELSEWHERE
       ZWQ1(:,4) = 0.
     END WHERE
@@ -3499,11 +3610,12 @@ IMPLICIT NONE
     WHERE( GDRY(:) )
       ZZW1(:,4) = MIN( ZRRS(:),XFRDRYG*ZZW(:)                    & ! RRDRYG
                         *( ZLBDAR(:)**(-4) )*( ZLBDAG(:)**XCXG ) &
-                        *( ZRHODREF(:)**(-XCEXVT-1.) )   &
+                        * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:))    &
                     *( XLBRDRYG1/( ZLBDAG(:)**2              ) + &
                        XLBRDRYG2/( ZLBDAG(:)   * ZLBDAR(:)   ) + &
                        XLBRDRYG3/(               ZLBDAR(:)**2) ) )
-      ZWQ1(:,6) =  ZWQ1(:,6) *  XFQRDRYG * ZRHODREF(:)**(-XCEXVT-1.) * &
+      ZWQ1(:,6) =  ZWQ1(:,6) * XFQRDRYG *                              &
+          ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:)) *                        &
           ZERT(:) * ZLBDAG(:)**XCXG * ZLBDAR(:)**XCXR *                &
          (XLBQRDRYG1 * ZLBDAR(:)**(-2.0 - XFR) +                       &
           XLBQRDRYG2 * ZLBDAR(:)**(-1.0 - XFR) * ZLBDAG(:)**(-1.0) +   &
@@ -3513,7 +3625,7 @@ IMPLICIT NONE
     WHERE (ZRRT(:) > XRTMIN_ELEC(3) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. & 
            ZRRS(:) > ZRSMIN_ELEC(3).AND. ABS(ZERT) > XERMIN .AND.        &
            ABS(ZQRT(:)) > XQTMIN(3))
-      ZWQ1(:,6) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,6))), ZQRS(:))
+      ZWQ1(:,6) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,6)) ),ZQRS(:) )
     ELSEWHERE
       ZWQ1(:,6) = 0.
     ENDWHERE
@@ -3563,8 +3675,8 @@ IMPLICIT NONE
   END WHERE
 !
   WHERE (ZRGT(:) > XRTMIN_ELEC(6) .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE) 
-    ZWQ1(:,7) = SIGN(MIN(ABS(ZQIS(:)), ABS(ZWQ1(:,7))), ZQIS(:))
-    ZWQ1(:,8) = SIGN(MIN(ABS(ZQSS(:)), ABS(ZWQ1(:,8))), ZQSS(:))
+    ZWQ1(:,7) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,7)) ),ZQIS(:) )
+    ZWQ1(:,8) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,8)) ),ZQSS(:) )
   ELSEWHERE
     ZWQ1(:,7) = 0.
     ZWQ1(:,8) = 0.
@@ -3574,9 +3686,7 @@ IMPLICIT NONE
          ZRRT(:) > XRTMIN_ELEC(3))
     ZWQ1(:,9) = XCOEF_RQ_R * ZQRT(:) * &
                (ZRWETG(:) - ZZW1(:,5) - ZZW1(:,6) - ZZW1(:,1)) / ZRRT(:)  ! QRWETG
-    ZWQ1(:,9) = SIGN(MIN(ABS(ZQRS(:)), ABS(ZWQ1(:,9))), ZQRS(:))
-  ELSEWHERE
-    ZWQ1(:,9) = 0.
+    ZWQ1(:,9) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,9)) ),ZQRS(:) )
   ENDWHERE
 !
 !
@@ -3616,13 +3726,13 @@ IMPLICIT NONE
       ZQIS(:) = ZQIS(:) - ZWQ1(:,7)
       ZQSS(:) = ZQSS(:) - ZWQ1(:,8)
       ZQGS(:) = ZQGS(:) + ZWQ1(:,1) + ZWQ1(:,9) + ZWQ1(:,7) + ZWQ1(:,8)
-      ZZW(:)  = ZQGS(:) * ZRDRYG(:) / (ZRWETG(:) + ZRDRYG(:)) !        and
-      ZRGS(:) = ZRGS(:) - ZZW(:)                        !   partial conversion
-      ZRHS(:) = ZRHS(:) + ZZW(:)                        ! of the graupel into hail
+      ZZW(:)  = ZQGS(:) * ZRDRYG(:) / (ZRWETG(:) + ZRDRYG(:)) ! partial graupel
+      ZQGS(:) = ZQGS(:) - ZZW(:)                        ! charge conversion
+      ZQHS(:) = ZQHS(:) + ZZW(:)                        ! into hail charge
     END WHERE
   ELSE IF( KRR == 6 ) THEN
     WHERE (ZRGT(:) > XRTMIN(6)    .AND. ZZT(:) < XTT .AND. & ! Wet
-           ZRDRYG(:) >= ZRWETG(:) .AND. ZRWETG(:) > 0.0)    ! case
+           ZRDRYG(:) >= ZRWETG(:) .AND. ZRWETG(:) > 0.0)     ! case
       ZZW(:)  = ZRWETG(:)
       ZRCS(:) = ZRCS(:) - ZZW1(:,1)
       ZRIS(:) = ZRIS(:) - ZZW1(:,5)
@@ -3641,27 +3751,27 @@ IMPLICIT NONE
     END WHERE
   END IF
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'WETG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                &
+                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               7,'WETG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                &
+                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               8,'WETG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'WETG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                &
+                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              10,'WETG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                &
+                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              11,'WETG_BU_RRG')
   IF ( KRR == 7 ) THEN
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RH) CALL BUDGET (                                              &
+                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              12,'WETG_BU_RRH')
   END IF
 !
@@ -3678,8 +3788,8 @@ IMPLICIT NONE
                                             12+NSV_ELECEND,'WETG_BU_RSV')
   END IF
 !
-  WHERE (ZRGT(:) > XRTMIN(6) .AND. ZZT(:) < XTT .AND. &
-         ZRDRYG(:) < ZRWETG(:) .AND. ZRDRYG(:) > 0.0) ! Dry
+  WHERE (ZRGT(:) > XRTMIN(6) .AND. ZZT(:) < XTT .AND. & ! Dry
+         ZRDRYG(:) < ZRWETG(:) .AND. ZRDRYG(:) > 0.0)   ! case
     ZRCS(:) = ZRCS(:) - ZZW1(:,1)
     ZRIS(:) = ZRIS(:) - ZZW1(:,2)
     ZRSS(:) = ZRSS(:) - ZZW1(:,3)
@@ -3696,23 +3806,23 @@ IMPLICIT NONE
                                               + ZWQ1(:,5) + ZWQ1(:,6)
   END WHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                    &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'DRYG_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                &
+                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               7,'DRYG_BU_RRC')
-  IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RR) CALL BUDGET (                                                &
+                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               8,'DRYG_BU_RRR')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'DRYG_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RS) CALL BUDGET (                                                &
+                     UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              10,'DRYG_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RG) CALL BUDGET (                                                &
+                     UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              11,'DRYG_BU_RRG')
 !
   IF (LBUDGET_SV) THEN
@@ -3728,10 +3838,6 @@ IMPLICIT NONE
                                             12+NSV_ELECEND,'DRYG_BU_RSV')
   END IF
 !
-!      WHERE ( ZZT(:) > XTT ) ! RSWETG case only
-!        ZRSS(:) = ZRSS(:) - ZZW1(:,6)
-!        ZRGS(:) = ZRGS(:) + ZZW1(:,6)
-!      END WHERE
 !
 ! Inductive mecanism
 !
@@ -3781,21 +3887,19 @@ IMPLICIT NONE
 !
   WHERE (ZRGT(:) > XRTMIN_ELEC(6) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
          ZZT(:) > XTT             .AND. ABS(ZQGT(:)) > XQTMIN(6))
-    ZWQ1(:,7) = SIGN(MIN(ABS(ZQGS(:)), ABS(ZWQ1(:,7))), ZQGS(:))
+    ZWQ1(:,7) = SIGN( MIN( ABS(ZQGS(:)),ABS(ZWQ1(:,7)) ),ZQGS(:) )
     ZQRS(:) = ZQRS(:) + ZWQ1(:,7)
     ZQGS(:) = ZQGS(:) - ZWQ1(:,7)
-  ELSEWHERE
-    ZWQ1(:,7) = 0.
   ENDWHERE
 !
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+    IF (LBUDGET_TH) CALL BUDGET (                                              &
+                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
                                                                 4,'GMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RR) CALL BUDGET (                                              &
+                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                 8,'GMLT_BU_RRR')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+    IF (LBUDGET_RG) CALL BUDGET (                                              &
+                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
                                                                11,'GMLT_BU_RRG')
 !
     IF (LBUDGET_SV) THEN
@@ -3833,11 +3937,11 @@ IMPLICIT NONE
 !
     ZZW1(:,:) = 0.0
     WHERE (GHAIL(:) .AND. ((ZRCT(:) > XRTMIN(2) .AND. ZRCS(:) > 0.0)))
-      ZZW(:) = ZLBDAH(:)**(XCXH-XDH-2.0) * ZRHODREF(:)**(-XCEXVT)
+      ZZW(:) = ZLBDAH(:)**(XCXH-XDH-2.0) * ZRHOCOR(:) / ZCOR00
       ZZW1(:,1) = MIN( ZRCS(:),XFWETH * ZRCT(:) * ZZW(:) )             ! RCWETH
     END WHERE
     WHERE (GHAIL(:) .AND. ((ZRIT(:) > XRTMIN(4) .AND. ZRIS(:) > 0.0)))
-      ZZW(:) = ZLBDAH(:)**(XCXH-XDH-2.0) * ZRHODREF(:)**(-XCEXVT)
+      ZZW(:) = ZLBDAH(:)**(XCXH-XDH-2.0) * ZRHOCOR(:) / ZCOR00
       ZZW1(:,2) = MIN( ZRIS(:),XFWETH * ZRIT(:) * ZZW(:) )             ! RIWETH
     END WHERE
 !
@@ -3879,20 +3983,13 @@ IMPLICIT NONE
 !*       7.2.5  perform the bilinear interpolation of the normalized
 !               SWETH-kernel
 !
-      DO JJ = 1,IGWET
-        ZVEC3(JJ) = (  XKER_SWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
-                     - XKER_SWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                                          * ZVEC1(JJ)          &
-                   - ( XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
-                     - XKER_SWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                                          * (ZVEC1(JJ) - 1.0)
-      END DO
-      ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+      ZVEC3(:) = BI_LIN_INTP_V(XKER_SWETH, IVEC1, IVEC2, ZVEC1, ZVEC2, IGWET)
+      ZZW(:)   = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
       WHERE( GWET(:) )
-        ZZW1(:,3) = MIN( ZRSS(:),XFSWETH*ZZW(:)                       & ! RSWETH
+        ZZW1(:,3) = MIN( ZRSS(:), XFSWETH*ZZW(:)                      & ! RSWETH
                       *( ZLBDAS(:)**(XCXS-XBS) )*( ZLBDAH(:)**XCXH )  &
-                         *( ZRHODREF(:)**(-XCEXVT-1.) )               &
+                         * ZRHOCOR(:)/(ZCOR00*ZRHODREF(:))            &
                          *( XLBSWETH1/( ZLBDAH(:)**2              ) + &
                             XLBSWETH2/( ZLBDAH(:)   * ZLBDAS(:)   ) + &
                             XLBSWETH3/(               ZLBDAS(:)**2) ) )
@@ -3941,20 +4038,13 @@ IMPLICIT NONE
 !*       7.2.10 perform the bilinear interpolation of the normalized
 !               GWETH-kernel
 !
-      DO JJ = 1, IGWET
-        ZVEC3(JJ) = (  XKER_GWETH(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
-                     - XKER_GWETH(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                                          * ZVEC1(JJ) &
-                  - (  XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
-                     - XKER_GWETH(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
-                                                          * (ZVEC1(JJ) - 1.0)
-      END DO
-      ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
+      ZVEC3(:) = BI_LIN_INTP_V(XKER_GWETH, IVEC1, IVEC2, ZVEC1, ZVEC2, IGWET)
+      ZZW(:)   = UNPACK( VECTOR=ZVEC3(:),MASK=GWET,FIELD=0.0 )
 !
       WHERE (GWET(:))
         ZZW1(:,5) = MIN( ZRGS(:),XFGWETH*ZZW(:)                       & ! RGWETH
                       *( ZLBDAG(:)**(XCXG-XBG) )*( ZLBDAH(:)**XCXH )  &
-                         *( ZRHODREF(:)**(-XCEXVT-1.) )               &
+                         * ZRHOCOR(:) / (ZCOR00 * ZRHODREF(:))        &
                          *( XLBGWETH1/( ZLBDAH(:)**2              ) + &
                             XLBGWETH2/( ZLBDAH(:)   * ZLBDAG(:)   ) + &
                             XLBGWETH3/(               ZLBDAG(:)**2) ) )
@@ -3978,13 +4068,18 @@ IMPLICIT NONE
 !
 ! compute RWETH
 !
-      ZZW(:) = (ZZW(:) * (X0DEPH *          ZLBDAH(:)**XEX0DEPH +        &
-                          X1DEPH * ZCJ(:) * ZLBDAH(:)**XEX1DEPH) +       &
-               (ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,5) ) *                    &
-               (ZRHODREF(:) * (XLMTT + (XCI - XCL) * (XTT - ZZT(:))))) / &
-                    (ZRHODREF(:) * (XLMTT - XCL * (XTT - ZZT(:))))
+      ZZW(:) = MAX(0., (ZZW(:) * (X0DEPH *          ZLBDAH(:)**XEX0DEPH + &
+                          X1DEPH * ZCJ(:) * ZLBDAH(:)**XEX1DEPH) +        &
+               (ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,5) ) *                     &
+               (ZRHODREF(:) * (XLMTT + (XCI - XCL) * (XTT - ZZT(:))))) /  &
+                    (ZRHODREF(:) * (XLMTT - XCL * (XTT - ZZT(:)))))
 !
-      ZZW1(:,6) = ZZW(:) - ZZW1(:,2) - ZZW1(:,3) - ZZW1(:,5) ! RCWETH+RRWETH
+      ZZW1(:,6) = MAX( ZZW(:) - ZZW1(:,2) - ZZW1(:,3) - ZZW1(:,5), 0. ) ! RCWETH+RRWETH
+    END WHERE
+!
+    ZUSW(:)   = 0.
+!
+    WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZZW1(:,6) /= 0.0)
 !
 ! limitation of the available rainwater mixing ratio (RRWETH < RRS !)
 !
@@ -4003,49 +4098,62 @@ IMPLICIT NONE
       ZRGS(:) = ZRGS(:) - ZZW1(:,5)
       ZRHS(:) = ZRHS(:) + ZZW(:)
       ZRRS(:) = MAX( 0.0,ZRRS(:) - ZZW1(:,4) + ZZW1(:,1) )
-      ZTHS(:) = ZTHS(:) + ZZW1(:,4)*(ZLSFACT(:)-ZLVFACT(:)) 
+      ZRRS(:) = ZRRS(:) - ZZW1(:,4)
+      ZTHS(:) = ZTHS(:) + (ZZW1(:,4)+ZZW1(:,1))*(ZLSFACT(:)-ZLVFACT(:))
                                  ! f(L_f*(RCWETH+RRWETH))
     END WHERE
 !
+    ZWQ1(:,:) = 0.0
+    WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZRCT(:) > XRTMIN_ELEC(2))
+      ZWQ1(:,1) = XCOEF_RQ_C * ZQCT(:) * ZZW1(:,1) / ZRCT(:)
+      ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
+    END WHERE
+    WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZRIT(:) > XRTMIN_ELEC(4))
+      ZWQ1(:,2) = XCOEF_RQ_I * ZQIT(:) * ZZW1(:,2) / ZRIT(:)
+      ZWQ1(:,2) = SIGN( MIN( ABS(ZQIS(:)),ABS(ZWQ1(:,2)) ),ZQIS(:) )
+    END WHERE
+    WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZRST(:) > XRTMIN_ELEC(5))
+      ZWQ1(:,3) = XCOEF_RQ_S * ZQST(:) * ZZW1(:,3) / ZRST(:)
+      ZWQ1(:,3) = SIGN( MIN( ABS(ZQSS(:)),ABS(ZWQ1(:,3)) ),ZQSS(:) )
+    END WHERE
+    WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZRGT(:) > XRTMIN_ELEC(6))
+      ZWQ1(:,5) = XCOEF_RQ_G * ZQGT(:) * ZZW1(:,5) / ZRGT(:)
+      ZWQ1(:,5) = SIGN( MIN( ABS(ZQGS(:)),ABS(ZWQ1(:,5)) ),ZQGS(:) )
+    END WHERE
     WHERE (GHAIL(:) .AND. ZZT(:) < XTT .AND. ZRRT(:) > XRTMIN_ELEC(3))
       ZWQ1(:,4) = XCOEF_RQ_R * ZQRT(:) * ZZW1(:,4) / ZRRT(:)
-!
-      ZQRS(:) = ZQRS(:) - ZWQ1(:,4) + ZWQ1(:,1)
+      ZWQ1(:,4) = SIGN( MIN( ABS(ZQRS(:)),ABS(ZWQ1(:,4)) ),ZQRS(:) )
     END WHERE
-    WHERE (GHAIL(:) .AND. ZZT(:) < XTT)
-      ZWQ1(:,2) = ZWQ1(:,2)*ZUSW(:)
-      ZWQ1(:,3) = ZWQ1(:,3)*ZUSW(:)
-      ZWQ1(:,5) = ZWQ1(:,5)*ZUSW(:)
-      ZZW(:)    = ZWQ1(:,4) + ZWQ1(:,2) + ZWQ1(:,3) + ZWQ1(:,5)
 !
-      ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
-      ZQIS(:) = ZQIS(:) - ZWQ1(:,2)
-      ZQSS(:) = ZQSS(:) - ZWQ1(:,3)
-      ZQGS(:) = ZQGS(:) - ZWQ1(:,5)
-      ZQHS(:) = ZQHS(:) + ZZW(:)
-    END WHERE
+    ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
+    ZQIS(:) = ZQIS(:) - ZWQ1(:,2)
+    ZQSS(:) = ZQSS(:) - ZWQ1(:,3)
+    ZQGS(:) = ZQGS(:) - ZWQ1(:,5)
+    ZQRS(:) = ZQRS(:) - ZWQ1(:,4)
+    ZQHS(:) = ZQHS(:) + ZWQ1(:,1) + ZWQ1(:,2) + ZWQ1(:,3) + ZWQ1(:,4) + ZWQ1(:,5)
   END IF
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'WETH_BU_RTH')
-    IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                       UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                7,'WETH_BU_RRC')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'WETH_BU_RRR')
-    IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                       UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                9,'WETH_BU_RRI')
-    IF (LBUDGET_RS) CALL BUDGET (                                                 &
-                       UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               10,'WETH_BU_RRS')
-    IF (LBUDGET_RG) CALL BUDGET (                                                 &
-                       UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               11,'WETH_BU_RRG')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'WETH_BU_RRH')
+
+  IF (LBUDGET_TH) CALL BUDGET (                                              &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
+                                                              4,'WETH_BU_RTH')
+  IF (LBUDGET_RC) CALL BUDGET (                                          &
+                 UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                              7,'WETH_BU_RRC')
+  IF (LBUDGET_RR) CALL BUDGET (                                          &
+                 UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                              8,'WETH_BU_RRR')
+  IF (LBUDGET_RI) CALL BUDGET (                                          &
+                 UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                              9,'WETH_BU_RRI')
+  IF (LBUDGET_RS) CALL BUDGET (                                          &
+                 UNPACK(ZRSS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                             10,'WETH_BU_RRS')
+  IF (LBUDGET_RG) CALL BUDGET (                                          &
+                 UNPACK(ZRGS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                             11,'WETH_BU_RRG')
+  IF (LBUDGET_RH) CALL BUDGET (                                          &
+                 UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                             12,'WETH_BU_RRH')
 !
   IF (IHAIL > 0) THEN
 !
@@ -4057,7 +4165,7 @@ IMPLICIT NONE
     WHERE (GHAIL(:) .AND. (ZRHS(:) > 0.0) .AND. (ZZT(:) > XTT))
       ZZW(:) = ZRVT(:) * ZPRES(:) / ((XMV / XMD) + ZRVT(:)) ! Vapor pressure
       ZZW(:) = ZKA(:) * (XTT - ZZT(:)) +                          &
-       	     ( ZDV(:) * (XLVTT + (XCPV - XCL) * (ZZT(:) - XTT)) * &
+             ( ZDV(:) * (XLVTT + (XCPV - XCL) * (ZZT(:) - XTT)) * &
                         (XESTT - ZZW(:)) / (XRV * ZZT(:)))
 !
 ! compute RHMLTR
@@ -4076,23 +4184,23 @@ IMPLICIT NONE
 !
     WHERE (ZRHT(:) > XRTMIN_ELEC(7) .AND. ZRHS(:) > ZRSMIN_ELEC(7) .AND. &
            ZZT(:) > XTT             .AND. ABS(ZQHT(:)) > XQTMIN(7))
-      ZWQ1(:,7) = SIGN(MIN(ABS(ZQHS(:)), ABS(ZWQ1(:,7))), ZQHS(:))
+      ZWQ1(:,7) = SIGN( MIN( ABS(ZQHS(:)),ABS(ZWQ1(:,7)) ),ZQHS(:) )
       ZQRS(:) = ZQRS(:) + ZWQ1(:,7)
       ZQHS(:) = ZQHS(:) - ZWQ1(:,7)
-    ELSEWHERE
-      ZWQ1(:,7) = 0.
     END WHERE
   END IF
+!
   DEALLOCATE(GHAIL)
-    IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                   UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
-                                                                4,'HMLT_BU_RTH')
-    IF (LBUDGET_RR) CALL BUDGET (                                                 &
-                       UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                                8,'HMLT_BU_RRR')
-    IF (LBUDGET_RH) CALL BUDGET (                                                 &
-                       UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
-                                                               12,'HMLT_BU_RRH')
+!
+  IF (LBUDGET_TH) CALL BUDGET (                                              &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
+                                                             4,'HMLT_BU_RTH')
+  IF (LBUDGET_RR) CALL BUDGET (                                              &
+                     UNPACK(ZRRS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                              8,'HMLT_BU_RRR')
+  IF (LBUDGET_RH) CALL BUDGET (                                              &
+                     UNPACK(ZRHS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0), &
+                                                             12,'HMLT_BU_RRH')
 !
   END SUBROUTINE RAIN_ICE_ELEC_FAST_RH
 !
@@ -4122,14 +4230,14 @@ IMPLICIT NONE
     ZQIS(:) = 0.
   END WHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                               4,'IMLT_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                &
+                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               7,'IMLT_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                               9,'IMLT_BU_RRI')
 !
   IF (LBUDGET_SV) THEN
@@ -4159,23 +4267,19 @@ IMPLICIT NONE
   WHERE (ZRCS(:) > 0.0            .AND. ZSSI(:) > 0.0 .AND.  &
          ZRIT(:) > 0.0            .AND. ZCIT(:) > 0.0 .AND.  &
          ZRCT(:) > XRTMIN_ELEC(2) .AND. ABS(ZQCT(:)) > XQTMIN(2))
-    ZWQ1(:,1) = SIGN(MIN(ABS(ZQCS(:)), ABS(ZWQ1(:,1))), ZQCS(:))
-!    ZQIS(:) = ZQIS(:) + ZWQ1(:,1) * 0.01     ! Attenuation de ce processus
-!    ZQCS(:) = ZQCS(:) - ZWQ1(:,1) * 0.01     ! trop important
+    ZWQ1(:,1) = SIGN( MIN( ABS(ZQCS(:)),ABS(ZWQ1(:,1)) ),ZQCS(:) )
     ZQIS(:) = ZQIS(:) + ZWQ1(:,1) 
     ZQCS(:) = ZQCS(:) - ZWQ1(:,1)
-  ELSEWHERE
-    ZWQ1(:,1) = 0.
   ENDWHERE
 !
-  IF (LBUDGET_TH) CALL BUDGET (                                                 &
-                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),   &
+  IF (LBUDGET_TH) CALL BUDGET (                                                &
+                 UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),  &
                                                              4,'BERFI_BU_RTH')
-  IF (LBUDGET_RC) CALL BUDGET (                                                 &
-                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RC) CALL BUDGET (                                                &
+                     UNPACK(ZRCS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              7,'BERFI_BU_RRC')
-  IF (LBUDGET_RI) CALL BUDGET (                                                 &
-                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),    &
+  IF (LBUDGET_RI) CALL BUDGET (                                                &
+                     UNPACK(ZRIS(:)*ZRHODJ(:),MASK=GMICRO(:,:,:),FIELD=0.0),   &
                                                              9,'BERFI_BU_RRI')
 !
   IF (LBUDGET_SV) THEN
@@ -4203,9 +4307,9 @@ REAL, DIMENSION(:), INTENT(IN), OPTIONAL :: ZRH
 !*      1.      COMPUTE LAMBDA
 !               --------------
 !
-ZLBDAR(:) = 0.0 
-ZLBDAS(:) = 0.0
-ZLBDAG(:) = 0.0
+  ZLBDAR(:) = 0.0 
+  ZLBDAS(:) = 0.0
+  ZLBDAG(:) = 0.0
 !
   WHERE( ZRR(:) > 0.0 )
     ZLBDAR(:) = XLBR * (ZRHODREF(:) * MAX(ZRR(:), XRTMIN(3)))**XLBEXR
@@ -4290,7 +4394,7 @@ ENDWHERE
 WHERE (ZRI(:) > ZRTMIN_E(4) .AND. ZCIT(:) > 0.0) 
   ZEI(:) = ZDUM * ZRHODREF(:) * ZQI(:) /                       &
            ((ZCIT**(1 - XEXFQUPDI)) * XFQUPDI * (ZRHODREF(:) * &
-           ZRI(:))**XEXFQUPDI)
+           ZDUM * ZRI(:))**XEXFQUPDI)
   ZEI(:) = SIGN( MIN(ABS(ZEI(:)), XEIMAX), ZEI(:))
 ENDWHERE
 !
@@ -4348,15 +4452,16 @@ IMPLICIT NONE
     ZFT(:) = 0.
 !
     GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) < XTT
-    GELEC(:,1) = GELEC(:,3) .AND. &
+    GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0.           .AND. ZLBDAG(:) > 0.
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,4) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
 !
     WHERE (GELEC(:,4))
@@ -4376,183 +4481,75 @@ IMPLICIT NONE
 !*      2.1     common to SAUN1 and SAUN2
 !
   IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2') THEN
-    ZEW(:)     = 0.
-    ZSAUNQ(:)  = 0.
-    ZSAUNIK(:) = 0.
-    ZSAUNSK(:) = 0.
-    ZSAUNIM(:) = 0.
-    ZSAUNIN(:) = 0.
-    ZSAUNSM(:) = 0.
-    ZSAUNSN(:) = 0.
+    ZDQLWC(:) = 0.
+    ZEW(:)    = 0.
+!
+! positive case is the default value
+    ZFQIAGGS(:)   = XFQIAGGSP
+    ZFQIDRYGBS(:) = XFQIDRYGBSP
+    ZLBQSDRYGB1S(:) = XLBQSDRYGB1SP
+    ZLBQSDRYGB2S(:) = XLBQSDRYGB2SP
+    ZLBQSDRYGB3S(:) = XLBQSDRYGB3SP
+    ZSAUNIM(:)  = XIMP     !3.76
+    ZSAUNIN(:)  = XINP     !2.5
+    ZSAUNSK(:)  = XSKP     !52.8
+    ZSAUNSM(:)  = XSMP     !0.44
+    ZSAUNSN(:)  = XSNP     !2.5
 !
 ! LWC_crit
-    ZLWCC(:) = -0.49 + 6.64E-2 * (XTT - ZZT(:))     ! (g m^-3)
-    WHERE ((ZZT(:) - XTT) >= -10.6928)
-      ZLWCC(:) = 0.22
-    ENDWHERE
-
-    WHERE ((ZZT(:) - XTT) <= -23.9458)
-      ZLWCC(:) = 1.1
-    ENDWHERE
+    ZLWCC(:) = MIN( MAX( -0.49 + 6.64E-2*(XTT-ZZT(:)),0.22 ),1.1 )   ! (g m^-3)
 !
 ! Mansell et al. (2005, JGR): droplet collection efficiency of the graupel ~ 0.6-1.0
     ZEW(:)   = 0.8 * ZRCT(:) * ZRHODREF(:) * 1.E3   ! (g m^-3)
-    XEW(:,:,:) = UNPACK(ZEW(:), MASK=GMICRO, FIELD=0.)
 !
-    GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
+    GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
+                 ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
-    GELEC(:,4) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
-! region S4 : positive
-    WHERE (GELEC(:,4) .AND.                                            &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 23.9458) .AND. & 
-           ZEW(:) > ZLWCC(:))
-      ZSAUNQ(:) = MAX(0., (20.22 * ZEW(:) + 1.36 * (ZZT(:) - XTT) + 10.05) * 1.E-15)
-    ENDWHERE
+    ALLOCATE (GSAUN(IMICRO))
+    GSAUN(:) = .FALSE.
 !
-! region S1 : positive --> linear interpolation
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZEW(:) > ZLWCC(:))
-      ZSAUNQ(:) = MAX(0., -(2.75 * ZEW(:) + 0.007) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
+! For temperature lower than -30C and higher than -40C, value of q at -30C
+    GSAUN(:) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
+    IGSAUN = COUNT (GSAUN(:))
 !
-! region S8 : positive
-    WHERE (GELEC(:,4) .AND.                                            &
-           ZZT(:) <= (XTT - 23.9458) .AND. ZZT(:) > (XTT - 40.0) .AND. & 
-           ZEW(:) > ZLWCC(:))
-      ZSAUNQ(:)  = MAX(0., (20.22 * ZEW(:) - 22.26) * 1.E-15)
-    ENDWHERE
+    IF (IGSAUN > 0) THEN
+      CALL ELEC_INI_NI_SAUNQ(ZEW, ZDQLWC)
 !
-! region S7 : negative
-    WHERE (GELEC(:,4) .AND.                                         &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 40.0) .AND. &
-           ZEW(:) >= 0.104149 .AND. ZEW(:) < ZLWCC(:))
-      ZSAUNQ(:) = MIN(0., (3.02 - 31.76 * ZEW(:) + 26.53 * ZEW(:)**2.) * 1.E-15)
-    ENDWHERE
+      WHERE (ZDQLWC(:) < 0.)
+        ZFQIAGGS(:)   = XFQIAGGSN
+        ZFQIDRYGBS(:) = XFQIDRYGBSN
+        ZLBQSDRYGB1S(:) = XLBQSDRYGB1SN
+        ZLBQSDRYGB2S(:) = XLBQSDRYGB2SN
+        ZLBQSDRYGB3S(:) = XLBQSDRYGB3SN
+        ZSAUNIM(:) = XIMN      !2.54
+        ZSAUNIN(:) = XINN      !2.8
+        ZSAUNSK(:) = XSKN      !24.
+        ZSAUNSM(:) = XSMN      !0.5
+        ZSAUNSN(:) = XSNN      !2.8
+      ENDWHERE
+    ENDIF
+!
+    DEALLOCATE( GSAUN )
   END IF
-!
-!*      2.2     SAUN1 only
-!
-! SAUN1 doesn't take into account marginal positive and negative regions at
-! low LWC
-!
-  IF (CNI_CHARGING == 'SAUN1') THEN
-!
-! region S1 : negative --> linear interpolation
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZEW(:) < ZLWCC(:) .AND. ZEW(:) >= 0.104149)
-      ZSAUNQ(:)  = MIN(0., (-0.41 + 4.32 * ZEW(:) - 3.61 * ZEW(:)**2) * &
-                           (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
-!
-    WHERE (ZSAUNQ(:) > 0.)
-      ZSAUNIK(:) = XIKP
-      ZSAUNIM(:) = XIMP
-      ZSAUNIN(:) = XINP
-      ZSAUNSK(:) = XSKP
-      ZSAUNSM(:) = XSMP
-      ZSAUNSN(:) = XSNP
-    ENDWHERE
-!
-    WHERE (ZSAUNQ(:) < 0.)
-      ZSAUNIK(:) = XIKN
-      ZSAUNIM(:) = XIMN
-      ZSAUNIN(:) = XINN
-      ZSAUNSK(:) = XSKN
-      ZSAUNSM(:) = XSMN
-      ZSAUNSN(:) = XSNN
-    ENDWHERE
-!
-  ENDIF
-!
-!*      2.3     SAUN2 only
-!
-! SAUN2 takes into account marginal positive and negative regions at low LWC
-!
-  IF (CNI_CHARGING == 'SAUN2') THEN
-!
-! region S2 : negative
-    WHERE (GELEC(:,4) .AND.                                         &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 16.0) .AND. &
-           ZEW(:) >= 0.026        .AND. ZEW(:) < 0.14)
-      ZSAUNQ(:) = MIN(0., (-314.4 * ZEW(:) + 7.92) * 1.E-15)
-    ENDWHERE
-!
-! region S3 : negative
-    WHERE (GELEC(:,4) .AND.                                         &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 16.0) .AND. & 
-           ZEW(:) >= 0.14         .AND. ZEW(:) < ZLWCC(:))
-      ZSAUNQ(:) = MIN(0., (419.4 * ZEW(:) - 92.64) * 1.E-15)
-    ENDWHERE
-!
-! region S5 : positive
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) < (XTT - 20.0) .AND. ZZT(:) > (XTT - 40.0) .AND. &
-           ZEW(:) >= 0.063034     .AND. ZEW(:) < 0.12)
-      ZSAUNQ(:) = MAX(0., (2041.76 * ZEW(:) - 128.7) * 1.E-15)
-    ENDWHERE
-!
-! region S6 : positive
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) < (XTT - 20.0) .AND. ZZT(:) > (XTT - 40.0) .AND. &
-           ZEW(:) >= 0.12        .AND. ZEW(:) < 0.1596)
-      ZSAUNQ(:) = MAX(0., (-2900.22 * ZEW(:) + 462.91) * 1.E-15)
-    ENDWHERE
-!
-! region S1 : negative --> linear interpolation of S3
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. & 
-           ZEW(:) >= 0.14        .AND. ZEW(:) < ZLWCC(:))
-      ZSAUNQ(:) = MIN(0., (-57.06 * ZEW(:) + 12.6) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
-!
-! region S1 : negative --> linear interpolation of S2
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZEW(:) >= 0.026       .AND. ZEW(:) < 0.14)
-      ZSAUNQ(:) = MIN(0., (42.8 * ZEW(:) - 1.08) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
-!
-    WHERE (ZSAUNQ(:) > 0.)
-      ZSAUNIK(:) = XIKP
-      ZSAUNIM(:) = XIMP
-      ZSAUNIN(:) = XINP
-      ZSAUNSK(:) = XSKP
-      ZSAUNSM(:) = XSMP
-      ZSAUNSN(:) = XSNP
-    ENDWHERE
-!
-    WHERE (ZSAUNQ(:) < 0.)
-      ZSAUNIK(:) = XIKN
-      ZSAUNIM(:) = XIMN
-      ZSAUNIN(:) = XINN
-      ZSAUNSK(:) = XSKN
-      ZSAUNSM(:) = XSMN
-      ZSAUNSN(:) = XSNN
-    ENDWHERE
-  ENDIF
 !
 !
 !*      3.      Saunders and Peck (1998)
 !
   IF (CNI_CHARGING == 'SAP98') THEN
-    ZRAR(:)      = 0.
     ZRAR_CRIT(:) = 0.
-    ZVGMEAN(:)   = 0.
-    ZVSMEAN(:)   = 0.
 !
 ! compute the critical rime accretion rate
-    WHERE (ZZT(:) <= XTT .AND. ZZT(:) >= (XTT - 23.7))
+    WHERE (ZZT(:) <= XTT .AND. ZZT(:) >= (XTT - 23.7)) ! Original from SAP98
       ZRAR_CRIT(:) = 1.0 + 7.93E-2 * (ZZT(:) - XTT) +    &
                            4.48E-2 * (ZZT(:) - XTT)**2 + &
                            7.48E-3 * (ZZT(:) - XTT)**3 + &
@@ -4561,118 +4558,117 @@ IMPLICIT NONE
                            1.76E-7 * (ZZT(:) - XTT)**6
     END WHERE
 !
-    WHERE (ZZT(:) < (XTT - 23.7) .AND. ZZT(:) > (XTT - 40.))
-      ZRAR_CRIT(:) = 3.4 * (1.0 - (ABS(ZZT(:) - XTT + 23.7) / &
+    WHERE (ZZT(:) < (XTT - 23.7) .AND. ZZT(:) > (XTT - 40.)) ! Added by Mansell
+      ZRAR_CRIT(:) = 3.4 * (1.0 - (ABS(ZZT(:) - XTT + 23.7) / & ! et al. (2005)
                      (-23.7 + 40.))**3.)
     END WHERE
 !
     GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
 !+++++++++ I - G collisions +++++++++
-    ZSAUNIK_IG(:) = 0.
-    ZSAUNSK_IG(:) = 0.
     ZSAUNIM_IG(:) = 0.
-    ZSAUNIN_IG(:) = 0.
-    ZSAUNSM_IG(:) = 0.
-    ZSAUNSN_IG(:) = 0.
-    ZPECKQ_IG(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IG(:) = XIMP
+    ZSAUNIN_IG(:) = XINP
 !
 ! Compute the Rime Accretion Rate 
+    ZRAR(:) = 0.
+    ZVGMEAN(:) = 0.
     WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUG, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
+      ZVGMEAN(:) = XVGCOEF * ZRHOCOR(:) * ZLBDAG(:)**(-XDG)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVGMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
-    GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.1    ! .AND. ZRAR(:) <= 3.3 
+    GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.1 
     GELEC(:,4) = GELEC(:,2)
 !
-! compute the coefficients for I-G collisions
-    CALL ELEC_INI_NI_SAP98 (ZRAR, ZPECKQ_IG, ZSAUNIK_IG, ZSAUNSK_IG, ZSAUNIM_IG, &
-                            ZSAUNIN_IG, ZSAUNSM_IG, ZSAUNSN_IG)
+    IF (COUNT(GELEC(:,4)) .GT. 0) THEN
 !
+! compute the coefficients for I-G collisions
+      CALL ELEC_INI_NI_SAP98 (ZRAR, ZDQRAR_IG)
+!
+      WHERE (ZDQRAR_IG(:) < 0.)
+        ZSAUNIM_IG(:) = XIMN
+        ZSAUNIN_IG(:) = XINN
+      ENDWHERE
+    ENDIF
 !
 !+++++++++ I - S collisions +++++++++
-    ZSAUNIK_IS(:) = 0.
-    ZSAUNSK_IS(:) = 0.
-    ZSAUNIM_IS(:) = 0.
-    ZSAUNIN_IS(:) = 0.
-    ZSAUNSM_IS(:) = 0.
-    ZSAUNSN_IS(:) = 0.
-    ZPECKQ_IS(:)  = 0.
-    ZRAR(:) = 0.
+    ZDQRAR_IS(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IS(:) = XIMP
+    ZSAUNIN_IS(:) = XINP
 !
 ! Compute the Rime Accretion Rate 
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVSMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
-    END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
+    ZRAR(:) = 0.
+    ZVSMEAN(:) = 0.
 !
-    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.1  ! .AND. ZRAR(:) <= 3.3 
+    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0.)
+      ZVSMEAN(:) = XVSCOEF * ZRHOCOR(:) * ZLBDAS(:)**(-XDS)
+      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVSMEAN(:) * 1.E3
+    END WHERE
+!
+    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.1
     GELEC(:,4) = GELEC(:,1)
 !
+    IF (COUNT(GELEC(:,4)) .GT. 0) THEN
 ! compute the coefficients for I-S collisions
-    CALL ELEC_INI_NI_SAP98 (ZRAR, ZPECKQ_IS, ZSAUNIK_IS, ZSAUNSK_IS, ZSAUNIM_IS, &
-                            ZSAUNIN_IS, ZSAUNSM_IS, ZSAUNSN_IS)
+      CALL ELEC_INI_NI_SAP98 (ZRAR, ZDQRAR_IS)
 !
+      WHERE (ZDQRAR_IS(:) < 0.)
+        ZSAUNIM_IS(:) = XIMN
+        ZSAUNIN_IS(:) = XINN
+      ENDWHERE
+    ENDIF
 !
 !+++++++++ S - G collisions +++++++++
-    ZSAUNIK_SG(:) = 0.
-    ZSAUNSK_SG(:) = 0.
-    ZSAUNIM_SG(:) = 0.
-    ZSAUNIN_SG(:) = 0.
-    ZSAUNSM_SG(:) = 0.
-    ZSAUNSN_SG(:) = 0.
-    ZPECKQ_SG(:)  = 0.
-    ZRAR(:) = 0.
+    ZDQRAR_SG(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNSK_SG(:) = XSKP
+    ZSAUNSM_SG(:) = XSMP
+    ZSAUNSN_SG(:) = XSNP
 !
 ! Compute the Rime Accretion Rate 
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0. .AND. ZLBDAG(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUS, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
-    END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
+    ZRAR(:) = 0.
 !
-    GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.1  !  .AND. ZRAR(:) <= 3.3 
+    WHERE (ZVSMEAN(:) > 0. .AND. ZVGMEAN(:) > 0.)
+      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
+    END WHERE
+!
+    GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.1 
     GELEC(:,4) = GELEC(:,3)
 !
-! compute the coefficients for S-G collisions
-    CALL ELEC_INI_NI_SAP98 (ZRAR, ZPECKQ_SG, ZSAUNIK_SG, ZSAUNSK_SG, ZSAUNIM_SG, &
-                            ZSAUNIN_SG, ZSAUNSM_SG, ZSAUNSN_SG)
+    IF( COUNT(GELEC(:,4)) .GT. 0) THEN
 !
+! compute the coefficients for S-G collisions
+      CALL ELEC_INI_NI_SAP98 (ZRAR, ZDQRAR_SG)
+!
+      WHERE (ZDQRAR_SG(:) < 0.)
+        ZSAUNSK_SG(:) = XSKN
+        ZSAUNSM_SG(:) = XSMN
+        ZSAUNSN_SG(:) = XSNN
+      ENDWHERE
+    ENDIF
   END IF
 !
-!*      4.      Brooks et al. (1997) without anomalies 
+!*      4.      Brooks et al. (1997) without / with anomalies 
 !
-  IF (CNI_CHARGING == 'BSMP1') THEN
-    ZRAR(:)    = 0.
-    ZVGMEAN(:) = 0.
-    ZVSMEAN(:) = 0.
+  IF (CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2') THEN
+
+    ALLOCATE (GSAUN(IMICRO))
 !
 ! compute the critical rime accretion rate
     WHERE (ZZT(:) > (XTT - 10.7))
@@ -4685,237 +4681,139 @@ IMPLICIT NONE
       ZRAR_CRIT(:) = 3.3
     END WHERE
 !
-    GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
+    GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
+                 ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
 !+++++++++ I - S collisions +++++++++
-    ZSAUNIK_IS(:) = 0.
-    ZSAUNSK_IS(:) = 0.
-    ZSAUNIM_IS(:) = 0.
-    ZSAUNIN_IS(:) = 0.
-    ZSAUNSM_IS(:) = 0.
-    ZSAUNSN_IS(:) = 0.
-    ZPECKQ_IS(:)  = 0.
+    ZDQRAR_IS(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IS(:) = XIMP
+    ZSAUNIN_IS(:) = XINP
+!
+    GSAUN(:) = .FALSE.
 !
 ! Compute the Rime Accretion Rate
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVSMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
-    END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
-!
-    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,1)
-!
-    CALL ELEC_INI_NI_BSMP1(ZRAR, ZPECKQ_IS, ZSAUNIK_IS, ZSAUNSK_IS,  &
-                           ZSAUNIM_IS, ZSAUNIN_IS, ZSAUNSM_IS, &
-                           ZSAUNSN_IS)
-!
-!+++++++++ I - G collisions +++++++++
-    ZSAUNIK_IG(:) = 0.
-    ZSAUNSK_IG(:) = 0.
-    ZSAUNIM_IG(:) = 0.
-    ZSAUNIN_IG(:) = 0.
-    ZSAUNSM_IG(:) = 0.
-    ZSAUNSN_IG(:) = 0.
-    ZPECKQ_IG(:)  = 0.
-!
-! Compute the Rime Accretion Rate
-    WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUS, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVGMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
-    END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
-!
-    GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,2)
-!
-    CALL ELEC_INI_NI_BSMP1(ZRAR, ZPECKQ_IG, ZSAUNIK_IG, ZSAUNSK_IG,  &
-                           ZSAUNIM_IG, ZSAUNIN_IG, ZSAUNSM_IG, &
-                           ZSAUNSN_IG)
-!
-!+++++++++ S - G collisions +++++++++
-    ZSAUNIK_SG(:) = 0.
-    ZSAUNSK_SG(:) = 0.
-    ZSAUNIM_SG(:) = 0.
-    ZSAUNIN_SG(:) = 0.
-    ZSAUNSM_SG(:) = 0.
-    ZSAUNSN_SG(:) = 0.
-    ZPECKQ_SG(:)  = 0.
-!
-! Compute the Rime Accretion Rate
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0. .AND. ZLBDAG(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUS, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
-    END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
-!
-    GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,3)
-!
-    CALL ELEC_INI_NI_BSMP1(ZRAR, ZPECKQ_SG, ZSAUNIK_SG, ZSAUNSK_SG,  &
-                           ZSAUNIM_SG, ZSAUNIN_SG, ZSAUNSM_SG, &
-                           ZSAUNSN_SG)
-  END IF
-!
-!
-!*      5.      Brooks et al. (1997) with anomalies
-!
-  IF (CNI_CHARGING == 'BSMP2') THEN
-    ZRAR(:)    = 0.
-    ZVGMEAN(:) = 0.
+    ZRAR(:) = 0.
     ZVSMEAN(:) = 0.
 !
-! compute the critical rime accretion rate 
-    WHERE (ZZT(:) > (XTT - 10.7))
-      ZRAR_CRIT(:) = 0.66
-    END WHERE
-    WHERE (ZZT(:) <= (XTT - 10.7) .AND. ZZT(:) >= (XTT - 23.7))
-      ZRAR_CRIT(:) = -1.47 - 0.2 * (ZZT(:) - XTT)
-    END WHERE
-    WHERE (ZZT(:) < (XTT - 23.7) .AND. ZZT(:) > (XTT - 40.))
-      ZRAR_CRIT(:) = 3.3
-    END WHERE
-!
-    GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
-    GELEC(:,1) = GELEC(:,3) .AND.                                              &
-                 ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
-    GELEC(:,2) = GELEC(:,3) .AND.                                              &
-                 ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
-    GELEC(:,3) = GELEC(:,3) .AND.                                              &
-                 ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
-!
-!+++++++++ I - S collisions +++++++++
-    ZSAUNIK_IS(:) = 0.
-    ZSAUNSK_IS(:) = 0.
-    ZSAUNIM_IS(:) = 0.
-    ZSAUNIN_IS(:) = 0.
-    ZSAUNSM_IS(:) = 0.
-    ZSAUNSN_IS(:) = 0.
-    ZPECKQ_IS(:)  = 0.
-!   
-! Compute the Rime Accretion Rate
     WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
+      ZVSMEAN(:) = XVSCOEF * ZRHOCOR(:) * ZLBDAS(:)**(-XDS)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVSMEAN(:) * 1.E3
-    ELSEWHERE    
-      ZRAR(:) = 0.
-    END WHERE 
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
-!   
-    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,1)
+    END WHERE
 !
-    CALL ELEC_INI_NI_BSMP2(ZRAR, ZPECKQ_IS, ZSAUNIK_IS, ZSAUNSK_IS,  &
-                           ZSAUNIM_IS, ZSAUNIN_IS, ZSAUNSM_IS, &
-                           ZSAUNSN_IS)
+    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.1 
+    GSAUN(:) = GELEC(:,1)
+    IGSAUN = COUNT (GSAUN(:))
+!
+    IF (IGSAUN .GT. 0) THEN
+      ZEW(:) = ZRAR(:) / 3.
+!
+      CALL ELEC_INI_NI_SAUNQ (ZEW, ZDQRAR_IS)
+!
+      WHERE (ZDQRAR_IS(:) < 0.)
+        ZSAUNIM_IS(:) = XIMN
+        ZSAUNIN_IS(:) = XINN
+      ENDWHERE
+    ENDIF
 !
 !+++++++++ I - G collisions +++++++++
-    ZSAUNIK_IG(:) = 0.
-    ZSAUNSK_IG(:) = 0.
-    ZSAUNIM_IG(:) = 0.
-    ZSAUNIN_IG(:) = 0.
-    ZSAUNSM_IG(:) = 0.
-    ZSAUNSN_IG(:) = 0.
-    ZPECKQ_IG(:)  = 0.
+    ZDQRAR_IG(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IG(:) = XIMP
+    ZSAUNIN_IG(:) = XINP
+!
+    GSAUN(:) = .FALSE.
 !
 ! Compute the Rime Accretion Rate
+    ZRAR(:) = 0.
+    ZVGMEAN(:) = 0.
+!
     WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) * &
-                   MOMG(XALPHAG, XNUG, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
+      ZVGMEAN(:) = XVGCOEF * ZRHOCOR(:) * ZLBDAG(:)**(-XDG)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVGMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
     GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,2)
+    GSAUN(:) = GELEC(:,2)
+    IGSAUN = COUNT (GSAUN(:))
 !
-    CALL ELEC_INI_NI_BSMP2(ZRAR, ZPECKQ_IG, ZSAUNIK_IG, ZSAUNSK_IG,  &
-                                 ZSAUNIM_IG, ZSAUNIN_IG, ZSAUNSM_IG, &
-                                 ZSAUNSN_IG)
+    IF (IGSAUN .GT. 0) THEN
+      ZEW(:) = ZRAR(:) / 3.
+      CALL ELEC_INI_NI_SAUNQ (ZEW, ZDQRAR_IG)
+!
+      WHERE (ZDQRAR_IG(:) < 0.)
+        ZSAUNIM_IG(:) = XIMN
+        ZSAUNIN_IG(:) = XINN
+      ENDWHERE
+    ENDIF
 !
 !+++++++++ S - G collisions +++++++++
-    ZSAUNIK_SG(:) = 0.
-    ZSAUNSK_SG(:) = 0.
-    ZSAUNIM_SG(:) = 0.
-    ZSAUNIN_SG(:) = 0.
-    ZSAUNSM_SG(:) = 0.
-    ZSAUNSN_SG(:) = 0.
-    ZPECKQ_SG(:)  = 0.
+    ZDQRAR_SG(:)  = 0.
+!
+! positive case is the default value
+    ZSAUNSK_SG(:) = XSKP
+    ZSAUNSM_SG(:) = XSMP
+    ZSAUNSN_SG(:) = XSNP
+!
+    GSAUN(:) = .FALSE.
 !
 ! Compute the Rime Accretion Rate
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0. .AND. ZLBDAG(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUG, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
-      ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
+    ZRAR(:) = 0.
+!
+    WHERE (ZVSMEAN(:) > 0. .AND. ZVGMEAN(:) > 0.)
+      ZRAR(:) = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
     GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.1 
-    GELEC(:,4) = GELEC(:,3)
+    GSAUN(:) = GELEC(:,3)
+    IGSAUN = COUNT (GSAUN(:))
 !
-    CALL ELEC_INI_NI_BSMP2(ZRAR, ZPECKQ_SG, ZSAUNIK_SG, ZSAUNSK_SG,  &
-                           ZSAUNIM_SG, ZSAUNIN_SG, ZSAUNSM_SG, &
-                           ZSAUNSN_SG)
+    IF (IGSAUN .GT. 0) THEN
+      ZEW(:) = ZRAR(:) / 3.
+      CALL ELEC_INI_NI_SAUNQ (ZEW, ZDQRAR_SG)
+!
+      WHERE (ZDQRAR_SG(:) < 0.)
+        ZSAUNSK_SG(:) = XSKN
+        ZSAUNSM_SG(:) = XSMN
+        ZSAUNSN_SG(:) = XSNN
+      ENDWHERE
+    ENDIF
+!
+    DEALLOCATE( GSAUN )
   END IF
 !
 !
-!*      6.      Takahashi (1978)
+!*      5.      Takahashi (1978)
 !
   IF (CNI_CHARGING == 'TAKAH') THEN
-    ZDQTAKA(:) = 0.
+    ZDQLWC(:) = 0.
 !
     ZEW(:) = ZRCT(:) * ZRHODREF(:) * 1.E3      ! (g m^-3)
-    XEW(:,:,:) = UNPACK(ZEW(:), MASK=GMICRO, FIELD=0.)
 !
     GELEC(:,3) = ZZT(:) > (XTT - 40.) .AND. ZZT(:) <= XTT .AND. &
                  ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
     ALLOCATE (GTAKA(IMICRO))
     GTAKA(:) = .FALSE.
@@ -4925,564 +4823,358 @@ IMPLICIT NONE
     IGTAKA = COUNT (GTAKA(:))
 !
     IF (IGTAKA > 0) THEN
-      ALLOCATE ( IVEC1(IGTAKA) )
-      ALLOCATE ( IVEC2(IGTAKA) )
-      ALLOCATE ( ZVEC1(IGTAKA) )
-      ALLOCATE ( ZVEC2(IGTAKA) )
-      ALLOCATE ( ZDQTAKA_OPT(IGTAKA) )
-      ALLOCATE ( ITEST_TAK(IGTAKA) )
-      ZDQTAKA_OPT(:) = 0.
-      IVEC1(:) = 0
-      IVEC2(:) = 0
-      ITEST_TAK(:) = 0
-!
-      ZVEC1(:) = PACK( ZZT(:), MASK=GTAKA )
-      ZVEC2(:) = PACK( ZEW(:), MASK=GTAKA )
-      ZDQTAKA_OPT(:) = PACK( ZDQTAKA(:), MASK=GTAKA )
-!
-! Temperature index (0C --> -40C)
-      ZVEC1(1:IGTAKA) = MAX( 1.00001, MIN( FLOAT(NIND_TEMP)-0.00001, &
-                                         (ZVEC1(1:IGTAKA) - XTT - 1.)/(-1.) ) )
-      IVEC1(1:IGTAKA) = INT( ZVEC1(1:IGTAKA) )
-      ZVEC1(1:IGTAKA) = ZVEC1(1:IGTAKA) - FLOAT(IVEC1(1:IGTAKA))
-!
-! LWC index (0.01 g.m^-3 --> 10 g.m^-3)
-      WHERE (ZVEC2(:) >= 0.01 .AND. ZVEC2(:) <= 0.1 .AND. ITEST_TAK(:) == 0)
-        ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(10)-0.00001, &
-                                      ZVEC2(:) * 100. ))
-        IVEC2(:) = INT(ZVEC2(:))
-        ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
-        ITEST_TAK(:) = 1
-      ENDWHERE
-!
-      WHERE (ZVEC2(:) > 0.1 .AND. ZVEC2(:) <= 1. .AND. ITEST_TAK(:) == 0)
-        ZVEC2(:) = MAX( 10.00001, MIN( FLOAT(19)-0.00001, &
-                                       ZVEC2(:) * 10. + 9. ) )
-        IVEC2(:) = INT(ZVEC2(:))
-        ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
-       ITEST_TAK(:) = 1
-      ENDWHERE
-!
-      WHERE ((ZVEC2(:) > 1.) .AND. (ZVEC2(:) <= 10.) .AND. ITEST_TAK(:) == 0)
-        ZVEC2(:) = MAX( 19.00001, MIN( FLOAT(NIND_LWC)-0.00001, &
-                                       ZVEC2(:) + 18. ) )
-        IVEC2(:) = INT(ZVEC2(:))
-        ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
-        ITEST_TAK(:) = 1
-      ENDWHERE
-!
-! Interpolate XMANSELL
-      ZDQTAKA_OPT(:) = BI_LIN_INTP_V( XMANSELL, IVEC2, IVEC1, ZVEC2, ZVEC1, &
-                                      IGTAKA )
-      ZDQTAKA(:) = UNPACK( ZDQTAKA_OPT(:), MASK=GTAKA, FIELD=0.0 )
-!
-      DEALLOCATE( IVEC1 )
-      DEALLOCATE( IVEC2 )
-      DEALLOCATE( ZVEC1 )
-      DEALLOCATE( ZVEC2 )
-      DEALLOCATE( ZDQTAKA_OPT )
-      DEALLOCATE( ITEST_TAK )
+      CALL ELEC_INI_NI_TAKAH(ZEW, ZDQLWC, XMANSELL)
     ENDIF
 !
     DEALLOCATE( GTAKA )
   ENDIF
 !
 !
-!*      7.    Takahashi with EW (Tsenova and Mitzeva, 2009)
+!*      6.    Takahashi with EW (Tsenova and Mitzeva, 2009)
 !
   IF (CNI_CHARGING == 'TEEWC') THEN
-    ZBTRMQ(:) = 0.
-    ZEW(:)    = 0.
+    ZDQLWC(:) = 0.
+!
+! positive case is the default value
+    ZFQIAGGS(:)   = XFQIAGGSP_TAK
+    ZFQIDRYGBS(:) = XFQIDRYGBSP_TAK
+    ZLBQSDRYGB1S(:) = XLBQSDRYGB1SP
+    ZLBQSDRYGB2S(:) = XLBQSDRYGB2SP
+    ZLBQSDRYGB3S(:) = XLBQSDRYGB3SP
+    ZSAUNIM(:)  = XIMP     !3.76
+    ZSAUNIN(:)  = XINP     !2.5
+    ZSAUNSK(:)  = XSKP_TAK !6.5
+    ZSAUNSM(:)  = XSMP     !0.44
+    ZSAUNSN(:)  = XSNP     !2.5
 !
 ! Compute the effective water content
+    ZEW(:) = 0.
+!
     WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
       ZEW(:) = 0.8 * ZRHODREF(:) * ZRCT(:) * 1.E3 
-    ELSEWHERE
-      ZEW(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZEW(:), MASK=GMICRO, FIELD=0.)
 !
     GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT .AND.  &
                  ZEW(:) >= 0.01 .AND. ZEW(:) <= 10.
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
-    GELEC(:,4) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
-! Eq. 1: >0
-   WHERE ( GELEC(:,4) .AND. ZZT(:) > (XTT - 10.) .AND. ZEW(:) <= 1.6)
-      ZBTRMQ(:) = 146.981 * ZEW(:) - 116.37 * ZEW(:)**2   &
-                + 29.76 * ZEW(:)**3                       &
-                - 0.03 * (ZZT(:) - XTT)**3  * ZEW(:)      &
-                - 2.58 * (ZZT(:) - XTT)                   &
-                - 0.21 * (ZZT(:) - XTT)**3  * ZEW(:)**3   &
-                + 0.36 * (ZZT(:) - XTT)**3  * ZEW(:)**2   &
-                + 0.15 * (ZZT(:) - XTT)**2                &
-                + 2.92 * (ZZT(:) - XTT)     * ZEW(:)**3   &
-                - 4.22 * (ZZT(:) - XTT)     * ZEW(:) - 8.506
-      ZBTRMQ(:) = MAX( 0., ZBTRMQ(:) * 1.E-15)
-    ENDWHERE
+    ALLOCATE (GTAKA(IMICRO))
+    GTAKA(:) = .FALSE.
 !
-!  Eq. 2: >0
-    WHERE (GELEC(:,4) .AND. ZZT(:) > (XTT - 10.) .AND. &
-           ZEW(:) > 1.6 .AND. ZEW(:) <= 8.)
-      ZBTRMQ(:) = 4.179 * (ZZT(:) - XTT)                &
-                - 0.005 * (ZZT(:) - XTT)**2 * ZEW(:)**2 &
-                + 0.916 * ZEW(:)**2                     &
-                - 1.333 * (ZZT(:) - XTT)    * ZEW(:)    &
-                - 7.465 * ZEW(:)                        &
-                + 0.109 * (ZZT(:) - XTT)    * ZEW(:)**2 &
-                + 0.001 * (ZZT(:) - XTT)**2 * ZEW(:)**3 &
-                - 0.035 * ZEW(:)**3  + 50.84454
-      ZBTRMQ(:) = MAX( 0., ZBTRMQ(:) * 1.E-15)
-    ENDWHERE
+! For temperature lower than -30C and higher than -40C, value of q at -30C
+    GTAKA(:) = GELEC(:,1) .OR. GELEC(:,2) .OR. GELEC(:,3)
+    IGTAKA = COUNT (GTAKA(:))
 !
-!  Eq. 8: > 0
-    WHERE ( GELEC(:,4) .AND. ZEW(:) <= 0.4 .AND. &
-            ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.))
-      ZBTRMQ(:) = - 3.3515 * (ZZT(:) - XTT)                &
-                  + 95.957 * (ZZT(:) - XTT)    * ZEW(:)**2 &
-                  + 511.83 * ZEW(:)                        &
-                  + 17.448 * (ZZT(:) - XTT)**2 * ZEW(:)**3 &
-                  - 0.0007 * (ZZT(:) - XTT)**3             &
-                  + 20.570 * (ZZT(:) - XTT)    * ZEW(:)    &
-                  + 0.1656 * (ZZT(:) - XTT)**2 * ZEW(:)    &
-                  + 0.4954 * (ZZT(:) - XTT)**3 * ZEW(:)**3 &
-                  - 0.0975 * (ZZT(:) - XTT)**3 * ZEW(:)**2 &
-                  + 67.457 * (ZZT(:) - XTT)    * ZEW(:)**3 &
-                  - 0.1066 * (ZZT(:) - XTT)**2 - 24.5715
-      ZBTRMQ(:) = MAX( 0., ZBTRMQ(:) * 1.E-15)
-    ENDWHERE
+    IF (IGTAKA > 0) THEN
+      CALL ELEC_INI_NI_TAKAH(ZEW, ZDQLWC, XTAKA_TM)
 !
-! Eq. 9: < 0
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.) .AND. &
-           ZEW(:) > 0.4 .AND. ZEW(:) <= 3.2)
-      ZBTRMQ(:) = - 1.5676 * (ZZT(:) - XTT) * ZEW(:)    &
-                + 0.2484 * (ZZT(:) - XTT)   * ZEW(:)**3 &
-                + 0.0112 * (ZZT(:) - XTT)**3            &
-                + 19.199 * (ZZT(:) - XTT)               &
-                + 0.8051 * (ZZT(:) - XTT)**2            &
-                - 83.4 * ZEW(:)                         &
-                + 15.4 * ZEW(:)**2                      &
-                + 5.97 * ZEW(:)**3 + 167.9278
-      ZBTRMQ(:) = MIN( 0., ZBTRMQ(:) * 1.E-15)
-    ENDWHERE
+      WHERE (ZDQLWC(:) < 0.)
+        ZFQIAGGS(:)   = XFQIAGGSN_TAK
+        ZFQIDRYGBS(:) = XFQIDRYGBSN_TAK
+        ZLBQSDRYGB1S(:) = XLBQSDRYGB1SN
+        ZLBQSDRYGB2S(:) = XLBQSDRYGB2SN
+        ZLBQSDRYGB3S(:) = XLBQSDRYGB3SN
+        ZSAUNIM(:) = XIMN      !2.54
+        ZSAUNIN(:) = XINN      !2.8
+        ZSAUNSK(:) = XSKN_TAK  !2.0
+        ZSAUNSM(:) = XSMN      !0.5
+        ZSAUNSN(:) = XSNN      !2.8
+      ENDWHERE
+    ENDIF
 !
-!  Eq. 10: > 0
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.) .AND. &
-           ZEW(:) > 3.2 .AND. ZEW(:) <= 8.)
-      ZBTRMQ(:) = 4.2127 * (ZZT(:) - XTT)              &
-                - 0.8311 * (ZZT(:) - XTT) * ZEW(:)     &
-                + 0.0670 * (ZZT(:) - XTT) * ZEW(:) **2 &
-                + 0.0042 * (ZZT(:) - XTT)**2 * ZEW(:) + 40.9642
-      ZBTRMQ(:) = MAX( 0., ZBTRMQ(:) * 1.E-15)
-    ENDWHERE
-  END IF
+    DEALLOCATE( GTAKA )
+  ENDIF
 !
 !
-!*      8.    Takahashi with RAR (Tsenova and Mitzeva, 2011)
+!*      7.    Takahashi with RAR (Tsenova and Mitzeva, 2011)
 !
   IF (CNI_CHARGING == 'TERAR') THEN
-    ZRAR(:)    = 0.
-    ZVGMEAN(:) = 0.
-    ZVSMEAN(:) = 0.
+!
+    ALLOCATE (GTAKA(IMICRO))
 !
     GELEC(:,3) = ZZT(:) >= (XTT - 40.) .AND. ZZT(:) <= XTT
     GELEC(:,1) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRST(:) > XRTMIN_ELEC(5) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAS(:) > 0. .AND. ZLBDAS(:) < XLBDAS_MAXE
     GELEC(:,2) = GELEC(:,3) .AND.                                              &
                  ZRIT(:) > XRTMIN_ELEC(4) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0.
+                 ZCIT(:) > 0.0 .AND. ZLBDAG(:) > 0. .AND. ZLBDAG(:) < XLBDAG_MAXE
     GELEC(:,3) = GELEC(:,3) .AND.                                              &
                  ZRST(:) > XRTMIN_ELEC(5) .AND. ZRGT(:) > XRTMIN_ELEC(6) .AND. &
-                 ZLBDAS(:) > 0. .AND. ZLBDAG(:) > 0.
+                 ZLBDAS(:) > 0.           .AND. ZLBDAS(:) < XLBDAS_MAXE  .AND. &
+                 ZLBDAG(:) > 0.           .AND. ZLBDAG(:) < XLBDAG_MAXE
 !
 !+++++++++ I - S collisions +++++++++
-    ZBTRMQ_IS(:) = 0.
+    ZDQRAR_IS(:) = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IS(:) = XIMP
+    ZSAUNIN_IS(:) = XINP
+!
+    GTAKA(:) = .FALSE.
 ! 
 ! Compute the Rime Accretion Rate
+    ZRAR(:) = 0.
+    ZVSMEAN(:) = 0.
+!
     WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
+      ZVSMEAN(:) = XVSCOEF * ZRHOCOR(:) * ZLBDAS(:)**(-XDS)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVSMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
-    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 90.
-    GELEC(:,4) = GELEC(:,1)
+    GELEC(:,1) = GELEC(:,1) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 80.
+    GTAKA(:) = GELEC(:,1)
 !
-    CALL ELEC_INI_NI_TERAR(ZRAR, ZBTRMQ_IS)
+    IGTAKA = COUNT (GTAKA(:))
+!
+    IF (IGTAKA > 0) THEN
+      ZEW(:) = ZRAR(:) / 8.
+      CALL ELEC_INI_NI_TAKAH(ZEW, ZDQRAR_IS, XTAKA_TM)
+!
+      WHERE (ZDQRAR_IS(:) < 0.)
+        ZSAUNIM_IS(:) = XIMN
+        ZSAUNIN_IS(:) = XINN
+      ENDWHERE
+    END IF
 !
 !
 !+++++++++ I - G collisions +++++++++
-    ZBTRMQ_IG(:) = 0.
+    ZDQRAR_IG(:) = 0.
+!
+! positive case is the default value
+    ZSAUNIM_IG(:) = XIMP
+    ZSAUNIN_IG(:) = XINP
+!
+    GTAKA(:) = .FALSE.
 ! 
 ! Compute the Rime Accretion Rate
+    ZRAR(:) = 0.
+    ZVGMEAN(:) = 0.
+!
     WHERE (ZLBDAG(:) > 0. .AND. ZRCT(:) > 0.)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUS, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
+      ZVGMEAN(:) = XVGCOEF * ZRHOCOR(:) * ZLBDAG(:)**(-XDG)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ZVGMEAN(:) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
-    GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 90.
-    GELEC(:,4) = GELEC(:,2)
+    GELEC(:,2) = GELEC(:,2) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 80.
+    GTAKA(:) = GELEC(:,2)
 !
-    CALL ELEC_INI_NI_TERAR(ZRAR, ZBTRMQ_IG)
+    IGTAKA = COUNT (GTAKA(:))
 !
+    IF (IGTAKA > 0) THEN
+      ZEW(:) = ZRAR(:) / 8.
+      CALL ELEC_INI_NI_TAKAH(ZEW, ZDQRAR_IG, XTAKA_TM)
+!
+      WHERE (ZDQRAR_IG(:) < 0.)
+        ZSAUNIM_IG(:) = XIMN
+        ZSAUNIN_IG(:) = XINN
+      ENDWHERE
+    ENDIF
 !
 !+++++++++ S - G collisions +++++++++
-    ZBTRMQ_SG(:) = 0.
+    ZDQRAR_SG(:) = 0.
+!
+! positive case is the default value
+    ZSAUNSK_SG(:) = XSKP_TAK
+    ZSAUNSM_SG(:) = XSMP
+    ZSAUNSN_SG(:) = XSNP
+!
+    GTAKA(:) = .FALSE.
 !
 ! Compute the Rime Accretion Rate
-    WHERE (ZLBDAS(:) > 0. .AND. ZRCT(:) > 0. .AND. ZLBDAG(:) > 0.)
-      ZVSMEAN(:) = XCS * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS) * &
-                   ZLBDAS(:)**(-XDS)
-      ZVGMEAN(:) = XCG * XINISAP * ZRHODREF(:)**(-XCEXVT) *                  &
-                   MOMG(XALPHAG, XNUS, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG) * &
-                   ZLBDAG(:)**(-XDG)
+    ZRAR(:) = 0.
+!
+    WHERE (ZVSMEAN(:) > 0. .AND. ZVGMEAN(:) > 0.)
       ZRAR(:)    = 0.8 * ZRHODREF(:) * ZRCT(:) * ABS(ZVGMEAN(:) - ZVSMEAN(:)) * 1.E3
-    ELSEWHERE
-      ZRAR(:) = 0.
     END WHERE
-    XEW(:,:,:) = UNPACK(ZRAR(:), MASK=GMICRO, FIELD=0.)
 !
-    GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 90
-    GELEC(:,4) = GELEC(:,3)
-
-    CALL ELEC_INI_NI_TERAR(ZRAR, ZBTRMQ_SG)
+    GELEC(:,3) = GELEC(:,3) .AND. ZRAR(:) > 0.01 .AND. ZRAR(:) <= 80
+    GTAKA(:) = GELEC(:,3)
+    IGTAKA = COUNT (GTAKA(:))
 !
+    IF (IGTAKA > 0) THEN
+      ZEW(:) = ZRAR(:) / 8.
+      CALL ELEC_INI_NI_TAKAH(ZEW, ZDQRAR_SG, XTAKA_TM)
+!
+      WHERE (ZDQRAR_SG(:) < 0.)
+        ZSAUNSK_SG(:) = XSKN_TAK
+        ZSAUNSM_SG(:) = XSMN
+        ZSAUNSN_SG(:) = XSNN
+      ENDWHERE
+    ENDIF
+!
+    DEALLOCATE( GTAKA )
   END IF
 !
 END SUBROUTINE ELEC_INI_NI_PROCESS
 ! 
 !-------------------------------------------------------------------------------
 !
-  SUBROUTINE ELEC_INI_NI_SAP98(ZRAR, ZPECKQ_AUX, ZSAUNIK_AUX, ZSAUNSK_AUX,  &
-                               ZSAUNIM_AUX, ZSAUNIN_AUX, ZSAUNSM_AUX, &
-                               ZSAUNSN_AUX)
+  SUBROUTINE ELEC_INI_NI_SAP98(ZRAR, ZDQRAR_AUX)
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(IMICRO) :: ZRAR
-REAL, DIMENSION(IMICRO) :: ZPECKQ_AUX   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(IMICRO) :: ZSAUNIK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIM_AUX  !  d_i exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIN_AUX  !  v_g/s-v_i________________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSM_AUX  !  d_s exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSN_AUX  !  v_g-v_s _________________________
+REAL, DIMENSION(:), INTENT(IN)    :: ZRAR
+REAL, DIMENSION(:), INTENT(INOUT) :: ZDQRAR_AUX   ! q= f(RAR,T) in Saunders and
+                                                  ! Peck's equation
 !
-    ZPECKQ_AUX(:) = 0.
+  ZDQRAR_AUX(:) = 0.
 !
-! region positive : Mansell et al., 2005
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:))
-      ZPECKQ_AUX(:) = 6.74 * (ZRAR(:) - ZRAR_CRIT(:)) * 1.E-15
-      ZPECKQ_AUX(:) = MAX(0., ZPECKQ_AUX(:))
-    ENDWHERE
+! positive region : Mansell et al., 2005
+  WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:))
+    ZDQRAR_AUX(:) = MAX(0., 6.74 * (ZRAR(:) - ZRAR_CRIT(:)) * 1.E-15)
+  ENDWHERE
 !
-! region S7 negative : Mansell et al. 2005
-    WHERE (GELEC(:,4) .AND. ZRAR(:) < ZRAR_CRIT(:))
-      ZPECKQ_AUX(:) = 3.9 * (ZRAR_CRIT(:) - 0.1) *                 &
-                    (4. * ((ZRAR(:) - (ZRAR_CRIT(:) + 0.1) / 2.) / &
-                     (ZRAR_CRIT(:) - 0.1))**2 - 1.) * 1.E-15
-      ZPECKQ_AUX(:) = MIN(0., ZPECKQ_AUX(:))
-    ENDWHERE
-!
-    WHERE (ZPECKQ_AUX(:) > 0.)
-      ZSAUNIK_AUX(:) = XIKP
-      ZSAUNIM_AUX(:) = XIMP
-      ZSAUNIN_AUX(:) = XINP
-      ZSAUNSK_AUX(:) = XSKP
-      ZSAUNSM_AUX(:) = XSMP
-      ZSAUNSN_AUX(:) = XSNP
-    ENDWHERE
-!
-    WHERE (ZPECKQ_AUX(:) < 0.)
-      ZSAUNIK_AUX(:) = XIKN
-      ZSAUNIM_AUX(:) = XIMN
-      ZSAUNIN_AUX(:) = XINN
-      ZSAUNSK_AUX(:) = XSKN
-      ZSAUNSM_AUX(:) = XSMN
-      ZSAUNSN_AUX(:) = XSNN
-    ENDWHERE
+! negative region : Mansell et al. 2005
+  WHERE (GELEC(:,4) .AND. ZRAR(:) < ZRAR_CRIT(:))
+    ZDQRAR_AUX(:) = MIN(0., 3.9 * (ZRAR_CRIT(:) - 0.1) *                   &
+                           (4.0 * ((ZRAR(:) - (ZRAR_CRIT(:) + 0.1) / 2.) / &
+                                  (ZRAR_CRIT(:) - 0.1))**2 - 1.) * 1.E-15)
+  ENDWHERE
 !
 END SUBROUTINE ELEC_INI_NI_SAP98
 !
 !-------------------------------------------------------------------------------
 !
-  SUBROUTINE ELEC_INI_NI_BSMP1(ZRAR, ZPECKQ_AUX, ZSAUNIK_AUX, ZSAUNSK_AUX,  &
-                               ZSAUNIM_AUX, ZSAUNIN_AUX, ZSAUNSM_AUX, &
-                               ZSAUNSN_AUX)
+  SUBROUTINE ELEC_INI_NI_SAUNQ(ZEW, ZDQLWC_AUX)
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(IMICRO) :: ZRAR
-REAL, DIMENSION(IMICRO) :: ZPECKQ_AUX   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(IMICRO) :: ZSAUNIK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIM_AUX  !  d_i exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIN_AUX  !  v_g/s-v_i________________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSM_AUX  !  d_s exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSN_AUX  !  v_g-v_s _________________________
+REAL, DIMENSION(:), INTENT(IN)    :: ZEW
+REAL, DIMENSION(:), INTENT(INOUT) :: ZDQLWC_AUX  ! q= f(RAR or EW,T) in Saunders
+                                                 !... equation
 !
-! region S4 : positive
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:) .AND. &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) >= (XTT - 23.74))
-      ZPECKQ_AUX(:) = MAX(0.,(6.74 * ZRAR(:) + 1.36 * (ZZT(:) - XTT) + 10.05)*1.E-15)
-    ENDWHERE
+! For temperature lower than -30C and higher than -40C, value of q at -30C
 !
-! region S1 : positive --> linear interpolation
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:) .AND. &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT)
-      ZPECKQ_AUX(:) = MAX(0., -(0.92 * ZRAR(:) + 0.007) * (ZZT(:) - XTT)*1.E-15)
-    ENDWHERE
+  ALLOCATE ( IVEC1(IGSAUN) )
+  ALLOCATE ( IVEC2(IGSAUN) )
+  ALLOCATE ( ZVEC1(IGSAUN) )
+  ALLOCATE ( ZVEC2(IGSAUN) )
+  ALLOCATE ( ZDQLWC_OPT(IGSAUN) )
 !
-! region S8 : positive
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:) .AND. &
-           ZZT(:) < (XTT - 23.74) .AND. ZZT(:) >= (XTT - 40.0)) 
-      ZPECKQ_AUX(:) = MAX(0., (6.74 * ZRAR(:) - 22.24) * 1.E-15)
-    ENDWHERE
+  ZDQLWC_OPT(:) = 0.
+  IVEC1(:) = 0
+  IVEC2(:) = 0
 !
-! region S7 : negative
-    WHERE (GELEC(:,4) .AND.                                        &
-         ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) >= (XTT - 40.0) .AND. &
-         ZRAR(:) < ZRAR_CRIT(:) .AND. ZRAR(:) > 0.1)
-      ZPECKQ_AUX(:) = (3.02 - 10.59 * ZRAR(:) + 2.95 * ZRAR(:)**2) * 1.E-15
-      ZPECKQ_AUX(:) = MIN( 0., ZPECKQ_AUX(:))
-    ENDWHERE
+  ZVEC1(:) = PACK( ZZT(:), MASK=GSAUN(:))
+  ZVEC2(:) = PACK( ZEW(:), MASK=GSAUN(:))
+  ZDQLWC_OPT(:) = PACK( ZDQLWC_AUX(:), MASK=GSAUN )
 !
-! region S1 : negative --> linear interpolation
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZRAR(:) < ZRAR_CRIT(:) .AND. ZRAR(:) > 0.1)
-      ZPECKQ_AUX(:) = (-0.41 + 1.44 * ZRAR(:) - 0.4 * ZRAR(:)**2) * &
-                      (ZZT(:) - XTT) * 1.E-15
-      ZPECKQ_AUX(:) = MIN( 0., ZPECKQ_AUX(:))
-    ENDWHERE
+! Temperature index (0C --> -40C)
+  ZVEC1(1:IGSAUN) = MAX( 1.00001, MIN( FLOAT(NIND_TEMP)-0.00001, &
+                                     (ZVEC1(1:IGSAUN) - XTT - 1.)/(-1.) ) )
+  IVEC1(1:IGSAUN) = INT( ZVEC1(1:IGSAUN) )
+  ZVEC1(1:IGSAUN) = ZVEC1(1:IGSAUN) - FLOAT(IVEC1(1:IGSAUN))
 !
-    WHERE (ZPECKQ_AUX(:) > 0.)
-      ZSAUNIK_AUX(:)  = 4.92E13
-      ZSAUNIM_AUX(:)  = 3.76
-      ZSAUNIN_AUX(:)  = 2.5
-      ZSAUNSK_AUX(:)  = 52.8
-      ZSAUNSM_AUX(:)  = 0.44
-      ZSAUNSN_AUX(:)  = 2.5
-    ENDWHERE
+! LWC index (0.01 g.m^-3 --> 10 g.m^-3)
+  WHERE (ZVEC2(:) >= 0.01 .AND. ZVEC2(:) < 0.1)
+    ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(10)-0.00001, &
+                                  ZVEC2(:) * 100. ))
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
 !
-    WHERE (ZPECKQ_AUX(:) < 0.)
-      ZSAUNIK_AUX(:) = 5.25E8
-      ZSAUNIM_AUX(:) = 2.54
-      ZSAUNIN_AUX(:) = 2.8
-      ZSAUNSK_AUX(:) = 24.
-      ZSAUNSM_AUX(:) = 0.5
-      ZSAUNSN_AUX(:) = 2.8
-    ENDWHERE
+  WHERE (ZVEC2(:) >= 0.1 .AND. ZVEC2(:) < 1. .AND. IVEC2(:) == 0)
+    ZVEC2(:) = MAX( 10.00001, MIN( FLOAT(19)-0.00001, &
+                                   ZVEC2(:) * 10. + 9. ) )
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
 !
-END SUBROUTINE ELEC_INI_NI_BSMP1
+  WHERE ((ZVEC2(:) >= 1.) .AND. ZVEC2(:) <= 10.)
+    ZVEC2(:) = MAX( 19.00001, MIN( FLOAT(NIND_LWC)-0.00001, &
+                                   ZVEC2(:) + 18. ) )
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
+!
+! Interpolate XSAUNDER
+  ZDQLWC_OPT(:) = BI_LIN_INTP_V( XSAUNDER, IVEC2, IVEC1, ZVEC2, ZVEC1, &
+                                  IGSAUN )
+  ZDQLWC_AUX(:) = UNPACK( ZDQLWC_OPT(:), MASK=GSAUN, FIELD=0.0 )
+!
+  DEALLOCATE( IVEC1 )
+  DEALLOCATE( IVEC2 )
+  DEALLOCATE( ZVEC1 )
+  DEALLOCATE( ZVEC2 )
+  DEALLOCATE( ZDQLWC_OPT )
+!
+END SUBROUTINE ELEC_INI_NI_SAUNQ
 !
 !-------------------------------------------------------------------------------
-!   
-  SUBROUTINE ELEC_INI_NI_BSMP2(ZRAR, ZPECKQ_AUX, ZSAUNIK_AUX, ZSAUNSK_AUX,  &
-                               ZSAUNIM_AUX, ZSAUNIN_AUX, ZSAUNSM_AUX, &
-                               ZSAUNSN_AUX)
+!
+  SUBROUTINE ELEC_INI_NI_TAKAH(ZEW, ZDQTAKA_AUX, XTAKA_AUX)
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(IMICRO) :: ZRAR
-REAL, DIMENSION(IMICRO) :: ZPECKQ_AUX   ! q= f(RAR,T) in Saunders and Peck's equation
-REAL, DIMENSION(IMICRO) :: ZSAUNIK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSK_AUX  ! constant B _______________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIM_AUX  !  d_i exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNIN_AUX  !  v_g/s-v_i________________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSM_AUX  !  d_s exponent ____________________
-REAL, DIMENSION(IMICRO) :: ZSAUNSN_AUX  !  v_g-v_s _________________________
+REAL, DIMENSION(IMICRO) :: ZEW
+REAL, DIMENSION(IMICRO) :: ZDQTAKA_AUX
+REAL, DIMENSION(NIND_LWC+1,NIND_TEMP+1) :: XTAKA_AUX  !XMANSELL or XTAKA_TM)
 !
 !
-! region S4 : positive
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:) .AND. &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) >= (XTT - 23.74))
-      ZPECKQ_AUX(:) = MAX(0., (6.74 * ZRAR(:) + 1.36 * (ZZT(:) - XTT) + 10.05) * 1.E-15)
-    ENDWHERE
+  ALLOCATE ( IVEC1(IGTAKA) )
+  ALLOCATE ( IVEC2(IGTAKA) )
+  ALLOCATE ( ZVEC1(IGTAKA) )
+  ALLOCATE ( ZVEC2(IGTAKA) )
+  ALLOCATE ( ZDQTAKA_OPT(IGTAKA) )
+
+  ZDQTAKA_OPT(:) = 0.
+  IVEC1(:) = 0
+  IVEC2(:) = 0
 !
-! region S1 : positive --> linear interpolation
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > ZRAR_CRIT(:) .AND. &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT) 
-      ZPECKQ_AUX(:) = MAX(0., -(0.92 * ZRAR(:) + 0.007) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
+  ZVEC1(:) = PACK( ZZT(:), MASK=GTAKA )
+  ZVEC2(:) = PACK( ZEW(:), MASK=GTAKA )
+  ZDQTAKA_OPT(:) = PACK( ZDQTAKA_AUX(:), MASK=GTAKA )
 !
-! region S8 : positive
-    WHERE (GELEC(:,4) .AND. ZRAR(:) > 3.3 .AND. &
-           ZZT(:) < (XTT - 23.74) .AND. ZZT(:) > (XTT - 40.0))
-      ZPECKQ_AUX(:) = MAX(0., (6.74 * ZRAR(:) - 22.24) * 1.E-15)
-    ENDWHERE
+! Temperature index (0C --> -40C)
+  ZVEC1(1:IGTAKA) = MAX( 1.00001, MIN( FLOAT(NIND_TEMP)-0.00001, &
+                                     (ZVEC1(1:IGTAKA) - XTT - 1.)/(-1.) ) )
+  IVEC1(1:IGTAKA) = INT( ZVEC1(1:IGTAKA) )
+  ZVEC1(1:IGTAKA) = ZVEC1(1:IGTAKA) - FLOAT(IVEC1(1:IGTAKA))
 !
-! region S7 : negative
-    WHERE (GELEC(:,4) .AND.                                          &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) >= (XTT - 40.0) .AND. &
-           ZRAR(:) < ZRAR_CRIT(:) .AND. ZRAR(:) > 0.3 )
-      ZPECKQ_AUX(:) = MIN(0., (3.02 - 10.59 * ZRAR(:) + 2.95 * ZRAR(:)**2) * 1.E-15)
-    ENDWHERE
+! LWC index (0.01 g.m^-3 --> 10 g.m^-3)
+  WHERE (ZVEC2(:) >= 0.01 .AND. ZVEC2(:) < 0.1)
+    ZVEC2(:) = MAX( 1.00001, MIN( FLOAT(10)-0.00001, &
+                                  ZVEC2(:) * 100. ))
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
 !
-! region S2 : negative
-    WHERE (GELEC(:,4) .AND.                                         &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 16.0) .AND. &
-           ZRAR(:) > 0.078        .AND. ZRAR(:) < 0.42)
-      ZPECKQ_AUX(:) = MIN(0., (-104.8 * ZRAR(:) + 7.92) * 1.E-15)
-    ENDWHERE
+  WHERE (ZVEC2(:) >= 0.1 .AND. ZVEC2(:) < 1. .AND. IVEC2(:) == 0)
+    ZVEC2(:) = MAX( 10.00001, MIN( FLOAT(19)-0.00001, &
+                                   ZVEC2(:) * 10. + 9. ) )
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
 !
-! region S3 : negative
-    WHERE (GELEC(:,4) .AND.                                         &
-           ZZT(:) <= (XTT - 7.35) .AND. ZZT(:) > (XTT - 16.0) .AND. &
-           ZRAR(:) > 0.42         .AND. ZRAR(:) < 0.66)
-      ZPECKQ_AUX(:) = MIN(0., (139.8 * ZRAR(:) - 92.64) * 1.E-15)
-    ENDWHERE
+  WHERE (ZVEC2(:) >= 1. .AND. ZVEC2(:) <= 10.)
+    ZVEC2(:) = MAX( 19.00001, MIN( FLOAT(NIND_LWC)-0.00001, &
+                                   ZVEC2(:) + 18. ) )
+    IVEC2(:) = INT(ZVEC2(:))
+    ZVEC2(:) = ZVEC2(:) - FLOAT(IVEC2(:))
+  ENDWHERE
 !
-! region S5 : positive
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) < (XTT - 20.0) .AND. ZZT(:) > (XTT - 40.0) .AND. &
-           ZRAR(:) > 0.18        .AND. ZRAR(:) < 0.36)
-      ZPECKQ_AUX(:) = MAX(0., (680.6 * ZRAR(:) - 128.7) * 1.E-15)
-    ENDWHERE
+! Interpolate XMANSELL or XTAKA_TM
+  ZDQTAKA_OPT(:) = BI_LIN_INTP_V( XTAKA_AUX, IVEC2, IVEC1, ZVEC2, ZVEC1, &
+                                  IGTAKA )
+  ZDQTAKA_AUX(:) = UNPACK( ZDQTAKA_OPT(:), MASK=GTAKA, FIELD=0.0 )
 !
-! region S6 : positive
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) < (XTT - 20.0) .AND. ZZT(:) > (XTT - 40.0) .AND. &
-           ZRAR(:) > 0.36        .AND. ZRAR(:) < 0.48)
-      ZPECKQ_AUX(:) = MAX(0., (-966.74 * ZRAR(:) + 462.91) * 1.E-15)
-    ENDWHERE
+  DEALLOCATE( IVEC1 )
+  DEALLOCATE( IVEC2 )
+  DEALLOCATE( ZVEC1 )
+  DEALLOCATE( ZVEC2 )
+  DEALLOCATE( ZDQTAKA_OPT )
 !
-! region S1 : negative --> linear interpolation of S3
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZRAR(:) < 0.66        .AND. ZRAR(:) > 0.42)
-      ZPECKQ_AUX(:) = MIN(0., (-19.02 * ZRAR(:) + 12.6) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
-!
-! region S1 : negative --> linear interpolation of S2
-    WHERE (GELEC(:,4) .AND.                               &
-           ZZT(:) > (XTT - 7.35) .AND. ZZT(:) < XTT .AND. &
-           ZRAR(:) < 0.42          .AND. ZRAR(:) > 0.078)
-      ZPECKQ_AUX(:) = MIN(0., (14.27 * ZRAR(:) - 1.08) * (ZZT(:) - XTT) * 1.E-15)
-    ENDWHERE
-!
-    WHERE (ZPECKQ_AUX(:) > 0.)
-      ZSAUNIK_AUX(:)  = 4.92E13
-      ZSAUNIM_AUX(:)  = 3.76
-      ZSAUNIN_AUX(:)  = 2.5
-      ZSAUNSK_AUX(:)  = 52.8
-      ZSAUNSM_AUX(:)  = 0.44
-      ZSAUNSN_AUX(:)  = 2.5
-    ENDWHERE
-!
-    WHERE (ZPECKQ_AUX(:) < 0.)
-      ZSAUNIK_AUX(:) = 5.25E8
-      ZSAUNIM_AUX(:) = 2.54
-      ZSAUNIN_AUX(:) = 2.8
-      ZSAUNSK_AUX(:) = 24.
-      ZSAUNSM_AUX(:) = 0.5
-      ZSAUNSN_AUX(:) = 2.8
-    ENDWHERE
-!
-END SUBROUTINE ELEC_INI_NI_BSMP2
-!
-!-------------------------------------------------------------------------------
-!   
-  SUBROUTINE ELEC_INI_NI_TERAR(ZRAR, ZBTRMQ_AUX)
-!
-IMPLICIT NONE
-!
-REAL, DIMENSION(IMICRO) :: ZRAR
-REAL, DIMENSION(IMICRO) :: ZBTRMQ_AUX
-!
-!  Tsenova and Mitzeva, Eq. 1: > 0
-    WHERE (GELEC(:,4) .AND. ZZT(:) > (XTT - 10.) .AND. ZRAR(:) <= 12.8)
-      ZBTRMQ_AUX(:) = 18.37 * ZRAR(:) - 1.82 * ZRAR(:)**2    &
-                    + 6.E-2 * ZRAR(:)**3                     &
-                    - 4.E-3 * (ZZT(:) - XTT)**3 * ZRAR(:)    &
-                    - 2.581 * (ZZT(:) - XTT)                 &
-                    - 4.E-4 * (ZZT(:) - XTT)**3 * ZRAR(:)**3 &
-                    + 6.E-3 * (ZZT(:) - XTT)**3 * ZRAR(:)**2 &
-                    + 0.150 * (ZZT(:) - XTT)**2              &
-                    + 6.E-3 * (ZZT(:) - XTT)    * ZRAR(:)**3 &
-                    - 0.530 * (ZZT(:) - XTT)    * ZRAR(:) - 8.506
-      ZBTRMQ_AUX(:) = MAX(0., ZBTRMQ_AUX(:) * 1.E-15)
-    ENDWHERE
-!
-!  Eq. 2: > 0
-    WHERE (GELEC(:,4) .AND. ZZT(:) > (XTT - 10.) .AND. &
-           ZRAR(:) > 12.8 .AND. ZRAR(:) <= 64.)
-      ZBTRMQ_AUX(:) = 4.17900 * (ZZT(:) - XTT)               &
-                    - 7.E-5 * (ZZT(:) - XTT)**2 * ZRAR(:)**2 &
-                    + 1.E-2 * ZRAR(:)**2                     &
-                    - 0.170 * (ZZT(:) - XTT)    * ZRAR(:)    &
-                    - 0.930 * ZRAR(:)                        &
-                    + 2.E-3 * (ZZT(:) - XTT)    * ZRAR(:)**2 &
-                    + 1.E-6 * (ZZT(:) - XTT)**2 * ZRAR(:)**3 &
-                    - 7.E-5 * ZRAR(:)**3  + 50.84454
-      ZBTRMQ_AUX(:) = MAX(0., ZBTRMQ_AUX(:) * 1.E-15)
-    ENDWHERE
-!
-!  Eq. 8: > 0
-    WHERE (GELEC(:,4) .AND. ZRAR(:) <= 3.2 .AND. &
-           ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.)) 
-      ZBTRMQ_AUX(:) = - 3.3515 * (ZZT(:) - XTT)              &
-                    + 1.5000 * (ZZT(:) - XTT) * ZRAR(:)**2   &
-                    + 63.98  * ZRAR(:)                       &
-                    + 3.E-2 * (ZZT(:) - XTT)**2 * ZRAR(:)**3 &
-                    - 7.E-4 * (ZZT(:) - XTT)**3              &
-                    + 2.57  * (ZZT(:) - XTT)    * ZRAR(:)    &
-                    + 2.E-2 * (ZZT(:) - XTT)**2 * ZRAR(:)    &
-                    + 1.E-3 * (ZZT(:) - XTT)**3 * ZRAR(:)**3 &
-                    - 2.E-3 * (ZZT(:) - XTT)**3 * ZRAR(:)**2 &
-                    + 0.130 * (ZZT(:) - XTT)    * ZRAR(:)**3 &
-                    - 0.107 * (ZZT(:) - XTT)**2 - 24.5715
-      ZBTRMQ_AUX(:) = MAX(0., ZBTRMQ_AUX(:) * 1.E-15)
-    ENDWHERE
-!
-!  Eq. 9: < 0
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.) .AND. &
-           ZRAR(:) > 3.2         .AND. ZRAR(:) <= 25.6)
-      ZBTRMQ_AUX(:) = - 2.E-1 * (ZZT(:) - XTT) * ZRAR(:)  &
-                    + 5.E-4 * (ZZT(:) - XTT) * ZRAR(:)**3 &
-                    + 0.011 * (ZZT(:) - XTT)**3           &
-                    + 19.20 * (ZZT(:) - XTT)              &
-                    + 0.805 * (ZZT(:) - XTT)**2           &
-                    - 10.42 * ZRAR(:)                     &
-                    + 0.240 * ZRAR(:)**2                  &
-                    + 1.E-2 * ZRAR(:)**3 + 167.9278
-      ZBTRMQ_AUX(:) = MIN(0., ZBTRMQ_AUX(:) * 1.E-15)
-    ENDWHERE
-!
-!  Eq. 10: > 0
-    WHERE (GELEC(:,4) .AND.                                        &
-           ZZT(:) <= (XTT - 10.) .AND. ZZT(:) >= (XTT - 40.) .AND. &
-           ZRAR(:) > 25.6        .AND. ZRAR(:) <= 64.)
-      ZBTRMQ_AUX(:) = 4.213 * (ZZT(:) - XTT)               &
-                    - 1.E-1 * (ZZT(:) - XTT) * ZRAR(:)     &
-                    + 1.E-3 * (ZZT(:) - XTT) * ZRAR(:) **2 &
-                    + 5.E-4 * (ZZT(:) - XTT)**2 * ZRAR(:) + 40.9642
-      ZBTRMQ_AUX(:) = MAX(0., ZBTRMQ_AUX(:) * 1.E-15)
-    ENDWHERE
-!
-END SUBROUTINE ELEC_INI_NI_TERAR
+END SUBROUTINE ELEC_INI_NI_TAKAH
 !
 !-------------------------------------------------------------------------------
 !
@@ -5505,8 +5197,8 @@ IMPLICIT NONE
   IF (CNI_CHARGING == 'HELFA') THEN
     ZWQ1(:,7) = 0.
 !
-    WHERE (ZRIS(:) > XRTMIN_ELEC(4) .AND. ZCIT(:) > 0.0 .AND.            &
-           ZRIT(:) > XRTMIN_ELEC(4) .AND.                                &
+    WHERE (ZRIS(:) > XRTMIN_ELEC(4) .AND. ZCIT(:) > 0.0 .AND. &
+           ZRIT(:) > XRTMIN_ELEC(4) .AND.                     &
            ZRST(:) > XRTMIN_ELEC(5))
       ZWQ1(:,7) = XFQIAGGSBH * ZZW(:) * ZCIT(:) / ZRIT(:)
       ZWQ1(:,7) = ZWQ1(:,7) * (1. - ZCOLIS(:)) / ZCOLIS(:) 
@@ -5524,15 +5216,14 @@ IMPLICIT NONE
 !
   IF (CNI_CHARGING == 'GARDI') THEN
     ZWQ1(:,7) = 0.
-!    WHERE (GELEC(:,1) .AND. ZDELTALWC(:) > 0.) 
-    WHERE (GELEC(:,1) .AND. ZDELTALWC(:) > 0. .AND. &
+    WHERE (GELEC(:,1) .AND. ZDELTALWC(:) > 0. .AND.               &
            ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
       ZWQ1(:,7) = XFQIAGGSBG  * (1 - ZCOLIS(:)) *          &
                   ZRHODREF(:)**(-4. * XCEXVT + 4. / XBI) * &
                   ZCIT(:)**(1 - 4. / XBI) *                &
                   ZDELTALWC(:) * ZFT(:) *                  &
                   ZLBDAS(:)**(XCXS - 2. - 4. * XDS) *      &
-                  (XAI * MOMG(XALPHAI, XNUI, XBI) /      &
+                  (XAI * MOMG(XALPHAI, XNUI, XBI) /        &
                   ZRIT(:))**(-4 / XBI)
 !
 ! Dq is limited to XLIM_NI_IS
@@ -5540,11 +5231,9 @@ IMPLICIT NONE
                   (1 - ZCOLIS(:)) / (ZRIT(:) * ZCOLIS(:))
       ZWQ1(:,7) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,7)) ), ZWQ1(:,7) )   
       ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
-    ELSEWHERE
-      ZWQ1(:,7) = 0.
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5553,23 +5242,21 @@ IMPLICIT NONE
     ZQIS(:) = ZQIS(:) - ZWQ1(:,7)
   END IF
 !
-!*      4. Charging process following Saunders et al. (1991)
+!*      4. Charging process based on EW: SAUN1/SAUN2, TEEWC
+!*         following Saunders et al. (1991), Takahashi via Tsenova and Mitzeva (2009)
 !
-  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2') THEN
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'TEEWC') THEN
     ZWQ1(:,7) = 0.
 !
-!    WHERE (GELEC(:,1) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZSAUNQ(:) /= 0.)
-    WHERE (GELEC(:,1) .AND. ZSAUNQ(:) /= 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                             &
-                 (ZRHO00 / ZRHODREF(:))**((1 + ZSAUNIN(:)) * XCEXVT) *       &
-                  ZSAUNIK(:) * ZSAUNQ(:) *                                   &
-                  XCS**(1. + ZSAUNIN(:)) * ZCIT(:)**(1 - ZSAUNIM(:) / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + ZSAUNIN(:))) *       &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + ZSAUNIN(:))) *          &
-                  MOMG(XALPHAI, XNUI, ZSAUNIM(:)) *                        &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /                         &
-                 (ZRHODREF * ZRIT(:)))**(-ZSAUNIM(:) / XBI)
+    WHERE (GELEC(:,1) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
+           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZDQLWC(:) /= 0.)
+      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                          &
+                  ZRHOCOR(:)**(1 + ZSAUNIN(:)) *                          &
+                  ZFQIAGGS(:) * ZDQLWC(:) *                               &
+                  ZCIT(:)**(1 - ZSAUNIM(:) / XBI) *                       &
+                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + ZSAUNIN(:))) *       &
+                 (ZRHODREF(:) * ZRIT(:) / XAIGAMMABI)**(ZSAUNIM(:) / XBI)
 !
 ! Dq is limited to XLIM_NI_IS
       ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
@@ -5578,7 +5265,7 @@ IMPLICIT NONE
       ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5588,24 +5275,36 @@ IMPLICIT NONE
 !
   END IF
 !
-!*      5. Charging process following Saunders and Peck (1998) or 
-!*                        Brooks et al., 1997 (with/out anomalies)
+!*      5. Charging process based on RAR (=EW*V): SAP98, BSMP1/BSMP2, TERAR
+!*         following Saunders and Peck (1998) or
+!*                   Brooks et al., 1997 (with/out anomalies) or
+!*                   Takahashi via Tsenova and Mitzeva (2011)
 !
-  IF (CNI_CHARGING == 'SAP98'.OR. CNI_CHARGING == 'BSMP1' .OR. &
-                                  CNI_CHARGING == 'BSMP2') THEN
+  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'BSMP1' .OR.   &
+      CNI_CHARGING == 'BSMP2' .OR. CNI_CHARGING == 'TERAR') THEN
+!
+    IF (CNI_CHARGING /= 'TERAR') THEN
+       ZFQIAGGS(:)   = XFQIAGGSP
+       WHERE (ZDQRAR_IS(:) < 0.)
+         ZFQIAGGS(:) = XFQIAGGSN
+       ENDWHERE
+    ELSE
+       ZFQIAGGS(:) = XFQIAGGSP_TAK
+       WHERE (ZDQRAR_IS(:) <0.)
+         ZFQIAGGS(:) = XFQIAGGSN_TAK
+       ENDWHERE
+    ENDIF
+!
     ZWQ1(:,7) = 0.
 !
-    WHERE (GELEC(:,1) .AND. ZPECKQ_IS(:) /= 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5)) 
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                                   &
-                 (ZRHO00 / ZRHODREF(:))**((1 + ZSAUNIN_IS(:)) * XCEXVT) *          &
-                  ZSAUNIK_IS(:) * ZPECKQ_IS(:) *                                   &
-                  XCS**(1. + ZSAUNIN_IS(:)) * ZCIT(:)**(1 - ZSAUNIM_IS(:) / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + ZSAUNIN_IS(:))) *            &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + ZSAUNIN_IS(:))) *             &
-                  MOMG(XALPHAI, XNUI, ZSAUNIM_IS(:)) *                             &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /                                 &
-                 (ZRHODREF * ZRIT(:)))**(-ZSAUNIM_IS(:) / XBI)
+    WHERE (GELEC(:,1) .AND. ZDQRAR_IS(:) /= 0. .AND. &
+           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
+      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                          &
+                  ZRHOCOR(:)**(1 + ZSAUNIN_IS(:)) *                       &
+                  ZFQIAGGS(:) * ZDQRAR_IS(:) *                            &
+                  ZCIT(:)**(1 - ZSAUNIM_IS(:) / XBI) *                    &
+                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + ZSAUNIN_IS(:))) *    &
+                 (ZRHODREF(:) * ZRIT(:)/XAIGAMMABI)**(ZSAUNIM_IS(:) / XBI)
 !
 ! Dq is limited to XLIM_NI_IS
       ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
@@ -5614,7 +5313,7 @@ IMPLICIT NONE
       ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5629,15 +5328,14 @@ IMPLICIT NONE
     ZWQ1(:,7) = 0.
     ZLIMIT(:) = 0.
 !
-    WHERE (GELEC(:,1) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5)) 
-      ZWQ1(:,7) = XFQIAGGSBT1 * (1.0 - ZCOLIS(:)) *                     &
-                  ZRHODREF(:)**(-XCEXVT) *                              &
-                  ZCIT(:) * ZLBDAS(:)**XCXS *                           &
-                  ZDQTAKA(:) *                                          &
-                  MIN( XFQIAGGSBT2 / (ZLBDAS(:)**(2. + XDS)) ,          &
-                       XFQIAGGSBT3 * ZRHODREF(:)**(2. / XBI - XCEXVT) * &
-                       ZRIT(:)**(2. / XBI) /                            &
-                      (ZCIT(:)**(2. / XBI) * ZLBDAS(:)**(2. + 2. * XDS))) 
+    WHERE (GELEC(:,1) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND.   &
+           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZDQLWC(:) /= 0.)
+      ZWQ1(:,7) = XFQIAGGSBT1 * (1.0 - ZCOLIS(:)) * ZRHOCOR(:) *          &
+                  ZCIT(:) * ZLBDAS(:)**XCXS * ZDQLWC(:) *                 &
+                  MIN( XFQIAGGSBT2 / (ZLBDAS(:)**(2. + XDS)) ,            &
+                       XFQIAGGSBT3 * ZRHOCOR(:) * ZRHODREF(:)**(2./XBI) * &
+                       ZRIT(:)**(2. / XBI) /                              &
+                      (ZCIT(:)**(2. / XBI) * ZLBDAS(:)**(2. + 2. * XDS)))
 !
 ! Dq is limited to XLIM_NI_IS
       ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
@@ -5646,7 +5344,7 @@ IMPLICIT NONE
       ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5655,111 +5353,6 @@ IMPLICIT NONE
     ZQIS(:) = ZQIS(:) - ZWQ1(:,7)
   END IF
 !
-!
-!*      6. Charging process following Tsenova and Mitzeva (2009) 
-!*                            for EW Takahashi
-!
-  IF (CNI_CHARGING == 'TEEWC') THEN
-    ZWQ1(:,7) = 0.
-!
-    WHERE (GELEC(:,1) .AND. ZBTRMQ(:) > 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                 &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.5 ) * XCEXVT) * &
-                  6.1E12 * ZBTRMQ(:) *                           &
-                  XCS**(1. + 2.5 ) * ZCIT(:)**(1 - 3.76 / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + 2.5 )) * &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + 2.5 )) *    &
-                  MOMG(XALPHAI, XNUI, 3.76 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                  (ZRHODREF * ZRIT(:)))**(-3.76 / XBI)
-!
-! Dq is limited to XLIM_NI_IS
-      ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
-                  (1 - ZCOLIS(:)) / (ZRIT(:) * ZCOLIS(:))
-      ZWQ1(:,7) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,7)) ), ZWQ1(:,7) )
-      ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
-    ENDWHERE
-!
-    WHERE (GELEC(:,1) .AND. ZBTRMQ(:) > 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                 &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.8 ) * XCEXVT) * &
-                  4.3E7 * ZBTRMQ(:) *                            &
-                  XCS**(1. + 2.8 ) * ZCIT(:)**(1 - 2.54 / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + 2.8 )) * &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + 2.8 )) *    &
-                  MOMG(XALPHAI, XNUI, 2.54 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                 (ZRHODREF * ZRIT(:)))**(-2.54 / XBI)
-!
-! Dq is limited to XLIM_NI_IS
-      ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
-                  (1 - ZCOLIS(:)) / (ZRIT(:) * ZCOLIS(:))
-      ZWQ1(:,7) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,7)) ), ZWQ1(:,7) )
-      ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
-    ENDWHERE
-!
-! For temperatures lower than -30°C --> linear interpolation
-    WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-    ZQSS(:) = ZQSS(:) + ZWQ1(:,7)
-    ZQIS(:) = ZQIS(:) - ZWQ1(:,7)
-  END IF
-!
-!
-!*      7. Charging process following Tsenova and Mitzeva (2009) 
-!*                            for RAR Takahashi
-!
-  IF (CNI_CHARGING == 'TERAR') THEN
-    ZWQ1(:,7) = 0.
-!
-    WHERE (GELEC(:,1) .AND. ZBTRMQ_IS(:) > 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                 &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.5 ) * XCEXVT) * &
-                  6.1E12 * ZBTRMQ_IS(:) *                        &
-                  XCS**(1. + 2.5 ) * ZCIT(:)**(1 - 3.76 / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + 2.5 )) * &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + 2.5 )) *    &
-                  MOMG(XALPHAI, XNUI, 3.76 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                  (ZRHODREF * ZRIT(:)))**(-3.76 / XBI)
-!
-! Dq is limited to XLIM_NI_IS
-      ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
-                  (1 - ZCOLIS(:)) / (ZRIT(:) * ZCOLIS(:))
-      ZWQ1(:,7) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,7)) ), ZWQ1(:,7) )
-      ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
-    ENDWHERE
-!
-    WHERE (GELEC(:,1) .AND. ZBTRMQ_IS(:) < 0. .AND. &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,7) = XFQIAGGSBS * (1 - ZCOLIS(:)) *                 &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.8 ) * XCEXVT) * &
-                  4.3E7 * ZBTRMQ_IS(:) *                         &
-                  XCS**(1. + 2.8 ) * ZCIT(:)**(1 - 2.54 / XBI) * &
-                  MOMG(XALPHAS, XNUS, 2. + XDS * (1 + 2.8 )) * &
-                  ZLBDAS(:)**(XCXS - 2.- XDS * (1. + 2.8 )) *    &
-                  MOMG(XALPHAI, XNUI, 2.54 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                 (ZRHODREF * ZRIT(:)))**(-2.54 / XBI)
-!
-! Dq is limited to XLIM_NI_IS
-      ZLIMIT(:) = XLIM_NI_IS * ZZW(:) * ZCIT(:) * &
-                  (1 - ZCOLIS(:)) / (ZRIT(:) * ZCOLIS(:))
-      ZWQ1(:,7) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,7)) ), ZWQ1(:,7) )
-      ZWQ1(:,7) = ZWQ1(:,7) / ZRHODREF(:)
-    ENDWHERE
-!
-! For temperatures lower than -30°C --> linear interpolation
-    WHERE (ZWQ1(:,7) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,7) = ZWQ1(:,7) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-    ZQSS(:) = ZQSS(:) + ZWQ1(:,7)
-    ZQIS(:) = ZQIS(:) - ZWQ1(:,7)
-  END IF
 !
 END SUBROUTINE ELEC_IAGGS_B
 !
@@ -5813,7 +5406,7 @@ IMPLICIT NONE
                   ZCIT(:)**(1 - 4. / XBI) *                 &
                   ZDELTALWC(:) * ZFT(:) *                   &
                   ZLBDAG(:)**(XCXG - 2. - 4. * XDG) *       &
-                  (XAI * MOMG(XALPHAI, XNUI, XBI) /       &
+                  (XAI * MOMG(XALPHAI, XNUI, XBI) /         &
                   ZRIT(:))**(-4 / XBI)
 !
 ! Dq limited to XLIM_NI_IG
@@ -5823,7 +5416,7 @@ IMPLICIT NONE
       ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
 !
     WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
@@ -5832,22 +5425,21 @@ IMPLICIT NONE
   END IF
 !
 !
-!*      2.3     Saunders et al. (1991)
+!*     2.3 Charging process based on EW: SAUN1/SAUN2, TEEWC
+!*         following Saunders et al. (1991), Takahashi via Tsenova and Mitzeva(2009)
 !
-  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2') THEN
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'TEEWC') THEN
     ZWQ1(:,3) = 0.
 !
-    WHERE (GELEC(:,2) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND.      &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZSAUNQ(:) /= 0.) 
-      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *                            &
-                 (ZRHO00 / ZRHODREF(:))**((1 + ZSAUNIN(:)) * XCEXVT) *       &
-                  XCG**(1. + ZSAUNIN(:)) * ZCIT(:)**(1 - ZSAUNIM(:) / XBI) * &
-                  ZSAUNIK(:) * ZSAUNQ(:) *                                   &
-                  MOMG(XALPHAG, XNUG, 2.+XDG*(1+ZSAUNIN(:))) *             &
-                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + ZSAUNIN(:))) *         &
-                  MOMG(XALPHAI, XNUI, ZSAUNIM(:)) *                        &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /                         &
-                 (ZRHODREF(:) * ZRIT(:)))**(-ZSAUNIM(:) / XBI)
+    WHERE (GELEC(:,2) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
+           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZDQLWC(:) /= 0.)
+      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *                    &
+                  ZRHOCOR(:)**(1. + ZSAUNIN(:)) *                    &
+                  ZFQIDRYGBS(:) * ZDQLWC(:) *                        &
+                  ZCIT(:)**(1. - ZSAUNIM(:) / XBI) *                 &
+                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + ZSAUNIN(:))) * &
+                 (ZRHODREF(:) * ZRIT(:)/XAIGAMMABI)**(ZSAUNIM(:) / XBI)
 !
 ! Dq is limited to XLIM_NI_IG
       ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
@@ -5856,7 +5448,7 @@ IMPLICIT NONE
       ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5864,23 +5456,36 @@ IMPLICIT NONE
   END IF
 !
 !
-!*      2.4     Saunders and Peck (1998) and Brooks et al. (1997)
+!*     2.4 Charging process based on RAR (=EW*V): SAP98, BSMP1/BSMP2, TERAR
+!*         following Saunders and Peck (1998) or
+!*                   Brooks et al., 1997 (with/out anomalies) or
+!*                   Takahashi via Tsenova and Mitzeva (2011)
 !
-  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'BSMP1'.OR. &
-                                   CNI_CHARGING == 'BSMP2' ) THEN
+  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'BSMP1' .OR.   &
+      CNI_CHARGING == 'BSMP2' .OR. CNI_CHARGING == 'TERAR') THEN
+!
+    IF (CNI_CHARGING /= 'TERAR') THEN
+       ZFQIDRYGBS(:) = XFQIDRYGBSP
+       WHERE (ZDQRAR_IG(:) < 0.)
+         ZFQIDRYGBS(:) = XFQIDRYGBSN
+       ENDWHERE
+    ELSE
+       ZFQIDRYGBS(:) = XFQIDRYGBSP_TAK
+       WHERE (ZDQRAR_IG(:) <0.)
+         ZFQIDRYGBS(:) = XFQIDRYGBSN_TAK
+       ENDWHERE
+    END IF
+!
     ZWQ1(:,3) = 0.
 !
-    WHERE (GELEC(:,2) .AND. ZPECKQ_IG(:) /= 0. .AND. &
+    WHERE (GELEC(:,2) .AND. ZDQRAR_IG(:) /= 0. .AND. &
            ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRGS(:) > ZRSMIN_ELEC(6)) 
-      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *                                  &
-                 (ZRHO00 / ZRHODREF(:))**((1 + ZSAUNIN_IG(:)) * XCEXVT) *          &
-                  XCG**(1. + ZSAUNIN_IG(:)) * ZCIT(:)**(1 - ZSAUNIM_IG(:) / XBI) * & 
-                  ZSAUNIK_IG(:) * ZPECKQ_IG(:) *                                   &
-                  MOMG(XALPHAG, XNUG, 2.+XDG*(1+ZSAUNIN_IG(:))) *                  &
-                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + ZSAUNIN_IG(:))) *            &
-                  MOMG(XALPHAI, XNUI, ZSAUNIM_IG(:)) *                             &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /                                 &
-                 (ZRHODREF(:) * ZRIT(:)))**(-ZSAUNIM_IG(:) / XBI)
+      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *                          &
+                  ZRHOCOR(:)**(1 + ZSAUNIN_IG(:)) *                        &
+                  ZFQIDRYGBS(:) * ZDQRAR_IG(:) *                           &
+                  ZCIT(:)**(1 - ZSAUNIM_IG(:) / XBI) *                     &
+                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + ZSAUNIN_IG(:))) *    &
+                 (ZRHODREF(:) * ZRIT(:)/XAIGAMMABI)**(ZSAUNIM_IG(:) / XBI)
 !
 ! Dq is limited to XLIM_NI_IG
       ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
@@ -5889,7 +5494,7 @@ IMPLICIT NONE
       ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatres lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -5903,14 +5508,12 @@ IMPLICIT NONE
     ZLIMIT(:) = 0.
 !
     WHERE (GELEC(:,2) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND. &
-           ZRGS(:) > ZRSMIN_ELEC(6))
-      ZWQ1(:,3) = XFQIDRYGBT1 * (1. - ZCOLIG(:)) * &
-                  ZRHODREF(:)**(-XCEXVT) * &
-                  ZCIT(:) * ZLBDAG(:)**XCXG * &
-                  ZDQTAKA(:) *                  &
-                  MIN( XFQIDRYGBT2 / (ZLBDAG(:)**(2. + XDG)),           &
-                       XFQIDRYGBT3 * ZRHODREF(:)**(2. / XBI - XCEXVT) * &
-                       ZRIT(:)**(2. / XBI) / (ZCIT(:)**(2. / XBI) *     & 
+           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZDQLWC(:) /= 0.)
+      ZWQ1(:,3) = XFQIDRYGBT1 * (1. - ZCOLIG(:)) * ZRHOCOR(:) *           &
+                  ZCIT(:) * ZLBDAG(:)**XCXG * ZDQLWC(:) *                 &
+                  MIN( XFQIDRYGBT2 / (ZLBDAG(:)**(2. + XDG)),             &
+                       XFQIDRYGBT3 * ZRHOCOR(:) * ZRHODREF(:)**(2./XBI) * &
+                       ZRIT(:)**(2. / XBI) / (ZCIT(:)**(2. / XBI) *       &
                        ZLBDAG(:)**(2. + 2. * XDG)) )
 !
 ! Dq is limited to XLIM_NI_IG
@@ -5920,113 +5523,12 @@ IMPLICIT NONE
       ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
   END IF
 !
-!
-!*      2.7     Takahashi, as a function of EW (Tsenova and Mitzeva, 2009)
-!
-  IF (CNI_CHARGING == 'TEEWC') THEN
-    ZWQ1(:,3) = 0.
-!
-    WHERE (GELEC(:,2) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND.     &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZBTRMQ(:) > 0.) 
-       ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *               &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.5 ) * XCEXVT) * &
-                  XCG**(1. + 2.5 ) * ZCIT(:)**(1 - 3.76 / XBI) * &
-                  6.1E12 * ZBTRMQ(:) *                           &
-                  MOMG(XALPHAG, XNUG, 2.+XDG*(1+2.5 )) *       &
-                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + 2.5 )) *   &
-                  MOMG(XALPHAI, XNUI, 3.76 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                 (ZRHODREF(:) * ZRIT(:)))**(-3.76 / XBI)
-!
-! Dq is limited to XLIM_NI_IG
-      ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
-                  (ZRIT(:) * ZCOLIG(:))
-      ZWQ1(:,3) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,3)) ), ZWQ1(:,3) )
-      ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
-    ENDWHERE
-!
-    WHERE (GELEC(:,2) .AND. ZRIS(:) > ZRSMIN_ELEC(4) .AND.       &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZBTRMQ(:) < 0.)
-      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *               &
-                (ZRHO00 / ZRHODREF(:))**((1 + 2.8 ) * XCEXVT) * &
-                 XCG**(1. + 2.8) * ZCIT(:)**(1 - 2.54 / XBI) *  &
-                 4.3E7 * ZBTRMQ(:) *                            &
-                 MOMG(XALPHAG, XNUG, 2.+XDG*(1+2.8 )) *       &
-                 ZLBDAG(:)**(XCXG - 2. - XDG * (1. + 2.8 )) *   &
-                 MOMG(XALPHAI, XNUI, 2.54 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /            &
-                 (ZRHODREF(:) * ZRIT(:)))**(-2.54 / XBI)
-!
-! Dq is limited to XLIM_NI_IG
-      ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
-                  (ZRIT(:) * ZCOLIG(:))
-      ZWQ1(:,3) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,3)) ), ZWQ1(:,3) )
-      ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
-   ENDWHERE
-!
-! For temperatres lower than -30°C --> linear interpolation
-    WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-  END IF
-!
-!
-!*      2.7     Takahashi, as a function of RAR (Tsenova and Mitzeva, 2009)
-!
-  IF (CNI_CHARGING == 'TERAR') THEN
-    ZWQ1(:,3) = 0.
-!
-    WHERE (GELEC(:,2) .AND.                                              &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
-           ZBTRMQ_IG(:) > 0.)
-       ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *               &
-                 (ZRHO00 / ZRHODREF(:))**((1 + 2.5 ) * XCEXVT) * &
-                  XCG**(1. + 2.5 ) * ZCIT(:)**(1 - 3.76 / XBI) * &
-                  6.1E12 * ZBTRMQ_IG(:) *                        &
-                  MOMG(XALPHAG, XNUG, 2.+XDG*(1+2.5 )) *       &
-                  ZLBDAG(:)**(XCXG - 2. - XDG * (1. + 2.5 )) *   &
-                  MOMG(XALPHAI, XNUI, 3.76 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /             &
-                 (ZRHODREF(:) * ZRIT(:)))**(-3.76 / XBI)
-!
-! Dq is limited to XLIM_NI_IG
-      ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
-                  (ZRIT(:) * ZCOLIG(:))
-      ZWQ1(:,3) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,3)) ), ZWQ1(:,3) )
-      ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
-    ENDWHERE
-!
-    WHERE (GELEC(:,2) .AND.                                              &
-           ZRIS(:) > ZRSMIN_ELEC(4) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
-           ZBTRMQ_IG(:) < 0. )
-      ZWQ1(:,3) = XFQIDRYGBS * (1. - ZCOLIG(:)) *               &
-                (ZRHO00 / ZRHODREF(:))**((1 + 2.8 ) * XCEXVT) * &
-                 XCG**(1. + 2.8) * ZCIT(:)**(1 - 2.54 / XBI) *  &
-                 4.3E7 * ZBTRMQ_IG(:) *                         &
-                 MOMG(XALPHAG, XNUG, 2.+XDG*(1+2.8 )) *       &
-                 ZLBDAG(:)**(XCXG - 2. - XDG * (1. + 2.8 )) *   &
-                 MOMG(XALPHAI, XNUI, 2.54 ) *                 &
-                 (XAI * MOMG(XALPHAI, XNUI, XBI) /            &
-                 (ZRHODREF(:) * ZRIT(:)))**(-2.54 / XBI)
-!
-! Dq is limited to XLIM_NI_IG
-      ZLIMIT(:) = XLIM_NI_IG * ZZW1(:,2) * ZCIT(:) * (1 - ZCOLIG(:)) / &
-                  (ZRIT(:) * ZCOLIG(:))
-      ZWQ1(:,3) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,3)) ), ZWQ1(:,3) )
-      ZWQ1(:,3) = ZWQ1(:,3) / ZRHODREF(:)
-   ENDWHERE
-!
-! For temperatres lower than -30°C --> linear interpolation
-    WHERE (ZWQ1(:,3) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,3) = ZWQ1(:,3) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-  END IF
 !
 END SUBROUTINE ELEC_IDRYG_B
 !
@@ -6042,7 +5544,6 @@ END SUBROUTINE ELEC_IDRYG_B
 !
 IMPLICIT NONE
 !
-!REAL, DIMENSION(SIZE(ZRHODREF )) :: ZCOLSG      ! Collection efficiency
 !
 !*      1.      COMPUTE THE COLLECTION EFFICIENCY
 !               ---------------------------------
@@ -6073,6 +5574,7 @@ IMPLICIT NONE
     ENDWHERE
   ENDIF
 !
+!
 !*      2.2     Gardiner et al. (1985)
 !
   IF (CNI_CHARGING == 'GARDI') THEN 
@@ -6081,25 +5583,25 @@ IMPLICIT NONE
 !
     WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND.        &
            ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZDELTALWC(:) > 0.) 
-        ZWQ1(:,5) = XFQSDRYGBG * (1. - ZCOLSG(:)) *                      &
-                    ZRHODREF(:)**(-4. * XCEXVT) *                        &
-                    ZFT(:) * ZDELTALWC(:) *                              &
-                    ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                  &
-                   (XLBQSDRYGB4G * ZLBDAS(:)**(-4.) * ZLBDAG(:)**(-2.) + &
-                    XLBQSDRYGB5G * ZLBDAS(:)**(-5.) * ZLBDAG(:)**(-1.) + &
-                    XLBQSDRYGB6G * ZLBDAS(:)**(-6.)) *                   &
-                    ZWQ1(:,10)
+      ZWQ1(:,5) = XFQSDRYGBG * (1. - ZCOLSG(:)) *                      &
+                  ZRHODREF(:)**(-4. * XCEXVT) *                        &
+                  ZFT(:) * ZDELTALWC(:) *                              &
+                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                  &
+                 (XLBQSDRYGB4G * ZLBDAS(:)**(-4.) * ZLBDAG(:)**(-2.) + &
+                  XLBQSDRYGB5G * ZLBDAS(:)**(-5.) * ZLBDAG(:)**(-1.) + &
+                  XLBQSDRYGB6G * ZLBDAS(:)**(-6.)) *                   &
+                  ZWQ1(:,10)
 !
 ! Dq is limited to XLIM_NI_SG
-        ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                    ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                    ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                   (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                    XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                    XAUX_LIM3 * ZLBDAG(:)**(-2.))
-        ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-        ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-      ENDWHERE
+      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                &
+                  ZRHOCOR(:) * (1. - ZCOLSG(:)) *                   &
+                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
+                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
+                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
+                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
+      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
+      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
+    ENDWHERE
 !
 ! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
@@ -6107,65 +5609,43 @@ IMPLICIT NONE
     ENDWHERE
   END IF
 !
-!*      2.3     Saunders et al. (1991)
+!*     2.3 Charging process based on EW: SAUN1/SAUN2, TEEWC
+!*         following Saunders et al. (1991), Takahashi via Tsenova and Mitzeva(2009)
 !
-  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2') THEN 
-    ZWQ1(:,5) = 0. 
+  IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
+      CNI_CHARGING == 'TEEWC') THEN
+!
+    ZWQ1(:,5) = 0.
     ZLIMIT(:) = 0.
 !
-! If graupel gains positive charge
-    WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND.     &
-           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZSAUNQ(:) > 0.) 
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                       &
-                 (ZRHO00 / ZRHODREF(:))**((1. + ZSAUNSN(:)) * XCEXVT) * &
-                  ZSAUNSK(:) * ZSAUNQ(:) *                              &  
-                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                   &
-                 (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, ZSAUNSM(:)) *      &
-                  ZLBDAS(:)**(-ZSAUNSM) * ZLBDAG(:)**(-2.)  +           &
-                  XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+ZSAUNSM(:)) *   &
-                  ZLBDAS(:)**(-(1. + ZSAUNSM)) * ZLBDAG(:)**(-1.) +     &
-                  MOMG(XALPHAS, XNUS, 2.+ZSAUNSM(:)) *                  &
-                  ZLBDAS(:)**(-2. - ZSAUNSM)) *                         &
-                  ZWQ3(:)
+    WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
+           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZDQLWC(:) /= 0.) 
+!
+!    ZWQ1(:,5) = ZWQ3(:) If graupel gains positive charge ZDQLWC(:) > 0.
+!    ZWQ1(:,5) = ZWQ4(:) If graupel gains negative charge ZDQLWC(:) < 0.
+      ZWQ1(:,5) = ZWQ3(:) * (0.5 + SIGN(0.5,ZDQLWC(:))) + &
+                  ZWQ4(:) * (0.5 - SIGN(0.5,ZDQLWC(:)))
+!
+      ZWQ1(:,5) = ZWQ1(:,5) * XFQSDRYGBS * (1. - ZCOLSG(:)) *                 &
+                  ZRHOCOR(:)**(1. + ZSAUNSN(:)) *                             &
+                  ZSAUNSK(:) * ZDQLWC(:) *                                    &
+                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                         &
+                ( ZLBQSDRYGB1S(:) / (ZLBDAS(:)**ZSAUNSM(:) *ZLBDAG(:)**2)   + &
+                  ZLBQSDRYGB2S(:) / (ZLBDAS(:)**( 1.+ZSAUNSM(:))*ZLBDAG(:)) + &
+                  ZLBQSDRYGB3S(:) /  ZLBDAS(:)**(2.+ZSAUNSM(:)) )
 !
 ! Dq is limited to XLIM_NI_SG
       ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
+                  ZRHOCOR(:) * (1. - ZCOLSG(:)) *                   &
                   ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
+                ( XAUX_LIM1 / ZLBDAS(:)**2           +              &
+                  XAUX_LIM2 /(ZLBDAS(:) * ZLBDAG(:)) +              &
+                  XAUX_LIM3 / ZLBDAG(:)**2 )
       ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
       ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
     ENDWHERE
 !
-! If graupel gains negative charge
-    WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND.     &
-           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZSAUNQ(:) < 0.) 
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                       &
-                 (ZRHO00 / ZRHODREF(:))**((1. + ZSAUNSN(:)) * XCEXVT) * &
-                  ZSAUNSK(:) * ZSAUNQ(:) *                              &
-                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                   &
-                 (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, ZSAUNSM(:)) *       &
-                  ZLBDAS(:)**(-ZSAUNSM(:)) * ZLBDAG(:)**(-2.)  +           &
-                  XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+ZSAUNSM(:)) *    &
-                  ZLBDAS(:)**(-(1. + ZSAUNSM(:))) * ZLBDAG(:)**(-1.) +     &
-                  MOMG(XALPHAS, XNUS, 2.+ZSAUNSM(:)) *                   &
-                  ZLBDAS(:)**(-2. - ZSAUNSM(:))) *                         &
-                  ZWQ4(:)
-!
-! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
-!
-! For temperatures lower than -30°C --> linear interpolation
+! For temperatures lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,5) = ZWQ1(:,5) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -6173,66 +5653,52 @@ IMPLICIT NONE
   END IF
 !
 !
-!*      2.4     Saunders and Peck (1998) and Brooks et al. (1997)
+!*     2.4 Charging process based on RAR (=EW*V): SAP98, BSMP1/BSMP2, TERAR
+!*         following Saunders and Peck (1998) or
+!*                   Brooks et al., 1997 (with/out anomalies) or
+!*                   Takahashi via Tsenova and Mitzeva (2011)
 !
-  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'BSMP1' .OR.         &
-                                   CNI_CHARGING == 'BSMP2') THEN
+  IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'BSMP1' .OR.   &
+      CNI_CHARGING == 'BSMP2' .OR. CNI_CHARGING == 'TERAR') THEN
+!
+    ZLBQSDRYGB1S(:) = XLBQSDRYGB1SP
+    ZLBQSDRYGB2S(:) = XLBQSDRYGB2SP
+    ZLBQSDRYGB3S(:) = XLBQSDRYGB3SP
+    WHERE (ZDQRAR_SG(:) < 0.)
+      ZLBQSDRYGB1S(:) = XLBQSDRYGB1SN
+      ZLBQSDRYGB2S(:) = XLBQSDRYGB2SN
+      ZLBQSDRYGB3S(:) = XLBQSDRYGB3SN
+    ENDWHERE
+!
     ZWQ1(:,5) = 0.  
     ZLIMIT(:) = 0.
 !
-! If graupel gains positive charge
-    WHERE (GELEC(:,3) .AND. ZPECKQ_SG(:) > 0. .AND. &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZRSS(:) > ZRSMIN_ELEC(5)) 
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                          &
-                 (ZRHO00 / ZRHODREF(:))**((1. + ZSAUNSN_SG(:)) * XCEXVT) * &
-                  ZSAUNSK_SG(:) * ZPECKQ_SG(:) *                           &  
-                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                      &
-                 (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, ZSAUNSM_SG(:)) *    &
-                  ZLBDAS(:)**(-ZSAUNSM_SG(:)) * ZLBDAG(:)**(-2.)  +        &
-                  XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+ZSAUNSM_SG(:)) * &
-                  ZLBDAS(:)**(-(1. + ZSAUNSM_SG)) * ZLBDAG(:)**(-1.) +     &
-                  MOMG(XALPHAS, XNUS, 2.+ZSAUNSM_SG(:)) *                &
-                  ZLBDAS(:)**(-2. - ZSAUNSM_SG)) *                         &
-                  ZWQ3(:)
+    WHERE (GELEC(:,3) .AND. ZDQRAR_SG(:) /= 0. .AND. &
+           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZRSS(:) > ZRSMIN_ELEC(5))
+      ZWQ1(:,5) = ZWQ3(:) * (0.5+SIGN(0.5,ZDQRAR_SG(:))) + &
+                  ZWQ4(:) * (0.5-SIGN(0.5,ZDQRAR_SG(:)))
 !
-! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
+      ZWQ1(:,5) = ZWQ1(:,5) * XFQSDRYGBS * (1. - ZCOLSG(:)) *                 &
+                  ZRHOCOR(:)**(1. + ZSAUNSN_SG(:)) *                          &
+                  ZSAUNSK_SG(:) * ZDQRAR_SG(:) *                              &
+                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                         &
+                 (ZLBQSDRYGB1S(:)/(ZLBDAS(:)**ZSAUNSM_SG(:) * ZLBDAG(:)**2) + &
+                  ZLBQSDRYGB2S(:)/(ZLBDAS(:)**(1.+ZSAUNSM_SG(:))*ZLBDAG(:)) + &
+                  ZLBQSDRYGB3S(:)/ ZLBDAS(:)**(2.+ZSAUNSM_SG(:)) )
 !
-! If graupel gains negative charge
-    WHERE (GELEC(:,3) .AND. ZPECKQ_SG(:) < 0. .AND. &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZRSS(:) > ZRSMIN_ELEC(5)) 
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                          &
-                 (ZRHO00 / ZRHODREF(:))**((1. + ZSAUNSN_SG(:)) * XCEXVT) * &
-                  ZSAUNSK_SG(:) * ZPECKQ_SG(:) *                           &
-                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                      &
-                 (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, ZSAUNSM_SG(:)) *      &
-                  ZLBDAS(:)**(-ZSAUNSM_SG) * ZLBDAG(:)**(-2.)  +           &
-                  XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+ZSAUNSM_SG(:)) *   &
-                  ZLBDAS(:)**(-(1. + ZSAUNSM_SG)) * ZLBDAG(:)**(-1.) +     &
-                  MOMG(XALPHAS, XNUS, 2.+ZSAUNSM_SG(:)) *                  &
-                  ZLBDAS(:)**(-2. - ZSAUNSM_SG)) *                         &
-                  ZWQ4(:)
 !
 ! Dq is limited to XLIM_NI_SG
       ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
+                  ZRHOCOR(:) * (1. - ZCOLSG(:)) *                   &
                   ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
+                ( XAUX_LIM1 / ZLBDAS(:)**2           +              &
+                  XAUX_LIM2 /(ZLBDAS(:) * ZLBDAG(:)) +              &
+                  XAUX_LIM3 / ZLBDAG(:)**2 )
       ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
       ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
     ENDWHERE
 !
-! For temperature lower than -30°C --> linear interpolation
+! For temperature lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,5) = ZWQ1(:,5) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
@@ -6246,11 +5712,9 @@ IMPLICIT NONE
     ZLIMIT(:) = 0.
 !
     WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
-           ZRSS(:) > ZRSMIN_ELEC(5))
-      ZWQ1(:,5) = XFQSDRYGBT1 * (1. - ZCOLSG(:)) *                          &
-                  ZRHODREF(:)**(-XCEXVT) *                                  &
-                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *                       &
-                  ZDQTAKA(:) *                                              &
+           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZDQLWC(:) /= 0.)
+      ZWQ1(:,5) = XFQSDRYGBT1 * (1. - ZCOLSG(:)) * ZRHOCOR(:) *             &
+                  ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS * ZDQLWC(:) *           &
                   MIN(10. * (                                               &
                    ABS(XFQSDRYGBT2 / (ZLBDAG(:)**XDG * ZLBDAS(:)**2.) -     & 
                        XFQSDRYGBT3 / (ZLBDAS(:)**(2. + XDS))) +             &
@@ -6258,156 +5722,28 @@ IMPLICIT NONE
                        XFQSDRYGBT5 / (ZLBDAS(:)**XDS * ZLBDAG(:)**2.)) +    &
                    ABS(XFQSDRYGBT6 / (ZLBDAG(:)**(1. + XDG) * ZLBDAS(:)) -  &
                        XFQSDRYGBT7 / (ZLBDAS(:)**(1. + XDS) * ZLBDAG(:)))), &
-                   XFQSDRYGBT8 * ZRHODREF(:)**(-XCEXVT) * ZWQ1(:,10) *      &
+                   XFQSDRYGBT8 * ZRHOCOR(:) * ZWQ1(:,10) *                  &
                   (XFQSDRYGBT9  / (ZLBDAS(:)**2. * ZLBDAG(:)**2.) +         &
                    XFQSDRYGBT10 / (ZLBDAS(:)**4.) +                         &
                    XFQSDRYGBT11 / (ZLBDAS(:)**3. * ZLBDAG(:))))
 !
 ! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
-!
-! For temperature lower than -30°C --> linear interpolation
-    WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,5) = ZWQ1(:,5) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-  END IF
-!
-!
-!*      2.6     Takahashi with EW (Tsenova and Mitzeva, 2009)
-!
-  IF (CNI_CHARGING == 'TEEWC') THEN
-    ZWQ1(:,5) = 0.
-    ZLIMIT(:) = 0.
-!
-! If graupel gains positive charge
-    WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
-           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZBTRMQ(:) > 0.)
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                  &
-                  (ZRHO00 / ZRHODREF(:))**((1. + 2.5 ) * XCEXVT) * &
-                   6.5 * ZBTRMQ(:) *                               &
-                   ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *             &
-                  (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, 0.44 ) *     &
-                   ZLBDAS(:)**(-0.44 ) * ZLBDAG(:)**(-2.)  +       &
-                   XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+0.44 ) *  &
-                   ZLBDAS(:)**(-(1. + 0.44 )) * ZLBDAG(:)**(-1.) + & 
-                   MOMG(XALPHAS, XNUS, 2.+0.44 ) *                 &
-                   ZLBDAS(:)**(-2. - 0.44 )) *                     &
-                   ZWQ3(:)
-!
-! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
-!
-! If graupel gains negative charge
-    WHERE (GELEC(:,3) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
-           ZRSS(:) > ZRSMIN_ELEC(5) .AND. ZBTRMQ(:) < 0.) 
-       ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                 &
-                  (ZRHO00 / ZRHODREF(:))**((1. + 2.8 ) * XCEXVT) * &
-                   2. * ZBTRMQ(:) *                                &
-                   ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *             &
-                  (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, 0.5 ) *      &
-                   ZLBDAS(:)**(-0.5 ) * ZLBDAG(:)**(-2.)  +        &
-                   XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+0.5 ) *   &
-                   ZLBDAS(:)**(-(1. + 0.5 )) * ZLBDAG(:)**(-1.) +  &
-                   MOMG(XALPHAS, XNUS, 2.+0.5 ) *                  &
-                   ZLBDAS(:)**(-2. - 0.5 )) *                      & 
-                   ZWQ4(:)
-!
-! Dq is limited to XLIM_NI_SG
       ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
+                  ZRHOCOR(:) * (1. - ZCOLSG(:)) *                   &
                   ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))                            
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))  
+                ( XAUX_LIM1 / ZLBDAS(:)**2           +              &
+                  XAUX_LIM2 /(ZLBDAS(:) * ZLBDAG(:)) +              &
+                  XAUX_LIM3 / ZLBDAG(:)**2 )
+      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
       ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
     ENDWHERE
 !
+! For temperature lower than -30C --> linear interpolation
     WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
       ZWQ1(:,5) = ZWQ1(:,5) * (ZZT(:) - XTT + 40.) / 10.
     ENDWHERE
   END IF
 !
-!
-!*      2.7     Takahashi with RAR (Tsenova and Mitzeva, 2009)
-!
-  IF (CNI_CHARGING == 'TERAR') THEN
-    ZWQ1(:,5) = 0.
-    ZLIMIT(:) = 0.
-!
-    WHERE (GELEC(:,3) .AND.                                              &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZRSS(:) > ZRSMIN_ELEC(5) .AND. &
-           ZBTRMQ_SG(:) > 0.)
-      ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                   &
-                  (ZRHO00 / ZRHODREF(:))**((1. + 2.5) * XCEXVT) *   &
-                   6.5 * ZBTRMQ_SG(:) *                             &
-                   ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *              &
-                  (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, 0.44) *       &
-                   ZLBDAS(:)**(-0.44) * ZLBDAG(:)**(-2.)  +         &
-                   XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+0.44 ) *   &
-                   ZLBDAS(:)**(-(1. + 0.44 )) * ZLBDAG(:)**(-1.) +  & 
-                   MOMG(XALPHAS, XNUS, 2.+0.44 ) *                  &
-                   ZLBDAS(:)**(-2. - 0.44 )) *                      &
-                   ZWQ3(:)
-!
-! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
-!
-! If graupel gains negative charge
-    WHERE (GELEC(:,3) .AND.                                              &
-           ZRGS(:) > ZRSMIN_ELEC(6) .AND. ZRSS(:) > ZRSMIN_ELEC(5) .AND. &
-           ZBTRMQ_SG(:) < 0.)
-       ZWQ1(:,5) = XFQSDRYGBS * (1. - ZCOLSG(:)) *                &
-                  (ZRHO00 / ZRHODREF(:))**((1. + 2.8) * XCEXVT) * &
-                   2. * ZBTRMQ_SG(:) *                            &
-                   ZLBDAG(:)**XCXG * ZLBDAS(:)**XCXS *            &
-                  (XLBQSDRYGB1S * MOMG(XALPHAS, XNUS, 0.5) *      &
-                   ZLBDAS(:)**(-0.5 ) * ZLBDAG(:)**(-2.)  +       &
-                   XLBQSDRYGB2S * MOMG(XALPHAS, XNUS, 1.+0.5) *   &
-                   ZLBDAS(:)**(-(1. + 0.5)) * ZLBDAG(:)**(-1.) +  &
-                   MOMG(XALPHAS, XNUS, 2.+0.5) *                  &
-                   ZLBDAS(:)**(-2. - 0.5)) *                      & 
-                   ZWQ4(:)
-!
-! Dq is limited to XLIM_NI_SG
-      ZLIMIT(:) = XLIM_NI_SG * ZAUX1(:) * XAUX_LIM *                   &
-                  ZRHODREF(:)**(-XCEXVT) * (1. - ZCOLSG(:)) *       &
-                  ZLBDAS(:)**(XCXS) * ZLBDAG(:)**(XCXG) *           &
-                 (XAUX_LIM1 * ZLBDAS(:)**(-2.) +                    &
-                  XAUX_LIM2 * ZLBDAS(:)**(-1.) * ZLBDAG(:)**(-1.) + &
-                  XAUX_LIM3 * ZLBDAG(:)**(-2.))
-      ZWQ1(:,5) = SIGN( MIN( ABS(ZLIMIT(:)), ABS(ZWQ1(:,5)) ), ZWQ1(:,5))
-      ZWQ1(:,5) = ZWQ1(:,5) / ZRHODREF(:)
-    ENDWHERE
-!
-    WHERE (ZWQ1(:,5) /= 0. .AND. ZZT(:) < (XTT-30.) .AND. ZZT(:) >= (XTT-40.))
-      ZWQ1(:,5) = ZWQ1(:,5) * (ZZT(:) - XTT + 40.) / 10.
-    ENDWHERE
-  END IF
 !
 END SUBROUTINE ELEC_SDRYG_B
 !
@@ -6429,20 +5765,20 @@ IMPLICIT NONE
 !*      1. COMPUTE THE CHARGING RATE
 !          -------------------------
 !
+  ZRATE_IND(:) = 0.
+!
   WHERE (GIND(:) .AND.                                                 &
          ZEFIELDW(:) /= 0. .AND. ABS(ZEGS(:)) > XEGMIN .AND.           &
          ZLBDAG(:) > 0. .AND.                                          &
          ZRGT(:) > XRTMIN_ELEC(6) .AND. ZRGS(:) > ZRSMIN_ELEC(6) .AND. &
          ZRCT(:) > XRTMIN_ELEC(2) .AND. ZRCS(:) > ZRSMIN_ELEC(2))
-    ZRATE_IND(:) = XIND1 * ZLBDAG(:)**XCXG * ZRHODREF(:)**(-XCEXVT) * &
+    ZRATE_IND(:) = XIND1 * ZLBDAG(:)**XCXG * ZRHOCOR(:) *                     &
                   (XIND2 * SIGN(MIN(100.E3, ABS(ZEFIELDW(:))), ZEFIELDW(:)) * &
-                   ZLBDAG(:) **(-2.-XDG) - &
+                   ZLBDAG(:) **(-2.-XDG) -                                    &
                    XIND3 * ZEGS(:) * ZLBDAG(:)**(-XFG-XDG))
     ZRATE_IND(:) = ZRATE_IND(:) / ZRHODREF(:)
     ZQGS(:) = ZQGS(:) + ZRATE_IND(:)
     ZQCS(:) = ZQCS(:) - ZRATE_IND(:)
-  ELSEWHERE
-    ZRATE_IND(:) = 0.
   END WHERE
 !
 END SUBROUTINE INDUCTIVE_PROCESS

@@ -42,6 +42,7 @@
 !!      P. Jabouille Apr 4, 2002    add switch for Sigma_s convection
 !!      V. Masson    Nov 13 2002    add switch for SBL lengths
 !!                   May   2006    Remove KEPS
+!!      C.Lac        Nov 2014      add terms of TKE production for LES diag
 
 !-------------------------------------------------------------------------------
 !
@@ -84,6 +85,11 @@ TYPE TURB_t
   REAL, DIMENSION(:,:), POINTER :: XSBL_DEPTH=>NULL()! SurfaceBL depth for RMC01 computations
   REAL, DIMENSION(:,:,:), POINTER :: XWTHVMF=>NULL()! Mass Flux vert. transport of buoyancy
   REAL               :: VSIGQSAT  ! coeff applied to qsat variance contribution
+  REAL, DIMENSION(:,:,:), POINTER :: XDYP=>NULL()    ! Dynamical production of Kinetic energy
+  REAL, DIMENSION(:,:,:), POINTER :: XTHP=>NULL()    ! Thermal production of Kinetic energy
+  REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()    ! Transport production of Kinetic energy
+  REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()    ! Dissipation of Kinetic energy
+  REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()    ! Mixing length
 !
 END TYPE TURB_t
 
@@ -105,6 +111,11 @@ REAL, DIMENSION(:,:), POINTER :: XBL_DEPTH=>NULL()
 REAL, DIMENSION(:,:), POINTER :: XSBL_DEPTH=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XWTHVMF=>NULL()
 REAL, POINTER :: VSIGQSAT=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XDYP=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XTHP=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XTR=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XDISS=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XLEM=>NULL()
 
 CONTAINS
 
@@ -116,6 +127,11 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 TURB_MODEL(KFROM)%XBL_DEPTH=>XBL_DEPTH
 TURB_MODEL(KFROM)%XSBL_DEPTH=>XSBL_DEPTH
 TURB_MODEL(KFROM)%XWTHVMF=>XWTHVMF
+TURB_MODEL(KFROM)%XDYP=>XDYP 
+TURB_MODEL(KFROM)%XTHP=>XTHP 
+TURB_MODEL(KFROM)%XTR=>XTR 
+TURB_MODEL(KFROM)%XDISS=>XDISS
+TURB_MODEL(KFROM)%XLEM=>XLEM
 !
 ! Current model is set to model KTO
 XIMPL=>TURB_MODEL(KTO)%XIMPL
@@ -134,6 +150,11 @@ XBL_DEPTH=>TURB_MODEL(KTO)%XBL_DEPTH
 XSBL_DEPTH=>TURB_MODEL(KTO)%XSBL_DEPTH
 XWTHVMF=>TURB_MODEL(KTO)%XWTHVMF
 VSIGQSAT=>TURB_MODEL(KTO)%VSIGQSAT
+XDYP=>TURB_MODEL(KTO)%XDYP 
+XTHP=>TURB_MODEL(KTO)%XTHP 
+XTR=>TURB_MODEL(KTO)%XTR  
+XDISS=>TURB_MODEL(KTO)%XDISS
+XLEM=>TURB_MODEL(KTO)%XLEM
 
 END SUBROUTINE TURB_GOTO_MODEL
 

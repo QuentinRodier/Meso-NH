@@ -214,7 +214,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!                    06/2010    (P.Peyrille)  add Call to aerozon.f90 if LAERO_FT=T
 !!                                to update 
 !!                                aerosols and ozone climatology at each call to
-!!                                phys_param otherwise it is constant to monthly average 
+!!                                phys_param otherwise it is constant to monthly average
 !!                    03/2013  (C.Lac) FIT temporal scheme
 !!                    01/2014 (C.Lac) correction for the nesting of 2D surface
 !!                           fields if the number of the son model does not
@@ -324,9 +324,7 @@ USE MODD_LATZ_EDFLX
 USE MODI_GOTO_SURFEX
 USE MODI_SWITCH_SBG_LES_N
 !
-!20130918
 USE MODE_MPPDB
-
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
@@ -398,7 +396,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC, ZRI, ZWT ! additional dummies
 REAL, DIMENSION(:,:),   ALLOCATABLE  :: ZDXDY         ! grid area
                     ! for rc, ri, w required if main variables not allocated
 !
-INTEGER :: IIU, IJU, IKU, II                              ! dimensional indexes
+INTEGER :: IIU, IJU, IKU                              ! dimensional indexes
 !
 INTEGER     :: JSV              ! Loop index for Scalar Variables
 INTEGER     :: JSWB             ! loop on SW spectral bands
@@ -1263,7 +1261,7 @@ IF ( CTURB == 'TKEL' ) THEN
     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS_ll)
 !!$  END IF
-  !20130918 use MPPDB for simultaneous runs np4 and np1
+!
   CALL MPPDB_CHECK2D(ZSFU,"phys_param::ZSFU",PRECISION)
   !
   IF ( CLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
@@ -1338,7 +1336,7 @@ END IF
       XCEI,XCEI_MIN,XCEI_MAX,XCOEF_AMPL_SAT,                                &
       XTHT,XRT,                                                             &
       XRUS,XRVS,XRWS,XRTHS,XRRS,XRSVS,XRTKES,XRTKEMS, XSIGS, XWTHVMF,       &
-      XTHW_FLUX, XRCW_FLUX, XSVW_FLUX                                       )
+      XTHW_FLUX, XRCW_FLUX, XSVW_FLUX,XDYP, XTHP, XTR, XDISS,  XLEM         )
 !
 IF (LRMC01) THEN
   CALL ADD2DFIELD_ll(TZFIELDS_ll,XSBL_DEPTH)
@@ -1374,8 +1372,8 @@ IF (CSCONV == 'EDKF') THEN
      CALL MPPDB_CHECK3D(ZEXN,"physparan.7::ZEXN",PRECISION)
      CALL ADD3DFIELD_ll(TZFIELDS_ll, ZEXN)
      !$20131113 add update_halo_ll
-        CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
-           CALL CLEANLIST_ll(TZFIELDS_ll)
+     CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
+     CALL CLEANLIST_ll(TZFIELDS_ll)
      CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
  !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
@@ -1383,7 +1381,7 @@ IF (CSCONV == 'EDKF') THEN
                    XIMPL_MF, XTSTEP,                                      &
                    XDZZ, XZZ,                                             &
                    XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &
-                   XTHT,XRT,XUT,XVT,XTKET,XSVT,                           &
+                   XTHT,XRT,XUT,XVT,XWT,XTKET,XSVT,                           &
                    XRTHS,XRRS,XRUS,XRVS,XRSVS,                            &
                    ZSIGMF,XRC_MF, XRI_MF, XCF_MF, XWTHVMF)
 !
