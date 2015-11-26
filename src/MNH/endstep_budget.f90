@@ -99,6 +99,7 @@ END MODULE MODI_ENDSTEP_BUDGET
 !!      V. Ducrocq  07/06/99  //
 !!      N. Asensio  22/06/99  // MASK case : delete KIU,KJU,KKU arguments
 !!                            and change the write_budget call
+!!      C.Lac       11/09/15 adaptation to FIT temporal scheme
 !!
 !-------------------------------------------------------------------------------
 !
@@ -136,7 +137,7 @@ SELECT CASE(CBUTYPE)
 !
 !*	 1.1    storage of the budget fields 
 !
-    IF( MODULO(KTCOUNT+1,NBUSTEP*NBUWRNB) == 0 ) THEN  
+    IF( MODULO(KTCOUNT,NBUSTEP*NBUWRNB) == 0 ) THEN  
       CALL WRITE_BUDGET(HFMDIAC,HLUOUT,TPDTCUR,TPDTMOD,PTSTEP, KSV )
 !
 !*	 1.2    resetting the budget arrays to 0.
@@ -169,7 +170,7 @@ SELECT CASE(CBUTYPE)
 !               -----------
 !  
   CASE('MASK')
-    IF( MODULO(KTCOUNT+1,NBUSTEP*NBUWRNB) == 0 ) THEN  
+    IF( MODULO(KTCOUNT,NBUSTEP*NBUWRNB) == 0 ) THEN  
 !
 !*	 2.1    storage of the budget fields
 ! 
@@ -202,7 +203,7 @@ SELECT CASE(CBUTYPE)
 !*	 2.3    update of the budget temporal increment and reset the budget
 !               initialization
 !
-    IF( MODULO(KTCOUNT+1,NBUSTEP) == 0 ) THEN  
+    IF( MODULO(KTCOUNT,NBUSTEP) == 0 ) THEN  
       NBUTIME=NBUTIME+1
       LBU_BEG=.TRUE.
     END IF

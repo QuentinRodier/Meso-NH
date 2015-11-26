@@ -231,6 +231,7 @@ END MODULE MODI_MODEL_n
 !!      J.Escobar 20/04/2015: missing UPDATE_HALO before UPDATE_HALO2
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!       C.Lac    11/09/2015: correction of the budget due to FIT temporal scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!-------------------------------------------------------------------------------
 !
@@ -958,34 +959,34 @@ XT_STORE = XT_STORE + ZTIME2 - ZTIME1
 !              --------------------------------------
 !
 IF (NBUMOD==IMI) THEN
-  LBU_ENABLE = CBUTYPE /='NONE'.AND. CBUTYPE /='SKIP' .AND. MODULO(KTCOUNT,2)==1
+  LBU_ENABLE = CBUTYPE /='NONE'.AND. CBUTYPE /='SKIP' 
 ELSE
   LBU_ENABLE = .FALSE.
 END IF
 !
-IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' .AND. MODULO(KTCOUNT,2)==1) THEN
+IF (NBUMOD==IMI .AND. CBUTYPE=='MASK' ) THEN
   CALL SET_MASK
   IF (LBU_RU)   XBURHODJU(:,NBUTIME,:) = XBURHODJU(:,NBUTIME,:)    &
-                            + 2.*MASK_COMPRESS(MXM(XRHODJ))
+                            + MASK_COMPRESS(MXM(XRHODJ))
   IF (LBU_RV)   XBURHODJV(:,NBUTIME,:) = XBURHODJV(:,NBUTIME,:)    &
-                            + 2.*MASK_COMPRESS(MYM(XRHODJ))
+                            + MASK_COMPRESS(MYM(XRHODJ))
   IF (LBU_RW)   XBURHODJW(:,NBUTIME,:) = XBURHODJW(:,NBUTIME,:)    &
-                            + 2.*MASK_COMPRESS(MZM(1,IKU,1,XRHODJ))
+                            + MASK_COMPRESS(MZM(1,IKU,1,XRHODJ))
   IF (ALLOCATED(XBURHODJ))                                         &
                 XBURHODJ (:,NBUTIME,:) = XBURHODJ (:,NBUTIME,:)    &
-                              + 2.*MASK_COMPRESS(XRHODJ)
+                              + MASK_COMPRESS(XRHODJ)
 END IF
 !
-IF (NBUMOD==IMI .AND. CBUTYPE=='CART' .AND. MODULO(KTCOUNT,2)==1) THEN
+IF (NBUMOD==IMI .AND. CBUTYPE=='CART' ) THEN
   IF (LBU_RU)   XBURHODJU(:,:,:) = XBURHODJU(:,:,:)    &
-                + 2.*CART_COMPRESS(MXM(XRHODJ))
+                + CART_COMPRESS(MXM(XRHODJ))
   IF (LBU_RV)   XBURHODJV(:,:,:) = XBURHODJV(:,:,:)    &
-                + 2.*CART_COMPRESS(MYM(XRHODJ))
+                + CART_COMPRESS(MYM(XRHODJ))
   IF (LBU_RW)   XBURHODJW(:,:,:) = XBURHODJW(:,:,:)    &
-                + 2.*CART_COMPRESS(MZM(1,IKU,1,XRHODJ))
+                + CART_COMPRESS(MZM(1,IKU,1,XRHODJ))
   IF (ALLOCATED(XBURHODJ))                             &
                 XBURHODJ (:,:,:) = XBURHODJ (:,:,:)    &
-                + 2.*CART_COMPRESS(XRHODJ)
+                + CART_COMPRESS(XRHODJ)
 END IF
 !
 CALL BUDGET_FLAGS(LUSERV, LUSERC, LUSERR,         &
@@ -1779,7 +1780,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     ZTOWN(:,:)= 0.
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
-                          NRR, NSPLITR, IMI, KTCOUNT,                    &
+                          NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
                           CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
                           GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,   &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
@@ -1793,7 +1794,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     DEALLOCATE(ZTOWN)
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
-                          NRR, NSPLITR, IMI, KTCOUNT,                    &
+                          NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
                           CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
                           GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,   &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
