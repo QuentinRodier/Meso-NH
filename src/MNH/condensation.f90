@@ -103,6 +103,10 @@ END MODULE MODI_CONDENSATION
 !!     modified : 21.3.2002
 !!     S.Malardel : 05.2006 : Correction sur le calcul de la fonction de
 !!                                         Bougeault F2
+!!     W. de Rooy: 06-06-2010: Modification in the statistical cloud scheme
+!!                             more specifically adding a variance term
+!!                             following ideas of Lenderink & Siebesma 2002
+!!                             and adding a height dependence
 !!     S. Riette, 18 May 2010 : PSIGQSAT is added
 !!     S. Riette, 11 Oct 2011 : MIN function in PDF for continuity
 !!                              modification of minimum value for Rc+Ri to create cloud and minimum value for sigma
@@ -111,6 +115,7 @@ END MODULE MODI_CONDENSATION
 !!                              Set ZCOND to zero if PCLDFR==0
 !!                              Safety limitation to .99*Pressure for saturation vapour pressure
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
+!!      2015   C.Lac   Change min value of ZSIGMA to be in agreement with AROME
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -316,7 +321,8 @@ DO JK=IKTB,IKTE
              ZA*ZA*ZDRW*ZDRW - 2.*ZA*ZB*ZDRW*ZDTL + ZB*ZB*ZDTL*ZDTL) + &
              ZSIG_CONV * ZSIG_CONV ) )
       END IF
-      ZSIGMA= MAX( 1.E-10, ZSIGMA )
+!     ZSIGMA= MAX( 1.E-10, ZSIGMA )
+      ZSIGMA= MAX( 1.E-12, ZSIGMA )
 
 ! normalized saturation deficit
       ZQ1   = ZSBAR/ZSIGMA

@@ -150,7 +150,7 @@ END MODULE MODI_RAIN_ICE
 !!          XCI                ! Ci (solid)
 !!          XTT                ! Triple point temperature
 !!          XLVTT              ! Vaporization heat constant
-!!          XALPW,XBETAW,XGAMW ! Constants for saturation vapor pressure
+!!          XALPW,XBETAW,XGAMW ! Constants for saturation vapor pressure/home/cnrm_other/ge/mrmh/riette/pack/20151118_phasage_MNH/src/main/mpa/micro/internals/rain_ice.F90
 !!                               function over liquid water
 !!          XALPI,XBETAI,XGAMI ! Constants for saturation vapor pressure
 !!                               function over solid ice
@@ -241,6 +241,7 @@ END MODULE MODI_RAIN_ICE
 !!                                reproducibility
 !!      (S. Riette) Oct 2010 Better vectorisation of RAIN_ICE_SEDIMENTATION_STAT
 !!      (Y. Seity), 02-2012  add possibility to run with reversed vertical levels
+!!      (S. Riette) Nov 2013 Protection against null sigma
 !!      Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
 !!      (C. Lac) FIT temporal scheme : instant M removed
 !!      (JP Pinty), 01-2014 : ICE4 : partial reconversion of hail to graupel
@@ -541,7 +542,7 @@ IF( IMICRO >= 0 ) THEN
     IF ( KRR == 7 ) ZRHT(JL) = PRHT(I1(JL),I2(JL),I3(JL))
     ZCIT(JL) = PCIT(I1(JL),I2(JL),I3(JL))
     IF ( HSUBG_AUCV == 'SIGM') THEN
-         ZSIGMA_RC(JL) = PSIGS(I1(JL),I2(JL),I3(JL)) * 2.
+         ZSIGMA_RC(JL) = MAX(PSIGS(I1(JL),I2(JL),I3(JL)) * 2., 1.E-12)
       ELSE IF ( HSUBG_AUCV == 'CLFR') THEN
          ZCF(JL) = PCLDFR(I1(JL),I2(JL),I3(JL))
     END IF
@@ -2012,7 +2013,7 @@ IMPLICIT NONE
 !*       3.4.5  compute the autoconversion of r_i for r_s production: RIAUTS
 !
   ALLOCATE(ZCRIAUTI(IMICRO))
-  ZCRIAUTI(:)=MIN(XCRIAUTI,10**(0.06*(ZZT(:)-XTT)-3.5))
+  ZCRIAUTI(:)=MIN(XCRIAUTI,10**(XACRIAUTI*(ZZT(:)-XTT)+XBCRIAUTI))
   ZZW(:) = 0.0
   WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRIS(:)>0.0) )
     ZZW(:) = MIN( ZRIS(:),XTIMAUTI * EXP( XTEXAUTI*(ZZT(:)-XTT) ) &

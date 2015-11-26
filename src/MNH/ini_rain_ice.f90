@@ -571,9 +571,11 @@ XEX1DEPH = XCXH-0.5*(XDH+3.0)
 !
 XTIMAUTI = 1.E-3  !  Time constant at T=T_t
 XTEXAUTI = 0.015  !  Temperature factor of the I+I collection efficiency
-!!XCRIAUTI = 0.25E-3 !  Critical ice content for the autoconversion to occur
 XCRIAUTI = 0.2E-4 !  Critical ice content for the autoconversion to occur
-                  !  Revised value by Chaboureau et al. (2001)
+                  !  Revised value by Chaboureau and Pinty (2006)
+XACRIAUTI = 0.06
+XBCRIAUTI = -3.5
+XT0CRIAUTI= (LOG10(XCRIAUTI)-XBCRIAUTI)/0.06
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -581,6 +583,10 @@ IF (GFLAG) THEN
   WRITE(UNIT=KLUOUT,FMT='(" Time constant   XTIMAUTI=",E13.6)') XTIMAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Temp. factor    XTEXAUTI=",E13.6)') XTEXAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Crit. ice cont. XCRIAUTI=",E13.6)') XCRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" A Coef. for cirrus law XACRIAUTI=",E13.6)') XACRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" B Coef. for cirrus law XBCRIAUTI=",E13.6)') XBCRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" Temp degC at which cirrus law starts to be &
+                              used=",E13.6)') XT0CRIAUTI
 END IF
 !
 !

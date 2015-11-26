@@ -64,8 +64,8 @@ REAL,SAVE :: XSCFAC,                           & ! Constants for raindrop
              X0DEPS,X1DEPS,XEX0DEPS,XEX1DEPS,  & !                  on S and
     	     X0DEPG,X1DEPG,XEX0DEPG,XEX1DEPG     !                  on G
 !
-REAL,SAVE :: XTIMAUTI,XTEXAUTI,                & ! Constants for pristine ice
-    	     XCRIAUTI                            ! autoconversion : AUT
+REAL,SAVE :: XTIMAUTI,XTEXAUTI,XCRIAUTI,       & ! Constants for pristine ice
+             XT0CRIAUTI,XACRIAUTI,XBCRIAUTI      ! autoconversion : AUT
 !
 REAL,SAVE :: XCOLIS,XCOLEXIS,                  & ! Constants for snow 
     	     XFIAGGS,                          & ! aggregation : AGG
