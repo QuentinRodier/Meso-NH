@@ -77,7 +77,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!
 !!      Module MODD_PARAM_n : CTURB,CRAD,CDCONV,CSCONV
 !!
-!!      Module MODD_LBC_n : CLBCX, CLBCY,NLBLX,NLBLY,XCPHASE
+!!      Module MODD_LBC_n : CLBCX, CLBCY,NLBLX,NLBLY,XCPHASE,XCPHASE_PBL,XPOND
 !!
 !!      Module MODD_TURB_n : XIMPL,CTURBLEN,CTURBDIM,LTURB_FLX,LTURB_DIAG,LSUBG_COND
 !!                           LTGT_FLX
@@ -207,6 +207,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   01/07/11 (B.Aouizerats) Add CAOP    
 !!                   07/2013  (C.Lac) add WENO, LCHECK              
 !!                   07/2013  (Bosseur & Filippi) adds Forefire
+!!                   08/2015  (Redelsperger & Pianezze) add XPOND coefficient for LBC
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -411,7 +412,7 @@ END IF
 CUVW_ADV_SCHEME =  'WENO_K'
 CMET_ADV_SCHEME =  'PPM_01'
 CSV_ADV_SCHEME  =  'PPM_01'
-CTEMP_SCHEME    =  'RK21'        
+CTEMP_SCHEME    =  'RK53'        
 NWENO_ORDER = 3
 NSPLIT      = 1
 LSPLIT_CFL  = .TRUE.
@@ -444,6 +445,7 @@ NLBLY(:) = 1
 XCPHASE = 20.
 XCPHASE_PBL = 0.
 XCARPKMAX = XUNDEF
+XPOND = 1.0
 !
 !-------------------------------------------------------------------------------
 !
@@ -867,7 +869,6 @@ COPISW = 'EBCU'
 COPWLW = 'SMSH'
 COPILW = 'EBCU'
 XFUDG = 1.
-LRAD_DUST = .FALSE.
 LAERO_FT=.FALSE.
 LFIX_DAT=.FALSE.
 !
