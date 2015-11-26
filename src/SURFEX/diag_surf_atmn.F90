@@ -27,6 +27,7 @@ SUBROUTINE DIAG_SURF_ATM_n(HPROGRAM)
 !!      Original    01/2004
 !!      Modified    01/2006 : sea flux parameterization.
 !!      Modified    08/2008 : cumulated fluxes
+!!      C.Lac       11/2015 : correction for ZP_QS
 !!------------------------------------------------------------------
 !
 
@@ -465,9 +466,15 @@ IF (LCOEF) THEN
    XCD_TILE      (KMASK(JJ),KTILE)  = ZP_CD       (JJ)
    XCH_TILE      (KMASK(JJ),KTILE)  = ZP_CH       (JJ)
    XCE_TILE      (KMASK(JJ),KTILE)  = ZP_CE       (JJ)
-   XQS_TILE      (KMASK(JJ),KTILE)  = ZP_QS       (JJ)
+!  XQS_TILE      (KMASK(JJ),KTILE)  = ZP_QS       (JJ)
    XZ0_TILE      (KMASK(JJ),KTILE)  = ZP_Z0       (JJ)
    XZ0H_TILE     (KMASK(JJ),KTILE)  = ZP_Z0H      (JJ)
+  ENDDO
+END IF
+!
+IF (LSURF_VARS) THEN      
+  DO JJ=1,KSIZE
+   XQS_TILE      (KMASK(JJ),KTILE)  = ZP_QS       (JJ)
   ENDDO
 END IF
 !----------------------------------------------------------------------
