@@ -81,6 +81,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!        between 2 Meso-NH levels if 10m is above the first atmospheric level
 !!      2015 : D.Ricard add UM10/VM10 for LCARTESIAN=T cases
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      P.Tulet : Diag for salt and orilam
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -113,6 +114,8 @@ USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_DUST,            ONLY: LDUST
+USE MODD_SALT,            ONLY: LSALT
+USE MODD_CH_AEROSOL,      ONLY: LORILAM
 USE MODD_RAD_TRANSF
 USE MODD_DIAG_IN_RUN, ONLY: XCURRENT_ZON10M,XCURRENT_MER10M,           &
                             XCURRENT_SFCO2, XCURRENT_SW, XCURRENT_LW
@@ -612,6 +615,77 @@ IF (NRAD_3D >= 1) THEN
     ENDDO
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
+  IF (LSALT) THEN
+!Salt optical depth between two vertical levels
+    YRECFM      = 'SLTAOD3D'
+    YCOMMENT    = 'X_Y_Z_Salt Aerosol Optical Depth (m)'
+    ILENCH=LEN(YCOMMENT)
+    ZWORK31(:,:,:)=0.
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,2)
+    END DO
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
+!Salt optical depth
+    ZWORK21(:,:)=0.0
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      DO JJ=IJB,IJE
+        DO JI=IIB,IIE
+          ZWORK21(JI,JJ)=ZWORK21(JI,JJ)+XAER(JI,JJ,IKRAD,2)
+        ENDDO
+      ENDDO
+    ENDDO
+    YRECFM      = 'SLTAOD2D'
+    YCOMMENT    = 'X_Y_Salt Aerosol Optical Depth (m)'
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+!Salt extinction (optical depth per km)
+    YRECFM      = 'SLTEXT'
+    YCOMMENT    = 'X_Y_Z_Salt EXTinction (1/km) '
+    ILENCH=LEN(YCOMMENT)
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,2)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
+    ENDDO
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
+  END IF
+  IF (LORILAM) THEN
+!Orilam anthropogenic optical depth between two vertical levels
+    YRECFM      = 'AERAOD3D'
+    YCOMMENT    = 'X_Y_Z_Anthropogenic Aerosol Optical Depth (m)'
+    ILENCH=LEN(YCOMMENT)
+    ZWORK31(:,:,:)=0.
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,4)
+    END DO
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
+!Orilam anthropogenic optical depth
+    ZWORK21(:,:)=0.0
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      DO JJ=IJB,IJE
+        DO JI=IIB,IIE
+          ZWORK21(JI,JJ)=ZWORK21(JI,JJ)+XAER(JI,JJ,IKRAD,4)
+        ENDDO
+      ENDDO
+    ENDDO
+    YRECFM      = 'AERAOD2D'
+    YCOMMENT    = 'X_Y_Anthropogenic Aerosol Optical Depth (m)'
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+!Orilam anthropogenic extinction (optical depth per km)
+    YRECFM      = 'AEREXT'
+    YCOMMENT    = 'X_Y_Z_Anthropogenic EXTinction (1/km) '
+    ILENCH=LEN(YCOMMENT)
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,4)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
+    ENDDO
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
+  END IF
+
 END IF
 !
 !-------------------------------------------------------------------------------

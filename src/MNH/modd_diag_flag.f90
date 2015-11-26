@@ -93,6 +93,7 @@ LOGICAL     :: LRADAR
 LOGICAL     :: LBLTOP
 LOGICAL     :: LTRAJ       ! to compute trajectories
 LOGICAL     :: LCHEMDIAG = .FALSE.  ! flag for chemistry
+CHARACTER (LEN=4) :: CAERDIAG  ! aerosols optical thickness type
 LOGICAL     :: LCHAQDIAG   ! flag for aqueous phase chemistry
 REAL, DIMENSION(10)  :: XCHEMLAT,XCHEMLON ! positions of vertical profiles written by routine write_ts1d
 LOGICAL     :: LAIRCRAFT_BALLOON    ! aircraft and balloon trajectories

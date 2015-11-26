@@ -67,10 +67,11 @@
 !!  03/2013     (O.Caumont)    Modif call aircraft_balloon
 !!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
 !!                             NBAZIM,LSNRT,XSNRMIN
-!!       D.Ricard 2015 : add LMOIST_ES
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!  D.Ricard 2015 : add LMOIST_ES
+!!  July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
-!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!   P.Tulet : 11/2015 : new diagnostic for aerosol
 !!
 !-------------------------------------------------------------------------------
 !
@@ -210,7 +211,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
                    XSTEP_AIRCRAFT_BALLOON,&
                    XLAT_BALLOON,XLON_BALLOON,XALT_BALLOON,&
-                   LC2R2, LC3R5, LELECDIAG,&
+                   LC2R2, LC3R5, LELECDIAG, CAERDIAG, &
                    NGPS,XLAT_GPS,XLON_GPS,XZS_GPS,CNAM_GPS,XDIFFORO, &
                    NVERSION_RAD, NCURV_INTERPOL, LCART_RAD, CARF,LREFR,LDNDZ,&
                    XLON_RAD,XLAT_RAD,XALT_RAD,CNAME_RAD,XLAM_RAD,XDT_RAD, &
@@ -283,6 +284,7 @@ LRADAR=.FALSE.
 LBLTOP=.FALSE.
 LVAR_FRC=.FALSE.
 LCHEMDIAG=.FALSE.
+CAERDIAG='CLIM'
 LCHAQDIAG=.FALSE.
 XCHEMLAT(:)=XUNDEF
 XCHEMLON(:)=XUNDEF
@@ -646,6 +648,7 @@ END IF
 IF (NRAD_3D == -1) CRAD = 'NONE'
 !
 IF (NRAD_3D >= 0) THEN
+  CAER=CAERDIAG
   IF (YRAD=='ECMW') THEN
     ! radiative fields are already initialized by INIT
     CRAD = 'NONE'
