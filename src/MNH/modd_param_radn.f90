@@ -84,7 +84,6 @@ TYPE PARAM_RAD_t
                                 ! aerosol and ozone distribution
   LOGICAL           :: LFIX_DAT ! logical switch to fix the date to a constant 
                                 ! perpetual day ( diurnal cycle is conserved)
-  LOGICAL:: LRAD_DUST ! .TRUE. the radiativ effect of dusts is take into account
 !-------------------------------------------------------------------------------
 !
 
@@ -116,7 +115,6 @@ CHARACTER (LEN=4), POINTER :: COPWSW=>NULL()
 CHARACTER (LEN=4), POINTER :: COPISW=>NULL()
 LOGICAL, POINTER :: LAERO_FT=>NULL()
 LOGICAL, POINTER :: LFIX_DAT=>NULL()
-LOGICAL, POINTER :: LRAD_DUST=>NULL()
 
 CONTAINS
 
@@ -144,7 +142,6 @@ COPWSW=>PARAM_RAD_MODEL(KTO)%COPWSW
 COPISW=>PARAM_RAD_MODEL(KTO)%COPISW
 LAERO_FT=>PARAM_RAD_MODEL(KTO)%LAERO_FT
 LFIX_DAT=>PARAM_RAD_MODEL(KTO)%LFIX_DAT
-LRAD_DUST=>PARAM_RAD_MODEL(KTO)%LRAD_DUST
 
 END SUBROUTINE PARAM_RAD_GOTO_MODEL
 

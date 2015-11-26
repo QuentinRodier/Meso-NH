@@ -210,6 +210,7 @@ END MODULE MODI_RADIATIONS
 !!      A. Grini    05/20/05  dust direct effect (optical properties)
 !!      V.Masson, C.Lac 08/10 Correction of inversion of Diffuse and direct albedo
 !!      B.Aouizerats 2010     Explicit aerosol optical properties
+!!      C.Lac       11/2015   Correction on aerosols
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -237,7 +238,7 @@ USE MODE_THERMO
 USE MODD_DUST, ONLY: LDUST
 USE MODD_SALT, ONLY: LSALT
 USE MODD_CH_AEROSOL, ONLY: LORILAM
-USE MODD_PARAM_RAD_n, ONLY: CAOP,LRAD_DUST         
+USE MODD_PARAM_RAD_n, ONLY: CAOP
 USE MODE_DUSTOPT
 USE MODE_SALTOPT
 USE MODI_AEROOPT_GET
@@ -944,7 +945,10 @@ IF (CAOP=='EXPL') THEN
 
  ZTAUREL_EQ_TMP(:,:,:,:)=ZTAUREL_DST_TMP(:,:,:,:)+ZTAUREL_AER_TMP(:,:,:,:)+ZTAUREL_SLT_TMP(:,:,:,:)
  
- PAER(:,:,:,3)=PAER_AER(:,:,:)+PAER_SLT(:,:,:)+PAER_DST(:,:,:)
+!PAER(:,:,:,3)=PAER_AER(:,:,:)+PAER_SLT(:,:,:)+PAER_DST(:,:,:)
+ PAER(:,:,:,2)=PAER_SLT(:,:,:)
+ PAER(:,:,:,3)=PAER_DST(:,:,:)
+ PAER(:,:,:,4)=PAER_AER(:,:,:)
 
 
  WHERE (ZTAUREL_EQ_TMP(:,:,:,:).GT.0.0)
@@ -1021,18 +1025,35 @@ ENDDO
 
 !
 ALLOCATE(ZAER(KDLON,KFLEV,KAER))
-IF (LRAD_DUST.AND.LDUST) THEN
-  DO JJ=IJB,IJE
-    DO JI=IIB,IIE
+! Aerosol classes
+! 1=Continental   2=Maritime   3=Desert     4=Urban     5=Volcanic 6=Stratos.Bckgnd
+DO JJ=IJB,IJE
+   DO JI=IIB,IIE
       IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
       ZAER (IIJ,:,:) = PAER_CLIM  (JI,JJ,:,:)
-    END DO
-  END DO
-ELSE
+   END DO
+END DO
+IF ((CAOP=='EXPL') .AND. LDUST ) THEN
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
       IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-      ZAER (IIJ,:,:) = PAER  (JI,JJ,:,:)
+      ZAER (IIJ,:,3) = PAER  (JI,JJ,:,3)
+    END DO
+  END DO
+END IF
+IF ((CAOP=='EXPL') .AND. LSALT ) THEN
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+      ZAER (IIJ,:,2) = PAER  (JI,JJ,:,2)
+    END DO
+  END DO
+END IF
+IF ((CAOP=='EXPL') .AND. LORILAM ) THEN
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+      ZAER (IIJ,:,4) = PAER  (JI,JJ,:,4)
     END DO
   END DO
 END IF
