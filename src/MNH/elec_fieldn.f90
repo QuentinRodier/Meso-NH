@@ -1,3 +1,4 @@
+
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -43,12 +44,15 @@ USE MODD_CST, ONLY : XCPD
 USE MODD_DYN_n, ONLY: XTRIGSX, XTRIGSY, XDXHATM, XDYHATM, NIFAXX, NIFAXY
 USE MODD_METRICS_n
 USE MODD_ELEC_DESCR, ONLY : CLSOL, NLAPITR_ELEC, XEPSILON, XEPOTFW_TOP
-USE MODD_ELEC_n, ONLY : XESOURCEFW, XRHOM_E, XAF_E, XCF_E, XBFY_E
+USE MODD_ELEC_n, ONLY : XRHOM_E, XAF_E, XCF_E, XBFY_E, &
+                        XBFB_E, XBF_SXP2_YP1_Z_E
 !
 USE MODI_FLAT_INV
+USE MODI_FLAT_INVZ
 USE MODI_RICHARDSON
 USE MODI_CONJGRAD
 USE MODI_CONRESOL
+USE MODI_CONRESOLZ
 USE MODI_GRADIENT_M
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
@@ -164,10 +168,18 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 IF (LFLAT .AND. LCARTESIAN) THEN
 ! flat cartesian LHE case -> exact solution 
-  CALL FLAT_INV (ZLBCX, ZLBCY, XDXHATM, XDYHATM,   &
-                 XRHOM_E, XAF_E, XBFY_E, XCF_E,    &
-                 XTRIGSX, XTRIGSY, NIFAXX, NIFAXY, &
-                 ZDV_SOURCE, ZPHIT)
+  IF ( CLSOL /= "ZRESI" ) THEN
+    CALL FLAT_INV (ZLBCX, ZLBCY, XDXHATM, XDYHATM,   &
+                   XRHOM_E, XAF_E, XBFY_E, XCF_E,    &
+                   XTRIGSX, XTRIGSY, NIFAXX, NIFAXY, &
+                   ZDV_SOURCE, ZPHIT)
+  ELSE
+    CALL FLAT_INVZ (ZLBCX, ZLBCY, XDXHATM, XDYHATM,  &
+                   XRHOM_E, XAF_E, XBFY_E, XCF_E,    &
+                   XTRIGSX, XTRIGSY, NIFAXX, NIFAXY, &
+                   ZDV_SOURCE, ZPHIT,                &
+                   XBFB_E, XBF_SXP2_YP1_Z_E)
+  END IF
 ELSE
   SELECT CASE(CLSOL)
   CASE('RICHA')     ! Richardson's method
@@ -189,6 +201,13 @@ ELSE
                    XRHOM_E, XAF_E, XBFY_E, XCF_E, XTRIGSX, XTRIGSY,    &
                    NIFAXX, NIFAXY, NLAPITR_ELEC,               &
                    ZDV_SOURCE, ZPHIT)
+  CASE('ZRESI')     ! Conjugate Residual method
+    CALL CONRESOLZ (ZLBCX, ZLBCY, XDXX, XDYY, XDZX, XDZY, XDZZ,&
+                   PRHODJ,ZTHETAV, XDXHATM, XDYHATM,           &
+                   XRHOM_E, XAF_E, XBFY_E, XCF_E, XTRIGSX, XTRIGSY,    &
+                   NIFAXX, NIFAXY, NLAPITR_ELEC,               &
+                   ZDV_SOURCE, ZPHIT,                          &
+                   XBFB_E, XBF_SXP2_YP1_Z_E)
   END SELECT
 END IF
 !

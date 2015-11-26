@@ -21,6 +21,7 @@ INTERFACE
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
+                   OLNOX_EXPLICIT,                                               &
                    OCONDSAMP,                                                    &
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
@@ -50,6 +51,7 @@ LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
 #endif
+LOGICAL,            INTENT(OUT) :: OLNOX_EXPLICIT ! explicit LNOx flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Orilam flag
 LOGICAL,            INTENT(OUT) :: OCHTRANS ! Deep convection on scalar
@@ -84,6 +86,7 @@ END MODULE MODI_READ_DESFM_n
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                    &
 #endif
+                   OLNOX_EXPLICIT,                                               &
                    OCONDSAMP,                                                    &
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
@@ -186,6 +189,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   03/2006   (O.Geoffroy) Add KHKO scheme
 !!      Modification   04/2010   (M. Leriche) Add aqueous + ice chemistry
 !!      Modification   07/2013   (Bosseur & Filippi) Adds Forefire
+!!      Modification   01/2015   (C. Barthe) Add explicit LNOx
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -279,6 +283,7 @@ LOGICAL,            INTENT(OUT) :: OPASPOL  ! Passive pollutant flag
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
 #endif
+LOGICAL,            INTENT(OUT) :: OLNOX_EXPLICIT ! explicit LNOx flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Dust flag
@@ -509,6 +514,7 @@ OPASPOL  = LPASPOL
 #ifdef MNH_FOREFIRE
 OFOREFIRE  = LFOREFIRE
 #endif
+OLNOX_EXPLICIT = LLNOX_EXPLICIT
 OCONDSAMP= LCONDSAMP
 KRIMX  = NRIMX
 KRIMY  = NRIMY
@@ -674,10 +680,10 @@ IF (NVERB >= 10) THEN
       WRITE(UNIT=ILUOUT,NML=NAM_PARAM_C1R3)
     END IF
 !
-   IF (CELEC /= 'NONE') THEN
-     WRITE(UNIT=ILUOUT,FMT="('************ ELEC SCHEME **********************')")
-     WRITE(UNIT=ILUOUT,NML=NAM_ELEC)                                             
-   END IF
+    IF (CELEC /= 'NONE') THEN
+      WRITE(UNIT=ILUOUT,FMT="('************ ELEC SCHEME **********************')")
+      WRITE(UNIT=ILUOUT,NML=NAM_ELEC)                                             
+    END IF
 !    
   END IF
 !

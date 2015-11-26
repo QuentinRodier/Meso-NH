@@ -34,6 +34,8 @@
 !!        M. Chong      26/01/10  Small ions parameters
 !!                               +Option for Fair weather field from
 !!                               Helsdon-Farley (JGR, 1987, 5661-5675)
+!!                               Add "Beard" effect via sedimentation process
+!!        J.-P. Pinty   25/10/13 Add "Latham" effect via aggregation process
 !!
 !-------------------------------------------------------------------------------
 !
@@ -56,7 +58,7 @@ LOGICAL :: LRELAX2FW_ION = .FALSE. ! .T.= Relaxation to fair weather ion
                                    ! layer
 LOGICAL :: LFLASH_GEOM=.TRUE.    ! .T.: the 'geometric' flash scheme is used
 LOGICAL :: LSAVE_COORD=.FALSE.   ! .T.: the flash coord are written in an ascii file
-INTEGER :: NFLASH_WRITE = 100    ! Number of flashes to be saved before writing
+INTEGER :: NFLASH_WRITE = 1000   ! Number of flashes to be saved before writing
                                  ! the diag and/or coordinates in ascii files
 LOGICAL :: LINDUCTIVE=.FALSE.      ! .T.: inductive process is taken into account
 LOGICAL :: LLNOX_EXPLICIT=.FALSE.  ! .T.: lnox production is computed
@@ -157,7 +159,7 @@ INTEGER :: NNBLIGHT=0              ! Nb of lightning flashes
 REAL, DIMENSION(:), ALLOCATABLE :: XNEUT_POS, XNEUT_NEG
 INTEGER :: NNB_CG          ! Nb of CG flashes
 INTEGER :: NNB_CG_POS      ! Nb of positive CG flashes
-REAL    :: XALT_CG           ! Altitude at which CG are detected
+REAL    :: XALT_CG         ! Altitude (m) at which CG are detected
 !
 CHARACTER(LEN=10), DIMENSION(8) &
          :: CELECNAMES=(/'QNIONP','QCELEC','QRELEC','QIELEC','QSELEC',   &
@@ -168,5 +170,12 @@ CHARACTER(LEN=10), DIMENSION(8) &
 REAL :: XLNOX_ECLAIR
 !
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XEPOTFW_TOP
+!
+! Parameters relative to the "Beard" effect ELEC=>MICROPHYS
+!
+LOGICAL :: LSEDIM_BEARD=.FALSE.    ! .T.: to enable ELEC=>MICROPHYS via
+!                                  ! particule sedimentation rate
+LOGICAL :: LIAGGS_LATHAM=.FALSE.   ! .T.: to enable ELEC=>MICROPHYS via
+!                                  ! ice aggregation rate
 !
 END MODULE MODD_ELEC_DESCR

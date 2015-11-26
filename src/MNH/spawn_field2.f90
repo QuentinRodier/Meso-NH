@@ -141,6 +141,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!                                        for 2D west african monsoon
 !!      Modification 07/13  (Bosseur & Filippi) Adds Forefire
 !!      Modification 2014 (M.Faivre)
+!!      Modification 01/15  (C. Barthe)   add LNOx
 !!      Modification 25/02/2015 (M.Moge) correction of the parallelization attempted by M.Faivre
 !-------------------------------------------------------------------------------
 !
@@ -839,6 +840,12 @@ IF (PRESENT(HSONFILE)) THEN
     END DO
     DO JSV = NSV_LGBEG,NSV_LGEND     ! LG Scalar Variables
       YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
+      CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+      IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+    END DO
+    DO JSV = NSV_LNOXBEG,NSV_LNOXEND     ! LNOx Scalar Variables
+      YRECFM='LINOX'
       CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
                   YCOMMENT,IRESP)
       IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)

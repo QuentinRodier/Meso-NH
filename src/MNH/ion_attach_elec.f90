@@ -74,7 +74,6 @@ END MODULE MODI_ION_ATTACH_ELEC
 !!    -------------
 !!      Original    2010
 !!      Modifications:
-!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -92,7 +91,6 @@ USE MODD_RAIN_ICE_PARAM
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELEC
 USE MODD_BUDGET, ONLY : LBU_RSV
 USE MODD_REF,    ONLY : XTHVREFZ
-USE MODE_ll
 !
 USE MODI_BUDGET
 USE MODI_MOMG
@@ -151,7 +149,10 @@ REAL    :: ZCOMB         ! Recombination
 ZCQD = 4 * XPI * XEPSILON * XBOLTZ / XECHARGE
 ZCDIF = XBOLTZ /XECHARGE
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IIB = 1 + JPHEXT
+IIE = SIZE(PTHT,1) - JPHEXT
+IJB = 1 + JPHEXT
+IJE = SIZE(PTHT,2) - JPHEXT
 IKB = 1 + JPVEXT
 IKE = SIZE(PTHT,3) - JPVEXT
 !
@@ -160,24 +161,24 @@ IKE = SIZE(PTHT,3) - JPVEXT
 !
 IVALID = 0
 DO IK = IKB, IKE
-   DO IJ = IJB, IJE
-      DO II = IIB, IIE
-         IF (GATTACH(II,IJ,IK)) THEN
+  DO IJ = IJB, IJE
+    DO II = IIB, IIE
+      IF (GATTACH(II,IJ,IK)) THEN
 ! Recombination
-            ZCOMB = XIONCOMB * (PSVS(II,IJ,IK,1)*PTSTEP) *    &
-                               (PSVS(II,IJ,IK,NSV_ELEC)*PTSTEP) * &
-                               PRHODREF(II,IJ,IK) / PRHODJ(II,IJ,IK)
-            ZCOMB = MIN(ZCOMB, PSVS(II,IJ,IK,1), PSVS(II,IJ,IK,NSV_ELEC))
-            PSVS(II,IJ,IK,1) = PSVS(II,IJ,IK,1) - ZCOMB
-            PSVS(II,IJ,IK,NSV_ELEC) = PSVS(II,IJ,IK,NSV_ELEC) - ZCOMB
+        ZCOMB = XIONCOMB * (PSVS(II,IJ,IK,1)*PTSTEP) *    &
+                           (PSVS(II,IJ,IK,NSV_ELEC)*PTSTEP) * &
+                           PRHODREF(II,IJ,IK) / PRHODJ(II,IJ,IK)
+        ZCOMB = MIN(ZCOMB, PSVS(II,IJ,IK,1), PSVS(II,IJ,IK,NSV_ELEC))
+        PSVS(II,IJ,IK,1) = PSVS(II,IJ,IK,1) - ZCOMB
+        PSVS(II,IJ,IK,NSV_ELEC) = PSVS(II,IJ,IK,NSV_ELEC) - ZCOMB
 ! Counting
-            IVALID = IVALID + 1
-            IGI(IVALID) = II
-            IGJ(IVALID) = IJ
-            IGK(IVALID) = IK
-         END IF
-      ENDDO
-   ENDDO
+        IVALID = IVALID + 1
+        IGI(IVALID) = II
+        IGJ(IVALID) = IJ
+        IGK(IVALID) = IK
+      END IF
+    ENDDO
+  ENDDO
 ENDDO
 !
 !*      1.2     Compute the temperature
@@ -185,8 +186,8 @@ ENDDO
 IF( IVALID /= 0 ) THEN
   ALLOCATE (ZT(IVALID))
   DO II = 1, IVALID
-     ZT(II) = PTHT(IGI(II),IGJ(II),IGK(II)) * &
-             (PPABST(IGI(II),IGJ(II),IGK(II)) / XP00) ** (XRD / XCPD)
+    ZT(II) = PTHT(IGI(II),IGJ(II),IGK(II)) * &
+            (PPABST(IGI(II),IGJ(II),IGK(II)) / XP00) ** (XRD / XCPD)
   ENDDO
 END IF
 !
@@ -221,9 +222,9 @@ IF( IVALID /= 0 ) THEN
 
   ITYPE = 2
   IF (PRESENT(PSEA)) THEN
-   CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE, PSEA, PTOWN)
+    CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE, PSEA, PTOWN)
   ELSE
-   CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE)
+    CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE)
   ENDIF
 !  
   CALL DIFF_COND (IGI, IGJ, IGK, PSVS(:,:,:,1), PSVS(:,:,:,NSV_ELEC),  &
@@ -233,10 +234,10 @@ IF( IVALID /= 0 ) THEN
 !                             and hail (if activated)
 !
   DO ITYPE = 3, KRR
-     CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE)
+    CALL HYDROPARAM (IGI, IGJ, IGK, ZCONC, ZVIT, ZRADIUS, ITYPE)
 !  
-     CALL DIFF_COND (IGI, IGJ, IGK, PSVS(:,:,:,1), PSVS(:,:,:,NSV_ELEC),  &
-                     PSVS(:,:,:,ITYPE))
+    CALL DIFF_COND (IGI, IGJ, IGK, PSVS(:,:,:,1), PSVS(:,:,:,NSV_ELEC),  &
+                    PSVS(:,:,:,ITYPE))
   END DO
 !
   DEALLOCATE (ZCONC, ZVIT, ZRADIUS)
@@ -363,7 +364,7 @@ SELECT CASE (ITYPE)
 !*	2.	PARAMETERS FOR RAIN
 !               -------------------
   CASE (3)
-    ZEXP1 = XEXSEDR
+    ZEXP1 = XEXSEDR - 1.
     ZEXP2 = ZEXP1 - XCEXVT
 !
     DO IV = 1, IVALID
@@ -376,7 +377,7 @@ SELECT CASE (ITYPE)
          ZRADIUS (IV) = 0.5 / ZLAMBDA
          ZCONC (IV) = XCCR / ZLAMBDA
          ZVIT (IV) = XFSEDR * PRHODREF(JI,JJ,JK)**ZEXP2 &
-                                * PRS(JI,JJ,JK,3)**(ZEXP1-1.)
+                                * PRS(JI,JJ,JK,3)**ZEXP1
       END IF
     ENDDO
 !
@@ -418,7 +419,7 @@ SELECT CASE (ITYPE)
 !
   CASE (5)
 !
-    ZEXP1 = XEXSEDS
+    ZEXP1 = XEXSEDS - 1. 
     ZEXP2 = ZEXP1 - XCEXVT
 !
     DO IV = 1, IVALID
@@ -431,7 +432,7 @@ SELECT CASE (ITYPE)
         ZRADIUS (IV) = 0.5 / ZLAMBDA
         ZCONC (IV) = XCCS * ZLAMBDA**XCXS
         ZVIT (IV) = XFSEDS * PRHODREF(JI,JJ,JK)**ZEXP2 &
-                               * PRS(JI,JJ,JK,5)**(ZEXP1-1.)
+                               * PRS(JI,JJ,JK,5)**ZEXP1
       END IF
     ENDDO
 !
@@ -441,7 +442,7 @@ SELECT CASE (ITYPE)
 !
   CASE (6)
 !
-    ZEXP1 = XEXSEDG
+    ZEXP1 = XEXSEDG - 1.
     ZEXP2 = ZEXP1 - XCEXVT
 !
     DO IV = 1, IVALID
@@ -454,7 +455,7 @@ SELECT CASE (ITYPE)
         ZRADIUS (IV) = 0.5 / ZLAMBDA
         ZCONC (IV) = XCCG * ZLAMBDA**XCXG
         ZVIT (IV) = XFSEDG * PRHODREF(JI,JJ,JK)**ZEXP2 &
-                               * PRS(JI,JJ,JK,6)**(ZEXP1-1.)
+                               * PRS(JI,JJ,JK,6)**ZEXP1
       END IF
     ENDDO
 !
@@ -464,7 +465,7 @@ SELECT CASE (ITYPE)
 !
   CASE (7)
 !
-    ZEXP1 = XEXSEDH
+    ZEXP1 = XEXSEDH - 1.
     ZEXP2 = ZEXP1-XCEXVT
     ZRAY = 0.5*MOMG(XALPHAH, XNUH, 1.)
 !
@@ -478,7 +479,7 @@ SELECT CASE (ITYPE)
         ZRADIUS (IV) = ZRAY / ZLAMBDA
         ZCONC (IV) = XCCG * ZLAMBDA**XCXG
         ZVIT (IV) = XFSEDH * PRHODREF(JI,JJ,JK)**ZEXP2 &
-                               * PRS(JI,JJ,JK,7)**(ZEXP1-1.)
+                               * PRS(JI,JJ,JK,7)**ZEXP1
       END IF
     ENDDO
 !

@@ -6,6 +6,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! masdev4_8 2008/07/09 16:40:30
 !-----------------------------------------------------------------
 !     ###################### 
       MODULE MODI_READ_EXSEG_n
@@ -21,6 +22,7 @@ INTERFACE
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                      &
 #endif
+                   OLNOX_EXPLICIT,                                                 &
                    OCONDSAMP,                                                      &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
@@ -51,6 +53,7 @@ LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMF
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 #endif
+LOGICAL,            INTENT(IN) :: OLNOX_EXPLICIT ! explicit LNOx FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCHTRANS       ! LCHTRANS FLAG in FMFILE
 
@@ -89,6 +92,7 @@ END MODULE MODI_READ_EXSEG_n
 #ifdef MNH_FOREFIRE
                    OFOREFIRE,                                                      &
 #endif
+                   OLNOX_EXPLICIT,                                                 &
                    OCONDSAMP,                                                      &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
@@ -179,7 +183,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Module MODN_PARAM1 : CTURB,CRAD,CDCONV,CSCONV
 !!
 !!      Module MODN_LUNIT1 : 
-!!      Module MODN_LBC1 : CLBCX,CLBCY,NLBLX,NLBLY,XCPHASE
+!!      Module MODN_LBC1 : CLBCX,CLBCY,NLBLX,NLBLY,XCPHASE,XPOND
 !!
 !!      Module MODN_TURB_n : CTURBLEN,CTURBDIM
 !!
@@ -273,6 +277,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   12/2012   (S.Bielli) add NAM_NCOUT for netcdf output
 !!      Modification   02/2012   (Pialat/Tulet) add ForeFire
 !!      Modification   02/2012   (T.Lunet) add of new Runge-Kutta methods
+!!      Modification   01/2015   (C. Barthe) add explicit LNOx
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!------------------------------------------------------------------------------
 !
@@ -384,6 +389,7 @@ LOGICAL,            INTENT(IN) :: OPASPOL        ! Passive pollutant FLAG in FMF
 #ifdef MNH_FOREFIRE
 LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 #endif
+LOGICAL,            INTENT(IN) :: OLNOX_EXPLICIT ! explicit LNOx FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCHTRANS       ! LCHTRANS FLAG in FMFILE
 
@@ -618,7 +624,8 @@ CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN_CLOUD',CTURBLEN_CLOUD,'NONE','DEAR','DELT','B
 !
 !   The test on the mass flux scheme for shallow convection
 !
-CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ')
+CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ',&
+                   'HRIO','BOUT')
 CALL TEST_NAM_VAR(ILUOUT,'CMF_CLOUD',CMF_CLOUD,'NONE','STAT','DIRE')
 !
 !   The test on the CSOLVER name is made elsewhere
@@ -635,9 +642,6 @@ END IF
 !*       2.    FIRST INITIALIZATIONS
 !              ---------------------
 !
-!!!!!!!!!!!!!!!!!!!!  TEST CL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!IF (NPROC==1) JPHEXT=1
-!!!!!!!!!!!!!!!!!!!!  TEST CL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !*       2.1   Time step in gridnesting case
 !
 IF (KMI /= 1 .AND. NDAD(KMI) /= KMI)  THEN
@@ -1354,6 +1358,20 @@ IF (CELEC /= 'NONE') THEN
          &SCHEME IN INITIAL FMFILE",/,&
          & "THE ELECTRICAL VARIABLES HAVE BEEN INITIALIZED TO ZERO ")') 
     CGETSVT(NSV_ELECBEG:NSV_ELECEND)='INIT'
+  END IF
+END IF
+!
+! (explicit) LINOx SV case 
+!
+IF (CELEC /= 'NONE' .AND. LLNOX_EXPLICIT) THEN
+  IF (HELEC /= 'NONE' .AND. OLNOX_EXPLICIT) THEN
+    CGETSVT(NSV_LNOXBEG:NSV_LNOXEND)='READ' 
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT=9001) KMI
+    WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR LINOX &
+         & IN INITIAL FMFILE",/,& 
+         & "THE LINOX VARIABLES HAVE BEEN INITIALIZED TO ZERO ")')  
+    CGETSVT(NSV_LNOXBEG:NSV_LNOXEND)='INIT' 
   END IF
 END IF
 !
@@ -2493,13 +2511,6 @@ IF (XTNUDGING < 4.*XTSTEP) THEN
   WRITE(ILUOUT,FMT=*) 'XTNUDGING is SET TO ',XTNUDGING
 END IF
 !
-IF (XBULEN < 2.*XTSTEP .AND. KMI==NBUMOD) THEN
-  XBULEN = 2.*XTSTEP
-  WRITE(UNIT=ILUOUT,FMT=9002) KMI
-  WRITE(UNIT=ILUOUT,FMT='("DURATION FOR BUDGET AVERAGING CAN NOT BE SMALLER THAN",  &
-                 &   " TWO TIMES THE TIME STEP")')
-  WRITE(ILUOUT,FMT=*) 'XBULEN is SET TO ',XBULEN
-END IF
 !
 IF (XWAY(KMI) == 3. ) THEN
   XWAY(KMI) = 2.

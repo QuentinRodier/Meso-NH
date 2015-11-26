@@ -110,6 +110,11 @@ REAL, DIMENSION(:,:,:),   ALLOCATABLE ::ZZZ_LES
 REAL, DIMENSION(:,:,:),   ALLOCATABLE ::ZINPRR3D_LES   ! precipitation flux 3D
 REAL, DIMENSION(:,:,:),   ALLOCATABLE ::ZEVAP3D_LES !evaporation 3D
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZP_LES    ! pres. on LES vertical grid
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZDP_LES   ! dynamical production TKE   
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZTP_LES   ! thermal production TKE    
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZTR_LES   ! transport production TKE    
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZDISS_LES ! dissipation TKE    
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZLM_LES    ! mixing length
 
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZDPDZ_LES   ! dp/dz on LES vertical grid
 REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZDTHLDZ_LES ! dThl/dz on LES vertical grid
@@ -197,6 +202,7 @@ INTEGER :: IIMAX_ll, IJMAX_ll  ! total physical domain I size
 INTEGER :: JLOOP
 !
 INTEGER :: IMASK    ! mask counter
+INTEGER :: IMASKUSER! mask user number 
 !
 INTEGER :: IRESP, ILUOUT
 INTEGER :: IMI      ! Current model index
@@ -239,6 +245,11 @@ END IF
 !            -----------
 !
 ALLOCATE(ZP_LES   (IIU,IJU,NLES_K))
+ALLOCATE(ZDP_LES   (IIU,IJU,NLES_K))
+ALLOCATE(ZTP_LES   (IIU,IJU,NLES_K))
+ALLOCATE(ZTR_LES   (IIU,IJU,NLES_K))
+ALLOCATE(ZDISS_LES   (IIU,IJU,NLES_K))
+ALLOCATE(ZLM_LES   (IIU,IJU,NLES_K))
 ALLOCATE(ZDTHLDZ_LES(IIU,IJU,NLES_K))
 ALLOCATE(ZDTHDZ_LES(IIU,IJU,NLES_K))
 ALLOCATE(ZDRTDZ_LES(IIU,IJU,NLES_K))
@@ -486,6 +497,11 @@ END IF
 !
 CALL LES_VER_INT( XZZ   , ZZZ_LES)
 CALL LES_VER_INT( XPABST, ZP_LES )
+CALL LES_VER_INT( XDYP, ZDP_LES )
+CALL LES_VER_INT( XTHP, ZTP_LES )
+CALL LES_VER_INT( XTR, ZTR_LES )
+CALL LES_VER_INT( XDISS, ZDISS_LES )
+CALL LES_VER_INT( XLEM, ZLM_LES )
 CALL LES_VER_INT( GZ_M_M(1,IKU,1,XPABST,XDZZ), ZDPDZ_LES )
 !
 CALL LES_VER_INT( MXF(XUT)  ,ZU_LES  )
@@ -642,6 +658,21 @@ END IF
 !
   CALL LES_MEAN_ll ( ZP_LES, LLES_CURRENT_CART_MASK,                   &
                      XLES_MEAN_P(:,NLES_CURRENT_TCOUNT,1)     )
+!
+  CALL LES_MEAN_ll ( ZDP_LES, LLES_CURRENT_CART_MASK,                   &
+                     XLES_MEAN_DP(:,NLES_CURRENT_TCOUNT,1)     )
+!
+  CALL LES_MEAN_ll ( ZTP_LES, LLES_CURRENT_CART_MASK,                   &
+                     XLES_MEAN_TP(:,NLES_CURRENT_TCOUNT,1)     )
+!
+  CALL LES_MEAN_ll ( ZTR_LES, LLES_CURRENT_CART_MASK,                   &
+                     XLES_MEAN_TR(:,NLES_CURRENT_TCOUNT,1)     )
+!
+  CALL LES_MEAN_ll ( ZDISS_LES, LLES_CURRENT_CART_MASK,                   &
+                     XLES_MEAN_DISS(:,NLES_CURRENT_TCOUNT,1)     )
+!
+  CALL LES_MEAN_ll ( ZLM_LES, LLES_CURRENT_CART_MASK,                   &
+                     XLES_MEAN_LM(:,NLES_CURRENT_TCOUNT,1)     )
 !
   CALL LES_MEAN_ll ( ZRHO_LES, LLES_CURRENT_CART_MASK,                 &
                      XLES_MEAN_RHO(:,NLES_CURRENT_TCOUNT,1)   )
@@ -998,6 +1029,11 @@ DEALLOCATE(ZTHL_LES)
 DEALLOCATE(ZRT_LES)
 DEALLOCATE(ZSV_LES)
 DEALLOCATE(ZP_LES   )
+DEALLOCATE(ZDP_LES   )
+DEALLOCATE(ZTP_LES   )
+DEALLOCATE(ZTR_LES   )
+DEALLOCATE(ZDISS_LES   )
+DEALLOCATE(ZLM_LES   )
 DEALLOCATE(ZDPDZ_LES)
 DEALLOCATE(ZLWP_ANOM)
 DEALLOCATE(ZWORK2D)
@@ -1276,6 +1312,31 @@ IF (LLES_MEAN .AND. IMASK > 1) THEN
 !
   CALL LES_MEAN_ll ( ZP_LES, OMASK,                               &
                      XLES_MEAN_P(:,NLES_CURRENT_TCOUNT,IMASK)     )
+!
+!* dynamical production TKE
+!
+  CALL LES_MEAN_ll ( ZDP_LES, OMASK,                               &
+                     XLES_MEAN_DP(:,NLES_CURRENT_TCOUNT,IMASK)     )
+!
+!* thermal production TKE
+!
+  CALL LES_MEAN_ll ( ZTP_LES, OMASK,                               &
+                     XLES_MEAN_TP(:,NLES_CURRENT_TCOUNT,IMASK)     )
+!
+!* transport TKE
+!
+  CALL LES_MEAN_ll ( ZTR_LES, OMASK,                               &
+                     XLES_MEAN_TR(:,NLES_CURRENT_TCOUNT,IMASK)     )
+!
+!* dissipation TKE
+!
+  CALL LES_MEAN_ll ( ZDISS_LES, OMASK,                               &
+                     XLES_MEAN_DISS(:,NLES_CURRENT_TCOUNT,IMASK)     )
+!
+!* mixing length            
+!
+  CALL LES_MEAN_ll ( ZLM_LES, OMASK,                               &
+                     XLES_MEAN_LM(:,NLES_CURRENT_TCOUNT,IMASK)     )
 !
 !* density
 !

@@ -26,6 +26,8 @@
 !!    -------------
 !!    Original 09/11/09
 !!    M. Chong 26/01/10 Option for fair weather field from Helsdon-Farley
+!!    M. Chong 26/08/13 Option for "Beard" effect and LLMA storage
+!!    J.-P. Pinty 25/10/13 Option for "Latham" effect
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -37,6 +39,7 @@
 
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_PARAM
+USE MODD_LMA_SIMULATOR
 !
 IMPLICIT NONE
 !
@@ -50,6 +53,7 @@ NAMELIST /NAM_ELEC/ LOCG, LELEC_FIELD, LFLASH_GEOM,            &
                     CLSOL, NLAPITR_ELEC, XRELAX_ELEC,          &
                     XETRIG, XEBALANCE, XEPROP, XQEXCES, XQNEUT,&
                     XDFRAC_ECLAIR, XDFRAC_L,                   &
-                    XWANG_A, XWANG_B
+                    XWANG_A, XWANG_B,                          &
+                    LSEDIM_BEARD, LIAGGS_LATHAM, LLMA
 !
 END MODULE MODN_ELEC

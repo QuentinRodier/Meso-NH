@@ -80,6 +80,7 @@ END MODULE MODI_INI_PARAM_ELEC
 !!        M. Chong      26/01/10  Small ions parameters 
 !!                               +Fair weather field from Helsdon-Farley
 !!                                (JGR, 1987, 5661-5675)
+!!        J.-P. Pinty jan 2015  tabulate the equations for Saunders
 !!
 !-------------------------------------------------------------------------------
 !
@@ -135,6 +136,9 @@ INTEGER             :: IGRID,ILENCH,IRESP
 CHARACTER (LEN=100) :: YCOMMENT
 CHARACTER (LEN=16)  :: YRECFM
 CHARACTER (LEN=2)   :: YDIR
+!
+INTEGER             :: JLWC, JTEMP
+REAL, DIMENSION(:), ALLOCATABLE :: ZT, ZLWCC, ZEW
 !
 !-------------------------------------------------------------------------------
 ! constants for electricity
@@ -383,29 +387,65 @@ END IF
 !*      8.2     Saunders et al. (1991) and 
 !*              Saunders and Peck (1998) parameterizations
 !
-IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR. &
-    CNI_CHARGING == 'SAP98') THEN
+IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR.  &
+    CNI_CHARGING == 'SAP98' .OR.                               &
+    CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2' .OR.  &
+    CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
 !
 ! ice particle = the smallest particle (I-S and I-G collisions)
-  XIMP = 3.76
+  XIMP = 3.76     ! for positive charge
   XINP = 2.5
   XIKP = 4.92E13
-  XIMN = 2.54
+  XIKP_TAK = 6.1E12     ! for Takahashi
+  XIMN = 2.54     ! for negative charge   
   XINN = 2.8
   XIKN = 5.25E8
+  XIKN_TAK = 4.3E7      ! for Takahashi
 ! 
 ! snow = the smallest particle (S-G collisions)
-  XSMP = 0.44
+  XSMP = 0.44     ! for positive charge
   XSNP = 2.5
   XSKP = 52.8
-  XSMN = 0.5
+  XSKP_TAK = 6.5     ! for Takahashi
+  XSMN = 0.5      ! for negative charge
   XSNN = 2.8
-  XSKN = 24
+  XSKN = 24.
+  XSKN_TAK = 2.0        ! for Takahashi
+!
+  XFQIAGGSP = XIKP * XCS**(1. + XINP) *                 &
+                MOMG(XALPHAS, XNUS, 2.+XDS*(1.+XINP)) * &
+                MOMG(XALPHAI, XNUI, XIMP)
+  XFQIAGGSN = XIKN * XCS**(1. + XINN) *                 &
+                MOMG(XALPHAS, XNUS, 2.+XDS*(1.+XINN)) * &
+                MOMG(XALPHAI, XNUI, XIMN)
+!
+  XFQIDRYGBSP = XIKP * XCG**(1. + XINP) *               &
+                MOMG(XALPHAG, XNUG, 2.+XDG*(1.+XINP)) * &
+                MOMG(XALPHAI, XNUI, XIMP)
+  XFQIDRYGBSN = XIKN * XCG**(1. + XINN) *               &
+                MOMG(XALPHAG, XNUG, 2.+XDG*(1.+XINN)) * &
+                MOMG(XALPHAI, XNUI, XIMN)
+!
+  XFQIAGGSP_TAK = XFQIAGGSP * XIKP_TAK / XIKP
+  XFQIAGGSN_TAK = XFQIAGGSN * XIKN_TAK / XIKN
+  XFQIDRYGBSP_TAK = XFQIDRYGBSP * XIKP_TAK / XIKP
+  XFQIDRYGBSN_TAK = XFQIDRYGBSN * XIKN_TAK / XIKN
+!
+  XAIGAMMABI      = XAI * MOMG(XALPHAI, XNUI, XBI)
+!
+  XLBQSDRYGB1SP = MOMG(XALPHAG,XNUG,2.) * MOMG(XALPHAS, XNUS, XSMP)
+  XLBQSDRYGB1SN = MOMG(XALPHAG,XNUG,2.) * MOMG(XALPHAS, XNUS, XSMN)
+  XLBQSDRYGB2SP = 2. * MOMG(XALPHAG,XNUG,1.) * MOMG(XALPHAS, XNUS, 1.+XSMP)
+  XLBQSDRYGB2SN = 2. * MOMG(XALPHAG,XNUG,1.) * MOMG(XALPHAS, XNUS, 1.+XSMN)
+  XLBQSDRYGB3SP =                              MOMG(XALPHAS, XNUS, 2.+XSMP)
+  XLBQSDRYGB3SN =                              MOMG(XALPHAS, XNUS, 2.+XSMN)
 ENDIF
 !
 IF (CNI_CHARGING == 'SAP98' .OR. CNI_CHARGING == 'TERAR' .OR. &
-    CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2')     &
-  XINISAP = PRHO00**XCEXVT
+    CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2') THEN
+  XVSCOEF = XCS * MOMG(XALPHAS, XNUS, XBS+XDS) / MOMG(XALPHAS, XNUS, XBS)
+  XVGCOEF = XCG * MOMG(XALPHAG, XNUG, XBG+XDG) / MOMG(XALPHAG, XNUG, XBG)
+END IF
 !
 !
 !*      8.3    Takahashi (1978) parameterization
@@ -526,6 +566,247 @@ IF (CNI_CHARGING == 'TAKAH') THEN
   XMANSELL(:,:) = XMANSELL(:,:) * 1.E-15 ! in C
 END IF
 !
+!
+!*      8.4    Saunders et al. (1991) parameterization
+!              Idem for Brooks et al. (1997), but with EW = ZRAR/3.
+!
+!
+IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'SAUN2' .OR.  &
+    CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2')  THEN
+!
+  NIND_TEMP = 31
+  NIND_LWC  = 28
+!
+  IF( .NOT.ALLOCATED(XSAUNDER)) ALLOCATE(XSAUNDER(NIND_LWC+1,NIND_TEMP+1))
+  ALLOCATE(ZT(NIND_TEMP+1))    ! Kelvin
+  ALLOCATE(ZLWCC(NIND_TEMP+1))
+  DO JTEMP = 1, NIND_TEMP+1
+    ZT(JTEMP)=1.0-FLOAT(JTEMP)+XTT
+  END DO
+  ZLWCC(:) = MIN( MAX( -0.49 + 6.64E-2*(XTT-ZT(:)),0.22 ),1.1 )   ! (g m^-3)
+  ALLOCATE(ZEW(NIND_LWC+1))
+!
+!                       LWC index (0.01 g.m^-3 --> 10 g.m^-3)
+!                                  0.01 to 0.09 every 0.01 (9 values)
+!                                  0.10 to 0.90 every 0.10 (9 values)
+!                                  1.00 to 10.0 every 1.00 (10 values)
+  DO JLWC = 1, 9
+    ZEW(JLWC)=0.01*FLOAT(JLWC)
+  END DO
+  DO JLWC = 10, 18
+    ZEW(JLWC)=0.1 + 0.1*FLOAT(JLWC-10)
+  END DO
+  DO JLWC = 19, NIND_LWC+1
+    ZEW(JLWC)=1.0 + FLOAT(JLWC-19)
+  END DO
+!
+!
+  XSAUNDER(:,:) = 0.0
+  DO JTEMP = 1, NIND_TEMP+1
+    DO JLWC = 1, NIND_LWC+1
+!
+! region S4 : positive
+      IF (ZT(JTEMP) <= (XTT-7.35) .AND. ZT(JTEMP) > (XTT-23.9458) .AND. &
+          ZEW(JLWC) > ZLWCC(JTEMP)) THEN
+        XSAUNDER(JLWC,JTEMP) = MAX( 0.,                                        &
+                                    20.22*ZEW(JLWC)+1.36*(ZT(JTEMP)-XTT)+10.05 )
+      ENDIF
+!
+! region S1 : positive --> linear interpolation
+      IF (ZT(JTEMP) > (XTT-7.35) .AND. ZT(JTEMP) < XTT .AND. &
+          ZEW(JLWC) > ZLWCC(JTEMP)) THEN
+        XSAUNDER(JLWC,JTEMP) = MAX( 0.,-(2.75*ZEW(JLWC)+0.007)*(ZT(JTEMP)-XTT) )
+      ENDIF
+!
+! region S8 : positive
+      IF (ZT(JTEMP) <= (XTT-23.9458) .AND. ZT(JTEMP) > (XTT-40.0) .AND. &
+          ZEW(JLWC) > ZLWCC(JTEMP)) THEN
+        XSAUNDER(JLWC,JTEMP)  = MAX( 0.,20.22*ZEW(JLWC)-22.26 )
+      ENDIF
+!
+! region S7 : negative
+      IF (ZT(JTEMP) <= (XTT-7.35) .AND. ZT(JTEMP) > (XTT-40.0) .AND. &
+          ZEW(JLWC) >= 0.104149   .AND. ZEW(JLWC) < ZLWCC(JTEMP)) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,3.02-31.76*ZEW(JLWC)+26.53*ZEW(JLWC)**2 )
+      ENDIF
+    END DO
+  END DO
+END IF
+!
+! SAUN1 doesn't take into account marginal positive and negative regions at
+! low LWC
+!
+IF (CNI_CHARGING == 'SAUN1' .OR. CNI_CHARGING == 'BSMP1') THEN
+  DO JTEMP = 1, NIND_TEMP+1
+    DO JLWC = 1, NIND_LWC+1
+!
+! region S1 : negative --> linear interpolation
+      IF (ZT(JTEMP) > (XTT-7.35)   .AND. ZT(JTEMP) < XTT .AND. &
+          ZEW(JLWC) < ZLWCC(JTEMP) .AND. ZEW(JLWC) >= 0.104149) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,                                        &
+                      (-0.41+4.32*ZEW(JLWC)-3.61*ZEW(JLWC)**2)*(ZT(JTEMP)-XTT) )
+      ENDIF
+    END DO
+  END DO
+!
+  XSAUNDER(:,:) = XSAUNDER(:,:) * 1.E-15 ! in C
+!
+END IF
+!
+! SAUN2 takes into account marginal positive and negative regions at low LWC
+!
+IF (CNI_CHARGING == 'SAUN2' .OR. CNI_CHARGING == 'BSMP2') THEN
+  DO JTEMP = 1, NIND_TEMP+1
+    DO JLWC = 1, NIND_LWC+1
+!
+! region S2 : negative
+      IF (ZT(JTEMP) <= (XTT-7.35) .AND. ZT(JTEMP) > (XTT-16.0) .AND. &
+          ZEW(JLWC) >= 0.026      .AND. ZEW(JLWC) < 0.14) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,-314.4*ZEW(JLWC) + 7.92 )
+      ENDIF
+!
+! region S3 : negative
+      IF (ZT(JTEMP) <= (XTT-7.35) .AND. ZT(JTEMP) > (XTT-16.0) .AND. &
+          ZEW(JLWC) >= 0.14       .AND. ZEW(JLWC) < 0.22) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,419.4 * ZEW(JLWC) - 92.64 )
+      ENDIF
+!
+! region S5 : positive
+      IF (ZT(JTEMP) < (XTT-20.0) .AND. ZT(JTEMP) > (XTT-40.0) .AND. &
+          ZEW(JLWC) >= 0.063034  .AND. ZEW(JLWC) < 0.12) THEN
+        XSAUNDER(JLWC,JTEMP) = MAX( 0.,2041.76*ZEW(JLWC) - 128.7 )
+      ENDIF
+!
+! region S6 : positive
+      IF (ZT(JTEMP) < (XTT-20.0) .AND. ZT(JTEMP) > (XTT-40.0) .AND. &
+          ZEW(JLWC)  >= 0.12      .AND. ZEW(JLWC)  < 0.1596) THEN
+        XSAUNDER(JLWC,JTEMP) = MAX( 0.,-2900.22*ZEW(JLWC) + 462.91 )
+      ENDIF
+!
+! region S1 : negative --> linear interpolation of S3
+      IF (ZT(JTEMP) > (XTT-7.35) .AND. ZT(JTEMP) < XTT .AND. &
+          ZEW(JLWC)  >= 0.14      .AND. ZEW(JLWC)  < ZLWCC(JTEMP)) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,(-57.06*ZEW(JLWC)+12.6)*(ZT(JTEMP)-XTT) )
+      ENDIF
+!
+! region S1 : negative --> linear interpolation of S2
+      IF (ZT(JTEMP) > (XTT-7.35) .AND. ZT(JTEMP) < XTT .AND. &
+          ZEW(JLWC)  >= 0.026     .AND. ZEW(JLWC)  < 0.14) THEN
+        XSAUNDER(JLWC,JTEMP) = MIN( 0.,(42.8*ZEW(JLWC)-1.08)*(ZT(JTEMP)-XTT) )
+      ENDIF
+    END DO
+  END DO
+!
+  XSAUNDER(:,:) = XSAUNDER(:,:) * 1.E-15 ! in C
+!
+END IF
+!
+!*      8.5    Takahashi with EW or ZRAR (Tsenova and Mitzeva, 2009, 2011)
+!                       here ZRAR = 9 * EW
+!                       Temperature index (0C --> -30C)
+!                       LWC index (0.01 g.m^-3 --> 10 g.m^-3)
+!                                  0.01 to 0.09 every 0.01 (9 values)
+!                                  0.10 to 0.90 every 0.10 (9 values)
+!                                  1.00 to 10.0 every 1.00 (10 values)
+!
+IF (CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
+!
+  NIND_TEMP = 31
+  NIND_LWC  = 28
+!
+  IF( .NOT.ALLOCATED(XTAKA_TM)) ALLOCATE(XTAKA_TM(NIND_LWC+1,NIND_TEMP+1))
+  ALLOCATE(ZT(NIND_TEMP+1))    ! Kelvin
+  ALLOCATE(ZEW(NIND_LWC+1))
+  DO JTEMP = 1, NIND_TEMP+1
+    ZT(JTEMP) = 1.0 - FLOAT(JTEMP) + XTT
+  END DO
+
+  DO JLWC = 1, 9
+    ZEW(JLWC) = 0.01 * FLOAT(JLWC)
+  END DO
+  DO JLWC = 10, 18
+    ZEW(JLWC) = 0.1 + 0.1 * FLOAT(JLWC-10)
+  END DO
+  DO JLWC = 19, NIND_LWC+1
+    ZEW(JLWC) = 1.0 + FLOAT(JLWC-19)
+  END DO
+!
+  XTAKA_TM(:,:) = 0.0
+  DO JTEMP = 1, NIND_TEMP+1
+    DO JLWC = 1, NIND_LWC+1
+!
+! Eq. 1: >0
+      IF ( ZT(JTEMP) > (XTT - 10.) .AND. ZEW(JLWC) <= 1.6) THEN
+        XTAKA_TM(JLWC, JTEMP) = 146.981 * ZEW(JLWC) - 116.37 * ZEW(JLWC)**2  &
+                               + 29.76 * ZEW(JLWC)**3                        &
+                               - 0.03 * (ZT(JTEMP) - XTT)**3 * ZEW(JLWC)     &
+                               - 2.58 * (ZT(JTEMP) - XTT)                    &
+                               - 0.21 * (ZT(JTEMP) - XTT)**3 * ZEW(JLWC)**3  &
+                               + 0.36 * (ZT(JTEMP) - XTT)**3 * ZEW(JLWC)**2  &
+                               + 0.15 * (ZT(JTEMP) - XTT)**2                 &
+                               + 2.92 * (ZT(JTEMP) - XTT)  * ZEW(JLWC)**3    &
+                               - 4.22 * (ZT(JTEMP) - XTT)  * ZEW(JLWC) - 8.506
+      END IF
+!
+!  Eq. 2: >0
+      IF ( ZT(JTEMP) > (XTT - 10.) .AND. &
+             ZEW(JLWC) > 1.6 .AND. ZEW(JLWC) <= 8.) THEN
+        XTAKA_TM(JLWC, JTEMP) = 4.179 * (ZT(JTEMP) - XTT)                    &
+                               - 0.005 * (ZT(JTEMP) - XTT)**2 * ZEW(JLWC)**2 &
+                               + 0.916 * ZEW(JLWC)**2                        &
+                               - 1.333 * (ZT(JTEMP) - XTT)    * ZEW(JLWC)    &
+                               - 7.465 * ZEW(JLWC)                           &
+                               + 0.109 * (ZT(JTEMP) - XTT)    * ZEW(JLWC)**2 &
+                               + 0.001 * (ZT(JTEMP) - XTT)**2 * ZEW(JLWC)**3 &
+                               - 0.035 * ZEW(JLWC)**3  + 50.84454
+      END IF
+!
+!  Eq. 8: > 0
+      IF ( ZEW(JLWC) <= 0.4 .AND. &
+              ZT(JTEMP) <= (XTT - 10.) .AND. ZT(JTEMP) >= (XTT - 40.)) THEN
+        XTAKA_TM(JLWC, JTEMP) = - 3.3515 * (ZT(JTEMP) - XTT)                   &
+                                + 95.957 * (ZT(JTEMP) - XTT)    * ZEW(JLWC)**2 &
+                                + 511.83 * ZEW(JLWC)                           &
+                                + 17.448 * (ZT(JTEMP) - XTT)**2 * ZEW(JLWC)**3 &
+                                - 0.0007 * (ZT(JTEMP) - XTT)**3                &
+                                + 20.570 * (ZT(JTEMP) - XTT)    * ZEW(JLWC)    &
+                                + 0.1656 * (ZT(JTEMP) - XTT)**2 * ZEW(JLWC)    &
+                                + 0.4954 * (ZT(JTEMP) - XTT)**3 * ZEW(JLWC)**3 &
+                                - 0.0975 * (ZT(JTEMP) - XTT)**3 * ZEW(JLWC)**2 &
+                                + 67.457 * (ZT(JTEMP) - XTT)    * ZEW(JLWC)**3 &
+                                - 0.1066 * (ZT(JTEMP) - XTT)**2 - 24.5715
+      END IF
+!
+! Eq. 9: < 0
+      IF ( ZT(JTEMP) <= (XTT - 10.) .AND. ZT(JTEMP) >= (XTT - 40.) .AND. &
+             ZEW(JLWC) > 0.4 .AND. ZEW(JLWC) <= 3.2) THEN
+        XTAKA_TM(JLWC, JTEMP) = - 1.5676 * (ZT(JTEMP) - XTT) * ZEW(JLWC)      &
+                                + 0.2484 * (ZT(JTEMP) - XTT)   * ZEW(JLWC)**3 &
+                                + 0.0112 * (ZT(JTEMP) - XTT)**3               &
+                                + 19.199 * (ZT(JTEMP) - XTT)                  &
+                                + 0.8051 * (ZT(JTEMP) - XTT)**2               &
+                                - 83.4 * ZEW(JLWC)                            &
+                                + 15.4 * ZEW(JLWC)**2                         &
+                                + 5.97 * ZEW(JLWC)**3 + 167.9278
+      END IF
+!
+!  Eq. 10: > 0
+      IF ( ZT(JTEMP) <= (XTT - 10.) .AND. ZT(JTEMP) >= (XTT - 40.) .AND. &
+           ZEW(JLWC) > 3.2 .AND. ZEW(JLWC) <= 8. ) THEN
+        XTAKA_TM(JLWC, JTEMP) = 4.2127 * (ZT(JTEMP) - XTT)                 &
+                              - 0.8311 * (ZT(JTEMP) - XTT) * ZEW(JLWC)     &
+                              + 0.0670 * (ZT(JTEMP) - XTT) * ZEW(JLWC) **2 &
+                              + 0.0042 * (ZT(JTEMP) - XTT)**2 * ZEW(JLWC)  &
+                              + 40.9642
+      END IF
+    END DO
+  END DO
+!
+  XTAKA_TM(:,:) = XTAKA_TM(:,:) * 1.E-15 ! in C
+!
+END IF
+!
+!
 !-------------------------------------------------------------------------------
 !
 !*	9.	NON_INDUCTIVE PROCESS: AGGREGATION OF ICE ON SNOW
@@ -551,10 +832,10 @@ XFQIAGGSBS = (XPI / 4.0) * XCCS
 !*      9.4     Takahashi (1978) parameterization
 !
 IF (CNI_CHARGING == 'TAKAH') THEN
-  XFQIAGGSBT1 = (XPI / 4.0) * XCCS * (PRHO00**XCEXVT) * XCS
+  XFQIAGGSBT1 = (XPI / 4.0) * XCCS * XCS
   XFQIAGGSBT2 = 10 * MOMG(XALPHAS,XNUS,2.+XDS)
-  XFQIAGGSBT3 = 5. * XCS * (PRHO00**XCEXVT) * MOMG(XALPHAI,XNUI,2.) * & 
-                MOMG(XALPHAS,XNUS,2.+2*XDS) / ((1.E-4)**2 * 8. *      & 
+  XFQIAGGSBT3 = 5. * XCS * MOMG(XALPHAI,XNUI,2.) *               &
+                MOMG(XALPHAS,XNUS,2.+2*XDS) / ((1.E-4)**2 * 8. * & 
                 (XAI * MOMG(XALPHAI,XNUI,XBI))**(2 / XBI))  
 END IF
 !
@@ -694,21 +975,21 @@ ENDIF
 IF (CNI_CHARGING == 'TAKAH') THEN
 !
 ! IDRYG_boun
-  XFQIDRYGBT1 = (XPI / 4.0) * XCCG * (PRHO00**XCEXVT) * XCG
+  XFQIDRYGBT1 = (XPI / 4.0) * XCCG * XCG
   XFQIDRYGBT2 = 10.0 * MOMG(XALPHAG,XNUG,2.+XDG) 
-  XFQIDRYGBT3 = 5.0 * XCG * (PRHO00**XCEXVT) * MOMG(XALPHAI,XNUI,2.) *    & 
-                MOMG(XALPHAG,XNUG,2.+2.*XDG) / ((2.E-4)**2 * 8. *         & 
+  XFQIDRYGBT3 = 5.0 * XCG * MOMG(XALPHAI,XNUI,2.) *               &
+                MOMG(XALPHAG,XNUG,2.+2.*XDG) / ((2.E-4)**2 * 8. * & 
                (XAI * MOMG(XALPHAI,XNUI,XBI))**(2 / XBI))  
 !
 ! SDRYG_boun
-  XFQSDRYGBT1  = (XPI / 4.0) * XCCG * (PRHO00**XCEXVT) * XCCS
+  XFQSDRYGBT1  = (XPI / 4.0) * XCCG * XCCS
   XFQSDRYGBT2  = XCG * MOMG(XALPHAG,XNUG,XDG) * MOMG(XALPHAS,XNUS,2.)
   XFQSDRYGBT3  = XCS * MOMG(XALPHAS,XNUS,2.+XDS)
   XFQSDRYGBT4  = XCG * MOMG(XALPHAG,XNUG,2.+XDG)
   XFQSDRYGBT5  = XCS * MOMG(XALPHAG,XNUG,2.) * MOMG(XALPHAS,XNUS,XDS)
   XFQSDRYGBT6  = 2. * XCG * MOMG(XALPHAG,XNUG,1.+XDG) * MOMG(XALPHAS,XNUS,1.)
   XFQSDRYGBT7  = 2. * XCS * MOMG(XALPHAG,XNUG,1.) * MOMG(XALPHAS,XNUS,1.+XDS)
-  XFQSDRYGBT8  = 5. * (PRHO00**XCEXVT) / ((1.E-4)**2 * 8.)  
+  XFQSDRYGBT8  = 5. / ((1.E-4)**2 * 8.)
   XFQSDRYGBT9  = MOMG(XALPHAG,XNUG,2.) * MOMG(XALPHAS,XNUS,2.)
   XFQSDRYGBT10 = MOMG(XALPHAS,XNUS,4.)
   XFQSDRYGBT11 = 2. * MOMG(XALPHAG,XNUG,1.) * MOMG(XALPHAS,XNUS,3.)
@@ -728,7 +1009,7 @@ IF (CNI_CHARGING == 'TAKAH' .OR. CNI_CHARGING == 'SAP98' .OR. &
     CNI_CHARGING == 'GARDI' .OR.                              &
     CNI_CHARGING == 'BSMP1' .OR. CNI_CHARGING == 'BSMP2' .OR. &
     CNI_CHARGING == 'TEEWC' .OR. CNI_CHARGING == 'TERAR') THEN
-  XAUX_LIM  = (XPI / 4.0) * XCCG * XCCS * (PRHO00**(XCEXVT)) 
+  XAUX_LIM  = (XPI / 4.0) * XCCG * XCCS
   XAUX_LIM1 =      MOMG(XALPHAS,XNUS,2.)  
   XAUX_LIM2 = 2. * MOMG(XALPHAS,XNUS,1.) * MOMG(XALPHAG,XNUG,1.) 
   XAUX_LIM3 =      MOMG(XALPHAG,XNUG,2.)
@@ -790,7 +1071,7 @@ XALPHA_IND = 0.07    ! moderate inductive charging
 XCOS_THETA = 0.2  
 !
 XIND1 = (XPI**3 / 8.) * (15.E-6)**2 * &
-        PRHO00**(XCEXVT) * XCG * 400.E6 * XCCG * &
+         XCG * 400.E6 * XCCG *        &
         XCOLCG_IND * XEBOUND * XALPHA_IND
 XIND2 = XPI * XEPSILON * XCOS_THETA * MOMG(XALPHAG,XNUG,2.+XDG)
 XIND3 = MOMG(XALPHAG,XNUG,XDG+XFG) / 3.
@@ -815,14 +1096,13 @@ XEXQLIGHTS = XCXS - 2.
 XFQLIGHTG  = XPI * XCCG * MOMG(XALPHAG,XNUG,2.)
 XEXQLIGHTG = XCXG - 2.
 !
-IF (IP == 1) THEN
-  IF( .NOT.ALLOCATED(XNEUT_POS)) ALLOCATE( XNEUT_POS(NLGHTMAX) )
-  IF( .NOT.ALLOCATED(XNEUT_NEG)) ALLOCATE( XNEUT_NEG(NLGHTMAX) )
-  XNEUT_POS(:) = 0.
-  XNEUT_NEG(:) = 0.
-ENDIF
+XFQLIGHTH  = XPI * XCCH * MOMG(XALPHAH,XNUH,2.)
+XEXQLIGHTH = XCXH - 2.
 !
-XALT_CG = 2000.  ! m
+IF( .NOT.ALLOCATED(XNEUT_POS)) ALLOCATE( XNEUT_POS(NLGHTMAX) )
+IF( .NOT.ALLOCATED(XNEUT_NEG)) ALLOCATE( XNEUT_NEG(NLGHTMAX) )
+XNEUT_POS(:) = 0.
+XNEUT_NEG(:) = 0.
 !
 !-------------------------------------------------------------------------------
 !

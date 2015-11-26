@@ -87,9 +87,6 @@ REAL, SAVE :: XFQSDRYG, XFQSDRYGB, XFQRDRYG        ! Constant in SDRYG and RDRYG
 REAL, DIMENSION(:,:), SAVE, ALLOCATABLE :: XKER_Q_LIMSG
 REAL, DIMENSION(:,:), SAVE, ALLOCATABLE  &                    
            :: XKER_Q_SDRYGB, XKER_Q_SDRYGB1, XKER_Q_SDRYGB2 
-REAL, DIMENSION(:,:), SAVE, ALLOCATABLE  &  
-           :: XFTAKA                     ! F(T,LWC) for Takahashi (1978) charge 
-                                         ! generation parametrization 
 !
 ! Helsdon-Farley
 !
@@ -111,7 +108,15 @@ REAL, SAVE :: XIMP, XINP, XIKP, &   ! Parameters m, n and k
               XIMN, XINN, XIKN, &   ! for the NI processes
               XSMP, XSNP, XSKP, &   ! following
               XSMN, XSNN, XSKN      ! Saunders et al. (1991)
-REAL, SAVE :: XINISAP
+REAL, SAVE :: XFQIAGGSP, XFQIAGGSN,         & ! Auxiliary parameters
+              XFQIDRYGBSP, XFQIDRYGBSN,     & ! containing MOMG function
+              XLBQSDRYGB1SP, XLBQSDRYGB1SN, &
+              XLBQSDRYGB2SP, XLBQSDRYGB2SN, &
+              XLBQSDRYGB3SP, XLBQSDRYGB3SN, &
+              XAIGAMMABI
+REAL, SAVE :: XIKP_TAK, XIKN_TAK, XSKP_TAK, XSKN_TAK ! Using Takahashi charge
+REAL, SAVE :: XFQIAGGSP_TAK, XFQIAGGSN_TAK, XFQIDRYGBSP_TAK, XFQIDRYGBSN_TAK
+REAL, SAVE :: XVSCOEF, XVGCOEF
 REAL, SAVE :: XFQIDRYGBS,   XLBQIDRYGBS    ! Constants in QIDRYGB
 REAL, SAVE :: XFQSDRYGBS                   ! Constants in QSDRYGB
 REAL, SAVE :: XLBQSDRYGB1S, XLBQSDRYGB2S   !
@@ -120,7 +125,9 @@ REAL, SAVE :: XLBQSDRYGB1S, XLBQSDRYGB2S   !
 !
 INTEGER, SAVE :: NIND_TEMP ! number of indexes for temperature
 INTEGER, SAVE :: NIND_LWC  ! number of indexes for liquid water content
-REAL, DIMENSION(:,:), SAVE, ALLOCATABLE :: XMANSELL ! F(T,LWC) for Takahashi(1978)
+REAL, DIMENSION(:,:), SAVE, ALLOCATABLE :: XMANSELL ! F(LWC, T) for Takahashi(1978) /Mansell
+REAL, DIMENSION(:,:), SAVE, ALLOCATABLE :: XSAUNDER ! F(LWC, T) for SAUN1/SAUN2, BSMP1/BSMP2
+REAL, DIMENSION(:,:), SAVE, ALLOCATABLE :: XTAKA_TM ! F(LWC, T) for Takahashi/Tsenova and Mitzeva
 !
 REAL, SAVE :: XFQIDRYGBT1,  XFQIDRYGBT2,  XFQIDRYGBT3, &  ! IDRYGB
               XFQSDRYGBT1,  XFQSDRYGBT2,  XFQSDRYGBT3, &  ! SDRYGB
@@ -156,9 +163,9 @@ REAL, SAVE :: XIND1, XIND2, XIND3
 !
 ! lightning
 !
-REAL :: XFQLIGHTC, XFQLIGHTR,  &            
-        XFQLIGHTI, XFQLIGHTS, XFQLIGHTG     ! Constant for charge redistribution
-REAL :: XEXQLIGHTR,            &          
-        XEXQLIGHTI, XEXQLIGHTS, XEXQLIGHTG  ! Exponent for charge redistribution
+REAL :: XFQLIGHTC, XFQLIGHTR, XFQLIGHTI, &
+        XFQLIGHTS, XFQLIGHTG, XFQLIGHTH     ! Constant for charge redistribution
+REAL :: XEXQLIGHTR, XEXQLIGHTI, &
+        XEXQLIGHTS, XEXQLIGHTG, XEXQLIGHTH  ! Exponent for charge redistribution
 !
 END MODULE  MODD_ELEC_PARAM     

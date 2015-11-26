@@ -45,6 +45,9 @@ END MODULE MODI_INI_FLASH_GEOM_ELEC
 !!    -------------
 !!      Original     29/11/02
 !!
+!!      Modifications
+!!        J.-P. Pinty  jan 2015 : add LMA simulator
+!!
 !-------------------------------------------------------------------------------
 !
 !*	0.	DECLARATIONS
@@ -55,6 +58,8 @@ USE MODD_RAIN_ICE_DESCR
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_PARAM
 USE MODD_DIM_n, ONLY : NKMAX
+USE MODD_TIME_n, ONLY : TDTCUR
+USE MODD_LMA_SIMULATOR, ONLY : LLMA, TDTLMA, LWRITE_LMA, XDTLMA, CLMA_FILE
 !
 USE MODI_MOMG
 !
@@ -105,7 +110,7 @@ XE_THRESH =  35.E3 ! (V/m)
 NLEADER_MAX = NKMAX
 !
 ! the maximum number of branches is arbitriraly set to 5000
-NBRANCH_MAX = 5000
+NBRANCH_MAX = 50000
 !
 ! the maximum number of electrified cells in the domain is arbitrarily 
 ! set to 10
@@ -113,7 +118,7 @@ NMAX_CELL = 10
 !
 ! the altitude for CG to be prolongated to the ground is set to 2 km
 ! this threshold could be modified once ions will be taken into account
-XALT_CG = 2000.   ! m
+XALT_CG = 2000.  ! m
 !
 !
 !----------------------------------------------------------------------------
@@ -125,6 +130,17 @@ NNBLIGHT   = 0
 NNB_CG     = 0
 NNB_CG_POS = 0
 !
+!
+!----------------------------------------------------------------------------
+!
+!*      4.      INITIALIZE LMA RECORDS
+!               ----------------------
+!
+! needs LLMA = .TRUE. to operate
+XDTLMA = 600.
+TDTLMA = TDTCUR
+LWRITE_LMA = .FALSE.
+CLMA_FILE(1:5) = "BEGIN"
 !
 !----------------------------------------------------------------------------
 !

@@ -1,3 +1,4 @@
+
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -8,25 +9,19 @@
 
 INTERFACE
 !
-      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, PRHODREF, PRHODJ,       &
-                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT)
+      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
 !
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY
-CHARACTER(LEN=3), INTENT(IN)                :: HDRIFT
-REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PDRIFTP, PDRIFTM
-REAL, DIMENSION(:,:,:,:),     INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PRHODREF, PRHODJ
-INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
-REAL,                     INTENT(IN)   :: PTSTEP
+CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PDRIFTP, PDRIFTM
+REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
 !
 END SUBROUTINE ION_DRIFT
 END INTERFACE
 END MODULE MODI_ION_DRIFT
 !
-!     ################################################################ 
-      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, PRHODREF, PRHODJ, &
-                           HLBCX, HLBCY, KTCOUNT, PTSTEP, HDRIFT)
-!     ################################################################
+!     ##########################################################
+      SUBROUTINE ION_DRIFT(PDRIFTP, PDRIFTM, PSVT, HLBCX, HLBCY)
+!     ##########################################################
 !
 !!    PURPOSE
 !!    -------
@@ -50,19 +45,16 @@ END MODULE MODI_ION_DRIFT
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ
-USE MODD_NSV,  ONLY: NSV_ELECBEG, NSV_ELECEND
+USE MODD_NSV,  ONLY: NSV_ELECBEG, NSV_ELECEND, XSVMIN
 USE MODD_ELEC_n, ONLY : XCION_POS_FW, XCION_NEG_FW, &
-                            XMOBIL_POS, XMOBIL_NEG,     &
-                            XEFIELDU, XEFIELDV, XEFIELDW
+                        XMOBIL_POS, XMOBIL_NEG,     &
+                        XEFIELDU, XEFIELDV, XEFIELDW
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 USE MODE_ll
 USE MODE_ELEC_ll
 !
 USE MODI_SHUMAN
-USE MODI_CONTRAV
-USE MODI_PPM_SCALAR
-USE MODI_PPM_RHODJ 
 USE MODI_GDIV
 USE MODI_ION_BOUND4DRIFT
 !
@@ -71,13 +63,9 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY
-CHARACTER(LEN=3), INTENT(IN)                :: HDRIFT
-REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PDRIFTP, PDRIFTM
-REAL, DIMENSION(:,:,:,:),     INTENT(INOUT) :: PSVT
-REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PRHODREF, PRHODJ
-INTEGER,                      INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
-REAL,                         INTENT(IN)    :: PTSTEP
+CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)    :: HLBCX,HLBCY
+REAL, DIMENSION(:,:,:),         INTENT(INOUT) :: PDRIFTP, PDRIFTM
+REAL, DIMENSION(:,:,:,:),       INTENT(INOUT) :: PSVT
 !
 !
 !*       0.2   declarations of local variables
@@ -86,24 +74,10 @@ INTEGER :: IIB, IIE  ! index of first and last inner mass points along x
 INTEGER :: IJB, IJE  ! index of first and last inner mass points along y
 INTEGER :: IKB, IKE  ! index of first and last inner mass points along z
 INTEGER :: IKU
-INTEGER :: IXOR, IYOR  ! origin of the extended subdomain
-INTEGER, DIMENSION(3) :: IM_LOC
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTX
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTY
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZDRIFTZ
-
-REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZADVS, ZSVT  !for advection form
-REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZXCT, ZYCT, ZZCT !
-CHARACTER (LEN=6)                     :: HSV_ADV_SCHEME
-                                                     ! of drift source
 !
-REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOX1,ZRHOX2
-REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOY1,ZRHOY2
-REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3)) :: ZRHOZ1,ZRHOZ2
-!
-REAL :: ZMIN_DRIFT, ZMAX_DRIFT
-REAL :: ZMAX__POS, ZMAX__NEG
-INTEGER :: IPROC, IPROCMIN, ISV
 INTEGER :: IINFO_ll      ! return code of parallel routine
 !
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
@@ -112,8 +86,6 @@ NULLIFY(TZFIELDS_ll)
 !
 !
 !------------------------------------------------------------------------
-!
-CALL MYPROC_ELEC_ll (IPROC)
 !
 !*       1.    COMPUTE DIMENSIONS OF ARRAYS AND OTHER INDICES
 !              ----------------------------------------------
@@ -127,7 +99,7 @@ IKU = SIZE(PSVT,3)
 !
 !-------------------------------------------------------------------------------
 !
-!*      3.     UPDATE BOUNDARY CONDITION FOR IONS ACCORDING TO THE DRIFT MOTION
+!*      2.     UPDATE BOUNDARY CONDITION FOR IONS ACCORDING TO THE DRIFT MOTION
 !              ----------------------------------------------------------------
 !
 IF (LWEST_ll() ) THEN
@@ -160,151 +132,76 @@ CALL UPDATE_HALO_ll(TZFIELDS_ll,IINFO_ll)
 CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 ! specify upper boundary ion mixing ratio
-WHERE (XEFIELDW(:,:,IKE) .GE. 0.)   ! Out(In)flow for positive (negative) ions 
-  PSVT (:,:,IKE+1,NSV_ELECBEG) = 2. * PSVT (:,:,IKE,NSV_ELECBEG) -  &
-                                      PSVT (:,:,IKE-1,NSV_ELECBEG)
+WHERE (XEFIELDW(:,:,IKE+1) .GE. 0.)   ! Out(In)flow for positive (negative) ions 
+  PSVT (:,:,IKE+1,NSV_ELECBEG) = MAX(2. * PSVT (:,:,IKE,NSV_ELECBEG) -  &
+                                  PSVT (:,:,IKE-1,NSV_ELECBEG),XSVMIN(NSV_ELECBEG))
   PSVT (:,:,IKE+1,NSV_ELECEND) = XCION_NEG_FW(:,:,IKE+1)
 ELSE WHERE      ! In(Out)flow for positive (negative) ions
   PSVT (:,:,IKE+1,NSV_ELECBEG) = XCION_POS_FW(:,:,IKE+1)
-  PSVT (:,:,IKE+1,NSV_ELECEND) = 2.* PSVT (:,:,IKE,NSV_ELECEND) -  &
-                                     PSVT (:,:,IKE-1,NSV_ELECEND)
+  PSVT (:,:,IKE+1,NSV_ELECEND) = MAX(2.* PSVT (:,:,IKE,NSV_ELECEND) -  &
+                                  PSVT (:,:,IKE-1,NSV_ELECEND),XSVMIN(NSV_ELECEND))
 END WHERE  
 !
 XEFIELDW(:,:,IKB-1) = XEFIELDW(:,:,IKB)
 XEFIELDW(:,:,IKE+1) = XEFIELDW(:,:,IKE)
 !
+!-------------------------------------------------------------------------------
 !
-!*       4.  positive ion source
+!*      3.     DRIFT MOTION TAKEN AS THE DIVERGENCE OF THE DRIFT FLUXES
+!              --------------------------------------------------------
 !
-IF (HDRIFT /= 'PPM') THEN   ! Divergence form
+!*      3.1  positive ion source (drifting along E)
+!
 ! x-component of div term
-  ZDRIFTX(:,:,:) = -PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:) * XEFIELDU(:,:,:) &
-                   * PRHODJ(:,:,:)
-! y-component of div term
-  ZDRIFTY(:,:,:) = -PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:) * XEFIELDV(:,:,:) &
-                   * PRHODJ(:,:,:)
-! z-component of div term
-  ZDRIFTZ(:,:,:) = -PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:) * XEFIELDW(:,:,:) &
-                   * PRHODJ(:,:,:)
-ELSE            ! Advection form
-  ZDRIFTX(:,:,:) = XMOBIL_POS(:,:,:) * XEFIELDU(:,:,:) 
-  ZDRIFTY(:,:,:) = XMOBIL_POS(:,:,:) * XEFIELDV(:,:,:)
-  ZDRIFTZ(:,:,:) = XMOBIL_POS(:,:,:) * XEFIELDW(:,:,:)
-ENDIF
+ZDRIFTX(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTX(:,:,:) = ZDRIFTX(:,:,:) * XEFIELDU(:,:,:)
+ZDRIFTX(:,:,:) = -MXM(ZDRIFTX(:,:,:)) ! Put components at flux sides
 !
-! Put components at flux sides
-ZDRIFTX(:,:,:) = MXM(ZDRIFTX(:,:,:))
-ZDRIFTY(:,:,:) = MYM(ZDRIFTY(:,:,:))
-ZDRIFTZ(:,:,:) = MZM(1,IKU,1,ZDRIFTZ (:,:,:))
+! y-component of div term
+ZDRIFTY(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTY(:,:,:) = ZDRIFTY(:,:,:) * XEFIELDV(:,:,:)
+ZDRIFTY(:,:,:) = -MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
+!
+! z-component of div term
+ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECBEG) * XMOBIL_POS(:,:,:)
+ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
+ZDRIFTZ(:,:,:) = -MZM(1,IKU,1,ZDRIFTZ(:,:,:)) ! Put components at flux sides
 !
 IF (LWEST_ll( ))  ZDRIFTX(IIB-1,:,:) = ZDRIFTX(IIB,:,:)
+IF (LEAST_ll( ))  ZDRIFTX(IIE+1,:,:) = ZDRIFTX(IIE,:,:)
 IF (LSOUTH_ll( )) ZDRIFTY(:,IJB-1,:) = ZDRIFTY(:,IJB,:)
+IF (LNORTH_ll( )) ZDRIFTY(:,IJE+1,:) = ZDRIFTY(:,IJE,:)
 ZDRIFTZ(:,:,IKB-1) = ZDRIFTZ(:,:,IKB)
+ZDRIFTZ(:,:,IKE+1) = ZDRIFTZ(:,:,IKE)
 !
-IF (HDRIFT /= 'PPM') THEN
-  CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTP)
-ELSE
-  ISV = 1
-  ALLOCATE (ZADVS(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3), ISV))
-  ALLOCATE (ZSVT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3), ISV))
-  ALLOCATE (ZXCT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3)))
-  ALLOCATE (ZYCT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3)))
-  ALLOCATE (ZZCT(SIZE(PDRIFTP,1),SIZE(PDRIFTP,2),SIZE(PDRIFTP,3)))
+CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTP)
 !
-  CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ, &
-                XDZX,XDZY,ZXCT,ZYCT,ZZCT,4)
+!*      3.2    negative ion source (drifting counter E)
 !
-  ZXCT = ZXCT*PTSTEP
-  ZYCT = ZYCT*PTSTEP
-  ZZCT = ZZCT*PTSTEP
-!
-  ZADVS(:,:,:,1) = 0.
-  ZSVT(:,:,:,1) = PSVT(:,:,:,NSV_ELECBEG)
-  HSV_ADV_SCHEME = 'PPM_01'
-!
-  CALL PPM_RHODJ(HLBCX,HLBCY, ZXCT, ZYCT, ZZCT,                     &
-               PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,      &
-               ZRHOZ1, ZRHOZ2                                       )
-!
-  CALL PPM_SCALAR (HLBCX,HLBCY, ISV, KTCOUNT, ZXCT, ZYCT, ZZCT, &
-                   PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2, &
-                   ZSVT, ZADVS, HSV_ADV_SCHEME                                       )
-!
-  PDRIFTP(:,:,:) = ZADVS(:,:,:,1)
-!
-! Additional term: -N . DIV(mu E)
-  ZDRIFTX = ZDRIFTX*MXM(PRHODJ)
-  ZDRIFTY = ZDRIFTY*MYM(PRHODJ)
-  ZDRIFTZ = ZDRIFTZ*MZM(1,IKU,1,PRHODJ)
-!
-  CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,ZXCT)
-!
-  PDRIFTP(:,:,:) = PDRIFTP(:,:,:)-ZXCT(:,:,:)*PSVT(:,:,:,NSV_ELECBEG)
-ENDIF
-!
-!
-!*       4.2.2  negative ion source
-!
-IF (HDRIFT /= 'PPM') THEN
 ! x-component of div term
-  ZDRIFTX(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:) * XEFIELDU(:,:,:) &
-                   *PRHODJ(:,:,:)
-! y-component of div term
-  ZDRIFTY(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:) * XEFIELDV(:,:,:) &
-                   * PRHODJ(:,:,:)
-! z-component of div term
-  ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:) * XEFIELDW(:,:,:) &
-                   * PRHODJ(:,:,:)
-ELSE
-  ZDRIFTX(:,:,:) = -XMOBIL_NEG(:,:,:) * XEFIELDU(:,:,:)
-  ZDRIFTY(:,:,:) = -XMOBIL_NEG(:,:,:) * XEFIELDV(:,:,:)
-  ZDRIFTZ(:,:,:) = -XMOBIL_NEG(:,:,:) * XEFIELDW(:,:,:)
-ENDIF
+ZDRIFTX(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTX(:,:,:) = ZDRIFTX(:,:,:) * XEFIELDU(:,:,:)
+ZDRIFTX(:,:,:) = +MXM(ZDRIFTX(:,:,:)) ! Put components at flux sides
 !
-! Put components at flux sides
-ZDRIFTX(:,:,:) = MXM(ZDRIFTX(:,:,:))
-ZDRIFTY(:,:,:) = MYM(ZDRIFTY(:,:,:))
-ZDRIFTZ(:,:,:) = MZM(1,IKU,1,ZDRIFTZ (:,:,:))
+! y-component of div term
+ZDRIFTY(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTY(:,:,:) = ZDRIFTY(:,:,:) * XEFIELDV(:,:,:)
+ZDRIFTY(:,:,:) = +MYM(ZDRIFTY(:,:,:)) ! Put components at flux sides
+!
+! z-component of div term
+ZDRIFTZ(:,:,:) = PSVT(:,:,:,NSV_ELECEND) * XMOBIL_NEG(:,:,:)
+ZDRIFTZ(:,:,:) = ZDRIFTZ(:,:,:) * XEFIELDW(:,:,:)
+ZDRIFTZ(:,:,:) = +MZM(1,IKU,1,ZDRIFTZ(:,:,:)) ! Put components at flux sides
+
 !
 IF (LWEST_ll( ))  ZDRIFTX(IIB-1,:,:) = ZDRIFTX(IIB,:,:)
+IF (LEAST_ll( ))  ZDRIFTX(IIE+1,:,:) = ZDRIFTX(IIE,:,:)
 IF (LSOUTH_ll( )) ZDRIFTY(:,IJB-1,:) = ZDRIFTY(:,IJB,:)
+IF (LNORTH_ll( )) ZDRIFTY(:,IJE+1,:) = ZDRIFTY(:,IJE,:)
 ZDRIFTZ(:,:,IKB-1) = ZDRIFTZ(:,:,IKB)
+ZDRIFTZ(:,:,IKE+1) = ZDRIFTZ(:,:,IKE)
 !
-IF (HDRIFT /= 'PPM') THEN
-  CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTM)
-ELSE
-  CALL CONTRAV (HLBCX,HLBCY,ZDRIFTX,ZDRIFTY,ZDRIFTZ,XDXX,XDYY,XDZZ, &
-                XDZX,XDZY,ZXCT,ZYCT,ZZCT,4)
-!
-  ZXCT = ZXCT * PTSTEP
-  ZYCT = ZYCT * PTSTEP
-  ZZCT = ZZCT * PTSTEP
-!
-  ZADVS(:,:,:,1) = 0.
-  ZSVT(:,:,:,1) = PSVT(:,:,:,NSV_ELECEND)
-  HSV_ADV_SCHEME = 'PPM_01'
-!
-  CALL PPM_RHODJ(HLBCX,HLBCY, ZXCT, ZYCT, ZZCT,                     &
-               PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,      &
-               ZRHOZ1, ZRHOZ2                                       )
-!
-  CALL PPM_SCALAR (HLBCX,HLBCY, ISV, KTCOUNT, ZXCT, ZYCT, ZZCT, &
-                   PTSTEP, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2, &
-                   ZSVT, ZADVS, HSV_ADV_SCHEME                                       )
-!
-  PDRIFTM(:,:,:) = ZADVS(:,:,:,1)
-!
-! Additional term  -N . DIV(-mu E)
-  ZDRIFTX = ZDRIFTX * MXM(PRHODJ)
-  ZDRIFTY = ZDRIFTY * MYM(PRHODJ)
-  ZDRIFTZ = ZDRIFTZ * MZM(1,IKU,1,PRHODJ)
-!
-  CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,ZXCT)
-!
-  PDRIFTM(:,:,:) = PDRIFTM(:,:,:) - ZXCT(:,:,:) * PSVT(:,:,:,NSV_ELECEND)
-!
-  DEALLOCATE (ZXCT, ZYCT, ZZCT, ZADVS, ZSVT)
-ENDIF
+CALL GDIV(HLBCX,HLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ,ZDRIFTX,ZDRIFTY,ZDRIFTZ,PDRIFTM)
 !
 !-------------------------------------------------------------------------------
 !

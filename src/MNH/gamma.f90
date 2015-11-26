@@ -1,16 +1,6 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 operators 2006/05/18 13:07:25
-!-----------------------------------------------------------------
-!       #################
+!########################
         MODULE MODI_GAMMA
-!       #################
+!########################
 !
 INTERFACE GAMMA
 !
@@ -20,13 +10,18 @@ REAL                                              :: PGAMMA
 END FUNCTION GAMMA_X0D
 !
 FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
-REAL, DIMENSION(:), INTENT(IN)        :: PX
-REAL, DIMENSION(SIZE(PX))             :: PGAMMA
+REAL, DIMENSION(:), INTENT(IN)                    :: PX
+REAL, DIMENSION(SIZE(PX))                         :: PGAMMA
 END FUNCTION GAMMA_X1D
 !
-END INTERFACE GAMMA
-!
+END INTERFACE
 END MODULE MODI_GAMMA
+!
+!--------------------------------------------------------------------------
+!
+!
+!*       1.   FUNCTION GAMMA FOR SCALAR VARIABLE
+! 
 !
 !     ######################################
       FUNCTION GAMMA_X0D(PX)  RESULT(PGAMMA)
@@ -63,11 +58,9 @@ END MODULE MODI_GAMMA
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original     7/12/95
+!!      Original     7/11/95
 !!      C. Barthe    9/11/09  add a function for 1D arguments
-!!
-!!-------------------------------------------------------------------------------
-
+!
 !*       0. DECLARATIONS
 !           ------------
 !
@@ -130,6 +123,10 @@ END FUNCTION GAMMA_X0D
 !
 !-------------------------------------------------------------------------------
 !
+!
+!*       1.   FUNCTION GAMMA FOR 1D ARRAY
+! 
+!
 !     ######################################
       FUNCTION GAMMA_X1D(PX)  RESULT(PGAMMA)
 !     ######################################
@@ -176,14 +173,14 @@ IMPLICIT NONE
 !
 !*       0.1 declarations of arguments and result
 !
-REAL,DIMENSION(:), INTENT(IN)           :: PX
-REAL,DIMENSION(SIZE(PX))                :: PGAMMA
+REAL, DIMENSION(:), INTENT(IN)       :: PX
+REAL, DIMENSION(SIZE(PX))            :: PGAMMA
 !
 !*       0.2 declarations of local variables
 !
 INTEGER                              :: JJ ! Loop index
-INTEGER                              :: JI ! Loop index
-REAL                                 :: ZSER,ZSTP,ZTMP,ZX,ZY,ZCOEF(6)
+REAL, DIMENSION(SIZE(PX))            :: ZSER,ZSTP,ZTMP,ZX,ZY
+REAL                                 :: ZCOEF(6)
 REAL                                 :: ZPI
 !
 !-------------------------------------------------------------------------------
@@ -200,34 +197,24 @@ ZCOEF(6) = -0.5395239384953E-5
 ZSTP     =  2.5066282746310005
 !
 ZPI = 3.141592654
+ZX(:) = PX(:)
+WHERE ( PX(:)<0.0 )
+  ZX(:) = 1.- PX(:)
+END WHERE
+ZY(:) = ZX(:)
+ZTMP(:) =  ZX(:) + 5.5
+ZTMP(:) = (ZX(:) + 0.5)*ALOG(ZTMP(:)) - ZTMP(:)
+ZSER(:) = 1.000000000190015
 !
-!-------------------------------------------------------------------------------
-!
-!*       2. COMPUTE GAMMA
-!           -------------
-!  
-DO JI = 1, SIZE(PX)
-  IF (PX(JI) .LT. 0.) THEN
-    ZX = 1. - PX(JI)
-  ELSE 
-    ZX = PX(JI)
-  END IF
-  ZY = ZX
-  ZTMP =  ZX + 5.5
-  ZTMP = (ZX + 0.5) * ALOG(ZTMP) - ZTMP
-  ZSER = 1.000000000190015
-!
-  DO JJ = 1, 6
-    ZY = ZY + 1.0
-    ZSER = ZSER + ZCOEF(JJ) / ZY
-  END DO
-!
-  IF (PX(JI) .LT. 0.) THEN
-    PGAMMA = ZPI / SIN(ZPI*PX(JI)) / EXP(ZTMP + ALOG(ZSTP*ZSER/ZX))
-  ELSE
-    PGAMMA = EXP(ZTMP + ALOG(ZSTP*ZSER/ZX))
-  END IF
+DO JJ = 1 , 6
+  ZY(:) = ZY(:) + 1.0
+  ZSER(:) = ZSER(:) + ZCOEF(JJ)/ZY(:)
 END DO
+!
+PGAMMA(:) = EXP( ZTMP(:) + ALOG( ZSTP*ZSER(:)/ZX(:) ) )
+WHERE ( PX(:)<0.0 )
+  PGAMMA(:) = ZPI/SIN(ZPI*PX(:))/PGAMMA(:)
+END WHERE
 RETURN
 !
 END FUNCTION GAMMA_X1D

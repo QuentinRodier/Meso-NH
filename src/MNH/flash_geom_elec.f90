@@ -7,15 +7,18 @@
 !     #############################
 !
 INTERFACE
-    SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP, PRHODJ, PRHODREF, &
-                                  PRT, PCIT, PRSVS, PRS, PTHT, PPABST,    &
-                                  PEFIELDU, PEFIELDV, PEFIELDW,           &
-                                  PZZ, PTOWN, PSEA)
+    SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,    &
+                                  PRHODJ, PRHODREF,                    &
+                                  PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
+                                  PEFIELDU, PEFIELDV, PEFIELDW,        &
+                                  PZZ, PSVS_LINOX, PTOWN, PSEA         )
 !
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
+INTEGER,                  INTENT(IN)    :: KMI      ! current model index
 INTEGER,                  INTENT(IN)    :: KRR      ! number of moist variables
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double time step except for
                                                     ! cold start
+LOGICAL,                  INTENT(IN)    :: OEXIT    ! switch for the end of the temporal loop
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF ! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ   ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT      ! Moist variables at time t
@@ -28,6 +31,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS      ! Moist variables vol. sourc
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT     ! Theta (K) at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! height
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSVS_LINOX ! NOx source term
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! town fraction
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land-sea mask
 !
@@ -36,12 +40,13 @@ END INTERFACE
 END MODULE MODI_FLASH_GEOM_ELEC_n
 !
 !
-!       #######################################################################
-        SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KRR, PTSTEP, PRHODJ, PRHODREF, &
-                                      PRT, PCIT, PRSVS, PRS, PTHT, PPABST,    &
-                                      PEFIELDU, PEFIELDV, PEFIELDW,           &
-                                      PZZ, PTOWN, PSEA)
-!       #######################################################################
+!       ####################################################################
+        SUBROUTINE FLASH_GEOM_ELEC_n (KTCOUNT, KMI, KRR, PTSTEP, OEXIT,    &
+                                      PRHODJ, PRHODREF,                    &
+                                      PRT, PCIT, PRSVS, PRS, PTHT, PPABST, &
+                                      PEFIELDU, PEFIELDV, PEFIELDW,        &
+                                      PZZ, PSVS_LINOX, PTOWN, PSEA         )
+!       ####################################################################
 !
 !!****  * -
 !!
@@ -72,28 +77,42 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      Original : Jan. 2010
 !!      Modifications:
 !!      M. Chong  * LA *  Juin 2010 : add small ions
-!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J-P Pinty * LA *  Feb. 2013 : add LMA storage
+!!      J-P Pinty * LA *  Nov. 2013 : add flash map storage
+!!      M. Chong  * LA *  Juin 2010 : add LiNOx
+!!      C. Barthe * LACy * Jan. 2015 : convert trig. pt into lat,lon in ascii file
 !!
 !-------------------------------------------------------------------------------
 !
 !*      0.      DECLARATIONS
 !               ------------
 !
-USE MODD_CONF, ONLY : CEXP
-USE MODD_PARAMETERS, ONLY : JPVEXT
+USE MODD_CST, ONLY : XAVOGADRO, XMD
+USE MODD_CONF, ONLY : CEXP, LCARTESIAN
+USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
+USE MODD_GRID, ONLY : XLATORI,XLONORI
 USE MODD_GRID_n, ONLY : XXHAT, XYHAT, XZHAT
 USE MODD_DYN_n, ONLY : XDXHATM, XDYHATM, NSTOP
+USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZZ ! in linox_production
 USE MODD_ELEC_DESCR 
 USE MODD_ELEC_PARAM, ONLY : XFQLIGHTR, XEXQLIGHTR, &
                             XFQLIGHTI, XEXQLIGHTI, &
                             XFQLIGHTS, XEXQLIGHTS, &
                             XFQLIGHTG, XEXQLIGHTG, &
+                            XFQLIGHTH, XEXQLIGHTH, &
                             XFQLIGHTC
 USE MODD_RAIN_ICE_DESCR, ONLY : XLBR, XLBEXR, XLBS, XLBEXS, &
-                                XLBG, XLBEXG, XLBDAS_MAX, XRTMIN, &
-                                XLBDAR_MAX, XLBDAG_MAX
+                                XLBG, XLBEXG, XLBH, XLBEXH, &
+                                XRTMIN
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
 USE MODD_VAR_ll, ONLY : NPROC
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_PRINT_ELEC,  ONLY : NLU_fgeom_diag, NLU_fgeom_coord, &
+                             NIOSTAT_fgeom_diag, NIOSTAT_fgeom_coord
+USE MODD_SUB_ELEC_n
+USE MODD_TIME_n
+USE MODD_LMA_SIMULATOR
+USE MODD_ELEC_FLASH
 !
 USE MODI_SHUMAN
 USE MODI_TO_ELEC_FIELD_n
@@ -106,10 +125,7 @@ USE MODE_PACK_PGI
 !
 USE MODE_ll
 USE MODE_ELEC_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_PRINT_ELEC,  ONLY : NLU_fgeom_diag, NLU_fgeom_coord, &
-                             NIOSTAT_fgeom_diag, NIOSTAT_fgeom_coord
-USE MODD_SUB_ELEC_n
+USE MODE_GRIDPROJ
 !
 IMPLICIT NONE
 !
@@ -117,9 +133,11 @@ IMPLICIT NONE
 !       0.1     Declaration of arguments
 !
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! Temporal loop counter
+INTEGER,                  INTENT(IN)    :: KMI      ! current model index
 INTEGER,                  INTENT(IN)    :: KRR      ! number of moist variables
 REAL,                     INTENT(IN)    :: PTSTEP   ! Double time step except for
                                                     ! cold start
+LOGICAL,                  INTENT(IN)    :: OEXIT    ! switch for the end of the temporal loop
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF ! Reference dry air density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ   ! Dry density * Jacobian
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT      ! Moist variables at time t
@@ -132,6 +150,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS      ! Moist variables vol. sourc
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT     ! Theta (K) at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST   ! Absolute pressure at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ      ! height
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSVS_LINOX ! NOx source term
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN ! town fraction
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA  ! Land-sea mask
 !
@@ -143,6 +162,7 @@ INTEGER :: IJB, IJE  ! index values of the first and last inner mass points alon
 INTEGER :: IKB, IKE  ! index values of the first and last inner mass points along z
 INTEGER :: IKU
 INTEGER :: II, IJ, IK, IL, IM, IPOINT  ! loop indexes
+INTEGER :: IX, IY, IZ
 INTEGER :: IXOR, IYOR  ! origin of the extended subdomain
 INTEGER :: INB_CELL    ! Number of detected electrified cells
 INTEGER :: IPROC_CELL  ! Proc with the center of the cell
@@ -180,14 +200,15 @@ INTEGER :: IWORK
 INTEGER :: ICHOICE
 INTEGER :: IIMIN, IIMAX, IJMIN, IJMAX, IKMIN, IKMAX
 INTEGER :: IPOS_LEADER, INEG_LEADER
-INTEGER :: INBSEG_GLOB     ! global number of segments
 INTEGER :: INBLIGHT
 INTEGER, DIMENSION(:), ALLOCATABLE, SAVE :: ITYPE   ! flash type (IC, CGN or CGP)
 INTEGER, DIMENSION(:), ALLOCATABLE :: INBSEG_LEADER ! number of segments in the leader
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISIGNE_EZ     ! sign of the vertical electric field 
                                                     ! component at the trig. pt
 INTEGER, DIMENSION(:), ALLOCATABLE :: IPROC_TRIG    ! proc that contains the triggering point
-INTEGER, DIMENSION(:), ALLOCATABLE :: INBSEG      ! Number of segments per flash
+INTEGER, DIMENSION(:), ALLOCATABLE :: INBSEG        ! Number of segments per flash
+INTEGER, DIMENSION(:), ALLOCATABLE :: INBSEG_ALL    ! Number of segments, all processes
+INTEGER, DIMENSION(NPROC)          :: INBSEG_PROC   ! ------------------ per process
 INTEGER, DIMENSION(:), ALLOCATABLE :: INB_FLASH     ! Number of flashes per time step / cell
 INTEGER, DIMENSION(:), ALLOCATABLE :: INB_FL_REAL   ! Effective Number of flashes per timestep/cell
 INTEGER, DIMENSION(:), ALLOCATABLE :: IHIST_LOC     ! local nb of possible branches at [r,r+dr]
@@ -219,18 +240,14 @@ REAL :: ZE_TRIG_THRES ! Triggering Electric field threshold corrected for
                       !  pressure   
 REAL :: ZMAXE         ! Max electric field module (V/m)
 REAL :: ZEMOD_BL      ! E module at the tip of the last segment of the leader (V/m)
-REAL :: IICOORD_GLOB  ! global i index of the cell point
-REAL :: IJCOORD_GLOB  ! global j index of the cell point
 REAL :: ZMEAN_GRID    ! mean grid size
 REAL :: ZMAX_DIST     ! max distance between the triggering pt and the possible branches
 REAL :: ZMIN_DIST     ! min distance between the triggering pt and the possible branches
-REAL :: ZRAD_INF      ! minimum radius from which to build the histograms
-REAL :: ZRAD_SUP      ! maximum radius up to which the histograms are build
 REAL :: ZRANDOM       ! random number
 REAL :: ZQNET         ! net charge carried by the flash (C/kg)
 REAL :: ZCLOUDLIM     ! cloud limit
 REAL :: ZSIGMIN       ! min efficient cross section
-!
+REAL :: ZLAT, ZLON    ! lat,lon coordinates of the triggering points if not lcartesian
 !
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZQMT   ! mass charge density (C/kg)
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCELL  ! define the electrified cells
@@ -238,10 +255,10 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSIGMA ! efficient cross section of hyd
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZDQDT  ! charge to neutralize at each pt (C/kg)
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZFLASH ! = 1 if the flash leader reaches this pt
                                                 ! = 2 if the flash branch is concerned
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQTRANSFER ! Charge distributed on ions
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLBDAR   ! Lambda for rain
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLBDAS   ! Lambda for snow
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLBDAG   ! Lambda for graupel
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLBDAH   ! Lambda for hail
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQMTOT   ! total mass charge density (C/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCLOUD   ! total mixing ratio (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZEMODULE ! Electric field module (V/m)
@@ -249,11 +266,18 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIST    ! distance between the trig. pt 
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSIGLOB  ! sum of the cross sections
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQFLASH  ! total charge in excess of xqexcess (C/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOORD_TRIG ! Global coordinates of triggering point
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOORD_SEG ! Global coordinates of segments
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZCELL_GLOB ! coordinates of the cell 'center' (m)
 REAL, DIMENSION(:), ALLOCATABLE :: ZEM_TRIG     ! Electric field module at the triggering pt
 REAL, DIMENSION(:), ALLOCATABLE :: ZNEUT_POS    ! Positive charge neutralized at each segment
 REAL, DIMENSION(:), ALLOCATABLE :: ZNEUT_NEG    ! Negative charge neutralized at each segment
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: ISEG_GLOB  ! Global indexes of LMA segments
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: ILMA_SEG_ALL   ! Global indexes of LMA segments
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLMA_QMT ! Particle charge at neutralization point
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLMA_PRT ! Particle mixing ratio at neutralization point
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLMA_NEUT_POS
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLMA_NEUT_NEG
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOORD_SEG_ALL
 REAL, DIMENSION(:), ALLOCATABLE :: ZEMAX        ! Max electric field in each cell
 REAL, DIMENSION(:), ALLOCATABLE :: ZHIST_PERCENT ! percentage of possible branches at [r,r+dr] on each proc
 REAL, DIMENSION(:), ALLOCATABLE :: ZMAX_BRANCH  ! max nb of branches at [r,r+dr]
@@ -266,6 +290,15 @@ INTEGER, SAVE :: ISAVE_STATUS ! 0: print and save
 !
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll=> NULL()   ! list of fields to exchange
 !
+! Storage for the localization of the flashes
+LOGICAL :: GFIRSTFLASH
+INTEGER,DIMENSION(SIZE(PRT,1),SIZE(PRT,2)) :: IMAP2D
+!
+!  Storage for the NOx production terms
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLNOX
+REAL    :: ZLGHTLENGTH, ZCOEF
+INTEGER :: IFLASH_COUNT, IFLASH_COUNT_GLOB  ! Total number of flashes within the timestep
+!
 !-------------------------------------------------------------------------------
 !
 !*      1.      INITIALIZATION
@@ -275,7 +308,10 @@ CALL MYPROC_ELEC_ll(IPROC)
 !*      1.1     subdomains indexes
 !
 ! beginning and end indexes of the physical subdomain
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IIB = 1 + JPHEXT
+IIE = SIZE(PRT,1) - JPHEXT
+IJB = 1 + JPHEXT
+IJE = SIZE(PRT,2) - JPHEXT
 IKB = 1 + JPVEXT
 IKE = SIZE(PRT,3) - JPVEXT
 IKU = SIZE(PRT,3)
@@ -297,6 +333,16 @@ IF (GEFIRSTCALL) THEN
   ALLOCATE (ZYMASS(SIZE(XYHAT)))
   ALLOCATE (ZZMASS(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)))
   ALLOCATE (ZPRES_COEF(SIZE(PZZ,1), SIZE(PZZ,2), SIZE(PZZ,3)))
+  IF(LLMA) THEN
+    ALLOCATE (ZLMA_LAT(NFLASH_WRITE, NBRANCH_MAX))
+    ALLOCATE (ZLMA_LON(NFLASH_WRITE, NBRANCH_MAX))
+    ALLOCATE (ZSLMA_NEUT_POS(NFLASH_WRITE, NBRANCH_MAX))
+    ALLOCATE (ZSLMA_NEUT_NEG(NFLASH_WRITE, NBRANCH_MAX))
+    ALLOCATE (ISLMA_SEG_GLOB(NFLASH_WRITE, NBRANCH_MAX, 3))
+    ALLOCATE (ZSLMA_QMT(NFLASH_WRITE, NBRANCH_MAX, SIZE(PRSVS,4)))
+    ALLOCATE (ZSLMA_PRT(NFLASH_WRITE, NBRANCH_MAX, SIZE(PRSVS,4)))
+    ISLMA_SEG_GLOB(:,:,:) = 0
+  END IF
   ALLOCATE (ZSCOORD_SEG(NFLASH_WRITE, NBRANCH_MAX, 3))  ! NFLASH_WRITE nb of flash to be stored
                                             ! before writing in files
                                             ! NBRANCH_MAX=5000 default
@@ -325,7 +371,6 @@ ALLOCATE (ZCLOUD(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (GPOSS(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (ZEMODULE(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (ZCELL(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),NMAX_CELL))
-ALLOCATE (ZQTRANSFER(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 !
 ZQMT(:,:,:,:) = 0.
 ZQMTOT(:,:,:) = 0.
@@ -340,6 +385,7 @@ ZCELL(:,:,:,:) = 0.
 !
 PRSVS(:,:,:,1) = XECHARGE * PRSVS(:,:,:,1)             ! C /(m3 s)
 PRSVS(:,:,:,NSV_ELEC) = -1. * XECHARGE * PRSVS(:,:,:,NSV_ELEC)  ! C /(m3 s)
+!
 CALL PT_DISCHARGE
 !
 !
@@ -350,7 +396,7 @@ DO II = 1, NSV_ELEC
   ZQMT(:,:,:,II) = PRSVS(:,:,:,II) * PTSTEP / PRHODJ(:,:,:)
 !
 ! total mass charge density (C/kg)
-  ZQMTOT(:,:,:)  = ZQMTOT(:,:,:)  + PRSVS(:,:,:,II) * PTSTEP / PRHODJ(:,:,:)
+  ZQMTOT(:,:,:)  = ZQMTOT(:,:,:) + PRSVS(:,:,:,II) * PTSTEP / PRHODJ(:,:,:)
 END DO
 !
 ! total mixing ratio (g/kg)
@@ -371,12 +417,10 @@ ZSIGMIN   = 1.E-12
 !               ------------------------------------
 !
 ALLOCATE (ZEMAX(NMAX_CELL))
-ALLOCATE (ICELL_LOC(NMAX_CELL,4))
-ALLOCATE (ZCELL_GLOB(NMAX_CELL,3))
+ALLOCATE (ICELL_LOC(4,NMAX_CELL))
 !
 ZEMAX(:) = 0.
 ICELL_LOC(:,:) = 0
-ZCELL_GLOB(:,:) = 0.
 !
 WHERE (ZCLOUD(IIB:IIE,IJB:IJE,IKB:IKE) .LE. ZCLOUDLIM)
   GPOSS(IIB:IIE,IJB:IJE,IKB:IKE) = .FALSE.
@@ -399,7 +443,6 @@ ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE) = ZPRES_COEF(IIB:IIE,IJB:IJE,IKB:IKE)*    &
                                      PEFIELDV(IIB:IIE,IJB:IJE,IKB:IKE)**2 + &
                                      PEFIELDW(IIB:IIE,IJB:IJE,IKB:IKE)**2)**0.5 
 !
-!
 DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)  
 !
 ! find the maximum electric field on each proc
@@ -414,19 +457,17 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
 !
   IF (ZMAXE .GT. ZE_TRIG_THRES) THEN
     INB_CELL = INB_CELL + 1  ! one cell is detected
-!
     ZEMAX(INB_CELL) = ZMAXE
 ! local coordinates of the maximum electric field
-!   ICELL_LOC(INB_CELL,1:3) = MAXLOC(ZEMODULE(:,:,:),MASK=GPOSS(:,:,:))
-    ICELL_LOC(INB_CELL,1:3) = MAXLOC(ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE), &
+    ICELL_LOC(1:3,INB_CELL) = MAXLOC(ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE), &
                               MASK=GPOSS(IIB:IIE,IJB:IJE,IKB:IKE))
-    IICOORD = ICELL_LOC(INB_CELL,1)
-    IJCOORD = ICELL_LOC(INB_CELL,2)
-    IKCOORD = ICELL_LOC(INB_CELL,3)
-    ICELL_LOC(INB_CELL,4) = IPROC_CELL
+    IICOORD = ICELL_LOC(1,INB_CELL)
+    IJCOORD = ICELL_LOC(2,INB_CELL)
+    IKCOORD = ICELL_LOC(3,INB_CELL)
+    ICELL_LOC(4,INB_CELL) = IPROC_CELL
 ! 
 ! Broadcast the center of the cell to all procs
-    CALL MPI_BCAST (ICELL_LOC(INB_CELL,:), 4, MPI_INTEGER, IPROC_CELL, &
+    CALL MPI_BCAST (ICELL_LOC(:,INB_CELL), 4, MPI_INTEGER, IPROC_CELL, &
                     MPI_COMM_WORLD, IERR)
 !
 !
@@ -454,27 +495,27 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
 !
         DO II = IIB, IIE
           DO IJ = IJB, IJE
-             IF ((ZCELL(II,IJ,IK,INB_CELL) .EQ. 0.) .AND.  &
-                 (GPOSS(II,IJ,IK)) .AND.                   &
-                 (ZCLOUD(II,IJ,IK) .GT. 1.E-5) .AND.       &
-                 ((ABS(ZQMT(II,IJ,IK,2)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
-                  (ABS(ZQMT(II,IJ,IK,3)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
-                  (ABS(ZQMT(II,IJ,IK,4)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
-                  (ABS(ZQMT(II,IJ,IK,5)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
-                  (ABS(ZQMT(II,IJ,IK,6)) * PRHODREF(II,IJ,IK) .GT. XQEXCES)) )THEN
-
-                IF ((ZCELL(II-1,IJ,  IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II+1,IJ,  IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II,  IJ-1,IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II,  IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II-1,IJ-1,IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II-1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II+1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
-                    (ZCELL(II+1,IJ-1,IK,INB_CELL) .EQ. 1.)) THEN
-                  ZCELL(II,IJ,IK,INB_CELL) = 1.
-                  GPOSS(II,IJ,IK) = .FALSE.
-                END IF
-             END IF
+            IF ((ZCELL(II,IJ,IK,INB_CELL) .EQ. 0.) .AND.  &
+                (GPOSS(II,IJ,IK)) .AND.                   &
+                (ZCLOUD(II,IJ,IK) .GT. 1.E-5) .AND.       &
+                ((ABS(ZQMT(II,IJ,IK,2)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
+                 (ABS(ZQMT(II,IJ,IK,3)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
+                 (ABS(ZQMT(II,IJ,IK,4)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
+                 (ABS(ZQMT(II,IJ,IK,5)) * PRHODREF(II,IJ,IK) .GT. XQEXCES).OR. &
+                 (ABS(ZQMT(II,IJ,IK,6)) * PRHODREF(II,IJ,IK) .GT. XQEXCES)) )THEN
+!
+              IF ((ZCELL(II-1,IJ,  IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II+1,IJ,  IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II,  IJ-1,IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II,  IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II-1,IJ-1,IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II-1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II+1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
+                  (ZCELL(II+1,IJ-1,IK,INB_CELL) .EQ. 1.)) THEN
+                ZCELL(II,IJ,IK,INB_CELL) = 1.
+                GPOSS(II,IJ,IK) = .FALSE.
+              END IF
+            END IF
           END DO
         END DO
 !
@@ -519,13 +560,37 @@ IF (INB_CELL .GE. 1) THEN
 ! laisse tel quel pour le moment
 !
   ALLOCATE (ISEG_LOC(3*SIZE(PRT,3), INB_CELL)) ! 3 coord indices of the leader
+  ALLOCATE (ZCOORD_TRIG(3, INB_CELL))
   ALLOCATE (ZCOORD_SEG(NBRANCH_MAX*3, INB_CELL))
                                          ! NBRANCH_MAX=5000 default
                                          ! 3= 3 coord index
+  ALLOCATE (ZCOORD_SEG_ALL(NBRANCH_MAX*3, INB_CELL))
+  ALLOCATE (ISEG_GLOB(NBRANCH_MAX*3, INB_CELL))
+  ISEG_GLOB(:,:) = 0
+!
+  IF(LLMA) THEN
+    ALLOCATE (ILMA_SEG_ALL (NBRANCH_MAX*3, INB_CELL))
+    ALLOCATE (ZLMA_QMT(NBRANCH_MAX*NSV_ELEC, INB_CELL))  ! charge des part.
+                                                  ! a neutraliser
+    ALLOCATE (ZLMA_PRT(NBRANCH_MAX*NSV_ELEC, INB_CELL))  ! mixing ratio
+    ALLOCATE (ZLMA_NEUT_POS(NBRANCH_MAX, INB_CELL))
+    ALLOCATE (ZLMA_NEUT_NEG(NBRANCH_MAX, INB_CELL))
+    ZLMA_QMT(:,:) = 0.
+    ZLMA_PRT(:,:) = 0.
+    ZLMA_NEUT_POS(:,:) = 0.
+    ZLMA_NEUT_NEG(:,:) = 0.
+  END IF
+!
+  IF (LLNOX_EXPLICIT) THEN
+    ALLOCATE (ZLNOX(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
+    ZLNOX(:,:,:) = 0.
+  END IF
+!
   ALLOCATE (ZEM_TRIG(INB_CELL))
   ALLOCATE (INB_FLASH(INB_CELL))
   ALLOCATE (INB_FL_REAL(INB_CELL))
   ALLOCATE (INBSEG(INB_CELL)) 
+  ALLOCATE (INBSEG_ALL(INB_CELL))
   ALLOCATE (ITYPE(INB_CELL)) 
   ALLOCATE (INBSEG_LEADER(INB_CELL))
   ALLOCATE (ZDQDT(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),SIZE(PRT,4)+1))
@@ -533,6 +598,7 @@ IF (INB_CELL .GE. 1) THEN
   ALLOCATE (ZLBDAR(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
   ALLOCATE (ZLBDAS(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
   ALLOCATE (ZLBDAG(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
+  IF (KRR == 7) ALLOCATE (ZLBDAH(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
   ALLOCATE (ZSIGLOB(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
   ALLOCATE (ZFLASH(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),INB_CELL))
   ALLOCATE (ZDIST(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
@@ -540,6 +606,7 @@ IF (INB_CELL .GE. 1) THEN
   ALLOCATE (GATTACH(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 !
   ISEG_LOC(:,:) = 0
+  ZCOORD_TRIG(:,:) = 0.
   ZCOORD_SEG(:,:) = 0.
   ZDQDT(:,:,:,:) = 0.
   ZSIGMA(:,:,:,:) = 0.
@@ -554,6 +621,8 @@ IF (INB_CELL .GE. 1) THEN
   INB_FLASH(:) = 0
   INB_FL_REAL(:) = 0
   INBSEG(:) = 0
+  INBSEG_ALL(:) = 0 
+  INBSEG_PROC(:) = 0 
   INBSEG_LEADER(:) = 0
   ITYPE(:) = 1  ! default = IC
 !
@@ -577,7 +646,7 @@ IF (INB_CELL .GE. 1) THEN
                             MAX(PRT(:,:,:,3),XRTMIN(3)))**XLBEXR
   END WHERE
 !
-  WHERE (PRT(:,:,:,3) > ZCLOUDLIM .AND. ZLBDAR(:,:,:) < XLBDAR_MAX .AND. &
+  WHERE (PRT(:,:,:,3) > ZCLOUDLIM .AND. ZLBDAR(:,:,:) < XLBDAR_MAXE .AND. &
                                         ZLBDAR(:,:,:) > 0.)
     ZSIGMA(:,:,:,2) = XFQLIGHTR * ZLBDAR(:,:,:)**XEXQLIGHTR
   END WHERE
@@ -594,12 +663,12 @@ IF (INB_CELL .GE. 1) THEN
 !*      3.4     for snow
 !
   WHERE (PRT(:,:,:,5) > 0.0)
-    ZLBDAS(:,:,:) = MIN(XLBDAS_MAX,                &
+    ZLBDAS(:,:,:) = MIN(XLBDAS_MAXE,               &
                         XLBS * (PRHODREF(:,:,:) *  &
                         MAX(PRT(:,:,:,5),XRTMIN(5)))**XLBEXS)
   END WHERE
 !
-  WHERE (PRT(:,:,:,5) > ZCLOUDLIM .AND. ZLBDAS(:,:,:) < XLBDAS_MAX .AND. &
+  WHERE (PRT(:,:,:,5) > ZCLOUDLIM .AND. ZLBDAS(:,:,:) < XLBDAS_MAXE .AND. &
                                         ZLBDAS(:,:,:) > 0.)
     ZSIGMA(:,:,:,4) = XFQLIGHTS * ZLBDAS(:,:,:)**XEXQLIGHTS
   ENDWHERE
@@ -611,7 +680,7 @@ IF (INB_CELL .GE. 1) THEN
     ZLBDAG(:,:,:) = XLBG * (PRHODREF(:,:,:) * MAX(PRT(:,:,:,6),XRTMIN(6)))**XLBEXG
   END WHERE
 !
-  WHERE (PRT(:,:,:,6) > ZCLOUDLIM .AND. ZLBDAG(:,:,:) < XLBDAG_MAX .AND. &
+  WHERE (PRT(:,:,:,6) > ZCLOUDLIM .AND. ZLBDAG(:,:,:) < XLBDAG_MAXE .AND. &
                                         ZLBDAG(:,:,:) > 0.)
     ZSIGMA(:,:,:,5) = XFQLIGHTG * ZLBDAG(:,:,:)**XEXQLIGHTG
   ENDWHERE
@@ -619,12 +688,25 @@ IF (INB_CELL .GE. 1) THEN
 !
 !*      3.6     for hail
 !
+  IF (KRR == 7) THEN
+    WHERE (PRT(:,:,:,7) > 0.0)
+      ZLBDAH(:,:,:) = XLBH * (PRHODREF(:,:,:) * &
+                      MAX(PRT(:,:,:,7), XRTMIN(7)))**XLBEXH
+    END WHERE
+!
+    WHERE (PRT(:,:,:,7) > ZCLOUDLIM .AND. ZLBDAH(:,:,:) < XLBDAH_MAXE .AND. &
+                                          ZLBDAH(:,:,:) > 0.)
+      ZSIGMA(:,:,:,6) = XFQLIGHTH * ZLBDAH(:,:,:)**XEXQLIGHTH
+    ENDWHERE
+  END IF
 !
 !
 !*      3.7     sum of the efficient cross sections
 !
   ZSIGLOB(:,:,:) = ZSIGMA(:,:,:,1) + ZSIGMA(:,:,:,2) + ZSIGMA(:,:,:,3) + &
                    ZSIGMA(:,:,:,4) + ZSIGMA(:,:,:,5)
+!
+  IF (KRR == 7) ZSIGLOB(:,:,:) = ZSIGLOB(:,:,:) + ZSIGMA(:,:,:,6)
 !
 !
 !-------------------------------------------------------------------------------
@@ -652,6 +734,9 @@ IF (INB_CELL .GE. 1) THEN
 !*      4.      FLASH TRIGGERING
 !               ----------------
 !
+  IFLASH_COUNT = 0
+  IFLASH_COUNT_GLOB = 0
+!
   DO WHILE (GNEW_FLASH_GLOB)
 !
     GATTACH(:,:,:) = .FALSE.
@@ -662,7 +747,7 @@ IF (INB_CELL .GE. 1) THEN
 ! update lightning informations
         INB_FLASH(IL) = INB_FLASH(IL) + 1   ! nb of flashes / cell / time step
         INB_FL_REAL(IL) = INB_FL_REAL(IL) + 1   ! nb of flashes / cell / time step
-        INBSEG(IL) = 1        ! nb of segments / flash
+        INBSEG(IL) = 0        ! nb of segments / flash
         ITYPE(IL) = 1
 !
         IF (IPROC .EQ. IPROC_TRIG(IL)) THEN 
@@ -671,7 +756,8 @@ IF (INB_CELL .GE. 1) THEN
            IJBL_LOC = ISEG_LOC(2,IL)
            IKBL     = ISEG_LOC(3,IL) 
 !
-           ZFLASH(IIBL_LOC,IJBL_LOC,IKBL,IL)  = 1.
+           INBSEG(IL) = 1        ! nb of segments / flash
+           ZFLASH(IIBL_LOC,IJBL_LOC,IKBL,IL) = 1.
         ENDIF
 !
         GCG = .FALSE.
@@ -702,13 +788,12 @@ IF (INB_CELL .GE. 1) THEN
         CALL ONE_LEADER
 !
         INBSEG_LEADER(IL) = INBSEG(IL)
-        INEG_LEADER = INBSEG_LEADER(IL) - IPOS_LEADER -1
+        INEG_LEADER = INBSEG_LEADER(IL) - IPOS_LEADER - 1
 !
 ! Eliminate this flash if only positive or negative leader exists        
-
         IF (IPROC .EQ. IPROC_TRIG(IL)) THEN 
           IF (IPOS_LEADER .EQ. 0 .OR. INEG_LEADER .EQ. 0) THEN
-            ZFLASH(IIBL_LOC,IJBL_LOC,IKB:IKE,IL)=0.
+            ZFLASH(IIBL_LOC,IJBL_LOC,IKB:IKE,IL) = 0.
             INB_FL_REAL(IL) = INB_FL_REAL(IL) - 1
             GNEW_FLASH(IL) = .FALSE.
           ELSE    ! return to actual Triggering electrical field
@@ -775,9 +860,9 @@ IF (INB_CELL .GE. 1) THEN
             DO IJ = IJB, IJE
               DO IK = IKB, IKE
                 IF (GPROP(II,IJ,IK,IL)) THEN
-                  ZDIST(II,IJ,IK) = ((ZXMASS(II) - ZCOORD_SEG(1,IL))**2 + &
-                                     (ZYMASS(IJ) - ZCOORD_SEG(2,IL))**2 + &
-                                     (ZZMASS(II,IJ,IK) - ZCOORD_SEG(3,IL))**2)**0.5
+                  ZDIST(II,IJ,IK) = ((ZXMASS(II) - ZCOORD_TRIG(1,IL))**2 + &
+                                     (ZYMASS(IJ) - ZCOORD_TRIG(2,IL))**2 + &
+                                     (ZZMASS(II,IJ,IK) - ZCOORD_TRIG(3,IL))**2)**0.5
                 END IF
               END DO
             END DO
@@ -792,7 +877,7 @@ IF (INB_CELL .GE. 1) THEN
 ! transform the min and max distances into min and max increments 
           IIND_MIN = 1
           IIND_MAX = MAX(1, INT((ZMAX_DIST-ZMIN_DIST)/ZMEAN_GRID +1.))
-          IDELTA_IND = IIND_MAX +1
+          IDELTA_IND = IIND_MAX + 1
 !
           ALLOCATE (IHIST_LOC(IDELTA_IND))
           ALLOCATE (ZHIST_PERCENT(IDELTA_IND))
@@ -860,9 +945,6 @@ IF (INB_CELL .GE. 1) THEN
 ! => the max number of branches / proc is proportional to the percentage of 
 ! available points / proc at this distance
 !
-! this line must be commented if branch_geom is called once
-!            IMAX_BRANCH(IM) = INT(ANINT(ZMAX_BRANCH(IM) * ZHIST_PERCENT(IM) / 2.))
-! this line must be commented if branch_geom is called twice
             IMAX_BRANCH(IM) = INT(ANINT(ZMAX_BRANCH(IM)))
           END DO
 !
@@ -875,12 +957,6 @@ IF (INB_CELL .GE. 1) THEN
 !*      8.3     distribute the branches
 !
           ALLOCATE (ZWORK(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
-!
-! upper branches
-!          CALL BRANCH_GEOM(IK_TRIG+1, IKE)
-!
-! lower branches
-!          CALL BRANCH_GEOM(IKB, IK_TRIG-1)
 !
           CALL BRANCH_GEOM(IKB, IKE)
 !
@@ -952,15 +1028,15 @@ IF (INB_CELL .GE. 1) THEN
             WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) < 0.)
                        !  increase negative ion charge
               ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) =         &
-                          ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) +  &
-                          ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
+                     ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) +  &
+                     ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
             ENDWHERE
 !
             WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) > 0.)
                      ! Increase positive ion charge
               ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) =         &
-                          ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) +  &
-                          ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
+                     ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) +  &
+                     ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
             ENDWHERE
 !
 !
@@ -972,21 +1048,21 @@ IF (INB_CELL .GE. 1) THEN
             IF (ITYPE(IL) .EQ. 3) THEN   
               DO II = 1, NSV_ELEC
                 WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) > 0.)
-                    ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) =    &
-                       ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) - &
-                       ZQMT(IIB:IIE,IJB:IJE,IKB:IKE,II)
+                  ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) =    &
+                     ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) - &
+                     ZQMT(IIB:IIE,IJB:IJE,IKB:IKE,II)
                 END WHERE
               ENDDO
 !
               WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) > 0.) 
-                  ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)=0.
+                ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)=0.
               END WHERE
 !
               WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) < 0.)
 ! Increase negative ion charge
-                   ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) =         &
-                          ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) +  &
-                          ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
+                ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) =         &
+                       ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,NSV_ELEC) +  &
+                       ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
               ENDWHERE
             ELSE
 !
@@ -994,21 +1070,21 @@ IF (INB_CELL .GE. 1) THEN
 !
               DO II = 1, NSV_ELEC
                 WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) < 0.)
-                    ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) =    &
+                  ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) =      &
                        ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,II) - &
                        ZQMT(IIB:IIE,IJB:IJE,IKB:IKE,II)
                 END WHERE
               ENDDO
 !
               WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) < 0.)
-                  ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)=0.
+                ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)=0.
               END WHERE
 !
               WHERE (ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE) > 0.)
                         ! Increase positive ion charge
-                   ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) =         &
-                          ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) +  &
-                          ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
+                ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) =         &
+                       ZDQDT(IIB:IIE,IJB:IJE,IKB:IKE,1) +  &
+                       ZQFLASH(IIB:IIE,IJB:IJE,IKB:IKE)
               ENDWHERE
             END IF        ! GCG_POS
           END IF          ! NOT(GCG)
@@ -1020,39 +1096,77 @@ IF (INB_CELL .GE. 1) THEN
 !
           CALL MPI_BCAST (INB_NEUT_OK,1, MPI_INTEGER, IPROC_TRIG(IL), &
                     MPI_COMM_WORLD, IERR)
-        END IF            !  GNEUTRALIZATION
+!
+!*      9.5     Gather lightning information from all processes
+!*              Save the particule charge and total pos/neg charge neutralization points.
+!*                   the coordinates of all flash branch points
+!
+          INBSEG_PROC(IPROC+1) = INBSEG(IL)
+          DO IK = 0, NPROC-1
+            CALL MPI_BCAST (INBSEG_PROC(IK+1), 1, MPI_INTEGER, IK,  &
+                            MPI_COMM_WORLD, IERR)
+          END DO
+
+          INBSEG_ALL(IL) = INBSEG(IL)
+          CALL SUM_ELEC_ll(INBSEG_ALL(IL))
+
+          CALL GATHER_ALL_BRANCH
+!
+!*      9.6     update the source term
+!
+          DO II = IIB, IIE
+            DO IJ = IJB, IJE
+              DO IK = IKB, IKE
+                DO IM = 1, NSV_ELEC
+                  IF (ZDQDT(II,IJ,IK,IM) .NE. 0.) THEN
+                    PRSVS(II,IJ,IK,IM) = PRSVS(II,IJ,IK,IM) + &
+                                         ZDQDT(II,IJ,IK,IM) * &
+                                         PRHODJ(II,IJ,IK) / PTSTEP
+                  END IF
 !
 !
-!*      9.5     update the source term
+!*      9.7     update the positive and negative charge neutralized
 !
-        DO II = IIB, IIE
-          DO IJ = IJB, IJE
-            DO IK = IKB, IKE
-              DO IM = 1, NSV_ELEC
-                IF (ZDQDT(II,IJ,IK,IM) .NE. 0.) THEN
-                  PRSVS(II,IJ,IK,IM) = PRSVS(II,IJ,IK,IM) + &
-                                       ZDQDT(II,IJ,IK,IM) * &
-                                       PRHODJ(II,IJ,IK) / PTSTEP
-                END IF
-!
-!
-!*      9.6     update the positive and negative charge neutralized
-!
-                IF (ZDQDT(II,IJ,IK,IM) .LT. 0.) THEN
-                  ZNEUT_NEG(IL) = ZNEUT_NEG(IL) + ZDQDT(II,IJ,IK,IM)*  &
-                                                  PRHODJ(II,IJ,IK) 
-                ELSE IF (ZDQDT(II,IJ,IK,IM) .GT. 0.) THEN
-                  ZNEUT_POS(IL) = ZNEUT_POS(IL) + ZDQDT(II,IJ,IK,IM)*  &
-                                                  PRHODJ(II,IJ,IK) 
-                END IF
+                  IF (ZDQDT(II,IJ,IK,IM) .LT. 0.) THEN
+                    ZNEUT_NEG(IL) = ZNEUT_NEG(IL) + ZDQDT(II,IJ,IK,IM) * &
+                                                    PRHODJ(II,IJ,IK) 
+                  ELSE IF (ZDQDT(II,IJ,IK,IM) .GT. 0.) THEN
+                    ZNEUT_POS(IL) = ZNEUT_POS(IL) + ZDQDT(II,IJ,IK,IM) * &
+                                                    PRHODJ(II,IJ,IK) 
+                  END IF
+                END DO
               END DO
             END DO
           END DO
-        END DO
 !
-        CALL SUM_ELEC_ll(ZNEUT_POS(IL))
-        CALL SUM_ELEC_ll(ZNEUT_NEG(IL))
+          CALL SUM_ELEC_ll(ZNEUT_POS(IL))
+          CALL SUM_ELEC_ll(ZNEUT_NEG(IL))
 !
+!
+!*      9.8     compute the NOx production
+!
+!!   The lightning length is first computed. The number of NOx molecules per
+!! meter of lightning flash is taken from Wang et al. (1998). It is a linear
+!! function of the pressure. No distinction is made between ICs and CGs.
+
+          IF (LLNOX_EXPLICIT) THEN
+            IFLASH_COUNT_GLOB = IFLASH_COUNT_GLOB + 1
+            IF (INBSEG(IL) .NE. 0) THEN
+              DO II = 0, INBSEG(IL)-1
+                IM = 3 * II
+                IX = ISEG_GLOB(IM+1,IL) - IXOR + 1
+                IY = ISEG_GLOB(IM+2,IL) - IYOR + 1
+                IZ = ISEG_GLOB(IM+3,IL)
+                ZLGHTLENGTH = (XDXX(IX,IY,IZ) * XDYY(IX,IY,IZ) * &
+                               XDZZ(IX,IY,IZ))**(1./3.)
+                ZLNOX(IX, IY, IZ) = ZLNOX(IX, IY, IZ) +                     &
+                                   (XWANG_A + XWANG_B * PPABST(IX,IY,IZ)) * &
+                                    ZLGHTLENGTH
+              ENDDO
+              IFLASH_COUNT = IFLASH_COUNT + 1
+            END IF
+          END IF
+        END IF            !  GNEUTRALIZATION
       END IF    ! end if gnew_flash
     END DO    ! end loop il
 !
@@ -1065,6 +1179,8 @@ IF (INB_CELL .GE. 1) THEN
 !               ---------------------------------------------------
 !
 ! Synchronizing all processes
+!   CALL MPI_BARRIER(MPI_COMM_WORLD, IERR)   ! A ACTIVER SI PB.
+!
     IF (IPROC .EQ. 0) THEN
       INBLIGHT = COUNT(GNEW_FLASH(1:INB_CELL))
       IF (INBLIGHT .NE. 0) THEN
@@ -1073,9 +1189,9 @@ IF (INB_CELL .GE. 1) THEN
           DO IL = 1, INB_CELL
             IF (GNEW_FLASH(IL)) THEN
               NNBLIGHT = NNBLIGHT + 1
-              ISFLASH_NUMBER(NNBLIGHT) = ISFLASH_NUMBER(NNBLIGHT-1) +1
+              ISFLASH_NUMBER(NNBLIGHT) = ISFLASH_NUMBER(NNBLIGHT-1) + 1
               ISNB_FLASH(NNBLIGHT) = INB_FL_REAL(IL)
-              ISNBSEG(NNBLIGHT) = INBSEG(IL)
+              ISNBSEG(NNBLIGHT) = INBSEG_ALL(IL)
               ISCELL_NUMBER(NNBLIGHT) = IL
               ISTCOUNT_NUMBER(NNBLIGHT) = KTCOUNT
               ISTYPE(NNBLIGHT) = ITYPE(IL)
@@ -1083,13 +1199,24 @@ IF (INB_CELL .GE. 1) THEN
               ZSNEUT_POS(NNBLIGHT) = ZNEUT_POS(IL) 
               ZSNEUT_NEG(NNBLIGHT) = ZNEUT_NEG(IL)
 !
-              DO II = 1, INBSEG(IL)
-                DO IJ = 1,3
-                  ZSCOORD_SEG(NNBLIGHT, II, IJ) = ZCOORD_SEG(3*(II-1)+IJ, IL)
-                END DO
+              DO II = 1, INBSEG_ALL(IL)
+                IM = 3 * (II - 1)
+                ZSCOORD_SEG(NNBLIGHT,II,1:3) = ZCOORD_SEG_ALL(IM+1:IM+3,IL)
               ENDDO
-            END IF
-          ENDDO
+!
+              IF(LLMA) THEN
+                DO II = 1, INBSEG_ALL(IL)
+                  IM = 3 * (II - 1)
+                  ISLMA_SEG_GLOB(NNBLIGHT,II,1:3) = ILMA_SEG_ALL(IM+1:IM+3,IL)
+                  IM = NSV_ELEC * (II - 1)
+                  ZSLMA_QMT(NNBLIGHT,II,2:6) = ZLMA_QMT(IM+2:IM+6,IL)
+                  ZSLMA_PRT(NNBLIGHT,II,2:6) = ZLMA_PRT(IM+2:IM+6,IL)
+                  ZSLMA_NEUT_POS(NNBLIGHT,II) = ZLMA_NEUT_POS(II,IL)
+                  ZSLMA_NEUT_NEG(NNBLIGHT,II) = ZLMA_NEUT_NEG(II,IL)
+                END DO
+              END IF   ! llma
+            END IF   ! gnew_flash
+          END DO   ! end loop il
 !
           IF (NNBLIGHT .EQ. NFLASH_WRITE) ISAVE_STATUS = 0
 !
@@ -1097,8 +1224,11 @@ IF (INB_CELL .GE. 1) THEN
           ISAVE_STATUS = 2
         END IF
 !      
-        IF (ISAVE_STATUS.EQ. 0 .OR. ISAVE_STATUS.EQ. 2) THEN
+        IF (ISAVE_STATUS .EQ. 0 .OR. ISAVE_STATUS .EQ. 2) THEN
           CALL WRITE_OUT_ASCII
+          IF(LLMA) THEN
+            CALL WRITE_OUT_LMA
+          END IF
           ISFLASH_NUMBER(0) = ISFLASH_NUMBER(NNBLIGHT)
         END IF
 !
@@ -1106,10 +1236,10 @@ IF (INB_CELL .GE. 1) THEN
           NNBLIGHT = 0
           DO IL = 1, INB_CELL
             IF (GNEW_FLASH(IL)) THEN
-               NNBLIGHT = NNBLIGHT + 1
-              ISFLASH_NUMBER(NNBLIGHT) = ISFLASH_NUMBER(NNBLIGHT-1) +1
+              NNBLIGHT = NNBLIGHT + 1
+              ISFLASH_NUMBER(NNBLIGHT) = ISFLASH_NUMBER(NNBLIGHT-1) + 1
               ISNB_FLASH(NNBLIGHT) = INB_FL_REAL(IL)
-              ISNBSEG(NNBLIGHT) = INBSEG(IL)
+              ISNBSEG(NNBLIGHT) = INBSEG_ALL(IL)
               ISCELL_NUMBER(NNBLIGHT) = IL
               ISTCOUNT_NUMBER(NNBLIGHT) = KTCOUNT
               ISTYPE(NNBLIGHT) = ITYPE(IL)
@@ -1117,11 +1247,22 @@ IF (INB_CELL .GE. 1) THEN
               ZSNEUT_POS(NNBLIGHT) = ZNEUT_POS(IL) 
               ZSNEUT_NEG(NNBLIGHT) = ZNEUT_NEG(IL)
 !
-              DO II = 1, INBSEG(IL)
-                DO IJ = 1,3
-                  ZSCOORD_SEG(NNBLIGHT, II, IJ)=ZCOORD_SEG(3*(II-1)+IJ, IL)
-                ENDDO
+              DO II = 1, INBSEG_ALL(IL)
+                IM = 3 * (II - 1)
+                ZSCOORD_SEG(NNBLIGHT, II, 1:3) = ZCOORD_SEG_ALL(IM+1:IM+3, IL)
               ENDDO
+!
+              IF(LLMA) THEN
+                DO II = 1, INBSEG_ALL(IL)
+                  IM = 3 * (II - 1)
+                  ISLMA_SEG_GLOB(NNBLIGHT,II,1:3) = ILMA_SEG_ALL(IM+1:IM+3,IL)
+                  IM = NSV_ELEC*(II-1)
+                  ZSLMA_QMT(NNBLIGHT,II,2:6) = ZLMA_QMT(IM+2:IM+6,IL)
+                  ZSLMA_PRT(NNBLIGHT,II,2:6) = ZLMA_PRT(IM+2:IM+6,IL)
+                  ZSLMA_NEUT_POS(NNBLIGHT,II) = ZLMA_NEUT_POS(II,IL)
+                  ZSLMA_NEUT_NEG(NNBLIGHT,II) = ZLMA_NEUT_NEG(II,IL)
+                END DO
+              END IF
             END IF
           ENDDO
         END IF
@@ -1132,6 +1273,45 @@ IF (INB_CELL .GE. 1) THEN
       END IF   ! INBLIGHT
     END IF   ! IPROC
 !
+! Save flash location statistics in all processes
+    IF (INBLIGHT .NE. 0) THEN
+      DO IL = 1, INB_CELL
+        IF (GNEW_FLASH(IL)) THEN
+          IMAP2D(:,:)   = 0
+          DO IK = IKB, IKE
+            IMAP2D(:,:) = IMAP2D(:,:) + ZFLASH(:,:,IK,IL)
+          END DO
+!
+! Detect Trig/Impact X,Y location
+          IX = 0
+          IY = 0
+          GFIRSTFLASH = .FALSE.
+          DO II = IIB, IIE
+            DO IJ = IJB, IJE
+              DO IK = IKB, IKE
+                IF (GFIRSTFLASH) EXIT
+                IF (ZFLASH(II,IJ,IK,IL)==1.) THEN
+                  IX = II
+                  IY = IJ
+                  GFIRSTFLASH = .TRUE.
+                END IF
+              END DO
+            END DO
+          END DO
+!
+! Store
+          IF (ITYPE(IL)==1) THEN ! IC
+            IF (IX*IY/=0) NMAP_TRIG_IC(IX,IY) = NMAP_TRIG_IC(IX,IY) + 1
+            NMAP_2DAREA_IC(:,:) = NMAP_2DAREA_IC(:,:) + MIN(1,IMAP2D(:,:))
+            NMAP_3DIC(:,:,:)    = NMAP_3DIC(:,:,:) + ZFLASH(:,:,:,IL)
+          ELSE ! CGN & CGP
+            IF (IX*IY/=0) NMAP_IMPACT_CG(IX,IY) = NMAP_IMPACT_CG(IX,IY) + 1
+            NMAP_2DAREA_CG(:,:) = NMAP_2DAREA_CG(:,:) + MIN(1,IMAP2D(:,:))
+            NMAP_3DCG(:,:,:)    = NMAP_3DCG(:,:,:) + ZFLASH(:,:,:,IL)
+          END IF
+        END IF
+      ENDDO
+    END IF   ! INBLIGHT
 !
 !------------------------------------------------------------------------------
 !
@@ -1187,6 +1367,13 @@ IF (INB_CELL .GE. 1) THEN
                                              PEFIELDV(IIB:IIE,IJB:IJE,IKB:IKE)**2 + &
                                              PEFIELDW(IIB:IIE,IJB:IJE,IKB:IKE)**2)**0.5
       ENDIF
+!
+      ISEG_LOC(:,:) = 0
+      ZCOORD_TRIG(:,:) = 0.
+      ZCOORD_SEG(:,:) = 0.
+      IPROC_TRIG(:) = 0
+      ISIGNE_EZ(:) = 0
+!
       CALL TRIG_POINT
     ELSE
       GNEW_FLASH_GLOB = .FALSE.
@@ -1194,7 +1381,33 @@ IF (INB_CELL .GE. 1) THEN
 !
     ZNEUT_POS(:) = 0.
     ZNEUT_NEG(:) = 0.
+!
+    IF (LLMA) THEN
+      ZLMA_NEUT_POS(:,:) = 0.
+      ZLMA_NEUT_NEG(:,:) = 0.
+    END IF
   END DO   ! end loop do while
+!
+!
+!-------------------------------------------------------------------------------
+!
+!*      13.     COMPUTE THE NOX SOURCE TERM
+!               ---------------------------
+!
+  IF (LLNOX_EXPLICIT) THEN
+    IF (IFLASH_COUNT_GLOB .NE. 0) THEN
+      ZCOEF = XMD / XAVOGADRO
+      XLNOX_ECLAIR = 0.
+      IF (IFLASH_COUNT .NE. 0) THEN
+        XLNOX_ECLAIR = SUM(ZLNOX(:,:,:))
+        PSVS_LINOX(:,:,:) = PSVS_LINOX(:,:,:) + ZLNOX(:,:,:) * ZCOEF ! PRHODJ is
+                                                                     ! implicit
+      END IF
+      CALL SUM_ELEC_ll (XLNOX_ECLAIR)
+      XLNOX_ECLAIR = XLNOX_ECLAIR / (XAVOGADRO * FLOAT(IFLASH_COUNT_GLOB))
+    END IF
+    DEALLOCATE (ZLNOX)
+  END IF
 !
   DEALLOCATE (ZNEUT_POS)
   DEALLOCATE (ZNEUT_NEG)
@@ -1202,6 +1415,7 @@ IF (INB_CELL .GE. 1) THEN
   DEALLOCATE (ZLBDAR)
   DEALLOCATE (ZLBDAS)
   DEALLOCATE (ZLBDAG)
+  IF (KRR == 7) DEALLOCATE (ZLBDAH)
   DEALLOCATE (ZSIGLOB)
   DEALLOCATE (ZDQDT)
   DEALLOCATE (ZDIST)
@@ -1211,24 +1425,47 @@ IF (INB_CELL .GE. 1) THEN
   DEALLOCATE (ISIGNE_EZ)
   DEALLOCATE (GNEW_FLASH)
   DEALLOCATE (INBSEG)
+  DEALLOCATE (INBSEG_ALL)
   DEALLOCATE (INBSEG_LEADER)
   DEALLOCATE (INB_FLASH)
   DEALLOCATE (INB_FL_REAL)
   DEALLOCATE (ZEM_TRIG)
   DEALLOCATE (ITYPE)
   DEALLOCATE (ISEG_LOC)
+  DEALLOCATE (ZCOORD_TRIG)
   DEALLOCATE (ZCOORD_SEG)
+  DEALLOCATE (ZCOORD_SEG_ALL)
+  DEALLOCATE (ISEG_GLOB)
   DEALLOCATE (GATTACH)
+  IF(LLMA) THEN
+    DEALLOCATE (ILMA_SEG_ALL)
+    DEALLOCATE (ZLMA_QMT)
+    DEALLOCATE (ZLMA_PRT)
+    DEALLOCATE (ZLMA_NEUT_POS)
+    DEALLOCATE (ZLMA_NEUT_NEG)
+  END IF
 END IF   ! (inb_cell .ge. 1)
 !
 !
 !-------------------------------------------------------------------------------
 !
 !*      13.     PRINT LIGHTNING INFORMATIONS FOR THE LAST TIMESTEP
+!               OR LMA_TIME_SAVE IS REACHED IF LLMA OPTION IS USED
 !               --------------------------------------------------
-
-IF (NNBLIGHT .NE. 0 .AND. IPROC .EQ. 0 .AND. KTCOUNT .EQ. NSTOP) THEN
+!
+IF (LLMA) THEN
+  IF( IPROC .EQ. 0 .AND. TDTCUR%TIME >= TDTLMA%TIME - PTSTEP ) THEN
+    CALL WRITE_OUT_ASCII
+    CALL WRITE_OUT_LMA
+    ISFLASH_NUMBER(0) = ISFLASH_NUMBER(NNBLIGHT)
+    NNBLIGHT = 0
+  END IF
+END IF
+!
+IF (NNBLIGHT .NE. 0 .AND. ((IPROC .EQ. 0 .AND. OEXIT) .OR. &
+                           (KTCOUNT == NSTOP .AND. KMI==1))) THEN
   CALL WRITE_OUT_ASCII
+  IF(LLMA) CALL WRITE_OUT_LMA
 END IF
 !
 !
@@ -1237,14 +1474,12 @@ END IF
 !*      14.     DEALLOCATE
 !               ----------
 !
-DEALLOCATE (ZCELL_GLOB)
 DEALLOCATE (ICELL_LOC)
 DEALLOCATE (ZQMT)
 DEALLOCATE (ZQMTOT)
 DEALLOCATE (ZCLOUD)
 DEALLOCATE (ZCELL)
 DEALLOCATE (ZEMODULE)
-DEALLOCATE (ZQTRANSFER)
 !
 !
 !-------------------------------------------------------------------------------
@@ -1353,15 +1588,21 @@ DO IL = 1, INB_CELL
           ISEG_LOC(1,IL) = II_TRIG_LOC
           ISEG_LOC(2,IL) = IJ_TRIG_LOC
           ISEG_LOC(3,IL) = IK_TRIG
-          ZCOORD_SEG(1,IL) = ZXMASS(II_TRIG_LOC)
-          ZCOORD_SEG(2,IL) = ZYMASS(IJ_TRIG_LOC)
-          ZCOORD_SEG(3,IL) = ZZMASS(II_TRIG_LOC, IJ_TRIG_LOC, IK_TRIG)
+!
+          ISEG_GLOB(1,IL) = II_TRIG_GLOB
+          ISEG_GLOB(2,IL) = IJ_TRIG_GLOB
+          ISEG_GLOB(3,IL) = IK_TRIG
+!
+          ZCOORD_TRIG(1,IL) = ZXMASS(II_TRIG_LOC)
+          ZCOORD_TRIG(2,IL) = ZYMASS(IJ_TRIG_LOC)
+          ZCOORD_TRIG(3,IL) = ZZMASS(II_TRIG_LOC, IJ_TRIG_LOC, IK_TRIG)
+!
+          ZCOORD_SEG(1:3,IL) = ZCOORD_TRIG(1:3,IL)
 !
 ! electric field module at the triggering point
           ZEM_TRIG(IL) = ZEMODULE(II_TRIG_LOC,IJ_TRIG_LOC,IK_TRIG)
 !
 ! sign of Ez at the triggering point
-!
           ISIGNE_EZ(IL) = 0
           IF (PEFIELDW(II_TRIG_LOC,IJ_TRIG_LOC,IK_TRIG) .GT. 0.) THEN
             ISIGNE_EZ(IL) = 1
@@ -1373,7 +1614,7 @@ DO IL = 1, INB_CELL
 !
 ! broadcast IFOUND and find the proc where IFOUND = 1
       CALL MAX_ELEC_ll (IFOUND, IPROC_TRIG(IL))
-
+!
     END DO
 !
 !
@@ -1381,13 +1622,13 @@ DO IL = 1, INB_CELL
 !*      4.      BROADCAST USEFULL PARAMETERS
 !               ----------------------------
 !
-    CALL MPI_BCAST (ZEM_TRIG(IL), 1,&
+    CALL MPI_BCAST (ZEM_TRIG(IL), 1, &
                     MPI_PRECISION, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-    CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3),   &     
+    CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &     
                     MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-    CALL MPI_BCAST (ZCOORD_SEG(:,IL), NBRANCH_MAX*3, & 
+    CALL MPI_BCAST (ZCOORD_TRIG(:,IL), 3, &
                     MPI_PRECISION, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-    CALL MPI_BCAST (ISIGNE_EZ(IL), 1,&
+    CALL MPI_BCAST (ISIGNE_EZ(IL), 1, &
                     MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
 !
 !
@@ -1440,18 +1681,24 @@ IF (IPROC .EQ. IPROC_TRIG(IL)) THEN
             IKBL < IKE .AND. ISTOP .EQ. 0 .AND.      &
             INBSEG(IL) .LE. (NLEADER_MAX-1))  
 !
-!    local coordinates of the new segment
-!
+! local coordinates of the new segment
     IIBL_LOC = ISEG_LOC(1,IL)
     IJBL_LOC = ISEG_LOC(2,IL)
     IKBL     = IKBL + IKSTEP
-    IIDECAL = INBSEG(IL)*3
+    IIDECAL = INBSEG(IL) * 3
+!
     ISEG_LOC(IIDECAL+1,IL) = IIBL_LOC
     ISEG_LOC(IIDECAL+2,IL) = IJBL_LOC
     ISEG_LOC(IIDECAL+3,IL) = IKBL
+!
+    ISEG_GLOB(IIDECAL+1,IL) = IIBL_LOC + IXOR - 1
+    ISEG_GLOB(IIDECAL+2,IL) = IJBL_LOC + IYOR - 1
+    ISEG_GLOB(IIDECAL+3,IL) = IKBL
+!
     ZCOORD_SEG(IIDECAL+1,IL) = ZXMASS(IIBL_LOC)
     ZCOORD_SEG(IIDECAL+2,IL) = ZYMASS(IJBL_LOC)
     ZCOORD_SEG(IIDECAL+3,IL) = ZZMASS(IIBL_LOC, IJBL_LOC, IKBL)
+!
     INBSEG(IL) = INBSEG(IL) + 1
 !
 !
@@ -1493,9 +1740,11 @@ IF (IPROC .EQ. IPROC_TRIG(IL)) THEN
         PRINT*,'THE LIGHTNING FLASH HAS REACHED THE GROUND ' 
         ISTOP = 1
         GCG = .TRUE.
+        NNB_CG = NNB_CG + 1
         IF (ISIGN_LEADER > 0) THEN
           GCG_POS = .TRUE.
           ITYPE(IL) = 3 ! CGP
+          NNB_CG_POS = NNB_CG_POS + 1 
         ELSE
           ITYPE(IL) = 2 ! CGN
         END IF
@@ -1511,10 +1760,8 @@ IF (IPROC .EQ. IPROC_TRIG(IL)) THEN
 !               -------------------------
 !
       IF (.NOT. GCG) THEN
-!       IF ((0.0005*(XZHAT(IKBL)+XZHAT(IKBL+1))) <= XALT_CG .AND. &
         IF ( (ZZMASS(IIBL_LOC,IJBL_LOC,IKBL)-PZZ(IIBL_LOC,IJBL_LOC,IKB)) <=   &
-             XALT_CG .AND. ZCLOUD(IIBL_LOC,IJBL_LOC,IKBL) <= ZCLOUDLIM .AND.  &
-             INBSEG(IL) .GT. 1  .AND. IKSTEP .LT. 0) THEN
+             XALT_CG .AND. INBSEG(IL) .GT. 1  .AND. IKSTEP .LT. 0) THEN
 !
 !
 !*      2.1    the channel is prolongated to the ground if 
@@ -1522,39 +1769,39 @@ IF (IPROC .EQ. IPROC_TRIG(IL)) THEN
 !
           DO WHILE (IKBL > IKB)
             IKBL = IKBL - 1
-
+!
 ! local coordinates of the new segment
-            IIDECAL = INBSEG(IL)*3
+            IIDECAL = INBSEG(IL) * 3
+!
             ISEG_LOC(IIDECAL+1,IL) = IIBL_LOC
             ISEG_LOC(IIDECAL+2,IL) = IJBL_LOC
             ISEG_LOC(IIDECAL+3,IL) = IKBL
+!
+            ISEG_GLOB(IIDECAL+1:IIDECAL+2,IL) = ISEG_GLOB(IIDECAL-2:IIDECAL-1,IL)
+            ISEG_GLOB(IIDECAL+3,IL) = IKBL
+!
             ZCOORD_SEG(IIDECAL+1:IIDECAL+2,IL) = ZCOORD_SEG(IIDECAL-2:IIDECAL-1,IL)
             ZCOORD_SEG(IIDECAL+3,IL) = ZZMASS(IIBL_LOC, IJBL_LOC, IKBL)
-
+!
 !  Increment number of segments
             INBSEG(IL) = INBSEG(IL) + 1 ! Nb of segments
             ZFLASH(IIBL_LOC,IJBL_LOC,IKBL,IL) = 1.
             ZCELL(IIBL_LOC,IJBL_LOC,IKBL,IL) = 0.   
           END DO
 !
+!
+!*      2.2    update the number of CG flashes
+!
           GCG = .TRUE.
+          NNB_CG = NNB_CG + 1 
           ISTOP = 1
 !
           IF (ISIGN_LEADER > 0) THEN
             GCG_POS = .TRUE.
+            NNB_CG_POS = NNB_CG_POS + 1 
             ITYPE(IL) = 3
           ELSE
             ITYPE(IL) = 2
-          END IF
-        END IF
-!
-!
-!*      2.2    update the number of CG flashes
-!
-        IF (GCG) THEN
-          NNB_CG = NNB_CG + 1
-          IF (GCG_POS) THEN
-            NNB_CG_POS = NNB_CG_POS + 1
           END IF
         END IF
       END IF
@@ -1566,13 +1813,9 @@ END IF  ! only iproc_trig was working
 !*      3.     BROADCAST THE INFORMATIONS TO ALL PROCS
 !              ---------------------------------------
 !
-CALL MPI_BCAST (INBSEG(IL), 1,          &
+CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &  
                 MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3),   &  
-                MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-CALL MPI_BCAST (ZCOORD_SEG(:,IL), NBRANCH_MAX*3,    &       
-                MPI_PRECISION, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
-CALL MPI_BCAST (ITYPE(IL), 1,&
+CALL MPI_BCAST (ITYPE(IL), 1, &
                 MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
 !
 !
@@ -1622,7 +1865,7 @@ DO IL = 1, INB_CELL
   END IF
   IF (GNEW_FLASH(IL) .AND. IPROC .EQ. IPROC_TRIG(IL)) THEN
     DO II = 1, INBSEG(IL)
-      IIDECAL = 3*(II-1)
+      IIDECAL = 3 * (II - 1)
       IIBL_LOC = ISEG_LOC(IIDECAL+1,IL)
       IJBL_LOC = ISEG_LOC(IIDECAL+2,IL)
       IKBL     = ISEG_LOC(IIDECAL+3,IL)
@@ -1781,13 +2024,13 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
   CALL SUM_ELEC_ll (IPT_DIST_GLOB)
 !
   IF (IPT_DIST_GLOB .LE. INB_SEG_TO_BRANCH) THEN
-     IF (IPT_DIST_GLOB .LE. IMAX_BRANCH(IM)) THEN
-       GRANDOM = .FALSE.
-     ELSE
-       GRANDOM = .TRUE.
-     END IF
+    IF (IPT_DIST_GLOB .LE. IMAX_BRANCH(IM)) THEN
+      GRANDOM = .FALSE.
+    ELSE
+      GRANDOM = .TRUE.
+    END IF
   ELSE
-     GRANDOM = .TRUE.
+    GRANDOM = .TRUE.
   END IF
 !
 !
@@ -1796,18 +2039,16 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
 !
   IF (IPT_DIST_GLOB .GT. 0 .AND. INB_SEG_TO_BRANCH .NE. 0) THEN
     IF (.NOT. GRANDOM) THEN
-
-     INB_SEG_TO_BRANCH = INB_SEG_TO_BRANCH - IPT_DIST_GLOB
+      INB_SEG_TO_BRANCH = INB_SEG_TO_BRANCH - IPT_DIST_GLOB
 !
 !*      2.1     all points are selected
 !
-     IF(IPT_DIST .GT. 0) THEN 
-      WHERE (IMASKQ_DIST(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. IM)
-        ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 2.
-        ZCELL(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 0.
-      END WHERE
-     END IF
-
+      IF(IPT_DIST .GT. 0) THEN 
+        WHERE (IMASKQ_DIST(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. IM)
+          ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 2.
+          ZCELL(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 0.
+        END WHERE
+      END IF
     ELSE
 !
 !*      2.2      the gridpoints are chosen randomly
@@ -1878,7 +2119,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
           ZWORK(:,:,:) = 0.
           ZWORK(:,:,:) = UNPACK(ZAUX(:), MASK=(IMASKQ_DIST(:,:,:).EQ.IM), FIELD=0.0)
           WHERE (ZWORK(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. 1.) 
-            ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL)  = 2.
+            ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 2.
             ZCELL(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 0.
           END WHERE
           DEALLOCATE (ZVECT)
@@ -1894,36 +2135,220 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
 ! next distance
   IM = IM + 1
 END DO   ! end loop / do while / radius IM
-
+!
 INB_SEG_AFT = COUNT (ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL) .NE. 0.)
 CALL SUM_ELEC_ll(INB_SEG_AFT)
+!
 IF (INB_SEG_AFT .GT. INB_SEG_BEF) THEN
-  DO IPLOOP = 0, NPROC-1
-    IF (IPROC .EQ. IPLOOP) THEN
-      DO II = IIB, IIE
-        DO IJ = IJB, IJE
-          DO IK = IKB, IKE
-            IF (ZFLASH(II,IJ,IK,IL) .EQ. 2.) THEN 
-              IIDECALB = INBSEG(IL)*3
-              ZCOORD_SEG(IIDECALB+1,IL) = ZXMASS(II)
-              ZCOORD_SEG(IIDECALB+2,IL) = ZYMASS(IJ)
-              ZCOORD_SEG(IIDECALB+3,IL) = ZZMASS(II, IJ, IK)
-              INBSEG(IL) = INBSEG(IL) + 1
-            END IF
-          END DO
-        END DO
+  DO II = IIB, IIE
+    DO IJ = IJB, IJE
+      DO IK = IKB, IKE
+        IF (ZFLASH(II,IJ,IK,IL) .EQ. 2.) THEN 
+          IIDECALB = INBSEG(IL) * 3
+!
+          ISEG_GLOB(IIDECALB+1,IL) = II + IXOR - 1
+          ISEG_GLOB(IIDECALB+2,IL) = IJ + IYOR - 1
+          ISEG_GLOB(IIDECALB+3,IL) = IK
+!
+          ZCOORD_SEG(IIDECALB+1,IL) = ZXMASS(II)
+          ZCOORD_SEG(IIDECALB+2,IL) = ZYMASS(IJ)
+          ZCOORD_SEG(IIDECALB+3,IL) = ZZMASS(II,IJ,IK)
+          INBSEG(IL) = INBSEG(IL) + 1
+        END IF
       END DO
-    END IF
-    CALL MPI_BCAST (INBSEG(IL), 1,&
-                    MPI_INTEGER, IPLOOP, MPI_COMM_WORLD, IERR)
-    CALL MPI_BCAST (ZCOORD_SEG(:,IL), NBRANCH_MAX*3,   &
-                    MPI_PRECISION, IPLOOP, MPI_COMM_WORLD, IERR)
+    END DO
   END DO
 END IF
 !
 END SUBROUTINE BRANCH_GEOM
 !
-!------- ------------------------------------------------------------------------
+!--------------------------------------------------------------------------------
+!
+  SUBROUTINE GATHER_ALL_BRANCH
+!
+!!
+!! Purpose:
+!!
+!
+!*      0.     DECLARATIONS
+!              ------------
+!
+IMPLICIT NONE
+!
+INTEGER :: INSEGPROC, INSEGCELL  ! number of segments in the process,
+                                 ! and number of segments in the cell
+INTEGER :: ISAVEDECAL
+INTEGER :: INSEGTRIG, IPROCTRIG
+REAL, DIMENSION(:), ALLOCATABLE :: ZLMAQMT, ZLMAPRT, ZLMAPOS, ZLMANEG
+REAL, DIMENSION(:), ALLOCATABLE :: ZSEND, ZRECV
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISEND, IRECV
+INTEGER, DIMENSION(NPROC) :: IDECAL, IDECAL3, IDECALN
+INTEGER, DIMENSION(NPROC) :: INBSEG_PROC_X3, INBSEG_PROC_XNSV
+!
+!
+IPROCTRIG = IPROC_TRIG(IL)
+INSEGCELL = INBSEG_ALL(IL)
+INSEGPROC = INBSEG_PROC(IPROC+1)
+INSEGTRIG = INBSEG_PROC(IPROCTRIG+1)
+!
+IDECAL(1) = INSEGTRIG
+DO IK = 2, NPROC
+  IDECAL(IK) = IDECAL(IK-1) + INBSEG_PROC(IK-1)
+END DO
+!
+IF(IPROCTRIG .EQ. 0) ISAVEDECAL = IDECAL(IPROCTRIG+1)
+!
+IDECAL(IPROCTRIG+1) = 0
+DO IK = IPROCTRIG+2, NPROC
+  IF(IPROCTRIG .EQ. 0) THEN
+    IDECAL(IK) = IDECAL(IK) - ISAVEDECAL
+  ELSE
+    IDECAL(IK) = IDECAL(IK) - IDECAL(1)
+  END IF
+END DO
+!
+IDECAL3(:) = 3 * IDECAL(:)
+!
+!
+!*      1.     BRANCH COORDINATES
+!
+ALLOCATE (ZRECV(INSEGCELL*3))
+ALLOCATE (ZSEND(INSEGPROC*3))
+!
+IF (INSEGPROC .NE. 0) THEN
+  ZSEND(1:3*INSEGPROC) = ZCOORD_SEG(1:3*INSEGPROC,IL)
+END IF
+!
+IF (IPROC .EQ. 0) THEN
+  INBSEG_PROC_X3(:) = 3 * INBSEG_PROC(:)
+END IF
+!
+CALL MPI_GATHERV (ZSEND, 3*INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC_X3, &
+                  IDECAL3, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+!
+IF (IPROC .EQ. 0) THEN
+  ZCOORD_SEG_ALL(1:3*INSEGCELL,IL) = ZRECV(1:3*INSEGCELL)
+END IF
+!
+DEALLOCATE (ZRECV)
+DEALLOCATE (ZSEND)
+!
+!
+!*      2.     FOR LMA-LIKE RESULTS: Charge, mixing ratio,
+!*                        neutralized positive/negative charge
+!*                        and grid index
+!
+IF (LLMA) THEN
+  ALLOCATE (ISEND(3*INSEGPROC))
+  ALLOCATE (ZLMAQMT(INSEGPROC*NSV_ELEC))
+  ALLOCATE (ZLMAPRT(INSEGPROC*NSV_ELEC))
+  ALLOCATE (ZLMAPOS(INSEGPROC))
+  ALLOCATE (ZLMANEG(INSEGPROC))
+!
+  ISEND  (:) = 0
+  ZLMAPOS(:) = 0.
+  ZLMANEG(:) = 0.
+  ZLMAQMT(:) = 0.
+  ZLMAPRT(:) = 0.
+!
+  IF (INSEGPROC .NE. 0) THEN
+    DO II = 1, INSEGPROC
+      IM = 3 * (II - 1)
+      IX = ISEG_GLOB(IM+1,IL) - IXOR + 1
+      IY = ISEG_GLOB(IM+2,IL) - IYOR + 1
+      IZ = ISEG_GLOB(IM+3,IL)
+!
+      IM = NSV_ELEC * (II - 1)
+      IF (IX .LE. IIE .AND. IX .GE. IIB .AND. &
+          IY .LE. IJE .AND. IY .GE. IJB) THEN
+        ZLMAQMT(IM+2:IM+6) = ZQMT(IX,IY,IZ,2:6)
+        ZLMAPRT(IM+2:IM+6) =  PRT(IX,IY,IZ,2:6)
+        DO IJ = 1, NSV_ELEC
+          IF (ZDQDT(IX,IY,IZ,IJ) .GT. 0.) THEN
+            ZLMAPOS(II) = ZLMAPOS(II) + &
+                          ZDQDT(IX,IY,IZ,IJ) * PRHODJ(IX,IY,IZ)
+          ELSE IF (ZDQDT(IX,IY,IZ,IJ) .LT. 0.) THEN
+            ZLMANEG(II) = ZLMANEG(II) + &
+                          ZDQDT(IX,IY,IZ,IJ) * PRHODJ(IX,IY,IZ)
+          END IF
+        END DO
+      END IF
+    END DO
+!
+    ISEND(1:3*INSEGPROC) = ISEG_GLOB(1:3*INSEGPROC, IL)
+  END IF
+!
+! Grid Indexes
+!
+  ALLOCATE (IRECV(3*INSEGCELL))
+!
+  CALL MPI_GATHERV (ISEND, 3*INSEGPROC, MPI_INTEGER, IRECV, INBSEG_PROC_X3, &
+                    IDECAL3, MPI_INTEGER, 0, MPI_COMM_WORLD, IERR)
+!
+  IF (IPROC .EQ. 0) THEN
+    ILMA_SEG_ALL(1:3*INSEGCELL,IL) = IRECV(1:3*INSEGCELL)
+  END IF
+!
+  DEALLOCATE (IRECV)
+  DEALLOCATE (ISEND)
+!
+! Neutralized charge at grid points
+!
+  ALLOCATE (ZRECV(INSEGCELL))
+!
+  CALL MPI_GATHERV (ZLMAPOS, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
+                    IDECAL, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+!
+  IF (IPROC .EQ. 0) THEN
+    ZLMA_NEUT_POS(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
+  END IF
+!
+  CALL MPI_GATHERV (ZLMANEG, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
+                    IDECAL, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+!
+  IF (IPROC .EQ. 0) THEN
+    ZLMA_NEUT_NEG(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
+  END IF
+!
+  DEALLOCATE (ZLMAPOS)
+  DEALLOCATE (ZLMANEG)
+  DEALLOCATE (ZRECV)
+!
+! Charge and mixing ratios at neutralized points
+!
+  ALLOCATE (ZRECV(NSV_ELEC*INSEGCELL))
+!
+  IDECALN(:) = IDECAL(:) * NSV_ELEC
+!
+  IF (IPROC .EQ. 0) THEN
+    INBSEG_PROC_XNSV(:) = NSV_ELEC * INBSEG_PROC(:)
+  END IF
+!
+  CALL MPI_GATHERV (ZLMAQMT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
+                    INBSEG_PROC_XNSV,                                  &
+                    IDECALN, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR    )
+!
+  IF (IPROC .EQ. 0) THEN
+    ZLMA_QMT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)
+  END IF
+!
+  CALL MPI_GATHERV (ZLMAPRT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
+                    INBSEG_PROC_XNSV,                                  &
+                    IDECALN, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+!
+  IF (IPROC .EQ. 0) THEN
+    ZLMA_PRT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)
+  END IF
+!
+  DEALLOCATE (ZLMAQMT)
+  DEALLOCATE (ZLMAPRT)
+  DEALLOCATE (ZRECV)
+!
+END IF
+!
+END SUBROUTINE GATHER_ALL_BRANCH
+!
+!--------------------------------------------------------------------------------
 !
   SUBROUTINE PT_DISCHARGE
 !
@@ -1938,24 +2363,23 @@ IMPLICIT NONE
 !
 !
 WHERE (ABS(PEFIELDW(:,:,IKB)) > XECORONA .AND. PEFIELDW(:,:,IKB) > 0.)
-  PRSVS(:,:,IKB,1) = PRSVS(:,:,IKB,1) +                                     &
+  PRSVS(:,:,IKB,1) = PRSVS(:,:,IKB,1) +                                       &
                      XFCORONA * PEFIELDW(:,:,IKB) * (ABS(PEFIELDW(:,:,IKB)) - &
                      XECORONA)**2 / (PZZ(:,:,IKB+1) - PZZ(:,:,IKB))
 ENDWHERE
-
+!
 WHERE (ABS(PEFIELDW(:,:,IKB)) > XECORONA .AND. PEFIELDW(:,:,IKB) < 0.)
   PRSVS(:,:,IKB,NSV_ELEC) = PRSVS(:,:,IKB,NSV_ELEC) +                         &
                      XFCORONA * PEFIELDW(:,:,IKB) * (ABS(PEFIELDW(:,:,IKB)) - &
                      XECORONA)**2 / (PZZ(:,:,IKB+1) - PZZ(:,:,IKB))
 ENDWHERE
-
+!
 END SUBROUTINE PT_DISCHARGE
 !
-
-!-----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
 !
   SUBROUTINE WRITE_OUT_ASCII
-
+!
 !!
 !! Purpose:
 !!
@@ -1969,27 +2393,51 @@ INTEGER :: I1, I2
 !
 !
 !*      1.     FLASH PARAMETERS
-!              ---------------
+!              ----------------
+!
 OPEN (UNIT=NLU_fgeom_diag, FILE=CEXP//"_fgeom_diag.asc", ACTION="WRITE", &
       STATUS="OLD", FORM="FORMATTED", POSITION="APPEND")
 !
 ! Ecriture ascii dans CEXP//'_fgeom_diag.asc" defini dans RESOLVED_ELEC
 !
-DO I1 = 1, NNBLIGHT
-  WRITE (NLU_fgeom_diag,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F9.3,F9.3,F7.3,F8.2,F9.2,f9.4)') &
-        ISFLASH_NUMBER(I1),              &
-        ISTCOUNT_NUMBER(I1) * PTSTEP,    &
-        ISCELL_NUMBER(I1),               &
-        ISNB_FLASH(I1),                  &
-        ISTYPE(I1),                      &
-        ISNBSEG(I1),                     &
-        ZSEM_TRIG(I1),                   &
-        ZSCOORD_SEG(I1,1,1)*1.E-3,       &
-        ZSCOORD_SEG(I1,1,2)*1.E-3,       &
-        ZSCOORD_SEG(I1,1,3)*1.E-3,       &
-        ZSNEUT_POS(I1),                  &
-        ZSNEUT_NEG(I1), ZSNEUT_POS(I1)+ZSNEUT_NEG(I1)
-ENDDO
+IF (LCARTESIAN) THEN
+  DO I1 = 1, NNBLIGHT
+    WRITE (UNIT=NLU_fgeom_diag,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
+          ISFLASH_NUMBER(I1),              &
+          ISTCOUNT_NUMBER(I1) * PTSTEP,    &
+          ISCELL_NUMBER(I1),               &
+          ISNB_FLASH(I1),                  &
+          ISTYPE(I1),                      &
+          ISNBSEG(I1),                     &
+          ZSEM_TRIG(I1),                   &
+          ZSCOORD_SEG(I1,1,1)*1.E-3,       &
+          ZSCOORD_SEG(I1,1,2)*1.E-3,       &
+          ZSCOORD_SEG(I1,1,3)*1.E-3,       &
+          ZSNEUT_POS(I1),                  &
+          ZSNEUT_NEG(I1), ZSNEUT_POS(I1)+ZSNEUT_NEG(I1)
+  END DO
+ELSE
+  DO I1 = 1, NNBLIGHT
+! compute latitude and longitude of the triggering point
+    CALL SM_LATLON(XLATORI,XLONORI,ZSCOORD_SEG(I1,1,1),&
+                                   ZSCOORD_SEG(I1,1,2),&
+                                   ZLAT,ZLON)
+!
+    WRITE (UNIT=NLU_fgeom_diag,FMT='(I8,F9.1,I4,I6,I4,I6,F9.3,F12.3,F12.3,F9.3,F8.2,F9.2,f9.4)') &
+          ISFLASH_NUMBER(I1),              &
+          ISTCOUNT_NUMBER(I1) * PTSTEP,    &
+          ISCELL_NUMBER(I1),               &
+          ISNB_FLASH(I1),                  &
+          ISTYPE(I1),                      &
+          ISNBSEG(I1),                     &
+          ZSEM_TRIG(I1),                   &
+          ZLAT,                            &
+          ZLON,                            &
+          ZSCOORD_SEG(I1,1,3)*1.E-3,       &
+          ZSNEUT_POS(I1),                  &
+          ZSNEUT_NEG(I1), ZSNEUT_POS(I1)+ZSNEUT_NEG(I1)
+  END DO
+END IF
 !
 CLOSE (UNIT=NLU_fgeom_diag)
 !
@@ -1998,6 +2446,7 @@ CLOSE (UNIT=NLU_fgeom_diag)
 !              -------------------------
 !
 IF (LSAVE_COORD) THEN
+!
 ! Ecriture ascii dans CEXP//'_fgeom_coord.asc" defini dans RESOLVED_ELEC
 !
   OPEN (UNIT=NLU_fgeom_coord, FILE=CEXP//"_fgeom_coord.asc", ACTION="WRITE", &
@@ -2019,6 +2468,58 @@ IF (LSAVE_COORD) THEN
 END IF
 !
 END SUBROUTINE WRITE_OUT_ASCII
+!
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE WRITE_OUT_LMA
+!
+!!
+!! Purpose:
+!!
+!
+!*      0.     DECLARATIONS
+!              ------------
+!
+IMPLICIT NONE
+!
+INTEGER :: I1, I2
+!
+!
+!*      1.     LMA SIMULATOR
+!              -------------
+!
+CALL SM_LATLON(XLATORI,XLONORI,ZSCOORD_SEG(:,:,1),ZSCOORD_SEG(:,:,2), &
+                               ZLMA_LAT(:,:),ZLMA_LON(:,:))
+DO I1 = 1, NNBLIGHT
+  DO I2 = 1, ISNBSEG(I1)
+    WRITE (ILMA_UNIT,FMT='(I6,F12.1,I6,2(F15.6),3(F15.3),3(I6),12(E15.4))') &
+               ISFLASH_NUMBER(I1),           &
+               ISTCOUNT_NUMBER(I1) * PTSTEP, &
+               ISTYPE(I1),                   &
+               ZLMA_LAT(I1,I2),              &
+               ZLMA_LON(I1,I2),              &
+               ZSCOORD_SEG(I1,I2,1)*1.E-3,   &
+               ZSCOORD_SEG(I1,I2,2)*1.E-3,   &
+               ZSCOORD_SEG(I1,I2,3)*1.E-3,   &
+               ISLMA_SEG_GLOB(I1,I2,1),      &
+               ISLMA_SEG_GLOB(I1,I2,2),      &
+               ISLMA_SEG_GLOB(I1,I2,3),      &
+               ZSLMA_PRT(I1,I2,2),           &
+               ZSLMA_PRT(I1,I2,3),           &
+               ZSLMA_PRT(I1,I2,4),           &
+               ZSLMA_PRT(I1,I2,5),           &
+               ZSLMA_PRT(I1,I2,6),           &
+               ZSLMA_QMT(I1,I2,2),           &
+               ZSLMA_QMT(I1,I2,3),           &
+               ZSLMA_QMT(I1,I2,4),           &
+               ZSLMA_QMT(I1,I2,5),           &
+               ZSLMA_QMT(I1,I2,6),           &
+               ZSLMA_NEUT_POS(I1,I2),        &
+               ZSLMA_NEUT_NEG(I1,I2)
+  END DO
+END DO
+!
+END SUBROUTINE WRITE_OUT_LMA
 !
 !-------------------------------------------------------------------------------
 !

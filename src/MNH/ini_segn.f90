@@ -6,6 +6,7 @@
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
 ! $Source$ $Revision$
+! masdev4_7 BUG1 2007/06/15 17:47:27
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_INI_SEG_n
@@ -162,6 +163,7 @@ END MODULE MODI_INI_SEG_n
 !!                                 test (Escobar)
 !!                       10/02/15  remove ABORT in parallel case for SPAWNING 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                       01/2015   add GLNOX_EXPLICIT (C. Barthe)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -236,6 +238,7 @@ LOGICAL            :: GFOREFIRE
 #endif
 LOGICAL            :: GCONDSAMP
 LOGICAL            :: GCHTRANS 
+LOGICAL            :: GLNOX_EXPLICIT              ! flag for LNOx
                                                   ! These variables
                                                   ! are used to locally store 
 INTEGER            :: ISV                         ! the value read in DESFM 
@@ -443,6 +446,7 @@ CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
 #ifdef MNH_FOREFIRE
                 GFOREFIRE, &
 #endif
+                GLNOX_EXPLICIT,                                             &
                 GCONDSAMP, IRIMX,IRIMY,ISV,       &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
 !
@@ -463,6 +467,7 @@ CALL READ_EXSEG_n(KMI,YEXSEG,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
 #ifdef MNH_FOREFIRE
                 GFOREFIRE, &
 #endif
+                GLNOX_EXPLICIT,                                             &
                 GCONDSAMP, IRIMX,IRIMY,ISV, &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
                 PTSTEP_ALL,CSTORAGE_TYPE,CINIFILEPGD_n                      )
