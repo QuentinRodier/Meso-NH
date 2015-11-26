@@ -131,6 +131,8 @@ LOGICAL :: GFOUND
 CHARACTER(LEN=28) :: YDAD     =' '        ! name of dad of input FM file
 CHARACTER(LEN=28) :: CPGDFILE ='PGDFILE'  ! name of the output file
 INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
+LOGICAL           :: LHSLOP=.FALSE.       ! filtering of slopes higher than XHSLOP   
+REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher than XHSLOP   
 INTEGER           :: NSLEVE   =12         ! number of iteration for filter for smooth orography
 REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography for SLEVE coordinate
 !#ifdef MNH_NCWRIT
@@ -147,7 +149,7 @@ INTEGER           :: IIMAX, IJMAX
 INTEGER           :: NHALO_MNH 
 !
 NAMELIST/NAM_PGDFILE/CPGDFILE, NHALO
-NAMELIST/NAM_ZSFILTER/NZSFILTER
+NAMELIST/NAM_ZSFILTER/NZSFILTER,LHSLOP,XHSLOP
 NAMELIST/NAM_SLEVE/NSLEVE, XSMOOTH_ZS
 NAMELIST/NAM_CONF_PGD/JPHEXT, NHALO_MNH
 !------------------------------------------------------------------------------
@@ -298,6 +300,7 @@ CALL FMWRIT(COUTFMFILE,'LON',CLUOUT0,'XY',ZWORK_LON,1,22,'X_Y_longitude (degree)
 END IF
 !*    4.      Computes and writes smooth orography for SLEVE coordinate
 !             ---------------------------------------------------------
+!CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS,LHSLOP,XHSLOP)
 CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS)
 
 IF ( LNETCDF ) THEN
@@ -324,6 +327,7 @@ END IF
 CALL WRITE_PGD_SURF_ATM_n('MESONH')
 !*    4.      Computes and writes smooth orography for SLEVE coordinate
 !             ---------------------------------------------------------
+!CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS,LHSLOP,XHSLOP)
 CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS)
 IF (.NOT.LCARTESIAN) THEN
 !!!! WRITE LAT and LON

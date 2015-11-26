@@ -567,6 +567,9 @@ INTEGER::JK
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZS_ll
 INTEGER                           :: IJ 
 INTEGER           :: NZSFILTER=1          ! number of iteration for filter for fine   orography
+LOGICAL           :: LHSLOP=.FALSE.       ! filtering of slopes higher than XHSLOP   
+REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher than XHSLOP
+
 !
 REAL              :: ZZS_MAX, ZZS_MAX_ll
 INTEGER           :: IJPHEXT
@@ -897,7 +900,6 @@ CALL SET_XEND_ll(NIMAX_ll+2*JPHEXT, 1)
 CALL SET_YOR_ll(1, 1)
 CALL SET_YEND_ll(NJMAX_ll+2*JPHEXT, 1)
 CALL SET_DAD_ll(0, 1)
-! CALL INI_PARA_ll(IINFO_ll)
 CALL INI_PARAZ_ll(IINFO_ll)
 !
 ! sizes of arrays of the extended sub-domain
@@ -1779,7 +1781,7 @@ IF (CSURF =='EXTE') THEN
   IF (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM) THEN
     CPGDFILE = CINIFILE
     CALL PGD_GRID_SURF_ATM('MESONH',CINIFILE,'MESONH',.TRUE.)
-!    CALL SPLIT_GRID('MESONH')
+!   CALL SPLIT_GRID('MESONH')
     CALL PGD_SURF_ATM     ('MESONH',CINIFILE,'MESONH',.TRUE.)
     CPGDFILE = CINIFILEPGD                                   
   ELSE
