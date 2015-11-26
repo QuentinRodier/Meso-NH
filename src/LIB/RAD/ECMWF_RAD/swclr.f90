@@ -53,6 +53,7 @@ SUBROUTINE SWCLR &
 !        JJMorcrette 990128 : sunshine duration
 !        99-05-25   JJMorcrette    Revised aerosols
 !        JJMorcrette 001218 : 6 spectral intervals
+!        D.St Martin 11/2015 : bug on ZFACOA for NOVLP>= 5
    
 !     ------------------------------------------------------------------
 
@@ -273,7 +274,7 @@ JKLP1 = JKL + 1
 DO JL = KIDIA,KFDIA
 !++MODIF_MESONH
   IF (NOVLP.GE.5) THEN
-   ZFACOA = PTAUAZ(JL,JK)
+   ZFACOA = PTAUAZ(JL,JKL)
    ZCORAE = ZFACOA *  PSEC(JL)
   ELSE
    ZFACOA = _ONE_ - PPIZAZ(JL,JKL)*PCGAZ(JL,JKL)*PCGAZ(JL,JKL)
@@ -313,7 +314,7 @@ DO JK = 2 , KLEV
   DO JL = KIDIA,KFDIA
 !++MODIF_MESONH
     IF (NOVLP.GE.5) THEN
-     ZFACOA = PTAUAZ(JL,JK)
+     ZFACOA = PTAUAZ(JL,JKL)
      ZCORAE = ZFACOA *  PSEC(JL)
     ELSE
      ZFACOA = _ONE_ - PPIZAZ(JL,JKL)*PCGAZ(JL,JKL)*PCGAZ(JL,JKL)
