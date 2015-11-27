@@ -9,7 +9,7 @@
 !
 INTERFACE
 !
-SUBROUTINE WRITE_PHYS_PARAM(HFMFILE,HDADFILE)
+SUBROUTINE WRITE_PHYS_PARAM(HFMFILE)
 CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
 CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
                                               ! its DAD model
@@ -21,7 +21,7 @@ END MODULE MODI_WRITE_PHYS_PARAM
 !
 !
 !     #############################################
-      SUBROUTINE WRITE_PHYS_PARAM(HFMFILE,HDADFILE)
+      SUBROUTINE WRITE_PHYS_PARAM(HFMFILE)
 !     #############################################
 !
 !!****  *WRITE_PHYS_PARAM* - routine to define the netcdf variables written in phys_param for model $n
@@ -77,6 +77,11 @@ END MODULE MODI_WRITE_PHYS_PARAM
 !!    AUTHOR
 !!    ------
 !!  	S. Bielli   *Laboratoire d'Aerologie* 
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!    09/2015 (S. Bielli)  Remove HDADFILE from call argument
 !!
 !-------------------------------------------------------------------------------
 !
@@ -159,8 +164,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !
 CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
-                                              ! its DAD model
 !
 !*       0.2   Declarations of local variables
 !

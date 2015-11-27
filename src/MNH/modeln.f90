@@ -233,6 +233,8 @@ END MODULE MODI_MODEL_n
 !!                                      aircraft, ballon and profiler
 !!       C.Lac    11/09/2015: correction of the budget due to FIT temporal scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!                   Sep 2015 (S. Bielli) : Remove YDADFILE from argument call 
+!                              of write_phys_param
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1286,7 +1288,7 @@ IF ( LNETCDF .AND. GCLOSE_OUT ) THEN
   NC_WRITE=LNETCDF
   NC_FILE='phy'
   LLFIFM = .FALSE.
-  CALL WRITE_PHYS_PARAM(YFMFILE,YDADFILE)
+  CALL WRITE_PHYS_PARAM(YFMFILE)
   DEF_NC=.FALSE.
   LLFIFM = .TRUE.
 END IF

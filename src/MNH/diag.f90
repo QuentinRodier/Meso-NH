@@ -72,6 +72,7 @@
 !!                                      aircraft, ballon and profiler
 !!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!   P.Tulet : 11/2015 : new diagnostic for aerosol
+!!  09/2015     (S. Bielli)    Add netcdf call for phys_param
 !!
 !-------------------------------------------------------------------------------
 !
@@ -702,10 +703,26 @@ ZCHEM=0.
 XTIME_LES=0.
 XTIME_LES_BU_PROCESS=0.
 XTIME_BU_PROCESS=0.
+#ifdef MNH_NCWRIT
+IF ( LNETCDF ) THEN
+  DEF_NC = .TRUE.
+  NC_WRITE=LNETCDF
+  NC_FILE='phy'
+  LLFIFM = .FALSE.
+  CALL WRITE_PHYS_PARAM(YFMFILE)
+  DEF_NC=.FALSE.
+  LLFIFM = .TRUE.
+END IF
 !
 CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
                   ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
+DEF_NC=.TRUE.
+#else
+CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
+                  ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
+                  ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
+#endif       
 PRINT*, 'DIAG AFTER PHYS_PARAM1'
 !
 !* restores the initial flags
