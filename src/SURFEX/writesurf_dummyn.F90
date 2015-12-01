@@ -18,6 +18,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/2004
+!!      P.Tulet     2015  Bug depassement de tableau YRECFM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -70,7 +71,7 @@ YCOMMENT=' '
 !
 DO JDUMMY=1,NDUMMY_NBR
   !
-  WRITE(YRECFM,'(A8,I3.3,A5)') 'DUMMY_GR',JDUMMY,'     '
+  WRITE(YRECFM,'(A8,I3.3,A1)') 'DUMMY_GR',JDUMMY,' '
   YSTRING20=CDUMMY_NAME(JDUMMY)
   YSTRING03=CDUMMY_AREA(JDUMMY)
   YCOMMENT='X_Y_'//YRECFM//YSTRING20//YSTRING03//  &

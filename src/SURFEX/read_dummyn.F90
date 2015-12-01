@@ -18,6 +18,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/2004
+!!      P.Tulet     2015  Bug depassement de tableau YRECFM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -77,7 +78,7 @@ ALLOCATE(XDUMMY_FIELDS(NSIZE_FULL,NDUMMY_NBR))
 !
 DO JDUMMY=1,NDUMMY_NBR
   !
-  WRITE(YRECFM,FMT='(A8,I3.3,A5)') 'DUMMY_GR',JDUMMY,'     '
+  WRITE(YRECFM,FMT='(A8,I3.3,A1)') 'DUMMY_GR',JDUMMY,' '
   CALL READ_SURF(HPROGRAM,YRECFM,XDUMMY_FIELDS(:,JDUMMY),IRESP,HCOMMENT=YCOMMENT)
   !
   !
