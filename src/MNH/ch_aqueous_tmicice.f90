@@ -100,6 +100,7 @@ END MODULE MODI_CH_AQUEOUS_TMICICE
 !!    M. Leriche 17/09/2010 add OUSECHIC flag
 !!    Juan 24/09/2012: for BUG Pgi rewrite PACK function on mode_pack_pgi
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!    M.Leriche 2015 correction bug
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1107,7 +1108,6 @@ ENDIF
 !
  ZZW(:) = 0.0
  ZZW2(:,:) = 0.0
- ZZW3(:,:) = 0.0
  ZZW4(:,:) = 0.0
  DO JL = 1,IMICRO
    IF ( (ZRGT(JL)>PRTMIN_AQ*1.e3/ZRHODREF(JL)) .AND.     &    ! wet case
@@ -1118,6 +1118,7 @@ ENDIF
      ZZW2(JL,:) = MAX(MIN(ZZW2(JL,:),(ZRSVT(JL,:)/PTSTEP)),0.0)
      ZRRSVS(JL,:) = ZRRSVS(JL,:) - ZZW2(JL,:)  ! rain -> graupel
      IF (OUSECHIC) THEN
+     ZZW3(:,:) = 0.0
      DO JLI = 1, SIZE(PSGRSVS,4)
        IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &

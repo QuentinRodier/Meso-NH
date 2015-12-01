@@ -158,25 +158,25 @@ IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP/PRHODJ
 !      REMOVE NEGATIVE VALUES OF CHEM SCALAR
 !
 IF (LUSECHEM) THEN
-  DO JSV = 1, KSV
-    IF ( MIN_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll) < 0.0 ) THEN
+  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
+    IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
 !
 ! compute the total water mass computation
 !
-      ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
+      ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,JSV), IINFO_ll ) )
 !
 ! remove the negative values
 !
-      PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = MAX(0., PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) )
+      PRSVS(:,:,:,JSV) = MAX(0., PRSVS(:,:,:,JSV) )
 !
 ! compute the new total mass
 !
-      ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRSVS(:,:,:,NSV_CHEMBEG+JSV-1), IINFO_ll ) )
+      ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRSVS(:,:,:,JSV), IINFO_ll ) )
 !
 ! correct again in such a way to conserve the total mass 
 !
       ZRATIO = ZMASSTOT / ZMASSPOS
-      PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) = PRSVS(:,:,:,NSV_CHEMBEG+JSV-1) * ZRATIO
+      PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) * ZRATIO
 !
       WRITE(ILUOUT,*)'DUE TO CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
       WRITE(ILUOUT,*)'SOURCES IS CORRECTED BY RATIO',ZRATIO

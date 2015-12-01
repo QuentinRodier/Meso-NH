@@ -65,7 +65,7 @@ END MODULE MODI_CH_AER_SOLV
 !!
 !!    EXTERNAL
 !!    --------
-!!    None
+!!    M.Leriche 2015 correction bug
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -101,7 +101,6 @@ INTEGER :: JI,JJ,JK, JN, IDT
 REAL, DIMENSION(SIZE(PM,1)) :: ZSUM
 REAL, DIMENSION(SIZE(PM,1),JPMODE) :: ZNEWM, ZMASK
 REAL, DIMENSION(SIZE(PM,1)) :: ZSIGMA
-REAL, DIMENSION(SIZE(POM,1),SIZE(POM,2)) :: ZOM
 
 REAL, DIMENSION(SIZE(PM,1)) :: ZA,ZB,ZC,ZD
 REAL, DIMENSION(SIZE(PM,1)) :: ZCONST1,ZCONST2
@@ -168,7 +167,7 @@ ZA(:)=0.
 ZB(:)=0.
 ZC(:)=0.
 ZA(:)=PDMINTRA(:,NM0(JI))
-!ZB(:)=PDMINTER(:,NM0(JI))
+ZB(:)=PDMINTER(:,NM0(JI))
 ZC(:)=PDMCOND(:,NM0(JI))
 
 DO JK=1,SIZE(PM,1)
@@ -266,10 +265,10 @@ DO JI=1,JPMODE
     ZSUM (:) = ZSUM (:) + PCTOTA(:,JJ,JI)
   ENDDO
 ENDDO
-ZOM(:,:) = 0.
+POM(:,:) = 0.
 DO JI=1,JPMODE
   DO JJ=1,NSP+NCARB+NSOA
-    ZOM(:,JI)  =  ZOM(:,JI) + PCTOTA(:,JJ,JI) / ZSUM (:) 
+    POM(:,JI)  =  POM(:,JI) + PCTOTA(:,JJ,JI) / ZSUM (:) 
   ENDDO
 ENDDO
   
@@ -280,7 +279,7 @@ ENDDO
 IDT = INT(MAX(5.*PDT,1.))
 IF ((PDT .GT. 0.).AND.( MOD(INT(PTIME) , IDT) .EQ. 0)) THEN
 !IF (PDT .GT. 0.) THEN
-  CALL CH_AER_MINERAL(PCTOTG, PCTOTA,PRV, PDENAIR, PPRESSURE, PTEMP, PRC, ZOM,&
+  CALL CH_AER_MINERAL(PCTOTG, PCTOTA,PRV, PDENAIR, PPRESSURE, PTEMP, PRC, POM,&
                       PCCTOT,PSIG0, PRG0, PDT)
 
 ! Equilibre Organiques
@@ -288,7 +287,7 @@ IF ((PDT .GT. 0.).AND.( MOD(INT(PTIME) , IDT) .EQ. 0)) THEN
 
   IF (NSOA .EQ. 10)   CALL CH_AER_ORGANIC(PCTOTG, PCTOTA,PRV, PDENAIR, &
                                           PPRESSURE, PTEMP,&
-                                          PRC, ZOM, PCCTOT,PSIG0, PRG0, PDT, PSOLORG)
+                                          PRC, POM, PCCTOT,PSIG0, PRG0, PDT, PSOLORG)
 END IF
 
 ! Mass need to be positive

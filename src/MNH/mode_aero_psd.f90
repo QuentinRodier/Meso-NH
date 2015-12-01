@@ -62,6 +62,7 @@ CONTAINS
 !!    MODIFICATIONS
 !!    -------------
 !!    Alf Grini (CNRM)
+!!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!
 !!    EXTERNAL
 !!    --------
@@ -135,6 +136,7 @@ ELSE
     ZMI(:,:,:,JP_AER_NO3)  = 63.
     ZMI(:,:,:,JP_AER_NH3)  = 17.
     ZMI(:,:,:,JP_AER_H2O)  = 18.
+    ZMI(:,:,:,JP_AER_BC)   = 12.
     IF (NSOA .EQ. 10) THEN
     ZMI(:,:,:,JP_AER_SOA1) = 88. 
     ZMI(:,:,:,JP_AER_SOA2) = 180.
@@ -410,6 +412,7 @@ ELSE
     ZMI(:,:,:,JP_AER_NO3)  = 63.
     ZMI(:,:,:,JP_AER_NH3)  = 17.
     ZMI(:,:,:,JP_AER_H2O)  = 18.
+    ZMI(:,:,:,JP_AER_BC)   = 12.
     ZMI(:,:,:,JP_AER_DST)  = 100.
     IF (NSOA .EQ. 10) THEN
     ZMI(:,:,:,JP_AER_SOA1) = 88. 
@@ -641,6 +644,7 @@ ELSE
     ZMI(:,JP_AER_NO3)  = 63.
     ZMI(:,JP_AER_NH3)  = 17.
     ZMI(:,JP_AER_H2O)  = 18.
+    ZMI(:,JP_AER_BC)   = 12.
     IF (NSOA .EQ. 10) THEN
     ZMI(:,JP_AER_SOA1) = 88. 
     ZMI(:,JP_AER_SOA2) = 180.

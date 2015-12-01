@@ -50,6 +50,7 @@ END MODULE MODI_CH_AER_WETDEP_n
 !!   MODIFICATIONS
 !!    -------------
 !!   Original
+!!    M.Leriche 2015 correction bug
 !!
 ! Entry variables:
 !
@@ -107,11 +108,11 @@ ZPMIN(6) = ZPMIN(4) * (ZRGMIN**6)*EXP(18. * LOG(XSIGJMIN)**2)
 !
 CALL  PPP2AERO(PSVT, PRHODREF, PSIG3D=ZSIG, PRG3D=ZRG, PM3D=ZPMOLD)
 CALL  PPP2AERO(PCWETDEP, PRHODREF, PSIG3D=ZSIGN, PRG3D=ZRGN, PM3D=ZPM)
+!
+DO JN=1,JPMODE
 WHERE (ZPM(:,:,:,NM3(JN)) .LT. ZPMIN(NM3(JN)))
    ZPM(:,:,:,NM3(JN)) = ZPMOLD(:,:,:,NM3(JN))
 END WHERE
-!
-DO JN=1,JPMODE
 ! Calcul pour maintenir le rayon fixe pour la sedimentation :
  IF (LRGFIX) THEN
     ZPM(:,:,:,NM0(JN)) = ZPM(:,:,:,NM3(JN)) / &

@@ -55,6 +55,7 @@ SUBROUTINE CH_AER_DRIVER(PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
 !!    MODIFICATIONS
 !!    -------------
 !!    Original
+!!       M.Leriche 2015 Calcul de la fraction massique entre les modes
 !!
 !!    EXTERNAL
 !!    --------
@@ -84,7 +85,7 @@ REAL,                 DIMENSION(:),     INTENT(IN)    :: PRV, PDENAIR, PPRESSURE
 !
 !  Declarations variables internes
 !
-INTEGER                       :: II
+INTEGER                       :: II, JI, JJ
 
 ! Variables utilisees pour le tranfert de moment de chaque espece
 ! pour la condensation 
@@ -97,7 +98,7 @@ REAL                          :: ZGASMW       ! Molecular weight of background
 REAL, DIMENSION(SIZE(PM,1))   :: ZPGAS        ! background gas pressure (Pa)
 REAL, DIMENSION(SIZE(PM,1))   :: ZRH,PSAT            ! Relative humidity
 REAL                          :: ZDT          ! Pas de temps
-REAL, DIMENSION(SIZE(PM,1))   :: ZPKM, ZPKH2O
+REAL, DIMENSION(SIZE(PM,1))   :: ZPKM, ZPKH2O, ZSUM
 
 !-----------------------------------------------------------------------------
 
@@ -109,6 +110,22 @@ NM6(1) = 3
 NM0(2) = 4
 NM3(2) = 5
 NM6(2) = 6
+
+!*************************************************************
+! Calcul de la fraction massique entre les modes
+!*************************************************************
+ZSUM (:) = 0.
+DO JI=1,JPMODE
+  DO JJ=1,NSP+NCARB+NSOA
+    ZSUM (:) = ZSUM (:) + PCTOTA(:,JJ,JI)
+  ENDDO
+ENDDO
+POM(:,:) = 0.
+DO JI=1,JPMODE
+  DO JJ=1,NSP+NCARB+NSOA
+    POM(:,JI)  =  POM(:,JI) + PCTOTA(:,JJ,JI) / ZSUM (:)
+  ENDDO
+ENDDO
 
 
 !******************************************************

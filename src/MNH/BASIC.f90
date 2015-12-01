@@ -1,21 +1,16 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
-!
 !
 !========================================================================
 !
 ! The following species appear on the left hand side of a reaction,
 ! but they are not in the list of prognostic variables. Make sure that
 ! they are defined elsewhere (in begin_module as TPK%something):
-! CO2
-! O1D
-! O3P
 ! H2
-! H2O
-! N2
+! O1D
 ! W_O2
+! O3P
+! H2O
+! CO2
+! N2
 ! O2
 !
 !========================================================================
@@ -23,11 +18,11 @@
 ! The following species appear on the right hand side of a reaction,
 ! but they are not in the list of prognostic variables. Make sure that
 ! they are really final products or defined elsewhere:
-! CO2
+! H2
 ! O1D
 ! O3P
-! H2
 ! H2O
+! CO2
 ! N2
 ! O2
 !
@@ -1974,468 +1969,6 @@ INTEGER, PARAMETER :: JP_WR_AHSO5 = 90
 INTEGER, PARAMETER :: JP_WR_AHMS = 91
 !
 END MODULE MODD_CH_M9_SCHEME
-!
-!========================================================================
-!
-! /BEGIN_ADDITIONAL/
-!
-!     ################
-      MODULE MODI_TROE
-!     ################
-INTERFACE
-FUNCTION TROE(PCOEF,PKO, PNEXP, PKINF, PMEXP, PM, PT, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: TROE 
-REAL,                     INTENT(IN) :: PCOEF,PKO, PNEXP, PKINF, PMEXP
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PM, PT
-END FUNCTION TROE
-END INTERFACE
-END MODULE MODI_TROE
-!
-!========================================================================
-!!    #############################################################
-      FUNCTION TROE(PCOEF,PKO, PNEXP, PKINF, PMEXP, PM, PT,KVECNPT)
-!!    #############################################################
-!!
-!!*** *TROE*
-!!
-!!    PURPOSE
-!!    -------
-!     this function implements the TROE reaction rate for RACM
-!!
-!!    REFERENCE
-!!    ---------
-!!    Stockwell et al., JGR, 1997
-!!
-!!    AUTHOR
-!!    ------
-!!    Karsten Suhre (LA)
-!!    
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 27/01/98
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: TROE 
-REAL,                     INTENT(IN) :: PCOEF,PKO, PNEXP, PKINF, PMEXP
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PM, PT
-!!
-!!    LOCAL VARIABLES
-!!    ---------------
-REAL, DIMENSION(KVECNPT) :: ZKOTM, ZKINFT, ZFACT
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        1. THE EXPRESSION
-!         -----------------
-!
-ZKOTM(:)  = PM(:) * PKO * ( (PT(:)/300.)**(-PNEXP) )
-ZKINFT(:) = PKINF * ( (PT(:)/300.)**(-PMEXP) )
-ZFACT(:)  = 0.6**(1./(1.+ALOG10(ZKOTM(:)/ZKINFT(:))**2 ))
-TROE(:)   = PCOEF*(ZKOTM(:)/(1.+ZKOTM(:)/ZKINFT(:)))*ZFACT(:)
-!
-END FUNCTION TROE
-!
-!========================================================================
-!
-!     ######################
-      MODULE MODI_TROE_EQUIL
-!     ######################
-INTERFACE
-FUNCTION TROE_EQUIL(PKO, PNEXP, PKINF, PMEXP, PAFACT, PB, PM, PT, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL,DIMENSION(KVECNPT)              :: TROE_EQUIL 
-REAL,                     INTENT(IN) :: PKO, PNEXP, PKINF, PMEXP, PAFACT, PB
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PM, PT
-END FUNCTION TROE_EQUIL
-END INTERFACE
-END MODULE MODI_TROE_EQUIL
-!
-!!    #########################################################################
-      FUNCTION TROE_EQUIL(PKO, PNEXP, PKINF, PMEXP, PAFACT, PB, PM, PT,KVECNPT)
-!!    #########################################################################
-!!
-!!*** *TROE_EQUIL*
-!!
-!!    PURPOSE
-!!    -------
-!     this function implements the TROE_EQUIL reaction rate for RACM
-!!
-!!    REFERENCE
-!!    ---------
-!!    Stockwell et al., JGR, 1997
-!!
-!!    AUTHOR
-!!    ------
-!!    Karsten Suhre (LA)
-!!    
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 27/01/98
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL,DIMENSION(KVECNPT)              :: TROE_EQUIL 
-REAL,                     INTENT(IN) :: PKO, PNEXP, PKINF, PMEXP, PAFACT, PB
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PM, PT
-!!
-!!    LOCAL VARIABLES
-!!    ---------------
-REAL, DIMENSION(KVECNPT) :: ZKOTM, ZKINFT, ZFACT
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        1. THE EXPRESSION
-!         -----------------
-!
-ZKOTM(:)      = PM(:) * PKO * ( (PT(:)/300.)**(-PNEXP) )
-ZKINFT(:)     = PKINF * ( (PT(:)/300.)**(-PMEXP) )
-ZFACT(:)      = 0.6**(1./(1.+ALOG10(ZKOTM(:)/ZKINFT(:))**2 ))
-TROE_EQUIL(:) = PAFACT*exp(-PB/PT)*(ZKOTM/(1.+ZKOTM(:)/ZKINFT(:)))*ZFACT(:)
-!
-END FUNCTION TROE_EQUIL
-!
-!========================================================================
-!
-!     ##############
-      MODULE MODI_KT
-!     ##############
-INTERFACE
-FUNCTION KT(PALPHA, PMM, PT, PRAD, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: KT
-REAL,                     INTENT(IN) :: PALPHA,PMM
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT, PRAD
-END FUNCTION KT
-END INTERFACE
-END MODULE MODI_KT
-!
-!
-!!    ###########################################
-      FUNCTION KT(PALPHA, PMM, PT, PRAD, KVECNPT)
-!!    ###########################################
-!!
-!!*** *KT*
-!!
-!!    PURPOSE
-!!    -------
-!     this function implements the mass transfer reaction rate
-!     for exchange between gas and aqueous phase
-!!
-!!    REFERENCE
-!!    ---------
-!!    Schwartz, 1986
-!!
-!!    AUTHORS
-!!    ------
-!!    Céline Mari & Maud Leriche (LA)
-!! 
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 22/02/2007
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: KT
-REAL,                     INTENT(IN) :: PALPHA,PMM
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT, PRAD
-!!
-!!    LOCAL VARIABLES
-!!    ---------------
-REAL, DIMENSION(KVECNPT)             :: ZDG, ZV
-!
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        1. THE EXPRESSION
-!         -----------------
-!
-ZV(:) = SQRT(8.*PT(:)*8.3144/(PMM*1.e-3)/3.1415926535898)
-ZDG(:) = 1.e-7 * ZV(:) /3.    !gas-phase diffusion
-KT(:) = 1./(PRAD(:)*PRAD(:)/(3.*ZDG(:))+(4.*PRAD(:)/(3.*ZV(:)*PALPHA)))
-!
-END FUNCTION KT
-!
-!========================================================================
-!
-!     #################
-      MODULE MODI_HENRY
-!     #################
-INTERFACE
-FUNCTION HENRY(PH, PDEPT, PT, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HENRY
-REAL,                     INTENT(IN) :: PH,PDEPT
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT
-END FUNCTION HENRY
-END INTERFACE
-END MODULE MODI_HENRY
-!
-!
-!!    ###########################################
-      FUNCTION HENRY(PH, PDEPT, PT, KVECNPT)
-!!    ###########################################
-!!
-!!*** *HENRY*
-!!
-!!    PURPOSE
-!!    -------
-!     this function computes the henry's law constant at a given temperature
-!!
-!!    AUTHOR
-!!    ------
-!!    Maud Leriche (LA)
-!! 
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 23/02/2007
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HENRY
-REAL,                     INTENT(IN) :: PH,PDEPT
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        1. THE EXPRESSION
-!         -----------------
-!
-HENRY(:) = PH*EXP(-PDEPT*((1./PT(:))-(1./298.15)))
-!
-END FUNCTION HENRY
-!
-!========================================================================
-!
-!     #################
-      MODULE MODI_HEFFA
-!     #################
-INTERFACE
-FUNCTION HEFFA(PH, PDEPT, PK1, PDEPT1, PK2, PDEPT2, PPH, PT, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HEFFA
-REAL,                     INTENT(IN) :: PH,PDEPT,PK1,PDEPT1,PK2,PDEPT2
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT,PPH
-END FUNCTION HEFFA
-END INTERFACE
-END MODULE MODI_HEFFA
-!
-!
-!!    #####################################################################
-      FUNCTION HEFFA(PH, PDEPT, PK1, PDEPT1, PK2, PDEPT2, PPH, PT, KVECNPT)
-!!    #####################################################################
-!!
-!!*** *HEFFA*
-!!
-!!    PURPOSE
-!!    -------
-!     this function computes the effective henry's law constant
-!     at a given temperature for acid
-!!
-!!    AUTHOR
-!!    ------
-!!    Maud Leriche (LA)
-!! 
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 23/02/2007
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HEFFA
-REAL,                     INTENT(IN) :: PH,PDEPT,PK1,PDEPT1,PK2,PDEPT2
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT,PPH
-!!
-!!    LOCAL VARIABLES
-!!    ---------------
-REAL, DIMENSION(KVECNPT)             :: ZHPLUS, ZH, ZK1, ZK2
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        0. Concentration of H+
-!         -------------------------
-!
-ZHPLUS(:) = 10.**(-PPH(:))
-!
-!*        1. Temperature dependency
-!         -------------------------
-!
-ZH(:) = PH*EXP(-PDEPT*((1./PT(:))-(1./298.15)))
-ZK1(:) = PK1*EXP(-PDEPT1*((1./PT(:))-(1./298.15)))
-ZK2(:) = PK2*EXP(-PDEPT2*((1./PT(:))-(1./298.15)))
-!
-!*        2. THE EXPRESSION
-!         -----------------
-!
-HEFFA(:) = ZH(:)*( 1.0 + (ZK1(:)/ZHPLUS(:))*(1.0+(ZK2(:)/(ZHPLUS(:)))) )
-!
-END FUNCTION HEFFA
-!
-!========================================================================
-!
-!     #################
-      MODULE MODI_HEFFB
-!     #################
-INTERFACE
-FUNCTION HEFFB(PH, PDEPT, PK1, PDEPT1, PPH, PT, KVECNPT)
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HEFFB
-REAL,                     INTENT(IN) :: PH,PDEPT,PK1,PDEPT1
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT,PPH
-END FUNCTION HEFFB
-END INTERFACE
-END MODULE MODI_HEFFB
-!
-!
-!!    ########################################################
-      FUNCTION HEFFB(PH, PDEPT, PK1, PDEPT1, PPH, PT, KVECNPT)
-!!    ########################################################
-!!
-!!*** *HEFFB*
-!!
-!!    PURPOSE
-!!    -------
-!     this function computes the effective henry's law constant
-!     at a given temperature for base
-!!
-!!    AUTHOR
-!!    ------
-!!    Maud Leriche (LA)
-!! 
-!!    MODIFICATIONS
-!!    -------------
-!!    Original 23/02/2007
-!!
-!!------------------------------------------------------------------------------
-!!
-!!    EXTERNAL
-!!    --------
-!!    none
-!!
-!!    IMPLICIT ARGUMENTS
-!!    ------------------
-!!    none
-!!
-!!    EXPLICIT ARGUMENTS
-!!    ------------------
-IMPLICIT NONE
-INTEGER,                  INTENT(IN) :: KVECNPT ! no. of points in vector mask
-REAL, DIMENSION(KVECNPT)             :: HEFFB
-REAL,                     INTENT(IN) :: PH,PDEPT,PK1,PDEPT1
-REAL, DIMENSION(KVECNPT), INTENT(IN) :: PT,PPH
-!!
-!!    LOCAL VARIABLES
-!!    ---------------
-REAL, DIMENSION(KVECNPT)             :: ZKH2O, ZHPLUS, ZOHM, ZH, ZK1
-!!
-!------------------------------------------------------------------------------
-!!
-!!    EXECUTABLE STATEMENTS
-!!    ---------------------
-!
-!*        0. Concentration of OH-
-!         -------------------------
-!
-ZHPLUS(:) = 10.**(-PPH(:))
-ZKH2O = 1.e-14*EXP(-6716*((1./PT(:))-(1./298.15)))
-ZOHM(:) = ZKH2O(:)/ZHPLUS(:)
-!
-!*        1. Temperature dependency
-!         -------------------------
-!
-ZH(:) = PH*EXP(-PDEPT*((1./PT(:))-(1./298.15)))
-ZK1(:) = PK1*EXP(-PDEPT1*((1./PT(:))-(1./298.15)))
-!
-!*        2. THE EXPRESSION
-!         -----------------
-!
-HEFFB(:) = ZH(:)*( 1.0 + ZK1(:)/ZOHM(:) )
-!
-END FUNCTION HEFFB
-!
-! /END_ADDITIONAL/
 !
 !========================================================================
 !
@@ -28772,12 +28305,12 @@ USE MODD_CH_M9_SCHEME
 USE MODD_CH_M9_n,        ONLY : METEOTRANSTYPE
 USE MODD_CH_MNHC_n,      ONLY : XRTMIN_AQ, XCH_PHINIT
 !     USER DEFINED FUNCTIONS
-USE MODI_HEFFA
-USE MODI_HEFFB
-USE MODI_TROE
 USE MODI_KT
-USE MODI_TROE_EQUIL
+USE MODI_TROE
 USE MODI_HENRY
+USE MODI_HEFFA
+USE MODI_TROE_EQUIL
+USE MODI_HEFFB
 !!
 !!    EXPLICIT ARGUMENTS
 !!    ------------------
@@ -29635,12 +29168,12 @@ USE MODD_CH_M9_SCHEME
 USE MODD_CH_M9_n,        ONLY : METEOTRANSTYPE
 USE MODI_CH_ALLOCATE_TACCS
 !     USER DEFINED FUNCTIONS
-USE MODI_HEFFA
-USE MODI_HEFFB
-USE MODI_TROE
 USE MODI_KT
-USE MODI_TROE_EQUIL
+USE MODI_TROE
 USE MODI_HENRY
+USE MODI_HEFFA
+USE MODI_TROE_EQUIL
+USE MODI_HEFFB
 !!
 !!    EXPLICIT ARGUMENTS
 !!    ------------------

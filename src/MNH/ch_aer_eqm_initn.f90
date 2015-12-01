@@ -48,7 +48,7 @@ END MODULE MODI_CH_AER_EQM_INIT_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    none
+!!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!
 !!    EXTERNAL
 !!    --------
@@ -132,6 +132,7 @@ XMI(:,:,:,JP_AER_SO4)  = 98.
 XMI(:,:,:,JP_AER_NO3)  = 63.
 XMI(:,:,:,JP_AER_NH3)  = 17.
 XMI(:,:,:,JP_AER_H2O)  = 18.
+XMI(:,:,:,JP_AER_BC) = 12.
 XMI(:,:,:,JP_AER_DST)  = 100.
 IF (NSOA .EQ. 10) THEN
 XMI(:,:,:,JP_AER_SOA1) = 88. 

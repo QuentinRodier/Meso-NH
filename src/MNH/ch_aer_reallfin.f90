@@ -46,7 +46,7 @@ END MODULE MODI_CH_AER_REALLFI_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    none
+!!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!
 !!    EXTERNAL
 !!    --------
@@ -117,6 +117,7 @@ ZMI(JP_AER_SO4)  = 98.
 ZMI(JP_AER_NO3)  = 63.
 ZMI(JP_AER_NH3)  = 17.
 ZMI(JP_AER_H2O)  = 18.
+ZMI(JP_AER_BC)   = 12.
 ZMI(JP_AER_DST)  = 100.
 !
 IF (NSOA .EQ. 10) THEN

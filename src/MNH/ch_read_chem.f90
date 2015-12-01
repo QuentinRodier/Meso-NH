@@ -59,6 +59,7 @@ END MODULE MODI_CH_READ_CHEM
 !!    Original 21/04/95
 !!    18/02/99 (K. Suhre) allow reading from namelist file
 !!    01/12/03 (D. Gazen)   change Chemical scheme interface
+!!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!
 !!    EXTERNAL
 !!    --------
@@ -158,6 +159,7 @@ ZMI(JP_AER_SO4)  = 98.
 ZMI(JP_AER_NO3)  = 63.
 ZMI(JP_AER_NH3)  = 17.
 ZMI(JP_AER_H2O)  = 18.
+ZMI(JP_AER_BC)   = 12.
 ZMI(JP_AER_DST)  = 100.
 IF (NSOA == 10) THEN
 ZMI(JP_AER_SOA1) = 88. 

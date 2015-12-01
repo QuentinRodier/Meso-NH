@@ -46,6 +46,7 @@
 !!    21/09/04 (P. Tulet) update for MASDEV44 bug2
 !!    21/03/06 (P. Tulet) update for MASDEV46 and add ORILAM aerosol scheme
 !!    24/24/14 (M. Leriche) add ReLACS3
+!!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
 !!
 !!    EXTERNAL
 !!    --------
@@ -245,6 +246,7 @@ ZMI(1,JP_AER_SO4)  = 98.
 ZMI(1,JP_AER_NO3)  = 63.
 ZMI(1,JP_AER_NH3)  = 17.
 ZMI(1,JP_AER_H2O)  = 18.
+ZMI(1,JP_AER_BC)   = 12.
 IF (NSOA == 10) THEN
 ZMI(1,JP_AER_SOA1) = 88. 
 ZMI(1,JP_AER_SOA2) = 180.
