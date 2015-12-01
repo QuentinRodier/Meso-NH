@@ -332,7 +332,7 @@ ELSE
 END IF
 
 WRITE(ILUOUT0,*) "ZAZIM_BASE(1)",ZAZIM_BASE(1)
-WRITE(ILUOUT0,*) "ZAZIM_BASE(NBAZIM/2.)",ZAZIM_BASE(NBAZIM/2.)
+WRITE(ILUOUT0,*) "ZAZIM_BASE(NBAZIM/2.)",ZAZIM_BASE(NINT(NBAZIM/2.))
 WRITE(ILUOUT0,*) "ZAZIM_BASE(NBAZIM)",ZAZIM_BASE(NBAZIM)
 
 !copy in the 3D matrix (ZAZIM) containing the horizontal discretization of the beam for all azimut of all radars 
