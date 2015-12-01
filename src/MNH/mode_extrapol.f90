@@ -222,7 +222,7 @@ CONTAINS
         ENDIF
       ELSEIF ( IDIMX_C == IIE - IIB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported : &
-                the child grid has to be one point larger or one point smaller in X dim"
+              & the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:,:) = 2. * PTAB(2,:,:) - PTAB(3,:,:)
@@ -250,7 +250,7 @@ CONTAINS
         ENDIF
       ELSEIF ( IDIMY_C == IJE - IJB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported :  &
-        the child grid has to be one point larger or one point smaller in Y dim"
+      & the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1,:) = 2. * PTAB(:,2,:) - PTAB(:,3,:)
@@ -356,7 +356,7 @@ CONTAINS
         ENDIF
       ELSEIF ( IDIMX_C == IIE - IIB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported :  &
-                the child grid has to be one point larger or one point smaller in X dim"
+              & the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:) = 2. * PTAB(2,:) - PTAB(3,:)
@@ -388,7 +388,7 @@ CONTAINS
         ENDIF
       ELSEIF ( IDIMY_C == IJE - IJB + 2 + 2*JPHEXT ) THEN !the child domain has the size of the father domain minus one
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported : &
-                the child grid has to be one point larger or one point smaller in Y dim"
+              & the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1) = 2. * PTAB(:,2) - PTAB(:,3)

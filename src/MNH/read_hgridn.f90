@@ -216,10 +216,10 @@ IF (CPROGRAM/='IDEAL ') THEN
   IF ( IJPHEXT .NE. JPHEXT ) THEN
      IF (CPROGRAM == 'REAL' ) THEN
         WRITE(ILUOUT,FMT=*) ' READ_HGRID_N : JPHEXT in PRE_REAL1.nam/NAM_REAL_CONF ( or default value )&
-             JPHEXT=',JPHEXT
+           & JPHEXT=',JPHEXT
      ELSE
         WRITE(ILUOUT,FMT=*) ' READ_HGRID_N : JPHEXT in PRE_NEST_PGD1.nam/NAM_CONF_NEST ( or default value )&
-             JPHEXT=',JPHEXT
+           & JPHEXT=',JPHEXT
      END IF
 
      WRITE(ILUOUT,FMT=*) ' different from PGD files=',HFMFILE ,' value JPHEXT=',IJPHEXT

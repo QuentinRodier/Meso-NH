@@ -586,7 +586,7 @@ IF (GFLAG) THEN
   WRITE(UNIT=KLUOUT,FMT='(" A Coef. for cirrus law XACRIAUTI=",E13.6)') XACRIAUTI
   WRITE(UNIT=KLUOUT,FMT='(" B Coef. for cirrus law XBCRIAUTI=",E13.6)') XBCRIAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Temp degC at which cirrus law starts to be &
-                              used=",E13.6)') XT0CRIAUTI
+                            & used=",E13.6)') XT0CRIAUTI
 END IF
 !
 !
