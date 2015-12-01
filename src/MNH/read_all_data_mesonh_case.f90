@@ -202,7 +202,7 @@ INTEGER                           :: IPRE_REAL1
 !
 !20131113 add vars related to ADD3DFIELD and UPDATE_HALO
 INTEGER :: IINFO_ll
-TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
+TYPE(LIST_ll), POINTER :: TZFIELDS_ll => NULL() ! list of fields to exchange
 !
 !------------------------------------------------------------------------------
 !
