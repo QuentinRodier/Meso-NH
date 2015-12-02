@@ -1,0 +1,3 @@
+set -x
+ln -sf ../004_restart/DUST7.1.SEG02.004.nc4 .
+ncl plot_dust.ncl

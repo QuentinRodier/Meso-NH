@@ -1,0 +1,3 @@
+set -x
+rm -f *.nc4 
+rm -f *.ps
