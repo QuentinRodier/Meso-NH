@@ -5,6 +5,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-rm -f KWRAIN.410* OUTPUT_LISTING* pipe* *.tex
+rm -f KWRAIN* OUTPUT_LISTING* pipe* *.tex
 time ${MONORUN} PREP_IDEAL_CASE${XYZ}
 #ddd --directory=~/.... PREP_PGD

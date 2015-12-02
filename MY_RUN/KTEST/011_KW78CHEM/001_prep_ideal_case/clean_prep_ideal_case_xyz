@@ -1,3 +1,3 @@
 #!/bin/sh
 set -x
-rm -f KWRAIN.410* OUTPUT_LISTING* pipe* *.tex
+rm -f KWRAIN* OUTPUT_LISTING* pipe* *.tex file_for_xtransfer

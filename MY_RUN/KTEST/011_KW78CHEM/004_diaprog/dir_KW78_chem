@@ -7,7 +7,7 @@ LCOLAREA=T LISO=F
 ! gestion des vecteurs (1 vecteur sur 4)
 NISKIP=4 XVRL=0.15                                                              
 ! 1er fichier a ouvrir
-_file1_'KWRAI.1.CH410.004dg'                                                    
+_file1_'KWRAI.1.SEGCH.004dg'                                                    
 !visu                     
 ! couleur de fond pour le 1er intervalle
 LCOLZERO=T NCOLZERO=1                                                           
@@ -64,33 +64,4 @@ IC_HNO3T_CV__ON_RST_PLUS_RGT_CV_
 PHC_CV_ 
 PHR_CV_
 quit
-! definition d une autre coupe verticale
-NIDEBCOU=15 NJDEBCOU=2 NLANGLE=90 NLMAX=23       
-LTRACECV=T                                                                      
-RVT_CV__ON_ULTWT_CV_                                                            
-LTRACECV=F                                                                      
-RCT_CV__ON_RRT_CV_                                                              
-THT_CV__MINUS_LSTHM_CV_                                                         
-WT_CV_                                                                          
-! 2e fichier a ouvrir
-_file2_'KWRAI.1.SEG00.003.dia'                                                  
-! definition d une coupe verticale
-LDEFCV2IND=T                                                                    
-NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
-LTRACECV=T                                                                    
-THT_CV_                                                                         
-LTRACECV=F                                                                    
-NIMNMX=-1
-RVT_CV__ON_ULTWT_CV_  
-RCT_CV__ON_RRT_CV_    
-WT_CV_
-! 3e fichier a ouvrir
-_file3_'KWRAI.1.SEG00.004.dia'                                                  
-LDEFCV2IND=T                                                                    
-NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
-THT_CV_                                                                         
-RVT_CV__ON_ULTWT_CV_  
-RCT_CV__ON_RRT_CV_    
-WT_CV_
-!
-! a vous d indiquer vos directives                                                                            
+                                                      
