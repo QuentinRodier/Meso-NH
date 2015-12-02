@@ -5,6 +5,8 @@
 set -x
 set -e
 
+ln -sf ../003_mesonh/ICART.1.SEG01.001.nc4 .
+ln -sf ../003_mesonh/ICART.1.SEG01.002.nc4 .
+
 rm -f *.ps 
-ncl plot_ICARTT_SEG1.ncl
-gs zsection_1000.ps
+ncl plot_ICARTT.ncl
