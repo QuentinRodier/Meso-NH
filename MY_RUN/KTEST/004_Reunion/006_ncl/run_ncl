@@ -4,7 +4,5 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../002_prep_ideal_case/REUNION_IDEA.*??? .
-ln -sf ../001_prep_pgd/REUNION_PGD_1km5.* .
-rm -f REUNI.1.* OUT*
-time ${MPIRUN} MESONH${XYZ}
+ln -sf ../003_mesonh/REUNI.1.00A20.004.nc4 .
+ncl plot_Reunion.ncl

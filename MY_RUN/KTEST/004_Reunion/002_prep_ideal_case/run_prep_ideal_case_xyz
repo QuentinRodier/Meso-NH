@@ -4,8 +4,8 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../001_prep_pgd/REUNION_PGD_1km5_520.*??? .
-rm -f REUNION_IDEA_520.* OUTPUT_LISTING* pipe* *.tex
+ln -sf ../001_prep_pgd/REUNION_PGD_1km5.*??? .
+rm -f REUNION_IDEA* OUTPUT_LISTING* pipe* *.tex
 
 time ${MONORUN} PREP_IDEAL_CASE${XYZ}          
 #ddd --directory=~/../src/dir_obj PREP_IDEAL_CASE${XYZ}
