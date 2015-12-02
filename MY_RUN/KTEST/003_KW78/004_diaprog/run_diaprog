@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../003_convdia/KWRAI.1.SG520.004dg.??? .
+ln -sf ../003_convdia/KWRAI.1.SEG01.004dg.??? .
 rm -f dir.*
 ${POSTRUN} diaprog < dir_KW78         
 #idt gmeta

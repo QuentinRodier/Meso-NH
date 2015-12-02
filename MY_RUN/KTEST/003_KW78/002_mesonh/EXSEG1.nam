@@ -2,7 +2,7 @@
 &NAM_CONFZ
  ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=8
 /
-&NAM_LUNITn CINIFILE = "KWRAIN.520" /
+&NAM_LUNITn CINIFILE = "KWRAIN" /
 &NAM_CONFn  LUSERV=T LUSERC=T LUSERR=T /
 &NAM_DYNn XTSTEP =10., 
           ! CPRESOPT = "ZRESI",
@@ -15,7 +15,7 @@
 &NAM_LBCn  CLBCX = 2*"OPEN", CLBCY = 2*"OPEN" /
 &NAM_CONF  CCONF = "START", NMODEL = 1,
            LFLAT = T, NVERB = 5,
-           CEXP = "KWRAI", CSEG = "SG520" ,
+           CEXP = "KWRAI", CSEG = "SEG01" ,
            CSPLIT='BSPLITTING' 
            !JPHEXT=3 NHALO=3
            /

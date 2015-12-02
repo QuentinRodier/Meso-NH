@@ -4,6 +4,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../001_prep_ideal_case/KWRAIN.*??? .
-rm -f KWRAI.1.* OUT*
-time ${MPIRUN} MESONH${XYZ}
+ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc4 .
+
+ncl  plot_KW78.ncl
