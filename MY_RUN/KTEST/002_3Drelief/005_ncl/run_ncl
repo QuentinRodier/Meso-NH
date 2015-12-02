@@ -4,6 +4,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../001_prep_ideal_case/RELIEF3D.*??? .
-rm -f REL3D.1* OUT*
-time ${MPIRUN} MESONH${XYZ}
+ln -sf ../002_mesonh/REL3D.1.EXP01.002.nc4 .
+
+ncl  plot_3Drelief.ncl
