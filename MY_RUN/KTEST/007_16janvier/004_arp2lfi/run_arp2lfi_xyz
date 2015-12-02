@@ -5,9 +5,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
+export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
 ln -sf ../003_nest/16JAN98_36km.neste1.??? .
-#cp ../003_nest/16JAN98_36km.neste1.??? .
 rm -f 16JAN_06_MNH.* OUTPUT_LISTING* pipe* *.tex
-#time ${MONORUN} PREP_REAL_CASE${XYZ}
 time ${MPIRUN} PREP_REAL_CASE${XYZ}
-#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_REAL_CASE

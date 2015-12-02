@@ -1,4 +1,6 @@
-all: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_conv2dia E011_diaprog E012_spectre
+all: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_conv2dia E011_diaprog  E011_ncl E012_spectre
+
+all_ncl_nc4: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E011_ncl_nc4
 
 all_ncl_lfi2cdf: E001_pgd1 E002_pgd2 E003_nest E004_arp2lfi E005_spa_mod1_mod2 E006_preal E008_run2 E009_diag E010_conv2dia E011_ncl_lfi2cdf
 
@@ -25,6 +27,10 @@ E010_conv2dia:
 	cd 010_conv2dia	       && run_conv2dia
 E011_diaprog:
 	cd 011_diaprog	       && run_diaprog
+E011_ncl:
+	cd 011_ncl             && run_ncl
+E011_ncl_nc4:
+	cd 011_ncl_nc4         && run_ncl
 E011_ncl_lfi2cdf:
 	cd 011_ncl_lfi2cdf     && run_ncl
 E011_ncl_extractdia:
@@ -45,4 +51,6 @@ clean:
 	cd 011_diaprog	       && clean_diaprog
 	cd 011_ncl_lfi2cdf     && clean_ncl
 	cd 011_ncl_extractdia  && clean_ncl
+	cd 011_ncl_nc4         && clean_ncl
+	cd 011_ncl             && clean_ncl
 	cd 012_spectre	       && clean_spectre_xyz
