@@ -154,7 +154,7 @@ LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
 !
 !   Local variable
 !
-INTEGER                 :: IROWF,IRESP,INUMBR,IFMFNL
+INTEGER                 :: INCERR,IROWF,IRESP,INUMBR,IFMFNL
 CHARACTER(LEN=JPFINL)   :: YFNDES,YFNLFI
 LOGICAL                 :: GSTATS
 LOGICAL, SAVE           :: GSFIRST=.TRUE.
@@ -250,9 +250,9 @@ IF (ISP == TZFDLFI%OWNER) THEN
      IF (HACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
         !! Open NetCDF File for reading
         TZFDLFI%CDF => NEWIOCDF()
-        IRESOU = NF_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF_NOWRITE, TZFDLFI%CDF%NCID)
-        IF (IRESOU /= NF_NOERR) THEN
-           PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(IRESOU)
+        INCERR = NF_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF_NOWRITE, TZFDLFI%CDF%NCID)
+        IF (INCERR /= NF_NOERR) THEN
+           PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(INCERR)
            STOP
         END IF
         PRINT *, 'NF_OPEN: ', TRIM(HFILEM)//'.nc4'
@@ -261,10 +261,10 @@ IF (ISP == TZFDLFI%OWNER) THEN
      IF (HACTION == 'WRITE') THEN
         ! HACTION == 'WRITE'
         TZFDLFI%CDF => NEWIOCDF()
-        IRESOU = NF_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
+        INCERR = NF_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
              &IOR(NF_CLOBBER,NF_NETCDF4), TZFDLFI%CDF%NCID)
-        IF (IRESOU /= NF_NOERR) THEN
-           PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(IRESOU)
+        IF (INCERR /= NF_NOERR) THEN
+           PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(INCERR)
            STOP
         END IF
         PRINT *, 'NF_CREATE: ', TRIM(HFILEM)//'.nc4'
