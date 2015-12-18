@@ -38,6 +38,7 @@
 !!                                     interpolated for spawning => 
 !!                                     ABOR1_SFX if (.NOT.OECOCLIMAP) in comment
 !     Modification 05/02/15 M.Moge : use NSIZE_FULL instead of SIZE(XLAT) (for clarity)
+!!      J.Escobar 18/12/2015 : missing interface
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -65,6 +66,8 @@ USE MODI_SUM_ON_ALL_PROCS
 USE MODI_GET_LUOUT
 USE MODI_CLEAN_PREP_OUTPUT_GRID
 USE MODI_GET_1D_MASK
+USE MODI_READ_LCOVER
+USE MODI_READ_SURFX2COV_1COV_MNH
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
