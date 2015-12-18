@@ -33,8 +33,8 @@
                     XCH_TUV_ALBNEW  = -1.,
                     XCH_TUV_DOBNEW  = -1.,
                     XCH_TUV_TUPDATE = 60.,
-                    CCH_VEC_METHOD = "TOT",
-                    NCH_VEC_LENGTH = 1000,
+                    CCH_VEC_METHOD = "MAX",
+                    NCH_VEC_LENGTH = 50,
                     XCH_TS1D_TSTEP = 600.,
                     CCH_TS1D_COMMENT = "no comment",
                     CCH_TS1D_FILENAME = "IO1D" /

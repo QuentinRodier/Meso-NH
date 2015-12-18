@@ -25,7 +25,7 @@ FORMPROF
 NORMINIT
 initial values (units are par per part = MIX)
 MIX
-22
+23
 (1X,A12,1X,E25.8)
 'O3          '   40.00E-09
 'H2O2        '    1.00E-09
@@ -41,13 +41,15 @@ MIX
 'CO          '  100.00E-09
 'OH          '    1.00E-12
 'HO2         '   10.00E-12
-'ALKL        '  900.00E-12
-'ETHE        '   10.00E-12
-'OLEL        '  100.00E-12
-'ISO         '  100.00E-12
+'CH4         ' 1700.00E-09
+'ETH         '  845.00E-12
+'ALKA        '  100.00E-12
+'ALKE        '   10.00E-12
+'BIO         '  100.00E-12
 'HCHO        '  200.00E-12
-'KETL        '  100.00E-12
-'PAN1        '  400.00E-12
+'KET         '  100.00E-12
+'PAN         '  400.00E-12
+'OP1         '    1.00E-09
 
 
 ===================================================================
@@ -56,7 +58,7 @@ MIX
 
 PROFASSO
 norm-profiles to be associated
-22
+23
 (1X,A12,1X,I3)
 'O3          '  2 
 'H2O2        '  1
@@ -68,7 +70,6 @@ norm-profiles to be associated
 'HNO3        '  1
 'HNO4        '  1
 'NH3         '  3
-'DMS         '  3
 'SO2         '  3
 'CO          '  3 
 'OH          '  1
