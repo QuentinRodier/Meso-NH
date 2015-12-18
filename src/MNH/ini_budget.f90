@@ -152,6 +152,7 @@ END MODULE MODI_INI_BUDGET
 !!      C .Lac          27/05/14    add negative corrections for chemical species
 !!      C.Lac           29/01/15  Correction for NSV_USER
 !!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
+!!      C.Lac           04/12/15  Correction for LSUPSAT  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -774,7 +775,8 @@ IF (LBU_RTH) THEN
   IPROC=IPROC+1
   IF (HCLOUD /= 'NONE')     IPROACTV(4,IPROC) = NNEGATH
   IPROC=IPROC+1
-  IF (HCLOUD(1:3) == 'ICE' .OR. HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO' ) &
+  IF (HCLOUD(1:3) == 'ICE' .OR. (HCLOUD == 'C2R2' .AND. (.NOT. LSUPSAT)) &
+          .OR. ( HCLOUD == 'KHKO' .AND. (.NOT. LSUPSAT)) ) &
       IPROACTV(4,IPROC) = NHENUTH 
   IPROC=IPROC+1
   IF (HCLOUD(1:3) == 'ICE') IPROACTV(4,IPROC) = NHONTH 
@@ -1022,7 +1024,9 @@ IF (LBU_RRV) THEN
   IPROC=IPROC+1 
   IF ( HCLOUD /= 'NONE' ) IPROACTV(6,IPROC) = NNEGARV
   IPROC=IPROC+1   
-  IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO' .OR. HCLOUD(1:3) == 'ICE')  &
+  IF ((HCLOUD == 'C2R2'  .AND. (.NOT. LSUPSAT)) &
+          .OR. ( HCLOUD == 'KHKO' .AND. (.NOT. LSUPSAT)) &
+          .OR. HCLOUD(1:3) == 'ICE')  &
         IPROACTV(6,IPROC) = NHENURV
   IPROC=IPROC+1
   IF (HCLOUD(1:3) == 'ICE') IPROACTV(6,IPROC) = NDEPSRV 
@@ -1141,7 +1145,8 @@ IF (LBU_RRC) THEN
   IPROC=IPROC+1
   IF (HCLOUD(1:3) == 'KES' )                      IPROACTV(7,IPROC) = NAUTORC
   IPROC=IPROC+1
-  IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO') IPROACTV(7,IPROC) = NHENURC
+  IF ((HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO')  .AND. (.NOT. LSUPSAT)) &
+          IPROACTV(7,IPROC) = NHENURC
   IPROC=IPROC+1
 !
   IF (HCLOUD(1:3) == 'ICE') IPROACTV(7,IPROC) = NHONRC
@@ -2170,15 +2175,19 @@ USE MODD_NSV, ONLY : NSV_USER, NSV_C2R2BEG, NSV_C2R2END, &
     ! C2R2 or KHKO Case
     SELECT CASE(JSV-NSV_C2R2BEG+1)
     CASE (1)                               ! Concentration of activated nuclei
+     IF (.NOT. LSUPSAT) THEN
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'HENU_'
+     END IF
       IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'CEVA_'
       IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
     CASE (2)                               ! Concentration of cloud droplets
+     IF (.NOT. LSUPSAT) THEN
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'HENU_'
+     END IF
       IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1
       YWORK2(12+JSV,ILAST_PROC_NBR)= 'SELF_'
