@@ -189,6 +189,7 @@ SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                     &
 !!                   07/2010  idem for ice phase chemical species
 !!    Bosseur & Filippi 07/2013 Adds Forefire
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -270,7 +271,7 @@ REAL, DIMENSION(:,:,:,:),INTENT(OUT) :: PLBXSVS ,PLBYSVS  ! in x and y-dir.
 !*       0.2   declarations of local variables
 !
 REAL                   :: ZTIME                   ! Interpolation length
-INTEGER                :: IIB,IIE,IJB,IJE
+INTEGER                :: IIB,IIE,IJB,IJE,IIU,IJU
 INTEGER                :: ILBX,ILBY,ILBX2,ILBY2
 REAL     ::   ZBIGTSTEP    ! time step of the dad model ($n)
 REAL     ::   ZRV_O_RD     ! = Rv /  Rd
@@ -306,11 +307,13 @@ CALL GOTO_MODEL(KDAD)
 ALLOCATE(ZJ(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)))
 ALLOCATE(ZRHOD(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3)))
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-JPHEXT
-IIE=IIE+JPHEXT
-IJB=IJB-JPHEXT
-IJE=IJE+JPHEXT
+!!$CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+CALL GET_DIM_EXT_ll ('B',IIU,IJU)
+IIB=1
+IIE=IIU
+IJB=1
+IJE=IJU
+
 ALLOCATE(ZWORK(IIB:IIE,IJB:IJE,SIZE(PLBXTHM,3)))  ! can be smaller than child extended subdomain
 ! LS_FORCING routine can not correctly manage extra halo zone
 ! LB will be filled only with one layer halo zone for the moment

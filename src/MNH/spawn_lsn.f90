@@ -124,6 +124,7 @@ END MODULE MODI_SPAWN_LS_n
 !!    -------------
 !!      Original     22/12/97
 !!    P. Jabouille   19/04/00 parallelisation
+!!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!
 !------------------------------------------------------------------------------
 !
@@ -180,7 +181,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)   :: PLSUS,PLSVS,PLSWS ! Large Scale source 
 !*       0.2   declarations of local variables
 !
 REAL                   :: ZTIME                   ! Interpolation length
-INTEGER                :: IIB,IJB,IIE,IJE,IKU
+INTEGER                :: IIB,IJB,IIE,IJE,IIU,IJU,IKU
 LOGICAL                :: GVERT_INTERP
 INTEGER, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PCOEFLIN_LBXM,3))   :: IKLIN
 REAL   , DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PCOEFLIN_LBXM,3))   :: ZCOEFLIN
@@ -210,11 +211,12 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: Z1,Z2,Z3,Z4,Z5
 !
 CALL GOTO_MODEL(KDAD)
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-1
-IIE=IIE+1
-IJB=IJB-1
-IJE=IJE+1
+!!$CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+CALL GET_DIM_EXT_ll ('B',IIU,IJU)
+IIB=1
+IIE=IIU
+IJB=1
+IJE=IJU
 !
 !*      1 GATHER LS FIELD FOR THE CHILD MODEL KMI
 !

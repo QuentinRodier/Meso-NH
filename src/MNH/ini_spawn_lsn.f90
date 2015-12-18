@@ -139,6 +139,7 @@ END MODULE MODI_INI_SPAWN_LS_n
 !!                   09/07/98  ( J. Stein ) bug in the storage of the interp
 !!                                          coeff for U
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -209,7 +210,7 @@ INTEGER                :: JI                      ! Loop index
 INTEGER, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PCOEFLIN_LBXM,3))   :: IKLIN
 REAL   , DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PCOEFLIN_LBXM,3))   :: ZCOEFLIN
 INTEGER                :: ILBX,ILBY,ILBX2,ILBY2
-INTEGER                :: IIB,IJB,IIE,IJE,IKU
+INTEGER                :: IIB,IJB,IIE,IJE,IIU,IJU,IKU
 REAL   , DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),1)                       :: ZZSLS
 REAL   , DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),1)                       :: ZZSMTLS
 REAL   , DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PCOEFLIN_LBXM,3))   :: ZZSS
@@ -237,11 +238,12 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTZSMT,ZZSMT
 !
 CALL GOTO_MODEL(KDAD)
 !
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IIB=IIB-JPHEXT
-IIE=IIE+JPHEXT
-IJB=IJB-JPHEXT
-IJE=IJE+JPHEXT
+!!$CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+CALL GET_DIM_EXT_ll ('B',IIU,IJU)
+IIB=1
+IIE=IIU
+IJB=1
+IJE=IJU
 !
 !*      1 GATHER LS FIELD FOR THE CHILD MODEL KMI
 !

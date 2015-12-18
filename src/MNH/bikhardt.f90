@@ -171,6 +171,7 @@ END MODULE MODI_BIKHARDT4D
 !!                             list to avoid duplication. 
 !!     V. Masson and F. Gheusi (10/10/97) bug in cyclic case
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!     J.Escobar : 18/12/2015 : set valide default values in corner in // for NHALO <>1 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -268,7 +269,8 @@ IF ( HLBCY(1) == 'CYCL' ) THEN
 END IF
 !-------------------------------------------------------------------------------
 !
-PFIELD2 = 0.0
+PFIELD2 = ZFIELD1(1,1,1,1) ! some valide values for missing ones
+!
 SELECT CASE (KGRID)
 !
 !*      2.1    Mass points
@@ -286,10 +288,8 @@ SELECT CASE (KGRID)
       ZBMY3 = PBMY3(JEPSY)
       ZBMY4 = PBMY4(JEPSY)
       DO JI = KXOR,KXEND
-!!$        IIF = IIB+JEPSX-1           +(JI-KXOR-JPHEXT)*KDXRATIO
         IIS = IIB+JEPSX-1+KDXRATIO/2+(JI-KXOR-JPHEXT)*KDXRATIO
         DO JJ = KYOR,KYEND
-!!$          IJF = IJB+JEPSY-1           +(JJ-KYOR-JPHEXT)*KDYRATIO
           IJS = IJB+JEPSY-1+KDYRATIO/2+(JJ-KYOR-JPHEXT)*KDYRATIO
 !
           IF (1 <= IIS .AND. IIS <= IIU .AND. 1 <= IJS .AND. IJS <= IJU) THEN

@@ -81,6 +81,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      J-P Pinty * LA *  Nov. 2013 : add flash map storage
 !!      M. Chong  * LA *  Juin 2010 : add LiNOx
 !!      C. Barthe * LACy * Jan. 2015 : convert trig. pt into lat,lon in ascii file
+!!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -308,10 +309,7 @@ CALL MYPROC_ELEC_ll(IPROC)
 !*      1.1     subdomains indexes
 !
 ! beginning and end indexes of the physical subdomain
-IIB = 1 + JPHEXT
-IIE = SIZE(PRT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PRT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PRT,3) - JPVEXT
 IKU = SIZE(PRT,3)

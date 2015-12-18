@@ -74,6 +74,7 @@ END MODULE MODI_ION_ATTACH_ELEC
 !!    -------------
 !!      Original    2010
 !!      Modifications:
+!!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -149,10 +150,7 @@ REAL    :: ZCOMB         ! Recombination
 ZCQD = 4 * XPI * XEPSILON * XBOLTZ / XECHARGE
 ZCDIF = XBOLTZ /XECHARGE
 !
-IIB = 1 + JPHEXT
-IIE = SIZE(PTHT,1) - JPHEXT
-IJB = 1 + JPHEXT
-IJE = SIZE(PTHT,2) - JPHEXT
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1 + JPVEXT
 IKE = SIZE(PTHT,3) - JPVEXT
 !
