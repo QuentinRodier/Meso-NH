@@ -279,6 +279,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   02/2012   (T.Lunet) add of new Runge-Kutta methods
 !!      Modification   01/2015   (C. Barthe) add explicit LNOx
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      M.Leriche 18/12/2015 : bug chimie glace dans prep_real_case
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -971,7 +972,7 @@ IF (LUSECHAQ.AND.CCLOUD(1:3) == 'ICE'.AND. .NOT. LUSECHIC) THEN
     WRITE(UNIT=ILUOUT,FMT=*) 'SUPERCOOLED WATER FREEZES'
   ENDIF
 ENDIF
-IF (LUSECHIC.AND. .NOT. CCLOUD(1:3) == 'ICE') THEN
+IF (LUSECHIC.AND. .NOT. CCLOUD(1:3) == 'ICE'.AND.CPROGRAM=='MESONH') THEN
   WRITE(UNIT=ILUOUT,FMT=9003) KMI
   WRITE(UNIT=ILUOUT,FMT=*) 'YOU WANT TO USE ICE PHASE CHEMISTRY'
   WRITE(UNIT=ILUOUT,FMT=*) 'BUT MIXED PHASE CLOUD MICROPHYSICS IS NOT ACTIVATED'
