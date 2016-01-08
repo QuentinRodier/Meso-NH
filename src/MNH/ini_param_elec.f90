@@ -81,6 +81,7 @@ END MODULE MODI_INI_PARAM_ELEC
 !!                               +Fair weather field from Helsdon-Farley
 !!                                (JGR, 1987, 5661-5675)
 !!        J.-P. Pinty jan 2015  tabulate the equations for Saunders
+!!        J. Escobar 8/01/2016 bug , missing YDIR='XY' in READ 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -354,6 +355,7 @@ XEW(:,:,:) = 0.
 SELECT CASE(HGETSVM(NSV_ELECEND))
   CASE ('READ')
     YRECFM='NI_IAGGS'
+    YDIR='XY'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
          YCOMMENT,IRESP)
     XNI_IAGGS(:,:,:) = Z3D(:,:,:)
