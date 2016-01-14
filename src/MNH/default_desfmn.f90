@@ -296,7 +296,7 @@ IF (KMI == 1) THEN
   XRELAX_HEIGHT_TOP = 30000.
   XRELAX_TIME = 864000.
   LPACK      = .TRUE.
-  NHALO      = 1
+  NHALO      = 3
 #ifdef MNH_SX5
   CSPLIT     ='YSPLITTING'   ! NEC vectoriel architecture , low number of PROC
 #else
