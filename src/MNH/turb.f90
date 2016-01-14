@@ -827,19 +827,6 @@ END IF
                         (XMNH_TINY + ZUSLOPE(:,:)**2 + ZVSLOPE(:,:)**2 )   &
                       )
 !
-!*      4.3 rotate the wind at time t
-!
-  IF (CPROGRAM/='AROME ') THEN
-    CALL ROTATE_WIND(PUT,PVT,PWT,                       &
-                     PDIRCOSXW, PDIRCOSYW, PDIRCOSZW,   &
-                     PCOSSLOPE,PSINSLOPE,               &
-                     PDXX,PDYY,PDZZ,                    &
-                     ZUSLOPE,ZVSLOPE                    )
-!
-    CALL UPDATE_ROTATE_WIND(ZUSLOPE,ZVSLOPE)
-  END IF
-!
-!
 !*       4.6 compute the surface tangential fluxes
 !
 ZTAU11M(:,:) =2./3.*(  (1.+ (PZZ (:,:,IKB+KKL)-PZZ (:,:,IKB))  &
