@@ -17,7 +17,7 @@ INTERFACE
     SUBROUTINE INI_RADIATIONS_ECMWF(HINIFILE,HLUOUT,                      &
          PZHAT,PPABST,PTHT,PTSRAD,PLAT,PLON,TPDTCUR,TPDTEXP,              &
          HLW,KDLON,KFLEV,KFLUX,KRAD,KSWB,HAER,KAER,KSTATM,                &
-         PSTATM,PCOVER,POZON, PAER,PDST_WL, OSUBG_COND                    )
+         PSTATM,PSEA,PTOWN,PBARE,POZON, PAER,PDST_WL, OSUBG_COND                    )
 !
 USE MODD_TYPE_DATE
 !
@@ -31,7 +31,9 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:,:),INTENT (IN):: PCOVER ! surface cover types
+REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
+REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
+REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -67,7 +69,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
     SUBROUTINE INI_RADIATIONS_ECMWF(HINIFILE,HLUOUT,                      &
          PZHAT,PPABST,PTHT,PTSRAD,PLAT,PLON,TPDTCUR,TPDTEXP,              &
          HLW,KDLON,KFLEV,KFLUX,KRAD,KSWB,HAER,KAER,KSTATM,                &
-         PSTATM,PCOVER,POZON, PAER, PDST_WL,OSUBG_COND                    )
+         PSTATM,PSEA,PTOWN,PBARE,POZON, PAER, PDST_WL,OSUBG_COND                    )
 !   #######################################################################
 !
 !!****  *INI_RADIATIONS * - initialisation for ECMWF radiation scheme in the MesoNH framework
@@ -173,6 +175,7 @@ END MODULE MODI_INI_RADIATIONS_ECMWF
 !!                           of the surface)
 !!      (A.Grini) 07/2005 add dust
 !!      (M.Tomasini P.Peyrille)  06/2012  to set date to a perpetual day if LFIX_DAT=T
+!!      (V. Masson)          replaces cover fractions by sea/town/bare soil fractions
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -225,7 +228,9 @@ REAL, DIMENSION(:),     INTENT(IN) :: PZHAT ! height level without orography
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PPABST! pressure
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PTHT  !Temperature
 REAL, DIMENSION(:,:),   INTENT(IN) :: PTSRAD ! surface radiative temperature
-REAL, DIMENSION (:,:,:),INTENT (IN):: PCOVER ! surface cover types
+REAL, DIMENSION (:,:),  INTENT(IN) :: PSEA   ! sea fraction
+REAL, DIMENSION (:,:),  INTENT(IN) :: PTOWN  ! town fraction
+REAL, DIMENSION (:,:),  INTENT(IN) :: PBARE  ! bare soil fraction
 REAL, DIMENSION(:,:),   INTENT(IN) :: PLAT, PLON ! arrays of latitude-longitude
 !
 TYPE (DATE_TIME),       INTENT(IN) :: TPDTCUR    ! Current date and time
@@ -257,7 +262,7 @@ LOGICAL :: GWINTER ! .T. when WINTERtime
 LOGICAL :: GSEASON ! .T. when SUMMERtime in the northern hemisphere or
                    !     when WINTERtime in the southern hemisphere
 !
-INTEGER :: JI, JJ, JK, JK1, JKRAD,IIJ,JL , JCOVER ! loop index
+INTEGER :: JI, JJ, JK, JK1, JKRAD,IIJ,JL  ! loop index
 !
 INTEGER :: IIB           ! I index value of the first inner mass point
 INTEGER :: IJB           ! J index value of the first inner mass point
@@ -274,6 +279,7 @@ REAL :: ZLATMEAN      ! MEAN LATitude in the domain
 REAL :: ZLAT_TROPICAL ! TROPIQUE LATitude
 REAL :: ZLAT_POLAR    ! POLAR circle LATitude
 !
+REAL, DIMENSION(:,:),ALLOCATABLE :: ZLON          ! longitude
 REAL, DIMENSION(SIZE(PSTATM,1)) :: ZZSTAT ! half level altitudes of standard atm.
 !
 INTEGER                :: IGRID,ILENCH,IRESP  !   File 
@@ -290,6 +296,8 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner functio
 !
 ! Variables for aerosols and ozone climatologies set up
 REAL, DIMENSION (:),     ALLOCATABLE  :: ZAESEA, ZAELAN, ZAEURB, ZAEDES
+LOGICAL, DIMENSION (:,:),ALLOCATABLE  :: GAFRICA, GASIA, GAUSTRALIA
+REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZDESERT ! desert fraction
 REAL, DIMENSION (:,:,:), ALLOCATABLE  :: ZAER
 REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZPRES_HL,ZT_HL, ZPAVE, ZOZON, ZWORK_GRID
 REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZCVDAES, ZCVDAEL, ZCVDAEU, ZCVDAED,ZETAH
@@ -556,50 +564,61 @@ IF(HAER /= 'NONE') THEN
                           PLAT,PLON,ZAESEA,ZAELAN,ZAEURB,ZAEDES )
   END IF
 !
-IF( HAER =='SURF') THEN
-! AEROSOLS from COVER data
+! AEROSOLS from SURFACE FRACTIONS
 !
-    ALLOCATE(ZAECOV_SEA(SIZE(PCOVER,3)))
-    ALLOCATE(ZAECOV_URB(SIZE(PCOVER,3)))
-    ALLOCATE(ZAECOV_DES(SIZE(PCOVER,3)))
-    ALLOCATE(ZAECOV_LAN(SIZE(PCOVER,3)))
+  IF( HAER =='SURF') THEN
+!
+    !* deserts are only considered over Africa, southern Asia, Australia
+    !* longitude between -180 and 180 for geographical tests
+    !  Only bare soil fractions larger than 0.5 are supposed to contribute to
+    !  desert aerosols
+    !
+    ALLOCATE(ZDESERT   (IIU,IJU))
+    ZDESERT(:,:) = 0.
 
-!sea aerosol for cover 1:
-    ZAECOV_SEA(:) = 0.
-    ZAECOV_SEA(1) = 1.
-!
-!urban aerosol for urban cover:
-    ZAECOV_URB(:) = 0.
-    ZAECOV_URB(7) = 1.
-    ZAECOV_URB(151:155) = 1.
-!desert cover for bare soil cover and partially for some open shrubland 
-!covers near Sahara and Australia
-    ZAECOV_DES(:) = 0.
-    ZAECOV_DES(4) = 1.
-    ZAECOV_DES(80:82) = 0.5
-    ZAECOV_DES(67:68) = 0.2
-!land cover 
-    ZAECOV_LAN(:) = 1.- ZAECOV_SEA(:) - ZAECOV_URB(:) - ZAECOV_DES(:)
-!
+    IF (.NOT.LCARTESIAN) THEN
+      !* deserts are only considered over Africa, southern Asia, Australia
+      ALLOCATE(ZLON      (IIU,IJU))
+      ALLOCATE(GAFRICA   (IIU,IJU))
+      ALLOCATE(GASIA     (IIU,IJU))
+      ALLOCATE(GAUSTRALIA(IIU,IJU))    
+      !* longitude between -180 and 180 for geographical tests
+      ZLON = PLON(:,:) - NINT(PLON/360.)*360.
+      GAFRICA   (:,:) = PLAT(:,:) > -36.086389  .AND. PLAT(:,:) < 36.010556 &
+                  .AND. ZLON(:,:) > -73.18      .AND. ZLON(:,:) < 34.158611
+      GASIA     (:,:) = PLAT(:,:) > 4.358056    .AND. PLAT(:,:) < 55.335278 &
+                  .AND. ZLON(:,:) > -123.157778 .AND. ZLON(:,:) <-34.285556
+      GAUSTRALIA(:,:) = PLAT(:,:) > -39.561389  .AND. PLAT(:,:) < -10.251667 &
+                  .AND. ZLON(:,:) > -155.041944 .AND. ZLON(:,:) < -111.405556
+      !
+      !  Only bare soil fractions larger than 0.5 are supposed to contribute to
+      !  desert aerosols
+      !
+      WHERE (GAFRICA(:,:) .OR. GASIA(:,:) .OR. GAUSTRALIA(:,:)) &
+      ZDESERT(:,:) = MAX( 2.*(PBARE(:,:)-0.5) , 0.)
+      !
+      !
+    ELSE
+      !
+      ZDESERT(:,:) = MAX( 2.*(PBARE(:,:)-0.5) , 0.)
+      !
+    ENDIF
+    !
+    !* fills sea, town, desert and land surface covers for aerosols distributions
     DO JJ=IJB,IJE
       DO JI=IIB,IIE
         IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-        ZAESEA(IIJ) = 0.
-        ZAEURB(IIJ) = 0.
-        ZAEDES(IIJ) = 0.
-        ZAELAN(IIJ) = 0.
-        DO JCOVER=1,SIZE(PCOVER,3)
-          ZAESEA(IIJ) = ZAESEA(IIJ) + ZAECOV_SEA(JCOVER) * PCOVER(JI,JJ,JCOVER)
-          ZAEURB(IIJ) = ZAEURB(IIJ) + ZAECOV_URB(JCOVER) * PCOVER(JI,JJ,JCOVER)
-          ZAEDES(IIJ) = ZAEDES(IIJ) + ZAECOV_DES(JCOVER) * PCOVER(JI,JJ,JCOVER)
-          ZAELAN(IIJ) = ZAELAN(IIJ) + ZAECOV_LAN(JCOVER) * PCOVER(JI,JJ,JCOVER)
-        END DO
+        ZAESEA(IIJ) = PSEA(JI,JJ)
+        ZAEURB(IIJ) = PTOWN(JI,JJ)
+        ZAEDES(IIJ) = ZDESERT(JI,JJ)
+        ZAELAN(IIJ) = MAX( 1.- ZAESEA(IIJ) - ZAEURB(IIJ) - ZAEDES(IIJ) , 0.)
       END DO
     END DO
-    DEALLOCATE(ZAECOV_SEA)
-    DEALLOCATE(ZAECOV_URB)
-    DEALLOCATE(ZAECOV_DES)
-    DEALLOCATE(ZAECOV_LAN)
+    IF (ALLOCATED(ZLON)) DEALLOCATE(ZLON)
+    IF (ALLOCATED(GAFRICA))     DEALLOCATE(GAFRICA)
+    IF (ALLOCATED(GASIA))     DEALLOCATE(GASIA)
+    IF (ALLOCATED(GAUSTRALIA))     DEALLOCATE(GAUSTRALIA)
+    IF (ALLOCATED(ZDESERT))     DEALLOCATE(ZDESERT)
 
   END IF
 !

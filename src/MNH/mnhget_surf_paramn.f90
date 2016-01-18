@@ -1,4 +1,3 @@
-
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -15,14 +14,15 @@
 INTERFACE
       SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
                                      PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PLAI, PVH )
+                                     PBARE, PLAI_TREE, PH_TREE )
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCOVER  ! cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PSEA    ! sea fraction
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PTOWN   ! town fraction
 INTEGER,                INTENT(OUT), OPTIONAL :: KCOVER  ! number of cover types
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PVH     
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PLAI   
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBARE           ! Bare soil fraction
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! 
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -43,7 +43,7 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !     ########################################
       SUBROUTINE MNHGET_SURF_PARAM_n(PCOVER,PSEA,KCOVER,PRN,PH,PLE,PLEI,PGFLUX, &
                                      PT2M,PQ2M,PHU2M,PZON10M,PMER10M,PZS,PTOWN,&
-                                     PLAI, PVH )
+                                     PBARE, PLAI_TREE, PH_TREE )
 !     ########################################
 !
 !!****  *MNHGET_SURF_PARAM_n* - gets some surface fields on MESONH grid
@@ -76,6 +76,7 @@ END MODULE MODI_MNHGET_SURF_PARAM_n
 !!      Modif
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test 
 !!                            & correction of index linearisation for NHALO<>1 
+!!       S. Donier  06/2015 : bug surface aerosols
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -90,6 +91,7 @@ USE MODI_GET_FRAC_N
 USE MODI_GET_JCOVER_N
 USE MODI_GET_FLUX_N
 USE MODI_GET_ZS_N
+USE MODI_GET_SURF_VAR_n
 !
 IMPLICIT NONE
 !
@@ -100,8 +102,9 @@ REAL, DIMENSION(:,:,:), INTENT(OUT), OPTIONAL :: PCOVER  ! cover types
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PSEA    ! sea fraction
 REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PTOWN   ! town fraction
 INTEGER,                INTENT(OUT), OPTIONAL :: KCOVER  ! number of cover types
-REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PVH     
-REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PBARE           ! Bare soil fraction
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PLAI_TREE       ! 
+REAL, DIMENSION(:,:),   INTENT(OUT), OPTIONAL :: PH_TREE         !
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PRN           ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PH            ! Sensible heat flux          (W/m2)
 REAL, DIMENSION(:),     INTENT(INOUT), OPTIONAL :: PLE           ! Total Latent heat flux      (W/m2)
@@ -134,6 +137,7 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZNATURE! nature fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZTOWN  ! town   fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZVH     
 REAL, DIMENSION(:),   ALLOCATABLE :: ZLAI
+REAL, DIMENSION(:),   ALLOCATABLE :: ZBARE  ! bare soil fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: ZZS    ! orography
 REAL, DIMENSION(:),   ALLOCATABLE :: ZRN    ! net radiation at surface    (W/m2)
 REAL, DIMENSION(:),   ALLOCATABLE :: ZH     ! Sensible heat flux          (W/m2)
@@ -165,7 +169,8 @@ IF (PRESENT(PCOVER)) THEN
   DEALLOCATE(ZCOVER)
 END IF
 !
-IF (PRESENT(PSEA) .OR. PRESENT(PTOWN)) THEN
+IF (PRESENT(PSEA) .OR. PRESENT(PTOWN) .OR. &
+    PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE)) THEN
   ALLOCATE(ZSEA   ( ILU ))
   ALLOCATE(ZWATER ( ILU ))
   ALLOCATE(ZNATURE( ILU ))
@@ -177,10 +182,13 @@ IF (PRESENT(PSEA) .OR. PRESENT(PTOWN)) THEN
   IF (PRESENT(PTOWN)) THEN
     CALL REMOVE_HALO(ZTOWN,PTOWN)
   END IF
-  DEALLOCATE(ZSEA   )
-  DEALLOCATE(ZWATER )
-  DEALLOCATE(ZNATURE)
-  DEALLOCATE(ZTOWN  )
+END IF
+!
+IF (PRESENT(PBARE)) THEN
+  ALLOCATE(ZBARE  ( ILU ))
+  CALL GET_SURF_VAR_n('MESONH', ILU, 1, PNATURE=ZNATURE, PBARE=ZBARE)
+  CALL REMOVE_HALO(ZBARE,PBARE)
+  DEALLOCATE(ZBARE)
 END IF
 !
 IF (PRESENT(KCOVER)) THEN
@@ -218,18 +226,24 @@ IF (PRESENT(PZS)) THEN
   DEALLOCATE(ZZS)
 END IF
 !
-IF (PRESENT(PVH)  .OR.PRESENT(PLAI)) THEN
-  PVH(:,:) = XUNDEF
-  PLAI(:,:) = XUNDEF
+IF (PRESENT(PH_TREE)  .OR.PRESENT(PLAI_TREE)) THEN
+  PH_TREE(:,:) = XUNDEF
+  PLAI_TREE(:,:) = XUNDEF
   ALLOCATE(ZVH  ( ILU ))
   ALLOCATE(ZLAI  ( ILU ))
-  CALL GET_VEG_n('MESONH',ILU,ZLAI,ZVH)
-  CALL REMOVE_HALO(ZLAI,PLAI)
-  CALL REMOVE_HALO(ZVH,PVH)
+  CALL GET_SURF_VAR_n('MESONH',ILU,1,PLAI_TREE=ZLAI,PH_TREE=ZVH)
+  CALL REMOVE_HALO(ZLAI,PLAI_TREE)
+  CALL REMOVE_HALO(ZVH,PH_TREE)
   DEALLOCATE(ZVH)
   DEALLOCATE(ZLAI)
 END IF
 !
+IF (ALLOCATED(ZSEA)) THEN
+  DEALLOCATE(ZSEA   )
+  DEALLOCATE(ZWATER )
+  DEALLOCATE(ZNATURE)
+  DEALLOCATE(ZTOWN  )
+END IF
 !==============================================================================
 !
 CONTAINS

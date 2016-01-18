@@ -1,4 +1,3 @@
-
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -55,6 +54,7 @@ END MODULE MODI_DRAG_VEG
 !!    -------------
 !!      Original    07/2009
 !!       C.Lac      07/2011 : Add budgets
+!!       S. Donier  06/2015 : bug surface aerosols
 !!---------------------------------------------------------------
 !
 !
@@ -124,7 +124,7 @@ ZDENSITY(:,:,:)=0.
 ALLOCATE(ZH_TREE_PGD(IIU,IJU))
 ALLOCATE(ZLAI_PGD(IIU,IJU))
 !
-CALL MNHGET_SURF_PARAM_n(PVH=ZH_TREE_PGD,PLAI=ZLAI_PGD)
+CALL MNHGET_SURF_PARAM_n(PH_TREE=ZH_TREE_PGD,PLAI_TREE=ZLAI_PGD)
 !
 ZVH(:,:)=ZH_TREE_PGD(:,:)
 ZLAI(:,:)=ZLAI_PGD(:,:)

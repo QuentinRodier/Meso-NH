@@ -3,7 +3,7 @@
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_VAR_NATURE_n(HPROGRAM,KI,PQS,PSNG,PSNV,PZ0EFF,PZ0,PZ0H,PTWSNOW)
+      SUBROUTINE GET_VAR_NATURE_n(HPROGRAM,KI,PQS,PSNG,PSNV,PZ0EFF,PZ0,PZ0H,PTWSNOW,PBARE)
 !     ######################################################################
 !
 !!****  *GET_VAR_NATURE_n* - routine to get variables defined only over nature
@@ -34,6 +34,7 @@
 !!      Original    02/2006
 !       M. Jidane   08/2008 Z0 and Z0H recovery from nature tiles
 !       S. Riette   06/2010 TWSNOW added
+!       V. Masson   02/2015 adds LAI, height of trees, fraction of bare soil
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -41,6 +42,8 @@
 !
 USE MODI_GET_LUOUT
 USE MODD_SURF_PAR,    ONLY   : XUNDEF
+USE MODD_DATA_COVER_PAR,   ONLY   : NVT_NO
+USE MODD_ISBA_n,           ONLY   : XVEGTYPE
 !
 USE MODD_DIAG_ISBA_n,      ONLY   : XAVG_QS, LSURF_VARS, XAVG_Z0EFF, LCOEF, XAVG_Z0, XAVG_Z0H
 USE MODD_DIAG_MISC_ISBA_n, ONLY   : XAVG_PSNG, XAVG_PSNV, XAVG_TWSNOW,LSURF_MISC_BUDGET
@@ -63,6 +66,7 @@ REAL, DIMENSION(KI),  INTENT(OUT)    :: PZ0EFF  ! effective roughness length (z0
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PZ0     ! surface roughness length
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PZ0H    ! surface roughness length for heat
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PTWSNOW ! Snow total reservoir
+REAL, DIMENSION(KI),  INTENT(OUT)    :: PBARE   ! bare soil fraction on grid mesh     (-)
 !
 !
 !*       0.2   Declarations of local variables
@@ -101,6 +105,12 @@ ELSE
    PZ0      = XUNDEF      
    PZ0H     = XUNDEF
 ENDIF
+IF (SIZE(PBARE) > 0) THEN
+  PBARE = XVEGTYPE(:,NVT_NO)
+ELSE
+  PBARE = XUNDEF         
+ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('GET_VAR_NATURE_N',1,ZHOOK_HANDLE)
 !
 !==============================================================================

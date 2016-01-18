@@ -263,6 +263,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   JAn.  2015  (F. Brosse) bug in allocate XACPRAQ
 !!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
 !!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!       V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -460,8 +461,9 @@ INTEGER :: IIU_B,IJU_B
 INTEGER :: IIU_SXP2_YP1_Z_ll,IJU_SXP2_YP1_Z_ll,IKU_SXP2_YP1_Z_ll
 !
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCO2   ! CO2 concentration near the surface
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCOVER ! surface cover types
-INTEGER                             :: ICOVER ! number of cover types
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSEA   ! sea fraction
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTOWN  ! town fraction
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZBARE  ! bare soil fraction
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIR_ALB ! direct albedo
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSCA_ALB ! diffuse albedo
@@ -1960,23 +1962,24 @@ IF (CRAD   == 'ECMW') THEN
 !* get cover mask for aerosols
 !
   IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ALLOCATE(ZTOWN(IIU,IJU))
+    ALLOCATE(ZBARE(IIU,IJU))
     IF (CSURF=='EXTE') THEN
       CALL GOTO_SURFEX(KMI,.TRUE.)
-      CALL MNHGET_SURF_PARAM_n(KCOVER=ICOVER)
-      ALLOCATE(ZCOVER(IIU,IJU,ICOVER))
-      CALL MNHGET_SURF_PARAM_n(PCOVER=ZCOVER)
+      CALL MNHGET_SURF_PARAM_n(PSEA=ZSEA,PTOWN=ZTOWN,PBARE=ZBARE)
     ELSE
-      ALLOCATE(ZCOVER(IIU,IJU,255))
-      ZCOVER(:,:,:) = 0.
-      ZCOVER(:,:,1) = 1.
+      ZSEA (:,:) = 1.
+      ZTOWN(:,:) = 0.
+      ZBARE(:,:) = 0.
     END IF
 !
     CALL INI_RADIATIONS_ECMWF (HINIFILE,HLUOUT,                                           &
                                XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,          &
                                CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB,CAER,NAER,NSTATM,          &
-                               XSTATM,ZCOVER,XOZON, XAER,XDST_WL, LSUBG_COND              )
+                               XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND              )
 !
-    DEALLOCATE(ZCOVER)
+    DEALLOCATE(ZSEA,ZTOWN,ZBARE)
     ALLOCATE (XAER_CLIM(SIZE(XAER,1),SIZE(XAER,2),SIZE(XAER,3),SIZE(XAER,4)))
     XAER_CLIM(:,:,:,:) =XAER(:,:,:,:)
 !
