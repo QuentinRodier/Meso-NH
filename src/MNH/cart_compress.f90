@@ -91,6 +91,7 @@ END MODULE MODI_CART_COMPRESS
 !              ------------
 !
 USE MODD_BUDGET
+USE MODD_PARAMETERS , ONLY : JPVEXT
 !
 !
 IMPLICIT NONE
@@ -122,7 +123,7 @@ IF (SIZE (PCOMPRESS) .EQ. 0 ) RETURN
 !JUAN
 !
 ZVARS(1:NBUSIH-NBUSIL+1,1:NBUSJH-NBUSJL+1,1:NBUKH-NBUKL+1) = &
-            PVARS(NBUSIL:NBUSIH,NBUSJL:NBUSJH,NBUKL:NBUKH)
+            PVARS(NBUSIL:NBUSIH,NBUSJL:NBUSJH,NBUKL+JPVEXT:NBUKH+JPVEXT)
 !
 !-------------------------------------------------------------------------------
 !
