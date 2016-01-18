@@ -38,6 +38,7 @@
 !!      Original    01/2004 
 !!        M.Moge    04/2015  Parallelization using routines from MNH/SURCOUCHE
 !!        M.Moge    06/2015  bug fix for reproductibility using UPDATE_NHALO1D
+!!        M.Moge    01/2016  bug fix for parallel execution with SPLIT2
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,7 +56,7 @@ USE MODI_ABOR1_SFX
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 
-USE MODE_SPLITTING_ll, ONLY : SPLIT2
+USE MODE_SPLITTING_ll, ONLY : SPLIT2, DEF_SPLITTING2
 USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING
 USE MODD_STRUCTURE_ll, ONLY : ZONE_ll, CRSPD_ll
 USE MODD_PARAMETERS, ONLY : JPHEXT
@@ -126,6 +127,8 @@ INTEGER     :: JI,JJ         ! loop controls relatively to modified grid
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: IMI
 INTEGER :: IINFO_ll
+INTEGER :: IXDOMAINS, IYDOMAINS               ! number of subdomains in X and Y directions
+LOGICAL :: GPREM                              ! needed for DEF_SPLITTING2, true if NPROC is a prime number
 INTEGER :: IXOR_F_ll, IYOR_F_ll               ! origin of local father subdomain in global coordinates
 INTEGER :: IXDIM_C, IYDIM_C                   ! size of local son subdomain (in coarse/father grid)
 INTEGER :: IXOR_C_ll, IYOR_C_ll               ! origin of local son subdomain (in global fine/son grid)
@@ -210,7 +213,16 @@ ENDDO
 ! partition son domain on father grid (with global coordinates on father grid)
 !
 ! we have to add one point on the west and south sides -> hence the "- 1"
-CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING)
+! Warning : we cannot just call SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING) as it would not 
+!           necessarily split the son domain the same way the father domain was splitted
+!           example : if father domain is 30x40 and son domain is 6x5 (in father grid dimensions) then
+!                     with NPROC = 2, SPLIT2 will split father domain along Y dimension -> 30x20 local domains
+!                     but SPLIT2 will split son domain along X dimension -> 3x5 local domains.
+!           therefore we have to use DEF_SPLITTING2 and force the decomposition in the call to SPLIT2
+! we want the same domain partitioning for the child domain and for the father domain
+CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,NIMAX_SURF_ll,NJMAX_SURF_ll,NPROC,GPREM)
+CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING, IXDOMAINS, IYDOMAINS)
+
 ! compute the local size of son grid
 ! KIMAX_C_ll, KJMAX_C_ll are the global sizes of son domain
 IIMAX_C = ( TZCOARSESONSPLIT(IP)%NXEND - TZCOARSESONSPLIT(IP)%NXOR + 1 ) * KDXRATIO
@@ -499,7 +511,9 @@ END IF
   ZYHAT2_F_TMP(:) = 0.
   ZXHAT2_F_TMP(1:IXDIM_C) = ZXHAT2_F(:,1,1)
   ZYHAT2_F_TMP(1:IYDIM_C) = ZYHAT2_F(1,:,1)
-  CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING)
+! we want the same domain partitioning for the child domain and for the father domain
+  CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,NIMAX_SURF_ll,NJMAX_SURF_ll,NPROC,GPREM)
+  CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING, IXDOMAINS, IYDOMAINS)
   CALL UPDATE_NHALO1D( 1, ZXHAT2_F_TMP, KXSIZE, KYSIZE,TZCOARSESONSPLIT(IP)%NXOR, &
     TZCOARSESONSPLIT(IP)%NXEND,TZCOARSESONSPLIT(IP)%NYOR,TZCOARSESONSPLIT(IP)%NYEND, 'XX    ')
   CALL UPDATE_NHALO1D( 1, ZYHAT2_F_TMP, KXSIZE, KYSIZE,TZCOARSESONSPLIT(IP)%NXOR, &

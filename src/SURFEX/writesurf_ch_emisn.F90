@@ -18,6 +18,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/2004
+!!      M.Moge    01/2016  using WRITE_SURF_FIELD2D/3D for 2D/3D surfex fields writes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -26,6 +27,7 @@
 USE MODD_CH_EMIS_FIELD_n,ONLY : NEMIS_NBR, CEMIS_AREA, CEMIS_NAME, &
                                   CEMIS_COMMENT, NEMIS_TIME, XEMIS_FIELDS  
 USE MODI_WRITE_SURF
+USE MODI_WRITE_SURF_FIELD2D
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -48,6 +50,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be written
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+ CHARACTER(LEN=100):: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
  CHARACTER(LEN=80) :: YNAME          ! emitted species name
 !
 INTEGER           :: JI,JT          ! loop indices
@@ -170,7 +173,8 @@ YCOMMENT = "Emission times in second"
 ! Finally write emission data for species JSPEC
 YRECFM = "E_"//TRIM(YEMISPEC_NAMES(JSPEC))
 YCOMMENT = "Emission data (x,y,t),"//TRIM(CEMIS_COMMENT(IINDEX(1)))
- CALL WRITE_SURF(HPROGRAM,YRECFM,ZWORK2D(:,:),IRESP,HCOMMENT=YCOMMENT)
+YCOMMENTUNIT='-'
+CALL WRITE_SURF_FIELD2D(HPROGRAM,ZWORK2D(:,:),YRECFM,YCOMMENT,YCOMMENTUNIT)
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_CH_EMIS_N:WRITE_EMIS_SPEC',1,ZHOOK_HANDLE)
 !

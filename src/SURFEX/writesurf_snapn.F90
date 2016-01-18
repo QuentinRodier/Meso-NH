@@ -1,7 +1,6 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+
+!!    MODIFICATIONS
+!!      M.Moge    01/2016  using WRITE_SURF_FIELD2D/3D for 2D/3D surfex fields writes
 !     #########
       SUBROUTINE WRITESURF_SNAP_n(HPROGRAM)
 !     #######################################################################
@@ -12,6 +11,7 @@
 !
 USE MODI_GET_LUOUT
 USE MODI_WRITE_SURF
+USE MODI_WRITE_SURF_FIELD2D
 !
 USE MODD_CH_SNAP_n
 !
@@ -30,6 +30,7 @@ IMPLICIT NONE
 INTEGER             :: IRESP    ! I/O error code
  CHARACTER (LEN=16)  :: YRECFM   ! article name
  CHARACTER (LEN=100) :: YCOMMENT ! comment
+ CHARACTER(LEN=100):: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
 INTEGER             :: ILUOUT   ! Unit number for prints
 INTEGER             :: JSPEC    ! Loop index for emission species
 INTEGER             :: JSNAP    ! Loop index for SNAP categories
@@ -61,11 +62,14 @@ DO JSPEC=1,NEMIS_NBR
 !
 ! Writes the temporal profiles of all snaps
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_M"
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_MONTHLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  YCOMMENTUNIT='-'
+  CALL WRITE_SURF_FIELD2D(HPROGRAM,XSNAP_MONTHLY(:,:,JSPEC),YRECFM,YCOMMENT,YCOMMENTUNIT,HDIR='-')
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_D"
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_DAILY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  YCOMMENTUNIT='-'
+  CALL WRITE_SURF_FIELD2D(HPROGRAM,XSNAP_DAILY(:,:,JSPEC),YRECFM,YCOMMENT,YCOMMENTUNIT,HDIR='-')
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_H"
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XSNAP_HOURLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  YCOMMENTUNIT='-'
+  CALL WRITE_SURF_FIELD2D(HPROGRAM,XSNAP_HOURLY(:,:,JSPEC),YRECFM,YCOMMENT,YCOMMENTUNIT,HDIR='-')
 ! Writes the potential emission of species for each snap
   DO JSNAP=1,NEMIS_SNAP
     WRITE(YRECFM,'("SNAP",I2.2,"_",A3)') JSNAP,CEMIS_NAME(JSPEC)

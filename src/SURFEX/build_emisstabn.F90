@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
        SUBROUTINE BUILD_EMISSTAB_n(HPROGRAM,KCH,HEMIS_GR_NAME, KNBTIMES,&
               KEMIS_GR_TIME,KOFFNDX,TPEMISS,KSIZE,KLUOUT, KVERB,PRHODREF)  
@@ -27,11 +23,12 @@
 !!    P.Tulet  01/01/04  change conversion for externalization (flux unit is
 !!                        molec./m2/s)
 !!    M.Leriche  04/14   apply conversion factor if lead = f
+!!    M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
 !!
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUTB
-USE MODI_READ_SURF
+USE MODI_READ_SURF_FIELD2D
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -148,7 +145,7 @@ DO JSPEC=1,SIZE(TPEMISS) ! loop on offline emission species
     ALLOCATE(TPEMISS(JSPEC)%XEMISDATA(KSIZE,INBTS))
 ! Read file for emission data
     YRECFM='E_'//TRIM(TPEMISS(JSPEC)%CNAME)
-    CALL READ_SURF(HPROGRAM,YRECFM,TPEMISS(JSPEC)%XEMISDATA(:,:),IRESP)
+    CALL READ_SURF_FIELD2D(HPROGRAM,TPEMISS(JSPEC)%XEMISDATA(:,:),YRECFM)
 !
 ! Correction : Replace 999. with 0. value in the Emission FLUX
 ! and apply conversion

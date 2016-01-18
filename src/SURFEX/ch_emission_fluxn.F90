@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE CH_EMISSION_FLUX_n(HPROGRAM,PSIMTIME,PSFSV, PRHOA, PTSTEP, KNBTS_MAX)
 !     ######################################################################
@@ -27,6 +23,7 @@
 !!    P.Tulet  01/01/04  change emission conversion factor
 !!    P.Tulet  01/01/05  add dust, orilam
 !!    M.Leriche    2015  suppress ZDEPOT
+!!    M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
 !!
 !!    EXTERNAL
 !!    --------
@@ -40,7 +37,7 @@ USE MODD_CSTS,             ONLY: NDAYSEC
 USE MODD_CH_EMIS_FIELD_n,  ONLY: TSEMISS, TSPRONOSLIST, XTIME_SIMUL
 USE MODD_CH_SURF_n,        ONLY: XCONVERSION
 !
-USE MODI_READ_SURF
+USE MODI_READ_SURF_FIELD2D
 USE MODI_INIT_IO_SURF_n
 USE MODI_END_IO_SURF_n
 USE MODI_GET_LUOUT
@@ -205,7 +202,7 @@ DO JI=1,SIZE(TSEMISS)
         IF (IVERB >= 6)&
                WRITE (ILUOUT,*) 'READ emission :',TRIM(YRECFM),&
                ', SIZE(ZWORK)=',SIZE(ZWORK,1),INBTS 
-        CALL READ_SURF(HPROGRAM,YRECFM,ZWORK(:,1:INBTS),IRESP)
+        CALL READ_SURF_FIELD2D(HPROGRAM,ZWORK(:,1:INBTS),YRECFM)
 !
 ! Correction : Replace 999. with 0. value in the Emission FLUX
         WHERE(ZWORK(:,1:INBTS) == 999.)

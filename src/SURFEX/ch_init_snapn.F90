@@ -1,7 +1,3 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
 !     #########
       SUBROUTINE CH_INIT_SNAP_n(HPROGRAM,KLU,HINIT,KCH,PRHOA)
 !     #######################################
@@ -24,6 +20,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        11/2011
+!!        M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
 !!-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -32,6 +29,7 @@ USE MODD_CSTS,       ONLY : XAVOGADRO, XMD
 USE MODD_CH_SNAP_n
 USE MODI_GET_LUOUT
 USE MODI_READ_SURF
+USE MODI_READ_SURF_FIELD2D
 USE MODI_ABOR1_SFX
 USE MODI_CH_CONVERSION_FACTOR
 USE MODI_BUILD_PRONOSLIST_n
@@ -137,11 +135,12 @@ DO JSPEC = 1,NEMIS_NBR ! Loop on the number of species
 !
 ! Read the temporal profiles of all snaps
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_M"
-  CALL READ_SURF(HPROGRAM,YRECFM,XSNAP_MONTHLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  YRECFM = 'ICE_STO'
+  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_MONTHLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_D"
-  CALL READ_SURF(HPROGRAM,YRECFM,XSNAP_DAILY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_DAILY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
   YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_H"
-  CALL READ_SURF(HPROGRAM,YRECFM,XSNAP_HOURLY(:,:,JSPEC),IRESP,YCOMMENT,HDIR='-')
+  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_HOURLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
 END DO
 !
 !*      3.     Conversion factor

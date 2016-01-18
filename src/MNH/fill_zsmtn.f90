@@ -60,6 +60,7 @@ END MODULE MODI_FILL_ZSMTn
 !!    -------------
 !!      Original        12/01/05
 !!      Modification    20/05/06 Remove Clark and Farley interpolation
+!!        M.Moge        01/2016 bug fix for parallel execution
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -74,7 +75,7 @@ USE MODI_INI_BIKHARDT_n
 USE MODI_SPAWN_ZS
 USE MODE_MODELN_HANDLER
 !
-USE MODE_SPLITTING_ll, ONLY : SPLIT2
+USE MODE_SPLITTING_ll, ONLY : SPLIT2, DEF_SPLITTING2
 USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
 USE MODD_STRUCTURE_ll, ONLY : ZONE_ll
 !
@@ -94,10 +95,13 @@ INTEGER :: IMI ! current model index (DAD index)
 CHARACTER(LEN=4), DIMENSION(:), POINTER :: DPTR_CLBCX,DPTR_CLBCY
 REAL, DIMENSION(:,:),  POINTER          :: DPTR_XZSMT
 INTEGER :: IINFO_ll
-INTEGER :: IXSIZE, IYSIZE  ! sizes of global son domain in father grid
+INTEGER :: IXSIZE, IYSIZE        ! sizes of global son domain in father grid
+INTEGER :: IXSIZE_F, IYSIZE_F    ! sizes of global father domain
 TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZSPLITTING
 INTEGER :: IXOR,IXEND,IYOR,IYEND ! limits of extended  domain of KSON model in its father's grid
 INTEGER :: IDIMX, IDIMY  ! dimensions of extended son subdomain in father's grid + one point in each direction
+INTEGER :: IXDOMAINS, IYDOMAINS               ! number of subdomains in X and Y directions
+LOGICAL :: GPREM                              ! needed for DEF_SPLITTING2, true if NPROC is a prime number
 !
 !*       1.    initializations
 !              ---------------
@@ -110,8 +114,12 @@ CALL GO_TOMODEL_ll(KSON, IINFO_ll)
 IXSIZE = NXEND_ALL(KSON) - NXOR_ALL (KSON) + 1 - 2*JPHEXT
 IYSIZE = NYEND_ALL(KSON) - NYOR_ALL (KSON) + 1 - 2*JPHEXT
 ! get splitting of current model KMI in father grid
+IXSIZE_F = NXEND_ALL(NDAD(KSON)) - NXOR_ALL (NDAD(KSON)) + 1 - 2*JPHEXT
+IYSIZE_F = NYEND_ALL(NDAD(KSON)) - NYOR_ALL (NDAD(KSON)) + 1 - 2*JPHEXT
 ALLOCATE(TZSPLITTING(NPROC))
-CALL SPLIT2 ( IXSIZE, IYSIZE, 1, NPROC, TZSPLITTING, YSPLITTING )
+! we want the same domain partitioning for the child domain and for the father domain
+CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,IXSIZE_F,IYSIZE_F,NPROC,GPREM)
+CALL SPLIT2 ( IXSIZE, IYSIZE, 1, NPROC, TZSPLITTING, YSPLITTING, IXDOMAINS, IYDOMAINS )
 ! get coords of extended domain of KSON in its father's grid
 IXOR  = NXOR_ALL(KSON) + TZSPLITTING(IP)%NXOR  -1 - JPHEXT 
 IXEND = NXOR_ALL(KSON) + TZSPLITTING(IP)%NXEND -1 + JPHEXT 
@@ -133,9 +141,6 @@ CALL INI_BIKHARDT_n(NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),KSON)
 DPTR_CLBCX=>CLBCX
 DPTR_CLBCY=>CLBCY
 DPTR_XZSMT=>XZSMT
-!CALL SPAWN_ZS(IXOR,IXEND,IYOR,IYEND, &
-!              NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),DPTR_CLBCX,DPTR_CLBCY,         &
-!              CLUOUT,PFIELD,DPTR_XZSMT,HFIELD                             )
 CALL SPAWN_ZS(NXOR_ALL(KSON),NXEND_ALL(KSON),NYOR_ALL(KSON),NYEND_ALL(KSON), &
               NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),IDIMX,IDIMY,DPTR_CLBCX,DPTR_CLBCY,         &
               CLUOUT,PFIELD,DPTR_XZSMT,HFIELD                             )

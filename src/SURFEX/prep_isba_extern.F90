@@ -25,7 +25,7 @@ SUBROUTINE PREP_ISBA_EXTERN(HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
-!!        M.Moge    08/2015  reading 'WR' one patch at a time for Z-parallel splitting with MNH
+!!        M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
 !!------------------------------------------------------------------
 !
 
@@ -49,6 +49,8 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_PUT_ON_ALL_VEGTYPES
+!
+USE MODI_READ_SURF_FIELD2D
 !
 IMPLICIT NONE
 !
@@ -75,7 +77,7 @@ REAL, DIMENSION(:,:),   POINTER     :: ZFIELD1        ! field read on initial MN
 REAL, DIMENSION(:,:,:), POINTER     :: ZD             ! depth of field in the soil
 REAL, DIMENSION(:,:), POINTER     :: ZD1            ! depth of field in the soil, one patch
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZOUT         !
-INTEGER                             :: JPATCH, JVEGTYPE        ! loop counter for patch
+INTEGER                             :: JVEGTYPE        ! loop counter for patch
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !------------------------------------------------------------------------------
@@ -156,14 +158,7 @@ SELECT CASE(HSURF)
      ALLOCATE(ZFIELD(INI,1,IPATCH))
      YRECFM = 'WR'
      CALL OPEN_AUX_IO_SURF(HFILE,HFILETYPE,'NATURE')
-#ifdef MNH_PARALLEL
-     DO JPATCH=1,IPATCH
-       WRITE(YRECFM,'(A2,I4.4)') 'WR',JPATCH
-       CALL READ_SURF(HFILETYPE,YRECFM,ZFIELD(:,1,JPATCH),IRESP,HDIR='A')
-     END DO
-#else
-     CALL READ_SURF(HFILETYPE,YRECFM,ZFIELD(:,1,:),IRESP,HDIR='A')
-#endif
+     CALL READ_SURF_FIELD2D(HFILETYPE,ZFIELD(:,1,:),YRECFM,HDIR='A')
      CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
      CALL PUT_ON_ALL_VEGTYPES(INI,1,IPATCH,NVEGTYPE,ZFIELD,PFIELD)
      DEALLOCATE(ZFIELD)

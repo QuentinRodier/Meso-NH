@@ -59,6 +59,7 @@ END MODULE MODI_FILL_SONFIELD_n
 !!    -------------
 !!      Original        27/09/96
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!        M.Moge        01/2016 bug fix for parallel execution
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -66,7 +67,7 @@ END MODULE MODI_FILL_SONFIELD_n
 USE MODD_GRID_n
 USE MODD_NESTING
 USE MODD_PARAMETERS
-USE MODE_SPLITTING_ll, ONLY : SPLIT2
+USE MODE_SPLITTING_ll, ONLY : SPLIT2, DEF_SPLITTING2
 USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
 USE MODD_STRUCTURE_ll, ONLY : ZONE_ll
 !
@@ -98,12 +99,15 @@ INTEGER :: IMI                 ! current model index
 INTEGER :: JLAYER              ! loop counter
 INTEGER :: IINFO_ll
 INTEGER :: IXSIZE, IYSIZE  ! sizes of global son domain in father grid
+INTEGER :: IXSIZE_F, IYSIZE_F  ! sizes of global father domain
 TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZSPLITTING
 INTEGER :: IXOR, IYOR  ! origin of local subdomain
 INTEGER :: IXOR_C, IYOR_C, IXEND_C, IYEND_C  ! origin and end of local physical son subdomain in father grid
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZSUM
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZSUM_C
 INTEGER :: IDIMX_C, IDIMY_C ! size of extended local son subdomain in father grid obtained with GET_CHILD_DIM_ll
+INTEGER :: IXDOMAINS, IYDOMAINS               ! number of subdomains in X and Y directions
+LOGICAL :: GPREM                              ! needed for DEF_SPLITTING2, true if NPROC is a prime number
 !-------------------------------------------------------------------------------
 !
 !*       1.    initializations
@@ -119,12 +123,12 @@ IF (KLSON/=1) THEN
   IXSIZE = NXEND_ALL(KMI) - NXOR_ALL (KMI) + 1 - 2*JPHEXT ! - 1
   IYSIZE = NYEND_ALL(KMI) - NYOR_ALL (KMI) + 1 - 2*JPHEXT ! - 1
   ! get splitting of current model KMI in father grid
+  IXSIZE_F = NXEND_ALL(NDAD(KMI)) - NXOR_ALL (NDAD(KMI))  + 1 - 2*JPHEXT
+  IYSIZE_F = NYEND_ALL(NDAD(KMI)) - NYOR_ALL (NDAD(KMI))  + 1 - 2*JPHEXT
   ALLOCATE(TZSPLITTING(NPROC))
-  CALL SPLIT2 ( IXSIZE, IYSIZE, 1, NPROC, TZSPLITTING, YSPLITTING )
-!  IIB1 = NXOR_ALL(KMI) + TZSPLITTING(IP)%NXOR - JPHEXT - IXOR + 1
-!  IIE1 = NXOR_ALL(KMI) + TZSPLITTING(IP)%NXEND - JPHEXT - IXOR + 1
-!  IJB1 = NYOR_ALL(KMI) + TZSPLITTING(IP)%NYOR - JPHEXT - IYOR + 1
-!  IJE1 = NYOR_ALL(KMI) + TZSPLITTING(IP)%NYEND - JPHEXT - IYOR + 1
+! we want the same domain partitioning for the child domain and for the father domain
+  CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,IXSIZE_F,IYSIZE_F,NPROC,GPREM)
+  CALL SPLIT2 ( IXSIZE, IYSIZE, 1, NPROC, TZSPLITTING, YSPLITTING, IXDOMAINS, IYDOMAINS )
   IIB1 = JPHEXT + 1
   IIE1 = TZSPLITTING(IP)%NXEND - TZSPLITTING(IP)%NXOR + JPHEXT + 1
   IJB1 = JPHEXT + 1
@@ -195,23 +199,11 @@ ELSE
 
       SELECT CASE(YFIELD)
          CASE ('ZS    ')
-!           ZSUM(JI1,JJ1) = SUM ( XZS(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                     / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
-!           ZSUM(JI2INF:JI2SUP,JJ2INF:JJ2SUP) = SUM ( XZS(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                     / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
            ZSUM_C(1+JPHEXT+(JI1-IIB1+1),1+JPHEXT+(JJ1-IJB1+1)) = SUM ( XZS(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
                                      / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
-!           PNESTFIELD(JI1,JJ1,KLSON,1) = SUM ( XZS(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                           / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
          CASE ('ZSMT  ')  ! smooth topography for SLEVE coordinate
-!           ZSUM(JI1,JJ1) = SUM ( XZSMT(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                     / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
-!           ZSUM(JI2INF,JJ2INF) = SUM ( XZSMT(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                     / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
            ZSUM_C(1+JPHEXT+(JI1-IIB1+1),1+JPHEXT+(JJ1-IJB1+1)) = SUM ( XZSMT(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
                                      / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
-!           PNESTFIELD(JI1,JJ1,KLSON,1) = SUM ( XZSMT(JI2INF:JI2SUP,JJ2INF:JJ2SUP ) )&
-!                                           / ( NDXRATIO_ALL(KMI)*NDYRATIO_ALL(KMI) )
         CASE DEFAULT
           CALL GOTO_MODEL(IMI)
           CALL GO_TOMODEL_ll(IMI, IINFO_ll)
@@ -221,14 +213,8 @@ ELSE
     END DO
   END DO
   !switch to father model to set the LSFIELD and do the communications with LS_FEEDBACK_ll
-!  CALL GOTO_MODEL( NDAD(KMI) )
-!  CALL GO_TOMODEL_ll( NDAD(KMI), IINFO_ll )
-!  CALL SET_LSFIELD_1WAY_ll(PNESTFIELD(:,:,KLSON,1), ZSUM, KMI)
 CALL GET_FEEDBACK_COORD_ll(IXOR_C,IYOR_C,IXEND_C,IYEND_C,IINFO_ll) ! physical domain's origin and end
   CALL SET_LSFIELD_2WAY_ll(PNESTFIELD(IXOR_C:IXEND_C,IYOR_C:IYEND_C,KLSON,1), ZSUM_C)
-!  CALL SET_LSFIELD_2WAY_ll(PNESTFIELD(:,:,KLSON,1), ZSUM)
-!  CALL GOTO_MODEL( KMI )
-!  CALL GO_TOMODEL_ll( KMI, IINFO_ll )
   CALL LS_FEEDBACK_ll(IINFO_ll)
   CALL UNSET_LSFIELD_1WAY_ll()
 !

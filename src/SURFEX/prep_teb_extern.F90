@@ -2,6 +2,10 @@
 !SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      M.Moge    01/2016  using READ_SURF_FIELD2D/3D for 2D/3D surfex fields reads
 !     #########
 SUBROUTINE PREP_TEB_EXTERN(HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,KLUOUT,PFIELD)
 !     #################################################################################
@@ -17,6 +21,7 @@ USE MODI_CLOSE_AUX_IO_SURF
 USE MODI_TOWN_PRESENCE
 USE MODI_READ_TEB_PATCH
 USE MODI_GET_CURRENT_TEB_PATCH
+USE MODI_READ_SURF_FIELD2D
 !
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 USE MODD_PREP_TEB,   ONLY : XGRID_ROAD, XGRID_WALL, XGRID_ROOF, &
@@ -300,9 +305,11 @@ ELSE
       ALLOCATE(ZFIELD(INI,IPATCH))
       CALL OPEN_AUX_IO_SURF(HFILE,HFILETYPE,'NATURE')
       IF (YSURF=='T_FLOO' .OR. YSURF=='T_CAN ' .OR. YSURF=='TI_ROA') THEN
-        CALL READ_SURF(HFILETYPE,'TG2',ZFIELD(:,:),IRESP,HDIR='A')
+        YRECFM='TG2'
+        CALL READ_SURF_FIELD2D(HFILETYPE,ZFIELD(:,:),YRECFM,HDIR='A')
       ELSE
-        CALL READ_SURF(HFILETYPE,'TG1',ZFIELD(:,:),IRESP,HDIR='A')
+        YRECFM='TG1'
+        CALL READ_SURF_FIELD2D(HFILETYPE,ZFIELD(:,:),YRECFM,HDIR='A')
       ENDIF
       CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
       !* fills the whole temperature profile by this soil temperature

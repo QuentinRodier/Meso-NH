@@ -38,7 +38,7 @@
 !!      A.L. Gibelin 04/2009 : dimension NBIOMASS for ISBA-A-gs
 !!      B. Decharme  07/2011 : delete argument HWRITE
 !!      M. Moge      02/2015 parallelization using WRITE_LCOVER
-!!      M. Moge      08/2015 writing ECO_DG fields as 2D fields with WRITE_SURF
+!!      M.Moge    01/2016  using WRITE_SURF_FIELD2D/3D for 2D/3D surfex fields writes
 !!
 !-------------------------------------------------------------------------------
 !
@@ -67,6 +67,9 @@ USE MODI_WRITE_GRID
 USE MODI_WRITESURF_PGD_ISBA_PAR_n
 USE MODI_WRITESURF_PGD_TSZ0_PAR_n
 !
+USE MODI_WRITE_SURF_FIELD2D
+USE MODI_WRITE_SURF_FIELD3D
+!
 USE MODI_WRITE_LCOVER
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -85,10 +88,10 @@ IMPLICIT NONE
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+ CHARACTER(LEN=100):: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 INTEGER :: JL     ! loop counter
-INTEGER :: JPATCH ! loop counter
 !
 !-------------------------------------------------------------------------------
 !
@@ -329,23 +332,17 @@ IF (LECOCLIMAP .AND. ASSOCIATED(XDG)) THEN
 !
 !* Soil depth for each patch
 !
-DO JPATCH = 1,SIZE(XDG,3)
-  DO JL=1,SIZE(XDG,2)
-    IF (JL<10) THEN
-      WRITE(YRECFM,FMT='(A6,I1,I4.4)') 'ECO_DG',JL,JPATCH
-    ELSE
-      WRITE(YRECFM,FMT='(A6,I2,I4.4)') 'ECO_DG',JL,JPATCH
-    ENDIF
-    YCOMMENT='soil depth from ecoclimap'//' (M)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XDG(:,JL,JPATCH),IRESP,HCOMMENT=YCOMMENT)
-  END DO
-END DO
+YRECFM='ECO_DG'
+YCOMMENT='soil depth from ecoclimap'
+YCOMMENTUNIT='M'
+CALL WRITE_SURF_FIELD3D(HPROGRAM,XDG,1,SIZE(XDG,2),YRECFM,YCOMMENT,YCOMMENTUNIT)
 !* Total soil depth for moisture
 !
   IF (CISBA=='DIF') THEN
     YRECFM='ECO_WG_L'
     YCOMMENT='Number of soil layers for moisture in ISBA-DIF'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,FLOAT(NWG_LAYER(:,:)),IRESP,HCOMMENT=YCOMMENT)
+    YCOMMENTUNIT='-'
+    CALL WRITE_SURF_FIELD2D(HPROGRAM,FLOAT(NWG_LAYER(:,:)),YRECFM,YCOMMENT,YCOMMENTUNIT)
   END IF
 END IF
 !
