@@ -11,8 +11,8 @@
 &NAM_TURBn XIMPL = 1., CTURBLEN = "DELT", CTURBDIM = "3DIM", 
 	   LTURB_DIAG = T, LTURB_FLX = T /
 &NAM_CONF CCONF = "START", LFLAT = F, NMODEL = 1, NVERB = 5, 
-          CEXP = "EXPER", CSEG = "HYD2D" 
-          !JPHEXT=3 NHALO=3
+          CEXP = "EXPER", CSEG = "HYD2D",NHALO=1 
+          !JPHEXT=3 
           /
 &NAM_DYN XSEGLEN =1080., XASSELIN = 0.2, LCORIO = F, 
          XALKTOP = 0.005, XALZBOT = 12570., LNUMDIFU =.T. /

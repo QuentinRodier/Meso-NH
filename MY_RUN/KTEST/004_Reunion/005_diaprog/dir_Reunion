@@ -25,7 +25,7 @@ THT_CV__MINUS_LSTHM_CV_
 ! difference pour la composante du vent selon Y avec le champ initial
 VT_CV__MINUS_LSVM_CV_
 ! difference pour la vitesse verticale avec le champ initial
-WT_CV__ON_ULMWM_CV_                                                             
+WT_CV__ON_ULTWT_CV_                                                             
 !
 ! a vous d indiquer vos directives
 quit
