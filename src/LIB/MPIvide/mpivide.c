@@ -218,6 +218,44 @@ int              *__ierr;
     *__ierr = 0;
 }
 
+#pragma weak mpi_gatherv__  = mpi_gatherv
+#pragma weak mpi_gatherv_   = mpi_gatherv
+void mpi_gatherv
+( sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, __ierr )
+
+void             *sendbuf;
+int              *sendcount;
+int              *sendtype;
+void             *recvbuf;
+int              *recvcounts;
+int              *displs;
+int              *recvtype;
+int              *root;
+int              *comm;
+int              *__ierr;
+{
+    int size = SIZE2PRECISION;
+    disppass("gatherv");
+    switch(*sendtype)
+    {
+      case MPI_INTEGER:
+        size = SIZEINTEGER;
+        break;
+      case MPI_PRECISION:
+        size = SIZEPRECISION;
+        break;
+      case MPI_2PRECISION:
+        size = SIZE2PRECISION;
+        break;
+      case MPI_DOUBLEDOUBLE:
+        size = SIZE_DOUBLEDOUBLE;
+        break;
+    }
+    memcpy(recvbuf, sendbuf, (*recvcounts)*size);
+
+    *__ierr = 0;
+}
+
 #pragma weak mpi_comm_get_parent__ =  mpi_comm_get_parent
 #pragma weak mpi_comm_get_parent_  =  mpi_comm_get_parent
 void mpi_comm_get_parent(int *parent , int *__ierr)
