@@ -656,22 +656,22 @@ IF (NBJSLICE > 0 ) THEN
 !
       ISB3=ISB3+1
       XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                         &
-                          SUM( XUT (IISL:IISH,IJSL:IJSH,NKCLS),  DIM=2 )
+                          SUM( XUT (IISL:IISH,IJSL:IJSH,NKCLS+JPVEXT),  DIM=2 )
 !
 !*      4.2  W at level KCLA
 !
       ISB3=ISB3+1
       XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                         &
-                          SUM( XWT (IISL:IISH,IJSL:IJSH,NKCLA),  DIM=2 )
+                          SUM( XWT (IISL:IISH,IJSL:IJSH,NKCLA+JPVEXT),  DIM=2 )
 !
 !*      4.3  Mean W between KLOW and KUP
 !
       ISB3=ISB3+1
       ZDIA (:,:)=0.
-      DO JK=NKLOW,NKUP
+      DO JK=NKLOW+JPVEXT,NKUP+JPVEXT
         ZDIA(:,:)= XWT(:,:,JK)*(XZZ(:,:,JK+1)-XZZ(:,:,JK)) + ZDIA(:,:)
       END DO
-      ZDIA(:,:)= ZDIA(:,:)/(XZZ(:,:,NKUP+1)-XZZ(:,:,NKLOW))
+      ZDIA(:,:)= ZDIA(:,:)/(XZZ(:,:,NKUP+JPVEXT+1)-XZZ(:,:,NKLOW+JPVEXT))
       XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                         &
                               SUM( ZDIA (IISL:IISH,IJSL:IJSH) , DIM=2 )
 !
@@ -681,13 +681,13 @@ IF (NBJSLICE > 0 ) THEN
 !
         ISB3=ISB3+1
         XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                       &
-                          SUM( XRT (IISL:IISH,IJSL:IJSH,NKCLS,1),DIM=2 )
+                          SUM( XRT (IISL:IISH,IJSL:IJSH,NKCLS+JPVEXT,1),DIM=2 )
 !
 !*      4.5  Rv at level KMID
 !
         ISB3=ISB3+1
         XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                       &
-                          SUM( XRT (IISL:IISH,IJSL:IJSH,NKMID,1),DIM=2 )
+                          SUM( XRT (IISL:IISH,IJSL:IJSH,NKMID+JPVEXT,1),DIM=2 )
 !
       END IF
 !
@@ -696,10 +696,10 @@ IF (NBJSLICE > 0 ) THEN
       IF (LUSERC) THEN
         ISB3=ISB3+1
         ZDIA (:,:)=0.
-        DO JK=IKB,NKUP
+        DO JK=IKB,NKUP+JPVEXT
           ZDIA(:,:)= XRT(:,:,JK,2)*(XZZ(:,:,JK+1)-XZZ(:,:,JK)) + ZDIA(:,:)
         END DO
-        ZDIA(:,:)= ZDIA(:,:)/(XZZ(:,:,NKUP+1)-XZZ(:,:,IKB))
+        ZDIA(:,:)= ZDIA(:,:)/(XZZ(:,:,NKUP+JPVEXT+1)-XZZ(:,:,IKB))
         XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                     &
                              SUM( ZDIA (IISL:IISH,IJSL:IJSH) , DIM=2 )
       END IF
@@ -709,7 +709,7 @@ IF (NBJSLICE > 0 ) THEN
       IF (LUSERR) THEN
         ISB3=ISB3+1
         XSSERIES3(1:IIDIM1,1,1,NSCOUNTD,1,ISB3)=                       &
-                         SUM( XRT(IISL:IISH,IJSL:IJSH,NKCLS,3) , DIM=2 )
+                         SUM( XRT(IISL:IISH,IJSL:IJSH,NKCLS+JPVEXT,3) , DIM=2 )
       END IF
     END IF
   END DO
