@@ -22,8 +22,10 @@ MNH_LIC for details. version 1.
 #ifdef FUJI
 #if MNH_INT == 8 
 #define SIZEINTEGER 8
+#define SIZELOGICAL 8
 #else
 #define SIZEINTEGER 4
+#define SIZELOGICAL 4
 #endif
 #define SIZEPRECISION 8 
 #define SIZE2PRECISION 16 
@@ -45,7 +47,7 @@ static int initflag = 0; /* ADDON Didier */
 void disppass(fct)
 char *fct;
 {
-/*  printf("Passage dans %s \n", fct); */
+  /* printf("MPIVIDE::Passage dans %s \n", fct); */
 }
 
 #pragma weak mpi_cart_sub__ = mpi_cart_sub
@@ -111,7 +113,7 @@ void mpi_alltoallv(void *sendbuf, int *sendcounts,
             int *rdispls, int *recvtype, int *comm, int *__ierr)
 {
     int size = SIZE2PRECISION;
-    disppass("allgatherv");
+    disppass("alltoallv");
     switch(*sendtype)
     {
       case MPI_INTEGER:
@@ -125,6 +127,9 @@ void mpi_alltoallv(void *sendbuf, int *sendcounts,
         break;
       case MPI_DOUBLEDOUBLE:
         size = SIZE_DOUBLEDOUBLE;
+        break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
         break;
     }
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
@@ -173,6 +178,9 @@ int              *__ierr;
       case MPI_DOUBLEDOUBLE:
         size = SIZE_DOUBLEDOUBLE;
         break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
+        break;
     }
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
     *__ierr = 0;
@@ -194,7 +202,7 @@ int              *comm;
 int              *__ierr;
 {
     int size = SIZE2PRECISION;
-    disppass("allgather");
+    disppass("gather");
     switch(*sendtype)
     {
       case MPI_INTEGER:
@@ -211,6 +219,9 @@ int              *__ierr;
         break;
       case MPI_DOUBLE:
         size = 8 ;
+        break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
         break;
     }
     memcpy(recvbuf, sendbuf, (*recvcount)*size);
@@ -249,6 +260,9 @@ int              *__ierr;
         break;
       case MPI_DOUBLEDOUBLE:
         size = SIZE_DOUBLEDOUBLE;
+        break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
         break;
     }
     memcpy(recvbuf, sendbuf, (*recvcounts)*size);
@@ -336,6 +350,9 @@ int              *__ierr;
       case MPI_DOUBLEDOUBLE:
         size = SIZE_DOUBLEDOUBLE;
         break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
+        break;
     }
     memcpy(recvbuf, sendbuf, (*recvcount)*size);
 
@@ -406,6 +423,9 @@ int              *__ierr;
         break;
       case MPI_DOUBLE:
         size = 8 ;
+        break;
+      case MPI_LOGICAL:
+        size = SIZELOGICAL ;
         break;
     }
     memcpy(recvbuf, sendbuf, (*count)*size); 
@@ -578,7 +598,7 @@ int     *datatype;
 int         *comm;
 int *__ierr;
 {
-    disppass("send");
+    disppass("bsend");
     *__ierr = 0;
 }
 
@@ -587,7 +607,7 @@ int *__ierr;
 void mpi_buffer_attach
 ( )
 {
-disppass("mpi_buffer_attach_ juanito");
+disppass("buffer_attach");
 }
 
 /* JUAN void fclose( iunit )
