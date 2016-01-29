@@ -90,6 +90,8 @@ SELECT CASE(CPROGRAM)
   CASE('MESONH','SPAWN ')
     CALL GET_MODEL_NUMBER_ll  (IMI)
     WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
+  CASE DEFAUT
+    YLUOUT = ''
 END SELECT
 !
 !-------------------------------------------------------------------------------
