@@ -19,6 +19,7 @@
 !     Juan 22/05/2008: bug mode SPECIFIC in OPEN_ll 
 !     Juan 05/11/2009: allow JPMAX_UNIT=48 open files 
 !     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
+!     Philippe 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
 !
 MODULE MODE_IO_ll
 
@@ -444,6 +445,20 @@ CONTAINS
                   ACTION=YACTION)
           ELSE
              IF (YFORM=="FORMATTED") THEN
+               IF (ACTION=='READ') THEN
+                OPEN(UNIT=TZFD%FLU,       &
+                     FILE=TRIM(TZFD%NAME),&
+                     STATUS=YSTATUS,       &
+                     ACCESS=YACCESS,       &
+                     IOSTAT=IOS,          &
+                     FORM=YFORM,           &
+                     RECL=YRECL,           &
+                     BLANK=YBLANK,         &
+                     POSITION=YPOSITION,   &
+                     ACTION=YACTION,      &
+                     !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
+                     PAD=YPAD)
+               ELSE
                 OPEN(UNIT=TZFD%FLU,       &
                      FILE=TRIM(TZFD%NAME),&
                      STATUS=YSTATUS,       &
@@ -456,6 +471,7 @@ CONTAINS
                      ACTION=YACTION,      &
                      DELIM=YDELIM,         &
                      PAD=YPAD)
+               ENDIF
              ELSE
                 OPEN(UNIT=TZFD%FLU,       &
                      FILE=TRIM(TZFD%NAME),&
@@ -536,6 +552,20 @@ CONTAINS
                RECL=YRECL,           &
                ACTION=YACTION)
        ELSE
+        IF (ACTION=='READ') THEN
+          OPEN(UNIT=TZFD%FLU,                      &
+               FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
+               STATUS=YSTATUS,                         &
+               ACCESS=YACCESS,                         &
+               IOSTAT=IOS,                             &
+               FORM=YFORM,                             &
+               RECL=YRECL,                             &
+               BLANK=YBLANK,                           &
+               POSITION=YPOSITION,                     &
+               ACTION=YACTION,                         &
+               !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
+               PAD=YPAD)
+         ELSE
           OPEN(UNIT=TZFD%FLU,                      &
                FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
                STATUS=YSTATUS,                         &
@@ -548,6 +578,7 @@ CONTAINS
                ACTION=YACTION,                         &
                DELIM=YDELIM,                           &
                PAD=YPAD)
+         ENDIF
        ENDIF
 #else
        OPEN(UNIT=TZFD%FLU,                      &
