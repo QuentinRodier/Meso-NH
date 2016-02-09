@@ -23,9 +23,12 @@
 !!
 !------------------------------------------------------------------------
 !
+USE MODD_MPIF
+USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+!
 IMPLICIT NONE
 !
-include "mpif.h"
+!include "mpif.h"
 !
 !
 INTEGER, PARAMETER :: IFIRST_PROC = 0   ! 0/1 to increase numerotation of proc number 
@@ -76,7 +79,7 @@ INTEGER :: KPROC
 INTEGER :: INFO
 !
 !
-CALL MPI_COMM_RANK (MPI_COMM_WORLD, KPROC, INFO)
+CALL MPI_COMM_RANK (NMNH_COMM_WORLD, KPROC, INFO)
 !
 KPROC = KPROC + IFIRST_PROC
 
@@ -113,7 +116,7 @@ INFO = -1
 !
 ! Sum(Proc)
 CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MPI_PRECISION, &
-                   MPI_SUM, MPI_COMM_WORLD, INFO)
+                   MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE RSUM_ELEC_ll
 !
@@ -150,7 +153,7 @@ INFO = -1
 !*     1.1    max(Proc)
 !
 CALL MPI_ALLREDUCE(ZTAB, PMIN_INOUT, IDIM, MPI_PRECISION, &
-                   MPI_MIN, MPI_COMM_WORLD, INFO)
+                   MPI_MIN, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
 !
@@ -163,7 +166,7 @@ ENDIF
 !*     1.3    broadcast to all proc 
 !
 CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MPI_INTEGER, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO) 
+                   MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE RMIN0_ELEC_ll
 !
@@ -200,7 +203,7 @@ INFO = -1
 !*     1.1    max(Proc)
 !
 CALL MPI_ALLREDUCE(ZTAB, PMAX_INOUT, IDIM, MPI_PRECISION, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO)
+                   MPI_MAX, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
 !
@@ -213,7 +216,7 @@ ENDIF
 !*     1.3    broadcast to all proc 
 !
 CALL MPI_ALLREDUCE(KPROC_LOCAL, KPROC,IDIM , MPI_INTEGER, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO) 
+                   MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE RMAX0_ELEC_ll
 !
@@ -250,7 +253,7 @@ INFO = -1
 !*     1.1    min(Proc)
 !
 CALL MPI_ALLREDUCE(ITAB, KMIN_INOUT, IDIM, MPI_INTEGER, &
-                   MPI_MIN, MPI_COMM_WORLD, INFO)
+                   MPI_MIN, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
 !
@@ -263,7 +266,7 @@ ENDIF
 !*     1.3    broadcast to all proc 
 !
 CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC,IDIM, MPI_INTEGER, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO) 
+                   MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE IMIN0_ELEC_ll
 !
@@ -300,7 +303,7 @@ INFO = -1
 !*     1.1    min(Proc)
 !
 CALL MPI_ALLREDUCE(ITAB, KMAX_INOUT, IDIM, MPI_INTEGER, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO)
+                   MPI_MAX, NMNH_COMM_WORLD, INFO)
 !
 !*     1.2    find the proc number of the maximum
 !
@@ -313,7 +316,7 @@ ENDIF
 !*     1.3    brodcast to all proc 
 !
 CALL MPI_ALLREDUCE(IPROC_LOCAL, KPROC, IDIM, MPI_INTEGER, &
-                   MPI_MAX, MPI_COMM_WORLD, INFO) 
+                   MPI_MAX, NMNH_COMM_WORLD, INFO) 
 !
 END SUBROUTINE IMAX0_ELEC_ll
 !
@@ -348,7 +351,7 @@ INFO = -1
 !*     1.1    sum(Proc)
 !
 CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MPI_INTEGER, &
-                   MPI_SUM, MPI_COMM_WORLD, INFO)
+                   MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE ISUM_ELEC_ll
 !
@@ -383,7 +386,7 @@ INFO = -1
 !*     1.1    sum(Proc)
 !
 CALL MPI_ALLREDUCE(ITAB, KSUM_INOUT, IDIM, MPI_INTEGER, &
-                   MPI_SUM, MPI_COMM_WORLD, INFO)
+                   MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE ISUM0_ELEC_ll
 !
@@ -418,7 +421,7 @@ INFO = -1
 !*     1.1    sum(Proc)
 !
 CALL MPI_ALLREDUCE(ZTAB, PSUM_INOUT, IDIM, MPI_PRECISION, &
-                   MPI_SUM, MPI_COMM_WORLD, INFO)
+                   MPI_SUM, NMNH_COMM_WORLD, INFO)
 !
 END SUBROUTINE RSUM0_ELEC_ll
 !
@@ -473,8 +476,8 @@ JCENT_GLOB = IYOR + JCENT_LOC - 1
 !
 ! The proc with the center of the cell broadcast the global coord of the cell
 !
-CALL MPI_BCAST(ICENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, MPI_COMM_WORLD, IERR)
-CALL MPI_BCAST(JCENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, MPI_COMM_WORLD, IERR)
+CALL MPI_BCAST(ICENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, NMNH_COMM_WORLD, IERR)
+CALL MPI_BCAST(JCENT_GLOB, 1, MPI_INTEGER, KPROC_COORD, NMNH_COMM_WORLD, IERR)
 !
 IS_GLOB = KIS + IXOR -1
 IE_GLOB = KIE + IXOR -1

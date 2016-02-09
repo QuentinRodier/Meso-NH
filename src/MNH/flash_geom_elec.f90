@@ -106,7 +106,7 @@ USE MODD_RAIN_ICE_DESCR, ONLY : XLBR, XLBEXR, XLBS, XLBEXS, &
                                 XLBG, XLBEXG, XLBH, XLBEXH, &
                                 XRTMIN
 USE MODD_NSV, ONLY : NSV_ELECBEG, NSV_ELECEND, NSV_ELEC
-USE MODD_VAR_ll, ONLY : NPROC
+USE MODD_VAR_ll, ONLY : NPROC,NMNH_COMM_WORLD
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_PRINT_ELEC,  ONLY : NLU_fgeom_diag, NLU_fgeom_coord, &
                              NIOSTAT_fgeom_diag, NIOSTAT_fgeom_coord
@@ -466,7 +466,7 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
 ! 
 ! Broadcast the center of the cell to all procs
     CALL MPI_BCAST (ICELL_LOC(:,INB_CELL), 4, MPI_INTEGER, IPROC_CELL, &
-                    MPI_COMM_WORLD, IERR)
+                    NMNH_COMM_WORLD, IERR)
 !
 !
 !*      2.2     horizontal extension of the cell 
@@ -803,11 +803,11 @@ IF (INB_CELL .GE. 1) THEN
         ENDIF
 !
         CALL MPI_BCAST (GNEW_FLASH(IL),1, MPI_LOGICAL, IPROC_TRIG(IL), &
-                        MPI_COMM_WORLD, IERR)
+                        NMNH_COMM_WORLD, IERR)
         CALL MPI_BCAST (ZEM_TRIG(IL), 1, MPI_PRECISION, IPROC_TRIG(IL), &
-                        MPI_COMM_WORLD, IERR)
+                        NMNH_COMM_WORLD, IERR)
         CALL MPI_BCAST (INB_FL_REAL(IL), 1, MPI_INTEGER, IPROC_TRIG(IL), &
-                        MPI_COMM_WORLD, IERR)
+                        NMNH_COMM_WORLD, IERR)
       END IF
     END DO  ! end loop il
 !
@@ -1093,7 +1093,7 @@ IF (INB_CELL .GE. 1) THEN
           END IF
 !
           CALL MPI_BCAST (INB_NEUT_OK,1, MPI_INTEGER, IPROC_TRIG(IL), &
-                    MPI_COMM_WORLD, IERR)
+                    NMNH_COMM_WORLD, IERR)
 !
 !*      9.5     Gather lightning information from all processes
 !*              Save the particule charge and total pos/neg charge neutralization points.
@@ -1102,7 +1102,7 @@ IF (INB_CELL .GE. 1) THEN
           INBSEG_PROC(IPROC+1) = INBSEG(IL)
           DO IK = 0, NPROC-1
             CALL MPI_BCAST (INBSEG_PROC(IK+1), 1, MPI_INTEGER, IK,  &
-                            MPI_COMM_WORLD, IERR)
+                            NMNH_COMM_WORLD, IERR)
           END DO
 
           INBSEG_ALL(IL) = INBSEG(IL)
@@ -1177,7 +1177,7 @@ IF (INB_CELL .GE. 1) THEN
 !               ---------------------------------------------------
 !
 ! Synchronizing all processes
-!   CALL MPI_BARRIER(MPI_COMM_WORLD, IERR)   ! A ACTIVER SI PB.
+!   CALL MPI_BARRIER(NMNH_COMM_WORLD, IERR)   ! A ACTIVER SI PB.
 !
     IF (IPROC .EQ. 0) THEN
       INBLIGHT = COUNT(GNEW_FLASH(1:INB_CELL))
@@ -1621,13 +1621,13 @@ DO IL = 1, INB_CELL
 !               ----------------------------
 !
     CALL MPI_BCAST (ZEM_TRIG(IL), 1, &
-                    MPI_PRECISION, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                    MPI_PRECISION, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
     CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &     
-                    MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                    MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
     CALL MPI_BCAST (ZCOORD_TRIG(:,IL), 3, &
-                    MPI_PRECISION, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                    MPI_PRECISION, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
     CALL MPI_BCAST (ISIGNE_EZ(IL), 1, &
-                    MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                    MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 !
 !
 !*      5.      CHECK IF THE FLASH CAN DEVELOP
@@ -1641,9 +1641,9 @@ DO IL = 1, INB_CELL
       GNEW_FLASH(IL) = .TRUE.
       GNEW_FLASH_GLOB = .TRUE.
       CALL MPI_BCAST (GNEW_FLASH(IL),1, MPI_LOGICAL, IPROC_TRIG(IL), &
-                      MPI_COMM_WORLD, IERR)
+                      NMNH_COMM_WORLD, IERR)
       CALL MPI_BCAST (GNEW_FLASH_GLOB,1, MPI_LOGICAL, IPROC_TRIG(IL), &
-                      MPI_COMM_WORLD, IERR)
+                      NMNH_COMM_WORLD, IERR)
     END IF
   END IF 
 END DO
@@ -1812,9 +1812,9 @@ END IF  ! only iproc_trig was working
 !              ---------------------------------------
 !
 CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &  
-                MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 CALL MPI_BCAST (ITYPE(IL), 1, &
-                MPI_INTEGER, IPROC_TRIG(IL), MPI_COMM_WORLD, IERR)
+                MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 !
 !
 END SUBROUTINE ONE_LEADER
@@ -1879,7 +1879,7 @@ DO IL = 1, INB_CELL
   END IF
 !
   CALL MPI_BCAST (ZSIGN(IL), 1, MPI_PRECISION, IPROC_TRIG(IL), &
-                  MPI_COMM_WORLD, IERR)
+                  NMNH_COMM_WORLD, IERR)
 END DO
 !
 DO WHILE (IEND_GLOB .NE. INB_CELL)
@@ -2054,7 +2054,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
       IF (IMAX_BRANCH(IM) .GT. 0) THEN
         INBPT_PROC(:) = 0
         CALL MPI_ALLGATHER(IPT_DIST, 1, MPI_INTEGER, &
-                   INBPT_PROC, 1, MPI_INTEGER, MPI_COMM_WORLD, IERR)
+                   INBPT_PROC, 1, MPI_INTEGER, NMNH_COMM_WORLD, IERR)
 !
         IF (IPROC .EQ. 0) THEN
           IF (INBPT_PROC(1) .NE. 0) THEN
@@ -2222,7 +2222,7 @@ IF (IPROC .EQ. 0) THEN
 END IF
 !
 CALL MPI_GATHERV (ZSEND, 3*INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC_X3, &
-                  IDECAL3, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+                  IDECAL3, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
 !
 IF (IPROC .EQ. 0) THEN
   ZCOORD_SEG_ALL(1:3*INSEGCELL,IL) = ZRECV(1:3*INSEGCELL)
@@ -2281,7 +2281,7 @@ IF (LLMA) THEN
   ALLOCATE (IRECV(3*INSEGCELL))
 !
   CALL MPI_GATHERV (ISEND, 3*INSEGPROC, MPI_INTEGER, IRECV, INBSEG_PROC_X3, &
-                    IDECAL3, MPI_INTEGER, 0, MPI_COMM_WORLD, IERR)
+                    IDECAL3, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ILMA_SEG_ALL(1:3*INSEGCELL,IL) = IRECV(1:3*INSEGCELL)
@@ -2295,14 +2295,14 @@ IF (LLMA) THEN
   ALLOCATE (ZRECV(INSEGCELL))
 !
   CALL MPI_GATHERV (ZLMAPOS, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
-                    IDECAL, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+                    IDECAL, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_NEUT_POS(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
   END IF
 !
   CALL MPI_GATHERV (ZLMANEG, INSEGPROC, MPI_PRECISION, ZRECV, INBSEG_PROC,  &
-                    IDECAL, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+                    IDECAL, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_NEUT_NEG(1:INSEGCELL,IL) = ZRECV(1:INSEGCELL)
@@ -2324,7 +2324,7 @@ IF (LLMA) THEN
 !
   CALL MPI_GATHERV (ZLMAQMT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
                     INBSEG_PROC_XNSV,                                  &
-                    IDECALN, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR    )
+                    IDECALN, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR    )
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_QMT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)
@@ -2332,7 +2332,7 @@ IF (LLMA) THEN
 !
   CALL MPI_GATHERV (ZLMAPRT, NSV_ELEC*INSEGPROC, MPI_PRECISION, ZRECV, &
                     INBSEG_PROC_XNSV,                                  &
-                    IDECALN, MPI_PRECISION, 0, MPI_COMM_WORLD, IERR)
+                    IDECALN, MPI_PRECISION, 0, NMNH_COMM_WORLD, IERR)
 !
   IF (IPROC .EQ. 0) THEN
     ZLMA_PRT(1:NSV_ELEC*INSEGCELL,IL) = ZRECV(1:NSV_ELEC*INSEGCELL)
