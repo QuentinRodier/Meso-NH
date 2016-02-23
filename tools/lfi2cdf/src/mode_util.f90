@@ -117,8 +117,7 @@ CONTAINS
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
     CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
     INTEGER, DIMENSION(10)                   :: idim_id
-    !JUAN CYCCL3
-    INTEGER                        :: JPHEXT
+    INTEGER                                  :: JPHEXT
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
