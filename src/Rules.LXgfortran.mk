@@ -86,6 +86,10 @@ endif
 #
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=_gfortran
+#
+# Netcdf/HDF5 flags
+#
+HDF_CONF= CFLAGS=-std=c99
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

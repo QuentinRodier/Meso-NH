@@ -332,9 +332,9 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 cdf : $(CDF_INC)
 $(CDF_INC) : 
 	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
-	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran" && make && make install 
+	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install 
 	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-f90 --disable-dap \
-	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install 
+	FC="$(FC)" FCFLAGS="$(OPT_BASE)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install 
 
 cleanmaster : cleancdf
 cleancdf :
