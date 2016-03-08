@@ -1,6 +1,8 @@
 ;================================================;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"   
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"   
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
 ; ================================================;
 ;================================================;
   begin
@@ -11,7 +13,8 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
 ;==================================================;
 ; Open the workstation
 ;==================================================;
-  type = "ps"
+  ; type = "ps"
+   type = "x11"
   wks = gsn_open_wks(type,"visu_Reunion")
 ;=================================================;
 ; Get informations on variable sizes
