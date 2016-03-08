@@ -65,7 +65,7 @@ if [ "`echo $BASENAME | egrep  -i $FILE_WITHOUT_INTERFACE_NEDEED `" = "" ]
 then
     for sfile in `cat liste_file`
     do 
-	if [ "`egrep -i '^ *module|^ *program' $sfile`" = "" ]
+	if [ "`egrep -ia '^ *module|^ *program' $sfile`" = "" ]
         then
 	if [ "$SUF" = "f90" ]
 	then
@@ -91,7 +91,7 @@ then
 fi
 fi
 ls -1 $TMP > liste_file
-egrep -v "liste_file"  liste_file > liste_file2
+egrep -va "liste_file"  liste_file > liste_file2
 )
 #
 # génération des dependances
@@ -133,8 +133,8 @@ then
   cp $spllfile $DIRNAME/$spllfile
   touch $DIRNAME/$BASENAME2.D
 fi 
-dep=`egrep -i "^[[:space:]]*use "    $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u `
-mod=`egrep -i "^[[:space:]]*module " $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u | grep -iv procedure `
+dep=`egrep -ia "^[[:space:]]*use "    $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u `
+mod=`egrep -ia "^[[:space:]]*module " $spllfile | sed -e 's/,/ /g' | awk '{ print '${TOCASE}'($2)".mod"}' | sort -u | grep -iv procedure `
 
 echo $mod        : $spllbase.o    >> $DIRNAME/$BASENAME2.D
 echo $spllbase.o : $spllfile $dep >> $DIRNAME/$BASENAME2.D
