@@ -157,7 +157,7 @@ DEP_ALL_MASTER = $(sort $(filter-out $(IGNORE_DEP_MASTER),$(DEP_MASTER)) )
 DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 #
 
-.PHONY : clean all objdir objdirmaster depall objs lib prog print
+.PHONY : clean objdir depall objs lib prog print
 
 .DELETE_ON_ERROR:  
 
@@ -166,12 +166,16 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 
 .INTERMEDIATE:   $(LIB_MASTER)
 
+.SECONDARY: mpi.mod netcdf.mod openacc.mod
 
 ##########################################################
 #                                                        #
 # MASTER RULES                                           #
 #                                                        #
 ##########################################################
+.PHONY : all objdirmaster libmaster bibmaster objmaster progmaster
+.PHONY : installmaster cleanlibmaster cleanmaster cleanobjmaster cleanprogmaster
+
 all : gribapi progmaster
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
@@ -509,4 +513,10 @@ endif
 ifeq "$(DO_COMP_USER)" "YES"
 include  filedepalluser
 endif 
+
+mpi.mod:
+
+netcdf.mod:
+
+openacc.mod:
 
