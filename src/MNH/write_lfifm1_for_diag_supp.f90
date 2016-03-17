@@ -82,6 +82,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      2015 : D.Ricard add UM10/VM10 for LCARTESIAN=T cases
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      P.Tulet : Diag for salt and orilam
+!!      J.-P. Chaboureau 07/03/2016 fix the dimensions of local arrays
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -200,9 +201,9 @@ REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZCORIOZ
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
 !
-IIU=NIMAX+2*JPHEXT
-IJU=NJMAX+2*JPHEXT
-IKU=NKMAX+2*JPVEXT
+IIU=SIZE(XTHT,1)
+IJU=SIZE(XTHT,2)
+IKU=SIZE(XTHT,3)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=IKU-JPVEXT
