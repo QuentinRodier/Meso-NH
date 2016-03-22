@@ -116,6 +116,7 @@ END MODULE MODI_CONDENSATION
 !!                              Safety limitation to .99*Pressure for saturation vapour pressure
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
 !!      2015   C.Lac   Change min value of ZSIGMA to be in agreement with AROME
+!!      2016   G.Delautier   Restore min value of ZSIGMA (instability)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -321,8 +322,8 @@ DO JK=IKTB,IKTE
              ZA*ZA*ZDRW*ZDRW - 2.*ZA*ZB*ZDRW*ZDTL + ZB*ZB*ZDTL*ZDTL) + &
              ZSIG_CONV * ZSIG_CONV ) )
       END IF
-!     ZSIGMA= MAX( 1.E-10, ZSIGMA )
-      ZSIGMA= MAX( 1.E-12, ZSIGMA )
+       ZSIGMA= MAX( 1.E-10, ZSIGMA )
+!      ZSIGMA= MAX( 1.E-12, ZSIGMA )
 
 ! normalized saturation deficit
       ZQ1   = ZSBAR/ZSIGMA
