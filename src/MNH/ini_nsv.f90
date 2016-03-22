@@ -61,6 +61,7 @@ END MODULE MODI_INI_NSV
 !!      Modification   15/02/12  (Pialat/Tulet) Add SV for ForeFire scalars
 !!                     03/2013   (C.Lac) add supersaturation as 
 !!                               the 4th C2R2 scalar variable
+!!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !! 
 !-------------------------------------------------------------------------------
 !
@@ -178,6 +179,67 @@ ELSE
 ! in order to create a null section
   NSV_ELECBEG_A(KMI) = 1
   NSV_ELECEND_A(KMI) = 0
+END IF
+!
+! scalar variables used as lagragian variables
+!
+IF (LLG) THEN
+  NSV_LG_A(KMI)     = 3
+  NSV_LGBEG_A(KMI)  = ISV+1
+  NSV_LGEND_A(KMI)  = ISV+NSV_LG_A(KMI)
+  ISV               = NSV_LGEND_A(KMI)
+ELSE
+  NSV_LG_A(KMI)     = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_LGBEG_A(KMI)  = 1
+  NSV_LGEND_A(KMI)  = 0
+END IF
+!
+! scalar variables used as LiNOX passive tracer
+!
+! In case without chemistry
+IF (LPASPOL) THEN
+  NSV_PP_A(KMI)   = NRELEASE
+  NSV_PPBEG_A(KMI)= ISV+1
+  NSV_PPEND_A(KMI)= ISV+NSV_PP_A(KMI)
+  ISV               = NSV_PPEND_A(KMI)
+ELSE
+  NSV_PP_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_PPBEG_A(KMI)= 1
+  NSV_PPEND_A(KMI)= 0
+END IF
+!
+#ifdef MNH_FOREFIRE
+
+! ForeFire tracers
+IF (LFOREFIRE .AND. NFFSCALARS .GT. 0) THEN
+  NSV_FF_A(KMI)    = NFFSCALARS
+  NSV_FFBEG_A(KMI) = ISV+1
+  NSV_FFEND_A(KMI) = ISV+NSV_FF_A(KMI)
+  ISV              = NSV_FFEND_A(KMI)
+ELSE
+  NSV_FF_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_FFBEG_A(KMI)= 1
+  NSV_FFEND_A(KMI)= 0
+END IF
+#endif
+! Conditional sampling variables  
+IF (LCONDSAMP) THEN
+  NSV_CS_A(KMI)   = NCONDSAMP
+  NSV_CSBEG_A(KMI)= ISV+1
+  NSV_CSEND_A(KMI)= ISV+NSV_CS_A(KMI)
+  ISV               = NSV_CSEND_A(KMI)
+ELSE
+  NSV_CS_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_CSBEG_A(KMI)= 1
+  NSV_CSEND_A(KMI)= 0
 END IF
 !
 ! scalar variables used in chemical core system
@@ -344,21 +406,6 @@ ELSE
 ! in order to create a null section
 END IF
 !
-! scalar variables used as lagragian variables
-!
-IF (LLG) THEN
-  NSV_LG_A(KMI)     = 3
-  NSV_LGBEG_A(KMI)  = ISV+1
-  NSV_LGEND_A(KMI)  = ISV+NSV_LG_A(KMI)
-  ISV               = NSV_LGEND_A(KMI)
-ELSE
-  NSV_LG_A(KMI)     = 0
-! force First index to be superior to last index
-! in order to create a null section
-  NSV_LGBEG_A(KMI)  = 1
-  NSV_LGEND_A(KMI)  = 0
-END IF
-!
 ! scalar variables used as LiNOX passive tracer
 !
 ! In case without chemistry
@@ -375,52 +422,10 @@ ELSE
   NSV_LNOXEND_A(KMI)= 0
 END IF
 !
-! scalar variables used as LiNOX passive tracer
+! finale number of NSV variable
 !
-! In case without chemistry
-IF (LPASPOL) THEN
-  NSV_PP_A(KMI)   = NRELEASE
-  NSV_PPBEG_A(KMI)= ISV+1
-  NSV_PPEND_A(KMI)= ISV+NSV_PP_A(KMI)
-  ISV               = NSV_PPEND_A(KMI)
-ELSE
-  NSV_PP_A(KMI)   = 0
-! force First index to be superior to last index
-! in order to create a null section
-  NSV_PPBEG_A(KMI)= 1
-  NSV_PPEND_A(KMI)= 0
-END IF
-!
-#ifdef MNH_FOREFIRE
-
-! ForeFire tracers
-IF (LFOREFIRE .AND. NFFSCALARS .GT. 0) THEN
-  NSV_FF_A(KMI)    = NFFSCALARS
-  NSV_FFBEG_A(KMI) = ISV+1
-  NSV_FFEND_A(KMI) = ISV+NSV_FF_A(KMI)
-  ISV              = NSV_FFEND_A(KMI)
-ELSE
-  NSV_FF_A(KMI)   = 0
-! force First index to be superior to last index
-! in order to create a null section
-  NSV_FFBEG_A(KMI)= 1
-  NSV_FFEND_A(KMI)= 0
-END IF
-#endif
-!
-IF (LCONDSAMP) THEN
-  NSV_CS_A(KMI)   = NCONDSAMP
-  NSV_CSBEG_A(KMI)= ISV+1
-  NSV_CSEND_A(KMI)= ISV+NSV_CS_A(KMI)
-  ISV               = NSV_CSEND_A(KMI)
-ELSE
-  NSV_CS_A(KMI)   = 0
-! force First index to be superior to last index
-! in order to create a null section
-  NSV_CSBEG_A(KMI)= 1
-  NSV_CSEND_A(KMI)= 0
-END IF
 NSV_A(KMI) = ISV
+!
 !
 !*        Update LHORELAX_SV,CGETSVM,CGETSVT for NON USER SV 
 !

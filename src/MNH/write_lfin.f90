@@ -160,6 +160,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       C.Lac         Dec.2014 writing past wind fields for centred advection
 !!       J.-P. Pinty   Jan 2015 add LNOx and flash map diagnostics
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -1079,7 +1080,7 @@ IF (NSV >=1) THEN
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
-    !JSA=JSA+1
+    JSA=JSA+1
   END DO
   ! Passive scalar variables        
  IF (LPASPOL) THEN
@@ -1089,7 +1090,7 @@ IF (NSV >=1) THEN
       ILENCH=LEN(YCOMMENT)
       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                   YCOMMENT,IRESP)
-      !JSA=JSA+1
+      JSA=JSA+1
     END DO
   END IF
 #ifdef MNH_FOREFIRE
@@ -1113,7 +1114,7 @@ IF (NSV >=1) THEN
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
-    !JSA=JSA+1
+    JSA=JSA+1
   END DO
 !
  END IF
