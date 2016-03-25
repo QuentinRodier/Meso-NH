@@ -43,6 +43,10 @@ DIR_MASTER += $(DIR_MNH)
 CPPFLAGS   += $(CPPFLAGS_MNH)
 INC        += $(INC_MNH)
 
+ifeq "$(MNH_INT)" "8"
+CPPFLAGS   += -DMNH_INT8
+endif
+
 OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
         spll_dzf.o spll_dzm.o spll_mxf.o \
         spll_mxm.o spll_myf.o spll_mym.o spll_mzf.o \

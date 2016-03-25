@@ -37,8 +37,9 @@ OPT_BASE           += $(OPT_R8)
 CPPFLAGS_SURCOUCHE += -DMNH_MPI_DOUBLE_PRECISION
 endif
 #
+OPT_BASE_I4       := $(OPT_BASE)
 ifeq "$(MNH_INT)" "8"
-OPT_BASE         += $(OPT_I8)
+OPT_BASE          += $(OPT_I8)
 LFI_INT           ?=8
 MNH_MPI_RANK_KIND ?=8
 else
@@ -144,5 +145,10 @@ $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 ifneq "$(findstring 8,$(LFI_INT))" ""
 OBJS_I8=spll_NEWLFI_ALL.o
 $(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
+
+ifeq "$(MNH_INT)" "8"
+OBJS_I4=spll_modd_netcdf.o
+$(OBJS_I4) : OPT = $(OPT_BASE_I4)
 endif
 

@@ -222,6 +222,7 @@ CONTAINS
        KMELEV,&
        OPARALLELIO)
 #if defined(MNH_IOCDF4)
+  USE MODD_NETCDF
   USE MODE_NETCDF
 #endif
   USE MODD_IO_ll
@@ -273,6 +274,7 @@ CONTAINS
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
     INTEGER              :: IOS,IERR
+    INTEGER(KIND=IDCDF_KIND) :: IOSCDF
     INTEGER              :: ICOMM
     INTEGER              :: ICMPRES
     TYPE(FD_ll), POINTER :: TZFD, TZFDTEMP
@@ -659,9 +661,9 @@ CONTAINS
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOS = NF_OPEN(TRIM(FILE)//cfile//".nc4", NF_NOWRITE, TZFD_IOZ%CDF%NCID)
-                      IF (IOS /= NF_NOERR) THEN
-                         PRINT *, 'NF_OPEN error : ', NF_STRERROR(IOS)
+                      IOSCDF = NF_OPEN(TRIM(FILE)//cfile//".nc4", NF_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      IF (IOSCDF /= NF_NOERR) THEN
+                         PRINT *, 'NF_OPEN error : ', NF_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
@@ -673,10 +675,10 @@ CONTAINS
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOS = NF_CREATE(TRIM(FILE)//cfile//".nc4", &
+                      IOSCDF = NF_CREATE(TRIM(FILE)//cfile//".nc4", &
                            &IOR(NF_CLOBBER,NF_NETCDF4), TZFD_IOZ%CDF%NCID)
-                      IF (IOS /= NF_NOERR) THEN
-                         PRINT *, 'NF_CREATE error : ', NF_STRERROR(IOS)
+                      IF (IOSCDF /= NF_NOERR) THEN
+                         PRINT *, 'NF_CREATE error : ', NF_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0

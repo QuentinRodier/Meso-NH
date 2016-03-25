@@ -35,6 +35,7 @@ OPT_I4      = -qintsize=4 -qxlf77=intarg
 MNH_INT   ?=4
 LFI_RECL  ?=512
 #
+OPT_BASE_I4       := $(OPT_BASE) $(OPT_I4)
 ifeq "$(MNH_INT)" "8"
 OPT_BASE         += $(OPT_I8)
 LFI_INT           ?=8
@@ -195,5 +196,10 @@ $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 ifneq "$(findstring 8,$(LFI_INT))" ""
 OBJS_I8=spll_NEWLFI_ALL.o
 $(OBJS_I8) : OPT = $(OPT_BASE) $(OPT_PERF2) $(OPT_I8)
+endif
+
+ifeq "$(MNH_INT)" "8"
+OBJS_I4=spll_modd_netcdf.o
+$(OBJS_I4) : OPT = $(OPT_BASE_I4)
 endif
 
