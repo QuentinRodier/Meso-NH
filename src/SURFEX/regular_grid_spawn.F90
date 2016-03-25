@@ -39,6 +39,7 @@
 !!        M.Moge    04/2015  Parallelization using routines from MNH/SURCOUCHE
 !!        M.Moge    06/2015  bug fix for reproductibility using UPDATE_NHALO1D
 !!        M.Moge    01/2016  bug fix for parallel execution with SPLIT2
+!!        Juan & Maxime 24/03/2016: bug fix in 002/pgd when proc have no data/empty intersection to send/recv 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -326,11 +327,11 @@ ENDDO
     TZCRSPDSENDTAB(1)%NCARD = 0
     TZCRSPDSENDTAB(1)%NCARDDIF = 0
   ENDIF
-!  IF (ICARD > 0) THEN
+ IF (ICARD > 0) THEN
     TZCRSPDSEND => TZCRSPDSENDTAB(1)
-!  ELSE
-!    TZCRSPDSEND => NULL()
-!  ENDIF
+ ELSE
+   TZCRSPDSEND => NULL()
+ ENDIF
   !
   ! ######## initializing the structures for the RECV ########
   !
@@ -393,21 +394,19 @@ ENDDO
       TZCRSPDRECVTAB(J)%NCARDDIF = ICARDDIF
     ENDDO
   ELSE
-    !il faut tout de meme mettre un element de taille 0 dans TZCRSPDRECVTAB
-    !sinon SEND_RECV_FIELD plante en 02
     ALLOCATE( TZCRSPDRECVTAB(1) )
     ICARD = 0
     ICARDDIF = 0
-    TZCRSPDRECVTAB(1)%TELT = TZSEND(1)
+    TZCRSPDRECVTAB(1)%TELT = TZRECV(1)
     TZCRSPDRECVTAB(1)%TNEXT => NULL()
     TZCRSPDRECVTAB(1)%NCARD = 0
     TZCRSPDRECVTAB(1)%NCARDDIF = 0
   ENDIF
-!  IF (ICARD > 0) THEN
+ IF (ICARD > 0) THEN
     TZCRSPDRECV => TZCRSPDRECVTAB(1)
-!  ELSE
-!    TZCRSPDRECV => NULL()
-!  ENDIF
+ ELSE
+   TZCRSPDRECV => NULL()
+ ENDIF
 #else
 IIMAX_C = KIMAX_C_ll
 IJMAX_C = KJMAX_C_ll
