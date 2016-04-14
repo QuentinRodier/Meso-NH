@@ -54,6 +54,7 @@ END MODULE MODI_DEFINE_MASK_n
 !!    -------------
 !!      Original        26/09/96
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!   P. Wautelet : 14/04/2016 : better way to get father coordinates
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -69,8 +70,7 @@ USE MODE_FM
 USE MODE_IO_ll
 USE MODE_MODELN_HANDLER
 !
-USE MODE_SPLITTING_ll, ONLY : SPLIT2
-USE MODD_VAR_ll, ONLY : NPROC, IP, YSPLITTING, NMNH_COMM_WORLD
+USE MODD_VAR_ll, ONLY : YSPLITTING
 USE MODD_STRUCTURE_ll, ONLY : ZONE_ll
 USE MODE_TOOLS_ll, ONLY : INTERSECTION
 !
@@ -90,9 +90,9 @@ INTEGER     :: IXOR_F, IYOR_F    ! origin of local father subdomain (global coor
 INTEGER     :: IXEND_F, IYEND_F    ! end of local father subdomain (global coord)
 INTEGER     :: IXOR_C, IYOR_C    ! origin of intersection between son model and local father subdomain (global coord)
 INTEGER     :: IXEND_C, IYEND_C    ! end of intersection between son model and local father subdomain (global coord)
-TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZSPLITTING
+TYPE(ZONE_ll), DIMENSION(1) :: TZSPLITTING
 TYPE(ZONE_ll) :: TZCOARSESONGLB ! global son domain in father grid
-TYPE(ZONE_ll), DIMENSION(:), ALLOCATABLE :: TZCOARSESONLCL ! intersection of global son domain and local father subdomain
+TYPE(ZONE_ll), DIMENSION(1) :: TZCOARSESONLCL ! intersection of global son domain and local father subdomain
 !-------------------------------------------------------------------------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
@@ -102,18 +102,20 @@ ALLOCATE ( NNESTMASK (NIMAX+2*JPHEXT,NJMAX+2*JPHEXT,1+COUNT(NDAD(:)==IMI)))
 ALLOCATE ( NSON      (                              1+COUNT(NDAD(:)==IMI)))
 !
 ! get splitting of father model
-ALLOCATE(TZSPLITTING(NPROC))
-ALLOCATE(TZCOARSESONLCL(NPROC))
-CALL SPLIT2 ( NIMAX_ll, NJMAX_ll, 1, NPROC, TZSPLITTING, YSPLITTING )
-! get coords of local father subdomain
-IXOR_F = TZSPLITTING(IP)%NXOR-JPHEXT
-IYOR_F = TZSPLITTING(IP)%NYOR-JPHEXT
-IXEND_F = TZSPLITTING(IP)%NXEND-JPHEXT
-IYEND_F = TZSPLITTING(IP)%NYEND-JPHEXT
 !
-TZCOARSESONGLB%NZOR = TZSPLITTING(IP)%NZOR    ! there is no splitting in Z direction
-TZCOARSESONGLB%NZEND = TZSPLITTING(IP)%NZEND  ! there is no splitting in Z direction
-TZCOARSESONGLB%NUMBER = TZSPLITTING(IP)%NUMBER
+CALL GET_OR_ll(YSPLITTING(1:1),IXOR_F,IYOR_F)
+IXEND_F = IXOR_F+NIMAX-1
+IYEND_F = IYOR_F+NJMAX-1
+!
+TZSPLITTING(1)%NXOR = IXOR_F+JPHEXT
+TZSPLITTING(1)%NYOR = IYOR_F+JPHEXT
+TZSPLITTING(1)%NXEND = IXEND_F+JPHEXT
+TZSPLITTING(1)%NYEND = IYEND_F+JPHEXT
+!
+TZCOARSESONGLB%NZOR = TZSPLITTING(1)%NZOR    ! there is no splitting in Z direction
+TZCOARSESONGLB%NZEND = TZSPLITTING(1)%NZEND  ! there is no splitting in Z direction
+TZCOARSESONGLB%NUMBER = TZSPLITTING(1)%NUMBER
+!
 !
 NNESTMASK(:,:,:) = 0
 NSON(1) = IMI
@@ -124,34 +126,22 @@ DO JLOOP=1,NMODEL
   ISON=ISON+1
   NSON(ISON)=JLOOP
   !
-  !JUAN A REVOIR TODO_JPHEXT !!!
-  ! <<<<<<< define_maskn.f90
   ! init global son zone in father grid coords
   !
-  ! TZCOARSESONGLB%NXOR = NXOR_ALL(JLOOP)+1
-  ! TZCOARSESONGLB%NYOR = NYOR_ALL(JLOOP)+1
-  ! TZCOARSESONGLB%NXEND = NXEND_ALL(JLOOP)-1
-  ! TZCOARSESONGLB%NYEND = NYEND_ALL(JLOOP)-1
   TZCOARSESONGLB%NXOR = NXOR_ALL(JLOOP)+JPHEXT
   TZCOARSESONGLB%NYOR = NYOR_ALL(JLOOP)+JPHEXT
   TZCOARSESONGLB%NXEND = NXEND_ALL(JLOOP)-JPHEXT
   TZCOARSESONGLB%NYEND = NYEND_ALL(JLOOP)-JPHEXT
   ! get the intersection  with local father subdomain -> TZCOARSESONLCL
-  CALL INTERSECTION( TZSPLITTING, NPROC, TZCOARSESONGLB, TZCOARSESONLCL)
-  IXOR_C = TZCOARSESONLCL(IP)%NXOR
-  IXEND_C = TZCOARSESONLCL(IP)%NXEND
-  IYOR_C = TZCOARSESONLCL(IP)%NYOR
-  IYEND_C = TZCOARSESONLCL(IP)%NYEND
+  CALL INTERSECTION( TZSPLITTING, 1, TZCOARSESONGLB, TZCOARSESONLCL)
+  IXOR_C = TZCOARSESONLCL(1)%NXOR
+  IXEND_C = TZCOARSESONLCL(1)%NXEND
+  IYOR_C = TZCOARSESONLCL(1)%NYOR
+  IYEND_C = TZCOARSESONLCL(1)%NYEND
   IF ( IXEND_C/=0 .AND. IYEND_C/=0 ) THEN
     ! the intersection is non empty
     NNESTMASK( (IXOR_C-IXOR_F+1):(IXEND_C-IXOR_F+1), (IYOR_C-IYOR_F+1):(IYEND_C-IYOR_F+1), ISON) = 1
   ENDIF
-!  NNESTMASK(NXOR_ALL(JLOOP)+1:NXEND_ALL(JLOOP)-1,     &
-!            NYOR_ALL(JLOOP)+1:NYEND_ALL(JLOOP)-1, ISON) = 1
-! =======
-!  NNESTMASK(NXOR_ALL(JLOOP)+JPHEXT:NXEND_ALL(JLOOP)-JPHEXT,     &
-!            NYOR_ALL(JLOOP)+JPHEXT:NYEND_ALL(JLOOP)-JPHEXT, ISON) = 1
-! >>>>>>> 1.2.4.2.18.2.2.1
 END DO
 !
 IF (ANY (SUM(NNESTMASK(:,:,:),DIM=3)>1) ) THEN
