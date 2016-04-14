@@ -139,6 +139,8 @@ USE MODD_VAR_ll, ONLY : NPROC, IP, NMNH_COMM_WORLD
 USE MODE_MNH_WORLD, ONLY : INIT_NMNH_COMM_WORLD
 USE MODE_MPPDB
 !
+USE MODD_DIM_n
+
 IMPLICIT NONE
 !
 !*       0.1   Declaration of local variables
@@ -239,6 +241,8 @@ DO JPGD=1,NMODEL
     NXEND_ALL(JPGD) = IIMAX+2*JPHEXT
     NYOR_ALL(JPGD) = 1
     NYEND_ALL(JPGD) = IJMAX+2*JPHEXT
+    NDXRATIO_ALL(JPGD) = 1
+    NDYRATIO_ALL(JPGD) = 1
   ENDIF
   ! initialize variables from MODD_DIM_ll, origin and end of global model JPGD in coordinates of its father
   CALL SET_XOR_ll(NXOR_ALL(JPGD), JPGD)
