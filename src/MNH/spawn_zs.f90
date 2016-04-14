@@ -163,7 +163,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZZS1_C ! zs of model 1 at iteration n or n+
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZZS2_C ! averaged zs of model 2 at iteration n
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZDZS_C ! difference between PZS1 and ZZS2
 !$20140617 ZTZS1 result of SET_LSFIELD_1WAY_ll(PZS1)
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZTZS1_C
+!JUAN REAL, DIMENSION(:,:), ALLOCATABLE :: ZTZS1_C
 !$20140704 ZDZS_3D to use MAX_ll(array3D arg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDZS_3D
 !$
@@ -455,7 +455,7 @@ IF (KDXRATIO/=1 .OR. KDYRATIO/=1) THEN
                             JCOUNTER,COUNT(ABS(ZDZS_C(:,:))>=1.E-3),          &
                             IZSMAX(1)+2,IZSMAX(2)+2,                          &
 !                            PZS1(KXOR+IZSMAX(1),KYOR+IZSMAX(2)),              &
-                            ZTZS1_C(2+IZSMAX(1),2+IZSMAX(2)),                 &
+!                            ZTZS1_C(2+IZSMAX(1),2+IZSMAX(2)),                 &
                             ZZS2_C(IZSMAX(1),IZSMAX(2)),                      &
                             ZDZS_C(IZSMAX(1),IZSMAX(2))
       ENDIF
