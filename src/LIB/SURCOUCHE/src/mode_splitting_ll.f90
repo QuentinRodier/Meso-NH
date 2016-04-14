@@ -686,27 +686,29 @@ CONTAINS
     !*	 2.    FILL THE FIELDS OF TPROC
     !
     IF(HSPLITTING.EQ."BSPLITTING") THEN
-       IF ((PREM).AND.(NB_PROC.GT.2)) THEN
-          CALL DEF_SPLITTING2(X_DOMAINS,Y_DOMAINS,X_DIM-X_DIM/NB_PROC-1,  &
-               Y_DIM,NB_PROC-1,PREM)
-          !
-          ! the last proc is a vertical sub-domain
-          !
-          TPROC(NB_PROC)%NUMBER = NB_PROC
-          TPROC(NB_PROC)%NXOR = X_DIM-X_DIM/NB_PROC
-          TPROC(NB_PROC)%NXEND = X_DIM
-          TPROC(NB_PROC)%NYOR = 1
-          TPROC(NB_PROC)%NYEND = Y_DIM
-          !
-          ! cartesian splitting with NB_PROC-1
-          !
-          CALL CARTESIAN(TPROC,NB_PROC-1,X_DIM-X_DIM/NB_PROC-1,   &
-               Y_DIM,X_DOMAINS,Y_DOMAINS)
-          !
-       ELSE
+       !Philippe: we do not want to do that anymore
+       !          (i.e. source of problems for prep_nest_pgd parallel if PREM=.T.)
+       !IF ((PREM).AND.(NB_PROC.GT.2)) THEN
+       !   CALL DEF_SPLITTING2(X_DOMAINS,Y_DOMAINS,X_DIM-X_DIM/NB_PROC-1,  &
+       !        Y_DIM,NB_PROC-1,PREM)
+       !   !
+       !   ! the last proc is a vertical sub-domain
+       !   !
+       !   TPROC(NB_PROC)%NUMBER = NB_PROC
+       !   TPROC(NB_PROC)%NXOR = X_DIM-X_DIM/NB_PROC
+       !   TPROC(NB_PROC)%NXEND = X_DIM
+       !   TPROC(NB_PROC)%NYOR = 1
+       !   TPROC(NB_PROC)%NYEND = Y_DIM
+       !   !
+       !   ! cartesian splitting with NB_PROC-1
+       !   !
+       !   CALL CARTESIAN(TPROC,NB_PROC-1,X_DIM-X_DIM/NB_PROC-1,   &
+       !        Y_DIM,X_DOMAINS,Y_DOMAINS)
+       !   !
+       !ELSE
           !
           CALL CARTESIAN(TPROC,NB_PROC,X_DIM,Y_DIM,X_DOMAINS,Y_DOMAINS)
-       END IF
+       !END IF
     ELSEIF(HSPLITTING.EQ."XSPLITTING") THEN
        !
        CALL CARTESIAN(TPROC,NB_PROC,X_DIM,Y_DIM,NB_PROC,1)
