@@ -128,6 +128,12 @@ END SUBROUTINE FMLOOK_ll
 
 SUBROUTINE FMOPEN_ll(HFILEM,HACTION,HFIPRI,KNPRAR,KFTYPE,KVERB,KNINAR&
      & ,KRESP,OPARALLELIO)
+!-------------------------------------------------------------------------------
+!!    MODIFICATIONS
+!!    -------------
+!!       J.escobar  19/04/2016 , return error<>0 when open file modified & no closed
+!!
+!-------------------------------------------------------------------------------
 USE MODD_IO_ll, ONLY : ISP,ISTDOUT,LFIPARAM,LIOCDF4,LLFIOUT,LLFIREAD
 USE MODE_FD_ll, ONLY : FD_ll,GETFD,JPFINL
 USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO
@@ -300,7 +306,8 @@ IF (ISP == TZFDLFI%OWNER) THEN
           ININAR8)
      KNINAR = ININAR8
      
-     IF (IRESOU /= 0 .AND. IRESOU /= -11) THEN
+!!$     IF (IRESOU /= 0 .AND. IRESOU /= -11) THEN
+  IF (IRESOU /= 0 ) THEN
         IRESP = IRESOU
      ENDIF
   END IF
