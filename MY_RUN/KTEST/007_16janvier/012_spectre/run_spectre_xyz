@@ -5,6 +5,6 @@
 set -x
 set -e
 ln -fs ../008_run2/16JAN.1.12B18.001.??? .
-time ${MPIRUN} SPECTRE${XYZ}  
+time ${MONORUN} SPECTRE${XYZ}  
 
 

@@ -6,5 +6,5 @@
 set -x
 set -e
 rm -f RELIEF3D* OUTPUT_LISTING* pipe* *.tex
-time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+time ${MPIRUN} PREP_IDEAL_CASE${XYZ}
 #ddd --directory=.../dir_obj PREP_PGD

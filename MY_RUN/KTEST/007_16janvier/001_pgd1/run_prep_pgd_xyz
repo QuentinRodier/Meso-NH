@@ -32,6 +32,5 @@ ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
 
 rm -f 16JAN98_36km.* OUTPUT_LISTING* pipe* *.tex
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 ./PREP_PGD${XYZ}
-#time ${MONORUN} PREP_PGD${XYZ}
 time ${MPIRUN} PREP_PGD${XYZ}
 fi

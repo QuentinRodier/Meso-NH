@@ -14,5 +14,5 @@ ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
 
 ln -sf ../001_pgd1/16JAN98_36km.??? .
 rm -f 16JAN98_9km* OUTPUT_LISTING* pipe* *.tex
-time ${MONORUN} PREP_PGD${XYZ}
+time ${MPIRUN} PREP_PGD${XYZ}
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_PGD

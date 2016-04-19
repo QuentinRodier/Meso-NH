@@ -8,5 +8,5 @@ set -e
 ln -sf ../002_pgd2/16JAN98_9km.??? .
 ln -sf ../001_pgd1/16JAN98_36km.??? .
 rm -f *e1.??? OUTPUT_LISTING* pipe* *.tex
-time ${MONORUN} PREP_NEST_PGD${XYZ}
+time ${MPIRUN} PREP_NEST_PGD${XYZ}
 #ddd --directory=~/DEV/.../PREP_NEST_PGD
