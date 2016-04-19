@@ -20,7 +20,8 @@
 &NAM_CONF  CCONF = "START", NMODEL = 1,
            NVERB = 5, CEXP = "REUNI", CSEG = "00A20" ,
            CSPLIT="BSPLITTING" 
-           !JPHEXT =3 , NHALO = 3 
+           !JPHEXT =3 , 
+           NHALO = 3 
            /
 &NAM_DYN  XSEGLEN = 40.,
           LCORIO = F, LNUMDIFU = F,
