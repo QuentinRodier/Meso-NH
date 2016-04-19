@@ -7,12 +7,13 @@ set -x
 set -e
 PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"}
 export PREP_PGD_FILES
+
+rm -f 16JAN98_9km* 16JAN98_36km* OUTPUT_LISTING* pipe* *.tex
+
 ln -sf $PREP_PGD_FILES/CLAY_HWSD_MOY.??? .
 ln -sf $PREP_PGD_FILES/SAND_HWSD_MOY.??? .
 ln -sf $PREP_PGD_FILES/gtopo30.??? .
 ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
-
 ln -sf ../001_pgd1/16JAN98_36km.??? .
-rm -f 16JAN98_9km* OUTPUT_LISTING* pipe* *.tex
 time ${MPIRUN} PREP_PGD${XYZ}
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_PGD

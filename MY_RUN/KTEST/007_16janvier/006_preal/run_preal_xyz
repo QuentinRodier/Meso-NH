@@ -5,11 +5,11 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
+rm -f 16JAN* OUTPUT_LISTING* pipe* *.tex
 ln -sf ../003_nest/16JAN98_9km.neste1.??? .
 ln -sf ../003_nest/16JAN98_36km.neste1.??? .
-ln -sf ../004_arp2lfi/16JAN_06_MNH.??? .
-ln -sf ../005_spa_mod1_mod2/16JAN_06_MNH.spa04.??? .
-rm -f 16JAN_06_MNH2.* OUTPUT_LISTING* pipe* *.tex
+ln -sf ../004_arp2lfi/16JAN_06_MNH.*??? .
+ln -sf ../005_spa_mod1_mod2/16JAN_06_MNH.spa04.*??? .
 #exit
 time ${MPIRUN} PREP_REAL_CASE${XYZ}
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2 PREP_REAL_CASE
