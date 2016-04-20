@@ -48,7 +48,8 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!    -------------
 !!      Original    09/2003 
 !!         M.Moge   04/2015  parallelization og PREP_PGD on son model
-!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -121,7 +122,7 @@ IF (LEN_TRIM(CACTION)>0) THEN
 END IF
 !
 IF (HFILE/=COUTFMFILE .AND. HFILE/=CPGDFILE) THEN
-  CALL FMOPEN_ll(HFILE,'READ',COUT,0,2,5,ININAR,IRESP)
+  CALL FMOPEN_ll(HFILE,'READ',COUT,0,2,5,ININAR,IRESP,OPARALLELIO=.FALSE.)
   CACTION = 'OPEN  '
 END IF
 !

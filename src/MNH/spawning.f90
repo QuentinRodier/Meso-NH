@@ -72,6 +72,7 @@
 !!      Modification 19/03/2008 (J.Escobar) rename INIT to INIT_MNH --> grib problem
 !!      Modification 05/02/2015 (M.Moge) read namelist NAM_CONFZ, before INIT_MNH
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -198,7 +199,7 @@ CALL CLOSE_ll(YEXSPA)
 CALL INIT_MNH
 !
 CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT,IRESP)
-CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP)
+CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP,OPARALLELIO=.FALSE.)
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZATION OF OUTER POINTS OF MODEL 1

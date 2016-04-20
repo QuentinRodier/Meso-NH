@@ -264,6 +264,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   Dec 2014 (C.Lac) : For reproducibility START/RESTA
 !!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!       V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
+!!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1879,7 +1880,7 @@ END IF
 IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
   ! ouverture du fichier PGD
   IF  ( LEN_TRIM(CINIFILEPGD) > 0 ) THEN
-    CALL FMOPEN_ll(CINIFILEPGD,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP) 
+    CALL FMOPEN_ll(CINIFILEPGD,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.) 
     IF (IRESP/=0) THEN
       WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
       WRITE(ILUOUT,FMT=*) "CHECK YOUR NAMELIST NAM_LUNITn"
@@ -1918,7 +1919,7 @@ ELSE
 END IF
 IF (CSURF=='EXTE' .AND. (CPROGRAM=='SPAWN ')) THEN
   ! ouverture du fichier PGD
-  CALL FMOPEN_ll(CINIFILEPGD,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP) 
+  CALL FMOPEN_ll(CINIFILEPGD,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.) 
   IF (IRESP/=0) THEN
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
     WRITE(ILUOUT,FMT=*) "CHECK YOUR NAMELIST NAM_LUNIT2_SPA"

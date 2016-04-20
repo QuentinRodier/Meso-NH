@@ -53,6 +53,7 @@ END MODULE MODI_MNHCLOSE_AUX_IO_SURF
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2003 
+!!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -81,7 +82,7 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !-------------------------------------------------------------------------------
 !
 IF (CACTION=='OPEN  ') THEN
-  CALL FMCLOS_ll(HFILE,'KEEP',COUT,IRESP)
+  CALL FMCLOS_ll(HFILE,'KEEP',COUT,IRESP,OPARALLELIO=.FALSE.)
   CACTION='      '
 END IF
 !

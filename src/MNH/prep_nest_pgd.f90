@@ -90,7 +90,8 @@
 !!                  30/07/97 (Masson) split of mode_lfifm_pgd
 !!                  2014 (M.Faivre)
 !!                  06/2015 (M.Moge) parallelization 
-!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -416,8 +417,8 @@ END DO
 !              --------------------
 !
 DO JPGD=1,NMODEL
-  CALL FMCLOS_ll(CPGD    (JPGD),'KEEP',CLUOUT0,IRESP)
-  CALL FMCLOS_ll(CNESTPGD(JPGD),'KEEP',CLUOUT0,IRESP)
+  CALL FMCLOS_ll(CPGD    (JPGD),'KEEP',CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
+  CALL FMCLOS_ll(CNESTPGD(JPGD),'KEEP',CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
 END DO
 !
 !* loop to spare enough time to transfer commands before end of program

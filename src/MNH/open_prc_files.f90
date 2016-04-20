@@ -88,6 +88,7 @@ END MODULE MODI_OPEN_PRC_FILES
 !!                            (V. Masson)
 !!      Modification 15/10/01 allow namelists in different orders (I. Mallet)
 !!      J.ESCOBAR    12/11/2008  Improve checking --> add STATUS=OLD in open_ll(PRE_REAL1.nam,...
+!!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -262,7 +263,7 @@ ELSE
 !*       5.    OPENNING THE PHYSIOGRAPHIC DATA FILE
 !              ------------------------------------
 !
-  CALL FMOPEN_ll(HPGDFILE,'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP)
+  CALL FMOPEN_ll(HPGDFILE,'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
   IF (IRESP/=0) THEN
     WRITE(ILUOUT0,*) 'STOP: problem during opening of PGD file ',HPGDFILE
 !callabortstop

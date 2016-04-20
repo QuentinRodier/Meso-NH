@@ -67,6 +67,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!                   11/2015 (M.Moge) disable the creation of files on multiple 
 !!                                 Z-levels when using parallel IO for PREP_PGD
 !!                   01/2016 (M.Moge) Bug fix : open the output file using Z-parallel IO
+!!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -314,7 +315,7 @@ CALL CLOSE_ll(HPRE_NEST_PGD)
 !
 DO JPGD=1,NMODEL
   CALL FMOPEN_ll(HPGD(JPGD),'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
-  CALL FMOPEN_ll(HNESTPGD(JPGD),'WRITE',CLUOUT0,0,1,NVERB,ININAR,IRESP)
+  CALL FMOPEN_ll(HNESTPGD(JPGD),'WRITE',CLUOUT0,0,1,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
 END DO
 !
 !-------------------------------------------------------------------------------

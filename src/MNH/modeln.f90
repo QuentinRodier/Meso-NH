@@ -234,7 +234,8 @@ END MODULE MODI_MODEL_n
 !!       C.Lac    11/09/2015: correction of the budget due to FIT temporal scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                   Sep 2015 (S. Bielli) : Remove YDADFILE from argument call 
-!                              of write_phys_param
+!!                              of write_phys_param
+!!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -2037,7 +2038,7 @@ IF (OEXIT) THEN
   CALL FMCLOS_ll(CFMDIAC,'KEEP',CLUOUT,IRESP)
   !
   CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT,IRESP)
-  IF (CSURF=="EXTE") CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP)
+  IF (CSURF=="EXTE") CALL FMCLOS_ll(CINIFILEPGD,'KEEP',CLUOUT,IRESP,OPARALLELIO=.FALSE.)
 !
 !*       28.1   print statistics!
 !
