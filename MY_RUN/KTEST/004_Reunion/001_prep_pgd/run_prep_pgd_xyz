@@ -28,6 +28,6 @@ set -x
 ln -sf $PREP_PGD_FILES/gtopo30.??? .
 ln -sf $PREP_PGD_FILES/ECOCLIMAP_v2.0.??? .
 rm -f  REUNION_PGD_1km5* OUTPUT_* pipe* *.tex
-time ${MONORUN} PREP_PGD${XYZ}
+time ${MPIRUN} PREP_PGD${XYZ}
 #ddd --directory=~/.../src/dir_obj PREP_PGD
 fi
