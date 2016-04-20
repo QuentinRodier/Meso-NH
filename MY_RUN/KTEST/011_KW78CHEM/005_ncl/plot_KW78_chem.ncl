@@ -1,6 +1,8 @@
 ;================================================;
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"   
-load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"   
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl" 
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"  
 ; ================================================;
 ;================================================;
 begin
@@ -12,6 +14,7 @@ begin
 ; Open the workstation
 ;==================================================;
   type = "ps"
+  ;type = "x11"
   wks = gsn_open_wks(type,"visu_KW78_chem")
 ;=================================================;
 ; Get informations on variable sizes
