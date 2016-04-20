@@ -10,7 +10,7 @@
 !!    PURPOSE
 !!    -------
 !!      call GET_NB_PROCIO_READ_MNH from SURFEX to get the number of processes used 
-!!      for Iinput of file MODD_IO_SURF_MNH::CFILE in MESO-NH (defined by user in namelist)
+!!      for Input of file MODD_IO_SURF_MNH::CFILE in MESO-NH (defined by user in namelist)
 !!
 !!**  METHOD
 !!    ------
@@ -28,7 +28,8 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	M. Moge   *LA - UPS*  08/01/2016	
+!!	M. Moge   *LA - UPS*  08/01/2016
+!!      J. escobar 19/04/2016 : bypass , For pb IOZ/NETCDF , pretende alway 2 ( > 1 ) I/O processors for homogenus PGD files 	
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -64,7 +65,8 @@ YFNLFI=TRIM(ADJUSTL(CFILE))//'.lfi'
 !
 TZFD=>GETFD(YFNLFI)
 IF (ASSOCIATED(TZFD)) THEN
-  KNB_PROCIO = TZFD%nb_procio
+!!$  KNB_PROCIO = TZFD%nb_procio
+  KNB_PROCIO = 2
 ELSE
   IRESP = -61
 END IF
