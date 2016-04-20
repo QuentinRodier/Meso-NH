@@ -6,6 +6,9 @@
       SUBROUTINE READWRITE_EMIS_FIELD_n(HPROGRAM)
 !     #######################################################################
 !
+!!    MODIFICATIONS
+!!    -------------
+!!    J.Escobar : 20/04/2016 : Pb IOZ/NETCDF , replace READ/WRITE_SURF by READ/WRITE_SURF_FIELD2D 
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -23,6 +26,8 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
+USE MODI_READ_SURF_FIELD2D
+USE MODI_WRITE_SURF_FIELD2D
 !
 IMPLICIT NONE
 !
@@ -32,7 +37,8 @@ IMPLICIT NONE
 !
 INTEGER             :: IRESP  ! I/O error code
  CHARACTER (LEN=16)  :: YRECFM ! article name
- CHARACTER (LEN=100) :: YCOMMENT ! comment
+ CHARACTER (LEN=100) :: YCOMMENT  ! comment
+ CHARACTER(LEN=100)  :: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
 INTEGER             :: ILUOUT   ! Unit number for prints
 INTEGER             :: JSPEC    ! Loop index for emission species
 INTEGER             :: IEMISPEC_NBR    ! number of emitted chemical species
@@ -111,7 +117,7 @@ DO JSPEC=1,IEMISPEC_NBR
 !
   CALL INIT_IO_SURF_n(HPROGRAM,'FULL  ','SURF  ','READ ')
   YRECFM='E_'//TRIM(YEMISPEC_NAME)
-  CALL READ_SURF(HPROGRAM,YRECFM,ZWORK,IRESP,YCOMMENT)
+  CALL READ_SURF_FIELD2D(HPROGRAM,ZWORK,YRECFM,HCOMMENT=YCOMMENT,KRESP=IRESP)
   CALL END_IO_SURF_n(HPROGRAM)
   !
   IF (IRESP/=0) THEN
@@ -119,7 +125,9 @@ DO JSPEC=1,IEMISPEC_NBR
   END IF
   !
   CALL INIT_IO_SURF_n(HPROGRAM,'FULL  ','SURF  ','WRITE')
-  CALL WRITE_SURF(HPROGRAM,YRECFM,ZWORK,IRESP,YCOMMENT)
+  YCOMMENTUNIT=''
+  CALL WRITE_SURF_FIELD2D(HPROGRAM,ZWORK,YRECFM,YCOMMENT,YCOMMENTUNIT)
+
   CALL END_IO_SURF_n(HPROGRAM)
 !
 !-------------------------------------------------------------------------------
