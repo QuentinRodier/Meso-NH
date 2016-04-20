@@ -3,7 +3,7 @@
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_SURF_FIELD2D( HPROGRAM,PFIELD2D,HFIELDNAME,HCOMMENT,HDIR)
+      SUBROUTINE READ_SURF_FIELD2D( HPROGRAM,PFIELD2D,HFIELDNAME,HCOMMENT,HDIR,KRESP)
 !     #####################################
 !
 !!****  *READ_SURF_FIELD2D* - reads surfex field in input file using READ_SURF,
@@ -42,6 +42,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/01/2016
+!!      J.Escobar : 20/04/2016 : Pb IOZ/NETCDF , add optional KRESP error code
 !!
 !-------------------------------------------------------------------------------
 !
@@ -72,6 +73,7 @@ CHARACTER(LEN=1),OPTIONAL,        INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
+INTEGER,OPTIONAL,               INTENT(OUT)  :: KRESP         
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -90,6 +92,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !------------------------------------------------------------------------------
 !
+IF (PRESENT(KRESP)) KRESP = -1
 !
 IF (LHOOK) CALL DR_HOOK('READ_SURF_FIELD2D',0,ZHOOK_HANDLE)
 !
@@ -127,6 +130,7 @@ IF (PRESENT(HDIR)) HCOMMENT = YCOMMENT
 !
 IF (LHOOK) CALL DR_HOOK('READ_SURF_FIELD2D',1,ZHOOK_HANDLE)
 !
+IF (PRESENT(KRESP)) KRESP = IRESP
 !-------------------------------------------------------------------------------
 !
       END SUBROUTINE READ_SURF_FIELD2D
