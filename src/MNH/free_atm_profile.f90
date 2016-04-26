@@ -86,6 +86,8 @@ END MODULE MODI_FREE_ATM_PROFILE
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/08/97
+!!      C.Lac  04/2016  Modification of the free atm gradient when the top of
+!!                      the model is too low
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -232,10 +234,14 @@ DO JI=1,IIU
 !*       3.2  guess of free atm. gradient
 !             ---------------------------
 !
+  IF (IK350/=IK5000) THEN
       ZFREEGR=( PVAR_MX  (JI,JJ,IK5000) &
                -PVAR_MX  (JI,JJ,IK350 ))&
              /( PZMASS_MX(JI,JJ,IK5000) &
                -PZMASS_MX(JI,JJ,IK350 ))
+  ELSE
+      ZFREEGR=PCLIMGR
+  END IF
 !
 !-------------------------------------------------------------------------------
 !
