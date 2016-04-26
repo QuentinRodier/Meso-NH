@@ -17,9 +17,6 @@ begin
 ; For paper quality plot do not use ncgm or eps
 ;=================================================;
   type = "x11"
-;  type = "png"
-; type = "pdf"
-; type = "ps"
 
 ;=================================================;
 ; Open the workstation and choose colormap
@@ -30,25 +27,26 @@ begin
 ;=================================================;
 ; Get informations on variable sizes
 ;=================================================;
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"UT") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 ;=================================================;
 ; Read  some variables from mnh_file
 ;=================================================;
-    lat2d=a->LAT(1:jmax,1:imax)
+    lat2d = a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
     lat2d@units="degrees_north"
-    lon2d=a->LON(1:jmax,1:imax)
+    lon2d = a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
     lon2d@units="degrees_east"
 
-    ZS =a->ZS(1:jmax,1:imax)              
+    ZS =a->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1)              
     ZS@lat2d = lat2d
     ZS@lon2d = lon2d
 
-    rv = a->RVT(1:kmax,1:jmax,1:imax)
+    rv = a->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
     rv = rv*1000.
     rv@description="RVT"
     rv@lat2d = lat2d
@@ -216,9 +214,7 @@ begin
 ; Define the plane where the cross-section will be done
 ; ------------------------------------------------------
         plane = new(2,float)
-        ;plane = (/ (mdims(nd-1)-2)/2, (mdims(nd-2)-2)/2 /)    ; pivot point is center of domain (x,y)
-        plane = (/ ((mdims(nd-1)-2)/2)+10, (mdims(nd-2)-2)/2 /)    ; pivot point is center of domain (x,y)
-
+        plane = (/ (imax/2)+10, (jmax)/2 /)    
 ; Resource for the interpolation
 ; --------------------------------
         opts = False

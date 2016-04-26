@@ -7,3 +7,4 @@ set -e
 ln -sf ../002_mesonh/REL3D.1.EXP01.002.nc4 .
 
 ncl  plot_3Drelief.ncl
+display visu_3Drelief.png

@@ -13,23 +13,24 @@ begin
 ;==================================================;
 ; Open the workstation
 ;==================================================;
-  type = "x11"
+  type = "png"
   wks = gsn_open_wks(type,"visu_16j_2")
 ;=================================================;
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-  mdims = getfilevardimsizes(fichier1,"UT") ; get dimension sizes
+  jphext  = fichier1->JPHEXT
+  mdims = getfilevardimsizes(fichier1,"UT") 
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 ;=================================================;
 ; Set map projection
 ;=================================================;
-    lat2d=fichier1->LAT(1:jmax,1:imax)
-    lon2d=fichier1->LON(1:jmax,1:imax)
+    lat2d=fichier1->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
+    lon2d=fichier1->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
 ; Resources for the map projection
 ;-----------------------------------------------;
   resmap=True
@@ -101,18 +102,18 @@ BETA = fichier1->BETA
 ;=================================================;
 ; lecture des différents champs
 ;=================================================;
-zs  = fichier1->ZS(1:jmax,1:imax) ; ZS
+zs  = fichier1->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1) ; ZS
 zs@long_name="Orography"
 zs@units="m"
 zs@lat2d = lat2d
 zs@lon2d = lon2d
 
 
-wt= fichier1->WT(1:kmax+1,1:jmax,1:imax) ; WT
-vt= fichier1->VT(1:kmax,1:jmax+1,1:imax) ; VT
-ut= fichier1->UT(1:kmax,1:jmax,1:imax+1) ; UT
+wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
 
-tht1= fichier1->THT(1:kmax,1:jmax,1:imax) ; THT
+tht1= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
 tht1@long_name="Potential Temperature"
 tht1@units="K"
 tht1@lat2d = lat2d
@@ -120,13 +121,13 @@ tht1@lon2d = lon2d
 
 
 
-pabst1= fichier1->PABST(1:kmax,1:jmax,1:imax) ; PABST
+pabst1= fichier1->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
 pabst1@long_name="Pressure"
 pabst1@units="Pa"
 pabst1@lat2d = lat2d
 pabst1@lon2d = lon2d
 
-rvt1= fichier1->RVT(1:kmax,1:jmax,1:imax) ; RVT
+rvt1= fichier1->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
 rvt1=rvt1*1000
 rvt1@long_name="Vapor mixing ratio"
 rvt1@units="kg/kg"

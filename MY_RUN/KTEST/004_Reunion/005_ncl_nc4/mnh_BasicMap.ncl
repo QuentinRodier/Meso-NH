@@ -19,10 +19,11 @@ begin
 ; Get information on variable sizes
 ;=================================================;
 
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"ZS") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2  ; -2 : to remove non-physical values
-  jmax=mdims(nd-2)-2  ; -2 : to remove non-physical values
+  imax=mdims(nd-1)-2*jphext  ; -2*jphext : to remove non-physical values
+  jmax=mdims(nd-2)-2*jphext  ; -2*jphext : to remove non-physical values
 
 ;=================================================;
 ; Read the variables 
@@ -31,10 +32,10 @@ begin
 ; Note: do not read first and last value which are non physical values
 ; -------------------------------------
 
-  lat2d=a->LAT(1:jmax,1:imax)
-  lon2d=a->LON(1:jmax,1:imax)
+  lat2d=a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  lon2d=a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
 
-  ZS = a->ZS(1:jmax,1:imax)
+  ZS = a->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   ZS@long_name="Orography"
   ZS@units="m"
 

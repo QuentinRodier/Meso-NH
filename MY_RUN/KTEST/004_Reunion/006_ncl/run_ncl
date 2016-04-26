@@ -6,3 +6,10 @@ set -x
 set -e
 ln -sf ../003_mesonh/REUNI.1.00A20.004.nc4 .
 ncl plot_Reunion.ncl
+display visu_Reunion.000001.png
+display visu_Reunion.000002.png
+display visu_Reunion.000003.png
+display visu_Reunion.000004.png
+display visu_Reunion.000005.png
+display visu_Reunion.000006.png
+display visu_Reunion.000007.png

@@ -13,55 +13,57 @@
 ;==================================================;
 ; Open the workstation
 ;==================================================;
-  type = "x11"
+  type = "png"
   wks = gsn_open_wks(type,"visu_KW78")
 ;=================================================;
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-  mdims = getfilevardimsizes(fichier1,"UM") ; get dimension sizes
+  jphext  = fichier1->JPHEXT
+  mdims = getfilevardimsizes(fichier1,"UT") 
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
+
+
 ;=================================================;
 ; lecture des différents champs
 ;=================================================;
-  zs  = fichier1->ZS(1:jmax,1:imax) ; ZS
+  zs  = fichier1->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1) ; ZS
   zhat  = fichier1->ZHAT(1:kmax+1) ; ZHAT
-  yhat  = fichier1->YHAT(1:jmax+1) ; YHAT
-  xhat  = fichier1->XHAT(1:imax+1) ; XHAT
+  yhat  = fichier1->YHAT(1:jmax+jphext-1+1) ; YHAT
+  xhat  = fichier1->XHAT(1:imax+jphext-1+1) ; XHAT
 
-  wt= fichier1->WT(1:kmax+1,1:jmax,1:imax) ; WT
-  vt= fichier1->VT(1:kmax,1:jmax+1,1:imax) ; VT
-  ut= fichier1->UT(1:kmax,1:jmax,1:imax+1) ; UT
-  tht1= fichier1->THT(1:kmax,1:jmax,1:imax) ; THT
+  wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+  vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+  tht1= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
   tht1@long_name="Potential Temperature"
   tht1@units="K"
-  lsthm1= fichier1->LSTHM(1:kmax,1:jmax,1:imax) 
+  lsthm1= fichier1->LSTHM(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   lsthm1@long_name="Large SCale Potential Temperature"
   lsthm1@units="K"
 
-  pabst1= fichier1->PABST(1:kmax,1:jmax,1:imax) ; PABST
+  pabst1= fichier1->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
   pabst1@long_name="Pressure"
   pabst1@units="Pa"
-  rvt1= fichier1->RVT(1:kmax,1:jmax,1:imax) ; RVT
+  rvt1= fichier1->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
   rvt1@long_name="Vapor mixing ratio"
   rvt1@units="kg/kg"
-  rct1= fichier1->RCT(1:kmax,1:jmax,1:imax) ; RCT
+  rct1= fichier1->RCT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RCT
   rct1@long_name="Cloud mixing ratio"
   rct1@units="kg/kg"
-  rrt1= fichier1->RRT(1:kmax,1:jmax,1:imax) ; RRT
+  rrt1= fichier1->RRT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RRT
   rrt1@long_name="Rain mixing ratio"
   rrt1@units="kg/kg"
 
-  inprr= fichier1->INPRR(1:jmax,1:imax) 
+  inprr= fichier1->INPRR(jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   inprr@long_name="Instantaneous Precipitation Rain Rate"
   inprr@units="mm/h"
-  acprr= fichier1->ACPRR(1:jmax,1:imax) 
+  acprr= fichier1->ACPRR(jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   acprr@long_name="Accumulated Precipitation Rain Rate"
   acprr@units="mm"
-
 
   YYYYDDMM1= fichier1->DTCUR__TDATE
   SS1=fichier1->DTCUR__TIME

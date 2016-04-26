@@ -14,31 +14,44 @@ begin
 ;==================================================;
 ; Open the workstation
 ;==================================================;
-  type = "x11"
+  type = "png"
   wks = gsn_open_wks(type,"visu_2Drelief")
 ;=================================================;
 ; lecture des différents champs
 ;=================================================;
-zs  = fichier1->ZS(0,:) ; ZS
-zhat  = fichier1->ZHAT(:) ; ZHAT
-xhat  = fichier1->XHAT(:) ; XHAT
-lsum1_old = fichier1->LSUM(:,0,:) ; LSUM
-lsthm1 = fichier1->LSTHM(:,0,:) ; LSTHM
+  jphext  = fichier1->JPHEXT
+  mdims = getfilevardimsizes(fichier1,"UT") 
+  nd = dimsizes(mdims)
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
+  kmax=mdims(nd-3)-2
+
+
+zs  = fichier1->ZS(0,jphext:imax+jphext-1) ; ZS
+zhat  = fichier1->ZHAT(1:kmax+1) ; ZHAT
+xhat  = fichier1->XHAT(jphext:imax+jphext-1+1) ; XHAT
+
+lsthm1 = fichier1->LSTHM(1:kmax,0,jphext:imax+jphext-1) ; LSTHM
 lsthm1@long_name="LSTHM"
 lsthm1@units="K"
 
-wt1_old= fichier1->WT(:,0,:) ; WT
-ut1_old= fichier1->UT(:,0,:) ; UT
-tht1= fichier1->THT(:,0,:) ; THT
+lsum1_old = fichier1->LSUM(1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
+wt1_old= fichier1->WT(1:kmax+1,0,jphext:imax+jphext-1) ; WT
+ut1_old= fichier1->UT(1:kmax,0,jphext:imax+jphext-1+1) ; UT
+
+tht1= fichier1->THT(1:kmax,0,jphext:imax+jphext-1) ; THT
 tht1@long_name="Potential Temperature"
 tht1@units="K"
-rvt1= fichier1->RVT(:,0,:) ; RVT
+
+rvt1= fichier1->RVT(1:kmax,0,jphext:imax+jphext-1) ; RVT
 rvt1@long_name="Vapor mixing ratio"
 rvt1@units="g/kg"
-cflu1= fichier1->CFLU(:,0,:) ; CFLU
+
+cflu1= fichier1->CFLU(1:kmax,0,jphext:imax+jphext-1) ; CFLU
 cflu1@long_name="CFLU"
 cflu1@units="-"
-cflw1= fichier1->CFLW(:,0,:) ; CFLW
+
+cflw1= fichier1->CFLW(1:kmax,0,jphext:imax+jphext-1) ; CFLW
 cflw1@long_name="CFLW"
 cflw1@units=" "
 
@@ -47,33 +60,30 @@ SS1=fichier1->DTCUR__TIME
 YYYYDDMM2= fichier2->DTCUR__TDATE
 SS2=fichier2->DTCUR__TIME
 
-lsum2_old = fichier2->LSUM(:,0,:) ; LSUM
-lsthm2 = fichier2->LSTHM(:,0,:) ; LSTHM
+lsthm2 = fichier2->LSTHM(1:kmax,0,jphext:imax+jphext-1) ; LSTHM
 lsthm2@long_name="LSTHM"
 lsthm2@units="K"
-wt2_old= fichier2->WT(:,0,:) ; WT
-ut2_old= fichier2->UT(:,0,:) ; UT
-tht2= fichier2->THT(:,0,:) ; THT
+
+lsum2_old = fichier2->LSUM(1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
+wt2_old= fichier2->WT(1:kmax+1,0,jphext:imax+jphext-1) ; WT
+ut2_old= fichier2->UT(1:kmax,0,jphext:imax+jphext-1+1) ; UT
+
+tht2= fichier2->THT(1:kmax,0,jphext:imax+jphext-1) ; THT
 tht2@long_name="Potential Temperature"
 tht2@units="K"
-rvt2= fichier2->RVT(:,0,:) ; RVT
+
+rvt2= fichier2->RVT(1:kmax,0,jphext:imax+jphext-1) ; RVT
 rvt2@long_name="Vapor mixing ratio"
 rvt2@units="g/kg"
-cflu2= fichier2->CFLU(:,0,:) ; CFLU
+
+cflu2= fichier2->CFLU(1:kmax,0,jphext:imax+jphext-1) ; CFLU
 cflu2@long_name="CFLU"
 cflu2@units="-"
-cflw2= fichier2->CFLW(:,0,:) ; CFLW
+
+cflw2= fichier2->CFLW(1:kmax,0,jphext:imax+jphext-1) ; CFLW
 cflw2@long_name="CFLW"
 cflw2@units=" "
 
-;=================================================;
-; Récupération des dimensions des tableaux 
-;=================================================;
-  mdims = dimsizes(tht1)
-  print (mdims)
-  nd=dimsizes(mdims)
-  imax=mdims(nd-1)
-  kmax=mdims(nd-2)
 ;=================================================;
 ; Récupération de la date 
 ;=================================================;
@@ -96,8 +106,6 @@ lsum1@units="m/s"
 ut1 = wrf_user_unstagger(ut1_old,"X")
 ut1@long_name="Zonal wind"
 ut1@units="m/s"
-printVarSummary(ut1_old)
-printVarSummary(ut1)
 
 lsum2 = wrf_user_unstagger(lsum1_old,"X")
 lsum2@long_name="LSUM"
@@ -141,12 +149,7 @@ wt2@units="m/s"
        z(:,i) = nzh*zcoef(i)+zs(i)
     end do
 
-   printVarSummary(ut1)
-   printVarSummary(z)
-   printVarSummary(xhat)
-
-   xconf=conform(tht1,xhat,1)
-   printVarSummary(xconf)
+   xconf=conform(tht1,xhat(0:imax-1),1)
 ;=================================================;
 ; Set some other basic resources
 ;=================================================;
@@ -165,7 +168,6 @@ wt2@units="m/s"
   resmap@sfXArray        = xconf             ; 2D                  
   resmap@trGridType            = "TriangularMesh"
   
-;  resmap@cnInfoLabelOn   = False               ; turn off contour info label
 
 resmap@tiXAxisPosition="Left"
 resmap@tiXAxisFontHeightF=0.015
@@ -246,6 +248,7 @@ opts@tiXAxisString="time="+time1+"s"
 plot_cflu1 = gsn_csm_contour(wks,cflu1,opts)
 draw(plot_cflu1)
 frame(wks)
+
 opts@tiXAxisString="time="+time2+"s"
 plot_cflu2 = gsn_csm_contour(wks,cflu2,opts)
 draw(plot_cflu2)
@@ -303,14 +306,14 @@ res_t@xyExplicitLegendLabels = (/"THT-LSTHM"/)
 res_t@gsnLeftString      = "THT-LSTHM"          ; title
 res_t@gsnLeftStringFontHeightF = 0.015
 
-plot  = gsn_csm_x2y (wks,wt1(:,128),tht1(:,128)-lsthm1(:,128),z(:,128),res_w,res_t)            
+plot  = gsn_csm_x2y (wks,wt1(:,127),tht1(:,127)-lsthm1(:,127),z(:,127),res_w,res_t)            
 draw(plot)
 frame(wks)
 
 res_t@trXMinF=-1
 res_t@trXMaxF=0.2
 res_w@gsnRightString="time="+time2+"s"
-plot  = gsn_csm_x2y (wks,wt2(:,128),tht2(:,128)-lsthm2(:,128),z(:,128),res_w,res_t)            
+plot  = gsn_csm_x2y (wks,wt2(:,127),tht2(:,127)-lsthm2(:,127),z(:,127),res_w,res_t)            
 draw(plot)
 frame(wks)
 
@@ -328,14 +331,14 @@ res_lsu@gsnLeftString      = "UT-LSUM"          ; title
 res_lsu@tiMainFontHeightF = 0.015
 res_w@gsnRightString="time="+time1+"s"
 
-plot  = gsn_csm_x2y (wks,wt1(:,128),ut1(:,128)-lsum1(:,128),z(:,128),res_w,res_lsu)            
+plot  = gsn_csm_x2y (wks,wt1(:,127),ut1(:,127)-lsum1(:,127),z(:,127),res_w,res_lsu)            
 draw(plot)
 frame(wks)
 res_lsu@trXMinF=-2
 res_lsu@trXMaxF=2
 res_w@gsnRightString="time="+time2+"s"
 
-plot  = gsn_csm_x2y (wks,wt2(:,128),ut2(:,128)-lsum2(:,128),z(:,128),res_w,res_lsu)            
+plot  = gsn_csm_x2y (wks,wt2(:,127),ut2(:,127)-lsum2(:,127),z(:,127),res_w,res_lsu)            
 draw(plot)
 frame(wks)
 

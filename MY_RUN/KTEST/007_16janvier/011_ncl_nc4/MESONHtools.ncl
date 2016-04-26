@@ -59,8 +59,9 @@ if(isfilevar(in_file,"RPK")) then
    if(isfilevar(in_file,"IMAX"))
        XHAT=in_file->XHAT
        YHAT=in_file->YHAT
-       IMAX= dimsizes(XHAT)-2
-       JMAX= dimsizes(YHAT)-2
+       jphext  = in_file->JPHEXT
+       IMAX= dimsizes(XHAT)-2*JPHEXT
+       JMAX= dimsizes(YHAT)-2*JPHEXT
        zdx=XHAT(2)-XHAT(1)
        zdy=YHAT(2)-YHAT(1)
 

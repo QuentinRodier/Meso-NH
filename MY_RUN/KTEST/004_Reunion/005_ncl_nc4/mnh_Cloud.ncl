@@ -28,11 +28,11 @@ begin
 ;=================================================;
 ; Get informations on variable sizes
 ;=================================================;
-
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"UT") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 ; -2 : to remove non-physical values
 
@@ -42,15 +42,15 @@ begin
 
 ; Read latitude and longitude fields
 ; -----------------------------------------
-  lat2d = a->LAT(1:jmax,1:imax)
+  lat2d = a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lat2d@units="degrees_north"
-  lon2d = a->LON(1:jmax,1:imax)
+  lon2d = a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lon2d@units="degrees_east"
 
 ; Read water wapor mixing ratio if it exists
 ; -----------------------------------------
     if(isfilevar(a,"RVT"))
-      qv = a->RVT(1:kmax,1:jmax,1:imax)
+      qv = a->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
       qv = qv*1000.
       qv@units = "g/kg"   
       qv@description="Water vapor mixing ratio"
@@ -61,7 +61,7 @@ begin
 ; Read cloud mixing ratio if it exists
 ; -----------------------------------------
     if(isfilevar(a,"RCT"))
-      qc = a->RCT(1:kmax,1:jmax,1:imax)
+      qc = a->RCT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
       qc = qc*1000.
       qc@units = "g/kg"   
       qc@description="Cloud mixing ratio"
@@ -72,7 +72,7 @@ begin
 ; Read rain mixing ratio if it exists
 ; -----------------------------------------
     if(isfilevar(a,"RRT"))
-      qr = a->RRT(1:kmax,1:jmax,1:imax)
+      qr = a->RRT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
       qr = qr*1000.
       qr@units = "g/kg"   
       qr@description="Rain mixing ratio"
@@ -83,7 +83,7 @@ begin
 ; Read ice mixing ratio if it exists
 ; -----------------------------------------
     if(isfilevar(a,"RIT"))
-      qi = a->RIT(1:kmax,1:jmax,1:imax)
+      qi = a->RIT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
       qi = qi*1000.
       qi@units = "g/kg"   
       qi@description="Ice mixing ratio"

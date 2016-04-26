@@ -13,28 +13,25 @@
 ;==================================================;
 ; Open the workstation
 ;==================================================;
-  type = "x11"
+  type = "png"
   wks = gsn_open_wks(type,"visu_3Drelief")
 ;=================================================;
 ; lecture des différents champs
 ;=================================================;
-  zs  = fichier1->ZS(0,:) ; ZS
-  zhat  = fichier1->ZHAT(:) ; ZHAT
-  xhat  = fichier1->XHAT(:) ; XHAT
+  jphext  = fichier1->JPHEXT
+  mdims = getfilevardimsizes(fichier1,"UT") 
+  nd = dimsizes(mdims)
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
+  kmax=mdims(nd-3)-2
 
-  ut= fichier1->UT(:,:,:) ; UT
+
+
+  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
   ut@long_name="Zonal wind"
   ut@units="m/s"
 
 
-;=================================================;
-; Récupération des dimensions des tableaux 
-;=================================================;
-  mdims = dimsizes(ut)
-  nd=dimsizes(mdims)
-  imax=mdims(nd-1)
-  jmax=mdims(nd-2)
-  kmax=mdims(nd-3)
 
 ;=================================================;
 ; Unstagger U
@@ -66,7 +63,7 @@
   resmap@cnLevelSpacingF    = 0.25
   resmap@cnMinLevelValF    = 8
   resmap@cnMaxLevelValF    = 14
-  plot_ut = gsn_csm_contour(wks,u(1,:,1:),resmap)
+  plot_ut = gsn_csm_contour(wks,u(0,:,:),resmap)
   draw(plot_ut)
   frame(wks)
 

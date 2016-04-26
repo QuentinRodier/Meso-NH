@@ -8,5 +8,12 @@ set -e
 ln -sf ../003_mesonh/ICART.1.SEG01.001.nc4 .
 ln -sf ../003_mesonh/ICART.1.SEG01.002.nc4 .
 
-rm -f *.ps 
+rm -f *.png 
 ncl plot_ICARTT.ncl
+
+display zsection_1250.000001.png
+display zsection_1250.000002.png
+display zsection_1250.000003.png
+display zsection_1250.000004.png
+display zsection_1250.000005.png
+display zsection_1250.000006.png

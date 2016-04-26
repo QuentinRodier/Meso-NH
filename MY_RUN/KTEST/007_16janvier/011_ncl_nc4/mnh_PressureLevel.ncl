@@ -37,11 +37,11 @@ begin
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-;print("Reading dims")
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"UT") ; get dimension sizes
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 
@@ -49,13 +49,12 @@ begin
 ; Read the variables we need
 ;=================================================;
 
-;  print("Reading THT")
-  tk = a->THT(1:kmax,1:jmax,1:imax)	     ; potential temperature
+  tk = a->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)	     ; potential temperature
   tk@description="Potential Temperature"
 
-;  print("Reading wind")
-  u = a->UT(1:kmax,1:jmax,1:imax+1)         ; u
-  v = a->VT(1:kmax,1:jmax+1,1:imax)         ; v
+  u = a->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1)         ; u
+  v = a->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1)         ; v
+
 
 ; Unstagger u,v
   u!0="Z"
@@ -68,17 +67,14 @@ begin
   v!2="X"
   v_unst = wrf_user_unstagger(v,"Y")
 
-;  print("Reading pressure")
-  p = a->PABST(1:kmax,1:jmax,1:imax)        ; pressure
+  p = a->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)        ; pressure
   p@description="Pressure"
 
-;  print("Reading water vapor mixing ratio")
-  rv = a->RVT(1:kmax,1:jmax,1:imax)    ; water vapor mixing ratio
+  rv = a->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)    ; water vapor mixing ratio
   rv = rv*1000.    ; water vapor mixing ratio
   rv@description="Water vapor mixing ratio"
 
-;  print("Reading orography")
-  zs = a->ZS(1:jmax,1:imax) 	            ; terrain
+  zs = a->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1) 	            ; terrain
   zh = a->ZHAT(1:kmax+1)	            ; heigth without terrain
 
 ;==========================================

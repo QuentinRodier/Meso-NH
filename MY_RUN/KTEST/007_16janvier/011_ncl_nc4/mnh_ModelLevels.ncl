@@ -1,4 +1,6 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
 load "MESONHtools.ncl"
 
 ;=============================================================;
@@ -29,40 +31,41 @@ begin
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"THT") ; get dimension sizes
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 ;=================================================;
 ; Read the variables we need
 ;=================================================;
-  lat2d = a->LAT(1:jmax,1:imax)
+  lat2d = a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lat2d@units="degrees_north"
-  lon2d = a->LON(1:jmax,1:imax)
+  lon2d = a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lon2d@units="degrees_east"
 
-  th  = a->THT(1:kmax,1:jmax,1:imax)   ; theta
+  th  = a->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)   ; theta
   th@long_name="Potential Temperature"
   th@units = "K"
   th@lat2d=lat2d
   th@lon2d=lon2d
 
-  qv  = a->RVT(1:kmax,1:jmax,1:imax)   ; Qv
+  qv  = a->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)   ; Qv
   qv = qv*1000.
   qv@long_name="Water vapor mixing ratio"
   qv@units = "g/kg"
   qv@lat2d=lat2d
   qv@lon2d=lon2d
 
-  ut   = a->UT(1:kmax,1:jmax,1:imax+1)        ; u
+  ut   = a->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1)        ; u
   ut@long_name="U"
   ut@units="m/s"
   ut@lat2d=lat2d
   ut@lon2d=lon2d
 
-  vt   = a->VT(1:kmax,1:jmax+1,1:imax)        ; v
+  vt   = a->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1)        ; v
   vt@long_name="V"
   vt@units="m/s"
   vt@lat2d=lat2d

@@ -15,21 +15,22 @@ begin
 ; Get informations on variable sizes
 ; dims are dims-2 to remove non-physical values
 ;=================================================;
-  mdims = getfilevardimsizes(a,"THT") ; get dimension sizes
+  jphext  = a->JPHEXT
+  mdims = getfilevardimsizes(a,"UT") 
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 ;-------------------------------------------------;
 ; Read data.
 ;-------------------------------------------------;
-  lat2d = a->LAT(1:jmax,1:imax)
+  lat2d = a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lat2d@units="degrees_north"
-  lon2d = a->LON(1:jmax,1:imax)
+  lon2d = a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
   lon2d@units="degrees_east"
 
-zs  = a->ZS(1:jmax,1:imax) ; ZS
+zs  = a->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1) ; ZS
 zs@long_name="Orography"
 zs@units="m"
 zs@lat2d = lat2d
@@ -37,7 +38,7 @@ zs@lon2d = lon2d
 
 printMinMax(zs,0)
 
-  rc_t1 = a->RCT(1:kmax,1:jmax,1:imax)*1.e3
+  rc_t1 = a->RCT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e3
   rc_t1@long_name="Cloud mixing ratio"
   rc_t1@units="g/kg"
   rc_t1@lat2d=lat2d
@@ -45,35 +46,35 @@ printMinMax(zs,0)
 printMinMax(rc_t1,0)
 
 ;
-  o3_t1 = a->O3T(1:kmax,1:jmax,1:imax)*1.e9
+  o3_t1 = a->O3T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e9
   o3_t1@long_name="Ozone"
   o3_t1@units="ppbv"
   o3_t1@lat2d=lat2d
   o3_t1@lon2d=lon2d
 
 ;
-  co_t1 = a->COT(1:kmax,1:jmax,1:imax)*1.e9
+  co_t1 = a->COT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e9
   co_t1@long_name="carbon monoxide"
   co_t1@units="ppbv"
   co_t1@lat2d=lat2d
   co_t1@lon2d=lon2d
 ;
 ;
-  rc_t2 = a2->RCT(1:kmax,1:jmax,1:imax)*1.e3
+  rc_t2 = a2->RCT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e3
   rc_t2@long_name="Cloud mixing ratio"
   rc_t2@units="g/kg"
   rc_t2@lat2d=lat2d
   rc_t2@lon2d=lon2d
 
 ;
-  o3_t2 = a2->O3T(1:kmax,1:jmax,1:imax)*1.e9
+  o3_t2 = a2->O3T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e9
   o3_t2@long_name="Ozone"
   o3_t2@units="ppbv"
   o3_t2@lat2d=lat2d
   o3_t2@lon2d=lon2d
 
 ;
-  co_t2 = a2->COT(1:kmax,1:jmax,1:imax)*1.e9
+  co_t2 = a2->COT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)*1.e9
   co_t2@long_name="carbon monoxide"
   co_t2@units="ppbv"
   co_t2@lat2d=lat2d
@@ -193,7 +194,7 @@ o3_t2_plane = wrf_user_intrp3d(o3_t2,alt,"h",1250,0.,False)
 
 
   figname ="zsection_1250"
-  wks  = gsn_open_wks("ps",figname)   ; open a ncgm file
+  wks  = gsn_open_wks("png",figname)   ; open a ncgm file
   gsn_define_colormap(wks,"WhBlGrYeRe") ; Choose colormap
 
   res                 = resmap          

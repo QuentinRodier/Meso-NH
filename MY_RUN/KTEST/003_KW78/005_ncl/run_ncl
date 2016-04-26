@@ -7,3 +7,17 @@ set -e
 ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc4 .
 
 ncl  plot_KW78.ncl
+display visu_KW78.000001.png
+display visu_KW78.000002.png
+display visu_KW78.000003.png
+display visu_KW78.000004.png
+display visu_KW78.000005.png
+display visu_KW78.000006.png
+display visu_KW78.000007.png
+display visu_KW78.000008.png
+display visu_KW78.000009.png
+display visu_KW78.000010.png
+display visu_KW78.000011.png
+display visu_KW78.000012.png
+display visu_KW78.000013.png
+

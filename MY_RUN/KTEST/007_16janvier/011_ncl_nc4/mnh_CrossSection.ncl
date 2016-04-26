@@ -1,5 +1,7 @@
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_code.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/gsn_csm.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/csm/contributed.ncl"
+load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
 load "MESONHtools.ncl"
 
 begin
@@ -15,9 +17,6 @@ begin
 ; For paper quality plot do not use ncgm or eps
 ;=================================================;
   type = "x11"
-;  type = "ps"
-; type = "pdf"
-; type = "ps"
 
 ;=================================================;
 ; Open the workstation and choose colormap
@@ -29,29 +28,30 @@ begin
 ;=================================================;
 ; Get informations on variable sizes
 ;=================================================;
+  jphext  = a->JPHEXT
   mdims = getfilevardimsizes(a,"UT") ; get some dimension sizes for the file
   nd = dimsizes(mdims)
-  imax=mdims(nd-1)-2
-  jmax=mdims(nd-2)-2
+  imax=mdims(nd-1)-2*jphext
+  jmax=mdims(nd-2)-2*jphext
   kmax=mdims(nd-3)-2
 
 ;=================================================;
 ; Read  some variables from mnh_file
 ;=================================================;
-    ZS =a->ZS(1:jmax,1:imax)              
+    ZS =a->ZS(jphext:jmax+jphext-1,jphext:imax+jphext-1)              
 
-    th = a->THT(1:kmax,1:jmax,1:imax)
+    th = a->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
     th@long_name="Potential Temperature"
     th@description="TH"
 
-    um = a->UT(1:kmax,1:jmax,1:imax+1)
+    um = a->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1)
     um@description="U"
 
     zh= a->ZHAT(0:kmax)
 
-    lat2d = a->LAT(1:jmax,1:imax)
+    lat2d = a->LAT(jphext:jmax+jphext-1,jphext:imax+jphext-1)
     lat2d@units="degrees_north"
-    lon2d = a->LON(1:jmax,1:imax)
+    lon2d = a->LON(jphext:jmax+jphext-1,jphext:imax+jphext-1)
     lon2d@units="degrees_east"
 
     ZS@lat2d=lat2d
@@ -107,8 +107,6 @@ begin
 ;-----------------------------------------------;
   resmap=True
 
-
-
 ;=================================================;
 ; Define Other Resources for map ploting
 ;=================================================;
@@ -126,9 +124,9 @@ begin
 
 ; Defining the corners for projection
 ;====================================
-  resmap@mpLimitMode            = "Corners"
-  resmap@mpLeftCornerLatF       = lat2d(0,0)
-  resmap@mpLeftCornerLonF       = lon2d(0,0)
+  resmap@mpLimitMode           = "Corners"
+  resmap@mpLeftCornerLatF      = lat2d(0,0)
+  resmap@mpLeftCornerLonF      = lon2d(0,0)
   resmap@mpRightCornerLatF     = lat2d(jmax-1,imax-1)
   resmap@mpRightCornerLonF     = lon2d(jmax-1,imax-1)
 
@@ -161,7 +159,7 @@ begin
 ; Define the plane where the cross-section will be done
 ; ------------------------------------------------------
         plane = new(2,float)
-        plane = (/ (mdims(nd-1)-2)/2, (mdims(nd-2)-2)/2 /)    ; pivot point is center of domain (x,y)
+        plane = (/ (imax)/2, (jmax)/2 /)    ; pivot point is center of domain (x,y)
 
 ; Resource for the interpolation
 ; --------------------------------
@@ -313,6 +311,5 @@ begin
 
 end do  ; make next cross section
 
-print(resmap)
 
 end
