@@ -203,6 +203,7 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         V.Puygrenier 07/2009 Correction on ice effective radius
 !         B. Aouizerats 09/2010 Explicit aerosol optical properties computation
 !         G.Delautier 9/2014: remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!         M.Mazoyer 2016 :  limit of 100 microns for effective radius 
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -788,7 +789,9 @@ DO JK = 1 , KLEV
                 IF (ZRADLP(JL)>1) then
                  ZTOL =ZFLWP(JL)*(XSWSAVIA(JSW)+(XSWSAVIB(JSW)/ZRADLP(JL)))/ZRADLP(JL)
                  ZGL  = RYFWCF(JSW)
-                 ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*ZRADLP(JL)
+! M.Mazoyer, O.Thouron effective radius does not exceed 100 microns
+!                ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*ZRADLP(JL)
+                 ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*MIN(ZRADLP(JL),100.0)
                 ENDIF
               ELSE IF (ZRADLP(JL)>1.) THEN
                  write(*,*)'PROGRAM ERROR: STOP'
