@@ -73,6 +73,7 @@
 !!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!   P.Tulet : 11/2015 : new diagnostic for aerosol
 !!  09/2015     (S. Bielli)    Add netcdf call for phys_param
+!!  04/2016     (G.Delautier) replace print by write in OUTPUT LISTING
 !!
 !-------------------------------------------------------------------------------
 !
@@ -367,56 +368,43 @@ XISOTH(:)=0.
 !*       1.0   Namelist reading
 !              ----------------
 !
-PRINT*, ' '
-PRINT*, '*********************************************************************'
-PRINT*, '*********************************************************************'
-PRINT*, ' '
-!
 YNAM  = 'DIAG1.nam'
 CALL OPEN_ll (UNIT=ILUNAM,FILE=YNAM,IOSTAT=IRESP,STATUS="OLD",ACTION='READ', &
      FORM="FORMATTED",POSITION="REWIND",MODE=GLOBAL)
 !
-PRINT*, 'READ THE DIAG.NAM FILE'
 !
 CALL POSNAM(ILUNAM,'NAM_DIAG',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_DIAG)
-  PRINT*, '  namelist NAM_DIAG read'
 END IF
 !
 CALL POSNAM(ILUNAM,'NAM_DIAG_BLANK',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_DIAG_BLANK)
-  PRINT*, '  namelist NAM_DIAG_BLANK read'
 END IF
 !
 CALL POSNAM(ILUNAM,'NAM_DIAG_FILE',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_DIAG_FILE)
-  PRINT*, '  namelist NAM_DIAG_FILE read'
 END IF
 !
 CALL POSNAM(ILUNAM,'NAM_STO_FILE',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_STO_FILE)
-  PRINT*, '  namelist NAM_STO_FILE read'
 END IF
 CALL POSNAM(ILUNAM,'NAM_CONFZ',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONFZ)
-   PRINT*, '  namelist NAM_CONFZ read'
 END IF
 #ifdef MNH_NCWRIT
 CALL POSNAM(ILUNAM,'NAM_NCOUT',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_NCOUT)
-  PRINT*, '  namelist NAM_NCOUT read'
 END IF
 #endif
 CALL POSNAM(ILUNAM,'NAM_CONFIO',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONFIO)
-  PRINT*, '  namelist NAM_CONFIO read'
 END IF
 CALL SET_CONFIO_ll(LCDF4, LLFIOUT, LLFIREAD)
 !
@@ -458,17 +446,10 @@ IF ( LEN_TRIM(CINIFILE)==0 ) THEN
  STOP
 ENDIF
 !
-PRINT*, ' '
-PRINT*, '****************************************'
-PRINT*, 'Treatment of file: ',CINIFILE
-PRINT*, '****************************************'
-!
 INPRAR = 24 +2*(4+NRR+NSV)
 YFMFILE=ADJUSTL(ADJUSTR(CINIFILE)//YSUFFIX)
 CALL FMOPEN_ll(YFMFILE,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,INPRAR,IRESP)
 COUTFMFILE=YFMFILE
-! YDESFM=ADJUSTL(ADJUSTR(YFMFILE)//'.des')
-! CALL WRITE_DESFM1(1,YDESFM,CLUOUT)
 !
 CALL SECOND_MNH2(ZTIME2)
 ZSTART=ZTIME2-ZTIME1
@@ -478,6 +459,13 @@ ZTIME1=ZTIME2
 !*       3.0   Fields initialization
 !
 CALL INIT_MNH
+!
+CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+!
+WRITE(ILUOUT0,*) ' '
+WRITE(ILUOUT0,*) '****************************************'
+WRITE(ILUOUT0,*) 'Treatment of file: ',CINIFILE
+WRITE(ILUOUT0,*) '****************************************'
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=NKMAX+2*JPVEXT
@@ -492,6 +480,19 @@ CALL INI_DIAG_IN_RUN(IIU,IJU,IKU,LFLYER,LSTATION,LPROFILER)
 CALL SECOND_MNH2(ZTIME2)
 ZINIT =ZTIME2-ZTIME1
 ZTIME1=ZTIME2
+!
+IF (LRADAR .AND. NVERSION_RAD==2 .AND. NPROC/=1) THEN
+      PRINT*, '***************************************'
+      PRINT*, ' WITH NVERSION_RAD=2, DIAG HAS TO BE &
+                      & PERFORMED WITH MONOPROCESSOR MODE '
+      PRINT*, '-> JOB ABORTED'
+      PRINT*, '***************************************'
+     !callabortstop
+      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
+      CALL ABORT
+      STOP
+
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*       4.0    Stores the fields in MESONH files if necessary
@@ -510,9 +511,9 @@ NC_WRITE = .FALSE.
 CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
 #endif
 !
-PRINT*, ' '
-PRINT*, 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG'
-PRINT*, ' '
+WRITE(ILUOUT0,*) ' '
+WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG'
+WRITE(ILUOUT0,*) ' '
 !
 CALL SECOND_MNH2(ZTIME2)
 ZWRIT =ZTIME2-ZTIME1
@@ -524,9 +525,9 @@ ZTIME1=ZTIME2
 IF ( LAIRCRAFT_BALLOON ) THEN
   YFMDIAC=ADJUSTL(ADJUSTR(CINIFILE)//'BAL')
   CALL FMOPEN_ll(YFMDIAC,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,INPRAR,IRESP)
-  PRINT*, ' '
-  PRINT*, 'DIAG AFTER OPEN DIACHRONIC FILE'
-  PRINT*, ' '
+  WRITE(ILUOUT0,*) ' '
+  WRITE(ILUOUT0,*) 'DIAG AFTER OPEN DIACHRONIC FILE'
+  WRITE(ILUOUT0,*) ' '
 !
   TXDTBAL%TDATE%YEAR = TDTCUR%TDATE%YEAR
   TXDTBAL%TDATE%MONTH = TDTCUR%TDATE%MONTH
@@ -578,9 +579,9 @@ IF ( LAIRCRAFT_BALLOON ) THEN
 #endif
   CALL MENU_DIACHRO(YFMDIAC,CLUOUT,'END')
   CALL FMCLOS_ll(YFMDIAC,'KEEP',CLUOUT,IRESP)
-  PRINT*, ' '
-  PRINT*, 'DIAG AFTER CLOSE DIACHRONIC FILE'
-  PRINT*, ' '
+  WRITE(ILUOUT0,*) ' '
+  WRITE(ILUOUT0,*) 'DIAG AFTER CLOSE DIACHRONIC FILE'
+  WRITE(ILUOUT0,*) ' '
 END IF
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -671,20 +672,20 @@ IF ( CTURB /= 'NONE' .OR. CDCONV /= 'NONE' .OR. CSCONV /= 'NONE' &
      .OR. CRAD /= 'NONE' ) THEN
 ! IF (CSTORAGE_TYPE/='MT') THEN
     IF (XDTSTEP==XUNDEF) THEN
-      PRINT*, ' '
-      PRINT*, '******************* WARNING in DIAG ***********************'
-      PRINT*, ' '
-      PRINT*, 'You asked for diagnostics that need to call the physics monitor:'
-      PRINT*, ' be aware of the time step used'
-      PRINT*, 'you can modify it with XDTSTEP in namelist NAM_DIAG'
-      PRINT*, ' '
+      WRITE(ILUOUT0,*) ' '
+      WRITE(ILUOUT0,*) '******************* WARNING in DIAG ***********************'
+      WRITE(ILUOUT0,*) ' '
+      WRITE(ILUOUT0,*) 'You asked for diagnostics that need to call the physics monitor:'
+      WRITE(ILUOUT0,*) ' be aware of the time step used'
+      WRITE(ILUOUT0,*) 'you can modify it with XDTSTEP in namelist NAM_DIAG'
+      WRITE(ILUOUT0,*) ' '
     ELSE
       XTSTEP=XDTSTEP
     END IF
 ! END IF
-  PRINT*,' XTSTEP= ', XTSTEP
-  PRINT*, ' '
-  PRINT*, 'DIAG BEFORE PHYS_PARAM1: CTURB=',CTURB,' CDCONV=',CDCONV, &
+  WRITE(ILUOUT0,*)' XTSTEP= ', XTSTEP
+  WRITE(ILUOUT0,*) ' '
+  WRITE(ILUOUT0,*) 'DIAG BEFORE PHYS_PARAM1: CTURB=',CTURB,' CDCONV=',CDCONV, &
           ' CSCONV=',CSCONV,' CRAD=',CRAD
 END IF
 !
@@ -723,7 +724,7 @@ CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
                   ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
 #endif       
-PRINT*, 'DIAG AFTER PHYS_PARAM1'
+WRITE(ILUOUT0,*) 'DIAG AFTER PHYS_PARAM1'
 !
 !* restores the initial flags
 !
@@ -766,8 +767,8 @@ IF (CSURF=='EXTE') THEN
   CALL DIAG_SURF_ATM_n('MESONH')
   CALL WRITE_DIAG_SURF_ATM_n('MESONH','ALL')
 #endif
-  PRINT*, ' '
-  PRINT*, 'DIAG AFTER WRITE_DIAG_SURF_ATM_n'
+  WRITE(ILUOUT0,*) ' '
+  WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_DIAG_SURF_ATM_n'
 ENDIF
 !
 CALL SECOND_MNH2(ZTIME2)
@@ -792,8 +793,8 @@ END IF
 #else
 CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
 #endif
-PRINT*, ' '
-PRINT*, 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG_SUPP'
+WRITE(ILUOUT0,*) ' '
+WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG_SUPP'
 !
 CALL SECOND_MNH2(ZTIME2)
 ZWRITS=ZTIME2-ZTIME1
@@ -823,13 +824,13 @@ CALL SECOND_MNH2(ZTIME2)
 ZTIME2=ZTIME2-ZTIME0
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+!CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
-WRITE(ILUOUT0,*) '+--------------------------------------------------------------+'
-WRITE(ILUOUT0,*) '|                                                              |'
-WRITE(ILUOUT0,*) '|            COMPUTING TIME ANALYSIS in DIAG                   |'
-WRITE(ILUOUT0,*) '|                                                              |'
-WRITE(ILUOUT0,*) '|--------------------------------------------------------------|'
+!WRITE(ILUOUT0,*) '+--------------------------------------------------------------+'
+!WRITE(ILUOUT0,*) '|                                                              |'
+!WRITE(ILUOUT0,*) '|            COMPUTING TIME ANALYSIS in DIAG                   |'
+!WRITE(ILUOUT0,*) '|                                                              |'
+!WRITE(ILUOUT0,*) '|--------------------------------------------------------------|'
 !WRITE(ILUOUT0,*) '|                     |                    |                   |'
 !WRITE(ILUOUT0,*) '|    ROUTINE NAME     |      CPU-TIME      |   PERCENTAGE %    |'
 !WRITE(ILUOUT0,*) '|                     |                    |                   |'
@@ -865,13 +866,13 @@ WRITE(ILUOUT0,*) '|-------------------------------------------------------------
 !WRITE(ILUOUT0,*) '|---------------------| -------------------|-------------------|'
 !
 !
+WRITE(ILUOUT0,*) ' '
+WRITE(ILUOUT0,*) '***************************** **************'
+WRITE(ILUOUT0,*) '*            EXIT  DIAG CORRECTLY          *'
+WRITE(ILUOUT0,*) '**************************** ***************'
+!WRITE(ILUOUT0,*) '  (see time analysis in ',TRIM(CLUOUT0),' )'
+WRITE(ILUOUT0,*) ' '
 CALL CLOSE_ll (CLUOUT0,IOSTAT=IRESP)
-PRINT*, ' '
-PRINT*, '***************************** **************'
-PRINT*, '*            EXIT  DIAG CORRECTLY          *'
-PRINT*, '**************************** ***************'
-PRINT*, '  (see time analysis in ',TRIM(CLUOUT0),' )'
-PRINT*, ' '
 !-------------------------------------------------------------------------------
 !
 !*      10.    FINALIZE THE PARALLEL SESSION
