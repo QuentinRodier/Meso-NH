@@ -143,6 +143,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 2014 (M.Faivre)
 !!      Modification 01/15  (C. Barthe)   add LNOx
 !!      Modification 25/02/2015 (M.Moge) correction of the parallelization attempted by M.Faivre
+!!      Modification 15/04/2016 (P.Tulet) bug allocation ZSVT_C
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -419,7 +420,7 @@ ELSE
   ALLOCATE(ZWTH_FLUX_M_C(IDIMX_C,IDIMY_C,SIZE(PVT,3)))
   !$***** 4D
   ALLOCATE(ZRT_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),SIZE(PRT,4)))
-  ALLOCATE(ZSVT_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),SIZE(PRT,4)))
+  ALLOCATE(ZSVT_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),NSV))
   ALLOCATE(ZDRVFRC_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),SIZE(PRT,4)))
   ALLOCATE(ZDTHFRC_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),SIZE(PRT,4)))
   ALLOCATE(ZRVREL_C(IDIMX_C,IDIMY_C,SIZE(PUT,3),SIZE(PRT,4)))
