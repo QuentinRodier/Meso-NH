@@ -36,7 +36,8 @@
 !!      V. Masson       06/11/02    new flags for budget calls and time counters
 !!      V. Masson       27/11/02    add 2way nesting effect
 !!      P. Jabouille    07/07/04    add budget terms for microphysics
-!!      C. Barthe       19/11/09    add budget terms for electricity              
+!!      C. Barthe       19/11/09    add budget terms for electricity          
+!!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -251,6 +252,9 @@ INTEGER, SAVE :: NHTURBTH   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBTH   ! vertical turbulence
 INTEGER, SAVE :: NDISSHTH   ! dissipative heating
 INTEGER, SAVE :: NNEGATH    ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNETURTH    ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNEADVTH    ! negative correction induced by hydrometeors
+INTEGER, SAVE :: NNECONTH    ! negative correction induced by hydrometeors
 INTEGER, SAVE :: NREVATH    ! rain evaporation
 INTEGER, SAVE :: NCONDTH    ! evaporation/condensation
 INTEGER, SAVE :: NHENUTH    ! HEterogenous NUcleation ICE3
@@ -308,6 +312,9 @@ INTEGER, SAVE :: NMAFLRV   ! Mass flux
 INTEGER, SAVE :: NHTURBRV  ! horizontal turbulence 
 INTEGER, SAVE :: NVTURBRV  ! vertical turbulence
 INTEGER, SAVE :: NNEGARV   ! negative correction                            
+INTEGER, SAVE :: NNETURRV   ! negative correction                            
+INTEGER, SAVE :: NNECONRV   ! negative correction                            
+INTEGER, SAVE :: NNEADVRV   ! negative correction                            
 INTEGER, SAVE :: NREVARV   ! rain evaporation
 INTEGER, SAVE :: NCONDRV   ! evaporation/condensation
 INTEGER, SAVE :: NHENURV   ! HEterogenous NUcleation ICE3
@@ -331,6 +338,9 @@ INTEGER, SAVE :: NDCONVRC   ! Deep CONVection
 INTEGER, SAVE :: NHTURBRC   ! horizontal turbulence 
 INTEGER, SAVE :: NVTURBRC   ! vertical turbulence
 INTEGER, SAVE :: NNEGARC    ! negative correction                            
+INTEGER, SAVE :: NNETURRC    ! negative correction                            
+INTEGER, SAVE :: NNECONRC    ! negative correction                            
+INTEGER, SAVE :: NNEADVRC    ! negative correction                            
 INTEGER, SAVE :: NACCRRC    ! accretion
 INTEGER, SAVE :: NAUTORC    ! autoconversion
 INTEGER, SAVE :: NCONDRC    ! evaporation/condensation

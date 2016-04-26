@@ -208,6 +208,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   07/2013  (C.Lac) add WENO, LCHECK              
 !!                   07/2013  (Bosseur & Filippi) adds Forefire
 !!                   08/2015  (Redelsperger & Pianezze) add XPOND coefficient for LBC
+!!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -584,6 +585,9 @@ IF (KMI == 1) THEN
   NHTURBTH = 0
   NDISSHTH = 0
   NNEGATH  = 0
+  NNEADVTH  = 0
+  NNETURTH  = 0
+  NNECONTH  = 0
   NREVATH  = 0
   NCONDTH  = 0
   NHENUTH  = 0
@@ -631,6 +635,9 @@ IF (KMI == 1) THEN
   NVTURBRV = 0
   NHTURBRV = 0
   NNEGARV  = 0
+  NNETURRV  = 0
+  NNECONRV  = 0
+  NNEADVRV  = 0
   NREVARV  = 0
   NCONDRV  = 0
   NHENURV  = 0
@@ -651,6 +658,9 @@ IF (KMI == 1) THEN
   NVTURBRC = 0
   NHTURBRC = 0
   NNEGARC  = 0
+  NNETURRC  = 0
+  NNECONRC  = 0
+  NNEADVRC  = 0
   NACCRRC  = 0
   NAUTORC  = 0
   NCONDRC  = 0

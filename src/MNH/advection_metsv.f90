@@ -9,10 +9,10 @@
 !
 INTERFACE
       SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
-                            HMET_ADV_SCHEME,HSV_ADV_SCHEME, KSPLIT,            &
+                            HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, KTCOUNT, PTSTEP,           &
-                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT,             &
+                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT, PPABST,     &
                             PTHVREF, PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,     &
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
                             PRTHS_CLD, PRRS_CLD, PRSVS_CLD, PRTKES_ADV         )
@@ -26,6 +26,7 @@ CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
                                         HUVW_ADV_SCHEME
+CHARACTER (LEN=4),      INTENT(IN)   :: HCLOUD      ! Kind of cloud parameterization                                
 !
 INTEGER,                INTENT(INOUT):: KSPLIT       ! Number of time splitting
                                                      ! for PPM advection
@@ -43,6 +44,7 @@ REAL,                     INTENT(IN)    :: PTSTEP
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET, PRHODJ
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST                 
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
@@ -63,10 +65,10 @@ END INTERFACE
 END MODULE MODI_ADVECTION_METSV
 !     ##########################################################################
       SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
-                            HMET_ADV_SCHEME,HSV_ADV_SCHEME, KSPLIT,            &
+                            HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, KTCOUNT, PTSTEP,           &
-                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT,             &
+                            PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT, PPABST,     &
                             PTHVREF, PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,     &
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
                             PRTHS_CLD, PRRS_CLD, PRSVS_CLD, PRTKES_ADV         )
@@ -128,6 +130,7 @@ END MODULE MODI_ADVECTION_METSV
 !!                  04/2015  (J.Escobar) remove/commente some NHALO=1 test
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                  J.Escobar : 01/10/2015 : add computation of CFL for L1D case
+!!                  04/2016  (C.Lac)       : correction of negativity for KHKO
 !!
 !-------------------------------------------------------------------------------
 !
@@ -140,6 +143,7 @@ USE MODE_IO_ll
 USE MODD_PARAM_n
 USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
 USE MODD_CTURB, ONLY : XTKEMIN
+USE MODD_CST 
 USE MODD_BUDGET
 !
 USE MODI_CONTRAV
@@ -165,6 +169,7 @@ CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
                                         HUVW_ADV_SCHEME
+CHARACTER (LEN=4),      INTENT(IN)   :: HCLOUD      ! Kind of cloud parameterization                                
 !
 INTEGER,                INTENT(INOUT):: KSPLIT       ! Number of time splitting
                                                      ! for PPM advection
@@ -182,6 +187,7 @@ REAL,                     INTENT(IN)    :: PTSTEP
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET, PRHODJ
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST                 
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT , PSVT
                                                   ! Variables at t
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHVREF   ! Virtual Temperature
@@ -232,6 +238,7 @@ REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZRSVS_PP
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOX1,ZRHOX2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOY1,ZRHOY2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOZ1,ZRHOZ2
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZT,ZEXN,ZLV,ZLS,ZCPH
 ! Temporary advected rhodj for PPM routines
 !
 INTEGER :: JS,JR,JSV,JSPL  ! Loop index
@@ -250,7 +257,7 @@ CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER             :: ILUOUT       ! logical unit
 INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
-INTEGER         :: IIB, IIE, IJB, IJE
+INTEGER             :: IIB, IIE, IJB, IJE
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
@@ -556,6 +563,28 @@ IF (KRR>=7.AND.LBUDGET_RH) CALL BUDGET (PRRS(:,:,:,7),12,'ADV_BU_RRH')
 DO JSV=1,KSV
   IF (LBUDGET_SV) CALL BUDGET (PRSVS(:,:,:,JSV),JSV+12,'ADV_BU_RSV')
 END DO
+!
+IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
+  ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+  ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+  ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+  ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
+  ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+  DO JSV = 2, 3
+    WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
+      PRTHS(:,:,:) = PRTHS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+             ZCPH(:,:,:) / ZEXN(:,:,:)
+      PRRS(:,:,:,JSV)  = 0.0
+      PRSVS(:,:,:,JSV) = 0.0
+    END WHERE
+  END DO
+!
+  IF (LBUDGET_TH) CALL BUDGET (PRTHS(:,:,:) , 4,'NEADV_BU_RTH')
+  IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NEADV_BU_RRV')
+  IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NEADV_BU_RRC')
+
+END IF
 
 
 !-------------------------------------------------------------------------------

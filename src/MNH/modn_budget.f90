@@ -225,6 +225,7 @@
 !!      J.-P. Pinty 18/02/97  add forcing and ice
 !!      J.-P. Pinty 25/09/00  add budget terms for C2R2
 !!      D. Gazen    22/01/01  add NCHEMSV
+!!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -251,7 +252,7 @@ NAMELIST/NAM_BU_RTH/LBU_RTH, NASSETH, NNESTTH, NADVTH, NFRCTH, &
                    NVTURBTH, NDISSHTH, NNEGATH, NREVATH, NCONDTH, NHENUTH, NHONTH, &
                    NSFRTH, NDEPSTH, NDEPGTH,NRIMTH, NACCTH, NCFRZTH, NWETGTH, &
                    NDRYGTH, NGMLTTH, NIMLTTH, NBERFITH, NCDEPITH, NWETHTH, NHMLTTH, &
-                   NMAFLTH
+                   NMAFLTH, NNETURTH, NNEADVTH,NNECONTH
 !
 NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
                      NFRCTKE, NDIFTKE, NRELTKE, NDRAGTKE,                           &
@@ -259,12 +260,14 @@ NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
 !
 NAMELIST/NAM_BU_RRV/LBU_RRV, NASSERV, NNESTRV, NADVRV, NFRCRV, &
                     NNUDRV, NDIFRV, NRELRV, NDCONVRV, NHTURBRV, NVTURBRV, NNEGARV, &
-                    NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV
+                    NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV, &
+                    NNETURRV, NNEADVRV,NNECONRV
 ! 
 NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
                     NDIFRC, NRELRC, NDCONVRC, NHTURBRC, NVTURBRC, NNEGARC, NACCRRC, &
                     NAUTORC, NCONDRC, NHONRC, NRIMRC, NWETGRC, NDRYGRC, NIMLTRC,   &
-                    NBERFIRC, NCDEPIRC, NHENURC, NSEDIRC, NWETHRC
+                    NBERFIRC, NCDEPIRC, NHENURC, NSEDIRC, NWETHRC, NNETURRC, &
+                    NNEADVRC,NNECONRC
 ! 
 NAMELIST/NAM_BU_RRR/LBU_RRR, NASSERR, NNESTRR, NADVRR, NFRCRR, &
                     NDIFRR, NRELRR, NNEGARR, NACCRRR, NAUTORR, NREVARR, NSEDIRR,    &
