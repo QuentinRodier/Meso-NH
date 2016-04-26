@@ -9,6 +9,8 @@
 ! $Name$ 
 ! $Revision$ 
 ! $Date$
+!Correction :
+!  D.Gazen   : avril 2016 change error message 
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
@@ -128,12 +130,6 @@ END SUBROUTINE FMLOOK_ll
 
 SUBROUTINE FMOPEN_ll(HFILEM,HACTION,HFIPRI,KNPRAR,KFTYPE,KVERB,KNINAR&
      & ,KRESP,OPARALLELIO)
-!-------------------------------------------------------------------------------
-!!    MODIFICATIONS
-!!    -------------
-!!       J.escobar  19/04/2016 , return error<>0 when open file modified & no closed
-!!
-!-------------------------------------------------------------------------------
 USE MODD_IO_ll, ONLY : ISP,ISTDOUT,LFIPARAM,LIOCDF4,LLFIOUT,LLFIREAD
 USE MODE_FD_ll, ONLY : FD_ll,GETFD,JPFINL
 USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO
@@ -262,7 +258,8 @@ IF (ISP == TZFDLFI%OWNER) THEN
         TZFDLFI%CDF => NEWIOCDF()
         INCERR = NF_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF_NOWRITE, TZFDLFI%CDF%NCID)
         IF (INCERR /= NF_NOERR) THEN
-           PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(INCERR)
+           !PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF_OPEN) ', TRIM(HFILEM)//'.nc4', ' : ', NF_STRERROR(IRESOU)
            STOP
         END IF
         PRINT *, 'NF_OPEN: ', TRIM(HFILEM)//'.nc4'
@@ -274,7 +271,8 @@ IF (ISP == TZFDLFI%OWNER) THEN
         INCERR = NF_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
              &IOR(NF_CLOBBER,NF_NETCDF4), TZFDLFI%CDF%NCID)
         IF (INCERR /= NF_NOERR) THEN
-           PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(INCERR)
+           !PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF_CREATE) ', TRIM(HFILEM)//'.nc4', ' : ', NF_STRERROR(IRESOU)
            STOP
         END IF
         PRINT *, 'NF_CREATE: ', TRIM(HFILEM)//'.nc4'

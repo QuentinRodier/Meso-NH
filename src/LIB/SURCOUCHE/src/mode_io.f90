@@ -20,6 +20,7 @@
 !     Juan 05/11/2009: allow JPMAX_UNIT=48 open files 
 !     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
 !     Philippe 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
+!     D.Gazen   : avril 2016 change error message 
 !
 MODULE MODE_IO_ll
 
@@ -663,7 +664,7 @@ CONTAINS
                       TZFD_IOZ%CDF => NEWIOCDF()
                       IOSCDF = NF_OPEN(TRIM(FILE)//cfile//".nc4", NF_NOWRITE, TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF_NOERR) THEN
-                         PRINT *, 'NF_OPEN error : ', NF_STRERROR(IOSCDF)
+   PRINT *, 'Error in opening (NF_OPEN) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF_STRERROR(IOS)
                          STOP
                       ELSE
                          IOS = 0
@@ -678,7 +679,7 @@ CONTAINS
                       IOSCDF = NF_CREATE(TRIM(FILE)//cfile//".nc4", &
                            &IOR(NF_CLOBBER,NF_NETCDF4), TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF_NOERR) THEN
-                         PRINT *, 'NF_CREATE error : ', NF_STRERROR(IOSCDF)
+                         PRINT *, 'Error in opening (NF_CREATE) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF_STRERROR(IOS)
                          STOP
                       ELSE
                          IOS = 0
