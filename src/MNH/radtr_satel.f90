@@ -104,6 +104,7 @@ END MODULE MODI_RADTR_SATEL
 !!      Original    29/03/00
 !!      J.-P. Chaboureau 15/04/03  add call to the subgrid condensation scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      G.Delautier 04/2016 : BUG JPHEXT
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -299,7 +300,7 @@ DO JK=IKB,IKE
   JKRAD = JK-JPVEXT
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
-      IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
       ZTAVE(IIJ,JKRAD)  = PTHT(JI,JJ,JK)*ZEXNT(JI,JJ,JK)
     END DO
   END DO
@@ -312,7 +313,7 @@ IF( SIZE(PRT(:,:,:,:),4) >= 1 ) THEN
     JKRAD = JK-JPVEXT
     DO JJ=IJB,IJE
       DO JI=IIB,IIE
-        IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
         ZQVAVE(IIJ,JKRAD) = PRT(JI,JJ,JK,1)
       END DO
     END DO
@@ -341,7 +342,7 @@ DO JK=IKB,IKE+1
   JKRAD = JK-JPVEXT
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
-      IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
       ZPRES_HL(IIJ,JKRAD) = XP00 * &
                            (0.5*(ZEXNT(JI,JJ,JK)+ZEXNT(JI,JJ,JK-1)))**(XCPD/XRD)
     END DO
@@ -359,7 +360,7 @@ END DO
 !  Surface temperature at the first level
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     ZT_HL(IIJ,1) = PTSRAD(JI,JJ)
   END DO
 END DO
@@ -369,7 +370,7 @@ ZT_HL(:,2:IKE-JPVEXT) = 0.5*(ZTAVE(:,1:IKE-JPVEXT-1)+ZTAVE(:,2:IKE-JPVEXT))
 !
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     ZT_HL(IIJ,IKE-JPVEXT+1)  =  0.5*PTHT(JI,JJ,IKE  )*ZEXNT(JI,JJ,IKE  ) &
                               + 0.5*PTHT(JI,JJ,IKE+1)*ZEXNT(JI,JJ,IKE+1)
   END DO
@@ -406,7 +407,7 @@ DO JJ = IJB,IJE
     DO JI = IIB,IIE
       ZOZ=(0.5*(PZZ(JI,JJ,JK2)+PZZ(JI,JJ,JK2+1))- ZSTAZZ(IKKOZ(JI,JK2))) &
            /( ZSTAZZ(IKKOZ(JI,JK2)+1)           - ZSTAZZ(IKKOZ(JI,JK2)))
-      IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+      IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
       ZO3AVE(IIJ,JKRAD) =( (1.- ZOZ) * ZSTAOZ(IKKOZ(JI,JK2))    &
                          +  ZOZ     * ZSTAOZ(IKKOZ(JI,JK2)+1))
     END DO
@@ -428,7 +429,7 @@ END DO
 ALLOCATE(ZREMIS(KDLON))
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     ZREMIS(IIJ)   = PEMIS(JI,JJ)
   END DO
 END DO
@@ -437,7 +438,7 @@ END DO
 ALLOCATE(ZDT0(KDLON))
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     ZDT0(IIJ) = PTSRAD(JI,JJ) - PTHT(JI,JJ,1)*ZEXNT(JI,JJ,1)
   END DO
 END DO
@@ -446,7 +447,7 @@ ALLOCATE(ZULAT(KDLON))
 ALLOCATE(ZULON(KDLON))
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     ZULON(IIJ) = XLON(JI,JJ)
     ZULAT(IIJ) = XLAT(JI,JJ)
   END DO
@@ -485,7 +486,7 @@ IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
     JKRAD = JK-JPVEXT
     DO JJ=IJB,IJE
       DO JI=IIB,IIE
-        IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
         IF ( ZVIEW(IIJ) /= XUNDEF .AND. &
              (ZRC(JI,JJ,JK)  > 0. .OR. ZRI(JI,JJ,JK) > 0. ) ) THEN
           ZFLWP = ZRC(JI,JJ,JK) / XG /MAX(1.E-10,ZNCLD(JI,JJ,JK)) &
@@ -518,7 +519,7 @@ GDOIT_2D(:) = .FALSE.
 !
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     IF (ZVIEW(IIJ) /= XUNDEF) GDOIT_2D(IIJ) = .TRUE.
   END DO
 END DO
@@ -717,7 +718,7 @@ PIRBT = XUNDEF
 PWVBT = XUNDEF
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
-    IIJ = (JI-JPHEXT) + (IIE-IIB+1)*(JJ-IJB)
+    IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
     PIRBT(JI,JJ) = ZZRADFT(IIJ,1)
     PWVBT(JI,JJ) = ZZRADFT(IIJ,2)
   END DO
