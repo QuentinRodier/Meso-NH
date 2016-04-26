@@ -15,7 +15,7 @@ INTERFACE
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
-                                  PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
+                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,&
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -73,6 +73,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-D
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD ! THeta RADiative Tendancy
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
@@ -142,7 +143,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
                                   PTHM, PRCM, PPABSM,                                  &
-                                  PW_ACT, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,        &
+                                  PW_ACT,PDTHRAD, PTHS, PRS, PSVT, PSVS, PSRCS, PCLDFR,&
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
@@ -250,6 +251,8 @@ END MODULE MODI_RESOLVED_CLOUD
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      M.Mazoyer : 04/2016 : Temperature radiative tendency used for  
+!!                            activation by cooling (OACTIT)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -337,6 +340,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   :: PRCM    ! Cloud water m.r. at time t-D
 !
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_ACT ! W for CCN activation
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PDTHRAD ! THeta RADiative Tendancy
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS  ! Theta source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRS   ! Moist  variable sources
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVT  ! Scalar variable at time t
@@ -582,21 +586,21 @@ SELECT CASE ( HCLOUD )
     END WHERE
 !
 !
-  CASE('C2R2','KHKO')                                 
-    CALL GET_HALO(PRS(:,:,:,2))
-    CALL GET_HALO(ZSVS(:,:,:,2))
-    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
-      ZSVS(:,:,:,1) = 0.0
-    END WHERE
-    DO JSV = 2, 3
-      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
-        PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
-        PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXN(:,:,:)
-        PRS(:,:,:,JSV)  = 0.0
-        ZSVS(:,:,:,JSV) = 0.0
-      END WHERE
-    ENDDO
+! CASE('C2R2','KHKO')                                 
+!   CALL GET_HALO(PRS(:,:,:,2))
+!   CALL GET_HALO(ZSVS(:,:,:,2))
+!   WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
+!     ZSVS(:,:,:,1) = 0.0
+!   END WHERE
+!   DO JSV = 2, 3
+!     WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+!       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
+!       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+!            ZCPH(:,:,:) / ZEXN(:,:,:)
+!       PRS(:,:,:,JSV)  = 0.0
+!       ZSVS(:,:,:,JSV) = 0.0
+!     END WHERE
+!   ENDDO
 ! Commented 03/2013 O.Thouron 
 ! (at least necessary to be commented for supersaturation variable)
 !  ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
@@ -675,14 +679,16 @@ END SELECT
 !*       3.3  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NEGA_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NEGA_BU_RRC')
+IF ((HCLOUD /= 'KHKO') .AND. (HCLOUD /= 'C2R2') ) THEN
+ IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NEGA_BU_RTH')
+ IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NEGA_BU_RRV')
+ IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NEGA_BU_RRC')
+END IF
 IF (LBUDGET_RR) CALL BUDGET (PRS(:,:,:,3) * PRHODJ(:,:,:), 8,'NEGA_BU_RRR')
 IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,9,'NEGA_BU_RRI')
 IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NEGA_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NEGA_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NEGA_BU_RTH')
 !
 
 !*       3.4    Limitations of Na and Nc to the CCN max number concentration
@@ -753,7 +759,7 @@ SELECT CASE ( HCLOUD )
                      HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
-                     PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
+                     PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
                      ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D ,                          &
@@ -877,7 +883,7 @@ SELECT CASE ( HCLOUD )
                      PRT(:,:,:,1), PRT(:,:,:,2),                                  &
                      PRT(:,:,:,3),                                                &
                      PTHM, PRCM, PPABSM,                                          &
-                     PW_ACT, PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
+                     PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
                      ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D,                           &
@@ -913,6 +919,20 @@ SELECT CASE ( HCLOUD )
 !
 END SELECT
 !
+IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
+    DO JSV = 2, 3
+      WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
+        PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
+        PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+             ZCPH(:,:,:) / ZEXN(:,:,:)
+        PRS(:,:,:,JSV)  = 0.0
+        ZSVS(:,:,:,JSV) = 0.0
+      END WHERE
+    ENDDO
+ IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)  * PRHODJ(:,:,:), 4,'NECON_BU_RTH')
+ IF (LBUDGET_RV) CALL BUDGET (PRS(:,:,:,1) * PRHODJ(:,:,:), 6,'NECON_BU_RRV')
+ IF (LBUDGET_RC) CALL BUDGET (PRS(:,:,:,2) * PRHODJ(:,:,:), 7,'NECON_BU_RRC')
+END IF
 !-------------------------------------------------------------------------------
 !
 !
