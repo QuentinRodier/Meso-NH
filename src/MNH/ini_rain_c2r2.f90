@@ -200,10 +200,11 @@ IF (ALLOCATED(XRTMIN)) RETURN     ! In case of nesting microphysics constants of
 !
 XAC = (XPI/6.0)*XRHOLW
 XBC = 3.0
+! CAREFUL : FOR FOG WITH KHKO, TAKE THE 2ND FORMULA
 IF (HCLOUD=='KHKO') THEN
-XCC = XRHOLW*XG/(18.0*1.816E-5) ! Stokes flow (Pruppacher p 322 for T=293K)
+ XCC = XRHOLW*XG/(18.0*1.816E-5) ! Stokes flow (Pruppacher p 322 for T=293K)
 ELSE
-XCC = XRHOLW*XG/(18.0*1.7E-5) ! Stokes flow (Pruppacher p 322 for T=273K)
+ XCC = XRHOLW*XG/(18.0*1.7E-5) ! Stokes flow (Pruppacher p 322 for T=273K)
 ENDIF
 XDC = 2.0
 !
