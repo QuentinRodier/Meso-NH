@@ -1151,7 +1151,7 @@ IF (KMI == 1) THEN ! other values initialized in modd_dust
   LDEPOS_DST(:) = .FALSE.
 
   LSALT      = .FALSE.
-  NMODE_DST  = 3
+  NMODE_SLT  = 3
   LVARSIG_SLT= .FALSE.
   LSEDIMSALT = .FALSE.
   LDEPOS_SLT(:)     = .FALSE.
