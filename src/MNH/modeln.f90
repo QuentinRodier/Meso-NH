@@ -236,6 +236,7 @@ END MODULE MODI_MODEL_n
 !!                   Sep 2015 (S. Bielli) : Remove YDADFILE from argument call 
 !!                              of write_phys_param
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!      M.Mazoyer : 04/2016      DTHRAD used for radiative cooling when LACTIT
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -297,7 +298,7 @@ USE MODD_PRECIP_n
 USE MODD_BIKHARDT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_NSV
-USE MODD_RADIATIONS_n, ONLY : XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER
+USE MODD_RADIATIONS_n, ONLY : XTSRAD,XSCAFLASWD,XDIRFLASWD,XDIRSRFSWD, XAER, XDTHRAD
 USE MODD_SERIES_n, ONLY: NFREQSERIES
 USE MODD_CH_AERO_n,    ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
@@ -1457,10 +1458,10 @@ XTIME_LES_BU_PROCESS = 0.
 CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
  CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
-                 CMET_ADV_SCHEME, CSV_ADV_SCHEME, NSPLIT,            &
+                 CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,    &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
                  CLBCX, CLBCY, NRR, NSV, KTCOUNT, XTSTEP,            &
-                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT,              &
+                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT, XPABST,      &
                  XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
                  XRTHS, XRRS, XRTKES, XRSVS,                         &
                  XRTHS_CLD, XRRS_CLD, XRSVS_CLD, XRTKEMS             )
@@ -1658,7 +1659,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
@@ -1676,7 +1677,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
@@ -1698,7 +1699,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
@@ -1714,7 +1715,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC, XRTHS, XRRS,                    &
+                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
