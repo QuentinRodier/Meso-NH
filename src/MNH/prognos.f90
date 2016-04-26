@@ -59,6 +59,7 @@ END MODULE MODI_KHKO_NOTADJUST
 !!    MODIFICATIONS
 !!    -------------
 !!     2014 G.Delautier : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
+!!     2015 M.Mazoyer and O.Thouron : Physical tunings
 !!
 !-------------------------------------------------------------------------------
 !
@@ -105,6 +106,7 @@ INTEGER, DIMENSION(SIZE(PRHOD,1)):: IVEC2   ! Vectors of indices for interpolati
 INTEGER :: J1,J2
 REAL,DIMENSION(SIZE(PS0,1))      ::MEM_PS0,ADJU2
 REAL::AER_RAD
+REAL, DIMENSION(SIZE(PRHOD,1))   :: ZFLAG_ACT   !Flag for activation
 !
 INTEGER                          :: IRESP      ! Return code of FM routines
 INTEGER                          :: ILUOUT     ! Logical unit of output listing
@@ -112,6 +114,7 @@ INTEGER                          :: ILUOUT     ! Logical unit of output listing
 !minimum radius of cloud droplet
 AER_RAD=1.0E-6
 !
+ZFLAG_ACT(:)=0.0
 !ACTIVATION
 ZVEC2(:) =0.0
 IVEC2(:) =0.0
@@ -143,6 +146,18 @@ WHERE (PS0(:).GT.0.0)
 END WHERE
 ENDIF
 ZZW2(:)=MAX( (ZZW2(:)-PCN(:)),0.0 )
+!
+WHERE (ZZW2(:).LT.1.0)   !Non physique d'activer moins d'une particule
+ZZW2(:)=0
+END WHERE
+!
+!
+!FLAG ACTIVE A TRUE (1.0) si on active pas
+DO J2=1,SIZE(PRC,1)
+ IF (ZZW2(J2).EQ.0.0) THEN
+ ZFLAG_ACT(J2)=1.0
+ ENDIF
+ENDDO
 !
 ! Mean radius
 ZRMOY(:)=0.0
@@ -287,7 +302,7 @@ DO J2=1,SIZE(PRC,1)
   ZRMOY(J2)=(MOMG(XALPHAC,XNUC,3.0)*4.0*XPI*PCL(J2)*XRHOLW/&
         (3.0*PRC(J2)*PRHOD(J2)))**(1.0/3.0)
   ZRMOY(J2)=MOMG(XALPHAC,XNUC,1.0)/ZRMOY(J2)
-  IF (ZRMOY(J2).LT.AER_RAD)THEN
+IF ((ZFLAG_ACT(J2).EQ.1.0).AND.(MEM_PS0(J2).LT.0.0).AND.(ZRMOY(J2).LT.AER_RAD)) THEN
    PTT(J2)=ZTL(J2)
    PRV(J2)=ZRT(J2)
    PRC(J2)=0.0
