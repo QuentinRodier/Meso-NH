@@ -164,6 +164,7 @@ END MODULE MODI_INI_SEG_n
 !!                       10/02/15  remove ABORT in parallel case for SPAWNING 
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                       01/2015   add GLNOX_EXPLICIT (C. Barthe)
+!!                       04/2016   add ABORT if CINIFILEPGD is not specified (G.Delautier)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -179,6 +180,7 @@ USE MODD_PARAMETERS
 USE MODD_DYN
 USE MODD_REF,   ONLY : LBOUSS
 USE MODD_IO_ll, ONLY : GSMONOPROC
+USE MODD_PARAM_n, ONLY : CSURF
 !
 USE MODE_FMREAD
 USE MODE_FM
@@ -324,6 +326,13 @@ IF (GFOUND) THEN
   CALL INIT_NAM_LUNITn
   READ(UNIT=ILUSEG,NML=NAM_LUNITn)
   CALL UPDATE_NAM_LUNITn
+  IF (LEN_TRIM(CINIFILEPGD)==0 .AND. CSURF=='EXTE') THEN
+    WRITE(ILUOUT,*) 'Error in namelist NAM_LUNITn : you need to specify CINIFILEPGD'
+    !callabortstop
+    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+    CALL ABORT
+    STOP
+  ENDIF
 END IF
 
 IF (CPROGRAM=='MESONH') THEN
@@ -354,6 +363,7 @@ IF (CPROGRAM=='MESONH') THEN
     !callabortstop
     CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
     CALL ABORT
+    STOP
     ENDIF
   ENDIF
 END IF

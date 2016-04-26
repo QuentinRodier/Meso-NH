@@ -2,6 +2,10 @@
 !SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
 !SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
 !SURFEX_LIC for details. version 1.
+!!    -------------
+!!    MODIFICATIONS
+!!    -------------
+!!                       04/2016   add ABORT if CINIFILEPGD is not specified (G.Delautier)
 !     #########
 SUBROUTINE READ_NAM_PREP_SURF_n(HPROGRAM)
 !     #######################################################
@@ -15,6 +19,7 @@ USE MODI_TEST_NAM_VAR_SURF
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
+USE MODI_ABOR1_SFX
 USE MODE_POS_SURF
 !
 !
@@ -52,6 +57,9 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_PREP_SURF_ATM)
 !
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CFILETYPE',   CFILETYPE,   '      ','GRIB  ','MESONH','ASCII ','LFI   ')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CFILEPGDTYPE',   CFILEPGDTYPE,   '      ','GRIB  ','MESONH','ASCII ','LFI   ')
+ IF (LEN_TRIM(CFILEPGD)==0) THEN
+   CALL ABOR1_SFX('Namelist NAM_PREP_SURF_ATM : you need to specify CFILEPGD ')   
+ ENDIF
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PREP_SURF_N',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE READ_NAM_PREP_SURF_n
