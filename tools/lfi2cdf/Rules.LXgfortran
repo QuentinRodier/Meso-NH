@@ -1,0 +1,15 @@
+# version de Didier recompilée pour LinuX avec un seul _
+#NETCDFHOME=/mesonh/MAKE/lib/netcdf-3.5.0.LX
+#NETCDFHOME=/usr/local/netcdf-3.5.0
+#
+
+NETCDFHOME = /usr
+DIR_CDF = $(NETCDFHOME)/lib64
+LIBCDF = $(DIR_CDF)/libnetcdff.so $(DIR_CDF)/libnetcdf.so
+
+###################################
+
+CPPFLAGS += -DLOWMEM
+INC      += -I$(NETCDFHOME)/include
+F90FLAGS += -fdefault-real-8  -O2 
+LDFLAGS  += 
