@@ -144,6 +144,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 01/15  (C. Barthe)   add LNOx
 !!      Modification 25/02/2015 (M.Moge) correction of the parallelization attempted by M.Faivre
 !!      Modification 15/04/2016 (P.Tulet) bug allocation ZSVT_C
+!!                   29/04/2016 (J.Escobar) bug in use of ZSVT_C in SET_LSFIELD_1WAY_ll        
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -276,6 +277,7 @@ CHARACTER (LEN=2)   :: YDIR
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
+CALL GO_TOMODEL_ll(2, IINFO_ll)
 !
 !*       1.0  recovers logical unit number of output listing
 !
@@ -501,9 +503,6 @@ ELSE
       IF (CONF_MODEL(1)%NRR>=1) THEN
         CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XRT(:,:,JI,KI),ZRT_C(:,:,JI,KI),2)
       ENDIF
-      IF (NSV>=1) THEN
-        CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XSVT(:,:,JI,KI),ZSVT_C(:,:,JI,KI),2)
-      ENDIF
       IF ( L2D_ADV_FRC ) THEN
         CALL SET_LSFIELD_1WAY_ll(ADVFRC_MODEL(1)%XDTHFRC(:,:,JI,KI),ZDTHFRC_C(:,:,JI,KI),2)
         CALL SET_LSFIELD_1WAY_ll(ADVFRC_MODEL(1)%XDRVFRC(:,:,JI,KI),ZDRVFRC_C(:,:,JI,KI),2)
@@ -520,6 +519,22 @@ ELSE
 !
     ENDDO
   ENDDO
+  !$***** 4D NSV 
+  IF (NSV>=1) THEN
+     DO JI=1,SIZE(PUT,3)
+        DO KI=1,NSV
+           CALL GOTO_MODEL(1)
+           CALL GO_TOMODEL_ll(1, IINFO_ll)           
+           CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XSVT(:,:,JI,KI),ZSVT_C(:,:,JI,KI),2)           
+           CALL LS_FORCING_ll(2, IINFO_ll, .TRUE.)
+           CALL GO_TOMODEL_ll(2, IINFO_ll)
+           CALL GOTO_MODEL(2)
+           CALL UNSET_LSFIELD_1WAY_ll()
+           !
+        ENDDO
+     ENDDO
+  ENDIF
+
 !if the child grid is the whole father grid, we first need to extrapolate
 !the data on a "pseudo halo" before doing BIKHARDT interpolation
 ! -------> done in LS_FORCING_ll
@@ -919,6 +934,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 CALL GOTO_MODEL(IMI)
+CALL GO_TOMODEL_ll(IMI, IINFO_ll)
 CONTAINS 
 !      
       SUBROUTINE COMPUTE_THV_HU(OUSERV,PR,PTH,PPABS,PTHV,PHU)
