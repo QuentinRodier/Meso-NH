@@ -140,7 +140,8 @@ module load netcdf/3.6.3
 source /bglocal/fe/pub/Modules/default/init/bash
 export MODULEPATH=/bghome/rech/mnh/rmnh007/my_modules:\$MODULEPATH
 module purge
-module load ibmcmp/V1R2M2/14.01.0000.0011/gcc.legacy
+#module load ibmcmp/V1R2M2/14.01.0000.0011/gcc.legacy
+module load mpi/gcc.legacy
 export VER_GA=ga-mpi-5-0-3-v1r2m2-gcc-legacy
 module load ga/\${VER_GA}
 "}
