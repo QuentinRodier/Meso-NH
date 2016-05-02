@@ -152,6 +152,7 @@ CONTAINS
 !!    -------------
 !!
 !!      Original    18/02/2015
+!!      J.Escobar 2/05/2016 : add STOP in case of problem with decomposition
 !-------------------------------------------------------------------------------
     USE MODD_LBC_n
     USE MODE_MODELN_HANDLER
@@ -224,6 +225,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported : &
               & the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO3D'
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:,:) = 2. * PTAB(2,:,:) - PTAB(3,:,:)
 !        ELSEIF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)=='CYCL' ) THEN
@@ -238,6 +240,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMX_C = ",  &
                 IDIMX_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO3D'
       ENDIF
     ENDIF
     IF ( IDIMY_C > IJE - IJB + 1 + 2*JPHEXT ) THEN
@@ -252,6 +255,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, case not supported :  &
       & the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO3D'
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1,:) = 2. * PTAB(:,2,:) - PTAB(:,3,:)
 !        ELSEIF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)=='CYCL' ) THEN
@@ -266,6 +270,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO3D, IDIMY_C = ",  &
                 IDIMY_C, ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO3D'
       ENDIF
     ENDIF
 !
@@ -289,6 +294,7 @@ CONTAINS
 !!    -------------
 !!
 !!      Original    18/02/2015
+!!      J.Escobar 2/05/2016 : add STOP in case of problem with decomposition
 !-------------------------------------------------------------------------------
     USE MODD_LBC_n
     USE MODE_MODELN_HANDLER
@@ -358,6 +364,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported :  &
               & the child grid has to be one point larger or one point smaller in X dim"
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO2D'
 !        IF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(1,:) = 2. * PTAB(2,:) - PTAB(3,:)
 !        ELSEIF ( IIB>1 .AND. LWEST_ll() .AND. CLBCX(1)=='CYCL' ) THEN
@@ -372,6 +379,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMX_C = ", IDIMX_C, &
                 ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO2D'
       ENDIF
     ENDIF
     IF ( IDIMY_C > IJE - IJB + 1 + 2*JPHEXT ) THEN
@@ -390,6 +398,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, case not supported : &
               & the child grid has to be one point larger or one point smaller in Y dim"
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO2D'
 !        IF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)/='CYCL' )  THEN !du cote ouest, on a un point dans le 'pseudo halo' a extrapoler
 !          PTAB(:,1) = 2. * PTAB(:,2) - PTAB(:,3)
 !        ELSEIF ( IJB>1 .AND. LNORTH_ll() .AND. CLBCY(1)=='CYCL' ) THEN
@@ -404,6 +413,7 @@ CONTAINS
         WRITE(*,*) "ERROR in EXTRAPOL_ON_PSEUDO_HALO2D, IDIMY_C = ", IDIMY_C, &
                 ", IIE - IIB + 1 + 2*JPHEXT = ", IIE - IIB + 1 + 2*JPHEXT
         CALL ABORT
+        STOP 'ERROR in EXTRAPOL_ON_PSEUDO_HALO2D'
       ENDIF
     ENDIF
 !
