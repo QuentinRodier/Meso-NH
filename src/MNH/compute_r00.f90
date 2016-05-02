@@ -57,6 +57,7 @@ END MODULE MODI_COMPUTE_R00
 !!     J. Stein  Jan. 2001  add supplementary starts and spare some memory
 !!     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                              change of YCOMMENT
+!!     Mai 2016 (G.Delautier) replace LG?M by LG?T
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -353,17 +354,17 @@ DO JFILECUR=1,NFILES
 !*       4.4   compute the origin of the particules using one more segment
 !
   IF (JFILECUR /= NFILES) THEN
-    YRECFM='LGXM'
+    YRECFM='LGXT'
     CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
               ZX0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
     ZX0(:,:,:)=ZX0(:,:,:)*1.E-3   ! ZX0 in km
     !
-    YRECFM='LGYM'
+    YRECFM='LGYT'
     CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
               ZY0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
     ZY0(:,:,:)=ZY0(:,:,:)*1.E-3   ! ZY0 in km
     !
-    YRECFM='LGZM'
+    YRECFM='LGZT'
     CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
               ZZ0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
     ZZ0(:,:,:)=ZZ0(:,:,:)*1.E-3   ! ZZ0 in km
