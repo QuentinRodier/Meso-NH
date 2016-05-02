@@ -74,6 +74,7 @@
 !!      V. Masson   15/03/99  call to ini_data_cover
 !!      P.Jabouille 15/07/99  special initialisation for spawning
 !!      J.P Chaboureau 2015   add ini_spectre_n
+!!      J.Escoabr   2/03/2016 bypass , reset NHALO=1 for SPAWNING
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -171,6 +172,10 @@ DO JMI=1,JPMODELMAX
   CALL INI_SEG_n(JMI,YLUOUT(JMI),YINIFILE(JMI),YINIFILEPGD(JMI),ZTSTEP_ALL)
   IF (JMI.EQ.NMODEL) EXIT
 END DO
+IF (CPROGRAM=='SPAWN ') THEN 
+  !bypass
+  NHALO = 1
+END IF
 !
 IF (CPROGRAM=='DIAG') CALL RESET_EXSEG(YLUOUT(1))
 !
