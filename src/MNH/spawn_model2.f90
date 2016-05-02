@@ -186,6 +186,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!                                      model2 before the call to ini_nsv
 !!      Modification 05/02/2015 (M.Moge) parallelization of SPAWNING
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar   02/05/2016 : test ZZS_MAX in // 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -275,6 +276,9 @@ USE MODD_2D_FRC
 !USE MODE_LB_ll, ONLY : SET_LB_FIELD_ll
 USE MODI_GET_SIZEX_LB
 USE MODI_GET_SIZEY_LB
+!
+USE MODD_MPIF
+USE MODD_VAR_ll
 !
 IMPLICIT NONE
 !
@@ -377,6 +381,7 @@ INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 !
 CHARACTER(LEN=4)    :: YLBTYPE
 !
+REAL                :: ZZS_MAX, ZZS_MAX_ll
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -1099,7 +1104,10 @@ ZTIME1  = ZTIME2
 !
 !* vertical interpolation
 !
-IF (ANY(XZS(:,:)>0.) .AND. (NDXRATIO/=1 .OR. NDYRATIO/=1) )  THEN
+ZZS_MAX = ABS( MAXVAL(XZS(:,:)))
+CALL MPI_ALLREDUCE(ZZS_MAX, ZZS_MAX_ll, 1, MPI_PRECISION, MPI_MAX,  &
+                     NMNH_COMM_WORLD,IINFO_ll)
+IF ( (ZZS_MAX_ll>0.) .AND. (NDXRATIO/=1 .OR. NDYRATIO/=1) )  THEN
   CALL MPPDB_CHECK3D(XUT,"SPAWN_M2 before VER_INTERP_FIELD:XUT",PRECISION)
   CALL VER_INTERP_FIELD (CTURB,NRR,NSV,ZZZ_LS,XZZ,                             &
                XUT,XVT,XWT,ZTHVT,XRT,ZHUT,XTKET,XSVT,                          &
