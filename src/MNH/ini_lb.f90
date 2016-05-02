@@ -126,6 +126,7 @@ SUBROUTINE INI_LB(HINIFILE,HLUOUT,OLSOURCE,KSV,                    &
 !!      M.Leriche       16/07/10    Add ice phase chemical species
 !!      Pialat/tulet    15/02/12    Add ForeFire scalars 
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 27/04/2016 : bug , test only on ANY(HGETSVM({{1:KSV}})=='READ'
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -491,7 +492,7 @@ END IF
 !*        2.6    LB-Scalar Variables
 !
 IF (KSV > 0) THEN 
-  IF (ANY(HGETSVM(:)=='READ')) THEN
+  IF (ANY(HGETSVM(1:KSV)=='READ')) THEN
     YRECFM = 'HORELAX_SV'
     YDIR='--'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,GHORELAX_SV,IGRID,ILENCH,YCOMMENT,IRESP)  
