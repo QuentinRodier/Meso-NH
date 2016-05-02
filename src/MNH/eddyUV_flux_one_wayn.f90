@@ -55,6 +55,7 @@ END MODULE MODI_EDDYUV_FLUX_ONE_WAY_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original  07/07/11
+!!      J.Escobar 2/05/2016 : bug in use of global/local bounds for call of BIKHARDT
 !!
 !     ##################################################################################
 !
@@ -98,7 +99,8 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFLUX2 ! Work array=Dad interpolated flux
                                               ! on the son grid
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIV_UV! Work array=DIV of ZFLUX2
 INTEGER :: IKU
-
+!
+INTEGER             :: IDIMX,IDIMY
 !-------------------------------------------------------------------------------
 !
 !
@@ -120,9 +122,11 @@ IF (ISYNCHRO==1 .OR. IDTRATIO_KMI_1 == 1) THEN
 
    ! v'u' (EDDY_FLUX_MODEL(1)%XVU_FLUX_M) of model1 interpolation on the son grid put into ZFLUX2
    ZFLUX2 = 0.
+   IDIMX = SIZE(EDDYUV_FLUX_MODEL(1)%XVU_FLUX_M,1)
+   IDIMY = SIZE(EDDYUV_FLUX_MODEL(1)%XVU_FLUX_M,2)
    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
-                  NXOR_ALL(KMI),NYOR_ALL(KMI),NXEND_ALL(KMI),NYEND_ALL(KMI),KDXRATIO,KDYRATIO,1,&
+                  2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,&
                   HLBCX,HLBCY,EDDYUV_FLUX_MODEL(1)%XVU_FLUX_M,ZFLUX2)
 
    ! Lateral boundary conditions 
