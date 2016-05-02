@@ -34,7 +34,7 @@ set -x
 
 cd $LOADL_STEP_INITDIR
 
-. ../conf/profile_mesonh-BGQI4-MNH-V5-2-0-MPIAUTO-O2NAN
+. ../conf/profile_mesonh-BGQI4-MNH-V5-2-1-MPIAUTO-O2NAN
 
 case $LOADL_STEP_NAME in
 

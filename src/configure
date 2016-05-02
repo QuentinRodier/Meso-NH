@@ -83,6 +83,20 @@ module rm grib_api ; module load grib_api/1.13.0_netcdf ;
 export GRIBAPI_PATH=/opt/softs/libraries/ICC13.1.4.183/grib_api-1.13.0_netcdf
 "}
               ;;
+'Linux prolix'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O3}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFBFIX}
+                export MNHENV=${MNHENV:-"
+module rm intel    ; module load intel/13.1.4.183 ;
+module rm intelmpi ; module load intelmpi/5.1.2.150 ;
+module rm netcdf ; module load netcdf/4.3.0 ;
+module rm grib_api ; module load grib_api/1.13.0_netcdf ;
+export GRIBAPI_PATH=/opt/softs/libraries/ICC13.1.4.183/grib_api-1.13.0_netcdf
+"}
+              ;;
 'Linux login0'*|'Linux compute'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
