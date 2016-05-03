@@ -12,7 +12,6 @@
 !-----------------------------------------------------------------
 !Correction :
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!  D.Gazen   : avril 2016 bug dimensions 2D cases
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -567,6 +566,7 @@ CONTAINS
     REAL                                   :: ERROR
     INTEGER                                :: JI
 #endif
+    INTEGER                      :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -582,6 +582,7 @@ CONTAINS
     !print * , ' Writing Article 2 ' , HRECFM
 #endif
     !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
@@ -589,8 +590,8 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==2*JPHEXT+1 .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN 
-             ZFIELDP=>PFIELD(2:2,2:2)
+          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
 #ifdef MNH_NCWRIT
       IF ( DEF_NC .AND. LLFIFM ) THEN
        CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -606,8 +607,8 @@ CONTAINS
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
 #endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN
-             ZFIELDP=>PFIELD(:,2:2)
+          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1)
 #ifdef MNH_NCWRIT
                IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -675,7 +676,7 @@ CONTAINS
              CALL GATHER_XXFIELD(HDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
           ELSEIF (HDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
-                CALL GATHER_XXFIELD('XX',PFIELD(:,2),ZFIELDP(:,1),TZFD%OWNER,TZFD%COMM)
+                CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1),ZFIELDP(:,1),TZFD%OWNER,TZFD%COMM)
              ELSE
 #ifdef MNH_GA
           !
@@ -858,6 +859,7 @@ CONTAINS
 #ifdef MNH_GA
     REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
 #endif
+    INTEGER                                  :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -893,6 +895,7 @@ CONTAINS
   END IF 
 #endif
     !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC .AND.  (TZFD%nb_procio.eq.1) ) THEN ! sequential execution
@@ -900,8 +903,8 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==2*JPHEXT+1 .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN 
-             ZFIELDP=>PFIELD(2:2,2:2,:)
+          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
 #ifdef MNH_NCWRIT
         IF ( DEF_NC .AND. LLFIFM ) THEN
           CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -917,8 +920,8 @@ CONTAINS
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
 #endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN
-             ZFIELDP=>PFIELD(:,2:2,:)
+          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:)
 #ifdef MNH_NCWRIT
         IF ( DEF_NC .AND. LLFIFM ) THEN
           CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -967,7 +970,7 @@ CONTAINS
              CALL GATHER_XXFIELD(HDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
           ELSEIF (HDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
-                CALL GATHER_XXFIELD('XX',PFIELD(:,2,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
+                CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
              ELSE
                 CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
              END IF
@@ -1120,7 +1123,7 @@ CONTAINS
                 ELSEIF (HDIR == 'XY') THEN
                    IF (LPACK .AND. L2D) THEN
                       STOP " L2D NON PREVU SUR BG POUR LE MOMENT "
-                      CALL GATHER_XXFIELD('XX',PFIELD(:,2,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
+                      CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
                    ELSE
                       !CALL GATHER_XYFIELD(ZSLIDE,ZSLIDE_ll,TZFD_IOZ%OWNER,TZFD_IOZ%COMM)
                       !JUANIOZ
@@ -1270,6 +1273,7 @@ CONTAINS
     REAL,DIMENSION(:,:,:,:),POINTER          :: ZFIELDP
     TYPE(FMHEADER)                           :: TZFMH
     LOGICAL                                  :: GALLOC
+    INTEGER                                  :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1278,6 +1282,7 @@ CONTAINS
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article 4 ' , HRECFM
     !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
@@ -1285,8 +1290,8 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==2*JPHEXT+1 .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN 
-             ZFIELDP=>PFIELD(2:2,2:2,:,:)
+          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:)
 #ifdef MNH_NCWRIT
            IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -1296,8 +1301,8 @@ CONTAINS
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
 #endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D  .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN
-             ZFIELDP=>PFIELD(:,2:2,:,:)
+          ELSEIF (LPACK .AND. L2D  .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:)
 #ifdef MNH_NCWRIT
           IF ( DEF_NC .AND. LLFIFM ) THEN
             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -1328,7 +1333,7 @@ CONTAINS
              CALL GATHER_XXFIELD(HDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
           ELSEIF (HDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
-                CALL GATHER_XXFIELD('XX',PFIELD(:,2,:,:),ZFIELDP(:,1,:,:),TZFD%OWNER,TZFD%COMM)
+                CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:,:),ZFIELDP(:,1,:,:),TZFD%OWNER,TZFD%COMM)
              ELSE
                 CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
              END IF
@@ -1401,6 +1406,7 @@ CONTAINS
     TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
     INTEGER,DIMENSION(6)         :: TABDIM
 #endif
+    INTEGER                                  :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1417,6 +1423,7 @@ CONTAINS
     !print * , ' Writing Article 5 ' , HRECFM
 #endif
     !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
@@ -1424,8 +1431,8 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==2*JPHEXT+1 .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN 
-             ZFIELDP=>PFIELD(2:2,2:2,:,:,:)
+          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:,:)
 #ifdef MNH_NCWRIT
             IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -1435,8 +1442,8 @@ CONTAINS
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
 #endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
-     ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==2*JPHEXT+1) THEN
-             ZFIELDP=>PFIELD(:,2:2,:,:,:)
+     ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:,:)
 #ifdef MNH_NCWRIT
             IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
@@ -1486,7 +1493,7 @@ CONTAINS
              CALL GATHER_XXFIELD(HDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
           ELSEIF (HDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
-                CALL GATHER_XXFIELD('XX',PFIELD(:,2,:,:,:),ZFIELDP(:,1,:,:,:),&
+                CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:,:,:),ZFIELDP(:,1,:,:,:),&
                      & TZFD%OWNER,TZFD%COMM)
              ELSE
                 CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
@@ -1904,7 +1911,7 @@ CONTAINS
     INTEGER,DIMENSION(:,:),POINTER           :: IFIELDP
     TYPE(FMHEADER)                           :: TZFMH
     LOGICAL                                  :: GALLOC
-
+    INTEGER                                  :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1913,6 +1920,7 @@ CONTAINS
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article N2 ' , HRECFM
     !
+    IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
 !    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
@@ -1921,8 +1929,8 @@ CONTAINS
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
-          IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==2*JPHEXT+1 .AND. SIZE(KFIELD,2)==2*JPHEXT+1) THEN 
-             IFIELDP=>KFIELD(2:2,2:2)
+          IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
+             IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
 #ifdef MNH_NCWRIT
                IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
@@ -1932,8 +1940,8 @@ CONTAINS
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELDP,TZFMH,IRESP)
 #endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
-          ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==2*JPHEXT+1) THEN
-             IFIELDP=>KFIELD(:,2:2)
+          ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
+             IFIELDP=>KFIELD(:,JPHEXT+1:JPHEXT+1)
 #ifdef MNH_NCWRIT
                IF ( DEF_NC .AND. LLFIFM ) THEN
              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
@@ -1964,7 +1972,7 @@ CONTAINS
              CALL GATHER_XXFIELD(HDIR,KFIELD,IFIELDP,TZFD%OWNER,TZFD%COMM)
           ELSEIF (HDIR == 'XY') THEN
              IF (LPACK .AND. L2D) THEN
-                CALL GATHER_XXFIELD('XX',KFIELD(:,2),IFIELDP(:,1),TZFD%OWNER,TZFD%COMM)
+                CALL GATHER_XXFIELD('XX',KFIELD(:,JPHEXT+1),IFIELDP(:,1),TZFD%OWNER,TZFD%COMM)
              ELSE
                 CALL GATHER_XYFIELD(KFIELD,IFIELDP,TZFD%OWNER,TZFD%COMM)
              END IF
@@ -2612,7 +2620,7 @@ CONTAINS
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
              IF (LPACK .AND. L2D) THEN
-                TX3DP=>Z3D(:,2:2,:)
+                TX3DP=>Z3D(:,JPHEXT+1:JPHEXT+1,:)
              ELSE
                 TX3DP=>Z3D
              END IF
