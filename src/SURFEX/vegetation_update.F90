@@ -121,9 +121,9 @@ LOGICAL,DIMENSION(:,:), INTENT(INOUT) :: OSTRESS
 REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBVIS_VEG ! visible, near infra-red and UV
 REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBNIR_VEG ! albedo of the vegetation
 REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBUV_VEG  !
-REAL,   DIMENSION(:,:), INTENT(IN)    :: PALBVIS_SOIL! visible, near infra-red and UV
-REAL,   DIMENSION(:,:), INTENT(IN)    :: PALBNIR_SOIL! soil albedo
-REAL,   DIMENSION(:,:), INTENT(IN)    :: PALBUV_SOIL !
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBVIS_SOIL! visible, near infra-red and UV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBNIR_SOIL! soil albedo
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PALBUV_SOIL !
 
 REAL, DIMENSION(:), INTENT(IN)  :: PAOSIP  ! A/S for increasing x
 REAL, DIMENSION(:), INTENT(IN)  :: PAOSIM  ! A/S for decreasing x
@@ -188,6 +188,13 @@ IDECADE2 = IDECADE
                            PCNA_NITRO=PCNA_NITRO,                &
                            TPSEED=TPSEED, TPREAP=TPREAP,         &
                            PWATSUP=PWATSUP,PIRRIG=PIRRIG     ) 
+      IF ( HALBEDO=='CM13') THEN
+        CALL CONVERT_PATCH_ISBA(HISBA,IDECADE,IDECADE2,PCOVER,&
+                              HPHOTO,OAGRIP,.FALSE.,HSFTYPE, &
+                              PALBNIR_SOIL=PALBNIR_SOIL, &
+                              PALBVIS_SOIL=PALBVIS_SOIL, &
+                              PALBUV_SOIL=PALBUV_SOIL )
+      ENDIF                     
       IF (HSFTYPE=='GRD'.OR.HSFTYPE=='GNR') THEN
         WHERE (XGARDEN(:)==0.)
           PVEG       (:,1) = 0.
