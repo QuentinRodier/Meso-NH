@@ -210,7 +210,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 07/10/2015 , Bug in parallel run , => comment test on INUCT>1 containing GET_HALO  
 !!      M.Mazoyer : 04/2016 : Temperature radiative tendency used for  
-!!                            activation by cooling (OACTIT)
+!!                            activation by cooling (OACTIT : mis en commentaires)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -608,12 +608,13 @@ ZZW1LOG(:,:,:)= 0. ! supersaturation
 ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 IF (OACTIT) THEN
-! ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
-! ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
-! ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
-! ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-! (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
-  ZTDT(:,:,:)   =  PDTHRAD(:,:,:)*(PPABST(:,:,:)/XP00)**(XRD/XCPD)
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+  ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
+  ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
+  ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
+  (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
+! Modif M.Mazoyer
+! ZTDT(:,:,:)   =  PDTHRAD(:,:,:)*(PPABST(:,:,:)/XP00)**(XRD/XCPD)
 END IF
 !
 !  optimization by looking for locations where
@@ -715,23 +716,24 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
     ZZW3(:) = 1.0
   ELSE
     IF (OACTIT) THEN
-!     ZZW4(:)=XPSI1( IVEC1(:)+1)*ZZW2(:)+XPSI3(IVEC1(:)+1)*ZTDTBIS(:)
-!     ZZW5(:)=XPSI1( IVEC1(:))*ZZW2(:)+XPSI3(IVEC1(:))*ZTDTBIS(:)
-      ZZW4(:) =0.0
-      ZZW5(:) =0.0
-      WHERE  (ZZW2(:)>= XWMIN .AND. ZTDTBIS(:) < XTMIN )
       ZZW4(:)=XPSI1( IVEC1(:)+1)*ZZW2(:)+XPSI3(IVEC1(:)+1)*ZTDTBIS(:)
       ZZW5(:)=XPSI1( IVEC1(:))*ZZW2(:)+XPSI3(IVEC1(:))*ZTDTBIS(:)
-      ELSEWHERE  (ZZW2(:)< XWMIN .AND. ZTDTBIS(:) < XTMIN )
-      ZZW4(:)=XPSI3(IVEC1(:)+1)*ZTDTBIS(:)
-      ZZW5(:)=XPSI3(IVEC1(:))*ZTDTBIS(:)
-      ELSEWHERE  (ZZW2(:)< XWMIN .AND. ZTDTBIS(:) >= XTMIN  )  
-      ZZW4(:)=0.0
-      ZZW5(:)=0.0
-      ELSEWHERE  (ZZW2(:)>= XWMIN .AND. ZTDTBIS(:) >= XTMIN  ) 
-      ZZW4(:)=XPSI1( IVEC1(:)+1)*ZZW2(:)
-      ZZW5(:)=XPSI1( IVEC1(:))*ZZW2(:)
-      END WHERE
+! Modif M.Mazoyer
+!     ZZW4(:) =0.0
+!     ZZW5(:) =0.0
+!     WHERE  (ZZW2(:)>= XWMIN .AND. ZTDTBIS(:) < XTMIN )
+!     ZZW4(:)=XPSI1( IVEC1(:)+1)*ZZW2(:)+XPSI3(IVEC1(:)+1)*ZTDTBIS(:)
+!     ZZW5(:)=XPSI1( IVEC1(:))*ZZW2(:)+XPSI3(IVEC1(:))*ZTDTBIS(:)
+!     ELSEWHERE  (ZZW2(:)< XWMIN .AND. ZTDTBIS(:) < XTMIN )
+!     ZZW4(:)=XPSI3(IVEC1(:)+1)*ZTDTBIS(:)
+!     ZZW5(:)=XPSI3(IVEC1(:))*ZTDTBIS(:)
+!     ELSEWHERE  (ZZW2(:)< XWMIN .AND. ZTDTBIS(:) >= XTMIN  )  
+!     ZZW4(:)=0.0
+!     ZZW5(:)=0.0
+!     ELSEWHERE  (ZZW2(:)>= XWMIN .AND. ZTDTBIS(:) >= XTMIN  ) 
+!     ZZW4(:)=XPSI1( IVEC1(:)+1)*ZZW2(:)
+!     ZZW5(:)=XPSI1( IVEC1(:))*ZZW2(:)
+!     END WHERE
       WHERE (ZZW4(:) < 0. .OR. ZZW5(:) < 0.)
              ZZW4(:) = 0.
              ZZW5(:) = 0.
@@ -912,12 +914,13 @@ ZZW1LOG(:,:,:)= 0. ! supersaturation
 ZTDT(:,:,:)   = 0.
 ZDRC(:,:,:)   = 0.
 IF (OACTIT) THEN
-! ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
-! ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
-! ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
-! ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-! (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
-  ZTDT(:,:,:)   =  PDTHRAD(:,:,:)*(PPABST(:,:,:)/XP00)**(XRD/XCPD)
+  ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+  ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
+  ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
+  ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
+  (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
+! Modif M.Mazoyer
+! ZTDT(:,:,:)   =  PDTHRAD(:,:,:)*(PPABST(:,:,:)/XP00)**(XRD/XCPD)
 END IF
 !
 !  optimization by looking for locations where
