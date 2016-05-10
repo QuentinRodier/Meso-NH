@@ -920,6 +920,12 @@ SELECT CASE ( HCLOUD )
 END SELECT
 !
 IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
+!    CALL GET_HALO(PRS(:,:,:,2))
+!    CALL GET_HALO(ZSVS(:,:,:,2))
+!    CALL GET_HALO(ZSVS(:,:,:,3))
+    WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,2) < 0.)
+      ZSVS(:,:,:,1) = 0.0
+    END WHERE
     DO JSV = 2, 3
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)

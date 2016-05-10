@@ -1326,7 +1326,7 @@ END IF
 !
    CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,     &
       OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
-      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,XIMPL,                          &
+      CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,CCLOUD,XIMPL,                   &
       XTSTEP,HFMFILE,CLUOUT,                                                &
       XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
       XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &

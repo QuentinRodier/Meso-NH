@@ -152,6 +152,7 @@ USE MODI_PPM_MET
 USE MODI_PPM_SCALAR
 USE MODI_ADV_BOUNDARIES
 USE MODI_BUDGET
+USE MODI_GET_HALO
 !
 USE MODE_FMWRIT
 !-------------------------------------------------------------------------------
@@ -570,6 +571,12 @@ IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
   ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
   ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZT(:,:,:)-XTT)
   ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+!  CALL GET_HALO(PRRS(:,:,:,2))
+!  CALL GET_HALO(PRSVS(:,:,:,2))
+!  CALL GET_HALO(PRSVS(:,:,:,3))
+  WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
+      PRSVS(:,:,:,1) = 0.0
+  END WHERE
   DO JSV = 2, 3
     WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
       PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)

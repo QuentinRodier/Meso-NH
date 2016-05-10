@@ -11,7 +11,7 @@ INTERFACE
       SUBROUTINE TURB(KKA, KKU, KKL, KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,   &
                 KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
-                HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,PIMPL,             &
+                HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,HFMFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,   &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
@@ -50,6 +50,7 @@ CHARACTER*4           , INTENT(IN)   ::  HTOM         ! kind of Third Order Mome
 CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
                                                       ! surface friction flux
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
                                                       ! FM-file
@@ -138,7 +139,7 @@ END MODULE MODI_TURB
 !     #################################################################
       SUBROUTINE TURB(KKA,KKU,KKL,KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
-                HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,PIMPL,             &
+                HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
                 PTSTEP,HFMFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,   &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
@@ -338,6 +339,7 @@ END MODULE MODI_TURB
 !!                                          vertical levels
 !!                     10/2012 (J. Colin) Correct bug in DearDoff for dry simulations
 !!                     10/2012 J.Escobar Bypass PGI bug , redefine some allocatable array inplace of automatic
+!!                     04/2016  (C.Lac) correction of negativity for KHKO
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -364,6 +366,7 @@ USE MODI_RMC01
 USE MODI_GRADIENT_W
 USE MODI_TM06
 USE MODI_UPDATE_LM
+USE MODI_GET_HALO
 !
 USE MODE_SBL
 USE MODE_FMWRIT
@@ -405,6 +408,7 @@ CHARACTER*4           , INTENT(IN)   ::  HTURBLEN     ! kind of mixing length
 CHARACTER*4           , INTENT(IN)   ::  HTOM         ! kind of Third Order Moment
 CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing length
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
+CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
                                                       ! FM-file
@@ -540,6 +544,7 @@ REAL                :: ZALPHA       ! proportionnality constant between Dz/2 and
 !                                   ! BL89 mixing length near the surface
 !
 REAL :: ZTIME1, ZTIME2
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH
 !
 !------------------------------------------------------------------------------------------
 ALLOCATE (                                                        &
@@ -1063,6 +1068,33 @@ IF ( KRRL >= 1 ) THEN
     PTHLT(:,:,:)  = PTHLT(:,:,:)  + ZLOCPEXNM(:,:,:) * PRT(:,:,:,2)
     PRTHLS(:,:,:) = PRTHLS(:,:,:) + ZLOCPEXNM(:,:,:) * PRRS(:,:,:,2)
   END IF
+END IF
+!
+IF ((HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2')) THEN
+ ZEXNE(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+ ZTT(:,:,:)= PTHLT(:,:,:)*ZEXNE(:,:,:)
+ ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZTT(:,:,:)-XTT)
+ ZLS(:,:,:)=XLSTT +(XCPV-XCI) *(ZTT(:,:,:)-XTT)
+ ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+! CALL GET_HALO(PRRS(:,:,:,2))
+! CALL GET_HALO(PRSVS(:,:,:,2))
+! CALL GET_HALO(PRSVS(:,:,:,3))
+ WHERE (PRRS(:,:,:,2) < 0. .OR. PRSVS(:,:,:,2) < 0.)
+      PRSVS(:,:,:,1) = 0.0
+ END WHERE
+ DO JSV = 2, 3
+  WHERE (PRRS(:,:,:,JSV) < 0. .OR. PRSVS(:,:,:,JSV) < 0.)
+      PRRS(:,:,:,1) = PRRS(:,:,:,1) + PRRS(:,:,:,JSV)
+      PRTHLS(:,:,:) = PRTHLS(:,:,:) - PRRS(:,:,:,JSV) * ZLV(:,:,:) /  &
+             ZCPH(:,:,:) / ZEXNE(:,:,:)
+      PRRS(:,:,:,JSV)  = 0.0
+      PRSVS(:,:,:,JSV) = 0.0
+  END WHERE
+ END DO
+!
+ IF (LBUDGET_TH) CALL BUDGET (PRTHLS(:,:,:), 4,'NETUR_BU_RTH')
+ IF (LBUDGET_RV) CALL BUDGET (PRRS(:,:,:,1), 6,'NETUR_BU_RRV')
+ IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2), 7,'NETUR_BU_RRC')
 END IF
 !
 !----------------------------------------------------------------------------
