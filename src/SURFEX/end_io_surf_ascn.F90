@@ -1,0 +1,77 @@
+!     #########
+      SUBROUTINE END_IO_SURF_ASC_n(HPROGRAM)
+!     #######################################################
+!
+!!****  *END_IO_SURF_ASC_n* - routine to close IO files
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	S.Malardel   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    09/2003 
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_IO_SURF_ASC, ONLY : NUNIT, NFULL, CMASK, LOPEN
+!
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('END_IO_SURF_ASC_N',0,ZHOOK_HANDLE)
+!
+!$OMP BARRIER
+!
+IF (NRANK==NPIO .AND. LOPEN) THEN
+!$OMP SINGLE     
+  CLOSE(NUNIT)
+!$OMP END SINGLE  
+ENDIF
+!
+NFULL = 0
+!
+NUNIT = 0
+!
+CMASK = '      '
+!
+IF (LHOOK) CALL DR_HOOK('END_IO_SURF_ASC_N',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE END_IO_SURF_ASC_n

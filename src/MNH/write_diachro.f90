@@ -1,0 +1,477 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! MASDEV4_7 diachro 2006/05/18 13:07:25
+!-----------------------------------------------------------------
+!     #################################################################
+      SUBROUTINE WRITE_DIACHRO(HFILEDIA,HLUOUTDIA,HGROUP,HTYPE,      &
+      KGRID,PDATIME,PVAR,PTRAJT,                                     &
+      HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH, &
+      PTRAJX,PTRAJY,PTRAJZ,PMASK)
+!     #################################################################
+!
+!!****  *WRITE_DIACHRO* - Ecriture d'un enregistrement dans un fichier
+!!                        diachronique (de nom de base HGROUP)
+!!
+!!    PURPOSE
+!!    -------
+!      
+!
+!!**  METHOD
+!!    ------
+!!      En fait pour un groupe donne HGROUP, on ecrit systematiquement
+!       plusieurs enregistrements :
+!       - 1: HGROUP.TYPE          (type d'informations a enregistrer)
+!       - 2: HGROUP.DIM           (dimensions de toutes les matrices a 
+!                                  enregistrer)
+!       - 3: HGROUP.TITRE         (Nom des processus)
+!       - 4: HGROUP.UNITE         (Unites pour chaque processus)
+!       - 5: HGROUP.COMMENT       (Champ commentaire pour chaque processus)
+!       - 6: HGROUP.TRAJT         (Temps)
+!       - 7: HGROUP.PROCx         (Champ traite . 1 enr./ 1 processus)
+!       - 8: HGROUP.DATIM         (Les differentes dates du modele)
+!       et pour certains types d'informations on enregistre egalement
+!       des coordonnees (HGROUP.TRAJX, HGROUP.TRAJY, HGROUP.TRAJZ)
+!!
+!!    EXTERNAL
+!!    --------
+!!      None
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      J. Duron    * Laboratoire d'Aerologie *
+!!
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       08/01/96
+!!      Updated   PM
+!!      Modification (N. Asencio) 18/06/99  : the two first dimensions of PMASK
+!!                   are linked to the horizontal grid, FMWRIT is called with 'XY' argument. 
+!!                   In standard configuration of the budgets, the mask is written once 
+!!                   outside this routine with FMWRIT call. Its record name is 'MASK_nnnn.MASK'
+!!                   So optional PMASK is not used .
+!!      Modification (J. Duron)   24/06/99  : add logical GPACK to disable the pack option,
+!!                                            add the initialization of the dimensions of
+!!                                          MASK array in MASK case with write outside the 
+!!                                          routine.
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODE_ll
+USE MODE_FM
+USE MODE_FMWRIT
+USE MODE_IO_ll
+!
+USE MODI_MENU_DIACHRO
+USE MODD_PARAMETERS, ONLY : JPHEXT
+USE MODD_CONF
+USE MODD_BUDGET
+
+IMPLICIT NONE
+!
+!*       0.1   Dummy arguments
+!              ---------------
+
+CHARACTER(LEN=*)              :: HFILEDIA,HLUOUTDIA
+CHARACTER(LEN=*)              :: HGROUP, HTYPE
+CHARACTER(LEN=*),DIMENSION(:) :: HTITRE, HUNITE, HCOMMENT
+
+INTEGER,DIMENSION(:)  :: KGRID
+INTEGER,OPTIONAL      :: KIL, KIH
+INTEGER,OPTIONAL      :: KJL, KJH
+INTEGER,OPTIONAL      :: KKL, KKH
+LOGICAL,OPTIONAL      :: OICP, OJCP, OKCP
+REAL,DIMENSION(:,:,:,:,:,:),OPTIONAL  :: PMASK
+REAL,DIMENSION(:,:,:,:,:,:)     :: PVAR
+REAL,DIMENSION(:,:)             :: PDATIME
+REAL,DIMENSION(:,:)             :: PTRAJT
+REAL,DIMENSION(:,:,:),OPTIONAL  :: PTRAJX
+REAL,DIMENSION(:,:,:),OPTIONAL  :: PTRAJY
+REAL,DIMENSION(:,:,:),OPTIONAL  :: PTRAJZ
+
+!
+!*       0.1   Local variables
+!              ---------------
+
+!
+CHARACTER(LEN=16) :: YRECFM
+CHARACTER(LEN=LEN(HFILEDIA)+4) :: YFILEDIA
+CHARACTER(LEN=20) :: YCOMMENT
+CHARACTER(LEN=3)  :: YJ
+INTEGER   ::   ILENG, ILENCH, ILENTITRE, ILENUNITE, ILENCOMMENT, ILE, IRESP
+INTEGER   ::   ILUOUTDIA, IRESPDIA,INPRARDIA,IFTYPEDIA,IVERBDIA,ININARDIA
+INTEGER   ::   II, IJ, IK, IT, IN, IP, INUM, J, JJ
+INTEGER   ::   INTRAJT, IKTRAJX, IKTRAJY, IKTRAJZ
+INTEGER   ::   ITTRAJX, ITTRAJY, ITTRAJZ
+INTEGER   ::   INTRAJX, INTRAJY, INTRAJZ
+INTEGER   ::   IIMASK, IJMASK, IKMASK, ITMASK, INMASK, IPMASK
+INTEGER   ::   ICOMPX, ICOMPY, ICOMPZ
+INTEGER   ::   IIMAX_ll, IJMAX_ll ! size of the physical global domain
+INTEGER,DIMENSION(:),ALLOCATABLE :: ITABCHAR
+LOGICAL   ::   GPACK
+!------------------------------------------------------------------------------
+!
+GPACK=LPACK
+LPACK=.FALSE.
+YCOMMENT='NOTHING'
+ILENCH = LEN(YCOMMENT)
+!
+! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
+! Question: doit-on mettre condition comme:
+!  IF(HTYPE == 'CART' .AND. .NOT. PRESENT(OICP) .AND. .NOT. PRESENT(OJCP)) THEN
+
+! en attendant correction on debranche avec un IF Present. ENDIF av
+! RETURN
+IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
+  IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
+                              !for parallel execution, PVAR is distributed on several proc
+    II=KIH-KIL+1
+    IJ=KJH-KJL+1
+  ELSE
+    II = SIZE(PVAR,1)
+    IJ = SIZE(PVAR,2)
+  ENDIF
+ELSE
+    II = SIZE(PVAR,1)
+    IJ = SIZE(PVAR,2)
+
+ENDIF
+IK = SIZE(PVAR,3)
+IT = SIZE(PVAR,4)
+IN = SIZE(PVAR,5)
+IP = SIZE(PVAR,6)
+
+INTRAJT=SIZE(PTRAJT,2)
+
+IKTRAJX=0; IKTRAJY=0; IKTRAJZ=0
+ITTRAJX=0; ITTRAJY=0; ITTRAJZ=0
+INTRAJX=0; INTRAJY=0; INTRAJZ=0
+IF(PRESENT(PTRAJX))THEN
+  IKTRAJX=SIZE(PTRAJX,1)
+  ITTRAJX=SIZE(PTRAJX,2)
+  INTRAJX=SIZE(PTRAJX,3)
+ENDIF
+IF(PRESENT(PTRAJY))THEN
+  IKTRAJY=SIZE(PTRAJY,1)
+  ITTRAJY=SIZE(PTRAJY,2)
+  INTRAJY=SIZE(PTRAJY,3)
+ENDIF
+IF(PRESENT(PTRAJZ))THEN
+  IKTRAJZ=SIZE(PTRAJZ,1)
+  ITTRAJZ=SIZE(PTRAJZ,2)
+  INTRAJZ=SIZE(PTRAJZ,3)
+ENDIF
+
+IIMASK=0; IJMASK=0; IKMASK=0; ITMASK=0; INMASK=0; IPMASK=0
+IF(HTYPE == 'MASK')THEN
+!     MASK is written outside this routine but the dimensions must be initialized
+!     the mask is defined on the extended domain
+  CALL GET_GLOBALDIMS_ll (IIMAX_ll,IJMAX_ll)
+  IIMASK=IIMAX_ll + 2 * JPHEXT
+  IJMASK=IJMAX_ll + 2 * JPHEXT
+  IF(PRESENT(PMASK))THEN
+    IKMASK=SIZE(PMASK,3)
+    ITMASK=SIZE(PMASK,4)
+    INMASK=SIZE(PMASK,5)
+    IPMASK=SIZE(PMASK,6)
+  ELSE
+    IKMASK=1
+    ITMASK=NBUWRNB
+    INMASK=NBUMASK
+    IPMASK=1
+  ENDIF
+ENDIF
+
+ILENTITRE = LEN(HTITRE)
+ILENUNITE = LEN(HUNITE)
+ILENCOMMENT = LEN(HCOMMENT)
+
+ICOMPX=0; ICOMPY=0; ICOMPZ=0
+IF(PRESENT(OICP))THEN
+IF(OICP)THEN
+  ICOMPX=1
+ENDIF
+IF(OJCP)THEN
+  ICOMPY=1
+ENDIF
+IF(OKCP)THEN
+  ICOMPZ=1
+ENDIF
+ENDIF
+!
+CALL FMLOOK_ll(HLUOUTDIA,HLUOUTDIA,ILUOUTDIA,IRESP)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)' WRITE_DIACHRO: ',TRIM(HLUOUTDIA),' IRESP=',IRESP
+ENDIF
+IF(IRESP == -54)THEN
+  CALL OPEN_ll(UNIT=ILUOUTDIA,FILE=HLUOUTDIA,IOSTAT=IRESPDIA,ACTION='WRITE')
+  IFTYPEDIA = 0; IVERBDIA = 5
+ENDIF
+!
+YFILEDIA=ADJUSTL(ADJUSTR(HFILEDIA)//'.lfi')
+CALL FMLOOK_ll(YFILEDIA,HLUOUTDIA,INUM,IRESPDIA)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)' WRITE_DIACHRO: ',TRIM(YFILEDIA),' IRESPDIA=',IRESPDIA
+ENDIF
+IF(IRESPDIA == -54)THEN
+  CALL FMOPEN_ll(HFILEDIA,'WRITE',HLUOUTDIA,INPRARDIA,IFTYPEDIA,IVERBDIA, &
+  ININARDIA,IRESPDIA)
+ENDIF
+!
+! 1er enregistrement TYPE
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TYPE')
+ILENG = LEN(HTYPE)
+ALLOCATE(ITABCHAR(ILENG))
+DO J = 1,ILENG
+  ITABCHAR(J) = ICHAR(HTYPE(J:J))
+ENDDO
+!print *,SIZE(ITABCHAR),'  ITABCHAR ',ITABCHAR,' KGRID ',KGRID,HLUOUTDIA,HFILEDIA
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            ITABCHAR,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+DEALLOCATE(ITABCHAR)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  1st ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! 2eme  enregistrement DIMENSIONS des MATRICES et LONGUEUR des TABLEAUX de CARACTERES et FLAGS de COMPRESSION sur les DIFFERENTS AXES
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.DIM')
+SELECT CASE(HTYPE)
+  CASE('CART','MASK','SPXY')
+    ILENG = 34
+    ALLOCATE(ITABCHAR(ILENG))
+    ITABCHAR(1)=ILENTITRE; ITABCHAR(2)=ILENUNITE
+    ITABCHAR(3)=ILENCOMMENT; ITABCHAR(4)=II
+    ITABCHAR(5)=IJ; ITABCHAR(6)=IK
+    ITABCHAR(7)=IT; ITABCHAR(8)=IN
+    ITABCHAR(9)=IP; ITABCHAR(10)=KIL
+    ITABCHAR(11)=KJL; ITABCHAR(12)=KKL
+    ITABCHAR(13)=KIH; ITABCHAR(14)=KJH
+    ITABCHAR(15)=KKH; ITABCHAR(16)=ICOMPX
+    ITABCHAR(17)=ICOMPY; ITABCHAR(18)=ICOMPZ
+    IF(HTYPE == 'MASK')THEN
+!     ITABCHAR(10)=1; ITABCHAR(11)=1
+!     ITABCHAR(13)=1; ITABCHAR(14)=1
+      ITABCHAR(16)=1; ITABCHAR(17)=1
+    ENDIF
+    ITABCHAR(19)=INTRAJT; ITABCHAR(20)=IKTRAJX
+    ITABCHAR(21)=IKTRAJY; ITABCHAR(22)=IKTRAJZ
+    ITABCHAR(23)=ITTRAJX; ITABCHAR(24)=ITTRAJY
+    ITABCHAR(25)=ITTRAJZ; ITABCHAR(26)=INTRAJX
+    ITABCHAR(27)=INTRAJY; ITABCHAR(28)=INTRAJZ
+    ITABCHAR(29)=IIMASK; ITABCHAR(30)=IJMASK
+    ITABCHAR(31)=IKMASK; ITABCHAR(32)=ITMASK
+    ITABCHAR(33)=INMASK; ITABCHAR(34)=IPMASK
+    CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',ITABCHAR, &
+                KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+    DEALLOCATE(ITABCHAR)
+    IF (NVERB>=5) THEN
+      WRITE(ILUOUTDIA,*)' ILENTITRE,ILENUNITE,ILENCOMMENT ',ILENTITRE,ILENUNITE,ILENCOMMENT
+    ENDIF
+  CASE DEFAULT
+    ILENG = 25 
+    ALLOCATE(ITABCHAR(ILENG))
+    ITABCHAR(1)=ILENTITRE; ITABCHAR(2)=ILENUNITE
+    ITABCHAR(3)=ILENCOMMENT; ITABCHAR(4)=II
+    ITABCHAR(5)=IJ; ITABCHAR(6)=IK
+    ITABCHAR(7)=IT; ITABCHAR(8)=IN
+    ITABCHAR(9)=IP
+    ITABCHAR(10)=INTRAJT; ITABCHAR(11)=IKTRAJX
+    ITABCHAR(12)=IKTRAJY; ITABCHAR(13)=IKTRAJZ
+    ITABCHAR(14)=ITTRAJX; ITABCHAR(15)=ITTRAJY
+    ITABCHAR(16)=ITTRAJZ; ITABCHAR(17)=INTRAJX
+    ITABCHAR(18)=INTRAJY; ITABCHAR(19)=INTRAJZ
+    ITABCHAR(20)=IIMASK; ITABCHAR(21)=IJMASK
+    ITABCHAR(22)=IKMASK; ITABCHAR(23)=ITMASK
+    ITABCHAR(24)=INMASK; ITABCHAR(25)=IPMASK
+!   CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',ILENTITRE,ILENUNITE, &
+!   ILENCOMMENT,II,IJ,IK,IT,IN,IP,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+    CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',ITABCHAR, &
+    KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+    DEALLOCATE(ITABCHAR)
+END SELECT
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  2nd ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! 3eme enregistrement TITRE
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TITRE')
+ILE = LEN(HTITRE)
+ILENG = ILE*IP
+ALLOCATE(ITABCHAR(ILENG))
+DO JJ = 1,IP
+  DO J = 1,ILE
+    ITABCHAR(ILE*(JJ-1)+J) = ICHAR(HTITRE(JJ)(J:J))
+  ENDDO
+  IF (NVERB>=5) THEN
+    WRITE(ILUOUTDIA,*)JJ,TRIM(HTITRE(JJ))
+  ENDIF
+ENDDO
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            ITABCHAR,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+DEALLOCATE(ITABCHAR)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  3rd ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! 4eme enregistrement UNITE
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.UNITE')
+ILE = LEN(HUNITE)
+ILENG = ILE*IP
+ALLOCATE(ITABCHAR(ILENG))
+DO JJ = 1,IP
+  DO J = 1,ILE
+    ITABCHAR(ILE*(JJ-1)+J) = ICHAR(HUNITE(JJ)(J:J))
+  ENDDO
+  IF (NVERB>=5) THEN
+    WRITE(ILUOUTDIA,*)JJ,TRIM(HUNITE(JJ))
+  ENDIF
+ENDDO
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            ITABCHAR,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+DEALLOCATE(ITABCHAR)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  4th ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! 5eme enregistrement COMMENT
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.COMMENT')
+ILE = LEN(HCOMMENT)
+ILENG = ILE*IP
+ALLOCATE(ITABCHAR(ILENG))
+DO JJ = 1,IP
+  DO J = 1,ILE
+    ITABCHAR(ILE*(JJ-1)+J) = ICHAR(HCOMMENT(JJ)(J:J))
+  ENDDO
+  IF (NVERB>=5) THEN
+    WRITE(ILUOUTDIA,*)JJ,TRIM(HCOMMENT(JJ))
+  ENDIF
+ENDDO
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            ITABCHAR,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+DEALLOCATE(ITABCHAR)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  5th ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! 6eme enregistrement PVAR
+!
+! Dans la mesure ou cette matrice risque d'etre tres volumineuse, on ecrira un 
+! enregistrement par processus
+!!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
+!ocl scalar
+!!!!!!!!!!!!!!!!  FUJI  compiler directive !!!!!!!!!!
+DO J = 1,IP
+  YJ = '   '
+  IF(J < 10)WRITE(YJ,'(I1)')J ; YJ = ADJUSTL(YJ)
+  IF(J >= 10 .AND. J < 100) THEN 
+          WRITE(YJ,'(I2)')J ; YJ = ADJUSTL(YJ)
+  ELSE IF(J >= 100 .AND. J < 1000) THEN 
+          WRITE(YJ,'(I3)')J
+  ENDIF
+  YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.PROC'//YJ)
+  ILENG = II*IJ*IK*IT*IN
+!print *,' PVAR '
+!print *,' YJ ILENG YRECFM KGRID(J) ',YJ,ILENG,YRECFM,KGRID(J)
+! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
+IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
+  IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
+    CALL FMWRITBOX(HFILEDIA,YRECFM,HLUOUTDIA,'BUDGET',PVAR(:,:,:,:,:,J),KGRID(J), &
+                   YCOMMENT,KIL,KIH,KJL,KJH,IRESPDIA)
+  ELSE
+    CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',PVAR(:,:,:,:,:,J),KGRID(J),   &
+                ILENCH,YCOMMENT,IRESPDIA)
+  ENDIF
+ELSE
+  CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',PVAR(:,:,:,:,:,J),KGRID(J),   &
+                ILENCH,YCOMMENT,IRESPDIA)
+END IF
+  IF (NVERB>=5) THEN
+    WRITE(ILUOUTDIA,*)J,TRIM(YRECFM)
+  ENDIF
+ENDDO
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  6th ENREGISTREMENT: OK'
+ENDIF
+!
+! 7eme enregistrement TRAJT
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TRAJT')
+ILENG = IT*INTRAJT
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            PTRAJT,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+IF (NVERB>=5) THEN
+  WRITE(ILUOUTDIA,*)'  7th ENREGISTREMENT(',TRIM(YRECFM),'): OK'
+ENDIF
+!
+! Dans certains cas
+!
+!
+! 8eme enregistrement TRAJX
+!
+IF(PRESENT(PTRAJX))THEN
+  YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TRAJX')
+  ILENG = IKTRAJX*ITTRAJX*INTRAJX
+  CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+              PTRAJX,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+ENDIF
+!
+!                        ou
+!
+IF(PRESENT(PMASK))THEN
+  YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.MASK')
+  ILENG = IIMASK*IJMASK*IKMASK*ITMASK*INMASK*IPMASK
+  CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'XY',PMASK,KGRID(1),  &
+              ILENCH,YCOMMENT,IRESPDIA)
+ENDIF
+!
+! 9eme enregistrement TRAJY
+!
+IF(PRESENT(PTRAJY))THEN
+  YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TRAJY')
+  ILENG = IKTRAJY*ITTRAJY*INTRAJY
+  CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+              PTRAJY,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+ENDIF
+!
+! 10eme enregistrement TRAJZ
+!
+IF(PRESENT(PTRAJZ))THEN
+  YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.TRAJZ')
+  ILENG = IKTRAJZ*ITTRAJZ*INTRAJZ
+  CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+              PTRAJZ,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+ENDIF
+!
+! 11eme enregistrement PDATIME
+!
+YRECFM = ADJUSTL(ADJUSTR(HGROUP)//'.DATIM')
+ILENG=16*IT
+CALL FMWRIT(HFILEDIA,YRECFM,HLUOUTDIA,'--',  &
+            PDATIME,KGRID(1),ILENCH,YCOMMENT,IRESPDIA)
+!
+CALL MENU_DIACHRO(HFILEDIA,HLUOUTDIA,HGROUP)
+LPACK=GPACK
+!-----------------------------------------------------------------------------
+!
+!*       2.       EXITS
+!                 -----
+! 
+RETURN
+END SUBROUTINE WRITE_DIACHRO

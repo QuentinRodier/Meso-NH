@@ -1,0 +1,6 @@
+F77FLAGS +=
+F90FLAGS += -Wv,-Ma -Aa -Ad
+CPPFLAGS += -DMNH_VPP
+
+#include path for 'mpif.h'
+INC += -I/usr/lang/mpi2/include64

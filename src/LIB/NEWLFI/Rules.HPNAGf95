@@ -1,0 +1,4 @@
+F77FLAGS = -O2 -kind=byte -w -mismatch_all -dusty
+CPPFLAGS += -DHPPA
+
+OBJS = NEWLFI_ALL.o poub.o

@@ -1,0 +1,5 @@
+F77FLAGS += -Wf,-msg nb
+CPPFLAGS += -DLINUX
+
+OBJS = NEWLFI_ALL.o poub.o
+

@@ -1,0 +1,7 @@
+set -x
+set -e
+ln -sf ../003_convdia/REL3D.1.EXP01.002dg.??? .
+#ln -sf ../003_convdia/REL3D_autre_run.??? .
+rm -f dir.0*
+${POSTRUN} diaprog < dir_3Drelief
+

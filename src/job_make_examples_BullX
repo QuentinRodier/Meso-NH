@@ -1,0 +1,57 @@
+#!/bin/bash
+#SBATCH -J Examples
+#SBATCH -N 1            # nodes number
+#SBATCH -n 1            # CPUs number (on all nodes) 
+#SBATCH -o Examples.eo%j   #
+#SBATCH -e Examples.eo%j   #
+#SBATCH -t 01:00:00    # time limit
+#SBATCH --export=NONE
+
+# Echo des commandes
+ulimit -c 0
+ulimit -s unlimited
+# Arrete du job des la premiere erreur
+set -e
+# Nom de la machine
+hostname 
+
+. ../conf/profile_mesonh-LXifortI4-MNH-V4-10-1-MPIINTEL-O3
+export MONORUN="mpirun -np 1 "
+export MPIRUN="mpirun -np 2 "
+export POSTRUN="time "
+
+cd $SRC_MESONH/MY_RUN/KTEST/003_KW78 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/001_2Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/002_3Drelief 
+make -k
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+
+cd $SRC_MESONH/MY_RUN/KTEST/004_Reunion
+make -k << EOF 
+
+
+EOF
+#
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+

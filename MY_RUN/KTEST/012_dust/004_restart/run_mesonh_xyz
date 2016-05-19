@@ -1,0 +1,9 @@
+#!/bin/sh
+set -x
+set -e
+rm -f DUST* OUT*  
+ln -sf  ../002_ecmwf2lfi/S702000092* .
+ln -sf  ../001_pgd1/pgd_dust_30km* .
+ln -sf  ../003_run/DUST7.1.SEG01.004.* .
+time ${MPIRUN} MESONH${XYZ}
+

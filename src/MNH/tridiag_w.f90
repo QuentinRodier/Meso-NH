@@ -1,0 +1,289 @@
+!     ###################
+      MODULE MODI_TRIDIAG_W
+!     ###################
+INTERFACE
+!
+       SUBROUTINE TRIDIAG_W(PVARM,PF,PDFDDWDZ,PTSTEP,  &
+                                 PMZM_DZZ,PRHODJ,PVARP )
+!
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARM   ! variable at t-1      at flux point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PF      ! flux in dT/dt=-dF/dz at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dT/dz)          at mass point
+REAL,                   INTENT(IN) :: PTSTEP  ! Double time step
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZM_DZZ! Dz                   at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! (dry rho)*J          at mass point
+!
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PVARP   ! variable at t+1      at flux point
+!
+END SUBROUTINE TRIDIAG_W
+!
+END INTERFACE
+!
+END MODULE MODI_TRIDIAG_W 
+!
+!
+!
+
+!      #################################################
+       SUBROUTINE TRIDIAG_W(PVARM,PF,PDFDDWDZ,PTSTEP, &
+                                 PMZM_DZZ,PRHODJ,PVARP)
+!      #################################################
+!
+!
+!!****   *TRIDIAG_W* - routine to solve a time implicit scheme
+!!
+!!
+!!     PURPOSE
+!!     -------
+!        The purpose of this routine is to give a field PVARP at t+1, by 
+!      solving an implicit TRIDIAGonal system obtained by the 
+!      discretization of the vertical turbulent diffusion. 
+!      The function of F(dT/dz) must have been linearized.
+!      PVARP is localized at a flux point.
+!
+!!**   METHOD
+!!     ------
+!!
+!!        [W(+) - W(-)]/Dt = -d{ F + dF/d(dW/dz) * [dW/dz(+)-dW/dz(-)] }/dz
+!!
+!!     It is discretized as follows:
+!!
+!!    (PRHODJ(k)+PRHODJ(k-1))/2.*PVARP(k)/PTSTEP
+!!              = 
+!!    (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP 
+!!  - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
+!!  + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
+!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k+1)/PMZM_DZZ(k)**2
+!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARP(k)  /PMZM_DZZ(k)**2
+!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k)  /PMZM_DZZ(k-1)**2
+!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARP(k-1)/PMZM_DZZ(k-1)**2
+!!  + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
+!!  - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
+!!  - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
+!!  + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!!
+!!
+!!    The system to solve is:
+!!
+!!      A*PVARP(k-1) + B*PVARP(k) + C*PVARP(k+1) = Y(k)
+!!
+!!
+!!    The RHS of the linear system in PVARP writes:
+!!
+!! y(k)    = (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP
+!!        - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
+!!        + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
+!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
+!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!!
+!!                      
+!!        Then, the classical TRIDIAGonal algorithm is used to invert the 
+!!     implicit operator. Its matrix is given by:
+!!
+!!     ( b(ikb)   c(ikb)      0        0        0         0        0        0  )
+!!     (   0      a(ikb+1) b(ikb+1) c(ikb+1)    0  ...    0        0        0  ) 
+!!     (   0         0     a(ikb+2) b(ikb+2) c(ikb+2).    0        0        0  ) 
+!!      .......................................................................
+!!     (   0   ...   0     a(k)     b(k)     c(k)         0   ...  0        0  ) 
+!!      .......................................................................
+!!     (   0         0        0        0        0 ...a(ike-1) b(ike-1) c(ike-1))
+!!     (   0         0        0        0        0 ...     0   a(ike)   b(ike)  )
+!!
+!!     ikb and ike represent the first and the last inner mass levels of the
+!!     model. The coefficients are:
+!!         
+!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! b(k) =   (PRHODJ(k)+PRHODJ(k-1))/2. / PTSTEP
+!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZM_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZM_DZZ(k)**2
+!!
+!!          for all k /= ikb or ike
+!!
+!!
+!! b(ikb) =   (PRHODJ(ikb)+PRHODJ(ikb-1))/2. / PTSTEP
+!!          - PRHODJ(ikb)   * PDFDDWDZ(ikb)  /PMZM_DZZ(ikb)**2
+!! c(ikb) = + PRHODJ(ikb)   * PDFDDWDZ(ikb)/PMZM_DZZ(ikb)**2
+!!
+!! b(ike) =  (PRHODJ(ike)+PRHODJ(ike-1))/2. / PTSTEP
+!!        - PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZM_DZZ(ike-1)**2
+!! a(ike) = + PRHODJ(ike-1) * PDFDDWDZ(ike-1)/PMZM_DZZ(ike-1)**2
+!!
+!!
+!!     EXTERNAL
+!!     --------
+!!
+!!       NONE
+!!
+!!     IMPLICIT ARGUMENTS
+!!     ------------------
+!!
+!!     REFERENCE
+!!     ---------
+!!       Press et al: Numerical recipes (1986) Cambridge Univ. Press
+!!
+!!     AUTHOR
+!!     ------
+!!       V. Masson         * Meteo-France *   
+!! 
+!!     MODIFICATIONS
+!!     -------------
+!!       Original        04/2011 (from tridiag_thermo.f90)
+!! ---------------------------------------------------------------------
+!
+!*       0. DECLARATIONS
+!
+USE MODD_PARAMETERS, ONLY : JPVEXT
+!
+USE MODI_SHUMAN
+!
+IMPLICIT NONE
+!
+!
+!*       0.1 declarations of arguments
+!
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PVARM   ! variable at t-1      at flux point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PF      ! flux in dT/dt=-dF/dz at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PDFDDWDZ! dF/d(dT/dz)          at mass point
+REAL,                   INTENT(IN) :: PTSTEP  ! Double time step
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PMZM_DZZ! Dz                   at mass point
+REAL, DIMENSION(:,:,:), INTENT(IN) :: PRHODJ  ! (dry rho)*J          at mass point
+!
+REAL, DIMENSION(:,:,:), INTENT(OUT):: PVARP   ! variable at t+1      at flux point
+!
+!
+!*       0.2 declarations of local variables
+!
+REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2),SIZE(PVARM,3))  :: ZRHODJ_DFDDWDZ_O_DZ2
+REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2),SIZE(PVARM,3))  :: ZMZM_RHODJ
+REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2),SIZE(PVARM,3))  :: ZA, ZB, ZC
+REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2),SIZE(PVARM,3))  :: ZY ,ZGAM 
+                                         ! RHS of the equation, 3D work array
+REAL, DIMENSION(SIZE(PVARM,1),SIZE(PVARM,2))                :: ZBET
+                                         ! 2D work array
+INTEGER                              :: JK            ! loop counter
+INTEGER                              :: IKB,IKE,IKU   ! inner vertical limits
+!
+! ---------------------------------------------------------------------------
+!                                              
+!*      1.  Preliminaries
+!           -------------
+!
+IKB=1+JPVEXT
+IKE=SIZE(PVARM,3)-JPVEXT 
+IKU=SIZE(PVARM,3)
+!
+ZMZM_RHODJ  = MZM(1,IKU,1,PRHODJ)
+ZRHODJ_DFDDWDZ_O_DZ2 = PRHODJ*PDFDDWDZ/PMZM_DZZ**2
+!
+ZA=0.
+ZB=0.
+ZC=0.
+ZY=0.
+!
+!
+!*      2.  COMPUTE THE RIGHT HAND SIDE
+!           ---------------------------
+!
+!! y(k)    = (PRHODJ(k)+PRHODJ(k-1))/2.*PVARM(k)/PTSTEP
+!!        - PRHODJ(k)   * PF(k  )/PMZM_PDZZ(k  )
+!!        + PRHODJ(k-1) * PF(k-1)/PMZM_PDZZ(k-1)
+!!        + PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k+1)/PMZM_DZZ(k)**2
+!!        - PRHODJ(k)   * PDFDDWDZ(k)   * PVARM(k)  /PMZM_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k)  /PMZM_DZZ(k-1)**2
+!!        + PRHODJ(k-1) * PDFDDWDZ(k-1) * PVARM(k-1)/PMZM_DZZ(k-1)**2
+!
+ZY(:,:,IKB) = ZMZM_RHODJ(:,:,IKB)*PVARM(:,:,IKB)/PTSTEP              &
+    - PRHODJ(:,:,IKB  ) * PF(:,:,IKB  )/PMZM_DZZ(:,:,IKB  )           &
+    + PRHODJ(:,:,IKB-1) * PF(:,:,IKB-1)/PMZM_DZZ(:,:,IKB-1)           &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB+1)&
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB) * PVARM(:,:,IKB  )
+!
+DO JK=IKB+1,IKE-1
+  ZY(:,:,JK) = ZMZM_RHODJ(:,:,JK)*PVARM(:,:,JK)/PTSTEP               &
+    - PRHODJ(:,:,JK  ) * PF(:,:,JK  )/PMZM_DZZ(:,:,JK  )              &
+    + PRHODJ(:,:,JK-1) * PF(:,:,JK-1)/PMZM_DZZ(:,:,JK-1)              &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK+1)  &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) * PVARM(:,:,JK  )  &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1) * PVARM(:,:,JK  )  &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1) * PVARM(:,:,JK-1)
+END DO
+! 
+ZY(:,:,IKE) = ZMZM_RHODJ(:,:,IKE)*PVARM(:,:,IKE)/PTSTEP              &
+    - PRHODJ(:,:,IKE  ) * PF(:,:,IKE  )/PMZM_DZZ(:,:,IKE  )           &
+    + PRHODJ(:,:,IKE-1) * PF(:,:,IKE-1)/PMZM_DZZ(:,:,IKE-1)           &
+    - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1) * PVARM(:,:,IKE  ) &
+    + ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1) * PVARM(:,:,IKE-1)
+!
+!
+!*       3.  INVERSION OF THE TRIDIAGONAL SYSTEM
+!            -----------------------------------
+!
+!
+!*       3.1 arrays A, B, C
+!            --------------
+!
+!! a(k) = + PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! b(k) =   (PRHODJ(k)+PRHODJ(k-1))/2. / PTSTEP
+!!        - PRHODJ(k)   * PDFDDWDZ(k)  /PMZM_DZZ(k)**2
+!!        - PRHODJ(k-1) * PDFDDWDZ(k-1)/PMZM_DZZ(k-1)**2
+!! c(k) = + PRHODJ(k)   * PDFDDWDZ(k)/PMZM_DZZ(k)**2
+!
+  ZB(:,:,IKB) =   PRHODJ(:,:,IKB)/PTSTEP                   &
+                - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
+  ZC(:,:,IKB) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKB)
+
+  DO JK=IKB+1,IKE-1
+    ZA(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
+    ZB(:,:,JK) =   ZMZM_RHODJ(:,:,JK)/PTSTEP                   &
+                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  ) &
+                 - ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK-1)
+    ZC(:,:,JK) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,JK  )
+  END DO
+
+  ZA(:,:,IKE) =   ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1)
+  ZB(:,:,IKE) =   PRHODJ(:,:,IKE)/PTSTEP                   &
+                - ZRHODJ_DFDDWDZ_O_DZ2(:,:,IKE-1)
+!
+!*       3.2 going up
+!            --------
+!
+  ZBET(:,:) = ZB(:,:,IKB)  ! bet = b(ikb)
+  PVARP(:,:,IKB) = ZY(:,:,IKB) / ZBET(:,:)
+
+  !
+  DO JK = IKB+1,IKE-1
+    ZGAM(:,:,JK) = ZC(:,:,JK-1) / ZBET(:,:)  
+                                                    ! gam(k) = c(k-1) / bet
+    ZBET(:,:)    = ZB(:,:,JK) - ZA(:,:,JK) * ZGAM(:,:,JK)
+                                                    ! bet = b(k) - a(k)* gam(k)  
+    PVARP(:,:,JK)= ( ZY(:,:,JK) - ZA(:,:,JK) * PVARP(:,:,JK-1) ) / ZBET(:,:)
+                                        ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
+  END DO 
+  ! special treatment for the last level
+  ZGAM(:,:,IKE) = ZC(:,:,IKE-1) / ZBET(:,:) 
+                                                    ! gam(k) = c(k-1) / bet
+  ZBET(:,:)     = ZB(:,:,IKE) - ZA(:,:,IKE) * ZGAM(:,:,IKE)
+                                                    ! bet = b(k) - a(k)* gam(k)  
+  PVARP(:,:,IKE)= ( ZY(:,:,IKE) - ZA(:,:,IKE) * PVARP(:,:,IKE-1) ) / ZBET(:,:)
+                                       ! res(k) = (y(k) -a(k)*res(k-1))/ bet 
+!
+!*       3.3 going down
+!            ----------
+!
+  DO JK = IKE-1,IKB,-1
+    PVARP(:,:,JK) = PVARP(:,:,JK) - ZGAM(:,:,JK+1) * PVARP(:,:,JK+1)
+  END DO
+!
+!
+!*       4.  FILL THE UPPER AND LOWER EXTERNAL VALUES
+!            ----------------------------------------
+!
+PVARP(:,:,IKB-1)=PVARP(:,:,IKB)
+PVARP(:,:,IKE+1)=PVARP(:,:,IKE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE TRIDIAG_W

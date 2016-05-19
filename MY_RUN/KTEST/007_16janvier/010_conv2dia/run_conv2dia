@@ -1,0 +1,7 @@
+set -x
+set -e
+ln -sf ../009_diag/16JAN.?.12B18.001dg.??? .
+rm -f 16JAN.?.12B18.001cv.???
+${POSTRUN} conv2dia < dir_conv2dia1
+${POSTRUN} conv2dia < dir_conv2dia2
+

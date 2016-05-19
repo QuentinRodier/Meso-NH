@@ -1,0 +1,199 @@
+!     #########
+      SUBROUTINE PGD_BATHYFIELD(HPROGRAM,HFIELD,HAREA,HFILE,HFILETYPE,&
+                                  HNCVARNAME,PUNIF,PFIELD)  
+!     ##############################################################
+!
+!!**** *PGD_FIELD* monitor for averaging and interpolations of ISBA physiographic fields
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!    METHOD
+!!    ------
+!!   
+!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!    C. Lebeaupin Brossier        Meteo-France
+!!
+!!    MODIFICATION
+!!    ------------
+!!
+!!    Original    01/2008
+!!
+!----------------------------------------------------------------------------
+!
+!*    0.     DECLARATION
+!            -----------
+!
+USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_PGD_GRID,       ONLY : NL
+USE MODD_PGDWORK,        ONLY : XSUMVAL, NSIZE
+USE MODD_SURF_ATM_n,     ONLY : XNATURE, XSEA, XTOWN, XWATER
+!
+USE MODI_GET_LUOUT
+USE MODI_TREAT_BATHYFIELD
+USE MODI_INTERPOL_FIELD
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODI_ABOR1_SFX
+!
+IMPLICIT NONE
+!
+!*    0.1    Declaration of arguments
+!            ------------------------
+!
+ CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM  ! Type of program
+ CHARACTER(LEN=*),  INTENT(IN) :: HFIELD    ! field name for prints
+ CHARACTER(LEN=3),  INTENT(IN) :: HAREA     ! area where field is defined
+!                                          ! 'ALL' : everywhere
+!                                          ! 'NAT' : on nature
+!                                          ! 'TWN' : on town
+!                                          ! 'SEA' : on sea
+!                                          ! 'WAT' : on inland waters
+!                                          ! 'LAN' : on nature + on town
+ CHARACTER(LEN=28), INTENT(IN) :: HFILE     ! data file name
+ CHARACTER(LEN=6),  INTENT(IN) :: HFILETYPE ! data file type
+ CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME! variable name to read
+REAL,              INTENT(IN) :: PUNIF     ! prescribed uniform value for field
+REAL, DIMENSION(:),INTENT(OUT):: PFIELD    ! physiographic field
+!
+!
+!*    0.2    Declaration of local variables
+!            ------------------------------
+!
+INTEGER :: ILUOUT    ! output listing logical unit
+!
+ CHARACTER(LEN=20) :: YFIELD
+INTEGER :: JLOOP
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!-------------------------------------------------------------------------------
+!
+!*    1.      Initializations
+!             ---------------
+!
+IF (LHOOK) CALL DR_HOOK('PGD_BATHYFIELD',0,ZHOOK_HANDLE)
+PFIELD(:) = XUNDEF
+!-------------------------------------------------------------------------------
+!
+!*    2.      Output listing logical unit
+!             ---------------------------
+!
+ CALL GET_LUOUT(HPROGRAM,ILUOUT)
+!
+!-------------------------------------------------------------------------------
+!
+!*    3.2     No data
+!             -------
+!
+IF (LEN_TRIM(HFILE)/=0) THEN
+!        
+!-------------------------------------------------------------------------------
+!
+!*    3.      Averages the field
+!             ------------------
+!
+  ALLOCATE(NSIZE     (NL))
+  ALLOCATE(XSUMVAL   (NL))
+!
+  NSIZE    (:) = 0.
+  XSUMVAL  (:) = 0.
+!
+  YFIELD = '                    '
+  YFIELD = HFIELD(1:MIN(LEN(HFIELD),20))
+!
+  CALL TREAT_BATHYFIELD(HPROGRAM,'SURF  ',HFILETYPE,'A_MESH',HFILE, HNCVARNAME,&
+                     YFIELD,PFIELD,HAREA                           )  
+!
+!-------------------------------------------------------------------------------
+!
+!*    4.      Mask for the interpolations
+!             ---------------------------
+!
+  SELECT CASE (HAREA)
+    CASE ('LAN')
+      WHERE (XTOWN(:)+XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+    CASE ('TWN')
+      WHERE (XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+    CASE ('NAT')
+      WHERE (XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+    CASE ('SEA')
+      WHERE (XSEA   (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+    CASE ('WAT')
+      WHERE (XWATER (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+
+  END SELECT
+!
+!-------------------------------------------------------------------------------
+!
+!*    5.      Interpolation if some points are not initialized (no data for these points)
+!             ------------------------------------------------
+!
+  CALL INTERPOL_FIELD(HPROGRAM,ILUOUT,NSIZE,PFIELD(:),HFIELD)
+!
+  DO JLOOP=1,SIZE(PFIELD)
+   PFIELD(JLOOP)=MIN(PFIELD(JLOOP),-1.)
+  ENDDO
+  DEALLOCATE(NSIZE    )
+  DEALLOCATE(XSUMVAL  )
+!
+!-------------------------------------------------------------------------------
+!
+!
+!*    3.      Uniform field is prescribed
+!             ---------------------------
+!
+!
+ELSEIF (PUNIF/=XUNDEF) THEN
+!
+!*    3.1     Use of the presribed field
+!             --------------------------
+!
+  PFIELD(:) = PUNIF
+!
+ELSE
+!
+  WRITE(ILUOUT,*) ' '
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) '* Error in PGD field preparation of field : ', HFIELD
+  WRITE(ILUOUT,*) '* There is no prescribed value and no input file          *'
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) ' '
+  CALL ABOR1_SFX('PGD_BATHYFIELD: NO PRESCRIBED VALUE NOR INPUT FILE FOR '//HFIELD)
+!
+END IF
+!-------------------------------------------------------------------------------
+!
+!*    6.      Mask for the field
+!             ------------------
+!
+SELECT CASE (HAREA)
+  CASE ('LAN')
+    WHERE (XTOWN(:)+XNATURE(:)==0.) PFIELD(:) = XUNDEF
+  CASE ('TWN')
+    WHERE (XTOWN  (:)==0.) PFIELD(:) = XUNDEF
+  CASE ('NAT')
+    WHERE (XNATURE(:)==0.) PFIELD(:) = XUNDEF
+  CASE ('SEA')
+    WHERE (XSEA   (:)==0.) PFIELD(:) = XUNDEF
+  CASE ('WAT')
+    WHERE (XWATER (:)==0.) PFIELD(:) = XUNDEF
+
+END SELECT
+IF (LHOOK) CALL DR_HOOK('PGD_BATHYFIELD',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE PGD_BATHYFIELD

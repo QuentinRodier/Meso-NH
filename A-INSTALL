@@ -1,0 +1,887 @@
+#
+# Version of PACKAGE MESONH "stand-alone distribution"
+#              PACK-MNH-V4-10-1
+#              DATE : 12/12/2013
+#              VERSION : MESONH MASDEV4_10 + BUG-1  
+#
+#  MAP
+#
+#        0) TWO WAYS OF DOWNLOADING MESONH
+#      I-A) DOWNLOAD VIA THE WEB MESONH HOME PAGE
+#      I-B) DOWNLOAD VIA CVS ANONYMOUS 
+#       II) CONFIGURING THE MESONH PACKAGE
+#      III) COMPILING/INSTALLING THE MESONH PACKAGE ON OUR LINUX COMPUTER 
+#       IV) RUN SOME "SMALL KTEST" EXAMPLES
+#        V) RECOMPILING YOUR 'OWN' SOURCES ONLY 
+#       VI) COMPILING/INSTALLING MESONH ON GENCI & ECMWF & METEO COMPUTERS
+#      VII) "SCANDOLLAR" = SCRIPTING YOUR OWN PROCEDURES 
+#
+#     VIII) TROUBLE-SHOOTING
+#           a) Segmentation violation -> problem of "stack size" limit
+#           b) Compiler bug with "ifort 10.0.xxx" 
+#
+#
+#  0) TWO WAYS OF DOWNLOADING MESONH
+#  =================================
+#
+#  MESONH sources and executables 
+#  http://mesonh.aero.obs-mip.fr
+#  are developed and maintained with the
+#  CVS tools ( http://www.cvshome.org/ )
+#
+#  There are two ways to download the package of
+#  MESONH containing :
+#    - sources 
+#    - makefiles
+#    - precompile exe 
+#    - graphic tools
+#    - basic examples
+#
+#  The first way is for VERY BASIC USER OF MESONH 
+#  via a download of a "tar ball" in the WEB site of MESONH
+#
+#  The second way is for USER/DEVELOPER of MESONH
+#  via the use of the CVS tools and an access via anonymous
+#  connection with "ssh" to the CVS REPOSITORY of the MESONH package 
+# 
+#
+# REM: It is now strongly recommended, but it's not an obligation, 
+#      for all users to use de CVS solution, because:
+#
+#      * It's far more easy for us ( support team ) to give you some assistance
+#        in case of trouble ... as the CVS tool permits us to know exactly
+#         what you have changed in the original PACKAGE
+#
+#      * It's much more easy for you to update to the last version ...  
+#        or at least see the change made for BUGFIX directly on our installation .
+#
+#
+#  So here are explained the two ways <=> mutually exclusif 
+#
+#
+^L
+# I-A) DOWNLOAD VIA THE WEB MESONH HOME PAGE
+# ==========================================
+#
+# With your preferred web browser go to the MESONH WEB SITE
+# 
+#  http://mesonh.aero.obs-mip.fr/mesonh
+#     ---> Download
+#           ---> CVS MESONH
+#
+# or directly
+#
+# http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/viewcvs.cgi/MNH-VX-Y-Z
+#
+# in the field  "Show files using tag:" 
+#
+#    ---> select "PACK-MNH-V4-10-1"
+#
+# and then download the file "PACK-MNH-VX-Y-Z.tar.gz" by the link 
+#
+#    --> Download tarball
+#
+# Then untar the file "PACK-MNH-VX-Y-Z.tar.gz" where you want to,
+# in your home directory for example:
+#
+ 
+cd ~
+tar xvfz PACK-MNH-VX-Y-Z.tar.gz
+
+#
+# As the directory did not reflect the last version name move it 
+# to the right one
+#
+ 
+mv MNH-VX-Y-Z MNH-V4-10-1
+      
+#
+#  Process now to the chapter to configure the MesoNH 
+#
+# => II) CONFIGURING THE MESONH PACKAGE
+#
+^L
+# I-B) DOWNLOAD VIA CVS ANONYMOUS
+# ===============================
+#
+#    a) download the ssh key file "anoncvs.key" for anonymous connection 
+#    -------------------------------------------------------------------
+#
+# With your preferred web browser go to the MESONH WEB SITE
+# 
+#  http://mesonh.aero.obs-mip.fr/mesonh
+#     ---> Download
+#           ---> CVS PACKAGE MESONH
+#
+# or directly
+#
+#   http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/viewcvs.cgi/MNH-VX-Y-Z
+#
+# in the field  "Show files using tag:" 
+#
+#    ---> select "PACK-MNH-V4-10-1"
+#
+#   download the file "anoncvs.key"
+#
+#   by  :
+#         1) a  "left-click" in the "Rev." column 
+#       + 2) a  "right-click" on "download" 
+#                   ---> save link to disk
+#               (Warning :: don't copy the file content with  mouse copy/past 
+#               because it contains binary-encoded information !!!)
+#
+#   then copy this file in your "${HOME}/.ssh/" directory
+#
+#   AND VERY IMPORTANT !!!
+#   Modify the "read/write" permission with:
+# 
+
+chmod 600 anoncvs.key
+
+#
+#    b) download the config file "config.anoncvs_www"
+#    ------------------------------------------------ 
+#
+#    For METEO-FRANCE & IDRIS & CINES & Laboratoire d'Aerologie computers ( IP address filter )
+#    ==========================================================================================
+#
+#    download the file
+#
+#      -->  "config.anoncvs_www" 
+#
+#    Then concatened the file content with your "${HOME}/.ssh/config" file
+#    ( this will define the computer alias "mesonh_anoncvs_www" for future ssh 
+#      anonymous connections )
+
+cd ${HOME}/.ssh
+cat config.anoncvs_www >> config
+
+#
+#    FOR OTHER COMPUTERS USE special "config.anoncvs_www" 
+#    ===================================================
+#
+#    if the computer, from which you download the MESONH sources,
+#    is external to  METEO-FRANCE & IDRIS & CINES & Laboratoire d'Aerologie Laboratoire download this file 
+#
+#      --> "config.anoncvs_www_ext" 
+
+cd ${HOME}/.ssh
+cat config.anoncvs_www_ext >> config
+
+#
+#    OR for ECMWF computer ( c1a ) download this config file 
+#    ( to bypass the gateway filter ) 
+#
+#      --> "config.anoncvs_www_ecmwf"
+#
+
+cd ${HOME}/.ssh
+cat config.anoncvs_www_ecmwf >> config
+
+#
+#    c) Setting CVS variables
+#    ------------------------
+#
+#    set the CVS_RSH et CVSROOT like this
+#    ( in your ".profile" or ".bashrc" file )
+#
+
+export CVS_RSH=ssh
+export CVSROOT=:ext:mesonh_anoncvs_www:/home/cvsroot
+
+#
+#   c)  Checking out the "MESONH PACKAGE"  
+#   -------------------------------------
+#
+#   Now, from your "$HOME" directory for example 
+#   extract the version "PACK-MNH-V4-10-1"
+#   of the directory "MNH-VX-Y-Z" from the
+#   cvs repository : 
+
+cd ~
+cvs co -r PACK-MNH-V4-10-1 -d MNH-V4-10-1 MNH-VX-Y-Z
+
+#
+# WARNING : don't use a sub-directory with dot "." in the name
+#            ---> you could have some trouble when compiling mesonh
+#
+#  this will create in your "$HOME" a directory "MNH-V4-10-1" 
+#  which contains of the last revision named "PACK-MNH-V4-10-1" 
+#  of the MESONH PACKAGE 
+#
+#  The advantage of this way of downloading 
+#  the package is that in the future you 
+#  could check/update quickly differences with
+#  the new version of the package without having
+#  to download entirely the full package
+#
+#  Suppose that a new version for example
+#  "PACK-MNH-V4-10-2" is announced ...
+#
+#  To see the differences with your working copy
+#  do
+#
+
+cd ~/MNH-V4-10-1
+cvs diff -r PACK-MNH-V4-10-2
+
+#
+#  And to upgrade your working copy
+#
+
+cd ~/MNH-V4-10-1
+cvs update -r PACK-MNH-V4-10-2 -d -P
+
+#
+# At any time you could also check for "uptodate" 
+# changes in the CVS "branch" dedicated to the MNH410 version
+# before the official release of the "bugN+1" bugfix
+#
+
+cvs diff -r MNH410-BUG-branch
+  
+#
+# An at "your own risk" update to this
+# ( not yet official ) version by
+#
+
+cd ~/MNH-V4-10-1
+cvs update -r MNH410-BUG-branch -d -P
+
+#
+#  Well, the use of CVS is not under the scope of this "INSTALL" document ...
+#
+#   Now go to then next chapter 
+#
+#   => II) CONFIGURING THE MESONH PACKAGE
+#
+#
+^L
+#
+# II) CONFIGURING THE MESONH PACKAGE
+# ==================================
+#
+#    For the installation process, you could now
+#    use the "./configure" script like this 
+#
+
+cd ~/MNH-V4-10-1/src
+./configure
+. ../conf/profile_mesonh
+
+#
+#    this will create a configuration file "profile_mesonh" with
+#    an extension reflecting the different "choices" made automatically
+#    to match the computer on which you want to install MESONH
+#   
+#    WARNING :
+#    =========
+#    On GENCI & ECMWF & METEO/CNRM  computers, the './configure' is tuned to 
+#    identify the computer on which the command is used
+#    so the good compiler,  mpi & cdf library , etc ... 
+#    are automatically chosen
+# 
+#    /!\ This is not the case in your "own" personal Linux computer ...
+#    So is up to you to set the ARCH variable correctly
+#    ARCH     = Fortran compiler to use,
+#    VER_MPI  = version of MPi to, use 
+#    OPTLEVEL = 
+#    etc ...
+#    and all the other environnement variables . 
+# 
+#    Be default, for an unknow computer, you will have  :
+#
+#   - the compiler choosen to be "gfortran" => ARCH=LXgfortran
+#   - the mpi library to be the MPIVIDE  => VER_MPI=MPIVIDE
+#     ( empty mpi library coming with MESONH package = no  parallel run possible )
+#   - the level compiler optimization   => OPTLEVEL=DEBUG
+#     (  for development purpose ,fast compilation & debugging )   
+#       
+#    SO IF NEEDED:
+#    ============
+#    you could change the default FLAG compiler/mpi/optlevel
+#    like this, for example 
+
+export ARCH=LXifort        # Use Intel "ifort" compiler on LX=linux Plateform 
+export VER_MPI=MPIAUTO     # Use MPI with compiler wrapper 'mpif90', for computer having this wrapper installed 
+export OPTLEVEL=O2         # Compile in O2 , 4 time faster then DEBUG, but least error check 
+
+./configure
+
+#    and then source/load the new generate file
+
+. ../conf/profile_mesonh.LXifort.MNH-V4-10-1.MPIAUTO.O2
+
+#
+#  REM: 
+#  ====
+#
+#  - Options specific to compile/architecture, like 'OPTLEVEL' are defined inside the "Rules.${ARCH}.mk" .
+#
+#  - Options specific to library like "mpi"="VER_MPI" or "cdf"="VER_CDF" are defined inside "Makefile.MESONH.mk"
+#
+#  - If need, for adaptation to your requirement, look inside the files and changes options for your needs .   
+#  
+#  - On PC-Linux, if needed , look in the "MesonhTEAM Wiki" to know how to compile the library MPI = OPEN-MPI , with MESONH
+#
+#    http://mesonh.aero.obs-mip.fr/teamwiki/MesonhTEAMFAQ/PC_Linux
+#      --> Compilation of OPEN-MPI
+
+^L
+#   
+# III) COMPILING/INSTALLING THE MESONH PACKAGE ON OUR LINUX COMPUTER 
+# ==================================================================
+#
+# go to the directory  "src"
+#
+
+cd  ~/MNH-V4-10-1/src
+
+#
+# if you have not already configured your MESONH environment
+# either manually in your interactive session 
+# or automatically through your .profile (or .bashrc), do:
+#
+# REM: use the configure file corresponding to your needs, cf. previous chapter 
+
+. ../conf/profile_mesonh{use_the_good_version_here} 
+
+#
+# run the compilation by
+#
+
+(g)make
+
+#
+# The compilation will take about 20 minutes on modern PC-Linux ...
+# 
+# If you have a multi-processor machine you can speedup
+# the compilation, for example, on two processors with:
+
+(g)make -j 2
+
+#
+#
+# The  object files "*.o"  &  main executables of the "MESONH PACKAGE" :
+#
+#  MESONH , PREP_IDEAL_CASE , PREP_REAL_CASE , etc ...
+#
+#  are compiled in one step and created in the directory
+#
+#    dir_obj-$(ARCH).../MASTER
+#
+# ( REM: the lib...a is only created and removed at the link phase;
+#          this allows a parallel compilation of the sources ... ) 
+#
+# The exact name of this "dir_obj..." depends on the different environnement
+# variables set by the "profile_mesonh...." which you have loaded before the compilation.
+#
+# This allow by loading different "profile_mesonh.." files to compile in the same
+# source/installation directory different version of MESONH , with different
+# compiler, different version of MPI , different USER sources , etc ...
+#
+#
+# To install the new compiled program in the "$SRC_MESONH/exe"
+# directory, after compilation, just run
+#
+
+make installmaster
+
+#
+# The executable with their full name, including, $ARCH , compiler
+# and MPI , level of optimization, will be linked in the "../exe" directory
+# 
+# REM: 
+# ---
+#      The "make installmaster" need to be done only one time by "version" . 
+#      If you change/add source only you have to do "make" 
+
+make
+ 
+#
+#  IV) RUN SOME "SMALL KTEST" EXAMPLES
+#  ===================================
+#
+#  After compilation & installation you could run
+#  some basic "KTEST" examples from the "src" directory 
+#  by running:
+
+make examples 
+
+# or by giving one of the "KTEST" names in 
+#
+# the list "001_2Drelief 002_3Drelief 003_KW78 004_Reunion 007_16janvier"
+
+make 004_Reunion
+
+#
+#  EXAMPLES USING NCL
+#  ===================
+#
+#  WITH 2 OPTIONS TO CONVERT FROM LFI TO NETCDF FORMAT
+#  1: with extractdia
+#  2: with lfi2cdf
+#  Only for 2 KTEST : 004_Reunion and 007_16janvier
+#
+
+make ncl1_examples  # if using extractdia
+
+#or
+
+make ncl2_examples  # if using lfi2cdf
+
+#
+# Or by giving the KTEST name followed by _ncl1 or _ncl2
+#
+
+make 004_Reunion_ncl1
+
+#or
+
+make 004_Reunion_ncl2
+
+^L
+#
+#  V) RECOMPILING YOUR OWN SOURCES ONLY 
+#  ====================================
+#
+#  NOW YOU COULD GENERATE AND RECOMPILE YOUR OWN SOURCES ONLY
+#  ( like BIBUSER in centralised MESONH version )
+#
+#  Suppose you want to create a "MY_MODIF" version ...
+#
+# Step-1 : prepare your source directory
+# ---------------------------------------
+#
+# Put your own source in a subdirectory of "${SRC_MESONH}/src" named 
+#  
+   
+${SRC_MESONH}/src/MY_MODIF
+
+#
+#  All subdirectories in "MY_MODIF" will be scanned so if you want
+#  you could make a subdirectory for each component of the MESONH
+#  Package
+#
+
+cp .../mesonh.f90 MY_MODIF/MNH/.
+cp .../isba.f90   MY_MODIF/SURFEX/.
+
+#
+#  /!\ WARNING :
+#  -------------
+#   - In this subdirectory put only fortran source you want to compile !!!
+#   Don't use it as a trash, with old sources file like 'my_source.f90.old'
+#   or 'tar' files 'mysource.tar' . 
+#   - All 'spirituous' file will confuse the  'make' commande .   
+#
+#   
+# Step-2 : configure/compiling with VER_USER=...
+# ----------------------------------------------
+# 
+# - Logout of the current session, to be sure to unset all the 
+#   environnement variables load with the your 'master 'profile_mesonh'   
+#
+# - Login again and :
+#
+#   - set the variable "VER_USER" with the name of your "USER VERSION",  
+#   - set also optionnal the , ARCH, VER_MPI ,etc... , you want to use 
+#  
+# and run again the "./configure" commande  
+
+#export ARCH=...
+#export VER_MPI=...
+export VER_USER=MY_MODIF
+./configure
+
+#
+# this will regenerate the "profile-mesonh" file and a copy
+# of this with the extent  "profile_mesonh...${VER_USER)..."
+#
+# as before load it & and compile with the command "make user"
+
+. ../conf/profile_mesnh...${VER_USER}...
+
+make user
+
+# this will compilation Only your sources, and the files depending of your sources
+# and generate the new executables in your own directory 
+#
+#   dir_obj-$(ARCH).../${VER_USER}
+#
+#
+# WARNING : 
+# ========
+#  before compiling your own sources be sure that these ones
+#  are younger than the "*.o" files of the MASTER directory
+#  if any doubt, at any time use the command 
+#
+#      touch *.f*
+#
+#     on your sources, and only on yours do that!!!
+#
+#
+# Step-3 : running the examples 
+# -----------------------------
+#
+#
+# Now if the compilatio is OK,  you could to test this new version with the "make examples"
+#
+# First, install the new binaries in the '${SRC_MESONH}/exe' with 
+
+make installuser
+
+#   The "make installuser" need to be done only one time by "version" . 
+
+#
+# And run the examples, your Version should appear in the name of the executables
+# used .
+#
+
+make examples 
+
+^L
+#
+#   VI) COMPILING/INSTALLING ON GENCI & ECMWF & METEO COMPUTERS
+#   ===========================================================
+#
+#   After downloading "exactly" like on "any standalone PC" 
+#   run the "./configure" command :
+#
+
+./configure
+
+#
+#  - If you do not have sufficient space in your "$HOME" directory
+#    install the whole package directly on the ${WORKDIR}
+#
+#   WARNING :
+#   ======== 
+#    - Think to do a backup of your installation 
+#    - This space is not more "purged" but a "crash disk" could/will
+#      probably occur !!!
+# 
+
+cd $WORKDIR
+cvs co -r PACK-MNH-V4-10-1 -d MNH-V4-10-1 MNH-VX-Y-Z
+cd MNH-V4-10-1/src
+
+./configure
+ 
+#   
+#   Due to limitation in time & memory on interactive connection 
+#   then compile the MESONH PACKAGE in batch mode with the different "job_make_mesonh*" files
+#   
+#   at IDRIS :
+#   ---------
+#
+
+#   - On ADA ( IBM/x3750 ) with :
+
+llsubmit job_make_mesonh_IBM_ada
+
+#
+#
+#   - On TURING (IBM BG/Q ) : 
+
+llsubmit job_make_mesonh_BGQ
+#
+#
+#   BACKUP : /!\ backup your work on "gaya"
+#
+#   
+#   at CINES on JADE( SGI/ICE ) :
+#   ----------------------------
+# 
+#   - install the PACKAGE in your "$WORKDIR" 
+#   - you could compile in interactive mode
+#
+#    BACKUP : /!\ backup your work on "/data/${USER}"
+# 
+# 
+#   at ECMWF on c2a ( IBM/SP7 ) :
+#   ----------------------------
+#
+#   - to install MESONH you need more disk space than allowed for 'standard' user ( 150 mb only ... )
+#     Ask to Dominique Lucas, look this email :
+#
+#    http://mesonh.aero.obs-mip.fr/cgi-bin/mesonh_interne/mail2html.cgi?file=2009_09_24_15:31:54
+#
+#   - for the compilation use :
+
+llsubmit job_make_mesonh_cxa
+
+#
+#   EXAMPLES ON GENCI & ECMWF PLATFORMS
+#   ====================================
+#
+#  - At IDRIS
+#
+
+# on ADA
+
+llsubmit job_make_examples_IBM_ada
+
+#on TURING
+
+llsubmit job_make_examples_BGQ
+
+#
+#   - At CINES on JADE( SGI/ICE ) :
+#
+# load ".profile_mesonh..." & set the variables :
+ 
+export MONORUN="mpirun -np 1"
+export MPIRUN="mpirun -np 4 " 
+  
+# and run with 
+
+make examples
+
+#
+#   - At ECMWF on c2a
+#
+
+llsubmit  job_make_examples_cxa
+
+#
+# That's all for the basic INSTALLATION of the "MESONH PACKAGE"
+#  
+
+#
+#  VII) "SCANDOLLAR" = SCRIPTING YOUR OWN PROCEDURES 
+#  ====================================================
+
+# A small script 'scandollar' is in test in this version of MESONH.
+# It will help you to build a complete chaining of an experiment. 
+# The idea is to write some "template" scripts with '$VARIABLE' in the 
+# Key point. Then 'scandollar' will parse this template files
+# and generate the file with the variables evaluated ...
+#
+# First don't forget to load your "profile_mesonh..."
+#
+# So how it work  ...
+#
+#  Syntaxe 
+
+export CONFEXP="YOUR_EXPERIMENT"
+scandollar [list_directory]
+
+# What is done :
+#
+#   for all (directory) in [liste directory]
+#   go to this (directory)
+#    - read the environnement variable in the user 'confdollar' file 
+#    - read the default environnement variable for this 'machine' in ${CONF_DOLLAR}
+#    - parse all the '*.ihm' file and put the transformed file 
+#         (without extension in) in a new sub-directory '${CONFEXP}'
+#
+#  Without [list_directory] the current directory '.' is parsed . 
+#
+# As a demonstration the '16janvier Study Case' is build with this
+# template script here :
+
+$SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar
+
+#
+# EXAMPLE :
+# -------
+#
+# To parse only the first pgd step = directory '001_pgd1'
+
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/001_pgd1
+
+export CONFEXP=4101
+scandollar
+
+## OUTPUT ::
+
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V4-10-1/conf/post/confdollar_aeropc_default
+>#
+>#  read    user config file :: --->  CONFIG=confdollar
+>#
+>#  processes file *.ihm and put them in ./4101/ ::
+>#          ---> run_prep_pgd_xyz.ihm =>  ./4101/run_prep_pgd_xyz
+
+
+#
+# And to run this step 
+#
+
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/001_pgd1/4101
+(qsub) run_prep_pgd_xyz # qsub on brodie 
+
+# To parse all these steps 
+
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier_scandollar/
+scandollar 0*
+
+## OUTPUT ::
+>#
+>#  read default config file :: --->  CONF_DOLLAR=/home/escj/DEV64/PACK-MNH-V4-10-1/conf/post/confdollar_aeropc_default
+>#
+>#  read    user config file :: --->  CONFIG=confdollar
+>#
+>#  processes file *.ihm and put them in 001_pgd1/4101/ ::
+>#          ---> run_prep_pgd_xyz.ihm =>  001_pgd1/4101/run_prep_pgd_xyz
+...
+>#  read    user config file :: --->  CONFIG=confdollar
+>#
+>#  processes file *.ihm and put them in 008_run2/4101/ ::
+>#          ---> run_mesonh_xyz.ihm =>  008_run2/4101/run_mesonh_xyz
+>#
+...
+>#  read    user config file :: --->  CONFIG=confdollar
+>#
+>#  processes file *.ihm and put them in 011_diaprog/4101/ ::
+>#          ---> run_diaprog.ihm =>  011_diaprog/4101/run_diaprog
+
+
+#
+# The chaining of the differents steps is control by the "RMSHELL" variable .
+# To inhibit put a "#" in it , eather in your current shell
+# or in the 'confdollar' file .
+
+export RMSHELL="#"
+
+#
+# Some 'predefine' variables are set in the '${CONF_DOLLAR}' default files
+#   --> One file is defined by know-computer . 
+#
+#   Are included files for 'brodie' , 'vargas' , ( babel beta-test ) , 'c1a' , 'jade' & 'aeropc*' ( = default for unknown host )
+
+export  CONF_DOLLAR=${SRC_MESONH}/conf/post/confdollar_aeropc_default
+
+#
+#   You could define your own default file and use it by setting
+#   in your shell the  'CONF_DOLLAR' variable 
+#   ( By default './configure' will set it for you in the profile_mesonh file ) 
+
+
+#
+#  ON GENCI PLATEFORM 
+#  ------------------
+# 
+#  You will find my "own" personal installation of MESONH 
+#  in the next directory . If you need only to run MESONH
+#  without recompiliong new sources for MESONH, you could :
+#
+#  - source/load my own "profile_mesonh" without modification
+# 
+#  - and copy the scripts examples  with 
+
+cp -R  007_16janvier_scandollar /.../your_directory
+  
+#
+
+# 
+# You could also copy only the differents "*/493"  sub-directory
+# if you don't when ti use the "scandollar" script  .
+#
+# 
+#   You will the need to change only information corresponding 
+#   the location to your own path directory for the input/ouput data .
+#  
+#   So
+#
+#  - At IDRIS :
+#    ==========
+#
+#  On Brodie
+#  ---------
+#
+# use this "profile_mesonh" :
+
+.  /home/rech/mnh/rmnh007/DEV/MNH-V4-10-1/conf/profile_mesonh-SX8-MNH-V4-10-1-MPIAUTO-O4
+
+# And the examples are here ( link to my $WORKDIR in actually )  
+
+/home/rech/mnh/rmnh007/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+
+#
+#  On vargas
+#  ---------
+#  use this "profile_mesonh" :
+
+. /workgpfs/rech/mnh/rmnh007/DEV/MNH-V4-10-1/conf/profile_mesonh-AIX64-MNH-V4-10-1-MPIAUTO-O2
+
+# and examples here :
+
+/workgpfs/rech/mnh/rmnh007/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+
+# 
+#  - At CINES on JADE :
+#    =================
+#
+# use 
+
+. /work/escobar/DEV/MNH-V4-10-1/conf/profile_mesonh-LXifort-MNH-V4-10-1-MPIICE-O2
+
+# and the exemples
+
+/work/escobar/DEV/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+
+#
+#  - At ECMWF on cxa :
+#    ===============
+#
+# use
+
+. /c1a/ms_perm/au5/MNH-V4-10-1/conf/profile_mesonh-AIX64-MNH-V4-10-1-MPIAUTO-O2
+
+# and the examples
+
+/c1a/ms_perm/au5/MNH-V4-10-1/MY_RUN/KTEST/007_16janvier_scandollar
+
+
+#
+#  Good luck!!!
+#
+
+#
+# VIII) TROUBLE-SHOOTING
+# ======================
+#
+#
+# a) "Segmentation violation" -> problem of "stack size" limit
+# ------------------------------------------------------------
+#
+#  When running the examples coming with the MESONH package, if you obtain
+#  a "segmentation violation" error it is probably a problem with
+#  the "stack size" limit on your Linux computer ...
+#
+#  Check this limit with the command
+
+ulimit -s
+
+#  The limit is given in Kbytes and is often 8192 KB
+#
+#  ---> this mean only 8Mbytes for array in stack memory
+#
+#  It's a very low walue !!!
+#
+#  We recommend you to put it to "unlimited" in your
+#  ".bashrc" or ".profile" like this
+
+ulimit -s unlimited
+
+
+#
+# b) Compiler BUG with "ifort 10.0.xxx" 
+# -------------------------------------
+#
+#   Some routines do not compile with
+#   the version "10.0.XXX" of "ifort" ( at least until 10.0.023 )
+#
+#    Solution ---> Upgrade to ifort "10.1.015"
+#
+#   The ifort "10.1.008" has also some bug in the generation
+#   of optimized 'vectorized SSE' code resulting in unpredictable
+#   "Flaoting Point" error
+#
+#    Solution ---> compile the routine with problem with '-O1' option
+#                  or upgrade to at least "10.1.015" version
+#   
+
+
+

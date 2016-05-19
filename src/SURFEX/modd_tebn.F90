@@ -1,0 +1,699 @@
+!     ################
+      MODULE MODD_TEB_n
+!     ################
+!
+!!****  *MODD_TEB_n - declaration of surface parameters for urban surface
+!!
+!!    PURPOSE
+!!    -------
+!     Declaration of surface parameters
+!
+!!
+!!**  IMPLICIT ARGUMENTS
+!!    ------------------
+!!      None 
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original       01/2004
+!!      A. Lemonsu      07/2012         Key for urban hydrology
+!
+!*       0.   DECLARATIONS
+!             ------------
+!
+USE MODD_TYPE_SNOW
+USE MODD_TYPE_DATE_SURF
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+
+
+TYPE TEB_OPTIONS_t
+! TEB scheme option
+!
+  LOGICAL                        :: LCANOPY      ! T: SBL scheme within the canopy
+                                                 ! F: no atmospheric layers below forcing level      
+  LOGICAL                        :: LGARDEN      ! T: Urban green areas (call ISBA from TEB)
+                                                 ! F: No urban green areas
+  CHARACTER(LEN=4)               :: CROAD_DIR    ! TEB option for road directions
+                                                 ! 'UNIF' : no specific direction
+                                                 ! 'ORIE' : many road ORIEntations
+                                                 ! ( one per TEB patch)
+  CHARACTER(LEN=4)               :: CWALL_OPT    ! TEB option for walls
+                                                 ! 'UNIF' : uniform walls
+                                                 ! 'TWO ' : two separated walls
+  CHARACTER(LEN=3)               :: CBLD_ATYPE   ! Type of averaging for walls
+                                                 ! 'ARI'  : Characteristics are
+                                                 !          linearly averaged
+                                                 ! 'MAJ ' : Majoritary building in
+                                                 !          grid mesh is chosen
+  CHARACTER(LEN=6)               :: CZ0H         ! TEB option for z0h roof & road
+                                                 ! 'MASC95' : Mascart et al 1995
+                                                 ! 'BRUT82' : Brustaert     1982
+                                                 ! 'KAND07' : Kanda         2007
+  CHARACTER(LEN=5)               :: CCH_BEM      ! BEM option for roof/wall outside convective coefficient
+                                                 ! 'DOE-2' : DOE-2 model from
+                                                 ! EnergyPlus Engineering reference, p65
+  CHARACTER(LEN=3)               :: CBEM         ! TEB option for the building energy model
+                                                 ! 'DEF':  DEFault version force-restore model from Masson et al. 2002
+                                                 ! 'BEM':  Building Energy Model Bueno et al. 2011
+
+  CHARACTER(LEN=3)               :: CTREE        ! TEB option for the high vegetation
+                                                 ! 'DEF':  DEFault version without radiative, dynamic effects or turbulent fluxes
+                                                 ! 'RAD':  only RADiative effects 
+                                                 ! 'DYN':  radiative and DYNamic effects 
+                                                 ! 'FLX':  radiative, dynamic effects, and turbulent fluxes 
+  LOGICAL                        :: LGREENROOF   ! T: green roofs (call ISBA from TEB)
+  LOGICAL                        :: LHYDRO       ! T: urban subsoil and hydrology processes
+! 
+! type of initialization of vegetation: from cover types (ecoclimap) or parameters prescribed
+!
+  LOGICAL                        :: LECOCLIMAP   ! T: parameters computed from ecoclimap
+!                                                ! F: they are read in the file
+!
+! General surface: 
+!
+  REAL, POINTER, DIMENSION(:)   :: XZS           ! orography                        (m)
+  REAL, POINTER, DIMENSION(:,:) :: XCOVER        ! fraction of each ecosystem       (-)
+  LOGICAL, POINTER, DIMENSION(:):: LCOVER        ! GCOVER(i)=T --> ith cover field is not 0.
+  INTEGER                       :: NTEB_PATCH    ! number of TEB patches
+  REAL, POINTER, DIMENSION(:,:) :: XTEB_PATCH    ! fraction of each TEB patch
+!
+! Number of layers
+!
+  INTEGER                       :: NROOF_LAYER   ! number of layers in roofs
+  INTEGER                       :: NROAD_LAYER   ! number of layers in roads
+  INTEGER                       :: NWALL_LAYER   ! number of layers in walls
+!
+! Date:
+!
+  TYPE (DATE_TIME)              :: TTIME         ! current date and time
+!
+! Time-step:
+!
+  REAL                          :: XTSTEP        ! time step for TEB
+!
+  REAL                          :: XOUT_TSTEP    ! TEB output writing time step
+!
+END TYPE TEB_OPTIONS_t
+
+TYPE(TEB_OPTIONS_t), ALLOCATABLE, TARGET, SAVE :: TEB_OPTIONS_MODEL(:)
+
+LOGICAL, POINTER :: LCANOPY=>NULL()
+!$OMP THREADPRIVATE(LCANOPY)
+LOGICAL, POINTER :: LGARDEN=>NULL()
+!$OMP THREADPRIVATE(LGARDEN)
+ CHARACTER(LEN=4), POINTER :: CROAD_DIR=>NULL()
+!$OMP THREADPRIVATE(CROAD_DIR)
+ CHARACTER(LEN=4), POINTER :: CWALL_OPT=>NULL()
+!$OMP THREADPRIVATE(CWALL_OPT)
+ CHARACTER(LEN=3), POINTER :: CBLD_ATYPE=>NULL()
+!$OMP THREADPRIVATE(CBLD_ATYPE)
+ CHARACTER(LEN=6), POINTER :: CZ0H=>NULL()
+!$OMP THREADPRIVATE(CZ0H)
+ CHARACTER(LEN=5), POINTER :: CCH_BEM=>NULL()
+!$OMP THREADPRIVATE(CCH_BEM)
+ CHARACTER(LEN=3), POINTER :: CBEM=>NULL()
+!$OMP THREADPRIVATE(CBEM)
+ CHARACTER(LEN=3), POINTER :: CTREE=>NULL()
+!$OMP THREADPRIVATE(CTREE)
+LOGICAL, POINTER :: LGREENROOF=>NULL()
+!$OMP THREADPRIVATE(LGREENROOF)
+LOGICAL, POINTER :: LHYDRO=>NULL()
+!$OMP THREADPRIVATE(LHYDRO)
+LOGICAL, POINTER :: LECOCLIMAP=>NULL()
+!$OMP THREADPRIVATE(LECOCLIMAP)
+REAL, POINTER, DIMENSION(:)   :: XZS=>NULL()
+!$OMP THREADPRIVATE(XZS)
+REAL, POINTER, DIMENSION(:,:) :: XCOVER=>NULL()
+!$OMP THREADPRIVATE(XCOVER)
+LOGICAL, POINTER, DIMENSION(:):: LCOVER=>NULL()
+!$OMP THREADPRIVATE(LCOVER)
+INTEGER, POINTER :: NTEB_PATCH=>NULL()
+!$OMP THREADPRIVATE(NTEB_PATCH)
+REAL, POINTER, DIMENSION(:,:) :: XTEB_PATCH=>NULL()
+!$OMP THREADPRIVATE(XTEB_PATCH)
+INTEGER, POINTER :: NROOF_LAYER=>NULL()
+!$OMP THREADPRIVATE(NROOF_LAYER)
+INTEGER, POINTER :: NROAD_LAYER=>NULL()
+!$OMP THREADPRIVATE(NROAD_LAYER)
+INTEGER, POINTER :: NWALL_LAYER=>NULL()
+!$OMP THREADPRIVATE(NWALL_LAYER)
+TYPE (DATE_TIME), POINTER :: TTIME=>NULL()
+!$OMP THREADPRIVATE(TTIME)
+REAL, POINTER :: XTSTEP=>NULL()
+!$OMP THREADPRIVATE(XTSTEP)
+REAL, POINTER :: XOUT_TSTEP=>NULL()
+!$OMP THREADPRIVATE(XOUT_TSTEP)
+
+!--------------------------------------------------------------------------
+
+TYPE TEB_t
+! TEB scheme option
+!
+! Geometric Parameters:
+!
+  REAL, POINTER, DIMENSION(:)   :: XROAD_DIR     ! Road direction (° from North, clockwise)
+  REAL, POINTER, DIMENSION(:)   :: XGARDEN       ! fraction of veg in the streets   (-)
+  REAL, POINTER, DIMENSION(:)   :: XGREENROOF    ! fraction of greenroofs on roofs  (-)
+  REAL, POINTER, DIMENSION(:)   :: XBLD          ! fraction of buildings            (-)
+  REAL, POINTER, DIMENSION(:)   :: XROAD         ! fraction of roads                (-)
+  REAL, POINTER, DIMENSION(:)   :: XCAN_HW_RATIO ! canyon    h/W                    (-)
+  REAL, POINTER, DIMENSION(:)   :: XBLD_HEIGHT   ! buildings height 'h'             (m)
+  REAL, POINTER, DIMENSION(:)   :: XWALL_O_HOR   ! wall surf. / hor. surf.          (-)
+  REAL, POINTER, DIMENSION(:)   :: XROAD_O_GRND  ! road surf. / (road + garden surf.) (-)
+  REAL, POINTER, DIMENSION(:)   :: XGARDEN_O_GRND! gard. surf. / (road + garden surf.)(-)
+  REAL, POINTER, DIMENSION(:)   :: XWALL_O_GRND  ! wall surf. / (road + garden surf.) (-)
+  REAL, POINTER, DIMENSION(:)   :: XWALL_O_BLD   ! wall surf. / bld surf. (-)
+  REAL, POINTER, DIMENSION(:)   :: XZ0_TOWN      ! roughness length for momentum    (m)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_ROAD     ! road sky view factor             (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_GARDEN   ! green area sky view factor       (-)
+  REAL, POINTER, DIMENSION(:)   :: XSVF_WALL     ! wall sky view factor             (-)
+!
+! Roof parameters
+!
+  REAL, POINTER, DIMENSION(:)   :: XALB_ROOF     ! roof albedo                      (-)
+  REAL, POINTER, DIMENSION(:)   :: XEMIS_ROOF    ! roof emissivity                  (-)
+  REAL, POINTER, DIMENSION(:,:) :: XHC_ROOF      ! roof layers heat capacity        (J/K/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XTC_ROOF      ! roof layers thermal conductivity (W/K/m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_ROOF       ! depth of roof layers             (m)
+  REAL, POINTER, DIMENSION(:)   :: XROUGH_ROOF   ! roof roughness coef
+!
+!
+! Road parameters
+!
+  REAL, POINTER, DIMENSION(:)   :: XALB_ROAD     ! road albedo                      (-)
+  REAL, POINTER, DIMENSION(:)   :: XEMIS_ROAD    ! road emissivity                  (-)
+  REAL, POINTER, DIMENSION(:,:) :: XHC_ROAD      ! road layers heat capacity        (J/K/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XTC_ROAD      ! road layers thermal conductivity (W/K/m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_ROAD       ! depth of road layers             (m)
+!
+! Wall parameters
+!
+  REAL, POINTER, DIMENSION(:)   :: XALB_WALL     ! wall albedo                      (-)
+  REAL, POINTER, DIMENSION(:)   :: XEMIS_WALL    ! wall emissivity                  (-)
+  REAL, POINTER, DIMENSION(:,:) :: XHC_WALL      ! wall layers heat capacity        (J/K/m3)
+  REAL, POINTER, DIMENSION(:,:) :: XTC_WALL      ! wall layers thermal conductivity (W/K/m)
+  REAL, POINTER, DIMENSION(:,:) :: XD_WALL       ! depth of wall layers             (m)
+  REAL, POINTER, DIMENSION(:)   :: XROUGH_WALL   ! wall roughness coef
+!
+! anthropogenic fluxes
+!
+  REAL, POINTER, DIMENSION(:)   :: XH_TRAFFIC    ! anthropogenic sensible
+!                                                  ! heat fluxes due to traffic       (W/m2)
+  REAL, POINTER, DIMENSION(:)   :: XLE_TRAFFIC   ! anthropogenic latent
+!                                                  ! heat fluxes due to traffic       (W/m2)
+  REAL, POINTER, DIMENSION(:)   :: XH_INDUSTRY   ! anthropogenic sensible                   
+!                                                  ! heat fluxes due to factories     (W/m2)
+  REAL, POINTER, DIMENSION(:)   :: XLE_INDUSTRY  ! anthropogenic latent
+!                                                  ! heat fluxes due to factories     (W/m2)
+!
+! temperatures for boundary conditions
+!
+  REAL, POINTER, DIMENSION(:)   :: XTI_ROAD      ! road interior temperature        (K)
+!
+! Prognostic variables:
+!
+  REAL, POINTER, DIMENSION(:)   :: XWS_ROOF      ! roof water reservoir             (kg/m2)
+  REAL, POINTER, DIMENSION(:)   :: XWS_ROAD      ! road water reservoir             (kg/m2)
+  REAL, POINTER, DIMENSION(:,:) :: XT_ROOF       ! roof layer temperatures          (K)
+  REAL, POINTER, DIMENSION(:,:) :: XT_ROAD       ! road layer temperatures          (K)
+  REAL, POINTER, DIMENSION(:,:) :: XT_WALL_A     ! wall layer temperatures          (K)
+  REAL, POINTER, DIMENSION(:,:) :: XT_WALL_B     ! wall layer temperatures          (K)
+!
+  REAL, POINTER, DIMENSION(:)   :: XAC_ROOF      ! roof aerodynamic conductance     ()
+  REAL, POINTER, DIMENSION(:)   :: XAC_ROAD      ! road aerodynamic conductance     ()
+  REAL, POINTER, DIMENSION(:)   :: XAC_WALL      ! wall aerodynamic conductance     ()
+  REAL, POINTER, DIMENSION(:)   :: XAC_TOP       ! top  aerodynamic conductance     ()
+  REAL, POINTER, DIMENSION(:)   :: XAC_ROOF_WAT  ! water aerodynamic conductance    ()
+  REAL, POINTER, DIMENSION(:)   :: XAC_ROAD_WAT  ! water aerodynamic conductance    ()
+!
+  REAL, POINTER, DIMENSION(:)   :: XQSAT_ROOF    ! humidity of saturation for roofs (kg/kg)
+  REAL, POINTER, DIMENSION(:)   :: XQSAT_ROAD    ! humidity of saturation for roads (kg/kg)
+!
+  REAL, POINTER, DIMENSION(:)   :: XDELT_ROOF    ! humidity of saturation for roofs (-)
+  REAL, POINTER, DIMENSION(:)   :: XDELT_ROAD    ! humidity of saturation for roads (-)
+!
+! Semi-prognostic variables:
+!
+  REAL, POINTER, DIMENSION(:)   :: XT_CANYON     ! canyon air temperature           (K)
+  REAL, POINTER, DIMENSION(:)   :: XQ_CANYON     ! canyon air specific humidity     (kg/kg)
+!
+!
+! Prognostic snow:
+!
+  TYPE(SURF_SNOW)                 :: TSNOW_ROOF      ! snow state on roofs: 
+!                                                  ! scheme type/option               (-)
+!                                                  ! number of layers                 (-)
+!                                                  ! snow (& liq. water) content      (kg/m2)
+!                                                  ! heat content                     (J/m2)
+!                                                  ! temperature                      (K)
+!                                                  ! density                          (kg m-3)
+  TYPE(SURF_SNOW)                 :: TSNOW_ROAD      ! snow state on roads: 
+!                                                  ! scheme type/option               (-)
+!                                                  ! number of layers                 (-)
+!                                                  ! snow (& liq. water) content      (kg/m2)
+!                                                  ! heat content                     (J/m2)
+!                                                  ! temperature                      (K)
+!                                                  ! density                          (kg m-3)
+!                                                  ! density                          (kg m-3)
+  TYPE(SURF_SNOW)                 :: TSNOW_GARDEN    ! snow state on green areas:
+!                                                  ! scheme type/option               (-)
+!                                                  ! number of layers                 (-)
+!                                                  ! snow (& liq. water) content      (kg/m2)
+!                                                  ! heat content                     (J/m2)
+!                                                  ! temperature                      (K)
+!                                                  ! density                          (kg m-3)
+!
+END TYPE TEB_t
+
+TYPE(TEB_t), ALLOCATABLE, TARGET, SAVE :: TEB_MODEL(:,:)
+
+REAL, POINTER, DIMENSION(:)   :: XROAD_DIR=>NULL()
+!$OMP THREADPRIVATE(XROAD_DIR)
+REAL, POINTER, DIMENSION(:)   :: XGARDEN=>NULL()
+!$OMP THREADPRIVATE(XGARDEN)
+REAL, POINTER, DIMENSION(:)   :: XGREENROOF=>NULL()
+!$OMP THREADPRIVATE(XGREENROOF)
+REAL, POINTER, DIMENSION(:)   :: XBLD=>NULL()
+!$OMP THREADPRIVATE(XBLD)
+REAL, POINTER, DIMENSION(:)   :: XROAD=>NULL()
+!$OMP THREADPRIVATE(XROAD)
+REAL, POINTER, DIMENSION(:)   :: XCAN_HW_RATIO=>NULL()
+!$OMP THREADPRIVATE(XCAN_HW_RATIO)
+REAL, POINTER, DIMENSION(:)   :: XBLD_HEIGHT=>NULL()
+!$OMP THREADPRIVATE(XBLD_HEIGHT)
+REAL, POINTER, DIMENSION(:)   :: XWALL_O_HOR=>NULL()
+!$OMP THREADPRIVATE(XWALL_O_HOR)
+REAL, POINTER, DIMENSION(:)   :: XROAD_O_GRND=>NULL()
+!$OMP THREADPRIVATE(XROAD_O_GRND)
+REAL, POINTER, DIMENSION(:)   :: XGARDEN_O_GRND=>NULL()
+!$OMP THREADPRIVATE(XGARDEN_O_GRND)
+REAL, POINTER, DIMENSION(:)   :: XWALL_O_GRND=>NULL()
+!$OMP THREADPRIVATE(XWALL_O_GRND)
+REAL, POINTER, DIMENSION(:)   :: XWALL_O_BLD=>NULL()
+!$OMP THREADPRIVATE(XWALL_O_BLD)
+REAL, POINTER, DIMENSION(:)   :: XZ0_TOWN=>NULL()
+!$OMP THREADPRIVATE(XZ0_TOWN)
+REAL, POINTER, DIMENSION(:)   :: XSVF_ROAD=>NULL()
+!$OMP THREADPRIVATE(XSVF_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XSVF_GARDEN=>NULL()
+!$OMP THREADPRIVATE(XSVF_GARDEN)
+REAL, POINTER, DIMENSION(:)   :: XSVF_WALL=>NULL()
+!$OMP THREADPRIVATE(XSVF_WALL)
+REAL, POINTER, DIMENSION(:)   :: XALB_ROOF=>NULL()
+!$OMP THREADPRIVATE(XALB_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XEMIS_ROOF=>NULL()
+!$OMP THREADPRIVATE(XEMIS_ROOF)
+REAL, POINTER, DIMENSION(:,:) :: XHC_ROOF=>NULL()
+!$OMP THREADPRIVATE(XHC_ROOF)
+REAL, POINTER, DIMENSION(:,:) :: XTC_ROOF=>NULL()
+!$OMP THREADPRIVATE(XTC_ROOF)
+REAL, POINTER, DIMENSION(:,:) :: XD_ROOF=>NULL()
+!$OMP THREADPRIVATE(XD_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XALB_ROAD=>NULL()
+!$OMP THREADPRIVATE(XALB_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XEMIS_ROAD=>NULL()
+!$OMP THREADPRIVATE(XEMIS_ROAD)
+REAL, POINTER, DIMENSION(:,:) :: XHC_ROAD=>NULL()
+!$OMP THREADPRIVATE(XHC_ROAD)
+REAL, POINTER, DIMENSION(:,:) :: XTC_ROAD=>NULL()
+!$OMP THREADPRIVATE(XTC_ROAD)
+REAL, POINTER, DIMENSION(:,:) :: XD_ROAD=>NULL()
+!$OMP THREADPRIVATE(XD_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XALB_WALL=>NULL()
+!$OMP THREADPRIVATE(XALB_WALL)
+REAL, POINTER, DIMENSION(:)   :: XEMIS_WALL=>NULL()
+!$OMP THREADPRIVATE(XEMIS_WALL)
+REAL, POINTER, DIMENSION(:,:) :: XHC_WALL=>NULL()
+!$OMP THREADPRIVATE(XHC_WALL)
+REAL, POINTER, DIMENSION(:,:) :: XTC_WALL=>NULL()
+!$OMP THREADPRIVATE(XTC_WALL)
+REAL, POINTER, DIMENSION(:,:) :: XD_WALL=>NULL()
+!$OMP THREADPRIVATE(XD_WALL)
+REAL, POINTER, DIMENSION(:)   :: XH_TRAFFIC=>NULL()
+!$OMP THREADPRIVATE(XH_TRAFFIC)
+REAL, POINTER, DIMENSION(:)   :: XLE_TRAFFIC=>NULL()
+!$OMP THREADPRIVATE(XLE_TRAFFIC)
+REAL, POINTER, DIMENSION(:)   :: XH_INDUSTRY=>NULL()
+!$OMP THREADPRIVATE(XH_INDUSTRY)
+REAL, POINTER, DIMENSION(:)   :: XLE_INDUSTRY=>NULL()
+!$OMP THREADPRIVATE(XLE_INDUSTRY)
+REAL, POINTER, DIMENSION(:)   :: XTI_ROAD=>NULL()
+!$OMP THREADPRIVATE(XTI_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XWS_ROOF=>NULL()
+!$OMP THREADPRIVATE(XWS_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XWS_ROAD=>NULL()
+!$OMP THREADPRIVATE(XWS_ROAD)
+REAL, POINTER, DIMENSION(:,:) :: XT_ROOF=>NULL()
+!$OMP THREADPRIVATE(XT_ROOF)
+REAL, POINTER, DIMENSION(:,:) :: XT_ROAD=>NULL()
+!$OMP THREADPRIVATE(XT_ROAD)
+REAL, POINTER, DIMENSION(:,:) :: XT_WALL_A=>NULL()
+!$OMP THREADPRIVATE(XT_WALL_A)
+REAL, POINTER, DIMENSION(:,:) :: XT_WALL_B=>NULL()
+!$OMP THREADPRIVATE(XT_WALL_B)
+REAL, POINTER, DIMENSION(:)   :: XAC_ROOF=>NULL()
+!$OMP THREADPRIVATE(XAC_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XAC_ROAD=>NULL()
+!$OMP THREADPRIVATE(XAC_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XAC_WALL=>NULL()
+!$OMP THREADPRIVATE(XAC_WALL)
+REAL, POINTER, DIMENSION(:)   :: XAC_TOP=>NULL()
+!$OMP THREADPRIVATE(XAC_TOP)
+REAL, POINTER, DIMENSION(:)   :: XAC_ROOF_WAT=>NULL()
+!$OMP THREADPRIVATE(XAC_ROOF_WAT)
+REAL, POINTER, DIMENSION(:)   :: XAC_ROAD_WAT=>NULL()
+!$OMP THREADPRIVATE(XAC_ROAD_WAT)
+REAL, POINTER, DIMENSION(:)   :: XQSAT_ROOF=>NULL()
+!$OMP THREADPRIVATE(XQSAT_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XQSAT_ROAD=>NULL()
+!$OMP THREADPRIVATE(XQSAT_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XDELT_ROOF=>NULL()
+!$OMP THREADPRIVATE(XDELT_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XDELT_ROAD=>NULL()
+!$OMP THREADPRIVATE(XDELT_ROAD)
+REAL, POINTER, DIMENSION(:)   :: XT_CANYON=>NULL()
+!$OMP THREADPRIVATE(XT_CANYON)
+REAL, POINTER, DIMENSION(:)   :: XQ_CANYON=>NULL()
+!$OMP THREADPRIVATE(XQ_CANYON)
+TYPE(SURF_SNOW), POINTER :: TSNOW_ROOF=>NULL()
+!$OMP THREADPRIVATE(TSNOW_ROOF)
+TYPE(SURF_SNOW), POINTER :: TSNOW_ROAD=>NULL()
+!$OMP THREADPRIVATE(TSNOW_ROAD)
+TYPE(SURF_SNOW), POINTER :: TSNOW_GARDEN=>NULL()
+!$OMP THREADPRIVATE(TSNOW_GARDEN)
+REAL, POINTER, DIMENSION(:)   :: XROUGH_ROOF=>NULL()
+!$OMP THREADPRIVATE(XROUGH_ROOF)
+REAL, POINTER, DIMENSION(:)   :: XROUGH_WALL=>NULL()
+!$OMP THREADPRIVATE(XROUGH_WALL)
+
+!----------------------------------------------------------------------------
+CONTAINS
+!----------------------------------------------------------------------------
+
+SUBROUTINE TEB_OPTIONS_GOTO_MODEL(KFROM, KTO, LKFROM)
+LOGICAL, INTENT(IN) :: LKFROM
+INTEGER, INTENT(IN) :: KFROM, KTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+! Save current state for allocated arrays
+IF (LKFROM) THEN
+TEB_OPTIONS_MODEL(KFROM)%XZS=>XZS
+TEB_OPTIONS_MODEL(KFROM)%XCOVER=>XCOVER
+TEB_OPTIONS_MODEL(KFROM)%LCOVER=>LCOVER
+TEB_OPTIONS_MODEL(KFROM)%XTEB_PATCH=>XTEB_PATCH
+ENDIF
+!
+! Current model is set to model KTO
+IF (LHOOK) CALL DR_HOOK('MODD_TEB_N:TEB_OPTIONS_GOTO_MODEL',0,ZHOOK_HANDLE)
+LCANOPY=>TEB_OPTIONS_MODEL(KTO)%LCANOPY
+LGARDEN=>TEB_OPTIONS_MODEL(KTO)%LGARDEN
+CZ0H=>TEB_OPTIONS_MODEL(KTO)%CZ0H
+CCH_BEM=>TEB_OPTIONS_MODEL(KTO)%CCH_BEM
+CBEM=>TEB_OPTIONS_MODEL(KTO)%CBEM
+CTREE=>TEB_OPTIONS_MODEL(KTO)%CTREE
+CROAD_DIR=>TEB_OPTIONS_MODEL(KTO)%CROAD_DIR
+CWALL_OPT=>TEB_OPTIONS_MODEL(KTO)%CWALL_OPT
+CBLD_ATYPE=>TEB_OPTIONS_MODEL(KTO)%CBLD_ATYPE
+LGREENROOF=>TEB_OPTIONS_MODEL(KTO)%LGREENROOF
+LHYDRO=>TEB_OPTIONS_MODEL(KTO)%LHYDRO
+LECOCLIMAP=>TEB_OPTIONS_MODEL(KTO)%LECOCLIMAP
+XZS=>TEB_OPTIONS_MODEL(KTO)%XZS
+XCOVER=>TEB_OPTIONS_MODEL(KTO)%XCOVER
+LCOVER=>TEB_OPTIONS_MODEL(KTO)%LCOVER
+NTEB_PATCH=>TEB_OPTIONS_MODEL(KTO)%NTEB_PATCH
+XTEB_PATCH=>TEB_OPTIONS_MODEL(KTO)%XTEB_PATCH
+NROOF_LAYER=>TEB_OPTIONS_MODEL(KTO)%NROOF_LAYER
+NROAD_LAYER=>TEB_OPTIONS_MODEL(KTO)%NROAD_LAYER
+NWALL_LAYER=>TEB_OPTIONS_MODEL(KTO)%NWALL_LAYER
+TTIME=>TEB_OPTIONS_MODEL(KTO)%TTIME
+XTSTEP=>TEB_OPTIONS_MODEL(KTO)%XTSTEP
+XOUT_TSTEP=>TEB_OPTIONS_MODEL(KTO)%XOUT_TSTEP
+IF (LHOOK) CALL DR_HOOK('MODD_TEB_N:TEB_OPTIONS_GOTO_MODEL',1,ZHOOK_HANDLE)
+
+END SUBROUTINE TEB_OPTIONS_GOTO_MODEL
+
+SUBROUTINE TEB_OPTIONS_ALLOC(KMODEL)
+INTEGER, INTENT(IN) :: KMODEL
+INTEGER :: J,JP
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_OPTIONS_ALLOC",0,ZHOOK_HANDLE)
+ALLOCATE(TEB_OPTIONS_MODEL(KMODEL))
+DO J=1,KMODEL
+  NULLIFY(TEB_OPTIONS_MODEL(J)%XZS)
+  NULLIFY(TEB_OPTIONS_MODEL(J)%XCOVER)
+  NULLIFY(TEB_OPTIONS_MODEL(J)%LCOVER)
+  NULLIFY(TEB_OPTIONS_MODEL(J)%XTEB_PATCH)
+ENDDO
+TEB_OPTIONS_MODEL(:)%LCANOPY=.FALSE.
+TEB_OPTIONS_MODEL(:)%LGARDEN=.FALSE.
+TEB_OPTIONS_MODEL(:)%CROAD_DIR=' '
+TEB_OPTIONS_MODEL(:)%CWALL_OPT=' '
+TEB_OPTIONS_MODEL(:)%CBLD_ATYPE=' '
+TEB_OPTIONS_MODEL(:)%CZ0H=' '
+TEB_OPTIONS_MODEL(:)%CCH_BEM=' '
+TEB_OPTIONS_MODEL(:)%CBEM=' '
+TEB_OPTIONS_MODEL(:)%CTREE=' '
+TEB_OPTIONS_MODEL(:)%LGREENROOF=.FALSE.
+TEB_OPTIONS_MODEL(:)%LHYDRO=.FALSE.
+TEB_OPTIONS_MODEL(:)%LECOCLIMAP=.FALSE.
+TEB_OPTIONS_MODEL(:)%NTEB_PATCH=0
+TEB_OPTIONS_MODEL(:)%NROOF_LAYER=0
+TEB_OPTIONS_MODEL(:)%NROAD_LAYER=0
+TEB_OPTIONS_MODEL(:)%NWALL_LAYER=0
+TEB_OPTIONS_MODEL(:)%XTSTEP=0.
+TEB_OPTIONS_MODEL(:)%XOUT_TSTEP=0.
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_OPTIONS_ALLOC",1,ZHOOK_HANDLE)
+END SUBROUTINE TEB_OPTIONS_ALLOC
+
+SUBROUTINE TEB_OPTIONS_DEALLO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_OPTIONS_DEALLO",0,ZHOOK_HANDLE)
+IF (ALLOCATED(TEB_OPTIONS_MODEL)) DEALLOCATE(TEB_OPTIONS_MODEL)
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_OPTIONS_DEALLO",1,ZHOOK_HANDLE)
+END SUBROUTINE TEB_OPTIONS_DEALLO
+
+!----------------------------------------------------------------------------
+
+SUBROUTINE TEB_GOTO_MODEL(KFROM, KTO, LKFROM, KFROM_PATCH, KTO_PATCH)
+LOGICAL, INTENT(IN) :: LKFROM
+INTEGER, INTENT(IN) :: KFROM, KTO
+INTEGER, INTENT(IN) :: KFROM_PATCH, KTO_PATCH
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+
+! Save current state for allocated arrays
+IF (LKFROM) THEN
+TEB_MODEL(KFROM,KFROM_PATCH)%XBLD=>XBLD
+TEB_MODEL(KFROM,KFROM_PATCH)%XROAD_DIR=>XROAD_DIR
+TEB_MODEL(KFROM,KFROM_PATCH)%XGARDEN=>XGARDEN
+TEB_MODEL(KFROM,KFROM_PATCH)%XGREENROOF=>XGREENROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XROAD=>XROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XCAN_HW_RATIO=>XCAN_HW_RATIO
+TEB_MODEL(KFROM,KFROM_PATCH)%XBLD_HEIGHT=>XBLD_HEIGHT
+TEB_MODEL(KFROM,KFROM_PATCH)%XWALL_O_HOR=>XWALL_O_HOR
+TEB_MODEL(KFROM,KFROM_PATCH)%XROAD_O_GRND=>XROAD_O_GRND
+TEB_MODEL(KFROM,KFROM_PATCH)%XGARDEN_O_GRND=>XGARDEN_O_GRND
+TEB_MODEL(KFROM,KFROM_PATCH)%XWALL_O_GRND=>XWALL_O_GRND
+TEB_MODEL(KFROM,KFROM_PATCH)%XWALL_O_BLD=>XWALL_O_BLD
+TEB_MODEL(KFROM,KFROM_PATCH)%XZ0_TOWN=>XZ0_TOWN
+TEB_MODEL(KFROM,KFROM_PATCH)%XSVF_ROAD=>XSVF_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XSVF_GARDEN=>XSVF_GARDEN
+TEB_MODEL(KFROM,KFROM_PATCH)%XSVF_WALL=>XSVF_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XALB_ROOF=>XALB_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XEMIS_ROOF=>XEMIS_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XHC_ROOF=>XHC_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XTC_ROOF=>XTC_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XD_ROOF=>XD_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XALB_ROAD=>XALB_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XEMIS_ROAD=>XEMIS_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XHC_ROAD=>XHC_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XTC_ROAD=>XTC_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XD_ROAD=>XD_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XALB_WALL=>XALB_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XEMIS_WALL=>XEMIS_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XHC_WALL=>XHC_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XTC_WALL=>XTC_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XD_WALL=>XD_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XH_TRAFFIC=>XH_TRAFFIC
+TEB_MODEL(KFROM,KFROM_PATCH)%XLE_TRAFFIC=>XLE_TRAFFIC
+TEB_MODEL(KFROM,KFROM_PATCH)%XH_INDUSTRY=>XH_INDUSTRY
+TEB_MODEL(KFROM,KFROM_PATCH)%XLE_INDUSTRY=>XLE_INDUSTRY
+TEB_MODEL(KFROM,KFROM_PATCH)%XTI_ROAD=>XTI_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XWS_ROOF=>XWS_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XWS_ROAD=>XWS_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XT_ROOF=>XT_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XT_ROAD=>XT_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XT_WALL_A=>XT_WALL_A
+TEB_MODEL(KFROM,KFROM_PATCH)%XT_WALL_B=>XT_WALL_B
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_ROOF=>XAC_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_ROAD=>XAC_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_WALL=>XAC_WALL
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_TOP=>XAC_TOP
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_ROOF_WAT=>XAC_ROOF_WAT
+TEB_MODEL(KFROM,KFROM_PATCH)%XAC_ROAD_WAT=>XAC_ROAD_WAT
+TEB_MODEL(KFROM,KFROM_PATCH)%XQSAT_ROOF=>XQSAT_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XQSAT_ROAD=>XQSAT_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XDELT_ROOF=>XDELT_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XDELT_ROAD=>XDELT_ROAD
+TEB_MODEL(KFROM,KFROM_PATCH)%XT_CANYON=>XT_CANYON
+TEB_MODEL(KFROM,KFROM_PATCH)%XQ_CANYON=>XQ_CANYON
+TEB_MODEL(KFROM,KFROM_PATCH)%XROUGH_ROOF=>XROUGH_ROOF
+TEB_MODEL(KFROM,KFROM_PATCH)%XROUGH_WALL=>XROUGH_WALL
+ENDIF
+
+!
+! Current model is set to model KTO
+IF (LHOOK) CALL DR_HOOK('MODD_TEB_N:TEB_GOTO_MODEL',0,ZHOOK_HANDLE)
+XBLD=>TEB_MODEL(KTO,KTO_PATCH)%XBLD
+XROAD_DIR=>TEB_MODEL(KTO,KTO_PATCH)%XROAD_DIR
+XGARDEN=>TEB_MODEL(KTO,KTO_PATCH)%XGARDEN
+XGREENROOF=>TEB_MODEL(KTO,KTO_PATCH)%XGREENROOF
+XROAD=>TEB_MODEL(KTO,KTO_PATCH)%XROAD
+XCAN_HW_RATIO=>TEB_MODEL(KTO,KTO_PATCH)%XCAN_HW_RATIO
+XBLD_HEIGHT=>TEB_MODEL(KTO,KTO_PATCH)%XBLD_HEIGHT
+XWALL_O_HOR=>TEB_MODEL(KTO,KTO_PATCH)%XWALL_O_HOR
+XROAD_O_GRND=>TEB_MODEL(KTO,KTO_PATCH)%XROAD_O_GRND
+XGARDEN_O_GRND=>TEB_MODEL(KTO,KTO_PATCH)%XGARDEN_O_GRND
+XWALL_O_GRND=>TEB_MODEL(KTO,KTO_PATCH)%XWALL_O_GRND
+XWALL_O_BLD=>TEB_MODEL(KTO,KTO_PATCH)%XWALL_O_BLD
+XZ0_TOWN=>TEB_MODEL(KTO,KTO_PATCH)%XZ0_TOWN
+XSVF_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XSVF_ROAD
+XSVF_GARDEN=>TEB_MODEL(KTO,KTO_PATCH)%XSVF_GARDEN
+XSVF_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XSVF_WALL
+XALB_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XALB_ROOF
+XEMIS_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XEMIS_ROOF
+XHC_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XHC_ROOF
+XTC_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XTC_ROOF
+XD_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XD_ROOF
+XALB_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XALB_ROAD
+XEMIS_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XEMIS_ROAD
+XHC_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XHC_ROAD
+XTC_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XTC_ROAD
+XD_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XD_ROAD
+XALB_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XALB_WALL
+XEMIS_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XEMIS_WALL
+XHC_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XHC_WALL
+XTC_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XTC_WALL
+XD_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XD_WALL
+XH_TRAFFIC=>TEB_MODEL(KTO,KTO_PATCH)%XH_TRAFFIC
+XLE_TRAFFIC=>TEB_MODEL(KTO,KTO_PATCH)%XLE_TRAFFIC
+XH_INDUSTRY=>TEB_MODEL(KTO,KTO_PATCH)%XH_INDUSTRY
+XLE_INDUSTRY=>TEB_MODEL(KTO,KTO_PATCH)%XLE_INDUSTRY
+XTI_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XTI_ROAD
+XWS_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XWS_ROOF
+XWS_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XWS_ROAD
+XT_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XT_ROOF
+XT_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XT_ROAD
+XT_WALL_A=>TEB_MODEL(KTO,KTO_PATCH)%XT_WALL_A
+XT_WALL_B=>TEB_MODEL(KTO,KTO_PATCH)%XT_WALL_B
+XAC_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XAC_ROOF
+XAC_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XAC_ROAD
+XAC_WALL=>TEB_MODEL(KTO,KTO_PATCH)%XAC_WALL
+XAC_TOP=>TEB_MODEL(KTO,KTO_PATCH)%XAC_TOP
+XAC_ROOF_WAT=>TEB_MODEL(KTO,KTO_PATCH)%XAC_ROOF_WAT
+XAC_ROAD_WAT=>TEB_MODEL(KTO,KTO_PATCH)%XAC_ROAD_WAT
+XQSAT_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XQSAT_ROOF
+XQSAT_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XQSAT_ROAD
+XDELT_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XDELT_ROOF
+XDELT_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%XDELT_ROAD
+XT_CANYON=>TEB_MODEL(KTO,KTO_PATCH)%XT_CANYON
+XQ_CANYON=>TEB_MODEL(KTO,KTO_PATCH)%XQ_CANYON
+TSNOW_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%TSNOW_ROOF
+TSNOW_ROAD=>TEB_MODEL(KTO,KTO_PATCH)%TSNOW_ROAD
+TSNOW_GARDEN=>TEB_MODEL(KTO,KTO_PATCH)%TSNOW_GARDEN
+XROUGH_ROOF=>TEB_MODEL(KTO,KTO_PATCH)%XROUGH_ROOF
+IF (LHOOK) CALL DR_HOOK('MODD_TEB_N:TEB_GOTO_MODEL',1,ZHOOK_HANDLE)
+!
+!
+END SUBROUTINE TEB_GOTO_MODEL
+
+SUBROUTINE TEB_ALLOC(KMODEL,KPATCH)
+INTEGER, INTENT(IN) :: KMODEL
+INTEGER, INTENT(IN) :: KPATCH
+INTEGER :: J,JP
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_ALLOC",0,ZHOOK_HANDLE)
+ALLOCATE(TEB_MODEL(KMODEL,KPATCH))
+DO J=1,KMODEL
+ DO JP=1,KPATCH
+  NULLIFY(TEB_MODEL(J,JP)%XROAD_DIR)
+  NULLIFY(TEB_MODEL(J,JP)%XGARDEN)
+  NULLIFY(TEB_MODEL(J,JP)%XGREENROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XBLD)
+  NULLIFY(TEB_MODEL(J,JP)%XROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XCAN_HW_RATIO)
+  NULLIFY(TEB_MODEL(J,JP)%XBLD_HEIGHT)
+  NULLIFY(TEB_MODEL(J,JP)%XWALL_O_HOR)
+  NULLIFY(TEB_MODEL(J,JP)%XROAD_O_GRND)
+  NULLIFY(TEB_MODEL(J,JP)%XGARDEN_O_GRND)
+  NULLIFY(TEB_MODEL(J,JP)%XWALL_O_GRND)
+  NULLIFY(TEB_MODEL(J,JP)%XWALL_O_BLD)
+  NULLIFY(TEB_MODEL(J,JP)%XZ0_TOWN)
+  NULLIFY(TEB_MODEL(J,JP)%XSVF_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XSVF_GARDEN)
+  NULLIFY(TEB_MODEL(J,JP)%XSVF_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XALB_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XEMIS_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XHC_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XTC_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XD_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XALB_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XEMIS_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XHC_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XTC_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XD_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XALB_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XEMIS_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XHC_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XTC_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XD_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XH_TRAFFIC)
+  NULLIFY(TEB_MODEL(J,JP)%XLE_TRAFFIC)
+  NULLIFY(TEB_MODEL(J,JP)%XH_INDUSTRY)
+  NULLIFY(TEB_MODEL(J,JP)%XLE_INDUSTRY)
+  NULLIFY(TEB_MODEL(J,JP)%XTI_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XWS_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XWS_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XT_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XT_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XT_WALL_A)
+  NULLIFY(TEB_MODEL(J,JP)%XT_WALL_B)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_WALL)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_TOP)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_ROOF_WAT)
+  NULLIFY(TEB_MODEL(J,JP)%XAC_ROAD_WAT)
+  NULLIFY(TEB_MODEL(J,JP)%XQSAT_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XQSAT_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XDELT_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XDELT_ROAD)
+  NULLIFY(TEB_MODEL(J,JP)%XT_CANYON)
+  NULLIFY(TEB_MODEL(J,JP)%XQ_CANYON)
+  NULLIFY(TEB_MODEL(J,JP)%XROUGH_ROOF)
+  NULLIFY(TEB_MODEL(J,JP)%XROUGH_WALL)
+ ENDDO
+ENDDO
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_ALLOC",1,ZHOOK_HANDLE)
+END SUBROUTINE TEB_ALLOC
+
+SUBROUTINE TEB_DEALLO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_DEALLO",0,ZHOOK_HANDLE)
+IF (ALLOCATED(TEB_MODEL)) DEALLOCATE(TEB_MODEL)
+IF (LHOOK) CALL DR_HOOK("MODD_TEB_N:TEB_DEALLO",1,ZHOOK_HANDLE)
+END SUBROUTINE TEB_DEALLO
+
+END MODULE MODD_TEB_n

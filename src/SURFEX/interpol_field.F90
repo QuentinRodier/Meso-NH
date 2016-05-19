@@ -1,0 +1,60 @@
+!     ###############################################
+      SUBROUTINE INTERPOL_FIELD(HPROGRAM,KLUOUT,KCODE,PFIELD,HFIELD,PDEF,KNPTS)
+!     ################################################
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODD_SURF_PAR, ONLY : XUNDEF
+!
+USE MODI_ABOR1_SFX
+USE MODI_INTERPOL_FIELD2D
+!
+IMPLICIT NONE
+!
+!*    0.1    Declaration of arguments
+!            ------------------------
+!
+ CHARACTER(LEN=6),        INTENT(IN)   :: HPROGRAM ! host program
+INTEGER,                 INTENT(IN)   :: KLUOUT   ! output listing logical unit
+INTEGER,DIMENSION(:),    INTENT(INOUT):: KCODE    ! code for each point
+                                                  ! >0 point used for interpolation
+                                                  !  0 point to interpolate
+                                                  ! -1 point not used
+                                                  ! -2 point not used
+!                                                 ! -3 if spline is no computed
+!                                                 ! for this point
+REAL,   DIMENSION(:),    INTENT(INOUT):: PFIELD   ! pgd field on grid mesh
+ CHARACTER(LEN=*),        INTENT(IN)   :: HFIELD   ! name of the field for prints
+REAL,           OPTIONAL,INTENT(IN)   :: PDEF     ! default value if not enough data
+INTEGER, OPTIONAL,       INTENT(IN)   :: KNPTS    ! number of points to interpolate with
+!
+!*    0.2    Declaration of local variables
+!            ------------------------------
+!
+REAL, DIMENSION(SIZE(PFIELD),1) :: ZFIELD
+REAL, DIMENSION(1)              :: ZDEF
+INTEGER                         :: INPTS          ! number of points to interpolate with
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!----------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('INTERPOL_FIELD',0,ZHOOK_HANDLE)
+!
+INPTS = 3
+IF (PRESENT(KNPTS)) INPTS = KNPTS
+!
+ZFIELD(:,1) = PFIELD(:)
+!
+IF (PRESENT(PDEF)) THEN
+  ZDEF = PDEF
+  CALL INTERPOL_FIELD2D(HPROGRAM,KLUOUT,KCODE,ZFIELD,HFIELD,ZDEF,KNPTS=INPTS)
+ELSE
+  CALL INTERPOL_FIELD2D(HPROGRAM,KLUOUT,KCODE,ZFIELD,HFIELD,KNPTS=INPTS)
+END IF
+!
+PFIELD(:)   = ZFIELD(:,1)
+IF (LHOOK) CALL DR_HOOK('INTERPOL_FIELD',1,ZHOOK_HANDLE)
+!----------------------------------------------------------------------------
+END SUBROUTINE INTERPOL_FIELD
+

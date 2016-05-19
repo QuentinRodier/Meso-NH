@@ -1,0 +1,22 @@
+# Temps CPU max. en seconde (d'un processus)
+# @ cpu_limit  = 7200
+# Memoire max. utilisee (ici 11 Go)
+# @ data_limit = 2gb
+# Nom du travail LoadLeveler
+# @ job_name   = Sortie   
+# Fichier de sortie standard du travail       
+# @ output     = $(job_name).$(jobid)
+# Fichier de sortie d'erreur du travail
+# @ error      =  $(job_name).$(jobid)
+# @ queue                   
+
+# Pour avoir l'echo des commandes
+set -x
+cd $LOADL_STEP_INITDIR
+
+. ../conf/profile_mesonh-BGI4-MNH-V4-10-1-MPIAUTO-O2          
+
+#time gmake 
+time gmake -r -j8
+time gmake installmaster
+

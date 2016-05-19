@@ -1,0 +1,258 @@
+!     #########
+      SUBROUTINE WRITE_DIAG_PGD_TEB_n(HPROGRAM)
+!     #########################################
+!
+!!****  *WRITE_DIAG_PGD_TEB_GARDEN_n* - writes the ISBA physiographic diagnostic fields
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004 
+!!      Modified    10/2004 by P. Le Moigne: add XZ0REL, XVEGTYPE_PATCH
+!!      Modified    11/2005 by P. Le Moigne: limit length of VEGTYPE_PATCH field names
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_SURF_PAR,       ONLY : XUNDEF
+USE MODD_TEB_n
+USE MODD_BEM_n, ONLY : XN_FLOOR, NFLOOR_LAYER, XHC_FLOOR, XTC_FLOOR, XD_FLOOR
+
+!
+USE MODD_IO_SURF_FA, ONLY : LFANOCOMPACT, LPREP
+!
+USE MODI_INIT_IO_SURF_n
+USE MODI_WRITE_SURF
+USE MODI_END_IO_SURF_n
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
+ CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+INTEGER           :: JLAYER         ! loop counter on layers
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!-------------------------------------------------------------------------------
+!
+!         Initialisation for IO
+!
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_PGD_TEB_N',0,ZHOOK_HANDLE)
+ CALL INIT_IO_SURF_n(HPROGRAM,'TOWN  ','TEB   ','WRITE')
+!
+!-------------------------------------------------------------------------------
+!
+!         Geometric parameters
+!
+YRECFM='BLD'
+YCOMMENT='building fraction (-)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XBLD(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='WALL_O_HOR'
+YCOMMENT='Wall surface over plan area surface (-)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XWALL_O_HOR(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='BLD_HEIGHT'
+YCOMMENT='Building Height (m)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XBLD_HEIGHT(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='Z0_TOWN'
+YCOMMENT='Town roughness length (m)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XZ0_TOWN(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='XROAD_DIR'
+YCOMMENT='Road direction'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XROAD_DIR(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='GARDEN_FRAC'
+YCOMMENT='Garden fraction (-)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XGARDEN(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='GREENROOF_FRAC'
+YCOMMENT='Greenroof fraction (-)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XGREENROOF(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!-------------------------------------------------------------------------------
+!
+!         Building parameters
+!
+YRECFM='ALB_ROOF'
+YCOMMENT='Roof Albedo'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XALB_ROOF(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='EMIS_ROOF'
+YCOMMENT='Roof Emissivity'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XEMIS_ROOF(:),IRESP,HCOMMENT=YCOMMENT)
+!
+DO JLAYER=1,NROOF_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'HC_ROOF',JLAYER
+  YCOMMENT='Roof Heat Capacity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XHC_ROOF(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NROOF_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'TC_ROOF',JLAYER
+  YCOMMENT='Roof thermal conductivity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XTC_ROOF(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NROOF_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'D_ROOF',JLAYER
+  YCOMMENT='Roof layer thickness'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XD_ROOF(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+YRECFM='ROUGH_ROOF'
+YCOMMENT='Roof roughness'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XROUGH_ROOF(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='ALB_WALL'
+YCOMMENT='WALL Albedo'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XALB_WALL(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='EMIS_WALL'
+YCOMMENT='WALL Emissivity'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XEMIS_WALL(:),IRESP,HCOMMENT=YCOMMENT)
+!
+DO JLAYER=1,NWALL_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'HC_WALL',JLAYER
+  YCOMMENT='WALL Heat Capacity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XHC_WALL(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NWALL_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'TC_WALL',JLAYER
+  YCOMMENT='WALL thermal conductivity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XTC_WALL(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NWALL_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'D_WALL',JLAYER
+  YCOMMENT='WALL layer thickness'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XD_WALL(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+YRECFM='ROUGH_WALL'
+YCOMMENT='Wall roughness'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XROUGH_WALL(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!-------------------------------------------------------------------------------
+!
+!         Road parameters
+!
+YRECFM='ALB_ROAD'
+YCOMMENT='ROAD Albedo'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XALB_ROAD(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='EMIS_ROAD'
+YCOMMENT='ROAD Emissivity'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XEMIS_ROAD(:),IRESP,HCOMMENT=YCOMMENT)
+!
+DO JLAYER=1,NROAD_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'HC_ROAD',JLAYER
+  YCOMMENT='ROAD Heat Capacity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XHC_ROAD(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NROAD_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'TC_ROAD',JLAYER
+  YCOMMENT='ROAD thermal conductivity'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XTC_ROAD(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+DO JLAYER=1,NROAD_LAYER
+  WRITE(YRECFM,FMT='(A,I1.1)') 'D_ROAD',JLAYER
+  YCOMMENT='ROAD layer thickness'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XD_ROAD(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+!-------------------------------------------------------------------------------
+!
+!         Anthropogneic Fluxes
+!
+YRECFM='H_TRAFFIC'
+YCOMMENT='Traffic Heat Flux'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XH_TRAFFIC(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='LE_TRAFFIC'
+YCOMMENT='Traffic Latent Flux'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XLE_TRAFFIC(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='H_INDUSTRY'
+YCOMMENT='INDUSTRY Heat Flux'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XH_INDUSTRY(:),IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='LE_INDUSTRY'
+YCOMMENT='INDUSTRY Latent Flux'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XLE_INDUSTRY(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!-------------------------------------------------------------------------------
+!
+!         Building Energy Model parameters
+!
+IF (CBEM=='BEM') THEN
+   YRECFM='N_FLOOR'
+   YCOMMENT='Number of floors'
+   CALL WRITE_SURF(HPROGRAM,YRECFM,XN_FLOOR(:),IRESP,HCOMMENT=YCOMMENT)
+
+   DO JLAYER=1,NFLOOR_LAYER
+     WRITE(YRECFM,FMT='(A,I1.1)') 'HC_FLOOR',JLAYER
+     YCOMMENT='FLOOR Heat Capacity'
+     CALL WRITE_SURF(HPROGRAM,YRECFM,XHC_FLOOR(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+   END DO
+   !
+   DO JLAYER=1,NFLOOR_LAYER
+     WRITE(YRECFM,FMT='(A,I1.1)') 'TC_FLOOR',JLAYER
+     YCOMMENT='FLOOR thermal conductivity'
+     CALL WRITE_SURF(HPROGRAM,YRECFM,XTC_FLOOR(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+   END DO
+   !
+   DO JLAYER=1,NFLOOR_LAYER
+     WRITE(YRECFM,FMT='(A,I1.1)') 'D_FLOOR',JLAYER
+     YCOMMENT='FLOOR layer thickness'
+     CALL WRITE_SURF(HPROGRAM,YRECFM,XD_FLOOR(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+   END DO
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!         End of IO
+!
+ CALL END_IO_SURF_n(HPROGRAM)
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_PGD_TEB_N',1,ZHOOK_HANDLE)
+!
+!
+END SUBROUTINE WRITE_DIAG_PGD_TEB_n

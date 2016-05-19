@@ -1,0 +1,12 @@
+#!/bin/ksh
+#set -x
+NARGS=$#
+let "N_1=${NARGS} - 1"
+export N_1
+CMD=`echo $* | cut -d" " -f 1-${N_1}`
+EXE=`echo $* | cut -d" " -f ${NARGS} `
+EXEBIN=$(ls -l `which ${EXE}` | awk '{ print $NF}' )
+echo ${CMD} ${EXEBIN}
+${CMD} ${EXEBIN}
+#echo CMD=$CMD
+#echo EXE=$EXE

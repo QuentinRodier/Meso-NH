@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -fs ../002_prep_ideal_case/REUNION_IDEA_410.*??? .
+ln -sf ../001_prep_pgd/REUNION_PGD_1km5_410.* .
+rm -f REUNI.1.* OUT*
+time ${MPIRUN} MESONH${XYZ}

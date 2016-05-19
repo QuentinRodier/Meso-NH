@@ -1,0 +1,98 @@
+!     ###################
+      MODULE MODD_PGDWORK
+!     ###################
+!
+!!****  *MODD_PGDWORK* - declaration of work arrays and variables
+!!
+!!    PURPOSE
+!!    -------  
+!!
+!!
+!!**  IMPLICIT ARGUMENTS
+!!    ------------------
+!!      None 
+!!
+!!    REFERENCE
+!!    ---------
+!!          
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    12/09/95   
+!!                  15/03/96 orographic filter parameter                   
+!!                  25/07/97 directional z0 computations
+!!                  15/03/99 add XSUMCOVER
+!!                  03/2004  externalization
+!!                  01/2012  add aggregation with the MAJORITY rule
+!-------------------------------------------------------------------------------
+!
+!*       0.   DECLARATIONS
+!             ------------
+!
+IMPLICIT NONE
+!
+!*        0.1    summation variables
+!                -------------------
+!
+REAL, DIMENSION(:), ALLOCATABLE   :: XSUMVAL  
+                            ! Sum of data in each mesh
+REAL, DIMENSION(:), ALLOCATABLE   :: XSUMVAL2 
+                            ! Sum of square data in each mesh
+REAL, DIMENSION(:), ALLOCATABLE   :: XSUMVAL3
+                            ! Sum of cube data in each mesh                            
+REAL, DIMENSION(:,:), ALLOCATABLE :: XSUMCOVER
+                            ! Sum of each cover type data in each mesh
+REAL, DIMENSION(:,:), ALLOCATABLE :: XTNG
+                            ! for flake
+INTEGER, DIMENSION(:), ALLOCATABLE:: NSIZE
+!                          ! Number of points inside each mesh of the domain
+!
+ CHARACTER(LEN=3)                  :: CATYPE = 'ARI'
+!                          ! Type of averaging:
+!                          ! 'ARI' : arithmetic
+!                          ! 'INV' : inverse
+!                          ! 'CDN' : neutral CD
+!
+!*        0.2    variables for SSO computations
+!                ------------------------------
+!
+REAL,    DIMENSION(:,:,:), ALLOCATABLE :: XSSQO ! mean of orography in a
+!                                               ! SSO subgrid square from
+!                                               ! ZMAXSSQ averaged values
+!                                               ! 1st dim: NSSO (x direc.)
+!                                               ! 2st dim: NSSO (y direc.)
+!                                               ! 3nd dim: number of grid meshes
+LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: LSSQO ! presence of data in a SSO
+!                                               ! subgrid square
+INTEGER :: NSSO                                 ! number of SSO subgrid squares
+!                                               ! in each direction in grid mesh
+!
+!*        0.3    variables for topographic index statistics computations
+!                -------------------------------------------------------
+!
+REAL, DIMENSION(:), ALLOCATABLE   :: XMIN_WORK
+REAL, DIMENSION(:), ALLOCATABLE   :: XMAX_WORK
+REAL, DIMENSION(:), ALLOCATABLE   :: XMEAN_WORK
+REAL, DIMENSION(:), ALLOCATABLE   :: XSTD_WORK
+REAL, DIMENSION(:), ALLOCATABLE   :: XSKEW_WORK
+!
+!
+!*        0.4    Variables for the Majority aggregation rule
+!                -------------------------------------------
+!
+INTEGER, PARAMETER :: JPVALMAX=20  ! Maximum number of different values 
+!                                  ! in each grid mesh
+INTEGER, DIMENSION(:),   ALLOCATABLE :: NVALNBR
+!                                  ! number of different values 
+!                                  ! in each grid mesh
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NVALCOUNT
+!                                  ! Number of times each value has been 
+!                                  ! counted in each grid mesh
+REAL,    DIMENSION(:,:), ALLOCATABLE :: XVALLIST
+!                                  ! List of Values encountered in each grid mesh
+!-------------------------------------------------------------------------------
+!
+END MODULE MODD_PGDWORK

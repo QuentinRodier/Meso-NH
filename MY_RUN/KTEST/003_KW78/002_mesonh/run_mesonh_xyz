@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal_case/KWRAIN.410.*??? .
+rm -f KWRAI.1.SG* OUT*
+time ${MPIRUN} MESONH${XYZ}

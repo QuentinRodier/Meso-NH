@@ -1,0 +1,46 @@
+!     ##################
+      MODULE MODD_IO_SURF_ASC
+!     ##################
+!
+!!****  *MODD_IO_SURF_ASC - 
+!!
+!!    PURPOSE
+!!    -------
+!
+!!
+!!**  IMPLICIT ARGUMENTS
+!!    ------------------
+!!      None 
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson    *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!    
+!!     P. LeMoigne 04/2004 : distinguish in and out file name
+!
+!*       0.   DECLARATIONS
+!
+IMPLICIT NONE
+ CHARACTER(LEN=28),SAVE :: CFILEIN ='SURFIN.txt' ! Name of the input
+ CHARACTER(LEN=28),SAVE :: CFILEIN_SAVE ='SURFIN.txt' ! Name of the input
+ CHARACTER(LEN=28),SAVE :: CFILEOUT='SURFOUT.txt'! Name of the output
+ CHARACTER(LEN=28),SAVE :: CFILEPGD     ='PGD.txt'    ! Name of the pgd file
+INTEGER                :: NUNIT       ! logical unit of surface file
+INTEGER                :: NLUOUT      ! logical unit of output file
+INTEGER, DIMENSION(:), POINTER :: NMASK ! 1D mask to read only interesting
+!$OMP THREADPRIVATE(NMASK)
+ CHARACTER(LEN=6)               :: CMASK ! surface mask type
+!$OMP THREADPRIVATE(CMASK)
+INTEGER                        :: NFULL ! total number fo points of surface
+!$OMP THREADPRIVATE(NFULL)
+LOGICAL, SAVE          :: LCREATED=.FALSE.   ! flag to know if the output file was created
+LOGICAL                :: LOPEN        ! flag to know if the file has been openned during the surface call and is to be read
+INTEGER                :: NNI_FORC      ! number of points in forcing files.
+!
+END MODULE MODD_IO_SURF_ASC

@@ -1,0 +1,9 @@
+#!/bin/sh
+set -x
+set -e
+ln -sf  ../003_nest/16JAN98_9km.neste1.??? .
+ln -sf  ../003_nest/16JAN98_36km.neste1.??? .
+ln -sf  ../004_arp2lfi/16JAN_06_MNH.??? .
+rm -f *spa04.??? OUTPUT_LISTING* pipe* *.tex
+time ${MONORUN} SPAWNING${XYZ}             
+#ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2_nest SPAWNING${XYZ}

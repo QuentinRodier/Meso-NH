@@ -1,0 +1,3 @@
+CPPFLAGS = -DRS6K
+#
+OBJS = NEWLFI_ALL.o poub.o

@@ -1,0 +1,44 @@
+# @ job_name =Examples_MNH
+# @ job_type = BLUEGENE
+# Fichier sortie standard du travail
+# @ output = $(job_name).$(jobid)
+# Fichier erreur standard du travail
+# @ error = $(output)
+# Temps elapsed maximum demande
+# @ wall_clock_limit = 3600     
+# Nombre de processeurs
+# @ bg_size = 64
+# @ queue
+
+# Pour avoir l'echo des commandes
+set -x
+cd $LOADL_STEP_INITDIR
+
+.  ../conf/profile_mesonh-BGI4-MNH-V4-10-1-MPIAUTO-O2
+
+
+#001_2Drelief 002_3Drelief 003_KW78 004_Reunion 007_16janvier
+
+
+export MONORUN="Mpirun -mode SMP -np 1 "
+export MPIRUN="Mpirun -mode SMP -np 4 "
+#export MONORUN="poe "
+#export MPIRUN="poe "
+export POSTRUN=" echo "
+
+time gmake -r -k 001_2Drelief
+time gmake -r -k 002_3Drelief
+time gmake -r -k 003_KW78
+time gmake -r -k 004_Reunion << EOF
+
+
+EOF
+#
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+
+

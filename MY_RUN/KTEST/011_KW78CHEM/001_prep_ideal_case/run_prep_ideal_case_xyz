@@ -1,0 +1,6 @@
+#!/bin/sh
+set -x
+set -e
+rm -f KWRAIN.410* OUTPUT_LISTING* pipe* *.tex
+time ${MONORUN} PREP_IDEAL_CASE${XYZ}
+#ddd --directory=~/.... PREP_PGD

@@ -1,0 +1,3 @@
+#!/bin/sh
+set -x
+rm -f KWRAIN.410* OUTPUT_LISTING* pipe* *.tex

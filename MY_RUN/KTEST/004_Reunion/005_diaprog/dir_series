@@ -1,0 +1,63 @@
+LINVWB=T
+LCOLAREA=T LISO=F
+XLWCONT=2
+LMINMAX=T
+! label de toutes les iso
+NULBLL=0
+! pour obtenir des labels d isolignes
+XSIZEL=0.012
+! localisation du minmax dans le print minmax
+LMNMXLOC=T
+! High&Low
+NHI=0
+! label des axes en indices plutot que km en CH
+LINDAX=T
+NIGRNC=10
+! vecteur
+XVRL=0.15
+NISKIP=4
+! pas de dilatation de la composante W
+LDILW=F
+! min max vecteur
+LVECTMNMX=T
+! min max du zoom si NIMNMX<=0
+LCVZOOM=T
+! normaliser la longueur des vecteurs a 20m/s et tracer tous les vecteurs
+XVHC=-20
+LVSUPSCA=T
+! pour agrandir la legende a droite
+LVPTUSER=T
+XVPTL=0.1 XVPTR=0.9 !XVPTT=0.8
+!LVPTVUSER=T
+!XVPTVL=0.08 XVPTVR=0.78 XVPTVT=0.8
+!LVPTPVUSER=T
+!XVPTPVL=0.08 XVPTPVR=0.78 XVPTPVT=0.8
+!LVPTXYUSER=T
+!XVPTXYL=0.08 XVPTXYR=0.78 XVPTXYT=0.8
+   
+_file_'REUNI.1.00A20.000'
+visu
+print group
+!
+print TSERIES dim proc time
+!print TSERIES minmax
+TSERIES_FT1_
+!print TSERIES(1:1,1:1,1:1,1:35,1:1,1:1)
+!print TSERIES(1:1,1:1,1:1,1:35,1:1,2:2)
+!print TSERIES(1:1,1:1,1:1,1:35,1:1,3:3)
+!print TSERIES(1:1,1:1,1:1,1:35,1:1,9:9)
+!
+print ZTSERIES dim proc
+!ZTSERIES_PVT_
+!
+print XTSERIES01 dim proc
+print XTSERIES02 dim proc
+print XTSERIES03 dim proc
+!XTSERIES01_PXT_
+!XTSERIES02_PXT_
+!XTSERIES03_PXT_
+!XTSERIES04_PXT_
+!XTSERIES05_PXT_
+! .... ?!
+!XTSERIES05_P_PROC1_PYT_
+quit

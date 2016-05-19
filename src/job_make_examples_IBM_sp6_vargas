@@ -1,0 +1,51 @@
+# Nom arbitraire du travail LoadLeveler
+# @ job_name = Sortie_examples
+# Type de travail
+# @ job_type = parallel
+# Fichier de sortie standard du travail
+# @ output = $(job_name).$(jobid)
+# Fichier de sortie d'erreur du travail
+# @ error =  $(job_name).$(jobid)
+# Temps CPU max. en seconde par processus
+# @ wall_clock_limit = 7200
+# Memoire max. utilise par processus (ici 700 Megaoctets)
+# @ data_limit = 1500mb
+# @ stack_limit = 1500mb,1500mb
+# Nombre de processus demande (ici 1)
+# @ total_tasks = 1
+# @ environment = $DISPLAY
+# @ queue
+
+# Pour avoir l'echo des commandes
+set -x
+cd $LOADL_STEP_INITDIR
+
+.  ../conf/profile_mesonh-AIX64-MNH-V4-10-1-MPIAUTO-O2
+
+
+#001_2Drelief 002_3Drelief 003_KW78 004_Reunion 007_16janvier
+
+#export MONORUN="tv poe -a "
+#export MPIRUN="tv poe -a "
+export MONORUN="poe hpmcount -a "
+export MPIRUN="poe hpmcount -a "
+#export MONORUN="poe "
+#export MPIRUN="poe "
+export POSTRUN=" echo "
+
+time gmake -k 001_2Drelief
+time gmake -k 002_3Drelief
+time gmake -k 003_KW78
+time gmake -k 004_Reunion << EOF
+
+
+EOF
+#
+cd $SRC_MESONH/MY_RUN/KTEST/007_16janvier
+make -k << EOF 
+
+
+EOF
+#
+
+

@@ -1,0 +1,3 @@
+set -x
+rm -f ICART* n\'est\ pas\ un\ tty
+rm -f dirextract OUT_DIA

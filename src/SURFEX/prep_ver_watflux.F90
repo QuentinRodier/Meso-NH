@@ -1,0 +1,83 @@
+!     #########
+SUBROUTINE PREP_VER_WATFLUX
+!     #################################################################################
+!
+!!****  *PREP_VER_WATFLUX* - change in WATFLUX var. due to altitude change
+!!
+!!    PURPOSE
+!!    -------
+!
+!!**  METHOD
+!!    ------
+!!
+!!    REFERENCE
+!!    ---------
+!!      
+!!
+!!    AUTHOR
+!!    ------
+!!     S. Malardel
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004
+!!------------------------------------------------------------------
+!
+
+!
+USE MODD_WATFLUX_n,   ONLY : XZS, XTS 
+USE MODD_PREP,       ONLY : XZS_LS, XT_CLIM_GRAD
+USE MODD_CSTS,       ONLY : XTT
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+!
+!*      0.2    declarations of local variables
+!
+REAL, DIMENSION(:), ALLOCATABLE :: ZTS_LS ! large-scale water temperature
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------------
+!
+!*      1.     Surface temperature of water
+!
+IF (LHOOK) CALL DR_HOOK('PREP_VER_WATFLUX',0,ZHOOK_HANDLE)
+ALLOCATE(ZTS_LS(SIZE(XTS)))
+ZTS_LS = XTS
+!
+XTS = ZTS_LS  + XT_CLIM_GRAD  * (XZS - XZS_LS)
+!
+!-------------------------------------------------------------------------------------
+!
+!*      2.     Limit on freezing
+!
+!* if water was already frozen, it can be considered liquid only for
+!  temperatures that are larger than 4 C
+!
+WHERE (ZTS_LS < XTT .AND. XTS < XTT + 4.) XTS = MIN(XTS,XTT)
+!
+!* if water was liquid, it can be considered frozen only for
+!  very cold temperatures, colder than 20 C. It should obviously 
+!  depend on the size of the lake. This cold limit is taken for
+!  large lakes, as US great lakes, that take a long time to freeze.
+!
+!  4 C is used here for the water of lowest density.
+!
+WHERE (ZTS_LS > XTT .AND. XTS > XTT - 20.) XTS = MAX(XTS,XTT+4.)
+!
+!-------------------------------------------------------------------------------------
+!
+!*      3.     Deallocation of large-scale orography
+!
+DEALLOCATE(ZTS_LS)
+IF (LHOOK) CALL DR_HOOK('PREP_VER_WATFLUX',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------------
+!
+END SUBROUTINE PREP_VER_WATFLUX

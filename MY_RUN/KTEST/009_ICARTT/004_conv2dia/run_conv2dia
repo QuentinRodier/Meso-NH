@@ -1,0 +1,7 @@
+set -x
+set -e
+ln -sf ../003_mesonh/ICART.1.SEG01.001.??? .
+ln -sf ../003_mesonh/ICART.1.SEG01.002.??? .
+rm -f ICART.1.SEG01.0*cv.???
+${POSTRUN} conv2dia < dir_conv2dia1
+

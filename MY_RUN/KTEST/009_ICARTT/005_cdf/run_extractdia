@@ -1,0 +1,8 @@
+set -x
+set -e
+ln -sf ../004_conv2dia/ICART.1.SEG01.012cv.??? .
+rm -f *.cdf *cdl
+
+extractdia < dir_extractdia1
+
+

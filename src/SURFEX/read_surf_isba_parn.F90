@@ -1,0 +1,85 @@
+!     #######################
+      SUBROUTINE READ_SURF_ISBA_PAR_n(HPROGRAM,HREC,KLUOUT,KSIZE,PFIELD,KRESP,KVERSION,HCOMMENT,HDIR)
+!     #######################
+!
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
+USE MODD_ISBA_n, ONLY : NPATCH
+!
+USE MODI_READ_SURF
+USE MODI_HOR_INTERPOL
+USE MODI_PUT_ON_ALL_VEGTYPES
+USE MODI_VEGTYPE_TO_PATCH
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+ CHARACTER(LEN=6),        INTENT(IN) :: HPROGRAM ! calling program
+ CHARACTER(LEN=*),        INTENT(IN) :: HREC   ! name of the article to be read
+!
+INTEGER,                 INTENT(IN) :: KLUOUT
+INTEGER,                 INTENT(IN) :: KSIZE
+REAL, DIMENSION(:,:),    INTENT(OUT):: PFIELD ! array containing the data field  
+
+INTEGER                  ,INTENT(OUT) :: KRESP      ! KRESP  : return-code if a problem appears
+INTEGER, INTENT(IN) :: KVERSION
+ CHARACTER(LEN=*),OPTIONAL,INTENT(OUT) :: HCOMMENT   ! name of the article to be read
+ CHARACTER(LEN=1),OPTIONAL,INTENT(IN)  :: HDIR       ! type of field :
+!                                                   ! 'H' : field with
+!                                                   !       horizontal spatial dim.
+!                                                   ! '-' : no horizontal dim.
+!
+!* local variables
+!  ---------------
+!
+REAL, DIMENSION(KSIZE, NVEGTYPE)  :: ZFIELD
+REAL, DIMENSION(SIZE(PFIELD,1),1,NPATCH) :: ZFIELD_PATCH
+REAL, DIMENSION(SIZE(PFIELD,1),1,NVEGTYPE) :: ZFIELD_VEGTYPE
+ CHARACTER(LEN=1)   :: YDIR
+INTEGER :: INI, JPATCH, IPATCH, JVEGTYPE
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('READ_SURF_ISBA_PAR_n',0,ZHOOK_HANDLE)
+!
+YDIR = 'H'
+IF (PRESENT(HDIR)) YDIR = HDIR
+!
+INI = SIZE(PFIELD,1)
+!
+IF (KVERSION<7) THEN
+  CALL READ_SURF(HPROGRAM,HREC,ZFIELD(:,1:NPATCH),KRESP,HCOMMENT=HCOMMENT,HDIR=YDIR)
+  IF (INI.NE.KSIZE) THEN
+    CALL HOR_INTERPOL(KLUOUT,ZFIELD(:,1:NPATCH),PFIELD(:,1:NPATCH))
+  ELSE
+    PFIELD(:,1:NPATCH) = ZFIELD(:,1:NPATCH)
+  ENDIF
+  DO JPATCH = 1, NPATCH
+    ZFIELD_PATCH(:,1,JPATCH) = PFIELD(:,JPATCH)
+  ENDDO
+  CALL PUT_ON_ALL_VEGTYPES(INI,1,NPATCH,NVEGTYPE,ZFIELD_PATCH,ZFIELD_VEGTYPE)
+  PFIELD(:,:) = ZFIELD_VEGTYPE(:,1,:)
+ELSE
+  CALL READ_SURF(HPROGRAM,HREC,ZFIELD(:,:),KRESP,HCOMMENT=HCOMMENT,HDIR=YDIR)
+  IF (INI.NE.KSIZE) THEN
+    CALL HOR_INTERPOL(KLUOUT,ZFIELD(:,:),ZFIELD_VEGTYPE(:,1,:))
+  ELSE
+    ZFIELD_VEGTYPE(:,1,:) = ZFIELD(:,:)
+  ENDIF  
+  IF (SIZE(PFIELD,2).NE.NVEGTYPE) THEN
+    IPATCH = SIZE(PFIELD,2)
+    PFIELD(:,:) = 0.
+    DO JVEGTYPE = 1, NVEGTYPE
+      JPATCH = VEGTYPE_TO_PATCH(JVEGTYPE,IPATCH)
+      IF (JPATCH<=IPATCH) PFIELD(:,JPATCH) = MAX(PFIELD(:,JPATCH),ZFIELD_VEGTYPE(:,1,JVEGTYPE))
+    ENDDO
+  ELSE
+    PFIELD(:,:) = ZFIELD_VEGTYPE(:,1,:)
+  ENDIF        
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('READ_SURF_ISBA_PAR_n',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------
+!
+END SUBROUTINE READ_SURF_ISBA_PAR_n

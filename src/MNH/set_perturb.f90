@@ -1,0 +1,503 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! MASDEV4_7 prep_ideal 2007/02/19 15:33:24
+!-----------------------------------------------------------------
+!     #######################
+      MODULE MODI_SET_PERTURB
+!     #######################
+!
+INTERFACE
+!
+SUBROUTINE SET_PERTURB(HEXPRE)
+CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+END SUBROUTINE SET_PERTURB
+!
+END INTERFACE
+!
+END MODULE MODI_SET_PERTURB
+!
+!     ##############################
+      SUBROUTINE SET_PERTURB(HEXPRE)
+!     ##############################
+!
+!!****  *SET_PERTURB* - add a perturbation to a larger scale state field
+!!
+!!    PURPOSE
+!!    -------
+!       The purpose of this routine is to add a perturbation to a balanced
+!     mass and wind fields. This perturbation is added either to the theta 
+!     field to initiate either a convective development, or to the wind field
+!     to initiate a normal mode selection or ...
+!
+!!**  METHOD
+!!    ------
+!!      
+!!      An analytical function is used to prescribe the theta perturbation 
+!!    variation and a stream function is used to set the wind perturbation in
+!!    not to create a divergent field.
+!!     
+!!
+!!    EXTERNAL
+!!    --------
+!!      NONE
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!      Module MODD_PARAMETERS : contains parameters
+!!        JPHEXT : number of horizontal external points
+!!        JPVEXT : number of vertical external points
+!!      Module MODD_GRID1 : contains grid variables
+!!        XXHAT :  Position x in the conformal
+!!                 plane or on the cartesian plane
+!!        XYHAT :  Position y in the conformal
+!!                 plane or on the cartesian plane
+!!        XZHAT :  Position z in the grid without orography
+!!      Module MODD_CST : contains physical constants
+!!        XPI   :  pi 
+!!      Module MODD_FIELD1 : contains prognostic variables
+!!        XTHT  : potential temperature 
+!!        XUT   : x-component of the wind
+!!        XVT   : y-component of the wind
+!!      Module MODD_CONF   : model configuration
+!!        L2D   : switch for 2D configuration
+!!      Module MODD_DIM1   : model dimensions
+!!        NIMAX,NJMAX
+!!      Module MODD_LBC1   : model lateral boudary conditions
+!!        CLBCX(2),CLBCY(2)
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!     Book2 subroutine SET_PERTURB
+!!
+!!    AUTHOR
+!!    ------
+!!  	J.Stein         * Meteo France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original              6/12/94
+!!      I.Mallet and J.Stein  07/01/95 add the perturbation for the wind field
+!!      J. Stein              16/03/95 remove R from the historical variables
+!!      J. Stein              16/03/95 remove MODD_REF1 which is not used
+!!      P. Mascart            01/09/95 change the bubble center computation
+!!      J. Stein+F. Lohou     06/02/96 add the white noise perturbation
+!!      J.-P. Pinty           06/12/96 add the argument list to control the 
+!!                                     perturbation type, amplitude and location
+!!      J-P Pinty P Jabouille 30/08/00 parallelization of the code
+!!      I. Mallet                06/06 cleaning (namelist inside the routine)
+!!      J.Escobar             25/03/2012 optim. parallelization of White noise
+!!      J.Escobar             27/03/2012 force identical random seed & correct XOR/YOR global shift 
+!!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_PARAMETERS ! declarative modules
+USE MODD_CST
+USE MODD_CONF
+USE MODD_GRID_n
+USE MODD_FIELD_n
+USE MODD_DIM_n
+USE MODD_LBC_n
+USE MODD_REF_n
+USE MODD_LUNIT_n
+!
+USE MODE_POS
+USE MODE_FM
+USE MODE_ll
+USE MODI_GATHER_ll
+USE MODI_SCATTER
+USE MODE_REPRO_SUM
+USE MODI_GET_HALO
+USE MODE_MPPDB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!
+CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+!
+!*       0.2   Declarations of local variables
+!
+INTEGER :: ILUPRE,IRESP ! logical unit number of the  EXPRE and FM return code
+INTEGER :: ILUOUT       ! Logical unit number for output-listing
+LOGICAL :: GFOUND                  ! Return code when searching namelist
+!
+REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZDIST ! distance
+                                   ! from the center of the 
+                                   ! disturbance               
+REAL :: ZCENTERX,ZCENTERY          ! coordinates of the disturbance center
+INTEGER          :: IIB,IJB,IKB    ! Begining useful area  in x,y,z directions
+INTEGER          :: IIE,IJE,IKE    ! End useful area in x,y,z directions
+INTEGER          :: IIU,IJU,IKU    ! Array sizes in i,j,k directions
+INTEGER          :: JI,JJ,JK       ! Loop indexes along the x,y,z directions
+INTEGER          :: IJ0            ! J value of the center of the perturb.
+INTEGER          :: IJMIN,IJMAX    ! J values for the y-width of the perturb.
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZPHI_ll        ! stream function
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZPU_ll,ZPV_ll  ! hor. wind components 
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZPU,ZPV
+REAL             :: ZX, ZY, ZRANDOM, ZT1, ZT2, ZAL, ZBL, ZCL, ZDL, ZVAR
+INTEGER          :: IKX, IKY, JX, JY              ! loop index in Fourier space
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZWHITE         ! white noise perturbation
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZWHITE_ll      ! global ZWHITE
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZCX_ll,ZSX_ll  ! Fourier coefficient for x
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZCY_ll,ZSY_ll  ! and y directions
+!
+REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZT    ! temperature
+REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZHU   ! rel. humidity
+!
+REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll    !  Position x in the conformal
+                                                 ! plane (array on the complete domain)
+REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
+                                                 ! plane (array on the complete domain)
+INTEGER :: IIU_ll,IJU_ll ! horizontal,vertical size of the extended global domain 
+INTEGER :: IIB_ll,IJB_ll ! global coordinate of the physical global domain 
+INTEGER :: IIE_ll,IJE_ll ! 
+!
+!*       0.3  Namelist declarations
+!
+CHARACTER(LEN=2) :: CPERT_KIND='TH'! Perturbation type
+REAL             :: XAMPLITH=1.5   ! Perturbation amplitude maximum for THETA
+REAL             :: XAMPLIRV=0.0   ! Perturbation amplitude maximum for R_V
+REAL             :: XAMPLIUV=1.083367E6
+                                   ! Perturbation amplitude maximum for U and V
+                                   ! initially XAMPLIUV=1.7E5/(2*SIN(XPI/40.))
+REAL             :: XAMPLIWH=0.1   ! Perturbation amplitude maximum for the
+                                   !                                WHite noise
+INTEGER          :: NKWH=2         ! Upper level of the layer
+                                   ! where white noise is applied
+LOGICAL          :: LSET_RHU=.TRUE.! Conservation of the Relative HUmidity when
+                                   !                                     TRUE
+REAL             :: XCENTERZ=2000. ! Height of the maximum of TH perturbation
+REAL             :: XRADX=  10000. ! X-Radius of the perturbation
+REAL             :: XRADY=  10000. ! Y-Radius of the perturbation
+REAL             :: XRADZ=   2200. ! Z-Radius of the perturbation
+!
+INTEGER, PARAMETER                 :: i_seed_param = 26032012
+INTEGER, DIMENSION(:), ALLOCATABLE :: i_seed
+INTEGER                            :: ni_seed
+!
+INTEGER                            :: IXOR,IYOR,JI_ll,JJ_ll
+!
+NAMELIST/NAM_PERT_PRE/CPERT_KIND,XAMPLITH,       &! Perturbation parameters
+                      XAMPLIRV,XCENTERZ,XRADX,   &!
+                      XRADY,XRADZ,LSET_RHU,      &
+                      XAMPLIUV,XAMPLIWH,NKWH
+!-------------------------------------------------------------------------------
+!
+!*	 1.     PROLOGUE : 
+!               ----------
+!
+!*       1.1   Retrieve unit numbers and read namelist
+!
+CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+!
+CALL POSNAM(ILUPRE,'NAM_PERT_PRE',GFOUND,ILUOUT)
+IF (GFOUND) READ(UNIT=ILUPRE,NML=NAM_PERT_PRE)
+!
+!  Distribue/set identical parameter  seed to all the proc
+!
+CALL RANDOM_SEED(SIZE=ni_seed) ! get size of seed
+ALLOCATE(i_seed(ni_seed))
+i_seed(:) = i_seed_param !  
+CALL RANDOM_SEED(PUT=i_seed)
+!
+!
+!*       1.2
+!
+IIU=SIZE(XXHAT)
+IJU=SIZE(XYHAT)
+IKU=SIZE(XZHAT)
+IKB=1+JPVEXT
+IKE=IKU-JPVEXT
+!
+IIB=JPHEXT+1
+IIE=IIU-JPHEXT
+IJB=JPHEXT+1
+IJE=IJU-JPHEXT
+!
+IIU_ll=NIMAX_ll+2*JPHEXT
+IJU_ll=NJMAX_ll+2*JPHEXT
+ALLOCATE(ZXHAT_ll(IIU_ll),ZYHAT_ll(IJU_ll))
+CALL GATHERALL_FIELD_ll('XX',XXHAT,ZXHAT_ll,IRESP)
+CALL GATHERALL_FIELD_ll('YY',XYHAT,ZYHAT_ll,IRESP)
+!  
+CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
+IIB_ll=1+JPHEXT
+IJB_ll=1+JPHEXT
+IIE_ll=IIU_ll-JPHEXT
+IJE_ll=IJU_ll-JPHEXT
+!
+CALL GET_OR_ll('B',IXOR,IYOR)
+!
+!-------------------------------------------------------------------------------
+!
+!*	 2.     COMPUTE THE PERTURBATION ON THETA : 
+!               -----------------------------------
+!
+SELECT CASE(CPERT_KIND)
+  CASE('TH')
+    ZDIST(:,:,:) = 2.
+! C grid shift
+    ZCENTERX=(ZXHAT_ll(2)+ZXHAT_ll(IIU_ll))*0.5
+    ZCENTERY=(ZYHAT_ll(2)+ZYHAT_ll(IJU_ll))*0.5
+!
+    DO JK =IKB,IKE
+      DO JJ = IJB,IJE
+        DO JI = IIB,IIE
+          ZDIST(JI,JJ,JK) = SQRT(                         &
+          (( (XXHAT(JI)+XXHAT(JI+1))*0.5 - ZCENTERX ) / XRADX)**2 + &
+          (( (XYHAT(JJ)+XYHAT(JJ+1))*0.5 - ZCENTERY ) / XRADY)**2 + &
+          (( (XZHAT(JK)+XZHAT(JK+1))*0.5 - XCENTERZ ) / XRADZ)**2   &
+                                )
+        END DO
+      END DO
+    END DO
+!
+    CALL MPPDB_CHECK3D(ZDIST,"SET_PERTURB::ZDIST",PRECISION)
+    CALL MPPDB_CHECK3D(XTHM,"SET_PERTURB::XTHM",PRECISION)
+!
+    IF ( LSET_RHU) THEN
+       ZT(:,:,:)  = 0.0
+       ZHU(:,:,:) = 0.0
+      WHERE ( ZDIST(:,:,:) <= 1.)
+!
+! save the actual relative humidity
+!
+        ZT(:,:,:) =XTHM(:,:,:)*(XPABSM(:,:,:)/XP00) **(XRD/XCPD)
+        ZHU(:,:,:)  = (XRM(:,:,:,1)*XPABSM(:,:,:)) / (((XMV/XMD)+XRM(:,:,:,1))* &
+                        EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) ))
+!
+! set the perturbation for Theta
+!
+        XTHM(:,:,:) = XTHM(:,:,:) + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
+!
+! compute the new vapor pressure (stored in ZHU!)
+!
+        ZT(:,:,:) =XTHM(:,:,:)*(XPABSM(:,:,:)/XP00) **(XRD/XCPD)
+        ZHU(:,:,:) = ZHU(:,:,:)*                                             &
+                     EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) )
+!
+! set the perturbation for r_v such that the relative humidity is conserved
+!
+        XRM(:,:,:,1) = (XMV/XMD) * ZHU(:,:,:) / ( XPABSM(:,:,:) - ZHU(:,:,:) )
+      END WHERE
+      CALL MPPDB_CHECK3D(ZT,"SET_PERTURB::ZT",PRECISION)
+      CALL MPPDB_CHECK3D(ZHU,"SET_PERTURB::ZHU",PRECISION)
+   ELSE
+      WHERE ( ZDIST(:,:,:) <= 1.) 
+        XTHM(:,:,:)  = XTHM(:,:,:)  + XAMPLITH * COS (XPI*0.5*ZDIST(:,:,:)) **2
+        XRM(:,:,:,1) = XRM(:,:,:,1) + XAMPLIRV * COS (XPI*0.5*ZDIST(:,:,:)) **2 
+      END WHERE
+    END IF
+    CALL MPPDB_CHECK3D(XRM(:,:,:,1),"SET_PERTURB::XRM",PRECISION)
+    CALL MPPDB_CHECK3D(XTHM,"SET_PERTURB::XTHM",PRECISION)
+!
+!-------------------------------------------------------------------------------
+!
+!*	 3.     COMPUTE THE PERTURBATION ON THE WIND : 
+!               --------------------------------------
+!
+  CASE('UV')
+    IJ0   = IJU_ll/2
+    IJMIN = IJ0 - NINT(IJU_ll*3./8.)
+    IJMAX = IJ0 + NINT(IJU_ll*3./8.)
+    ALLOCATE(ZPHI_ll(IIU_ll,IJU_ll))
+    ALLOCATE(ZPU_ll(IIU_ll,IJU_ll))
+    ALLOCATE(ZPV_ll(IIU_ll,IJU_ll))
+!
+!*       3.1   stream function at vorticity point :
+!
+    DO JI = 1,IIU_ll
+      DO JJ = 1,IJU_ll
+        ZPHI_ll(JI,JJ) = XAMPLIUV*EXP(-((ZYHAT_ll(JJ)-ZYHAT_ll(IJ0))/XRADY)**2)       &
+                             * COS(2.*XPI/XRADX*ZXHAT_ll(JI))
+      END DO
+    END DO
+!
+!*       3.2   Wind perturbation :
+!
+    DO JI = 1,IIU_ll
+      DO JJ = IJMIN,IJMAX
+        ZPU_ll(JI,JJ) = (ZPHI_ll(JI,JJ+1)-ZPHI_ll(JI,JJ)) / (-ZYHAT_ll(JJ+1)+ZYHAT_ll(JJ) )
+        ZPV_ll(JI,JJ) = (ZPHI_ll(JI+1,JJ)-ZPHI_ll(JI,JJ)) / ( ZXHAT_ll(JI+1)-ZXHAT_ll(JI) )
+      END DO
+    END DO
+!
+    DO JJ = 1,IJMIN-1
+      ZPU_ll(:,JJ) = ZPU_ll(:,IJMIN)
+      ZPV_ll(:,JJ) = ZPV_ll(:,IJMIN)
+    END DO
+    DO JJ = IJMAX+1,IJU_ll
+      ZPU_ll(:,JJ) = ZPU_ll(:,IJMAX)
+      ZPV_ll(:,JJ) = ZPV_ll(:,IJMAX)
+    END DO
+!
+!*       3.3   Add to the U and V fields :
+!
+    ALLOCATE(ZPU(IIU,IJU),ZPV(IIU,IJU))
+    CALL SCATTER(ZPU_ll,ZPU)
+    CALL SCATTER(ZPV_ll,ZPV)
+    DEALLOCATE(ZPU_ll,ZPV_ll)
+    DO JI = 1,IIU
+      DO JJ = 1,IJU
+        XUM(JI,JJ,:) = XUM(JI,JJ,:) + ZPU(JI,JJ)
+      END DO
+    END DO
+    DO JJ = 1,IJU
+      DO JI = 1,IIU
+        XVM(JI,JJ,:) = XVM(JI,JJ,:) + ZPV(JI,JJ)
+      END DO
+    END DO
+    DEALLOCATE(ZPU,ZPV)
+!
+!
+  CASE('WH','WW')  !    white noise is computed on global domain 
+                   ! J.Escobar optim => need only identical random on all domain 
+!
+ DO JK = IKB, NKWH
+     IKX = (NIMAX_ll+1)/2
+     ZX  = 2*XPI/NIMAX_ll
+     ALLOCATE(ZCX_ll(IIU_ll,IKX))
+     ALLOCATE(ZSX_ll(IIU_ll,IKX))
+     IKY = (NJMAX_ll+1)/2
+     ALLOCATE(ZCY_ll(IJU_ll,IKY))
+     ALLOCATE(ZSY_ll(IJU_ll,IKY))
+
+!
+    DO JX = 1, IKX
+      DO JI = IIB_ll,IIE_ll
+        ZCX_ll(JI,JX) = COS(ZX*JX*(JI-IIB_ll))
+        ZSX_ll(JI,JX) = SIN(ZX*JX*(JI-IIB_ll))
+      END DO
+    END DO
+      IKY = (NJMAX_ll+1)/2
+      ZY  = 2*XPI/NJMAX_ll
+      DO JY = 1, IKY
+       DO JJ = IJB_ll,IJE_ll
+          ZCY_ll(JJ,JY) = COS(ZY*JY*(JJ-IJB_ll))
+          ZSY_ll(JJ,JY) = SIN(ZY*JY*(JJ-IJB_ll))
+        END DO
+      END DO
+!
+    ALLOCATE(ZWHITE(IIU,IJU))
+    ZWHITE(:,:) = 0.0
+! 
+    DO JY = 1, IKY
+      DO JX = 1, IKX
+        CALL RANDOM_NUMBER(ZRANDOM)
+        ZT1 = 2*XPI*ZRANDOM
+        ZAL = SIN(ZT1)
+        ZBL = COS(ZT1)
+        IF ( .NOT. L2D ) THEN
+          CALL RANDOM_NUMBER(ZRANDOM)
+          ZT2 = 2*XPI*ZRANDOM
+          ZCL = SIN(ZT2)
+          ZDL = COS(ZT2)
+        ELSE
+          ZCL=0.
+          ZDL=0.
+        END IF
+!
+        DO JJ = IJB,IJE
+           JJ_ll = JJ  + IYOR-JPHEXT
+          DO JI = IIB,IIE
+             JI_ll = JI + IXOR-JPHEXT
+            ZWHITE(JI,JJ) = ZWHITE(JI,JJ)+             &
+               (ZBL+ZDL)*ZSX_ll(JI_ll,JX)*ZCY_ll(JJ_ll,JY) +       &
+               (ZAL+ZCL)*ZCX_ll(JI_ll,JX)*ZCY_ll(JJ_ll,JY) +       &
+               (ZCL-ZAL)*ZSX_ll(JI_ll,JX)*ZSY_ll(JJ_ll,JY) +       &
+               (ZBL-ZDL)*ZCX_ll(JI_ll,JX)*ZSY_ll(JJ_ll,JY)
+          END DO
+        END DO
+      END DO
+    END DO
+    DEALLOCATE(ZCX_ll,ZSX_ll,ZCY_ll,ZSY_ll)
+!
+    ZVAR= SUM_DD_R2_ll( (ZWHITE(IIB:IIE,IJB:IJE))**2 )/FLOAT(NIMAX_ll*NJMAX_ll)
+    CALL MPPDB_CHECK2D(ZWHITE,"SET_PERTURB::ZWHITE",PRECISION)
+    ZWHITE(:,:) = ZWHITE(:,:)/SQRT(ZVAR)
+!
+!!$    CALL GET_HALO(XTHM)
+    CALL MPPDB_CHECK2D(XTHM(:,:,JK),"SET_PERTURB::XTHM",PRECISION)
+    CALL MPPDB_CHECK2D(ZWHITE,"SET_PERTURB::ZWHITE",PRECISION)
+
+    IF (CPERT_KIND=='WH') THEN ! white noise on theta
+      XTHM(:,:,JK) = XTHM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      CALL MPPDB_CHECK2D(XTHM(:,:,JK),"SET_PERTURB::XTHM",PRECISION)      
+    ELSE  ! white noise on wind
+      XWM(:,:,JK) = XWM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      XUM(:,:,JK) = XUM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+      XVM(:,:,JK) = XVM(:,:,JK) +  XAMPLIWH * ZWHITE(:,:)
+    ENDIF
+    DEALLOCATE(ZWHITE)
+!
+ END DO
+
+ CALL GET_HALO(XTHM)
+ CALL GET_HALO(XUM)
+ CALL GET_HALO(XVM)
+ CALL GET_HALO(XWM)
+
+ CALL MPPDB_CHECK3D(XTHM,"SET_PERTURB::XTHM",PRECISION)
+ CALL MPPDB_CHECK3D(XUM,"SET_PERTURB::XUM",PRECISION)
+ CALL MPPDB_CHECK3D(XVM,"SET_PERTURB::XVM",PRECISION)
+ CALL MPPDB_CHECK3D(XWM,"SET_PERTURB::XWM",PRECISION)
+ CALL MPPDB_CHECK3D(XRM(:,:,:,1),"SET_PERTURB::XRM",PRECISION)
+
+!-------------------------------------------------------------------------------
+!
+!*	 4.     LATERAL BOUNDARY CONDITIONS :
+!               -----------------------------
+!   	
+!
+  IF (CPERT_KIND=='WH') THEN ! white noise on theta
+    IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
+     XTHM(IIB-1,:,IKB) = 2. * XTHM(IIB,:,IKB) - XTHM(IIB+1,:,IKB)
+    IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
+     XTHM(IIE+1,:,IKB) = 2. * XTHM(IIE,:,IKB) - XTHM(IIE-1,:,IKB)
+    IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XTHM(:,IJB-1,IKB) = 2. * XTHM(:,IJB,IKB) - XTHM(:,IJB+1,IKB)
+    IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XTHM(:,IJE+1,IKB) = 2. * XTHM(:,IJE,IKB) - XTHM(:,IJE-1,IKB)
+  ELSE ! white noise on wind
+    IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
+     XWM(IIB-1,:,IKB) = 2. * XWM(IIB,:,IKB) - XWM(IIB+1,:,IKB)
+    IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
+     XWM(IIE+1,:,IKB) = 2. * XWM(IIE,:,IKB) - XWM(IIE-1,:,IKB)    
+    IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XWM(:,IJB-1,IKB) = 2. * XWM(:,IJB,IKB) - XWM(:,IJB+1,IKB)
+    IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XWM(:,IJE+1,IKB) = 2. * XWM(:,IJE,IKB) - XWM(:,IJE-1,IKB)
+!     
+    IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
+     XUM(IIB-1,:,IKB) = 2. * XUM(IIB,:,IKB) - XUM(IIB+1,:,IKB)
+    IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
+     XUM(IIE+1,:,IKB) = 2. * XUM(IIE,:,IKB) - XUM(IIE-1,:,IKB)
+    IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XUM(:,IJB-1,IKB) = 2. * XUM(:,IJB,IKB) - XUM(:,IJB+1,IKB)
+    IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XUM(:,IJE+1,IKB) = 2. * XUM(:,IJE,IKB) - XUM(:,IJE-1,IKB)
+!
+    IF (LWEST_ll() .AND. CLBCX(1)/='CYCL')  &
+     XVM(IIB-1,:,IKB) = 2. * XVM(IIB,:,IKB) - XVM(IIB+1,:,IKB)
+    IF (LEAST_ll() .AND. CLBCX(1)/='CYCL')   &
+     XVM(IIE+1,:,IKB) = 2. * XVM(IIE,:,IKB) - XVM(IIE-1,:,IKB)
+    IF (LSOUTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XVM(:,IJB-1,IKB) = 2. * XVM(:,IJB,IKB) - XVM(:,IJB+1,IKB)
+    IF (LNORTH_ll() .AND. CLBCY(1)/='CYCL') &
+     XVM(:,IJE+1,IKB) = 2. * XVM(:,IJE,IKB) - XVM(:,IJE-1,IKB)
+  ENDIF
+END SELECT
+!
+DEALLOCATE(ZXHAT_ll,ZYHAT_ll)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE SET_PERTURB 
+

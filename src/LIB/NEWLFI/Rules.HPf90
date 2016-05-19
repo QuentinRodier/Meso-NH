@@ -1,0 +1,5 @@
+F77FLAGS += -O3 +Oinfo +Onolimit
+CPPFLAGS += -DHPPA
+
+OBJS = NEWLFI_ALL.o poub.o
+

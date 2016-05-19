@@ -1,0 +1,5 @@
+set -x
+set -e
+ln -fs ../001_prep_ideal_case/HYD2D.??? .
+rm -f EXPER.1.HYD* OUT*
+time ${MONORUN} MESONH${XYZ}

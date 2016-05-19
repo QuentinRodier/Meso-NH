@@ -1,0 +1,387 @@
+!     #########
+      SUBROUTINE WRITESURF_ISBA_n(HPROGRAM,OLAND_USE)
+!     #####################################
+!
+!!****  *WRITESURF_ISBA_n* - writes ISBA prognostic fields
+!!                        
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2003 
+!!      P. LeMoigne 12/2004 : correct dimensionning if more than 10 layers in
+!!                            the soil (diffusion version)
+!!      B. Decharme  2008    : Floodplains
+!!      B. Decharme  01/2009 : Optional Arpege deep soil temperature write
+!!      A.L. Gibelin   03/09 : modifications for CENTURY model 
+!!      A.L. Gibelin 04/2009 : BIOMASS and RESP_BIOMASS arrays 
+!!      A.L. Gibelin 06/2009 : Soil carbon variables for CNT option
+!!      B. Decharme  07/2011 : land_use semi-prognostic variables
+!!      B. Decharme  09/2012 : suppress NWG_LAYER (parallelization problems)
+!!      B. Decharme  09/2012 : write some key for prep_read_external
+!!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_SURF_PAR, ONLY : NUNDEF
+!
+USE MODD_ISBA_n, ONLY :   NGROUND_LAYER, CISBA, CPHOTO, CRESPSL, CSOC, &
+                          NNBIOMASS, NNLITTER, NNSOILCARB, NNLITTLEVS, &
+                          XTG, XWG, XWGI, XWR, XLAI, TSNOW, XTSRAD_NAT,&
+                          XRESA, XAN, XANFM, XLE, XANDAY, TTIME,       &
+                          XRESP_BIOMASS, XBIOMASS, XPATCH, XDG,        &
+                          XLITTER, XSOILCARB, XLIGNIN_STRUC, LFLOOD,   &
+                          XZ0_FLOOD, LTEMP_ARP, NTEMPLAYER_ARP,        &
+                          LGLACIER, XICE_STO, LSPINUPCARBS,            &
+                          LSPINUPCARBW, NNBYEARSOLD
+!
+USE MODD_ASSIM, ONLY : LASSIM, CASSIM
+!
+USE MODD_CH_ISBA_n,    ONLY : NDSTEQ
+USE MODD_DST_n
+USE MODD_DST_SURF
+!
+USE MODI_WRITE_SURF
+USE MODI_WRITESURF_GR_SNOW
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+LOGICAL,           INTENT(IN)  :: OLAND_USE !
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
+ CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=4 ) :: YLVL
+ CHARACTER(LEN=100):: YCOMMENT       ! Comment string
+ CHARACTER(LEN=25) :: YFORM          ! Writing format
+!
+INTEGER :: JJ, JLAYER, JP, JNBIOMASS, JNLITTER, JNSOILCARB, JNLITTLEVS  ! loop counter on levels
+INTEGER :: IWORK   ! Work integer
+INTEGER :: JSV
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!------------------------------------------------------------------------------
+!
+!*       2.     Prognostic fields:
+!               -----------------
+!
+IF (LHOOK) CALL DR_HOOK('WRITESURF_ISBA_N',0,ZHOOK_HANDLE)
+!* soil temperatures
+!
+IF(LTEMP_ARP)THEN
+  IWORK=NTEMPLAYER_ARP
+ELSE
+  IWORK=NGROUND_LAYER
+ENDIF
+!
+DO JLAYER=1,IWORK
+  WRITE(YLVL,'(I4)') JLAYER
+  YRECFM='TG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+  YFORM='(A6,I1.1,A4)'
+  IF (JLAYER >= 10)  YFORM='(A6,I2.2,A4)'
+  WRITE(YCOMMENT,FMT=YFORM) 'X_Y_TG',JLAYER,' (K)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XTG(:,JLAYER,:),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+!* soil liquid water contents
+!
+DO JLAYER=1,NGROUND_LAYER
+   WRITE(YLVL,'(I4)') JLAYER     
+   YRECFM='WG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+   YFORM='(A6,I1.1,A8)'
+   IF (JLAYER >= 10)  YFORM='(A6,I2.2,A8)'
+   WRITE(YCOMMENT,FMT=YFORM) 'X_Y_WG',JLAYER,' (m3/m3)'
+   CALL WRITE_SURF(HPROGRAM,YRECFM,XWG(:,JLAYER,:),IRESP,HCOMMENT=YCOMMENT)
+END DO
+!
+!* soil ice water contents
+!
+DO JLAYER=1,NGROUND_LAYER
+   WRITE(YLVL,'(I4)') JLAYER     
+   YRECFM='WGI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+   YFORM='(A7,I1.1,A8)'
+   IF (JLAYER >= 10)  YFORM='(A7,I2.2,A8)'
+   WRITE(YCOMMENT,YFORM) 'X_Y_WGI',JLAYER,' (m3/m3)'
+   CALL WRITE_SURF(HPROGRAM,YRECFM,XWGI(:,JLAYER,:),IRESP,HCOMMENT=YCOMMENT)  
+END DO
+!
+!* water intercepted on leaves
+!
+YRECFM='WR'
+YCOMMENT='X_Y_WR (kg/m2)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XWR(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+!* roughness length of Flood water
+!
+IF(LFLOOD)THEN
+  YRECFM='Z0_FLOOD'
+  YCOMMENT='X_Y_Z0_FLOOD (-)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XZ0_FLOOD(:,:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!* Glacier ice storage
+!
+IF(LGLACIER)THEN
+  YRECFM='ICE_STO'
+  YCOMMENT='X_Y_ICE_STO (kg/m2)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XICE_STO(:,:),IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+!* Leaf Area Index
+!
+IF (CPHOTO/='NON' .AND. CPHOTO/='AGS' .AND. CPHOTO/='AST') THEN
+  !
+  IF(LASSIM) THEN
+    IF(CASSIM=='PLUS ') THEN
+      YRECFM='LAIp'
+    ELSEIF(CASSIM=='AVERA') THEN
+      YRECFM='LAIa'
+    ELSEIF(CASSIM=='2DVAR') THEN
+      YRECFM='LAI'
+    ENDIF
+  ELSE
+    YRECFM='LAI'
+  ENDIF
+  !
+  YCOMMENT='X_Y_LAI (m2/m2)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XLAI(:,:),IRESP,HCOMMENT=YCOMMENT)
+  !
+END IF
+!
+!* snow mantel
+!
+ CALL WRITESURF_GR_SNOW(HPROGRAM,'VEG','     ',TSNOW)
+!
+!
+!* key and/or field usefull to make an external prep
+!
+YRECFM = 'GLACIER'
+YCOMMENT='LGLACIER key for external prep'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,LGLACIER,IRESP,HCOMMENT=YCOMMENT)
+!
+IF(CISBA=='DIF')THEN
+!
+  YRECFM = 'SOC'
+  YCOMMENT='SOC key for external prep'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,CSOC,IRESP,HCOMMENT=YCOMMENT)
+!
+  IF(CSOC=='SGH')THEN
+!   Fraction for each patch
+    YRECFM='PATCH'
+    YCOMMENT='X_Y_PATCH (-) for external prep with SOC'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XPATCH(:,:),IRESP,HCOMMENT=YCOMMENT)        
+  ENDIF
+!
+ELSE
+!
+  YRECFM = 'TEMPARP'
+  YCOMMENT='LTEMP_ARP key for external prep'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,LTEMP_ARP,IRESP,HCOMMENT=YCOMMENT)
+!
+  IF(LTEMP_ARP)THEN
+    YRECFM = 'NTEMPLARP'
+    YCOMMENT='NTEMPLAYER_ARP for external prep'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,NTEMPLAYER_ARP,IRESP,HCOMMENT=YCOMMENT)
+  ENDIF
+!
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*       4.  Semi-prognostic variables
+!            -------------------------
+!
+!
+!* patch averaged radiative temperature (K)
+!
+YRECFM='TSRAD_NAT'
+YCOMMENT='X_TSRAD_NAT (K)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XTSRAD_NAT(:),IRESP,HCOMMENT=YCOMMENT)
+!
+!* aerodynamical resistance
+!
+YRECFM='RESA'
+YCOMMENT='X_Y_RESA (s/m)'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,XRESA(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+!* Land use variables
+!
+IF(OLAND_USE)THEN
+!     
+  YRECFM='OLD_PATCH'
+  YCOMMENT='X_Y_OLD_PATCH (-)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XPATCH(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+  DO JLAYER=1,NGROUND_LAYER
+    WRITE(YLVL,'(I4)') JLAYER
+    YRECFM='OLD_DG'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YFORM='(A6,I1.1,A8)'
+    IF (JLAYER >= 10)  YFORM='(A6,I2.2,A8)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_OLD_DG',JLAYER,' (m)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XDG(:,JLAYER,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+!
+ENDIF
+!
+!* ISBA-AGS variables
+!
+IF (CPHOTO/='NON') THEN
+  YRECFM='AN'
+  YCOMMENT='X_Y_AN (kgCO2/kgair m/s)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XAN(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+  YRECFM='ANDAY'
+  YCOMMENT='X_Y_ANDAY (kgCO2/m2/day)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XANDAY(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+  YRECFM='ANFM'
+  YCOMMENT='X_Y_ANFM (kgCO2/kgair m/s)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XANFM(:,:),IRESP,HCOMMENT=YCOMMENT)
+!
+  YRECFM='LE_AGS'
+  YCOMMENT='X_Y_LE_AGS (W/m2)'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,XLE(:,:),IRESP,HCOMMENT=YCOMMENT)
+END IF
+!
+!
+IF (CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
+  !
+  DO JNBIOMASS=1,NNBIOMASS
+    WRITE(YLVL,'(I1)') JNBIOMASS
+    YRECFM='BIOMA'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YFORM='(A11,I1.1,A10)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_BIOMASS',JNBIOMASS,' (kgDM/m2)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XBIOMASS(:,JNBIOMASS,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+  !
+  !
+  DO JNBIOMASS=2,NNBIOMASS-2
+    WRITE(YLVL,'(I1)') JNBIOMASS
+    YRECFM='RESPI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YFORM='(A16,I1.1,A10)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_RESP_BIOMASS',JNBIOMASS,' (kg/m2/s)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XRESP_BIOMASS(:,JNBIOMASS,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+  !
+  IF (CPHOTO=='NIT') THEN
+    !
+    DO JNBIOMASS=NNBIOMASS-1,NNBIOMASS
+      WRITE(YLVL,'(I1)') JNBIOMASS
+      YRECFM='RESPI'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+      YFORM='(A16,I1.1,A10)'
+      WRITE(YCOMMENT,FMT=YFORM) 'X_Y_RESP_BIOMASS',JNBIOMASS,' (kg/m2/s)'
+      CALL WRITE_SURF(HPROGRAM,YRECFM,XRESP_BIOMASS(:,JNBIOMASS,:),IRESP,HCOMMENT=YCOMMENT)
+    END DO
+    !
+  ENDIF
+  !
+END IF
+!
+!* Soil carbon
+!
+YRECFM = 'RESPSL'
+YCOMMENT=YRECFM
+ CALL WRITE_SURF(HPROGRAM,YRECFM,CRESPSL,IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='NLITTER'
+YCOMMENT=YRECFM
+ CALL WRITE_SURF(HPROGRAM,YRECFM,NNLITTER,IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='NLITTLEVS'
+YCOMMENT=YRECFM
+ CALL WRITE_SURF(HPROGRAM,YRECFM,NNLITTLEVS,IRESP,HCOMMENT=YCOMMENT)
+!
+YRECFM='NSOILCARB'
+YCOMMENT=YRECFM
+ CALL WRITE_SURF(HPROGRAM,YRECFM,NNSOILCARB,IRESP,HCOMMENT=YCOMMENT)
+!
+IF(LSPINUPCARBS.OR.LSPINUPCARBW)THEN
+  YRECFM='NBYEARSOLD'
+  YCOMMENT='yrs'
+  CALL WRITE_SURF(HPROGRAM,YRECFM,NNBYEARSOLD,IRESP,HCOMMENT=YCOMMENT)
+ENDIF
+!
+IF (CRESPSL=='CNT') THEN
+  !
+  DO JNLITTER=1,NNLITTER
+    DO JNLITTLEVS=1,NNLITTLEVS
+      WRITE(YLVL,'(I1,A1,I1)') JNLITTER,'_',JNLITTLEVS
+      YRECFM='LITTER'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+      YFORM='(A10,I1.1,A1,I1.1,A8)'
+      WRITE(YCOMMENT,FMT=YFORM) 'X_Y_LITTER',JNLITTER,' ',JNLITTLEVS,' (gC/m2)'
+      CALL WRITE_SURF(HPROGRAM,YRECFM,XLITTER(:,JNLITTER,JNLITTLEVS,:),IRESP,HCOMMENT=YCOMMENT)
+    END DO
+  END DO
+
+  DO JNSOILCARB=1,NNSOILCARB
+    WRITE(YLVL,'(I4)') JNSOILCARB
+    YRECFM='SOILCARB'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YFORM='(A8,I1.1,A8)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_SOILCARB',JNSOILCARB,' (gC/m2)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XSOILCARB(:,JNSOILCARB,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+!
+  DO JNLITTLEVS=1,NNLITTLEVS
+    WRITE(YLVL,'(I4)') JNLITTLEVS
+    YRECFM='LIGNIN_STR'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+    YFORM='(A12,I1.1,A8)'
+    WRITE(YCOMMENT,FMT=YFORM) 'X_Y_LIGNIN_STRUC',JNLITTLEVS,' (-)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XLIGNIN_STRUC(:,JNLITTLEVS,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+!
+ENDIF
+!
+!
+IF (NDSTEQ > 0)THEN
+  DO JSV = 1,NDSTMDE ! for all dust modes
+    WRITE(YRECFM,'(A8,I3.3)')'FLX_DSTM',JSV
+    YCOMMENT='X_Y_'//YRECFM//' (kg/m2)'
+    CALL WRITE_SURF(HPROGRAM,YRECFM,XSFDSTM(:,JSV,:),IRESP,HCOMMENT=YCOMMENT)
+  END DO
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*       5.  Time
+!            ----
+!
+YRECFM='DTCUR'
+YCOMMENT='s'
+ CALL WRITE_SURF(HPROGRAM,YRECFM,TTIME,IRESP,HCOMMENT=YCOMMENT)
+IF (LHOOK) CALL DR_HOOK('WRITESURF_ISBA_N',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE WRITESURF_ISBA_n

@@ -1,0 +1,5 @@
+&NAM_LUNIT2_SPA  CINIFILE = "16JAN_06_MNH",
+                 CINIFILEPGD="16JAN98_36km.neste1",
+                 YDOMAIN  = "16JAN98_9km.neste1",
+                 YSPANBR = '04' /
+

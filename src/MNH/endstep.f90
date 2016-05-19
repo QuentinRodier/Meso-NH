@@ -1,0 +1,562 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$ $Date$
+!-----------------------------------------------------------------
+!     ###################
+      MODULE MODI_ENDSTEP
+!     ###################
+!
+INTERFACE
+!
+      SUBROUTINE ENDSTEP        (PTSTEP,PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV,   &
+                                 KRR,KSV,KTCOUNT,KMI,PRHODJ,               &
+                                 PUS,PVS,PWS,PDRYMASSS,                    &
+                                 PTHS,PRS,PTKES,PSVS,                      &
+                                 PLSUS,PLSVS,PLSWS,                        &
+                                 PLSTHS,PLSRVS,                            &
+                                 PLBXUS,PLBXVS,PLBXWS,                     &
+                                 PLBXTHS,PLBXRS,PLBXTKES,PLBXSVS,          &
+                                 PLBYUS,PLBYVS,PLBYWS,                     &
+                                 PLBYTHS,PLBYRS,PLBYTKES,PLBYSVS,          &
+                                 PUM,PVM,PWM,PPABSM,                       &
+                                 PTHM,PRM,PTKEM,PSVM,PSRCM,                &
+                                 PUT,PVT,PWT,PPABST,PDRYMASST,             &
+                                 PTHT,PRT,PTKET,PSVT,PSRCT,                &
+                                 PLSUM,PLSVM,PLSWM,                        &
+                                 PLSTHM,PLSRVM,                            &
+                                 PLBXUM,PLBXVM,PLBXWM,                     &
+                                 PLBXTHM,PLBXRM,PLBXTKEM,PLBXSVM,          &
+                                 PLBYUM,PLBYVM,PLBYWM,                     &
+                                 PLBYTHM,PLBYRM,PLBYTKEM,PLBYSVM,          &
+                                 HMET_ADV_SCHEME,HSV_ADV_SCHEME            )
+!
+REAL,                     INTENT(IN) :: PTSTEP        !  Time step
+REAL,                     INTENT(IN) :: PTSTEP_UVW    !  Effective time step for
+                                                      !  momentum advection
+REAL,                     INTENT(IN) :: PTSTEP_MET    !  Effective time step for
+                                            !  meteorological variables advection
+REAL,                     INTENT(IN) :: PTSTEP_SV     !  Effective time step for
+                                            !  scalar variables advection
+INTEGER,                  INTENT(IN) :: KRR           !  Number of water var.
+INTEGER,                  INTENT(IN) :: KSV           !  Number of scal. var.
+INTEGER,                  INTENT(IN) :: KTCOUNT       !  Temporal loop COUNTer
+INTEGER,                  INTENT(IN) :: KMI           !  Model index
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ        ! (Rho) dry * Jacobian
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUS,PVS,PWS,   & ! 
+                                        PTHS,PTKES       ! variables at 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS,PSVS         !    t+dt
+!
+REAL,                     INTENT(IN) :: PDRYMASSS           !   Md source
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLSUS,PLSVS,PLSWS,& ! Large Scale 
+                                        PLSTHS,PLSRVS       ! fields tendencies
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUS,PLBXVS,PLBXWS,  &  !
+                                        PLBXTHS,PLBXTKES          ! LBX tendancy 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PLBXRS,PLBXSVS            ! 
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBYUS,PLBYVS,PLBYWS,&    !     
+                                        PLBYTHS,PLBYTKES          ! LBY tendancy 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PLBYRS,PLBYSVS            !  
+!  
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PUM,PVM,PWM,PPABSM,PTHM,&! Variables at
+                                         PTKEM,PSRCM              !   t-dt
+REAL, DIMENSION(:,:,:,:),INTENT(INOUT):: PRM,PSVM                 !
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PUT,PVT,PWT,PPABST,PTHT,&!
+                                         PTKET,PSRCT        ! Variables at
+REAL, DIMENSION(:,:,:,:),INTENT(INOUT):: PRT,PSVT                 !     t
+REAL,                    INTENT(INOUT):: PDRYMASST                ! 
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM,& ! Large Scale fields
+                                         PLSTHM,PLSRVM       !     at t-dt
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBXUM,PLBXVM,PLBXWM,   & ! 
+                                          PLBXTHM,PLBXTKEM          ! LBX fields
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBXRM,PLBXSVM            !
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBYUM,PLBYVM,PLBYWM,   & ! 
+                                          PLBYTHM,PLBYTKEM          ! LBY fields
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBYRM,PLBYSVM            ! 
+CHARACTER(LEN=6),         INTENT(IN)  :: HMET_ADV_SCHEME ! Scalar meteorological advection scheme 
+CHARACTER(LEN=6),         INTENT(IN)  :: HSV_ADV_SCHEME ! Scalar tracer advection scheme
+!
+END SUBROUTINE ENDSTEP
+!
+END INTERFACE
+!
+END MODULE MODI_ENDSTEP
+!
+!
+!
+!     ######################################################################
+      SUBROUTINE ENDSTEP        (PTSTEP,PTSTEP_UVW,PTSTEP_MET,PTSTEP_SV,   &
+                                 KRR,KSV,KTCOUNT,KMI,PRHODJ,               &
+                                 PUS,PVS,PWS,PDRYMASSS,                    &
+                                 PTHS,PRS,PTKES,PSVS,                      &
+                                 PLSUS,PLSVS,PLSWS,                        &
+                                 PLSTHS,PLSRVS,                            &
+                                 PLBXUS,PLBXVS,PLBXWS,                     &
+                                 PLBXTHS,PLBXRS,PLBXTKES,PLBXSVS,          &
+                                 PLBYUS,PLBYVS,PLBYWS,                     &
+                                 PLBYTHS,PLBYRS,PLBYTKES,PLBYSVS,          &
+                                 PUM,PVM,PWM,PPABSM,                       &
+                                 PTHM,PRM,PTKEM,PSVM,PSRCM,                &
+                                 PUT,PVT,PWT,PPABST,PDRYMASST,             &
+                                 PTHT,PRT,PTKET,PSVT,PSRCT,                &
+                                 PLSUM,PLSVM,PLSWM,                        &
+                                 PLSTHM,PLSRVM,                            &
+                                 PLBXUM,PLBXVM,PLBXWM,                     &
+                                 PLBXTHM,PLBXRM,PLBXTKEM,PLBXSVM,          &
+                                 PLBYUM,PLBYVM,PLBYWM,                     &
+                                 PLBYTHM,PLBYRM,PLBYTKEM,PLBYSVM,          &
+                                 HMET_ADV_SCHEME,HSV_ADV_SCHEME            )
+!     ######################################################################
+!
+!!****  *ENDSTEP* - temporal advance and asselin filter for all variables
+!!        (replaces the previous endstep_dyn and endstep_scalar subroutines)
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!    The purpose of ENDSTEP is to apply the asselin filter, perform
+!!    the time advance and thereby finalize the time step.
+!
+!
+!!**  METHOD
+!!    ------
+!!    
+!!    The filtered values of the prognostic variables at t is obtained
+!!    by linear combination of variables at t-dt, t, and t+dt.
+!!    This value is put into the array containing the t-dt value.
+!!    To perform the time swapping, the t+dt values are put into the arrays 
+!!    containing the t values.
+!!
+!!    In case of cold start (first time step), indicated by the value 'START'
+!!    of CCONF in module MODD_CONF, a simple time advance is performed.
+!!
+!!    The swapping for the absolute pressure function is only a copy of time t in
+!!    time (t-dt).
+!!
+!!    Temporal advances of large scale, lateral boundarie and SST fields
+!!    are also made in this subroutine.
+!!
+!!    The different sources terms are stored for the budget computations.
+!!    
+!!    EXTERNAL
+!!    --------
+!!      BUDGET      : Stores the different budget components
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!    MODULE MODD_DYN containing XASSELIN
+!!    MODULE MODD_CONF containing CCONF
+!!    MODULE MODD_CTURB containing XTKEMIN, XEPSMIN
+!!    MODULE MODD_BUDGET:
+!!         NBUMOD       : model in which budget is calculated
+!!         NBUPROCCTR   : process counter used for each budget variable
+!!         NBUTSHIFT    : temporal shift for budgets writing
+!!
+!!    REFERENCE
+!!    ---------
+!!    Book2 of documentation
+!!
+!!    AUTHOR
+!!    ------
+!!    P. Bougeault  Meteo France
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!    original     22/06/94
+!!    corrections  01/09/94 (J. P. Lafore)
+!!     "           07/11/94 (J.Stein)   pressure function swapping
+!!    update       03/01/94 (J. P. Lafore) Total mass of dry air Md evolution
+!!                 20/03/95 (J.Stein )   remove R from the historical variables
+!!                                      + switch for TKE unused
+!!                 01/04/95 (Ph. Hereil J. Nicolau) add the budget computation
+!!                 30/08/95 (J.Stein)    remove the positivity control and 
+!!                        correct the bug for PRM and PSVM for the cold start
+!!                 16/10/95 (J. Stein)     change the budget calls 
+!!                 12/10/96 (J. Stein)     add the SRC temporal evolution
+!!                 20/12/96 (J.-P. Pinty)  update the CALL BUDGET
+!!                 03/09/96 (J. P. Lafore) temporal advance of LS scalar fields
+!!                 22/06/97 (J. Stein)     add the absolute pressure
+!!                 13/03/97 (J. P. Lafore) add "surfacic" LS fields
+!!                 24/09/97 (V. Masson)    positive values for ls fields
+!!                 10/01/98 (J. Stein)     use the LB fields
+!!                 20/04/98 (P. Josse)     temporal evolution of SST
+!!                 18/09/98 (P. Jabouille) merge endstep_dyn and endstep_scalar
+!!                 08/12/00 (P. Jabouille) minimum values for hydrometeors
+!!                 22/06/01 (P. Jabouille) use XSVMIN
+!!                 06/11/02 (V. Masson)    update the budget calls
+!!                 01/2004  (V. Masson)  surface externalization
+!!                 05/2006                Remove KEPS
+!!                 10/2006  (Maric, Lac)  modification for PPM schemes 
+!!                 10/2009  (C.Lac)       Correction on FIT temporal scheme for variables
+!!                                         advected with PPM
+
+!------------------------------------------------------------------------------
+!
+!*      0.   DECLARATIONS
+!            ------------
+!
+USE MODD_DYN 
+USE MODD_CONF
+USE MODD_CTURB
+USE MODD_GRID_n
+USE MODD_BUDGET
+USE MODD_NSV, ONLY : XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
+                     NSV_AERBEG, NSV_AEREND,&
+                     NSV_DSTBEG, NSV_DSTEND
+
+USE MODD_CH_AEROSOL, ONLY : LORILAM
+USE MODD_DUST,       ONLY : LDUST
+USE MODI_BUDGET
+USE MODI_SHUMAN
+!
+IMPLICIT NONE
+!
+!*      0.1  DECLARATIONS OF ARGUMENTS
+!
+!
+REAL,                     INTENT(IN) :: PTSTEP        !  Time step
+REAL,                     INTENT(IN) :: PTSTEP_UVW    !  Effective time step for
+                                                      !  momentum advection
+REAL,                     INTENT(IN) :: PTSTEP_MET    !  Effective time step for
+                                            !  meteorological variables advection
+REAL,                     INTENT(IN) :: PTSTEP_SV     !  Effective time step for
+                                            !  scalar variables advection
+INTEGER,                  INTENT(IN) :: KRR           !  Number of water var.
+INTEGER,                  INTENT(IN) :: KSV           !  Number of scal. var.
+INTEGER,                  INTENT(IN) :: KTCOUNT       !  Temporal loop COUNTer
+INTEGER,                  INTENT(IN) :: KMI           !  Model index
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ        ! (Rho) dry * Jacobian
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUS,PVS,PWS,   & ! 
+                                        PTHS,PTKES       ! variables at 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRS,PSVS         !    t+dt
+!
+REAL,                     INTENT(IN) :: PDRYMASSS           !   Md source
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLSUS,PLSVS,PLSWS,& !    Large Scale 
+                                        PLSTHS,PLSRVS       ! fields tendencies
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBXUS,PLBXVS,PLBXWS,  &  !
+                                        PLBXTHS,PLBXTKES          ! LBX tendancy 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PLBXRS,PLBXSVS            ! 
+!
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PLBYUS,PLBYVS,PLBYWS,&    !     
+                                        PLBYTHS,PLBYTKES          ! LBY tendancy 
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PLBYRS,PLBYSVS            !  
+!  
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PUM,PVM,PWM,PPABSM,PTHM,&! Variables at
+                                         PTKEM,PSRCM        !   t-dt
+REAL, DIMENSION(:,:,:,:),INTENT(INOUT):: PRM,PSVM                 !
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PUT,PVT,PWT,PPABST,PTHT,&!
+                                         PTKET,PSRCT        ! Variables at
+REAL, DIMENSION(:,:,:,:),INTENT(INOUT):: PRT,PSVT                 !     t
+REAL,                    INTENT(INOUT):: PDRYMASST                ! 
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM,& ! Large Scale fields
+                                         PLSTHM,PLSRVM       !     at t-dt
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBXUM,PLBXVM,PLBXWM,   & ! 
+                                          PLBXTHM,PLBXTKEM          ! LBX fields
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBXRM,PLBXSVM            !
+!
+REAL, DIMENSION(:,:,:), INTENT(INOUT)  :: PLBYUM,PLBYVM,PLBYWM,   & ! 
+                                          PLBYTHM,PLBYTKEM          ! LBY fields
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT):: PLBYRM,PLBYSVM            !   
+CHARACTER(LEN=6),         INTENT(IN)  :: HMET_ADV_SCHEME ! Scalar meteorological advection scheme 
+CHARACTER(LEN=6),         INTENT(IN)  :: HSV_ADV_SCHEME ! Scalar tracer advection scheme
+!
+!
+!*      0.2  DECLARATIONS OF LOCAL VARIABLES
+!
+INTEGER:: JSV                  ! loop counters
+REAL, DIMENSION(SIZE(PSRCM,1),SIZE(PSRCM,2),SIZE(PSRCM,3)) :: ZSRC_STORE
+INTEGER :: IKU
+!
+!------------------------------------------------------------------------------
+!
+IKU=SIZE(XZHAT)
+!*      1.   ASSELIN FILTER
+!
+IF( KTCOUNT /= 1 .OR. CCONF /= 'START' ) THEN
+!
+! Basic variables
+!
+     PUM(:,:,:)=(1.-XASSELIN)*PUT(:,:,:)+0.5*XASSELIN*(PUM(:,:,:)+PUS(:,:,:))
+     PVM(:,:,:)=(1.-XASSELIN)*PVT(:,:,:)+0.5*XASSELIN*(PVM(:,:,:)+PVS(:,:,:))
+     PWM(:,:,:)=(1.-XASSELIN)*PWT(:,:,:)+0.5*XASSELIN*(PWM(:,:,:)+PWS(:,:,:))
+! if using PPM advection for acalars, skip Asselin filter
+!
+   IF (HMET_ADV_SCHEME(1:3) == 'PPM') THEN
+      PTHM(:,:,:) = PTHT(:,:,:)
+! Moisture
+      PRM(:,:,:,1:KRR) = PRT(:,:,:,1:KRR)
+! Turbulent kinetic energy
+      IF (SIZE(PTKEM,1) /= 0) PTKEM(:,:,:) = PTKET(:,:,:)
+   ELSE
+      PTHM(:,:,:)=(1.-XASSELIN)*PTHT(:,:,:)+0.5*XASSELIN*(PTHM(:,:,:)+PTHS(:,:,:))
+! Moisture
+      PRM(:,:,:,1:KRR)=(1.-XASSELIN)*PRT(:,:,:,1:KRR)+                   &
+                      0.5*XASSELIN*(PRM(:,:,:,1:KRR)+PRS(:,:,:,1:KRR))
+!
+! Turbulence kinetic energy
+      IF (SIZE(PTKEM,1) /= 0) &
+      PTKEM(:,:,:)=(1.-XASSELIN)*PTKET(:,:,:)+0.5*XASSELIN*(PTKEM(:,:,:)+PTKES(:,:,:))
+   END IF
+!
+!
+! Other scalars
+!
+   IF  (HSV_ADV_SCHEME(1:3) == 'PPM')  THEN
+      PSVM(:,:,:,1:KSV) = PSVT(:,:,:,1:KSV)
+!
+   ELSE ! other advection schemes
+!
+    PSVM(:,:,:,1:KSV)=(1.-XASSELIN_SV)*PSVT(:,:,:,1:KSV)+          &
+                       0.5*XASSELIN_SV*(PSVM(:,:,:,1:KSV)+PSVS(:,:,:,1:KSV))
+   END IF
+!
+ENDIF
+!------------------------------------------------------------------------------
+!
+!*      2.   SWAPPING FOR THE ABSOLUTE PRESSURE
+!
+PPABSM(:,:,:)=PPABST(:,:,:)
+!
+!------------------------------------------------------------------------------
+!
+!*      3.   TEMPORAL ADVANCE OF PROGNOSTIC VARIABLES
+!
+PUT(:,:,:)=PUS(:,:,:)
+PVT(:,:,:)=PVS(:,:,:)
+PWT(:,:,:)=PWS(:,:,:)
+!
+PDRYMASST = PDRYMASST + PTSTEP * PDRYMASSS
+!
+PTHT(:,:,:)=PTHS(:,:,:)
+!
+! Moisture
+!
+PRT(:,:,:,1:KRR)=PRS(:,:,:,1:KRR)
+!
+! Turbulence
+!
+IF (SIZE(PTKEM,1) /= 0) PTKET(:,:,:)=PTKES(:,:,:)
+!
+! Other scalars
+!
+PSVT(:,:,:,1:KSV)=PSVS(:,:,:,1:KSV)
+!
+! PSRC
+!
+IF ( SIZE(PSRCM,1) /= 0 ) THEN
+  ZSRC_STORE(:,:,:) = PSRCM(:,:,:)
+  PSRCM(:,:,:)      = PSRCT(:,:,:)
+  PSRCT(:,:,:)      = ZSRC_STORE(:,:,:)
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      4.   TEMPORAL ADVANCE OF THE LARGE SCALE FIELDS
+!
+!
+IF (SIZE(PLSUS,1) /= 0) THEN
+  PLSUM(:,:,:)  = PLSUM(:,:,:)  + PTSTEP * PLSUS(:,:,:)
+  PLSVM(:,:,:)  = PLSVM(:,:,:)  + PTSTEP * PLSVS(:,:,:)
+  PLSWM(:,:,:)  = PLSWM(:,:,:)  + PTSTEP * PLSWS(:,:,:)
+END IF
+!
+IF (SIZE(PLSTHS,1) /= 0) THEN
+  PLSTHM(:,:,:) = PLSTHM(:,:,:) + PTSTEP * PLSTHS(:,:,:)
+ENDIF
+!
+IF (SIZE(PLSRVS,1) /= 0) THEN
+  PLSRVM(:,:,:) = MAX( PLSRVM(:,:,:) + PTSTEP * PLSRVS(:,:,:) , 0.)
+ENDIF
+!
+!------------------------------------------------------------------------------
+!
+!*      5.   TEMPORAL ADVANCE OF THE LATERAL BOUNDARIES FIELDS
+!
+IF (SIZE(PLBXUS,1) /= 0) THEN
+  PLBXUM(:,:,:)  = PLBXUM(:,:,:)  + PTSTEP * PLBXUS(:,:,:)
+  PLBXVM(:,:,:)  = PLBXVM(:,:,:)  + PTSTEP * PLBXVS(:,:,:)
+  PLBXWM(:,:,:)  = PLBXWM(:,:,:)  + PTSTEP * PLBXWS(:,:,:)
+ENDIF
+IF (SIZE(PLBYUS,1) /= 0) THEN
+  PLBYUM(:,:,:)  = PLBYUM(:,:,:)  + PTSTEP * PLBYUS(:,:,:)
+  PLBYVM(:,:,:)  = PLBYVM(:,:,:)  + PTSTEP * PLBYVS(:,:,:)
+  PLBYWM(:,:,:)  = PLBYWM(:,:,:)  + PTSTEP * PLBYWS(:,:,:)
+ENDIF
+!
+IF (SIZE(PLBXTHS,1) /= 0) THEN
+  PLBXTHM(:,:,:) = PLBXTHM(:,:,:) + PTSTEP * PLBXTHS(:,:,:)
+END IF
+IF (SIZE(PLBYTHS,1) /= 0) THEN
+  PLBYTHM(:,:,:) = PLBYTHM(:,:,:) + PTSTEP * PLBYTHS(:,:,:)
+END IF
+!
+IF (SIZE(PLBXTKES,1) /= 0) THEN
+  PLBXTKEM(:,:,:) = MAX( PLBXTKEM(:,:,:) + PTSTEP * PLBXTKES(:,:,:), XTKEMIN)
+END IF
+IF (SIZE(PLBYTKES,1) /= 0) THEN
+  PLBYTKEM(:,:,:) = MAX( PLBYTKEM(:,:,:) + PTSTEP * PLBYTKES(:,:,:), XTKEMIN)
+END IF
+!
+IF (SIZE(PLBXRS,1) /= 0) THEN
+  PLBXRM(:,:,:,:) = MAX( PLBXRM(:,:,:,:) + PTSTEP * PLBXRS(:,:,:,:), 0.)
+END IF
+IF (SIZE(PLBYRS,1) /= 0) THEN
+  PLBYRM(:,:,:,:) = MAX( PLBYRM(:,:,:,:) + PTSTEP * PLBYRS(:,:,:,:), 0.)
+END IF
+!
+IF (SIZE(PLBXSVS,1) /= 0) THEN
+  DO JSV = 1,KSV
+    PLBXSVM(:,:,:,JSV) = MAX( PLBXSVM(:,:,:,JSV) + PTSTEP * PLBXSVS(:,:,:,JSV),XSVMIN(JSV))
+  ENDDO
+ENDIF
+IF (SIZE(PLBYSVS,1) /= 0) THEN
+  DO JSV = 1,KSV
+    PLBYSVM(:,:,:,JSV) = MAX( PLBYSVM(:,:,:,JSV) + PTSTEP * PLBYSVS(:,:,:,JSV),XSVMIN(JSV))
+  ENDDO
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      6.   MINIMUM VALUE FOR HYDROMETEORS
+!
+IF (SIZE(PRT,4) > 1) THEN
+  WHERE(PRT(:,:,:,2:)<1.E-20)
+    PRT(:,:,:,2:)=0.
+  END WHERE
+  WHERE(PRM(:,:,:,2:)<1.E-20)
+    PRM(:,:,:,2:)=0.
+  END WHERE
+END IF
+IF (SIZE(PLBXRM,4) > 1) THEN
+  WHERE(PLBXRM(:,:,:,2:)<1.E-20)
+    PLBXRM(:,:,:,2:)=0.
+  END WHERE
+END IF
+IF (SIZE(PLBYRM,4) > 1) THEN
+  WHERE(PLBYRM(:,:,:,2:)<1.E-20)
+    PLBYRM(:,:,:,2:)=0.
+  END WHERE
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      7.   MINIMUM VALUE FOR CHEMISTRY
+!
+IF ((SIZE(PLBXSVM,4) > NSV_CHEMEND-1).AND.(SIZE(PLBXSVM,1) /= 0))  THEN
+  DO JSV=NSV_CHEMBEG, NSV_CHEMEND
+    PLBXSVM(:,:,:,JSV) = MAX(PLBXSVM(:,:,:,JSV), XSVMIN(JSV))
+  END DO
+END IF
+IF ((SIZE(PLBYSVM,4) > NSV_CHEMEND-1).AND.(SIZE(PLBYSVM,1) /= 0)) THEN
+  DO JSV=NSV_CHEMBEG, NSV_CHEMEND
+    PLBYSVM(:,:,:,JSV) = MAX(PLBYSVM(:,:,:,JSV), XSVMIN(JSV))
+  END DO
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      8.   MINIMUM VALUE FOR AEROSOLS
+!
+IF (LORILAM) THEN
+  IF ((SIZE(PLBXSVM,4) > NSV_AEREND-1).AND.(SIZE(PLBXSVM,1) /= 0))  THEN
+    DO JSV=NSV_AERBEG, NSV_AEREND
+      PLBXSVM(:,:,:,JSV) = MAX(PLBXSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+  IF ((SIZE(PLBYSVM,4) > NSV_AEREND-1).AND.(SIZE(PLBYSVM,1) /= 0)) THEN
+    DO JSV=NSV_AERBEG, NSV_AEREND
+      PLBYSVM(:,:,:,JSV) = MAX(PLBYSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      9.   MINIMUM VALUE FOR DUSTS
+!
+IF (LDUST) THEN
+  IF ((SIZE(PLBXSVM,4) > NSV_DSTEND-1).AND.(SIZE(PLBXSVM,1) /= 0))  THEN
+    DO JSV=NSV_DSTBEG, NSV_DSTEND
+      PLBXSVM(:,:,:,JSV) = MAX(PLBXSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+  IF ((SIZE(PLBYSVM,4) > NSV_DSTEND-1).AND.(SIZE(PLBYSVM,1) /= 0)) THEN
+    DO JSV=NSV_DSTBEG, NSV_DSTEND
+      PLBYSVM(:,:,:,JSV) = MAX(PLBYSVM(:,:,:,JSV), XSVMIN(JSV))
+    END DO
+  END IF
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      10.   STORAGE IN BUDGET ARRAYS
+!
+IF (LBU_ENABLE) THEN
+  NBUPROCCTR(1:12+KSV)=3
+  NBUCTR_ACTV(1:12+KSV)=3
+!
+  IF (LBUDGET_U)   CALL BUDGET (PUM(:,:,:)*PRHODJ(:,:,:)/PTSTEP,1,'AVEF_BU_RU')
+  IF (LBUDGET_V)   CALL BUDGET (PVM(:,:,:)*PRHODJ(:,:,:)/PTSTEP,2,'AVEF_BU_RV')
+  IF (LBUDGET_W)   CALL BUDGET (PWM(:,:,:)*PRHODJ(:,:,:)/PTSTEP,3,'AVEF_BU_RW')
+  IF (LBUDGET_TH)  CALL BUDGET (PTHM(:,:,:)*PRHODJ(:,:,:)/PTSTEP,4,'AVEF_BU_RTH')
+  IF (LBUDGET_TKE) CALL BUDGET (PTKEM(:,:,:)*PRHODJ(:,:,:)/PTSTEP,5,'AVEF_BU_RTKE')
+  IF (LBUDGET_RV)  CALL BUDGET (PRM(:,:,:,1)*PRHODJ(:,:,:)/PTSTEP,6,'AVEF_BU_RRV')
+  IF (LBUDGET_RC)  CALL BUDGET (PRM(:,:,:,2)*PRHODJ(:,:,:)/PTSTEP,7,'AVEF_BU_RRC')
+  IF (LBUDGET_RR)  CALL BUDGET (PRM(:,:,:,3)*PRHODJ(:,:,:)/PTSTEP,8,'AVEF_BU_RRR')
+  IF (LBUDGET_RI)  CALL BUDGET (PRM(:,:,:,4)*PRHODJ(:,:,:)/PTSTEP,9,'AVEF_BU_RRI')
+  IF (LBUDGET_RS)  CALL BUDGET (PRM(:,:,:,5)*PRHODJ(:,:,:)/PTSTEP,10,'AVEF_BU_RRS')
+  IF (LBUDGET_RG)  CALL BUDGET (PRM(:,:,:,6)*PRHODJ(:,:,:)/PTSTEP,11,'AVEF_BU_RRG')
+  IF (LBUDGET_RH)  CALL BUDGET (PRM(:,:,:,7)*PRHODJ(:,:,:)/PTSTEP,12,'AVEF_BU_RRH')
+  IF (LBUDGET_SV) THEN
+    DO JSV=1,KSV
+      CALL BUDGET (PSVM(:,:,:,JSV)*PRHODJ(:,:,:)/PTSTEP,12+JSV,'AVEF_BU_RSV')
+    END DO
+  END IF
+!
+  NBUPROCCTR(1:12+KSV)=2
+  NBUCTR_ACTV(1:12+KSV)=2
+!
+  IF (LBUDGET_U)   CALL BUDGET (PUS*MXM(PRHODJ)/PTSTEP_UVW,1,'ENDF_BU_RU')
+  IF (LBUDGET_V)   CALL BUDGET (PVS*MYM(PRHODJ)/PTSTEP_UVW,2,'ENDF_BU_RV')
+  IF (LBUDGET_W)   CALL BUDGET (PWS*MZM(1,IKU,1,PRHODJ)/PTSTEP_UVW,3,'ENDF_BU_RW')
+  IF (LBUDGET_TH)  CALL BUDGET (PTHS*PRHODJ/PTSTEP_MET,4,'ENDF_BU_RTH')
+  IF (LBUDGET_TKE) CALL BUDGET (PTKES*PRHODJ/PTSTEP_MET,5,'ENDF_BU_RTKE')
+  IF (LBUDGET_RV)  CALL BUDGET (PRS(:,:,:,1)*PRHODJ/PTSTEP_MET,6,'ENDF_BU_RRV')
+  IF (LBUDGET_RC)  CALL BUDGET (PRS(:,:,:,2)*PRHODJ/PTSTEP_MET,7,'ENDF_BU_RRC')
+  IF (LBUDGET_RR)  CALL BUDGET (PRS(:,:,:,3)*PRHODJ/PTSTEP_MET,8,'ENDF_BU_RRR')
+  IF (LBUDGET_RI)  CALL BUDGET (PRS(:,:,:,4)*PRHODJ/PTSTEP_MET,9,'ENDF_BU_RRI')
+  IF (LBUDGET_RS)  CALL BUDGET (PRS(:,:,:,5)*PRHODJ/PTSTEP_MET,10,'ENDF_BU_RRS')
+  IF (LBUDGET_RG)  CALL BUDGET (PRS(:,:,:,6)*PRHODJ/PTSTEP_MET,11,'ENDF_BU_RRG')
+  IF (LBUDGET_RH)  CALL BUDGET (PRS(:,:,:,7)*PRHODJ/PTSTEP_MET,12,'ENDF_BU_RRH')
+  IF (LBUDGET_SV) THEN
+    DO JSV=1,KSV
+      CALL BUDGET (PSVS(:,:,:,JSV)*PRHODJ/PTSTEP_SV,JSV+12,'ENDF_BU_RSV')
+    END DO
+  END IF
+END IF
+!
+!------------------------------------------------------------------------------
+!
+!*      11.  COMPUTATION OF PHASE VELOCITY
+!            -----------------------------
+!
+!   It is temporarily set to a constant value
+!
+!------------------------------------------------------------------------------
+!
+!
+END SUBROUTINE ENDSTEP

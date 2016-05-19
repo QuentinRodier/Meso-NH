@@ -1,0 +1,60 @@
+!     #########
+      SUBROUTINE DEFAULT_WRITE_SURF_ATM(ONOWRITE_CANOPY, ONOWRITE_TEXFILE)
+!     ########################################################################
+!
+!!****  *DEFAULT_WRITE_SURF_ATM* - routine to desactivate output writings
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	P. Le Moigne   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    02/2008 
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+LOGICAL,           INTENT(OUT) :: ONOWRITE_CANOPY  ! flag to desactivate writing of canopy fields
+LOGICAL,           INTENT(OUT) :: ONOWRITE_TEXFILE ! flag to desactivate writing of tex file
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+!-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('DEFAULT_WRITE_SURF_ATM',0,ZHOOK_HANDLE)
+ONOWRITE_CANOPY  = .FALSE.
+ONOWRITE_TEXFILE = .TRUE.
+IF (LHOOK) CALL DR_HOOK('DEFAULT_WRITE_SURF_ATM',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE DEFAULT_WRITE_SURF_ATM

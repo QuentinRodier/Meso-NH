@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH --verbose
+#SBATCH --job-name=compile
+#SBATCH --time=04:05:00
+#SBATCH --mem=9600
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --share
+#SBATCH -o MasterI.eo%j   #
+#SBATCH -e MasterI.eo%j   #
+#SBATCH --export=NONE
+
+set -x
+# On va lancer la compilation dans le répertoire de lancement du job
+pwd
+
+. ../conf/profile_mesonh-LXifortI4-MNH-V4-10-1-MPIINTEL-O3
+
+time gmake -j 4
+time gmake -j 1 installmaster
+

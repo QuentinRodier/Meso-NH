@@ -1,0 +1,11 @@
+#!/bin/sh
+set -x
+set -e
+
+CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} ; export CHIMIE_FILES
+ln -sf ${CHIMIE_FILES}/*.20040810.18* .
+
+rm -f ICART* CPLCH20040810.18.* OUTPUT_LISTING* pipe* 
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.??? .
+
+time ${MONORUN} PREP_REAL_CASE${XYZ}

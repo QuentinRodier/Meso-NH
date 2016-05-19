@@ -1,0 +1,82 @@
+!     #########
+      SUBROUTINE GET_LUOUT(HPROGRAM,KLUOUT)
+!     #######################################################
+!
+!!****  *GET_LUOUT* - routine to get output listing logical unit
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004 
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+#ifdef LFI
+USE MODI_LFIGET_LUOUT
+#endif
+#ifdef MNH
+USE MODI_MNHGET_LUOUT
+#endif
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+ CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling GROUND
+INTEGER,           INTENT(OUT) :: KLUOUT   ! Logical unit of output listing
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('GET_LUOUT',0,ZHOOK_HANDLE)
+IF (HPROGRAM=='MESONH') THEN
+#ifdef MNH
+  CALL MNHGET_LUOUT(HPROGRAM,KLUOUT)
+#endif
+ELSE IF (HPROGRAM=='AROME ') THEN
+#ifdef ARO
+  CALL AROGET_LUOUT(HPROGRAM,KLUOUT)
+#endif
+ELSE IF (HPROGRAM=='LFI   ') THEN
+#ifdef LFI
+  CALL LFIGET_LUOUT(HPROGRAM,KLUOUT)
+#endif
+ELSE
+  KLUOUT = 10
+END IF
+IF (LHOOK) CALL DR_HOOK('GET_LUOUT',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE GET_LUOUT

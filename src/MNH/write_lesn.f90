@@ -1,0 +1,1456 @@
+! $Source$
+!-----------------------------------------------------------------
+!######################
+MODULE MODI_WRITE_LES_n
+!######################
+!
+INTERFACE
+!
+      SUBROUTINE  WRITE_LES_n(HLES_AVG)
+!
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
+!                                        ! or normalizations
+END SUBROUTINE WRITE_LES_n
+!
+END INTERFACE
+!
+END MODULE MODI_WRITE_LES_n
+
+!     ######################
+      SUBROUTINE  WRITE_LES_n(HLES_AVG)
+!     ######################
+!
+!
+!!****  *WRITE_LES_n* writes the LES final diagnostics for model _n 
+!!                         
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!    AUTHOR
+!!    ------
+!!      V. Masson
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original         07/02/00
+!!                       01/02/01 (D. Gazen) add module MODD_NSV for NSV variable
+!!                       06/11/02 (V. Masson) some minor bugs
+!!                       01/04/03 (V. Masson) idem
+!!                       10/10/09 (P. Aumond) Add user multimaskS
+!!
+!! --------------------------------------------------------------------------
+!       
+!*      0. DECLARATIONS
+!          ------------
+!
+USE MODD_CST
+USE MODD_LES
+USE MODD_LES_n
+USE MODD_FIELD_n
+USE MODD_CONF_n
+USE MODD_PARAM_n
+USE MODD_TURB_n
+USE MODD_GRID_n
+USE MODD_NSV, ONLY : NSV
+!
+USE MODD_LUNIT_n
+!
+USE MODE_ll
+USE MODE_FM
+!
+USE MODE_LES_DIACHRO
+USE MODE_MODELN_HANDLER
+!
+USE MODI_WRITE_LES_BUDGET_n
+USE MODI_WRITE_LES_RT_BUDGET_n
+USE MODI_WRITE_LES_SV_BUDGET_n
+!
+USE MODI_LES_SPEC_N
+!
+IMPLICIT NONE
+!
+!
+!*      0.1  declarations of arguments
+!
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
+!                                        ! or normalizations
+!
+!
+!*      0.2  declaration of local variables
+!
+INTEGER :: IRESP, ILUOUT
+INTEGER :: IMASK
+!
+INTEGER :: JSV       ! scalar loop counter
+INTEGER :: JI        ! loop counter
+INTEGER :: JPDF      ! pdf loop counter
+!
+CHARACTER(len=9), DIMENSION(NLES_MASKS) :: YSUBTITLE
+CHARACTER(len=5)                        :: YGROUP
+!
+REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZAVG_PTS_ll
+REAL, DIMENSION(:,:,:), ALLOCATABLE     :: ZUND_PTS_ll
+REAL                                    :: ZCART_PTS_ll
+INTEGER                                 :: IMI ! Current model inde
+!
+!
+!-------------------------------------------------------------------------------
+!
+IF (.NOT. LLES) RETURN
+!
+IF (HLES_AVG=='A'                                                       &
+     .AND. (XLES_TEMP_MEAN_START==XUNDEF .OR. XLES_TEMP_MEAN_END==XUNDEF)) RETURN
+IF (HLES_AVG=='E' .AND. CLES_NORM_TYPE=='NONE'                          ) RETURN
+IF (HLES_AVG=='H' .AND. (CLES_NORM_TYPE=='NONE'                          &
+     .OR. XLES_TEMP_MEAN_START/=XUNDEF .OR. XLES_TEMP_MEAN_END/=XUNDEF)) RETURN
+!
+!*      1.   Initializations
+!            ---------------
+!
+IMI = GET_CURRENT_MODEL_INDEX()
+!
+CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+!
+!
+!*      1.1  Normalization variables
+!            -----------------------
+!
+IF (CLES_NORM_TYPE/='NONE' ) THEN
+  ALLOCATE(XLES_NORM_M  (NLES_TIMES))
+  ALLOCATE(XLES_NORM_S  (NLES_TIMES))
+  ALLOCATE(XLES_NORM_K  (NLES_TIMES))
+  ALLOCATE(XLES_NORM_RHO(NLES_TIMES))
+  ALLOCATE(XLES_NORM_RV (NLES_TIMES))
+  ALLOCATE(XLES_NORM_SV (NLES_TIMES,NSV))
+  ALLOCATE(XLES_NORM_P  (NLES_TIMES))
+  !
+  IF (CLES_NORM_TYPE=='CONV') THEN
+    WHERE (XLES_WSTAR(:)>0.)
+      XLES_NORM_M(:)   = XLES_BL_HEIGHT(:)
+      XLES_NORM_S(:)   = XLES_NORM_M(:) / XLES_WSTAR(:)
+      XLES_NORM_K(:)   = XLES_Q0(:) / XLES_WSTAR(:)
+      XLES_NORM_RHO(:) = XLES_MEAN_RHO(1,:,1)
+      XLES_NORM_RV(:)  = XLES_E0(:) / XLES_WSTAR(:)
+      XLES_NORM_P(:)   = XLES_MEAN_RHO(1,:,1) * XLES_WSTAR(:)**2
+    ELSEWHERE
+      XLES_NORM_M(:)   = 0.
+      XLES_NORM_S(:)   = 0.
+      XLES_NORM_K(:)   = 0.
+      XLES_NORM_RHO(:) = 0.
+      XLES_NORM_RV(:)  = 0.
+      XLES_NORM_P(:)   = 0.
+    END WHERE
+    DO JSV=1,NSV
+      WHERE (XLES_WSTAR(:)>0.)
+        XLES_NORM_SV(:,JSV)= XLES_SV0(:,JSV) / XLES_WSTAR(:)
+      ELSEWHERE
+        XLES_NORM_SV(:,JSV)= 0.
+      END WHERE
+    END DO
+  ELSE IF (CLES_NORM_TYPE=='EKMA') THEN
+    WHERE (XLES_USTAR(:)>0.)
+      XLES_NORM_M(:)   = XLES_BL_HEIGHT(:)
+      XLES_NORM_S(:)   = XLES_NORM_M(:) / XLES_USTAR(:)
+      XLES_NORM_K(:)   = XLES_Q0(:) / XLES_USTAR(:)
+      XLES_NORM_RHO(:) = XLES_MEAN_RHO(1,:,1)
+      XLES_NORM_RV(:)  = XLES_E0(:) / XLES_USTAR(:)
+      XLES_NORM_P(:)   = XLES_MEAN_RHO(1,:,1) * XLES_USTAR(:)**2
+    ELSEWHERE
+      XLES_NORM_M(:)   = 0.
+      XLES_NORM_S(:)   = 0.
+      XLES_NORM_K(:)   = 0.
+      XLES_NORM_RHO(:) = 0.
+      XLES_NORM_RV(:)  = 0.
+      XLES_NORM_P(:)   = 0.
+    END WHERE
+    DO JSV=1,NSV
+      WHERE (XLES_USTAR(:)>0.)
+        XLES_NORM_SV(:,JSV)= XLES_SV0(:,JSV) / XLES_USTAR(:)
+      ELSEWHERE
+        XLES_NORM_SV(:,JSV)= 0.
+      END WHERE
+    END DO
+  ELSE IF (CLES_NORM_TYPE=='MOBU') THEN
+    XLES_NORM_M(:) = XLES_MO_LENGTH(:)
+    WHERE (XLES_USTAR(:)>0.)
+      XLES_NORM_S(:)   = XLES_NORM_M(:) / XLES_USTAR(:)
+      XLES_NORM_K(:)   = XLES_Q0(:) / XLES_USTAR(:)
+      XLES_NORM_RHO(:) = XLES_MEAN_RHO(1,:,1)
+      XLES_NORM_RV(:)  = XLES_E0(:) / XLES_USTAR(:)
+      XLES_NORM_P(:)   = XLES_MEAN_RHO(1,:,1) * XLES_USTAR(:)**2
+    ELSEWHERE
+      XLES_NORM_S(:)   = 0.
+      XLES_NORM_K(:)   = 0.
+      XLES_NORM_RHO(:) = 0.
+      XLES_NORM_RV(:)  = 0.
+      XLES_NORM_P(:)   = 0.
+    END WHERE
+    DO JSV=1,NSV
+      WHERE (XLES_USTAR(:)>0.)
+        XLES_NORM_SV(:,JSV)= XLES_SV0(:,JSV) / XLES_USTAR(:)
+      ELSEWHERE
+        XLES_NORM_SV(:,JSV)= 0.
+      END WHERE
+    END DO
+  END IF
+END IF
+!
+!*      1.2  Initializations for WRITE_DIACHRO
+!            ---------------------------------
+!
+NLES_CURRENT_TIMES=NLES_TIMES
+!
+ALLOCATE(XLES_CURRENT_TRAJT(NLES_TIMES,1))
+XLES_CURRENT_TRAJT(:,:) = XLES_TRAJT(:,:)
+ALLOCATE(XLES_CURRENT_Z(NLES_K))
+XLES_CURRENT_Z(:) = XLES_Z(:)
+ALLOCATE(XLES_CURRENT_DATIME(16,NLES_TIMES))
+XLES_CURRENT_DATIME(:,:) = XLES_DATIME(:,:)
+!
+XLES_CURRENT_ZS = XLES_ZS
+!
+NLES_CURRENT_IINF=NLESn_IINF(IMI)
+NLES_CURRENT_ISUP=NLESn_ISUP(IMI)
+NLES_CURRENT_JINF=NLESn_JINF(IMI)
+NLES_CURRENT_JSUP=NLESn_JSUP(IMI)
+!
+XLES_CURRENT_DOMEGAX=XDXHAT(1)
+XLES_CURRENT_DOMEGAY=XDYHAT(1)
+!
+CCURRENT_FMDIAC = CFMDIAC
+!
+!
+!*      2.   (z,t) profiles (all masks)
+!            --------------
+IMASK = 1
+YSUBTITLE(IMASK) = " (cart)"
+IF (LLES_NEB_MASK) THEN
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (neb)"
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (clear)"
+END IF
+IF (LLES_CORE_MASK) THEN
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (core)"
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (env)"
+END IF
+IF (LLES_MY_MASK) THEN
+   DO JI=1,NLES_MASKS_USER
+        IMASK=IMASK+1
+        YSUBTITLE(IMASK) = " (user)"
+   END DO
+END IF
+IF (LLES_CS_MASK) THEN
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (cs1)"
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (cs2)"
+  IMASK=IMASK+1
+  YSUBTITLE(IMASK) = " (cs3)"
+END IF
+!
+!*      2.0  averaging diagnostics
+!            ---------------------
+!
+IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
+  ALLOCATE(ZAVG_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
+  ALLOCATE(ZUND_PTS_ll (NLES_K,NLES_TIMES,NLES_MASKS))
+  !
+  ZAVG_PTS_ll(:,:,:) = NLES_AVG_PTS_ll(:,:,:)
+  ZUND_PTS_ll(:,:,:) = NLES_UND_PTS_ll(:,:,:)
+  ZCART_PTS_ll       = (NLESn_ISUP(IMI)-NLESn_IINF(IMI)+1) * (NLESn_JSUP(IMI)-NLESn_JINF(IMI)+1)
+  !
+  CALL LES_DIACHRO_MASKS("AVG_PTS  ",YSUBTITLE(:), &
+  "number of points used for averaging"//YSUBTITLE(:),"-",ZAVG_PTS_ll,HLES_AVG)
+  CALL LES_DIACHRO_MASKS("AVG_PTSF",YSUBTITLE(:), &
+  "fraction of points used for averaging"//YSUBTITLE(:),"-",ZAVG_PTS_ll/ZCART_PTS_ll,HLES_AVG)
+  CALL LES_DIACHRO_MASKS("UND_PTS  ",YSUBTITLE(:), &
+  "number of points below orography"//YSUBTITLE(:),"-",ZUND_PTS_ll,HLES_AVG)
+  CALL LES_DIACHRO_MASKS("UND_PTSF",YSUBTITLE(:), &
+  "fraction of points below orography"//YSUBTITLE(:),"-",ZUND_PTS_ll/ZCART_PTS_ll,HLES_AVG)
+  !
+  DEALLOCATE(ZAVG_PTS_ll)
+  DEALLOCATE(ZUND_PTS_ll)
+END IF
+!
+!
+!*      2.1  mean quantities
+!            ---------------
+!
+CALL LES_DIACHRO_MASKS("MEAN_U  ",YSUBTITLE(:), &
+  "Mean U Profile"//YSUBTITLE(:)," m/s",XLES_MEAN_U,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_V  ",YSUBTITLE(:), &
+  "Mean V Profile"//YSUBTITLE(:)," m/s",XLES_MEAN_V,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_W  ",YSUBTITLE(:), &
+  "Mean W Profile"//YSUBTITLE(:)," m/s",XLES_MEAN_W,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_PRE",YSUBTITLE(:), &
+  "Mean pressure Profile"//YSUBTITLE(:)," Pa",XLES_MEAN_P,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_RHO",YSUBTITLE(:), &
+  "Mean density Profile"//YSUBTITLE(:)," kg/m3",XLES_MEAN_RHO,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_TH ",YSUBTITLE(:),&
+  "Mean potential temperature Profile"//YSUBTITLE(:)," K",XLES_MEAN_Th,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEAN_MF ",YSUBTITLE(:),&
+  "Mass-flux Profile"//YSUBTITLE(:)," m s-1",XLES_MEAN_Mf,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_THL",YSUBTITLE(:), &
+   "Mean liquid potential temperature Profile"//YSUBTITLE(:)," K",XLES_MEAN_Thl,HLES_AVG)
+
+IF (LUSERV) &
+CALL LES_DIACHRO_MASKS("MEAN_THV",YSUBTITLE(:), &
+   "Mean virtual potential temperature Profile"//YSUBTITLE(:)," K",XLES_MEAN_Thv,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_RT ",YSUBTITLE(:), &
+  "Mean Rt Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rt,HLES_AVG)
+
+IF (LUSERV) &
+CALL LES_DIACHRO_MASKS("MEAN_RV ",YSUBTITLE(:), &
+  "Mean Rv Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rv,HLES_AVG)
+
+IF (LUSERV) &
+CALL LES_DIACHRO_MASKS("MEAN_REHU ",YSUBTITLE(:), &
+  "Mean Rh Profile"//YSUBTITLE(:)," %",XLES_MEAN_Rehu,HLES_AVG)
+
+IF (LUSERV) &
+CALL LES_DIACHRO_MASKS("MEAN_QS ",YSUBTITLE(:), &
+  "Mean Qs Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Qs,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_KHT ",YSUBTITLE(:),&
+  "Eddy-diffusivity (temperature) Profile"//YSUBTITLE(:)," m2 s-1",XLES_MEAN_KHt,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_KHR ",YSUBTITLE(:),&
+  "Eddy-diffusivity (wvapor) Profile"//YSUBTITLE(:)," m2 s-1",XLES_MEAN_KHr,HLES_AVG)  
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_RC ",YSUBTITLE(:), &
+  "Mean Rc Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rc,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_CF ",YSUBTITLE(:), &
+  "Mean Cf Profile"//YSUBTITLE(:)," ",XLES_MEAN_Cf,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_INDCF ",YSUBTITLE(:), &
+  "Mean Cf>1-6 Profile (0 ou 1)"//YSUBTITLE(:)," ",XLES_MEAN_INDCf,HLES_AVG)
+
+IF (LUSERC) &
+CALL LES_DIACHRO_MASKS("MEAN_INDCF2 ",YSUBTITLE(:), &
+  "Mean Cf>1-5 Profile (0 ou 1)"//YSUBTITLE(:)," ",XLES_MEAN_INDCf2,HLES_AVG)
+
+IF (LUSERR) &
+CALL LES_DIACHRO_MASKS("MEAN_RR ",YSUBTITLE(:), &
+  "Mean Rr Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rr,HLES_AVG)
+
+IF (LUSERI) &
+CALL LES_DIACHRO_MASKS("MEAN_RI ",YSUBTITLE(:), &
+  "Mean Ri Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Ri,HLES_AVG)
+
+IF (LUSERS) &
+CALL LES_DIACHRO_MASKS("MEAN_RS ",YSUBTITLE(:), &
+  "Mean Rs Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rs,HLES_AVG)
+
+IF (LUSERG) &
+CALL LES_DIACHRO_MASKS("MEAN_RG ",YSUBTITLE(:), &
+  "Mean Rg Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rg,HLES_AVG)
+
+IF (LUSERH) &
+CALL LES_DIACHRO_MASKS("MEAN_RH ",YSUBTITLE(:), &
+  "Mean Rh Profile"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Rh,HLES_AVG)
+
+IF (NSV>0) &
+CALL LES_DIACHRO_SV_MASKS("MEAN_SV ",YSUBTITLE(:), &
+  "Mean Sv Profiles"//YSUBTITLE(:)," kg/kg",XLES_MEAN_Sv,HLES_AVG)
+
+CALL LES_DIACHRO_MASKS("MEANWIND",YSUBTITLE(:), &
+  "Profile of Mean Modulus of Wind"//YSUBTITLE(:)," m/s",XLES_MEAN_WIND,HLES_AVG)
+!
+CALL LES_DIACHRO_MASKS("MEANMSFX",YSUBTITLE(:),  &
+     "Total updraft mass flux"//YSUBTITLE(:)," kg/m2/s",XLES_RESOLVED_MASSFX   ,HLES_AVG)
+!
+IF (LLES_PDF) THEN
+  CALL LES_DIACHRO_SV_MASKS("PDF_TH ",YSUBTITLE(:), &
+  "Pdf potential temperature Profiles"//YSUBTITLE(:)," ",XLES_PDF_TH,HLES_AVG)
+  CALL LES_DIACHRO_SV_MASKS("PDF_W ",YSUBTITLE(:), &
+  "Pdf vertical velocity Profiles"//YSUBTITLE(:)," ",XLES_PDF_W,HLES_AVG)
+  CALL LES_DIACHRO_SV_MASKS("PDF_THV ",YSUBTITLE(:), &
+  "Pdf virtual pot. temp. Profiles"//YSUBTITLE(:)," ",XLES_PDF_THV,HLES_AVG)
+    
+  IF (LUSERV) THEN
+   CALL LES_DIACHRO_SV_MASKS("PDF_RV ",YSUBTITLE(:), &
+     "Pdf Rv Profiles"//YSUBTITLE(:)," ",XLES_PDF_RV,HLES_AVG)
+  END IF
+
+  IF (LUSERC) THEN
+   CALL LES_DIACHRO_SV_MASKS("PDF_RC ",YSUBTITLE(:), &
+   "Pdf Rc Profiles"//YSUBTITLE(:)," ",XLES_PDF_RC,HLES_AVG)
+
+   CALL LES_DIACHRO_SV_MASKS("PDF_RT ",YSUBTITLE(:), &
+   "Pdf Rt Profiles"//YSUBTITLE(:)," ",XLES_PDF_RT,HLES_AVG)
+
+   CALL LES_DIACHRO_SV_MASKS("PDF_THL ",YSUBTITLE(:), &
+   "Pdf Thl Profiles"//YSUBTITLE(:)," ",XLES_PDF_THL,HLES_AVG)
+  END IF
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SV_MASKS("PDF_RR ",YSUBTITLE(:), &
+  "Pdf Rr Profiles"//YSUBTITLE(:)," ",XLES_PDF_RR,HLES_AVG)
+
+  IF (LUSERI) &
+  CALL LES_DIACHRO_SV_MASKS("PDF_RI ",YSUBTITLE(:), &
+  "Pdf Ri Profiles"//YSUBTITLE(:)," ",XLES_PDF_RI,HLES_AVG)
+
+  IF (LUSERS) &
+  CALL LES_DIACHRO_SV_MASKS("PDF_RS ",YSUBTITLE(:), &
+  "Pdf Rs Profiles"//YSUBTITLE(:)," ",XLES_PDF_RS,HLES_AVG)
+
+  IF (LUSERG) &
+  CALL LES_DIACHRO_SV_MASKS("PDF_RG ",YSUBTITLE(:), &
+  "Pdf Rg Profiles"//YSUBTITLE(:)," ",XLES_PDF_RG,HLES_AVG)
+
+END IF
+!
+!*      2.2  resolved quantities
+!            -------------------
+!
+IF (LLES_RESOLVED) THEN
+  CALL LES_DIACHRO_MASKS("RES_U2  ",YSUBTITLE(:), &
+     "Resolved <u2> variance "//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_U2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_V2  ",YSUBTITLE(:), &
+     "Resolved <v2> variance"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_V2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_W2  ",YSUBTITLE(:), &
+     "Resolved <w2> variance"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_W2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_UV  ",YSUBTITLE(:), &
+     "Resolved <uv> Flux"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_UV,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_WU  ",YSUBTITLE(:), &
+   "Resolved <wu> Flux"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_WU,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_WV  ",YSUBTITLE(:), &
+     "Resolved <wv> Flux"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_WV,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_KE  ",YSUBTITLE(:), &
+     "Resolved TKE Profile"//YSUBTITLE(:),"m2/s2",XLES_RESOLVED_Ke,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_P2  ",YSUBTITLE(:), &
+     "Resolved pressure variance"//YSUBTITLE(:),"Pa2",XLES_RESOLVED_P2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_UPZ ",YSUBTITLE(:), &
+     "Resolved <up> horizontal Flux"//YSUBTITLE(:),"Pa/s",XLES_RESOLVED_UP,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_VPZ ",YSUBTITLE(:), &
+     "Resolved <vp> horizontal Flux"//YSUBTITLE(:),"Pa/s",XLES_RESOLVED_VP,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_WPZ ",YSUBTITLE(:), &
+     "Resolved <wp> vertical Flux"//YSUBTITLE(:),"Pa/s",XLES_RESOLVED_WP,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO_MASKS("RES_THTV ",YSUBTITLE(:), &
+     "Resolved potential temperature - virtual potential temperature covariance"//YSUBTITLE(:), &
+     "K2",XLES_RESOLVED_ThThv,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_MASKS("RES_TLTV ",YSUBTITLE(:), &
+     "Resolved liquid potential temperature - virtual potential temperature covariance"//YSUBTITLE(:), &
+     "K2",XLES_RESOLVED_ThlThv,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_TH2 ",YSUBTITLE(:), &
+     "Resolved potential temperature variance"//YSUBTITLE(:),"K2",XLES_RESOLVED_Th2,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_MASKS("RES_THL2",YSUBTITLE(:), &
+     "Resolved liquid potential temperature variance"//YSUBTITLE(:),"K2",XLES_RESOLVED_Thl2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_UTH ",YSUBTITLE(:), &
+     "Resolved <uth> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_UTh,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_VTH ",YSUBTITLE(:), &
+     "Resolved <vth> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_VTh,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_WTH ",YSUBTITLE(:), &
+     "Resolved <wth> vertical Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_WTh,HLES_AVG)
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO_MASKS("RES_UTHL",YSUBTITLE(:), &
+       "Resolved <uthl> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_UThl,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_VTHL",YSUBTITLE(:), &
+       "Resolved <vthl> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_VThl,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WTHL",YSUBTITLE(:), &
+       "Resolved <wthl> vertical Flux "//YSUBTITLE(:),"mK/s",XLES_RESOLVED_WThl,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_RT2 ",YSUBTITLE(:), &
+     "Resolved total water variance"//YSUBTITLE(:),"kg2/kg2",XLES_RESOLVED_Rt2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WRT ",YSUBTITLE(:), &
+       "Resolved <wrt> vertical Flux "//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WRt,HLES_AVG)
+  END IF
+
+  IF (LUSERV) THEN
+
+    CALL LES_DIACHRO_MASKS("RES_UTHV",YSUBTITLE(:), &
+       "Resolved <uthv> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_UThv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_VTHV",YSUBTITLE(:), &
+       "Resolved <vthl> horizontal Flux"//YSUBTITLE(:),"mK/s",XLES_RESOLVED_VThv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WTHV",YSUBTITLE(:), &
+       "Resolved <wthv> vertical Flux "//YSUBTITLE(:),"mK/s",XLES_RESOLVED_WThv,HLES_AVG)
+  END IF
+!
+  IF (LUSERV) THEN
+    CALL LES_DIACHRO_MASKS("RES_RV2 ",YSUBTITLE(:), &
+       "Resolved water vapor variance"//YSUBTITLE(:),"kg2/kg2",XLES_RESOLVED_Rv2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_THRV",YSUBTITLE(:), &
+       "Resolved <thrv> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThRv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO_MASKS("RES_TLRV",YSUBTITLE(:), &
+       "Resolved <thlrv> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThlRv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_TVRV",YSUBTITLE(:), &
+       "Resolved <thvrv> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThvRv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_URV ", YSUBTITLE(:), &
+       "Resolved <urv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_URv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_VRV ", YSUBTITLE(:), &
+       "Resolved <vrv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_VRv,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WRV ", YSUBTITLE(:), &
+       "Resolved <wrv> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WRv,HLES_AVG)
+  END IF
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO_MASKS("RES_RC2 ", YSUBTITLE(:), &
+       "Resolved cloud water variance"//YSUBTITLE(:),"kg2/kg2",XLES_RESOLVED_Rc2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_THRC", YSUBTITLE(:), &
+       "Resolved <thrc> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_TLRC", YSUBTITLE(:), &
+       "Resolved <thlrc> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThlRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_TVRC", YSUBTITLE(:), &
+       "Resolved <thvrc> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThvRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_URC ", YSUBTITLE(:), &
+       "Resolved <urc> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_URc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_VRC ", YSUBTITLE(:), &
+       "Resolved <vrc> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_VRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WRC ", YSUBTITLE(:), &
+       "Resolved <wrc> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WRc,HLES_AVG)
+  END IF
+
+  IF (LUSERI) THEN
+    CALL LES_DIACHRO_MASKS("RES_RI2 ", YSUBTITLE(:), &
+       "Resolved cloud ice variance"//YSUBTITLE(:),"kg2/kg2",XLES_RESOLVED_Ri2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_THRI", YSUBTITLE(:), &
+       "Resolved <thri> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThRi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_TLRI", YSUBTITLE(:), &
+       "Resolved <thlri> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThlRi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_TVRI", YSUBTITLE(:), &
+       "Resolved <thvri> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThvRi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_URI ", YSUBTITLE(:), &
+       "Resolved <uri> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_URi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_VRI ", YSUBTITLE(:), &
+       "Resolved <vri> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_VRi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_WRI ", YSUBTITLE(:), &
+       "Resolved <wri> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WRi,HLES_AVG)
+  END IF
+
+  IF (LUSERR) THEN
+    CALL LES_DIACHRO_MASKS("RES_WRR ", YSUBTITLE(:), &
+       "Resolved <wrr> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WRr,HLES_AVG)
+    
+    CALL LES_DIACHRO_MASKS("INPRR3D ", YSUBTITLE(:), &
+       "Precipitation flux"//YSUBTITLE(:),"m/s",XLES_INPRR3D,HLES_AVG)   
+        
+    CALL LES_DIACHRO_MASKS("MAXINPR3D ", YSUBTITLE(:), &
+       "Max Precip flux"//YSUBTITLE(:),"m/s",XLES_MAX_INPRR3D,HLES_AVG)   
+        
+    CALL LES_DIACHRO_MASKS("EVAP3D ", YSUBTITLE(:), &
+       "Evaporation profile"//YSUBTITLE(:),"kg/kg/s",XLES_EVAP3D,HLES_AVG)
+  ENDIF
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV_MASKS("RES_SV2 ", YSUBTITLE(:), &
+       "Resolved scalar variables variances"//YSUBTITLE(:),"kg2/kg2",XLES_RESOLVED_Sv2,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RES_THSV", YSUBTITLE(:), &
+       "Resolved <ThSv> variance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThSv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO_SV_MASKS("RES_TLSV", YSUBTITLE(:), &
+       "Resolved <ThlSv> variance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThlSv,HLES_AVG)
+
+    IF (LUSERV) &
+    CALL LES_DIACHRO_SV_MASKS("RES_TVSV", YSUBTITLE(:), &
+       "Resolved <ThvSv> variance"//YSUBTITLE(:),"Kkg/kg",XLES_RESOLVED_ThvSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RES_USV ", YSUBTITLE(:), &
+       "Resolved <uSv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_USv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RES_VSV ", YSUBTITLE(:), &
+       "Resolved <vSv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_VSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RES_WSV ", YSUBTITLE(:), &
+       "Resolved <wSv> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_RESOLVED_WSv,HLES_AVG)
+  END IF
+
+  CALL LES_DIACHRO_MASKS("RES_U3  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_U3,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_V3  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_V3,HLES_AVG)
+    
+  CALL LES_DIACHRO_MASKS("RES_W3  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_W3,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_U4  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m4/s4",XLES_RESOLVED_U4,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_V4  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m4/s4",XLES_RESOLVED_V4,HLES_AVG)
+    
+  CALL LES_DIACHRO_MASKS("RES_W4  ",YSUBTITLE(:),  &
+       "Resolved <w3>"//YSUBTITLE(:),"m4/s4",XLES_RESOLVED_W4,HLES_AVG)
+
+
+  CALL LES_DIACHRO_MASKS("RES_WTL2",YSUBTITLE(:),  &
+       "Resolved <wThl2>"//YSUBTITLE(:),"mK2/s",XLES_RESOLVED_WThl2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_W2TL",YSUBTITLE(:),  &
+       "Resolved <w2Thl>"//YSUBTITLE(:),"m2K/s2",XLES_RESOLVED_W2Thl,HLES_AVG)
+
+  IF (LUSERV) THEN
+    CALL LES_DIACHRO_MASKS("RES_WRV2",YSUBTITLE(:),  &
+         "Resolved <wRv2>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRv2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_W2RV",YSUBTITLE(:),  &
+         "Resolved <w2Rv>"//YSUBTITLE(:),"m2kg/kg/s2",XLES_RESOLVED_W2Rv,HLES_AVG)
+     
+    CALL LES_DIACHRO_MASKS("RES_WRT2",YSUBTITLE(:),  &
+         "Resolved <wRt2>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRt2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_W2RT",YSUBTITLE(:),  &
+         "Resolved <w2Rt>"//YSUBTITLE(:),"m2kg/kg/s2",XLES_RESOLVED_W2Rt,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RE_WTLRV",YSUBTITLE(:),  &
+         "Resolved <wThlRv>"//YSUBTITLE(:),"mKkg/kg/s",XLES_RESOLVED_WThlRv,HLES_AVG)
+   
+    CALL LES_DIACHRO_MASKS("RE_WTLRT",YSUBTITLE(:),  &
+         "Resolved <wThlRt>"//YSUBTITLE(:),"mKkg/kg/s",XLES_RESOLVED_WThlRt,HLES_AVG)  
+  END IF
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO_MASKS("RES_WRC2",YSUBTITLE(:),  &
+         "Resolved <wRc2>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRc2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_W2RC",YSUBTITLE(:),  &
+         "Resolved <w2Rc>"//YSUBTITLE(:),"m2kg/kg/s2",XLES_RESOLVED_W2Rc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RE_WTLRC",YSUBTITLE(:),  &
+         "Resolved <wThlRc>"//YSUBTITLE(:),"mKkg/kg/s",XLES_RESOLVED_WThlRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RE_WRVRC",YSUBTITLE(:),  &
+         "Resolved <wRvRc>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRvRc,HLES_AVG)
+  END IF
+
+  IF (LUSERI) THEN
+    CALL LES_DIACHRO_MASKS("RES_WRI2",YSUBTITLE(:),  &
+         "Resolved <wRi2>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRi2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RES_W2RI",YSUBTITLE(:),  &
+         "Resolved <w2Ri>"//YSUBTITLE(:),"m2kg/kg/s2",XLES_RESOLVED_W2Ri,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RE_WTLRI",YSUBTITLE(:),  &
+         "Resolved <wThlRi>"//YSUBTITLE(:),"mKkg/kg/s",XLES_RESOLVED_WThlRi,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("RE_WRVRI",YSUBTITLE(:),  &
+         "Resolved <wRvRi>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRvRi,HLES_AVG)
+  END IF
+
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV_MASKS("RES_WSV2",YSUBTITLE(:),  &
+         "Resolved <wSv2>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WSv2,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RES_W2SV",YSUBTITLE(:),  &
+         "Resolved <w2Sv>"//YSUBTITLE(:),"m2kg/kg/s2",XLES_RESOLVED_W2Sv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RE_WTLSV",YSUBTITLE(:),  &
+         "Resolved <wThlSv>"//YSUBTITLE(:),"mKkg/kg/s",XLES_RESOLVED_WThlSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("RE_WRVSV",YSUBTITLE(:),  &
+         "Resolved <wRvSv>"//YSUBTITLE(:),"mkg2/kg2/s",XLES_RESOLVED_WRvSv,HLES_AVG)
+  END IF
+
+  CALL LES_DIACHRO_MASKS("RES_TLPZ",YSUBTITLE(:),  &
+       "Resolved <Thldp/dz>"//YSUBTITLE(:),"KPa/m",XLES_RESOLVED_ThlPz,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO_MASKS("RES_RVPZ",YSUBTITLE(:),  &
+       "Resolved <Rvdp/dz>"//YSUBTITLE(:),"kg2/kg2Pa/m",XLES_RESOLVED_RvPz,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_MASKS("RES_RCPZ",YSUBTITLE(:),  &
+       "Resolved <Rcdp/dz>"//YSUBTITLE(:),"kg2/kg2Pa/m",XLES_RESOLVED_RcPz,HLES_AVG)
+
+  IF (LUSERI) &
+  CALL LES_DIACHRO_MASKS("RES_RIPZ",YSUBTITLE(:),  &
+       "Resolved <Ridp/dz>"//YSUBTITLE(:),"kg2/kg2Pa/m",XLES_RESOLVED_RiPz,HLES_AVG)
+
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV_MASKS("RES_SVPZ",YSUBTITLE(:),  &
+         "Resolved <Svdp/dz>"//YSUBTITLE(:),"kg2/kg2Pa/m",XLES_RESOLVED_SvPz,HLES_AVG)
+  END IF
+
+  CALL LES_DIACHRO_MASKS("RES_UKE ", YSUBTITLE(:), &
+       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_UKe,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_VKE ", YSUBTITLE(:), &
+       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_VKe,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("RES_WKE ", YSUBTITLE(:), &
+       "Resolved flux of resolved kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_RESOLVED_WKe,HLES_AVG)
+
+END IF
+!
+!
+!*      2.3  subgrid quantities
+!            ------------------
+!
+IF (LLES_SUBGRID) THEN
+
+  CALL LES_DIACHRO_MASKS("SBG_TKE ",YSUBTITLE(:), &
+       "Subgrid TKE"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_Tke,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_U2  ", YSUBTITLE(:), &
+       "Subgrid <u2> variance"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_U2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_V2  ", YSUBTITLE(:), &
+       "Subgrid <v2> variance"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_V2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_W2  ", YSUBTITLE(:), &
+       "Subgrid <w2> variance"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_W2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_UV  ", YSUBTITLE(:), &
+       "Subgrid <uv> flux"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_UV,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_WU  ", YSUBTITLE(:), &
+       "Subgrid <wu> flux"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_WU,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_WV  ", YSUBTITLE(:), &
+       "Subgrid <wv> flux"//YSUBTITLE(:),"m2/s2",XLES_SUBGRID_WV,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_THL2", YSUBTITLE(:), &
+       "Subgrid liquid potential temperature variance"//YSUBTITLE(:),"K2",XLES_SUBGRID_Thl2,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_UTHL", YSUBTITLE(:), &
+       "Subgrid hor. flux of liquid potential temperature"//YSUBTITLE(:),"mK/s",XLES_SUBGRID_UThl,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_VTHL", YSUBTITLE(:), &
+       "Subgrid hor. flux of liquid potential temperature"//YSUBTITLE(:),"mK/s",XLES_SUBGRID_VThl,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_WTHL", YSUBTITLE(:), &
+       "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"mK/s",XLES_SUBGRID_WThl,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_WP  ",YSUBTITLE(:), &
+     "Subgrid <wp> vertical Flux"//YSUBTITLE(:),"mPa/s",XLES_SUBGRID_WP,HLES_AVG)
+!!
+!!
+  CALL LES_DIACHRO_MASKS("THLUP_MF",YSUBTITLE(:), &
+     "Subgrid <thl> of updraft"//YSUBTITLE(:),"K",XLES_SUBGRID_THLUP_MF,HLES_AVG)
+!     
+  CALL LES_DIACHRO_MASKS("RTUP_MF ",YSUBTITLE(:), &
+     "Subgrid <rt> of updraft"//YSUBTITLE(:),"kg/kg",XLES_SUBGRID_RTUP_MF,HLES_AVG)
+!     
+  CALL LES_DIACHRO_MASKS("RVUP_MF ",YSUBTITLE(:), &
+     "Subgrid <rv> of updraft"//YSUBTITLE(:),"kg/kg",XLES_SUBGRID_RVUP_MF,HLES_AVG)
+!     
+  CALL LES_DIACHRO_MASKS("RCUP_MF ",YSUBTITLE(:), &
+     "Subgrid <rc> of updraft"//YSUBTITLE(:),"kg/kg",XLES_SUBGRID_RCUP_MF,HLES_AVG) 
+!     
+  CALL LES_DIACHRO_MASKS("RIUP_MF ",YSUBTITLE(:), &
+     "Subgrid <ri> of updraft"//YSUBTITLE(:),"kg/kg",XLES_SUBGRID_RIUP_MF,HLES_AVG) 
+!     
+  CALL LES_DIACHRO_MASKS("WUP_MF  ",YSUBTITLE(:), &
+     "Subgrid <w> of updraft"//YSUBTITLE(:),"m/s",XLES_SUBGRID_WUP_MF,HLES_AVG)  
+!     
+  CALL LES_DIACHRO_MASKS("MAFLX_MF",YSUBTITLE(:), &
+     "Subgrid <MF> of updraft"//YSUBTITLE(:),"kg/m2/s",XLES_SUBGRID_MASSFLUX,HLES_AVG) 
+!     
+  CALL LES_DIACHRO_MASKS("DETR_MF ",YSUBTITLE(:), &
+     "Subgrid <detr> of updraft"//YSUBTITLE(:),"kg/m3/s",XLES_SUBGRID_DETR,HLES_AVG) 
+!     
+  CALL LES_DIACHRO_MASKS("ENTR_MF ",YSUBTITLE(:), &
+     "Subgrid <entr> of updraft"//YSUBTITLE(:),"kg/m3/s",XLES_SUBGRID_ENTR,HLES_AVG)  
+!     
+  CALL LES_DIACHRO_MASKS("FRCUP_MF",YSUBTITLE(:), &
+     "Subgrid <FracUp> of updraft"//YSUBTITLE(:),"-",XLES_SUBGRID_FRACUP,HLES_AVG)   
+!     
+  CALL LES_DIACHRO_MASKS("THVUP_MF",YSUBTITLE(:), &
+     "Subgrid <thv> of updraft"//YSUBTITLE(:),"K",&
+                                XLES_SUBGRID_THVUP_MF,HLES_AVG) 
+!     
+  CALL LES_DIACHRO_MASKS("WTHL_MF ",YSUBTITLE(:), &
+     "Subgrid <wthl> of mass flux convection scheme"//YSUBTITLE(:),"mk/s",&
+                                XLES_SUBGRID_WTHLMF,HLES_AVG)  
+!     
+  CALL LES_DIACHRO_MASKS("WRT_MF  ",YSUBTITLE(:), &
+     "Subgrid <wrt> of mass flux convection scheme"//YSUBTITLE(:),"mkg/kg/s",&
+                                XLES_SUBGRID_WRTMF,HLES_AVG)   
+!     
+  CALL LES_DIACHRO_MASKS("WTHV_MF ",YSUBTITLE(:), &
+     "Subgrid <wthv> of mass flux convection scheme"//YSUBTITLE(:),"mK/s",&
+                                XLES_SUBGRID_WTHVMF,HLES_AVG)  
+!     
+  CALL LES_DIACHRO_MASKS("WU_MF   ",YSUBTITLE(:), &
+     "Subgrid <wu> of mass flux convection scheme"//YSUBTITLE(:),"m2/s2",&
+                                XLES_SUBGRID_WUMF,HLES_AVG)   
+!     
+  CALL LES_DIACHRO_MASKS("WV_MF   ",YSUBTITLE(:), &
+     "Subgrid <wv> of mass flux convection scheme"//YSUBTITLE(:),"m2/s2",&
+                                XLES_SUBGRID_WVMF,HLES_AVG)   
+!!     
+
+  CALL LES_DIACHRO_MASKS("SBG_PHI3",YSUBTITLE(:), &
+     "Subgrid Phi3 function"//YSUBTITLE(:),"-",XLES_SUBGRID_PHI3,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_LMIX",YSUBTITLE(:), &
+     "Subgrid Mixing Length"//YSUBTITLE(:),"-",XLES_SUBGRID_LMix,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_LDIS",YSUBTITLE(:), &
+     "Subgrid Dissipation Length"//YSUBTITLE(:),"-",XLES_SUBGRID_LDiss,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_KM  ",YSUBTITLE(:), &
+     "Eddy diffusivity for momentum"//YSUBTITLE(:),"m2/s",XLES_SUBGRID_Km,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_KH  ",YSUBTITLE(:), &
+     "Eddy diffusivity for heat"//YSUBTITLE(:),"m2/s",XLES_SUBGRID_Kh,HLES_AVG)
+!
+  IF (LUSERV) THEN
+     CALL LES_DIACHRO_MASKS("SBG_WTHV", YSUBTITLE(:), &
+       "Subgrid vert. flux of liquid potential temperature"//YSUBTITLE(:),"mK/s",XLES_SUBGRID_WThv,HLES_AVG)
+    CALL LES_DIACHRO_MASKS("SBG_RT2 ", YSUBTITLE(:), &
+       "Subgrid total water variance"//YSUBTITLE(:),"kg2/kg2",XLES_SUBGRID_Rt2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_TLRT", YSUBTITLE(:), &
+       "Subgrid <thlrt> covariance"//YSUBTITLE(:),"Kkg/kg",XLES_SUBGRID_ThlRt,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_URT ", YSUBTITLE(:), &
+       "Subgrid total water horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_URt,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_VRT ", YSUBTITLE(:), &
+       "Subgrid total water horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_VRt,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_WRT ", YSUBTITLE(:), &
+       "Subgrid total water vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_WRt,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_PSI3",YSUBTITLE(:), &
+       "Subgrid Psi3 function"//YSUBTITLE(:),"-",XLES_SUBGRID_PSI3,HLES_AVG)  
+  END IF
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO_MASKS("SBG_RC2 ", YSUBTITLE(:), &
+       "Subgrid cloud water variance"//YSUBTITLE(:),"kg2/kg2",XLES_SUBGRID_Rc2,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_URC ", YSUBTITLE(:), &
+       "Subgrid cloud water horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_URc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_VRC ", YSUBTITLE(:), &
+       "Subgrid cloud water horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_VRc,HLES_AVG)
+
+    CALL LES_DIACHRO_MASKS("SBG_WRC ", YSUBTITLE(:), &
+       "Subgrid cloud water vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_WRc,HLES_AVG)
+  END IF
+
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV_MASKS("SBG_USV ", YSUBTITLE(:), &
+       "Subgrid <uSv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_USv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("SBG_VSV ", YSUBTITLE(:), &
+       "Subgrid <vSv> horizontal flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_VSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV_MASKS("SBG_WSV ", YSUBTITLE(:), &
+       "Subgrid <wSv> vertical flux"//YSUBTITLE(:),"mkg/kg/s",XLES_SUBGRID_WSv,HLES_AVG)
+  END IF
+
+  CALL LES_DIACHRO_MASKS("SBG_UTKE", YSUBTITLE(:), &
+     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_SUBGRID_UTke,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_VTKE", YSUBTITLE(:), &
+     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_SUBGRID_VTke,HLES_AVG)
+
+  CALL LES_DIACHRO_MASKS("SBG_WTKE",YSUBTITLE(:),  &
+     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m3/s3",XLES_SUBGRID_WTke,HLES_AVG)
+!
+  CALL LES_DIACHRO_MASKS("SBG_W2TL",YSUBTITLE(:),  &
+     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"m2K/s2",XLES_SUBGRID_W2Thl,HLES_AVG)
+!
+  CALL LES_DIACHRO_MASKS("SBG_WTL2",YSUBTITLE(:),  &
+     "Subgrid flux of subgrid kinetic energy"//YSUBTITLE(:),"mK2/s",XLES_SUBGRID_WThl2,HLES_AVG)
+!
+END IF
+!
+!*      2.4  Updraft quantities
+!            ------------------
+!
+IF (LLES_UPDRAFT) THEN
+  CALL LES_DIACHRO("UP_FRAC ",  &
+       "Updraft fraction","-",XLES_UPDRAFT,HLES_AVG)
+
+  CALL LES_DIACHRO("UP_W    ",  &
+       "Updraft W mean value","m/s",XLES_UPDRAFT_W,HLES_AVG)
+
+  CALL LES_DIACHRO("UP_TH   ",  &
+       "Updraft potential temperature mean value","K",XLES_UPDRAFT_Th,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("UP_THL  ",  &
+       "Updraft liquid potential temperature mean value","K",XLES_UPDRAFT_Thl,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("UP_THV  ",  &
+       "Updraft virutal potential temperature mean value","K",XLES_UPDRAFT_Thv,HLES_AVG)
+
+  CALL LES_DIACHRO("UP_KE   ",  &
+       "Updraft resolved TKE mean value","m2/s2",XLES_UPDRAFT_Ke,HLES_AVG)
+
+  CALL LES_DIACHRO("UP_TKE  ",  &
+       "Updraft subgrid TKE mean value","m2/s2",XLES_UPDRAFT_Tke,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("UP_RV   ",  &
+       "Updraft water vapor mean value","kg/kg",XLES_UPDRAFT_Rv,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("UP_RC   ",  &
+       "Updraft cloud water mean value","kg/kg",XLES_UPDRAFT_Rc,HLES_AVG)
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO("UP_RR   ",  &
+       "Updraft rain mean value","kg/kg",XLES_UPDRAFT_Rr,HLES_AVG)
+
+  IF (LUSERI) &
+  CALL LES_DIACHRO("UP_RI   ",  &
+       "Updraft ice mean value","kg/kg",XLES_UPDRAFT_Ri,HLES_AVG)
+
+  IF (LUSERS) &
+  CALL LES_DIACHRO("UP_RS   ",  &
+       "Updraft snow mean value","kg/kg",XLES_UPDRAFT_Rs,HLES_AVG)
+
+  IF (LUSERG) &
+  CALL LES_DIACHRO("UP_RG   ",  &
+       "Updraft graupel mean value","kg/kg",XLES_UPDRAFT_Rg,HLES_AVG)
+
+  IF (LUSERH) &
+  CALL LES_DIACHRO("UP_RH   ",  &
+       "Updraft hail mean value","kg/kg",XLES_UPDRAFT_Rh,HLES_AVG)
+
+  IF (NSV>0) &
+  CALL LES_DIACHRO_SV("UP_SV   ",  &
+       "Updraft scalar variables mean values","kg/kg",XLES_UPDRAFT_Sv,HLES_AVG)
+  !
+  CALL LES_DIACHRO("UP_TH2 ",  &
+       "Updraft resolved Theta variance ","K2",XLES_UPDRAFT_Th2,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("UP_THL2",  &
+       "Updraft resolved Theta_l variance ","K2",XLES_UPDRAFT_Thl2,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("UP_THTV",  &
+       "Updraft resolved Theta Theta_v covariance ","K2",XLES_UPDRAFT_ThThv,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("UP_TLTV",  &
+       "Updraft resolved Theta_l Theta_v covariance ","K2",XLES_UPDRAFT_ThlThv,HLES_AVG)
+
+  CALL LES_DIACHRO("UP_WTH  ",  &
+       "Updraft resolved WTh flux","mK/s",XLES_UPDRAFT_WTh,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("UP_WTHL ",  &
+       "Updraft resolved WThl flux","mK/s",XLES_UPDRAFT_WThl,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("UP_WTHV ",  &
+       "Updraft resolved WThv flux","mK/s",XLES_UPDRAFT_WThv,HLES_AVG)
+  !
+  IF (LUSERV) THEN
+    CALL LES_DIACHRO("UP_RV2  ",  &
+       "Updraft resolved water vapor variance","kg2/kg2",XLES_UPDRAFT_Rv2,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THRV ",  &
+       "Updraft resolved <thrv> covariance","Kkg/kg",XLES_UPDRAFT_ThRv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO("UP_THLRV",  &
+     "Updraft resolved <thlrv> covariance","Kkg/kg",XLES_UPDRAFT_ThlRv,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THVRV",  &
+       "Updraft resolved <thvrv> covariance","Kkg/kg",XLES_UPDRAFT_ThvRv,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_WRV  ",  &
+       "Updraft resolved <wrv> vertical flux","mkg/kg/s",XLES_UPDRAFT_WRv,HLES_AVG)
+  END IF
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO("UP_RC2  ",  &
+       "Updraft resolved cloud water variance","kg2/kg2",XLES_UPDRAFT_Rc2,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THRC ",  &
+       "Updraft resolved <thrc> covariance","Kkg/kg",XLES_UPDRAFT_ThRc,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THLRC", &
+       "Updraft resolved <thlrc> covariance","Kkg/kg",XLES_UPDRAFT_ThlRc,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THVRC", &
+       "Updraft resolved <thvrc> covariance","Kkg/kg",XLES_UPDRAFT_ThvRc,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_WRC  ",  &
+       "Updraft resolved <wrc> vertical flux","mkg/kg/s",XLES_UPDRAFT_WRc,HLES_AVG)
+  END IF
+
+  IF (LUSERI) THEN
+    CALL LES_DIACHRO("UP_RI2  ", &
+       "Updraft resolved cloud ice variance","kg2/kg2",XLES_UPDRAFT_Ri2,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THRI ",  &
+       "Updraft resolved <thri> covariance","Kkg/kg",XLES_UPDRAFT_ThRi,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THLRI",  &
+       "Updraft resolved <thlri> covariance","Kkg/kg",XLES_UPDRAFT_ThlRi,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_THVRI",  &
+       "Updraft resolved <thvri> covariance","Kkg/kg",XLES_UPDRAFT_ThvRi,HLES_AVG)
+
+    CALL LES_DIACHRO("UP_WRI  ",  &
+       "Updraft resolved <wri> vertical flux","mkg/kg/s",XLES_UPDRAFT_WRi,HLES_AVG)
+  END IF
+
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV("UP_SV2  ",  &
+       "Updraft resolved scalar variables variances","kg2/kg2",XLES_UPDRAFT_Sv2,HLES_AVG)
+
+    CALL LES_DIACHRO_SV("UP_THSV ", &
+       "Updraft resolved <ThSv> variance","Kkg/kg",XLES_UPDRAFT_ThSv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO_SV("UP_THLSV",  &
+       "Updraft resolved <ThlSv> variance","Kkg/kg",XLES_UPDRAFT_ThlSv,HLES_AVG)
+
+    IF (LUSERV) &
+    CALL LES_DIACHRO_SV("UP_THVSV",  &
+       "Updraft resolved <ThvSv> variance","Kkg/kg",XLES_UPDRAFT_ThvSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV("UP_WSV  ",  &
+       "Updraft resolved <wSv> vertical flux","mkg/kg/s",XLES_UPDRAFT_WSv,HLES_AVG)
+  END IF
+END IF
+!                
+!
+!*      2.5  Downdraft quantities
+!            --------------------
+!
+IF (LLES_DOWNDRAFT) THEN
+   CALL LES_DIACHRO("DW_FRAC ",  &
+       "Downdraft fraction","-",XLES_DOWNDRAFT,HLES_AVG)
+
+  CALL LES_DIACHRO("DW_W    ", &
+       "Downdraft W mean value","m/s",XLES_DOWNDRAFT_W,HLES_AVG)
+
+  CALL LES_DIACHRO("DW_TH   ",  &
+       "Downdraft potential temperature mean value","K",XLES_DOWNDRAFT_Th,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("DW_THL  ", &
+       "Downdraft liquid potential temperature mean value","K",XLES_DOWNDRAFT_Thl,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("DW_THV  ",  &
+       "Downdraft virtual potential temperature mean value","K",XLES_DOWNDRAFT_Thv,HLES_AVG)
+
+
+  CALL LES_DIACHRO("DW_KE   ", &
+       "Downdraft resolved TKE mean value","m2/s2",XLES_DOWNDRAFT_Ke,HLES_AVG)
+
+  CALL LES_DIACHRO("DW_TKE  ",  &
+       "Downdraft subgrid TKE mean value","m2/s2",XLES_DOWNDRAFT_Tke,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("DW_RV   ",  &
+       "Downdraft water vapor mean value","kg/kg",XLES_DOWNDRAFT_Rv,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("DW_RC   ",  &
+       "Downdraft cloud water mean value","kg/kg",XLES_DOWNDRAFT_Rc,HLES_AVG)
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO("DW_RR   ",  &
+       "Downdraft rain mean value","kg/kg",XLES_DOWNDRAFT_Rr,HLES_AVG)
+
+  IF (LUSERI) &
+  CALL LES_DIACHRO("DW_RI   ",  &
+       "Downdraft ice mean value","kg/kg",XLES_DOWNDRAFT_Ri,HLES_AVG)
+
+  IF (LUSERS) &
+  CALL LES_DIACHRO("DW_RS   ",  &
+       "Downdraft snow mean value","kg/kg",XLES_DOWNDRAFT_Rs,HLES_AVG)
+
+  IF (LUSERG) &
+  CALL LES_DIACHRO("DW_RG   ",  &
+       "Downdraft graupel mean value","kg/kg",XLES_DOWNDRAFT_Rg,HLES_AVG)
+
+  IF (LUSERH) &
+  CALL LES_DIACHRO("DW_RH   ",  &
+       "Downdraft hail mean value","kg/kg",XLES_DOWNDRAFT_Rh,HLES_AVG)
+
+  IF (NSV>0) &
+  CALL LES_DIACHRO_SV("DW_SV   ", &
+       "Downdraft scalar variables mean values","kg/kg",XLES_DOWNDRAFT_Sv,HLES_AVG)
+  !
+  CALL LES_DIACHRO("DW_TH2 ",  &
+       "Downdraft resolved Theta variance ","K2",XLES_DOWNDRAFT_Th2,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("DW_THL2",  &
+       "Downdraft resolved Theta_l variance ","K2",XLES_DOWNDRAFT_Thl2,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("DW_THTV ",  &
+       "Downdraft resolved Theta Theta_v covariance ","K2",XLES_DOWNDRAFT_ThThv,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("DW_TLTV ",  &
+       "Downdraft resolved Theta_l Theta_v covariance ","K2",XLES_DOWNDRAFT_ThlThv,HLES_AVG)
+
+  CALL LES_DIACHRO("DW_WTH  ",  &
+       "Downdraft resolved WTh flux","mK/s",XLES_DOWNDRAFT_WTh,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO("DW_WTHL ",  &
+       "Downdraft resolved WThl flux","mK/s",XLES_DOWNDRAFT_WThl,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO("DW_WTHV ",  &
+       "Downdraft resolved WThv flux","mK/s",XLES_DOWNDRAFT_WThv,HLES_AVG)
+  !
+  IF (LUSERV) THEN
+    CALL LES_DIACHRO("DW_RV2  ",  &
+       "Downdraft resolved water vapor variance","kg2/kg2",XLES_DOWNDRAFT_Rv2,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THRV ",  &
+       "Downdraft resolved <thrv> covariance","Kkg/kg",XLES_DOWNDRAFT_ThRv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO("DW_THLRV",  &
+       "Downdraft resolved <thlrv> covariance","Kkg/kg",XLES_DOWNDRAFT_ThlRv,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THVRV",  &
+       "Downdraft resolved <thvrv> covariance","Kkg/kg",XLES_DOWNDRAFT_ThvRv,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_WRV  ",  &
+       "Downdraft resolved <wrv> vertical flux","mkg/kg/s",XLES_DOWNDRAFT_WRv,HLES_AVG)
+  END IF
+
+  IF (LUSERC) THEN
+    CALL LES_DIACHRO("DW_RC2  ",  &
+       "Downdraft resolved cloud water variance","kg2/kg2",XLES_DOWNDRAFT_Rc2,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THRC ",  &
+       "Downdraft resolved <thrc> covariance","Kkg/kg",XLES_DOWNDRAFT_ThRc,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THLRC",  &
+       "Downdraft resolved <thlrc> covariance","Kkg/kg",XLES_DOWNDRAFT_ThlRc,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THVRC",  &
+       "Downdraft resolved <thvrc> covariance","Kkg/kg",XLES_DOWNDRAFT_ThvRc,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_WRC  ",  &
+       "Downdraft resolved <wrc> vertical flux","mkg/kg/s",XLES_DOWNDRAFT_WRc,HLES_AVG)
+  END IF
+
+  IF (LUSERI) THEN
+    CALL LES_DIACHRO("DW_RI2  ",  &
+       "Downdraft resolved cloud ice variance","kg2/kg2",XLES_DOWNDRAFT_Ri2,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THRI ",  &
+       "Downdraft resolved <thri> covariance","Kkg/kg",XLES_DOWNDRAFT_ThRi,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THLRI", &
+       "Downdraft resolved <thlri> covariance","Kkg/kg",XLES_DOWNDRAFT_ThlRi,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_THVRI",  &
+       "Downdraft resolved <thvri> covariance","Kkg/kg",XLES_DOWNDRAFT_ThvRi,HLES_AVG)
+
+    CALL LES_DIACHRO("DW_WRI  ", &
+       "Downdraft resolved <wri> vertical flux","mkg/kg/s",XLES_DOWNDRAFT_WRi,HLES_AVG)
+  END IF
+
+  IF (NSV>0) THEN
+    CALL LES_DIACHRO_SV("DW_SV2  ", &
+       "Downdraft resolved scalar variables variances","kg2/kg2",XLES_DOWNDRAFT_Sv2,HLES_AVG)
+
+   CALL LES_DIACHRO_SV("DW_THSV ",  &
+       "Downdraft resolved <ThSv> variance","Kkg/kg",XLES_DOWNDRAFT_ThSv,HLES_AVG)
+
+    IF (LUSERC) &
+    CALL LES_DIACHRO_SV("DW_THLSV",  &
+       "Downdraft resolved <ThlSv> variance","Kkg/kg",XLES_DOWNDRAFT_ThlSv,HLES_AVG)
+
+    IF (LUSERV) &
+    CALL LES_DIACHRO_SV("DW_THVSV",  &
+       "Downdraft resolved <ThvSv> variance","Kkg/kg",XLES_DOWNDRAFT_ThvSv,HLES_AVG)
+
+    CALL LES_DIACHRO_SV("DW_WSV  ", &
+       "Downdraft resolved <wSv> vertical flux","mkg/kg/s",XLES_DOWNDRAFT_WSv,HLES_AVG)
+  END IF
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*      3.   surface normalization parameters
+!            --------------------------------
+!
+IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
+
+  CALL LES_DIACHRO_SURF("Q0      ",  &
+     "Sensible heat flux at the surface","mK/s",XLES_Q0,HLES_AVG)
+
+  IF (LUSERV) &
+  CALL LES_DIACHRO_SURF("E0      ",  &
+     "Latent heat flux at the surface","kg/kgm/s",XLES_E0,HLES_AVG)
+     !writes  sw and lw flux and dthrad at all levels
+  CALL LES_DIACHRO("SWU      ",  &
+     "sw_up ","W/m2 ",XLES_SWU,HLES_AVG)
+
+  CALL LES_DIACHRO("SWD      ",  &
+     "sw_down ","W/m2 ",XLES_SWD,HLES_AVG)
+     
+  CALL LES_DIACHRO("LWU      ",  &
+     "lw_up ","W/m2 ",XLES_LWU,HLES_AVG)
+
+  CALL LES_DIACHRO("LWD      ",  &
+     "lw_down ","W/m2 ",XLES_LWD,HLES_AVG)
+
+  CALL LES_DIACHRO("DTHRADSW      ",  &
+     "dthrad_sw ","K/s ",XLES_DTHRADSW,HLES_AVG)
+
+  CALL LES_DIACHRO("DTHRADLW      ",  &
+     "dthrad_lw ","K/s ",XLES_DTHRADLW,HLES_AVG)
+!writes mean_effective radius at all levels
+  CALL LES_DIACHRO("RADEFF      ",  &
+     "mean effective radius ","microm ",XLES_RADEFF,HLES_AVG)
+
+  IF (NSV>0) &
+  CALL LES_DIACHRO_SURF_SV("SV0     ",  &
+     "Scalar variable fluxes at the surface","kg/kgm/s",XLES_SV0,HLES_AVG)
+
+  CALL LES_DIACHRO_SURF("U*      ",  &
+     "Friction velocity","m/s",XLES_USTAR,HLES_AVG)
+
+  CALL LES_DIACHRO_SURF("W*      ",  &
+     "Convective velocity","m/s",XLES_WSTAR,HLES_AVG)
+
+  CALL LES_DIACHRO_SURF("BL_H    ",  &
+     "Boundary Layer Height","m",XLES_BL_HEIGHT,HLES_AVG)
+
+  CALL LES_DIACHRO_SURF("L_MO    ",  &
+     "Monin-Obukhov length","m",XLES_MO_LENGTH,HLES_AVG)
+
+  CALL LES_DIACHRO_SURF("INT_TKE    ",  &
+     "Vertical integrated tke","m2.s-2",XLES_INT_TKE,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("ZCB    ",  &
+     "Cloud base Height","m",XLES_ZCB,HLES_AVG)   
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("ZCFTOT    ",  &
+     "Total Cloud cover"," ",XLES_CFtot,HLES_AVG)   
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("ZCF2TOT    ",  &
+     "Total Cloud cove 2r"," ",XLES_CF2tot,HLES_AVG)   
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("LWP    ",  &
+     "Liquid Water path","kg/m²",XLES_LWP,HLES_AVG)   
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("LWPVAR ",  &
+     "Liquid Water path variance","kg/m4",XLES_LWPVAR,HLES_AVG)   
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SURF("RWP    ",  &
+     "Rain Water path","kg/m2",XLES_RWP,HLES_AVG)   
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SURF("PREC_FRAC    ",  &
+  "Fract of col where rain at surface","",XLES_PRECFR,HLES_AVG)
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SURF("INST_PREC    ",  &
+     "Inst precip rate","mm/day",XLES_INPRR,HLES_AVG)
+
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SURF("RAIN_PREC    ",  &
+     "inst pr. rate over rainy grid cells","mm/day",XLES_RAIN_INPRR,HLES_AVG)   
+     
+  IF (LUSERR) &
+  CALL LES_DIACHRO_SURF("ACCU_PREC    ",  &
+     "Accu precip rate","mm/day",XLES_ACPRR,HLES_AVG)   
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("ZMAXCF    ",  &
+     "Height of Cloud fraction max","m",XLES_ZMAXCF,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("ZMAXCF2   ",  &
+     "Height of Cloud fraction2max","m",XLES_ZMAXCF2,HLES_AVG)
+
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*      4.   LES budgets
+!            -----------
+!
+CALL WRITE_LES_BUDGET_n(HLES_AVG)
+IF (LUSERV) CALL WRITE_LES_RT_BUDGET_n(HLES_AVG)
+IF (NSV>0)  CALL WRITE_LES_SV_BUDGET_n(HLES_AVG)
+!
+!-------------------------------------------------------------------------------
+!
+!*      5.   (ni,z,t) and (nj,z,t) 2points correlations
+!            ------------------------------------------
+!
+IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
+  IF (NSPECTRA_K>0) THEN
+    CALL LES_DIACHRO_2PT("UU   ","U*U     2 points correlations", &
+  "m2/s2",XCORRi_UU,    XCORRj_UU,HLES_AVG)
+    CALL LES_DIACHRO_2PT("VV   ","V*V     2 points correlations", &
+  "m2/s2",XCORRi_VV,    XCORRj_VV,HLES_AVG)
+    CALL LES_DIACHRO_2PT("WW   ","W*W     2 points correlations", &
+  "m2/s2",XCORRi_WW,    XCORRj_WW,HLES_AVG)
+    CALL LES_DIACHRO_2PT("UV   ","U*V     2 points correlations", &
+  "m2/s2",XCORRi_UV,    XCORRj_UV,HLES_AVG)
+    CALL LES_DIACHRO_2PT("WU   ","W*U     2 points correlations", &
+  "m2/s2",XCORRi_WU,    XCORRj_WU,HLES_AVG)
+    CALL LES_DIACHRO_2PT("WV   ","W*V     2 points correlations", &
+  "m2/s2",XCORRi_WV,    XCORRj_WV,HLES_AVG)
+    CALL LES_DIACHRO_2PT("THTH ","Th*Th   2 points correlations", &
+  "K2   ",XCORRi_ThTh,  XCORRj_ThTh,HLES_AVG)
+    IF (LUSERC) &
+    CALL LES_DIACHRO_2PT("TLTL ","Thl*Thl 2 points correlations", &
+  "K2   ",XCORRi_ThlThl,XCORRj_ThlThl,HLES_AVG)
+    CALL LES_DIACHRO_2PT("WTH  ","W*Th    2 points correlations", &
+  "mK/s ",XCORRi_WTh,   XCORRj_WTh,HLES_AVG)
+    IF (LUSERC) &
+    CALL LES_DIACHRO_2PT("WTHL ","W*Thl   2 points correlations", &
+  "mK/s ",XCORRi_WThl,  XCORRj_WThl,HLES_AVG)
+    !
+    IF (LUSERV) THEN
+      CALL LES_DIACHRO_2PT("RVRV ","rv*rv   2 points correlations", &
+  "kg2/kg2 ",XCORRi_RvRv,  XCORRj_RvRv,HLES_AVG)
+      CALL LES_DIACHRO_2PT("THRV ","th*rv   2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThRv,  XCORRj_ThRv,HLES_AVG)
+      IF (LUSERC) &
+      CALL LES_DIACHRO_2PT("TLRV ","thl*rv  2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThlRv, XCORRj_ThlRv,HLES_AVG)
+      CALL LES_DIACHRO_2PT("WRV  ","W*rv    2 points correlations", &
+  "mkg/s/kg",XCORRi_WRv,   XCORRj_WRv,HLES_AVG)
+    END IF
+    IF (LUSERC) THEN
+      CALL LES_DIACHRO_2PT("RCRC ","rc*rc   2 points correlations", &
+  "kg2/kg2 ",XCORRi_RcRc,  XCORRj_RcRc,HLES_AVG)
+      CALL LES_DIACHRO_2PT("THRC ","th*rc   2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThRc,  XCORRj_ThRc,HLES_AVG)
+      CALL LES_DIACHRO_2PT("TLRC ","thl*rc  2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThlRc, XCORRj_ThlRc,HLES_AVG)
+      CALL LES_DIACHRO_2PT("WRC  ","W*rc    2 points correlations", &
+  "mkg/s/kg",XCORRi_WRc,   XCORRj_WRc,HLES_AVG)
+    END IF
+    IF (LUSERI) THEN
+      CALL LES_DIACHRO_2PT("RCRC ","ri*ri   2 points correlations", &
+  "kg2/kg2 ",XCORRi_RiRi,  XCORRj_RiRi,HLES_AVG)
+      CALL LES_DIACHRO_2PT("THRC ","th*ri   2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThRi,  XCORRj_ThRi,HLES_AVG)
+      CALL LES_DIACHRO_2PT("TLRC ","thl*ri  2 points correlations", &
+  "Kkg/kg  ",XCORRi_ThlRi, XCORRj_ThlRi,HLES_AVG)
+      CALL LES_DIACHRO_2PT("WRC  ","W*ri    2 points correlations", &
+  "mkg/s/kg",XCORRi_WRi,   XCORRj_WRi,HLES_AVG)
+    END IF
+    DO JSV=1,NSV
+      WRITE (YGROUP,FMT="(A2,I3.3)") "SS",JSV
+      CALL LES_DIACHRO_2PT(YGROUP,"Sv*Sv   2 points correlations", &
+  "kg2/kg2 ",XCORRi_SvSv(:,:,:,JSV),  XCORRj_SvSv(:,:,:,JSV),HLES_AVG)
+    END DO
+    DO JSV=1,NSV
+      WRITE (YGROUP,FMT="(A2,I3.3)") "WS",JSV
+      CALL LES_DIACHRO_2PT(YGROUP,"W*Sv    2 points correlations", &
+ "mkg/s/kg",XCORRi_WSv(:,:,:,JSV),   XCORRj_WSv(:,:,:,JSV),HLES_AVG)
+    END DO
+  END IF
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*      6.   spectra and time-averaged profiles (if first call to WRITE_LES_n)
+!            ----------------------------------
+!
+IF (HLES_AVG==' ') CALL LES_SPEC_n
+!
+!-------------------------------------------------------------------------------
+!
+!*      7.   deallocations
+!            -------------
+!
+DEALLOCATE(XLES_CURRENT_TRAJT )
+DEALLOCATE(XLES_CURRENT_Z     )
+DEALLOCATE(XLES_CURRENT_DATIME)
+
+IF (CLES_NORM_TYPE/='NONE' ) THEN
+  DEALLOCATE(XLES_NORM_M  )
+  DEALLOCATE(XLES_NORM_S  )
+  DEALLOCATE(XLES_NORM_K  )
+  DEALLOCATE(XLES_NORM_RHO)
+  DEALLOCATE(XLES_NORM_RV )
+  DEALLOCATE(XLES_NORM_SV )
+  DEALLOCATE(XLES_NORM_P  )
+END IF
+!
+END SUBROUTINE WRITE_LES_n 

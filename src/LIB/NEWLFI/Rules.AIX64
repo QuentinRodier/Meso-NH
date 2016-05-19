@@ -1,0 +1,9 @@
+# F77FLAGS += -O3 -qsave
+# F90FLAGS += -O3 -qsave
+
+F77FLAGS += -O3
+F90FLAGS += -O3
+
+CPPFLAGS = -DRS6K
+#
+OBJS = NEWLFI_ALL.o

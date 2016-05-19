@@ -1,0 +1,4 @@
+F77FLAGS += -O2
+CPPFLAGS += -DO2000
+
+OBJS = NEWLFI_ALL.o poub.o

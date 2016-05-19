@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -sf ../002_mesonh/REL3D.1.EXP01.002.??? .
+rm -f REL3D.1.EXP01.002dg.???
+${POSTRUN} conv2dia < dir_conv2dia
+

@@ -1,0 +1,60 @@
+!     #########
+SUBROUTINE DEALLOC_NATURE_n
+!     ###############################################################################
+!
+!!****  *DEALLOC_NATURE_n * - Deallocate all arrays
+!!
+!!    PURPOSE
+!!    -------
+!
+!!**  METHOD
+!!    ------
+!!
+!!    REFERENCE
+!!    ---------
+!!      
+!!
+!!    AUTHOR
+!!    ------
+!!     V. Masson 
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004
+!!------------------------------------------------------------------
+!
+
+!
+USE MODD_SURF_ATM_n, ONLY : CNATURE
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODI_DEALLOC_IDEAL_FLUX
+!
+USE MODI_DEALLOC_ISBA_n
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+!
+!*      0.2    declarations of local variables
+!
+!-------------------------------------------------------------------------------------
+!
+
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
+IF (LHOOK) CALL DR_HOOK('DEALLOC_NATURE_N',0,ZHOOK_HANDLE)
+IF (CNATURE=='ISBA  ' .OR. CNATURE=='TSZ0  ') THEN
+  CALL DEALLOC_ISBA_n
+ELSE IF (CNATURE=='FLUX  ') THEN
+  CALL DEALLOC_IDEAL_FLUX
+END IF
+IF (LHOOK) CALL DR_HOOK('DEALLOC_NATURE_N',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------------
+!
+END SUBROUTINE DEALLOC_NATURE_n

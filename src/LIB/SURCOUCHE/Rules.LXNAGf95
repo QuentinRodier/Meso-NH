@@ -1,0 +1,6 @@
+F77FLAGS +=
+F90FLAGS += -O2 -r8
+CPPFLAGS = -DNAGf95 -DMNH_MPI_DOUBLE_PRECISION -DMNH_LINUX -DMNH_MPI_BSEND
+
+#include path for 'mpif.h'
+INC +=  -I../MPIvide

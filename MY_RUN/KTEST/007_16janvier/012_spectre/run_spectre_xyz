@@ -1,0 +1,7 @@
+set -x
+set -e
+ln -s ../008_run2/16JAN.1.12B18.001.lfi .
+ln -s ../008_run2/16JAN.1.12B18.001.des .
+time ${MPIRUN} SPECTRE${XYZ}  
+
+

@@ -1,0 +1,31 @@
+! directives de presentation
+LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015 LCOLAREA=T LISO=F               
+! gestion des vectuers
+NISKIP=4 XVRL=0.15                                                              
+! nom du fichier a ouvrir
+_file_'REUNI.1.00A20.004dg'                                                   
+! ouverture de la fenetre d affichage
+visu                                                                            
+! module du vent et vecteurs du niveau K=2
+MUMVM_K_2_ON_UMVM_K_2                                                           
+! temperature potentielle a 1500m
+THM_Z_1500                                                                      
+pression et vent en vecteurs a 1500m
+PABSM_Z_1500_ON_UMVM_Z_1500                                                     
+! definition d une coupe verticale
+NIDEBCOU=35 NJDEBCOU=2 NLANGLE=90 NLMAX=80                                      
+! trace de la coupe verticale dans le plan horizontal
+LTRACECV=T                                                                      
+! temperature potentielle
+THM_CV_                                                                         
+! plus de trace de la coupe verticale
+LTRACECV=F                                                                      
+! difference pour la temperature potentielle avec le champ initial
+THM_CV__MINUS_LSTHM_CV_
+! difference pour la composante du vent selon Y avec le champ initial
+VM_CV__MINUS_LSVM_CV_
+! difference pour la vitesse verticale avec le champ initial
+WM_CV__ON_ULMWM_CV_                                                             
+!
+! a vous d indiquer vos directives
+quit

@@ -1,0 +1,86 @@
+!#########################################################################
+SUBROUTINE LATLON_GRIDTYPE_GAUSS(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,PDIR)
+!#########################################################################
+!
+!!****  *LATLON_GRIDTYPE_GAUSS* - routine to get the horizontal geographic fields
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004 
+!!      F. Taillefer   11/2007  correct estimation of the grid meshes
+!
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODE_GRIDTYPE_GAUSS
+!
+USE MODD_CSTS, ONLY : XRADIUS, XPI
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+INTEGER,                    INTENT(IN)  :: KGRID_PAR  ! size of PGRID_PAR
+INTEGER,                    INTENT(IN)  :: KL         ! number of points
+REAL, DIMENSION(KGRID_PAR), INTENT(IN)  :: PGRID_PAR  ! parameters defining this grid
+REAL, DIMENSION(KL),        INTENT(OUT) :: PLAT       ! latitude  (degrees)
+REAL, DIMENSION(KL),        INTENT(OUT) :: PLON       ! longitude (degrees)
+REAL, DIMENSION(KL),        INTENT(OUT) :: PMESH_SIZE ! mesh size (m2)
+REAL, DIMENSION(KL),        INTENT(OUT) :: PDIR ! direction of main grid Y axis (deg. from N, clockwise)
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+!---------------------------------------------------------------------------
+!
+!*       1.    get grid component
+!              ------------------
+!
+IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_GAUSS',0,ZHOOK_HANDLE)
+ CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,PLAT=PLAT,PLON=PLON,PMESH_SIZE=PMESH_SIZE)
+!
+!-----------------------------------------------------------------------------
+!
+!*       2.    Direction of Y axis (from North) for each grid point (degrees)
+!              ----------------------------------------------------
+!
+!* the following formulae is given for clockwise angles.
+!
+!A COMPLETER
+!
+PDIR(:) = 0.
+IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_GAUSS',1,ZHOOK_HANDLE)
+!
+!WHERE (PDIR(:) <0.)    PDIR = PDIR + 360.
+!WHERE (PDIR(:) >=360.) PDIR = PDIR - 360.
+!
+!---------------------------------------------------------------------------
+!
+END SUBROUTINE LATLON_GRIDTYPE_GAUSS

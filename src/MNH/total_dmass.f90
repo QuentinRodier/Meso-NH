@@ -1,0 +1,130 @@
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! MASDEV4_7 prep_ideal 2006/07/17 13:23:16
+!-----------------------------------------------------------------
+!     #######################
+      MODULE MODI_TOTAL_DMASS
+!     #######################
+!
+INTERFACE
+!
+      SUBROUTINE TOTAL_DMASS(HLUOUT,PJ,PRHOD,PDRYMASS)
+!
+IMPLICIT NONE
+!
+CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
+                                                 !  of nested models                                       
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian             
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOD     ! dry density
+!
+REAL,                   INTENT(OUT) :: PDRYMASS ! Mass of dry air Md
+                                          !  contained in the simulation domai
+!
+END SUBROUTINE TOTAL_DMASS
+!
+END INTERFACE
+!
+END MODULE MODI_TOTAL_DMASS
+!
+!
+!
+!
+!     #########################################################################
+      SUBROUTINE TOTAL_DMASS(HLUOUT,PJ,PRHOD,PDRYMASS)
+!     #########################################################################
+!
+!!****  *TOTAL_DMASS* - routine to set reference state for anelastic approximation
+!!
+!!    PURPOSE
+!!    -------
+!       The purpose of this routine is to set the total mass of dry air Md
+!
+!!**  METHOD
+!!    ------
+!!      
+!!      The total mass of dry air Md is taken as the one corresponding
+!!    to the reference atmosphere.
+!!      This assumption is made for a simulation preparation of an ideal case.
+!!    For a real case, the total mass of dry air Md, can be supplied by the
+!!    LS coupling fields.
+!!      
+!!    EXTERNAL
+!!    --------   
+!!      none
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------ 
+!!      Module MODD_PARAMETERS : contains declaration of parameter variables
+!!       
+!!         JPHEXT   : Horizontal external points number
+!!         JPVEXT   : Vertical external points number
+!!
+!!      Module MODD_CONF   : contains configuration variables
+!!      
+!!       NVERB  : verbosity level
+!!
+!!    REFERENCE
+!!    ---------
+!!      Book2 of documentation (routine TOTAL_DMASS)
+!!      
+!!
+!!    AUTHOR
+!!    ------
+!!	J.P. Lafore     * Meteo France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original        06/02/95  
+!!      J.-P. Pinty     16/12/99  Parallelization
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------ 
+USE MODE_FM
+USE MODE_ll
+!  
+USE MODD_CONF,     ONLY : NVERB
+!
+IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
+                                                 !  of nested models                                       
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian             
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOD     ! dry density
+!
+REAL,                   INTENT(OUT) :: PDRYMASS ! Mass of dry air Md
+                                          !  contained in the simulation domain                        
+!
+!*       0.2   declarations of local variables
+!
+INTEGER             :: IRESP      ! File management variable
+INTEGER             :: ILUOUT     ! Unit number for prints
+!
+INTEGER             :: IINFO_ll   ! Return code of parallel routine
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.     COMPUTE THE TOTAL MASS OF DRY AIR   
+!	        ----------------------------------
+!
+PDRYMASS=SUM3D_ll(PJ(:,:,:)*PRHOD(:,:,:),IINFO_ll)
+!
+!-------------------------------------------------------------------------------
+!
+!*       3.    PRINT ON OUTPUT-LISTING
+!              -----------------------
+!
+IF(NVERB >= 5) THEN  
+!
+  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+!
+  WRITE(ILUOUT,*) 'TOTAL_DMASS:    M= ',PDRYMASS
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE TOTAL_DMASS

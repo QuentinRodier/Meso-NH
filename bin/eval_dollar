@@ -1,0 +1,6 @@
+#!/bin/ksh
+sh <<EOF_DOLLAR2
+cat <<EOF_DOLLAR1
+$(cat $1) 
+EOF_DOLLAR1
+EOF_DOLLAR2

@@ -1,0 +1,49 @@
+!     #########
+SUBROUTINE READ_NAMELISTS_SEAFLUX_n(HPROGRAM,HINIT)
+!     #######################################################
+!
+!---------------------------------------------------------------------------   
+!
+USE MODN_SEAFLUX_n
+!
+USE MODI_DEFAULT_SEAFLUX
+USE MODI_DEFAULT_CH_DEP
+USE MODI_DEFAULT_DIAG_SEAFLUX
+USE MODI_READ_DEFAULT_SEAFLUX_n
+USE MODI_READ_SEAFLUX_CONF_n
+!
+USE MODI_READ_NAM_PREP_SEAFLUX_n
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+ CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=3),   INTENT(IN)  :: HINIT     ! choice of fields to initialize
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!---------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_SEAFLUX_N',0,ZHOOK_HANDLE)
+ CALL DEFAULT_SEAFLUX(XTSTEP,XOUT_TSTEP,CSEA_ALB,CSEA_FLUX,LPWG,       &
+                        LPRECIP,LPWEBB,NGRVWAVES,LPROGSST,NTIME_COUPLING,&
+                        XICHCE,CINTERPOL_SST          )   
+!               
+ CALL DEFAULT_CH_DEP(CCH_DRY_DEP)
+!
+ CALL DEFAULT_DIAG_SEAFLUX(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,LCOEF,LSURF_VARS,&
+                          LDIAG_OCEAN,LSURF_BUDGETC,LRESET_BUDGETC,XDIAG_TSTEP     )  
+!
+ CALL READ_DEFAULT_SEAFLUX_n(HPROGRAM)
+!
+ CALL READ_SEAFLUX_CONF_n(HPROGRAM)
+!
+!---------------------------------------------------------------------------
+!
+IF (HINIT=='PRE') CALL READ_NAM_PREP_SEAFLUX_n(HPROGRAM)
+IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_SEAFLUX_N',1,ZHOOK_HANDLE)
+!
+!
+END SUBROUTINE READ_NAMELISTS_SEAFLUX_n

@@ -1,0 +1,1623 @@
+!     ######spl
+      MODULE MODI_READ_FIELD
+!     ######################
+!
+INTERFACE 
+!
+      SUBROUTINE READ_FIELD(HINIFILE,HLUOUT,KIU,KJU,KKU,PTSTEP_OLD,PTSTEP,   &
+            HGETTKEM,HGETRVM,HGETRCM,HGETRRM,HGETRIM,HGETRSM,                &
+            HGETRGM,HGETRHM,HGETSVM,HGETSRCM,                                &
+            HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
+            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
+            HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,                      &
+            KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
+            KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
+            KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
+            PUM,PVM,PWM,PTHM,PPABSM,PTKEM,PRM,PSVM,PSRCM,                    &
+            PUT,PVT,PWT,PTHT,PPABST,PTKET,PRT,PSVT,PCIT,PDRYMASST,           &
+            PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
+            PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
+            PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
+            PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
+            KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
+            PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
+            KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
+            KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
+            PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M )
+
+!
+USE MODD_TIME ! for type DATE_TIME
+!
+!
+CHARACTER (LEN=*),         INTENT(IN)  :: HINIFILE       
+                             ! name of the initial file
+CHARACTER (LEN=*),         INTENT(IN)  :: HLUOUT        
+                             ! name for output-listing of nested models
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+                             ! array sizes in x, y and z  directions
+REAL,                      INTENT(IN)  :: PTSTEP_OLD   
+                             ! OLD Time STEP (DESFM)
+REAL,                      INTENT(IN)  :: PTSTEP       
+                             ! current Time STEP   
+! 
+CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKEM,                          &
+                                          HGETRVM,HGETRCM,HGETRRM,           &
+                                          HGETRIM,HGETRSM,HGETRGM,HGETRHM,   &
+                                          HGETSRCM
+CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVM
+!
+CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
+                                          HGETRVT,HGETRCT,HGETRRT,           &
+                                          HGETRIT,HGETRST,HGETRGT,HGETRHT,   & 
+                                          HGETCIT,HGETSRCT,                  &
+                                          HGETSIGS,HGETCLDFR,HGETBL_DEPTH,   &
+                                          HGETSBL_DEPTH,HGETPHC,HGETPHR
+CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
+!
+! GET indicators to know wether a given  variable should or not be read in the
+! FM file at time t-deltat and t
+!
+! sizes of the West-east total LB area
+INTEGER, INTENT(IN) :: KSIZELBX_ll,KSIZELBXU_ll      ! for T,V,W and u 
+INTEGER, INTENT(IN) :: KSIZELBXTKE_ll                ! for TKE 
+INTEGER, INTENT(IN) :: KSIZELBXR_ll,KSIZELBXSV_ll    ! for Rx and SV    
+! sizes of the North-south total LB area
+INTEGER, INTENT(IN) :: KSIZELBY_ll,KSIZELBYV_ll      ! for T,U,W  and v
+INTEGER, INTENT(IN):: KSIZELBYTKE_ll                ! for TKE
+INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHM,PTKEM      ! theta, tke and
+                                                          ! eps at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-dt
+REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRM,PSVM        ! moist and scalar
+                                                          ! variables at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCM           ! turbulent flux
+                                                          !  <s'Rc'> at t-dt
+REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
+REAL, DIMENSION(:,:),      INTENT(OUT) :: PSBL_DEPTH      ! SBL depth
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PWTHVMF         ! MassFlux buoyancy flux
+!
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
+                                                          ! eps at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
+REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
+                                                          ! variables at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
+                                                          !  <s'Rc'> at t 
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
+REAL,                      INTENT(OUT) :: PDRYMASST       ! Md(t)
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
+                                                          ! Subgrid Condensation
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHC            ! pH value in cloud water  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHR            ! pH value in rainwater  
+! Larger Scale fields
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSUM,PLSVM,PLSWM    ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSTHM,  PLSRVM      ! Mass
+! LB fields
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXUM,PLBXVM,PLBXWM ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXTHM              ! Mass
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYUM,PLBYVM,PLBYWM ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYTHM              ! Mass
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXTKEM          ! TKE
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYTKEM
+REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBXRM  ,PLBXSVM  ! Moisture and SV
+REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRM  ,PLBYSVM  ! in x and y-dir.
+! Forcing fields
+INTEGER,              INTENT(IN)  :: KFRC              ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTFRC ! date of forcing profs.
+REAL, DIMENSION(:,:), INTENT(OUT) :: PUFRC,PVFRC,PWFRC ! forcing variables
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTHFRC,PRVFRC
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC
+REAL, DIMENSION(:),   INTENT(OUT) :: PPGROUNDFRC
+REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PATC
+INTEGER,              INTENT(IN)  :: KADVFRC              ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTADVFRC ! date of forcing profs.
+REAL, DIMENSION(:,:,:,:),   INTENT(OUT) :: PDTHFRC, PDRVFRC
+INTEGER,              INTENT(IN)  :: KRELFRC              ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTRELFRC ! date of forcing profs.
+REAL, DIMENSION(:,:,:,:),   INTENT(OUT) :: PTHREL, PRVREL
+REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M ! Eddy fluxes
+!
+!
+END SUBROUTINE READ_FIELD
+!
+END INTERFACE
+!
+END MODULE MODI_READ_FIELD
+!     ######spl
+      SUBROUTINE READ_FIELD(HINIFILE,HLUOUT,KIU,KJU,KKU,PTSTEP_OLD,PTSTEP,   &
+            HGETTKEM,HGETRVM,HGETRCM,HGETRRM,HGETRIM,HGETRSM,                &
+            HGETRGM,HGETRHM,HGETSVM,HGETSRCM,                                &
+            HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
+            HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
+            HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,                      &
+            KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
+            KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
+            KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
+             PUM,PVM,PWM,PTHM,PPABSM,PTKEM,PRM,PSVM,PSRCM,                   &
+            PUT,PVT,PWT,PTHT,PPABST,PTKET,PRT,PSVT,PCIT,PDRYMASST,           &
+            PSIGS,PSRCT,PCLDFR,PBL_DEPTH,PSBL_DEPTH,PWTHVMF,PPHC,PPHR,       &
+            PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                                 &
+            PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
+            PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
+            KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
+            PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
+            KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
+            KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
+            PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M )
+!     ########################################################################
+!
+!!****  *READ_FIELD* - routine to read prognostic and surface fields
+!!
+!!    PURPOSE
+!!    -------
+!       The purpose of this routine is to initialize  prognostic and 
+!     surface fields by reading their  value in initial file or by setting 
+!     them to a fixed value.
+!
+!!**  METHOD
+!!    ------
+!!      According to the get indicators, the prognostics fields are :
+!!          - initialized by reading their value in the LFIFM file 
+!!    if the corresponding indicators are equal to 'READ'  
+!!          - initialized to zero if the corresponding indicators 
+!!    are equal to 'INIT'
+!!          -  not initialized if their corresponding indicators 
+!!    are equal to 'SKIP'
+!!
+!!      In case of time step change, all fields at t-dt are (linearly)
+!!    interpolated to get a consistant initial state before the segment 
+!!    integration  
+!!
+!!    EXTERNAL
+!!    --------
+!!      FMREAD   : to read data in LFIFM file
+!!      INI_LS   : to initialize larger scale fields
+!!      INI_LB   : to initialize "2D" surfacic LB fields 
+!!       
+!!    IMPLICIT ARGUMENTS
+!!    ------------------ 
+!!      Module MODD_CONF   : NVERB,CCONF,CPROGRAM
+!!
+!!      Module MODD_CTURB :  XTKEMIN
+!!
+!!    REFERENCE
+!!    ---------
+!!      Book2 of the documentation (routine READ_FIELD)
+!!      
+!!
+!!    AUTHOR
+!!    ------
+!!  	V. Ducrocq       * Meteo France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original        15/06/94 
+!!      modification    22/11/94  add the pressure function (J.Stein)
+!!      modification    22/11/94  add the LS fields         (J.Stein)
+!!      modification    06/01/95  add Md(t)                 (J.P.Lafore)
+!!                      26/03/95  add EPS var               (J. Cuxart)
+!!                      30/06/95  add var related to the Subgrid condensation
+!!                                                                   (J.Stein)
+!!                      18/08/95  time step change case     (J.P.Lafore)
+!!                      01/03/96  add the cloud fraction    (J. Stein)
+!!     modification     13/12/95  add fmread of the forcing variables 
+!!                                                          (M.Georgelin)
+!!     modification     13/02/96  external control of the forcing (J.-P. Pinty)
+!!                      11/04/96  add the ice concentration (J.-P. Pinty)
+!!                      27/01/97  read ISVR 3D fields of SV (J.-P. Pinty)
+!!                      26/02/97  "surfacic" LS fieds  introduction (J.P.Lafore)
+!!          (V MASSON)  03/03/97  positivity control for time step change 
+!!                      10/04/97  proper treatment of minima for LS-fields (J.P.Lafore)
+!!           J. Stein   22/06/97  use the absolute pressure
+!!           J. Stein   22/10/97  cleaning + add the LB fields for u,v,w,theta,Rv
+!!          P. Bechtold 22/01/98  add SST and surface pressure forcing
+!!          V. Ducrocq  14/08/98  //,  remove KIINF,KJINF,KISUP,KJSUP,
+!!                                     and introduce INI_LS and INI_LB
+!!          J. Stein    22/01/99  add the reading of STORAGE_TYPE to improve
+!!                                the START case when the file contains 2
+!!                                instants MT
+!!          D. Gazen    22/01/01  use MODD_NSV to handle NSV floating indices
+!!                                for the current model
+!!          V. Masson   01/2004   removes surface (externalization)
+!!       J.-P. Pinty    06/05/04  treat NSV_* for C1R3 and ELEC
+!!                      05/06     Remove EPS
+!!          M. Leriche  04/10     add pH in cloud water and rainwater
+!!          M. Leriche  07/10     treat NSV_* for ice phase chemical species
+!!          M.Tomasini, 
+!!          P. Peyrille   06/12   2D west african monsoon : add reading of ADV forcing and addy fluxes 
+!!          C.Lac       03/13     add prognostic supersaturation for C2R2/KHKO
+!!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+USE MODE_FM
+USE MODE_IO_ll, ONLY : UPCASE
+!
+USE MODD_CONF
+USE MODD_TIME ! for type DATE_TIME
+USE MODD_CST
+USE MODD_CTURB
+USE MODD_NSV
+USE MODD_DUST
+USE MODD_SALT
+USE MODD_PASPOL
+USE MODD_CH_AEROSOL
+USE MODD_CH_MNHC_n, ONLY : XCH_PHINIT
+!
+USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
+USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
+USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
+USE MODD_LG,              ONLY: CLGNAMES
+USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
+!
+USE MODE_FMREAD
+USE MODI_INI_LS
+USE MODI_INI_LB
+!
+USE MODD_LATZ_EDFLX
+USE MODD_2D_FRC
+!
+IMPLICIT NONE
+!
+!*       0.1   declarations of arguments
+!
+!
+!
+CHARACTER (LEN=*),         INTENT(IN)  :: HINIFILE       
+                             ! name of the initial file
+CHARACTER (LEN=*),         INTENT(IN)  :: HLUOUT        
+                             ! name for output-listing of nested models
+INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
+                             ! array sizes in x, y and z  directions
+REAL,                      INTENT(IN)  :: PTSTEP_OLD   
+                             ! OLD Time STEP (DESFM)
+REAL,                      INTENT(IN)  :: PTSTEP       
+                             ! current Time STEP   
+! 
+CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKEM,                          &
+                                          HGETRVM,HGETRCM,HGETRRM,           &
+                                          HGETRIM,HGETRSM,HGETRGM,HGETRHM,   &
+                                          HGETSRCM
+CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVM
+!
+CHARACTER (LEN=*),         INTENT(IN)  :: HGETTKET,                          &
+                                          HGETRVT,HGETRCT,HGETRRT,           &
+                                          HGETRIT,HGETRST,HGETRGT,HGETRHT,   & 
+                                          HGETCIT,HGETSRCT,                  &
+                                          HGETSIGS,HGETCLDFR,HGETBL_DEPTH,   &
+                                          HGETSBL_DEPTH,HGETPHC,HGETPHR
+CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
+!
+! GET indicators to know wether a given  variable should or not be read in the
+! FM file at time t-deltat and t
+!
+! sizes of the West-east total LB area
+INTEGER, INTENT(IN) :: KSIZELBX_ll,KSIZELBXU_ll      ! for T,V,W and u 
+INTEGER, INTENT(IN) :: KSIZELBXTKE_ll                ! for TKE 
+INTEGER, INTENT(IN) :: KSIZELBXR_ll,KSIZELBXSV_ll    ! for Rx and SV    
+! sizes of the North-south total LB area
+INTEGER, INTENT(IN) :: KSIZELBY_ll,KSIZELBYV_ll      ! for T,U,W  and v
+INTEGER, INTENT(IN):: KSIZELBYTKE_ll                ! for TKE
+INTEGER, INTENT(IN) :: KSIZELBYR_ll,KSIZELBYSV_ll    ! for Rx and SV 
+!
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUM,PVM,PWM     ! U,V,W at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHM,PTKEM      ! theta, tke and
+                                                          ! eps at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABSM          ! pressure at t-dt
+REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRM,PSVM        ! moist and scalar
+                                                          ! variables at t-dt
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCM           ! turbulent flux
+                                                          !  <s'Rc'> at t-dt
+REAL, DIMENSION(:,:),      INTENT(OUT) :: PBL_DEPTH       ! BL depth
+REAL, DIMENSION(:,:),      INTENT(OUT) :: PSBL_DEPTH      ! SBL depth
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PWTHVMF         ! MassFlux buoyancy flux
+!
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PUT,PVT,PWT     ! U,V,W at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PTHT,PTKET      ! theta, tke and
+                                                          ! eps at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPABST          ! pressure at t
+REAL, DIMENSION(:,:,:,:),  INTENT(OUT) :: PRT,PSVT        ! moist and scalar
+                                                          ! variables at t
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSRCT           ! turbulent flux
+                                                          !  <s'Rc'> at t 
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCIT            ! ice conc. at t
+REAL,                      INTENT(OUT) :: PDRYMASST       ! Md(t)
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PSIGS           ! =sqrt(<s's'>) for the
+                                                          ! Subgrid Condensation
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PCLDFR          ! cloud fraction  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHC            ! pH value in cloud water  
+REAL, DIMENSION(:,:,:),    INTENT(OUT) :: PPHR            ! pH value in rainwater  
+!
+!
+! Larger Scale fields
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSUM,PLSVM,PLSWM    ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLSTHM,  PLSRVM      ! Mass
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXUM,PLBXVM,PLBXWM ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXTHM              ! Mass
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYUM,PLBYVM,PLBYWM ! Wind
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYTHM              ! Mass
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBXTKEM          ! TKE
+REAL, DIMENSION(:,:,:),          INTENT(OUT) :: PLBYTKEM
+REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBXRM  ,PLBXSVM  ! Moisture and SV
+REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRM  ,PLBYSVM  ! in x and y-dir.
+!
+!       
+! Forcing fields
+INTEGER,              INTENT(IN)  :: KFRC              ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTFRC ! date of forcing profs.
+REAL, DIMENSION(:,:), INTENT(OUT) :: PUFRC,PVFRC,PWFRC ! forcing variables
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTHFRC,PRVFRC
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC
+REAL, DIMENSION(:),   INTENT(OUT) :: PPGROUNDFRC
+REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PATC
+!
+REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M ! Eddy fluxes
+INTEGER,              INTENT(IN)  :: KADVFRC                 ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTADVFRC    ! date of forcing profs.
+REAL, DIMENSION(:,:,:,:),   INTENT(OUT) :: PDTHFRC, PDRVFRC  ! advective forcing
+INTEGER,              INTENT(IN)  :: KRELFRC                 ! number of forcing
+TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTRELFRC    ! date of forcing profs.
+REAL, DIMENSION(:,:,:,:),   INTENT(OUT) :: PTHREL, PRVREL    ! relaxation forcing
+!
+!*       0.2   declarations of local variables
+!
+REAL, DIMENSION(KIU,KJU,KKU) :: Z3D               ! 3D array used to read  data
+                                                  ! in initial file 
+REAL, DIMENSION(KIU,KJU,KKU) :: ZWORK             ! to compute supersaturation 
+INTEGER             :: IGRID,ILENCH,IRESP         !   File 
+CHARACTER (LEN=16)  :: YRECFM                     ! management
+CHARACTER (LEN=100) :: YCOMMENT                   ! variables 
+CHARACTER (LEN=2)   :: YDIR                       !
+INTEGER             :: ILUOUT                     ! Unit number for prints
+INTEGER             :: JSV                        ! Loop index for additional
+                                                  ! scalar variables
+INTEGER             :: ISV                        ! total number of  scalar variables
+INTEGER             :: IRR                        !  counter for moist variables
+INTEGER             :: JKLOOP,JRR                 ! Loop indexes
+INTEGER             :: IIUP,IJUP                  ! size  of working 
+                                                  ! window arrays
+REAL                :: Z1,Z2                      ! coeff. for the temporal 
+                                                  ! interpolation
+INTEGER             :: JT                  ! loop index
+REAL, DIMENSION(KKU)        :: Z1D    ! forcing working arrays
+INTEGER, DIMENSION(3)       :: ITDATE ! date array
+CHARACTER(LEN=3)            :: YFRC   ! To mark the different forcing dates
+LOGICAL :: GLSOURCE ! switch for the source term (for ini_ls and ini_lb)
+CHARACTER (LEN=2)      :: YSTORAGE_TYPE
+! ---------------------------------------------------------------------
+! Modif PP ADV FRC
+REAL, DIMENSION(KIU)        :: X1D    ! forcing working arrays
+REAL, DIMENSION(KIU,KJU,KKU):: XDTH3D,XDRV3D
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.    INITIALIZATION
+!              ---------------
+!
+GLSOURCE=.FALSE.
+Z3D = 0.0 
+ZWORK = 0.0
+!
+YRECFM='STORAGE_TYPE' 
+YDIR='--'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,YSTORAGE_TYPE,IGRID,ILENCH,YCOMMENT,IRESP)
+IF (IRESP /= 0) YSTORAGE_TYPE='TT'
+!
+!-------------------------------------------------------------------------------
+!
+!*       2.    READ PROGNOSTIC VARIABLES
+!              -------------------------
+!
+!*       2.1  Time t-dt:
+!
+YRECFM = 'UM'
+YDIR='XY'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PUM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM = 'VM'
+YDIR='XY'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM = 'WM'
+YDIR='XY'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PWM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM = 'THM'
+YDIR='XY'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PTHM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+YRECFM = 'PABSM'
+YDIR='XY'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPABSM,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+SELECT CASE(HGETTKEM)                   
+  CASE('READ') 
+    YRECFM = 'TKEM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PTKEM,IGRID,ILENCH,YCOMMENT,IRESP)
+  CASE('INIT')
+    PTKEM(:,:,:)=XTKEMIN
+END SELECT 
+!
+IRR=0
+!
+SELECT CASE(HGETRVM)             ! vapor
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RVM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR)=0.
+END SELECT 
+!
+SELECT CASE(HGETRCM)             ! cloud 
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RCM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR) = 0.
+END SELECT
+!
+SELECT CASE(HGETRRM)             ! rain 
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RRM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR) = 0.
+END SELECT
+!
+SELECT CASE(HGETRIM)             ! cloud ice
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RIM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR)=0.
+END SELECT
+!
+SELECT CASE(HGETRSM)             ! snow
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RSM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR)=0.
+END SELECT
+!
+SELECT CASE(HGETRGM)             ! graupel
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RGM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR)=0.
+END SELECT
+!
+SELECT CASE(HGETRHM)             ! hail
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RHM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRM(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRM(:,:,:,IRR)=0.
+END SELECT
+!
+!             Scalar Variables Reading : Users, C2R2, C1R3, ELEC, Chemical SV
+!
+YDIR='XY'
+ISV= SIZE(PSVM,4)
+!
+DO JSV = 1, NSV_USER              ! initialize according to the get indicators
+  SELECT CASE(HGETSVM(JSV))
+    CASE ('READ')
+      WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
+      CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+      PSVM(:,:,:,JSV) = Z3D(:,:,:)
+    CASE ('INIT')
+      PSVM(:,:,:,JSV) = 0. 
+  END SELECT
+END DO
+!
+DO JSV = NSV_C2R2BEG,NSV_C2R2END
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+    IF (LSUPSAT .AND. (HGETRVM == 'READ') ) THEN
+      ZWORK(:,:,:) = (PPABSM(:,:,:)/XP00 )**(XRD/XCPD)
+      ZWORK(:,:,:) = PTHM(:,:,:)*ZWORK(:,:,:)
+      ZWORK(:,:,:) = EXP(XALPW-XBETAW/ZWORK(:,:,:)-XGAMW*ALOG(ZWORK(:,:,:)))
+      !rvsat
+      ZWORK(:,:,:) = (XMV / XMD)*ZWORK(:,:,:)/(PPABSM(:,:,:)-ZWORK(:,:,:))
+      ZWORK(:,:,:) = PRM(:,:,:,1)/ZWORK(:,:,:) 
+      PSVM(:,:,:,NSV_C2R2END ) = ZWORK(:,:,:)
+    END IF
+  END SELECT
+END DO
+!
+DO JSV = NSV_C1R3BEG,NSV_C1R3END
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+DO JSV = NSV_ELECBEG,NSV_ELECEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+DO JSV = NSV_CHEMBEG,NSV_CHEMEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    CNAMES(JSV-NSV_CHEMBEG+1) = UPCASE(CNAMES(JSV-NSV_CHEMBEG+1))
+    YRECFM=TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_CHICBEG,NSV_CHICEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    CICNAMES(JSV-NSV_CHICBEG+1) = UPCASE(CICNAMES(JSV-NSV_CHICBEG+1))
+    YRECFM=TRIM(CICNAMES(JSV-NSV_CHICBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_SLTBEG,NSV_SLTEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_DSTBEG,NSV_DSTEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)  
+    CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+END SELECT
+END DO
+
+DO JSV = NSV_AERBEG,NSV_AEREND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CAERONAMES(JSV-NSV_AERBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)  
+    CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+END SELECT
+END DO
+!
+DO JSV = NSV_LGBEG,NSV_LGEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'M'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+DO JSV = NSV_PPBEG,NSV_PPEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    IF ( IRESP ==0 ) THEN
+       PSVM(:,:,:,JSV) = Z3D(:,:,:)
+    ELSE
+       PSVM(:,:,:,JSV) = 0.
+    END IF
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+DO JSV = NSV_CSBEG,NSV_CSEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    WRITE(YRECFM,'(A3,I3.3)')'SVM',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    IF ( IRESP ==0 ) THEN
+       PSVM(:,:,:,JSV) = Z3D(:,:,:)
+    ELSE
+       PSVM(:,:,:,JSV) = 0.
+    END IF
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+DO JSV = NSV_LNOXBEG,NSV_LNOXEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    YRECFM='LINOXM'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVM(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+!*       2.2  LS fields at time t-dt:
+!
+!*       2.2a  3D LS fields  
+!
+!
+CALL INI_LS(HINIFILE,HLUOUT,HGETRVM,GLSOURCE,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM)
+!
+!
+!*       2.2b  2D "surfacic" LB fields   
+!
+!
+CALL INI_LB(HINIFILE,HLUOUT,GLSOURCE,ISV,                             &   
+     KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
+     KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
+     KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
+     HGETTKEM,HGETRVM,HGETRCM,HGETRRM,HGETRIM,HGETRSM,                &
+     HGETRGM,HGETRHM,HGETSVM,                                         &
+     PLBXUM,PLBXVM,PLBXWM,PLBXTHM,PLBXTKEM,PLBXRM,PLBXSVM,            &
+     PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM             ) 
+!
+!*       2.3  Time t:
+!
+YRECFM = 'UT'
+YDIR='XY'
+IF (YSTORAGE_TYPE=='TT') THEN
+  PUT(:,:,:)   =PUM(:,:,:)
+ELSE
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PUT,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
+YRECFM = 'VT'
+YDIR='XY'
+IF (YSTORAGE_TYPE=='TT') THEN
+  PVT(:,:,:)   =PVM(:,:,:)
+ELSE
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVT,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
+YRECFM = 'WT'
+YDIR='XY'
+IF (YSTORAGE_TYPE=='TT') THEN
+  PWT(:,:,:)   =PWM(:,:,:)
+ELSE
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PWT,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
+YRECFM = 'THT'
+YDIR='XY'
+IF (YSTORAGE_TYPE=='TT') THEN
+  PTHT(:,:,:)   =PTHM(:,:,:)
+ELSE
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PTHT,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
+YRECFM = 'PABST'
+YDIR='XY'
+IF (YSTORAGE_TYPE=='TT') THEN
+  PPABST(:,:,:)=PPABSM(:,:,:)
+ELSE
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPABST,IGRID,ILENCH,YCOMMENT,IRESP)
+ENDIF
+!
+SELECT CASE(HGETTKET) 
+  CASE('READ')
+    YRECFM = 'TKET'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PTKET,IGRID,ILENCH,YCOMMENT,IRESP)
+  CASE('INIT') 
+    PTKET(:,:,:)=XTKEMIN
+    IF (YSTORAGE_TYPE=='TT') PTKET(:,:,:)=PTKEM(:,:,:)
+END SELECT
+!
+IRR=0
+SELECT CASE(HGETRVT)             ! vapor 
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RVT' 
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0. 
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRCT)             ! cloud
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RCT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRRT)             ! rain
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RRT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRIT)             ! cloud ice
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RIT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRST)             ! snow
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RST'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRGT)             ! graupel
+  CASE('READ') 
+    IRR=IRR+1 
+    YRECFM='RGT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETRHT)             ! hail 
+  CASE('READ')
+    IRR=IRR+1 
+    YRECFM='RHT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    PRT(:,:,:,IRR)=Z3D(:,:,:)
+  CASE('INIT')
+    IRR=IRR+1 
+    PRT(:,:,:,IRR)=0.
+    IF (YSTORAGE_TYPE=='TT')  PRT(:,:,:,IRR)=PRM(:,:,:,IRR)
+END SELECT
+!
+SELECT CASE(HGETCIT)             ! ice concentration
+  CASE('READ')
+    YRECFM='CIT'
+    YDIR='XY'
+    IF (SIZE(PCIT) /= 0 )   &
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PCIT,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+  CASE('INIT')
+    PCIT(:,:,:)=0.
+END SELECT
+!
+!             Scalar Variables : Users, C2R2, C1R3, ELEC, Chemical
+!
+YDIR='XY'
+DO JSV = 1, NSV_USER  ! initialize according to the get indicators
+  SELECT CASE(HGETSVT(JSV))
+    CASE ('READ')
+      WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+      CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+      PSVT(:,:,:,JSV) = Z3D(:,:,:)
+    CASE ('INIT')
+      PSVT(:,:,:,JSV) = 0. 
+      IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_C2R2BEG,NSV_C2R2END
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0. 
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_C1R3BEG,NSV_C1R3END
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0. 
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_ELECBEG,NSV_ELECEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0. 
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_CHEMBEG,NSV_CHEMEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    CNAMES(JSV-NSV_CHEMBEG+1) = UPCASE(CNAMES(JSV-NSV_CHEMBEG+1))
+    YRECFM=TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0. 
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!   
+DO JSV = NSV_CHICBEG,NSV_CHICEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    CICNAMES(JSV-NSV_CHICBEG+1) = UPCASE(CICNAMES(JSV-NSV_CHICBEG+1))
+    YRECFM=TRIM(CICNAMES(JSV-NSV_CHICBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_SLTBEG,NSV_SLTEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+!
+DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDESLTNAMES(JSV-NSV_SLTDEPBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+!
+DO JSV = NSV_DSTBEG,NSV_DSTEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+!
+DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+
+!
+DO JSV = NSV_AERBEG,NSV_AEREND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CAERONAMES(JSV-NSV_AERBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+!
+DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT    
+END DO
+!   
+DO JSV = NSV_LGBEG,NSV_LGEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM=TRIM(CLGNAMES(JSV-NSV_LGBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_LNOXBEG,NSV_LNOXEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    YRECFM='LINOXT'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+DO JSV = NSV_PPBEG,NSV_PPEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    IF (IRESP == 0) THEN
+       PSVT(:,:,:,JSV) = Z3D(:,:,:)
+    ELSE
+       PSVT(:,:,:,JSV) = 0.
+    END IF
+    WRITE(YRECFM,'(A3,I3.3)')'ATC',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (IRESP == 0) THEN
+      PATC(:,:,:,JSV-NSV_PPBEG+1) = Z3D(:,:,:)
+    ELSE
+      PATC(:,:,:,JSV-NSV_PPBEG+1) = 0. 
+    ENDIF
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    PATC(:,:,:,JSV-NSV_PPBEG+1) = 0. 
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+!
+END DO
+!
+DO JSV = NSV_CSBEG,NSV_CSEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    WRITE(YRECFM,'(A3,I3.3)')'SVT',JSV
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    IF (IRESP == 0) THEN
+       PSVT(:,:,:,JSV) = Z3D(:,:,:)
+    ELSE
+       PSVT(:,:,:,JSV) = 0.
+    END IF
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+    IF (YSTORAGE_TYPE=='TT')  PSVT(:,:,:,JSV)=PSVM(:,:,:,JSV)
+  END SELECT
+END DO
+!
+!
+!*       2.4  Some special variables:
+!
+YRECFM = 'DRYMASST'                  ! dry mass
+YDIR='--'
+CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PDRYMASST,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+SELECT CASE(HGETSRCM)                ! turbulent flux SRC at time t-dt 
+  CASE('READ')
+    YRECFM='SRCM'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    IF( IRESP /= 0 ) THEN
+      YRECFM='SRC'
+      YDIR='XY'
+      CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+    END IF
+    PSRCM(:,:,:)=Z3D(:,:,:)
+  CASE('INIT')
+    PSRCM(:,:,:)=0.
+END SELECT
+!
+SELECT CASE(HGETSRCT)                ! turbulent flux SRC at time t 
+  CASE('READ')
+    YRECFM='SRCT'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+    IF( IRESP /= 0 ) THEN
+      YRECFM='SRC'
+      YDIR='XY'
+      CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+    END IF
+    PSRCT(:,:,:)=Z3D(:,:,:)
+  CASE('INIT')
+    PSRCT(:,:,:)=0.
+    IF (YSTORAGE_TYPE=='TT')  PSRCT(:,:,:)=PSRCM(:,:,:)
+END SELECT
+!
+SELECT CASE(HGETSIGS)                ! subgrid condensation
+  CASE('READ')
+    YRECFM='SIGS'
+    YDIR='XY' 
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PSIGS,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+  CASE('INIT')
+    PSIGS(:,:,:)=0.
+END SELECT
+!
+SELECT CASE(HGETPHC)             ! pH in cloud water
+  CASE('READ')
+    YRECFM='PHC'
+    YDIR='XY'
+!    IF (SIZE(PCIT) /= 0 )   &
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPHC,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+  CASE('INIT')
+    PPHC(:,:,:)=XCH_PHINIT
+END SELECT
+!
+SELECT CASE(HGETPHR)             ! pH in rainwater
+  CASE('READ')
+    YRECFM='PHR'
+    YDIR='XY'
+!    IF (SIZE(PCIT) /= 0 )   &
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPHR,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+  CASE('INIT')
+    PPHR(:,:,:)=XCH_PHINIT
+END SELECT
+!
+IRESP=0
+IF(HGETCLDFR=='READ') THEN           ! cloud fraction
+    YRECFM='CLDFR'
+    YDIR='XY' 
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PCLDFR,IGRID,ILENCH,  &
+                YCOMMENT,IRESP)
+ENDIF
+IF(HGETCLDFR=='INIT' .OR. IRESP /= 0) THEN
+  IF(SIZE(PRT,4) > 3) THEN
+    WHERE(PRT(:,:,:,2)+PRT(:,:,:,4) > 1.E-30)
+      PCLDFR(:,:,:) = 1.
+    ELSEWHERE
+      PCLDFR(:,:,:) = 0.
+    ENDWHERE
+  ELSE
+    WHERE(PRT(:,:,:,2) > 1.E-30)
+      PCLDFR(:,:,:) = 1.
+    ELSEWHERE
+      PCLDFR(:,:,:) = 0.
+    ENDWHERE
+  ENDIF
+ENDIF
+!
+!* boundary layer depth
+!
+IF (HGETBL_DEPTH=='READ') THEN
+  YRECFM = 'BL_DEPTH'
+  YDIR='XY'
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PBL_DEPTH,IGRID,ILENCH,YCOMMENT,IRESP)
+ELSE
+  PBL_DEPTH(:,:)=XUNDEF
+END IF
+!
+!* surface boundary layer depth
+!
+IF (HGETSBL_DEPTH=='READ') THEN
+  YRECFM = 'SBL_DEPTH'
+  YDIR='XY'
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PSBL_DEPTH,IGRID,ILENCH,YCOMMENT,IRESP)
+ELSE
+  PSBL_DEPTH(:,:)=0.
+END IF
+!
+!* Contribution from MAss Flux parameterizations to vert. flux of buoyancy
+!
+SELECT CASE(HGETTKET)                   
+  CASE('READ') 
+    YRECFM = 'WTHVMF'
+    YDIR='XY'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PWTHVMF,IGRID,ILENCH,YCOMMENT,IRESP)
+  CASE('INIT')
+    PWTHVMF(:,:,:)=0.
+END SELECT 
+!-------------------------------------------------------------------------------
+!
+!*       2.5   READ FORCING VARIABLES
+!              ----------------------
+!
+!
+IF ( LFORCING ) THEN
+  DO JT=1,KFRC
+!
+    WRITE (YFRC,'(I3.3)') JT
+    YRECFM='DTFRC'//YFRC//'%TDATE' ! array of rank 3 for date
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
+    TPDTFRC(JT)%TDATE%YEAR  = ITDATE(1)
+    TPDTFRC(JT)%TDATE%MONTH = ITDATE(2)
+    TPDTFRC(JT)%TDATE%DAY   = ITDATE(3)
+    YRECFM='DTFRC'//YFRC//'%TIME'
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TPDTFRC(JT)%TIME,IGRID,ILENCH, &
+                YCOMMENT,IRESP)
+!
+    YRECFM='UFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PUFRC(:,JT)=Z1D(:)
+!
+    YRECFM='VFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PVFRC(:,JT)=Z1D(:)
+!
+    YRECFM='WFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PWFRC(:,JT)=Z1D(:)
+!
+    YRECFM='THFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PTHFRC(:,JT)=Z1D(:)
+!
+    YRECFM='RVFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PRVFRC(:,JT)=Z1D(:)
+!
+    YRECFM='TENDTHFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PTENDTHFRC(:,JT)=Z1D(:)
+!
+    YRECFM='TENDRVFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PTENDRVFRC(:,JT)=Z1D(:)
+!
+    YRECFM='GXTHFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PGXTHFRC(:,JT)=Z1D(:)
+!
+    YRECFM='GYTHFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PGYTHFRC(:,JT)=Z1D(:)
+!
+    YRECFM='PGROUNDFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPGROUNDFRC(JT),IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  END DO
+END IF
+!
+!-------------------------------------------------------------------------------
+IF (L2D_ADV_FRC) THEN
+
+  DO JT=1,KADVFRC  
+
+    WRITE (YFRC,'(I3.3)') JT
+    YRECFM='DTADV'//YFRC//'%TDATE' ! array of rank 3 for date
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
+    TPDTADVFRC(JT)%TDATE%YEAR  = ITDATE(1)
+    TPDTADVFRC(JT)%TDATE%MONTH = ITDATE(2)
+    TPDTADVFRC(JT)%TDATE%DAY   = ITDATE(3)
+    !
+    YRECFM='DTADV'//YFRC//'%TIME'
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TPDTADVFRC(JT)%TIME,IGRID,ILENCH, &
+	    YCOMMENT,IRESP)
+    YRECFM='TH_ADV'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XDTH3D,IGRID,ILENCH,  &
+                                                         YCOMMENT,IRESP)
+    PDTHFRC(:,:,:,JT)=XDTH3D(:,:,:)
+    !
+    YRECFM='Q_ADV'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XDRV3D,IGRID,ILENCH,  &
+                                                         YCOMMENT,IRESP)
+    
+    PDRVFRC(:,:,:,JT)=XDRV3D(:,:,:)
+  ENDDO
+ENDIF
+!
+IF (L2D_REL_FRC) THEN
+
+  DO JT=1,KRELFRC  
+
+    WRITE (YFRC,'(I3.3)') JT
+    YRECFM='DTREL'//YFRC//'%TDATE' ! array of rank 3 for date
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
+    TPDTRELFRC(JT)%TDATE%YEAR  = ITDATE(1)
+    TPDTRELFRC(JT)%TDATE%MONTH = ITDATE(2)
+    TPDTRELFRC(JT)%TDATE%DAY   = ITDATE(3)
+
+    ! Relaxation
+
+    YRECFM='TH_REL'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XDTH3D,IGRID,ILENCH,  &
+                                                         YCOMMENT,IRESP)
+    
+    PTHREL(:,:,:,JT)=XDTH3D(:,:,:)
+    !
+    YRECFM='Q_REL'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XDRV3D,IGRID,ILENCH,  &
+                                                         YCOMMENT,IRESP)
+
+    PRVREL(:,:,:,JT)=XDRV3D(:,:,:)
+
+    ENDDO
+
+ENDIF
+
+!
+IF (LUV_FLX) THEN
+   IF ( CCONF /= 'START' .OR. CPROGRAM=='SPAWN ' ) THEN 
+       WRITE(ILUOUT,FMT=*) 'read_field.f90 : UV Eddy fluxes reading in the initial file'
+       YRECFM='VU_FLX'
+       YDIR='XY'
+       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVU_FLUX_M,IGRID,ILENCH,YCOMMENT,IRESP)
+   ELSE IF (CCONF == 'START') THEN
+       PVU_FLUX_M(:,:,:)=0.
+   END IF
+ENDIF
+!
+IF (LTH_FLX) THEN
+   IF ( CCONF /= 'START' .OR. CPROGRAM=='SPAWN ' ) THEN 
+       WRITE(ILUOUT,FMT=*) 'read_field.f90 : Eddy fluxes reading in the initial file'
+       YRECFM='VT_FLX'
+       YDIR='XY'
+       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PVTH_FLUX_M,IGRID,ILENCH,YCOMMENT,IRESP)
+       YRECFM='WT_FLX'
+       YDIR='XY'
+   ELSE IF (CCONF == 'START') THEN
+       PWTH_FLUX_M(:,:,:)=0.
+       PVTH_FLUX_M(:,:,:)=0.
+   END IF
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*       3.    TIME STEP CHANGE OR EXOTIC START CONFIGURATION
+!              ----------------------------------------------
+!
+IF ( (ABS(PTSTEP -PTSTEP_OLD) >1.E-16) .AND. (CCONF /= 'START') )  THEN
+  Z1 = PTSTEP / PTSTEP_OLD
+  Z2 = 1. - Z1
+!
+  PUM  (:,:,:)   = Z1 * PUM  (:,:,:)   + Z2 * PUT  (:,:,:) 
+  PVM  (:,:,:)   = Z1 * PVM  (:,:,:)   + Z2 * PVT  (:,:,:)
+  PWM  (:,:,:)   = Z1 * PWM  (:,:,:)   + Z2 * PWT  (:,:,:)
+  PTHM (:,:,:)   = Z1 * PTHM (:,:,:)   + Z2 * PTHT (:,:,:)
+  PTKEM(:,:,:)   = MAX(XTKEMIN,Z1 * PTKEM(:,:,:)   + Z2 * PTKET(:,:,:))
+  PRM  (:,:,:,:) = MAX(0.,Z1 * PRM  (:,:,:,:) + Z2 * PRT  (:,:,:,:))
+  PSVM (:,:,:,:) = MAX(0.,Z1 * PSVM (:,:,:,:) + Z2 * PSVT (:,:,:,:))
+  PPABSM(:,:,:)   = Z1 * PPABSM(:,:,:)   + Z2 * PPABST(:,:,:)
+!
+END IF
+!
+IF (YSTORAGE_TYPE=='MT' .AND. CCONF=='START' .AND. CPROGRAM=='MESONH') THEN
+  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  WRITE(ILUOUT,FMT=*) '*******************************************************'
+  WRITE(ILUOUT,FMT=*) 'THE 2 INSTANTS M AND T ARE DIFFERENT IN FILE ',HINIFILE
+  WRITE(ILUOUT,FMT=*) 'BUT YOU WANT TO PERFORM A START THEREFORE ALL THE'
+  WRITE(ILUOUT,FMT=*) 'FIELDS OF INSTANT M ARE SET EQUAL TO THOSE OF INSTANT T'
+  WRITE(ILUOUT,FMT=*) '*******************************************************'
+  PUM(:,:,:)   =PUT(:,:,:)
+  PVM(:,:,:)   =PVT(:,:,:)
+  PWM(:,:,:)   =PWT(:,:,:)
+  PTHM(:,:,:)  =PTHT(:,:,:)
+  PPABSM(:,:,:)=PPABST(:,:,:)
+  PTKEM(:,:,:) =PTKET(:,:,:)
+  PRM(:,:,:,:) =PRT(:,:,:,:)
+  PSVM(:,:,:,:)=PSVT(:,:,:,:)
+ENDIF
+!-------------------------------------------------------------------------------
+!
+!*       4.    PRINT ON OUTPUT-LISTING
+!              ----------------------
+!
+IF (NVERB >= 10 .AND. .NOT. L1D) THEN
+  IIUP = SIZE(PUT,1)
+  IJUP = SIZE(PVT,2) 
+  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+! 
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PUT values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PUT(1,1,JKLOOP),PUT(IIUP/2,IJUP/2,JKLOOP), &
+    PUT(IIUP,KJU,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PUM values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PUM(1,1,JKLOOP),PUM(IIUP/2,IJUP/2,JKLOOP), &
+    PUM(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PVT values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PVT(1,1,JKLOOP),PVT(IIUP/2,IJUP/2,JKLOOP), &
+    PVT(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PVM values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PVM(1,1,JKLOOP),PVM(IIUP/2,IJUP/2,JKLOOP), &
+    PVM(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PWT values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PWT(1,1,JKLOOP),PWT(IIUP/2,IJUP/2,JKLOOP), &
+    PWT(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PWM values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PWM(1,1,JKLOOP),PWM(IIUP/2,IJUP/2,JKLOOP), &
+    PWM(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PTHT values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PTHT(1,1,JKLOOP),PTHT(IIUP/2,IJUP/2,JKLOOP), &
+    PTHT(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PTHM values:'
+  WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+  DO JKLOOP=1,KKU
+    WRITE(ILUOUT,FMT=*) PTHM(1,1,JKLOOP),PTHM(IIUP/2,IJUP/2,JKLOOP), &
+    PTHM(IIUP,IJUP,JKLOOP),JKLOOP    
+  END DO
+!
+  IF(SIZE(PTKEM,1) /=0) THEN
+    WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PTKET values:'
+    WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+    DO JKLOOP=1,KKU
+      WRITE(ILUOUT,FMT=*) PTKET(1,1,JKLOOP),PTKET(IIUP/2,IJUP/2,JKLOOP), &
+      PTKET(IIUP,IJUP,JKLOOP),JKLOOP    
+    END DO
+!
+    WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PTKEM values:'
+    WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+    DO JKLOOP=1,KKU
+      WRITE(ILUOUT,FMT=*) PTKEM(1,1,JKLOOP),PTKEM(IIUP/2,IJUP/2,JKLOOP), &
+      PTKEM(IIUP,IJUP,JKLOOP),JKLOOP    
+    END DO
+  END IF
+!
+  IF (SIZE(PRM,4) /= 0) THEN
+    WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PRT values:'
+    DO JRR = 1, SIZE(PRM,4)
+      WRITE(ILUOUT,FMT=*) 'JRR = ',JRR
+      WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+      DO JKLOOP=1,KKU
+        WRITE(ILUOUT,FMT=*) PRT(1,1,JKLOOP,JRR),PRT(IIUP/2,IJUP/2,JKLOOP,JRR), &
+        PRT(IIUP,IJUP,JKLOOP,JRR),JKLOOP    
+      END DO
+    END DO
+!
+    WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PRM values:'
+    DO JRR = 1, SIZE(PRM,4)
+      WRITE(ILUOUT,FMT=*) 'JRR = ',JRR
+      WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+      DO JKLOOP=1,KKU
+        WRITE(ILUOUT,FMT=*) PRM(1,1,JKLOOP,JRR),PRM(IIUP/2,IJUP/2,JKLOOP,JRR), &
+        PRM(IIUP,IJUP,JKLOOP,JRR),JKLOOP    
+      END DO
+    END DO
+  END IF   
+!
+  IF (SIZE(PSVM,4) /= 0) THEN
+    WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PSVT values:'
+    DO JRR = 1, SIZE(PSVM,4)
+      WRITE(ILUOUT,FMT=*) 'JRR = ',JRR
+      WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+      DO JKLOOP=1,KKU
+        WRITE(ILUOUT,FMT=*) PSVT(1,1,JKLOOP,JRR),PSVT(IIUP/2,IJUP/2,JKLOOP,JRR), &
+        PSVT(IIUP,IJUP,JKLOOP,JRR),JKLOOP    
+      END DO
+    END DO
+!
+   WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PSVM values:'
+    DO JRR = 1, SIZE(PSVM,4)
+      WRITE(ILUOUT,FMT=*) 'JRR = ',JRR
+      WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '
+      DO JKLOOP=1,KKU
+        WRITE(ILUOUT,FMT=*) PSVM(1,1,JKLOOP,JRR),PSVM(IIUP/2,IJUP/2,JKLOOP,JRR), &
+        PSVM(IIUP,IJUP,JKLOOP,JRR),JKLOOP  
+      END DO
+    END DO
+  END IF   
+END IF 
+!-------------------------------------------------------------------------------
+!      
+!
+END SUBROUTINE READ_FIELD

@@ -1,0 +1,25 @@
+      SUBROUTINE VSLOG(PA,PLOG,N)
+!
+      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+      USE PARKIND1  ,ONLY : JPRB
+!
+!
+!
+
+*   COMPUTES THE LOGARITHM
+
+#include "impnone.h"
+
+      INTEGER N
+      REAL PA(N), PLOG(N)
+
+      INTEGER J
+      REAL(KIND=JPRB) :: ZHOOK_HANDLE
+
+      IF (LHOOK) CALL DR_HOOK('VSLOG',0,ZHOOK_HANDLE)
+      DO J=1,N
+        PLOG(J) = LOG(PA(J))
+      END DO
+      IF (LHOOK) CALL DR_HOOK('VSLOG',1,ZHOOK_HANDLE)
+
+      END

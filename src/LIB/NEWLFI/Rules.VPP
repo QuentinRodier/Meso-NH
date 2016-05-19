@@ -1,0 +1,6 @@
+F77FLAGS += -Am -X9
+CFLAGS   += 
+CPPFLAGS += -DVPP
+
+OBJS = NEWLFI_ALL.o poub.o
+

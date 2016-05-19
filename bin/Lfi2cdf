@@ -1,0 +1,8 @@
+#ECHO=echo
+for file in `ls -1 $* | grep lfi`
+do
+BASENAME=$(basename $file .lfi)
+echo BASENAME=$BASENAME
+$ECHO lfi2cdf $file 
+$ECHO mv $BASENAME.cdf  $BASENAME.nc
+done

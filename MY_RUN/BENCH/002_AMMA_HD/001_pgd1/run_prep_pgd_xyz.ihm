@@ -1,0 +1,36 @@
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . ${SRC_MESONH}/conf/profile_mesonh${XYZ}
+
+set -e
+cd ${SUBDIR}
+
+${MNHENV}
+export MONORUN="${MONORUN}"
+
+#
+# Remove old files
+#
+rm -f ${CPGDFILE}.??? OUTPUT_LISTING? pipe* *.tex
+
+ln -sf ${PREP_PGD_FILES}/*.??? .
+
+time \${MONORUN} ${SRC_MESONH}/exe/PREP_PGD${XYZ}
+
+${JOBSTAT}
+
+cat OUTPUT_LISTING0
+
+#
+# Postprocessing
+#
+rm -f ${CPGDFILE}.cv.??? 
+conv2dia < dir_conv2dia
+
+rm -f gmeta
+diaprog < dir_diaprog

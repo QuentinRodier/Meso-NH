@@ -1,0 +1,6 @@
+set -x 
+set -e
+ln -sf ../002_mesonh/EXPER.1.HYD2D.00?.??? .
+rm -f EXPER.1.HYD2D.002-3d.???
+time ${POSTRUN} conv2dia < dir_conv2dia
+

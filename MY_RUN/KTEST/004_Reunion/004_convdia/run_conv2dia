@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -sf ../003_mesonh/REUNI.1.00A20.004.??? .
+rm -f REUNI.1.00A20.004dg.???
+${POSTRUN} conv2dia < dir_conv2dia
+

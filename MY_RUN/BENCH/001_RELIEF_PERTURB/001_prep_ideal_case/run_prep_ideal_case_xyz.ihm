@@ -1,0 +1,28 @@
+${JOBMULTI}
+
+set -x
+
+#
+# init env
+#
+[ "x\$XYZ" = "x" ] && . $SRC_MESONH/conf/profile_mesonh${XYZ}
+
+set -e
+cd ${SUBDIR}
+
+${MNHENV}
+export MONORUN="${MONORUN}"
+
+#
+# Remove old files
+#
+rm -f ${CINIFILE}.??? OUTPUT_LISTING? pipe* *.tex
+
+
+time \${MONORUN} ${SRC_MESONH}/exe/PREP_IDEAL_CASE${XYZ}
+
+${JOBSTAT}
+
+cat OUTPUT_LISTING1
+
+#ddd --directory=~/.... PREP_PGD

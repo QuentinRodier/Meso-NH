@@ -1,0 +1,2 @@
+set -x
+rm -f REUNION_PGD_1km5_410* REUNION_IDEA_410* OUTPUT_LISTING* pipe* *.tex

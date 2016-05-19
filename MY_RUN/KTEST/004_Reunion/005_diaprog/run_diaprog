@@ -1,0 +1,9 @@
+set -x
+set -e
+ln -sf ../004_convdia/REUNI.1.00A20.004dg.??? .
+rm -f dir.0*
+${POSTRUN} diaprog < dir_Reunion
+mv gmeta gmeta_Reunion || echo pas de gmeta
+ln -sf ../003_mesonh/REUNI.1.00A20.000.??? .
+${POSTRUN} diaprog < dir_series
+mv gmeta gmeta_series || echo pas de gmeta

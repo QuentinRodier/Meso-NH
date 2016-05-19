@@ -1,0 +1,79 @@
+!     #########
+      SUBROUTINE GET_SSO_n(HPROGRAM,KI,PSSO_SLOPE)
+!     ########################################
+!
+!!****  *GET_SSO_n* - routine to get some surface fields
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	V. Masson   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2004
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODI_GET_LUOUT
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : XSSO_SLOPE
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODI_ABOR1_SFX
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+ CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
+INTEGER,             INTENT(IN)  :: KI          ! horizontal dim. of cover
+REAL, DIMENSION(KI), INTENT(OUT) :: PSSO_SLOPE  ! subgrid slope
+!
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER :: ILUOUT
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('GET_SSO_N',0,ZHOOK_HANDLE)
+ CALL GET_LUOUT(HPROGRAM,ILUOUT)
+!-------------------------------------------------------------------------------
+!
+IF ( SIZE(PSSO_SLOPE) /= SIZE(XSSO_SLOPE) ) THEN
+  WRITE(ILUOUT,*) 'try to get SSO_SLOPE fields from atmospheric model, but size is not correct'
+  WRITE(ILUOUT,*) 'size of field expected by the atmospheric model (PSSO_SLOPE) :', SIZE(PSSO_SLOPE)
+  WRITE(ILUOUT,*) 'size of field inthe surface                     (XSSO_SLOPE) :', SIZE(XSSO_SLOPE)
+  CALL ABOR1_SFX('GET_SSON: SSO_SLOPE SIZE NOT CORRECT')
+ELSE
+  PSSO_SLOPE = XSSO_SLOPE
+END IF
+IF (LHOOK) CALL DR_HOOK('GET_SSO_N',1,ZHOOK_HANDLE)
+!
+!==============================================================================
+!
+END SUBROUTINE GET_SSO_n

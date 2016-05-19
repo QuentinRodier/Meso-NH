@@ -1,0 +1,244 @@
+!     #########
+    SUBROUTINE ECUME_SEAFLUX(PZ0SEA,PMASK,KSIZE_WATER,KSIZE_ICE,      &
+                              PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,         &
+                              PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,      &
+                              PICHCE,OPRECIP,OPWEBB, OPWG, PQSAT,     &
+                              PSFTH,PSFTQ,PUSTAR,PCD,PCDN,PCH,        &
+                              PCE,PRI,PRESA,PZ0HSEA) 
+!     #######################################################################
+!
+!
+!!****  *ECUME_SEAFLUX*  
+!!
+!!    PURPOSE
+!!    -------
+!     
+!      Calculate the sea surface fluxes with modified bulk algorithm COARE:  
+!
+!      Calculates the surface fluxes of heat, moisture, and momentum over
+!      sea surface with Unified Turbulent fluxes parameterization with calibration 
+!      multi-campaign of neutral transfer coefficient from
+!      ALBATROS dataset (exp. POMME, CATCH, FETCH, SEMAPHORE, EQUALANT99)
+! 
+!      based on water_flux computation for sea ice
+!     
+!!**  METHOD
+!!    ------
+!
+!!    EXTERNAL
+!!    --------
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------ 
+!!      
+!!    REFERENCE
+!!    ---------
+!!     
+!!    AUTHOR
+!!    ------
+!!     C. Lebeaupin  *Météo-France* 
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original     18/03/2005
+!!      Modified        08/2009 B. Decharme
+!-------------------------------------------------------------------------------
+!
+!*       0.     DECLARATIONS
+!               ------------
+!!
+USE MODI_ICE_SEA_FLUX
+USE MODI_ECUME_FLUX
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:), INTENT(IN)   :: PMASK
+INTEGER           , INTENT(IN)   :: KSIZE_WATER  ! number of points of sea water 
+INTEGER           , INTENT(IN)   :: KSIZE_ICE    ! and of sea ice
+!
+REAL, DIMENSION(:), INTENT(IN)    :: PTA   ! air temperature at atm. level (K)
+REAL, DIMENSION(:), INTENT(IN)    :: PQA   ! air humidity at atm. level (kg/kg)
+REAL, DIMENSION(:), INTENT(IN)    :: PEXNA ! Exner function at atm. level
+REAL, DIMENSION(:), INTENT(IN)    :: PRHOA ! air density at atm. level
+REAL, DIMENSION(:), INTENT(IN)    :: PVMOD ! module of wind at atm. wind level (m/s)
+REAL, DIMENSION(:), INTENT(IN)    :: PZREF ! atm. level for temp. and humidity (m)
+REAL, DIMENSION(:), INTENT(IN)    :: PUREF ! atm. level for wind (m)
+REAL, DIMENSION(:), INTENT(IN)    :: PSST  ! Sea Surface Temperature (K)
+REAL, DIMENSION(:), INTENT(IN)    :: PEXNS ! Exner function at sea surface
+REAL, DIMENSION(:), INTENT(IN)    :: PPS   ! air pressure at sea surface (Pa)
+REAL, DIMENSION(:), INTENT(IN)    :: PRAIN ! precipitation rate (kg/s/m2)
+REAL, DIMENSION(:), INTENT(IN)    :: PSNOW ! snow rate (kg/s/m2)
+!
+REAL,               INTENT(IN)    :: PICHCE ! 
+LOGICAL,            INTENT(IN)    :: OPRECIP! 
+LOGICAL,            INTENT(IN)    :: OPWEBB ! 
+LOGICAL,            INTENT(IN)    :: OPWG   ! 
+!
+REAL, DIMENSION(:), INTENT(INOUT)    :: PZ0SEA! roughness length over the ocean
+!                                                                                 
+!  surface fluxes : latent heat, sensible heat, friction fluxes
+REAL, DIMENSION(:), INTENT(OUT)      :: PSFTH ! heat flux (W/m2)
+REAL, DIMENSION(:), INTENT(OUT)      :: PSFTQ ! water flux (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT)      :: PUSTAR! friction velocity (m/s)
+!
+! diagnostics
+REAL, DIMENSION(:), INTENT(OUT)      :: PQSAT ! humidity at saturation
+REAL, DIMENSION(:), INTENT(OUT)      :: PCD   ! heat drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCDN  ! momentum drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCH   ! neutral momentum drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCE   !transfer coef. for latent heat flux
+REAL, DIMENSION(:), INTENT(OUT)      :: PRI   ! Richardson number
+REAL, DIMENSION(:), INTENT(OUT)      :: PRESA ! aerodynamical resistance
+REAL, DIMENSION(:), INTENT(OUT)      :: PZ0HSEA ! heat roughness length
+!
+!*      0.2    declarations of local variables
+!
+INTEGER, DIMENSION(KSIZE_WATER) :: IR_WATER
+INTEGER, DIMENSION(KSIZE_ICE)   :: IR_ICE
+INTEGER                         :: J1,J2,JJ
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+!       1.     Create Masks for ice and water sea
+!              ------------------------------------
+IF (LHOOK) CALL DR_HOOK('ECUME_SEAFLUX',0,ZHOOK_HANDLE)
+!
+IR_WATER(:)=0
+IR_ICE(:)=0
+J1=0
+J2=0
+!
+DO JJ=1,SIZE(PSST(:))
+  IF (PMASK(JJ) >=0.0 ) THEN
+    J1 = J1 + 1
+    IR_WATER(J1)= JJ
+  ELSE
+    J2 = J2 + 1
+    IR_ICE(J2)= JJ
+  ENDIF
+END DO
+!
+!-------------------------------------------------------------------------------
+!
+!       2.      water sea : call to ECUME_FLUX
+!              ------------------------------------------------
+!
+IF (KSIZE_WATER > 0 ) CALL TREAT_SURF(IR_WATER,'W') 
+!
+!-------------------------------------------------------------------------------
+!
+!       3.      sea ice : call to ICE_SEA_FLUX
+!              ------------------------------------
+!
+IF (KSIZE_ICE > 0 ) CALL TREAT_SURF(IR_ICE,'I')
+!
+IF (LHOOK) CALL DR_HOOK('ECUME_SEAFLUX',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------
+!
+CONTAINS
+
+SUBROUTINE TREAT_SURF(KMASK,YTYPE)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN), DIMENSION(:) :: KMASK
+ CHARACTER(LEN=1), INTENT(IN) :: YTYPE
+!
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_TA   ! air temperature at atm. level (K)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_QA   ! air humidity at atm. level (kg/kg)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_EXNA ! Exner function at atm. level
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_RHOA ! air density at atm. level
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_VMOD ! module of wind at atm. wind level (m/s)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_ZREF ! atm. level for temp. and humidity (m)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_UREF ! atm. level for wind (m)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_SST  ! Sea Surface Temperature (K)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_EXNS ! Exner function at sea surface
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_PS   ! air pressure at sea surface (Pa)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_RAIN !precipitation rate (kg/s/m2)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_SNOW !snow rate (kg/s/m2)
+!
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_Z0SEA! roughness length over the ocean
+!                                                                                 
+!  surface fluxes : latent heat, sensible heat, friction fluxes
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_SFTH ! heat flux (W/m2)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_SFTQ ! water flux (kg/m2/s)
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_USTAR! friction velocity (m/s)
+!
+! diagnostics
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_QSAT ! humidity at saturation
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_CD   ! heat drag coefficient
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_CDN  ! momentum drag coefficient
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_CH   ! neutral momentum drag coefficient
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_CE   !transfer coef. for latent heat flux
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_RI   ! Richardson number
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_RESA ! aerodynamical resistance
+REAL, DIMENSION(SIZE(KMASK))      :: ZW_Z0HSEA ! heat roughness length
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('ECUME_SEAFLUX:TREAT_SURF',0,ZHOOK_HANDLE)
+DO JJ=1, SIZE(KMASK)
+  ZW_TA(JJ)   = PTA(KMASK(JJ))
+  ZW_QA(JJ)   = PQA(KMASK(JJ))
+  ZW_EXNA(JJ) = PEXNA(KMASK(JJ))
+  ZW_RHOA(JJ) = PRHOA(KMASK(JJ))
+  ZW_VMOD(JJ) = PVMOD(KMASK(JJ))
+  ZW_ZREF(JJ) = PZREF(KMASK(JJ)) 
+  ZW_UREF(JJ) = PUREF(KMASK(JJ))
+  ZW_SST(JJ)  = PSST(KMASK(JJ))
+  ZW_EXNS(JJ) = PEXNS(KMASK(JJ)) 
+  ZW_PS(JJ)   = PPS(KMASK(JJ))
+  ZW_QSAT(JJ)   = PQSAT(KMASK(JJ))
+  ZW_RAIN(JJ) = PRAIN(KMASK(JJ))
+  ZW_SNOW(JJ) = PSNOW(KMASK(JJ))
+  ZW_Z0SEA(JJ)= PZ0SEA(KMASK(JJ))
+  ZW_SFTH(JJ) = PSFTH(KMASK(JJ))
+  ZW_SFTQ(JJ) = PSFTQ(KMASK(JJ))
+  ZW_USTAR(JJ) = PUSTAR(KMASK(JJ))
+  ZW_CD(JJ) = PCD(KMASK(JJ))
+  ZW_CDN(JJ) = PCDN(KMASK(JJ))
+  ZW_CH(JJ) = PCH(KMASK(JJ)) 
+  ZW_CE(JJ) = PCE(KMASK(JJ))
+  ZW_RI(JJ) = PRI(KMASK(JJ))
+  ZW_RESA(JJ) = PRESA(KMASK(JJ))
+  ZW_Z0HSEA(JJ) = PZ0HSEA(KMASK(JJ))
+END DO
+!
+IF (YTYPE=='W') THEN
+  !
+  CALL ECUME_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,        &
+         ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,PICHCE,OPRECIP,OPWEBB,OPWG,&
+         ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD,ZW_CDN,ZW_CH,ZW_CE,     &
+         ZW_RI,ZW_RESA,ZW_RAIN,ZW_Z0HSEA)   
+  !
+ELSEIF (YTYPE=='I') THEN
+  !
+  CALL ICE_SEA_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,ZW_QA,ZW_RAIN,ZW_SNOW,  &
+          ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD, &
+          ZW_CDN,ZW_CH,ZW_RI,ZW_RESA,ZW_Z0HSEA)   
+  !
+ENDIF
+!
+DO JJ=1, SIZE(KMASK)
+  PQSAT(KMASK(JJ))   = ZW_QSAT(JJ)
+  PZ0SEA(KMASK(JJ))= ZW_Z0SEA(JJ)
+  PSFTH(KMASK(JJ)) = ZW_SFTH(JJ) 
+  PSFTQ(KMASK(JJ)) = ZW_SFTQ(JJ) 
+  PUSTAR(KMASK(JJ))= ZW_USTAR(JJ)
+  PCD(KMASK(JJ))   = ZW_CD(JJ) 
+  PCDN(KMASK(JJ))  = ZW_CDN(JJ) 
+  PCH(KMASK(JJ))   = ZW_CH(JJ)
+  PCE(KMASK(JJ))   = ZW_CE(JJ)
+  PRI(KMASK(JJ))   = ZW_RI(JJ) 
+  PRESA(KMASK(JJ)) = ZW_RESA(JJ) 
+  PZ0HSEA(KMASK(JJ)) = ZW_Z0HSEA(JJ) 
+END DO
+IF (LHOOK) CALL DR_HOOK('ECUME_SEAFLUX:TREAT_SURF',1,ZHOOK_HANDLE)
+END SUBROUTINE TREAT_SURF
+!  
+END SUBROUTINE ECUME_SEAFLUX

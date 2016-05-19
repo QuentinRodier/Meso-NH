@@ -1,0 +1,197 @@
+!     #####################
+      MODULE MODD_CH_TEB_n
+!     ######################
+!
+!!
+!!    PURPOSE
+!!    -------
+!     
+!   
+!
+!!
+!!**  IMPLICIT ARGUMENTS
+!!    ------------------
+!!      None
+!!
+!
+!!    AUTHOR
+!!    ------
+!!  P. Tulet   *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!  16/07/03 (P. Tulet)  restructured for externalization
+!------------------------------------------------------------------------------
+!
+!*       0.   DECLARATIONS
+!             ------------
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+
+TYPE CH_TEB_t
+!
+  CHARACTER(LEN=28)  :: CCHEM_SURF_FILE  ! name of general (chemical) purpose ASCII input file
+  CHARACTER(LEN=6)                :: CCH_DRY_DEP            !  deposition scheme
+  REAL, DIMENSION(:,:),   POINTER :: XDEP =>NULL()                  ! final dry deposition
+                                                            ! velocity  for nature
+  REAL, DIMENSION(:,:),   POINTER :: XSOILRC_SO2 =>NULL()           ! for SO2
+  REAL, DIMENSION(:,:),   POINTER :: XSOILRC_O3 =>NULL()            ! for O3
+  LOGICAL                         :: LCH_BIO_FLUX           ! flag for the calculation of
+                                                            ! biogenic fluxes
+  LOGICAL                         :: LCH_NO_FLUX            ! flag for the calculation of
+                                                            ! biogenic NO fluxes
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSV =>NULL()           ! name of the scalar var.
+
+  INTEGER    :: NSV_CHSBEG, NSV_CHSEND                      ! chemical begin and ending
+                                                            ! index of the HSV/CSV array
+  INTEGER    :: NBEQ                                        ! number of chemical species
+                                                            ! in the surface scheme
+  INTEGER    :: NSV_DSTBEG, NSV_DSTEND                      ! index of first and last dust
+!                                                           ! related scalar variable
+  INTEGER    :: NSV_SLTBEG, NSV_SLTEND                      ! index of first and last sea salt
+!                                                           ! related scalar variable
+  INTEGER    :: NSV_AERBEG, NSV_AEREND                      ! index of first and last dust
+!                                                           ! related scalar variable
+  INTEGER    :: NDSTEQ                                      ! number of dust related species
+!                                                           ! in scalar variables list
+  INTEGER    :: NAEREQ                                      ! number of aerosol species
+  INTEGER    :: NSLTEQ                                      ! number of sea salt related species
+!                                                           ! in scalar variables list
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES =>NULL()     ! NAME OF CHEMICAL SPECIES
+                                                            ! (FOR DIAG ONLY)
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CAER_NAMES =>NULL()     ! NAME OF CHEMICAL SPECIES
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CDSTNAMES =>NULL()     ! NAME OF CHEMICAL SPECIES
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSLTNAMES =>NULL()     ! NAME OF CHEMICAL SPECIES
+
+!
+END TYPE CH_TEB_t
+
+TYPE(CH_TEB_t), ALLOCATABLE, TARGET, SAVE :: CH_TEB_MODEL(:)
+
+ CHARACTER(LEN=28), POINTER :: CCHEM_SURF_FILE=>NULL()
+!$OMP THREADPRIVATE(CCHEM_SURF_FILE)
+ CHARACTER(LEN=6), POINTER :: CCH_DRY_DEP=>NULL()
+!$OMP THREADPRIVATE(CCH_DRY_DEP)
+REAL, DIMENSION(:,:),   POINTER :: XDEP=>NULL()
+!$OMP THREADPRIVATE(XDEP)
+REAL, DIMENSION(:,:),   POINTER :: XSOILRC_SO2=>NULL()
+!$OMP THREADPRIVATE(XSOILRC_SO2)
+REAL, DIMENSION(:,:),   POINTER :: XSOILRC_O3=>NULL()
+!$OMP THREADPRIVATE(XSOILRC_O3)
+LOGICAL, POINTER :: LCH_BIO_FLUX=>NULL()
+!$OMP THREADPRIVATE(LCH_BIO_FLUX)
+LOGICAL, POINTER :: LCH_NO_FLUX=>NULL()
+!$OMP THREADPRIVATE(LCH_NO_FLUX)
+CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSV=>NULL()
+!$OMP THREADPRIVATE(CSV)
+INTEGER, POINTER :: NSV_CHSBEG=>NULL(), NSV_CHSEND=>NULL()
+!$OMP THREADPRIVATE(NSV_CHSBEG,NSV_CHSEND)
+INTEGER, POINTER :: NSV_AERBEG=>NULL(), NSV_AEREND=>NULL()
+!$OMP THREADPRIVATE(NSV_AERBEG,NSV_AEREND)
+INTEGER, POINTER :: NSV_DSTBEG=>NULL(), NSV_DSTEND=>NULL()
+!$OMP THREADPRIVATE(NSV_DSTBEG,NSV_DSTEND)
+INTEGER, POINTER :: NSV_SLTBEG=>NULL(), NSV_SLTEND=>NULL()
+!$OMP THREADPRIVATE(NSV_SLTBEG,NSV_SLTEND)
+INTEGER, POINTER :: NBEQ=>NULL()
+!$OMP THREADPRIVATE(NBEQ)
+INTEGER, POINTER :: NAEREQ=>NULL()
+!$OMP THREADPRIVATE(NAEREQ)
+INTEGER, POINTER :: NDSTEQ=>NULL()
+!$OMP THREADPRIVATE(NDSTEQ)
+INTEGER, POINTER :: NSLTEQ=>NULL()
+!$OMP THREADPRIVATE(NSLTEQ)
+ CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES=>NULL()
+!$OMP THREADPRIVATE(CCH_NAMES)
+ CHARACTER(LEN=6), DIMENSION(:), POINTER :: CAER_NAMES=>NULL()
+!$OMP THREADPRIVATE(CAER_NAMES)
+ CHARACTER(LEN=6), DIMENSION(:), POINTER :: CDSTNAMES=>NULL()
+!$OMP THREADPRIVATE(CDSTNAMES)
+ CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSLTNAMES=>NULL()
+!$OMP THREADPRIVATE(CSLTNAMES)
+
+CONTAINS
+
+SUBROUTINE CH_TEB_GOTO_MODEL(KFROM, KTO, LKFROM)
+LOGICAL, INTENT(IN) :: LKFROM
+INTEGER, INTENT(IN) :: KFROM, KTO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+! Save current state for allocated arrays
+IF (LKFROM) THEN
+CH_TEB_MODEL(KFROM)%XDEP=>XDEP
+CH_TEB_MODEL(KFROM)%XSOILRC_SO2=>XSOILRC_SO2
+CH_TEB_MODEL(KFROM)%XSOILRC_O3=>XSOILRC_O3
+CH_TEB_MODEL(KFROM)%CSV=>CSV
+CH_TEB_MODEL(KFROM)%CCH_NAMES=>CCH_NAMES
+CH_TEB_MODEL(KFROM)%CDSTNAMES=>CDSTNAMES
+CH_TEB_MODEL(KFROM)%CSLTNAMES=>CSLTNAMES
+CH_TEB_MODEL(KFROM)%CAER_NAMES=>CAER_NAMES
+ENDIF
+
+!
+! Current model is set to model KTO
+IF (LHOOK) CALL DR_HOOK('MODD_CH_TEB_N:CH_TEB_GOTO_MODEL',0,ZHOOK_HANDLE)
+CCHEM_SURF_FILE=>CH_TEB_MODEL(KTO)%CCHEM_SURF_FILE
+CCH_DRY_DEP=>CH_TEB_MODEL(KTO)%CCH_DRY_DEP
+XDEP=>CH_TEB_MODEL(KTO)%XDEP
+XSOILRC_SO2=>CH_TEB_MODEL(KTO)%XSOILRC_SO2
+XSOILRC_O3=>CH_TEB_MODEL(KTO)%XSOILRC_O3
+LCH_BIO_FLUX=>CH_TEB_MODEL(KTO)%LCH_BIO_FLUX
+LCH_NO_FLUX=>CH_TEB_MODEL(KTO)%LCH_NO_FLUX
+CSV=>CH_TEB_MODEL(KTO)%CSV
+NSV_CHSBEG=>CH_TEB_MODEL(KTO)%NSV_CHSBEG
+NSV_CHSEND=>CH_TEB_MODEL(KTO)%NSV_CHSEND
+NBEQ=>CH_TEB_MODEL(KTO)%NBEQ
+NSV_DSTBEG=>CH_TEB_MODEL(KTO)%NSV_DSTBEG
+NSV_DSTEND=>CH_TEB_MODEL(KTO)%NSV_DSTEND
+NDSTEQ=>CH_TEB_MODEL(KTO)%NDSTEQ
+NSV_SLTBEG=>CH_TEB_MODEL(KTO)%NSV_SLTBEG
+NSV_SLTEND=>CH_TEB_MODEL(KTO)%NSV_SLTEND
+NSLTEQ=>CH_TEB_MODEL(KTO)%NSLTEQ
+NSV_AERBEG=>CH_TEB_MODEL(KTO)%NSV_AERBEG
+NSV_AEREND=>CH_TEB_MODEL(KTO)%NSV_AEREND
+NAEREQ=>CH_TEB_MODEL(KTO)%NAEREQ
+CCH_NAMES=>CH_TEB_MODEL(KTO)%CCH_NAMES
+CAER_NAMES=>CH_TEB_MODEL(KTO)%CAER_NAMES
+CDSTNAMES=>CH_TEB_MODEL(KTO)%CDSTNAMES
+CSLTNAMES=>CH_TEB_MODEL(KTO)%CSLTNAMES
+IF (LHOOK) CALL DR_HOOK('MODD_CH_TEB_N:CH_TEB_GOTO_MODEL',1,ZHOOK_HANDLE)
+
+END SUBROUTINE CH_TEB_GOTO_MODEL
+
+SUBROUTINE CH_TEB_ALLOC(KMODEL)
+INTEGER, INTENT(IN) :: KMODEL
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_CH_TEB_N:CH_TEB_ALLOC",0,ZHOOK_HANDLE)
+ALLOCATE(CH_TEB_MODEL(KMODEL))
+CH_TEB_MODEL(:)%CCHEM_SURF_FILE=' '
+CH_TEB_MODEL(:)%CCH_DRY_DEP=' '
+CH_TEB_MODEL(:)%LCH_BIO_FLUX=.FALSE.
+CH_TEB_MODEL(:)%LCH_NO_FLUX=.FALSE.
+CH_TEB_MODEL(:)%NBEQ=0
+CH_TEB_MODEL(:)%NDSTEQ=0
+CH_TEB_MODEL(:)%NAEREQ=0
+CH_TEB_MODEL(:)%NSLTEQ=0
+CH_TEB_MODEL(:)%NSV_CHSBEG=0
+CH_TEB_MODEL(:)%NSV_CHSEND=0
+CH_TEB_MODEL(:)%NSV_DSTBEG=0
+CH_TEB_MODEL(:)%NSV_DSTEND=0
+CH_TEB_MODEL(:)%NSV_SLTBEG=0
+CH_TEB_MODEL(:)%NSV_SLTEND=0
+CH_TEB_MODEL(:)%NSV_AERBEG=0
+CH_TEB_MODEL(:)%NSV_AEREND=0
+IF (LHOOK) CALL DR_HOOK("MODD_CH_TEB_N:CH_TEB_ALLOC",1,ZHOOK_HANDLE)
+END SUBROUTINE CH_TEB_ALLOC
+
+SUBROUTINE CH_TEB_DEALLO
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_CH_TEB_N:CH_TEB_DEALLO",0,ZHOOK_HANDLE)
+IF (ALLOCATED(CH_TEB_MODEL)) DEALLOCATE(CH_TEB_MODEL)
+IF (LHOOK) CALL DR_HOOK("MODD_CH_TEB_N:CH_TEB_DEALLO",1,ZHOOK_HANDLE)
+END SUBROUTINE CH_TEB_DEALLO
+
+END MODULE MODD_CH_TEB_n

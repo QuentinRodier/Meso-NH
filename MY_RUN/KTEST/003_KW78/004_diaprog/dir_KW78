@@ -1,0 +1,70 @@
+! directives de presentation
+LINVWB=T NIGRNC=10 nhi=0 lminmax=t xsizel=0.015
+! fenetre graphique
+visu
+! plages de couleur, pas d isolignes
+LCOLAREA=T LISO=F               
+! gestion des vecteurs (1 vecteur sur 4)
+NISKIP=4 XVRL=0.15                                                              
+! 1er fichier a ouvrir
+_file1_'KWRAI.1.SG410.004dg'                                                    
+!visu                     
+! couleur de fond pour le 1er intervalle
+LCOLZERO=T NCOLZERO=1                                                           
+! precipitations explicites instantanees
+INPRR                                                                           
+! precipitations explicites cumulees
+ACPRR                                                                           
+! trace de tous les vecteurs
+NISKIP=1                                                                        
+! superposition de la pression et des vecteurs de vent au niveau K=2
+PABSM_K_2_ON_UMVM_K_2                                                           
+! superposition du rapport d eau nuageuse et des vecteurs vent a 3000m
+RCM_Z_3000_ON_UMVM_Z_3000                                                       
+! superposition du rapport d eau nuageuse et des vecteurs vent a 5000m
+RCM_Z_5000_ON_UMVM_Z_5000                                                       
+! definition d une coupe verticale
+NIDEBCOU=5 NJDEBCOU=2 NLANGLE=47 NLMAX=21                                       
+! trace de la coupe verticale dans le plan horizontal
+LTRACECV=T                                                                      
+! rapport de vapeur et vecteurs vent dans la coupe verticale
+RVM_CV__ON_ULMWM_CV_                                                            
+! plus de trace de la coupe verticale
+LTRACECV=F                                                                      
+! rapport de melange d eau nuageuse et rapport d eau de pluie
+RCM_CV__ON_RRM_CV_                                                              
+! difference pour la temperature potentielle avec le champ initial
+THM_CV__MINUS_LSTHM_CV_                                                         
+! vitesse verticale en coupe verticale
+WM_CV_                                                                          
+! definition d une autre coupe verticale
+NIDEBCOU=15 NJDEBCOU=2 NLANGLE=90 NLMAX=23       
+LTRACECV=T                                                                      
+RVM_CV__ON_ULMWM_CV_                                                            
+LTRACECV=F                                                                      
+RCM_CV__ON_RRM_CV_                                                              
+THM_CV__MINUS_LSTHM_CV_                                                         
+WM_CV_                                                                          
+quit
+! 2e fichier a ouvrir
+_file2_'KWRAI.1.SEG00.003.dia'                                                  
+! definition d une coupe verticale
+LDEFCV2IND=T                                                                    
+NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
+LTRACECV=T                                                                    
+THM_CV_                                                                         
+LTRACECV=F                                                                    
+NIMNMX=-1
+RVM_CV__ON_ULMWM_CV_  
+RCM_CV__ON_RRM_CV_    
+WM_CV_
+! 3e fichier a ouvrir
+_file3_'KWRAI.1.SEG00.004.dia'                                                  
+LDEFCV2IND=T                                                                    
+NIDEBCV=2 NJDEBCV=12 NIFINCV=24 NJFINCV=12                                      
+THM_CV_                                                                         
+RVM_CV__ON_ULMWM_CV_  
+RCM_CV__ON_RRM_CV_    
+WM_CV_
+!
+! a vous d indiquer vos directives                                                                            

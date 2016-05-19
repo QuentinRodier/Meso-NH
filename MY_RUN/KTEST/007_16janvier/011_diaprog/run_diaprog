@@ -1,0 +1,6 @@
+set -x
+set -e
+ln -sf ../010_conv2dia/16JAN.?.12B18.001cv.??? .
+rm -f dir.0*
+${POSTRUN} diaprog < dir_16janv
+
