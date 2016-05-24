@@ -1,0 +1,6 @@
+conf/profile_mesonh-*
+pub/ncl_ncarg*/
+src/dir_obj-*
+src/LIB/grib_api*
+src/LIB/hdf5*
+src/LIB/netcdf*
