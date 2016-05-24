@@ -10,7 +10,8 @@
 ! $Revision$ 
 ! $Date$
 !Correction :
-!  D.Gazen   : avril 2016 change error message 
+!  D.Gazen   : avril 2016 change error message
+!  P. Wautelet : may 2016: use NetCDF Fortran module
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
@@ -137,7 +138,7 @@ USE MODE_IO_ll, ONLY : OPEN_ll,GCONFIO
 USE MODD_CONFZ,ONLY  : NB_PROCIO_R,NB_PROCIO_W
 !JUANZ
 #if defined(MNH_IOCDF4)
-USE MODD_NETCDF
+USE MODD_NETCDF, ONLY:IDCDF_KIND
 USE MODE_NETCDF
 #endif
 CHARACTER(LEN=*),INTENT(IN) ::HFILEM  ! name of the file.
@@ -256,26 +257,26 @@ IF (ISP == TZFDLFI%OWNER) THEN
      IF (HACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
         !! Open NetCDF File for reading
         TZFDLFI%CDF => NEWIOCDF()
-        INCERR = NF_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF_NOWRITE, TZFDLFI%CDF%NCID)
-        IF (INCERR /= NF_NOERR) THEN
-           !PRINT *, 'FMOPEN_ll, NF_OPEN error : ', NF_STRERROR(INCERR)
-           PRINT *, 'Error in opening (FMOPEN_ll/NF_OPEN) ', TRIM(HFILEM)//'.nc4', ' : ', NF_STRERROR(IRESOU)
+        INCERR = NF90_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF90_NOWRITE, TZFDLFI%CDF%NCID)
+        IF (INCERR /= NF90_NOERR) THEN
+           !PRINT *, 'FMOPEN_ll, NF90_OPEN error : ', NF90_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF90_OPEN) ', TRIM(HFILEM)//'.nc4', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        PRINT *, 'NF_OPEN: ', TRIM(HFILEM)//'.nc4'
+        PRINT *, 'NF90_OPEN: ', TRIM(HFILEM)//'.nc4'
      END IF
      
      IF (HACTION == 'WRITE') THEN
         ! HACTION == 'WRITE'
         TZFDLFI%CDF => NEWIOCDF()
-        INCERR = NF_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
-             &IOR(NF_CLOBBER,NF_NETCDF4), TZFDLFI%CDF%NCID)
-        IF (INCERR /= NF_NOERR) THEN
-           !PRINT *, 'FMOPEN_ll, NF_CREATE error : ', NF_STRERROR(INCERR)
-           PRINT *, 'Error in opening (FMOPEN_ll/NF_CREATE) ', TRIM(HFILEM)//'.nc4', ' : ', NF_STRERROR(IRESOU)
+        INCERR = NF90_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
+             &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFDLFI%CDF%NCID)
+        IF (INCERR /= NF90_NOERR) THEN
+           !PRINT *, 'FMOPEN_ll, NF90_CREATE error : ', NF90_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF90_CREATE) ', TRIM(HFILEM)//'.nc4', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        PRINT *, 'NF_CREATE: ', TRIM(HFILEM)//'.nc4'
+        PRINT *, 'NF90_CREATE: ', TRIM(HFILEM)//'.nc4'
      END IF
   END IF
 #endif

@@ -19,8 +19,9 @@
 !     Juan 22/05/2008: bug mode SPECIFIC in OPEN_ll 
 !     Juan 05/11/2009: allow JPMAX_UNIT=48 open files 
 !     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
-!     Philippe 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
+!     P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
 !     D.Gazen   : avril 2016 change error message 
+!     P. Wautelet : may 2016: use NetCDF Fortran module
 !
 MODULE MODE_IO_ll
 
@@ -223,7 +224,7 @@ CONTAINS
        KMELEV,&
        OPARALLELIO)
 #if defined(MNH_IOCDF4)
-  USE MODD_NETCDF
+  USE MODD_NETCDF, ONLY:IDCDF_KIND
   USE MODE_NETCDF
 #endif
   USE MODD_IO_ll
@@ -662,29 +663,29 @@ CONTAINS
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOSCDF = NF_OPEN(TRIM(FILE)//cfile//".nc4", NF_NOWRITE, TZFD_IOZ%CDF%NCID)
-                      IF (IOSCDF /= NF_NOERR) THEN
-   PRINT *, 'Error in opening (NF_OPEN) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF_STRERROR(IOS)
+                      IOSCDF = NF90_OPEN(TRIM(FILE)//cfile//".nc4", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      IF (IOSCDF /= NF90_NOERR) THEN
+   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
                       END IF
-                      PRINT *, 'NF_OPEN(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                      PRINT *, 'NF90_OPEN(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
                    END IF
                    
                    IF (YACTION == 'WRITE') THEN
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOSCDF = NF_CREATE(TRIM(FILE)//cfile//".nc4", &
-                           &IOR(NF_CLOBBER,NF_NETCDF4), TZFD_IOZ%CDF%NCID)
-                      IF (IOSCDF /= NF_NOERR) THEN
-                         PRINT *, 'Error in opening (NF_CREATE) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF_STRERROR(IOS)
+                      IOSCDF = NF90_CREATE(TRIM(FILE)//cfile//".nc4", &
+                           &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFD_IOZ%CDF%NCID)
+                      IF (IOSCDF /= NF90_NOERR) THEN
+                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
                       END IF
-                      PRINT *, 'NF_CREATE(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                      PRINT *, 'NF90_CREATE(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
                    END IF
                 END IF
 #endif
