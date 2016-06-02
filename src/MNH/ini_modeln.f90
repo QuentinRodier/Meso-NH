@@ -265,6 +265,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!       V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!                   J.Escobar : 01/06/2016 : correct check limit of NRIM versus local subdomain size IDIM
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -493,6 +494,8 @@ REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS
 !
+INTEGER                         ::  IIB,IJB,IIE,IJE,IDIMX,IDIMY
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    PROLOGUE
@@ -599,6 +602,10 @@ IJU_ll=NJMAX_ll + 2 * JPHEXT
 ! initialize NIMAX and NJMAX for not updated versions regarding the parallelism
 ! spawning,...
 CALL GET_DIM_PHYS_ll('B',NIMAX,NJMAX)
+!
+CALL GET_INDICE_ll( IIB,IJB,IIE,IJE)
+IDIMX = IIE - IIB + 1
+IDIMY = IJE - IJB + 1
 !
 NRR=0
 NRRL=0
@@ -1004,11 +1011,11 @@ ELSE                                   ! 3D case
 ! check if local domain not to small for NRIMX NRIMY
 !
   IF ( CLBCX(1) /= 'CYCL' )  THEN
-     IF ( NRIMX+2*JPHEXT .GE. IIU )   THEN
+     IF ( NRIMX .GT. IDIMX )   THEN
         WRITE(*,'(A,I8,A/A,2I8,/A)') "Processor=", IP-1, &
-             " :: INI_MODEL_n ERROR:  ( NRIMX+2*JPHEXT >= IIU )  ", &
-             " Local domain to small for relaxation NRIMX+2*JPHEXT,IIU ", &
-             NRIMX+2*JPHEXT,IIU ,&
+             " :: INI_MODEL_n ERROR:  ( NRIMX  > IDIMX )  ", &
+             " Local domain to small for relaxation NRIMX,IDIMX ", &
+             NRIMX,IDIMX ,&
              " change relaxation parameters or number of processors "
         !callabortstop
         CALL ABORT
@@ -1016,11 +1023,11 @@ ELSE                                   ! 3D case
      END IF
   END IF
   IF ( CLBCY(1) /= 'CYCL' ) THEN
-     IF ( NRIMY+2*JPHEXT .GE. IJU )  THEN
+     IF ( NRIMY .GT. IDIMY )  THEN
         WRITE(*,'(A,I8,A/A,2I8,/A)') "Processor=", IP-1, &
-             " :: INI_MODEL_n ERROR:  ( NRIMY+2*JPHEXT >= IJU )  ", &
-             " Local domain to small for relaxation NRIMY+2*JPHEXT,IJU ", &
-             NRIMY+2*JPHEXT,IJU ,&
+             " :: INI_MODEL_n ERROR:  ( NRIMY > IDIMY )  ", &
+             " Local domain to small for relaxation NRIMY,IDIMY ", &
+             NRIMY,IDIMY ,&
              " change relaxation parameters or number of processors "
         !callabortstop
         CALL ABORT
