@@ -3,7 +3,7 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 #MNH_LIC for details. version 1.
 set -x
-set -e
+
 ln -sf ../002_mesonh/EXPER.1.HYD2D.002.nc4 .
 ln -sf ../002_mesonh/EXPER.1.HYD2D.003.nc4 .
 
@@ -24,3 +24,4 @@ display visu_2Drelief.000013.png
 display visu_2Drelief.000014.png
 display visu_2Drelief.000015.png
 display visu_2Drelief.000016.png
+exit 0

@@ -3,7 +3,7 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 #MNH_LIC for details. version 1.
 set -x
-set -e
+
 ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc4 .
 
 ncl  plot_KW78.ncl
@@ -20,4 +20,4 @@ display visu_KW78.000010.png
 display visu_KW78.000011.png
 display visu_KW78.000012.png
 display visu_KW78.000013.png
-
+exit 0
