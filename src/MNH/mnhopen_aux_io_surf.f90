@@ -50,6 +50,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!         M.Moge   04/2015  parallelization og PREP_PGD on son model
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!         J.Escobar : 02/06/2016 : abort MNHOPEN with STOP if problem with OPEN of INPUT/READ file 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -123,6 +124,10 @@ END IF
 !
 IF (HFILE/=COUTFMFILE .AND. HFILE/=CPGDFILE) THEN
   CALL FMOPEN_ll(HFILE,'READ',COUT,0,2,5,ININAR,IRESP,OPARALLELIO=.FALSE.)
+  IF (IRESP .NE. 0) THEN
+   PRINT*," /!\  MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES =", HFILE
+   STOP '/!\ MNHOPEN_AUX_IO_SURF :: FATAL PROBLEM OPENING INPUT/READ FILES , CHECK OUTPUT_LISTING* !!!'
+  ENDIF
   CACTION = 'OPEN  '
 END IF
 !
