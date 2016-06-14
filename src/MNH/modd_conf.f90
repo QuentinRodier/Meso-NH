@@ -67,7 +67,7 @@ LOGICAL,SAVE      :: LTHINSHELL  ! Logical for thinshell approximation
 LOGICAL,SAVE      :: LCARTESIAN  ! Logical for cartesian geometry :
                                  !  .TRUE.  = cartesian geometry 
                                  !  .FALSE. = conformal projection
-LOGICAL,SAVE      :: L2D         ! Logical for 2D model version
+LOGICAL,SAVE      :: L2D = .FALSE. ! Logical for 2D model version
                                  ! .TRUE.  = 2D model version
                                  ! .FALSE. = 3D model version
 LOGICAL,SAVE      :: L1D         ! Logical for 1D model version
