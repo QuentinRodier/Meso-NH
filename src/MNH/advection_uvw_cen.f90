@@ -26,7 +26,7 @@ CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 !
 REAL,                     INTENT(IN)    :: PTSTEP!  time step
 INTEGER,                  INTENT(IN)    :: KTCOUNT
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM, PVM, PWM
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM, PVM, PWM
                                                   ! Variables at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDUM, PDVM, PDWM
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT, PRHODJ
@@ -121,7 +121,7 @@ CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 !
 REAL,                     INTENT(IN)    :: PTSTEP!  time step
 INTEGER,                  INTENT(IN)    :: KTCOUNT
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PUM, PVM, PWM
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUM, PVM, PWM
                                                   ! Variables at t-dt
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDUM, PDVM, PDWM
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT, PRHODJ
