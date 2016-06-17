@@ -14,73 +14,73 @@
 !
 INTERFACE
 !
-FUNCTION PPM_01_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+FUNCTION PPM_01_X(HLBCX, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_01_X
 !
-FUNCTION PPM_01_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+FUNCTION PPM_01_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! Y direction LBC type
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_01_Y
 !
-FUNCTION PPM_01_Z(KGRID, PSRC, ZCR, PRHO, PTSTEP) RESULT(PR)
+FUNCTION PPM_01_Z(KGRID, PSRC, PCR, PRHO, PTSTEP) RESULT(PR)
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_01_Z
 !
-FUNCTION PPM_S0_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+FUNCTION PPM_S0_X(HLBCX, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S0_X
 !
-FUNCTION PPM_S0_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+FUNCTION PPM_S0_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
@@ -88,33 +88,33 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S0_Y
 !
-FUNCTION PPM_S0_Z(KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+FUNCTION PPM_S0_Z(KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S0_Z
 !
-FUNCTION PPM_S1_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PRHOT, &
+FUNCTION PPM_S1_X(HLBCX, KGRID, PSRC, PCR, PRHO, PRHOT, &
                         PTSTEP) RESULT(PR)
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
@@ -122,18 +122,18 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S1_X
 !
-FUNCTION PPM_S1_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PRHOT, &
+FUNCTION PPM_S1_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PRHOT, &
                         PTSTEP) RESULT(PR)
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! X direction LBC type
@@ -141,31 +141,31 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S1_Y
 !
-FUNCTION PPM_S1_Z(KGRID, PSRC, ZCR, PRHO, PRHOT, PTSTEP) &
+FUNCTION PPM_S1_Z(KGRID, PSRC, PCR, PRHO, PRHOT, PTSTEP) &
                         RESULT(PR)
 !
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 END FUNCTION PPM_S1_Z
 !
@@ -177,7 +177,7 @@ END MODULE MODI_PPM
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !     ########################################################################
-      FUNCTION PPM_01_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+      FUNCTION PPM_01_X(HLBCX, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !     ########################################################################
 !!
@@ -212,13 +212,13 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -226,15 +226,15 @@ INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
 ! terms used in parabolic interpolation, dmq, qL, qR, dq, q6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL,ZQR
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDQ,ZQ6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDMQ
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL,ZQR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDQ,ZQ6
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDMQ
 !
 ! extra variables for the initial guess of parabolae parameters
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL0,ZQR0,ZQ60
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL0,ZQR0,ZQ60
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 !BEG JUAN PPM_LL
 INTEGER                          :: ILUOUT,IRESP             ! for prints
@@ -373,10 +373,10 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
 ! and finally calculate fluxes for the advection
 !
-!  ZFPOS(i) = Fct[ ZQR(i-1),ZCR(i),ZDQ(i-1),ZQ6(i-1) ]
+!  ZFPOS(i) = Fct[ ZQR(i-1),PCR(i),ZDQ(i-1),ZQ6(i-1) ]
 !
-   ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*ZCR(IIB:IIE+1,IJS:IJN,:) * &            
-        (ZDQ(IIB-1:IIE,IJS:IJN,:) - (1.0 - 2.0*ZCR(IIB:IIE+1,IJS:IJN,:)/3.0)        &
+   ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*PCR(IIB:IIE+1,IJS:IJN,:) * &            
+        (ZDQ(IIB-1:IIE,IJS:IJN,:) - (1.0 - 2.0*PCR(IIB:IIE+1,IJS:IJN,:)/3.0)        &
         * ZQ6(IIB-1:IIE,IJS:IJN,:))
 !
    CALL GET_HALO(ZFPOS)
@@ -387,15 +387,15 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 ! we set it to 0
 !!$   ZFPOS(IIB-1,:,:) = 0.0 JUANPPMLL01
 !
-   ZFNEG(:,IJS:IJN,:) = ZQL(:,IJS:IJN,:) - 0.5*ZCR(:,IJS:IJN,:) *      &            
-        ( ZDQ(:,IJS:IJN,:) + (1.0 + 2.0*ZCR(:,IJS:IJN,:)/3.0) * ZQ6(:,IJS:IJN,:) )
+   ZFNEG(:,IJS:IJN,:) = ZQL(:,IJS:IJN,:) - 0.5*PCR(:,IJS:IJN,:) *      &            
+        ( ZDQ(:,IJS:IJN,:) + (1.0 + 2.0*PCR(:,IJS:IJN,:)/3.0) * ZQ6(:,IJS:IJN,:) )
 !
    CALL GET_HALO(ZFNEG)
 !
 ! advect the actual field in X direction by U*dt
 !
-   PR = DXF( ZCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+   PR = DXF( PCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
    CALL GET_HALO(PR)   
 !
 !
@@ -513,13 +513,13 @@ CASE('OPEN')
 ! and finally calculate fluxes for the advection
 !
 !
-!  ZFPOS(i) = Fct[ ZQR(i-1),ZCR(i),ZDQ(i-1),ZQ6(i-1) ]
+!  ZFPOS(i) = Fct[ ZQR(i-1),PCR(i),ZDQ(i-1),ZQ6(i-1) ]
 !
-!!$   ZFPOS(IIB+1:IIE+1,:,:) = ZQR(IIB:IIE,:,:) - 0.5*ZCR(IIB+1:IIE+1,:,:) * &            
-!!$        (ZDQ(IIB:IIE,:,:) - (1.0 - 2.0*ZCR(IIB+1:IIE+1,:,:)/3.0)          &
+!!$   ZFPOS(IIB+1:IIE+1,:,:) = ZQR(IIB:IIE,:,:) - 0.5*PCR(IIB+1:IIE+1,:,:) * &            
+!!$        (ZDQ(IIB:IIE,:,:) - (1.0 - 2.0*PCR(IIB+1:IIE+1,:,:)/3.0)          &
 !!$        * ZQ6(IIB:IIE,:,:))
-   ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*ZCR(IIB:IIE+1,IJS:IJN,:) * &            
-        (ZDQ(IIB-1:IIE,IJS:IJN,:) - (1.0 - 2.0*ZCR(IIB:IIE+1,IJS:IJN,:)/3.0)        &
+   ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZQR(IIB-1:IIE,IJS:IJN,:) - 0.5*PCR(IIB:IIE+1,IJS:IJN,:) * &            
+        (ZDQ(IIB-1:IIE,IJS:IJN,:) - (1.0 - 2.0*PCR(IIB:IIE+1,IJS:IJN,:)/3.0)        &
         * ZQ6(IIB-1:IIE,IJS:IJN,:))
 !
    CALL GET_HALO(ZFPOS)
@@ -530,18 +530,18 @@ CASE('OPEN')
 ! advection flux at open boundary when u(IIB) > 0
 ! 
   IF (LWEST_ll()) THEN 
-   ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZQR(IIB-1,IJS:IJN,:))*ZCR(IIB,IJS:IJN,:) + &
+   ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZQR(IIB-1,IJS:IJN,:))*PCR(IIB,IJS:IJN,:) + &
                     ZQR(IIB-1,IJS:IJN,:)
 ! PPOSX(IIB-1,:,:) is not important for the calc of advection so 
 ! we set it to 0
 !!$   ZFPOS(IIB-1,:,:) = 0.0
    ENDIF
 !
-!!$   ZFNEG(IIB-1:IIE,:,:) = ZQL(IIB-1:IIE,:,:) - 0.5*ZCR(IIB-1:IIE,:,:) *  &            
-!!$        (ZDQ(IIB-1:IIE,:,:) + (1.0 + 2.0*ZCR(IIB-1:IIE,:,:)/3.0)         &
+!!$   ZFNEG(IIB-1:IIE,:,:) = ZQL(IIB-1:IIE,:,:) - 0.5*PCR(IIB-1:IIE,:,:) *  &            
+!!$        (ZDQ(IIB-1:IIE,:,:) + (1.0 + 2.0*PCR(IIB-1:IIE,:,:)/3.0)         &
 !!$        * ZQ6(IIB-1:IIE,:,:))
-   ZFNEG(:,IJS:IJN,:) = ZQL(:,IJS:IJN,:) - 0.5*ZCR(:,IJS:IJN,:) *      &            
-        ( ZDQ(:,IJS:IJN,:) + (1.0 + 2.0*ZCR(:,IJS:IJN,:)/3.0) * ZQ6(:,IJS:IJN,:) )
+   ZFNEG(:,IJS:IJN,:) = ZQL(:,IJS:IJN,:) - 0.5*PCR(:,IJS:IJN,:) *      &            
+        ( ZDQ(:,IJS:IJN,:) + (1.0 + 2.0*PCR(:,IJS:IJN,:)/3.0) * ZQ6(:,IJS:IJN,:) )
 !
    CALL GET_HALO(ZFNEG)
 !
@@ -549,14 +549,14 @@ CASE('OPEN')
 !
 ! advection flux at open boundary when u(IIE+1) < 0
   IF (LEAST_ll()) THEN
-   ZFNEG(IIE+1,IJS:IJN,:) = (ZQR(IIE,IJS:IJN,:)-PSRC(IIE+1,IJS:IJN,:))*ZCR(IIE+1,IJS:IJN,:) + &
+   ZFNEG(IIE+1,IJS:IJN,:) = (ZQR(IIE,IJS:IJN,:)-PSRC(IIE+1,IJS:IJN,:))*PCR(IIE+1,IJS:IJN,:) + &
                       ZQR(IIE,IJS:IJN,:)
   ENDIF
 !
 ! advect the actual field in X direction by U*dt
 !
-   PR = DXF( ZCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+   PR = DXF( PCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
    CALL GET_HALO(PR)   
 !
 !
@@ -625,7 +625,7 @@ END FUNCTION PPM_01_X
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_01_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+      FUNCTION PPM_01_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !     ########################################################################
 !!
@@ -660,13 +660,13 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! Y direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -674,15 +674,15 @@ INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
 ! terms used in parabolic interpolation, dmq, qL, qR, dq, q6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL,ZQR
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDQ,ZQ6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDMQ
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL,ZQR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDQ,ZQ6
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDMQ
 !
 ! extra variables for the initial guess of parabolae parameters
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL0,ZQR0,ZQ60
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL0,ZQR0,ZQ60
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 !BEG JUAN PPM_LL
 INTEGER                          :: ILUOUT,IRESP             ! for prints
@@ -816,10 +816,10 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 ! and finally calculate fluxes for the advection
 !
-!  ZFPOS(j) = Fct[ ZQR(j-1),ZCR(i),ZDQ(j-1),ZQ6(j-1) ]
+!  ZFPOS(j) = Fct[ ZQR(j-1),PCR(i),ZDQ(j-1),ZQ6(j-1) ]
 !
-   ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZQR(IIW:IIA,IJB-1:IJE,:) - 0.5*ZCR(IIW:IIA,IJB:IJE+1,:) * &            
-        (ZDQ(IIW:IIA,IJB-1:IJE,:) - (1.0 - 2.0*ZCR(IIW:IIA,IJB:IJE+1,:)/3.0)        &
+   ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZQR(IIW:IIA,IJB-1:IJE,:) - 0.5*PCR(IIW:IIA,IJB:IJE+1,:) * &            
+        (ZDQ(IIW:IIA,IJB-1:IJE,:) - (1.0 - 2.0*PCR(IIW:IIA,IJB:IJE+1,:)/3.0)        &
         * ZQ6(IIW:IIA,IJB-1:IJE,:))
 !
    CALL GET_HALO(ZFPOS)
@@ -830,15 +830,15 @@ CASE ('CYCL','WALL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 ! we set it to 0
 !!$   ZFPOS(:,IJB-1,:) = 0.0 JUANPPMLL01
 !
-   ZFNEG(IIW:IIA,:,:) = ZQL(IIW:IIA,:,:) - 0.5*ZCR(IIW:IIA,:,:) *      &            
-        ( ZDQ(IIW:IIA,:,:) + (1.0 + 2.0*ZCR(IIW:IIA,:,:)/3.0) * ZQ6(IIW:IIA,:,:) )
+   ZFNEG(IIW:IIA,:,:) = ZQL(IIW:IIA,:,:) - 0.5*PCR(IIW:IIA,:,:) *      &            
+        ( ZDQ(IIW:IIA,:,:) + (1.0 + 2.0*PCR(IIW:IIA,:,:)/3.0) * ZQ6(IIW:IIA,:,:) )
 !
    CALL GET_HALO(ZFNEG)
 !
 ! advect the actual field in Y direction by V*dt
 !
-   PR = DYF( ZCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+   PR = DYF( PCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
    CALL GET_HALO(PR) 
 !
 !*       2.2    NON-CYCLIC BOUNDARY CONDITIONS IN THE Y DIRECTION
@@ -937,11 +937,11 @@ CASE('OPEN')
    ZDQ = ZQR - ZQL
 !
 ! and finally calculate fluxes for the advection
-!!$   ZFPOS(:,IJB+1:IJE+1,:) = ZQR(:,IJB:IJE,:) - 0.5*ZCR(:,IJB+1:IJE+1,:) * &            
-!!$        (ZDQ(:,IJB:IJE,:) - (1.0 - 2.0*ZCR(:,IJB+1:IJE+1,:)/3.0)        &
+!!$   ZFPOS(:,IJB+1:IJE+1,:) = ZQR(:,IJB:IJE,:) - 0.5*PCR(:,IJB+1:IJE+1,:) * &            
+!!$        (ZDQ(:,IJB:IJE,:) - (1.0 - 2.0*PCR(:,IJB+1:IJE+1,:)/3.0)        &
 !!$        * ZQ6(:,IJB:IJE,:))
-   ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZQR(IIW:IIA,IJB-1:IJE,:) - 0.5*ZCR(IIW:IIA,IJB:IJE+1,:) * &            
-        (ZDQ(IIW:IIA,IJB-1:IJE,:) - (1.0 - 2.0*ZCR(IIW:IIA,IJB:IJE+1,:)/3.0)        &
+   ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZQR(IIW:IIA,IJB-1:IJE,:) - 0.5*PCR(IIW:IIA,IJB:IJE+1,:) * &            
+        (ZDQ(IIW:IIA,IJB-1:IJE,:) - (1.0 - 2.0*PCR(IIW:IIA,IJB:IJE+1,:)/3.0)        &
         * ZQ6(IIW:IIA,IJB-1:IJE,:))
 !
    CALL GET_HALO(ZFPOS)
@@ -952,7 +952,7 @@ CASE('OPEN')
 !  SOUTH BOUND
 !
    IF (LSOUTH_ll()) THEN
-    ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZQR(IIW:IIA,IJB-1,:))*ZCR(IIW:IIA,IJB,:) + &
+    ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZQR(IIW:IIA,IJB-1,:))*PCR(IIW:IIA,IJB,:) + &
                       ZQR(IIW:IIA,IJB-1,:)
    ENDIF
 !
@@ -960,11 +960,11 @@ CASE('OPEN')
 ! we set it to 0
 !!$   ZFPOS(:,IJB-1,:) = 0.0 ! JUAN PPMLL01
 !
-!!$   ZFNEG(:,IJB-1:IJE,:) = ZQL(:,IJB-1:IJE,:) - 0.5*ZCR(:,IJB-1:IJE,:) * &            
-!!$        ( ZDQ(:,IJB-1:IJE,:) + (1.0 + 2.0*ZCR(:,IJB-1:IJE,:)/3.0) * &
+!!$   ZFNEG(:,IJB-1:IJE,:) = ZQL(:,IJB-1:IJE,:) - 0.5*PCR(:,IJB-1:IJE,:) * &            
+!!$        ( ZDQ(:,IJB-1:IJE,:) + (1.0 + 2.0*PCR(:,IJB-1:IJE,:)/3.0) * &
 !!$        ZQ6(:,IJB-1:IJE,:) )
-   ZFNEG(IIW:IIA,:,:) = ZQL(IIW:IIA,:,:) - 0.5*ZCR(IIW:IIA,:,:) *      &            
-        ( ZDQ(IIW:IIA,:,:) + (1.0 + 2.0*ZCR(IIW:IIA,:,:)/3.0) * ZQ6(IIW:IIA,:,:) )
+   ZFNEG(IIW:IIA,:,:) = ZQL(IIW:IIA,:,:) - 0.5*PCR(IIW:IIA,:,:) *      &            
+        ( ZDQ(IIW:IIA,:,:) + (1.0 + 2.0*PCR(IIW:IIA,:,:)/3.0) * ZQ6(IIW:IIA,:,:) )
 !
    CALL GET_HALO(ZFNEG)
 !
@@ -973,14 +973,14 @@ CASE('OPEN')
 !  NORTH BOUND
 !
    IF (LNORTH_ll()) THEN
-    ZFNEG(IIW:IIA,IJE+1,:) = (ZQR(IIW:IIA,IJE,:)-PSRC(IIW:IIA,IJE+1,:))*ZCR(IIW:IIA,IJE+1,:) + &
+    ZFNEG(IIW:IIA,IJE+1,:) = (ZQR(IIW:IIA,IJE,:)-PSRC(IIW:IIA,IJE+1,:))*PCR(IIW:IIA,IJE+1,:) + &
                         ZQR(IIW:IIA,IJE,:)
    ENDIF
 !
 ! advect the actual field in X direction by U*dt
 !
-   PR = DYF( ZCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+   PR = DYF( PCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
    CALL GET_HALO(PR)
 !
@@ -1052,7 +1052,7 @@ END FUNCTION PPM_01_Y
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_01_Z(KGRID, PSRC, ZCR, PRHO, PTSTEP) RESULT(PR)
+      FUNCTION PPM_01_Z(KGRID, PSRC, PCR, PRHO, PTSTEP) RESULT(PR)
 !     ########################################################################
 !!
 !!****  PPM_01_Z - PPM_01 fully monotonic PPM advection scheme in Z direction
@@ -1080,13 +1080,13 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1095,15 +1095,15 @@ INTEGER:: IKE    ! End useful area in x,y,z directions
 INTEGER:: IKU
 !
 ! terms used in parabolic interpolation, dmq, qL, qR, dq, q6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL,ZQR
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDQ,ZQ6
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZDMQ
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL,ZQR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDQ,ZQ6
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZDMQ
 !
 ! extra variables for the initial guess of parabolae parameters
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZQL0,ZQR0,ZQ60
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZQL0,ZQR0,ZQ60
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 !-------------------------------------------------------------------------------
 !
@@ -1183,30 +1183,30 @@ ZDQ = ZQR - ZQL
 !
 ! and finally calculate fluxes for the advection
 !
-ZFPOS(:,:,IKB+1:IKE+1) = ZQR(:,:,IKB:IKE) - 0.5*ZCR(:,:,IKB+1:IKE+1) * &            
-     (ZDQ(:,:,IKB:IKE) - (1.0 - 2.0*ZCR(:,:,IKB+1:IKE+1)/3.0)        &
+ZFPOS(:,:,IKB+1:IKE+1) = ZQR(:,:,IKB:IKE) - 0.5*PCR(:,:,IKB+1:IKE+1) * &            
+     (ZDQ(:,:,IKB:IKE) - (1.0 - 2.0*PCR(:,:,IKB+1:IKE+1)/3.0)        &
      * ZQ6(:,:,IKB:IKE))
 !
 ! advection flux at open boundary when u(IKB) > 0
-ZFPOS(:,:,IKB) = (PSRC(:,:,IKB-1) - ZQR(:,:,IKB-1))*ZCR(:,:,IKB) + &
+ZFPOS(:,:,IKB) = (PSRC(:,:,IKB-1) - ZQR(:,:,IKB-1))*PCR(:,:,IKB) + &
                  ZQR(:,:,IKB-1)
 !
 ! PPOSX(IKB-1) is not important for the calc of advection so 
 ! we set it to 0
 ZFPOS(:,:,IKB-1) = 0.0
 !
-ZFNEG(:,:,IKB-1:IKE) = ZQL(:,:,IKB-1:IKE) - 0.5*ZCR(:,:,IKB-1:IKE) *      &            
-     ( ZDQ(:,:,IKB-1:IKE) + (1.0 + 2.0*ZCR(:,:,IKB-1:IKE)/3.0) * &
+ZFNEG(:,:,IKB-1:IKE) = ZQL(:,:,IKB-1:IKE) - 0.5*PCR(:,:,IKB-1:IKE) *      &            
+     ( ZDQ(:,:,IKB-1:IKE) + (1.0 + 2.0*PCR(:,:,IKB-1:IKE)/3.0) * &
        ZQ6(:,:,IKB-1:IKE) )
 !
 ! advection flux at open boundary when u(IKE+1) < 0
-ZFNEG(:,:,IKE+1) = (ZQR(:,:,IKE)-PSRC(:,:,IKE+1))*ZCR(:,:,IKE+1) + &
+ZFNEG(:,:,IKE+1) = (ZQR(:,:,IKE)-PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
                    ZQR(:,:,IKE)
 !
 ! advect the actual field in Z direction by W*dt
 !
-PR = DZF(1,IKU,1, ZCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                          ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+PR = DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                          ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 CALL GET_HALO(PR)
 !
 CONTAINS
@@ -1277,7 +1277,7 @@ END FUNCTION PPM_01_Z
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S0_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+      FUNCTION PPM_S0_X(HLBCX, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !     ########################################################################
 !!
@@ -1312,13 +1312,13 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1326,10 +1326,10 @@ INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 ! variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !
 !BEG JUAN PPM_LL
 TYPE(HALO2LIST_ll), POINTER      :: TZ_PSRC_HALO2_ll         ! halo2 for PSRC
@@ -1417,16 +1417,16 @@ CASE ('CYCL','WALL')            ! In that case one must have HLBCX(1) == HLBCX(2
 CALL  GET_HALO(ZPHAT)
 !
    ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZPHAT(IIB:IIE+1,IJS:IJN,:) - & 
-        ZCR(IIB:IIE+1,IJS:IJN,:)*(ZPHAT(IIB:IIE+1,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) - &
-        ZCR(IIB:IIE+1,IJS:IJN,:)*(1.0 - ZCR(IIB:IIE+1,IJS:IJN,:)) * &
+        PCR(IIB:IIE+1,IJS:IJN,:)*(ZPHAT(IIB:IIE+1,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) - &
+        PCR(IIB:IIE+1,IJS:IJN,:)*(1.0 - PCR(IIB:IIE+1,IJS:IJN,:)) * &
         (ZPHAT(IIB-1:IIE,IJS:IJN,:) - 2.0*PSRC(IIB-1:IIE,IJS:IJN,:) + ZPHAT(IIB:IIE+1,IJS:IJN,:))
 !
 !!$   ZFPOS(IIB-1,:,:) = ZFPOS(IIE,:,:) !JUAN
 CALL GET_HALO(ZFPOS) ! JUAN
 !
    ZFNEG(IIB-1:IIE,IJS:IJN,:) = ZPHAT(IIB-1:IIE,IJS:IJN,:) + & 
-        ZCR(IIB-1:IIE,IJS:IJN,:)*(ZPHAT(IIB-1:IIE,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) + &
-        ZCR(IIB-1:IIE,IJS:IJN,:)*(1.0 + ZCR(IIB-1:IIE,IJS:IJN,:)) * &
+        PCR(IIB-1:IIE,IJS:IJN,:)*(ZPHAT(IIB-1:IIE,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) + &
+        PCR(IIB-1:IIE,IJS:IJN,:)*(1.0 + PCR(IIB-1:IIE,IJS:IJN,:)) * &
         (ZPHAT(IIB-1:IIE,IJS:IJN,:) - 2.0*PSRC(IIB-1:IIE,IJS:IJN,:) + ZPHAT(IIB:IIE+1,IJS:IJN,:))
 !
 ! define fluxes for CYCL BC outside physical domain
@@ -1437,8 +1437,8 @@ CALL GET_HALO(ZFNEG) ! JUAN
 ! calculate the advection
 !
    PR = PSRC * PRHO - &
-        DXF( ZCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+        DXF( PCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
    CALL GET_HALO(PR) ! JUAN
 !
 CASE ('OPEN')
@@ -1474,19 +1474,19 @@ CALL  GET_HALO(ZPHAT)
 !!$CALL  GET_HALO(ZPHAT)
 !
 !!$   ZFPOS(IIB+1:IIE+1,:,:) = ZPHAT(IIB+1:IIE+1,:,:) - & 
-!!$        ZCR(IIB+1:IIE+1,:,:)*(ZPHAT(IIB+1:IIE+1,:,:) - PSRC(IIB:IIE,:,:)) - &
-!!$        ZCR(IIB+1:IIE+1,:,:)*(1.0 - ZCR(IIB+1:IIE+1,:,:)) * &
+!!$        PCR(IIB+1:IIE+1,:,:)*(ZPHAT(IIB+1:IIE+1,:,:) - PSRC(IIB:IIE,:,:)) - &
+!!$        PCR(IIB+1:IIE+1,:,:)*(1.0 - PCR(IIB+1:IIE+1,:,:)) * &
 !!$        (ZPHAT(IIB:IIE,:,:) - 2.0*PSRC(IIB:IIE,:,:) + ZPHAT(IIB+1:IIE+1,:,:))
    ZFPOS(IIB:IIE+1,IJS:IJN,:) = ZPHAT(IIB:IIE+1,IJS:IJN,:) - & 
-        ZCR(IIB:IIE+1,IJS:IJN,:)*(ZPHAT(IIB:IIE+1,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) - &
-        ZCR(IIB:IIE+1,IJS:IJN,:)*(1.0 - ZCR(IIB:IIE+1,IJS:IJN,:)) * &
+        PCR(IIB:IIE+1,IJS:IJN,:)*(ZPHAT(IIB:IIE+1,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) - &
+        PCR(IIB:IIE+1,IJS:IJN,:)*(1.0 - PCR(IIB:IIE+1,IJS:IJN,:)) * &
         (ZPHAT(IIB-1:IIE,IJS:IJN,:) - 2.0*PSRC(IIB-1:IIE,IJS:IJN,:) + ZPHAT(IIB:IIE+1,IJS:IJN,:))
 !
 CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! positive flux on the WEST boundary
   IF (LWEST_ll()) THEN
-   ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZPHAT(IIB,IJS:IJN,:))*ZCR(IIB,IJS:IJN,:) + &
+   ZFPOS(IIB,IJS:IJN,:) = (PSRC(IIB-1,IJS:IJN,:) - ZPHAT(IIB,IJS:IJN,:))*PCR(IIB,IJS:IJN,:) + &
                      ZPHAT(IIB,IJS:IJN,:) 
 ! this is not used
    ZFPOS(IIB-1,IJS:IJN,:) = 0.0
@@ -1494,39 +1494,39 @@ CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! negative fluxes
 !!$   ZFNEG(IIB:IIE,:,:) = ZPHAT(IIB:IIE,:,:) + & 
-!!$        ZCR(IIB:IIE,:,:)*(ZPHAT(IIB:IIE,:,:) - PSRC(IIB:IIE,:,:)) + &
-!!$        ZCR(IIB:IIE,:,:)*(1.0 + ZCR(IIB:IIE,:,:)) * &
+!!$        PCR(IIB:IIE,:,:)*(ZPHAT(IIB:IIE,:,:) - PSRC(IIB:IIE,:,:)) + &
+!!$        PCR(IIB:IIE,:,:)*(1.0 + PCR(IIB:IIE,:,:)) * &
 !!$        (ZPHAT(IIB:IIE,:,:) - 2.0*PSRC(IIB:IIE,:,:) + ZPHAT(IIB+1:IIE+1,:,:))
    ZFNEG(IIB-1:IIE,IJS:IJN,:) = ZPHAT(IIB-1:IIE,IJS:IJN,:) + & 
-        ZCR(IIB-1:IIE,IJS:IJN,:)*(ZPHAT(IIB-1:IIE,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) + &
-        ZCR(IIB-1:IIE,IJS:IJN,:)*(1.0 + ZCR(IIB-1:IIE,IJS:IJN,:)) * &
+        PCR(IIB-1:IIE,IJS:IJN,:)*(ZPHAT(IIB-1:IIE,IJS:IJN,:) - PSRC(IIB-1:IIE,IJS:IJN,:)) + &
+        PCR(IIB-1:IIE,IJS:IJN,:)*(1.0 + PCR(IIB-1:IIE,IJS:IJN,:)) * &
         (ZPHAT(IIB-1:IIE,IJS:IJN,:) - 2.0*PSRC(IIB-1:IIE,IJS:IJN,:) + ZPHAT(IIB:IIE+1,IJS:IJN,:))
 !
    CALL GET_HALO(ZFNEG) ! JUAN
 !
   IF (LEAST_ll()) THEN
 !
-! in OPEN case ZCR(IIB-1) is not used, so we also set ZFNEG(IIB-1) = 0
+! in OPEN case PCR(IIB-1) is not used, so we also set ZFNEG(IIB-1) = 0
 !
    ZFNEG(IIB-1,IJS:IJN,:) = 0.0
 !
 ! modified negative flux on EAST boundary. We use linear function instead of a
 ! parabola to represent the tracer field, so it simplifies the flux expresion
 !
-   ZFNEG(IIE+1,IJS:IJN,:) = (ZPHAT(IIE+1,IJS:IJN,:) - PSRC(IIE+1,IJS:IJN,:))*ZCR(IIE+1,IJS:IJN,:) + &
+   ZFNEG(IIE+1,IJS:IJN,:) = (ZPHAT(IIE+1,IJS:IJN,:) - PSRC(IIE+1,IJS:IJN,:))*PCR(IIE+1,IJS:IJN,:) + &
                        ZPHAT(IIE+1,IJS:IJN,:)
   ENDIF
 !
 ! calculate the advection
 !
    PR = PSRC * PRHO - &
-        DXF( ZCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+        DXF( PCR*MXM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 ! in OPEN case fix boundary conditions
 !
   IF (LWEST_ll()) THEN
-   WHERE ( ZCR(IIB,IJS:IJN,:) <= 0. ) !  OUTFLOW condition
+   WHERE ( PCR(IIB,IJS:IJN,:) <= 0. ) !  OUTFLOW condition
       PR(IIB-1,IJS:IJN,:) = 2.*PR(IIB,IJS:IJN,:) - PR(IIB+1,IJS:IJN,:)
    ELSEWHERE
       PR(IIB-1,IJS:IJN,:) = PR(IIB,IJS:IJN,:)
@@ -1534,7 +1534,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
   ENDIF
 !
   IF (LEAST_ll()) THEN 
-   WHERE ( ZCR(IIE,IJS:IJN,:) >= 0. ) !  OUTFLOW condition
+   WHERE ( PCR(IIE,IJS:IJN,:) >= 0. ) !  OUTFLOW condition
       PR(IIE+1,IJS:IJN,:) = 2.*PR(IIE,IJS:IJN,:) - PR(IIE-1,IJS:IJN,:)
    ELSEWHERE
       PR(IIE+1,IJS:IJN,:) = PR(IIE,IJS:IJN,:)
@@ -1555,7 +1555,7 @@ END FUNCTION PPM_S0_X
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S0_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+      FUNCTION PPM_S0_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !     ########################################################################
 !!
@@ -1587,13 +1587,13 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1601,10 +1601,10 @@ INTEGER:: IIB,IJB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE    ! End useful area in x,y,z directions
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 ! variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !
 !BEG JUAN PPM_LL
 TYPE(HALO2LIST_ll), POINTER      :: TZ_PSRC_HALO2_ll         ! halo2 for PSRC
@@ -1682,16 +1682,16 @@ CALL  GET_HALO(ZPHAT)
 ! calculate the fluxes:
 !
    ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZPHAT(IIW:IIA,IJB:IJE+1,:) - & 
-        ZCR(IIW:IIA,IJB:IJE+1,:)*(ZPHAT(IIW:IIA,IJB:IJE+1,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) - &
-        ZCR(IIW:IIA,IJB:IJE+1,:)*(1.0 - ZCR(IIW:IIA,IJB:IJE+1,:)) * &
+        PCR(IIW:IIA,IJB:IJE+1,:)*(ZPHAT(IIW:IIA,IJB:IJE+1,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) - &
+        PCR(IIW:IIA,IJB:IJE+1,:)*(1.0 - PCR(IIW:IIA,IJB:IJE+1,:)) * &
         (ZPHAT(IIW:IIA,IJB-1:IJE,:) - 2.0*PSRC(IIW:IIA,IJB-1:IJE,:) + ZPHAT(IIW:IIA,IJB:IJE+1,:))
 !
 !!$   ZFPOS(:,IJB-1,:) = ZFPOS(:,IJE,:)
 CALL GET_HALO(ZFPOS) ! JUAN
 !
    ZFNEG(IIW:IIA,IJB-1:IJE,:) = ZPHAT(IIW:IIA,IJB-1:IJE,:) + & 
-        ZCR(IIW:IIA,IJB-1:IJE,:)*(ZPHAT(IIW:IIA,IJB-1:IJE,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) + &
-        ZCR(IIW:IIA,IJB-1:IJE,:)*(1.0 + ZCR(IIW:IIA,IJB-1:IJE,:)) * &
+        PCR(IIW:IIA,IJB-1:IJE,:)*(ZPHAT(IIW:IIA,IJB-1:IJE,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) + &
+        PCR(IIW:IIA,IJB-1:IJE,:)*(1.0 + PCR(IIW:IIA,IJB-1:IJE,:)) * &
         (ZPHAT(IIW:IIA,IJB-1:IJE,:) - 2.0*PSRC(IIW:IIA,IJB-1:IJE,:) +ZPHAT(IIW:IIA,IJB:IJE+1,:))
 !
 
@@ -1703,8 +1703,8 @@ CALL GET_HALO(ZFNEG) ! JUAN
 ! calculate the advection
 !
    PR = PSRC * PRHO - &
-        DYF( ZCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+        DYF( PCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 CASE ('OPEN')
 !
@@ -1743,19 +1743,19 @@ CALL  GET_HALO(ZPHAT)
 ! calculate the fluxes:
 ! positive fluxes
 !!$   ZFPOS(:,IJB+1:IJE+1,:) = ZPHAT(:,IJB+1:IJE+1,:) - & 
-!!$        ZCR(:,IJB+1:IJE+1,:)*(ZPHAT(:,IJB+1:IJE+1,:) - PSRC(:,IJB:IJE,:)) - &
-!!$        ZCR(:,IJB+1:IJE+1,:)*(1.0 - ZCR(:,IJB+1:IJE+1,:)) * &
+!!$        PCR(:,IJB+1:IJE+1,:)*(ZPHAT(:,IJB+1:IJE+1,:) - PSRC(:,IJB:IJE,:)) - &
+!!$        PCR(:,IJB+1:IJE+1,:)*(1.0 - PCR(:,IJB+1:IJE+1,:)) * &
 !!$        (ZPHAT(:,IJB:IJE,:) - 2.0*PSRC(:,IJB:IJE,:) + ZPHAT(:,IJB+1:IJE+1,:))
 ZFPOS(IIW:IIA,IJB:IJE+1,:) = ZPHAT(IIW:IIA,IJB:IJE+1,:) - & 
-        ZCR(IIW:IIA,IJB:IJE+1,:)*( ZPHAT(IIW:IIA,IJB:IJE+1,:) - PSRC(IIW:IIA,IJB-1:IJE  ,:) ) - &
-        ZCR(IIW:IIA,IJB:IJE+1,:)*( 1.0                  -  ZCR(IIW:IIA,IJB  :IJE+1,:) ) * &
+        PCR(IIW:IIA,IJB:IJE+1,:)*( ZPHAT(IIW:IIA,IJB:IJE+1,:) - PSRC(IIW:IIA,IJB-1:IJE  ,:) ) - &
+        PCR(IIW:IIA,IJB:IJE+1,:)*( 1.0                  -  PCR(IIW:IIA,IJB  :IJE+1,:) ) * &
         (ZPHAT(IIW:IIA,IJB-1:IJE,:) - 2.0*PSRC(IIW:IIA,IJB-1:IJE,:) + ZPHAT(IIW:IIA,IJB:IJE+1,:))
 !
 CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! positive flux on the SOUTH boundary
   IF (LSOUTH_ll()) THEN
-   ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZPHAT(IIW:IIA,IJB,:))*ZCR(IIW:IIA,IJB,:) + &
+   ZFPOS(IIW:IIA,IJB,:) = (PSRC(IIW:IIA,IJB-1,:) - ZPHAT(IIW:IIA,IJB,:))*PCR(IIW:IIA,IJB,:) + &
                      ZPHAT(IIW:IIA,IJB,:)
 !
 ! this is not used
@@ -1764,12 +1764,12 @@ CALL GET_HALO(ZFPOS) ! JUAN
 ! 
 ! negative fluxes
 !!$   ZFNEG(:,IJB:IJE,:) = ZPHAT(:,IJB:IJE,:) + & 
-!!$        ZCR(:,IJB:IJE,:)*(ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB:IJE,:)) + &
-!!$        ZCR(:,IJB:IJE,:)*(1.0 + ZCR(:,IJB:IJE,:)) * &
+!!$        PCR(:,IJB:IJE,:)*(ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB:IJE,:)) + &
+!!$        PCR(:,IJB:IJE,:)*(1.0 + PCR(:,IJB:IJE,:)) * &
 !!$        (ZPHAT(:,IJB:IJE,:) - 2.0*PSRC(:,IJB:IJE,:) +ZPHAT(:,IJB+1:IJE+1,:))
    ZFNEG(IIW:IIA,IJB-1:IJE,:) = ZPHAT(IIW:IIA,IJB-1:IJE,:) + & 
-        ZCR(IIW:IIA,IJB-1:IJE,:)*(ZPHAT(IIW:IIA,IJB-1:IJE,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) + &
-        ZCR(IIW:IIA,IJB-1:IJE,:)*(1.0 + ZCR(IIW:IIA,IJB-1:IJE,:)) * &
+        PCR(IIW:IIA,IJB-1:IJE,:)*(ZPHAT(IIW:IIA,IJB-1:IJE,:) - PSRC(IIW:IIA,IJB-1:IJE,:)) + &
+        PCR(IIW:IIA,IJB-1:IJE,:)*(1.0 + PCR(IIW:IIA,IJB-1:IJE,:)) * &
         (ZPHAT(IIW:IIA,IJB-1:IJE,:) - 2.0*PSRC(IIW:IIA,IJB-1:IJE,:) +ZPHAT(IIW:IIA,IJB:IJE+1,:))
 !
    CALL GET_HALO(ZFNEG) ! JUAN
@@ -1779,20 +1779,20 @@ CALL GET_HALO(ZFPOS) ! JUAN
    ZFNEG(IIW:IIA,IJB-1,:) = 0.0
 !
 ! negative flux on the NORTH boundary
-   ZFNEG(IIW:IIA,IJE+1,:) = (ZPHAT(IIW:IIA,IJE+1,:) - PSRC(IIW:IIA,IJE+1,:))*ZCR(IIW:IIA,IJE+1,:) + &
+   ZFNEG(IIW:IIA,IJE+1,:) = (ZPHAT(IIW:IIA,IJE+1,:) - PSRC(IIW:IIA,IJE+1,:))*PCR(IIW:IIA,IJE+1,:) + &
                        ZPHAT(IIW:IIA,IJE+1,:)
   ENDIF
 !
 ! calculate the advection
 !
    PR = PSRC * PRHO - &
-        DYF( ZCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                             ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+        DYF( PCR*MYM(PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                             ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 ! in OPEN case fix boundary conditions
 !
   IF (LSOUTH_ll()) THEN
-   WHERE ( ZCR(IIW:IIA,IJB,:) <= 0. ) !  OUTFLOW condition
+   WHERE ( PCR(IIW:IIA,IJB,:) <= 0. ) !  OUTFLOW condition
       PR(IIW:IIA,IJB-1,:) = 1.0 * 2.*PR(IIW:IIA,IJB,:) - PR(IIW:IIA,IJB+1,:)
    ELSEWHERE
       PR(IIW:IIA,IJB-1,:) = PR(IIW:IIA,IJB,:) 
@@ -1800,7 +1800,7 @@ CALL GET_HALO(ZFPOS) ! JUAN
   ENDIF
 !
   IF (LNORTH_ll()) THEN
-   WHERE ( ZCR(IIW:IIA,IJE,:) >= 0. ) !  OUTFLOW condition
+   WHERE ( PCR(IIW:IIA,IJE,:) >= 0. ) !  OUTFLOW condition
       PR(IIW:IIA,IJE+1,:) = 1.0 * 2.*PR(IIW:IIA,IJE,:) - PR(IIW:IIA,IJE-1,:)
    ELSEWHERE
       PR(IIW:IIA,IJE+1,:) = PR(IIW:IIA,IJE,:) 
@@ -1822,7 +1822,7 @@ END FUNCTION PPM_S0_Y
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S0_Z(KGRID, PSRC, ZCR, PRHO, PTSTEP) &
+      FUNCTION PPM_S0_Z(KGRID, PSRC, PCR, PRHO, PTSTEP) &
                RESULT(PR)
 !     ########################################################################
 !!
@@ -1851,13 +1851,13 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1866,10 +1866,10 @@ INTEGER:: IKE    ! End useful area in x,y,z directions
 INTEGER:: IKU
 !
 ! advection fluxes
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFPOS, ZFNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFPOS, ZFNEG
 !
 ! interpolated variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT
 !
 !-------------------------------------------------------------------------------
 !
@@ -1902,14 +1902,14 @@ ZPHAT(:,:,IKE+1) = 0.5*(PSRC(:,:,IKE) + PSRC(:,:,IKE+1))
 ! (for inflow or outflow situation)
 !
 ZFPOS(:,:,IKB+1:IKE+1) = ZPHAT(:,:,IKB+1:IKE+1) - & 
-     ZCR(:,:,IKB+1:IKE+1)*(ZPHAT(:,:,IKB+1:IKE+1) - PSRC(:,:,IKB:IKE)) - &
-     ZCR(:,:,IKB+1:IKE+1)*(1.0 - ZCR(:,:,IKB+1:IKE+1)) * &
+     PCR(:,:,IKB+1:IKE+1)*(ZPHAT(:,:,IKB+1:IKE+1) - PSRC(:,:,IKB:IKE)) - &
+     PCR(:,:,IKB+1:IKE+1)*(1.0 - PCR(:,:,IKB+1:IKE+1)) * &
      (ZPHAT(:,:,IKB:IKE) - 2.0*PSRC(:,:,IKB:IKE) + ZPHAT(:,:,IKB+1:IKE+1))
 !
 !!$CALL GET_HALO(ZFPOS) ! JUAN
 !
 ! positive flux on the BOTTOM boundary
-ZFPOS(:,:,IKB) = (PSRC(:,:,IKB-1) - ZPHAT(:,:,IKB))*ZCR(:,:,IKB) + &
+ZFPOS(:,:,IKB) = (PSRC(:,:,IKB-1) - ZPHAT(:,:,IKB))*PCR(:,:,IKB) + &
                   ZPHAT(:,:,IKB)
 !
 ! below bottom flux - not used
@@ -1918,8 +1918,8 @@ ZFPOS(:,:,IKB-1) = 0.0
 ! negative fluxes:
 !
 ZFNEG(:,:,IKB:IKE) = ZPHAT(:,:,IKB:IKE) + & 
-     ZCR(:,:,IKB:IKE)*(ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB:IKE)) + &
-     ZCR(:,:,IKB:IKE)*(1.0 + ZCR(:,:,IKB:IKE)) * &
+     PCR(:,:,IKB:IKE)*(ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB:IKE)) + &
+     PCR(:,:,IKB:IKE)*(1.0 + PCR(:,:,IKB:IKE)) * &
      (ZPHAT(:,:,IKB:IKE) - 2.0*PSRC(:,:,IKB:IKE) +ZPHAT(:,:,IKB+1:IKE+1))
 !
 !!$   CALL GET_HALO(ZFNEG) ! JUAN
@@ -1928,14 +1928,14 @@ ZFNEG(:,:,IKB:IKE) = ZPHAT(:,:,IKB:IKE) + &
 ZFNEG(:,:,IKB-1) = 0.0 
 !
 ! negative flux at the TOP
-ZFNEG(:,:,IKE+1) = (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1))*ZCR(:,:,IKE+1) + &
+ZFNEG(:,:,IKE+1) = (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1))*PCR(:,:,IKE+1) + &
                     ZPHAT(:,:,IKE+1) 
 !
 ! calculate the advection
 !
 PR = PSRC * PRHO - &
-     DZF(1,IKU,1, ZCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,ZCR)) + & 
-                          ZFNEG*(0.5-SIGN(0.5,ZCR)) ) )
+     DZF(1,IKU,1, PCR*MZM(1,IKU,1,PRHO)*( ZFPOS*(0.5+SIGN(0.5,PCR)) + & 
+                          ZFNEG*(0.5-SIGN(0.5,PCR)) ) )
 !
 ! in OPEN case fix boundary conditions
 !
@@ -1950,7 +1950,7 @@ END FUNCTION PPM_S0_Z
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S1_X(HLBCX, KGRID, PSRC, ZCR, PRHO, PRHOT, &
+      FUNCTION PPM_S1_X(HLBCX, KGRID, PSRC, PCR, PRHO, PRHOT, &
                         PTSTEP) RESULT(PR)
 !     ########################################################################
 !!
@@ -1982,14 +1982,14 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1997,13 +1997,13 @@ INTEGER:: IIB,IJB,IKB    ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE,IKE    ! End useful area in x,y,z directions
 !
 ! variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT, ZRUT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT, ZRUT
 !
 ! advection fluxes, upwind and correction
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFUP, ZFCOR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFUP, ZFCOR
 !
 ! ratios for limiting the correction flux
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZRPOS, ZRNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZRPOS, ZRNEG
 !
 ! variables for limiting the correction flux
 REAL :: ZSRCMAX, ZSRCMIN, ZFIN, ZFOUT
@@ -2026,7 +2026,7 @@ IKE = SIZE(PSRC,3) - JPVEXT
 !
 ! Calculate contravariant component rho*u/dx
 !
-ZRUT = ZCR/PTSTEP * MXM(PRHO)
+ZRUT = PCR/PTSTEP * MXM(PRHO)
 !
 ! calculate 4th order fluxes at cell edges in the inner domain
 !
@@ -2058,47 +2058,47 @@ END SELECT
 ! that makes it equivalent to the PPM flux
 ! flux_ppm = flux_up + flux_corr
 !
-WHERE ( ZCR(IIB:IIE,:,:) .GT. 0.0 )
+WHERE ( PCR(IIB:IIE,:,:) .GT. 0.0 )
    ZFUP(IIB:IIE,:,:) = ZRUT(IIB:IIE,:,:) * PSRC(IIB-1:IIE-1,:,:)
    ZFCOR(IIB:IIE,:,:) = ZRUT(IIB:IIE,:,:) * &
-        (1.0 - ZCR(IIB:IIE,:,:)) * &
-        (ZPHAT(IIB:IIE,:,:) - PSRC(IIB-1:IIE-1,:,:) - ZCR(IIB:IIE,:,:) * &
+        (1.0 - PCR(IIB:IIE,:,:)) * &
+        (ZPHAT(IIB:IIE,:,:) - PSRC(IIB-1:IIE-1,:,:) - PCR(IIB:IIE,:,:) * &
         (ZPHAT(IIB-1:IIE-1,:,:) - 2.0*PSRC(IIB-1:IIE-1,:,:)+ZPHAT(IIB:IIE,:,:)))
 ELSEWHERE
    ZFUP(IIB:IIE,:,:) = ZRUT(IIB:IIE,:,:) * PSRC(IIB:IIE,:,:)
    ZFCOR(IIB:IIE,:,:) = ZRUT(IIB:IIE,:,:) * &
-        (1.0 + ZCR(IIB:IIE,:,:)) * &
-        (ZPHAT(IIB:IIE,:,:) - PSRC(IIB:IIE,:,:) + ZCR(IIB:IIE,:,:) * &
+        (1.0 + PCR(IIB:IIE,:,:)) * &
+        (ZPHAT(IIB:IIE,:,:) - PSRC(IIB:IIE,:,:) + PCR(IIB:IIE,:,:) * &
         (ZPHAT(IIB:IIE,:,:) - 2.0*PSRC(IIB:IIE,:,:) + ZPHAT(IIB+1:IIE+1,:,:)))
 END WHERE
 !
 ! set boundaries to CYCL
 !
-WHERE ( ZCR(IIB-1,:,:) .GT. 0.0 )
+WHERE ( PCR(IIB-1,:,:) .GT. 0.0 )
    ZFUP(IIB-1,:,:) = ZRUT(IIB-1,:,:) * PSRC(IIE-1,:,:)
    ZFCOR(IIB-1,:,:) =  ZRUT(IIB-1,:,:) * &
-        (1.0 - ZCR(IIB-1,:,:)) * &
-        (ZPHAT(IIB-1,:,:) - PSRC(IIE-1,:,:) - ZCR(IIB-1,:,:) * &
+        (1.0 - PCR(IIB-1,:,:)) * &
+        (ZPHAT(IIB-1,:,:) - PSRC(IIE-1,:,:) - PCR(IIB-1,:,:) * &
         (ZPHAT(IIE-1,:,:) - 2.0*PSRC(IIE-1,:,:) + ZPHAT(IIB-1,:,:)))
 ELSEWHERE
    ZFUP(IIB-1,:,:) = ZRUT(IIB-1,:,:) * PSRC(IIB-1,:,:)
    ZFCOR(IIB-1,:,:) =  ZRUT(IIB-1,:,:) * &
-        (1.0 + ZCR(IIB-1,:,:)) * &
-        (ZPHAT(IIB-1,:,:) - PSRC(IIB-1,:,:) + ZCR(IIB-1,:,:) * &
+        (1.0 + PCR(IIB-1,:,:)) * &
+        (ZPHAT(IIB-1,:,:) - PSRC(IIB-1,:,:) + PCR(IIB-1,:,:) * &
         (ZPHAT(IIB-1,:,:) - 2.0*PSRC(IIB-1,:,:) + ZPHAT(IIB,:,:)))
 END WHERE
 !
-WHERE ( ZCR(IIE+1,:,:) .GT. 0.0 )
+WHERE ( PCR(IIE+1,:,:) .GT. 0.0 )
    ZFUP(IIE+1,:,:) = ZRUT(IIE+1,:,:) * PSRC(IIE,:,:)
    ZFCOR(IIE+1,:,:) =  ZRUT(IIE+1,:,:) * &
-        (1.0 - ZCR(IIE+1,:,:)) * &
-        (ZPHAT(IIE+1,:,:) - PSRC(IIE,:,:) - ZCR(IIE+1,:,:) * &
+        (1.0 - PCR(IIE+1,:,:)) * &
+        (ZPHAT(IIE+1,:,:) - PSRC(IIE,:,:) - PCR(IIE+1,:,:) * &
         (ZPHAT(IIE,:,:) - 2.0*PSRC(IIE,:,:) + ZPHAT(IIE+1,:,:)))
 ELSEWHERE
    ZFUP(IIE+1,:,:) = ZRUT(IIE+1,:,:) * PSRC(IIE+1,:,:)
    ZFCOR(IIE+1,:,:) =  ZRUT(IIE+1,:,:) * &
-        (1.0 + ZCR(IIE+1,:,:)) * &
-        (ZPHAT(IIE+1,:,:) - PSRC(IIE+1,:,:) + ZCR(IIE+1,:,:) * &
+        (1.0 + PCR(IIE+1,:,:)) * &
+        (ZPHAT(IIE+1,:,:) - PSRC(IIE+1,:,:) + PCR(IIE+1,:,:) * &
         (ZPHAT(IIE+1,:,:) - 2.0*PSRC(IIE+1,:,:) + ZPHAT(IIB+1,:,:)))
 END WHERE
 !
@@ -2204,7 +2204,7 @@ END FUNCTION PPM_S1_X
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S1_Y(HLBCY, KGRID, PSRC, ZCR, PRHO, PRHOT, &
+      FUNCTION PPM_S1_Y(HLBCY, KGRID, PSRC, PCR, PRHO, PRHOT, &
                         PTSTEP) RESULT(PR)
 !     ########################################################################
 !!
@@ -2236,14 +2236,14 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! X direction LBC type
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -2251,13 +2251,13 @@ INTEGER:: IIB,IJB,IKB   ! Begining useful area in x,y,z directions
 INTEGER:: IIE,IJE,IKE   ! End useful area in x,y,z directions
 !
 ! variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT, ZRVT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT, ZRVT
 !
 ! advection fluxes, upwind and correction
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFUP, ZFCOR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFUP, ZFCOR
 !
 ! ratios for limiting the correction flux
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZRPOS, ZRNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZRPOS, ZRNEG
 !
 ! variables for limiting the correction flux
 REAL :: ZSRCMAX, ZSRCMIN, ZFIN, ZFOUT
@@ -2286,7 +2286,7 @@ IKE = SIZE(PSRC,3) - JPVEXT
 !
 !-------------------------------------------------------------------------------
 !
-ZRVT = ZCR/PTSTEP * MYM(PRHO)
+ZRVT = PCR/PTSTEP * MYM(PRHO)
 !
 ! calculate 4th order fluxes at cell edges in the inner domain !
 ZPHAT(:,IJB+1:IJE,:) = (7.0 * &
@@ -2317,47 +2317,47 @@ END SELECT
 ! that makes it equivalent to the PPM flux
 ! flux_ppm = flux_up + flux_corr
 !
-WHERE ( ZCR(:,IJB:IJE,:) .GT. 0.0 )
+WHERE ( PCR(:,IJB:IJE,:) .GT. 0.0 )
    ZFUP(:,IJB:IJE,:) = ZRVT(:,IJB:IJE,:) * PSRC(:,IJB-1:IJE-1,:)
    ZFCOR(:,IJB:IJE,:) = ZRVT(:,IJB:IJE,:) * &
-        (1.0 - ZCR(:,IJB:IJE,:)) * &
-        (ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB-1:IJE-1,:) - ZCR(:,IJB:IJE,:) * &
+        (1.0 - PCR(:,IJB:IJE,:)) * &
+        (ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB-1:IJE-1,:) - PCR(:,IJB:IJE,:) * &
         (ZPHAT(:,IJB-1:IJE-1,:) - 2.0*PSRC(:,IJB-1:IJE-1,:)+ZPHAT(:,IJB:IJE,:)))
 ELSEWHERE
    ZFUP(:,IJB:IJE,:) = ZRVT(:,IJB:IJE,:) * PSRC(:,IJB:IJE,:)
    ZFCOR(:,IJB:IJE,:) = ZRVT(:,IJB:IJE,:) * &
-        (1.0 + ZCR(:,IJB:IJE,:)) * &
-        (ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB:IJE,:) + ZCR(:,IJB:IJE,:) * &
+        (1.0 + PCR(:,IJB:IJE,:)) * &
+        (ZPHAT(:,IJB:IJE,:) - PSRC(:,IJB:IJE,:) + PCR(:,IJB:IJE,:) * &
         (ZPHAT(:,IJB:IJE,:) - 2.0*PSRC(:,IJB:IJE,:) + ZPHAT(:,IJB+1:IJE+1,:)))
 END WHERE
 !
 ! set boundaries to CYCL
 !
-WHERE ( ZCR(:,IJB-1,:) .GT. 0.0 )
+WHERE ( PCR(:,IJB-1,:) .GT. 0.0 )
    ZFUP(:,IJB-1,:) = ZRVT(:,IJB-1,:) * PSRC(:,IJE-1,:)
    ZFCOR(:,IJB-1,:) =  ZRVT(:,IJB-1,:) * &
-        (1.0 - ZCR(:,IJB-1,:)) * &
-        (ZPHAT(:,IJB-1,:) - PSRC(:,IJE-1,:) - ZCR(:,IJB-1,:) * &
+        (1.0 - PCR(:,IJB-1,:)) * &
+        (ZPHAT(:,IJB-1,:) - PSRC(:,IJE-1,:) - PCR(:,IJB-1,:) * &
         (ZPHAT(:,IJE-1,:) - 2.0*PSRC(:,IJE-1,:) + ZPHAT(:,IJB-1,:)))
 ELSEWHERE
    ZFUP(:,IJB-1,:) = ZRVT(:,IJB-1,:) * PSRC(:,IJB-1,:)
    ZFCOR(:,IJB-1,:) =  ZRVT(:,IJB-1,:) * &
-        (1.0 + ZCR(:,IJB-1,:)) * &
-        (ZPHAT(:,IJB-1,:) - PSRC(:,IJB-1,:) + ZCR(:,IJB-1,:) * &
+        (1.0 + PCR(:,IJB-1,:)) * &
+        (ZPHAT(:,IJB-1,:) - PSRC(:,IJB-1,:) + PCR(:,IJB-1,:) * &
         (ZPHAT(:,IJB-1,:) - 2.0*PSRC(:,IJB-1,:) + ZPHAT(:,IJB,:)))
 END WHERE
 !
-WHERE ( ZCR(:,IJE+1,:) .GT. 0.0 )
+WHERE ( PCR(:,IJE+1,:) .GT. 0.0 )
    ZFUP(:,IJE+1,:) = ZRVT(:,IJE+1,:) * PSRC(:,IJE,:)
    ZFCOR(:,IJE+1,:) =  ZRVT(:,IJE+1,:) * &
-        (1.0 - ZCR(:,IJE+1,:)) * &
-        (ZPHAT(:,IJE+1,:) - PSRC(:,IJE,:) - ZCR(:,IJE+1,:) * &
+        (1.0 - PCR(:,IJE+1,:)) * &
+        (ZPHAT(:,IJE+1,:) - PSRC(:,IJE,:) - PCR(:,IJE+1,:) * &
         (ZPHAT(:,IJE,:) - 2.0*PSRC(:,IJE,:) + ZPHAT(:,IJE+1,:)))
 ELSEWHERE
    ZFUP(:,IJE+1,:) = ZRVT(:,IJE+1,:) * PSRC(:,IJE+1,:)
    ZFCOR(:,IJE+1,:) =  ZRVT(:,IJE+1,:) * &
-        (1.0 + ZCR(:,IJE+1,:)) * &
-        (ZPHAT(:,IJE+1,:) - PSRC(:,IJE+1,:) + ZCR(:,IJE+1,:) * &
+        (1.0 + PCR(:,IJE+1,:)) * &
+        (ZPHAT(:,IJE+1,:) - PSRC(:,IJE+1,:) + PCR(:,IJE+1,:) * &
         (ZPHAT(:,IJE+1,:) - 2.0*PSRC(:,IJE+1,:) + ZPHAT(:,IJB+1,:)))
 END WHERE
 !
@@ -2461,7 +2461,7 @@ END FUNCTION PPM_S1_Y
 !-------------------------------------------------------------------------------
 !
 !     ########################################################################
-      FUNCTION PPM_S1_Z(KGRID, PSRC, ZCR, PRHO, PRHOT, PTSTEP) &
+      FUNCTION PPM_S1_Z(KGRID, PSRC, PCR, PRHO, PRHOT, PTSTEP) &
                         RESULT(PR)
 !     ########################################################################
 !!
@@ -2489,14 +2489,14 @@ IMPLICIT NONE
 INTEGER,                INTENT(IN)  :: KGRID   ! C grid localisation
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC    ! variable at t
-REAL, DIMENSION(:,:,:), INTENT(IN)  :: ZCR     ! Courant number
+REAL, DIMENSION(:,:,:), INTENT(IN)  :: PCR     ! Courant number
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHO  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOT ! density at t+dt
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
 !
 ! output source term
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: PR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -2505,13 +2505,13 @@ INTEGER:: IIE,IJE,IKE   ! End useful area in x,y,z directions
 INTEGER:: IKU
 !
 ! variable at cell edges
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZPHAT, ZRVT
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZPHAT, ZRVT
 !
 ! advection fluxes, upwind and correction
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZFUP, ZFCOR
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZFUP, ZFCOR
 !
 ! ratios for limiting the correction flux
-REAL, DIMENSION(SIZE(ZCR,1),SIZE(ZCR,2),SIZE(ZCR,3)) :: ZRPOS, ZRNEG
+REAL, DIMENSION(SIZE(PCR,1),SIZE(PCR,2),SIZE(PCR,3)) :: ZRPOS, ZRNEG
 !
 ! variables for limiting the correction flux
 REAL :: ZSRCMAX, ZSRCMIN, ZFIN, ZFOUT
@@ -2532,7 +2532,7 @@ IKU =  SIZE(PSRC,3)
 !
 !-------------------------------------------------------------------------------
 !
-ZRVT = ZCR/PTSTEP * MZM(1,IKU,1,PRHO)
+ZRVT = PCR/PTSTEP * MZM(1,IKU,1,PRHO)
 !
 ! calculate 4th order fluxes at cell edges in the inner domain !
 ZPHAT(:,:,IKB+1:IKE) = (7.0 * &
@@ -2560,78 +2560,78 @@ ZPHAT(:,:,IKE+1) = (7.0 * &
 ! that makes it equivalent to the PPM flux
 ! flux_ppm = flux_up + flux_corr
 !
-WHERE ( ZCR(:,:,IKB:IKE) .GT. 0.0 )
+WHERE ( PCR(:,:,IKB:IKE) .GT. 0.0 )
    ZFUP(:,:,IKB:IKE) = ZRVT(:,:,IKB:IKE) * PSRC(:,:,IKB-1:IKE-1)
    ZFCOR(:,:,IKB:IKE) = ZRVT(:,:,IKB:IKE) * &
-        (1.0 - ZCR(:,:,IKB:IKE)) * &
-        (ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB-1:IKE-1) - ZCR(:,:,IKB:IKE) * &
+        (1.0 - PCR(:,:,IKB:IKE)) * &
+        (ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB-1:IKE-1) - PCR(:,:,IKB:IKE) * &
         (ZPHAT(:,:,IKB-1:IKE-1) - 2.0*PSRC(:,:,IKB-1:IKE-1)+ZPHAT(:,:,IKB:IKE)))
 ELSEWHERE
    ZFUP(:,:,IKB:IKE) = ZRVT(:,:,IKB:IKE) * PSRC(:,:,IKB:IKE)
    ZFCOR(:,:,IKB:IKE) = ZRVT(:,:,IKB:IKE) * &
-        (1.0 + ZCR(:,:,IKB:IKE)) * &
-        (ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB:IKE) + ZCR(:,:,IKB:IKE) * &
+        (1.0 + PCR(:,:,IKB:IKE)) * &
+        (ZPHAT(:,:,IKB:IKE) - PSRC(:,:,IKB:IKE) + PCR(:,:,IKB:IKE) * &
         (ZPHAT(:,:,IKB:IKE) - 2.0*PSRC(:,:,IKB:IKE) + ZPHAT(:,:,IKB+1:IKE+1)))
 END WHERE
 !
 ! set BC to WALL
 !
-WHERE ( ZCR(:,:,IKB-1) .GT. 0.0 )
+WHERE ( PCR(:,:,IKB-1) .GT. 0.0 )
    ZFUP(:,:,IKB-1) = ZRVT(:,:,IKB-1) * PSRC(:,:,IKB+2)
    ZFCOR(:,:,IKB-1) =  ZRVT(:,:,IKB-1) * &
-        (1.0 - ZCR(:,:,IKB-1)) * &
-        (ZPHAT(:,:,IKB+1) - PSRC(:,:,IKB+2) - ZCR(:,:,IKB+1) * &
+        (1.0 - PCR(:,:,IKB-1)) * &
+        (ZPHAT(:,:,IKB+1) - PSRC(:,:,IKB+2) - PCR(:,:,IKB+1) * &
         (ZPHAT(:,:,IKB+2) - 2.0*PSRC(:,:,IKB+2) + ZPHAT(:,:,IKB+1)))
 ELSEWHERE
    ZFUP(:,:,IKB-1) = ZRVT(:,:,IKB-1) * PSRC(:,:,IKB+1)
    ZFCOR(:,:,IKB-1) =  ZRVT(:,:,IKB-1) * &
-        (1.0 + ZCR(:,:,IKB-1)) * &
-        (ZPHAT(:,:,IKB+1) - PSRC(:,:,IKB+1) + ZCR(:,:,IKB+1) * &
+        (1.0 + PCR(:,:,IKB-1)) * &
+        (ZPHAT(:,:,IKB+1) - PSRC(:,:,IKB+1) + PCR(:,:,IKB+1) * &
         (ZPHAT(:,:,IKB+1) - 2.0*PSRC(:,:,IKB+1) + ZPHAT(:,:,IKB)))
 END WHERE
 !
-WHERE ( ZCR(:,:,IKE+1) .GT. 0.0 )
+WHERE ( PCR(:,:,IKE+1) .GT. 0.0 )
    ZFUP(:,:,IKE+1) = ZRVT(:,:,IKE+1) * PSRC(:,:,IKE)
    ZFCOR(:,:,IKE+1) =  ZRVT(:,:,IKE+1) * &
-        (1.0 - ZCR(:,:,IKE+1)) * &
-        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE) - ZCR(:,:,IKE+1) * &
+        (1.0 - PCR(:,:,IKE+1)) * &
+        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE) - PCR(:,:,IKE+1) * &
         (ZPHAT(:,:,IKE) - 2.0*PSRC(:,:,IKE) + ZPHAT(:,:,IKE+1)))
 ELSEWHERE
    ZFUP(:,:,IKE+1) = ZRVT(:,:,IKE+1) * PSRC(:,:,IKE+1)
    ZFCOR(:,:,IKE+1) =  ZRVT(:,:,IKE+1) * &
-        (1.0 + ZCR(:,:,IKE+1)) * &
-        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1) + ZCR(:,:,IKE+1) * &
+        (1.0 + PCR(:,:,IKE+1)) * &
+        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1) + PCR(:,:,IKE+1) * &
         (ZPHAT(:,:,IKE+1) - 2.0*PSRC(:,:,IKE+1) + ZPHAT(:,:,IKE)))
 END WHERE
 !
 !
 !!$! set boundaries to CYCL
 !!$!
-!!$WHERE ( ZCR(:,:,IKB-1) .GT. 0.0 )
+!!$WHERE ( PCR(:,:,IKB-1) .GT. 0.0 )
 !!$   ZFUP(:,:,IKB-1) = ZRVT(:,:,IKB-1) * PSRC(:,:,IKE-1)
 !!$   ZFCOR(:,:,IKB-1) =  ZRVT(:,:,IKB-1) * &
-!!$        (1.0 - ZCR(:,:,IKB-1)) * &
-!!$        (ZPHAT(:,:,IKB-1) - PSRC(:,:,IKE-1) - ZCR(:,:,IKB-1) * &
+!!$        (1.0 - PCR(:,:,IKB-1)) * &
+!!$        (ZPHAT(:,:,IKB-1) - PSRC(:,:,IKE-1) - PCR(:,:,IKB-1) * &
 !!$        (ZPHAT(:,:,IKE-1) - 2.0*PSRC(:,:,IKE-1) + ZPHAT(:,:,IKB-1)))
 !!$ELSEWHERE
 !!$   ZFUP(:,:,IKB-1) = ZRVT(:,:,IKB-1) * PSRC(:,:,IKB-1)
 !!$   ZFCOR(:,:,IKB-1) =  ZRVT(:,:,IKB-1) * &
-!!$        (1.0 + ZCR(:,:,IKB-1)) * &
-!!$        (ZPHAT(:,:,IKB-1) - PSRC(:,:,IKB-1) + ZCR(:,:,IKB-1) * &
+!!$        (1.0 + PCR(:,:,IKB-1)) * &
+!!$        (ZPHAT(:,:,IKB-1) - PSRC(:,:,IKB-1) + PCR(:,:,IKB-1) * &
 !!$        (ZPHAT(:,:,IKB-1) - 2.0*PSRC(:,:,IKB-1) + ZPHAT(:,:,IKB)))
 !!$END WHERE
 !!$!
-!!$WHERE ( ZCR(:,:,IKE+1) .GT. 0.0 )
+!!$WHERE ( PCR(:,:,IKE+1) .GT. 0.0 )
 !!$   ZFUP(:,:,IKE+1) = ZRVT(:,:,IKE+1) * PSRC(:,:,IKE)
 !!$   ZFCOR(:,:,IKE+1) =  ZRVT(:,:,IKE+1) * &
-!!$        (1.0 - ZCR(:,:,IKE+1)) * &
-!!$        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE) - ZCR(:,:,IKE+1) * &
+!!$        (1.0 - PCR(:,:,IKE+1)) * &
+!!$        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE) - PCR(:,:,IKE+1) * &
 !!$        (ZPHAT(:,:,IKE) - 2.0*PSRC(:,:,IKE) + ZPHAT(:,:,IKE+1)))
 !!$ELSEWHERE
 !!$   ZFUP(:,:,IKE+1) = ZRVT(:,:,IKE+1) * PSRC(:,:,IKE+1)
 !!$   ZFCOR(:,:,IKE+1) =  ZRVT(:,:,IKE+1) * &
-!!$        (1.0 + ZCR(:,:,IKE+1)) * &
-!!$        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1) + ZCR(:,:,IKE+1) * &
+!!$        (1.0 + PCR(:,:,IKE+1)) * &
+!!$        (ZPHAT(:,:,IKE+1) - PSRC(:,:,IKE+1) + PCR(:,:,IKE+1) * &
 !!$        (ZPHAT(:,:,IKE+1) - 2.0*PSRC(:,:,IKE+1) + ZPHAT(:,:,IKB+1)))
 !!$END WHERE
 !
