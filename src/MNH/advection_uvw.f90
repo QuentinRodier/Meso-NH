@@ -286,22 +286,24 @@ DO JSPL=1,ISPLIT
   PRVS(:,:,:) = PRVS(:,:,:) + ZRVS_ADV(:,:,:) / ISPLIT
   PRWS(:,:,:) = PRWS(:,:,:) + ZRWS_ADV(:,:,:) / ISPLIT
 
-!
-! Guesses for next time splitting loop
-!
-  ZU(:,:,:) = ZU(:,:,:) + ZTSTEP / ZMXM_RHODJ *  &
-              (ZRUS_OTHER(:,:,:) + ZRUS_ADV(:,:,:))
-  ZV(:,:,:) = ZV(:,:,:) + ZTSTEP / ZMYM_RHODJ *  &
-              (ZRVS_OTHER(:,:,:) + ZRVS_ADV(:,:,:))
-  ZW(:,:,:) = ZW(:,:,:) + ZTSTEP / ZMZM_RHODJ *  &
+  IF (JSPL<ISPLIT) THEN
+    !
+    ! Guesses for next time splitting loop
+    !
+    ZU(:,:,:) = ZU(:,:,:) + ZTSTEP / ZMXM_RHODJ *  &
+                (ZRUS_OTHER(:,:,:) + ZRUS_ADV(:,:,:))
+    ZV(:,:,:) = ZV(:,:,:) + ZTSTEP / ZMYM_RHODJ *  &
+                (ZRVS_OTHER(:,:,:) + ZRVS_ADV(:,:,:))
+    ZW(:,:,:) = ZW(:,:,:) + ZTSTEP / ZMZM_RHODJ *  &
               (ZRWS_OTHER(:,:,:) + ZRWS_ADV(:,:,:))
-!
-! Top and bottom Boundaries 
-!
-  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZU, PUT, 'U' )    
-  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZV, PVT, 'V' )    
-  CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZW, PWT, 'W' )
-  ZW (:,:,IKE+1 ) = 0.
+    !
+    ! Top and bottom Boundaries
+    !
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZU, PUT, 'U' )
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZV, PVT, 'V' )
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZW, PWT, 'W' )
+    ZW (:,:,IKE+1 ) = 0.
+  END IF
 !
 ! End of the time splitting loop
 END DO
