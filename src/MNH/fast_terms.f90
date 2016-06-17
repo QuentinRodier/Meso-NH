@@ -159,6 +159,7 @@ END MODULE MODI_FAST_TERMS
 !!                                                              Scheme
 !!                     J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                     June 17, 2016 (P. Wautelet) removed unused variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -235,11 +236,6 @@ INTEGER             :: IRESP      ! Return code of FM routines
 INTEGER             :: ILENG      ! Length of comment string in LFIFM file
 INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
-INTEGER             :: IKB        ! K index value of the first inner mass point
-INTEGER             :: IKE        ! K index value of the last inner mass point
-INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
-INTEGER             :: IIE,IJE    ! Horz index values of the last inner mass points
-INTEGER             :: IPLAN      ! Number of horz inner points
 INTEGER             :: JK         ! Var for vertical DO loops
 INTEGER             :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
@@ -251,14 +247,6 @@ CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !               -------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-!!$IIB = 1 + JPHEXT
-!!$IIE = SIZE(PRHODJ,1) - JPHEXT
-!!$IJB = 1 + JPHEXT
-!!$IJE = SIZE(PRHODJ,2) - JPHEXT
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IPLAN = (SIZE(PRHODJ,1)-2*JPHEXT)*(SIZE(PRHODJ,2)-2*JPHEXT)
-IKB = 1 + JPVEXT
-IKE = SIZE(PRHODJ,3) - JPVEXT
 ZEPS= XMV / XMD
 !
 IF (OSUBG_COND) THEN
