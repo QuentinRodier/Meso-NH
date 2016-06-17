@@ -20,7 +20,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 END SUBROUTINE ADVEC_WENO_K_3_UX
 !
@@ -38,7 +38,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 END SUBROUTINE ADVEC_WENO_K_3_MX
 !
@@ -57,7 +57,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 END SUBROUTINE ADVEC_WENO_K_3_VY
 !
@@ -75,7 +75,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 END SUBROUTINE ADVEC_WENO_K_3_MY
 !
@@ -146,7 +146,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -806,7 +806,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -1465,7 +1465,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
@@ -2129,7 +2129,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 !
 !*       0.2   Declarations of local variables :
 !
