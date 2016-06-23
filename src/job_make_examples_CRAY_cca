@@ -27,7 +27,7 @@ cd ${PBS_O_WORKDIR}
 
 #ARCH=LXifort
 ARCH=LXcray
-. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-2-1-MPICRAY-O2
+. ../conf/profile_mesonh-${ARCH}I4-MNH-V5-3-0-MPICRAY-O2
 
 
 export MONORUN="aprun -n 1 "
