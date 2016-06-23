@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_VAR_WATER_n(HPROGRAM,KI,HWATER,PQS,PZ0,PZ0H)
+      SUBROUTINE GET_VAR_WATER_n (DGF, DGW, &
+                                  HPROGRAM,KI,HWATER,PQS,PZ0,PZ0H)
 !     ###########################################################
 !
 !!****  *GET_VAR_WATER_n* - routine to get variables defined only over water
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne *Meteo France*	
+!!      P. Le Moigne *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,10 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+USE MODD_DIAG_FLAKE_n, ONLY : DIAG_FLAKE_t
+USE MODD_DIAG_WATFLUX_n, ONLY : DIAG_WATFLUX_t
 !
 USE MODI_GET_LUOUT
 USE MODD_SURF_PAR,       ONLY   : XUNDEF
@@ -48,6 +53,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_FLAKE_t), INTENT(INOUT) :: DGF
+TYPE(DIAG_WATFLUX_t), INTENT(INOUT) :: DGW
 !
  CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
  CHARACTER(LEN=6),     INTENT(IN)     :: HWATER
@@ -71,14 +80,13 @@ ELSE
 END IF
 !
 IF (LHOOK) CALL DR_HOOK('GET_VAR_WATER_N',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !
 !------------------------------------------------------------------------------
 !------------------------------------------------------------------------------
 !
 SUBROUTINE GET_VAR_WATFLX_n
 !
-USE MODD_DIAG_WATFLUX_n, ONLY   : XZ0, XZ0H, XQS, LSURF_VARS, LCOEF
 !
 !-------------------------------------------------------------------------------
 
@@ -88,14 +96,14 @@ IF (LHOOK) CALL DR_HOOK('GET_VAR_WATFLX_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF (LSURF_VARS) THEN 
-        PQS      = XQS      
+IF (DGW%LSURF_VARS) THEN 
+        PQS      = DGW%XQS      
 ELSE 
         PQS      = XUNDEF      
 ENDIF           
-IF (LCOEF) THEN 
-        PZ0      = XZ0
-        PZ0H     = XZ0H
+IF (DGW%LCOEF) THEN 
+        PZ0      = DGW%XZ0
+        PZ0H     = DGW%XZ0H
 ELSE 
         PZ0      = XUNDEF
         PZ0H     = XUNDEF
@@ -108,7 +116,6 @@ END SUBROUTINE GET_VAR_WATFLX_n
 !
 SUBROUTINE GET_VAR_FLAKE_n
 !
-USE MODD_DIAG_FLAKE_n, ONLY   : XZ0, XZ0H, XQS, LSURF_VARS, LCOEF
 !
 !-------------------------------------------------------------------------------
 
@@ -118,14 +125,14 @@ IF (LHOOK) CALL DR_HOOK('GET_VAR_FLAKE_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF (LSURF_VARS) THEN 
-        PQS      = XQS      
+IF (DGF%LSURF_VARS) THEN 
+        PQS      = DGF%XQS      
 ELSE 
         PQS      = XUNDEF      
 ENDIF           
-IF (LCOEF) THEN 
-        PZ0      = XZ0
-        PZ0H     = XZ0H
+IF (DGF%LCOEF) THEN 
+        PZ0      = DGF%XZ0
+        PZ0H     = DGF%XZ0H
 ELSE 
         PZ0      = XUNDEF
         PZ0H     = XUNDEF

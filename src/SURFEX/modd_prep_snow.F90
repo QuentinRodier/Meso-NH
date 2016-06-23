@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################
       MODULE MODD_PREP_SNOW
 !     ################
@@ -22,11 +22,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       01/2004
+!!      Modif M Lafaysse 04/2014 : LSNOW_PREP_PERM
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -48,13 +49,18 @@ REAL, PARAMETER  :: XWSNOW_CLIM_GRAD = - 0.08 * 300.     * (-0.0065)
 !
 LOGICAL :: LSNOW_FRAC_TOT
 INTEGER, PARAMETER :: NSNOW_LAYER_MAX = 50
+LOGICAL :: LSNOW_PREP_PERM ! activate or disactivate initialization over permanent ice areas
 !
 !--------------------------------------------------------------------------
 !
 !* normalized dimensions for interpolation grids for soil
-INTEGER, PARAMETER           :: NGRID_LEVEL = 6
-REAL, DIMENSION(NGRID_LEVEL) :: XGRID_SNOW = (/ 0., 0.05, 0.1, 0.5, 0.9, 1.  /)
-!
+INTEGER, PARAMETER           :: NGRID_LEVEL = 40
+REAL, DIMENSION(NGRID_LEVEL) :: XGRID_SNOW = &
+(/0.01,0.02,0.03,0.04,0.05,0.06,0.08,0.10,0.12,0.14,&
+  0.16,0.18,0.21,0.25,0.30,0.35,0.40,0.45,0.50,0.55,&
+  0.60,0.65,0.70,0.75,0.80,0.85,0.87,0.88,0.89,0.90,&
+  0.91,0.92,0.93,0.94,0.95,0.96,0.97,0.98,0.99,1.00/)
+
 !--------------------------------------------------------------------------
 !
 END MODULE MODD_PREP_SNOW

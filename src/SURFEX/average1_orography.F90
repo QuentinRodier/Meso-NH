@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE AVERAGE1_OROGRAPHY(KLUOUT,PLAT,PLON,PVALUE)
+      SUBROUTINE AVERAGE1_OROGRAPHY (USS, &
+                                     KLUOUT,KNBLINES,PLAT,PLON,PVALUE,PNODATA)
 !     #######################################################
 !
 !!**** *AVERAGE1_OROGRAPHY* computes the sum of orography, squared orography
@@ -40,11 +41,13 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_PGDWORK,       ONLY : XSUMVAL, XSUMVAL2, NSIZE, XSSQO, LSSQO, NSSO
-USE MODD_SURF_ATM_SSO_n, ONLY : XMIN_ZS, XMAX_ZS
 !
 USE MODI_GET_MESH_INDEX
-USE MODD_POINT_OVERLAY
+USE MODD_POINT_OVERLAY, ONLY : NOVMX
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -55,21 +58,27 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+!
 INTEGER,                 INTENT(IN)    :: KLUOUT
+INTEGER,                 INTENT(IN)    :: KNBLINES
 REAL, DIMENSION(:),      INTENT(IN)    :: PLAT    ! latitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PLON    ! longitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PVALUE  ! value of the point to add
+REAL, OPTIONAL, INTENT(IN) :: PNODATA
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-INTEGER, DIMENSION(SIZE(PLAT)) :: IINDEX ! mesh index of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IINDEX ! mesh index of all input points
                                          ! 0 indicates the point is out of the domain
-INTEGER, DIMENSION(SIZE(PLAT)) :: ISSOX  ! X submesh index in their mesh of all input points
-INTEGER, DIMENSION(SIZE(PLAT)) :: ISSOY  ! Y submesh index in their mesh of all input points
-INTEGER, DIMENSION(SIZE(PLAT)) :: INUM ! numbers of index
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOX  ! X submesh index in their mesh of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: ISSOY  ! Y submesh index in their mesh of all input points
 !
-INTEGER :: JLOOP        ! loop index on input arrays
+INTEGER :: JLOOP, JOVER        ! loop index on input arrays
+REAL, DIMENSION(SIZE(PLAT)) :: ZVALUE
+REAL :: ZNODATA
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -78,63 +87,68 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !            ------------
 !     
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_OROGRAPHY',0,ZHOOK_HANDLE)
-IF (ALLOCATED(XNUM)) DEALLOCATE(XNUM)
-ALLOCATE(XNUM(SIZE(PLAT)))
-!
-XNUM(:)=1
-!
-DO WHILE(MAXVAL(XNUM).NE.0)
-                                         
-  CALL GET_MESH_INDEX(KLUOUT,PLAT,PLON,IINDEX,NSSO,ISSOX,ISSOY)
+!      
+IF (PRESENT(PNODATA)) THEN
+  ZVALUE(:) = PVALUE(:)
+  ZNODATA = PNODATA
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA,NSSO,ISSOX,ISSOY)
+ELSE
+  ZVALUE(:) = 1.
+  ZNODATA = 0.
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX,KSSO=NSSO,KISSOX=ISSOX,KISSOY=ISSOY)
+ENDIF
 !
 !*    2.     Loop on all input data points
 !            -----------------------------
-!     
-  DO JLOOP = 1 , SIZE(PLAT)
+!    
+bloop: &
+DO JLOOP = 1 , SIZE(PLAT)
+!
+  DO JOVER = 1, NOVMX
 !
 !*    3.     Tests on position
 !            -----------------
 !     
-    IF (IINDEX(JLOOP)==0) CYCLE
+    IF (IINDEX(JOVER,JLOOP)==0) CYCLE bloop
 !
 !*    4.     Summation
 !            ---------
 !
-    NSIZE(IINDEX(JLOOP))=NSIZE(IINDEX(JLOOP))+1
+    NSIZE(IINDEX(JOVER,JLOOP))=NSIZE(IINDEX(JOVER,JLOOP))+1
 !
 !*    5.     Orography
 !            ---------
 !
-    XSUMVAL(IINDEX(JLOOP))=XSUMVAL(IINDEX(JLOOP))+PVALUE(JLOOP)
+    XSUMVAL(IINDEX(JOVER,JLOOP))=XSUMVAL(IINDEX(JOVER,JLOOP))+PVALUE(JLOOP)
 !
 !*    6.     Square of Orography
 !            -------------------
 !
-    XSUMVAL2(IINDEX(JLOOP))=XSUMVAL2(IINDEX(JLOOP))+PVALUE(JLOOP)**2
+    XSUMVAL2(IINDEX(JOVER,JLOOP))=XSUMVAL2(IINDEX(JOVER,JLOOP))+PVALUE(JLOOP)**2
 !
 !*    7.     Maximum orography in a subgrid square
 !            -------------------------------------
 !
-    LSSQO(ISSOX(JLOOP),ISSOY(JLOOP),IINDEX(JLOOP)) = .TRUE.
-    XSSQO(ISSOX(JLOOP),ISSOY(JLOOP),IINDEX(JLOOP)) = &
-         MAX (  XSSQO(ISSOX(JLOOP),ISSOY(JLOOP),IINDEX(JLOOP)) , PVALUE(JLOOP) )   
+    LSSQO(ISSOX(JOVER,JLOOP),ISSOY(JOVER,JLOOP),IINDEX(JOVER,JLOOP)) = .TRUE.
+    XSSQO(ISSOX(JOVER,JLOOP),ISSOY(JOVER,JLOOP),IINDEX(JOVER,JLOOP)) = &
+         MAX (  XSSQO(ISSOX(JOVER,JLOOP),ISSOY(JOVER,JLOOP),IINDEX(JOVER,JLOOP)) , PVALUE(JLOOP) )   
 !
 !
 !*    8.     Maximum orography in the mesh
 !            -----------------------------
 !
-    XMAX_ZS(IINDEX(JLOOP))=MAX(XMAX_ZS(IINDEX(JLOOP)),PVALUE(JLOOP))
+    USS%XMAX_ZS(IINDEX(JOVER,JLOOP))=MAX(USS%XMAX_ZS(IINDEX(JOVER,JLOOP)),PVALUE(JLOOP))
 !
 !
 !*    9.     Minimum orography in the mesh
 !            -----------------------------
 !
-    XMIN_ZS(IINDEX(JLOOP))=MIN(XMIN_ZS(IINDEX(JLOOP)),PVALUE(JLOOP))
+    USS%XMIN_ZS(IINDEX(JOVER,JLOOP))=MIN(USS%XMIN_ZS(IINDEX(JOVER,JLOOP)),PVALUE(JLOOP))
 !
 !
   END DO
 !
-ENDDO
+ENDDO bloop
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_OROGRAPHY',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

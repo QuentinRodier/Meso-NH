@@ -1,16 +1,18 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_SURF_VAR_n(HPROGRAM, KI, KS,                              &
+      SUBROUTINE GET_SURF_VAR_n (DGF, I, DGI, DGMI, DGS, DGU, DGT, DGW, F, UG, U, USS, &
+                                 HPROGRAM, KI, KS,                              &
                                   PSEA, PWATER, PNATURE, PTOWN,                &
                                   PT2M, PQ2M, PQS, PZ0, PZ0H, PZ0EFF,          &
                                   PZ0_SEA, PZ0_WATER, PZ0_NATURE, PZ0_TOWN,    &
                                   PZ0H_SEA, PZ0H_WATER, PZ0H_NATURE, PZ0H_TOWN,&
                                   PQS_SEA, PQS_WATER, PQS_NATURE, PQS_TOWN,    &
                                   PPSNG, PPSNV, PZS, PSERIES, PTWSNOW,         &
-                                  PSSO_STDEV,PBARE, PLAI_TREE, PH_TREE         )  
+                                  PSSO_STDEV, PLON, PLAT,                      &
+                                  PBARE, PLAI_TREE, PH_TREE                    )  
 !     #######################################################################
 !
 !!****  *GET_SURF_VAR_n* - gets some surface fields on atmospheric grid
@@ -39,27 +41,38 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    02/2006
 !       S. Riette   06/2010 PSSO_STDEV and PTWSNOW added
 !       B. Decharme 09/2012 Argument added in GET_FLUX_n
-!       S. Donier  06/2015 : bug surface aerosols
+!       B. Decharme 05/2013 Argument added in GET_FLUX_n for debug in ARP/AL/AR
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DIAG_FLAKE_n, ONLY : DIAG_FLAKE_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+USE MODD_DIAG_SEAFLUX_n, ONLY : DIAG_SEAFLUX_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DIAG_TEB_n, ONLY : DIAG_TEB_t
+USE MODD_DIAG_WATFLUX_n, ONLY : DIAG_WATFLUX_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,     ONLY : XUNDEF
-USE MODD_SURF_ATM_n,   ONLY : CWATER, XNATURE
 USE MODI_GET_LUOUT
 USE MODI_GET_FLUX_n
 USE MODI_GET_FRAC_n
 USE MODI_GET_Z0_n
 USE MODI_GET_QS_n
-USE MODI_GET_VEG_n
 USE MODI_GET_VAR_SEA_n
 USE MODI_GET_VAR_WATER_n
 USE MODI_GET_VAR_NATURE_n
@@ -73,11 +86,27 @@ USE PARKIND1  ,ONLY : JPRB
 USE MODI_ABOR1_SFX
 USE MODI_GET_SSO_STDEV_n
 USE MODI_GET_1D_MASK
+USE MODI_GET_COORD_n
+USE MODI_GET_VEG_n
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_FLAKE_t), INTENT(INOUT) :: DGF
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DGMI
+TYPE(DIAG_SEAFLUX_t), INTENT(INOUT) :: DGS
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(DIAG_TEB_t), INTENT(INOUT) :: DGT
+TYPE(DIAG_WATFLUX_t), INTENT(INOUT) :: DGW
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),   INTENT(IN)            :: HPROGRAM    
 INTEGER,            INTENT(IN)            :: KI         ! number of points
@@ -116,10 +145,14 @@ REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PPSNV      ! snow fraction over veg
 !
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PZS        ! surface orography                   (m)    
 !
-REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PSERIES   ! any surface field for which 
-!                                                        ! mesoNH series are required
+REAL, DIMENSION(:,:), INTENT(OUT), OPTIONAL :: PSERIES  ! any surface field for which 
+!                                                       ! mesoNH series are required
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PTWSNOW    ! Snow total reservoir
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PSSO_STDEV ! S.S.O. standard deviation           (m)
+!
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLON       ! longitude
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAT       ! latitude
+!
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PBARE      ! bare soil fraction on grid mesh     (-)
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PLAI_TREE       ! Leaf Area Index    on grid mesh     (-)
 REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PH_TREE        ! Height of trees    on grid mesh     (-)
@@ -155,7 +188,8 @@ IF (LHOOK) CALL DR_HOOK('GET_SURF_VAR_N',0,ZHOOK_HANDLE)
 !
 IF (PRESENT(PSEA) .OR. PRESENT(PWATER) .OR. PRESENT(PNATURE) .OR. PRESENT(PTOWN)) THEN
    !
-   CALL GET_FRAC_n(HPROGRAM, KI, ZFIELD1, ZFIELD2, ZFIELD3, ZFIELD4)
+   CALL GET_FRAC_n(U, &
+                   HPROGRAM, KI, ZFIELD1, ZFIELD2, ZFIELD3, ZFIELD4)
    !
    IF (PRESENT(PSEA)   ) PSEA    = ZFIELD1
    IF (PRESENT(PWATER) ) PWATER  = ZFIELD2
@@ -170,8 +204,10 @@ END IF
 !
 IF ( PRESENT(PT2M) .OR. PRESENT(PQ2M) ) THEN
    !
-   CALL GET_FLUX_n(HPROGRAM, KI, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD2, &
-                                 ZFIELD3, ZFIELD4, ZFIELD4, ZFIELD4, ZFIELD4, ZFIELD4  )
+   CALL GET_FLUX_n(DGU, &
+                   HPROGRAM, KI, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD1, ZFIELD2, &
+                                 ZFIELD3, ZFIELD4, ZFIELD4, ZFIELD4, ZFIELD4, ZFIELD4, &
+                                 ZFIELD4, ZFIELD4, ZFIELD4                             )
    !
    IF (PRESENT(PT2M)   ) PT2M    = ZFIELD2
    IF (PRESENT(PQ2M)   ) PQ2M    = ZFIELD3
@@ -184,7 +220,8 @@ END IF
 !
 IF ( PRESENT(PZ0) .OR. PRESENT(PZ0H) ) THEN
    !
-   CALL GET_Z0_n(HPROGRAM, KI, ZFIELD1, ZFIELD2)
+   CALL GET_Z0_n(DGU, &
+                 HPROGRAM, KI, ZFIELD1, ZFIELD2)
    !
    IF (PRESENT(PZ0)    ) PZ0    = ZFIELD1
    IF (PRESENT(PZ0H)   ) PZ0H   = ZFIELD2
@@ -197,7 +234,8 @@ END IF
 !
 IF ( PRESENT(PQS) ) THEN
    !
-   CALL GET_QS_n(HPROGRAM, KI, PQS)
+   CALL GET_QS_n(DGU, &
+                 HPROGRAM, KI, PQS)
    !
 END IF
 !
@@ -220,7 +258,8 @@ IF ( PRESENT(PQS_SEA) .OR. PRESENT(PZ0_SEA) .OR. PRESENT(PZ0H_SEA) ) THEN
    IMASK(:)=0
    CALL GET_1D_MASK(KI_SEA, KI, PSEA, IMASK(1:KI_SEA))
    !
-   CALL GET_VAR_SEA_n(HPROGRAM, KI_SEA, ZFIELD1(1:KI_SEA), ZFIELD2(1:KI_SEA), ZFIELD3(1:KI_SEA))
+   CALL GET_VAR_SEA_n(DGS, &
+                      HPROGRAM, KI_SEA, ZFIELD1(1:KI_SEA), ZFIELD2(1:KI_SEA), ZFIELD3(1:KI_SEA))
    !
    IF(PRESENT(PQS_SEA))THEN
       PQS_SEA    (:) = XUNDEF
@@ -260,7 +299,8 @@ IF ( PRESENT(PQS_WATER) .OR. PRESENT(PZ0_WATER) .OR. PRESENT(PZ0H_WATER) ) THEN
    IMASK(:)=0
    CALL GET_1D_MASK(KI_WATER, KI, PWATER, IMASK(1:KI_WATER))
    !
-   CALL GET_VAR_WATER_n(HPROGRAM, KI_WATER, CWATER, ZFIELD1(1:KI_WATER), &
+   CALL GET_VAR_WATER_n(DGF, DGW, &
+                        HPROGRAM, KI_WATER, U%CWATER, ZFIELD1(1:KI_WATER), &
                                ZFIELD2(1:KI_WATER), ZFIELD3(1:KI_WATER))
    !
    IF(PRESENT(PQS_WATER))THEN
@@ -289,7 +329,7 @@ ENDIF
    !-------------------------------------------------------------------------------
    !
 IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(PZ0EFF).OR. &
-     PRESENT(PTWSNOW) .OR. PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE)  ) THEN
+     PRESENT(PTWSNOW) .OR. PRESENT(PBARE) .OR. PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) ) THEN
    !
    ! Get parameters over nature tile
    !
@@ -306,10 +346,11 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
    CALL GET_1D_MASK(KI_NATURE, KI, PNATURE, IMASK(1:KI_NATURE))
    !
    IF (KI_NATURE>0) THEN
-     CALL GET_VAR_NATURE_n(HPROGRAM, KI_NATURE, ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE), &
-                                              ZFIELD3(1:KI_NATURE), ZFIELD4(1:KI_NATURE), &
-                        ZFIELD5(1:KI_NATURE), ZFIELD6(1:KI_NATURE), ZFIELD7(1:KI_NATURE), &
-                        ZFIELD8(1:KI_NATURE))
+     CALL GET_VAR_NATURE_n(I, DGI, DGMI, &
+                           HPROGRAM, KI_NATURE, ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE), &
+                                                ZFIELD3(1:KI_NATURE), ZFIELD4(1:KI_NATURE), &
+                          ZFIELD5(1:KI_NATURE), ZFIELD6(1:KI_NATURE), ZFIELD7(1:KI_NATURE), &
+                          ZFIELD8(1:KI_NATURE))
    ENDIF
    !
    IF(PRESENT(PQS_NATURE))THEN
@@ -368,20 +409,21 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
      DO JI = 1, KI_NATURE
        PBARE   (IMASK(JI)) = ZFIELD8(JI)
      ENDDO
-     PBARE(:) = PBARE(:) * XNATURE(:) ! averages bare soil fraction on whole grid mesh
+     PBARE(:) = PBARE(:) * U%XNATURE(:) ! averages bare soil fraction on whole grid mesh
    ENDIF
    !
    !*   LAI and height of trees
    !
    IF (PRESENT(PLAI_TREE) .OR. PRESENT(PH_TREE) ) THEN
-     CALL GET_VEG_n(HPROGRAM, KI, ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE))
+     !
+     CALL GET_VEG_n(HPROGRAM, KI_NATURE, U, I, ZFIELD1(1:KI_NATURE), ZFIELD2(1:KI_NATURE))
      !
      IF (PRESENT(PLAI_TREE)) THEN
        PLAI_TREE(:) = XUNDEF
        DO JI = 1, KI_NATURE
          PLAI_TREE   (IMASK(JI)) = ZFIELD1(JI)
        ENDDO
-       PLAI_TREE(:) = PLAI_TREE(:) * XNATURE(:) ! averages tree LAI on whole grid mesh
+       PLAI_TREE(:) = PLAI_TREE(:) * U%XNATURE(:) ! averages tree LAI on whole grid mesh
      END IF
      !
      IF (PRESENT(PH_TREE)) THEN
@@ -391,7 +433,8 @@ IF ( PRESENT(PQS_NATURE) .OR. PRESENT(PPSNG) .OR. PRESENT(PPSNV) .OR.  PRESENT(P
        ENDDO
      END IF
      !
-   END IF
+   END IF   
+   !   
 ENDIF
    !
    !-------------------------------------------------------------------------------
@@ -411,7 +454,8 @@ IF ( PRESENT(PQS_TOWN) .OR. PRESENT(PZ0_TOWN) .OR. PRESENT(PZ0H_TOWN) ) THEN
    IMASK(:)=0
    CALL GET_1D_MASK(KI_TOWN, KI, PTOWN, IMASK(1:KI_TOWN))
    !
-   CALL GET_VAR_TOWN_n(HPROGRAM, KI_TOWN, ZFIELD1(1:KI_TOWN), ZFIELD2(1:KI_TOWN), ZFIELD3(1:KI_TOWN))
+   CALL GET_VAR_TOWN_n(DGT, &
+                       HPROGRAM, KI_TOWN, ZFIELD1(1:KI_TOWN), ZFIELD2(1:KI_TOWN), ZFIELD3(1:KI_TOWN))
    !
    IF(PRESENT(PQS_TOWN))THEN
       PQS_TOWN    (:) = XUNDEF
@@ -440,7 +484,8 @@ END IF
 !
 IF (PRESENT(PZS)) THEN
    !
-   CALL GET_ZS_n(HPROGRAM, KI, ZFIELD1)
+   CALL GET_ZS_n(U, &
+                 HPROGRAM, KI, ZFIELD1)
    !
    PZS = ZFIELD1 
    !
@@ -456,7 +501,8 @@ IF (PRESENT(PSERIES)) THEN
    !
    IF ( COUNT(PWATER  (:) > 0.0) > 0.0 ) THEN
      !   
-     CALL GET_SERIES_n(HPROGRAM, KI, KS, ZSERIES)
+     CALL GET_SERIES_n(F, &
+                       HPROGRAM, KI, KS, ZSERIES)
      !
      PSERIES = ZSERIES
      !
@@ -466,19 +512,30 @@ IF (PRESENT(PSERIES)) THEN
    !
 END IF
 !
-!*   6. SSO STDEV
+!*   7. Subgrid orography standard deviation
 !
 IF (PRESENT(PSSO_STDEV)) THEN
    !
-   CALL GET_SSO_STDEV_n('ASCII ', KI, ZFIELD1)
+   CALL GET_SSO_STDEV_n(USS, &
+                        'ASCII ', KI, ZFIELD1)
    !
    PSSO_STDEV = ZFIELD1
    !
 END IF
 !
+!*   8. Longitude et Latitude
+!
+IF (PRESENT(PLON).OR.PRESENT(PLAT)) THEN
+   !
+   CALL GET_COORD_n(UG, &
+                    HPROGRAM, KI, ZFIELD1, ZFIELD2)
+   !
+   IF (PRESENT(PLON)   ) PLON    = ZFIELD1
+   IF (PRESENT(PLAT)   ) PLAT    = ZFIELD2
+   !
+END IF
+!
 IF (LHOOK) CALL DR_HOOK('GET_SURF_VAR_N',1,ZHOOK_HANDLE)
-!
-!
 !==============================================================================
 !
 END SUBROUTINE GET_SURF_VAR_n

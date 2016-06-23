@@ -1,12 +1,12 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE ECUME_FLUX(PZ0SEA,PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,PVMOD, &
                             PZREF,PUREF,PPS,PICHCE,OPRECIP,OPWEBB,OPWG,&
                             PQSAT,PSFTH,PSFTQ,PUSTAR,PCD,PCDN,PCH,PCE, &
-                            PRI,PRESA,PRAIN,PZ0HSEA    )  
+                            PRI,PRESA,PRAIN,PZ0HSEA,OPERTFLUX,PPERTFLUX)  
 !###############################################################################
 !!
 !!****  *ECUME_FLUX*
@@ -52,16 +52,25 @@
 !!      Modified        09/2012  B. Decharme: CD correction
 !!      Modified        09/2012  B. Decharme: limitation of Ri in surface_ri.F90
 !!      Modified        10/2012  P. Le Moigne: extra inputs for FLake use
+!!      Modified        06/2013  B. Decharme: bug in z0 (output) computation 
+!!      Modified        06/2013  J.Escobar : for REAL4/8 add EPSILON management
 !!!
 !-------------------------------------------------------------------------------
 
 !       0.   DECLARATIONS
 !            ------------
-
+!
 USE MODD_CSTS,       ONLY : XKARMAN, XG, XSTEFAN, XRD, XRV, &
-                              XLVTT, XCL, XCPD, XCPV, XRHOLW, XTT,XP00  
-USE MODD_SURF_PAR,   ONLY : XUNDEF, XSURF_EPSILON
+                            XLVTT, XCL, XCPD, XCPV, XRHOLW, &
+                            XTT,XP00
+USE MODD_SURF_PAR,   ONLY : XUNDEF, XSURF_EPSILON                    
+!
+USE MODD_REPROD_OPER,  ONLY : CCHARNOCK
+!
+USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SNOW_PAR,   ONLY : XZ0SN, XZ0HSN
+USE MODD_SURF_ATM,   ONLY : XVCHRNK, XVZ0CM
+!
 USE MODD_WATER_PAR
 !
 USE MODI_WIND_THRESHOLD
@@ -72,8 +81,6 @@ USE MODE_THERMOS
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
-!
-USE MODI_ABOR1_SFX
 !
 IMPLICIT NONE
 
@@ -90,11 +97,13 @@ REAL, DIMENSION(:), INTENT(IN)    :: PPS       ! air pressure at sea surf. (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PRAIN     ! precipitation rate (kg/s/m2)
 REAL, DIMENSION(:), INTENT(IN)    :: PEXNA     ! Exner function at atm. level
 REAL, DIMENSION(:), INTENT(IN)    :: PEXNS     ! Exner function at sea surface
+REAL, DIMENSION(:), INTENT(IN)    :: PPERTFLUX ! stochastic flux perturbation pattern
 
 REAL,               INTENT(IN)    :: PICHCE    !
 LOGICAL,            INTENT(IN)    :: OPRECIP   !
 LOGICAL,            INTENT(IN)    :: OPWEBB    !
 LOGICAL,            INTENT(IN)    :: OPWG      !
+LOGICAL,            INTENT(IN)    :: OPERTFLUX !
 
 REAL, DIMENSION(:), INTENT(INOUT) :: PZ0SEA    ! roughness length over the ocean
 
@@ -143,11 +152,16 @@ REAL, DIMENSION(SIZE(PTA))        :: ZDELTAU10N,ZDELTAT10N,ZDELTAQ10N
                                                ! vert. gradients (10-m, neutral)
 REAL, DIMENSION(SIZE(PTA))        :: ZCHN,ZCEN ! neutral coef. for T,Q
 REAL, DIMENSION(SIZE(PTA))        :: ZD0
+REAL, DIMENSION(SIZE(PTA))        :: ZCHARN    !Charnock number
+REAL, DIMENSION(SIZE(PTA))        :: ZTVSR,ZBF ! constants to compute gustiness factor
 !
 REAL    :: ZETV,ZRDSRV     ! thermodynamic constants
 REAL    :: ZLMOU,ZLMOT     ! Obukhovs stability param. z/l for U, T/Q
 REAL    :: ZPSI_U,ZPSI_T   ! PSI funct. for U, T/Q
 REAL    :: ZLMOMIN,ZLMOMAX ! min/max value of Obukhovs stability parameter z/l
+REAL    :: ZBETAGUST       ! gustiness factor
+REAL    :: ZZBL            !atm. boundary layer depth (m)
+!
 REAL    :: ZCHIC,ZCHIK,ZEPS,ZLOGHS10,ZLOGTS10,ZPI,ZPIS2,ZPSIC,ZPSIK, &
              ZSQR3,ZZDQ,ZZDTH  
 !
@@ -163,10 +177,6 @@ IF (LHOOK) CALL DR_HOOK('ECUME_FLUX',0,ZHOOK_HANDLE)
 !
 NITERFL = 10
 !
-IF(OPWG) THEN
-   CALL ABOR1_SFX('Ecume_flux : Correction of fluxes due to gustiness was removed, OPWG should be at false')           
-ENDIF
-!
 !-------------------------------------------------------------------------------
 !
 !       1.   AUXILIARY CONSTANTS & ARRAY INITIALISATION BY UNDEFINED VALUES.
@@ -178,9 +188,12 @@ ZP00    = 1013.25E+02
 ZPIS2   = 2.0*ATAN(1.0)
 ZPI     = 2.0*ZPIS2
 ZSQR3   = SQRT(3.0)
-ZEPS    = 1.E-8 ! XSURF_EPSILON ! 1.E-12
+ZEPS    = 1.E-8
 ZETV    = XRV/XRD-1.0
 ZRDSRV  = XRD/XRV
+!
+ZBETAGUST=1.2  ! value based on TOGA-COARE experiment
+ZZBL     =600. ! Set a default value for boundary layer depth
 !
 ZDIRCOSZW(:)=1.
 !
@@ -229,9 +242,13 @@ ZDQ (:) = PQA(:)-PQSAT(:)
 !
 ZD0(:) = 1.2+6.3E-03*MAX(ZDU(:)-10.0,0.0)
 !
-!IF(OPWG) ZWG(:) = 0.0                  !no gustiness initial guess
-!ZDUWG(:) = SQRT(ZDU(:)**2+ZWG(:)**2)
-ZDUWG     (:) = ZDU  (:)
+IF (OPWG) THEN !initial guess for gustiness factor
+   ZWG   (:) = 0.5
+   ZDUWG (:) = SQRT(ZDU(:)**2+ZWG(:)**2)
+ELSE
+   ZDUWG (:) = ZDU(:)
+ENDIF
+!
 ZDELTAU10N(:) = ZDUWG(:)
 ZDELTAT10N(:) = ZDTH (:)*ZD0(:)
 ZDELTAQ10N(:) = ZDQ  (:)
@@ -240,6 +257,15 @@ ZDELTAQ10N(:) = ZDQ  (:)
 !
 ZLV(:) = XLVTT+(XCPV-XCL)*(PSST(:)-XTT)                 !at sea surface
 ZLR(:) = XLVTT+(XCPV-XCL)*(PTA(:)-XTT)                  !at atm.level
+!
+!       2.5. Charnock number
+!
+IF(CCHARNOCK=='OLD')THEN
+  ZCHARN(:) = XVCHRNK
+ELSE
+! vary between 0.011 et 0.018 according to Chris Fairall's data as in coare3.0        
+  ZCHARN(:) = MAX(0.011,MIN(0.018,0.011+0.007*(ZDUWG(:)-10.)/8.))
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -301,9 +327,14 @@ DO JJ=1,NITERFL
     ZUSR(JLON) = SQRT(PCDN(JLON))*ZDELTAU10N(JLON)
     ZTSR(JLON) = ZCHN(JLON)/SQRT(PCDN(JLON))*ZDELTAT10N(JLON)
     ZQSR(JLON) = ZCEN(JLON)/SQRT(PCDN(JLON))*ZDELTAQ10N(JLON)
-    PZ0SEA(JLON) = 10.0/EXP(XKARMAN*ZDELTAU10N(JLON)/ZUSR(JLON))
 !
 !       3.5. Gustiness factor ZWG following Mondon & Redelsperger (1998)
+!
+    IF(OPWG) THEN
+      ZTVSR(JLON)=ZTSR(JLON)*(1.0+ZETV*PQA(JLON))+ZETV*PTA(JLON)*ZQSR(JLON)
+      ZBF(JLON)=MAX(0.0,-XG/PTA(JLON)*ZUSR(JLON)*ZTVSR(JLON))
+      ZWG(JLON)=ZBETAGUST*(ZBF(JLON)*ZZBL)**(1./3.)
+    ENDIF
 !
 !       3.6. Obukhovs stability param. z/l following Liu et al. (JAS, 1979)
 !
@@ -355,7 +386,7 @@ DO JJ=1,NITERFL
 !
     ZLOGHS10 = LOG(PUREF(JLON)/10.0)
     ZLOGTS10 = LOG(PZREF(JLON)/10.0)
-    ZDUWG(JLON) = (ZDU(JLON)**2+ZWG(JLON)**2)**0.5
+    ZDUWG     (JLON) = SQRT(ZDU(JLON)**2+ZWG(JLON)**2)
     ZDELTAU10N(JLON) = ZDUWG(JLON)-ZUSR(JLON)*(ZLOGHS10-ZPSI_U)/XKARMAN
     ZDELTAT10N(JLON) = ZDTH (JLON)-ZTSR(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
     ZDELTAQ10N(JLON) = ZDQ  (JLON)-ZQSR(JLON)*(ZLOGTS10-ZPSI_T)/XKARMAN
@@ -388,6 +419,14 @@ DO JLON=1,SIZE(PTA)
   ZTAU(JLON) = -PRHOA(JLON)*PCD(JLON)*ZDUWG(JLON)**2
   ZHF (JLON) = -PRHOA(JLON)*XCPD*PCH(JLON)*ZDUWG(JLON)*ZDTH(JLON)
   ZEF (JLON) = -PRHOA(JLON)*ZLV(JLON)*PCE(JLON)*ZDUWG(JLON)*ZDQ(JLON)
+!
+!       4.3. Stochastic perturbation of turbulent fluxes
+
+  IF( OPERTFLUX )THEN
+    ZTAU(JLON) = ZTAU(JLON)* ( 1. + PPERTFLUX(JLON) / 2. )
+    ZHF (JLON) = ZHF(JLON)*  ( 1. + PPERTFLUX(JLON) / 2. )
+    ZEF (JLON) = ZEF(JLON)*  ( 1. + PPERTFLUX(JLON) / 2. )
+  ENDIF
 !
 ENDDO
 !
@@ -466,17 +505,15 @@ PUSTAR(:)=SQRT(ZUSTAR2(:))
 !
 ZAC(:)=PCH(:)*ZVMOD(:)
 PRESA(:)=1./ MAX(ZAC(:),XSURF_EPSILON)
-!!$WHERE ( ZAC(:) /= 0.0 )
-!!$ELSEWHERE
-!!$PRESA(:)= 45.5
-!!$END WHERE
 !
 !       7.4. Total surface fluxes
 !
 PSFTH(:)=ZHF(:)+ZRF(:)
 PSFTQ(:)=(ZEF(:)+ZEFWEBB(:))/ZLV(:)
 !
-!       7.5. Z0H over water
+!       7.5. Z0 and Z0H over water
+!
+PZ0SEA(:) = ZCHARN(:) * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
 !
 PZ0HSEA(:)=PZ0SEA(:)
 !

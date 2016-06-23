@@ -1,11 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
-SUBROUTINE INIT_SLT(HPROGRAM  &! Program calling unit
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+SUBROUTINE INIT_SLT (SLT, &
+                     HPROGRAM  &! Program calling unit
        )  
 
-USE MODD_SLT_n
+!
+USE MODD_SLT_n, ONLY : SLT_t
+!
 USE MODD_SLT_SURF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -14,6 +17,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 
 !PASSED VARIABLES
+!
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+!
  CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM              !Passing unit
 !
 !LOCAL VARIABLES
@@ -26,8 +32,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('INIT_SLT',0,ZHOOK_HANDLE)
 !
 !Allocate memory for the real values which will be used by the model
-ALLOCATE(XEMISRADIUS_SLT(NSLTMDE))
-ALLOCATE(XEMISSIG_SLT   (NSLTMDE))
+ALLOCATE(SLT%XEMISRADIUS_SLT(NSLTMDE))
+ALLOCATE(SLT%XEMISSIG_SLT   (NSLTMDE))
 !
 !Get initial size distributions. This is cut and pasted
 !from dead routine dstpsd.F90
@@ -46,11 +52,11 @@ DO JMODE=1,NSLTMDE
   !
   JMODE_IDX = JORDER_SLT(JMODE)
   !
-  XEMISSIG_SLT   (JMODE) = XEMISSIG_INI_SLT   (JMODE_IDX)
-  XEMISRADIUS_SLT(JMODE) = XEMISRADIUS_INI_SLT(JMODE_IDX)
+  SLT%XEMISSIG_SLT   (JMODE) = XEMISSIG_INI_SLT   (JMODE_IDX)
+  SLT%XEMISRADIUS_SLT(JMODE) = XEMISRADIUS_INI_SLT(JMODE_IDX)
   !
   IF (CRGUNITS=="MASS") &
-    XEMISRADIUS_SLT(JMODE) = XEMISRADIUS_SLT(JMODE) * EXP(-3.d0 * (LOG(XEMISSIG_SLT(JMODE)))**2)    
+    SLT%XEMISRADIUS_SLT(JMODE) = SLT%XEMISRADIUS_SLT(JMODE) * EXP(-3.d0 * (LOG(SLT%XEMISSIG_SLT(JMODE)))**2)    
   !
 ENDDO
 !

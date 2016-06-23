@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_SURF_ATM_CONF(HPROGRAM)
 !     #######################################################
@@ -27,11 +27,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
+!!      B. Decharme 06/2013 CIMPLICIT_WIND is now in NAM_SURF_REPROD_OPER
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -41,7 +42,6 @@ USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
 USE MODE_POS_SURF
-USE MODI_TEST_NAM_VAR_SURF
 !
 USE MODN_CHS_ORILAM
 USE MODN_SURF_ATM
@@ -85,7 +85,6 @@ IF (GFOUND) READ(UNIT=INAM,NML=NAM_CHS_ORILAM)
 !
  CALL POSNAM(INAM,'NAM_SURF_ATM',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=INAM,NML=NAM_SURF_ATM)
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CIMPLICIT_WIND',CIMPLICIT_WIND,'OLD','NEW')
 !
  CALL POSNAM(INAM,'NAM_WRITE_SURF_ATM',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=INAM,NML=NAM_WRITE_SURF_ATM)

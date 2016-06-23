@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_PREP_TEB_GARDEN
 !     ###########################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,14 +38,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PREP_TEB_GARDEN, ONLY : CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,       &
-                                   CFILE_HUG, CTYPE_HUG,                           &
-                                   CFILE_HUG_SURF, CFILE_HUG_ROOT, CFILE_HUG_DEEP, &
-                                   XHUG_SURF, XHUG_ROOT, XHUG_DEEP,                &
-                                   XHUGI_SURF,XHUGI_ROOT, XHUGI_DEEP,              &
-                                   CFILE_TG, CTYPE_TG,                             &
-                                   CFILE_TG_SURF, CFILE_TG_ROOT, CFILE_TG_DEEP,    &
-                                   XTG_SURF, XTG_ROOT, XTG_DEEP,                   &
+USE MODD_PREP_TEB_GARDEN, ONLY : CFILE_GD, CTYPE, CFILEPGD_GD, CTYPEPGD,       &
+                                   CFILE_HUG_GD, CTYPE_HUG,                           &
+                                   CFILE_HUG_SURF_GD, CFILE_HUG_ROOT_GD, CFILE_HUG_DEEP_GD, &
+                                   XHUG_SURF_GD, XHUG_ROOT_GD, XHUG_DEEP_GD,                &
+                                   XHUGI_SURF_GD, XHUGI_ROOT_GD, XHUGI_DEEP_GD,              &
+                                   CFILE_TG_GD, CTYPE_TG,                             &
+                                   CFILE_TG_SURF_GD, CFILE_TG_ROOT_GD, CFILE_TG_DEEP_GD,    &
+                                   XTG_SURF_GD, XTG_ROOT_GD, XTG_DEEP_GD,                   &
                                    XWR_DEF  
 
 USE MODD_SURF_PAR,   ONLY : XUNDEF
@@ -72,31 +72,31 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB_GARDEN',0,ZHOOK_HANDLE)
-CFILE_ISBA = '                          '
-CTYPE      = 'GRIB  '
-CFILEPGD_ISBA = '                          '
-CTYPEPGD      = '      '
-CFILE_HUG  = '                          '
-CTYPE_HUG  = '      '
-CFILE_TG   = '                          '
-CTYPE_TG   = '      '
+ CFILE_GD = '                          '
+ CTYPE      = 'GRIB  '
+ CFILEPGD_GD = '                          '
+ CTYPEPGD      = '      '
+ CFILE_HUG_GD  = '                          '
+ CTYPE_HUG  = '      '
+ CFILE_TG_GD   = '                          '
+ CTYPE_TG   = '      '
 !
-CFILE_HUG_SURF = '                          '
-CFILE_HUG_ROOT = '                          '
-CFILE_HUG_DEEP = '                          '
-CFILE_TG_SURF  = '                          '
-CFILE_TG_ROOT  = '                          '
-CFILE_TG_DEEP  = '                          '
+ CFILE_HUG_SURF_GD = '                          '
+ CFILE_HUG_ROOT_GD = '                          '
+ CFILE_HUG_DEEP_GD = '                          '
+ CFILE_TG_SURF_GD  = '                          '
+ CFILE_TG_ROOT_GD  = '                          '
+ CFILE_TG_DEEP_GD  = '                          '
 !
-XHUG_SURF = XUNDEF
-XHUG_ROOT = XUNDEF
-XHUG_DEEP = XUNDEF
-XHUGI_SURF= XUNDEF
-XHUGI_ROOT= XUNDEF
-XHUGI_DEEP= XUNDEF
-XTG_SURF  = XUNDEF
-XTG_ROOT  = XUNDEF
-XTG_DEEP  = XUNDEF
+XHUG_SURF_GD = XUNDEF
+XHUG_ROOT_GD = XUNDEF
+XHUG_DEEP_GD = XUNDEF
+XHUGI_SURF_GD= XUNDEF
+XHUGI_ROOT_GD= XUNDEF
+XHUGI_DEEP_GD= XUNDEF
+XTG_SURF_GD  = XUNDEF
+XTG_ROOT_GD  = XUNDEF
+XTG_DEEP_GD  = XUNDEF
 !
 XWR_DEF   = 0.
 !

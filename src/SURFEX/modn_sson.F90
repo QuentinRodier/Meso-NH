@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !##################
 MODULE MODN_SSO_n
 !##################
@@ -23,7 +23,7 @@ MODULE MODN_SSO_n
 !!       
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -34,10 +34,6 @@ MODULE MODN_SSO_n
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_SURF_ATM_SSO_n, ONLY: &
-         CROUGH_n => CROUGH,   &
-         XFRACZ0_n => XFRACZ0, &
-         XCOEFBE_n => XCOEFBE
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -50,25 +46,37 @@ REAL              :: XCOEFBE
 !
 NAMELIST/NAM_SSOn/CROUGH, XFRACZ0, XCOEFBE
 !
-CONTAINS
+ CONTAINS
 !
-SUBROUTINE INIT_NAM_SSOn
+SUBROUTINE INIT_NAM_SSOn (USS)
+!
+  USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
+  IMPLICIT NONE
+!
+  TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
   REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
   IF (LHOOK) CALL DR_HOOK('MODN_SSO_N:INIT_NAM_SSON',0,ZHOOK_HANDLE)
-  CROUGH = CROUGH_n
-  XFRACZ0= XFRACZ0_n  
-  XCOEFBE= XCOEFBE_n  
+  CROUGH = USS%CROUGH
+  XFRACZ0= USS%XFRACZ0  
+  XCOEFBE= USS%XCOEFBE  
   IF (LHOOK) CALL DR_HOOK('MODN_SSO_N:INIT_NAM_SSON',1,ZHOOK_HANDLE)
 END SUBROUTINE INIT_NAM_SSOn
 
-SUBROUTINE UPDATE_NAM_SSOn
+SUBROUTINE UPDATE_NAM_SSOn (USS)
+!
+  USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
+  IMPLICIT NONE
+!
+  TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
   REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
   IF (LHOOK) CALL DR_HOOK('MODN_SSO_N:UPDATE_NAM_SSON',0,ZHOOK_HANDLE)
-  CROUGH_n = CROUGH
-  XFRACZ0_n= XFRACZ0  
-  XCOEFBE_n= XCOEFBE  
+  USS%CROUGH = CROUGH
+  USS%XFRACZ0= XFRACZ0  
+  USS%XCOEFBE= XCOEFBE  
   IF (LHOOK) CALL DR_HOOK('MODN_SSO_N:UPDATE_NAM_SSON',1,ZHOOK_HANDLE)
 END SUBROUTINE UPDATE_NAM_SSOn
 

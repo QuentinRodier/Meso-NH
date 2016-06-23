@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE INI_CSTS 
 !     ##################
@@ -34,7 +34,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!  	V. Ducrocq       * Meteo France *
+!!      V. Ducrocq       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -46,7 +46,7 @@
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add XCONDI
 !!      A. Voldoire 01/12/09  add XTTSI, XICEC, XTTS for ESM
-!!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XSURF_TINY=1.0e-80 in real8 case 
+!!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XSURF_TINY=1.0e-80 in real8 case
 !!
 !-------------------------------------------------------------------------------
 !
@@ -69,15 +69,15 @@ IMPLICIT NONE
 !  
 !-------------------------------------------------------------------------------
 !
-!*	 1.     FUNDAMENTAL CONSTANTS
-!	        ---------------------
+!*       1.     FUNDAMENTAL CONSTANTS
+!               ---------------------
 !
 
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('INI_CSTS',0,ZHOOK_HANDLE)
 
-#ifdef MNH
+#ifdef SFX_MNH
 #ifdef MNH_MPI_DOUBLE_PRECISION
 XSURF_TINY    = 1.0e-80
 #else
@@ -99,7 +99,7 @@ XAVOGADRO   = 6.0221367E+23
 !-------------------------------------------------------------------------------
 !
 !*       2.     ASTRONOMICAL CONSTANTS
-!	        ----------------------
+!               ----------------------
 !
 XDAY   = 86400.
 XSIYEA = 365.25*XDAY*2.*XPI/ 6.283076
@@ -111,22 +111,22 @@ NDAYSEC = 24*3600 ! Number of seconds in a day
 !
 !
 !*       3.     TERRESTRIAL GEOIDE CONSTANTS
-!	        ----------------------------
+!               ----------------------------
 !
 XRADIUS = 6371229.
 XG      = 9.80665
 !
 !-------------------------------------------------------------------------------
 !
-!*	 4.     REFERENCE PRESSURE
-!	        -------------------
+!*       4.     REFERENCE PRESSURE
+!               -------------------
 !
 XP00 = 1.E5
 XTH00 = 300.
 !-------------------------------------------------------------------------------
 !
-!*	 5.     RADIATION CONSTANTS
-!	        -------------------
+!*       5.     RADIATION CONSTANTS
+!               -------------------
 !
 !JUAN OVERFLOW XSTEFAN = 2.* XPI**5 * XBOLTZ**4 / (15.* XLIGHTSPEED**2 * XPLANCK**3)
 XSTEFAN = ( 2.* XPI**5 / 15. ) * ( (XBOLTZ / XPLANCK)* XBOLTZ ) * (XBOLTZ/(XLIGHTSPEED*XPLANCK))**2 
@@ -134,8 +134,8 @@ XI0     = 1370.
 !
 !-------------------------------------------------------------------------------
 !
-!*	 6.     THERMODYNAMIC CONSTANTS
-!	        -----------------------
+!*       6.     THERMODYNAMIC CONSTANTS
+!               -----------------------
 !
 XMD    = 28.9644E-3
 XMV    = 18.0153E-3
@@ -165,19 +165,19 @@ XALPI  = LOG(XESTT) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
 !
 !-------------------------------------------------------------------------------
 !
-!*	 7.     TURBULENCE CONSTANTS
-!	        --------------------
+!*       7.     TURBULENCE CONSTANTS
+!               --------------------
 !
  CALL INI_CTURBS
 !-------------------------------------------------------------------------------
 !
-!*	 8.     OCEAN CONSTANTS
-!	        ---------------
+!*       8.     OCEAN CONSTANTS
+!               ---------------
 !
  CALL INI_OCEAN_CSTS
 !
-!*	 9.     SURFACE CONSTANTS
-!	        -----------------
+!*       9.     SURFACE CONSTANTS
+!               -----------------
 !
  CALL INI_SURF_CSTS
 IF (LHOOK) CALL DR_HOOK('INI_CSTS',1,ZHOOK_HANDLE)

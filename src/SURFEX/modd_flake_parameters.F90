@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 ! File %M% from Library %Q%
 ! Version %I% from %G% extracted: %H%
 !------------------------------------------------------------------------------
@@ -34,15 +34,15 @@ MODULE modd_flake_parameters
 ! Software Standards: "European Standards for Writing and
 ! Documenting Exchangeable Fortran 90 Code".
 !==============================================================================
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      P. Le Moigne 04/2013 : homogeneization with surfex parameters
+!!
+!==============================================================================
 !
 ! Declarations:
 !
-! Modules used:
-
-!USE modd_data_parameters , ONLY : &
-!    ireals                   ,  &! KIND-type parameter for real variables 
-!    iintegers                    ! KIND-type parameter for "normal" integer variables  
-
 !==============================================================================
 
 IMPLICIT NONE
@@ -104,27 +104,30 @@ REAL , PARAMETER ::         &
 
 !  Thermodynamic parameters
 REAL , PARAMETER ::        &
-    tpl_grav          = 9.81       ,  &! Acceleration due to gravity [m s^{-2}]
+    tpl_grav          = 9.80665    ,  &! Acceleration due to gravity [m s^{-2}]
     tpl_T_r           = 277.13     ,  &! Temperature of maximum density of fresh water [K]
     tpl_T_f           = 273.15     ,  &! Fresh water freezing point [K]
     tpl_a_T           = 1.6509E-05 ,  &! Constant in the fresh-water equation of state [K^{-2}]
     tpl_rho_w_r       = 1.0E+03    ,  &! Maximum density of fresh water [kg m^{-3}]
-    tpl_rho_I         = 9.1E+02    ,  &! Density of ice [kg m^{-3}]
+    tpl_rho_I         = 9.17E+02   ,  &! Density of ice [kg m^{-3}]
     tpl_rho_S_min     = 1.0E+02    ,  &! Minimum snow density [kg m^{-3}]
-    tpl_rho_S_max     = 4.0E+02    ,  &! Maximum snow density [kg m^{-3}]
+    tpl_rho_S_max     = 3.0E+02    ,  &! Maximum snow density [kg m^{-3}]
     tpl_Gamma_rho_S   = 2.0E+02    ,  &! Empirical parameter [kg m^{-4}]  
                                             ! in the expression for the snow density 
-    tpl_L_f           = 3.3E+05    ,  &! Latent heat of fusion [J kg^{-1}]
-    tpl_c_w           = 4.2E+03    ,  &! Specific heat of water [J kg^{-1} K^{-1}]
-    tpl_c_I           = 2.1E+03    ,  &! Specific heat of ice [J kg^{-1} K^{-1}]
+    tpl_L_f           = 3.335E+05  ,  &! Latent heat of fusion [J kg^{-1}]
+    tpl_c_w           = 4.218E+03  ,  &! Specific heat of water [J kg^{-1} K^{-1}]
+    tpl_c_I           = 2.106E+03  ,  &! Specific heat of ice [J kg^{-1} K^{-1}]
     tpl_c_S           = 2.1E+03    ,  &! Specific heat of snow [J kg^{-1} K^{-1}]
     tpl_kappa_w       = 5.46E-01   ,  &! Molecular heat conductivity of water [J m^{-1} s^{-1} K^{-1}]
     tpl_kappa_I       = 2.29       ,  &! Molecular heat conductivity of ice [J m^{-1} s^{-1} K^{-1}]
     tpl_kappa_S_min   = 0.2        ,  &! Minimum molecular heat conductivity of snow [J m^{-1} s^{-1} K^{-1}]
     tpl_kappa_S_max   = 1.5        ,  &! Maximum molecular heat conductivity of snow [J m^{-1} s^{-1} K^{-1}]
     tpl_Gamma_kappa_S = 1.3            ! Empirical parameter [J m^{-2} s^{-1} K^{-1}]   
-                                            ! in the expression for the snow heat conductivity 
+                                       ! in the expression for the snow heat conductivity 
 
+!  Skin temperature parameters
+REAL , PARAMETER ::        &
+    h_skinlayer_flk   = 0.001          ! Skin layer thickness [m]                                            
 !==============================================================================
 
 END MODULE modd_flake_parameters

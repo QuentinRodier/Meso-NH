@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_GRID_CONF_PROJ(HFILETYPE,HINTERP_TYPE,KNI)
+      SUBROUTINE PREP_GRID_CONF_PROJ (GCP,&
+                                      HFILETYPE,HINTERP_TYPE,KNI)
 !     ##########################################################################
 !
 !!****  *PREP_GRID_CONF_PROJ* - reads EXTERNALIZED Surface grid.
@@ -38,11 +39,12 @@
 !*      0. DECLARATIONS
 !          ------------
 !
+!
+!
+!
 USE MODI_READ_SURF
 !
-USE MODD_GRID_CONF_PROJ, ONLY : XX, XY, NX, NY, XLAT0, XLON0, XLATORI, &
-                                  XLONORI, XRPK, XBETA  
-!
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t,XX,XY
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -52,7 +54,10 @@ IMPLICIT NONE
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)    :: HFILETYPE    ! file type
+!
+!
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+CHARACTER(LEN=6),  INTENT(IN)    :: HFILETYPE    ! file type
  CHARACTER(LEN=6),  INTENT(OUT)   :: HINTERP_TYPE ! Grid type
 INTEGER,           INTENT(OUT)   :: KNI          ! number of points
 !
@@ -74,13 +79,17 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PREP_GRID_CONF_PROJ',0,ZHOOK_HANDLE)
 YRECFM = 'LAT0'
- CALL READ_SURF(HFILETYPE,YRECFM,XLAT0,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XLAT0,IRESP)
 YRECFM = 'LON0'
- CALL READ_SURF(HFILETYPE,YRECFM,XLON0,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XLON0,IRESP)
 YRECFM = 'RPK'
- CALL READ_SURF(HFILETYPE,YRECFM,XRPK,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XRPK,IRESP)
 YRECFM = 'BETA'
- CALL READ_SURF(HFILETYPE,YRECFM,XBETA,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XBETA,IRESP)
 !
 !-----------------------------------------------------------------------
 !
@@ -88,37 +97,47 @@ YRECFM = 'BETA'
 !      ----
 !
 YRECFM = 'LATORI'
- CALL READ_SURF(HFILETYPE,YRECFM,XLATORI,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XLATORI,IRESP)
 YRECFM = 'LONORI'
- CALL READ_SURF(HFILETYPE,YRECFM,XLONORI,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%XLONORI,IRESP)
 !
 YRECFM = 'IMAX'
- CALL READ_SURF(HFILETYPE,YRECFM,NX,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%NX,IRESP)
 YRECFM = 'JMAX'
- CALL READ_SURF(HFILETYPE,YRECFM,NY,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,GCP%NY,IRESP)
 !
-KNI = NX * NY
+KNI = GCP%NX * GCP%NY
 !
 ALLOCATE(ZW(KNI))
 !
 IF (ALLOCATED(XX)) DEALLOCATE(XX)
-ALLOCATE(XX(NX))
+ALLOCATE(XX(GCP%NX))
 YRECFM = 'XX'
- CALL READ_SURF(HFILETYPE,YRECFM,ZW,IRESP,HDIR='A')
-XX = ZW(1:NX)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,ZW,IRESP,HDIR='A')
+XX = ZW(1:GCP%NX)
 
 
 IF (ALLOCATED(XY)) DEALLOCATE(XY)
-ALLOCATE(XY(NY))
+ALLOCATE(XY(GCP%NY))
 YRECFM = 'YY'
- CALL READ_SURF(HFILETYPE,YRECFM,ZW,IRESP,HDIR='A')
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,ZW,IRESP,HDIR='A')
 DO JL=1,KNI
-  IF (MOD(JL,NX)==0) XY(JL/NX) = ZW(JL)
+  IF (MOD(JL,GCP%NX)==0) XY(JL/GCP%NX) = ZW(JL)
 END DO
 DEALLOCATE(ZW)
 !
 !-----------------------------------------------------------------------
-HINTERP_TYPE = 'BILIN '
+IF(KNI==1)THEN
+  HINTERP_TYPE = 'UNIF  '
+ELSE
+  HINTERP_TYPE = 'BILIN '
+ENDIF
 IF (LHOOK) CALL DR_HOOK('PREP_GRID_CONF_PROJ',1,ZHOOK_HANDLE)
 !-----------------------------------------------------------------------
 !

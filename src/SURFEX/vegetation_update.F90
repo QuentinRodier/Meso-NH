@@ -1,11 +1,12 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE VEGETATION_UPDATE(PTSTEP,TTIME,PCOVER,                 &
-                       HISBA,OECOCLIMAP, HPHOTO, OAGRIP, HSFTYPE,     &
-                       PLAI,PVEG,PZ0,                                 &
+    SUBROUTINE VEGETATION_UPDATE (DTCO, DTI, DTGD, DTGR, IG, I, TGRO, &
+                                  PTSTEP,TTIME,PCOVER,OCOVER,          &
+                       HISBA,OECOCLIMAP, HPHOTO, OAGRIP, OTR_ML,      &
+                       HSFTYPE, PLAI,PVEG,PZ0,                        &
                        PALBNIR,PALBVIS,PALBUV,PEMIS,                  &
                        PRSMIN,PGAMMA,PWRMAX_CF,                       &
                        PRGL,PCV,                                      &
@@ -17,7 +18,11 @@
                        HALBEDO, PALBNIR_VEG, PALBVIS_VEG, PALBUV_VEG, &
                        PALBNIR_SOIL, PALBVIS_SOIL, PALBUV_SOIL,       &
                        PCE_NITRO, PCF_NITRO, PCNA_NITRO,              &
-                       TPSEED, TPREAP, PWATSUP, PIRRIG       )  
+                       TPSEED, TPREAP, PWATSUP, PIRRIG,               &
+                       PGNDLITTER, PRGLGV,PGAMMAGV,                   &
+                       PRSMINGV, PWRMAX_CFGV,                         &
+                       PH_VEG, PLAIGV, PZ0LITTER,                     &
+                       ODUPDATED, OABSENT                             )
 !   ###############################################################
 !!****  *VEGETATION EVOL*
 !!
@@ -46,21 +51,33 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson          * Meteo-France *
+!!      V. Masson          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/03/03 
 !!
 !!      P Le Moigne 09/2005 AGS modifs of L. Jarlan
+!!      P Samuelsson 10/2014 MEB
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_TYPE_DATE_SURF
 !
-USE MODD_TEB_n,   ONLY : XGARDEN
+!
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_DATA_TEB_GARDEN_n, ONLY : DATA_TEB_GARDEN_t
+USE MODD_DATA_TEB_GREENROOF_n, ONLY : DATA_TEB_GREENROOF_t
+USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+!
+USE MODD_TYPE_DATE_SURF
 !
 USE MODI_INIT_ISBA_MIXPAR
 USE MODI_CONVERT_PATCH_ISBA
@@ -79,12 +96,23 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(DATA_TEB_GARDEN_t), INTENT(INOUT) :: DTGD
+TYPE(DATA_TEB_GREENROOF_t), INTENT(INOUT) :: DTGR
+TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+!
 REAL,                 INTENT(IN)    :: PTSTEP  ! time step
 TYPE(DATE_TIME),      INTENT(IN)    :: TTIME   ! UTC time
 REAL,   DIMENSION(:,:), INTENT(IN)  :: PCOVER  ! cover types
+LOGICAL, DIMENSION(:), INTENT(IN)   :: OCOVER
  CHARACTER(LEN=*),     INTENT(IN)    :: HISBA   ! type of soil (Force-Restore OR Diffusion)
  CHARACTER(LEN=*),     INTENT(IN)    :: HPHOTO  ! type of photosynthesis
 LOGICAL,              INTENT(IN)    :: OAGRIP
+LOGICAL,              INTENT(IN)    :: OTR_ML
  CHARACTER(LEN=*),     INTENT(IN)    :: HSFTYPE ! nature / garden
 LOGICAL,              INTENT(IN)    :: OECOCLIMAP ! T if ecoclimap is used
 !
@@ -112,6 +140,16 @@ REAL,   DIMENSION(:,:), INTENT(INOUT) :: PGC
 REAL,   DIMENSION(:,:), INTENT(INOUT) :: PF2I
 REAL,   DIMENSION(:,:), INTENT(INOUT) :: PDMAX
 LOGICAL,DIMENSION(:,:), INTENT(INOUT) :: OSTRESS
+!
+! MEB stuff
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PGNDLITTER
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PRGLGV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PGAMMAGV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PRSMINGV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PWRMAX_CFGV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PH_VEG
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PLAIGV
+REAL,   DIMENSION(:,:), INTENT(INOUT) :: PZ0LITTER
 !
  CHARACTER(LEN=4),     INTENT(IN)    :: HALBEDO ! albedo type
 !                                              ! 'DRY ' 
@@ -145,6 +183,9 @@ TYPE(DATE_TIME), DIMENSION(:,:), INTENT(INOUT) :: TPREAP   ! seeding date
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PWATSUP  ! water supply during irrigation
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PIRRIG   ! irrigated fraction
 !
+LOGICAL,              INTENT(OUT)   :: ODUPDATED  ! T if parameters are being reset
+LOGICAL,DIMENSION(:), INTENT(IN), OPTIONAL :: OABSENT ! T where field is not defined
+!
 !*      0.2    declarations of local variables
 !
 INTEGER                                  :: IDECADE, IDECADE2  ! decade of simulation
@@ -160,21 +201,26 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('VEGETATION_UPDATE',0,ZHOOK_HANDLE)
 IDECADE = 3 * ( TTIME%TDATE%MONTH - 1 ) + MIN(TTIME%TDATE%DAY-1,29) / 10 + 1
 IDECADE2 = IDECADE
+ODUPDATED=.FALSE.
 !
 !*      2.2    From ecoclimap
 !              --------------
 !
 !* new decade?
-  IF ( MOD(TTIME%TDATE%DAY,10)==1 .AND. TTIME%TIME - PTSTEP < 0.) THEN
+  IF ( MOD(MIN(TTIME%TDATE%DAY,30),10)==1 .AND. TTIME%TIME - PTSTEP < 0.) THEN
+    ODUPDATED=.TRUE.
 !* time varying parameters
     IF (OECOCLIMAP .OR. HSFTYPE=='NAT') THEN
 !* new year ? --> recomputes data LAI and derivated parameters (usefull in case of ecoclimap2)
-      CALL UPDATE_DATA_COVER(TTIME%TDATE%YEAR)  
-      IF (HSFTYPE=='NAT') CALL INIT_ISBA_MIXPAR(HISBA,IDECADE,IDECADE2,PCOVER,HPHOTO,HSFTYPE)
-      CALL CONVERT_PATCH_ISBA(HISBA,IDECADE,IDECADE2,PCOVER,HPHOTO,  &
-                           OAGRIP,.FALSE.,HSFTYPE, PVEG=PVEG,    &
-                           PLAI=PLAI,PRSMIN=PRSMIN,PGAMMA=PGAMMA,&
-                           PWRMAX_CF=PWRMAX_CF,                  &
+      CALL UPDATE_DATA_COVER(DTCO, DTI, IG, I, &
+                             TTIME%TDATE%YEAR)  
+      IF (HSFTYPE=='NAT') CALL INIT_ISBA_MIXPAR(DTCO, DTI, IG, I, &
+                                                HISBA,IDECADE,IDECADE2,PCOVER,OCOVER,HPHOTO,HSFTYPE)
+      CALL CONVERT_PATCH_ISBA(DTCO, DTI, I, &
+                              HISBA,IDECADE,IDECADE2,PCOVER,OCOVER,&
+                           HPHOTO,OAGRIP,.FALSE.,OTR_ML,HSFTYPE, &
+                           PVEG=PVEG,PLAI=PLAI,PRSMIN=PRSMIN,    &
+                           PGAMMA=PGAMMA, PWRMAX_CF=PWRMAX_CF,   &
                            PRGL=PRGL,PCV=PCV,PZ0=PZ0,            &
                            PALBNIR_VEG=PALBNIR_VEG,              &
                            PALBVIS_VEG=PALBVIS_VEG,              &
@@ -187,16 +233,37 @@ IDECADE2 = IDECADE
                            PCF_NITRO=PCF_NITRO,                  &
                            PCNA_NITRO=PCNA_NITRO,                &
                            TPSEED=TPSEED, TPREAP=TPREAP,         &
-                           PWATSUP=PWATSUP,PIRRIG=PIRRIG     ) 
+                           PWATSUP=PWATSUP,PIRRIG=PIRRIG,        &
+                           PGNDLITTER=PGNDLITTER,                &
+                           PRGLGV=PRGLGV,PGAMMAGV=PGAMMAGV,      &
+                           PRSMINGV=PRSMINGV,                    &
+                           PWRMAX_CFGV=PWRMAX_CFGV,              &
+                           PLAIGV=PLAIGV,PZ0LITTER=PZ0LITTER,    &
+                           PH_VEG=PH_VEG                         )
       IF ( HALBEDO=='CM13') THEN
-        CALL CONVERT_PATCH_ISBA(HISBA,IDECADE,IDECADE2,PCOVER,&
-                              HPHOTO,OAGRIP,.FALSE.,HSFTYPE, &
+        CALL CONVERT_PATCH_ISBA(DTCO, DTI, I, &
+                              HISBA,IDECADE,IDECADE2,PCOVER,OCOVER,&
+                              HPHOTO,OAGRIP,.FALSE.,OTR_ML,HSFTYPE, &
                               PALBNIR_SOIL=PALBNIR_SOIL, &
                               PALBVIS_SOIL=PALBVIS_SOIL, &
                               PALBUV_SOIL=PALBUV_SOIL )
-      ENDIF                     
-      IF (HSFTYPE=='GRD'.OR.HSFTYPE=='GNR') THEN
-        WHERE (XGARDEN(:)==0.)
+      ENDIF
+    ELSEIF (HSFTYPE=='GRD') THEN
+      CALL INIT_FROM_DATA_GRDN_n(DTGD, &
+                                 IDECADE,HPHOTO,                                      &
+                       PVEG=PVEG(:,1),PLAI=PLAI(:,1),PZ0=PZ0(:,1),PEMIS=PEMIS(:,1)    )  
+     
+    ELSEIF (HSFTYPE=='GNR') THEN
+      CALL INIT_FROM_DATA_GREENROOF_n(DTGR, TGRO, &
+                                      IDECADE,HPHOTO,                                 &
+                       PVEG=PVEG(:,1),PLAI=PLAI(:,1),PZ0=PZ0(:,1),PEMIS=PEMIS(:,1)    )  
+
+    ENDIF
+!
+!* default values to avoid problems in physical routines
+!  for points where there is no vegetation or soil to be simulated by ISBA.
+    IF (PRESENT(OABSENT)) THEN
+        WHERE (OABSENT(:))
           PVEG       (:,1) = 0.
           PLAI       (:,1) = 0.
           PRSMIN     (:,1) = 40.
@@ -211,7 +278,7 @@ IDECADE2 = IDECADE
           PEMIS      (:,1) = 0.94                
         END WHERE
         IF (HPHOTO/='NON') THEN
-          WHERE (XGARDEN(:)==0.)
+          WHERE (OABSENT(:))
             PGMES      (:,1) = 0.020
             PBSLAI     (:,1) = 0.36
             PLAIMIN    (:,1) = 0.3
@@ -219,9 +286,9 @@ IDECADE2 = IDECADE
             PGC        (:,1) = 0.00025                  
           END WHERE
           IF (HPHOTO/='AGS' .AND. HPHOTO/='LAI') THEN
-            WHERE (XGARDEN(:)==0.) PF2I       (:,1) = 0.3
+            WHERE (OABSENT(:)) PF2I       (:,1) = 0.3
             IF (HPHOTO=='NIT' .OR. HPHOTO=='NCB') THEN
-              WHERE (XGARDEN(:)==0.)
+              WHERE (OABSENT(:))
                 PCE_NITRO  (:,1) = 7.68
                 PCF_NITRO  (:,1) = -4.33
                 PCNA_NITRO (:,1) = 1.3                      
@@ -229,17 +296,8 @@ IDECADE2 = IDECADE
             ENDIF
           ENDIF
         ENDIF
-      ENDIF
-  
-    ELSEIF (HSFTYPE=='GRD') THEN
-      CALL INIT_FROM_DATA_GRDN_n(IDECADE,HPHOTO,                                      &
-                       PVEG=PVEG(:,1),PLAI=PLAI(:,1),PZ0=PZ0(:,1),PEMIS=PEMIS(:,1)    )  
-     
-    ELSEIF (HSFTYPE=='GNR') THEN
-      CALL INIT_FROM_DATA_GREENROOF_n(IDECADE,HPHOTO,                                 &
-                       PVEG=PVEG(:,1),PLAI=PLAI(:,1),PZ0=PZ0(:,1),PEMIS=PEMIS(:,1)    )  
-
     ENDIF
+
     IF (HSFTYPE=='NAT') THEN
 !* albedo
       CALL ALBEDO(HALBEDO,                                 &

@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_SNAP_n(HPROGRAM,KLU,HINIT,KCH,PRHOA)
+      SUBROUTINE CH_INIT_SNAP_n (&
+                                  CHN, SV, &
+                                 HPROGRAM,KLU,HINIT,KCH,PRHOA)
 !     #######################################
 !
 !!****  *CH_INIT_EMIISION_TEMP_n* - routine to initialize chemical emissions data structure
@@ -19,25 +21,33 @@
 !!    
 !!    AUTHOR
 !!    ------
-!!	S.QUEGUINER 
+!!      S.QUEGUINER 
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        11/2011
+!!      J.Escobar       11/2013 : ajout use MODI_CH_OPEN_INPUTB
 !!        M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
 !!-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !
+!
+!
+!
+!
+!
+USE MODD_CH_SNAP_n, ONLY : CH_EMIS_SNAP_t
+USE MODD_SV_n, ONLY : SV_t
+!
 USE MODD_CSTS,       ONLY : XAVOGADRO, XMD
-USE MODD_CH_SNAP_n
 USE MODI_GET_LUOUT
 USE MODI_READ_SURF
 USE MODI_READ_SURF_FIELD2D
 USE MODI_ABOR1_SFX
 USE MODI_CH_CONVERSION_FACTOR
-USE MODI_BUILD_PRONOSLIST_n
 USE MODI_CH_OPEN_INPUTB
+USE MODI_BUILD_PRONOSLIST_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -46,6 +56,12 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
+!
+!
+!
+!
+TYPE(CH_EMIS_SNAP_t), INTENT(INOUT) :: CHN
+TYPE(SV_t), INTENT(INOUT) :: SV
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! Program name
 INTEGER,           INTENT(IN)  :: KLU      ! number of points
@@ -58,8 +74,11 @@ REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 !
 !*       0.2   declarations of local variables
 !
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZTEMP
+INTEGER :: ISNAP
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
+ CHARACTER (LEN=3)   :: YCONVERSION
  CHARACTER (LEN=16)  :: YRECFM                ! management
  CHARACTER (LEN=100) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for chemical species
@@ -76,18 +95,23 @@ IF (LHOOK) CALL DR_HOOK('CH_INIT_SNAP_N',0,ZHOOK_HANDLE)
 !
 !* ascendant compatibility
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IVERSION,IRESP)
 YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUG,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IBUG,IRESP)
 !
 !*      1.     Chemical Emission snap configuration
 !              ------------------------------------
 !
 ! Read the number of emission species and snaps
 IF (IVERSION>7 .OR. (IVERSION==7 .AND. IBUG>=3) ) THEN
-  CALL READ_SURF(HPROGRAM,'EMISPEC_NBR',NEMIS_NBR,IRESP)
-  CALL READ_SURF(HPROGRAM,'SNAP_NBR',NEMIS_SNAP,IRESP)
-  CALL READ_SURF(HPROGRAM,'SNAP_TIME',CSNAP_TIME_REF,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,'EMISPEC_NBR',CHN%NEMIS_NBR,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,'SNAP_NBR',CHN%NEMIS_SNAP,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,'SNAP_TIME',CHN%CSNAP_TIME_REF,IRESP)
 ELSE
   CALL ABOR1_SFX('CH_INIT_SNAPN: NO SNAP EMISSIONS IN SURFEX FILE: FILE TOO OLD')
 END IF
@@ -95,74 +119,110 @@ END IF
 ! Number of instants for each temporal profile.
 ! For the time being, they are constant (even for the diurnal cycle)
 !
-NSNAP_M=12 ! 12 months
-NSNAP_D=7  !  7 day a week
-NSNAP_H=24 ! 24 hours a day (=> temporal resolution = 1 hour)
+ CHN%NSNAP_M=12 ! 12 months
+ CHN%NSNAP_D=7  !  7 day a week
+ CHN%NSNAP_H=24 ! 24 hours a day (=> temporal resolution = 1 hour)
 !
 !
 !*      2.     Chemical Emission fields
 !              ------------------------
 !
-ALLOCATE(CEMIS_NAME       (               NEMIS_NBR))
-ALLOCATE(CEMIS_COMMENT    (               NEMIS_NBR))
-ALLOCATE(XEMIS_FIELDS_SNAP(KLU,NEMIS_SNAP,NEMIS_NBR))
-ALLOCATE(XEMIS_FIELDS     (KLU,           NEMIS_NBR))
-LEMIS_FIELDS = .FALSE.
+ALLOCATE(CHN%CEMIS_NAME       (               CHN%NEMIS_NBR))
+ALLOCATE(CHN%CEMIS_COMMENT    (               CHN%NEMIS_NBR))
+ALLOCATE(CHN%XEMIS_FIELDS_SNAP(KLU,CHN%NEMIS_SNAP,CHN%NEMIS_NBR))
+ALLOCATE(CHN%XEMIS_FIELDS     (KLU,           CHN%NEMIS_NBR))
 !
-ALLOCATE(XSNAP_MONTHLY(NSNAP_M,NEMIS_SNAP,NEMIS_NBR))
-ALLOCATE(XSNAP_DAILY  (NSNAP_D,NEMIS_SNAP,NEMIS_NBR))
-ALLOCATE(XSNAP_HOURLY (NSNAP_H,NEMIS_SNAP,NEMIS_NBR))
+ALLOCATE(CHN%XSNAP_MONTHLY(CHN%NSNAP_M,CHN%NEMIS_SNAP,CHN%NEMIS_NBR))
+ALLOCATE(CHN%XSNAP_DAILY  (CHN%NSNAP_D,CHN%NEMIS_SNAP,CHN%NEMIS_NBR))
+ALLOCATE(CHN%XSNAP_HOURLY (CHN%NSNAP_H,CHN%NEMIS_SNAP,CHN%NEMIS_NBR))
 !
-IF (CSNAP_TIME_REF=='LEGAL') THEN
-  ALLOCATE(XDELTA_LEGAL_TIME(KLU))
+IF (CHN%CSNAP_TIME_REF=='LEGAL') THEN
+  ALLOCATE(CHN%XDELTA_LEGAL_TIME(KLU))
   YRECFM='LEGALTIME'
-  CALL READ_SURF(HPROGRAM,YRECFM,XDELTA_LEGAL_TIME(:),IRESP,YCOMMENT)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,CHN%XDELTA_LEGAL_TIME(:),IRESP,YCOMMENT)
 END IF
 !
-DO JSPEC = 1,NEMIS_NBR ! Loop on the number of species
+IF (HPROGRAM=="NC    ") THEN
+  ISNAP = MAX(CHN%NSNAP_M,CHN%NSNAP_D,CHN%NSNAP_H)
+  ALLOCATE(ZTEMP(ISNAP,CHN%NEMIS_SNAP))
+ENDIF
+!
+DO JSPEC = 1,CHN%NEMIS_NBR ! Loop on the number of species
 !
 ! Read the species name
   WRITE(YRECFM,'("EMISNAME",I3.3)') JSPEC
-  CALL READ_SURF(HPROGRAM,YRECFM,YSPEC_NAME,IRESP,YCOMMENT)
-  CEMIS_COMMENT(JSPEC)=YCOMMENT
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,YSPEC_NAME,IRESP,YCOMMENT)
+  CHN%CEMIS_COMMENT(JSPEC)=YCOMMENT
   IF (IRESP/=0) THEN
     CALL ABOR1_SFX('CH_INIT_SNAPN: PROBLEM WHEN READING NAME OF EMITTED CHEMICAL SPECIES')
   END IF
   WRITE(ILUOUT,*) ' Emission ',JSPEC,' : ',TRIM(YSPEC_NAME)
-  CEMIS_NAME(JSPEC) = YSPEC_NAME(1:12)
+  CHN%CEMIS_NAME(JSPEC) = YSPEC_NAME(1:12)
 ! 
 ! Read  the potential emission of species for each snap
-  DO JSNAP=1,NEMIS_SNAP
-    WRITE(YRECFM,'("SNAP",I2.2,"_",A3)') JSNAP,CEMIS_NAME(JSPEC)
-    CALL READ_SURF(HPROGRAM,YRECFM,XEMIS_FIELDS_SNAP(:,JSNAP,JSPEC),IRESP,YCOMMENT)
+  DO JSNAP=1,CHN%NEMIS_SNAP
+    WRITE(YRECFM,'("SNAP",I2.2,"_",A3)') JSNAP,CHN%CEMIS_NAME(JSPEC)
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,CHN%XEMIS_FIELDS_SNAP(:,JSNAP,JSPEC),IRESP,YCOMMENT)
   END DO
 !
 ! Read the temporal profiles of all snaps
-  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_M"
-  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_MONTHLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
-  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_D"
-  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_DAILY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
-  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))//"_H"
-  CALL READ_SURF_FIELD2D(HPROGRAM,XSNAP_HOURLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
+  YRECFM = "E_"//TRIM(CHN%CEMIS_NAME(JSPEC))//"_M"
+  IF (HPROGRAM=="NC    ") THEN
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,ZTEMP,YRECFM,YCOMMENT,HDIR='-')
+    CHN%XSNAP_MONTHLY(:,:,JSPEC) = ZTEMP(1:CHN%NSNAP_M,:)
+  ELSE
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,CHN%XSNAP_MONTHLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
+  ENDIF
+  YRECFM = "E_"//TRIM(CHN%CEMIS_NAME(JSPEC))//"_D"
+  IF (HPROGRAM=="NC    ") THEN
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,ZTEMP,YRECFM,YCOMMENT,HDIR='-')
+    CHN%XSNAP_DAILY(:,:,JSPEC) = ZTEMP(1:CHN%NSNAP_D,:)
+  ELSE
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,CHN%XSNAP_DAILY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
+  ENDIF
+  YRECFM = "E_"//TRIM(CHN%CEMIS_NAME(JSPEC))//"_H"
+  IF (HPROGRAM=="NC    ") THEN
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,ZTEMP,YRECFM,YCOMMENT,HDIR='-')
+    CHN%XSNAP_HOURLY(:,:,JSPEC) = ZTEMP(1:CHN%NSNAP_H,:)
+  ELSE
+    CALL READ_SURF_FIELD2D(&
+                HPROGRAM,CHN%XSNAP_HOURLY(:,:,JSPEC),YRECFM,YCOMMENT,HDIR='-')
+  ENDIF
 END DO
+!
+IF (HPROGRAM=="NC    ") DEALLOCATE(ZTEMP)
 !
 !*      3.     Conversion factor
 !              -----------------
 !
 IF (HINIT=='ALL') THEN
+!$OMP SINGLE        
   CALL CH_OPEN_INPUTB("EMISUNIT", KCH, ILUOUT)
 !
 ! read unit identifier
-  READ(KCH,'(A3)') CCONVERSION
+  READ(KCH,'(A3)') YCONVERSION
+!$OMP END SINGLE COPYPRIVATE(YCONVERSION)
 !
-  ALLOCATE (XCONVERSION(KLU))
+ CHN%CCONVERSION = YCONVERSION
+!
+  ALLOCATE (CHN%XCONVERSION(KLU))
 ! determine the conversion factor
-  CALL CH_CONVERSION_FACTOR(CCONVERSION,PRHOA)
+  CALL CH_CONVERSION_FACTOR(CHN, &
+                            CHN%CCONVERSION,PRHOA)
 !
 !*      4.     List of emissions to be aggregated into atm. chemical species
 !              -------------------------------------------------------------
 !
-  CALL BUILD_PRONOSLIST_n(NEMIS_NBR,CEMIS_NAME,TSPRONOSLIST,KCH,ILUOUT,6)
+  CALL BUILD_PRONOSLIST_n(SV, &
+                          CHN%NEMIS_NBR,CHN%CEMIS_NAME,CHN%TSPRONOSLIST,KCH,ILUOUT,6)
 !
 !-------------------------------------------------------------------------------
 END IF

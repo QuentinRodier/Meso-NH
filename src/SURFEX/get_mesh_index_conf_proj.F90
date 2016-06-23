@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_CONF_PROJ(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_CONF_PROJ(KGRID_PAR,KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_CONF_PROJ* get the grid mesh where point (lat,lon) is located
@@ -21,6 +21,7 @@
 !!
 !!    Original    12/09/95
 !!    J.Escobar  22/10/2011 : reintroduce optimisation for JI/JJ number of lines computation
+!!     J. Escobar  06/2013  : modif for REAL*4
 !!
 !----------------------------------------------------------------------------
 !
@@ -43,14 +44,14 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
-INTEGER,                       INTENT(IN)    :: KL        ! number of points
-REAL,    DIMENSION(KGRID_PAR), INTENT(IN)    :: PGRID_PAR ! grid parameters
-REAL,    DIMENSION(KL),        INTENT(IN)    :: PLAT      ! latitude of the point
-REAL,    DIMENSION(KL),        INTENT(IN)    :: PLON      ! longitude of the point
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+!
+REAL,    DIMENSION(:),         INTENT(IN)    :: PGRID_PAR ! grid parameters
+REAL,    DIMENSION(:),         INTENT(IN)    :: PLAT      ! latitude of the point
+REAL,    DIMENSION(:),         INTENT(IN)    :: PLON      ! longitude of the point
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
@@ -135,28 +136,30 @@ ALLOCATE(ZY (SIZE(PLAT)))
 !*    5.     Localisation of the data points on (x,y) grid
 !            ---------------------------------------------
 !
+KINDEX(:,:) = 0
+!
 DO JL=1,SIZE(PLON)
-  IF (     ZX(JL)<XXLIM(1) .OR. ZX(JL)>= XXLIM(NIMAX+1) &
-        .OR. ZY(JL)<XYLIM(1) .OR. ZY(JL)>= XYLIM(NJMAX+1) ) THEN  
-    KINDEX(JL) = 0
+  IF (     ZX(JL)<XXLIM(1) .OR. ZX(JL)>=XXLIM(NIMAX+1) &
+        .OR. ZY(JL)<XYLIM(1) .OR. ZY(JL)>=XYLIM(NJMAX+1) ) THEN  
+    KINDEX(1,JL) = 0
     IF (KSSO/=0) THEN
-      KISSOX(JL) = 0
-      KISSOY(JL) = 0
+      KISSOX(1,JL) = 0
+      KISSOY(1,JL) = 0
     END IF
     CYCLE
   END IF
   JI = MIN(INT( (ZX(JL) - XXLIM(1))/ZDXLIM+1),NIMAX)
   JJ = MIN(INT( (ZY(JL) - XYLIM(1))/ZDYLIM+1),NJMAX)
 
-  KINDEX(JL) = (JJ-1) * NIMAX + JI
+  KINDEX(1,JL) = (JJ-1) * NIMAX + JI
 !
 !
 !*    6.     Localisation of the data points on in the subgrid of this mesh
 !            --------------------------------------------------------------
 !
   IF (KSSO/=0) THEN
-    KISSOX(JL) = 1 + INT( FLOAT(KSSO) * (ZX(JL)-XXLIM(JI))/(XXLIM(JI+1)-XXLIM(JI)) )
-    KISSOY(JL) = 1 + INT( FLOAT(KSSO) * (ZY(JL)-XYLIM(JJ))/(XYLIM(JJ+1)-XYLIM(JJ)) )
+    KISSOX(1,JL) = 1 + INT( FLOAT(KSSO) * (ZX(JL)-XXLIM(JI))/(XXLIM(JI+1)-XXLIM(JI)) )
+    KISSOY(1,JL) = 1 + INT( FLOAT(KSSO) * (ZY(JL)-XYLIM(JJ))/(XYLIM(JJ+1)-XYLIM(JJ)) )
   END IF
 END DO
 !

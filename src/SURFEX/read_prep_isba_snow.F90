@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PREP_ISBA_SNOW(HPROGRAM,HSNOW,KSNOW_LAYER,HFILE,HFILETYPE,OUNIF)
+      SUBROUTINE READ_PREP_ISBA_SNOW(HPROGRAM,HSNOW,KSNOW_LAYER,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,OUNIF)
 !     #######################################################
 !
 !!****  *READ_PREP_ISBA_SNOW* - routine to read the configuration for snow
@@ -28,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,6 +38,10 @@
 !                           - Preparation of uniform snow fields : density, temperture,albedo,grain types
 !!                          - Flag to avtivate new maximal liquid water holding capacity : formulation used by Crocus
 !!     B. Decharme  07/2012 Bug init uniform snow
+!!      M. Lafaysse 11/2012, snow liquid water content
+!!      M. Lafaysse 11/2012, possibility to prescribe snow depth instead of snow water equivalent
+!!      M Lafaysse 04/2014 : LSNOW_PREP_PERM
+!      B. Decharme  07/2013 ES snow grid layer can be > to 3 (default 12)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -57,14 +61,16 @@ USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
 USE MODI_ABOR1_SFX
 !
-USE MODD_PREP_ISBA, ONLY : CFILE_SNOW, CTYPE_SNOW, LSNOW_IDEAL, &
+USE MODD_PREP_ISBA, ONLY : CFILE_SNOW, CTYPE_SNOW, CFILEPGD_SNOW, &
+                           CTYPEPGD_SNOW, LSNOW_IDEAL, &
                            XWSNOW_p=>XWSNOW, XTSNOW_p=>XTSNOW,  &
+                           XLWCSNOW_p=>XLWCSNOW, &
                            XRSNOW_p=>XRSNOW, XASNOW,            &
                            XSG1SNOW_p=>XSG1SNOW, XSG2SNOW_p=>XSG2SNOW, &
                            XHISTSNOW_p=>XHISTSNOW, XAGESNOW_p=>XAGESNOW
                            
 !
-USE MODD_PREP_SNOW, ONLY : LSNOW_FRAC_TOT, NSNOW_LAYER_MAX 
+USE MODD_PREP_SNOW, ONLY : LSNOW_FRAC_TOT, NSNOW_LAYER_MAX , LSNOW_PREP_PERM
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -79,12 +85,14 @@ IMPLICIT NONE
 INTEGER, INTENT(OUT)           :: KSNOW_LAYER  ! number of snow layers
  CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
  CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
+ CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILEPGD       ! file name
+ CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILEPGDTYPE    ! file type
 LOGICAL,           OPTIONAL, INTENT(OUT) :: OUNIF  ! uniform snow
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-REAL, DIMENSION(NSNOW_LAYER_MAX) :: XWSNOW, XRSNOW, XTSNOW, &
+REAL, DIMENSION(NSNOW_LAYER_MAX) :: XWSNOW, XZSNOW, XRSNOW, XTSNOW, XLWCSNOW, &
                                     XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW
 INTEGER           :: JLAYER
 !
@@ -96,9 +104,11 @@ INTEGER           :: ILUNAM         ! namelist file logical unit
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 NAMELIST/NAM_PREP_ISBA_SNOW/CSNOW, NSNOW_LAYER, CFILE_SNOW, CTYPE_SNOW,  &
-                            LSNOW_IDEAL, LSNOW_FRAC_TOT,                 &
-                            XWSNOW, XTSNOW, XRSNOW, XASNOW,              &
-                            XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW
+                            CFILEPGD_SNOW, CTYPEPGD_SNOW,                & 
+                            LSNOW_IDEAL, LSNOW_FRAC_TOT,LSNOW_PREP_PERM, &
+                            XWSNOW, XZSNOW, XTSNOW, XLWCSNOW, XRSNOW, XASNOW,  &
+                            XSG1SNOW, XSG2SNOW, XHISTSNOW, XAGESNOW,     &
+                            LSWEMAX,XSWEMAX
 !-------------------------------------------------------------------------------
 !* default
 !  -------
@@ -109,20 +119,28 @@ IF (LNAM_READ) THEN
   CSNOW = 'D95'
   NSNOW_LAYER = 1
   !
-  CFILE_SNOW    = '                         '
-  CTYPE_SNOW    = '      '
+  CFILE_SNOW = '                         '
+  CTYPE_SNOW = '      '
+  CFILEPGD_SNOW = '                         '
+  CTYPEPGD_SNOW = '      '  
   !
   LSNOW_IDEAL = .FALSE.
   LSNOW_FRAC_TOT = .FALSE.
+  LSNOW_PREP_PERM = .TRUE.
   !
   XWSNOW(:) = XUNDEF
+  XZSNOW(:) = XUNDEF
   XRSNOW(:) = XUNDEF  
   XTSNOW(:) = XTT  
+  XLWCSNOW(:) = 0.
   XASNOW = XANSMIN
   XSG1SNOW(:) = XUNDEF
   XSG2SNOW(:) = XUNDEF
   XHISTSNOW(:) = XUNDEF
   XAGESNOW(:) = XUNDEF  
+  !
+  LSWEMAX=.FALSE. 
+  XSWEMAX=500. 
   !
   CALL GET_LUOUT(HPROGRAM,ILUOUT)
   CALL OPEN_NAMELIST(HPROGRAM,ILUNAM)
@@ -139,16 +157,7 @@ IF (LNAM_READ) THEN
   !
   IF (CSNOW=='D95' .OR. CSNOW=='EBA') NSNOW_LAYER = 1
   !
-  IF ((CSNOW=='3-L' .OR. CSNOW=='CRO') .AND. NSNOW_LAYER<=2) NSNOW_LAYER = 3
-  !
-  IF (CSNOW=='3-L' .AND. NSNOW_LAYER>3) THEN
-    NSNOW_LAYER = 3
-    WRITE(ILUOUT,*) '------------------------------------'
-    WRITE(ILUOUT,*) 'With ISBA-ES, number of snow layers '
-    WRITE(ILUOUT,*) 'cannot be more than 3.              '
-    WRITE(ILUOUT,*) 'So it is forced to 3 here.          '
-    WRITE(ILUOUT,*) '------------------------------------'
-  ENDIF
+  IF ((CSNOW=='3-L' .OR. CSNOW=='CRO') .AND. NSNOW_LAYER<=2) NSNOW_LAYER = 12
   !
   IF (NSNOW_LAYER > NSNOW_LAYER_MAX) THEN
     WRITE(ILUOUT,*) '------------------------------------'
@@ -160,6 +169,31 @@ IF (LNAM_READ) THEN
     CALL ABOR1_SFX('READ_PREP_ISBA_SNOW: NUMBER OF SNOW LAYERS MUST BE INCREASED IN NAMELIST DECLARATION')
   ENDIF
   !
+  ! Convert prescribed snow depth and snow density in snow water equivalent
+  DO JLAYER=1,NSNOW_LAYER
+    IF (XZSNOW(JLAYER)/=XUNDEF) THEN
+      IF (XWSNOW(JLAYER)/=XUNDEF) THEN
+        WRITE(ILUOUT,*) '----------------------------'
+        WRITE(ILUOUT,*) 'layer ',JLAYER,':'
+        WRITE(ILUOUT,*) 'XWSNOW and XZSNOW are both defined.'
+        WRITE(ILUOUT,*) 'You must define only one of them.'
+        WRITE(ILUOUT,*) '    PLEASE CORRECT THAT     '
+        WRITE(ILUOUT,*) '----------------------------'
+        CALL ABOR1_SFX('READ_PREP_ISBA_SNOW: ERROR IN INITIALISATION OF SNOW PARAMETERS')
+      ELSEIF (XRSNOW(JLAYER)==XUNDEF) THEN
+        WRITE(ILUOUT,*) '----------------------------'
+        WRITE(ILUOUT,*) 'layer ',JLAYER,':'
+        WRITE(ILUOUT,*) 'XZSNOW is defined           '
+        WRITE(ILUOUT,*) 'but XRSNOW is not.          '
+        WRITE(ILUOUT,*) '    PLEASE CORRECT THAT     '
+        WRITE(ILUOUT,*) '----------------------------'
+        CALL ABOR1_SFX('READ_PREP_ISBA_SNOW: ERROR IN INITIALISATION OF SNOW PARAMETERS')
+      ELSE
+        XWSNOW(JLAYER)=XZSNOW(JLAYER)*XRSNOW(JLAYER)
+      END IF
+    ENDIF
+  END DO
+
   IF(NSNOW_LAYER>=3)THEN
     IF(XWSNOW(1)/=XUNDEF.AND.ANY(XWSNOW(2:NSNOW_LAYER)==XUNDEF))THEN
       WHERE(XWSNOW(2:NSNOW_LAYER)==XUNDEF)XWSNOW(2:NSNOW_LAYER)=0.0
@@ -172,22 +206,39 @@ IF (LNAM_READ) THEN
   ALLOCATE(XWSNOW_p(NSNOW_LAYER))
   ALLOCATE(XRSNOW_p(NSNOW_LAYER))
   ALLOCATE(XTSNOW_p(NSNOW_LAYER))
+  ALLOCATE(XLWCSNOW_p(NSNOW_LAYER))
+  ALLOCATE(XAGESNOW_p(NSNOW_LAYER))
   !
-  XWSNOW_p=XWSNOW(1:NSNOW_LAYER)
-  XRSNOW_p=XRSNOW(1:NSNOW_LAYER)
-  XTSNOW_p=XTSNOW(1:NSNOW_LAYER)
+  XWSNOW_p  =XWSNOW(1:NSNOW_LAYER)
+  XRSNOW_p  =XRSNOW(1:NSNOW_LAYER)
+  XTSNOW_p  =XTSNOW(1:NSNOW_LAYER)
+  XAGESNOW_p=XAGESNOW(1:NSNOW_LAYER)
+  XLWCSNOW_p=XLWCSNOW(1:NSNOW_LAYER)
   !
+
+  !Coherence test between XTSNOW and XLWCSNOW
+  DO JLAYER=1,NSNOW_LAYER
+    IF  ((XLWCSNOW_p(JLAYER)>0.).AND.(XTSNOW_p(JLAYER)<XTT)) THEN
+        WRITE(ILUOUT,*) '----------------------------'
+        WRITE(ILUOUT,*) 'layer ',JLAYER,':'
+        WRITE(ILUOUT,*) 'Incoherence between         '
+        WRITE(ILUOUT,*) 'snow liquid water content   '
+        WRITE(ILUOUT,*) 'and snow temperature.       '
+        WRITE(ILUOUT,*) '    PLEASE CORRECT THAT     '
+        WRITE(ILUOUT,*) '----------------------------'
+        CALL ABOR1_SFX('READ_PREP_ISBA_SNOW: ERROR IN INITIALISATION OF SNOW PARAMETERS')
+    END IF
+  END DO
+
   IF (CSNOW=='CRO') THEN
     !
     ALLOCATE(XSG1SNOW_p (NSNOW_LAYER))
     ALLOCATE(XSG2SNOW_p (NSNOW_LAYER))
     ALLOCATE(XHISTSNOW_p(NSNOW_LAYER))
-    ALLOCATE(XAGESNOW_p (NSNOW_LAYER))
     !
     XSG1SNOW_p =XSG1SNOW (1:NSNOW_LAYER)
     XSG2SNOW_p =XSG2SNOW (1:NSNOW_LAYER)
     XHISTSNOW_p=XHISTSNOW(1:NSNOW_LAYER)
-    XAGESNOW_p =XAGESNOW (1:NSNOW_LAYER)
     !
     DO JLAYER=1,NSNOW_LAYER
       IF ((XSG1SNOW_p (JLAYER)==XUNDEF .OR. XSG2SNOW_p(JLAYER)==XUNDEF .OR. &
@@ -208,7 +259,6 @@ IF (LNAM_READ) THEN
     ALLOCATE(XSG1SNOW_p (0))
     ALLOCATE(XSG2SNOW_p (0))
     ALLOCATE(XHISTSNOW_p(0))
-    ALLOCATE(XAGESNOW_p (0))
     !
   ENDIF
   !
@@ -226,7 +276,8 @@ ELSEIF(PRESENT(OUNIF))THEN
     OUNIF=.TRUE.
 ENDIF
 !
-LFILE=(LEN_TRIM(CFILE_SNOW)>0.AND.LEN_TRIM(CTYPE_SNOW)>0)
+LFILE=(LEN_TRIM(CFILE_SNOW)>0.AND.LEN_TRIM(CTYPE_SNOW)>0 &
+        .AND.LEN_TRIM(CFILEPGD_SNOW)>0.AND.LEN_TRIM(CTYPEPGD_SNOW)>0)
 !
 IF(PRESENT(HFILE))THEN 
   IF(LFILE)THEN
@@ -240,6 +291,20 @@ IF(PRESENT(HFILETYPE))THEN
      HFILETYPE = CTYPE_SNOW
   ELSE
      HFILETYPE = '      '
+  ENDIF
+ENDIF
+IF(PRESENT(HFILEPGDTYPE))THEN 
+  IF(LFILE)THEN
+     HFILEPGDTYPE = CTYPEPGD_SNOW
+  ELSE
+     HFILEPGDTYPE = '      '
+  ENDIF
+ENDIF
+IF(PRESENT(HFILEPGD))THEN 
+  IF(LFILE)THEN
+     HFILEPGD = CFILEPGD_SNOW
+  ELSE
+     HFILEPGD = '                         '
   ENDIF
 ENDIF
 IF (LFILE.AND.PRESENT(OUNIF)) OUNIF=.FALSE.

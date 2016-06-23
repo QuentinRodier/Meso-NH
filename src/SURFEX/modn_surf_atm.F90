@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !!
 !!    #####################
       MODULE MODN_SURF_ATM
@@ -25,7 +25,7 @@
 !!    ------------------
 USE MODD_SURF_ATM, ONLY : XCISMIN, XVMODMIN, LALDTHRES, &
                             LDRAG_COEF_ARP, LALDZ0H,      &
-                            LNOSOF, LRW_PRECIP,           &
+                            LNOSOF, LCPL_GCM,             &
                             XEDB, XEDC, XEDD, XEDK,       &
                             XUSURIC, XUSURID, XUSURICL,   &
                             XVCHRNK, XVZ0CM, XDELTA_MAX,  &
@@ -34,7 +34,8 @@ USE MODD_SURF_ATM, ONLY : XCISMIN, XVMODMIN, LALDTHRES, &
                             XVZIUSTAR0,XRZHZ0M,           &
                             XRRSCALE, XRRGAMMA,           &
                             XUTILGUST, LCPL_ARP, LQVNPLUS,&
-                            CIMPLICIT_WIND
+                            LVSHIFT_LW, LVSHIFT_PRCP,     &
+                            XCO2UNCPL         
 !
 !-----------------------------------------------------------------------------
 !
@@ -44,7 +45,7 @@ IMPLICIT NONE
 SAVE
 NAMELIST /NAM_SURF_ATM/XCISMIN, XVMODMIN, LALDTHRES, &
                          LDRAG_COEF_ARP, LALDZ0H,      &
-                         LNOSOF, LRW_PRECIP,           &
+                         LNOSOF, LCPL_GCM,             &
                          XEDB, XEDC, XEDD, XEDK,       &
                          XUSURIC, XUSURID, XUSURICL,   &
                          XVCHRNK, XVZ0CM, XDELTA_MAX,  &
@@ -53,6 +54,7 @@ NAMELIST /NAM_SURF_ATM/XCISMIN, XVMODMIN, LALDTHRES, &
                          XVZIUSTAR0,XRZHZ0M,           &
                          XRRSCALE, XRRGAMMA,           &
                          XUTILGUST, LCPL_ARP, LQVNPLUS,&
-                         CIMPLICIT_WIND
+                         LVSHIFT_LW, LVSHIFT_PRCP,     &
+                         XCO2UNCPL         
 !
 END MODULE MODN_SURF_ATM

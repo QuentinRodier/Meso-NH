@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###########################################################################################################
       SUBROUTINE TEB_MORPHO(HPROGRAM, PBLD,PWALL_O_HOR, PGARDEN, PBLD_HEIGHT, PROAD, &
                             PROAD_O_GRND, PGARDEN_O_GRND, PWALL_O_GRND,              &
@@ -35,12 +35,14 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon   *Meteo France*	
+!!      G. Pigeon   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2011
-!-------------------------------------------------------------------------------
+!!      C. de Munck and A. lemonsu 05/2013 : - corrections in case of too high WALL_O_HOR (6.)
+!!                                           - final check of parameters range added
+!----------------------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
@@ -76,12 +78,22 @@ REAL, DIMENSION(:),   INTENT(INOUT)  :: PLE_TRAFFIC  ! latent heat flux due to t
 INTEGER :: JJ
 INTEGER :: ILUOUT
 !
+REAL, DIMENSION(SIZE(PBLD)) :: ZWALL_O_BLD   ! Initial wall to built surface ratio
+REAL, DIMENSION(SIZE(PBLD)) :: ZWALL_O_HOR   ! Initial wall to horizontal surface ratio
+!
+REAL, DIMENSION(2) :: ZRANGE_BLD        = (/ 0.0001  ,   0.9999 /) ! Range allowed for PBLD variation
+REAL, DIMENSION(2) :: ZRANGE_ROAD       = (/ 0.0001  ,   0.9999 /) ! Range allowed for PROAD variation
+REAL, DIMENSION(2) :: ZRANGE_BLD_HEIGHT = (/ 3.      , 829.84   /) ! Range allowed for PBLD_HEIGHT variation
+REAL, DIMENSION(2) :: ZRANGE_WALL_O_HOR = (/ 0.00012 , 322.     /) ! Range allowed for PWALL_O_HOR variation
+!
 !
 !*       1.   Get listing file for warnings
 !
  CALL GET_LUOUT(HPROGRAM, ILUOUT)
 !
 
+ZWALL_O_BLD(:) = 0.
+ZWALL_O_HOR(:) = 0.
 
 DO JJ=1,SIZE(PBLD)
    !
@@ -89,38 +101,31 @@ DO JJ=1,SIZE(PBLD)
    !          reference: http://en.wikipedia.org/wiki/List_of_tallest_buildings_and_structures_in_the_world (2011)
    !          and control Z0_TOWN
    !
-   IF (PBLD_HEIGHT(JJ) < 3.) THEN
-      WRITE(ILUOUT,*) 'WARNING: BLD_HEIGHT lower than 3m',PBLD_HEIGHT(JJ),' grid mesh number ',JJ,' set to 3. m'
-      PBLD_HEIGHT(JJ) = 3.
+   IF (PBLD_HEIGHT(JJ) < ZRANGE_BLD_HEIGHT(1) ) THEN
+      PBLD_HEIGHT(JJ) = ZRANGE_BLD_HEIGHT(1)
    ENDIF
-   IF (PBLD_HEIGHT(JJ) > 829.84) &
+   IF (PBLD_HEIGHT(JJ) > ZRANGE_BLD_HEIGHT(2)) &
            CALL ABOR1_SFX('TEB_MORPHO: PBLD_HEIGHT higher than 829.84, highest building in the world, should be lower')
    !
    IF (PZ0_TOWN(JJ) > PBLD_HEIGHT(JJ)) THEN
-      WRITE(ILUOUT,*) ' WARNING TEB_MORPHO: PZ0_TOWN higher than PBLD_HEIGHT, PZ0_TOWN',PZ0_TOWN(JJ),' PBLD_HEIGHT', &
-         PBLD_HEIGHT(JJ),' grid mesh number ',JJ,' should be lower'
       CALL ABOR1_SFX('TEB_MORPHO: PZ0_TOWN higher than PBLD_HEIGHT, should be lower')
    ENDIF
    !
    !*    3.   Control no and almost no building in the cell
    !          authorize building up to 10m and W_O_H 0.001
    !
-   IF (PBLD(JJ) < 0.0001) THEN
-      WRITE(ILUOUT,*) 'WARNING: BLD is very low ',PBLD(JJ),' grid mesh number ',JJ,' set to 0.0001'
-      PBLD(JJ) = 0.0001
-      PGARDEN(JJ) = MIN(PGARDEN(JJ), 1.-2*PBLD(JJ))
+   IF (PBLD(JJ) < ZRANGE_BLD(1) ) THEN
+      PBLD(JJ) = ZRANGE_BLD(1)
+      PGARDEN(JJ) = MIN(PGARDEN(JJ), 1.-2.*PBLD(JJ))
    ENDIF
    !
    !*    4.   Control only building in the cell: could occur for high resolution 
    !          theoretically W_O_H could be 0. -> impose that at least the wall surface is equal to the mesh perimeter x building 
    !          height for a mesh size of 100 x 100m; the waste heat is released at the roof level
    !
-   IF (PBLD(JJ) > 0.9999) THEN
-      WRITE(ILUOUT,*) 'WARNING: PBLD higher than 0.9999',PBLD(JJ),' grid mesh number ',JJ,' set to 0.9999'
-      PBLD(JJ) = 0.9999
+   IF (PBLD(JJ) > ZRANGE_BLD(2)) THEN
+      PBLD(JJ) = ZRANGE_BLD(2)
       IF (PGARDEN(JJ) > 0.) THEN
-         WRITE(ILUOUT,*) 'WARNING: PGARDEN higher than 0. while PBLD is 0.9999',PGARDEN(JJ), &
-                ' grid mesh number ',JJ,' set to 0.'
          PGARDEN(JJ) = 0. 
       ENDIF
    ENDIF
@@ -130,40 +135,59 @@ DO JJ=1,SIZE(PBLD)
    !          wall surface of the building evaluated considering 1 square building
    !
    IF (PWALL_O_HOR(JJ) < 4. * SQRT(PBLD(JJ))*PBLD_HEIGHT(JJ)/1000.) THEN
-      WRITE(ILUOUT,*) 'WARNING: WALL_O_HOR is low respective to BLD and BLD_HEIGHT ',PWALL_O_HOR(JJ),' grid mesh number ',JJ, &
-         'set to 4 * sqrt(PBLD) * PBLD_HEIGHT/1000.'
       PWALL_O_HOR(JJ) = 4. * SQRT(PBLD(JJ))*PBLD_HEIGHT(JJ)/1000. 
    ENDIF
    !
    !*    6.   Control facade surface vs building height, case of too high WALL_O_HOR
    !
    PWALL_O_BLD(JJ) = PWALL_O_HOR(JJ)/PBLD(JJ)
-   IF (PWALL_O_BLD(JJ) > (0.4 * PBLD_HEIGHT(JJ))) THEN
-      WRITE(ILUOUT,*) 'WARNING: PWALL_O_BLD', PWALL_O_BLD(JJ),' higher than  0.4 * PBLD_HEIGHT ',0.4*PBLD_HEIGHT(JJ), &
-         ' grid mesh number ',JJ,' should be lower, PBLD_HEIGHT modified consequently'
-      PBLD_HEIGHT(JJ) = PWALL_O_BLD(JJ) / 0.4
-!      IF (PBLD_HEIGHT(JJ) > 829.84) &
-!         WRITE(ILUOUT,*) 'WARNING: PBLD_HEIGHT is higher than 829.84m but corrections have already been made'
+   !
+   IF (PWALL_O_BLD(JJ) > (0.4 * PBLD_HEIGHT(JJ))) THEN ! <=> side_of_building < 10 m
+      !     
+      ZWALL_O_HOR(JJ) = PWALL_O_HOR(JJ)
+      ZWALL_O_BLD(JJ) = PWALL_O_BLD(JJ)
       !
-      IF (PWALL_O_HOR(JJ) < 4. * SQRT(PBLD(JJ))*PBLD_HEIGHT(JJ)/1000.) &
-         WRITE(ILUOUT,*) 'WARNING: WALL_O_HOR is low respective to BLD and BLD_HEIGHT but some corrections have already been made'
+      PWALL_O_HOR(JJ) = 0.4 * PBLD (JJ) * PBLD_HEIGHT(JJ) ! correction WOHOR v2.1
+      PWALL_O_BLD(JJ) = PWALL_O_HOR(JJ) / PBLD       (JJ) ! correction WOHOR v2.1
+
    ENDIF
    !
-   !*    8.   Verify road
+   !*    7.   Verify road
    !
    PROAD      (JJ) = 1.-(PGARDEN(JJ)+PBLD(JJ))
-   IF (PROAD(JJ) <= 0.0001) THEN
-      WRITE(ILUOUT,*) 'WARNING: PROAD lower than 0.0001 ',PROAD(JJ),' grid mesh number ',JJ,' should be higher, set to 0.0001'
-      PROAD(JJ) = 0.0001
-      PGARDEN(JJ) = MAX(PGARDEN(JJ) - 0.0001, 0.)
+   IF (PROAD(JJ) <= ZRANGE_ROAD(1) ) THEN
+      PROAD(JJ) = ZRANGE_ROAD(1)
+      PGARDEN(JJ) = MAX(PGARDEN(JJ) - ZRANGE_ROAD(1), 0.)
       IF (PH_TRAFFIC(JJ) > 0. .OR. PLE_TRAFFIC(JJ) > 0.) THEN
-         WRITE(ILUOUT,*) 'WARNING: ROAD was low but H_TRAFFIC no ',PH_TRAFFIC(JJ)+PLE_TRAFFIC(JJ), &
-                         ' set to 0.0; grid mesh number ',JJ
          PH_TRAFFIC(JJ)  = 0.
          PLE_TRAFFIC(JJ) = 0.
       ENDIF
    ENDIF
+   !
+   !*    8.   Final check of parameters range
+   !
+   IF ( PBLD(JJ) < ZRANGE_BLD(1) .OR. PBLD(JJ) > ZRANGE_BLD(2) ) THEN
+        WRITE(ILUOUT,*) 'WARNING : PBLD is still out of range after final corrections &
+        &for grid mesh',JJ,' : ',PBLD(JJ)
+   ENDIF
+   !
+   IF ( PBLD_HEIGHT(JJ) < ZRANGE_BLD_HEIGHT(1) .OR. PBLD_HEIGHT(JJ) > ZRANGE_BLD_HEIGHT(2) ) THEN
+        WRITE(ILUOUT,*) 'WARNING : PBLD_HEIGHT is still out of range after final corrections &
+        &for grid mesh',JJ,' : ',PBLD_HEIGHT(JJ)
+   ENDIF
+   !
+   IF ( PWALL_O_HOR(JJ) < ZRANGE_WALL_O_HOR(1) .OR. PWALL_O_HOR(JJ) > ZRANGE_WALL_O_HOR(2) ) THEN
+        WRITE(ILUOUT,*) 'WARNING : PWALL_O_HOR is still out of range after final corrections &
+        &for grid mesh',JJ,' : ',PWALL_O_HOR(JJ)
+   ENDIF
+   !
+   IF ( PWALL_O_BLD(JJ) - (0.4 * PBLD_HEIGHT(JJ)) > 10E-16 ) THEN
+        WRITE(ILUOUT,*) 'WARNING : PWALL_O_BLD is still too high after final corrections &
+        &for grid mesh',JJ,' : ',PWALL_O_BLD(JJ)
+   ENDIF
+   !
 ENDDO
+!
 !
 !*    9.   Compute morphometric parameters 
 !

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#####################################################################
 SUBROUTINE BEM_MORPHO(PBLD, PWALL_O_HOR, PBLD_HEIGHT, PFLOOR_HEIGHT,            &
                       PGR, PN_FLOOR, PWALL_O_BLD, PGLAZ_O_BLD, PMASS_O_BLD,     &
@@ -35,7 +35,7 @@ SUBROUTINE BEM_MORPHO(PBLD, PWALL_O_HOR, PBLD_HEIGHT, PFLOOR_HEIGHT,            
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon   *Meteo France*	
+!!      G. Pigeon   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -45,6 +45,7 @@ SUBROUTINE BEM_MORPHO(PBLD, PWALL_O_HOR, PBLD_HEIGHT, PFLOOR_HEIGHT,            
 !*       0.    DECLARATIONS
 !              ------------
 !
+IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
@@ -55,9 +56,9 @@ REAL, DIMENSION(:),   INTENT(IN)  :: PBLD_HEIGHT  ! Average building height [m]
 REAL, DIMENSION(:),   INTENT(INOUT)::PFLOOR_HEIGHT ! Building floor height [m]
 REAL, DIMENSION(:),   INTENT(IN)  :: PGR           ! Glazing ratio
 REAL, DIMENSION(:),   INTENT(OUT) :: PN_FLOOR ! number of floor levels
-REAL, DIMENSION(:),   INTENT(OUT) :: PWALL_O_BLD  ! wall surface per ground building surface [m²(wall)/m²(bld)]
-REAL, DIMENSION(:),   INTENT(OUT) :: PGLAZ_O_BLD  ! glazing surface per ground building surface [m²(glazing)/m²(bld)]
-REAL, DIMENSION(:),   INTENT(OUT) :: PMASS_O_BLD  ! thermal mass surface per ground building surface [m²(mass)/m²(bld)]
+REAL, DIMENSION(:),   INTENT(OUT) :: PWALL_O_BLD  ! wall surface per ground building surface [m2(wall)/m2(bld)]
+REAL, DIMENSION(:),   INTENT(OUT) :: PGLAZ_O_BLD  ! glazing surface per ground building surface [m2(glazing)/m2(bld)]
+REAL, DIMENSION(:),   INTENT(OUT) :: PMASS_O_BLD  ! thermal mass surface per ground building surface [m2(mass)/m2(bld)]
 REAL, DIMENSION(:),   INTENT(OUT) :: PFLOOR_HW_RATIO !Height to width ratio of the floor levels
 REAL, DIMENSION(:),   INTENT(OUT) :: PF_FLOOR_MASS  !view factor from floor to mass (how much floor seen by mass)
 REAL, DIMENSION(:),   INTENT(OUT) :: PF_FLOOR_WALL
@@ -78,6 +79,9 @@ REAL, DIMENSION(:),   INTENT(INOUT)::PF_WASTE_CAN !fraction of waste heat releas
 !*      0.2    Declarations of local variables 
 !
 REAL, DIMENSION(SIZE(PBLD)):: ZF_AUX2       ! Auxiliar view factor
+!
+!RJ: missing declaration
+INTEGER :: JJ
 !
 !------------------------------------------------------------------------------
 !

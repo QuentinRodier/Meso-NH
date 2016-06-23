@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE ICE_SEA_FLUX(PZ0ICE,                                       &
                               PTA, PEXNA, PRHOA, PTICE, PEXNS, PQA, PRR, PRS, &
@@ -27,6 +27,7 @@
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 
+!!    XCD_ICE_CST, from MODD_SEAFLUX
 !!
 !!      
 !!    REFERENCE
@@ -34,7 +35,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -47,8 +48,9 @@
 !!      (P. Tulet)    01/10/03  aerodynamical resistance output
 !!      (P. LeMoigne) 29/03/04  bug in the heat flux computation
 !!      (P. LeMoigne) 09/02/06  Z0H as output
-!!      B. Decharme    06/2009 limitation of Ri
-!!      Modified        09/2009  B. Decharme: limitation of Ri in surface_ri.F90
+!!      B. Decharme    06/2009  limitation of Ri
+!!      Modified       09/2009  B. Decharme: limitation of Ri in surface_ri.F90
+!!      S.Senesi       01/2014  use XCD_ICE_CST (if /= 0) as value for for Cd, Cdn and Ch
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -57,8 +59,9 @@
 USE MODD_CSTS,       ONLY : XG, XCPD
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_SURF_ATM,   ONLY : LDRAG_COEF_ARP, LRRGUST_ARP, XRRSCALE, &
-                              XRRGAMMA, XUTILGUST     
+                            XRRGAMMA, XUTILGUST     
 USE MODD_SNOW_PAR,   ONLY : XZ0SN, XZ0HSN
+USE MODN_SEAFLUX_n,  ONLY : XCD_ICE_CST
 !
 USE MODI_SURFACE_RI
 USE MODI_SURFACE_AERO_COND
@@ -101,9 +104,9 @@ REAL, DIMENSION(:), INTENT(OUT)      :: PUSTAR! friction velocity (m/s)
 !
 ! diagnostics
 REAL, DIMENSION(:), INTENT(OUT)      :: PQSAT ! humidity at saturation
-REAL, DIMENSION(:), INTENT(OUT)      :: PCD   ! heat drag coefficient
-REAL, DIMENSION(:), INTENT(OUT)      :: PCDN  ! momentum drag coefficient
-REAL, DIMENSION(:), INTENT(OUT)      :: PCH   ! neutral momentum drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCD   ! momentum drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCDN  ! neutral momentum drag coefficient
+REAL, DIMENSION(:), INTENT(OUT)      :: PCH   ! heat drag coefficient
 REAL, DIMENSION(:), INTENT(OUT)      :: PRI   ! Richardson number
 REAL, DIMENSION(:), INTENT(OUT)      :: PRESA     ! aerodynamical resistance
 REAL, DIMENSION(:), INTENT(OUT)      :: PZ0HICE    ! heat roughness length
@@ -166,28 +169,41 @@ PZ0HICE(:) = XZ0HSN
 !
 PZ0ICE (:) = XZ0SN
 !
-!       2.3    Drag coefficient
+!-------------------------------------------------------------------------------
+!
+!       3.     Drag coefficient for heat and aerodynamical resistance
 !              ----------------
 !
 ZVMOD(:)=WIND_THRESHOLD(PVMOD(:),PUREF(:))
 !
-IF (LDRAG_COEF_ARP) THEN
+IF ( XCD_ICE_CST == 0.0 ) THEN 
 !
-   CALL SURFACE_CDCH_1DARP(PZREF, PZ0ICE, PZ0HICE , ZVMOD, PTA, PTICE, &
+  IF (LDRAG_COEF_ARP) THEN
+!
+     CALL SURFACE_CDCH_1DARP(PZREF, PZ0ICE, PZ0HICE , ZVMOD, PTA, PTICE, &
                              PQA, PQSAT, PCD, PCDN, PCH                 )  
 !
-   ZRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
+     ZRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
+!
+  ELSE
+
+     CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0ICE, PZ0HICE, PCD, PCDN)
+!
+     CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE, ZAC, ZRA, PCH)
+!
+  ENDIF
 !
 ELSE
-
-   CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0ICE, PZ0HICE , PCD, PCDN)
 !
-!-------------------------------------------------------------------------------
+! Using variable transfer coefficients is not appropriate on seaice 
+! with simple bulk functions.
+! A constant value (e.g. 1.5.e-3 ) is preferable, and used except if the  
+! user request backward compatibility by setting XCD_ICE_CST to 0 (DEFAULT). 
 !
-!       3.     Drag coefficient for heat and aerodynamical resistance
-!              -------------------------------------------------------
-!
-   CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0ICE, PZ0HICE , ZAC, ZRA, PCH)
+   PCD (:)=XCD_ICE_CST
+   PCDN(:)=XCD_ICE_CST
+   PCH (:)=XCD_ICE_CST
+   ZRA (:)=1./(PCH(:)*ZVMOD(:))
 !
 ENDIF
 !
@@ -211,8 +227,10 @@ ENDIF
 !              ----------
 !
 PSFTH (:) =  XCPD * PRHOA(:) * PCH(:) * ZVMOD(:) * ( PTICE(:) -PTA(:) * PEXNS(:) / PEXNA(:) ) / PEXNS(:)
+! Using Heat transfer coefficient CH for vapor transfer coefficient CE !
 PSFTQ (:) =  PRHOA(:) * PCH(:) * ZVMOD(:) * ( PQSAT(:)-PQA(:) )
 PUSTAR(:) = SQRT(ZUSTAR2(:))
+!
 IF (LHOOK) CALL DR_HOOK('ICE_SEA_FLUX',1,ZHOOK_HANDLE)
 !
 !

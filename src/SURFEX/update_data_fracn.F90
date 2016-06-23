@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE UPDATE_DATA_FRAC_n(PDATA_NATURE,PDATA_TOWN,PDATA_GARDEN,OGARDEN, &
                                     PDATA_BLD, PDATA_WALL_O_HOR                   )
@@ -40,9 +40,6 @@
 !            -----------
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_DATA_COVER_n, ONLY : XDATA_NATURE, XDATA_TOWN, XDATA_GARDEN, &
-                              XDATA_SEA, XDATA_WATER,                 &
-                              XDATA_BLD, XDATA_WALL_O_HOR, LGARDEN
 !
 USE MODI_ARRANGE_COVER
 !

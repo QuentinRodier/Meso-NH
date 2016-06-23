@@ -1,10 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_VEG_n(KPATCH, KI, OCANOPY, HROUGH, TPSNOW, &
-                         HPHOTO, PLAIMIN, PH_TREE, PVEGTYPE_PATCH, PLAI, PZ0, PVEG, PEMIS, &
+SUBROUTINE INIT_VEG_n(KPATCH, KI, OCANOPY, HROUGH, OAGRI_TO_GRASS, TPSNOW, &
+                         HPHOTO, OIMP_VEG, OIMP_Z0, OIMP_EMIS,  &
+                         PLAIMIN, PH_TREE, PVEGTYPE_PATCH, PLAI, PZ0, PVEG, PEMIS, &
                          OTR_ML, PFAPARC, PFAPIRC, PLAI_EFFC, PMUS, &
                          PALBNIR_SOIL, PALBVIS_SOIL, PALBUV_SOIL, PALBNIR, PALBVIS, PALBUV, &
                          OSURF_DIAG_ALBEDO, PPSN, PPSNG, PPSNV, PPSNV_A, &
@@ -32,9 +33,11 @@ SUBROUTINE INIT_VEG_n(KPATCH, KI, OCANOPY, HROUGH, TPSNOW, &
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
+!!
+!!      B. Decharme    01/16 : Bug when vegetation veg, z0 and emis are imposed whith interactive vegetation
 !!
 !-------------------------------------------------------------------------------
 !
@@ -63,9 +66,15 @@ INTEGER, INTENT(IN) :: KPATCH
 INTEGER, INTENT(IN) :: KI
 LOGICAL, INTENT(IN) :: OCANOPY
  CHARACTER(LEN=4), INTENT(INOUT) :: HROUGH
+LOGICAL, INTENT(IN) :: OAGRI_TO_GRASS
 TYPE(SURF_SNOW),      INTENT(INOUT) :: TPSNOW  ! snow characteristics
 !
  CHARACTER(LEN=3), INTENT(IN) :: HPHOTO
+!
+LOGICAL, INTENT(IN) :: OIMP_VEG
+LOGICAL, INTENT(IN) :: OIMP_Z0
+LOGICAL, INTENT(IN) :: OIMP_EMIS
+!
 REAL, DIMENSION(:,:), INTENT(IN) :: PLAIMIN
 REAL, DIMENSION(:,:), INTENT(IN) :: PH_TREE
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PVEGTYPE_PATCH
@@ -115,15 +124,15 @@ IF (LHOOK) CALL DR_HOOK('INIT_VEG_n',0,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
-!*      13.     Roughness length option
-!               -----------------------
+!*      1.     Roughness length option
+!              -----------------------
 !
  CALL SET_ROUGH(OCANOPY,HROUGH)
 !
 !-------------------------------------------------------------------------------
 !
-!*      14.     Radiative fields and snow/flood fracion initialization:
-!               -------------------------------------------------------
+!*      2.     Radiative fields and snow/flood fracion initialization:
+!              -------------------------------------------------------
 !
 !* snow long-wave properties (not initialized in read_gr_snow)
 !
@@ -131,19 +140,23 @@ IF (LHOOK) CALL DR_HOOK('INIT_VEG_n',0,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
-!* z0 and vegetation fraction estimated from LAI
+!* z0 and vegetation fraction estimated from LAI if not imposed
 IF (HPHOTO=='LAI' .OR. HPHOTO=='LST' .OR. HPHOTO=='NIT' .OR. HPHOTO=='NCB') THEN
   DO JPATCH=1,KPATCH
     DO JILU=1,KI    
       IF(PLAI(JILU,JPATCH)/=XUNDEF) THEN
-        IF (PLAI(JILU,JPATCH).LT.PLAIMIN(JILU,JPATCH)) THEN
-          PLAI(JILU,JPATCH) = PLAIMIN(JILU,JPATCH)
-        ENDIF
-           PZ0  (JILU,JPATCH) = Z0V_FROM_LAI(PLAI(JILU,JPATCH),PH_TREE(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH))
-           PVEG (JILU,JPATCH) = VEG_FROM_LAI(PLAI(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH))
-           PEMIS(JILU,JPATCH) = EMIS_FROM_VEG(PVEG(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH))
-        END IF  
-     END DO
+        PLAI (JILU,JPATCH) = MAX(PLAIMIN(JILU,JPATCH),PLAI(JILU,JPATCH))
+      END IF  
+      IF(.NOT.OIMP_Z0.AND.PLAI(JILU,JPATCH)/=XUNDEF) THEN
+        PZ0  (JILU,JPATCH) = Z0V_FROM_LAI(PLAI(JILU,JPATCH),PH_TREE(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH),OAGRI_TO_GRASS)
+      END IF  
+      IF(.NOT.OIMP_VEG.AND.PLAI(JILU,JPATCH)/=XUNDEF) THEN
+        PVEG (JILU,JPATCH) = VEG_FROM_LAI(PLAI(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH),OAGRI_TO_GRASS)
+      END IF  
+      IF(.NOT.OIMP_EMIS.AND.PLAI(JILU,JPATCH)/=XUNDEF) THEN
+        PEMIS(JILU,JPATCH) = EMIS_FROM_VEG(PVEG(JILU,JPATCH),PVEGTYPE_PATCH(JILU,:,JPATCH))
+      END IF  
+    END DO
   END DO
 END IF
 !

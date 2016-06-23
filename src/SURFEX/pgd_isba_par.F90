@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_ISBA_PAR(HPROGRAM)
+      SUBROUTINE PGD_ISBA_PAR (DTCO, DGU, UG, U, USS, DTI, I, IG, &
+                               HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_ISBA_PAR* monitor for averaging and interpolations of cover fractions
@@ -35,41 +36,28 @@
 !!    Original    10/12/97
 !!
 !!       Modified 08/12/05, P. Le Moigne: user defined fields
+!!                 05/2012  R. Alkama   : 19 vegtypes rather than 12    
+!!       Modified 02/2012,  P. Samuelsson: MEB
 !!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
+!
+!
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_ISBA_GRID_n,    ONLY : NDIM
-USE MODD_ISBA_n,         ONLY : LECOCLIMAP, CISBA, CPHOTO, NGROUND_LAYER, XSOILGRID
-USE MODD_DATA_ISBA_n,    ONLY : XPAR_VEGTYPE,  XPAR_LAI, XPAR_H_TREE, XPAR_DG, &
-                                XPAR_ROOTFRAC, XPAR_VEG, XPAR_Z0, XPAR_EMIS, XPAR_DICE, &
-                                XPAR_RSMIN, XPAR_GAMMA, XPAR_WRMAX_CF, XPAR_RGL, &
-                                XPAR_CV, XPAR_Z0_O_Z0H, &
-                                XPAR_ALBNIR_VEG, XPAR_ALBVIS_VEG, XPAR_ALBUV_VEG,      &
-                                XPAR_ALBNIR_SOIL, XPAR_ALBVIS_SOIL, XPAR_ALBUV_SOIL,   &
-                                XPAR_GMES, XPAR_BSLAI, XPAR_SEFOLD, XPAR_GC, XPAR_DMAX, &
-                                XPAR_RE25, XPAR_LAIMIN, XPAR_F2I,  &
-                                XPAR_CE_NITRO,XPAR_CF_NITRO,XPAR_CNA_NITRO, &
-                                XPAR_GROUND_DEPTH, XPAR_ROOT_DEPTH,               &
-                                XPAR_ROOT_EXTINCTION, XPAR_ROOT_LIN,              &
-                                LPAR_STRESS, XPAR_IRRIG, XPAR_WATSUP, &
-                                LDATA_VEGTYPE, LDATA_LAI, LDATA_H_TREE, LDATA_DG, &
-                                LDATA_ROOTFRAC, LDATA_VEG, LDATA_Z0, LDATA_EMIS,  &
-                                LDATA_RSMIN, LDATA_GAMMA, LDATA_WRMAX_CF, LDATA_RGL, &
-                                LDATA_CV, LDATA_Z0_O_Z0H, LDATA_DICE, &
-                                LDATA_ALBNIR_VEG, LDATA_ALBVIS_VEG, LDATA_ALBUV_VEG, &
-                                LDATA_ALBVIS_SOIL, LDATA_ALBNIR_SOIL, LDATA_ALBUV_SOIL, &
-                                LDATA_GMES, LDATA_BSLAI, LDATA_SEFOLD, LDATA_GC, LDATA_DMAX, &
-                                LDATA_RE25, LDATA_LAIMIN, LDATA_F2I, &
-                                LDATA_CE_NITRO,LDATA_CF_NITRO, LDATA_CNA_NITRO,&
-                                LDATA_STRESS, LDATA_IRRIG, LDATA_WATSUP,              &
-                                LDATA_GROUND_DEPTH, LDATA_ROOT_DEPTH,             &
-                                LDATA_ROOT_EXTINCTION, LDATA_ROOT_LIN, &
-                                NTIME_n=>NTIME
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -90,18 +78,32 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
+!
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
+REAL, DIMENSION(IG%NDIM,NVEGTYPE)     :: ZROOTFRACGV,TEST,TEST2,TEST3
 INTEGER               :: ILUOUT    ! output listing logical unit
 INTEGER               :: ILUNAM    ! namelist file  logical unit
+INTEGER               :: IHGROUND_LAYER ! Half number of NGROUND_LAYER
+INTEGER               :: IIH       ! Ground layer counter
 LOGICAL               :: GFOUND    ! true if namelist is found
 !
 INTEGER               :: JVEGTYPE  ! loop counter on patch
 LOGICAL               :: GPAR_STRESS   ! type of stress
+!
+INTEGER               :: ISIZE_LMEB_PATCH  ! Number of patches with MEB=true
 !
 !*    0.3    Declaration of namelists
 !            ------------------------
@@ -109,7 +111,7 @@ LOGICAL               :: GPAR_STRESS   ! type of stress
 INTEGER :: NTIME
 INTEGER, PARAMETER :: NTIME_MAX    = 36
 INTEGER, PARAMETER :: NGROUND_MAX  = 150
-INTEGER, PARAMETER :: NVEGTYPE_MAX = 12
+INTEGER, PARAMETER :: NVEGTYPE_MAX = 19
 !
 REAL, DIMENSION(NVEGTYPE_MAX)   :: XSTRESS   ! 1. if defensive /0. if offensive
 !
@@ -152,6 +154,17 @@ REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_RE25       ! soil respirati
 REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_CE_NITRO   ! CE for nitrogen
 REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_CF_NITRO   ! CF for nitrogen
 REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_CNA_NITRO  ! CNA for nitrogen
+!
+REAL, DIMENSION(NVEGTYPE_MAX,NTIME_MAX)     :: XUNIF_LAIGV
+REAL, DIMENSION(NVEGTYPE_MAX,NTIME_MAX)     :: XUNIF_Z0LITTER
+REAL, DIMENSION(NVEGTYPE_MAX,NTIME_MAX)     :: XUNIF_GNDLITTER
+REAL, DIMENSION(NVEGTYPE_MAX,NGROUND_MAX)   :: XUNIF_ROOTFRACGV
+REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_RSMINGV
+REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_GAMMAGV
+REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_WRMAX_CFGV
+REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_RGLGV
+REAL, DIMENSION(NVEGTYPE_MAX,NTIME_MAX)     :: XUNIF_H_VEG
+REAL, DIMENSION(NVEGTYPE_MAX)               :: XUNIF_ROOT_EXTINCTIONGV! root extinction parameter
 !
 LOGICAL, DIMENSION(NVEGTYPE_MAX)            :: LUNIF_STRESS     ! stress type
 !
@@ -197,6 +210,17 @@ LOGICAL, DIMENSION(NVEGTYPE_MAX)            :: LUNIF_STRESS     ! stress type
  CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CF_NITRO   ! CF for nitrogen
  CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_CNA_NITRO  ! CNA for nitrogen
 !
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_LAIGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_Z0LITTER
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_GNDLITTER
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFNAM_ROOTFRACGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RSMINGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_GAMMAGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_WRMAX_CFGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_RGLGV
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFNAM_H_VEG
+ CHARACTER(LEN=28), DIMENSION(NVEGTYPE_MAX)             :: CFNAM_ROOT_EXTINCTIONGV! root extinction parameter
+!
 ! types of file containing data
 !
  CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)           :: CFTYP_VEGTYPE    ! fractions of each vegtypes
@@ -238,9 +262,20 @@ LOGICAL, DIMENSION(NVEGTYPE_MAX)            :: LUNIF_STRESS     ! stress type
  CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_CE_NITRO   ! CE for nitrogen
  CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_CF_NITRO   ! CF for nitrogen
  CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_CNA_NITRO  ! CNA for nitrogen
+!
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFTYP_LAIGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFTYP_Z0LITTER
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFTYP_GNDLITTER
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX,NGROUND_MAX) :: CFTYP_ROOTFRACGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_RSMINGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_GAMMAGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_WRMAX_CFGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_RGLGV
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX,NTIME_MAX)   :: CFTYP_H_VEG
+ CHARACTER(LEN=6), DIMENSION(NVEGTYPE_MAX)             :: CFTYP_ROOT_EXTINCTIONGV! root extinction parameter
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-INTEGER :: JI
 NAMELIST/NAM_DATA_ISBA/NTIME, XUNIF_VEGTYPE, XUNIF_DG, XUNIF_ROOTFRAC, XUNIF_DICE,                  &
                          XUNIF_GROUND_DEPTH, XUNIF_ROOT_DEPTH, XUNIF_ROOT_EXTINCTION,               &
                          XUNIF_ROOT_LIN, XUNIF_LAI, XUNIF_VEG, XUNIF_Z0, XUNIF_EMIS,                &
@@ -270,9 +305,18 @@ NAMELIST/NAM_DATA_ISBA/NTIME, XUNIF_VEGTYPE, XUNIF_DG, XUNIF_ROOTFRAC, XUNIF_DIC
                          CFTYP_GROUND_DEPTH,CFTYP_ROOT_DEPTH,CFTYP_ROOT_EXTINCTION,CFTYP_ROOT_LIN,  &
                          CFTYP_GMES,CFTYP_BSLAI,CFTYP_LAIMIN,CFTYP_SEFOLD,CFTYP_GC,                 &
                          CFTYP_DMAX,CFTYP_F2I, CFTYP_H_TREE,CFTYP_RE25,                             &
-                         CFTYP_CE_NITRO,CFTYP_CF_NITRO,CFTYP_CNA_NITRO  
+                         CFTYP_CE_NITRO,CFTYP_CF_NITRO,CFTYP_CNA_NITRO,                             &
+                         XUNIF_LAIGV, XUNIF_Z0LITTER, XUNIF_ROOTFRACGV, XUNIF_GNDLITTER, XUNIF_RSMINGV, &
+                         XUNIF_GAMMAGV, XUNIF_WRMAX_CFGV, XUNIF_RGLGV,                              &
+                         XUNIF_H_VEG, XUNIF_ROOT_EXTINCTIONGV,                                      &
+                         CFNAM_LAIGV, CFNAM_Z0LITTER, CFNAM_ROOTFRACGV, CFNAM_GNDLITTER, CFNAM_RSMINGV, &
+                         CFNAM_GAMMAGV, CFNAM_WRMAX_CFGV, CFNAM_RGLGV,                              &
+                         CFNAM_H_VEG, CFNAM_ROOT_EXTINCTIONGV,                                      &
+                         CFTYP_LAIGV, CFTYP_Z0LITTER, CFTYP_ROOTFRACGV, CFTYP_GNDLITTER, CFTYP_RSMINGV, &
+                         CFTYP_GAMMAGV, CFTYP_WRMAX_CFGV, CFTYP_RGLGV,                              &
+                         CFTYP_H_VEG, CFTYP_ROOT_EXTINCTIONGV
 
-DATA XSTRESS /1.,1.,1.,0.,1.,0.,1.,0.,1.,0.,0.,0./
+DATA XSTRESS /1.,1.,1.,0.,1.,0.,1.,0.,1.,0.,0.,0.,0.,0.,1.,0.,1.,0.,0./
 !-------------------------------------------------------------------------------
 !
 !*    1.      Initializations
@@ -318,88 +362,122 @@ XUNIF_CE_NITRO        = XUNDEF ! CE for nitrogen
 XUNIF_CF_NITRO        = XUNDEF ! CF for nitrogen
 XUNIF_CNA_NITRO       = XUNDEF ! CNA for nitrogen
 !
-CFNAM_VEGTYPE (:)     = '                            '
+XUNIF_LAIGV           = XUNDEF
+XUNIF_Z0LITTER        = XUNDEF
+XUNIF_ROOTFRACGV      = XUNDEF
+XUNIF_GNDLITTER       = XUNDEF
+XUNIF_RSMINGV         = XUNDEF
+XUNIF_GAMMAGV         = XUNDEF
+XUNIF_WRMAX_CFGV      = XUNDEF
+XUNIF_RGLGV           = XUNDEF
+XUNIF_H_VEG           = XUNDEF
+XUNIF_ROOT_EXTINCTIONGV = XUNDEF ! root extinction parameter
 !
-CFNAM_VEG  (:,:)      = '                            '
-CFNAM_LAI  (:,:)      = '                            '
-CFNAM_Z0   (:,:)      = '                            '
-CFNAM_EMIS (:,:)      = '                            '
+ CFNAM_VEGTYPE (:)     = '                            '
 !
-CFNAM_DG       (:,:)  = '                            '
-CFNAM_ROOTFRAC (:,:)  = '                            '
-CFNAM_DICE     (:)    = '                            '
+ CFNAM_VEG  (:,:)      = '                            '
+ CFNAM_LAI  (:,:)      = '                            '
+ CFNAM_Z0   (:,:)      = '                            '
+ CFNAM_EMIS (:,:)      = '                            '
 !
-CFNAM_GROUND_DEPTH    (:) = '                            '
-CFNAM_ROOT_DEPTH      (:) = '                            '
-CFNAM_ROOT_EXTINCTION (:) = '                            '
-CFNAM_ROOT_LIN        (:) = '                            '
+ CFNAM_DG       (:,:)  = '                            '
+ CFNAM_ROOTFRAC (:,:)  = '                            '
+ CFNAM_DICE     (:)    = '                            '
 !
-CFNAM_RSMIN       (:) = '                            '
-CFNAM_GAMMA       (:) = '                            '
-CFNAM_WRMAX_CF    (:) = '                            '
-CFNAM_RGL         (:) = '                            '
-CFNAM_CV          (:) = '                            '
-CFNAM_Z0_O_Z0H    (:) = '                            '
-CFNAM_ALBNIR_VEG  (:) = '                            '
-CFNAM_ALBVIS_VEG  (:) = '                            '
-CFNAM_ALBUV_VEG   (:) = '                            '
-CFNAM_ALBNIR_SOIL (:) = '                            '
-CFNAM_ALBVIS_SOIL (:) = '                            '
-CFNAM_ALBUV_SOIL  (:) = '                            '
-CFNAM_GMES        (:) = '                            '
-CFNAM_BSLAI       (:) = '                            '
-CFNAM_LAIMIN      (:) = '                            '
-CFNAM_SEFOLD      (:) = '                            '
-CFNAM_GC          (:) = '                            '
-CFNAM_DMAX        (:) = '                            '
-CFNAM_F2I         (:) = '                            '
-CFNAM_H_TREE      (:) = '                            '
-CFNAM_RE25        (:) = '                            '
-CFNAM_CE_NITRO    (:) = '                            '
-CFNAM_CF_NITRO    (:) = '                            '
-CFNAM_CNA_NITRO   (:) = '                            '
+ CFNAM_GROUND_DEPTH    (:) = '                            '
+ CFNAM_ROOT_DEPTH      (:) = '                            '
+ CFNAM_ROOT_EXTINCTION (:) = '                            '
+ CFNAM_ROOT_LIN        (:) = '                            '
 !
-CFTYP_VEGTYPE (:)     = '      '
+ CFNAM_RSMIN       (:) = '                            '
+ CFNAM_GAMMA       (:) = '                            '
+ CFNAM_WRMAX_CF    (:) = '                            '
+ CFNAM_RGL         (:) = '                            '
+ CFNAM_CV          (:) = '                            '
+ CFNAM_Z0_O_Z0H    (:) = '                            '
+ CFNAM_ALBNIR_VEG  (:) = '                            '
+ CFNAM_ALBVIS_VEG  (:) = '                            '
+ CFNAM_ALBUV_VEG   (:) = '                            '
+ CFNAM_ALBNIR_SOIL (:) = '                            '
+ CFNAM_ALBVIS_SOIL (:) = '                            '
+ CFNAM_ALBUV_SOIL  (:) = '                            '
+ CFNAM_GMES        (:) = '                            '
+ CFNAM_BSLAI       (:) = '                            '
+ CFNAM_LAIMIN      (:) = '                            '
+ CFNAM_SEFOLD      (:) = '                            '
+ CFNAM_GC          (:) = '                            '
+ CFNAM_DMAX        (:) = '                            '
+ CFNAM_F2I         (:) = '                            '
+ CFNAM_H_TREE      (:) = '                            '
+ CFNAM_RE25        (:) = '                            '
+ CFNAM_CE_NITRO    (:) = '                            '
+ CFNAM_CF_NITRO    (:) = '                            '
+ CFNAM_CNA_NITRO   (:) = '                            '
 !
-CFTYP_VEG  (:,:)      = '      '
-CFTYP_LAI  (:,:)      = '      '
-CFTYP_Z0   (:,:)      = '      '
-CFTYP_EMIS (:,:)      = '      '
+ CFNAM_LAIGV       (:,:) = '                            '
+ CFNAM_Z0LITTER    (:,:) = '                            '
+ CFNAM_GNDLITTER   (:,:) = '                            '
+ CFNAM_ROOTFRACGV  (:,:) = '                            '
+ CFNAM_RSMINGV     (:) = '                            '
+ CFNAM_GAMMAGV     (:) = '                            '
+ CFNAM_WRMAX_CFGV  (:) = '                            '
+ CFNAM_RGLGV       (:) = '                            '
+ CFNAM_H_VEG       (:,:) = '                            '
+ CFNAM_ROOT_EXTINCTIONGV (:) = '                            '
+
+ CFTYP_VEGTYPE (:)     = '      '
 !
-CFTYP_DG       (:,:)  = '      '
-CFTYP_ROOTFRAC (:,:)  = '      '
-CFTYP_DICE     (:)    = '      '
+ CFTYP_VEG  (:,:)      = '      '
+ CFTYP_LAI  (:,:)      = '      '
+ CFTYP_Z0   (:,:)      = '      '
+ CFTYP_EMIS (:,:)      = '      '
 !
-CFTYP_GROUND_DEPTH    (:) = '      '
-CFTYP_ROOT_DEPTH      (:) = '      '
-CFTYP_ROOT_EXTINCTION (:) = '      '
-CFTYP_ROOT_LIN        (:) = '      '
+ CFTYP_DG       (:,:)  = '      '
+ CFTYP_ROOTFRAC (:,:)  = '      '
+ CFTYP_DICE     (:)    = '      '
 !
-CFTYP_RSMIN       (:) = '      '
-CFTYP_GAMMA       (:) = '      '
-CFTYP_WRMAX_CF    (:) = '      '
-CFTYP_RGL         (:) = '      '
-CFTYP_CV          (:) = '      '
-CFTYP_Z0_O_Z0H    (:) = '      '
-CFTYP_ALBNIR_VEG  (:) = '      '
-CFTYP_ALBVIS_VEG  (:) = '      '
-CFTYP_ALBUV_VEG   (:) = '      '
-CFTYP_ALBNIR_SOIL (:) = '      '
-CFTYP_ALBVIS_SOIL (:) = '      '
-CFTYP_ALBUV_SOIL  (:) = '      '
-CFTYP_GMES        (:) = '      '
-CFTYP_BSLAI       (:) = '      '
-CFTYP_LAIMIN      (:) = '      '
-CFTYP_SEFOLD      (:) = '      '
-CFTYP_GC          (:) = '      '
-CFTYP_DMAX        (:) = '      '
-CFTYP_F2I         (:) = '      '
-CFTYP_H_TREE      (:) = '      '
-CFTYP_RE25        (:) = '      '
-CFTYP_CE_NITRO    (:) = '      '
-CFTYP_CF_NITRO    (:) = '      '
-CFTYP_CNA_NITRO   (:) = '      '
+ CFTYP_GROUND_DEPTH    (:) = '      '
+ CFTYP_ROOT_DEPTH      (:) = '      '
+ CFTYP_ROOT_EXTINCTION (:) = '      '
+ CFTYP_ROOT_LIN        (:) = '      '
 !
+ CFTYP_RSMIN       (:) = '      '
+ CFTYP_GAMMA       (:) = '      '
+ CFTYP_WRMAX_CF    (:) = '      '
+ CFTYP_RGL         (:) = '      '
+ CFTYP_CV          (:) = '      '
+ CFTYP_Z0_O_Z0H    (:) = '      '
+ CFTYP_ALBNIR_VEG  (:) = '      '
+ CFTYP_ALBVIS_VEG  (:) = '      '
+ CFTYP_ALBUV_VEG   (:) = '      '
+ CFTYP_ALBNIR_SOIL (:) = '      '
+ CFTYP_ALBVIS_SOIL (:) = '      '
+ CFTYP_ALBUV_SOIL  (:) = '      '
+ CFTYP_GMES        (:) = '      '
+ CFTYP_BSLAI       (:) = '      '
+ CFTYP_LAIMIN      (:) = '      '
+ CFTYP_SEFOLD      (:) = '      '
+ CFTYP_GC          (:) = '      '
+ CFTYP_DMAX        (:) = '      '
+ CFTYP_F2I         (:) = '      '
+ CFTYP_H_TREE      (:) = '      '
+ CFTYP_RE25        (:) = '      '
+ CFTYP_CE_NITRO    (:) = '      '
+ CFTYP_CF_NITRO    (:) = '      '
+ CFTYP_CNA_NITRO   (:) = '      '
+!
+ CFTYP_LAIGV       (:,:) = '      '
+ CFTYP_Z0LITTER    (:,:) = '      '
+ CFTYP_GNDLITTER   (:,:) = '      '
+ CFTYP_ROOTFRACGV  (:,:) = '      '
+ CFTYP_RSMINGV     (:) = '      '
+ CFTYP_GAMMAGV     (:) = '      '
+ CFTYP_WRMAX_CFGV  (:) = '      '
+ CFTYP_RGLGV       (:) = '      '
+ CFTYP_H_VEG       (:,:) = '      '
+ CFTYP_ROOT_EXTINCTIONGV (:) = '      '
+!
+ISIZE_LMEB_PATCH=COUNT(I%LMEB_PATCH(:))
 !-------------------------------------------------------------------------------
 !
 !*    2.      Input file for cover types
@@ -413,7 +491,7 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_DATA_ISBA)
 !
  CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
-NTIME_n = NTIME
+DTI%NTIME = NTIME
 !
 !-------------------------------------------------------------------------------
 IF (NVEGTYPE_MAX < NVEGTYPE) THEN
@@ -426,12 +504,12 @@ IF (NVEGTYPE_MAX < NVEGTYPE) THEN
   CALL ABOR1_SFX('PGD_ISBA_PAR: MAXIMUM NUMBER OF VEGTYPE MUST BE INCREASED IN NAMELIST DECLARATION')
 END IF
 !-------------------------------------------------------------------------------
-IF (NGROUND_MAX < NGROUND_LAYER) THEN
+IF (NGROUND_MAX < I%NGROUND_LAYER) THEN
   WRITE(ILUOUT,*) '------------------------------------'
   WRITE(ILUOUT,*) 'Please update pgd_isba_par.f90 routine : '
   WRITE(ILUOUT,*) 'The maximum number of soil layers  '
   WRITE(ILUOUT,*) 'in the declaration of the namelist variables '
-  WRITE(ILUOUT,*) 'must be increased to : ', NGROUND_LAYER
+  WRITE(ILUOUT,*) 'must be increased to : ', I%NGROUND_LAYER
   WRITE(ILUOUT,*) '------------------------------------'
   CALL ABOR1_SFX('PGD_ISBA_PAR: MAXIMUM NUMBER OF SOIL LAYERS MUST BE INCREASED IN NAMELIST DECLARATION')
 END IF
@@ -447,11 +525,12 @@ IF (NTIME/=36 .AND. NTIME/=12 .AND. NTIME/=2 .AND. NTIME/=1) &
 !
 !-------------------------------------vegtypes-----------------------------------------
 !
-ALLOCATE(XPAR_VEGTYPE     (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','VEGTYPE: vegetation type','NAT',CFNAM_VEGTYPE,   &
-       CFTYP_VEGTYPE,XUNIF_VEGTYPE,XPAR_VEGTYPE,LDATA_VEGTYPE)  
+ALLOCATE(DTI%XPAR_VEGTYPE     (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','VEGTYPE: vegetation type','NAT',CFNAM_VEGTYPE,   &
+       CFTYP_VEGTYPE,XUNIF_VEGTYPE,DTI%XPAR_VEGTYPE,DTI%LDATA_VEGTYPE)  
 !
-IF (.NOT.LECOCLIMAP .AND. .NOT.LDATA_VEGTYPE) THEN
+IF (.NOT.I%LECOCLIMAP .AND. .NOT.DTI%LDATA_VEGTYPE) THEN
   !
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) '***********************************************************'
@@ -462,44 +541,56 @@ IF (.NOT.LECOCLIMAP .AND. .NOT.LDATA_VEGTYPE) THEN
   WRITE(ILUOUT,*) ' '
   CALL ABOR1_SFX('PGD_ISBA_PAR: NO PRESCRIBED VALUE NOR INPUT FILE FOR VEGTYPE')
   !
-ELSEIF (LDATA_VEGTYPE) THEN
+ELSEIF (DTI%LDATA_VEGTYPE) THEN
   !
-  WHERE (XPAR_VEGTYPE(:,:)==XUNDEF) XPAR_VEGTYPE(:,:)=0.
-  WHERE (XPAR_VEGTYPE(:,:)/=0.) XPAR_VEGTYPE(:,:) = XPAR_VEGTYPE(:,:) / SPREAD(SUM(XPAR_VEGTYPE(:,:),2),2,NVEGTYPE)
+  WHERE (DTI%XPAR_VEGTYPE(:,:)==XUNDEF) DTI%XPAR_VEGTYPE(:,:)=0.
+  WHERE (DTI%XPAR_VEGTYPE(:,:)/=0.) DTI%XPAR_VEGTYPE(:,:) = DTI%XPAR_VEGTYPE(:,:) / &
+                                                    SPREAD(SUM(DTI%XPAR_VEGTYPE(:,:),2),2,NVEGTYPE)
   !  
 ENDIF
 !
 !--------------------------------temporal fields-----------------------------------
 !
-ALLOCATE(XPAR_VEG      (NDIM,NTIME,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','VEG: vegetation fraction','NAT',CFNAM_VEG,CFTYP_VEG,XUNIF_VEG,XPAR_VEG,LDATA_VEG)
-IF (.NOT. LDATA_VEG) DEALLOCATE(XPAR_VEG)
+ALLOCATE(DTI%XPAR_VEG      (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','VEG: vegetation fraction','NAT',CFNAM_VEG,CFTYP_VEG,XUNIF_VEG, &
+                        DTI%XPAR_VEG,DTI%LDATA_VEG)
+IF (.NOT. DTI%LDATA_VEG) DEALLOCATE(DTI%XPAR_VEG)
 !
-ALLOCATE(XPAR_LAI      (NDIM,NTIME,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','LAI: leaf area index','NAT',CFNAM_LAI,CFTYP_LAI,XUNIF_LAI,XPAR_LAI,LDATA_LAI) 
-IF (.NOT. LDATA_VEGTYPE .AND. .NOT. LDATA_LAI) DEALLOCATE(XPAR_LAI)
+ALLOCATE(DTI%XPAR_LAI      (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','LAI: leaf area index','NAT',CFNAM_LAI,CFTYP_LAI,XUNIF_LAI, &
+                        DTI%XPAR_LAI,DTI%LDATA_LAI) 
+IF (.NOT. DTI%LDATA_VEGTYPE .AND. .NOT. DTI%LDATA_LAI) DEALLOCATE(DTI%XPAR_LAI)
 !
-ALLOCATE(XPAR_Z0       (NDIM,NTIME,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'CDN','Z0: roughness length','NAT',CFNAM_Z0,CFTYP_Z0,XUNIF_Z0,XPAR_Z0,LDATA_Z0)
-DO JI=1,NDIM
-XPAR_Z0(JI,:,:) = XPAR_Z0(JI,:,:) * (0.5 + MOD(NINT ( (FLOAT(JI)**1.5) ),100)/100. )
-END DO
-IF (.NOT. LDATA_Z0) DEALLOCATE(XPAR_Z0)
+ALLOCATE(DTI%XPAR_H_VEG       (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','H_VEG: vegetation height','NAT',CFNAM_H_VEG,CFTYP_H_VEG,XUNIF_H_VEG, &
+                        DTI%XPAR_H_VEG,DTI%LDATA_H_VEG) 
+IF (.NOT. DTI%LDATA_H_VEG) DEALLOCATE(DTI%XPAR_H_VEG)
 !
-ALLOCATE(XPAR_EMIS     (NDIM,NTIME,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','EMIS: emissivity','NAT',CFNAM_EMIS,CFTYP_EMIS,XUNIF_EMIS,XPAR_EMIS,LDATA_EMIS)
-IF (.NOT. LDATA_EMIS) DEALLOCATE(XPAR_EMIS)
+ALLOCATE(DTI%XPAR_Z0       (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'CDN','Z0: roughness length','NAT',CFNAM_Z0,CFTYP_Z0,XUNIF_Z0, &
+                        DTI%XPAR_Z0,DTI%LDATA_Z0)
+IF (.NOT. DTI%LDATA_Z0) DEALLOCATE(DTI%XPAR_Z0)
 !
-IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_VEG .AND. LDATA_LAI .AND. LDATA_Z0 .AND. LDATA_EMIS)) THEN
+ALLOCATE(DTI%XPAR_EMIS     (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','EMIS: emissivity','NAT',CFNAM_EMIS,CFTYP_EMIS,XUNIF_EMIS, &
+                        DTI%XPAR_EMIS,DTI%LDATA_EMIS)
+IF (.NOT. DTI%LDATA_EMIS) DEALLOCATE(DTI%XPAR_EMIS)
+!
+IF (.NOT.I%LECOCLIMAP .AND. .NOT.(DTI%LDATA_VEG .AND. DTI%LDATA_LAI .AND. DTI%LDATA_Z0 .AND. DTI%LDATA_EMIS)) THEN
   !
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) '***********************************************************'
   WRITE(ILUOUT,*) '* Error in PGD field preparation of temporal fields       *'
   WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
-  IF (.NOT.LDATA_VEG ) WRITE(ILUOUT,*) '* for VEG                            *'
-  IF (.NOT.LDATA_LAI ) WRITE(ILUOUT,*) '* for LAI                            *'
-  IF (.NOT.LDATA_Z0  ) WRITE(ILUOUT,*) '* for Z0                             *'
-  IF (.NOT.LDATA_EMIS) WRITE(ILUOUT,*) '* for EMIS                           *'
+  IF (.NOT.DTI%LDATA_VEG ) WRITE(ILUOUT,*) '* for VEG                            *'
+  IF (.NOT.DTI%LDATA_LAI ) WRITE(ILUOUT,*) '* for LAI                            *'
+  IF (.NOT.DTI%LDATA_Z0  ) WRITE(ILUOUT,*) '* for Z0                             *'
+  IF (.NOT.DTI%LDATA_EMIS) WRITE(ILUOUT,*) '* for EMIS                           *'
   WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
   WRITE(ILUOUT,*) '***********************************************************'
   WRITE(ILUOUT,*) ' '
@@ -507,40 +598,113 @@ IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_VEG .AND. LDATA_LAI .AND. LDATA_Z0 .AND. L
   !
 ENDIF
 !
+! ------------ Begin MEB parameters ---------------------
+IF(ISIZE_LMEB_PATCH>0) THEN
+  !
+  ALLOCATE(DTI%XPAR_LAIGV       (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','LAIGV: GV leaf area index','NAT', &
+                         CFNAM_LAIGV,CFTYP_LAIGV,XUNIF_LAIGV,DTI%XPAR_LAIGV,DTI%LDATA_LAIGV) 
+  IF (.NOT. DTI%LDATA_LAIGV) DEALLOCATE(DTI%XPAR_LAIGV)
+  !
+  ALLOCATE(DTI%XPAR_GNDLITTER   (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GNDLITTER: ground litter fraction','NAT',&
+                         CFNAM_GNDLITTER,CFTYP_GNDLITTER,XUNIF_GNDLITTER,DTI%XPAR_GNDLITTER,DTI%LDATA_GNDLITTER)
+  IF (.NOT. DTI%LDATA_GNDLITTER) DEALLOCATE(DTI%XPAR_GNDLITTER)
+  !
+  ALLOCATE(DTI%XPAR_Z0LITTER        (IG%NDIM,NTIME,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'CDN','Z0LITTER: ground litter roughness length','NAT', &
+                         CFNAM_Z0LITTER,CFTYP_Z0LITTER,XUNIF_Z0LITTER,DTI%XPAR_Z0LITTER,DTI%LDATA_Z0LITTER)
+  IF (.NOT. DTI%LDATA_Z0LITTER) DEALLOCATE(DTI%XPAR_Z0LITTER)
+  !
+ENDIF
+! ------------ End MEB parameters ---------------------
+!
 !--------------------------------depths fields-----------------------------------
 !
-ALLOCATE(XPAR_DG          (NDIM,NGROUND_LAYER,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','DG: ground depth','NAT',CFNAM_DG,CFTYP_DG,XUNIF_DG,XPAR_DG,LDATA_DG)
-IF (.NOT. LDATA_VEGTYPE .AND. .NOT. LDATA_DG) DEALLOCATE(XPAR_DG)
+ALLOCATE(DTI%XPAR_DG          (IG%NDIM,I%NGROUND_LAYER,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','DG: ground depth','NAT',CFNAM_DG,CFTYP_DG,XUNIF_DG,DTI%XPAR_DG,DTI%LDATA_DG)
+IF (.NOT. DTI%LDATA_VEGTYPE .AND. .NOT. DTI%LDATA_DG) DEALLOCATE(DTI%XPAR_DG)
 !  
-ALLOCATE(XPAR_ROOT_DEPTH    (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ROOT_DEPTH: root depth','NAT',CFNAM_ROOT_DEPTH,CFTYP_ROOT_DEPTH,&
-      XUNIF_ROOT_DEPTH,XPAR_ROOT_DEPTH,LDATA_ROOT_DEPTH)
+ALLOCATE(DTI%XPAR_ROOT_DEPTH    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOT_DEPTH: root depth','NAT',CFNAM_ROOT_DEPTH,CFTYP_ROOT_DEPTH,&
+      XUNIF_ROOT_DEPTH,DTI%XPAR_ROOT_DEPTH,DTI%LDATA_ROOT_DEPTH)
 !
-ALLOCATE(XPAR_GROUND_DEPTH    (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','GROUND_DEPTH: ground depth','NAT',CFNAM_GROUND_DEPTH,CFTYP_GROUND_DEPTH,&
-      XUNIF_GROUND_DEPTH,XPAR_GROUND_DEPTH,LDATA_GROUND_DEPTH)
+ALLOCATE(DTI%XPAR_GROUND_DEPTH    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GROUND_DEPTH: ground depth','NAT',CFNAM_GROUND_DEPTH,CFTYP_GROUND_DEPTH,&
+      XUNIF_GROUND_DEPTH,DTI%XPAR_GROUND_DEPTH,DTI%LDATA_GROUND_DEPTH)
 !
-IF(CISBA=='DIF')THEN 
+IF(I%CISBA=='DIF')THEN 
   ! 
-  ALLOCATE(XPAR_ROOTFRAC    (NDIM,NGROUND_LAYER,NVEGTYPE))  
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ROOTFRAC: root fraction','NAT',CFNAM_ROOTFRAC,CFTYP_ROOTFRAC,&
-        XUNIF_ROOTFRAC,XPAR_ROOTFRAC,LDATA_ROOTFRAC)
-  IF (.NOT. LDATA_ROOTFRAC) DEALLOCATE(XPAR_ROOTFRAC)
-  !        
-  ALLOCATE(XPAR_ROOT_EXTINCTION    (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ROOT_EXTINCTION: root extinction','NAT',CFNAM_ROOT_EXTINCTION,CFTYP_ROOT_EXTINCTION,&
-        XUNIF_ROOT_EXTINCTION,XPAR_ROOT_EXTINCTION,LDATA_ROOT_EXTINCTION)
-  IF (.NOT. LDATA_ROOT_EXTINCTION) DEALLOCATE(XPAR_ROOT_EXTINCTION)
-  !        
-  ALLOCATE(XPAR_ROOT_LIN    (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ROOT_LIN: root linear','NAT',CFNAM_ROOT_LIN,CFTYP_ROOT_LIN,&
-        XUNIF_ROOT_LIN,XPAR_ROOT_LIN,LDATA_ROOT_LIN)
-  IF (.NOT. LDATA_ROOT_LIN) DEALLOCATE(XPAR_ROOT_LIN)
+  ALLOCATE(DTI%XPAR_ROOTFRAC    (IG%NDIM,I%NGROUND_LAYER,NVEGTYPE))  
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOTFRAC: root fraction','NAT',CFNAM_ROOTFRAC,CFTYP_ROOTFRAC,&
+        XUNIF_ROOTFRAC,DTI%XPAR_ROOTFRAC,DTI%LDATA_ROOTFRAC)
+  IF (.NOT. DTI%LDATA_ROOTFRAC) DEALLOCATE(DTI%XPAR_ROOTFRAC)
   !
-  IF (.NOT.LECOCLIMAP) THEN
-    IF(LDATA_DG .AND. .NOT.LDATA_ROOTFRAC .AND. &
-       (.NOT.LDATA_ROOT_DEPTH.OR..NOT.LDATA_ROOT_EXTINCTION.OR..NOT.LDATA_ROOT_LIN)) THEN
+  ALLOCATE(DTI%XPAR_ROOT_EXTINCTION    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOT_EXTINCTION: root extinction','NAT',CFNAM_ROOT_EXTINCTION,CFTYP_ROOT_EXTINCTION,&
+        XUNIF_ROOT_EXTINCTION,DTI%XPAR_ROOT_EXTINCTION,DTI%LDATA_ROOT_EXTINCTION)
+  IF (.NOT. DTI%LDATA_ROOT_EXTINCTION) DEALLOCATE(DTI%XPAR_ROOT_EXTINCTION)
+  !        
+  ALLOCATE(DTI%XPAR_ROOT_LIN    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOT_LIN: root linear','NAT',CFNAM_ROOT_LIN,CFTYP_ROOT_LIN,&
+        XUNIF_ROOT_LIN,DTI%XPAR_ROOT_LIN,DTI%LDATA_ROOT_LIN)
+  IF (.NOT. DTI%LDATA_ROOT_LIN) DEALLOCATE(DTI%XPAR_ROOT_LIN)
+  !
+  ! ------------ Begin MEB parameters ---------------------
+  IF(ISIZE_LMEB_PATCH>0) THEN
+    !
+    ALLOCATE(DTI%XPAR_ROOTFRACGV  (IG%NDIM,I%NGROUND_LAYER,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOTFRACGV: GV root fraction','NAT',CFNAM_ROOTFRACGV,CFTYP_ROOTFRACGV,&
+            XUNIF_ROOTFRACGV,DTI%XPAR_ROOTFRACGV,DTI%LDATA_ROOTFRACGV)
+    IF (.NOT. DTI%LDATA_ROOTFRACGV) DEALLOCATE(DTI%XPAR_ROOTFRACGV)
+    !
+    !  Apply a function of XPAR_ROOTFRAC on XPAR_ROOTFRACGV if XUNIF_ROOTFRACGV is undefined
+    IF (.NOT. DTI%LDATA_ROOTFRACGV .AND. DTI%LDATA_ROOTFRAC)THEN
+      ALLOCATE(DTI%XPAR_ROOTFRACGV  (IG%NDIM,I%NGROUND_LAYER,NVEGTYPE))
+      IHGROUND_LAYER=INT(CEILING(REAL(I%NGROUND_LAYER)/2.0))
+      DTI%XPAR_ROOTFRACGV=0.
+      DO IIH=1,IHGROUND_LAYER
+        DTI%XPAR_ROOTFRACGV(:,IIH,:)=DTI%XPAR_ROOTFRAC(:,IIH,:)
+      ENDDO
+      ZROOTFRACGV(:,:)=SUM(DTI%XPAR_ROOTFRACGV,DIM=2)
+      DO IIH=1,IHGROUND_LAYER
+        TEST=RESHAPE(DTI%XPAR_ROOTFRACGV(:,IIH,:),(/IG%NDIM,NVEGTYPE/))
+        TEST2=1.
+        WHERE(ZROOTFRACGV>0.)TEST2 = 1./ZROOTFRACGV
+        TEST3=TEST * TEST2
+        DTI%XPAR_ROOTFRACGV(:,IIH,:)=TEST3
+      ENDDO
+      DTI%LDATA_ROOTFRACGV = .TRUE.
+    ENDIF
+    !                                     '                                '
+    ALLOCATE(DTI%XPAR_ROOT_EXTINCTIONGV(IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ROOT_EXTINCTIONGV: root ext gv  ','NAT',CFNAM_ROOT_EXTINCTIONGV,CFTYP_ROOT_EXTINCTIONGV,&
+          XUNIF_ROOT_EXTINCTIONGV,DTI%XPAR_ROOT_EXTINCTIONGV,DTI%LDATA_ROOT_EXTINCTIONGV)
+    IF (.NOT. DTI%LDATA_ROOT_EXTINCTIONGV) DEALLOCATE(DTI%XPAR_ROOT_EXTINCTIONGV)
+    !
+    IF (.NOT. DTI%LDATA_ROOT_EXTINCTIONGV .AND. DTI%LDATA_ROOT_EXTINCTION)THEN
+      ALLOCATE(DTI%XPAR_ROOT_EXTINCTIONGV(IG%NDIM,NVEGTYPE))
+      DTI%XPAR_ROOT_EXTINCTIONGV = DTI%XPAR_ROOT_EXTINCTION
+      DTI%LDATA_ROOT_EXTINCTIONGV = .TRUE.
+    ENDIF
+    !
+  ENDIF
+  ! ------------ End MEB parameters ---------------------
+  !
+  IF (.NOT.I%LECOCLIMAP) THEN
+    IF(DTI%LDATA_DG .AND. .NOT.DTI%LDATA_ROOTFRAC .AND. &
+       (.NOT.DTI%LDATA_ROOT_DEPTH.OR..NOT.DTI%LDATA_ROOT_EXTINCTION.OR..NOT.DTI%LDATA_ROOT_LIN)) THEN
       WRITE(ILUOUT,*) ' '
       WRITE(ILUOUT,*) '****************************************************************************'
       WRITE(ILUOUT,*) '* Without ECOCLIMAP, Error in PGD field preparation for ISBA-DIF           *'
@@ -553,9 +717,9 @@ IF(CISBA=='DIF')THEN
       WRITE(ILUOUT,*) '****************************************************************************'
       WRITE(ILUOUT,*) ' '
       CALL ABOR1_SFX("PGD_ISBA_PAR: PROBLEM IN SOIL GRID COMPUTATION") 
-    ELSEIF( .NOT.ALL(XSOILGRID(:)==XUNDEF) .AND. &
-           (.NOT.LDATA_GROUND_DEPTH   .OR..NOT.LDATA_ROOT_DEPTH.OR. &
-            .NOT.LDATA_ROOT_EXTINCTION.OR..NOT.LDATA_ROOT_LIN  )) THEN
+    ELSEIF( .NOT.ALL(I%XSOILGRID(:)==XUNDEF) .AND. &
+           (.NOT.DTI%LDATA_GROUND_DEPTH   .OR..NOT.DTI%LDATA_ROOT_DEPTH.OR. &
+            .NOT.DTI%LDATA_ROOT_EXTINCTION.OR..NOT.DTI%LDATA_ROOT_LIN  )) THEN
       WRITE(ILUOUT,*) ' '
       WRITE(ILUOUT,*) '****************************************************************************'
       WRITE(ILUOUT,*) '* Without ECOCLIMAP, Error in PGD field preparation for ISBA-DIF           *'
@@ -569,7 +733,7 @@ IF(CISBA=='DIF')THEN
       WRITE(ILUOUT,*) ' '
       CALL ABOR1_SFX("PGD_ISBA_PAR: PROBLEM IN SOIL GRID COMPUTATION") 
     ENDIF
-    IF(.NOT.LDATA_DG .AND.ALL(XSOILGRID(:)==XUNDEF))THEN
+    IF(.NOT.DTI%LDATA_DG .AND.ALL(I%XSOILGRID(:)==XUNDEF))THEN
       WRITE(ILUOUT,*) ' '
       WRITE(ILUOUT,*) '****************************************************************************'
       WRITE(ILUOUT,*) '* Without ECOCLIMAP, Error in PGD field preparation for ISBA-DIF           *'
@@ -586,8 +750,8 @@ IF(CISBA=='DIF')THEN
   !
 ELSE   
   !
-  IF ( .NOT.LECOCLIMAP .AND. .NOT.LDATA_DG .AND. &
-      (.NOT.LDATA_GROUND_DEPTH.OR..NOT.LDATA_ROOT_DEPTH) ) THEN
+  IF ( .NOT.I%LECOCLIMAP .AND. .NOT.DTI%LDATA_DG .AND. &
+      (.NOT.DTI%LDATA_GROUND_DEPTH.OR..NOT.DTI%LDATA_ROOT_DEPTH) ) THEN
     WRITE(ILUOUT,*) ' '
     WRITE(ILUOUT,*) '****************************************************************************'
     WRITE(ILUOUT,*) '* Without ECOCLIMAP, Error in PGD field preparation                        *'
@@ -600,21 +764,22 @@ ELSE
   !
 ENDIF
 !
-ALLOCATE(XPAR_DICE        (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','DICE: ice depth for runoff','NAT',CFNAM_DICE,CFTYP_DICE,&
-        XUNIF_DICE,XPAR_DICE,LDATA_DICE)
+ALLOCATE(DTI%XPAR_DICE        (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','DICE: ice depth for runoff','NAT',CFNAM_DICE,CFTYP_DICE,&
+        XUNIF_DICE,DTI%XPAR_DICE,DTI%LDATA_DICE)
 !
-IF (.NOT.LECOCLIMAP.AND..NOT. LDATA_DICE) THEN
-  IF(CISBA/='DIF' .AND. (LDATA_DG.OR.LDATA_ROOT_DEPTH)) THEN   
-    IF(LDATA_DG)THEN
-      XPAR_DICE(:,:) = MAX(0.2,0.8*XPAR_DG(:,2,:))
-    ELSEIF(LDATA_ROOT_DEPTH)THEN
-      XPAR_DICE(:,:) = MAX(0.2,0.8*XPAR_ROOT_DEPTH(:,:))
+IF (.NOT.I%LECOCLIMAP.AND..NOT. DTI%LDATA_DICE) THEN
+  IF(I%CISBA/='DIF' .AND. (DTI%LDATA_DG.OR.DTI%LDATA_ROOT_DEPTH)) THEN   
+    IF(DTI%LDATA_DG)THEN
+      DTI%XPAR_DICE(:,:) = MAX(0.2,0.8*DTI%XPAR_DG(:,2,:))
+    ELSEIF(DTI%LDATA_ROOT_DEPTH)THEN
+      DTI%XPAR_DICE(:,:) = MAX(0.2,0.8*DTI%XPAR_ROOT_DEPTH(:,:))
     ENDIF
-    LDATA_DICE=.TRUE.
-  ELSEIF (CISBA=='DIF') THEN
-    XPAR_DICE(:,:) = 0.0
-    LDATA_DICE=.TRUE.
+    DTI%LDATA_DICE=.TRUE.
+  ELSEIF (I%CISBA=='DIF') THEN
+    DTI%XPAR_DICE(:,:) = 0.0
+    DTI%LDATA_DICE=.TRUE.
   ELSE
     WRITE(ILUOUT,*) ' '
     WRITE(ILUOUT,*) '***********************************************************'
@@ -629,86 +794,98 @@ ENDIF
 !
 !---------------------classical fields---------------------------------------------
 !
-ALLOCATE(XPAR_RSMIN       (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'INV','RSMIN: minimal stomatal resistance','NAT',CFNAM_RSMIN,   &
-       CFTYP_RSMIN,XUNIF_RSMIN,XPAR_RSMIN,LDATA_RSMIN)
-IF (.NOT. LDATA_RSMIN) DEALLOCATE(XPAR_RSMIN)
+ALLOCATE(DTI%XPAR_RSMIN       (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'INV','RSMIN: minimal stomatal resistance','NAT',CFNAM_RSMIN,   &
+       CFTYP_RSMIN,XUNIF_RSMIN,DTI%XPAR_RSMIN,DTI%LDATA_RSMIN)
+IF (.NOT. DTI%LDATA_RSMIN) DEALLOCATE(DTI%XPAR_RSMIN)
 !
-ALLOCATE(XPAR_GAMMA       (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','GAMMA: gamma coefficient','NAT',CFNAM_GAMMA,   &
-       CFTYP_GAMMA,XUNIF_GAMMA,XPAR_GAMMA,LDATA_GAMMA)
-IF (.NOT. LDATA_GAMMA) DEALLOCATE(XPAR_GAMMA)
+ALLOCATE(DTI%XPAR_GAMMA       (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GAMMA: gamma coefficient','NAT',CFNAM_GAMMA,   &
+       CFTYP_GAMMA,XUNIF_GAMMA,DTI%XPAR_GAMMA,DTI%LDATA_GAMMA)
+IF (.NOT. DTI%LDATA_GAMMA) DEALLOCATE(DTI%XPAR_GAMMA)
 !
-ALLOCATE(XPAR_WRMAX_CF    (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','WRMAX_CF: coeff. for max WR','NAT',CFNAM_WRMAX_CF,   &
-       CFTYP_WRMAX_CF,XUNIF_WRMAX_CF,XPAR_WRMAX_CF,LDATA_WRMAX_CF)
-IF (.NOT. LDATA_WRMAX_CF) DEALLOCATE(XPAR_WRMAX_CF)
+ALLOCATE(DTI%XPAR_WRMAX_CF    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','WRMAX_CF: coeff. for max WR','NAT',CFNAM_WRMAX_CF,   &
+       CFTYP_WRMAX_CF,XUNIF_WRMAX_CF,DTI%XPAR_WRMAX_CF,DTI%LDATA_WRMAX_CF)
+IF (.NOT. DTI%LDATA_WRMAX_CF) DEALLOCATE(DTI%XPAR_WRMAX_CF)
 !
-ALLOCATE(XPAR_RGL         (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','RGL: max SW rad. for photosynthesis','NAT',CFNAM_RGL,   &
-       CFTYP_RGL,XUNIF_RGL,XPAR_RGL,LDATA_RGL)  
-IF (.NOT. LDATA_RGL) DEALLOCATE(XPAR_RGL)
+ALLOCATE(DTI%XPAR_RGL         (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','RGL: max SW rad. for photosynthesis','NAT',CFNAM_RGL,   &
+       CFTYP_RGL,XUNIF_RGL,DTI%XPAR_RGL,DTI%LDATA_RGL)  
+IF (.NOT. DTI%LDATA_RGL) DEALLOCATE(DTI%XPAR_RGL)
 !
-ALLOCATE(XPAR_CV          (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'INV','CV: thermal inertia for vegetation','NAT',CFNAM_CV,   &
-       CFTYP_CV,XUNIF_CV,XPAR_CV,LDATA_CV)  
-IF (.NOT. LDATA_CV) DEALLOCATE(XPAR_CV)
+ALLOCATE(DTI%XPAR_CV          (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'INV','CV: thermal inertia for vegetation','NAT',CFNAM_CV,   &
+       CFTYP_CV,XUNIF_CV,DTI%XPAR_CV,DTI%LDATA_CV)  
+IF (.NOT. DTI%LDATA_CV) DEALLOCATE(DTI%XPAR_CV)
 !
-ALLOCATE(XPAR_Z0_O_Z0H    (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','Z0_O_Z0H: ratio of roughness lengths','NAT',CFNAM_Z0_O_Z0H,   &
-       CFTYP_Z0_O_Z0H,XUNIF_Z0_O_Z0H,XPAR_Z0_O_Z0H,LDATA_Z0_O_Z0H)  
-IF (.NOT. LDATA_Z0_O_Z0H) DEALLOCATE(XPAR_Z0_O_Z0H)
+ALLOCATE(DTI%XPAR_Z0_O_Z0H    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','Z0_O_Z0H: ratio of roughness lengths','NAT',CFNAM_Z0_O_Z0H,   &
+       CFTYP_Z0_O_Z0H,XUNIF_Z0_O_Z0H,DTI%XPAR_Z0_O_Z0H,DTI%LDATA_Z0_O_Z0H)  
+IF (.NOT. DTI%LDATA_Z0_O_Z0H) DEALLOCATE(DTI%XPAR_Z0_O_Z0H)
 !
-ALLOCATE(XPAR_ALBNIR_VEG  (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBNIR_VEG: NIR albedo of vegetation','NAT',CFNAM_ALBNIR_VEG,   &
-       CFTYP_ALBNIR_VEG,XUNIF_ALBNIR_VEG,XPAR_ALBNIR_VEG,LDATA_ALBNIR_VEG)
-IF (.NOT. LDATA_ALBNIR_VEG) DEALLOCATE(XPAR_ALBNIR_VEG)
+ALLOCATE(DTI%XPAR_ALBNIR_VEG  (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBNIR_VEG: NIR albedo of vegetation','NAT',CFNAM_ALBNIR_VEG,   &
+       CFTYP_ALBNIR_VEG,XUNIF_ALBNIR_VEG,DTI%XPAR_ALBNIR_VEG,DTI%LDATA_ALBNIR_VEG)
+IF (.NOT. DTI%LDATA_ALBNIR_VEG) DEALLOCATE(DTI%XPAR_ALBNIR_VEG)
 !
-ALLOCATE(XPAR_ALBVIS_VEG  (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBVIS_VEG: VIS albedo of vegetation','NAT',CFNAM_ALBVIS_VEG,   &
-       CFTYP_ALBVIS_VEG,XUNIF_ALBVIS_VEG,XPAR_ALBVIS_VEG,LDATA_ALBVIS_VEG)  
-IF (.NOT. LDATA_ALBVIS_VEG) DEALLOCATE(XPAR_ALBVIS_VEG)
+ALLOCATE(DTI%XPAR_ALBVIS_VEG  (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBVIS_VEG: VIS albedo of vegetation','NAT',CFNAM_ALBVIS_VEG,   &
+       CFTYP_ALBVIS_VEG,XUNIF_ALBVIS_VEG,DTI%XPAR_ALBVIS_VEG,DTI%LDATA_ALBVIS_VEG)  
+IF (.NOT. DTI%LDATA_ALBVIS_VEG) DEALLOCATE(DTI%XPAR_ALBVIS_VEG)
 !
-ALLOCATE(XPAR_ALBUV_VEG   (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBUV_VEG: UV albedo of vegetation','NAT',CFNAM_ALBUV_VEG,   &
-       CFTYP_ALBUV_VEG,XUNIF_ALBUV_VEG,XPAR_ALBUV_VEG,LDATA_ALBUV_VEG)
-IF (.NOT. LDATA_ALBUV_VEG) DEALLOCATE(XPAR_ALBUV_VEG)
+ALLOCATE(DTI%XPAR_ALBUV_VEG   (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBUV_VEG: UV albedo of vegetation','NAT',CFNAM_ALBUV_VEG,   &
+       CFTYP_ALBUV_VEG,XUNIF_ALBUV_VEG,DTI%XPAR_ALBUV_VEG,DTI%LDATA_ALBUV_VEG)
+IF (.NOT. DTI%LDATA_ALBUV_VEG) DEALLOCATE(DTI%XPAR_ALBUV_VEG)
 !
-ALLOCATE(XPAR_ALBNIR_SOIL (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBNIR_SOIL: NIR albedo of SOIL','NAT',CFNAM_ALBNIR_SOIL,   &
-       CFTYP_ALBNIR_SOIL,XUNIF_ALBNIR_SOIL,XPAR_ALBNIR_SOIL,LDATA_ALBNIR_SOIL)  
-IF (.NOT. LDATA_ALBNIR_SOIL) DEALLOCATE(XPAR_ALBNIR_SOIL)
+ALLOCATE(DTI%XPAR_ALBNIR_SOIL (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBNIR_SOIL: NIR albedo of SOIL','NAT',CFNAM_ALBNIR_SOIL,   &
+       CFTYP_ALBNIR_SOIL,XUNIF_ALBNIR_SOIL,DTI%XPAR_ALBNIR_SOIL,DTI%LDATA_ALBNIR_SOIL)  
+IF (.NOT. DTI%LDATA_ALBNIR_SOIL) DEALLOCATE(DTI%XPAR_ALBNIR_SOIL)
 !
-ALLOCATE(XPAR_ALBVIS_SOIL (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBVIS_SOIL: VIS albedo of SOIL','NAT',CFNAM_ALBVIS_SOIL,   &
-       CFTYP_ALBVIS_SOIL,XUNIF_ALBVIS_SOIL,XPAR_ALBVIS_SOIL,LDATA_ALBVIS_SOIL)  
-IF (.NOT. LDATA_ALBVIS_SOIL) DEALLOCATE(XPAR_ALBVIS_SOIL)
+ALLOCATE(DTI%XPAR_ALBVIS_SOIL (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBVIS_SOIL: VIS albedo of SOIL','NAT',CFNAM_ALBVIS_SOIL,   &
+       CFTYP_ALBVIS_SOIL,XUNIF_ALBVIS_SOIL,DTI%XPAR_ALBVIS_SOIL,DTI%LDATA_ALBVIS_SOIL)  
+IF (.NOT. DTI%LDATA_ALBVIS_SOIL) DEALLOCATE(DTI%XPAR_ALBVIS_SOIL)
 !
-ALLOCATE(XPAR_ALBUV_SOIL  (NDIM,NVEGTYPE))
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','ALBUV_SOIL: UV albedo of SOIL','NAT',CFNAM_ALBUV_SOIL,   &
-       CFTYP_ALBUV_SOIL,XUNIF_ALBUV_SOIL,XPAR_ALBUV_SOIL,LDATA_ALBUV_SOIL)  
-IF (.NOT. LDATA_ALBUV_SOIL) DEALLOCATE(XPAR_ALBUV_SOIL)
+ALLOCATE(DTI%XPAR_ALBUV_SOIL  (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','ALBUV_SOIL: UV albedo of SOIL','NAT',CFNAM_ALBUV_SOIL,   &
+       CFTYP_ALBUV_SOIL,XUNIF_ALBUV_SOIL,DTI%XPAR_ALBUV_SOIL,DTI%LDATA_ALBUV_SOIL)  
+IF (.NOT. DTI%LDATA_ALBUV_SOIL) DEALLOCATE(DTI%XPAR_ALBUV_SOIL)
 !
-IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_RSMIN.AND.LDATA_GAMMA.AND.LDATA_WRMAX_CF.AND.LDATA_RGL &
-         .AND.LDATA_CV.AND.LDATA_Z0_O_Z0H.AND.LDATA_ALBNIR_VEG.AND.LDATA_ALBVIS_VEG.AND.&
-         LDATA_ALBUV_VEG.AND.LDATA_ALBNIR_SOIL.AND.LDATA_ALBVIS_SOIL.AND.LDATA_ALBUV_SOIL)) THEN
+IF (.NOT.I%LECOCLIMAP .AND. .NOT.(DTI%LDATA_RSMIN.AND.DTI%LDATA_GAMMA.AND.DTI%LDATA_WRMAX_CF.AND.DTI%LDATA_RGL &
+         .AND.DTI%LDATA_CV.AND.DTI%LDATA_Z0_O_Z0H.AND.DTI%LDATA_ALBNIR_VEG.AND.DTI%LDATA_ALBVIS_VEG.AND.&
+         DTI%LDATA_ALBUV_VEG.AND.DTI%LDATA_ALBNIR_SOIL.AND.DTI%LDATA_ALBVIS_SOIL.AND.DTI%LDATA_ALBUV_SOIL)) THEN
   !
   WRITE(ILUOUT,*) ' '
   WRITE(ILUOUT,*) '***********************************************************'
   WRITE(ILUOUT,*) '* Error in PGD field preparation of classical fields      *'
   WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
-  IF (.NOT.LDATA_RSMIN       ) WRITE(ILUOUT,*) '* for RSMIN                  *'
-  IF (.NOT.LDATA_GAMMA       ) WRITE(ILUOUT,*) '* for GAMMA                  *'
-  IF (.NOT.LDATA_WRMAX_CF    ) WRITE(ILUOUT,*) '* for WRMAX_CF               *'
-  IF (.NOT.LDATA_RGL         ) WRITE(ILUOUT,*) '* for RGL                    *'
-  IF (.NOT.LDATA_CV          ) WRITE(ILUOUT,*) '* for CV                     *'
-  IF (.NOT.LDATA_Z0_O_Z0H    ) WRITE(ILUOUT,*) '* for Z0_O_Z0H               *'
-  IF (.NOT.LDATA_ALBNIR_VEG  ) WRITE(ILUOUT,*) '* for ALBNIR_VEG             *'
-  IF (.NOT.LDATA_ALBVIS_VEG  ) WRITE(ILUOUT,*) '* for ALBVIS_VEG             *'
-  IF (.NOT.LDATA_ALBUV_VEG   ) WRITE(ILUOUT,*) '* for ALBUV_VEG              *'
-  IF (.NOT.LDATA_ALBNIR_SOIL ) WRITE(ILUOUT,*) '* for ALBNIR_SOIL            *'
-  IF (.NOT.LDATA_ALBVIS_SOIL ) WRITE(ILUOUT,*) '* for ALBVIS_SOIL            *'
-  IF (.NOT.LDATA_ALBUV_SOIL  ) WRITE(ILUOUT,*) '* for ALBUV_SOIL             *'
+  IF (.NOT.DTI%LDATA_RSMIN       ) WRITE(ILUOUT,*) '* for RSMIN                  *'
+  IF (.NOT.DTI%LDATA_GAMMA       ) WRITE(ILUOUT,*) '* for GAMMA                  *'
+  IF (.NOT.DTI%LDATA_WRMAX_CF    ) WRITE(ILUOUT,*) '* for WRMAX_CF               *'
+  IF (.NOT.DTI%LDATA_RGL         ) WRITE(ILUOUT,*) '* for RGL                    *'
+  IF (.NOT.DTI%LDATA_CV          ) WRITE(ILUOUT,*) '* for CV                     *'
+  IF (.NOT.DTI%LDATA_Z0_O_Z0H    ) WRITE(ILUOUT,*) '* for Z0_O_Z0H               *'
+  IF (.NOT.DTI%LDATA_ALBNIR_VEG  ) WRITE(ILUOUT,*) '* for ALBNIR_VEG             *'
+  IF (.NOT.DTI%LDATA_ALBVIS_VEG  ) WRITE(ILUOUT,*) '* for ALBVIS_VEG             *'
+  IF (.NOT.DTI%LDATA_ALBUV_VEG   ) WRITE(ILUOUT,*) '* for ALBUV_VEG              *'
+  IF (.NOT.DTI%LDATA_ALBNIR_SOIL ) WRITE(ILUOUT,*) '* for ALBNIR_SOIL            *'
+  IF (.NOT.DTI%LDATA_ALBVIS_SOIL ) WRITE(ILUOUT,*) '* for ALBVIS_SOIL            *'
+  IF (.NOT.DTI%LDATA_ALBUV_SOIL  ) WRITE(ILUOUT,*) '* for ALBUV_SOIL             *'
   WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
   WRITE(ILUOUT,*) '***********************************************************'
   WRITE(ILUOUT,*) ' '
@@ -716,63 +893,120 @@ IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_RSMIN.AND.LDATA_GAMMA.AND.LDATA_WRMAX_CF.A
   !
 ENDIF
 !
-!--------------------------------------AGS parameters----------------------------
-!
-IF (CPHOTO/='NON' .OR. (.NOT.LDATA_Z0.AND.(LDATA_LAI.OR.LDATA_VEGTYPE))) THEN
+! ------------ Begin MEB parameters ---------------------
+IF(ISIZE_LMEB_PATCH>0) THEN
   !
-  ALLOCATE(XPAR_H_TREE      (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','H_TREE: height of trees','NAT',CFNAM_H_TREE,   &
-         CFTYP_H_TREE,XUNIF_H_TREE,XPAR_H_TREE,LDATA_H_TREE)  
-  IF (.NOT. LDATA_VEGTYPE .AND. .NOT. LDATA_H_TREE) DEALLOCATE(XPAR_H_TREE)
+  ALLOCATE(DTI%XPAR_RSMINGV     (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'INV','RSMINGV: GV min stomatal res','NAT',CFNAM_RSMINGV,   &
+         CFTYP_RSMINGV,XUNIF_RSMINGV,DTI%XPAR_RSMINGV,DTI%LDATA_RSMINGV)
+  IF (.NOT. DTI%LDATA_RSMINGV) DEALLOCATE(DTI%XPAR_RSMINGV)
+  !                                     '                            '
+  ALLOCATE(DTI%XPAR_GAMMAGV     (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GAMMAGV: GV gamma coeff','NAT',CFNAM_GAMMAGV,   &
+         CFTYP_GAMMAGV,XUNIF_GAMMAGV,DTI%XPAR_GAMMAGV,DTI%LDATA_GAMMAGV)
+  IF (.NOT. DTI%LDATA_GAMMAGV) DEALLOCATE(DTI%XPAR_GAMMAGV)
+  !                                     '                            '
+  ALLOCATE(DTI%XPAR_WRMAX_CFGV  (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','WRMAX_CFGV: cff max GV WR','NAT',CFNAM_WRMAX_CFGV,   &
+         CFTYP_WRMAX_CFGV,XUNIF_WRMAX_CFGV,DTI%XPAR_WRMAX_CFGV,DTI%LDATA_WRMAX_CFGV)
+  IF (.NOT. DTI%LDATA_WRMAX_CFGV) DEALLOCATE(DTI%XPAR_WRMAX_CFGV)
+  !                                     '                            '
+  ALLOCATE(DTI%XPAR_RGLGV       (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','RGLGV: max GV SW photosynth','NAT',CFNAM_RGLGV,   &
+         CFTYP_RGLGV,XUNIF_RGLGV,DTI%XPAR_RGLGV,DTI%LDATA_RGLGV)  
+  IF (.NOT. DTI%LDATA_RGLGV) DEALLOCATE(DTI%XPAR_RGLGV)
   !
 ENDIF
-  
-IF (CPHOTO/='NON') THEN
+! ------------ End MEB parameters ---------------------
+!
+!--------------------------------------AGS parameters----------------------------
+!
+IF (I%CPHOTO/='NON' .OR. (.NOT.DTI%LDATA_Z0.AND.(DTI%LDATA_LAI.OR.DTI%LDATA_VEGTYPE)) .OR. ISIZE_LMEB_PATCH>0) THEN
   !
-  ALLOCATE(XPAR_RE25        (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','RE25: ecosystem respiration','NAT',CFNAM_RE25,   &
-       CFTYP_RE25,XUNIF_RE25,XPAR_RE25,LDATA_RE25)  
-  IF (.NOT. LDATA_RE25) DEALLOCATE(XPAR_RE25)  
+  ALLOCATE(DTI%XPAR_H_TREE      (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','H_TREE: height of trees','NAT',CFNAM_H_TREE,   &
+         CFTYP_H_TREE,XUNIF_H_TREE,DTI%XPAR_H_TREE,DTI%LDATA_H_TREE)  
+  IF (.NOT. DTI%LDATA_VEGTYPE .AND. .NOT. DTI%LDATA_H_TREE) DEALLOCATE(DTI%XPAR_H_TREE)
   !
-  ALLOCATE(XPAR_LAIMIN      (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','LAIMIN: minimum LAI','NAT',CFNAM_LAIMIN,   &
-         CFTYP_LAIMIN,XUNIF_LAIMIN,XPAR_LAIMIN,LDATA_LAIMIN)  
-  IF (.NOT. LDATA_LAIMIN) DEALLOCATE(XPAR_LAIMIN)          
+ENDIF
+
+IF (I%CPHOTO/='NON' .OR. ISIZE_LMEB_PATCH>0) THEN
+  ALLOCATE(DTI%XPAR_BSLAI       (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','BSLAI: biomass over LAI','NAT',CFNAM_BSLAI,   &
+       CFTYP_BSLAI,XUNIF_BSLAI,DTI%XPAR_BSLAI,DTI%LDATA_BSLAI)  
+  IF (.NOT. DTI%LDATA_BSLAI) DEALLOCATE(DTI%XPAR_BSLAI)
+ENDIF
+!
+IF (.NOT.I%LECOCLIMAP .AND. ISIZE_LMEB_PATCH>0 .AND. .NOT.(DTI%LDATA_H_TREE      &
+         .AND. DTI%LDATA_GNDLITTER .AND. DTI%LDATA_Z0LITTER  &
+         .AND. DTI%LDATA_BSLAI))THEN
+  WRITE(ILUOUT,*) ' '
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) '* Error in PGD field preparation of MEB fields            *'
+  WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
+  IF (.NOT.DTI%LDATA_GNDLITTER   ) WRITE(ILUOUT,*) '* for GNDLITTER              *'
+  IF (.NOT.DTI%LDATA_Z0LITTER    ) WRITE(ILUOUT,*) '* for Z0LITTER               *'
+  IF (.NOT.DTI%LDATA_H_TREE      ) WRITE(ILUOUT,*) '* for H_TREE                 *'
+  IF (.NOT.DTI%LDATA_BSLAI       ) WRITE(ILUOUT,*) '* for BSLAI                  *'
+  WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
+  WRITE(ILUOUT,*) '***********************************************************'
+  WRITE(ILUOUT,*) ' '
+  CALL ABOR1_SFX('PGD_ISBA_PAR: NO PRESCRIBED VALUE NOR INPUT FILE FOR MEB PARAMETERS')
   !
-  ALLOCATE(XPAR_BSLAI       (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','BSLAI: biomass over LAI','NAT',CFNAM_BSLAI,   &
-       CFTYP_BSLAI,XUNIF_BSLAI,XPAR_BSLAI,LDATA_BSLAI)  
-  IF (.NOT. LDATA_BSLAI) DEALLOCATE(XPAR_BSLAI)
+ENDIF
+!
+IF (I%CPHOTO/='NON') THEN
   !
-  ALLOCATE(XPAR_SEFOLD      (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','SEFOLD: e-folding time for senescence','NAT',CFNAM_SEFOLD,   &
-         CFTYP_SEFOLD,XUNIF_SEFOLD,XPAR_SEFOLD,LDATA_SEFOLD)  
-  IF (.NOT. LDATA_SEFOLD) DEALLOCATE(XPAR_SEFOLD)
+  ALLOCATE(DTI%XPAR_RE25        (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','RE25: ecosystem respiration','NAT',CFNAM_RE25,   &
+       CFTYP_RE25,XUNIF_RE25,DTI%XPAR_RE25,DTI%LDATA_RE25)  
+  IF (.NOT. DTI%LDATA_RE25) DEALLOCATE(DTI%XPAR_RE25)  
+  !
+  ALLOCATE(DTI%XPAR_LAIMIN      (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','LAIMIN: minimum LAI','NAT',CFNAM_LAIMIN,   &
+         CFTYP_LAIMIN,XUNIF_LAIMIN,DTI%XPAR_LAIMIN,DTI%LDATA_LAIMIN)  
+  IF (.NOT. DTI%LDATA_LAIMIN) DEALLOCATE(DTI%XPAR_LAIMIN)          
+  !
+  ALLOCATE(DTI%XPAR_SEFOLD      (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','SEFOLD: e-folding time for senescence','NAT',CFNAM_SEFOLD,   &
+         CFTYP_SEFOLD,XUNIF_SEFOLD,DTI%XPAR_SEFOLD,DTI%LDATA_SEFOLD)  
+  IF (.NOT. DTI%LDATA_SEFOLD) DEALLOCATE(DTI%XPAR_SEFOLD)
   !  
-  ALLOCATE(XPAR_GMES        (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','GMES: mesophyl conductance','NAT',CFNAM_GMES,   &
-         CFTYP_GMES,XUNIF_GMES,XPAR_GMES,LDATA_GMES)
-  IF (.NOT. LDATA_GMES) DEALLOCATE(XPAR_GMES)
+  ALLOCATE(DTI%XPAR_GMES        (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GMES: mesophyl conductance','NAT',CFNAM_GMES,   &
+         CFTYP_GMES,XUNIF_GMES,DTI%XPAR_GMES,DTI%LDATA_GMES)
+  IF (.NOT. DTI%LDATA_GMES) DEALLOCATE(DTI%XPAR_GMES)
   !
-  ALLOCATE(XPAR_GC          (NDIM,NVEGTYPE))
-  CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','GC: cuticular conductance','NAT',CFNAM_GC,   &
-       CFTYP_GC,XUNIF_GC,XPAR_GC,LDATA_GC)  
-  IF (.NOT. LDATA_GC) DEALLOCATE(XPAR_GC)
+  ALLOCATE(DTI%XPAR_GC          (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','GC: cuticular conductance','NAT',CFNAM_GC,   &
+       CFTYP_GC,XUNIF_GC,DTI%XPAR_GC,DTI%LDATA_GC)  
+  IF (.NOT. DTI%LDATA_GC) DEALLOCATE(DTI%XPAR_GC)
   !
-  IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_H_TREE.AND.LDATA_RE25.AND.LDATA_LAIMIN.AND.&
-           LDATA_BSLAI.AND.LDATA_SEFOLD.AND.LDATA_GMES.AND.LDATA_GC)) THEN
+  IF (.NOT.I%LECOCLIMAP .AND. .NOT.(DTI%LDATA_H_TREE.AND.DTI%LDATA_RE25.AND.DTI%LDATA_LAIMIN.AND.&
+           DTI%LDATA_BSLAI.AND.DTI%LDATA_SEFOLD.AND.DTI%LDATA_GMES.AND.DTI%LDATA_GC)) THEN
     !
     WRITE(ILUOUT,*) ' '
     WRITE(ILUOUT,*) '***********************************************************'
     WRITE(ILUOUT,*) '* Error in PGD field preparation of AGS fields            *'
     WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
-    IF (.NOT.LDATA_H_TREE ) WRITE(ILUOUT,*) '* for H_TREE                      *'
-    IF (.NOT.LDATA_RE25   ) WRITE(ILUOUT,*) '* for RE25                        *'    
-    IF (.NOT.LDATA_LAIMIN ) WRITE(ILUOUT,*) '* for LAIMIN                      *'    
-    IF (.NOT.LDATA_BSLAI  ) WRITE(ILUOUT,*) '* for BSLAI                       *'
-    IF (.NOT.LDATA_SEFOLD ) WRITE(ILUOUT,*) '* for SEFOLD                      *'
-    IF (.NOT.LDATA_GMES   ) WRITE(ILUOUT,*) '* for GMES                        *'
-    IF (.NOT.LDATA_GC     ) WRITE(ILUOUT,*) '* for GC                          *'
+    IF (.NOT.DTI%LDATA_H_TREE ) WRITE(ILUOUT,*) '* for H_TREE                      *'
+    IF (.NOT.DTI%LDATA_RE25   ) WRITE(ILUOUT,*) '* for RE25                        *'    
+    IF (.NOT.DTI%LDATA_LAIMIN ) WRITE(ILUOUT,*) '* for LAIMIN                      *'    
+    IF (.NOT.DTI%LDATA_BSLAI  ) WRITE(ILUOUT,*) '* for BSLAI                       *'
+    IF (.NOT.DTI%LDATA_SEFOLD ) WRITE(ILUOUT,*) '* for SEFOLD                      *'
+    IF (.NOT.DTI%LDATA_GMES   ) WRITE(ILUOUT,*) '* for GMES                        *'
+    IF (.NOT.DTI%LDATA_GC     ) WRITE(ILUOUT,*) '* for GC                          *'
     WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
     WRITE(ILUOUT,*) '***********************************************************'
     WRITE(ILUOUT,*) ' '
@@ -782,35 +1016,37 @@ IF (CPHOTO/='NON') THEN
   !  
   !--------------------------------------AGS Stress parameters----------------------------
   !  
-  IF (CPHOTO/='AGS' .AND. CPHOTO/='LAI') THEN
+  IF (I%CPHOTO/='AGS' .AND. I%CPHOTO/='LAI') THEN
     !
-    ALLOCATE(XPAR_F2I         (NDIM,NVEGTYPE))
-    CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','F2I: critical normalized soil water content (stress)','NAT',CFNAM_F2I,   &
-         CFTYP_F2I,XUNIF_F2I,XPAR_F2I,LDATA_F2I)
-    IF (.NOT. LDATA_F2I) DEALLOCATE(XPAR_F2I)
+    ALLOCATE(DTI%XPAR_F2I         (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','F2I: critical normalized soil water content (stress)','NAT',CFNAM_F2I,   &
+         CFTYP_F2I,XUNIF_F2I,DTI%XPAR_F2I,DTI%LDATA_F2I)
+    IF (.NOT. DTI%LDATA_F2I) DEALLOCATE(DTI%XPAR_F2I)
     !
-    ALLOCATE(XPAR_DMAX        (NDIM,NVEGTYPE))
-    CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','DMAX: maximum air saturation deficit','NAT',CFNAM_DMAX,   &
-         CFTYP_DMAX,XUNIF_DMAX,XPAR_DMAX,LDATA_DMAX)  
-    IF (.NOT. LDATA_DMAX) DEALLOCATE(XPAR_DMAX)
+    ALLOCATE(DTI%XPAR_DMAX        (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','DMAX: maximum air saturation deficit','NAT',CFNAM_DMAX,   &
+         CFTYP_DMAX,XUNIF_DMAX,DTI%XPAR_DMAX,DTI%LDATA_DMAX)  
+    IF (.NOT. DTI%LDATA_DMAX) DEALLOCATE(DTI%XPAR_DMAX)
     !
-    ALLOCATE(LPAR_STRESS      (NDIM,NVEGTYPE))
+    ALLOCATE(DTI%LPAR_STRESS      (IG%NDIM,NVEGTYPE))
     DO JVEGTYPE=1,NVEGTYPE
       GPAR_STRESS = LUNIF_STRESS(JVEGTYPE)
       IF (XSTRESS(JVEGTYPE)<1.) GPAR_STRESS = .FALSE.
-      IF (XSTRESS(JVEGTYPE)==1. .AND. .NOT.GPAR_STRESS) LDATA_STRESS=.TRUE.
-      LPAR_STRESS(:,JVEGTYPE) = GPAR_STRESS
+      IF (XSTRESS(JVEGTYPE)==1. .AND. .NOT.GPAR_STRESS) DTI%LDATA_STRESS=.TRUE.
+      DTI%LPAR_STRESS(:,JVEGTYPE) = GPAR_STRESS
     ENDDO
-    IF (.NOT. LDATA_STRESS) DEALLOCATE(LPAR_STRESS)
+    IF (.NOT. DTI%LDATA_STRESS) DEALLOCATE(DTI%LPAR_STRESS)
     !
-    IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_F2I.AND.LDATA_DMAX)) THEN
+    IF (.NOT.I%LECOCLIMAP .AND. .NOT.(DTI%LDATA_F2I.AND.DTI%LDATA_DMAX)) THEN
       !
       WRITE(ILUOUT,*) ' '
       WRITE(ILUOUT,*) '***********************************************************'
       WRITE(ILUOUT,*) '* Error in PGD field preparation of AGS Stress fields     *'
       WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
-      IF (.NOT.LDATA_F2I  ) WRITE(ILUOUT,*) '* for F2I                           *'
-      IF (.NOT.LDATA_DMAX ) WRITE(ILUOUT,*) '* for DMAX                          *'
+      IF (.NOT.DTI%LDATA_F2I  ) WRITE(ILUOUT,*) '* for F2I                           *'
+      IF (.NOT.DTI%LDATA_DMAX ) WRITE(ILUOUT,*) '* for DMAX                          *'
       WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
       WRITE(ILUOUT,*) '***********************************************************'
       WRITE(ILUOUT,*) ' '
@@ -820,32 +1056,35 @@ IF (CPHOTO/='NON') THEN
     !    
     !--------------------------------------AGS Nitrogen parameters----------------------------
     !  
-    IF (CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
+    IF (I%CPHOTO=='NIT' .OR. I%CPHOTO=='NCB') THEN
       !
-      ALLOCATE(XPAR_CE_NITRO    (NDIM,NVEGTYPE))
-      CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','CE_NITRO: leaf area ratio sensitivity to nitrogen ccion','NAT',&
-                CFNAM_CE_NITRO, CFTYP_CE_NITRO,XUNIF_CE_NITRO,XPAR_CE_NITRO,LDATA_CE_NITRO)  
-      IF (.NOT. LDATA_CE_NITRO) DEALLOCATE(XPAR_CE_NITRO)
+      ALLOCATE(DTI%XPAR_CE_NITRO    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','CE_NITRO: leaf area ratio sensitivity to nitrogen ccion','NAT',&
+                CFNAM_CE_NITRO, CFTYP_CE_NITRO,XUNIF_CE_NITRO,DTI%XPAR_CE_NITRO,DTI%LDATA_CE_NITRO)  
+      IF (.NOT. DTI%LDATA_CE_NITRO) DEALLOCATE(DTI%XPAR_CE_NITRO)
       !
-      ALLOCATE(XPAR_CF_NITRO    (NDIM,NVEGTYPE))
-      CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','CF_NITRO: lethal minimum value of leaf area ratio','NAT',&
-                CFNAM_CF_NITRO,CFTYP_CF_NITRO,XUNIF_CF_NITRO,XPAR_CF_NITRO,LDATA_CF_NITRO)
-      IF (.NOT. LDATA_CF_NITRO) DEALLOCATE(XPAR_CF_NITRO)
+      ALLOCATE(DTI%XPAR_CF_NITRO    (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','CF_NITRO: lethal minimum value of leaf area ratio','NAT',&
+                CFNAM_CF_NITRO,CFTYP_CF_NITRO,XUNIF_CF_NITRO,DTI%XPAR_CF_NITRO,DTI%LDATA_CF_NITRO)
+      IF (.NOT. DTI%LDATA_CF_NITRO) DEALLOCATE(DTI%XPAR_CF_NITRO)
       !
-      ALLOCATE(XPAR_CNA_NITRO   (NDIM,NVEGTYPE))
-      CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','CNA_NITRO: nitrogen ccion of active biomass','NAT',&
-                CFNAM_CNA_NITRO,CFTYP_CNA_NITRO,XUNIF_CNA_NITRO,XPAR_CNA_NITRO,LDATA_CNA_NITRO)
-      IF (.NOT. LDATA_CNA_NITRO) DEALLOCATE(XPAR_CNA_NITRO)
+      ALLOCATE(DTI%XPAR_CNA_NITRO   (IG%NDIM,NVEGTYPE))
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','CNA_NITRO: nitrogen ccion of active biomass','NAT',&
+                CFNAM_CNA_NITRO,CFTYP_CNA_NITRO,XUNIF_CNA_NITRO,DTI%XPAR_CNA_NITRO,DTI%LDATA_CNA_NITRO)
+      IF (.NOT. DTI%LDATA_CNA_NITRO) DEALLOCATE(DTI%XPAR_CNA_NITRO)
       !
-      IF (.NOT.LECOCLIMAP .AND. .NOT.(LDATA_CE_NITRO.AND.LDATA_CF_NITRO.AND.LDATA_CNA_NITRO)) THEN
+      IF (.NOT.I%LECOCLIMAP .AND. .NOT.(DTI%LDATA_CE_NITRO.AND.DTI%LDATA_CF_NITRO.AND.DTI%LDATA_CNA_NITRO)) THEN
         !
         WRITE(ILUOUT,*) ' '
         WRITE(ILUOUT,*) '***********************************************************'
         WRITE(ILUOUT,*) '* Error in PGD field preparation of AGS Nitrogen fields   *'
         WRITE(ILUOUT,*) '* There is no prescribed value and no input file :        *'
-        IF (.NOT.LDATA_CE_NITRO  ) WRITE(ILUOUT,*) '* for CE_NITRO                 *'
-        IF (.NOT.LDATA_CF_NITRO  ) WRITE(ILUOUT,*) '* for CF_NITRO                 *'
-        IF (.NOT.LDATA_CNA_NITRO ) WRITE(ILUOUT,*) '* for CNA_NITRO                *'
+        IF (.NOT.DTI%LDATA_CE_NITRO  ) WRITE(ILUOUT,*) '* for CE_NITRO                 *'
+        IF (.NOT.DTI%LDATA_CF_NITRO  ) WRITE(ILUOUT,*) '* for CF_NITRO                 *'
+        IF (.NOT.DTI%LDATA_CNA_NITRO ) WRITE(ILUOUT,*) '* for CNA_NITRO                *'
         WRITE(ILUOUT,*) '* Without ECOCLIMAP, these fields must be prescribed      *'
         WRITE(ILUOUT,*) '***********************************************************'
         WRITE(ILUOUT,*) ' '
@@ -861,23 +1100,26 @@ ENDIF
 !
 !--------------------------------------irrigation parameters----------------------------
 !
-LDATA_IRRIG=.FALSE.
-LDATA_WATSUP=.FALSE.
+DTI%LDATA_IRRIG=.FALSE.
+DTI%LDATA_WATSUP=.FALSE.
 !
 !----------------------------------------------------------------------------------------
 !
-IF (LECOCLIMAP .AND. LDATA_VEGTYPE) THEN
+IF (I%LECOCLIMAP .AND. DTI%LDATA_VEGTYPE) THEN
   !
-  ALLOCATE(XPAR_IRRIG       (NDIM,NTIME,NVEGTYPE))
-  ALLOCATE(XPAR_WATSUP      (NDIM,NTIME,NVEGTYPE)) 
+  ALLOCATE(DTI%XPAR_IRRIG       (IG%NDIM,NTIME,NVEGTYPE))
+  ALLOCATE(DTI%XPAR_WATSUP      (IG%NDIM,NTIME,NVEGTYPE)) 
+  ALLOCATE(DTI%XPAR_ROOT_DEPTHGV(IG%NDIM,NVEGTYPE))
   !  
-  CALL EXTRAPOL_FIELDS(HPROGRAM,ILUOUT)
+  CALL EXTRAPOL_FIELDS(DTCO, DTI, IG, I, UG, U, &
+                       HPROGRAM,ILUOUT)
   !
-  IF (.NOT. LDATA_LAI) DEALLOCATE(XPAR_LAI)
-  IF (.NOT. LDATA_H_TREE .AND. CPHOTO/='NON') DEALLOCATE(XPAR_H_TREE)
-  IF (.NOT. LDATA_DG) DEALLOCATE(XPAR_DG)
-  IF (.NOT. LDATA_ROOT_DEPTH) DEALLOCATE(XPAR_ROOT_DEPTH)
-  IF (.NOT. LDATA_GROUND_DEPTH) DEALLOCATE(XPAR_GROUND_DEPTH)
+  IF (.NOT. DTI%LDATA_LAI) DEALLOCATE(DTI%XPAR_LAI)
+  IF (.NOT. DTI%LDATA_H_TREE .AND. I%CPHOTO/='NON') DEALLOCATE(DTI%XPAR_H_TREE)
+  IF (.NOT. DTI%LDATA_DG) DEALLOCATE(DTI%XPAR_DG)
+  IF (.NOT. DTI%LDATA_ROOT_DEPTH) DEALLOCATE(DTI%XPAR_ROOT_DEPTH)
+  IF (.NOT. DTI%LDATA_ROOT_DEPTHGV) DEALLOCATE(DTI%XPAR_ROOT_DEPTHGV)
+  IF (.NOT. DTI%LDATA_GROUND_DEPTH) DEALLOCATE(DTI%XPAR_GROUND_DEPTH)
   !
 ENDIF
 !

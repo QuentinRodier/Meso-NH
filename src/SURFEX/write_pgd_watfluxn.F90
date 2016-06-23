@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_PGD_WATFLUX_n(HPROGRAM)
+      SUBROUTINE WRITE_PGD_WATFLUX_n (DTCO, DGU, U, WG, W, &
+                                      HPROGRAM)
 !     ####################################
 !
 !!****  *WRITE_PGD_WATFLUX_n* - routine to write pgd surface variables in their respective files
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	B. Decharme   *Meteo France*	
+!!      B. Decharme   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,13 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_WATFLUX_GRID_n, ONLY : WATFLUX_GRID_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITESURF_PGD_WATFLUX_n
@@ -50,6 +58,13 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(WATFLUX_GRID_t), INTENT(INOUT) :: WG
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !                                             ! 'ALL' : all fields are written
@@ -61,12 +76,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_PGD_WATFLUX_N',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(HPROGRAM,'WATER ','WATFLX','WRITE')
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                     HPROGRAM,'WATER ','WATFLX','WRITE')
 !
 !*       1.     Selection of surface scheme
 !               ---------------------------
 !
- CALL WRITESURF_PGD_WATFLUX_n(HPROGRAM)
+ CALL WRITESURF_PGD_WATFLUX_n(DGU, U, &
+                              WG, W, &
+                              HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !

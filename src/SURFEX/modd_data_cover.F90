@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #####################
       MODULE MODD_DATA_COVER
 !     #####################
@@ -25,7 +25,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +36,8 @@
 !!      P Le Moigne 09/2005 AGS modifs of L. Jarlan
 !!      P Le Moigne 06/2006 seeding and irrigation
 !!      G Pigeon    08/2012 ROUGH_ROOF, ROUGH_WALL
+!!      V. Masson   08/2013  Adds solar panel variables
+!!      P Samuelsson 10/2014 Multi-energy balance (MEB)
 !!----------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -159,8 +161,6 @@ REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_WATER  ! inland water fraction
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_SEA    ! sea fraction
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_GREEN  ! greeness fraction   (monthly)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_BSLAI_NITRO ! biomass/LAI ratio from nitrogen
-!                                                           ! decline theory
 REAL, DIMENSION(:,:),  ALLOCATABLE :: XDATA_SOILRC_SO2 ! for SO2 deposition
 REAL, DIMENSION(:,:),  ALLOCATABLE :: XDATA_SOILRC_O3  ! for O3  deposition
 !
@@ -223,6 +223,19 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_HC_FLOOR     ! heat capacity of floor
 REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_TC_FLOOR     ! thermal conductivity of floor layers [W m-1 K-1]
 REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_D_FLOOR      ! thickness of floor layers [m]
 !
+! For multi-energy balance (MEB)
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RGLGV              ! 
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GAMMAGV            !
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RSMINGV            ! Understory minimum
+!                                                               ! stomatal resistance 
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_ROOT_EXTINCTIONGV  ! Understory Jackson coefficient
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_WRMAX_CFGV
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_LAIGV              ! Understory LAI
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_GNDLITTER          ! Ground litter coverage
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_Z0LITTER           ! Ground litter roughness length
+REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_ROOT_DEPTHGV       ! Understory root depth
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_H_VEG              ! Height of canopy vegetation
+!
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_TARGET ! cooling setpoint of indoor air
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_THEAT_TARGET ! heating setpoint of indoor air
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_F_WASTE_CAN  ! fraction of waste heat released into the canyon
@@ -252,6 +265,12 @@ REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_SHADE
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_NATVENT
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ROUGH_ROOF
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ROUGH_WALL
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_RESIDENTIAL ! residential use fraction
+
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_EMIS_PANEL  ! emissivity of solar panels
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_ALB_PANEL   ! albedo     of solar panels
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_EFF_PANEL   ! efficiency of solar panels
+REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_FRAC_PANEL  ! fraction   of solar panels on roofs
 !
 ! urban vegetation parameters
 !

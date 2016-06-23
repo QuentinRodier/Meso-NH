@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE NITRO_DECLINE(HPHOTO, HRESPSL, OTR_ML, KSPINW ,            &
                 PBSLAI_NITRO, PSEFOLD, PGMES, PANMAX, PANDAY,         &
@@ -43,7 +43,7 @@ SUBROUTINE NITRO_DECLINE(HPHOTO, HRESPSL, OTR_ML, KSPINW ,            &
 !!    AUTHOR
 !!    ------
 !!
-!!	A.-L. Gibelin           * Meteo-France *
+!!      A.-L. Gibelin           * Meteo-France *
 !!      (following Belair)
 !!
 !!    MODIFICATIONS
@@ -57,8 +57,11 @@ SUBROUTINE NITRO_DECLINE(HPHOTO, HRESPSL, OTR_ML, KSPINW ,            &
 !!      A.L. Gibelin 04/2009 : adaptation to SURFEX environment
 !!      A.   Barbu   01/2011 : modification of active biomass,leaf reservoir (see nitro_decline.f90)
 !!      C.   Delire  04/2012 : spinup wood carbon
-!!      B.   Decharme 05/2012 : Optimization
+!!      R.   Alkama  04/2012 : 19 vegtype rather than 12
+!!      B.   Decharme 05/2012: Optimization
 !!                              ZCC_NITRO and ZBIOMASST_LIM in modd_co2v_par.F90
+!!      C.   Delire   01/2014 : sapwood respiration from IBIS
+
 !
 !-------------------------------------------------------------------------------
 !
@@ -68,7 +71,9 @@ SUBROUTINE NITRO_DECLINE(HPHOTO, HRESPSL, OTR_ML, KSPINW ,            &
 USE MODD_CSTS,           ONLY : XPI, XDAY
 USE MODD_CO2V_PAR,       ONLY : XPCCO2, XCC_NIT, XCA_NIT, XMC, &
                                 XMCO2, XCC_NITRO, XBIOMASST_LIM 
-USE MODD_DATA_COVER_PAR, ONLY : NVT_TREE, NVT_EVER, NVT_CONI
+USE MODD_DATA_COVER_PAR, ONLY : NVT_TEBD, NVT_BONE, NVT_TRBE, NVT_TRBD, &
+                                NVT_TEBE, NVT_TENE, NVT_BOBD, NVT_BOND, &
+                                NVT_SHRB
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -123,8 +128,9 @@ REAL, DIMENSION(SIZE(PLAI),SIZE(PBIOMASS,2))  :: ZDECLINE      ! biomass decline
 REAL, DIMENSION(SIZE(PLAI),SIZE(PBIOMASS,2))  :: ZSTORAGE      ! storage (part of decline kgDM m-2 day-1)
 REAL, DIMENSION(SIZE(PLAI))                   :: ZMORT_LEAF    ! leaf mortality
 !
-REAL, DIMENSION(SIZE(PLAI))                   :: ZWORK
-LOGICAL, DIMENSION(SIZE(PLAI))                :: LMASK_ASSIM, LMASK_VEGTYP
+REAL, DIMENSION(SIZE(PLAI))                   :: ZWORK,ZRESP
+LOGICAL, DIMENSION(SIZE(PLAI))                :: GMASK_ASSIM
+LOGICAL, DIMENSION(SIZE(PLAI))                :: GWOODY
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -336,6 +342,10 @@ IF (HPHOTO=='NIT') THEN
   !
 ELSEIF (HPHOTO=='NCB') THEN
   !
+  GWOODY = (PVEGTYPE(:,NVT_TEBD)+PVEGTYPE(:,NVT_BONE)+PVEGTYPE(:,NVT_TRBE)+ &
+            PVEGTYPE(:,NVT_TRBD)+PVEGTYPE(:,NVT_TEBE)+PVEGTYPE(:,NVT_TENE)+ &
+            PVEGTYPE(:,NVT_BOBD)+PVEGTYPE(:,NVT_BOND)+PVEGTYPE(:,NVT_SHRB) >= 0.5)
+  !
   ! 4.2 - Evolution of the other reservoirs
   ! 4.2.1 - senesence, avoiding negative values of biomass
   !
@@ -344,9 +354,10 @@ ELSEIF (HPHOTO=='NCB') THEN
   ZDECLINE(:,4) = MIN(PBIOMASS(:,4)*(1.0-EXP(-1.0*XDAY/PSEFOLD(:))), &
                       PBIOMASS(:,4)-PRESP_BIOMASS(:,4))
   !
-  WHERE (PVEGTYPE(:,NVT_TREE)+PVEGTYPE(:,NVT_CONI)+PVEGTYPE(:,NVT_EVER) >= 0.5)
+  WHERE (GWOODY(:))
     ! Woody
-    ZDECLINE(:,5) = PBIOMASS(:,5)*(1.0-EXP(-1.0*XDAY/PTAU_WOOD(:)))
+    ZDECLINE(:,5) = MIN(PBIOMASS(:,5)*(1.0-EXP(-1.0*XDAY/PTAU_WOOD(:))), &
+                      PBIOMASS(:,5)-PRESP_BIOMASS(:,5))
     ZDECLINE(:,6) = PBIOMASS(:,6)*(1.0-EXP(-1.0*XDAY/PTAU_WOOD(:)))
   ELSEWHERE
     ! Herbaceous
@@ -356,10 +367,9 @@ ELSEIF (HPHOTO=='NCB') THEN
   !
   ! 4.2.2 - storage (part of decline used as input for other reservoirs)
   !
-  LMASK_ASSIM (:)=(ZASSIM(:) >= ZDECLINE(:,1))
-  LMASK_VEGTYP(:)=(PVEGTYPE(:,NVT_TREE)+PVEGTYPE(:,NVT_CONI)+PVEGTYPE(:,NVT_EVER)>=0.5)
+  GMASK_ASSIM (:)=(ZASSIM(:) >= ZDECLINE(:,1))
   !
-  WHERE (LMASK_ASSIM(:))
+  WHERE (GMASK_ASSIM(:))
     !
     ! Remaining mortality is stored in roots.
     ZINCREASE(:,4)   = ZMORT_LEAF(:)
@@ -381,7 +391,7 @@ ELSEIF (HPHOTO=='NCB') THEN
     !   
   END WHERE
   !
-  WHERE(LMASK_ASSIM(:).AND.LMASK_VEGTYP(:))
+  WHERE(GMASK_ASSIM(:).AND.GWOODY(:))
       ! Woody
       ZSTORAGE(:,4)  = ZDECLINE(:,4)
       !
@@ -389,7 +399,7 @@ ELSEIF (HPHOTO=='NCB') THEN
       ZINCREASE(:,5) =                  0.7* (ZSTORAGE(:,2) + ZSTORAGE(:,3))
       ZINCREASE(:,6) = ZSTORAGE(:,4)
       !
-  ELSEWHERE(LMASK_ASSIM(:).AND..NOT.LMASK_VEGTYP(:))
+  ELSEWHERE(GMASK_ASSIM(:).AND..NOT.GWOODY(:))
       ! Herbaceous
       ZSTORAGE(:,4)  = 0.
       !
@@ -397,7 +407,7 @@ ELSEIF (HPHOTO=='NCB') THEN
       !
   END WHERE
   !
-  WHERE (.NOT.LMASK_ASSIM(:).AND.LMASK_VEGTYP(:))
+  WHERE (.NOT.GMASK_ASSIM(:).AND.GWOODY(:))
       ! Woody
       ! Senescence, only a part of decline is used as storage
       ZSTORAGE(:,2)  = 0.5*ZDECLINE(:,2)
@@ -407,7 +417,7 @@ ELSEIF (HPHOTO=='NCB') THEN
       ZINCREASE(:,5) = ZSTORAGE(:,2) + ZSTORAGE(:,3)
       ZINCREASE(:,6) = ZSTORAGE(:,4)
       !
-  ELSEWHERE(.NOT.LMASK_ASSIM(:).AND..NOT.LMASK_VEGTYP(:))
+  ELSEWHERE(.NOT.GMASK_ASSIM(:).AND..NOT.GWOODY(:))
       !  Herbaceous
       ! Senescence, no storage
       ZSTORAGE(:,2)  = 0.
@@ -464,15 +474,17 @@ ELSEIF (HPHOTO=='NCB') THEN
 !
   ZBIOMASS(:,5) = PBIOMASS(:,5)
   ZBIOMASS(:,6) = PBIOMASS(:,6)
+  ZRESP(:) = PRESP_BIOMASS(:,5)
 !
   DO JSPIN = 1, KSPINW
     DO JI = 1,INI
-       IF(LMASK_VEGTYP(JI))THEN
+       IF(GWOODY(JI))THEN
          !Woody
-         ZBIOMASS(JI,5) = ZBIOMASS(JI,5) + ZINCREASE(JI,5) - ZDECLINE(JI,5)
+         ZBIOMASS(JI,5) = ZBIOMASS(JI,5) + ZINCREASE(JI,5) - ZDECLINE(JI,5) - ZRESP(JI)
          ZBIOMASS(JI,6) = ZBIOMASS(JI,6) + ZINCREASE(JI,6) - ZDECLINE(JI,6)
          ZDECLINE(JI,5) = ZBIOMASS(JI,5)*(1.0-EXP((-1.0*XDAY)/PTAU_WOOD(JI)))
          ZDECLINE(JI,6) = ZBIOMASS(JI,6)*(1.0-EXP((-1.0*XDAY)/PTAU_WOOD(JI)))
+         IF (PBIOMASS(JI,5) .gt. 0.0) ZRESP(JI) = PRESP_BIOMASS(JI,5)/PBIOMASS(JI,5) * ZBIOMASS(JI,5)  
        ELSE   
          !Herbaceous
          ZBIOMASS(JI,5) = 0.
@@ -486,6 +498,7 @@ ELSEIF (HPHOTO=='NCB') THEN
   PBIOMASS(:,6) = ZBIOMASS(:,6)
   !
   PRESP_BIOMASS(:,4) = 0.0
+  PRESP_BIOMASS(:,5) = 0.0
   !
   PINCREASE(:,:) = ZINCREASE(:,:)
 !  

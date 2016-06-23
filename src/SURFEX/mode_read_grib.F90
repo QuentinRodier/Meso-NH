@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #####################
 MODULE MODE_READ_GRIB
 !     #####################
@@ -13,7 +13,7 @@ USE GRIB_API
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-CONTAINS
+ CONTAINS
 !-------------------------------------------------------------------
 !     ####################
       SUBROUTINE MAKE_GRIB_INDEX(HGRIB)
@@ -33,7 +33,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:MAKE_GRIB_INDEX',0,ZHOOK_HANDLE)
 IF (CGRIB_FILE==HGRIB) CALL DR_HOOK('MODE_READ_GRIB:MAKE_GRIB_INDEX',1,ZHOOK_HANDLE)
 IF (CGRIB_FILE==HGRIB) RETURN
 !
-CGRIB_FILE=HGRIB
+ CGRIB_FILE=HGRIB
 !
  CALL GRIB_INDEX_CREATE(NIDX,HGRIB,'indicatorOfParameter',IRET)
 IF (IRET/=0) CALL ABOR1_SFX("MODE_READ_GRIB:MAKE_GRIB_INDEX: error while creating the grib index")
@@ -136,7 +136,7 @@ ENDDO
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:GET_GRIB_MESSAGE',1,ZHOOK_HANDLE)
 !
-CONTAINS
+ CONTAINS
 !
 !       ##############
         SUBROUTINE TEST_IRET(KLUOUT,VAL1,VAL0,KRET)
@@ -571,7 +571,7 @@ IF (KLTYPE==112) THEN
   PD = (KLEV2 - KLEV1) / 100.
 ELSE
   IF (KNLAYERDEEP == 4) THEN
-    PD = PV4            
+    PD = PV4
   ELSE
     PD = PV
   END IF
@@ -1211,20 +1211,20 @@ ALLOCATE(PTG(SIZE(ZFIELD),3))
 ALLOCATE(PDT(SIZE(ZFIELD),3))
 !
 PTG(:,1) = ZFIELD(:)
-PDT(:,1) = 0.
+PDT(:,1) = 0.01
 !--------------------------------------------------------------------------------
 ! 3.  Deep soil temperature
 !     ---------------------
  CALL READ_GRIB_T2(HGRIB,KLUOUT,HINMODEL,PMASK,ZFIELD)
 !
 PTG(:,2) = ZFIELD(:)
-PDT(:,2) = 0.2         ! deep temperature depth assumed equal to 0.2m
+PDT(:,2) = 0.4         ! deep temperature layer depth assumed equal to 0.4m
 DEALLOCATE(ZFIELD)
 !--------------------------------------------------------------------------------
 ! 4.  Assumes uniform temperature profile below
 !     -----------------------------------------
 PTG(:,3) = PTG(:,2)
-PDT(:,3) = 3.          ! temperature profile down to 3m
+PDT(:,3) = 5.          ! temperature profile down to 5m
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TG_METEO_FRANCE',1,ZHOOK_HANDLE)
 END SUBROUTINE READ_GRIB_TG_METEO_FRANCE
@@ -1332,7 +1332,7 @@ ELSE
   ALLOCATE(PD(NNI,3))
 ENDIF
 !
-PD(:,1) = 0.
+PD(:,1) = 0.01
 PD(:,2) = 0.20
 !-------------------------------------------------------------------------------
 ! 2.  Read layer 1 moisture
@@ -1482,7 +1482,7 @@ ELSE
   ALLOCATE(PD(NNI,2))
 ENDIF
 !
-PD(:,1) = 0.
+PD(:,1) = 0.01
 !-------------------------------------------------------------------------------
 ! 2.  Read layer 1 soil ice
 !     ---------------------
@@ -1619,7 +1619,7 @@ END IF
 ALLOCATE(PTG(SIZE(ZFIELD),3))
 ALLOCATE(PDT(SIZE(ZFIELD),3))
 PTG(:,1)= ZFIELD(:)
-PDT(:,1) = 0.
+PDT(:,1) = 0.01
 !--------------------------------------------------------------------------------
 ! 2.  Deep soil temperature
 !     ---------------------
@@ -1634,12 +1634,12 @@ END IF
 !
 PTG(:,2)= ZFIELD(:)
 DEALLOCATE(ZFIELD)
-PDT(:,2) = 0.2         ! deep temperature depth assumed equal to 0.20m
+PDT(:,2) = 0.4         ! deep temperature layer depth assumed equal to 0.40m
 !--------------------------------------------------------------------------------
 ! 4.  Assumes uniform temperature profile below
 !     -----------------------------------------
 PTG(:,3) = PTG(:,2)
-PDT(:,3) = 3.          ! temperature profile down to 3m
+PDT(:,3) = 5.          ! temperature profile down to 5m
 !--------------------------------------------------------------------------------
 ! 5.  Apply land mask
 !     ---------------
@@ -1774,7 +1774,7 @@ ALLOCATE (PFIELD(NNI,2))
 ALLOCATE (PD    (NNI,2))
 PFIELD(:,:) = 0.
 !
-PD    (:,1) = 0.
+PD    (:,1) = 0.01
 PD    (:,2) = 1.
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_WGI_HIRLAM',1,ZHOOK_HANDLE)
@@ -1784,6 +1784,12 @@ END SUBROUTINE READ_GRIB_WGI_HIRLAM
 !     #######################
       SUBROUTINE READ_GRIB_SNOW_VEG_AND_DEPTH(HGRIB,KLUOUT,HINMODEL,PMASK,PSNV,PSNVD)
 !     #######################
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!    C Ardilouze 07/2013 : possibility to read snow density (ERAI-land)
+!!
+!-------------------------------------------------------------------------------
 !
 USE MODD_GRID_GRIB,  ONLY : NNI
 USE MODD_SURF_PAR,   ONLY : XUNDEF
@@ -1804,10 +1810,12 @@ REAL, DIMENSION(:), OPTIONAL, POINTER :: PSNVD   ! field to initialize
 !  ---------------
 INTEGER(KIND=kindOfInt)                           :: IRET      ! return code
 REAL, DIMENSION(:), POINTER       :: ZFIELD => NULL()    ! field to initialize
+REAL, DIMENSION(:), POINTER       :: ZFIELD2 => NULL()    ! field to initialize
+REAL, DIMENSION(:), POINTER       :: ZRHO => NULL()
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !--------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_VEG_AND_DEPTH',0,ZHOOK_HANDLE)
-WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_SNOW_VEG_AND_DEPTH: | Reading snow depth'
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_SNOW_VEG_AND_DEPTH: | Reading snow depth and density (if present)'
 !
 SELECT CASE(HINMODEL)
   CASE('ECMWF ')
@@ -1822,10 +1830,12 @@ IF (IRET /= 0 ) THEN
   CALL ABOR1_SFX('MODE_READ_GRIB: SNOW AND VEG DEPTH MISSING (READ_GRIB_SNOW_VEG_AND_DEPTH)')
 END IF
 !
+ CALL READ_GRIB_SNOW_DEN(HGRIB,KLUOUT,HINMODEL,PMASK,ZRHO)
+!
 IF (PRESENT(PSNV)) THEN
   ALLOCATE(PSNV(SIZE(ZFIELD)))
   PSNV(:)=ZFIELD(:)
-  IF (HINMODEL=='ECMWF ') PSNV(:) = PSNV(:) * XRHOSMAX
+  IF (HINMODEL=='ECMWF ') PSNV(:) = PSNV(:) * ZRHO(:)
   IF (SIZE(PMASK)==SIZE(PSNV)) &
     WHERE (PMASK(:)/=1.) PSNV(:) = XUNDEF
 ENDIF
@@ -1833,15 +1843,117 @@ ENDIF
 IF (PRESENT(PSNVD)) THEN
   ALLOCATE(PSNVD(SIZE(ZFIELD)))
   PSNVD(:)=ZFIELD(:)
-  IF (HINMODEL/='ECMWF ') PSNVD = PSNVD / XRHOSMAX
+  IF (HINMODEL/='ECMWF ') PSNVD = PSNVD / ZRHO(:)
   IF (SIZE(PMASK)==SIZE(PSNVD)) &
     WHERE (PMASK(:)/=1.) PSNVD(:) = XUNDEF
 ENDIF
 !
 DEALLOCATE(ZFIELD)
+DEALLOCATE(ZRHO)
+!
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_VEG_AND_DEPTH',1,ZHOOK_HANDLE)
 END SUBROUTINE READ_GRIB_SNOW_VEG_AND_DEPTH
+!-------------------------------------------------------------------
+!-------------------------------------------------------------------
+!     #######################
+      SUBROUTINE READ_GRIB_SNOW_ALB(HGRIB,KLUOUT,HINMODEL,PMASK,PSNVA)
+!     #######################
+!!
+!!    AUTHOR
+!!    -------------
+!!    C Ardilouze 07/2013 : possibility to read snow albedo (ERAI-land)
+!!
+!-------------------------------------------------------------------------------
+!
+USE MODD_GRID_GRIB,  ONLY : NNI
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SNOW_PAR,   ONLY : XANSMIN, XANSMAX
+!
+IMPLICIT NONE
+!
+!* dummy arguments
+!  ---------------
+ CHARACTER(LEN=*),     INTENT(IN)    :: HGRIB    ! Grib file name
+INTEGER,              INTENT(IN)    :: KLUOUT   ! logical unit of output listing
+ CHARACTER(LEN=6),     INTENT(IN)    :: HINMODEL ! Grib originating model
+REAL, DIMENSION(:),   INTENT(IN)    :: PMASK    ! grib land mask
+REAL, DIMENSION(:), POINTER         :: PSNVA    ! field to initialize
+!
+!* local variables
+!  ---------------
+INTEGER(KIND=kindOfInt)           :: IRET      ! return code
+REAL, DIMENSION(:), POINTER       :: ZFIELD => NULL()    ! field to initialize 
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!--------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_ALB',0,ZHOOK_HANDLE)
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_SNOW_ALB: | Reading snow albedo'
+!
+ALLOCATE(PSNVA(NNI))
+PSNVA(:) = 0.5 * ( XANSMIN + XANSMAX )
+IF (HINMODEL == 'ECMWF') THEN
+  CALL READ_GRIB(HGRIB,KLUOUT,32,IRET,ZFIELD)
+  IF (IRET == 0 ) THEN
+    DEALLOCATE(PSNVA)      
+    ALLOCATE(PSNVA(SIZE(ZFIELD)))
+    PSNVA(:)=ZFIELD(:)
+    DEALLOCATE(ZFIELD)
+  END IF
+END IF 
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_ALB',1,ZHOOK_HANDLE)
+END SUBROUTINE READ_GRIB_SNOW_ALB
+!!-------------------------------------------------------------------
+!     #######################
+      SUBROUTINE READ_GRIB_SNOW_DEN(HGRIB,KLUOUT,HINMODEL,PMASK,PSNV)
+!     #######################
+!!
+!!    AUTHOR
+!!    -------------
+!!    C Ardilouze 08/2013 : possibility to read snow density (ERAI-land)
+!!
+!-------------------------------------------------------------------------------
+!
+USE MODD_GRID_GRIB,  ONLY : NNI
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_SNOW_PAR,   ONLY : XRHOSMAX
+!
+IMPLICIT NONE
+!
+!* dummy arguments
+!  ---------------
+ CHARACTER(LEN=*),     INTENT(IN)    :: HGRIB    ! Grib file name
+INTEGER,              INTENT(IN)    :: KLUOUT   ! logical unit of output listing
+ CHARACTER(LEN=6),     INTENT(IN)    :: HINMODEL ! Grib originating model
+REAL, DIMENSION(:),   INTENT(IN)    :: PMASK    ! grib land mask
+REAL, DIMENSION(:), POINTER         :: PSNV    ! field to initialize
+!
+!* local variables
+!  ---------------
+INTEGER(KIND=kindOfInt)           :: IRET      ! return code
+REAL, DIMENSION(:), POINTER       :: ZFIELD => NULL()    ! field to initialize 
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!--------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_DEN',0,ZHOOK_HANDLE)
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_SNOW_DEN: | Reading snow density'
+!
+ALLOCATE(PSNV(NNI))
+PSNV(:) = XRHOSMAX
+IF (HINMODEL == 'ECMWF') THEN
+  CALL READ_GRIB(HGRIB,KLUOUT,33,IRET,ZFIELD)
+  IF (IRET == 0 ) THEN
+    DEALLOCATE(PSNV)      
+    ALLOCATE(PSNV(SIZE(ZFIELD)))
+    PSNV(:)=ZFIELD(:)
+    DEALLOCATE(ZFIELD)
+  END IF
+END IF 
+!
+IF (SIZE(PMASK)==SIZE(PSNV)) &
+  WHERE (PMASK(:)/=1.) PSNV = XUNDEF
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_SNOW_DEN',1,ZHOOK_HANDLE)
+END SUBROUTINE READ_GRIB_SNOW_DEN
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
 !     #######################

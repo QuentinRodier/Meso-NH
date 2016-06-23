@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE PGD_SNAP_TEMP_PROFILE(HPROGRAM,HFILENAME,PSNAP_COEF, &
                                        KSNAP,KTPS,HSNAP_TIME_REF      )
@@ -106,7 +106,7 @@ ENDDO
 !           ------------------------
 !
 2000 CONTINUE
-CALL CLOSE_FILE (HPROGRAM,IUNIT)
+ CALL CLOSE_FILE (HPROGRAM,IUNIT)
 !
 IF (LHOOK) CALL DR_HOOK('PGD_SNAP_TEMP_PROFILE',1,ZHOOK_HANDLE)
 !

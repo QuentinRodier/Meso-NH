@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE AVERAGE1_COVER(KLUOUT,PLAT,PLON,PVALUE)
+      SUBROUTINE AVERAGE1_COVER(KLUOUT,KNBLINES,PLAT,PLON,PVALUE,PNODATA)
 !     #######################################################
 !
 !!**** *AVERAGE1_COVER* computes the sum of values of a cover fractions
@@ -56,17 +56,21 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                 INTENT(IN)    :: KLUOUT
+INTEGER,                 INTENT(IN)    :: KNBLINES
 REAL, DIMENSION(:),      INTENT(IN)    :: PLAT    ! latitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PLON    ! longitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PVALUE  ! value of the point to add
+REAL, OPTIONAL, INTENT(IN) :: PNODATA
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-INTEGER, DIMENSION(SIZE(PLAT)) :: IINDEX ! mesh index of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IINDEX ! mesh index of all input points
                                          ! 0 indicates the point is out of the domain                              
 !
-INTEGER :: JLOOP        ! loop index on input arrays
+REAL, DIMENSION(SIZE(PLAT)) :: ZVALUE
+REAL :: ZNODATA
+INTEGER :: JLOOP, JOVER        ! loop index on input arrays
 INTEGER :: ICOVERCLASS  ! class of cover type
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
@@ -76,24 +80,29 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !            ------------
 !     
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_COVER',0,ZHOOK_HANDLE)
-IF (ALLOCATED(XNUM)) DEALLOCATE(XNUM)
-ALLOCATE(XNUM(SIZE(PLAT)))
 !
-XNUM(:)=1
-!                                         
-DO WHILE(MAXVAL(XNUM).NE.0)
-!
-  CALL GET_MESH_INDEX(KLUOUT,PLAT,PLON,IINDEX)
+IF (PRESENT(PNODATA)) THEN
+  ZVALUE(:) = PVALUE(:)
+  ZNODATA = PNODATA
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA)
+ELSE
+  ZVALUE(:) = 1.
+  ZNODATA = 0.
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX)
+ENDIF
 !
 !*    2.     Loop on all input data points
 !            -----------------------------
 !     
-  DO JLOOP = 1 , SIZE(PLAT)
+bloop: &
+DO JLOOP = 1 , SIZE(PLAT)
 !
 !*    3.     Tests on position
 !            -----------------
-!     
-    IF (IINDEX(JLOOP)==0) CYCLE
+!    
+  DO JOVER = 1, NOVMX
+
+    IF (IINDEX(JOVER,JLOOP)==0) CYCLE bloop
 !
 !*    4.     Test on value meaning
 !            ---------------------
@@ -105,15 +114,17 @@ DO WHILE(MAXVAL(XNUM).NE.0)
 !*    5.     Summation
 !            ---------
 !
-    NSIZE(IINDEX(JLOOP))=NSIZE(IINDEX(JLOOP))+1
+    NSIZE(IINDEX(JOVER,JLOOP))=NSIZE(IINDEX(JOVER,JLOOP))+1
 !
 !*    6.     Fraction of cover type
 !            ----------------------
 !
-    XSUMCOVER(IINDEX(JLOOP),ICOVERCLASS)=XSUMCOVER(IINDEX(JLOOP),ICOVERCLASS)+1.
+    XSUMCOVER(IINDEX(JOVER,JLOOP),ICOVERCLASS)=XSUMCOVER(IINDEX(JOVER,JLOOP),ICOVERCLASS)+1.
 !
-  END DO
-ENDDO
+  ENDDO
+!
+END DO bloop
+!
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_COVER',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

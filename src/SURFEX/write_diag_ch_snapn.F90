@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_DIAG_CH_SNAP_n(HPROGRAM)
+      SUBROUTINE WRITE_DIAG_CH_SNAP_n (DTCO, DGU, U, CHN, &
+                                       HPROGRAM)
 !     #################################
 !
 !!****  *WRITE_DIAG_CH_SNAP_n* - writes surface chemical emissions diagnostics
@@ -22,18 +23,24 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson & S. Queguiner  *Meteo France*	
+!!      V. Masson & S. Queguiner  *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2012
+!!    M.Leriche 04/2014  change emissions name EMIS_ -> E_ name for coherence with PGD
+!!                       change length of CHARACTER for emission 6->12
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_CH_SNAP_n, ONLY : CH_EMIS_SNAP_t
+!
 USE MODD_CSTS,        ONLY : XAVOGADRO
-USE MODD_CH_SNAP_n,   ONLY : NEMIS_NBR,XEMIS_FIELDS,CEMIS_NAME,LEMIS_FIELDS
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
 USE MODI_END_IO_SURF_n
@@ -46,6 +53,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(CH_EMIS_SNAP_t), INTENT(INOUT) :: CHN
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -65,21 +78,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !         Initialisation for IO
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_CH_SNAP_n',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(HPROGRAM,'FULL  ','SURF  ','WRITE')
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                     HPROGRAM,'FULL  ','SURF  ','WRITE')
 !
 !-------------------------------------------------------------------------------
 !
 !         Writes Emissions of all species
 !
-IF (LEMIS_FIELDS) THEN
-!
-DO JSPEC=1,NEMIS_NBR
-  YRECFM = "E_"//TRIM(CEMIS_NAME(JSPEC))
+DO JSPEC=1,CHN%NEMIS_NBR
+  YRECFM = "E_"//TRIM(CHN%CEMIS_NAME(JSPEC))
   YCOMMENT = "Emission data at time t (ppm*m/s)"
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XEMIS_FIELDS(:,JSPEC),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(DGU, U, &
+                  HPROGRAM,YRECFM,CHN%XEMIS_FIELDS(:,JSPEC),IRESP,HCOMMENT=YCOMMENT)
 END DO
 !
-END IF
 !-------------------------------------------------------------------------------
 !
 !         End of IO

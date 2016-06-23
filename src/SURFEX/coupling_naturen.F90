@@ -1,14 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_NATURE_n(HPROGRAM, HCOUPLING, PTIMEC,                                    &
+SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DTGD, DTGR, TGRO, DGL, DST, SLT,  &
+                              HPROGRAM, HCOUPLING, PTIMEC,                                    &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, &
                  PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,          &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  HTEST                                                                       )  
@@ -33,12 +34,27 @@ SUBROUTINE COUPLING_NATURE_n(HPROGRAM, HCOUPLING, PTIMEC,                       
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      B. Decharme  04/2013 new coupling variables
+!!      P. Le Moigne 03/2015 tsz0 time management
 !!--------------------------------------------------------------------
 !
-USE MODD_SURF_ATM_n, ONLY : CNATURE
-USE MODD_CSTS,       ONLY : XTT
 !
-! 
+!
+USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
+USE MODD_DATA_TEB_GARDEN_n, ONLY : DATA_TEB_GARDEN_t
+USE MODD_DATA_TEB_GREENROOF_n, ONLY : DATA_TEB_GREENROOF_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_SLT_n, ONLY : SLT_t
+!
+USE MODD_CSTS,       ONLY : XTT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -52,6 +68,20 @@ USE MODI_COUPLING_TSZ0_n
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
+TYPE(DATA_TEB_GARDEN_t), INTENT(INOUT) :: DTGD
+TYPE(DATA_TEB_GREENROOF_t), INTENT(INOUT) :: DTGR
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -101,13 +131,18 @@ REAL, DIMENSION(KI), INTENT(OUT) :: PSFTH     ! flux of heat                    
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFU      ! zonal momentum flux                   (Pa)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFV      ! meridian momentum flux                (Pa)
-REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(KI,KSV),INTENT(OUT):: PSFTS   ! flux of scalar var.                   (kg/m2/s)
 !
 REAL, DIMENSION(KI), INTENT(OUT) :: PTRAD     ! radiative temperature                 (K)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PDIR_ALB! direct albedo for each spectral band  (-)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PSCA_ALB! diffuse albedo for each spectral band (-)
 REAL, DIMENSION(KI), INTENT(OUT) :: PEMIS     ! emissivity                            (-)
+!
+REAL, DIMENSION(KI), INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0       ! roughness length for momentum         (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0H      ! roughness length for heat             (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PQSURF    ! specific humidity at surface          (kg/kg)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_A_COEF! implicit coefficients
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_B_COEF! needed if HCOUPLING='I'
@@ -123,43 +158,46 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_NATURE_N',0,ZHOOK_HANDLE)
-IF (CNATURE=='ISBA  ') THEN
-  CALL COUPLING_ISBA_SVAT_n(HPROGRAM, HCOUPLING,                                           &
+IF (U%CNATURE=='ISBA  ') THEN
+  CALL COUPLING_ISBA_SVAT_n(DTCO, UG, U, USS, IM, DTGD, DTGR, TGRO, DST, SLT,    &
+                                 HPROGRAM, HCOUPLING,                                             &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
                  KI,KSV,KSW,                                                                 &
                  PTSUN, PZENITH, PZENITH2, PAZIM,                                            &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  'OK'                                                                        )  
-ELSE IF (CNATURE=='TSZ0  ') THEN
-  CALL COUPLING_TSZ0_n(HPROGRAM, HCOUPLING,                                                &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
+ELSE IF (U%CNATURE=='TSZ0  ') THEN
+  CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ, DTGD, DTGR, TGRO, DST, SLT,  &
+                       HPROGRAM, HCOUPLING,                                                  &
+                 PTSTEP, KYEAR, KMONTH, KDAY, PTIMEC,                                        &
                  KI,KSV,KSW,                                                                 &
                  PTSUN, PZENITH,  PZENITH2, PAZIM,                                           &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  'OK'                                                                        )  
-ELSE IF (CNATURE=='FLUX  ') THEN
-  CALL COUPLING_IDEAL_FLUX(HPROGRAM, HCOUPLING, PTIMEC,                                      &
+ELSE IF (U%CNATURE=='FLUX  ') THEN
+  CALL COUPLING_IDEAL_FLUX(DGL, &
+                           HPROGRAM, HCOUPLING, PTIMEC,                                      &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
                  KI,KSV,KSW,                                                                 &
                  PTSUN, PZENITH, PAZIM,                                                      &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  'OK'                                                                        )  
-ELSE IF (CNATURE=='NONE  ') THEN
+ELSE IF (U%CNATURE=='NONE  ') THEN
   PSFTH = 0.
   PSFTQ = 0.
   PSFTS = 0.
@@ -171,6 +209,12 @@ ELSE IF (CNATURE=='NONE  ') THEN
   PDIR_ALB = 0.
   PSCA_ALB = 0.
   PEMIS   = 1.
+!  
+  PTSURF = XTT
+  PZ0    = 0.01
+  PZ0H   = 0.001
+  PQSURF = 0.0
+!  
 END IF
 IF (LHOOK) CALL DR_HOOK('COUPLING_NATURE_N',1,ZHOOK_HANDLE)
 !

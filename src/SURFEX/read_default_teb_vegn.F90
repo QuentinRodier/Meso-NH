@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_DEFAULT_TEB_VEG_n(HPROGRAM)
+      SUBROUTINE READ_DEFAULT_TEB_VEG_n (CHT, TVG, &
+                                         HPROGRAM)
 !     #######################################################
 !
 !!****  *READ_DEFAULT_TEB_VEG* - routine to read the configuration for VEGs
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,12 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+USE MODD_CH_TEB_n, ONLY : CH_TEB_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -55,6 +62,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_TEB_t), INTENT(INOUT) :: CHT
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
 
@@ -81,10 +92,11 @@ IF (ILUDES==0) RETURN
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_TEB_VEGn
- CALL INIT_NAM_CH_CONTROLn
- CALL INIT_NAM_CH_TEB_VEGn
- CALL INIT_NAM_SGH_TEB_VEGn
+ CALL INIT_NAM_TEB_VEGn(TVG)
+ CALL INIT_NAM_TEB_VEG_AGSn(TVG)
+ CALL INIT_NAM_CH_CONTROLn(CHT)
+ CALL INIT_NAM_CH_TEB_VEGn(CHT)
+ CALL INIT_NAM_SGH_TEB_VEGn(TVG)
 ENDIF
 !
 IF (LNAM_READ) THEN
@@ -94,6 +106,8 @@ IF (LNAM_READ) THEN
  !
  CALL POSNAM(ILUDES,'NAM_ISBAN',GFOUND,ILUOUT)
  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_ISBAn)
+ CALL POSNAM(ILUDES,'NAM_ISBA_AGSN',GFOUND,ILUOUT)
+ IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_ISBA_AGSn) 
  CALL POSNAM(ILUDES,'NAM_CH_CONTROLN',GFOUND,ILUOUT)
  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CH_CONTROLn)
 ! for the time being, chemistry is not implemented on gardens
@@ -105,10 +119,11 @@ IF (LNAM_READ) THEN
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_TEB_VEGn
- CALL UPDATE_NAM_CH_CONTROLn
- CALL UPDATE_NAM_CH_TEB_VEGn
- CALL UPDATE_NAM_SGH_TEB_VEGn
+ CALL UPDATE_NAM_TEB_VEGn(TVG)
+ CALL UPDATE_NAM_TEB_VEG_AGSn(TVG)
+ CALL UPDATE_NAM_CH_CONTROLn(CHT)
+ CALL UPDATE_NAM_CH_TEB_VEGn(CHT)
+ CALL UPDATE_NAM_SGH_TEB_VEGn(TVG)
 ENDIF
 IF (LHOOK) CALL DR_HOOK('READ_DEFAULT_TEB_VEG_N',1,ZHOOK_HANDLE)
 !

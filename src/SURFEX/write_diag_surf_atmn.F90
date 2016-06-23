@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE WRITE_DIAG_SURF_ATM_n(HPROGRAM,HWRITE)
+SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC, &
+                                  HPROGRAM,HWRITE)
 !     #################################################################################
 !
 !!****  *WRITE_DIAG_SURF_ATM_n * - Chooses the surface schemes for diagnostics writing
@@ -27,13 +28,13 @@ SUBROUTINE WRITE_DIAG_SURF_ATM_n(HPROGRAM,HWRITE)
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
+!
+USE MODD_SURFEX_n, ONLY : SURFEX_t
+!
 USE MODD_SURF_CONF,      ONLY : CPROGNAME
-USE MODD_SURF_ATM_n,     ONLY : NDIM_SEA,  NDIM_TOWN,  NDIM_NATURE,  NDIM_WATER, &
-                                  XSEA    ,  XTOWN    ,  XNATURE    ,  XWATER,     &
-                                  TTIME  
-
+!
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_DIAG_SURF_ATM_n,ONLY : XDIAG_TSTEP, LFRAC, LDIAG_GRID
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
@@ -46,6 +47,8 @@ USE MODI_WRITE_DIAG_TOWN_n
 !
 USE MODI_WRITE_DIAG_SEB_SURF_ATM_n
 !
+USE MODI_WRITE_DIAG_CH_AGGR_n
+USE MODI_WRITE_DIAG_CH_SNAP_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -53,6 +56,8 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HWRITE    ! 'PGD' : only physiographic fields are written
@@ -67,31 +72,55 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',0,ZHOOK_HANDLE)
-CPROGNAME = HPROGRAM
+ CPROGNAME = HPROGRAM
 !
-IF (NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n         (HPROGRAM,HWRITE)
-IF (NDIM_WATER  >0) CALL WRITE_DIAG_INLAND_WATER_n(HPROGRAM,HWRITE)
-IF (NDIM_NATURE >0) CALL WRITE_DIAG_NATURE_n      (HPROGRAM,HWRITE)
-IF (NDIM_TOWN   >0) CALL WRITE_DIAG_TOWN_n        (HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%SM, & 
+                                                HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_WATER  >0) CALL WRITE_DIAG_INLAND_WATER_n(YSC%DTCO, YSC%DGU, YSC%U, &
+                                                         YSC%WM, YSC%FM, &
+                                                     HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_NATURE >0) CALL WRITE_DIAG_NATURE_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%IM, YSC%DST, &
+                                                   HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_TOWN   >0) CALL WRITE_DIAG_TOWN_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%TM, YSC%GDM, YSC%GRM, &
+                                                      HPROGRAM,HWRITE)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Writing
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 !
-IF (XDIAG_TSTEP==XUNDEF .OR. ABS(NINT(TTIME%TIME/XDIAG_TSTEP)*XDIAG_TSTEP-TTIME%TIME)<1.E-3 ) THEN
+IF (YSC%DGU%XDIAG_TSTEP==XUNDEF .OR. &
+        ABS(NINT(YSC%U%TTIME%TIME/YSC%DGU%XDIAG_TSTEP)*YSC%DGU%XDIAG_TSTEP-YSC%U%TTIME%TIME)<1.E-3 ) THEN
   !
-  IF (LFRAC) THEN
-    CALL INIT_IO_SURF_n(HPROGRAM,'FULL  ','SURF  ','WRITE')
+  IF (YSC%DGU%LFRAC) THEN
+ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
+                        HPROGRAM,'FULL  ','SURF  ','WRITE')          
     YCOMMENT = '(-)'
-    CALL WRITE_SURF(HPROGRAM,'FRAC_SEA   ',XSEA,   IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(HPROGRAM,'FRAC_NATURE',XNATURE,IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(HPROGRAM,'FRAC_WATER ',XWATER, IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(HPROGRAM,'FRAC_TOWN  ',XTOWN,  IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DGU, YSC%U, &
+                    HPROGRAM,'FRAC_SEA   ',YSC%U%XSEA, IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DGU, YSC%U, &
+                    HPROGRAM,'FRAC_NATURE',YSC%U%XNATURE,IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DGU, YSC%U, &
+                    HPROGRAM,'FRAC_WATER ',YSC%U%XWATER, IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DGU, YSC%U, &
+                    HPROGRAM,'FRAC_TOWN  ',YSC%U%XTOWN, IRESP,HCOMMENT=YCOMMENT)
     CALL END_IO_SURF_n(HPROGRAM)
   END IF
   !
-  IF (HWRITE/='PGD'.AND.LDIAG_GRID) CALL WRITE_DIAG_SEB_SURF_ATM_n(HPROGRAM)
+  IF (HWRITE/='PGD'.AND.YSC%DGU%LDIAG_GRID) &
+          CALL WRITE_DIAG_SEB_SURF_ATM_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%UG, &
+                                         HPROGRAM)
+  !
+  IF (YSC%CHU%LCH_EMIS .AND. YSC%SV%NBEQ>0 .AND. YSC%CHU%LCH_SURF_EMIS) THEN
+    IF (YSC%CHU%CCH_EMIS=='AGGR') THEN 
+      CALL WRITE_DIAG_CH_AGGR_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%CHE, &
+                                HPROGRAM)
+    ELSE IF (YSC%CHU%CCH_EMIS=='SNAP') THEN
+      CALL WRITE_DIAG_CH_SNAP_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%CHN, &
+                                HPROGRAM)
+    END IF
+  END IF
+  !  
 END IF
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',1,ZHOOK_HANDLE)
 !

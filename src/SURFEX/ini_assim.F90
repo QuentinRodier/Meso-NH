@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE INI_ASSIM 
 !     ####################
@@ -25,7 +25,7 @@
 !! 
 !!    AUTHOR
 !!    ------
-!!  	J.-F. Mahfouf       * Meteo France *
+!!      J.-F. Mahfouf       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,8 +36,19 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_ASSIM
-USE MODD_CSTS,       ONLY : XRHOLW, XPI 
+USE MODD_ASSIM, ONLY : LFGEL, LCLIM, XSODELX, NTVGLA, XRD1, XRTINER, XWCRIN, &
+                       XWPMX, XWSMX, XTMERGL, XRZHZ0G, NSEAICE, XRWPIA, &
+                       XRWPIB, XRSNSA, XRSNSB, XSALBM, XSALBB, XSEMIM, XSEMIB, &
+                       XSZZ0B, LHUMID, LLDHMT, LISSEW, NLISSEW, NMINDJ, NNEBUL, &
+                       NNEIGT, NNEIGW, XANEBUL, XRCLIMN, XRCLIMTP, XRCLIMTS, &
+                       XRCLIMV, XRCLIMWP, XRCLIMWS, XSCOEFH, XSCOEFT, XSEVAP, &
+                       XSICE, XSNEIGT, XSNEIGW, XSPRECIP, XSWFC, XV10MX, XSMU0, &
+                       L_SM_WP, NR_SM_WP, XRA_SM_WP, XSIGHP1, XSIGT2MR, XSIGH2MR, &
+                       XRSABR, XRARGR, XGWFC, XEWFC, XGWWILT, XEWWILT, XG1WSAT, &
+                       XG2WSAT, XADWR, XREPS1, XREPS2, XREPS3, NIDJ, XREPSM, &
+                       XRCDTR
+!
+USE MODD_CSTS,  ONLY : XPI 
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -55,15 +66,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 ! NECHGU : ECHEANCE DU GUESS EN HEURES (0 A 30).
 !
- IF (LHOOK) CALL DR_HOOK('INI_ASSIM',0,ZHOOK_HANDLE)
- NECHGU = 6
-!
+IF (LHOOK) CALL DR_HOOK('INI_ASSIM',0,ZHOOK_HANDLE)
 !
 !LFGEL   : CLE D'APPEL DU GEL DE L'EAU DU SOL AVEC ISBA (LSOLV)
 !        : KEY FOR SOIL FREEZING WITH ISBA (LSOLV)
 !          ( ACSOL, ACDROV)
- LFGEL = .TRUE.
- LCLIM = .TRUE.
+LFGEL = .TRUE.
+LCLIM = .TRUE.
 !
 !  Characteristics of ice and sea 
 !SODELX(0:9): DISCRETISATION VERTICALE DU SOL (MAXI 10 COUCHES)
@@ -84,37 +93,34 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !           : MELTING TEMPERATURE OF FLOATING ICE.
 !RZHZ0G     : RAPPORT LONGUEUR DE RUGOSITE THERMIQUE SUR LONGUEUR
 !             RUGOSITE DYNAMIQUE DE LA BANQUISE
- SODELX(0)=1.0/SQRT(1.0+2.0*XPI)
- DO J=1,9
-   SODELX(J)=SODELX(J-1)*2.0*XPI
- ENDDO
- RD1    = 1.E-2
- RTINER = 5.
- WCRIN  = 10.
- WPMX   = 100.
- WSMX   = 20.
- NTVGLA = 2
- TMERGL = 271.23 
- RZHZ0G = 1.0 
+XSODELX(0) = 1.0/SQRT(1.0+2.0*XPI)
+DO J=1,9
+  XSODELX(J) = XSODELX(J-1)*2.0*XPI
+ENDDO
+!
+NTVGLA = 2
+!
+XRD1    = 1.E-2
+XRTINER = 5.
+XWCRIN  = 10.
+XWPMX   = 100.
+XWSMX   = 20.
+XTMERGL = 271.23 
+XRZHZ0G = 1.0 
 !
 !nactex, canali
-!  RCLIMCA : coef. de rappel vers la climatologie des champs de surface
-!  RCLISST : coef. de rappel vers la climatologie de SST
 !  NSEAICE : utilsation limite glace SSM/I (et nb de jours de retard possible)
 !  RSNSA   : Coefficient pour l'analyse de neige
 !  RSNSB   : Coefficient pour l'analyse de neige
 !  RWPIA   : Coefficient pour l'analyse de l'eau gelee
 !  RWPIB   : Coefficient pour l'analyse de l'eau gelee
 !
-!RCLIMCA=0.045
- RCLIMCA = 0. ! no climatology relaxation
-!RCLISST=0.05 ! as in the original cacsts
- RCLISST = 0.05
- NSEAICE = 0
- RWPIA   = 0.025
- RWPIB   = 2.  
- RSNSA   = 0.025
- RSNSB   = 1.0 
+NSEAICE = 0
+!
+XRWPIA   = 0.025
+XRWPIB   = 2.  
+XRSNSA   = 0.025
+XRSNSB   = 1.0 
 !
 !yomcli
 !  SALBN,SALBX,SALBM,SALBG,SALBB,SALBD : albedo
@@ -123,11 +129,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !  SZZ0N,SZZ0M,SZZ0B,SZZ0U,SZZ0D : roughness length
 !  (minimum,sea,sea-ice,urban areas,desert)
 !
- SALBM = 0.07
- SALBB = 0.65
- SEMIM = 0.96
- SEMIB = 0.97
- SZZ0B = 0.001
+XSALBM = 0.07
+XSALBB = 0.65
+XSEMIM = 0.96
+XSEMIB = 0.97
+XSZZ0B = 0.001
 !
 ! ecarts-type d'erreurs d'observation
 ! T2m  -> SIGT2MO
@@ -139,7 +145,6 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !   V10MX , MINDJ , SPRECIP , SWFC  , SEVAP , SICE , SMU0
 !
 ! cles et coefficients de reglage
-!     LIMVEG : activation de la limitation a wp > veg*wwilt
 !     LHUMID : activation de la clef LIMVEG  ou du seuil SWFC limitee
 !     LISSEW : activation du lissage des increments de wp (si NLISSEW=3)
 !     NLISSEW: nombre de reseaux anterieurs utilisables pour le lissage
@@ -169,7 +174,6 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !***
 !*** conditions d'analyse
-!***  LIMVEG  : si wp >= veg*wwilt
 !***  MINDJ   : duree du jour minimale (heure)
 !***  V10MX   : seuil sur le module du vent (analyse) a 10m
 !***  SPRECIP : seuil sur les precipitations (prevues) en mm
@@ -181,8 +185,6 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !***  LHUMID  : humidification seulement si wp < veg*wwilt
 !***          : assechement seulement si ws > SWFC*wfc (pour ws)
 !***  LISSEW  : lissage des increments de wp (moyenne glissante sur 24h)
-!***  SIGT2MO : ecart-type d'erreur "d'observation" sur T2m
-!***  SIGH2MO : ecart-type d'erreur "d'observation" sur Hu2m
 !***  ANEBUL  : reduction maximale par la nebulosite
 !***  NNEBUL  : puissance de la nebulosite prise en compte
 !***            nebulosite moyenne neb <--> poids 1-ANEBUL*neb**NNEBUL
@@ -208,87 +210,80 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !***
 !***---------------------------------------------------------------------
 !
- ANEBUL   = 0.75
- LHUMID   = .TRUE.
- LIMVEG   = .TRUE.
- LLDHMT   = .FALSE.
- LISSEW   = .FALSE.
- LOBSWG   = .TRUE.   ! assimilation of WG
- LOBS2M   = .FALSE.  ! assimilation of T2M + RH2M (with WG)
- LAROME   = .TRUE. !  if AROME model 
- LPRINT   = .TRUE. !  for additional prints
- NLISSEW  = 0
- MINDJ    = 6
- NNEBUL   = 1
- NNEIGT   = 0
- NNEIGW   = 1
- RCLIMN   = 0.
- RCLIMTP  = 0.
- RCLIMTS  = 0.
- RCLIMV   = 1.
- RCLIMWP  = 0.1
- RCLIMWS  = 0.
- SCOEFH   = 0.
- SCOEFT   = 0.
- SEVAP    = 0.
- SICE     = 5
- SIGH2MO  = 0.1  ! observation error for HU2m
- SIGT2MO  = 1.0  ! observation error for T2m
- SIGWGO   = 0.06 ! observation error for WG
- SIGWGB   = 0.06 ! background error for WG
- SIGW2B   = 0.03 ! background error for W2
- SNEIGT   = 1.
- SNEIGW   = 0.
- SPRECIP  = .3
- SPRECIP2 = 4.0
- SWFC     = 1.0
- V10MX    = 10.
- SMU0     = 7.
- RTHR_QC  = 3.0
- SIGWGO_MAX = 6.0 ! maximum acceptable WG obs error (%)
- RSCAL_JAC  = 4.0  ! to modify the "effective" assimilation window
+LHUMID   = .TRUE.
+LLDHMT   = .FALSE.
+LISSEW   = .FALSE.
+!
+NLISSEW  = 0
+NMINDJ    = 6
+NNEBUL   = 1
+NNEIGT   = 0
+NNEIGW   = 1
+!
+XANEBUL   = 0.75
+XRCLIMN   = 0.
+XRCLIMTP  = 0.
+XRCLIMTS  = 0.
+XRCLIMV   = 1.
+XRCLIMWP  = 0.1
+XRCLIMWS  = 0.
+XSCOEFH   = 0.
+XSCOEFT   = 0.
+XSEVAP    = 0.
+XSICE     = 5
+XSNEIGT   = 1.
+XSNEIGW   = 0.
+XSPRECIP  = .3
+XSWFC     = 1.0
+XV10MX    = 10.
+XSMU0     = 7.
 !
 ! PARAMETERS TO SWITCH ON CASMSWI - SPATIAL SMOOTHING OF SWI (SOIL WETNESS INDEX)
 ! THEN CHANGING OF Wp ( TOTAL SOIL WATER CONTENT) IN CANARI OI. 
 ! CASMSWI IS CALLED BY CANARI
 !
- L_SM_WP  = .FALSE.
- NR_SM_WP = 1
- RA_SM_WP = 5000.0
+L_SM_WP  = .FALSE.
+!
+NR_SM_WP = 1
+!
+XRA_SM_WP = 5000.0
 !
 ! Standard deviation of background error
 !
- SIGHP1 = 15.E-2
+XSIGHP1 = 15.E-2
 !
 ! Standard deviation of observation errors (referencce)
 !
- SIGT2MR = 1.0
- SIGH2MR = 10.E-2
+XSIGT2MR = 1.0
+XSIGH2MR = 10.E-2
 !
 ! Soil textural properties (reference = loam)
 !
- RSABR   = 43.
- RARGR   = 18.
- GWFC    = 89.0467E-3
- EWFC    = 0.35
- GWWILT  = 37.1342E-3
- EWWILT  = 0.5
- G1WSAT  = -1.08E-3
- G2WSAT  = 494.31E-3
- ADWR    = GWFC*(RARGR**EWFC) - GWWILT*(RARGR**EWWILT)
+XRSABR   = 43.
+XRARGR   = 18.
+XGWFC    = 89.0467E-3
+XEWFC    = 0.35
+XGWWILT  = 37.1342E-3
+XEWWILT  = 0.5
+XG1WSAT  = -1.08E-3
+XG2WSAT  = 494.31E-3
+!
+XADWR    = XGWFC*(XRARGR**XEWFC) - XGWWILT*(XRARGR**XEWWILT)
 !
 ! Low threshold values
 !
- REPS1   = 1.E-3 
- REPS2   = 1.E-1
- REPS3   = 1.E-13
+XREPS1   = 1.E-3 
+XREPS2   = 1.E-1
+XREPS3   = 1.E-13
 !
 ! Astronomical and time constants
 !
- REPSM   = 0.409093                ! obliquity
- IDJ     = 12.0                    ! day duration
- RCDTR   = 24./360.
- ! ITRAD (half assimilation window in sec) --> dependant from NECHGU --> set in OI_MAIN
+NIDJ     = 12                      ! day duration
+!
+XREPSM   = 0.409093                ! obliquity
+XRCDTR   = 24./360.
+! ITRAD (half assimilation window in sec) --> dependant from NECHGU --> set in OI_MAIN
+!
 IF (LHOOK) CALL DR_HOOK('INI_ASSIM',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

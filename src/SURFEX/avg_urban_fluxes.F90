@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE AVG_URBAN_FLUXES(                                                &
                        PTS_TOWN, PEMIS_TOWN,                                    &
@@ -36,6 +36,10 @@
                        PEVAP_GARDEN, PEVAP_GREENROOF,                           &
                        PRN_GRND, PH_GRND, PLE_GRND, PGFLUX_GRND,                &
                        PRN_TOWN, PH_TOWN, PLE_TOWN, PGFLUX_TOWN, PEVAP_TOWN,    &
+                       PRUNOFF_GARDEN,PRUNOFF_ROAD,PRUNOFF_STRLROOF,            &
+                       PRUNOFF_GREENROOF, PDRAIN_GREENROOF, PRUNOFF_TOWN,       &
+                       PABS_LW_PANEL, PEMIS_PANEL, PFRAC_PANEL, PRN_PANEL,      &
+                       PH_PANEL,                                                &
                        PH_WASTE, PLE_WASTE, PF_WASTE_CAN,                       &
                        PABS_LW_WIN, PT_WIN1, PGR, PEMIT_LW_ROAD,                &
                        PEMIT_LW_GARDEN, PEMIT_LW_GRND, HBEM,                    &
@@ -74,7 +78,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -86,6 +90,7 @@
 !!                           to domestic heating
 !!                     10/11 (G. Pigeon) simplification for road, garden, roof,
 !!                           wall fractions
+!!                     08/13 (V. Masson) adds solar panels
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -222,6 +227,12 @@ REAL, DIMENSION(:), INTENT(IN)    :: PHSNOW_ROAD       ! sensible heat flux over
 REAL, DIMENSION(:), INTENT(IN)    :: PEVAP_GARDEN      ! evaporation over gardens
 REAL, DIMENSION(:), INTENT(IN)    :: PEVAP_GREENROOF   ! evaporation over green roofs
 !
+REAL, DIMENSION(:), INTENT(IN)    :: PRUNOFF_GARDEN    ! surface runoff over green areas      (kg/m2/s)
+REAL, DIMENSION(:), INTENT(IN)    :: PRUNOFF_ROAD      ! surface runoff over roads            (kg/m2/s)
+REAL, DIMENSION(:), INTENT(IN)    :: PRUNOFF_STRLROOF  ! surface runoff over structural roofs (kg/m2/s)
+REAL, DIMENSION(:), INTENT(IN)    :: PRUNOFF_GREENROOF ! surface runoff over green roofs      (kg/m2/s)
+REAL, DIMENSION(:), INTENT(IN)    :: PDRAIN_GREENROOF  ! outlet drainage at green roof base   (kg/m2/s)
+!
 REAL, DIMENSION(:), INTENT(OUT)   :: PRN_GRND          ! net radiation over ground
 REAL, DIMENSION(:), INTENT(OUT)   :: PH_GRND           ! sensible heat flux over ground
 REAL, DIMENSION(:), INTENT(OUT)   :: PLE_GRND          ! latent heat flux over ground
@@ -231,6 +242,13 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PH_TOWN           ! sensible heat flux over
 REAL, DIMENSION(:), INTENT(OUT)   :: PLE_TOWN          ! latent heat flux over town
 REAL, DIMENSION(:), INTENT(OUT)   :: PGFLUX_TOWN       ! flux through the ground for town
 REAL, DIMENSION(:), INTENT(OUT)   :: PEVAP_TOWN        ! evaporation (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF_TOWN      ! aggregated runoff for town (kg/m2/s)
+
+REAL, DIMENSION(:), INTENT(IN)    :: PABS_LW_PANEL     ! absorbed LW radiation by solar panels
+REAL, DIMENSION(:), INTENT(IN)    :: PEMIS_PANEL       ! emissivity of solar panels
+REAL, DIMENSION(:), INTENT(IN)    :: PFRAC_PANEL       ! fraction of solar panels on roofs
+REAL, DIMENSION(:), INTENT(IN)    :: PRN_PANEL         ! net radiation of solar panels
+REAL, DIMENSION(:), INTENT(IN)    :: PH_PANEL          ! sensible heat flux of solar panels
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PH_WASTE     ! sensible waste heat released by HVAC systems
 REAL, DIMENSION(:), INTENT(IN)    :: PLE_WASTE    ! latent waste heat released by HVAC systems
@@ -239,9 +257,9 @@ REAL, DIMENSION(:), INTENT(IN)    :: PABS_LW_WIN  ! absorbed LW radiation by win
 REAL, DIMENSION(:), INTENT(IN)    :: PT_WIN1      ! window outdoor temperature
 REAL, DIMENSION(:), INTENT(IN)    :: PGR          ! glazing ratio
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PEMIT_LW_ROAD ! LW emitted by the road (W/m² road)
-REAL, DIMENSION(:), INTENT(IN)    :: PEMIT_LW_GARDEN ! LW emitted by the garden (W/m² garden)
-REAL, DIMENSION(:), INTENT(OUT)   :: PEMIT_LW_GRND ! LW emitted by the ground (road+garden) (W/m² ground)
+REAL, DIMENSION(:), INTENT(IN)    :: PEMIT_LW_ROAD ! LW emitted by the road (W/m2 road)
+REAL, DIMENSION(:), INTENT(IN)    :: PEMIT_LW_GARDEN ! LW emitted by the garden (W/m2 garden)
+REAL, DIMENSION(:), INTENT(OUT)   :: PEMIT_LW_GRND ! LW emitted by the ground (road+garden) (W/m2 ground)
  CHARACTER(LEN=3), INTENT(IN)      :: HBEM ! Building Energy model 'DEF' or 'BEM'
 REAL, DIMENSION(:), INTENT(IN)    :: PGARDEN_O_GRND! garden surf. / (road+garden surf.) 
 REAL, DIMENSION(:), INTENT(IN)    :: PROAD_O_GRND  ! road surf.   / (road+garden surf.) 
@@ -301,14 +319,16 @@ DO JJ=1,SIZE(PROAD)
 !              -------------------------------------
 !
   PRN_TOWN(JJ)    = PTOTS_O_HORS(JJ) * ( &
-                   PROOF_FRAC  (JJ) * PRN_ROOF    (JJ)                  &
+                   PROOF_FRAC  (JJ) * PRN_PANEL   (JJ) * PFRAC_PANEL(JJ)&
+                 + PROOF_FRAC  (JJ) * PRN_ROOF    (JJ)                  &
                  + PROAD_FRAC  (JJ) * PRN_ROAD    (JJ)                  &
                  + PGARDEN_FRAC(JJ) * PRN_GARDEN  (JJ)                  &
                  + PWALL_FRAC  (JJ) * PRN_WALL_A  (JJ) * 0.5            &
                  + PWALL_FRAC  (JJ) * PRN_WALL_B  (JJ) * 0.5 )  
 !
   PH_TOWN (JJ)    = PTOTS_O_HORS(JJ) * ( &
-                   PROOF_FRAC  (JJ) * PH_ROOF    (JJ)                   &
+                   PROOF_FRAC  (JJ) * PH_PANEL   (JJ) * PFRAC_PANEL(JJ) &
+                 + PROOF_FRAC  (JJ) * PH_ROOF    (JJ)                   &
                  + PROAD_FRAC  (JJ) * PH_ROAD    (JJ)                   &
                  + PGARDEN_FRAC(JJ) * PH_GARDEN  (JJ)                   &
                  + PWALL_FRAC  (JJ) * PH_WALL_A  (JJ) * 0.5             &
@@ -344,6 +364,7 @@ DO JJ=1,SIZE(PROAD)
             - ( PROOF_FRAC  (JJ)*(1.-PFRAC_GR(JJ))*PDF_ROOF (JJ)*PABS_LW_ROOF      (JJ) &
                +PROOF_FRAC  (JJ)*(1.-PFRAC_GR(JJ))*PDN_ROOF (JJ)*PABS_LW_SNOW_ROOF (JJ) &
                +PROOF_FRAC  (JJ)*    PFRAC_GR(JJ)               *PABS_LW_GREENROOF (JJ) &
+               +PROOF_FRAC  (JJ)*    PFRAC_PANEL(JJ)            *PABS_LW_PANEL     (JJ) &
                +PROAD_FRAC  (JJ)                  *PDF_ROAD (JJ)*PABS_LW_ROAD      (JJ) &
                +PROAD_FRAC  (JJ)                  *PDN_ROAD (JJ)*PABS_LW_SNOW_ROAD (JJ) &
                +PGARDEN_FRAC(JJ)                                *PABS_LW_GARDEN    (JJ) &
@@ -354,12 +375,13 @@ DO JJ=1,SIZE(PROAD)
 !*      3.2    Town emissivity
 !              ---------------
 !
-    PEMIS_TOWN(JJ) =  PBLD       (JJ)*(1.-PFRAC_GR   (JJ))*PDF_ROOF(JJ)*PEMIS_ROOF     (JJ) &
-                    + PBLD       (JJ)*(1.-PFRAC_GR   (JJ))*PDN_ROOF(JJ)*PESNOW_ROOF    (JJ) &
-                    + PBLD       (JJ)*    PFRAC_GR   (JJ)              *PEMIS_GREENROOF(JJ) &
-                    + PROAD      (JJ)*(   PSVF_ROAD  (JJ) *PDF_ROAD(JJ)*PEMIS_ROAD     (JJ) &
-                                      +   PSVF_ROAD  (JJ) *PDN_ROAD(JJ)*PESNOW_ROAD    (JJ))&
-                    + PGARDEN    (JJ)*    PSVF_GARDEN(JJ)              *PEMIS_GARDEN   (JJ) &
+    PEMIS_TOWN(JJ) =  PBLD       (JJ)*(1.-PFRAC_GR   (JJ))*PDF_ROOF(JJ)*PEMIS_ROOF     (JJ)* (1.-PFRAC_PANEL(JJ)) &
+                    + PBLD       (JJ)*(1.-PFRAC_GR   (JJ))*PDN_ROOF(JJ)*PESNOW_ROOF    (JJ)* (1.-PFRAC_PANEL(JJ)) &
+                    + PBLD       (JJ)*    PFRAC_GR   (JJ)              *PEMIS_GREENROOF(JJ)* (1.-PFRAC_PANEL(JJ)) &
+                    + PBLD       (JJ)                                  *PEMIS_PANEL    (JJ)*     PFRAC_PANEL(JJ)  &
+                    + PROAD      (JJ)*(   PSVF_ROAD  (JJ) *PDF_ROAD(JJ)*PEMIS_ROAD     (JJ)                       &
+                                      +   PSVF_ROAD  (JJ) *PDN_ROAD(JJ)*PESNOW_ROAD    (JJ))                      &
+                    + PGARDEN    (JJ)*    PSVF_GARDEN(JJ)              *PEMIS_GARDEN   (JJ)                       &
                     + PWALL_O_HOR(JJ)*    PSVF_WALL  (JJ)              *PEMIS_WALL     (JJ) 
 !*      3.3    Town radiative surface temperature
 !              ----------------------------------
@@ -385,7 +407,15 @@ DO JJ=1,SIZE(PROAD)
 !
 !-------------------------------------------------------------------------------
 !
-!*      5.    Air canyon temperature at time t+dt
+!*      5.     Averaged runoff flux (kg/m2/s)
+!              -----------------------------------
+  PRUNOFF_TOWN(JJ) =  ((1.-PFRAC_GR(JJ))* PRUNOFF_STRLROOF (JJ)               &
+                      +    PFRAC_GR(JJ) *(PRUNOFF_GREENROOF(JJ)+PDRAIN_GREENROOF(JJ))) * PBLD(JJ)   &
+                    +     PROAD    (JJ) * PRUNOFF_ROAD     (JJ)               &
+                    +     PGARDEN  (JJ) * PRUNOFF_GARDEN   (JJ)                 
+!-------------------------------------------------------------------------------
+!
+!*      6.    Air canyon temperature at time t+dt
 !             -----------------------------------
 !
   IF (.NOT. OCANOPY) THEN
@@ -406,7 +436,7 @@ DO JJ=1,SIZE(PROAD)
 !
 !-------------------------------------------------------------------------------
 !
-!*      6.     Air canyon specific humidity
+!*      7.     Air canyon specific humidity
 !              ----------------------------
 !
   PQ_CANYON(JJ) = &

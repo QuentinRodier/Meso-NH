@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
- SUBROUTINE DIAG_INLINE_ISBA_n (PTA, PTS, PQA, PPA, PPS, PRHOA, PZONA, PMERA,  &
+ SUBROUTINE DIAG_INLINE_ISBA_n (DGEI, DGI, I, PKDI, &
+                                 PTA, PTS, PQA, PPA, PPS, PRHOA, PZONA, PMERA,  &
                                   PHT, PHW, PCD, PCDN, PCH, PRI, PHU, PZ0, PZ0H, &
                                   PZ0EFF, PSFTH, PSFTQ, PSFZON, PSFMER, PQS,     &
                                   PDIR_ALB, PSCA_ALB, PDIR_SW, PSCA_SW, PLW, PRN )  
@@ -36,15 +37,13 @@
 
 !
 !
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_PACK_DIAG_ISBA, ONLY : PACK_DIAG_ISBA_t
+!
 USE MODD_SURF_PAR,         ONLY : XUNDEF
-USE MODD_ISBA_n,           ONLY : LCANOPY
-USE MODD_DIAG_ISBA_n,      ONLY : N2M, LCOEF, LSURF_VARS, LSURF_BUDGET
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : LSURF_BUDGETC
-USE MODD_PACK_DIAG_ISBA,   ONLY : XP_T2M, XP_Q2M, XP_HU2M, XP_ZON10M, XP_MER10M, &
-                                    XP_CD, XP_CH, XP_CE, XP_RI, XP_Z0_WITH_SNOW,   &
-                                    XP_Z0H_WITH_SNOW, XP_Z0EFF, XP_QS,             &
-                                    XP_SWD, XP_SWU, XP_SWBD, XP_SWBU,              &
-                                    XP_LWD, XP_LWU, XP_FMU, XP_FMV  
 !
 USE MODI_PARAM_CLS
 USE MODI_CLS_TQ
@@ -58,6 +57,12 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
+TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(PACK_DIAG_ISBA_t), INTENT(INOUT) :: PKDI
 !
 REAL, DIMENSION(:), INTENT(IN)       :: PTA      ! atmospheric temperature
 REAL, DIMENSION(:), INTENT(IN)       :: PTS      ! surface temperature
@@ -97,72 +102,80 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_ISBA_N',0,ZHOOK_HANDLE)
-IF (.NOT. LCANOPY) THEN
+!
+! * Richardson number
+!
+IF (DGI%N2M>=1) THEN
+    PKDI%XP_RI     = PRI        
+ENDIF
+!
+! * Near surface atmospheric variables
+!
+IF (.NOT. I%LCANOPY) THEN
 !        
-  IF (N2M==1) THEN
+  IF (DGI%N2M==1) THEN
     CALL PARAM_CLS(PTA, PTS, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW,  &
                      PSFTH, PSFTQ, PSFZON, PSFMER,                     &
-                     XP_T2M, XP_Q2M, XP_HU2M, XP_ZON10M, XP_MER10M     )  
-    XP_RI     = PRI        
-  ELSE IF (N2M==2) THEN
+                     PKDI%XP_T2M, PKDI%XP_Q2M, PKDI%XP_HU2M, PKDI%XP_ZON10M, PKDI%XP_MER10M     )  
+  ELSE IF (DGI%N2M==2) THEN
     ZH(:)=2.          
     CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,           &
                   PCD, PCH, PRI,                   &
                   PTS, PHU, PZ0H, ZH,              &
-                  XP_T2M, XP_Q2M, XP_HU2M          )  
+                  PKDI%XP_T2M, PKDI%XP_Q2M, PKDI%XP_HU2M          )  
     ZH(:)=10.                
     CALL CLS_WIND(PZONA, PMERA, PHW,               &
                     PCD, PCDN, PRI, ZH,            &
-                    XP_ZON10M, XP_MER10M           )  
-    XP_RI     = PRI        
+                    PKDI%XP_ZON10M, PKDI%XP_MER10M           )  
   END IF
 !
 ELSE
   !        
-  IF (N2M>=1) THEN
-    XP_T2M    = XUNDEF
-    XP_Q2M    = XUNDEF
-    XP_HU2M   = XUNDEF
-    XP_ZON10M = XUNDEF
-    XP_MER10M = XUNDEF
-    XP_RI     = PRI        
+  IF (DGI%N2M>=1) THEN
+    PKDI%XP_T2M    = XUNDEF
+    PKDI%XP_Q2M    = XUNDEF
+    PKDI%XP_HU2M   = XUNDEF
+    PKDI%XP_ZON10M = XUNDEF
+    PKDI%XP_MER10M = XUNDEF
   ENDIF
   !        
 ENDIF
 !
-IF (LSURF_BUDGET.OR.LSURF_BUDGETC) THEN
+! * Surface energy budget
+!
+IF (DGI%LSURF_BUDGET.OR.DGEI%LSURF_BUDGETC) THEN
    !
    CALL DIAG_SURF_BUDGET_ISBA(PDIR_SW, PSCA_SW, PDIR_ALB, PSCA_ALB,  &
                                 PLW, PRN,                              &
-                                XP_SWD, XP_SWU, XP_SWBD, XP_SWBU,      &
-                                XP_LWD, XP_LWU   )          
+                                PKDI%XP_SWD, PKDI%XP_SWU, PKDI%XP_SWBD, PKDI%XP_SWBU,      &
+                                PKDI%XP_LWD, PKDI%XP_LWU   )          
    !
-   XP_FMU = PSFZON
-   XP_FMV = PSFMER
+   PKDI%XP_FMU = PSFZON
+   PKDI%XP_FMV = PSFMER
    !
 END IF
 !
-IF (LCOEF) THEN
+IF (DGI%LCOEF) THEN
   !
   !* Transfer coefficient
   !
-  XP_CD = PCD
-  XP_CH = PCH
-  XP_CE = PCH
+  PKDI%XP_CD = PCD
+  PKDI%XP_CH = PCH
+  PKDI%XP_CE = PCH
   !
   !* Roughness lengths
   !
-  XP_Z0_WITH_SNOW  = PZ0
-  XP_Z0H_WITH_SNOW = PZ0H
-  XP_Z0EFF         = PZ0EFF
+  PKDI%XP_Z0_WITH_SNOW  = PZ0
+  PKDI%XP_Z0H_WITH_SNOW = PZ0H
+  PKDI%XP_Z0EFF         = PZ0EFF
   !
 ENDIF
 !
-IF (LSURF_VARS) THEN
+IF (DGI%LSURF_VARS) THEN
   !
   !* Humidity at surface
   !
-  XP_QS = PQS
+  PKDI%XP_QS = PQS
   !
 ENDIF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_ISBA_N',1,ZHOOK_HANDLE)

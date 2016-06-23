@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE OPEN_NAMELIST(HPROGRAM,KLUNAM,HFILE)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,19 +37,22 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#ifdef OL
+#ifdef SFX_OL
 USE MODI_OPEN_NAMELIST_OL
 #endif
-#ifdef ASC
+#ifdef SFX_ASC
 USE MODI_OPEN_NAMELIST_ASC
 #endif
-#ifdef FA
+#ifdef SFX_FA
 USE MODI_OPEN_NAMELIST_FA
 #endif
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODI_OPEN_NAMELIST_LFI
 #endif
-#ifdef MNH
+#ifdef SFX_NC
+USE MODI_OPEN_NAMELIST_NC
+#endif
+#ifdef SFX_MNH
 USE MODI_MNHOPEN_NAMELIST
 #endif
 !
@@ -81,31 +84,38 @@ ELSE
   YFILE = '                           '
 END IF
 
+!$OMP SINGLE
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL MNHOPEN_NAMELIST(HPROGRAM,KLUNAM,YFILE)
 #endif
 ELSE IF (HPROGRAM=='OFFLIN') THEN
-#ifdef OL
+#ifdef SFX_OL
   CALL OPEN_NAMELIST_OL(HPROGRAM,KLUNAM,YFILE)
 #endif
 ELSE IF (HPROGRAM=='ASCII ') THEN
-#ifdef ASC
+#ifdef SFX_ASC
   CALL OPEN_NAMELIST_ASC(HPROGRAM,KLUNAM,YFILE)
 #endif
 ELSE IF (HPROGRAM=='AROME ') THEN
-#ifdef ARO
+#ifdef SFX_ARO
   CALL AROOPEN_NAMELIST(HPROGRAM,KLUNAM,YFILE)
 #endif
 ELSE IF (HPROGRAM=='FA    ') THEN
-#ifdef FA
+#ifdef SFX_FA
   CALL OPEN_NAMELIST_FA(HPROGRAM,KLUNAM,YFILE)
 #endif
 ELSE IF (HPROGRAM=='LFI   ') THEN
-#ifdef LFI
+#ifdef SFX_LFI
   CALL OPEN_NAMELIST_LFI(HPROGRAM,KLUNAM,YFILE)
 #endif
+ELSE IF (HPROGRAM=='NC    ') THEN
+#ifdef SFX_NC
+  CALL OPEN_NAMELIST_NC(HPROGRAM,KLUNAM,YFILE)
+#endif
 END IF
+!$OMP END SINGLE COPYPRIVATE(KLUNAM)
+!
 IF (LHOOK) CALL DR_HOOK('OPEN_NAMELIST',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

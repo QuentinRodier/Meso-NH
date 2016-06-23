@@ -1,18 +1,17 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_VEG_PGD_GARDEN_n(HPROGRAM, KLUOUT, KI, KGROUND_LAYER, KMONTH,        &
-                        PVEGTYPE, PTDEEP, PGAMMAT, HPHOTO, HINIT, OTR_ML,   &
+SUBROUTINE INIT_VEG_PGD_GARDEN_n (CHI, DTCO, DST, I, SLT, U, &
+                                  HPROGRAM, KLUOUT, KI, KGROUND_LAYER, KMONTH,        &
+                        PVEGTYPE, PTDEEP, PGAMMAT, HPHOTO, HINIT, OTR_ML, HRUNOFF,  &
                         KNBIOMASS, PCO2, PRHOA, PABC, PPOI,  &
                         PGMES, PGC, PDMAX, PANMAX, PFZERO, PEPSO, PGAMM, PQDGAMM,   &
                         PQDGMES, PT1GMES, PT2GMES, PAMAX, PQDAMAX, PT1AMAX, PT2AMAX,&
                         PAH, PBH,                   &
-                        KSV, HSV, KBEQ, HSVO, KAEREQ, KSV_CHSBEG, KSV_CHSEND,       &
-                        KSV_AERBEG, KSV_AEREND, HCH_NAMES, HAER_NAMES, KDSTEQ,      &
-                        KSV_DSTBEG, KSV_DSTEND, KSLTEQ, KSV_SLTBEG, KSV_SLTEND,     &
-                        HDSTNAMES, HSLTNAMES, HCHEM_SURF_FILE,                      &
+                        KSV, HSV, YSV, HCH_NAMES, HAER_NAMES, HDSTNAMES, HSLTNAMES, &
+                        HCHEM_SURF_FILE,                      &
                         PCLAY, PSAND, HPEDOTF,                                      &
                         PCONDSAT, PMPOTSAT, PBCOEF, PWWILT, PWFC, PWSAT,            &
                         PTAUICE, PCGSAT, PC1SAT, PC2REF, PC3, PC4B, PACOEF, PPCOEF, &
@@ -46,15 +45,26 @@ SUBROUTINE INIT_VEG_PGD_GARDEN_n(HPROGRAM, KLUOUT, KI, KGROUND_LAYER, KMONTH,   
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
+!     B. decharme 04/2013 : dummy for water table / surface coupling
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+USE MODD_SV_n, ONLY : SV_t
+!
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_INIT_VEG_PGD_n
 !
@@ -65,6 +75,14 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 INTEGER, INTENT(IN)  :: KLUOUT
@@ -82,6 +100,7 @@ REAL, DIMENSION(:), POINTER :: PGAMMAT
  CHARACTER(LEN=3), INTENT(IN) :: HPHOTO
  CHARACTER(LEN=3), INTENT(IN) :: HINIT
 LOGICAL, INTENT(IN) :: OTR_ML
+ CHARACTER(LEN=4), INTENT(IN) :: HRUNOFF
 INTEGER, INTENT(IN) :: KNBIOMASS
 REAL, DIMENSION(:), INTENT(IN) :: PCO2
 REAL, DIMENSION(:), INTENT(IN) :: PRHOA
@@ -107,21 +126,9 @@ REAL, DIMENSION(:), POINTER :: PBH
 !
 INTEGER,                          INTENT(IN) :: KSV      ! number of scalars
  CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN) :: HSV      ! name of all scalar variables
-INTEGER,                         INTENT(OUT) :: KBEQ     ! number of chemical variables
- CHARACTER(LEN=6), DIMENSION(:), POINTER :: HSVO          ! name of scalar species without # and @
-INTEGER,                         INTENT(OUT) :: KAEREQ  ! number of aerosol variables
-INTEGER,                         INTENT(OUT) :: KSV_CHSBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_CHSEND  ! last  chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_AERBEG  ! first aerosol var.
-INTEGER,                         INTENT(OUT) :: KSV_AEREND  ! last  aerosol var.
+TYPE(SV_t), INTENT(INOUT) :: YSV
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HCH_NAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HAER_NAMES     
-INTEGER,                         INTENT(OUT) :: KDSTEQ     ! number of chemical variables
-INTEGER,                         INTENT(OUT) :: KSV_DSTBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_DSTEND  ! last  chemical var.
-INTEGER,                         INTENT(OUT) :: KSLTEQ     ! number of chemical variables
-INTEGER,                         INTENT(OUT) :: KSV_SLTBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_SLTEND  ! last  chemical var.
  CHARACTER(LEN=6), DIMENSION(:), POINTER, OPTIONAL :: HDSTNAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER, OPTIONAL :: HSLTNAMES
 !
@@ -241,6 +248,11 @@ REAL, DIMENSION(:,:), POINTER :: ZT2AMAX
 REAL, DIMENSION(:,:), POINTER :: ZAH
 REAL, DIMENSION(:,:), POINTER :: ZBH
 REAL, DIMENSION(:,:), POINTER :: ZTAU_WOOD
+REAL, DIMENSION(:,:), POINTER :: ZKANISO
+REAL, DIMENSION(:,:), POINTER :: ZWD0
+!
+REAL, DIMENSION(:), POINTER   :: ZFWTD ! grid-cell fraction of water table to rise
+REAL, DIMENSION(:), POINTER   :: ZWTD  ! water table depth from Obs, TRIP or MODCOU
 !
 REAL, DIMENSION(SIZE(PDG,1),SIZE(PDG,2),1) :: ZDG
 REAL, DIMENSION(SIZE(PDROOT),1) :: ZDROOT
@@ -314,6 +326,10 @@ NULLIFY(ZT2AMAX)
 NULLIFY(ZAH)
 NULLIFY(ZBH)
 NULLIFY(ZTAU_WOOD)
+NULLIFY(ZFWTD)
+NULLIFY(ZWTD)
+NULLIFY(ZWD0)
+NULLIFY(ZKANISO)
 !
 ZDG(:,:,1) = PDG(:,:)
 ZROOTFRAC(:,:,1) = PROOTFRAC(:,:)
@@ -328,7 +344,8 @@ ZGMES(:,1) = PGMES(:)
 ZGC(:,1) = PGC(:)
 ZDMAX(:,1) = PDMAX(:)
 !
- CALL INIT_VEG_PGD_n(HPROGRAM, 'TOWN  ',KLUOUT, KI, 1, KGROUND_LAYER, KMONTH,   &
+ CALL INIT_VEG_PGD_n(CHI, DTCO, DST, I, SLT, U, &
+                     HPROGRAM, 'TOWN  ',KLUOUT, KI, 1, KGROUND_LAYER, KMONTH,   &
                   PVEGTYPE, ZPATCH, ZVEGTYPE_PATCH, ISIZE_NATURE_P, IR_NATURE_P,    &
                   0.0, &
                   .FALSE., .FALSE., ZTDEEP_CLI, ZGAMMAT_CLI, PTDEEP, PGAMMAT,   &
@@ -337,15 +354,14 @@ ZDMAX(:,1) = PDMAX(:)
                   ZGMES, ZGC, ZDMAX, ZANMAX, ZFZERO, ZEPSO, ZGAMM, ZQDGAMM,   &
                   ZQDGMES, ZT1GMES, ZT2GMES, ZAMAX, ZQDAMAX, ZT1AMAX, ZT2AMAX,&
                   ZAH, ZBH, ZTAU_WOOD, ZINCREASE, ZTURNOVER,                  &
-                  KSV, HSV, KBEQ, HSVO, KAEREQ, KSV_CHSBEG, KSV_CHSEND,       &
-                  KSV_AERBEG, KSV_AEREND, HCH_NAMES, HAER_NAMES, KDSTEQ,      &
-                  KSV_DSTBEG, KSV_DSTEND, KSLTEQ, KSV_SLTBEG, KSV_SLTEND,     &
-                  HDSTNAMES, HSLTNAMES, HCHEM_SURF_FILE,                      &
+                  KSV, HSV, YSV, HCH_NAMES, HAER_NAMES, HDSTNAMES, HSLTNAMES, &
+                  HCHEM_SURF_FILE,                      &
                   ZSFDST, ZSFDSTM, ZSFSLT,                                    &
                   ZAOSIP, ZAOSIM, ZAOSJP, ZAOSJM, ZHO2IP, ZHO2IM, ZHO2JP,     &
                   ZHO2JM, ZZ0, ZZ0EFFIP, ZZ0EFFIM, ZZ0EFFJP, ZZ0EFFJM, ZZ0REL,&
                   PCLAY, PSAND, HPEDOTF,                                      &
-                  ZCONDSAT, PMPOTSAT, PBCOEF, PWWILT, PWFC, PWSAT,            &
+                  ZCONDSAT, PMPOTSAT, PBCOEF, PWWILT, PWFC, PWSAT, ZWD0,      &
+                  ZKANISO, HRUNOFF,                                           &
                   PTAUICE, PCGSAT, ZC1SAT, ZC2REF, ZC3, PC4B, PACOEF, PPCOEF, &
                   ZC4REF, ZPCPS, ZPLVTT, ZPLSTT,                              &
                   HSCOND, HISBA, PHCAPSOIL, PCONDDRY, PCONDSLD, HCPSURF,      &
@@ -353,7 +369,7 @@ ZDMAX(:,1) = PDMAX(:)
                   ZSOILWGHT, IWG_LAYER, KLAYER_HORT, KLAYER_DUN, ZD_ICE,      &
                   ZKSAT_ICE, PALBNIR_DRY, PALBVIS_DRY, PALBUV_DRY,            &
                   PALBNIR_WET, PALBVIS_WET, PALBUV_WET, ZBSLAI_NITRO,         &
-                  ZCE_NITRO, ZCNA_NITRO, ZCF_NITRO                            )
+                  ZCE_NITRO, ZCNA_NITRO, ZCF_NITRO, ZFWTD, ZWTD               )
 !
 ALLOCATE(PPCPS(SIZE(ZPCPS,1)))
 IF (SIZE(ZPCPS)>0) &

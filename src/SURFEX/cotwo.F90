@@ -1,11 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE COTWO(PCSP, PF2, PIA, PDS, PGAMMT,               &
                      PFZERO, PEPSO, PANMAX, PGMEST, PGC, PDMAX, &
-                     PAN, PGS, PRD                             )  
+                     PAN, PGS, PRD, PLAITOP, PLAI   )  
 !   #########################################################################
 !
 !!****  *COTWO*  
@@ -36,7 +36,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	A. Boone           * Meteo-France *
+!!      A. Boone           * Meteo-France *
 !!      (following Belair)
 !!
 !!    MODIFICATIONS
@@ -49,11 +49,15 @@
 !!      A.L. Gibelin 07/2009 : Suppress GPP and PPST as outputs
 !!                             GPP is calculated in cotwores.f90 and cotworestress.f90
 !!      B. Decharme   2012   : optimization
+!!      C. Delire     2014   : Assuming a nitrogen profile with an exctinction coefficient 
+!!      B. Decharme   07/15  : Bug = Add numerical adjustement for very dry soil 
+!!      
 !!
 !-------------------------------------------------------------------------------
 !
 USE MODD_CSTS,     ONLY : XMV, XMD, XRHOLW
 USE MODD_CO2V_PAR, ONLY : XRDCF, XAIRTOH2O, XCO2TOH2O, XCONDSTMIN
+USE MODD_ISBA_PAR, ONLY : XDENOM_MIN
 !
 !*       0.     DECLARATIONS
 !               ------------
@@ -72,13 +76,13 @@ REAL, DIMENSION(:),   INTENT(IN):: PCSP, PF2, PIA, PDS,PGAMMT
 !                                      PCSP  = atmospheric concentration of CO2
 !                                      PF2   = normalized soil water stress
 !                                      PIA   = incident solar radiation
-!	                               PDS   = saturation deficit of atmosphere
+!                                      PDS   = saturation deficit of atmosphere
 !                                              verses the leaf surface (with correction)
 !                                      PGAMMT = compensation point
 !
 !                                      Time constants:
 !
-REAL, DIMENSION(:), INTENT(IN)  :: PFZERO, PEPSO, PANMAX, PGMEST, PGC, PDMAX
+REAL, DIMENSION(:), INTENT(IN)  :: PFZERO, PEPSO, PANMAX, PGMEST, PGC, PDMAX, PLAITOP, PLAI
 !                                      PFZERO    = ideal value of F, no photorespiration 
 !                                                  or saturation deficit
 !                                      PEPSO     = maximum initial quantum use efficiency 
@@ -90,6 +94,8 @@ REAL, DIMENSION(:), INTENT(IN)  :: PFZERO, PEPSO, PANMAX, PGMEST, PGC, PDMAX
 !                                      PGC       = cuticular conductance (m s-1)
 !                                      PDMAX     = maximum saturation deficit of 
 !                                                  atmosphere tolerate by vegetation       
+!                                      PLAITOP   = LAI (thickness of canopy) above considered layer 
+!                                      PLAI      = canopy LAI 
 !
 !                                      CO2 model outputs:
 REAL, DIMENSION(:),  INTENT(OUT) :: PAN, PGS, PRD
@@ -101,10 +107,11 @@ REAL, DIMENSION(:),  INTENT(OUT) :: PAN, PGS, PRD
 !*      0.2    declarations of local variables
 !
 !
-REAL, DIMENSION(SIZE(PAN)) :: ZFMIN, ZDRAP, ZF
+REAL, DIMENSION(SIZE(PAN)) :: ZFMIN, ZDRAP, ZF, ZWORK
 !                                       ZFMIN = minimum f factor
 !                                       ZDRAP = ratio Ds/Dmax
 !                                       ZF    = factor related to diffusion
+!                                       ZWORK = work array
 !
 REAL, DIMENSION(SIZE(PAN)) :: ZCSP, ZCI, ZCMIN, ZAMIN  
 !                                       ZCSP    = atmospheric concentration 
@@ -121,7 +128,7 @@ REAL, DIMENSION(SIZE(PAN)) :: ZAM, ZEPS, ZLEF, ZAGR, ZAG
 !                                                 function of CO2 deficit
 !                                       ZEPS   = initial quantum 
 !                                                use efficiency
-!	                                ZLEF    = leaf transpiration 
+!                                       ZLEF    = leaf transpiration 
 !                                        ZAGR = assimilation rate ratio
 !                                        ZAG  = modified gross assimilation 
 !                                               rate
@@ -131,13 +138,15 @@ REAL, DIMENSION(SIZE(PAN)) :: ZGSC, ZGS
 !                                       ZGS     = cuticular conductance (m s-1)
 !
 INTEGER :: JJ, ITER
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('COTWO',0,ZHOOK_HANDLE)
 !
 !*       X.     COMPUTE PRELIMINARY QUANITIES NEEDED FOR CO2 MODEL
 !               --------------------------------------------------
-!
-IF (LHOOK) CALL DR_HOOK('COTWO',0,ZHOOK_HANDLE)
 !
 DO JJ = 1, SIZE(PAN) 
   !
@@ -147,12 +156,14 @@ DO JJ = 1, SIZE(PAN)
   !                                                          Equation #s in 
   !                                                          Jacob's Thesis:
   !
+  ZWORK(JJ) = MAX(PGC(JJ)+PGMEST(JJ),XDENOM_MIN)
+  !  
   ! Eq. 3.21
-  ZFMIN(JJ) = PGC(JJ)/(PGC(JJ)+PGMEST(JJ))                          ! fmin
+  ZFMIN(JJ) = PGC(JJ)/ZWORK(JJ) ! fmin
   ! fmin <= f0, and so f <= f0
   ZFMIN(JJ) = MIN(ZFMIN(JJ),PFZERO(JJ))
   ! fmin > 0, and so PCI > PGAMMT
-  ZFMIN(JJ) = MAX(ZFMIN(JJ),1.E-10)
+  ZFMIN(JJ) = MAX(ZFMIN(JJ),XDENOM_MIN)
   !
   ! f from specific humidity deficit ds (g kg-1)
   !
@@ -171,7 +182,7 @@ DO JJ = 1, SIZE(PAN)
   !
   !
   ! Eq. 3.23
-  ZCMIN(JJ) = (PGC(JJ)*ZCSP(JJ) + PGMEST(JJ)*PGAMMT(JJ))/(PGMEST(JJ)+PGC(JJ))  
+  ZCMIN(JJ) = (PGC(JJ)*ZCSP(JJ) + PGMEST(JJ)*PGAMMT(JJ))/ZWORK(JJ) 
   !
   ! residual photosynthesis rate (kgCO2 kgAir-1 m s-1)
   !
@@ -185,16 +196,21 @@ DO JJ = 1, SIZE(PAN)
   ZAM(JJ) = PGMEST(JJ)*(ZCI(JJ)-PGAMMT(JJ))
   !
   ZAM(JJ) = -ZAM(JJ)/PANMAX(JJ)
-  ZAM(JJ) = PANMAX(JJ)*(1.0d0 - EXP(ZAM(JJ)*1.0d0))
+  ZAM(JJ) = PANMAX(JJ)*(1.0 - EXP(ZAM(JJ)))
   ZAM(JJ) = MAX(ZAM(JJ),ZAMIN(JJ))
   !
-  PRD(JJ) = ZAM(JJ)*XRDCF
+  ! Assuming a nitrogen profile within the canopy with a Kn exctinction coefficient (Bonan et al, 2011) 
+  ! that applies to dark respiration. Here Kn=0.2 (Mercado et al, 2009).
+  ! Rd is divised by LAI to be consistent with the logic of assimilation (calculated per unit LAI)
+  ! if not tropical forest, PLAITOP=0, PRD=ZAM*XRDCF
+  !
+  PRD(JJ) = ZAM(JJ)*XRDCF/PLAI(JJ)*EXP(-0.2*PLAITOP(JJ))
   !
   ! Initial quantum use efficiency (kgCO2 J-1 PAR m3 kgAir-1):
   !
   ZEPS(JJ)   = PEPSO(JJ)*(ZCI(JJ) - PGAMMT(JJ))/(ZCI(JJ) + 2.0*PGAMMT(JJ))
   !
-  IF (ZAM(JJ).NE.0.) THEN
+  IF (ZAM(JJ)/=0.) THEN
     PAN(JJ) = (ZAM(JJ) + PRD(JJ))*( 1.0 - EXP(-ZEPS(JJ)*PIA(JJ) &
                /(ZAM(JJ) + PRD(JJ))) ) - PRD(JJ)  
   ELSE
@@ -203,7 +219,7 @@ DO JJ = 1, SIZE(PAN)
   PAN(JJ) = MAX(-PRD(JJ),PAN(JJ))
   !
   ! Eq. 3.28
-  IF (ZAM(JJ).NE.0.) THEN
+  IF (ZAM(JJ)/=0.) THEN
     ZAGR(JJ) = (PAN(JJ) + PRD(JJ))/(ZAM(JJ) + PRD(JJ))   
   ELSE
     ZAGR(JJ)=0.
@@ -253,6 +269,11 @@ ENDDO
 !
 ! Eq. 3.16
 PGS(:) = XCO2TOH2O*ZGSC(:) + PGC(:)
+!
+! Prevent numerical artefact in plant transpiration when
+! soilstress is maximum (F2 = 0.0)
+!
+PGS(:) = PGS(:) * MIN(1.0,PF2(:)/XDENOM_MIN)
 !
 IF (LHOOK) CALL DR_HOOK('COTWO',1,ZHOOK_HANDLE)
 !	

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE HOR_INTERPOL(KLUOUT,PFIELDIN,PFIELDOUT)
+SUBROUTINE HOR_INTERPOL (DTCO, U, GCP,&
+                         KLUOUT,PFIELDIN,PFIELDOUT)
 !     #################################################################################
 !
 !!****  *HOR_INTERPOL * - Call the interpolation of a surface field
@@ -29,6 +30,12 @@ SUBROUTINE HOR_INTERPOL(KLUOUT,PFIELDIN,PFIELDOUT)
 !!------------------------------------------------------------------
 !
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+!
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 !
 USE MODI_HOR_INTERPOL_GAUSS
@@ -48,6 +55,11 @@ USE MODI_HOR_INTERPOL_BUFFER
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 REAL, DIMENSION(:,:), INTENT(IN)   :: PFIELDIN  ! field to interpolate horizontally
@@ -108,7 +120,7 @@ SELECT CASE (CINTERP_TYPE)
   CASE('BILIN ')
     SELECT CASE(CINGRID_TYPE)
       CASE ('CONF PROJ ')
-        CALL HOR_INTERPOL_CONF_PROJ(KLUOUT,PFIELDIN,PFIELDOUT)
+        CALL HOR_INTERPOL_CONF_PROJ(GCP,KLUOUT,PFIELDIN,PFIELDOUT)
       CASE ('CARTESIAN ')
         CALL HOR_INTERPOL_CARTESIAN(KLUOUT,PFIELDIN,PFIELDOUT)
     END SELECT
@@ -117,7 +129,8 @@ SELECT CASE (CINTERP_TYPE)
 !              ------------------------------
 !
   CASE('BUFFER')
-    CALL HOR_INTERPOL_BUFFER(KLUOUT,PFIELDIN,PFIELDOUT)
+    CALL HOR_INTERPOL_BUFFER(DTCO, U, &
+                             KLUOUT,PFIELDIN,PFIELDOUT)
 
 !
 !*      4.     no interpolation

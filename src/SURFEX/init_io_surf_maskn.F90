@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_IO_SURF_MASK_n(HMASK,KSIZE,KLUOUT,KFULL,KMASK)
+      SUBROUTINE INIT_IO_SURF_MASK_n (DTCO, U, &
+                                      HMASK,KSIZE,KLUOUT,KFULL,KMASK)
 !     ######################
 !
 !!****  *INIT_IO_SURF_MASK* Keep in memory the output files
@@ -21,13 +22,18 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Faroux   *Meteo France*
+!!      S. Faroux   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!
 !*       0.   DECLARATIONS
 !             ------------
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_MASK, ONLY: NMASK_FULL
 !
@@ -37,6 +43,10 @@ USE PARKIND1  ,ONLY : JPRB
 USE MODI_GET_SURF_MASK_n
 !
 IMPLICIT NONE
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HMASK
 INTEGER,           INTENT(IN) :: KSIZE
@@ -49,7 +59,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('INIT_IO_SURF_MASK_N',0,ZHOOK_HANDLE)
 !
- CALL GET_SURF_MASK_n(HMASK,KSIZE,IMASK,KFULL,KLUOUT)
+ CALL GET_SURF_MASK_n(DTCO, U, &
+                      HMASK,KSIZE,IMASK,KFULL,KLUOUT)
 !
 IF (ALLOCATED(NMASK_FULL)) THEN
   IF (KSIZE>SIZE(NMASK_FULL)) DEALLOCATE(NMASK_FULL)

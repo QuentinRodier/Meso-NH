@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
 SUBROUTINE SW_DAYCYCLE(KI, PZENITH, PTOT_SW)
 !     #############################################################
@@ -14,6 +14,9 @@ USE PARKIND1  ,ONLY : JPRB
 INTEGER,             INTENT(IN)  :: KI        ! number of points
 REAL, DIMENSION(KI), INTENT(IN)  :: PZENITH     ! Zenith angle (rad)
 REAL, DIMENSION(KI), INTENT(OUT) :: PTOT_SW     ! Extraterrestrial solar radiation (W m-2)
+!
+!RJ: missing declaration
+INTEGER :: JJ
 !
 REAL      :: ZC_SOL  ! Solar constant [W/m2]
 REAL      :: ZD_CORR ! Correction to acutal solar distance at any specific day of the year

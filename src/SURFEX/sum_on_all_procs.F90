@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       FUNCTION SUM_ON_ALL_PROCS(HPROGRAM,HGRID,OIN,HNAME) RESULT(KOUT)
 !     #######################################################
@@ -28,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*	
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,11 +38,12 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#ifdef OL
+#ifdef SFX_OL
 USE MODI_SUM_ON_ALL_PROCS_OL
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_SUM_ON_ALL_PROCS_MNH
+USE MODI_SUM_ON_ALL_PROCS_MNH_HAL
 #endif
 !
 !
@@ -78,15 +79,21 @@ IIN   = 0
 WHERE(OIN) IIN = 1
 !
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
-  CALL SUM_ON_ALL_PROCS_MNH(ISIZE,IIN,KOUT)
+#ifdef SFX_MNH
+  YNAME = ' '
+  IF (PRESENT(HNAME)) YNAME = HNAME
+  IF (YNAME=="HAL") THEN
+    CALL SUM_ON_ALL_PROCS_MNH_HAL(ISIZE,IIN,KOUT)
+  ELSE
+    CALL SUM_ON_ALL_PROCS_MNH(ISIZE,IIN,KOUT)
+  ENDIF
 #endif
 ELSE IF (HPROGRAM=='AROME ' ) THEN
-#ifdef ARO
+#ifdef SFX_ARO
   KOUT = MAX(COUNT(OIN),1)   ! to be coded properly in AROME
 #endif
 ELSE
-#ifdef OL
+#ifdef SFX_OL
   ! to be coded properly once Offline version is parallelized
   YNAME = ' '
   IF (PRESENT(HNAME)) YNAME = HNAME

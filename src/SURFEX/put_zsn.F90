@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ########################################
-      SUBROUTINE PUT_ZS_n(HPROGRAM,KI,PZS)
+      SUBROUTINE PUT_ZS_n (F, I, S, U, TOP, W, &
+                           HPROGRAM,KI,PZS)
 !     ########################################
 !
 !!****  *PUT_ZS_n* - routine to modify surface oropgraphy of each tile using atmospheric
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,16 +37,22 @@
 !!      P. Le Moigne 05/2007: write model orography over each tile
 !-------------------------------------------------------------------------------
 !      
-USE MODD_SURF_ATM_n, ONLY : NSIZE_WATER, NSIZE_TOWN, NSIZE_NATURE, &
-                            NR_WATER,    NR_TOWN,    NR_NATURE,    &
-                            CWATER, NSIZE_SEA, NR_SEA,             &
-                            CSEA, CNATURE, CWATER, CTOWN,          &
-                            NDIM_FULL, NSIZE_FULL, XNATURE, XSEA,  &
-                            XWATER, XTOWN
+!
+!
+!
+!
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+USE MODD_FLAKE_n, ONLY : FLAKE_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -67,6 +74,14 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
 INTEGER,             INTENT(IN)  :: KI      ! horizontal dim. of cover
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS     ! orography
@@ -83,31 +98,32 @@ IF (LHOOK) CALL DR_HOOK('PUT_ZS_N',0,ZHOOK_HANDLE)
 !*       1. Full surface
 !           ------------
 !
- CALL PUT_ZS_SURF_ATM_n(HPROGRAM,KI,PZS)
+ CALL PUT_ZS_SURF_ATM_n(U, &
+                        HPROGRAM,KI,PZS)
 !
 !*       2. inland water
 !           ------------
 !
-IF (NSIZE_WATER > 0 .AND. CWATER/='NONE' .AND. CWATER/='FLUX') CALL PACK_ZS(NSIZE_WATER,NR_WATER,'W')
+IF (U%NSIZE_WATER > 0 .AND. U%CWATER/='NONE' .AND. U%CWATER/='FLUX') CALL PACK_ZS(U%NSIZE_WATER,U%NR_WATER,'W')
 !
 !*       3. nature
 !           ------
 !
-IF (NSIZE_NATURE > 0 .AND. CNATURE/='NONE' .AND. CNATURE/='FLUX') CALL PACK_ZS(NSIZE_NATURE,NR_NATURE,'N')
+IF (U%NSIZE_NATURE > 0 .AND. U%CNATURE/='NONE' .AND. U%CNATURE/='FLUX') CALL PACK_ZS(U%NSIZE_NATURE,U%NR_NATURE,'N')
 !
 !*       4. town
 !           ----
 !
-IF (NSIZE_TOWN > 0 .AND. CTOWN/='NONE' .AND. CTOWN/='FLUX') CALL PACK_ZS(NSIZE_TOWN,NR_TOWN,'T')
+IF (U%NSIZE_TOWN > 0 .AND. U%CTOWN/='NONE' .AND. U%CTOWN/='FLUX') CALL PACK_ZS(U%NSIZE_TOWN,U%NR_TOWN,'T')
 !
 !        5.sea
 !           ----
 !
-IF (NSIZE_SEA > 0 .AND. CSEA/='NONE' .AND. CSEA/='FLUX') CALL PACK_ZS(NSIZE_SEA,NR_SEA,'S')
+IF (U%NSIZE_SEA > 0 .AND. U%CSEA/='NONE' .AND. U%CSEA/='FLUX') CALL PACK_ZS(U%NSIZE_SEA,U%NR_SEA,'S')
 !
 IF (LHOOK) CALL DR_HOOK('PUT_ZS_N',1,ZHOOK_HANDLE)
 !
-CONTAINS
+ CONTAINS
 !=======================================================================================
 SUBROUTINE PACK_ZS(KSIZE,KMASK,YTYPE)
 !
@@ -126,15 +142,16 @@ IF (LHOOK) CALL DR_HOOK('PUT_ZS_N:PACK_ZS',0,ZHOOK_HANDLE)
 IF (.NOT.ASSOCIATED(KMASK)) THEN
   ALLOCATE(KMASK (KSIZE))
   IF (KSIZE>0) THEN
-    CALL GET_SIZE_FULL_n(HPROGRAM,NDIM_FULL,NSIZE_FULL)
+    CALL GET_SIZE_FULL_n(U, &
+                         HPROGRAM,U%NDIM_FULL,U%NSIZE_FULL)
     IF (YTYPE=='W') THEN
-      CALL GET_1D_MASK( KSIZE, NSIZE_FULL, XWATER, KMASK)
+      CALL GET_1D_MASK( KSIZE, U%NSIZE_FULL, U%XWATER, KMASK)
     ELSEIF (YTYPE=='N') THEN
-      CALL GET_1D_MASK( KSIZE, NSIZE_FULL, XNATURE, KMASK)
+      CALL GET_1D_MASK( KSIZE, U%NSIZE_FULL, U%XNATURE, KMASK)
     ELSEIF (YTYPE=='T') THEN
-      CALL GET_1D_MASK( KSIZE, NSIZE_FULL, XTOWN, KMASK)
+      CALL GET_1D_MASK( KSIZE, U%NSIZE_FULL, U%XTOWN, KMASK)
     ELSEIF (YTYPE=='S') THEN
-      CALL GET_1D_MASK( KSIZE, NSIZE_FULL, XSEA, KMASK)
+      CALL GET_1D_MASK( KSIZE, U%NSIZE_FULL, U%XSEA, KMASK)
     ENDIF     
   ENDIF
 ENDIF
@@ -144,13 +161,17 @@ DO JJ=1,KSIZE
 ENDDO
 !
 IF (YTYPE=='W') THEN
-  CALL PUT_ZS_INLAND_WATER_n(HPROGRAM,KSIZE,ZP_ZS,CWATER)
+  CALL PUT_ZS_INLAND_WATER_n(F, W, &
+                             HPROGRAM,KSIZE,ZP_ZS,U%CWATER)
 ELSEIF (YTYPE=='N') THEN
-  CALL PUT_ZS_NATURE_n(HPROGRAM,KSIZE,ZP_ZS)
+  CALL PUT_ZS_NATURE_n(I, &
+                       HPROGRAM,KSIZE,ZP_ZS)
 ELSEIF (YTYPE=='T') THEN
-  CALL PUT_ZS_TOWN_n(HPROGRAM,KSIZE,ZP_ZS)
+  CALL PUT_ZS_TOWN_n(TOP, &
+                     HPROGRAM,KSIZE,ZP_ZS)
 ELSEIF (YTYPE=='S') THEN
-  CALL PUT_ZS_SEA_n(HPROGRAM,KSIZE,ZP_ZS)
+  CALL PUT_ZS_SEA_n(S, &
+                    HPROGRAM,KSIZE,ZP_ZS)
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('PUT_ZS_N:PACK_ZS',1,ZHOOK_HANDLE)

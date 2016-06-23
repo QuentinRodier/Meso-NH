@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DIAG_CPL_ESM_ISBA(PTSTEP,PCPL_DRAIN,PCPL_RUNOFF,PCPL_EFLOOD, &
+      SUBROUTINE DIAG_CPL_ESM_ISBA (I, &
+                                    PTSTEP,PCPL_DRAIN,PCPL_RUNOFF,PCPL_EFLOOD, &
                                      PCPL_PFLOOD,PCPL_IFLOOD,PCPL_ICEFLUX         )  
 !     #####################################################################
 !
@@ -32,23 +33,22 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	B. Decharme           * Meteo-France *
+!!      B. Decharme           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!
+!!      B. Decharme    01/16 : Bug with flood budget and add cpl keys
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,        ONLY : XLVTT, XRHOLW
-USE MODD_ISBA_GRID_n, ONLY : XMESH_SIZE
-USE MODD_ISBA_n,      ONLY : XPATCH, XCPL_EFLOOD, XCPL_PFLOOD,     &
-                               XCPL_IFLOOD, XCPL_DRAIN, XCPL_RUNOFF, &
-                               XFFLOOD, XPIFLOOD, XTSTEP_COUPLING,   &
-                               XCPL_ICEFLUX, LFLOOD, LGLACIER  
+USE MODD_ISBA_n, ONLY : ISBA_t
 !
+USE MODN_SFX_OASIS, ONLY : XTSTEP_CPL_LAND
+!
+USE MODD_SFX_OASIS,  ONLY : LCPL_FLOOD, LCPL_GW
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -56,6 +56,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
 !
 REAL, INTENT(IN)                   :: PTSTEP
 REAL, DIMENSION(:,:), INTENT(IN)   :: PCPL_DRAIN
@@ -67,61 +70,95 @@ REAL, DIMENSION(:,:), INTENT(IN)   :: PCPL_ICEFLUX
 !
 !*      0.2    declarations of local variables
 !
-INTEGER :: JPATCH ! tile loop counter
-REAL, DIMENSION(SIZE(XPATCH,1)) :: ZSUMPATCH
-REAL, DIMENSION(SIZE(XPATCH,1)) :: ZBUDGET
+REAL, DIMENSION(SIZE(PCPL_DRAIN,1),SIZE(PCPL_DRAIN,2)) :: ZCPL_DRAIN
+REAL, DIMENSION(SIZE(PCPL_DRAIN,1),SIZE(PCPL_DRAIN,2)) :: ZCPL_RECHARGE
+!
+REAL, DIMENSION(SIZE(I%XPATCH,1)) :: ZSUMPATCH
+REAL, DIMENSION(SIZE(I%XPATCH,1)) :: ZBUDGET
+!
+INTEGER :: INI,INP
+INTEGER :: JI, JPATCH ! tile loop counter
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
-! Initialize and allocate local variable
-!-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_CPL_ESM_ISBA',0,ZHOOK_HANDLE)
-ZSUMPATCH(:) = 0.
-DO JPATCH=1,SIZE(XPATCH,2)
-  ZSUMPATCH(:) = ZSUMPATCH(:) + XPATCH(:,JPATCH)
-END DO
 !
-!* update ISBA - TRIP or NEMO coupling variable
-!  ------------------------------------
+!* Initialization
+!  --------------
 !
-!kg/m²
-DO JPATCH=1,SIZE(XPATCH,2)
-   WHERE (ZSUMPATCH(:) > 0.)
-         XCPL_DRAIN (:) = XCPL_DRAIN (:) + PTSTEP * MAX(PCPL_DRAIN (:,JPATCH),0.0) * XPATCH(:,JPATCH)/ZSUMPATCH(:) 
-         XCPL_RUNOFF(:) = XCPL_RUNOFF(:) + PTSTEP * MAX(PCPL_RUNOFF(:,JPATCH),0.0) * XPATCH(:,JPATCH)/ZSUMPATCH(:) 
-   END WHERE
-END DO
+INI=SIZE(I%XPATCH,1)
+INP=SIZE(I%XPATCH,2)
 !
-!kg/m²
-IF(LGLACIER)THEN
-  DO JPATCH=1,SIZE(XPATCH,2)
-     WHERE (ZSUMPATCH(:) > 0.)
-           XCPL_ICEFLUX(:) = XCPL_ICEFLUX(:) + PTSTEP * MAX(PCPL_ICEFLUX(:,JPATCH),0.0) * XPATCH(:,JPATCH)/ZSUMPATCH(:)
-     END WHERE
-  END DO
+ZSUMPATCH(:) = 0.0
+DO JPATCH=1,INP
+  DO JI=1,INI
+     ZSUMPATCH(JI) = ZSUMPATCH(JI) + I%XPATCH(JI,JPATCH)
+  ENDDO
+ENDDO
+!
+ZCPL_RECHARGE(:,:) = 0.0
+!
+IF(I%CISBA/='DIF')THEN
+! prevent small negatives values with ISBA-FR
+  ZCPL_DRAIN(:,:)=MAX(0.0,PCPL_DRAIN(:,:))
+ELSE
+  ZCPL_DRAIN(:,:)=PCPL_DRAIN(:,:)
 ENDIF
 !
-IF(LFLOOD)THEN
-!        
-!* update the Floodplains diagnostics for the coupling with TRIP !
-!  ---------------------------------------------------------------
+!* groundwater case
+!  ----------------
 !
-! kg/m²
-  DO JPATCH=1,SIZE(XPATCH,2)
-     WHERE (ZSUMPATCH(:) > 0.)
-           XCPL_EFLOOD  (:)  = XCPL_EFLOOD  (:) + PTSTEP * PCPL_EFLOOD  (:,JPATCH)*XPATCH(:,JPATCH)/ZSUMPATCH(:)
-           XCPL_PFLOOD  (:)  = XCPL_PFLOOD  (:) + PTSTEP * PCPL_PFLOOD  (:,JPATCH)*XPATCH(:,JPATCH)/ZSUMPATCH(:)
-           XCPL_IFLOOD  (:)  = XCPL_IFLOOD  (:) + PTSTEP * PCPL_IFLOOD  (:,JPATCH)*XPATCH(:,JPATCH)/ZSUMPATCH(:)
-     END WHERE
-  END DO
+IF(LCPL_GW.AND.I%LWTD)THEN
+  DO JPATCH=1,INP
+    DO JI=1,INI
+      IF(I%XGW(JI)>0.0.AND.ZSUMPATCH(JI)>0.0)THEN
+        ZCPL_RECHARGE(JI,JPATCH) = PCPL_DRAIN(JI,JPATCH)
+        ZCPL_DRAIN   (JI,JPATCH) = 0.0
+      ENDIF
+    ENDDO
+  ENDDO
+ENDIF
 !
-  ZBUDGET(:)=XPIFLOOD*XTSTEP_COUPLING+(XCPL_PFLOOD(:)-XCPL_IFLOOD(:)-XCPL_EFLOOD(:))
-  WHERE(ZBUDGET(:)<=0.0)
-        XPIFLOOD(:)=0.0
-        XFFLOOD (:)=0.0
+!* update ISBA - RRM coupling variable (kg/m2)
+!  -------------------------------------------
+!
+!kg/mÂ²
+DO JPATCH=1,INP
+  DO JI=1,INI
+!  
+     IF(ZSUMPATCH(JI)>0.0)THEN
+       I%XCPL_DRAIN (JI) = I%XCPL_DRAIN (JI) + PTSTEP * ZCPL_DRAIN (JI,JPATCH) * I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI) 
+       I%XCPL_RUNOFF(JI) = I%XCPL_RUNOFF(JI) + PTSTEP * PCPL_RUNOFF(JI,JPATCH) * I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI) 
+     ENDIF
+!
+     IF(I%LGLACIER.AND.ZSUMPATCH(JI)>0.0)THEN
+        I%XCPL_ICEFLUX(JI) = I%XCPL_ICEFLUX(JI) + PTSTEP * PCPL_ICEFLUX(JI,JPATCH) * I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI)
+     ENDIF
+!
+     IF(LCPL_GW.AND.I%LWTD.AND.ZSUMPATCH(JI)>0.0)THEN
+        I%XCPL_RECHARGE(JI) = I%XCPL_RECHARGE(JI) + PTSTEP * ZCPL_RECHARGE(JI,JPATCH) * I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI)
+     ENDIF
+!   
+     IF(LCPL_FLOOD.AND.I%LFLOOD.AND.ZSUMPATCH(JI)>0.0)THEN
+        I%XCPL_EFLOOD  (JI) = I%XCPL_EFLOOD  (JI) + PTSTEP * PCPL_EFLOOD  (JI,JPATCH)*I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI)
+        I%XCPL_PFLOOD  (JI) = I%XCPL_PFLOOD  (JI) + PTSTEP * PCPL_PFLOOD  (JI,JPATCH)*I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI)
+        I%XCPL_IFLOOD  (JI) = I%XCPL_IFLOOD  (JI) + PTSTEP * PCPL_IFLOOD  (JI,JPATCH)*I%XPATCH(JI,JPATCH)/ZSUMPATCH(JI)
+     ENDIF
+!    
+  ENDDO
+ENDDO
+!
+!* update ISBA Floodplains variable for mass conservation (kg/m2)
+!  --------------------------------------------------------------
+!
+IF(LCPL_FLOOD.AND.I%LFLOOD)THEN
+  ZBUDGET(:)=(I%XPIFLOOD(:)*XTSTEP_CPL_LAND)+I%XCPL_PFLOOD(:)-I%XCPL_IFLOOD(:)-I%XCPL_EFLOOD(:)
+  WHERE(ZBUDGET (:)<=0.0)
+        I%XPIFLOOD(:)=0.0
+        I%XFFLOOD (:)=0.0
   ENDWHERE
-!
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_CPL_ESM_ISBA',1,ZHOOK_HANDLE)

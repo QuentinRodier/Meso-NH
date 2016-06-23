@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #######################################################
-      SUBROUTINE OPEN_AUX_IO_SURF_ASC(HFILE,HFILETYPE,HMASK)
+      SUBROUTINE OPEN_AUX_IO_SURF_ASC (&
+                                       HFILE,HFILETYPE,HMASK)
 !     #######################################################
 !
 !!****  *OPEN_AUX_IO_SURF_ASC* - chooses the routine to OPENialize IO
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*	
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,10 +38,13 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
 USE MODD_IO_SURF_ASC,ONLY:NUNIT,CFILEIN,CFILEOUT,NMASK,NLUOUT,NFULL,CMASK
 USE MODI_GET_LUOUT
 USE MODI_READ_SURF
-USE MODI_IO_BUFF_CLEAN_n
+USE MODI_IO_BUFF_CLEAN
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -50,6 +54,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
 !
  CHARACTER(LEN=28), INTENT(IN)  :: HFILE     ! file name
  CHARACTER(LEN=6),  INTENT(IN)  :: HFILETYPE ! main program
@@ -66,15 +72,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('OPEN_AUX_IO_SURF_ASC',0,ZHOOK_HANDLE)
- CALL IO_BUFF_CLEAN_n
+ CALL IO_BUFF_CLEAN
  CALL GET_LUOUT('ASCII ',NLUOUT)
 !
 NUNIT=9
 !
 OPEN(UNIT=NUNIT,FILE=TRIM(HFILE)//'.txt',FORM='FORMATTED')
 !
-CMASK = HMASK
- CALL READ_SURF('ASCII ','DIM_FULL',NFULL,IRET)
+ CMASK = 'FULL  '
+ CALL READ_SURF(&
+                'ASCII ','DIM_FULL',NFULL,IRET)
 ALLOCATE(NMASK(NFULL))
 ALLOCATE(ZFULL(NFULL))
 ZFULL=1.
@@ -82,7 +89,7 @@ ZFULL=1.
 DEALLOCATE(ZFULL)
 !
 !------------------------------------------------------------------------------
-CMASK = HMASK
+ CMASK = HMASK
 IF (LHOOK) CALL DR_HOOK('OPEN_AUX_IO_SURF_ASC',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !

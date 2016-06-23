@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
 SUBROUTINE INIT_VEG_GARDEN_n(KI, OCANOPY, HROUGH, TPSNOW, &
                          HPHOTO, PLAIMIN, PH_TREE, PVEGTYPE, PLAI, PZ0, PVEG, PEMIS, &
@@ -32,7 +32,7 @@ SUBROUTINE INIT_VEG_GARDEN_n(KI, OCANOPY, HROUGH, TPSNOW, &
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!
@@ -122,6 +122,8 @@ REAL, DIMENSION(SIZE(PZ0),1) :: ZZ0
 REAL, DIMENSION(SIZE(PVEG),1) :: ZVEG
 REAL, DIMENSION(SIZE(PEMIS),1) :: ZEMIS
 !
+LOGICAL :: LAGRI_TO_GRASS
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -154,11 +156,14 @@ ZZ0(:,1) = PZ0(:)
 ZVEG(:,1) = PVEG(:)
 ZEMIS(:,1) = PEMIS(:)
 !
+LAGRI_TO_GRASS = .FALSE.
+!
 ZVEGTYPE_PATCH(:,:,1) = PVEGTYPE(:,:)
 !-------------------------------------------------------------------------------
 !
- CALL INIT_VEG_n(1, KI, OCANOPY, HROUGH, TPSNOW, &
-                   HPHOTO, ZLAIMIN, ZH_TREE, ZVEGTYPE_PATCH, ZLAI, ZZ0, ZVEG, ZEMIS, &
+ CALL INIT_VEG_n(1, KI, OCANOPY, HROUGH, LAGRI_TO_GRASS, TPSNOW, &
+                   HPHOTO, .FALSE., .FALSE., .FALSE., &
+                   ZLAIMIN, ZH_TREE, ZVEGTYPE_PATCH, ZLAI, ZZ0, ZVEG, ZEMIS, &
                    OTR_ML, ZFAPARC, ZFAPIRC, ZLAI_EFFC, ZMUS, &
                    ZALBNIR_SOIL, ZALBVIS_SOIL, ZALBUV_SOIL, ZALBNIR, ZALBVIS, ZALBUV, &
                    OSURF_DIAG_ALBEDO, ZPSN, ZPSNG, ZPSNV, ZPSNV_A, &

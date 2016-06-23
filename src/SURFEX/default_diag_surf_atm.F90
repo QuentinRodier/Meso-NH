@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_DIAG_SURF_ATM(K2M,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET,   &
+      SUBROUTINE DEFAULT_DIAG_SURF_ATM(K2M,OT2MMW,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET, &
                                          OCOEF,OSURF_VARS,OSURF_BUDGETC,          &
                                          ORESET_BUDGETC, OSELECT, OPROVAR_TO_DIAG,&
                                          ODIAG_GRID, OFRAC, PDIAG_TSTEP, CSELECT  )                                         
@@ -30,7 +30,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -56,6 +56,7 @@ IMPLICIT NONE
 !
 !
 INTEGER,  INTENT(OUT) :: K2M           ! flag for operational 2m quantities
+LOGICAL,  INTENT(OUT) :: OT2MMW        ! flag for modified weighting of 2m temperature
 LOGICAL,  INTENT(OUT) :: OSURF_BUDGET  ! flag for surface budget
 LOGICAL,  INTENT(OUT) :: O2M_MIN_ZS    ! flag for 2m quantities on min.  orography
 LOGICAL,  INTENT(OUT) :: ORAD_BUDGET   ! flag for radiative budget
@@ -79,6 +80,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('DEFAULT_DIAG_SURF_ATM',0,ZHOOK_HANDLE)
 !
 K2M          = 0
+OT2MMW       = .FALSE.
 OSURF_BUDGET = .FALSE.
 !
 O2M_MIN_ZS   = .FALSE.

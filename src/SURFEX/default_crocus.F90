@@ -1,10 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_CROCUS(OSNOWDRIFT,OSNOWDRIFT_SUBLIM,PZ0ICEZ0SNOW,PRHOTHRESHOLD_ICE,&
-                 PALBICE1,PALBICE2,PALBICE3,PVAGING_NOGLACIER,PVAGING_GLACIER)  
+      SUBROUTINE DEFAULT_CROCUS(OSNOWDRIFT,OSNOWDRIFT_SUBLIM,OSNOW_ABS_ZENITH,&
+                 HSNOWMETAMO,HSNOWRAD)  
 !     ########################################################################
 !
 !!****  *DEFAULT_ISBA* - routine to set default values for the configuration for Crocus
@@ -28,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	M. Lafaysse   *Meteo France*	
+!!      M. Lafaysse   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -52,19 +52,11 @@ IMPLICIT NONE
 ! Logicals to activate / disactivate snowdrift                                          
 LOGICAL, INTENT(OUT)          :: OSNOWDRIFT
 LOGICAL, INTENT(OUT)          :: OSNOWDRIFT_SUBLIM
-
-! Prescribed ice albedo in 3 spectral bands for glacier simulation with CROCUS scheme.
-REAL,  INTENT(OUT) :: PALBICE1,PALBICE2,PALBICE3
+LOGICAL, INTENT(OUT)          :: OSNOW_ABS_ZENITH
 !
-
-! Density threshold for ice detection in CROCUS scheme.
-REAL,  INTENT(OUT) :: PRHOTHRESHOLD_ICE
-
-! Roughness length ratio between ice and snow
-REAL, INTENT(OUT) :: PZ0ICEZ0SNOW
-
-! Parameters for ageing effect on albedo
-REAL, INTENT(OUT) :: PVAGING_NOGLACIER,PVAGING_GLACIER
+! Snow metamorphism scheme and radiative transfer scheme
+ CHARACTER(*), INTENT(OUT) :: HSNOWMETAMO,HSNOWRAD
+!
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -73,34 +65,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_CROCUS',0,ZHOOK_HANDLE)
-
-OSNOWDRIFT=.TRUE.
-OSNOWDRIFT_SUBLIM=.FALSE.
-
-! Roughness length ratio between ice and snow
-PZ0ICEZ0SNOW=10.
-
-! 3 bands spectral albedo for glacier ice (CROCUS)
-! Default values from Lejeune et al 2009 (Zongo, Bolivia)
-PALBICE1=0.38
-PALBICE2=0.23
-PALBICE3=0.08
-
-! Gerbaux et al 2005 (Saint Sorlin)
-! PALBICE1=0.23
-! PALBICE2=0.16
-! PALBICE3=0.05
 !
-! Density threshold for ice detection kg.m-3
-PRHOTHRESHOLD_ICE=850.
-
-! Parameters for ageing effect on albedo
-PVAGING_NOGLACIER=60.
-PVAGING_GLACIER=900.
-
-
+OSNOWDRIFT        = .TRUE.
+OSNOWDRIFT_SUBLIM = .FALSE.
+OSNOW_ABS_ZENITH = .FALSE.
+!
+HSNOWMETAMO = 'B92'
+HSNOWRAD    = 'B92'
+!
 IF (LHOOK) CALL DR_HOOK('DEFAULT_CROCUS',1,ZHOOK_HANDLE)
-!
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE DEFAULT_CROCUS

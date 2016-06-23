@@ -1,20 +1,20 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######spl
       SUBROUTINE ISBA_FLUXES(HISBA, HSNOW_ISBA, OTEMP_ARP,                     &
                           PTSTEP, PSODELX,                                     &
-                          PSW_RAD, PLW_RAD, PTA, PQA, PUSTAR2,                 &
+                          PSW_RAD, PLW_RAD, PTA, PQA,                          &
                           PRHOA, PEXNS, PEXNA, PCPS, PLVTT, PLSTT,             &
                           PVEG, PHUG, PHUI, PHV,                               &
                           PLEG_DELTA, PLEGI_DELTA, PDELTA, PRA,                &
-                          PF5, PRS, PCS, PCG, PCT, PSNOWSWE, PT2M, PTSM,       &
+                          PF5, PRS, PCS, PCG, PCT, PSNOWSWE, PTSM, PT2M,       &
                           PPSN, PPSNV, PPSNG, PFROZEN1,                        &
                           PALBT, PEMIST, PQSAT, PDQSAT, PSNOW_THRUFAL,         &
                           PRN, PH, PLE, PLEG, PLEGI, PLEV,                     &
                           PLES, PLER, PLETR, PEVAP,                            &
-                          PGFLUX, PMELTADV, PMELT, PRESTORE, PUSTAR,           &
+                          PGFLUX, PMELTADV, PMELT,                             &
                           PSOILCONDZ, PD_G, PDZG, PTG,                         &
                           PSR, PPSNV_A,                                        &
                           PFFG, PFFV, PFF, PFFROZEN,                           &
@@ -55,7 +55,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -84,6 +84,7 @@
 !!      (A.Boone)    02/2013  Split soil phase changes into seperate routine
 !!      (B. Decharme)04/2013  Pass soil phase changes routines in hydro.F90
 !!      (B. Decharme)04/2013  Delete PTS_RAD because wrong diagnostic
+!!      (B. Decharme)10/14    "Restore" flux computed in e_budget
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -106,12 +107,12 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-CHARACTER(LEN=*),   INTENT(IN)      :: HISBA      ! type of soil (Force-Restore OR Diffusion)
+ CHARACTER(LEN=*),   INTENT(IN)      :: HISBA      ! type of soil (Force-Restore OR Diffusion)
 !                                                 ! '2-L'
 !                                                 ! '3-L'
 !                                                 ! 'DIF'   ISBA-DF
 !
-CHARACTER(LEN=*), INTENT(IN)        :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
+ CHARACTER(LEN=*), INTENT(IN)        :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
 !                                                 !         (Douville et al. 1995)
 !                                                 ! '3-L' = 3-L snow scheme (option)
 !                                                 !         (Boone and Etchevers 2001)
@@ -124,8 +125,6 @@ REAL, INTENT (IN)                   :: PTSTEP     ! model time step (s)
 !
 !
 REAL, DIMENSION(:), INTENT(IN)      :: PSODELX    ! Pulsation for each layer (Only used if LTEMP_ARP=True)
-!
-REAL, DIMENSION(:), INTENT (IN)     :: PUSTAR2    ! wind friction after implicitation (m2/s2)
 !
 REAL, DIMENSION(:), INTENT (IN)     :: PSW_RAD, PLW_RAD, PTA, PQA, PRHOA
 !                                      PSW_RAD = incoming solar radiation
@@ -205,7 +204,7 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PLE_FLOOD, PLEI_FLOOD !Floodplains latent
 REAL, DIMENSION(:), INTENT(OUT)     :: PSNOWTEMP  ! snow layer temperatures (K)
 !
 REAL, DIMENSION(:), INTENT(OUT)     :: PRN, PH, PLE, PLEG, PLEV, PLES
-REAL, DIMENSION(:), INTENT(OUT)     :: PLER, PLETR, PEVAP, PGFLUX, PMELTADV, PMELT, PRESTORE
+REAL, DIMENSION(:), INTENT(OUT)     :: PLER, PLETR, PEVAP, PGFLUX, PMELTADV, PMELT
 !                                     PRN = net radiation at the surface
 !                                     PH = sensible heat flux
 !                                     PLE = latent heat flux
@@ -222,12 +221,10 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PLER, PLETR, PEVAP, PGFLUX, PMELTADV, PME
 !                                                (acts to restore temperature to
 !                                                 melting point) (W/m2)
 !                                     PMELT = melting rate of snow (kg m-2 s-1)
-!                                     PRESTORE = surface restore flux (W m-2)
 !
-REAL, DIMENSION(:), INTENT(OUT)     :: PLEGI, PUSTAR
+REAL, DIMENSION(:), INTENT(OUT)     :: PLEGI
 !                                      PLEGI   = sublimation component of the 
 !                                                latent heat flux from the soil surface
-!                                      PUSTAR  = friction velocity
 !
 !*      0.2    declarations of local variables
 !
@@ -278,6 +275,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       0.     Initialization
 !               --------------
 IF (LHOOK) CALL DR_HOOK('ISBA_FLUXES',0,ZHOOK_HANDLE)
+!
 IF (HSNOW_ISBA == 'EBA') ZEPS1=1.0E-8
 !
 PMELT(:)        = 0.0
@@ -301,11 +299,12 @@ ELSE
    ZFRAC(:)     = PPSNG(:)
 ENDIF
 !
-!
-DO JJ=1,SIZE(PTG,1)
 !-------------------------------------------------------------------------------
+!
 !*       1.     FLUX CALCULATIONS
 !               -----------------
+!
+DO JJ=1,SIZE(PTG,1)
 !                                            temperature change
   ZDT(JJ)      = PTG(JJ,1) - PTSM(JJ)
 !
@@ -381,45 +380,17 @@ DO JJ=1,SIZE(PTG,1)
   PEVAP(JJ)    = ((PLEV(JJ) + PLEG(JJ))/PLVTT(JJ)) + ((PLEGI(JJ) + PLES(JJ))/PLSTT(JJ))
 !                                            total evaporative flux (kg/m2/s)
 !                                            without flood
-!-------------------------------------------------------------------------------
-!
-!*       2.     FRICTION VELOCITY
-!               -----------------
-!
-!
-  PUSTAR(JJ) = SQRT(PUSTAR2(JJ))
 !
 ENDDO
-
+!
+!-------------------------------------------------------------------------------
+!
 IF(HSNOW_ISBA == 'D95')THEN
-!cdir nodep
   DO JJ=1,SIZE(PTG,1)
     PLE    (JJ)  = PLE    (JJ) + PLE_FLOOD(JJ) + PLEI_FLOOD(JJ)
     PGFLUX (JJ)  = PGFLUX (JJ) - PLE_FLOOD(JJ) - PLEI_FLOOD(JJ)
     PEVAP  (JJ)  = PEVAP  (JJ) + PLE_FLOOD(JJ)/PLVTT(JJ) + PLEI_FLOOD(JJ)/PLSTT(JJ)
   ENDDO
-ENDIF
-!
-IF (HISBA /= 'DIF') THEN
-!
-! "Restore" flux between surface and deep layer:
-!
-   PRESTORE(:) = 2.0*XPI*(PTG(:,1)-PT2M(:))/(PCT(:)*XDAY)  
-!
-   IF(OTEMP_ARP)THEN
-      PRESTORE(:)=2.0*XPI*(PTG(:,1)-PTG(:,2))/(PCT(:)*XDAY*PSODELX(1)*(PSODELX(1)+PSODELX(2)))
-   ENDIF
-!
-ELSE
-!
-! "Restore" flux here is actually the heat flux between the surface
-! and sub-surface layers:
-!
-  DO JJ=1,SIZE(PTG,1)
-    ZCONDAVG(JJ) = (PDZG(JJ,1)*PSOILCONDZ(JJ,1) + PDZG(JJ,2)*PSOILCONDZ(JJ,2))/PD_G(JJ,2)
-    PRESTORE(JJ) = 2.*ZCONDAVG(JJ)*(PTG(JJ,1)-PTG(JJ,2))/PD_G(JJ,2)
-  ENDDO
-!
 ENDIF
 !
 !-------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######################
       MODULE MODD_DATA_COVER_PAR
 !     ######################
@@ -25,7 +25,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Belair   *Meteo France*
+!!      S. Belair   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -33,6 +33,7 @@
 !!      (V.Masson)     05/10/98+ add XCDZ0EFF, XRHOSMIN, XRHOSMAX
 !!      (V.Masson)     15/03/99 add number of layers
 !!      (A.Boone)      02/05/02 add ISBA-ES parameters
+!!      (R.Alkama)     05/2012  add 7 new vegtypes (19 rather than 12)
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -52,18 +53,25 @@ INTEGER, PARAMETER    :: NCOVER_ECO2_START  = 301
 INTEGER                                :: NVEGTYPE
 ! number of vegetation types
 !
-INTEGER                                :: NVT_C4
-INTEGER                                :: NVT_TREE
-INTEGER                                :: NVT_CONI
-INTEGER                                :: NVT_EVER
-INTEGER                                :: NVT_GRAS
-INTEGER                                :: NVT_TROG
-INTEGER                                :: NVT_C3
-INTEGER                                :: NVT_NO
-INTEGER                                :: NVT_ROCK
-INTEGER                                :: NVT_SNOW
-INTEGER                                :: NVT_IRR
-INTEGER                                :: NVT_PARK
+INTEGER  :: NVT_C4    ! C4 cultures types
+INTEGER  :: NVT_TRBE  ! tropical broadleaf evergreen   EVER
+INTEGER  :: NVT_TRBD  ! tropical broadleaf deciduous   TREE
+INTEGER  :: NVT_TEBE  ! temperate broadleaf evergreen  TREE 
+INTEGER  :: NVT_TEBD  ! temperate broadleaf cold-deciduous (summergreen)  TREE   
+INTEGER  :: NVT_TENE  ! temperate needleleaf evergreen CONI
+INTEGER  :: NVT_BOBD  ! boreal broadleaf cold-deciduous (summergreen) TREE  
+INTEGER  :: NVT_BONE  ! boreal needleleaf evergreen    CONI
+INTEGER  :: NVT_BOND  ! boreal needleleaf cold-deciduous (summergreen) CONI
+INTEGER  :: NVT_BOGR  ! Arctic Grass  C3               GRAS
+INTEGER  :: NVT_SHRB  ! Shrub        (TREE <= 2 m)
+INTEGER  :: NVT_GRAS  ! GRASsland      C3
+INTEGER  :: NVT_TROG  ! TROpical Grass C4
+INTEGER  :: NVT_C3    ! C3 CULTures types
+INTEGER  :: NVT_NO    ! NO vegetation
+INTEGER  :: NVT_ROCK  ! ROCKs
+INTEGER  :: NVT_SNOW  ! Ice-cap ice-sheet
+INTEGER  :: NVT_IRR   ! IRRigated crops
+INTEGER  :: NVT_PARK  ! irrigated PARKs gardens or peat bogs
 ! indexes of these types (C4 cultures types, Broadleaf TREEs, CONIferous trees,
 !                         EVERgreen broadleaf trees, GRASsland, TROpical Grass,
 !                         C3 CULTures types, NO vegetation, ROCKs,
@@ -80,8 +88,8 @@ INTEGER                                :: NPERMSNOW
 !
 ! Free water bodies
 !
-INTEGER, DIMENSION(2)                  :: NSEA
-INTEGER, DIMENSION(3)                  :: NWATER
+INTEGER, DIMENSION(3)                  :: NSEA
+INTEGER, DIMENSION(2)                  :: NWATER
 !
 !---------------------------------------------------------------------------------
 !

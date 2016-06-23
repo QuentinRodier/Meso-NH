@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE INIT_ISBA_SBL(HISBA, HCPSURF, KLVL, PPA, PPS, PTA, PQA, PRHOA, PU, PV,           &
+    SUBROUTINE INIT_ISBA_SBL(HISBA, HCPSURF, KLVL, PTSTEP, PPA, PPS, PTA, PQA, PRHOA, PU, PV,   &
                                PDIR_SW, PSCA_SW, PSW_BANDS, PRAIN, PSNOW,                       &
                                PZREF, PUREF, PTG, PPATCH, PWG, PWGI, PZ0, PSSO_SLOPE,           &
                                PRESA, PVEG, PLAI, PWR, PRGL, PRSMIN, PGAMMA, PWRMAX_CF,         &
@@ -33,7 +33,7 @@
 !
 USE MODD_TYPE_SNOW
 !
-USE MODD_CSTS,             ONLY : XCPD, XRD, XP00, XG
+USE MODD_CSTS,             ONLY : XCPD, XRD, XP00, XG, XLVTT
 USE MODD_SURF_ATM,         ONLY : LNOSOF
 USE MODD_CANOPY_TURB,      ONLY : XALPSBL
 !
@@ -53,6 +53,7 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=*)  , INTENT(IN)  :: HISBA     ! type of ISBA version
  CHARACTER(LEN=*)  , INTENT(IN)  :: HCPSURF   ! specific heat at surface
+REAL,               INTENT(IN)   :: PTSTEP   ! timestep of the integration
 INTEGER           , INTENT(IN)  :: KLVL      ! number      of levels in canopy
 REAL, DIMENSION(:), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(:), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
@@ -169,6 +170,7 @@ REAL, DIMENSION(SIZE(PTA),SIZE(PTSNOW%WSNOW,2))   ::ZSUM_LAYER
 REAL, DIMENSION(SIZE(PTA))   ::ZSUM
 REAL, DIMENSION(SIZE(PTA))   :: ZLEG_DELTA  ! soil evaporation delta fn
 REAL, DIMENSION(SIZE(PTA))   :: ZLEGI_DELTA ! soil sublimation delta fn
+REAL, DIMENSION(SIZE(PTA))   :: ZLVTT
 !
 INTEGER                     :: JSWB
 INTEGER                     :: JLAYER
@@ -270,13 +272,16 @@ ZFFVNOS(:) = 0.0
 ZFF    (:) = 0.0
 !
 ZF5    (:) = 1.0
+ZLVTT  (:) = XLVTT
 !We compute ZCD, ZCH and ZRI
- CALL DRAG(HISBA, PTSNOW%SCHEME, HCPSURF, ZTS, ZWG, ZWGI, ZEXNS, ZEXNA, PTA,   &
+ CALL DRAG(HISBA, PTSNOW%SCHEME, HCPSURF,  PTSTEP,                            &
+          ZTS, ZWG, ZWGI, ZEXNS, ZEXNA, PTA,                                  &
           ZWIND, ZQA, PRAIN, PSNOW, PPS, ZRS,                                 &
           ZVEG, ZZ0, ZZ0EFF, ZZ0H, PWFC(:,1), PWSAT(:,1),                     &
           ZPSNG, ZPSNV, PZREF, PUREF, ZP_SLOPE_COS, ZDELTA, ZF5,              &
           ZRESA, ZCH, ZCD, ZCDN, ZRI, ZHUG, ZHUGI, ZHV, ZHU, ZCPS,            &
-          ZQS, ZFFG, ZFFV, ZFF, ZFFGNOS, ZFFVNOS, ZLEG_DELTA, ZLEGI_DELTA     )  
+          ZQS, ZFFG, ZFFV, ZFF, ZFFGNOS, ZFFVNOS, ZLEG_DELTA, ZLEGI_DELTA,    &
+          ZWR, PRHOA, ZLVTT                                                   )  
 !
 !Initialisation of T, Q, Wind and TKE on all canopy levels
 DO JLAYER=1,KLVL

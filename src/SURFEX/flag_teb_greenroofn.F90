@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE FLAG_TEB_GREENROOF_n(KFLAG)
+      SUBROUTINE FLAG_TEB_GREENROOF_n (TGR, TGRO, TGRPE, T, TVG, &
+                                       KFLAG)
 !     ##################################
 !
 !!****  *FLAG_TEB_GREENROOF_n* - routine to flag ISBA variables where green roofs are
@@ -29,7 +30,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -41,15 +42,14 @@
 !              ------------
 !
 !
+!
+USE MODD_TEB_GREENROOF_n, ONLY : TEB_GREENROOF_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+USE MODD_TEB_GREENROOF_PGD_EVOL_n, ONLY : TEB_GREENROOF_PGD_EVOL_t
+USE MODD_TEB_n, ONLY : TEB_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODD_CO2V_PAR,       ONLY : XANFMINIT, XCONDCTMIN
-USE MODD_TEB_n,          ONLY : XGREENROOF
-USE MODD_TEB_VEG_n,      ONLY : CPHOTO, CISBA, CRESPSL
-USE MODD_TEB_GREENROOF_n,   ONLY : NLAYER_GR,                      &
-                                XTG, XWG, XWGI, XWR, XLAI, TSNOW,   &
-                                XRESA, XANFM, XAN, XLE, XANDAY,     &
-                                XBSLAI, XBIOMASS, XRESP_BIOMASS,    &
-                                XSNOWFREE_ALB, XSNOWFREE_ALB_VEG,   &
-                                XSNOWFREE_ALB_SOIL
 !                                
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -62,6 +62,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(TEB_GREENROOF_t), INTENT(INOUT) :: TGR
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+TYPE(TEB_GREENROOF_PGD_EVOL_t), INTENT(INOUT) :: TGRPE
+TYPE(TEB_t), INTENT(INOUT) :: T
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
 !
 INTEGER, INTENT(IN) :: KFLAG ! 1 : to put physical values to run ISBA afterwards
 !                            ! 2 : to flag with XUNDEF value for points without green roof
@@ -99,38 +106,38 @@ ENDIF
 !-------------------------------------------------------------------------------
 !     
   !
-  DO JL1=1,NLAYER_GR
-    WHERE (XGREENROOF(:)==0.) 
-      XTG (:,JL1) = ZTG
-      XWG (:,JL1) = ZWG
-      XWGI(:,JL1) = ZDEF
+  DO JL1=1,TGRO%NLAYER_GR
+    WHERE (T%CUR%XGREENROOF(:)==0.) 
+      TGR%CUR%XTG (:,JL1) = ZTG
+      TGR%CUR%XWG (:,JL1) = ZWG
+      TGR%CUR%XWGI(:,JL1) = ZDEF
     END WHERE
   END DO
   !
-  WHERE (XGREENROOF(:)==0.) 
-    XWR  (:) = ZWR
-    XRESA(:) = ZRESA
+  WHERE (T%CUR%XGREENROOF(:)==0.) 
+    TGR%CUR%XWR  (:) = ZWR
+    TGR%CUR%XRESA(:) = ZRESA
   END WHERE
   !
-  IF (CPHOTO/='NON') THEN
+  IF (TVG%CPHOTO/='NON') THEN
     !
-    WHERE (XGREENROOF(:)==0.)
-      XANFM (:) = ZANFM              
-      XAN   (:) = ZDEF
-      XANDAY(:) = ZDEF
-      XLE   (:) = ZDEF
+    WHERE (T%CUR%XGREENROOF(:)==0.)
+      TGR%CUR%XANFM (:) = ZANFM              
+      TGR%CUR%XAN   (:) = ZDEF
+      TGR%CUR%XANDAY(:) = ZDEF
+      TGR%CUR%XLE   (:) = ZDEF
     END WHERE
     !
-  ELSE IF (CPHOTO=='LAI' .OR. CPHOTO=='LST' .OR. CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
+  ELSE IF (TVG%CPHOTO=='LAI' .OR. TVG%CPHOTO=='LST' .OR. TVG%CPHOTO=='NIT' .OR. TVG%CPHOTO=='NCB') THEN
     !
-    WHERE (XGREENROOF(:)==0.) XLAI(:) = ZDEF
+    WHERE (T%CUR%XGREENROOF(:)==0.) TGRPE%CUR%XLAI(:) = ZDEF
     !
-  ELSE IF (CPHOTO=='AGS' .OR. CPHOTO=='AST') THEN
+  ELSE IF (TVG%CPHOTO=='AGS' .OR. TVG%CPHOTO=='AST') THEN
     !
-    DO JL1=1,SIZE(XBIOMASS,2)
-      WHERE (XGREENROOF(:)==0.)
-        XBIOMASS     (:,JL1) = ZDEF
-        XRESP_BIOMASS(:,JL1) = ZDEF
+    DO JL1=1,SIZE(TGR%CUR%XBIOMASS,2)
+      WHERE (T%CUR%XGREENROOF(:)==0.)
+        TGR%CUR%XBIOMASS     (:,JL1) = ZDEF
+        TGR%CUR%XRESP_BIOMASS(:,JL1) = ZDEF
       END WHERE
     END DO
       !
@@ -143,19 +150,19 @@ ENDIF
 !
 !* Flag snow characteristics
 !
- CALL FLAG_GR_SNOW(KFLAG,XGREENROOF(:)==0.,TSNOW)
+ CALL FLAG_GR_SNOW(KFLAG,T%CUR%XGREENROOF(:)==0.,TGR%CUR%TSNOW)
 !
 !
 !* snow-free characteristics
 !
 IF (KFLAG==1) THEN
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB      = 0.2
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB_VEG  = 0.2
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB_SOIL = 0.2
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB      = 0.2
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB_VEG  = 0.2
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB_SOIL = 0.2
 ELSEIF (KFLAG==2) THEN
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB      = XUNDEF
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB_VEG  = XUNDEF
-  WHERE (XGREENROOF==0.) XSNOWFREE_ALB_SOIL = XUNDEF
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB      = XUNDEF
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB_VEG  = XUNDEF
+  WHERE (T%CUR%XGREENROOF==0.) TGR%CUR%XSNOWFREE_ALB_SOIL = XUNDEF
 END IF
 !
 !-------------------------------------------------------------------------------

@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################################
-      SUBROUTINE READ_NAM_GRID_CONF_PROJ(HPROGRAM,KGRID_PAR,KL,PGRID_PAR)
+      SUBROUTINE READ_NAM_GRID_CONF_PROJ(HPROGRAM,KGRID_PAR,KL,PGRID_PAR,GCP)
 !     ################################################################
 !
 !!****  *READ_NAM_GRID_CONF_PROJ* - routine to read in namelist the horizontal grid
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -45,7 +45,7 @@ USE MODI_CLOSE_NAMELIST
 USE MODI_GET_LUOUT
 !
 USE MODE_GRIDTYPE_CONF_PROJ
-USE MODD_GRID_CONF_PROJ, ONLY : XLATC, XLONC
+USE MODD_GRID_CONF_PROJ, ONLY :GRID_CONF_PROJ_t 
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -59,6 +59,7 @@ IMPLICIT NONE
 INTEGER,                    INTENT(INOUT) :: KGRID_PAR  ! size of PGRID_PAR
 INTEGER,                    INTENT(OUT)   :: KL         ! number of points
 REAL, DIMENSION(KGRID_PAR), INTENT(OUT)   :: PGRID_PAR  ! parameters defining this grid
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -179,8 +180,8 @@ ZYOR = - FLOAT(NJMAX+1)/2.*XDY
  CALL LATLON_CONF_PROJ(XLAT0,XLON0,XRPK,XBETA,XLATCEN,XLONCEN, &
                         ZXOR,ZYOR,ZLATOR,ZLONOR                 )  
 !
-XLATC=XLATCEN
-XLONC=XLONCEN
+GCP%XLATC=XLATCEN
+GCP%XLONC=XLONCEN
 !---------------------------------------------------------------------------
 !
 !*       8.    All this information stored into pointer PGRID_PAR

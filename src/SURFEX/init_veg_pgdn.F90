@@ -1,34 +1,35 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_VEG_PGD_n(HPROGRAM, HSURF, KLUOUT, KI, KPATCH, KGROUND_LAYER, KMONTH,        &
-                        PVEGTYPE, PPATCH, PVEGTYPE_PATCH, KSIZE_NATURE_P, KR_NATURE_P,  &
-                        PRM_PATCH, &
-                        ODEEPSOIL, OPHYSDOMC, PTDEEP_CLI, PGAMMAT_CLI, PTDEEP, PGAMMAT, &
-                        OAGRIP, PTHRESHOLD, KIRRINUM, OIRRIDAY, OIRRIGATE, PTHRESHOLDSPT, &
-                        HPHOTO, HINIT, OTR_ML, KNBIOMASS, PCO2, PRHOA, PABC, PPOI,  &
-                        PGMES, PGC, PDMAX, PANMAX, PFZERO, PEPSO, PGAMM, PQDGAMM,   &
-                        PQDGMES, PT1GMES, PT2GMES, PAMAX, PQDAMAX, PT1AMAX, PT2AMAX,&
-                        PAH, PBH, PTAU_WOOD, PINCREASE, PTURNOVER,                  &
-                        KSV, HSV, KBEQ, HSVO, KAEREQ, KSV_CHSBEG, KSV_CHSEND,       &
-                        KSV_AERBEG, KSV_AEREND, HCH_NAMES, HAER_NAMES, KDSTEQ,      &
-                        KSV_DSTBEG, KSV_DSTEND, KSLTEQ, KSV_SLTBEG, KSV_SLTEND,     &
-                        HDSTNAMES, HSLTNAMES, HCHEM_SURF_FILE,                      &
-                        PSFDST, PSFDSTM, PSFSLT,                                    &
-                        PAOSIP, PAOSIM, PAOSJP, PAOSJM, PHO2IP, PHO2IM, PHO2JP,     &
-                        PHO2JM, PZ0, PZ0EFFIP, PZ0EFFIM, PZ0EFFJP, PZ0EFFJM, PZ0REL,&
-                        PCLAY, PSAND, HPEDOTF,                                      &
-                        PCONDSAT, PMPOTSAT, PBCOEF, PWWILT, PWFC, PWSAT,            &
-                        PTAUICE, PCGSAT, PC1SAT, PC2REF, PC3, PC4B, PACOEF, PPCOEF, &
-                        PC4REF, PPCPS, PPLVTT, PPLSTT,                              &
-                        HSCOND, HISBA, PHCAPSOIL, PCONDDRY, PCONDSLD, HCPSURF,      &
-                        PDG, PDROOT, PDG2, PROOTFRAC, PRUNOFFD, PDZG, PDZDIF,       &
-                        PSOILWGHT, KWG_LAYER, KLAYER_HORT, KLAYER_DUN, PD_ICE,      &
-                        PKSAT_ICE, PALBNIR_DRY, PALBVIS_DRY, PALBUV_DRY,            &
-                        PALBNIR_WET, PALBVIS_WET, PALBUV_WET, PBSLAI_NITRO,         &
-                        PCE_NITRO, PCNA_NITRO, PCF_NITRO                            )  
+SUBROUTINE INIT_VEG_PGD_n (CHI, DTCO, DST, I, SLT, U, &
+                           HPROGRAM, HSURF, KLUOUT, KI, KPATCH, KGROUND_LAYER, KMONTH, &
+                          PVEGTYPE, PPATCH, PVEGTYPE_PATCH, KSIZE_NATURE_P,           &
+                          KR_NATURE_P, PRM_PATCH,                                     &
+                          ODEEPSOIL, OPHYSDOMC, PTDEEP_CLI, PGAMMAT_CLI, PTDEEP,      &
+                          PGAMMAT, OAGRIP, PTHRESHOLD, KIRRINUM, OIRRIDAY, OIRRIGATE, &
+                          PTHRESHOLDSPT,                                              &
+                          HPHOTO, HINIT, OTR_ML, KNBIOMASS, PCO2, PRHOA, PABC, PPOI,  &
+                          PGMES, PGC, PDMAX, PANMAX, PFZERO, PEPSO, PGAMM, PQDGAMM,   &
+                          PQDGMES, PT1GMES, PT2GMES, PAMAX, PQDAMAX, PT1AMAX, PT2AMAX,&
+                          PAH, PBH, PTAU_WOOD, PINCREASE, PTURNOVER,                  &
+                          KSV, HSV, YSV, HCH_NAMES, HAER_NAMES, HDSTNAMES, HSLTNAMES, &
+                          HCHEM_SURF_FILE,                      &
+                          PSFDST, PSFDSTM, PSFSLT,                                    &
+                          PAOSIP, PAOSIM, PAOSJP, PAOSJM, PHO2IP, PHO2IM, PHO2JP,     &
+                          PHO2JM, PZ0, PZ0EFFIP, PZ0EFFIM, PZ0EFFJP, PZ0EFFJM, PZ0REL,&
+                          PCLAY, PSAND, HPEDOTF,                                      &
+                          PCONDSAT, PMPOTSAT, PBCOEF, PWWILT, PWFC, PWSAT, PWD0,      &
+                          PKANISO, HRUNOFF,                                           &
+                          PTAUICE, PCGSAT, PC1SAT, PC2REF, PC3, PC4B, PACOEF, PPCOEF, &
+                          PC4REF, PPCPS, PPLVTT, PPLSTT,                              &
+                          HSCOND, HISBA, PHCAPSOIL, PCONDDRY, PCONDSLD, HCPSURF,      &
+                          PDG, PDROOT, PDG2, PROOTFRAC, PRUNOFFD, PDZG, PDZDIF,       &
+                          PSOILWGHT, KWG_LAYER, KLAYER_HORT, KLAYER_DUN, PD_ICE,      &
+                          PKSAT_ICE, PALBNIR_DRY, PALBVIS_DRY, PALBUV_DRY,            &
+                          PALBNIR_WET, PALBVIS_WET, PALBUV_WET, PBSLAI_NITRO,         &
+                          PCE_NITRO, PCNA_NITRO, PCF_NITRO, PFWTD, PWTD               )  
 !#############################################################
 !
 !!****  *INIT_VEG_PGD_n_n* - routine to initialize ISBA
@@ -52,15 +53,29 @@ SUBROUTINE INIT_VEG_PGD_n(HPROGRAM, HSURF, KLUOUT, KI, KPATCH, KGROUND_LAYER, KM
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
+!!      23/07/13     (Decharme) Surface / Water table depth coupling
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+USE MODD_SV_n, ONLY : SV_t
+!
+!
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_SURF_ATM,       ONLY : LCPL_ARP
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
@@ -70,6 +85,8 @@ USE MODD_SNOW_PAR,       ONLY : XEMISSN
 USE MODD_ISBA_PAR,       ONLY : XTAU_ICE
 !
 USE MODD_SGH_PAR,        ONLY : XICE_DEPH_MAX
+!
+USE MODE_COTWO,          ONLY : GAULEG
 !
 USE MODI_SURF_PATCH
 USE MODI_GET_1D_MASK
@@ -97,6 +114,14 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6), INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=6), INTENT(IN)  :: HSURF     ! Type of surface
@@ -160,21 +185,9 @@ REAL, DIMENSION(:,:,:), POINTER :: PTURNOVER
 !
 INTEGER,                          INTENT(IN) :: KSV      ! number of scalars
  CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN) :: HSV      ! name of all scalar variables
-INTEGER,                         INTENT(OUT) :: KBEQ     ! number of chemical variables
- CHARACTER(LEN=6), DIMENSION(:), POINTER :: HSVO          ! name of scalar species without # and @
-INTEGER,                         INTENT(OUT) :: KAEREQ  ! number of aerosol variables
-INTEGER,                         INTENT(OUT) :: KSV_CHSBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_CHSEND  ! last  chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_AERBEG  ! first aerosol var.
-INTEGER,                         INTENT(OUT) :: KSV_AEREND  ! last  aerosol var.
+TYPE(SV_t), INTENT(INOUT) :: YSV 
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HCH_NAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HAER_NAMES     
-INTEGER,                         INTENT(OUT) :: KDSTEQ     ! number of chemical variables
-INTEGER,                         INTENT(OUT) :: KSV_DSTBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_DSTEND  ! last  chemical var.
-INTEGER,                         INTENT(OUT) :: KSLTEQ     ! number of chemical variables
-INTEGER,                         INTENT(OUT) :: KSV_SLTBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_SLTEND  ! last  chemical var.
  CHARACTER(LEN=6), DIMENSION(:), POINTER, OPTIONAL :: HDSTNAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER, OPTIONAL :: HSLTNAMES
 !
@@ -208,6 +221,9 @@ REAL, DIMENSION(:,:), POINTER :: PBCOEF
 REAL, DIMENSION(:,:), POINTER :: PWWILT
 REAL, DIMENSION(:,:), POINTER :: PWFC
 REAL, DIMENSION(:,:), POINTER :: PWSAT
+REAL, DIMENSION(:,:), POINTER :: PWD0
+REAL, DIMENSION(:,:), POINTER :: PKANISO
+!
 REAL, DIMENSION(:), POINTER :: PTAUICE
 REAL, DIMENSION(:), POINTER :: PCGSAT
 REAL, DIMENSION(:,:), POINTER :: PC1SAT
@@ -224,6 +240,7 @@ REAL, DIMENSION(:,:), POINTER :: PPLSTT
 !
  CHARACTER(LEN=4), INTENT(IN) :: HSCOND
  CHARACTER(LEN=3), INTENT(IN) :: HISBA
+ CHARACTER(LEN=4), INTENT(IN) :: HRUNOFF
 REAL, DIMENSION(:,:), POINTER :: PHCAPSOIL
 REAL, DIMENSION(:,:), POINTER :: PCONDDRY
 REAL, DIMENSION(:,:), POINTER :: PCONDSLD
@@ -252,9 +269,12 @@ REAL, DIMENSION(:), POINTER :: PALBVIS_WET
 REAL, DIMENSION(:), POINTER :: PALBUV_WET
 !
 REAL, DIMENSION(:,:), POINTER :: PBSLAI_NITRO
-REAL, DIMENSIOn(:,:), INTENT(IN) :: PCE_NITRO
-REAL, DIMENSIOn(:,:), INTENT(IN) :: PCNA_NITRO
-REAL, DIMENSIOn(:,:), INTENT(IN) :: PCF_NITRO
+REAL, DIMENSION(:,:), INTENT(IN) :: PCE_NITRO
+REAL, DIMENSION(:,:), INTENT(IN) :: PCNA_NITRO
+REAL, DIMENSION(:,:), INTENT(IN) :: PCF_NITRO
+!
+REAL, DIMENSION(:), POINTER :: PFWTD
+REAL, DIMENSION(:), POINTER :: PWTD
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -267,6 +287,8 @@ INTEGER :: ICH     ! unit of input chemistry file
 INTEGER :: ISIZE
 !
 REAL, DIMENSION(SIZE(PCO2))       :: ZCO2  ! CO2 concentration  (kg/kg)
+!
+INTEGER, DIMENSION(:), ALLOCATABLE :: IR_NATURE_P
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -313,7 +335,10 @@ ENDDO
 !
 KR_NATURE_P(:,:) = 0
 DO JPATCH=1,KPATCH
-  CALL GET_1D_MASK(KSIZE_NATURE_P(JPATCH),KI,PPATCH(:,JPATCH),KR_NATURE_P(:KSIZE_NATURE_P(JPATCH),JPATCH))
+  ALLOCATE(IR_NATURE_P(KSIZE_NATURE_P(JPATCH)))
+  CALL GET_1D_MASK(KSIZE_NATURE_P(JPATCH),KI,PPATCH(:,JPATCH),IR_NATURE_P)
+  KR_NATURE_P(:KSIZE_NATURE_P(JPATCH),JPATCH) = IR_NATURE_P(:)
+  DEALLOCATE(IR_NATURE_P)
 ENDDO
 !
 !
@@ -397,12 +422,23 @@ IF(HPHOTO /= 'NON' .AND. HINIT == 'ALL') THEN
   ALLOCATE(PTAU_WOOD     (KI,KPATCH))
   ALLOCATE(PINCREASE     (KI,KNBIOMASS,KPATCH))
   ALLOCATE(PTURNOVER     (KI,KNBIOMASS,KPATCH))
-  CALL CO2_INIT_n(HPHOTO, KSIZE_NATURE_P, KR_NATURE_P, PVEGTYPE_PATCH, &
+  CALL CO2_INIT_n(I, &
+                  HPHOTO, KSIZE_NATURE_P, KR_NATURE_P, PVEGTYPE_PATCH, &
                   ZCO2, PGMES, PGC, PDMAX, PABC, PPOI, PANMAX, &
                   PFZERO, PEPSO, PGAMM, PQDGAMM, PQDGMES,      &
                   PT1GMES, PT2GMES, PAMAX, PQDAMAX,            &
                   PT1AMAX, PT2AMAX, PAH, PBH, PTAU_WOOD,       &
                   PINCREASE, PTURNOVER                         )
+
+ELSEIF(HPHOTO == 'NON' .AND. OTR_ML)THEN ! Case for MEB
+   ISIZE = 10
+   ALLOCATE (PABC(ISIZE))
+   ALLOCATE (PPOI(ISIZE)) ! Working
+   PABC(:) = 0.
+   PPOI(:) = 0.
+   CALL GAULEG(0.0,1.0,PABC,PPOI,SIZE(PABC))
+   DEALLOCATE (PPOI)
+   ALLOCATE   (PPOI(0))
 ELSE
   ALLOCATE(PABC(0))
   ALLOCATE(PPOI(0))
@@ -438,40 +474,40 @@ END IF
     ! contains explicitely modules from ISBAn. It should be cleaned in a future
     ! version.
 IF (HSURF=='NATURE') THEN
- CALL INIT_CHEMICAL_n(KLUOUT, KSV, HSV, KBEQ, HSVO, KAEREQ,           &
-                     KSV_CHSBEG, KSV_CHSEND, KSV_AERBEG, KSV_AEREND, &
-                     HCH_NAMES, HAER_NAMES, KDSTEQ, KSV_DSTBEG,      &
-                     KSV_DSTEND, KSLTEQ, KSV_SLTBEG, KSV_SLTEND,     &
+ CALL INIT_CHEMICAL_n(KLUOUT, KSV, HSV, YSV, HCH_NAMES, HAER_NAMES,  &
                      HDSTNAMES=HDSTNAMES, HSLTNAMES=HSLTNAMES        )
 END IF
 !
 IF (KSV /= 0) THEN
   !
-  IF (HSURF=='NATURE' .AND. KBEQ > 0) THEN
+  IF (HSURF=='NATURE' .AND. YSV%NBEQ > 0) THEN
     !* for the time being, chemistry deposition on vegetation works only for
     ! ISBA on nature tile (not for gardens), because subroutine CH_INIT_DEP_ISBA_n
     ! contains explicitely modules from ISBAn. It should be cleaned in a future
     ! version.
     CALL OPEN_NAMELIST(HPROGRAM, ICH, HFILE=HCHEM_SURF_FILE)
-    CALL CH_INIT_DEP_ISBA_n(ICH, KLUOUT, HSVO, KI)
+    CALL CH_INIT_DEP_ISBA_n(CHI, DTCO, I, &
+                            ICH, KLUOUT, KI)
     CALL CLOSE_NAMELIST(HPROGRAM, ICH)
   END IF
   !
-  IF (KDSTEQ >=1) THEN
-    ALLOCATE (PSFDST (KI, KDSTEQ, KPATCH))  !Output array
-    ALLOCATE (PSFDSTM(KI, KDSTEQ, KPATCH))  !Output array
+  IF (YSV%NDSTEQ >=1) THEN
+    ALLOCATE (PSFDST (KI, YSV%NDSTEQ, KPATCH))  !Output array
+    ALLOCATE (PSFDSTM(KI, YSV%NDSTEQ, KPATCH))  !Output array
     PSFDST(:,:,:)  = 0.
     PSFDSTM(:,:,:) = 0.     
-    CALL INIT_DST(HPROGRAM,KSIZE_NATURE_P,KR_NATURE_P, &
+    CALL INIT_DST(DST, U, &
+                  HPROGRAM,KSIZE_NATURE_P,KR_NATURE_P, &
                   KPATCH,PVEGTYPE_PATCH)    
   ELSE
     ALLOCATE(PSFDST (0,0,0))
     ALLOCATE(PSFDSTM(0,0,0))
   END IF
   !
-  IF (KSLTEQ >=1) THEN
-    ALLOCATE (PSFSLT(KI,KSLTEQ,KPATCH))  !Output array
-    CALL INIT_SLT(HPROGRAM)   
+  IF (YSV%NSLTEQ >=1) THEN
+    ALLOCATE (PSFSLT(KI,YSV%NSLTEQ,KPATCH))  !Output array
+    CALL INIT_SLT(SLT, &
+                  HPROGRAM)   
   ELSE
     ALLOCATE(PSFSLT(0,0,0))
   END IF
@@ -520,10 +556,10 @@ END DO
 !
 IF (HISBA=='2-L' .OR. HISBA=='3-L') THEN
   !  field capacity at hydraulic conductivity = 0.1mm/day
-  PWFC  (:,:) = WFC_FUNC  (PCLAY(:,:),PSAND(:,:),HPEDOTF)
+  PWFC(:,:) = WFC_FUNC(PCLAY(:,:),PSAND(:,:),HPEDOTF)
 ELSE IF (HISBA=='DIF') THEN
   !  field capacity at water potential = 0.33bar        
-  PWFC  (:,:) = W33_FUNC  (PCLAY(:,:),PSAND(:,:),HPEDOTF)
+  PWFC(:,:) = W33_FUNC(PCLAY(:,:),PSAND(:,:),HPEDOTF)
 END IF
 !
 PTAUICE(:) = XTAU_ICE
@@ -567,6 +603,25 @@ ELSE IF (HISBA=='DIF') THEN
   !
 END IF
 !
+IF(HRUNOFF=='SGH')THEN
+!
+  ALLOCATE(PWD0   (KI,KGROUND_LAYER))
+  ALLOCATE(PKANISO(KI,KGROUND_LAYER))
+!
+  IF(HISBA=='DIF')THEN
+     PWD0(:,:) = WFC_FUNC(PCLAY(:,:),PSAND(:,:),HPEDOTF)
+  ELSE
+     PWD0(:,:) = PWWILT(:,:)
+  ENDIF
+  PKANISO(:,:) = ANISO_FUNC(PCLAY(:,:))
+!
+ELSE
+!
+  ALLOCATE(PWD0   (0,0))
+  ALLOCATE(PKANISO(0,0))
+!
+ENDIF
+!
 !*       5.2     Soil thermal characteristics:
 !               --------------------------------
 !
@@ -578,24 +633,23 @@ PPLVTT(:,:) = XLVTT
 PPLSTT(:,:) = XLSTT
 !
 !CSCOND used in soil.F90 and soildif.F90
+!
+IF (HSCOND=='NP89'.AND.HISBA=='DIF') THEN
+   WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(KLUOUT,*)'IF CISBA=DIF, CSCOND=NP89 is not available'
+   WRITE(KLUOUT,*)'because not physic. CSCOND is put to PL98 '
+   WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+   WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+ENDIF
+!
 IF (HSCOND=='PL98'.OR.HISBA=='DIF') THEN
   ALLOCATE(PHCAPSOIL(KI,KGROUND_LAYER))
+  ALLOCATE(PCONDDRY (KI,KGROUND_LAYER))
+  ALLOCATE(PCONDSLD (KI,KGROUND_LAYER))
   ! 
-  CALL HEATCAPZ(PSAND,PWSAT,PHCAPSOIL)
-  !
-  IF (HSCOND=='PL98') THEN
-    !
-    ALLOCATE(PCONDDRY (KI,KGROUND_LAYER))
-    ALLOCATE(PCONDSLD (KI,KGROUND_LAYER))
-    ! 
-    CALL THRMCONDZ(PSAND,PWSAT,PCONDDRY,PCONDSLD)
-    !
-  ELSE
-    !
-    ALLOCATE(PCONDDRY (0,0))
-    ALLOCATE(PCONDSLD (0,0))
-    !
-  ENDIF
+  CALL HEATCAPZ(PSAND,PHCAPSOIL)
+  CALL THRMCONDZ(PSAND,PWSAT,PCONDDRY,PCONDSLD)
   !
 ELSE
   ALLOCATE(PHCAPSOIL(0,0))
@@ -626,6 +680,11 @@ IF (HISBA == 'DIF') THEN
                  KWG_LAYER, PDZG, PDZDIF, PSOILWGHT,        &
                  PRUNOFFD, KLAYER_HORT, KLAYER_DUN  )
 !
+   ALLOCATE(PFWTD(KI))
+   ALLOCATE(PWTD (KI))
+   PFWTD(:) = 0.0
+   PWTD (:) = XUNDEF
+!
 ELSE
 !    
   ALLOCATE(PDZG       (0,0,0))
@@ -639,6 +698,9 @@ ELSE
 !  
   KLAYER_DUN=2
   KLAYER_HORT=2
+!
+  ALLOCATE(PFWTD(0))
+  ALLOCATE(PWTD (0))
 !   
 ENDIF
 !

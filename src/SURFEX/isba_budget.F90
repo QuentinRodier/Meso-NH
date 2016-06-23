@@ -1,14 +1,17 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE ISBA_BUDGET(HISBA, HSNOW_ISBA, OGLACIER, PTSTEP,    &
-                       PWG, PWGI, PWR, PSNOWSWE, PDG, PDZG,    &
-                       PWG_INI, PWGI_INI, PWR_INI, PSWE_INI,   & 
-                       PRAIN, PSNOW, PEVAP, PDRAIN, PRUNOFF,   &
-                       PIFLOOD, PPFLOOD, PICEFLUX, PIRRIG_FLUX,&
-                       PDWG, PDWGI, PDWR, PDSWE, PWATBUD       )
+SUBROUTINE ISBA_BUDGET (DGEI, &
+                        HISBA, HSNOW_ISBA, OGLACIER, PTSTEP,    &
+                        PWG, PWGI, PWR, PSNOWSWE, PDG, PDZG,    &
+                        PWG_INI, PWGI_INI, PWR_INI, PSWE_INI,   & 
+                        PRAIN, PSNOW, PEVAP, PDRAIN, PRUNOFF,   &
+                        PIFLOOD, PPFLOOD, PLE_FLOOD, PLEI_FLOOD,&
+                        PICEFLUX, PIRRIG_FLUX, PSNDRIFT,        &
+                        PLVTT, PLSTT,                           &
+                        PDWG, PDWGI, PDWR, PDSWE, PWATBUD       )
 !     ###############################################################################
 !
 !!****  *ISBA_BUDGET * - water and energy budget for ISBA
@@ -31,12 +34,15 @@ SUBROUTINE ISBA_BUDGET(HISBA, HSNOW_ISBA, OGLACIER, PTSTEP,    &
 !!    -------------
 !!      Original    07/2012
 !!
+!!      B. Decharme    01/16 : Bug with flood budget
 !!------------------------------------------------------------------
+!
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_CSTS,       ONLY : XRHOLW
 !     
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : LWATER_BUDGET
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -44,6 +50,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
 !
  CHARACTER(LEN=*),      INTENT(IN) :: HISBA      ! type of ISBA version:
 !                                               ! '2-L' (default)
@@ -77,8 +86,12 @@ REAL, DIMENSION(:),    INTENT(IN)  :: PDRAIN    ! drainage                      
 REAL, DIMENSION(:),    INTENT(IN)  :: PRUNOFF   ! surface runoff                 (kg/m2/s)
 REAL, DIMENSION(:),    INTENT(IN)  :: PIFLOOD   ! Floodplain infiltration        (kg/m2/s)
 REAL, DIMENSION(:),    INTENT(IN)  :: PPFLOOD   ! Floodplain direct precip runoff(kg/m2/s)
+REAL, DIMENSION(:),    INTENT(IN)  :: PLE_FLOOD ! Floodplain latent heat         (W/m2)
+REAL, DIMENSION(:),    INTENT(IN)  :: PLEI_FLOOD! Floodplain sublimation heat    (W/m2)
 REAL, DIMENSION(:),    INTENT(IN)  :: PICEFLUX  ! Ice flux from Snow reservoir   (kg/m2/s)
 REAL ,DIMENSION(:),    INTENT(IN)  :: PIRRIG_FLUX! additional water flux from irrigation (kg/m2/s)
+REAL ,DIMENSION(:),    INTENT(IN)  :: PSNDRIFT   ! blowing snow sublimation (kg/m2/s)
+REAL, DIMENSION(:),    INTENT(IN)  :: PLVTT, PLSTT    
 ! 
 REAL, DIMENSION(:),    INTENT(OUT) :: PDWG
 REAL, DIMENSION(:),    INTENT(OUT) :: PDWGI
@@ -95,6 +108,8 @@ REAL, DIMENSION(SIZE(PWR)) :: ZICEFLUX
 REAL, DIMENSION(SIZE(PWR)) :: ZSWE_T
 REAL, DIMENSION(SIZE(PWR)) :: ZWG_T
 REAL, DIMENSION(SIZE(PWR)) :: ZWGI_T
+REAL, DIMENSION(SIZE(PWR)) :: ZSNDRIFT
+REAL, DIMENSION(SIZE(PWR)) :: ZEFLOOD
 !
 INTEGER :: INI, INL, INLS
 INTEGER :: JI, JL
@@ -116,11 +131,16 @@ PDWGI(:) = XUNDEF
 PDWR (:) = XUNDEF
 PDSWE(:) = XUNDEF
 !
+IF (HSNOW_ISBA=='3-L'.OR.HSNOW_ISBA=='CRO') THEN
+   ZSNDRIFT(:)=PSNDRIFT(:)
+ELSE
+   ZSNDRIFT(:)=0.0
+ENDIF
 !
 !*      2.0    Comptut isba water budget in kg/m2/s
 !       -------------------------------------------
 !
-IF(LWATER_BUDGET)THEN
+IF(DGEI%LWATER_BUDGET)THEN
 !
 ! total swe at t in kg/m2
   ZSWE_T(:)=0.0
@@ -163,11 +183,16 @@ IF(LWATER_BUDGET)THEN
     ZICEFLUX(:)=0.0
   ENDIF
 !
+! Floodplains evaporation (kg/m2/s)
+  ZEFLOOD(:)=PLE_FLOOD(:)/PLVTT(:)+PLEI_FLOOD(:)/PLSTT(:)
+!
 ! total input water in the system at t
   ZINPUT(:)=PRAIN(:)+PSNOW(:)+PIFLOOD(:)+PIRRIG_FLUX(:)
 !
 ! total output water in the system at t
-  ZOUTPUT(:) = PEVAP(:)+PDRAIN(:)+PRUNOFF(:)+PPFLOOD(:)+ZICEFLUX(:)
+  ZOUTPUT(:) = PEVAP  (:)+PDRAIN  (:)+PRUNOFF (:) &
+             + PPFLOOD(:)+ZICEFLUX(:)+ZSNDRIFT(:) &
+             - ZEFLOOD(:)
 !
 ! total reservoir time tendencies at "t - (t-1)"
   ZTENDENCY(:) = PDWG(:)+PDWGI(:)+PDWR(:)+PDSWE(:)

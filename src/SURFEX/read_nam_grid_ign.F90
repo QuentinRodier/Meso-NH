@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################################
       SUBROUTINE READ_NAM_GRID_IGN(HPROGRAM,KGRID_PAR,KL,PGRID_PAR)
 !     ################################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	E. Martin   *Meteo France*	
+!!      E. Martin   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -80,10 +80,10 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZDY      ! Y grid mesh size
 !
  CHARACTER(LEN=3) :: CLAMBERT  ! Lambert type
 INTEGER :: NPOINTS  ! number of points
-REAL, DIMENSION(100000) :: XX  ! X coordinate of grid mesh center (in meters)
-REAL, DIMENSION(100000) :: XY  ! Y coordinate of grid mesh center (in meters)
-REAL, DIMENSION(100000) :: XDX ! X mesh size (in meters)
-REAL, DIMENSION(100000) :: XDY ! Y mesh size (in meters)
+REAL, DIMENSION(1000000) :: XX  ! X coordinate of grid mesh center (in meters)
+REAL, DIMENSION(1000000) :: XY  ! Y coordinate of grid mesh center (in meters)
+REAL, DIMENSION(1000000) :: XDX ! X mesh size (in meters)
+REAL, DIMENSION(1000000) :: XDY ! Y mesh size (in meters)
 !
 REAL :: XX_LLCORNER ! X coordinate of left  side of the domain
 REAL :: XY_LLCORNER ! Y coordinate of lower side of the domain

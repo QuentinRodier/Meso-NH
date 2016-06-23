@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CONVERT_COVER_CH_ISBA   (PCOVER,PSOILRC_SO2,PSOILRC_O3)
+      SUBROUTINE CONVERT_COVER_CH_ISBA (DTCO, &
+                                           PCOVER,OCOVER,PSOILRC_SO2,PSOILRC_O3)
 !     ##############################################################
 !
 !!**** *CONVERT_COVER* convert surface cover classes into secondary 
@@ -40,8 +41,12 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_DATA_COVER,     ONLY : XDATA_SOILRC_SO2, XDATA_SOILRC_O3
-
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+!
+USE MODD_DATA_COVER,     ONLY : XDATA_SOILRC_SO2, XDATA_SOILRC_O3 
+!
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER
 !
 USE MODI_AV_PGD
@@ -55,7 +60,11 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+!
 REAL, DIMENSION(:,:), INTENT(IN)    :: PCOVER
+LOGICAL, DIMENSION(:), INTENT(IN)   :: OCOVER
 
 REAL, DIMENSION(:,:),   INTENT(OUT)   :: PSOILRC_SO2
 REAL, DIMENSION(:,:),   INTENT(OUT)   :: PSOILRC_O3
@@ -68,8 +77,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CONVERT_COVER_CH_ISBA',0,ZHOOK_HANDLE)
- CALL AV_PGD (PSOILRC_SO2 ,PCOVER ,XDATA_SOILRC_SO2 (:,:) ,'NAT','ARI')
- CALL AV_PGD (PSOILRC_O3  ,PCOVER ,XDATA_SOILRC_O3  (:,:) ,'NAT','ARI')
+!
+IF (ASSOCIATED(DTCO%XDATA_WEIGHT)) DEALLOCATE(DTCO%XDATA_WEIGHT)
+!
+ CALL AV_PGD(DTCO, &
+              PSOILRC_SO2 ,PCOVER ,XDATA_SOILRC_SO2(:,:) ,'NAT','ARI',OCOVER,KDECADE=1)
+ CALL AV_PGD(DTCO, &
+              PSOILRC_O3  ,PCOVER ,XDATA_SOILRC_O3 (:,:) ,'NAT','ARI',OCOVER,KDECADE=1)
+!
+IF (ASSOCIATED(DTCO%XDATA_WEIGHT)) DEALLOCATE(DTCO%XDATA_WEIGHT)
+!
 IF (LHOOK) CALL DR_HOOK('CONVERT_COVER_CH_ISBA',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

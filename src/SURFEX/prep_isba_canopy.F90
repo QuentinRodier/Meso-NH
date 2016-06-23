@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_ISBA_CANOPY()
+SUBROUTINE PREP_ISBA_CANOPY (ICP, IG)
 !     #################################################################################
 !
 !!****  *PREP_ISBA_CANOPY* - prepares ISBA canopy fields
@@ -30,8 +30,10 @@ SUBROUTINE PREP_ISBA_CANOPY()
 !!      E. Martin   01/2012 XUNDEF fields are no more written in PREP file
 !!------------------------------------------------------------------
 !
-USE MODD_ISBA_GRID_n,     ONLY : NDIM
-USE MODD_ISBA_CANOPY_n,   ONLY : NLVL, XZ
+!
+!
+USE MODD_ISBA_CANOPY_n, ONLY : ISBA_CANOPY_t
+USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -42,6 +44,10 @@ IMPLICIT NONE
 !
 !
 !*      0.2    declarations of local variables
+!
+!
+TYPE(ISBA_CANOPY_t), INTENT(INOUT) :: ICP
+TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
 !
 INTEGER :: JLAYER
 !
@@ -55,13 +61,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !             ----------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_ISBA_CANOPY',0,ZHOOK_HANDLE)
-NLVL = 6
+ICP%NLVL = 6
 !
 !*      2.    height of half levels (where turbulent fluxes will be)
 !             ---------------------
 !
 !* Warning :   ZZF(:,1)   MUST BE ZERO
-ALLOCATE(ZZF(NDIM,NLVL))
+ALLOCATE(ZZF(IG%NDIM,ICP%NLVL))
 ZZF(:,1) = 0.
 ZZF(:,2) = 1
 ZZF(:,3) = 3.
@@ -69,11 +75,11 @@ ZZF(:,4) = 5.
 ZZF(:,5) = 8.
 ZZF(:,6) = 12.
 
-ALLOCATE(XZ(NDIM,NLVL))
-DO JLAYER=1,NLVL-1
-  XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
+ALLOCATE(ICP%XZ(IG%NDIM,ICP%NLVL))
+DO JLAYER=1,ICP%NLVL-1
+  ICP%XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
 END DO
-XZ(:,NLVL) = 1.5 * ZZF(:,NLVL) - 0.5 * ZZF(:,NLVL-1)
+ICP%XZ(:,ICP%NLVL) = 1.5 * ZZF(:,ICP%NLVL) - 0.5 * ZZF(:,ICP%NLVL-1)
 !
 DEALLOCATE(ZZF)
 !

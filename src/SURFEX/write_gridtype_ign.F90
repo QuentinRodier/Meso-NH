@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################
-      SUBROUTINE WRITE_GRIDTYPE_IGN(HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
+      SUBROUTINE WRITE_GRIDTYPE_IGN (DGU, U, &
+                                     HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !     #################################################################
 !
 !!****  *WRITE_GRIDTYPE_IGN* - routine to write the horizontal grid
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,11 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_WRITE_SURF
 !
@@ -49,6 +55,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),           INTENT(IN)  :: HPROGRAM   ! calling program
 INTEGER,                    INTENT(IN)  :: KLU        ! number of points
@@ -101,19 +111,24 @@ SELECT CASE (ILAMBERT)
      CASE (6)
      YCOMMENT='LAMBERT 93'
 END SELECT
- CALL WRITE_SURF(HPROGRAM,'LAMBERT ',ILAMBERT, KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LAMBERT ',ILAMBERT, KRESP,YCOMMENT)
 !
 YCOMMENT='XX'
- CALL WRITE_SURF(HPROGRAM,'XX',ZX,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'XX',ZX,KRESP,YCOMMENT)
 !
 YCOMMENT='XY'
- CALL WRITE_SURF(HPROGRAM,'XY',ZY,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'XY',ZY,KRESP,YCOMMENT)
 !
 YCOMMENT='XDX'
- CALL WRITE_SURF(HPROGRAM,'DX',ZDX,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'DX',ZDX,KRESP,YCOMMENT)
 !
 YCOMMENT='XDY'
- CALL WRITE_SURF(HPROGRAM,'DY',ZDY,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'DY',ZDY,KRESP,YCOMMENT)
 !
 !---------------------------------------------------------------------------
 DEALLOCATE(ZX)

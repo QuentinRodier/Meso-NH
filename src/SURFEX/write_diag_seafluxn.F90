@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE WRITE_DIAG_SEAFLUX_n(HPROGRAM,HWRITE)
+SUBROUTINE WRITE_DIAG_SEAFLUX_n (DTCO, DGU, U, SM, &   
+                                 HPROGRAM,HWRITE)
 !     ###############################################################################
 !
 !!****  *WRITE_DIAG_SEAFLUX_n * - diagnostics for SEAFLUX
@@ -25,17 +26,20 @@ SUBROUTINE WRITE_DIAG_SEAFLUX_n(HPROGRAM,HWRITE)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      Modified    09/2013 : S. Senesi : call WRITE_DIAG_SEB_SEAICE_n
 !!------------------------------------------------------------------
 !
-
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_SEAFLUX_n,      ONLY : TTIME
-USE MODD_DIAG_OCEAN_n,   ONLY : LDIAG_OCEAN
-USE MODD_DIAG_SEAFLUX_n, ONLY : XDIAG_TSTEP
 !
 USE MODI_WRITE_DIAG_SEB_SEAFLUX_n
 USE MODI_WRITE_DIAG_SEB_OCEAN_n
+USE MODI_WRITE_DIAG_SEB_SEAICE_n
 ! 
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -44,6 +48,12 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HWRITE   ! 'PGD' : only physiographic fields are written
@@ -57,9 +67,14 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SEAFLUX_N',0,ZHOOK_HANDLE)
 IF (HWRITE/='PGD') THEN
 !        
-   IF (XDIAG_TSTEP==XUNDEF .OR. ABS(NINT(TTIME%TIME/XDIAG_TSTEP)*XDIAG_TSTEP-TTIME%TIME)<1.E-3 ) THEN
-      CALL WRITE_DIAG_SEB_SEAFLUX_n(HPROGRAM)
-      IF (LDIAG_OCEAN) CALL WRITE_DIAG_SEB_OCEAN_n(HPROGRAM)
+   IF (SM%DGS%XDIAG_TSTEP==XUNDEF .OR. &
+           ABS(NINT(SM%S%TTIME%TIME/SM%DGS%XDIAG_TSTEP)*SM%DGS%XDIAG_TSTEP-SM%S%TTIME%TIME)<1.E-3 ) THEN
+      CALL WRITE_DIAG_SEB_SEAFLUX_n(DTCO, DGU, U, SM%CHS, SM%DGS, SM%S, &
+                                    HPROGRAM)
+      IF (SM%DGO%LDIAG_OCEAN)  CALL WRITE_DIAG_SEB_OCEAN_n(DTCO, DGU, U, SM%DGO, &
+                                                        HPROGRAM)
+      IF (SM%DGSI%LDIAG_SEAICE) CALL WRITE_DIAG_SEB_SEAICE_n(DTCO, DGU, U, SM%DGS, SM%DGSI, SM%S, &
+                                                          HPROGRAM)
    END IF
 !        
 ENDIF

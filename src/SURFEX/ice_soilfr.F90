@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
       SUBROUTINE ICE_SOILFR(HSNOW_ISBA, HSOILFRZ, PTSTEP, PKSFC_IVEG, PCG, PCT, &
                             PPSNG, PFFG, PTAUICE, PDWGI1, PDWGI2, PWSATZ,       &
                             PMPOTSATZ, PBCOEFZ, PD_G, PTG, PWGI, PWG            )   
@@ -41,7 +41,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	A. Boone           * Meteo-France *
+!!      A. Boone           * Meteo-France *
 !!      B. Decharme        * Meteo-France *
 !!
 !!    MODIFICATIONS
@@ -71,12 +71,12 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
+ CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
 !                                               !         (Douville et al. 1995)
 !                                               ! '3-L' = 3-L snow scheme (option)
 !                                               !         (Boone and Etchevers 2001)
 !
-CHARACTER(LEN=*),   INTENT(IN)      :: HSOILFRZ   ! soil freezing-physics option
+ CHARACTER(LEN=*),   INTENT(IN)      :: HSOILFRZ   ! soil freezing-physics option
 !                                                 ! 'DEF'   Default (Boone et al. 2000; Giard and Bazile 2000)
 !                                                 ! 'LWT'   phase changes as above, but relation between unfrozen 
 !                                                         water and temperature considered

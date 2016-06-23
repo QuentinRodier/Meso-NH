@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_GRID_LONLAT_REG(HFILETYPE,HINTERP_TYPE,KNI)
+      SUBROUTINE PREP_GRID_LONLAT_REG (&
+                                       HFILETYPE,HINTERP_TYPE,KNI)
 !     ##########################################################################
 !
 !!****  *PREP_GRID_LATLON* - reads EXTERNALIZED Surface grid.
@@ -38,6 +39,9 @@
 !*      0. DECLARATIONS
 !          ------------
 !
+!
+!
+!
 USE MODI_READ_SURF
 !
 USE MODD_GRID_LATLONREGUL, ONLY : XILAT1,XILON1,XILAT2,XILON2,NINLAT,NINLON,NILENGTH,XILATARRAY
@@ -49,6 +53,8 @@ IMPLICIT NONE
 !
 !* 0.1. Declaration of arguments
 !       ------------------------
+!
+!
 !
  CHARACTER(LEN=6),  INTENT(IN)    :: HFILETYPE    ! file type
  CHARACTER(LEN=6),  INTENT(OUT)   :: HINTERP_TYPE ! Grid type
@@ -71,20 +77,26 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PREP_GRID_LONLAT_REG',0,ZHOOK_HANDLE)
 YRECFM = 'LONMIN'
- CALL READ_SURF(HFILETYPE,YRECFM,XILON1,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,XILON1,IRESP)
 YRECFM = 'LONMAX'
- CALL READ_SURF(HFILETYPE,YRECFM,XILON2,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,XILON2,IRESP)
 YRECFM = 'LATMIN'
- CALL READ_SURF(HFILETYPE,YRECFM,XILAT1,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,XILAT1,IRESP)
 YRECFM = 'LATMAX'
- CALL READ_SURF(HFILETYPE,YRECFM,XILAT2,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,XILAT2,IRESP)
 YRECFM = 'NLAT'
- CALL READ_SURF(HFILETYPE,YRECFM,NINLAT,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,NINLAT,IRESP)
 !
 IF (ALLOCATED(NINLON)) DEALLOCATE(NINLON)
 ALLOCATE(NINLON(NINLAT))
 YRECFM = 'NLON'
- CALL READ_SURF(HFILETYPE,YRECFM,NINLON(1),IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,YRECFM,NINLON(1),IRESP)
 IF (NINLAT.GT.1) NINLON(2:NINLAT) = NINLON(1)
 !
 !-----------------------------------------------------------------------
@@ -112,7 +124,12 @@ DO JL = 2,NINLAT
 ENDDO
 !
 !-----------------------------------------------------------------------
-HINTERP_TYPE = 'HORIBL'
+IF(KNI==1)THEN
+  HINTERP_TYPE = 'UNIF'
+ELSE
+  HINTERP_TYPE = 'HORIBL'
+ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('PREP_GRID_LONLAT_REG',1,ZHOOK_HANDLE)
 !-----------------------------------------------------------------------
 !

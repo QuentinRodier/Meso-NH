@@ -1,13 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
-SUBROUTINE INIT_FLAKE_n(HPROGRAM,HINIT,                            &
+SUBROUTINE INIT_FLAKE_n ( DTCO, DGU, UG, U, FM,                 &
+                          HPROGRAM,HINIT,                            &
                           KI,KSV,KSW,                                &
                           HSV,PCO2,PRHOA,                            &
                           PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                          PEMIS,PTSRAD,                              &
+                          PEMIS,PTSRAD,PTSURF,                       &
                           KYEAR, KMONTH,KDAY, PTIME,                 &
                           HATMFILE,HATMFILETYPE,                     &
                           HTEST                                     )   
@@ -34,47 +35,37 @@ SUBROUTINE INIT_FLAKE_n(HPROGRAM,HINIT,                            &
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003
 !!      B. Decharme    07/11 : read pgd+prep
+!!      Modified    04/2013, P. Le Moigne: FLake chemistry
+!!      Modified    04/2013, P. Le Moigne: Coupling with AGCM
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CSTS,           ONLY : XTT, XPI, XOMEGA 
-USE MODD_WATER_PAR,      ONLY : XALBWAT, XEMISWAT
-!?? USE MODD_SNOW_PAR,       ONLY : XANSMAX, XEMISSN
-USE MODD_FLAKE_GRID_n,  ONLY : XLAT
-USE MODD_FLAKE_n,  ONLY : XCOVER          , TTIME         , XTSTEP        , &
-                            XOUT_TSTEP    , XEMIS         , XWATER_DEPTH  , &
-                            XWATER_FETCH  , XT_BS         , XDEPTH_BS     , &
-                            XCORIO        , XDIR_ALB      , XSCA_ALB      , &
-                            XICE_ALB      , XSNOW_ALB     , XEXTCOEF_WATER, &
-                            XEXTCOEF_ICE  , XEXTCOEF_SNOW , XT_SNOW       , &
-                            XT_ICE        , XT_MNW        , XT_WML        , &
-                            XT_BOT        , XT_B1         , XCT           , &
-                            XH_SNOW       , XH_ICE        , XH_ML         , &
-                            XH_B1         , XTS           , LSEDIMENTS    , &
-                            CSNOW_FLK     , CFLK_FLUX     , CFLK_ALB      , &
-                            LSBL          , XICHCE        , LPRECIP       , &
-                            LPWEBB
-
-
-
-USE MODD_DIAG_FLAKE_n, ONLY : N2M, LSURF_BUDGET, LRAD_BUDGET, XDIAG_TSTEP, &
-                                L2M_MIN_ZS, LCOEF, LSURF_VARS, LSURF_BUDGETC,&
-                                LRESET_BUDGETC  
-USE MODD_DIAG_MISC_FLAKE_n,    ONLY : LWATER_PROFILE , XZWAT_PROFILE,     &
-                                      XZW_PROFILE, XTW_PROFILE
-USE MODD_CH_WATFLUX_n,   ONLY : XDEP, CCH_DRY_DEP, CSV, CCH_NAMES, &
-                                  NBEQ, NSV_CHSBEG, NSV_CHSEND,  &
-                                  NAEREQ, NSV_AERBEG, NSV_AEREND, CAER_NAMES,&
-                                  NSV_DSTBEG, NSV_DSTEND, NDSTEQ, CDSTNAMES, &
-                                  NSV_SLTBEG, NSV_SLTEND, NSLTEQ, CSLTNAMES  
+!
+USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+!
+USE MODD_CSTS,          ONLY : XTT, XPI, XOMEGA 
+!
+USE MODD_WATER_PAR,     ONLY : XALBWATICE, XALBWATSNOW
+USE MODD_SNOW_PAR,      ONLY : XANSMIN, XANSMAX
+!
+!
+!
+!
 USE MODD_CHS_AEROSOL,    ONLY: LVARSIGI, LVARSIGJ
 USE MODD_DST_SURF,       ONLY: LVARSIG_DST, NDSTMDE, NDST_MDEBEG, LRGFIX_DST
 USE MODD_SLT_SURF,       ONLY: LVARSIG_SLT, NSLTMDE, NSLT_MDEBEG, LRGFIX_SLT
@@ -98,7 +89,7 @@ USE MODI_READ_FLAKE_DATE
 USE MODI_READ_NAM_PREP_FLAKE_n
 USE MODI_INIT_CHEMICAL_n
 USE MODI_PREP_CTRL_FLAKE
-USE MODI_UPDATE_RAD_SEAWAT
+USE MODI_UPDATE_RAD_FLAKE
 USE MODI_READ_FLAKE_SBL_n
 !
 USE MODI_SET_SURFEX_FILEIN
@@ -110,12 +101,17 @@ USE MODI_ABOR1_SFX
 !
 USE MODI_GET_TYPE_DIM_n
 !
-USE MODI_WRITE_COVER_TEX_WATER
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(FLAKE_MODEL_t), INTENT(INOUT) :: FM
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -132,6 +128,7 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSRAD    ! radiative temperature
+REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
 INTEGER,                          INTENT(IN)  :: KYEAR     ! current year (UTC)
 INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
@@ -166,7 +163,7 @@ IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('INIT_FLAKEN: FATAL ERROR DURING ARGUMENT TRANSFER')
 END IF
 !
-ALLOCATE(XZWAT_PROFILE(100))
+ALLOCATE(FM%DGMF%XZWAT_PROFILE(100))
 !
 !         Others litlle things
 !
@@ -174,6 +171,7 @@ PDIR_ALB = XUNDEF
 PSCA_ALB = XUNDEF
 PEMIS    = XUNDEF
 PTSRAD   = XUNDEF
+PTSURF   = XUNDEF
 !
 IF (LNAM_READ) THEN
  !
@@ -182,35 +180,27 @@ IF (LNAM_READ) THEN
  !
  !        0.1. Hard defaults
  !      
- CALL DEFAULT_FLAKE(XTSTEP,XOUT_TSTEP,LSEDIMENTS,CSNOW_FLK,CFLK_FLUX,CFLK_ALB,&
-                    XICHCE,LPRECIP,LPWEBB)
- CALL DEFAULT_CH_DEP(CCH_DRY_DEP)
- CALL DEFAULT_DIAG_FLAKE(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,LCOEF,LSURF_VARS, &
-                         LWATER_PROFILE,LSURF_BUDGETC,LRESET_BUDGETC,XDIAG_TSTEP,  &
-                         XZWAT_PROFILE             )  
+ CALL DEFAULT_FLAKE(FM%F%XTSTEP,FM%F%XOUT_TSTEP,FM%F%LSEDIMENTS,FM%F%CSNOW_FLK,FM%F%CFLK_FLUX,FM%F%CFLK_ALB,&
+                    FM%F%LSKINTEMP)
+ CALL DEFAULT_CH_DEP(FM%CHF%CCH_DRY_DEP)
+ CALL DEFAULT_DIAG_FLAKE(FM%DGF%N2M,FM%DGF%LSURF_BUDGET,FM%DGF%L2M_MIN_ZS,FM%DGF%LRAD_BUDGET,&
+                         FM%DGF%LCOEF,FM%DGF%LSURF_VARS, FM%DGMF%LWATER_PROFILE,FM%DGF%LSURF_BUDGETC,&
+                         FM%DGF%LRESET_BUDGETC,FM%DGF%XDIAG_TSTEP,FM%DGMF%XZWAT_PROFILE      )  
  !
 ENDIF
 !
 !        0.2. Defaults from file header
 !    
- CALL READ_DEFAULT_FLAKE_n(HPROGRAM)
+ CALL READ_DEFAULT_FLAKE_n(FM%CHF, FM%DGF, FM%DGMF, FM%F, &
+                           HPROGRAM)
 
 !
 !*       1.1    Reading of configuration:
 !               -------------------------
 !
- CALL READ_FLAKE_CONF_n(HPROGRAM)
+ CALL READ_FLAKE_CONF_n(FM%CHF, FM%DGF, FM%DGMF, FM%F, &
+                        HPROGRAM)
 !
-IF (LWATER_PROFILE) THEN
-   CALL GET_TYPE_DIM_n('WATER ',ILU)
-   ALLOCATE (XZW_PROFILE(count (XZWAT_PROFILE /= XUNDEF))) 
-   ALLOCATE (XTW_PROFILE(count (XZWAT_PROFILE /= XUNDEF),ILU)) 
-   XZW_PROFILE=XZWAT_PROFILE(:count (XZWAT_PROFILE /= XUNDEF))
- ELSE
-   ALLOCATE (XZW_PROFILE(1)) 
-   ALLOCATE (XTW_PROFILE(1,1)) 
- END IF
-
 !-------------------------------------------------------------------------------
 !
 !*       1.     Cover fields and grid:
@@ -219,20 +209,24 @@ IF (LWATER_PROFILE) THEN
 !
 SELECT CASE (HINIT)
   CASE ('PGD')
-    TTIME%TDATE%YEAR = NUNDEF
-    TTIME%TDATE%MONTH= NUNDEF
-    TTIME%TDATE%DAY  = NUNDEF
-    TTIME%TIME       = XUNDEF
+    FM%F%TTIME%TDATE%YEAR = NUNDEF
+    FM%F%TTIME%TDATE%MONTH= NUNDEF
+    FM%F%TTIME%TDATE%DAY  = NUNDEF
+    FM%F%TTIME%TIME       = XUNDEF
 
   CASE ('PRE')
-    CALL PREP_CTRL_FLAKE(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,LCOEF,LSURF_VARS,&
-                             ILUOUT,LWATER_PROFILE,LSURF_BUDGETC) 
+    CALL PREP_CTRL_FLAKE(FM%DGF%N2M,FM%DGF%LSURF_BUDGET,FM%DGF%L2M_MIN_ZS,FM%DGF%LRAD_BUDGET,&
+                         FM%DGF%LCOEF,FM%DGF%LSURF_VARS,ILUOUT,&
+                         FM%DGMF%LWATER_PROFILE,FM%DGF%LSURF_BUDGETC) 
     IF (LNAM_READ) CALL READ_NAM_PREP_FLAKE_n(HPROGRAM)                            
-    CALL READ_FLAKE_DATE(HPROGRAM,HINIT,ILUOUT,HATMFILE,HATMFILETYPE,KYEAR,KMONTH,KDAY,PTIME,TTIME)
+    CALL READ_FLAKE_DATE(&
+                         HPROGRAM,HINIT,ILUOUT,HATMFILE,HATMFILETYPE,KYEAR,KMONTH,KDAY,PTIME,FM%F%TTIME)
 
   CASE DEFAULT
-    CALL INIT_IO_SURF_n(HPROGRAM,'WATER ','FLAKE ','READ ')
-    CALL READ_SURF(HPROGRAM,'DTCUR',TTIME,IRESP)
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                        HPROGRAM,'WATER ','FLAKE ','READ ')
+    CALL READ_SURF(&
+                   HPROGRAM,'DTCUR',FM%F%TTIME,IRESP)
     CALL END_IO_SURF_n(HPROGRAM)
 END SELECT
 !
@@ -243,13 +237,13 @@ END SELECT
 !         Initialisation for IO
 !
  CALL SET_SURFEX_FILEIN(HPROGRAM,'PGD ') ! change input file name to pgd name
- CALL INIT_IO_SURF_n(HPROGRAM,'WATER ','FLAKE ','READ ')
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                        HPROGRAM,'WATER ','FLAKE ','READ ')
 !
 !         Reading of the fields
 !
- CALL READ_PGD_FLAKE_n(HPROGRAM)
-!
- CALL WRITE_COVER_TEX_WATER
+ CALL READ_PGD_FLAKE_n(DTCO, U, FM%FG, FM%F, &
+                       HPROGRAM)
 !
  CALL END_IO_SURF_n(HPROGRAM)
  CALL SET_SURFEX_FILEIN(HPROGRAM,'PREP') ! restore input file name
@@ -270,50 +264,57 @@ END IF
 !*       2.     Prognostic and cover fields:
 !               ---------------------------
 !
- CALL INIT_IO_SURF_n(HPROGRAM,'WATER ','FLAKE ','READ ')
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                        HPROGRAM,'WATER ','FLAKE ','READ ')
 !
- CALL READ_FLAKE_n(HPROGRAM)
+ CALL READ_FLAKE_n(DTCO, U, FM%F, &
+                   HPROGRAM)
 !
-ILU = SIZE(XCOVER,1)
+ILU = SIZE(FM%F%XCOVER,1)
 !
 !-------------------------------------------------------------------------------
 !
 !*       3.     Specific fields 
 !               ---------------
 !
-ALLOCATE(XCORIO         (ILU))
-ALLOCATE(XICE_ALB       (ILU))
-ALLOCATE(XSNOW_ALB      (ILU))
-ALLOCATE(XEXTCOEF_ICE   (ILU))
-ALLOCATE(XEXTCOEF_SNOW  (ILU))
+ALLOCATE(FM%F%XCORIO         (ILU))
+ALLOCATE(FM%F%XICE_ALB       (ILU))
+ALLOCATE(FM%F%XSNOW_ALB      (ILU))
+ALLOCATE(FM%F%XEXTCOEF_ICE   (ILU))
+ALLOCATE(FM%F%XEXTCOEF_SNOW  (ILU))
 !
-XCORIO(:) = 2*XOMEGA*SIN(XLAT(:)*XPI/180.)
+FM%F%XCORIO(:) = 2*XOMEGA*SIN(FM%FG%XLAT(:)*XPI/180.)
 !
-XICE_ALB      = XUNDEF
-XSNOW_ALB     = XUNDEF
-XEXTCOEF_ICE  = XUNDEF
-XEXTCOEF_SNOW = XUNDEF
+FM%F%XICE_ALB  = XALBWATICE  ! constant, should be improved latter
+FM%F%XSNOW_ALB = XALBWATSNOW ! constant, should be improved latter
+!
+FM%F%XEXTCOEF_ICE  = XUNDEF !not used
+FM%F%XEXTCOEF_SNOW = XUNDEF !not used
 !-------------------------------------------------------------------------------
 !
 !*       4.     Albedo, emissivity and radiative fields on lake
 !               -----------------------------------------------
 !
-ALLOCATE(XDIR_ALB (ILU))
-ALLOCATE(XSCA_ALB (ILU))
-ALLOCATE(XEMIS    (ILU))
-XDIR_ALB = 0.0
-XSCA_ALB = 0.0
-XEMIS    = 0.0
+ALLOCATE(FM%F%XDIR_ALB (ILU))
+ALLOCATE(FM%F%XSCA_ALB (ILU))
+ALLOCATE(FM%F%XEMIS    (ILU))
+FM%F%XDIR_ALB = 0.0
+FM%F%XSCA_ALB = 0.0
+FM%F%XEMIS    = 0.0
 !
- CALL UPDATE_RAD_SEAWAT(CFLK_ALB,XTS,PZENITH,XTT,XEMIS,XDIR_ALB   ,&
-                      XSCA_ALB,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD   )
+ CALL UPDATE_RAD_FLAKE(FM%F%CFLK_ALB,FM%F%XTS,PZENITH,FM%F%XH_ICE,FM%F%XH_SNOW,&
+                       FM%F%XICE_ALB,FM%F%XSNOW_ALB,FM%F%XDIR_ALB,FM%F%XSCA_ALB,&
+                       FM%F%XEMIS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD  )
+!
+PTSURF(:) = FM%F%XTS(:)
 !
 !-------------------------------------------------------------------------------
 !
 !*       6.     SBL air fields:
 !               --------------
 !
- CALL READ_FLAKE_SBL_n(HPROGRAM)
+ CALL READ_FLAKE_SBL_n(DTCO, U, FM%F, FM%FSB, &
+                       HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !
@@ -321,18 +322,16 @@ XEMIS    = 0.0
 !               ----------------
 !
 !
- CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, NBEQ, CSV, NAEREQ,            &
-                     NSV_CHSBEG, NSV_CHSEND, NSV_AERBEG, NSV_AEREND, &
-                     CCH_NAMES, CAER_NAMES, NDSTEQ, NSV_DSTBEG,      &
-                     NSV_DSTEND, NSLTEQ, NSV_SLTBEG, NSV_SLTEND,     &
-                     HDSTNAMES=CDSTNAMES, HSLTNAMES=CSLTNAMES        )
+ CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, FM%CHF%SVF,    &      
+                     FM%CHF%CCH_NAMES, FM%CHF%CAER_NAMES,      &
+                     HDSTNAMES=FM%CHF%CDSTNAMES, HSLTNAMES=FM%CHF%CSLTNAMES  )
 !
 !* depositiion scheme
 !
-IF (NBEQ>0 .AND. CCH_DRY_DEP=='WES89') THEN
-  ALLOCATE(XDEP(ILU,NBEQ))
+IF (FM%CHF%SVF%NBEQ>0 .AND. FM%CHF%CCH_DRY_DEP=='WES89') THEN
+  ALLOCATE(FM%CHF%XDEP(ILU,FM%CHF%SVF%NBEQ))
 ELSE
-  ALLOCATE(XDEP(0,0))
+  ALLOCATE(FM%CHF%XDEP(0,0))
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -340,7 +339,8 @@ END IF
 !*       7.     diagnostics initialization
 !               --------------------------
 !
- CALL DIAG_FLAKE_INIT_n(ILU,KSW)
+ CALL DIAG_FLAKE_INIT_n(DGU, FM%DGF, FM%DGMF, FM%F, &
+                        HPROGRAM,ILU,KSW)
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

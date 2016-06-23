@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE OLD_NAME(HPROGRAM,HRECIN,HRECOUT)
+      SUBROUTINE OLD_NAME (&
+                           HPROGRAM,HRECIN,HRECOUT)
 !     #######################################################
 !
 !!****  *OLD_NAME* - get the old name of a field for reading in an old SURFEX file
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*	
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,9 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
 !
 !
 !
@@ -48,6 +52,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
  CHARACTER(LEN=12), INTENT(IN)  :: HRECIN   ! name of field to be read
@@ -68,8 +74,10 @@ IF (LHOOK) CALL DR_HOOK('OLD_NAME',0,ZHOOK_HANDLE)
 !
 HRECOUT = HRECIN
 IF (HRECIN=='COVER_LIST') THEN
-  CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
-  CALL READ_SURF(HPROGRAM,'BUG', IBUGFIX ,IRESP)
+  CALL READ_SURF(&
+                 HPROGRAM,'VERSION',IVERSION,IRESP)
+  CALL READ_SURF(&
+                 HPROGRAM,'BUG', IBUGFIX ,IRESP)
   IF (IVERSION<7 .OR. (IVERSION==7 .AND. IBUGFIX==0)) HRECOUT='COVER'
 END IF
 !

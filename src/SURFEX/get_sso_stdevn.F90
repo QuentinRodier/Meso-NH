@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ########################################
-      SUBROUTINE GET_SSO_STDEV_n(HPROGRAM,KI,PSSO_STDEV)
+      SUBROUTINE GET_SSO_STDEV_n (USS, &
+                                  HPROGRAM,KI,PSSO_STDEV)
 !     ########################################
 !
 !!****  *GET_SSO_STDEV_n* - routine to get some surface fields
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Riette   *Meteo France*
+!!      S. Riette   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,10 +38,12 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODI_GET_LUOUT
 USE MODI_ABOR1_SFX
 !
-USE MODD_SURF_ATM_SSO_n,     ONLY : XSSO_STDEV
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -49,6 +52,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
 INTEGER,             INTENT(IN)  :: KI      ! horizontal dim. of cover
@@ -66,13 +72,13 @@ IF (LHOOK) CALL DR_HOOK('GET_SSO_STDEV_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF ( SIZE(PSSO_STDEV) /= SIZE(XSSO_STDEV) ) THEN
+IF ( SIZE(PSSO_STDEV) /= SIZE(USS%XSSO_STDEV) ) THEN
   WRITE(ILUOUT,*) 'try to get SSO_STDEV field from atmospheric model, but size is not correct'
   WRITE(ILUOUT,*) 'size of field expected by the atmospheric model (PSSO_STDEV) :', SIZE(PSSO_STDEV)
-  WRITE(ILUOUT,*) 'size of field inthe surface                     (XSSO_STDEV) :', SIZE(XSSO_STDEV)
+  WRITE(ILUOUT,*) 'size of field inthe surface                     (XSSO_STDEV) :', SIZE(USS%XSSO_STDEV)
   CALL ABOR1_SFX('GET_SSO_STDEVN: SSO_STDEV SIZE NOT CORRECT')
 ELSE
-  PSSO_STDEV = XSSO_STDEV
+  PSSO_STDEV = USS%XSSO_STDEV
 END IF
 IF (LHOOK) CALL DR_HOOK('GET_SSO_STDEV_N',1,ZHOOK_HANDLE)
 !

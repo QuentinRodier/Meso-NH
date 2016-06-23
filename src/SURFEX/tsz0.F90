@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE TSZ0( PTIME, PTSTEP, PWFC, PTG, PWG )
+      SUBROUTINE TSZ0 (DTZ, &
+                       PTIME, PTSTEP, PWFC, PTG, PWG )
 !     ################################################################
 !
 !
@@ -36,21 +37,24 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    25/01/96 
-!!                  25/03/96   spatialize the input TS, WG, SST fields
-!!                  22/05/96   correct igrid value for the rain rate
-!!                  27/11/96   set realistic values for z0 fields on sea
-!!      (V.Masson)  09/07/97  add directional z0 computations and RESA correction
-!!      (V.Masson)  15/03/99  some computations are now done in GROUND_PARAMn
-!!      (V.Masson)  04/01/00  all computations are now done in ISBA
+!!      Original     25/01/96 
+!!                   25/03/96 spatialize the input TS, WG, SST fields
+!!                   22/05/96 correct igrid value for the rain rate
+!!                   27/11/96 set realistic values for z0 fields on sea
+!!      V.Masson     09/07/97 add directional z0 computations and RESA correction
+!!      V.Masson     15/03/99 some computations are now done in GROUND_PARAMn
+!!      V.Masson     04/01/00 all computations are now done in ISBA
+!!      P. Le Moigne 03/2015  tsz0 time management
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
+!
+USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
+!
 USE MODD_CSTS,       ONLY : XPI
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_DATA_TSZ0_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -62,6 +66,9 @@ IMPLICIT NONE
 !
 !* general variables
 !  -----------------
+!
+TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
+!
 REAL,                   INTENT(IN)  :: PTIME      ! Current time
 REAL,                   INTENT(IN)  :: PTSTEP     ! timestep of the integration
 !
@@ -103,16 +110,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('TSZ0',0,ZHOOK_HANDLE)
 !
-ZTIMEP = MOD(PTIME+PTSTEP,86400.)  ! recover the time from O HTU
+IF (DTZ%NTIME==25) THEN
+   ZTIMEP = MOD(PTIME+PTSTEP,86400.)  ! recover the time from O HTU
+ELSE
+   ZTIMEP = PTIME+PTSTEP              ! accumulated time since beginning of run
+ENDIF
 !
 IHOURP = INT(ZTIMEP/3600.)+1
 !
-IF (NTIME==25) THEN
-  ZDTS_HOUR    = XDATA_DTS   (IHOURP)
-  ZDHUGRD_HOUR = XDATA_DHUGRD(IHOURP)
-ELSEIF (NTIME==1) THEN
-  ZDTS_HOUR    = XDATA_DTS   (1)
-  ZDHUGRD_HOUR = XDATA_DHUGRD(1)
+IF (DTZ%NTIME==1) THEN
+  ZDTS_HOUR    = DTZ%XDATA_DTS   (1)
+  ZDHUGRD_HOUR = DTZ%XDATA_DHUGRD(1)        
+ELSE
+  ZDTS_HOUR    = DTZ%XDATA_DTS   (IHOURP)
+  ZDHUGRD_HOUR = DTZ%XDATA_DHUGRD(IHOURP)
 ENDIF
 !
 ! temporal interpolation of the surface temperature increment  over land at time t

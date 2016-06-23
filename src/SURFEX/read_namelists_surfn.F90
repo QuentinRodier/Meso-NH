@@ -1,12 +1,19 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE READ_NAMELISTS_SURF_n(HPROGRAM,HINIT)
+SUBROUTINE READ_NAMELISTS_SURF_n (CHU, DGU, USS, &
+                                  HPROGRAM,HINIT)
 !     #######################################################
 !
 !---------------------------    
+!
+!
+!
+USE MODD_CH_SURF_n, ONLY : CH_SURF_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
 !
 USE MODN_SURF_ATM_n
 !
@@ -32,6 +39,11 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+!
+TYPE(CH_SURF_t), INTENT(INOUT) :: CHU
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+!
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HINIT     ! choice of fields to initialize
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -43,14 +55,16 @@ IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_SURF_N',0,ZHOOK_HANDLE)
 !
  CALL DEFAULT_CH_SURF_ATM(CCHEM_SURF_FILE,LCH_SURF_EMIS)
 !
- CALL DEFAULT_DIAG_SURF_ATM(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,  &
+ CALL DEFAULT_DIAG_SURF_ATM(N2M,LT2MMW,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET, &
                             LCOEF,LSURF_VARS,LSURF_BUDGETC,          &
                             LRESET_BUDGETC,LSELECT, LPROVAR_TO_DIAG, &
                             LDIAG_GRID,LFRAC, XDIAG_TSTEP, CSELECT   )   
 !      
- CALL READ_DEFAULT_SURF_ATM_n(HPROGRAM) 
+ CALL READ_DEFAULT_SURF_ATM_n(CHU, DGU, USS, &
+                              HPROGRAM) 
 !
- CALL READ_SURF_ATM_CONF_n(HPROGRAM)    
+ CALL READ_SURF_ATM_CONF_n(CHU, DGU, USS, &
+                           HPROGRAM)    
 !       
 !---------------------------------------------------------------------------
 !PREP

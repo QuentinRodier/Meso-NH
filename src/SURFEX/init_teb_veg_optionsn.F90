@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_VEG_OPTIONS_n(HPROGRAM)
+SUBROUTINE INIT_TEB_VEG_OPTIONS_n (&
+                                    CHT, DGMTO, TGDO, TVG, &
+                                   HPROGRAM)
 !#############################################################
 !
 !!****  *INIT_TEB_TEB_VEG_n* - routine to initialize ISBA
@@ -27,33 +29,37 @@ SUBROUTINE INIT_TEB_VEG_OPTIONS_n(HPROGRAM)
 !!
 !!    AUTHOR
 !!    ------
-!!	A. Lemonsu  *Meteo France*	
+!!      A. Lemonsu  *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2009
 !!      B. Decharme 07/2011 : read pgd+prep
+!!      B. Decharme 04/2013 : delete CTOPREG option (never used)
+!!                            water table / surface coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+USE MODD_CH_TEB_n, ONLY : CH_TEB_t
+USE MODD_DIAG_MISC_TEB_OPTION_n, ONLY : DIAG_MISC_TEB_OPTIONS_t
+USE MODD_TEB_GARDEN_OPTION_n, ONLY : TEB_GARDEN_OPTIONS_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODD_READ_NAMELIST,   ONLY : LNAM_READ
 !
 USE MODD_TYPE_DATE_SURF
 USE MODD_TYPE_SNOW
 !
-USE MODD_TEB_VEG_n,       ONLY: CROUGH,CISBA,CPEDOTF,LTR_ML,CPHOTO,CRUNOFF,CALBEDO,   &
-                                CSCOND, CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,       &
-                                CRESPSL,NNBIOMASS, CSOC,                              & 
-                                CCPSURF, CHORT, CKSAT, CTOPREG, XCGMAX, XCDRAG
 !
-USE MODD_TEB_GARDEN_n,    ONLY: NGROUND_LAYER, XSOILGRID
 
-USE MODD_CH_TEB_n,        ONLY: LCH_BIO_FLUX  
 
 USE MODD_DATA_COVER_PAR,  ONLY: NVEGTYPE
 USE MODD_SURF_PAR,        ONLY: XUNDEF, NUNDEF
-USE MODD_DIAG_MISC_TEB_n, ONLY: LSURF_DIAG_ALBEDO
 !
 USE MODD_ISBA_PAR,        ONLY : XOPTIMGRID
 !
@@ -75,6 +81,14 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+!
+!
+TYPE(CH_TEB_t), INTENT(INOUT) :: CHT
+TYPE(DIAG_MISC_TEB_OPTIONS_t), INTENT(INOUT) :: DGMTO
+TYPE(TEB_GARDEN_OPTIONS_t), INTENT(INOUT) :: TGDO
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+!
  CHARACTER(LEN=6),                   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 !
 !
@@ -86,19 +100,23 @@ INTEGER           :: IVERSION, IBUGFIX  ! surface version
 INTEGER           :: ILUOUT   ! unit of output listing file
 INTEGER           :: IRESP    ! Error code after redding
  CHARACTER(LEN=12) :: YRECFM   ! Name of the article to be read
+ CHARACTER(LEN=4 ) :: YLVL
 !
+INTEGER :: JLAYER ! loop counter on layers
 !
 REAL                              :: ZOUT_TSTEP
  CHARACTER(LEN=3)                  :: YRAIN 
 LOGICAL                           :: GCANOPY_DRAG
 LOGICAL                           :: GGLACIER
-LOGICAL                           :: GTRIP
 LOGICAL                           :: GFLOOD
+LOGICAL                           :: GWTD
 LOGICAL                           :: GVEGUPD
 LOGICAL                           :: GSPINUPCARBS
 LOGICAL                           :: GSPINUPCARBW
 REAL                              :: ZSPINMAXS
 REAL                              :: ZSPINMAXW
+REAL                              :: ZCO2_START
+REAL                              :: ZCO2_END
 INTEGER                           :: INBYEARSPINS
 INTEGER                           :: INBYEARSPINW
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -112,7 +130,7 @@ IF (LHOOK) CALL DR_HOOK('INIT_TEB_VEG_OPTIONS_N',0,ZHOOK_HANDLE)
 !
 !               Other little things
 !
-LSURF_DIAG_ALBEDO = .FALSE.
+DGMTO%LSURF_DIAG_ALBEDO = .FALSE.
 !
 IF (LNAM_READ) THEN
  !
@@ -127,26 +145,27 @@ IF (LNAM_READ) THEN
  !             forced to the same values for TEB and urban green areas)
  !
  CALL DEFAULT_ISBA(XTSTEP, ZOUT_TSTEP,                         &
-                   CROUGH, CRUNOFF, CALBEDO, CSCOND,           &
-                   CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,     &
-                   CCPSURF, XCGMAX, XCDRAG, CKSAT, CSOC,       &
-                   CTOPREG, YRAIN, CHORT, GFLOOD, GTRIP,       &
-                   GGLACIER, GCANOPY_DRAG, GVEGUPD,            &
-                   GSPINUPCARBS, GSPINUPCARBW,                 & 
-                   ZSPINMAXS, ZSPINMAXW,                       &
-                   INBYEARSPINS, INBYEARSPINW                  )
+                   TVG%CROUGH, TVG%CRUNOFF, TVG%CALBEDO, TVG%CSCOND,           &
+                   TVG%CC1DRY, TVG%CSOILFRZ, TVG%CDIFSFCOND, TVG%CSNOWRES,     &
+                   TVG%CCPSURF, TVG%XCGMAX, TVG%XCDRAG, TVG%CKSAT, TVG%LSOC,       &
+                   YRAIN, TVG%CHORT, GGLACIER, GCANOPY_DRAG,       &
+                   GVEGUPD, GSPINUPCARBS, GSPINUPCARBW,        & 
+                   ZSPINMAXS, ZSPINMAXW, ZCO2_START, ZCO2_END, &
+                   INBYEARSPINS, INBYEARSPINW, TVG%LNITRO_DILU     )
  !
- CALL DEFAULT_CH_BIO_FLUX(LCH_BIO_FLUX)
+ CALL DEFAULT_CH_BIO_FLUX(CHT%LCH_BIO_FLUX)
  !
 ENDIF
 !        1.2. Defaults from file header
 !    
- CALL READ_DEFAULT_TEB_VEG_n(HPROGRAM)
+ CALL READ_DEFAULT_TEB_VEG_n(CHT, TVG, &
+                             HPROGRAM)
 !
- CALL READ_TEB_VEG_CONF_n(HPROGRAM)
+ CALL READ_TEB_VEG_CONF_n(CHT, TVG, &
+                          HPROGRAM)
 !
 !-------------------------------------------------------------------------------
-CRESPSL = 'DEF'
+TVG%CRESPSL = 'DEF'
 !-------------------------------------------------------------------------------
 !
 !         Initialisation for IO
@@ -155,10 +174,12 @@ CRESPSL = 'DEF'
 !               ---------------------
 !
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IBUGFIX,IRESP)
 !
 !*       2.     Initialisation of ISBA options
 !               ------------------------------
@@ -166,25 +187,29 @@ YRECFM='BUG'
 !
 YRECFM='TWN_ISBA'
 IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_ISBA'
- CALL READ_SURF(HPROGRAM,YRECFM,CISBA,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,TVG%CISBA,IRESP)
 !
 IF (IVERSION>=7) THEN
   !
   YRECFM='TWN_PEDOTF'
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_PEDOTF'
-  CALL READ_SURF(HPROGRAM,YRECFM,CPEDOTF,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,TVG%CPEDOTF,IRESP)
   !
 ELSE
-  CPEDOTF = 'CH78'
+  TVG%CPEDOTF = 'CH78'
 ENDIF
 !
 YRECFM='TWN_PHOTO'
 IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_PHOTO'
- CALL READ_SURF(HPROGRAM,YRECFM,CPHOTO,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,TVG%CPHOTO,IRESP)
 !
 YRECFM='TWN_LAYER'
 IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_LAYER'
- CALL READ_SURF(HPROGRAM,YRECFM,NGROUND_LAYER,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,TGDO%NGROUND_LAYER,IRESP)
 !
 !* new radiative transfert
 !
@@ -192,32 +217,41 @@ IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=2) THEN
   !
   YRECFM='TWN_TR_ML'
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_TR_ML'
-  CALL READ_SURF(HPROGRAM,YRECFM,LTR_ML,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,TVG%LTR_ML,IRESP)
   !
 ELSE 
-  LTR_ML = .FALSE.
+  TVG%LTR_ML = .FALSE.
 ENDIF
 !
 !* Reference grid for DIF
 !
-IF(CISBA=='DIF') THEN
-  ALLOCATE(XSOILGRID(NGROUND_LAYER))
-  XSOILGRID=XUNDEF
-  IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=2) THEN
+IF(TVG%CISBA=='DIF') THEN
+  ALLOCATE(TGDO%XSOILGRID(TGDO%NGROUND_LAYER))
+  TGDO%XSOILGRID=XUNDEF
+  IF (IVERSION>=8) THEN
+     DO JLAYER=1,TGDO%NGROUND_LAYER
+        WRITE(YLVL,'(I4)') JLAYER
+        YRECFM='GD_SGRID'//ADJUSTL(YLVL(:LEN_TRIM(YLVL)))
+        CALL READ_SURF(&
+                HPROGRAM,YRECFM,TGDO%XSOILGRID(JLAYER),IRESP)
+     ENDDO
+  ELSEIF (IVERSION==7 .AND. IBUGFIX>=2) THEN
     YRECFM='TWN_SOILGRID'
     IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM='GD_SOILGRID'
-    CALL READ_SURF(HPROGRAM,YRECFM,XSOILGRID,IRESP,HDIR='-')
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,TGDO%XSOILGRID,IRESP,HDIR='-')
   ELSE
-    XSOILGRID(1:NGROUND_LAYER)=XOPTIMGRID(1:NGROUND_LAYER)
+    TGDO%XSOILGRID(1:TGDO%NGROUND_LAYER)=XOPTIMGRID(1:TGDO%NGROUND_LAYER)
   ENDIF
 ELSE
-  ALLOCATE(XSOILGRID(0))
+  ALLOCATE(TGDO%XSOILGRID(0))
 ENDIF
 !
 !* number of biomass pools
 !
-NNBIOMASS=1
-IF (CPHOTO=='NIT') NNBIOMASS=3
+TVG%NNBIOMASS=1
+IF (TVG%CPHOTO=='NIT') TVG%NNBIOMASS=3
 !
 !-------------------------------------------------------------------------------
 !

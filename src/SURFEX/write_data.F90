@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################
       SUBROUTINE WRITE_DATA(HPROGRAM)
 !     #########################
@@ -34,6 +34,7 @@
 !!
 !!    Original    15/12/97
 !!    F.solmon    01/06/00 adaptation for patch approach
+!!    R. Alkama    05/2012 : add new vegtypes (from 12 to 19)
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -74,23 +75,30 @@ INTEGER               :: JCOVER,JDEC,JK ! loop counters on covers, decades and v
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=8), DIMENSION(12) :: CNVT
+ CHARACTER(LEN=8), DIMENSION(19) :: CNVT
  CHARACTER(LEN=2) :: CF
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('WRITE_DATA',0,ZHOOK_HANDLE)
-CNVT(1) =  "NVT_NO  "      ! no vegetation (smooth)
-CNVT(2) =  "NVT_ROCK"      ! no vegetation (rocks)
-CNVT(3) =  "NVT_SNOW"      ! permanent snow and ice
-CNVT(4) =  "NVT_TREE"      ! forest and trees
-CNVT(5) =  "NVT_CONI"      ! forest and trees (coniferous)
-CNVT(6) =  "NVT_EVER"      ! forest and trees (broadleaf evergreen)
-CNVT(7) =  "NVT_C3  "      ! C3 cultures types
-CNVT(8) =  "NVT_C4  "      ! C4 cultures types
-CNVT(9) =  "NVT_IRR "      ! irrigated crops
-CNVT(10)=  "NVT_GRAS"      ! grassland
-CNVT(11)=  "NVT_TROG"      ! tropical grassland
-CNVT(12)=  "NVT_PARK"      ! peat bogs, parks and gardens (irrigated grass)
+ CNVT(1) =  "NVT_NO  "      ! no vegetation (smooth)
+ CNVT(2) =  "NVT_ROCK"      ! no vegetation (rocks)
+ CNVT(3) =  "NVT_SNOW"      ! permanent snow and ice
+ CNVT(4) =  "NVT_TEBD"      ! temperate broadleaf deciduous trees
+ CNVT(5) =  "NVT_BONE"      ! boreal needleleaf evergreen trees 
+ CNVT(6) =  "NVT_TRBE"      ! tropical broadleaf evergreen trees
+ CNVT(7) =  "NVT_C3  "      ! C3 cultures types
+ CNVT(8) =  "NVT_C4  "      ! C4 cultures types
+ CNVT(9) =  "NVT_IRR "      ! irrigated crops
+ CNVT(10)=  "NVT_GRAS"      ! temperate grassland C3
+ CNVT(11)=  "NVT_TROG"      ! tropical  grassland C4
+ CNVT(12)=  "NVT_PARK"      ! peat bogs, parks and gardens (irrigated grass)
+ CNVT(13)=  "NVT_TRBD"      ! tropical  broadleaf  deciduous trees
+ CNVT(14)=  "NVT_TEBE"      ! temperate broadleaf  evergreen trees
+ CNVT(15)=  "NVT_TENE"      ! temperate needleleaf evergreen trees
+ CNVT(16)=  "NVT_BOBD"      ! boreal    broadleaf  deciduous trees
+ CNVT(17)=  "NVT_BOND"      ! boreal    needleleaf deciduous trees
+ CNVT(18)=  "NVT_BOGR"      ! boreal grassland C3
+ CNVT(19)=  "NVT_SHRB"      ! broadleaf shrub
 
 DO JCOVER=301,JPCOVER
 WRITE(*,FMT='(A80)') '!-------------------------------------------------------------------------------'
@@ -106,7 +114,7 @@ WRITE(*,FMT='(A21,F4.2)') 'XDATA_NATURE(ICOVER)=',XDATA_NATURE(JCOVER)
 WRITE(*,FMT='(A21,F4.2)') 'XDATA_WATER (ICOVER)=',XDATA_WATER(JCOVER)
 WRITE(*,FMT='(A21,F4.2)') 'XDATA_SEA   (ICOVER)=',XDATA_SEA(JCOVER)
 WRITE(*,FMT='(A1)') '!'
-DO JK=1,12
+DO JK=1,19
   IF (XDATA_VEGTYPE(JCOVER,JK)==0.) CYCLE
   IF (ALL(XDATA_LAI_ALL_YEARS(JCOVER,:,JK)==0.)) THEN
     WRITE(*,FMT='(A29,A8,A5)') &
@@ -135,7 +143,7 @@ DO JK=1,12
   WRITE(*,FMT='(A7)') '     /)'
 END DO
 WRITE(*,FMT='(A1)') '!'
-DO JK=1,12
+DO JK=1,19
   IF (XDATA_VEGTYPE(JCOVER,JK)==0.) CYCLE
   WRITE(*,FMT='(A21,A8,A3,F4.2)') &
            'XDATA_VEGTYPE(ICOVER,',CNVT(JK),')= ',XDATA_VEGTYPE(JCOVER,JK)  
@@ -147,13 +155,13 @@ DO JK=4,6
            'XDATA_H_TREE(ICOVER,',CNVT(JK),')= ',XDATA_H_TREE(JCOVER,JK)  
 END DO
 WRITE(*,FMT='(A1)') '!'
-DO JK=1,12
+DO JK=1,19
   IF (XDATA_VEGTYPE(JCOVER,JK)==0.) CYCLE
   WRITE(*,FMT='(A24,A8,A3,F4.1)') &
            'XDATA_ROOT_DEPTH(ICOVER,',CNVT(JK),')= ',XDATA_ROOT_DEPTH(JCOVER,JK)  
 END DO
 WRITE(*,FMT='(A1)') '!'
-DO JK=1,12
+DO JK=1,19
   IF (XDATA_VEGTYPE(JCOVER,JK)==0.) CYCLE
   WRITE(*,FMT='(A26,A8,A3,F4.1)') &
            'XDATA_GROUND_DEPTH(ICOVER,',CNVT(JK),')= ',XDATA_GROUND_DEPTH(JCOVER,JK)  

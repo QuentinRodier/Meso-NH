@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TEB_PAR(HPROGRAM,OGARDEN,OGREENROOF,HBLD_ATYPE)
+      SUBROUTINE PGD_TEB_PAR (DTCO, DGU, UG, U, USS, BDD, DTT, DTI, TG, &
+                              HPROGRAM,OGARDEN,OGREENROOF,HBLD_ATYPE)
 !     ##############################################################
 !
 !!**** *PGD_TEB_PAR* monitor for averaging and interpolations of cover fractions
@@ -36,43 +37,27 @@
 !!
 !!       Modified 08/12/05, P. Le Moigne: user defined fields
 !!    G. Pigeon      09/2012: add ROUGH_WALL/ROUGH_ROOF for outdoor convection
+!!    V. Masson      08/2013: adds solar panels
+!!    V. Masson      10/2013: adds residential fraction
 !!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_BLD_DESCRIPTION_n, ONLY : BLD_DESC_t
+USE MODD_DATA_TEB_n, ONLY : DATA_TEB_t
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
-USE MODD_TEB_GRID_n, ONLY : NDIM
-USE MODD_DATA_TEB_n, ONLY : NPAR_ROAD_LAYER_n => NPAR_ROAD_LAYER,          &
-                            NPAR_ROOF_LAYER_n => NPAR_ROOF_LAYER,          &
-                            NPAR_WALL_LAYER_n => NPAR_WALL_LAYER,          &
-                            XPAR_Z0_TOWN, XPAR_BLD, XPAR_ALB_ROOF,         &
-                            XPAR_EMIS_ROOF, XPAR_HC_ROOF, XPAR_TC_ROOF,    &
-                            XPAR_D_ROOF, XPAR_ALB_ROAD, XPAR_EMIS_ROAD,    &
-                            XPAR_HC_ROAD, XPAR_TC_ROAD, XPAR_D_ROAD,       &
-                            XPAR_ALB_WALL, XPAR_EMIS_WALL, XPAR_HC_WALL,   &
-                            XPAR_TC_WALL, XPAR_D_WALL, XPAR_BLD_HEIGHT,    &
-                            XPAR_WALL_O_HOR,                               &
-                            XPAR_H_TRAFFIC, XPAR_LE_TRAFFIC,               &
-                            XPAR_H_INDUSTRY, XPAR_LE_INDUSTRY ,            &
-                            XPAR_GARDEN, NPAR_BLDTYPE,                     &
-                            XPAR_ROAD_DIR, NPAR_USETYPE, NPAR_BLD_AGE,     &
-                            NPAR_BLDCODE,                                  &
-                            LDATA_Z0_TOWN, LDATA_BLD, LDATA_ALB_ROOF,      &
-                            LDATA_EMIS_ROOF, LDATA_HC_ROOF, LDATA_TC_ROOF, &
-                            LDATA_D_ROOF, LDATA_ALB_ROAD, LDATA_EMIS_ROAD, &
-                            LDATA_HC_ROAD, LDATA_TC_ROAD, LDATA_D_ROAD,    &
-                            LDATA_ALB_WALL, LDATA_EMIS_WALL, LDATA_HC_WALL,&
-                            LDATA_TC_WALL, LDATA_D_WALL, LDATA_BLD_HEIGHT, &
-                            LDATA_WALL_O_HOR,                              &
-                            LDATA_H_TRAFFIC, LDATA_LE_TRAFFIC,             &
-                            LDATA_H_INDUSTRY, LDATA_LE_INDUSTRY ,          &
-                            LDATA_GARDEN, LDATA_BLDTYPE,                   &
-                            LDATA_ROAD_DIR, LDATA_USETYPE, LDATA_BLD_AGE,  &
-                            LDATA_ROUGH_ROOF, LDATA_ROUGH_WALL,            &
-                            XPAR_ROUGH_ROOF, XPAR_ROUGH_WALL,              &
-                            LDATA_GREENROOF, XPAR_GREENROOF
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -96,6 +81,17 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(BLD_DESC_t), INTENT(INOUT) :: BDD
+TYPE(DATA_TEB_t), INTENT(INOUT) :: DTT
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
+!
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 LOGICAL,             INTENT(IN)    :: OGARDEN      ! T if urban green areas
 LOGICAL,             INTENT(IN)    :: OGREENROOF   ! T if greenroofs option is activated
@@ -109,7 +105,7 @@ INTEGER               :: ILUOUT    ! output listing logical unit
 INTEGER               :: ILUNAM    ! namelist file  logical unit
 LOGICAL               :: GFOUND    ! true if namelist is found
 !
-REAL, DIMENSION(NDIM) :: ZWORK
+REAL, DIMENSION(TG%NDIM) :: ZWORK
 REAL                  :: ZUNIF     ! temporary variable
 !
 !*    0.3    Declaration of namelists
@@ -143,7 +139,7 @@ REAL                                    :: XUNIF_WALL_O_HOR   ! wall surf. / hor
 REAL                                    :: XUNIF_Z0_TOWN      ! roughness length for momentum    (m)
 REAL                                    :: XUNIF_GARDEN       ! fraction of veg in the streets   (-)
 REAL                                    :: XUNIF_GREENROOF    ! fraction of greenroofs on roofs  (-)
-REAL                                    :: XUNIF_ROAD_DIR     ! road direction (° from North, clockwise)
+REAL                                    :: XUNIF_ROAD_DIR     ! road direction (deg from North, clockwise)
  CHARACTER(LEN=28)                       :: CFNAM_BLD          ! file name for BLD 
  CHARACTER(LEN=28)                       :: CFNAM_BLD_HEIGHT   ! file name for BLD_HEIGHT
  CHARACTER(LEN=28)                       :: CFNAM_WALL_O_HOR   ! file name for WALL_O_HOR
@@ -219,6 +215,9 @@ REAL, DIMENSION(NWALL_MAX)              :: XUNIF_D_WALL       ! depth of wall la
 REAL                                    :: XUNIF_ROUGH_WALL  ! wall roughness coef
  CHARACTER(LEN=28)                       :: CFNAM_ROUGH_WALL  ! file name for ROUGH_WALL
  CHARACTER(LEN=6)                        :: CFTYP_ROUGH_WALL  ! file type for ROUGH_WALL
+REAL                                    :: XUNIF_RESIDENTIAL ! residential fraction
+ CHARACTER(LEN=28)                       :: CFNAM_RESIDENTIAL ! file name for RESIDENTIAL
+ CHARACTER(LEN=6)                        :: CFTYP_RESIDENTIAL ! file type for RESIDENTIAL
 !
 ! anthropogenic fluxes
 !
@@ -238,6 +237,22 @@ REAL                                    :: XUNIF_LE_INDUSTRY  ! anthropogenic la
  CHARACTER(LEN=6)                        :: CFTYP_LE_TRAFFIC   ! file type for LE_TRAFFIC
  CHARACTER(LEN=6)                        :: CFTYP_H_INDUSTRY   ! file type for H_INDUSTRY
  CHARACTER(LEN=6)                        :: CFTYP_LE_INDUSTRY  ! file type for LE_INDUSTRY
+!
+! Solar panels parameters
+!
+REAL                                    :: XUNIF_EMIS_PANEL    ! emissivity of solar panel       (-)
+REAL                                    :: XUNIF_ALB_PANEL     ! albedo     of solar panel       (-)
+REAL                                    :: XUNIF_EFF_PANEL     ! efficiency of solar panel       (-)
+REAL                                    :: XUNIF_FRAC_PANEL    ! fraction   of solar panel       (-)
+ CHARACTER(LEN=28)                       :: CFNAM_EMIS_PANEL   ! file name for EMIS_PANEL
+ CHARACTER(LEN=28)                       :: CFNAM_ALB_PANEL    ! file name for ALB_PANEL
+ CHARACTER(LEN=28)                       :: CFNAM_EFF_PANEL    ! file name for EFF_PANEL
+ CHARACTER(LEN=28)                       :: CFNAM_FRAC_PANEL   ! file name for FRAC_PANEL
+ CHARACTER(LEN=6)                        :: CFTYP_EMIS_PANEL   ! file type for EMIS_PANEL
+ CHARACTER(LEN=6)                        :: CFTYP_ALB_PANEL    ! file type for ALB_PANEL
+ CHARACTER(LEN=6)                        :: CFTYP_EFF_PANEL    ! file type for EFF_PANEL
+ CHARACTER(LEN=6)                        :: CFTYP_FRAC_PANEL   ! file type for FRAC_PANEL
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 
@@ -282,7 +297,12 @@ NAMELIST/NAM_DATA_TEB/      NPAR_ROOF_LAYER, NPAR_ROAD_LAYER, NPAR_WALL_LAYER,&
                               CFTYP_H_INDUSTRY, CFTYP_LE_INDUSTRY,            &
                               CFTYP_GARDEN, CFTYP_ROAD_DIR, CFTYP_GREENROOF,  &
                               XUNIF_ROUGH_ROOF, CFNAM_ROUGH_ROOF, CFTYP_ROUGH_ROOF, &
-                              XUNIF_ROUGH_WALL, CFNAM_ROUGH_WALL, CFTYP_ROUGH_WALL
+                              XUNIF_ROUGH_WALL, CFNAM_ROUGH_WALL, CFTYP_ROUGH_WALL, &
+                              XUNIF_RESIDENTIAL,CFNAM_RESIDENTIAL,CFTYP_RESIDENTIAL,&
+                              XUNIF_EMIS_PANEL, CFNAM_EMIS_PANEL, CFTYP_EMIS_PANEL, &
+                              XUNIF_ALB_PANEL,  CFNAM_ALB_PANEL,  CFTYP_ALB_PANEL,  &
+                              XUNIF_EFF_PANEL,  CFNAM_EFF_PANEL,  CFTYP_EFF_PANEL,  &
+                              XUNIF_FRAC_PANEL, CFNAM_FRAC_PANEL, CFTYP_FRAC_PANEL
 
 !
 !-------------------------------------------------------------------------------
@@ -294,7 +314,7 @@ IF (LHOOK)   CALL DR_HOOK('PGD_TEB_PAR',0,ZHOOK_HANDLE)
 NPAR_ROOF_LAYER=0
 NPAR_ROAD_LAYER=0
 NPAR_WALL_LAYER=0
-CBLD_ATYPE ='MAJ'
+ CBLD_ATYPE ='MAJ'
 NUNIF_BLDTYPE      = NUNDEF
 NUNIF_BLD_AGE      = NUNDEF
 NUNIF_USETYPE      = NUNDEF
@@ -326,76 +346,91 @@ XUNIF_GREENROOF    = XUNDEF
 XUNIF_ROAD_DIR     = XUNDEF
 XUNIF_ROUGH_ROOF   = XUNDEF
 XUNIF_ROUGH_WALL   = XUNDEF
+XUNIF_RESIDENTIAL  = XUNDEF
+XUNIF_EMIS_PANEL   = XUNDEF
+XUNIF_ALB_PANEL    = XUNDEF
+XUNIF_EFF_PANEL    = XUNDEF
+XUNIF_FRAC_PANEL   = XUNDEF
 
-CFNAM_BLDTYPE      = '                            '
-CFNAM_BLD_AGE      = '                            '
-CFNAM_USETYPE      = '                            '
-CCSVDATAFILE       ='                            '
-CFNAM_BLD          = '                            '
-CFNAM_BLD_HEIGHT   = '                            '
-CFNAM_WALL_O_HOR   = '                            '
-CFNAM_Z0_TOWN      = '                            '
+ CFNAM_BLDTYPE      = '                            '
+ CFNAM_BLD_AGE      = '                            '
+ CFNAM_USETYPE      = '                            '
+ CCSVDATAFILE       ='                            '
+ CFNAM_BLD          = '                            '
+ CFNAM_BLD_HEIGHT   = '                            '
+ CFNAM_WALL_O_HOR   = '                            '
+ CFNAM_Z0_TOWN      = '                            '
 
-CFNAM_ALB_ROOF (:) = '                            '
-CFNAM_EMIS_ROOF(:) = '                            '
-CFNAM_HC_ROOF  (:) = '                            '
-CFNAM_TC_ROOF  (:) = '                            '
-CFNAM_D_ROOF   (:) = '                            '
-CFNAM_ROUGH_ROOF(:) = '                            '
-CFNAM_ROUGH_WALL(:) = '                            '
-CFNAM_ALB_ROAD (:) = '                            '
-CFNAM_EMIS_ROAD(:) = '                            '
-CFNAM_HC_ROAD  (:) = '                            '
-CFNAM_TC_ROAD  (:) = '                            '
-CFNAM_D_ROAD   (:) = '                            '
-CFNAM_ALB_WALL (:) = '                            '
-CFNAM_EMIS_WALL(:) = '                            '
-CFNAM_HC_WALL  (:) = '                            '
-CFNAM_TC_WALL  (:) = '                            '
-CFNAM_D_WALL   (:) = '                            '
+ CFNAM_ALB_ROOF (:) = '                            '
+ CFNAM_EMIS_ROOF(:) = '                            '
+ CFNAM_HC_ROOF  (:) = '                            '
+ CFNAM_TC_ROOF  (:) = '                            '
+ CFNAM_D_ROOF   (:) = '                            '
+ CFNAM_ROUGH_ROOF(:) = '                            '
+ CFNAM_ROUGH_WALL(:) = '                            '
+ CFNAM_RESIDENTIAL(:)= '                            '
+ CFNAM_ALB_ROAD (:) = '                            '
+ CFNAM_EMIS_ROAD(:) = '                            '
+ CFNAM_HC_ROAD  (:) = '                            '
+ CFNAM_TC_ROAD  (:) = '                            '
+ CFNAM_D_ROAD   (:) = '                            '
+ CFNAM_ALB_WALL (:) = '                            '
+ CFNAM_EMIS_WALL(:) = '                            '
+ CFNAM_HC_WALL  (:) = '                            '
+ CFNAM_TC_WALL  (:) = '                            '
+ CFNAM_D_WALL   (:) = '                            '
 
-CFNAM_H_TRAFFIC    = '                            '
-CFNAM_LE_TRAFFIC   = '                            '
-CFNAM_H_INDUSTRY   = '                            '
-CFNAM_LE_INDUSTRY  = '                            '
+ CFNAM_H_TRAFFIC    = '                            '
+ CFNAM_LE_TRAFFIC   = '                            '
+ CFNAM_H_INDUSTRY   = '                            '
+ CFNAM_LE_INDUSTRY  = '                            '
 
-CFNAM_GARDEN       = '                            '
-CFNAM_GREENROOF    = '                            '
-CFNAM_ROAD_DIR     = '                            '
+ CFNAM_GARDEN       = '                            '
+ CFNAM_GREENROOF    = '                            '
+ CFNAM_ROAD_DIR     = '                            '
 
-CFTYP_BLDTYPE      = '      '
-CFTYP_BLD_AGE      = '      '
-CFTYP_USETYPE      = '      '
-CFTYP_BLD          = '      '
-CFTYP_BLD_HEIGHT   = '      '
-CFTYP_WALL_O_HOR   = '      '
-CFTYP_Z0_TOWN      = '      '
-CFTYP_ALB_ROOF(:)  = '      '
-CFTYP_EMIS_ROOF(:) = '      '
-CFTYP_HC_ROOF(:)   = '      '
-CFTYP_TC_ROOF(:)   = '      '
-CFTYP_D_ROOF(:)    = '      '
-CFTYP_ROUGH_ROOF(:)    = '      '
-CFTYP_ROUGH_WALL(:)    = '      '
-CFTYP_ALB_ROAD(:)  = '      '
-CFTYP_EMIS_ROAD(:) = '      '
-CFTYP_HC_ROAD(:)   = '      '
-CFTYP_TC_ROAD(:)   = '      '
-CFTYP_D_ROAD(:)    = '      '
-CFTYP_ALB_WALL(:)  = '      '
-CFTYP_EMIS_WALL(:) = '      '
-CFTYP_HC_WALL(:)   = '      '
-CFTYP_TC_WALL(:)   = '      '
-CFTYP_D_WALL(:)    = '      '
-CFTYP_H_TRAFFIC    = '      '
-CFTYP_LE_TRAFFIC   = '      '
-CFTYP_H_INDUSTRY   = '      '
-CFTYP_LE_INDUSTRY  = '      '
-CFTYP_GARDEN       = '      '
-CFTYP_GREENROOF    = '      '
-CFTYP_ROAD_DIR     = '      '
+ CFNAM_EMIS_PANEL   = '                            '
+ CFNAM_ALB_PANEL    = '                            '
+ CFNAM_EFF_PANEL    = '                            '
+ CFNAM_FRAC_PANEL   = '                            '
+
+ CFTYP_BLDTYPE      = '      '
+ CFTYP_BLD_AGE      = '      '
+ CFTYP_USETYPE      = '      '
+ CFTYP_BLD          = '      '
+ CFTYP_BLD_HEIGHT   = '      '
+ CFTYP_WALL_O_HOR   = '      '
+ CFTYP_Z0_TOWN      = '      '
+ CFTYP_ALB_ROOF(:)  = '      '
+ CFTYP_EMIS_ROOF(:) = '      '
+ CFTYP_HC_ROOF(:)   = '      '
+ CFTYP_TC_ROOF(:)   = '      '
+ CFTYP_D_ROOF(:)    = '      '
+ CFTYP_ROUGH_ROOF(:)    = '      '
+ CFTYP_ROUGH_WALL(:)    = '      '
+ CFTYP_RESIDENTIAL(:)   = '      '
+ CFTYP_ALB_ROAD(:)  = '      '
+ CFTYP_EMIS_ROAD(:) = '      '
+ CFTYP_HC_ROAD(:)   = '      '
+ CFTYP_TC_ROAD(:)   = '      '
+ CFTYP_D_ROAD(:)    = '      '
+ CFTYP_ALB_WALL(:)  = '      '
+ CFTYP_EMIS_WALL(:) = '      '
+ CFTYP_HC_WALL(:)   = '      '
+ CFTYP_TC_WALL(:)   = '      '
+ CFTYP_D_WALL(:)    = '      '
+ CFTYP_H_TRAFFIC    = '      '
+ CFTYP_LE_TRAFFIC   = '      '
+ CFTYP_H_INDUSTRY   = '      '
+ CFTYP_LE_INDUSTRY  = '      '
+ CFTYP_GARDEN       = '      '
+ CFTYP_GREENROOF    = '      '
+ CFTYP_ROAD_DIR     = '      '
 !
-
+ CFTYP_EMIS_PANEL   = '      '
+ CFTYP_ALB_PANEL    = '      '
+ CFTYP_EFF_PANEL    = '      '
+ CFTYP_FRAC_PANEL   = '      '
 !
 !-------------------------------------------------------------------------------
 !
@@ -412,9 +447,9 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_DATA_TEB)
 !
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CBLD_ATYPE',CBLD_ATYPE,'ARI','MAJ')
 !
-NPAR_ROOF_LAYER_n = NPAR_ROOF_LAYER
-NPAR_ROAD_LAYER_n = NPAR_ROAD_LAYER
-NPAR_WALL_LAYER_n = NPAR_WALL_LAYER
+DTT%NPAR_ROOF_LAYER = NPAR_ROOF_LAYER
+DTT%NPAR_ROAD_LAYER = NPAR_ROAD_LAYER
+DTT%NPAR_WALL_LAYER = NPAR_WALL_LAYER
 !
 HBLD_ATYPE = CBLD_ATYPE
 !-------------------------------------------------------------------------------
@@ -442,39 +477,45 @@ IF ((     ANY(XUNIF_HC_WALL/=XUNDEF) .OR. ANY(LEN_TRIM(CFNAM_HC_WALL)>0) &
   CALL ABOR1_SFX('In order to initialize WALL thermal quantities, please specify NPAR_WALL_LAYER in namelist NAM_DATA_TEB')
 END IF
 !-------------------------------------------------------------------------------
-ALLOCATE(NPAR_BLDTYPE     (NDIM))
-ALLOCATE(NPAR_BLD_AGE     (NDIM))
-ALLOCATE(NPAR_BLDCODE     (NDIM))
-ALLOCATE(NPAR_USETYPE     (NDIM))
-ALLOCATE(XPAR_Z0_TOWN     (NDIM))
-ALLOCATE(XPAR_ALB_ROOF    (NDIM))
-ALLOCATE(XPAR_EMIS_ROOF   (NDIM))
-ALLOCATE(XPAR_ALB_ROAD    (NDIM))
-ALLOCATE(XPAR_EMIS_ROAD   (NDIM))
-ALLOCATE(XPAR_ALB_WALL    (NDIM))
-ALLOCATE(XPAR_EMIS_WALL   (NDIM))
-ALLOCATE(XPAR_BLD         (NDIM))
-ALLOCATE(XPAR_BLD_HEIGHT  (NDIM))
-ALLOCATE(XPAR_WALL_O_HOR  (NDIM))
-ALLOCATE(XPAR_H_TRAFFIC   (NDIM))
-ALLOCATE(XPAR_LE_TRAFFIC  (NDIM))
-ALLOCATE(XPAR_H_INDUSTRY  (NDIM))
-ALLOCATE(XPAR_LE_INDUSTRY (NDIM))
-ALLOCATE(XPAR_GARDEN      (NDIM))
-ALLOCATE(XPAR_GREENROOF   (NDIM))
-ALLOCATE(XPAR_ROAD_DIR    (NDIM))
+ALLOCATE(DTT%NPAR_BLDTYPE     (TG%NDIM))
+ALLOCATE(DTT%NPAR_BLD_AGE     (TG%NDIM))
+ALLOCATE(DTT%NPAR_BLDCODE     (TG%NDIM))
+ALLOCATE(DTT%NPAR_USETYPE     (TG%NDIM))
+ALLOCATE(DTT%XPAR_Z0_TOWN     (TG%NDIM))
+ALLOCATE(DTT%XPAR_ALB_ROOF    (TG%NDIM))
+ALLOCATE(DTT%XPAR_EMIS_ROOF   (TG%NDIM))
+ALLOCATE(DTT%XPAR_ALB_ROAD    (TG%NDIM))
+ALLOCATE(DTT%XPAR_EMIS_ROAD   (TG%NDIM))
+ALLOCATE(DTT%XPAR_ALB_WALL    (TG%NDIM))
+ALLOCATE(DTT%XPAR_EMIS_WALL   (TG%NDIM))
+ALLOCATE(DTT%XPAR_BLD         (TG%NDIM))
+ALLOCATE(DTT%XPAR_BLD_HEIGHT  (TG%NDIM))
+ALLOCATE(DTT%XPAR_WALL_O_HOR  (TG%NDIM))
+ALLOCATE(DTT%XPAR_H_TRAFFIC   (TG%NDIM))
+ALLOCATE(DTT%XPAR_LE_TRAFFIC  (TG%NDIM))
+ALLOCATE(DTT%XPAR_H_INDUSTRY  (TG%NDIM))
+ALLOCATE(DTT%XPAR_LE_INDUSTRY (TG%NDIM))
+ALLOCATE(DTT%XPAR_GARDEN      (TG%NDIM))
+ALLOCATE(DTT%XPAR_GREENROOF   (TG%NDIM))
+ALLOCATE(DTT%XPAR_ROAD_DIR    (TG%NDIM))
 !
-ALLOCATE(XPAR_HC_ROOF     (NDIM,NPAR_ROOF_LAYER))
-ALLOCATE(XPAR_TC_ROOF     (NDIM,NPAR_ROOF_LAYER))
-ALLOCATE(XPAR_D_ROOF      (NDIM,NPAR_ROOF_LAYER))
-ALLOCATE(XPAR_HC_ROAD     (NDIM,NPAR_ROAD_LAYER))
-ALLOCATE(XPAR_TC_ROAD     (NDIM,NPAR_ROAD_LAYER))
-ALLOCATE(XPAR_D_ROAD      (NDIM,NPAR_ROAD_LAYER))
-ALLOCATE(XPAR_HC_WALL     (NDIM,NPAR_WALL_LAYER))
-ALLOCATE(XPAR_TC_WALL     (NDIM,NPAR_WALL_LAYER))
-ALLOCATE(XPAR_D_WALL      (NDIM,NPAR_WALL_LAYER))
-ALLOCATE(XPAR_ROUGH_ROOF    (NDIM))
-ALLOCATE(XPAR_ROUGH_WALL    (NDIM))
+ALLOCATE(DTT%XPAR_HC_ROOF     (TG%NDIM,NPAR_ROOF_LAYER))
+ALLOCATE(DTT%XPAR_TC_ROOF     (TG%NDIM,NPAR_ROOF_LAYER))
+ALLOCATE(DTT%XPAR_D_ROOF      (TG%NDIM,NPAR_ROOF_LAYER))
+ALLOCATE(DTT%XPAR_HC_ROAD     (TG%NDIM,NPAR_ROAD_LAYER))
+ALLOCATE(DTT%XPAR_TC_ROAD     (TG%NDIM,NPAR_ROAD_LAYER))
+ALLOCATE(DTT%XPAR_D_ROAD      (TG%NDIM,NPAR_ROAD_LAYER))
+ALLOCATE(DTT%XPAR_HC_WALL     (TG%NDIM,NPAR_WALL_LAYER))
+ALLOCATE(DTT%XPAR_TC_WALL     (TG%NDIM,NPAR_WALL_LAYER))
+ALLOCATE(DTT%XPAR_D_WALL      (TG%NDIM,NPAR_WALL_LAYER))
+ALLOCATE(DTT%XPAR_ROUGH_ROOF    (TG%NDIM))
+ALLOCATE(DTT%XPAR_ROUGH_WALL    (TG%NDIM))
+ALLOCATE(DTT%XPAR_RESIDENTIAL   (TG%NDIM))
+!
+ALLOCATE(DTT%XPAR_EMIS_PANEL  (TG%NDIM))
+ALLOCATE(DTT%XPAR_ALB_PANEL   (TG%NDIM))
+ALLOCATE(DTT%XPAR_EFF_PANEL   (TG%NDIM))
+ALLOCATE(DTT%XPAR_FRAC_PANEL  (TG%NDIM))
 !
 !-------------------------------------------------------------------------------
 IF (NROOF_MAX < NPAR_ROOF_LAYER) THEN
@@ -515,26 +556,28 @@ ENDIF
 !* building's type
 ZUNIF = XUNDEF
 IF (NUNIF_BLDTYPE/=NUNDEF) ZUNIF=FLOAT(NUNIF_BLDTYPE)
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'MAJ','BLDTYPE    ','TWN', CFNAM_BLDTYPE,CFTYP_BLDTYPE,ZUNIF,&
-        ZWORK(:),LDATA_BLDTYPE )
-IF (.NOT. LDATA_BLDTYPE) THEN
-  DEALLOCATE(NPAR_BLDTYPE)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'MAJ','BLDTYPE    ','TWN', CFNAM_BLDTYPE,CFTYP_BLDTYPE,ZUNIF,&
+        ZWORK(:),DTT%LDATA_BLDTYPE )
+IF (.NOT. DTT%LDATA_BLDTYPE) THEN
+  DEALLOCATE(DTT%NPAR_BLDTYPE)
 ELSE
-  NPAR_BLDTYPE = NINT(ZWORK)
+  DTT%NPAR_BLDTYPE = NINT(ZWORK)
 END IF
 !
 !* building's age
 ZUNIF = XUNDEF
 IF (NUNIF_BLD_AGE/=NUNDEF) ZUNIF=FLOAT(NUNIF_BLD_AGE)
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','BLD_AGE    ','TWN', CFNAM_BLD_AGE,CFTYP_BLD_AGE,ZUNIF,&
-        ZWORK(:),LDATA_BLD_AGE )
-IF (.NOT. LDATA_BLD_AGE) THEN
-  DEALLOCATE(NPAR_BLD_AGE)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','BLD_AGE    ','TWN', CFNAM_BLD_AGE,CFTYP_BLD_AGE,ZUNIF,&
+        ZWORK(:),DTT%LDATA_BLD_AGE )
+IF (.NOT. DTT%LDATA_BLD_AGE) THEN
+  DEALLOCATE(DTT%NPAR_BLD_AGE)
 ELSE
-  NPAR_BLD_AGE = NINT(ZWORK)
+  DTT%NPAR_BLD_AGE = NINT(ZWORK)
 END IF
 !
-IF (LDATA_BLDTYPE .AND. .NOT. LDATA_BLD_AGE) THEN
+IF (DTT%LDATA_BLDTYPE .AND. .NOT. DTT%LDATA_BLD_AGE) THEN
   WRITE(ILUOUT,*) '---------------------------------------------'
   WRITE(ILUOUT,*) ' You chose to define building types :        '
   IF (NUNIF_BLDTYPE/=NUNDEF) THEN
@@ -557,144 +600,198 @@ END IF
 !* building's use
 ZUNIF = XUNDEF
 IF (NUNIF_USETYPE/=NUNDEF) ZUNIF=FLOAT(NUNIF_USETYPE)
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'MAJ','USETYPE    ','TWN', CFNAM_USETYPE,CFTYP_USETYPE,ZUNIF,&
-        ZWORK(:),LDATA_USETYPE )
-IF (.NOT. LDATA_USETYPE) THEN
-  DEALLOCATE(NPAR_USETYPE)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'MAJ','USETYPE    ','TWN', CFNAM_USETYPE,CFTYP_USETYPE,ZUNIF,&
+        ZWORK(:),DTT%LDATA_USETYPE )
+IF (.NOT. DTT%LDATA_USETYPE) THEN
+  DEALLOCATE(DTT%NPAR_USETYPE)
 ELSE
-  NPAR_USETYPE = NINT(ZWORK)
+  DTT%NPAR_USETYPE = NINT(ZWORK)
 END IF
 !
-IF (LDATA_BLDTYPE .OR. LDATA_BLD_AGE .OR. LDATA_USETYPE)  CALL READ_CSVDATA_TEB(HPROGRAM,CCSVDATAFILE)
+IF (DTT%LDATA_BLDTYPE .OR. DTT%LDATA_BLD_AGE .OR. DTT%LDATA_USETYPE)  CALL READ_CSVDATA_TEB(BDD, &
+                                                                                            HPROGRAM,CCSVDATAFILE)
 !
 !* building's code
-IF (ASSOCIATED(NPAR_BLDTYPE)) NPAR_BLDCODE(:) = BLDCODE(NPAR_BLDTYPE,NPAR_BLD_AGE)
+IF (ASSOCIATED(DTT%NPAR_BLDTYPE)) DTT%NPAR_BLDCODE(:) = BLDCODE(BDD, DTT%NPAR_BLDTYPE,DTT%NPAR_BLD_AGE)
 !
 !
 !* other building parameters
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','BLD        ','TWN', CFNAM_BLD,CFTYP_BLD,XUNIF_BLD,XPAR_BLD,LDATA_BLD )
-IF (.NOT.LDATA_BLD) DEALLOCATE(XPAR_BLD)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','BLD        ','TWN', CFNAM_BLD,CFTYP_BLD,XUNIF_BLD,DTT%XPAR_BLD,DTT%LDATA_BLD )
+IF (.NOT.DTT%LDATA_BLD) DEALLOCATE(DTT%XPAR_BLD)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','BLD_HEIGHT ','TWN',CFNAM_BLD_HEIGHT,CFTYP_BLD_HEIGHT,XUNIF_BLD_HEIGHT,&
-        XPAR_BLD_HEIGHT,LDATA_BLD_HEIGHT)
-IF (.NOT.LDATA_BLD_HEIGHT) DEALLOCATE(XPAR_BLD_HEIGHT)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','BLD_HEIGHT ','TWN',CFNAM_BLD_HEIGHT,CFTYP_BLD_HEIGHT,XUNIF_BLD_HEIGHT,&
+        DTT%XPAR_BLD_HEIGHT,DTT%LDATA_BLD_HEIGHT)
+IF (.NOT.DTT%LDATA_BLD_HEIGHT) DEALLOCATE(DTT%XPAR_BLD_HEIGHT)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','WALL_O_HOR ','TWN',CFNAM_WALL_O_HOR,CFTYP_WALL_O_HOR,XUNIF_WALL_O_HOR,&
-        XPAR_WALL_O_HOR,LDATA_WALL_O_HOR)
-IF (.NOT.LDATA_WALL_O_HOR) DEALLOCATE(XPAR_WALL_O_HOR)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','WALL_O_HOR ','TWN',CFNAM_WALL_O_HOR,CFTYP_WALL_O_HOR,XUNIF_WALL_O_HOR,&
+        DTT%XPAR_WALL_O_HOR,DTT%LDATA_WALL_O_HOR)
+IF (.NOT.DTT%LDATA_WALL_O_HOR) DEALLOCATE(DTT%XPAR_WALL_O_HOR)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'CDN','Z0_TOWN    ','TWN',CFNAM_Z0_TOWN,CFTYP_Z0_TOWN,XUNIF_Z0_TOWN,&
-        XPAR_Z0_TOWN,LDATA_Z0_TOWN)
-IF (.NOT.LDATA_Z0_TOWN) DEALLOCATE(XPAR_Z0_TOWN)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'CDN','Z0_TOWN    ','TWN',CFNAM_Z0_TOWN,CFTYP_Z0_TOWN,XUNIF_Z0_TOWN,&
+        DTT%XPAR_Z0_TOWN,DTT%LDATA_Z0_TOWN)
+IF (.NOT.DTT%LDATA_Z0_TOWN) DEALLOCATE(DTT%XPAR_Z0_TOWN)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'ALB_ROOF   ','TWN',CFNAM_ALB_ROOF,CFTYP_ALB_ROOF,XUNIF_ALB_ROOF  ,&
-        XPAR_ALB_ROOF,LDATA_ALB_ROOF)
-IF (.NOT.LDATA_ALB_ROOF) DEALLOCATE(XPAR_ALB_ROOF)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'ALB_ROOF   ','TWN',CFNAM_ALB_ROOF,CFTYP_ALB_ROOF,XUNIF_ALB_ROOF  ,&
+        DTT%XPAR_ALB_ROOF,DTT%LDATA_ALB_ROOF)
+IF (.NOT.DTT%LDATA_ALB_ROOF) DEALLOCATE(DTT%XPAR_ALB_ROOF)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'EMIS_ROOF  ','TWN',CFNAM_EMIS_ROOF,CFTYP_EMIS_ROOF,XUNIF_EMIS_ROOF ,&
-        XPAR_EMIS_ROOF,LDATA_EMIS_ROOF)
-IF (.NOT.LDATA_EMIS_ROOF) DEALLOCATE(XPAR_EMIS_ROOF)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'EMIS_ROOF  ','TWN',CFNAM_EMIS_ROOF,CFTYP_EMIS_ROOF,XUNIF_EMIS_ROOF ,&
+        DTT%XPAR_EMIS_ROOF,DTT%LDATA_EMIS_ROOF)
+IF (.NOT.DTT%LDATA_EMIS_ROOF) DEALLOCATE(DTT%XPAR_EMIS_ROOF)
 !
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'HC_ROOF  ','TWN',CFNAM_HC_ROOF,CFTYP_HC_ROOF, &
-        XUNIF_HC_ROOF,XPAR_HC_ROOF,LDATA_HC_ROOF ) 
-IF (.NOT.LDATA_HC_ROOF) DEALLOCATE(XPAR_HC_ROOF)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'HC_ROOF  ','TWN',CFNAM_HC_ROOF,CFTYP_HC_ROOF, &
+        XUNIF_HC_ROOF,DTT%XPAR_HC_ROOF,DTT%LDATA_HC_ROOF ) 
+IF (.NOT.DTT%LDATA_HC_ROOF) DEALLOCATE(DTT%XPAR_HC_ROOF)
 ! 
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'TC_ROOF  ','TWN',CFNAM_TC_ROOF,CFTYP_TC_ROOF, &
-                 XUNIF_TC_ROOF ,XPAR_TC_ROOF, LDATA_TC_ROOF ) 
-IF (.NOT.LDATA_TC_ROOF) DEALLOCATE(XPAR_TC_ROOF)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'TC_ROOF  ','TWN',CFNAM_TC_ROOF,CFTYP_TC_ROOF, &
+                 XUNIF_TC_ROOF ,DTT%XPAR_TC_ROOF, DTT%LDATA_TC_ROOF ) 
+IF (.NOT.DTT%LDATA_TC_ROOF) DEALLOCATE(DTT%XPAR_TC_ROOF)
 ! 
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'D_ROOF   ','TWN',CFNAM_D_ROOF,CFTYP_D_ROOF, &
-                 XUNIF_D_ROOF  ,XPAR_D_ROOF , LDATA_D_ROOF ) 
-IF (.NOT.LDATA_D_ROOF) DEALLOCATE(XPAR_D_ROOF)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'D_ROOF   ','TWN',CFNAM_D_ROOF,CFTYP_D_ROOF, &
+                 XUNIF_D_ROOF  ,DTT%XPAR_D_ROOF , DTT%LDATA_D_ROOF ) 
+IF (.NOT.DTT%LDATA_D_ROOF) DEALLOCATE(DTT%XPAR_D_ROOF)
 ! 
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','ALB_ROAD   ','TWN',CFNAM_ALB_ROAD  ,CFTYP_ALB_ROAD  ,XUNIF_ALB_ROAD  ,&
-        XPAR_ALB_ROAD, LDATA_ALB_ROAD  )
-IF (.NOT.LDATA_ALB_ROAD) DEALLOCATE(XPAR_ALB_ROAD)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','ALB_ROAD   ','TWN',CFNAM_ALB_ROAD  ,CFTYP_ALB_ROAD  ,XUNIF_ALB_ROAD  ,&
+        DTT%XPAR_ALB_ROAD, DTT%LDATA_ALB_ROAD  )
+IF (.NOT.DTT%LDATA_ALB_ROAD) DEALLOCATE(DTT%XPAR_ALB_ROAD)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','EMIS_ROAD  ','TWN',CFNAM_EMIS_ROAD ,CFTYP_EMIS_ROAD ,XUNIF_EMIS_ROAD ,&
-        XPAR_EMIS_ROAD, LDATA_EMIS_ROAD )
-IF (.NOT.LDATA_EMIS_ROAD) DEALLOCATE(XPAR_EMIS_ROAD)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','EMIS_ROAD  ','TWN',CFNAM_EMIS_ROAD ,CFTYP_EMIS_ROAD ,XUNIF_EMIS_ROAD ,&
+        DTT%XPAR_EMIS_ROAD, DTT%LDATA_EMIS_ROAD )
+IF (.NOT.DTT%LDATA_EMIS_ROAD) DEALLOCATE(DTT%XPAR_EMIS_ROAD)
 !
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'HC_ROAD  ','TWN',CFNAM_HC_ROAD ,CFTYP_HC_ROAD , &
-                   XUNIF_HC_ROAD ,XPAR_HC_ROAD, LDATA_HC_ROAD  )  
-IF (.NOT.LDATA_HC_ROAD) DEALLOCATE(XPAR_HC_ROAD)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'HC_ROAD  ','TWN',CFNAM_HC_ROAD ,CFTYP_HC_ROAD , &
+                   XUNIF_HC_ROAD ,DTT%XPAR_HC_ROAD, DTT%LDATA_HC_ROAD  )  
+IF (.NOT.DTT%LDATA_HC_ROAD) DEALLOCATE(DTT%XPAR_HC_ROAD)
 !
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'TC_ROAD  ','TWN',CFNAM_TC_ROAD ,CFTYP_TC_ROAD , &
-                   XUNIF_TC_ROAD ,XPAR_TC_ROAD, LDATA_TC_ROAD  )  
-IF (.NOT.LDATA_TC_ROAD) DEALLOCATE(XPAR_TC_ROAD)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'TC_ROAD  ','TWN',CFNAM_TC_ROAD ,CFTYP_TC_ROAD , &
+                   XUNIF_TC_ROAD ,DTT%XPAR_TC_ROAD, DTT%LDATA_TC_ROAD  )  
+IF (.NOT.DTT%LDATA_TC_ROAD) DEALLOCATE(DTT%XPAR_TC_ROAD)
 !
- CALL INI_VAR_FROM_DATA(HPROGRAM,'ARI','D_ROAD   ','TWN',CFNAM_D_ROAD  ,CFTYP_D_ROAD  , &
-                   XUNIF_D_ROAD  ,XPAR_D_ROAD , LDATA_D_ROAD  )
-IF (.NOT.LDATA_D_ROAD) DEALLOCATE(XPAR_D_ROAD)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,'ARI','D_ROAD   ','TWN',CFNAM_D_ROAD  ,CFTYP_D_ROAD  , &
+                   XUNIF_D_ROAD  ,DTT%XPAR_D_ROAD , DTT%LDATA_D_ROAD  )
+IF (.NOT.DTT%LDATA_D_ROAD) DEALLOCATE(DTT%XPAR_D_ROAD)
 !  
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'ALB_WALL   ','TWN',CFNAM_ALB_WALL  ,CFTYP_ALB_WALL  ,XUNIF_ALB_WALL  ,&
-        XPAR_ALB_WALL, LDATA_ALB_WALL   )
-IF (.NOT.LDATA_ALB_WALL) DEALLOCATE(XPAR_ALB_WALL)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'ALB_WALL   ','TWN',CFNAM_ALB_WALL  ,CFTYP_ALB_WALL  ,XUNIF_ALB_WALL  ,&
+        DTT%XPAR_ALB_WALL, DTT%LDATA_ALB_WALL   )
+IF (.NOT.DTT%LDATA_ALB_WALL) DEALLOCATE(DTT%XPAR_ALB_WALL)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'EMIS_WALL  ','TWN',CFNAM_EMIS_WALL ,CFTYP_EMIS_WALL ,XUNIF_EMIS_WALL ,&
-        XPAR_EMIS_WALL, LDATA_EMIS_WALL  )
-IF (.NOT.LDATA_EMIS_WALL) DEALLOCATE(XPAR_EMIS_WALL)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'EMIS_WALL  ','TWN',CFNAM_EMIS_WALL ,CFTYP_EMIS_WALL ,XUNIF_EMIS_WALL ,&
+        DTT%XPAR_EMIS_WALL, DTT%LDATA_EMIS_WALL  )
+IF (.NOT.DTT%LDATA_EMIS_WALL) DEALLOCATE(DTT%XPAR_EMIS_WALL)
 !
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'HC_WALL  ','TWN',CFNAM_HC_WALL ,CFTYP_HC_WALL , &
-                   XUNIF_HC_WALL ,XPAR_HC_WALL, LDATA_HC_WALL  ) 
-IF (.NOT.LDATA_HC_WALL) DEALLOCATE(XPAR_HC_WALL)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'HC_WALL  ','TWN',CFNAM_HC_WALL ,CFTYP_HC_WALL , &
+                   XUNIF_HC_WALL ,DTT%XPAR_HC_WALL, DTT%LDATA_HC_WALL  ) 
+IF (.NOT.DTT%LDATA_HC_WALL) DEALLOCATE(DTT%XPAR_HC_WALL)
 ! 
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'TC_WALL  ','TWN',CFNAM_TC_WALL ,CFTYP_TC_WALL , &
-                   XUNIF_TC_WALL ,XPAR_TC_WALL, LDATA_TC_WALL  ) 
-IF (.NOT.LDATA_TC_WALL) DEALLOCATE(XPAR_TC_WALL)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'TC_WALL  ','TWN',CFNAM_TC_WALL ,CFTYP_TC_WALL , &
+                   XUNIF_TC_WALL ,DTT%XPAR_TC_WALL, DTT%LDATA_TC_WALL  ) 
+IF (.NOT.DTT%LDATA_TC_WALL) DEALLOCATE(DTT%XPAR_TC_WALL)
 ! 
- CALL INI_VAR_FROM_DATA(HPROGRAM,CBLD_ATYPE,'D_WALL   ','TWN',CFNAM_D_WALL  ,CFTYP_D_WALL  , &
-                   XUNIF_D_WALL  ,XPAR_D_WALL , LDATA_D_WALL  ) 
-IF (.NOT.LDATA_D_WALL) DEALLOCATE(XPAR_D_WALL)
+ CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+                        HPROGRAM,CBLD_ATYPE,'D_WALL   ','TWN',CFNAM_D_WALL  ,CFTYP_D_WALL  , &
+                   XUNIF_D_WALL  ,DTT%XPAR_D_WALL , DTT%LDATA_D_WALL  ) 
+IF (.NOT.DTT%LDATA_D_WALL) DEALLOCATE(DTT%XPAR_D_WALL)
 ! 
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','H_TRAFFIC  ','TWN',CFNAM_H_TRAFFIC  ,CFTYP_H_TRAFFIC  ,XUNIF_H_TRAFFIC  ,&
-        XPAR_H_TRAFFIC, LDATA_H_TRAFFIC   )
-IF (.NOT.LDATA_H_TRAFFIC) DEALLOCATE(XPAR_H_TRAFFIC)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','H_TRAFFIC  ','TWN',CFNAM_H_TRAFFIC  ,CFTYP_H_TRAFFIC  ,XUNIF_H_TRAFFIC  ,&
+        DTT%XPAR_H_TRAFFIC, DTT%LDATA_H_TRAFFIC   )
+IF (.NOT.DTT%LDATA_H_TRAFFIC) DEALLOCATE(DTT%XPAR_H_TRAFFIC)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','LE_TRAFFIC ','TWN',CFNAM_LE_TRAFFIC ,CFTYP_LE_TRAFFIC ,XUNIF_LE_TRAFFIC ,&
-        XPAR_LE_TRAFFIC, LDATA_LE_TRAFFIC  )
-IF (.NOT.LDATA_LE_TRAFFIC) DEALLOCATE(XPAR_LE_TRAFFIC)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','LE_TRAFFIC ','TWN',CFNAM_LE_TRAFFIC ,CFTYP_LE_TRAFFIC ,XUNIF_LE_TRAFFIC ,&
+        DTT%XPAR_LE_TRAFFIC, DTT%LDATA_LE_TRAFFIC  )
+IF (.NOT.DTT%LDATA_LE_TRAFFIC) DEALLOCATE(DTT%XPAR_LE_TRAFFIC)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','H_INDUSTRY ','TWN',CFNAM_H_INDUSTRY ,CFTYP_H_INDUSTRY ,XUNIF_H_INDUSTRY ,&
-        XPAR_H_INDUSTRY, LDATA_H_INDUSTRY  )
-IF (.NOT.LDATA_H_INDUSTRY) DEALLOCATE(XPAR_H_INDUSTRY)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','H_INDUSTRY ','TWN',CFNAM_H_INDUSTRY ,CFTYP_H_INDUSTRY ,XUNIF_H_INDUSTRY ,&
+        DTT%XPAR_H_INDUSTRY, DTT%LDATA_H_INDUSTRY  )
+IF (.NOT.DTT%LDATA_H_INDUSTRY) DEALLOCATE(DTT%XPAR_H_INDUSTRY)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','LE_INDUSTRY','TWN',CFNAM_LE_INDUSTRY,CFTYP_LE_INDUSTRY,XUNIF_LE_INDUSTRY,&
-        XPAR_LE_INDUSTRY, LDATA_LE_INDUSTRY )
-IF (.NOT.LDATA_LE_INDUSTRY) DEALLOCATE(XPAR_LE_INDUSTRY)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','LE_INDUSTRY','TWN',CFNAM_LE_INDUSTRY,CFTYP_LE_INDUSTRY,XUNIF_LE_INDUSTRY,&
+        DTT%XPAR_LE_INDUSTRY, DTT%LDATA_LE_INDUSTRY )
+IF (.NOT.DTT%LDATA_LE_INDUSTRY) DEALLOCATE(DTT%XPAR_LE_INDUSTRY)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'ROUGH_ROOF','TWN',CFNAM_ROUGH_ROOF,CFTYP_ROUGH_ROOF,XUNIF_ROUGH_ROOF ,&
-        XPAR_ROUGH_ROOF,LDATA_ROUGH_ROOF)
-IF (.NOT.LDATA_ROUGH_ROOF) DEALLOCATE(XPAR_ROUGH_ROOF)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'ROUGH_ROOF','TWN',CFNAM_ROUGH_ROOF,CFTYP_ROUGH_ROOF,XUNIF_ROUGH_ROOF ,&
+        DTT%XPAR_ROUGH_ROOF,DTT%LDATA_ROUGH_ROOF)
+IF (.NOT.DTT%LDATA_ROUGH_ROOF) DEALLOCATE(DTT%XPAR_ROUGH_ROOF)
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'ROUGH_WALL','TWN',CFNAM_ROUGH_WALL,CFTYP_ROUGH_WALL,XUNIF_ROUGH_WALL ,&
-        XPAR_ROUGH_WALL,LDATA_ROUGH_WALL)
-IF (.NOT.LDATA_ROUGH_WALL) DEALLOCATE(XPAR_ROUGH_WALL)
-
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'ROUGH_WALL','TWN',CFNAM_ROUGH_WALL,CFTYP_ROUGH_WALL,XUNIF_ROUGH_WALL ,&
+        DTT%XPAR_ROUGH_WALL,DTT%LDATA_ROUGH_WALL)
+IF (.NOT.DTT%LDATA_ROUGH_WALL) DEALLOCATE(DTT%XPAR_ROUGH_WALL)
+!
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'RESIDENTIAL','TWN',CFNAM_RESIDENTIAL,CFTYP_RESIDENTIAL,XUNIF_RESIDENTIAL ,&
+        DTT%XPAR_RESIDENTIAL,DTT%LDATA_RESIDENTIAL)
+IF (.NOT.DTT%LDATA_RESIDENTIAL) DEALLOCATE(DTT%XPAR_RESIDENTIAL)
 !-------------------------------------------------------------------------------
 !
 !* coherence checks
 !
- CALL COHERENCE_THERMAL_DATA('ROAD',LDATA_HC_ROAD,LDATA_TC_ROAD,LDATA_D_ROAD)
- CALL COHERENCE_THERMAL_DATA('ROOF',LDATA_HC_ROOF,LDATA_TC_ROOF,LDATA_D_ROOF)
- CALL COHERENCE_THERMAL_DATA('WALL',LDATA_HC_WALL,LDATA_TC_WALL,LDATA_D_WALL)
+ CALL COHERENCE_THERMAL_DATA('ROAD',DTT%LDATA_HC_ROAD,DTT%LDATA_TC_ROAD,DTT%LDATA_D_ROAD)
+ CALL COHERENCE_THERMAL_DATA('ROOF',DTT%LDATA_HC_ROOF,DTT%LDATA_TC_ROOF,DTT%LDATA_D_ROOF)
+ CALL COHERENCE_THERMAL_DATA('WALL',DTT%LDATA_HC_WALL,DTT%LDATA_TC_WALL,DTT%LDATA_D_WALL)
 
 !-------------------------------------------------------------------------------
 !
 !* road directions
 !
- CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','ROAD_DIR   ','TWN',CFNAM_ROAD_DIR  ,CFTYP_ROAD_DIR    ,XUNIF_ROAD_DIR   ,&
-        XPAR_ROAD_DIR, LDATA_ROAD_DIR    )
-IF (.NOT.LDATA_ROAD_DIR) DEALLOCATE(XPAR_ROAD_DIR)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','ROAD_DIR   ','TWN',CFNAM_ROAD_DIR  ,CFTYP_ROAD_DIR    ,XUNIF_ROAD_DIR   ,&
+        DTT%XPAR_ROAD_DIR, DTT%LDATA_ROAD_DIR    )
+IF (.NOT.DTT%LDATA_ROAD_DIR) DEALLOCATE(DTT%XPAR_ROAD_DIR)
+!
+!-------------------------------------------------------------------------------
+!
+!* solar panels
+!
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','EMIS_PANEL ','BLD',CFNAM_EMIS_PANEL,CFTYP_EMIS_PANEL,XUNIF_EMIS_PANEL,&
+       DTT%XPAR_EMIS_PANEL, DTT%LDATA_EMIS_PANEL    )
+IF (.NOT.DTT%LDATA_EMIS_PANEL) DEALLOCATE(DTT%XPAR_EMIS_PANEL)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','ALB_PANEL  ','BLD',CFNAM_ALB_PANEL ,CFTYP_ALB_PANEL ,XUNIF_ALB_PANEL ,&
+       DTT%XPAR_ALB_PANEL , DTT%LDATA_ALB_PANEL     )
+IF (.NOT.DTT%LDATA_ALB_PANEL ) DEALLOCATE(DTT%XPAR_ALB_PANEL )
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','EFF_PANEL  ','BLD',CFNAM_EFF_PANEL ,CFTYP_EFF_PANEL ,XUNIF_EFF_PANEL ,&
+       DTT%XPAR_EFF_PANEL , DTT%LDATA_EFF_PANEL     )
+IF (.NOT.DTT%LDATA_EFF_PANEL ) DEALLOCATE(DTT%XPAR_EFF_PANEL )
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','FRAC_PANEL ','BLD',CFNAM_FRAC_PANEL,CFTYP_FRAC_PANEL,XUNIF_FRAC_PANEL,&
+       DTT%XPAR_FRAC_PANEL, DTT%LDATA_FRAC_PANEL    )
+IF (.NOT.DTT%LDATA_FRAC_PANEL) DEALLOCATE(DTT%XPAR_FRAC_PANEL)
 !
 !-------------------------------------------------------------------------------
 !
 !* greenroof fraction
 !
 IF (OGREENROOF) THEN
-  CALL INI_VAR_FROM_DATA_0D(HPROGRAM,CBLD_ATYPE,'GREENROOF','BLD',CFNAM_GREENROOF,CFTYP_GREENROOF,XUNIF_GREENROOF ,&
-        XPAR_GREENROOF,LDATA_GREENROOF)
-  IF (.NOT.LDATA_GREENROOF) DEALLOCATE(XPAR_GREENROOF)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,CBLD_ATYPE,'GREENROOF','BLD',CFNAM_GREENROOF,CFTYP_GREENROOF,XUNIF_GREENROOF ,&
+        DTT%XPAR_GREENROOF,DTT%LDATA_GREENROOF)
+  IF (.NOT.DTT%LDATA_GREENROOF) DEALLOCATE(DTT%XPAR_GREENROOF)
 ELSE IF ( (XUNIF_GREENROOF/=0. .AND. XUNIF_GREENROOF/=XUNDEF) .OR. LEN_TRIM(CFNAM_GREENROOF)/=0) THEN
   WRITE(ILUOUT,*) '---------------------------------------------'
   WRITE(ILUOUT,*) ' You chose not to include greenroofs in urban areas : LGREENROOF=.FALSE.     '
@@ -716,9 +813,10 @@ END IF
 !* gardens
 !
 IF (OGARDEN) THEN
-  CALL INI_VAR_FROM_DATA_0D(HPROGRAM,'ARI','GARDEN     ','TWN',CFNAM_GARDEN    ,CFTYP_GARDEN    ,XUNIF_GARDEN    ,&
-        XPAR_GARDEN, LDATA_GARDEN    )
-  IF (.NOT.LDATA_GARDEN) DEALLOCATE(XPAR_GARDEN)
+ CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+                           HPROGRAM,'ARI','GARDEN     ','TWN',CFNAM_GARDEN    ,CFTYP_GARDEN    ,XUNIF_GARDEN    ,&
+        DTT%XPAR_GARDEN, DTT%LDATA_GARDEN    )
+  IF (.NOT.DTT%LDATA_GARDEN) DEALLOCATE(DTT%XPAR_GARDEN)
 ELSE IF ( (XUNIF_GARDEN/=0. .AND. XUNIF_GARDEN/=XUNDEF) .OR. LEN_TRIM(CFNAM_GARDEN)/=0) THEN
   WRITE(ILUOUT,*) '---------------------------------------------'
   WRITE(ILUOUT,*) ' You chose not to include gardens in urban areas : LGARDEN=.FALSE.     '
@@ -742,7 +840,7 @@ END IF
 !-------------------------------------------------------------------------------
 IF (LHOOK)   CALL DR_HOOK('PGD_TEB_PAR',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
-CONTAINS
+ CONTAINS
 SUBROUTINE COHERENCE_THERMAL_DATA(HTYPE,ODATA_HC,ODATA_TC,ODATA_D)
  CHARACTER(LEN=4), INTENT(IN) :: HTYPE
 LOGICAL,          INTENT(IN) :: ODATA_HC

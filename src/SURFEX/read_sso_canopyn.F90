@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################################
-      SUBROUTINE READ_SSO_CANOPY_n(HPROGRAM,HINIT)
+      SUBROUTINE READ_SSO_CANOPY_n (DTCO, SSCP, U, &
+                                    HPROGRAM,HINIT)
 !     #########################################
 !
 !!****  *READ_SSO_CANOPY_n* - reads SSO fields
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -40,11 +41,17 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SSO_CANOPY_n, ONLY : SSO_CANOPY_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_SURF_PAR,        ONLY : XUNDEF
-USE MODD_SSO_CANOPY_n,   ONLY : NLVL, XZ, XU, XTKE, XDZ, XZF, XDZF
 !
 USE MODI_READ_SURF
-USE MODI_PREP_SSO_CANOPY
+USE MODI_SET_SSO_LEVELS
 USE MODI_CANOPY_GRID
 USE MODI_GET_TYPE_DIM_n
 !
@@ -55,6 +62,11 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SSO_CANOPY_t), INTENT(INOUT) :: SSCP
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=3),  INTENT(IN)  :: HINIT    ! choice of fields to initialize
@@ -75,21 +87,36 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !* 1D physical dimension
 !
 IF (LHOOK) CALL DR_HOOK('READ_SSO_CANOPY_N',0,ZHOOK_HANDLE)
- CALL GET_TYPE_DIM_n('FULL  ',ILU)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'FULL  ',ILU)
 !
 !* flag to use or not canopy levels
 !
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IBUGFIX,IRESP)
 !
 IF (IVERSION<6.OR.HINIT=='PGD'.OR. HINIT=='PRE') THEN
   GCANOPY = .FALSE.
 ELSE
-  YRECFM='SSO_CANOPY'
-  CALL READ_SURF(HPROGRAM,YRECFM,GCANOPY,IRESP)
+  IF (IVERSION>7 .OR. IVERSION==7 .AND.IBUGFIX>=2) THEN
+    YRECFM='STORAGETYPE'
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,YREAD,IRESP)
+  ELSE
+    YREAD = 'ALL'
+  ENDIF
+  IF (YREAD/='ALL') THEN
+    GCANOPY = .FALSE.
+  ELSE
+    YRECFM='SSO_CANOPY'
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,GCANOPY,IRESP)
+  ENDIF
 END IF
 !
 !*       2.     Allocation of Prognostic fields:
@@ -98,52 +125,42 @@ END IF
 !* number of vertical levels
 !
 IF (.NOT. GCANOPY) THEN
-  CALL PREP_SSO_CANOPY(ILU)
+  CALL SET_SSO_LEVELS(SSCP, &
+                      ILU)
 ELSE
   !
   YRECFM='SSO_CAN_LVL'
-  CALL READ_SURF(HPROGRAM,YRECFM,NLVL,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,SSCP%NLVL,IRESP)
   !
-  ALLOCATE(XZ(ILU,NLVL))
   !
   !*       3.     Reading of Prognostic fields:
   !               -----------------------------
   !
-  !* altitudes
+  ALLOCATE(SSCP%XZ(ILU,SSCP%NLVL))  
+  ALLOCATE(SSCP%XU(ILU,SSCP%NLVL))
+  ALLOCATE(SSCP%XTKE(ILU,SSCP%NLVL))
   !
-  DO JLAYER=1,NLVL
+  !* altitudes
+  DO JLAYER=1,SSCP%NLVL
     WRITE(YRECFM,'(A9,I2.2,A1)') 'SSO_CAN_Z',JLAYER,' '
-    CALL READ_SURF(HPROGRAM,YRECFM,XZ(:,JLAYER),IRESP)
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,SSCP%XZ(:,JLAYER),IRESP)
+  END DO
+  !    
+  !* wind in canopy
+  DO JLAYER=1,SSCP%NLVL
+    WRITE(YRECFM,'(A9,I2.2,A1)') 'SSO_CAN_U',JLAYER,' '
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,SSCP%XU(:,JLAYER),IRESP)
   END DO
   !
-  ALLOCATE(XU(ILU,NLVL))
-  ALLOCATE(XTKE(ILU,NLVL))
-  !
-  IF (IVERSION>7 .OR. IVERSION==7 .AND.IBUGFIX>=2) THEN
-    YRECFM='STORAGETYPE'
-    CALL READ_SURF(HPROGRAM,YRECFM,YREAD,IRESP)
-  ELSE
-    YREAD = 'ALL'
-  ENDIF
-  !
-  IF(YREAD=='ALL') THEN
-    !
-    !* wind in canopy
-    DO JLAYER=1,NLVL
-      WRITE(YRECFM,'(A9,I2.2,A1)') 'SSO_CAN_U',JLAYER,' '
-      CALL READ_SURF(HPROGRAM,YRECFM,XU(:,JLAYER),IRESP)
-    END DO
-    !
-    !* Tke in canopy
-    DO JLAYER=1,NLVL
-      WRITE(YRECFM,'(A9,I2.2,A1)') 'SSO_CAN_E',JLAYER,' '
-      CALL READ_SURF(HPROGRAM,YRECFM,XTKE(:,JLAYER),IRESP)
-    END DO
-    !
-  ELSE
-    XU(:,:)=XUNDEF
-    XTKE(:,:)=XUNDEF
-  ENDIF
+  !* Tke in canopy
+  DO JLAYER=1,SSCP%NLVL
+    WRITE(YRECFM,'(A9,I2.2,A1)') 'SSO_CAN_E',JLAYER,' '
+    CALL READ_SURF(&
+                HPROGRAM,YRECFM,SSCP%XTKE(:,JLAYER),IRESP)
+  END DO
   !
 ENDIF
 !
@@ -164,10 +181,10 @@ ENDIF
 !  --------------------------------- XZ(k-1)                     XDZ(k-1)   V
 !  - - - - - - - - - - - - - - - - - XZf(k-1)
 !
-ALLOCATE(XDZ (ILU,NLVL))
-ALLOCATE(XZF (ILU,NLVL))
-ALLOCATE(XDZF(ILU,NLVL))
- CALL CANOPY_GRID(ILU,NLVL,XZ,XZF,XDZ,XDZF)
+ALLOCATE(SSCP%XDZ (ILU,SSCP%NLVL))
+ALLOCATE(SSCP%XZF (ILU,SSCP%NLVL))
+ALLOCATE(SSCP%XDZF(ILU,SSCP%NLVL))
+ CALL CANOPY_GRID(ILU,SSCP%NLVL,SSCP%XZ,SSCP%XZF,SSCP%XDZ,SSCP%XDZF)
 IF (LHOOK) CALL DR_HOOK('READ_SSO_CANOPY_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_FLAKE_SBL()
+SUBROUTINE PREP_FLAKE_SBL (FG, FSB)
 !     #################################################################################
 !
 !!****  *PREP_FLAKE_SBL* - prepares FLAKE SBL fields
@@ -31,8 +31,10 @@ SUBROUTINE PREP_FLAKE_SBL()
 !!------------------------------------------------------------------
 !
 !
-USE MODD_FLAKE_GRID_n,     ONLY : NDIM
-USE MODD_FLAKE_SBL_n,   ONLY : NLVL, XZ
+!
+!
+USE MODD_FLAKE_GRID_n, ONLY : FLAKE_GRID_t
+USE MODD_FLAKE_SBL_n, ONLY : FLAKE_SBL_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -43,6 +45,10 @@ IMPLICIT NONE
 !
 !
 !*      0.2    declarations of local variables
+!
+!
+TYPE(FLAKE_GRID_t), INTENT(INOUT) :: FG
+TYPE(FLAKE_SBL_t), INTENT(INOUT) :: FSB
 !
 INTEGER :: JLAYER
 !
@@ -57,13 +63,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !             ----------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_FLAKE_SBL',0,ZHOOK_HANDLE)
-NLVL = 6
+FSB%NLVL = 6
 !
 !*      2.    height of half levels (where turbulent fluxes will be)
 !             ---------------------
 !
 !* Warning :   ZZF(:,1)   MUST BE ZERO
-ALLOCATE(ZZF(NDIM,NLVL))
+ALLOCATE(ZZF(FG%NDIM,FSB%NLVL))
 ZZF(:,1) = 0.
 ZZF(:,2) = 1
 ZZF(:,3) = 3.
@@ -71,11 +77,11 @@ ZZF(:,4) = 5.
 ZZF(:,5) = 8.
 ZZF(:,6) = 12.
 
-ALLOCATE(XZ(NDIM,NLVL))
-DO JLAYER=1,NLVL-1
-  XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
+ALLOCATE(FSB%XZ(FG%NDIM,FSB%NLVL))
+DO JLAYER=1,FSB%NLVL-1
+  FSB%XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
 END DO
-XZ(:,NLVL) = 1.5 * ZZF(:,NLVL) - 0.5 * ZZF(:,NLVL-1)
+FSB%XZ(:,FSB%NLVL) = 1.5 * ZZF(:,FSB%NLVL) - 0.5 * ZZF(:,FSB%NLVL-1)
 !
 DEALLOCATE(ZZF)
 !

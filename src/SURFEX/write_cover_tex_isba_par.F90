@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_COVER_TEX_ISBA_PAR(KPATCH,KLAYER,HISBA,HPHOTO,PSOILGRID)
+      SUBROUTINE WRITE_COVER_TEX_ISBA_PAR (DTCO, I, &
+                                           KPATCH,KLAYER,HISBA,HPHOTO,PSOILGRID)
 !     ##########################
 !
 !!**** *WRITE_COVER_TEX* writes the ISBA data arrays into a tex file
@@ -43,6 +44,11 @@
 !
 !
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
 USE MODE_WRITE_COVER_TEX
 
 USE MODI_CONVERT_COVER_ISBA
@@ -63,6 +69,10 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(ISBA_t), INTENT(INOUT) :: I
+!
 INTEGER,          INTENT(IN) :: KPATCH! number of patch
 INTEGER,          INTENT(IN) :: KLAYER! number of soil layers
  CHARACTER(LEN=*), INTENT(IN) :: HISBA ! type of soil (Force-Restore OR Diffusion)
@@ -73,7 +83,7 @@ REAL, DIMENSION(:),INTENT(IN) :: PSOILGRID ! reference grid for DIF
 !            ------------------------------
 !
 !
-INTEGER :: I,J,IP
+INTEGER :: JI,JJ,JIP
 !
  CHARACTER(LEN=6), DIMENSION(12      ) :: YDATA_VEGPARAM! vegetation parameters
  CHARACTER(LEN=6)                      :: YSTRING6
@@ -93,6 +103,7 @@ INTEGER           :: JPATCH   ! loop counter
 LOGICAL           :: GLINE ! flag to write an additional horizontal line
 !
 REAL, DIMENSION(JPCOVER,JPCOVER     ) :: ZCOVER
+LOGICAL, DIMENSION(JPCOVER          ) :: GCOVER
 REAL, DIMENSION(JPCOVER,KPATCH, 12  ) :: ZVEG, ZLAI, ZZ0VEG, ZEMIS_ECO, ZF2I
 REAL, DIMENSION(JPCOVER,KPATCH      ) :: ZRSMIN,ZGAMMA,ZRGL,ZCV,             &
                                            ZALBNIR_VEG,ZALBVIS_VEG,ZALBUV_VEG, &
@@ -115,13 +126,24 @@ IF (NTEX==0) RETURN
 GLINE=.FALSE.
 !
 ZCOVER(:,:) = 0.
-DO I=1,JPCOVER
-  ZCOVER(I,I) = 1.
+DO JI=1,JPCOVER
+  ZCOVER(JI,JI) = 1.
 END DO
+!
+GCOVER(:) = .TRUE.
 !
 !ocl scalar
 !
- CALL CONVERT_COVER_ISBA(HISBA,2,ZCOVER,HPHOTO, 'NAT',                    &
+DO JJ=1,12
+  CALL CONVERT_COVER_ISBA(DTCO, I, &
+                          HISBA,3*JJ-1,ZCOVER,GCOVER,HPHOTO, 'NAT',         &
+                            PVEG=ZVEG(:,:,JJ), PLAI=ZLAI(:,:,JJ),            &
+                            PZ0=ZZ0VEG(:,:,JJ), PEMIS_ECO=ZEMIS_ECO(:,:,JJ), &
+                            PF2I=ZF2I(:,:,JJ),OSTRESS=GSTRESS(:,:,JJ)        )  
+END DO
+
+ CALL CONVERT_COVER_ISBA(DTCO, I, &
+                          HISBA,2,ZCOVER,GCOVER,HPHOTO, 'NAT',            &
                         PRSMIN=ZRSMIN,PGAMMA=ZGAMMA,PWRMAX_CF=ZWRMAX_CF, &
                         PRGL=ZRGL,PCV=ZCV,PSOILGRID=PSOILGRID,           &
                         PDG=ZDG,KWG_LAYER=IWG_LAYER,PDROOT=ZDROOT,       &
@@ -133,12 +155,6 @@ END DO
                         PSEFOLD=ZSEFOLD,PGC=ZGC,PDMAX=ZDMAX,             &
                         PH_TREE=ZH_TREE,PRE25=ZRE25                       )  
 !
-DO J=1,12
-  CALL CONVERT_COVER_ISBA(HISBA,3*J-1,ZCOVER,HPHOTO, 'NAT',                &
-                            PVEG=ZVEG(:,:,J), PLAI=ZLAI(:,:,J),            &
-                            PZ0=ZZ0VEG(:,:,J), PEMIS_ECO=ZEMIS_ECO(:,:,J), &
-                            PF2I=ZF2I(:,:,J),OSTRESS=GSTRESS(:,:,J)        )  
-END DO
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -151,10 +167,10 @@ DO JPATCH=1,KPATCH
 !
 !
 !
- I=0
+ JI=0
  DO 
 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf averaged leaf area index} (patch ',JPATCH,'/',KPATCH,') \\'
@@ -168,43 +184,43 @@ DO JPATCH=1,KPATCH
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10&11&12&$d_2$&$d_3$&$h$\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
-    IF (ZLAI(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,12
-        IF (ZLAI(I,JPATCH,J)==0. .OR. ZLAI(I,JPATCH,J)==XUNDEF) THEN
-          YDATA_MONTH(J) = ' -  '
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
+    IF (ZLAI(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,12
+        IF (ZLAI(JI,JPATCH,JJ)==0. .OR. ZLAI(JI,JPATCH,JJ)==XUNDEF) THEN
+          YDATA_MONTH(JJ) = ' -  '
         ELSE
-          WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZLAI(I,JPATCH,J),1),'.',DEC(ZLAI(I,JPATCH,J),1),')'
-          WRITE(YSTRING6, FMT=YFMT) ZLAI(I,JPATCH,J)
-          YDATA_MONTH(J) = YSTRING6
+          WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZLAI(JI,JPATCH,JJ),1),'.',DEC(ZLAI(JI,JPATCH,JJ),1),')'
+          WRITE(YSTRING6, FMT=YFMT) ZLAI(JI,JPATCH,JJ)
+          YDATA_MONTH(JJ) = YSTRING6
         END IF
       END DO
 
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZDG(I,2,JPATCH),1),'.',DEC(ZDG(I,2,JPATCH),1),')'
-      WRITE(YSTRING6, FMT=YFMT) ZDG(I,2,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZDG(JI,2,JPATCH),1),'.',DEC(ZDG(JI,2,JPATCH),1),')'
+      WRITE(YSTRING6, FMT=YFMT) ZDG(JI,2,JPATCH)
       YDATA_VEGPARAM(1) = YSTRING6
       IF (KLAYER>=3) THEN
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZDG(I,3,JPATCH),1),'.',DEC(ZDG(I,3,JPATCH),1),')'
-        WRITE(YSTRING6, FMT=YFMT) ZDG(I,3,JPATCH)
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZDG(JI,3,JPATCH),1),'.',DEC(ZDG(JI,3,JPATCH),1),')'
+        WRITE(YSTRING6, FMT=YFMT) ZDG(JI,3,JPATCH)
         YDATA_VEGPARAM(2) = YSTRING6
       ELSE
         YDATA_VEGPARAM(2) = ' -    '
       END IF
 
-      IF (ZH_TREE(I,JPATCH)==XUNDEF .OR. ZH_TREE(I,JPATCH)==0.) THEN
+      IF (ZH_TREE(JI,JPATCH)==XUNDEF .OR. ZH_TREE(JI,JPATCH)==0.) THEN
         YDATA_VEGPARAM(3) = ' -    '
       ELSE
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZH_TREE(I,JPATCH)),'.',DEC(ZH_TREE(I,JPATCH)),')'
-        WRITE(YSTRING6, FMT=YFMT) ZH_TREE(I,JPATCH)
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZH_TREE(JI,JPATCH)),'.',DEC(ZH_TREE(JI,JPATCH)),')'
+        WRITE(YSTRING6, FMT=YFMT) ZH_TREE(JI,JPATCH)
         YDATA_VEGPARAM(3) = YSTRING6
       END IF
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
             YDATA_MONTH(3),' & ',YDATA_MONTH(4), ' & ',YDATA_MONTH(5), ' & ', &
             YDATA_MONTH(6),' & ',YDATA_MONTH(7), ' & ',YDATA_MONTH(8), ' & ', &
             YDATA_MONTH(9),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
@@ -213,8 +229,8 @@ DO JPATCH=1,KPATCH
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT  
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT  
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -226,9 +242,9 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf ground layer depth} (from surface, patch ',JPATCH,'/',KPATCH,') \\'
@@ -242,21 +258,21 @@ DO
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
     YDATA_LAYER(:) = ' -  '
-    IF (ZDG(I,1,JPATCH)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,MIN(KLAYER,10)
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZDG(I,J,JPATCH),1),'.',DEC(ZDG(I,J,JPATCH),1),')'
-        WRITE(YSTRING6, FMT=YFMT) ZDG(I,J,JPATCH)
-        YDATA_LAYER(J) = YSTRING6
+    IF (ZDG(JI,1,JPATCH)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,MIN(KLAYER,10)
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZDG(JI,JJ,JPATCH),1),'.',DEC(ZDG(JI,JJ,JPATCH),1),')'
+        WRITE(YSTRING6, FMT=YFMT) ZDG(JI,JJ,JPATCH)
+        YDATA_LAYER(JJ) = YSTRING6
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_LAYER(1), ' & ',YDATA_LAYER(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_LAYER(1), ' & ',YDATA_LAYER(2), ' & ', &
             YDATA_LAYER(3),' & ',YDATA_LAYER(4), ' & ',YDATA_LAYER(5), ' & ', &
             YDATA_LAYER(6),' & ',YDATA_LAYER(7), ' & ',YDATA_LAYER(8), ' & ', &
             YDATA_LAYER(9),' & ',YDATA_LAYER(10),' \\'  
@@ -264,8 +280,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -278,9 +294,9 @@ ENDDO
 !
 IF (HISBA=='DIF') THEN
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT  
+  IF (JI==JPCOVER) EXIT  
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf cumulative root fraction} (patch ',JPATCH,'/',KPATCH,') \\'
@@ -294,21 +310,21 @@ DO
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
     YDATA_LAYER(:) = ' -  '
-    IF (ZROOTFRAC(I,1,JPATCH)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,MIN(KLAYER,10)
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZROOTFRAC(I,J,JPATCH),1),'.',DEC(ZROOTFRAC(I,J,JPATCH),1),')'
-        WRITE(YSTRING6, FMT=YFMT) ZROOTFRAC(I,J,JPATCH)
-        YDATA_LAYER(J) = YSTRING6
+    IF (ZROOTFRAC(JI,1,JPATCH)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,MIN(KLAYER,10)
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZROOTFRAC(JI,JJ,JPATCH),1),'.',DEC(ZROOTFRAC(JI,JJ,JPATCH),1),')'
+        WRITE(YSTRING6, FMT=YFMT) ZROOTFRAC(JI,JJ,JPATCH)
+        YDATA_LAYER(JJ) = YSTRING6
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_LAYER(1), ' & ',YDATA_LAYER(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_LAYER(1), ' & ',YDATA_LAYER(2), ' & ', &
             YDATA_LAYER(3),' & ',YDATA_LAYER(4), ' & ',YDATA_LAYER(5), ' & ', &
             YDATA_LAYER(6),' & ',YDATA_LAYER(7), ' & ',YDATA_LAYER(8), ' & ', &
             YDATA_LAYER(9),' & ',YDATA_LAYER(10),' \\'  
@@ -316,8 +332,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -330,9 +346,9 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf vegetation fraction (over natural or agricultural areas)} (patch ',JPATCH,'/',KPATCH,') \\'
@@ -347,25 +363,25 @@ DO
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10&11&12\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
-    IF (ZLAI(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,12
-        IF (ZVEG(I,JPATCH,J)==0.) THEN
-          YDATA_MONTH(J) = ' -  '
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
+    IF (ZLAI(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,12
+        IF (ZVEG(JI,JPATCH,JJ)==0.) THEN
+          YDATA_MONTH(JJ) = ' -  '
         ELSE
-          WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZVEG(I,JPATCH,J),2),'.',DEC(ZVEG(I,JPATCH,J),2),')'
-          WRITE(YSTRING6, FMT=YFMT) ZVEG(I,JPATCH,J)
+          WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZVEG(JI,JPATCH,JJ),2),'.',DEC(ZVEG(JI,JPATCH,JJ),2),')'
+          WRITE(YSTRING6, FMT=YFMT) ZVEG(JI,JPATCH,JJ)
 
-          YDATA_MONTH(J) = YSTRING6
+          YDATA_MONTH(JJ) = YSTRING6
         END IF
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
             YDATA_MONTH(3),' & ',YDATA_MONTH(4), ' & ',YDATA_MONTH(5), ' & ', &
             YDATA_MONTH(6),' & ',YDATA_MONTH(7), ' & ',YDATA_MONTH(8), ' & ', &
             YDATA_MONTH(9),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
@@ -374,8 +390,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -388,9 +404,9 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf surface roughness length for momentum: $z_{0}$} (patch ',JPATCH,'/',KPATCH,') \\'
@@ -404,21 +420,21 @@ DO
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10&11&12\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
 
-    IF (ZLAI(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,12
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZZ0VEG(I,JPATCH,J)),'.',DEC(ZZ0VEG(I,JPATCH,J)),')'
-        WRITE(YSTRING6, FMT=YFMT) ZZ0VEG(I,JPATCH,J)
-        YDATA_MONTH(J) = YSTRING6
+    IF (ZLAI(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,12
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZZ0VEG(JI,JPATCH,JJ)),'.',DEC(ZZ0VEG(JI,JPATCH,JJ)),')'
+        WRITE(YSTRING6, FMT=YFMT) ZZ0VEG(JI,JPATCH,JJ)
+        YDATA_MONTH(JJ) = YSTRING6
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
             YDATA_MONTH(3),' & ',YDATA_MONTH(4), ' & ',YDATA_MONTH(5), ' & ', &
             YDATA_MONTH(6),' & ',YDATA_MONTH(7), ' & ',YDATA_MONTH(8), ' & ', &
             YDATA_MONTH(9),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
@@ -427,8 +443,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
    END DO
 
   WRITE(NTEX,*) '\end{tabular}'
@@ -442,9 +458,9 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf emissivity of natural continental surfaces} (patch ',JPATCH,'/',KPATCH,') \\'
@@ -458,23 +474,23 @@ DO
   WRITE(NTEX,*) '&&01&02&03&04&05&06&07&08&09&10&11&12\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
-    IF (ZLAI(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      DO J=1,12
-        IF (ZEMIS_ECO(I,JPATCH,J)==1.) THEN
-          YDATA_MONTH(J) = ' 1.  '
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
+    IF (ZLAI(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      DO JJ=1,12
+        IF (ZEMIS_ECO(JI,JPATCH,JJ)==1.) THEN
+          YDATA_MONTH(JJ) = ' 1.  '
         ELSE
-          WRITE(YSTRING6, FMT='(F3.2)') ZEMIS_ECO(I,JPATCH,J)
-          YDATA_MONTH(J) = YSTRING6
+          WRITE(YSTRING6, FMT='(F3.2)') ZEMIS_ECO(JI,JPATCH,JJ)
+          YDATA_MONTH(JJ) = YSTRING6
         END IF
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
+          JI,' & ',CNAME(JI),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
             YDATA_MONTH(3),' & ',YDATA_MONTH(4), ' & ',YDATA_MONTH(5), ' & ', &
             YDATA_MONTH(6),' & ',YDATA_MONTH(7), ' & ',YDATA_MONTH(8), ' & ', &
             YDATA_MONTH(9),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
@@ -483,8 +499,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -496,9 +512,9 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf other vegetation parameters} (1) (patch ',JPATCH,'/',KPATCH,') \\'
@@ -513,40 +529,40 @@ DO
     '&&$\alpha_{nir}$&$\alpha_{vis}$&$\alpha_{UV}$&$r_{s_{min}}$&$\gamma$&$rgl$&$C_{w_{r_{max}}}$&$z_0$/$z_{0_h}$&$C_v$\\'  
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
-    IF (ZLAI(I,JPATCH,1)>0. .AND. ZVEG(I,JPATCH,1)>0. .AND. ZVEG(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      WRITE(YSTRING6, FMT='(F3.2)') ZALBNIR_VEG(I,JPATCH)
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
+    IF (ZLAI(JI,JPATCH,1)>0. .AND. ZVEG(JI,JPATCH,1)>0. .AND. ZVEG(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      WRITE(YSTRING6, FMT='(F3.2)') ZALBNIR_VEG(JI,JPATCH)
       YDATA_VEGPARAM(4) = YSTRING6
-      WRITE(YSTRING6, FMT='(F3.2)') ZALBVIS_VEG(I,JPATCH)
+      WRITE(YSTRING6, FMT='(F3.2)') ZALBVIS_VEG(JI,JPATCH)
       YDATA_VEGPARAM(5) = YSTRING6
-      WRITE(YSTRING6, FMT='(F3.2)') ZALBUV_VEG (I,JPATCH)
+      WRITE(YSTRING6, FMT='(F3.2)') ZALBUV_VEG (JI,JPATCH)
       YDATA_VEGPARAM(6) = YSTRING6
-      ZRSMIN(I,JPATCH) = NINT(ZRSMIN(I,JPATCH))
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZRSMIN(I,JPATCH)),'.',DEC(ZRSMIN(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZRSMIN(I,JPATCH)
+      ZRSMIN(JI,JPATCH) = NINT(ZRSMIN(JI,JPATCH))
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZRSMIN(JI,JPATCH)),'.',DEC(ZRSMIN(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZRSMIN(JI,JPATCH)
       YDATA_VEGPARAM(7) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZGAMMA(I,JPATCH)),'.',DEC(ZGAMMA(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZGAMMA(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZGAMMA(JI,JPATCH)),'.',DEC(ZGAMMA(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZGAMMA(JI,JPATCH)
       YDATA_VEGPARAM(8) = YSTRING6
-      ZRGL(I,JPATCH) = NINT(ZRGL(I,JPATCH))
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZRGL(I,JPATCH)),'.',DEC(ZRGL(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZRGL(I,JPATCH)
+      ZRGL(JI,JPATCH) = NINT(ZRGL(JI,JPATCH))
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZRGL(JI,JPATCH)),'.',DEC(ZRGL(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZRGL(JI,JPATCH)
       YDATA_VEGPARAM(9) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZWRMAX_CF(I,JPATCH)),'.',DEC(ZWRMAX_CF(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZWRMAX_CF(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZWRMAX_CF(JI,JPATCH)),'.',DEC(ZWRMAX_CF(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZWRMAX_CF(JI,JPATCH)
       YDATA_VEGPARAM(10) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZZ0_O_Z0H(I,JPATCH)),'.',DEC(ZZ0_O_Z0H(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZZ0_O_Z0H(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZZ0_O_Z0H(JI,JPATCH)),'.',DEC(ZZ0_O_Z0H(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZZ0_O_Z0H(JI,JPATCH)
       YDATA_VEGPARAM(11) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000. *ZCV(I,JPATCH)),'.',DEC(10000. *ZCV(I,JPATCH)),',A10)'
-      WRITE(YDATA_CV, FMT=YFMT) 10000. *ZCV(I,JPATCH),' $10^{-4}$'
+      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000. *ZCV(JI,JPATCH)),'.',DEC(10000. *ZCV(JI,JPATCH)),',A10)'
+      WRITE(YDATA_CV, FMT=YFMT) 10000. *ZCV(JI,JPATCH),' $10^{-4}$'
 
       WRITE(NTEX, FMT=*) &
-             I,' & ',CNAME(I),' & ', &
+             JI,' & ',CNAME(JI),' & ', &
                      YDATA_VEGPARAM(4),' & ',YDATA_VEGPARAM(5),' & ', &
                      YDATA_VEGPARAM(6),' & ',YDATA_VEGPARAM(7),' & ', &
                      YDATA_VEGPARAM(8),' & ',YDATA_VEGPARAM(9),' & ', &
@@ -555,8 +571,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !
@@ -568,9 +584,9 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 !
-I=0
+JI=0
 DO 
-  IF (I==JPCOVER) EXIT
+  IF (JI==JPCOVER) EXIT
 
   IF (CLANG=='EN') THEN
     WRITE(NTEX,*) '{\bf other vegetation parameters} (2) (patch ',JPATCH,'/',KPATCH,') \\'
@@ -584,47 +600,47 @@ DO
   WRITE(NTEX,*) '&&$gm$&$B/lai$&$lai_{_{m}}$&$e_{_{fold}}$&$G_c$&$D_{max}$&$f_{2i}$&stress&Re$_{25}$\\'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
-  IP=0
+  JIP=0
   DO
-    IF (I==JPCOVER) EXIT
-    I=I+1
+    IF (JI==JPCOVER) EXIT
+    JI=JI+1
 
-    IF (ZLAI(I,JPATCH,1)>0. .AND. ZVEG(I,JPATCH,1)>0. .AND. ZVEG(I,JPATCH,1)/=XUNDEF) THEN
-      IP=IP+1
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZGMES(I,JPATCH)),'.',DEC(ZGMES(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZGMES(I,JPATCH)
+    IF (ZLAI(JI,JPATCH,1)>0. .AND. ZVEG(JI,JPATCH,1)>0. .AND. ZVEG(JI,JPATCH,1)/=XUNDEF) THEN
+      JIP=JIP+1
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZGMES(JI,JPATCH)),'.',DEC(ZGMES(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZGMES(JI,JPATCH)
       YDATA_VEGPARAM(1) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZBSLAI(I,JPATCH)),'.',DEC(ZBSLAI(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZBSLAI(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZBSLAI(JI,JPATCH)),'.',DEC(ZBSLAI(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZBSLAI(JI,JPATCH)
       YDATA_VEGPARAM(2) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZLAIMIN(I,JPATCH)),'.',DEC(ZLAIMIN(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZLAIMIN(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZLAIMIN(JI,JPATCH)),'.',DEC(ZLAIMIN(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZLAIMIN(JI,JPATCH)
       YDATA_VEGPARAM(3) = YSTRING6
-      ZSEFOLD(I,JPATCH) = NINT(ZSEFOLD(I,JPATCH)/XDAY)
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZSEFOLD(I,JPATCH)),'.',DEC(ZSEFOLD(I,JPATCH)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZSEFOLD(I,JPATCH)
+      ZSEFOLD(JI,JPATCH) = NINT(ZSEFOLD(JI,JPATCH)/XDAY)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(ZSEFOLD(JI,JPATCH)),'.',DEC(ZSEFOLD(JI,JPATCH)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZSEFOLD(JI,JPATCH)
       YDATA_VEGPARAM(4) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000. *ZGC(I,JPATCH)),'.',DEC(10000. *ZGC(I,JPATCH)),',A10)'
-      WRITE(YDATA_CV, FMT=YFMT) 10000. *ZGC(I,JPATCH),' $10^{-4}$'
-      IF (ZDMAX(I,JPATCH) /= XUNDEF)THEN
-         WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZDMAX(I,JPATCH)),'.',DEC(ZDMAX(I,JPATCH)),')'
-         WRITE(YSTRING6, FMT=YFMT) ZDMAX(I,JPATCH)
+      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000. *ZGC(JI,JPATCH)),'.',DEC(10000. *ZGC(JI,JPATCH)),',A10)'
+      WRITE(YDATA_CV, FMT=YFMT) 10000. *ZGC(JI,JPATCH),' $10^{-4}$'
+      IF (ZDMAX(JI,JPATCH) /= XUNDEF)THEN
+         WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZDMAX(JI,JPATCH)),'.',DEC(ZDMAX(JI,JPATCH)),')'
+         WRITE(YSTRING6, FMT=YFMT) ZDMAX(JI,JPATCH)
       ELSE
          YSTRING6 ='  -   '
       ENDIF
       YDATA_VEGPARAM(5) = YSTRING6
-      IF (GSTRESS(I,JPATCH,1)) THEN
+      IF (GSTRESS(JI,JPATCH,1)) THEN
         YDATA_STRESS='def.'
       ELSE
         YDATA_STRESS='off.'
       END IF
-      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZF2I(I,JPATCH,1)),'.',DEC(ZF2I(I,JPATCH,1)),')'
-      WRITE(YSTRING6, FMT=YFMT) ZF2I(I,JPATCH,1)
+      WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NBT(ZF2I(JI,JPATCH,1)),'.',DEC(ZF2I(JI,JPATCH,1)),')'
+      WRITE(YSTRING6, FMT=YFMT) ZF2I(JI,JPATCH,1)
       YDATA_VEGPARAM(6) = YSTRING6
-      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000000. *ZRE25(I,JPATCH)),'.',DEC(10000000. *ZRE25(I,JPATCH)),',A10)'
-      WRITE(YDATA_RE25, FMT=YFMT) 10000000. *ZRE25(I,JPATCH),' $10^{-7}$'
+      WRITE(YFMT,'(A2,I1,A1,I1,A5)') '(F',NB(10000000. *ZRE25(JI,JPATCH)),'.',DEC(10000000. *ZRE25(JI,JPATCH)),',A10)'
+      WRITE(YDATA_RE25, FMT=YFMT) 10000000. *ZRE25(JI,JPATCH),' $10^{-7}$'
       WRITE(NTEX, FMT=*) &
-             I,' & ',CNAME(I),' & ', &
+             JI,' & ',CNAME(JI),' & ', &
                      YDATA_VEGPARAM(1),' & ',YDATA_VEGPARAM(2),' & ', &
                      YDATA_VEGPARAM(3),' & ',YDATA_VEGPARAM(4),' & ', &
                      YDATA_CV,         ' & ',YDATA_VEGPARAM(5),' & ', &
@@ -633,8 +649,8 @@ DO
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
-    CALL HLINE(NTEX,GLINE,I)
-    IF (IP==NLINES) EXIT
+    CALL HLINE(NTEX,GLINE,JI)
+    IF (JIP==NLINES) EXIT
   END DO
   WRITE(NTEX,*) '\end{tabular}'
 !

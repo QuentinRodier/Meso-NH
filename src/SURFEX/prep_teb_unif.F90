@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_TEB_UNIF(KLUOUT,HSURF,PFIELD)
 !     #################################################################################
@@ -53,7 +53,7 @@ REAL, POINTER, DIMENSION(:,:)   :: PFIELD    ! field to interpolate horizontally
 !*      0.2    declarations of local variables
 REAL, DIMENSION(:), ALLOCATABLE :: ZPS       ! surface pressure
 REAL, DIMENSION(:), ALLOCATABLE :: ZTI_BLD   ! indoor building temperature
-REAL, PARAMETER                 :: ZRHOA=1.19! air volumic mass at 20°C and 1015hPa
+REAL, PARAMETER                 :: ZRHOA=1.19! air volumic mass at 20C and 1015hPa
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -145,13 +145,13 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='UNIF  '
+ CINTERP_TYPE='UNIF  '
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_UNIF',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PT_BY_PT_TREATMENT(KLUOUT,PLAT,PLON,PVALUE,HSUBROUTINE)
+      SUBROUTINE PT_BY_PT_TREATMENT (USS, &
+                                     KLUOUT,PLAT,PLON,PVALUE,HSUBROUTINE,KNBLINES,PNODATA)
 !     ###################################################################
 !
 !!**** *PT_BY_PT_TREATMENT* 
@@ -40,6 +41,10 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODI_AVERAGE1_COVER
 USE MODI_AVERAGE1_OROGRAPHY
 USE MODI_AVERAGE1_CTI
@@ -55,40 +60,75 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+!
 INTEGER,           INTENT(IN) :: KLUOUT
 REAL,DIMENSION(:), INTENT(IN) :: PLAT
 REAL,DIMENSION(:), INTENT(IN) :: PLON
 REAL,DIMENSION(:), INTENT(IN) :: PVALUE
  CHARACTER(LEN=6), INTENT(IN)  :: HSUBROUTINE   ! Name of the subroutine to call
+INTEGER, OPTIONAL, INTENT(IN) :: KNBLINES
+REAL, OPTIONAL,    INTENT(IN) :: PNODATA
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
+INTEGER :: INBLINES
 !----------------------------------------------------------------------------
 !
       IF (LHOOK) CALL DR_HOOK('PT_BY_PT_TREATMENT',0,ZHOOK_HANDLE)
+      INBLINES = 1
+      IF (PRESENT(KNBLINES)) INBLINES = KNBLINES
+
       SELECT CASE (HSUBROUTINE)
 
       CASE ('A_COVR')
-      CALL AVERAGE1_COVER(KLUOUT,PLAT,PLON,PVALUE)
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_COVER(KLUOUT,INBLINES,PLAT,PLON,PVALUE,PNODATA)
+      ELSE
+        CALL AVERAGE1_COVER(KLUOUT,INBLINES,PLAT,PLON,PVALUE)
+      ENDIF
 
       CASE ('A_OROG')
-      CALL AVERAGE1_OROGRAPHY(KLUOUT,PLAT,PLON,PVALUE)
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_OROGRAPHY(USS, &
+                                KLUOUT,INBLINES,PLAT,PLON,PVALUE,PNODATA)
+      ELSE
+        CALL AVERAGE1_OROGRAPHY(USS, &
+                                KLUOUT,INBLINES,PLAT,PLON,PVALUE)
+      ENDIF
 
       CASE ('A_CTI ')
-      CALL AVERAGE1_CTI(KLUOUT,PLAT,PLON,PVALUE)
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_CTI(KLUOUT,INBLINES,PLAT,PLON,PVALUE,PNODATA)
+      ELSE
+        CALL AVERAGE1_CTI(KLUOUT,INBLINES,PLAT,PLON,PVALUE)
+      ENDIF
 
       CASE ('A_LDBD')
-      CALL AVERAGE1_LDB(KLUOUT,PLAT,PLON,PVALUE,'D')
-
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_LDB(KLUOUT,INBLINES,PLAT,PLON,PVALUE,'D',PNODATA)
+      ELSE
+        CALL AVERAGE1_LDB(KLUOUT,INBLINES,PLAT,PLON,PVALUE,'D')
+      ENDIF
+              
       CASE ('A_LDBS')
-      CALL AVERAGE1_LDB(KLUOUT,PLAT,PLON,PVALUE,'S')
-      
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_LDB(KLUOUT,INBLINES,PLAT,PLON,PVALUE,'S',PNODATA)
+      ELSE
+        CALL AVERAGE1_LDB(KLUOUT,INBLINES,PLAT,PLON,PVALUE,'S')
+      ENDIF
+                    
       CASE ('A_MESH')
-      CALL AVERAGE1_MESH(KLUOUT,PLAT,PLON,PVALUE)
-
+      IF (PRESENT(PNODATA)) THEN
+        CALL AVERAGE1_MESH(KLUOUT,INBLINES,PLAT,PLON,PVALUE,PNODATA)
+      ELSE
+        CALL AVERAGE1_MESH(KLUOUT,INBLINES,PLAT,PLON,PVALUE)
+      ENDIF
+              
       END SELECT
 IF (LHOOK) CALL DR_HOOK('PT_BY_PT_TREATMENT',1,ZHOOK_HANDLE)
 !

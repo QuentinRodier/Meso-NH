@@ -1,14 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_OROG_n(HPROGRAM, HCOUPLING,                               &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2,  &
+SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, &
+                                    HPROGRAM, HCOUPLING, PTIMEC,                              &
+                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, &
                  PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,          &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  HTEST                                                                       )  
@@ -36,13 +37,19 @@ SUBROUTINE COUPLING_SEAFLUX_OROG_n(HPROGRAM, HCOUPLING,                         
 !!      Original    01/2004
 !!      B. Decharme   2008   reset the subgrid topographic effect on the forcing
 !!      J. Escobar    09/2012 SIZE(PTA) not allowed without-interface , replace by KI
+!!      B. Decharme  04/2013 new coupling variables
+!!                           improve forcing vertical shift
 !!-------------------------------------------------------------
 !
-USE MODD_CSTS,   ONLY : XCPD, XRD, XP00
-USE MODD_SEAFLUX_n,        ONLY : LSBL, XSST, XZ0, XZS
-USE MODD_SEAFLUX_SBL_n,    ONLY : XZ, XU, NLVL, XTKE, XT, XQ, XLMO, XZF, XDZ, XDZF, XP
-USE MODD_DIAG_SEAFLUX_n,   ONLY : N2M, XT2M, XQ2M, XHU2M, XZON10M, XMER10M, XWIND10M, &
-                                  XWIND10M_MAX, XT2M_MIN, XT2M_MAX, XHU2M_MIN, XHU2M_MAX
+!
+USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
+!
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_SLT_n, ONLY : SLT_t
+!
+!
+USE MODD_SURF_PAR,         ONLY : XUNDEF
+USE MODD_CSTS,             ONLY : XCPD, XRD, XP00
 !
 USE MODD_SURF_ATM, ONLY : LVERTSHIFT
 !
@@ -57,10 +64,16 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+!
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
                                               ! 'E' : explicit
                                               ! 'I' : implicit
+REAL,                INTENT(IN)  :: PTIMEC    ! current duration since start of the run (s)
 INTEGER,             INTENT(IN)  :: KYEAR     ! current year (UTC)
 INTEGER,             INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,             INTENT(IN)  :: KDAY      ! current day (UTC)
@@ -104,13 +117,18 @@ REAL, DIMENSION(KI), INTENT(OUT) :: PSFTH     ! flux of heat                    
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFU      ! zonal momentum flux                   (Pa)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFV      ! meridian momentum flux                (Pa)
-REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(KI,KSV),INTENT(OUT):: PSFTS   ! flux of scalar var.                   (kg/m2/s)
 !
 REAL, DIMENSION(KI), INTENT(OUT) :: PTRAD     ! radiative temperature                 (K)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PDIR_ALB! direct albedo for each spectral band  (-)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PSCA_ALB! diffuse albedo for each spectral band (-)
 REAL, DIMENSION(KI), INTENT(OUT) :: PEMIS     ! emissivity                            (-)
+!
+REAL, DIMENSION(KI), INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0       ! roughness length for momentum         (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0H      ! roughness length for heat             (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PQSURF    ! specific humidity at surface          (kg/kg)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_A_COEF! implicit coefficients
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_B_COEF! needed if HCOUPLING='I'
@@ -130,6 +148,10 @@ REAL, DIMENSION(KI)  :: ZPA    ! Pressure    at forcing height above surface oro
 REAL, DIMENSION(KI)  :: ZPS    ! Pressure    at surface orography
 REAL, DIMENSION(KI)  :: ZQA    ! Humidity    at forcing height above surface orography
 REAL, DIMENSION(KI)  :: ZRHOA  ! Density     at forcing height above surface orography
+REAL, DIMENSION(KI)  :: ZLW    ! LW rad      at forcing height above surface orography
+REAL, DIMENSION(KI)  :: ZRAIN  ! Rainfall    at forcing height above surface orography
+REAL, DIMENSION(KI)  :: ZSNOW  ! Snowfall    at forcing height above surface orography
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 ! Preliminaries:
@@ -137,14 +159,24 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEAFLUX_OROG_N',0,ZHOOK_HANDLE)
 !
-ZPEQ_B_COEF = PPEQ_B_COEF
-ZPET_B_COEF = PPET_B_COEF
+ZPEQ_B_COEF(:) = PPEQ_B_COEF(:)
+ZPET_B_COEF(:) = PPET_B_COEF(:)
 !
 IF(LVERTSHIFT)THEN
-!        
-  CALL FORCING_VERT_SHIFT(PZS,XZS,PTA,PQA,PPA,PRHOA,ZTA,ZQA,ZPA,ZRHOA)
 !
-  ZPS = ZPA + (PPS - PPA)
+  ZTA  (:) = XUNDEF
+  ZQA  (:) = XUNDEF
+  ZPS  (:) = XUNDEF
+  ZPA  (:) = XUNDEF
+  ZRHOA(:) = XUNDEF
+  ZLW  (:) = XUNDEF
+  ZRAIN(:) = XUNDEF
+  ZSNOW(:) = XUNDEF
+!     
+   CALL FORCING_VERT_SHIFT(PZS,SM%S%XZS,PTA,PQA,PPA,PRHOA,PLW,PRAIN,PSNOW,&
+                           ZTA,ZQA,ZPA,ZRHOA,ZLW,ZRAIN,ZSNOW         )
+!
+   ZPS(:) = ZPA(:) + (PPS(:) - PPA(:))
 !
   IF (HCOUPLING=='I') THEN
     ZPEQ_B_COEF = PPEQ_B_COEF + ZQA - PQA
@@ -153,28 +185,27 @@ IF(LVERTSHIFT)THEN
 !
 ELSE
 !
-  ZTA     = PTA
-  ZQA     = PQA
-  ZPS     = PPS
-  ZPA     = PPS
-  ZRHOA   = PRHOA
+  ZTA  (:) = PTA  (:)
+  ZQA  (:) = PQA  (:)
+  ZPS  (:) = PPS  (:)
+  ZPA  (:) = PPA  (:)
+  ZRHOA(:) = PRHOA(:)
+  ZLW  (:) = PLW  (:)
+  ZRAIN(:) = PRAIN(:)
+  ZSNOW(:) = PSNOW(:)
 !
 ENDIF
 !
- CALL COUPLING_SEAWAT_SBL_n(HPROGRAM, HCOUPLING, 'S',                                       &
-               PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-               KI, KSV, KSW,                                                               &
-               PTSUN, PZENITH, PZENITH2, PAZIM,                                            &
-               PZREF, PUREF, XZS, PU, PV, ZQA, ZTA, ZRHOA, PSV, PCO2, HSV,                 &
-               PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, ZPS, ZPA,                   &
-               PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, LSBL, XSST, XZ0,                   &
-               XZ, XU, NLVL, XTKE, XT, XQ, XLMO, XZF, XDZ, XDZF, XP,                       &
-               N2M, XT2M, XQ2M, XHU2M, XZON10M, XMER10M, XWIND10M, XWIND10M_MAX,           &
-               XT2M_MIN, XT2M_MAX, XHU2M_MIN, XHU2M_MAX,                                   &
-               PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
-               PPEW_A_COEF, PPEW_B_COEF,                                                   &
-               PPET_A_COEF, PPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF,                         &
-               'OK'                                                                        )
+ CALL COUPLING_SEAFLUX_SBL_n(SM, DST, SLT, &
+                             HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,                   &
+                             KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,              &
+                             PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
+                             ZQA, ZTA, ZRHOA, PSV, PCO2, HSV, ZRAIN, ZSNOW, ZLW,    &
+                             PDIR_SW, PSCA_SW, PSW_BANDS, ZPS, ZPA, PSFTQ, PSFTH,   &
+                             PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,  &
+                             PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,         &
+                             PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, ZPET_B_COEF,    &
+                             ZPEQ_B_COEF, HTEST                                     )
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEAFLUX_OROG_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_DEFAULT_NAM_n(HPROGRAM,HACTION,KLUDES)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,9 +37,13 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#ifdef MNH
+USE MODD_WRITE_SURF_ATM, ONLY : LNAM_WRITTEN
+!
+#ifdef SFX_MNH
 USE MODI_MNHGET_DESFM_n
 #endif
+!
+USE MODI_GET_LUOUT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -61,16 +65,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('GET_DEFAULT_NAM_N',0,ZHOOK_HANDLE)
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL MNHGET_DESFM_n(HACTION,KLUDES)
   IF (HACTION=='READ ' .AND. KLUDES.NE.0) REWIND(KLUDES)
 #endif
 ELSEIF (HPROGRAM=='AROME ') THEN
-#ifdef ARO
+#ifdef SFX_ARO
   CALL AROGET_DESFM_n(HACTION,KLUDES)
 #endif
 ELSE
   KLUDES = 0
+  IF (HACTION=='WRITE' .AND. LNAM_WRITTEN) THEN
+     CALL GET_LUOUT(HPROGRAM,KLUDES)
+     LNAM_WRITTEN = .FALSE.
+  ENDIF
 END IF
 IF (LHOOK) CALL DR_HOOK('GET_DEFAULT_NAM_N',1,ZHOOK_HANDLE)
 !

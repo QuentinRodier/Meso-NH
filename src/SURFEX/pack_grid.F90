@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE PACK_GRID(KMASK,HGRID1,HGRID2,PGRID_PAR1,PGRID_PAR2)
 !     ##############################################################
@@ -26,6 +26,7 @@
 !!    ------------
 !!
 !!    Original    03/2004
+!!    P. Samuelsson   SMHI   12/2012  Rotated lonlat
 !!
 !----------------------------------------------------------------------------
 !
@@ -49,6 +50,8 @@ USE MODI_PACK_GRID_IGN
 USE MODI_PACK_GRID_LONLAT_REG
 !
 USE MODI_PACK_GRID_LONLATVAL
+!
+USE MODI_PACK_GRID_LONLAT_ROT
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -80,7 +83,7 @@ HGRID2 = HGRID1
 !
 SELECT CASE (HGRID1)
 !     
-  CASE("CONF PROJ ","LONLAT REG","CARTESIAN","GAUSS     ","IGN       ","LONLATVAL ")
+  CASE("CONF PROJ ","LONLAT REG","CARTESIAN","GAUSS     ","IGN       ","LONLATVAL ","LONLAT ROT")
     !
     !
     KGRID_PAR2 = 0
@@ -97,6 +100,8 @@ SELECT CASE (HGRID1)
       CALL PACK_GRID_IGN(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.FALSE.,PGRID_PAR2)  
     IF (HGRID1=="LONLATVAL ") &
       CALL PACK_GRID_LONLATVAL(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.FALSE.,PGRID_PAR2)  
+    IF (HGRID1=="LONLAT ROT") &
+      CALL PACK_GRID_LONLAT_ROT(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.FALSE.,PGRID_PAR2)  
     
     DEALLOCATE(PGRID_PAR2)
     !
@@ -113,6 +118,8 @@ SELECT CASE (HGRID1)
       CALL PACK_GRID_IGN(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.TRUE.,PGRID_PAR2)  
     IF (HGRID1=="LONLATVAL ") &
       CALL PACK_GRID_LONLATVAL(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.TRUE.,PGRID_PAR2)  
+    IF (HGRID1=="LONLAT ROT") &
+      CALL PACK_GRID_LONLAT_ROT(SIZE(KMASK),KMASK,SIZE(PGRID_PAR1),PGRID_PAR1,KGRID_PAR2,.TRUE.,PGRID_PAR2)  
     !
   CASE DEFAULT
     CALL ABOR1_SFX('PACK_GRID: GRID TYPE NOT SUPPORTED '//HGRID1)

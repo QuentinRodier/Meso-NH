@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE OPEN_FILE(HPROGRAM,KUNIT,HFILE,HFORM,HACTION,HACCESS,KRECL)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,19 +37,22 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#if defined(ASC) || defined(ARO) || defined(MNH)
+#if defined(SFX_ASC) || defined(SFX_ARO) || defined(SFX_MNH) || defined(SFX_NC)
 USE MODI_OPEN_FILE_ASC
 #endif
-#ifdef FA
+#ifdef SFX_FA
 USE MODI_OPEN_FILE_FA
 #endif
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODI_OPEN_FILE_LFI
 #endif
-#ifdef OL
+#ifdef SFX_NC
+USE MODI_OPEN_FILE_NC
+#endif
+#ifdef SFX_OL
 USE MODI_OPEN_FILE_OL
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_OPEN_FILE_MNH
 #endif
 !
@@ -103,23 +106,27 @@ ELSE
 END IF
 !
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL OPEN_FILE_MNH(KUNIT,YFILE,YFORM,YACTION,YACCESS,IRECL)
 #endif
 ELSE IF (HPROGRAM=='OFFLIN') THEN
-#ifdef OL
+#ifdef SFX_OL
   CALL OPEN_FILE_OL(KUNIT,YFILE,YFORM,YACTION,YACCESS,IRECL)
 #endif
 ELSE IF (HPROGRAM=='ASCII ' .OR. HPROGRAM=='AROME ') THEN
-#if defined(ASC) || defined(ARO) || defined(MNH)
+#if defined(SFX_ASC) || defined(SFX_ARO) || defined(SFX_MNH) || defined(SFX_NC)
   CALL OPEN_FILE_ASC(KUNIT,YFILE,YFORM,YACTION,YACCESS,IRECL)
 #endif
 ELSE IF (HPROGRAM=='FA    ') THEN
-#ifdef FA
+#ifdef SFX_FA
   CALL OPEN_FILE_FA(KUNIT,YFILE,YFORM,YACTION,YACCESS,IRECL)
 #endif
+ELSE IF (HPROGRAM=='NC    ') THEN
+#ifdef SFX_NC
+  CALL OPEN_FILE_NC(KUNIT,YFILE,YFORM,YACTION,YACCESS,IRECL)
+#endif
 ELSE IF (HPROGRAM=='LFI   ') THEN
-#ifdef LFI
+#ifdef SFX_LFI
   CALL OPEN_FILE_LFI(KUNIT,YFILE,YFORM,YACTION,YACCESS,'ASIS  ',IRECL)
 #endif
 END IF

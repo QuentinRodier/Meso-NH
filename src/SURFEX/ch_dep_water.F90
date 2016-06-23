@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
      SUBROUTINE CH_DEP_WATER  (PRESA,PUSTAR,PTA,PTRAD,PSV, HSV, PDEP)
   !###########################################################
@@ -21,7 +21,7 @@
   !!    MODIFICATIONS
   !!    -------------
   !!      Original      20/02/97 
-  !!	Modification  18/07/03  (Tulet) surface externalization
+  !!    Modification  18/07/03  (Tulet) surface externalization
   !!
   !-------------------------------------------------------------------------------
   !
@@ -128,7 +128,7 @@
     ZWATRC(:,JSV) = ZWATRC(:,JSV)+ZTCOR(:)   
   ENDDO
   !
-  !							       	       
+  !
   !       5.0  Compute  water resistance (in land water and sea)
   !            -------------------------------------------------
   !

@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE ECOCLIMAP2_LAI
+      SUBROUTINE ECOCLIMAP2_LAI (DTCO)
 !     #########################
 !
 !!**** *ECOCLIMAP2_LAI* initializes cover-field correspondance arrays
@@ -38,9 +38,11 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
-USE MODD_DATA_COVER_n,   ONLY : XDATA_VEGTYPE, NYEAR
 USE MODD_DATA_COVER,     ONLY : XDATA_LAI, XDATA_LAI_ALL_YEARS, LCLIM_LAI, &
                                   NECO2_START_YEAR, NECO2_END_YEAR  
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER
@@ -59,6 +61,10 @@ IMPLICIT NONE
 !            ------------------------------
 !
 !
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+!
+REAL, DIMENSION(36) :: ZLAI
+!
 INTEGER :: IYEAR           ! year index
 INTEGER :: JCOVER,JVEGTYPE ! loop counters on covers and decades
 INTEGER :: JYEAR           ! loop counter on years
@@ -75,16 +81,16 @@ XDATA_LAI(301:,:,:) = XUNDEF
 !*       2. if averaged LAI
 !           ---------------
 !
-IF (LCLIM_LAI .OR. NYEAR<NECO2_START_YEAR .OR. NYEAR>NECO2_END_YEAR) THEN
+IF (LCLIM_LAI .OR. DTCO%NYEAR<NECO2_START_YEAR .OR. DTCO%NYEAR>NECO2_END_YEAR) THEN
 !
   DO JCOVER=301,JPCOVER
     DO JVEGTYPE=1,NVEGTYPE
-      IF (XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
-        XDATA_LAI(JCOVER,:,JVEGTYPE) = 0.
+      IF (DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
+        ZLAI(:) = 0.
         DO JYEAR=1,5
-          XDATA_LAI(JCOVER,:,JVEGTYPE)=XDATA_LAI(JCOVER,:,JVEGTYPE) &
-                                        +XDATA_LAI_ALL_YEARS(JCOVER,(JYEAR-1)*36+1:JYEAR*36,JVEGTYPE)/5.  
+          ZLAI(:) = ZLAI(:) + XDATA_LAI_ALL_YEARS(JCOVER,(JYEAR-1)*36+1:JYEAR*36,JVEGTYPE)/5.  
         END DO
+        XDATA_LAI(JCOVER,:,JVEGTYPE) = ZLAI(:)
       ENDIF
     END DO
   END DO
@@ -94,10 +100,10 @@ IF (LCLIM_LAI .OR. NYEAR<NECO2_START_YEAR .OR. NYEAR>NECO2_END_YEAR) THEN
 !           -------------------------
 ELSE
 !
-  IYEAR = NYEAR - NECO2_START_YEAR
+  IYEAR = DTCO%NYEAR - NECO2_START_YEAR
   DO JCOVER=301,JPCOVER
     DO JVEGTYPE=1,NVEGTYPE
-      IF (XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
+      IF (DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
         XDATA_LAI(JCOVER,:,JVEGTYPE)=XDATA_LAI_ALL_YEARS(JCOVER,IYEAR*36+1:(IYEAR+1)*36,JVEGTYPE)
       ENDIF
     ENDDO

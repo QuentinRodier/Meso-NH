@@ -1,1 +1,3 @@
-      implicit none
+!RJ: inlined
+      ERROR aa
+#error should not be used

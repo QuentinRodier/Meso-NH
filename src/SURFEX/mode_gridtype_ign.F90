@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ##############################
       MODULE MODE_GRIDTYPE_IGN
 !     ##############################
@@ -13,7 +13,7 @@
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-CONTAINS
+ CONTAINS
 !############################################################################
 !############################################################################
 !############################################################################
@@ -26,13 +26,16 @@ CONTAINS
 !!
 !!    AUTHOR
 !!    ------
-!!	E. Martin   *Meteo France*	
+!!      E. Martin   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2007
 !!      02/2011     Correction de la longitude d'origine pourle cas L93 (A. Lemonsu)
 !!      07/2011     add maximum domain dimension for output (B. Decharme)
+!       01/2016     Correction de la valeur de l'excentricite pour L93 (V. Masson)
+!       01/2016     Correction de la valeur du rayon terrestre pour Lamberts 1 a 4 (V. Masson)
+!       01/2016     Correction d'une boucle pour parallelisation (V. Masson)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -97,7 +100,7 @@ END SUBROUTINE PUT_GRIDTYPE_IGN
 !!
 !!    AUTHOR
 !!    ------
-!!	E. Martin   *Meteo France*	
+!!      E. Martin   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -235,9 +238,9 @@ REAL, DIMENSION(:),   INTENT(OUT):: PLAT,PLON
 REAL, DIMENSION(SIZE(PX)) :: ZGAMMA
 REAL, DIMENSION(SIZE(PX)) :: ZR               ! length of arc meridian line projection
 REAL, DIMENSION(SIZE(PX)) :: ZLATISO          ! Isometric latitude
-REAL, DIMENSION(SIZE(PX)) :: ZLAT0            ! For iteration
+REAL                      :: ZLAT0            ! For iteration
 ! 
-INTEGER                         :: J
+INTEGER                         :: J, JJ
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
@@ -255,18 +258,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       3.     LATITUDE
 !               --------
       ZLATISO(:)=-1./XN(KLAMBERT) * ALOG(ABS(ZR(:)/XC(KLAMBERT)))
-      ZLAT0(:)  =2. * ATAN (EXP(ZLATISO(:))) - XPI/2.
 !      
-      DO J=1, 1000
-         PLAT(:) = 2. * ATAN(                                               &
-           ( (1+XECC*SIN(ZLAT0(:)))/(1-XECC*SIN(ZLAT0(:))) )**(XECC/2.)       &
-             *EXP(ZLATISO(:)) )  -XPI/2.  
+!$OMP PARALLEL DO PRIVATE(JJ,J,ZLAT0)
+      DO JJ=1,SIZE(PLAT)
+        ZLAT0  =2. * ATAN (EXP(ZLATISO(JJ))) - XPI/2.
+        DO J=1, 1000
+         PLAT(JJ) = 2. * ATAN(                                               &
+           ( (1+XECC(KLAMBERT)*SIN(ZLAT0))/(1-XECC(KLAMBERT)*SIN(ZLAT0)) )**(XECC(KLAMBERT)/2.)       &
+             *EXP(ZLATISO(JJ)) )  -XPI/2.  
 !
-         IF (MAXVAL(ABS(PLAT(:) - ZLAT0(:))) < XCVGLAT ) EXIT
-         ZLAT0(:)=PLAT(:)
+         IF (ABS(PLAT(JJ) - ZLAT0) < XCVGLAT ) EXIT
+         ZLAT0=PLAT(JJ)
+        ENDDO
       ENDDO
+!$OMP END PARALLEL DO 
 !      
       PLAT(:)=PLAT(:) *180./XPI
+!
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:LATLON_IGN',1,ZHOOK_HANDLE)
 !---------------------------------------------------------------------------------
 END SUBROUTINE LATLON_IGN
@@ -334,12 +342,14 @@ REAL, DIMENSION(:),   INTENT(OUT):: PX,PY
                                            ! processed points (meters);
 !
 !*     0.2    Declarations of local variables
-! 
-REAL, DIMENSION(SIZE(PLAT)) :: ZWRK1, ZWRK2     ! working arrays
-REAL, DIMENSION(SIZE(PLAT)) :: ZLATRAD, ZLONRAD ! longitude and latitude in radians
-REAL, DIMENSION(SIZE(PLAT)) :: ZGAMMA
-REAL, DIMENSION(SIZE(PLAT)) :: ZLATFI           ! Isometric latitude
-REAL, DIMENSION(SIZE(PLAT)) :: ZR               ! length of arc meridian line projection
+!
+REAL :: ZPI180, ZPI4, ZECC2
+REAL :: ZWRK     ! working arrays
+REAL :: ZLATRAD, ZLONRAD ! longitude and latitude in radians
+REAL :: ZGAMMA
+REAL :: ZLATFI           ! Isometric latitude
+REAL :: ZR               ! length of arc meridian line projection
+INTEGER :: JJ
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
@@ -348,31 +358,43 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       1.     Latitude /Longitude in radian :
 !               -------------------------------
 !
-      IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:XY_IGN',0,ZHOOK_HANDLE)
-      WHERE (PLON(:) > 180.) 
-      ZLONRAD(:) = (PLON(:) - 360. - XLONP(KLAMBERT)) * XPI / 180.
-      ELSEWHERE
-      ZLONRAD(:) = (PLON(:) - XLONP(KLAMBERT)) * XPI / 180.
-      ENDWHERE
-      ZLATRAD(:) = PLAT(:) * XPI / 180.
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:XY_IGN',0,ZHOOK_HANDLE)
 !
+ZPI180 = XPI / 180.
+ZPI4 = XPI / 4.
+ZECC2 = XECC(KLAMBERT) / 2. 
+!
+!$OMP PARALLEL DO PRIVATE(JJ,ZLONRAD,ZLATRAD,ZWRK,ZLATFI,ZGAMMA,ZR)
+DO JJ=1,SIZE(PLON)
+  !
+  IF (PLON(JJ) > 180.) THEN
+    ZLONRAD = (PLON(JJ) - 360. - XLONP(KLAMBERT)) * ZPI180
+  ELSE
+    ZLONRAD = (PLON(JJ) - XLONP(KLAMBERT)) * ZPI180
+  ENDIF
+  !
+  ZLATRAD = PLAT(JJ) * ZPI180
+  !
 !*       2.     Calcul of the isometric latitude :
 !               ----------------------------------
-!
-      ZWRK1(:)   = LOG(TAN(XPI / 4. + ZLATRAD(:) / 2.))
-      ZWRK2(:)   = XECC * SIN(ZLATRAD(:))
-      ZWRK2(:)   = (1. - ZWRK2(:)) / (1. + ZWRK2(:))
-      ZWRK2(:)   = XECC / 2. * (LOG(ZWRK2))
-      ZLATFI(:)  = ZWRK1(:) + ZWRK2(:)
-!
-!*       3.     Calcul of the lambert II coordinates X and Y:
+  !
+  ZWRK   = SIN(ZLATRAD) * XECC(KLAMBERT)
+  !
+  ZLATFI  = LOG(TAN(ZPI4 + ZLATRAD / 2.)) + ( (LOG(1-ZWRK)-LOG(1+ZWRK)) * ZECC2)
+  !
+!*       3.     Calcul of the lambert II coordinates X and YJJ
 !               ---------------------------------------------
-      ZGAMMA(:)  = XN(KLAMBERT) * ZLONRAD(:)
-      ZWRK1(:)   = 0 - XN(KLAMBERT) * ZLATFI(:)
-      ZR(:)      =  EXP(ZWRK1(:))
-      ZR(:)      = XC(KLAMBERT)*ZR(:)
-      PX(:) = XXS(KLAMBERT) + ZR(:) * SIN(ZGAMMA(:))
-      PY(:) = XYS(KLAMBERT) - ZR(:) * COS(ZGAMMA(:)) 
+  !
+  ZR      = EXP(- XN(KLAMBERT) * ZLATFI) * XC(KLAMBERT)
+  !
+  ZGAMMA  = XN(KLAMBERT) * ZLONRAD
+  !
+  PX(JJ) = XXS(KLAMBERT) + SIN(ZGAMMA) * ZR
+  PY(JJ) = XYS(KLAMBERT) - COS(ZGAMMA) * ZR   
+  !
+ENDDO
+!$OMP END PARALLEL DO 
+!
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:XY_IGN',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 END SUBROUTINE XY_IGN
@@ -449,7 +471,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !      
       DO J=1, 100
          ZLAT(:) = 2. * ATAN(                                               &
-           ( (1+XECC*SIN(ZLAT0(:)))/(1-XECC*SIN(ZLAT0(:))) )**(XECC/2.)       &
+           ( (1+XECC(KLAMBERT)*SIN(ZLAT0(:)))/(1-XECC(KLAMBERT)*SIN(ZLAT0(:))) )**(XECC(KLAMBERT)/2.)       &
              *EXP(ZLATISO(:)) )  -XPI/2.  
 !
          IF (MAXVAL(ABS(ZLAT(:) - ZLAT0(:))) < XCVGLAT ) EXIT
@@ -460,7 +482,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*       2.     MAP FACTOR
 !               ----------
 !
-      ZGRANDN = XA / SQRT(1-(XECC*SIN(ZLAT(:)))**2)
+      ZGRANDN = XA(KLAMBERT) / SQRT(1-(XECC(KLAMBERT)*SIN(ZLAT(:)))**2)
       PMAP(:)=XN(KLAMBERT)* ZR(:) / ( ZGRANDN(:)*COS(ZLAT(:)) )
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_IGN:MAP_FACTOR_IGN',1,ZHOOK_HANDLE)
 !

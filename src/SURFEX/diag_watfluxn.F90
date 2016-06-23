@@ -1,15 +1,17 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_WATFLUX_n(HPROGRAM,                                               &
+SUBROUTINE DIAG_WATFLUX_n (DGW, &
+                           HPROGRAM,                                               &
                             PRN, PH, PLE, PLEI, PGFLUX, PRI, PCD, PCH, PCE, PQS,    &
                             PZ0, PZ0H, PT2M, PTS, PQ2M, PHU2M, PZON10M, PMER10M,    &
                             PSWD, PSWU, PLWD, PLWU, PSWBD, PSWBU, PFMU, PFMV,       &
                             PRNC, PHC, PLEC, PGFLUXC, PSWDC, PSWUC, PLWDC,          &
                             PLWUC, PFMUC, PFMVC, PT2M_MIN, PT2M_MAX, PLEIC,         &
-                            PHU2M_MIN, PHU2M_MAX, PWIND10M, PWIND10M_MAX            )  
+                            PHU2M_MIN, PHU2M_MAX, PWIND10M, PWIND10M_MAX,           &
+                            PEVAP, PEVAPC, PSUBL, PSUBLC                            )
 !     ###############################################################################
 !
 !!****  *DIAG_WATFLUX_n * - diagnostics for lakes
@@ -32,19 +34,15 @@ SUBROUTINE DIAG_WATFLUX_n(HPROGRAM,                                             
 !!    -------------
 !!      Original    01/2004
 !!      Modified    08/2009 : cumulated diag & t2m min/max
+!       B. decharme 04/2013 : Add EVAP and SUBL diag
 !!------------------------------------------------------------------
 !
 
 !
+!
+USE MODD_DIAG_WATFLUX_n, ONLY : DIAG_WATFLUX_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_WATFLUX_n,      ONLY : TTIME
-USE MODD_DIAG_WATFLUX_n, ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_BUDGETC, LSURF_VARS, &
-                                  XRN, XH, XLE, XLEI, XGFLUX, XRI, XCD, XCH, XCE,  &
-                                  XQS, XZ0, XZ0H, XT2M, XQ2M, XHU2M, XZON10M, XMER10M,  &
-                                  XSWD, XSWU, XSWBD, XSWBU, XLWD, XLWU, XFMU, XFMV,&
-                                  XRNC, XHC, XLEC, XGFLUXC, XSWDC, XSWUC, XLWDC,   &
-                                  XLWUC, XFMUC, XFMVC, XT2M_MIN, XT2M_MAX, XLEIC,  &
-                                  XDIAG_TS, XHU2M_MIN, XHU2M_MAX, XWIND10M, XWIND10M_MAX  
 !                                
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -54,6 +52,9 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+TYPE(DIAG_WATFLUX_t), INTENT(INOUT) :: DGW
+!
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! program calling surf. schemes
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PRN      ! Net radiation       (W/m2)
@@ -61,6 +62,8 @@ REAL, DIMENSION(:), INTENT(OUT) :: PH       ! Sensible heat flux  (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLE      ! Total latent heat flux    (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEI     ! Sublimation latent heat flux    (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PGFLUX   ! Storage flux        (W/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAP    ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBL    ! Sublimation (kg/m2/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PRI      ! Richardson number   (-)
 REAL, DIMENSION(:), INTENT(OUT) :: PCD      ! drag coefficient    (W/s2)
 REAL, DIMENSION(:), INTENT(OUT) :: PCH      ! transf. coef heat   (W/s)
@@ -87,6 +90,8 @@ REAL, DIMENSION(:), INTENT(OUT) :: PHC      ! Sensible heat flux  (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEC     ! Total latent heat flux    (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEIC    ! Sublimation latent heat flux    (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PGFLUXC  ! Storage flux        (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAPC   ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBLC   ! Sublimation (kg/m2/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PSWDC    ! incoming short wave radiation (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSWUC    ! outgoing short wave radiation (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLWDC    ! incoming long wave radiation (J/m2)
@@ -107,63 +112,67 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_WATFLUX_N',0,ZHOOK_HANDLE)
-IF (LSURF_BUDGET) THEN
-  PRN      = XRN
-  PH       = XH
-  PLE      = XLE
-  PLEI     = XLEI
-  PGFLUX   = XGFLUX
-  PSWD     = XSWD
-  PSWU     = XSWU
-  PLWD     = XLWD
-  PLWU     = XLWU
-  PSWBD    = XSWBD
-  PSWBU    = XSWBU
-  PFMU     = XFMU
-  PFMV     = XFMV
+IF (DGW%LSURF_BUDGET) THEN
+  PRN      = DGW%XRN
+  PH       = DGW%XH
+  PLE      = DGW%XLE
+  PLEI     = DGW%XLEI
+  PGFLUX   = DGW%XGFLUX
+  PEVAP    = DGW%XEVAP
+  PSUBL    = DGW%XSUBL
+  PSWD     = DGW%XSWD
+  PSWU     = DGW%XSWU
+  PLWD     = DGW%XLWD
+  PLWU     = DGW%XLWU
+  PSWBD    = DGW%XSWBD
+  PSWBU    = DGW%XSWBU
+  PFMU     = DGW%XFMU
+  PFMV     = DGW%XFMV
 END IF
 !
-IF (LSURF_BUDGETC) THEN
-  PRNC      = XRNC
-  PHC       = XHC
-  PLEC      = XLEC
-  PLEIC     = XLEIC
-  PGFLUXC   = XGFLUXC
-  PSWDC     = XSWDC
-  PSWUC     = XSWUC
-  PLWDC     = XLWDC
-  PLWUC     = XLWUC
-  PFMUC     = XFMUC
-  PFMVC     = XFMVC
+IF (DGW%LSURF_BUDGETC) THEN
+  PRNC      = DGW%XRNC
+  PHC       = DGW%XHC
+  PLEC      = DGW%XLEC
+  PLEIC     = DGW%XLEIC
+  PGFLUXC   = DGW%XGFLUXC
+  PEVAPC    = DGW%XEVAPC
+  PSUBLC    = DGW%XSUBLC  
+  PSWDC     = DGW%XSWDC
+  PSWUC     = DGW%XSWUC
+  PLWDC     = DGW%XLWDC
+  PLWUC     = DGW%XLWUC
+  PFMUC     = DGW%XFMUC
+  PFMVC     = DGW%XFMVC
 END IF
 !
-IF (N2M>=1 .OR. LSURF_BUDGET .OR. LSURF_BUDGETC) PTS = XDIAG_TS
+IF (DGW%N2M>=1 .OR. DGW%LSURF_BUDGET .OR. DGW%LSURF_BUDGETC) PTS = DGW%XDIAG_TS
 !
-IF (N2M>=1) THEN
-  PRI      = XRI
-  PT2M     = XT2M
-  PT2M_MIN = XT2M_MIN
-  PT2M_MAX = XT2M_MAX  
-  PQ2M     = XQ2M
-  PHU2M    = XHU2M
-  PHU2M_MIN= XHU2M_MIN
-  PHU2M_MAX= XHU2M_MAX
-  PZON10M  = XZON10M
-  PMER10M  = XMER10M
-  PWIND10M = XWIND10M
-  PWIND10M_MAX = XWIND10M_MAX
+IF (DGW%N2M>=1) THEN
+  PRI      = DGW%XRI
+  PT2M     = DGW%XT2M
+  PT2M_MIN = DGW%XT2M_MIN
+  PT2M_MAX = DGW%XT2M_MAX  
+  PQ2M     = DGW%XQ2M
+  PHU2M    = DGW%XHU2M
+  PHU2M_MIN= DGW%XHU2M_MIN
+  PHU2M_MAX= DGW%XHU2M_MAX
+  PZON10M  = DGW%XZON10M
+  PMER10M  = DGW%XMER10M
+  PWIND10M = DGW%XWIND10M
+  PWIND10M_MAX = DGW%XWIND10M_MAX
 END IF
 !
-IF (LCOEF) THEN
-  PCD      = XCD
-  PCH      = XCH
-  PCE      = XCE
-  PZ0      = XZ0
-  PZ0H     = XZ0H
+IF (DGW%LCOEF) THEN
+  PCD      = DGW%XCD
+  PCH      = DGW%XCH
+  PCE      = DGW%XCE
+  PZ0      = DGW%XZ0
+  PZ0H     = DGW%XZ0H
 END IF
 !
-IF (LSURF_VARS) THEN
-  PQS = XQS
+IF (DGW%LSURF_VARS) THEN
+  PQS = DGW%XQS
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_WATFLUX_N',1,ZHOOK_HANDLE)

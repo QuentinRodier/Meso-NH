@@ -1,13 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ############################################################
-      SUBROUTINE INIT_IDEAL_FLUX(HPROGRAM,HINIT,                            &
+      SUBROUTINE INIT_IDEAL_FLUX (DGL, OREAD_BUDGETC, &
+                                  HPROGRAM,HINIT,                            &
                                    KI,KSV,KSW,                                &
                                    HSV,PCO2,PRHOA,                            &
                                    PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                                   PEMIS,PTSRAD,                              &
+                                   PEMIS,PTSRAD,PTSURF,                       &
                                    HTEST                                      )  
 !     ############################################################
 !
@@ -38,25 +39,28 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	    J. Cuxart and J. Stein       * Meteo France *
+!!      J. Cuxart and J. Stein       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/01/95 
 !!      V. Masson      02/03  split the routine in two (initialization here, and run)
 !!      R. Honnert     07/10  allows reading of data in namelist
+!!      B. Decharme  04/2013 new coupling variables
+!!      P. Le Moigne  03/2015 add diagnostics IDEAL case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
 !
 USE MODD_IDEAL_FLUX, ONLY : XSFTS, XALB, XEMIS
 USE MODN_IDEAL_FLUX
 USE MODD_READ_NAMELIST, ONLY : LNAM_READ
 
 USE MODI_DIAG_IDEAL_INIT_n
-USE MODD_DIAG_IDEAL_n, ONLY : N2M, LSURF_BUDGET, L2M_MIN_ZS, LRAD_BUDGET, LCOEF      , &
-                                LSURF_VARS, XDIAG_TSTEP, LSURF_BUDGETC, LRESET_BUDGETC   
 USE MODI_READ_IDEAL_CONF_n
 USE MODI_READ_DEFAULT_IDEAL_n
 USE MODI_PREP_CTRL_IDEAL
@@ -71,6 +75,11 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 ! 
+!
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+!
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
+!
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
 INTEGER,                          INTENT(IN)  :: KI        ! number of points
@@ -86,6 +95,7 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSRAD    ! radiative temperature
+REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
 !
  CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 !
@@ -113,8 +123,8 @@ IF (LNAM_READ) THEN
  !*       0.1    defaults
  !               --------
  !
- CALL DEFAULT_DIAG_IDEAL(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,LCOEF,LSURF_VARS,&
-                         LSURF_BUDGETC,LRESET_BUDGETC,XDIAG_TSTEP           )  
+ CALL DEFAULT_DIAG_IDEAL(DGL%N2M,DGL%LSURF_BUDGET,DGL%L2M_MIN_ZS,DGL%LRAD_BUDGET,DGL%LCOEF,DGL%LSURF_VARS,&
+                         DGL%LSURF_BUDGETC,DGL%LRESET_BUDGETC,DGL%XDIAG_TSTEP           )  
 
 ENDIF
 !----------------------------------------------------------------------------------
@@ -122,59 +132,69 @@ ENDIF
 !*       0.2    configuration
 !               -------------
 !
- CALL READ_DEFAULT_IDEAL_n(HPROGRAM)
- CALL READ_IDEAL_CONF_n(HPROGRAM)
+ CALL READ_DEFAULT_IDEAL_n(DGL, &
+                           HPROGRAM)
+ CALL READ_IDEAL_CONF_n(DGL, &
+                        HPROGRAM)
 !
-ALLOCATE(XTIMEF_f (NFORCF+1))
-ALLOCATE(XSFTH_f  (NFORCF+1))
-ALLOCATE(XSFTQ_f  (NFORCF+1))
-ALLOCATE(XSFCO2_f (NFORCF+1))
-IF (CUSTARTYPE=='USTAR') ALLOCATE(XUSTAR_f (NFORCF+1))
+IF (.NOT.ALLOCATED(XTIMEF_f)) THEN
+
+!$OMP SINGLE
+  ALLOCATE(XTIMEF_f (NFORCF+1))
+  ALLOCATE(XSFTH_f  (NFORCF+1))
+  ALLOCATE(XSFTQ_f  (NFORCF+1))
+  ALLOCATE(XSFCO2_f (NFORCF+1))
+  IF (CUSTARTYPE=='USTAR') ALLOCATE(XUSTAR_f (NFORCF+1))
 !
-ALLOCATE(XTIMET_t (NFORCT+1))
-ALLOCATE(XTSRAD_t (NFORCT+1))
+  ALLOCATE(XTIMET_t (NFORCT+1))
+  ALLOCATE(XTSRAD_t (NFORCT+1))
+!$OMP END SINGLE
 !
-XTIMEF_f(1:NFORCF) = XTIMEF(1:NFORCF)
-XSFTH_f (1:NFORCF) = XSFTH (1:NFORCF)
-XSFTQ_f (1:NFORCF) = XSFTQ (1:NFORCF)
-XSFCO2_f(1:NFORCF) = XSFCO2(1:NFORCF)
-IF (CUSTARTYPE=='USTAR') XUSTAR_f(1:NFORCF) = XUSTAR(1:NFORCF)
+  XTIMEF_f(1:NFORCF) = XTIMEF(1:NFORCF)
+  XSFTH_f (1:NFORCF) = XSFTH (1:NFORCF)
+  XSFTQ_f (1:NFORCF) = XSFTQ (1:NFORCF)
+  XSFCO2_f(1:NFORCF) = XSFCO2(1:NFORCF)
+  IF (CUSTARTYPE=='USTAR') XUSTAR_f(1:NFORCF) = XUSTAR(1:NFORCF)
 !
-XTIMET_t(1:NFORCT) = XTIMET(1:NFORCT)
-XTSRAD_t(1:NFORCT) = XTSRAD(1:NFORCT)
+  XTIMET_t(1:NFORCT) = XTIMET(1:NFORCT)
+  XTSRAD_t(1:NFORCT) = XTSRAD(1:NFORCT)
 !
-XTIMEF_f(NFORCF+1) = XTIMEF_f(NFORCF)+1
-XSFTH_f (NFORCF+1) = XSFTH_f (NFORCF)
-XSFTQ_f (NFORCF+1) = XSFTQ_f (NFORCF)
-XSFCO2_f(NFORCF+1) = XSFCO2_f(NFORCF)
-IF (CUSTARTYPE=='USTAR') XUSTAR_f(NFORCF+1) = XUSTAR_f(NFORCF)
+  XTIMEF_f(NFORCF+1) = XTIMEF_f(NFORCF)+1
+  XSFTH_f (NFORCF+1) = XSFTH_f (NFORCF)
+  XSFTQ_f (NFORCF+1) = XSFTQ_f (NFORCF)
+  XSFCO2_f(NFORCF+1) = XSFCO2_f(NFORCF)
+  IF (CUSTARTYPE=='USTAR') XUSTAR_f(NFORCF+1) = XUSTAR_f(NFORCF)
 !
-XTIMET_t(NFORCT+1) = XTIMET(NFORCT)+1
-XTSRAD_t(NFORCT+1) = XTSRAD(NFORCT)
+  XTIMET_t(NFORCT+1) = XTIMET(NFORCT)+1
+  XTSRAD_t(NFORCT+1) = XTSRAD(NFORCT)
 !
 !----------------------------------------------------------------------------------
 !
 !*       0.3    control
 !               -------
 !
-IF (HINIT=='PRE') THEN
-   CALL PREP_CTRL_IDEAL(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,LCOEF,LSURF_VARS,&
-                          ILUOUT,LSURF_BUDGETC)  
-ENDIF
+  IF (HINIT=='PRE') THEN
+    CALL PREP_CTRL_IDEAL(DGL%N2M,DGL%LSURF_BUDGET,DGL%L2M_MIN_ZS,DGL%LRAD_BUDGET,DGL%LCOEF,DGL%LSURF_VARS,&
+                          ILUOUT,DGL%LSURF_BUDGETC)  
+  ENDIF
 !
 !----------------------------------------------------------------------------------
 !
 !*       3.    HOURLY surface scalar mixing ratio fluxes (NFORCF+1 values per scalar from 00UTC to 24UTC)
 !              -----------------------------------------
 !
-ISV = SIZE(HSV)
+  ISV = SIZE(HSV)
 !
-IF(.NOT. ALLOCATED (XSFTS) )ALLOCATE(XSFTS(NFORCF+1,ISV))
+  IF(.NOT. ALLOCATED (XSFTS) )ALLOCATE(XSFTS(NFORCF+1,ISV))
 !
 !* unit: kg/m2/s
 !
-XSFTS = 0.
-!                                                          
+  XSFTS = 0.
+!
+ CALL DIAG_IDEAL_INIT_n(DGL, HPROGRAM, OREAD_BUDGETC, &
+                        KI,KSW)
+!
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*       8.    Radiative outputs
@@ -186,12 +206,13 @@ PDIR_ALB = XALB
 PSCA_ALB = XALB
 PEMIS    = XEMIS
 !
+PTSURF   = PTSRAD
+!
 !-------------------------------------------------------------------------------
 !
 !*       9.    Fluxes as diagnostics
 !              ---------------------
 !
- CALL DIAG_IDEAL_INIT_n(KI,KSW)
 IF (LHOOK) CALL DR_HOOK('INIT_IDEAL_FLUX',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

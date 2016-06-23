@@ -1,13 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
-!     #######################################################################################
-      SUBROUTINE UPDATE_ESM_WATFLUX_n(HPROGRAM,KI,KSW,PZENITH,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD)
-!     #######################################################################################
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!     ##############################################################
+      SUBROUTINE UPDATE_ESM_WATFLUX_n (W, &
+                                       KI,KSW,PZENITH,PDIR_ALB,     &
+                                      PSCA_ALB,PEMIS,PTSRAD,PTSURF )
+!     ##############################################################
 !
-!!****  *UPDATE_ESM_WATFLUX_n* - routine to update WATFLUX radiative properties in Earth
-!!                               System Model after the call to OASIS coupler in order 
+!!****  *UPDATE_ESM_WATFLUX_n* - routine to update WATFLUX radiative and physical properties in
+!!                               Earth System Model after the call to OASIS coupler in order 
 !!                               to close the energy budget between radiative scheme and surfex
 !!
 !!    PURPOSE
@@ -34,17 +36,19 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2009
+!!      B. Decharme 06/2013 new coupling variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
+!
 USE MODD_CSTS,           ONLY : XTT
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_WATFLUX_n,      ONLY : XDIR_ALB, XSCA_ALB,           &
-                                  XEMIS, XTS, CWAT_ALB  
 !                                
-USE MODI_UPDATE_RAD_SEAWAT
+USE MODI_UPDATE_RAD_WATER
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -55,7 +59,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),                   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+!
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
 INTEGER,                            INTENT(IN)  :: KI        ! number of points
 INTEGER,                            INTENT(IN)  :: KSW       ! number of short-wave spectral bands
 !
@@ -65,11 +71,13 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),    INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),    INTENT(OUT) :: PTSRAD    ! radiative temperature
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL,             DIMENSION(KI),    INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
 !
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
@@ -78,8 +86,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !             ---------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_ESM_WATFLUX_N',0,ZHOOK_HANDLE)
- CALL UPDATE_RAD_SEAWAT(CWAT_ALB,XTS,PZENITH,XTT,XEMIS,XDIR_ALB,&
-                         XSCA_ALB,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD )  
+!
+ CALL UPDATE_RAD_WATER(W%CWAT_ALB,W%XTS,PZENITH,XTT,W%XEMIS,W%XDIR_ALB,&
+                      W%XSCA_ALB,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD ) 
+!
+PTSURF(:) = W%XTS(:)
+!
 IF (LHOOK) CALL DR_HOOK('UPDATE_ESM_WATFLUX_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

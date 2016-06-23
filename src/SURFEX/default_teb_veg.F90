@@ -1,13 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_TEB_VEG(HROUGH,HRUNOFF,HALBEDO,HSCOND,          &
                                  HC1DRY, HSOILFRZ, HDIFSFCOND, HSNOWRES, &
                                  HCPSURF, PCGMAX, HKSAT,                 &
-                                 HTOPREG, HRAIN, HHORT, OFLOOD, OTRIP,   &
-                                 OGLACIER, OCANOPY_DRAG, OVEGUPD         )
+                                 HRAIN, HHORT,                           &
+                                 OGLACIER, OCANOPY_DRAG, OVEGUPD,        &
+                                 ONITRO_DILU                             )
 !     ########################################################################
 !
 !!****  *DEFAULT_TEB_VEG* - routine to set default values for the configuration for TEB scheme
@@ -31,7 +32,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -61,20 +62,19 @@ IMPLICIT NONE
  CHARACTER(LEN=3),  INTENT(OUT) :: HSNOWRES   ! Turbulent exchanges over snow ('DEF','RIL')
  CHARACTER(LEN=3),  INTENT(OUT) :: HCPSURF    ! specific heat ('DRY','HUM')
  CHARACTER(LEN=4),  INTENT(OUT) :: HRUNOFF    ! surface runoff formulation ('WSAT','DT92','SGH ')
- CHARACTER(LEN=3),  INTENT(OUT) :: HTOPREG    ! linear regression for Topmodel ('DEF','NON')
  CHARACTER(LEN=3),  INTENT(OUT) :: HKSAT      ! soil hydraulic profile option ('DEF','SGH')
  CHARACTER(LEN=3),  INTENT(OUT) :: HRAIN      ! Rainfall spatial distribution ('DEF','SGH')
  CHARACTER(LEN=3),  INTENT(OUT) :: HHORT      ! Horton runoff ('DEF','SGH')
 
-LOGICAL, INTENT(OUT)           :: OTRIP      ! T= ISBA-TRIP coupling, F= No ISBA-TRIP coupling
-LOGICAL, INTENT(OUT)           :: OFLOOD     ! T= Flooding scheme, F= No flooding scheme
 LOGICAL, INTENT(OUT)           :: OGLACIER   ! T= Over permanent snow and ice, initialise WGI=WSAT, 
 !                                                 Hsnow>=3.3m and allow 0.8<SNOALB<0.85
 !                                            ! F= No specific treatment
 LOGICAL, INTENT(OUT)           :: OCANOPY_DRAG ! T: drag activated in SBL scheme within the canopy
 LOGICAL, INTENT(OUT)           :: OVEGUPD      ! T: update vegetation parameters every decade
 !                                              ! F: keep vegetation parameters constant in time
-REAL,              INTENT(OUT) :: PCGMAX     ! maximum soil heat capacity
+REAL,    INTENT(OUT)           :: PCGMAX     ! maximum soil heat capacity
+LOGICAL, INTENT(OUT)           :: ONITRO_DILU ! nitrogen dilution fct of CO2 (Calvet et al. 2008)
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -95,7 +95,6 @@ HSNOWRES   = 'DEF'
 HCPSURF    = 'DRY'
 !
 HRUNOFF    = "WSAT"
-HTOPREG    = 'DEF'
 HKSAT      = 'DEF'
 HRAIN      = 'DEF'
 HHORT      = 'DEF'
@@ -104,7 +103,10 @@ PCGMAX     = 2.0E-5
 !
 OCANOPY_DRAG = .FALSE.
 !
-OVEGUPD   = .TRUE.
+OVEGUPD     = .TRUE.
+ONITRO_DILU = .FALSE.
+!
+OGLACIER  = .FALSE.
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_TEB_VEG',1,ZHOOK_HANDLE)
 !

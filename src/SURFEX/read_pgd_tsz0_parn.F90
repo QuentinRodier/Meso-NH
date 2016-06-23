@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PGD_TSZ0_PAR_n(HPROGRAM)
+      SUBROUTINE READ_PGD_TSZ0_PAR_n (&
+                                       DTZ, &
+                                      HPROGRAM)
 !     ################################################
 !
 !!****  *READ_PGD_TSZ0_PAR_n* - reads SEAFLUX sst
@@ -32,13 +34,19 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    09/2007 
+!!      Original     09/2007 
+!!      P. Le Moigne 03/2015 tsz0 time management
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_DATA_TSZ0_n,    ONLY : NTIME, XDATA_DTS, XDATA_DHUGRD
+!
+!
+!
+!
+!
+USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 !
 USE MODI_READ_SURF
 !
@@ -49,6 +57,11 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+!
+!
+TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -66,34 +79,39 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_TSZ0_PAR_N',0,ZHOOK_HANDLE)
 !
- CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
- CALL READ_SURF(HPROGRAM,'BUG', IBUGFIX ,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,'VERSION',IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,'BUG', IBUGFIX ,IRESP)
 !
 IF (IVERSION.GT.7 .OR. (IVERSION==7 .AND. IBUGFIX.GT.1)) THEN
   YRECFM='ND_TSZ0_TIME'
   YCOMMENT = '(-)'
-  CALL READ_SURF(HPROGRAM,YRECFM,NTIME,IRESP,HCOMMENT=YCOMMENT)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,DTZ%NTIME,IRESP,HCOMMENT=YCOMMENT)
 ELSE 
-  NTIME=25
+  DTZ%NTIME=37
 ENDIF
 !
-ALLOCATE(XDATA_DTS   (NTIME))
-ALLOCATE(XDATA_DHUGRD(NTIME))
+ALLOCATE(DTZ%XDATA_DTS   (DTZ%NTIME))
+ALLOCATE(DTZ%XDATA_DHUGRD(DTZ%NTIME))
 !
 IF (IVERSION.GT.7 .OR. (IVERSION==7 .AND. IBUGFIX.GT.1)) THEN
   !
   YRECFM = 'D_DTS'
   YCOMMENT = 'X_Y_DATA_DTS'
-  CALL READ_SURF(HPROGRAM,YRECFM,XDATA_DTS(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,DTZ%XDATA_DTS(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
   !
   YRECFM='D_DHUGRD'
   YCOMMENT = 'X_Y_DATA_DHUGRD'
-  CALL READ_SURF(HPROGRAM,YRECFM,XDATA_DHUGRD(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,DTZ%XDATA_DHUGRD(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
   !
 ELSE
   !
-  XDATA_DTS   (:) = 0.0
-  XDATA_DHUGRD(:) = 0.0
+  DTZ%XDATA_DTS   (:) = 0.0
+  DTZ%XDATA_DHUGRD(:) = 0.0
   !
 ENDIF
 !

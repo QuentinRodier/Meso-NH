@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################
-      SUBROUTINE WRITE_GRIDTYPE_LONLAT_REG(HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
+      SUBROUTINE WRITE_GRIDTYPE_LONLAT_REG (DGU, U, &
+                                            HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !     #################################################################
 !
 !!****  *WRITE_GRIDTYPE_LONLAT_REG* - routine to write the horizontal grid
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,11 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_WRITE_SURF
 !
@@ -49,6 +55,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),           INTENT(IN)  :: HPROGRAM   ! calling program
 INTEGER,                    INTENT(IN)  :: KLU        ! number of points
@@ -90,14 +100,22 @@ ALLOCATE(ZLAT(IL))
 !              -----------------------------------------
 !
 YCOMMENT=' '
- CALL WRITE_SURF(HPROGRAM,'LONMIN',ZLONMIN,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LONMAX',ZLONMAX,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LATMIN',ZLATMIN,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LATMAX',ZLATMAX,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'NLON',ILON,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'NLAT',ILAT,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'REG_LON',ZLON,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'REG_LAT',ZLAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LONMIN',ZLONMIN,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LONMAX',ZLONMAX,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LATMIN',ZLATMIN,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LATMAX',ZLATMAX,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'NLON',ILON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'NLAT',ILAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'REG_LON',ZLON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'REG_LAT',ZLAT,KRESP,YCOMMENT)
 !---------------------------------------------------------------------------
 DEALLOCATE(ZLON)
 DEALLOCATE(ZLAT)

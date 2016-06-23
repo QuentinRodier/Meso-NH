@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE UNPACK_ISBA_PATCH_n(KMASK,KSIZE,KPATCH)
+SUBROUTINE UNPACK_ISBA_PATCH_n (AG, I, PKI, &
+                                KMASK,KSIZE,KPATCH)
 !##############################################
 !
 !!****  *UNPACK_ISBA_PATCH_n* - unpacks ISBA prognostic variables
@@ -32,62 +33,20 @@ SUBROUTINE UNPACK_ISBA_PATCH_n(KMASK,KSIZE,KPATCH)
 !!      A.L. Gibelin 06/2009 : Soil carbon variables for CNT option
 !!      A.L. Gibelin 07/2009 : Suppress RDK and transform GPP as a diagnostic
 !!      A.L. Gibelin 07/2009 : Suppress PPST and PPSTF as outputs
+!!      B. Decharme  06/2013 : add lateral drainage flux diag for DIF
+!!                             water table / surface coupling
+!!      P. Samuelsson 02/2012 : MEB
 !!
 !!------------------------------------------------------------------
 !
-USE MODD_PACK_ISBA, ONLY :   LBLOCK_SIMPLE, LBLOCK_0, TBLOCK_SIMPLE, TBLOCK_0, XBLOCK_SIMPLE,  &
-                             XBLOCK_GROUND, XBLOCK_VEGTYPE, XBLOCK_TG, XBLOCK_SNOW, XBLOCK_ALB,&
-                             XBLOCK_2, XBLOCK_BIOMASS, XBLOCK_SOILCARB, XBLOCK_LITTLEVS,       &
-                             XBLOCK_LITTER, XBLOCK_0, XBLOCK_00, XBLOCK_000, XBLOCK_01,        &
-                             NBLOCK_SIMPLE, NBLOCK_0,                                          &
-                             XP_Z0_O_Z0H, XP_EMIS, XP_Z0,                                      &
-                             XP_WRMAX_CF, XP_GAMMA, XP_ALBNIR, XP_ALBVIS, XP_ALBUV,            &
-                             XP_CV, XP_RGL, XP_VEGTYPE_PATCH, XP_DG, XP_RUNOFFD, XP_RUNOFFB,   &
-                             XP_WDRAIN, XP_TAUICE, XP_Z0REL, XP_GAMMAT, NK_WG_LAYER,           &
-                             XP_C1SAT, XP_C2REF, XP_C3, XP_C4B, XP_C4REF, XP_ACOEF, XP_PCOEF,  &
-                             XP_WFC, XP_WWILT, XP_WSAT, XP_BCOEF, XP_WR, XP_TG, XP_WG,         &
-                             XP_WGI, XP_LAI, XP_RESA, XP_VEG, XP_TDEEP, XP_ROOTFRAC, XP_DZG,   &
-                             XP_DZDIF, XP_CONDSAT, XP_MPOTSAT, XP_CGSAT, XP_HCAPSOIL,          &
-                             XP_CONDDRY, XP_CONDSLD, XP_RSMIN, XP_BSLAI, XP_LAIMIN,            &
-                             XP_SEFOLD, XP_H_TREE, XP_ANF, XP_ANMAX, XP_FZERO, XP_EPSO,        &
-                             XP_GAMM, XP_QDGAMM, XP_GMES, XP_RE25, XP_QDGMES, XP_T1GMES,       &
-                             XP_T2GMES, XP_TAU_WOOD, XP_SOILWGHT,                              &
-                             XP_FAPARC, XP_FAPIRC, XP_LAI_EFFC, XP_MUS,                        &
-                             XP_AMAX, XP_QDAMAX, XP_T1AMAX, XP_T2AMAX, XP_AN, XP_ANFM,         &
-                             XP_LE, LP_STRESS, XP_F2I, XP_GC, XP_AH, XP_BH, XP_DMAX,           &
-                             XP_ANDAY, XP_Z0EFFIP,XP_Z0EFFIM,XP_Z0EFFJP,XP_Z0EFFJM,            &
-                             XP_AOSIP,XP_AOSIM,XP_AOSJP,XP_AOSJM,                              &
-                             XP_HO2IP,XP_HO2IM,XP_HO2JP,XP_HO2JM,XP_SSO_SLOPE,                 &
-                             XP_SNOWSWE, XP_SNOWRHO, XP_SNOWHEAT, XP_SNOWEMIS, XP_SNOWALB,     &
-                             XP_SNOWGRAN1, XP_SNOWGRAN2,  XP_SNOWHIST, XP_SNOWAGE,             &
-                             XP_ALBNIR_VEG, XP_ALBVIS_VEG, XP_ALBUV_VEG,                       &
-                             XP_ALBNIR_DRY, XP_ALBVIS_DRY, XP_ALBUV_DRY,                       &
-                             XP_ALBNIR_WET, XP_ALBVIS_WET, XP_ALBUV_WET,                       &
-                             XP_ALBNIR_SOIL, XP_ALBVIS_SOIL, XP_ALBUV_SOIL,                    &
-                             XP_CLAY, XP_SAND, XP_LAT, XP_LON,                                 &
-                             XP_BIOMASS, XP_RESP_BIOMASS,                                      &
-                             XP_LITTER, XP_SOILCARB, XP_LIGNIN_STRUC,                          &
-                             XP_CE_NITRO, XP_CF_NITRO, XP_CNA_NITRO, XP_BSLAI_NITRO,           &
-                             TP_SEED,TP_REAP,XP_IRRIG,XP_WATSUP,XP_LIRRIDAY,XP_THRESHOLD,      &
-                             XP_LIRRIGATE, XP_D_ICE,XP_KSAT_ICE,XP_MUF,XP_FSAT,                &
-                             XP_FFLOOD, XP_Z0FLOOD, XP_PIFLOOD,  XP_INCREASE, XP_TURNOVER,     &
-                             XP_PSN, XP_PSNG, XP_PSNV, XP_PSNV_A, XP_FF, XP_FFG, XP_FFV,       &
-                             XP_CPS, XP_LVTT, XP_LSTT, XP_DIR_ALB_WITH_SNOW,                   &
-                             XP_SCA_ALB_WITH_SNOW, XP_ALBF, XP_EMISF, XP_ICE_STO, XP_FFROZEN
 
+!
+USE MODD_AGRI_n, ONLY : AGRI_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_PACK_ISBA, ONLY : PACK_ISBA_t
+!
 USE MODD_AGRI,     ONLY :  LAGRIP
-USE MODD_AGRI_n,   ONLY :  LIRRIDAY
 
-USE MODD_ISBA_n,   ONLY : TSNOW, XWR, XTG, XWG, XWGI, XRESA, XLAI, XAN, XANFM,          &
-                            XLE, XANDAY, CPHOTO, XALBNIR, XALBVIS, XALBUV,              &
-                            XALBNIR_VEG, XALBVIS_VEG, XALBUV_VEG, LGLACIER, LTR_ML,     &
-                            XZ0EFFIP, XZ0EFFIM, XZ0EFFJP, XZ0EFFJM, XLAI_EFFC, XMUS,    &
-                            XVEG, XZ0, XEMIS, XALBNIR_SOIL, XALBVIS_SOIL, XALBUV_SOIL,  &
-                            NPATCH, NNBIOMASS, NNLITTER, NNLITTLEVS, NNSOILCARB,        &
-                            XBIOMASS, XRESP_BIOMASS, XINCREASE, XTURNOVER, XFAPARC,     &
-                            CRESPSL, XLITTER, XSOILCARB, XLIGNIN_STRUC, XFAPIRC,        &
-                            XCE_NITRO, XCF_NITRO, XCNA_NITRO, XBSLAI_NITRO,             &
-                            LFLOOD, XZ0_FLOOD, XPCPS, XPLVTT, XPLSTT, XICE_STO
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -96,6 +55,11 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
+!
+TYPE(AGRI_t), INTENT(INOUT) :: AG
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(PACK_ISBA_t), INTENT(INOUT) :: PKI
 !
 INTEGER, INTENT(IN)               :: KSIZE, KPATCH
 !
@@ -107,89 +71,103 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('UNPACK_ISBA_PATCH_N',0,ZHOOK_HANDLE)
-IF (NPATCH==1) THEN
-  TSNOW%WSNOW     (:, :, 1) = XP_SNOWSWE    (:, :)
-  TSNOW%RHO       (:, :, 1) = XP_SNOWRHO    (:, :)
-  TSNOW%ALB       (:, 1)    = XP_SNOWALB    (:)
-  XWR             (:, 1)    = XP_WR         (:)
-  XTG             (:, :, 1) = XP_TG         (:, :)
-  XWG             (:, :, 1) = XP_WG         (:, :)
-  XWGI            (:, :, 1) = XP_WGI        (:, :)
-  XRESA           (:, 1)    = XP_RESA       (:) 
-  XPCPS           (:, 1)    = XP_CPS        (:) 
-  XPLVTT          (:, 1)    = XP_LVTT       (:) 
-  XPLSTT          (:, 1)    = XP_LSTT       (:) 
-  XALBNIR         (:, 1)    = XP_ALBNIR     (:) 
-  XALBVIS         (:, 1)    = XP_ALBVIS     (:) 
-  XALBUV          (:, 1)    = XP_ALBUV      (:) 
-  XALBNIR_VEG     (:, 1)    = XP_ALBNIR_VEG (:) 
-  XALBVIS_VEG     (:, 1)    = XP_ALBVIS_VEG (:) 
-  XALBUV_VEG      (:, 1)    = XP_ALBUV_VEG  (:) 
-  XALBNIR_SOIL    (:, 1)    = XP_ALBNIR_SOIL(:) 
-  XALBVIS_SOIL    (:, 1)    = XP_ALBVIS_SOIL(:) 
-  XALBUV_SOIL     (:, 1)    = XP_ALBUV_SOIL (:) 
-  XEMIS           (:, 1)    = XP_EMIS       (:) 
-  XLAI            (:, 1)    = XP_LAI        (:) 
-  XVEG            (:, 1)    = XP_VEG        (:) 
-  XZ0             (:, 1)    = XP_Z0         (:) 
-  XZ0EFFIP        (:, 1)    = XP_Z0EFFIP    (:) 
-  XZ0EFFIM        (:, 1)    = XP_Z0EFFIM    (:) 
-  XZ0EFFJP        (:, 1)    = XP_Z0EFFJP    (:) 
-  XZ0EFFJM        (:, 1)    = XP_Z0EFFJM    (:) 
-  XLE             (:, 1)    = XP_LE         (:)
+IF (I%NPATCH==1) THEN
+  I%TSNOW%WSNOW     (:, :, 1) = PKI%XP_SNOWSWE    (:, :)
+  I%TSNOW%RHO       (:, :, 1) = PKI%XP_SNOWRHO    (:, :)
+  I%TSNOW%ALB       (:, 1)    = PKI%XP_SNOWALB    (:)
+  I%XWR             (:, 1)    = PKI%XP_WR         (:)
+  I%XTG             (:, :, 1) = PKI%XP_TG         (:, :)
+  I%XWG             (:, :, 1) = PKI%XP_WG         (:, :)
+  I%XWGI            (:, :, 1) = PKI%XP_WGI        (:, :)
+  I%XRESA           (:, 1)    = PKI%XP_RESA       (:) 
+  I%XPCPS           (:, 1)    = PKI%XP_CPS        (:) 
+  I%XPLVTT          (:, 1)    = PKI%XP_LVTT       (:) 
+  I%XPLSTT          (:, 1)    = PKI%XP_LSTT       (:) 
+  I%XALBNIR         (:, 1)    = PKI%XP_ALBNIR     (:) 
+  I%XALBVIS         (:, 1)    = PKI%XP_ALBVIS     (:) 
+  I%XALBUV          (:, 1)    = PKI%XP_ALBUV      (:) 
+  I%XALBNIR_VEG     (:, 1)    = PKI%XP_ALBNIR_VEG (:) 
+  I%XALBVIS_VEG     (:, 1)    = PKI%XP_ALBVIS_VEG (:) 
+  I%XALBUV_VEG      (:, 1)    = PKI%XP_ALBUV_VEG  (:) 
+  I%XALBNIR_SOIL    (:, 1)    = PKI%XP_ALBNIR_SOIL(:) 
+  I%XALBVIS_SOIL    (:, 1)    = PKI%XP_ALBVIS_SOIL(:) 
+  I%XALBUV_SOIL     (:, 1)    = PKI%XP_ALBUV_SOIL (:) 
+  I%XEMIS           (:, 1)    = PKI%XP_EMIS       (:) 
+  I%XZ0EFFIP        (:, 1)    = PKI%XP_Z0EFFIP    (:) 
+  I%XZ0EFFIM        (:, 1)    = PKI%XP_Z0EFFIM    (:) 
+  I%XZ0EFFJP        (:, 1)    = PKI%XP_Z0EFFJP    (:) 
+  I%XZ0EFFJM        (:, 1)    = PKI%XP_Z0EFFJM    (:) 
+  I%XLE             (:, 1)    = PKI%XP_LE         (:)
   !
-  IF (LTR_ML) THEN
-    XFAPARC         (:, 1)    = XP_FAPARC     (:)
-    XFAPIRC         (:, 1)    = XP_FAPIRC     (:)
-    XLAI_EFFC       (:, 1)    = XP_LAI_EFFC   (:)
-    XMUS            (:, 1)    = XP_MUS        (:)
+   IF(I%LMEB_PATCH(KPATCH))THEN
+     I%XWRL            (:, 1)    = PKI%XP_WRL        (:)
+     I%XWRLI           (:, 1)    = PKI%XP_WRLI       (:)
+     I%XWRVN           (:, 1)    = PKI%XP_WRVN       (:)
+     I%XTV             (:, 1)    = PKI%XP_TV         (:)
+     I%XTL             (:, 1)    = PKI%XP_TL         (:)
+     I%XTC             (:, 1)    = PKI%XP_TC         (:)
+     I%XQC             (:, 1)    = PKI%XP_QC         (:)
+     I%XLAI            (:, 1)    = PKI%XP_LAI        (:) 
+     I%XZ0             (:, 1)    = PKI%XP_Z0         (:) 
+   ELSE
+! Please note that XLAI, XVEG, and XZ0 are not unpacked
+! in the case of MEB.
+     I%XLAI            (:, 1)    = PKI%XP_LAI        (:) 
+     I%XVEG            (:, 1)    = PKI%XP_VEG        (:) 
+     I%XZ0             (:, 1)    = PKI%XP_Z0         (:) 
+   ENDIF
+  !
+  IF (I%LTR_ML) THEN
+    I%XFAPARC         (:, 1)    = PKI%XP_FAPARC     (:)
+    I%XFAPIRC         (:, 1)    = PKI%XP_FAPIRC     (:)
+    I%XLAI_EFFC       (:, 1)    = PKI%XP_LAI_EFFC   (:)
+    I%XMUS            (:, 1)    = PKI%XP_MUS        (:)
   ENDIF   
   !
-  IF (CPHOTO/='NON') THEN
-     XAN             (:, 1)    = XP_AN         (:)
-     XANDAY          (:, 1)    = XP_ANDAY      (:)
-     XANFM           (:, 1)    = XP_ANFM       (:)
-     XBIOMASS        (:,:,1)   = XP_BIOMASS        (:,:)
-     XRESP_BIOMASS   (:,:,1)   = XP_RESP_BIOMASS   (:,:)
+  IF (I%CPHOTO/='NON') THEN
+     I%XAN             (:, 1)    = PKI%XP_AN         (:)
+     I%XANDAY          (:, 1)    = PKI%XP_ANDAY      (:)
+     I%XANFM           (:, 1)    = PKI%XP_ANFM       (:)
+     I%XBIOMASS        (:,:,1)   = PKI%XP_BIOMASS        (:,:)
+     I%XRESP_BIOMASS   (:,:,1)   = PKI%XP_RESP_BIOMASS   (:,:)
   END IF
   !
-  IF(CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
-     XBSLAI_NITRO    (:,1)    =    XP_BSLAI_NITRO    (:)          
+  IF(I%CPHOTO=='NIT' .OR. I%CPHOTO=='NCB') THEN
+     I%XBSLAI_NITRO    (:,1)    =    PKI%XP_BSLAI_NITRO    (:)          
   END IF
   !
-    IF(CPHOTO=='NCB') THEN
-     XINCREASE       (:,:,1)   =    XP_INCREASE       (:,:)
+    IF(I%CPHOTO=='NCB') THEN
+     I%XINCREASE       (:,:,1)   =    PKI%XP_INCREASE       (:,:)
   END IF
   !
-  IF(CRESPSL=='CNT') THEN
-     XLITTER         (:,:,:,1) =    XP_LITTER         (:,:,:)
-     XSOILCARB       (:,:,1)   =    XP_SOILCARB       (:,:)
-     XLIGNIN_STRUC   (:,:,1)   =    XP_LIGNIN_STRUC   (:,:)
-     XTURNOVER       (:,:,1)   =    XP_TURNOVER       (:,:)
+  IF(I%CRESPSL=='CNT') THEN
+     I%XLITTER         (:,:,:,1) =    PKI%XP_LITTER         (:,:,:)
+     I%XSOILCARB       (:,:,1)   =    PKI%XP_SOILCARB       (:,:)
+     I%XLIGNIN_STRUC   (:,:,1)   =    PKI%XP_LIGNIN_STRUC   (:,:)
+     I%XTURNOVER       (:,:,1)   =    PKI%XP_TURNOVER       (:,:)
   END IF
   !
-  IF(LAGRIP .AND. (CPHOTO=='NIT' .OR. CPHOTO=='LAI' .OR. CPHOTO=='LST' .OR. CPHOTO=='NCB') ) THEN
-    LIRRIDAY (:,1)  =    XP_LIRRIDAY (:)
+  IF(LAGRIP .AND. (I%CPHOTO=='NIT' .OR. I%CPHOTO=='LAI' .OR. I%CPHOTO=='LST' .OR. I%CPHOTO=='NCB') ) THEN
+    AG%LIRRIDAY (:,1)  =    PKI%XP_LIRRIDAY (:)
   END IF
   !
-  IF (TSNOW%SCHEME=='3-L' .OR. TSNOW%SCHEME=='CRO') THEN
-     TSNOW%HEAT      (:, :, 1) = XP_SNOWHEAT   (:, :)
-     TSNOW%EMIS      (:, 1)    = XP_SNOWEMIS   (:)
+  IF (I%TSNOW%SCHEME=='3-L' .OR. I%TSNOW%SCHEME=='CRO') THEN
+     I%TSNOW%HEAT      (:, :, 1) = PKI%XP_SNOWHEAT   (:, :)
+     I%TSNOW%EMIS      (:, 1)    = PKI%XP_SNOWEMIS   (:)
+     I%TSNOW%AGE       (:, :, 1) = PKI%XP_SNOWAGE    (:, :)
+     I%TSNOW%ALBVIS    (:, 1)    = PKI%XP_SNOWALBVIS (:)
+     I%TSNOW%ALBNIR    (:, 1)    = PKI%XP_SNOWALBNIR (:)
+     I%TSNOW%ALBFIR    (:, 1)    = PKI%XP_SNOWALBFIR (:)     
   END IF
 
-  IF (TSNOW%SCHEME=='CRO') THEN
-     TSNOW%GRAN1     (:, :, 1) = XP_SNOWGRAN1   (:, :)
-     TSNOW%GRAN2     (:, :, 1) = XP_SNOWGRAN2   (:, :)
-     TSNOW%HIST      (:, :, 1) = XP_SNOWHIST    (:, :)
-     TSNOW%AGE       (:, :, 1) = XP_SNOWAGE     (:, :)
-  END IF
-!
-  IF(LFLOOD)THEN
-     XZ0_FLOOD       (:,1)     = XP_Z0FLOOD    (:)
+  IF (I%TSNOW%SCHEME=='CRO') THEN
+     I%TSNOW%GRAN1     (:, :, 1) = PKI%XP_SNOWGRAN1   (:, :)
+     I%TSNOW%GRAN2     (:, :, 1) = PKI%XP_SNOWGRAN2   (:, :)
+     I%TSNOW%HIST      (:, :, 1) = PKI%XP_SNOWHIST    (:, :)
   END IF
   !
-  IF(LGLACIER)THEN
-     XICE_STO        (:,1)     = XP_ICE_STO    (:)
+  IF(I%LGLACIER)THEN
+     I%XICE_STO        (:,1)     = PKI%XP_ICE_STO    (:)
   ENDIF
 !
 ELSE
@@ -198,169 +176,188 @@ ELSE
 !
   DO JJ=1,KSIZE
     JI                              = KMASK         (JJ)
-    TSNOW%ALB       (JI, KPATCH)    = XP_SNOWALB    (JJ)
-    XWR             (JI, KPATCH)    = XP_WR         (JJ)
-    XRESA           (JI, KPATCH)    = XP_RESA       (JJ) 
-    XPCPS           (JI, KPATCH)    = XP_CPS        (JJ) 
-    XPLVTT          (JI, KPATCH)    = XP_LVTT       (JJ) 
-    XPLSTT          (JI, KPATCH)    = XP_LSTT       (JJ) 
-    XALBNIR         (JI, KPATCH)    = XP_ALBNIR     (JJ) 
-    XALBVIS         (JI, KPATCH)    = XP_ALBVIS     (JJ) 
-    XALBUV          (JI, KPATCH)    = XP_ALBUV      (JJ) 
-    XALBNIR_VEG     (JI, KPATCH)    = XP_ALBNIR_VEG (JJ) 
-    XALBVIS_VEG     (JI, KPATCH)    = XP_ALBVIS_VEG (JJ) 
-    XALBUV_VEG      (JI, KPATCH)    = XP_ALBUV_VEG  (JJ) 
-    XALBNIR_SOIL    (JI, KPATCH)    = XP_ALBNIR_SOIL(JJ) 
-    XALBVIS_SOIL    (JI, KPATCH)    = XP_ALBVIS_SOIL(JJ) 
-    XALBUV_SOIL     (JI, KPATCH)    = XP_ALBUV_SOIL (JJ) 
-    XEMIS           (JI, KPATCH)    = XP_EMIS       (JJ) 
-    XLAI            (JI, KPATCH)    = XP_LAI        (JJ) 
-    XVEG            (JI, KPATCH)    = XP_VEG        (JJ) 
-    XZ0             (JI, KPATCH)    = XP_Z0         (JJ) 
-    XZ0EFFIP        (JI, KPATCH)    = XP_Z0EFFIP    (JJ) 
-    XZ0EFFIM        (JI, KPATCH)    = XP_Z0EFFIM    (JJ) 
-    XZ0EFFJP        (JI, KPATCH)    = XP_Z0EFFJP    (JJ) 
-    XZ0EFFJM        (JI, KPATCH)    = XP_Z0EFFJM    (JJ) 
-    XLE             (JI, KPATCH)    = XP_LE         (JJ)
+    I%TSNOW%ALB       (JI, KPATCH)    = PKI%XP_SNOWALB    (JJ)
+    I%XWR             (JI, KPATCH)    = PKI%XP_WR         (JJ)
+    I%XRESA           (JI, KPATCH)    = PKI%XP_RESA       (JJ) 
+    I%XPCPS           (JI, KPATCH)    = PKI%XP_CPS        (JJ) 
+    I%XPLVTT          (JI, KPATCH)    = PKI%XP_LVTT       (JJ) 
+    I%XPLSTT          (JI, KPATCH)    = PKI%XP_LSTT       (JJ) 
+    I%XALBNIR         (JI, KPATCH)    = PKI%XP_ALBNIR     (JJ) 
+    I%XALBVIS         (JI, KPATCH)    = PKI%XP_ALBVIS     (JJ) 
+    I%XALBUV          (JI, KPATCH)    = PKI%XP_ALBUV      (JJ) 
+    I%XALBNIR_VEG     (JI, KPATCH)    = PKI%XP_ALBNIR_VEG (JJ) 
+    I%XALBVIS_VEG     (JI, KPATCH)    = PKI%XP_ALBVIS_VEG (JJ) 
+    I%XALBUV_VEG      (JI, KPATCH)    = PKI%XP_ALBUV_VEG  (JJ) 
+    I%XALBNIR_SOIL    (JI, KPATCH)    = PKI%XP_ALBNIR_SOIL(JJ) 
+    I%XALBVIS_SOIL    (JI, KPATCH)    = PKI%XP_ALBVIS_SOIL(JJ) 
+    I%XALBUV_SOIL     (JI, KPATCH)    = PKI%XP_ALBUV_SOIL (JJ) 
+    I%XEMIS           (JI, KPATCH)    = PKI%XP_EMIS       (JJ) 
+    I%XZ0EFFIP        (JI, KPATCH)    = PKI%XP_Z0EFFIP    (JJ) 
+    I%XZ0EFFIM        (JI, KPATCH)    = PKI%XP_Z0EFFIM    (JJ) 
+    I%XZ0EFFJP        (JI, KPATCH)    = PKI%XP_Z0EFFJP    (JJ) 
+    I%XZ0EFFJM        (JI, KPATCH)    = PKI%XP_Z0EFFJM    (JJ) 
+    I%XLE             (JI, KPATCH)    = PKI%XP_LE         (JJ)
   !
   END DO
-  DO JK=1,SIZE(XTG,2)
+  !
+  IF(I%LMEB_PATCH(KPATCH))THEN
+    DO JJ=1,KSIZE
+      JI                              = KMASK         (JJ)
+      I%XWRL            (JI, KPATCH)    = PKI%XP_WRL        (JJ)
+      I%XWRLI           (JI, KPATCH)    = PKI%XP_WRLI       (JJ)
+      I%XWRVN           (JI, KPATCH)    = PKI%XP_WRVN       (JJ)
+      I%XTV             (JI, KPATCH)    = PKI%XP_TV         (JJ)
+      I%XTL             (JI, KPATCH)    = PKI%XP_TL         (JJ)
+      I%XTC             (JI, KPATCH)    = PKI%XP_TC         (JJ)
+      I%XQC             (JI, KPATCH)    = PKI%XP_QC         (JJ)
+      I%XLAI            (JI, KPATCH)    = PKI%XP_LAI        (JJ) 
+      I%XZ0             (JI, KPATCH)    = PKI%XP_Z0         (JJ) 
+    END DO
+  ELSE
+! Please note that XLAI, XVEG, and XZ0 are not unpacked
+! in the case of MEB yet. This must be done when interactive/carbon
+! vegetation is activated for MEB.
+    DO JJ=1,KSIZE
+      JI                              = KMASK         (JJ)
+      I%XLAI            (JI, KPATCH)    = PKI%XP_LAI        (JJ) 
+      I%XVEG            (JI, KPATCH)    = PKI%XP_VEG        (JJ) 
+      I%XZ0             (JI, KPATCH)    = PKI%XP_Z0         (JJ) 
+    END DO
+  ENDIF
+  !
+  DO JK=1,SIZE(I%XTG,2)
     DO JJ=1,KSIZE
       JI                      =    KMASK(JJ)
-      XTG             (JI, JK, KPATCH) = XP_TG         (JJ, JK)
+      I%XTG             (JI, JK, KPATCH) = PKI%XP_TG         (JJ, JK)
     ENDDO
   ENDDO
 !  
-  DO JK=1,SIZE(XWG,2)
+  DO JK=1,SIZE(I%XWG,2)
     DO JJ=1,KSIZE
       JI                      =    KMASK(JJ)
-      XWG             (JI, JK, KPATCH) = XP_WG         (JJ, JK)
-      XWGI            (JI, JK, KPATCH) = XP_WGI        (JJ, JK)
+      I%XWG             (JI, JK, KPATCH) = PKI%XP_WG         (JJ, JK)
+      I%XWGI            (JI, JK, KPATCH) = PKI%XP_WGI        (JJ, JK)
     ENDDO
   ENDDO
 !  
-  DO JK=1,SIZE(XP_SNOWSWE,2)
+  DO JK=1,SIZE(PKI%XP_SNOWSWE,2)
     DO JJ=1,KSIZE
       JI                      =    KMASK(JJ)
-      TSNOW%WSNOW     (JI, JK, KPATCH) = XP_SNOWSWE    (JJ, JK)
-      TSNOW%RHO       (JI, JK, KPATCH) = XP_SNOWRHO    (JJ, JK)
+      I%TSNOW%WSNOW     (JI, JK, KPATCH) = PKI%XP_SNOWSWE    (JJ, JK)
+      I%TSNOW%RHO       (JI, JK, KPATCH) = PKI%XP_SNOWRHO    (JJ, JK)
     ENDDO
   ENDDO
   !
-  IF (LTR_ML) THEN
+  IF (I%LTR_ML) THEN
     DO JJ=1,KSIZE
       JI                      =    KMASK(JJ)          
-      XFAPARC         (JI, KPATCH)    = XP_FAPARC     (JJ)
-      XFAPIRC         (JI, KPATCH)    = XP_FAPIRC     (JJ)
-      XLAI_EFFC       (JI, KPATCH)    = XP_LAI_EFFC   (JJ)
-      XMUS            (JI, KPATCH)    = XP_MUS        (JJ)
+      I%XFAPARC         (JI, KPATCH)    = PKI%XP_FAPARC     (JJ)
+      I%XFAPIRC         (JI, KPATCH)    = PKI%XP_FAPIRC     (JJ)
+      I%XLAI_EFFC       (JI, KPATCH)    = PKI%XP_LAI_EFFC   (JJ)
+      I%XMUS            (JI, KPATCH)    = PKI%XP_MUS        (JJ)
     ENDDO
   ENDIF  
   !
-  IF (CPHOTO/='NON') THEN
+  IF (I%CPHOTO/='NON') THEN
     DO JJ=1,KSIZE
       JI                              = KMASK         (JJ)
-      XAN             (JI, KPATCH)    = XP_AN         (JJ)
-      XANDAY          (JI, KPATCH)    = XP_ANDAY      (JJ)
-      XANFM           (JI, KPATCH)    = XP_ANFM       (JJ)
+      I%XAN             (JI, KPATCH)    = PKI%XP_AN         (JJ)
+      I%XANDAY          (JI, KPATCH)    = PKI%XP_ANDAY      (JJ)
+      I%XANFM           (JI, KPATCH)    = PKI%XP_ANFM       (JJ)
     ENDDO
-    DO JK=1,SIZE(XBIOMASS,2)
+    DO JK=1,SIZE(I%XBIOMASS,2)
       DO JJ=1,KSIZE
         JI                              = KMASK         (JJ)       
-        XBIOMASS        (JI, JK, KPATCH) = XP_BIOMASS        (JJ, JK)
-        XRESP_BIOMASS   (JI, JK, KPATCH) = XP_RESP_BIOMASS   (JJ, JK)
+        I%XBIOMASS        (JI, JK, KPATCH) = PKI%XP_BIOMASS        (JJ, JK)
+        I%XRESP_BIOMASS   (JI, JK, KPATCH) = PKI%XP_RESP_BIOMASS   (JJ, JK)
       ENDDO
     END DO
   END IF
   !
-  IF (CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
+  IF (I%CPHOTO=='NIT' .OR. I%CPHOTO=='NCB') THEN
     DO JJ=1,KSIZE
       JI                                 = KMASK             (JJ)
-      XBSLAI_NITRO    (JI, KPATCH)       = XP_BSLAI_NITRO    (JJ)
+      I%XBSLAI_NITRO    (JI, KPATCH)       = PKI%XP_BSLAI_NITRO    (JJ)
     END DO
   END IF
   !
-  IF (CPHOTO=='NCB') THEN
-    DO JK=1,SIZE(XINCREASE,2)
+  IF (I%CPHOTO=='NCB') THEN
+    DO JK=1,SIZE(I%XINCREASE,2)
       DO JJ=1,KSIZE
         JI                                 = KMASK             (JJ)
-        XINCREASE       (JI, JK, KPATCH)   = XP_INCREASE       (JJ, JK)
+        I%XINCREASE       (JI, JK, KPATCH)   = PKI%XP_INCREASE       (JJ, JK)
       ENDDO
     END DO
   END IF
   !
-  IF (CRESPSL=='CNT') THEN
-    DO JL=1,SIZE(XP_LITTER,3)
-      DO JK=1,SIZE(XP_LITTER,2)
+  IF (I%CRESPSL=='CNT') THEN
+    DO JL=1,SIZE(PKI%XP_LITTER,3)
+      DO JK=1,SIZE(PKI%XP_LITTER,2)
         DO JJ=1,KSIZE
           JI                                 = KMASK             (JJ)
-          XLITTER       (JI, JK, JL, KPATCH) = XP_LITTER         (JJ, JK, JL)
+          I%XLITTER       (JI, JK, JL, KPATCH) = PKI%XP_LITTER         (JJ, JK, JL)
         ENDDO
       ENDDO
     ENDDO
-    DO JK=1,SIZE(XP_SOILCARB,2)
+    DO JK=1,SIZE(PKI%XP_SOILCARB,2)
       DO JJ=1,KSIZE
         JI                                 = KMASK             (JJ)
-        XSOILCARB       (JI, JK, KPATCH)   = XP_SOILCARB       (JJ, JK)
+        I%XSOILCARB       (JI, JK, KPATCH)   = PKI%XP_SOILCARB       (JJ, JK)
       ENDDO
     ENDDO
-    DO JK=1,SIZE(XP_LIGNIN_STRUC,2)
+    DO JK=1,SIZE(PKI%XP_LIGNIN_STRUC,2)
       DO JJ=1,KSIZE
         JI                                  = KMASK             (JJ)
-        XLIGNIN_STRUC   (JI, JK, KPATCH)    = XP_LIGNIN_STRUC   (JJ, JK)
+        I%XLIGNIN_STRUC   (JI, JK, KPATCH)    = PKI%XP_LIGNIN_STRUC   (JJ, JK)
       ENDDO
     ENDDO
-    DO JK=1,SIZE(XP_TURNOVER,2)
+    DO JK=1,SIZE(PKI%XP_TURNOVER,2)
       DO JJ=1,KSIZE
         JI                      =    KMASK(JJ)
-        XTURNOVER       (JI, JK, KPATCH)    = XP_TURNOVER       (JJ, JK)
+        I%XTURNOVER       (JI, JK, KPATCH)    = PKI%XP_TURNOVER       (JJ, JK)
       ENDDO
     END DO
   END IF
   !
-  IF(LAGRIP .AND. (CPHOTO=='NIT' .OR. CPHOTO=='LAI' .OR. CPHOTO=='LST' .OR. CPHOTO=='NCB') ) THEN
+  IF(LAGRIP .AND. (I%CPHOTO=='NIT' .OR. I%CPHOTO=='LAI' .OR. I%CPHOTO=='LST' .OR. I%CPHOTO=='NCB') ) THEN
      DO JJ=1,KSIZE
        JI                    =  KMASK             (JJ)
-       LIRRIDAY (JI,KPATCH)  =  XP_LIRRIDAY       (JJ)
+       AG%LIRRIDAY (JI,KPATCH)  =  PKI%XP_LIRRIDAY       (JJ)
      END DO
   END IF
   !
-  IF (TSNOW%SCHEME=='3-L' .OR. TSNOW%SCHEME=='CRO') THEN
-    DO JK=1,SIZE(XP_SNOWHEAT,2)
+  IF (I%TSNOW%SCHEME=='3-L' .OR. I%TSNOW%SCHEME=='CRO') THEN
+    DO JK=1,SIZE(PKI%XP_SNOWHEAT,2)
       DO JJ=1,KSIZE
         JI                              = KMASK         (JJ)
-        TSNOW%HEAT      (JI, JK, KPATCH) = XP_SNOWHEAT   (JJ, JK)
+        I%TSNOW%HEAT      (JI, JK, KPATCH) = PKI%XP_SNOWHEAT  (JJ, JK)
+        I%TSNOW%AGE       (JI, JK, KPATCH) = PKI%XP_SNOWAGE   (JJ, JK)
       ENDDO
     ENDDO
     DO JJ=1,KSIZE
       JI                              = KMASK         (JJ)
-      TSNOW%EMIS      (JI, KPATCH)    = XP_SNOWEMIS   (JJ)
+      I%TSNOW%EMIS      (JI, KPATCH)    = PKI%XP_SNOWEMIS   (JJ)
+      I%TSNOW%ALBVIS    (JI, KPATCH)    = PKI%XP_SNOWALBVIS (JJ)
+      I%TSNOW%ALBNIR    (JI, KPATCH)    = PKI%XP_SNOWALBNIR (JJ)
+      I%TSNOW%ALBFIR    (JI, KPATCH)    = PKI%XP_SNOWALBFIR (JJ)     
     END DO
   END IF
 
-  IF (TSNOW%SCHEME=='CRO') THEN
-    DO JK=1,SIZE(XP_SNOWGRAN1,2)
+  IF (I%TSNOW%SCHEME=='CRO') THEN
+    DO JK=1,SIZE(PKI%XP_SNOWGRAN1,2)
       DO JJ=1,KSIZE
         JI                              = KMASK         (JJ)
-        TSNOW%GRAN1     (JI, JK, KPATCH) = XP_SNOWGRAN1   (JJ, JK)
-        TSNOW%GRAN2     (JI, JK, KPATCH) = XP_SNOWGRAN2   (JJ, JK)
-        TSNOW%HIST      (JI, JK, KPATCH) = XP_SNOWHIST    (JJ, JK)
-        TSNOW%AGE       (JI, JK, KPATCH) = XP_SNOWAGE     (JJ, JK)
+        I%TSNOW%GRAN1     (JI, JK, KPATCH) = PKI%XP_SNOWGRAN1   (JJ, JK)
+        I%TSNOW%GRAN2     (JI, JK, KPATCH) = PKI%XP_SNOWGRAN2   (JJ, JK)
+        I%TSNOW%HIST      (JI, JK, KPATCH) = PKI%XP_SNOWHIST    (JJ, JK)
       ENDDO
     END DO
   END IF
   !
-  IF(LFLOOD)THEN
-    DO JJ=1,KSIZE
-      JI                    = KMASK     (JJ)
-      XZ0_FLOOD(JI, KPATCH) = XP_Z0FLOOD(JJ)
-    END DO
-  END IF  
-  !
-  IF(LGLACIER)THEN
+  IF(I%LGLACIER)THEN
     DO JJ=1,KSIZE
        JI                   = KMASK     (JJ)
-       XICE_STO(JI, KPATCH) = XP_ICE_STO(JJ)
+       I%XICE_STO(JI, KPATCH) = PKI%XP_ICE_STO(JJ)
     ENDDO
   ENDIF
 !
@@ -368,217 +365,242 @@ END IF
 !
 !------------------------------------------------------------------
 !
-XP_Z0_O_Z0H     => NULL()
-XP_EMIS         => NULL()
-XP_ALBNIR       => NULL()
-XP_ALBVIS       => NULL()
-XP_ALBUV        => NULL()
-XP_ALBNIR_VEG   => NULL()
-XP_ALBVIS_VEG   => NULL()
-XP_ALBUV_VEG    => NULL()
-XP_ALBNIR_SOIL  => NULL()
-XP_ALBVIS_SOIL  => NULL()
-XP_ALBUV_SOIL   => NULL()
-XP_Z0           => NULL()
-XP_WRMAX_CF     => NULL()
-XP_GAMMA        => NULL()
-XP_CV           => NULL()
-XP_RGL          => NULL()
-XP_RUNOFFD      => NULL()
-XP_Z0EFFIP      => NULL()
-XP_Z0EFFIM      => NULL()
-XP_Z0EFFJP      => NULL()
-XP_Z0EFFJM      => NULL()
-XP_WR           => NULL() 
-XP_LAI          => NULL() 
-XP_RESA         => NULL()
-XP_CPS          => NULL()
-XP_LVTT         => NULL()
-XP_LSTT         => NULL()
-XP_VEG          => NULL()
-XP_SNOWALB      => NULL()
-XP_LE           => NULL() 
-XP_PSN          => NULL()
-XP_PSNG         => NULL()
-XP_PSNV         => NULL()
-XP_ALBNIR_DRY   => NULL()
-XP_ALBVIS_DRY   => NULL()
-XP_ALBUV_DRY    => NULL()
-XP_ALBNIR_WET   => NULL()
-XP_ALBVIS_WET   => NULL()
-XP_ALBUV_WET    => NULL()
-XP_RUNOFFB      => NULL()
-XP_WDRAIN       => NULL()
-XP_TAUICE       => NULL()
-XP_Z0REL        => NULL()
-XP_AOSIP        => NULL()
-XP_AOSIM        => NULL()
-XP_AOSJP        => NULL()
-XP_AOSJM        => NULL()
-XP_HO2IP        => NULL()
-XP_HO2IM        => NULL()
-XP_HO2JP        => NULL()
-XP_HO2JM        => NULL()
-XP_SSO_SLOPE    => NULL()
-XP_GAMMAT       => NULL()
-XP_TDEEP        => NULL() 
+PKI%XP_Z0_O_Z0H     => NULL()
+PKI%XP_EMIS         => NULL()
+PKI%XP_ALBNIR       => NULL()
+PKI%XP_ALBVIS       => NULL()
+PKI%XP_ALBUV        => NULL()
+PKI%XP_ALBNIR_VEG   => NULL()
+PKI%XP_ALBVIS_VEG   => NULL()
+PKI%XP_ALBUV_VEG    => NULL()
+PKI%XP_ALBNIR_SOIL  => NULL()
+PKI%XP_ALBVIS_SOIL  => NULL()
+PKI%XP_ALBUV_SOIL   => NULL()
+PKI%XP_Z0           => NULL()
+PKI%XP_WRMAX_CF     => NULL()
+PKI%XP_GAMMA        => NULL()
+PKI%XP_CV           => NULL()
+PKI%XP_RGL          => NULL()
+PKI%XP_RUNOFFD      => NULL()
+PKI%XP_Z0EFFIP      => NULL()
+PKI%XP_Z0EFFIM      => NULL()
+PKI%XP_Z0EFFJP      => NULL()
+PKI%XP_Z0EFFJM      => NULL()
+PKI%XP_WR           => NULL() 
+PKI%XP_LAI          => NULL() 
+PKI%XP_RESA         => NULL()
+PKI%XP_CPS          => NULL()
+PKI%XP_LVTT         => NULL()
+PKI%XP_LSTT         => NULL()
+PKI%XP_VEG          => NULL()
+PKI%XP_SNOWALB      => NULL()
+PKI%XP_SNOWALBVIS   => NULL()
+PKI%XP_SNOWALBNIR   => NULL()
+PKI%XP_SNOWALBFIR   => NULL()
+PKI%XP_LE           => NULL() 
+PKI%XP_PSN          => NULL()
+PKI%XP_PSNG         => NULL()
+PKI%XP_PSNV         => NULL()
+PKI%XP_ALBNIR_DRY   => NULL()
+PKI%XP_ALBVIS_DRY   => NULL()
+PKI%XP_ALBUV_DRY    => NULL()
+PKI%XP_ALBNIR_WET   => NULL()
+PKI%XP_ALBVIS_WET   => NULL()
+PKI%XP_ALBUV_WET    => NULL()
+PKI%XP_RUNOFFB      => NULL()
+PKI%XP_WDRAIN       => NULL()
+PKI%XP_TAUICE       => NULL()
+PKI%XP_Z0REL        => NULL()
+PKI%XP_AOSIP        => NULL()
+PKI%XP_AOSIM        => NULL()
+PKI%XP_AOSJP        => NULL()
+PKI%XP_AOSJM        => NULL()
+PKI%XP_HO2IP        => NULL()
+PKI%XP_HO2IM        => NULL()
+PKI%XP_HO2JP        => NULL()
+PKI%XP_HO2JM        => NULL()
+PKI%XP_SSO_SLOPE    => NULL()
+PKI%XP_GAMMAT       => NULL()
+PKI%XP_TDEEP        => NULL() 
 !
-XP_CLAY         => NULL() 
-XP_SAND         => NULL() 
-XP_WFC          => NULL()
-XP_WWILT        => NULL()
-XP_WSAT         => NULL()
-XP_CONDSAT      => NULL()
-XP_DG           => NULL()
-XP_WG           => NULL()
-XP_WGI          => NULL()
+PKI%XP_CLAY         => NULL() 
+PKI%XP_SAND         => NULL() 
+PKI%XP_WFC          => NULL()
+PKI%XP_WWILT        => NULL()
+PKI%XP_WSAT         => NULL()
+PKI%XP_CONDSAT      => NULL()
+PKI%XP_DG           => NULL()
+PKI%XP_WG           => NULL()
+PKI%XP_WGI          => NULL()
 !
-XP_KSAT_ICE     => NULL()
-XP_D_ICE        => NULL()
+PKI%XP_KSAT_ICE     => NULL()
+PKI%XP_D_ICE        => NULL()
 !
-XP_VEGTYPE_PATCH=> NULL()
+PKI%XP_VEGTYPE_PATCH=> NULL()
 !
-XP_TG           => NULL()
+PKI%XP_TG           => NULL()
 !
-XP_SNOWSWE      => NULL()
-XP_SNOWRHO      => NULL()
+PKI%XP_SNOWSWE      => NULL()
+PKI%XP_SNOWRHO      => NULL()
 !
-XP_DIR_ALB_WITH_SNOW=> NULL()
-XP_SCA_ALB_WITH_SNOW=> NULL()
+PKI%XP_DIR_ALB_WITH_SNOW=> NULL()
+PKI%XP_SCA_ALB_WITH_SNOW=> NULL()
 !
-XP_FFLOOD       => NULL()
-XP_PIFLOOD      => NULL()
-XP_Z0FLOOD      => NULL()
-XP_FF           => NULL()
-XP_FFG          => NULL()
-XP_FFV          => NULL()
-XP_FFROZEN      => NULL()
-XP_ALBF         => NULL()
-XP_EMISF        => NULL()
+PKI%XP_FFLOOD       => NULL()
+PKI%XP_PIFLOOD      => NULL()
+PKI%XP_FF           => NULL()
+PKI%XP_FFG          => NULL()
+PKI%XP_FFV          => NULL()
+PKI%XP_FFROZEN      => NULL()
+PKI%XP_ALBF         => NULL()
+PKI%XP_EMISF        => NULL()
 !
-XP_PSNV_A       => NULL()
+PKI%XP_PSNV_A       => NULL()
 !
-XP_SNOWHEAT     => NULL()
-XP_SNOWEMIS     => NULL() 
+PKI%XP_SNOWHEAT     => NULL()
+PKI%XP_SNOWEMIS     => NULL() 
 !
-XP_SNOWGRAN1    => NULL()
-XP_SNOWGRAN2    => NULL()
-XP_SNOWHIST     => NULL()
-XP_SNOWAGE      => NULL()
+PKI%XP_SNOWGRAN1    => NULL()
+PKI%XP_SNOWGRAN2    => NULL()
+PKI%XP_SNOWHIST     => NULL()
+PKI%XP_SNOWAGE      => NULL()
 !
-XP_ICE_STO      => NULL()
+PKI%XP_ICE_STO      => NULL()
 !
-XP_HCAPSOIL     => NULL()
+PKI%XP_FWTD         => NULL()
+PKI%XP_WTD          => NULL()
 !
-XP_CONDDRY      => NULL()
-XP_CONDSLD      => NULL()
+PKI%XP_HCAPSOIL     => NULL()
 !
-XP_C4B          => NULL() 
-XP_ACOEF        => NULL() 
-XP_PCOEF        => NULL()
-XP_CGSAT        => NULL() 
-XP_C1SAT        => NULL() 
-XP_C2REF        => NULL() 
-XP_C4REF        => NULL()
-XP_C3           => NULL() 
+PKI%XP_CONDDRY      => NULL()
+PKI%XP_CONDSLD      => NULL()
 !
-XP_MPOTSAT      => NULL()
-XP_BCOEF        => NULL()
+PKI%XP_C4B          => NULL() 
+PKI%XP_ACOEF        => NULL() 
+PKI%XP_PCOEF        => NULL()
+PKI%XP_CGSAT        => NULL() 
+PKI%XP_C1SAT        => NULL() 
+PKI%XP_C2REF        => NULL() 
+PKI%XP_C4REF        => NULL()
+PKI%XP_C3           => NULL() 
 !
-XP_ROOTFRAC     => NULL()
-XP_DZG          => NULL()
-XP_DZDIF        => NULL()
-NK_WG_LAYER     => NULL()
-XP_SOILWGHT     => NULL()
+PKI%XP_MPOTSAT      => NULL()
+PKI%XP_BCOEF        => NULL()
 !
-XP_RSMIN        => NULL()
+PKI%XP_ROOTFRAC     => NULL()
+PKI%XP_DZG          => NULL()
+PKI%XP_DZDIF        => NULL()
+PKI%NK_WG_LAYER     => NULL()
+PKI%XP_SOILWGHT     => NULL()
 !
-XP_BSLAI        => NULL()
-XP_LAIMIN       => NULL()
-XP_SEFOLD       => NULL()
-XP_H_TREE       => NULL()
-XP_ANF          => NULL()
-XP_ANMAX        => NULL()
-XP_FZERO        => NULL()
-XP_EPSO         => NULL()
-XP_GAMM         => NULL()
-XP_QDGAMM       => NULL()
-XP_GMES         => NULL()
-XP_RE25         => NULL()
-XP_QDGMES       => NULL()
-XP_T1GMES       => NULL()
-XP_T2GMES       => NULL()
-XP_AMAX         => NULL()
-XP_QDAMAX       => NULL()
-XP_T1AMAX       => NULL()
-XP_T2AMAX       => NULL()
-XP_FAPARC       => NULL()
-XP_FAPIRC       => NULL()
-XP_LAI_EFFC     => NULL()
-XP_MUS          => NULL()
-XP_AN           => NULL() 
-XP_ANDAY        => NULL() 
-XP_ANFM         => NULL() 
-XP_GC           => NULL()
-XP_LAT          => NULL()
-XP_LON          => NULL()
-XP_BIOMASS      => NULL()
-XP_RESP_BIOMASS => NULL()
+PKI%XP_RSMIN        => NULL()
 !
-LP_STRESS       => NULL()
-XP_F2I          => NULL()
-XP_AH           => NULL()
-XP_BH           => NULL()
-XP_DMAX         => NULL()
+PKI%XP_BSLAI        => NULL()
+PKI%XP_LAIMIN       => NULL()
+PKI%XP_SEFOLD       => NULL()
+PKI%XP_H_TREE       => NULL()
+PKI%XP_ANF          => NULL()
+PKI%XP_ANMAX        => NULL()
+PKI%XP_FZERO        => NULL()
+PKI%XP_EPSO         => NULL()
+PKI%XP_GAMM         => NULL()
+PKI%XP_QDGAMM       => NULL()
+PKI%XP_GMES         => NULL()
+PKI%XP_RE25         => NULL()
+PKI%XP_QDGMES       => NULL()
+PKI%XP_T1GMES       => NULL()
+PKI%XP_T2GMES       => NULL()
+PKI%XP_AMAX         => NULL()
+PKI%XP_QDAMAX       => NULL()
+PKI%XP_T1AMAX       => NULL()
+PKI%XP_T2AMAX       => NULL()
+PKI%XP_FAPARC       => NULL()
+PKI%XP_FAPIRC       => NULL()
+PKI%XP_LAI_EFFC     => NULL()
+PKI%XP_MUS          => NULL()
+PKI%XP_AN           => NULL() 
+PKI%XP_ANDAY        => NULL() 
+PKI%XP_ANFM         => NULL() 
+PKI%XP_GC           => NULL()
+PKI%XP_LAT          => NULL()
+PKI%XP_LON          => NULL()
+PKI%XP_BIOMASS      => NULL()
+PKI%XP_RESP_BIOMASS => NULL()
 !
-TP_SEED         => NULL()
-TP_REAP         => NULL()
-XP_IRRIG        => NULL()
-XP_WATSUP       => NULL()
+PKI%LP_STRESS       => NULL()
+PKI%XP_F2I          => NULL()
+PKI%XP_AH           => NULL()
+PKI%XP_BH           => NULL()
+PKI%XP_DMAX         => NULL()
 !
-XP_LIRRIDAY     => NULL()
-XP_THRESHOLD    => NULL()
-XP_LIRRIGATE    => NULL()
+PKI%TP_SEED         => NULL()
+PKI%TP_REAP         => NULL()
+PKI%XP_IRRIG        => NULL()
+PKI%XP_WATSUP       => NULL()
 !
-XP_CE_NITRO     => NULL()
-XP_CF_NITRO     => NULL()
-XP_CNA_NITRO    => NULL()
-XP_BSLAI_NITRO  => NULL()
+PKI%XP_LIRRIDAY     => NULL()
+PKI%XP_THRESHOLD    => NULL()
+PKI%XP_LIRRIGATE    => NULL()
 !
-XP_INCREASE     => NULL()
-XP_TAU_WOOD     => NULL()
+PKI%XP_CE_NITRO     => NULL()
+PKI%XP_CF_NITRO     => NULL()
+PKI%XP_CNA_NITRO    => NULL()
+PKI%XP_BSLAI_NITRO  => NULL()
 !
-XP_LITTER       => NULL()
-XP_SOILCARB     => NULL()
-XP_LIGNIN_STRUC => NULL()
-XP_TURNOVER     => NULL()
+PKI%XP_INCREASE     => NULL()
+PKI%XP_TAU_WOOD     => NULL()
 !
-XP_FSAT=> NULL()
+PKI%XP_LITTER       => NULL()
+PKI%XP_SOILCARB     => NULL()
+PKI%XP_LIGNIN_STRUC => NULL()
+PKI%XP_TURNOVER     => NULL()
 !
-XP_MUF=> NULL()
+PKI%XP_FSAT=> NULL()
+PKI%XP_TOPQS=> NULL()
+!
+PKI%XP_MUF=> NULL()
+!
+PKI%XP_WRL          => NULL()
+PKI%XP_WRLI         => NULL()
+PKI%XP_WRVN         => NULL() 
+PKI%XP_TV           => NULL() 
+PKI%XP_TL           => NULL() 
+PKI%XP_TC           => NULL() 
+PKI%XP_QC           => NULL() 
+
+PKI%XP_H_VEG        => NULL()
+PKI%XP_RGLV         => NULL()
+PKI%XP_GAMMAV       => NULL()
+PKI%XP_WRMAX_CFV    => NULL()
+PKI%XP_LAIV         => NULL()
+PKI%XP_Z0V          => NULL()
+PKI%XP_RSMINV       => NULL()
+PKI%XP_ROOTFRACV    => NULL()
+PKI%XP_GNDLITTER    => NULL()
+PKI%XP_Z0LITTER     => NULL()
 !
 !
-DEALLOCATE(LBLOCK_SIMPLE)
-DEALLOCATE(LBLOCK_0)
-DEALLOCATE(NBLOCK_SIMPLE)
-DEALLOCATE(NBLOCK_0)
-DEALLOCATE(TBLOCK_SIMPLE)
-DEALLOCATE(TBLOCK_0)
-DEALLOCATE(XBLOCK_SIMPLE)
-DEALLOCATE(XBLOCK_GROUND)
-DEALLOCATE(XBLOCK_VEGTYPE)
-DEALLOCATE(XBLOCK_TG)
-DEALLOCATE(XBLOCK_SNOW)
-DEALLOCATE(XBLOCK_ALB)
-DEALLOCATE(XBLOCK_2)
-DEALLOCATE(XBLOCK_BIOMASS)
-DEALLOCATE(XBLOCK_SOILCARB)
-DEALLOCATE(XBLOCK_LITTLEVS)
-DEALLOCATE(XBLOCK_LITTER)
-DEALLOCATE(XBLOCK_0)
-DEALLOCATE(XBLOCK_00)
-DEALLOCATE(XBLOCK_000)
-DEALLOCATE(XBLOCK_01)
+DEALLOCATE(PKI%LBLOCK_SIMPLE)
+DEALLOCATE(PKI%LBLOCK_0)
+DEALLOCATE(PKI%NBLOCK_SIMPLE)
+DEALLOCATE(PKI%NBLOCK_0)
+DEALLOCATE(PKI%TBLOCK_SIMPLE)
+DEALLOCATE(PKI%TBLOCK_0)
+DEALLOCATE(PKI%XBLOCK_SIMPLE)
+DEALLOCATE(PKI%XBLOCK_GROUND)
+DEALLOCATE(PKI%XBLOCK_VEGTYPE)
+DEALLOCATE(PKI%XBLOCK_TG)
+DEALLOCATE(PKI%XBLOCK_SNOW)
+DEALLOCATE(PKI%XBLOCK_ALB)
+DEALLOCATE(PKI%XBLOCK_2)
+DEALLOCATE(PKI%XBLOCK_BIOMASS)
+DEALLOCATE(PKI%XBLOCK_SOILCARB)
+DEALLOCATE(PKI%XBLOCK_LITTLEVS)
+DEALLOCATE(PKI%XBLOCK_LITTER)
+DEALLOCATE(PKI%XBLOCK_0)
+DEALLOCATE(PKI%XBLOCK_00)
+DEALLOCATE(PKI%XBLOCK_000)
+DEALLOCATE(PKI%XBLOCK_01)
 !
 IF (LHOOK) CALL DR_HOOK('UNPACK_ISBA_PATCH_N',1,ZHOOK_HANDLE)
 !------------------------------------------------------------------

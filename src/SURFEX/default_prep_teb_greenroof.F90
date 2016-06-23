@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_PREP_TEB_GREENROOF
 !     ###########################
@@ -38,14 +38,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PREP_TEB_GREENROOF, ONLY : CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,       &
-                                    CFILE_HUG, CTYPE_HUG,          &
-                                    CFILE_HUG_SURF, CFILE_HUG_ROOT, CFILE_HUG_DEEP,   &
-                                    XHUG_SURF, XHUG_ROOT, XHUG_DEEP,                  &
-                                    XHUGI_SURF,XHUGI_ROOT, XHUGI_DEEP,                &
-                                    CFILE_TG, CTYPE_TG,                               &
-                                    CFILE_TG_SURF, CFILE_TG_ROOT, CFILE_TG_DEEP,      &
-                                    XTG_SURF, XTG_ROOT, XTG_DEEP,                     &
+USE MODD_PREP_TEB_GREENROOF, ONLY : CFILE_GR, CTYPE, CFILEPGD_GR, CTYPEPGD,       &
+                                    CFILE_HUG_GR, CTYPE_HUG,          &
+                                    CFILE_HUG_SURF_GR, CFILE_HUG_ROOT_GR, CFILE_HUG_DEEP_GR,   &
+                                    XHUG_SURF_GR, XHUG_ROOT_GR, XHUG_DEEP_GR,                  &
+                                    XHUGI_SURF_GR, XHUGI_ROOT_GR, XHUGI_DEEP_GR,                &
+                                    CFILE_TG_GR, CTYPE_TG,                               &
+                                    CFILE_TG_SURF_GR, CFILE_TG_ROOT_GR, CFILE_TG_DEEP_GR,      &
+                                    XTG_SURF_GR, XTG_ROOT_GR, XTG_DEEP_GR,                     &
                                     XWR_DEF  
 
 USE MODD_SURF_PAR,   ONLY : XUNDEF
@@ -70,31 +70,31 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB_GREENROOF',0,ZHOOK_HANDLE)
-CFILE_ISBA      = '                          '
-CTYPE           = 'GRIB  '
-CFILEPGD_ISBA   = '                          '
-CTYPEPGD        = 'GRIB  '
-CFILE_HUG       = '                          '
-CTYPE_HUG       = '      '
-CFILE_TG        = '                          '
-CTYPE_TG        = '      '
+ CFILE_GR      = '                          '
+ CTYPE           = 'GRIB  '
+ CFILEPGD_GR   = '                          '
+ CTYPEPGD        = 'GRIB  '
+ CFILE_HUG_GR       = '                          '
+ CTYPE_HUG       = '      '
+ CFILE_TG_GR        = '                          '
+ CTYPE_TG        = '      '
 !
-CFILE_HUG_SURF = '                          '
-CFILE_HUG_ROOT = '                          '
-CFILE_HUG_DEEP = '                          '
-CFILE_TG_SURF  = '                          '
-CFILE_TG_ROOT  = '                          '
-CFILE_TG_DEEP  = '                          '
+ CFILE_HUG_SURF_GR = '                          '
+ CFILE_HUG_ROOT_GR = '                          '
+ CFILE_HUG_DEEP_GR = '                          '
+ CFILE_TG_SURF_GR  = '                          '
+ CFILE_TG_ROOT_GR  = '                          '
+ CFILE_TG_DEEP_GR  = '                          '
 !
-XHUG_SURF = XUNDEF
-XHUG_ROOT = XUNDEF
-XHUG_DEEP = XUNDEF
-XHUGI_SURF= 0.
-XHUGI_ROOT= 0.
-XHUGI_DEEP= 0.
-XTG_SURF  = XUNDEF
-XTG_ROOT  = XUNDEF
-XTG_DEEP  = XUNDEF
+XHUG_SURF_GR = XUNDEF
+XHUG_ROOT_GR = XUNDEF
+XHUG_DEEP_GR = XUNDEF
+XHUGI_SURF_GR= 0.
+XHUGI_ROOT_GR= 0.
+XHUGI_DEEP_GR= 0.
+XTG_SURF_GR  = XUNDEF
+XTG_ROOT_GR  = XUNDEF
+XTG_DEEP_GR  = XUNDEF
 !
 XWR_DEF   = 0.
 !

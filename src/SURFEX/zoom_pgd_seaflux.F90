@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######spl
-      SUBROUTINE ZOOM_PGD_SEAFLUX(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)
+      SUBROUTINE ZOOM_PGD_SEAFLUX (DTCO, DTS, SG, S, UG, U,GCP, &
+                                   HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)
 !     ##############################################################
 !
 !!**** *PGD_SEAFLUX* monitor for averaging and interpolations of SEAFLUX physiographic fields
@@ -41,12 +42,21 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_SEAFLUX_n, ONLY : DATA_SEAFLUX_t
+USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+!
 USE MODD_DATA_COVER_PAR,  ONLY : JPCOVER
 USE MODD_PREP,             ONLY : CINGRID_TYPE, CINTERP_TYPE, LINTERP
 !
-USE MODD_SEAFLUX_n,       ONLY : XCOVER, LCOVER, XZS, XSEABATHY
-USE MODD_SEAFLUX_GRID_n,  ONLY : CGRID, XGRID_PAR, XLAT, XLON, XMESH_SIZE, NDIM
-USE MODD_DATA_SEAFLUX_n,    ONLY : LSST_DATA, NTIME, XDATA_SST, TDATA_SST
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_AUX_IO_SURF
@@ -67,6 +77,15 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_SEAFLUX_t), INTENT(INOUT) :: DTS
+TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! Type of program
  CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
@@ -102,35 +121,39 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SEAFLUX',0,ZHOOK_HANDLE)
 !  Their value must be defined as XUNDEF.
 !
 !
- CALL OPEN_AUX_IO_SURF(HINIFILE,HINIFILETYPE,'FULL  ')
+ CALL OPEN_AUX_IO_SURF(&
+                       HINIFILE,HINIFILETYPE,'FULL  ')
 !
 !-------------------------------------------------------------------------------
 !
 !*    5.      Number of points and packing
 !             ----------------------------
 !
- CALL GET_SURF_SIZE_n('SEA   ',NDIM)
+ CALL GET_SURF_SIZE_n(DTCO, U, &
+                      'SEA   ',SG%NDIM)
 !
-ALLOCATE(LCOVER     (JPCOVER))
-ALLOCATE(XCOVER     (NDIM,JPCOVER))
-ALLOCATE(XZS        (NDIM))
-ALLOCATE(XLAT       (NDIM))
-ALLOCATE(XLON       (NDIM))
-ALLOCATE(XMESH_SIZE (NDIM))
+ALLOCATE(S%LCOVER     (JPCOVER))
+ALLOCATE(S%XZS        (SG%NDIM))
+ALLOCATE(SG%XLAT       (SG%NDIM))
+ALLOCATE(SG%XLON       (SG%NDIM))
+ALLOCATE(SG%XMESH_SIZE (SG%NDIM))
 !
- CALL PACK_PGD(HPROGRAM, 'SEA   ',                      &
-                CGRID,  XGRID_PAR, LCOVER,             &
-                XCOVER, XZS,                           &
-                XLAT, XLON, XMESH_SIZE                 )  
+ CALL PACK_PGD(DTCO, U, &
+               HPROGRAM, 'SEA   ',                      &
+                SG%CGRID,  SG%XGRID_PAR, S%LCOVER,             &
+                S%XCOVER, S%XZS,                           &
+                SG%XLAT, SG%XLON, SG%XMESH_SIZE                 )  
 !
 !------------------------------------------------------------------------------
 !
 !*      2.     Reading of grid
 !              ---------------
 !
- CALL PREP_GRID_EXTERN(HINIFILETYPE,ILUOUT,CINGRID_TYPE,CINTERP_TYPE,INI)
+ CALL PREP_GRID_EXTERN(GCP,&
+                       HINIFILETYPE,ILUOUT,CINGRID_TYPE,CINTERP_TYPE,INI)
 !
- CALL PREP_OUTPUT_GRID(ILUOUT,CGRID,XGRID_PAR,XLAT,XLON)
+ CALL PREP_OUTPUT_GRID(UG, U, &
+                       ILUOUT,SG%CGRID,SG%XGRID_PAR,SG%XLAT,SG%XLON)
 !
 !* mask where interpolations must be done
 !
@@ -142,20 +165,24 @@ LINTERP(:) = .TRUE.
 !              -----------------
 !
 ALLOCATE(ZSEABATHY(INI,1))
- CALL READ_SURF(HPROGRAM,'BATHY',ZSEABATHY(:,1),IRESP,HDIR='A')
+ CALL READ_SURF(&
+                HPROGRAM,'BATHY',ZSEABATHY(:,1),IRESP,HDIR='A')
 !
-ALLOCATE(ZWORK(NDIM,1))
- CALL HOR_INTERPOL(ILUOUT,ZSEABATHY(:,1:1),ZWORK(:,1:1)) 
-ALLOCATE(XSEABATHY (NDIM))
-XSEABATHY(:) = ZWORK(:,1)
+ALLOCATE(ZWORK(SG%NDIM,1))
+ CALL HOR_INTERPOL(DTCO, U,GCP, &
+                   ILUOUT,ZSEABATHY(:,1:1),ZWORK(:,1:1)) 
+ALLOCATE(S%XSEABATHY (SG%NDIM))
+S%XSEABATHY(:) = ZWORK(:,1)
 DEALLOCATE(ZSEABATHY,ZWORK)
 !
 !============================================================
 ! G. TANGUY 03/2009
 ! reading of fields for SST_DATA
- CALL READ_SURF(HPROGRAM,'SST_DATA',LSST_DATA,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,'SST_DATA',DTS%LSST_DATA,IRESP)
 !
-IF (LSST_DATA) CALL READ_PGD_SEAFLUX_PAR_n(HPROGRAM,INI,HDIR='A')
+IF (DTS%LSST_DATA) CALL READ_PGD_SEAFLUX_PAR_n(DTCO, U, DTS, SG,GCP, &
+                                               HPROGRAM,INI,HDIR='A')
 !
 !============================================================
 !

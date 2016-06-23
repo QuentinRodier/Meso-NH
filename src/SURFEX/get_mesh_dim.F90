@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_MESH_DIM(HGRID,KGRID_PAR,KL,PGRID_PAR,PDX,PDY,PMESHSIZE)
 !     ##############################################################
@@ -26,6 +26,7 @@
 !!    ------------
 !!
 !!    Original    03/2004
+!!    P. Samuelsson   SMHI   10/2014   Rotated lonlat
 !!
 !----------------------------------------------------------------------------
 !
@@ -41,6 +42,7 @@ USE MODI_GET_MESH_DIM_GAUSS
 USE MODI_GET_MESH_DIM_IGN
 USE MODI_GET_MESH_DIM_LONLAT_REG
 USE MODI_GET_MESH_DIM_LONLATVAL
+USE MODI_GET_MESH_DIM_LONLAT_ROT
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -77,6 +79,9 @@ SELECT CASE (HGRID)
 
   CASE("LONLATVAL ")
     CALL GET_MESH_DIM_LONLATVAL(KGRID_PAR,KL,PGRID_PAR,PDX,PDY)
+
+  CASE("LONLAT ROT")
+    CALL GET_MESH_DIM_LONLAT_ROT(KGRID_PAR,KL,PGRID_PAR,PDX,PDY)
 
   CASE("NONE      ")
     PDX(:) = SQRT(PMESHSIZE)

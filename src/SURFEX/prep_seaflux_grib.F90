@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_SEAFLUX_GRIB(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !     #################################################################################
@@ -36,7 +36,7 @@ USE MODD_TYPE_DATE_SURF
 USE MODI_PREP_GRIB_GRID
 !
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
-USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE
+USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE, NNI
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -92,7 +92,7 @@ SELECT CASE(HSURF)
     END SELECT
 
 !
-!* 3.  Temperature profiles
+!* 2.  Temperature profiles
 !      --------------------
 !
   CASE('SST    ')
@@ -103,7 +103,14 @@ SELECT CASE(HSURF)
         PFIELD(:,1) = ZFIELD(:)
         DEALLOCATE(ZFIELD)
     END SELECT
-
+!
+!* 3.  Sea surface salinity and ice fraction
+!      -------------------------------------
+!
+  CASE('SSS    ','SIC    ')
+      ALLOCATE(PFIELD(NNI,1))
+      PFIELD = 0.0
+!
 END SELECT
 !
 DEALLOCATE(ZMASK)
@@ -111,7 +118,7 @@ DEALLOCATE(ZMASK)
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='HORIBL'
+ CINTERP_TYPE='HORIBL'
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_GRIB',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

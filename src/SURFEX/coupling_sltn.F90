@@ -1,8 +1,8 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
-!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!ORILAM_LIC for details.
-SUBROUTINE COUPLING_SLT_n(  &
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+SUBROUTINE COUPLING_SLT_n (SLT, &
       KI,                   &!I [nbr] number of sea points 
       KSLT,                 &!I [nbr] number of sea points 
       PWIND,                &!I Wind velocity
@@ -17,9 +17,11 @@ SUBROUTINE COUPLING_SLT_n(  &
 !-------
 ! P. Tulet
 !
+!
+USE MODD_SLT_n, ONLY : SLT_t
+!
 USE MODD_CSTS, ONLY : XAVOGADRO, XPI
 USE MODD_SLT_SURF
-USE MODD_SLT_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -27,6 +29,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !INPUT
+!
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+!
 INTEGER, INTENT(IN)                :: KI             !I Number of sea points
 INTEGER, INTENT(IN)                :: KSLT           !I Number of sea salt emission variables
 REAL, DIMENSION(KI),      INTENT(IN)  :: PWIND       !I wind velocity
@@ -156,8 +161,8 @@ DO JN=1,JPMODE_SLT
   IF (LVARSIG_SLT) THEN
     !
     PSFSLT(:,1+(JN-1)*3) = ZSFSLT_MDE(:,JORDER_SLT(JN))
-    PSFSLT(:,2+(JN-1)*3) = PSFSLT(:,1+(JN-1)*3) * (XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(XEMISSIG_SLT(JN))**2)  
-    PSFSLT(:,3+(JN-1)*3) = PSFSLT(:,1+(JN-1)*3) * (XEMISRADIUS_SLT(JN)**6)*EXP(18. * LOG(XEMISSIG_SLT(JN))**2)  
+    PSFSLT(:,2+(JN-1)*3) = PSFSLT(:,1+(JN-1)*3) * (SLT%XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2)  
+    PSFSLT(:,3+(JN-1)*3) = PSFSLT(:,1+(JN-1)*3) * (SLT%XEMISRADIUS_SLT(JN)**6)*EXP(18. * LOG(SLT%XEMISSIG_SLT(JN))**2)  
     !
     ! Conversion into fluxes
     PSFSLT(:,1+(JN-1)*3) = PSFSLT(:,1+(JN-1)*3) * ZCONVERTFACM0_SLT
@@ -165,13 +170,13 @@ DO JN=1,JPMODE_SLT
     PSFSLT(:,3+(JN-1)*3) = PSFSLT(:,3+(JN-1)*3) * ZCONVERTFACM6_SLT
 
   ELSE IF (LRGFIX_SLT) THEN
-    PSFSLT(:,JN) =  ZSFSLT_MDE(:,JORDER_SLT(JN)) * (XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(XEMISSIG_SLT(JN))**2) 
+    PSFSLT(:,JN) =  ZSFSLT_MDE(:,JORDER_SLT(JN)) * (SLT%XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2) 
     ! Conversion into fluxes
     PSFSLT(:,JN) = PSFSLT(:,JN) * ZCONVERTFACM3_SLT
 
   ELSE
     PSFSLT(:,1+(JN-1)*2) = ZSFSLT_MDE(:,JORDER_SLT(JN)) 
-    PSFSLT(:,2+(JN-1)*2) = PSFSLT(:,1+(JN-1)*2) * (XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(XEMISSIG_SLT(JN))**2) 
+    PSFSLT(:,2+(JN-1)*2) = PSFSLT(:,1+(JN-1)*2) * (SLT%XEMISRADIUS_SLT(JN)**3)*EXP(4.5 * LOG(SLT%XEMISSIG_SLT(JN))**2) 
 
     ! Conversion into fluxes
     PSFSLT(:,1+(JN-1)*2) = PSFSLT(:,1+(JN-1)*2) * ZCONVERTFACM0_SLT

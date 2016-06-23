@@ -1,14 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_TOWN_n(HPROGRAM, HCOUPLING, PTIMEC,                                      &
+SUBROUTINE COUPLING_TOWN_n (DTCO, U, DTI, IG, I, DGL, DST, SLT, TM, GDM, GRM, &
+                            HPROGRAM, HCOUPLING, PTIMEC,                                      &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PAZIM,    &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  HTEST                                                                       )  
@@ -33,9 +34,22 @@ SUBROUTINE COUPLING_TOWN_n(HPROGRAM, HCOUPLING, PTIMEC,                         
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      B. Decharme  04/2013 new coupling variables
 !!------------------------------------------------------------------
 !
-USE MODD_SURF_ATM_n, ONLY : CTOWN
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+!
 USE MODD_CSTS,       ONLY : XTT, XCPD, XRD, XP00
 !
 ! 
@@ -50,6 +64,19 @@ USE MODI_COUPLING_TEB_OROGRAPHY_n
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -98,13 +125,18 @@ REAL, DIMENSION(KI), INTENT(OUT) :: PSFTH     ! flux of heat                    
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFU      ! zonal momentum flux                   (Pa)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFV      ! meridian momentum flux                (Pa)
-REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(KI,KSV),INTENT(OUT):: PSFTS   ! flux of scalar var.                   (kg/m2/s)
 !
 REAL, DIMENSION(KI), INTENT(OUT) :: PTRAD     ! radiative temperature                 (K)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PDIR_ALB! direct albedo for each spectral band  (-)
 REAL, DIMENSION(KI,KSW),INTENT(OUT):: PSCA_ALB! diffuse albedo for each spectral band (-)
 REAL, DIMENSION(KI), INTENT(OUT) :: PEMIS     ! emissivity                            (-)
+!
+REAL, DIMENSION(KI), INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0       ! roughness length for momentum         (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PZ0H      ! roughness length for heat             (m)
+REAL, DIMENSION(KI), INTENT(OUT) :: PQSURF    ! specific humidity at surface          (kg/kg)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_A_COEF! implicit coefficients
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_B_COEF! needed if HCOUPLING='I'
@@ -125,31 +157,33 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_TOWN_N',0,ZHOOK_HANDLE)
 !
-IF (CTOWN=='TEB   ') THEN 
-  CALL COUPLING_TEB_OROGRAPHY_n(HPROGRAM, HCOUPLING,                                       &
+IF (U%CTOWN=='TEB   ') THEN 
+  CALL COUPLING_TEB_OROGRAPHY_n(DTCO, DTI, IG, I, DST, SLT, TM, GDM, GRM,            &
+                                HPROGRAM, HCOUPLING,                                       &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
                  KI, KSV, KSW,                                                               &
                  PTSUN, PZENITH, PAZIM,                                                      &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  'OK'                                                                        )  
-ELSE IF (CTOWN=='FLUX  ') THEN
-  CALL COUPLING_IDEAL_FLUX(HPROGRAM, HCOUPLING, PTIMEC,                                      &
+ELSE IF (U%CTOWN=='FLUX  ') THEN
+  CALL COUPLING_IDEAL_FLUX(DGL, &
+                           HPROGRAM, HCOUPLING, PTIMEC,                                      &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
                  KI, KSV, KSW,                                                               &
                  PTSUN, PZENITH, PAZIM,                                                      &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
                  PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                  'OK'                                                                        )  
-ELSE IF (CTOWN=='NONE  ') THEN
+ELSE IF (U%CTOWN=='NONE  ') THEN
   PSFTH = 0.
   PSFTQ = 0.
   PSFTS = 0.
@@ -161,6 +195,12 @@ ELSE IF (CTOWN=='NONE  ') THEN
   PDIR_ALB = 0.
   PSCA_ALB = 0.
   PEMIS   = 1.
+!  
+  PTSURF = XTT
+  PZ0    = 0.1
+  PZ0H   = 0.001
+  PQSURF = 0.0
+!  
 END IF
 IF (LHOOK) CALL DR_HOOK('COUPLING_TOWN_N',1,ZHOOK_HANDLE)
 !

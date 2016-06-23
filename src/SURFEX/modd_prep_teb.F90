@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################
       MODULE MODD_PREP_TEB
 !     ################
@@ -22,7 +22,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -40,8 +40,10 @@ SAVE
  CHARACTER(LEN=6)  :: CTYPE          ! input file type
  CHARACTER(LEN=28) :: CFILEPGD_TEB   ! input file name
  CHARACTER(LEN=6)  :: CTYPEPGD       ! input file type
- CHARACTER(LEN=28) :: CFILE_SNOW     ! input file name for Snow
+ CHARACTER(LEN=28) :: CFILE_SNOW_TEB ! input file name for Snow
  CHARACTER(LEN=6)  :: CTYPE_SNOW     ! input file type for Snow
+ CHARACTER(LEN=28) :: CFILEPGD_SNOW_TEB ! input file name for Snow
+ CHARACTER(LEN=6)  :: CTYPEPGD_SNOW     ! input file type for Snow
  CHARACTER(LEN=28) :: CFILE_WS       ! input file name for Ws
  CHARACTER(LEN=6)  :: CTYPE_WS       ! input file type for Ws
  CHARACTER(LEN=28) :: CFILE_TS       ! input file name for Ts
@@ -67,15 +69,17 @@ REAL              :: XHUI_BLD_DEF   ! default uniform building interior relative
 !
 ! Snow variables
 !
-LOGICAL :: LSNOW_IDEAL 
+LOGICAL :: LSNOW_IDEAL_TEB 
 !
 REAL, DIMENSION(:), POINTER :: XWSNOW_ROOF      ! snow reservoir   for roofs
 REAL, DIMENSION(:), POINTER :: XTSNOW_ROOF      ! snow density     for roofs
+REAL, DIMENSION(:), POINTER :: XLWCSNOW_ROOF      ! snow liquid water content     for roofs
 REAL, DIMENSION(:), POINTER :: XRSNOW_ROOF      ! snow temperature for roofs
 REAL              :: XASNOW_ROOF      ! snow albedo      for roofs
 !
 REAL, DIMENSION(:), POINTER :: XWSNOW_ROAD      ! snow reservoir   for roads
 REAL, DIMENSION(:), POINTER :: XTSNOW_ROAD      ! snow temperature for roads
+REAL, DIMENSION(:), POINTER :: XLWCSNOW_ROAD      ! snow liquid water content     for roads
 REAL, DIMENSION(:), POINTER :: XRSNOW_ROAD      ! snow density     for roads
 REAL              :: XASNOW_ROAD      ! snow albedo      for roads
 !

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_BINLLVFAST(HPROGRAM,HSUBROUTINE,HFILENAME)
+      SUBROUTINE READ_BINLLVFAST (USS, &
+                                  HPROGRAM,HSUBROUTINE,HFILENAME)
 !     ##############################################################
 !
 !!**** *READ_BINLLVFAST* reads a binary latlonvalue file and call treatment 
@@ -32,6 +33,10 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_PGD_GRID,   ONLY : LLATLONMASK
 !
@@ -48,6 +53,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
@@ -115,7 +123,8 @@ END DO
 !     
 IF (ICPT > 0) THEN
   ZLLVWORK=>ZLLV(:,1:ICPT)
-  CALL PT_BY_PT_TREATMENT(ILUOUT,ZLLVWORK(1,:),ZLLVWORK(2,:),ZLLVWORK(3,:),HSUBROUTINE)
+  CALL PT_BY_PT_TREATMENT(USS, &
+                          ILUOUT,ZLLVWORK(1,:),ZLLVWORK(2,:),ZLLVWORK(3,:),HSUBROUTINE)
 END IF
 !
 !----------------------------------------------------------------------------

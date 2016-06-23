@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_GRID_EXTERN(HFILETYPE,KLUOUT,HGRIDTYPE,HINTERP_TYPE,KNI)
+      SUBROUTINE PREP_GRID_EXTERN (GCP,&
+                                   HFILETYPE,KLUOUT,HGRIDTYPE,HINTERP_TYPE,KNI)
 !     ##########################################################################
 !
 !!****  *PREP_GRID_EXTERN* - reads EXTERNALIZED Surface grid.
@@ -38,6 +39,10 @@
 !*      0. DECLARATIONS
 !          ------------
 !
+!
+!
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+!
 USE MODI_READ_SURF
 USE MODI_PREP_GRID_CONF_PROJ
 USE MODI_PREP_GRID_CARTESIAN
@@ -54,6 +59,9 @@ IMPLICIT NONE
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
+!
+!
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
  CHARACTER(LEN=6),  INTENT(IN)    :: HFILETYPE    ! file type
 INTEGER,           INTENT(IN)    :: KLUOUT       ! logical unit of output listing
  CHARACTER(LEN=10),  INTENT(OUT)  :: HGRIDTYPE    ! Grid type
@@ -72,7 +80,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !      ------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_GRID_EXTERN',0,ZHOOK_HANDLE)
- CALL READ_SURF(HFILETYPE,'GRID_TYPE',HGRIDTYPE,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,'GRID_TYPE',HGRIDTYPE,IRESP)
 !
 !-----------------------------------------------------------------------
 !
@@ -80,14 +89,18 @@ IF (LHOOK) CALL DR_HOOK('PREP_GRID_EXTERN',0,ZHOOK_HANDLE)
 !      ---------------
 !
 IF (HGRIDTYPE=='CONF PROJ ') THEN
-  CALL PREP_GRID_CONF_PROJ(HFILETYPE,HINTERP_TYPE,KNI)
+  CALL PREP_GRID_CONF_PROJ(GCP,&
+                           HFILETYPE,HINTERP_TYPE,KNI)
 ELSE IF (HGRIDTYPE=='CARTESIAN ') THEN
-  CALL PREP_GRID_CARTESIAN(HFILETYPE,HINTERP_TYPE,KNI)
+  CALL PREP_GRID_CARTESIAN(&
+                           HFILETYPE,HINTERP_TYPE,KNI)
 ELSE IF (HGRIDTYPE=='GAUSS     ') THEN
-  CALL PREP_GRID_GAUSS(HFILETYPE,HINTERP_TYPE,KNI)
+  CALL PREP_GRID_GAUSS(&
+                       HFILETYPE,HINTERP_TYPE,KNI)
 ELSE IF (HGRIDTYPE=='LONLAT REG') THEN
   HGRIDTYPE = 'LATLON    '
-  CALL PREP_GRID_LONLAT_REG(HFILETYPE,HINTERP_TYPE,KNI)
+  CALL PREP_GRID_LONLAT_REG(&
+                            HFILETYPE,HINTERP_TYPE,KNI)
 ELSE
   WRITE(KLUOUT,*) 'GRIDTYPE "',HGRIDTYPE,'" NOT ACCEPTED AS INPUT FILE FOR FIELD PREPARATION'
   CALL ABOR1_SFX('GRIDTYPE NOT ACCEPTED AS INPUT FILE FOR FIELD PREPARATION, '//HGRIDTYPE)

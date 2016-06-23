@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_OCEAN_FIELD( HPROGRAM,                       &
+SUBROUTINE PREP_HOR_OCEAN_FIELD (DTCO, UG, U, &
+                                  O, OR, SG,GCP, &
+                                 HPROGRAM,                       &
                                  HFILE,HFILETYPE,KLUOUT,OUNIF,   &
                                  HSURF,HNCVARNAME                )
 !     #######################################################
@@ -30,14 +32,23 @@ SUBROUTINE PREP_HOR_OCEAN_FIELD( HPROGRAM,                       &
 !!      Modified    07/2012, P. Le Moigne : CMO1D phasing
 !!------------------------------------------------------------------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_OCEAN_n, ONLY : OCEAN_t
+USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
+USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+!
 USE MODD_CSTS,           ONLY : XTT
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_OCEAN_CSTS  ,   ONLY : NOCKMIN,NOCKMAX
-USE MODD_OCEAN_n,        ONLY : XSEAT, XSEAS, XSEAU, XSEAV, LCURRENT
+USE MODD_OCEAN_GRID,   ONLY : NOCKMIN,NOCKMAX
 USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE, XLAT_OUT, XLON_OUT,&
                                 XX_OUT, XY_OUT
-USE MODD_SEAFLUX_GRID_n, ONLY : XLAT, XLON
-USE MODD_OCEAN_REL_n, ONLY : XSEAS_REL, XSEAT_REL, XSEAU_REL, XSEAV_REL
 !
 USE MODI_PREP_OCEAN_UNIF
 USE MODI_PREP_OCEAN_NETCDF
@@ -52,6 +63,17 @@ USE MODI_ABOR1_SFX
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
+TYPE(OCEAN_t), INTENT(INOUT) :: O
+TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
+TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! file name
@@ -87,7 +109,8 @@ ELSE IF (HFILETYPE=='NETCDF') THEN
 ELSE IF (HFILETYPE=='ASCII') THEN
    WRITE(KLUOUT,*) 'PERSONAL LIB TEST FOR READING ',HFILETYPE,'file type'
    WRITE(KLUOUT,*) 'ASCII FILE MUST CONTAIN LAT,LON,DEPTH,T,S,U,V'
-   CALL PREP_OCEAN_ASCLLV(HPROGRAM,HSURF,HFILE,KLUOUT,ZFIELDIN)                         
+   CALL PREP_OCEAN_ASCLLV(DTCO, UG, U, &
+                          HPROGRAM,HSURF,HFILE,KLUOUT,ZFIELDIN)                         
 ELSE
   CALL ABOR1_SFX('PREP_OCEAN_HOR_FIELD: data file type not supported : '//HFILETYPE)
 END IF
@@ -96,12 +119,13 @@ END IF
 !
 !*      3.     Horizontal interpolation
 !
-ALLOCATE(ZFIELDOUT  (SIZE(XLAT),SIZE(ZFIELDIN,2),SIZE(ZFIELDIN,3)) )
+ALLOCATE(ZFIELDOUT  (SIZE(SG%XLAT),SIZE(ZFIELDIN,2),SIZE(ZFIELDIN,3)) )
 ALLOCATE(ZFIELD(SIZE(ZFIELDIN,1),SIZE(ZFIELDIN,3)))
 !
 DO JLEV=1,SIZE(ZFIELDIN,2)
   ZFIELD(:,:)=ZFIELDIN(:,JLEV,:)
-  CALL HOR_INTERPOL(KLUOUT,ZFIELD,ZFIELDOUT(:,JLEV,:))
+  CALL HOR_INTERPOL(DTCO, U,GCP, &
+                    KLUOUT,ZFIELD,ZFIELDOUT(:,JLEV,:))
 ENDDO
 !
 !*      5.     Return to historical variable
@@ -109,53 +133,53 @@ ENDDO
 IK1=NOCKMIN+1
 SELECT CASE (HSURF)
   CASE('TEMP_OC') 
-    ALLOCATE(XSEAT(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
-    ALLOCATE(XSEAT_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(O%XSEAT(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(OR%XSEAT_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
     DO JLEV=IK1,NOCKMAX
-      XSEAT(:,JLEV) = ZFIELDOUT(:,JLEV,1)
-      !prevoir interpolation sur la grille verticale si niveau différents
+      O%XSEAT(:,JLEV) = ZFIELDOUT(:,JLEV,1)
+      !prevoir interpolation sur la grille verticale si niveau diffÃ©rents
     ENDDO
-    XSEAT(:,NOCKMIN)=XSEAT(:,IK1)
+    O%XSEAT(:,NOCKMIN)=O%XSEAT(:,IK1)
     !
     ! Relaxation Profile = initial profile for the steady regime
     ! Change it for seasonal cycle!! 
-    XSEAT_REL(:,:) = XSEAT(:,:)
+    OR%XSEAT_REL(:,:) = O%XSEAT(:,:)
     !    
   CASE('SALT_OC') 
-    ALLOCATE(XSEAS(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
-    ALLOCATE(XSEAS_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(O%XSEAS(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(OR%XSEAS_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
     DO JLEV=IK1,NOCKMAX
-      XSEAS(:,JLEV) = ZFIELDOUT(:,JLEV,1)
+      O%XSEAS(:,JLEV) = ZFIELDOUT(:,JLEV,1)
     ENDDO
-    XSEAS(:,NOCKMIN)=XSEAS(:,IK1)
+    O%XSEAS(:,NOCKMIN)=O%XSEAS(:,IK1)
     !
     ! Relaxation Profile = initial profile for the steady regime
     ! Change it for seasonal cycle!! 
-    XSEAS_REL(:,:) = XSEAS(:,:)
+    OR%XSEAS_REL(:,:) = O%XSEAS(:,:)
     !    
   CASE('UCUR_OC') 
-    ALLOCATE(XSEAU(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
-    ALLOCATE(XSEAU_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(O%XSEAU(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(OR%XSEAU_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
     DO JLEV=IK1,NOCKMAX
-      XSEAU(:,JLEV) = ZFIELDOUT(:,JLEV,1)
+      O%XSEAU(:,JLEV) = ZFIELDOUT(:,JLEV,1)
     ENDDO
-    XSEAU(:,NOCKMIN)=XSEAU(:,IK1)
+    O%XSEAU(:,NOCKMIN)=O%XSEAU(:,IK1)
     ! 
-    IF (.NOT.LCURRENT) XSEAU(:,:)=0.
+    IF (.NOT.O%LCURRENT) O%XSEAU(:,:)=0.
     !
-    XSEAU_REL(:,:) = XSEAU(:,:)
+    OR%XSEAU_REL(:,:) = O%XSEAU(:,:)
     !
   CASE('VCUR_OC') 
-    ALLOCATE(XSEAV(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
-    ALLOCATE(XSEAV_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(O%XSEAV(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
+    ALLOCATE(OR%XSEAV_REL(SIZE(ZFIELDOUT,1),NOCKMIN:NOCKMAX))
     DO JLEV=IK1,NOCKMAX
-      XSEAV(:,JLEV) = ZFIELDOUT(:,JLEV,1)
+      O%XSEAV(:,JLEV) = ZFIELDOUT(:,JLEV,1)
     ENDDO
-    XSEAV(:,NOCKMIN)=XSEAV(:,IK1)    
+    O%XSEAV(:,NOCKMIN)=O%XSEAV(:,IK1)    
     !
-    IF (.NOT.LCURRENT) XSEAV(:,:)=0.
+    IF (.NOT.O%LCURRENT) O%XSEAV(:,:)=0.
     !
-    XSEAV_REL(:,:) = XSEAV(:,:)
+    OR%XSEAV_REL(:,:) = O%XSEAV(:,:)
     !
 END SELECT
 !

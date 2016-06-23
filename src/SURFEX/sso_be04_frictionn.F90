@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE SSO_BE04_FRICTION_n(PTSTEP,PSEA,PUREF,PRHOA,PU,PV,PSFU,PSFV)
+SUBROUTINE SSO_BE04_FRICTION_n (SSCP, USS, &
+                                PTSTEP,PSEA,PUREF,PRHOA,PU,PV,PSFU,PSFV)
 !     ###############################################################################
 !
 !!****  *SSO_BE04_FRICTION_n * - Computes subgrid-scale orography friction
@@ -32,12 +33,14 @@ SUBROUTINE SSO_BE04_FRICTION_n(PTSTEP,PSEA,PUREF,PRHOA,PU,PV,PSFU,PSFV)
 !----------------------------------------------------------------
 !
 !
+!
+USE MODD_SSO_CANOPY_n, ONLY : SSO_CANOPY_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_SURF_ATM_SSO_n, ONLY : XSSO_STDEV
 USE MODD_CANOPY_TURB,    ONLY : XALPSBL
 USE MODD_CSTS,           ONLY : XKARMAN
 !
-USE MODD_SSO_CANOPY_n,   ONLY : NLVL, XZ, XU, XTKE, XDZ, XZF, XDZF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -49,6 +52,10 @@ USE MODI_SSO_BELJAARS04
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(SSO_CANOPY_t), INTENT(INOUT) :: SSCP
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
 REAL,               INTENT(IN)    :: PTSTEP    ! time step
 REAL, DIMENSION(:), INTENT(IN)    :: PSEA      ! Sea fraction                          (-)
@@ -70,28 +77,28 @@ REAL, DIMENSION(SIZE(PU))    :: ZUSTAR  ! friction velocity
 REAL, DIMENSION(SIZE(PU))     :: ZTA      ! temperature                                   (K)
 REAL, DIMENSION(SIZE(PU))     :: ZQA      ! specific humidity                             (kg/m3)
 REAL, DIMENSION(SIZE(PU))     :: ZPA      ! pressure                                      (Pa)
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZT
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZQ
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZLMO
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZLM
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZLEPS
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZP
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZT
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZQ
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZLMO
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZLM
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZLEPS
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZP
 REAL, DIMENSION(SIZE(PU))     :: ZSFLUX_T
 REAL, DIMENSION(SIZE(PU))     :: ZSFLUX_Q
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZFORC_T
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZDFORC_TDT
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZFORC_Q
-REAL, DIMENSION(SIZE(PU),NLVL) :: ZDFORC_QDQ
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZFORC_T
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZDFORC_TDT
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZFORC_Q
+REAL, DIMENSION(SIZE(PU),SSCP%NLVL) :: ZDFORC_QDQ
 REAL, DIMENSION(SIZE(PU)) :: ZALFATH
 REAL, DIMENSION(SIZE(PU)) :: ZBETATH
 REAL, DIMENSION(SIZE(PU)) :: ZALFAQ
 REAL, DIMENSION(SIZE(PU)) :: ZBETAQ
 !
-REAL,    DIMENSION(SIZE(PU), NLVL) :: ZFORC_U      ! tendency due to drag force for wind
-REAL,    DIMENSION(SIZE(PU), NLVL) :: ZDFORC_UDU   ! formal derivative of
+REAL,    DIMENSION(SIZE(PU), SSCP%NLVL) :: ZFORC_U      ! tendency due to drag force for wind
+REAL,    DIMENSION(SIZE(PU), SSCP%NLVL) :: ZDFORC_UDU   ! formal derivative of
 !                                                  ! tendency due to drag force for wind
-REAL,    DIMENSION(SIZE(PU), NLVL) :: ZFORC_E      ! tendency due to drag force for TKE
-REAL,    DIMENSION(SIZE(PU), NLVL) :: ZDFORC_EDE   ! formal derivative of
+REAL,    DIMENSION(SIZE(PU), SSCP%NLVL) :: ZFORC_E      ! tendency due to drag force for TKE
+REAL,    DIMENSION(SIZE(PU), SSCP%NLVL) :: ZDFORC_EDE   ! formal derivative of
 !                                                  ! tendency due to drag force for TKE
 INTEGER                            :: INI          ! number of points
 INTEGER                            :: JI           ! number of points loop counter
@@ -114,7 +121,7 @@ IF (LHOOK) CALL DR_HOOK('SSO_BE04_FRICTION_N',0,ZHOOK_HANDLE)
 INI = SIZE(PU)
 !
 ZH = 0.
- CALL CANOPY_GRID_UPDATE(INI,NLVL,ZH,PUREF,XZ,XZF,XDZ,XDZF)
+ CALL CANOPY_GRID_UPDATE(INI,SSCP%NLVL,ZH,PUREF,SSCP%XZ,SSCP%XZF,SSCP%XDZ,SSCP%XDZF)
 !
 !*      1.2    Wind
 !              ----
@@ -127,12 +134,12 @@ ZSFLUX_U = - SQRT(PSFU**2+PSFV**2)
 !*      1.3    Canopy profiles at first time step (neutral case)
 !              ----------------------------------
 !
-IF (ANY(XU(:,NLVL)==XUNDEF)) THEN
-  DO JLAYER=1,NLVL
+IF (ANY(SSCP%XU(:,SSCP%NLVL)==XUNDEF)) THEN
+  DO JLAYER=1,SSCP%NLVL
      DO JI=1,INI
-        XU  (JI,JLAYER) = MAX ( ZWIND(JI) + SQRT(-ZSFLUX_U(JI)) / XKARMAN      &
-                                  * LOG(XZ(JI,JLAYER)/XZ(JI,NLVL))   , 0.)
-        XTKE(JI,JLAYER) = - XALPSBL * ZSFLUX_U(JI)
+        SSCP%XU  (JI,JLAYER) = MAX ( ZWIND(JI) + SQRT(-ZSFLUX_U(JI)) / XKARMAN      &
+                                  * LOG(SSCP%XZ(JI,JLAYER)/SSCP%XZ(JI,SSCP%NLVL))   , 0.)
+        SSCP%XTKE(JI,JLAYER) = - XALPSBL * ZSFLUX_U(JI)
      ENDDO
   ENDDO
 ENDIF
@@ -143,7 +150,7 @@ ENDIF
 !*      2.    Subgrid-scale orographic drag (Beljaars et al 2004)
 !             -----------------------------
 !
-ZSSO_STDEV = XSSO_STDEV
+ZSSO_STDEV = USS%XSSO_STDEV
 WHERE (ZSSO_STDEV==XUNDEF) ZSSO_STDEV=0.
 !
 ZFORC_U   (:,:)= 0.
@@ -152,12 +159,13 @@ ZFORC_E   (:,:) = 0.
 ZDFORC_EDE(:,:) = 0.
 !
 !* computes tendencies on wind and Tke due to subgridscale orography
- CALL SSO_BELJAARS04( INI,NLVL,XZ,ZSSO_STDEV,XU,ZFORC_U,ZDFORC_UDU )
+ CALL SSO_BELJAARS04(USS, &
+                     INI,SSCP%NLVL,SSCP%XZ,ZSSO_STDEV,SSCP%XU,ZFORC_U,ZDFORC_UDU )
 !
-DO JLAYER=1,NLVL
+DO JLAYER=1,SSCP%NLVL
    DO JI=1,INI
-      ZFORC_U   (JI,NLVL) = ZFORC_U   (JI,NLVL) * (1.0-PSEA(JI))
-      ZDFORC_UDU(JI,NLVL) = ZDFORC_UDU(JI,NLVL) * (1.0-PSEA(JI))
+      ZFORC_U   (JI,SSCP%NLVL) = ZFORC_U   (JI,SSCP%NLVL) * (1.0-PSEA(JI))
+      ZDFORC_UDU(JI,SSCP%NLVL) = ZDFORC_UDU(JI,SSCP%NLVL) * (1.0-PSEA(JI))
    ENDDO
 ENDDO
 !
@@ -180,11 +188,11 @@ ZDFORC_TDT(:,:) = XUNDEF
 ZFORC_Q   (:,:) = XUNDEF
 ZDFORC_QDQ(:,:) = XUNDEF
 !
- CALL CANOPY_EVOL(INI, NLVL, PTSTEP, 2, XZ, ZWIND, ZTA, ZQA, ZPA, PRHOA,   &
+ CALL CANOPY_EVOL(INI, SSCP%NLVL, PTSTEP, 2, SSCP%XZ, ZWIND, ZTA, ZQA, ZPA, PRHOA,   &
                  ZSFLUX_U, ZSFLUX_T, ZSFLUX_Q,                            &
                  ZFORC_U, ZDFORC_UDU, ZFORC_E, ZDFORC_EDE,                &
                  ZFORC_T, ZDFORC_TDT, ZFORC_Q, ZDFORC_QDQ,                &
-                 XZ, XZF, XDZ, XDZF, XU, XTKE, ZT, ZQ, ZLMO, ZLM,         &
+                 SSCP%XZ, SSCP%XZF, SSCP%XDZ, SSCP%XDZF, SSCP%XU, SSCP%XTKE, ZT, ZQ, ZLMO, ZLM,         &
                  ZLEPS, ZP, ZUSTAR,                                       &
                  ZALFAU, ZBETAU, ZALFATH, ZBETATH, ZALFAQ, ZBETAQ,        &
                  ONEUTRAL=.TRUE.                                          )

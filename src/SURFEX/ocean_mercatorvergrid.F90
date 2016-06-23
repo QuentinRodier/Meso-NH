@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE OCEAN_MERCATORVERGRID
 !   ######################################################################
@@ -37,135 +37,101 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	C. Lebeaupin Brossier  * Meteo-France *
+!!      C. Lebeaupin Brossier  * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2008
+!       D.BARBARY 11/2014 : HPROGRAM,OUNIF in Calling OCEAN_MERCATORVERGRID
+!                           Reading oceanic level and depth
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,ONLY : XPI
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_OCEAN_GRID_n
-USE MODD_OCEAN_CSTS
+USE MODD_OCEAN_GRID
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
-!*      0.1    declarations of arguments
 !*      0.2    declarations of local variables
 !
 !
-REAL                   :: RUP,RDOWN
+REAL                   :: ZUP,ZDOWN
 INTEGER            :: JLOOP
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-------------------------------------------------------------------------------
 !       1.     Allocations
 !              -----------
 IF (LHOOK) CALL DR_HOOK('OCEAN_MERCATORVERGRID',0,ZHOOK_HANDLE)
+
+!       1.     Principal grid
+!              --------------
 !
-ALLOCATE(XZHOC      (NOCKMIN:NOCKMAX))
+!-------------------------------------------------------------------------------
+!       2.     Ocean Secondary Grids 
+!              ---------------------
 !
-ALLOCATE(XZ2        (NOCKMIN:NOCKMAX))
-ALLOCATE(XDZ1       (NOCKMIN:NOCKMAX))
-ALLOCATE(XDZ2       (NOCKMIN:NOCKMAX))
+!$OMP SINGLE
 !
 ALLOCATE(XK1        (NOCKMIN:NOCKMAX))
 ALLOCATE(XK2        (NOCKMIN:NOCKMAX))
 ALLOCATE(XK3        (NOCKMIN:NOCKMAX))
 ALLOCATE(XK4        (NOCKMIN:NOCKMAX))
 !
+ALLOCATE(XZ2        (NOCKMIN:NOCKMAX))
+ALLOCATE(XDZ1       (NOCKMIN:NOCKMAX))
+ALLOCATE(XDZ2       (NOCKMIN:NOCKMAX))
+!
 ALLOCATE(XRAY       (NOCKMIN:NOCKMAX))
-!-------------------------------------------------------------------------------
-!       2.     Ocean Grid Levels
-!              -----------------
 !
-XZHOC(0)      = 0.
-XZHOC(1)      = -1.
-XZHOC(2)      = -5.
-XZHOC(3)      = -10.
-XZHOC(4)      = -15.
-XZHOC(5)      = -20.
-XZHOC(6)      = -25.
-XZHOC(7)      = -30.
-XZHOC(8)      = -40.
-XZHOC(9)      = -50.
-XZHOC(10)     = -60.
-XZHOC(11)     = -75.
-XZHOC(12)     = -100.
-XZHOC(13)     = -125.
-XZHOC(14)     = -150.
-XZHOC(15)     = -175.
-XZHOC(16)     = -200.
-XZHOC(17)     = -225.
-XZHOC(18)     = -250.
-XZHOC(19)     = -300.
-XZHOC(20)     = -400.
-XZHOC(21)     = -500.
-XZHOC(22)     = -600.
-XZHOC(23)     = -700.
-XZHOC(24)     = -800.
-XZHOC(25)     = -900.
-XZHOC(26)     = -1000.
-XZHOC(27)     = -1100.
-XZHOC(28)     = -1200.
-XZHOC(29)     = -1300.
-XZHOC(30)     = -1400.
-XZHOC(31)     = -1500.
-XZHOC(32)     = -1750.
-XZHOC(33)     = -2000.
-XZHOC(34)     = -2250.
-XZHOC(35)     = -2500.
-XZHOC(36)     = -2750.
-XZHOC(37)     = -3000.
-XZHOC(38)     = -3250.
-XZHOC(39)     = -3500.
-XZHOC(40)     = -4000.
-
-!
-DO JLOOP=NOCKMIN, NOCKMAX-1
-  XZ2(JLOOP)   = (XZHOC(JLOOP+1) + XZHOC(JLOOP))/2.
-  XDZ1(JLOOP)  = XZHOC(JLOOP) - XZHOC(JLOOP+1)
+DO JLOOP = NOCKMIN,NOCKMAX-1
+  XZ2(JLOOP) = (XZHOC(JLOOP+1) + XZHOC(JLOOP))/2.
+  XDZ1(JLOOP) = XZHOC(JLOOP) - XZHOC(JLOOP+1)
 ENDDO
-XZ2(NOCKMAX) = -4250.
+XZ2(NOCKMAX) = XZHOC(NOCKMAX) + ((XZHOC(NOCKMAX)-XZHOC(NOCKMAX-1))/2.) !dernier niveau+delta/2
 XDZ1(NOCKMAX) = XDZ1(NOCKMAX-1)
 !
-DO JLOOP=NOCKMIN+1, NOCKMAX 
-  XDZ2(JLOOP)  = XZ2(JLOOP-1) - XZ2(JLOOP)
-ENDDO
-XDZ2(NOCKMIN) = - XZ2(NOCKMIN)
 !
+XDZ2(NOCKMIN) = - XZ2(NOCKMIN)
+DO JLOOP = NOCKMIN+1,NOCKMAX
+  XDZ2(JLOOP) = XZ2(JLOOP-1) - XZ2(JLOOP)
+ENDDO
+!!
 !!       3.     Grid Parameters
 !!              ---------------
-RUP=1.
-XK1(NOCKMIN) = 0.
 !
+XK1(NOCKMIN) = 0.
 DO JLOOP = NOCKMIN+1,NOCKMAX
   XK1(JLOOP) = -1. / (XDZ2(JLOOP)*XDZ1(JLOOP-1))
 ENDDO
 !
+ZUP=1.
 DO JLOOP = NOCKMIN,NOCKMAX
-  XK4(JLOOP) =  1. / (XDZ1(JLOOP)*XDZ1(JLOOP))
-  RDOWN = RAYO(XZ2(JLOOP))
-  XRAY(JLOOP) = RUP-RDOWN
-  RUP=RDOWN
+  XK4(JLOOP) =  1. / ( XDZ1(JLOOP) * XDZ1(JLOOP) )
+  ZDOWN = RAYO(XZ2(JLOOP))
+  XRAY(JLOOP) = ZUP - ZDOWN
+  ZUP = ZDOWN
 ENDDO
 !
-DO JLOOP=NOCKMIN,NOCKMAX-1
-  XK2(JLOOP)=-1. / (XDZ2(JLOOP)*XDZ1(JLOOP))
-  XK3(JLOOP)=-1. / (XDZ1(JLOOP)*XDZ2(JLOOP+1))
+DO JLOOP = NOCKMIN,NOCKMAX-1
+  XK2(JLOOP) = -1. / (XDZ2(JLOOP)*XDZ1(JLOOP))
+  XK3(JLOOP) = -1. / (XDZ1(JLOOP)*XDZ2(JLOOP+1))
 ENDDO
+!
 XK2(NOCKMAX) = XK2(NOCKMAX-1)
-XK3(NOCKMAX)=0.
+XK3(NOCKMAX) = 0.
+!
+!$OMP END SINGLE
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('OCEAN_MERCATORVERGRID',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !rayo
 !-------------------------------------------------------------------------------
 !

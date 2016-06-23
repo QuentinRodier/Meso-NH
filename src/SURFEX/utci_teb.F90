@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !   ##########################################################################
 SUBROUTINE UTCI_TEB(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD, PU10, PPS,         &
                     PREF_SW_GRND, PREF_SW_FAC, PSCA_SW, PDIR_SW, PZENITH,&
@@ -28,7 +28,7 @@ SUBROUTINE UTCI_TEB(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD, PU10, PPS,         &
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-!! à compléter
+!! a supplement
 !!    MODD_CST
 !!
 !!    REFERENCE
@@ -38,7 +38,7 @@ SUBROUTINE UTCI_TEB(PT_CAN, PQ_CAN, PTI_BLD, PQI_BLD, PU10, PPS,         &
 !!    AUTHOR
 !!    ------
 !!
-!!	G. Pigeon           * Meteo-France *
+!!      G. Pigeon           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -64,23 +64,23 @@ REAL, DIMENSION(:), INTENT(IN)  :: PTI_BLD !Indoor air temperature (K)
 REAL, DIMENSION(:), INTENT(IN)  :: PQI_BLD !Indoor specific humidity (kg/kg) 
 REAL, DIMENSION(:), INTENT(IN)  :: PU10 !Canyon wind speed at 10m (m/s)
 REAL, DIMENSION(:), INTENT(IN)  :: PPS !Atmospheric Pressure (Pa)
-REAL, DIMENSION(:), INTENT(IN)  :: PREF_SW_GRND !Solar radiation reflected by ground [road + garden] (W/m²)
-REAL, DIMENSION(:), INTENT(IN)  :: PREF_SW_FAC !Solar radiation reflected by facade [wall + glazing] (W/m²)
-REAL, DIMENSION(:), INTENT(IN)  :: PSCA_SW !Diffuse solar radiation (W/m²)
-REAL, DIMENSION(:), INTENT(IN)  :: PDIR_SW !Direct solar radiation (W/m²)
+REAL, DIMENSION(:), INTENT(IN)  :: PREF_SW_GRND !Solar radiation reflected by ground [road + garden] (W/m2)
+REAL, DIMENSION(:), INTENT(IN)  :: PREF_SW_FAC !Solar radiation reflected by facade [wall + glazing] (W/m2)
+REAL, DIMENSION(:), INTENT(IN)  :: PSCA_SW !Diffuse solar radiation (W/m2)
+REAL, DIMENSION(:), INTENT(IN)  :: PDIR_SW !Direct solar radiation (W/m2)
 REAL, DIMENSION(:), INTENT(IN)  :: PZENITH !solar zenithal angle (rad from vert.)
-REAL, DIMENSION(:), INTENT(IN)  :: PEMIT_LW_FAC !Longwave radiation emitted by the facade [wall + glazing] (W/m²)
-REAL, DIMENSION(:), INTENT(IN)  :: PEMIT_LW_GRND !Longwave radiation emitted by the ground [road + garden] (W/m²)
-REAL, DIMENSION(:), INTENT(IN)  :: PLW_RAD !Atmospheric longwave radiation (W/m²)
+REAL, DIMENSION(:), INTENT(IN)  :: PEMIT_LW_FAC !Longwave radiation emitted by the facade [wall + glazing] (W/m2)
+REAL, DIMENSION(:), INTENT(IN)  :: PEMIT_LW_GRND !Longwave radiation emitted by the ground [road + garden] (W/m2)
+REAL, DIMENSION(:), INTENT(IN)  :: PLW_RAD !Atmospheric longwave radiation (W/m2)
 REAL, DIMENSION(:), INTENT(IN)  :: PTRAD_IN !Indoor radiant temperature (K)
 REAL, DIMENSION(:), INTENT(IN)  :: PBLD !Building surface fraction
 REAL, DIMENSION(:), INTENT(IN)  :: PBLD_HEIGHT !Building surface fraction
 REAL, DIMENSION(:), INTENT(IN)  :: PWALL_O_HOR !Building surface fraction
-REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_IN !UTCI for indoor person (°C)
-REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_OUTSUN !UTCI for outdoor person at sun (°C)
-REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_OUTSHADE !UTCI for outdoor person in shade (°C)
-REAL, DIMENSION(:), INTENT(OUT) :: PTRAD_SUN !Mean radiant temperature at sun (°C)
-REAL, DIMENSION(:), INTENT(OUT) :: PTRAD_SHADE !Mean radiant temperature in shade (°C)
+REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_IN !UTCI for indoor person (C)
+REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_OUTSUN !UTCI for outdoor person at sun (C)
+REAL, DIMENSION(:), INTENT(OUT) :: PUTCI_OUTSHADE !UTCI for outdoor person in shade (C)
+REAL, DIMENSION(:), INTENT(OUT) :: PTRAD_SUN !Mean radiant temperature at sun (C)
+REAL, DIMENSION(:), INTENT(OUT) :: PTRAD_SHADE !Mean radiant temperature in shade (C)
 !
 !*      0.2    declarations of local variables
 REAL, DIMENSION(SIZE(PTI_BLD)) :: ZEHPA !water vapour pressure (hPa)

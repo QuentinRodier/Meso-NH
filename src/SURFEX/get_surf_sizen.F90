@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_SURF_SIZE_n(HTYPE,KL)
+      SUBROUTINE GET_SURF_SIZE_n (DTCO, U, &
+                                  HTYPE,KL)
 !     #####################################################
 !
 !!****  *GET_SURF_SIZE_n* - routine to define the masks between all surface 
@@ -21,7 +22,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*	
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -31,7 +32,11 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_ATM_n, ONLY : XCOVER, XNATURE, XSEA, XTOWN, XWATER
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_CONVERT_COVER_FRAC
 !
@@ -43,6 +48,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=*),  INTENT(IN)    :: HTYPE    ! Type of surface
 INTEGER,           INTENT(OUT)   :: KL       ! number of points of this surface type
@@ -63,19 +72,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ---------
 !
 IF (LHOOK) CALL DR_HOOK('GET_SURF_SIZE_N',0,ZHOOK_HANDLE)
-ILU = SIZE(XCOVER,1)
+ILU = SIZE(U%XCOVER,1)
 !
 ALLOCATE(ZSEA   (ILU))
 ALLOCATE(ZNATURE(ILU))
 ALLOCATE(ZTOWN  (ILU))
 ALLOCATE(ZWATER (ILU))
-IF (.NOT.ASSOCIATED(XSEA)) THEN
-  CALL CONVERT_COVER_FRAC(XCOVER,ZSEA,ZNATURE,ZTOWN,ZWATER)
+IF (.NOT.ASSOCIATED(U%XSEA)) THEN
+  CALL CONVERT_COVER_FRAC(DTCO, &
+                          U%XCOVER,U%LCOVER,ZSEA,ZNATURE,ZTOWN,ZWATER)
 ELSE
-  ZSEA    = XSEA
-  ZNATURE = XNATURE
-  ZWATER  = XWATER
-  ZTOWN   = XTOWN
+  ZSEA    = U%XSEA
+  ZNATURE = U%XNATURE
+  ZWATER  = U%XWATER
+  ZTOWN   = U%XTOWN
 END IF
 !
 SELECT CASE (HTYPE)

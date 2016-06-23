@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE CLOSE_NAMELIST(HPROGRAM,KLUNAM)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,19 +37,22 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#ifdef ASC
+#ifdef SFX_ASC
 USE MODI_CLOSE_NAMELIST_ASC
 #endif
-#ifdef FA
+#ifdef SFX_FA
 USE MODI_CLOSE_NAMELIST_FA
 #endif
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODI_CLOSE_NAMELIST_LFI
 #endif
-#ifdef OL
+#ifdef SFX_OL
 USE MODI_CLOSE_NAMELIST_OL
 #endif
-#ifdef MNH
+#ifdef SFX_NC
+USE MODI_CLOSE_NAMELIST_NC
+#endif
+#ifdef SFX_MNH
 USE MODI_MNHCLOSE_NAMELIST
 #endif
 !
@@ -71,31 +74,37 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST',0,ZHOOK_HANDLE)
+!$OMP SINGLE
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL MNHCLOSE_NAMELIST(HPROGRAM,KLUNAM)
 #endif
 ELSE IF (HPROGRAM=='OFFLIN') THEN
-#ifdef OL
+#ifdef SFX_OL
   CALL CLOSE_NAMELIST_OL(HPROGRAM,KLUNAM)
 #endif
 ELSE IF (HPROGRAM=='ASCII ') THEN
-#ifdef ASC
+#ifdef SFX_ASC
   CALL CLOSE_NAMELIST_ASC(HPROGRAM,KLUNAM)
 #endif
 ELSE IF (HPROGRAM=='AROME ') THEN
-#ifdef ARO
+#ifdef SFX_ARO
   CALL AROCLOSE_NAMELIST(HPROGRAM,KLUNAM)
 #endif
 ELSE IF (HPROGRAM=='FA    ') THEN
-#ifdef FA
+#ifdef SFX_FA
   CALL CLOSE_NAMELIST_FA(HPROGRAM,KLUNAM)
 #endif
 ELSE IF (HPROGRAM=='LFI   ') THEN
-#ifdef LFI
+#ifdef SFX_LFI
   CALL CLOSE_NAMELIST_LFI(HPROGRAM,KLUNAM)
 #endif
+ELSE IF (HPROGRAM=='NC    ') THEN
+#ifdef SFX_NC
+  CALL CLOSE_NAMELIST_NC(HPROGRAM,KLUNAM)
+#endif
 END IF
+!$OMP END SINGLE
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

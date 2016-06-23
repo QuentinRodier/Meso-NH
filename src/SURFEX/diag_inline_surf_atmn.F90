@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_SURF_ATM_n (PHW, PHT, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
+       SUBROUTINE DIAG_INLINE_SURF_ATM_n (DGU, &
+                                           PHW, PHT, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
 !     ###############################################################################!
 !!****  *DIAG_INLINE_SURF_ATM_n * - Computes diagnostics during SURF_ATM time-step
 !!
@@ -29,9 +30,9 @@
 
 !
 !
-USE MODD_DIAG_SURF_ATM_n, ONLY : LCOEF, XDIAG_UREF, XDIAG_ZREF, &
-                                 XPS, XRHOA, XDIAG_TRAD, XDIAG_EMIS,&
-                                 XSSO_FMU, XSSO_FMV, XAVG_SFCO2
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -39,6 +40,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 !
 REAL, DIMENSION(:), INTENT(IN)       :: PHW    ! atmospheric level height for wind
 REAL, DIMENSION(:), INTENT(IN)       :: PHT    ! atmospheric level height
@@ -56,20 +60,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SURF_ATM_N',0,ZHOOK_HANDLE)
-IF (LCOEF) THEN
-  XDIAG_UREF = PHW
-  XDIAG_ZREF = PHT
+IF (DGU%LCOEF) THEN
+  DGU%XDIAG_UREF = PHW
+  DGU%XDIAG_ZREF = PHT
 END IF
 !
-XRHOA = PRHOA
-XPS   = PPS
-XDIAG_TRAD = PTRAD
-XDIAG_EMIS = PEMIS
+DGU%XRHOA = PRHOA
+DGU%XPS   = PPS
+DGU%XDIAG_TRAD = PTRAD
+DGU%XDIAG_EMIS = PEMIS
 !
-XSSO_FMU   = PSFU
-XSSO_FMV   = PSFV
+DGU%XSSO_FMU   = PSFU
+DGU%XSSO_FMV   = PSFV
 !
-XAVG_SFCO2 = PSFCO2
+DGU%XAVG_SFCO2 = PSFCO2
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SURF_ATM_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

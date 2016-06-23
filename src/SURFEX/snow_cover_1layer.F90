@@ -1,14 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
     SUBROUTINE SNOW_COVER_1LAYER(PTSTEP, PANSMIN, PANSMAX, PTODRY,         &
                                    PRHOSMIN, PRHOSMAX, PRHOFOLD, OALL_MELT,  &
                                    PDRAIN_TIME, PWCRN, PZ0SN, PZ0HSN,        &
                                    PTSNOW, PASNOW, PRSNOW, PWSNOW, PTS_SNOW, &
                                    PESNOW,                                   &
-                                   PTG,PABS_SW, PLW1, PLW2,                  &
+                                   PTG, PTG_COEFA, PTG_COEFB,                &
+                                   PABS_SW, PLW1, PLW2,                      &
                                    PTA, PQA, PVMOD, PPS, PRHOA, PSR,         &
                                    PZREF, PUREF,                             &
                                    PRNSNOW, PHSNOW, PLESNOW, PGSNOW, PMELT,  &
@@ -49,12 +50,13 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    08/09/98 
 !!      J. Escobar 24/10/2012 : BUF PGI10.X , rewrite some 1 line WHERE statement
+!!      V. Masson  13/09/2013 : implicitation of coupling with roof below
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -100,6 +102,8 @@ REAL, DIMENSION(:), INTENT(INOUT) :: PRSNOW   ! snow density
 REAL, DIMENSION(:), INTENT(INOUT) :: PTS_SNOW ! snow surface temperature
 REAL, DIMENSION(:), INTENT(INOUT) :: PESNOW   ! snow emissivity
 REAL, DIMENSION(:), INTENT(IN)    :: PTG      ! underlying ground temperature
+REAL, DIMENSION(:), INTENT(IN)    :: PTG_COEFA! underlying ground temperature
+REAL, DIMENSION(:), INTENT(IN)    :: PTG_COEFB! implicit terms
 REAL, DIMENSION(:), INTENT(IN)    :: PABS_SW  ! absorbed SW energy (Wm-2)
 REAL, DIMENSION(:), INTENT(IN)    :: PLW1     ! LW coef independant of TSNOW
                                               ! (Wm-2)     usually equal to:
@@ -197,7 +201,14 @@ PRNSNOW(:) = 0.
 PHSNOW (:) = 0.
 PLESNOW(:) = 0.
 PGSNOW (:) = 0.
+!RJ: workaround to prevent decomposition unstable xundef masks for Tx_LWA_SN_RD fields
+!RJ: in TEB_DIAGNOSTICS.nc during TEB_GARDEN_GREENROOF_BEM_3L_IRRIG_* tests
+!RJ: problem with decomposition handling somewhere else
+#ifdef RJ_PFIX
+PABS_LW(:) = 0.0
+#else
 PABS_LW(:) = XUNDEF
+#endif
 !
 !* snow reservoir before evolution
 !
@@ -411,9 +422,10 @@ DO JJ=1,JCOMPT_SNOW3
 !
   ZWORK1(JI) = ZSNOW_TC(JI)/(0.5*ZSNOW_D(JI))
 !
-  ZB(JI) = ZB(JI) + ZWORK1(JI) *  ZIMPL
+  ZB(JI) = ZB(JI) + ZWORK1(JI) *  ZIMPL / ( 1. + ZWORK1(JI)*PTG_COEFA(JI) )
 !
-  ZY(JI) = ZY(JI) - ZWORK1(JI) * (ZEXPL * PTSNOW(JI) - PTG(JI))
+  ZY(JI) = ZY(JI) - ZWORK1(JI) * (ZEXPL * PTSNOW(JI) - PTG_COEFB(JI)) &
+                   / ( 1. + ZWORK1(JI)*PTG_COEFA(JI) )
 !
 !*      3.8    guess of snow temperature before accumulation and melting
 !              ---------------------------------------------------------
@@ -500,7 +512,9 @@ DO JJ = 1, JCOMPT_FLUX
 !*      5.5    Conduction heat flux
 !              --------------------
 !
-  PGSNOW(JI) = ZSNOW_TC(JI)/(0.5*ZSNOW_D(JI)) * ( PTSNOW(JI) - PTG(JI) )
+  !PGSNOW(JI) = ZSNOW_TC(JI)/(0.5*ZSNOW_D(JI)) * ( PTSNOW(JI) - PTG(JI) )
+  PGSNOW(JI) = ZSNOW_TC(JI)/(0.5*ZSNOW_D(JI)) * ( PTSNOW(JI) - PTG_COEFB(JI) ) &
+             / ( 1. + ZSNOW_TC(JI)/(0.5*ZSNOW_D(JI))*PTG_COEFA(JI) )
 !
 !
 !*      5.6    If ground T>0 C, Melting is estimated from conduction heat flux

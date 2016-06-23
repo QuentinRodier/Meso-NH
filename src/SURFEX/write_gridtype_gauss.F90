@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#################################################################
-SUBROUTINE WRITE_GRIDTYPE_GAUSS(HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
+SUBROUTINE WRITE_GRIDTYPE_GAUSS (DGU, U, &
+                                 HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !#################################################################
 !
 !!****  *WRITE_GRIDTYPE_GAUSS* - routine to write the horizontal grid
@@ -27,7 +28,7 @@ SUBROUTINE WRITE_GRIDTYPE_GAUSS(HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,11 @@ SUBROUTINE WRITE_GRIDTYPE_GAUSS(HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_WRITE_SURF
 !
@@ -49,6 +55,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),           INTENT(IN)  :: HPROGRAM   ! calling program
 INTEGER,                    INTENT(IN)  :: KLU        ! number of points
@@ -70,22 +80,30 @@ REAL,    DIMENSION(KLU) :: ZLON ! longitudes
 REAL,    DIMENSION(KLU) :: ZLAT_XY
 REAL,    DIMENSION(KLU) :: ZLON_XY
 REAL,    DIMENSION(KLU) :: ZMESH_SIZE
-
+!                                                                 _____ Sup
+REAL,    DIMENSION(KLU) :: ZLATSUP     ! Grid corner Latitude    |     |
+REAL,    DIMENSION(KLU) :: ZLONSUP     ! Grid corner Longitude   |     |
+REAL,    DIMENSION(KLU) :: ZLATINF     ! Grid corner Latitude    |_____|
+REAL,    DIMENSION(KLU) :: ZLONINF     ! Grid corner Longitude  Inf
+!
 INTEGER                            :: IL    ! total number of points
 !
  CHARACTER(LEN=100)                :: YCOMMENT ! comment written in the file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('WRITE_GRIDTYPE_GAUSS',0,ZHOOK_HANDLE)
+!
 !*       1.    Projection and 2D grid parameters
 !              ---------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('WRITE_GRIDTYPE_GAUSS',0,ZHOOK_HANDLE)
  CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,INLATI)
 !
 ALLOCATE(INLOPA(INLATI))
+!
  CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,INLATI,ZLAPO,ZLOPO,ZCODIL,INLOPA(:),IL,&
-                          ZLAT,ZLON,ZLAT_XY,ZLON_XY,ZMESH_SIZE)  
+                         ZLAT,ZLON,ZLAT_XY,ZLON_XY,ZMESH_SIZE,            &
+                         ZLONINF,ZLATINF,ZLONSUP,ZLATSUP                  )  
 !
 !---------------------------------------------------------------------------
 !
@@ -93,19 +111,38 @@ ALLOCATE(INLOPA(INLATI))
 !              -----------------------------------------
 !
 YCOMMENT=' '
- CALL WRITE_SURF(HPROGRAM,'NLATI',INLATI,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LAPO',ZLAPO, KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LOPO',ZLOPO,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'CODIL',ZCODIL,KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'NLOPA',INLOPA(:),KRESP,YCOMMENT,HDIR='-')
- CALL WRITE_SURF(HPROGRAM,'LATGAUSS',ZLAT(:),KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LONGAUSS',ZLON(:),KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LAT_G_XY',ZLAT_XY(:),KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'LON_G_XY',ZLON_XY(:),KRESP,YCOMMENT)
- CALL WRITE_SURF(HPROGRAM,'MESHGAUSS',ZMESH_SIZE(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'NLATI',INLATI,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LAPO',ZLAPO, KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LOPO',ZLOPO,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'CODIL',ZCODIL,KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'NLOPA',INLOPA(:),KRESP,YCOMMENT,HDIR='-',HNAM_DIM='Nlati           ')
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LATGAUSS',ZLAT(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LONGAUSS',ZLON(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LAT_G_XY',ZLAT_XY(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LON_G_XY',ZLON_XY(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'MESHGAUSS',ZMESH_SIZE(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LONINF',ZLONINF(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LATINF',ZLATINF(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LONSUP',ZLONSUP(:),KRESP,YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LATSUP',ZLATSUP(:),KRESP,YCOMMENT)
+!
+DEALLOCATE(INLOPA)
 !
 !---------------------------------------------------------------------------
-DEALLOCATE(INLOPA)
 IF (LHOOK) CALL DR_HOOK('WRITE_GRIDTYPE_GAUSS',1,ZHOOK_HANDLE)
 !---------------------------------------------------------------------------
 !

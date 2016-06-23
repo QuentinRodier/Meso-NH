@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE DRAG(HISBA, HSNOW_ISBA, HCPSURF,                          &
+    SUBROUTINE DRAG(HISBA, HSNOW_ISBA, HCPSURF, PTSTEP,                  &
                       PTG, PWG, PWGI,                                    &
                       PEXNS, PEXNA, PTA, PVMOD, PQA, PRR, PSR,           &
                       PPS, PRS, PVEG, PZ0, PZ0EFF, PZ0H,                 &
@@ -12,7 +12,7 @@
                       PCH, PCD, PCDN, PRI, PHUG, PHUGI,                  &
                       PHV, PHU, PCPS, PQS, PFFG, PFFV, PFF,              &
                       PFFG_NOSNOW, PFFV_NOSNOW,                          &
-                      PLEG_DELTA, PLEGI_DELTA                            )  
+                      PLEG_DELTA, PLEGI_DELTA, PWR, PRHOA, PLVTT, PQSAT  )  
 !   ############################################################################
 !
 !!****  *DRAG*  
@@ -54,7 +54,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -76,6 +76,7 @@
 !!      (A.Boone)    21/11/11 Add Rs_max limit for dry conditions with Etv
 !!      (B. Decharme)   09/12 limitation of Ri in surface_ri.F90
 !!      (C. Ardilouze)  09/13 Halstead coef set to 0 for very low values
+!!      (B. Decharme)   03/16 Bug in limitation of Er for Interception reservoir
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -115,6 +116,8 @@ IMPLICIT NONE
 !                                               ! 'DRY' = dry Cp
 !                                               ! 'HUM' = Cp as a function of qs
 !
+REAL,                 INTENT(IN) :: PTSTEP      ! timestep of ISBA (not split time step)
+!
 REAL, DIMENSION(:), INTENT(IN)   :: PTG, PWG, PWGI, PEXNS
 !                                     PTG     = surface temperature
 !                                     PWG     = near-surface volumetric water content
@@ -152,7 +155,7 @@ REAL, DIMENSION(:), INTENT(IN)   :: PWFC, PWSAT, PPSNG, PPSNV, PZREF, PUREF
 !                                             ONLY in stand-alone/forced mode,
 !                                             NOT when coupled to a model (MesoNH)
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PDELTA
+REAL, DIMENSION(:), INTENT(INOUT) :: PDELTA
 !                                     PDELTA = fraction of the foliage covered
 !                                              by intercepted water
 REAL, DIMENSION(:), INTENT(IN)    :: PF5
@@ -184,7 +187,13 @@ REAL, DIMENSION(:), INTENT(IN)   :: PFFV, PFF, PFFG, PFFG_NOSNOW, PFFV_NOSNOW
 !                                   PFFV = Floodplain fraction over vegetation
 !                                   PFF  = Floodplain fraction at the surface
 !
+REAL, DIMENSION(:), INTENT(IN)   :: PWR, PRHOA, PLVTT
+!                                   PWR = liquid water retained on the foliage
+!                                   PRHOA = near-ground air density
+!                                   PLVTT = Vaporization heat
 !
+REAL, DIMENSION(:), INTENT(OUT), OPTIONAL :: PQSAT
+!                                            PQSAT = specific humidity at saturation
 !
 !*      0.2    declarations of local variables
 !
@@ -202,7 +211,7 @@ REAL, DIMENSION(SIZE(PTG)) :: ZQSAT,           &
 !                                              ZFP = working variable                               
                                  ZZHV,           &
 !                                              ZZHV = condensation delta fn for Hv
-                                 ZRRCOR 
+                                 ZRRCOR
 !                                              ZRRCOR = correction of CD, CH, CDN due to moist-gustiness
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -225,6 +234,10 @@ PRI(:)      =0.
 !
 ZVMOD = WIND_THRESHOLD(PVMOD,PUREF)
 !
+ZQSAT(:) = QSAT(PTG(:),PPS(:)) 
+!
+IF(PRESENT(PQSAT))PQSAT(:)=ZQSAT(:)
+!
 !-------------------------------------------------------------------------------
 !
 !*       1.     RELATIVE HUMIDITY OF THE GROUND HU
@@ -246,9 +259,6 @@ PHUGI(:) = 0.5 * ( 1.-COS(XPI*MIN(PWGI(:)/ZWFC(:),1.)) )
 !
 !                                         there is a specific treatment for dew
 !                                         (see Mahfouf and Noilhan, jam, 1991)
-!
-ZQSAT(:) = QSAT(PTG(:),PPS(:)) 
-!
 !                                         when hu*qsat < qa, there are two
 !                                         possibilities
 !
@@ -341,7 +351,7 @@ ENDIF
 !               ----------------------------------------------
 !
  CALL SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,                    &
-                  PZREF, PUREF, PDIRCOSZW, PVMOD, PRI                  )  
+                PZREF, PUREF, PDIRCOSZW, PVMOD, PRI                  )  
 !
 !-------------------------------------------------------------------------------
 !
@@ -406,6 +416,8 @@ PHV(:)        = PDELTA(:) + (1.- PDELTA(:))*                                    
                 ( PRA(:) + PRS(:)*(1.0 - ZZHV(:)) )*                               &
                 ( (1/(PRA(:)+PRS(:))) - (ZZHV(:)*(1.-PF5(:))/(PRA(:)+XRS_MAX)) )
 !
+ CALL LIMIT_LER(PDELTA)
+!
 WHERE(PHV(:)<ZHVLIM)
       PHV(:)=0.0
 ENDWHERE
@@ -414,5 +426,81 @@ IF (LHOOK) CALL DR_HOOK('DRAG',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
+ CONTAINS
+!
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE LIMIT_LER(PDELTA)
+!
+IMPLICIT NONE
+!
+!*      0.1    declarations of arguments
+!
+REAL, DIMENSION(:), INTENT(INOUT) :: PDELTA
+!
+!
+!*      0.2    declarations of local variables
+!
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZPSNV
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZLEV
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZLETR
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZLECOEF
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZER
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZRRVEG
+REAL, DIMENSION(SIZE(PDELTA)) ::  ZWR_DELTA
+!
+REAL(KIND=JPRB)   :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DRAG:LIMIT_LER',0,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+!*       1.     Initialization:
+!               ---------------
+!
+IF(HSNOW_ISBA == '3-L' .OR. HSNOW_ISBA == 'CRO' .OR. HISBA == 'DIF')THEN
+   ZLECOEF(:) = (1.0-PPSNV(:)-PFFV(:))
+   ZPSNV  (:) = 0.0
+ELSE
+   ZLECOEF(:) = 1.0
+   ZPSNV  (:) = PPSNV(:)+PFFV(:)
+ENDIF
+!
+!
+!*       2.     Interception reservoir consistency:
+!               -----------------------------------
+!
+!  In DRAG, we use the timestep of ISBA (PTSTEP) and not the split time step (ZTSTEP)
+!  because diagnostic canopy evaporation (Er) must be consistent with PWR to
+!  limit negative dripping in hydro_veg
+
+!
+ZLEV(:)  = PRHOA(:) * PLVTT(:) * PVEG(:) * (1-ZPSNV(:)) * PHV(:) * (ZQSAT(:) - PQA(:)) / PRA(:)
+!
+ZLETR(:) = ZZHV(:) * PRHOA(:) * (1. - PDELTA(:)) * PLVTT(:) * PVEG(:) *(1-ZPSNV(:))         &
+         * (ZQSAT(:) - PQA(:)) * ( (1/(PRA(:) + PRS(:))) - ((1.-PF5(:))/(PRA(:) + XRS_MAX)) )
+!
+ZER(:)=PTSTEP*(ZLEV(:)-ZLETR(:))*ZLECOEF(:)/PLVTT(:)
+!
+ZRRVEG(:) = PTSTEP*PVEG(:)*(1.-PPSNV(:))*PRR(:)
+!
+ZWR_DELTA(:)=1.0
+!
+WHERE( ZZHV(:)>0.0 .AND. ZER(:)/=0.0 .AND. (PWR(:)+ZRRVEG(:))<ZER(:) )
+!
+       ZWR_DELTA(:) = MAX(0.01,MIN(1.0,(PWR(:)+ZRRVEG(:))/ZER(:)))
+!       
+       PDELTA(:) = PDELTA(:) * ZWR_DELTA(:)
+!
+       PHV(:)    = PDELTA(:) + (1.- PDELTA(:))*( PRA(:) + PRS(:)*(1.0 - ZZHV(:)) )* &
+                  ( (1/(PRA(:)+PRS(:))) - (ZZHV(:)*(1.-PF5(:))/(PRA(:)+XRS_MAX)) )
+!
+ENDWHERE
+!
+IF (LHOOK) CALL DR_HOOK('DRAG:LIMIT_LER',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE LIMIT_LER
+!
+!-------------------------------------------------------------------------------
 !
 END SUBROUTINE DRAG

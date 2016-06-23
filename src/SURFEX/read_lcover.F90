@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_LCOVER(HPROGRAM,OCOVER)
+      SUBROUTINE READ_LCOVER (&
+                              HPROGRAM,OCOVER)
 !     ################################
 !
 !!****  *READ_LCOVER* - routine to read a file for
@@ -31,7 +32,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -42,6 +43,9 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 !
 USE MODI_READ_SURF
@@ -51,13 +55,14 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
-!
 #ifndef NOMPI
 INCLUDE "mpif.h"
 #endif
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
 LOGICAL, DIMENSION(JPCOVER)    :: OCOVER   ! list of covers
@@ -77,20 +82,24 @@ INTEGER   :: IINFO
 !* ascendant compatibility
 IF (LHOOK) CALL DR_HOOK('READ_LCOVER',0,ZHOOK_HANDLE)
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IVERSION,IRESP)
 IF (IVERSION<=3) THEN
   ALLOCATE(GCOVER(255))
 ELSE
   ALLOCATE(GCOVER(JPCOVER))
 END IF
- CALL OLD_NAME(HPROGRAM,'COVER_LIST      ',YRECFM)
- CALL READ_SURF(HPROGRAM,YRECFM,GCOVER(:),IRESP,HDIR='-')
+ CALL OLD_NAME(&
+               HPROGRAM,'COVER_LIST      ',YRECFM)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,GCOVER(:),IRESP,HDIR='-')
 !
+OCOVER=.FALSE.
+OCOVER(:SIZE(GCOVER))=GCOVER(:)
 #ifndef NOMPI
 CALL MPI_ALLREDUCE(GCOVER, OCOVER, SIZE(GCOVER),MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, IINFO)
 #endif
 DEALLOCATE(GCOVER)
-!
 IF (LHOOK) CALL DR_HOOK('READ_LCOVER',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

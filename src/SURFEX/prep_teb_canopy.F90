@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_TEB_CANOPY()
+SUBROUTINE PREP_TEB_CANOPY (TCP, TG)
 !     #################################################################################
 !
 !!****  *PREP_TEB_CANOPY* - prepares TEB canopy fields
@@ -31,8 +31,10 @@ SUBROUTINE PREP_TEB_CANOPY()
 !!------------------------------------------------------------------
 !
 !
-USE MODD_TEB_GRID_n,     ONLY : NDIM
-USE MODD_TEB_CANOPY_n,   ONLY : NLVL, XZ
+!
+!
+USE MODD_TEB_CANOPY_n, ONLY : TEB_CANOPY_t
+USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -43,6 +45,10 @@ IMPLICIT NONE
 !
 !
 !*      0.2    declarations of local variables
+!
+!
+TYPE(TEB_CANOPY_t), INTENT(INOUT) :: TCP
+TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
 !
 INTEGER :: JLAYER
 !
@@ -56,13 +62,13 @@ IF (LHOOK) CALL DR_HOOK('PREP_TEB_CANOPY',0,ZHOOK_HANDLE)
 !*      1.    number of levels (MUST be at least equal to 2)
 !             ----------------
 !
-NLVL = 6
+TCP%NLVL = 6
 !
 !*      2.    height of half levels (where turbulent fluxes will be)
 !             ---------------------
 !
 !* Warning :   ZZF(:,1)   MUST BE ZERO
-ALLOCATE(ZZF(NDIM,NLVL))
+ALLOCATE(ZZF(TG%NDIM,TCP%NLVL))
 ZZF(:,1) = 0.
 ZZF(:,2) = 1.
 ZZF(:,3) = 3.
@@ -70,11 +76,11 @@ ZZF(:,4) = 5.
 ZZF(:,5) = 8.
 ZZF(:,6) = 12.
 
-ALLOCATE(XZ(NDIM,NLVL))
-DO JLAYER=1,NLVL-1
-  XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
+ALLOCATE(TCP%XZ(TG%NDIM,TCP%NLVL))
+DO JLAYER=1,TCP%NLVL-1
+  TCP%XZ(:,JLAYER) = 0.5 * (ZZF(:,JLAYER)+ZZF(:,JLAYER+1))
 END DO
-XZ(:,NLVL) = 1.5 * ZZF(:,NLVL) - 0.5 * ZZF(:,NLVL-1)
+TCP%XZ(:,TCP%NLVL) = 1.5 * ZZF(:,TCP%NLVL) - 0.5 * ZZF(:,TCP%NLVL-1)
 !
 DEALLOCATE(ZZF)
 !

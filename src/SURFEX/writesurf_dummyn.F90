@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_DUMMY_n(HPROGRAM)
+      SUBROUTINE WRITESURF_DUMMY_n (DGU, U, &
+                                     DUU, &
+                                    HPROGRAM)
 !     ##########################################
 !
 !!****  *WRITESURF_DUMMY_n* - routine to write dummy surface fields
@@ -13,7 +15,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -24,8 +26,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_DUMMY_SURF_FIELDS_n, ONLY : NDUMMY_NBR,  CDUMMY_NAME,    &
-                                       CDUMMY_AREA, XDUMMY_FIELDS  
+!
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_DUMMY_SURF_FIELDS_n, ONLY : DUMMY_SURF_FIELDS_t
 !
 USE MODI_WRITE_SURF
 !
@@ -37,6 +45,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
+TYPE(DUMMY_SURF_FIELDS_t), INTENT(INOUT) :: DUU
 !
  CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM     ! 
 !
@@ -62,21 +77,23 @@ IF (LHOOK) CALL DR_HOOK('WRITESURF_DUMMY_N',0,ZHOOK_HANDLE)
 YRECFM='DUMMY_GR_NBR'
 YCOMMENT=' '
 !
- CALL WRITE_SURF(HPROGRAM,YRECFM,NDUMMY_NBR,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,DUU%NDUMMY_NBR,IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
 !*       2.     Dummy fields :
 !               ------------
 !
-DO JDUMMY=1,NDUMMY_NBR
+DO JDUMMY=1,DUU%NDUMMY_NBR
   !
   WRITE(YRECFM,'(A8,I3.3,A1)') 'DUMMY_GR',JDUMMY,' '
-  YSTRING20=CDUMMY_NAME(JDUMMY)
-  YSTRING03=CDUMMY_AREA(JDUMMY)
+  YSTRING20=DUU%CDUMMY_NAME(JDUMMY)
+  YSTRING03=DUU%CDUMMY_AREA(JDUMMY)
   YCOMMENT='X_Y_'//YRECFM//YSTRING20//YSTRING03//  &
              '                                                             '  
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XDUMMY_FIELDS(:,JDUMMY),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,DUU%XDUMMY_FIELDS(:,JDUMMY),IRESP,HCOMMENT=YCOMMENT)
 END DO
 IF (LHOOK) CALL DR_HOOK('WRITESURF_DUMMY_N',1,ZHOOK_HANDLE)
 !

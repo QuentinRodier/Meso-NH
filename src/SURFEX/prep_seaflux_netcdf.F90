@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_SEAFLUX_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !     #################################################################################
@@ -25,6 +25,7 @@ SUBROUTINE PREP_SEAFLUX_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2008
+!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC fields 
 !!------------------------------------------------------------------
 !
 USE MODE_READ_NETCDF_MERCATOR
@@ -61,7 +62,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*      1.     Grid type
 !              ---------
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_NETCDF',0,ZHOOK_HANDLE)
-CINGRID_TYPE='LATLON '
+ CINGRID_TYPE='LATLON '
 !
 !*      2.     Reading of field
 !              ----------------
@@ -84,8 +85,14 @@ SELECT CASE(HSURF)
 !* 2.2 Temperature profiles
 !      --------------------
 !
-  CASE('SST    ')
-    YNCVAR='temperature'
+  CASE('SST    ','SSS    ','SIC    ')
+    IF ( HSURF == 'SST    ') THEN
+       YNCVAR='temperature'
+    ELSE IF ( HSURF == 'SSS    ') THEN
+       YNCVAR='sss'
+    ELSE IF ( HSURF == 'SIC    ') THEN
+       YNCVAR='sic'
+    END IF
     CALL PREP_NETCDF_GRID(HFILE,YNCVAR)
     CALL READ_NETCDF_SST(HFILE,YNCVAR,ZFIELD)
     ALLOCATE(PFIELD(MAX(1,NILENGTH),1))

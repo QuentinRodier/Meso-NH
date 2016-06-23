@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_LONLATVAL(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_LONLATVAL(KGRID_PAR,KSSO,PGRID_PAR,PLAT,PLON,KINDEX,KISSOX,KISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_LONLATVAL* get the grid mesh where point (lat,lon) is located
@@ -27,8 +27,10 @@
 !            -----------
 !
 USE MODD_GET_MESH_INDEX_LONLATVAL, ONLY : XXLIM, XYLIM, XX_MIN, XX_MAX, XY_MIN, &
-                                      XY_MAX, XDX, XDY  
+                                      XY_MAX, XDX, XDY, XXLIMS, NXIDS, XDX_MAX,&
+                                      NFRACD  
 USE MODE_GRIDTYPE_LONLATVAL
+!
 USE MODD_POINT_OVERLAY
 !
 !
@@ -41,29 +43,35 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                       INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
-INTEGER,                       INTENT(IN)    :: KL        ! number of points
-REAL,    DIMENSION(KGRID_PAR), INTENT(IN)    :: PGRID_PAR ! grid parameters
-REAL,    DIMENSION(KL),        INTENT(IN)    :: PLAT      ! latitude of the point
-REAL,    DIMENSION(KL),        INTENT(IN)    :: PLON      ! longitude of the point
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
 INTEGER,                       INTENT(IN)    :: KSSO      ! number of subgrid mesh in each direction
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
-INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
+REAL,    DIMENSION(:),         INTENT(IN)    :: PGRID_PAR ! grid parameters
+REAL,    DIMENSION(:),         INTENT(IN)    :: PLAT      ! latitude of the point
+REAL,    DIMENSION(:),         INTENT(IN)    :: PLON      ! longitude of the point
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOX    ! X index of the subgrid mesh
+INTEGER, DIMENSION(:,:),       INTENT(OUT)   :: KISSOY    ! Y index of the subgrid mesh
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-INTEGER                           :: ILAMBERT ! Lambert type
+REAL  :: XLON0
+REAL  :: ZVALX
+!
+REAL, DIMENSION(SIZE(PLON)) :: ZLON
 !
 REAL, DIMENSION(:), ALLOCATABLE   :: ZX       ! X Lambert   coordinate
 REAL, DIMENSION(:), ALLOCATABLE   :: ZY       ! Y Lambert   coordinate
+REAL, DIMENSION(:), ALLOCATABLE   :: ZXLIM       ! X Lambert   coordinate
 !
-INTEGER                           :: IVAR
-INTEGER                           :: IL       ! Grid dimension
+INTEGER :: ISIZE, IFACT
+INTEGER                           :: IL, ICPT       ! Grid dimension
 INTEGER                           :: JL       ! loop counter in lambert grid
-INTEGER                           :: JI       ! loop counter on input points
-REAL, DIMENSION(SIZE(PLON)) :: ZLON
-REAL :: XLON0
+INTEGER                           :: JI, JJ       ! loop counter on input points
+INTEGER, DIMENSION(SIZE(PLAT),2)  :: ICI
+INTEGER, DIMENSION(1)             :: IDX0
+!
+LOGICAL, DIMENSION(SIZE(PLAT)) :: GMASK
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -76,12 +84,26 @@ IF (.NOT. ALLOCATED(XXLIM)) THEN
 !
   CALL GET_GRIDTYPE_LONLATVAL(PGRID_PAR,KL=IL)
 !
+  IFACT = FLOOR(SQRT(FLOAT(IL)))
+  ISIZE = FLOOR(FLOAT(IL) / IFACT)
+  ALLOCATE(NFRACD(IFACT+1))
+  NFRACD(1) = 1
+  NFRACD(IFACT+1) = IL
+  DO JJ=2,IFACT
+    NFRACD(JJ) = 1 + (JJ-1)*ISIZE
+  ENDDO  
+!
   ALLOCATE(ZX (IL))
   ALLOCATE(ZY (IL))
   ALLOCATE(XDX(IL))
   ALLOCATE(XDY(IL))
   ALLOCATE(XXLIM(IL))
   ALLOCATE(XYLIM(IL))
+
+  ALLOCATE(XXLIMS(0:IL))
+  ALLOCATE(NXIDS(IL))
+
+  ALLOCATE(ZXLIM(IL))   
 !
   CALL GET_GRIDTYPE_LONLATVAL(PGRID_PAR,PX=ZX,PY=ZY,PDX=XDX,PDY=XDY)
 !
@@ -95,10 +117,24 @@ IF (.NOT. ALLOCATED(XXLIM)) THEN
   XX_MAX = MAXVAL(XXLIM+XDX)
   XY_MIN = MINVAL(XYLIM)
   XY_MAX = MAXVAL(XYLIM+XDY)
+
+  XDX_MAX = MINVAL(XDX)
+
+  ZXLIM(:) = XXLIM(:)
+
+  ZVALX = MAXVAL(ZXLIM) + 1.
+  DO JI=1,IL
+    IDX0 = MINLOC(ZXLIM) 
+    XXLIMS(JI) = ZXLIM(IDX0(1))
+    NXIDS(JI) = IDX0(1)
+    ZXLIM(IDX0(1)) = ZVALX
+  ENDDO
+  XXLIMS(0) = XXLIMS(1) - XDX_MAX -1.
+
+  DEALLOCATE(ZXLIM)  
   DEALLOCATE(ZX )
   DEALLOCATE(ZY )
   
-
 END IF
 !
 XLON0 = 0.5*(XX_MIN+XX_MAX)
@@ -106,68 +142,87 @@ XLON0 = 0.5*(XX_MIN+XX_MAX)
 !*    3.     Projection
 !            ----------
 !
-ALLOCATE(ZX (SIZE(PLAT)))
-ALLOCATE(ZY (SIZE(PLAT)))
-!
   CALL GET_GRIDTYPE_LONLATVAL(PGRID_PAR)
 !
   ZLON(:) = PLON(:)+NINT((XLON0-PLON(:))/360.)*360.
 !
+GMASK(:) = .FALSE.
+DO JL=1,SIZE(PLAT)
+  IF (     ZLON(JL)<XX_MIN .OR. ZLON(JL)>XX_MAX  &
+      .OR. PLAT(JL)<XY_MIN .OR. PLAT(JL)>XY_MAX ) GMASK(JL) = .TRUE.
+ENDDO
+
 !*    5.     Localisation of the data points on (x,y) grid
 !            ---------------------------------------------
 !
-KINDEX(:)=0.
+IFACT = SIZE(NFRACD) - 1
 !
-DO JI=1,SIZE(PLON)
-
-  IF (     ZLON(JI)<XX_MIN .OR. ZLON(JI)>XX_MAX        &
-        .OR. PLAT(JI)<XY_MIN .OR. PLAT(JI)>XY_MAX ) THEN  
-     KINDEX(JI) = 0
-    IF (KSSO/=0) THEN
-      KISSOX(JI) = 0
-      KISSOY(JI) = 0
-    END IF
-    XNUM(JI)=0
-    CYCLE
-  END IF
+KINDEX(:,:)=0
 !
-  IVAR=XNUM(JI)
+KISSOX(:,:) = 0
+KISSOY(:,:) = 0
 !
-  IF (IVAR.NE.0) THEN
-          
-    DO JL=IVAR,SIZE(XXLIM)
-      IF( ZLON(JI)> XXLIM(JL) .AND. ZLON(JI) < XXLIM(JL)+XDX(JL)   &
-       .AND. PLAT(JI) > XYLIM(JL) .AND. PLAT(JI) < XYLIM(JL)+XDY(JL) ) THEN  
+ICI(:,:) = 0
+!$OMP PARALLEL DO PRIVATE(JL,JI,JJ)
+DO JL=1,SIZE(PLAT)
+  !
+  IF (GMASK(JL)) CYCLE
+  !
+  frac: &
+  DO JJ=IFACT,1,-1
+    !
+    IF (ZLON(JL)>XXLIMS(NFRACD(JJ))) THEN
+      !
+      DO JI = NFRACD(JJ+1),NFRACD(JJ),-1
+        IF (ZLON(JL)>XXLIMS(JI)) THEN
+          ICI(JL,2) = JI
+          EXIT
+        ENDIF
+      ENDDO
+      !
+      DO JI = ICI(JL,2),0,-1
+        IF (ZLON(JL)>=XXLIMS(JI)+XDX_MAX) THEN
+          ICI(JL,1) = JI+1
+          EXIT
+        ENDIF
+      ENDDO
+      !
+      EXIT frac
+      !
+    ENDIF 
+    !
+  ENDDO frac
+  !
+ENDDO
+!$OMP END PARALLEL DO
 !
-        KINDEX(JI) = JL
-        IVAR = JL+1
+DO JL=1,SIZE(PLAT)
+  !
+  IF (GMASK(JL)) CYCLE
+  !
+  ICPT = 0
+  DO JI=ICI(JL,1),ICI(JL,2)
+    !
+    IF (PLAT(JL)>XYLIM(NXIDS(JI)) .AND. PLAT(JL)<XYLIM(NXIDS(JI))+XDY(NXIDS(JI)) &
+    .AND. ZLON(JL)<XXLIMS(JI)+XDX(NXIDS(JI))) THEN
+      !
+      ICPT = ICPT + 1
+      !
+      KINDEX(ICPT,JL) = NXIDS(JI)
+      !
+      IF (KSSO/=0) THEN
+        KISSOX(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (ZLON(JL)-XXLIM(NXIDS(JI)))/XDX(NXIDS(JI)) )   
+        KISSOY(ICPT,JL) = 1 + INT( FLOAT(KSSO) * (PLAT(JL)-XYLIM(NXIDS(JI)))/XDY(NXIDS(JI)) ) 
+      ENDIF     
+      !
+      IF (ICPT==NOVMX) EXIT
+      !
+    ENDIF 
+    !
+  ENDDO
+  !
+ENDDO
 !
-!*    6.     Localisation of the data points in the subgrid of this mesh
-!            -----------------------------------------------------------
-!
-        IF (KSSO/=0) THEN
-          KISSOX(JI) = 1 + INT( FLOAT(KSSO) *             &
-                           (ZLON(JI)-XXLIM(KINDEX(JI)))/XDX(KINDEX(JI)) )  
-          KISSOY(JI) = 1 + INT( FLOAT(KSSO) *             &
-                           (PLAT(JI)-XYLIM(KINDEX(JI)))/XDY(KINDEX(JI)) )  
-        END IF
-        EXIT
-      ENDIF
-    ENDDO
-
-    IF (IVAR.NE.XNUM(JI)) THEN
-      XNUM(JI)=IVAR
-    ELSE
-      XNUM(JI)=0
-    ENDIF
- 
-  ENDIF 
-    
-END DO
-!
-!-------------------------------------------------------------------------------
-DEALLOCATE(ZX )
-DEALLOCATE(ZY )
 IF (LHOOK) CALL DR_HOOK('GET_MESH_INDEX_LONLATVAL',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !

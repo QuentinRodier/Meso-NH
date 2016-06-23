@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE TREAT_BATHYFIELD(HPROGRAM,HSCHEME,HFILETYPE,    &
+      SUBROUTINE TREAT_BATHYFIELD (UG, U, USS, &
+                                   HPROGRAM,HSCHEME,HFILETYPE,    &
                               HSUBROUTINE,HFILENAME,HNCVARNAME,   &
                               HFIELD, PPGDARRAY,HSFTYPE               )  
 !     ##############################################################
@@ -41,6 +42,13 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODI_GET_LUOUT
 USE MODI_READ_DIRECT
 USE MODI_READ_BINLLV
@@ -49,7 +57,6 @@ USE MODI_READ_ASCLLV
 USE MODI_READ_NETCDF
 USE MODI_AVERAGE2_MESH
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : CGRID
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -66,6 +73,11 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
@@ -93,22 +105,28 @@ IF (LHOOK) CALL DR_HOOK('TREAT_BATHYFIELD',0,ZHOOK_HANDLE)
 SELECT CASE (HFILETYPE)
 
    CASE ('DIRECT')
-         IF(CGRID=="GAUSS     ")THEN
-            CALL READ_DIRECT_GAUSS(HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD)
+         IF(UG%CGRID=="GAUSS     ")THEN
+            CALL READ_DIRECT_GAUSS(USS, &
+                                   HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD)
          ELSE
-            CALL READ_DIRECT(HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD)
+            CALL READ_DIRECT(USS, &
+                             HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD)
          ENDIF
    CASE ('BINLLV')
-       CALL READ_BINLLV(HPROGRAM,HSUBROUTINE,HFILENAME)
+       CALL READ_BINLLV(USS, &
+                        HPROGRAM,HSUBROUTINE,HFILENAME)
 
    CASE ('BINLLF')
-       CALL READ_BINLLVFAST(HPROGRAM,HSUBROUTINE,HFILENAME)
+       CALL READ_BINLLVFAST(USS, &
+                            HPROGRAM,HSUBROUTINE,HFILENAME)
 
    CASE ('ASCLLV')
-       CALL READ_ASCLLV(HPROGRAM,HSUBROUTINE,HFILENAME)
+       CALL READ_ASCLLV(USS, &
+                        HPROGRAM,HSUBROUTINE,HFILENAME)
 
    CASE ('NETCDF')
-       CALL READ_NETCDF(HPROGRAM,HSUBROUTINE,HFILENAME,HNCVARNAME)
+       CALL READ_NETCDF(USS, &
+                        HPROGRAM,HSUBROUTINE,HFILENAME,HNCVARNAME)
 
 END SELECT
 !
@@ -120,10 +138,11 @@ END SELECT
 SELECT CASE (HSUBROUTINE)
 
   CASE ('A_COVR')
-    CALL AVERAGE2_COVER
+    CALL AVERAGE2_COVER(U, &
+                        HPROGRAM)
 
   CASE ('A_OROG')
-    CALL AVERAGE2_OROGRAPHY
+    CALL AVERAGE2_OROGRAPHY(USS)
 
   CASE ('A_MESH')
     IF (.NOT. PRESENT(PPGDARRAY)) THEN

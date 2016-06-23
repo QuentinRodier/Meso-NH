@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GRID_FROM_FILE(HPROGRAM,HFILE,HFILETYPE,OGRID,HGRID,KGRID_PAR,PGRID_PAR,KL)
+      SUBROUTINE GRID_FROM_FILE (&
+                                 HPROGRAM,HFILE,HFILETYPE,OGRID,HGRID,KGRID_PAR,PGRID_PAR,KL,U)
 !     ##########################################################
 !!
 !!    PURPOSE
@@ -40,6 +41,9 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
 USE MODI_OPEN_AUX_IO_SURF
 USE MODI_READ_GRIDTYPE
 USE MODI_CLOSE_AUX_IO_SURF
@@ -52,15 +56,18 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_GET_LUOUT
-USE MODD_SURF_ATM_n, ONLY : NDIM_FULL, NSIZE_FULL, NIMAX_SURF_ll, NJMAX_SURF_ll
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 #ifdef MNH_PARALLEL
 USE MODE_TOOLS_ll, ONLY : GET_DIM_PHYS_ll
 #endif
+
 IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
+!
+!
 !
  CHARACTER(LEN=6),  INTENT(IN)   :: HPROGRAM   ! program calling the surface
  CHARACTER(LEN=28), INTENT(IN)   :: HFILE      ! file name
@@ -70,6 +77,7 @@ LOGICAL,           INTENT(IN)   :: OGRID      ! .true. if grid is imposed by atm
 INTEGER,           INTENT(OUT)  :: KGRID_PAR  ! size of PGRID_PAR
 REAL, DIMENSION(:), POINTER     :: PGRID_PAR  ! parameters defining this grid
 INTEGER,           INTENT(OUT)  :: KL         ! number of points on processor
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 !
 !*    0.2    Declaration of local variables
@@ -100,45 +108,49 @@ IF (LHOOK) CALL DR_HOOK('GRID_FROM_FILE',0,ZHOOK_HANDLE)
 !*       2.    Opening of the file
 !              -------------------
 !
- CALL OPEN_AUX_IO_SURF(HFILE,HFILETYPE,'FULL  ')
+ CALL OPEN_AUX_IO_SURF(&
+                       HFILE,HFILETYPE,'FULL  ')
 !
 !---------------------------------------------------------------------------
 !
 !*       3.    Number of points in this file
 !              -----------------------------
 !
- CALL READ_SURF(HFILETYPE,'DIM_FULL  ',KL,IRESP)
- NDIM_FULL = KL
+ CALL READ_SURF(&
+                HFILETYPE,'DIM_FULL  ',KL,IRESP)
+ U%NDIM_FULL = KL
 !
 !---------------------------------------------------------------------------
 !
 !*       4.    Grid type
 !              ---------
 !
- CALL READ_SURF(HFILETYPE,'GRID_TYPE',HGRID,IRESP)
+ CALL READ_SURF(&
+                HFILETYPE,'GRID_TYPE',HGRID,IRESP)
 !
 !---------------------------------------------------------------------------
 !
 !*       5.    Reading parameters of the grid
 !              ------------------------------
 !
+#ifdef MNH_PARALLEL
  CALL READ_SURF(HPROGRAM,'IMAX ',IIMAX, IRESP,HDIR='H')
  CALL READ_SURF(HPROGRAM,'JMAX ',IJMAX, IRESP,HDIR='H')
- NIMAX_SURF_ll = IIMAX
- NJMAX_SURF_ll = IJMAX
-#ifdef MNH_PARALLEL
+ U%NIMAX_SURF_ll = IIMAX
+ U%NJMAX_SURF_ll = IJMAX
  CALL GET_DIM_PHYS_ll('B',IIMAX_LOC,IJMAX_LOC)
- NSIZE_FULL = IIMAX_LOC*IJMAX_LOC
- KL = NSIZE_FULL
- CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,NSIZE_FULL,.FALSE.,HDIR='H')
+ U%NSIZE_FULL = IIMAX_LOC*IJMAX_LOC
+ KL = U%NSIZE_FULL
+ CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,U%NSIZE_FULL,.FALSE.,HDIR='H')
 !
 ALLOCATE(PGRID_PAR(KGRID_PAR))
- CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,NSIZE_FULL,.TRUE.,PGRID_PAR,IRESP,HDIR='H')
+ CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,U%NSIZE_FULL,.TRUE.,PGRID_PAR,IRESP,HDIR='H')
 #else
  CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,KL,.FALSE.,HDIR='A')
 !
 ALLOCATE(PGRID_PAR(KGRID_PAR))
- CALL READ_GRIDTYPE(HFILETYPE,HGRID,KGRID_PAR,KL,.TRUE.,PGRID_PAR,IRESP,HDIR='A')
+ CALL READ_GRIDTYPE(&
+                    HFILETYPE,HGRID,KGRID_PAR,KL,.TRUE.,PGRID_PAR,IRESP,HDIR='A')
 #endif
 !
 !---------------------------------------------------------------------------
@@ -160,7 +172,7 @@ ALLOCATE(PGRID_PAR(KGRID_PAR))
 !*       8.    Grid modification
 !              -----------------
 !
-IF (.NOT. OGRID) CALL GRID_MODIF(ILUOUT,ILUNAM,HGRID,KGRID_PAR,PGRID_PAR,KL)
+IF (.NOT. OGRID) CALL GRID_MODIF(U,ILUOUT,ILUNAM,HGRID,KGRID_PAR,PGRID_PAR,KL)
 !
 !------------------------------------------------------------------------------
 !

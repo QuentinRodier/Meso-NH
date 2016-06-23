@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_TEB_GREENROOF_UNIF(KLUOUT,HSURF,PFIELD)
 !     #################################################################################
@@ -33,9 +33,9 @@ SUBROUTINE PREP_TEB_GREENROOF_UNIF(KLUOUT,HSURF,PFIELD)
 USE MODD_PREP,              ONLY : CINTERP_TYPE
 USE MODD_DATA_COVER_PAR,    ONLY : NVEGTYPE
 USE MODD_SURF_PAR,          ONLY : XUNDEF
-USE MODD_PREP_TEB_GREENROOF,ONLY : XHUG_SURF, XHUG_ROOT, XHUG_DEEP,     &
-                                   XHUGI_SURF, XHUGI_ROOT, XHUGI_DEEP,  &
-                                   XTG_SURF, XTG_ROOT, XTG_DEEP,        &
+USE MODD_PREP_TEB_GREENROOF,ONLY : XHUG_SURF_GR, XHUG_ROOT_GR, XHUG_DEEP_GR,     &
+                                   XHUGI_SURF_GR, XHUGI_ROOT_GR, XHUGI_DEEP_GR,  &
+                                   XTG_SURF_GR, XTG_ROOT_GR, XTG_DEEP_GR,        &
                                    XWR_DEF  
 !
 !
@@ -72,9 +72,9 @@ SELECT CASE(HSURF)
   CASE('WG     ')
     ALLOCATE(PFIELD(1,3,NVEGTYPE))
     DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XHUG_SURF
-      PFIELD(:,2,JV) = XHUG_ROOT
-      PFIELD(:,3,JV) = XHUG_DEEP
+      PFIELD(:,1,JV) = XHUG_SURF_GR
+      PFIELD(:,2,JV) = XHUG_ROOT_GR
+      PFIELD(:,3,JV) = XHUG_DEEP_GR
     END DO
 
 !*      3.2    Profile of soil humidity for ice
@@ -82,9 +82,9 @@ SELECT CASE(HSURF)
   CASE('WGI    ')
     ALLOCATE(PFIELD(1,3,NVEGTYPE))
     DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XHUGI_SURF
-      PFIELD(:,2,JV) = XHUGI_ROOT
-      PFIELD(:,3,JV) = XHUGI_DEEP
+      PFIELD(:,1,JV) = XHUGI_SURF_GR
+      PFIELD(:,2,JV) = XHUGI_ROOT_GR
+      PFIELD(:,3,JV) = XHUGI_DEEP_GR
     END DO
 
 !*      3.3    Profile of temperatures
@@ -92,9 +92,9 @@ SELECT CASE(HSURF)
   CASE('TG     ')
     ALLOCATE(PFIELD(1,3,NVEGTYPE))
     DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XTG_SURF
-      PFIELD(:,2,JV) = XTG_ROOT
-      PFIELD(:,3,JV) = XTG_DEEP
+      PFIELD(:,1,JV) = XTG_SURF_GR
+      PFIELD(:,2,JV) = XTG_ROOT_GR
+      PFIELD(:,3,JV) = XTG_DEEP_GR
     END DO
 
 !*      3.4    Other quantities
@@ -112,7 +112,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='UNIF  '
+ CINTERP_TYPE='UNIF  '
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_GREENROOF_UNIF',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

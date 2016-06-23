@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_FROM_DATA_GRDN_n(KDECADE, HPHOTO,                               &
+      SUBROUTINE INIT_FROM_DATA_GRDN_n (DTGD, &
+                                        KDECADE, HPHOTO,                               &
                                                PVEG,                                  &
                                                PLAI,PRSMIN,PGAMMA,PWRMAX_CF,          &
                                                PRGL,PCV,PDG,PD_ICE,PZ0,PZ0_O_Z0H,     &
@@ -51,22 +52,11 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_DATA_TEB_GARDEN_n, ONLY : XDATA_LAI, XDATA_H_TREE, XDATA_VEGTYPE, &
-                                   XDATA_VEG, XDATA_Z0, XDATA_Z0_O_Z0H,    &
-                                   XDATA_EMIS, XDATA_GAMMA, XDATA_CV,      &
-                                   XDATA_RGL, XDATA_RSMIN, XDATA_DG,       &
-                                   XDATA_ALBNIR_VEG, XDATA_ALBVIS_VEG,     &
-                                   XDATA_ALBUV_VEG, XDATA_DICE,            &
-                                   XDATA_ALBNIR_SOIL, XDATA_ALBVIS_SOIL,   &
-                                   XDATA_ALBUV_SOIL,                       &
-                                   XDATA_GMES, XDATA_BSLAI, XDATA_LAIMIN,  &
-                                   XDATA_SEFOLD, XDATA_GC, XDATA_WRMAX_CF, &
-                                   XDATA_ROOTFRAC, LDATA_STRESS,           &
-                                   XDATA_DMAX, XDATA_F2I, XDATA_RE25,      &
-                                   XDATA_CE_NITRO, XDATA_CF_NITRO,         &
-                                   XDATA_CNA_NITRO  
 
 !
+!
+!
+USE MODD_DATA_TEB_GARDEN_n, ONLY : DATA_TEB_GARDEN_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -75,6 +65,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_TEB_GARDEN_t), INTENT(INOUT) :: DTGD
 !
 INTEGER,                INTENT(IN)    :: KDECADE
  CHARACTER(LEN=*),       INTENT(IN)    :: HPHOTO  ! type of photosynthesis
@@ -130,7 +123,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 ! data every month
 IF (LHOOK) CALL DR_HOOK('INIT_FROM_DATA_GRDN_N',0,ZHOOK_HANDLE)
-ITIME = (KDECADE+2)/3      
+IF (DTGD%NTIME==12) THEN
+  ITIME = (KDECADE+2)/3    
+ELSEIF (DTGD%NTIME==1) THEN
+  ITIME = 1
+ENDIF
 !
 !*    2.      SECONDARY VARIABLES
 !             -------------------
@@ -140,123 +137,123 @@ ITIME = (KDECADE+2)/3
 !
 !
 IF (PRESENT(PH_TREE)) THEN
-  IF (SIZE(PH_TREE)>0) PH_TREE = XDATA_H_TREE
+  IF (SIZE(PH_TREE)>0) PH_TREE = DTGD%XDATA_H_TREE
 ENDIF
 !
-IF (PRESENT(PVEGTYPE)) PVEGTYPE = XDATA_VEGTYPE
+IF (PRESENT(PVEGTYPE)) PVEGTYPE = DTGD%XDATA_VEGTYPE
 !
 ! vegetation fraction
 ! -------------------
 !
-IF (PRESENT(PVEG)) PVEG(:) =  XDATA_VEG (:,ITIME)
+IF (PRESENT(PVEG)) PVEG(:) =  DTGD%XDATA_VEG (:,ITIME)
 !
 ! Leaf Aera Index
 ! ---------------
 !
-IF (PRESENT(PLAI)) PLAI(:) = XDATA_LAI (:,ITIME)
+IF (PRESENT(PLAI)) PLAI(:) = DTGD%XDATA_LAI (:,ITIME)
 !
 ! roughness length
 ! ----------------
 !
-IF (PRESENT(PZ0)) PZ0(:) =  XDATA_Z0 (:,ITIME)
+IF (PRESENT(PZ0)) PZ0(:) =  DTGD%XDATA_Z0 (:,ITIME)
 !
-IF (PRESENT(PZ0_O_Z0H)) PZ0_O_Z0H = XDATA_Z0_O_Z0H
+IF (PRESENT(PZ0_O_Z0H)) PZ0_O_Z0H = DTGD%XDATA_Z0_O_Z0H
 !
 !
 !emis-eco
 !--------
 !
-IF (PRESENT(PEMIS)) PEMIS(:) =  XDATA_EMIS (:,ITIME)
+IF (PRESENT(PEMIS)) PEMIS(:) =  DTGD%XDATA_EMIS (:,ITIME)
 ! 
 !---------------------------------------------------------------------------------
 ! 
 !* 1/Rsmin
 !
 IF (PRESENT(PRSMIN)) THEN
-  IF (SIZE(PRSMIN)>0) PRSMIN = XDATA_RSMIN
+  IF (SIZE(PRSMIN)>0) PRSMIN = DTGD%XDATA_RSMIN
 END IF
 !
 !* other vegetation parameters
 !
-IF (PRESENT(PGAMMA)) PGAMMA = XDATA_GAMMA
-IF (PRESENT(PWRMAX_CF)) PWRMAX_CF = XDATA_WRMAX_CF
+IF (PRESENT(PGAMMA)) PGAMMA = DTGD%XDATA_GAMMA
+IF (PRESENT(PWRMAX_CF)) PWRMAX_CF = DTGD%XDATA_WRMAX_CF
 !
 !
-IF (PRESENT(PRGL)) PRGL = XDATA_RGL
-IF (PRESENT(PCV)) PCV = XDATA_CV
+IF (PRESENT(PRGL)) PRGL = DTGD%XDATA_RGL
+IF (PRESENT(PCV)) PCV = DTGD%XDATA_CV
 !
 !---------------------------------------------------------------------------------
 !
 !* soil layers
 !  -----------
 !
-IF (PRESENT(PDG)) PDG = XDATA_DG
+IF (PRESENT(PDG)) PDG = DTGD%XDATA_DG
 !
 !* cumulative root fraction
 !
 IF (PRESENT(PROOTFRAC)) THEN
-  IF (SIZE(PROOTFRAC)>0) PROOTFRAC = XDATA_ROOTFRAC
+  IF (SIZE(PROOTFRAC)>0) PROOTFRAC = DTGD%XDATA_ROOTFRAC
 ENDIF
 !
 !* soil ice for runoff
 !
-IF (PRESENT(PD_ICE)) PD_ICE = XDATA_DICE
+IF (PRESENT(PD_ICE)) PD_ICE = DTGD%XDATA_DICE
 !
 !---------------------------------------------------------------------------------
-IF (PRESENT(PALBNIR_VEG)) PALBNIR_VEG = XDATA_ALBNIR_VEG
-IF (PRESENT(PALBVIS_VEG)) PALBVIS_VEG = XDATA_ALBVIS_VEG
-IF (PRESENT(PALBUV_VEG)) PALBUV_VEG = XDATA_ALBUV_VEG
+IF (PRESENT(PALBNIR_VEG)) PALBNIR_VEG = DTGD%XDATA_ALBNIR_VEG
+IF (PRESENT(PALBVIS_VEG)) PALBVIS_VEG = DTGD%XDATA_ALBVIS_VEG
+IF (PRESENT(PALBUV_VEG)) PALBUV_VEG = DTGD%XDATA_ALBUV_VEG
 
-IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL(:) = XDATA_ALBNIR_SOIL
-IF (PRESENT(PALBVIS_SOIL)) PALBVIS_SOIL(:) = XDATA_ALBVIS_SOIL
-IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL(:) = XDATA_ALBUV_SOIL
+IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL(:) = DTGD%XDATA_ALBNIR_SOIL
+IF (PRESENT(PALBVIS_SOIL)) PALBVIS_SOIL(:) = DTGD%XDATA_ALBVIS_SOIL
+IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL(:) = DTGD%XDATA_ALBUV_SOIL
 
 IF (PRESENT(PGMES)) THEN
-  IF (SIZE(PGMES)>0) PGMES = XDATA_GMES
+  IF (SIZE(PGMES)>0) PGMES = DTGD%XDATA_GMES
 END IF
 
 IF (PRESENT(PBSLAI)) THEN
-  IF (SIZE(PBSLAI)>0) PBSLAI = XDATA_BSLAI
+  IF (SIZE(PBSLAI)>0) PBSLAI = DTGD%XDATA_BSLAI
 END IF
 
 IF (PRESENT(PSEFOLD)) THEN
-  IF (SIZE(PSEFOLD)>0) PSEFOLD = XDATA_SEFOLD
+  IF (SIZE(PSEFOLD)>0) PSEFOLD = DTGD%XDATA_SEFOLD
 END IF
 
 IF (PRESENT(PGC)) THEN
-  IF (SIZE(PGC)>0) PGC = XDATA_GC
+  IF (SIZE(PGC)>0) PGC = DTGD%XDATA_GC
 END IF
 
 IF (PRESENT(PDMAX)) THEN
-  IF (SIZE(PDMAX)>0) PDMAX = XDATA_DMAX
+  IF (SIZE(PDMAX)>0) PDMAX = DTGD%XDATA_DMAX
 END IF
 
 IF (PRESENT(PRE25)) THEN
-  IF (SIZE(PRE25)>0) PRE25 = XDATA_RE25
+  IF (SIZE(PRE25)>0) PRE25 = DTGD%XDATA_RE25
 END IF
 
 IF (PRESENT(PLAIMIN)) THEN
-  IF (SIZE(PLAIMIN)>0) PLAIMIN = XDATA_LAIMIN
+  IF (SIZE(PLAIMIN)>0) PLAIMIN = DTGD%XDATA_LAIMIN
 END IF
 
 IF (PRESENT(PCE_NITRO)) THEN
-  IF (SIZE(PCE_NITRO)>0) PCE_NITRO = XDATA_CE_NITRO
+  IF (SIZE(PCE_NITRO)>0) PCE_NITRO = DTGD%XDATA_CE_NITRO
 END IF
 
 IF (PRESENT(PCF_NITRO)) THEN
-  IF (SIZE(PCF_NITRO)>0) PCF_NITRO = XDATA_CF_NITRO
+  IF (SIZE(PCF_NITRO)>0) PCF_NITRO = DTGD%XDATA_CF_NITRO
 END IF
 
 IF (PRESENT(PCNA_NITRO)) THEN
-  IF (SIZE(PCNA_NITRO)>0) PCNA_NITRO = XDATA_CNA_NITRO
+  IF (SIZE(PCNA_NITRO)>0) PCNA_NITRO = DTGD%XDATA_CNA_NITRO
 END IF
 
 IF (PRESENT(PF2I)) THEN
-  IF (SIZE(PF2I)>0) PF2I = XDATA_F2I
+  IF (SIZE(PF2I)>0) PF2I = DTGD%XDATA_F2I
 END IF
 !
 IF (PRESENT(OSTRESS)) THEN
-  IF (SIZE(OSTRESS)>0) OSTRESS = LDATA_STRESS
+  IF (SIZE(OSTRESS)>0) OSTRESS = DTGD%LDATA_STRESS
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_FROM_DATA_GRDN_N',1,ZHOOK_HANDLE)
 !

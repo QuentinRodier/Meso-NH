@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_PGD_SEAF_PAR_n(HPROGRAM)
+      SUBROUTINE WRITESURF_PGD_SEAF_PAR_n (DGU, U, &
+                                            DTS, &
+                                           HPROGRAM)
 !     ################################################
 !
 !!****  *WRITESURF_PGD_SEAF_PAR_n* - writes SEAFLUX sst
@@ -28,7 +30,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,8 +40,15 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_DATA_SEAFLUX_n, ONLY : DATA_SEAFLUX_t
+!
 USE MODD_TYPE_DATE_SURF
-USE MODD_DATA_SEAFLUX_n,    ONLY : NTIME, XDATA_SST, TDATA_SST
 !
 USE MODI_WRITE_SURF
 !
@@ -51,6 +60,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
+TYPE(DATA_SEAFLUX_t), INTENT(INOUT) :: DTS
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -67,20 +83,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_SEAF_PAR_N',0,ZHOOK_HANDLE)
-NTIME = SIZE(XDATA_SST,2)
+DTS%NTIME = SIZE(DTS%XDATA_SST,2)
 YRECFM='ND_SEA_TIME'
 YCOMMENT='(-)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,NTIME,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,DTS%NTIME,IRESP,HCOMMENT=YCOMMENT)
 !
-DO JTIME=1,NTIME
+DO JTIME=1,DTS%NTIME
   WRITE(YRECFM,FMT='(A7,I3.3)') 'D_SST_T',JTIME
   YCOMMENT='X_Y_DATA_SST'
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XDATA_SST(:,JTIME),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,DTS%XDATA_SST(:,JTIME),IRESP,HCOMMENT=YCOMMENT)
 END DO
 !
 YRECFM='TD_SST'
 YCOMMENT='(-)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,TDATA_SST,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,DTS%TDATA_SST,IRESP,HCOMMENT=YCOMMENT)
 IF (LHOOK) CALL DR_HOOK('WRITESURF_PGD_SEAF_PAR_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

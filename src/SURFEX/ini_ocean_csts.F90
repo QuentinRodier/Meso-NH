@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 SUBROUTINE INI_OCEAN_CSTS 
 !     ##################
 !
@@ -31,7 +31,7 @@ SUBROUTINE INI_OCEAN_CSTS
 !!
 !!    AUTHOR
 !!    ------
-!!  	C. Lebeaupin Brossier       * Meteo France *
+!!      C. Lebeaupin Brossier       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -53,31 +53,28 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------
 !
 !
-!*	 1.     THERMODYNAMICAL CONSTANTS OF SEAWATER
-!	        -------------------------------------
+!*       1.     THERMODYNAMICAL CONSTANTS OF SEAWATER
+!               -------------------------------------
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('INI_OCEAN_CSTS',0,ZHOOK_HANDLE)
 !
-NOCKMIN = 0
-NOCKMAX = 40
-!
 XRHOSW=1024.
 XRHOSWREF=1024.458
 XCPSW=4178.4
 !
-!*	 2.     CORIOLIS FRACTION
-!	        -----------------
+!*       2.     CORIOLIS FRACTION
+!               -----------------
 XGAMA=0.53
 !
-!*	 3.     TURBULENCE CONSTANTS
-!	        --------------------
+!*       3.     TURBULENCE CONSTANTS
+!               --------------------
 XZCE=1./0.7
 XCKL=0.1
 !
-!*	 4.      RADIATION CONSTANTS
-!	        --------------------
+!*       4.      RADIATION CONSTANTS
+!               --------------------
 !from Jerlov's 1976 optical water C type I
 XR=0.58
 XD1=0.35
@@ -85,8 +82,6 @@ XD2=23.
 !albedo of seawater
 XALBEDOSW=0.06
 !
-!*       5.      OCEANIC MODEL TIME STEP
-XOCEAN_TSTEP=5.*60.
 IF (LHOOK) CALL DR_HOOK('INI_OCEAN_CSTS',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

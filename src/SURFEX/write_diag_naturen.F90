@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE WRITE_DIAG_NATURE_n(HPROGRAM,HWRITE)
+SUBROUTINE WRITE_DIAG_NATURE_n (DTCO, DGU, U, IM, DST, &
+                                HPROGRAM,HWRITE)
 !     ###############################################################################
 !
 !!****  *WRITE_DIAG_NATURE_n * - Chooses the surface schemes for diagnostics over
@@ -28,10 +29,14 @@ SUBROUTINE WRITE_DIAG_NATURE_n(HPROGRAM,HWRITE)
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
-
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
+USE MODD_DST_n, ONLY : DST_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_SURF_ATM_n, ONLY : CNATURE
 !
 USE MODI_WRITE_DIAG_ISBA_n
 ! 
@@ -42,6 +47,13 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
+TYPE(DST_t), INTENT(INOUT) :: DST
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HWRITE   ! 'PGD' : only physiographic fields are written
@@ -54,8 +66,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_NATURE_N',0,ZHOOK_HANDLE)
-IF (CNATURE=='ISBA  ') THEN
-  CALL WRITE_DIAG_ISBA_n(HPROGRAM,HWRITE)
+IF (U%CNATURE=='ISBA  ') THEN
+  CALL WRITE_DIAG_ISBA_n(DTCO, DGU, U, IM, DST, &
+                         HPROGRAM,HWRITE)
 END IF
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_NATURE_N',1,ZHOOK_HANDLE)
 !

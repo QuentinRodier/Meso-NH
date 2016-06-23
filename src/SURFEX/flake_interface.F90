@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
 SUBROUTINE flake_interface (KI, &
 ! Atmospheric forcing
@@ -10,16 +10,17 @@ SUBROUTINE flake_interface (KI, &
 ! Constant parameters                           
                                depth_w, fetch, depth_bs, T_bs, par_Coriolis, del_time,            &
 ! Parameters that may change                             
-                               emis_water, albedo_water,   albedo_ice,   albedo_snow,             &
+                               emis_water, albedo,                                                &
                                extincoef_water, extincoef_ice, extincoef_snow,                    &
 ! Flake variables
                                T_snow, T_ice, T_mnw, T_wML, T_bot, T_B1, C_T, h_snow, h_ice,      &
                                h_ML, H_B1, T_sfc,                                                 &
-! Surface heat and momentum fluxes                       
-                               Q_sensible, Q_latent ,Q_momentum, z0, z0t, Ri, ustar, Cd_a,        &
+! Surface heat, momentum fluxes, and other diags                       
+                               Q_sensible, Q_latent ,Q_momentum, z0, z0t, Qsat, Ri, ustar, Cd_a,  &
+                               Q_watvap, Q_latenti, Q_sublim, Q_atm_lw_up, pswe,                  &
 ! Switches to configure FLake runs
-                               lflk_botsed, hflk_flux, PPEW_A_COEF, PPEW_B_COEF, rho_a,           &
-                               HIMPLICIT_WIND                                                     )  
+                               lflk_botsed, lflk_skintemp, hflk_flux, PPEW_A_COEF, PPEW_B_COEF,   &
+                               rho_a, HIMPLICIT_WIND                                              )  
 !------------------------------------------------------------------------------
 !
 ! Description:
@@ -81,20 +82,21 @@ SUBROUTINE flake_interface (KI, &
 USE modd_flake_derivedtypes         ! Definitions of several derived TYPEs
 
 USE modd_flake_parameters , ONLY :   &
+    tpl_kappa_w                 ,  &! Molecular heat conductivity of water [J m^{-1} s^{-1} K^{-1}]
     tpl_T_f                     ,  &! Fresh water freezing point [K]
     tpl_rho_w_r                 ,  &! Maximum density of fresh water [kg m^{-3}]
     h_Snow_min_flk              ,  &! Minimum snow thickness [m]
-    h_Ice_min_flk                   ! Minimum ice thickness [m]  
+    h_Ice_min_flk               ,  &! Minimum ice thickness [m]  
+    h_skinlayer_flk                 ! Skin layer thickness [m]  
 
 USE modd_flake_paramoptic_ref       ! Reference values of the optical characteristics
                                ! of the lake water, lake ice and snow 
 
-USE modd_flake_albedo_ref           ! Reference values the albedo for the lake water, lake ice and snow
-
 USE mode_flake           , ONLY :    &
     flake_driver                ,  &! Subroutine, FLake driver
     flake_radflux               ,  &! Subroutine, computes radiation fluxes at various depths
-                                  !
+    flake_snowdensity           ,  &! Function, computes snow density
+                                    !
     T_snow_p_flk, T_snow_n_flk  ,  &! Temperature at the air-snow interface [K]
     T_ice_p_flk, T_ice_n_flk    ,  &! Temperature at the snow-ice or air-ice interface [K]
     T_mnw_p_flk, T_mnw_n_flk    ,  &! Mean temperature of the water column [K]
@@ -185,16 +187,15 @@ REAL, DIMENSION(KI), INTENT(IN) ::   &
 !                                                     ! 'OLD' = direct
 !                                                     ! 'NEW' = Taylor serie, order 1
 !
-LOGICAL ::  lflk_botsed ! Switch, .TRUE. -> use the bottom-sediment scheme 
- CHARACTER(LEN=5) ::  hflk_flux     ! 'DEF  '/'FLAKE'/'ECUME' compute the surface fluxes if = 'FLAKE'
+LOGICAL,          INTENT(IN) ::  lflk_botsed   ! Switch, .TRUE. -> use the bottom-sediment scheme 
+LOGICAL,          INTENT(IN) ::  lflk_skintemp ! Switch, .TRUE. -> use the skin temperature parameterization
+ CHARACTER(LEN=5),INTENT(IN) ::  hflk_flux     ! 'DEF  '/'FLAKE' compute the surface fluxes if = 'FLAKE'
 
 !
 !  Input/Output (procedure arguments)
 
-REAL, DIMENSION(KI), INTENT(INOUT)  :: &
-    albedo_water                        ,  &! Water surface albedo with respect to the solar radiation
-    albedo_ice                          ,  &! Ice surface albedo with respect to the solar radiation
-    albedo_snow                             ! Snow surface albedo with respect to the solar radiation  
+REAL, DIMENSION(KI), INTENT(IN)    :: albedo  ! surface albedo with respect to the solar radiation
+                                              ! (free water, ice or snow; e.g. update_rade_flake.f90)
 
 REAL, DIMENSION(KI), INTENT(INOUT) ::  &
     extincoef_water                       ,  &! extintion coefficient of water
@@ -219,17 +220,21 @@ REAL, DIMENSION(KI), INTENT(INOUT)  :: &
 
 REAL, DIMENSION(KI), INTENT(INOUT)  ::    &
     Q_sensible             ,  &! Sensible heat flux [W m^{-2}]
-    Q_latent               ,  &! Latent heat flux [W m^{-2}]
+    Q_latent               ,  &! Total Latent heat flux [W m^{-2}]
+    Q_watvap               ,  &! Total Flux of water vapour [kg m^{-2} s^{-1}] 
+    Q_latenti              ,  &! Sublimation Latent heat flux [W m^{-2}]
+    Q_sublim               ,  &! Flux of sublimation [kg m^{-2} s^{-1}]    
     Q_momentum             ,  &! Momentum flux [N m^{-2}]
     z0                     ,  &! Roughness length with respect to wind velocity [m]
     z0t                    ,  &! Roughness length with respect to potential temperature [m]
     Ri                     ,  &! Gradient Richardson number 
     ustar                  ,  &! air friction velocity  
     Cd_a                       ! wind drag coefficient [no unit]
-
-
-
-
+!
+REAL, DIMENSION(KI), INTENT(OUT)  ::    &
+    Qsat                   ,  &! specific humidity at saturation [kg.kg-1]
+    Q_atm_lw_up            ,  &! Upward longwave flux at t [W m^{-2}]
+    pswe                       ! snow water equivalent [kg.m-2]
 !
 !*      0.2    declarations of local variables
 !
@@ -239,32 +244,24 @@ REAL :: T_sfc_n ! Surface temperature at the new time step [K]
 REAL :: ustar2  ! square of air friction velocity (m2/s2)  
 REAL :: zvmod   ! wind at t+1   
 REAL, DIMENSION(KI) ::    &
-    Q_watvap, &                      ! Flux of water vapour [kg m^{-2} s^{-1}] 
     zwind             ! thresholded wind
 
 TYPE (opticpar_medium), DIMENSION(KI) ::  &
     opticpar_water                       ,  &! Optical characteristics of water
     opticpar_ice                         ,  &! Optical characteristics of ice
-    opticpar_snow                            ! Optical characteristics of snow   
+    opticpar_snow                            ! Optical characteristics of snow      
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+REAL, PARAMETER  :: ZTIMEMAX      = 300.  ! s  Maximum timescale without time spliting
+!
+INTEGER  :: JDT, INDT
+REAL :: zaux, zcond, zloc, ZTSTEP
 !
 !==============================================================================
 !  Start calculations
 !------------------------------------------------------------------------------
-
-!------------------------------------------------------------------------------
-!  Set albedos of the lake water, lake ice and snow
-!------------------------------------------------------------------------------
-!
-! Use default value 
-! albedo_water(:) = albedo_water_ref
-! Use empirical formulation proposed by Mironov and Ritter (2004) for GME 
 IF (LHOOK) CALL DR_HOOK('FLAKE_INTERFACE',0,ZHOOK_HANDLE)
-albedo_ice   = albedo_whiteice_ref 
-!albedo_ice(:)   = EXP(-c_albice_MR*(tpl_T_f-T_sfc(:))/tpl_T_f)
-!albedo_ice(:)   = albedo_whiteice_ref*(1.-albedo_ice) + albedo_blueice_ref*albedo_ice
-! Snow is not considered
-albedo_snow(:)  = albedo_ice(:)  
+!
 !------------------------------------------------------------------------------
 !  Set optical characteristics of the lake water, lake ice and snow
 !------------------------------------------------------------------------------
@@ -310,30 +307,32 @@ opticpar_water(JL) = opticpar_medium(1,                       &
 !------------------------------------------------------------------------------
    
    I_atm_flk = I_atm_in(JL)
-   CALL flake_radflux ( depth_w(JL), albedo_water(JL), albedo_ice(JL), &
-                          albedo_snow(JL), opticpar_water(JL),           &
+   CALL flake_radflux ( depth_w(JL), albedo(JL), opticpar_water(JL),  &
                           opticpar_ice(JL), opticpar_snow(JL) )  
    
 !------------------------------------------------------------------------------
 !  Compute long-wave radiation fluxes (positive downward)
+!  lwd-lwu = emis*(lwd-sigma*ts**4)
 !------------------------------------------------------------------------------
-   
-   Q_w_flk = Q_atm_lw_in(JL)                       ! Radiation of the atmosphere 
-   Q_w_flk = Q_w_flk - SfcFlx_lwradwsfc(emis_water(JL),T_sfc(JL))  ! Radiation of the surface (notice the sign)
-   
+!   
+   Q_w_flk = emis_water(JL)*Q_atm_lw_in(JL) - sfcflx_lwradwsfc(emis_water(JL),T_sfc(JL))
+!
+   Q_atm_lw_up(JL) = Q_atm_lw_in(JL) - Q_w_flk
+!   
 !------------------------------------------------------------------------------
 !  Compute the surface friction velocity and fluxes of sensible and latent heat 
 !------------------------------------------------------------------------------
    
    IF (hflk_flux=='FLAKE') THEN
-           z0t(JL)=1.E-7  ! bug correction V. Masson: default value if
-                          ! computations cannot be done in SfxFlx_momsenlat
+      !
       Q_momentum(JL) = - rho_a(JL) * ustar(JL)**2
-      CALL SfcFlx_momsenlat ( height_u_in(JL), height_tq_in(JL), fetch(JL),  &
+      !
+      CALL sfcflx_momsenlat ( height_u_in(JL), height_tq_in(JL), fetch(JL),  &
                              U_a_in(JL), T_a_in(JL), q_a_in(JL), T_sfc(JL), &
                              P_a_in(JL), h_ice_p_flk, Q_momentum(JL),       &
                              Q_sensible(JL), Q_latent(JL), Q_watvap(JL),    &
-                             Ri(JL), z0(JL), z0t(JL)                        )  
+                             Ri(JL), z0(JL), z0t(JL), Qsat(JL),             &
+                             Q_latenti(JL), Q_sublim(JL)                    )
       z0(JL)= z0u_sf
       z0t(JL)=z0t_sf
       ! recomputes the future wind speed and associated momentum flux
@@ -388,18 +387,37 @@ opticpar_water(JL) = opticpar_medium(1,                       &
        Q_snow_flk = 0.
        Q_ice_flk  = 0.
    END IF
-   
+
 !------------------------------------------------------------------------------
 !  Advance FLake variables
-!------------------------------------------------------------------------------
-   CALL flake_driver ( depth_w(JL), depth_bs(JL), T_bs(JL), par_Coriolis(JL),         &
-                         opticpar_water(JL)%extincoef_optic(1),             &
-                         del_time(JL), T_sfc(JL), T_sfc_n )  
-   
+!  Time splitting parameter for *very large time steps* 
+! -----------------------------------------------------------------------------
+!
+   INDT    = MAX(1,NINT(del_time(JL)/ZTIMEMAX))
+   ZTSTEP  = del_time(JL)/REAL(INDT)
+
+   DO JDT=1,INDT
+!
+   T_snow_p_flk = T_snow(JL)
+   T_ice_p_flk  = T_ice(JL)
+   T_mnw_p_flk  = T_mnw(JL)
+   T_wML_p_flk  = T_wML(JL)
+   T_bot_p_flk  = T_bot(JL)
+   T_B1_p_flk   = T_B1(JL)
+   C_T_p_flk    = C_T(JL)
+   h_snow_p_flk = h_snow(JL)
+   h_ice_p_flk  = h_ice(JL)
+   h_ML_p_flk   = h_ML(JL)
+   H_B1_p_flk   = H_B1(JL)
+!
+   CALL flake_driver ( depth_w(JL), depth_bs(JL), T_bs(JL), par_Coriolis(JL), &
+                       opticpar_water(JL)%extincoef_optic(1),                 &
+                       ZTSTEP, T_sfc(JL), T_sfc_n ) 
+!                       
 !------------------------------------------------------------------------------
 !  Set output values
 !------------------------------------------------------------------------------
-   
+!   
    T_snow(JL) = T_snow_n_flk  
    T_ice(JL)  = T_ice_n_flk      
    T_mnw(JL)  = T_mnw_n_flk     
@@ -410,12 +428,37 @@ opticpar_water(JL) = opticpar_medium(1,                       &
    h_snow(JL) = h_snow_n_flk   
    h_ice(JL)  = h_ice_n_flk    
    h_ML(JL)   = h_ML_n_flk     
-   H_B1(JL)   = H_B1_n_flk    
+   H_B1(JL)   = H_B1_n_flk  
    T_sfc(JL)  = T_sfc_n
-   
-ENDDO H_POINT_LOOP
-IF (LHOOK) CALL DR_HOOK('FLAKE_INTERFACE',1,ZHOOK_HANDLE)
+!
+   ENDDO                      
+!
+   pswe(JL) = h_snow(JL)*flake_snowdensity(h_snow(JL))
+!
+!------------------------------------------------------------------------------
+!  Compute skin temperature in case of no ice nor snow
+!------------------------------------------------------------------------------
+!
+!  Q_w_flk=LWD-LWU-(QH+QE)      accounts for water phase (water, ice, snow)
+!  (1-albedo)*I_atm_flk=SWD-SWU accounts for water phase (water, ice, snow)
+!
+   IF (lflk_skintemp.AND.(h_ice(JL)<h_Ice_min_flk).AND.(hflk_flux=='FLAKE')) THEN
 
+         zaux  = (1.0-exp(-opticpar_water(JL)%extincoef_optic(1) * h_skinlayer_flk)) &
+                        / opticpar_water(JL)%extincoef_optic(1)
+
+         zcond = tpl_kappa_w
+
+         zloc = ((1.0-albedo(JL))*I_atm_flk+Q_w_flk)*h_skinlayer_flk-(1.0-albedo(JL))*I_atm_flk*zaux
+
+         T_sfc(JL)  = T_sfc_n + zloc / zcond
+
+   ENDIF
+!   
+ENDDO H_POINT_LOOP
+!
+IF (LHOOK) CALL DR_HOOK('FLAKE_INTERFACE',1,ZHOOK_HANDLE)
+!
 !------------------------------------------------------------------------------
 !  End calculations
 !==============================================================================

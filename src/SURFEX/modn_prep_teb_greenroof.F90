@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ##################
       MODULE MODN_PREP_TEB_GREENROOF
 !     ##################
@@ -33,25 +33,25 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_PREP_TEB_GREENROOF,  ONLY : CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,     &
-                                     CFILE_HUG, CTYPE_HUG,        &
-                                     CFILE_HUG_SURF, CFILE_HUG_ROOT, CFILE_HUG_DEEP, &
-                                     XHUG_SURF, XHUG_ROOT, XHUG_DEEP,                 &
-                                     XHUGI_SURF, XHUGI_ROOT, XHUGI_DEEP,              &
-                                     CFILE_TG, CTYPE_TG,                             &
-                                     CFILE_TG_SURF, CFILE_TG_ROOT, CFILE_TG_DEEP,    &
-                                     XTG_SURF, XTG_ROOT, XTG_DEEP   
+USE MODD_PREP_TEB_GREENROOF,  ONLY : CFILE_GR, CTYPE, CFILEPGD_GR, CTYPEPGD,     &
+                                     CFILE_HUG_GR, CTYPE_HUG,        &
+                                     CFILE_HUG_SURF_GR, CFILE_HUG_ROOT_GR, CFILE_HUG_DEEP_GR, &
+                                     XHUG_SURF_GR, XHUG_ROOT_GR, XHUG_DEEP_GR,                 &
+                                     XHUGI_SURF_GR, XHUGI_ROOT_GR, XHUGI_DEEP_GR,              &
+                                     CFILE_TG_GR, CTYPE_TG,                             &
+                                     CFILE_TG_SURF_GR, CFILE_TG_ROOT_GR, CFILE_TG_DEEP_GR,    &
+                                     XTG_SURF_GR, XTG_ROOT_GR, XTG_DEEP_GR   
 
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_PREP_TEB_GREENROOF/CFILE_ISBA, CTYPE, CFILEPGD_ISBA, CTYPEPGD,     &
-                                CFILE_HUG, CTYPE_HUG,        &
-                                CFILE_HUG_SURF, CFILE_HUG_ROOT, CFILE_HUG_DEEP, &
-                                XHUG_SURF, XHUG_ROOT, XHUG_DEEP,                &
-                                XHUGI_SURF, XHUGI_ROOT, XHUGI_DEEP,             &
-                                CFILE_TG, CTYPE_TG,                              &
-                                CFILE_TG_SURF, CFILE_TG_ROOT, CFILE_TG_DEEP,    &
-                                XTG_SURF, XTG_ROOT, XTG_DEEP   
+NAMELIST/NAM_PREP_TEB_GREENROOF/CFILE_GR, CTYPE, CFILEPGD_GR, CTYPEPGD,     &
+                                CFILE_HUG_GR, CTYPE_HUG,        &
+                                CFILE_HUG_SURF_GR, CFILE_HUG_ROOT_GR, CFILE_HUG_DEEP_GR, &
+                                XHUG_SURF_GR, XHUG_ROOT_GR, XHUG_DEEP_GR,                &
+                                XHUGI_SURF_GR, XHUGI_ROOT_GR, XHUGI_DEEP_GR,             &
+                                CFILE_TG_GR, CTYPE_TG,                              &
+                                CFILE_TG_SURF_GR, CFILE_TG_ROOT_GR, CFILE_TG_DEEP_GR,    &
+                                XTG_SURF_GR, XTG_ROOT_GR, XTG_DEEP_GR   
 !
 END MODULE MODN_PREP_TEB_GREENROOF

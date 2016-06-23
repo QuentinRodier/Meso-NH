@@ -1,7 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
-!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!ORILAM_LIC for details.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
      SUBROUTINE CH_AER_DEP (PSVT, PFSVT,  PUSTAR, &
                       PRESA, PTA, PRHODREF)  
@@ -21,7 +21,8 @@
   !!
   !!    MODIFICATIONS
   !!    -------------
-  !!      Original      20/02/05 
+  !!      Original      20/02/05
+  !!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
   !!
   !-------------------------------------------------------------------------------
   !
@@ -84,6 +85,7 @@
   !--------------
 ! Cf Ackermann (all to black carbon except water)
 IF (LHOOK) CALL DR_HOOK('CH_AER_DEP',0,ZHOOK_HANDLE)
+!
 ZRHOI(:) = 1.8e3
 ZRHOI(JP_AER_H2O) = 1.0e3   ! water
 
@@ -100,9 +102,7 @@ DO JSV=1,SIZE(PSVT,2)
 ZSVT(:,JSV) = PSVT(:,JSV) * XMD / (XAVOGADRO * PRHODREF(:))
 ENDDO
 ZSVT(:,:) = MAX(ZSVT(:,:),XSURF_TINY)
-
-CALL PPP2AERO_SURF(ZSVT, PRHODREF, PSIG1D=ZSIG, PRG1D=ZRG, PN1D=ZN, PCTOTA=ZCTOTA)
-
+ CALL PPP2AERO_SURF(ZSVT, PRHODREF, PSIG1D=ZSIG, PRG1D=ZRG, PN1D=ZN, PCTOTA=ZCTOTA)
 ZRHOP(:,:) = 0.
 DO JN=1,JPMODE
   ZSUM(:)=0.
@@ -115,9 +115,7 @@ DO JN=1,JPMODE
    ZRHOP(:,JN)=ZRHOP(:,JN)+ZCCTOT(:,JJ,JN)*ZRHOI(JJ)
   ENDDO
 ENDDO
-
-CALL CH_AER_VELGRAV1D(ZSIG, ZRG, PTA, PRHODREF, ZRHOP, ZMU, ZVGK,ZDPK, ZVG, ZDG)
-
+ CALL CH_AER_VELGRAV1D(ZSIG, ZRG, PTA, PRHODREF, ZRHOP, ZMU, ZVGK,ZDPK, ZVG, ZDG)
 Dg(:,:)  = MAX(ZDPK(:,:),1.E-40)
 zvs(:,:) = MAX(ZVGK(:,:),1.E-20)
 ZNU(:)   = ZMU(:)/PRHODREF(:)
@@ -127,14 +125,12 @@ zvsg(:,3*JN+JJ-2) =  MAX(ZVG(:,JN),1.E-20)
 zdsg(:,3*JN+JJ-2) =  MAX(ZDG(:,JN),1.E-40)
 END DO
 END DO
-
 !     compute Schmidt number
 !     ----------------------
   DO  JN=1,JPIN
       !Sc(:,JN)= ZNU(:)/Dg(:,JN)
       Sc(:,JN)= ZNU(:)/zdsg(:,JN)
   END DO
-
 !Scale for convective velocity 
 ! WCn(:) = MAX((PTKE(:) - 4.65* ZUSTAR(:)**2)/0.3, 1.E-20)
 
@@ -151,21 +147,21 @@ Stn(:,:) =0.
 ZVD(:,:) = 0.
 ZWORK(:,:) = 0.
 DO JT=1,SIZE(PSVT,1)
- IF (ZUSTAR(JT).GE.1.E-10) THEN
-  DO  JN=1,JPIN
-     ZTMP1=0.
-     ZTMP2=0.
-     ZTMP3=0.
-     ZTMP4=0.  
-     Stn(JT,JN)= zvsg(JT,JN)*ZUSTAR(JT)**2/(ZG*ZNU(JT))
-     ZTMP1=Sc(JT,JN)**(-2./3.)
-     ZTMP2=(-3./Stn(JT,JN))
-     IF (ZTMP2.gt.-10) then
-       ZTMP3=10.**(ZTMP2)
-     ELSE
-       ZTMP3=0.
-     ENDIF
-     ZTMP4=ZTMP1+ZTMP3
+  IF (ZUSTAR(JT).GE.1.E-10) THEN
+    DO JN=1,JPIN
+      ZTMP1=0.
+      ZTMP2=0.
+      ZTMP3=0.
+      ZTMP4=0.  
+      Stn(JT,JN)= zvsg(JT,JN)*ZUSTAR(JT)**2/(ZG*ZNU(JT))
+      ZTMP1=Sc(JT,JN)**(-2./3.)
+      ZTMP2=(-3./Stn(JT,JN))
+      IF (ZTMP2.gt.-10) then
+        ZTMP3=10.**(ZTMP2)
+      ELSE
+        ZTMP3=0.
+      ENDIF
+      ZTMP4=ZTMP1+ZTMP3
      
      !ZRD(:,JN) = (Sc(:,JN)**(-2./3.)+ 10**(-3./Stn(:,JN)))&
      !      * (1 + 0.24 * WCn(:)**2 /ZUSTAR(:)**2) &
@@ -183,36 +179,34 @@ DO JT=1,SIZE(PSVT,1)
      ZVD(JT,JN) = ZVD(JT,JN) + ZWORK(JT,JN)
   END DO
  ELSE
-  ZVD(JT,JN)=0.
+   ZVD(JT,:) = 0.
  END IF
 ENDDO  
 
-
-
-  M6I=0
-  M6J=0
-  IF (LVARSIGI) M6I=1
-  IF (LVARSIGJ) M6J=1
-  DO JSV=1,SIZE(PSVT,2)-1-(JPMODE+M6I+M6J),2 ! mass deposition for I mode
+M6I=0
+M6J=0
+IF (LVARSIGI) M6I=1
+IF (LVARSIGJ) M6J=1
+DO JSV=1,SIZE(PSVT,2)-1-(JPMODE+M6I+M6J),2 ! mass deposition for I mode
   PFSVT(:,JSV) =  PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,2)
-  ENDDO
-  DO JSV=2,SIZE(PSVT,2)-(JPMODE+M6I+M6J),2   ! mass deposition for J mode
+ENDDO
+DO JSV=2,SIZE(PSVT,2)-(JPMODE+M6I+M6J),2   ! mass deposition for J mode
   PFSVT(:,JSV) =  PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,5)
-  ENDDO
-  ! number particles deposition I
-  JSV = SIZE(PSVT,2)-(1+M6I+M6J)
-  PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,1)
-  ! number particles deposition J
-  JSV = SIZE(PSVT,2)-(M6I+M6J)
-  PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,4)
-  ! m6 deposition I
-  JSV = SIZE(PSVT,2)-M6J
-  IF (LVARSIGI) PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,3)
-  ! m6 deposition J
-  JSV = SIZE(PSVT,2)
-  IF (LVARSIGJ) PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,6)
+ENDDO
+! number particles deposition I
+JSV = SIZE(PSVT,2)-(1+M6I+M6J)
+PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,1)
+! number particles deposition J
+JSV = SIZE(PSVT,2)-(M6I+M6J)
+PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,4)
+! m6 deposition I
+JSV = SIZE(PSVT,2)-M6J
+IF (LVARSIGI) PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,3)
+! m6 deposition J
+JSV = SIZE(PSVT,2)
+IF (LVARSIGJ) PFSVT(:,JSV) = PFSVT(:,JSV) - PSVT(:,JSV)  * ZVD(:,6)
 IF (LHOOK) CALL DR_HOOK('CH_AER_DEP',1,ZHOOK_HANDLE)
-!							       	       
+!
 !---------------------------------------------------------------------
 !
 END SUBROUTINE CH_AER_DEP

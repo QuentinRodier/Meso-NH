@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GARDEN_SOIL_DEPTH(HNVEG,HLVEG,HHVEG,PNVEG,PLVEG,PHVEG,PDG)
 !     #########################################
@@ -27,11 +27,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2011 
+!!      R. Alkama  : Add 7 new vegtype (19 rather than 12)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -73,18 +74,30 @@ IF (SIZE(PDG,2)<=3) THEN
 
   ZDATA_DG(:,1,:) = 0.01
   ZDATA_DG(:,2,:) = 1.50
-  IF(HHVEG=='TREE')  ZDATA_DG(:,2,1)= 2.0
-  IF(HHVEG=='CONI')  ZDATA_DG(:,2,1)= 2.0 
-  IF(HHVEG=='EVER')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='TEBD')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='BONE')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='TRBE')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='TRBD')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='TEBE')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='TENE')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='BOBD')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='BOND')  ZDATA_DG(:,2,1)= 2.0
+  IF(HHVEG=='SHRB')  ZDATA_DG(:,2,1)= 2.0
   IF(HNVEG=='NO  ')  ZDATA_DG(:,2,3)= 0.5
   IF(HNVEG=='ROCK')  ZDATA_DG(:,2,3)= 0.5
   IF(HNVEG=='SNOW')  ZDATA_DG(:,2,3)= 0.5
 
   IF (SIZE(PDG,2)==3) THEN
     ZDATA_DG(:,3,:) = 2.00
-    IF(HHVEG=='TREE')  ZDATA_DG(:,3,1)= 3.0
-    IF(HHVEG=='CONI')  ZDATA_DG(:,3,1)= 3.0
-    IF(HHVEG=='EVER')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='TEBD')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='BONE')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='TRBE')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='TRBD')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='TEBE')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='TENE')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='BOBD')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='BOND')  ZDATA_DG(:,3,1)= 3.0
+    IF(HHVEG=='SHRB')  ZDATA_DG(:,3,1)= 3.0
     IF(HNVEG=='NO  ')  ZDATA_DG(:,3,3)= 1.0
     IF(HNVEG=='ROCK')  ZDATA_DG(:,3,3)= 1.0
     IF(HNVEG=='SNOW')  ZDATA_DG(:,3,3)= 1.0

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CO2_TEB_GREENROOF_INIT_n(PCO2)
+      SUBROUTINE CO2_TEB_GREENROOF_INIT_n (I, TGRP, TVG, &
+                                           PCO2)
 !     #####################
 !
 !!****  *CO2_TEB_GREENROOF_INIT_n* - routine to initialize ISBA-AGS variables
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -46,13 +47,13 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_TEB_GREENROOF_PGD_n, ONLY : TEB_GREENROOF_PGD_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_TEB_VEG_n,      ONLY : CPHOTO
-USE MODD_TEB_GREENROOF_n,ONLY : XVEGTYPE,                             &
-                                XGMES, XGC, XDMAX, XABC, XPOI, XANMAX,&
-                                XFZERO, XEPSO, XGAMM, XQDGAMM,        &
-                                XQDGMES, XT1GMES, XT2GMES, XAMAX,     &
-                                XQDAMAX, XT1AMAX, XT2AMAX, XAH, XBH
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
 !
 USE MODI_COTWOINIT_n
@@ -66,6 +67,11 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(TEB_GREENROOF_PGD_t), INTENT(INOUT) :: TGRP
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+!
 REAL, DIMENSION(:), INTENT(IN) :: PCO2 ! air CO2 concentration (kg/kg)
 !
 !
@@ -73,7 +79,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PCO2 ! air CO2 concentration (kg/kg)
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-REAL, DIMENSION(SIZE(XVEGTYPE,1)) :: ZTAU_WOOD
+REAL, DIMENSION(SIZE(TGRP%XVEGTYPE,1)) :: ZTAU_WOOD
 INTEGER :: ILU   ! size of arrays
 INTEGER :: JP    ! loop on tiles
 !
@@ -81,28 +87,29 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CO2_TEB_GREENROOF_INIT_N',0,ZHOOK_HANDLE)
-ILU = SIZE(XVEGTYPE,1)
+ILU = SIZE(TGRP%XVEGTYPE,1)
 !
-ALLOCATE(XANMAX        (ILU))
-ALLOCATE(XFZERO        (ILU))
-ALLOCATE(XEPSO         (ILU))
-ALLOCATE(XGAMM         (ILU))
-ALLOCATE(XQDGAMM       (ILU))
-ALLOCATE(XQDGMES       (ILU))
-ALLOCATE(XT1GMES       (ILU))
-ALLOCATE(XT2GMES       (ILU))
-ALLOCATE(XAMAX         (ILU))
-ALLOCATE(XQDAMAX       (ILU))
-ALLOCATE(XT1AMAX       (ILU))
-ALLOCATE(XT2AMAX       (ILU))
-ALLOCATE(XAH           (ILU))
-ALLOCATE(XBH           (ILU))
+ALLOCATE(TGRP%XANMAX        (ILU))
+ALLOCATE(TGRP%XFZERO        (ILU))
+ALLOCATE(TGRP%XEPSO         (ILU))
+ALLOCATE(TGRP%XGAMM         (ILU))
+ALLOCATE(TGRP%XQDGAMM       (ILU))
+ALLOCATE(TGRP%XQDGMES       (ILU))
+ALLOCATE(TGRP%XT1GMES       (ILU))
+ALLOCATE(TGRP%XT2GMES       (ILU))
+ALLOCATE(TGRP%XAMAX         (ILU))
+ALLOCATE(TGRP%XQDAMAX       (ILU))
+ALLOCATE(TGRP%XT1AMAX       (ILU))
+ALLOCATE(TGRP%XT2AMAX       (ILU))
+ALLOCATE(TGRP%XAH           (ILU))
+ALLOCATE(TGRP%XBH           (ILU))
 !
-     CALL COTWOINIT_n(CPHOTO, XVEGTYPE,XGMES,PCO2,XGC,&
-            XDMAX,XABC,XPOI,XANMAX, XFZERO,           &
-            XEPSO,XGAMM,XQDGAMM,XQDGMES,XT1GMES,      &
-            XT2GMES,XAMAX,XQDAMAX,XT1AMAX,            &
-            XT2AMAX,XAH,XBH,ZTAU_WOOD                 )  
+     CALL COTWOINIT_n(I, &
+                      TVG%CPHOTO, TGRP%XVEGTYPE,TGRP%XGMES,PCO2,TGRP%XGC,&
+            TGRP%XDMAX,TGRP%XABC,TGRP%XPOI,TGRP%XANMAX, TGRP%XFZERO,           &
+            TGRP%XEPSO,TGRP%XGAMM,TGRP%XQDGAMM,TGRP%XQDGMES,TGRP%XT1GMES,      &
+            TGRP%XT2GMES,TGRP%XAMAX,TGRP%XQDAMAX,TGRP%XT1AMAX,            &
+            TGRP%XT2AMAX,TGRP%XAH,TGRP%XBH,ZTAU_WOOD                 )  
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('CO2_TEB_GREENROOF_INIT_N',1,ZHOOK_HANDLE)

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_FRAC(HPROGRAM,OECOCLIMAP)
+      SUBROUTINE PGD_FRAC (DTCO, UG, U, USS, &
+                           HPROGRAM,OECOCLIMAP)
 !     ##############################################################
 !
 !!**** *PGD_FRAC* monitor for averaging and interpolations of cover fractions
@@ -41,15 +42,16 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL, CGRID
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_SURF_ATM_n,     ONLY : XNATURE, XSEA, XTOWN, XWATER,             &
-                                  XCOVER, LCOVER,                         &
-                                  NSIZE_NATURE, NSIZE_SEA,                &
-                                  NSIZE_TOWN, NSIZE_WATER,NSIZE_FULL,     &
-                                  NDIM_NATURE, NDIM_SEA,                  &
-                                  NDIM_TOWN,NDIM_WATER  
 !
 USE MODD_PGDWORK,        ONLY : CATYPE
 !
@@ -71,6 +73,12 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 LOGICAL,             INTENT(OUT)   :: OECOCLIMAP   ! F if fractions prescribed by user
@@ -112,6 +120,7 @@ REAL     :: XUNIF_TOWN  ! value of town   fraction
 !
 INTEGER               :: ICOVER       ! 0 if cover is not present, >1 if present somewhere
 !                                     ! (even on another processor)
+INTEGER               :: ICPT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -131,14 +140,14 @@ XUNIF_WATER    = XUNDEF
 XUNIF_NATURE   = XUNDEF
 XUNIF_TOWN     = XUNDEF
 LECOCLIMAP     = .TRUE.
-CFNAM_SEA   (:)= '                            '
-CFNAM_WATER (:)= '                            '
-CFNAM_NATURE(:)= '                            '
-CFNAM_TOWN  (:)= '                            '
-CFTYP_SEA   (:)= '      '
-CFTYP_WATER (:)= '      '
-CFTYP_NATURE(:)= '      '
-CFTYP_TOWN  (:)= '      '
+ CFNAM_SEA   (:)= '                            '
+ CFNAM_WATER (:)= '                            '
+ CFNAM_NATURE(:)= '                            '
+ CFNAM_TOWN  (:)= '                            '
+ CFTYP_SEA   (:)= '      '
+ CFTYP_WATER (:)= '      '
+ CFTYP_NATURE(:)= '      '
+ CFTYP_TOWN  (:)= '      '
 !
 OECOCLIMAP = .TRUE.
 !
@@ -160,10 +169,10 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_FRAC)
 IF ((LEN_TRIM(CFNAM_SEA)/=0 .OR. XUNIF_SEA/=XUNDEF) .AND. (LEN_TRIM(CFNAM_WATER)/=0 .OR. XUNIF_WATER/=XUNDEF) .AND. &
     (LEN_TRIM(CFNAM_NATURE)/=0 .OR. XUNIF_NATURE/=XUNDEF) .AND. (LEN_TRIM(CFNAM_TOWN)/=0 .OR. XUNIF_TOWN/=XUNDEF)) THEN
 !
-  ALLOCATE(XSEA   (NL))
-  ALLOCATE(XWATER (NL))
-  ALLOCATE(XNATURE(NL))
-  ALLOCATE(XTOWN  (NL))
+  ALLOCATE(U%XSEA   (NL))
+  ALLOCATE(U%XWATER (NL))
+  ALLOCATE(U%XNATURE(NL))
+  ALLOCATE(U%XTOWN  (NL))
 !
 !*    3.      Uniform fractions are prescribed
 !             --------------------------------
@@ -188,10 +197,10 @@ IF ((LEN_TRIM(CFNAM_SEA)/=0 .OR. XUNIF_SEA/=XUNDEF) .AND. (LEN_TRIM(CFNAM_WATER)
 !
     ELSE
 !
-      XSEA    = XUNIF_SEA 
-      XWATER  = XUNIF_WATER
-      XNATURE = XUNIF_NATURE
-      XTOWN   = XUNIF_TOWN
+      U%XSEA    = XUNIF_SEA 
+      U%XWATER  = XUNIF_WATER
+      U%XNATURE = XUNIF_NATURE
+      U%XTOWN   = XUNIF_TOWN
 
     END IF
 !
@@ -202,28 +211,32 @@ IF ((LEN_TRIM(CFNAM_SEA)/=0 .OR. XUNIF_SEA/=XUNDEF) .AND. (LEN_TRIM(CFNAM_WATER)
 
     CATYPE = 'ARI'
     IF (XUNIF_SEA==XUNDEF) THEN
-      CALL PGD_FIELD(HPROGRAM,'XSEA: sea fraction      ','ALL', CFNAM_SEA   , &
-                    CFTYP_SEA   , XUNIF_SEA   , XSEA(:)   )  
+      CALL PGD_FIELD(DTCO, UG, U, USS, &
+                     HPROGRAM,'XSEA: sea fraction      ','ALL', CFNAM_SEA   , &
+                    CFTYP_SEA   , XUNIF_SEA   , U%XSEA(:)   )  
     ELSE                 
-      XSEA(:) = XUNIF_SEA
+      U%XSEA(:) = XUNIF_SEA
     ENDIF
     IF (XUNIF_WATER==XUNDEF) THEN
-      CALL PGD_FIELD(HPROGRAM,'XWATER: water fraction  ','ALL', CFNAM_WATER , &
-                    CFTYP_WATER , XUNIF_WATER , XWATER(:) )  
+      CALL PGD_FIELD(DTCO, UG, U, USS, &
+                     HPROGRAM,'XWATER: water fraction  ','ALL', CFNAM_WATER , &
+                    CFTYP_WATER , XUNIF_WATER , U%XWATER(:) )  
     ELSE                    
-      XWATER(:) = XUNIF_WATER
+      U%XWATER(:) = XUNIF_WATER
     ENDIF
     IF (XUNIF_NATURE==XUNDEF) THEN
-      CALL PGD_FIELD(HPROGRAM,'XNATURE: nature fraction','ALL', CFNAM_NATURE, &
-                    CFTYP_NATURE, XUNIF_NATURE, XNATURE(:))  
+      CALL PGD_FIELD(DTCO, UG, U, USS, &
+                     HPROGRAM,'XNATURE: nature fraction','ALL', CFNAM_NATURE, &
+                    CFTYP_NATURE, XUNIF_NATURE, U%XNATURE(:))  
     ELSE                    
-      XNATURE(:) = XUNIF_NATURE
+      U%XNATURE(:) = XUNIF_NATURE
     ENDIF
     IF (XUNIF_TOWN==XUNDEF) THEN
-      CALL PGD_FIELD(HPROGRAM,'XTOWN: town fraction    ','ALL', CFNAM_TOWN  , &
-                    CFTYP_TOWN  , XUNIF_TOWN  , XTOWN(:)  )  
+      CALL PGD_FIELD(DTCO, UG, U, USS, &
+                     HPROGRAM,'XTOWN: town fraction    ','ALL', CFNAM_TOWN  , &
+                    CFTYP_TOWN  , XUNIF_TOWN  , U%XTOWN(:)  )  
     ELSE                    
-      XTOWN(:) = XUNIF_TOWN
+      U%XTOWN(:) = XUNIF_TOWN
     ENDIF
   ENDIF
 
@@ -240,12 +253,12 @@ ENDIF
 !         consistency check
 !         ------------------
 !
-ZSUM(:) = XSEA(:) + XNATURE(:) + XWATER(:) + XTOWN(:)
+ZSUM(:) = U%XSEA(:) + U%XNATURE(:) + U%XWATER(:) + U%XTOWN(:)
 
-XSEA(:)    = XSEA(:)    / ZSUM(:)
-XNATURE(:) = XNATURE(:) / ZSUM(:)
-XWATER(:)  = XWATER(:)  / ZSUM(:)
-XTOWN(:)   = XTOWN(:)   / ZSUM(:)
+U%XSEA(:)    = U%XSEA(:)    / ZSUM(:)
+U%XNATURE(:) = U%XNATURE(:) / ZSUM(:)
+U%XWATER(:)  = U%XWATER(:)  / ZSUM(:)
+U%XTOWN(:)   = U%XTOWN(:)   / ZSUM(:)
 !
 !-------------------------------------------------------------------------------
 
@@ -259,23 +272,53 @@ OECOCLIMAP = LECOCLIMAP
 !
 IF (.NOT.LECOCLIMAP) THEN
 
-  ALLOCATE(XCOVER (NL,JPCOVER))
+  ALLOCATE(U%LCOVER(JPCOVER))
+  U%LCOVER(:) = .FALSE.
+  ICOVER = 0
+  ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XSEA(:)/=0. ,'COV')
+  IF (ICPT/=0) THEN
+    U%LCOVER(1) = .TRUE.
+    ICOVER=ICOVER+1
+  ENDIF
+  ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XWATER(:)/=0. ,'COV')
+  IF (ICPT/=0) THEN  
+    U%LCOVER(2) = .TRUE.
+    ICOVER=ICOVER+1
+  ENDIF
+  ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XNATURE(:)/=0. ,'COV')
+  IF (ICPT/=0) THEN  
+    U%LCOVER(4) = .TRUE.
+    ICOVER=ICOVER+1
+  ENDIF
+  ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XTOWN(:)/=0. ,'COV')
+  IF (ICPT/=0) THEN  
+    U%LCOVER(151) = .TRUE.
+    ICOVER=ICOVER+1
+  ENDIF
 
-  XCOVER(:,:) =0.
-  XCOVER(:,1) = XSEA(:)
-  XCOVER(:,2) = XWATER(:)
-  XCOVER(:,4) = XNATURE(:)
-  XCOVER(:,151) = XTOWN(:)
+  ALLOCATE(U%XCOVER (NL,ICOVER))
+
+  ICPT = 0
+  IF (U%LCOVER(1)) THEN
+    ICPT = ICPT + 1
+    U%XCOVER(:,ICPT) = U%XSEA(:)
+  ENDIF
+  IF (U%LCOVER(2)) THEN
+    ICPT = ICPT + 1
+    U%XCOVER(:,ICPT) = U%XWATER(:)
+  ENDIF
+  IF (U%LCOVER(4)) THEN
+    ICPT = ICPT + 1
+    U%XCOVER(:,ICPT) = U%XNATURE(:)
+  ENDIF
+  IF (U%LCOVER(151)) THEN
+    ICPT = ICPT + 1
+    U%XCOVER(:,ICPT) = U%XTOWN(:)
+  ENDIF
+  
   ! comment V. Masson: to use this cover type for town by default avoids crashes
   ! when garden fraction is specified but no garden vegetation parameters.
   ! In this cas, the properties for garden come from the cover 151
-!
- ALLOCATE(LCOVER(JPCOVER))
-  LCOVER = .FALSE.
- DO JCOVER=1,JPCOVER
-    ICOVER = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XCOVER(:,JCOVER)/=0. ,'COV')
-    IF (ICOVER>0) LCOVER(JCOVER)=.TRUE. 
- END DO  
 !
 !
 !-------------------------------------------------------------------------------
@@ -283,16 +326,16 @@ IF (.NOT.LECOCLIMAP) THEN
 !*    6.      Land - sea fractions
 !             --------------------
 !
-  NSIZE_NATURE    = COUNT(XNATURE(:) > 0.0)
-  NSIZE_WATER     = COUNT(XWATER (:) > 0.0)
-  NSIZE_SEA       = COUNT(XSEA   (:) > 0.0)
-  NSIZE_TOWN      = COUNT(XTOWN  (:) > 0.0)
-  NSIZE_FULL      = NL
+  U%NSIZE_NATURE    = COUNT(U%XNATURE(:) > 0.0)
+  U%NSIZE_WATER     = COUNT(U%XWATER (:) > 0.0)
+  U%NSIZE_SEA       = COUNT(U%XSEA   (:) > 0.0)
+  U%NSIZE_TOWN      = COUNT(U%XTOWN  (:) > 0.0)
+  U%NSIZE_FULL      = NL
 !
-  NDIM_NATURE    = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XNATURE(:) > 0.0, 'DIM')
-  NDIM_WATER     = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XWATER (:) > 0.0, 'DIM')
-  NDIM_SEA       = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XSEA   (:) > 0.0, 'DIM')
-  NDIM_TOWN      = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XTOWN  (:) > 0.0, 'DIM')
+  U%NDIM_NATURE    = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XNATURE(:) > 0.0, 'DIM')
+  U%NDIM_WATER     = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XWATER (:) > 0.0, 'DIM')
+  U%NDIM_SEA       = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XSEA   (:) > 0.0, 'DIM')
+  U%NDIM_TOWN      = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XTOWN  (:) > 0.0, 'DIM')
 !  
 ENDIF
 IF (LHOOK) CALL DR_HOOK('PGD_FRAC',1,ZHOOK_HANDLE)

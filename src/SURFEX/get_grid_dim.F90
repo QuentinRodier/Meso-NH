@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_GRID_DIM(HGRID,KGRID_PAR,PGRID_PAR,ORECT,KDIM1,KDIM2)
 !     ##############################################################
@@ -27,6 +27,7 @@
 !!
 !!    Original    03/2004
 !!      07/2011     add IGN grid (B. Decharme)
+!!      P. Samuelsson SMHI  10/2014   Rotated lonlat
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -38,6 +39,7 @@ USE MODI_GET_GRID_DIM_LONLAT_REG
 USE MODI_GET_GRID_DIM_GAUSS
 USE MODI_GET_GRID_DIM_LONLATVAL
 USE MODI_GET_GRID_DIM_IGN
+USE MODI_GET_GRID_DIM_LONLAT_ROT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -80,6 +82,9 @@ SELECT CASE (HGRID)
 
   CASE("IGN       ")
     CALL GET_GRID_DIM_IGN(KGRID_PAR,PGRID_PAR,ORECT,KDIM1,KDIM2)
+
+  CASE("LONLAT ROT")
+    CALL GET_GRID_DIM_LONLAT_ROT(KGRID_PAR,PGRID_PAR,ORECT,KDIM1,KDIM2)
 
   CASE("NONE      ")
     ORECT = .FALSE.

@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_WATFLUX_n(HPROGRAM)
+      SUBROUTINE WRITESURF_WATFLUX_n (DGU, U, &
+                                       W, &
+                                      HPROGRAM)
 !     ########################################
 !
 !!****  *WRITESURF_WATFLUX_n* - writes WATFLUX fields
@@ -27,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,8 +39,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_WATFLUX_n,      ONLY : XTS, XZ0, TTIME,  &
-                                  LINTERPOL_TS, XTS_MTH  
+!
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODI_WRITE_SURF
 !
@@ -50,6 +58,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 
@@ -74,22 +89,24 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !* water temperature
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_WATFLUX_N',0,ZHOOK_HANDLE)
-IF(LINTERPOL_TS)THEN
+IF(W%LINTERPOL_TS)THEN
 !
-  INMTH=SIZE(XTS_MTH,2)
+  INMTH=SIZE(W%XTS_MTH,2)
 !
   DO JMTH=1,INMTH
      WRITE(YMTH,'(I2)') (JMTH-1)
      YRECFM='TS_WATER'//ADJUSTL(YMTH(:LEN_TRIM(YMTH)))
      YCOMMENT='TS_WATER month t'//ADJUSTL(YMTH(:LEN_TRIM(YMTH)))
-     CALL WRITE_SURF(HPROGRAM,YRECFM,XTS_MTH(:,JMTH),IRESP,HCOMMENT=YCOMMENT)
+     CALL WRITE_SURF(DGU, U, &
+                     HPROGRAM,YRECFM,W%XTS_MTH(:,JMTH),IRESP,HCOMMENT=YCOMMENT)
   ENDDO
 !
 ENDIF
 !
 YRECFM='TS_WATER'
 YCOMMENT='TS_WATER (K)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,XTS(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                     HPROGRAM,YRECFM,W%XTS(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -100,7 +117,8 @@ YCOMMENT='TS_WATER (K)'
 !
 YRECFM='Z0WATER'
 YCOMMENT='Z0WATER (m)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,XZ0(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                     HPROGRAM,YRECFM,W%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !
 !-------------------------------------------------------------------------------
@@ -110,7 +128,8 @@ YCOMMENT='Z0WATER (m)'
 !
 YRECFM='DTCUR'
 YCOMMENT='s'
- CALL WRITE_SURF(HPROGRAM,YRECFM,TTIME,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                     HPROGRAM,YRECFM,W%TTIME,IRESP,HCOMMENT=YCOMMENT)
 IF (LHOOK) CALL DR_HOOK('WRITESURF_WATFLUX_N',1,ZHOOK_HANDLE)
 !
 

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 MODULE MODE_READ_BUFFER
 !     #####################
 !-------------------------------------------------------------------
@@ -11,7 +11,7 @@ USE MODI_ABOR1_SFX
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-CONTAINS
+ CONTAINS
 !-------------------------------------------------------------------
 !     ####################
       SUBROUTINE READ_BUFFER_LAND_MASK(KLUOUT,HINMODEL,PMASK)
@@ -33,7 +33,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_LAND_MASK',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading land mask'
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
 ALLOCATE (ZFIELD(NNI))
     CALL READ_BUFFER('LSM   ',ZFIELD,IRET)
 END SELECT
@@ -75,7 +75,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_ZS_LAND',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading land orography'
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('LPHIS ',PFIELD,IRET)
 END SELECT
@@ -114,7 +114,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_ZS_SEA',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading sea orography in buffer'
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('SPHIS ',PFIELD,IRET)
 END SELECT
@@ -154,7 +154,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_ZS',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading orography'
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('PHIS  ',PFIELD,IRET)
 END SELECT
@@ -192,7 +192,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_TS',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading surface temperature'
 !
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('TG1   ',PFIELD,IRET)
 END SELECT
@@ -227,7 +227,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_SST',0,ZHOOK_HANDLE)
 WRITE (KLUOUT,'(A)') ' | Reading sea surface temperature'
 !
 SELECT CASE (HINMODEL)
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('SST   ',PFIELD,IRET)
 !
@@ -265,7 +265,7 @@ WRITE (KLUOUT,'(A)') ' | Reading deep soil temperature'
 !
 SELECT CASE (HINMODEL)
 
-CASE ('ALADIN')
+ CASE ('ALADIN')
    ALLOCATE (PFIELD(NNI))
    CALL READ_BUFFER('TG2   ',PFIELD,IRET)
 END SELECT
@@ -418,7 +418,7 @@ IF (GISBA) THEN
   IF (IRET /= 0) THEN
     CALL ABOR1_SFX('MODE_READ_BUFFER: LEVEL 2 DEPTH MISSING')
   END IF
-  PD(:,1) = 0.
+  PD(:,1) = 0.01
   PD(:,2) = 0.20
   PD(:,3) = ZFIELD(:)
   !
@@ -428,9 +428,9 @@ IF (GISBA) THEN
   ZWG(:,2) = ZWG(:,2) /(1000. * ZFIELD(:))
   DEALLOCATE(ZFIELD)
 ELSE
-  PD(:,1) = 0.
+  PD(:,1) = 0.01
   PD(:,2) = 0.2
-  PD(:,3) = 2.
+  PD(:,3) = 2.0
 END IF
 !
 !
@@ -628,7 +628,7 @@ IF (GISBA) THEN
   IF (IRET /= 0) THEN
     CALL ABOR1_SFX('MODE_READ_BUFFER: LEVEL 2 DEPTH FOR ICE MISSING')
   END IF
-  PD(:,1) = 0.
+  PD(:,1) = 0.01
   PD(:,2) = 0.20
   PD(:,3) = ZFIELD(:)
   !
@@ -638,9 +638,9 @@ IF (GISBA) THEN
   ZWGI(:,2) = ZWGI(:,2) /(1000. * ZFIELD(:))
   DEALLOCATE(ZFIELD)
 ELSE
-  PD(:,1) = 0.
+  PD(:,1) = 0.01
   PD(:,2) = 0.20
-  PD(:,3) = 2.
+  PD(:,3) = 2.0
 END IF
 !
 !
@@ -739,7 +739,7 @@ ALLOCATE (ZFIELD(NNI))
  CALL READ_BUFFER_TS(KLUOUT,HINMODEL,ZFIELD)
 !
 PFIELD(:,1) = ZFIELD(:)
-PD    (:,1) = 0.
+PD    (:,1) = 0.01
 DEALLOCATE(ZFIELD)
 !
 !--------------------------------------------------------------------------------
@@ -751,7 +751,7 @@ ALLOCATE (ZFIELD(NNI))
  CALL READ_BUFFER_T2(KLUOUT,HINMODEL,ZFIELD)
 !
 PFIELD(:,2) = ZFIELD(:)
-PD    (:,2) = 0.2         ! deep temperature depth assumed equal to 0.2m
+PD    (:,2) = 0.4         ! deep temperature depth assumed equal to 0.2m
 DEALLOCATE(ZFIELD)
 !
 !--------------------------------------------------------------------------------
@@ -760,7 +760,7 @@ DEALLOCATE(ZFIELD)
 !     -----------------------------------------
 !
 PFIELD(:,3) = PFIELD(:,2)
-PD    (:,3) = 3.          ! temperature profile down to 3m
+PD    (:,3) = 5.          ! temperature profile down to 5m
 IF (LHOOK) CALL DR_HOOK('MODE_READ_BUFFER:READ_BUFFER_TG',1,ZHOOK_HANDLE)
 !
 !

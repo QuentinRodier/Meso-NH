@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITE_COVER_TEX_ISBA(KPATCH,KLAYER,HISBA)
 !     ##########################
@@ -33,7 +33,8 @@
 !!    ------------
 !!
 !!    Original    08/01/98
-!!
+!!       
+!!    R. Alkama    05/2012 : from 12 to 19 vegtype 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -42,19 +43,21 @@
 !
 !
 USE MODE_WRITE_COVER_TEX
-
+!
 USE MODD_WRITE_COVER_TEX,ONLY : NTEX, CNAME, CLANG, NLINES
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_DATA_COVER,     ONLY : XDATA_NATURE,                            &
                                   XDATA_VEGTYPE, XDATA_H_TREE, XDATA_LAI,  &
                                   XDATA_ROOT_DEPTH, XDATA_GROUND_DEPTH  
-
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NVEGTYPE, NVT_ROCK, NVT_SNOW, &
-                                  NVT_NO, NVT_GRAS, NVT_TROG, NVT_PARK,  &
-                                  NVT_C3, NVT_C4, NVT_IRR, NVT_TREE,     &
-                                  NVT_CONI, NVT_EVER  
-
+                                  
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NVEGTYPE, NVT_NO, NVT_ROCK,      & 
+                                  NVT_SNOW, NVT_TEBD, NVT_BONE, NVT_TRBE, &
+                                  NVT_C3, NVT_C4, NVT_IRR, NVT_GRAS,      &
+                                  NVT_TROG,NVT_PARK, NVT_TRBD, NVT_TEBE,  &
+                                  NVT_TENE, NVT_BOBD, NVT_BOND, NVT_BOGR, &
+                                  NVT_SHRB 
 !
+USE MODD_REPROD_OPER,    ONLY : XEVERG_VEG, XEVERG_RSMIN
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -112,18 +115,22 @@ DO
     WRITE(NTEX,*) "{\bf type de v\'eg\'etation et param\`etres principaux d'ISBA $^\star$}\\"
   END IF
   WRITE(NTEX,*) '\medskip\'
-  WRITE(NTEX,*) '\begin{tabular}{||r|l||c|c|c|c|c|c|c|c|c|c|c|c||}'
+  WRITE(NTEX,*) '\begin{tabular}{||r|l||c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c||}'
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
 !
 !* WARNING: check the cover type order in ini_data_cover routine
 !
   IF (CLANG=='EN') THEN
-    WRITE(NTEX,*) '&&bare&rocks&snow&broad-&conif.&ever-&C3&C4&irr.&grass&trop.&irr.\\'
-    WRITE(NTEX,*) '&&land&&&leaf&&green&&&crops&&grass&grass\\'
+    WRITE(NTEX, '("&&bare&rocks&snow&broad.d&needl.e&ever-&C3&C4&irr.&grass&grass&irr. ")', ADVANCE='NO') 
+    WRITE(NTEX, '("broad.d&broad.e&needl.e&broad.d&needl.d&grass&shrubs\\")')
+    WRITE(NTEX, '("&&land&&&temp.&boreal&green&crops&crops&crops&C3&C4&grass&trop. ")', ADVANCE='NO')
+    WRITE(NTEX, '("temp.&temp.&boreal&boreal&boreal&broad.\\")')
   ELSE
-    WRITE(NTEX,*) "&&sol&roc&neige&feuillus&coni-&persis-&C3&C4&cult.&prairie&prairie&pelouse\\"
-    WRITE(NTEX,*) "&&nu&&&&f\`eres&tants&&&irr.&&tropicale&\\"
+    WRITE(NTEX, '("&&sol&roc&neige&feuillu.d&coni.p&persis-&C3&C4&cult.&prairie&prairie ")', ADVANCE='NO')
+    WRITE(NTEX, '("pelouse&feuillu.d&feuillu.p&aigui.p&feuillu.d&aigui.d&prairie&arbuste\\")')
+    WRITE(NTEX, '("&&nu&&&temp.&boreale&tants&cult.&cult.&irr.&&tropicale&&tropi.&temp. ")', ADVANCE='NO')
+    WRITE(NTEX, '("temp.&boreale&boreale&boreale\\")')
   END IF
   WRITE(NTEX,*) '\hline'
   WRITE(NTEX,*) '\hline'
@@ -145,11 +152,13 @@ DO
       END DO
 
       WRITE(NTEX, FMT=*) &
-          I,' & ',CNAME(I),' & ',YDATA_VEGTYPE(1),' & ',YDATA_VEGTYPE(2),' & ', &
-          YDATA_VEGTYPE(3),' & ',YDATA_VEGTYPE(4),' & ',YDATA_VEGTYPE(5),' & ', &
-          YDATA_VEGTYPE(6),' & ',YDATA_VEGTYPE(7),' & ',YDATA_VEGTYPE(8),' & ', &
-          YDATA_VEGTYPE(9),' & ',YDATA_VEGTYPE(10),' & ',YDATA_VEGTYPE(11),' & ',&
-          YDATA_VEGTYPE(12),' \\'  
+          I,' & ',CNAME(I ),' & ',YDATA_VEGTYPE(1 ),' & ',YDATA_VEGTYPE(2 ),' & ',&
+          YDATA_VEGTYPE(3 ),' & ',YDATA_VEGTYPE(4 ),' & ',YDATA_VEGTYPE(5 ),' & ',&
+          YDATA_VEGTYPE(6 ),' & ',YDATA_VEGTYPE(7 ),' & ',YDATA_VEGTYPE(8 ),' & ',&
+          YDATA_VEGTYPE(9 ),' & ',YDATA_VEGTYPE(10),' & ',YDATA_VEGTYPE(11),' & ',&
+          YDATA_VEGTYPE(12),' & ',YDATA_VEGTYPE(13),' & ',YDATA_VEGTYPE(14),' & ',&
+          YDATA_VEGTYPE(15),' & ',YDATA_VEGTYPE(16),' & ',YDATA_VEGTYPE(17),' & ',&          
+          YDATA_VEGTYPE(18),' & ',YDATA_VEGTYPE(19),' \\'  
       WRITE(NTEX,*) '\hline'
       GLINE=.TRUE.
     END IF
@@ -176,9 +185,13 @@ END DO
     WRITE(NTEX,*) '\medskip\'
     WRITE(NTEX,*) '\begin{tabular}{rll}'
     WRITE(NTEX,*) 'veg = & $1-e^{-0.6 lai}$ & for C3, C4 and irrigated crops\\'
-    WRITE(NTEX,*) 'veg = & 0.95 & for grassland, tropical grassland and irrigated grass\\'
+    WRITE(NTEX,*) 'veg = & 0.95 & for boreale, temperate, tropical and irrigated grass\\'
     WRITE(NTEX,*) 'veg = & 0.95 & for broadleaf and coniferous trees\\'
-    WRITE(NTEX,*) 'veg = & 0.99 & for evergreen broadleaf trees\\'
+    IF(XEVERG_VEG==0.99)THEN
+      WRITE(NTEX,*) 'veg = & 0.99 & for evergreen broadleaf trees\\'
+    ELSE
+      WRITE(NTEX,*) 'veg = & 1.00 & for evergreen broadleaf trees\\'
+    ENDIF
     WRITE(NTEX,*) 'veg = & 0.   & for bare soil, snow and rocks'
     WRITE(NTEX,*) '\end{tabular}'
     WRITE(NTEX,*) '\smallskip\'
@@ -233,7 +246,11 @@ END DO
     WRITE(NTEX,*) '\hline'
     WRITE(NTEX,*) 'brodleaf trees      & .25 & .05 & 150 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$ & 0.966 \\'
     WRITE(NTEX,*) 'coniferous trees    & .15 & .05 & 150 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$ & 0.943 \\'
-    WRITE(NTEX,*) 'evergreen broadleaf trees & .21 & .05 & 250 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$ & 0.962 \\'
+    IF(XEVERG_RSMIN==250.)THEN
+      WRITE(NTEX,*) 'evergreen broadleaf trees & .21 & .05 & 250 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$ & 0.962 \\'
+    ELSE
+      WRITE(NTEX,*) 'evergreen broadleaf trees & .21 & .05 & 175 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$ & 0.962 \\'
+    ENDIF
     WRITE(NTEX,*) 'C3 crops   & .30 & .10 &  40 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$& 0.961 \\'
     WRITE(NTEX,*) 'C4 crops   & .30 & .10 &  120 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$ & 0.972 \\'
     WRITE(NTEX,*) 'irr. crops & .30 & .10 &  120 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$ & 0.961 \\'
@@ -253,12 +270,16 @@ END DO
     WRITE(NTEX,*) "\begin{tabular}{rll}"
     WRITE(NTEX,*) "veg = & $1-e^{-0.6 lai}$ & pour les cultures (C3, C4 et irrigu\'ees)\\"
     WRITE(NTEX,*) "veg = & 0.95 & pour les arbres (feuillus, conif\`eres)\\"
-    WRITE(NTEX,*) "veg = & 0.99 & pour les feuillus persistants\\"
+    IF(XEVERG_VEG==0.99)THEN
+      WRITE(NTEX,*) "veg = & 0.99 & pour les feuillus persistants\\"
+    ELSE
+      WRITE(NTEX,*) "veg = & 1.00 & pour les feuillus persistants\\"
+    ENDIF
     WRITE(NTEX,*) "veg = & 0.95 & pour la prairie, la prairie tropicale et la pelouse irrigu\'ee\\"
     WRITE(NTEX,*) "veg = & 0.   & pour les sols nus, la neige \'eternelle et les rochers"
     WRITE(NTEX,*) "\end{tabular}"
     WRITE(NTEX,*) "\smallskip\"
-   WRITE(NTEX,*) "Quand une moyenne est n\'ecessaire, elle est arithm\'etique."
+    WRITE(NTEX,*) "Quand une moyenne est n\'ecessaire, elle est arithm\'etique."
     WRITE(NTEX,*) "\bigskip\"
     WRITE(NTEX,*) "\underline{longueur de rugosit\'e pour la quantit\'e de mouvement}\"
     WRITE(NTEX,*) '\medskip\'
@@ -311,7 +332,11 @@ END DO
     WRITE(NTEX,*) '\hline'
     WRITE(NTEX,*) 'feuillus     & .25 & .05 & 150 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$& 0.966 \\'
     WRITE(NTEX,*) 'conif\`eres & .15 & .05 & 150 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$& 0.943 \\'
-    WRITE(NTEX,*) 'feuillus persistans & .21 & .05 & 250 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$& 0.962 \\'
+    IF(XEVERG_RSMIN==250.)THEN
+      WRITE(NTEX,*) 'feuillus persistans & .21 & .05 & 250 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$& 0.962 \\'
+    ELSE
+      WRITE(NTEX,*) 'feuillus persistans & .21 & .05 & 175 & .04 & 30 & .001 & .25 & 365. & 1. $10^{-5}$& 0.962 \\'
+    ENDIF
     WRITE(NTEX,*) 'cultures C3  & .30 & .10 &  40 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$& 0.961 \\'
     WRITE(NTEX,*) 'cultures C4  & .30 & .10 &  120 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$& 0.972 \\'
     WRITE(NTEX,*) 'cultures irr.  & .30 & .10 & 120 & 0. & 100 & .003 & .06 &  60. & 2. $10^{-5}$& 0.961 \\'
@@ -346,7 +371,9 @@ DO JVEGTYPE=1,NVEGTYPE
   IF (JVEGTYPE==NVT_NO  ) YPATCH = (/ 'bare soil                    ',   &
                                         'le sol nu                    ' /)  
   IF (JVEGTYPE==NVT_GRAS) YPATCH = (/ 'grasslands                   ',   &
-                                        'les prairies                 ' /)  
+                                        'les prairies                 ' /)
+  IF (JVEGTYPE==NVT_BOGR) YPATCH = (/ 'tundra and boreal grass      ',   &
+                                        'les prairies boreale         ' /)
   IF (JVEGTYPE==NVT_TROG) YPATCH = (/ 'tropical grasslands          ',   &
                                         'les prairies tropicales      ' /)  
   IF (JVEGTYPE==NVT_PARK) THEN
@@ -361,18 +388,27 @@ DO JVEGTYPE=1,NVEGTYPE
     YPATCH(1) = 'irrigated crops              '
     YPATCH(2) = "les cultures irrigu\'ees    "
   END IF
-  IF (JVEGTYPE==NVT_TREE) YPATCH = (/ 'broadleaf trees             ',   &
-                                        'les feuillus                ' /)  
-  IF (JVEGTYPE==NVT_CONI) THEN
-     YPATCH(1) = 'coniferous trees             '
-     YPATCH(2) = "les conif\`eres             "
+  IF (JVEGTYPE==NVT_TEBD) YPATCH = (/ 'temperate broadleaf deciduous',   &
+                                      'les feuillus decidus tempere ' /)
+  IF (JVEGTYPE==NVT_BONE) YPATCH = (/ 'boreal needleleaf evergreen  ',   &
+                                      'coniferes boreale persistant ' /)
+  IF (JVEGTYPE==NVT_TRBE) THEN
+    YPATCH(1) = 'equatorial evergreen forest  '
+    YPATCH(2) = "les for\^ets \'equatoriales"
   END IF
-
-  IF (JVEGTYPE==NVT_EVER) THEN
-     YPATCH(1) = 'equatorial forest            '
-     YPATCH(2) = "les for\^ets \'equatoriales"
-  END IF
-
+  IF (JVEGTYPE==NVT_TRBD) YPATCH = (/ 'tropical broadleaf deciduous ',   &
+                                      'feuillus decidus tropical    ' /)
+  IF (JVEGTYPE==NVT_TEBE) YPATCH = (/ 'temperate broadleaf evergreen',   &
+                                      'feuillus tempere persistant  ' /)
+  IF (JVEGTYPE==NVT_TENE) YPATCH = (/ 'temperate needle. evergreen  ',   &
+                                      'coniferes tempere persistant ' /)
+  IF (JVEGTYPE==NVT_BOBD) YPATCH = (/ 'boreal broadleaf deciduous   ',   &
+                                      'coniferes decidus boreale    ' /)
+  IF (JVEGTYPE==NVT_BOND) YPATCH = (/ 'boreal needleleaf deciduous  ',   &
+                                      'coniferes decidus boreale    ' /)
+  IF (JVEGTYPE==NVT_SHRB) YPATCH = (/ 'broadleaf shrub              ',   &
+                                      'arbustes feuillus            ' /)
+  !
   IF (JVEGTYPE==NVT_ROCK .OR. JVEGTYPE==NVT_SNOW .OR. JVEGTYPE==NVT_NO) THEN
     IF (CLANG=='EN') THEN
       WRITE(NTEX,*) '{\bf Ground depths for : ',YPATCH(1),'}\\'
@@ -393,8 +429,10 @@ DO JVEGTYPE=1,NVEGTYPE
     ELSE
       WRITE(NTEX,*) "{\bf Indice foliaire et profondeurs de sol pour : ",YPATCH(2),'}\\'
     END IF
-
-    IF (JVEGTYPE==NVT_TREE .OR. JVEGTYPE==NVT_CONI .OR. JVEGTYPE==NVT_EVER) THEN
+    !
+    IF (JVEGTYPE==NVT_TEBD .OR. JVEGTYPE==NVT_BONE .OR. JVEGTYPE==NVT_TRBE .OR. &
+        JVEGTYPE==NVT_TRBD .OR. JVEGTYPE==NVT_TEBE .OR. JVEGTYPE==NVT_TENE .OR. &
+        JVEGTYPE==NVT_BOBD .OR. JVEGTYPE==NVT_BOND .OR. JVEGTYPE==NVT_SHRB ) THEN
       WRITE(NTEX,*) '\medskip\'
       WRITE(NTEX,*) '\begin{tabular}{||r|l||c|c|c|c|c|c|c|c|c|c|c|c||c|c||c||}'
       WRITE(NTEX,*) '\hline'
@@ -420,7 +458,7 @@ DO JVEGTYPE=1,NVEGTYPE
     !
     IF (XDATA_VEGTYPE(I,JVEGTYPE)>0.) THEN
       IP=IP+1
-
+      !
       DO J=1,12
         IF (XDATA_LAI(I,J,JVEGTYPE)==0.) THEN
           YDATA_MONTH(J) = ' -  '
@@ -430,37 +468,62 @@ DO JVEGTYPE=1,NVEGTYPE
           YDATA_MONTH(J) = YSTRING6
         END IF
       END DO
-
+      !
       WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_ROOT_DEPTH(I,JVEGTYPE)),'.',DEC(XDATA_ROOT_DEPTH(I,JVEGTYPE)),')'
       WRITE(YSTRING6, FMT=YFMT) XDATA_ROOT_DEPTH(I,JVEGTYPE)
       YDATA_VEGPARAM(1) = YSTRING6
       WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_GROUND_DEPTH(I,JVEGTYPE)),'.',DEC(XDATA_GROUND_DEPTH(I,JVEGTYPE)),')'
       WRITE(YSTRING6, FMT=YFMT) XDATA_GROUND_DEPTH(I,JVEGTYPE)
       YDATA_VEGPARAM(2) = YSTRING6
-
-
-      IF (JVEGTYPE==NVT_TREE) THEN
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TREE)),'.',DEC(XDATA_H_TREE(I,NVT_TREE)),')'
-        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TREE)
+      !
+      IF (JVEGTYPE==NVT_TEBD) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TEBD)),'.',DEC(XDATA_H_TREE(I,NVT_TEBD)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TEBD)
         YDATA_VEGPARAM(3) = YSTRING6
-      ELSE IF (JVEGTYPE==NVT_CONI) THEN
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_CONI)),'.',DEC(XDATA_H_TREE(I,NVT_CONI)),')'
-        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_CONI)
+      ELSE IF (JVEGTYPE==NVT_BONE) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_BONE)),'.',DEC(XDATA_H_TREE(I,NVT_BONE)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_BONE)
         YDATA_VEGPARAM(3) = YSTRING6
-      ELSE IF (JVEGTYPE==NVT_EVER) THEN
-        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_EVER)),'.',DEC(XDATA_H_TREE(I,NVT_EVER)),')'
-        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_EVER)
+      ELSE IF (JVEGTYPE==NVT_TRBE) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TRBE)),'.',DEC(XDATA_H_TREE(I,NVT_TRBE)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TRBE)
         YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_TRBD) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TRBD)),'.',DEC(XDATA_H_TREE(I,NVT_TRBD)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TRBD)
+        YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_TEBE) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TEBE)),'.',DEC(XDATA_H_TREE(I,NVT_TEBE)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TEBE)
+        YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_TENE) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_TENE)),'.',DEC(XDATA_H_TREE(I,NVT_TENE)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_TENE)
+        YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_BOBD) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_BOBD)),'.',DEC(XDATA_H_TREE(I,NVT_BOBD)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_BOBD)
+        YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_BOND) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_BOND)),'.',DEC(XDATA_H_TREE(I,NVT_BOND)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_BOND)
+        YDATA_VEGPARAM(3) = YSTRING6
+      ELSE IF (JVEGTYPE==NVT_SHRB) THEN
+        WRITE(YFMT,'(A2,I1,A1,I1,A1)') '(F',NB(XDATA_H_TREE(I,NVT_SHRB)),'.',DEC(XDATA_H_TREE(I,NVT_SHRB)),')'
+        WRITE(YSTRING6, FMT=YFMT) XDATA_H_TREE(I,NVT_SHRB)
+        YDATA_VEGPARAM(3) = YSTRING6        
       ELSE
         YDATA_VEGPARAM(3) = '       '
       END IF
-
-      IF (JVEGTYPE==NVT_TREE .OR. JVEGTYPE==NVT_CONI .OR. JVEGTYPE==NVT_EVER) THEN
+      !
+      IF (JVEGTYPE==NVT_TEBD .OR. JVEGTYPE==NVT_BONE .OR. JVEGTYPE==NVT_TRBE .OR. &
+          JVEGTYPE==NVT_TRBD .OR. JVEGTYPE==NVT_TEBE .OR. JVEGTYPE==NVT_TENE .OR. &
+          JVEGTYPE==NVT_BOBD .OR. JVEGTYPE==NVT_BOND .OR. JVEGTYPE==NVT_SHRB ) THEN
         WRITE(NTEX, FMT=*) &
-            I,' & ',CNAME(I),' & ',YDATA_MONTH(1), ' & ',YDATA_MONTH(2), ' & ', &
-              YDATA_MONTH(3),' & ',YDATA_MONTH(4), ' & ',YDATA_MONTH(5), ' & ', &
-              YDATA_MONTH(6),' & ',YDATA_MONTH(7), ' & ',YDATA_MONTH(8), ' & ', &
-              YDATA_MONTH(9),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
+            I,' & ',CNAME(I ),' & ',YDATA_MONTH(1 ), ' & ',YDATA_MONTH(2),' & ', &
+              YDATA_MONTH(3 ),' & ',YDATA_MONTH(4 ), ' & ',YDATA_MONTH(5),' & ', &
+              YDATA_MONTH(6 ),' & ',YDATA_MONTH(7 ), ' & ',YDATA_MONTH(8),' & ', &
+              YDATA_MONTH(9 ),' & ',YDATA_MONTH(10),' & ',YDATA_MONTH(11),' & ', &
               YDATA_MONTH(12),' & ',YDATA_VEGPARAM(1),' & ',YDATA_VEGPARAM(2),' & ',YDATA_VEGPARAM(3),' \\'  
       ELSE IF (JVEGTYPE==NVT_ROCK .OR. JVEGTYPE==NVT_SNOW .OR. JVEGTYPE==NVT_NO) THEN
         WRITE(NTEX, FMT=*) &
@@ -492,3 +555,4 @@ IF (LHOOK) CALL DR_HOOK('WRITE_COVER_TEX_ISBA',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE WRITE_COVER_TEX_ISBA
+

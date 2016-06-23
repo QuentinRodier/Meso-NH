@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_NAM_PGD_ISBA(HPROGRAM, KPATCH, KGROUND_LAYER,                         &
                                    HISBA, HPEDOTF, HPHOTO, OTR_ML, PRM_PATCH,               &
@@ -9,7 +9,8 @@
                                    HSAND, HSANDFILETYPE, PUNIF_SAND, OIMP_SAND,             &
                                    HSOC_TOP, HSOC_SUB, HSOCFILETYPE, PUNIF_SOC_TOP,         &
                                    PUNIF_SOC_SUB, OIMP_SOC, HCTI, HCTIFILETYPE, OIMP_CTI,   &
-                                   HPERM, HPERMFILETYPE, PUNIF_PERM, OIMP_PERM,             &          
+                                   HPERM, HPERMFILETYPE, PUNIF_PERM, OIMP_PERM, OMEB,       &          
+                                   HGW, HGWFILETYPE, PUNIF_GW, OIMP_GW,                     &          
                                    HRUNOFFB, HRUNOFFBFILETYPE, PUNIF_RUNOFFB,               &
                                    HWDRAIN,  HWDRAINFILETYPE , PUNIF_WDRAIN, PSOILGRID,     &
                                    HPH, HPHFILETYPE, PUNIF_PH, HFERT, HFERTFILETYPE,        &
@@ -48,6 +49,7 @@
 !!                          and subgridrunoff
 !!    06/2009 B. Decharme : files of data for topographic index
 !!    07/2012 B. Decharme : files of data for permafrost area and for SOC top and sub soil
+!!    10/2014 P. Samuelsson: MEB
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -82,12 +84,14 @@ REAL,                INTENT(OUT)   :: PRM_PATCH     ! threshold to remove little
  CHARACTER(LEN=28),   INTENT(OUT)   :: HCLAY         ! file name for clay fraction
  CHARACTER(LEN=28),   INTENT(OUT)   :: HCTI          ! file name for topographic index
  CHARACTER(LEN=28),   INTENT(OUT)   :: HPERM         ! file name for permafrost distribution
+ CHARACTER(LEN=28),   INTENT(OUT)   :: HGW           ! file name for groundwater distribution
  CHARACTER(LEN=28),   INTENT(OUT)   :: HRUNOFFB      ! file name for runoffb parameter
  CHARACTER(LEN=28),   INTENT(OUT)   :: HWDRAIN       ! file name for wdrain parameter
  CHARACTER(LEN=6),    INTENT(OUT)   :: HSANDFILETYPE ! sand data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HCLAYFILETYPE ! clay data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HCTIFILETYPE  ! topographic index data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HPERMFILETYPE    ! permafrost distribution data file type
+ CHARACTER(LEN=6),    INTENT(OUT)   :: HGWFILETYPE      ! groundwater distribution data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HRUNOFFBFILETYPE ! subgrid runoff data file type
  CHARACTER(LEN=6),    INTENT(OUT)   :: HWDRAINFILETYPE  ! subgrid drainage data file type
 REAL,                INTENT(OUT)   :: PUNIF_SAND    ! uniform value of sand fraction
@@ -95,10 +99,13 @@ REAL,                INTENT(OUT)   :: PUNIF_CLAY    ! uniform value of clay frac
 REAL,                INTENT(OUT)   :: PUNIF_RUNOFFB ! uniform value of subgrid runoff coefficient
 REAL,                INTENT(OUT)   :: PUNIF_WDRAIN  ! uniform value of subgrid drainage coefficient
 REAL,                INTENT(OUT)   :: PUNIF_PERM    ! uniform value of permafrost distribution
+REAL,                INTENT(OUT)   :: PUNIF_GW      ! uniform value of groundwater distribution
 LOGICAL,             INTENT(OUT)   :: OIMP_SAND     ! Imposed values for Sand
 LOGICAL,             INTENT(OUT)   :: OIMP_CLAY     ! Imposed values for Clay
 LOGICAL,             INTENT(OUT)   :: OIMP_CTI      ! Imposed values for topographic index statistics
+LOGICAL,             INTENT(OUT)   :: OMEB          ! MEB
 LOGICAL,             INTENT(OUT)   :: OIMP_PERM     ! Imposed maps of permafrost distribution
+LOGICAL,             INTENT(OUT)   :: OIMP_GW       ! Imposed maps of permafrost distribution
  CHARACTER(LEN=28),   INTENT(OUT)   :: HSOC_TOP      ! file name for organic carbon
  CHARACTER(LEN=28),   INTENT(OUT)   :: HSOC_SUB      ! file name for organic carbon
  CHARACTER(LEN=6),    INTENT(OUT)   :: HSOCFILETYPE  ! organic carbon data file type
@@ -135,6 +142,7 @@ REAL                     :: XRM_PATCH        ! threshold to remove little fracti
  CHARACTER(LEN=28)        :: YCLAY            ! file name for clay fraction
  CHARACTER(LEN=28)        :: YCTI             ! file name for topographic index
  CHARACTER(LEN=28)        :: YPERM            ! file name for permafrost distribution
+ CHARACTER(LEN=28)        :: YGW              ! file name for groundwater map
  CHARACTER(LEN=28)        :: YRUNOFFB         ! file name for runoffb parameter
  CHARACTER(LEN=28)        :: YWDRAIN          ! file name for wdrain parameter
  CHARACTER(LEN=28)        :: YPH              ! file name for pH
@@ -143,6 +151,7 @@ REAL                     :: XRM_PATCH        ! threshold to remove little fracti
  CHARACTER(LEN=6)         :: YCLAYFILETYPE    ! clay data file type
  CHARACTER(LEN=6)         :: YCTIFILETYPE     ! topographic index data file type
  CHARACTER(LEN=6)         :: YPERMFILETYPE    ! permafrost distribution data file type
+ CHARACTER(LEN=6)         :: YGWFILETYPE      ! groundwater distribution data file type
  CHARACTER(LEN=6)         :: YRUNOFFBFILETYPE ! subgrid runoff data file type
  CHARACTER(LEN=6)         :: YWDRAINFILETYPE  ! subgrid drainage data file type
  CHARACTER(LEN=6)         :: YPHFILETYPE      ! pH data file type
@@ -150,12 +159,15 @@ REAL                     :: XRM_PATCH        ! threshold to remove little fracti
 LOGICAL                  :: LIMP_SAND        ! Imposed maps of Sand from another PGD file
 LOGICAL                  :: LIMP_CLAY        ! Imposed maps of Clay from another PGD file
 LOGICAL                  :: LIMP_CTI         ! Imposed values for topographic index statistics from another PGD file
-LOGICAL                  :: LIMP_PERM     ! Imposed maps of permafrost distribution
+LOGICAL                  :: LMEB             ! MEB
+LOGICAL                  :: LIMP_PERM        ! Imposed maps of permafrost distribution
+LOGICAL                  :: LIMP_GW          ! Imposed maps of groundwater distribution
 REAL                     :: XUNIF_SAND    ! uniform value of sand fraction
 REAL                     :: XUNIF_CLAY    ! uniform value of clay fraction
 REAL                     :: XUNIF_RUNOFFB ! uniform value of subgrid runoff coefficient
 REAL                     :: XUNIF_WDRAIN  ! uniform value of subgrid drainage coefficient
 REAL                     :: XUNIF_PERM    ! uniform value of permafrost distribution
+REAL                     :: XUNIF_GW      ! uniform groundwater distribution
 REAL                     :: XUNIF_PH      ! uniform value of pH
 REAL                     :: XUNIF_FERT    ! uniform value of fertilisation rate
 !
@@ -175,7 +187,8 @@ NAMELIST/NAM_ISBA/ NPATCH, NGROUND_LAYER, CISBA, CPEDO_FUNCTION, CPHOTO,   &
                    LIMP_CLAY, YSAND, YSANDFILETYPE, XUNIF_SAND, LIMP_SAND, &
                    YSOC_TOP, YSOC_SUB, YSOCFILETYPE, XUNIF_SOC_TOP,        &
                    XUNIF_SOC_SUB, LIMP_SOC, YCTI, YCTIFILETYPE, LIMP_CTI,  &
-                   YPERM, YPERMFILETYPE, XUNIF_PERM, LIMP_PERM,            &                   
+                   YPERM, YPERMFILETYPE, XUNIF_PERM, LIMP_PERM, LMEB,      &                   
+                   YGW, YGWFILETYPE, XUNIF_GW, LIMP_GW,                    &                   
                    YRUNOFFB, YRUNOFFBFILETYPE, XUNIF_RUNOFFB,              &
                    YWDRAIN,  YWDRAINFILETYPE,  XUNIF_WDRAIN, XSOILGRID,    &
                    YPH, YPHFILETYPE, XUNIF_PH, YFERT, YFERTFILETYPE,       &
@@ -190,9 +203,9 @@ NAMELIST/NAM_ISBA/ NPATCH, NGROUND_LAYER, CISBA, CPEDO_FUNCTION, CPHOTO,   &
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_ISBA',0,ZHOOK_HANDLE)
 NPATCH         = 1
 NGROUND_LAYER  = NUNDEF
-CISBA          = '3-L'
-CPEDO_FUNCTION = 'CH78'
-CPHOTO         = 'NON'
+ CISBA          = '3-L'
+ CPEDO_FUNCTION = 'CH78'
+ CPHOTO         = 'NON'
 LTR_ML         = .FALSE.
 XSOILGRID(:)   = XUNDEF
 XRM_PATCH      = 0.0
@@ -205,8 +218,9 @@ XUNIF_SOC_SUB    = XUNDEF
 XUNIF_RUNOFFB    = 0.5
 XUNIF_WDRAIN     = 0.
 XUNIF_PERM       = XUNDEF
-XUNIF_PH        = XUNDEF
-XUNIF_FERT      = XUNDEF
+XUNIF_GW         = XUNDEF
+XUNIF_PH         = XUNDEF
+XUNIF_FERT       = XUNDEF
 !
 YCLAY            = '                          '
 YSAND            = '                          '
@@ -214,6 +228,7 @@ YSOC_TOP         = '                          '
 YSOC_SUB         = '                          '
 YCTI             = '                          '
 YPERM            = '                          '
+YGW              = '                          '
 YRUNOFFB         = '                          '
 YWDRAIN          = '                          '
 YPH              = '                          '
@@ -224,6 +239,7 @@ YSANDFILETYPE    = '      '
 YSOCFILETYPE     = '      '
 YCTIFILETYPE     = '      '
 YPERMFILETYPE    = '      '
+YGWFILETYPE      = '      '
 YRUNOFFBFILETYPE = '      '
 YWDRAINFILETYPE  = '      ' 
 YPHFILETYPE      = '      '
@@ -233,7 +249,9 @@ LIMP_CLAY        = .FALSE.
 LIMP_SAND        = .FALSE.
 LIMP_SOC         = .FALSE.
 LIMP_CTI         = .FALSE.
+LMEB             = .FALSE.
 LIMP_PERM        = .FALSE.
+LIMP_GW          = .FALSE.
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
@@ -265,6 +283,7 @@ HSOC_TOP         = YSOC_TOP         ! file name for organic carbon
 HSOC_SUB         = YSOC_SUB         ! file name for organic carbon
 HCTI             = YCTI             ! file name for topographic index
 HPERM            = YPERM            ! file name for permafrost distribution
+HGW            = YGW                ! file name for groundwater distribution
 HRUNOFFB         = YRUNOFFB         ! file name for subgrid runoff
 HWDRAIN          = YWDRAIN          ! file name for subgrid drainage
 HSANDFILETYPE    = YSANDFILETYPE    ! sand data file type
@@ -272,6 +291,7 @@ HCLAYFILETYPE    = YCLAYFILETYPE    ! clay data file type
 HSOCFILETYPE     = YSOCFILETYPE     ! organic carbon data file type
 HCTIFILETYPE     = YCTIFILETYPE     ! topographic index data file type
 HPERMFILETYPE    = YPERMFILETYPE    ! permafrost distribution data file type
+HGWFILETYPE    = YGWFILETYPE        ! groundwater distribution data file type
 HRUNOFFBFILETYPE = YRUNOFFBFILETYPE ! subgrid runoff data file type
 HWDRAINFILETYPE  = YWDRAINFILETYPE  ! subgrid drainage data file type
 PUNIF_SAND       = XUNIF_SAND       ! uniform value of sand fraction
@@ -281,11 +301,14 @@ PUNIF_SOC_SUB    = XUNIF_SOC_SUB    ! uniform value of organic carbon sub soil
 PUNIF_RUNOFFB    = XUNIF_RUNOFFB    ! uniform value of subgrid runoff coefficient
 PUNIF_WDRAIN     = XUNIF_WDRAIN     ! uniform value of subgrid drainage coefficient
 PUNIF_PERM       = XUNIF_PERM       ! uniform value of permafrost distribution
+PUNIF_GW       = XUNIF_GW           ! uniform value of groundwater distribution
 OIMP_SAND        = LIMP_SAND        ! Imposed values for SAND
 OIMP_CLAY        = LIMP_CLAY        ! Imposed values for CLAY
 OIMP_SOC         = LIMP_SOC         ! Imposed values for organic carbon
 OIMP_CTI         = LIMP_CTI         ! Imposed values for topographic index statistics
 OIMP_PERM        = LIMP_PERM        ! Imposed values for permafrost distribution
+OMEB             = LMEB             ! MEB
+OIMP_GW        = LIMP_GW            ! Imposed values for groundwater distribution
 !
 HPH           = YPH           ! file name for pH value
 HFERT         = YFERT         ! file name for fertilisation data

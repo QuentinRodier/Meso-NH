@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INI_DATA_ROOTFRAC( PDG, PROOTDEPTH, PROOT_EXT, PROOT_LIN, PROOTFRAC )
+      SUBROUTINE INI_DATA_ROOTFRAC( PDG, PROOTDEPTH, PROOT_EXT, PROOT_LIN,  &
+                                    PROOTFRAC, OGV                          )
 
 !     ##########################################################################
 !
@@ -41,14 +42,15 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	A. Boone           * Meteo-France *
+!!      A. Boone           * Meteo-France *
 !!      new version :
-!!	B. Decharme        * Meteo-France *
+!!      B. Decharme        * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original     12/04/03
 !!      new version :10/08/2011
+!!      P. Samuelsson  02/2012  MEB
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -68,6 +70,7 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PDG         ! depth of base of soil lay
 REAL,    DIMENSION(:,:),   INTENT(IN) :: PROOTDEPTH  ! effective root depth         (m)
 REAL, DIMENSION(:,:), INTENT(IN)     :: PROOT_EXT
 REAL, DIMENSION(:,:), INTENT(IN)     :: PROOT_LIN
+LOGICAL, OPTIONAL, INTENT(IN)        :: OGV
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PROOTFRAC
 !
@@ -76,6 +79,10 @@ REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PROOTFRAC
 REAL               :: ZLOG1, ZLOG2
 REAL               :: ZJACKSON ! Jackson (1996) formulation for cumulative root fraction
 REAL               :: ZUNIF    ! linear formulation for cumulative root fraction
+REAL               :: ZROOTFRGV ! Fraction of patch root depth given to
+!                               ! grass root depth for understory ground vegetation.
+!                               ! =1 for non-understory vegetation
+
 !
 INTEGER            :: INI,INL,IPATCH
 INTEGER            :: JJ,JL,JPATCH
@@ -91,6 +98,10 @@ INI    = SIZE(PDG,1)
 INL    = SIZE(PDG,2)
 IPATCH = SIZE(PDG,3)
 !
+ZROOTFRGV  = 1.0
+IF (PRESENT(OGV)) THEN
+  IF(OGV) ZROOTFRGV  = 0.5
+ENDIF
 !
 PROOTFRAC(:,:,:) = XUNDEF
 !
@@ -101,9 +112,9 @@ DO JPATCH=1,IPATCH
       !
       DO JL=1,INL                
         ZLOG1    = 100. * LOG(PROOT_EXT(JJ,JPATCH)) * PDG    (JJ,JL,JPATCH)
-        ZLOG2    = 100. * LOG(PROOT_EXT(JJ,JPATCH)) * PROOTDEPTH(JJ,JPATCH)
+        ZLOG2    = 100. * LOG(PROOT_EXT(JJ,JPATCH)) * ZROOTFRGV * PROOTDEPTH(JJ,JPATCH)
         ZJACKSON = MIN(1.0,(1.0-EXP(ZLOG1))/(1.0-EXP(ZLOG2)))
-        ZUNIF    = MIN(1.0,(PDG(JJ,JL,JPATCH)/PROOTDEPTH(JJ,JPATCH))) 
+        ZUNIF    = MIN(1.0,(PDG(JJ,JL,JPATCH)/ZROOTFRGV/PROOTDEPTH(JJ,JPATCH))) 
         PROOTFRAC(JJ,JL,JPATCH) =      PROOT_LIN(JJ,JPATCH)  * ZUNIF    &
                                    + (1.0-PROOT_LIN(JJ,JPATCH)) * ZJACKSON
       ENDDO

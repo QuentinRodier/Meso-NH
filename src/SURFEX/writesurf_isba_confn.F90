@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_ISBA_CONF_n(HPROGRAM)
+      SUBROUTINE WRITESURF_ISBA_CONF_n (CHI, DGEI, DGI, DGMI, I, &
+                                        HPROGRAM)
 !     ######################################################
 !
 !!****  *WRITESURF_ISBA_CONF* - routine to read the configuration for ISBA
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,8 +38,20 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+!
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
 USE MODN_ISBA_n
 USE MODI_GET_DEFAULT_NAM_n
+USE MODN_AGRI
+USE MODN_DEEPSOIL
 USE MODN_TREEDRAG
 USE MODN_DST
 !
@@ -50,6 +63,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
+TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DGMI
+TYPE(ISBA_t), INTENT(INOUT) :: I
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM ! program calling ISBA
 
@@ -70,19 +90,26 @@ IF (ILUDES==0) RETURN
 !
 !-------------------------------------------------------------------------------
 !
- CALL INIT_NAM_ISBAn
- CALL INIT_NAM_SGH_ISBAn
- CALL INIT_NAM_DIAG_ISBAn
- CALL INIT_NAM_CH_ISBAn
- CALL INIT_NAM_SPINUP_CARB_ISBAn
+ CALL INIT_NAM_ISBAn(I)
+ CALL INIT_NAM_ISBA_AGSn(I)
+ CALL INIT_NAM_SGH_ISBAn(I)
+ CALL INIT_NAM_DIAG_ISBAn(DGEI, DGI, DGMI)
+ CALL INIT_NAM_CH_ISBAn(CHI)
+ CALL INIT_NAM_SPINUP_CARB_ISBAn(I)
+ CALL INIT_NAM_ISBA_SNOWn(I)
 !
 WRITE(UNIT=ILUDES,NML=NAM_ISBAn)
+WRITE(UNIT=ILUDES,NML=NAM_ISBA_AGSn)
 WRITE(UNIT=ILUDES,NML=NAM_SGH_ISBAn)
 WRITE(UNIT=ILUDES,NML=NAM_DIAG_ISBAn)
 WRITE(UNIT=ILUDES,NML=NAM_CH_ISBAn)
+WRITE(UNIT=ILUDES,NML=NAM_SPINUP_CARBn)
+WRITE(UNIT=ILUDES,NML=NAM_ISBA_SNOWn)
+WRITE(UNIT=ILUDES,NML=NAM_AGRI)
+WRITE(UNIT=ILUDES,NML=NAM_DEEPSOIL)
 WRITE(UNIT=ILUDES,NML=NAM_TREEDRAG)
 WRITE(UNIT=ILUDES,NML=NAM_SURF_DST)
-WRITE(UNIT=ILUDES,NML=NAM_SPINUP_CARBn)
+!
 IF (LHOOK) CALL DR_HOOK('WRITESURF_ISBA_CONF_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

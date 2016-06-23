@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_SURF_ATM_CONF_n(HPROGRAM)
+      SUBROUTINE READ_SURF_ATM_CONF_n (CHU, DGU, USS, &
+                                       HPROGRAM)
 !     #######################################################
 !
 !!****  *READ_SURF_ATM_CONF* - reads the general configuration for surface
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,14 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+!
+USE MODD_CH_SURF_n, ONLY : CH_SURF_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -56,6 +65,11 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_SURF_t), INTENT(INOUT) :: CHU
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling GROUND
 !
@@ -78,12 +92,12 @@ IF (LHOOK) CALL DR_HOOK('READ_SURF_ATM_CONF_N',0,ZHOOK_HANDLE)
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_SSOn
- CALL INIT_NAM_CH_CONTROLn
- CALL INIT_NAM_CH_SURFn
- CALL INIT_NAM_DIAG_SURF_ATMn
- CALL INIT_NAM_DIAG_SURFn
- CALL INIT_NAM_WRITE_DIAG_SURFn
+ CALL INIT_NAM_SSOn(USS)
+ CALL INIT_NAM_CH_CONTROLn(CHU)
+ CALL INIT_NAM_CH_SURFn(CHU)
+ CALL INIT_NAM_DIAG_SURF_ATMn(DGU)
+ CALL INIT_NAM_DIAG_SURFn(DGU)
+ CALL INIT_NAM_WRITE_DIAG_SURFn(DGU)
 ENDIF
 !
 IF (LNAM_READ) THEN
@@ -123,12 +137,12 @@ IF (LNAM_READ) THEN
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_SSOn
- CALL UPDATE_NAM_CH_CONTROLn
- CALL UPDATE_NAM_CH_SURFn
- CALL UPDATE_NAM_DIAG_SURF_ATMn
- CALL UPDATE_NAM_DIAG_SURFn
- CALL UPDATE_NAM_WRITE_DIAG_SURFn
+ CALL UPDATE_NAM_SSOn(USS)
+ CALL UPDATE_NAM_CH_CONTROLn(CHU)
+ CALL UPDATE_NAM_CH_SURFn(CHU)
+ CALL UPDATE_NAM_DIAG_SURF_ATMn(DGU)
+ CALL UPDATE_NAM_DIAG_SURFn(DGU)
+ CALL UPDATE_NAM_WRITE_DIAG_SURFn(DGU)
 ENDIF
 IF (LHOOK) CALL DR_HOOK('READ_SURF_ATM_CONF_N',1,ZHOOK_HANDLE)
 !

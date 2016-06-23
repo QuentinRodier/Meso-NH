@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_TEB_n (OCANOPY, PTA, PTS, PQA, PPA, PPS, PRHOA,                  &
+       SUBROUTINE DIAG_INLINE_TEB_n (DGT, TCP, T, &
+                                      OCANOPY, PTA, PTS, PQA, PPA, PPS, PRHOA,                  &
                                        PZONA, PMERA, PWIND, PHT, PHW,                          &
                                        PCD, PCDN, PRI, PCH, PZ0,                               &
                                        PTRAD, PEMIS, PDIR_ALB, PSCA_ALB,                       &
@@ -32,19 +33,18 @@
 !!      Original    01/2004
 !!      S. Riette   06/2009 CLS_WIND has one more argument (height of diagnostic)
 !!      S. Riette   01/2010 Use of interpol_sbl to compute 10m wind diagnostic
+!       B. decharme 04/2013 : Add EVAP and SUBL diag
 !!------------------------------------------------------------------
 !
 
 !
 !
+!
+USE MODD_DIAG_TEB_n, ONLY : DIAG_TEB_t
+USE MODD_TEB_CANOPY_n, ONLY : TEB_CANOPY_t
+USE MODD_TEB_n, ONLY : TEB_t
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_TEB_n,      ONLY : XT_CANYON, XQ_CANYON
-USE MODD_TEB_CANOPY_n, ONLY : XZ, XU, XP, XT, XQ
-USE MODD_DIAG_TEB_n, ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_VARS, &
-                              XT2M, XQ2M, XHU2M, XZON10M, XMER10M,  &
-                              XRN, XH, XLE, XGFLUX, XRI, XCD, XCH,  &
-                              XCE, XZ0, XZ0H, XQS, XSWD, XSWU, XLWD,&
-                              XLWU, XSWBD, XSWBU, XFMU, XFMV, XSFCO2
 !
 USE MODI_CLS_WIND
 USE MODI_PARAM_CLS
@@ -60,6 +60,11 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_TEB_t), INTENT(INOUT) :: DGT
+TYPE(TEB_CANOPY_t), INTENT(INOUT) :: TCP
+TYPE(TEB_t), INTENT(INOUT) :: T
 !
 LOGICAL,            INTENT(IN)       :: OCANOPY  ! Flag for canopy
 REAL, DIMENSION(:), INTENT(IN)       :: PTA      ! atmospheric temperature
@@ -77,9 +82,9 @@ REAL, DIMENSION(:), INTENT(IN)       :: PCD      ! drag coefficient for momentum
 REAL, DIMENSION(:), INTENT(IN)       :: PCDN     ! neutral drag coefficient
 REAL, DIMENSION(:), INTENT(IN)       :: PSFZON   ! zonal friction
 REAL, DIMENSION(:), INTENT(IN)       :: PSFMER   ! meridian friction
-REAL, DIMENSION(:), INTENT(IN)       :: PSFCO2   ! CO2 flux
+REAL, DIMENSION(:), INTENT(IN)       :: PSFCO2   ! CO2 flux   (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(:), INTENT(IN)       :: PSFTH    ! heat flux  (W/m2)
-REAL, DIMENSION(:), INTENT(IN)       :: PSFTQ    ! water flux (kg/m2)
+REAL, DIMENSION(:), INTENT(IN)       :: PSFTQ    ! water flux (kg/m2/s)
 REAL, DIMENSION(:), INTENT(IN)       :: PRI      ! Richardson number
 REAL, DIMENSION(:), INTENT(IN)       :: PCH      ! drag coefficient for heat
 REAL, DIMENSION(:), INTENT(IN)       :: PZ0      ! roughness length for momentum
@@ -113,6 +118,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_TEB_N',0,ZHOOK_HANDLE)
+!
+! * Mean surface temperature need to couple with AGCM
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!Here it is the radiative temperature that is wrong !
+!It should be the arithmetic mean of the surface temperature
+!of each independant energy budget, if there is. See ISBA for more detail.
+!
+DGT%XDIAG_TS(:) = PTS(:)
+!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 ZZ0_O_Z0H = 200.
 !
 !* 2m and 10m variables interpolated from canopy if used
@@ -123,66 +140,79 @@ IF (OCANOPY) THEN
   ZHU2M_MIN(:) = XUNDEF
   ZHU2M_MAX(:) = XUNDEF
   ZWIND10M_MAX(:) = XUNDEF
-  IF (N2M>0) CALL INIT_2M_10M( XP(:,2), XT(:,2), XQ(:,2),  XU, XZ, &
+  IF (DGT%N2M>0) CALL INIT_2M_10M( TCP%XP(:,2), TCP%XT(:,2), TCP%XQ(:,2),  TCP%XU, TCP%XZ, &
                                PZONA, PMERA, PWIND, PRHOA,         &
-                               XT2M, XQ2M, XHU2M, XZON10M, XMER10M,&
+                               DGT%XT2M, DGT%XQ2M, DGT%XHU2M, DGT%XZON10M, DGT%XMER10M,&
                                ZU10, ZWIND10M_MAX, ZT2M_MIN,       &
                                ZT2M_MAX, ZHU2M_MIN, ZHU2M_MAX )
 ELSE
 !* 2m and 10m variables using CLS laws
- IF (N2M==1) THEN
+ IF (DGT%N2M==1) THEN
   CALL PARAM_CLS(PTA, PTS, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
                    PSFTH, PSFTQ, PSFZON, PSFMER,                       &
-                   XT2M, XQ2M, XHU2M, XZON10M, XMER10M                )  
+                   DGT%XT2M, DGT%XQ2M, DGT%XHU2M, DGT%XZON10M, DGT%XMER10M                )  
   !
   !* erases temperature and humidity 2m above roof level bu canyon air values
   !
-  XT2M  = XT_CANYON
-  XQ2M  = XQ_CANYON
+  DGT%XT2M  = T%CUR%XT_CANYON
+  DGT%XQ2M  = T%CUR%XQ_CANYON
   !
   !* Richardson number
   !
-  XRI = PRI
-  XHU2M = MIN(XQ_CANYON /QSAT(XT_CANYON,PPA),1.)
- ELSE IF (N2M==2) THEN
+  DGT%XRI = PRI
+  DGT%XHU2M = MIN(T%CUR%XQ_CANYON /QSAT(T%CUR%XT_CANYON,PPA),1.)
+ ELSE IF (DGT%N2M==2) THEN
   ZH(:)=10.
   CALL CLS_WIND(PZONA, PMERA, PHW,  &
                   PCD, PCDN, PRI, ZH, &
-                  XZON10M, XMER10M    )  
-  XT2M  = XT_CANYON
-  XQ2M  = XQ_CANYON
-  XRI   = PRI
-  XHU2M = MIN(XQ_CANYON /QSAT(XT_CANYON,PPA),1.)
+                  DGT%XZON10M, DGT%XMER10M    )  
+  DGT%XT2M  = T%CUR%XT_CANYON
+  DGT%XQ2M  = T%CUR%XQ_CANYON
+  DGT%XRI   = PRI
+  DGT%XHU2M = MIN(T%CUR%XQ_CANYON /QSAT(T%CUR%XT_CANYON,PPA),1.)
  END IF
 END IF
 !
+IF (DGT%N2M>=1) THEN
+  !
+  DGT%XT2M_MIN(:) = MIN(DGT%XT2M_MIN(:),DGT%XT2M(:))
+  DGT%XT2M_MAX(:) = MAX(DGT%XT2M_MAX(:),DGT%XT2M(:))
+  !
+  DGT%XHU2M_MIN(:) = MIN(DGT%XHU2M_MIN(:),DGT%XHU2M(:))
+  DGT%XHU2M_MAX(:) = MAX(DGT%XHU2M_MAX(:),DGT%XHU2M(:))
+  !
+  DGT%XWIND10M    (:) = SQRT(DGT%XZON10M**2+DGT%XMER10M**2)
+  DGT%XWIND10M_MAX(:) = MAX(DGT%XWIND10M_MAX(:),DGT%XWIND10M(:))
+  !
+END IF
+
 !
-IF (LSURF_BUDGET) THEN
+IF (DGT%LSURF_BUDGET) THEN
    !
    CALL DIAG_SURF_BUDGET_TEB(PDIR_SW, PSCA_SW, PDIR_ALB, PSCA_ALB,  &
                                PLW, PEMIS, PTRAD,                     &
-                               XSWD, XSWU, XSWBD, XSWBU, XLWD, XLWU   )  
+                               DGT%XSWD, DGT%XSWU, DGT%XSWBD, DGT%XSWBU, DGT%XLWD, DGT%XLWU   )  
    !                             
-   XRN    = PRN
-   XH     = PH
-   XLE    = PLE
-   XGFLUX = PGFLUX
-   XFMU   = PSFZON
-   XFMV   = PSFMER
-   XSFCO2 = PSFCO2
+   DGT%XRN    = PRN
+   DGT%XH     = PH
+   DGT%XLE    = PLE
+   DGT%XGFLUX = PGFLUX
+   DGT%XFMU   = PSFZON
+   DGT%XFMV   = PSFMER
+   DGT%XSFCO2 = PSFCO2
    !
 END IF
 !
-IF (LCOEF) THEN
-  XCD    = PCD
-  XCH    = PCH
-  XCE    = PCH
-  XZ0    = PZ0
-  XZ0H   = PZ0 / ZZ0_O_Z0H
+IF (DGT%LCOEF) THEN
+  DGT%XCD    = PCD
+  DGT%XCH    = PCH
+  DGT%XCE    = PCH
+  DGT%XZ0    = PZ0
+  DGT%XZ0H   = PZ0 / ZZ0_O_Z0H
 END IF
 !
-IF (LSURF_VARS) THEN
-  XQS    = XQ_CANYON
+IF (DGT%LSURF_VARS) THEN
+  DGT%XQS    = T%CUR%XQ_CANYON
 END IF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_TEB_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

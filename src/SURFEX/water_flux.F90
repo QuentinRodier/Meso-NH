@@ -1,12 +1,12 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE WATER_FLUX(PZ0SEA,                                         &
                               PTA, PEXNA, PRHOA, PSST, PEXNS, PQA, PRR, PRS,  &
                               PTT, PVMOD, PZREF, PUREF,                       &
-                              PPS, PQSAT,                                     &
+                              PPS, OHANDLE_SIC, PQSAT,                        &
                               PSFTH, PSFTQ, PUSTAR,                           &
                               PCD, PCDN, PCH, PRI, PRESA, PZ0HSEA             )  
 !     #######################################################################
@@ -34,7 +34,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -50,6 +50,7 @@
 !!      (P. LeMoigne) 20/06/07  minimum wind speed and/or shear
 !!      B. Decharme    06/2009 limitation of Ri
 !!      B. Decharme    09/2012 limitation of Ri in surface_ri.F90
+!!      B. Decharme    06/2013 Charnock number according to coare3.0
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -68,9 +69,9 @@ USE MODI_WIND_THRESHOLD
 USE MODE_THERMOS
 !
 USE MODD_SURF_ATM,    ONLY : LDRAG_COEF_ARP, XVCHRNK, XVZ0CM, LVZIUSTAR0_ARP, XVZIUSTAR0,  &
-                               LRRGUST_ARP, XRRSCALE, XRRGAMMA, XUTILGUST, XRZHZ0M  
-
+                               LRRGUST_ARP, XRRSCALE, XRRGAMMA, XUTILGUST, XRZHZ0M
 !
+USE MODD_REPROD_OPER,  ONLY : CCHARNOCK
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -91,6 +92,7 @@ REAL, DIMENSION(:), INTENT(IN)       :: PUREF ! atm. level for wind
 REAL, DIMENSION(:), INTENT(IN)       :: PSST  ! Sea Surface Temperature
 REAL, DIMENSION(:), INTENT(IN)       :: PEXNS ! Exner function at sea surface
 REAL, DIMENSION(:), INTENT(IN)       :: PPS   ! air pressure at sea surface
+LOGICAL,            INTENT(IN)       :: OHANDLE_SIC ! if TRUE, do not care to detect seaice
 REAL, DIMENSION(:), INTENT(IN)       :: PRR   ! rain rate
 REAL, DIMENSION(:), INTENT(IN)       :: PRS   ! snow rate
 REAL,               INTENT(IN)       :: PTT   ! temperature of freezing point
@@ -123,6 +125,8 @@ REAL, DIMENSION(SIZE(PTA)) :: ZRA       ! Aerodynamical resistance
 REAL, DIMENSION(SIZE(PTA)) :: ZDIRCOSZW ! orography slope cosine (=1 on water!)
 REAL, DIMENSION(SIZE(PTA)) :: ZFP       ! working variable
 REAL, DIMENSION(SIZE(PTA)) :: ZRRCOR    ! correction of CD, CH, CDN due to moist-gustiness
+REAL, DIMENSION(SIZE(PTA)) :: ZCHARN    ! Charnock number
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -149,6 +153,22 @@ PRESA(:)=XUNDEF
 !
 PQSAT(:) = QSAT(PSST(:),PPS(:))
 !
+!
+!       1.2    Wind speed threshold
+!              --------------------
+!
+ZVMOD(:)=WIND_THRESHOLD(PVMOD(:),PUREF(:))
+!
+!       1.3    Charnock number
+!              ---------------
+!
+IF(CCHARNOCK=='OLD')THEN
+  ZCHARN(:) = XVCHRNK
+ELSE
+! vary between 0.011 et 0.018 according to Chris Fairall's data as in coare3.0        
+  ZCHARN(:) = MAX(0.011,MIN(0.018,0.011+0.007*(ZVMOD(:)-10.)/8.))
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !       2.     Calculate the drag coefficient for momentum (PCD)
@@ -158,60 +178,38 @@ PQSAT(:) = QSAT(PSST(:),PPS(:))
 !              -----------------
 !
  CALL SURFACE_RI(PSST,PQSAT,PEXNS,PEXNA,PTA,PQA,  &
-                  PZREF, PUREF, ZDIRCOSZW,PVMOD,PRI)
+                PZREF, PUREF, ZDIRCOSZW,PVMOD,PRI)
 !
 !       2.2    Detection of sea ice
 !              --------------------
 !
 IF (LVZIUSTAR0_ARP) THEN
-  WHERE (PSST(:) >= PTT)
-    PZ0HSEA(:)=MIN(PZ0SEA(:),PZ0SEA(:)*XRZHZ0M)
-  END WHERE
-ELSEIF ( .NOT. LVZIUSTAR0_ARP ) THEN
-  WHERE (PSST(:) >= PTT)
-    PZ0HSEA(:)=PZ0SEA(:)
-  END WHERE
+   PZ0HSEA(:)=MIN(PZ0SEA(:),PZ0SEA(:)*XRZHZ0M)
+ELSE
+   PZ0HSEA(:)=PZ0SEA(:)
 ENDIF
-WHERE (PSST(:) < PTT)
-  PZ0HSEA(:) = XZ0HSN
-END WHERE
+!
+IF (.NOT.OHANDLE_SIC ) THEN 
+   WHERE (PSST(:) < PTT)
+      PZ0HSEA(:) = XZ0HSN
+   END WHERE
+ENDIF
 !
 !       2.3    Drag coefficient
 !              ----------------
 !
-ZVMOD(:)=WIND_THRESHOLD(PVMOD(:),PUREF(:))
-!
 IF (LDRAG_COEF_ARP) THEN
  
   CALL SURFACE_CDCH_1DARP(PZREF, PZ0SEA, PZ0HSEA, ZVMOD, PTA, PSST, &
-                            PQA, PQSAT, PCD, PCDN, PCH                )  
+                          PQA, PQSAT, PCD, PCDN, PCH                )  
 
   ZRA(:) = 1. / ( PCH(:) * ZVMOD(:) )
 !
-!       2.4    Calculate u* and the roughness length over the ocean
-!              ----------------------------------------------------
-!
-!                              According to Charnock's expression...
-!
-  ZUSTAR2(:) = PCD(:)*ZVMOD(:)*ZVMOD(:)
-  WHERE (PSST(:)>=PTT)
-    PZ0SEA(:) = XVCHRNK * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
-  ELSEWHERE
-    PZ0SEA(:) = XZ0SN
-  END WHERE
-  IF (LVZIUSTAR0_ARP .AND. XVZIUSTAR0>0.) THEN
-    WHERE (PSST(:)>=PTT)
-      PZ0HSEA(:)=PZ0SEA(:)*EXP(-SQRT(ZUSTAR2(:))*XVZIUSTAR0)
-    END WHERE
-  ELSE
-    WHERE (PSST(:)>=PTT)
-      PZ0HSEA(:)=PZ0SEA(:)
-    END WHERE
-  ENDIF     
-
 ELSE
 !
   CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0SEA, PZ0HSEA, PCD, PCDN)
+!
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -220,30 +218,29 @@ ELSE
 !
 !                              According to Charnock's expression...
 !
-  ZUSTAR2(:) = PCD(:)*ZVMOD(:)*ZVMOD(:)
+ZUSTAR2(:) = PCD(:)*ZVMOD(:)*ZVMOD(:)
 !
-  WHERE (PSST(:)>=PTT)
-    PZ0SEA(:) = XVCHRNK * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
-  ELSEWHERE
-    PZ0SEA(:) = XZ0SN
-  END WHERE
-  IF (LVZIUSTAR0_ARP .AND. XVZIUSTAR0>0.) THEN
-    WHERE (PSST(:)>=PTT)
-      PZ0HSEA(:)=PZ0SEA(:)*EXP(-SQRT(ZUSTAR2(:))*XVZIUSTAR0)
-    END WHERE
-  ELSE
-    WHERE (PSST(:)>=PTT)
-      PZ0HSEA(:)=PZ0SEA(:)
-    END WHERE
-  ENDIF     
+PZ0SEA (:) = ZCHARN(:) * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
+!
+IF (LVZIUSTAR0_ARP .AND. XVZIUSTAR0>0.) THEN
+    PZ0HSEA(:)=PZ0SEA(:)*EXP(-SQRT(ZUSTAR2(:))*XVZIUSTAR0)
+ELSE
+    PZ0HSEA(:)=PZ0SEA(:)
+ENDIF
+!
+IF (.NOT.OHANDLE_SIC ) THEN 
+   WHERE (PSST(:) < PTT)
+          PZ0SEA(:) = XZ0SN
+   END WHERE
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
 !       4.     Drag coefficient for heat and aerodynamical resistance
 !              -------------------------------------------------------
 !
-  CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0SEA, PZ0HSEA, ZAC, ZRA, PCH)
-!
+IF (.NOT.LDRAG_COEF_ARP) THEN
+   CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0SEA, PZ0HSEA, ZAC, ZRA, PCH)
 ENDIF
 !
 IF (LRRGUST_ARP) THEN
@@ -266,13 +263,8 @@ PRESA(:) = ZRA(:)
 PSFTH (:) =  XCPD * PRHOA(:) * PCH(:) * ZVMOD(:) * ( PSST(:) -PTA(:) * PEXNS(:) / PEXNA(:) ) / PEXNS(:)
 PSFTQ (:) =  PRHOA(:) * PCH(:) * ZVMOD(:) * ( PQSAT(:)-PQA(:) )
 PUSTAR(:) = SQRT(ZUSTAR2(:))
+!
 IF (LHOOK) CALL DR_HOOK('WATER_FLUX',1,ZHOOK_HANDLE)
-!
-!-------------------------------------------------------------------------------
-!
-!       6.     Specific fields for GELATO
-!              --------------------------
-!
 !
 !-------------------------------------------------------------------------------
 !

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE COTWOINIT_n(HPHOTO,PVEGTYPE,PGMES,PCO2,PGC,PDMAX,            &
+      SUBROUTINE COTWOINIT_n (I, &
+                              HPHOTO,PVEGTYPE,PGMES,PCO2,PGC,PDMAX,            &
                             PABC,PPOI,PANMAX,                                 &
                             PFZERO,PEPSO,PGAMM,PQDGAMM,PQDGMES,PT1GMES,       &
                             PT2GMES,PAMAX,PQDAMAX,PT1AMAX,PT2AMAX,PAH,PBH,    &
@@ -40,34 +41,41 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	A. Boone           * Meteo-France *
+!!      A. Boone           * Meteo-France *
 !!      (following Belair)
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    27/10/97
-!!	(V. Rivalland) 10/04/02	 Add: PAH and PBH coefficients for
+!!      (V. Rivalland) 10/04/02  Add: PAH and PBH coefficients for
 !!                               herbaceous water stress response
-!!	(P. LeMoigne) 03/2004:   computation of zgmest in SI units
-!!	(P. LeMoigne) 10/2004:   possibility of 2 different FZERO
+!!      (P. LeMoigne) 03/2004:   computation of zgmest in SI units
+!!      (P. LeMoigne) 10/2004:   possibility of 2 different FZERO
 !!      (L. Jarlan)   10/2004:   initialization of DMAX
 !!      P Le Moigne   09/2005    AGS modifs of L. Jarlan
 !!      S. Lafont     03/2009    change unit of AMAX
 !!      A.L. Gibelin  04/2009    TAU_WOOD for NCB option 
 !!      A.L. Gibelin  04/2009    Suppress useless GPP and RDK arguments 
 !!      A.L. Gibelin  07/2009    Suppress PPST and PPSTF as outputs
-!!      B. Decharme   05/2012 : Optimization
+!!      B. Decharme   05/2012    Optimization
+!!      R. Alkama     05/2012    add 7 new vegtype (19  instead 12)
+!!      C. Delire     01/2014    Define a dummy LAI from top and total lai for Dark respiration 
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVT_C4, NVT_IRR, NVT_TROG,            &
-                                  NVT_TREE, NVT_CONI, NVT_EVER  
+!
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVT_C3, NVT_C4, NVT_IRR, NVT_TROG,     &
+                                NVT_TEBD, NVT_BONE, NVT_TRBE, NVT_TRBD, NVT_TEBE,&
+                                NVT_TENE, NVT_BOBD, NVT_BOND, NVT_SHRB, NVT_GRAS
 USE MODD_CSTS,           ONLY : XMD
-USE MODD_CO2V_PAR,       ONLY : XTOPT, XFZERO1, XFZERO2, XEPSO, XGAMM, XQDGAMM, &
+USE MODD_CO2V_PAR,       ONLY : XTOPT, XFZERO1, XFZERO2, XFZEROTROP, XEPSO, XGAMM, XQDGAMM, &
                                   XQDGMES, XT1GMES, XT2GMES, XAMAX,               &
                                   XQDAMAX, XT1AMAX, XT2AMAX, XAH, XBH,            &
                                   XDSPOPT, XIAOPT, XAW, XBW, XMCO2, XMC, XTAU_WOOD  
 ! 
+USE MODE_COTWO,          ONLY : GAULEG
 USE MODI_COTWO  
 !
 !*       0.     DECLARATIONS
@@ -81,6 +89,9 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
 !
  CHARACTER(LEN=3),   INTENT(IN)   :: HPHOTO      ! type of photosynthesis
 REAL,DIMENSION(:,:),INTENT(IN)   :: PVEGTYPE
@@ -140,7 +151,9 @@ REAL,DIMENSION(:),INTENT(OUT)  :: PAH, PBH
 !*      0.2    declaration of local variables
 !
 INTEGER                           :: JCLASS    ! indexes for loops
+INTEGER                           :: ICLASS    ! indexes for loops
 INTEGER                           :: ICO2TYPE  ! type of CO2 vegetation
+INTEGER                           :: IRAD      ! with or without new radiative transfer
 !
 REAL, DIMENSION(SIZE(PANMAX))     :: ZGS, ZGAMMT, ZTOPT, ZANMAX, ZGMEST, ZGPP, ZRDK, ZEPSO
 !                                    ZTOPT     = optimum  temperature for compensation 
@@ -152,19 +165,21 @@ REAL, DIMENSION(SIZE(PANMAX))     :: ZGS, ZGAMMT, ZTOPT, ZANMAX, ZGMEST, ZGPP, Z
 !                                    ZRDK      = dark respiration
 !
 !
-REAL, DIMENSION(SIZE(PANMAX))     :: ZCO2INIT3, ZCO2INIT4, ZCO2INIT5
+REAL, DIMENSION(SIZE(PANMAX))     :: ZCO2INIT3, ZCO2INIT4, ZCO2INIT5, ZCO2INIT2,ZCO2INIT1
 !                                    working arrays for initializing surface 
 !                                    temperature, saturation deficit, global radiation,
 !                                    optimum temperature for determining maximum 
 !                                    photosynthesis rate, and soil water stress (none)
 REAL, DIMENSION(SIZE(PDMAX))      :: ZDMAX
 REAL, DIMENSION(SIZE(PDMAX))      :: ZWORK
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !                                    Local variable in order to initialise DMAX
 !                                    following Calvet, 2000 (AST or LST cases)
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('COTWOINIT_N',0,ZHOOK_HANDLE)
+!
 ZTOPT  (:) = 0.
 PFZERO (:) = 0.
 PEPSO  (:) = 0.
@@ -213,13 +228,23 @@ DO JCLASS=1,NVEGTYPE
   ELSE
     ICO2TYPE = 1   ! C3 type
   END IF
+  IF(I%LAGRI_TO_GRASS.AND.(JCLASS==NVT_C4 .OR. JCLASS==NVT_IRR)) ICO2TYPE = 1
+  IF (I%LTR_ML) THEN
+    IRAD = 1   ! running with new radiative transfer
+  ELSE
+    IRAD = 2
+  ENDIF
   !
   ZTOPT  (:) = ZTOPT  (:) + XTOPT  (ICO2TYPE) * PVEGTYPE(:,JCLASS)
   IF (HPHOTO == 'AGS' .OR. HPHOTO == 'LAI') THEN
      PFZERO (:) = PFZERO (:) + XFZERO1 (ICO2TYPE) * PVEGTYPE(:,JCLASS)
   ELSE
-     IF((JCLASS==NVT_TREE) .OR. (JCLASS==NVT_CONI) .OR. (JCLASS==NVT_EVER)) THEN
+     IF((JCLASS==NVT_TEBD) .OR. (JCLASS==NVT_BONE) .OR.                         &
+        (JCLASS==NVT_TRBD) .OR. (JCLASS==NVT_TEBE) .OR. (JCLASS==NVT_TENE) .OR. &
+        (JCLASS==NVT_BOBD) .OR. (JCLASS==NVT_BOND) .OR. (JCLASS==NVT_SHRB)) THEN
         PFZERO (:) = PFZERO (:) + ((XAW - LOG(PGMES(:)*1000.0))/XBW)*PVEGTYPE(:,JCLASS)
+     ELSE IF (JCLASS==NVT_TRBE) THEN
+        PFZERO (:) = PFZERO (:) + XFZEROTROP(IRAD) * PVEGTYPE(:,JCLASS)
      ELSE
         PFZERO (:) = PFZERO (:) + XFZERO2 (ICO2TYPE) * PVEGTYPE(:,JCLASS)
      ENDIF
@@ -231,14 +256,20 @@ DO JCLASS=1,NVEGTYPE
   PQDGMES(:) = PQDGMES(:) + XQDGMES(ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PT1GMES(:) = PT1GMES(:) + XT1GMES(ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PT2GMES(:) = PT2GMES(:) + XT2GMES(ICO2TYPE) * PVEGTYPE(:,JCLASS)
-  PAMAX  (:) = PAMAX  (:) + XAMAX  (ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PQDAMAX(:) = PQDAMAX(:) + XQDAMAX(ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PT1AMAX(:) = PT1AMAX(:) + XT1AMAX(ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PT2AMAX(:) = PT2AMAX(:) + XT2AMAX(ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PAH    (:) = PAH    (:) + XAH    (ICO2TYPE) * PVEGTYPE(:,JCLASS)
   PBH    (:) = PBH    (:) + XBH    (ICO2TYPE) * PVEGTYPE(:,JCLASS)
   !
-  PTAU_WOOD(:) = PTAU_WOOD(:) + XTAU_WOOD(JCLASS) * PVEGTYPE(:,JCLASS)
+  IF(I%LAGRI_TO_GRASS.AND.(JCLASS==NVT_C3 .OR. JCLASS==NVT_C4 .OR. JCLASS==NVT_IRR))THEN
+    ICLASS=NVT_GRAS
+  ELSE
+    ICLASS=JCLASS
+  ENDIF    
+  !
+  PTAU_WOOD(:) = PTAU_WOOD(:) + XTAU_WOOD(ICLASS) * PVEGTYPE(:,JCLASS)
+  PAMAX    (:) = PAMAX    (:) + XAMAX    (ICLASS) * PVEGTYPE(:,JCLASS)
   !
 END DO
 !
@@ -279,6 +310,11 @@ ZCO2INIT3(:) = XDSPOPT
 ZCO2INIT4(:) = XIAOPT
 ZCO2INIT5(:) = 1.0
 !
+! Define a dummy LAI from top (zco2init2=0.1) and total lai (zco2init=1) for Dark respiration extinction parameterization 
+!
+ZCO2INIT2(:) = 0.1
+ZCO2INIT1(:) = 1.0
+!
 ! Add soil moisture stress effect to leaf conductance:
 !
 ZGMEST(:) = ZGMEST(:)*ZCO2INIT5(:)
@@ -302,137 +338,11 @@ ZGAMMT(:)=ZGAMMT(:)*XMCO2/XMD*1e-6
 !
  CALL COTWO(PCO2, ZCO2INIT5, ZCO2INIT4, ZCO2INIT3, ZGAMMT, &
            PFZERO, ZEPSO, ZANMAX, ZGMEST, PGC, ZDMAX,     &
-           PANMAX, ZGS, ZRDK                              )                     
+           PANMAX, ZGS, ZRDK, ZCO2INIT2, ZCO2INIT1        )                     
 ! change by sebastien PEPSO change into ZEPSO for units consistency
 !
 !
 !
 IF (LHOOK) CALL DR_HOOK('COTWOINIT_N',1,ZHOOK_HANDLE)
-CONTAINS
-   !
-   !
-   SUBROUTINE GAULEG(PX1,PX2,PX,PW,KN)
-   !
-   !
-   !!****  *GAULEG*  
-   !!
-   !!    PURPOSE
-   !!    -------
-   !
-   !     Calculates the Gaussian weights for integration of net assimilation
-   !     and stomatal conductance over the canopy depth
-   !         
-   !     
-   !!**  METHOD
-   !!    ------
-   !
-   !     1) Calculate the weights and abscissa using Gaussian Quadrature
-   !
-   !!    EXTERNAL
-   !!    --------
-   !!    none
-   !!
-   !!    IMPLICIT ARGUMENTS
-   !!    ------------------
-   !!    MODD_CST
-   !!      
-   !!    REFERENCE
-   !!    ---------
-   !!
-   !!    Calvet et al. (1998) For. Agri. Met.
-   !!      
-   !!    AUTHOR
-   !!    ------
-   !!
-   !!	A. Boone           * Meteo-France *
-   !!      (following Belair)
-   !!
-   !!    MODIFICATIONS
-   !!    -------------
-   !!      Original    27/10/97 
-   !!
-   !-------------------------------------------------------------------------------
-   !
-   !
-   !*       0.     DECLARATIONS
-   !               ------------
-   !
-   USE MODD_CSTS, ONLY : XPI
-   !
-   !
-   !*      0.1    declarations of arguments
-   !
-   INTEGER,             INTENT(IN)   :: KN
-   !                                    number of points at which Gaussian
-   !                                    weights are evaluated/needed
-   !
-   REAL,                INTENT(IN)   :: PX1, PX2
-   !                                    mathematical/numerical values needed for 
-   !                                    weight computation
-   !
-   REAL, DIMENSION(KN), INTENT(OUT)  :: PX, PW
-   !                                    PX = abscissa
-   !                                    PW = Gaussian weights
-   !
-   !
-   !*      0.2    declarations of local variables
-   !
-   REAL, PARAMETER                             :: PPEPS = 3.0E-14
-   !                                              convergence criteria
-   !
-   INTEGER JI,JJ,JK                             ! loop indexes
-   !
-   INTEGER IM                                   ! 
-   !
-   REAL ZXM, ZXL, ZZ, ZP1, ZP2, ZP3, ZPP, ZZ1   ! dummy variables needed for 
-   REAL(KIND=JPRB) :: ZHOOK_HANDLE
-   !                                              computation of the gaussian weights
-   !
-   !-------------------------------------------------------------------------------
-   !
-   !  calcul des poids et abscisses par la methode de quad de Gauss
-   !
-   IF (LHOOK) CALL DR_HOOK('GAULEG',0,ZHOOK_HANDLE)
-   IM  = (KN+1)/2
-   ZXM = 0.50*(PX2+PX1)
-   ZXL = 0.50*(PX2-PX1)
-   !      
-   IM_POINT_LOOP: DO JI = 1,IM
-      ZZ  = COS(XPI*(FLOAT(JI)-.250)/(FLOAT(KN)+.50))
-   !
-   !  begin iteration:
-   !
-      ITERATION_LOOP: DO JK = 1,100
-         ZP1 = 1.
-         ZP2 = 0.
-         DO JJ = 1,KN
-            ZP3 = ZP2
-            ZP2 = ZP1
-            ZP1 = ((2.*(JJ)-1.)*ZZ*ZP2-(FLOAT(JJ)-1.)*ZP3)/JJ
-         END DO
-         ZPP = FLOAT(KN)*(ZZ*ZP1-ZP2)/(ZZ*ZZ-1.)
-         ZZ1 = ZZ
-         ZZ  = ZZ1-ZP1/ZPP
-         IF(ABS(ZZ-ZZ1).LE.PPEPS)EXIT
-      END DO ITERATION_LOOP
-   !
-   !  end iteration.
-   !
-   !  compute abscissa
-   !
-      PX(JI)      = ZXM - ZXL*ZZ
-      PX(KN+1-JI) = ZXM + ZXL*ZZ
-   !
-   !  compute weights
-   !
-      PW(JI)      = 2.0*ZXL/((1.0-ZZ*ZZ)*ZPP*ZPP)
-      PW(KN+1-JI) = PW(JI)
-   END DO IM_POINT_LOOP
-   IF (LHOOK) CALL DR_HOOK('GAULEG',1,ZHOOK_HANDLE)
-   !
-   !
-   END SUBROUTINE GAULEG   
-!
-!
 !
 END SUBROUTINE COTWOINIT_n

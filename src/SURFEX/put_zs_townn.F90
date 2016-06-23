@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################################
-      SUBROUTINE PUT_ZS_TOWN_n(HPROGRAM,KI,PZS)
+      SUBROUTINE PUT_ZS_TOWN_n (TOP, &
+                                HPROGRAM,KI,PZS)
 !     #########################################
 !
 !!****  *PUT_ZS_SURF_ATM_n* - routine to modify town oropgraphy using atmospheric
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,9 +39,11 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
+!
 USE MODI_GET_LUOUT
 !
-USE MODD_TEB_n,     ONLY : XZS
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -52,6 +55,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
 INTEGER,             INTENT(IN)  :: KI      ! horizontal dim. of cover
@@ -69,13 +75,13 @@ IF (LHOOK) CALL DR_HOOK('PUT_ZS_TOWN_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF ( SIZE(PZS) /= SIZE(XZS) ) THEN
+IF ( SIZE(PZS) /= SIZE(TOP%XZS) ) THEN
   WRITE(ILUOUT,*) 'try to get ZS field from atmospheric model, but size is not correct'
   WRITE(ILUOUT,*) 'size of field expected by the atmospheric model (PZS) :', SIZE(PZS)
-  WRITE(ILUOUT,*) 'size of field over town                         (XZS) :', SIZE(XZS)
+  WRITE(ILUOUT,*) 'size of field over town                         (XZS) :', SIZE(TOP%XZS)
   CALL ABOR1_SFX('PUT_ZS_TOWNN: GET ZS FROM ATMOSPHERIC MODEL: SIZE NOT CORRECT')
 ELSE
-  XZS = PZS
+  TOP%XZS = PZS
 END IF
 IF (LHOOK) CALL DR_HOOK('PUT_ZS_TOWN_N',1,ZHOOK_HANDLE)
 !

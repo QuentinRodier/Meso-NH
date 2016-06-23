@@ -1,7 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
-!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!ORILAM_LIC for details.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !!     ######################
        MODULE MODD_CHS_AEROSOL
 !!     ######################
@@ -81,7 +81,7 @@ INTEGER            :: JP_AER_SOA8 = 15
 INTEGER            :: JP_AER_SOA9 = 16 
 INTEGER            :: JP_AER_SOA10 = 17
 
-CHARACTER(LEN=32),DIMENSION(:), ALLOCATABLE :: CAERONAMES
+ CHARACTER(LEN=32),DIMENSION(:), ALLOCATABLE :: CAERONAMES
 
 INTEGER            :: JP_CH_SO4I = 1  
 INTEGER            :: JP_CH_SO4J = 2  
@@ -180,7 +180,7 @@ REAL         :: XEMISSIGI     = 1.86   ! dispersion of primary aerosol
                                        ! emission for I mode
 REAL         :: XEMISSIGJ     = 1.29   ! dispersion of primary aerosol
                                        ! emission for J mode
-CHARACTER*4  :: CRGUNIT   = 'NUMB'    ! type of log-normal geometric mean radius given
+ CHARACTER*4  :: CRGUNIT   = 'NUMB'    ! type of log-normal geometric mean radius given
 !                                     ! in nameliste (mass on number)
 
 

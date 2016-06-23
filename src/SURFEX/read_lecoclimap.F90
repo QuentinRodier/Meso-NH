@@ -1,10 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #######################
-      SUBROUTINE READ_LECOCLIMAP(HPROGRAM,OECOCLIMAP)
+      SUBROUTINE READ_LECOCLIMAP (&
+                                  HPROGRAM,OECOCLIMAP)
 !     #######################
+!
+!
+!
 !
 USE MODI_READ_SURF
 !
@@ -16,6 +20,8 @@ IMPLICIT NONE
 !
 !* dummy arguments
 !  ---------------
+!
+!
 !
  CHARACTER(LEN=6),     INTENT(IN)    :: HPROGRAM  ! program calling surf. schemes
 LOGICAL,              INTENT(OUT)   :: OECOCLIMAP! flag for ecoclimap
@@ -36,15 +42,18 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('READ_LECOCLIMAP',0,ZHOOK_HANDLE)
 YRECFM='VERSION'
- CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IVERSION,IRESP)
 YRECFM='BUG'
- CALL READ_SURF(HPROGRAM,YRECFM,IBUGFIX,IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,IBUGFIX,IRESP)
 !
 IF (IVERSION<1 .OR. (IVERSION==1 .AND. IBUGFIX==0)) THEN
   OECOCLIMAP = .TRUE.
 ELSE
   YRECFM='ECOCLIMAP'
-  CALL READ_SURF(HPROGRAM,YRECFM,OECOCLIMAP,IRESP)
+  CALL READ_SURF(&
+                HPROGRAM,YRECFM,OECOCLIMAP,IRESP)
 END IF
 IF (LHOOK) CALL DR_HOOK('READ_LECOCLIMAP',1,ZHOOK_HANDLE)
 !

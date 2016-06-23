@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE LATLON_GRID(HGRID,KGRID_PAR,KL,KLUOUT,PGRID_PAR,PLAT,PLON,PMESH_SIZE,PDIR)
 !     #########################################################################
@@ -27,12 +27,13 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004 
 !!                  10/2007 (E. Martin) IGN grids
+!!                  12/2012 (P. Samuelsson SMHI) Rotated lonlat
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,6 +56,8 @@ USE MODI_LATLON_GRIDTYPE_IGN
 USE MODI_LATLON_GRIDTYPE_LONLAT_REG
 !
 USE MODI_LATLON_GRIDTYPE_LONLATVAL
+!
+USE MODI_LATLON_GRIDTYPE_LONLAT_ROT
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -116,22 +119,28 @@ SELECT CASE (HGRID)
     CALL LATLON_GRIDTYPE_GAUSS(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,ZDIR)
     IF (PRESENT(PDIR)) PDIR = ZDIR
 !
-!*    4.      IGN grid
+!*    5.      IGN grid
 !             --------
 !
   CASE ('IGN       ')
     CALL LATLON_GRIDTYPE_IGN(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,ZDIR)
     IF (PRESENT(PDIR)) PDIR = ZDIR
 !
-!*    4.      lonlatval grid
+!*    6.      lonlatval grid
 !             --------
 !
   CASE ('LONLATVAL ')
     CALL LATLON_GRIDTYPE_LONLATVAL(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,ZDIR)
     IF (PRESENT(PDIR)) PDIR = ZDIR
-
-
-
+!
+!*    7.      Rotated lonlat grid
+!             -------------------
+!
+  CASE ('LONLAT ROT')
+    CALL LATLON_GRIDTYPE_LONLAT_ROT(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,ZDIR)
+    IF (PRESENT(PDIR)) PDIR = ZDIR
+!
+!
   CASE DEFAULT
     CALL ABOR1_SFX('LATLON_GRID: GRID TYPE NOT SUPPORTED '//HGRID)
 

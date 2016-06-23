@@ -1,13 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_TOWN_n    (HPROGRAM,HINIT,                            &
+      SUBROUTINE INIT_TOWN_n (DTCO, DGU, UG, U, CHI, DTI, I, &
+                              TM, GDM, GRM, DGL, DST, SLT,GCP, &                        
+                                  HPROGRAM,HINIT,                            &
                                    KI,KSV,KSW,                                &
                                    HSV,PCO2,PRHOA,                            &
                                    PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                                   PEMIS,PTSRAD,                              &
+                                   PEMIS,PTSRAD,PTSURF,                       &
                                    KYEAR, KMONTH,KDAY, PTIME,                 &
                                    HATMFILE,HATMFILETYPE,                     &
                                    HTEST                                      )  
@@ -34,7 +36,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -42,15 +44,29 @@
 !!       V.Masson   18/08/97 call to fmread directly with dates and strings
 !!       V.Masson   15/03/99 new PGD treatment with COVER types
 !        F.Solmon  06/00   adaptation for patch approach
+!!       B.Decharme 04/2013 new coupling variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_ATM_n, ONLY : CTOWN
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DST_n, ONLY : DST_t
+USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+!
 USE MODD_CSTS,       ONLY : XTT
-!
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -63,6 +79,22 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
@@ -80,6 +112,7 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSRAD    ! radiative temperature
+REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
 INTEGER,                          INTENT(IN)  :: KYEAR     ! current year (UTC)
 INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
@@ -102,20 +135,24 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !               ---------------------------
 !
 IF (LHOOK) CALL DR_HOOK('INIT_TOWN_N',0,ZHOOK_HANDLE)
-IF (CTOWN=='NONE  ') THEN
+IF (U%CTOWN=='NONE  ') THEN
   PDIR_ALB=0.
   PSCA_ALB=0.
   PEMIS   =1.
   PTSRAD  =XTT
-ELSE IF (CTOWN=='FLUX  ') THEN
-  CALL INIT_IDEAL_FLUX(HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
+  PTSURF  =XTT
+ELSE IF (U%CTOWN=='FLUX  ') THEN
+  CALL INIT_IDEAL_FLUX(DGL, DGU%LREAD_BUDGETC, &
+                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
                            PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
-                           PEMIS,PTSRAD,'OK'                           )  
-ELSE IF (CTOWN=='TEB   ') THEN
-  CALL INIT_TEB_n(HPROGRAM,HINIT,                               &
+                           PEMIS,PTSRAD,PTSURF,'OK'                    )  
+ELSE IF (U%CTOWN=='TEB   ') THEN
+  CALL INIT_TEB_n(DTCO, DGU, UG, U, CHI, DTI, I, &
+                  TM, GDM, GRM, DST, SLT,GCP, &
+                  HPROGRAM,HINIT,                               &
                     KI,KSV,KSW,HSV,PCO2,PRHOA,                    &
                     PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                    PEMIS,PTSRAD,                                 &
+                    PEMIS,PTSRAD,PTSURF,                          &
                     KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
                     'OK'                                          )  
 END IF

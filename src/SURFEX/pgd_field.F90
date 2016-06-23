@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_FIELD(HPROGRAM,HFIELD,HAREA,HFILE,HFILETYPE,PUNIF,PFIELD,OPRESENT)
+      SUBROUTINE PGD_FIELD (DTCO, UG, U, USS, &
+                            HPROGRAM,HFIELD,HAREA,HFILE,HFILETYPE,PUNIF,PFIELD,OPRESENT)
 !     ##############################################################
 !
 !!**** *PGD_FIELD* monitor for averaging and interpolations of ISBA physiographic fields
@@ -36,16 +37,25 @@
 !!    09/2010 (E. Kourzeneva):   interpolation of the lake depth 
 !!                               is not allowed and not necessary
 !!
+!!    02/2014 (B. Decharme):     interpolation of the lake depth 
+!!                               re-allowed but using the nearest point
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL
 USE MODD_PGDWORK,        ONLY : XSUMVAL, NSIZE, CATYPE,      &
                                 NVALNBR, NVALCOUNT, XVALLIST, JPVALMAX
-USE MODD_SURF_ATM_n,     ONLY : XNATURE, XSEA, XTOWN, XWATER
 !
 USE MODI_GET_LUOUT
 USE MODI_TREAT_FIELD
@@ -66,6 +76,12 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM  ! Type of program
  CHARACTER(LEN=*),  INTENT(IN) :: HFIELD    ! field name for prints
@@ -130,6 +146,10 @@ IF (LEN_TRIM(HFILE)/=0) THEN
   XSUMVAL  (:) = 0.
   INPTS        = 3
 !
+  IF(HFIELD=="water depth") THEN
+    INPTS = 1
+  ENDIF  
+!
   IF (CATYPE=='MAJ') THEN
     ALLOCATE(NVALNBR  (NL))
     ALLOCATE(NVALCOUNT(NL,JPVALMAX))
@@ -143,7 +163,8 @@ IF (LEN_TRIM(HFILE)/=0) THEN
   YFIELD = '                    '
   YFIELD = HFIELD(1:MIN(LEN(HFIELD),20))
 !
-  CALL TREAT_FIELD(HPROGRAM,'SURF  ',HFILETYPE,'A_MESH',HFILE,   &
+  CALL TREAT_FIELD(UG, U, USS, &
+                   HPROGRAM,'SURF  ',HFILETYPE,'A_MESH',HFILE,   &
                    YFIELD,ZFIELD,HAREA                           )  
 !
 !-------------------------------------------------------------------------------
@@ -153,17 +174,17 @@ IF (LEN_TRIM(HFILE)/=0) THEN
 !
   SELECT CASE (HAREA)
     CASE ('LAN')
-      WHERE ((XTOWN(:)+XNATURE(:))==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE ((U%XTOWN(:)+U%XNATURE(:))==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('TWN')
-      WHERE (XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('BLD')
-      WHERE (XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1              
+      WHERE (U%XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1              
     CASE ('NAT')
-      WHERE (XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('SEA')
-      WHERE (XSEA   (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XSEA   (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('WAT')
-      WHERE (XWATER (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XWATER (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
   END SELECT
 !
 !-------------------------------------------------------------------------------
@@ -171,13 +192,13 @@ IF (LEN_TRIM(HFILE)/=0) THEN
 !*    5.      Interpolation if some points are not initialized (no data for these points)
 !             ------------------------------------------------
 !
-  IF(HFIELD.NE."water depth") THEN
-    IF (PUNIF/=XUNDEF) THEN
-      CALL INTERPOL_FIELD(HPROGRAM,ILUOUT,NSIZE,ZFIELD(:),HFIELD,PDEF=PUNIF,KNPTS=INPTS)
-    ELSE
-      CALL INTERPOL_FIELD(HPROGRAM,ILUOUT,NSIZE,ZFIELD(:),HFIELD)
-    END IF          
-  END IF
+  IF (PUNIF/=XUNDEF) THEN
+    CALL INTERPOL_FIELD(UG, U, &
+                        HPROGRAM,ILUOUT,NSIZE,ZFIELD(:),HFIELD,PDEF=PUNIF,KNPTS=INPTS)
+  ELSE
+    CALL INTERPOL_FIELD(UG, U, &
+                        HPROGRAM,ILUOUT,NSIZE,ZFIELD(:),HFIELD)
+  END IF          
 !
   DEALLOCATE(NSIZE    )
   DEALLOCATE(XSUMVAL  )
@@ -237,7 +258,8 @@ SELECT CASE (HAREA)
           RETURN
 END SELECT
 
- CALL GET_TYPE_DIM_n(YMASK,IDIM)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     YMASK,IDIM)
 IF (IDIM/=SIZE(PFIELD)) THEN
    WRITE(ILUOUT,*)'Wrong dimension of MASK: ',IDIM,SIZE(PFIELD)
    CALL ABOR1_SFX('PGD_FIELD: WRONG DIMENSION OF MASK')
@@ -245,7 +267,8 @@ ENDIF
 
 ALLOCATE(IMASK(IDIM))
 ILU=0
- CALL GET_SURF_MASK_n(YMASK,IDIM,IMASK,ILU,ILUOUT)
+ CALL GET_SURF_MASK_n(DTCO, U, &
+                      YMASK,IDIM,IMASK,ILU,ILUOUT)
  CALL PACK_SAME_RANK(IMASK,ZFIELD(:),PFIELD(:))
 DEALLOCATE(IMASK)
 IF (LHOOK) CALL DR_HOOK('PGD_FIELD',1,ZHOOK_HANDLE)

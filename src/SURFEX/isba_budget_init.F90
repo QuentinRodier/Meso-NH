@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE ISBA_BUDGET_INIT(HISBA, HSNOW_ISBA,                   &
+SUBROUTINE ISBA_BUDGET_INIT (DGEI, &
+                             HISBA, HSNOW_ISBA,                   &
                             PWG, PWGI, PWR, PSNOWSWE, PDG, PDZG, &
                             PWG_INI, PWGI_INI, PWR_INI, PSWE_INI )
 !     ###############################################################################
@@ -30,10 +31,12 @@ SUBROUTINE ISBA_BUDGET_INIT(HISBA, HSNOW_ISBA,                   &
 !!
 !!------------------------------------------------------------------
 !
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_CSTS,       ONLY : XRHOLW
 !    
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : LWATER_BUDGET
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -41,6 +44,9 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
 !
  CHARACTER(LEN=*),     INTENT(IN)  :: HISBA      ! type of ISBA version:
 !                                               ! '2-L' (default)
@@ -87,7 +93,7 @@ PWR_INI (:) = XUNDEF
 ! * Water budget
 !   ------------
 !
-IF(LWATER_BUDGET)THEN
+IF(DGEI%LWATER_BUDGET)THEN
 !
 ! total wr at t-1
   PWR_INI(:)=PWR(:)

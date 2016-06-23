@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######################
       MODULE MODD_SURFEX_OMP
 !     ######################
@@ -21,13 +21,13 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Faroux   *Meteo France*
+!!      S. Faroux   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       26/06/12
-!!      Modified    11/2013 by J.Escobar :add !$ to inhibit completly omp dependency  
-!!-------------------------------------------------------------
+!!      Modified    11/2013 by J.Escobar :add !$ to inhibit completly omp
+!!                                 dependency
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -36,25 +36,33 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 #ifdef AIX64 
-!$ USE OMP_LIB
+ USE OMP_LIB
 #endif
 !
 IMPLICIT NONE
 !
 #ifndef AIX64
-!$ INCLUDE 'omp_lib.h'
+  INCLUDE 'omp_lib.h'
 #endif
 !
+!RJ: this broke non openmp version before
+!RJ: OMP_GET_THREAD_NUM() returns 0 for first omp thread
+!RJ: OMP_GET_NUM_THREADS() returns 1 for omp thread count
+#ifdef RJ_OFIX
+INTEGER :: NBLOCKTOT = 1
+INTEGER :: NBLOCK = 0
+#else
 INTEGER :: NBLOCKTOT = 1
 INTEGER :: NBLOCK = 1
+#endif
 !$OMP THREADPRIVATE(NBLOCK)
-INTEGER :: NINDX1 = 1
-!$OMP THREADPRIVATE(NINDX1)
-INTEGER :: NINDX2 = 1
-!$OMP THREADPRIVATE(NINDX2)
+INTEGER :: NINDX1SFX = 1
+!$OMP THREADPRIVATE(NINDX1SFX)
+INTEGER :: NINDX2SFX = 1
+!$OMP THREADPRIVATE(NINDX2SFX)
 INTEGER :: IDC = 0
 !
-CHARACTER(LEN=100) :: CWORK0, CWORKB
+ CHARACTER(LEN=100) :: CWORK0, CWORKB
 LOGICAL :: LWORK0
 LOGICAL, DIMENSION(:), POINTER :: LWORKD
 INTEGER :: NWORK0, NWORKVAR, NWORKB, NWORKDIMS
@@ -63,6 +71,7 @@ INTEGER, DIMENSION(4) :: NWORKIDS
 INTEGER, DIMENSION(:), POINTER :: NWORK_FULL
 INTEGER, DIMENSION(:), POINTER :: NWORKD
 INTEGER, DIMENSION(:), POINTER :: NWORK
+INTEGER, DIMENSION(:,:), POINTER :: NWORK2_FULL
 INTEGER, DIMENSION(:,:), POINTER :: NWORKD2
 INTEGER, DIMENSION(:,:), POINTER :: NWORK2
 INTEGER, DIMENSION(:,:,:), POINTER :: NWORKD3
@@ -76,13 +85,15 @@ REAL, DIMENSION(:,:), POINTER :: XWORK2
 REAL, DIMENSION(:,:,:), POINTER :: XWORKD3
 REAL, DIMENSION(:,:,:), POINTER :: XWORK3
 !
-CONTAINS
+ CONTAINS
 !
 !*********************************************************
 !
 SUBROUTINE INIT_DIM(KSIZE_OMP,KBLOCK,KKPROMA,KINDX1,KINDX2)
 !
-INTEGER, DIMENSION(0:NBLOCKTOT-1), INTENT(IN) :: KSIZE_OMP
+!RJ: work around to detect serial regions
+!RJ INTEGER, DIMENSION(0:NBLOCKTOT-1), INTENT(IN) :: KSIZE_OMP
+INTEGER, DIMENSION(0:), INTENT(IN) :: KSIZE_OMP
 INTEGER, INTENT(IN) :: KBLOCK
 INTEGER, INTENT(OUT) :: KKPROMA
 INTEGER, INTENT(OUT) :: KINDX1
@@ -92,9 +103,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODD_SURFEX_OMP:INIT_DIM',0,ZHOOK_HANDLE)
 !
+IF((KBLOCK<SIZE(KSIZE_OMP)).AND.(KBLOCK<NBLOCKTOT)) THEN
 KKPROMA = KSIZE_OMP(KBLOCK)
 KINDX2  = SUM(KSIZE_OMP(0:KBLOCK))
 KINDX1   = KINDX2 - KKPROMA + 1
+ELSE
+write(0,*) "Warning[OMP]: dummy dim init for KBLOCK=",KBLOCK
+KKPROMA=0
+KINDX2=-666
+KINDX1=-666
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('MODD_SURFEX_OMP:INIT_DIM',1,ZHOOK_HANDLE)
 !

@@ -1,10 +1,16 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######spl
 MODULE MODE_SPLINES
-
+!-------------------------------------------------------------------------------
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
+!!
+!-------------------------------------------------------------------------------
 USE MODI_ABOR1_SFX
 USE MODD_SPLINES
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -142,7 +148,7 @@ INTERFACE SPLB2C
         MODULE PROCEDURE SPLB2C
 END INTERFACE
 
-CONTAINS
+ CONTAINS
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1865,7 +1871,7 @@ M=SIZE(IW,2)
 DO J=1,N
   C(J,J)=C(J,J)-1.
 ENDDO
-C(:,:)=-C(:,:)
+ C(:,:)=-C(:,:)
 !-----------------------------------------------------------
 !     Calcul des vecteurs propres de I - Tm c ((Tm'*Tm)-1) c Tm'
  CALL EISRS1(C,VP,R1,WORK,IREP)

@@ -1,9 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_ISBA_CANOPY_n(HPROGRAM,HWRITE)
+      SUBROUTINE WRITESURF_ISBA_CANOPY_n (DGU, U, &
+                                           ICP, I, &
+                                          HPROGRAM,HWRITE)
 !     ####################################
 !
 !!****  *WRITE_ISBA_n* - writes ISBA fields
@@ -27,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -40,8 +42,15 @@
 !
 !
 !
-USE MODD_ISBA_n,          ONLY : LCANOPY
-USE MODD_ISBA_CANOPY_n,   ONLY : NLVL, XZ, XU, XT, XQ, XTKE, XLMO, XP
+!
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
+USE MODD_ISBA_CANOPY_n, ONLY : ISBA_CANOPY_t
+USE MODD_ISBA_n, ONLY : ISBA_t
 !
 USE MODI_WRITE_SURF
 !
@@ -53,6 +62,14 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
+TYPE(ISBA_CANOPY_t), INTENT(INOUT) :: ICP
+TYPE(ISBA_t), INTENT(INOUT) :: I
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE ! 'PREP' : does not write SBL XUNDEF fields
@@ -76,70 +93,79 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('WRITESURF_ISBA_CANOPY_N',0,ZHOOK_HANDLE)
 YRECFM='ISBA_CANOPY'
 YCOMMENT='flag to use canopy levels'
- CALL WRITE_SURF(HPROGRAM,YRECFM,LCANOPY,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,I%LCANOPY,IRESP,HCOMMENT=YCOMMENT)
 !
-IF (.NOT. LCANOPY .AND. LHOOK) CALL DR_HOOK('WRITESURF_ISBA_CANOPY_N',1,ZHOOK_HANDLE)
-IF (.NOT. LCANOPY) RETURN
+IF (.NOT. I%LCANOPY .AND. LHOOK) CALL DR_HOOK('WRITESURF_ISBA_CANOPY_N',1,ZHOOK_HANDLE)
+IF (.NOT. I%LCANOPY) RETURN
 !
 !* number of levels
 !
 YRECFM='ISBA_CAN_LVL'
 YCOMMENT='number of canopy levels'
- CALL WRITE_SURF(HPROGRAM,YRECFM,NLVL,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%NLVL,IRESP,HCOMMENT=YCOMMENT)
 !
 !* altitudes
 !
-DO JLAYER=1,NLVL
+DO JLAYER=1,ICP%NLVL
   WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_Z',JLAYER
   YCOMMENT='altitudes of canopy levels (m)'
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XZ(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XZ(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
 END DO
 !
 IF (HWRITE/='PRE') THEN
   !
   !* wind in canopy
   !
-  DO JLAYER=1,NLVL
+  DO JLAYER=1,ICP%NLVL
     WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_U',JLAYER
     YCOMMENT='wind at canopy levels (m/s)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XU(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XU(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
   !* temperature in canopy
   !
-  DO JLAYER=1,NLVL
+  DO JLAYER=1,ICP%NLVL
     WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_T',JLAYER
     YCOMMENT='temperature at canopy levels (K)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XT(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XT(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
   !* humidity in canopy
   !
-  DO JLAYER=1,NLVL
+  DO JLAYER=1,ICP%NLVL
     WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_Q',JLAYER
     YCOMMENT='humidity at canopy levels (kg/m3)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XQ(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XQ(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
   !* Tke in canopy
   !
-  DO JLAYER=1,NLVL
+  DO JLAYER=1,ICP%NLVL
     WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_E',JLAYER
     YCOMMENT='Tke at canopy levels (m2/s2)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XTKE(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XTKE(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
   !* Monin-Obhukov length
   !
   YRECFM='ISBA_CAN_LMO'
-  CALL WRITE_SURF(HPROGRAM,YRECFM,XLMO(:),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XLMO(:),IRESP,HCOMMENT=YCOMMENT)
   !
   !* Air pressure in canopy
   !
-  DO JLAYER=1,NLVL
+  DO JLAYER=1,ICP%NLVL
     WRITE(YRECFM,'(A10,I2.2)') 'ISBA_CAN_P',JLAYER
     YCOMMENT='Pressure at canopy levels (Pa)'
-    CALL WRITE_SURF(HPROGRAM,YRECFM,XP(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,ICP%XP(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
 ENDIF

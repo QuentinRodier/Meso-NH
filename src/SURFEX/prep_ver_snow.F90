@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_VER_SNOW(TPSNOW,PZS_LS,PZS,PTG_LS,PTG,KDEEP_SOIL)
 !          ###########################################
@@ -26,7 +26,8 @@ SUBROUTINE PREP_VER_SNOW(TPSNOW,PZS_LS,PZS,PTG_LS,PTG,KDEEP_SOIL)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
-!!       02/2014    E. Martin vertical correction applied to snow cover and not by layers
+!!       02/2014    E. Martin, vertical correction applied to snow cover and not by layers
+!!       09/2014    B. Decharme, Bug : Coherence between snow layer and depth
 !!------------------------------------------------------------------
 !
 
@@ -40,6 +41,7 @@ USE MODI_SNOW_HEAT_TO_T_WLIQ
 USE MODI_SNOW_T_WLIQ_TO_HEAT
 USE MODI_MKFLAG_SNOW
 !
+USE MODE_SNOW3L
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,9 +59,6 @@ INTEGER,               INTENT(IN),OPTIONAL:: KDEEP_SOIL ! index of deep soil tem
 !
 !*      0.2    declarations of local variables
 !
-INTEGER                             :: IPATCH    ! number of patches
-INTEGER                             :: JPATCH    ! loop counter on patches
-INTEGER                             :: JLAYER    ! loop counter on snow layers
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWSNOW_LS ! snow reservoir   on initial orography
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTSNOW_LS ! snow temperature on initial orography
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWSNOW    ! snow content     on final   orography
@@ -68,6 +67,13 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWSNOW2   ! snow content     on final   o
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTSNOW2   ! snow temperature on final   orography
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWLIQ     ! snow liquid water content
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZZSFREEZE ! altitude where deep soil freezes
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZDTOT     ! snow depth
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDZSN     ! snow layer thickness
+!
+INTEGER                             :: IPATCH    ! number of patches
+INTEGER                             :: JPATCH    ! loop counter on patches
+INTEGER                             :: JLAYER    ! loop counter on snow layers
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -129,7 +135,8 @@ IF (PRESENT(PTG)) THEN
   DO JPATCH=1,IPATCH
     DO JLAYER=1,TPSNOW%NLAYER
       WHERE(ZWSNOW_LS(:,JLAYER,JPATCH)>0..AND.((PTG(:,KDEEP_SOIL,JPATCH)-XTT >= 2.).OR.(PZS(:) > PZS_LS(:))))
-        ZWSNOW(:,JLAYER,JPATCH) = ZWSNOW_LS(:,JLAYER,JPATCH) + ( XWSNOW_CLIM_GRAD  * (PZS(:) - PZS_LS(:))/TPSNOW%NLAYER)  
+        ZWSNOW(:,JLAYER,JPATCH) = ZWSNOW_LS(:,JLAYER,JPATCH) + &
+        &( XWSNOW_CLIM_GRAD  * (PZS(:) - PZS_LS(:))/TPSNOW%NLAYER)
         ZWSNOW(:,JLAYER,JPATCH) = MAX(ZWSNOW(:,JLAYER,JPATCH),0.)
       END WHERE
     END DO
@@ -138,7 +145,8 @@ ELSE
   DO JPATCH=1,IPATCH
     DO JLAYER=1,TPSNOW%NLAYER
       WHERE(ZWSNOW_LS(:,JLAYER,JPATCH)>0.)
-        ZWSNOW(:,JLAYER,JPATCH) = ZWSNOW_LS(:,JLAYER,JPATCH) + ( XWSNOW_CLIM_GRAD  * (PZS(:) - PZS_LS(:))/TPSNOW%NLAYER)
+        ZWSNOW(:,JLAYER,JPATCH) = ZWSNOW_LS(:,JLAYER,JPATCH) + &
+        &( XWSNOW_CLIM_GRAD  * (PZS(:) - PZS_LS(:))/TPSNOW%NLAYER)
         ZWSNOW(:,JLAYER,JPATCH) = MAX(ZWSNOW(:,JLAYER,JPATCH),0.)
       END WHERE
     END DO
@@ -178,7 +186,8 @@ IF (PRESENT(PTG)) THEN
   ALLOCATE(ZTSNOW2(SIZE(TPSNOW%WSNOW,1),TPSNOW%NLAYER,IPATCH))
   DO JPATCH=1,IPATCH
     DO JLAYER=1,TPSNOW%NLAYER
-      ZWSNOW2(:,JLAYER,JPATCH) =  XWSNOW_CLIM_GRAD  * (PZS(:) - ZZSFREEZE(:,JPATCH))/TPSNOW%NLAYER
+      ZWSNOW2(:,JLAYER,JPATCH) =  XWSNOW_CLIM_GRAD  *&
+      & (PZS(:) - ZZSFREEZE(:,JPATCH))/TPSNOW%NLAYER
       ZWSNOW2(:,JLAYER,JPATCH) = MAX(ZWSNOW2(:,JLAYER,JPATCH),0.)
       ZTSNOW2      (:,JLAYER,JPATCH) = PTG(:,KDEEP_SOIL,JPATCH)
     END DO
@@ -204,7 +213,7 @@ END IF
 !
 !-------------------------------------------------------------------------------------
 !
-!*       6.    Coherence between temperature and snow content
+!*       6.1   Coherence between temperature and snow content
 !              ----------------------------------------------
 !
 SELECT CASE(TPSNOW%SCHEME)
@@ -217,6 +226,35 @@ SELECT CASE(TPSNOW%SCHEME)
     CALL SNOW_HEAT_TO_T_WLIQ(TPSNOW%HEAT,TPSNOW%RHO,ZTSNOW,ZWLIQ)
     CALL SNOW_T_WLIQ_TO_HEAT(TPSNOW%HEAT,TPSNOW%RHO,ZTSNOW,ZWLIQ)
     DEALLOCATE(ZWLIQ)
+END SELECT
+!
+!*       6.2   Coherence between snow layer and depth
+!              --------------------------------------
+!
+SELECT CASE(TPSNOW%SCHEME)
+  CASE('3-L','CRO')
+    ALLOCATE(ZDTOT(SIZE(TPSNOW%WSNOW,1),IPATCH))
+    ALLOCATE(ZDZSN(SIZE(TPSNOW%WSNOW,1),SIZE(TPSNOW%WSNOW,2),IPATCH))
+    ZDTOT(:,:)=0.0
+    DO JLAYER=1,TPSNOW%NLAYER
+       WHERE(TPSNOW%WSNOW(:,JLAYER,:)/=XUNDEF.AND.TPSNOW%RHO(:,JLAYER,:)/=XUNDEF)
+             ZDTOT(:,:)=ZDTOT(:,:)+TPSNOW%WSNOW(:,JLAYER,:)/TPSNOW%RHO(:,JLAYER,:)
+       ENDWHERE
+    END DO
+    DO JPATCH=1,IPATCH
+       CALL SNOW3LGRID(ZDZSN(:,:,JPATCH),ZDTOT(:,JPATCH))
+      DO JLAYER=1,TPSNOW%NLAYER
+         WHERE(TPSNOW%RHO(:,JLAYER,JPATCH)/=XUNDEF.AND.ZDTOT(:,JPATCH)>0.)
+           TPSNOW%WSNOW(:,JLAYER,JPATCH) = TPSNOW%RHO(:,JLAYER,JPATCH) * ZDZSN(:,JLAYER,JPATCH)
+         ELSEWHERE(TPSNOW%RHO(:,JLAYER,JPATCH)==XUNDEF.OR.ZDTOT(:,JPATCH)==0.0)
+           TPSNOW%WSNOW(:,JLAYER,JPATCH) = 0.0
+         ELSEWHERE
+           TPSNOW%WSNOW(:,JLAYER,JPATCH) = XUNDEF
+         END WHERE
+      END DO
+    END DO   
+    DEALLOCATE(ZDTOT)
+    DEALLOCATE(ZDZSN)
 END SELECT
 !
 !-------------------------------------------------------------------------------------

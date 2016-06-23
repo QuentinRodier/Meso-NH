@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DIAG_TEB_GREENROOF_INIT_n(HPROGRAM,KLU,KSW)
+      SUBROUTINE DIAG_TEB_GREENROOF_INIT_n (DGMTO, DGGR, TGRO, TVG, &
+                                            HPROGRAM,KLU,KSW)
 !     #####################
 !
 !!****  *DIAG_TEB_GREENROOF_INIT_n* - routine to initialize TEB-ISBA diagnostic variables
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -43,26 +44,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+USE MODD_DIAG_MISC_TEB_OPTION_n, ONLY : DIAG_MISC_TEB_OPTIONS_t
+USE MODD_DIAG_TEB_GREENROOF_n, ONLY : DIAG_TEB_GREENROOF_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODD_SURF_PAR,             ONLY : XUNDEF
-USE MODD_TEB_VEG_n,            ONLY : CPHOTO, CHORT
-USE MODD_TEB_GREENROOF_n,      ONLY : NLAYER_GR
 USE MODD_TYPE_DATE_SURF
-USE MODD_DIAG_SURF_ATM_n,      ONLY : LREAD_BUDGETC
-USE MODD_DIAG_TEB_n,           ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_VARS
-USE MODD_DIAG_MISC_TEB_n,      ONLY : LSURF_EVAP_BUDGET, LSURF_MISC_BUDGET  
-USE MODD_DIAG_TEB_GREENROOF_n, ONLY : XRN, XH, XGFLUX, XLEI, XRI, XCD, XCDN, XCH, XCE, &
-                                      XTS, XTSRAD,                                     &
-                                      XZ0_WITH_SNOW, XZ0H_WITH_SNOW, XZ0EFF, XQS,      &
-                                      XSWD, XSWU, XSWBD, XSWBU, XLWD, XLWU, XFMU, XFMV,&
-                                      XLEG, XLEGI, XLEV, XLES, XLER, XLETR, XEVAP,     &
-                                      XDRAIN, XRUNOFF, XHORT, XDRIP, XMELT,            &
-                                      XRRVEG, XHV,  XSWI, XTSWI, XTWSNOW,              &
-                                      XTDSNOW, XSEUIL, XGPP, XRESP_AUTO, XRESP_ECO,    &
-                                      XALBT, XEMIST, XALBT,                            &
-                                      XCG, XC1, XC2, XWGEQ, XCT, XRS, XHU, XHUG,       &
-                                      XRESTORE, XUSTAR,                                &
-                                      XSNOWTEMP, XSNOWLIQ, XSNOWDZ, XSNOWHMASS,        &
-                                      XMELTADV, XIACAN  
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -71,6 +60,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DIAG_MISC_TEB_OPTIONS_t), INTENT(INOUT) :: DGMTO
+TYPE(DIAG_TEB_GREENROOF_t), INTENT(INOUT) :: DGGR
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
 !
 INTEGER, INTENT(IN)         :: KLU       ! size of arrays
 INTEGER, INTENT(IN)         :: KSW       ! spectral bands
@@ -86,105 +81,105 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_TEB_GREENROOF_INIT_N',0,ZHOOK_HANDLE)
-XCG         = XUNDEF
-XC1         = XUNDEF
-XC2         = XUNDEF
-XWGEQ       = XUNDEF
-XCT         = XUNDEF
-XRS         = XUNDEF
-XHU         = XUNDEF
-XHUG        = XUNDEF
-XHV         = XUNDEF
-XRESTORE    = XUNDEF
-XRI         = XUNDEF
-XUSTAR      = XUNDEF
-XRN         = XUNDEF
-XH          = XUNDEF
-XGFLUX      = XUNDEF
-XSNOWTEMP   = XUNDEF
-XSNOWLIQ    = XUNDEF
-XSNOWDZ     = XUNDEF
-XSNOWHMASS  = XUNDEF
-XMELTADV    = XUNDEF
-IF (CPHOTO/='NON') THEN
-  XIACAN    = XUNDEF
+DGGR%XCG         = XUNDEF
+DGGR%XC1         = XUNDEF
+DGGR%XC2         = XUNDEF
+DGGR%XWGEQ       = XUNDEF
+DGGR%XCT         = XUNDEF
+DGGR%XRS         = XUNDEF
+DGGR%XHU         = XUNDEF
+DGGR%XHUG        = XUNDEF
+DGGR%XHV         = XUNDEF
+DGGR%XRESTORE    = XUNDEF
+DGGR%XRI         = XUNDEF
+DGGR%XUSTAR      = XUNDEF
+DGGR%XRN         = XUNDEF
+DGGR%XH          = XUNDEF
+DGGR%XGFLUX      = XUNDEF
+DGGR%XSNOWTEMP   = XUNDEF
+DGGR%XSNOWLIQ    = XUNDEF
+DGGR%XSNOWDZ     = XUNDEF
+DGGR%XSNOWHMASS  = XUNDEF
+DGGR%XMELTADV    = XUNDEF
+IF (TVG%CPHOTO/='NON') THEN
+  DGGR%XIACAN    = XUNDEF
 END IF
-XCD         = XUNDEF
-XCDN        = XUNDEF
-XCH         = XUNDEF
-XQS         = XUNDEF
-XLEI        = XUNDEF
-XLEG        = XUNDEF
-XLEGI       = XUNDEF
-XLEV        = XUNDEF
-XLES        = XUNDEF
-XLER        = XUNDEF
-XLETR       = XUNDEF
-XEVAP       = XUNDEF
-XDRAIN      = XUNDEF
-XRUNOFF     = XUNDEF
-XHORT       = XUNDEF
-XDRIP       = XUNDEF
-XRRVEG      = XUNDEF
-XMELT       = XUNDEF
-XALBT       = XUNDEF
-XEMIST      = XUNDEF
+DGGR%XCD         = XUNDEF
+DGGR%XCDN        = XUNDEF
+DGGR%XCH         = XUNDEF
+DGGR%XQS         = XUNDEF
+DGGR%XLEI        = XUNDEF
+DGGR%XLEG        = XUNDEF
+DGGR%XLEGI       = XUNDEF
+DGGR%XLEV        = XUNDEF
+DGGR%XLES        = XUNDEF
+DGGR%XLER        = XUNDEF
+DGGR%XLETR       = XUNDEF
+DGGR%XEVAP       = XUNDEF
+DGGR%XDRAIN      = XUNDEF
+DGGR%XRUNOFF     = XUNDEF
+DGGR%XHORT       = XUNDEF
+DGGR%XDRIP       = XUNDEF
+DGGR%XRRVEG      = XUNDEF
+DGGR%XMELT       = XUNDEF
+DGGR%XALBT       = XUNDEF
+DGGR%XEMIST      = XUNDEF
 !
 !* surface energy budget
 !
 !IF (LSURF_BUDGET) THEN
   !
-  ALLOCATE(XSWD      (KLU))
-  ALLOCATE(XSWU      (KLU))
-  ALLOCATE(XSWBD     (KLU,KSW))
-  ALLOCATE(XSWBU     (KLU,KSW))
-  ALLOCATE(XLWD      (KLU))
-  ALLOCATE(XLWU      (KLU))
-  ALLOCATE(XFMU      (KLU))
-  ALLOCATE(XFMV      (KLU))
+  ALLOCATE(DGGR%XSWD      (KLU))
+  ALLOCATE(DGGR%XSWU      (KLU))
+  ALLOCATE(DGGR%XSWBD     (KLU,KSW))
+  ALLOCATE(DGGR%XSWBU     (KLU,KSW))
+  ALLOCATE(DGGR%XLWD      (KLU))
+  ALLOCATE(DGGR%XLWU      (KLU))
+  ALLOCATE(DGGR%XFMU      (KLU))
+  ALLOCATE(DGGR%XFMV      (KLU))
   !
-  XSWD     = XUNDEF
-  XSWU     = XUNDEF
-  XSWBD    = XUNDEF
-  XSWBU    = XUNDEF
-  XLWD     = XUNDEF
-  XLWU     = XUNDEF
-  XFMU     = XUNDEF
-  XFMV     = XUNDEF
+  DGGR%XSWD     = XUNDEF
+  DGGR%XSWU     = XUNDEF
+  DGGR%XSWBD    = XUNDEF
+  DGGR%XSWBU    = XUNDEF
+  DGGR%XLWD     = XUNDEF
+  DGGR%XLWU     = XUNDEF
+  DGGR%XFMU     = XUNDEF
+  DGGR%XFMV     = XUNDEF
   !
 !END IF
 !
 !* surface temperature and parameters at 2m
 !
-ALLOCATE(XTS    (KLU))
-XTS     = XUNDEF
-ALLOCATE(XTSRAD (KLU))
-XTSRAD  = XUNDEF
+ALLOCATE(DGGR%XTS    (KLU))
+DGGR%XTS     = XUNDEF
+ALLOCATE(DGGR%XTSRAD (KLU))
+DGGR%XTSRAD  = XUNDEF
 !
 !* miscellaneous surface fields
 !
-IF (LSURF_MISC_BUDGET) THEN
+IF (DGMTO%LSURF_MISC_BUDGET) THEN
   !
-  ALLOCATE(XSWI    (KLU,NLAYER_GR))
-  ALLOCATE(XTSWI   (KLU,NLAYER_GR))
-  ALLOCATE(XTWSNOW (KLU))
-  ALLOCATE(XTDSNOW (KLU))
-  XSWI     = XUNDEF
-  XTSWI    = XUNDEF
-  XTWSNOW  = XUNDEF
-  XTDSNOW  = XUNDEF
+  ALLOCATE(DGGR%XSWI    (KLU,TGRO%NLAYER_GR))
+  ALLOCATE(DGGR%XTSWI   (KLU,TGRO%NLAYER_GR))
+  ALLOCATE(DGGR%XTWSNOW (KLU))
+  ALLOCATE(DGGR%XTDSNOW (KLU))
+  DGGR%XSWI     = XUNDEF
+  DGGR%XTSWI    = XUNDEF
+  DGGR%XTWSNOW  = XUNDEF
+  DGGR%XTDSNOW  = XUNDEF
 ENDIF
 
 
-  ALLOCATE(XALBT   (KLU))
-  ALLOCATE(XGPP    (KLU))
-  ALLOCATE(XRESP_AUTO  (KLU))
-  ALLOCATE(XRESP_ECO   (KLU))
+  ALLOCATE(DGGR%XALBT   (KLU))
+  ALLOCATE(DGGR%XGPP    (KLU))
+  ALLOCATE(DGGR%XRESP_AUTO  (KLU))
+  ALLOCATE(DGGR%XRESP_ECO   (KLU))
   !
-  XALBT    = XUNDEF
-  XGPP     = XUNDEF
-  XRESP_AUTO   = XUNDEF
-  XRESP_ECO    = XUNDEF  
+  DGGR%XALBT    = XUNDEF
+  DGGR%XGPP     = XUNDEF
+  DGGR%XRESP_AUTO   = XUNDEF
+  DGGR%XRESP_ECO    = XUNDEF  
   !
 !END IF
 !
@@ -192,24 +187,24 @@ ENDIF
 !
 !IF (LCOEF) THEN
   !
-  ALLOCATE(XCE            (KLU))
-  ALLOCATE(XZ0_WITH_SNOW  (KLU))
-  ALLOCATE(XZ0H_WITH_SNOW (KLU))
-  ALLOCATE(XZ0EFF         (KLU))
+  ALLOCATE(DGGR%XCE            (KLU))
+  ALLOCATE(DGGR%XZ0_WITH_SNOW  (KLU))
+  ALLOCATE(DGGR%XZ0H_WITH_SNOW (KLU))
+  ALLOCATE(DGGR%XZ0EFF         (KLU))
   !
-  XCE            = XUNDEF
-  XZ0_WITH_SNOW  = XUNDEF
-  XZ0H_WITH_SNOW = XUNDEF
-  XZ0EFF         = XUNDEF
+  DGGR%XCE            = XUNDEF
+  DGGR%XZ0_WITH_SNOW  = XUNDEF
+  DGGR%XZ0H_WITH_SNOW = XUNDEF
+  DGGR%XZ0EFF         = XUNDEF
 !END IF
 !
 !
 !* surface humidity
 !
 !IF (LSURF_VARS) THEN
-  ALLOCATE(XQS            (KLU))
+  ALLOCATE(DGGR%XQS            (KLU))
   !
-  XQS            = XUNDEF
+  DGGR%XQS            = XUNDEF
 !END IF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_TEB_GREENROOF_INIT_N',1,ZHOOK_HANDLE)

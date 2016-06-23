@@ -1,7 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+!!
+!!      Modified    09/2013 : S. Senesi : adapt READ_NETCDF_SST to read 2D fields other than SST
+!!
 MODULE MODE_READ_NETCDF_MERCATOR
 !!!=============================================================================
 !-------------------------------------------------------------------------------
@@ -12,7 +15,7 @@ USE MODI_ABOR1_SFX
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-CONTAINS
+ CONTAINS
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
 !     ####################
@@ -491,7 +494,7 @@ SELECT CASE (NVARDIMS)
 !CAS 1D
   CASE (1) 
     HACTION='get variable dimensions length'
-    status=nf_inq_dimlen(kcdf_id,NVARDIMS,KDIM)
+    status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,KDIM)
     if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
 !
 !CAS 2D
@@ -499,7 +502,7 @@ SELECT CASE (NVARDIMS)
     KDIM=1
     DO JLOOP=1,NVARDIMS
       HACTION='get variable dimensions length'
-      status=nf_inq_dimlen(kcdf_id,JLOOP,NLEN2D(JLOOP))
+      status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,NLEN2D(JLOOP))
       if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
       KDIM=KDIM*NLEN2D(JLOOP)
     ENDDO
@@ -641,7 +644,7 @@ SELECT CASE (NVARDIMS)
 !CAS 1D
   CASE (1) 
     HACTION='get variable dimensions length'
-    status=nf_inq_dimlen(kcdf_id,NVARDIMS,IDIM)
+    status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,IDIM)
     if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
 !
 !CAS 2D,3D
@@ -692,6 +695,121 @@ IF (ALLOCATED(VARNAME     ))  DEALLOCATE(VARNAME)
 IF (LHOOK) CALL DR_HOOK('MODE_READ_NETCDF_MERCATOR:PREP_NETCDF_GRID',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE PREP_NETCDF_GRID
+!------------------------------------------------------------------------------
+!==============================================================================
+!     ####################
+       SUBROUTINE READ_Z1D_CDF(HFILENAME,HNCVARNAME,PVAL)
+!     ####################
+!
+IMPLICIT NONE
+!
+ CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
+ CHARACTER(LEN=28), INTENT(IN) :: HNCVARNAME  ! Name of variable to read in netcdf file
+REAL, DIMENSION(:), INTENT(OUT) :: PVAL      ! value to get
+!
+integer :: status
+integer :: kcdf_id
+integer :: NBVARS
+character(len=80) :: HACTION
+character(len=80),DIMENSION(:),ALLOCATABLE :: VARNAME
+integer ::JLOOP1
+integer ::ID_VARTOGET,ID_VARTOGET1,ID_VARTOGET2
+integer ::NVARDIMS
+integer ::NLEN
+real,DIMENSION(:),ALLOCATABLE   :: ZVALU
+real :: ZMISS
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+include 'netcdf.inc'
+!
+!*    1.      Open the netcdf file 
+!             --------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_NETCDF_MERCATOR:READ_Z1D_CDF',0,ZHOOK_HANDLE)
+status=-9999
+kcdf_id=-9999
+HACTION='open netcdf'
+status=NF_OPEN(HFILENAME,nf_nowrite,kcdf_id)
+if (status/=NF_NOERR) then 
+  CALL HANDLE_ERR_MER(status,HACTION)
+endif
+!-----------
+!*    2.      get the number of variables in netcdf file 
+!             ------------------------------------------
+HACTION='get number of variables'
+status=NF_INQ_NVARS(kcdf_id,NBVARS)
+if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+!write(0,*) 'nb vars', NBVARS
+ALLOCATE(VARNAME(NBVARS))
+!-----------
+!*    3.      get the variables names in netcdf file 
+!             --------------------------------------
+ID_VARTOGET1=0
+ID_VARTOGET2=0
+DO JLOOP1=1,NBVARS
+  HACTION='get variables  names'
+  status=NF_INQ_VARNAME(kcdf_id,JLOOP1,VARNAME(JLOOP1))
+  if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+  if (VARNAME(JLOOP1)==HNCVARNAME) then
+    ID_VARTOGET1=JLOOP1
+  endif
+  if (VARNAME(JLOOP1)/=HNCVARNAME) then
+    if((LGT(TRIM(VARNAME(JLOOP1)),TRIM(HNCVARNAME))).AND.&
+           (SCAN(TRIM(VARNAME(JLOOP1)),TRIM(HNCVARNAME))==1)) then  
+      ID_VARTOGET2=JLOOP1
+    endif
+  endif
+ENDDO
+if (ID_VARTOGET1/=0) then
+  ID_VARTOGET=ID_VARTOGET1
+else
+  ID_VARTOGET=ID_VARTOGET2
+endif
+if (ID_VARTOGET==0) then
+  HACTION='close netcdf'
+  status=nf_close(kcdf_id)
+  if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+  CALL ABOR1_SFX('MODE_READ_NETCDF_MERCATOR: READ_Z1D_CDF')
+endif
+!-----------
+!*    4.      get the variable in netcdf file 
+!             -------------------------------
+!     4.1      get the variable dimensions number
+!             -----------------------------------
+HACTION='get variable dimensions number'
+status=nf_inq_varndims(kcdf_id,ID_VARTOGET,NVARDIMS)
+if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+!
+!     4.2      get the variable dimensions length and values
+!            ----------------------------------------------
+SELECT CASE (NVARDIMS)
+!CAS 1D
+  CASE (1) 
+    HACTION='get variable dimensions length'
+    status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,NLEN)
+    if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+    ALLOCATE(ZVALU(NLEN))
+    !write(0,*) 'call GET1DCDF'
+    CALL GET1DCDF(kcdf_id,ID_VARTOGET,ZMISS,ZVALU)
+    PVAL(:)=ZVALU(:)
+!CAS 2D
+  CASE (2)
+    write(0,*) 'YOU ARE TRYING TO READ A 2D FIELD FOR :', TRIM(HNCVARNAME)
+    CALL ABOR1_SFX('MODE_READ_NETCDF_MERCATOR: READ_Z1D_CDF')
+END SELECT
+!-----------
+!*    5.     Close the netcdf file 
+!             ---------------------
+HACTION='close netcdf'
+status=nf_close(kcdf_id)
+if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
+!-----------
+!*    6.     Deallocate 
+!             ----------
+IF (ALLOCATED(VARNAME     ))  DEALLOCATE(VARNAME)
+IF (ALLOCATED(ZVALU       ))  DEALLOCATE(ZVALU  )
+!!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_NETCDF_MERCATOR:READ_Z1D_CDF',1,ZHOOK_HANDLE)
+END SUBROUTINE READ_Z1D_CDF
 !------------------------------------------------------------------------------
 !==============================================================================
 !     ####################
@@ -809,7 +927,7 @@ SELECT CASE (NVARDIMS)
 !CAS 1D
   CASE (1) 
     HACTION='get variable dimensions length'
-    status=nf_inq_dimlen(kcdf_id,NVARDIMS,NLEN)
+    status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,NLEN)
     if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
     ALLOCATE(ZVALU(NLEN))
     !write(0,*) 'call GET1DCDF'
@@ -819,7 +937,7 @@ SELECT CASE (NVARDIMS)
   CASE (2)
     DO JLOOP=1,NVARDIMS
       HACTION='get variable dimensions length'
-      status=nf_inq_dimlen(kcdf_id,JLOOP,NLEN2D(JLOOP))
+      status=nf_inq_dimlen(kcdf_id,ID_VARTOGET,NLEN2D(JLOOP))
       if (status/=NF_NOERR) CALL HANDLE_ERR_MER(status,HACTION)
     ENDDO
     ALLOCATE(ZVALU2D(NLEN2D(1),NLEN2D(2)))
@@ -1182,11 +1300,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 include 'netcdf.inc'
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_NETCDF_MERCATOR:READ_NETCDF_SST',0,ZHOOK_HANDLE)
-if (NILENGTH<0) then
+IF (NILENGTH<0) then
   ALLOCATE(PFIELD(1))
   PFIELD(:)=XUNDEF
   CINTERP_TYPE='UNIF  ' !!prescribed uniform field
-elseif (NINDEPTH<0) then
+ELSEIF (NINDEPTH<0) THEN
   ALLOCATE(ZLATI(NILENGTH) )
   ALLOCATE(ZLONG(NILENGTH) )
   ALLOCATE(ZVAL (NILENGTH) )
@@ -1194,11 +1312,13 @@ elseif (NINDEPTH<0) then
   ALLOCATE(PFIELD(NILENGTH))
   PFIELD(:)=XUNDEF
   PFIELD(:) = ZVAL(:)
-  WHERE (ZVAL(:)/=ZUNDEF .AND. ZVAL(:)<100.) PFIELD(:)=PFIELD(:)+XTT
+  IF (TRIM(HNCVARNAME) == 'temperature') THEN 
+     WHERE (ZVAL(:)/=ZUNDEF .AND. ZVAL(:)<100.) PFIELD(:)=PFIELD(:)+XTT
+  ENDIF
   CINTERP_TYPE='HORIBL' !!interpolation from gaussian, legendre or regular grid
 !                       !!CINGRID_TYPE='GAUSS  ' ou ='AROME '
 !                       !!CINGRID_TYPE='LATLON '
-else 
+ELSE
   ALLOCATE(ZVALUE(NILENGTH,NINDEPTH))
   ALLOCATE(ZLATI(NILENGTH) )
   ALLOCATE(ZLONG(NILENGTH) )
@@ -1209,11 +1329,13 @@ else
   ALLOCATE(PFIELD(NILENGTH))
   PFIELD(:)=XUNDEF
   PFIELD(:)=ZVALUE(:,1)
-  WHERE (ZVALUE(:,1)/=ZUNDEF .AND. ZVALUE(:,1)<100.) PFIELD(:)=PFIELD(:)+XTT
+  IF (TRIM(HNCVARNAME) == 'temperature') THEN 
+     WHERE (ZVALUE(:,1)/=ZUNDEF .AND. ZVALUE(:,1)<100.) PFIELD(:)=PFIELD(:)+XTT
+  ENDIF
   CINTERP_TYPE='HORIBL' !!interpolation from gaussian, legendre or regular grid
 !                       !!CINGRID_TYPE='GAUSS  ' ou ='AROME '
 !                       !!CINGRID_TYPE='LATLON '
-endif
+ENDIF
 !
 IF (ALLOCATED(ZVALUE      ))  DEALLOCATE(ZVALUE )
 IF (ALLOCATED(ZLONG       ))  DEALLOCATE(ZLONG  )

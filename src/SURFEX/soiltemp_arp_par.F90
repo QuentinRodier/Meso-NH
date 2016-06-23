@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SOILTEMP_ARP_PAR(HPROGRAM,OTEMP_ARP,KTEMPLAYER_ARP)
+      SUBROUTINE SOILTEMP_ARP_PAR (I, &
+                                   HPROGRAM,OTEMP_ARP,KTEMPLAYER_ARP)
 !     ##############################################################
 !
 !!**** *SOILTEMP_ARP_PAR* Impose special pseudo depth for "force-restore"
@@ -41,10 +42,12 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
 USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_READ_NAMELIST, ONLY : LNAM_READ
 !
-USE MODD_ISBA_n,   ONLY : CISBA, XSODELX
 !
 USE MODN_SOILTEMP_ARP
 !
@@ -64,6 +67,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 LOGICAL,             INTENT(OUT)   :: OTEMP_ARP
@@ -116,7 +122,7 @@ ENDIF
 !*    3.      Consistency
 !             -----------
 !
-IF(LTEMP_ARP.AND.CISBA=='DIF')THEN
+IF(LTEMP_ARP.AND.I%CISBA=='DIF')THEN
    LTEMP_ARP=.FALSE.
    WRITE(ILUOUT,*)'LTEMP_ARP put at False because you use the ISBA-DF scheme'
 ENDIF
@@ -144,26 +150,26 @@ ENDIF
 !
 IF(LTEMP_ARP)THEN
 !
-  ALLOCATE(XSODELX(NTEMPLAYER_ARP))
+  ALLOCATE(I%XSODELX(NTEMPLAYER_ARP))
 !
   IF(ALL(SODELX(:)==XUNDEF))THEN
 !          
-    XSODELX(1)=0.5
-    XSODELX(2)=1.5
-    XSODELX(3)=4.5
-    XSODELX(4)=13.5
-    WRITE(ILUOUT,*)'SODELX default values : ',XSODELX(:)
+    I%XSODELX(1)=0.5
+    I%XSODELX(2)=1.5
+    I%XSODELX(3)=4.5
+    I%XSODELX(4)=13.5
+    WRITE(ILUOUT,*)'SODELX default values : ',I%XSODELX(:)
 !    
   ELSE
 !          
-    XSODELX(:)=SODELX(1:NTEMPLAYER_ARP)
-    WRITE(ILUOUT,*)'SODELX imposed to : ',XSODELX(:)
+    I%XSODELX(:)=SODELX(1:NTEMPLAYER_ARP)
+    WRITE(ILUOUT,*)'SODELX imposed to : ',I%XSODELX(:)
 !    
   ENDIF
 !
 ELSE
 !
-  ALLOCATE(XSODELX(0))
+  ALLOCATE(I%XSODELX(0))
 !
 ENDIF
 !

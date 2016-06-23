@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_NAM_PGD_DUMMY(HPROGRAM, KDUMMY_NBR, HDUMMY_NAME, HDUMMY_AREA, &
                                       HDUMMY_ATYPE, HDUMMY_FILE, HDUMMY_FILETYPE      )  
@@ -116,11 +116,11 @@ NAMELIST/NAM_DUMMY_PGD/ NDUMMY_NBR, CDUMMY_NAME, CDUMMY_AREA,       &
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_DUMMY',0,ZHOOK_HANDLE)
 NDUMMY_NBR = 0
 !
-CDUMMY_NAME     = "                    "
-CDUMMY_FILE     = "                            "
-CDUMMY_FILETYPE = "      "
-CDUMMY_AREA     = "ALL"
-CDUMMY_ATYPE    = "ARI"
+ CDUMMY_NAME     = "                    "
+ CDUMMY_FILE     = "                            "
+ CDUMMY_FILETYPE = "      "
+ CDUMMY_AREA     = "ALL"
+ CDUMMY_ATYPE    = "ARI"
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !

@@ -1,10 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE PREP_CTRL_SEAFLUX(K2M,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET,OCOEF,OSURF_VARS,&
-                                     ODIAG_OCEAN,KLUOUT,OSURF_BUDGETC)  
+                                     ODIAG_OCEAN,ODIAG_SEAICE,KLUOUT,OSURF_BUDGETC)  
 !     #################################################################################################################
 !
 !!****  *PREP_CTRL_SEAFLUX* - routine to check that diagnostics are switched off
@@ -28,11 +28,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/2007 
+!!      Modified    09/2013 : S. Senesi : manage ODIAG_SEAICE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -54,6 +55,7 @@ LOGICAL,  INTENT(INOUT) :: ORAD_BUDGET        ! flag for radiative budget
 LOGICAL,  INTENT(INOUT) :: OCOEF              ! flag for turbulent coefficients
 LOGICAL,  INTENT(INOUT) :: OSURF_VARS         ! flag for other surface variables
 LOGICAL,  INTENT(INOUT) :: ODIAG_OCEAN        ! flag for ocean variables
+LOGICAL,  INTENT(INOUT) :: ODIAG_SEAICE       ! flag for seaice variables
 INTEGER,  INTENT(IN)    :: KLUOUT             ! unit number
 LOGICAL,  INTENT(INOUT) :: OSURF_BUDGETC ! flag for cumulated surface budget
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -72,6 +74,7 @@ ORAD_BUDGET   = .FALSE.
 OCOEF         = .FALSE.
 OSURF_VARS    = .FALSE.
 ODIAG_OCEAN   = .FALSE.
+ODIAG_SEAICE  = .FALSE.
 OSURF_BUDGETC = .FALSE.
 !
 WRITE(KLUOUT,*)'SEAFLUX DIAGNOSTICS DESACTIVATED'

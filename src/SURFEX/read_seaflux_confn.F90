@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_SEAFLUX_CONF_n(HPROGRAM)
+      SUBROUTINE READ_SEAFLUX_CONF_n (CHS, DGO, DGS, DGSI, O, S, &
+                                      HPROGRAM)
 !     #############################################################
 !
 !!****  *READ_SEAFLUX_CONF* - routine to read the configuration for SEAFLUX
@@ -33,11 +34,26 @@
 !!    -------------
 !!      Original    01/2003 
 !!      Modified    01/2006 : sea flux parameterization.
+!!      Modified    09/2013 : S. Senesi : introduce 1D version of sea-ice model Gelato
+!!      Modified    01/2015 : R. Séférian: introduce ocean surface albedo
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+!
+!
+!
+!
+USE MODD_CH_SEAFLUX_n, ONLY : CH_SEAFLUX_t
+USE MODD_DIAG_OCEAN_n, ONLY : DIAG_OCEAN_t
+USE MODD_DIAG_SEAFLUX_n, ONLY : DIAG_SEAFLUX_t
+USE MODD_DIAG_SEAICE_n, ONLY : DIAG_SEAICE_t
+USE MODD_OCEAN_n, ONLY : OCEAN_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -62,6 +78,14 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(CH_SEAFLUX_t), INTENT(INOUT) :: CHS
+TYPE(DIAG_OCEAN_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_SEAFLUX_t), INTENT(INOUT) :: DGS
+TYPE(DIAG_SEAICE_t), INTENT(INOUT) :: DGSI
+TYPE(OCEAN_t), INTENT(INOUT) :: O
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+!
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
 !
 !*       0.2   Declarations of local variables
@@ -83,10 +107,11 @@ IF (LHOOK) CALL DR_HOOK('READ_SEAFLUX_CONF_N',0,ZHOOK_HANDLE)
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_SEAFLUXn
- CALL INIT_NAM_DIAG_SURFn
- CALL INIT_NAM_CH_SEAFLUXn
- CALL INIT_NAM_DIAG_OCEANn
+ CALL INIT_NAM_SEAFLUXn(O, S)
+ CALL INIT_NAM_DIAG_SURFn(DGS)
+ CALL INIT_NAM_CH_SEAFLUXn(CHS)
+ CALL INIT_NAM_DIAG_OCEANn(DGO)
+ CALL INIT_NAM_SEAICEn(DGSI, S)
 ENDIF
 !
 IF (LNAM_READ) THEN
@@ -107,10 +132,18 @@ IF (LNAM_READ) THEN
  CALL POSNAM(INAM,'NAM_DIAG_OCEANN',GFOUND,ILUOUT)
  IF (GFOUND) READ(UNIT=INAM,NML=NAM_DIAG_OCEANn)
  !
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CSEA_FLUX',CSEA_FLUX,'DIRECT','ITERAT','ECUME ','COARE3')
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CSEA_ALB',CSEA_ALB,'UNIF','TA96','MK10')
+ CALL POSNAM(INAM,'NAM_SEAICEN',GFOUND,ILUOUT)
+ IF (GFOUND) READ(UNIT=INAM,NML=NAM_SEAICEn)
+
+ !
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CSEA_FLUX',CSEA_FLUX,'DIRECT','ITERAT','ECUME ','ECUME6','COARE3')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CSEA_ALB',CSEA_ALB,'UNIF','TA96','MK10','RS14')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CCH_DRY_DEP',CCH_DRY_DEP,'      ','WES89 ','NONE  ')
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_SST',CINTERPOL_SST,'ANNUAL','MONTH ','NONE  ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_SST',CINTERPOL_SST,'LINEAR','UNIF  ','QUADRA','NONE  ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_SSS',CINTERPOL_SSS,'LINEAR','UNIF  ','QUADRA','NONE  ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_SIC',CINTERPOL_SIC,'LINEAR','UNIF  ','NONE  ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_SIT',CINTERPOL_SIT,'LINEAR','UNIF  ','NONE  ')
+ !
  !
  !* close namelist file
  !
@@ -119,10 +152,11 @@ IF (LNAM_READ) THEN
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_SEAFLUXn
- CALL UPDATE_NAM_DIAG_SURFn
- CALL UPDATE_NAM_CH_SEAFLUXn
- CALL UPDATE_NAM_DIAG_OCEANn
+ CALL UPDATE_NAM_SEAFLUXn(O, S)
+ CALL UPDATE_NAM_DIAG_SURFn(DGS)
+ CALL UPDATE_NAM_CH_SEAFLUXn(CHS)
+ CALL UPDATE_NAM_DIAG_OCEANn(DGO)
+ CALL UPDATE_NAM_SEAICEn(DGSI, S)
 ENDIF
 !
 !-------------------------------------------------------------------------------

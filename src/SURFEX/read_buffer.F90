@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #######################
       MODULE MODI_READ_BUFFER
 !     #######################
@@ -69,7 +69,7 @@ END MODULE MODI_READ_BUFFER
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -107,7 +107,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_READ_BUFFER:READ_BUFC0',0,ZHOOK_HANDLE)
  CALL GET_LUOUT('AROME ',ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
  CALL GET_BUFC0(HNAME,HFIELD,LEN(HFIELD),KRET)
 #endif
 !
@@ -147,7 +147,7 @@ END SUBROUTINE READ_BUFC0
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -185,7 +185,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_READ_BUFFER:READ_BUFN0',0,ZHOOK_HANDLE)
  CALL GET_LUOUT('AROME ',ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
  CALL GET_BUFN0(HNAME,KFIELD,KRET)
 #endif
 !
@@ -225,7 +225,7 @@ END SUBROUTINE READ_BUFN0
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -263,7 +263,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_READ_BUFFER:READ_BUFN1',0,ZHOOK_HANDLE)
  CALL GET_LUOUT('AROME ',ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
  CALL GET_BUFN1(HNAME,SIZE(KFIELD),KFIELD,KRET)
 #endif
 !
@@ -303,7 +303,7 @@ END SUBROUTINE READ_BUFN1
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -341,7 +341,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_READ_BUFFER:READ_BUFX0',0,ZHOOK_HANDLE)
  CALL GET_LUOUT('AROME ',ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
  CALL GET_BUFX0(HNAME,PFIELD,KRET)
 #endif
 !
@@ -381,7 +381,7 @@ END SUBROUTINE READ_BUFX0
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -419,7 +419,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('MODI_READ_BUFFER:READ_BUFX1',0,ZHOOK_HANDLE)
  CALL GET_LUOUT('AROME ',ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
  CALL GET_BUFX1(HNAME,SIZE(PFIELD),PFIELD,KRET)
 #endif
 !

@@ -1,19 +1,25 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE READ_NAMELISTS_TEB_n(HPROGRAM, HINIT)
+SUBROUTINE READ_NAMELISTS_TEB_n (TM, TGRO, TVG, &
+                                 HPROGRAM, HINIT)
 !     #######################################################
 !
 !---------------------------------------------------------------------------
 !
+!
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODN_TEB_n                          
 USE MODN_TEB_VEG_n,            ONLY: CROUGH,CRUNOFF,CALBEDO,CSCOND,                &
                                      CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,       &
-                                     CCPSURF, XCGMAX, CKSAT, CTOPREG,              &
-                                     CRAIN, CHORT, LFLOOD, LTRIP , LGLACIER,       &
-                                     LCANOPY_DRAG, LVEGUPD
+                                     CCPSURF, XCGMAX, CKSAT,                       &
+                                     CRAIN, CHORT, LGLACIER,                       &
+                                     LCANOPY_DRAG, LVEGUPD, LNITRO_DILU
 USE MODN_TEB_GREENROOF_n,      ONLY: CRUNOFF_GR,CSCOND_GR,CKSAT_GR,CHORT_GR
 !
 USE MODI_DEFAULT_TEB
@@ -36,6 +42,11 @@ USE PARKIND1  ,ONLY : JPRB
 USE MODI_READ_TEB_CONF_n
 IMPLICIT NONE
 !
+!
+TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+!
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),   INTENT(IN)  :: HINIT     ! choice of fields to initialize
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -43,13 +54,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_TEB_N',0,ZHOOK_HANDLE)
- CALL DEFAULT_TEB(CZ0H,XTSTEP,XOUT_TSTEP, CCH_BEM)
+ CALL DEFAULT_TEB(CZ0H,XTSTEP,XOUT_TSTEP, CCH_BEM, XDT_RES, XDT_OFF)
 !
  CALL DEFAULT_TEB_VEG(CROUGH,CRUNOFF,CALBEDO,CSCOND,            &
                      CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,   &
-                     CCPSURF, XCGMAX, CKSAT, CTOPREG,          &
-                     CRAIN, CHORT, LFLOOD, LTRIP , LGLACIER,   &
-                     LCANOPY_DRAG, LVEGUPD                     )
+                     CCPSURF, XCGMAX, CKSAT,                   &
+                     CRAIN, CHORT, LGLACIER,                   &
+                     LCANOPY_DRAG, LVEGUPD, LNITRO_DILU        )
 !
  CALL DEFAULT_GREENROOF(CRUNOFF_GR,CSCOND_GR,                   &
                        CKSAT_GR,CHORT_GR)
@@ -57,14 +68,17 @@ IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_TEB_N',0,ZHOOK_HANDLE)
  CALL DEFAULT_CH_DEP(CCH_DRY_DEP)
 !
  CALL DEFAULT_DIAG_TEB(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET, &
-                      LCOEF,LSURF_VARS,LSURF_MISC_BUDGET,LUTCI,&
-                      LPGD,LPGD_FIX,XDIAG_TSTEP)   
+                      LCOEF,LSURF_VARS,LSURF_MISC_BUDGET,&
+                      LSURF_DIAG_ALBEDO,LUTCI,LPGD,LPGD_FIX,XDIAG_TSTEP)   
 !               
- CALL READ_DEFAULT_TEB_n(HPROGRAM)
+ CALL READ_DEFAULT_TEB_n(TM%CHT, TM%DGMTO, TM%DGT, TM%DGUT, TGRO, TM%T, TM%TOP, &
+                         HPROGRAM)
 !
- CALL READ_TEB_CONF_n(HPROGRAM) 
+ CALL READ_TEB_CONF_n(TM%CHT, TM%DGMTO, TM%DGT, TM%DGUT, TM%T, TM%TOP, &
+                      HPROGRAM) 
 !  
- CALL READ_TEB_VEG_CONF_n(HPROGRAM) 
+ CALL READ_TEB_VEG_CONF_n(TM%CHT, TVG, &
+                          HPROGRAM) 
 !
 IF (HINIT=='PRE') THEN
         CALL READ_NAM_PREP_TEB_n(HPROGRAM)

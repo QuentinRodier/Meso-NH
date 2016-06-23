@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_ISBA_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
+SUBROUTINE PREP_ISBA_NETCDF (DTCO, U, &
+                             HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !     #################################################################################
 !
 !!****  *PREP_ISBA_NETCDF* - prepares ISBA fields from initialization files in NETCDF
@@ -28,24 +29,30 @@ SUBROUTINE PREP_ISBA_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!      J.Escobar   11/2013  Add USE MODI_GET_TYPE_DIM_n
 !!------------------------------------------------------------------
 !
-
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_PREP,           ONLY : CINTERP_TYPE
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
-
+!
 USE MODI_ABOR1_SFX
-
+USE MODI_GET_TYPE_DIM_n
+!
 USE MODE_READ_CDF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
-!
-USE MODI_GET_TYPE_DIM_n
 !
 IMPLICIT NONE
 
 INCLUDE 'netcdf.inc'
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
@@ -86,7 +93,8 @@ IF (LHOOK) CALL DR_HOOK('PREP_ISBA_NETCDF',0,ZHOOK_HANDLE)
 
 !*      1.    get nature dimension
 !
- CALL GET_TYPE_DIM_n('NATURE',IL)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'NATURE',IL)
 !
 !*      2.     Reading of field
 !              ----------------
@@ -138,19 +146,17 @@ IERROR=NF_GET_VAR_DOUBLE(ID_FILE,ID_VAR,ZFIELD)
 ! Close netcdf file
 IERROR=NF_CLOSE(ID_FILE)
 !
-ALLOCATE(PFIELD(IL,INLAYERS,NVEGTYPE)) !will be deallocated later by prep_hor_isba_field
+ALLOCATE(PFIELD(IL,INLAYERS,1)) !will be deallocated later by prep_hor_isba_field
 !
 ! For now initial values are identical for all tiles / soil layers.
 DO JJ=1,INLAYERS
-  DO JK=1,NVEGTYPE
-    PFIELD(:,JJ,JK)=ZFIELD
-  END DO
+  PFIELD(:,JJ,1)=ZFIELD
 END DO
 !
 DEALLOCATE(ZFIELD)
 !
 !Interpolation method
-CINTERP_TYPE='NONE'
+ CINTERP_TYPE='NONE'
 !
 IF (LHOOK) CALL DR_HOOK('PREP_ISBA_NETCDF',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

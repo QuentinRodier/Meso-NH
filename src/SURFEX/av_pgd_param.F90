@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################################
-      SUBROUTINE AV_PGD_PARAM(PFIELD,PVEGTYPE,PDATA,HSFTYPE,HATYPE,PDZ,KDECADE)
+      SUBROUTINE AV_PGD_PARAM (DTI, &
+                               PFIELD,PVEGTYPE,PDATA,HSFTYPE,HATYPE,PDZ,KDECADE)
 !     ################################################################
 !
 !!**** *AV_PATCH_PGD* average for each surface patch a secondary physiographic 
@@ -48,15 +49,21 @@
 !!
 !!    Original    15/12/97
 !!    V. Masson   01/2004  Externalization
-!!
+!!    R. Alkama   04/2012  add 6 new tree vegtype (9 instead 3)
+!
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_DATA_ISBA_n, ONLY : XPAR_VEG, XPAR_LAI
-USE MODD_DATA_COVER_PAR, ONLY : NVT_TREE, NVT_CONI, NVT_EVER, NVEGTYPE, XCDREF
+USE MODD_DATA_COVER_PAR, ONLY : NVT_TEBD, NVT_BONE, NVT_TRBE, NVT_TRBD, NVT_TEBE,  &
+                                NVT_TENE, NVT_BOBD, NVT_BOND, NVT_SHRB, NVEGTYPE,  &
+                                XCDREF
+
 !
 USE MODI_VEGTYPE_TO_PATCH 
 !
@@ -71,6 +78,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
 !
 REAL, DIMENSION(:,:), INTENT(OUT) :: PFIELD  ! secondary field to construct
 REAL, DIMENSION(:,:), INTENT(IN)  :: PVEGTYPE  ! fraction of each cover class
@@ -157,35 +167,54 @@ SELECT CASE (HSFTYPE)
 
    CASE('VEG','GRV')
      DO JVEGTYPE=1,NVEGTYPE
-       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*XPAR_VEG(:,KDECADE,JVEGTYPE)
+       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*DTI%XPAR_VEG(:,KDECADE,JVEGTYPE)
      END DO
 
    CASE('BAR','GRB')
      DO JVEGTYPE=1,NVEGTYPE
-       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*(1.-XPAR_VEG(:,KDECADE,JVEGTYPE))
+       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*(1.-DTI%XPAR_VEG(:,KDECADE,JVEGTYPE))
      END DO
      
     CASE('DVG','GDV') ! for diffusion scheme only, average only on vegetated area
      DO JVEGTYPE=1,NVEGTYPE
-       WHERE ( SUM(XPAR_LAI(:,:,JVEGTYPE),2) .GT. 0.0) &
+       WHERE ( SUM(DTI%XPAR_LAI(:,:,JVEGTYPE),2) .GT. 0.0) &
         ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)
      END DO
 
    CASE('LAI','GRL')
      DO JVEGTYPE=4,NVEGTYPE
-       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*XPAR_LAI(:,KDECADE,JVEGTYPE)
+       ZWEIGHT(:,JVEGTYPE)=PVEGTYPE(:,JVEGTYPE)*DTI%XPAR_LAI(:,KDECADE,JVEGTYPE)
      END DO
 
     CASE('TRE','GRT')
       ZWEIGHT(:,:)=0.
-      WHERE (PVEGTYPE(:,NVT_TREE)>0.)
-        ZWEIGHT(:,NVT_TREE)=PVEGTYPE(:,NVT_TREE)
+      WHERE (PVEGTYPE(:,NVT_TEBD)>0.)
+        ZWEIGHT(:,NVT_TEBD)=PVEGTYPE(:,NVT_TEBD)
       ENDWHERE
-      WHERE (PVEGTYPE(:,NVT_CONI)>0.)
-        ZWEIGHT(:,NVT_CONI)=PVEGTYPE(:,NVT_CONI)
+      WHERE (PVEGTYPE(:,NVT_BONE)>0.)
+        ZWEIGHT(:,NVT_BONE)=PVEGTYPE(:,NVT_BONE)
       ENDWHERE
-      WHERE (PVEGTYPE(:,NVT_EVER)>0.)
-        ZWEIGHT(:,NVT_EVER)=PVEGTYPE(:,NVT_EVER)
+      WHERE (PVEGTYPE(:,NVT_TRBE)>0.)
+        ZWEIGHT(:,NVT_TRBE)=PVEGTYPE(:,NVT_TRBE)
+      ENDWHERE
+
+      WHERE (PVEGTYPE(:,NVT_TRBD)>0.)
+        ZWEIGHT(:,NVT_TRBD)=PVEGTYPE(:,NVT_TRBD)
+      ENDWHERE
+      WHERE (PVEGTYPE(:,NVT_TEBE)>0.)
+        ZWEIGHT(:,NVT_TEBE)=PVEGTYPE(:,NVT_TEBE)
+      ENDWHERE
+      WHERE (PVEGTYPE(:,NVT_TENE)>0.)
+        ZWEIGHT(:,NVT_TENE)=PVEGTYPE(:,NVT_TENE)
+      ENDWHERE
+      WHERE (PVEGTYPE(:,NVT_BOBD)>0.)
+        ZWEIGHT(:,NVT_BOBD)=PVEGTYPE(:,NVT_BOBD)
+      ENDWHERE
+      WHERE (PVEGTYPE(:,NVT_BOND)>0.)
+        ZWEIGHT(:,NVT_BOND)=PVEGTYPE(:,NVT_BOND)
+      ENDWHERE
+      WHERE (PVEGTYPE(:,NVT_SHRB)>0.)
+        ZWEIGHT(:,NVT_SHRB)=PVEGTYPE(:,NVT_SHRB)
       ENDWHERE
 
     CASE DEFAULT
@@ -251,7 +280,7 @@ SELECT CASE (HATYPE)
         ZSUM_WEIGHT_PATCH(JJ,JPATCH) =  ZSUM_WEIGHT_PATCH(JJ,JPATCH)+ ZWEIGHT(JJ,JVEGTYPE)
         IF (PDATA(JJ,JVEGTYPE).NE.0.) THEN
           ZWORK(JJ,JPATCH)= ZWORK(JJ,JPATCH) + 1./(LOG(ZDZ(JJ,JPATCH)/ PDATA(JJ,JVEGTYPE)))**2    &
-                            * ZWEIGHT(JJ,JVEGTYPE)  
+                            * ZWEIGHT(JJ,JVEGTYPE)
         ENDIF
       ENDDO
     END DO   

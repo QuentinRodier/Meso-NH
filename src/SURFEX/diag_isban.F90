@@ -1,15 +1,17 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_ISBA_n(HPROGRAM,                                               &
+SUBROUTINE DIAG_ISBA_n (DGEI, DGI, &
+                        HPROGRAM,                                               &
                          PRN, PH, PLE, PLEI, PGFLUX, PRI, PCD, PCH, PCE, PQS,    &
                          PZ0, PZ0H, PT2M, PTS, PQ2M, PHU2M, PZON10M, PMER10M,    &
                          PSWD, PSWU, PLWD, PLWU, PSWBD, PSWBU, PFMU, PFMV,       &
                          PRNC, PHC, PLEC, PGFLUXC, PSWDC, PSWUC, PLWDC,          &
                          PLWUC, PFMUC, PFMVC, PT2M_MIN, PT2M_MAX, PLEIC,         &
-                         PHU2M_MIN, PHU2M_MAX, PWIND10M, PWIND10M_MAX            )  
+                         PHU2M_MIN, PHU2M_MAX, PWIND10M, PWIND10M_MAX,           &
+                            PEVAP, PEVAPC, PSUBL, PSUBLC                         )
 !     ###############################################################################
 !
 !!****  *DIAG_ISBA_n * - Stores ISBA diagnostics
@@ -33,28 +35,16 @@ SUBROUTINE DIAG_ISBA_n(HPROGRAM,                                               &
 !!      Original    01/2004
 !!      Modified    01/2006 : sea flux parameterization.
 !!      Modified    08/2009 : new diag
+!       B. decharme 04/2013 : Add EVAP and SUBL diag
 !!------------------------------------------------------------------
 !
 !
+!
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
+!
 USE MODD_SURF_PAR,    ONLY : XUNDEF
-USE MODD_ISBA_n,      ONLY : TTIME
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : LSURF_BUDGETC, XAVG_RNC,       &
-                                    XAVG_HC, XAVG_LEC, XAVG_LEIC,  &
-                                    XAVG_GFLUXC  
 !                                  
-USE MODD_DIAG_ISBA_n, ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_VARS,       &
-                               XAVG_RN, XAVG_H, XAVG_LE, XAVG_GFLUX,     &
-                               XAVG_RI, XAVG_CD, XAVG_CH, XAVG_CE,       &
-                               XAVG_T2M, XAVG_Q2M, XAVG_HU2M,            &
-                               XAVG_ZON10M, XAVG_MER10M, XAVG_T2M_MAX,   &
-                               XAVG_QS, XAVG_Z0, XAVG_Z0H, XAVG_T2M_MIN, &
-                               XAVG_SWD, XAVG_SWU, XAVG_SWBD, XAVG_SWBU, &
-                               XAVG_LWD, XAVG_LWU, XAVG_FMU, XAVG_FMV  , &
-                               XAVG_SWDC, XAVG_SWUC, XAVG_LWDC,          &
-                               XAVG_LWUC, XAVG_FMUC, XAVG_FMVC,          &
-                               XAVG_TS, XAVG_LEI, XAVG_HU2M_MIN,         &
-                               XAVG_HU2M_MAX, XAVG_WIND10M,              &
-                               XAVG_WIND10M_MAX  
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -64,6 +54,10 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
+TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
+!
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! program calling surf. schemes
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PRN      ! Net radiation       (W/m2)
@@ -71,6 +65,8 @@ REAL, DIMENSION(:), INTENT(OUT) :: PH       ! Sensible heat flux  (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLE      ! Total latent heat flux    (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEI     ! Sublimation latent heat flux    (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PGFLUX   ! Storage flux        (W/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAP    ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBL    ! Sublimation (kg/m2/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PRI      ! Richardson number   (-)
 REAL, DIMENSION(:), INTENT(OUT) :: PCD      ! drag coefficient    (W/s2)
 REAL, DIMENSION(:), INTENT(OUT) :: PCH      ! transf. coef heat   (W/s)
@@ -97,6 +93,8 @@ REAL, DIMENSION(:), INTENT(OUT) :: PHC      ! Sensible heat flux  (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEC     ! Total latent heat flux    (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLEIC    ! Sublimation latent heat flux    (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PGFLUXC  ! Storage flux        (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAPC   ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBLC   ! Sublimation (kg/m2/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PSWDC    ! incoming short wave radiation (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSWUC    ! outgoing short wave radiation (J/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLWDC    ! incoming long wave radiation (J/m2)
@@ -117,63 +115,70 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_N',0,ZHOOK_HANDLE)
-IF (LSURF_BUDGET) THEN
-  PRN      = XAVG_RN
-  PH       = XAVG_H
-  PLE      = XAVG_LE
-  PLEI     = XAVG_LEI
-  PGFLUX   = XAVG_GFLUX
-  PSWD     = XAVG_SWD
-  PSWU     = XAVG_SWU
-  PLWD     = XAVG_LWD
-  PLWU     = XAVG_LWU
-  PSWBD    = XAVG_SWBD
-  PSWBU    = XAVG_SWBU
-  PFMU     = XAVG_FMU
-  PFMV     = XAVG_FMV
+IF (DGI%LSURF_BUDGET) THEN
+  PRN      = DGI%XAVG_RN
+  PH       = DGI%XAVG_H
+  PLE      = DGI%XAVG_LE
+  PLEI     = DGI%XAVG_LEI
+  PGFLUX   = DGI%XAVG_GFLUX
+  PSWD     = DGI%XAVG_SWD
+  PSWU     = DGI%XAVG_SWU
+  PLWD     = DGI%XAVG_LWD
+  PLWU     = DGI%XAVG_LWU
+  PSWBD    = DGI%XAVG_SWBD
+  PSWBU    = DGI%XAVG_SWBU
+  PFMU     = DGI%XAVG_FMU
+  PFMV     = DGI%XAVG_FMV
 END IF
 !
-IF (LSURF_BUDGETC) THEN
-  PRNC      = XAVG_RNC
-  PHC       = XAVG_HC
-  PLEC      = XAVG_LEC
-  PLEIC     = XAVG_LEIC
-  PGFLUXC   = XAVG_GFLUXC
-  PSWDC     = XAVG_SWDC
-  PSWUC     = XAVG_SWUC
-  PLWDC     = XAVG_LWDC
-  PLWUC     = XAVG_LWUC
-  PFMUC     = XAVG_FMUC
-  PFMVC     = XAVG_FMVC
+IF (DGEI%LSURF_EVAP_BUDGET) THEN
+  PEVAP    = DGEI%XAVG_EVAP
+  PSUBL    = DGEI%XAVG_SUBL
+ENDIF
+!
+IF (DGEI%LSURF_BUDGETC) THEN
+  PRNC      = DGEI%XAVG_RNC
+  PHC       = DGEI%XAVG_HC
+  PLEC      = DGEI%XAVG_LEC
+  PLEIC     = DGEI%XAVG_LEIC
+  PGFLUXC   = DGEI%XAVG_GFLUXC
+  PEVAPC    = DGEI%XAVG_EVAPC
+  PSUBLC    = DGEI%XAVG_SUBLC
+  PSWDC     = DGI%XAVG_SWDC
+  PSWUC     = DGI%XAVG_SWUC
+  PLWDC     = DGI%XAVG_LWDC
+  PLWUC     = DGI%XAVG_LWUC
+  PFMUC     = DGI%XAVG_FMUC
+  PFMVC     = DGI%XAVG_FMVC
 END IF
 !
-IF (N2M>=1 .OR. LSURF_BUDGET .OR. LSURF_BUDGETC) PTS = XAVG_TS
+IF (DGI%N2M>=1 .OR. DGI%LSURF_BUDGET .OR. DGEI%LSURF_BUDGETC) PTS = DGI%XAVG_TS
 !
-IF (N2M>=1) THEN
-  PRI      = XAVG_RI
-  PT2M     = XAVG_T2M
-  PT2M_MIN = XAVG_T2M_MIN
-  PT2M_MAX = XAVG_T2M_MAX
-  PQ2M     = XAVG_Q2M
-  PHU2M    = XAVG_HU2M
-  PHU2M_MIN= XAVG_HU2M_MIN
-  PHU2M_MAX= XAVG_HU2M_MAX
-  PZON10M  = XAVG_ZON10M
-  PMER10M  = XAVG_MER10M
-  PWIND10M = XAVG_WIND10M
-  PWIND10M_MAX = XAVG_WIND10M_MAX
+IF (DGI%N2M>=1) THEN
+  PRI      = DGI%XAVG_RI
+  PT2M     = DGI%XAVG_T2M
+  PT2M_MIN = DGI%XAVG_T2M_MIN
+  PT2M_MAX = DGI%XAVG_T2M_MAX
+  PQ2M     = DGI%XAVG_Q2M
+  PHU2M    = DGI%XAVG_HU2M
+  PHU2M_MIN= DGI%XAVG_HU2M_MIN
+  PHU2M_MAX= DGI%XAVG_HU2M_MAX
+  PZON10M  = DGI%XAVG_ZON10M
+  PMER10M  = DGI%XAVG_MER10M
+  PWIND10M = DGI%XAVG_WIND10M
+  PWIND10M_MAX = DGI%XAVG_WIND10M_MAX
 END IF
 !
-IF (LCOEF) THEN
-  PCD      = XAVG_CD
-  PCH      = XAVG_CH
-  PCE      = XAVG_CE
-  PZ0      = XAVG_Z0
-  PZ0H     = XAVG_Z0H
+IF (DGI%LCOEF) THEN
+  PCD      = DGI%XAVG_CD
+  PCH      = DGI%XAVG_CH
+  PCE      = DGI%XAVG_CE
+  PZ0      = DGI%XAVG_Z0
+  PZ0H     = DGI%XAVG_Z0H
 END IF
 !
-IF (LSURF_VARS) THEN
-  PQS = XAVG_QS
+IF (DGI%LSURF_VARS) THEN
+  PQS = DGI%XAVG_QS
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_ISBA_N',1,ZHOOK_HANDLE)

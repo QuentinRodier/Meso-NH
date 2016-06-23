@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###########################################################
-      SUBROUTINE ZOOM_PGD_SURF_ATM(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)
+      SUBROUTINE ZOOM_PGD_SURF_ATM (YSC, &
+                                    HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)
 !     ###########################################################
 
 !!
@@ -39,15 +40,9 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : CGRID, XGRID_PAR, NGRID_PAR
-USE MODD_SURF_ATM_n,      ONLY : CNATURE, CSEA, CWATER, CTOWN, &
-                                   XSEA, XWATER,                 &
-                                   NDIM_NATURE, NDIM_SEA,        &
-                                   NDIM_TOWN,NDIM_WATER,         &
-                                   XNATURE, NDIM_FULL, LGARDEN,  &
-                                   LECOCLIMAP
-USE MODD_CH_SURF_n,       ONLY : LCH_EMIS, LRW_CH_EMIS
-USE MODD_DUMMY_SURF_FIELDS_n, ONLY : NDUMMY_NBR
+!
+!
+USE MODD_SURFEX_n, ONLY : SURFEX_t
 !
 USE MODI_INI_CSTS
 USE MODI_READ_NAM_WRITE_COVER_TEX
@@ -65,9 +60,6 @@ USE MODI_ZOOM_PGD_NATURE
 USE MODI_ZOOM_PGD_SEA
 USE MODI_ZOOM_PGD_TOWN
 USE MODI_READ_COVER_GARDEN
-!USE MODE_MODELN_SURFEX_HANDLER
-USE MODI_GOTO_WRAPPER_SURFATM
-!
 USE MODI_GOTO_MODEL_MNH
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -77,6 +69,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
+!
+!
+TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM    ! program calling
  CHARACTER(LEN=28),    INTENT(IN)  :: HINIFILE    ! input atmospheric file name
@@ -109,21 +104,27 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',0,ZHOOK_HANDLE)
 !             -----------------------------------------
 !
 ! intialization of output (child) grid, so we need to get the local sizes of child model
- CALL GOTO_MODEL_MNH(HPROGRAM,2,IINFO_ll)
-!
- CALL PGD_GRID(HPROGRAM,HFILE,HFILETYPE,.TRUE.,CGRID,NGRID_PAR,XGRID_PAR)
+ CALL GOTO_MODEL_MNH(YSC%U,HPROGRAM,2,IINFO_ll)
+ CALL PGD_GRID(&
+               YSC%UG, YSC%U,YSC%GCP, &
+               HPROGRAM,HFILE,HFILETYPE,.TRUE.,YSC%UG%CGRID,YSC%UG%NGRID_PAR,YSC%UG%XGRID_PAR)
 !
 ! we read fields from father model, so we need to get the local sizes of father model
- CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
- !
- CALL OPEN_AUX_IO_SURF(HINIFILE,HINIFILETYPE,'FULL  ')
- CALL READ_SURF(HINIFILETYPE,'SEA',   CSEA,   IRESP)
- CALL READ_SURF(HINIFILETYPE,'NATURE',CNATURE,IRESP)
- CALL READ_SURF(HINIFILETYPE,'WATER', CWATER, IRESP)
- CALL READ_SURF(HINIFILETYPE,'TOWN',  CTOWN,  IRESP)
- CALL READ_COVER_GARDEN(HINIFILETYPE,LGARDEN)
+ CALL GOTO_MODEL_MNH(YSC%U,HPROGRAM,1,IINFO_ll)
+ CALL OPEN_AUX_IO_SURF(&
+                       HINIFILE,HINIFILETYPE,'FULL  ')
+ CALL READ_SURF(&
+                HINIFILETYPE,'SEA',   YSC%U%CSEA,   IRESP)
+ CALL READ_SURF(&
+                HINIFILETYPE,'NATURE',YSC%U%CNATURE,IRESP)
+ CALL READ_SURF(&
+                HINIFILETYPE,'WATER', YSC%U%CWATER, IRESP)
+ CALL READ_SURF(&
+                HINIFILETYPE,'TOWN',  YSC%U%CTOWN,  IRESP)
+ CALL READ_COVER_GARDEN(&
+                        HINIFILETYPE,YSC%U%LGARDEN)
  CALL INIT_READ_DATA_COVER(HPROGRAM)
- CALL INI_DATA_COVER
+ CALL INI_DATA_COVER(YSC%DTCO, YSC%U)
  CALL CLOSE_AUX_IO_SURF(HINIFILE,HINIFILETYPE)
 !
 !-------------------------------------------------------------------------------
@@ -131,62 +132,67 @@ IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',0,ZHOOK_HANDLE)
 !*    3.      surface cover
 !             -------------
 !
-! stay on father model
-! CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
- CALL ZOOM_PGD_COVER(HPROGRAM,HINIFILE,HINIFILETYPE,LECOCLIMAP)
+ CALL ZOOM_PGD_COVER(YSC%DTCO, YSC%UG, YSC%U,YSC%GCP, &
+                     HPROGRAM,HINIFILE,HINIFILETYPE,YSC%U%LECOCLIMAP)
 !
 !-------------------------------------------------------------------------------
 !
 !*    4.      Orography
 !             ---------
 !
-! stay on father model
-!CALL GOTO_MODEL_SURFEX(1, .TRUE.)
-! CALL GOTO_MODEL_MNH(HPROGRAM,1,IINFO_ll)
- CALL ZOOM_PGD_OROGRAPHY(HPROGRAM,XSEA,XWATER,HINIFILE,HINIFILETYPE)
+ CALL ZOOM_PGD_OROGRAPHY(YSC%DTCO, &
+                         YSC%UG, YSC%U, YSC%USS,YSC%GCP, &
+                         HPROGRAM,YSC%U%XSEA,YSC%U%XWATER,HINIFILE,HINIFILETYPE)
 !
 !_______________________________________________________________________________
 !
 !*    5.      Additionnal fields for nature scheme
 !             ------------------------------------
 !
-IF (NDIM_NATURE>0)                                 &
-  CALL ZOOM_PGD_NATURE(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,LECOCLIMAP)  
+IF (YSC%U%NDIM_NATURE>0)                                 &
+  CALL ZOOM_PGD_NATURE(YSC%IM%CHI, YSC%DTCO, YSC%IM%DTI, YSC%IM%IG, &
+                        YSC%IM%I, YSC%UG, YSC%U, YSC%USS,YSC%GCP, &
+                       HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,YSC%U%LECOCLIMAP)  
 !_______________________________________________________________________________
 !
 !*    6.      Additionnal fields for town scheme
 !             ----------------------------------
 !
-IF (NDIM_TOWN>0)                                 &
-  CALL ZOOM_PGD_TOWN(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,LECOCLIMAP,LGARDEN)  
+IF (YSC%U%NDIM_TOWN>0)                                 &
+  CALL ZOOM_PGD_TOWN(YSC%TM%B, YSC%TM%DGCT, YSC%TM%DGMT, YSC%TM%T, YSC%GDM%TGD, &
+                     YSC%GDM%TGDPE, YSC%GRM%TGR, YSC%GRM%TGRPE, &
+                     YSC%TM%BOP, YSC%TM%BDD, YSC%TM%DTB, YSC%DTCO, YSC%TM%DTT, YSC%UG, YSC%U, &
+                     YSC%GDM%TGDO, YSC%GDM%TGDP, YSC%TM%TG, YSC%TM%TOP, YSC%GDM%TVG,YSC%GCP, &
+                     HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,YSC%U%LECOCLIMAP,YSC%U%LGARDEN)  
 !_______________________________________________________________________________
 !
 !*    7.      Additionnal fields for inland water scheme
 !             ------------------------------------------
 !
-IF (NDIM_WATER>0)                                 &
-  CALL ZOOM_PGD_INLAND_WATER(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)  
+IF (YSC%U%NDIM_WATER>0)                                 &
+  CALL ZOOM_PGD_INLAND_WATER(YSC%DTCO, YSC%FM%FG, YSC%FM%F, YSC%UG, YSC%U, YSC%USS, YSC%WM%WG, YSC%WM%W, &
+                             HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,YSC%U%LECOCLIMAP)  
 !_______________________________________________________________________________
 !
 !*    8.      Additionnal fields for sea scheme
 !             ---------------------------------
 !
-IF (NDIM_SEA>0)                                 &
-  CALL ZOOM_PGD_SEA(HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)  
+IF (YSC%U%NDIM_SEA>0)                                 &
+  CALL ZOOM_PGD_SEA(YSC%DTCO, YSC%SM%DTS, YSC%SM%SG, YSC%SM%S, YSC%UG, YSC%U,YSC%GCP, &
+                    HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE)  
 !
 !_______________________________________________________________________________
 !
 !*    9.      Dummy fields
 !             ------------
 !
-NDUMMY_NBR = 0
+YSC%DUU%NDUMMY_NBR = 0
 !_______________________________________________________________________________
 !
 !*   10.      Chemical Emission fields
 !             ------------------------
 !
-LCH_EMIS = .FALSE.
-LRW_CH_EMIS = .FALSE.
+YSC%CHU%LCH_EMIS = .FALSE.
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',1,ZHOOK_HANDLE)
 !_______________________________________________________________________________
 !

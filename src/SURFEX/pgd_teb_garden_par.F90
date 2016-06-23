@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TEB_GARDEN_PAR(HPROGRAM)
+      SUBROUTINE PGD_TEB_GARDEN_PAR (DTCO, UG, U, USS, TG, GDM, &
+                                     HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_TEB_GARDEN_PAR* monitor for averaging and interpolations of cover fractions
@@ -39,16 +40,17 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
+!
 USE MODD_DATA_COVER_PAR,    ONLY : NVEGTYPE
 USE MODD_SURF_PAR,          ONLY : XUNDEF
-USE MODD_TEB_GRID_n,        ONLY : NDIM
-USE MODD_TEB_VEG_n,         ONLY : CISBA, CPHOTO
-USE MODD_TEB_GARDEN_n,      ONLY : NGROUND_LAYER, LPAR_GARDEN,              &
-                                   CTYPE_HVEG, CTYPE_LVEG, CTYPE_NVEG  
-USE MODD_DATA_TEB_GARDEN_n, ONLY : XDATA_FRAC_HVEG, XDATA_FRAC_LVEG,        &
-                                   XDATA_FRAC_NVEG,                         &
-                                   XDATA_LAI_HVEG , XDATA_LAI_LVEG ,        &
-                                   XDATA_H_HVEG, NTIME_n => NTIME
 !
 USE MODD_PGDWORK,           ONLY : CATYPE
 !
@@ -69,6 +71,14 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+!
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !
 !
@@ -84,9 +94,9 @@ INTEGER               :: JTIME     ! loop counter on time
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
-INTEGER                                :: NTIME
+INTEGER                                :: NTIME_GD
 INTEGER, PARAMETER                     :: NGROUND_MAX  = 20
-INTEGER, PARAMETER                     :: NVEGTYPE_MAX = 12
+INTEGER, PARAMETER                     :: NVEGTYPE_MAX = 19
 INTEGER, PARAMETER                     :: NTIME_MAX    = 12
 !
 ! type of vegetation
@@ -124,7 +134,7 @@ REAL                                   :: XUNIF_H_HVEG     ! height of trees
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-NAMELIST/NAM_DATA_TEB_GARDEN/   NTIME,                                             &
+NAMELIST/NAM_DATA_TEB_GARDEN/   NTIME_GD,                                          &
                                 CTYP_GARDEN_HVEG, CTYP_GARDEN_LVEG,                &
                                 CTYP_GARDEN_NVEG,                                  &
                                 XUNIF_FRAC_HVEG, XUNIF_FRAC_LVEG, XUNIF_FRAC_NVEG, &
@@ -144,11 +154,11 @@ NAMELIST/NAM_DATA_TEB_GARDEN/   NTIME,                                          
 !
 IF (LHOOK) CALL DR_HOOK('PGD_TEB_GARDEN_PAR',0,ZHOOK_HANDLE)
 
-NTIME = 12
+NTIME_GD = 12
 !
-CTYP_GARDEN_HVEG   = 'TREE'           ! Forest and trees
-CTYP_GARDEN_LVEG   = 'PARK'           ! Grassland
-CTYP_GARDEN_NVEG   = 'NO  '           ! No vegetation
+ CTYP_GARDEN_HVEG   = 'TEBD'           ! Temperate broadleaf trees (forest)
+ CTYP_GARDEN_LVEG   = 'PARK'           ! Grassland
+ CTYP_GARDEN_NVEG   = 'NO  '           ! No vegetation
 !
 XUNIF_FRAC_HVEG    = XUNDEF
 XUNIF_FRAC_LVEG    = XUNDEF
@@ -157,22 +167,22 @@ XUNIF_LAI_HVEG     = XUNDEF
 XUNIF_LAI_LVEG     = XUNDEF
 XUNIF_H_HVEG       = XUNDEF
 !
-CFNAM_FRAC_HVEG    = '                            '
-CFNAM_FRAC_LVEG    = '                            '
-CFNAM_FRAC_NVEG    = '                            '
-CFNAM_LAI_HVEG     = '                            '
-CFNAM_LAI_LVEG     = '                            '
-CFNAM_H_HVEG       = '                            '
+ CFNAM_FRAC_HVEG    = '                            '
+ CFNAM_FRAC_LVEG    = '                            '
+ CFNAM_FRAC_NVEG    = '                            '
+ CFNAM_LAI_HVEG     = '                            '
+ CFNAM_LAI_LVEG     = '                            '
+ CFNAM_H_HVEG       = '                            '
 !
-CFTYP_FRAC_HVEG    = '      '
-CFTYP_FRAC_LVEG    = '      '
-CFTYP_FRAC_NVEG    = '      '
-CFTYP_LAI_HVEG     = '      '
-CFTYP_LAI_LVEG     = '      '
-CFTYP_H_HVEG       = '      '
+ CFTYP_FRAC_HVEG    = '      '
+ CFTYP_FRAC_LVEG    = '      '
+ CFTYP_FRAC_NVEG    = '      '
+ CFTYP_LAI_HVEG     = '      '
+ CFTYP_LAI_LVEG     = '      '
+ CFTYP_H_HVEG       = '      '
 !
 !-------------------------------------------------------------------------------
-NTIME_n = 12
+GDM%DTGD%NTIME = 12
 !-------------------------------------------------------------------------------
 !
 !*    2.      Input file for cover types
@@ -186,18 +196,18 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_DATA_TEB_GARDEN)
 !
  CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
-IF (NTIME==1) THEN
+IF (NTIME_GD==1) THEN
   XUNIF_LAI_HVEG(2:) = XUNIF_LAI_HVEG(1)
   XUNIF_LAI_LVEG(2:) = XUNIF_LAI_LVEG(1)
-ELSE IF (NTIME/=12) THEN
-  CALL ABOR1_SFX( 'Namelist NAM_DATA_TEB_GARDEN: NTIME must be equal to 1 or 12')
+ELSE IF (NTIME_GD/=12) THEN
+  CALL ABOR1_SFX( 'Namelist NAM_DATA_TEB_GARDEN: NTIME_GD must be equal to 1 or 12')
 END IF
 !-------------------------------------------------------------------------------
 !
 !*    3.      Coherence check
 !             ---------------
 !
-LPAR_GARDEN =  (XUNIF_FRAC_HVEG /= XUNDEF .OR. LEN_TRIM(CFNAM_FRAC_HVEG) >0 )&
+GDM%TGDO%LPAR_GARDEN =  (XUNIF_FRAC_HVEG /= XUNDEF .OR. LEN_TRIM(CFNAM_FRAC_HVEG) >0 )&
          .AND. (XUNIF_FRAC_LVEG /= XUNDEF .OR. LEN_TRIM(CFNAM_FRAC_LVEG) >0 )&
          .AND. (XUNIF_FRAC_NVEG /= XUNDEF .OR. LEN_TRIM(CFNAM_FRAC_NVEG) >0 )
 
@@ -205,7 +215,7 @@ GNO_PAR_GARDEN = (XUNIF_FRAC_HVEG == XUNDEF .AND. LEN_TRIM(CFNAM_FRAC_HVEG)==0)&
            .AND. (XUNIF_FRAC_LVEG == XUNDEF .AND. LEN_TRIM(CFNAM_FRAC_LVEG)==0)&
            .AND. (XUNIF_FRAC_NVEG == XUNDEF .AND. LEN_TRIM(CFNAM_FRAC_NVEG)==0)
 
-IF ( .NOT. LPAR_GARDEN .AND. .NOT. GNO_PAR_GARDEN ) THEN
+IF ( .NOT. GDM%TGDO%LPAR_GARDEN .AND. .NOT. GNO_PAR_GARDEN ) THEN
   WRITE(ILUOUT,*) ' Error for fraction of high, low and no vegetation fractions in gardens '
   WRITE(ILUOUT,*) ' You need to specify the three of them ... or none. '
   CALL ABOR1_SFX( 'Namelist NAM_DATA_TEB_GARDEN: you need to specify all of  HVEG, LVEG, NVEG fractions or NONE of them')
@@ -218,48 +228,56 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-ALLOCATE(XDATA_FRAC_HVEG   (NDIM        ))
-ALLOCATE(XDATA_FRAC_LVEG   (NDIM        ))
-ALLOCATE(XDATA_FRAC_NVEG   (NDIM        ))
-ALLOCATE(XDATA_LAI_HVEG    (NDIM,NTIME_n))
-ALLOCATE(XDATA_LAI_LVEG    (NDIM,NTIME_n))
-ALLOCATE(XDATA_H_HVEG      (NDIM        ))
+GDM%DTGD%NTIME = NTIME_GD
 !
-CTYPE_HVEG = CTYP_GARDEN_HVEG
-CTYPE_LVEG = CTYP_GARDEN_LVEG
-CTYPE_NVEG = CTYP_GARDEN_NVEG
+ALLOCATE(GDM%DTGD%XDATA_FRAC_HVEG   (TG%NDIM        ))
+ALLOCATE(GDM%DTGD%XDATA_FRAC_LVEG   (TG%NDIM        ))
+ALLOCATE(GDM%DTGD%XDATA_FRAC_NVEG   (TG%NDIM        ))
+ALLOCATE(GDM%DTGD%XDATA_LAI_HVEG    (TG%NDIM,GDM%DTGD%NTIME))
+ALLOCATE(GDM%DTGD%XDATA_LAI_LVEG    (TG%NDIM,GDM%DTGD%NTIME))
+ALLOCATE(GDM%DTGD%XDATA_H_HVEG      (TG%NDIM        ))
+!
+GDM%TGDP%CTYPE_HVEG = CTYP_GARDEN_HVEG
+GDM%TGDP%CTYPE_LVEG = CTYP_GARDEN_LVEG
+GDM%TGDP%CTYPE_NVEG = CTYP_GARDEN_NVEG
 !
 !-------------------------------------------------------------------------------
 !
 !*    3.      Uniform fields are prescribed
 !             -----------------------------
 !
-CATYPE = 'ARI'
+ CATYPE = 'ARI'
 !
- CALL PGD_FIELD(HPROGRAM,'FRAC_HVEG: fraction of high vegetation','TWN',CFNAM_FRAC_HVEG,   &
-                 CFTYP_FRAC_HVEG,XUNIF_FRAC_HVEG,XDATA_FRAC_HVEG(:))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'FRAC_HVEG: fraction of high vegetation','TWN',CFNAM_FRAC_HVEG,   &
+                 CFTYP_FRAC_HVEG,XUNIF_FRAC_HVEG,GDM%DTGD%XDATA_FRAC_HVEG(:))  
 !
- CALL PGD_FIELD(HPROGRAM,'FRAC_LVEG: fraction of low vegetation' ,'TWN',CFNAM_FRAC_LVEG,   &
-                 CFTYP_FRAC_LVEG,XUNIF_FRAC_LVEG,XDATA_FRAC_LVEG(:))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'FRAC_LVEG: fraction of low vegetation' ,'TWN',CFNAM_FRAC_LVEG,   &
+                 CFTYP_FRAC_LVEG,XUNIF_FRAC_LVEG,GDM%DTGD%XDATA_FRAC_LVEG(:))  
 !
- CALL PGD_FIELD(HPROGRAM,'FRAC_NVEG: fraction of bare soil'      ,'TWN',CFNAM_FRAC_NVEG,   &
-                 CFTYP_FRAC_NVEG,XUNIF_FRAC_NVEG,XDATA_FRAC_NVEG(:))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'FRAC_NVEG: fraction of bare soil'      ,'TWN',CFNAM_FRAC_NVEG,   &
+                 CFTYP_FRAC_NVEG,XUNIF_FRAC_NVEG,GDM%DTGD%XDATA_FRAC_NVEG(:))  
 !
 !
-DO JTIME=1,NTIME_n
+DO JTIME=1,GDM%DTGD%NTIME
 !
- CALL PGD_FIELD(HPROGRAM,'LAI_HVEG: LAI of high vegetation','TWN',CFNAM_LAI_HVEG(JTIME),  &
-                  CFTYP_LAI_HVEG(JTIME),XUNIF_LAI_HVEG(JTIME),XDATA_LAI_HVEG(:,JTIME))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'LAI_HVEG: LAI of high vegetation','TWN',CFNAM_LAI_HVEG(JTIME),  &
+                  CFTYP_LAI_HVEG(JTIME),XUNIF_LAI_HVEG(JTIME),GDM%DTGD%XDATA_LAI_HVEG(:,JTIME))  
 !
- CALL PGD_FIELD(HPROGRAM,'LAI_LVEG: LAI of low  vegetation','TWN',CFNAM_LAI_LVEG(JTIME),  &
-                  CFTYP_LAI_LVEG(JTIME),XUNIF_LAI_LVEG(JTIME),XDATA_LAI_LVEG(:,JTIME))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'LAI_LVEG: LAI of low  vegetation','TWN',CFNAM_LAI_LVEG(JTIME),  &
+                  CFTYP_LAI_LVEG(JTIME),XUNIF_LAI_LVEG(JTIME),GDM%DTGD%XDATA_LAI_LVEG(:,JTIME))  
 !
 !
 ENDDO
 !
 !
- CALL PGD_FIELD(HPROGRAM,'H_HVEG: height of trees','TWN',CFNAM_H_HVEG,                     &
-                 CFTYP_H_HVEG,XUNIF_H_HVEG,XDATA_H_HVEG(:))  
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'H_HVEG: height of trees','TWN',CFNAM_H_HVEG,                     &
+                 CFTYP_H_HVEG,XUNIF_H_HVEG,GDM%DTGD%XDATA_H_HVEG(:))  
 IF (LHOOK) CALL DR_HOOK('PGD_TEB_GARDEN_PAR',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

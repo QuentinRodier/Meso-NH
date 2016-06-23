@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_MISC_ISBA_n(PTSTEP, HISBA, HPHOTO, HSNOW, OAGRIP, OTR_ML, &
+SUBROUTINE DIAG_MISC_ISBA_n (DGMI, PKDI, &
+                             PTSTEP, HISBA, HPHOTO, HSNOW, OAGRIP, OTR_ML, &
                             PTIME, KSIZE, KPATCH, KMASK, PSEUIL,          &
                             PPSN, PPSNG, PPSNV, PFF, PFFG, PFFV,          &
                             PWG, PWGI, PWFC, PWWILT, PWSNOW, PRSNOW,      &
@@ -43,25 +44,17 @@ SUBROUTINE DIAG_MISC_ISBA_n(PTSTEP, HISBA, HPHOTO, HSNOW, OAGRIP, OTR_ML, &
 !!
 !!------------------------------------------------------------------
 !
+!
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+USE MODD_PACK_DIAG_ISBA, ONLY : PACK_DIAG_ISBA_t
+!
 USE MODD_CSTS,       ONLY : XTT
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
-USE MODD_PACK_DIAG_ISBA,      ONLY : XP_HV, XP_SWI, XP_ALBT, XP_TSWI,     &
-                                     XP_TWSNOW, XP_TDSNOW, XP_SNOWTEMP,   &
-                                     XP_SNOWLIQ,                          &
-                                     XP_FAPAR, XP_FAPIR, XP_FAPAR_BS,     &
-                                     XP_FAPIR_BS 
 !                                     
-USE MODD_DIAG_MISC_ISBA_n,    ONLY : LSURF_MISC_BUDGET,                       &
-                                     XHV, XSWI, XDPSNG, XDPSNV, XDPSN, XSEUIL,&
-                                     XALBT, XTSWI, XDFF, XDFFG,               &
-                                     XDFFV, XTWSNOW, XTDSNOW, XTTSNOW,        &
-                                     XSNOWLIQ, XSNOWTEMP, XDLAI_EFFC,         &
-                                     XFAPAR, XFAPIR, XDFAPARC, XDFAPIRC,      &
-                                     XFAPAR_BS, XFAPIR_BS, XDFSAT, XALT,      &
-                                     XFLT
 USE MODD_TYPE_SNOW
 !
+USE MODI_COMPUT_COLD_LAYERS_THICK
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -69,6 +62,10 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DGMI
+TYPE(PACK_DIAG_ISBA_t), INTENT(INOUT) :: PKDI
 !
 REAL,               INTENT(IN)    :: PTSTEP        ! timestep for  accumulated values 
  CHARACTER(LEN=*), INTENT(IN)      :: HISBA         ! ISBA scheme
@@ -112,6 +109,8 @@ REAL, DIMENSION(SIZE(PPSN))    :: ZSNOWTEMP
 REAL, DIMENSION(SIZE(PWSNOW,1),SIZE(PWSNOW,2)) :: ZWORK
 REAL, DIMENSION(SIZE(PWSNOW,1),SIZE(PWSNOW,2)) :: ZWORKTEMP
 !
+REAL, DIMENSION(KSIZE) :: ZALT, ZFLT
+!
 LOGICAL :: GMASK
 INTEGER :: JJ, JI, JK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -119,26 +118,30 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N',0,ZHOOK_HANDLE)
-IF (LSURF_MISC_BUDGET) THEN
+!
+IF (DGMI%LSURF_MISC_BUDGET) THEN
   !
-  XP_SWI (:,:)=XUNDEF
-  XP_TSWI(:,:)=XUNDEF  
+  PKDI%XP_SWI (:,:)=XUNDEF
+  PKDI%XP_TSWI(:,:)=XUNDEF  
   DO JJ=1,SIZE(PWG,2)
     DO JI=1,SIZE(PWG,1)
       IF(PWG (JI,JJ)/=XUNDEF)THEN    
-        XP_SWI (JI,JJ) = (PWG (JI,JJ)               - PWWILT(JI,JJ)) / (PWFC(JI,JJ) - PWWILT(JI,JJ))
-        XP_TSWI(JI,JJ) = (PWG (JI,JJ) + PWGI(JI,JJ) - PWWILT(JI,JJ)) / (PWFC(JI,JJ) - PWWILT(JI,JJ))
+        PKDI%XP_SWI (JI,JJ) = (PWG (JI,JJ) - PWWILT(JI,JJ)) / (PWFC(JI,JJ) - PWWILT(JI,JJ))
+        PKDI%XP_TSWI(JI,JJ) = (PWG (JI,JJ) - PWWILT(JI,JJ)) / (PWFC(JI,JJ) - PWWILT(JI,JJ))
+      ENDIF
+      IF(PWGI (JI,JJ)/=XUNDEF)THEN    
+        PKDI%XP_TSWI(JI,JJ) = PKDI%XP_TSWI(JI,JJ) +  PWGI(JI,JJ) / (PWFC(JI,JJ) - PWWILT(JI,JJ))
       ENDIF
     ENDDO
   ENDDO
   !
-  DO JK=1,SIZE(XP_SWI,2)
+  DO JK=1,SIZE(PKDI%XP_SWI,2)
 !cdir nodep
     DO JJ=1,KSIZE
       JI                      =  KMASK         (JJ)
       !
-      XSWI     (JI,JK,KPATCH)  =  XP_SWI        (JJ,JK)
-      XTSWI    (JI,JK,KPATCH)  =  XP_TSWI       (JJ,JK)
+      DGMI%XSWI     (JI,JK,KPATCH)  =  PKDI%XP_SWI        (JJ,JK)
+      DGMI%XTSWI    (JI,JK,KPATCH)  =  PKDI%XP_TSWI       (JJ,JK)
       !
     END DO
   ENDDO  
@@ -150,12 +153,12 @@ IF (LSURF_MISC_BUDGET) THEN
     ENDDO
   ENDDO
   !
-  XP_TWSNOW=0.
-  XP_TDSNOW=0.
+  PKDI%XP_TWSNOW=0.
+  PKDI%XP_TDSNOW=0.
   ZSNOWTEMP=0.  
   !
   IF (HSNOW/='EBA')THEN
-     ZWORKTEMP(:,:) = XP_SNOWTEMP(:,:)
+     ZWORKTEMP(:,:) = PKDI%XP_SNOWTEMP(:,:)
   ELSE
      ZWORKTEMP(:,1) = MIN(PTG(:,1),XTT)
   ENDIF
@@ -163,14 +166,14 @@ IF (LSURF_MISC_BUDGET) THEN
   DO JI = 1,SIZE(PWSNOW,2)
 !cdir nodep 
     DO JJ = 1,SIZE(PWSNOW,1)
-      XP_TWSNOW(JJ) = XP_TWSNOW(JJ) + PWSNOW(JJ,JI)      
-      XP_TDSNOW(JJ) = XP_TDSNOW(JJ) + ZWORK (JJ,JI)
+      PKDI%XP_TWSNOW(JJ) = PKDI%XP_TWSNOW(JJ) + PWSNOW(JJ,JI)      
+      PKDI%XP_TDSNOW(JJ) = PKDI%XP_TDSNOW(JJ) + ZWORK (JJ,JI)
       ZSNOWTEMP(JJ) = ZSNOWTEMP(JJ) + ZWORKTEMP(JJ,JI) * ZWORK(JJ,JI)
     ENDDO
   ENDDO
   !
-  WHERE(XP_TDSNOW(:)>0.0)
-        ZSNOWTEMP(:)=ZSNOWTEMP(:)/XP_TDSNOW(:)
+  WHERE(PKDI%XP_TDSNOW(:)>0.0)
+        ZSNOWTEMP(:)=ZSNOWTEMP(:)/PKDI%XP_TDSNOW(:)
   ELSEWHERE
         ZSNOWTEMP(:)=XUNDEF
   ENDWHERE
@@ -179,30 +182,30 @@ IF (LSURF_MISC_BUDGET) THEN
   DO JJ=1,KSIZE
      JI                     =  KMASK       (JJ)
      !
-     XHV      (JI, KPATCH)  =  XP_HV       (JJ)
-     XDPSNG   (JI, KPATCH)  =  PPSNG       (JJ)
-     XDPSNV   (JI, KPATCH)  =  PPSNV       (JJ)
-     XDPSN    (JI, KPATCH)  =  PPSN        (JJ)     
-     XALBT    (JI, KPATCH)  =  XP_ALBT     (JJ)
-     XDFF     (JI, KPATCH)  =  PFF         (JJ)
-     XDFFG    (JI, KPATCH)  =  PFFG        (JJ)
-     XDFFV    (JI, KPATCH)  =  PFFV        (JJ)     
-     XTWSNOW  (JI, KPATCH)  =  XP_TWSNOW   (JJ)
-     XTDSNOW  (JI, KPATCH)  =  XP_TDSNOW   (JJ)
-     XTTSNOW  (JI, KPATCH)  =  ZSNOWTEMP   (JJ)
-     XDFSAT   (JI, KPATCH)  =  PFSAT       (JJ)     
+     DGMI%XHV      (JI, KPATCH)  =  PKDI%XP_HV       (JJ)
+     DGMI%XDPSNG   (JI, KPATCH)  =  PPSNG       (JJ)
+     DGMI%XDPSNV   (JI, KPATCH)  =  PPSNV       (JJ)
+     DGMI%XDPSN    (JI, KPATCH)  =  PPSN        (JJ)     
+     DGMI%XALBT    (JI, KPATCH)  =  PKDI%XP_ALBT     (JJ)
+     DGMI%XDFF     (JI, KPATCH)  =  PFF         (JJ)
+     DGMI%XDFFG    (JI, KPATCH)  =  PFFG        (JJ)
+     DGMI%XDFFV    (JI, KPATCH)  =  PFFV        (JJ)     
+     DGMI%XTWSNOW  (JI, KPATCH)  =  PKDI%XP_TWSNOW   (JJ)
+     DGMI%XTDSNOW  (JI, KPATCH)  =  PKDI%XP_TDSNOW   (JJ)
+     DGMI%XTTSNOW  (JI, KPATCH)  =  ZSNOWTEMP   (JJ)
+     DGMI%XDFSAT   (JI, KPATCH)  =  PFSAT       (JJ)     
      !
   END DO
 !
   IF (HSNOW=='3-L' .OR. HSNOW=='CRO') THEN
      !
-    DO JK=1,SIZE(XP_SNOWLIQ,2)
+    DO JK=1,SIZE(PKDI%XP_SNOWLIQ,2)
 !cdir nodep
       DO JJ=1,KSIZE
         JI                      =  KMASK         (JJ)
         !
-        XSNOWLIQ (JI,JK,KPATCH)  =  XP_SNOWLIQ    (JJ,JK)
-        XSNOWTEMP(JI,JK,KPATCH)  =  XP_SNOWTEMP   (JJ,JK)
+        DGMI%XSNOWLIQ (JI,JK,KPATCH)  =  PKDI%XP_SNOWLIQ    (JJ,JK)
+        DGMI%XSNOWTEMP(JI,JK,KPATCH)  =  PKDI%XP_SNOWTEMP   (JJ,JK)
         !
       END DO
     ENDDO
@@ -218,10 +221,10 @@ IF (LSURF_MISC_BUDGET) THEN
        DO JJ=1,KSIZE
          JI = KMASK(JJ)
          !
-         XFAPAR      (JI, KPATCH) = XP_FAPAR      (JJ)
-         XFAPIR      (JI, KPATCH) = XP_FAPIR      (JJ)
-         XFAPAR_BS   (JI, KPATCH) = XP_FAPAR_BS   (JJ)
-         XFAPIR_BS   (JI, KPATCH) = XP_FAPIR_BS   (JJ)
+         DGMI%XFAPAR      (JI, KPATCH) = PKDI%XP_FAPAR      (JJ)
+         DGMI%XFAPIR      (JI, KPATCH) = PKDI%XP_FAPIR      (JJ)
+         DGMI%XFAPAR_BS   (JI, KPATCH) = PKDI%XP_FAPAR_BS   (JJ)
+         DGMI%XFAPIR_BS   (JI, KPATCH) = PKDI%XP_FAPIR_BS   (JJ)
          !
        ENDDO
        !
@@ -233,9 +236,9 @@ IF (LSURF_MISC_BUDGET) THEN
            JI = KMASK(JJ)
            !
            IF (PMUS(JJ).NE.0.) THEN
-             XDFAPARC   (JI, KPATCH) = PFAPARC   (JJ) / PMUS(JJ) 
-             XDFAPIRC   (JI, KPATCH) = PFAPIRC   (JJ) / PMUS(JJ)
-             XDLAI_EFFC (JI, KPATCH) = PLAI_EFFC (JJ) / PMUS(JJ)
+             DGMI%XDFAPARC   (JI, KPATCH) = PFAPARC   (JJ) / PMUS(JJ) 
+             DGMI%XDFAPIRC   (JI, KPATCH) = PFAPIRC   (JJ) / PMUS(JJ)
+             DGMI%XDLAI_EFFC (JI, KPATCH) = PLAI_EFFC (JJ) / PMUS(JJ)
            ENDIF
            !
          ENDDO
@@ -251,7 +254,14 @@ IF (LSURF_MISC_BUDGET) THEN
   ENDIF
   !
   IF(HISBA=='DIF')THEN
-    CALL COMPUT_COLD_LAYERS_THICK
+    ZALT(:)=0.0
+    ZFLT(:)=0.0
+    CALL COMPUT_COLD_LAYERS_THICK(PDG,PTG,ZALT,ZFLT)
+    DO JJ=1,KSIZE
+       JI              =  KMASK(JJ)
+       DGMI%XALT(JI,KPATCH) =  ZALT(JJ) 
+       DGMI%XFLT(JI,KPATCH) =  ZFLT(JJ)  
+    ENDDO
   ENDIF
   !
 END IF
@@ -262,113 +272,12 @@ IF (OAGRIP) THEN
   DO JJ=1,KSIZE
      JI                     =  KMASK         (JJ)
      !
-     XSEUIL   (JI, KPATCH)  =  PSEUIL (JJ)
+     DGMI%XSEUIL   (JI, KPATCH)  =  PSEUIL (JJ)
      !
   END DO
 !
 END IF
 IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N',1,ZHOOK_HANDLE)
-!-------------------------------------------------------------------------------------
-!
-CONTAINS
-!
-SUBROUTINE COMPUT_COLD_LAYERS_THICK
-!
-! Comput active layer (ALT) and frozen layer (FLT) theaknesses 
-! using linear interpolation between two nodes :
-!       ALT = depth to zero centigrade isotherm in permafrost
-!       FLT = depth to zero centigrade isotherm in non-permafrost
-!
-USE MODD_SURF_PAR, ONLY : NUNDEF
-!
-IMPLICIT NONE
-!
-REAL, DIMENSION(KSIZE,SIZE(PDG,2)) :: ZNODE
-INTEGER, DIMENSION(KSIZE)          :: IUP_ALT, IDOWN_ALT
-INTEGER, DIMENSION(KSIZE)          :: IUP_FLT, IDOWN_FLT
-!
-REAL    :: ZTG_UP, ZTG_DOWN
-REAL    :: ZUP, ZDOWN
-REAL    :: ZALT, ZFLT, ZSLOPE
-!
-INTEGER :: JJ, JI, JL, INL
-!
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N:COMPUT_COLD_LAYERS_THICK',0,ZHOOK_HANDLE)
-!
-INL=SIZE(PDG,2)
-!
-IUP_ALT  (:)=0
-IDOWN_ALT(:)=0
-IUP_FLT  (:)=0
-IDOWN_FLT(:)=0
-!
-!Surface soil layer
-!
-ZNODE(:,1)=0.5*PDG(:,1)
-WHERE(PTG(:,1)>XTT.AND.PTG(:,2)<=XTT.AND.PTG(:,3)<=XTT)
-      IUP_ALT  (:)=1
-      IDOWN_ALT(:)=2
-ENDWHERE
-WHERE(PTG(:,1)<XTT.AND.PTG(:,2)>=XTT.AND.PTG(:,3)>=XTT)
-      IUP_FLT  (:)=1
-      IDOWN_FLT(:)=2
-ENDWHERE
-!
-!Middle soil layer
-!
-DO JL=2,INL-1
-   DO JJ=1,KSIZE 
-      ZNODE(JJ,JL)=0.5*(PDG(JJ,JL)+PDG(JJ,JL-1))
-      IF(PTG(JJ,JL-1)>XTT.AND.PTG(JJ,JL)>XTT.AND.PTG(JJ,JL+1)<=XTT)THEN
-        IUP_ALT  (JJ)=JL
-        IDOWN_ALT(JJ)=JL+1
-      ENDIF
-      IF(PTG(JJ,JL-1)<XTT.AND.PTG(JJ,JL)<XTT.AND.PTG(JJ,JL+1)>=XTT)THEN
-        IUP_FLT  (JJ)=JL
-        IDOWN_FLT(JJ)=JL+1
-      ENDIF      
-   ENDDO
-ENDDO
-!
-!Last soil layer
-!
-ZNODE(:,INL)=0.5*(PDG(:,INL)+PDG(:,INL-1))
-WHERE(PTG(:,INL)>XTT)IDOWN_ALT(:)=NUNDEF
-WHERE(PTG(:,INL)<XTT)IDOWN_FLT(:)=NUNDEF
-!
-DO JJ=1,KSIZE
-!
-   ZALT  =0.0
-   IF(IDOWN_ALT(JJ)>0.AND.IDOWN_ALT(JJ)<=INL)THEN
-     ZTG_UP    = PTG  (JJ,IUP_ALT  (JJ))
-     ZTG_DOWN  = PTG  (JJ,IDOWN_ALT(JJ))
-     ZUP       = ZNODE(JJ,IUP_ALT  (JJ))
-     ZDOWN     = ZNODE(JJ,IDOWN_ALT(JJ))
-     ZSLOPE    = (ZUP-ZDOWN)/(ZTG_UP-ZTG_DOWN)
-     ZALT      = ZDOWN+(XTT-ZTG_DOWN)*ZSLOPE
-   ENDIF
-!
-   ZFLT  =0.0
-   IF(IDOWN_FLT(JJ)>0.AND.IDOWN_FLT(JJ)<=INL)THEN
-     ZTG_UP    = PTG  (JJ,IUP_FLT  (JJ))
-     ZTG_DOWN  = PTG  (JJ,IDOWN_FLT(JJ))
-     ZUP       = ZNODE(JJ,IUP_FLT  (JJ))
-     ZDOWN     = ZNODE(JJ,IDOWN_FLT(JJ))
-     ZSLOPE    = (ZUP-ZDOWN)/(ZTG_UP-ZTG_DOWN)
-     ZFLT      = ZDOWN+(XTT-ZTG_DOWN)*ZSLOPE
-   ENDIF
-!
-   JI              =  KMASK(JJ)
-   XALT(JI,KPATCH) =  ZALT 
-   XFLT(JI,KPATCH) =  ZFLT 
-!
-ENDDO
-!
-IF (LHOOK) CALL DR_HOOK('DIAG_MISC_ISBA_N:COMPUT_COLD_LAYERS_THICK',1,ZHOOK_HANDLE)
-!
-END SUBROUTINE COMPUT_COLD_LAYERS_THICK
 !-------------------------------------------------------------------------------------
 !
 END SUBROUTINE DIAG_MISC_ISBA_n

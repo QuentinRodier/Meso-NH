@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE DEALLOC_FLAKE_n
+SUBROUTINE DEALLOC_FLAKE_n (CHF, FG, F)
 !     #################################################################################
 !
 !!****  *DEALLOC_FLAKE_n * - Deallocate all arrays
@@ -25,28 +25,18 @@ SUBROUTINE DEALLOC_FLAKE_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      Modified    04/2013, P. Le Moigne: FLake chemistry and XZ0
 !!------------------------------------------------------------------
 !
 
 !
-USE MODD_FLAKE_n,      ONLY : LCOVER          , XCOVER        , &
-                                XZS           , XEMIS         , &
-                                XWATER_DEPTH  , XWATER_FETCH  , &
-                                XT_BS         , XDEPTH_BS     , &
-                                XCORIO        , XDIR_ALB      , &
-                                XSCA_ALB      , XICE_ALB      , &
-                                XSNOW_ALB     , XEXTCOEF_WATER, &
-                                XEXTCOEF_ICE  , XEXTCOEF_SNOW , &
-                                XT_SNOW       , XT_ICE        , &
-                                XT_MNW        , XT_WML        , &
-                                XT_BOT        , XT_B1         , &
-                                XCT           , XH_SNOW       , &
-                                XH_ICE        , XH_ML         , &
-                                XH_B1         , XTS             
-USE MODD_FLAKE_GRID_n, ONLY : XGRID_PAR, XLAT, XLON, XMESH_SIZE
-USE MODD_CH_WATFLUX_n,   ONLY : XDEP, CCH_NAMES, CSV
 
 
+!
+!
+USE MODD_CH_FLAKE_n, ONLY : CH_FLAKE_t
+USE MODD_FLAKE_GRID_n, ONLY : FLAKE_GRID_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -61,50 +51,56 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------------
 !
 
+!
+TYPE(CH_FLAKE_t), INTENT(INOUT) :: CHF
+TYPE(FLAKE_GRID_t), INTENT(INOUT) :: FG
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEALLOC_FLAKE_N',0,ZHOOK_HANDLE)
-IF (ASSOCIATED(LCOVER ))  DEALLOCATE(LCOVER )
-IF (ASSOCIATED(XCOVER ))  DEALLOCATE(XCOVER )
-IF (ASSOCIATED(XZS    ))  DEALLOCATE(XZS    )
-IF (ASSOCIATED(XEMIS         ))  DEALLOCATE(XEMIS         )
-IF (ASSOCIATED(XWATER_DEPTH  ))  DEALLOCATE(XWATER_DEPTH  )
-IF (ASSOCIATED(XWATER_FETCH  ))  DEALLOCATE(XWATER_FETCH  )
-IF (ASSOCIATED(XT_BS         ))  DEALLOCATE(XT_BS         )
-IF (ASSOCIATED(XDEPTH_BS     ))  DEALLOCATE(XDEPTH_BS     )
-IF (ASSOCIATED(XCORIO        ))  DEALLOCATE(XCORIO        )
-IF (ASSOCIATED(XDIR_ALB      ))  DEALLOCATE(XDIR_ALB      )
-IF (ASSOCIATED(XSCA_ALB      ))  DEALLOCATE(XSCA_ALB      )
-IF (ASSOCIATED(XICE_ALB      ))  DEALLOCATE(XICE_ALB      )
-IF (ASSOCIATED(XSNOW_ALB     ))  DEALLOCATE(XSNOW_ALB     )
-IF (ASSOCIATED(XEXTCOEF_WATER))  DEALLOCATE(XEXTCOEF_WATER)
-IF (ASSOCIATED(XEXTCOEF_ICE  ))  DEALLOCATE(XEXTCOEF_ICE  )
-IF (ASSOCIATED(XEXTCOEF_SNOW ))  DEALLOCATE(XEXTCOEF_SNOW )
-IF (ASSOCIATED(XT_SNOW       ))  DEALLOCATE(XT_SNOW       )
-IF (ASSOCIATED(XT_ICE        ))  DEALLOCATE(XT_ICE        )
-IF (ASSOCIATED(XT_MNW        ))  DEALLOCATE(XT_MNW        )
-IF (ASSOCIATED(XT_WML        ))  DEALLOCATE(XT_WML        )
-IF (ASSOCIATED(XT_BOT        ))  DEALLOCATE(XT_BOT        )
-IF (ASSOCIATED(XT_B1         ))  DEALLOCATE(XT_B1         )
-IF (ASSOCIATED(XCT           ))  DEALLOCATE(XCT           )
-IF (ASSOCIATED(XH_SNOW       ))  DEALLOCATE(XH_SNOW       )
-IF (ASSOCIATED(XH_ICE        ))  DEALLOCATE(XH_ICE        )
-IF (ASSOCIATED(XH_ML         ))  DEALLOCATE(XH_ML         )
-IF (ASSOCIATED(XH_B1         ))  DEALLOCATE(XH_B1         )
-IF (ASSOCIATED(XTS           ))  DEALLOCATE(XTS           )
+IF (ASSOCIATED(F%LCOVER ))  DEALLOCATE(F%LCOVER )
+IF (ASSOCIATED(F%XCOVER ))  DEALLOCATE(F%XCOVER )
+IF (ASSOCIATED(F%XZS    ))  DEALLOCATE(F%XZS    )
+IF (ASSOCIATED(F%XEMIS         ))  DEALLOCATE(F%XEMIS         )
+IF (ASSOCIATED(F%XWATER_DEPTH  ))  DEALLOCATE(F%XWATER_DEPTH  )
+IF (ASSOCIATED(F%XWATER_FETCH  ))  DEALLOCATE(F%XWATER_FETCH  )
+IF (ASSOCIATED(F%XT_BS         ))  DEALLOCATE(F%XT_BS         )
+IF (ASSOCIATED(F%XDEPTH_BS     ))  DEALLOCATE(F%XDEPTH_BS     )
+IF (ASSOCIATED(F%XCORIO        ))  DEALLOCATE(F%XCORIO        )
+IF (ASSOCIATED(F%XDIR_ALB      ))  DEALLOCATE(F%XDIR_ALB      )
+IF (ASSOCIATED(F%XSCA_ALB      ))  DEALLOCATE(F%XSCA_ALB      )
+IF (ASSOCIATED(F%XICE_ALB      ))  DEALLOCATE(F%XICE_ALB      )
+IF (ASSOCIATED(F%XSNOW_ALB     ))  DEALLOCATE(F%XSNOW_ALB     )
+IF (ASSOCIATED(F%XEXTCOEF_WATER))  DEALLOCATE(F%XEXTCOEF_WATER)
+IF (ASSOCIATED(F%XEXTCOEF_ICE  ))  DEALLOCATE(F%XEXTCOEF_ICE  )
+IF (ASSOCIATED(F%XEXTCOEF_SNOW ))  DEALLOCATE(F%XEXTCOEF_SNOW )
+IF (ASSOCIATED(F%XT_SNOW       ))  DEALLOCATE(F%XT_SNOW       )
+IF (ASSOCIATED(F%XT_ICE        ))  DEALLOCATE(F%XT_ICE        )
+IF (ASSOCIATED(F%XT_MNW        ))  DEALLOCATE(F%XT_MNW        )
+IF (ASSOCIATED(F%XT_WML        ))  DEALLOCATE(F%XT_WML        )
+IF (ASSOCIATED(F%XT_BOT        ))  DEALLOCATE(F%XT_BOT        )
+IF (ASSOCIATED(F%XT_B1         ))  DEALLOCATE(F%XT_B1         )
+IF (ASSOCIATED(F%XCT           ))  DEALLOCATE(F%XCT           )
+IF (ASSOCIATED(F%XH_SNOW       ))  DEALLOCATE(F%XH_SNOW       )
+IF (ASSOCIATED(F%XH_ICE        ))  DEALLOCATE(F%XH_ICE        )
+IF (ASSOCIATED(F%XH_ML         ))  DEALLOCATE(F%XH_ML         )
+IF (ASSOCIATED(F%XH_B1         ))  DEALLOCATE(F%XH_B1         )
+IF (ASSOCIATED(F%XTS           ))  DEALLOCATE(F%XTS           )
+IF (ASSOCIATED(F%XZ0           ))  DEALLOCATE(F%XZ0           )
 !
 !-------------------------------------------------------------------------------------
 !
-IF (ASSOCIATED(XGRID_PAR )) DEALLOCATE(XGRID_PAR )
-IF (ASSOCIATED(XLAT      )) DEALLOCATE(XLAT      )
-IF (ASSOCIATED(XLON      )) DEALLOCATE(XLON      )
-IF (ASSOCIATED(XMESH_SIZE)) DEALLOCATE(XMESH_SIZE)
+IF (ASSOCIATED(FG%XGRID_PAR )) DEALLOCATE(FG%XGRID_PAR )
+IF (ASSOCIATED(FG%XLAT      )) DEALLOCATE(FG%XLAT      )
+IF (ASSOCIATED(FG%XLON      )) DEALLOCATE(FG%XLON      )
+IF (ASSOCIATED(FG%XMESH_SIZE)) DEALLOCATE(FG%XMESH_SIZE)
 !
 !-------------------------------------------------------------------------------------
 !
-IF(ASSOCIATED(XDEP))      DEALLOCATE(XDEP)
-IF(ASSOCIATED(CCH_NAMES)) DEALLOCATE(CCH_NAMES)
-IF(ASSOCIATED(CSV))       DEALLOCATE(CSV)
+IF(ASSOCIATED(CHF%XDEP))      DEALLOCATE(CHF%XDEP)
+IF(ASSOCIATED(CHF%CCH_NAMES)) DEALLOCATE(CHF%CCH_NAMES)
+IF(ASSOCIATED(CHF%SVF%CSV))       DEALLOCATE(CHF%SVF%CSV)
 IF (LHOOK) CALL DR_HOOK('DEALLOC_FLAKE_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_SEAFLUX_PAR(HPROGRAM,OSST_DATA)
+      SUBROUTINE PGD_SEAFLUX_PAR (DTCO, DTS, SG, UG, U, USS, &
+                                  HPROGRAM,OSST_DATA)
 !     ##############################################################
 !
 !!**** *PGD_SEAFLUX_PAR* monitor for averaging and interpolations of sst
@@ -40,9 +41,16 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_SEAFLUX_n, ONLY : DATA_SEAFLUX_t
+USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
-USE MODD_SEAFLUX_GRID_n, ONLY : NDIM
-USE MODD_DATA_SEAFLUX_n, ONLY : XDATA_SST, TDATA_SST
 !
 USE MODD_PGDWORK,       ONLY : CATYPE
 !
@@ -66,6 +74,14 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_SEAFLUX_t), INTENT(INOUT) :: DTS
+TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+!
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 LOGICAL         ,    INTENT(OUT)   :: OSST_DATA
 !
@@ -82,8 +98,8 @@ INTEGER               :: JTIME     ! loop counter on time
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
-INTEGER            :: NTIME
-INTEGER, PARAMETER :: NTIME_MAX    = 365
+INTEGER            :: NTIME_SST
+INTEGER, PARAMETER :: NTIME_MAX    = 800
 !
 REAL, DIMENSION(NTIME_MAX)     :: XUNIF_SST        ! sea surface temperature
 
@@ -99,7 +115,7 @@ LOGICAL                        :: LSST_DATA
  CHARACTER(LEN=6),  DIMENSION(NTIME_MAX)   :: CFTYP_SST        ! sea surface temperature
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-NAMELIST/NAM_DATA_SEAFLUX/NTIME, LSST_DATA, XUNIF_SST, CFNAM_SST, CFTYP_SST, &
+NAMELIST/NAM_DATA_SEAFLUX/NTIME_SST, LSST_DATA, XUNIF_SST, CFNAM_SST, CFTYP_SST, &
                             NYEAR_SST, NMONTH_SST, NDAY_SST, XTIME_SST  
 !-------------------------------------------------------------------------------
 !
@@ -107,12 +123,12 @@ NAMELIST/NAM_DATA_SEAFLUX/NTIME, LSST_DATA, XUNIF_SST, CFNAM_SST, CFTYP_SST, &
 !             ---------------
 !
 IF (LHOOK) CALL DR_HOOK('PGD_SEAFLUX_PAR',0,ZHOOK_HANDLE)
-NTIME             = 12
+NTIME_SST         = 12
 XUNIF_SST (:)     = XUNDEF ! sea surface temperature
 !
-CFNAM_SST (:)     = '                            '
+ CFNAM_SST (:)     = '                            '
 !
-CFTYP_SST (:)     = '      '
+ CFTYP_SST (:)     = '      '
 !
 NYEAR_SST  (:)    = NUNDEF
 NMONTH_SST (:)    = NUNDEF
@@ -137,28 +153,29 @@ OSST_DATA         = LSST_DATA
 IF (.NOT. LSST_DATA .AND. LHOOK) CALL DR_HOOK('PGD_SEAFLUX_PAR',1,ZHOOK_HANDLE)
 IF (.NOT. LSST_DATA) RETURN
 !
-IF (NTIME > NTIME_MAX) THEN
-   WRITE(ILUOUT,*)'NTIME SHOULD NOT EXCEED',NTIME_MAX
+IF (NTIME_SST > NTIME_MAX) THEN
+   WRITE(ILUOUT,*)'NTIME_SST SHOULD NOT EXCEED',NTIME_MAX
    CALL ABOR1_SFX('PGD_SEAFLUX_PAR: NTIME TOO BIG')
 ENDIF
-ALLOCATE(XDATA_SST     (NDIM,NTIME))
-ALLOCATE(TDATA_SST     (NTIME))
+ALLOCATE(DTS%XDATA_SST     (SG%NDIM,NTIME_SST))
+ALLOCATE(DTS%TDATA_SST     (NTIME_SST))
 !
 !-------------------------------------------------------------------------------
 !
 !*    3.      Uniform fields are prescribed
 !             -----------------------------
 !
-CATYPE = 'ARI'
+ CATYPE = 'ARI'
 !
-DO JTIME=1,NTIME
-  CALL PGD_FIELD(HPROGRAM,'SST: sea surface temperature','SEA',CFNAM_SST(JTIME),   &
-                   CFTYP_SST(JTIME),XUNIF_SST(JTIME),XDATA_SST(:,JTIME))  
+DO JTIME=1,NTIME_SST
+  CALL PGD_FIELD(DTCO, UG, U, USS, &
+                 HPROGRAM,'SST: sea surface temperature','SEA',CFNAM_SST(JTIME),   &
+                   CFTYP_SST(JTIME),XUNIF_SST(JTIME),DTS%XDATA_SST(:,JTIME))  
 !                 
-  TDATA_SST(JTIME)%TDATE%YEAR  = NYEAR_SST(JTIME)
-  TDATA_SST(JTIME)%TDATE%MONTH = NMONTH_SST(JTIME)
-  TDATA_SST(JTIME)%TDATE%DAY   = NDAY_SST(JTIME)
-  TDATA_SST(JTIME)%TIME        = XTIME_SST(JTIME)
+  DTS%TDATA_SST(JTIME)%TDATE%YEAR  = NYEAR_SST(JTIME)
+  DTS%TDATA_SST(JTIME)%TDATE%MONTH = NMONTH_SST(JTIME)
+  DTS%TDATA_SST(JTIME)%TDATE%DAY   = NDAY_SST(JTIME)
+  DTS%TDATA_SST(JTIME)%TIME        = XTIME_SST(JTIME)
 !  
 END DO
 IF (LHOOK) CALL DR_HOOK('PGD_SEAFLUX_PAR',1,ZHOOK_HANDLE)

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_DEFAULT_FLAKE_n(HPROGRAM)
+      SUBROUTINE READ_DEFAULT_FLAKE_n (CHF, DGF, DGMF, F, &
+                                       HPROGRAM)
 !     #############################################################
 !
 !!****  *READ_FLAKE_CONF* - routine to read the configuration for FLAKE
@@ -27,15 +28,26 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
+!!      Modified    04/2013, P. Le Moigne: FLake chemistry
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+!
+!
+USE MODD_CH_FLAKE_n, ONLY : CH_FLAKE_t
+USE MODD_DIAG_FLAKE_n, ONLY : DIAG_FLAKE_t
+USE MODD_DIAG_MISC_FLAKE_n, ONLY : DIAG_MISC_FLAKE_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -44,7 +56,6 @@ USE MODI_GET_LUOUT
 USE MODI_GET_DEFAULT_NAM_n
 !
 USE MODN_FLAKE_n
-USE MODD_DIAG_MISC_FLAKE_n,    ONLY : XZW_PROFILE, XTW_PROFILE
 USE MODD_SURF_PAR,           ONLY : XUNDEF
 USE MODD_READ_NAMELIST, ONLY : LNAM_READ
 !
@@ -57,6 +68,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_FLAKE_t), INTENT(INOUT) :: CHF
+TYPE(DIAG_FLAKE_t), INTENT(INOUT) :: DGF
+TYPE(DIAG_MISC_FLAKE_t), INTENT(INOUT) :: DGMF
+TYPE(FLAKE_t), INTENT(INOUT) :: F
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
 
@@ -85,10 +102,10 @@ IF (ILUDES==0) RETURN
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_FLAKEn
- CALL INIT_NAM_DIAG_SURFn
- CALL INIT_NAM_DIAG_FLAKEn
- CALL INIT_NAM_CH_WATFLUXn
+ CALL INIT_NAM_FLAKEn(F)
+ CALL INIT_NAM_DIAG_SURFn(DGF)
+ CALL INIT_NAM_DIAG_FLAKEn(DGMF)
+ CALL INIT_NAM_CH_FLAKEn(CHF)
 ENDIF
 !
 IF (LNAM_READ) THEN
@@ -104,16 +121,16 @@ IF (LNAM_READ) THEN
  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_DIAG_FLAKEn)
  IF (LWATER_PROFILE .AND. count (XZWAT_PROFILE /= XUNDEF) == 0) &
      CALL ABOR1_SFX("XZWAT_PROFILE MUST BE DEFINED IN NAMELIST NAM_DIAG_FLAKEN IF LWATER_PROFILE=T")     
- CALL POSNAM(ILUDES,'NAM_CH_WATFLUXN',GFOUND,ILUOUT)
- IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CH_WATFLUXn)
+ CALL POSNAM(ILUDES,'NAM_CH_FLAKEN',GFOUND,ILUOUT)
+ IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CH_FLAKEn)
 !
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_FLAKEn
- CALL UPDATE_NAM_DIAG_SURFn
- CALL UPDATE_NAM_DIAG_FLAKEn
- CALL UPDATE_NAM_CH_WATFLUXn
+ CALL UPDATE_NAM_FLAKEn(F)
+ CALL UPDATE_NAM_DIAG_SURFn(DGF)
+ CALL UPDATE_NAM_DIAG_FLAKEn(DGMF)
+ CALL UPDATE_NAM_CH_FLAKEn(CHF)
 ENDIF
 IF (LHOOK) CALL DR_HOOK('READ_DEFAULT_FLAKE_N',1,ZHOOK_HANDLE)
 !

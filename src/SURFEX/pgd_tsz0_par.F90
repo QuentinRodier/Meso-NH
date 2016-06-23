@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TSZ0_PAR(HPROGRAM)
+      SUBROUTINE PGD_TSZ0_PAR (DTZ, &
+                               HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_TSZ0_PAR* monitor for averaging and interpolations of sst
@@ -32,7 +33,8 @@
 !!    MODIFICATION
 !!    ------------
 !!
-!!    Original    09/2007
+!!    Original     09/2007
+!!    P. Le Moigne 03/2015 tsz0 time management
 !!
 !!
 !----------------------------------------------------------------------------
@@ -40,7 +42,9 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_DATA_TSZ0_n, ONLY : XDATA_DTS, XDATA_DHUGRD
+!
+!
+USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -58,6 +62,9 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
+!
+TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
+!
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !
 !
@@ -74,7 +81,7 @@ INTEGER               :: JTIME     ! loop counter on time
 !            ------------------------
 !
 INTEGER            :: NTIME
-INTEGER, PARAMETER :: NTIME_MAX    = 25
+INTEGER, PARAMETER :: NTIME_MAX    = 37
 !
 REAL, DIMENSION(NTIME_MAX)     :: XUNIF_DTS
 REAL, DIMENSION(NTIME_MAX)     :: XUNIF_DHUGRD
@@ -97,10 +104,10 @@ IF (LHOOK) CALL DR_HOOK('PGD_TSZ0_PAR',0,ZHOOK_HANDLE)
 NTIME             = 25
 XUNIF_DTS (:)     = -0.250
 XUNIF_DHUGRD(:)   = 0.0
-CFNAM_DTS   (:) = '                            '
-CFNAM_DHUGRD(:) = '                            '
-CFTYP_DTS   (:) = '      '
-CFTYP_DHUGRD(:) = '      '
+ CFNAM_DTS   (:) = '                            '
+ CFNAM_DHUGRD(:) = '                            '
+ CFTYP_DTS   (:) = '      '
+ CFTYP_DHUGRD(:) = '      '
 !
 !-------------------------------------------------------------------------------
 !
@@ -118,27 +125,26 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_DATA_TSZ0)
 IF (NTIME > NTIME_MAX) THEN
    WRITE(ILUOUT,*)'NTIME SHOULD NOT EXCEED',NTIME_MAX
    CALL ABOR1_SFX('PGD_TSZ0_PAR: NTIME TOO BIG')
-ELSEIF (NTIME.NE.1 .AND. NTIME.NE.25) THEN
-  CALL ABOR1_SFX('PGD_TSZ0_PAR: NTIME MUST BE 1 OR 25')
 ENDIF
 !
-ALLOCATE(XDATA_DTS    (NTIME))
-ALLOCATE(XDATA_DHUGRD (NTIME))
+ALLOCATE(DTZ%XDATA_DTS    (NTIME))
+ALLOCATE(DTZ%XDATA_DHUGRD (NTIME))
 !
 !-------------------------------------------------------------------------------
 !
 !*    3.      Uniform fields are prescribed
 !             -----------------------------
 !
-IF (NTIME==25) THEN
+IF (NTIME==1) THEN
+  DTZ%XDATA_DTS   (:) = XUNIF_DTS   (1)
+  DTZ%XDATA_DHUGRD(:) = XUNIF_DHUGRD(1)
+ELSE
   DO JTIME=1,NTIME
-    XDATA_DTS   (JTIME) = XUNIF_DTS   (JTIME)
-    XDATA_DHUGRD(JTIME) = XUNIF_DHUGRD(JTIME)
+    DTZ%XDATA_DTS   (JTIME) = XUNIF_DTS   (JTIME)
+    DTZ%XDATA_DHUGRD(JTIME) = XUNIF_DHUGRD(JTIME)
   END DO
-ELSEIF (NTIME==1) THEN
-  XDATA_DTS   (:) = XUNIF_DTS   (1)
-  XDATA_DHUGRD(:) = XUNIF_DHUGRD(1)
 ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('PGD_TSZ0_PAR',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

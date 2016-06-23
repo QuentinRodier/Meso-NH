@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###########################################################################
-SUBROUTINE SSO_BELJAARS04(KI,KLVL,PZ,PSSO_STDEV,PU,PFORC_U,PDFORC_UDU)
+SUBROUTINE SSO_BELJAARS04 (USS, &
+                           KI,KLVL,PZ,PSSO_STDEV,PU,PFORC_U,PDFORC_UDU)
 !     ###############################################################################
 !
 !!****  *SSO_BELJAARS04_n * - prepares forcing for canopy air model
@@ -27,13 +28,18 @@ SUBROUTINE SSO_BELJAARS04(KI,KLVL,PZ,PSSO_STDEV,PU,PFORC_U,PDFORC_UDU)
 !!      Original    07/2006
 !!---------------------------------------------------------------
 !
-USE MODD_SURF_ATM_SSO_n, ONLY : XCOEFBE
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
 INTEGER,                  INTENT(IN)    :: KI        ! number of points
 INTEGER,                  INTENT(IN)    :: KLVL      ! number of levels in canopy
@@ -74,7 +80,7 @@ IF (LHOOK) CALL DR_HOOK('SSO_BELJAARS04',0,ZHOOK_HANDLE)
 !*      2.     Computations of wind tendency due to orographic drag
 !              ----------------------------------------------------
 !
-C_AVAR    = C_K1**(C_N1-C_N2) / (C_IH * C_KFLT**C_N1)   ! (unit: m^{1+C_N2}  =  m^-1.8)
+ C_AVAR    = C_K1**(C_N1-C_N2) / (C_IH * C_KFLT**C_N1)   ! (unit: m^{1+C_N2}  =  m^-1.8)
 !
 !
 !*      2.1    Drag coefficient in  drag force by subscale orography 
@@ -84,7 +90,7 @@ C_AVAR    = C_K1**(C_N1-C_N2) / (C_IH * C_KFLT**C_N1)   ! (unit: m^{1+C_N2}  =  
 !
 ZSSO_DRAG = 0.
 DO JL=1,KLVL
-  ZSSO_DRAG (:,JL) = XCOEFBE * C_ALPHA * C_BETA * C_COR * C_CMD * 2.109 * EXP( -(PZ(:,JL)/1500.)**1.5) &
+  ZSSO_DRAG (:,JL) = USS%XCOEFBE * C_ALPHA * C_BETA * C_COR * C_CMD * 2.109 * EXP( -(PZ(:,JL)/1500.)**1.5) &
     * C_AVAR * PSSO_STDEV(:)**2 * PZ(:,JL)**(-1.2)
 END DO
 !

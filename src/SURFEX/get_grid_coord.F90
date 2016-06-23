@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_GRID_COORD(KLUOUT,PX,PY,KL,HGRID,PGRID_PAR)
+      SUBROUTINE GET_GRID_COORD (UG, U, &
+                                 KLUOUT,PX,PY,KL,HGRID,PGRID_PAR)
 !     #######################################
 !!
 !!    PURPOSE
@@ -34,14 +35,17 @@
 !!
 !!    Original     01/2004
 !!                 10/2007  E. Martin  IGN Grid
+!!                 10/2014  P. Samuelsson SMHI Rotated lonlat
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : CGRID, NGRID_PAR, XGRID_PAR
-USE MODD_SURF_ATM_n,      ONLY : NSIZE_FULL
 !
+!
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -59,10 +63,16 @@ USE MODI_GET_GRID_COORD_IGN
 USE MODI_GET_GRID_COORD_LONLAT_REG
 !
 USE MODI_GET_GRID_COORD_LONLATVAL
+!
+USE MODI_GET_GRID_COORD_LONLAT_ROT
 IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
+!
+!
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 INTEGER,                      INTENT(IN)  :: KLUOUT ! output listing logical unit
 REAL, DIMENSION(:), OPTIONAL, INTENT(OUT) :: PX     ! X natural coordinate in the projection
@@ -79,7 +89,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZX
 REAL, DIMENSION(:), ALLOCATABLE :: ZY
 !
  CHARACTER(LEN=10)           :: YGRID
-REAL, DIMENSION(:), POINTER :: ZGRID_PAR
+REAL, DIMENSION(:), ALLOCATABLE :: ZGRID_PAR
 INTEGER                     :: IGRID_PAR
 INTEGER                     :: IL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -93,11 +103,11 @@ IF (PRESENT(HGRID)) THEN
   ALLOCATE(ZGRID_PAR(IGRID_PAR))
   ZGRID_PAR = PGRID_PAR
 ELSE
-  YGRID = CGRID
-  IGRID_PAR = NGRID_PAR
-  IL = NSIZE_FULL
+  YGRID = UG%CGRID
+  IGRID_PAR = UG%NGRID_PAR
+  IL = U%NSIZE_FULL
   ALLOCATE(ZGRID_PAR(IGRID_PAR))
-  ZGRID_PAR = XGRID_PAR
+  ZGRID_PAR = UG%XGRID_PAR
 END IF
 !
 ALLOCATE(ZX(IL))
@@ -146,14 +156,21 @@ SELECT CASE (YGRID)
         CALL GET_GRID_COORD_IGN(IGRID_PAR,IL,ZGRID_PAR,ZX,ZY)
 
 !
-!*    5.      lonlatval
+!*    6.      lonlatval
 !             -------------
 !
       CASE ('LONLATVAL ')
         CALL GET_GRID_COORD_LONLATVAL(IGRID_PAR,IL,ZGRID_PAR,ZX,ZY)
 
 !
-!*    5.      Other cases
+!*    7.      Rotated lonlat grid
+!             -------------------
+!
+      CASE ('LONLAT ROT')
+        CALL GET_GRID_COORD_LONLAT_ROT(IGRID_PAR,IL,ZGRID_PAR,ZX,ZY)
+
+!
+!*    8.      Other cases
 !             -----------
 !
       CASE DEFAULT

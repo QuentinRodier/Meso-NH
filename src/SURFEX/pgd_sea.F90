@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_SEA(HPROGRAM)
+      SUBROUTINE PGD_SEA (DTCO, DTS, SG, S, UG, U, USS, &
+                          HPROGRAM)
 !     #############################################################
 !
 !!****  *PGD_SEA* - routine to choose initialization of sea scheme
@@ -26,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,7 +37,16 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_ATM_n, ONLY : CSEA
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_SEAFLUX_n, ONLY : DATA_SEAFLUX_t
+USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
 !
 USE MODI_PGD_SEAFLUX
 !
@@ -49,6 +59,15 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_SEAFLUX_t), INTENT(INOUT) :: DTS
+TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),                INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -63,14 +82,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !               ---------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PGD_SEA',0,ZHOOK_HANDLE)
-IF (CSEA=='NONE  ') THEN
+IF (U%CSEA=='NONE  ') THEN
   IF (LHOOK) CALL DR_HOOK('PGD_SEA',1,ZHOOK_HANDLE)
   RETURN
-ELSE IF (CSEA=='FLUX  ') THEN
+ELSE IF (U%CSEA=='FLUX  ') THEN
   IF (LHOOK) CALL DR_HOOK('PGD_SEA',1,ZHOOK_HANDLE)
   RETURN
-ELSE IF (CSEA=='SEAFLX') THEN
-  CALL PGD_SEAFLUX(HPROGRAM)
+ELSE IF (U%CSEA=='SEAFLX') THEN
+  CALL PGD_SEAFLUX(DTCO, DTS, SG, S, UG, U, USS, &
+                   HPROGRAM)
 END IF
 IF (LHOOK) CALL DR_HOOK('PGD_SEA',1,ZHOOK_HANDLE)
 !

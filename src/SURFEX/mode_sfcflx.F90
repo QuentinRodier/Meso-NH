@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 ! File %M% from Library %Q%
 ! Version %I% from %G% extracted: %H%
 !------------------------------------------------------------------------------
@@ -173,20 +173,15 @@ REAL , PARAMETER ::     &
 
 !  sfcflx variables of type REAL
 
+!RJ: provide default unreasonable value to init for 'ifort -fpic -openmp', to avoid ICE
+REAL,PARAMETER,PRIVATE :: Z_=-HUGE(0.0)
+
 !  Roughness lengths
 REAL  ::    &
-    z0u_sf                 ,  &! Roughness length with respect to wind velocity [m]
-    z0t_sf                 ,  &! Roughness length with respect to potential temperature [m]
-    z0q_sf                     ! Roughness length with respect to specific humidity [m]  
+    z0u_sf=Z_                 ,  &! Roughness length with respect to wind velocity [m]
+    z0t_sf=Z_                 ,  &! Roughness length with respect to potential temperature [m]
+    z0q_sf=Z_                     ! Roughness length with respect to specific humidity [m]  
 !$OMP THREADPRIVATE(z0u_sf,z0t_sf,z0q_sf)
-!  Fluxes in the surface air layer
-REAL  ::    &
-    u_star_a_sf            ,  &! Friction velocity [m s^{-1}]
-    Q_mom_a_sf             ,  &! Momentum flux [N m^{-2}]
-    Q_sens_a_sf            ,  &! Sensible heat flux [W m^{-2}]
-    Q_lat_a_sf             ,  &! Laten heat flux [W m^{-2}]
-    Q_watvap_a_sf              ! Flux of water vapout [kg m^{-2} s^{-1}]  
-!$OMP THREADPRIVATE(u_star_a_sf,Q_mom_a_sf,Q_sens_a_sf,Q_lat_a_sf,Q_watvap_a_sf)
 !  Security constants
 REAL , PARAMETER ::   &
     u_wind_min_sf  = 1.0E-02  ,  &! Minimum wind speed [m s^{-1}]
@@ -203,7 +198,7 @@ REAL , PARAMETER ::     &
 ! Procedures 
 !==============================================================================
 
-CONTAINS
+ CONTAINS
 
 !==============================================================================
 !  The codes of the sfcflx procedures are stored in separate "*.incf" files
@@ -384,8 +379,8 @@ END FUNCTION sfcflx_lwradatm
 ! Version %I% from %G% extracted: %H%
 !------------------------------------------------------------------------------
 
-!SURFEX REAL  FUNCTION sfcflx_lwradwsfc (T)
-FUNCTION sfcflx_lwradwsfc (emis,T)
+!SURFEX REAL  FUNCTION sfcflx_lwradwsfc (zts)
+FUNCTION sfcflx_lwradwsfc (emis,pts)
 
 !------------------------------------------------------------------------------
 !
@@ -434,7 +429,7 @@ IMPLICIT NONE
 !  Input (function argument) 
 REAL , INTENT(IN) ::   &
     emis                            , &   ! Emissivity
-    T                                     ! Temperature [K]  
+    pts                                   ! Temperature [K]  
  
 !  Output (function result) 
 REAL               ::   &
@@ -448,7 +443,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 ! Long-wave radiation flux [W m^{-2}]
 
 IF (LHOOK) CALL DR_HOOK('SFCFLX:SFCFLX_LWRADWSFC',0,ZHOOK_HANDLE)
-sfcflx_lwradwsfc = emis*tpsf_C_StefBoltz*T**4
+sfcflx_lwradwsfc = emis*tpsf_C_StefBoltz*pts**4
 IF (LHOOK) CALL DR_HOOK('SFCFLX:SFCFLX_LWRADWSFC',1,ZHOOK_HANDLE)
 
 !------------------------------------------------------------------------------
@@ -467,7 +462,8 @@ END FUNCTION sfcflx_lwradwsfc
 SUBROUTINE sfcflx_momsenlat ( height_u, height_tq, fetch,                &
                                 U_a, T_a, q_a, T_s, P_a, h_ice,            &
                                 Q_momentum, Q_sensible, Q_latent, Q_watvap,&
-                                Ri, z0u_ini, z0t_ini)   
+                                Ri, z0u_ini, z0t_ini, Qsat_out,            &
+                                Q_latenti, Q_sublim                        )   
 
 !------------------------------------------------------------------------------
 !
@@ -516,6 +512,9 @@ SUBROUTINE sfcflx_momsenlat ( height_u, height_tq, fetch,                &
 
 !==============================================================================
 
+USE MODE_THERMOS
+USE MODD_SURF_ATM, ONLY : XRIMAX
+
 IMPLICIT NONE
 
 !==============================================================================
@@ -547,14 +546,16 @@ REAL , INTENT(INOUT) :: &
 REAL , INTENT(OUT) ::   &
     Q_sensible                         ,  &! Sensible heat flux [W m^{-2}]  
     Q_latent                           ,  &! Laten heat flux [W m^{-2}]
+    Q_latenti                          ,  &! Sublimation Latent heat flux [W m^{-2}]
     Q_watvap                           ,  &! Flux of water vapout [kg m^{-2} s^{-1}]
-    Ri                                     ! Gradient Richardson number   
+    Q_sublim                           ,  &! Flux of sublimation [kg m^{-2} s^{-1}] 
+    Ri                                 ,  &! Gradient Richardson number   
+    Qsat_out                               ! specific humidity at saturation [kg.kg-1]
 
 
 !  Local parameters of type INTEGER
 INTEGER , PARAMETER ::  &
-    n_iter_max     =   5                       ! Maximum number of iterations   
-!  n_iter_max     = 24                       ! Maximum number of iterations 
+   n_iter_max     =  5                       ! Maximum number of iterations   
 
 !  Local variables of type LOGICAL
 LOGICAL ::          &
@@ -619,10 +620,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('SFCFLX:SFCFLX_MOMSENLAT',0,ZHOOK_HANDLE)
-wvpres_s = sfcflx_satwvpres(T_s, h_ice)  ! Saturation water vapour pressure at T=T_s
-q_s = sfcflx_spechum (wvpres_s, P_a)     ! Saturation specific humidity at T=T_s
+q_s = QSAT(T_s,P_a)
 rho_a = sfcflx_rhoair(T_s, q_s, P_a)     ! Air density at T_s and q_s (surface values)
-
 !------------------------------------------------------------------------------
 !  Compute molecular fluxes of momentum and of sensible and latent heat
 !------------------------------------------------------------------------------
@@ -658,7 +657,7 @@ Q_mom_con = 0.                 ! Momentum flux in free (viscous or CBL-scale) co
 R_z   = height_tq/height_u                        ! Ratio of "height_tq" to "height_u"
 Ri_cr = c_MO_t_stab/c_MO_u_stab**2*R_z  ! Critical Ri
 Ri    = tpl_grav*((T_a-T_s)/T_s+tpsf_alpha_q*(q_a-q_s))/MAX(U_a,u_wind_min_sf)**2
-Ri    = Ri*height_u/Pr_neutral                    ! Gradient Richardson number
+Ri    = MIN(XRIMAX,Ri*height_u/Pr_neutral)        ! Gradient Richardson number
 
 Turb_Fluxes: IF(U_a.LT.u_wind_min_sf.OR.Ri.GT.Ri_cr-c_small_sf) THEN  ! Low wind or Ri>Ri_cr 
 
@@ -720,6 +719,7 @@ Delta = 1.                ! Set initial error to a large value (as compared to t
 !* modif. V. Masson (Meteo-France) : uses previous time-step momentum flux for ustar guess
 u_star_previter = max ( sqrt( - Q_momentum / rho_a ) , u_star_thresh )
 !
+
 IF(U_a.LE.U_a_thresh) THEN  ! Smooth surface
   DO WHILE (Delta.GT.c_accur_sf.AND.n_iter.LT.n_iter_max) 
     CALL sfcflx_roughness (fetch, U_a, MIN(u_star_thresh, u_star_previter), h_ice,   &
@@ -743,7 +743,7 @@ IF(U_a.LE.U_a_thresh) THEN  ! Smooth surface
     Delta = ABS((u_star_st-u_star_previter)/(u_star_st+u_star_previter))
     u_star_previter = u_star_st
     n_iter = n_iter + 1
-  END DO 
+  END DO
 ELSE                        ! Rough surface
   DO WHILE (Delta.GT.c_accur_sf.AND.n_iter.LT.n_iter_max.AND.z0t_sf>z0t_min_sf) 
     CALL sfcflx_roughness (fetch, U_a, MAX(u_star_thresh, u_star_previter), h_ice,   &
@@ -804,6 +804,7 @@ Q_mom_tur = -u_star_st*u_star_st
 
 !  Temperature and specific humidity fluxes
  CALL sfcflx_roughness (fetch, U_a, u_star_st, h_ice, c_z0u_fetch, u_star_thresh, z0u_sf, z0t_sf, z0q_sf)
+!
 IF(ZoL.GE.0.) THEN   ! Stable stratification 
   psi_t = c_MO_t_stab*R_z*ZoL*(1.-MIN(z0t_sf/height_tq, 1.))
   psi_q = c_MO_q_stab*R_z*ZoL*(1.-MIN(z0q_sf/height_tq, 1.))
@@ -867,20 +868,23 @@ END IF
 !------------------------------------------------------------------------------
 !  Set output (notice that fluxes are no longer in kinematic units)
 !------------------------------------------------------------------------------
-
+!
 Q_momentum = Q_momentum*rho_a 
 Q_sensible = Q_sensible*rho_a*tpsf_c_a_p
 Q_watvap   = Q_latent*rho_a
-Q_latent = tpsf_L_evap
-IF(h_ice.GE.h_Ice_min_flk) Q_latent = Q_latent + tpl_L_f   ! Add latent heat of fusion over ice
-Q_latent = Q_watvap*Q_latent
-
-! Set "*_sf" variables to make fluxes accessible to driving routines that use "sfcflx"
-u_star_a_sf     = u_star_st 
-Q_mom_a_sf      = Q_momentum  
-Q_sens_a_sf     = Q_sensible 
-Q_lat_a_sf      = Q_latent
-Q_watvap_a_sf   = Q_watvap
+!
+IF(h_ice.GE.h_Ice_min_flk)THEN
+   Q_latent  = Q_watvap * (tpsf_L_evap + tpl_L_f)   ! Add latent heat of fusion over ice
+   Q_latenti = Q_watvap * (tpsf_L_evap + tpl_L_f)
+   Q_sublim  = Q_watvap
+ELSE
+   Q_latent  = Q_watvap * tpsf_L_evap
+   Q_latenti = 0.0
+   Q_sublim  = 0.0
+ENDIF
+!
+Qsat_out = q_s
+!
 IF (LHOOK) CALL DR_HOOK('SFCFLX:SFCFLX_MOMSENLAT',1,ZHOOK_HANDLE)
 
 !------------------------------------------------------------------------------

@@ -1,12 +1,13 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_DIAG_MISC_FLAKE_n(HPROGRAM)
+      SUBROUTINE WRITE_DIAG_MISC_FLAKE_n ( DTCO, DGU, U, DGMF, &
+                                          HPROGRAM)
 !     #################################
 !
-!!****  *WRITE_DIAG_MISC_FLAKE* - writes the FLAKE diagnostic fields
+!!****  *WRITE_DIAG_MISC_FLAKE* - writes the FLAKE miscellaneous diagnostic fields
 !!
 !!    PURPOSE
 !!    -------
@@ -21,7 +22,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -30,12 +31,16 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_DIAG_MISC_FLAKE_n, ONLY : DIAG_MISC_FLAKE_t
+!
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
 USE MODI_END_IO_SURF_n
-!USE MODD_FLAKE_n
-USE MODD_DIAG_MISC_FLAKE_n,ONLY : LWATER_PROFILE, XZW_PROFILE, XTW_PROFILE
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -44,6 +49,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(DIAG_MISC_FLAKE_t), INTENT(INOUT) :: DGMF
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -58,26 +69,25 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_MISC_FLAKE_N',0,ZHOOK_HANDLE)
+!
 !         Initialisation for IO
 !
-IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_MISC_FLAKE_N',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(HPROGRAM,'WATER ','FLAKE   ','WRITE')
+ CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+                    HPROGRAM,'WATER ','FLAKE   ','WRITE')
 !
 !-------------------------------------------------------------------------------
 !
-IF (LWATER_PROFILE) THEN
+!* Flake temperature profile
 !
-!*       Miscellaneous fields :
-!        ----------------------
-DO IZ=1,SIZE(XZW_PROFILE)
-   WRITE(YRECFM,'(F5.1)') XZW_PROFILE(IZ)
-   YRECFM='TW_'//TRIM(ADJUSTL(YRECFM))
-   YCOMMENT='X_Y_'//YRECFM//' (K)'
-!
-   CALL WRITE_SURF(HPROGRAM,YRECFM,XTW_PROFILE(IZ,:),IRESP,HCOMMENT=YCOMMENT)
-END DO
-!
-!
+IF (DGMF%LWATER_PROFILE) THEN      
+   DO IZ=1,SIZE(DGMF%XZW_PROFILE)
+      WRITE(YRECFM,'(F5.1)') DGMF%XZW_PROFILE(IZ)
+      YRECFM='TW_'//TRIM(ADJUSTL(YRECFM))
+      YCOMMENT='X_Y_'//YRECFM//' (K)'
+      CALL WRITE_SURF(DGU, U, &
+                      HPROGRAM,YRECFM,DGMF%XTW_PROFILE(IZ,:),IRESP,HCOMMENT=YCOMMENT)
+   END DO
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -85,6 +95,7 @@ END IF
 !         End of IO
 !
  CALL END_IO_SURF_n(HPROGRAM)
+!
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_MISC_FLAKE_N',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE WRITE_DIAG_MISC_FLAKE_n

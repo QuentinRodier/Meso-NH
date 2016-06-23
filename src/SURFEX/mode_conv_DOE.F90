@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !###################
 MODULE MODE_CONV_DOE
 !###################
@@ -23,7 +23,7 @@ MODULE MODE_CONV_DOE
 !!
 !!    AUTHOR
 !!    ------
-!!    G. Pigeon	
+!!    G. Pigeon
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -58,7 +58,7 @@ INTERFACE CHTC_ROUGH_DOE
         MODULE PROCEDURE CHTC_ROUGH_DOE_1D
 END INTERFACE
 !
-CONTAINS
+ CONTAINS
 !----------------------------
 !#############################################
 FUNCTION CHTC_VERT_DOE_0D(PTS, PTA) RESULT(PCHTC)
@@ -89,7 +89,7 @@ FUNCTION CHTC_VERT_DOE_0D(PTS, PTA) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -106,7 +106,7 @@ IMPLICIT NONE
 !
 REAL, INTENT(IN)                :: PTS     ! Surface temperature (Kelvin)
 REAL, INTENT(IN)                :: PTA     ! Air temperature (Kelvin)
-REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ FUNCTION CHTC_VERT_DOE_1D(PTS, PTA) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -167,7 +167,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:), INTENT(IN)                :: PTS     ! Surface temperature (Kelvin)
 REAL, DIMENSION(:), INTENT(IN)                :: PTA     ! Air temperature (Kelvin)
-REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ FUNCTION CHTC_UP_DOE_1D(PTS, PTA) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -228,7 +228,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:), INTENT(IN)                :: PTS     ! Surface temperature (Kelvin)
 REAL, DIMENSION(:), INTENT(IN)                :: PTA     ! Air temperature (Kelvin)
-REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ FUNCTION CHTC_UP_DOE_0D(PTS, PTA) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -293,7 +293,7 @@ IMPLICIT NONE
 !
 REAL, INTENT(IN)                :: PTS     ! Surface temperature (Kelvin)
 REAL, INTENT(IN)                :: PTA     ! Air temperature (Kelvin)
-REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -343,7 +343,7 @@ FUNCTION CHTC_DOWN_DOE(PTS, PTA) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -359,7 +359,7 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:), INTENT(IN)                :: PTS     ! Surface temperature (Kelvin)
 REAL, DIMENSION(:), INTENT(IN)                :: PTA     ! Air temperature (Kelvin)
-REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(SIZE(PTS))                    :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -411,7 +411,7 @@ FUNCTION CHTC_SMOOTH_LEE_DOE_0D(PCHTCN, PVMOD) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -425,9 +425,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL,INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
+REAL,INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
 REAL,INTENT(IN)                :: PVMOD   ! wind speed (m/s)
-REAL                           :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL                           :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !
@@ -484,7 +484,7 @@ FUNCTION CHTC_SMOOTH_LEE_DOE_1D(PCHTCN, PVMOD) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -498,9 +498,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
+REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
 REAL, DIMENSION(:), INTENT(IN)                :: PVMOD   ! wind speed (m/s)
-REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !
@@ -556,7 +556,7 @@ FUNCTION CHTC_SMOOTH_WIND_DOE_0D(PCHTCN, PVMOD) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -570,9 +570,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL,INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
+REAL,INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
 REAL,INTENT(IN)                :: PVMOD   ! wind speed (m/s)
-REAL                           :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL                           :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !
@@ -629,7 +629,7 @@ FUNCTION CHTC_SMOOTH_WIND_DOE_1D(PCHTCN, PVMOD) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -643,9 +643,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
+REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
 REAL, DIMENSION(:), INTENT(IN)                :: PVMOD   ! wind speed (m/s)
-REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !
@@ -700,7 +700,7 @@ FUNCTION CHTC_ROUGH_DOE_0D(PCHTCN, PCHTCS, PROUGH) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -714,10 +714,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL, INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
-REAL, INTENT(IN)                :: PCHTCS  ! Convective heat transfer coefficient for a smooth surface [W/(m²K)]
-REAL, INTENT(IN)                :: PROUGH  ! Convective heat transfer coefficient for a smooth surface [W/(m²K)]
-REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
+REAL, INTENT(IN)                :: PCHTCS  ! Convective heat transfer coefficient for a smooth surface [W/(m2.K)]
+REAL, INTENT(IN)                :: PROUGH  ! Convective heat transfer coefficient for a smooth surface [W/(m2.K)]
+REAL                            :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !
@@ -765,7 +765,7 @@ FUNCTION CHTC_ROUGH_DOE_1D(PCHTCN, PCHTCS, PROUGH) RESULT(PCHTC)
 !!
 !!    AUTHOR
 !!    ------
-!!	G. Pigeon       * Meteo France *
+!!      G. Pigeon       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -779,10 +779,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
-REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m²K)]
-REAL, DIMENSION(:), INTENT(IN)                :: PCHTCS  ! Convective heat transfer coefficient for a smooth surface [W/(m²K)]
-REAL, DIMENSION(:), INTENT(IN)                :: PROUGH  ! Convective heat transfer coefficient for a smooth surface [W/(m²K)]
-REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m²K)]
+REAL, DIMENSION(:), INTENT(IN)                :: PCHTCN  ! Convective heat transfer coefficient for natural conv. [W/(m2.K)]
+REAL, DIMENSION(:), INTENT(IN)                :: PCHTCS  ! Convective heat transfer coefficient for a smooth surface [W/(m2.K)]
+REAL, DIMENSION(:), INTENT(IN)                :: PROUGH  ! Convective heat transfer coefficient for a smooth surface [W/(m2.K)]
+REAL, DIMENSION(SIZE(PCHTCN))                 :: PCHTC   ! Convective heat transfer coefficient [W/(m2.K)]
 !
 !*       0.2   Declarations of local variables
 !

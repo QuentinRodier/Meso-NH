@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 SUBROUTINE DUSTFLUX_GET_MB(     &
         PUSTAR                  &  !I [m/s] Wind friction speed 
        ,PRHOA                   &  !I [kg/m3] air density at 2m height 
@@ -219,7 +219,7 @@ DO I = 1, SIZE(ZFRC_THR_NCR_DRG)
   !++grini: fxm: USE WHOLE ARRAY OF Z0 INSTEAD OF ONLY RGH_MMN_MBL AS IN OLD CODE 
   CALL FRC_THR_NCR_DRG_GET(ZRGH_Z0, ZZS0(ITEX), ZFRC_THR_NCR_DRG(I))
 ENDDO
-!	 
+!
 ! Convert volumetric water content to gravimetric water content
  CALL VWC2GWC(GFLG_MBL, PWSAT, PWG, ZGWC_SFC)
 ! Factor by which soil moisture increases threshold friction velocity 

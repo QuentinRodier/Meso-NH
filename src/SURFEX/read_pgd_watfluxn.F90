@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PGD_WATFLUX_n(HPROGRAM)
+      SUBROUTINE READ_PGD_WATFLUX_n (DTCO, U, WG, W, &
+                                     HPROGRAM)
 !     #########################################
 !
 !!****  *READ_PGD_WATFLUX_n* - read WATFLUX physiographic fields
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,11 +39,19 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_WATFLUX_GRID_n, ONLY : WATFLUX_GRID_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
+!
 USE MODD_TYPE_DATE_SURF
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_WATFLUX_n,      ONLY : XCOVER, XZS,TTIME, LCOVER
-USE MODD_WATFLUX_GRID_n, ONLY : XLAT, XLON, XMESH_SIZE, CGRID, XGRID_PAR, NDIM
+!
+USE MODE_READ_SURF_COV, ONLY : READ_SURF_COV
 !
 USE MODI_READ_SURF
 USE MODI_READ_GRID
@@ -58,6 +67,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(WATFLUX_GRID_t), INTENT(INOUT) :: WG
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
 !
@@ -75,7 +90,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_WATFLUX_N',0,ZHOOK_HANDLE)
 YRECFM='SIZE_WATER'
- CALL GET_TYPE_DIM_n('WATER ',NDIM)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'WATER ',WG%NDIM)
 !
 !
 !
@@ -84,24 +100,28 @@ YRECFM='SIZE_WATER'
 !
 !* cover classes
 !
-ALLOCATE(LCOVER(JPCOVER))
- CALL READ_LCOVER(HPROGRAM,LCOVER)
+ALLOCATE(W%LCOVER(JPCOVER))
+ CALL READ_LCOVER(&
+                  HPROGRAM,W%LCOVER)
 !
-ALLOCATE(XCOVER(NDIM,JPCOVER))
- CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP)
+ALLOCATE(W%XCOVER(WG%NDIM,JPCOVER))
+ CALL READ_SURF_COV(&
+                    HPROGRAM,'COVER',W%XCOVER(:,:),W%LCOVER,IRESP)
 !
 !* orography
 !
-ALLOCATE(XZS(NDIM))
+ALLOCATE(W%XZS(WG%NDIM))
 YRECFM='ZS'
- CALL READ_SURF(HPROGRAM,YRECFM,XZS(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,W%XZS(:),IRESP)
 !
 !* latitude, longitude 
 !
-ALLOCATE(XLAT      (NDIM))
-ALLOCATE(XLON      (NDIM))
-ALLOCATE(XMESH_SIZE(NDIM))
- CALL READ_GRID(HPROGRAM,CGRID,XGRID_PAR,XLAT,XLON,XMESH_SIZE,IRESP)
+ALLOCATE(WG%XLAT      (WG%NDIM))
+ALLOCATE(WG%XLON      (WG%NDIM))
+ALLOCATE(WG%XMESH_SIZE(WG%NDIM))
+ CALL READ_GRID(&
+                HPROGRAM,WG%CGRID,WG%XGRID_PAR,WG%XLAT,WG%XLON,WG%XMESH_SIZE,IRESP)
 IF (LHOOK) CALL DR_HOOK('READ_PGD_WATFLUX_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

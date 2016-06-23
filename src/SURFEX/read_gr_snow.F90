@@ -1,10 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_GR_SNOW(HPROGRAM,HSURFTYPE,HPREFIX,     &
-                              KLU,KPATCH,TPSNOW,HDIR)  
+      SUBROUTINE READ_GR_SNOW (&
+                               HPROGRAM,HSURFTYPE,HPREFIX,     &
+                              KLU,KPATCH,TPSNOW,HDIR,KVERSION,KBUGFIX)  
 !     ##########################################################
 !
 !!****  *READ_GR_SNOW* - routine to read snow surface fields
@@ -32,7 +33,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson       * Meteo France *
+!!      V. Masson       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -44,6 +45,9 @@
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
+!
+!
+!
 !
 USE MODD_TYPE_SNOW
 !
@@ -63,6 +67,8 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
+!
+!
  CHARACTER(LEN=6),   INTENT(IN)           :: HPROGRAM  ! calling program
  CHARACTER (LEN=*),  INTENT(IN)           :: HSURFTYPE ! generic name used for
                                                       ! snow characteristics
@@ -76,6 +82,9 @@ TYPE(SURF_SNOW)                          :: TPSNOW    ! snow characteristics
 !                                                     ! HDIR = 'A' : entire field on All processors
 !                                                     ! HDIR = 'H' : distribution on each processor
 !
+INTEGER,            INTENT(IN), OPTIONAL :: KVERSION
+INTEGER,            INTENT(IN), OPTIONAL :: KBUGFIX
+!
 !*       0.2   declarations of local variables
 !
 INTEGER             :: IRESP               ! Error code after redding
@@ -86,7 +95,6 @@ INTEGER             :: IRESP               ! Error code after redding
 INTEGER             :: ISURFTYPE_LEN       ! 
 LOGICAL             :: GSNOW               ! snow written in the file
 INTEGER             :: JLAYER              ! loop counter
-CHARACTER(LEN=4)    :: YPATCH              ! number of the patch
 REAL, DIMENSION(:,:),ALLOCATABLE  :: ZWORK ! 2D array to write data in file
  CHARACTER(LEN=1)    :: YDIR                ! type of reading
  CHARACTER(LEN=4)    :: YNLAYER     !Format depending on the number of layers
@@ -99,8 +107,18 @@ YDIR = 'H'
 IF (PRESENT(HDIR)) YDIR = HDIR
 !
 !-------------------------------------------------------------------------------
- CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
- CALL READ_SURF(HPROGRAM,'BUG',IBUGFIX,IRESP)
+IF(PRESENT(KVERSION))THEN
+  IVERSION=KVERSION
+ELSE
+  CALL READ_SURF(&
+                 HPROGRAM,'VERSION',IVERSION,IRESP)
+ENDIF
+IF(PRESENT(KBUGFIX))THEN
+  IBUGFIX=KBUGFIX
+ELSE
+  CALL READ_SURF(&
+                 HPROGRAM,'BUG',IBUGFIX,IRESP)
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*       1.    Type of snow scheme
@@ -121,7 +139,8 @@ ELSE
   ENDIF
 END IF
 !
- CALL READ_SURF(HPROGRAM,YRECFM2,TPSNOW%SCHEME,IRESP)
+ CALL READ_SURF(&
+                 HPROGRAM,YRECFM2,TPSNOW%SCHEME,IRESP)
 !
 !*       2.    Snow levels
 !              -----------
@@ -136,7 +155,8 @@ ELSE
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM2=ADJUSTL(HPREFIX//YRECFM2)
 END IF
 !
- CALL READ_SURF(HPROGRAM,YRECFM2,TPSNOW%NLAYER,IRESP)
+ CALL READ_SURF(&
+                 HPROGRAM,YRECFM2,TPSNOW%NLAYER,IRESP)
 !
 !*       2.    Presence of snow fields in the file
 !              -----------------------------------
@@ -145,7 +165,8 @@ IF (IVERSION >6 .OR. (IVERSION==6 .AND. IBUGFIX>=1)) THEN
   WRITE(YFMT,'(A5,I1,A1)')     '(A3,A',ISURFTYPE_LEN,')'
   WRITE(YRECFM,YFMT) 'SN_',HSURFTYPE
   IF (IVERSION>7 .OR. IVERSION==7 .AND. IBUGFIX>=3) YRECFM=ADJUSTL(HPREFIX//YRECFM)
-  CALL READ_SURF(HPROGRAM,YRECFM,GSNOW,IRESP)
+  CALL READ_SURF(&
+                 HPROGRAM,YRECFM,GSNOW,IRESP)
 ELSE
   IF (TPSNOW%NLAYER==0) THEN
     GSNOW = .FALSE.
@@ -172,7 +193,8 @@ END IF
 !*       4.    Additional key
 !              ---------------
 !
-IF (IVERSION >= 7 .AND. HSURFTYPE=='VEG') CALL READ_SURF(HPROGRAM,'LSNOW_FRAC_T',LSNOW_FRAC_TOT,IRESP)
+IF (IVERSION >= 7 .AND. HSURFTYPE=='VEG') CALL READ_SURF(&
+                 HPROGRAM,'LSNOW_FRAC_T',LSNOW_FRAC_TOT,IRESP)
 !
 !-------------------------------------------------------------------------------
 !
@@ -181,6 +203,7 @@ IF (IVERSION >= 7 .AND. HSURFTYPE=='VEG') CALL READ_SURF(HPROGRAM,'LSNOW_FRAC_T'
 !
 ALLOCATE(ZWORK(SIZE(TPSNOW%WSNOW,1),SIZE(TPSNOW%WSNOW,3)))
 !
+!   
   IF (TPSNOW%SCHEME=='1-L' .OR. TPSNOW%SCHEME=='D95' .OR. TPSNOW%SCHEME=='EBA' .OR. TPSNOW%SCHEME=='3-L' &
      .OR. TPSNOW%SCHEME=='CRO') THEN  
 !
@@ -201,7 +224,7 @@ ALLOCATE(ZWORK(SIZE(TPSNOW%WSNOW,1),SIZE(TPSNOW%WSNOW,3)))
       YRECFM='RSNOW_'//HSURFTYPE
     ELSE
       YRECFM=ADJUSTL(HPREFIX//'RSN_'//HSURFTYPE)
-    ENDIF
+    ENDIF    
     CALL READ_SURF_FIELD3D(HPROGRAM,TPSNOW%RHO,1,TPSNOW%NLAYER,YRECFM,HDIR=YDIR)
     WHERE(TPSNOW%WSNOW(:,1:TPSNOW%NLAYER,:)==0.0)TPSNOW%RHO(:,1:TPSNOW%NLAYER,:)=XUNDEF
   END IF
@@ -213,8 +236,8 @@ ALLOCATE(ZWORK(SIZE(TPSNOW%WSNOW,1),SIZE(TPSNOW%WSNOW,3)))
     IF (IVERSION<7 .OR. IVERSION==7 .AND. IBUGFIX<3) THEN
       YRECFM='TSNOW_'//HSURFTYPE
     ELSE
-      YRECFM=ADJUSTL(HPREFIX//'TSN_'//HSURFTYPE)
-    ENDIF
+      YRECFM=ADJUSTL(HPREFIX//'TSN_'//HSURFTYPE)            
+    ENDIF      
     CALL READ_SURF_FIELD3D(HPROGRAM,TPSNOW%T,1,TPSNOW%NLAYER,YRECFM,HDIR=YDIR)
     DO JLAYER = 1,TPSNOW%NLAYER
       WHERE (TPSNOW%WSNOW(:,1,:) == 0.0) TPSNOW%T(:,JLAYER,:) = XUNDEF
@@ -284,15 +307,23 @@ ALLOCATE(ZWORK(SIZE(TPSNOW%WSNOW,1),SIZE(TPSNOW%WSNOW,3)))
 !*       12.    Age parameter
 !              -------------------
 !
-  IF (TPSNOW%SCHEME=='CRO') THEN
+  IF ((TPSNOW%SCHEME=='3-L'.AND.IVERSION>=8) .OR. TPSNOW%SCHEME=='CRO') THEN
     IF (IVERSION<7 .OR. IVERSION==7 .AND. IBUGFIX<3) THEN
       YRECFM='SAGE_'//HSURFTYPE
     ELSE
       YRECFM=ADJUSTL(HPREFIX//'SAG_'//HSURFTYPE)
-    ENDIF
+    ENDIF     
     CALL READ_SURF_FIELD3D(HPROGRAM,TPSNOW%AGE,1,TPSNOW%NLAYER,YRECFM,HDIR=YDIR)
     DO JLAYER = 1,TPSNOW%NLAYER
       WHERE (TPSNOW%WSNOW(:,1,:) == 0.0) TPSNOW%AGE(:,JLAYER,:) = XUNDEF
+    ENDDO
+  ELSEIF(TPSNOW%SCHEME=='3-L'.AND.IVERSION<8)THEN
+    DO JLAYER = 1,TPSNOW%NLAYER
+      WHERE (TPSNOW%WSNOW(:,1,:) >= 0.0) 
+           TPSNOW%AGE(:,JLAYER,:) = 0.0
+      ELSEWHERE
+           TPSNOW%AGE(:,JLAYER,:) = XUNDEF
+      ENDWHERE
     ENDDO
   END IF
 !-------------------------------------------------------------------------------
@@ -306,7 +337,6 @@ DEALLOCATE(ZWORK)
 !
 IF (TPSNOW%SCHEME=='D95' .OR. TPSNOW%SCHEME=='EBA' .OR. TPSNOW%SCHEME=='1-L' .OR. TPSNOW%SCHEME=='3-L' &
     .OR. TPSNOW%SCHEME=='CRO') THEN  
-
   IF (IVERSION<7 .OR. IVERSION==7 .AND. IBUGFIX<3) THEN
     YRECFM='ASNOW_'//HSURFTYPE
   ELSE

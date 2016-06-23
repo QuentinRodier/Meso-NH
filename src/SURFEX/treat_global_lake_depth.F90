@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE TREAT_GLOBAL_LAKE_DEPTH(HPROGRAM,PDEPTH,KSTATUS)
+      SUBROUTINE TREAT_GLOBAL_LAKE_DEPTH (DTCO, UG, U, USS, &
+                                          HPROGRAM,PDEPTH,KSTATUS)
 !     ##############################################################
 !
 !!**** *TREAT_GLOBAL_LAKE_DEPTH* monitor for averaging and interpolations of ISBA physiographic fields
@@ -39,10 +40,17 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL
 USE MODD_PGDWORK,        ONLY : XTNG, NSIZE
-USE MODD_SURF_ATM_n,     ONLY : XWATER
 USE MODD_DATA_LAKE,      ONLY : CLAKELDB, CSTATUSLDB, NGRADDEPTH_LDB, NGRADSTATUS_LDB 
 !
 USE MODI_GET_LUOUT
@@ -60,6 +68,12 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM  ! Type of program
 REAL, DIMENSION(:),INTENT(OUT):: PDEPTH    ! physiographic field
@@ -105,7 +119,8 @@ ALLOCATE(XTNG      (NL,NGRADDEPTH_LDB))
 NSIZE  (:) = 0.
 XTNG   (:,:) = 0.
 !
- CALL TREAT_FIELD(HPROGRAM,'SURF  ','DIRECT','A_LDBD', CLAKELDB,   &
+ CALL TREAT_FIELD(UG, U, USS, &
+                  HPROGRAM,'SURF  ','DIRECT','A_LDBD', CLAKELDB,   &
                  'water depth         ',ZDEPTH,'WAT'              ) 
 !
 DEALLOCATE(XTNG)
@@ -114,7 +129,8 @@ ALLOCATE(XTNG      (NL,NGRADSTATUS_LDB))
 NSIZE  (:) = 0.
 XTNG   (:,:) = 0.
 !
- CALL TREAT_FIELD(HPROGRAM,'SURF  ','DIRECT','A_LDBS', CSTATUSLDB,  &
+ CALL TREAT_FIELD(UG, U, USS, &
+                  HPROGRAM,'SURF  ','DIRECT','A_LDBS', CSTATUSLDB,  &
                  'water status        ',ZSTATUS,'WAT'              )
 !
 ISTATUS = NINT(ZSTATUS)
@@ -128,7 +144,7 @@ DEALLOCATE(XTNG)
 !             ------------------
 !
 DO JI = 1, SIZE(ZDEPTH)
-  IF (XWATER(JI).GT.0.) THEN
+  IF (U%XWATER(JI).GT.0.) THEN
     IF (ISTATUS(JI).LE.2) ZDEPTH(JI) = 10.
     IF (ISTATUS(JI)==3.AND.ZDEPTH(JI)==0.) ZDEPTH(JI) = 10.
   ELSE
@@ -140,7 +156,8 @@ ENDDO
 !             ------------------
 !
 YMASK='WATER '
- CALL GET_TYPE_DIM_n(YMASK,IDIM)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     YMASK,IDIM)
 IF (IDIM/=SIZE(PDEPTH) .OR. IDIM/=SIZE(KSTATUS)) THEN
    WRITE(ILUOUT,*)'Wrong dimension of MASK: ',IDIM,SIZE(PDEPTH),SIZE(KSTATUS)
    CALL ABOR1_SFX('TREAT_GLOBAL_LAKE_DEPTH: WRONG DIMENSION OF MASK')
@@ -148,7 +165,8 @@ ENDIF
 
 ALLOCATE(IMASK(IDIM))
 ILU=0
- CALL GET_SURF_MASK_n(YMASK,IDIM,IMASK,ILU,ILUOUT)
+ CALL GET_SURF_MASK_n(DTCO, U, &
+                      YMASK,IDIM,IMASK,ILU,ILUOUT)
  CALL PACK_SAME_RANK(IMASK,ZDEPTH(:),PDEPTH(:))
  CALL PACK_SAME_RANK(IMASK,ISTATUS(:),KSTATUS(:))
 DEALLOCATE(IMASK)

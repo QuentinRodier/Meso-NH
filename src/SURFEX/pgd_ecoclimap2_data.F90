@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE PGD_ECOCLIMAP2_DATA(HPROGRAM)
+      SUBROUTINE PGD_ECOCLIMAP2_DATA (DTCO, &
+                                      HPROGRAM)
 !     #########################
 !
 !!**** *PGD_ECOCLIMAP2_DATA* initializes cover-field correspondance arrays
@@ -39,9 +40,11 @@
 !*    0.     DECLARATION
 !            -----------
 
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF, NUNDEF
 !
-USE MODD_DATA_COVER_n,   ONLY : NYEAR
 USE MODD_DATA_COVER,     ONLY : TDATA_SEED, TDATA_REAP, XDATA_WATSUP, XDATA_IRRIG,&
                                   LDATA_IRRIG, XDATA_VEGTYPE, LCLIM_LAI  
 
@@ -69,6 +72,9 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !
@@ -108,7 +114,7 @@ NAMELIST/NAM_ECOCLIMAP2/  YIRRIG, LCLIM_LAI
 IF (LHOOK) CALL DR_HOOK('PGD_ECOCLIMAP2_DATA',0,ZHOOK_HANDLE)
 YIRRIG         = '                          '
 LCLIM_LAI      = .TRUE.
-NYEAR          = NUNDEF
+DTCO%NYEAR          = NUNDEF
 !
 !* Reading
 !
@@ -187,7 +193,7 @@ END IF
 !    4.    Computes LAI evolution for the chosen year
 !          ------------------------------------------
 !
- CALL ECOCLIMAP2_LAI
+ CALL ECOCLIMAP2_LAI(DTCO)
 IF (LHOOK) CALL DR_HOOK('PGD_ECOCLIMAP2_DATA',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

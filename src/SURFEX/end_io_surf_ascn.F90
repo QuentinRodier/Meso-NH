@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE END_IO_SURF_ASC_n(HPROGRAM)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -72,7 +72,7 @@ NFULL = 0
 !
 NUNIT = 0
 !
-CMASK = '      '
+ CMASK = '      '
 !
 IF (LHOOK) CALL DR_HOOK('END_IO_SURF_ASC_N',1,ZHOOK_HANDLE)
 !

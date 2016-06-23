@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CARBON_SPINUP(KMONTH,KDAY,PTIME,                   &
+      SUBROUTINE CARBON_SPINUP(KMONTH,KDAY,PTIME,                      &
                    OSPINUPCARBS, OSPINUPCARBW, PSPINMAXS, PSPINMAXW,   &
                    KNBYEARSPINS, KNBYEARSPINW, KNBYEARSOLD, HPHOTO,    &
                    HRESPSL, KSPINS, KSPINW                             )
@@ -32,7 +32,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	R. Alkama           * Meteo-France *
+!!      R. Alkama           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -77,14 +77,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
+IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',0,ZHOOK_HANDLE)
+!
 !       1.     Initializations
 !              ---------------
 !
-IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',0,ZHOOK_HANDLE)
-!
-IF (KMONTH == 1 .AND. KDAY==1 .AND. PTIME == 0.0 )THEN
-   KNBYEARSOLD = KNBYEARSOLD + 1
-ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! number of times CARBON_SOIL subroutine is called for each time step
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -98,6 +95,10 @@ ENDIF
 KSPINW=1
 IF ( OSPINUPCARBW .AND. HPHOTO=='NCB' ) THEN
    CALL SPINUP_MAX(PSPINMAXW,KNBYEARSPINW,KNBYEARSOLD,KSPINW)
+ENDIF
+!
+IF (KMONTH == 1 .AND. KDAY==1 .AND. PTIME == 0.0 )THEN
+   KNBYEARSOLD = KNBYEARSOLD + 1
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',1,ZHOOK_HANDLE)

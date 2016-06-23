@@ -1,2 +1,4 @@
-      REAL AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX,RAC3
-      COMMON / SURFCON / AS,ASX,CI,BS,BETA,FACTN,HMIN,ANGMAX,RAC3
+
+!RJ: inlined
+      ERROR aa
+#error should not be used

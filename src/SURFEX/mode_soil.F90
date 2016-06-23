@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       MODULE MODE_SOIL 
 !     ################
@@ -31,13 +31,14 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson       * Meteo France *
+!!      V. Masson       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        3/12/98
 !!
 !!       02/2014       B. Decharme correction for W33 functions
+!!                                 Add ANISO_FUNC
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -107,9 +108,13 @@ INTERFACE PCOEF_FUNC
   MODULE PROCEDURE PCOEF_FUNC_2D
   MODULE PROCEDURE PCOEF_FUNC_1D
 END INTERFACE
+INTERFACE ANISO_FUNC
+  MODULE PROCEDURE ANISO_FUNC_2D
+  MODULE PROCEDURE ANISO_FUNC_1D
+END INTERFACE
 !
 !-------------------------------------------------------------------------------
-CONTAINS
+ CONTAINS
 !
    FUNCTION WSAT_FUNC_2D(PCLAY,PSAND,HPEDOTF)
    USE MODD_SURF_PAR,   ONLY : XUNDEF
@@ -209,7 +214,7 @@ CONTAINS
    WHERE (PCLAY==XUNDEF) W33_FUNC_2D = XUNDEF
    IF (LHOOK) CALL DR_HOOK('MODE_SOIL:W33_FUNC_2D',1,ZHOOK_HANDLE)
    !
-   END FUNCTION W33_FUNC_2D  
+   END FUNCTION W33_FUNC_2D
    !
    !
    !
@@ -454,6 +459,25 @@ CONTAINS
    IF (LHOOK) CALL DR_HOOK('MODE_SOIL:PCOEF_FUNC_2D',1,ZHOOK_HANDLE)
    !
    END FUNCTION PCOEF_FUNC_2D
+   !
+   !
+   !
+   FUNCTION ANISO_FUNC_2D(PCLAY)
+   USE MODD_SURF_PAR,   ONLY : XUNDEF
+   IMPLICIT NONE
+   REAL, DIMENSION(:,:), INTENT(IN)     :: PCLAY
+   REAL, DIMENSION(SIZE(PCLAY,1),SIZE(PCLAY,2)) :: ANISO_FUNC_2D
+   REAL(KIND=JPRB) :: ZHOOK_HANDLE
+   !
+   IF (LHOOK) CALL DR_HOOK('MODE_SOIL:ANISO_FUNC_2D',0,ZHOOK_HANDLE)
+   WHERE (PCLAY/=XUNDEF)
+     ANISO_FUNC_2D = 1.55+32.85*PCLAY(:,:)+65.637*PCLAY(:,:)**2
+   ELSEWHERE
+     ANISO_FUNC_2D = XUNDEF
+   END WHERE
+   IF (LHOOK) CALL DR_HOOK('MODE_SOIL:ANISO_FUNC_2D',1,ZHOOK_HANDLE)
+   !
+   END FUNCTION ANISO_FUNC_2D
    
 !                                                          
 !
@@ -803,6 +827,25 @@ CONTAINS
    IF (LHOOK) CALL DR_HOOK('MODE_SOIL:PCOEF_FUNC_1D',1,ZHOOK_HANDLE)
    !
    END FUNCTION PCOEF_FUNC_1D
+   !
+   !
+   !
+   FUNCTION ANISO_FUNC_1D(PCLAY)
+   USE MODD_SURF_PAR,   ONLY : XUNDEF
+   IMPLICIT NONE
+   REAL, DIMENSION(:), INTENT(IN)     :: PCLAY
+   REAL, DIMENSION(SIZE(PCLAY))       :: ANISO_FUNC_1D
+   REAL(KIND=JPRB) :: ZHOOK_HANDLE
+   !
+   IF (LHOOK) CALL DR_HOOK('MODE_SOIL:ANISO_FUNC_1D',0,ZHOOK_HANDLE)
+   WHERE (PCLAY/=XUNDEF)
+     ANISO_FUNC_1D = 1.55+32.85*PCLAY(:)+65.637*PCLAY(:)**2
+   ELSEWHERE
+     ANISO_FUNC_1D = XUNDEF
+   END WHERE
+   IF (LHOOK) CALL DR_HOOK('MODE_SOIL:ANISO_FUNC_1D',1,ZHOOK_HANDLE)
+   !
+   END FUNCTION ANISO_FUNC_1D
                                                           
 !-------------------------------------------------------------------------------
 !

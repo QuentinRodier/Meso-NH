@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE CH_INIT_NAMES (KLUOUT,HSV,KBEQ,KBAER,HSVO,&
                             KSV_CHSBEG,KSV_CHSEND, KSV_AERBEG, KSV_AEREND,&
@@ -49,12 +49,12 @@ IMPLICIT NONE
 !
 
 INTEGER,                         INTENT(IN)  :: KLUOUT ! output listing channel
-CHARACTER(LEN=*), DIMENSION(:),  INTENT(IN)  :: HSV    ! name of chemical species
+ CHARACTER(LEN=*), DIMENSION(:),  INTENT(IN)  :: HSV    ! name of chemical species
                                                        ! with character # (gas chemistry )
                                                        ! and  character @ (aerosols)
 INTEGER,                         INTENT(OUT) :: KBEQ     ! number of chemical variables
 INTEGER,                         INTENT(OUT) :: KBAER    ! number of aerosol variables
-CHARACTER(LEN=*), DIMENSION(SIZE(HSV)),  INTENT(OUT) :: HSVO ! name of scalar species without # and @
+ CHARACTER(LEN=*), DIMENSION(SIZE(HSV)),  INTENT(OUT) :: HSVO ! name of scalar species without # and @
 INTEGER,                         INTENT(OUT) :: KSV_CHSBEG  ! first chemical var.
 INTEGER,                         INTENT(OUT) :: KSV_CHSEND  ! last  chemical var.
 INTEGER,                         INTENT(OUT) :: KSV_AERBEG  ! first aerosol var.
@@ -63,8 +63,8 @@ LOGICAL,                         INTENT(OUT) :: OVARSIGI, OVARSIGJ ! type of sta
 !
 !*      0.2    declarations of local variables
 INTEGER :: JSV  !! loop  NBEQ
-CHARACTER        :: YRC1
-CHARACTER(LEN=5) :: YRC2
+ CHARACTER        :: YRC1
+ CHARACTER(LEN=5) :: YRC2
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

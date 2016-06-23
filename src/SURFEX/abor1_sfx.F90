@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
       SUBROUTINE ABOR1_SFX(YTEXT)
 !     #############################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -62,7 +62,7 @@ IMPLICIT NONE
 INTEGER           :: ILUOUT         ! logical unit of output file      
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-#ifdef ARO
+#ifdef SFX_ARO
 #include "abor1.intfb.h"
 #endif
 !-------------------------------------------------------------------------------
@@ -74,7 +74,7 @@ YPROGRAM = CPROGNAME
 !      
  CALL GET_LUOUT(YPROGRAM,ILUOUT)
 !
-IF (YPROGRAM=='ASCII ' .OR. YPROGRAM=='TEXTE ' .OR. YPROGRAM=='BINARY') THEN
+IF (YPROGRAM=='ASCII ' .OR. YPROGRAM=='TEXTE ' .OR. YPROGRAM=='BINARY' .OR. YPROGRAM=='NC    ') THEN
    IF ( NPROC>1 .OR. NBLOCKTOT>1 ) &
      WRITE(*,*)"MPI TASK NUMBER = ",NRANK,", OMP THREAD NUMBER = ",NBLOCK
    WRITE(*,*)YTEXT
@@ -96,9 +96,10 @@ WRITE(ILUOUT,*) '---------------------------------------------------------------
 WRITE(ILUOUT,*) '---------------------------------------------------------------------------'
  CALL CLOSE_FILE(YPROGRAM,ILUOUT)
 !
-#ifdef ARO
+#ifdef SFX_ARO
 call abor1('abort by abor1_sfx')
 #else
+ write(0,*) "aborted with text:",trim(ytext),"|"
  CALL ABORT
 STOP
 #endif

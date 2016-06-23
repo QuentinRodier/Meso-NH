@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_TEB_GREENROOF_BUFFER(HPROGRAM,HSURF,KLUOUT,PFIELD)
 !     #################################################################################
@@ -35,7 +35,7 @@ USE MODE_READ_BUFFER
 USE MODD_TYPE_DATE_SURF
 !
 USE MODI_PREP_BUFFER_GRID
-USE MODI_INTERP_GRID
+USE MODI_INTERP_GRID_NAT
 !
 USE MODD_PREP,               ONLY : CINTERP_TYPE
 USE MODD_PREP_TEB_GREENROOF, ONLY : XGRID_SOIL, XWR_DEF
@@ -135,14 +135,14 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='BUFFER'
+ CINTERP_TYPE='BUFFER'
 !
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_GREENROOF_BUFFER',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------
@@ -158,7 +158,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
      !* interpolation on fine vertical grid
      IF (LHOOK) CALL DR_HOOK('SOIL_PROFILE_BUFFER',0,ZHOOK_HANDLE)
      ALLOCATE(ZOUT  (SIZE(ZFIELD,1),SIZE(XGRID_SOIL)))
-     CALL INTERP_GRID(ZD,ZFIELD,XGRID_SOIL,ZOUT)
+     CALL INTERP_GRID_NAT(ZD,ZFIELD,XGRID_SOIL,ZOUT)
      !
      !* extends definition to all vegtypes.
      ALLOCATE(PFIELD(SIZE(ZFIELD,1),SIZE(XGRID_SOIL),NVEGTYPE))

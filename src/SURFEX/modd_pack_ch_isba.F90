@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######################
       MODULE MODD_PACK_CH_ISBA
 !     ######################
@@ -21,7 +21,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	A. Boone   *Meteo France*
+!!      A. Boone   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -30,21 +30,44 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
-!-------------------------------------------------------------------------------
-!
-REAL, ALLOCATABLE, DIMENSION(:,:), TARGET :: XBLOCK_SIMPLE
-!$OMP THREADPRIVATE(XBLOCK_SIMPLE)
-!
-REAL, POINTER, DIMENSION(:)    :: XP_SOILRC_SO2 ! for SO2 deposition
-!$OMP THREADPRIVATE(XP_SOILRC_SO2)
-REAL, POINTER, DIMENSION(:)    :: XP_SOILRC_O3  ! for SO2 deposition
-!$OMP THREADPRIVATE(XP_SOILRC_O3)
-REAL, ALLOCATABLE, DIMENSION(:,:)  :: XP_DEP        ! deposition velocity
-!$OMP THREADPRIVATE(XP_DEP)
 !
 !-------------------------------------------------------------------------------
 !
-END MODULE MODD_PACK_CH_ISBA
+TYPE PACK_CH_ISBA_t
 
+  REAL, POINTER, DIMENSION(:,:) :: XBLOCK_SIMPLE
+  REAL, POINTER, DIMENSION(:)   :: XP_SOILRC_SO2 ! for SO2 deposition
+  REAL, POINTER, DIMENSION(:)   :: XP_SOILRC_O3  ! for SO2 deposition
+  REAL, POINTER, DIMENSION(:,:) :: XP_DEP        ! deposition velocity
+
+END TYPE PACK_CH_ISBA_t
+!
+!-------------------------------------------------------------------------------
+!
+
+
+ CONTAINS
+
+!
+!
+
+
+
+
+SUBROUTINE PACK_CH_ISBA_INIT(YPACK_CH_ISBA)
+TYPE(PACK_CH_ISBA_t), INTENT(INOUT) :: YPACK_CH_ISBA
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK("MODD_PACK_CH_ISBA_N:PACK_CH_ISBA_INIT",0,ZHOOK_HANDLE)
+  NULLIFY(YPACK_CH_ISBA%XBLOCK_SIMPLE)
+  NULLIFY(YPACK_CH_ISBA%XP_SOILRC_SO2)
+  NULLIFY(YPACK_CH_ISBA%XP_SOILRC_O3)
+  NULLIFY(YPACK_CH_ISBA%XP_DEP)
+IF (LHOOK) CALL DR_HOOK("MODD_PACK_CH_ISBA_N:PACK_CH_ISBA_INIT",1,ZHOOK_HANDLE)
+END SUBROUTINE PACK_CH_ISBA_INIT
+
+
+END MODULE MODD_PACK_CH_ISBA

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DIAG_IDEAL_INIT_n(KLU,KSW)
+      SUBROUTINE DIAG_IDEAL_INIT_n (DGL, HPROGRAM, OREAD_BUDGETC, &
+                                    KLU,KSW)
 !     #####################
 !
 !!****  *DIAG_IDEAL_INIT_n* - routine to initialize IDEAL diagnostic variables
@@ -27,25 +28,23 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	P. Le Moigne   *Meteo France*	
+!!      P. Le Moigne   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/2009 
+!!      P. Le Moigne 03/2015: add diagnostics IDEAL case
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR,   ONLY : XUNDEF
-USE MODD_DIAG_IDEAL_n, ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_VARS, &
-                              XRN, XH, XLE, XGFLUX, XRI,            &
-                              XCD, XCH, XCE, XZ0, XZ0H,             &
-                              XT2M, XQ2M, XHU2M,                    &
-                              XZON10M, XMER10M, XQS,                &
-                              XSWD, XSWU, XSWBD, XSWBU, XLWD, XLWU, &
-                              XFMU, XFMV  
 !
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+!
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+!
+USE MODI_READ_SURF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -55,115 +54,270 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+!
+ CHARACTER(LEN=6), INTENT(IN):: HPROGRAM  ! program calling
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
+!
 INTEGER, INTENT(IN) :: KLU   ! size of arrays
 INTEGER, INTENT(IN) :: KSW   ! spectral bands
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+INTEGER           :: IVERSION
+INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
+ CHARACTER(LEN=12) :: YREC           ! Name of the article to be read
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
 !* surface energy budget
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_IDEAL_INIT_N',0,ZHOOK_HANDLE)
-IF (LSURF_BUDGET) THEN
-  ALLOCATE(XRN     (KLU))
-  ALLOCATE(XH      (KLU))
-  ALLOCATE(XLE     (KLU))
-  ALLOCATE(XGFLUX  (KLU))
-  ALLOCATE(XSWD    (KLU))
-  ALLOCATE(XSWU    (KLU))
-  ALLOCATE(XSWBD   (KLU,KSW))
-  ALLOCATE(XSWBU   (KLU,KSW))
-  ALLOCATE(XLWD    (KLU))
-  ALLOCATE(XLWU    (KLU))
-  ALLOCATE(XFMU    (KLU))
-  ALLOCATE(XFMV    (KLU))
+!
+ALLOCATE(DGL%XDIAG_TS(KLU))
+DGL%XDIAG_TS = XUNDEF
+!
+IF (DGL%LSURF_BUDGET .OR. DGL%LSURF_BUDGETC) THEN
+  ALLOCATE(DGL%XRN     (KLU))
+  ALLOCATE(DGL%XH      (KLU))
+  ALLOCATE(DGL%XLE     (KLU))
+  ALLOCATE(DGL%XLEI    (KLU))
+  ALLOCATE(DGL%XGFLUX  (KLU))
+  ALLOCATE(DGL%XEVAP   (KLU))
+  ALLOCATE(DGL%XSUBL   (KLU))
+  ALLOCATE(DGL%XSWD    (KLU))
+  ALLOCATE(DGL%XSWU    (KLU))
+  ALLOCATE(DGL%XLWD    (KLU))
+  ALLOCATE(DGL%XLWU    (KLU))  
+  ALLOCATE(DGL%XSWBD   (KLU,KSW))
+  ALLOCATE(DGL%XSWBU   (KLU,KSW))
+  ALLOCATE(DGL%XFMU    (KLU))
+  ALLOCATE(DGL%XFMV    (KLU))
+  ALLOCATE(DGL%XALBT   (KLU))
+  ALLOCATE(DGL%XSWE    (KLU))  
   !
-  XRN      = XUNDEF
-  XH       = XUNDEF
-  XLE      = XUNDEF
-  XGFLUX   = XUNDEF
-  XSWD     = XUNDEF
-  XSWU     = XUNDEF
-  XSWBD    = XUNDEF
-  XSWBU    = XUNDEF
-  XLWD     = XUNDEF
-  XLWU     = XUNDEF
-  XFMU     = XUNDEF
-  XFMV     = XUNDEF
+  DGL%XRN      = XUNDEF
+  DGL%XH       = XUNDEF
+  DGL%XLE      = XUNDEF
+  DGL%XLEI     = XUNDEF  
+  DGL%XGFLUX   = XUNDEF
+  DGL%XEVAP    = XUNDEF
+  DGL%XSUBL    = XUNDEF    
+  DGL%XSWD     = XUNDEF
+  DGL%XSWU     = XUNDEF
+  DGL%XLWD     = XUNDEF
+  DGL%XLWU     = XUNDEF  
+  DGL%XSWBD    = XUNDEF
+  DGL%XSWBU    = XUNDEF
+  DGL%XFMU     = XUNDEF
+  DGL%XFMV     = XUNDEF
+  DGL%XALBT    = XUNDEF
+  DGL%XSWE     = XUNDEF  
 ELSE
-  ALLOCATE(XRN     (0))
-  ALLOCATE(XH      (0))
-  ALLOCATE(XLE     (0))
-  ALLOCATE(XGFLUX  (0))
-  ALLOCATE(XSWD    (0))
-  ALLOCATE(XSWU    (0))
-  ALLOCATE(XLWD    (0))
-  ALLOCATE(XLWU    (0))
-  ALLOCATE(XSWBD   (0,0))
-  ALLOCATE(XSWBU   (0,0))
-  ALLOCATE(XFMU    (0))
-  ALLOCATE(XFMV    (0))
+  ALLOCATE(DGL%XRN     (0))
+  ALLOCATE(DGL%XH      (0))
+  ALLOCATE(DGL%XLE     (0))
+  ALLOCATE(DGL%XLEI    (0))  
+  ALLOCATE(DGL%XGFLUX  (0))
+  ALLOCATE(DGL%XEVAP   (0))
+  ALLOCATE(DGL%XSUBL   (0))   
+  ALLOCATE(DGL%XSWD    (0))
+  ALLOCATE(DGL%XSWU    (0))
+  ALLOCATE(DGL%XLWD    (0))
+  ALLOCATE(DGL%XLWU    (0))
+  ALLOCATE(DGL%XSWBD   (0,0))
+  ALLOCATE(DGL%XSWBU   (0,0))
+  ALLOCATE(DGL%XFMU    (0))
+  ALLOCATE(DGL%XFMV    (0))
+  ALLOCATE(DGL%XALBT   (0))
+  ALLOCATE(DGL%XSWE    (0))  
 END IF
+!
+!* cumulative surface energy budget
+!
+IF (DGL%LSURF_BUDGETC) THEN
+!    
+  ALLOCATE(DGL%XRNC    (KLU))
+  ALLOCATE(DGL%XHC     (KLU))
+  ALLOCATE(DGL%XLEC    (KLU))
+  ALLOCATE(DGL%XLEIC   (KLU))
+  ALLOCATE(DGL%XGFLUXC (KLU))
+  ALLOCATE(DGL%XEVAPC  (KLU))
+  ALLOCATE(DGL%XSUBLC  (KLU))  
+  ALLOCATE(DGL%XSWDC   (KLU))
+  ALLOCATE(DGL%XSWUC   (KLU))
+  ALLOCATE(DGL%XLWDC   (KLU))
+  ALLOCATE(DGL%XLWUC   (KLU))
+  ALLOCATE(DGL%XFMUC   (KLU))
+  ALLOCATE(DGL%XFMVC   (KLU))
+!
+  IF (.NOT. OREAD_BUDGETC) THEN        
+     DGL%XRNC    = 0.0
+     DGL%XHC     = 0.0
+     DGL%XLEC    = 0.0
+     DGL%XLEIC   = 0.0
+     DGL%XGFLUXC = 0.0
+     DGL%XEVAPC  = 0.0
+     DGL%XSUBLC  = 0.0
+     DGL%XSWDC   = 0.0
+     DGL%XSWUC   = 0.0
+     DGL%XLWDC   = 0.0
+     DGL%XLWUC   = 0.0
+     DGL%XFMUC   = 0.0
+     DGL%XFMVC   = 0.0
+  ELSEIF (OREAD_BUDGETC.AND.DGL%LRESET_BUDGETC) THEN
+     DGL%XRNC    = 0.0
+     DGL%XHC     = 0.0
+     DGL%XLEC    = 0.0
+     DGL%XLEIC   = 0.0
+     DGL%XGFLUXC = 0.0
+     DGL%XEVAPC  = 0.0
+     DGL%XSUBLC  = 0.0     
+     DGL%XSWDC   = 0.0
+     DGL%XSWUC   = 0.0
+     DGL%XLWDC   = 0.0
+     DGL%XLWUC   = 0.0
+     DGL%XFMUC   = 0.0
+     DGL%XFMVC   = 0.0
+  ELSE
+     CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
+     IF (IVERSION<8)THEN
+       DGL%XRNC    = 0.0
+       DGL%XHC     = 0.0
+       DGL%XLEC    = 0.0
+       DGL%XLEIC   = 0.0
+       DGL%XGFLUXC = 0.0
+       DGL%XEVAPC  = 0.0
+       DGL%XSUBLC  = 0.0     
+       DGL%XSWDC   = 0.0
+       DGL%XSWUC   = 0.0
+       DGL%XLWDC   = 0.0
+       DGL%XLWUC   = 0.0
+       DGL%XFMUC   = 0.0
+       DGL%XFMVC   = 0.0             
+     ELSE
+       YREC='RNC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XRNC,IRESP)
+       YREC='HC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XHC ,IRESP)
+       YREC='LEC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XLEC,IRESP)
+       YREC='LEIC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XLEIC,IRESP)     
+       YREC='GFLUXC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XGFLUXC,IRESP)
+       YREC='SWDC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XSWDC,IRESP)
+       YREC='SWUC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XSWUC,IRESP)
+       YREC='LWDC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XLWDC,IRESP)
+       YREC='LWUC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XLWUC,IRESP)
+       YREC='FMUC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XFMUC,IRESP)
+       YREC='FMVC_WAT'
+       CALL READ_SURF(HPROGRAM,YREC,DGL%XFMVC,IRESP)
+       YREC='EVAPC_WAT'
+        CALL READ_SURF(HPROGRAM,YREC,DGL%XEVAPC,IRESP)
+        YREC='SUBLC_WAT'
+        CALL READ_SURF(HPROGRAM,YREC,DGL%XSUBLC,IRESP)              
+      ENDIF
+!
+  ENDIF   
+ELSE
+  ALLOCATE(DGL%XRNC    (0))
+  ALLOCATE(DGL%XHC     (0))
+  ALLOCATE(DGL%XLEC    (0))
+  ALLOCATE(DGL%XLEIC   (0))
+  ALLOCATE(DGL%XGFLUXC (0))
+  ALLOCATE(DGL%XEVAPC  (0))
+  ALLOCATE(DGL%XSUBLC  (0))  
+  ALLOCATE(DGL%XSWDC   (0))
+  ALLOCATE(DGL%XSWUC   (0))
+  ALLOCATE(DGL%XLWDC   (0))
+  ALLOCATE(DGL%XLWUC   (0))
+  ALLOCATE(DGL%XFMUC   (0))
+  ALLOCATE(DGL%XFMVC   (0))  
+ENDIF
 !
 !* parameters at 2m
 !
-IF (N2M>=1) THEN
-  ALLOCATE(XRI     (KLU))
-  ALLOCATE(XT2M    (KLU))
-  ALLOCATE(XQ2M    (KLU))
-  ALLOCATE(XHU2M   (KLU))
-  ALLOCATE(XZON10M (KLU))
-  ALLOCATE(XMER10M (KLU))
+IF (DGL%N2M>=1) THEN
+  ALLOCATE(DGL%XRI     (KLU))
+  ALLOCATE(DGL%XT2M    (KLU))
+  ALLOCATE(DGL%XT2M_MIN(KLU))
+  ALLOCATE(DGL%XT2M_MAX(KLU))
+  ALLOCATE(DGL%XQ2M    (KLU))
+  ALLOCATE(DGL%XHU2M   (KLU))
+  ALLOCATE(DGL%XHU2M_MIN(KLU))
+  ALLOCATE(DGL%XHU2M_MAX(KLU))
+  ALLOCATE(DGL%XZON10M (KLU))
+  ALLOCATE(DGL%XMER10M (KLU))
+  ALLOCATE(DGL%XWIND10M (KLU))
+  ALLOCATE(DGL%XWIND10M_MAX(KLU))
   !
-  XRI      = XUNDEF
-  XT2M     = XUNDEF
-  XQ2M     = XUNDEF
-  XHU2M    = XUNDEF
-  XZON10M  = XUNDEF
-  XMER10M  = XUNDEF
+  DGL%XRI      = XUNDEF
+  DGL%XT2M     = XUNDEF
+  DGL%XT2M_MIN = XUNDEF
+  DGL%XT2M_MAX = 0.0
+  DGL%XQ2M     = XUNDEF
+  DGL%XHU2M    = XUNDEF
+  DGL%XHU2M_MIN= XUNDEF
+  DGL%XHU2M_MAX=-XUNDEF
+  DGL%XZON10M  = XUNDEF
+  DGL%XMER10M  = XUNDEF
+  DGL%XWIND10M = XUNDEF
+  DGL%XWIND10M_MAX = 0.0
 ELSE
-  ALLOCATE(XRI     (0))
-  ALLOCATE(XT2M    (0))
-  ALLOCATE(XQ2M    (0))
-  ALLOCATE(XHU2M   (0))
-  ALLOCATE(XZON10M (0))
-  ALLOCATE(XMER10M (0))
+  ALLOCATE(DGL%XRI      (0))
+  ALLOCATE(DGL%XT2M     (0))
+  ALLOCATE(DGL%XT2M_MIN (0))
+  ALLOCATE(DGL%XT2M_MAX (0))
+  ALLOCATE(DGL%XQ2M     (0))
+  ALLOCATE(DGL%XHU2M    (0))
+  ALLOCATE(DGL%XHU2M_MIN(0))
+  ALLOCATE(DGL%XHU2M_MAX(0))
+  ALLOCATE(DGL%XZON10M  (0))
+  ALLOCATE(DGL%XMER10M  (0))
+  ALLOCATE(DGL%XWIND10M (0))
+  ALLOCATE(DGL%XWIND10M_MAX(0))
 END IF
 !
 !* transfer coefficients
 !
-IF (LCOEF) THEN
-  ALLOCATE(XCD     (KLU))
-  ALLOCATE(XCH     (KLU))
-  ALLOCATE(XCE     (KLU))
-  ALLOCATE(XZ0     (KLU))
-  ALLOCATE(XZ0H    (KLU))
+IF (DGL%LCOEF) THEN
+  ALLOCATE(DGL%XCD     (KLU))
+  ALLOCATE(DGL%XCH     (KLU))
+  ALLOCATE(DGL%XCE     (KLU))
+  ALLOCATE(DGL%XZ0     (KLU))
+  ALLOCATE(DGL%XZ0H    (KLU))
   !
-  XCD      = XUNDEF
-  XCH      = XUNDEF
-  XCE      = XUNDEF
-  XZ0      = XUNDEF
-  XZ0H     = XUNDEF
+  DGL%XCD      = XUNDEF
+  DGL%XCH      = XUNDEF
+  DGL%XCE      = XUNDEF
+  DGL%XZ0      = XUNDEF
+  DGL%XZ0H     = XUNDEF
 ELSE
-  ALLOCATE(XCD     (0))
-  ALLOCATE(XCH     (0))
-  ALLOCATE(XCE     (0))
-  ALLOCATE(XZ0     (0))
-  ALLOCATE(XZ0H    (0))
+  ALLOCATE(DGL%XCD     (0))
+  ALLOCATE(DGL%XCH     (0))
+  ALLOCATE(DGL%XCE     (0))
+  ALLOCATE(DGL%XZ0     (0))
+  ALLOCATE(DGL%XZ0H    (0))
 END IF
 !
 !
 !* surface humidity
 !
-IF (LSURF_VARS) THEN
-  ALLOCATE(XQS     (KLU))
+IF (DGL%LSURF_VARS) THEN
+  ALLOCATE(DGL%XQS     (KLU))
   !
-  XQS      = XUNDEF
+  DGL%XQS      = XUNDEF
 ELSE
-  ALLOCATE(XQS     (0))
+  ALLOCATE(DGL%XQS     (0))
 END IF
 IF (LHOOK) CALL DR_HOOK('DIAG_IDEAL_INIT_N',1,ZHOOK_HANDLE)
 !

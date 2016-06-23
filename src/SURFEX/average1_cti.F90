@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE AVERAGE1_CTI(KLUOUT,PLAT,PLON,PVALUE)
+      SUBROUTINE AVERAGE1_CTI(KLUOUT,KNBLINES,PLAT,PLON,PVALUE,PNODATA)
 !     ################################################
 !
 !!**** *AVERAGE1_CTI* computes the sum of cti, squared cti
@@ -56,17 +56,22 @@ IMPLICIT NONE
 !            ------------------------
 !
 INTEGER,                 INTENT(IN)    :: KLUOUT
+INTEGER,                 INTENT(IN)    :: KNBLINES
 REAL, DIMENSION(:),      INTENT(IN)    :: PLAT    ! latitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PLON    ! longitude of the point to add
 REAL, DIMENSION(:),      INTENT(IN)    :: PVALUE  ! value of the point to add
+REAL, OPTIONAL, INTENT(IN) :: PNODATA
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
-INTEGER, DIMENSION(SIZE(PLAT)) :: IINDEX ! mesh index of all input points
+INTEGER, DIMENSION(NOVMX,SIZE(PLAT)) :: IINDEX ! mesh index of all input points
                                          ! 0 indicates the point is out of the domain
 !
-INTEGER :: JLOOP        ! loop index on input arrays
+REAL, DIMENSION(SIZE(PLAT)) :: ZVALUE
+REAL :: ZNODATA
+!
+INTEGER :: JLOOP, JOVER        ! loop index on input arrays
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -75,62 +80,68 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !            ------------
 ! 
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_CTI',0,ZHOOK_HANDLE)
-IF (ALLOCATED(XNUM)) DEALLOCATE(XNUM)
-ALLOCATE(XNUM(SIZE(PLAT)))
 !
-XNUM(:)=1
-!
-DO WHILE(MAXVAL(XNUM).NE.0)
-!
-  CALL GET_MESH_INDEX(KLUOUT,PLAT,PLON,IINDEX)
+IF (PRESENT(PNODATA)) THEN
+  ZVALUE(:) = PVALUE(:)
+  ZNODATA = PNODATA
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX,ZVALUE,ZNODATA)
+ELSE
+  ZVALUE(:) = 1.
+  ZNODATA = 0.
+  CALL GET_MESH_INDEX(KLUOUT,KNBLINES,PLAT,PLON,IINDEX)
+ENDIF
 !
 !*    2.     Loop on all input data points
 !            -----------------------------
 !     
-  DO JLOOP = 1 , SIZE(PLAT)
+bloop: &
+DO JLOOP = 1 , SIZE(PLAT)
+!
+  DO JOVER = 1, NOVMX
 !
 !*    3.     Tests on position
 !            -----------------
-!     
-    IF (IINDEX(JLOOP)==0) CYCLE
+!
+    IF (IINDEX(JOVER,JLOOP)==0) CYCLE bloop
 !
 !*    4.     Summation
 !            ---------
 !
-    NSIZE(IINDEX(JLOOP))=NSIZE(IINDEX(JLOOP))+1
+    NSIZE(IINDEX(JOVER,JLOOP))=NSIZE(IINDEX(JOVER,JLOOP))+1
 !
 !*    5.     CTI
 !            ---
 !
-    XSUMVAL(IINDEX(JLOOP))=XSUMVAL(IINDEX(JLOOP))+PVALUE(JLOOP)
+    XSUMVAL(IINDEX(JOVER,JLOOP))=XSUMVAL(IINDEX(JOVER,JLOOP))+PVALUE(JLOOP)
 !
 !*    6.     Square of CTI
 !            -------------
 !
-    XSUMVAL2(IINDEX(JLOOP))=XSUMVAL2(IINDEX(JLOOP))+PVALUE(JLOOP)**2
+    XSUMVAL2(IINDEX(JOVER,JLOOP))=XSUMVAL2(IINDEX(JOVER,JLOOP))+PVALUE(JLOOP)**2
 !
 !
 !*    7.     Cube of CTI
 !            -------------
 !
-    XSUMVAL3(IINDEX(JLOOP))=XSUMVAL3(IINDEX(JLOOP))+PVALUE(JLOOP)**3
+    XSUMVAL3(IINDEX(JOVER,JLOOP))=XSUMVAL3(IINDEX(JOVER,JLOOP))+PVALUE(JLOOP)**3
 !
 !
 !*    8.     Maximum CTI in the mesh
 !            -----------------------
 !
-    XMAX_WORK(IINDEX(JLOOP))=MAX(XMAX_WORK(IINDEX(JLOOP)),PVALUE(JLOOP))
+    XMAX_WORK(IINDEX(JOVER,JLOOP))=MAX(XMAX_WORK(IINDEX(JOVER,JLOOP)),PVALUE(JLOOP))
 !
 !
 !*    9.     Minimum CTI in the mesh
 !            -----------------------
 !
-    XMIN_WORK(IINDEX(JLOOP))=MIN(XMIN_WORK(IINDEX(JLOOP)),PVALUE(JLOOP))
+    XMIN_WORK(IINDEX(JOVER,JLOOP))=MIN(XMIN_WORK(IINDEX(JOVER,JLOOP)),PVALUE(JLOOP))
 !
 !
   ENDDO
 !  
-END DO
+ENDDO bloop
+!
 IF (LHOOK) CALL DR_HOOK('AVERAGE1_CTI',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

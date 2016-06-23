@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE HOR_INTERPOL_GAUSS(KLUOUT,PFIELDIN,PFIELDOUT)
 !     #################################################################################
@@ -16,7 +16,6 @@ SUBROUTINE HOR_INTERPOL_GAUSS(KLUOUT,PFIELDIN,PFIELDOUT)
 !!
 !!    REFERENCE
 !!    ---------
-!!      
 !!
 !!    AUTHOR
 !!    ------
@@ -25,9 +24,8 @@ SUBROUTINE HOR_INTERPOL_GAUSS(KLUOUT,PFIELDIN,PFIELDOUT)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      M. Jidane   Dec 2013 : initialize NNI if not already done
 !!------------------------------------------------------------------
-!
-!
 !
 USE MODD_PREP,       ONLY : XLAT_OUT, XLON_OUT, LINTERP
 USE MODD_GRID_GAUSS, ONLY : XILA1, XILO1, XILA2, XILO2, NINLA, NINLO, NILEN, LROTPOLE, &
@@ -66,6 +64,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_GAUSS',0,ZHOOK_HANDLE)
 INO = SIZE(XLAT_OUT)
 !
+IF (NNI==0) NNI=NILEN
 ALLOCATE(IMASKIN (NNI))
 !
 ALLOCATE(ZLAT    (INO))
@@ -108,7 +107,7 @@ DEALLOCATE(IMASKOUT)
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_GAUSS',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !
 !     ##########################################################################
 SUBROUTINE ARPEGE_STRETCH_A(KN,PLAP,PLOP,PCOEF,PLAR,PLOR,PLAC,PLOC)

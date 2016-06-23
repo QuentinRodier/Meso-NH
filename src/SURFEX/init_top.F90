@@ -1,12 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######spl
-      SUBROUTINE INIT_TOP (HISBA, HTOPREG, KLUOUT, PPATCH, PRUNOFFD, &
-                           PDZG, PWWILT, PWSAT, PTI_MIN,             &
+      SUBROUTINE INIT_TOP (I, &
+                            HISBA, KLUOUT, PPATCH, PRUNOFFD,          &
+                           PWD0, PWSAT, PTI_MIN,                     &
                            PTI_MAX, PTI_MEAN, PTI_STD, PTI_SKEW,     &
-                           PSOILWGHT, PTAB_FSAT, PTAB_WTOP, PM       )
+                           PSOILWGHT, PTAB_FSAT, PTAB_WTOP,          &
+                           PTAB_QTOP, PM                             )
 !
 !     #####################################################################
 !
@@ -23,11 +25,24 @@
 !     Note that over land point where topographic index do not exist, a VIC
 !     distribution is used with Bcoef at least equal to 0.1. This value can be
 !     change in namelist
-!     
+!
+!!
+!!    AUTHOR
+!!    ------
+!!     B. Decharme
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    01/2008
+!       B. decharme 04/2013 : DIF lateral drainage
+!                             CTI linear regression done in PGD (HTOPREG deleted)
+!
 !-------------------------------------------------------------------------------
 !
+!
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
 USE MODD_SURF_PAR,ONLY : XUNDEF
-USE MODD_ISBA_n,  ONLY : NPATCH, NGROUND_LAYER, NSIZE_NATURE_P
 !
 USE MODD_SGH_PAR, ONLY : X2, X4, XREGP, XREGA
 !
@@ -46,29 +61,26 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
+!
  CHARACTER(LEN=*), INTENT(IN)         :: HISBA   ! type of ISBA version:
 !                                               ! '2-L' (default)
 !                                               ! '3-L'
 !                                               ! 'DIF'
 !
- CHARACTER(LEN=*), INTENT(IN)         :: HTOPREG ! Wolock and McCabe (2000) linear regression for Topmodel
-                                                ! 'DEF' = Reg
-                                                ! 'NON'
-!
 INTEGER, INTENT(IN)                  :: KLUOUT
 !
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PPATCH
-!
-REAL,    DIMENSION(:,:,:),INTENT(IN) :: PDZG     ! soil layer thickness
 !
 REAL, DIMENSION(:,:,:),INTENT(IN)    :: PSOILWGHT  ! ISBA-DIF: weights for vertical
 !                                                  ! integration of soil water and properties
 !
 REAL,    DIMENSION(:,:), INTENT(IN)  :: PRUNOFFD ! depth over which sub-grid runoff is computed
 !
-REAL,    DIMENSION(:,:), INTENT(IN)  :: PWWILT, PWSAT
-!                                       PWWILT = the wilting point volumetric 
-!                                                water content (m3 m-3)
+REAL,    DIMENSION(:,:), INTENT(IN)  :: PWD0, PWSAT
+!                                       PWD0   = water content equivalent to 
+!                                                D0 maximum deficit (m3 m-3)
 !                                       PWSAT  = saturation volumetric water content
 !                                                of the soil (m3 m-3)
 !
@@ -80,16 +92,17 @@ REAL,    DIMENSION(:), INTENT(IN)    :: PTI_MIN, PTI_MAX, PTI_STD, &
 !                                       PTI_STD  = ti standard deviation
 !                                       PTI_SKEW = ti skewness
 !
-REAL, DIMENSION(:,:), INTENT(INOUT)  :: PTAB_FSAT, PTAB_WTOP
+REAL, DIMENSION(:,:), INTENT(INOUT)  :: PTAB_FSAT, PTAB_WTOP, PTAB_QTOP
 !                                       PTAB_FSAT = Satured fraction array
 !                                       PTAB_WTOP = Active TOPMODEL-layer array
+!                                       PTAB_QTOP = Subsurface flow TOPMODEL array
 !
 REAL,    DIMENSION(:), INTENT(INOUT) :: PM
 !                                       PM = exponential decay factor of the local deficit
 !
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PM)) :: ZD_TOP, ZWSAT_AVG, ZWWILT_AVG
+REAL, DIMENSION(SIZE(PM)) :: ZD_TOP, ZWSAT_AVG, ZWD0_AVG
 !                            ZD_TOP  = Topmodel active layer
 !
 REAL                  :: ZXI, ZPHI, ZNU, ZTI_MEAN, ZTI_MIN, ZTI_MAX, ZTI_STD, ZTI_SKEW
@@ -131,11 +144,11 @@ INTEGER               :: IFLG, IFLGST
 !
 REAL                  :: ZNO, ZAR, ZTOT
 !
-REAL                  :: ZFUP, ZFDOWN, ZWUP, ZWDOWN, ZSLOPEW
+REAL                  :: ZFUP, ZFDOWN, ZQUP, ZQDOWN, ZSLOPEQ, ZWUP, ZWDOWN, ZSLOPEW
 !
 INTEGER, DIMENSION (1):: ID
 !
-INTEGER               :: INI, I, IND, JSI_MIN, JSI_MAX, IPAS, &
+INTEGER               :: INI, JI, IND, JSI_MIN, JSI_MAX, IPAS, &
                          JL, INL, JPATCH
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -160,39 +173,39 @@ ZG  = 0.0
 !
 ZD_TOP    (:) = 0.0
 ZWSAT_AVG (:) = 0.0
-ZWWILT_AVG(:) = 0.0
+ZWD0_AVG(:) = 0.0
 !
 ! soil properties for runoff (m)
 !
 IF (HISBA == 'DIF') THEN                                   
 !
-  DO JPATCH=1,NPATCH
-    IF (NSIZE_NATURE_P(JPATCH) == 0 ) CYCLE
+  DO JPATCH=1,I%NPATCH
+    IF (I%NSIZE_NATURE_P(JPATCH) == 0 ) CYCLE
     DO JL=1,INL
-       DO I=1,INI
-          ZD_TOP    (I) = ZD_TOP    (I) + PPATCH(I,JPATCH)*PSOILWGHT(I,JL,JPATCH)
-          ZWSAT_AVG (I) = ZWSAT_AVG (I) + PPATCH(I,JPATCH)*PSOILWGHT(I,JL,JPATCH)*PWSAT (I,JL)
-          ZWWILT_AVG(I) = ZWWILT_AVG(I) + PPATCH(I,JPATCH)*PSOILWGHT(I,JL,JPATCH)*PWWILT(I,JL)
+       DO JI=1,INI
+          ZD_TOP   (JI) = ZD_TOP   (JI) + PPATCH(JI,JPATCH)*PSOILWGHT(JI,JL,JPATCH)
+          ZWSAT_AVG(JI) = ZWSAT_AVG(JI) + PPATCH(JI,JPATCH)*PSOILWGHT(JI,JL,JPATCH)*PWSAT(JI,JL)
+          ZWD0_AVG (JI) = ZWD0_AVG (JI) + PPATCH(JI,JPATCH)*PSOILWGHT(JI,JL,JPATCH)*PWD0 (JI,JL)
        ENDDO
     ENDDO
   ENDDO
 !
   WHERE(ZD_TOP(:)>0.0)
-        ZWSAT_AVG (:)=ZWSAT_AVG (:)/ZD_TOP(:)
-        ZWWILT_AVG(:)=ZWWILT_AVG(:)/ZD_TOP(:)
+        ZWSAT_AVG(:)=ZWSAT_AVG(:)/ZD_TOP(:)
+        ZWD0_AVG (:)=ZWD0_AVG (:)/ZD_TOP(:)
   ENDWHERE
 !
 ELSE
 !     
-  DO JPATCH=1,NPATCH
-     IF (NSIZE_NATURE_P(JPATCH) == 0 ) CYCLE
-     DO I=1,INI
-        ZD_TOP(I)=ZD_TOP(I)+PRUNOFFD(I,JPATCH)*PPATCH(I,JPATCH)
+  DO JPATCH=1,I%NPATCH
+     IF (I%NSIZE_NATURE_P(JPATCH) == 0 ) CYCLE
+     DO JI=1,INI
+        ZD_TOP(JI)=ZD_TOP(JI)+PRUNOFFD(JI,JPATCH)*PPATCH(JI,JPATCH)
      ENDDO
   ENDDO
 !     
-  ZWSAT_AVG (:) = PWSAT (:,1)
-  ZWWILT_AVG(:) = PWWILT(:,1)
+  ZWSAT_AVG(:) = PWSAT(:,1)
+  ZWD0_AVG (:) = PWD0 (:,1)
 !      
 ENDIF
 !
@@ -206,17 +219,18 @@ ZAR = 0.0
 ZTOT= 0.0
 ZNO = 0.0
 !
-DO I=1,INI
+DO JI=1,INI
 !   
-   IF(PTI_MEAN(I)==XUNDEF)THEN
+   IF(PTI_MEAN(JI)==XUNDEF)THEN
 !
 !    *Case where the Topographics index are not defined.
 !    --------------------------------------------------------         
      ZNO=ZNO+1.0
-     PTAB_FSAT(I,:)=0.0     
-     PTAB_WTOP(I,:)=XUNDEF
+     PTAB_FSAT(JI,:)=0.0     
+     PTAB_WTOP(JI,:)=XUNDEF
+     PTAB_QTOP(JI,:)=0.0
 !     
-     PM(I) =XUNDEF
+     PM(JI) =XUNDEF
 !
    ELSE 
 !
@@ -228,37 +242,25 @@ DO I=1,INI
      ZXI       = 0.0        
      ZPHI      = 0.0
      ZNU       = 0.0
-!
-!    Wolock and McCabe (2000) linear regression equation between the mean
-!    topographic index computed with a 1000 meter DEM and a 100 meter DEM.
-!
-     IF(HTOPREG=="DEF")THEN
-       ZTI_MEAN=XREGP*PTI_MEAN(I)-XREGA
-       IF (HISBA=='DIF'.OR.(PTI_MAX(I)-PTI_MIN(I))<0.2) THEN                                   
-          ZTI_MIN =XREGP*PTI_MIN (I)-XREGA
-          ZTI_MAX =XREGP*PTI_MAX (I)-XREGA
-          ZTI_STD =SQRT((XREGP**2)*(PTI_STD(I)**2))
-       ELSE
-          ZTI_MIN =PTI_MIN (I)
-          ZTI_MAX =PTI_MAX (I)
-          ZTI_STD =PTI_STD (I)
-       ENDIF
-     ELSE
-       ZTI_MEAN=PTI_MEAN(I)
-       ZTI_MIN =PTI_MIN (I)
-       ZTI_MAX =PTI_MAX (I)
-       ZTI_STD =PTI_STD (I)
-     ENDIF
+!      
+!    New version : Regressions directly in the pgd
+!    1000 meter DEM to 2m DEM (PAN AND KING 2012)
+!             
+     ZTI_MEAN=PTI_MEAN(JI)
+     ZTI_MIN =PTI_MIN (JI)
+     ZTI_MAX =PTI_MAX (JI)
+     ZTI_STD =PTI_STD (JI)
+     ZTI_SKEW=PTI_SKEW(JI)
 !
 !    Calculate topographic index pdf parameters 
 !
 !    Numerical problem especialy over Greenland
-     IF(PTI_SKEW(I)<=0.2)THEN
+     IF(ZTI_SKEW<=0.2)THEN
 !     
        ZTI_SKEW=0.2
 !       
-       WRITE(KLUOUT,*)'TI_SKEW is too low or negatif (=',PTI_SKEW(I),'),' 
-       WRITE(KLUOUT,*)'then PHI is too big for the grid-cell',I,'So,GAMMA(PHI) -> +inf.'
+       WRITE(KLUOUT,*)'TI_SKEW is too low or negatif (=',ZTI_SKEW,'),' 
+       WRITE(KLUOUT,*)'then PHI is too big for the grid-cell',JI,'So,GAMMA(PHI) -> +inf.'
        WRITE(KLUOUT,*)'The applied solution is to put TI_SKEW = 0.2'
        IF(ZTI_STD<1.0)THEN
          WRITE(KLUOUT,*)'In addition TI_STD is too low (=',ZTI_STD,'),' 
@@ -273,7 +275,7 @@ DO I=1,INI
 !
      ELSE
 !
-       ZXI  = PTI_SKEW(I)*ZTI_STD/X2 
+       ZXI  = ZTI_SKEW*ZTI_STD/X2 
        ZPHI = (ZTI_STD/ZXI)**X2
 !
      ENDIF
@@ -282,14 +284,14 @@ DO I=1,INI
 !
 !    Exponential decay factor of the local deficit
 !
-     PM(I) =(ZWSAT_AVG(I)-ZWWILT_AVG(I))*ZD_TOP(I)/X4 
+     PM(JI) =(ZWSAT_AVG(JI)-ZWD0_AVG(JI))*ZD_TOP(JI)/X4 
 !
 !    1.2.1 Calculate grid cell pdf total density FTOT = F(ymin --> ymax)
 !    -------------------------------------------------------------------
 !
 !    Normalized TOPMODEL maximum deficit D0/M coefficient
 !
-     ZD0 = (ZWSAT_AVG(I)-ZWWILT_AVG(I))*ZD_TOP(I)/PM(I)
+     ZD0 = (ZWSAT_AVG(JI)-ZWD0_AVG(JI))*ZD_TOP(JI)/PM(JI)
 !
 !    Initialise
 !
@@ -324,7 +326,7 @@ DO I=1,INI
 !    if the incomplete gamma function don't work, print why
 !
      IF (IFLGST/=0)THEN
-        WRITE(KLUOUT,*)'GRID-CELL =',I,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YMIN= ',ZYMIN 
+        WRITE(KLUOUT,*)'GRID-CELL =',JI,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YMIN= ',ZYMIN 
         CALL ABOR1_SFX('INIT_TOP: (1) PROBLEM WITH DGAM FUNCTION')
      ENDIF      
 !
@@ -335,7 +337,7 @@ DO I=1,INI
 !    if the incomplete gamma function don't work, print why
 !
      IF (IFLGST/=0)THEN
-        WRITE(KLUOUT,*)'GRID-CELL =',I,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YMAX= ',ZYMAX
+        WRITE(KLUOUT,*)'GRID-CELL =',JI,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YMAX= ',ZYMAX
         CALL ABOR1_SFX('INIT_TOP: (2) PROBLEM WITH DGAM FUNCTION')
      ENDIF      
 !
@@ -345,11 +347,13 @@ DO I=1,INI
 !
 !    initialization water content and fraction
 !
-     PTAB_WTOP(I,1) = ZWSAT_AVG(I)
-     PTAB_FSAT(I,1) = 1.0
+     PTAB_WTOP(JI,1) = ZWSAT_AVG(JI)
+     PTAB_FSAT(JI,1) = 1.0
+     PTAB_QTOP(JI,1) = 0.0
 !     
-     PTAB_WTOP(I,IPAS) = ZWWILT_AVG(I)
-     PTAB_FSAT(I,IPAS) = 0.0
+     PTAB_WTOP(JI,IPAS) = ZWD0_AVG(JI)
+     PTAB_FSAT(JI,IPAS) = 0.0
+     PTAB_QTOP(JI,IPAS) = 0.0
 !
 !    Define the new limits for the satured index loop
 !
@@ -401,7 +405,7 @@ DO I=1,INI
 !       if the incomplete gamma function don't works, print why
 !
         IF (IFLGST/=0)THEN
-           WRITE(KLUOUT,*)'GRID-CELL= ',I,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YSAT= ',ZYSAT
+           WRITE(KLUOUT,*)'GRID-CELL= ',JI,'FLGST= ',IFLGST,'PHI= ',ZPHI,'YSAT= ',ZYSAT
            CALL ABOR1_SFX('INIT_TOP: (3) PROBLEM WITH DGAM FUNCTION')
         ENDIF 
 !
@@ -412,13 +416,13 @@ DO I=1,INI
 !       if the incomplete gamma function don't works, print why
 !
         IF (IFLGST/=0)THEN
-           WRITE(KLUOUT,*)'GRID-CELL= ',I,'FLGST= ',IFLGST,'PHI= ',ZPHI,'Y0= ',ZY0
+           WRITE(KLUOUT,*)'GRID-CELL= ',JI,'FLGST= ',IFLGST,'PHI= ',ZPHI,'Y0= ',ZY0
            CALL ABOR1_SFX('INIT_TOP: (4) PROBLEM WITH DGAM FUNCTION')
         ENDIF 
 !
 !       compute satured fraction as FSAT = F(0 --> ymax) - F(0 --> ysat)
 !       
-        PTAB_FSAT(I,IND)=MAX(0.0,(ZGYMAX-ZGYSAT)/ZFTOT)
+        PTAB_FSAT(JI,IND)=MAX(0.0,(ZGYMAX-ZGYSAT)/ZFTOT)
 !
 !       Compute driest fraction
 !
@@ -426,7 +430,7 @@ DO I=1,INI
 !
 !       Calculate FMED
 !        
-        ZFMED=(1.0-PTAB_FSAT(I,IND)-ZF0)
+        ZFMED=(1.0-PTAB_FSAT(JI,IND)-ZF0)
 !
         IF (ZFMED/=0.0) THEN
 !
@@ -451,7 +455,11 @@ DO I=1,INI
 !
 !       Solves Dbar = (Wsat-WT)*d_top with Dbar/M (=ZDMOY) = (Wsat-WT)*d_top/M
 !
-        PTAB_WTOP(I,IND) = ZWSAT_AVG(I)-(PM(I)*ZDMOY/ZD_TOP(I))
+        PTAB_WTOP(JI,IND) = ZWSAT_AVG(JI)-(PM(JI)*ZDMOY/ZD_TOP(JI))
+!
+!       Solves Qs = FMED * M * Ks * exp(-Xsat) / Ks (dimentionless)
+!
+        PTAB_QTOP(JI,IND) = ZFMED*PM(JI)*EXP(-ZXSAT_IND)
 !        
       ENDDO
 !
@@ -461,35 +469,42 @@ ENDDO
 !
 ! supress numerical artifacs for boundaries conditions
 !
-DO I=1,INI
+DO JI=1,INI
 !
 !  Upper boundary
 !
-   IF(PTAB_WTOP(I,2)==ZWSAT_AVG(I))THEN
+   IF(PTAB_WTOP(JI,2)==ZWSAT_AVG(JI))THEN
 !
-     ZFUP=PTAB_FSAT(I,1)
-     ZWUP=PTAB_WTOP(I,1)
+     ZFUP=PTAB_FSAT(JI,1)
+     ZWUP=PTAB_WTOP(JI,1)
+     ZQUP=PTAB_QTOP(JI,1)
+!  
+     
+     ID(:)=MAXLOC(PTAB_WTOP(JI,:),PTAB_WTOP(JI,:)<ZWSAT_AVG(JI))
 !   
-     ID(:)=MAXLOC(PTAB_WTOP(I,:),PTAB_WTOP(I,:)<ZWSAT_AVG(I))
-!   
-     ZFDOWN=PTAB_FSAT(I,ID(1))
-     ZWDOWN=PTAB_WTOP(I,ID(1))
+     ZFDOWN=PTAB_FSAT(JI,ID(1))
+     ZWDOWN=PTAB_WTOP(JI,ID(1))
+     ZQDOWN=PTAB_QTOP(JI,ID(1))
 !     
      ZSLOPEW=(ZWUP-ZWDOWN)/(ZFUP-ZFDOWN)   
+     ZSLOPEQ=(ZQUP-ZQDOWN)/(ZFUP-ZFDOWN)   
 !
      DO IND=2,ID(1)-1
-        PTAB_WTOP(I,IND)=ZWDOWN+(PTAB_FSAT(I,IND)-ZFDOWN)*ZSLOPEW
+        PTAB_WTOP(JI,IND)=ZWDOWN+(PTAB_FSAT(JI,IND)-ZFDOWN)*ZSLOPEW
+        PTAB_QTOP(JI,IND)=ZQDOWN+(PTAB_FSAT(JI,IND)-ZFDOWN)*ZSLOPEQ
      ENDDO
 !   
    ENDIF
 !
 !  Lower boundary
 !
-   WHERE(PTAB_FSAT(I,:)<=0.0      )
-         PTAB_WTOP(I,:)=ZWWILT_AVG(I)
+   WHERE(PTAB_FSAT(JI,:)<=0.0      )
+         PTAB_WTOP(JI,:)=ZWD0_AVG(JI)
+         PTAB_QTOP(JI,:)=0.0
    ENDWHERE
-   WHERE(PTAB_WTOP(I,:)<=ZWWILT_AVG(I))
-         PTAB_FSAT(I,:)=0.0
+   WHERE(PTAB_WTOP(JI,:)<=ZWD0_AVG(JI))
+         PTAB_FSAT(JI,:)=0.0
+         PTAB_QTOP(JI,:)=0.0
    ENDWHERE
 !   
 ENDDO

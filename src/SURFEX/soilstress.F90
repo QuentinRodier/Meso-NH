@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE SOILSTRESS( HISBA, PF2,                                   &
                   PROOTFRAC, PWSAT, PWFC, PWWILT,                    &
@@ -42,13 +42,14 @@ SUBROUTINE SOILSTRESS( HISBA, PF2,                                   &
 !!    AUTHOR
 !!    ------
 !!
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original      13/03/95 
 !!     (P.Jabouille)  13/11/96    mininum value for ZF1
 !!     (V. Masson)    28/08/98    add PF2 for Calvet (1998) CO2 computations
+!!     (B. Decharme)     07/15    Suppress numerical adjustement for PF2 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -92,9 +93,9 @@ REAL, DIMENSION(:,:), INTENT(OUT):: PF2WGHT  ! water stress coefficient profile 
 !
 !
 REAL, DIMENSION(SIZE(PWFC,1)) ::  ZWFC_AVGZ, ZWSAT_AVGZ, ZWWILT_AVGZ
-!	                           ZWFC_AVGZ   = field capacity averaged over entire soil column
-!	                           ZWSAT_AVGZ  = porosity averaged over entire soil column
-!	                           ZWWILT_AVGZ = wilting point averaged over entire soil column
+!                                  ZWFC_AVGZ   = field capacity averaged over entire soil column
+!                                  ZWSAT_AVGZ  = porosity averaged over entire soil column
+!                                  ZWWILT_AVGZ = wilting point averaged over entire soil column
 !
 ! ISBA-DF:
 !
@@ -111,9 +112,8 @@ INTEGER :: INI, INL, JJ, JL, IDEPTH
 !
 !*      0.3    declarations of local parameters:
 !
-REAL, PARAMETER                :: ZDENOM_MIN  = 1.E-6 ! minimum denominator: 
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!                                                     ! numerical factor to prevent division by 0
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.     Initialization of variables:
@@ -143,8 +143,6 @@ ZWWILT_AVGZ(:)  = 0.
 !   increase the stomatal resistance                                   
 ! - The stomatal resistance should be large
 !   when the soil is very dry (< WILT)
-! - For intermediate soils it ranges (F2_min =< F2 <= 1):
-!   where F2_min is a small numerical threshold
 !
 IF(HISBA =='DIF')THEN      
 !
@@ -161,17 +159,13 @@ IF(HISBA =='DIF')THEN
   ZWWILT(:) = PWWILT(:,1) * ZWSAT(:)/PWSAT(:,1)
 !
 ! Calculate the soil water stress factor for each layer:
-  PF2WGHT(:,1) = (PWG(:,1)-ZWWILT(:))/(ZWFC(:)-ZWWILT(:))
-  PF2WGHT(:,1) = MIN( 1.0, MAX( ZDENOM_MIN,PF2WGHT(:,1) ) ) 
+  PF2WGHT(:,1) = MAX(0.0,MIN(1.0,(PWG(:,1)-ZWWILT(:))/(ZWFC(:)-ZWWILT(:))))
 !
 ! Normalize the transpiration weights by root fraction:
   PF2WGHT(:,1) = PROOTFRAC(:,1)*PF2WGHT(:,1)
 !
 ! Net soil water stress for entire root zone:
   PF2(:) = PF2WGHT(:,1)
-!
-! Make sure weights stress factor is within limits
-  PF2WGHT(:,1) = MAX(PF2WGHT(:,1),ZDENOM_MIN*PROOTFRAC(:,1))
 !
 !---------------------------------------------------------
 ! Other layers
@@ -188,29 +182,22 @@ IF(HISBA =='DIF')THEN
         ZWFC  (JJ) = PWFC  (JJ,JL) * ZWSAT(JJ)/PWSAT(JJ,JL)
         ZWWILT(JJ) = PWWILT(JJ,JL) * ZWSAT(JJ)/PWSAT(JJ,JL)
 !
-!       Calculate the soil water stress factor for each layer:
-        PF2WGHT(JJ,JL) = (PWG(JJ,JL)-ZWWILT(JJ))/(ZWFC(JJ)-ZWWILT(JJ))
-        PF2WGHT(JJ,JL) = MIN( 1.0, MAX( ZDENOM_MIN,PF2WGHT(JJ,JL) ) ) 
-!
 !       Calculate normalized root fraction weights:
         ZROOTFRACN = PROOTFRAC(JJ,JL) - PROOTFRAC(JJ,JL-1)
+!
+!       Calculate the soil water stress factor for each layer:
+        PF2WGHT(JJ,JL) = MAX(0.0,MIN(1.0,(PWG(JJ,JL)-ZWWILT(JJ))/(ZWFC(JJ)-ZWWILT(JJ))))
 !
 !       Normalize the transpiration weights by root fraction:                                                
         PF2WGHT(JJ,JL) = ZROOTFRACN*PF2WGHT(JJ,JL)
 !
 !       Net soil water stress for entire root zone:
         PF2(JJ) = PF2(JJ) + PF2WGHT(JJ,JL)
-!
-!       Make sure weights stress factor is within limits
-        PF2WGHT(JJ,JL) = MAX(PF2WGHT(JJ,JL),ZDENOM_MIN*ZROOTFRACN)
 !        
       ENDIF
 !
      ENDDO
   ENDDO
-!
-! Make sure average stress factor is within limits
-  PF2(:) = MAX(ZDENOM_MIN, MIN(1.0, PF2(:)))
 !
 ELSE
 !
@@ -221,21 +208,21 @@ ELSE
 !
 ! Due to the presence of ice, modify soil parameters:
 !
-   ZWSAT_AVGZ(:)  = PWSAT(:,1) - PWGI(:,2)
-   ZWFC_AVGZ(:)   = PWFC(:,1)  *ZWSAT_AVGZ(:)/PWSAT(:,1)
+   ZWSAT_AVGZ(:)  = PWSAT (:,1) - PWGI(:,2)
+   ZWFC_AVGZ(:)   = PWFC  (:,1)*ZWSAT_AVGZ(:)/PWSAT(:,1)
    ZWWILT_AVGZ(:) = PWWILT(:,1)*ZWSAT_AVGZ(:)/PWSAT(:,1)
 !
 ! Compute the water stress factor:
 !
-   PF2(:) = ( PWG(:,2)-ZWWILT_AVGZ(:) ) /  ( ZWFC_AVGZ(:)-ZWWILT_AVGZ(:))
-   PF2(:) = MAX(ZDENOM_MIN , MIN(1.0, PF2(:)))
+   PF2(:) = (PWG(:,2)-ZWWILT_AVGZ(:))/(ZWFC_AVGZ(:)-ZWWILT_AVGZ(:))
+   PF2(:) = MAX(0.0,MIN(1.0, PF2(:)))
 !
 !
 ENDIF
 !
 ! Function to cause Etv to approach 0 as F2 goes to 0:
 !
-PF5(:) = MERGE(PF2(:),0.0,PF2(:)>ZDENOM_MIN)
+PF5(:) = PF2(:)
 !
 IF (LHOOK) CALL DR_HOOK('SOILSTRESS',1,ZHOOK_HANDLE)
 !

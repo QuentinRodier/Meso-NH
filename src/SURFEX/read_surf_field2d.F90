@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_SURF_FIELD2D( HPROGRAM,PFIELD2D,HFIELDNAME,HCOMMENT,HDIR,KRESP)
 !     #####################################
@@ -52,7 +52,7 @@
 USE MODD_SURF_PAR, ONLY : NUNDEF
 !
 USE MODI_READ_SURF
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_GET_NB_PROCIO_READ_MNH
 #endif
 !
@@ -73,7 +73,7 @@ CHARACTER(LEN=1),OPTIONAL,        INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
-INTEGER,OPTIONAL,               INTENT(OUT)  :: KRESP         
+INTEGER,OPTIONAL,               INTENT(OUT)  :: KRESP  
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -102,7 +102,7 @@ IF (PRESENT(HDIR)) YDIR = HDIR
 IPATCH = SIZE( PFIELD2D, 2 )
 !
 INB_PROCIO = 1
-#ifdef MNH
+#ifdef SFX_MNH
 IF (HPROGRAM=='MESONH') THEN
   CALL GET_NB_PROCIO_READ_MNH( INB_PROCIO, IRESP )
 ENDIF

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_NAM_PGD_TEB_GREENROOF(HPROGRAM, KTIME_GR,KLAYER_GR,HTYP_GR,                   &
                                             PUNIF_OM_GR, PUNIF_CLAY_GR, PUNIF_SAND_GR, PUNIF_LAI_GR,&
@@ -49,6 +49,7 @@ USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
 !
+USE MODI_ABOR1_SFX
 USE MODE_POS_SURF
 !
 !
@@ -129,22 +130,22 @@ IF (LHOOK) CALL DR_HOOK('PGD_TEB_GREENROOF_PAR',0,ZHOOK_HANDLE)
 !
 NTIME_GR         = 1
 NLAYER_GR        = 6
-CTYP_GR          = 'GRASS'           ! Grasses - graminoïds
+ CTYP_GR          = 'GRASS'           ! Grasses - graminoïds
 !
 XUNIF_OM_GR      = XUNDEF
 XUNIF_CLAY_GR    = XUNDEF
 XUNIF_SAND_GR    = XUNDEF
 XUNIF_LAI_GR     = XUNDEF
 !
-CFNAM_OM_GR      = '                            '
-CFNAM_CLAY_GR    = '                            '
-CFNAM_SAND_GR    = '                            '
-CFNAM_LAI_GR     = '                            '
+ CFNAM_OM_GR      = '                            '
+ CFNAM_CLAY_GR    = '                            '
+ CFNAM_SAND_GR    = '                            '
+ CFNAM_LAI_GR     = '                            '
 !
-CFTYP_OM_GR      = '      '
-CFTYP_CLAY_GR    = '      '
-CFTYP_SAND_GR    = '      '
-CFTYP_LAI_GR     = '      '
+ CFTYP_OM_GR      = '      '
+ CFTYP_CLAY_GR    = '      '
+ CFTYP_SAND_GR    = '      '
+ CFTYP_LAI_GR     = '      '
 !
 !-------------------------------------------------------------------------------
 !
@@ -158,6 +159,10 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_DATA_TEB_GREENROOF)
 !
  CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
+!--------------------------------------------------
+IF (NTIME_GR/=1 .AND. NTIME_GR/=12) THEN
+  CALL ABOR1_SFX('NTIME_GR must be either equal to 1 (uniform LAI) or 12 (monthly LAI)')
+END IF
 !--------------------------------------------------
 !
 KTIME_GR           = NTIME_GR

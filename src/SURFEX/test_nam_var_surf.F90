@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !############################
 MODULE MODI_TEST_NAM_VAR_SURF
 !############################
@@ -59,6 +59,27 @@ INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE8  ! eightth possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE9  ! nineth possible value
 !
 END SUBROUTINE TEST_NAM_VARN0_SURF
+!
+      SUBROUTINE TEST_NAM_VARX0_SURF(KLUOUT,HNAME,PVAR,       &
+                                     PVALUE1,PVALUE2,PVALUE3, &
+                                     PVALUE4,PVALUE5,PVALUE6, &
+                                     PVALUE7,PVALUE8,PVALUE9  )  
+!
+INTEGER,          INTENT(IN)          ::KLUOUT   ! output listing logical unit
+ CHARACTER(LEN=*) ,INTENT(IN)          ::HNAME    ! name of the variable to test
+REAL             ,INTENT(IN)          ::PVAR     ! variable to test
+
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE1  ! first possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE2  ! second possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE3  ! third possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE4  ! fourth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE5  ! fiveth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE6  ! sixth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE7  ! seventh possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE8  ! eightth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE9  ! nineth possible value
+!
+END SUBROUTINE TEST_NAM_VARX0_SURF
 !
 END INTERFACE
 !
@@ -452,3 +473,155 @@ IF ( PRESENT (KVALUE9) ) WRITE (KLUOUT,*) '"',KVALUE9,'"'
 IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 END SUBROUTINE TEST_NAM_VARN0_SURF
+
+!     #########################################################
+      SUBROUTINE TEST_NAM_VARX0_SURF(KLUOUT,HNAME,PVAR,       &
+                                     PVALUE1,PVALUE2,PVALUE3, &
+                                     PVALUE4,PVALUE5,PVALUE6, &
+                                     PVALUE7,PVALUE8,PVALUE9  )  
+!     #########################################################
+!
+!!****  *TEST_NAM_VARN0* - routine to test the value of an integer var.
+!!
+!!    PURPOSE
+!!    -------
+!
+!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!      FM_READ
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!
+!!      B. Decharme      *METEO-FRANCE*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!
+!!      original  01/2014
+!----------------------------------------------------------------------------
+!
+!*      0.    DECLARATIONS
+!             ------------
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+USE MODI_ABOR1_SFX
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
+ CHARACTER(LEN=*) ,INTENT(IN)           ::HNAME    ! name of the variable to test
+REAL             ,INTENT(IN)           ::PVAR     ! variable to test
+
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE1  ! first possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE2  ! second possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE3  ! third possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE4  ! fourth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE5  ! fiveth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE6  ! sixth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE7  ! seventh possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE8  ! eightth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE9  ! nineth possible value
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!*      0.2   Declarations of local variables
+!
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',0,ZHOOK_HANDLE)
+IF ( PRESENT (PVALUE1) ) THEN
+  IF ( PVAR==PVALUE1  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE1 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE2) ) THEN
+  IF ( PVAR==PVALUE2  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE2 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE3) ) THEN
+  IF ( PVAR==PVALUE3  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE3 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE4) ) THEN
+  IF ( PVAR==PVALUE4  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE4 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE5) ) THEN
+  IF ( PVAR==PVALUE5  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE5 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE6) ) THEN
+  IF ( PVAR==PVALUE6  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE6 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE7) ) THEN
+  IF ( PVAR==PVALUE7  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE7 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE8) ) THEN
+  IF ( PVAR==PVALUE8  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE8 ) RETURN
+END IF
+!
+IF ( PRESENT (PVALUE9) ) THEN
+  IF ( PVAR==PVALUE9  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE9 ) RETURN
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+WRITE (KLUOUT,*) ' '
+WRITE (KLUOUT,*) 'FATAL ERROR:'
+WRITE (KLUOUT,*) '-----------'
+WRITE (KLUOUT,*) ' '
+WRITE (KLUOUT,*) 'Value "',PVAR,'" is not allowed for variable ',HNAME
+WRITE (KLUOUT,*) ' '
+WRITE (KLUOUT,*) 'Possible values are:'
+IF ( PRESENT (PVALUE1) ) WRITE (KLUOUT,*) '"',PVALUE1,'"'
+IF ( PRESENT (PVALUE2) ) WRITE (KLUOUT,*) '"',PVALUE2,'"'
+IF ( PRESENT (PVALUE3) ) WRITE (KLUOUT,*) '"',PVALUE3,'"'
+IF ( PRESENT (PVALUE4) ) WRITE (KLUOUT,*) '"',PVALUE4,'"'
+IF ( PRESENT (PVALUE5) ) WRITE (KLUOUT,*) '"',PVALUE5,'"'
+IF ( PRESENT (PVALUE6) ) WRITE (KLUOUT,*) '"',PVALUE6,'"'
+IF ( PRESENT (PVALUE7) ) WRITE (KLUOUT,*) '"',PVALUE7,'"'
+IF ( PRESENT (PVALUE8) ) WRITE (KLUOUT,*) '"',PVALUE8,'"'
+IF ( PRESENT (PVALUE9) ) WRITE (KLUOUT,*) '"',PVALUE9,'"'
+!
+ CALL ABOR1_SFX('TEST_NAM_VAR_SURF: (4) REAL VALUE NOT ALLOWED')
+IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+!-------------------------------------------------------------------------------
+END SUBROUTINE TEST_NAM_VARX0_SURF

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !      ###########
 MODULE MODI_SOIL_ALBEDO
 !      ###########
@@ -112,7 +112,7 @@ END MODULE MODI_SOIL_ALBEDO
 !!      
 !!    AUTHOR
 !!    ------
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -248,7 +248,7 @@ END SUBROUTINE SOIL_ALBEDO_1D
 !!      
 !!    AUTHOR
 !!    ------
-!!	F.Solmon  /  V. Masson          
+!!      F.Solmon  /  V. Masson          
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -309,7 +309,7 @@ IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL = XUNDEF
 IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL  = XUNDEF
 !
 SELECT CASE ( HALBEDO )
-CASE ('EVOL')
+ CASE ('EVOL')
 
   DO JPATCH=1,IPATCH
     ZX = MIN( PWG1(:,JPATCH)/PWSAT(:) , 1. )
@@ -345,17 +345,17 @@ CASE ('EVOL')
     !END WHERE
   END DO
 
-CASE ('DRY ')
+ CASE ('DRY ')
   IF (PRESENT(PALBVIS_SOIL)) PALBVIS_SOIL(:,:) = SPREAD(PALBVIS_DRY(:),2,IPATCH)
   IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL(:,:) = SPREAD(PALBNIR_DRY(:),2,IPATCH)
   IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL (:,:) = SPREAD(PALBUV_DRY (:),2,IPATCH)
 
-CASE ('WET ')
+ CASE ('WET ')
   IF (PRESENT(PALBVIS_SOIL)) PALBVIS_SOIL(:,:) = SPREAD(PALBVIS_WET(:),2,IPATCH)
   IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL(:,:) = SPREAD(PALBNIR_WET(:),2,IPATCH)
   IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL (:,:) = SPREAD(PALBUV_WET (:),2,IPATCH)
 
-CASE ('MEAN')
+ CASE ('MEAN')
   IF (PRESENT(PALBVIS_SOIL))  PALBVIS_SOIL(:,:) = 0.5 * ( SPREAD(PALBVIS_DRY(:),2,IPATCH) + SPREAD(PALBVIS_WET(:),2,IPATCH) )
   IF (PRESENT(PALBNIR_SOIL)) PALBNIR_SOIL(:,:) = 0.5 * ( SPREAD(PALBNIR_DRY(:),2,IPATCH) + SPREAD(PALBNIR_WET(:),2,IPATCH) )
   IF (PRESENT(PALBUV_SOIL)) PALBUV_SOIL (:,:) = 0.5 * ( SPREAD(PALBUV_DRY (:),2,IPATCH) + SPREAD(PALBUV_WET (:),2,IPATCH) )

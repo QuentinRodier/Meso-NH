@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################################################################
       SUBROUTINE LATLON_GRIDTYPE_LONLATVAL(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,PDIR)
 !     #########################################################################
@@ -27,8 +27,8 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	E. Martin   *Meteo France*	
-!!
+!!      E. Martin   *Meteo France*
+!!      M Lafaysse 08/2013 missing deallocate
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2007 
@@ -110,6 +110,18 @@ PMESH_SIZE(:) = XRADIUS**2 * XPI/180.*(ZDLON(:))              &
 !              ----------------------------------------------------
 !
 PDIR(:) = 0.
+
+
+
+DEALLOCATE(ZX)
+DEALLOCATE(ZY)
+DEALLOCATE(ZDX)
+DEALLOCATE(ZDY)
+DEALLOCATE(ZDLON)
+DEALLOCATE(ZDLAT)
+
+
+
 IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_LONLATVAL',1,ZHOOK_HANDLE)
 !
 !---------------------------------------------------------------------------

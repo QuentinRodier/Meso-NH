@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
      SUBROUTINE CH_DEP_TOWN ( PRESA_TOWN,  PUSTAR_TOWN,PTA, PTRAD, PWALL_O_HOR, &
                                 PSV, HSV,  PDEP)  
@@ -22,8 +22,8 @@
   !!    MODIFICATIONS
   !!    -------------
   !!      Original      20/02/97 
-  !!	Modification  21/07/00  (Guenais/Tulet) add deposition on town
-  !!	Modification  18/07/03  (Tulet) surface externalization
+  !!      Modification  21/07/00  (Guenais/Tulet) add deposition on town
+  !!      Modification  18/07/03  (Tulet) surface externalization
   !!
   !-------------------------------------------------------------------------------
   !
@@ -68,7 +68,7 @@
   REAL             , DIMENSION(SIZE(PTRAD,1),SIZE(HSV,1)) :: ZTOWNRB 
   ! snow quasi-laminar  resistance
   REAL             , DIMENSION(SIZE(PTRAD,1),SIZE(HSV,1)) :: ZTOWNRC 
-  ! towm surface  resistance				 
+  ! towm surface  resistance
 
   REAL             , DIMENSION(SIZE(PTRAD,1),SIZE(HSV,1)) :: ZRESTOWN 
   !  final town  resistance
@@ -98,7 +98,7 @@
   !
   !        1.0  Aerodynamic resistance for the differents COVER TYPE
   !             ----------------------------------------------------
-  !   PRESA_TOWN(:)	! Aerodynamic resistance for TOWN 
+  !   PRESA_TOWN(:)     ! Aerodynamic resistance for TOWN 
   !
   !       2.0  Quasi-laminar resistance (Hicks, 1987)
   !            ------------------------      
@@ -139,7 +139,7 @@
   ! 
         !        6.0  Compute town resistance
         !             -----------------------
-        !	
+        !
         DO JSV=1,SIZE(HSV,1) 
            ZRESTOWN(:,JSV) = PRESA_TOWN(:) + &
                   ZTOWNRB(:,JSV) + ZTOWNRC(:,JSV)  

@@ -1,86 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
-#if 0
-!#######################
-MODULE MODI_PGD_GRID_IO_INIT
-  !#######################
-  !
-  INTERFACE
-    !     #########
-#ifdef MNH_PARALLEL
-          SUBROUTINE PGD_GRID_IO_INIT(HPROGRAM,KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
-#else
-      SUBROUTINE PGD_GRID_IO_INIT(HPROGRAM)
-#endif
-    !     ######################################
-    !!
-    !!    PURPOSE
-    !!    -------
-    !!
-    !!
-    !!    METHOD
-    !!    ------
-    !!
-    !!    EXTERNAL
-    !!    --------
-    !!
-    !!
-    !!    IMPLICIT ARGUMENTS
-    !!    ------------------
-    !!
-    !!
-    !!    REFERENCE
-    !!    ---------
-    !!
-    !!    AUTHOR
-    !!    ------
-    !!
-    !!    V. Masson                   Meteo-France
-    !!
-    !!    MODIFICATION
-    !!    ------------
-    !!
-    !!    Original     13/10/03
-    !!        M.Moge   11/02/15 adding MODULE MODI_PGD_GRID_IO_INIT and INTERFACE + modif of the input args
-    !!        M.Moge   11/02/15 change in the input arguments : passing KDXRATIO,KDYRATIO
-    !----------------------------------------------------------------------------
-    !
-    !*    0.     DECLARATION
-    !            -----------
-    !
-    !
-    USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-    USE PARKIND1  ,ONLY : JPRB
-    !
-    #ifdef MNH
-    USE MODI_PGD_GRID_IO_INIT_MNH
-    #endif
-    IMPLICIT NONE
-    !
-    !*    0.1    Declaration of dummy arguments
-    !            ------------------------------
-    !
-     CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling READ_PGD
-#ifdef MNH_PARALLEL
-     INTEGER,                         INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
-     REAL, DIMENSION(KGRID_PAR),      INTENT(IN)    :: PGRID_PAR ! grid parameters
-     CHARACTER(LEN=10),     INTENT(IN), OPTIONAL    :: HGRID
-     LOGICAL,               INTENT(IN), OPTIONAL    :: ORECT
-! if KIMAX,KJMAX,KDXRATIO,KDYRATIO present, this means we are in PREP_PGD, and we only initialise the child model, 
-! using a father model read from a file and previously initialized with INI_PARAZ_ll
-     INTEGER,               INTENT(IN), OPTIONAL    :: KIMAX
-     INTEGER,               INTENT(IN), OPTIONAL    :: KJMAX
-     INTEGER,               INTENT(IN), OPTIONAL    :: KDXRATIO
-     INTEGER,               INTENT(IN), OPTIONAL    :: KDYRATIO
-#endif
-          END SUBROUTINE PGD_GRID_IO_INIT
-     !
-  END INTERFACE
-  !
-END MODULE MODI_PGD_GRID_IO_INIT
-#endif
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 #ifdef MNH_PARALLEL
       SUBROUTINE PGD_GRID_IO_INIT(HPROGRAM,KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
@@ -127,7 +48,7 @@ END MODULE MODI_PGD_GRID_IO_INIT
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_PGD_GRID_IO_INIT_MNH
 #endif
 IMPLICIT NONE
@@ -166,7 +87,7 @@ IF (HPROGRAM=='MESONH') THEN
     CALL PGD_GRID_IO_INIT_MNH(KGRID_PAR,PGRID_PAR)
   ENDIF
 #else
-#ifdef MNH
+#ifdef SFX_MNH
   CALL PGD_GRID_IO_INIT_MNH
 #endif
 #endif

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE WRITE_COVER_TEX_START(HPROGRAM)
 !     ##########################
@@ -43,10 +43,10 @@
 USE MODD_WRITE_COVER_TEX,ONLY : NTEX
 USE MODD_WRITE_SURF_ATM, ONLY : LNOWRITE_TEXFILE
 !
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODI_OPEN_WRITE_COVER_TEX_LFI
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_MNHOPEN_WRITE_COVER_TEX
 #endif
 !
@@ -76,13 +76,13 @@ ENDIF
 !* opening of the file
 !
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL MNHOPEN_WRITE_COVER_TEX(NTEX)
 #endif
 END IF
 !
 IF (HPROGRAM=='LFI   ') THEN
-#ifdef LFI
+#ifdef SFX_LFI
   CALL OPEN_WRITE_COVER_TEX_LFI(NTEX)
 #endif
 END IF
@@ -93,7 +93,7 @@ IF (HPROGRAM=='ASCII ' .OR. HPROGRAM=='FA    ') THEN
 ENDIF
 !
 IF (HPROGRAM=='AROME ') THEN
-#ifdef ARO
+#ifdef SFX_ARO
    CALL AROOPEN_WRITE_COVER_TEX(NTEX)
 #endif
 END IF

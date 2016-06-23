@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE MOD1D_n(HPROGRAM,PTIME,PEMIS,PDIR_ALB,PSCA_ALB,PLW,PSCA_SW,&
+    SUBROUTINE MOD1D_n (DGO, O, OR, SG, S, &
+                        HPROGRAM,PTIME,PEMIS,PDIR_ALB,PSCA_ALB,PLW,PSCA_SW,&
                        PDIR_SW, PSFTH,PSFTQ,PSFU,PSFV,PRAIN,PSST )           
 !     #######################################################################
 !
@@ -32,7 +33,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!     C. Lebeaupin  *Météo-France* 
+!!     C. Lebeaupin  *MÃ©tÃ©o-France* 
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -43,16 +44,22 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+!
+!
+!
+USE MODD_DIAG_OCEAN_n, ONLY : DIAG_OCEAN_t
+USE MODD_OCEAN_n, ONLY : OCEAN_t
+USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
+USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+!
 USE MODD_CSTS
 USE MODD_OCEAN_CSTS
-USE MODD_OCEAN_n, ONLY : XSEATEND, LPROGSST, NOCTCOUNT, XSEAHMO
-USE MODD_SEAFLUX_n
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 USE MODI_MIXTL_n
 USE MODI_DIAG_INLINE_OCEAN_n
 !
-USE MODD_OCEAN_REL_n , ONLY : LFLUX_NULL
 USE MODI_GET_LUOUT
 !
 !
@@ -63,6 +70,13 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+!
+TYPE(DIAG_OCEAN_t), INTENT(INOUT) :: DGO
+TYPE(OCEAN_t), INTENT(INOUT) :: O
+TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
+TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 !
  CHARACTER(LEN=6),    INTENT(IN)       :: HPROGRAM  ! program calling surf. schemes
 REAL                ,INTENT(IN)       :: PTIME   ! current time since midnight in second
@@ -105,10 +119,10 @@ IF (LHOOK) CALL DR_HOOK('MOD1D_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 ITIME=INT(PTIME)
-NOCEAN_STEP=INT(XOCEAN_TSTEP)
+NOCEAN_STEP=INT(O%XOCEAN_TSTEP)
 !
 GTIMEOK=(MOD(ITIME,NOCEAN_STEP)==0)
-GCALLMIXT=((MOD(ITIME,NOCEAN_STEP)==0).AND.(NOCTCOUNT>0))
+GCALLMIXT=((MOD(ITIME,NOCEAN_STEP)==0).AND.(O%NOCTCOUNT>0))
 !
 !Call 1D model if ptime proportional to the oceanic model time step
 !
@@ -139,19 +153,20 @@ IF (GCALLMIXT) THEN
 !        2. Call oceanic TKE model
 !           ----------------------
 !
-  IF (LFLUX_NULL) THEN
+  IF (OR%LFLUX_NULL) THEN
      WRITE(ILUOUT,*) 'Caution : SURFACE FLUX ARE SET TO 0 '
      ZFSOL(:)   = 0.
      ZFNSOL(:)  = 0.
      ZSFTEAU(:) = 0.
   END IF
 
-  CALL MIXTL_n(ZFSOL,ZFNSOL,ZSFTEAU,PSFU,PSFV,ZSEATEMP)
+  CALL MIXTL_n(O, OR, SG, &
+               ZFSOL,ZFNSOL,ZSFTEAU,PSFU,PSFV,ZSEATEMP)
 !
 !---------------------------------------------------------------------------
 !        3. Coupling with SURFEX by SST (and relative wind) evolution
 !
-  IF (LPROGSST) THEN 
+  IF (O%LPROGSST) THEN 
     PSST(:)=ZSEATEMP(:)
     !WRITE(ILUOUT,*) '**SST CHANGED FOR THE ',NOCTCOUNT,'TIME BY FIRST LEVEL OCEANIC MODEL TEMPERATURE AT ', ITIME,' s **'
   ENDIF
@@ -159,8 +174,8 @@ IF (GCALLMIXT) THEN
 ENDIF
 !
 IF (GTIMEOK) THEN
-  CALL DIAG_INLINE_OCEAN_n
-  NOCTCOUNT=NOCTCOUNT+1
+  CALL DIAG_INLINE_OCEAN_n(DGO, O, S)
+  O%NOCTCOUNT=O%NOCTCOUNT+1
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('MOD1D_N',1,ZHOOK_HANDLE)

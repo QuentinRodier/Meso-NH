@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_CHEMISTRY(HPROGRAM,OCH_EMIS)
+      SUBROUTINE PGD_CHEMISTRY (CHE, DTCO, UG, U, USS, &
+                                HPROGRAM,OCH_EMIS)
 !     ##############################################################
 !
 !!**** *PGD_CHEMISTRY* monitor for averaging and interpolations of physiographic fields
@@ -39,13 +40,19 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+!
+USE MODD_CH_EMIS_FIELD_n, ONLY : CH_EMIS_FIELD_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_PGD_GRID,           ONLY : NL
 USE MODD_PGDWORK,            ONLY : CATYPE
 USE MODD_SURF_PAR,           ONLY : XUNDEF
 USE MODD_CH_SURF,            ONLY : JPEMISMAX_F
-USE MODD_CH_EMIS_FIELD_n,    ONLY : NEMIS_NBR, CEMIS_AREA, CEMIS_NAME, &
-                                     CEMIS_COMMENT, NEMIS_TIME, XEMIS_FIELDS  
-USE MODD_SURF_ATM_n
 !
 USE MODI_GET_LUOUT
 USE MODI_PGD_FIELD
@@ -68,6 +75,13 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(CH_EMIS_FIELD_t), INTENT(INOUT) :: CHE
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 LOGICAL,             INTENT(OUT)   :: OCH_EMIS     ! emission flag
@@ -110,13 +124,13 @@ NAMELIST/NAM_CH_EMIS_PGD/ NEMIS_PGD_NBR,CEMIS_PGD_NAME,NEMIS_PGD_TIME,&
 !
 IF (LHOOK) CALL DR_HOOK('PGD_CHEMISTRY',0,ZHOOK_HANDLE)
 NEMIS_PGD_NBR = 0  
-CEMIS_PGD_NAME(:)    = '                           '
+ CEMIS_PGD_NAME(:)    = '                           '
 NEMIS_PGD_TIME(:)    = 0
-CEMIS_PGD_COMMENT(:) = ''
-CEMIS_PGD_AREA(:)    = 'ALL'
-CEMIS_PGD_FILETYPE(:)= 'DIRECT'
-CEMIS_PGD_FILE(:)    = '                           '
-CEMIS_PGD_ATYPE(:)   = 'ARI'
+ CEMIS_PGD_COMMENT(:) = ''
+ CEMIS_PGD_AREA(:)    = 'ALL'
+ CEMIS_PGD_FILETYPE(:)= 'DIRECT'
+ CEMIS_PGD_FILE(:)    = '                           '
+ CEMIS_PGD_ATYPE(:)   = 'ARI'
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
@@ -138,36 +152,39 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_CH_EMIS_PGD)
 !*    3.      Allocation
 !             ----------
 !
-NEMIS_NBR = NEMIS_PGD_NBR
+ CHE%NEMIS_NBR = NEMIS_PGD_NBR
 !
- CALL GET_SURF_SIZE_n('LAND', IL_LAND)
- CALL GET_SURF_SIZE_n('SEA   ',IL_SEA)
+ CALL GET_SURF_SIZE_n(DTCO, U, &
+                      'LAND', IL_LAND)
+ CALL GET_SURF_SIZE_n(DTCO, U, &
+                      'SEA   ',IL_SEA)
 !
 !
 ALLOCATE(ZEMIS_FIELDS (NL))
 !
-ALLOCATE(XEMIS_FIELDS (NL,NEMIS_NBR))
-ALLOCATE(CEMIS_AREA   (NEMIS_NBR))
-ALLOCATE(CEMIS_COMMENT(NEMIS_NBR))
-ALLOCATE(CEMIS_NAME   (NEMIS_NBR))
-ALLOCATE(NEMIS_TIME   (NEMIS_NBR))
+ALLOCATE(CHE%XEMIS_FIELDS (NL,CHE%NEMIS_NBR))
+ALLOCATE(CHE%CEMIS_AREA   (CHE%NEMIS_NBR))
+ALLOCATE(CHE%CEMIS_COMMENT(CHE%NEMIS_NBR))
+ALLOCATE(CHE%CEMIS_NAME   (CHE%NEMIS_NBR))
+ALLOCATE(CHE%NEMIS_TIME   (CHE%NEMIS_NBR))
 !
-CEMIS_AREA   (:) = CEMIS_PGD_AREA   (1:NEMIS_NBR)
-CEMIS_NAME   (:) = CEMIS_PGD_NAME   (1:NEMIS_NBR)
-NEMIS_TIME   (:) = NEMIS_PGD_TIME   (1:NEMIS_NBR)
-CEMIS_COMMENT(:) = CEMIS_PGD_COMMENT(1:NEMIS_NBR)
+ CHE%CEMIS_AREA   (:) = CEMIS_PGD_AREA   (1:CHE%NEMIS_NBR)
+ CHE%CEMIS_NAME   (:) = CEMIS_PGD_NAME   (1:CHE%NEMIS_NBR)
+ CHE%NEMIS_TIME   (:) = NEMIS_PGD_TIME   (1:CHE%NEMIS_NBR)
+ CHE%CEMIS_COMMENT(:) = CEMIS_PGD_COMMENT(1:CHE%NEMIS_NBR)
 !
+ CHE%NTIME_MAX = MAXVAL(CHE%NEMIS_TIME)
 !
 !-------------------------------------------------------------------------------
-OCH_EMIS = NEMIS_NBR > 0
+OCH_EMIS = CHE%NEMIS_NBR > 0
 !-------------------------------------------------------------------------------
 !
 !*    4.      Computations
 !             ------------
 !
-DO JNBR=1,NEMIS_NBR
+DO JNBR=1,CHE%NEMIS_NBR
   CATYPE = CEMIS_PGD_ATYPE(JNBR)
-  SELECT CASE (CEMIS_AREA(JNBR))
+  SELECT CASE (CHE%CEMIS_AREA(JNBR))
     CASE ('LAN')
       IL = IL_LAND
       YMASK='LAND  '
@@ -183,13 +200,15 @@ DO JNBR=1,NEMIS_NBR
   ALLOCATE(ZEMIS_FIELD (IL))
   ALLOCATE(IMASK(IL))
   !*    4.1     Computes the field on the surface points where it is defined
-  CALL PGD_FIELD(HPROGRAM,CEMIS_NAME(JNBR),CEMIS_AREA(JNBR),CEMIS_PGD_FILE(JNBR), &
+  CALL PGD_FIELD(DTCO, UG, U, USS, &
+                 HPROGRAM,CHE%CEMIS_NAME(JNBR),CHE%CEMIS_AREA(JNBR),CEMIS_PGD_FILE(JNBR), &
                    CEMIS_PGD_FILETYPE(JNBR),XUNDEF,ZEMIS_FIELD(:)             )  
   CATYPE = 'ARI'
   
 !*    4.2     Expends field on all surface points
   ILU=0
-  CALL GET_SURF_MASK_n(YMASK,IL,IMASK,ILU,ILUOUT)
+  CALL GET_SURF_MASK_n(DTCO, U, &
+                       YMASK,IL,IMASK,ILU,ILUOUT)
   CALL UNPACK_SAME_RANK(IMASK,ZEMIS_FIELD(:),ZEMIS_FIELDS(:))
   DEALLOCATE(ZEMIS_FIELD)
   DEALLOCATE(IMASK)
@@ -197,13 +216,13 @@ DO JNBR=1,NEMIS_NBR
   
 !*    4.3      Weights field on all surface points 
 !              (zero weight where field is not defined)
-  SELECT CASE (CEMIS_AREA(JNBR))
+  SELECT CASE (CHE%CEMIS_AREA(JNBR))
     CASE ('LAN')
-      XEMIS_FIELDS(:,JNBR) = (XNATURE(:)+XTOWN(:))*ZEMIS_FIELDS(:) 
+      CHE%XEMIS_FIELDS(:,JNBR) = (U%XNATURE(:)+U%XTOWN(:))*ZEMIS_FIELDS(:) 
     CASE ('SEA')
-      XEMIS_FIELDS(:,JNBR) = XSEA*ZEMIS_FIELDS(:)
+      CHE%XEMIS_FIELDS(:,JNBR) = U%XSEA*ZEMIS_FIELDS(:)
     CASE ('ALL')
-      XEMIS_FIELDS(:,JNBR) = ZEMIS_FIELDS(:)
+      CHE%XEMIS_FIELDS(:,JNBR) = ZEMIS_FIELDS(:)
     CASE DEFAULT
       CALL ABOR1_SFX('PGD_CHEMISTRY (2): EMISSION AREA NOT SUPPORTED')
   END SELECT

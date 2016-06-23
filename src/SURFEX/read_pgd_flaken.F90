@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PGD_FLAKE_n(HPROGRAM)
+      SUBROUTINE READ_PGD_FLAKE_n (DTCO, U, FG, F, &
+                                   HPROGRAM)
 !     #########################################
 !
 !!****  *READ_PGD_FLAKE_n* - read FLAKE physiographic fields
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,17 +39,21 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_FLAKE_GRID_n, ONLY : FLAKE_GRID_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_TYPE_DATE_SURF
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_FLAKE_n,      ONLY : XCOVER        , XZS           , &
-                              TTIME         , LCOVER        , &
-                              XWATER_DEPTH  , XWATER_FETCH  , &
-                              XT_BS         , XDEPTH_BS     , &
-                              XEXTCOEF_WATER
 
 
-USE MODD_FLAKE_GRID_n, ONLY : XLAT, XLON, XMESH_SIZE, CGRID, XGRID_PAR, NDIM
+!
+USE MODE_READ_SURF_COV, ONLY : READ_SURF_COV
 !
 USE MODI_READ_SURF
 USE MODI_READ_GRID
@@ -64,6 +69,12 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(FLAKE_GRID_t), INTENT(INOUT) :: FG
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
 !
@@ -81,7 +92,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_FLAKE_N',0,ZHOOK_HANDLE)
 YRECFM='SIZE_WATER'
- CALL GET_TYPE_DIM_n('WATER ',NDIM)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'WATER ',FG%NDIM)
 !
 !
 !
@@ -90,46 +102,55 @@ YRECFM='SIZE_WATER'
 !
 !* cover classes
 !
-ALLOCATE(LCOVER(JPCOVER))
- CALL READ_LCOVER(HPROGRAM,LCOVER)
+ALLOCATE(F%LCOVER(JPCOVER))
+ CALL READ_LCOVER(&
+                  HPROGRAM,F%LCOVER)
 !
-ALLOCATE(XCOVER(NDIM,JPCOVER))
- CALL READ_SURF(HPROGRAM,'COVER',XCOVER(:,:),LCOVER,IRESP)
+ALLOCATE(F%XCOVER(FG%NDIM,JPCOVER))
+ CALL READ_SURF_COV(&
+                    HPROGRAM,'COVER',F%XCOVER(:,:),F%LCOVER,IRESP)
 !
 !* orography
 !
-ALLOCATE(XZS(NDIM))
+ALLOCATE(F%XZS(FG%NDIM))
 YRECFM='ZS'
- CALL READ_SURF(HPROGRAM,YRECFM,XZS(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XZS(:),IRESP)
 !
 !* latitude, longitude 
 !
-ALLOCATE(XLAT      (NDIM))
-ALLOCATE(XLON      (NDIM))
-ALLOCATE(XMESH_SIZE(NDIM))
- CALL READ_GRID(HPROGRAM,CGRID,XGRID_PAR,XLAT,XLON,XMESH_SIZE,IRESP)
+ALLOCATE(FG%XLAT      (FG%NDIM))
+ALLOCATE(FG%XLON      (FG%NDIM))
+ALLOCATE(FG%XMESH_SIZE(FG%NDIM))
+ CALL READ_GRID(&
+                HPROGRAM,FG%CGRID,FG%XGRID_PAR,FG%XLAT,FG%XLON,FG%XMESH_SIZE,IRESP)
 !
 !* FLake parameters
 !
-ALLOCATE(XWATER_DEPTH   (NDIM))
+ALLOCATE(F%XWATER_DEPTH   (FG%NDIM))
 YRECFM='WATER_DEPTH'
- CALL READ_SURF(HPROGRAM,YRECFM,XWATER_DEPTH(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XWATER_DEPTH(:),IRESP)
 !
-ALLOCATE(XWATER_FETCH   (NDIM))
+ALLOCATE(F%XWATER_FETCH   (FG%NDIM))
 YRECFM='WATER_FETCH'
- CALL READ_SURF(HPROGRAM,YRECFM,XWATER_FETCH(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XWATER_FETCH(:),IRESP)
 !
-ALLOCATE(XT_BS          (NDIM))
+ALLOCATE(F%XT_BS          (FG%NDIM))
 YRECFM='T_BS'
- CALL READ_SURF(HPROGRAM,YRECFM,XT_BS(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XT_BS(:),IRESP)
 !
-ALLOCATE(XDEPTH_BS      (NDIM))
+ALLOCATE(F%XDEPTH_BS      (FG%NDIM))
 YRECFM='DEPTH_BS'
- CALL READ_SURF(HPROGRAM,YRECFM,XDEPTH_BS(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XDEPTH_BS(:),IRESP)
 !
-ALLOCATE(XEXTCOEF_WATER (NDIM))
+ALLOCATE(F%XEXTCOEF_WATER (FG%NDIM))
 YRECFM='EXTCOEF_WAT'
- CALL READ_SURF(HPROGRAM,YRECFM,XEXTCOEF_WATER(:),IRESP)
+ CALL READ_SURF(&
+                HPROGRAM,YRECFM,F%XEXTCOEF_WATER(:),IRESP)
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_FLAKE_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

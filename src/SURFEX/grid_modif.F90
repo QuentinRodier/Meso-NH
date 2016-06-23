@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GRID_MODIF(KLUOUT,KLUNAM,HGRID,KGRID_PAR,PGRID_PAR,KL)
+      SUBROUTINE GRID_MODIF(U,KLUOUT,KLUNAM,HGRID,KGRID_PAR,PGRID_PAR,KL)
 !     ##########################################################
 !!
 !!    PURPOSE
@@ -40,6 +40,7 @@
 !            -----------
 !
 !
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -52,6 +53,7 @@ IMPLICIT NONE
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
 !
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER,           INTENT(IN)   :: KLUOUT     ! output listing logical unit
 INTEGER,           INTENT(IN)   :: KLUNAM     ! namelist file logical unit
  CHARACTER(LEN=10), INTENT(IN)   :: HGRID      ! type of horizontal grid
@@ -70,6 +72,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF',0,ZHOOK_HANDLE)
+!
+IF (HGRID=="NONE      ".OR.HGRID=="LONLAT REG".OR.HGRID=="GAUSS     ".OR.&
+        HGRID=="LONLATVAL ") THEN
+  IF (LHOOK) CALL DR_HOOK('GRID_MODIF',1,ZHOOK_HANDLE)
+  RETURN
+END IF
+!
 IGRID_PAR = 0
 ALLOCATE(ZGRID_PAR(0))
  CALL GRID_MODIFICATION(KLUOUT,KLUNAM,HGRID,KGRID_PAR,KL,PGRID_PAR,IGRID_PAR,IL,.FALSE.,ZGRID_PAR)
@@ -90,7 +99,7 @@ DEALLOCATE(ZGRID_PAR)
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF',1,ZHOOK_HANDLE)
-CONTAINS
+ CONTAINS
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
@@ -167,17 +176,12 @@ END IF
 ALLOCATE(ZGRID_PAR2(IGRID_PAR2))
 !
 SELECT CASE (HGRID)
-  CASE("NONE      ","LONLAT REG","GAUSS     ")
-    DEALLOCATE(ZGRID_PAR2)
-    IF (LHOOK) CALL DR_HOOK('GRID_MODIFICATION',1,ZHOOK_HANDLE)
-    RETURN
-
   CASE ("CONF PROJ ")
-    CALL GRID_MODIF_CONF_PROJ(KLUOUT,KLUNAM,KGRID_PAR,KL,PGRID_PAR, &
+    CALL GRID_MODIF_CONF_PROJ(U,KLUOUT,KLUNAM,KGRID_PAR,KL,PGRID_PAR, &
                                        KGRID_PAR2,KL2,OMODIF,ZGRID_PAR2      )  
 
   CASE ("CARTESIAN ")
-    CALL GRID_MODIF_CARTESIAN(KLUOUT,KLUNAM,KGRID_PAR,KL,PGRID_PAR, &
+    CALL GRID_MODIF_CARTESIAN(U,KLUOUT,KLUNAM,KGRID_PAR,KL,PGRID_PAR, &
                                        KGRID_PAR2,KL2,OMODIF,ZGRID_PAR2      )  
 
 END SELECT

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TEB_GREENROOF_PAR(HPROGRAM)
+      SUBROUTINE PGD_TEB_GREENROOF_PAR (DTCO, DTGR, UG, U, USS, TGRO, TG, &
+                                        HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_TEB_GREENROOF_PAR* monitor for averaging and interpolations of cover fractions
@@ -40,13 +41,19 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DATA_TEB_GREENROOF_n, ONLY : DATA_TEB_GREENROOF_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
+USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
+!
 USE MODD_DATA_COVER_PAR,       ONLY : NVEGTYPE
 USE MODD_SURF_PAR,             ONLY : XUNDEF
-USE MODD_TEB_GRID_n,           ONLY : NDIM
-USE MODD_TEB_n,                ONLY : LECOCLIMAP
-USE MODD_TEB_GREENROOF_n,      ONLY : NLAYER_GR, NTIME_GR, CTYP_GR
 USE MODD_TEB_VEG,              ONLY : NLAYER_GR_MAX, NTIME_GR_MAX
-USE MODD_DATA_TEB_GREENROOF_n, ONLY : XPAR_OM_GR, XPAR_CLAY_GR, XPAR_SAND_GR, XPAR_LAI_GR
 !
 USE MODD_PGDWORK,              ONLY : CATYPE
 !
@@ -64,6 +71,15 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DATA_TEB_GREENROOF_t), INTENT(INOUT) :: DTGR
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
+TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
 !
  CHARACTER(LEN=6),    INTENT(IN)             :: HPROGRAM     ! Type of program
 !
@@ -148,47 +164,51 @@ YFTYP_LAI_GR     = '      '
                                 YFNAM_OM_GR, YFNAM_CLAY_GR, YFNAM_SAND_GR, YFNAM_LAI_GR,  &
                                 YFTYP_OM_GR, YFTYP_CLAY_GR, YFTYP_SAND_GR, YFTYP_LAI_GR)
 !
-NTIME_GR           = ITIME_GR
-NLAYER_GR          = ILAYER_GR
-CTYP_GR            = YTYP_GR
+TGRO%NTIME_GR           = ITIME_GR
+TGRO%NLAYER_GR          = ILAYER_GR
+TGRO%CTYP_GR            = YTYP_GR
 !
 !*           Coherence of options for the green roof type
 !             -------------------------------------------
 !
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYP_GR',CTYP_GR,'GRASS','SEDUM')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYP_GR',TGRO%CTYP_GR,'GRASS','SEDUM')
 !
 !
-ALLOCATE(XPAR_OM_GR       (NDIM,NLAYER_GR))
-ALLOCATE(XPAR_CLAY_GR     (NDIM,NLAYER_GR))
-ALLOCATE(XPAR_SAND_GR     (NDIM,NLAYER_GR))
-ALLOCATE(XPAR_LAI_GR      (NDIM,NTIME_GR ))
+ALLOCATE(DTGR%XPAR_OM_GR       (TG%NDIM,TGRO%NLAYER_GR))
+ALLOCATE(DTGR%XPAR_CLAY_GR     (TG%NDIM,TGRO%NLAYER_GR))
+ALLOCATE(DTGR%XPAR_SAND_GR     (TG%NDIM,TGRO%NLAYER_GR))
+ALLOCATE(DTGR%XPAR_LAI_GR      (TG%NDIM,TGRO%NTIME_GR ))
 !
 !-------------------------------------------------------------------------------
 !
 !*    3.2      Uniform fields are prescribed
 !             -----------------------------
 !
-CATYPE = 'ARI'
+ CATYPE = 'ARI'
 !
 !
-DO JLAYER_GR=1,NLAYER_GR
- CALL PGD_FIELD(HPROGRAM,'OM_GR: fraction of OM in GR layer','BLD',YFNAM_OM_GR(JLAYER_GR),   &
-               YFTYP_OM_GR(JLAYER_GR), ZUNIF_OM_GR(JLAYER_GR), XPAR_OM_GR(:,JLAYER_GR))
+DO JLAYER_GR=1,TGRO%NLAYER_GR
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'OM_GR: fraction of OM in GR layer','BLD',YFNAM_OM_GR(JLAYER_GR),   &
+               YFTYP_OM_GR(JLAYER_GR), ZUNIF_OM_GR(JLAYER_GR), DTGR%XPAR_OM_GR(:,JLAYER_GR))
 ENDDO
 !
-DO JLAYER_GR=1,NLAYER_GR
- CALL PGD_FIELD(HPROGRAM,'CLAY_GR: fraction of CLAY in the non-OM part of GR layer','BLD',YFNAM_CLAY_GR(JLAYER_GR),   &
-               YFTYP_CLAY_GR(JLAYER_GR), ZUNIF_CLAY_GR(JLAYER_GR), XPAR_CLAY_GR(:,JLAYER_GR))
+DO JLAYER_GR=1,TGRO%NLAYER_GR
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'CLAY_GR: fraction of CLAY in the non-OM part of GR layer','BLD',YFNAM_CLAY_GR(JLAYER_GR),   &
+               YFTYP_CLAY_GR(JLAYER_GR), ZUNIF_CLAY_GR(JLAYER_GR), DTGR%XPAR_CLAY_GR(:,JLAYER_GR))
 ENDDO
 !
-DO JLAYER_GR=1,NLAYER_GR
- CALL PGD_FIELD(HPROGRAM,'SAND_GR: fraction of SAND in the non-OM part of GR layer','BLD',YFNAM_SAND_GR(JLAYER_GR),   &
-               YFTYP_SAND_GR(JLAYER_GR), ZUNIF_SAND_GR(JLAYER_GR), XPAR_SAND_GR(:,JLAYER_GR))
+DO JLAYER_GR=1,TGRO%NLAYER_GR
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'SAND_GR: fraction of SAND in the non-OM part of GR layer','BLD',YFNAM_SAND_GR(JLAYER_GR),   &
+               YFTYP_SAND_GR(JLAYER_GR), ZUNIF_SAND_GR(JLAYER_GR), DTGR%XPAR_SAND_GR(:,JLAYER_GR))
 ENDDO
 !
-DO JTIME=1,NTIME_GR
- CALL PGD_FIELD(HPROGRAM,'LAI_GR: LAI of green roof','BLD',YFNAM_LAI_GR(JTIME),  &
-                YFTYP_LAI_GR(JTIME),ZUNIF_LAI_GR(JTIME),XPAR_LAI_GR(:,JTIME))
+DO JTIME=1,TGRO%NTIME_GR
+ CALL PGD_FIELD(DTCO, UG, U, USS, &
+                HPROGRAM,'LAI_GR: LAI of green roof','BLD',YFNAM_LAI_GR(JTIME),  &
+                YFTYP_LAI_GR(JTIME),ZUNIF_LAI_GR(JTIME),DTGR%XPAR_LAI_GR(:,JTIME))
 !
 ENDDO
 !

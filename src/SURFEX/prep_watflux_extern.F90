@@ -1,11 +1,16 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_WATFLUX_EXTERN(HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,KLUOUT,PFIELD)
+SUBROUTINE PREP_WATFLUX_EXTERN (GCP,&
+                                HPROGRAM,HSURF,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,KLUOUT,PFIELD)
 !     #################################################################################
 !
+!
+!
+!
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
 USE MODD_TYPE_DATE_SURF
 !
 USE MODI_PREP_GRID_EXTERN
@@ -15,6 +20,7 @@ USE MODI_CLOSE_AUX_IO_SURF
 USE MODI_ABOR1_SFX
 USE MODI_GET_LUOUT
 !
+USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -24,6 +30,9 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+!
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
  CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
@@ -36,11 +45,13 @@ REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !*      0.2    declarations of local variables
 !
 !
+REAL, DIMENSION(:), ALLOCATABLE :: ZMASK
  CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: ILUOUT
 INTEGER           :: IDIM_WATER
 !
+INTEGER           :: IVERSION       ! total 1D dimension
 INTEGER           :: INI            ! total 1D dimension
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -60,10 +71,24 @@ IF (LHOOK) CALL DR_HOOK('PREP_WATFLUX_EXTERN',0,ZHOOK_HANDLE)
 !*      2.     Reading of grid
 !              ---------------
 !
- CALL OPEN_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE,'WATER ')
- CALL PREP_GRID_EXTERN(HFILEPGDTYPE,KLUOUT,CINGRID_TYPE,CINTERP_TYPE,INI)
+ CALL OPEN_AUX_IO_SURF(&
+                      HFILEPGD,HFILEPGDTYPE,'FULL  ')
+ CALL PREP_GRID_EXTERN(GCP,&
+                      HFILEPGDTYPE,KLUOUT,CINGRID_TYPE,CINTERP_TYPE,INI)
 !
- CALL READ_SURF(HFILEPGDTYPE,'DIM_WATER',IDIM_WATER,IRESP)
+ CALL READ_SURF(&
+               HFILEPGDTYPE,'DIM_WATER',IDIM_WATER,IRESP)
+!
+YRECFM='VERSION'
+ CALL READ_SURF(HFILEPGDTYPE,YRECFM,IVERSION,IRESP)
+!
+ALLOCATE(ZMASK(INI))
+IF (IVERSION>=7) THEN
+  YRECFM='FRAC_WATER'
+  CALL READ_SURF(HFILEPGDTYPE,YRECFM,ZMASK,IRESP,HDIR='A')       
+ELSE
+  ZMASK(:) = 1.
+ENDIF  
 !
 IF (IDIM_WATER==0) THEN
   CALL GET_LUOUT(HPROGRAM,ILUOUT)
@@ -84,7 +109,8 @@ SELECT CASE(HSURF)
   CASE('ZS     ')
     ALLOCATE(PFIELD(INI,1))
     YRECFM='ZS'
-    CALL READ_SURF(HFILEPGDTYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='A')
+    CALL READ_SURF(&
+               HFILEPGDTYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='A')
     CALL CLOSE_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE)
 !
 !*      4.  Sea surface temperature
@@ -94,13 +120,18 @@ SELECT CASE(HSURF)
     ALLOCATE(PFIELD(INI,1))
     YRECFM='TS_WATER'
     CALL CLOSE_AUX_IO_SURF(HFILEPGD,HFILEPGDTYPE)
-    CALL OPEN_AUX_IO_SURF(HFILE,HFILETYPE,'WATER ')
-    CALL READ_SURF(HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='A')
+    CALL OPEN_AUX_IO_SURF(&
+                      HFILE,HFILETYPE,'WATER ')
+    CALL READ_SURF(&
+               HFILETYPE,YRECFM,PFIELD(:,1),IRESP,HDIR='A')
     CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
+    WHERE (ZMASK(:)==0.) PFIELD(:,1) = XUNDEF    
 !
 !---------------------------------------------------------------------------------------
 END SELECT
 !-------------------------------------------------------------------------------------
+!
+DEALLOCATE(ZMASK)
 !
 !*      6.     End of IO
 !              ---------

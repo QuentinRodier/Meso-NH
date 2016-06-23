@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################################
-      SUBROUTINE REGULAR_GRID_SPAWN(KLUOUT,                               &
+      SUBROUTINE REGULAR_GRID_SPAWN(U,KLUOUT,                               &
                                       KL1, KIMAX1,KJMAX1,PX1,PY1,PDX1,PDY1, &
                                       KXOR, KYOR, KDXRATIO, KDYRATIO,       &
                                       KXSIZE, KYSIZE,                       &
@@ -39,7 +39,6 @@
 !!        M.Moge    04/2015  Parallelization using routines from MNH/SURCOUCHE
 !!        M.Moge    06/2015  bug fix for reproductibility using UPDATE_NHALO1D
 !!        M.Moge    01/2016  bug fix for parallel execution with SPLIT2
-!!        Juan & Maxime 24/03/2016: bug fix in 002/pgd when proc have no data/empty intersection to send/recv 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -50,7 +49,7 @@ USE MODD_SURF_PAR, ONLY : NUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
-USE MODD_SURF_ATM_n, ONLY : NIMAX_SURF_ll, NJMAX_SURF_ll
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_ABOR1_SFX
 #ifdef MNH_PARALLEL
@@ -71,6 +70,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER,                      INTENT(IN)    :: KLUOUT     ! output listing logical unit
 INTEGER,                      INTENT(IN)    :: KL1        ! total number of points KIMAX1 * KJMAX1
 INTEGER,                      INTENT(IN)    :: KIMAX1     ! number of points in x direction
@@ -125,6 +125,10 @@ REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZXHAT2_F, ZYHAT2_F   ! temporary 3D fie
 !
 INTEGER     :: JL            ! loop counter
 INTEGER     :: JI,JJ         ! loop controls relatively to modified grid
+#ifndef MNH_PARALLEL
+INTEGER     :: JIBOX,JJBOX   ! grid mesh relatively to initial grid
+REAL        :: ZCOEF         ! ponderation coefficient for linear interpolation
+#endif
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: IMI
 INTEGER :: IINFO_ll
@@ -167,18 +171,34 @@ INTEGER :: ICARDDIF
 !* tests
 !
 IF (LHOOK) CALL DR_HOOK('REGULAR_GRID_SPAWN',0,ZHOOK_HANDLE)
-IF ( KXOR+KXSIZE-1 > NIMAX_SURF_ll ) THEN
+#ifdef MNH_PARALLEL
+IF ( KXOR+KXSIZE-1 > U%NIMAX_SURF_ll ) THEN
   WRITE(KLUOUT,*) 'spawned domain is not contained in the input domain'
   WRITE(KLUOUT,*) 'IXOR = ', KXOR, ' IXSIZE = ', KXSIZE,&
-                    ' with NIMAX(file) = ', NIMAX_SURF_ll
+                    ' with NIMAX(file) = ', U%NIMAX_SURF_ll
   CALL ABOR1_SFX('REGULAR_GRID_SPAWN: (1) SPAWNED DOMAIN NOT CONTAINED IN INPUT DOMAIN')
 END IF
-IF ( KYOR+KYSIZE-1 > NJMAX_SURF_ll ) THEN
+IF ( KYOR+KYSIZE-1 > U%NJMAX_SURF_ll ) THEN
   WRITE(KLUOUT,*) 'spawned domain is not contained in the input domain'
   WRITE(KLUOUT,*) 'IYOR = ', KYOR, ' IYSIZE = ', KYSIZE,&
-                    ' with NJMAX(file) = ', NJMAX_SURF_ll
+                    ' with NJMAX(file) = ',  U%NJMAX_SURF_ll
   CALL ABOR1_SFX('REGULAR_GRID_SPAWN: (2) SPAWNED DOMAIN NOT CONTAINED IN INPUT DOMAIN')
 END IF
+#else
+IF ( KXOR+KXSIZE-1 > KIMAX1 ) THEN
+  WRITE(KLUOUT,*) 'spawned domain is not contained in the input domain'
+  WRITE(KLUOUT,*) 'IXOR = ', KXOR, ' IXSIZE = ', KXSIZE,&
+                    ' with NIMAX(file) = ', KIMAX1  
+  CALL ABOR1_SFX('REGULAR_GRID_SPAWN: (1) SPAWNED DOMAIN NOT CONTAINED IN INPUT DOMAIN')
+END IF
+IF ( KYOR+KYSIZE-1 > KJMAX1 ) THEN
+  WRITE(KLUOUT,*) 'spawned domain is not contained in the input domain'
+  WRITE(KLUOUT,*) 'IYOR = ', KYOR, ' IYSIZE = ', KYSIZE,&
+                    ' with NJMAX(file) = ', KJMAX1  
+  CALL ABOR1_SFX('REGULAR_GRID_SPAWN: (2) SPAWNED DOMAIN NOT CONTAINED IN INPUT DOMAIN')
+END IF
+#endif
+
 !
 !------------------------------------------------------------------------------
 !
@@ -202,7 +222,7 @@ ALLOCATE(TZCOARSESONSPLIT(NPROC))
 !
 ! compute father partitioning
 !
-CALL SPLIT2(NIMAX_SURF_ll, NJMAX_SURF_ll, 1, NPROC,TZCOARSEFATHER, YSPLITTING)
+CALL SPLIT2( U%NIMAX_SURF_ll,  U%NJMAX_SURF_ll, 1, NPROC,TZCOARSEFATHER, YSPLITTING)
 ! we don't want the halo
 DO J = 1, NPROC
   TZCOARSEFATHER(J)%NXOR = TZCOARSEFATHER(J)%NXOR - JPHEXT
@@ -221,7 +241,7 @@ ENDDO
 !                     but SPLIT2 will split son domain along X dimension -> 3x5 local domains.
 !           therefore we have to use DEF_SPLITTING2 and force the decomposition in the call to SPLIT2
 ! we want the same domain partitioning for the child domain and for the father domain
-CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,NIMAX_SURF_ll,NJMAX_SURF_ll,NPROC,GPREM)
+CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS, U%NIMAX_SURF_ll, U%NJMAX_SURF_ll,NPROC,GPREM)
 CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING, IXDOMAINS, IYDOMAINS)
 
 ! compute the local size of son grid
@@ -327,11 +347,11 @@ ENDDO
     TZCRSPDSENDTAB(1)%NCARD = 0
     TZCRSPDSENDTAB(1)%NCARDDIF = 0
   ENDIF
- IF (ICARD > 0) THEN
+  IF (ICARD > 0) THEN
     TZCRSPDSEND => TZCRSPDSENDTAB(1)
- ELSE
-   TZCRSPDSEND => NULL()
- ENDIF
+  ELSE
+    TZCRSPDSEND => NULL()
+  ENDIF
   !
   ! ######## initializing the structures for the RECV ########
   !
@@ -394,19 +414,21 @@ ENDDO
       TZCRSPDRECVTAB(J)%NCARDDIF = ICARDDIF
     ENDDO
   ELSE
+    !il faut tout de meme mettre un element de taille 0 dans TZCRSPDRECVTAB
+    !sinon SEND_RECV_FIELD plante en 02
     ALLOCATE( TZCRSPDRECVTAB(1) )
     ICARD = 0
     ICARDDIF = 0
-    TZCRSPDRECVTAB(1)%TELT = TZRECV(1)
+    TZCRSPDRECVTAB(1)%TELT = TZSEND(1)
     TZCRSPDRECVTAB(1)%TNEXT => NULL()
     TZCRSPDRECVTAB(1)%NCARD = 0
     TZCRSPDRECVTAB(1)%NCARDDIF = 0
   ENDIF
- IF (ICARD > 0) THEN
+  IF (ICARD > 0) THEN
     TZCRSPDRECV => TZCRSPDRECVTAB(1)
- ELSE
-   TZCRSPDRECV => NULL()
- ENDIF
+  ELSE
+    TZCRSPDRECV => NULL()
+  ENDIF
 #else
 IIMAX_C = KIMAX_C_ll
 IJMAX_C = KJMAX_C_ll
@@ -511,7 +533,7 @@ END IF
   ZXHAT2_F_TMP(1:IXDIM_C) = ZXHAT2_F(:,1,1)
   ZYHAT2_F_TMP(1:IYDIM_C) = ZYHAT2_F(1,:,1)
 ! we want the same domain partitioning for the child domain and for the father domain
-  CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS,NIMAX_SURF_ll,NJMAX_SURF_ll,NPROC,GPREM)
+  CALL DEF_SPLITTING2(IXDOMAINS,IYDOMAINS, U%NIMAX_SURF_ll, U%NJMAX_SURF_ll,NPROC,GPREM)
   CALL SPLIT2(KXSIZE, KYSIZE, 1, NPROC, TZCOARSESONSPLIT, YSPLITTING, IXDOMAINS, IYDOMAINS)
   CALL UPDATE_NHALO1D( 1, ZXHAT2_F_TMP, KXSIZE, KYSIZE,TZCOARSESONSPLIT(IP)%NXOR, &
     TZCOARSESONSPLIT(IP)%NXEND,TZCOARSESONSPLIT(IP)%NYOR,TZCOARSESONSPLIT(IP)%NYEND, 'XX    ')
@@ -526,6 +548,18 @@ END IF
 !
 !* X coordinate array
 !
+#ifndef MNH_PARALLEL
+DO JI=1,IIMAX_C
+  JIBOX=(JI-1)/KDXRATIO + KXOR
+  ZCOEF= FLOAT(MOD(JI-1,KDXRATIO))/FLOAT(KDXRATIO)
+  ZXHAT2(JI)=(1.-ZCOEF)*ZXHAT1(JIBOX)+ZCOEF*ZXHAT1(JIBOX+1)
+END DO
+IF (IIMAX_C==1) THEN
+  ZXHAT2(IIMAX_C+1) = ZXHAT2(IIMAX_C) + ZXHAT1(JIBOX+1) - ZXHAT1(JIBOX)
+ELSE
+  ZXHAT2(IIMAX_C+1) = 2. * ZXHAT2(IIMAX_C) - ZXHAT2(IIMAX_C-1)
+END IF
+#else
 DO J=0,KDXRATIO-1
   ZCOEFX(J+1) = FLOAT(J)/FLOAT(KDXRATIO)
 ENDDO
@@ -537,19 +571,28 @@ ENDDO
 IF (IIMAX_C==1) THEN
   ZXHAT2(IIMAX_C+1) = ZXHAT2(IIMAX_C) + ZXHAT2_F(JI,1,1) - ZXHAT2_F(JI,1,1)
 ELSE
-#ifdef MNH_PARALLEL
-  IF ( LEAST_ll() ) THEN ! the east halo point does not have a correct value so have to do an extrapolation
-    ZXHAT2(IIMAX_C+1) = 2. * ZXHAT2(IIMAX_C) - ZXHAT2(IIMAX_C-1)
-  ELSE
-    ZXHAT2(IIMAX_C+1)=(1.-ZCOEFX(1))*ZXHAT2_F_TMP(IXDIM_C)+ZCOEFX(1)*ZXHAT2_F_TMP(IXDIM_C+1)
-  ENDIF
-#else
-  ZXHAT2(IIMAX_C+1) = 2. * ZXHAT2(IIMAX_C) - ZXHAT2(IIMAX_C-1)
-#endif
+   IF ( LEAST_ll() ) THEN ! the east halo point does not have a correct value so have to do an extrapolation
+      ZXHAT2(IIMAX_C+1) = 2. * ZXHAT2(IIMAX_C) - ZXHAT2(IIMAX_C-1)
+   ELSE
+      ZXHAT2(IIMAX_C+1)=(1.-ZCOEFX(1))*ZXHAT2_F_TMP(IXDIM_C)+ZCOEFX(1)*ZXHAT2_F_TMP(IXDIM_C+1)
+   ENDIF
 END IF
+#endif
 !
 !* Y coordinate array
 !
+#ifndef MNH_PARALLEL
+DO JJ=1,IJMAX_C
+  JJBOX=(JJ-1)/KDYRATIO + KYOR
+  ZCOEF= FLOAT(MOD(JJ-1,KDYRATIO))/FLOAT(KDYRATIO)
+  ZYHAT2(JJ)=(1.-ZCOEF)*ZYHAT1(JJBOX)+ZCOEF*ZYHAT1(JJBOX+1)
+END DO
+IF (IJMAX_C==1) THEN
+  ZYHAT2(IJMAX_C+1) = ZYHAT2(IJMAX_C) + ZYHAT1(JJBOX+1) - ZYHAT1(JJBOX)
+ELSE
+  ZYHAT2(IJMAX_C+1) = 2. * ZYHAT2(IJMAX_C) - ZYHAT2(IJMAX_C-1)
+END IF
+#else
 DO J=0,KDYRATIO-1
   ZCOEFY(J+1) = FLOAT(J)/FLOAT(KDYRATIO)
 ENDDO
@@ -561,16 +604,13 @@ ENDDO
 IF (IJMAX_C==1) THEN
   ZYHAT2(IJMAX_C+1) = ZYHAT2(IJMAX_C) + ZYHAT2_F(1,JI,1) - ZYHAT2_F(1,JI,1)
 ELSE
-#ifdef MNH_PARALLEL
   IF ( LNORTH_ll() ) THEN ! the east halo point does not have a correct value so have to do an extrapolation
     ZYHAT2(IJMAX_C+1) = 2. * ZYHAT2(IJMAX_C) - ZYHAT2(IJMAX_C-1)
   ELSE
     ZYHAT2(IJMAX_C+1)=(1.-ZCOEFY(1))*ZYHAT2_F_TMP(IYDIM_C)+ZCOEFY(1)*ZYHAT2_F_TMP(IYDIM_C+1)
   ENDIF
-#else
-  ZYHAT2(IJMAX_C+1) = 2. * ZYHAT2(IJMAX_C) - ZYHAT2(IJMAX_C-1)
-#endif
 END IF
+#endif
 !---------------------------------------------------------------------------
 DEALLOCATE(ZXM1)
 DEALLOCATE(ZYM1)

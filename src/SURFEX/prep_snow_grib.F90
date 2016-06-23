@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_SNOW_GRIB(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
+SUBROUTINE PREP_SNOW_GRIB(HPROGRAM,HSURF,HFILE,KLUOUT,KLAYER,PFIELD)
 !     #################################################################################
 !
 !!****  *PREP_SNOW_GRIB* - prepares snow field from operational GRIB
@@ -24,11 +24,13 @@ SUBROUTINE PREP_SNOW_GRIB(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004
+!!      Original     01/2004
+!!      C. Ardilouze 06/2013 read snow albedo and density (for Erai-land)
 !!------------------------------------------------------------------
 !
 !
 USE MODE_READ_GRIB
+USE MODE_SNOW3L
 !
 USE MODD_TYPE_DATE_SURF
 !
@@ -36,7 +38,7 @@ USE MODI_PREP_GRIB_GRID
 USE MODI_SNOW_T_WLIQ_TO_HEAT
 !
 USE MODD_PREP,           ONLY : CINGRID_TYPE, CINTERP_TYPE
-USE MODD_PREP_SNOW,      ONLY : XGRID_SNOW
+USE MODD_PREP_SNOW,      ONLY : NGRID_LEVEL, XGRID_SNOW
 USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_GRID_GRIB,      ONLY : CGRIB_FILE, NNI
@@ -51,10 +53,11 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=10),   INTENT(IN) :: HSURF     ! type of field
- CHARACTER(LEN=28),  INTENT(IN)  :: HFILE     ! name of file
-INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
+ CHARACTER(LEN=6),   INTENT(IN)    :: HPROGRAM  ! program calling surf. schemes
+ CHARACTER(LEN=10),   INTENT(IN)   :: HSURF     ! type of field
+ CHARACTER(LEN=28),  INTENT(IN)    :: HFILE     ! name of file
+INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
+INTEGER,            INTENT(IN)    :: KLAYER    ! Number of layer of output snow scheme
 REAL,DIMENSION(:,:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables
@@ -90,10 +93,12 @@ IF (TRIM(HFILE).NE.CGRIB_FILE) CGRIB_FILE=""
 IF (HSURF(7:8)=='RO') THEN
   ! 
   SELECT CASE(HSURF(1:3))
-    CASE('DEP','ALB','WWW')
+    CASE('DEP')
+      ALLOCATE(PFIELD(NNI,KLAYER,1))
+    CASE('ALB','WWW')
       ALLOCATE(PFIELD(NNI,1,1))
     CASE('HEA','RHO')
-      ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),1))
+      ALLOCATE(PFIELD(NNI,NGRID_LEVEL,1))
   END SELECT
   !
   PFIELD(:,:,:) = 0.
@@ -124,9 +129,9 @@ ELSE
   CASE('DEP')
      CALL READ_GRIB_SNOW_VEG_AND_DEPTH(HFILE,KLUOUT,YINMODEL,ZMASK,PSNVD=ZFIELD1D)
      !
-     ALLOCATE(PFIELD(SIZE(ZFIELD1D),1,NVEGTYPE))
+     ALLOCATE(PFIELD(SIZE(ZFIELD1D),KLAYER,NVEGTYPE))
      DO JVEGTYPE=1,NVEGTYPE
-       PFIELD(:,1,JVEGTYPE)=ZFIELD1D(:)
+        CALL SNOW3LGRID(PFIELD(:,:,JVEGTYPE),ZFIELD1D(:))
      END DO
      DEALLOCATE(ZFIELD1D)
 !
@@ -139,14 +144,14 @@ ELSE
      WHERE (ZFIELD1D/=XUNDEF) ZFIELD1D(:) = MIN(ZFIELD1D,XTT)
      !* assumes no liquid water in the snow
      ALLOCATE(ZHEAT(SIZE(ZFIELD1D)))
-     ALLOCATE(ZRHO (SIZE(ZFIELD1D)))
-     ZRHO(:) = XRHOSMAX
+     CALL READ_GRIB_SNOW_DEN(HFILE,KLUOUT,YINMODEL,ZMASK,ZRHO) 
+     WHERE(ZFIELD1D(:)==XUNDEF)ZRHO(:)=XUNDEF
      !
      CALL SNOW_T_WLIQ_TO_HEAT(ZHEAT,ZRHO,ZFIELD1D)
      !
-     ALLOCATE(PFIELD(SIZE(ZFIELD1D),SIZE(XGRID_SNOW),NVEGTYPE))
+     ALLOCATE(PFIELD(SIZE(ZFIELD1D),NGRID_LEVEL,NVEGTYPE))
      DO JVEGTYPE=1,NVEGTYPE
-       DO JLAYER=1,SIZE(XGRID_SNOW)
+       DO JLAYER=1,NGRID_LEVEL
          PFIELD(:,JLAYER,JVEGTYPE)=ZHEAT(:)
        END DO
      END DO
@@ -157,37 +162,45 @@ ELSE
 !*      3.4    Albedo
 !
   CASE('ALB')    
-    ALLOCATE(PFIELD(NNI,1,NVEGTYPE))
-    PFIELD = 0.5 * ( XANSMIN + XANSMAX )
+    CALL READ_GRIB_SNOW_ALB(HFILE,KLUOUT,YINMODEL,ZMASK,ZFIELD1D)      
+    ALLOCATE(PFIELD(SIZE(ZFIELD1D),1,NVEGTYPE))
+    DO JVEGTYPE=1,NVEGTYPE
+      PFIELD(:,1,JVEGTYPE)=ZFIELD1D(:)
+    END DO
+    DEALLOCATE(ZFIELD1D)
 !
 !*      3.5    Density
 !
   CASE('RHO')    
-    ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),NVEGTYPE))
-    PFIELD = XRHOSMAX
+    CALL READ_GRIB_SNOW_DEN(HFILE,KLUOUT,YINMODEL,ZMASK,ZFIELD1D)      
+    ALLOCATE(PFIELD(SIZE(ZFIELD1D),1,NVEGTYPE))
+    DO JVEGTYPE=1,NVEGTYPE
+      PFIELD(:,1,JVEGTYPE)=ZFIELD1D(:)
+    END DO
+    DEALLOCATE(ZFIELD1D)
 !
 !*      3.6    SG1: initial grain is partially rounded
 !
   CASE('SG1')
-    ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),NVEGTYPE))
+    ALLOCATE(PFIELD(NNI,NGRID_LEVEL,NVEGTYPE))
     PFIELD = -20
 !
 !*      3.7    SG2: initial grain is partially rounded
 !
   CASE('SG2')
-    ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),NVEGTYPE))
+    ALLOCATE(PFIELD(NNI,NGRID_LEVEL,NVEGTYPE))
     PFIELD = 80
 !
 !*      3.8    AGE: snow is 3-days old
 !
   CASE('AGE')
-    ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),NVEGTYPE))
+    ALLOCATE(PFIELD(NNI,NGRID_LEVEL,NVEGTYPE))
     PFIELD = 3
 !
 !*      3.9    HIS: 0 by default
 !
   CASE('HIS')
-    ALLOCATE(PFIELD(NNI,SIZE(XGRID_SNOW),NVEGTYPE))
+    ALLOCATE(PFIELD(NNI,NGRID_LEVEL,NVEGTYPE))
     PFIELD = 0
 !
   END SELECT
@@ -201,7 +214,7 @@ DEALLOCATE(ZMASK)
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='HORIBL'
+ CINTERP_TYPE='HORIBL'
 !
 IF (LHOOK) CALL DR_HOOK('PREP_SNOW_GRIB',1,ZHOOK_HANDLE)
 !

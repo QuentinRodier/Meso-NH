@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SUBSCALE_AOS(OZ0EFFI,OZ0EFFJ,PSEA)
+      SUBROUTINE SUBSCALE_AOS (UG, USS, &
+                               OZ0EFFI,OZ0EFFJ,PSEA)
 !     #############################################
 !
 !!*SUBSCALE_AOS  computes the sum of the ratio: (h'-h)/L when  h'/L >h/L  
@@ -38,12 +39,12 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_PGDWORK,        ONLY : NSSO, XSSQO, LSSQO
 USE MODD_PGD_GRID,       ONLY : NL, CGRID, XGRID_PAR, NGRID_PAR
-USE MODD_SURF_ATM_GRID_n, ONLY : XMESH_SIZE
-USE MODD_SURF_ATM_SSO_n,  ONLY : XAOSIP, XAOSIM, XAOSJP, XAOSJM, &
-                                  XHO2IP, XHO2IM, XHO2JP, XHO2JM, &
-                                  XAVG_ZS  
 !
 USE MODI_GET_ADJACENT_MESHES
 !
@@ -56,6 +57,10 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
+!
+!
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
 LOGICAL, DIMENSION(:), INTENT(OUT) :: OZ0EFFI! .T. : the z0eff coefficients
 !                                            ! are computed at grid point
@@ -140,7 +145,7 @@ OZ0EFFJ(:)=.FALSE.
 !*    1.2    Grid dimension (meters)
 !            -----------------------
 !
- CALL GET_MESH_DIM(CGRID,NGRID_PAR,NL,XGRID_PAR,ZDX,ZDY,XMESH_SIZE)
+ CALL GET_MESH_DIM(CGRID,NGRID_PAR,NL,XGRID_PAR,ZDX,ZDY,UG%XMESH_SIZE)
 !
 !
 !*    1.3    Left, top, right and bottom adjacent gris meshes
@@ -157,17 +162,17 @@ ZSLOPEJP(0) = 0.
 !
 DO JL=1,NL
   IF (IRIGHT(JL)/=0 .AND. ILEFT(JL)/=0) THEN
-    ZSLOPEIP(JL) =  0.5 * ( XAVG_ZS(IRIGHT(JL)) - XAVG_ZS(JL) ) &
+    ZSLOPEIP(JL) =  0.5 * ( USS%XAVG_ZS(IRIGHT(JL)) - USS%XAVG_ZS(JL) ) &
                           / ( 0.5 * (ZDX(IRIGHT(JL)) + ZDX(JL)) ) &
-                    + 0.5 * ( XAVG_ZS(JL) - XAVG_ZS(ILEFT (JL)) ) &
+                    + 0.5 * ( USS%XAVG_ZS(JL) - USS%XAVG_ZS(ILEFT (JL)) ) &
                           / ( 0.5 * (ZDX(JL)  + ZDX(ILEFT(JL))) )  
   ELSE
     ZSLOPEIP(JL) = 0.
   END IF
   IF (ITOP(JL)/=0 .AND. IBOTTOM(JL)/=0) THEN
-    ZSLOPEJP(JL) =  0.5 * ( XAVG_ZS(ITOP(JL))     - XAVG_ZS(JL) ) &
+    ZSLOPEJP(JL) =  0.5 * ( USS%XAVG_ZS(ITOP(JL))     - USS%XAVG_ZS(JL) ) &
                           / ( 0.5 * (ZDY(ITOP(JL))     + ZDY(JL)) ) &
-                    + 0.5 * ( XAVG_ZS(JL) - XAVG_ZS(IBOTTOM (JL)) ) &
+                    + 0.5 * ( USS%XAVG_ZS(JL) - USS%XAVG_ZS(IBOTTOM (JL)) ) &
                           / ( 0.5 * (ZDY(JL)  + ZDY(IBOTTOM(JL))) )  
   ELSE
     ZSLOPEJP(JL) = 0.
@@ -302,17 +307,17 @@ DO JL=1,NL
 !            -----------------------------
 !
     IF (IAOSCOUNTER>0) THEN
-      XAOSIP(JL)=SUM(ZAOSIP) / IAOSCOUNTER
-      XAOSIM(JL)=SUM(ZAOSIM) / IAOSCOUNTER
+      USS%XAOSIP(JL)=SUM(ZAOSIP) / IAOSCOUNTER
+      USS%XAOSIM(JL)=SUM(ZAOSIM) / IAOSCOUNTER
       IF (IHO2COUNTERIP>0) THEN
-        XHO2IP(JL)=ZSUMHO2IP   / IHO2COUNTERIP
+        USS%XHO2IP(JL)=ZSUMHO2IP   / IHO2COUNTERIP
       ELSE
-        XHO2IP(JL)=0.
+        USS%XHO2IP(JL)=0.
       END IF
       IF (IHO2COUNTERIM>0) THEN
-        XHO2IM(JL)=ZSUMHO2IM   / IHO2COUNTERIM
+        USS%XHO2IM(JL)=ZSUMHO2IM   / IHO2COUNTERIM
       ELSE
-        XHO2IM(JL)=0.
+        USS%XHO2IM(JL)=0.
       END IF
       OZ0EFFI(JL)=.TRUE.
     END IF
@@ -428,17 +433,17 @@ DO JL=1,NL
 !            -----------------------------
 !
     IF (IAOSCOUNTER>0) THEN
-      XAOSJP(JL)=SUM(ZAOSJP) /IAOSCOUNTER
-      XAOSJM(JL)=SUM(ZAOSJM) /IAOSCOUNTER
+      USS%XAOSJP(JL)=SUM(ZAOSJP) /IAOSCOUNTER
+      USS%XAOSJM(JL)=SUM(ZAOSJM) /IAOSCOUNTER
       IF (IHO2COUNTERJP>0) THEN
-        XHO2JP(JL)=ZSUMHO2JP   /IHO2COUNTERJP
+        USS%XHO2JP(JL)=ZSUMHO2JP   /IHO2COUNTERJP
       ELSE
-        XHO2JP(JL)=0.
+        USS%XHO2JP(JL)=0.
       END IF
       IF (IHO2COUNTERJM>0) THEN
-        XHO2JM(JL)=ZSUMHO2JM   /IHO2COUNTERJM
+        USS%XHO2JM(JL)=ZSUMHO2JM   /IHO2COUNTERJM
       ELSE
-        XHO2JM(JL)=0.
+        USS%XHO2JM(JL)=0.
       END IF
       OZ0EFFJ(JL)=.TRUE.
     END IF

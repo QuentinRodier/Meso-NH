@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE ICE_SOILDIF(PTSTEP, PTAUICE, PKSFC_IVEG, PLEGI,                 &
                             PSOILHCAPZ, PWSATZ, PMPOTSATZ, PBCOEFZ,              &
@@ -46,7 +46,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	A. Boone          * Meteo-France *
+!!      A. Boone          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -69,6 +69,9 @@
 !
 !      Modified    08/2011     Decharme
 !                              Optimization
+!      Modified    10/2013     Boone
+!                              Slight edit to phase computation to improve enthalpy conservation
+!                              
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -211,7 +214,7 @@ DO JL=1,INL
       PTG(JJ,JL) = ZTGM + (ZPHASEF - ZPHASEM)/(PSOILHCAPZ(JJ,JL)+ZAPPHEATCAP)
 !
 !     Get estimate of actual total phase change (J/m3) for equivalent soil water changes:
-      ZPHASE = ZPHASEF - ZPHASEM - ZAPPHEATCAP*(PTG(JJ,JL)-ZTGM)
+      ZPHASE = (PSOILHCAPZ(JJ,JL)+ZAPPHEATCAP)*(PTG(JJ,JL)-ZTGM)
 !
 !     Adjust ice and liquid water conents (m3/m3) accordingly :
       PWGI(JJ,JL) = ZWGIM + ZPHASE/(XLMTT*XRHOLW)     

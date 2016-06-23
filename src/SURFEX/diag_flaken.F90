@@ -1,13 +1,17 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_FLAKE_n(HPROGRAM,                                                 &
-                            PRN, PH, PLE, PLEI, PGFLUX, PRI, PCD, PCH, PCE,         &
-                            PQS, PZ0, PZ0H,                                         &
-                            PT2M, PTS, PQ2M, PHU2M, PZON10M, PMER10M,               &
-                            PSWD, PSWU, PLWD, PLWU, PSWBD, PSWBU, PFMU, PFMV        )  
+SUBROUTINE DIAG_FLAKE_n (DGF, &
+                         HPROGRAM,                                                 &
+                            PRN, PH, PLE, PLEI, PGFLUX, PRI, PCD, PCH, PCE, PQS,    &
+                            PZ0, PZ0H, PT2M, PTS, PQ2M, PHU2M, PZON10M, PMER10M,    &
+                            PSWD, PSWU, PLWD, PLWU, PSWBD, PSWBU, PFMU, PFMV,       &
+                            PRNC, PHC, PLEC, PGFLUXC, PSWDC, PSWUC, PLWDC,          &
+                            PLWUC, PFMUC, PFMVC, PT2M_MIN, PT2M_MAX, PLEIC,         &
+                            PHU2M_MIN, PHU2M_MAX, PWIND10M, PWIND10M_MAX,           &
+                            PEVAP, PEVAPC, PSUBL, PSUBLC                            )
 !     ###############################################################################
 !
 !!****  *DIAG_FLAKE_n * - diagnostics for lakes
@@ -29,19 +33,16 @@ SUBROUTINE DIAG_FLAKE_n(HPROGRAM,                                               
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!       V.Masson   10/2013 Adds min and max 2m parameters
+!!      Modified    04/2013 P.LeMoigne : cumulated diag & t2m min/max
 !!------------------------------------------------------------------
 !
 
 !
-USE MODD_SURF_PAR,     ONLY : XUNDEF
-USE MODD_FLAKE_n,      ONLY : TTIME
-USE MODD_DIAG_FLAKE_n, ONLY : N2M, LSURF_BUDGET, LCOEF, LSURF_VARS,              &
-                                XRN, XH, XLE, XLEI, XGFLUX, XRI, XCD, XCH, XCE,  &
-                                XQS, XZ0, XZ0H,                                  &
-                                XT2M, XQ2M, XHU2M, XZON10M, XMER10M,             &
-                                XSWD, XSWU, XSWBD, XSWBU, XLWD, XLWU, XFMU, XFMV  
 !
-USE MODD_FLAKE_n,      ONLY : XTS
+USE MODD_DIAG_FLAKE_n, ONLY : DIAG_FLAKE_t
+!
+USE MODD_SURF_PAR,     ONLY : XUNDEF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -51,13 +52,18 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+!
+TYPE(DIAG_FLAKE_t), INTENT(INOUT) :: DGF
+!
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM ! program calling surf. schemes
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PRN      ! Net radiation       (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PH       ! Sensible heat flux  (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PLE      ! Total latent heat flux    (W/m2)
-REAL, DIMENSION(:), INTENT(OUT) :: PLEI     ! Sublimation atent heat flux    (W/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PLEI     ! Sublimation latent heat flux    (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PGFLUX   ! Storage flux        (W/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAP    ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBL    ! Sublimation (kg/m2/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PRI      ! Richardson number   (-)
 REAL, DIMENSION(:), INTENT(OUT) :: PCD      ! drag coefficient    (W/s2)
 REAL, DIMENSION(:), INTENT(OUT) :: PCH      ! transf. coef heat   (W/s)
@@ -77,8 +83,27 @@ REAL, DIMENSION(:), INTENT(OUT) :: PLWD     ! incoming long-wave radiation (W/m2
 REAL, DIMENSION(:), INTENT(OUT) :: PLWU     ! upward long-wave radiation (W/m2)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSWBD  ! incoming short-wave radiation by spectral band (W/m2)
 REAL, DIMENSION(:,:), INTENT(OUT) :: PSWBU  ! upward short-wave radiation by spectral band (W/m2)
-REAL, DIMENSION(:), INTENT(OUT) :: PFMU     ! zonal momentum flux (m2/s2)
-REAL, DIMENSION(:), INTENT(OUT) :: PFMV     ! meridian momentum flux (m2/s2)
+REAL, DIMENSION(:), INTENT(OUT) :: PFMU     ! zonal momentum flux (Pa)
+REAL, DIMENSION(:), INTENT(OUT) :: PFMV     ! meridian momentum flux (Pa)
+REAL, DIMENSION(:), INTENT(OUT) :: PRNC     ! Net radiation       (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PHC      ! Sensible heat flux  (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PLEC     ! Total latent heat flux    (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PLEIC    ! Sublimation latent heat flux    (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PGFLUXC  ! Storage flux        (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PEVAPC   ! Total evapotranspiration  (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSUBLC   ! Sublimation (kg/m2/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PSWDC    ! incoming short wave radiation (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PSWUC    ! outgoing short wave radiation (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PLWDC    ! incoming long wave radiation (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PLWUC    ! outgoing long wave radiation (J/m2)
+REAL, DIMENSION(:), INTENT(OUT) :: PFMUC    ! zonal friction
+REAL, DIMENSION(:), INTENT(OUT) :: PFMVC    ! meridian friction
+REAL, DIMENSION(:), INTENT(OUT) :: PT2M_MIN ! Minimum temperature at 2m   (K)
+REAL, DIMENSION(:), INTENT(OUT) :: PT2M_MAX ! Maximum temperature at 2m   (K)
+REAL, DIMENSION(:), INTENT(OUT) :: PHU2M_MIN! Minimum relative humidity at 2m (-)
+REAL, DIMENSION(:), INTENT(OUT) :: PHU2M_MAX! Maximum relative humidity at 2m (-)
+REAL, DIMENSION(:), INTENT(OUT) :: PWIND10M ! wind at 10m (m/s)
+REAL, DIMENSION(:), INTENT(OUT) :: PWIND10M_MAX! Maximum wind at 10m (m/s)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
@@ -87,42 +112,67 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_FLAKE_N',0,ZHOOK_HANDLE)
-IF (LSURF_BUDGET) THEN
-  PRN      = XRN
-  PH       = XH
-  PLE      = XLE
-  PLEI     = XLEI
-  PGFLUX   = XGFLUX
-  PSWD     = XSWD
-  PSWU     = XSWU
-  PLWD     = XLWD
-  PLWU     = XLWU
-  PSWBD    = XSWBD
-  PSWBU    = XSWBU
-  PFMU     = XFMU
-  PFMV     = XFMV
+IF (DGF%LSURF_BUDGET) THEN
+  PRN      = DGF%XRN
+  PH       = DGF%XH
+  PLE      = DGF%XLE
+  PLEI     = DGF%XLEI
+  PGFLUX   = DGF%XGFLUX
+  PEVAP    = DGF%XEVAP
+  PSUBL    = DGF%XSUBL
+  PSWD     = DGF%XSWD
+  PSWU     = DGF%XSWU
+  PLWD     = DGF%XLWD
+  PLWU     = DGF%XLWU
+  PSWBD    = DGF%XSWBD
+  PSWBU    = DGF%XSWBU
+  PFMU     = DGF%XFMU
+  PFMV     = DGF%XFMV
 END IF
 !
-IF (N2M>=1) THEN
-  PRI      = XRI 
-  PTS      = XTS
-  PT2M     = XT2M
-  PQ2M     = XQ2M
-  PHU2M    = XHU2M
-  PZON10M  = XZON10M
-  PMER10M  = XMER10M
+IF (DGF%LSURF_BUDGETC) THEN
+  PRNC      = DGF%XRNC
+  PHC       = DGF%XHC
+  PLEC      = DGF%XLEC
+  PLEIC     = DGF%XLEIC
+  PGFLUXC   = DGF%XGFLUXC
+  PEVAPC    = DGF%XEVAPC
+  PSUBLC    = DGF%XSUBLC  
+  PSWDC     = DGF%XSWDC
+  PSWUC     = DGF%XSWUC
+  PLWDC     = DGF%XLWDC
+  PLWUC     = DGF%XLWUC
+  PFMUC     = DGF%XFMUC
+  PFMVC     = DGF%XFMVC
 END IF
 !
-IF (LCOEF) THEN
-  PCD      = XCD
-  PCH      = XCH
-  PCE      = XCE
-  PZ0      = XZ0
-  PZ0H     = XZ0H
+IF (DGF%N2M>=1 .OR. DGF%LSURF_BUDGET .OR. DGF%LSURF_BUDGETC) PTS = DGF%XDIAG_TS
+!
+IF (DGF%N2M>=1) THEN
+  PRI      = DGF%XRI
+  PT2M     = DGF%XT2M
+  PT2M_MIN = DGF%XT2M_MIN
+  PT2M_MAX = DGF%XT2M_MAX  
+  PQ2M     = DGF%XQ2M
+  PHU2M    = DGF%XHU2M
+  PHU2M_MIN= DGF%XHU2M_MIN
+  PHU2M_MAX= DGF%XHU2M_MAX
+  PZON10M  = DGF%XZON10M
+  PMER10M  = DGF%XMER10M
+  PWIND10M = DGF%XWIND10M
+  PWIND10M_MAX = DGF%XWIND10M_MAX
 END IF
 !
-IF (LSURF_VARS) THEN
-  PQS = XQS
+IF (DGF%LCOEF) THEN
+  PCD      = DGF%XCD
+  PCH      = DGF%XCH
+  PCE      = DGF%XCE
+  PZ0      = DGF%XZ0
+  PZ0H     = DGF%XZ0H
+END IF
+!
+IF (DGF%LSURF_VARS) THEN
+  PQS = DGF%XQS
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_FLAKE_N',1,ZHOOK_HANDLE)

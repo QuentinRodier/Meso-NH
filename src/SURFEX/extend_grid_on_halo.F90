@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !!     ###########################################################
-      SUBROUTINE EXTEND_GRID_ON_HALO(HPROGRAM,KGRID_PAR,PGRID_PAR)
+      SUBROUTINE EXTEND_GRID_ON_HALO(HPROGRAM,UG,U,KGRID_PAR,PGRID_PAR)
 !     ###########################################################
 !!
 !!    PURPOSE
@@ -38,8 +38,8 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_ATM_GRID_n, ONLY : CGRID!, XGRID_PAR, NGRID_PAR
-USE MODD_SURF_ATM_n,      ONLY : NDIM_FULL, NSIZE_FULL
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n,      ONLY : SURF_ATM_t
 !
 USE MODI_EXTEND_GRID_ON_HALO_CONF_PROJ
 USE MODI_EXTEND_GRID_ON_HALO_CARTESIAN
@@ -55,6 +55,8 @@ IMPLICIT NONE
 !            ------------------------------
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM ! program calling
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER,            INTENT(INOUT)  :: KGRID_PAR ! size of PGRID_PAR pointer
 REAL, DIMENSION(:), POINTER, INTENT(INOUT) :: PGRID_PAR ! parameters defining this grid
 !
@@ -69,14 +71,14 @@ INTEGER :: IHALO
 !------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('SPLIT_GRID',0,ZHOOK_HANDLE)
 !
-SELECT CASE(CGRID)
+SELECT CASE(UG%CGRID)
 
   CASE('CONF PROJ ')
-    CALL EXTEND_GRID_ON_HALO_CONF_PROJ(HPROGRAM,NDIM_FULL,NSIZE_FULL,KGRID_PAR,PGRID_PAR)
+    CALL EXTEND_GRID_ON_HALO_CONF_PROJ(HPROGRAM,U%NDIM_FULL,U%NSIZE_FULL,KGRID_PAR,PGRID_PAR)
   CASE('CARTESIAN ')
-    CALL EXTEND_GRID_ON_HALO_CARTESIAN(HPROGRAM,NDIM_FULL,NSIZE_FULL,KGRID_PAR,PGRID_PAR)
+    CALL EXTEND_GRID_ON_HALO_CARTESIAN(HPROGRAM,U%NDIM_FULL,U%NSIZE_FULL,KGRID_PAR,PGRID_PAR)
   CASE DEFAULT
-    CALL GET_SIZE_FULL_n(HPROGRAM,NDIM_FULL,NSIZE_FULL)
+    CALL GET_SIZE_FULL_n(U,HPROGRAM,U%NDIM_FULL,U%NSIZE_FULL)
 
 END SELECT
 !

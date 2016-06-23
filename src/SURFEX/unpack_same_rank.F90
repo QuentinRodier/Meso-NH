@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ##########################
       MODULE MODI_UNPACK_SAME_RANK
 !     ##########################
@@ -13,6 +13,14 @@ INTEGER, DIMENSION(:),   INTENT(IN) :: K1D_IN
 INTEGER, DIMENSION(:),   INTENT(OUT):: K1D_OUT
 INTEGER, OPTIONAL,       INTENT(IN) :: KMISS
 END SUBROUTINE UNPACK_SAME_RANK_FROM1DI
+!
+      SUBROUTINE UNPACK_SAME_RANK_FROM2DI(KM,K1D_IN,K1D_OUT,KMISS)
+
+INTEGER, DIMENSION(:),   INTENT(IN) :: KM
+INTEGER, DIMENSION(:,:), INTENT(IN) :: K1D_IN
+INTEGER, DIMENSION(:,:), INTENT(OUT):: K1D_OUT
+INTEGER, OPTIONAL,       INTENT(IN) :: KMISS
+END SUBROUTINE UNPACK_SAME_RANK_FROM2DI
 !
       SUBROUTINE UNPACK_SAME_RANK_FROM1DL(KM,O1D_IN,O1D_OUT,OMISS)
 
@@ -86,7 +94,7 @@ END MODULE MODI_UNPACK_SAME_RANK
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -164,7 +172,7 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM1D
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -215,6 +223,85 @@ IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM1DI',1,ZHOOK
 !
 END SUBROUTINE UNPACK_SAME_RANK_FROM1DI
 !
+!     ##############################################
+      SUBROUTINE UNPACK_SAME_RANK_FROM2DI(KM,K2D_IN,K2D_OUT,PMISS)
+!     ##############################################
+!
+!!****  *UNPACK_SAME_RANK* - extract the defined data from a 2D field into a 2D field
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!      F. Habets   *Meteo France*
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    08/03
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_SURF_PAR,   ONLY : NUNDEF
+!
+USE MODD_SURFEX_OMP, ONLY : NWORK2_FULL
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+INTEGER, DIMENSION(:),  INTENT(IN) :: KM
+INTEGER, DIMENSION(:,:),   INTENT(IN) :: K2D_IN
+INTEGER, DIMENSION(:,:),   INTENT(OUT):: K2D_OUT
+REAL, OPTIONAL,         INTENT(IN) :: PMISS
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER :: JI, JJ ! loop counter
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM2DI',0,ZHOOK_HANDLE)
+!
+IF(PRESENT(PMISS))THEN
+  K2D_OUT(:,:) = PMISS      
+ELSE
+  K2D_OUT(:,:) = NUNDEF
+ENDIF
+!
+DO JJ=1,SIZE(K2D_IN,2)
+!cdir nodep
+  DO JI=1,SIZE(K2D_IN,1)
+    K2D_OUT(KM(JI),JJ) = K2D_IN(JI,JJ)
+  ENDDO 
+ENDDO
+IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM2DI',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE UNPACK_SAME_RANK_FROM2DI
 !
 !     ##############################################
       SUBROUTINE UNPACK_SAME_RANK_FROM1DL(KM,O1D_IN,O1D_OUT,OMISS)
@@ -241,7 +328,7 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM1DI
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -317,7 +404,7 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM1DL
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -398,7 +485,7 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM2D
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -480,7 +567,7 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM3D
 !!
 !!    AUTHOR
 !!    ------
-!!	F. Habets   *Meteo France*	
+!!      F. Habets   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------

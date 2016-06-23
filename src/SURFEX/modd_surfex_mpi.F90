@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######################
       MODULE MODD_SURFEX_MPI
 !     ######################
@@ -21,11 +21,15 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Faroux   *Meteo France*
+!!      S. Faroux   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       04/06/12
+!!      B. Decharme    04/2013  Delete NWG_LAYER_TOT, NWG_SIZE
+!!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!
+!-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -41,15 +45,12 @@ IMPLICIT NONE
 INTEGER, DIMENSION(:), ALLOCATABLE :: NINDEX
 INTEGER, DIMENSION(:), ALLOCATABLE :: NSIZE_TASK
 !
-INTEGER, DIMENSION(:,:), ALLOCATABLE :: NWG_LAYER_TOT
-!
-INTEGER :: NWG_SIZE
-!
 INTEGER :: NPROC = 1
 INTEGER :: NRANK = 0
 INTEGER :: NCOMM = -1
 INTEGER :: NPIO  = 0
 INTEGER :: NSIZE = 0
+INTEGER :: MYPROC = 0
 !
 INTEGER :: IDX_R = 0
 INTEGER :: IDX_W = 0
@@ -91,7 +92,7 @@ REAL :: XTIME_NATURE=0
 REAL :: XTIME_TOWN=0
 !$OMP THREADPRIVATE(XTIME_TOWN)
 !
-CONTAINS
+ CONTAINS
 !
 SUBROUTINE WLOG_MPI(HLOG,PLOG,KLOG,KLOG2,OLOG)
 !
@@ -162,22 +163,20 @@ END SUBROUTINE WLOG_MPI
 SUBROUTINE PREP_LOG_MPI
 !
  CHARACTER(LEN=100) :: YNAME
+ CHARACTER(LEN=10)  :: YRANK
 INTEGER :: IUNIT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODD_SURFEX_MPI:PREP_LOG_MPI',0,ZHOOK_HANDLE)
 !
-IF (NRANK>=10) THEN
-  WRITE(YNAME,FMT='(A3,I2)') 'log',NRANK
-ELSE
-  WRITE(YNAME,FMT='(A3,I1)') 'log',NRANK
-ENDIF
+WRITE(YRANK,FMT='(I10)') NRANK
+YNAME='log'//ADJUSTL(YRANK)
 !
 IUNIT=100000+NRANK
 !
 !$OMP SINGLE
-OPEN(UNIT=IUNIT,FILE=YNAME,FORM='FORMATTED')
+OPEN(UNIT=IUNIT,FILE=TRIM(YNAME),FORM='FORMATTED')
 WRITE(IUNIT,*) "Log offline pour proc ",NRANK
 !$OMP END SINGLE
 !
@@ -197,7 +196,7 @@ IUNIT=100000+NRANK
 !
 !$OMP SINGLE
 WRITE(IUNIT,*) "End log offline pour proc ",NRANK
-CLOSE(UNIT=IUNIT)
+ CLOSE(UNIT=IUNIT)
 !$OMP END SINGLE
 !
 IF (LHOOK) CALL DR_HOOK('MODD_SURFEX_MPI:END_LOG_MPI',1,ZHOOK_HANDLE)

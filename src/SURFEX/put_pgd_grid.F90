@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE PUT_PGD_GRID(HGRID,KSIZE_FULL,KGRID_PAR,PGRID_PAR)
 !     ##########################################################
@@ -68,7 +68,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PUT_PGD_GRID',0,ZHOOK_HANDLE)
 !
-CGRID = HGRID
+ CGRID = HGRID
 NL=KSIZE_FULL
 NGRID_PAR=KGRID_PAR
 ALLOCATE(XGRID_PAR(NGRID_PAR))

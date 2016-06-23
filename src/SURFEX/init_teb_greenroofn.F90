@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_GREENROOF_n(HPROGRAM,HINIT,KI,KSW,PSW_BANDS)
+SUBROUTINE INIT_TEB_GREENROOF_n (DTCO, U, DGMTO, TOP, TVG, GRM, &
+                                 HPROGRAM,HINIT,KI,KSW,PSW_BANDS,KPATCH)
 !#############################################################
 !
 !!****  *INIT_TEB_GREENROOF_n* - routine to initialize ISBA
@@ -27,7 +28,7 @@ SUBROUTINE INIT_TEB_GREENROOF_n(HPROGRAM,HINIT,KI,KSW,PSW_BANDS)
 !!
 !!    AUTHOR
 !!    ------
-!!	A. Lemonsu  *Meteo France*	
+!!      A. Lemonsu  *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,24 +38,18 @@ SUBROUTINE INIT_TEB_GREENROOF_n(HPROGRAM,HINIT,KI,KSW,PSW_BANDS)
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_DIAG_MISC_TEB_OPTION_n, ONLY : DIAG_MISC_TEB_OPTIONS_t
+USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+!
 USE MODD_TYPE_DATE_SURF
 USE MODD_TYPE_SNOW
 !
-USE MODD_TEB_n,                ONLY: TTIME, NTEB_PATCH, LCANOPY
-USE MODD_TEB_VEG_n,            ONLY: CALBEDO, CCPSURF,  CROUGH, CPHOTO
-USE MODD_TEB_GREENROOF_n,      ONLY: CISBA_GR, LTR_ML_GR,                  &
-                                     TSNOW, XLAI, XLAIMIN, XZ0, XVEG, XEMIS, &
-                                     XALBNIR_SOIL, XALBVIS_SOIL, XALBUV_SOIL, &
-                                     XALBNIR, XALBVIS, XALBUV, XWG, XTG,      &
-                                     XWSAT, XFAPARC, XFAPIRC, XLAI_EFFC, XMUS,&                                     
-                                     XWSAT,                                   &
-                                     LPAR_GREENROOF, XVEGTYPE, XH_TREE,       &
-                                     NLAYER_GR,                               &
-                                     XALBVIS_DRY, XALBNIR_DRY, XALBUV_DRY,    &
-                                     XALBNIR_VEG, XALBVIS_VEG, XALBUV_VEG,    &
-                                     XALBVIS_WET, XALBNIR_WET, XALBUV_WET,    &
-                                     XPSN, XPSNG, XPSNV, XPSNV_A
-USE MODD_DIAG_MISC_TEB_n,      ONLY: LSURF_DIAG_ALBEDO
+
 !
 USE MODD_DATA_COVER_PAR,       ONLY: NVEGTYPE
 USE MODD_SURF_PAR,             ONLY: XUNDEF, NUNDEF
@@ -65,7 +60,6 @@ USE MODI_GET_LUOUT
 USE MODI_READ_PREP_GREENROOF_SNOW
 USE MODI_ALLOCATE_TEB_GREENROOF
 USE MODI_ABOR1_SFX
-USE MODI_GET_CURRENT_TEB_PATCH
 USE MODI_READ_TEB_GREENROOF_n
 USE MODI_INIT_VEG_GARDEN_n
 USE MODI_SOIL_ALBEDO
@@ -80,11 +74,20 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(DIAG_MISC_TEB_OPTIONS_t), INTENT(INOUT) :: DGMTO
+TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+!
  CHARACTER(LEN=6),                   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                   INTENT(IN)  :: HINIT     ! choice of fields to initialize
 INTEGER,                            INTENT(IN)  :: KI        ! number of points
 INTEGER,                            INTENT(IN)  :: KSW       ! number of short-wave spectral bands
 REAL,             DIMENSION(KSW),   INTENT(IN)  :: PSW_BANDS ! middle wavelength of each band
+INTEGER,                            INTENT(IN)  :: KPATCH
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -93,7 +96,6 @@ INTEGER           :: ILUOUT   ! unit of output listing file
 !
 INTEGER           :: IDECADE  ! decade of simulation
 !
-INTEGER :: JTEB_PATCH  ! loop counter on TEB patches
  CHARACTER(LEN=3) :: YPATCH ! patch identificator
 !
 REAL, DIMENSION(KI)               :: ZWG1 ! work array for surface water content
@@ -120,9 +122,10 @@ IF (LHOOK) CALL DR_HOOK('INIT_TEB_GREENROOF_N',0,ZHOOK_HANDLE)
 !* initialization of snow scheme (TSNOW defined in MODD_TEB_GREENROOF_n)
 !
 IF (HINIT=='PRE') THEN
-   CALL READ_PREP_GREENROOF_SNOW(HPROGRAM,TSNOW%SCHEME,TSNOW%NLAYER)
+   CALL READ_PREP_GREENROOF_SNOW(HPROGRAM,GRM%TGR%CUR%TSNOW%SCHEME,GRM%TGR%CUR%TSNOW%NLAYER)
 !
-   IF (TSNOW%SCHEME.NE.'3-L' .AND. TSNOW%SCHEME.NE.'CRO' .AND. CISBA_GR=='DIF') THEN
+   IF (GRM%TGR%CUR%TSNOW%SCHEME.NE.'3-L' .AND. GRM%TGR%CUR%TSNOW%SCHEME.NE.'CRO' &
+           .AND. GRM%TGRO%CISBA_GR=='DIF') THEN
     CALL ABOR1_SFX("INIT_TEB_GREENROOF_n: WITH CISBA_GR = DIF, CSNOW MUST BE 3-L OR CRO")
   ENDIF
   IF (LHOOK) CALL DR_HOOK('INIT_TEB_GREENROOF_N',1,ZHOOK_HANDLE)
@@ -130,11 +133,12 @@ IF (HINIT=='PRE') THEN
 ENDIF
 !-------------------------------------------------------------------------------
 !
- CALL ALLOCATE_TEB_GREENROOF(KI, NLAYER_GR)  
+ CALL ALLOCATE_TEB_GREENROOF(GRM%TGR, TVG, &
+                             KI, GRM%TGRO%NLAYER_GR)  
 !
 !-------------------------------------------------------------------------------
 !
-IF( CCPSURF=='DRY' .AND. LCPL_ARP ) THEN
+IF( TVG%CCPSURF=='DRY' .AND. LCPL_ARP ) THEN
   CALL ABOR1_SFX('CCPSURF=DRY must not be used with LCPL_ARP')
 ENDIF
 !
@@ -154,49 +158,54 @@ ENDIF
 !
 !
   YPATCH='   '
-  CALL GET_CURRENT_TEB_PATCH(JTEB_PATCH)
-  IF (NTEB_PATCH>1) WRITE(YPATCH,FMT='(A,I1,A)') 'T',JTEB_PATCH,'_'
+  IF (TOP%NTEB_PATCH>1) WRITE(YPATCH,FMT='(A,I1,A)') 'T',KPATCH,'_'
 !
-  CALL READ_TEB_GREENROOF_n(HPROGRAM,YPATCH)
+  CALL READ_TEB_GREENROOF_n(DTCO, U, TVG, GRM, &
+                            HPROGRAM,YPATCH)
 !
 !
- CALL INIT_VEG_GARDEN_n(KI, LCANOPY, CROUGH, TSNOW, &
-                   CPHOTO, XLAIMIN, XH_TREE, XVEGTYPE, XLAI, XZ0, XVEG, XEMIS, &
-                   LTR_ML_GR, XFAPARC, XFAPIRC, XLAI_EFFC, XMUS, &
-                   XALBNIR_SOIL, XALBVIS_SOIL, XALBUV_SOIL, XALBNIR, XALBVIS, XALBUV, &
-                   LSURF_DIAG_ALBEDO, XPSN, XPSNG, XPSNV, XPSNV_A, &
+ CALL INIT_VEG_GARDEN_n(KI, TOP%LCANOPY, TVG%CROUGH, GRM%TGR%CUR%TSNOW, &
+                   TVG%CPHOTO, GRM%TGRP%XLAIMIN, GRM%TGRP%XH_TREE, GRM%TGRP%XVEGTYPE, &
+                   GRM%TGRPE%CUR%XLAI, GRM%TGRPE%CUR%XZ0, GRM%TGRPE%CUR%XVEG, &
+                   GRM%TGRPE%CUR%XEMIS, GRM%TGRO%LTR_ML_GR, GRM%TGR%CUR%XFAPARC, &
+                   GRM%TGR%CUR%XFAPIRC, GRM%TGR%CUR%XLAI_EFFC, GRM%TGR%CUR%XMUS, &
+                   GRM%TGRP%XALBNIR_SOIL, GRM%TGRP%XALBVIS_SOIL, GRM%TGRP%XALBUV_SOIL, &
+                   GRM%TGRPE%CUR%XALBNIR, GRM%TGRPE%CUR%XALBVIS, GRM%TGRPE%CUR%XALBUV, &
+                   DGMTO%LSURF_DIAG_ALBEDO, GRM%TGR%CUR%XPSN, GRM%TGR%CUR%XPSNG, &
+                   GRM%TGR%CUR%XPSNV, GRM%TGR%CUR%XPSNV_A, &
                    ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSRAD )
 !
-ZWG1(:) = XWG(:,1)
-ZTG1(:) = XTG(:,1)
+ZWG1(:) = GRM%TGR%CUR%XWG(:,1)
+ZTG1(:) = GRM%TGR%CUR%XTG(:,1)
 !
-IF (.NOT. LPAR_GREENROOF) THEN
-  CALL SOIL_ALBEDO(CALBEDO,                               &
-                     XWSAT(:,1),ZWG1,                       &
-                     XALBVIS_DRY,XALBNIR_DRY,XALBUV_DRY,    &
-                     XALBVIS_WET,XALBNIR_WET,XALBUV_WET,    &
-                     XALBVIS_SOIL,XALBNIR_SOIL,XALBUV_SOIL  )  
+IF (.NOT. GRM%TGRO%LPAR_GREENROOF) THEN
+  CALL SOIL_ALBEDO(TVG%CALBEDO,                               &
+                     GRM%TGRP%XWSAT(:,1),ZWG1,                       &
+                     GRM%TGRP%XALBVIS_DRY,GRM%TGRP%XALBNIR_DRY,GRM%TGRP%XALBUV_DRY,    &
+                     GRM%TGRP%XALBVIS_WET,GRM%TGRP%XALBNIR_WET,GRM%TGRP%XALBUV_WET,    &
+                     GRM%TGRP%XALBVIS_SOIL,GRM%TGRP%XALBNIR_SOIL,GRM%TGRP%XALBUV_SOIL  )  
 ELSE
-  IF (TTIME%TDATE%MONTH /= NUNDEF) THEN
-    IDECADE = 3 * ( TTIME%TDATE%MONTH - 1 ) + MIN(TTIME%TDATE%DAY-1,29) / 10 + 1
+  IF (TOP%TTIME%TDATE%MONTH /= NUNDEF) THEN
+    IDECADE = 3 * ( TOP%TTIME%TDATE%MONTH - 1 ) + MIN(TOP%TTIME%TDATE%DAY-1,29) / 10 + 1
   ELSE
     IDECADE = 1
   END IF
-  CALL INIT_FROM_DATA_GREENROOF_n(IDECADE,CPHOTO,              &
-                                  PALBNIR_SOIL=XALBNIR_SOIL,   &
-                                  PALBVIS_SOIL=XALBVIS_SOIL,   &
-                                  PALBUV_SOIL=XALBUV_SOIL      )  
+  CALL INIT_FROM_DATA_GREENROOF_n(GRM%DTGR, GRM%TGRO, &
+                                  IDECADE,TVG%CPHOTO,              &
+                                  PALBNIR_SOIL=GRM%TGRP%XALBNIR_SOIL,   &
+                                  PALBVIS_SOIL=GRM%TGRP%XALBVIS_SOIL,   &
+                                  PALBUV_SOIL=GRM%TGRP%XALBUV_SOIL      )  
 END IF
 !
 ! 
- CALL AVG_ALBEDO_EMIS_GREENROOF(CALBEDO,                                &
-                               XVEG,XZ0,XLAI,ZTG1,                     &
+ CALL AVG_ALBEDO_EMIS_GREENROOF(GRM%TGR, &
+                                TVG%CALBEDO,                                &
+                               GRM%TGRPE%CUR%XVEG,GRM%TGRPE%CUR%XZ0,GRM%TGRPE%CUR%XLAI,ZTG1,  &
                                PSW_BANDS,                              &
-                               XALBNIR_VEG,XALBVIS_VEG,XALBUV_VEG,     &
-                               XALBNIR_SOIL,XALBVIS_SOIL,XALBUV_SOIL,  &
-                               XEMIS,                                  &
-                               TSNOW,                                  &
-                               XALBNIR,XALBVIS,XALBUV,                 &
+                               GRM%TGRP%XALBNIR_VEG,GRM%TGRP%XALBVIS_VEG,GRM%TGRP%XALBUV_VEG,     &
+                               GRM%TGRP%XALBNIR_SOIL,GRM%TGRP%XALBVIS_SOIL,GRM%TGRP%XALBUV_SOIL,  &
+                               GRM%TGRPE%CUR%XEMIS, GRM%TGR%CUR%TSNOW,                     &
+                               GRM%TGRPE%CUR%XALBNIR,GRM%TGRPE%CUR%XALBVIS,GRM%TGRPE%CUR%XALBUV, &
                                ZDIR_ALB, ZSCA_ALB,                     &
                                ZEMIS,ZTSRAD                            )  
 !
@@ -207,4 +216,5 @@ IF (LHOOK) CALL DR_HOOK('INIT_TEB_GREENROOF_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 !
+
 END SUBROUTINE INIT_TEB_GREENROOF_n

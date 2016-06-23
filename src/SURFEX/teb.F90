@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !   ##########################################################################
-    SUBROUTINE TEB  (HZ0H, HIMPLICIT_WIND, HWALL_OPT, HBEM,                    &
+    SUBROUTINE TEB  (HZ0H, HIMPLICIT_WIND, HWALL_OPT, HBEM, TPTIME, PTSUN,     &
                      PT_CANYON, PQ_CANYON, PU_CANYON,                          &
                      PT_LOWCAN, PQ_LOWCAN, PU_LOWCAN, PZ_LOWCAN, PTI_BLD,      &
                      PT_ROOF, PT_ROAD, PT_WALL_A, PT_WALL_B,PWS_ROOF, PWS_ROAD,&
@@ -27,7 +27,9 @@
                      PLEW_ROOF, PGFLUX_ROOF, PRUNOFF_ROOF,                     &
                      PRN_GREENROOF, PH_GREENROOF, PLE_GREENROOF,               &
                      PGFLUX_GREENROOF, PUW_GREENROOF,                          &
+                     PRUNOFF_GREENROOF, PDRAIN_GREENROOF,                      &
                      PRN_STRLROOF, PH_STRLROOF, PLE_STRLROOF, PGFLUX_STRLROOF, &
+                     PRUNOFF_STRLROOF,                                         &
                      PRN_ROAD, PH_ROAD,                                        &
                      PLE_ROAD, PLEW_ROAD, PGFLUX_ROAD, PRUNOFF_ROAD,           &
                      PRN_WALL_A, PH_WALL_A, PLE_WALL_A, PGFLUX_WALL_A,         &
@@ -38,7 +40,6 @@
                      PRNSNOW_ROAD, PHSNOW_ROAD, PLESNOW_ROAD, PGSNOW_ROAD,     &
                      PMELT_ROAD,                                               &
                      PG_GREENROOF_ROOF,                                        &
-                     PRUNOFF_TOWN,                                             &
                      PUW_ROAD, PUW_ROOF, PDUWDU_ROAD, PDUWDU_ROOF,             &
                      PUSTAR_TOWN, PCD, PCDN, PCH_TOWN, PRI_TOWN,               &
                      PRESA_TOWN, PDQS_TOWN, PQF_TOWN, PQF_BLD, PFLX_BLD,       &
@@ -76,7 +77,9 @@
                      PF_FLOOR_WIN, PF_FLOOR_ROOF, PF_WALL_FLOOR, PF_WALL_MASS, &
                      PF_WALL_WIN, PF_WIN_FLOOR, PF_WIN_MASS, PF_WIN_WALL,      &
                      PF_MASS_FLOOR, PF_MASS_WALL, PF_MASS_WIN, OCANOPY,        &
-                     HCH_BEM, PROUGH_ROOF, PROUGH_WALL, PF_WIN_WIN )
+                     HCH_BEM, PROUGH_ROOF, PROUGH_WALL, PF_WIN_WIN,            &
+                     OPAR_RD_IRRIG, PRD_START_MONTH, PRD_END_MONTH,            &
+                     PRD_START_HOUR, PRD_END_HOUR, PRD_24H_IRRIG, PIRRIG_ROAD  )
 !   ##########################################################################
 !
 !!****  *TEB*  
@@ -217,7 +220,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -227,11 +230,13 @@
 !!     17 / 10 / 2005   (G. Pigeon) computation of anthropogenic heat from domestic heating
 !!          01 / 2012   V. Masson   Separates the 2 walls 
 !!     25 / 09 / 2012   B. Decharme new wind implicitation
+!!          07 / 2013   V. Masson   Adds road watering
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_TYPE_DATE_SURF,ONLY: DATE_TIME
 USE MODD_CSTS,         ONLY : XTT, XSTEFAN, XCPD, XLVTT
 USE MODD_SURF_PAR,     ONLY : XUNDEF
 USE MODD_SNOW_PAR,     ONLY : XEMISSN, XANSMAX_ROOF, &
@@ -251,6 +256,7 @@ USE MODI_URBAN_HYDRO
 USE MODI_BLD_E_BUDGET
 USE MODI_WIND_THRESHOLD
 USE MODI_BEM
+USE MODI_TEB_IRRIG
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -271,6 +277,8 @@ IMPLICIT NONE
                                                    ! 'UNIF' : uniform walls
                                                    ! 'TWO ' : two different opposite walls
  CHARACTER(LEN=3), INTENT(IN)      :: HBEM          ! Building Energy model 'DEF' or 'BEM'
+TYPE(DATE_TIME)     , INTENT(IN)    :: TPTIME             ! current date and time from teb
+REAL, DIMENSION(:),   INTENT(IN)    :: PTSUN              ! solar time   (s from midnight)
 REAL, DIMENSION(:), INTENT(INOUT) :: PT_CANYON     ! canyon air temperature
 REAL, DIMENSION(:), INTENT(INOUT) :: PQ_CANYON     ! canyon air specific humidity
 REAL, DIMENSION(:), INTENT(IN)    :: PU_CANYON     ! canyon hor. wind
@@ -377,7 +385,8 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PH_ROOF      ! sensible heat flux over roof
 REAL, DIMENSION(:), INTENT(OUT)   :: PLE_ROOF     ! latent heat flux over roof
 REAL, DIMENSION(:), INTENT(OUT)   :: PLEW_ROOF    ! latent heat flux over roof (snow)
 REAL, DIMENSION(:), INTENT(OUT)   :: PGFLUX_ROOF  ! flux through the roof
-REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF_ROOF ! runoff over the ground
+REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF_STRLROOF ! runoff over the ground
+REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF_ROOF ! runoff over roofs
 REAL, DIMENSION(:), INTENT(OUT)   :: PRN_ROAD     ! net radiation over road
 REAL, DIMENSION(:), INTENT(OUT)   :: PH_ROAD      ! sensible heat flux over road
 REAL, DIMENSION(:), INTENT(OUT)   :: PLE_ROAD     ! latent heat flux over road
@@ -402,6 +411,8 @@ REAL, DIMENSION(:), INTENT(IN)    :: PH_GREENROOF      ! sensible heat flux over
 REAL, DIMENSION(:), INTENT(IN)    :: PLE_GREENROOF     ! latent heat flux over greenroof
 REAL, DIMENSION(:), INTENT(IN)    :: PGFLUX_GREENROOF  ! flux through the greenroof
 REAL, DIMENSION(:), INTENT(IN)    :: PUW_GREENROOF     ! Momentum flux for greenroofs
+REAL, DIMENSION(:), INTENT(IN)    :: PRUNOFF_GREENROOF ! runoff over green roofs
+REAL, DIMENSION(:), INTENT(IN)    :: PDRAIN_GREENROOF  ! outlet drainage at base of green roofs
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PRN_STRLROOF      ! net radiation over structural roof
 REAL, DIMENSION(:), INTENT(OUT)   :: PH_STRLROOF       ! sensible heat flux over structural roof
@@ -419,7 +430,6 @@ REAL, DIMENSION(:), INTENT(OUT)   :: PLESNOW_ROAD ! latent heat flux over snow
 REAL, DIMENSION(:), INTENT(OUT)   :: PGSNOW_ROAD  ! flux under the snow
 REAL, DIMENSION(:), INTENT(OUT)   :: PMELT_ROAD   ! snow melt
 !
-REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF_TOWN ! runoff over the ground
 REAL, DIMENSION(:), INTENT(OUT)   :: PUW_ROAD     ! Momentum flux for roads
 REAL, DIMENSION(:), INTENT(OUT)   :: PUW_ROOF     ! Momentum flux for roofs
 REAL, DIMENSION(:), INTENT(OUT)   :: PDUWDU_ROAD  !
@@ -563,8 +573,8 @@ REAL, DIMENSION(:), INTENT(IN)   :: PABS_SW_WIN   ! window absorbed shortwave ra
 REAL, DIMENSION(:), INTENT(OUT)  :: PABS_LW_WIN   ! absorbed infrared rad. [W m-2]
 REAL, DIMENSION(:), INTENT(IN)   :: PUGG_WIN      ! window glass-to-glass U-factro [W m-2 K-1]
  !new argument for PET calculation
-REAL, DIMENSION(:), INTENT(OUT) :: PEMIT_LW_ROAD ! LW fluxes emitted by road (W/m² surf road)
-REAL, DIMENSION(:), INTENT(OUT) :: PEMIT_LW_FAC  ! LW fluxes emitted by wall (W/m² surf wall)
+REAL, DIMENSION(:), INTENT(OUT) :: PEMIT_LW_ROAD ! LW fluxes emitted by road (W/m2 surf road)
+REAL, DIMENSION(:), INTENT(OUT) :: PEMIT_LW_FAC  ! LW fluxes emitted by wall (W/m2 surf wall)
 REAL, DIMENSION(:), INTENT(OUT) :: PT_RAD_IND    ! Indoor mean radiant temperature [K]
 REAL, DIMENSION(:), INTENT(OUT) :: PHU_BLD       ! Indoor relative humidity 0 < (-) < 1
 REAL,                INTENT(IN)  :: PTIME        ! current time since midnight (UTC, s)
@@ -597,6 +607,16 @@ LOGICAL,              INTENT(IN)  :: OCANOPY         ! is canopy active ?
 REAL, DIMENSION(:)  , INTENT(IN)  :: PROUGH_ROOF     ! roof roughness coef
 REAL, DIMENSION(:)  , INTENT(IN)  :: PROUGH_WALL     ! wall roughness coef
 REAL, DIMENSION(:)  , INTENT(IN)  :: PF_WIN_WIN      ! indoor win to win view factor
+!
+!* arguments for road watering
+!
+LOGICAL,              INTENT(IN)  :: OPAR_RD_IRRIG  ! True if there is potentially irrigation
+REAL, DIMENSION(:),   INTENT(IN)  :: PRD_START_MONTH! First month of irrigation
+REAL, DIMENSION(:),   INTENT(IN)  :: PRD_END_MONTH  ! Last month of irrigation
+REAL, DIMENSION(:),   INTENT(IN)  :: PRD_START_HOUR ! First hour of irrigation (included)
+REAL, DIMENSION(:),   INTENT(IN)  :: PRD_END_HOUR   ! Last hour of irrigation  (excluded)
+REAL, DIMENSION(:),   INTENT(IN)  :: PRD_24H_IRRIG  ! diurnal averaged irrigation flux (kg/m2/s)
+REAL, DIMENSION(:),   INTENT(OUT) :: PIRRIG_ROAD    ! man-made watering for road (kg/m2/s)
 !
 !*      0.2    Declarations of local variables
 !
@@ -664,11 +684,11 @@ REAL, DIMENSION(SIZE(PTA)) :: ZCONV_WALL_BLD  ! rad. flux from roof to bld [W m-
 REAL, DIMENSION(SIZE(PTA)) :: ZCONV_WIN_BLD   ! rad. flux from roof to bld [W m-2(win)]
 REAL, DIMENSION(SIZE(PTA)) :: ZAC_WIN         ! window aerodynamic conductance
 
-REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_ROOF   ! indoor load on roof W/m²[roof]
-REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_FLOOR   ! indoor load on floor W/m²[floor]
-REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_WALL   ! indoor load on wall W/m²[wall]
-REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_WIN   ! indoor load on win W/m²[win]
-REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_MASS   ! indoor load on mass W/m²[mass]
+REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_ROOF   ! indoor load on roof W/m2[roof]
+REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_FLOOR   ! indoor load on floor W/m2[floor]
+REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_WALL   ! indoor load on wall W/m2[wall]
+REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_WIN   ! indoor load on win W/m2[win]
+REAL, DIMENSION(SIZE(PTA)) :: ZLOAD_IN_MASS   ! indoor load on mass W/m2[mass]
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE                                             
 !-------------------------------------------------------------------------------
@@ -715,7 +735,7 @@ ZTS_ROOF    (:)=PT_ROOF     (:,1)
 IF (HBEM=='BEM') THEN
   !
   ZLOAD_IN_ROOF = PF_FLOOR_WIN * PTR_SW_WIN + PQIN * PN_FLOOR * (1-PQIN_FLAT) * PQIN_FRAD  &
-           / (2 + PWALL_O_BLD + PGLAZ_O_BLD + PMASS_O_BLD ) ! W/m² [ROOF]
+           / (2 + PWALL_O_BLD + PGLAZ_O_BLD + PMASS_O_BLD ) ! W/m2 [ROOF]
   ZLOAD_IN_FLOOR = PF_FLOOR_WIN * PTR_SW_WIN + PQIN * PN_FLOOR * (1-PQIN_FLAT) * PQIN_FRAD  &
            / (2 + PWALL_O_BLD + PGLAZ_O_BLD + PMASS_O_BLD )
   ZLOAD_IN_MASS = PF_MASS_WIN * PTR_SW_WIN + PQIN * PN_FLOOR * (1-PQIN_FLAT) * PQIN_FRAD  &
@@ -795,6 +815,7 @@ ZQA(:) = PQA(:) * QSAT(PTA(:),PPS(:)) / QSAT(ZTA(:),PPA(:))
 !
  CALL URBAN_SNOW_EVOL(PT_LOWCAN, PQ_LOWCAN, PU_LOWCAN,                         &
                      ZTS_ROOF,ZTS_ROAD,ZTS_WALL_A, ZTS_WALL_B,                &
+                     PT_ROOF, PD_ROOF, PTC_ROOF, PHC_ROOF,                    &
                      HSNOW_ROOF,                                              &
                      PWSNOW_ROOF, PTSNOW_ROOF, PRSNOW_ROOF, PASNOW_ROOF,      &
                      PTSSNOW_ROOF, PESNOW_ROOF,                               &
@@ -852,6 +873,7 @@ END SELECT
 !
 !* ts_roof and qsat_roof are updated
 !
+
  CALL ROOF_LAYER_E_BUDGET(PT_ROOF, PQSAT_ROOF, PTI_BLD, ZAC_BLD, PTSTEP, &
                          HBEM, PHC_ROOF, PTC_ROOF, PD_ROOF, PDN_ROOF,   &
                          PRHOA, PAC_ROOF, PAC_ROOF_WAT, PLW_RAD, PPS,   &
@@ -871,9 +893,15 @@ END SELECT
 !
 !-------------------------------------------------------------------------------
 !
-!*      8.    Road and wall Ts computations
+!*      8.    Road Ts computations
 !              -----------------------------
 !
+!* Road watering
+
+ CALL TEB_IRRIG(OPAR_RD_IRRIG, PTSTEP, TPTIME%TDATE%MONTH, PTSUN, &
+               PRD_START_MONTH, PRD_END_MONTH, PRD_START_HOUR,   &
+               PRD_END_HOUR, PRD_24H_IRRIG, PIRRIG_ROAD          )
+
 !* ts_road, ts_wall, qsat_road, t_canyon and q_canyon are updated
 !
  CALL ROAD_LAYER_E_BUDGET(PT_ROAD, PTSTEP, PHC_ROAD, PTC_ROAD, PD_ROAD,       &
@@ -884,7 +912,12 @@ END SELECT
                          PTS_GARDEN, PT_WIN1,                                &
                          PLW_WA_TO_R, PLW_WB_TO_R, PLW_S_TO_R, PLW_WIN_TO_R, &
                          PEMIS_ROAD, PEMIT_LW_ROAD, ZDQS_ROAD, PABS_LW_ROAD, &
-                         PH_ROAD, PLEW_ROAD, ZIMB_ROAD, PRR                  )
+                         PH_ROAD, PLEW_ROAD, ZIMB_ROAD, PRR+PIRRIG_ROAD      )
+!
+!-------------------------------------------------------------------------------
+!
+!*      8.     Wall Ts computations
+!              -----------------------------
 !
  CALL FACADE_E_BUDGET(HWALL_OPT, HBEM,                                    &
                      PT_WALL_A, PT_WALL_B, PTSTEP,                       &
@@ -923,7 +956,7 @@ END SELECT
 ZT_WALL   (:,:)=0.5 * (PT_WALL_A(:,:)+PT_WALL_B(:,:))
 !
 SELECT CASE(HBEM)
-CASE("DEF")
+ CASE("DEF")
 !
    CALL BLD_E_BUDGET(.TRUE., PTSTEP, PBLD, PWALL_O_HOR,        &
                      PRHOA, PT_ROOF, ZT_WALL, PTI_BLD, ZTS_FLOOR(:) )
@@ -944,15 +977,14 @@ CASE("DEF")
    PHVAC_COOL(:)  = XUNDEF
    PHVAC_HEAT(:)  = XUNDEF
    PCAP_SYS(:)    = XUNDEF
-   PT_SYS(:)      = XUNDEF
    PM_SYS(:)      = XUNDEF
    PCOP(:)        = XUNDEF
    PQ_SYS(:)      = XUNDEF
    PFAN_POWER(:)  = XUNDEF
    PHU_BLD(:)     = XUNDEF
 
-CASE("BEM")
-  CALL BEM(PTSTEP, PTIME, HCOOL_COIL, HHEAT_COIL,                 &
+ CASE("BEM")
+  CALL BEM(PTSTEP, PTSUN, HCOOL_COIL, HHEAT_COIL,                 &
     OAUTOSIZE, KDAY, HNATVENT,                                    &
     PPS, PRHOA, PT_CANYON, PQ_CANYON, PU_CANYON,                  &
     PT_ROOF, PT_WALL_A, PT_WALL_B, PBLD, PBLD_HEIGHT, PWALL_O_HOR,&
@@ -1033,11 +1065,14 @@ ENDWHERE
 !*      11.    Roof ans road reservoirs evolution
 !              ----------------------------------
 !
- CALL URBAN_HYDRO(ZWS_ROOF_MAX,ZWS_ROAD_MAX, PWS_ROOF, PWS_ROAD,        &
-                 PRR, PTSTEP, PBLD, PLE_ROOF, PLE_ROAD,                &
-                 PRUNOFF_ROOF,                                         &
-                 PRUNOFF_ROAD,                                         &
-                 PRUNOFF_TOWN                                          )
+ CALL URBAN_HYDRO(ZWS_ROOF_MAX,ZWS_ROAD_MAX, PWS_ROOF, PWS_ROAD,      &
+                 PRR, PIRRIG_ROAD, PTSTEP, PBLD, PLE_ROOF, PLE_ROAD,  &
+                 PRUNOFF_STRLROOF,                                    &
+                 PRUNOFF_ROAD                                         )
+!
+PRUNOFF_ROOF(:) =   ( 1. - PFRAC_GR(:) ) *   PRUNOFF_STRLROOF(:)                        &
+                  +        PFRAC_GR(:)   * ( PRUNOFF_GREENROOF(:) + PDRAIN_GREENROOF(:) )
+                                                           
 !
 !-------------------------------------------------------------------------------
 !

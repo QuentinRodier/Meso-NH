@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_WATFLUX_CONF_n(HPROGRAM)
+      SUBROUTINE WRITESURF_WATFLUX_CONF_n (CHW, W, &
+                                           HPROGRAM)
 !     ######################################################
 !
 !!****  *WRITESURF_WATFLUX_CONF* - routine to read the configuration for WATFLUX
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,6 +37,12 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+USE MODD_CH_WATFLUX_n, ONLY : CH_WATFLUX_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODN_WATFLUX_n
 !
@@ -49,6 +56,10 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(CH_WATFLUX_t), INTENT(INOUT) :: CHW
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM ! program calling WATFLUX
 
@@ -69,8 +80,8 @@ IF (ILUDES==0) RETURN
 !
 !-------------------------------------------------------------------------------
 !
- CALL INIT_NAM_WATFLUXn
- CALL INIT_NAM_CH_WATFLUXn
+ CALL INIT_NAM_WATFLUXn(W)
+ CALL INIT_NAM_CH_WATFLUXn(CHW)
 !
 WRITE(UNIT=ILUDES,NML=NAM_WATFLUXn)
 WRITE(UNIT=ILUDES,NML=NAM_CH_WATFLUXn)

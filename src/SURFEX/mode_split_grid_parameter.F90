@@ -1,12 +1,12 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !##################
 MODULE MODE_SPLIT_GRID_PARAMETER
 !##################
 !
-CONTAINS
+ CONTAINS
 !
 !     #############################################################
 #ifdef MNH_PARALLEL
@@ -21,10 +21,10 @@ CONTAINS
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-#ifdef OL
+#ifdef SFX_OL
 USE MODE_SPLIT_GRID_PARAMETER_OL
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_SPLIT_GRID_PARAMETERX1_MNH
 #endif
 !
@@ -55,7 +55,7 @@ IF (HPROGRAM=='MESONH') THEN
 #ifdef MNH_PARALLEL
   CALL SPLIT_GRID_PARAMETERX1_MNH(HGRID,HREC,KDIM,KSIZE,KIMAX_ll,KJMAX_ll,KHALO,PFIELD,PFIELD_SPLIT)
 #else
-#ifdef MNH
+#ifdef SFX_MNH
   CALL SPLIT_GRID_PARAMETERX1_MNH(HGRID,HREC,KDIM,KSIZE,PFIELD,PFIELD_SPLIT)
 #endif
 #endif
@@ -63,7 +63,7 @@ ENDIF
 !
 !
 IF (HPROGRAM=='OFFLIN') THEN
-#ifdef OL
+#ifdef SFX_OL
   CALL SPLIT_GRID_PARAMETERX1_OL(HPROGRAM,HGRID,HREC,KDIM,KSIZE,PFIELD,PFIELD_SPLIT)
 #endif
 ENDIF
@@ -87,10 +87,10 @@ END SUBROUTINE SPLIT_GRID_PARAMETERX1
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-#ifdef OL
+#ifdef SFX_OL
 USE MODE_SPLIT_GRID_PARAMETER_OL
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_SPLIT_GRID_PARAMETERN0_MNH
 #endif
 !
@@ -118,14 +118,14 @@ IF (HPROGRAM=='MESONH') THEN
 #ifdef MNH_PARALLEL
   CALL SPLIT_GRID_PARAMETERN0_MNH(HGRID,HREC,KHALO,KFIELD,KFIELD_SPLIT)
 #else
-#ifdef MNH
+#ifdef SFX_MNH
   CALL SPLIT_GRID_PARAMETERN0_MNH(HGRID,HREC,KFIELD,KFIELD_SPLIT)
 #endif
 #endif
 ENDIF
 !
 IF (HPROGRAM=='OFFLIN') THEN
-#ifdef OL
+#ifdef SFX_OL
   CALL SPLIT_GRID_PARAMETERN0_OL(HPROGRAM,HGRID,HREC,KFIELD,KFIELD_SPLIT)
 #endif
 ENDIF

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_TEB_VEG_CONF_n(HPROGRAM)
+      SUBROUTINE READ_TEB_VEG_CONF_n (CHT, TVG, &
+                                      HPROGRAM)
 !     #######################################################
 !
 !!****  *READ_TEB_VEG_CONF* - routine to read the configuration for VEG
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -36,10 +37,17 @@
 !!      P Le Moigne 09/2005 CSNOWRES option
 !!      Modified by P. Le Moigne (06/2006): seeding and irrigation
 !!      Modified by P. Le Moigne (05/2008): deep soil characteristics
+!!      B. Decharme 06/2013 delete CTOPREG
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
+!
+USE MODD_CH_TEB_n, ONLY : CH_TEB_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -64,6 +72,10 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(CH_TEB_t), INTENT(INOUT) :: CHT
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+!
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
 
 !
@@ -86,10 +98,11 @@ IF (LHOOK) CALL DR_HOOK('READ_TEB_VEG_CONF_N',0,ZHOOK_HANDLE)
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_TEB_VEGn
- CALL INIT_NAM_CH_CONTROLn
- CALL INIT_NAM_CH_TEB_VEGn
- CALL INIT_NAM_SGH_TEB_VEGn        
+ CALL INIT_NAM_TEB_VEGn(TVG)
+ CALL INIT_NAM_TEB_VEG_AGSn(TVG)
+ CALL INIT_NAM_CH_CONTROLn(CHT)
+ CALL INIT_NAM_CH_TEB_VEGn(CHT)
+ CALL INIT_NAM_SGH_TEB_VEGn(TVG)        
 ENDIF
 
 IF (LNAM_READ) THEN
@@ -103,6 +116,8 @@ IF (LNAM_READ) THEN
  !
  CALL POSNAM(INAM,'NAM_ISBAN',GFOUND,ILUOUT)
  IF (GFOUND) READ(UNIT=INAM,NML=NAM_ISBAn)
+ CALL POSNAM(INAM,'NAM_ISBA_AGSN',GFOUND,ILUOUT)
+ IF (GFOUND) READ(UNIT=INAM,NML=NAM_ISBA_AGSn) 
 ! for the time being, chemistry is not implemented on gardens
 ! CALL POSNAM(INAM,'NAM_CH_ISBAN',GFOUND,ILUOUT)
 ! IF (GFOUND) READ(UNIT=INAM,NML=NAM_CH_ISBAn)
@@ -121,7 +136,6 @@ IF (LNAM_READ) THEN
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CCPSURF',CCPSURF,'DRY','HUM')
  !
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CRUNOFF',CRUNOFF,'WSAT','DT92','SGH ','TOPD')
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CTOPREG',CTOPREG,'DEF','NON')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CKSAT',CKSAT,'DEF','SGH','EXP')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CHORT',CHORT,'DEF','SGH')
  !
@@ -132,10 +146,11 @@ IF (LNAM_READ) THEN
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_TEB_VEGn
- CALL UPDATE_NAM_CH_TEB_VEGn
- CALL UPDATE_NAM_CH_CONTROLn
- CALL UPDATE_NAM_SGH_TEB_VEGn        
+ CALL UPDATE_NAM_TEB_VEGn(TVG)
+ CALL UPDATE_NAM_TEB_VEG_AGSn(TVG)
+ CALL UPDATE_NAM_CH_TEB_VEGn(CHT)
+ CALL UPDATE_NAM_CH_CONTROLn(CHT)
+ CALL UPDATE_NAM_SGH_TEB_VEGn(TVG)        
 ENDIF
 IF (LHOOK) CALL DR_HOOK('READ_TEB_VEG_CONF_N',1,ZHOOK_HANDLE)
 !

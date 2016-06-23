@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_GR_SNOW(HPROGRAM,HSURFTYPE,HPREFIX,TPSNOW  )
+      SUBROUTINE WRITESURF_GR_SNOW (DGU, U, &
+                                    HPROGRAM,HSURFTYPE,HPREFIX,TPSNOW  )
 !     ##########################################################
 !
 !!****  *WRITESURF_GR_SNOW* - routine to write snow surface fields
@@ -31,7 +32,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson       * Meteo France *
+!!      V. Masson       * Meteo France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -41,6 +42,11 @@
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
+!
+!
+!
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_TYPE_SNOW
@@ -58,6 +64,10 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
+!
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
  CHARACTER (LEN=6),  INTENT(IN) :: HPROGRAM   ! program
  CHARACTER (LEN=*),  INTENT(IN) :: HSURFTYPE  ! generic name used for
                                              ! snow characteristics
@@ -72,14 +82,13 @@ INTEGER             :: ISURFTYPE_LEN
 !
  CHARACTER (LEN=100) :: YFMT           ! format for writing
  CHARACTER(LEN=12)   :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=100):: YCOMMENT         ! Comment string
- CHARACTER(LEN=100):: YCOMMENTUNIT     ! Comment string : unit of the datas in the field to write
+ CHARACTER(LEN=100)  :: YCOMMENT       ! Comment string
+ CHARACTER(LEN=100):: YCOMMENTUNIT     ! Comment string : unit of the datas in the field to write 
 INTEGER             :: IRESP          ! IRESP  : return-code if a problem appears
 !
 LOGICAL             :: GSNOW          ! T --> snow exists somewhere
 !
 INTEGER             :: JLAYER         ! loop counter
-CHARACTER(LEN=4)    :: YPATCH              ! number of the patch
  CHARACTER(LEN=4)    :: YNLAYER        ! String depending on the number of layer : less
                                       !than 10 or more                              
 !
@@ -89,7 +98,7 @@ IF (LHOOK) CALL DR_HOOK('WRITESURF_GR_SNOW',0,ZHOOK_HANDLE)
 !
 !*       1.    Initialisation
 !              --------------
-
+!
 ISURFTYPE_LEN = LEN_TRIM(HSURFTYPE)
 !
 !
@@ -100,7 +109,8 @@ WRITE(YFMT,'(A5,I1,A4)') '(A3,A',ISURFTYPE_LEN,',A4)'
 WRITE(YRECFM,YFMT) 'SN_',HSURFTYPE,'_TYP'
 YRECFM=ADJUSTL(HPREFIX//YRECFM)
 YCOMMENT=' '
- CALL WRITE_SURF(HPROGRAM,YRECFM,TPSNOW%SCHEME,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,TPSNOW%SCHEME,IRESP,HCOMMENT=YCOMMENT)
 !
 !
 !*       3.    Number of layers
@@ -110,7 +120,8 @@ WRITE(YFMT,'(A5,I1,A4)') '(A3,A',ISURFTYPE_LEN,',A2)'
 WRITE(YRECFM,YFMT) 'SN_',HSURFTYPE,'_N'
 YRECFM=ADJUSTL(HPREFIX//YRECFM)
 YCOMMENT    = '(INTEGER)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,TPSNOW%NLAYER,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,TPSNOW%NLAYER,IRESP,HCOMMENT=YCOMMENT)
 !
 !
 !*       4.    Tests to find if there is snow
@@ -126,7 +137,8 @@ WRITE(YFMT,'(A5,I1,A1)') '(A3,A',ISURFTYPE_LEN,')'
 WRITE(YRECFM,YFMT) 'SN_',HSURFTYPE
 YRECFM=ADJUSTL(HPREFIX//YRECFM)
 YCOMMENT    = '(LOGICAL)'
- CALL WRITE_SURF(HPROGRAM,YRECFM,GSNOW,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,YRECFM,GSNOW,IRESP,HCOMMENT=YCOMMENT)
 !
 !
 IF (.NOT. GSNOW) THEN
@@ -139,91 +151,100 @@ END IF
 !              ---------------
 !
 YCOMMENT    = '(LOGICAL)'
- CALL WRITE_SURF(HPROGRAM,'LSNOW_FRAC_T',LSNOW_FRAC_TOT,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(DGU, U, &
+                 HPROGRAM,'LSNOW_FRAC_T',LSNOW_FRAC_TOT,IRESP,HCOMMENT=YCOMMENT)
 !
 !
 IF (TPSNOW%SCHEME=='1-L' .OR. TPSNOW%SCHEME=='D95' .OR. TPSNOW%SCHEME=='EBA' .OR. &
-    TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
-  !
-  !
-  !*       6.    Snow reservoir
-  !              --------------
-  !
-  YRECFM=ADJUSTL(HPREFIX//'WSN_'//HSURFTYPE)
-  YCOMMENT='X_Y_WSNOW_'//HSURFTYPE
-  YCOMMENTUNIT='kg/m2'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%WSNOW,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
-  !
-  !*       7.    Snow density
-  !              ------------
-  !
-  YRECFM=ADJUSTL(HPREFIX//'RSN_'//HSURFTYPE)
-  YCOMMENT='X_Y_RSNOW_'//HSURFTYPE
-  YCOMMENTUNIT='kg/m2'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%RHO,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
-  !
+      TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+    !
+    !*       6.    Snow reservoir
+    !              --------------
+    !
+    YRECFM=ADJUSTL(HPREFIX//'WSN_'//HSURFTYPE)
+    YCOMMENT='X_Y_WSNOW_'//HSURFTYPE
+    YCOMMENTUNIT='kg/m2'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%WSNOW,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+
+    !
+    !*       7.    Snow density
+    !              ------------
+    !
+    !
+    YRECFM=ADJUSTL(HPREFIX//'RSN_'//HSURFTYPE)
+    YCOMMENT='X_Y_RSNOW_'//HSURFTYPE
+    YCOMMENTUNIT='kg/m2'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%RHO,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    !
 END IF
-!
-!*       8.    Snow temperature
-!              ----------------
-!
-IF (TPSNOW%SCHEME=='1-L') THEN
   !
-  YRECFM=ADJUSTL(HPREFIX//'TSN_'//HSURFTYPE)
-  YCOMMENT='X_Y_TSNOW_'//HSURFTYPE
-  YCOMMENTUNIT='kg/m2'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%T,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+  !*       8.    Snow temperature
+  !              ----------------
   !
-END IF
-!
-!*       9.    Heat content
-!              ------------
-!
-IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+  IF (TPSNOW%SCHEME=='1-L') THEN
   !
-  YRECFM=ADJUSTL(HPREFIX//'HSN_'//HSURFTYPE)
-  YCOMMENT='X_Y_HSNOW_'//HSURFTYPE
-  YCOMMENTUNIT='kg/m2'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%HEAT,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    YRECFM=ADJUSTL(HPREFIX//'TSN_'//HSURFTYPE)
+    YCOMMENT='X_Y_TSNOW_'//HSURFTYPE
+    YCOMMENTUNIT='kg/m2'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%T,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+  !    !
+  END IF
   !
-END IF
-!
-IF (TPSNOW%SCHEME=='CRO') THEN
+  IF (TPSNOW%SCHEME=='3-L' .OR. TPSNOW%SCHEME=='CRO') THEN
+    !
+    !*       9.    Heat content
+    !              ------------         
+    !
+    YRECFM=ADJUSTL(HPREFIX//'HSN_'//HSURFTYPE)
+    YCOMMENT='X_Y_HSNOW_'//HSURFTYPE
+    YCOMMENTUNIT='kg/m2'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%HEAT,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    !
+    !*       10.    Age parameter
+    !              ---------------
+    !
+    YRECFM=ADJUSTL(HPREFIX//'SAG_'//HSURFTYPE)
+    YCOMMENT='X_Y_SAGE_'//HSURFTYPE
+    YCOMMENTUNIT='-'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%AGE,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    !
+  END IF
   !
-  !
-  !*       10.    Snow Gran1
-  !              ----------
-  !
-  YRECFM=ADJUSTL(HPREFIX//'SG1_'//HSURFTYPE)
-  YCOMMENT='X_Y_SGRAN1_'//HSURFTYPE
-  YCOMMENTUNIT='-'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%GRAN1,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
-  !
-  !*       11.    Snow Gran2
-  !              ------------
-  !
-  YRECFM=ADJUSTL(HPREFIX//'SG2_'//HSURFTYPE)
-  YCOMMENT='X_Y_SGRAN2_'//HSURFTYPE
-  YCOMMENTUNIT='-'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%GRAN2,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
-  !
-  !*       12.   Historical parameter
-  !              -------------------
-  !
+  IF (TPSNOW%SCHEME=='CRO') THEN
+    !
+    !*       11.    Snow Gran1
+    !              ----------
+    !
+    YRECFM=ADJUSTL(HPREFIX//'SG1_'//HSURFTYPE)
+    YCOMMENT='X_Y_SGRAN1_'//HSURFTYPE
+    YCOMMENTUNIT='-'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%GRAN1,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    !
+    !*       12.    Snow Gran2
+    !              ------------
+    !
+    YRECFM=ADJUSTL(HPREFIX//'SG2_'//HSURFTYPE)
+    YCOMMENT='X_Y_SGRAN2_'//HSURFTYPE
+    YCOMMENTUNIT='-'
+    CALL WRITE_SURF_FIELD3D(DGU, U, &
+            HPROGRAM,TPSNOW%GRAN2,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+    !
+    !*       13.   Historical parameter
+    !              -------------------
+    !
   YRECFM=ADJUSTL(HPREFIX//'SHI_'//HSURFTYPE)
   YCOMMENT='X_Y_SHIST_'//HSURFTYPE
   YCOMMENTUNIT='-'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%HIST,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+  CALL WRITE_SURF_FIELD3D(DGU, U, &
+          HPROGRAM,TPSNOW%HIST,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
+  END IF
   !
-  !*       13.    Age parameter
-  !              ---------------
-  !
-  YRECFM=ADJUSTL(HPREFIX//'SAG_'//HSURFTYPE)
-  YCOMMENT='X_Y_SAGE_'//HSURFTYPE
-  YCOMMENTUNIT='-'
-  CALL WRITE_SURF_FIELD3D(HPROGRAM,TPSNOW%AGE,1,TPSNOW%NLAYER,YRECFM,YCOMMENT,YCOMMENTUNIT)
-  !
-END IF
 !
 !
 !*       14.    Albedo
@@ -235,7 +256,8 @@ IF (TPSNOW%SCHEME=='D95' .OR. TPSNOW%SCHEME=='EBA' .OR. TPSNOW%SCHEME=='1-L' .OR
   YRECFM=ADJUSTL(HPREFIX//'ASN_'//HSURFTYPE)
   YCOMMENT='X_Y_ASNOW_'//HSURFTYPE
   YCOMMENTUNIT='no unit'
-  CALL WRITE_SURF_FIELD2D(HPROGRAM,TPSNOW%ALB,YRECFM,YCOMMENT,YCOMMENTUNIT)
+  CALL WRITE_SURF_FIELD2D(DGU, U, &
+          HPROGRAM,TPSNOW%ALB,YRECFM,YCOMMENT,YCOMMENTUNIT)
   !
 END IF
 !

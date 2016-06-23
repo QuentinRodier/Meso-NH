@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE FLAG_TEB_GARDEN_n(KFLAG)
+      SUBROUTINE FLAG_TEB_GARDEN_n (TGD, TGDO, TGDPE, T, TVG, &
+                                    KFLAG)
 !     ##################################
 !
 !!****  *FLAG_TEB_GARDEN_n* - routine to flag ISBA variables where gardens are
@@ -29,7 +30,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -41,15 +42,14 @@
 !              ------------
 !
 !
+!
+USE MODD_TEB_GARDEN_n, ONLY : TEB_GARDEN_t
+USE MODD_TEB_GARDEN_OPTION_n, ONLY : TEB_GARDEN_OPTIONS_t
+USE MODD_TEB_GARDEN_PGD_EVOL_n, ONLY : TEB_GARDEN_PGD_EVOL_t
+USE MODD_TEB_n, ONLY : TEB_t
+USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+!
 USE MODD_CO2V_PAR,       ONLY : XANFMINIT, XCONDCTMIN
-USE MODD_TEB_n,          ONLY : XGARDEN
-USE MODD_TEB_VEG_n,      ONLY : CPHOTO, CISBA, CRESPSL
-USE MODD_TEB_GARDEN_n,   ONLY : NGROUND_LAYER,                      &
-                                XTG, XWG, XWGI, XWR, XLAI, TSNOW,   &
-                                XRESA, XANFM, XAN, XLE, XANDAY,     &
-                                XBSLAI, XBIOMASS, XRESP_BIOMASS,    &
-                                XSNOWFREE_ALB, XSNOWFREE_ALB_VEG,   &
-                                XSNOWFREE_ALB_SOIL
 !                                
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -62,6 +62,13 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
+TYPE(TEB_GARDEN_t), INTENT(INOUT) :: TGD
+TYPE(TEB_GARDEN_OPTIONS_t), INTENT(INOUT) :: TGDO
+TYPE(TEB_GARDEN_PGD_EVOL_t), INTENT(INOUT) :: TGDPE
+TYPE(TEB_t), INTENT(INOUT) :: T
+TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
 !
 INTEGER, INTENT(IN) :: KFLAG ! 1 : to put physical values to run ISBA afterwards
 !                            ! 2 : to flag with XUNDEF value for points wihtout garden
@@ -99,38 +106,38 @@ ENDIF
 !-------------------------------------------------------------------------------
 !     
   !
-  DO JL1=1,NGROUND_LAYER
-    WHERE (XGARDEN(:)==0.) 
-      XTG (:,JL1) = ZTG
-      XWG (:,JL1) = ZWG
-      XWGI(:,JL1) = ZDEF
+  DO JL1=1,TGDO%NGROUND_LAYER
+    WHERE (T%CUR%XGARDEN(:)==0.) 
+      TGD%CUR%XTG (:,JL1) = ZTG
+      TGD%CUR%XWG (:,JL1) = ZWG
+      TGD%CUR%XWGI(:,JL1) = ZDEF
     END WHERE
   END DO
   !
-  WHERE (XGARDEN(:)==0.) 
-    XWR  (:) = ZWR
-    XRESA(:) = ZRESA
+  WHERE (T%CUR%XGARDEN(:)==0.) 
+    TGD%CUR%XWR  (:) = ZWR
+    TGD%CUR%XRESA(:) = ZRESA
   END WHERE
   !
-  IF (CPHOTO/='NON') THEN
+  IF (TVG%CPHOTO/='NON') THEN
     !
-    WHERE (XGARDEN(:)==0.)
-      XANFM (:) = ZANFM              
-      XAN   (:) = ZDEF
-      XANDAY(:) = ZDEF
-      XLE   (:) = ZDEF
+    WHERE (T%CUR%XGARDEN(:)==0.)
+      TGD%CUR%XANFM (:) = ZANFM              
+      TGD%CUR%XAN   (:) = ZDEF
+      TGD%CUR%XANDAY(:) = ZDEF
+      TGD%CUR%XLE   (:) = ZDEF
     END WHERE
     !
-    IF (CPHOTO=='LAI' .OR. CPHOTO=='LST' .OR. CPHOTO=='NIT' .OR. CPHOTO=='NCB') THEN
+    IF (TVG%CPHOTO=='LAI' .OR. TVG%CPHOTO=='LST' .OR. TVG%CPHOTO=='NIT' .OR. TVG%CPHOTO=='NCB') THEN
       !
-      WHERE (XGARDEN(:)==0.) XLAI(:) = ZDEF
+      WHERE (T%CUR%XGARDEN(:)==0.) TGDPE%CUR%XLAI(:) = ZDEF
       !
-    ELSE IF (CPHOTO=='AGS' .OR. CPHOTO=='AST') THEN
+    ELSE IF (TVG%CPHOTO=='AGS' .OR. TVG%CPHOTO=='AST') THEN
       !
-      DO JL1=1,SIZE(XBIOMASS,2)
-        WHERE (XGARDEN(:)==0.)
-          XBIOMASS     (:,JL1) = ZDEF
-          XRESP_BIOMASS(:,JL1) = ZDEF
+      DO JL1=1,SIZE(TGD%CUR%XBIOMASS,2)
+        WHERE (T%CUR%XGARDEN(:)==0.)
+          TGD%CUR%XBIOMASS     (:,JL1) = ZDEF
+          TGD%CUR%XRESP_BIOMASS(:,JL1) = ZDEF
         END WHERE
       END DO
       !
@@ -143,19 +150,19 @@ ENDIF
 !
 !* Flag snow characteristics
 !
- CALL FLAG_GR_SNOW(KFLAG,XGARDEN(:)==0.,TSNOW)
+ CALL FLAG_GR_SNOW(KFLAG,T%CUR%XGARDEN(:)==0.,TGD%CUR%TSNOW)
 !
 !
 !* snow-free characteristics
 !
 IF (KFLAG==1) THEN
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB      = 0.2
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB_VEG  = 0.2
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB_SOIL = 0.2
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB      = 0.2
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB_VEG  = 0.2
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB_SOIL = 0.2
 ELSEIF (KFLAG==2) THEN
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB      = XUNDEF
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB_VEG  = XUNDEF
-  WHERE (XGARDEN==0.) XSNOWFREE_ALB_SOIL = XUNDEF
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB      = XUNDEF
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB_VEG  = XUNDEF
+  WHERE (T%CUR%XGARDEN==0.) TGD%CUR%XSNOWFREE_ALB_SOIL = XUNDEF
 END IF
 !
 !-------------------------------------------------------------------------------

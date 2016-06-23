@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE OPEN_FILE_ASC(KUNIT,HFILE,HFORM,HACTION,HACCESS,KRECL)
 !     #######################################################
@@ -27,11 +27,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
+!       10/14 : test if file exist if 'read'
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -61,9 +62,19 @@ INTEGER,           INTENT(IN) :: KRECL    ! record length
 !
 INTEGER :: ILUOUT
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+LOGICAL :: LEXIST
+
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('OPEN_FILE_ASC',0,ZHOOK_HANDLE)
+!
+IF(HACTION=='READ     ') THEN
+        INQUIRE (FILE=HFILE,EXIST=LEXIST)
+        IF (.NOT. LEXIST ) THEN
+        CALL ABOR1_SFX ('ERROR WHILE OPENING '//HFILE//' THIS FILE IS MISSING'// &
+                  ' IN THE RUN DIRECTORY')
+        ENDIF
+ENDIF
 KUNIT = 21
 !
 IF (HFORM=='FORMATTED') THEN

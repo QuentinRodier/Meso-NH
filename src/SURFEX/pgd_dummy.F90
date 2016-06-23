@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_DUMMY(HPROGRAM)
+      SUBROUTINE PGD_DUMMY (DTCO, DUU, UG, U, USS, &
+                            HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_DUMMY* monitor for averaging and interpolations of physiographic fields
@@ -39,10 +40,17 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DUMMY_SURF_FIELDS_n, ONLY : DUMMY_SURF_FIELDS_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_PGD_GRID,           ONLY : NL
 USE MODD_PGDWORK,            ONLY : CATYPE
 USE MODD_SURF_PAR,           ONLY : XUNDEF
-USE MODD_DUMMY_SURF_FIELDS_n, ONLY : NDUMMY_NBR, CDUMMY_AREA, CDUMMY_NAME, XDUMMY_FIELDS
 !
 USE MODI_GET_LUOUT
 USE MODI_PGD_FIELD
@@ -56,6 +64,13 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DUMMY_SURF_FIELDS_t), INTENT(INOUT) :: DUU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !
@@ -94,26 +109,29 @@ IF (LHOOK) CALL DR_HOOK('PGD_DUMMY',0,ZHOOK_HANDLE)
  CALL READ_NAM_PGD_DUMMY(HPROGRAM, IDUMMY_NBR, YDUMMY_NAME, YDUMMY_AREA, &
                           CDUMMY_ATYPE, CDUMMY_FILE, CDUMMY_FILETYPE      )  
 !
-NDUMMY_NBR     = IDUMMY_NBR
-CDUMMY_NAME(:) = YDUMMY_NAME(:)
-CDUMMY_AREA(:) = YDUMMY_AREA(:)
+DUU%NDUMMY_NBR     = IDUMMY_NBR
+ALLOCATE(DUU%CDUMMY_NAME(DUU%NDUMMY_NBR))
+ALLOCATE(DUU%CDUMMY_AREA(DUU%NDUMMY_NBR))
+DUU%CDUMMY_NAME(:) = YDUMMY_NAME(1:DUU%NDUMMY_NBR)
+DUU%CDUMMY_AREA(:) = YDUMMY_AREA(1:DUU%NDUMMY_NBR)
 !
 !-------------------------------------------------------------------------------
 !
 !*    3.      Allocation
 !             ----------
 !
-ALLOCATE(XDUMMY_FIELDS(NL,NDUMMY_NBR))
+ALLOCATE(DUU%XDUMMY_FIELDS(NL,DUU%NDUMMY_NBR))
 !
 !-------------------------------------------------------------------------------
 !
 !*    4.      Computations
 !             ------------
 !
-DO JNBR=1,NDUMMY_NBR
+DO JNBR=1,DUU%NDUMMY_NBR
   CATYPE = CDUMMY_ATYPE(JNBR)
-  CALL PGD_FIELD(HPROGRAM,CDUMMY_NAME(JNBR),CDUMMY_AREA(JNBR),CDUMMY_FILE(JNBR), &
-                   CDUMMY_FILETYPE(JNBR),XUNDEF,XDUMMY_FIELDS(:,JNBR)              )  
+  CALL PGD_FIELD(DTCO, UG, U, USS, &
+                 HPROGRAM,DUU%CDUMMY_NAME(JNBR),DUU%CDUMMY_AREA(JNBR),CDUMMY_FILE(JNBR), &
+                   CDUMMY_FILETYPE(JNBR),XUNDEF,DUU%XDUMMY_FIELDS(:,JNBR)              )  
   CATYPE = 'ARI'
 END DO
 IF (LHOOK) CALL DR_HOOK('PGD_DUMMY',1,ZHOOK_HANDLE)

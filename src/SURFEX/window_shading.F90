@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
 SUBROUTINE WINDOW_SHADING(PSHGC, PSHGC_SH, O_SHADE, PALB_WALL,      &
                           PABS_WIN, PABS_WINSH, PALB_WIN, PTRAN_WIN )
@@ -41,7 +41,7 @@ SUBROUTINE WINDOW_SHADING(PSHGC, PSHGC_SH, O_SHADE, PALB_WALL,      &
 !!    AUTHOR
 !!    ------
 !!
-!!	B. Bueno           * Meteo-France *
+!!      B. Bueno           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------

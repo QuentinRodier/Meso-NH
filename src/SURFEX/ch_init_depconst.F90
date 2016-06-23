@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
        SUBROUTINE CH_INIT_DEPCONST(KCH,KLUOUT,HSV)
 !!    ##################################################
@@ -80,11 +80,13 @@ REAL             , DIMENSION(:), ALLOCATABLE :: ZREACTVAL
 !
 INTEGER :: IHENRY         ! number of chemical Henry constant to be read
  CHARACTER(LEN=40), DIMENSION(:), ALLOCATABLE :: YHENRYNAME !species names
+ character(len=50) :: yname
 REAL             , DIMENSION(:,:), ALLOCATABLE :: ZHENRYVAL
                           !chemical Henry constant value
 !
 INTEGER :: JI, JN, JNREAL ! loop control variables
 INTEGER :: INACT          ! array pointer
+logical :: lopened
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -93,6 +95,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------
 !
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEPCONST',0,ZHOOK_HANDLE)
+!$OMP SINGLE
 IF(.NOT. ALLOCATED(XSREALMASSMOLVAL)) ALLOCATE( XSREALMASSMOLVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALREACTVAL)  ) ALLOCATE( XSREALREACTVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
@@ -102,7 +105,7 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 !
 ! open input file
   WRITE(KLUOUT,*) &
-       "CH_INIT_CONST: reading  molar mass"  
+       "CH_INIT_CONST: reading  molar mass" 
   CALL CH_OPEN_INPUTB("MASS_MOL", KCH, KLUOUT)
 !
 ! read number of molecular diffusivity IMASS
@@ -112,12 +115,15 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 ! read data input format
   READ(KCH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
+!$OMP END SINGLE COPYPRIVATE(IMASS,YFORMAT)
 !
 ! allocate fields
   ALLOCATE(YMASSMOLNAME(IMASS))
   ALLOCATE(ZMASSMOLVAL(IMASS))
 !
+inquire(KCH,NAME=YNAME,opened=lopened)
 ! read molecular diffusivity
+!$OMP SINGLE
   DO JI = 1, IMASS
     READ(KCH,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
     WRITE(KLUOUT,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
@@ -129,6 +135,8 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
     WRITE(KLUOUT,'(A)') 'molecular mass (in g/mol) for molecular diffusion'
     WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
     WRITE(KLUOUT,'(A)') YOUTFORMAT
+!$OMP END SINGLE COPYPRIVATE(YMASSMOLNAME,ZMASSMOLVAL)
+!
   XSREALMASSMOLVAL(:) = 50. ! default molecular mass 
   DO JNREAL = 1, SIZE(HSV,1)
     INACT = 0
@@ -148,6 +156,7 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 !*       3.  read molecular reactivity factor REA_FACT
 !
 ! open input file
+!$OMP SINGLE
    WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading  reactivity factor "  
   CALL CH_OPEN_INPUTB("REA_FACT", KCH, KLUOUT)
@@ -159,22 +168,25 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 ! read data input format
   READ(KCH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
+!$OMP END SINGLE COPYPRIVATE(IREACT,YFORMAT)
 !
 ! allocate fields
   ALLOCATE(YREACTNAME(IREACT))
   ALLOCATE(ZREACTVAL(IREACT))
 ! read reactivity factor 
+!$OMP SINGLE
   DO JI = 1, IREACT
     READ(KCH,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
     WRITE(KLUOUT,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
   END DO
-!
 !
     WRITE(KLUOUT,'(A)') '----------------------------------------------------'
     WRITE(KLUOUT,'(A)') 'REA_FACT'
     WRITE(KLUOUT,'(A)') 'reactivity factor'
     WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
     WRITE(KLUOUT,'(A)') YOUTFORMAT
+!$OMP END SINGLE COPYPRIVATE(YREACTNAME,ZREACTVAL)
+!    
   XSREALREACTVAL(:) = 0.0 ! default (high surface resistance)
   DO JNREAL = 1, SIZE(HSV,1)
     INACT = 0
@@ -197,6 +209,7 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
   WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading effective Henry constant", &
        " and its temperature correction "  
+!$OMP SINGLE
   CALL CH_OPEN_INPUTB("HENRY_SP", KCH, KLUOUT)
 !
 ! read number of molecular diffusivity IHENRY
@@ -206,12 +219,14 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 ! read data input format
   READ(KCH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
+!$OMP END SINGLE COPYPRIVATe(IHENRY,YFORMAT)  
 !
 ! allocate fields
   ALLOCATE(YHENRYNAME(IHENRY))
   ALLOCATE(ZHENRYVAL(IHENRY,2))
 !
 ! read reactivity factor 
+!$OMP SINGLE
   DO JNREAL = 1, IHENRY
     READ(KCH,YFORMAT) YHENRYNAME(JNREAL), ZHENRYVAL(JNREAL,1),&
                              ZHENRYVAL(JNREAL,2)  
@@ -219,12 +234,13 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
                              ZHENRYVAL(JNREAL,2)  
   END DO
 !
-!
   WRITE(KLUOUT,'(A)') '----------------------------------------------------'
   WRITE(KLUOUT,'(A)') 'HENRY_SP'
   WRITE(KLUOUT,'(A)') 'Henrys law constants factor / exponent'
   WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
   WRITE(KLUOUT,'(A)') YOUTFORMAT
+!$OMP END SINGLE COPYPRIVATE(YHENRYNAME,ZHENRYVAL)
+!  
   XSREALHENRYVAL(:,1) = 1E-8 ! no deposition; low Henry constant
   XSREALHENRYVAL(:,2) = 0. ! 
   DO JNREAL = 1, SIZE(HSV,1)

@@ -1,11 +1,11 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE HYDRO_VEG(HRAIN, PTSTEP, PMUF, PRR, PLEV, PLETR,    &
                               PVEG, PPSNV, PWR, PWRMAX, PPG, PDRIP,    &
-                              PRRVEG  )    
+                              PRRVEG, PLVTT  )    
 !     #####################################################################
 !
 !!****  *HYDRO_VEG*  
@@ -43,7 +43,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -66,8 +66,6 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CSTS,ONLY : XLVTT
-!
 USE MODD_SGH_PAR, ONLY : X001
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -85,11 +83,12 @@ IMPLICIT NONE
 REAL, INTENT(IN)                    :: PTSTEP
 !                                      timestep of the integration
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PRR,  PLEV, PLETR, PMUF
+REAL, DIMENSION(:), INTENT(IN)    :: PRR,  PLEV, PLETR, PMUF, PLVTT
 !                                      PRR   = rain rate
 !                                      PLEV = latent heat of evaporation over vegetation
 !                                      PLETR = evapotranspiration of the vegetation
 !                                      PMUF   = fraction of the grid cell reached by the precipitation
+!                                      PLVTT  = latent heat of vaporization (J/kg)
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PVEG, PWRMAX
 !                                      PVEG   = fraction of vegetation
@@ -136,7 +135,7 @@ ZWR   (:) = 0.
 !
 !evaporation rates
 !
-ZER(:)    = (PLEV(:)-PLETR(:))  / XLVTT
+ZER(:)    = (PLEV(:)-PLETR(:))  / PLVTT(:)
 !
 !intercepted rainfall rate
 !

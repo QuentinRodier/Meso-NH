@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_SEAFLUX_UNIF(KLUOUT,HSURF,PFIELD)
 !     #################################################################################
@@ -25,12 +25,13 @@ SUBROUTINE PREP_SEAFLUX_UNIF(KLUOUT,HSURF,PFIELD)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC variables
 !!------------------------------------------------------------------
 !
 
 !
 USE MODD_PREP,       ONLY : CINTERP_TYPE
-USE MODD_PREP_SEAFLUX,   ONLY : XSST_UNIF
+USE MODD_PREP_SEAFLUX,   ONLY : XSST_UNIF, XSSS_UNIF, XSIC_UNIF
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -65,12 +66,25 @@ SELECT CASE(HSURF)
     ALLOCATE(PFIELD(1,1))
     PFIELD = XSST_UNIF
 !
+!*      3.2    Sea surface salinity
+!
+  CASE('SSS    ')
+    ALLOCATE(PFIELD(1,1))
+    PFIELD = XSSS_UNIF
+!
+!
+!*      3.3    Sea Ice Cover
+!
+  CASE('SIC    ')
+    ALLOCATE(PFIELD(1,1))
+    PFIELD = XSIC_UNIF
+!
 END SELECT
 !
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='UNIF  '
+ CINTERP_TYPE='UNIF  '
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_UNIF',1,ZHOOK_HANDLE)
 !
 !

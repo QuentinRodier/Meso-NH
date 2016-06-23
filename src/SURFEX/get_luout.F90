@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_LUOUT(HPROGRAM,KLUOUT)
 !     #######################################################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -42,10 +42,10 @@
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODI_LFIGET_LUOUT
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_MNHGET_LUOUT
 #endif
 !
@@ -65,15 +65,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('GET_LUOUT',0,ZHOOK_HANDLE)
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL MNHGET_LUOUT(HPROGRAM,KLUOUT)
 #endif
 ELSE IF (HPROGRAM=='AROME ') THEN
-#ifdef ARO
+#ifdef SFX_ARO
   CALL AROGET_LUOUT(HPROGRAM,KLUOUT)
 #endif
 ELSE IF (HPROGRAM=='LFI   ') THEN
-#ifdef LFI
+#ifdef SFX_LFI
   CALL LFIGET_LUOUT(HPROGRAM,KLUOUT)
 #endif
 ELSE

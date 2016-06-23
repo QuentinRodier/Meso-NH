@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###############################################################################
 SUBROUTINE CIRCUMSOLAR_RAD(PDIR_SW, PSCA_SW, PZENITH, PF1_o_B)
 !     ###############################################################################
@@ -85,7 +85,7 @@ ENDDO
 
 IF (LHOOK) CALL DR_HOOK('MODE_CONV_DOE:CHTC_VERT_DOE',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
-CONTAINS
+ CONTAINS
 SUBROUTINE FIJ(PE, PF11, PF13)
 REAL, DIMENSION(:), INTENT(IN) :: PE !sky clearness factor
 REAL, DIMENSION(:), INTENT(OUT):: PF11

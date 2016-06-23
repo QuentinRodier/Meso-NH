@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE AVERAGE2_OROGRAPHY
+      SUBROUTINE AVERAGE2_OROGRAPHY (USS)
 !     #########################
 !
 !!**** *AVERAGE2_OROGRAPHY* computes the cover fractions
@@ -38,8 +38,10 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_PGDWORK,       ONLY : NSIZE, XSUMVAL, XSUMVAL2, LSSQO, XSSQO, NSSO
-USE MODD_SURF_ATM_SSO_n, ONLY : XAVG_ZS, XSSO_STDEV, XSIL_ZS
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -53,6 +55,9 @@ IMPLICIT NONE
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
+!
+!
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
 INTEGER                  :: JL
 REAL,    DIMENSION(NSSO) :: ZMAXX
@@ -68,7 +73,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('AVERAGE2_OROGRAPHY',0,ZHOOK_HANDLE)
 WHERE (NSIZE(:)/=0)
-  XAVG_ZS(:)=XSUMVAL(:)/NSIZE(:)
+  USS%XAVG_ZS(:)=XSUMVAL(:)/NSIZE(:)
 END WHERE
 !
 !-------------------------------------------------------------------------------
@@ -77,7 +82,7 @@ END WHERE
 !            ------------------
 !
 WHERE (NSIZE(:)/=0)
-  XSSO_STDEV(:)=SQRT( MAX(0.,XSUMVAL2(:)/NSIZE(:) - XAVG_ZS(:)*XAVG_ZS(:)) )
+  USS%XSSO_STDEV(:)=SQRT( MAX(0.,XSUMVAL2(:)/NSIZE(:) - USS%XAVG_ZS(:)*USS%XAVG_ZS(:)) )
 END WHERE
 !
 !-------------------------------------------------------------------------------
@@ -85,13 +90,13 @@ END WHERE
 !*    3.     Silhouette orography
 !            --------------------
 !
-DO JL=1,SIZE(XSIL_ZS)
+DO JL=1,SIZE(USS%XSIL_ZS)
   IF (NSIZE(JL)==0) CYCLE
   ZMAXX(:) = MAXVAL(XSSQO(:,:,JL),DIM=2)
   GSEGX(:) = ANY   (LSSQO(:,:,JL),DIM=2)
   ZMAXY(:) = MAXVAL(XSSQO(:,:,JL),DIM=1)
   GSEGY(:) = ANY   (LSSQO(:,:,JL),DIM=1)
-  XSIL_ZS(JL) =0.5*(  SUM(ZMAXX(:),MASK=GSEGX(:)) / COUNT(GSEGX(:)) &
+  USS%XSIL_ZS(JL) =0.5*(  SUM(ZMAXX(:),MASK=GSEGX(:)) / COUNT(GSEGX(:)) &
                       + SUM(ZMAXY(:),MASK=GSEGY(:)) / COUNT(GSEGY(:)) )  
   
 END DO

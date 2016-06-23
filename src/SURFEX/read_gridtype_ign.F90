@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################################
-      SUBROUTINE READ_GRIDTYPE_IGN(HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
+      SUBROUTINE READ_GRIDTYPE_IGN (&
+                                    HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
 !     ################################################################
 !
 !!****  *READ_GRIDTYPE_IGN* - routine to initialise the horizontal grid
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	E. Martin   *Meteo France*	
+!!      E. Martin   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,6 +38,9 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
 !
 USE MODI_READ_SURF
 USE MODI_GET_LUOUT
@@ -53,6 +57,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
 !
  CHARACTER(LEN=6),       INTENT(IN)    :: HPROGRAM   ! calling program
 INTEGER,                INTENT(INOUT) :: KGRID_PAR  ! real size of PGRID_PAR
@@ -81,7 +87,8 @@ INTEGER                           :: IDIMX    ! maximum domain length in X
 INTEGER                           :: IDIMY    ! maximum domain length in Y
 INTEGER                           :: ILUOUT
 !---------------------------------------------------------------------------
-REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR
+REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
+!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !
@@ -89,33 +96,45 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_IGN',0,ZHOOK_HANDLE)
- CALL READ_SURF(HPROGRAM,'LAMBERT',ILAMBERT,KRESP,HDIR=HDIR)
+ CALL READ_SURF(&
+                HPROGRAM,'LAMBERT',ILAMBERT,KRESP,HDIR=HDIR)
 !
 !---------------------------------------------------------------------------
 !
 !*       2.    Reading parameters of the grid
 !              ------------------------------
 !
- CALL READ_SURF(HPROGRAM,'XX',ZX,KRESP,HDIR=HDIR)
- CALL READ_SURF(HPROGRAM,'XY',ZY,KRESP,HDIR=HDIR)
+ CALL READ_SURF(&
+                HPROGRAM,'XX',ZX,KRESP,HDIR=HDIR)
+ CALL READ_SURF(&
+                HPROGRAM,'XY',ZY,KRESP,HDIR=HDIR)
 !
- CALL READ_SURF(HPROGRAM,'DX',ZDX,KRESP,HDIR=HDIR)
- CALL READ_SURF(HPROGRAM,'DY',ZDY,KRESP,HDIR=HDIR)
+ CALL READ_SURF(&
+                HPROGRAM,'DX',ZDX,KRESP,HDIR=HDIR)
+ CALL READ_SURF(&
+                HPROGRAM,'DY',ZDY,KRESP,HDIR=HDIR)
 !
 !---------------------------------------------------------------------------
 !
 !*       7.    maximum domain lengths
 !              ----------------------
 !
- CALL GET_XYALL_IGN(ZX,ZY,ZDX,ZDY,ZXALL,ZYALL,IDIMX,IDIMY)
+IF (HDIR=='A') THEN
+  CALL GET_XYALL_IGN(ZX,ZY,ZDX,ZDY,ZXALL,ZYALL,IDIMX,IDIMY)
+ CALL PUT_GRIDTYPE_IGN(ZGRID_PAR,ILAMBERT,ZX,ZY,ZDX,ZDY,        &
+                      IDIMX,IDIMY,ZXALL(1:IDIMX),ZYALL(1:IDIMY))
+ELSE
+  IDIMX = 0
+  IDIMY = 0
+  CALL PUT_GRIDTYPE_IGN(ZGRID_PAR,ILAMBERT,ZX,ZY,ZDX,ZDY,        &
+                      IDIMX,IDIMY,ZXALL,ZYALL)
+ENDIF
 !
 !--------------------------------------------------------------------------
 !
 !*       4.    All this information stored into pointer PGRID_PAR
 !              --------------------------------------------------
 !
- CALL PUT_GRIDTYPE_IGN(ZGRID_PAR,ILAMBERT,ZX,ZY,ZDX,ZDY,        &
-                      IDIMX,IDIMY,ZXALL(1:IDIMX),ZYALL(1:IDIMY))
 !
 !---------------------------------------------------------------------------
 IF (OREAD) THEN

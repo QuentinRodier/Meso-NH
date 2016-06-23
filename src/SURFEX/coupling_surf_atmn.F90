@@ -1,14 +1,15 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE COUPLING_SURF_ATM_n(HPROGRAM, HCOUPLING, PTIMEC,                                &
+SUBROUTINE COUPLING_SURF_ATM_n (YSC, &
+                                HPROGRAM, HCOUPLING, PTIMEC,                                &
                PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH,           &
                PZENITH2,PAZIM,PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2,       &
                HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,              &
                PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-               PTRAD, PDIR_ALB, PSCA_ALB, PEMIS,                                           &
+               PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                PPEW_A_COEF, PPEW_B_COEF,                                                   &
                PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
                HTEST                                                                       )
@@ -36,30 +37,27 @@ SUBROUTINE COUPLING_SURF_ATM_n(HPROGRAM, HCOUPLING, PTIMEC,                     
 !!      Original    01/2004
 !!      Modified    09/2011 by S.Queguiner: Add total CO2 surface flux (anthropo+biogenic) as diagnostic
 !!      Modified    11/2011 by S.Queguiner: Add total Chemical surface flux (anthropo) as diagnostic
+!!      B. Decharme 04/2013 new coupling variables and replace RW_PRECIP_n by CPL_GCM_n
+!!      Modified    06/2013 by J.Escobar  : replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      R. Séférian 03/2014 Adding decoupling between CO2 seen by photosynthesis and radiative CO2
 !!-------------------------------------------------------------
+!
+!
+USE MODD_SURFEX_n, ONLY : SURFEX_t
 !
 USE MODD_SURF_CONF,      ONLY : CPROGNAME
 USE MODD_SURF_PAR,       ONLY : XUNDEF
-USE MODD_CSTS,           ONLY : XP00, XCPD, XRD, XAVOGADRO
-USE MODD_SURF_ATM_GRID_n,ONLY : XLON
-USE MODD_SURF_ATM_n,     ONLY : NDIM_SEA, NDIM_WATER, NDIM_TOWN, NDIM_NATURE, &
-                                NSIZE_SEA, NSIZE_WATER, NSIZE_TOWN, NSIZE_NATURE, &
-                                NR_SEA,    NR_WATER,    NR_TOWN,    NR_NATURE,    &
-                                XSEA,      XWATER,      XTOWN,      XNATURE,      &
-                                TTIME, NSIZE_FULL
-USE MODD_SURF_ATM_SSO_n, ONLY : CROUGH
+USE MODD_CSTS,           ONLY : XP00, XCPD, XRD, XAVOGADRO, XMD
+USE MODD_CO2V_PAR,       ONLY : XMCO2 
+USE MODD_SURF_ATM,       ONLY : LCPL_GCM, XCO2UNCPL
 USE MODD_DATA_COVER_PAR, ONLY : NTILESFC
-USE MODD_SV_n,           ONLY : NBEQ,NSV_CHSBEG,NSV_CHSEND, &
-                                NDSTEQ,NSV_DSTBEG,NSV_DSTEND,&
-                                NAEREQ,NSV_AERBEG,NSV_AEREND, CSV
 !
-USE MODD_CH_SURF_n,      ONLY : LCH_SURF_EMIS, LCH_EMIS, CCH_EMIS
-USE MODD_CH_EMIS_FIELD_n,ONLY : TSEMISS
 !
 USE MODD_SURFEX_MPI, ONLY : XTIME_SEA, XTIME_WATER, XTIME_NATURE, XTIME_TOWN
 !
 USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_AVERAGE_FLUX
+USE MODI_AVERAGE_PHY
 USE MODI_AVERAGE_RAD
 USE MODI_DIAG_INLINE_SURF_ATM_n
 USE MODI_CH_EMISSION_FLUX_n
@@ -67,8 +65,6 @@ USE MODI_CH_EMISSION_SNAP_n
 USE MODI_CH_EMISSION_TO_ATM_n
 USE MODI_SSO_Z0_FRICTION_n
 USE MODI_SSO_BE04_FRICTION_n
-!
-USE MODI_RW_PRECIP_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -83,13 +79,17 @@ USE MODI_COUPLING_SEA_n
 !
 USE MODI_COUPLING_TOWN_n
 !
+USE MODI_CPL_GCM_n
+!
 IMPLICIT NONE
 !
-#ifndef NOMPI
+#ifdef SFX_MPI
 INCLUDE 'mpif.h'
 #endif
 !
 !*      0.1    declarations of arguments
+!
+TYPE(SURFEX_t), INTENT(INOUT) :: YSC
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -131,21 +131,26 @@ REAL, DIMENSION(KI), INTENT(IN)  :: PPS       ! pressure at atmospheric model su
 REAL, DIMENSION(KI), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(KI), INTENT(IN)  :: PZS       ! atmospheric model orography           (m)
 REAL, DIMENSION(KI), INTENT(IN)  :: PCO2      ! CO2 concentration in the air          (kg/m3)
-REAL, DIMENSION(KI), INTENT(INOUT) :: PSNOW     ! snow precipitation                    (kg/m2/s)
-REAL, DIMENSION(KI), INTENT(INOUT) :: PRAIN     ! liquid precipitation                  (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(IN)  :: PSNOW     ! snow precipitation                    (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(IN)  :: PRAIN     ! liquid precipitation                  (kg/m2/s)
 !
 !
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTH     ! flux of heat                          (W/m2)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFU      ! zonal momentum flux                   (Pa)
 REAL, DIMENSION(KI), INTENT(OUT) :: PSFV      ! meridian momentum flux                (Pa)
-REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (kg/m2/s)
+REAL, DIMENSION(KI), INTENT(OUT) :: PSFCO2    ! flux of CO2                           (m/s*kg_CO2/kg_air)
 REAL, DIMENSION(KI,KSV),INTENT(OUT):: PSFTS   ! flux of scalar var.                   (kg/m2/s)
 !
 REAL, DIMENSION(KI), INTENT(INOUT) :: PTRAD     ! radiative temperature                 (K)
-REAL, DIMENSION(KI,KSW),INTENT(OUT):: PDIR_ALB! direct albedo for each spectral band  (-)
-REAL, DIMENSION(KI,KSW),INTENT(OUT):: PSCA_ALB! diffuse albedo for each spectral band (-)
+REAL, DIMENSION(KI,KSW),INTENT(OUT):: PDIR_ALB  ! direct albedo for each spectral band  (-)
+REAL, DIMENSION(KI,KSW),INTENT(OUT):: PSCA_ALB  ! diffuse albedo for each spectral band (-)
 REAL, DIMENSION(KI), INTENT(INOUT) :: PEMIS     ! emissivity                            (-)
+!
+REAL, DIMENSION(KI), INTENT(OUT)   :: PTSURF    ! surface effective temperature         (K)
+REAL, DIMENSION(KI), INTENT(INOUT) :: PZ0       ! roughness length for momentum         (m)
+REAL, DIMENSION(KI), INTENT(INOUT) :: PZ0H      ! roughness length for heat             (m)
+REAL, DIMENSION(KI), INTENT(INOUT) :: PQSURF    ! specific humidity at surface          (kg/kg)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_A_COEF! implicit coefficients
 REAL, DIMENSION(KI), INTENT(IN) :: PPEW_B_COEF! needed if HCOUPLING='I'
@@ -180,6 +185,10 @@ REAL, DIMENSION(KI,NTILESFC) :: ZSFV_TILE      ! meridian momentum flux
 REAL, DIMENSION(KI,NTILESFC) :: ZTRAD_TILE     ! radiative surface temperature
 REAL, DIMENSION(KI,NTILESFC) :: ZEMIS_TILE     ! emissivity
 REAL, DIMENSION(KI,NTILESFC) :: ZFRAC_TILE     ! fraction of each surface type
+REAL, DIMENSION(KI,NTILESFC) :: ZTSURF_TILE    ! surface effective temperature
+REAL, DIMENSION(KI,NTILESFC) :: ZZ0_TILE       ! roughness length for momentum
+REAL, DIMENSION(KI,NTILESFC) :: ZZ0H_TILE      ! roughness length for heat
+REAL, DIMENSION(KI,NTILESFC) :: ZQSURF_TILE    ! specific humidity at surface
 !
 REAL, DIMENSION(KI,KSW,NTILESFC) :: ZDIR_ALB_TILE ! direct albedo
 REAL, DIMENSION(KI,KSW,NTILESFC) :: ZSCA_ALB_TILE ! diffuse albedo
@@ -192,7 +201,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('COUPLING_SURF_ATM_N',0,ZHOOK_HANDLE)
-CPROGNAME=HPROGRAM
+ CPROGNAME=HPROGRAM
 !
 IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('COUPLING_SURF_ATMN: FATAL ERROR DURING ARGUMENT TRANSFER')
@@ -202,18 +211,19 @@ END IF
 ! Time evolution
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
-TTIME%TIME = TTIME%TIME + PTSTEP
- CALL ADD_FORECAST_TO_DATE_SURF(TTIME%TDATE%YEAR,TTIME%TDATE%MONTH,TTIME%TDATE%DAY,TTIME%TIME)
+YSC%U%TTIME%TIME = YSC%U%TTIME%TIME + PTSTEP
+ CALL ADD_FORECAST_TO_DATE_SURF(YSC%U%TTIME%TDATE%YEAR,YSC%U%TTIME%TDATE%MONTH,&
+                                YSC%U%TTIME%TDATE%DAY,YSC%U%TTIME%TIME)
 !
 !-------------------------------------------------------------------------------------
 ! Preliminaries: Tile related operations
 !-------------------------------------------------------------------------------------
 ! FLAGS for the various surfaces:
 !
-GSEA      = NDIM_SEA    >0
-GWATER    = NDIM_WATER  >0
-GTOWN     = NDIM_TOWN   >0
-GNATURE   = NDIM_NATURE >0
+GSEA      = YSC%U%NDIM_SEA    >0
+GWATER    = YSC%U%NDIM_WATER  >0
+GTOWN     = YSC%U%NDIM_TOWN   >0
+GNATURE   = YSC%U%NDIM_NATURE >0
 
 !
 ! Tile counter:
@@ -236,11 +246,14 @@ ZSFTS_TILE(:,:,:)     = 0.
 ZSFCO2_TILE(:,:)      = 0.
 ZSFU_TILE(:,:)        = XUNDEF
 ZSFV_TILE(:,:)        = XUNDEF
+ZTSURF_TILE(:,:)      = XUNDEF
+ZZ0_TILE(:,:)         = XUNDEF
+ZZ0H_TILE(:,:)        = XUNDEF
+ZQSURF_TILE(:,:)      = XUNDEF
 !
 ! Fractions for each tile:
 !
 ZFRAC_TILE(:,:)    = 0.0
-
 !
 ! initialization of implicit coefficients:
 !
@@ -261,16 +274,10 @@ ELSE
 END IF
 !
 !--------------------------------------------------------------------------------------
-! Initialize/Save precip and zenith field for a ARPEGE/ALADIN run
-!--------------------------------------------------------------------------------------
-!
- CALL RW_PRECIP_n(HPROGRAM,PRAIN,PSNOW)
-!
-!--------------------------------------------------------------------------------------
 ! Call ALMA interfaces for sea, water, nature and town here...
 !--------------------------------------------------------------------------------------
 !
-#ifndef NOMPI
+#ifdef SFX_MPI
 XTIME0 = MPI_WTIME()
 #endif
 !
@@ -284,14 +291,14 @@ JTILE = JTILE + 1
 !
 IF(GSEA)THEN
 !
-  ZFRAC_TILE(:,JTILE) = XSEA(:)
+  ZFRAC_TILE(:,JTILE) = YSC%U%XSEA(:)
 !
-  CALL TREAT_SURF(JTILE,NSIZE_SEA,NR_SEA)
+  CALL TREAT_SURF(JTILE,YSC%U%NSIZE_SEA,YSC%U%NR_SEA)
 !
 ENDIF
 !
-#ifndef NOMPI
-XTIME_SEA = XTIME_SEA + (MPI_WTIME() - XTIME0)*100./MAX(1,NSIZE_SEA)
+#ifdef SFX_MPI
+XTIME_SEA = XTIME_SEA + (MPI_WTIME() - XTIME0)*100./MAX(1,YSC%U%NSIZE_SEA)
 XTIME0 = MPI_WTIME()
 #endif
 !
@@ -303,14 +310,14 @@ JTILE = JTILE + 1
 !
 IF(GWATER)THEN
 !
-  ZFRAC_TILE(:,JTILE) = XWATER(:)
+  ZFRAC_TILE(:,JTILE) = YSC%U%XWATER(:)
 !
-  CALL TREAT_SURF(JTILE,NSIZE_WATER,NR_WATER)
+  CALL TREAT_SURF(JTILE,YSC%U%NSIZE_WATER,YSC%U%NR_WATER)
 !
 ENDIF 
 !
-#ifndef NOMPI
-XTIME_WATER = XTIME_WATER + (MPI_WTIME() - XTIME0)*100./MAX(1,NSIZE_WATER)
+#ifdef SFX_MPI
+XTIME_WATER = XTIME_WATER + (MPI_WTIME() - XTIME0)*100./MAX(1,YSC%U%NSIZE_WATER)
 XTIME0 = MPI_WTIME()
 #endif
 !
@@ -322,14 +329,14 @@ JTILE = JTILE + 1
 !
 IF(GNATURE)THEN
 !
-  ZFRAC_TILE(:,JTILE) = XNATURE(:)
+  ZFRAC_TILE(:,JTILE) = YSC%U%XNATURE(:)
 !
-  CALL TREAT_SURF(JTILE,NSIZE_NATURE,NR_NATURE)
+  CALL TREAT_SURF(JTILE,YSC%U%NSIZE_NATURE,YSC%U%NR_NATURE)
 !
 ENDIF 
 !
-#ifndef NOMPI
-XTIME_NATURE = XTIME_NATURE + (MPI_WTIME() - XTIME0)*100./MAX(1,NSIZE_NATURE)
+#ifdef SFX_MPI
+XTIME_NATURE = XTIME_NATURE + (MPI_WTIME() - XTIME0)*100./MAX(1,YSC%U%NSIZE_NATURE)
 XTIME0 = MPI_WTIME()
 #endif
 !
@@ -341,14 +348,14 @@ JTILE = JTILE + 1
 !
 IF(GTOWN)THEN
 !
-  ZFRAC_TILE(:,JTILE) = XTOWN(:)
+  ZFRAC_TILE(:,JTILE) = YSC%U%XTOWN(:)
 !
-  CALL TREAT_SURF(JTILE,NSIZE_TOWN,NR_TOWN)
+  CALL TREAT_SURF(JTILE,YSC%U%NSIZE_TOWN,YSC%U%NR_TOWN)
 !
 ENDIF 
 !
-#ifndef NOMPI
-XTIME_TOWN = XTIME_TOWN + (MPI_WTIME() - XTIME0)*100./MAX(1,NSIZE_TOWN)
+#ifdef SFX_MPI
+XTIME_TOWN = XTIME_TOWN + (MPI_WTIME() - XTIME0)*100./MAX(1,YSC%U%NSIZE_TOWN)
 #endif
 !
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -366,21 +373,24 @@ XTIME_TOWN = XTIME_TOWN + (MPI_WTIME() - XTIME0)*100./MAX(1,NSIZE_TOWN)
 ! Chemical Emissions:                  
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF ((NBEQ > 0).AND.(LCH_SURF_EMIS)) THEN
-  IF (CCH_EMIS=='AGGR') THEN
-    IF (NSV_AEREND < 0)  THEN
-      IINDEXEND = NSV_CHSEND ! case only gas chemistry
+IF ((YSC%SV%NBEQ > 0).AND.(YSC%CHU%LCH_SURF_EMIS)) THEN
+  IF (YSC%CHU%CCH_EMIS=='AGGR') THEN
+    IF (YSC%SV%NSV_AEREND < 0)  THEN
+      IINDEXEND = YSC%SV%NSV_CHSEND ! case only gas chemistry
     ELSE
-      IINDEXEND = NSV_AEREND ! case aerosol + gas chemistry
+      IINDEXEND = YSC%SV%NSV_AEREND ! case aerosol + gas chemistry
     ENDIF
     INBTS=0
-    DO JI=1,SIZE(TSEMISS)
-      IF (SIZE(TSEMISS(JI)%NETIMES).GT.INBTS) INBTS=SIZE(TSEMISS(JI)%NETIMES)
+    DO JI=1,SIZE(YSC%CHE%TSEMISS)
+      IF (SIZE(YSC%CHE%TSEMISS(JI)%NETIMES).GT.INBTS) INBTS=SIZE(YSC%CHE%TSEMISS(JI)%NETIMES)
     ENDDO
-    CALL CH_EMISSION_FLUX_n(HPROGRAM,PTIME,PSFTS(:,NSV_CHSBEG:IINDEXEND),PRHOA,PTSTEP,INBTS)
-  ELSE IF (CCH_EMIS=='SNAP') THEN
-    CALL CH_EMISSION_SNAP_n(HPROGRAM,NSIZE_FULL,PTIME,PTSUN,KYEAR,KMONTH,KDAY,PRHOA,XLON)
-    CALL CH_EMISSION_TO_ATM_n(PSFTS,PRHOA)
+    CALL CH_EMISSION_FLUX_n(YSC, &
+                            HPROGRAM,PTIME,PSFTS(:,YSC%SV%NSV_CHSBEG:IINDEXEND),PRHOA,PTSTEP,INBTS)
+  ELSE IF (YSC%CHU%CCH_EMIS=='SNAP') THEN
+    CALL CH_EMISSION_SNAP_n(YSC%CHN, &
+                            HPROGRAM,YSC%U%NSIZE_FULL,PTIME,PTSUN,KYEAR,KMONTH,KDAY,PRHOA,YSC%UG%XLON)
+    CALL CH_EMISSION_TO_ATM_n(YSC%CHN, YSC%SV, &
+                              PSFTS,PRHOA)
   END IF
 END IF
 !
@@ -393,14 +403,13 @@ WHERE(PSFTS(:,:)==XUNDEF)  PSFTS(:,:)=0.
 !               PSFCO2 in kgCO2/m2/s      = *Navogadro*1E3/Mco2(44g/mol) molecules/m2/s
 !
 DO JI=1,SIZE(PSV,2)
-  IF(TRIM(ADJUSTL(CSV(JI)))=="CO2") THEN
+  IF(TRIM(ADJUSTL(YSC%SV%CSV(JI)))=="CO2") THEN
     ! CO2 Flux (Antrop + biog) (molec*m2/s)
     PSFTS(:,JI) = PSFTS(:,JI) + PSFCO2(:)*PRHOA(:)*(XAVOGADRO/44.)*1E3
     ! CO2 Flux (Antrop + biog) (kgCO2/kgair*m/s)
     PSFCO2(:)   = PSFTS(:,JI)/(PRHOA(:)*(XAVOGADRO/44.)*1E3)
   END IF
 END DO
-!
 !
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Radiative fluxes
@@ -410,27 +419,45 @@ END DO
                  PDIR_ALB,      PSCA_ALB,      PEMIS,      PTRAD       )
 !
 ! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+! Physical properties
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+ CALL AVERAGE_PHY(ZFRAC_TILE,                              &
+                  ZTSURF_TILE, ZZ0_TILE,                   &
+                  ZZ0H_TILE, ZQSURF_TILE,                  &    
+                  PUREF, PZREF,                            &
+                  PTSURF, PZ0, PZ0H, PQSURF                )
+!
+! store these field to write in restart file (important for AGCM)
+!
+IF(LCPL_GCM) CALL CPL_GCM_n(YSC%U, &
+   KI,PZ0=PZ0,PZ0H=PZ0H,PQSURF=PQSURF)
+!
+! - - - - -- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Orographic friction
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 !* adds friction due to subscale orography to momentum fluxes
 !  but only over continental area
 !
-IF (CROUGH=="Z01D" .OR. CROUGH=="Z04D") THEN
-  CALL SSO_Z0_FRICTION_n(XSEA,PUREF,PRHOA,PU,PV,ZPEW_A_COEF,ZPEW_B_COEF,PSFU,PSFV)
-ELSE IF (CROUGH=="BE04") THEN
-  CALL SSO_BE04_FRICTION_n(PTSTEP,XSEA,PUREF,PRHOA,PU,PV,PSFU,PSFV)
+IF (YSC%USS%CROUGH=="Z01D" .OR. YSC%USS%CROUGH=="Z04D") THEN
+  CALL SSO_Z0_FRICTION_n(YSC%USS, &
+                         YSC%U%XSEA,PUREF,PRHOA,PU,PV,ZPEW_A_COEF,ZPEW_B_COEF,PSFU,PSFV)
+ELSE IF (YSC%USS%CROUGH=="BE04") THEN
+  CALL SSO_BE04_FRICTION_n(YSC%SSCP, YSC%USS, &
+                           PTSTEP,YSC%U%XSEA,PUREF,PRHOA,PU,PV,PSFU,PSFV)
 END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Inline diagnostics for full surface
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
- CALL DIAG_INLINE_SURF_ATM_n(PUREF, PZREF, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
+ CALL DIAG_INLINE_SURF_ATM_n(YSC%DGU, &
+                             PUREF, PZREF, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
+!
 IF (LHOOK) CALL DR_HOOK('COUPLING_SURF_ATM_N',1,ZHOOK_HANDLE)
 !
 !=======================================================================================
-CONTAINS
+ CONTAINS
 !=======================================================================================
 SUBROUTINE TREAT_SURF(KTILE,KSIZE,KMASK)
 !
@@ -478,6 +505,11 @@ REAL, DIMENSION(KSIZE,ISWB) :: ZP_DIR_ALB  ! direct albedo for each spectral ban
 REAL, DIMENSION(KSIZE,ISWB) :: ZP_SCA_ALB  ! diffuse albedo for each spectral band (-)
 REAL, DIMENSION(KSIZE) :: ZP_EMIS     ! emissivity   
 !
+REAL, DIMENSION(KSIZE) :: ZP_TSURF    ! surface effective temperature (K)
+REAL, DIMENSION(KSIZE) :: ZP_Z0       ! roughness length for momentum (m)
+REAL, DIMENSION(KSIZE) :: ZP_Z0H      ! roughness length for heat     (m)
+REAL, DIMENSION(KSIZE) :: ZP_QSURF    ! specific humidity at surface  (kg/kg)
+!
 REAL, DIMENSION(KSIZE) :: ZP_PEW_A_COEF ! implicit coefficients
 REAL, DIMENSION(KSIZE) :: ZP_PEW_B_COEF ! needed if HCOUPLING='I'
 REAL, DIMENSION(KSIZE) :: ZP_PET_A_COEF
@@ -515,6 +547,12 @@ DO JJ=1,KSIZE
   ZP_ZS(JJ)         = PZS         (JI)
 ENDDO
 !
+!consider decoupling between CO2 emploied for photosynthesis and radiative CO2
+!recommended as C4MIP option (XCO2UNCPL in ppmv)
+IF(XCO2UNCPL/=XUNDEF)THEN
+  ZP_CO2(:) = ZP_RHOA(:) * XCO2UNCPL * 1.E-6 * XMCO2 / XMD   
+ENDIF
+!
 DO JK=1,SIZE(PSV,2)
 !cdir nodep
 !cdir unroll=8
@@ -550,56 +588,62 @@ ENDDO
 !
 IF (KTILE==1) THEN
   !
-  CALL COUPLING_SEA_n(HPROGRAM, HCOUPLING, PTIMEC,                                           &
+  CALL COUPLING_SEA_n(YSC%SM, YSC%DGL, YSC%U, YSC%DST, YSC%SLT,  &
+                      HPROGRAM, HCOUPLING, PTIMEC,                                           &
               PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                            &
-              NSIZE_SEA, KSV, KSW,                                                           &
+              YSC%U%NSIZE_SEA, KSV, KSW,                                                      &
               ZP_TSUN, ZP_ZENITH, ZP_ZENITH2,ZP_AZIM,                                        &
               ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, HSV,&
               ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, PSW_BANDS, ZP_PS, ZP_PA,        &
               ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-              ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS,                                      &
+              ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,   &
               ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
               ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
               'OK'                                                                           )
   !
 ELSEIF (KTILE==2) THEN
   !
-  CALL COUPLING_INLAND_WATER_n(HPROGRAM, HCOUPLING, PTIMEC,                                   &
+  CALL COUPLING_INLAND_WATER_n(YSC%FM, YSC%WM, YSC%DGL, YSC%U, YSC%DST, YSC%SLT, &
+                               HPROGRAM, HCOUPLING, PTIMEC,                                   &
                PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                            &
-               NSIZE_WATER, KSV, KSW,                                                         &
+               YSC%U%NSIZE_WATER, KSV, KSW,                                                   &
                ZP_TSUN, ZP_ZENITH, ZP_ZENITH2,ZP_AZIM,                                        &
                ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, HSV,&
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, PSW_BANDS, ZP_PS, ZP_PA,        &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS,                                      &
+               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,   &
                ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
                ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
                'OK'                                                                           )
   !
 ELSEIF (KTILE==3) THEN
   !
-  CALL COUPLING_NATURE_n(HPROGRAM, HCOUPLING, PTIMEC,                                         &
+  CALL COUPLING_NATURE_n(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%IM, YSC%DTZ, &
+                         YSC%GDM%DTGD, YSC%GRM%DTGR, YSC%GRM%TGRO, YSC%DGL, YSC%DST, YSC%SLT, &
+                         HPROGRAM, HCOUPLING, PTIMEC,                                         &
                PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                            &
-               NSIZE_NATURE, KSV, KSW,                                                        &
+               YSC%U%NSIZE_NATURE, KSV, KSW,                                                  &
                ZP_TSUN, ZP_ZENITH, ZP_ZENITH2,ZP_AZIM,                                        &
                ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, HSV,&
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, PSW_BANDS, ZP_PS, ZP_PA,        &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS,                                      &
+               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,   &
                ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
                ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
                'OK'                                                                           )
   !
 ELSEIF (KTILE==4) THEN
   !
-  CALL COUPLING_TOWN_n(HPROGRAM, HCOUPLING, PTIMEC,                                           &
+  CALL COUPLING_TOWN_n(YSC%DTCO, YSC%U, YSC%IM%DTI, YSC%IM%IG, YSC%IM%I, YSC%DGL, &
+                       YSC%DST, YSC%SLT, YSC%TM, YSC%GDM, YSC%GRM,  &
+                       HPROGRAM, HCOUPLING, PTIMEC,                                           &
                PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                            &
-               NSIZE_TOWN, KSV, KSW,                                                          &
+               YSC%U%NSIZE_TOWN, KSV, KSW,                                                    &
                ZP_TSUN, ZP_ZENITH, ZP_AZIM,                                                   &
                ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, HSV,&
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, PSW_BANDS, ZP_PS, ZP_PA,        &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS,                                      &
+               ZP_TRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,   &
                ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
                ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
                'OK'                                                                           )
@@ -619,6 +663,10 @@ DO JJ=1,KSIZE
    ZSFV_TILE       (JI,KTILE)  = ZP_SFV       (JJ)
    ZTRAD_TILE      (JI,KTILE)  = ZP_TRAD      (JJ)
    ZEMIS_TILE      (JI,KTILE)  = ZP_EMIS      (JJ)
+   ZTSURF_TILE     (JI,KTILE)  = ZP_TSURF     (JJ)
+   ZZ0_TILE        (JI,KTILE)  = ZP_Z0        (JJ)
+   ZZ0H_TILE       (JI,KTILE)  = ZP_Z0H       (JJ)
+   ZQSURF_TILE     (JI,KTILE)  = ZP_QSURF     (JJ)
 ENDDO
 !
 DO JI=1,SIZE(ZP_SFTS,2)

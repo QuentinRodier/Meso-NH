@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ###########################################################
 #ifdef MNH_PARALLEL
       SUBROUTINE SPLIT_GRID_CONF_PROJ(HPROGRAM,KDIM_FULL,KSIZE_FULL,KGRID_PAR,PGRID_PAR,KHALO)
@@ -86,8 +86,8 @@ IF (LHOOK) CALL DR_HOOK('SPLIT_GRID_CONF_PROJ',0,ZHOOK_HANDLE)
 !*    1.      Gets Parameters of the Grid
 !
  CALL GET_GRIDTYPE_CONF_PROJ(PGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
-                            ZLATOR,ZLONOR,IIMAX,IJMAX,        &
-                            ZX,ZY,ZDX,ZDY                     )
+                            ZLATOR,ZLONOR,IIMAX,IJMAX,       &
+                            ZX,ZY,ZDX,ZDY                    )
 !
 !
 !*    2.      Splits the (pertinent) parameters of the grid

@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE PREP_OCEAN_ASCLLV(HPROGRAM,HSURF,HFILE, & 
+SUBROUTINE PREP_OCEAN_ASCLLV (DTCO, UG, U, &
+                              HPROGRAM,HSURF,HFILE, & 
      &                       KLUOUT,PFIELD)
 !     #################################################################################
 !
@@ -39,29 +40,38 @@ SUBROUTINE PREP_OCEAN_ASCLLV(HPROGRAM,HSURF,HFILE, &
 !!      J.Escobar   11/2013   Add USE MODI_ABOR1_SFX and USE MODI_GET_SURF_MASK_N
 !!------------------------------------------------------------------
 !
+!
+!
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_PREP,       ONLY : CINTERP_TYPE, CINGRID_TYPE
 USE MODD_PGD_GRID,       ONLY : NL,LLATLONMASK,CGRID,XGRID_PAR,NGRID_PAR
-USE MODD_OCEAN_CSTS , ONLY : NOCKMAX
+USE MODD_OCEAN_GRID , ONLY : NOCKMAX
 USE MODD_PGDWORK,        ONLY : XSUMVAL, NSIZE
-USE MODD_SURF_ATM_n,     ONLY : XNATURE, XSEA, XTOWN, XWATER
-USE MODD_SEAFLUX_GRID_n , ONLY : NDIM
 !
 USE MODI_OPEN_FILE
 USE MODI_CLOSE_FILE
 USE MODI_GET_LUOUT
 USE MODI_GET_LATLONMASK_n
 USE MODI_PACK_SAME_RANK
+USE MODI_ABOR1_SFX
+USE MODI_GET_SURF_MASK_n
 !
 USE MODI_GET_TYPE_DIM_n
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-USE MODI_ABOR1_SFX
-USE MODI_GET_SURF_MASK_n
-!
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
@@ -90,17 +100,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('PREP_OCEAN_ASCLLV',0,ZHOOK_HANDLE)
 !
-CINGRID_TYPE='CONF PROJ '
+ CINGRID_TYPE='CONF PROJ '
 
 !*      1.    get full dimension of grid
- CALL GET_TYPE_DIM_n('FULL  ',NL)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'FULL  ',NL)
 !*      2.    get Ocean dimension
 !
- CALL GET_TYPE_DIM_n('SEA   ',IL)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     'SEA   ',IL)
 
 !*      3.    get grid informations known over full grid
 !
- CALL GET_LATLONMASK_n(LLATLONMASK,CGRID,XGRID_PAR,NGRID_PAR)
+ CALL GET_LATLONMASK_n(UG, &
+                       LLATLONMASK,CGRID,XGRID_PAR,NGRID_PAR)
 !
 !!
 
@@ -139,7 +152,9 @@ END DO
 
  
 !      3. Close the file
-99 CALL CLOSE_FILE (HPROGRAM,IGLB)
+
+99 CONTINUE
+ CALL CLOSE_FILE (HPROGRAM,IGLB)
 
 WRITE(KLUOUT,*) MINVAL(ZFIELDR), MAXVAL(ZFIELDR)
 
@@ -161,12 +176,13 @@ END SELECT
 !*      3.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='NONE  '
+ CINTERP_TYPE='NONE  '
 !CINTERP_TYPE='HORIBL'
 !
 
 YMASK = 'SEA   '
- CALL GET_TYPE_DIM_n(YMASK,IDIM)
+ CALL GET_TYPE_DIM_n(DTCO, U, &
+                     YMASK,IDIM)
 WRITE(KLUOUT,*) "IDIM (dim sea) =", IDIM
 
 ALLOCATE(PFIELD(1:IDIM,1:SIZE(ZFIELD,2),1:SIZE(ZFIELD,3)))
@@ -178,7 +194,8 @@ ENDIF
 
 ALLOCATE(IMASK(IDIM))
 ILU=0
- CALL GET_SURF_MASK_n(YMASK,IDIM,IMASK,ILU,KLUOUT)
+ CALL GET_SURF_MASK_n(DTCO, U, &
+                      YMASK,IDIM,IMASK,ILU,KLUOUT)
 DO JK=1,NOCKMAX
   CALL PACK_SAME_RANK(IMASK,ZFIELD(:,JK,1),PFIELD(:,JK,1))
 END DO

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE GET_INTERP_HALO(HPROGRAM,HGRID,KHALO)
 !     #######################################################
@@ -28,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson    *Meteo France*	
+!!      V. Masson    *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,10 +38,10 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-#ifdef OL
+#ifdef SFX_OL
 USE MODI_GET_INTERP_HALO_OL
 #endif
-#ifdef MNH
+#ifdef SFX_MNH
 USE MODI_GET_INTERP_HALO_MNH
 #endif
 !
@@ -67,11 +67,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('GET_INTERP_HALO',0,ZHOOK_HANDLE)
 !
 IF (HPROGRAM=='MESONH') THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL GET_INTERP_HALO_MNH(KHALO)
 #endif
 ELSE
-#ifdef OL
+#ifdef SFX_OL
   ! to be coded properly once Offline version is parallelized
   CALL GET_INTERP_HALO_OL(HGRID,KHALO)
 #endif

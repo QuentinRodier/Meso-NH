@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_PREP_FLAKE
 !     ###########################
@@ -27,7 +27,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Malardel   *Meteo France*	
+!!      S. Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -53,7 +53,7 @@ USE MODD_PREP_FLAKE,   ONLY : CFILE_FLAKE, CTYPE, CFILEPGD_FLAKE, CTYPEPGD, XTS_
 !                              XUNIF_H_ML_DEF,   &
 !                              XUNIF_H_B1_DEF 
 !
-USE MODN_PREP_FLAKE, ONLY : LWAT_SBL
+USE MODN_PREP_FLAKE, ONLY : LWAT_SBL, LCLIM_LAKE
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF 
 !
@@ -77,11 +77,11 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_FLAKE',0,ZHOOK_HANDLE)
-CFILE_FLAKE  = '                          '
-CTYPE        = '      '
+ CFILE_FLAKE  = '                          '
+ CTYPE        = '      '
 !
-CFILEPGD_FLAKE = '                          '
-CTYPEPGD       = '      '
+ CFILEPGD_FLAKE = '                          '
+ CTYPEPGD       = '      '
 !
 XTS_UNIF = XUNDEF
 XUNIF_T_SNOW   = XUNDEF
@@ -96,6 +96,7 @@ XUNIF_H_ICE    = XUNDEF
 XUNIF_H_ML     = XUNDEF
 XUNIF_H_B1     = XUNDEF
 
+LCLIM_LAKE = .FALSE.
 LWAT_SBL = .FALSE. 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_FLAKE',1,ZHOOK_HANDLE)
 !XUNIF_T_SNOW_DEF =

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE LATLONMASK(HGRID,KGRID_PAR,PGRID_PAR,OLATLONMASK)
 !     #####################
@@ -21,6 +21,7 @@
 !!      
 !!      Original        03/2004
 !!                      10/2007  E. Martin  IGN Grids
+!!                      12/2012  P. Samuelsson SMHI Rotated lonlat
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -37,6 +38,8 @@ USE MODI_LATLONMASK_IGN
 USE MODI_LATLONMASK_LONLAT_REG
 !
 USE MODI_LATLONMASK_LONLATVAL
+!
+USE MODI_LATLONMASK_LONLAT_ROT
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -62,6 +65,9 @@ SELECT CASE (HGRID)
 
   CASE('LONLATVAL ')
     CALL LATLONMASK_LONLATVAL(KGRID_PAR,PGRID_PAR,OLATLONMASK)
+
+  CASE('LONLAT ROT')
+    CALL LATLONMASK_LONLAT_ROT(KGRID_PAR,PGRID_PAR,OLATLONMASK)
 
   CASE DEFAULT
     OLATLONMASK(:,:) = .TRUE.

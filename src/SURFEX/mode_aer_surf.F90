@@ -1,7 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
-!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!ORILAM_LIC for details.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !!   ########################
 MODULE MODE_AER_SURF
 !!   ########################
@@ -12,7 +12,13 @@ MODULE MODE_AER_SURF
 !!
 !! Modifications
 !!    M.Leriche 2015 : masse molaire Black carbon à 12 g/mol
+!-------------------------------------------------------------------------------
+!!    MODIFICATIONS
+!!    -------------
 !!
+!!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
+!!
+!------------------------------------------------------------------------------- 
   USE MODD_CHS_AEROSOL
   USE MODD_DST_SURF, ONLY : XDENSITY_DST
 !
@@ -22,7 +28,7 @@ MODULE MODE_AER_SURF
 !
   IMPLICIT NONE
 !!
-CONTAINS
+ CONTAINS
 !!
 SUBROUTINE INIT_VAR(PSV,PFAC,PCTOTA)
 !
@@ -224,7 +230,7 @@ DO JJ=1, SIZE(PSVT,2)
   ZSV(:,JJ) = MAX(ZSV(:,JJ),1E-40 * ZDEN2MOL * PRHODREF(:))
 ENDDO
 !
-CALL INIT_VAR(ZSV,ZFAC,ZCTOTA)
+ CALL INIT_VAR(ZSV,ZFAC,ZCTOTA)
 !
 !*       2    calculate moment 3 from total aerosol mass
 !
@@ -240,8 +246,8 @@ ENDDO
 !
 ZM(:,1)=   MAX(ZSV(:,JP_CH_M0i) * 1E+6, XSURF_TINY) ! molec_{aer}/m3_{air}
 ZM(:,4)=   MAX(ZSV(:,JP_CH_M0j) * 1E+6, XSURF_TINY) ! molec_{aer}/m3_{air}
-!WHERE ((ZM(:,1) .LT. ZMMIN(1)).OR.(ZM(:,2) .LT. ZMMIN(2)))
-!  ZM(:,1)= ZMMIN(1)
+WHERE ((ZM(:,1) .LT. ZMMIN(1))) !.OR.(ZM(:,2) .LT. ZMMIN(2)))
+  ZM(:,1)= ZMMIN(1)
 !  ZM(:,2)= ZMMIN(2)
 !
 !  ZCTOTA(:,JP_AER_H2O,1) = 0.
@@ -250,10 +256,10 @@ ZM(:,4)=   MAX(ZSV(:,JP_CH_M0j) * 1E+6, XSURF_TINY) ! molec_{aer}/m3_{air}
 !  ZCTOTA(:,JP_AER_NO3,1) = 0.
 !  ZCTOTA(:,JP_AER_BC,1) = 0.5 * ZM(:,2) * ZFAC(JP_AER_BC)
 !  ZCTOTA(:,JP_AER_OC,1) = 0.5 * ZM(:,2) * ZFAC(JP_AER_OC)
-!END WHERE
+END WHERE
 !!
-!WHERE ((ZM(:,4) .LT. ZMMIN(4)).OR.(ZM(:,5) .LT. ZMMIN(5)))  
-!  ZM(:,4)= ZMMIN(4)
+WHERE ((ZM(:,4) .LT. ZMMIN(4))) !.OR.(ZM(:,5) .LT. ZMMIN(5)))  
+  ZM(:,4)= ZMMIN(4)
 !  ZM(:,5)= ZMMIN(5)
 !
 !  ZCTOTA(:,JP_AER_H2O,2) = 0.
@@ -262,7 +268,7 @@ ZM(:,4)=   MAX(ZSV(:,JP_CH_M0j) * 1E+6, XSURF_TINY) ! molec_{aer}/m3_{air}
 !  ZCTOTA(:,JP_AER_NO3,2) = 0.
 !  ZCTOTA(:,JP_AER_BC,2) = 0.5 * ZM(:,5) * ZFAC(JP_AER_BC)
 !  ZCTOTA(:,JP_AER_OC,2) = 0.5 * ZM(:,5) * ZFAC(JP_AER_OC)
-!END WHERE
+END WHERE
 !
 !*       4    set moment 6  ==> um6_{aer}/m3_{air}
 !
@@ -285,7 +291,7 @@ ELSE ! fixed standard deviation
   ZM(:,3) = ZM(:,1) &
             * ( (ZM(:,2)/ZM(:,1))**(1./3.)  &
             * exp(-(3./2.)*log(XEMISSIGI)**2))**6 &
-            * exp(18.*log(XEMISSIGI)**2)  
+            * exp(18.*log(XEMISSIGI)**2) 
 
   IF(PRESENT(PSIG1D)) PSIG1D(:,1) = XEMISSIGI
 END IF
@@ -396,7 +402,7 @@ DO JJ=1, SIZE(PSVT, 2)
   PSVT(:,JJ) =  PSVT(:,JJ) * ZDEN2MOL * PRHODREF(:)
 ENDDO
 !
-CALL INIT_VAR(PSVT,ZFAC,ZCTOTA)
+ CALL INIT_VAR(PSVT,ZFAC,ZCTOTA)
 !
 !*       3    calculate moment 3 from total aerosol mass
 !

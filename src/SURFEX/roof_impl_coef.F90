@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !   ###############################################
-SUBROUTINE ROOF_IMPL_COEF(PTSTEP,PTDEEP_A,PTDEEP_B)
+SUBROUTINE ROOF_IMPL_COEF(PTSTEP, KROOF_LAYER, PD_ROOF, PTC_ROOF, PHC_ROOF, PT_ROOF, PTDEEP_A,PTDEEP_B)
 !   ###############################################
 !
 !!
@@ -37,7 +37,7 @@ SUBROUTINE ROOF_IMPL_COEF(PTSTEP,PTDEEP_A,PTDEEP_B)
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -51,8 +51,6 @@ SUBROUTINE ROOF_IMPL_COEF(PTSTEP,PTDEEP_A,PTDEEP_B)
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-USE MODD_TEB_n, ONLY : XD_ROOF, XTC_ROOF, XHC_ROOF, XT_ROOF, NROOF_LAYER
-!
 USE MODI_LAYER_E_BUDGET_GET_COEF
 !
 IMPLICIT NONE
@@ -60,8 +58,13 @@ IMPLICIT NONE
 !
 !*      0.1    Declarations of arguments
 !
-REAL              , INTENT(IN)  :: PTSTEP             ! time step
-REAL, DIMENSION(:), INTENT(OUT) :: PTDEEP_A, PTDEEP_B     
+REAL              ,   INTENT(IN)  :: PTSTEP      ! time step
+INTEGER           ,   INTENT(IN)  :: KROOF_LAYER ! number of roof layers
+REAL, DIMENSION(:,:), INTENT(IN)  :: PD_ROOF   ! thickness            of each layer
+REAL, DIMENSION(:,:), INTENT(IN)  :: PTC_ROOF  ! thermal conductivity of each layer
+REAL, DIMENSION(:,:), INTENT(IN)  :: PHC_ROOF  ! heat capacity        of each layer
+REAL, DIMENSION(:,:), INTENT(IN)  :: PT_ROOF   ! temperature          of each layer
+REAL, DIMENSION(:),   INTENT(OUT) :: PTDEEP_A, PTDEEP_B     
                                               ! Deep soil temperature (prescribed)
 !                                      PTDEEP_A = Deep soil temperature
 !                                                 coefficient depending on flux
@@ -79,14 +82,14 @@ REAL, DIMENSION(:), INTENT(OUT) :: PTDEEP_A, PTDEEP_B
 REAL :: ZIMPL = 1.0        ! implicit coefficient
 INTEGER :: JK              ! loop counter
 !
-REAL, DIMENSION(SIZE(PTDEEP_A),NROOF_LAYER) :: ZA,& ! lower diag.
+REAL, DIMENSION(SIZE(PTDEEP_A),KROOF_LAYER) :: ZA,& ! lower diag.
                                                ZB,& ! main  diag.
                                                ZC,& ! upper diag.
                                                ZY   ! r.h.s.
 
 REAL, DIMENSION(SIZE(PTDEEP_A))             :: ZDET ! work array
-REAL, DIMENSION(SIZE(PTDEEP_A),NROOF_LAYER) :: ZW   ! work array
-REAL, DIMENSION(SIZE(PTDEEP_A),NROOF_LAYER) :: ZT   ! guess of T
+REAL, DIMENSION(SIZE(PTDEEP_A),KROOF_LAYER) :: ZW   ! work array
+REAL, DIMENSION(SIZE(PTDEEP_A),KROOF_LAYER) :: ZT   ! guess of T
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -95,7 +98,7 @@ IF (LHOOK) CALL DR_HOOK('ROOF_IMPL_COEF',0,ZHOOK_HANDLE)
 !*      1.0    Coefficients of the tridioagonal matrix for heat conduction eq.
 !              ---------------------------------------------------------------
 !
- CALL LAYER_E_BUDGET_GET_COEF( XT_ROOF, PTSTEP, ZIMPL, XHC_ROOF, XTC_ROOF, XD_ROOF, &
+ CALL LAYER_E_BUDGET_GET_COEF( PT_ROOF, PTSTEP, ZIMPL, PHC_ROOF, PTC_ROOF, PD_ROOF, &
                               ZA, ZB, ZC, ZY )
 !
 !-------------------------------------------------------------------------------
@@ -105,13 +108,13 @@ IF (LHOOK) CALL DR_HOOK('ROOF_IMPL_COEF',0,ZHOOK_HANDLE)
 !
 ! layer at bottom of roof
 !
-ZDET(:)   = ZB(:,NROOF_LAYER)
+ZDET(:)   = ZB(:,KROOF_LAYER)
 !
-ZT  (:,NROOF_LAYER) = ZY(:,NROOF_LAYER) / ZDET(:)
+ZT  (:,KROOF_LAYER) = ZY(:,KROOF_LAYER) / ZDET(:)
 !
 ! internal layers & top layer (but without the external heat flux term)
 !
-DO JK=NROOF_LAYER-1,1,-1
+DO JK=KROOF_LAYER-1,1,-1
   ZW  (:,JK)  = ZA(:,JK+1)/ZDET(:)
   ZDET(:)     = ZB(:,JK  ) - ZC(:,JK)*ZW(:,JK)
   ZT  (:,JK)  = ( ZY(:,JK) - ZC(:,JK)*ZT(:,JK+1) ) / ZDET(:) ! + FLUX / ZDET
@@ -128,7 +131,7 @@ PTDEEP_B = ZT  (:,1)
 PTDEEP_A = 1. / ZDET(:) 
 !
 !* The following lines are here if you want to test the explicit coupling
-!PTDEEP_B = XT_ROOF(:,1)
+!PTDEEP_B = PT_ROOF(:,1)
 !PTDEEP_A = 0.
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('ROOF_IMPL_COEF',1,ZHOOK_HANDLE)

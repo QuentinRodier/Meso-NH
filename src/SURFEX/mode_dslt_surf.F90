@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !!   ########################
 MODULE MODE_DSLT_SURF
 !!   ########################
@@ -12,7 +12,7 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
-CONTAINS
+ CONTAINS
 !!
 !!   ############################################################
 SUBROUTINE MASSFLUX2MOMENTFLUX(     &
@@ -53,7 +53,8 @@ SUBROUTINE MASSFLUX2MOMENTFLUX(     &
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!    none
+!!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
+!!    
 !!
 !!    EXTERNAL
 !!    --------
@@ -211,7 +212,7 @@ SUBROUTINE DSLTMOMENT2SIZE(       &
 !!
 !!    EXTERNAL
 !!    --------
-!!    None
+!!    
 USE MODD_SURF_PAR , ONLY : XSURF_TINY
 !!
 IMPLICIT NONE
@@ -259,7 +260,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_DSLT_SURF:DSLTMOMENT2SIZE',0,ZHOOK_HANDLE)
 !Get scalar variable indexes
 !
 !Save the moments in a local array
-ZSV(:,:) = MAX(PSVT(:,:), XSURF_TINY)
+ZSV(:,:) = MAX(PSVT(:,:),  XSURF_TINY)
 !
 DO JN=1,SIZE(KM0)
 

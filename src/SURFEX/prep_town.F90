@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_TOWN(HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
+SUBROUTINE PREP_TOWN (DTCO, UG, U, USS, IG, I, TM, GDM, GRM,GCP, &
+                      HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
 !     #################################################################################
 !
 !!****  *PREP_TOWN* - chooses town scheme to prepare
@@ -27,9 +28,17 @@ SUBROUTINE PREP_TOWN(HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
-
 !
-USE MODD_SURF_ATM_n,     ONLY : CTOWN
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
+USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
+USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
 !
 USE MODI_PREP_TEB
 !
@@ -41,6 +50,18 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+!
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
@@ -55,8 +76,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_TOWN',0,ZHOOK_HANDLE)
-IF (CTOWN=='TEB   ') THEN
-  CALL PREP_TEB(HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
+IF (U%CTOWN=='TEB   ') THEN
+  CALL PREP_TEB(DTCO, UG, U, USS, IG, I, TM, GDM, GRM, GCP,&
+                     HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
 END IF
 IF (LHOOK) CALL DR_HOOK('PREP_TOWN',1,ZHOOK_HANDLE)
 !

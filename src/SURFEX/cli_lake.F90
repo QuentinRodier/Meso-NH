@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #######
-SUBROUTINE CLI_LAKE
+SUBROUTINE CLI_LAKE (FG, F)
 !     ###############
 !
 !!****  *CLI_LAKE* - prepares input for lake variables from climate data
@@ -29,11 +29,10 @@ SUBROUTINE CLI_LAKE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_FLAKE_GRID_n, ONLY : XLAT, XLON
-USE MODD_FLAKE_n,      ONLY : XTS, XT_SNOW, XT_ICE, XT_MNW, XT_WML, &
-                              XT_BOT, XT_B1, TTIME, &  
-                              XCT, XH_SNOW, XH_ICE, XH_ML, XH_B1, &  
-                              XWATER_DEPTH
+!
+!
+USE MODD_FLAKE_GRID_n, ONLY : FLAKE_GRID_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE MODI_START_LAKE_OF
 !
@@ -47,17 +46,21 @@ IMPLICIT NONE
 !
 !*      0.2    declarations of local variables
 !
+!
+TYPE(FLAKE_GRID_t), INTENT(INOUT) :: FG
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+!
 INTEGER :: JI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('CLI_LAKE',0,ZHOOK_HANDLE)
 
-DO JI=1,SIZE(XLAT)
-  CALL START_LAKE_OF(TTIME%TDATE%DAY,TTIME%TDATE%MONTH,XLON(JI),XLAT(JI),&
-        XWATER_DEPTH(JI), XT_SNOW(JI),XT_ICE(JI),XT_MNW(JI),XT_WML(JI), &
-        XT_BOT(JI),XT_B1(JI),XCT(JI), &
-        XH_SNOW(JI),XH_ICE(JI),XH_ML(JI),XH_B1(JI),XTS(JI))
+DO JI=1,SIZE(FG%XLAT)
+  CALL START_LAKE_OF(F%TTIME%TDATE%DAY,F%TTIME%TDATE%MONTH,FG%XLON(JI),FG%XLAT(JI),&
+        F%XWATER_DEPTH(JI), F%XT_SNOW(JI),F%XT_ICE(JI),F%XT_MNW(JI),F%XT_WML(JI), &
+        F%XT_BOT(JI),F%XT_B1(JI),F%XCT(JI), &
+        F%XH_SNOW(JI),F%XH_ICE(JI),F%XH_ML(JI),F%XH_B1(JI),F%XTS(JI))
  
 END DO
 

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE READ_NAM_PREP_ISBA_n(HPROGRAM)
 !     #######################################################
@@ -55,8 +55,8 @@ XTIME=XUNDEF
 IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_PREP_ISBA)
  CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPE',    CTYPE,   '      ', 'GRIB  ','MESONH','ASCII ','LFI   ')
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPEPGD',   CTYPEPGD,   '      ','GRIB  ','MESONH','ASCII ','LFI   ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPE',    CTYPE,   '      ', 'GRIB  ','MESONH','ASCII ','LFI   ','FA    ')
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPEPGD',   CTYPEPGD,   '      ','GRIB  ','MESONH','ASCII ','LFI   ','FA    ')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPE_HUG',CTYPE_HUG,'      ','GRIB  ','MESONH','ASCII ','ASCLLV','LFI   ','NETCDF')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CTYPE_TG', CTYPE_TG,'      ', 'GRIB  ','MESONH','ASCII ','ASCLLV','LFI   ','NETCDF')
 !

@@ -1,18 +1,19 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE ISBA_ALBEDO(HSNOW, OTR_ML,                               &
+      SUBROUTINE ISBA_ALBEDO(HSNOW, OTR_ML, OMEB,                         &
                                PDIR_SW, PSCA_SW, PSW_BANDS, KSW,          &
                                PALBNIR, PALBVIS, PALBUV,                  &
                                PALBNIR_VEG, PALBVIS_VEG, PALBUV_VEG,      &
                                PALBNIR_SOIL, PALBVIS_SOIL, PALBUV_SOIL,   &
-                               PSNOWALB, PPSNV, PPSNG, PFALB, PFFV, PFFG, &
+                               PFALB, PFFV, PFFG,                         &
                                PGLOBAL_SW, PSNOWFREE_ALB,                 &
                                PSNOWFREE_ALB_VEG, PSNOWFREE_ALB_SOIL,     &
+                               PMEB_SCA_SW,                               &
                                PALBNIR_TVEG, PALBVIS_TVEG,                &
-                               PALBNIR_TSOIL, PALBVIS_TSOIL             )  
+                               PALBNIR_TSOIL, PALBVIS_TSOIL               )
 !     ##########################################################################
 !
 !!****  *ISBA_ALBEDO*  
@@ -34,6 +35,12 @@
 !!    ------
 !!
 !!	S. Belair           * Meteo-France *
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    
+!!      P. Samuelsson  02/2012  MEB
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -54,6 +61,8 @@ IMPLICIT NONE
 !
  CHARACTER(LEN=*)    , INTENT(IN)   :: HSNOW      ! ISBA snow scheme
 LOGICAL,              INTENT(IN)   :: OTR_ML
+LOGICAL,              INTENT(IN)   :: OMEB        ! True = patch with multi-energy balance 
+!                                                 ! False = patch with classical ISBA
 !
 REAL, DIMENSION(:,:), INTENT(IN)   :: PDIR_SW            ! direct incoming solar radiation
 REAL, DIMENSION(:,:), INTENT(IN)   :: PSCA_SW            ! diffus incoming solar radiation
@@ -68,16 +77,12 @@ REAL, DIMENSION(:)  , INTENT(IN)   :: PALBUV_VEG         ! UV      veg   albedo
 REAL, DIMENSION(:)  , INTENT(IN)   :: PALBNIR_SOIL       ! nearIR  soil  albedo
 REAL, DIMENSION(:)  , INTENT(IN)   :: PALBVIS_SOIL       ! visible soil  albedo
 REAL, DIMENSION(:)  , INTENT(IN)   :: PALBUV_SOIL        ! UV      soil  albedo
-REAL, DIMENSION(:)  , INTENT(IN)   :: PSNOWALB           ! Snow albedo
-REAL, DIMENSION(:)  , INTENT(IN)   :: PPSNV              ! fraction of the the veg.
-!                                                        ! covered by snow
-REAL, DIMENSION(:)  , INTENT(IN)   :: PPSNG              ! fraction of the the bare
-!                                                        ! ground covered by snow
 REAL, DIMENSION(:)  , INTENT(IN)   :: PFALB              ! Floodplain albedo
 REAL, DIMENSION(:)  , INTENT(IN)   :: PFFV               ! Floodplain fraction over vegetation
 REAL, DIMENSION(:)  , INTENT(IN)   :: PFFG               ! Floodplain fraction over the ground
 !
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PGLOBAL_SW         ! global incoming SW rad.
+REAL, DIMENSION(:)  , INTENT(OUT)  :: PMEB_SCA_SW        ! diffuse incoming SW rad.
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PSNOWFREE_ALB      !snow free albedo 
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PSNOWFREE_ALB_VEG  !snow free albedo of vegetation for EBA
 REAL, DIMENSION(:)  , INTENT(OUT)  :: PSNOWFREE_ALB_SOIL !snow free albedo of soil for EBA option
@@ -111,11 +116,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_ALBEDO',0,ZHOOK_HANDLE)
 !
-IF (OTR_ML) THEN
-  PALBNIR_TVEG (:) = ( 1.-PPSNV(:)-PFFV(:))*PALBNIR_VEG(:)  + PPSNV(:)*PSNOWALB(:) + PFFV(:)*PFALB(:)
-  PALBNIR_TSOIL(:) = ( 1.-PPSNG(:)-PFFG(:))*PALBNIR_SOIL(:) + PPSNG(:)*PSNOWALB(:) + PFFG(:)*PFALB(:)   
-  PALBVIS_TVEG (:) = ( 1.-PPSNV(:)-PFFV(:))*PALBVIS_VEG(:)  + PPSNV(:)*PSNOWALB(:) + PFFV(:)*PFALB(:)
-  PALBVIS_TSOIL(:) = ( 1.-PPSNG(:)-PFFG(:))*PALBVIS_SOIL(:) + PPSNG(:)*PSNOWALB(:) + PFFG(:)*PFALB(:)
+IF (OTR_ML )THEN
+   IF (OMEB) THEN
+      PALBNIR_TVEG (:) =               PALBNIR_VEG(:)
+      PALBNIR_TSOIL(:) = ( 1.-PFFG(:))*PALBNIR_SOIL(:) + PFFG(:)*PFALB(:)   
+      PALBVIS_TVEG (:) =               PALBVIS_VEG(:)
+      PALBVIS_TSOIL(:) = ( 1.-PFFG(:))*PALBVIS_SOIL(:) + PFFG(:)*PFALB(:)
+   ELSE
+      PALBNIR_TVEG (:) = PALBNIR_VEG(:)
+      PALBNIR_TSOIL(:) = PALBNIR_SOIL(:) 
+      PALBVIS_TVEG (:) = PALBVIS_VEG(:)
+      PALBVIS_TSOIL(:) = PALBVIS_SOIL(:) 
+   ENDIF
+ELSE
+  PALBNIR_TVEG (:) = XUNDEF
+  PALBNIR_TSOIL(:) = XUNDEF
+  PALBVIS_TVEG (:) = XUNDEF
+  PALBVIS_TSOIL(:) = XUNDEF
 ENDIF
 !
  CALL ALBEDO_FROM_NIR_VIS(PSW_BANDS, PALBNIR, PALBVIS, PALBUV,         &
@@ -124,8 +141,10 @@ ENDIF
 !* total shortwave incoming radiation
 !
   PGLOBAL_SW(:) = 0.
+  PMEB_SCA_SW(:) = 0.
   DO JSWB=1,KSW
     PGLOBAL_SW(:) = PGLOBAL_SW(:) + (PDIR_SW(:,JSWB) + PSCA_SW(:,JSWB))
+    PMEB_SCA_SW(:) = PMEB_SCA_SW(:) + (PSCA_SW(:,JSWB))
   END DO
 !
 !* snow-free global albedo (needed by ISBA)

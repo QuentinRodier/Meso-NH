@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ################################################
-      SUBROUTINE INTERPOL_FIELD2D(HPROGRAM,KLUOUT,KCODE,PFIELD,HFIELD,PDEF,KNPTS)
+      SUBROUTINE INTERPOL_FIELD2D (UG, U, &
+                                   HPROGRAM,KLUOUT,KCODE,PFIELD,HFIELD,PDEF,KNPTS)
 !     ################################################
 !
 !!**** *INTERPOL_FIELD* initializes coordinate system for spline interpolation
@@ -31,16 +32,21 @@
 !!    Original    01/2004
 !!    Modification
 !!      A. Alias        07/2013 add MODI_ABOR1_SFX
+!!      A. Alias        05/2016 add MODI_GET_INTERP_HALO
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_SURF_PAR,  ONLY : XUNDEF
-USE MODD_SURF_ATM_n, ONLY : NDIM_FULL, NSIZE_FULL
-USE MODD_SURF_ATM_GRID_n, ONLY : CGRID
 !
 USE MODI_GET_GRID_COORD
+USE MODI_GET_INTERP_HALO
 USE MODI_INTERPOL_NPTS
 USE MODI_SUM_ON_ALL_PROCS
 USE MODI_ABOR1_SFX
@@ -52,6 +58,10 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),        INTENT(IN)   :: HPROGRAM ! host program
 INTEGER,                 INTENT(IN)   :: KLUOUT   ! output listing
@@ -75,10 +85,12 @@ REAL, DIMENSION(SIZE(KCODE))   :: ZX             ! coordinate used for
 REAL, DIMENSION(SIZE(KCODE))   :: ZY             ! splines interpolation
 REAL, DIMENSION(SIZE(PFIELD,2)):: ZDEF           ! default value for field
 INTEGER                        :: INPTS          ! number of points to interpolate with
+INTEGER :: IHALO, INEAR_NBR
 
 !
 INTEGER                        :: JLOOP          ! loop counter
 !
+INTEGER :: IERR0
 INTEGER                        :: IERR1          ! number of points interpolated
 INTEGER                        :: IERR2          ! number of points not interpolated in the end
 !
@@ -96,22 +108,34 @@ IF (PRESENT(PDEF)) ZDEF = PDEF
 !*    2.     Miscellaneous Initializations
 !            -----------------------------
 !
- CALL GET_GRID_COORD(KLUOUT,PX=ZX,PY=ZY)
+ CALL GET_GRID_COORD(UG, U, &
+                     KLUOUT,PX=ZX,PY=ZY)
 !
 !-------------------------------------------------------------------------------
 !
 !*    5.     Interpolation with 3 nearest points
 !            -----------------------------------
 !
- CALL INTERPOL_NPTS(HPROGRAM,KLUOUT,INPTS,KCODE,ZX,ZY,PFIELD)
+IERR0 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==0)
+!
+ CALL GET_INTERP_HALO(HPROGRAM,UG%CGRID,IHALO)
+!
+IF (IHALO/=0) THEN
+  INEAR_NBR = (2*IHALO+1)**2
+ELSE
+  INEAR_NBR = U%NDIM_FULL
+ENDIF
+!
+ CALL INTERPOL_NPTS(UG, U, &
+                    HPROGRAM,KLUOUT,INPTS,KCODE,ZX,ZY,PFIELD,INEAR_NBR)
 !
 !-------------------------------------------------------------------------------
 !
 !*    6.     Final check
 !            -----------
 !
-IERR1 = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,KCODE(:)==0)
-IERR2 = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,KCODE(:)==-4)
+IERR1 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==0)
+IERR2 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==-4)
 !
 IF (IERR1>0 .OR. IERR2>0) THEN
   !
@@ -126,20 +150,36 @@ IF (IERR1>0 .OR. IERR2>0) THEN
   IF (IERR2>0) THEN
     WRITE(KLUOUT,*) ' Number of points that could not be interpolated : ', &
                       IERR2
-    IF (PRESENT(PDEF)) THEN
-      DO JLOOP=1,SIZE(PFIELD,2)
-        WHERE(KCODE(:)==-4)
-          PFIELD(:,JLOOP)=PDEF(JLOOP)
-        END WHERE
-        WRITE(KLUOUT,*) ' For these points, the default value (',PDEF(JLOOP),') is set.'
-      END DO
-    ELSE
-      WRITE(KLUOUT,*) ' Please provide data with better resolution'
-      WRITE(KLUOUT,*) ' Or define a higher halo value             '
-      CALL ABOR1_SFX('Some points lack data and are too far away from other points')
-    END IF
+      IF (PRESENT(PDEF) .AND. (INEAR_NBR>=U%NDIM_FULL .OR. IERR2==IERR0)) THEN          
+        DO JLOOP=1,SIZE(PFIELD,2)
+          WRITE(KLUOUT,*) ' For these points, the default value (',ZDEF(JLOOP),') is set.'
+        ENDDO
+      ELSE
+        WRITE(KLUOUT,*) ' Please provide data with better resolution'
+        WRITE(KLUOUT,*) ' Or define a higher halo value             '
+      END IF
   END IF
 !
+END IF
+!
+IF (IERR2>0) THEN
+  !
+  IF (.NOT.PRESENT(PDEF) .OR. (INEAR_NBR<U%NDIM_FULL .AND. IERR2/=IERR0)) &
+          CALL ABOR1_SFX('Some points lack data and are too far away from other points. &
+                Please define a higher halo value in NAM_IO_OFFLINE.')
+  !
+ENDIF
+!
+IF (COUNT(KCODE(:)==-4)>0) THEN
+  !
+  DO JLOOP=1,SIZE(PFIELD,2)
+    IF (ZDEF(JLOOP)/=XUNDEF) THEN
+      WHERE(KCODE(:)==-4)
+        PFIELD(:,JLOOP)=ZDEF(JLOOP)
+      END WHERE
+    ENDIF
+  END DO
+  !
 END IF
 !
 IF (LHOOK) CALL DR_HOOK('INTERPOL_FIELD:INTERPOL_FIELD2D',1,ZHOOK_HANDLE)

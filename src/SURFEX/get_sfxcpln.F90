@@ -1,15 +1,22 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_SFXCPL_n(HPROGRAM,KI,PRUI,PWIND,PFWSU,PFWSV,PSNET, &
+      SUBROUTINE GET_SFXCPL_n (I, S, U, W, &
+                               HPROGRAM,KI,PRUI,PWIND,PFWSU,PFWSV,PSNET, &
                                 PHEAT,PEVAP,PRAIN,PSNOW,PICEFLUX,PFWSM,   &
                                 PHEAT_ICE,PEVAP_ICE,PSNET_ICE)  
 !     ###################################################################
 !
 !!****  *GETSFXCPL_n* - routine to get some variables from surfex into
-!                       ocean and/or a river routing model
+!                       ocean and/or a river routing model when the coupler
+!                       is not in SURFEX but in ARPEGE.
+!
+!                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                       This routine will be suppress soon.
+!                       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
 !!    PURPOSE
 !!    -------
 !!
@@ -29,7 +36,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	B. Decharme      *Meteo France*	
+!!      B. Decharme      *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -39,25 +46,24 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_PAR,  ONLY : XUNDEF
 !
-USE MODD_ISBA_n,    ONLY : XCPL_DRAIN, XCPL_RUNOFF, XCPL_ICEFLUX
 !
-USE MODD_SEAFLUX_n, ONLY : XCPL_SEA_WIND,XCPL_SEA_EVAP,XCPL_SEA_HEAT, &
-                             XCPL_SEA_SNET,XCPL_SEA_FWSU,XCPL_SEA_FWSV, &
-                             XCPL_SEA_RAIN,XCPL_SEA_SNOW,XCPL_SEA_FWSM, &
-                             XCPL_SEAICE_EVAP,XCPL_SEAICE_HEAT,         &
-                             XCPL_SEAICE_SNET  
 !
-USE MODD_WATFLUX_n, ONLY : XCPL_WATER_WIND,XCPL_WATER_EVAP,XCPL_WATER_HEAT, &
-                             XCPL_WATER_SNET,XCPL_WATER_FWSU,XCPL_WATER_FWSV, &
-                             XCPL_WATER_RAIN,XCPL_WATER_SNOW,XCPL_WATER_FWSM, &
-                             XCPL_WATERICE_EVAP,XCPL_WATERICE_HEAT,           &
-                             XCPL_WATERICE_SNET  
+USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
-USE MODI_UNPACK_SAME_RANK
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+!
+USE MODN_SFX_OASIS,  ONLY : LWATER
+USE MODD_SFX_OASIS,  ONLY : LCPL_LAND, LCPL_CALVING, LCPL_GW, &
+                            LCPL_FLOOD, LCPL_SEA, LCPL_SEAICE
+!
+USE MODI_GET_SFX_SEA
+USE MODI_GET_SFX_LAND
+USE MODI_ABOR1_SFX
 USE MODI_GET_LUOUT
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -70,259 +76,147 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM
 INTEGER,             INTENT(IN)  :: KI      ! number of points
 !
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PRUI
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PWIND
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PFWSU
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PFWSV
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PSNET
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PHEAT
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PEVAP
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PRAIN
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PSNOW
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PICEFLUX
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PFWSM
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PHEAT_ICE
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PEVAP_ICE
-REAL, DIMENSION(KI), INTENT(OUT), OPTIONAL :: PSNET_ICE
+REAL, DIMENSION(KI), INTENT(OUT) :: PRUI
+REAL, DIMENSION(KI), INTENT(OUT) :: PWIND
+REAL, DIMENSION(KI), INTENT(OUT) :: PFWSU
+REAL, DIMENSION(KI), INTENT(OUT) :: PFWSV
+REAL, DIMENSION(KI), INTENT(OUT) :: PSNET
+REAL, DIMENSION(KI), INTENT(OUT) :: PHEAT
+REAL, DIMENSION(KI), INTENT(OUT) :: PEVAP
+REAL, DIMENSION(KI), INTENT(OUT) :: PRAIN
+REAL, DIMENSION(KI), INTENT(OUT) :: PSNOW
+REAL, DIMENSION(KI), INTENT(OUT) :: PICEFLUX
+REAL, DIMENSION(KI), INTENT(OUT) :: PFWSM
+REAL, DIMENSION(KI), INTENT(OUT) :: PHEAT_ICE
+REAL, DIMENSION(KI), INTENT(OUT) :: PEVAP_ICE
+REAL, DIMENSION(KI), INTENT(OUT) :: PSNET_ICE
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-REAL, DIMENSION(KI)  :: ZSEA    ! fraction of sea
-REAL, DIMENSION(KI)  :: ZWATER  ! fraction of water
-REAL, DIMENSION(KI)  :: ZNATURE ! fraction of nature
-REAL, DIMENSION(KI)  :: ZTOWN   ! fraction of town
+REAL, DIMENSION(KI)   :: ZRUNOFF    ! Cumulated Surface runoff             (kg/m2)
+REAL, DIMENSION(KI)   :: ZDRAIN     ! Cumulated Deep drainage              (kg/m2)
+REAL, DIMENSION(KI)   :: ZCALVING   ! Cumulated Calving flux               (kg/m2)
+REAL, DIMENSION(KI)   :: ZRECHARGE  ! Cumulated Recharge to groundwater    (kg/m2)
+REAL, DIMENSION(KI)   :: ZSRCFLOOD  ! Cumulated flood freshwater flux      (kg/m2)
 !
-LOGICAL :: LPRESENT1, LPRESENT2
+REAL, DIMENSION(KI)   :: ZSEA_FWSU  ! Cumulated zonal wind stress       (Pa.s)
+REAL, DIMENSION(KI)   :: ZSEA_FWSV  ! Cumulated meridian wind stress    (Pa.s)
+REAL, DIMENSION(KI)   :: ZSEA_HEAT  ! Cumulated Non solar net heat flux (J/m2)
+REAL, DIMENSION(KI)   :: ZSEA_SNET  ! Cumulated Solar net heat flux     (J/m2)
+REAL, DIMENSION(KI)   :: ZSEA_WIND  ! Cumulated 10m wind speed          (m)
+REAL, DIMENSION(KI)   :: ZSEA_FWSM  ! Cumulated wind stress             (Pa.s)
+REAL, DIMENSION(KI)   :: ZSEA_EVAP  ! Cumulated Evaporation             (kg/m2)
+REAL, DIMENSION(KI)   :: ZSEA_RAIN  ! Cumulated Rainfall rate           (kg/m2)
+REAL, DIMENSION(KI)   :: ZSEA_SNOW  ! Cumulated Snowfall rate           (kg/m2)
+REAL, DIMENSION(KI)   :: ZSEA_WATF  ! Cumulated freshwater flux         (kg/m2)
+!
+REAL, DIMENSION(KI)   :: ZSEAICE_HEAT ! Cumulated Sea-ice non solar net heat flux (J/m2)
+REAL, DIMENSION(KI)   :: ZSEAICE_SNET ! Cumulated Sea-ice solar net heat flux     (J/m2)
+REAL, DIMENSION(KI)   :: ZSEAICE_EVAP ! Cumulated Sea-ice sublimation             (kg/m2)
 !
 INTEGER :: ILU, ILUOUT
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N',0,ZHOOK_HANDLE)
+!
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
+!
 !-------------------------------------------------------------------------------
 ! Global argument
 !
- CALL GET_FRAC_n(HPROGRAM, KI, ZSEA, ZWATER, ZNATURE, ZTOWN)
+IF(KI/=U%NSIZE_FULL)THEN
+  WRITE(ILUOUT,*) 'size of field expected by the coupling :', KI
+  WRITE(ILUOUT,*) 'size of field in SURFEX                :', U%NSIZE_FULL
+  CALL ABOR1_SFX('GET_SFXCPL_N: VECTOR SIZE NOT CORRECT FOR COUPLING')
+ENDIF
 !
 !-------------------------------------------------------------------------------
 ! Get variable over nature tile
 !
-LPRESENT1=PRESENT(PRUI)
-LPRESENT2=PRESENT(PICEFLUX)
+IF(LCPL_LAND)THEN
 !
-IF (LPRESENT1 .OR. LPRESENT2) THEN
-  ILU=COUNT(ZNATURE(:)>0.0)
-  CALL TREAT_NATURE(LPRESENT1,LPRESENT2,ILU)
+! * Init land output fields
+!
+  ZRUNOFF  (:) = XUNDEF
+  ZDRAIN   (:) = XUNDEF
+  ZCALVING (:) = XUNDEF
+  ZRECHARGE(:) = XUNDEF
+  ZSRCFLOOD(:) = XUNDEF
+!
+! * Get land output fields
+!       
+  CALL GET_SFX_LAND(I, U, &
+                    LCPL_GW,LCPL_FLOOD,LCPL_CALVING,    &
+                    ZRUNOFF,ZDRAIN,ZCALVING,ZRECHARGE,  &
+                    ZSRCFLOOD             )
+!
+! * Assign land output fields
+!        
+  PRUI    (:) = ZRUNOFF (:)+ZDRAIN(:)
+  PICEFLUX(:) = ZCALVING(:)
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------
 ! Get variable over sea and water tiles and for ice
 !
-LPRESENT1=(PRESENT(PWIND).AND.PRESENT(PFWSU).AND.PRESENT(PFWSV).AND.PRESENT(PSNET).AND. &
-            PRESENT(PHEAT).AND.PRESENT(PEVAP).AND.PRESENT(PRAIN).AND.PRESENT(PSNOW))
-LPRESENT2=(PRESENT(PSNET_ICE).AND.PRESENT(PHEAT_ICE).AND.PRESENT(PEVAP_ICE))
+IF(LCPL_SEA)THEN
 !
-IF (LPRESENT1 .OR. LPRESENT2) THEN
-  ILU=COUNT(ZSEA(:)>0.0)
-  CALL TREAT_SEA(LPRESENT1,LPRESENT2,ILU)  
-  !
-  ILU=COUNT(ZWATER(:)>0.0)
-  CALL TREAT_WATER(LPRESENT1,LPRESENT2,ILU)
+! * Init sea output fields
+!
+  ZSEA_FWSU (:) = XUNDEF
+  ZSEA_FWSV (:) = XUNDEF
+  ZSEA_HEAT (:) = XUNDEF
+  ZSEA_SNET (:) = XUNDEF
+  ZSEA_WIND (:) = XUNDEF
+  ZSEA_FWSM (:) = XUNDEF
+  ZSEA_EVAP (:) = XUNDEF
+  ZSEA_RAIN (:) = XUNDEF
+  ZSEA_SNOW (:) = XUNDEF
+  ZSEA_WATF (:) = XUNDEF
+!
+  ZSEAICE_HEAT (:) = XUNDEF
+  ZSEAICE_SNET (:) = XUNDEF
+  ZSEAICE_EVAP (:) = XUNDEF
+!
+! * Get sea output fields
+!
+  CALL GET_SFX_SEA(S, U, W, &
+                   LCPL_SEAICE,LWATER,                      &
+                   ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET, &
+                   ZSEA_WIND,ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN, &
+                   ZSEA_SNOW,ZSEA_WATF,                     &
+                   ZSEAICE_HEAT,ZSEAICE_SNET,ZSEAICE_EVAP   )
+!
+! * Assign sea output fields
+!
+  PFWSU     (:) = ZSEA_FWSU (:)
+  PFWSV     (:) = ZSEA_FWSV (:)
+  PSNET     (:) = ZSEA_SNET (:)
+  PHEAT     (:) = ZSEA_HEAT (:)
+  PEVAP     (:) = ZSEA_EVAP (:)
+  PRAIN     (:) = ZSEA_RAIN (:)
+  PSNOW     (:) = ZSEA_SNOW (:)
+  PFWSM     (:) = ZSEA_FWSM (:)
+  PHEAT_ICE (:) = ZSEAICE_HEAT (:)
+  PEVAP_ICE (:) = ZSEAICE_EVAP (:)
+  PSNET_ICE (:) = ZSEAICE_SNET (:)
+!
 ENDIF
 !
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N',1,ZHOOK_HANDLE)
-!
-CONTAINS
-!
-SUBROUTINE TREAT_NATURE(OPRESENT1,OPRESENT2,KLU)
-!
-IMPLICIT NONE
-!
-LOGICAL, INTENT(IN) :: OPRESENT1
-LOGICAL, INTENT(IN) :: OPRESENT2
-INTEGER, INTENT(IN) :: KLU
-!
-INTEGER, DIMENSION(KLU) :: IMASK
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_NATURE',0,ZHOOK_HANDLE)
-!
- CALL GET_1D_MASK(KLU,KI,ZNATURE,IMASK)
-!
-IF (OPRESENT1) THEN
-  !
-  XCPL_RUNOFF(:)=XCPL_RUNOFF(:)+XCPL_DRAIN(:)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_RUNOFF(:),PRUI(:),XUNDEF)
-  !
-  XCPL_RUNOFF (:) = 0.0
-  XCPL_DRAIN  (:) = 0.0
-  !
-ENDIF
-!
-IF (OPRESENT2) THEN
-  !
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_ICEFLUX(:),PICEFLUX(:),XUNDEF)
-  !
-  XCPL_ICEFLUX(:) = 0.0
-  !
-ENDIF
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_NATURE',1,ZHOOK_HANDLE)
-!
-END SUBROUTINE TREAT_NATURE
-!
-!
-SUBROUTINE TREAT_SEA(OPRESENT1,OPRESENT2,KLU)
-!
-IMPLICIT NONE
-!
-LOGICAL, INTENT(IN) :: OPRESENT1
-LOGICAL, INTENT(IN) :: OPRESENT2
-INTEGER, INTENT(IN) :: KLU
-!
-INTEGER, DIMENSION(KLU) :: IMASK
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_SEA',0,ZHOOK_HANDLE)
-!
- CALL GET_1D_MASK(KLU,KI,ZSEA,IMASK)
-!
-IF (OPRESENT1) THEN
-  !
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_WIND(:),PWIND(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_FWSU(:),PFWSU(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_FWSV(:),PFWSV(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_SNET(:),PSNET(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_HEAT(:),PHEAT(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_EVAP(:),PEVAP(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_RAIN(:),PRAIN(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_SNOW(:),PSNOW(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEA_FWSM(:),PFWSM(:),XUNDEF)
-  !
-  XCPL_SEA_WIND(:) = 0.0
-  XCPL_SEA_EVAP(:) = 0.0
-  XCPL_SEA_HEAT(:) = 0.0
-  XCPL_SEA_SNET(:) = 0.0
-  XCPL_SEA_FWSU(:) = 0.0
-  XCPL_SEA_FWSV(:) = 0.0
-  XCPL_SEA_RAIN(:) = 0.0
-  XCPL_SEA_SNOW(:) = 0.0
-  XCPL_SEA_FWSM(:) = 0.0
-  !
-ENDIF
-!
-IF (OPRESENT2) THEN
-  !
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEAICE_SNET(:),PSNET_ICE(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEAICE_HEAT(:),PHEAT_ICE(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_SEAICE_EVAP(:),PEVAP_ICE(:),XUNDEF)
-  !
-  XCPL_SEAICE_SNET(:) = 0.0
-  XCPL_SEAICE_EVAP(:) = 0.0
-  XCPL_SEAICE_HEAT(:) = 0.0
-  !  
-ENDIF
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_SEA',1,ZHOOK_HANDLE)
-!
-END SUBROUTINE TREAT_SEA
-!
-!
-SUBROUTINE TREAT_WATER(OPRESENT1,OPRESENT2,KLU)
-!
-IMPLICIT NONE
-!
-LOGICAL, INTENT(IN) :: OPRESENT1
-LOGICAL, INTENT(IN) :: OPRESENT2
-INTEGER, INTENT(IN) :: KLU
-!
-INTEGER, DIMENSION(KLU) :: IMASK
-!
-REAL, DIMENSION(KI)  :: ZWIND
-REAL, DIMENSION(KI)  :: ZFWSU
-REAL, DIMENSION(KI)  :: ZFWSV
-REAL, DIMENSION(KI)  :: ZSNET
-REAL, DIMENSION(KI)  :: ZHEAT
-REAL, DIMENSION(KI)  :: ZEVAP
-REAL, DIMENSION(KI)  :: ZRAIN
-REAL, DIMENSION(KI)  :: ZSNOW
-REAL, DIMENSION(KI)  :: ZFWSM
-!
-REAL, DIMENSION(KI)  :: ZSNET_ICE
-REAL, DIMENSION(KI)  :: ZHEAT_ICE
-REAL, DIMENSION(KI)  :: ZEVAP_ICE
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_WATER',0,ZHOOK_HANDLE)
-!
- CALL GET_1D_MASK(KLU,KI,ZWATER,IMASK)
-!
-IF (OPRESENT1) THEN
-  !
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_WIND(:),ZWIND(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_FWSU(:),ZFWSU(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_FWSV(:),ZFWSV(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_SNET(:),ZSNET(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_HEAT(:),ZHEAT(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_EVAP(:),ZEVAP(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_RAIN(:),ZRAIN(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_SNOW(:),ZSNOW(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATER_FWSM(:),ZFWSM(:),XUNDEF)
-  !  
-  WHERE(ZSEA(:)>.0.OR.ZWATER(:)>0.0) 
-  !
-    PWIND(:) = (ZSEA(:)*PWIND(:) + ZWATER(:)*ZWIND(:))/(ZSEA(:)+ZWATER(:))
-    PFWSU(:) = (ZSEA(:)*PFWSU(:) + ZWATER(:)*ZFWSU(:))/(ZSEA(:)+ZWATER(:))
-    PFWSV(:) = (ZSEA(:)*PFWSV(:) + ZWATER(:)*ZFWSV(:))/(ZSEA(:)+ZWATER(:))
-    PSNET(:) = (ZSEA(:)*PSNET(:) + ZWATER(:)*ZSNET(:))/(ZSEA(:)+ZWATER(:))
-    PHEAT(:) = (ZSEA(:)*PHEAT(:) + ZWATER(:)*ZHEAT(:))/(ZSEA(:)+ZWATER(:))
-    PEVAP(:) = (ZSEA(:)*PEVAP(:) + ZWATER(:)*ZEVAP(:))/(ZSEA(:)+ZWATER(:))
-    PRAIN(:) = (ZSEA(:)*PRAIN(:) + ZWATER(:)*ZRAIN(:))/(ZSEA(:)+ZWATER(:))
-    PSNOW(:) = (ZSEA(:)*PSNOW(:) + ZWATER(:)*ZSNOW(:))/(ZSEA(:)+ZWATER(:))
-    PFWSM(:) = (ZSEA(:)*PFWSM(:) + ZWATER(:)*ZFWSM(:))/(ZSEA(:)+ZWATER(:))
-  !
-  ENDWHERE  
-  !
-  XCPL_WATER_WIND(:) = 0.0
-  XCPL_WATER_EVAP(:) = 0.0
-  XCPL_WATER_HEAT(:) = 0.0
-  XCPL_WATER_SNET(:) = 0.0
-  XCPL_WATER_FWSU(:) = 0.0
-  XCPL_WATER_FWSV(:) = 0.0
-  XCPL_WATER_RAIN(:) = 0.0
-  XCPL_WATER_SNOW(:) = 0.0
-  XCPL_WATER_FWSM(:) = 0.0
-  !
-ENDIF
-!
-IF (OPRESENT2) THEN
-  !
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATERICE_SNET(:),ZSNET_ICE(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATERICE_HEAT(:),ZHEAT_ICE(:),XUNDEF)
-  CALL UNPACK_SAME_RANK(IMASK,XCPL_WATERICE_EVAP(:),ZEVAP_ICE(:),XUNDEF)
-  !  
-  WHERE(ZSEA(:)>.0.OR.ZWATER(:)>0.0)     
-    PSNET_ICE(:) = (ZSEA(:)*PSNET_ICE(:) + ZWATER(:)*ZSNET_ICE(:))/(ZSEA(:)+ZWATER(:))
-    PHEAT_ICE(:) = (ZSEA(:)*PHEAT_ICE(:) + ZWATER(:)*ZHEAT_ICE(:))/(ZSEA(:)+ZWATER(:))
-    PEVAP_ICE(:) = (ZSEA(:)*PEVAP_ICE(:) + ZWATER(:)*ZEVAP_ICE(:))/(ZSEA(:)+ZWATER(:))
-  ENDWHERE
-  !  
-  XCPL_WATERICE_SNET(:) = 0.0
-  XCPL_WATERICE_EVAP(:) = 0.0
-  XCPL_WATERICE_HEAT(:) = 0.0
-  !  
-ENDIF
-!
-IF (LHOOK) CALL DR_HOOK('GET_SFXCPL_N:TREAT_WATER',1,ZHOOK_HANDLE)
-!
-END SUBROUTINE TREAT_WATER
-!
-!==============================================================================
 !
 END SUBROUTINE GET_SFXCPL_n

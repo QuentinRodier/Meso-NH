@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_TEB_DATE(HPROGRAM,HINIT,KLUOUT,HATMFILE,HATMFILETYPE,&
+      SUBROUTINE READ_TEB_DATE (&
+                                HPROGRAM,HINIT,KLUOUT,HATMFILE,HATMFILETYPE,&
                                  KYEAR,KMONTH,KDAY,PTIME,TPTIME)  
 !     #######################################################
 !
@@ -28,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S.Malardel   *Meteo France*	
+!!      S.Malardel   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -38,6 +39,9 @@
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+!
+!
 !
 USE MODD_TYPE_DATE_SURF
 USE MODD_SURF_PAR,       ONLY : NUNDEF, XUNDEF
@@ -56,6 +60,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
+!
+!
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM    ! program calling
  CHARACTER(LEN=3),  INTENT(IN)  :: HINIT     ! fields to initialize 'ALL', 'PRE', 'PGD'
@@ -113,7 +119,8 @@ IF (TPTIME%TDATE%YEAR==NUNDEF.OR.TPTIME%TDATE%MONTH==NUNDEF &
                           HATMFILE,HATMFILETYPE,YFILEPGDIN,YFILEPGDINTYPE,KLUOUT,GUNIF)
   !
   IF (LEN_TRIM(YFILETYPE)/=0) THEN
-    CALL READ_PREP_FILE_DATE(HPROGRAM,YFILE,YFILETYPE,TPTIME,KLUOUT)
+    CALL READ_PREP_FILE_DATE(&
+                             HPROGRAM,YFILE,YFILETYPE,TPTIME,KLUOUT)
   END IF
   !
 END IF

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
      SUBROUTINE BILIN (KLUOUT,PX1,PY1,PFIELD1,PX2,PY2,PFIELD2,OINTERP)
 !     #########################################################################
@@ -76,12 +76,14 @@
 !!    -------------
 !!
 !!      Original     01/2004
+! TD&DD: added OpenMP directives
+
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODI_HOR_EXTRAPOL_SURF
+USE MODI_HOR_EXTRAPOL_SURF_CHEAP
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -114,10 +116,8 @@ REAL, DIMENSION (:,:), ALLOCATABLE   :: ZFIELD_Y ! FIELD at mesh interface
 REAL, DIMENSION (:,:), ALLOCATABLE   :: ZFIELD_XY! FIELD at mesh corner
 REAL, DIMENSION (SIZE(PX1)+1)        :: ZX       ! X coordinate of left   limit of input meshes
 REAL, DIMENSION (SIZE(PY1)+1)        :: ZY       ! Y coordinate of bottom limit of input meshes
-REAL, DIMENSION (:),   ALLOCATABLE   :: ZX1      ! input X coordinate of all points
-REAL, DIMENSION (:),   ALLOCATABLE   :: ZY1      ! input Y coordinate of all points
-REAL, DIMENSION (:),   ALLOCATABLE   :: ZFIELD1  ! input field of all points
 !
+INTEGER, DIMENSION(SIZE(PFIELD2))    :: ICI, ICJ
 REAL                                 :: ZC1_X    ! coefficient for left   points
 REAL                                 :: ZC2_X    ! coefficient for middle points
 REAL                                 :: ZC3_X    ! coefficient for right  points
@@ -138,7 +138,8 @@ REAL                                 :: ZEPS=1.E-3
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('BILIN',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BILIN_1',0,ZHOOK_HANDLE)
+
 IIU=SIZE(PFIELD1,1)
 IJU=SIZE(PFIELD1,2)
 !
@@ -313,11 +314,36 @@ PFIELD2(:) = XUNDEF
 !
 !* loop on all output grid points
 !
+IF (LHOOK) CALL DR_HOOK('BILIN_1',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BILIN_2',0,ZHOOK_HANDLE)
+!
+ICI(:) = 1
+ICJ(:) = 1
+!$OMP PARALLEL DO PRIVATE(JL,JJ)
+DO JL=1,SIZE(PFIELD2)
+  DO JJ=SIZE(ZX),1,-1
+    IF (ZX(JJ)<=PX2(JL)) THEN
+      ICI(JL) = JJ
+      EXIT
+    ENDIF
+  ENDDO
+  DO JJ=SIZE(ZY),1,-1
+    IF (ZY(JJ)<=PY2(JL)) THEN
+      ICJ(JL) = JJ
+      EXIT
+    ENDIF
+  ENDDO
+ENDDO
+!$OMP END PARALLEL DO
+
+IF (LHOOK) CALL DR_HOOK('BILIN_2',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BILIN_3',0,ZHOOK_HANDLE)
+
 DO JL=1,SIZE(PFIELD2,1)
 !
 !* interpolation weights in X direction
 !
-  JI=COUNT(ZX(:)<=PX2(JL))
+  JI=ICI(JL)
   JI=MAX(MIN(JI,IIU),0)
   IF (PX1(JI)<=PX2(JL)) THEN
     ZC2_X = (PX2(JL)-ZX(JI+1))/(PX1(JI)-ZX(JI+1))
@@ -331,9 +357,9 @@ DO JL=1,SIZE(PFIELD2,1)
     ZC3_X = 0.
   END IF
 !
-!* interpolation weights in Y direction
+!  interpolation weights in Y direction
 !
-  JJ=COUNT(ZY(:)<=PY2(JL))
+  JJ=ICJ(JL)
   JJ=MAX(MIN(JJ,IJU),0)
   IF (PY1(JJ)<=PY2(JL)) THEN
     ZC2_Y = (PY2(JL)-ZY(JJ+1))/(PY1(JJ)-ZY(JJ+1))
@@ -362,6 +388,9 @@ DO JL=1,SIZE(PFIELD2,1)
                       + ZC3_X * ZFIELD_XY(JI+1,JJ+1) )  
 
 END DO
+!
+IF (LHOOK) CALL DR_HOOK('BILIN_3',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BILIN_4',0,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -394,25 +423,9 @@ WRITE(KLUOUT,*) ' Number of points to interpolate: ',COUNT(PFIELD2(:)==XUNDEF .A
 !
 !* input grid coordinates
 !
-ALLOCATE(ZX1(IIU*IJU))
-ALLOCATE(ZY1(IIU*IJU))
-ALLOCATE(ZFIELD1(IIU*IJU))
-IIN=0
-DO JJ=1,IJU
-  DO JI=1,IIU
-    IIN = IIN +1
-    ZX1    (IIN) = PX1    (JI)
-    ZY1    (IIN) = PY1       (JJ)
-    ZFIELD1(IIN) = PFIELD1(JI,JJ)
-  END DO
-END DO
+ CALL HOR_EXTRAPOL_SURF_CHEAP(KLUOUT,'XY  ',PY1,PX1,PFIELD1,PY2,PX2,PFIELD2,OINTERP)
 !
- CALL HOR_EXTRAPOL_SURF(KLUOUT,'XY  ',ZY1,ZX1,ZFIELD1,PY2,PX2,PFIELD2,OINTERP)
-!
-DEALLOCATE(ZX1)
-DEALLOCATE(ZY1)
-DEALLOCATE(ZFIELD1)
-IF (LHOOK) CALL DR_HOOK('BILIN',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('BILIN_4',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE BILIN

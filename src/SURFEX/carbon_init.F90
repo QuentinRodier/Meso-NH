@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE CARBON_INIT(KNBIOMASS,KNLITTER, KNLITTLEVS, KNSOILCARB)  
 !     #####################
@@ -29,7 +29,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	A.-L. Gibelin           * Meteo-France *
+!!      A.-L. Gibelin           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -64,8 +64,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_INIT',0,ZHOOK_HANDLE)
 !
-!*	 2.     BIOMASS CONSTANTS
-!	        -----------------
+!*       2.     BIOMASS CONSTANTS
+!               -----------------
 !
 ! Biomass Carbon/Nitrogen ratio
 XCN(1) = 40.0
@@ -88,7 +88,7 @@ XFRAC_LITTER(:,1) = 0.85 - 0.018 * XLC(:) * XCN(:)
 XFRAC_LITTER(:,2) = 1. - XFRAC_LITTER(:,1)
 !  
 !
-!*	 3.     LITTER CONSTANTS
+!*       3.     LITTER CONSTANTS
 !               ----------------
 !        
 ! Residence times in litter pools (s)
@@ -112,7 +112,7 @@ XFRAC_SOILCARB(1,1,1) = 0.45
 XFRAC_SOILCARB(1,1,2) = 0.45
 !   
 !
-!*	 4.     SOIL CONSTANTS
+!*       4.     SOIL CONSTANTS
 !               --------------
 !  
 ! Residence times in carbon pools (s)

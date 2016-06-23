@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE DEALLOC_WATFLUX_n
+SUBROUTINE DEALLOC_WATFLUX_n (CHW, WG, W)
 !     #################################################################################
 !
 !!****  *DEALLOC_WATFLUX_n * - Deallocate all arrays
@@ -29,20 +29,13 @@ SUBROUTINE DEALLOC_WATFLUX_n
 !
 
 !
-USE MODD_WATFLUX_n,      ONLY : LCOVER, XCOVER, XZS, XTS, XZ0, &
-                                  XEMIS, XDIR_ALB, XSCA_ALB,     &
-                                  XCPL_WATER_WIND,               &
-                                  XCPL_WATER_FWSU,               &
-                                  XCPL_WATER_FWSV,               &
-                                  XCPL_WATER_SNET,               &
-                                  XCPL_WATER_HEAT,               &
-                                  XCPL_WATER_EVAP,               &
-                                  XCPL_WATER_RAIN,               &
-                                  XCPL_WATER_SNOW  
-USE MODD_WATFLUX_GRID_n, ONLY : XGRID_PAR, XLAT, XLON, XMESH_SIZE
-USE MODD_CH_WATFLUX_n,   ONLY : XDEP, CCH_NAMES, CSV
 
 
+!
+!
+USE MODD_CH_WATFLUX_n, ONLY : CH_WATFLUX_t
+USE MODD_WATFLUX_GRID_n, ONLY : WATFLUX_GRID_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,42 +50,47 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------------
 !
 
+!
+TYPE(CH_WATFLUX_t), INTENT(INOUT) :: CHW
+TYPE(WATFLUX_GRID_t), INTENT(INOUT) :: WG
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEALLOC_WATFLUX_N',0,ZHOOK_HANDLE)
-IF (ASSOCIATED(LCOVER ))  DEALLOCATE(LCOVER )
-IF (ASSOCIATED(XCOVER ))  DEALLOCATE(XCOVER )
-IF (ASSOCIATED(XZS    ))  DEALLOCATE(XZS    )
-IF (ASSOCIATED(XTS    ))  DEALLOCATE(XTS    )
-IF (ASSOCIATED(XZ0    ))  DEALLOCATE(XZ0    )
-IF (ASSOCIATED(XEMIS  ))  DEALLOCATE(XEMIS  )
+IF (ASSOCIATED(W%LCOVER ))  DEALLOCATE(W%LCOVER )
+IF (ASSOCIATED(W%XCOVER ))  DEALLOCATE(W%XCOVER )
+IF (ASSOCIATED(W%XZS    ))  DEALLOCATE(W%XZS    )
+IF (ASSOCIATED(W%XTS    ))  DEALLOCATE(W%XTS    )
+IF (ASSOCIATED(W%XZ0    ))  DEALLOCATE(W%XZ0    )
+IF (ASSOCIATED(W%XEMIS  ))  DEALLOCATE(W%XEMIS  )
 !
-IF (ASSOCIATED(XDIR_ALB))  DEALLOCATE(XDIR_ALB)
-IF (ASSOCIATED(XSCA_ALB))  DEALLOCATE(XSCA_ALB)
-!
-!-------------------------------------------------------------------------------------
-!
-IF (ASSOCIATED(XGRID_PAR )) DEALLOCATE(XGRID_PAR )
-IF (ASSOCIATED(XLAT      )) DEALLOCATE(XLAT      )
-IF (ASSOCIATED(XLON      )) DEALLOCATE(XLON      )
-IF (ASSOCIATED(XMESH_SIZE)) DEALLOCATE(XMESH_SIZE)
+IF (ASSOCIATED(W%XDIR_ALB))  DEALLOCATE(W%XDIR_ALB)
+IF (ASSOCIATED(W%XSCA_ALB))  DEALLOCATE(W%XSCA_ALB)
 !
 !-------------------------------------------------------------------------------------
 !
-IF(ASSOCIATED(XDEP))      DEALLOCATE(XDEP)
-IF(ASSOCIATED(CCH_NAMES)) DEALLOCATE(CCH_NAMES)
-IF(ASSOCIATED(CSV))       DEALLOCATE(CSV)
+IF (ASSOCIATED(WG%XGRID_PAR )) DEALLOCATE(WG%XGRID_PAR )
+IF (ASSOCIATED(WG%XLAT      )) DEALLOCATE(WG%XLAT      )
+IF (ASSOCIATED(WG%XLON      )) DEALLOCATE(WG%XLON      )
+IF (ASSOCIATED(WG%XMESH_SIZE)) DEALLOCATE(WG%XMESH_SIZE)
 !
 !-------------------------------------------------------------------------------------
 !
-IF(ASSOCIATED(XCPL_WATER_WIND))      DEALLOCATE(XCPL_WATER_WIND)
-IF(ASSOCIATED(XCPL_WATER_FWSU))      DEALLOCATE(XCPL_WATER_FWSU)
-IF(ASSOCIATED(XCPL_WATER_FWSV))      DEALLOCATE(XCPL_WATER_FWSV)
-IF(ASSOCIATED(XCPL_WATER_SNET))      DEALLOCATE(XCPL_WATER_SNET)
-IF(ASSOCIATED(XCPL_WATER_HEAT))      DEALLOCATE(XCPL_WATER_HEAT)
-IF(ASSOCIATED(XCPL_WATER_EVAP))      DEALLOCATE(XCPL_WATER_EVAP)
-IF(ASSOCIATED(XCPL_WATER_RAIN))      DEALLOCATE(XCPL_WATER_RAIN)
-IF(ASSOCIATED(XCPL_WATER_SNOW))      DEALLOCATE(XCPL_WATER_SNOW)
+IF(ASSOCIATED(CHW%XDEP))      DEALLOCATE(CHW%XDEP)
+IF(ASSOCIATED(CHW%CCH_NAMES)) DEALLOCATE(CHW%CCH_NAMES)
+IF(ASSOCIATED(CHW%SVW%CSV))       DEALLOCATE(CHW%SVW%CSV)
+!
+!-------------------------------------------------------------------------------------
+!
+IF(ASSOCIATED(W%XCPL_WATER_WIND))      DEALLOCATE(W%XCPL_WATER_WIND)
+IF(ASSOCIATED(W%XCPL_WATER_FWSU))      DEALLOCATE(W%XCPL_WATER_FWSU)
+IF(ASSOCIATED(W%XCPL_WATER_FWSV))      DEALLOCATE(W%XCPL_WATER_FWSV)
+IF(ASSOCIATED(W%XCPL_WATER_SNET))      DEALLOCATE(W%XCPL_WATER_SNET)
+IF(ASSOCIATED(W%XCPL_WATER_HEAT))      DEALLOCATE(W%XCPL_WATER_HEAT)
+IF(ASSOCIATED(W%XCPL_WATER_EVAP))      DEALLOCATE(W%XCPL_WATER_EVAP)
+IF(ASSOCIATED(W%XCPL_WATER_RAIN))      DEALLOCATE(W%XCPL_WATER_RAIN)
+IF(ASSOCIATED(W%XCPL_WATER_SNOW))      DEALLOCATE(W%XCPL_WATER_SNOW)
 IF (LHOOK) CALL DR_HOOK('DEALLOC_WATFLUX_N',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

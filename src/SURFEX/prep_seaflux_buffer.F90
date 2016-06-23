@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
 SUBROUTINE PREP_SEAFLUX_BUFFER(HPROGRAM,HSURF,KLUOUT,PFIELD)
 !     #################################################################################
@@ -77,10 +77,11 @@ SELECT CASE(HSURF)
 !      ---------
 !
   CASE('ZS     ')
+    ALLOCATE(PFIELD(NNI,1))
+    PFIELD = 0.0
     SELECT CASE (YINMODEL)
       CASE ('ALADIN')
         CALL READ_BUFFER_ZS(KLUOUT,YINMODEL,ZFIELD)
-        ALLOCATE(PFIELD(NNI,1))
         PFIELD(:,1) = ZFIELD(:)
         DEALLOCATE(ZFIELD)
     END SELECT
@@ -90,21 +91,29 @@ SELECT CASE(HSURF)
 !      --------------------
 !
   CASE('SST    ')
+    ALLOCATE(PFIELD(NNI,1))
+    PFIELD = 0.0
     SELECT CASE (YINMODEL)
       CASE ('ALADIN')
         CALL READ_BUFFER_SST(KLUOUT,YINMODEL,ZFIELD)
-        ALLOCATE(PFIELD(NNI,1))
         PFIELD(:,1) = ZFIELD(:)
         DEALLOCATE(ZFIELD)
     END SELECT
-
+!
+!*      5.  Sea surface salinity and ice fraction
+!           -------------------------------------
+!
+  CASE('SSS    ', 'SIC    ')
+    ALLOCATE(PFIELD(NNI,1))
+    PFIELD = 0.0
+!
 END SELECT
 
 !
 !*      4.     Interpolation method
 !              --------------------
 !
-CINTERP_TYPE='BUFFER'
+ CINTERP_TYPE='BUFFER'
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_BUFFER',1,ZHOOK_HANDLE)
 !
 !

@@ -1,9 +1,9 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_LCOVER(HPROGRAM,OCOVER)
+      SUBROUTINE WRITE_LCOVER(DGU,U,HPROGRAM,OCOVER)
 !     ################################
 !
 !!****  *READ_LCOVER* - routine to write a file for
@@ -42,7 +42,8 @@
 !              ------------
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-!USE MODD_WATFLUX_n,      ONLY : LCOVER
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_WRITE_SURF
 !
@@ -64,6 +65,8 @@ LOGICAL, DIMENSION(JPCOVER)    :: OCOVER   ! list of covers
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER           :: IRESP          ! Error code after reading
 CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
@@ -81,7 +84,7 @@ CALL MPI_ALLREDUCE(OCOVER, GCOVER, SIZE(OCOVER),MPI_LOGICAL, MPI_LOR, MPI_COMM_W
 OCOVER(:)=GCOVER(:)
 YRECFM='COVER_LIST'
 YCOMMENT='(LOGICAL LIST)'
-CALL WRITE_SURF(HPROGRAM,YRECFM,OCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+CALL WRITE_SURF(DGU,U,HPROGRAM,YRECFM,OCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_LCOVER',1,ZHOOK_HANDLE)
 !

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ##############################
       MODULE MODE_GRIDTYPE_CONF_PROJ
 !     ##############################
@@ -13,7 +13,7 @@
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
-CONTAINS
+ CONTAINS
 !############################################################################
 !############################################################################
 !############################################################################
@@ -27,7 +27,7 @@ CONTAINS
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -78,7 +78,7 @@ LOGICAL                         :: GFULL    ! T : entire grid is stored
 INTEGER                         :: IL       ! number of points
 INTEGER                         :: JJ       ! loop counter
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
-#ifdef MNH
+#ifdef SFX_MNH
 INTEGER                         :: IINFO_ll
 INTEGER                         :: IXOR, IYOR
 INTEGER                         :: IXORMIN, IYORMIN
@@ -182,7 +182,7 @@ END SUBROUTINE PUT_GRIDTYPE_CONF_PROJ
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------

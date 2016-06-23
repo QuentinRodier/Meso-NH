@@ -1,21 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
-SUBROUTINE GOTO_TEB(KPATCH)
-!
-USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-USE PARKIND1  ,ONLY : JPRB
-!
-USE MODE_MODELN_TEB_HANDLER
-!
-IMPLICIT NONE
-!
-INTEGER, INTENT(IN) :: KPATCH
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!!
-IF (LHOOK) CALL DR_HOOK('GOTO_TEB',0,ZHOOK_HANDLE)
- CALL GOTO_PATCH_TEB(KPATCH)
-IF (LHOOK) CALL DR_HOOK('GOTO_TEB',1,ZHOOK_HANDLE)
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
+SUBROUTINE GOTO_TEB!
 !!
 END SUBROUTINE GOTO_TEB

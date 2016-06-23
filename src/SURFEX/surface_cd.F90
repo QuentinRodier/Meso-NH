@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !   #################################################################
     SUBROUTINE SURFACE_CD(PRI, PZREF, PUREF, PZ0EFF, PZ0H,   &
                               PCD, PCDN) 
@@ -47,7 +47,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson           * Meteo-France *
+!!      V. Masson           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -94,7 +94,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 ! Functions :
 REAL :: X, CMSTAR, PM
-CMSTAR(X) = 6.8741 + 2.6933*X - 0.3601*X*X + 0.0154*X*X*X
+ CMSTAR(X) = 6.8741 + 2.6933*X - 0.3601*X*X + 0.0154*X*X*X
 PM    (X) = 0.5233 - 0.0815*X + 0.0135*X*X - 0.0010*X*X*X
 
 !-------------------------------------------------------------------------------

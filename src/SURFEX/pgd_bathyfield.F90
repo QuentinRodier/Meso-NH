@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_BATHYFIELD(HPROGRAM,HFIELD,HAREA,HFILE,HFILETYPE,&
+      SUBROUTINE PGD_BATHYFIELD (UG, U, USS, &
+                                 HPROGRAM,HFIELD,HAREA,HFILE,HFILETYPE,&
                                   HNCVARNAME,PUNIF,PFIELD)  
 !     ##############################################################
 !
@@ -40,10 +41,15 @@
 !*    0.     DECLARATION
 !            -----------
 !
+!
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL
 USE MODD_PGDWORK,        ONLY : XSUMVAL, NSIZE
-USE MODD_SURF_ATM_n,     ONLY : XNATURE, XSEA, XTOWN, XWATER
 !
 USE MODI_GET_LUOUT
 USE MODI_TREAT_BATHYFIELD
@@ -58,6 +64,11 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM  ! Type of program
  CHARACTER(LEN=*),  INTENT(IN) :: HFIELD    ! field name for prints
@@ -118,7 +129,8 @@ IF (LEN_TRIM(HFILE)/=0) THEN
   YFIELD = '                    '
   YFIELD = HFIELD(1:MIN(LEN(HFIELD),20))
 !
-  CALL TREAT_BATHYFIELD(HPROGRAM,'SURF  ',HFILETYPE,'A_MESH',HFILE, HNCVARNAME,&
+  CALL TREAT_BATHYFIELD(UG, U, USS, &
+                        HPROGRAM,'SURF  ',HFILETYPE,'A_MESH',HFILE, HNCVARNAME,&
                      YFIELD,PFIELD,HAREA                           )  
 !
 !-------------------------------------------------------------------------------
@@ -128,15 +140,15 @@ IF (LEN_TRIM(HFILE)/=0) THEN
 !
   SELECT CASE (HAREA)
     CASE ('LAN')
-      WHERE (XTOWN(:)+XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XTOWN(:)+U%XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('TWN')
-      WHERE (XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XTOWN  (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('NAT')
-      WHERE (XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XNATURE(:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('SEA')
-      WHERE (XSEA   (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XSEA   (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
     CASE ('WAT')
-      WHERE (XWATER (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
+      WHERE (U%XWATER (:)==0. .AND. NSIZE(:)==0 ) NSIZE(:) = -1
 
   END SELECT
 !
@@ -145,7 +157,8 @@ IF (LEN_TRIM(HFILE)/=0) THEN
 !*    5.      Interpolation if some points are not initialized (no data for these points)
 !             ------------------------------------------------
 !
-  CALL INTERPOL_FIELD(HPROGRAM,ILUOUT,NSIZE,PFIELD(:),HFIELD)
+  CALL INTERPOL_FIELD(UG, U, &
+                      HPROGRAM,ILUOUT,NSIZE,PFIELD(:),HFIELD)
 !
   DO JLOOP=1,SIZE(PFIELD)
    PFIELD(JLOOP)=MIN(PFIELD(JLOOP),-1.)
@@ -185,15 +198,15 @@ END IF
 !
 SELECT CASE (HAREA)
   CASE ('LAN')
-    WHERE (XTOWN(:)+XNATURE(:)==0.) PFIELD(:) = XUNDEF
+    WHERE (U%XTOWN(:)+U%XNATURE(:)==0.) PFIELD(:) = XUNDEF
   CASE ('TWN')
-    WHERE (XTOWN  (:)==0.) PFIELD(:) = XUNDEF
+    WHERE (U%XTOWN  (:)==0.) PFIELD(:) = XUNDEF
   CASE ('NAT')
-    WHERE (XNATURE(:)==0.) PFIELD(:) = XUNDEF
+    WHERE (U%XNATURE(:)==0.) PFIELD(:) = XUNDEF
   CASE ('SEA')
-    WHERE (XSEA   (:)==0.) PFIELD(:) = XUNDEF
+    WHERE (U%XSEA   (:)==0.) PFIELD(:) = XUNDEF
   CASE ('WAT')
-    WHERE (XWATER (:)==0.) PFIELD(:) = XUNDEF
+    WHERE (U%XWATER (:)==0.) PFIELD(:) = XUNDEF
 
 END SELECT
 IF (LHOOK) CALL DR_HOOK('PGD_BATHYFIELD',1,ZHOOK_HANDLE)

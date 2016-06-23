@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######################
       MODULE MODD_ISBA_PAR
 !     ######################
@@ -18,7 +18,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	S. Belair   *Meteo France*
+!!      S. Belair   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -27,6 +27,9 @@
 !!      (V.Masson)     15/03/99 add number of layers
 !!      (A.Boone)      02/05/02 add ISBA-ES parameters
 !!      (A.Boone)      21/11/11 add Rsmax
+!!      (S.Gollvik)    20/02/12 add XFLXMAX
+!!      (A.Boone)      20/02/12 add ISBA-MEB parameters
+!!     (B. Decharme)      07/15 Add numerical adjustement for F2 soilstress function
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -56,6 +59,14 @@ REAL, PARAMETER       :: XVEGMIN   = 0.95
 !
 REAL, PARAMETER       :: XRS_MAX   = 5000. 
 !
+! Factor to restore explicit Cv value (DIF option)
+!
+REAL, PARAMETER       :: XCVHEATF  = 0.20 
+!
+! Numerical factor to prevent division by 0 for F2 soilstress function
+!
+REAL, PARAMETER       :: XDENOM_MIN  = 1.E-12 
+!
 !--------------------------------------------------------------------------------
 ! Soil:
 !--------------------------------------------------------------------------------
@@ -82,6 +93,21 @@ REAL, PARAMETER       :: XCONDOTH1 = 2.0    ! W/(m K)  Other thermal conductivit
 REAL, PARAMETER       :: XCONDOTH2 = 3.0    ! W/(m K)  Other thermal conductivity
 REAL, PARAMETER       :: XCONDWTR  = 0.57   ! W/(m K)  Water thermal conductivity
 !
+REAL, PARAMETER       :: XOMRHO     = 1300.   !Organic mater density (kg.m-3)
+REAL, PARAMETER       :: XOMSPH     = 1926.   !Organic mater specific heat              (J/(kg K))
+REAL, PARAMETER       :: XOMCONDDRY = 0.05    !Organic mater dry thermal conductivity   (W.m–1.K–1)
+REAL, PARAMETER       :: XOMCONDSLD = 0.25    !Organic mater solid thermal conductivity (W.m–1.K–1)
+!                        
+! Maximum depth of the water table for soil thermal computation
+!
+REAL, PARAMETER       :: XWTD_MAXDEPTH = 100. !m
+!                        
+! Minimun depth of permafrost and limit area
+!
+REAL, PARAMETER :: XPERMFRAC  = 0.25   ! permafrost limit area (fraction)
+!
+REAL, PARAMETER :: XPERMDEPTH = 12.0   ! permafrost depth (m)
+!
 !--------------------------------------------------------------------------------
 ! Vegetation radiative properties
 !--------------------------------------------------------------------------------
@@ -93,9 +119,19 @@ REAL, PARAMETER       :: XRED_EDGE = 0.0000007  ! (m)   0.7 micro-m
 !                        
 ! Wavelength between visible and UV parts of the solar spectra
 !
-REAL, PARAMETER       :: XUV_EDGE  = 0.00000025 ! (m)   0.1 micro-m
+REAL, PARAMETER       :: XUV_EDGE  = 0.0000002 ! (m)   0.1 micro-m
 !
 !--------------------------------------------------------------------------------
+! MEB: Multiple energy balance  parameters
+!--------------------------------------------------------------------------------
+!                        
+REAL, PARAMETER       :: XFLXMAX = 5000.   ! [kg/(m**2*s)]
+!                        Maximum value of exchange coeffient
+!                        (should go to infinity, for some cases, i.e. when lai=>0) 
+!                        
+REAL, PARAMETER       :: XLIMH       = 2.0 ! m
+!                        Minimum forcing height above vegetation top (turbulence computations)
+!
 ! Soil geometry if DF option
 !--------------------------------------------------------------------------------
 !

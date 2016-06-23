@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !~ *************************************************************
 FUNCTION UTCI_APPROX(PTA,PEHPA,PTMRT,PVA) RESULT(PUTCI_APPROX)
 !~ *************************************************************
@@ -29,10 +29,10 @@ FUNCTION UTCI_APPROX(PTA,PEHPA,PTMRT,PVA) RESULT(PUTCI_APPROX)
 !!    REFERENCE
 !!    ---------
 !!   www.utci.org
-!~ REAL Function value is the UTCI in degree Celsius
+!~ DOUBLE PRECISION Function value is the UTCI in degree Celsius
 !~ computed by a 6th order approximating polynomial from the 4 Input paramters 
 !~ 
-!~ Input parameters (all of type REAL)
+!~ Input parameters (all of type DOUBLE PRECISION)
 !~ - Ta       : air temperature, degree Celsius
 !~ - ehPa    : water vapour presure, hPa=hecto Pascal
 !~ - Tmrt   : mean radiant temperature, degree Celsius
@@ -44,7 +44,7 @@ FUNCTION UTCI_APPROX(PTA,PEHPA,PTMRT,PVA) RESULT(PUTCI_APPROX)
 !!    AUTHOR
 !!    ------
 !!
-!!	P. Broede
+!!      P. Broede
 !!
 !!    MODIFICATIONS
 !!    -------------

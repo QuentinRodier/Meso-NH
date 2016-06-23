@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ######
 !
    SUBROUTINE CCETR_PAIR(KNIV, PABC, PABC_SUP, PIA, PXMUS, PB_DR, POMEGA_DR,&
@@ -9,7 +9,7 @@
                         PFD_SKY, PFD_VEG, PTR, PXIA, PLAI_EFF               )
    
 !
-!!***	*CCETR_PAIR* ***
+!!***   *CCETR_PAIR* ***
 !!
 !!    PURPOSE
 !!    -------
@@ -33,7 +33,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!	  D. Carrer           * Meteo-France *
+!!      D. Carrer           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -53,35 +53,41 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-INTEGER, INTENT(IN)               :: KNIV
-REAL,    INTENT(IN)               :: PABC, PABC_SUP
-!                              PABC    = abscissa needed for integration
-!                                       of net assimilation and stomatal 
-!                                       conductance over canopy depth
-REAL, DIMENSION(:), INTENT(IN)    :: PIA, PXMUS, PB_DR, POMEGA_DR, POMEGA_DF
-REAL, INTENT(IN) :: PB_DF
-!	                       PIA   = absorbed PAR / PIR
-!                              PXMUS = cosine of solar zenith angle
-!                              PLAI  = leaf area index
-REAL, DIMENSION(:), INTENT(IN)    :: PLAI, PALB_VEG, PALB_SOIL
-REAL, DIMENSION(:), INTENT(IN)    :: PFD_SKY
-REAL, DIMENSION(:), INTENT(INOUT) :: PFD_VEG, PTR
-REAL, DIMENSION(:), INTENT(OUT)   :: PXIA
-!                              PXIA  = abs. radiation of veg
-REAL, DIMENSION(:), INTENT(OUT)   :: PLAI_EFF
+INTEGER,            INTENT(IN)    :: KNIV              ! layer number from 10 (top of canopy) to 1 (bottom)
+REAL,               INTENT(IN)    :: PABC              ! normalized height units of the considered layer and the one above
+REAL,               INTENT(IN)    :: PABC_SUP          ! cumulated canopy height (0 at the bottom, 1 at the top)
+REAL,               INTENT(IN)    :: PB_DF             ! single_scattering albedo of considered leaf layer for diffuse rad.
+REAL, DIMENSION(:), INTENT(IN)    :: PIA               ! incident PAR or NIR
+REAL, DIMENSION(:), INTENT(IN)    :: PXMUS             ! cosine of solar zenith angle
+REAL, DIMENSION(:), INTENT(IN)    :: PB_DR             ! single_scattering albedo of considered leaf layer for direct rad.
+REAL, DIMENSION(:), INTENT(IN)    :: POMEGA_DR         !
+REAL, DIMENSION(:), INTENT(IN)    :: POMEGA_DF         !
+REAL, DIMENSION(:), INTENT(IN)    :: PLAI              ! leaf area index
+REAL, DIMENSION(:), INTENT(IN)    :: PALB_VEG          ! vegetation albedo in PAR or NIR
+REAL, DIMENSION(:), INTENT(IN)    :: PALB_SOIL         ! soil albedo in PAR or NIR
+REAL, DIMENSION(:), INTENT(IN)    :: PFD_SKY           ! fraction of incident diffuse radiation at top of canopy
+!
+REAL, DIMENSION(:), INTENT(INOUT) :: PFD_VEG           ! fraction of incident diffuse radiation at top of considered canopy layer
+REAL, DIMENSION(:), INTENT(INOUT) :: PTR               ! fraction of transmited radiation
+!
+REAL, DIMENSION(:), INTENT(OUT)   :: PXIA              ! fraction of abs. radiation of veg
+REAL, DIMENSION(:), INTENT(OUT)   :: PLAI_EFF          ! LAI effective
 !
 !*      0.2    declarations of local variables
 
 !
-REAL, DIMENSION(SIZE(PLAI)) :: ZSLAI_TRU, ZFD_VEG, ZTDF, ZIDR, ZIDF
+REAL, DIMENSION(SIZE(PLAI)) :: ZSLAI_TRU, ZFD_VEG, ZTDF, ZIDR, &
+                               ZIDF, ZABC, ZABC_SUP, ZB_DF, ZGT
 !                              ZIDF  = interception of diffusion
 !                              ZIDR  = direct interception
 !                              XB_DR = DH albedo of upper/lower layers
-REAL    :: ZGT_SUP, ZGT_INF, ZGT
+REAL    :: ZGT_SUP, ZGT_INF
 INTEGER :: I
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 !-----------------------------------------------------------------------
+!
 IF (LHOOK) CALL DR_HOOK('CCETR_PAIR',0,ZHOOK_HANDLE)
 !
 PLAI_EFF(:) = 0.
@@ -94,17 +100,20 @@ ZGT_SUP = 0.5
 ZGT_INF = 0.5
 !
 IF (PABC.GT.0.8) THEN
-  ZGT = ZGT_SUP
+  ZGT(:) = ZGT_SUP
 ELSE
-  ZGT = ZGT_INF
+  ZGT(:) = ZGT_INF
 ENDIF
 !
+ZABC    (:) = PABC
+ZABC_SUP(:) = PABC_SUP
+ZB_DF   (:) = PB_DF
 !
 IF (PABC.GT.0.8) THEN
   DO I=1,SIZE(PIA)
     IF (PIA(I)>0.) THEN
       ! diffuse fraction due to vegetation
-      ZFD_VEG(I) = EXP(-(1.-PABC)*POMEGA_DR(I)*PLAI(I))
+      ZFD_VEG(I) = EXP(-(1.-ZABC(I))*POMEGA_DR(I)*PLAI(I))
       ZFD_VEG(I) = (1. - ZFD_VEG(I)) / (1. - (1.-PXMUS(I))*ZFD_VEG(I))
       PFD_VEG(I) = MIN(ZFD_VEG(I) + PFD_SKY(I),1.)
     ENDIF
@@ -113,12 +122,12 @@ ENDIF
 !
 DO I=1,SIZE(PIA)
   IF (PIA(I)>0.) THEN
-    ZSLAI_TRU(I) = (PABC_SUP-PABC)*PLAI(I)
+    ZSLAI_TRU(I) = (ZABC_SUP(I)-ZABC(I))*PLAI(I)
     !PLAI_EFF(I) = POMEGA_DR(I)*ZSLAI_TRU(I)
     ! transmittance of direct beam
-    ZIDR(I) = EXP(-ZGT*PB_DR(I)*POMEGA_DR(I)*ZSLAI_TRU(I)/PXMUS(I))
+    ZIDR(I) = EXP(-ZGT(I)*PB_DR(I)*POMEGA_DR(I)*ZSLAI_TRU(I)/PXMUS(I))
     ! transmittance of diffuse beam
-    ZIDF(I) = EXP(-PB_DF*POMEGA_DF(I)*ZSLAI_TRU(I))
+    ZIDF(I) = EXP(-ZB_DF(I)*POMEGA_DF(I)*ZSLAI_TRU(I))
     PLAI_EFF(I) = ((1.-PFD_VEG(I))*POMEGA_DR(I)+PFD_VEG(I)*POMEGA_DF(I))*ZSLAI_TRU(I)
     !
     PTR(I) = ((1.-PFD_VEG(I))*ZIDR(I) + PFD_VEG(I)*ZIDF(I))*PTR(I)
@@ -136,8 +145,8 @@ IF (KNIV .EQ. 1) THEN
     IF (PIA(I)>0.) THEN  
       ! -- reflection of surface ---   
       ! transmittance diffuse up - all layer
-      ZTDF(I) = EXP(-PB_DF*POMEGA_DF(I)*(1.-PABC)*PLAI(I))
-      PXIA(I)= PXIA(I) + (1.-PALB_VEG(I))**2*PALB_SOIL(I)*(1.-ZTDF(I))*PTR(I)*PIA(I)
+      ZTDF(I) = EXP(-ZB_DF(I)*POMEGA_DF(I)*(1.-ZABC(I))*PLAI(I))
+      PXIA(I)= PXIA(I) + (1.-PALB_VEG(I))*(1.-PALB_VEG(I))*PALB_SOIL(I)*(1.-ZTDF(I))*PTR(I)*PIA(I)
     ENDIF
   ENDDO
 ENDIF

@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE SET_SURFEX_FILEIN(HPROGRAM,HMASK)
 !     ############################################
@@ -28,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	B. Decharme   *Meteo France*	
+!!      B. Decharme   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -39,19 +39,23 @@
 !              ------------
 !
 !
-#ifdef ASC
+#ifdef SFX_ASC
 USE MODD_IO_SURF_ASC,ONLY : CFILEIN_SAVE, CFILEPGD
 USE MODI_SET_SURFEX_FILE_NAME_ASC
 #endif
-#ifdef FA
+#ifdef SFX_FA
 USE MODD_IO_SURF_FA, ONLY : CFILEIN_FA_SAVE, CFILEPGD_FA
 USE MODI_SET_SURFEX_FILE_NAME_FA
 #endif
-#ifdef LFI
+#ifdef SFX_LFI
 USE MODD_IO_SURF_LFI,ONLY : CFILEIN_LFI_SAVE, CFILEPGD_LFI
 USE MODI_SET_SURFEX_FILE_NAME_LFI
 #endif
-#ifdef MNH
+#ifdef SFX_NC
+USE MODD_IO_SURF_NC, ONLY : CFILEIN_NC_SAVE, CFILEPGD_NC
+USE MODI_SET_SURFEX_FILE_NAME_NC
+#endif
+#ifdef SFX_MNH
 USE MODI_SET_SURFEX_FILE_NAME_MNH
 #endif
 !
@@ -82,7 +86,7 @@ IF(HMASK/='PGD'.AND.HMASK/='PREP') CALL ABOR1_SFX('SET_SURFEX_FILEIN: MASK='//HM
 !
 IF (HPROGRAM=='ASCII ' ) THEN
 !  
-#ifdef ASC
+#ifdef SFX_ASC
   IF(HMASK=='PGD')THEN
     YFILE=CFILEPGD
   ELSE
@@ -95,7 +99,7 @@ ENDIF
 !
 IF (HPROGRAM=='FA    ' ) THEN
 ! 
-#ifdef FA
+#ifdef SFX_FA
   IF(HMASK=='PGD')THEN
     YFILE=CFILEPGD_FA
   ELSE
@@ -108,7 +112,7 @@ ENDIF
 !
 IF (HPROGRAM=='LFI   ' ) THEN
 !
-#ifdef LFI
+#ifdef SFX_LFI
   IF(HMASK=='PGD')THEN
     YFILE=CFILEPGD_LFI
   ELSE
@@ -119,14 +123,28 @@ IF (HPROGRAM=='LFI   ' ) THEN
 !
 ENDIF
 !
+IF (HPROGRAM=='NC    ' ) THEN
+!
+#ifdef SFX_NC
+  IF(HMASK=='PGD')THEN
+    YFILE=CFILEPGD_NC
+  ELSE
+    YFILE=CFILEIN_NC_SAVE
+  ENDIF 
+  CALL SET_SURFEX_FILE_NAME_NC(HNAME_IN=YFILE)
+#endif  
+!
+ENDIF
+
+!
 IF (HPROGRAM=='AROME ' ) THEN
-#ifdef ARO
+#ifdef SFX_ARO
   CALL SET_SURFEX_FILE_NAME_ARO(HMASK)
 #endif  
 ENDIF
 !
 IF (HPROGRAM=='MESONH' ) THEN
-#ifdef MNH
+#ifdef SFX_MNH
   CALL SET_SURFEX_FILE_NAME_MNH(HMASK)
 #endif  
 ENDIF

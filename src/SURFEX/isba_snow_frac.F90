@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE ISBA_SNOW_FRAC(HSNOW,                                &
                                 PWSNOW, PRSNOW, PASNOW,               &
@@ -27,7 +27,7 @@
 !!    AUTHOR
 !!    ------
 !!
-!!	S. Belair           * Meteo-France *
+!!      S. Belair           * Meteo-France *
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -35,7 +35,7 @@
 !
 USE MODD_SNOW_PAR   , ONLY : XEMISSN, XEMCRIN, XSNOWDMIN, &
                              XRHOSMAX_ES, XRHOSMIN_ES, &
-                             XWCRN_EXPL 
+                             XWCRN_EXPL, XDCRN_EXPL
 !
 USE MODD_PREP_SNOW, ONLY : LSNOW_FRAC_TOT
 !
@@ -81,12 +81,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
 !
-!*      1.     Compute snow fractions
-!              ----------------------
-!
-!       1.a    Total SWE (kg m-2) and snowpack average density (kg m-3)
-!
 IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_FRAC',0,ZHOOK_HANDLE)
+!
+!*      1.     Compute Total SWE (kg m-2) and snowpack average density (kg m-3)
+!              ----------------------------------------------------------------
+!
 ZSNOWSWE(:) = 0.
 !
 DO JLAYER=1,SIZE(PWSNOW,2)
@@ -104,9 +103,17 @@ ELSE
    ZSNOWRHO(:) = PRSNOW(:,1)
 END IF
 !
-!       1.b    Snow fractions
+!*      2.     Snow fraction over ground
+!              -------------------------
 !
-PPSNG(:) = SNOW_FRAC_GROUND(ZSNOWSWE)
+IF (HSNOW == 'CRO' .OR. HSNOW == '3-L') THEN
+   PPSNG(:) = MIN(1.0, ZSNOWD(:)/XDCRN_EXPL)
+ELSE
+   PPSNG(:) = SNOW_FRAC_GROUND(ZSNOWSWE)
+ENDIF
+!
+!*      3.     Snow fraction over vegetation
+!              -----------------------------
 !
 IF (HSNOW == 'EBA' ) THEN
    PPSNV_A(:) = SNOW_FRAC_VEG_A (PPSNG,PLAI,PASNOW)
@@ -115,10 +122,13 @@ ELSE
    PPSNV  (:) = SNOW_FRAC_VEG   (PPSNG,ZSNOWSWE,PZ0,ZSNOWRHO)
 ENDIF
 !
+!*      4.     Total snow fraction
+!              -------------------
+!
 PPSN(:)       = SNOW_FRAC_NAT(ZSNOWSWE,PPSNG,PPSNV,PVEG)
 !
 IF (LSNOW_FRAC_TOT) THEN
-  PPSN(:) = MIN(1.0, ZSNOWSWE(:)/XWCRN_EXPL)      
+  PPSN (:) = MIN(1.0, ZSNOWSWE(:)/XWCRN_EXPL)      
   PPSNG(:) = PPSN(:)
   PPSNV(:) = PPSN(:)
 ENDIF

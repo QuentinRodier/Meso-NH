@@ -1,7 +1,7 @@
-!ORILAM_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!ORILAM_LIC This is part of the ORILAM software governed by the CeCILL-C licence
-!ORILAM_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!ORILAM_LIC for details.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 ! ######spl
 MODULE MODE_DSTMBLUTL ! [mdl] Mobilization utilities
 !
@@ -10,7 +10,7 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
-CONTAINS
+ CONTAINS
 !
 !----------------------------------------------------------------------------------------
 SUBROUTINE WND_FRC_THR_SLT_GET(PDNS_MDP, PDP, PWND_FRC_THR_SLT)  

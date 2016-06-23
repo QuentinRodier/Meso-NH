@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !#######################
 MODULE MODI_EMIS_FROM_VEG
 !#######################
@@ -78,7 +78,7 @@ END MODULE MODI_EMIS_FROM_VEG
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson and A. Boone          * Meteo-France *
+!!      V. Masson and A. Boone          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -153,7 +153,7 @@ END FUNCTION EMIS_FROM_VEG_0D
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson and A. Boone          * Meteo-France *
+!!      V. Masson and A. Boone          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -228,7 +228,7 @@ END FUNCTION EMIS_FROM_VEG_1D
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson and A. Boone          * Meteo-France *
+!!      V. Masson and A. Boone          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -307,7 +307,7 @@ END FUNCTION EMIS_FROM_VEG_2D
 !!    AUTHOR
 !!    ------
 !!
-!!	V. Masson and A. Boone          * Meteo-France *
+!!      V. Masson and A. Boone          * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------

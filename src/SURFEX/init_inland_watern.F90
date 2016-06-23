@@ -1,13 +1,14 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_INLAND_WATER_n(HPROGRAM,HINIT,                        &
+      SUBROUTINE INIT_INLAND_WATER_n (DTCO, DGU, UG, U, WM, FM, DGL,     &
+                                      HPROGRAM,HINIT,                         &
                                    KI,KSV,KSW,                                &
                                    HSV,PCO2,PRHOA,                            &
                                    PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                                   PEMIS,PTSRAD,                              &
+                                   PEMIS,PTSRAD,PTSURF,                       &
                                    KYEAR, KMONTH,KDAY, PTIME,                 &
                                    HATMFILE,HATMFILETYPE,                     &
                                    HTEST                                      )  
@@ -34,19 +35,29 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003
+!!      B. Decharme  04/2013 new coupling variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SURF_ATM_n, ONLY : CWATER
-USE MODD_CSTS,       ONLY : XTT
 !
+USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t
+USE MODD_SURFEX_n, ONLY : WATFLUX_MODEL_t
+!
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+!
+!
+USE MODD_CSTS,       ONLY : XTT
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -64,6 +75,14 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(WATFLUX_MODEL_t), INTENT(INOUT) :: WM
+TYPE(FLAKE_MODEL_t), INTENT(INOUT) :: FM
+TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+!
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
 INTEGER,                          INTENT(IN)  :: KI        ! number of points
@@ -79,6 +98,7 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSRAD    ! radiative temperature
+REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
 INTEGER,                          INTENT(IN)  :: KYEAR     ! current year (UTC)
 INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
@@ -99,25 +119,29 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !               ---------------------------
 !
 IF (LHOOK) CALL DR_HOOK('INIT_INLAND_WATER_N',0,ZHOOK_HANDLE)
-IF (CWATER=='NONE  ') THEN
+IF (U%CWATER=='NONE  ') THEN
   PDIR_ALB=0.
   PSCA_ALB=0.
   PEMIS   =1.
   PTSRAD  =XTT
-ELSE IF (CWATER=='FLUX  ') THEN
-  CALL INIT_IDEAL_FLUX(HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,   &
+  PTSURF  =XTT
+ELSE IF (U%CWATER=='FLUX  ') THEN
+  CALL INIT_IDEAL_FLUX(DGL, DGU%LREAD_BUDGETC, &
+                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,   &
                          PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
-                         PEMIS,PTSRAD,'OK'                           )  
-ELSE IF (CWATER=='WATFLX') THEN
-  CALL INIT_WATFLUX_n(HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
+                         PEMIS,PTSRAD,PTSURF,'OK'                    )  
+ELSE IF (U%CWATER=='WATFLX') THEN
+  CALL INIT_WATFLUX_n(DTCO, DGU, UG, U, WM, &
+                      HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
                         PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                        PEMIS,PTSRAD,                                 &
+                        PEMIS,PTSRAD,PTSURF,                          &
                         KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
                         'OK'                                          )  
-ELSE IF (CWATER=='FLAKE ') THEN
-  CALL INIT_FLAKE_n(HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,       &
+ELSE IF (U%CWATER=='FLAKE ') THEN
+  CALL INIT_FLAKE_n(DTCO, DGU, UG, U, FM, &
+                    HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,       &
                         PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                        PEMIS,PTSRAD,                                 &
+                        PEMIS,PTSRAD,PTSURF,                          &
                         KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
                         'OK')          
 END IF

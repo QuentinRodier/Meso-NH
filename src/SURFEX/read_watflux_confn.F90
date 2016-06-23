@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_WATFLUX_CONF_n(HPROGRAM)
+      SUBROUTINE READ_WATFLUX_CONF_n (CHW, DGW, W, &
+                                      HPROGRAM)
 !     #############################################################
 !
 !!****  *READ_WATFLUX_CONF* - reads the configuration for WATFLUX
@@ -27,7 +28,7 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -37,6 +38,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+!
+!
+!
+!
+!
+USE MODD_CH_WATFLUX_n, ONLY : CH_WATFLUX_t
+USE MODD_DIAG_WATFLUX_n, ONLY : DIAG_WATFLUX_t
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODE_MODELN_SURFEX_HANDLER
 !
@@ -61,6 +70,11 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+!
+TYPE(CH_WATFLUX_t), INTENT(INOUT) :: CHW
+TYPE(DIAG_WATFLUX_t), INTENT(INOUT) :: DGW
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
+!
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
 
 !
@@ -82,9 +96,9 @@ IF (LHOOK) CALL DR_HOOK('READ_WATFLUX_CONF_N',0,ZHOOK_HANDLE)
 IMI=GET_CURRENT_MODEL_INDEX_SURFEX()
 !
 IF (IMI.NE.-1 .AND. LNAM_READ) THEN
- CALL INIT_NAM_WATFLUXn
- CALL INIT_NAM_DIAG_SURFn
- CALL INIT_NAM_CH_WATFLUXn
+ CALL INIT_NAM_WATFLUXn(W)
+ CALL INIT_NAM_DIAG_SURFn(DGW)
+ CALL INIT_NAM_CH_WATFLUXn(CHW)
 ENDIF
 !
 IF (LNAM_READ) THEN
@@ -105,7 +119,7 @@ IF (LNAM_READ) THEN
  !
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CWAT_ALB',CWAT_ALB,'UNIF','TA96')
  CALL TEST_NAM_VAR_SURF(ILUOUT,'CCH_DRY_DEP',CCH_DRY_DEP,'      ','WES89 ','NONE  ')
- CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_TS',CINTERPOL_TS,'ANNUAL','MONTH ','NONE  ')!
+ CALL TEST_NAM_VAR_SURF(ILUOUT,'CINTERPOL_TS',CINTERPOL_TS,'QUADRA','LINEAR','UNIF  ','NONE  ')
  !
  !* close namelist file
  !
@@ -114,9 +128,9 @@ IF (LNAM_READ) THEN
 ENDIF
 !
 IF (IMI.NE.-1) THEN
- CALL UPDATE_NAM_WATFLUXn
- CALL UPDATE_NAM_DIAG_SURFn
- CALL UPDATE_NAM_CH_WATFLUXn
+ CALL UPDATE_NAM_WATFLUXn(W)
+ CALL UPDATE_NAM_DIAG_SURFn(DGW)
+ CALL UPDATE_NAM_CH_WATFLUXn(CHW)
  ENDIF
 !
 !-------------------------------------------------------------------------------

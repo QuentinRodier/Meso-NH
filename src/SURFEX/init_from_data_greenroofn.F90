@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_FROM_DATA_GREENROOF_n(KDECADE, HPHOTO,                              &
+      SUBROUTINE INIT_FROM_DATA_GREENROOF_n (DTGR, TGRO, &
+                                             KDECADE, HPHOTO,                              &
                                             POM_GR, PSAND_GR, PCLAY_GR, PVEG,             &
                                             PLAI,PRSMIN,PGAMMA,PWRMAX_CF,                 &
                                             PRGL,PCV,PDG,PD_ICE,PZ0,PZ0_O_Z0H,            &
@@ -50,25 +51,12 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_TEB_GREENROOF_n,      ONLY :NTIME_GR
-USE MODD_DATA_TEB_GREENROOF_n, ONLY :XPAR_OM_GR,                          &
-                                     XPAR_SAND_GR, XPAR_CLAY_GR,          &
-                                     XPAR_LAI, XPAR_H_TREE, XPAR_VEGTYPE, &
-                                     XPAR_VEG, XPAR_Z0, XPAR_Z0_O_Z0H,    &
-                                     XPAR_EMIS, XPAR_GAMMA, XPAR_CV,      &
-                                     XPAR_RGL, XPAR_RSMIN, XPAR_DG,       &
-                                     XPAR_ALBNIR_VEG, XPAR_ALBVIS_VEG,    &
-                                     XPAR_ALBUV_VEG, XPAR_DICE,           &
-                                     XPAR_ALBNIR_SOIL, XPAR_ALBVIS_SOIL,  &
-                                     XPAR_ALBUV_SOIL,                     &
-                                     XPAR_GMES, XPAR_BSLAI, XPAR_LAIMIN,  &
-                                     XPAR_SEFOLD, XPAR_GC, XPAR_WRMAX_CF, &
-                                     XPAR_ROOTFRAC, LDATA_STRESS,         &
-                                     XPAR_DMAX, XPAR_F2I, XPAR_RE25,      &
-                                     XPAR_CE_NITRO, XPAR_CF_NITRO,        &
-                                     XPAR_CNA_NITRO  
 
 !
+!
+!
+USE MODD_DATA_TEB_GREENROOF_n, ONLY : DATA_TEB_GREENROOF_t
+USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -77,6 +65,10 @@ IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
+!
+!
+TYPE(DATA_TEB_GREENROOF_t), INTENT(INOUT) :: DTGR
+TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
 !
 INTEGER,                INTENT(IN)    :: KDECADE
  CHARACTER(LEN=*),       INTENT(IN)    :: HPHOTO  ! type of photosynthesis
@@ -136,8 +128,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 ! data every month
 IF (LHOOK) CALL DR_HOOK('INIT_FROM_DATA_GREENROOF_N',0,ZHOOK_HANDLE)
-!ITIME = (KDECADE+2)/3      
-ITIME = NTIME_GR
+IF (TGRO%NTIME_GR==12) THEN
+  ITIME = (KDECADE+2)/3      
+ELSE
+  ITIME = 1
+END IF
 !
 !*    2.      SECONDARY VARIABLES
 !             -------------------
@@ -145,128 +140,128 @@ ITIME = NTIME_GR
 !*    2.0     fields for greenroofs
 !             ---------------------
 !
-IF (PRESENT(POM_GR))   POM_GR(:,:)   = XPAR_OM_GR(:,:)
+IF (PRESENT(POM_GR))   POM_GR(:,:)   = DTGR%XPAR_OM_GR(:,:)
 !
-IF (PRESENT(PSAND_GR)) PSAND_GR(:,:) = XPAR_SAND_GR(:,:)
+IF (PRESENT(PSAND_GR)) PSAND_GR(:,:) = DTGR%XPAR_SAND_GR(:,:)
 !
-IF (PRESENT(PCLAY_GR)) PCLAY_GR(:,:) = XPAR_CLAY_GR(:,:)
+IF (PRESENT(PCLAY_GR)) PCLAY_GR(:,:) = DTGR%XPAR_CLAY_GR(:,:)
 !
 !
 !*    2.1     fields on natural surfaces only, taking into account patches/ 
 !             -------------------------------
 !
-IF (PRESENT(PVEGTYPE)) PVEGTYPE = XPAR_VEGTYPE
+IF (PRESENT(PVEGTYPE)) PVEGTYPE = DTGR%XPAR_VEGTYPE
 !
 ! vegetation fraction
 ! -------------------
 !
-IF (PRESENT(PVEG)) PVEG(:) =  XPAR_VEG (:,ITIME)
+IF (PRESENT(PVEG)) PVEG(:) =  DTGR%XPAR_VEG (:,ITIME)
 !
 ! Leaf Area Index
 ! ---------------
 !
-IF (PRESENT(PLAI)) PLAI(:) = XPAR_LAI (:,ITIME)
+IF (PRESENT(PLAI)) PLAI(:) = DTGR%XPAR_LAI (:,ITIME)
 !
 ! roughness length
 ! ----------------
 !
-IF (PRESENT(PZ0)) PZ0(:) =  XPAR_Z0 (:,ITIME)
+IF (PRESENT(PZ0)) PZ0(:) =  DTGR%XPAR_Z0 (:,ITIME)
 !
-IF (PRESENT(PZ0_O_Z0H)) PZ0_O_Z0H = XPAR_Z0_O_Z0H
+IF (PRESENT(PZ0_O_Z0H)) PZ0_O_Z0H = DTGR%XPAR_Z0_O_Z0H
 !
 !
 !emis-eco
 !--------
 !
-IF (PRESENT(PEMIS)) PEMIS(:) =  XPAR_EMIS (:,ITIME)
+IF (PRESENT(PEMIS)) PEMIS(:) =  DTGR%XPAR_EMIS (:,ITIME)
 ! 
 !---------------------------------------------------------------------------------
 ! 
 !* 1/Rsmin
 !
 IF (PRESENT(PRSMIN)) THEN
-  IF (SIZE(PRSMIN)>0) PRSMIN = XPAR_RSMIN
+  IF (SIZE(PRSMIN)>0) PRSMIN = DTGR%XPAR_RSMIN
 END IF
 !
 !* other vegetation parameters
 !
-IF (PRESENT(PGAMMA)) PGAMMA = XPAR_GAMMA
-IF (PRESENT(PWRMAX_CF)) PWRMAX_CF = XPAR_WRMAX_CF
+IF (PRESENT(PGAMMA)) PGAMMA = DTGR%XPAR_GAMMA
+IF (PRESENT(PWRMAX_CF)) PWRMAX_CF = DTGR%XPAR_WRMAX_CF
 !
 !
-IF (PRESENT(PRGL)) PRGL = XPAR_RGL
-IF (PRESENT(PCV)) PCV = XPAR_CV
+IF (PRESENT(PRGL)) PRGL = DTGR%XPAR_RGL
+IF (PRESENT(PCV)) PCV = DTGR%XPAR_CV
 !
 !---------------------------------------------------------------------------------
 !
 !* soil layers
 !  -----------
 !
-IF (PRESENT(PDG)) PDG = XPAR_DG
+IF (PRESENT(PDG)) PDG = DTGR%XPAR_DG
 !
 !* cumulative root fraction
 !
-IF (PRESENT(PROOTFRAC)) PROOTFRAC = XPAR_ROOTFRAC
+IF (PRESENT(PROOTFRAC)) PROOTFRAC = DTGR%XPAR_ROOTFRAC
 !
 !* soil ice for runoff
 !
-IF (PRESENT(PD_ICE)) PD_ICE = XPAR_DICE
+IF (PRESENT(PD_ICE)) PD_ICE = DTGR%XPAR_DICE
 !
 !---------------------------------------------------------------------------------
-IF (PRESENT(PALBNIR_VEG))   PALBNIR_VEG = XPAR_ALBNIR_VEG
-IF (PRESENT(PALBVIS_VEG))   PALBVIS_VEG = XPAR_ALBVIS_VEG
-IF (PRESENT(PALBUV_VEG))    PALBUV_VEG  = XPAR_ALBUV_VEG
+IF (PRESENT(PALBNIR_VEG))   PALBNIR_VEG = DTGR%XPAR_ALBNIR_VEG
+IF (PRESENT(PALBVIS_VEG))   PALBVIS_VEG = DTGR%XPAR_ALBVIS_VEG
+IF (PRESENT(PALBUV_VEG))    PALBUV_VEG  = DTGR%XPAR_ALBUV_VEG
 
-IF (PRESENT(PALBNIR_SOIL))  PALBNIR_SOIL(:) = XPAR_ALBNIR_SOIL
-IF (PRESENT(PALBVIS_SOIL))  PALBVIS_SOIL(:) = XPAR_ALBVIS_SOIL
-IF (PRESENT(PALBUV_SOIL))   PALBUV_SOIL (:) = XPAR_ALBUV_SOIL
+IF (PRESENT(PALBNIR_SOIL))  PALBNIR_SOIL(:) = DTGR%XPAR_ALBNIR_SOIL
+IF (PRESENT(PALBVIS_SOIL))  PALBVIS_SOIL(:) = DTGR%XPAR_ALBVIS_SOIL
+IF (PRESENT(PALBUV_SOIL))   PALBUV_SOIL (:) = DTGR%XPAR_ALBUV_SOIL
 
 IF (PRESENT(PGMES)) THEN
-  IF (SIZE(PGMES)>0) PGMES = XPAR_GMES
+  IF (SIZE(PGMES)>0) PGMES = DTGR%XPAR_GMES
 END IF
 
 IF (PRESENT(PBSLAI)) THEN
-  IF (SIZE(PBSLAI)>0) PBSLAI = XPAR_BSLAI
+  IF (SIZE(PBSLAI)>0) PBSLAI = DTGR%XPAR_BSLAI
 END IF
 
 IF (PRESENT(PSEFOLD)) THEN
-  IF (SIZE(PSEFOLD)>0) PSEFOLD = XPAR_SEFOLD
+  IF (SIZE(PSEFOLD)>0) PSEFOLD = DTGR%XPAR_SEFOLD
 END IF
 
 IF (PRESENT(PGC)) THEN
-  IF (SIZE(PGC)>0) PGC = XPAR_GC
+  IF (SIZE(PGC)>0) PGC = DTGR%XPAR_GC
 END IF
 
 IF (PRESENT(PDMAX)) THEN
-  IF (SIZE(PDMAX)>0) PDMAX = XPAR_DMAX
+  IF (SIZE(PDMAX)>0) PDMAX = DTGR%XPAR_DMAX
 END IF
 
 IF (PRESENT(PRE25)) THEN
-  IF (SIZE(PRE25)>0) PRE25 = XPAR_RE25
+  IF (SIZE(PRE25)>0) PRE25 = DTGR%XPAR_RE25
 END IF
 
 IF (PRESENT(PLAIMIN)) THEN
-  IF (SIZE(PLAIMIN)>0) PLAIMIN = XPAR_LAIMIN
+  IF (SIZE(PLAIMIN)>0) PLAIMIN = DTGR%XPAR_LAIMIN
 END IF
 
 IF (PRESENT(PCE_NITRO)) THEN
-  IF (SIZE(PCE_NITRO)>0) PCE_NITRO = XPAR_CE_NITRO
+  IF (SIZE(PCE_NITRO)>0) PCE_NITRO = DTGR%XPAR_CE_NITRO
 END IF
 
 IF (PRESENT(PCF_NITRO)) THEN
-  IF (SIZE(PCF_NITRO)>0) PCF_NITRO = XPAR_CF_NITRO
+  IF (SIZE(PCF_NITRO)>0) PCF_NITRO = DTGR%XPAR_CF_NITRO
 END IF
 
 IF (PRESENT(PCNA_NITRO)) THEN
-  IF (SIZE(PCNA_NITRO)>0) PCNA_NITRO = XPAR_CNA_NITRO
+  IF (SIZE(PCNA_NITRO)>0) PCNA_NITRO = DTGR%XPAR_CNA_NITRO
 END IF
 
 IF (PRESENT(PF2I)) THEN
-  IF (SIZE(PF2I)>0) PF2I = XPAR_F2I
+  IF (SIZE(PF2I)>0) PF2I = DTGR%XPAR_F2I
 END IF
 !
 IF (PRESENT(OSTRESS)) THEN
-  IF (SIZE(OSTRESS)>0) OSTRESS = LDATA_STRESS
+  IF (SIZE(OSTRESS)>0) OSTRESS = DTGR%LDATA_STRESS
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_FROM_DATA_GREENROOF_N',1,ZHOOK_HANDLE)
 !

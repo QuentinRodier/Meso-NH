@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     ##########################
       SUBROUTINE WRITE_COVER_TEX_WATER
 !     ##########################
@@ -52,7 +52,6 @@ USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_DATA_COVER,     ONLY : XDATA_SEA, XDATA_WATER
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_WATER_PAR,      ONLY : XALBWAT, XALBSCA_WAT, XEMISWAT
-USE MODD_SEAFLUX_n,      ONLY : CSEA_ALB
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK

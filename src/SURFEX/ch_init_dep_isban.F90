@@ -1,9 +1,10 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_DEP_ISBA_n(KCH,KLUOUT,HSV,KLU)
+      SUBROUTINE CH_INIT_DEP_ISBA_n (CHI, DTCO, I, &
+                                     KCH,KLUOUT,KLU)
 !!    ##################################################
 !!
 !!*** *CH_INIT_DEP_ISBA_n*
@@ -11,7 +12,7 @@
 !!    PURPOSE
 !!    -------
 !        The purpose of this subroutine is to calculate the surface flux
-!     (emission or deposition) for the chemical (=scalar) variables
+!     (emission or deposition) for the chemical (=scalar) variable
 !!
 !!**  METHOD
 !!    ------
@@ -60,13 +61,17 @@
 !!
 !!    EXTERNAL
 !!    --------
+!
+!
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_ISBA_n, ONLY : ISBA_t
+!
 USE MODI_CH_OPEN_INPUTB  ! open the general purpose ASCII input file
 USE MODI_CONVERT_COVER_CH_ISBA
 !
-USE MODD_CH_ISBA_n,      ONLY: NBEQ, CCH_DRY_DEP, XDEP, XSOILRC_SO2, XSOILRC_O3
 USE MODD_CH_ISBA,        ONLY: XRCCLAYSO2, XRCCLAYO3, XRCSANDSO2, XRCSANDO3, &
                                  XRCSNOWSO2, XRCSNOWO3, XLANDREXT  
-USE MODD_ISBA_n,         ONLY: XCOVER, NPATCH
 USE MODD_CH_SURF
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !!
@@ -83,9 +88,13 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
+!
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(ISBA_t), INTENT(INOUT) :: I
+!
 INTEGER,                         INTENT(IN)  :: KCH      ! chemistry input file
 INTEGER,                         INTENT(IN)  :: KLUOUT   ! output listing channel
- CHARACTER(LEN=6), DIMENSION(:),  INTENT(IN)  :: HSV      ! name of chemical species
 INTEGER,                         INTENT(IN)  :: KLU      ! number of points
 !
 !*      0.2    declarations of local variables
@@ -119,22 +128,24 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
   !-----------------------------------------------------------------------------
   !
   !
-  IF (CCH_DRY_DEP == "WES89") THEN
+  IF (CHI%CCH_DRY_DEP == "WES89") THEN
     !
     !*       2.    Physiographic fields
     !
-    ALLOCATE(XSOILRC_SO2(KLU,NPATCH))
-    ALLOCATE(XSOILRC_O3(KLU,NPATCH))
+    ALLOCATE(CHI%XSOILRC_SO2(KLU,I%NPATCH))
+    ALLOCATE(CHI%XSOILRC_O3(KLU,I%NPATCH))
 
-    CALL CONVERT_COVER_CH_ISBA(XCOVER,XSOILRC_SO2,XSOILRC_O3)
+    CALL CONVERT_COVER_CH_ISBA(DTCO, &
+                               I%XCOVER,I%LCOVER,CHI%XSOILRC_SO2,CHI%XSOILRC_O3)
     !
     !---------------------------------------------------------------------------
     !
     !
     !*       3.    read surface resistance SURF_RES
     !
-    ALLOCATE(XDEP(KLU,NBEQ,NPATCH))
-
+    ALLOCATE(CHI%XDEP(KLU,CHI%SVI%NBEQ,I%NPATCH))
+    !
+!$OMP SINGLE
     ! open input file
     WRITE(KLUOUT,*) &
            "CH_INIT_DEP_ISBA_n: reading  reactivity factor "  
@@ -147,16 +158,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
     ! read data input format
     READ(KCH,"(A)") YFORMAT
     WRITE(KLUOUT,*) "input format is: ", YFORMAT
+!$OMP END SINGLE COPYPRIVATE(IRESIS,YFORMAT)
     !
     ! allocate fields
     ALLOCATE(YRESISNAME(IRESIS))
     ALLOCATE(ZRESISVAL(IRESIS))
     !
+!$OMP SINGLE
     ! read reactivity factor 
     DO JI = 1, IRESIS
       READ(KCH,YFORMAT) YRESISNAME(JI), ZRESISVAL(JI)
       WRITE(KLUOUT,YFORMAT) YRESISNAME(JI), ZRESISVAL(JI)
     END DO
+!$OMP END SINGLE COPYPRIVATE(YRESISNAME,ZRESISVAL)
+!
     ! close file
     DO JNREAL = 1, IRESIS
       IF ('LANDREXT'== YRESISNAME(JNREAL) (1:8)) XLANDREXT = ZRESISVAL(JNREAL) 
@@ -184,7 +199,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
    DEALLOCATE(YRESISNAME)
    DEALLOCATE(ZRESISVAL)
   ELSE
-    ALLOCATE(XDEP(0,0,0))
+    ALLOCATE(CHI%XDEP(0,0,0))
   END IF
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEP_ISBA_N',1,ZHOOK_HANDLE)
   !

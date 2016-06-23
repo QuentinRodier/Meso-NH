@@ -1,7 +1,7 @@
-!SURFEX_LIC Copyright 1994-2014 Meteo-France 
-!SURFEX_LIC This is part of the SURFEX software governed by the CeCILL-C  licence
-!SURFEX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt
-!SURFEX_LIC for details. version 1.
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
+!SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_PREP_ISBA_CONF(HPROGRAM,HVAR,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE,&
                                      HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KLUOUT,OUNIF)
@@ -29,11 +29,12 @@
 !!
 !!    AUTHOR
 !!    ------
-!!	V. Masson   *Meteo France*	
+!!      V. Masson   *Meteo France*
 !!
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      P. Samuelsson  02/2012  MEB
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,7 +107,7 @@ SELECT CASE (HVAR)
       HFILE     = CFILE_HUG
       HFILETYPE = CTYPE_HUG
     END IF
-  CASE ('TG     ')
+  CASE ('TG     ','TV     ','TC     ')
     IF (LEN_TRIM(CFILE_TG)>0 .AND. LEN_TRIM(CTYPE_TG)>0 ) THEN
       HFILE     = CFILE_TG
       HFILETYPE = CTYPE_TG
@@ -152,7 +153,7 @@ SELECT CASE (HVAR)
        IF (LHOOK) CALL DR_HOOK('READ_PREP_ISBA_CONF',1,ZHOOK_HANDLE)
        RETURN
     ENDIF
-  CASE ('TG     ')
+  CASE ('TG     ','TV     ','TC     ')
     IF ( LEN_TRIM(CTYPE_TG )>0       .AND. &
            LEN_TRIM(CFILE_TG_SURF)>0   .AND. &
            LEN_TRIM(CFILE_TG_ROOT)>0   .AND. &
@@ -197,7 +198,7 @@ SELECT CASE (HVAR)
        CALL ABOR1_SFX('READ_PREP_ISBA_CONF: XHUGI_DEEP MUST BE SET')
     END IF
    !
-  CASE ('TG     ')
+  CASE ('TG     ','TV     ','TC     ')
     OUNIF = (XTG_SURF/=XUNDEF)  .OR. (XTG_ROOT/=XUNDEF)  .OR. (XTG_DEEP/=XUNDEF)
     IF (OUNIF .AND. (XTG_SURF==XUNDEF)) THEN
        WRITE(KLUOUT,*)'ONE OF XTG_SURF, XTG_ROOT OR XTG_DEEP IS GIVEN'
