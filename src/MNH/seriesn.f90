@@ -41,6 +41,7 @@
 !!    -------------
 !!      Original    4/03/2002
 !!         Oct. 2011 : (P.Le Moigne) Surface series
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -67,6 +68,7 @@ USE MODE_ll
 USE MODE_IO_ll
 !
 USE MODI_TEMPORAL_DIST
+USE MODD_MNH_SURFEX_n
 !
 IMPLICIT NONE
 !
@@ -129,7 +131,11 @@ END IF
 IF (LSURF) THEN
    KI=(IIE-IIB+1)*(IJE-IJB+1)
    ALLOCATE(ZSERIES(KI,5))
-   CALL GET_SURF_VAR_n('MESONH',KI,5,PSERIES=ZSERIES)
+   CALL GET_SURF_VAR_n(YSURF_CUR%FM%DGF,YSURF_CUR%IM%I,YSURF_CUR%IM%DGI,&
+                       YSURF_CUR%IM%DGMI,YSURF_CUR%SM%DGS,YSURF_CUR%DGU,&
+                       YSURF_CUR%TM%DGT,YSURF_CUR%WM%DGW,YSURF_CUR%FM%F,&
+                       YSURF_CUR%UG, YSURF_CUR%U, YSURF_CUR%USS,&
+                       'MESONH',KI,5,PSERIES=ZSERIES)
    ZTS(:,:)=0.
    ZTMNW(:,:)=0.
    ZTBOT(:,:)=0.

@@ -311,6 +311,7 @@
 !!      Bug : detected with cray compiler ,
 !!                  missing '&' in continuation string  3/12/2014 J.Escobar
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -386,14 +387,12 @@ USE MODI_ZSMT_PIC
 USE MODI_ZSMT_PGD
 USE MODI_READ_VER_GRID
 USE MODI_READ_ALL_NAMELISTS
-USE MODI_GOTO_SURFEX
 USE MODI_PGD_GRID_SURF_ATM
 USE MODI_SPLIT_GRID
 USE MODI_PGD_SURF_ATM
 USE MODI_ICE_ADJUST_BIS
 USE MODI_WRITE_PGD_SURF_ATM_n
 USE MODI_PREP_SURF_MNH
-USE MODI_ALLOC_SURFEX
 !
 !JUAN
 USE MODE_SPLITTINGZ_ll
@@ -411,8 +410,7 @@ USE MODI_TH_R_FROM_THL_RT_3D
 USE MODI_VERSION
 USE MODI_INIT_PGD_SURF_ATM
 USE MODI_WRITE_SURF_ATM_N
-USE MODI_DEALLOC_SURF_ATM_N
-USE MODI_DEALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 ! Modif ADVFRC
 USE MODD_2D_FRC
 USE MODD_ADVFRC_n     ! Modif for grid-nesting
@@ -1772,22 +1770,22 @@ IF (CSURF =='EXTE') THEN
       STOP
     ENDIF      
   ENDIF
-  CALL ALLOC_SURFEX(1)
-  CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)                                     
+  CALL SURFEX_ALLOC_LIST(1)
+  YSURF_CUR => YSURF_LIST(1)
+  CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)              
   ! Switch to model 1 surface variables
-  CALL GOTO_SURFEX(1,.TRUE.)
+  CALL GOTO_SURFEX(1)
   !* definition of physiographic fields
   ! computed ...
   IF (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM) THEN
     CPGDFILE = CINIFILE
-    CALL PGD_GRID_SURF_ATM('MESONH',CINIFILE,'MESONH',.TRUE.)
-!   CALL SPLIT_GRID('MESONH')
-    CALL PGD_SURF_ATM     ('MESONH',CINIFILE,'MESONH',.TRUE.)
+    CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',CINIFILE,'MESONH',.TRUE.)
+    CALL PGD_SURF_ATM     (YSURF_CUR,'MESONH',CINIFILE,'MESONH',.TRUE.)
     CPGDFILE = CINIFILEPGD                                   
   ELSE
   ! ... or read from file.
     CPGDFILE = CPGD_FILE
-    CALL INIT_PGD_SURF_ATM('MESONH','PGD',                         &
+    CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PGD',                         &
                             '                            ','      ',&
                             TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH,  &
                             TDTCUR%TDATE%DAY, TDTCUR%TIME           )
@@ -1812,10 +1810,10 @@ IF (CSURF =='EXTE') THEN
     CALL WRITE_HGRID(1,CINIFILEPGD,' ')
     NC_FILE='sf1'
     NC_WRITE=LNETCDF
-    CALL WRITE_PGD_SURF_ATM_n('MESONH')
+    CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
     IF ( LNETCDF ) THEN
        DEF_NC=.FALSE.
-       CALL WRITE_PGD_SURF_ATM_n('MESONH')
+       CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
        DEF_NC=.TRUE.
        NC_WRITE = .FALSE.
     END IF
@@ -1826,20 +1824,18 @@ IF (CSURF =='EXTE') THEN
     CALL FMWRIT(CINIFILEPGD,'L2D         ',CLUOUT,'--',L2D,0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'PACK        ',CLUOUT,'--',LPACK,0,1,' ',NRESP)
     CALL WRITE_HGRID(1,CINIFILEPGD,' ')
-    CALL WRITE_PGD_SURF_ATM_n('MESONH')
+    CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 #endif
   CSTORAGE_TYPE='TT'
   ENDIF
   
   !
-  !* deallocation of physiographic fields
-  CALL DEALLOC_SURF_ATM_n
   !
   !* rereading of physiographic fields and definition of prognostic fields
   !* writing of all surface fields
   COUTFMFILE = CINIFILE
   CALL PREP_SURF_MNH('                            ','      ')
-  CALL DEALLOC_SURFEX
+  CALL SURFEX_DEALLO_LIST
 ELSE
   CSURF = "NONE"
 END IF

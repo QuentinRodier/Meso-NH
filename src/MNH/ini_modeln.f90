@@ -265,6 +265,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!       V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!  06/2016     (G.Delautier) phasage surfex 8
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -398,7 +399,7 @@ USE MODD_FOREFIRE_n
 USE MODI_INIT_FOREFIRE_n
 #endif
 USE MODI_INI_LES_N
-USE MODI_GOTO_SURFEX
+USE MODD_MNH_SURFEX_n
 USE MODI_INI_SERIES_N
 ! Eddy fluxes  ! Ajout PP
 USE MODD_DEF_EDDY_FLUX_n   ! for VT and WT fluxes
@@ -1894,7 +1895,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
     CINIFILEPGD = HINIFILE
   END IF
   !
-  CALL GOTO_SURFEX(KMI,.TRUE.)
+  CALL GOTO_SURFEX(KMI)
   !* initialization of surface
   CALL INIT_GROUND_PARAM_n ('ALL',SIZE(CSV),CSV,ZCO2,                             &
                             XZENITH,XAZIM,XSW_BANDS,ZDIR_ALB,ZSCA_ALB,  &
@@ -1967,7 +1968,7 @@ IF (CRAD   == 'ECMW') THEN
     ALLOCATE(ZTOWN(IIU,IJU))
     ALLOCATE(ZBARE(IIU,IJU))
     IF (CSURF=='EXTE') THEN
-      CALL GOTO_SURFEX(KMI,.TRUE.)
+      CALL GOTO_SURFEX(KMI)
       CALL MNHGET_SURF_PARAM_n(PSEA=ZSEA,PTOWN=ZTOWN,PBARE=ZBARE)
     ELSE
       ZSEA (:,:) = 1.

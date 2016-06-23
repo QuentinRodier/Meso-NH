@@ -53,6 +53,7 @@ END MODULE MODI_MNHINIT_IO_SURF_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2003 
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -79,6 +80,7 @@ USE MODE_MODELN_HANDLER
 USE MODI_GET_1D_MASK
 USE MODI_GET_TYPE_DIM_N
 USE MODI_GET_SURF_MASK_N
+USE MODD_MNH_SURFEX_n
 !
 IMPLICIT NONE
 !
@@ -167,9 +169,9 @@ CALL GET_1D_MASK(ILU_ALL,ILU_ALL,ZFULL,NMASK_ALL)
 DEALLOCATE(ZFULL)
 !
 !* dimension and mask for distributed field on processors
-CALL GET_TYPE_DIM_n(HMASK,ILM)
+CALL GET_TYPE_DIM_n(YSURF_CUR%DTCO,YSURF_CUR%U,HMASK,ILM)
 ALLOCATE(NMASK(ILM))
-CALL GET_SURF_MASK_n(HMASK,ILM,NMASK,ILU,NLUOUT)
+CALL GET_SURF_MASK_n(YSURF_CUR%DTCO,YSURF_CUR%U,HMASK,ILM,NMASK,ILU,NLUOUT)
 !
 !-------------------------------------------------------------------------------
 !

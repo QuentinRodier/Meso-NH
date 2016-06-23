@@ -237,6 +237,7 @@ END MODULE MODI_MODEL_n
 !!                              of write_phys_param
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!      M.Mazoyer : 04/2016      DTHRAD used for radiative cooling when LACTIT
+!!  06/2016     (G.Delautier) phasage surfex 8
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -372,7 +373,6 @@ USE MODD_TIMEZ
 USE MODE_MNH_TIMING
 !
 USE MODI_SETLB_LG
-USE MODI_GOTO_SURFEX
 USE MODI_WRITE_SURF_ATM_N
 USE MODI_SET_MASK
 USE MODI_DIAG_SURF_ATM_N
@@ -386,6 +386,8 @@ USE MODE_UTIL
 #endif
 USE MODI_GET_HALO
 USE MODE_MPPDB
+!
+USE MODD_MNH_SURFEX_n
 !
 IMPLICIT NONE
 !
@@ -860,7 +862,7 @@ XT_BOUND = XT_BOUND + ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !* initializes surface number
-IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI,.TRUE.)
+IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
 !-------------------------------------------------------------------------------
 !
 !*       4.    STORAGE IN A SYNCHRONOUS FILE
@@ -920,18 +922,18 @@ DO JOUT = 1,NOUT_NUMB
     CALL MNHWRITE_ZS_DUMMY_n(CPROGRAM)
 #endif
     IF (CSURF=='EXTE') THEN
-      CALL GOTO_SURFEX(IMI,.TRUE.)
+      CALL GOTO_SURFEX(IMI)
 #ifdef MNH_NCWRIT
       NC_WRITE = LNETCDF
       NC_FILE = 'sf1'
-      CALL WRITE_SURF_ATM_n('MESONH','ALL',.FALSE.)
+      CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
       IF ( LNETCDF ) THEN
         DEF_NC=.FALSE.
-        CALL WRITE_SURF_ATM_n('MESONH','ALL',.FALSE.)
+        CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
         DEF_NC=.TRUE.
       END IF
 #else
-      CALL WRITE_SURF_ATM_n('MESONH','ALL',.FALSE.)
+      CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
 #endif
     END IF
     !
@@ -1317,20 +1319,22 @@ END IF
 DO JOUT = 1,NOUT_NUMB
   IF (KTCOUNT == NOUT_TIMES(JOUT)) THEN
     IF (CSURF=='EXTE') THEN
-      CALL GOTO_SURFEX(IMI,.TRUE.)
-      CALL DIAG_SURF_ATM_n('MESONH')
+      CALL GOTO_SURFEX(IMI)
+      CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
+                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
+                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
 #ifdef MNH_NCWRIT
       NC_WRITE=LNETCDF
       NC_FILE='sf2'
-      CALL WRITE_DIAG_SURF_ATM_n('MESONH','ALL')
+      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
       IF ( LNETCDF ) THEN
         DEF_NC=.FALSE.
-        CALL WRITE_DIAG_SURF_ATM_n('MESONH','ALL')
+        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
         DEF_NC=.TRUE.
         NC_WRITE = .FALSE.
       END IF
 #else
-      CALL WRITE_DIAG_SURF_ATM_n('MESONH','ALL')
+      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
 #endif
     END IF
   END IF

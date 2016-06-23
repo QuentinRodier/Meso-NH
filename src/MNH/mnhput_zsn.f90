@@ -51,6 +51,7 @@ END MODULE MODI_MNHPUT_ZS_n
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -64,6 +65,7 @@ USE MODD_DIM_n,      ONLY : NIMAX, NJMAX
 USE MODD_GRID_n,     ONLY : XZS
 !
 USE MODI_PUT_ZS_N
+USE MODD_MNH_SURFEX_n
 !
 USE MODI_GET_LUOUT
 !
@@ -101,7 +103,9 @@ IL = (IIE-IIB+1)*(IJE-IJB+1)
 ALLOCATE(ZZS(IL))
 ZZS(:) = RESHAPE (XZS(IIB:IIE,IJB:IJE), (/ IL /) )
 !
-CALL PUT_ZS_n('MESONH',IL,ZZS(:))
+CALL PUT_ZS_n(YSURF_CUR%FM%F,YSURF_CUR%IM%I,YSURF_CUR%SM%S,&
+              YSURF_CUR%U,YSURF_CUR%TM%TOP,YSURF_CUR%WM%W,'MESONH',IL,ZZS(:))
+!
 CALL MPPDB_CHECK_SURFEX2D(ZZS,"mnhput_zs_n:ZZS",PRECISION,ILUOUT)
 CALL MPPDB_CHECK2D(XZS,"mnhput_zs_n:MODD_GRID_n::XZS",PRECISION)
 !

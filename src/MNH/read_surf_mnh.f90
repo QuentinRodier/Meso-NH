@@ -561,6 +561,7 @@ END SUBROUTINE READ_SURFX2_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  06/2016     (G.Delautier) phasage surfex 8
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -571,6 +572,7 @@ USE MODE_FMREAD
 USE MODE_ll
 USE MODE_IO_ll
 !
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_CST,         ONLY : XPI
 !
 USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE , NLUOUT,  NMASK, &
@@ -588,7 +590,7 @@ IMPLICIT NONE
 CHARACTER(LEN=16),   INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN) :: KL1,KL2  !  number of points
 REAL, DIMENSION(KL1,KL2), INTENT(OUT):: PFIELD   ! array containing the data field
-LOGICAL,DIMENSION(KL2),   INTENT(IN) ::OFLAG  ! mask for array filling
+LOGICAL,DIMENSION(JPCOVER),   INTENT(IN) ::OFLAG  ! mask for array filling
 INTEGER,             INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),  INTENT(OUT):: HCOMMENT ! comment
 CHARACTER(LEN=1),    INTENT(IN) :: HDIR     ! type of field :
@@ -661,7 +663,7 @@ END IF
 !
 IF (.NOT. GCOVER_PACKED) THEN
    ICOVER=0
-   DO JL2=1,KL2
+   DO JL2=1,SIZE(OFLAG)
       WRITE(YREC,'(A5,I3.3)') 'COVER',JL2
       IF (OFLAG(JL2)) THEN
         ICOVER=ICOVER+1
@@ -680,13 +682,8 @@ IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) ' '
 ELSE IF (HDIR=='H' .OR. HDIR=='A') THEN
    ICOVER=0
-   DO JL2=1,KL2
-      IF (OFLAG(JL2)) THEN
-         ICOVER=ICOVER+1
-         CALL PACK_2D_1D(IMASK,ZWORK3D(IIB:IIE,IJB:IJE,ICOVER),PFIELD(:,JL2))
-      ELSE
-         PFIELD(:,JL2) = 0.0
-      END IF
+   DO JL2=1,NCOVER
+     CALL PACK_2D_1D(IMASK,ZWORK3D(IIB:IIE,IJB:IJE,JL2),PFIELD(:,JL2))
    END DO
 END IF
 !

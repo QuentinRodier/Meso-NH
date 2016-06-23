@@ -104,6 +104,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!     (D.Gazen)              01/12/03  change emissions handling for surf. externalization
 !!     (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
 !      (J.escobar)            2/2014 add Forefire coupling
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -145,6 +146,7 @@ USE MODI_SHUMAN
 USE MODI_MNHGET_SURF_PARAM_n
 USE MODI_COUPLING_SURF_ATM_n
 USE MODI_DIAG_SURF_ATM_n
+USE MODD_MNH_SURFEX_n
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
@@ -288,6 +290,11 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZP_TSRAD    ! radiative surface temperature
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZP_DIR_ALB  ! direct albedo
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZP_SCA_ALB  ! diffuse albedo
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_EMIS     ! emissivity
+
+REAL, DIMENSION(:),   ALLOCATABLE :: ZP_TSURF
+REAL, DIMENSION(:),   ALLOCATABLE :: ZP_Z0
+REAL, DIMENSION(:),   ALLOCATABLE :: ZP_Z0H
+REAL, DIMENSION(:),   ALLOCATABLE :: ZP_QSURF
 
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_PEW_A_COEF ! coefficients for
 REAL, DIMENSION(:),   ALLOCATABLE :: ZP_PEW_B_COEF ! implicit coupling
@@ -501,21 +508,23 @@ CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
 !
 ! Call to surface schemes
 !                       
-CALL COUPLING_SURF_ATM_n('MESONH', 'E',ZTIMEC,                                                   &
+CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                                                   &
                XTSTEP, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME,  &
                IDIM1D,NSV,SIZE(XSW_BANDS),                                                    &
                ZP_TSUN, ZP_ZENITH,ZP_ZENITH, ZP_AZIM,                                                   &
                ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, CSV,&
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, XSW_BANDS, ZP_PS, ZP_PA,        &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
-               ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS,                                     &
+               ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,  &
                ZP_PEW_A_COEF, ZP_PEW_B_COEF,                                                  &
                ZP_PET_A_COEF, ZP_PEQ_A_COEF, ZP_PET_B_COEF, ZP_PEQ_B_COEF,                    &
                'OK'                                                                           )
 !
 
 IF (CPROGRAM=='DIAG  ' .OR. LDIAG_IN_RUN) THEN
-  CALL DIAG_SURF_ATM_n('MESONH')
+  CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
+                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
+                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
   CALL  MNHGET_SURF_PARAM_n(PRN=ZP_RN,PH=ZP_H,PLE=ZP_LE,PGFLUX=ZP_GFLUX, &
                            PT2M=ZP_T2M,PQ2M=ZP_Q2M,PHU2M=ZP_HU2M,        &
                            PZON10M=ZP_ZON10M,PMER10M=ZP_MER10M           )
@@ -707,6 +716,10 @@ ALLOCATE(ZP_TSRAD   (KDIM1D))
 ALLOCATE(ZP_DIR_ALB (KDIM1D,SIZE(PDIR_ALB,3)))
 ALLOCATE(ZP_SCA_ALB (KDIM1D,SIZE(PSCA_ALB,3)))
 ALLOCATE(ZP_EMIS    (KDIM1D))
+ALLOCATE(ZP_TSURF   (KDIM1D))
+ALLOCATE(ZP_Z0      (KDIM1D))
+ALLOCATE(ZP_Z0H     (KDIM1D))
+ALLOCATE(ZP_QSURF   (KDIM1D))
 ALLOCATE(ZP_RN      (KDIM1D))
 ALLOCATE(ZP_H       (KDIM1D))
 ALLOCATE(ZP_LE      (KDIM1D))

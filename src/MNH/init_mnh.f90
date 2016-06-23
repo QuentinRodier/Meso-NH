@@ -75,6 +75,7 @@
 !!      P.Jabouille 15/07/99  special initialisation for spawning
 !!      J.P Chaboureau 2015   add ini_spectre_n
 !!      J.Escoabr   2/03/2016 bypass , reset NHALO=1 for SPAWNING
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -99,7 +100,7 @@ USE MODI_INI_SIZE_SPAWN
 USE MODI_RESET_EXSEG
 USE MODE_MODELN_HANDLER
 USE MODI_READ_ALL_NAMELISTS
-USE MODI_ALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 USE MODI_INI_SPECTRE_n
 !JUAN
 USE MODE_SPLITTINGZ_ll
@@ -205,13 +206,17 @@ CALL INI_PARAZ_ll(IINFO_ll)
 !-------------------------------------------------------------------------------
 !
 !
-CALL ALLOC_SURFEX(NMODEL)
+!     Allocations of Surfex Types
+CALL SURFEX_ALLOC_LIST(NMODEL)
+DO JMI=1,NMODEL
+  YSURF_CUR => YSURF_LIST(JMI)
 !
-IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  ') THEN 
-  CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
-ELSE
-  CALL READ_ALL_NAMELISTS('MESONH','ALL',.TRUE.)
-ENDIF
+  IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  ') THEN 
+    CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
+  ELSE
+    CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','ALL',.TRUE.)
+  ENDIF
+ENDDO
 !
 !
 !-------------------------------------------------------------------------------

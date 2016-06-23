@@ -67,6 +67,7 @@
 !!    J.Escobar : 05/10/2015 : missing JPHEXT for LAT/LON/ZS/ZSMT writing
 !!    M.Moge          11/2015     disable the creation of files on multiple 
 !!                                Z-levels when using parallel IO for PREP_PGD
+!!  06/2016     (G.Delautier) phasage surfex 8
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -96,23 +97,19 @@ USE MODD_CONF, ONLY       : NHALO_CONF_MNH => NHALO
 !JUAN
 USE MODN_CONFIO
 !
-USE MODI_ALLOC_SURFEX
 USE MODI_READ_ALL_NAMELISTS
-USE MODI_GOTO_SURFEX
 USE MODI_VERSION
 USE MODI_PGD_GRID_SURF_ATM
 USE MODI_SPLIT_GRID
 USE MODI_PGD_SURF_ATM
 USE MODI_WRITE_PGD_SURF_ATM_N
-USE MODI_DEALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 !
-USE MODD_SURF_ATM_GRID_n,     ONLY : XLON, XLAT
 #ifdef MNH_NCWRIT
 USE MODN_NCOUT
 USE MODE_UTIL
 USE MODE_FMREAD
 #endif
-USE MODD_SURF_ATM_GRID_n, ONLY : NGRID_PAR, XGRID_PAR
 USE MODE_MPPDB
 USE MODI_EXTEND_GRID_ON_HALO
 !
@@ -135,7 +132,6 @@ LOGICAL           :: LHSLOP=.FALSE.       ! filtering of slopes higher than XHSL
 REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher than XHSLOP   
 INTEGER           :: NSLEVE   =12         ! number of iteration for filter for smooth orography
 REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography for SLEVE coordinate
-!#ifdef MNH_NCWRIT
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LAT ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LON ! work array for lat and lon reshape
@@ -145,7 +141,6 @@ INTEGER           :: IGRID    ! grid location
 INTEGER           :: ILENCH   ! length of comment string
 CHARACTER(LEN=100):: YCOMMENT ! comment string
 INTEGER           :: IIMAX, IJMAX
-!#endif
 INTEGER           :: NHALO_MNH 
 !
 NAMELIST/NAM_PGDFILE/CPGDFILE, NHALO
@@ -212,11 +207,12 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_NCOUT)
 CALL CLOSE_ll('PRE_PGD1.nam')
 !
 !
-CALL ALLOC_SURFEX(1)
-CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
+CALL SURFEX_ALLOC_LIST(1)
+YSURF_CUR => YSURF_LIST(1)
+CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
 !
 CALL GOTO_MODEL(1)
-CALL GOTO_SURFEX(1,.TRUE.)
+CALL GOTO_SURFEX(1)
 !
 CALL VERSION
 CSTORAGE_TYPE = 'PG'
@@ -230,15 +226,17 @@ CALL INI_CST
 !*            Initializes the grid
 !             --------------------
 ! 
-CALL PGD_GRID_SURF_ATM('MESONH','                            ','      ',.FALSE.)
+CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',&
+                       '                            ','      ',.FALSE.)
 !
-CALL EXTEND_GRID_ON_HALO('MESONH',NGRID_PAR, XGRID_PAR)
+CALL EXTEND_GRID_ON_HALO('MESONH',YSURF_CUR%UG, YSURF_CUR%U,&
+        YSURF_CUR%UG%NGRID_PAR, YSURF_CUR%UG%XGRID_PAR)
 !
 !
 !*            Initializes all physiographic fields
 !             ------------------------------------
 !
-CALL PGD_SURF_ATM('MESONH','                            ','      ',.FALSE.)
+CALL PGD_SURF_ATM(YSURF_CUR,'MESONH','                            ','      ',.FALSE.)
 !
 !
 !*    3.      Writes the physiographic fields
@@ -280,7 +278,7 @@ CALL FMWRIT(COUTFMFILE,'JPHEXT      ',CLUOUT0,'--',JPHEXT,0,1,' ',IRESP)
 !
 #ifdef MNH_NCWRIT
 NC_WRITE = LNETCDF
-CALL WRITE_PGD_SURF_ATM_n('MESONH')
+CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
   LLFIFM = .FALSE.
 !!!! WRITE LAT and LON
@@ -288,11 +286,11 @@ IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
   ALLOCATE(ZWORK(IIMAX+NHALO*2,IJMAX+NHALO*2))
   ALLOCATE(ZWORK_LAT(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
   ALLOCATE(ZWORK_LON(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-  ZWORK=RESHAPE(XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
+  ZWORK=RESHAPE(YSURF_CUR%UG%XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
   ZWORK_LAT=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
 !!
 CALL FMWRIT(COUTFMFILE,'LAT',CLUOUT0,'XY',ZWORK_LAT,1,21,'X_Y_latitude (degree)',IRESP)
-  ZWORK=RESHAPE(XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
+  ZWORK=RESHAPE(YSURF_CUR%UG%XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
   ZWORK_LON=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
 CALL FMWRIT(COUTFMFILE,'LON',CLUOUT0,'XY',ZWORK_LON,1,22,'X_Y_longitude (degree)',IRESP)
   DEALLOCATE(ZWORK)
@@ -305,7 +303,7 @@ CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS)
 
 IF ( LNETCDF ) THEN
   DEF_NC=.FALSE.
-  CALL WRITE_PGD_SURF_ATM_n('MESONH')
+  CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
   IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
     LLFIFM = .FALSE.
 !!!! WRITE LAT and LON
@@ -324,7 +322,7 @@ IF ( LNETCDF ) THEN
   NC_WRITE = .FALSE.
 END IF
 #else
-CALL WRITE_PGD_SURF_ATM_n('MESONH')
+CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 !*    4.      Computes and writes smooth orography for SLEVE coordinate
 !             ---------------------------------------------------------
 !CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS,LHSLOP,XHSLOP)
@@ -335,9 +333,9 @@ IF (.NOT.LCARTESIAN) THEN
    ALLOCATE(ZWORK(IIMAX+NHALO*2,IJMAX+NHALO*2))
    ALLOCATE(ZWORK_LAT(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
    ALLOCATE(ZWORK_LON(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-   ZWORK=RESHAPE(XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
+   ZWORK=RESHAPE(YSURF_CUR%UG%XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
    ZWORK_LAT=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
-   ZWORK=RESHAPE(XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
+   ZWORK=RESHAPE(YSURF_CUR%UG%XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
    ZWORK_LON=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
    YRECFM='LAT'
    YCOMMENT='X_Y_latitude (degree)'
@@ -367,7 +365,7 @@ CALL FMCLOS_ll(COUTFMFILE,'KEEP',CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
 !
 CALL END_PARA_ll(IINFO_ll)
 !
-CALL DEALLOC_SURFEX
+CALL SURFEX_DEALLO_LIST
 !
 !-------------------------------------------------------------------------------
 !

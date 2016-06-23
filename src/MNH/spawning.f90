@@ -73,6 +73,7 @@
 !!      Modification 05/02/2015 (M.Moge) read namelist NAM_CONFZ, before INIT_MNH
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -120,7 +121,7 @@ USE MODI_BOUNDARIES
 !
 USE MODI_VERSION
 USE MODI_INIT_MNH
-USE MODI_DEALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 USE MODE_MPPDB
 !
 !
@@ -238,7 +239,7 @@ CALL SPAWN_MODEL2 (NRR,NSV_USER,CTURB,CSURF,CCLOUD,                     &
                    CCHEM_INPUT_FILE,YSPAFILE,YSPANBR,YSONFILE,          &
                    CINIFILE, CINIFILEPGD, LSPAWN_SURF                   )
 !
-CALL DEALLOC_SURFEX
+CALL SURFEX_DEALLO_LIST
 CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
 CALL END_PARA_ll(IINFO_ll)
 !JUAN CALL ABORT

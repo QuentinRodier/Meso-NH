@@ -67,6 +67,7 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !!      Original    01/2003
 !!      01/12/03    (D.Gazen) change emissions handling for surf. externalization
 !!      Nov.  2010  (J.Escobar) PGI BUG , add SIZE(CSV) to interface
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,6 +87,7 @@ USE MODD_CH_AEROSOL, ONLY : CAERONAMES
 USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
 !
 USE MODI_INIT_SURF_ATM_N
+USE MODD_MNH_SURFEX_n 
 !
 IMPLICIT NONE
 !
@@ -116,6 +118,7 @@ REAL, DIMENSION(:,:),  ALLOCATABLE :: ZDIR_ALB  ! direct albedo
 REAL, DIMENSION(:,:),  ALLOCATABLE :: ZSCA_ALB  ! diffuse albedo
 REAL, DIMENSION(:),    ALLOCATABLE :: ZEMIS     ! emissivity
 REAL, DIMENSION(:),    ALLOCATABLE :: ZTSRAD    ! radiative temperature
+REAL, DIMENSION(:),    ALLOCATABLE :: ZTSURF
 !
 INTEGER :: ISWB  ! number of SW bands
 INTEGER :: IIU   ! 1st array size
@@ -145,6 +148,7 @@ ALLOCATE(ZDIR_ALB(ILU,ISWB))
 ALLOCATE(ZSCA_ALB(ILU,ISWB))
 ALLOCATE(ZEMIS   (ILU))
 ALLOCATE(ZTSRAD  (ILU))
+ALLOCATE(ZTSURF  (ILU))
 !-------------------------------------------------------------------------------
 !
 ZRHODREF= RESHAPE(XRHODREF(IIB:IIE,IJB:IJE,JPVEXT+1), (/ ILU /) )
@@ -166,11 +170,11 @@ DO JLAYER=NSV_AERBEG,NSV_AEREND
 END DO
 !
 ISV = SIZE(HSV)
-CALL INIT_SURF_ATM_n('MESONH',HINIT,.FALSE.,                                        &
+CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                                        &
                      ILU,ISV,SIZE(PSW_BANDS),                         &
                      HSV,ZCO2,ZRHODREF,                                     &
                      ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,             &
-                     ZEMIS,ZTSRAD,                                          &
+                     ZEMIS,ZTSRAD,ZTSURF,                                          &
                      TIME_MODEL(1)%TDTCUR%TDATE%YEAR, TIME_MODEL(1)%TDTCUR%TDATE%MONTH,&
                      TIME_MODEL(1)%TDTCUR%TDATE%DAY, TIME_MODEL(1)%TDTCUR%TIME,        &
                      '                            ','      ',               &

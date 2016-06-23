@@ -13,7 +13,7 @@ MODULE MODI_GOTO_MODEL_SURFEX_MNH
   !
   INTERFACE
     !     ###############################
-          SUBROUTINE GOTO_MODEL_SURFEX_MNH(KMI, KINFO_ll)
+          SUBROUTINE GOTO_MODEL_SURFEX_MNH(U,KMI, KINFO_ll)
     !     ###############################
     !!
     !!    PURPOSE
@@ -51,18 +51,14 @@ MODULE MODI_GOTO_MODEL_SURFEX_MNH
     !*    0.     DECLARATION
     !            -----------
     !
-!    USE MODE_ll
-    USE MODE_TOOLS_ll, ONLY : GET_GLOBALDIMS_ll, GET_DIM_PHYS_ll
-    USE MODD_SURF_ATM_n, ONLY : NDIM_FULL, NSIZE_FULL, NIMAX_SURF_ll, NJMAX_SURF_ll, NIMAX_SURF_LOC, NJMAX_SURF_LOC
-!    USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
-    !
-!    USE MODI_GOTO_SURFEX
+    USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
     !
     IMPLICIT NONE
     !
     !*    0.1    Declaration of dummy arguments
     !            ------------------------------
     !
+    TYPE(SURF_ATM_t), INTENT(INOUT) :: U
     INTEGER,                         INTENT(IN)    :: KMI    !model id
     INTEGER,                         INTENT(OUT)    :: KINFO_ll
           END SUBROUTINE GOTO_MODEL_SURFEX_MNH
@@ -71,7 +67,7 @@ MODULE MODI_GOTO_MODEL_SURFEX_MNH
   !
 END MODULE MODI_GOTO_MODEL_SURFEX_MNH
 !     ###############################
-      SUBROUTINE GOTO_MODEL_SURFEX_MNH(KMI, KINFO_ll)
+      SUBROUTINE GOTO_MODEL_SURFEX_MNH(U,KMI, KINFO_ll)
 !     ###############################
 !!
 !!    PURPOSE
@@ -102,12 +98,13 @@ END MODULE MODI_GOTO_MODEL_SURFEX_MNH
 !!    ------------
 !!
 !!    Original      08/2015
+!!  06/2016     (G.Delautier) phasage surfex 8
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_SURF_ATM_n, ONLY : NDIM_FULL, NSIZE_FULL, NIMAX_SURF_ll, NJMAX_SURF_ll, NIMAX_SURF_LOC, NJMAX_SURF_LOC
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 !USE MODE_ll
 USE MODE_TOOLS_ll, ONLY : GET_GLOBALDIMS_ll, GET_DIM_PHYS_ll
@@ -115,13 +112,13 @@ USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT
 USE MODD_VAR_ll, ONLY : YSPLITTING
 USE MODE_MODELN_HANDLER
 !
-USE MODI_GOTO_SURFEX
 !
 IMPLICIT NONE
 !
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
 !
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER,                         INTENT(IN)    :: KMI    !model id
 INTEGER,                         INTENT(OUT)    :: KINFO_ll
 !
@@ -148,8 +145,8 @@ CHARACTER*1 :: HSPLIT
 !CALL GO_TOMODEL_ll(KMI,KINFO_ll)
 !CALL GOTO_MODEL(KMI)
 !
-CALL GET_GLOBALDIMS_ll(NIMAX_SURF_ll,NJMAX_SURF_ll)
-NDIM_FULL = NIMAX_SURF_ll*NJMAX_SURF_ll
+CALL GET_GLOBALDIMS_ll(U%NIMAX_SURF_ll,U%NJMAX_SURF_ll)
+U%NDIM_FULL = U%NIMAX_SURF_ll*U%NJMAX_SURF_ll
 !
 IF ( YSPLITTING == "BSPLITTING" ) THEN
   HSPLIT = 'B'
@@ -160,8 +157,8 @@ ELSE IF ( YSPLITTING == "YSPLITTING" ) THEN
 ELSE
   HSPLIT = ''
 ENDIF
-CALL GET_DIM_PHYS_ll(HSPLIT,NIMAX_SURF_LOC,NJMAX_SURF_LOC)
-NSIZE_FULL = NIMAX_SURF_LOC*NJMAX_SURF_LOC
+CALL GET_DIM_PHYS_ll(HSPLIT,U%NIMAX_SURF_LOC,U%NJMAX_SURF_LOC)
+U%NSIZE_FULL = U%NIMAX_SURF_LOC*U%NJMAX_SURF_LOC
 !
 !-------------------------------------------------------------------------------
 !

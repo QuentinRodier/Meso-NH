@@ -77,6 +77,7 @@
 !!      J.Escobar                 19/03/2008  rename INIT to INIT_MNH --> grib problem
 !!      J.Escobar                  6/11/2014  remove test on LCHECK otherwise never call MPPDB_INIT
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -95,7 +96,7 @@ USE MODE_MODELN_HANDLER
 !
 USE MODI_VERSION
 USE MODI_INIT_MNH
-USE MODI_DEALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 !
 USE MODE_MPPDB
 !
@@ -171,7 +172,7 @@ ELSE
 END IF
 !
 !
-CALL DEALLOC_SURFEX
+CALL SURFEX_DEALLO_LIST
 !
 !-------------------------------------------------------------------------------
 !

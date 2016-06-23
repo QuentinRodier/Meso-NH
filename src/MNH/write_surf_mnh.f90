@@ -397,6 +397,7 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  06/2016     (G.Delautier) phasage surfex 8
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -407,6 +408,7 @@ USE MODE_FMWRIT
 USE MODE_ll
 USE MODE_IO_ll
 !
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_PARAMETERS,  ONLY : XUNDEF, JPHEXT
 USE MODD_CONF_n,        ONLY : CSTORAGE_TYPE
 USE MODD_CONFZ ,        ONLY : NB_PROCIO_W
@@ -425,7 +427,7 @@ IMPLICIT NONE
 CHARACTER(LEN=12),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KL1,KL2       ! number of points
 REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
-LOGICAL,DIMENSION(KL2),   INTENT(IN)  ::OFLAG  ! mask for array filling
+LOGICAL,DIMENSION(JPCOVER),   INTENT(IN)  ::OFLAG  ! mask for array filling
 INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
 CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :
@@ -503,18 +505,15 @@ ALLOCATE(ZWORK3D(IIU,IJU,NCOVER))
 ZWORK3D = XUNDEF
 !
 ICOVER=0
-DO IKL2=1,KL2
-  IF (OFLAG(IKL2)) THEN
-    ICOVER=ICOVER+1   
-    CALL UNPACK_1D_2D(IMASK,PFIELD(:,IKL2),ZWORK3D(IIB:IIE,IJB:IJE,ICOVER))
-  END IF
+DO IKL2=1,NCOVER
+  CALL UNPACK_1D_2D(IMASK,PFIELD(:,IKL2),ZWORK3D(IIB:IIE,IJB:IJE,IKL2))
 END DO
 
 IGRID=4
 
 IF (.NOT. GCOVER_PACKED) THEN
   ICOVER=0
-  DO JL2=1,KL2
+  DO JL2=1,SIZE(OFLAG)
     WRITE(YREC,'(A5,I3.3)') 'COVER',JL2
     IF (OFLAG(JL2)) THEN
       ICOVER=ICOVER+1

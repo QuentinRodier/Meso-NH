@@ -29,6 +29,7 @@
 !!    -------------
 !!      Original    12/2004 (P. Le Moigne)
 !!    10/10/2011  J.Escobar call INI_PARAZ_ll
+!!  06/2016     (G.Delautier) phasage surfex 8
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,10 +56,8 @@ USE MODE_MODELN_HANDLER
 USE MODE_SPLITTINGZ_ll
 !JUANZ
 USE MODI_VERSION
-USE MODI_ALLOC_SURFEX
 USE MODI_READ_ALL_NAMELISTS
-USE MODI_GOTO_SURFEX
-USE MODI_DEALLOC_SURFEX
+USE MODD_MNH_SURFEX_n
 !
 IMPLICIT NONE
 !
@@ -172,11 +171,11 @@ ELSE
   TDTCUR%TIME       = XUNDEF
 END IF
 !
-CALL ALLOC_SURFEX(1)
-CALL READ_ALL_NAMELISTS('MESONH','PRE',.FALSE.)
-CALL GOTO_SURFEX(1,.TRUE.)
+CALL SURFEX_ALLOC_LIST(1)
+YSURF_CUR => YSURF_LIST(1)
+CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
+CALL GOTO_SURFEX(1)
 !
-CALL GOTO_SURFEX(1,.TRUE.)
 CALL PREP_SURF_MNH(YATMFILE,YATMFILETYPE)
 !
 !-------------------------------------------------------------------------------
@@ -204,7 +203,7 @@ CALL CLOSE_ll(CLUOUT0, IOSTAT=IRESP)
 CALL FMCLOS_ll(CINIFILE,'KEEP',CLUOUT0,IRESP)
 !
 CALL END_PARA_ll(IINFO_ll)
-CALL DEALLOC_SURFEX
+CALL SURFEX_DEALLO_LIST
 !-------------------------------------------------------------------------------
 !
 END PROGRAM PREP_SURFEX

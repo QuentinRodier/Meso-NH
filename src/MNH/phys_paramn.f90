@@ -221,6 +221,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!                           follow the number of the dad model
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                       2014  (M.Faivre)
+!!  06/2016     (G.Delautier) phasage surfex 8
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -321,7 +322,7 @@ USE MODI_EDDYUV_FLUX_ONE_WAY_n     ! Ajout PP
 USE MODD_DEF_EDDY_FLUX_n           ! Ajout PP
 USE MODD_DEF_EDDYUV_FLUX_n         ! Ajout PP
 USE MODD_LATZ_EDFLX
-USE MODI_GOTO_SURFEX
+USE MODD_MNH_SURFEX_n
 USE MODI_SWITCH_SBG_LES_N
 !
 USE MODE_MPPDB
@@ -1059,7 +1060,7 @@ PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 ZTIME1 = ZTIME2
 !
 IF (CSURF=='EXTE') THEN
-  CALL GOTO_SURFEX(IMI,.TRUE.)
+  CALL GOTO_SURFEX(IMI)
 !
   IF( LTRANS ) THEN
     XUT(:,:,1+JPVEXT) = XUT(:,:,1+JPVEXT) + XUTRANS
