@@ -340,7 +340,7 @@ cdf : $(CDF_INC)
 $(CDF_INC) : 
 	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
 	FC="$(FC)" FCFLAGS="$(HDF_OPT)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install && $(MAKE) -j 1 clean
-	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-f90 --disable-dap \
+	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --enable-f90 --disable-dap \
 	FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
 
 cleanmaster : cleancdf
@@ -374,6 +374,11 @@ ifndef DO_COMP_USER
 else
 #	ln -sf $(OBJDIR)/$(*F) $(SRC_MESONH)/exe/$(*F)-${ARCH_XYZ}-${VER_USER}
 	ln -sf $(OBJDIR)/$(*F) $(SRC_MESONH)/exe/$(*F)${XYZ}
+endif
+ifdef MNH_TOOLS
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/lfi2cdf
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2cdf
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2lfi
 endif
 	rm -f $(SRC_MESONH)/exe/$(*F)_${ARCH_XYZ}~
 

@@ -91,6 +91,12 @@ CNAME_GRIBEX=_gfortran
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+MNH_TOOLS = yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

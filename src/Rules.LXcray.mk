@@ -98,6 +98,12 @@ endif
 #
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=_gfortran
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+MNH_TOOLS = yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

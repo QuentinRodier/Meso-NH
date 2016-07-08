@@ -97,6 +97,12 @@ CPPFLAGS_MNH       = -DMNH
 #ARCH_GRIBEX=NEC
 TARGET_GRIBEX=NEC
 CNAME_GRIBEX=sxmpif90
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+#MNH_TOOLS = no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

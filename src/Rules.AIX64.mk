@@ -95,6 +95,12 @@ CPPFLAGS_MNH       = -DAMAX1=MAX -DMNH
 TARGET_GRIBEX=ibm_power4
 CNAME_GRIBEX=""
 #A64=A64
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+MNH_TOOLS = yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

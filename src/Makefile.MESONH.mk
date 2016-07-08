@@ -195,6 +195,17 @@ VPATH                 += $(DIR_FOREFIRE)
 CPPFLAGS              += -DMNH_FOREFIRE
 endif
 ##########################################################
+#           Source TOOLS                                 #
+##########################################################
+ifdef MNH_TOOLS
+DIR_TOOLS  += ../LIBTOOLS/tools/lfi2cdf/src
+INC_TOOLS  += -I$(B)$(DIR_TOOLS)
+DIR_MASTER += $(DIR_TOOLS)
+INC        += $(INC_TOOLS)
+VPATH      += $(DIR_TOOLS)
+#CPPFLAGS   += -DLOWMEM
+endif
+##########################################################
 #           Source MPIVIDE                               #
 ##########################################################
 #
@@ -502,6 +513,9 @@ NSOURCE=8
 PROG_LIST += MESONH  LATLON_TO_XY PREP_IDEAL_CASE PREP_REAL_CASE PREP_PGD \
             PREP_NEST_PGD SPAWNING DIAG PREP_SURFEX ZOOM_PGD SPECTRE \
 	    MNH2LPDM
+ifdef MNH_TOOLS
+PROG_LIST += LFI2CDF
+endif
 #endif
 ##########################################################
 #                                                        #
