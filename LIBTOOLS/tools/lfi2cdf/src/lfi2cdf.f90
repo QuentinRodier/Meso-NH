@@ -23,15 +23,15 @@ program LFI2CDF
   call read_commandline(options,hinfile,houtfile,runmode)
 
   CALL OPEN_FILES(infiles, outfiles, hinfile, houtfile, nbvar_infile, options, runmode)
-  IF (options(OPTLIST)%set) return
+  IF (options(OPTLIST)%set) STOP
 
   IF (runmode == MODELFI2CDF .OR. runmode == MODECDF2CDF) THEN
      IF (options(OPTVAR)%set) THEN
         ! nbvar_tbr is computed from number of requested variables
         ! by counting commas, = and +
-        nbvar_tbr  = 0
+        nbvar_tbr  = 1
         nbvar_calc = 0
-        nbvar_tbw = 0
+        nbvar_tbw = 1
         hvarlist = options(OPTVAR)%cvalue
         DO ji=1,len(hvarlist)
            IF (hvarlist(ji:ji) == ',' .OR.hvarlist(ji:ji) == '+') THEN

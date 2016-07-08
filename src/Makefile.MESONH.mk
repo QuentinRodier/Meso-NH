@@ -203,7 +203,7 @@ INC_TOOLS  += -I$(B)$(DIR_TOOLS)
 DIR_MASTER += $(DIR_TOOLS)
 INC        += $(INC_TOOLS)
 VPATH      += $(DIR_TOOLS)
-#CPPFLAGS   += -DLOWMEM
+CPPFLAGS   += -DLOWMEM
 endif
 ##########################################################
 #           Source MPIVIDE                               #

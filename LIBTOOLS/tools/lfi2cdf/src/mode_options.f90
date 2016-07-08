@@ -80,7 +80,6 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
 
   call check_options(options,hinfile,runmode)
 
-  houtfile = options(OPTOUTPUT)%cvalue
 
   !Remove level in the filename if merging LFI splitted files
   if (.NOT.options(OPTOUTPUT)%set) then
@@ -103,6 +102,8 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
        end if
        houtfile=houtfile(1:len(houtfile)-ji)
     end if
+  else
+    houtfile = options(OPTOUTPUT)%cvalue
   end if
 
 end subroutine read_commandline

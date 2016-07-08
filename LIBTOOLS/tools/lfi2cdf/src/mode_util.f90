@@ -121,7 +121,6 @@ CONTAINS
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
-
       CALL FMREADLFIN1(ilu,'JPHEXT',JPHEXT,iresp)
       IF (iresp /= 0) JPHEXT=1
 
@@ -187,7 +186,7 @@ CONTAINS
         tpreclist(ji)%found  = .FALSE.
         tpreclist(ji)%calc   = .FALSE. !By default variables are not computed from others
         tpreclist(ji)%tbw    = .TRUE.  !By default variables are written
-        tpreclist(ji)%tbr    = .TRUE.  !By default variables are written
+        tpreclist(ji)%tbr    = .TRUE.  !By default variables are read
         tpreclist(ji)%src(:) = -1
         tpreclist(ji)%tgt    = -1
       END DO
@@ -198,8 +197,8 @@ CONTAINS
        DO ji=1,nbvar_tbw
           !crash compiler GCC 4.2.0: nde = INDEX(TRIM(options(OPTVAR)%cvalue(ndb:)),',')
           nde = INDEX(TRIM(options(OPTVAR)%cvalue(ndb:len(trim(options(OPTVAR)%cvalue)))),',')
+          IF (nde == 0) nde = LEN( TRIM(options(OPTVAR)%cvalue(ndb:len(trim(options(OPTVAR)%cvalue)))) ) + 1
           yrecfm = options(OPTVAR)%cvalue(ndb:ndb+nde-2)
-
           !Detect operations on variables (only + is supported now)
           ndey = INDEX(TRIM(yrecfm),'=')
           idx = 1
@@ -293,7 +292,6 @@ CONTAINS
        END DO
 
        maxvar = nbvar_tbr+nbvar_calc
-
 DO ji=1,nbvar_tbr+nbvar_calc
   print *,ji,'name=',trim(tpreclist(ji)%name),' calc=',tpreclist(ji)%calc,' tbw=',tpreclist(ji)%tbw,&
           ' tbr=',tpreclist(ji)%tbr,' found=',tpreclist(ji)%found
@@ -752,17 +750,17 @@ END DO
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
-           itab(1:extent) = iwork(3+iwork(2):)
+           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
          ELSE
            src=tpreclist(ji)%src(1)
            CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
-           itab(1:extent) = iwork(3+iwork(2):)
+           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
-             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):)
+             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
              jj=jj+1
            END DO
          ENDIF
@@ -914,6 +912,10 @@ END DO
 
        CASE (TEXT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
+#if LOWMEM
+         CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+         CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+#endif
          ALLOCATE(ytab(extent))
          DO jj=1,extent
 #if LOWMEM
@@ -1155,7 +1157,7 @@ END DO
     INTEGER         , INTENT(IN)  :: runmode
 
     INTEGER                     :: extindex
-    INTEGER(KIND=LFI_INT)       :: iresp,iverb,inap,inaf
+    INTEGER(KIND=LFI_INT)       :: ilu,iresp,iverb,inap,inaf
     INTEGER                     :: idx,status
     CHARACTER(LEN=4)            :: ypextsrc, ypextdest
     LOGICAL                     :: fexist
@@ -1172,15 +1174,16 @@ END DO
        infiles%files(idx)%lun_id = 11
        infiles%files(idx)%format = LFI_FORMAT
        infiles%files(idx)%status = READING
-       CALL LFIOUV(iresp,infiles%files(idx)%lun_id,ltrue,hinfile,'OLD',lfalse&
+       ilu = infiles%files(idx)%lun_id
+       CALL LFIOUV(iresp,ilu,ltrue,hinfile,'OLD',lfalse&
             & ,lfalse,iverb,inap,inaf)
        infiles%files(idx)%opened  = .TRUE.
 
        nbvar_infile = inaf
 
        IF (options(OPTLIST)%set) THEN
-          CALL LFILAF(iresp,infiles%files(idx)%lun_id,lfalse)
-          CALL LFIFER(iresp,infiles%files(idx)%lun_id,'KEEP')
+          CALL LFILAF(iresp,ilu,lfalse)
+          CALL LFIFER(iresp,ilu,'KEEP')
           return
        END IF
 
@@ -1191,9 +1194,9 @@ END DO
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
          IF (options(OPTCDF4)%set) THEN
-            status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
+            status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
-            status = NF90_CREATE(houtfile, IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
+            status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
          END IF
        
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
@@ -1264,12 +1267,12 @@ END DO
        outfiles%files(idx)%lun_id = 11
        outfiles%files(idx)%format = LFI_FORMAT
        outfiles%files(idx)%status = WRITING
-       CALL LFIOUV(iresp,outfiles%files(idx)%lun_id,ltrue,houtfile,'NEW'&
-            & ,lfalse,lfalse,iverb,inap,inaf)
+       ilu = outfiles%files(idx)%lun_id
+       CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW' ,lfalse,lfalse,iverb,inap,inaf)
        outfiles%files(idx)%opened  = .TRUE.
     END IF
 
-    PRINT *,'--> Fichier converti : ', houtfile
+    PRINT *,'--> Fichier converti : ', TRIM(houtfile)
 
   END SUBROUTINE OPEN_FILES
 
@@ -1342,7 +1345,7 @@ END DO
       outfiles%files(idx)%var_id = ji
 
       IF (options(OPTCDF4)%set) THEN
-        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
       ELSE
         filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
@@ -1366,14 +1369,15 @@ END DO
   SUBROUTINE CLOSE_FILES(filelist)
     TYPE(filelist_struct),INTENT(INOUT) :: filelist
     
-    INTEGER(KIND=LFI_INT) :: iresp
+    INTEGER(KIND=LFI_INT) :: ilu,iresp
     INTEGER               :: ji,status
 
     DO ji=1,filelist%nbfiles
       IF ( .NOT.filelist%files(ji)%opened ) CYCLE
 
       IF ( filelist%files(ji)%format == LFI_FORMAT ) THEN
-        CALL LFIFER(iresp,filelist%files(ji)%lun_id,'KEEP')
+        ilu = filelist%files(ji)%lun_id
+        CALL LFIFER(iresp,ilu,'KEEP')
       ELSE IF ( filelist%files(ji)%format == NETCDF_FORMAT ) THEN
         status = NF90_CLOSE(filelist%files(ji)%lun_id)
         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
