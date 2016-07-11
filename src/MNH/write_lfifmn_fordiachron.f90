@@ -81,6 +81,7 @@
 !!       October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!       P.Wautelet: 11/07/2016 : removed MNH_NCWRIT define
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -104,10 +105,6 @@ USE MODE_FMWRIT
 USE MODE_GRIDPROJ
 USE MODE_ll
 USE MODI_GATHER_ll
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
 !
 IMPLICIT NONE
 !
@@ -280,23 +277,23 @@ IF (.NOT.LCARTESIAN) THEN
   ILENCH=LEN(YCOMMENT)
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'--',ZLATOR,IGRID,ILENCH,YCOMMENT,IRESP)
 !
-#ifdef MNH_NCWRIT
-  IF (LNETCDF) THEN
-    LLFIFM = .FALSE.
-    YRECFM='LAT'
-    YCOMMENT='X_Y_latitude (degree)'
-    IGRID=1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
-
-    YRECFM='LON'
-    YCOMMENT='X_Y_longitude (degree)'
-    IGRID=1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
-    LLFIFM = .TRUE.
-  END IF
-#endif
+! #ifdef MNH_NCWRIT
+!   IF (LNETCDF) THEN
+!     LLFIFM = .FALSE.
+!     YRECFM='LAT'
+!     YCOMMENT='X_Y_latitude (degree)'
+!     IGRID=1
+!     ILENCH=LEN(YCOMMENT)
+!     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
+! 
+!     YRECFM='LON'
+!     YCOMMENT='X_Y_longitude (degree)'
+!     IGRID=1
+!     ILENCH=LEN(YCOMMENT)
+!     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
+!     LLFIFM = .TRUE.
+!   END IF
+! #endif
 END IF
 !
 YRECFM='THINSHELL'

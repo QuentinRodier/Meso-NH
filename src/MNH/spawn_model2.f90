@@ -187,6 +187,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification 05/02/2015 (M.Moge) parallelization of SPAWNING
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar   02/05/2016 : test ZZS_MAX in // 
+!!      P.Wautelet  08/07/2016 : removed MNH_NCWRIT define
 !!      J.Escobar   12/07/2016 : add test on NRIMY & change the one on NRIMX with >=
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
@@ -264,10 +265,6 @@ USE MODE_THERMO
 !
 USE MODI_SECOND_MNH
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
 ! Modules for  EDDY_FLUX
 USE MODD_LATZ_EDFLX
 USE MODD_DEF_EDDY_FLUX_n           
@@ -1458,17 +1455,7 @@ ELSE
   CDAD_NAME(2)=CMY_NAME(1) ! model 1 becomes the DAD of model 2 (spawned one)
 ENDIF
 !
-#ifdef MNH_NCWRIT
-NC_WRITE = LNETCDF
 CALL WRITE_LFIFM_n(CMY_NAME(2),CDAD_NAME(2))
-IF ( LNETCDF ) THEN
-  DEF_NC=.FALSE.
-  CALL WRITE_LFIFM_n(CMY_NAME(2),CDAD_NAME(2))
-  DEF_NC=.TRUE.
-END IF
-#else
-CALL WRITE_LFIFM_n(CMY_NAME(2),CDAD_NAME(2))
-#endif
 !
 CALL SECOND_MNH(ZTIME2)
 !

@@ -67,7 +67,8 @@
 !!    J.Escobar : 05/10/2015 : missing JPHEXT for LAT/LON/ZS/ZSMT writing
 !!    M.Moge          11/2015     disable the creation of files on multiple 
 !!                                Z-levels when using parallel IO for PREP_PGD
-!!  06/2016     (G.Delautier) phasage surfex 8
+!!    06/2016     (G.Delautier) phasage surfex 8
+!!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!    10/2016    (S.Faroux S.Bielli) correction for NHALO=0
 !----------------------------------------------------------------------------
 !
@@ -106,11 +107,6 @@ USE MODI_PGD_SURF_ATM
 USE MODI_WRITE_PGD_SURF_ATM_N
 USE MODD_MNH_SURFEX_n
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-USE MODE_FMREAD
-#endif
 USE MODE_MPPDB
 USE MODI_EXTEND_GRID_ON_HALO
 !
@@ -136,7 +132,6 @@ REAL              :: XSMOOTH_ZS = XUNDEF  ! optional uniform smooth orography fo
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LAT ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LON ! work array for lat and lon reshape
-REAL, DIMENSION(:,:),ALLOCATABLE   :: ZZS ! work array for lat and lon reshape
 CHARACTER(LEN=16) :: YRECFM   ! name of record
 INTEGER           :: IGRID    ! grid location
 INTEGER           :: ILENCH   ! length of comment string
@@ -199,11 +194,6 @@ ENDIF
 CALL POSNAM(ILUNAM,'NAM_CONFIO',GFOUND)
 IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_CONFIO)
 CALL SET_CONFIO_ll(LCDF4, LLFIOUT, LLFIREAD)
-!SB
-#ifdef MNH_NCWRIT
-CALL POSNAM(ILUNAM,'NAM_NCOUT',GFOUND)
-IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_NCOUT)
-#endif
 !
 CALL CLOSE_ll('PRE_PGD1.nam')
 !
@@ -277,68 +267,6 @@ CALL FMWRIT(COUTFMFILE,'XOR         ',CLUOUT0,'--',NXOR,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'YOR         ',CLUOUT0,'--',NYOR,0,1,' ',IRESP)
 CALL FMWRIT(COUTFMFILE,'JPHEXT      ',CLUOUT0,'--',JPHEXT,0,1,' ',IRESP)
 !
-#ifdef MNH_NCWRIT
-NC_WRITE = LNETCDF
-CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
-  LLFIFM = .FALSE.
-!!!! WRITE LAT and LON
-  CALL GET_DIM_PHYS_ll('B',IIMAX,IJMAX)
-  ALLOCATE(ZWORK(IIMAX+NHALO*2,IJMAX+NHALO*2))
-  ALLOCATE(ZWORK_LAT(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-  ALLOCATE(ZWORK_LON(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-  ZWORK=RESHAPE(YSURF_CUR%UG%XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
-  IF (NHALO/=0) THEN   
-    ZWORK_LAT=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
-  ELSE
-    ZWORK_LAT(2:IIMAX+1,2:IJMAX+1)=ZWORK
-    ZWORK_LAT(1,:) = ZWORK_LAT(2,:)
-    ZWORK_LAT(IIMAX+2,:) = ZWORK_LAT(IIMAX+1,:)
-    ZWORK_LAT(:,1) = ZWORK_LAT(:,2)
-    ZWORK_LAT(:,IJMAX+2) = ZWORK_LAT(:,IJMAX+1)
-  ENDIF
-!!
-CALL FMWRIT(COUTFMFILE,'LAT',CLUOUT0,'XY',ZWORK_LAT,1,21,'X_Y_latitude (degree)',IRESP)
-  ZWORK=RESHAPE(YSURF_CUR%UG%XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
-   IF (NHALO/=0) THEN   
-     ZWORK_LON=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
-   ELSE
-     ZWORK_LON(2:IIMAX+1,2:IJMAX+1)=ZWORK
-     ZWORK_LON(1,:) = ZWORK_LON(2,:)
-     ZWORK_LON(IIMAX+2,:) = ZWORK_LON(IIMAX+1,:)
-     ZWORK_LON(:,1) = ZWORK_LAT(:,2)
-     ZWORK_LON(:,IJMAX+2) = ZWORK_LON(:,IJMAX+1)           
-   ENDIF    
-CALL FMWRIT(COUTFMFILE,'LON',CLUOUT0,'XY',ZWORK_LON,1,22,'X_Y_longitude (degree)',IRESP)
-  DEALLOCATE(ZWORK)
-  LLFIFM = .TRUE.
-END IF
-!*    4.      Computes and writes smooth orography for SLEVE coordinate
-!             ---------------------------------------------------------
-!CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS,LHSLOP,XHSLOP)
-CALL ZSMT_PGD(COUTFMFILE,NZSFILTER,NSLEVE,XSMOOTH_ZS)
-
-IF ( LNETCDF ) THEN
-  DEF_NC=.FALSE.
-  CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-  IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
-    LLFIFM = .FALSE.
-!!!! WRITE LAT and LON
-    CALL FMWRIT(COUTFMFILE,'LAT',CLUOUT0,'XY',ZWORK_LAT,1,21,'X_Y_latitude (degree)',IRESP)
-    CALL FMWRIT(COUTFMFILE,'LON',CLUOUT0,'XY',ZWORK_LON,1,22,'X_Y_longitude (degree)',IRESP)
-  END IF
-  ALLOCATE(ZZS(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-!!!!  writes smooth orography for SLEVE coordinate in netcdf
-  YRECFM = 'ZS              '
-  CALL FMREAD(COUTFMFILE,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
-  CALL FMWRIT(COUTFMFILE,'ZS',CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
-  YRECFM = 'ZSMT            '
-  CALL FMREAD(COUTFMFILE,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
-  CALL FMWRIT(COUTFMFILE,'ZSMT',CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
-  DEF_NC=.TRUE.
-  NC_WRITE = .FALSE.
-END IF
-#else
 CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 !*    4.      Computes and writes smooth orography for SLEVE coordinate
 !             ---------------------------------------------------------
@@ -381,8 +309,9 @@ IF (.NOT.LCARTESIAN) THEN
    IGRID=1
    ILENCH=LEN(YCOMMENT)
    CALL FMWRIT(COUTFMFILE,YRECFM,CLUOUT0,'XY',ZWORK_LON,IGRID,ILENCH,YCOMMENT,IRESP)
+   !
+   DEALLOCATE(ZWORK,ZWORK_LAT,ZWORK_LON)
 END IF
-#endif
 !
 !
 WRITE(ILUOUT0,*)

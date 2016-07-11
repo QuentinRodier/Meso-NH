@@ -59,10 +59,6 @@ export OPTLEVEL=${OPTLEVEL}
 #
 export VER_USER=${VER_USER}
 #
-#  NETCDF OUTPUT
-#
-export MNH_NCWRIT=${MNH_NCWRIT}
-#
 # 'Scandollar' Post Processing default variables
 #
 export CONF_DOLLAR=${CONF_DOLLAR}

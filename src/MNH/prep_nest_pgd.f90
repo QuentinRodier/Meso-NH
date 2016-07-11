@@ -93,6 +93,7 @@
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!      P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -127,11 +128,6 @@ USE MODI_INIT_HORGRID_ll_n
 USE MODI_INIT_PGD_SURF_ATM
 USE MODI_WRITE_PGD_SURF_ATM_N
 USE MODD_MNH_SURFEX_n
-!
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
 !
 USE MODE_SPLITTINGZ_ll, ONLY : INI_PARAZ_ll
 USE MODD_VAR_ll, ONLY : NPROC, IP, NMNH_COMM_WORLD
@@ -355,27 +351,8 @@ DO JPGD=1,NMODEL
   COUTFMFILE = CNESTPGD(JPGD)
   CALL GOTO_MODEL(JPGD)
   CALL GOTO_SURFEX(JPGD)
-#ifdef MNH_NCWRIT
-  NC_WRITE = LNETCDF
-  CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-  IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
-    LLFIFM = .FALSE.
-    LLFIFM = .TRUE.
-  END IF
-!*      11.    SMOOTH OROGRAPHY WRITING
-  CALL WRITE_ZSMT_n(CNESTPGD(JPGD))
-  IF ( LNETCDF ) THEN
-    DEF_NC=.FALSE.
-    CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-!*      11.    SMOOTH OROGRAPHY WRITING
-    CALL WRITE_ZSMT_n(CNESTPGD(JPGD))
-    DEF_NC=.TRUE.
-    NC_WRITE = .FALSE.
-  END IF
-#else
   CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
   CALL WRITE_ZSMT_n(CNESTPGD(JPGD))
-#endif
 END DO
 !
 !-------------------------------------------------------------------------------

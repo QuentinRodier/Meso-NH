@@ -59,6 +59,7 @@ END MODULE MODI_WRITE_SERIES_n
 !!      Original    4/03/2002
 !!      Modification 7/01/2013 Add key for netcdf writing
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      P.Wautelet: 11/07/2016 : removed MNH_NCWRIT define
 !!
 !-------------------------------------------------------------------------------
 !
@@ -74,10 +75,6 @@ USE MODI_WRITE_DIACHRO
 USE MODI_GATHER_ll
 USE MODE_ll
 USE MODE_IO_ll
-#ifdef MNH_NCWRIT
-  USE MODE_DIMLIST
-  USE MODE_UTIL
-#endif
 !
 IMPLICIT NONE
 !
@@ -149,9 +146,6 @@ IF (LMASKLANDSEA) ISER=3
 !
 !*      2.1  Average processes of temporal series 
 !
-#ifdef MNH_NCWRIT
-IF (DEF_NC) THEN
-#endif
 ALLOCATE(ZVAR2D(NSNBSTEPT,NAVER1))
 IF (LSERIES1) THEN
   ZVAR2D(:,:)=XSSERIES1(1,1,1,1:NSNBSTEPT,1,1:NAVER1)
@@ -251,9 +245,6 @@ IF (LWMINMAX) THEN
   ! 
   DEALLOCATE(ZVAR3D,ZVAR3D_ll)
 ENDIF
-#ifdef MNH_NCWRIT
-ENDIF
-#endif
 !
 !*      2.3  Write in diachro file
 !
@@ -271,9 +262,6 @@ CALL WRITE_DIACHRO(HFILEDIA,HLUOUT,'TSERIES','CART',NSGRIDD1,XSDATIME(:,1:NSNBST
 !
 !*      3.1  Average processes of temporal series 
 !
-#ifdef MNH_NCWRIT
-IF (DEF_NC) THEN
-#endif
 ALLOCATE(ZVAR3D(IKMAX,NSNBSTEPT,NSTEMP_SERIE2))
 !
 IF (LSERIES2) THEN
@@ -318,9 +306,6 @@ IF (LMASKLANDSEA) THEN
   XSSERIES2(1,1,1:IKMAX,1:NSNBSTEPT,1,2*INAV+1:NSTEMP_SERIE2)=ZVAR3D(:,:,2*INAV+1:NSTEMP_SERIE2)/MAX(ZSIZEHB,1.)
 END IF
 DEALLOCATE(ZVAR3D)
-#ifdef MNH_NCWRIT
-END IF
-#endif
 !
 !*      3.2  Write in diachro file
 !

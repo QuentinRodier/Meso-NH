@@ -205,12 +205,6 @@ VPATH               += $(DIR_NEWLFI)
 #ARCH_XYZ    := $(ARCH_XYZ)-$(VER_NEWLFI)
 endif
 ##########################################################
-#           Source NCWRIT                                #
-##########################################################
-ifdef MNH_NCWRIT
-CPPFLAGS_MNH += -DMNH_NCWRIT=${MNH_NCWRIT}
-endif
-##########################################################
 #           Source FOREFIRE                              #
 ##########################################################
 ifdef MNH_FOREFIRE

@@ -66,6 +66,7 @@ END MODULE MODI_SPAWN_SURF
 !!
 !!      Original     01/2004  
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!     P.Wautelet 08/07/2016 : removed MNH_NCWRIT define
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -98,10 +99,6 @@ USE MODI_PREP_SURF_ATM
 USE MODI_WRITE_DIAG_SURF_ATM_N
 USE MODD_MNH_SURFEX_n
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
 !
 IMPLICIT NONE
 !
@@ -141,41 +138,15 @@ IF (CSURF=='EXTE') THEN
     CALL ZOOM_PGD_SURF_ATM(YSURF_CUR,'MESONH',HINIFILEPGD,'MESONH',CPGDFILE,'MESONH')
     CALL MNHPUT_ZS_n
     !* writing of physiographic fields in the file
-#ifdef MNH_NCWRIT
-    NC_WRITE=LNETCDF
-    NC_FILE='pgd'
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-    IF ( LNETCDF ) THEN
-      DEF_NC=.FALSE.
-      CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-      DEF_NC=.TRUE.
-      NC_WRITE = .FALSE.
-   END IF
-#else 
-    CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
-#endif
     !* rereading of physiographic fields and definition of prognostic fields
     CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HINIFILE,'MESONH',      &
                            TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
                            TDTCUR%TDATE%DAY, TDTCUR%TIME          )
     CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HINIFILE,'MESONH',HINIFILEPGD,'MESONH')
     !* writing of all surface fields
-#ifdef MNH_NCWRIT
-    NC_WRITE=LNETCDF
-    NC_FILE='sf2'
     CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
     CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-    IF ( LNETCDF ) THEN
-      DEF_NC=.FALSE.
-      CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-      DEF_NC=.TRUE.
-      NC_WRITE = .FALSE.
-   END IF
-#else
-    CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-    CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-#endif    
     !
   ELSE
     CSURF='EXRM'

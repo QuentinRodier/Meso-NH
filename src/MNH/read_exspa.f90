@@ -95,7 +95,8 @@ END MODULE MODI_READ_EXSPA
 !!      Modification 15/10/01  (I.Mallet) allow namelists in different orders
 !!      Modification 08/04/04  (G.Jaubert) spawning 1 for anelastic balance only
 !!      Modification 07/07/05  (D.Barbary) spawn with 2 input files (father+son1)
-!!      Modification 30/03/12  (S.Bielli) add NAM_NCOUT for netcdf output
+!!      Modification 30/03/12  (S.Bielli) add NAM_NCOUT for netcdf output (removed 08/07/2016)
+!!      Modification 08/07/2016 (P.Wautelet) removed MNH_NCWRIT define
 !
 !-------------------------------------------------------------------------------
 !
@@ -111,9 +112,6 @@ USE MODE_POS
 USE MODE_MODELN_HANDLER
 !
 USE MODN_CONFIO
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-#endif
 !
 IMPLICIT NONE
 !
@@ -227,10 +225,6 @@ CINIFILEPGD_n=CINIFILEPGD
 CALL POSNAM(ILUSPA,'NAM_CONFIO',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_CONFIO)
 CALL SET_CONFIO_ll(LCDF4, LLFIOUT, LLFIREAD)
-#ifdef MNH_NCWRIT
-CALL POSNAM(ILUSPA,'NAM_NCOUT',GFOUND,ILUOUT)
-IF (GFOUND) READ(ILUSPA,NAM_NCOUT)
-#endif
 CALL CLOSE_ll(YEXSPA)
 !
 !

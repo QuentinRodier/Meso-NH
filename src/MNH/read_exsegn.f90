@@ -274,7 +274,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   09/2009   (J.Escobar) add more info on relaxation problems
 !!      Modification   09/2011   (J.Escobar) re-add 'ZRESI' choose
 !!      Modification   12/2011   (C.Lac) Adaptation to FIT temporal scheme 
-!!      Modification   12/2012   (S.Bielli) add NAM_NCOUT for netcdf output
+!!      Modification   12/2012   (S.Bielli) add NAM_NCOUT for netcdf output (removed 08/07/2016)
 !!      Modification   02/2012   (Pialat/Tulet) add ForeFire
 !!      Modification   02/2012   (T.Lunet) add of new Runge-Kutta methods
 !!      Modification   01/2015   (C. Barthe) add explicit LNOx
@@ -282,6 +282,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      M.Leriche 18/12/2015 : bug chimie glace dans prep_real_case
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      Modification   02/2016   (M.Leriche) treat gas and aq. chemicals separately
+!!      P.Wautelet 08/07/2016 : removed MNH_NCWRIT define
 !!      Modification   10/2016    (C.LAC) Add OSPLIT_WENO + Add droplet
 !!                                deposition + Add max values
 !!------------------------------------------------------------------------------
@@ -293,11 +294,6 @@ USE MODD_CONF
 USE MODD_CONFZ
 USE MODD_CONF_n, ONLY : CSTORAGE_TYPE
 USE MODD_VAR_ll,    ONLY:  NPROC
-!
-#ifdef MNH_NCWRIT
-USE MODD_NCOUT
-USE MODN_NCOUT
-#endif
 !
 USE MODN_BUDGET
 USE MODN_LES
@@ -573,10 +569,6 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_2D_FRC)
   CALL POSNAM(ILUSEG,'NAM_LATZ_EDFLX',GFOUND)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_LATZ_EDFLX)
-#ifdef MNH_NCWRIT
-  CALL POSNAM(ILUSEG,'NAM_NCOUT',GFOUND,ILUOUT)
-  IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_NCOUT)
-#endif
 END IF
 !
 !-------------------------------------------------------------------------------

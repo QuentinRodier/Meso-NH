@@ -236,12 +236,6 @@ CONTAINS
     USE MODD_IO_ll, ONLY : ISP,GSMONOPROC,LIOCDF4,LLFIOUT
     USE MODD_FM
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
-#ifdef MNH_NCWRIT
-    USE MODD_GRID
-    USE MODD_DIM_n, ONLY: NIMAX
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
     !
     !*      0.    DECLARATIONS
     !             ------------
@@ -285,59 +279,15 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-          IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)    
-          END IF
-          IF ( LNETCDF .AND. NIMAX == 0 ) THEN
-!    PRINT * , ' SAVE MAP PARAMETER IF PGD '
-          IF ( trim(hrecfm) == "RPK" ) THEN
-            XRPK=PFIELD
-          ELSEIF ( trim(hrecfm) == "BETA" ) THEN
-            XBETA=PFIELD
-          ELSEIF (trim(hrecfm) == "LATORI" ) THEN
-            XLATORI=PFIELD
-          ELSEIF (trim(hrecfm) == "LONORI" ) THEN
-            XLONORI=PFIELD
-          ELSEIF (trim(hrecfm) == "LAT0" ) THEN
-            XLAT0=PFIELD
-          ELSEIF (trim(hrecfm) == "LON0" ) THEN
-            XLON0=PFIELD
-          END IF
-          END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
-               END IF
-             IF ( LNETCDF .AND. NIMAX == 0 ) THEN
-!                  print * , ' SAVE MAP PARAMETER IF PGD '
-               IF ( trim(hrecfm) == "RPK" ) THEN
-                 XRPK=PFIELD
-               ELSEIF ( trim(hrecfm) == "BETA" ) THEN
-                 XBETA=PFIELD
-               ELSEIF (trim(hrecfm) == "LATORI" ) THEN
-                 XLATORI=PFIELD
-               ELSEIF (trim(hrecfm) == "LONORI" ) THEN
-                 XLONORI=PFIELD
-               ELSEIF (trim(hrecfm) == "LAT0" ) THEN
-                 XLAT0=PFIELD
-               ELSEIF (trim(hrecfm) == "LON0" ) THEN
-                 XLON0=PFIELD
-               END IF
-             END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -353,14 +303,8 @@ CONTAINS
                 TZFMH%GRID=KGRID
                 TZFMH%COMLEN=KLENCH
                 TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
-               END IF
-#else
                IF (LLFIOUT) CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.TRUE.,1,PFIELD,TZFMH,IRESP)
                IF (LIOCDF4) CALL NCWRIT(TZFD_IOZ%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
              END IF
           END DO
        ENDIF
@@ -381,12 +325,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-#ifdef MNH_NCWRIT
-    USE MODE_UTIL
-    USE MODE_DIMLIST
-    USE MODD_DIM_n, ONLY: NIMAX
-    USE MODD_NCOUT
-#endif
     !
     !*      0.    DECLARATIONS
     !             ------------
@@ -413,21 +351,12 @@ CONTAINS
     TYPE(FMHEADER)               :: TZFMH
     REAL,DIMENSION(:),POINTER    :: ZFIELDP
     LOGICAL                      :: GALLOC
-#ifdef MNH_NCWRIT
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)         :: TABDIM
-#endif
     !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
     GALLOC = .FALSE.
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
-#ifdef MNH_NCWRIT
-    TABDIM(:)=1
-    TABDIM(1)=SIZE(PFIELD,1)
-    !print * , ' Writing Article 1 ' , HRECFM
-#endif
     !------------------------------------------------------------------    
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
@@ -435,25 +364,8 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-         IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-         END IF
-         ! ------- WRITE NETCDF
-         IF ( LNETCDF .AND. NC_WRITE ) THEN
-          CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD,.TRUE.,TZRECLIST, &
-!          CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD, &
-                  & KLENCH,HCOMMENT)
-            IF ( NC_FILE == 'phy' ) THEN
-!!!!! CAS WRITE_PHYS_PARAM ... l'ecriture lfi ne peut pas se faire en meme temps
-              CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE., &
-                 SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-            END IF
-         END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,HDIR,GALLOC)
@@ -470,25 +382,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-           IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-           END IF
-           IF ( LNETCDF .AND. NC_WRITE ) THEN
-            TABDIM(1)=SIZE(ZFIELDP,1)
-            CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-              & KLENCH,HCOMMENT)
-             IF ( NC_FILE == 'phy' ) THEN
-               CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-             END IF
-           END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -516,12 +412,6 @@ CONTAINS
     USE MODD_TIMEZ, ONLY : TIMEZ
     USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
     !JUANZ 
-#ifdef MNH_NCWRIT
-    USE MODE_UTIL
-    USE MODE_DIMLIST
-    USE MODD_DIM_n, ONLY: NIMAX
-    USE MODD_NCOUT
-#endif
 #ifdef MNH_GA
     !JUAN_IOGA
     USE MODE_GA
@@ -550,12 +440,6 @@ CONTAINS
     REAL,DIMENSION(:,:),POINTER            :: ZFIELDP
     TYPE(FMHEADER)                         :: TZFMH
     LOGICAL                                :: GALLOC
-#ifdef MNH_NCWRIT
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)         :: TABDIM
-    LOGICAL                      :: NCWR
-    INTEGER                      :: LHREC_BEG,LHRECFM 
-#endif
     !
     !JUANZ
     REAL*8,DIMENSION(2) :: T0,T1,T2
@@ -574,13 +458,6 @@ CONTAINS
     IRESP = 0
     GALLOC = .FALSE.
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
-#ifdef MNH_NCWRIT
-    NCWR=.TRUE.
-    TABDIM(:)=1
-    TABDIM(1)=SIZE(PFIELD,1)
-    TABDIM(2)=SIZE(PFIELD,2)
-    !print * , ' Writing Article 2 ' , HRECFM
-#endif
     !------------------------------------------------------------------
     IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
@@ -592,75 +469,16 @@ CONTAINS
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
              ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
-#ifdef MNH_NCWRIT
-      IF ( DEF_NC .AND. LLFIFM ) THEN
-       CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-      END IF
-      IF ( LNETCDF .AND. NC_WRITE ) THEN
-         TABDIM(1)=1
-         TABDIM(2)=1
-        CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST,&
-                  & KLENCH,HCOMMENT)
-      END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
           ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
              ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-             LHRECFM = LEN_TRIM(ADJUSTL(HRECFM))
-             IF ( LHRECFM > 5 ) THEN
-               LHREC_BEG =LHRECFM-4
-               IF ( ADJUSTL(HRECFM(LHREC_BEG:LHRECFM)) == 'DATIM') THEN
-                  NCWR = .FALSE.
-               END IF
-             END IF
-             IF ( LNETCDF .AND. NC_WRITE .AND. NCWR ) THEN
-                 TABDIM(2)=1
-              IF ( NC_FILE == 'phy' ) THEN
-                  CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE., &
-                     SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-              END IF
-                  CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST,&
-                  & KLENCH,HCOMMENT)
-             END IF
-               NCWR = .TRUE.
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-             IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-             END IF
-             LHRECFM = LEN_TRIM(ADJUSTL(HRECFM))
-             IF ( LHRECFM > 5 ) THEN
-               LHREC_BEG =LHRECFM-4
-               IF ( ADJUSTL(HRECFM(LHREC_BEG:LHRECFM)) == 'DATIM') THEN
-                   NCWR = .FALSE.
-               END IF
-             END IF
-!             IF ( NIMAX /= 0 ) THEN
-               IF ( LNETCDF .AND. NC_WRITE .AND. NCWR ) THEN
-              IF ( NC_FILE == 'phy' ) THEN
-               CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE., &
-               SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-              END IF
-                 CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD,.TRUE.,TZRECLIST, &
-                 & KLENCH,HCOMMENT)
-               END IF
-               NCWR = .TRUE.
-!             END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
           END IF
        ELSE ! multiprocessor execution
           CALL SECOND_MNH2(T0)
@@ -725,31 +543,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-             IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-             END IF
-             LHRECFM = LEN_TRIM(ADJUSTL(HRECFM))
-             IF ( LHRECFM > 5 ) THEN
-               LHREC_BEG =LHRECFM-4
-               IF ( ADJUSTL(HRECFM(LHREC_BEG:LHRECFM)) == 'DATIM') THEN
-                   NCWR = .FALSE.
-               END IF
-             END IF
-               IF ( LNETCDF .AND. NC_WRITE .AND. NCWR ) THEN
-              TABDIM(1)=SIZE(ZFIELDP,1)
-              TABDIM(2)=SIZE(ZFIELDP,2)
-                 CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-!                 CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP, &
-                 & KLENCH,HCOMMENT)
-              END IF
-                NCWR=.TRUE.
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
 #ifdef MNH_GA
 !!$         IF (ISP .EQ. 1 ) THEN
@@ -793,11 +589,6 @@ CONTAINS
     USE MODD_TIMEZ, ONLY : TIMEZ
     USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
     !JUANZ 
-#ifdef MNH_NCWRIT
-    USE MODE_UTIL
-    USE MODD_DIM_n, ONLY: NIMAX
-    USE MODD_NCOUT
-#endif
 #ifdef MNH_GA
     USE MODE_GA
 #endif
@@ -850,12 +641,6 @@ CONTAINS
     REAL*8,DIMENSION(2) :: T11,T22
     !JUANZIO
     !JUAN
-#ifdef MNH_NCWRIT
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)                     :: TABDIM
-    CHARACTER(LEN=LEN(HRECFM))               :: HRECT
-    INTEGER                                  :: LHRECT
-#endif
 #ifdef MNH_GA
     REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
 #endif
@@ -870,30 +655,6 @@ CONTAINS
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article 3 ' , HRECFM
 !
-#ifdef MNH_NCWRIT
-    HRECT=TRIM(HRECFM)
-    LHRECT=LEN(TRIM(HRECT))
-    TABDIM(:)=1
-    TABDIM(1)=SIZE(PFIELD,1)
-    TABDIM(2)=SIZE(PFIELD,2)
-    TABDIM(3)=SIZE(PFIELD,3)
-   IF ( LHRECT .gt. 4 ) THEN
-      IF ( HRECT(LHRECT-4:LHRECT) == 'TRAJZ' ) THEN
-           TABDIM(3)=SIZE(PFIELD,1)
-           TABDIM(1)=1
-      END IF
-   END IF
-    IF ( TRIM(HRECFM)  == 'AVION.TRAJX' ) THEN
-         TABDIM(1)=SIZE(PFIELD,2)
-         TABDIM(2)=1
-    ELSEIF ( TRIM(HRECFM)  == 'AVION.TRAJY' ) THEN
-         TABDIM(1)=SIZE(PFIELD,2)
-         TABDIM(2)=1
-    ELSEIF ( TRIM(HRECFM)  == 'AVION.TRAJZ' ) THEN
-         TABDIM(1)=SIZE(PFIELD,2)
-         TABDIM(2)=1
-  END IF 
-#endif
     !------------------------------------------------------------------
     IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
@@ -905,57 +666,16 @@ CONTAINS
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
              ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
-#ifdef MNH_NCWRIT
-        IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-        END IF
-        IF ( LNETCDF .AND. NC_WRITE ) THEN
-          TABDIM(1)=1
-          TABDIM(2)=1
-          CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-             & KLENCH,HCOMMENT)
-        END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
           ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
              ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:)
-#ifdef MNH_NCWRIT
-        IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-        END IF
-        IF ( LNETCDF .AND. NC_WRITE ) THEN
-           TABDIM(2)=1
-          IF ( NC_FILE == 'phy' ) THEN
-            CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-          END IF
-           CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-!            CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP, &
-               & KLENCH,HCOMMENT)
-        END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-        IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-        END IF
-        IF ( LNETCDF .AND. NC_WRITE ) THEN
-          IF ( NC_FILE == 'phy' ) THEN
-            CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-          END IF
-            CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD,.TRUE.,TZRECLIST, &
-!             CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD, &
-                & KLENCH,HCOMMENT)
-        END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
           END IF
        ELSEIF ( (TZFD%nb_procio .eq. 1 ) .OR. ( HDIR == '--' ) ) THEN  ! multiprocessor execution & 1 proc IO
           ! write 3D field in 1 time = output for graphique
@@ -980,28 +700,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-        IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-               & ,IRESP)
-        END IF
-        IF ( LNETCDF .AND. NC_WRITE ) THEN
-           TABDIM(1)=SIZE(ZFIELDP,1)
-           TABDIM(2)=SIZE(ZFIELDP,2)
-           TABDIM(3)=SIZE(ZFIELDP,3)
-           IF ( NC_FILE == ' phy' ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-          END IF
-             CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-!                CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP, &
-               & KLENCH,HCOMMENT)
-        END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
        END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
@@ -1244,12 +945,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-!!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!!! MOD SB
     !
     !
     !*      0.1   Declarations of arguments
@@ -1292,34 +987,16 @@ CONTAINS
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
              ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:)
-#ifdef MNH_NCWRIT
-           IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-           END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
           ELSEIF (LPACK .AND. L2D  .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
              ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:)
-#ifdef MNH_NCWRIT
-          IF ( DEF_NC .AND. LLFIFM ) THEN
-            CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-          END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-          IF ( DEF_NC .AND. LLFIFM ) THEN
-            CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-          END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
           END IF
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
@@ -1343,14 +1020,8 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-           IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-           END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1374,11 +1045,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-#ifdef MNH_NCWRIT
-    USE MODE_UTIL
-    USE MODD_DIM_n
-    USE MODD_NCOUT
-#endif
     !
     !
     !*      0.1   Declarations of arguments
@@ -1402,10 +1068,6 @@ CONTAINS
     REAL,DIMENSION(:,:,:,:,:),POINTER        :: ZFIELDP
     TYPE(FMHEADER)                           :: TZFMH
     LOGICAL                                  :: GALLOC
-#ifdef MNH_NCWRIT
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)         :: TABDIM
-#endif
     INTEGER                                  :: IHEXTOT
     !
     !*      1.1   THE NAME OF LFIFM
@@ -1413,15 +1075,6 @@ CONTAINS
     IRESP = 0
     GALLOC = .FALSE.
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
-#ifdef MNH_NCWRIT
-    TABDIM(:)=1
-    TABDIM(1)=SIZE(PFIELD,1)
-    TABDIM(2)=SIZE(PFIELD,2)
-    TABDIM(3)=SIZE(PFIELD,3)
-    TABDIM(4)=SIZE(PFIELD,4)
-    TABDIM(5)=SIZE(PFIELD,5)
-    !print * , ' Writing Article 5 ' , HRECFM
-#endif
     !------------------------------------------------------------------
     IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
@@ -1433,53 +1086,16 @@ CONTAINS
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
              ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:,:,:)
-#ifdef MNH_NCWRIT
-            IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-            END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
      ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
              ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1,:,:,:)
-#ifdef MNH_NCWRIT
-            IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-            END IF
-            IF ( LNETCDF .AND. NC_WRITE ) THEN
-             TABDIM(2)=1
-              IF ( NC_FILE == 'phy' ) THEN
-                 CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP), &
-                 ZFIELDP,TZFMH,IRESP)
-              END IF
-               CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-!               CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP, &
-               & KLENCH,HCOMMENT)
-             END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-               END IF
-             IF ( LNETCDF .AND. NC_WRITE ) THEN
-              IF ( NC_FILE == 'phy' ) THEN
-                 CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD), &
-                     PFIELD,TZFMH,IRESP)
-              END IF
-               CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD,.TRUE.,TZRECLIST, &
-!               CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,PFIELD, &
-               & KLENCH,HCOMMENT)
-             END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
           END IF
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
@@ -1504,25 +1120,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-                END IF
-             IF ( LNETCDF .AND. NC_WRITE ) THEN
-              IF ( NC_FILE == 'phy' ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-              END IF
-         CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP,.TRUE.,TZRECLIST, &
-!               CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,ZFIELDP, &
-               & KLENCH,HCOMMENT)
-             END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1546,12 +1146,6 @@ CONTAINS
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -1588,14 +1182,8 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PFIELD),PFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,PFIELD,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,HDIR,GALLOC)
@@ -1614,16 +1202,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1646,12 +1227,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     !*      0.    DECLARATIONS
     !             ------------
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL 
-#endif
-!!!! MOD SB
     !
     !
     !*      0.1   Declarations of arguments
@@ -1694,27 +1269,15 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,KFIELD,TZFMH,IRESP)
-#endif
        ELSE 
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,KFIELD,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1731,14 +1294,8 @@ CONTAINS
                 TZFMH%GRID=KGRID
                 TZFMH%COMLEN=KLENCH
                 TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-                CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
-               END IF
-#else
                 IF (LLFIOUT) CALL FM_WRIT_ll(TZFD_IOZ%FLU,HRECFM,.FALSE.,1,KFIELD,TZFMH,IRESP)
                 IF (LIOCDF4) CALL NCWRIT(TZFD_IOZ%CDF,HRECFM,HDIR,KFIELD,TZFMH,IRESP)
-#endif
              END IF
           END DO
        ENDIF
@@ -1762,12 +1319,6 @@ CONTAINS
     USE MODE_GATHER_ll
     !*      0.    DECLARATIONS
     !             ------------
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !
     !*      0.1   Declarations of arguments
@@ -1791,11 +1342,6 @@ CONTAINS
     TYPE(FMHEADER)               :: TZFMH
     INTEGER,DIMENSION(:),POINTER :: IFIELDP
     LOGICAL                      :: GALLOC
-#ifdef MNH_NCWRIT
-    REAL,DIMENSION(SIZE(KFIELD)) ::WFIELD
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)         :: TABDIM
-#endif
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -1804,10 +1350,6 @@ CONTAINS
     GALLOC = .FALSE.
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article N1 ' , HRECFM
-#ifdef MNH_NCWRIT
-    WFIELD = KFIELD
-    TABDIM(:)=1
-#endif
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
     IF (ASSOCIATED(TZFD)) THEN
@@ -1815,18 +1357,8 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(KFIELD),KFIELD,TZFMH,IRESP)
-               END IF
-               IF ( LNETCDF .AND. NC_WRITE ) THEN
-          CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,WFIELD, &
-          & .TRUE.,TZRECLIST,KLENCH,HCOMMENT)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(KFIELD),KFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,KFIELD,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,HDIR,GALLOC)
@@ -1843,21 +1375,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-               IF ( LNETCDF .AND. NC_WRITE ) THEN
-          CALL NC_WRIT_ll(HRECFM,HFILEM,KGRID,TABDIM,WFIELD, &
-          .TRUE.,TZRECLIST,&
-                   & KLENCH,HCOMMENT)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1883,12 +1403,6 @@ CONTAINS
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -1922,7 +1436,6 @@ CONTAINS
     !
     IHEXTOT = 2*JPHEXT+1
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID=KGRID
@@ -1931,34 +1444,16 @@ CONTAINS
           !    IF (LPACK .AND. L1D .AND. HDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
              IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELDP,TZFMH,IRESP)
-#endif
              !    ELSE IF (LPACK .AND. L2D .AND. HDIR=='XY') THEN
           ELSEIF (LPACK .AND. L2D .AND. SIZE(KFIELD,2)==IHEXTOT) THEN
              IFIELDP=>KFIELD(:,JPHEXT+1:JPHEXT+1)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELDP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(KFIELD),KFIELD,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(KFIELD),KFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,KFIELD,TZFMH,IRESP)
-#endif
           END IF
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
@@ -1982,16 +1477,9 @@ CONTAINS
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH&
-                  & ,IRESP)
-                END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELDP),IFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -2015,12 +1503,6 @@ CONTAINS
     USE MODD_FM
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
 
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.    DECLARATIONS
     !             ------------
@@ -2061,33 +1543,20 @@ CONTAINS
     END IF
     !----------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,IFIELD,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,IFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELD,TZFMH,IRESP)
-#endif 
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,IFIELD,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,1,IFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELD,TZFMH,IRESP)
-#endif
           END IF
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
        END IF
@@ -2110,12 +1579,6 @@ CONTAINS
 
     !*      0.    DECLARATIONS
     !             ------------
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -2152,33 +1615,20 @@ CONTAINS
     END WHERE
     !----------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELD),IFIELD,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELD),IFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELD,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELD),IFIELD,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,SIZE(IFIELD),IFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,IFIELD,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -2203,12 +1653,6 @@ CONTAINS
     !*      0.    DECLARATIONS
     !             ------------
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -2232,10 +1676,6 @@ CONTAINS
     TYPE(FD_ll), POINTER             :: TZFD
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
-#ifdef MNH_NCWRIT
-    TYPE(workfield), DIMENSION(:), POINTER   :: TZRECLIST
-    INTEGER,DIMENSION(6)                     :: TABDIM
-#endif
 
     !----------------------------------------------------------------
     !*      1.1   THE NAME OF LFIFM
@@ -2244,10 +1684,6 @@ CONTAINS
     YFNLFI=TRIM(ADJUSTL(HFILEM))//'.lfi'
     !print * , ' Writing Article C0 ' , HRECFM
     ILENG=LEN(HFIELD)
-#ifdef MNH_NCWRIT
-    TABDIM(:)=1
-    TABDIM(1)=ILENG
-#endif
     !
     IF (ILENG==0) THEN
        ILENG=1
@@ -2266,27 +1702,15 @@ CONTAINS
           TZFMH%GRID=KGRID
           TZFMH%COMLEN=KLENCH
           TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,ILENG,IFIELD,TZFMH,KRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,ILENG,IFIELD,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,HFIELD,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMLEN=KLENCH
              TZFMH%COMMENT=HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,ILENG,IFIELD,TZFMH,KRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.FALSE.,ILENG,IFIELD,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,HDIR,HFIELD,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -2399,12 +1823,6 @@ CONTAINS
     USE MODD_FM
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !*      0.1   Declarations of arguments
     !
     CHARACTER(LEN=*),    INTENT(IN) ::HFILEM ! FM-file name
@@ -2436,62 +1854,32 @@ CONTAINS
     ITDATE(3)=TFIELD%TDATE%DAY
     !-------------------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID=KGRID
           TZFMH%COMMENT='YYYYMMDD'
           TZFMH%COMLEN=LEN_TRIM(TZFMH%COMMENT)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TDATE',.FALSE.,3,ITDATE&
-               & ,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TDATE',.FALSE.,3,ITDATE&
                & ,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,TRIM(HRECFM)//'%TDATE',HDIR,ITDATE,TZFMH,IRESP)
-#endif
           TZFMH%COMMENT='SECONDS'
           TZFMH%COMLEN=LEN_TRIM(TZFMH%COMMENT)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TIME',.TRUE.,1,TFIELD%TIME&
-               & ,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TIME',.TRUE.,1,TFIELD%TIME&
                & ,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,TRIM(HRECFM)//'%TIME',HDIR,TFIELD%TIME,TZFMH,IRESP)
-#endif
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
              TZFMH%GRID=KGRID
              TZFMH%COMMENT='YYYYMMDD'
              TZFMH%COMLEN=LEN_TRIM(TZFMH%COMMENT)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TDATE',.FALSE.,3,ITDATE&
-                  & ,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TDATE',.FALSE.,3,ITDATE&
                   & ,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,TRIM(HRECFM)//'%TDATE',HDIR,ITDATE,TZFMH,IRESP)
-#endif
              TZFMH%COMMENT='SECONDS'
              TZFMH%COMLEN=LEN_TRIM(TZFMH%COMMENT)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TIME',.TRUE.,1,TFIELD%TIME&
-                  & ,TZFMH,IRESP)
-               END IF
-#else
-
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,TRIM(HRECFM)//'%TIME',.TRUE.,1,TFIELD%TIME&
                   & ,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,TRIM(HRECFM)//'%TIME',HDIR,TFIELD%TIME,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -2516,12 +1904,6 @@ CONTAINS
     USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
     USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_LL
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
     !
     !*      0.1   Declarations of arguments
@@ -2569,7 +1951,6 @@ CONTAINS
     END IF
     !
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN  ! sequential execution
           TZFMH%GRID=KGRID
@@ -2577,23 +1958,11 @@ CONTAINS
           TZFMH%COMMENT=HCOMMENT
           IF (LPACK .AND. L2D) THEN
              TX3DP=>PLB(:,JPHEXT+1:JPHEXT+1,:)
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(TX3DP),TX3DP,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(TX3DP),TX3DP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',TX3DP,TZFMH,IRESP)
-#endif
           ELSE
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PLB),PLB,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(PLB),PLB,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',PLB,TZFMH,IRESP)
-#endif
           END IF
        ELSE
           IF (ISP == TZFD%OWNER)  THEN
@@ -2624,14 +1993,8 @@ CONTAINS
              ELSE
                 TX3DP=>Z3D
              END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(TX3DP),TX3DP,TZFMH,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(TX3DP),TX3DP,TZFMH,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',TX3DP,TZFMH,IRESP)
-#endif
           ELSE
              NB_REQ=0
              ALLOCATE(REQ_TAB(1))
@@ -2677,12 +2040,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -2718,7 +2075,6 @@ CONTAINS
     !print * , ' Writing Article BOXX2 ' , HRECFM
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID    = KGRID
@@ -2731,14 +2087,8 @@ CONTAINS
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              ! Allocate the box
@@ -2756,16 +2106,9 @@ CONTAINS
              TZFMH%GRID    = KGRID
              TZFMH%COMLEN  = LEN_TRIM(HCOMMENT)
              TZFMH%COMMENT = HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
@@ -2789,12 +2132,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -2830,7 +2167,6 @@ CONTAINS
     !print * , ' Writing Article BOXX3 ' , HRECFM
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID    = KGRID
@@ -2843,14 +2179,8 @@ CONTAINS
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              ! Allocate the box
@@ -2868,16 +2198,9 @@ CONTAINS
              TZFMH%GRID    = KGRID
              TZFMH%COMLEN  = LEN_TRIM(HCOMMENT)
              TZFMH%COMMENT = HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
@@ -2901,12 +2224,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -2942,7 +2259,6 @@ CONTAINS
     !print * , ' Writing Article BOXX4 ' , HRECFM
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID    = KGRID
@@ -2955,14 +2271,8 @@ CONTAINS
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              ! Allocate the box
@@ -2980,16 +2290,9 @@ CONTAINS
              TZFMH%GRID    = KGRID
              TZFMH%COMLEN  = LEN_TRIM(HCOMMENT)
              TZFMH%COMMENT = HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
@@ -3013,12 +2316,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -3054,7 +2351,6 @@ CONTAINS
     !print * , ' Writing Article BOXX5 ' , HRECFM
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID    = KGRID
@@ -3067,14 +2363,8 @@ CONTAINS
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              ! Allocate the box
@@ -3093,16 +2383,9 @@ CONTAINS
              TZFMH%GRID    = KGRID
              TZFMH%COMLEN  = LEN_TRIM(HCOMMENT)
              TZFMH%COMMENT = HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
@@ -3126,12 +2409,6 @@ CONTAINS
     USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
     USE MODE_GATHER_ll
     !
-!!!! MOD SB
-#ifdef MNH_NCWRIT
-    USE MODD_NCOUT
-    USE MODE_UTIL
-#endif
-!!!! MOD SB
     !
     !*      0.1   Declarations of arguments
     !
@@ -3167,7 +2444,6 @@ CONTAINS
     !print * , ' Writing Article BOXX6 ' , HRECFM
     !------------------------------------------------------------------
     TZFD=>GETFD(YFNLFI)
-!    IF (ASSOCIATED(TZFD) .OR. .not.LLFIFM) THEN
     IF (ASSOCIATED(TZFD)) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           TZFMH%GRID    = KGRID
@@ -3180,14 +2456,8 @@ CONTAINS
              ! take the field as a budget
              ZFIELDP=>PFIELD
           END IF
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-          CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
-               END IF
-#else
           IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
           IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
        ELSE ! multiprocessor execution
           IF (ISP == TZFD%OWNER)  THEN
              ! Allocate the box
@@ -3206,16 +2476,9 @@ CONTAINS
              TZFMH%GRID    = KGRID
              TZFMH%COMLEN  = LEN_TRIM(HCOMMENT)
              TZFMH%COMMENT = HCOMMENT
-#ifdef MNH_NCWRIT
-               IF ( DEF_NC .AND. LLFIFM ) THEN
-             CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
-                  & ,IRESP)
-               END IF
-#else
              IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,HRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
                   & ,IRESP)
              IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,HRECFM,'XY',ZFIELDP,TZFMH,IRESP)
-#endif
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&

@@ -68,6 +68,7 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !!                                 Z-levels when using parallel IO for PREP_PGD
 !!                   01/2016 (M.Moge) Bug fix : open the output file using Z-parallel IO
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -86,9 +87,6 @@ USE MODE_POS
 !
 USE MODE_MODELN_HANDLER
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-#endif
 USE MODN_CONFIO
 !
 USE MODD_PARAMETERS, ONLY : JPHEXT  
@@ -297,10 +295,6 @@ DO JPGD=1,NMODEL
   HNESTPGD(JPGD) = ADJUSTR( YSHORTPGD(JPGD))//'.nest'//ADJUSTL(YNEST)
   HNESTPGD(JPGD) = ADJUSTL(HNESTPGD(JPGD))
 END DO
-#ifdef MNH_NCWRIT
-CALL POSNAM(IPRE_NEST_PGD,'NAM_NCOUT',GFOUND,ILUOUT0)
-IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_NCOUT)
-#endif
 !
 CALL POSNAM(IPRE_NEST_PGD,'NAM_CONFIO',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONFIO)

@@ -83,6 +83,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      P.Tulet : Diag for salt and orilam
 !!      J.-P. Chaboureau 07/03/2016 fix the dimensions of local arrays
+!!      P.Wautelet : 11/07/2016 : removed MNH_NCWRIT define
 !!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
 !!      F. Brosse 10/2016 add chemical production destruction terms outputs
 !-------------------------------------------------------------------------------
@@ -152,11 +153,6 @@ USE MODE_FMWRIT
 !
 USE MODI_GET_SURF_UNDEF
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-use mode_util
-#endif
-!
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -223,21 +219,21 @@ ALLOCATE(ZWORK31(IIU,IJU,IKU))
 ALLOCATE(ZTEMP(IIU,IJU,IKU))
 ZTEMP(:,:,:)=XTHT(:,:,:)*(XPABST(:,:,:)/ XP00) **(XRD/XCPD)
 !
-#ifdef MNH_NCWRIT
-IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
-  YRECFM='LAT'
-  YCOMMENT='X_Y_latitude (degree)'
-  IGRID=1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM='LON'
-  YCOMMENT='X_Y_longitude (degree)'
-  IGRID=1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
-END IF
-#endif
+! #ifdef MNH_NCWRIT
+! IF (LNETCDF.AND..NOT.LCARTESIAN) THEN
+!   YRECFM='LAT'
+!   YCOMMENT='X_Y_latitude (degree)'
+!   IGRID=1
+!   ILENCH=LEN(YCOMMENT)
+!   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLAT,IGRID,ILENCH,YCOMMENT,IRESP)
+! !
+!   YRECFM='LON'
+!   YCOMMENT='X_Y_longitude (degree)'
+!   IGRID=1
+!   ILENCH=LEN(YCOMMENT)
+!   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLON,IGRID,ILENCH,YCOMMENT,IRESP)
+! END IF
+! #endif
 !
 !-------------------------------------------------------------------------------
 !

@@ -63,7 +63,7 @@
 !!                             advected with PPM
 !!  03/2010     (G.Tanguy)     Clean up of unuseful variables
 !!  05/2010                    Add lidar
-!!!  03/2012     (S. Bielli)    Add NAM_NCOUT for netcdf output
+!!!  03/2012     (S. Bielli)   Add NAM_NCOUT for netcdf output (removed 11/07/2016)
 !!  03/2013     (O.Caumont)    Modif call aircraft_balloon
 !!  03/2013     (C. Augros)    Add variables for radar simulator in NAMELIST:
 !!                             NBAZIM,LSNRT,XSNRMIN
@@ -75,9 +75,11 @@
 !!  09/2015     (S. Bielli)    Add netcdf call for phys_param
 !!  04/2016     (G.Delautier) replace print by write in OUTPUT LISTING
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  11/07/2016 (P.Wautelet)   removed MNH_NCWRIT define
 !!  09/2016      (JP Pinty) Add LIMA
 !!  10/2016      (C.LAC) add LVISI
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -158,11 +160,6 @@ USE MODI_DIAG_SURF_ATM_N
 USE MODI_WRITE_DIAG_SURF_ATM_N  
 USE MODD_MNH_SURFEX_n
 !  
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
-!
 USE MODN_CONF, ONLY : JPHEXT , NHALO
 !
 IMPLICIT NONE
@@ -403,12 +400,6 @@ CALL POSNAM(ILUNAM,'NAM_CONFZ',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONFZ)
 END IF
-#ifdef MNH_NCWRIT
-CALL POSNAM(ILUNAM,'NAM_NCOUT',GFOUND)
-IF (GFOUND) THEN
-  READ(UNIT=ILUNAM,NML=NAM_NCOUT)
-END IF
-#endif
 CALL POSNAM(ILUNAM,'NAM_CONFIO',GFOUND)
 IF (GFOUND) THEN
   READ(UNIT=ILUNAM,NML=NAM_CONFIO)
@@ -504,19 +495,7 @@ ENDIF
 !
 !*       4.0    Stores the fields in MESONH files if necessary
 !
-#ifdef MNH_NCWRIT
-NC_WRITE = LNETCDF
 CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
-IF ( LNETCDF ) THEN
-  DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
-  CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
-  DEF_NC=.TRUE.
-END IF
-NC_WRITE = .FALSE.
-#else
-CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
-#endif
 !
 WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG'
@@ -567,22 +546,8 @@ IF ( LAIRCRAFT_BALLOON ) THEN
                           TXDTBAL%TDATE%DAY,  &
                           TXDTBAL%TIME        )
   ENDDO
-#ifdef MNH_NCWRIT
-  NC_FILE=''
-  NC_WRITE=LNETCDF
   CALL WRITE_LFIFMN_FORDIACHRO_n(YFMDIAC)
   CALL WRITE_AIRCRAFT_BALLOON(YFMDIAC)
-  IF ( LNETCDF ) THEN
-      DEF_NC=.FALSE.
-      CALL WRITE_LFIFMN_FORDIACHRO_n(YFMDIAC)
-      CALL WRITE_AIRCRAFT_BALLOON(YFMDIAC)
-      DEF_NC=.TRUE.
-      NC_WRITE = .FALSE.
-  END IF
-#else
-  CALL WRITE_LFIFMN_FORDIACHRO_n(YFMDIAC)
-  CALL WRITE_AIRCRAFT_BALLOON(YFMDIAC)
-#endif
   CALL MENU_DIACHRO(YFMDIAC,CLUOUT,'END')
   CALL FMCLOS_ll(YFMDIAC,'KEEP',CLUOUT,IRESP)
   WRITE(ILUOUT0,*) ' '
@@ -710,26 +675,9 @@ ZCHEM=0.
 XTIME_LES=0.
 XTIME_LES_BU_PROCESS=0.
 XTIME_BU_PROCESS=0.
-#ifdef MNH_NCWRIT
-IF ( LNETCDF ) THEN
-  DEF_NC = .TRUE.
-  NC_WRITE=LNETCDF
-  NC_FILE='phy'
-  LLFIFM = .FALSE.
-  CALL WRITE_PHYS_PARAM(YFMFILE)
-  DEF_NC=.FALSE.
-  LLFIFM = .TRUE.
-END IF
-!
 CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
                   ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
-DEF_NC=.TRUE.
-#else
-CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
-                  ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
-                  ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
-#endif       
 WRITE(ILUOUT0,*) 'DIAG AFTER PHYS_PARAM1'
 !
 !* restores the initial flags
@@ -747,36 +695,11 @@ ZTIME1=ZTIME2
 !
 IF (CSURF=='EXTE') THEN
   CALL GOTO_SURFEX(1)
-#ifdef MNH_NCWRIT
-  NC_WRITE= LNETCDF
-  NC_FILE = 'sf1'
-  CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-  IF ( LNETCDF ) THEN
-    DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
-    CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-    DEF_NC=.TRUE.
-  END IF
-  CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
-                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
-                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
-  NC_WRITE= LNETCDF
-  NC_FILE = 'sf2'
-  CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-  IF ( LNETCDF ) THEN
-    DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
-    CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-    DEF_NC=.TRUE.
-  END IF
-  !!!!!! MODIF SB
-#else
   CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
   CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
                              YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
                              YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
   CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-#endif
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_DIAG_SURF_ATM_n'
 ENDIF
@@ -789,20 +712,7 @@ ZTIME1=ZTIME2
 !
 !*       7.0    Stores other fields in MESONH files if necessary
 !
-#ifdef MNH_NCWRIT
-NC_WRITE = LNETCDF
-NC_FILE='dgs'
 CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
-IF ( LNETCDF ) THEN
-  DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
-  CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
-  DEF_NC=.TRUE.
-END IF
-!!!!!! MODIF SB
-#else
-CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
-#endif
 WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) 'DIAG AFTER WRITE_LFIFM1_FOR_DIAG_SUPP'
 !

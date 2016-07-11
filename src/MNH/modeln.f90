@@ -245,6 +245,7 @@ END MODULE MODI_MODEL_n
 !!                                  _  Add OSPLIT_WENO
 !!                                  _ Add droplet deposition 
 !!                   10/2016 (M.Mazoyer) New KHKO output fields
+!!      P.Wautelet : 11/07/2016 : removed MNH_NCWRIT define
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -396,10 +397,6 @@ USE MODI_WRITE_DIAG_SURF_ATM_N
 USE MODI_SERIES_N
 USE MODI_LES_N
 !
-#ifdef MNH_NCWRIT
-USE MODN_NCOUT
-USE MODE_UTIL
-#endif
 USE MODI_GET_HALO
 USE MODE_MPPDB
 !
@@ -612,19 +609,7 @@ IF (KTCOUNT == 1) THEN
   CALL FMOPEN_ll(CFMDIAC,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,ININAR,IRESP)
   YDESFM=ADJUSTL(ADJUSTR(CFMDIAC)//'.des')
   CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
-#ifdef MNH_NCWRIT
-  NC_WRITE = LNETCDF
-  NC_FILE=''
   CALL WRITE_LFIFMN_FORDIACHRO_n(CFMDIAC)
-  IF ( LNETCDF ) THEN
-     DEF_NC=.FALSE.
-     CALL WRITE_LFIFMN_FORDIACHRO_n(CFMDIAC)
-     DEF_NC=.TRUE.
-  END IF
-  NC_WRITE = .FALSE.
-#else
-  CALL WRITE_LFIFMN_FORDIACHRO_n(CFMDIAC)
-#endif
 !
 !*       1.4   Initialization of the list of fields for the halo updates
 !
@@ -953,39 +938,12 @@ DO JOUT = 1,NOUT_NUMB
     YDESFM=ADJUSTL(ADJUSTR(YFMFILE)//'.des')
 !  
     CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
-#ifdef MNH_NCWRIT
-    NC_WRITE = LNETCDF
-    NC_FILE = ''
     CALL WRITE_LFIFM_n(YFMFILE,YDADFILE)
     COUTFMFILE = YFMFILE
     CALL MNHWRITE_ZS_DUMMY_n(CPROGRAM)
-    IF ( LNETCDF ) THEN
-      DEF_NC=.FALSE.
-      CALL WRITE_LFIFM_n(YFMFILE,YDADFILE)
-      COUTFMFILE = YFMFILE
-      CALL MNHWRITE_ZS_DUMMY_n(CPROGRAM)
-      DEF_NC=.TRUE.
-    END IF
-    NC_WRITE = .FALSE.
-#else
-    CALL WRITE_LFIFM_n(YFMFILE,YDADFILE)
-    COUTFMFILE = YFMFILE
-    CALL MNHWRITE_ZS_DUMMY_n(CPROGRAM)
-#endif
     IF (CSURF=='EXTE') THEN
       CALL GOTO_SURFEX(IMI)
-#ifdef MNH_NCWRIT
-      NC_WRITE = LNETCDF
-      NC_FILE = 'sf1'
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-      IF ( LNETCDF ) THEN
-        DEF_NC=.FALSE.
-        CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-        DEF_NC=.TRUE.
-      END IF
-#else
-      CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-#endif
     END IF
     !
     ! Reinitialize Lagragian variables at every model output
@@ -1340,27 +1298,11 @@ XT_RELAX = XT_RELAX + ZTIME2 - ZTIME1 &
 !
 ZTIME1 = ZTIME2
 !
-#ifdef MNH_NCWRIT
-IF ( LNETCDF .AND. GCLOSE_OUT ) THEN
-  DEF_NC = .TRUE.
-  NC_WRITE=LNETCDF
-  NC_FILE='phy'
-  LLFIFM = .FALSE.
-  CALL WRITE_PHYS_PARAM(YFMFILE)
-  DEF_NC=.FALSE.
-  LLFIFM = .TRUE.
-END IF
+!!Was called if MNH_NCWRIT: CALL WRITE_PHYS_PARAM(YFMFILE)
 CALL PHYS_PARAM_n(KTCOUNT,YFMFILE, GCLOSE_OUT,                        &
                   XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,       &
                   XT_DRAG,XT_TURB,XT_TRACER,                          &
                   XT_CHEM,ZTIME,GMASKkids)
-DEF_NC=.TRUE.
-#else
-CALL PHYS_PARAM_n(KTCOUNT,YFMFILE, GCLOSE_OUT,                        &
-                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,       &
-                  XT_DRAG,XT_TURB,XT_TRACER,                          &
-                  XT_CHEM,ZTIME,GMASKkids)
-#endif                  
 !
 IF (CDCONV/='NONE') THEN
   XPACCONV = XPACCONV + XPRCONV * XTSTEP
@@ -1377,19 +1319,7 @@ DO JOUT = 1,NOUT_NUMB
       CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
                              YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
                              YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
-#ifdef MNH_NCWRIT
-      NC_WRITE=LNETCDF
-      NC_FILE='sf2'
       CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-      IF ( LNETCDF ) THEN
-        DEF_NC=.FALSE.
-        CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-        DEF_NC=.TRUE.
-        NC_WRITE = .FALSE.
-      END IF
-#else
-      CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
-#endif
     END IF
   END IF
 END DO
@@ -1713,26 +1643,6 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     ZSEA(:,:) = 0.
     ZTOWN(:,:)= 0.
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
-#ifdef MNH_NCWRIT
-    NC_FILE='phy'
-    DEF_NC=.FALSE.
-    CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
-                          NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
-                          XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
-                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
-                          XSVT, XRSVS,                                         &
-                          XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
-                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,           &
-                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                      &
-                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO,               &
-                          ZSEA, ZTOWN    )
-    DEF_NC=.TRUE.
-#else    
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
@@ -1748,29 +1658,8 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                                       &
                           XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO,               &
                           ZSEA, ZTOWN    )
-#endif
     DEALLOCATE(ZTOWN)
   ELSE
-#ifdef MNH_NCWRIT
-    NC_FILE='phy'
-    DEF_NC=.FALSE.
-    CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
-                          NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
-                          GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
-                          XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
-                          XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
-                          XSVT, XRSVS,                                         &
-                          XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
-                          LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,             &
-                          XINPRS,XINPRG,XINPRH   &
-                          XSOLORG, XMI, &
-                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO               )
-    DEF_NC=.TRUE.
-#else
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
                           CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
@@ -1786,7 +1675,6 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XINPRS,XINPRG, XINPRH,   &
                           XSOLORG, XMI,&
                           XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO           )
-#endif
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
   XRRS_CLD   = XRRS  - XRRS_CLD
@@ -2064,9 +1952,6 @@ END IF
 !
 IF (OEXIT) THEN
 !
-#ifdef MNH_NCWRIT
-  NC_WRITE = LNETCDF
-  NC_FILE = 'ser'
   IF (LSERIES) CALL WRITE_SERIES_n(CFMDIAC,CLUOUT )
   CALL WRITE_AIRCRAFT_BALLOON(CFMDIAC)
   CALL WRITE_STATION_n(CFMDIAC)
@@ -2075,29 +1960,6 @@ IF (OEXIT) THEN
   CALL WRITE_LES_n('A')
   CALL WRITE_LES_n('E')
   CALL WRITE_LES_n('H')
-  IF ( LNETCDF ) THEN
-    DEF_NC=.FALSE.
-    IF (LSERIES) CALL WRITE_SERIES_n(CFMDIAC,CLUOUT )
-    CALL WRITE_AIRCRAFT_BALLOON(CFMDIAC)
-    CALL WRITE_STATION_n(CFMDIAC)
-    CALL WRITE_PROFILER_n(CFMDIAC)
-    CALL WRITE_LES_n(' ')
-    CALL WRITE_LES_n('A')
-    CALL WRITE_LES_n('E')
-    CALL WRITE_LES_n('H')
-    DEF_NC=.TRUE.
-  END IF
-  NC_WRITE = .FALSE.
-#else
-  IF (LSERIES) CALL WRITE_SERIES_n(CFMDIAC,CLUOUT )
-  CALL WRITE_AIRCRAFT_BALLOON(CFMDIAC)
-  CALL WRITE_STATION_n(CFMDIAC)
-  CALL WRITE_PROFILER_n(CFMDIAC)
-  CALL WRITE_LES_n(' ')
-  CALL WRITE_LES_n('A')
-  CALL WRITE_LES_n('E')
-  CALL WRITE_LES_n('H')
-#endif  
   CALL MENU_DIACHRO(CFMDIAC,CLUOUT,'END')
   CALL FMCLOS_ll(CFMDIAC,'KEEP',CLUOUT,IRESP)
   !
