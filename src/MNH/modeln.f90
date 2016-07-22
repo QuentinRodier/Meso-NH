@@ -921,9 +921,10 @@ DO JOUT = 1,NOUT_NUMB
       YDADFILE=YFMFILE
     ELSE
       IOUTDAD=0
+!PW: TODO/TOCHECK: est-ce que cela fait la meme chose qu'avant?
       DO JOUTDAD =1,JPOUTMAX
-        IF ( XFMOUT(NDAD(IMI),JOUTDAD) /= XUNDEF .AND.                 &
-             XFMOUT(NDAD(IMI),JOUTDAD) <= (XFMOUT(IMI,JOUT)+1.E-10) )   &
+        IF ( XBAK_TIME(NDAD(IMI),JOUTDAD) >=0. .AND.                 &
+             XBAK_TIME(NDAD(IMI),JOUTDAD) <= (XBAK_TIME(IMI,JOUT)+1.E-10) )   &
                      IOUTDAD=IOUTDAD+1
       END DO
       IF(IOUTDAD>0) THEN

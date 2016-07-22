@@ -329,6 +329,8 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
+REAL                         :: ZTEMP            ! Intermediate variable
+INTEGER                      :: IPOS
 INTEGER                :: IGRID,ILENCH,IRESP  !   File
 CHARACTER (LEN=16)     :: YRECFM              ! management
 CHARACTER (LEN=100)    :: YCOMMENT            ! variables
@@ -337,7 +339,7 @@ INTEGER, DIMENSION(3)  :: ITDATE           ! date array
 CHARACTER (LEN=40)     :: YTITLE                    ! Title for date print
 INTEGER                :: ILUOUT                    ! Logical unit number for
                                                     ! output-listing
-INTEGER                :: JKLOOP,JOUT               ! Loop index
+INTEGER                :: JKLOOP,JOUT,IDX           ! Loop index
 INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
                                                     ! window arrays,
                                                     ! supp. time steps
@@ -514,27 +516,78 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 !
 !*       2.3    Temporal grid - outputs managment
 !
-!*       2.3.1  a) synchronization between nested models through XFMOUT arrays (MODD_FMOUT)
+!*       2.3.1  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
 !
 DO JOUT = 1,JPOUTMAX
-  IF (XFMOUT(KMI,JOUT) /= XUNDEF) THEN
-    XFMOUT(KMI,JOUT) = NINT(XFMOUT(KMI,JOUT)/PTSTEP) * PTSTEP
-    DO JKLOOP = KMI,JPMODELMAX
-      XFMOUT(JKLOOP,JOUT) = XFMOUT(KMI,JOUT)
+  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
+    !Value is rounded to nearest timestep
+    XBAK_TIME(KMI,JOUT) = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) * PTSTEP
+    !Output/backup time is propagated to nested models (with higher numbers)
+    !PW: TODO: BUG?: what happens if 2 dissociated models?
+    DO JKLOOP = KMI+1,JPMODELMAX
+      IDX = 1
+      !Find first non 'allocated' element
+      DO WHILE ( XBAK_TIME(JKLOOP,IDX) >= 0. )
+        IDX = IDX + 1
+      END DO
+      IF (IDX > JPOUTMAX) THEN
+        PRINT *,'Error in SET_GRID when treating output list'
+        CALL ABORT
+        STOP
+      END IF
+      XBAK_TIME(JKLOOP,IDX) = XBAK_TIME(KMI,JOUT)
     END DO
   END IF
 END DO
 !
+!*       2.3.2 Find duplicated entries
 !
-!*       2.3.2 counting the output number of model KMI
-!
-KOUT_NUMB =0
 DO JOUT = 1,JPOUTMAX
-  IF (XFMOUT(KMI,JOUT) /= XUNDEF) THEN
-      KOUT_NUMB = KOUT_NUMB + 1
-      KOUT_TIMES(KOUT_NUMB) = NINT(XFMOUT(KMI,JOUT)/PTSTEP) + 1
+  DO JKLOOP = JOUT+1,JPOUTMAX
+    IF ( XBAK_TIME(KMI,JKLOOP) == XBAK_TIME(KMI,JOUT) .AND. XBAK_TIME(KMI,JKLOOP) >= 0. ) THEN
+      print *,'WARNING: found duplicated backup (removed extra one)'
+      XBAK_TIME(KMI,JKLOOP) = -1.
+    END IF
+  END DO
+END DO
+!
+!*       2.3.3 Sort entries
+!
+DO JOUT = 1,JPOUTMAX
+  ZTEMP = XBAK_TIME(KMI,JOUT)
+  IF (ZTEMP<0.) ZTEMP = 1e99
+  IPOS = -1
+  DO JKLOOP = JOUT+1,JPOUTMAX
+    IF ( XBAK_TIME(KMI,JKLOOP) < ZTEMP .AND. XBAK_TIME(KMI,JKLOOP) >= 0. ) THEN
+      ZTEMP = XBAK_TIME(KMI,JKLOOP)
+      IPOS = JKLOOP
+    END IF
+  END DO
+  IF (IPOS >= JOUT) THEN
+    XBAK_TIME(KMI,IPOS) = XBAK_TIME(KMI,JOUT)
+    XBAK_TIME(KMI,JOUT) = ZTEMP
   END IF
 END DO
+!
+!*       2.3.4 counting the output number of model KMI
+!
+KOUT_NUMB = 0
+DO JOUT = 1,JPOUTMAX
+  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
+      KOUT_NUMB = KOUT_NUMB + 1
+      KOUT_TIMES(KOUT_NUMB) = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) + 1
+  END IF
+END DO
+!
+PRINT *,'-------------------------'
+PRINT *,'Model number:      ',KMI
+PRINT *,'Number of backups: ',KOUT_NUMB
+PRINT *,'Timestep     Time'
+DO JOUT = 1,KOUT_NUMB
+  WRITE(*,'( I9 F12.3 )'  ) KOUT_TIMES(JOUT),XBAK_TIME(KMI,JOUT)
+END DO
+PRINT *,'-------------------------'
+
 !
 !-------------------------------------------------------------------------------
 !
