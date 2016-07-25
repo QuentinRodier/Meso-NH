@@ -43,43 +43,30 @@
 !
 !
 USE MODD_PARAMETERS, ONLY: JPMODELMAX, JPOUTMAX
+USE MODE_IO_ll, ONLY:TOUTBAK
 IMPLICIT NONE
 
 TYPE OUT_t
 !
-!JUAN
-  INTEGER, DIMENSION(:), POINTER   :: NOUT_TIMES => NULL() ! list of the values of the temporal
-!JUAN
-               !  index in the temporal model loop where fields outputs on 
-               !  FM-files are realized by model n
   INTEGER             :: NOUT_NUMB ! number of outputs perform by model n
+  TYPE(TOUTBAK),DIMENSION(:),POINTER :: TOUTBAKN=>NULL() ! List of the outputs and backups
 !
 !
 END TYPE OUT_t
 
 TYPE(OUT_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: OUT_MODEL
-LOGICAL    , DIMENSION(JPMODELMAX),         SAVE :: OUT_FIRST_CALL = .TRUE.
 
-INTEGER, DIMENSION(:), POINTER :: NOUT_TIMES=>NULL()
 INTEGER, POINTER :: NOUT_NUMB=>NULL()
+TYPE(TOUTBAK),DIMENSION(:),POINTER :: TOUTBAKN=>NULL()
 
 CONTAINS
 
 SUBROUTINE OUT_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
-!JUAN
-IF (OUT_FIRST_CALL(KTO)) THEN
-ALLOCATE (OUT_MODEL(KTO)%NOUT_TIMES(JPOUTMAX))
-OUT_FIRST_CALL(KTO) = .FALSE.
-ENDIF
-!JUAN
-
-! Save current state for allocated arrays
-!
 ! Current model is set to model KTO
-NOUT_TIMES=>OUT_MODEL(KTO)%NOUT_TIMES
 NOUT_NUMB=>OUT_MODEL(KTO)%NOUT_NUMB
+TOUTBAKN=>OUT_MODEL(KTO)%TOUTBAKN
 
 END SUBROUTINE OUT_GOTO_MODEL
 

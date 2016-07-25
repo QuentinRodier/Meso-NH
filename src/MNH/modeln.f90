@@ -430,7 +430,6 @@ INTEGER :: INPRAR               ! number of articles predicted  in
 INTEGER :: ININAR               ! number of articles  present in
                                 !  the LFIFM file
 INTEGER :: ITYPE                ! type of file (cpio or not)
-INTEGER :: JOUT                 ! loop index on the output instant list
 INTEGER :: IOUTDAD              ! numero of the OUTPUT FM-file of DAD model
 INTEGER :: JOUTDAD              ! loop index on the output instant list for DAD model
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
@@ -907,8 +906,7 @@ IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
 ZTIME1 = ZTIME2
 !
 YFMFILE='                            '
-DO JOUT = 1,NOUT_NUMB
-  IF (KTCOUNT == NOUT_TIMES(JOUT)) THEN
+IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
     IOUT=IOUT+1
     GCLOSE_OUT=.TRUE.
     INPRAR = 22 +2*(4+NRR+NSV)
@@ -924,7 +922,7 @@ DO JOUT = 1,NOUT_NUMB
 !PW: TODO/TOCHECK: est-ce que cela fait la meme chose qu'avant?
       DO JOUTDAD =1,JPOUTMAX
         IF ( XBAK_TIME(NDAD(IMI),JOUTDAD) >=0. .AND.                 &
-             XBAK_TIME(NDAD(IMI),JOUTDAD) <= (XBAK_TIME(IMI,JOUT)+1.E-10) )   &
+             XBAK_TIME(NDAD(IMI),JOUTDAD) <= (TOUTBAKN(IOUT)%XTIME+1.E-10) )   &
                      IOUTDAD=IOUTDAD+1
       END DO
       IF(IOUTDAD>0) THEN
@@ -962,8 +960,6 @@ DO JOUT = 1,NOUT_NUMB
     END IF
 !
   END IF
-!
-END DO
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1313,8 +1309,8 @@ IF (CDCONV/='NONE') THEN
   END IF
 END IF
 !
-DO JOUT = 1,NOUT_NUMB
-  IF (KTCOUNT == NOUT_TIMES(JOUT)) THEN
+IF (IOUT>0) THEN
+  IF (KTCOUNT == TOUTBAKN(IOUT)%NSTEP) THEN
     IF (CSURF=='EXTE') THEN
       CALL GOTO_SURFEX(IMI)
       CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
@@ -1323,7 +1319,7 @@ DO JOUT = 1,NOUT_NUMB
       CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
     END IF
   END IF
-END DO
+END IF
 !
 CALL SECOND_MNH2(ZTIME2)
 !

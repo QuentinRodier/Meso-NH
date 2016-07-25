@@ -47,7 +47,7 @@ USE MODD_PARAMETERS
 !
 IMPLICIT NONE
 !
-REAL,SAVE, DIMENSION(JPMODELMAX,JPOUTMAX)  ::   XBAK_TIME = XNEGUNDEF 
+REAL,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   XBAK_TIME 
 ! XBAK_TIME(m,i) array of 
 ! the increments in seconds from the beginning of the segment to the
 ! instant where the i-th fields output on FM-files is realized by model "m"

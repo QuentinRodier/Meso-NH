@@ -22,6 +22,7 @@
 !     P. Wautelet 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
 !     D.Gazen   : avril 2016 change error message 
 !     P. Wautelet : may 2016: use NetCDF Fortran module
+!     P. Wautelet : July 2016: added type OUTBAK
 !
 MODULE MODE_IO_ll
 
@@ -58,6 +59,13 @@ MODULE MODE_IO_ll
   !JUANZ
   PUBLIC  io_file,io_rank
   !JUANZ
+
+  !Structure describing the characteristics of an output or a backup
+  TYPE TOUTBAK
+    INTEGER :: NSTEP      !Timestep number
+    REAL    :: XTIME      !Time from start of the segment (in seconds and rounded to a timestep)
+  END TYPE TOUTBAK
+  PUBLIC TOUTBAK
 
 CONTAINS 
 

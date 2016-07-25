@@ -25,9 +25,10 @@ INTERFACE
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
                           PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
                           PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,KOUT_TIMES,KOUT_NUMB          )
+                          TPDTMOD,TPDTCUR,KSTOP,KOUT_NUMB,TPOUTBAKN           )
 !
 USE MODD_TYPE_DATE
+USE MODE_IO_ll, ONLY:TOUTBAK
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
@@ -85,12 +86,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
-INTEGER, DIMENSION(:), INTENT(OUT)  :: KOUT_TIMES ! list of the values
-               ! of the temporal index in the temporal model loop where fields
-               !  outputs on FM-files are realized
 INTEGER,                INTENT(OUT) :: KOUT_NUMB ! number of outputs
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 END SUBROUTINE SET_GRID
 !
@@ -114,7 +113,7 @@ END MODULE MODI_SET_GRID
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
                           PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
                           PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,KOUT_TIMES,KOUT_NUMB          )
+                          TPDTMOD,TPDTCUR,KSTOP,KOUT_NUMB,TPOUTBAKN           )
 !     #########################################################################
 !
 !!****  *SET_GRID* - routine to set grid variables
@@ -252,7 +251,7 @@ USE MODE_ll
 USE MODI_GATHER_ll  !!!! a mettre dans mode_ll
 !
 USE MODE_FMREAD
-USE MODD_VAR_ll, ONLY : NPROC
+USE MODD_VAR_ll, ONLY : IP,NPROC
 !
 IMPLICIT NONE
 !
@@ -314,12 +313,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
-INTEGER, DIMENSION(:), INTENT(OUT)  :: KOUT_TIMES ! list of the values
-               ! of the temporal index in the temporal model loop where fields
-               !  outputs on FM-files are realized
 INTEGER,                INTENT(OUT) :: KOUT_NUMB ! number of outputs
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 !*       0.2   declarations of local variables
 !
@@ -507,8 +504,6 @@ IF (CPROGRAM /= 'DIAG  ') TDTSEG = TPDTCUR
 ISUP = 1     ! 1 corresponds to a last timestep
    ! to obtain the prognostic and diagnostic fields all along this timestep
 !
-KOUT_TIMES(:) = NUNDEF
-!
 IF ( KMI == 1) PSEGLEN = PSEGLEN + PTSTEP*ISUP ! needed for the gridnesting case to get
                                                ! the same PSEGLEN for all nested models
 KSTOP = NINT(PSEGLEN/PTSTEP)
@@ -575,19 +570,28 @@ KOUT_NUMB = 0
 DO JOUT = 1,JPOUTMAX
   IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
       KOUT_NUMB = KOUT_NUMB + 1
-      KOUT_TIMES(KOUT_NUMB) = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) + 1
+  END IF
+END DO
+ALLOCATE(TPOUTBAKN(KOUT_NUMB))
+IPOS = 0
+DO JOUT = 1,JPOUTMAX
+  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
+      IPOS = IPOS + 1
+      TPOUTBAKN(IPOS)%NSTEP = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) + 1
+      TPOUTBAKN(IPOS)%XTIME = XBAK_TIME(KMI,JOUT)
   END IF
 END DO
 !
+IF (IP==1) THEN
 PRINT *,'-------------------------'
 PRINT *,'Model number:      ',KMI
 PRINT *,'Number of backups: ',KOUT_NUMB
 PRINT *,'Timestep     Time'
 DO JOUT = 1,KOUT_NUMB
-  WRITE(*,'( I9 F12.3 )'  ) KOUT_TIMES(JOUT),XBAK_TIME(KMI,JOUT)
+  WRITE(*,'( I9 F12.3 )'  ) TPOUTBAKN(JOUT)%NSTEP,TPOUTBAKN(JOUT)%XTIME
 END DO
 PRINT *,'-------------------------'
-
+END IF
 !
 !-------------------------------------------------------------------------------
 !
