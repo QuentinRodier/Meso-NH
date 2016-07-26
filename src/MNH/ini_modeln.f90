@@ -413,6 +413,7 @@ USE MODD_LATZ_EDFLX
 USE MODD_ADVFRC_n
 USE MODD_RELFRC_n
 USE MODD_2D_FRC
+USE MODD_IO_SURF_MNH, ONLY : IO_SURF_MNH_MODEL
 !
 USE MODD_CH_PRODLOSSTOT_n
 USE MODI_CH_INIT_PRODLOSSTOT_n
@@ -513,7 +514,7 @@ REAL, DIMENSION(:,:,:),   POINTER ::  DPTR_XZZ
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUM,DPTR_XLSVM,DPTR_XLSWM,DPTR_XLSTHM,DPTR_XLSRVM
 REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTHS,DPTR_XLSRVS
 !
-INTEGER                         ::  IIB,IJB,IIE,IJE,IDIMX,IDIMY
+INTEGER                         ::  IIB,IJB,IIE,IJE,IDIMX,IDIMY,IMI
 !
 !-------------------------------------------------------------------------------
 !
@@ -668,7 +669,7 @@ IF (NVERB >= 5) THEN
   WRITE (UNIT=ILUOUT,FMT='("THERE ARE ",I2," SOLID VARIABLES")') NRRI
 END IF
 !
-!*       2.3  Update NSV and floating indices for the current model
+!*       2.4  Update NSV and floating indices for the current model
 !
 ! 
 CALL UPDATE_NSV(KMI) 
@@ -1517,7 +1518,30 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !
 !-------------------------------------------------------------------------------
 !
-!*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
+!*       6.     BUILT THE GENERIC OUTPUT NAME
+!               ----------------------------
+!
+IF (KMI == 1) THEN
+  DO IMI = 1 , NMODEL
+    WRITE(IO_SURF_MNH_MODEL(IMI)%COUTFILE,'(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))
+    WRITE(LUNIT_MODEL(IMI)%CFMDIAC, '(A,".",I1,".",A)') CEXP,IMI,TRIM(ADJUSTL(CSEG))//'.000'
+  END DO
+  !
+  IF (CPROGRAM=='MESONH') THEN
+    IF ( NDAD(KMI) == 1)  CDAD_NAME(KMI) = CEXP//'.1.'//CSEG
+    IF ( NDAD(KMI) == 2)  CDAD_NAME(KMI) = CEXP//'.2.'//CSEG
+    IF ( NDAD(KMI) == 3)  CDAD_NAME(KMI) = CEXP//'.3.'//CSEG
+    IF ( NDAD(KMI) == 4)  CDAD_NAME(KMI) = CEXP//'.4.'//CSEG
+    IF ( NDAD(KMI) == 5)  CDAD_NAME(KMI) = CEXP//'.5.'//CSEG
+    IF ( NDAD(KMI) == 6)  CDAD_NAME(KMI) = CEXP//'.6.'//CSEG
+    IF ( NDAD(KMI) == 7)  CDAD_NAME(KMI) = CEXP//'.7.'//CSEG
+    IF ( NDAD(KMI) == 8)  CDAD_NAME(KMI) = CEXP//'.8.'//CSEG
+  END IF
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
 CALL SET_GRID(KMI,HINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,         &
@@ -1553,7 +1577,7 @@ NDT_2_WAY(KMI)=4
 !
 !-------------------------------------------------------------------------------
 !
-!*      7.    INITIALIZE DATA FOR JVALUES AND AEROSOLS 
+!*      8.    INITIALIZE DATA FOR JVALUES AND AEROSOLS 
 !
 IF ( LUSECHEM .OR. LCHEMDIAG ) THEN
   IF ((KMI==1).AND.(CPROGRAM == "MESONH".OR.CPROGRAM == "DIAG  "))  &
@@ -1575,7 +1599,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !
 !-------------------------------------------------------------------------------
 !
-!*       8.    INITIALIZE THE PROGNOSTIC FIELDS
+!*       9.    INITIALIZE THE PROGNOSTIC FIELDS
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
@@ -1606,7 +1630,7 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
 !-------------------------------------------------------------------------------
 !
 !
-!*        9.   INITIALIZE REFERENCE STATE
+!*        10.  INITIALIZE REFERENCE STATE
 !              ---------------------------
 !
 !
@@ -1805,25 +1829,9 @@ IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
   CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
 
 !
-!*       16.    BUILT THE GENERIC OUTPUT NAME
-!               ----------------------------
-!
-WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
-WRITE(CFMDIAC, '(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))//'.000'
-IF (CPROGRAM=='MESONH') THEN
-  IF ( NDAD(KMI) == 1)  CDAD_NAME(KMI) = CEXP//'.1.'//CSEG
-  IF ( NDAD(KMI) == 2)  CDAD_NAME(KMI) = CEXP//'.2.'//CSEG
-  IF ( NDAD(KMI) == 3)  CDAD_NAME(KMI) = CEXP//'.3.'//CSEG
-  IF ( NDAD(KMI) == 4)  CDAD_NAME(KMI) = CEXP//'.4.'//CSEG
-  IF ( NDAD(KMI) == 5)  CDAD_NAME(KMI) = CEXP//'.5.'//CSEG
-  IF ( NDAD(KMI) == 6)  CDAD_NAME(KMI) = CEXP//'.6.'//CSEG
-  IF ( NDAD(KMI) == 7)  CDAD_NAME(KMI) = CEXP//'.7.'//CSEG
-  IF ( NDAD(KMI) == 8)  CDAD_NAME(KMI) = CEXP//'.8.'//CSEG
-END IF
-!
 !-------------------------------------------------------------------------------
 !
-!*       17.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
+!*       16.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
 !               ------------------------------------------
 !
 CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
@@ -1850,10 +1858,10 @@ CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
 !
 !-------------------------------------------------------------------------------
 !
-!*      18.    SURFACE FIELDS
+!*      17.    SURFACE FIELDS
 !              --------------
 !
-!*      18.1   Radiative setup
+!*      17.1   Radiative setup
 !              ---------------
 !
 IF (CRAD   /= 'NONE') THEN
@@ -1900,13 +1908,13 @@ END IF
 CALL INI_SW_SETUP (CRAD,NSWB_MNH,XSW_BANDS)
 !
 !
-!       18.1.1 Special initialisation for CO2 content
+!       17.1.1 Special initialisation for CO2 content
 !              CO2 (molar mass=44) horizontally and vertically homogeneous at 360 ppm
 !
 XCCO2 = 360.0E-06 * 44.0E-03 / XMD
 !
 !
-!*      18.2   Externalized surface fields
+!*      17.2   Externalized surface fields
 !              ---------------------------
 !
 ALLOCATE(ZCO2(IIU,IJU))
@@ -1996,14 +2004,14 @@ IF (CRAD   == 'ECMW' .AND. CGETRAD=='READ') THEN
 END IF
 !
 !
-!*      18.3   Mesonh fields
+!*      17.3   Mesonh fields
 !              -------------
 !
 IF (CPROGRAM/='REAL  ') CALL MNHREAD_ZS_DUMMY_n(CINIFILEPGD)
 !
 !-------------------------------------------------------------------------------
 !
-!*       19.    INITIALIZE THE PARAMETERS FOR THE PHYSICS
+!*       18.    INITIALIZE THE PARAMETERS FOR THE PHYSICS
 !               -----------------------------------------
 !
 IF (CRAD   == 'ECMW') THEN
@@ -2090,7 +2098,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*      22.    UPDATE HALO
+!*      21.    UPDATE HALO
 !              -----------
 !
 !
@@ -2102,7 +2110,7 @@ CALL CLEANLIST_ll(TZINITHALO2D_ll)
 !
 !-------------------------------------------------------------------------------
 !
-!*      23.    DEALLOCATION
+!*      22.    DEALLOCATION
 !              -------------
 !
 DEALLOCATE(ZJ)
@@ -2115,7 +2123,7 @@ DEALLOCATE(XSPOWATM)
 !
 !-------------------------------------------------------------------------------
 !
-!*      24.     BALLOON and AIRCRAFT initializations
+!*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
 CALL INI_AIRCRAFT_BALLOON(HINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2124,7 +2132,7 @@ CALL INI_AIRCRAFT_BALLOON(HINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
 !
 !-------------------------------------------------------------------------------
 !
-!*      25.     STATION initializations
+!*      24.     STATION initializations
 !              -----------------------
 !
 CALL INI_SURFSTATION_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2133,7 +2141,7 @@ CALL INI_SURFSTATION_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
 !
 !-------------------------------------------------------------------------------
 !
-!*      26.     PROFILER initializations
+!*      25.     PROFILER initializations
 !              ------------------------
 !
 CALL INI_POSPROFILER_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
@@ -2142,7 +2150,7 @@ CALL INI_POSPROFILER_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
 !
 !-------------------------------------------------------------------------------
 !
-!*      28.     Prognostic aerosols          
+!*      26.     Prognostic aerosols          
 !              ------------------------
 !
 CALL INI_AEROSET1
@@ -2155,7 +2163,7 @@ CALL INI_AEROSET6
 ! 
 !-------------------------------------------------------------------------------
 !
-!*      29.    FOREFIRE initializations
+!*      27.    FOREFIRE initializations
 !              ------------------------
 !
 

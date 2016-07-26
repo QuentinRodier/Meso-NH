@@ -251,9 +251,10 @@ USE MODE_ll
 USE MODI_GATHER_ll  !!!! a mettre dans mode_ll
 !
 USE MODE_FMREAD
-USE MODD_OUT_n, ONLY : OUT_MODEL
-USE MODD_VAR_ll, ONLY : IP,NPROC
-USE MODD_DYN_n, ONLY : DYN_MODEL
+USE MODD_OUT_n,       ONLY : OUT_MODEL
+USE MODD_VAR_ll,      ONLY : IP,NPROC
+USE MODD_DYN_n,       ONLY : DYN_MODEL
+USE MODD_IO_SURF_MNH, ONLY : IO_SURF_MNH_MODEL
 !
 IMPLICIT NONE
 !
@@ -346,6 +347,8 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
 INTEGER                :: IMASDEV                   ! masdev of the file
 INTEGER                :: IMI                       ! model number for loop
 INTEGER                :: IOUT_NUMB                 ! number of outputs
+CHARACTER (LEN=4)      :: YNUMBER   ! character string for the OUTPUT FM-file number
+CHARACTER (LEN=4)      :: YDADNUMBER! character string for the DAD model OUTPUT FM-file number
 !-------------------------------------------------------------------------------
 !
 YRECFM='MASDEV'
@@ -517,6 +520,7 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 !
 ! The output/backups times have been read only by model 1
 IF (KMI == 1) THEN
+!
 DO IMI = 1, NMODEL
   !
   !*       2.3.1  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
@@ -543,7 +547,7 @@ DO IMI = 1, NMODEL
     END IF
   END DO
   !
-  !*       2.3.2 Find duplicated entries
+  !*       2.3.2 Find and remove duplicated entries
   !
   DO JOUT = 1,JPOUTMAX
     DO JKLOOP = JOUT+1,JPOUTMAX
@@ -572,7 +576,7 @@ DO IMI = 1, NMODEL
     END IF
   END DO
   !
-  !*       2.3.4 counting the output number of model IMI
+  !*       2.3.4 Counting the number of backups of model IMI
   !
   IOUT_NUMB = 0
   DO JOUT = 1,JPOUTMAX
@@ -588,12 +592,16 @@ DO IMI = 1, NMODEL
   DO JOUT = 1,JPOUTMAX
     IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
         IPOS = IPOS + 1
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NBAKID = IPOS
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTID = -1
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NSTEP = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%XTIME = XBAK_TIME(IMI,JOUT)
+        WRITE (YNUMBER,FMT="('.',I3.3)") IPOS
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CFILENAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//YNUMBER)
     END IF
   END DO
   !
-  !*       2.3.5 finding dad output number
+  !*       2.3.5 Find dad output number
   !
   !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
   IF (NDAD(IMI)>IMI) THEN
@@ -602,6 +610,7 @@ DO IMI = 1, NMODEL
   END IF
   IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
     OUT_MODEL(IMI)%TOUTBAKN(:)%NOUTDAD = 0
+    OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CDADFILENAME = OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CFILENAME
   ELSE
     DO IPOS = 1,OUT_MODEL(IMI)%NOUT_NUMB
       IDX = 0
@@ -614,8 +623,11 @@ DO IMI = 1, NMODEL
       END DO
       IF (IDX>0) THEN
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTDAD = IDX
+        WRITE (YDADNUMBER,FMT="('.',I3.3)") OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTDAD
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CDADFILENAME = ADJUSTL(ADJUSTR(CDAD_NAME(IMI))//YDADNUMBER)
       ELSE
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTDAD = -1
+        WRITE ( OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CDADFILENAME , FMT="('NO_DAD_FILE')" )
       END IF
     END DO
   END IF

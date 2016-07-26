@@ -419,8 +419,6 @@ INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
 CHARACTER (LEN=28) :: YFMFILE   ! name of the OUTPUT FM-file
 CHARACTER (LEN=28) :: YDADFILE  ! name of the corresponding DAD model OUTPUT FM-file
-CHARACTER (LEN=4)  :: YNUMBER   ! character string for the OUTPUT FM-file number
-CHARACTER (LEN=4)  :: YDADNUMBER! character string for the DAD model OUTPUT FM-file number
 CHARACTER (LEN=32) :: YDESFM    ! name of the desfm part of this FM-file
 INTEGER  :: INBVAR              ! number of HALO2_lls to allocate
 INTEGER  :: IRESP               ! return code in FM routines
@@ -909,23 +907,13 @@ IF (IOUT < NOUT_NUMB ) THEN
     IOUT=IOUT+1
     GCLOSE_OUT=.TRUE.
     INPRAR = 22 +2*(4+NRR+NSV)
-    WRITE (YNUMBER,FMT="('.',I3.3)") IOUT
-    YFMFILE=ADJUSTL(ADJUSTR(COUTFILE)//YNUMBER)
-!
-!        search for the corresponding Output of the DAD model
-!
-    IF (TOUTBAKN(IOUT)%NOUTDAD < 0) THEN
-      WRITE (YDADFILE,FMT="('NO_DAD_FILE')")
-    ELSE IF (TOUTBAKN(IOUT)%NOUTDAD == 0) THEN
-      YDADFILE=YFMFILE
-    ELSE
-      WRITE (YDADNUMBER,FMT="('.',I3.3)") TOUTBAKN(IOUT)%NOUTDAD
-      YDADFILE=ADJUSTL(ADJUSTR(CDAD_NAME(IMI))//YDADNUMBER)
-    END IF
-!
+    !
+    YFMFILE  = TOUTBAKN(IOUT)%CFILENAME
+    YDADFILE = TOUTBAKN(IOUT)%CDADFILENAME
+    !
     CALL FMOPEN_ll(YFMFILE,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,ININAR,IRESP)
     YDESFM=ADJUSTL(ADJUSTR(YFMFILE)//'.des')
-!  
+    !    
     CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
     CALL WRITE_LFIFM_n(YFMFILE,YDADFILE)
     COUTFMFILE = YFMFILE

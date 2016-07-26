@@ -62,9 +62,13 @@ MODULE MODE_IO_ll
 
   !Structure describing the characteristics of an output or a backup
   TYPE TOUTBAK
-    INTEGER :: NSTEP        !Timestep number
-    REAL    :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
-    INTEGER :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
+    INTEGER           :: NBAKID = -1  !Backup number
+    INTEGER           :: NOUTID = -1  !Output number
+    INTEGER           :: NSTEP        !Timestep number
+    REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
+    CHARACTER(LEN=28) :: CFILENAME    !Filename
+    INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
+    CHARACTER(LEN=28) :: CDADFILENAME !Filename of dad
   END TYPE TOUTBAK
   PUBLIC TOUTBAK
 
