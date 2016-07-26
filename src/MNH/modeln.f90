@@ -430,8 +430,6 @@ INTEGER :: INPRAR               ! number of articles predicted  in
 INTEGER :: ININAR               ! number of articles  present in
                                 !  the LFIFM file
 INTEGER :: ITYPE                ! type of file (cpio or not)
-INTEGER :: IOUTDAD              ! numero of the OUTPUT FM-file of DAD model
-INTEGER :: JOUTDAD              ! loop index on the output instant list for DAD model
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
 !
                                 ! for computing time analysis
@@ -906,7 +904,8 @@ IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
 ZTIME1 = ZTIME2
 !
 YFMFILE='                            '
-IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
+IF (IOUT < NOUT_NUMB ) THEN
+  IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
     IOUT=IOUT+1
     GCLOSE_OUT=.TRUE.
     INPRAR = 22 +2*(4+NRR+NSV)
@@ -915,22 +914,13 @@ IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
 !
 !        search for the corresponding Output of the DAD model
 !
-    IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
+    IF (TOUTBAKN(IOUT)%NOUTDAD < 0) THEN
+      WRITE (YDADFILE,FMT="('NO_DAD_FILE')")
+    ELSE IF (TOUTBAKN(IOUT)%NOUTDAD == 0) THEN
       YDADFILE=YFMFILE
     ELSE
-      IOUTDAD=0
-!PW: TODO/TOCHECK: est-ce que cela fait la meme chose qu'avant?
-      DO JOUTDAD =1,JPOUTMAX
-        IF ( XBAK_TIME(NDAD(IMI),JOUTDAD) >=0. .AND.                 &
-             XBAK_TIME(NDAD(IMI),JOUTDAD) <= (TOUTBAKN(IOUT)%XTIME+1.E-10) )   &
-                     IOUTDAD=IOUTDAD+1
-      END DO
-      IF(IOUTDAD>0) THEN
-        WRITE (YDADNUMBER,FMT="('.',I3.3)") IOUTDAD
-        YDADFILE=ADJUSTL(ADJUSTR(CDAD_NAME(IMI))//YDADNUMBER)
-      ELSE
-        WRITE (YDADFILE,FMT="('NO_DAD_FILE')")
-      END IF
+      WRITE (YDADNUMBER,FMT="('.',I3.3)") TOUTBAKN(IOUT)%NOUTDAD
+      YDADFILE=ADJUSTL(ADJUSTR(CDAD_NAME(IMI))//YDADNUMBER)
     END IF
 !
     CALL FMOPEN_ll(YFMFILE,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,ININAR,IRESP)
@@ -960,6 +950,7 @@ IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
     END IF
 !
   END IF
+END IF
 !
 CALL SECOND_MNH2(ZTIME2)
 !
@@ -1309,7 +1300,7 @@ IF (CDCONV/='NONE') THEN
   END IF
 END IF
 !
-IF (IOUT>0) THEN
+IF (IOUT>0 .AND. IOUT <= NOUT_NUMB ) THEN
   IF (KTCOUNT == TOUTBAKN(IOUT)%NSTEP) THEN
     IF (CSURF=='EXTE') THEN
       CALL GOTO_SURFEX(IMI)

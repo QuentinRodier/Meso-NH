@@ -86,10 +86,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
-INTEGER,                INTENT(OUT) :: KOUT_NUMB ! number of outputs
+INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 END SUBROUTINE SET_GRID
 !
@@ -251,7 +251,9 @@ USE MODE_ll
 USE MODI_GATHER_ll  !!!! a mettre dans mode_ll
 !
 USE MODE_FMREAD
+USE MODD_OUT_n, ONLY : OUT_MODEL
 USE MODD_VAR_ll, ONLY : IP,NPROC
+USE MODD_DYN_n, ONLY : DYN_MODEL
 !
 IMPLICIT NONE
 !
@@ -313,10 +315,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
-INTEGER,                INTENT(OUT) :: KOUT_NUMB ! number of outputs
+INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
 !
 !*       0.2   declarations of local variables
 !
@@ -342,6 +344,8 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
                                                     ! supp. time steps
 !
 INTEGER                :: IMASDEV                   ! masdev of the file
+INTEGER                :: IMI                       ! model number for loop
+INTEGER                :: IOUT_NUMB                 ! number of outputs
 !-------------------------------------------------------------------------------
 !
 YRECFM='MASDEV'
@@ -511,87 +515,131 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 !
 !*       2.3    Temporal grid - outputs managment
 !
-!*       2.3.1  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
-!
-DO JOUT = 1,JPOUTMAX
-  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
-    !Value is rounded to nearest timestep
-    XBAK_TIME(KMI,JOUT) = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) * PTSTEP
-    !Output/backup time is propagated to nested models (with higher numbers)
-    !PW: TODO: BUG?: what happens if 2 dissociated models?
-    DO JKLOOP = KMI+1,JPMODELMAX
-      IDX = 1
-      !Find first non 'allocated' element
-      DO WHILE ( XBAK_TIME(JKLOOP,IDX) >= 0. )
-        IDX = IDX + 1
+! The output/backups times have been read only by model 1
+IF (KMI == 1) THEN
+DO IMI = 1, NMODEL
+  !
+  !*       2.3.1  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
+  !
+  DO JOUT = 1,JPOUTMAX
+    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      !Value is rounded to nearest timestep
+      XBAK_TIME(IMI,JOUT) = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) * DYN_MODEL(IMI)%XTSTEP
+      !Output/backup time is propagated to nested models (with higher numbers)
+      !PW: TODO: BUG?: what happens if 2 dissociated models?
+      DO JKLOOP = IMI+1,NMODEL
+        IDX = 1
+        !Find first non 'allocated' element
+        DO WHILE ( XBAK_TIME(JKLOOP,IDX) >= 0. )
+          IDX = IDX + 1
+        END DO
+        IF (IDX > JPOUTMAX) THEN
+          PRINT *,'Error in SET_GRID when treating output list'
+          CALL ABORT
+          STOP
+        END IF
+        XBAK_TIME(JKLOOP,IDX) = XBAK_TIME(IMI,JOUT)
       END DO
-      IF (IDX > JPOUTMAX) THEN
-        PRINT *,'Error in SET_GRID when treating output list'
-        CALL ABORT
-        STOP
+    END IF
+  END DO
+  !
+  !*       2.3.2 Find duplicated entries
+  !
+  DO JOUT = 1,JPOUTMAX
+    DO JKLOOP = JOUT+1,JPOUTMAX
+      IF ( XBAK_TIME(IMI,JKLOOP) == XBAK_TIME(IMI,JOUT) .AND. XBAK_TIME(IMI,JKLOOP) >= 0. ) THEN
+        print *,'WARNING: found duplicated backup (removed extra one)'
+        XBAK_TIME(IMI,JKLOOP) = -1.
       END IF
-      XBAK_TIME(JKLOOP,IDX) = XBAK_TIME(KMI,JOUT)
+    END DO
+  END DO
+  !
+  !*       2.3.3 Sort entries
+  !
+  DO JOUT = 1,JPOUTMAX
+    ZTEMP = XBAK_TIME(IMI,JOUT)
+    IF (ZTEMP<0.) ZTEMP = 1e99
+    IPOS = -1
+    DO JKLOOP = JOUT+1,JPOUTMAX
+      IF ( XBAK_TIME(IMI,JKLOOP) < ZTEMP .AND. XBAK_TIME(IMI,JKLOOP) >= 0. ) THEN
+        ZTEMP = XBAK_TIME(IMI,JKLOOP)
+        IPOS = JKLOOP
+      END IF
+    END DO
+    IF (IPOS >= JOUT) THEN
+      XBAK_TIME(IMI,IPOS) = XBAK_TIME(IMI,JOUT)
+      XBAK_TIME(IMI,JOUT) = ZTEMP
+    END IF
+  END DO
+  !
+  !*       2.3.4 counting the output number of model IMI
+  !
+  IOUT_NUMB = 0
+  DO JOUT = 1,JPOUTMAX
+    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      IOUT_NUMB = IOUT_NUMB + 1
+    END IF
+  END DO
+  !
+  OUT_MODEL(IMI)%NOUT_NUMB = IOUT_NUMB
+  ALLOCATE(OUT_MODEL(IMI)%TOUTBAKN(IOUT_NUMB))
+  !
+  IPOS = 0
+  DO JOUT = 1,JPOUTMAX
+    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+        IPOS = IPOS + 1
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NSTEP = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%XTIME = XBAK_TIME(IMI,JOUT)
+    END IF
+  END DO
+  !
+  !*       2.3.5 finding dad output number
+  !
+  !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
+  IF (NDAD(IMI)>IMI) THEN
+    print *,'ERROR in SET_GRID'
+    STOP
+  END IF
+  IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
+    OUT_MODEL(IMI)%TOUTBAKN(:)%NOUTDAD = 0
+  ELSE
+    DO IPOS = 1,OUT_MODEL(IMI)%NOUT_NUMB
+      IDX = 0
+      DO JOUT = 1,OUT_MODEL(NDAD(IMI))%NOUT_NUMB
+        IF ( OUT_MODEL(NDAD(IMI))%TOUTBAKN(JOUT)%XTIME <= OUT_MODEL(IMI)%TOUTBAKN(IPOS)%XTIME+1.E-6 ) THEN
+          IDX = JOUT
+        ELSE
+          EXIT
+        END IF
+      END DO
+      IF (IDX>0) THEN
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTDAD = IDX
+      ELSE
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTDAD = -1
+      END IF
     END DO
   END IF
-END DO
-!
-!*       2.3.2 Find duplicated entries
-!
-DO JOUT = 1,JPOUTMAX
-  DO JKLOOP = JOUT+1,JPOUTMAX
-    IF ( XBAK_TIME(KMI,JKLOOP) == XBAK_TIME(KMI,JOUT) .AND. XBAK_TIME(KMI,JKLOOP) >= 0. ) THEN
-      print *,'WARNING: found duplicated backup (removed extra one)'
-      XBAK_TIME(KMI,JKLOOP) = -1.
-    END IF
+  !
+  !
+  IF (IP==1) THEN
+  PRINT *,'-------------------------'
+  PRINT *,'Model number:      ',IMI
+  PRINT *,'Number of backups: ',IOUT_NUMB
+  PRINT *,'Timestep     Time'
+  DO JOUT = 1,IOUT_NUMB
+    WRITE(*,'( I9 F12.3 )'  ) OUT_MODEL(IMI)%TOUTBAKN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTBAKN(JOUT)%XTIME
   END DO
-END DO
-!
-!*       2.3.3 Sort entries
-!
-DO JOUT = 1,JPOUTMAX
-  ZTEMP = XBAK_TIME(KMI,JOUT)
-  IF (ZTEMP<0.) ZTEMP = 1e99
-  IPOS = -1
-  DO JKLOOP = JOUT+1,JPOUTMAX
-    IF ( XBAK_TIME(KMI,JKLOOP) < ZTEMP .AND. XBAK_TIME(KMI,JKLOOP) >= 0. ) THEN
-      ZTEMP = XBAK_TIME(KMI,JKLOOP)
-      IPOS = JKLOOP
-    END IF
-  END DO
-  IF (IPOS >= JOUT) THEN
-    XBAK_TIME(KMI,IPOS) = XBAK_TIME(KMI,JOUT)
-    XBAK_TIME(KMI,JOUT) = ZTEMP
+  PRINT *,'-------------------------'
   END IF
-END DO
+  !
+END DO ! IMI=1,NMODEL
 !
-!*       2.3.4 counting the output number of model KMI
+DEALLOCATE(XBAK_TIME)
 !
-KOUT_NUMB = 0
-DO JOUT = 1,JPOUTMAX
-  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
-      KOUT_NUMB = KOUT_NUMB + 1
-  END IF
-END DO
-ALLOCATE(TPOUTBAKN(KOUT_NUMB))
-IPOS = 0
-DO JOUT = 1,JPOUTMAX
-  IF (XBAK_TIME(KMI,JOUT) >= 0.) THEN
-      IPOS = IPOS + 1
-      TPOUTBAKN(IPOS)%NSTEP = NINT(XBAK_TIME(KMI,JOUT)/PTSTEP) + 1
-      TPOUTBAKN(IPOS)%XTIME = XBAK_TIME(KMI,JOUT)
-  END IF
-END DO
+END IF ! IMI==1
 !
-IF (IP==1) THEN
-PRINT *,'-------------------------'
-PRINT *,'Model number:      ',KMI
-PRINT *,'Number of backups: ',KOUT_NUMB
-PRINT *,'Timestep     Time'
-DO JOUT = 1,KOUT_NUMB
-  WRITE(*,'( I9 F12.3 )'  ) TPOUTBAKN(JOUT)%NSTEP,TPOUTBAKN(JOUT)%XTIME
-END DO
-PRINT *,'-------------------------'
-END IF
+KOUT_NUMB => OUT_MODEL(KMI)%NOUT_NUMB
+TPOUTBAKN => OUT_MODEL(KMI)%TOUTBAKN
 !
 !-------------------------------------------------------------------------------
 !

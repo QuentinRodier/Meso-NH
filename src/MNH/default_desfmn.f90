@@ -492,8 +492,6 @@ XTNUDGING = 21600.
 !*      9.    SET DEFAULT VALUES FOR MODD_FMOUT and MODD_OUT_n :
 !             ------------------------------------------------
 !
-!XBAK_TIME is not yet allocated
-!IF (KMI == 1) XBAK_TIME (:,:) = XNEGUNDEF
 !
 !
 !-------------------------------------------------------------------------------
