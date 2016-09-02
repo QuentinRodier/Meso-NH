@@ -47,6 +47,10 @@ USE MODD_PARAMETERS
 !
 IMPLICIT NONE
 !
+LOGICAL,SAVE :: LBAK_BEG = .FALSE. ! Force a backup at the first timestep
+                                   ! of the segment for all models
+LOGICAL,SAVE :: LBAK_END = .FALSE. ! Force a backup at the last timestep
+                                   ! of the segment for all models
 REAL,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   XBAK_TIME 
 ! XBAK_TIME(m,i) array of 
 ! the increments in seconds from the beginning of the segment to the

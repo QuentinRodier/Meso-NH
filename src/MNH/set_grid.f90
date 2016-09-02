@@ -575,12 +575,20 @@ DO IMI = 1, NMODEL
     END IF
   END DO
   !
-  !*       2.3.2 Group all backups in a common form
+  !*       2.3.2 Group all backups in a common form and add backups at beginning and end if requested
+  !
+  IF (LBAK_BEG) IBAK_NUMB = IBAK_NUMB + 1
+  IF (LBAK_END) IBAK_NUMB = IBAK_NUMB + 1
   !
   ALLOCATE(IBAK_STEP(IBAK_NUMB))
   IBAK_STEP(:) = NNEGUNDEF
   !
   IBAK_NUMB = 0
+  !
+  IF (LBAK_BEG) THEN
+    IBAK_NUMB = IBAK_NUMB + 1
+    IBAK_STEP(IBAK_NUMB) = 1 ! 1 is the 1st step number
+  END IF
   !
   DO JOUT = 1,JPOUTMAX
     IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
@@ -595,6 +603,12 @@ DO IMI = 1, NMODEL
       IBAK_STEP(IBAK_NUMB) = NBAK_STEP(IMI,JOUT)
     END IF
   END DO
+  !
+  IF (LBAK_END) THEN
+    IBAK_NUMB = IBAK_NUMB + 1
+    IBAK_STEP(IBAK_NUMB) = NINT(XSEGLEN/DYN_MODEL(IMI)%XTSTEP)+1
+    IF (IMI == 1) IBAK_STEP(IBAK_NUMB) = IBAK_STEP(IBAK_NUMB) - ISUP
+  END IF
   !
   !*       2.3.2 Find and remove duplicated entries
   !
