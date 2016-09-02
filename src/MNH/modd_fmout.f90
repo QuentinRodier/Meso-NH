@@ -51,6 +51,10 @@ REAL,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   XBAK_TIME
 ! XBAK_TIME(m,i) array of 
 ! the increments in seconds from the beginning of the segment to the
 ! instant where the i-th fields output on FM-files is realized by model "m"
+INTEGER,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   NBAK_STEP
+! NBAK_STEP(m,i) array of
+! the increments in steps from the beginning of the segment to the
+! step where the i-th fields output on FM-files is realized by model "m"
 !
 !
 END MODULE MODD_FMOUT

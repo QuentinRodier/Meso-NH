@@ -67,12 +67,14 @@ INTEGER, PARAMETER :: JPRIMMAX = 6    ! Maximum number of points for the
 INTEGER, PARAMETER :: JPSVMAX  = 200  ! Maximum number of scalar variables
 !
 !
-REAL,    PARAMETER :: XUNDEF = 999.   ! default value for undefined or unused
-!                                     ! field.
+REAL,    PARAMETER :: XUNDEF = 999.     ! default value for undefined or unused
+!                                       ! field.
 REAL,    PARAMETER :: XNEGUNDEF = -999. ! default value for undefined or unused
 !                                       ! field (negative value guaranteed)
-INTEGER, PARAMETER :: NUNDEF = 999    ! default value for undefined or unused
-!                                     ! field.
+INTEGER, PARAMETER :: NUNDEF = 999      ! default value for undefined or unused
+!                                       ! field.
+INTEGER, PARAMETER :: NNEGUNDEF = -999  ! default value for undefined or unused
+!                                       ! field (negative value guaranteed)
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
 INTEGER, PARAMETER :: JPOUTMAX = 192 ! Maximum allowed number of OUTput files

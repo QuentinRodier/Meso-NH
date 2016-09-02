@@ -329,7 +329,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
-REAL                         :: ZTEMP            ! Intermediate variable
+INTEGER                      :: ITEMP            ! Intermediate variable
 INTEGER                      :: IPOS
 INTEGER                :: IGRID,ILENCH,IRESP  !   File
 CHARACTER (LEN=16)     :: YRECFM              ! management
@@ -346,7 +346,8 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
 !
 INTEGER                :: IMASDEV                   ! masdev of the file
 INTEGER                :: IMI                       ! model number for loop
-INTEGER                :: IOUT_NUMB                 ! number of outputs
+INTEGER                :: IBAK_NUMB                 ! number of outputs
+INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP ! Array to store list of backup steps (intermediate array)
 CHARACTER (LEN=4)      :: YNUMBER   ! character string for the OUTPUT FM-file number
 CHARACTER (LEN=4)      :: YDADNUMBER! character string for the DAD model OUTPUT FM-file number
 !-------------------------------------------------------------------------------
@@ -522,11 +523,13 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 IF (KMI == 1) THEN
 !
 DO IMI = 1, NMODEL
+  IBAK_NUMB = 0
   !
-  !*       2.3.1  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
+  !*       2.3.1a  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
   !
   DO JOUT = 1,JPOUTMAX
     IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      IBAK_NUMB = IBAK_NUMB + 1
       !Value is rounded to nearest timestep
       XBAK_TIME(IMI,JOUT) = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) * DYN_MODEL(IMI)%XTSTEP
       !Output/backup time is propagated to nested models (with higher numbers)
@@ -547,61 +550,113 @@ DO IMI = 1, NMODEL
     END IF
   END DO
   !
-  !*       2.3.2 Find and remove duplicated entries
+  !*       2.3.1b  Synchronization between nested models through NBAK_STEP arrays (MODD_FMOUT)
   !
   DO JOUT = 1,JPOUTMAX
-    DO JKLOOP = JOUT+1,JPOUTMAX
-      IF ( XBAK_TIME(IMI,JKLOOP) == XBAK_TIME(IMI,JOUT) .AND. XBAK_TIME(IMI,JKLOOP) >= 0. ) THEN
-        print *,'WARNING: found duplicated backup (removed extra one)'
-        XBAK_TIME(IMI,JKLOOP) = -1.
+    IF (NBAK_STEP(IMI,JOUT) > 0) THEN
+      IBAK_NUMB = IBAK_NUMB + 1
+      !Output/backup time is propagated to nested models (with higher numbers)
+      !PW: TODO: BUG?: what happens if 2 dissociated models?
+      DO JKLOOP = IMI+1,NMODEL
+        IDX = 1
+        !Find first non 'allocated' element
+        DO WHILE ( NBAK_STEP(JKLOOP,IDX) >= 0 )
+          IDX = IDX + 1
+        END DO
+        IF (IDX > JPOUTMAX) THEN
+          PRINT *,'Error in SET_GRID when treating output list'
+          CALL ABORT
+          STOP
+        END IF
+        ! Use of NINT and real to prevent rounding errors
+        ! (STEP-1)* ... +1 because step numbers begin at 1
+        NBAK_STEP(JKLOOP,IDX) = (NBAK_STEP(IMI,JOUT)-1) * NINT( DYN_MODEL(JKLOOP)%XTSTEP/DYN_MODEL(IMI)%XTSTEP ) + 1
+      END DO
+    END IF
+  END DO
+  !
+  !*       2.3.2 Group all backups in a common form
+  !
+  ALLOCATE(IBAK_STEP(IBAK_NUMB))
+  IBAK_STEP(:) = NNEGUNDEF
+  !
+  IBAK_NUMB = 0
+  !
+  DO JOUT = 1,JPOUTMAX
+    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+      IBAK_NUMB = IBAK_NUMB + 1
+      IBAK_STEP(IBAK_NUMB) = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
+    END IF
+  END DO
+  !
+  DO JOUT = 1,JPOUTMAX
+    IF (NBAK_STEP(IMI,JOUT) > 0) THEN
+      IBAK_NUMB = IBAK_NUMB + 1
+      IBAK_STEP(IBAK_NUMB) = NBAK_STEP(IMI,JOUT)
+    END IF
+  END DO
+  !
+  !*       2.3.2 Find and remove duplicated entries
+  !
+  DO JOUT = 1,IBAK_NUMB
+    DO JKLOOP = JOUT+1,IBAK_NUMB
+      IF ( IBAK_STEP(JKLOOP) == IBAK_STEP(JOUT) .AND. IBAK_STEP(JKLOOP) > 0 ) THEN
+        print *,'WARNING: found duplicated backup step (removed extra one)'
+        IBAK_STEP(JKLOOP) = NNEGUNDEF
       END IF
     END DO
   END DO
   !
   !*       2.3.3 Sort entries
   !
-  DO JOUT = 1,JPOUTMAX
-    ZTEMP = XBAK_TIME(IMI,JOUT)
-    IF (ZTEMP<0.) ZTEMP = 1e99
+  DO JOUT = 1,IBAK_NUMB
+    ITEMP = IBAK_STEP(JOUT)
+    IF (ITEMP<=0) ITEMP = HUGE(ITEMP)
     IPOS = -1
-    DO JKLOOP = JOUT+1,JPOUTMAX
-      IF ( XBAK_TIME(IMI,JKLOOP) < ZTEMP .AND. XBAK_TIME(IMI,JKLOOP) >= 0. ) THEN
-        ZTEMP = XBAK_TIME(IMI,JKLOOP)
+    DO JKLOOP = JOUT+1,IBAK_NUMB
+      IF ( IBAK_STEP(JKLOOP) < ITEMP .AND. IBAK_STEP(JKLOOP) >= 0 ) THEN
+        ITEMP = IBAK_STEP(JKLOOP)
         IPOS = JKLOOP
       END IF
     END DO
     IF (IPOS >= JOUT) THEN
-      XBAK_TIME(IMI,IPOS) = XBAK_TIME(IMI,JOUT)
-      XBAK_TIME(IMI,JOUT) = ZTEMP
+      IBAK_STEP(IPOS) = IBAK_STEP(JOUT)
+      IBAK_STEP(JOUT) = ITEMP
     END IF
   END DO
   !
-  !*       2.3.4 Counting the number of backups of model IMI
+  !*       2.3.4 Count the number of backups of model IMI
   !
-  IOUT_NUMB = 0
-  DO JOUT = 1,JPOUTMAX
-    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
-      IOUT_NUMB = IOUT_NUMB + 1
+  IBAK_NUMB = 0
+  DO JOUT = 1,SIZE(IBAK_STEP)
+    IF (IBAK_STEP(JOUT) >= 0) THEN
+      IBAK_NUMB = IBAK_NUMB + 1
     END IF
   END DO
   !
-  OUT_MODEL(IMI)%NOUT_NUMB = IOUT_NUMB
-  ALLOCATE(OUT_MODEL(IMI)%TOUTBAKN(IOUT_NUMB))
+  OUT_MODEL(IMI)%NOUT_NUMB = IBAK_NUMB
+  ALLOCATE(OUT_MODEL(IMI)%TOUTBAKN(IBAK_NUMB))
+  !
+  !*       2.3.5 Populate the backup data structures
   !
   IPOS = 0
-  DO JOUT = 1,JPOUTMAX
-    IF (XBAK_TIME(IMI,JOUT) >= 0.) THEN
+  DO JOUT = 1,SIZE(IBAK_STEP)
+    IF (IBAK_STEP(JOUT) >= 0) THEN
         IPOS = IPOS + 1
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NBAKID = IPOS
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NOUTID = -1
-        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NSTEP = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) + 1
-        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%XTIME = XBAK_TIME(IMI,JOUT)
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%NSTEP = IBAK_STEP(JOUT)
+        OUT_MODEL(IMI)%TOUTBAKN(IPOS)%XTIME = (IBAK_STEP(JOUT)-1)*DYN_MODEL(IMI)%XTSTEP
+        IF (IPOS>999) THEN
+          print *,'ERROR in SET_GRID: more than 999 backups'
+          STOP
+        END IF
         WRITE (YNUMBER,FMT="('.',I3.3)") IPOS
         OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CFILENAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//YNUMBER)
     END IF
   END DO
   !
-  !*       2.3.5 Find dad output number
+  !*       2.3.6 Find dad output number
   !
   !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
   IF (NDAD(IMI)>IMI) THEN
@@ -632,13 +687,14 @@ DO IMI = 1, NMODEL
     END DO
   END IF
   !
+  DEALLOCATE(IBAK_STEP)
   !
   IF (IP==1) THEN
   PRINT *,'-------------------------'
   PRINT *,'Model number:      ',IMI
-  PRINT *,'Number of backups: ',IOUT_NUMB
+  PRINT *,'Number of backups: ',IBAK_NUMB
   PRINT *,'Timestep     Time'
-  DO JOUT = 1,IOUT_NUMB
+  DO JOUT = 1,IBAK_NUMB
     WRITE(*,'( I9 F12.3 )'  ) OUT_MODEL(IMI)%TOUTBAKN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTBAKN(JOUT)%XTIME
   END DO
   PRINT *,'-------------------------'
@@ -646,6 +702,7 @@ DO IMI = 1, NMODEL
   !
 END DO ! IMI=1,NMODEL
 !
+DEALLOCATE(NBAK_STEP)
 DEALLOCATE(XBAK_TIME)
 !
 END IF ! IMI==1
