@@ -14,7 +14,7 @@ dependance_flist = $(notdir $(shell find $(1) -follow -type f \
                -name '*.f' -o -name '*.f90' -o -name '*.fx90' -o -name '*.F90'\
                | grep -v ',v' | sed -e 's/\.f.*/.D/g' -e 's/\.F.*/.D/g' ))
 obj_flist        = $(notdir $(shell find $(1) -follow -type f \
-               -name 'spll_*.f*' | sed -e 's/\..*/.o/g' )) 
+               -name 'spll_*.f*' | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #
 ##########################################################
 #                                                        #
@@ -129,7 +129,7 @@ endif
 #
 # MASTER 
 #
-OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(notdir $(shell find $(OBJDIR_MASTER) -follow -type f -name "spll_*.f*" | sed -e 's/\..*/.o/g' )) 
+OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(notdir $(shell find $(OBJDIR_MASTER) -follow -type f -name "spll_*.f*" | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(obj_flist $(OBJDIR_MASTER)) 
 #
 OBJS_LISTE_MASTER := $(sort $(filter-out $(IGNORE_OBJS),$(OBJS_LISTE_MASTER))) 
@@ -139,7 +139,7 @@ LIB_MASTER=$(OBJDIR_MASTER)/$(LIB_OBJS_ROOT)-MASTER.a
 # USER
 #
 #ifdef DO_COMP_USER
-OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(notdir $(shell find $(OBJDIR_USER) -follow -type f -name "spll_*.f*" | sed -e 's/\..*/.o/g' )) 
+OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(notdir $(shell find $(OBJDIR_USER) -follow -type f -name "spll_*.f*" | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(obj_flist $(OBJDIR_USER)) 
 #
 OBJS_LISTE_USER := $(sort $(filter-out $(IGNORE_OBJS), $(OBJS_LISTE_USER) $(OBJS_LISTE_MASTER) )) 
