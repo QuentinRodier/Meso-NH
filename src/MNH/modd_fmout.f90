@@ -59,6 +59,10 @@ INTEGER,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   NBAK_STEP
 ! NBAK_STEP(m,i) array of
 ! the increments in steps from the beginning of the segment to the
 ! step where the i-th fields output on FM-files is realized by model "m"
+INTEGER,SAVE,DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ = NNEGUNDEF ! Number
+! of timesteps between 2 backups for each model
+INTEGER,SAVE,DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ_FIRST = 1   ! First
+! timestep numbers between 2 backups for each model (if NBAK_STEP_FREQ is set)
 !
 !
 END MODULE MODD_FMOUT

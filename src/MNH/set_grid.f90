@@ -347,6 +347,7 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
 INTEGER                :: IMASDEV                   ! masdev of the file
 INTEGER                :: IMI                       ! model number for loop
 INTEGER                :: IBAK_NUMB                 ! number of outputs
+INTEGER                :: ISTEP_MAX                 ! number of timesteps
 INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP ! Array to store list of backup steps (intermediate array)
 CHARACTER (LEN=4)      :: YNUMBER   ! character string for the OUTPUT FM-file number
 CHARACTER (LEN=4)      :: YDADNUMBER! character string for the DAD model OUTPUT FM-file number
@@ -524,6 +525,8 @@ IF (KMI == 1) THEN
 !
 DO IMI = 1, NMODEL
   IBAK_NUMB = 0
+  ISTEP_MAX = NINT(XSEGLEN/DYN_MODEL(IMI)%XTSTEP)+1
+  IF (IMI == 1) ISTEP_MAX = ISTEP_MAX - ISUP
   !
   !*       2.3.1a  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
   !
@@ -533,22 +536,40 @@ DO IMI = 1, NMODEL
       !Value is rounded to nearest timestep
       XBAK_TIME(IMI,JOUT) = NINT(XBAK_TIME(IMI,JOUT)/DYN_MODEL(IMI)%XTSTEP) * DYN_MODEL(IMI)%XTSTEP
       !Output/backup time is propagated to nested models (with higher numbers)
-      !PW: TODO: BUG?: what happens if 2 dissociated models?
+      !PW: TODO: BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         !Find first non 'allocated' element
         DO WHILE ( XBAK_TIME(JKLOOP,IDX) >= 0. )
           IDX = IDX + 1
+          IF (IDX > JPOUTMAX) THEN
+            PRINT *,'Error in SET_GRID when treating output list (JPOUTMAX too small)'
+            CALL ABORT
+            STOP
+          END IF
         END DO
-        IF (IDX > JPOUTMAX) THEN
-          PRINT *,'Error in SET_GRID when treating output list'
-          CALL ABORT
-          STOP
-        END IF
         XBAK_TIME(JKLOOP,IDX) = XBAK_TIME(IMI,JOUT)
       END DO
     END IF
   END DO
+  !
+  !*       2.3.1b0 Insert regular backups into NBAK_STEP array
+  !
+  IF (NBAK_STEP_FREQ(IMI)>0) THEN
+    IDX = 1
+    DO JOUT = NBAK_STEP_FREQ_FIRST(IMI), ISTEP_MAX, NBAK_STEP_FREQ(IMI)
+      !Find first non 'allocated' element
+      DO WHILE ( NBAK_STEP(IMI,IDX) >= 0 )
+        IDX = IDX + 1
+        IF (IDX > JPOUTMAX) THEN
+          PRINT *,'Error in SET_GRID when treating output list (JPOUTMAX too small)'
+          CALL ABORT
+          STOP
+        END IF
+      END DO
+      NBAK_STEP(IMI,IDX) = JOUT
+    END DO
+  END IF
   !
   !*       2.3.1b  Synchronization between nested models through NBAK_STEP arrays (MODD_FMOUT)
   !
@@ -556,7 +577,7 @@ DO IMI = 1, NMODEL
     IF (NBAK_STEP(IMI,JOUT) > 0) THEN
       IBAK_NUMB = IBAK_NUMB + 1
       !Output/backup time is propagated to nested models (with higher numbers)
-      !PW: TODO: BUG?: what happens if 2 dissociated models?
+      !PW: TODO: BUG?: what happens if 2 dissociated models? Use NSON(:) array?
       DO JKLOOP = IMI+1,NMODEL
         IDX = 1
         !Find first non 'allocated' element
@@ -564,7 +585,7 @@ DO IMI = 1, NMODEL
           IDX = IDX + 1
         END DO
         IF (IDX > JPOUTMAX) THEN
-          PRINT *,'Error in SET_GRID when treating output list'
+          PRINT *,'Error in SET_GRID when treating output list (JPOUTMAX too small)'
           CALL ABORT
           STOP
         END IF
@@ -606,8 +627,7 @@ DO IMI = 1, NMODEL
   !
   IF (LBAK_END) THEN
     IBAK_NUMB = IBAK_NUMB + 1
-    IBAK_STEP(IBAK_NUMB) = NINT(XSEGLEN/DYN_MODEL(IMI)%XTSTEP)+1
-    IF (IMI == 1) IBAK_STEP(IBAK_NUMB) = IBAK_STEP(IBAK_NUMB) - ISUP
+    IBAK_STEP(IBAK_NUMB) = ISTEP_MAX
   END IF
   !
   !*       2.3.2 Find and remove duplicated entries
