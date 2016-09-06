@@ -63,6 +63,10 @@ INTEGER,SAVE,DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ = NNEGUNDEF ! Number
 ! of timesteps between 2 backups for each model
 INTEGER,SAVE,DIMENSION(JPMODELMAX) :: NBAK_STEP_FREQ_FIRST = 1   ! First
 ! timestep numbers between 2 backups for each model (if NBAK_STEP_FREQ is set)
+REAL,SAVE,DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ = XNEGUNDEF ! Time between
+! 2 backups for each model
+REAL,SAVE,DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ_FIRST = 0.   ! Time for first
+! backup for each model (if XBAK_TIME_FREQ is set)
 !
 !
 END MODULE MODD_FMOUT

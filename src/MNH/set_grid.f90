@@ -528,6 +528,27 @@ DO IMI = 1, NMODEL
   ISTEP_MAX = NINT(XSEGLEN/DYN_MODEL(IMI)%XTSTEP)+1
   IF (IMI == 1) ISTEP_MAX = ISTEP_MAX - ISUP
   !
+  !*       2.3.1a0 Insert regular backups into XBAK_TIME array
+  !
+  IF (XBAK_TIME_FREQ(IMI)>0.) THEN
+    IDX = 1
+    ZOUT = XBAK_TIME_FREQ_FIRST(IMI)
+    ZOUTMAX = PSEGLEN - PTSTEP*ISUP
+    DO WHILE ( ZOUT <= ZOUTMAX )
+      !Find first non 'allocated' element
+      DO WHILE ( XBAK_TIME(IMI,IDX) >= 0. )
+        IDX = IDX + 1
+        IF (IDX > JPOUTMAX) THEN
+          PRINT *,'Error in SET_GRID when treating output list (JPOUTMAX too small)'
+          CALL ABORT
+          STOP
+        END IF
+      END DO
+      XBAK_TIME(IMI,IDX) = ZOUT
+      ZOUT = ZOUT + XBAK_TIME_FREQ(IMI)
+    END DO
+  END IF
+  !
   !*       2.3.1a  Synchronization between nested models through XBAK_TIME arrays (MODD_FMOUT)
   !
   DO JOUT = 1,JPOUTMAX
@@ -699,7 +720,8 @@ DO IMI = 1, NMODEL
   END IF
   IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
     OUT_MODEL(IMI)%TOUTBAKN(:)%NOUTDAD = 0
-    OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CDADFILENAME = OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CFILENAME
+    !Check IPOS>0 because TOUTBAKN(0) does not exist (IPOS=0 only if no backups)
+    IF(IPOS>0) OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CDADFILENAME = OUT_MODEL(IMI)%TOUTBAKN(IPOS)%CFILENAME
   ELSE
     DO IPOS = 1,OUT_MODEL(IMI)%NOUT_NUMB
       IDX = 0
