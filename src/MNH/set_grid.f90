@@ -28,7 +28,7 @@ INTERFACE
                           TPDTMOD,TPDTCUR,KSTOP,KOUT_NUMB,TPOUTBAKN           )
 !
 USE MODD_TYPE_DATE
-USE MODE_IO_ll, ONLY:TOUTBAK
+USE MODD_IO_ll, ONLY:TOUTBAK
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
@@ -255,6 +255,7 @@ USE MODD_OUT_n,       ONLY : OUT_MODEL
 USE MODD_VAR_ll,      ONLY : IP,NPROC
 USE MODD_DYN_n,       ONLY : DYN_MODEL
 USE MODD_IO_SURF_MNH, ONLY : IO_SURF_MNH_MODEL
+USE MODD_IO_ll,       ONLY : TOUTBAK
 !
 IMPLICIT NONE
 !
@@ -329,6 +330,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
+REAL                         :: ZOUT, ZOUTMAX    ! Time of output/backup
 INTEGER                      :: ITEMP            ! Intermediate variable
 INTEGER                      :: IPOS
 INTEGER                :: IGRID,ILENCH,IRESP  !   File
