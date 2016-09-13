@@ -45,6 +45,17 @@ TYPE TOUTBAK
   CHARACTER(LEN=28) :: CFILENAME    !Filename
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
   CHARACTER(LEN=28) :: CDADFILENAME !Filename of dad
+  TYPE(TFILEDATA),POINTER :: TFILE => NULL() !Corresponding file
 END TYPE TOUTBAK
+
+!Structure describing the characteristics of a file
+TYPE TFILEDATA
+  CHARACTER(LEN=7)  :: CFILETYPE = "UNKNOWN" !Filetype (backup, output...)
+  TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
+  TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
+END TYPE TFILEDATA
+
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_FIRST => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_LAST  => NULL()
 
 END MODULE MODD_IO_ll

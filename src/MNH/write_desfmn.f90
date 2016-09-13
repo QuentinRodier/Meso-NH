@@ -470,8 +470,8 @@ IF (NVERB >= 5) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'********** NESTING **************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_NESTING)
 !
-    WRITE(UNIT=ILUOUT,FMT="(/,'********** FMOUT ****************************')")
-    WRITE(UNIT=ILUOUT,NML=NAM_FMOUT)
+!    WRITE(UNIT=ILUOUT,FMT="(/,'********** FMOUT ****************************')")
+!    WRITE(UNIT=ILUOUT,NML=NAM_FMOUT)
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ BUDGET ***************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_BUDGET)
