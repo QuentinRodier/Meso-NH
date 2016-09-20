@@ -11,7 +11,6 @@ INTERFACE
 !
 SUBROUTINE WRITE_PHYS_PARAM(HFMFILE)
 CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
                                               ! its DAD model
 END SUBROUTINE WRITE_PHYS_PARAM
 !
