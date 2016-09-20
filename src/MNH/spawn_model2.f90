@@ -370,7 +370,6 @@ LOGICAL             :: GNOSON = .TRUE.
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D ! working array
 CHARACTER(LEN=28)   :: YDAD_SON
 !$
-INTEGER             :: IDIMX, IDIMY
 INTEGER             :: IINFO_ll
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 INTEGER             :: NXOR_TMP, NYOR_TMP, NXEND_TMP, NYEND_TMP 
