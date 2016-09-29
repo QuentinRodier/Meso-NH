@@ -278,6 +278,7 @@ USE MODD_LUNIT
 USE MODD_GRID, ONLY: XLONORI,XLATORI
 USE MODD_SERIES, ONLY: LSERIES
 USE MODD_TURB_CLOUD, ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 USE MODD_SUB_MODEL_n
 USE MODD_GET_n
@@ -428,6 +429,7 @@ INTEGER :: INPRAR               ! number of articles predicted  in
 INTEGER :: ININAR               ! number of articles  present in
                                 !  the LFIFM file
 INTEGER :: ITYPE                ! type of file (cpio or not)
+INTEGER :: IVERB                ! LFI verbosity level
 LOGICAL :: GSTEADY_DMASS        ! conditional call to mass computation
 !
                                 ! for computing time analysis
@@ -525,6 +527,8 @@ REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZTMP
 TYPE(LIST_ll), POINTER :: TZFIELDC_ll   ! list of fields to exchange
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2C_ll   ! list of fields to exchange
 !
+TYPE(TFILEDATA),POINTER :: TZFILE
+CHARACTER(LEN=:),ALLOCATABLE :: YMODE
 !-------------------------------------------------------------------------------
 !
 !*       0.    MICROPHYSICAL SCHEME
@@ -906,12 +910,21 @@ IF (IOUT < NOUT_NUMB ) THEN
   IF (KTCOUNT == TOUTBAKN(IOUT+1)%NSTEP) THEN
     IOUT=IOUT+1
     GCLOSE_OUT=.TRUE.
-    INPRAR = 22 +2*(4+NRR+NSV)
     !
-    YFMFILE  = TOUTBAKN(IOUT)%TFILE%CFILENAME
+    TZFILE => TOUTBAKN(IOUT)%TFILE
+    YFMFILE  = TZFILE%CNAME
     YDADFILE = TOUTBAKN(IOUT)%CDADFILENAME
+    YMODE    = TZFILE%CMODE
+    INPRAR   = TZFILE%NLFINPRAR
+    ITYPE    = TZFILE%NLFITYPE
+    IVERB    = TZFILE%NLFIVERB
     !
-    CALL FMOPEN_ll(YFMFILE,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,ININAR,IRESP)
+    CALL FMOPEN_ll(YFMFILE,YMODE,CLUOUT,INPRAR,ITYPE,IVERB,ININAR,IRESP)
+    !
+    TZFILE%NLFININAR = ININAR
+    TZFILE%LOPENED = .TRUE.
+    TZFILE%NOPEN   = TZFILE%NOPEN + 1
+    !
     YDESFM=ADJUSTL(ADJUSTR(YFMFILE)//'.des')
     !    
     CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
@@ -923,12 +936,12 @@ IF (IOUT < NOUT_NUMB ) THEN
       CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
     END IF
     !
-    ! Reinitialize Lagragian variables at every model output
+    ! Reinitialize Lagragian variables at every model backup
     IF (LLG .AND. LINIT_LG .AND. CINIT_LG=='FMOUT') THEN
       CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
-      IF (NVERB>=5) THEN
+      IF (IVERB>=5) THEN
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
-        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(YFMFILE),' output'
+        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(YFMFILE),' backup'
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
       END IF
     END IF
@@ -1900,6 +1913,7 @@ XT_STEP_BUD = XT_STEP_BUD + ZTIME2 - ZTIME1 + XTIME_BU
 IF (GCLOSE_OUT) THEN
   GCLOSE_OUT=.FALSE.
   CALL FMCLOS_ll(YFMFILE,'KEEP',CLUOUT,IRESP)
+  TZFILE%LOPENED = .FALSE.
 END IF
 !
 !-------------------------------------------------------------------------------

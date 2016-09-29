@@ -49,8 +49,19 @@ END TYPE TOUTBAK
 
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
-  CHARACTER(LEN=28) :: CFILENAME             !Filename
-  CHARACTER(LEN=7)  :: CFILETYPE = "UNKNOWN" !Filetype (backup, output...)
+  CHARACTER(LEN=28) :: CNAME               !Filename
+  CHARACTER(LEN=7)  :: CTYPE   = "UNKNOWN" !Filetype (backup, output...)
+  CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI...)
+  CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
+  LOGICAL           :: LOPENED = .FALSE.   !Is the file opened
+  INTEGER           :: NOPEN   = 0         !Number of times the file has been opened (during the current execution)
+  !
+  ! Fields for LFI files
+  INTEGER :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
+  INTEGER :: NLFININAR = -1 !Number of articles present at opening of the LFI file
+  INTEGER :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
+  INTEGER :: NLFIVERB  = 1  !LFI verbosity level
+  !
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
