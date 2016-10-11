@@ -187,6 +187,10 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 depmaster : cdf
 endif
 
+ifeq "$(VER_OASIS)" "OASISAUTO"
+depmaster : oasis
+endif
+
 depmaster : gribapi
 
 filedepallmaster :  $(DEP_ALL_MASTER)
@@ -336,13 +340,30 @@ cdf : $(CDF_INC)
 $(CDF_INC) : 
 	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
 	FC="$(FC)" FCFLAGS="$(HDF_OPT)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install && $(MAKE) -j 1 clean
-	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-f90 --disable-dap \
-	FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
+	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-dap \
+        FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
 
 cleanmaster : cleancdf
 cleancdf :
 	- [ -d ${CDF_PATH} ] && rm -fr  ${CDF_PATH}
 endif
+##########################################################
+#                                                        #
+# EXTRA LIB : OASIS                                      #
+#                                                        #
+##########################################################
+ifeq "$(VER_OASIS)" "OASISAUTO"
+#
+oasis : $(OASIS_KEY)
+$(OASIS_KEY): 
+	cd ${SRC_MESONH}/src/LIB/oasis3-mct_v3/util/make_dir && make realclean -f TopMakefileOasis3 && make -f TopMakefileOasis3 && cd ${SRC_MESONH}/src/LIB/toy_v1-0 && make clean && make
+
+cleanmaster : cleanoasis
+cleanoasis :
+	- [ -d ${OASIS_PATH} ] && rm -fr  ${OASIS_PATH}
+endif
+
+
 ##########################################################
 #                                                        #
 # PROGRAM RULES                                          #

@@ -30,6 +30,12 @@ endif
 ##########################################################
 #           Source MNH                                   #
 ##########################################################
+ifdef CPLOASIS
+DIR_SURFEX    += ARCH_SRC/CPL_WAVE/SURFEX
+DIR_MNH       += ARCH_SRC/CPL_WAVE/MNH
+DIR_SURCOUCHE += ARCH_SRC/CPL_WAVE/SURCOUCHE
+CPPFLAGS       += -DCPLOASIS
+endif
 # PRE_BUG TEST !!!
 #DIR_MNH += ARCH_SRC/bug_mnh
 # PRE_BUG TEST !!!
@@ -356,6 +362,34 @@ VPATH         += $(GRIBAPI_PATH)/include
 R64_GRIBAPI=R64
 endif
 ##########################################################
+#           Librairie OASIS                              #
+##########################################################
+#
+ifeq "$(VER_OASIS)" "OASISAUTO"
+OASIS_PATH ?= ${SRC_MESONH}/src/LIB/work_oasis3-mct
+OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
+# INC_OASIS     : includes all *o and *mod for each library
+INC_OASIS      ?= -I${OASIS_PATH}/build/lib/psmile.MPI1 -I$(OASIS_PATH)/build/lib/mct -I$(OASIS_PATH)/build/lib/scrip
+LIB_OASIS      ?= -L${OASIS_PATH}/lib -lpsmile.MPI1 -lmct -lmpeu -lscrip
+INC            += $(INC_OASIS)
+LIBS           += $(LIB_OASIS)
+VPATH          += ${OASIS_PATH}/build/lib/psmile.MPI1
+CPPFLAGS       += -DCPLOASIS
+endif
+
+ifeq "$(VER_OASIS)" "OASISBASHRC"
+OASIS_PATH ?= ${OASISDIR}
+OASIS_KEY ?= ${OASIS_PATH}/build/lib/psmile.MPI1/mod_oasis.mod
+# INC_OASIS     : includes all *o and *mod for each library
+INC_OASIS      ?= -I${OASIS_PATH}/build/lib/psmile.MPI1 -I$(OASIS_PATH)/build/lib/mct -I$(OASIS_PATH)/build/lib/scrip
+LIB_OASIS      ?= -L${OASIS_PATH}/lib -lpsmile.MPI1 -lmct -lmpeu -lscrip
+INC            += $(INC_OASIS)
+LIBS           += $(LIB_OASIS)
+VPATH          += ${OASIS_PATH}/build/lib/psmile.MPI1
+CPPFLAGS       += -DCPLOASIS
+endif
+
+##########################################################
 #           Librairie NETCDF4                            #
 ##########################################################
 # NETCDF4 INPUT/OUTPUT in MesoNH 
@@ -377,6 +411,18 @@ INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #
 DIR_HDF?=${SRC_MESONH}/src/LIB/hdf5-${VERSION_HDF}
+endif
+#
+# NetCDF : CDF LaReunion Local
+#
+ifeq "$(VER_CDF)" "CDFBASHRC"
+#
+INC_NETCDF     ?= $(shell $(NETCDF_CONFIG) --fflags)
+LIB_NETCDF     ?= $(shell $(NETCDF_CONFIG) --flibs)
+#
+INC            += $(INC_NETCDF)
+LIBS           += $(LIB_NETCDF)
+#
 endif
 #
 # NetCDF in beaufix (bull meteo-france)

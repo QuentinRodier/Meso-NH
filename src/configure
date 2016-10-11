@@ -18,6 +18,7 @@ export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.13.1"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
 export MNH_IOCDF4=${MNH_IOCDF4:-1}
+export VER_OASIS=${VER_OASIS:-NO}
 #
 export NEED_TOOLS=YES
 #
@@ -416,6 +417,12 @@ if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
 ( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
 fi
 #
+#  Install OASIS if VER_OASIS=OASISAUTO
+#
+if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
+( cd $LOCAL/src/LIB ; [ ! -d oasis3-mct ] && tar xvfz oasis3-mct_v3.tar.gz ; [ ! -d toy ] && tar xvfz toy_v1-0.tar.gz )
+fi
+#
 #  Install GRIBAPI
 #
 cd $LOCAL/src/LIB ; [ ! -d grib_api-${VERSION_GRIBAPI} ] && [ -f grib_api-${VERSION_GRIBAPI}.tar.gz ] && gunzip -c grib_api-${VERSION_GRIBAPI}.tar.gz |tar -xvf -
@@ -431,6 +438,7 @@ echo  VER_USER=${VER_USER-" pas de version user ..."}
 echo  OPTLEVEL=${OPTLEVEL}
 echo  CONF_DOLLAR=${CONF_DOLLAR}
 echo  VER_CDF=${VER_CDF}
+echo  VER_OASIS=${VER_OASIS}
 echo  BIN_TOOLS=${BIN_TOOLS}
 echo
 echo  "---> XYZ=${XYZ}"
