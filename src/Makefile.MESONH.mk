@@ -30,7 +30,7 @@ endif
 ##########################################################
 #           Source MNH                                   #
 ##########################################################
-ifdef CPLOASIS
+ifdef VER_OASIS
 DIR_SURFEX    += ARCH_SRC/CPL_WAVE/SURFEX
 DIR_MNH       += ARCH_SRC/CPL_WAVE/MNH
 DIR_SURCOUCHE += ARCH_SRC/CPL_WAVE/SURCOUCHE
