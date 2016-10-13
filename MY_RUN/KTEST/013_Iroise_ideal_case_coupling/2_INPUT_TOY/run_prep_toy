@@ -2,7 +2,7 @@
 echo '--------------------------------------'
 echo '--  input for TOY                     '
 echo '--------------------------------------'
-
+PREP_PGD_FILES=${PREP_PGD_FILES:-"$HOME/PREP_PGD_FILES_WWW"} ; export PREP_PGD_FILES
 if [ "$PREP_PGD_FILES" = "" ]
 then
 
