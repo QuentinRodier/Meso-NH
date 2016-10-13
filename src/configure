@@ -10,7 +10,8 @@ then
 # 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-3}
 export VERSION_BUG=${VERSION_BUG:-0}
-export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}}
+export VER_OASIS=${VER_OASIS:-""}
+export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"23/06/2016"}
 export VERSION_CDF=${VERSION_CDF:-"4.1.3"}
 export VERSION_HDF=${VERSION_HDF:-"1.8.9"}
@@ -18,7 +19,10 @@ export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.13.1"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
 export MNH_IOCDF4=${MNH_IOCDF4:-1}
-export VER_OASIS=${VER_OASIS:-NO}
+
+export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
+export VERSION_TOY=${VERSION_TOY:-"v1-0"}
+
 #
 export NEED_TOOLS=YES
 #
@@ -420,7 +424,7 @@ fi
 #  Install OASIS if VER_OASIS=OASISAUTO
 #
 if [ "x${VER_OASIS}" == "xOASISAUTO" ] ; then
-( cd $LOCAL/src/LIB ; [ ! -d oasis3-mct ] && tar xvfz oasis3-mct_v3.tar.gz ; [ ! -d toy ] && tar xvfz toy_v1-0.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d oasis3-${VERSION_OASIS} ] && tar xvfz oasis3-${VERSION_OASIS}.tar.gz ; [ ! -d toy_${VERSION_TOY} ] && tar xvfz toy_${VERSION_TOY}.tar.gz )
 fi
 #
 #  Install GRIBAPI
