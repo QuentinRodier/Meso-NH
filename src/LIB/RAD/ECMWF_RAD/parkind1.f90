@@ -1,13 +1,13 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
 ! ECMWF_RAD2 2003/02/19 13:36:36
 !-----------------------------------------------------------------
 MODULE PARKIND1
 !
 !     *** Define usual kinds for strong typing ***
 !     J.Escobar : 9/06/2015, for I*8 compilation force JPIM to default size
+!     J.-P. Chaboureau: 14/10/2016, adding logical kind JPLM for RTTOV
 !
 IMPLICIT NONE
 SAVE
@@ -29,5 +29,9 @@ INTEGER, PARAMETER :: JPRS = SELECTED_REAL_KIND(4,2)
 INTEGER, PARAMETER :: JPRM = SELECTED_REAL_KIND(6,37)
 REAL               :: REAL_DEF_JPRB
 INTEGER, PARAMETER :: JPRB = KIND(REAL_DEF_JPRB) ! SELECTED_REAL_KIND(13,300)
+!
+!     Logical Kinds
+!     -------------
+INTEGER, PARAMETER :: JPLM = KIND(.TRUE.)               !Standard logical type
 !
 END MODULE PARKIND1
