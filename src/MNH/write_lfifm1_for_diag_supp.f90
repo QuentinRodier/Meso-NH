@@ -3,10 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !     ######################################
       MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !     ######################################
@@ -83,6 +79,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      P.Tulet : Diag for salt and orilam
 !!      J.-P. Chaboureau 07/03/2016 fix the dimensions of local arrays
+!!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -134,7 +131,12 @@ USE MODI_GRADIENT_V
 USE MODI_GRADIENT_UV
 !
 USE MODI_SHUMAN
-USE MODI_CALL_RTTOV
+#ifdef MNH_RTTOV_8
+USE MODI_CALL_RTTOV8
+#endif
+#ifdef MNH_RTTOV_11
+USE MODI_CALL_RTTOV11
+#endif
 USE MODI_RADTR_SATEL
 USE MODI_UV_TO_ZONAL_AND_MERID
 !
@@ -755,13 +757,23 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !* Brightness temperatures from the Radiatif Transfer for Tiros Operational
-! Vertical Sounder (RTTOV) code (version 8.7)
+! Vertical Sounder (RTTOV) code
 !
 IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
   PRINT*,'YOU ASK FOR BRIGHTNESS TEMPERATURE COMPUTED by RTTOV code'
-  CALL CALL_RTTOV(NDLON, NFLEV, NSTATM, XEMIS, XTSRAD, XSTATM, XTHT, XRT,     &
+#ifdef MNH_RTTOV_8
+  CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS, XTSRAD, XSTATM, XTHT, XRT,    &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
                   LUSERI, NRTTOVINFO, HFMFILE                                 )
+#else
+#ifdef MNH_RTTOV_11
+  CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS, XTSRAD, XTHT, XRT,    &
+                  XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
+                  LUSERI, NRTTOVINFO, HFMFILE                                 )
+#else
+PRINT *, "RTTOV LIBRARY NOT AVAILABLE = ###CALL_RTTOV####"
+#endif
+#endif
 END IF
 !
 !-------------------------------------------------------------------------------
