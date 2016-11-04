@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/test_nam_var.f90,v $ $Revision: 1.2.4.1.18.1 $
 ! MASDEV4_7 init 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !############################
@@ -17,7 +17,8 @@ INTERFACE TEST_NAM_VAR
       SUBROUTINE TEST_NAM_VARC0(KLUOUT,HNAME,HVAR,            &
                                      HVALUE1,HVALUE2,HVALUE3, &
                                      HVALUE4,HVALUE5,HVALUE6, &
-                                     HVALUE7,HVALUE8,HVALUE9,HVALUE10   )
+                                     HVALUE7,HVALUE8,HVALUE9, &
+                                     HVALUE10,HVALUE11        )
 !
 INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
 CHARACTER(LEN=*) ,INTENT(IN)           ::HNAME    ! name of the variable to test
@@ -32,7 +33,8 @@ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE6  ! sixth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
-CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value             
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE11 ! eleventh possible value             
 !
 END SUBROUTINE TEST_NAM_VARC0
 !
@@ -45,7 +47,8 @@ END MODULE MODI_TEST_NAM_VAR
       SUBROUTINE TEST_NAM_VARC0(KLUOUT,HNAME,HVAR,            &
                                      HVALUE1,HVALUE2,HVALUE3, &
                                      HVALUE4,HVALUE5,HVALUE6, &
-                                     HVALUE7,HVALUE8,HVALUE9,HVALUE10   )
+                                     HVALUE7,HVALUE8,HVALUE9, &
+                                     HVALUE10,HVALUE11        )
 !     #########################################################
 !
 !!****  *TEST_NAM_VARC0* - routine to test the value of a character var.
@@ -79,6 +82,7 @@ END MODULE MODI_TEST_NAM_VAR
 !!    -------------
 !!
 !!      original                                                     17/04/98
+!!      B.Vie 2016 : for LIMA add arguments
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -101,6 +105,7 @@ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE6  ! sixth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE11 ! eleventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value           
 !
 !*      0.2   Declarations of local variables
@@ -148,6 +153,10 @@ IF ( PRESENT (HVALUE10) ) THEN
   IF ( HVAR==HVALUE10 ) RETURN
 END IF
 !
+IF ( PRESENT (HVALUE11) ) THEN  
+  IF ( HVAR==HVALUE11 ) RETURN
+END IF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -168,6 +177,7 @@ IF ( PRESENT (HVALUE7) ) WRITE (KLUOUT,*) '"',HVALUE7,'"'
 IF ( PRESENT (HVALUE8) ) WRITE (KLUOUT,*) '"',HVALUE8,'"'
 IF ( PRESENT (HVALUE9) ) WRITE (KLUOUT,*) '"',HVALUE9,'"'
 IF ( PRESENT (HVALUE10) ) WRITE (KLUOUT,*) '"',HVALUE10,'"'
+IF ( PRESENT (HVALUE11) ) WRITE (KLUOUT,*) '"',HVALUE11,'"'
 !
  !callabortstop
 CALL ABORT

@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/goto_model_wrapper.f90,v $ $Revision: 1.2.4.1.2.3.4.2.2.3 $
 ! MASDEV4_7 newsrc 2006/06/26 12:01:39
 !
 !!    MODIFICATIONS
@@ -13,6 +13,7 @@
 !!      06/12 (Tomasini) Grid-nesting of ADVFRC and EDDY_FLUX
 !!      07/13 (Bosseur & Filippi) adds Forefire
 !!      2014 (Faivre)
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -100,6 +101,9 @@ USE MODD_CH_ROSENBROCK_n
 USE MODD_RBK90_Global_n
 USE MODD_RBK90_JacobianSP_n
 USE MODD_RBK90_Parameters_n
+!
+USE MODD_LIMA_PRECIP_SCAVENGING_n
+!
 USE MODD_DEF_EDDY_FLUX_n
 USE MODD_DEF_EDDYUV_FLUX_n
 USE MODD_RELFRC_n
@@ -183,6 +187,9 @@ CALL CH_ROSENBROCK_GOTO_MODEL(KFROM, KTO)
 CALL RBK90_Global_GOTO_MODEL(KFROM, KTO)
 CALL RBK90_JacobianSP_GOTO_MODEL(KFROM, KTO)
 CALL RBK90_Parameters_GOTO_MODEL(KFROM, KTO)
+!
+CALL LIMA_PRECIP_SCAVENGING_GOTO_MODEL(KFROM, KTO)
+!
 CALL EDDY_FLUX_GOTO_MODEL(KFROM, KTO)
 CALL EDDYUV_FLUX_GOTO_MODEL(KFROM, KTO)
 CALL ADVFRC_GOTO_MODEL(KFROM, KTO)

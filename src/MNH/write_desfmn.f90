@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/write_desfmn.f90,v $ $Revision: 1.2.2.1.2.1.2.2.10.1.2.4 $ $Date: 2014/02/14 09:15:53 $
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_WRITE_DESFM_n
@@ -142,6 +142,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification   V. Masson      01/2004  removes surface (externalization)
 !!      Modification   P. Tulet       01/2005  add dust, orilam
 !!      Modification                  05/2006  Remove EPS and OWRIGET
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -150,6 +151,7 @@ USE MODE_FM
 !
 USE MODD_PARAMETERS
 USE MODD_CONF
+USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA
 !
 USE MODN_CONF
 USE MODN_DYN
@@ -175,6 +177,7 @@ USE MODN_CH_MNHC_n
 USE MODN_CH_SOLVER_n
 USE MODN_PARAM_C2R2
 USE MODN_PARAM_C1R3
+USE MODN_PARAM_LIMA
 USE MODN_ELEC
 USE MODN_SERIES
 USE MODN_SERIES_n 
@@ -214,7 +217,8 @@ LOGICAL                     ::  GHORELAX_UVWTH,                               &
 #ifdef MNH_FOREFIRE
                                 GHORELAX_SVFF,                                &
 #endif
-                                GHORELAX_SVCHEM, GHORELAX_SVC1R3,GHORELAX_SVELEC
+                                GHORELAX_SVCHEM, GHORELAX_SVC1R3,             &
+                                GHORELAX_SVELEC, GHORELAX_SVLIMA
 LOGICAL                     ::  GHORELAX_SVDST, GHORELAX_SVSLT,  GHORELAX_SVAER
 LOGICAL, DIMENSION(JPSVMAX) ::  GHORELAX_SV
 !
@@ -249,6 +253,7 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
   GHORELAX_SV(:) = LHORELAX_SV(:)
   GHORELAX_SVC2R2= LHORELAX_SVC2R2
   GHORELAX_SVC1R3= LHORELAX_SVC1R3
+  GHORELAX_SVLIMA= LHORELAX_SVLIMA
   GHORELAX_SVELEC= LHORELAX_SVELEC
   GHORELAX_SVCHEM= LHORELAX_SVCHEM
   GHORELAX_SVCHIC= LHORELAX_SVCHIC
@@ -272,6 +277,7 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
   LHORELAX_SV(:) = .FALSE.
   LHORELAX_SVC2R2= .FALSE.
   LHORELAX_SVC1R3= .FALSE.
+  LHORELAX_SVLIMA= .FALSE.
   LHORELAX_SVELEC= .FALSE.
   LHORELAX_SVCHEM= .FALSE.
   LHORELAX_SVCHIC= .FALSE.
@@ -388,6 +394,7 @@ IF(CCLOUD(1:3) == 'ICE')  WRITE(UNIT=ILUSEG,NML=NAM_PARAM_ICE)
 IF(CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') &
                      WRITE(UNIT=ILUSEG,NML=NAM_PARAM_C2R2)
 IF(CCLOUD == 'C3R5' ) WRITE(UNIT=ILUSEG,NML=NAM_PARAM_C1R3) 
+IF(CCLOUD == 'LIMA' ) WRITE(UNIT=ILUSEG,NML=NAM_PARAM_LIMA) 
 IF(CELEC /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_ELEC) 
 IF(LSERIES) WRITE(UNIT=ILUSEG,NML=NAM_SERIES)
 IF(NMODEL_CLOUD/=NUNDEF) WRITE(UNIT=ILUSEG,NML=NAM_TURB_CLOUD)
@@ -549,7 +556,12 @@ IF (NVERB >= 5) THEN
       END IF
     END IF
 !
-    IF( CCLOUD == 'KHKO' ) THEN                                                   
+    IF( CCLOUD == 'LIMA' ) THEN
+      WRITE(UNIT=ILUOUT,FMT="('*********** LIMA SCHEME *********************')")
+      WRITE(UNIT=ILUOUT,NML=NAM_PARAM_LIMA)
+    END IF
+!
+    IF( CCLOUD == 'KHKO' ) THEN
       WRITE(UNIT=ILUOUT,FMT="('*********** KHKO SCHEME *********************')")
       WRITE(UNIT=ILUOUT,NML=NAM_PARAM_C2R2)
     END IF
@@ -581,6 +593,7 @@ IF (CPROGRAM /='MESONH') THEN !return to previous LHORELAX_
   LHORELAX_SV(:) = GHORELAX_SV(:)
   LHORELAX_SVC2R2= GHORELAX_SVC2R2
   LHORELAX_SVC1R3= GHORELAX_SVC1R3
+  LHORELAX_SVLIMA= GHORELAX_SVLIMA
   LHORELAX_SVELEC= GHORELAX_SVELEC
   LHORELAX_SVCHEM= GHORELAX_SVCHEM
   LHORELAX_SVCHIC= GHORELAX_SVCHIC

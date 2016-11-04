@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_micron.f90,v $ $Revision: 1.3.2.2.2.1.2.2.10.2 $
 ! MASDEV4_7 init 2007/03/23 11:55:57
 !-----------------------------------------------------------------
 !      ########################
@@ -50,6 +50,7 @@ END MODULE MODI_INI_MICRO_n
 !!    -------------
 !!      Original         27/11/02
 !!      O.Geoffroy (03/2006) : Add KHKO scheme
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!
 !! --------------------------------------------------------------------------
 !
@@ -57,8 +58,6 @@ END MODULE MODI_INI_MICRO_n
 !          ------------
 !
 !
-USE MODD_NSV, ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
-                                  NSV_C1R3BEG,NSV_C1R3END
 USE MODD_CONF, ONLY : CCONF,CPROGRAM       
 USE MODD_LUNIT_n, ONLY : CINIFILE,CLUOUT
 USE MODD_GET_n, ONLY : CGETRCT,CGETRRT, CGETRST, CGETRGT, CGETRHT, CGETCLOUD
@@ -89,6 +88,22 @@ USE MODI_SET_CONC_ICE_C1R3
 !
 USE MODE_ll
 USE MODE_MODELN_HANDLER
+!
+USE MODD_NSV,        ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
+                            NSV_C1R3BEG,NSV_C1R3END,              &
+                            NSV_LIMA, NSV_LIMA_BEG, NSV_LIMA_END, &
+                            NSV_LIMA_NC, NSV_LIMA_NR,             &
+                            NSV_LIMA_CCN_FREE, NSV_LIMA_CCN_ACTI, &
+                            NSV_LIMA_SCAVMASS,                    &
+                            NSV_LIMA_NI,                          &
+                            NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, &
+                            NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
+USE MODD_PARAM_LIMA, ONLY : LSCAV, MSEDC=>LSEDC, MACTIT=>LACTIT
+USE MODD_LIMA_PRECIP_SCAVENGING_n
+!
+USE MODI_INIT_AEROSOL_CONCENTRATION
+USE MODI_INI_LIMA
+USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -140,9 +155,9 @@ ELSE
   ALLOCATE(XACPRR(0,0))
 END IF
 !
-IF ((CCLOUD(1:3) == 'ICE' .AND. LSEDIC)  .OR. &
-    ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. &
-    CCLOUD == 'KHKO') .AND. LSEDC)) THEN
+IF (( CCLOUD(1:3) == 'ICE'                                   .AND.LSEDIC) .OR. &
+    ((CCLOUD=='C2R2' .OR. CCLOUD=='C3R5' .OR. CCLOUD=='KHKO').AND.LSEDC)  .OR. &
+    ( CCLOUD=='LIMA'                                         .AND.MSEDC))  THEN
   ALLOCATE(XINPRC(IIU,IJU))
   ALLOCATE(XACPRC(IIU,IJU))
   XINPRC(:,:)=0.0
@@ -152,7 +167,7 @@ ELSE
   ALLOCATE(XACPRC(0,0))
 END IF
 !
-IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5') THEN
+IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRS(IIU,IJU))
   ALLOCATE(XACPRS(IIU,IJU))
   XINPRS(:,:)=0.0
@@ -162,7 +177,7 @@ ELSE
   ALLOCATE(XACPRS(0,0))
  END IF
 !
-IF (CCLOUD == 'C3R5' .OR. CCLOUD(1:3) == 'ICE' ) THEN
+IF (CCLOUD == 'C3R5' .OR. CCLOUD(1:3) == 'ICE'.OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRG(IIU,IJU))
   ALLOCATE(XACPRG(IIU,IJU))
   XINPRG(:,:)=0.0
@@ -172,7 +187,7 @@ ELSE
   ALLOCATE(XACPRG(0,0))
 END IF
 !
-IF (CCLOUD =='ICE4') THEN
+IF (CCLOUD =='ICE4' .OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRH(IIU,IJU))
   ALLOCATE(XACPRH(IIU,IJU))
   XINPRH(:,:)=0.0
@@ -186,7 +201,7 @@ IF(SIZE(XINPRR) == 0) RETURN
 !
 !*       2b.    ALLOCATION for Radiative cooling 
 !              ------------------------------
-IF (LACTIT) THEN
+IF (LACTIT .OR. MACTIT) THEN
   ALLOCATE( XTHM(IIU,IJU,IKU) )
   ALLOCATE( XRCM(IIU,IJU,IKU) )
   XTHM = XTHT
@@ -196,12 +211,23 @@ IF (LACTIT) THEN
   ALLOCATE( XRCM(0,0,0) )
 END IF
 !
+!
+!*       2.bis ALLOCATE  Module MODD_PRECIP_SCAVENGING_n
+!              ------------------------------
+!
+IF ( (CCLOUD=='LIMA') .AND. LSCAV ) THEN
+  ALLOCATE(XINPAP(IIU,IJU))
+  ALLOCATE(XACPAP(IIU,IJU))
+  XINPAP(:,:)=0.0
+  XACPAP(:,:)=0.0  
+END IF
+!
 !*       3.    INITIALIZE MODD_PRECIP_n variables
 !              ----------------------------------
 !
-CALL READ_PRECIP_FIELD(CINIFILE,CLUOUT,CPROGRAM,CCONF,                           &
-                  CGETRCT,CGETRRT,CGETRST,CGETRGT,CGETRHT,                       &
-                  XINPRC,XACPRC,XINPRR,XINPRR3D,XEVAP3D,                         &
+CALL READ_PRECIP_FIELD(CINIFILE,CLUOUT,CPROGRAM,CCONF,              &
+                  CGETRCT,CGETRRT,CGETRST,CGETRGT,CGETRHT,          &
+                  XINPRC,XACPRC,XINPRR,XINPRR3D,XEVAP3D,            &
                   XACPRR,XINPRS,XACPRS,XINPRG,XACPRG, XINPRH,XACPRH )           
 !
 !
@@ -220,17 +246,24 @@ DO JK = IKB,IKE
 END DO
 ZDZMIN = MIN_ll (ZDZ,IINFO_ll,1,1,IKB,NIMAX_ll+2*JPHEXT,NJMAX_ll+2*JPHEXT,IKE )
 DEALLOCATE(ZDZ)
+!
 IF (CCLOUD(1:3) == 'KES') THEN
   CALL INI_CLOUD(XTSTEP,ZDZMIN,NSPLITR)                  ! Warm cloud only
 ELSE IF (CCLOUD(1:3) == 'ICE'  ) THEN
-  CALL INI_RAIN_ICE(KLUOUT,XTSTEP,ZDZMIN,NSPLITR,CCLOUD)        ! Mixed phase cloud
+  CALL INI_RAIN_ICE(KLUOUT,XTSTEP,ZDZMIN,NSPLITR,CCLOUD) ! Mixed phase cloud
                                                          ! including hail
-ELSE IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' &
-         .OR. CCLOUD == 'KHKO') THEN
-  CALL INI_RAIN_C2R2(XTSTEP,ZDZMIN,NSPLITR,CCLOUD)        ! 1/2 spectral warm cloud
+ELSE IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
+  CALL INI_RAIN_C2R2(XTSTEP,ZDZMIN,NSPLITR,CCLOUD)       ! 1/2 spectral warm cloud
   IF (CCLOUD == 'C3R5') THEN
     CALL INI_ICE_C1R3(XTSTEP,ZDZMIN,NSPLITG)       ! 1/2 spectral cold cloud
   END IF
+ELSE IF (CCLOUD == 'LIMA') THEN               
+   IF (CGETCLOUD /= 'READ') THEN 
+      CALL INIT_AEROSOL_CONCENTRATION(XRHODREF,                              &
+                                      XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), &
+                                                                  XZZ(:,:,:) )
+   END IF
+   CALL INI_LIMA(XTSTEP,ZDZMIN,NSPLITR, NSPLITG)   ! 1/2 spectral warm cloud
 END IF
 !
 IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
@@ -249,6 +282,13 @@ IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') THEN
     ENDIF
   ENDIF
 ENDIF
+!
+IF (CCLOUD == 'LIMA') THEN
+   IF (CGETCLOUD/='READ') THEN
+      CALL SET_CONC_LIMA(CLUOUT,CGETCLOUD,XRHODREF,&
+                         XRT,XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END))
+   END IF
+END IF
 !
 !
 !*       5.    INITIALIZE ATMOSPHERIC ELECTRICITY

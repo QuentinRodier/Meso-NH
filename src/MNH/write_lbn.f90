@@ -5,7 +5,8 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lbn.f90,v $ $Revision: 1.2.2.4.2.2.2.2.10.1.2.2 $
+! masdev4_8 init 2008/06/30 12:13:35
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_WRITE_LB_n
@@ -75,6 +76,7 @@ END MODULE MODI_WRITE_LB_n
 !!     M. Leriche  07/10    add NSV_* for ice phase chemistry
 !!     P. Tulet    09/14    modif SALT
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!    J.-P. Pinty  09/02/16 Add LIMA that is LBC for CCN and IFN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -88,6 +90,8 @@ USE MODD_LUNIT_n
 USE MODD_PARAM_n
 USE MODD_TURB_n
 USE MODD_NSV
+USE MODD_PARAM_LIMA
+USE MODD_PARAM_n
 !
 USE MODE_FMWRIT
 USE MODE_ll
@@ -99,6 +103,8 @@ USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 USE MODD_CH_AEROSOL
 USE MODD_CH_AERO_n
 USE MODI_CH_AER_REALLFI_n
@@ -142,6 +148,7 @@ INTEGER  :: JK
 !         Integers, counters for dust modes
 INTEGER                          :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX
 INTEGER :: IMI ! Current model index
+CHARACTER(LEN=2)  :: INDICE ! to index CCN and IFN fields of LIMA scheme
 !-------------------------------------------------------------------------------
 !
 !*       1.    SOME INITIALIZATIONS
@@ -388,6 +395,51 @@ IF (NSV >=1) THEN
            & IGRID,ILENCH,YCOMMENT,IRESP)
     END IF
   END DO
+!
+! LIMA: CCN and IFN scalar variables
+!
+  IF (CCLOUD=='LIMA' ) THEN
+    DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+      IF(NSIZELBXSV_ll /= 0) THEN
+        YRECFM='LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (/KG)'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      END IF
+!
+      IF(NSIZELBYSV_ll /= 0) THEN
+        YRECFM='LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (/KG)'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      END IF
+    END DO
+!
+    DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+      IF(NSIZELBXSV_ll /= 0) THEN
+        YRECFM='LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (/KG)'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      END IF
+!
+      IF(NSIZELBYSV_ll /= 0) THEN
+        YRECFM='LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (/KG)'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT_LB(HFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      END IF
+    END DO
+  END IF
+!
+! ELEC
+!
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     IF(NSIZELBXSV_ll /= 0) THEN
       YRECFM='LBX_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))

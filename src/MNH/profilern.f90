@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/profilern.f90,v $ $Revision: 1.3.4.1.2.1.10.2.2.3 $
 ! MASDEV4_7 profiler 2006/06/01 09:51:49
 !-----------------------------------------------------------------
 !      ##########################
@@ -18,9 +18,7 @@ INTERFACE
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS,PP, PAER, PCLDFR, PCIT,                 &
-                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,&
-                            PINPRC3D,PINPRR3D,PINPRS3D,PINPRG3D,PINPRH3D)
+                         PTS,PP, PAER, PCLDFR, PCIT)
 !
 USE MODD_TYPE_DATE
 !
@@ -46,16 +44,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRC3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRR3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRS3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRG3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRH3D! 3D sedimentation rate     
 !
 !-------------------------------------------------------------------------------
 !
@@ -70,9 +58,7 @@ END MODULE MODI_PROFILER_n
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                            PTS, PP, PAER, PCLDFR, PCIT,          &
-                            PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,&
-                            PINPRC3D,PINPRR3D,PINPRS3D,PINPRG3D,PINPRH3D)
+                         PTS,PP, PAER, PCLDFR, PCIT)
 !     ########################################################
 !
 !
@@ -107,8 +93,6 @@ END MODULE MODI_PROFILER_n
 !!     Original 15/02/2002
 !!     March 2013 : C.Lac : Corrections for 1D + new fields (RARE,THV,DD,FF)
 !!     April 2014 : C.Lac : Call RADAR only if ICE3   
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
 !!
 !!
 !! --------------------------------------------------------------------------
@@ -165,16 +149,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PP     ! pressure
 REAL, DIMENSION(:,:,:,:), INTENT(IN)     :: PAER   ! aerosol extinction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCLDFR ! cloud fraction
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT   ! ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRC3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRR3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRS3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRG3D! 3D sedimentation rate     
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PINPRH3D! 3D sedimentation rate  
 !
 !-------------------------------------------------------------------------------
 !
@@ -232,6 +206,9 @@ REAL                       :: ZZHD_PROFILER ! ZHD at station location
 REAL                       :: ZZWD_PROFILER ! ZWD at station location
 REAL                       :: ZZHDR         ! ZHD correction at station location
 REAL                       :: ZZWDR         ! ZWD correction at station location
+!-------- Calculation parameters --------
+REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
+REAL  :: ZRDSRV                 ! XRD/XRV
 !
 INTEGER                    :: IINFO_ll    ! return code
 INTEGER                    :: ILUOUT      ! logical unit
@@ -241,8 +218,6 @@ INTEGER                    :: I           ! loop for stations
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2))              :: ZZTD,ZZHD,ZZWD
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZTHV,ZTEMPV
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK32,ZWORK33,ZWORK34,ZCIT
-REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
-REAL  :: ZRDSRV                 ! XRD/XRV
 !----------------------------------------------------------------------------
 !
 !*      2.   PRELIMINARIES
@@ -521,16 +496,6 @@ IF (GSTORE) THEN
       TPROFILER%ZZ  (IN,:,I) = ZZ(:)
       TPROFILER%RHOD(IN,:,I) = ZRHOD(:)
       IF (SIZE(PR,4) == 6) TPROFILER%RARE(IN,:,I) = PROFILER_INTERP(ZRARE)
-      TPROFILER%SPEEDC(IN,:,I) = PROFILER_INTERP(PSPEEDC)
-      TPROFILER%SPEEDR(IN,:,I) = PROFILER_INTERP(PSPEEDR)
-      TPROFILER%SPEEDS(IN,:,I) = PROFILER_INTERP(PSPEEDS)
-      TPROFILER%SPEEDG(IN,:,I) = PROFILER_INTERP(PSPEEDG)
-      TPROFILER%SPEEDH(IN,:,I) = PROFILER_INTERP(PSPEEDH)
-      TPROFILER%INPRC3D(IN,:,I) = PROFILER_INTERP(PINPRC3D)*3.6E6
-      TPROFILER%INPRR3D(IN,:,I) = PROFILER_INTERP(PINPRR3D)*3.6E6
-      TPROFILER%INPRS3D(IN,:,I) = PROFILER_INTERP(PINPRS3D)*3.6E6
-      TPROFILER%INPRG3D(IN,:,I) = PROFILER_INTERP(PINPRG3D)*3.6E6
-      TPROFILER%INPRH3D(IN,:,I) = PROFILER_INTERP(PINPRH3D)*3.6E6
       IF (.NOT. L1D) THEN
         TPROFILER%P   (IN,:,I) = PROFILER_INTERP(PP(II(I):II(I)+1,IJ(I):IJ(I)+1,:))
       ELSE
@@ -611,16 +576,6 @@ IF (GSTORE) THEN
   CALL DISTRIBUTE_PROFILER(TPROFILER%THV (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RHOD(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RARE(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDC(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDR(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDS(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDG(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%SPEEDH(IN,JK,I))  
-  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRC3D(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRR3D(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRS3D(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRG3D(IN,JK,I))
-  CALL DISTRIBUTE_PROFILER(TPROFILER%INPRH3D(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%ZTD(IN,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%ZHD(IN,I))

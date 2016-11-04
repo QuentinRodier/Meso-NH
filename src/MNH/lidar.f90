@@ -21,11 +21,11 @@ REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! Moist variables at t
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLIDAROUT ! Lidar output
 REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLIPAROUT ! Lidar output (particle only)
 
-REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PCT  ! Concentration 
-                                                       ! (C2R2 and C1R3) 
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTC ! Dust Concentration 
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTD ! Dust Diameter
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTS ! Dust Sigma
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PCT ! Concentration 
+                                                      ! (C2R2 and C1R3) 
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTC ! Dust Concentration 
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTD ! Dust Diameter
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTS ! Dust Sigma
 !
 
 !
@@ -84,6 +84,7 @@ END MODULE MODI_LIDAR
 !!      JP Chaboureau 12/02/10 change dust refraction index
 !!                             add inputs (lidar charact. and cloud fraction)
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!   B.VIE  2016 : LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -93,8 +94,8 @@ USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_RAIN_C2R2_DESCR, ONLY : XLBEXC, XLBEXR, &
                                  XRTMIN, XCTMIN
-USE MODD_PARAM_C2R2,      ONLY : XALPHAC,XNUC, &
-                                 XALPHAR,XNUR
+USE MODD_PARAM_C2R2,      ONLY : YALPHAC=>XALPHAC,YNUC=>XNUC, &
+                                 YALPHAR=>XALPHAR,YNUR=>XNUR
 USE MODD_RAIN_ICE_DESCR,  ONLY : XCCR, WLBEXR=>XLBEXR, XLBR, &
                                  XCCS, XCXS,   XLBEXS, XLBS, &
                                  XCCG, XCXG,   XLBEXG, XLBG, &
@@ -103,9 +104,17 @@ USE MODD_RAIN_ICE_DESCR,  ONLY : XCCR, WLBEXR=>XLBEXR, XLBR, &
 USE MODD_ICE_C1R3_DESCR,  ONLY : XLBEXI,                      &
                                  YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
 !
+USE MODD_PARAM_LIMA,      ONLY : URTMIN=>XRTMIN, UCTMIN=>XCTMIN, &
+                                 UALPHAC=>XALPHAC,UNUC=>XNUC, &
+                                 UALPHAR=>XALPHAR,UNUR=>XNUR, &
+                                 UALPHAI=>XALPHAI,UNUI=>XNUI 
+USE MODD_PARAM_LIMA_COLD, ONLY : UCCS=>XCCS, UCXS=>XCXS, ULBEXS=>XLBEXS, & 
+                                                         ULBS=>XLBS
+USE MODD_PARAM_LIMA_MIXED,ONLY : UCCG=>XCCG, UCXG=>XCXG, ULBEXG=>XLBEXG, &
+                                                         ULBG=>XLBG
+!
 USE MODI_BHMIE_WATER    ! Gamma or mono dispersed size distributions
 USE MODI_BHMIE_AEROSOLS ! Lognormal or mono dispersed size distributions
-USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -124,9 +133,9 @@ REAL, DIMENSION(:,:,:),  INTENT(OUT) :: PLIPAROUT ! Lidar output (particle only)
 
 REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PCT  ! Concentration 
                                                        ! (C2R2 and C1R3) 
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTC ! Dust Concentration 
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTD ! Dust Diameter
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN) :: PDSTS ! Dust Sigma
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTC ! Dust Concentration 
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTD ! Dust Diameter
+REAL, DIMENSION(:,:,:,:), OPTIONAL, INTENT(IN) :: PDSTS ! Dust Sigma
 !
 !*       0.2   Declarations of local variables :
 !
@@ -199,6 +208,11 @@ REAL, DIMENSION(5) :: ZPOLC, ZPOLR, ZPOLI ! BackScat. Coefficients
 ! 
 REAL, DIMENSION(10) :: ZRTMIN, ZCTMIN
 REAL                :: ZLBEXR
+!
+INTEGER :: JL
+REAL :: ZALPHAC, ZNUC, ZALPHAR, ZNUR, ZALPHAI, ZNUI
+REAL :: ZCCS, ZCXS, ZLBEXS, ZLBS
+REAL :: ZCCG, ZCXG, ZLBEXG, ZLBG
 ! 
 ! -----------------------------------------------------------------------------
 !
@@ -246,13 +260,56 @@ SELECT CASE ( HCLOUD )
   CASE('ICE2','ICE3','ICE4')
     ZRTMIN(1:SIZE(WRTMIN)) = WRTMIN(1:SIZE(WRTMIN))
     ZLBEXR = WLBEXR
+    ZCCS    = XCCS
+    ZCXS    = XCXS
+    ZLBEXS  = XLBEXS
+    ZLBS    = XLBS
+    ZCCG    = XCCG
+    ZCXG    = XCXG
+    ZLBEXG  = XLBEXG
+    ZLBG    = XLBG
   CASE('C2R2')
     ZRTMIN(1:SIZE(XRTMIN)) = XRTMIN(1:SIZE(XRTMIN))
     ZCTMIN(1:SIZE(XCTMIN)) = XCTMIN(1:SIZE(XCTMIN))
-    ZLBEXR = XLBEXR
+    ZLBEXR  = XLBEXR
+    ZALPHAC = YALPHAC
+    ZNUR    = YNUR
+    ZALPHAR = YALPHAR
+    ZNUC    = YNUC
   CASE('C3R5')
     ZRTMIN(1:SIZE(YRTMIN)) = YRTMIN(1:SIZE(YRTMIN))
     ZCTMIN(1:SIZE(YCTMIN)) = YCTMIN(1:SIZE(YCTMIN))
+    ZALPHAC = YALPHAC
+    ZNUR    = YNUR
+    ZALPHAR = YALPHAR
+    ZNUC    = YNUC
+    ZALPHAI = ZALPHAC
+    ZNUI    = ZNUC
+    ZCCS    = XCCS
+    ZCXS    = XCXS
+    ZLBEXS  = XLBEXS
+    ZLBS    = XLBS
+    ZCCG    = XCCG
+    ZCXG    = XCXG
+    ZLBEXG  = XLBEXG
+    ZLBG    = XLBG
+  CASE('LIMA')
+      ZRTMIN(1:SIZE(URTMIN)) = URTMIN(1:SIZE(URTMIN))
+      ZCTMIN(1:SIZE(UCTMIN)) = UCTMIN(1:SIZE(UCTMIN))
+      ZALPHAC = UALPHAC
+      ZNUR    = UNUR
+      ZALPHAR = UALPHAR
+      ZNUC    = UNUC
+      ZALPHAI = UALPHAI
+      ZNUI    = UNUI
+      ZCCS    = UCCS
+      ZCXS    = UCXS 
+      ZLBEXS  = ULBEXS 
+      ZLBS    = ULBS
+      ZCCG    = UCCG
+      ZCXG    = UCXG 
+      ZLBEXG  = ULBEXG
+      ZLBG    = ULBG
 END SELECT
 !
 ! -----------------------------------------------------------------------------
@@ -274,26 +331,29 @@ ZALPH_PAR(:,:,:) = 0.
 ! AEROSOL CONTRIBUTION     ! call bhmie_aerosols
 !
 IF (PRESENT(PDSTC)) THEN
-   DO JK = IKB, IKE
-     DO JJ = IJB, IJE
-       DO JI = IIB, IIE
-         IF ( PDSTD(JI,JJ,JK)>0.1 ) THEN
-!
-! Desert dust particles
-!
-           YDSD    = 'MONOD'
-           ZCONC   = PDSTC(JI,JJ,JK)
-           ZFRACVOL_CORE = 1.0
-           ZRADIUS = PDSTD(JI,JJ,JK)*1.0E-6
-           CALL BHMIE_AEROSOLS( ZWAVE_LENGTH, ZZREFIND_DUST, ZZREFIND_DUST,  &
-                                YDSD, ZCONC, ZFRACVOL_CORE, ZEXT_COEF,       &
-                                ZBAK_COEF, PRADIUS=ZRADIUS )
-           ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETAAER * ZEXT_COEF
-           ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
-         END IF
-       END DO
-     END DO
-   END DO
+  DO JL = 1, SIZE(PDSTD,4)
+    DO JK = IKB, IKE
+      DO JJ = IJB, IJE
+        DO JI = IIB, IIE
+          IF ( PDSTD(JI,JJ,JK,JL)>0.1 ) THEN
+ !
+ ! Desert dust particles
+ !
+            YDSD    = 'MONOD'
+            ZCONC   = PDSTC(JI,JJ,JK,JL)
+            ZFRACVOL_CORE = 1.0
+            ZRADIUS = PDSTD(JI,JJ,JK,JL)*1.0E-6
+            IF( ZRADIUS .GE. 1.0E-3 ) ZRADIUS = ZRADIUS * 1.0E-6
+            CALL BHMIE_AEROSOLS( ZWAVE_LENGTH, ZZREFIND_DUST, ZZREFIND_DUST,  &
+                                 YDSD, ZCONC, ZFRACVOL_CORE, ZEXT_COEF,       &
+                                 ZBAK_COEF, PRADIUS=ZRADIUS )
+            ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETAAER * ZEXT_COEF
+            ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
+          END IF
+        END DO
+      END DO
+    END DO
+  END DO
 END IF
 !
 !
@@ -351,7 +411,7 @@ SELECT CASE ( HCLOUD )
         END DO
       END DO
     END DO
-  CASE ('C2R2','C3R5')
+  CASE ('C2R2','C3R5','LIMA')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -366,7 +426,7 @@ SELECT CASE ( HCLOUD )
             IANGLE  = 11
             CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_WAT, YDSD, ZCONC,       &
                               IANGLE, ZEXT_COEF, ZBAK_COEF, KRADIUS=IRADIUS, & 
-                              PALPHA=XALPHAC, PNU=XNUC, PLWC=ZLWC            )
+                              PALPHA=ZALPHAC, PNU=ZNUC, PLWC=ZLWC            )
             ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETACLD * ZEXT_COEF
             ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
           END IF
@@ -387,7 +447,7 @@ SELECT CASE ( HCLOUD )
             IANGLE  = 11
             CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_WAT, YDSD, ZCONC,       &
                               IANGLE, ZEXT_COEF, ZBAK_COEF, KRADIUS=IRADIUS, & 
-                              PALPHA=XALPHAR, PNU=XNUR, PLWC=ZLWC            )
+                              PALPHA=ZALPHAR, PNU=ZNUR, PLWC=ZLWC            )
             ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETACLD * ZEXT_COEF
             ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
           END IF
@@ -425,7 +485,7 @@ SELECT CASE ( HCLOUD )
         END DO
       END DO
     END DO
-  CASE ('C3R5')
+  CASE ('C3R5','LIMA')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -440,7 +500,7 @@ SELECT CASE ( HCLOUD )
             IANGLE  = 11
             CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_ICE, YDSD, ZCONC,       &
                               IANGLE, ZEXT_COEF, ZBAK_COEF, KRADIUS=IRADIUS, &
-                              PALPHA=XALPHAC, PNU=XNUC, PLWC=ZIWC            )
+                              PALPHA=ZALPHAI, PNU=ZNUI, PLWC=ZIWC            )
             ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETACLD * ZEXT_COEF
             ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
           END IF
@@ -449,7 +509,7 @@ SELECT CASE ( HCLOUD )
     END DO
 END SELECT
 SELECT CASE ( HCLOUD )
-  CASE('ICE2','ICE3','ICE4','C3R5')
+  CASE('ICE2','ICE3','ICE4','C3R5','LIMA')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -459,21 +519,23 @@ SELECT CASE ( HCLOUD )
 !
             YDSD = 'MONOD'
             ZIWC    = PRHO(JI,JJ,JK)*PRT(JI,JJ,JK,5)
-            ZLBDAS  = XLBS*(ZIWC)**XLBEXS
-            ZCONC   = XCCS*(ZLBDAS)**XCXS
-            ZRADIUS = 0.5*(3.0/ZLBDAS) ! Assume Marshall-Palmer law for Reff
-            IANGLE  = 11
-            CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_ICE, YDSD, ZCONC,      &
-                              IANGLE, ZEXT_COEF, ZBAK_COEF, PRADIUS=ZRADIUS )
-            ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETACLD * ZEXT_COEF
-            ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
+            ZLBDAS  = ZLBS*(ZIWC)**ZLBEXS
+            IF (ZLBDAS .GT. 0) THEN
+              ZCONC   = ZCCS*(ZLBDAS)**ZCXS
+              ZRADIUS = 0.5*(3.0/ZLBDAS) ! Assume Marshall-Palmer law for Reff
+              IANGLE  = 11
+              CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_ICE, YDSD, ZCONC,      &
+                                IANGLE, ZEXT_COEF, ZBAK_COEF, PRADIUS=ZRADIUS )
+              ZALPH_PAR(JI,JJ,JK) = ZALPH_PAR(JI,JJ,JK) + ZETACLD * ZEXT_COEF
+              ZBETA_PAR(JI,JJ,JK) = ZBETA_PAR(JI,JJ,JK) + ZBAK_COEF
+            END IF
           END IF
         END DO
       END DO
     END DO
 END SELECT
 SELECT CASE ( HCLOUD )
-  CASE('ICE3','ICE4','C3R5')
+  CASE('ICE3','ICE4','C3R5','LIMA')
     DO JK = IKB, IKE
       DO JJ = IJB, IJE
         DO JI = IIB, IIE
@@ -483,8 +545,8 @@ SELECT CASE ( HCLOUD )
 !
             YDSD = 'MONOD'
             ZIWC    = PRHO(JI,JJ,JK)*PRT(JI,JJ,JK,6)
-            ZLBDAG  = XLBG*(ZIWC)**XLBEXG
-            ZCONC   = XCCG*(ZLBDAG)**XCXG
+            ZLBDAG  = ZLBG*(ZIWC)**ZLBEXG
+            ZCONC   = ZCCG*(ZLBDAG)**ZCXG
             ZRADIUS = 0.5*(3.0/ZLBDAG) ! Assume Marshall-Palmer law for Reff
             IANGLE  = 11
             CALL BHMIE_WATER( ZWAVE_LENGTH, ZZREFIND_ICE, YDSD, ZCONC,      &

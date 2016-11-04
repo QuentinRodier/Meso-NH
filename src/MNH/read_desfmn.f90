@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/read_desfmn.f90,v $ $Revision: 1.2.2.1.2.1.2.2.10.1.2.4 $ $Date: 2014/02/14 09:15:53 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_READ_DESFM_n
@@ -190,6 +190,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   04/2010   (M. Leriche) Add aqueous + ice chemistry
 !!      Modification   07/2013   (Bosseur & Filippi) Adds Forefire
 !!      Modification   01/2015   (C. Barthe) Add explicit LNOx
+!!      Modification   2016      (B.VIE) LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -208,7 +209,8 @@ USE MODN_PARAM_n
 USE MODN_PARAM_RAD_n
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_MFSHALL_n
-USE MODN_PARAM_ICE
+USE MODN_PARAM_ICE, ONLY : NAM_PARAM_ICE, ZWARM=>LWARM, ZSEDIC=>LSEDIC, &
+                           ZPRISTINE_ICE=>CPRISTINE_ICE, ZSEDIM=>CSEDIM
 USE MODN_LUNIT_n
 USE MODN_LBC_n
 USE MODN_NUDGING_n
@@ -217,8 +219,22 @@ USE MODN_FRC
 USE MODN_BLANK
 USE MODN_CH_SOLVER_n
 USE MODN_CH_MNHC_n
-USE MODN_PARAM_C2R2
-USE MODN_PARAM_C1R3
+USE MODN_PARAM_C2R2, ONLY : HPARAM_CCN_C2R2=>HPARAM_CCN,HINI_CCN_C2R2=>HINI_CCN, &
+                            HTYPE_CCN_C2R2=>HTYPE_CCN,LRAIN_C2R2=>LRAIN, &
+                            LSEDC_C2R2=>LSEDC,LACTIT_C2R2=>LACTIT,XCHEN_C2R2=>XCHEN, &
+                            XKHEN_C2R2=>XKHEN,XMUHEN_C2R2=>XMUHEN, &
+                            XBETAHEN_C2R2=>XBETAHEN,XCONC_CCN_C2R2=>XCONC_CCN, &
+                            XR_MEAN_CCN_C2R2=>XR_MEAN_CCN,XLOGSIG_CCN_C2R2=>XLOGSIG_CCN, &
+                            XFSOLUB_CCN_C2R2=>XFSOLUB_CCN,XACTEMP_CCN_C2R2=>XACTEMP_CCN, &
+                            XALPHAC_C2R2=>XALPHAC,XNUC_C2R2=>XNUC,XALPHAR_C2R2=>XALPHAR, &
+                            XNUR_C2R2=>XNUR,XAERDIFF_C2R2=>XAERDIFF, &
+                            XAERHEIGHT_C2R2=>XAERHEIGHT,NAM_PARAM_C2R2
+USE MODN_PARAM_C1R3, ONLY : XALPHAI_C1R3=>XALPHAI,XNUI_C1R3=>XNUI,XALPHAS_C1R3=>XALPHAS, &
+                            XNUS_C1R3=>XNUS,XALPHAG_C1R3=>XALPHAG,XNUG_C1R3=>XNUG, &
+                            XFACTNUC_DEP_C1R3=>XFACTNUC_DEP, &
+                            XFACTNUC_CON_C1R3=>XFACTNUC_CON,LSEDI_C1R3=>LSEDI, &
+                            LHHONI_C1R3=>LHHONI,CPRISTINE_ICE_C1R3,CHEVRIMED_ICE_C1R3, &
+                            NAM_PARAM_C1R3
 USE MODN_ELEC
 USE MODN_SERIES
 USE MODN_SERIES_n
@@ -235,6 +251,7 @@ USE MODN_CONDSAMP
 USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
 !
+USE MODN_PARAM_LIMA
 !
 USE MODE_POS
 USE MODE_FM
@@ -452,6 +469,8 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAM_C2R2)
   CALL POSNAM(ILUDES,'NAM_PARAM_C1R3',GFOUND)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAM_C1R3)
+  CALL POSNAM(ILUDES,'NAM_PARAM_LIMA',GFOUND)
+  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAM_LIMA)
   CALL POSNAM(ILUDES,'NAM_ELEC',GFOUND)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_ELEC)
   CALL POSNAM(ILUDES,'NAM_SERIES',GFOUND,ILUOUT)
@@ -680,10 +699,15 @@ IF (NVERB >= 10) THEN
       WRITE(UNIT=ILUOUT,NML=NAM_PARAM_C1R3)
     END IF
 !
-    IF (CELEC /= 'NONE') THEN
-      WRITE(UNIT=ILUOUT,FMT="('************ ELEC SCHEME **********************')")
-      WRITE(UNIT=ILUOUT,NML=NAM_ELEC)                                             
+    IF( CCLOUD == 'LIMA' ) THEN
+      WRITE(UNIT=ILUOUT,FMT="('************ LIMA SCHEME **********************')")
+      WRITE(UNIT=ILUOUT,NML=NAM_PARAM_LIMA)
     END IF
+!
+   IF (CELEC /= 'NONE') THEN
+     WRITE(UNIT=ILUOUT,FMT="('************ ELEC SCHEME **********************')")
+     WRITE(UNIT=ILUOUT,NML=NAM_ELEC)                                             
+   END IF
 !    
   END IF
 !

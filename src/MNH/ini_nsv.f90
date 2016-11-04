@@ -62,6 +62,7 @@ END MODULE MODI_INI_NSV
 !!                     03/2013   (C.Lac) add supersaturation as 
 !!                               the 4th C2R2 scalar variable
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
+!!      Modification    01/2016  (JP Pinty) Add LIMA and LUSECHEM condition
 !! 
 !-------------------------------------------------------------------------------
 !
@@ -74,10 +75,11 @@ USE MODD_CH_M9_n,    ONLY : NEQ, NEQAQ
 USE MODD_CH_MNHC_n, ONLY : LUSECHEM, LUSECHAQ, LUSECHIC, CCH_SCHEME, LCH_CONV_LINOX
 USE MODD_DIAG_FLAG,ONLY : LELECDIAG,LCHEMDIAG,LCHAQDIAG
 USE MODD_PARAM_n,   ONLY : CCLOUD, CELEC
-USE MODD_DYN_n,     ONLY : LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3, &
-                          LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
-                          LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
-                          LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC
+USE MODD_DYN_n,     ONLY : LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3,   &
+                           LHORELAX_SVLIMA,                               &
+                           LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
+                           LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
+                           LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC
 #ifdef MNH_FOREFIRE
 USE MODD_DYN_n,     ONLY : LHORELAX_SVFF
 USE MODD_FOREFIRE
@@ -93,10 +95,16 @@ USE MODD_PREP_REAL, ONLY: XT_LS
 USE MODD_ELEC_DESCR, ONLY : LLNOX_EXPLICIT
 USE MODD_PARAM_C2R2, ONLY : LSUPSAT
 !
+USE MODD_PARAM_LIMA, ONLY: NMOD_CCN, LSCAV, LAERO_MASS, &
+                           NMOD_IFN, NMOD_IMM, LHHONI,  &
+                           LWARM, LCOLD, LRAIN
+!
 USE MODI_UPDATE_NSV
 USE MODD_CST, ONLY : XMNH_TINY
 !
 IMPLICIT NONE 
+!
+!-------------------------------------------------------------------------------
 !
 !*       0.1   Declarations of arguments
 !
@@ -105,6 +113,8 @@ INTEGER, INTENT(IN)             :: KMI ! model index
 !*       0.2   Declarations of local variables
 !
 INTEGER :: ISV ! total number of scalar variables
+!
+!-------------------------------------------------------------------------------
 !
 LINI_NSV = .TRUE. 
 !
@@ -147,6 +157,72 @@ ELSE
   NSV_C1R3BEG_A(KMI) = 1
   NSV_C1R3END_A(KMI) = 0
 END IF
+!
+! scalar variables used in the LIMA microphysical scheme
+!
+IF (CCLOUD == 'LIMA' ) THEN
+   ISV = ISV+1
+   NSV_LIMA_BEG_A(KMI) = ISV
+   IF (LWARM) THEN
+! Nc
+      NSV_LIMA_NC_A(KMI) = ISV
+      ISV = ISV+1
+! Nr
+      IF (LRAIN) THEN
+         NSV_LIMA_NR_A(KMI) = ISV
+         ISV = ISV+1
+      END IF
+   END IF ! LWARM
+! CCN
+   IF (NMOD_CCN .GT. 0) THEN
+      NSV_LIMA_CCN_FREE_A(KMI) = ISV
+      ISV = ISV + NMOD_CCN
+      NSV_LIMA_CCN_ACTI_A(KMI) = ISV
+      ISV = ISV + NMOD_CCN
+   END IF
+! Scavenging
+   IF (LSCAV .AND. LAERO_MASS) THEN
+      NSV_LIMA_SCAVMASS_A(KMI) = ISV
+      ISV = ISV+1
+   END IF ! LSCAV
+! 
+   IF (LCOLD) THEN
+! Ni
+      NSV_LIMA_NI_A(KMI) = ISV
+      ISV = ISV+1
+   END IF ! LCOLD
+! IFN
+   IF (NMOD_IFN .GT. 0) THEN
+      NSV_LIMA_IFN_FREE_A(KMI) = ISV
+      ISV = ISV + NMOD_IFN
+      NSV_LIMA_IFN_NUCL_A(KMI) = ISV
+      ISV = ISV + NMOD_IFN
+   END IF
+! IMM
+   IF (NMOD_IMM .GT. 0) THEN
+      NSV_LIMA_IMM_NUCL_A(KMI) = ISV
+      ISV = ISV + MAX(1,NMOD_IMM)
+   END IF
+! Homogeneous freezing of CCN
+   IF (LCOLD .AND. LHHONI) THEN
+      NSV_LIMA_HOM_HAZE_A(KMI) = ISV
+      ISV = ISV + 1
+   END IF
+!
+! End and total variables
+!
+   ISV = ISV - 1
+   NSV_LIMA_END_A(KMI) = ISV
+   NSV_LIMA_A(KMI) = NSV_LIMA_END_A(KMI) - NSV_LIMA_BEG_A(KMI) + 1
+ELSE
+   NSV_LIMA_A(KMI)    = 0
+!
+! force First index to be superior to last index
+! in order to create a null section
+!
+   NSV_LIMA_BEG_A(KMI) = 1
+   NSV_LIMA_END_A(KMI) = 0
+END IF ! CCLOUD = LIMA
 !
 !
 !  Add one scalar for negative ion
@@ -244,7 +320,7 @@ END IF
 !
 ! scalar variables used in chemical core system
 !
-IF (NEQ .GT. 0) THEN
+IF (LUSECHEM .AND.(NEQ .GT. 0)) THEN
   NSV_CHEM_A(KMI)   = NEQ
   NSV_CHEMBEG_A(KMI)= ISV+1
   NSV_CHEMEND_A(KMI)= ISV+NSV_CHEM_A(KMI)
@@ -438,6 +514,9 @@ LHORELAX_SV(NSV_C2R2BEG_A(KMI):NSV_C2R2END_A(KMI))=LHORELAX_SVC2R2
 ! C3R5 SV case
 IF (CCLOUD == 'C3R5') &
 LHORELAX_SV(NSV_C1R3BEG_A(KMI):NSV_C1R3END_A(KMI))=LHORELAX_SVC1R3
+! LIMA SV case
+IF (CCLOUD == 'LIMA') &
+LHORELAX_SV(NSV_LIMA_BEG_A(KMI):NSV_LIMA_END_A(KMI))=LHORELAX_SVLIMA
 ! Electrical SV case
 IF (CELEC /= 'NONE') &
 LHORELAX_SV(NSV_ELECBEG_A(KMI):NSV_ELECEND_A(KMI))=LHORELAX_SVELEC
@@ -483,6 +562,8 @@ IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR.  CCLOUD == 'KHKO' ) &
 XSVMIN(NSV_C2R2BEG_A(KMI):NSV_C2R2END_A(KMI))=0.
 IF (CCLOUD == 'C3R5') &
 XSVMIN(NSV_C1R3BEG_A(KMI):NSV_C1R3END_A(KMI))=0.
+IF (CCLOUD == 'LIMA') &
+XSVMIN(NSV_LIMA_BEG_A(KMI):NSV_LIMA_END_A(KMI))=0.
 IF (CELEC /= 'NONE') &
 XSVMIN(NSV_ELECBEG_A(KMI):NSV_ELECEND_A(KMI))=0.
 IF (LUSECHEM .OR. LCHEMDIAG) &

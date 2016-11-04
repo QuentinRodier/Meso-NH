@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/boundaries.f90,v $ $Revision: 1.3.2.1.2.1.2.2.12.3 $ $Date: 2014/01/09 15:01:54 $
 !-----------------------------------------------------------------
 !#####################
 MODULE MODI_BOUNDARIES
@@ -171,6 +171,7 @@ END MODULE MODI_BOUNDARIES
 !!                                 for non normal velocity and potential temp
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Redelsperger & Pianezze : 08/2015 : add XPOND coefficient
+!!      Modification    01/2016  (JP Pinty) Add LIMA that is LBC for CCN and IFN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -188,8 +189,11 @@ USE MODD_CONDSAMP,    ONLY : LCONDSAMP
 USE MODD_ELEC_DESCR             
 USE MODD_ELEC_n                 
 USE MODD_REF_n    
-USE MODD_PARAM_n,    ONLY : CELEC 
+USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD 
 USE MODD_LBC_n,      ONLY : XPOND
+!
+USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, LBOUND, LWARM, LCOLD
+!
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE,   ONLY : LFOREFIRE
 #endif
@@ -262,7 +266,7 @@ REAL                :: ZPOND      !  Coeff PONDERATION LS
 INTEGER             :: ILBX,ILBY ! size of LB fields' arrays
 LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE :: GCHBOUNDARY, GAERBOUNDARY,&
                     GDSTBOUNDARY, GSLTBOUNDARY, GPPBOUNDARY,          &
-                    GCSBOUNDARY, GICBOUNDARY 
+                    GCSBOUNDARY, GICBOUNDARY, GLIMABOUNDARY 
 LOGICAL, SAVE        :: GFIRSTCALL1 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL2 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL3 = .TRUE.
@@ -270,6 +274,7 @@ LOGICAL, SAVE        :: GFIRSTCALL5 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALLPP = .TRUE.                         
 LOGICAL, SAVE        :: GFIRSTCALLCS = .TRUE.                         
 LOGICAL, SAVE        :: GFIRSTCALLIC = .TRUE.                 
+LOGICAL, SAVE        :: GFIRSTCALLLIMA = .TRUE.                 
 !
 REAL, DIMENSION(SIZE(PLBXWM,1),SIZE(PLBXWM,2),SIZE(PLBXWM,3)) ::  &
                        ZLBXVT,ZLBXWT,ZLBXTHT
@@ -290,6 +295,9 @@ REAL, DIMENSION(SIZE(PLBYSVM,1),SIZE(PLBYSVM,2),SIZE(PLBYSVM,3),SIZE(PLBYSVM,4))
 LOGICAL              :: GCHTMP
 LOGICAL              :: GPPTMP
 LOGICAL              :: GCSTMP
+!
+LOGICAL, SAVE        :: GFIRSTCALL4 = .TRUE.
+!
 #ifdef MNH_FOREFIRE
 LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE ::  GFFBOUNDARY
 LOGICAL, SAVE        :: GFIRSTCALLFF = .TRUE.                         
@@ -854,6 +862,36 @@ SELECT CASE ( HLBCY(2) )
 END SELECT
 END IF
 !
+!
+IF (CCLOUD == 'LIMA' .AND. IMI == 1) THEN
+  IF (GFIRSTCALLLIMA) THEN
+    ALLOCATE(GLIMABOUNDARY(NSV_LIMA))
+    GFIRSTCALLLIMA = .FALSE.
+    DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
+       GCHTMP = .FALSE.
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(JPHEXT,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX-JPHEXT+1,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,JPHEXT,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY-JPHEXT+1,:,JSV)==0)
+       GLIMABOUNDARY(JSV-NSV_LIMA_BEG+1) = GCHTMP
+    ENDDO
+    ENDIF
+
+  DO JSV=NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1 ! LBC for CCN from MACC
+    IF (GLIMABOUNDARY(JSV-NSV_LIMA_CCN_FREE+1)) THEN
+      IF (SIZE(PSVT)>0) THEN
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
+      ENDIF
+    ENDIF
+  ENDDO 
+  DO JSV=NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1 ! LBC for IFN from MACC
+    IF (GLIMABOUNDARY(JSV-NSV_LIMA_IFN_FREE+1)) THEN
+      IF (SIZE(PSVT)>0) THEN
+        CALL CH_BOUNDARIES (HLBCX,HLBCY,PUT,PVT,PSVT(:,:,:,JSV))
+      ENDIF
+    ENDIF
+  ENDDO 
+ENDIF
 !
 IF (LUSECHEM .AND. IMI == 1) THEN
   IF (GFIRSTCALL1) THEN

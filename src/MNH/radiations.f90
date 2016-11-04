@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/radiations.f90,v $ $Revision: 1.3.2.3.2.2.2.4 $
 ! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !    ########################
@@ -211,6 +211,7 @@ END MODULE MODI_RADIATIONS
 !!      V.Masson, C.Lac 08/10 Correction of inversion of Diffuse and direct albedo
 !!      B.Aouizerats 2010     Explicit aerosol optical properties
 !!      C.Lac       11/2015   Correction on aerosols
+!!      B.Vie            /13  LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -231,7 +232,10 @@ USE MODD_NSV, ONLY : NSV_C2R2,NSV_C2R2BEG,NSV_C2R2END, &
                      NSV_C1R3,NSV_C1R3BEG,NSV_C1R3END, &
                      NSV_DSTBEG, NSV_DSTEND, &
                      NSV_AERBEG, NSV_AEREND, &
-                     NSV_SLTBEG, NSV_SLTEND
+                     NSV_SLTBEG, NSV_SLTEND, &
+                     NSV_LIMA,NSV_LIMA_BEG,NSV_LIMA_END, &
+                     NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_NI
+USE MODD_PARAM_n, ONLY : CCLOUD
 !
 USE MODE_THERMO
 
@@ -242,6 +246,7 @@ USE MODD_PARAM_RAD_n, ONLY: CAOP
 USE MODE_DUSTOPT
 USE MODE_SALTOPT
 USE MODI_AEROOPT_GET
+USE MODD_PARAM_LIMA
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -387,6 +392,9 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZDPRES   ! layer pressure thickness
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2! Cloud water Concentarion (C2R2)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2! Rain water Concentarion (C2R2)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3! Ice water Concentarion (C2R2)
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA! Cloud water Concentration(LIMA)
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA! Rain water Concentration(LIMA)
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA! Ice water Concentration(LIMA)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZAER     ! aerosol optical thickness
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBP    ! spectral surface albedo for direct radiations
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBD    ! spectral surface albedo for diffuse radiations 
@@ -514,6 +522,9 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZDZ_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3_SPLIT
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA_SPLIT
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA_SPLIT
+REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA_SPLIT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZTS_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIR_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIF_SPLIT
@@ -721,7 +732,8 @@ IF( SIZE(PRT(:,:,:,:),4) >= 4 ) THEN
       DO JI=IIB,IIE
         IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
         ZQIWC(IIJ,JKRAD) = MAX(0.,PRT(JI,JJ,JK,4)*PRHODREF(JI,JJ,JK))
-        ZQIAVE(IIJ,JKRAD) = MAX( PRT(JI,JJ,JK,4)-XRTMIN(4),0.0 )
+!        ZQIAVE(IIJ,JKRAD) = MAX( PRT(JI,JJ,JK,4)-XRTMIN(4),0.0 )
+        ZQIAVE(IIJ,JKRAD) = MAX( PRT(JI,JJ,JK,4),0.0 )
       END DO
     END DO
   END DO
@@ -773,6 +785,29 @@ IF( NSV_C1R3 /= 0 ) THEN
   END DO
 ELSE 
   ALLOCATE (ZCIT_C1R3(0,0))
+END IF
+!
+!
+!        2.1*bis pronostic water concentation fields (LIMA coupling) 
+!
+IF( CCLOUD == 'LIMA' ) THEN
+   ALLOCATE (ZCCT_LIMA(KDLON, KFLEV))
+   ALLOCATE (ZCRT_LIMA(KDLON, KFLEV))
+   ALLOCATE (ZCIT_LIMA(KDLON, KFLEV))
+   ZCCT_LIMA(:, :) = 0.
+   ZCRT_LIMA (:,:) = 0.
+   ZCIT_LIMA (:,:) = 0.
+   DO JK=IKB,IKE
+      JKRAD = JK-JPVEXT
+      DO JJ=IJB,IJE
+         DO JI=IIB,IIE
+            IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+            IF (LWARM) ZCCT_LIMA(IIJ,JKRAD) = MAX(0.,PSVT(JI,JJ,JK,NSV_LIMA_NC))
+            IF (LWARM .AND. LRAIN) ZCRT_LIMA(IIJ,JKRAD) = MAX(0.,PSVT(JI,JJ,JK,NSV_LIMA_NR))
+            IF (LCOLD) ZCIT_LIMA(IIJ,JKRAD) = MAX(0.,PSVT(JI,JJ,JK,NSV_LIMA_NI))
+         END DO
+      END DO
+   END DO
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -942,10 +977,8 @@ IF (CAOP=='EXPL') THEN
 
  ENDIF
 
-
  ZTAUREL_EQ_TMP(:,:,:,:)=ZTAUREL_DST_TMP(:,:,:,:)+ZTAUREL_AER_TMP(:,:,:,:)+ZTAUREL_SLT_TMP(:,:,:,:)
  
-!PAER(:,:,:,3)=PAER_AER(:,:,:)+PAER_SLT(:,:,:)+PAER_DST(:,:,:)
  PAER(:,:,:,2)=PAER_SLT(:,:,:)
  PAER(:,:,:,3)=PAER_DST(:,:,:)
  PAER(:,:,:,4)=PAER_AER(:,:,:)
@@ -1390,6 +1423,31 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     ZCIT_C1R3 (:,:) = TRANSPOSE( RESHAPE( ZWORK2(:),(/KFLEV,ICLOUD_COL+1/) ) )
   ENDIF
   !
+  ! LIMA water particle concentration
+  !
+  IF( CCLOUD == 'LIMA' ) THEN
+     ZWORK1(:) = PACK( TRANSPOSE(ZCCT_LIMA(:,:)),MASK=GCLOUDT(:,:) )
+     ZWORK2(1:ICLOUD) = ZWORK1(1:ICLOUD) ! fills the ICLOUD_COL cloudy columns
+     ZWORK2(ICLOUD+1:)= 0.0      !   and the single clear_sky one
+     DEALLOCATE(ZCCT_LIMA)
+     ALLOCATE(ZCCT_LIMA(ICLOUD_COL+1,KFLEV))
+     ZCCT_LIMA (:,:) = TRANSPOSE( RESHAPE( ZWORK2(:),(/KFLEV,ICLOUD_COL+1/) ) )
+!
+     ZWORK1(:) = PACK( TRANSPOSE(ZCRT_LIMA(:,:)),MASK=GCLOUDT(:,:) )
+     ZWORK2(1:ICLOUD) = ZWORK1(1:ICLOUD) ! fills the ICLOUD_COL cloudy columns
+     ZWORK2(ICLOUD+1:)= 0.0      !   and the single clear_sky one
+     DEALLOCATE(ZCRT_LIMA)
+     ALLOCATE(ZCRT_LIMA(ICLOUD_COL+1,KFLEV))
+     ZCRT_LIMA (:,:) = TRANSPOSE( RESHAPE( ZWORK2(:),(/KFLEV,ICLOUD_COL+1/) ) )
+!
+     ZWORK1(:) = PACK( TRANSPOSE(ZCIT_LIMA(:,:)),MASK=GCLOUDT(:,:) )
+     ZWORK2(1:ICLOUD) = ZWORK1(1:ICLOUD) ! fills the ICLOUD_COL cloudy columns
+     ZWORK2(ICLOUD+1:)= 0.0      !   and the single clear_sky one
+     DEALLOCATE(ZCIT_LIMA)
+     ALLOCATE(ZCIT_LIMA(ICLOUD_COL+1,KFLEV))
+     ZCIT_LIMA (:,:) = TRANSPOSE( RESHAPE( ZWORK2(:),(/KFLEV,ICLOUD_COL+1/) ) )
+  ENDIF
+  !
   ! ozone content profiles
   !
   ZWORK1(:) = PACK( TRANSPOSE(ZO3AVE(:,:)),MASK=GCLOUDT(:,:) )
@@ -1722,6 +1780,28 @@ IF (SIZE(ZCIT_C1R3) > 0) THEN
   END DO
 END IF
 !
+!LIMA water particle concentration
+!
+IF( CCLOUD == 'LIMA' ) THEN
+   ZWORK_GRID(:,:)=ZCCT_LIMA(:,:)
+   DO JKRAD=1, KFLEV
+      JK1=KFLEV+1-JKRAD
+      ZCCT_LIMA(:,JKRAD)=ZWORK_GRID(:,JK1)
+   END DO
+!
+   ZWORK_GRID(:,:)=ZCRT_LIMA(:,:)
+   DO JKRAD=1, KFLEV
+      JK1=KFLEV+1-JKRAD
+      ZCRT_LIMA(:,JKRAD)=ZWORK_GRID(:,JK1)
+   END DO
+!
+   ZWORK_GRID(:,:)=ZCIT_LIMA(:,:)
+   DO JKRAD=1, KFLEV
+      JK1=KFLEV+1-JKRAD
+      ZCIT_LIMA(:,JKRAD)=ZWORK_GRID(:,JK1)
+   END DO
+END IF
+!
 !ozone content 
 ZWORK_GRID(:,:)=ZO3AVE(:,:)
 DO JKRAD=1, KFLEV
@@ -1868,6 +1948,25 @@ IF( IDIM <= KRAD_COLNBR ) THEN
 ! there is less than KRAD_COLNBR verticals to be considered therefore
 ! no split of the arrays is performed
 !
+ IF (CCLOUD == 'LIMA') THEN
+  CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
+       ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE,               &
+       PCCO2, ZCFAVE, ZDPRES, ZEMIS, ZEMIW, ZLSM, ZRMU0,          &
+       ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
+       ZT_HL,ZTAVE, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
+       ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
+       ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
+       ZSFSWDIR, ZSFSWDIF,                                        &
+       ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
+       ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
+       ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
+       ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
+       ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
+       ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
+       ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
+       GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
+ ELSE
    CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
        ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE,               &
@@ -1885,7 +1984,8 @@ IF( IDIM <= KRAD_COLNBR ) THEN
        ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
-
+ END IF
+!
 ELSE
 !
 ! the splitting of the arrays will be performed
@@ -2019,6 +2119,14 @@ ELSE
       ELSE
         ALLOCATE (ZCIT_C1R3_SPLIT(0,0))
       END IF
+!
+! LIMA coupling
+!
+      IF( CCLOUD == 'LIMA' ) THEN
+          ALLOCATE (ZCCT_LIMA_SPLIT(IDIM_EFF,KFLEV))
+          ALLOCATE (ZCRT_LIMA_SPLIT(IDIM_EFF,KFLEV))
+          ALLOCATE (ZCIT_LIMA_SPLIT(IDIM_EFF,KFLEV))
+      END IF
     END IF
 ! 
 ! fill the splitted arrays with their values taken from the full arrays 
@@ -2056,12 +2164,38 @@ ELSE
     ZQSAVE_SPLIT (:,:) = ZQSAVE (IBEG:IEND ,:)
     ZTS_SPLIT (:) = ZTS (IBEG:IEND)
 !
+!  CALL the ECMWF radiation with the splitted array
+!
+  IF (CCLOUD == 'LIMA') THEN
+! LIMA concentrations
+     ZCCT_LIMA_SPLIT(:,:) = ZCCT_LIMA (IBEG:IEND ,:)
+     ZCRT_LIMA_SPLIT(:,:) = ZCRT_LIMA (IBEG:IEND ,:)
+     ZCIT_LIMA_SPLIT(:,:) = ZCIT_LIMA (IBEG:IEND ,:)
+!
+   CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,               &
+         ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,          &
+         ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT,            &
+         ZPAVE_SPLIT,PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, &
+         ZLSM_SPLIT, ZRMU0_SPLIT,ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,      &
+         ZQLAVE_SPLIT,ZQLWC_SPLIT,ZQSAVE_SPLIT, ZQRAVE_SPLIT,ZQRWC_SPLIT,  ZT_HL_SPLIT,      &
+         ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_LIMA_SPLIT,ZCRT_LIMA_SPLIT,ZCIT_LIMA_SPLIT, &
+         ZNFLW_CS_SPLIT, ZNFLW_SPLIT, ZNFSW_CS_SPLIT,ZNFSW_SPLIT,                 &
+         ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                  &
+         ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                          &
+         ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                 &
+         ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,         &
+         ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,         &
+         ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT,            &
+         ZPLAN_TRA_NIR_SPLIT, ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,           &
+         ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT, ZFLWP_SPLIT,ZFIWP_SPLIT,               &
+         ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
+         ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
+         GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
+  ELSE
 ! C2R2 concentrations
     IF (SIZE (ZCCT_C2R2) > 0)  ZCCT_C2R2_SPLIT(:,:) = ZCCT_C2R2 (IBEG:IEND ,:)
     IF (SIZE (ZCRT_C2R2) > 0)  ZCRT_C2R2_SPLIT(:,:) = ZCRT_C2R2 (IBEG:IEND ,:)  
     IF (SIZE (ZCIT_C1R3) > 0)  ZCIT_C1R3_SPLIT(:,:) = ZCIT_C1R3 (IBEG:IEND ,:)
-!
-!  CALL the ECMWF radiation with the splitted array
 !
    CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,              &    
          ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,                    &
@@ -2082,7 +2216,7 @@ ELSE
          ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
          ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
          GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
-
+    END IF 
 !
 ! fill the full output arrays with the splitted arrays
 !
@@ -2162,9 +2296,12 @@ ELSE
       DEALLOCATE(  ZQLWC_SPLIT     )
       DEALLOCATE(  ZQRWC_SPLIT     )
       DEALLOCATE(  ZQIWC_SPLIT     )
-      DEALLOCATE(   ZCCT_C2R2_SPLIT  )
-      DEALLOCATE(   ZCRT_C2R2_SPLIT  )
-      DEALLOCATE(   ZCIT_C1R3_SPLIT  )
+      IF ( ALLOCATED( ZCCT_C2R2_SPLIT ) ) DEALLOCATE(   ZCCT_C2R2_SPLIT  )
+      IF ( ALLOCATED( ZCRT_C2R2_SPLIT ) ) DEALLOCATE(   ZCRT_C2R2_SPLIT  )
+      IF ( ALLOCATED( ZCIT_C1R3_SPLIT ) ) DEALLOCATE(   ZCIT_C1R3_SPLIT  )
+      IF ( ALLOCATED( ZCCT_LIMA_SPLIT ) ) DEALLOCATE(   ZCCT_LIMA_SPLIT  )
+      IF ( ALLOCATED( ZCRT_LIMA_SPLIT ) ) DEALLOCATE(   ZCRT_LIMA_SPLIT  )
+      IF ( ALLOCATED( ZCIT_LIMA_SPLIT ) ) DEALLOCATE(   ZCIT_LIMA_SPLIT  )
       DEALLOCATE(  ZTS_SPLIT    )
       DEALLOCATE(   ZNFLW_CS_SPLIT)
       DEALLOCATE(   ZNFLW_SPLIT)
@@ -2229,6 +2366,11 @@ DEALLOCATE(ZDPRES)
 DEALLOCATE(ZCCT_C2R2)
 DEALLOCATE(ZCRT_C2R2)
 DEALLOCATE(ZCIT_C1R3)
+IF (CCLOUD == 'LIMA') THEN 
+  DEALLOCATE(ZCCT_LIMA)
+  DEALLOCATE(ZCRT_LIMA)
+  DEALLOCATE(ZCIT_LIMA)
+END IF
 !
 DEALLOCATE(ZTS)
 DEALLOCATE(ZALBP)

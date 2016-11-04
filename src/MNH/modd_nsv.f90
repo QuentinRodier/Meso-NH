@@ -25,6 +25,7 @@
 !!       M. Leriche    08/07/10 add ice phase chemistry
 !!       C.Lac         07/11    add conditional sampling
 !!       Pialat/Tulet  15/02/12 add ForeFire
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!
 !-------------------------------------------------------------------------------
 !
@@ -114,6 +115,20 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_CS_A = 0    ! number of condit.samplings
 INTEGER,DIMENSION(JPMODELMAX)::NSV_CSBEG_A = 0 ! with indices in the range :
 INTEGER,DIMENSION(JPMODELMAX)::NSV_CSEND_A = 0 ! NSV_CSBEG_A...NSV_CSEND_A
 !
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_A = 0     ! number of scalar in LIMA
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_BEG_A = 0 ! with indices in the range :
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_END_A = 0 ! NSV_LIMA_BEG_A...NSV_LIMA_END_A
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_NC_A = 0       ! First Nc variable
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_NR_A = 0       ! First Nr variable
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_CCN_FREE_A = 0 ! First Free CCN conc.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_CCN_ACTI_A = 0 ! First Acti. CNN conc.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_SCAVMASS_A = 0 ! Scavenged mass variable
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_NI_A = 0       ! First Ni var.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IFN_FREE_A = 0 ! First Free IFN conc.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IFN_NUCL_A = 0 ! First Nucl. IFN conc.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_IMM_NUCL_A = 0 ! First Nucl. IMM conc.
+INTEGER,DIMENSION(JPMODELMAX)::NSV_LIMA_HOM_HAZE_A = 0 ! Hom. freezing of CCN
+!
 #ifdef MNH_FOREFIRE
 INTEGER,DIMENSION(JPMODELMAX)::NSV_FF_A = 0    ! number of ForeFire scalar variables
 INTEGER,DIMENSION(JPMODELMAX)::NSV_FFBEG_A = 0 ! with indices in the range :
@@ -196,6 +211,20 @@ INTEGER :: NSV_PPEND = 0 ! NSV_PPBEG...NSV_PPEND
 INTEGER :: NSV_CS    = 0 ! number of condit.samplings         
 INTEGER :: NSV_CSBEG = 0 ! with indices in the range :
 INTEGER :: NSV_CSEND = 0 ! NSV_CSBEG...NSV_CSEND
+!
+INTEGER :: NSV_LIMA     ! number of scalar in LIMA
+INTEGER :: NSV_LIMA_BEG ! with indices in the range :
+INTEGER :: NSV_LIMA_END ! NSV_LIMA_BEG_A...NSV_LIMA_END_A
+INTEGER :: NSV_LIMA_NC       !
+INTEGER :: NSV_LIMA_NR       !
+INTEGER :: NSV_LIMA_CCN_FREE !
+INTEGER :: NSV_LIMA_CCN_ACTI !
+INTEGER :: NSV_LIMA_SCAVMASS !
+INTEGER :: NSV_LIMA_NI       !
+INTEGER :: NSV_LIMA_IFN_FREE !
+INTEGER :: NSV_LIMA_IFN_NUCL !
+INTEGER :: NSV_LIMA_IMM_NUCL !
+INTEGER :: NSV_LIMA_HOM_HAZE !
 !
 #ifdef MNH_FOREFIRE
 INTEGER :: NSV_FF    = 0 ! number of ForeFire scalar variables

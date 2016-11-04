@@ -265,6 +265,7 @@ END MODULE MODI_INI_MODEL_n
 !!       V. Masson     Feb 2015 replaces, for aerosols, cover fractions by sea, town, bare soil fractions
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!                   Jun.  2016 (G.Delautier) phasage surfex 8
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                   Aug.  2016 (J.Pianezze) Add SFX_OASIS_READ_NAM function from SurfEx
 !---------------------------------------------------------------------------------
 !
@@ -415,6 +416,7 @@ USE MODD_RELFRC_n
 USE MODD_2D_FRC
 !
 USE MODE_MPPDB
+USE MODI_INIT_AEROSOL_PROPERTIES
 !
 IMPLICIT NONE
 !
@@ -503,6 +505,12 @@ REAL, DIMENSION(:,:,:), POINTER ::   DPTR_XLSUS,DPTR_XLSVS,DPTR_XLSWS,DPTR_XLSTH
 !
 !*       0.    PROLOGUE
 !              --------
+! Compute relaxation coefficients without changing INI_DYNAMICS nor RELAXDEF
+!
+IF (CCLOUD == 'LIMA') THEN
+  LHORELAX_SVC1R3=LHORELAX_SVLIMA
+END IF
+!
 !
 NULLIFY(TZINITHALO2D_ll)
 NULLIFY(TZINITHALO3D_ll)
@@ -1530,6 +1538,8 @@ ELSE
   IF (.NOT.(ASSOCIATED(XMI))) ALLOCATE(XMI(0,0,0,0))
   IF (.NOT.(ASSOCIATED(XSOLORG))) ALLOCATE(XSOLORG(0,0,0,0))
 END IF
+!
+IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !
 !-------------------------------------------------------------------------------
 !

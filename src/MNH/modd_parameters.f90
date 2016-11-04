@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_parameters.f90,v $ $Revision: 1.1.8.6.2.1.16.2.2.2 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODD_PARAMETERS
@@ -42,6 +42,7 @@
 !!                                         and JPBUMAX from 120 to 250
 !!      Modification 17/05/04 (P.Jabouille) add JPOUTMAX
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      B.VIE 2016 LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -59,7 +60,7 @@ INTEGER, PARAMETER :: JPVEXT_TURB = 1      ! Vertical External points number
 INTEGER, PARAMETER :: JPMODELMAX = 8  ! Maximum allowed number of nested models 
 INTEGER, PARAMETER :: JPCPLFILEMAX = 24 ! Maximum allowed number of CouPLing FILEs
 INTEGER, PARAMETER :: JPBUMAX= 250     ! Maximum of allowed budgets 
-INTEGER, PARAMETER :: JPBUPROMAX = 42 ! Maximum of allowed processes for all
+INTEGER, PARAMETER :: JPBUPROMAX = 60 ! Maximum of allowed processes for all
                                       ! budgets
 INTEGER, PARAMETER :: JPRIMMAX = 6    ! Maximum number of points for the
                        ! horizontal relaxation for the outermost verticals
@@ -73,5 +74,8 @@ INTEGER, PARAMETER :: NUNDEF = 999    ! default value for undefined or unused
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
 INTEGER, PARAMETER :: JPOUTMAX = 192 ! Maximum allowed number of OUTput files
+!
+INTEGER, PARAMETER :: JPLIMACCNMAX = 10 ! Maximum allowed number of CCN modes in LIMA
+INTEGER, PARAMETER :: JPLIMAIFNMAX = 10 ! Maximum allowed number of IFN modes in LIMA
 !
 END MODULE MODD_PARAMETERS

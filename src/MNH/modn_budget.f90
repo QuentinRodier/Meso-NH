@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modn_budget.f90,v $ $Revision: 1.2.2.1.2.1.2.1.10.1.2.3 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODN_BUDGET
@@ -226,6 +226,7 @@
 !!      J.-P. Pinty 25/09/00  add budget terms for C2R2
 !!      D. Gazen    22/01/01  add NCHEMSV
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!      C. Barthe        /16  add budget terms for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -252,7 +253,8 @@ NAMELIST/NAM_BU_RTH/LBU_RTH, NASSETH, NNESTTH, NADVTH, NFRCTH, &
                    NVTURBTH, NDISSHTH, NNEGATH, NREVATH, NCONDTH, NHENUTH, NHONTH, &
                    NSFRTH, NDEPSTH, NDEPGTH,NRIMTH, NACCTH, NCFRZTH, NWETGTH, &
                    NDRYGTH, NGMLTTH, NIMLTTH, NBERFITH, NCDEPITH, NWETHTH, NHMLTTH, &
-                   NMAFLTH, NNETURTH, NNEADVTH,NNECONTH
+                   NMAFLTH, NNETURTH, NNEADVTH, NNECONTH, &
+                   NHINDTH, NHINCTH, NHONHTH, NHONCTH, NHONRTH, NCEDSTH
 !
 NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
                      NFRCTKE, NDIFTKE, NRELTKE, NDRAGTKE,                           &
@@ -261,32 +263,36 @@ NAMELIST/NAM_BU_RTKE/LBU_RTKE, NASSETKE, NADVTKE,    &
 NAMELIST/NAM_BU_RRV/LBU_RRV, NASSERV, NNESTRV, NADVRV, NFRCRV, &
                     NNUDRV, NDIFRV, NRELRV, NDCONVRV, NHTURBRV, NVTURBRV, NNEGARV, &
                     NREVARV, NCONDRV, NHENURV, NDEPSRV, NDEPGRV, NCDEPIRV, NMAFLRV, &
-                    NNETURRV, NNEADVRV,NNECONRV
+                    NNETURRV, NNEADVRV,NNECONRV, NHINDRV, NHONHRV, NCEDSRV
 ! 
 NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
                     NDIFRC, NRELRC, NDCONVRC, NHTURBRC, NVTURBRC, NNEGARC, NACCRRC, &
                     NAUTORC, NCONDRC, NHONRC, NRIMRC, NWETGRC, NDRYGRC, NIMLTRC,   &
                     NBERFIRC, NCDEPIRC, NHENURC, NSEDIRC, NWETHRC, NNETURRC, &
-                    NNEADVRC,NNECONRC
+                    NNEADVRC,NNECONRC, NHINCRC, NHONCRC, NCEDSRC, NREVARC 
 ! 
 NAMELIST/NAM_BU_RRR/LBU_RRR, NASSERR, NNESTRR, NADVRR, NFRCRR, &
                     NDIFRR, NRELRR, NNEGARR, NACCRRR, NAUTORR, NREVARR, NSEDIRR,    &
                     NSFRRR, NACCRR, NCFRZRR, NWETGRR, NDRYGRR, NGMLTRR, NWETHRR,    &
-                    NHMLTRR
+                    NHMLTRR, &
+                    NHONRRR
 ! 
 NAMELIST/NAM_BU_RRI/LBU_RRI, NASSERI, NNESTRI, NADVRI, NFRCRI, &
                     NDIFRI, NRELRI, NDCONVRI, NHTURBRI, NVTURBRI, NNEGARI, NSEDIRI, &
                     NHENURI, NHONRI, NAGGSRI, NAUTSRI, NCFRZRI, NWETGRI, NDRYGRI,   &
-                    NIMLTRI, NBERFIRI, NCDEPIRI, NWETHRI
+                    NIMLTRI, NBERFIRI, NCDEPIRI, NWETHRI, &
+                    NHINDRI, NHINCRI, NHONHRI, NHONCRI, NCNVIRI, NCNVSRI, &
+                    NHMSRI, NHMGRI, NCEDSRI 
 ! 
 NAMELIST/NAM_BU_RRS/LBU_RRS, NASSERS, NNESTRS, NADVRS, NFRCRS, &
                     NDIFRS, NRELRS, NNEGARS, NSEDIRS, NDEPSRS, NAGGSRS, NAUTSRS,    &
-                    NRIMRS, NACCRS, NCMELRS, NWETGRS, NDRYGRS, NWETHRS
+                    NRIMRS, NACCRS, NCMELRS, NWETGRS, NDRYGRS, NWETHRS, &
+                    NCNVIRS, NCNVSRS, NHMSRS
 ! 
 NAMELIST/NAM_BU_RRG/LBU_RRG, NASSERG, NNESTRG, NADVRG, NFRCRG, &
                     NDIFRG, NRELRG, NNEGARG, NSEDIRG, NSFRRG, NDEPGRG, NRIMRG, NACCRG,    &
                     NCMELRG, NCFRZRG, NWETGRG, NDRYGRG, NGMLTRG, NWETHRG, &
-                    NCOHGRG
+                    NHONRRG, NHMGRG, NCOHGRG
 ! 
 NAMELIST/NAM_BU_RRH/LBU_RRH, NASSERH, NNESTRH, NADVRH, NFRCRH, &
                     NDIFRH, NRELRH, NNEGARH, NSEDIRH, NWETGRH, NWETHRH, NCOHGRH, NHMLTRH

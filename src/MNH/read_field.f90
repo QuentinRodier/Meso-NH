@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!     ######spl
+!     ######################
       MODULE MODI_READ_FIELD
 !     ######################
 !
@@ -230,6 +230,7 @@ END MODULE MODI_READ_FIELD
 !!          Bosseur & Filippi 07/13 Adds Forefire
 !!          M. Leriche  11/14     correct bug in pH initialization
 !!          C.Lac       12/14     correction for reproducibility START/RESTA
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -256,6 +257,11 @@ USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
+!
+USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
+                                NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, LHHONI
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 !
 USE MODE_FMREAD
 USE MODI_INI_LS
@@ -390,6 +396,9 @@ CHARACTER (LEN=2)      :: YSTORAGE_TYPE
 ! Modif PP ADV FRC
 REAL, DIMENSION(KIU)        :: X1D    ! forcing working arrays
 REAL, DIMENSION(KIU,KJU,KKU):: XDTH3D,XDRV3D
+!
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
 !
 !-------------------------------------------------------------------------------
 !
@@ -604,7 +613,7 @@ SELECT CASE(HGETCIT)             ! ice concentration
     PCIT(:,:,:)=0.
 END SELECT
 !
-!             Scalar Variables Reading : Users, C2R2, C1R3, ELEC, Chemical SV
+!  Scalar Variables Reading : Users, C2R2, C1R3, LIMA, ELEC, Chemical SV
 !
 YDIR='XY'
 ISV= SIZE(PSVT,4)
@@ -648,6 +657,67 @@ DO JSV = NSV_C1R3BEG,NSV_C1R3END
     YRECFM=TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))//'T'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
          YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+!
+! LIMA variables
+!
+DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+! Nc
+    IF (JSV .EQ. NSV_LIMA_NC) THEN
+      YRECFM=TRIM(CLIMA_WARM_NAMES(1))//'T'
+    END IF
+! Nr
+    IF (JSV .EQ. NSV_LIMA_NR) THEN
+      YRECFM=TRIM(CLIMA_WARM_NAMES(2))//'T'
+    END IF
+! N CCN free
+    IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+      YRECFM=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
+    END IF
+! N CCN acti
+    IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+      YRECFM=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
+    END IF
+! Scavenging
+    IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
+      YRECFM=TRIM(CAERO_MASS(1))//'T'
+    END IF
+! Ni
+    IF (JSV .EQ. NSV_LIMA_NI) THEN
+      YRECFM=TRIM(CLIMA_COLD_NAMES(1))//'T'
+    END IF
+! N IFN free
+    IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+      YRECFM=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+    END IF
+! N IFN nucl
+    IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+      YRECFM=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+    END IF
+! N IMM nucl
+    I = 0
+    IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+    I = I + 1
+    WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+    YRECFM=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+  END IF
+! Hom. freez. of CCN
+  IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
+    YRECFM=TRIM(CLIMA_COLD_NAMES(5))//'T'
+  END IF
+!
+  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,YCOMMENT,IRESP)
+!
     PSVT(:,:,:,JSV) = Z3D(:,:,:)
   CASE ('INIT')
     PSVT(:,:,:,JSV) = 0.

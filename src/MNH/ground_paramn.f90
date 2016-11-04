@@ -105,6 +105,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!     (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
 !      (J.escobar)            2/2014 add Forefire coupling
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!     (B.Vie)                2016 LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -160,6 +161,8 @@ USE MODI_COUPLING_FOREFIRE_n
 USE MODD_TIME_n
 USE MODD_TIME
 USE MODI_TEMPORAL_DIST
+!
+USE MODD_PARAM_LIMA, ONLY : MSEDC=>LSEDC
 !
 IMPLICIT NONE
 !
@@ -445,8 +448,9 @@ ZRHOA(:,:) = ZPA(:,:)/(XRD * ZTA(:,:) * ((1. + (XRD/XRV)*ZRVA(:,:))/ &
 ZRAIN=0.
 ZSNOW=0.
 IF (NRR>2 .AND. SIZE(XINPRR)>0 ) THEN
-  IF ((CCLOUD(1:3) == 'ICE' .AND. LSEDIC) .OR. &
-     ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') .AND. LSEDC)) THEN
+  IF (( CCLOUD(1:3) == 'ICE'                                          .AND. LSEDIC) .OR. &
+      ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') .AND. LSEDC)  .OR. &
+      ( CCLOUD=='LIMA'                                                .AND. MSEDC))   THEN
     ZRAIN = ZRAIN + XINPRR * XRHOLW + XINPRC * XRHOLW
   ELSE
     ZRAIN = ZRAIN + XINPRR * XRHOLW

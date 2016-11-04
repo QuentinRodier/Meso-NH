@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_aircraft_balloon.f90,v $ $Revision: 1.1.10.1.2.1.10.2.2.2 $
 ! MASDEV4_7 modd 2006/06/28 11:31:03
 !-----------------------------------------------------------------
 !     ############################
@@ -36,8 +36,7 @@
 !!      Original    15/05/00
 !!              Apr,19, 2001 (G.Jaubert) add CVBALL type
 !!              March, 2013 : O.Caumont, C.Lac : add vertical profiles
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
+!!              Oct,2016 : G.DELAUTIER LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -135,10 +134,8 @@ REAL, DIMENSION(:,:), POINTER :: FFZ      ! horizontal wind
 REAL, DIMENSION(:,:), POINTER :: IWCZ     ! ice water content              
 REAL, DIMENSION(:,:), POINTER :: LWCZ     ! liquid water content              
 REAL, DIMENSION(:,:), POINTER :: CIZ      ! Ice concentration
-REAL, DIMENSION(:,:), POINTER :: SPEEDCZ  ! Cloud fall velocity 
-REAL, DIMENSION(:,:), POINTER :: SPEEDRZ  ! Rain fall velocity
-REAL, DIMENSION(:,:), POINTER :: SPEEDSZ  ! Snow fall velocity
-REAL, DIMENSION(:,:), POINTER :: SPEEDGZ  ! Graupel fall velocity
+REAL, DIMENSION(:,:), POINTER :: CCZ      ! Cloud concentration (LIMA)
+REAL, DIMENSION(:,:), POINTER :: CRZ      ! Rain concentration (LIMA)
 REAL, DIMENSION(:,:), POINTER :: CRARE     ! cloud radar reflectivity
 REAL, DIMENSION(:,:), POINTER :: CRARE_ATT ! attenuated (= more realistic) cloud radar reflectivity
 REAL, DIMENSION(:,:), POINTER :: WZ        ! vertical profile of vertical velocity

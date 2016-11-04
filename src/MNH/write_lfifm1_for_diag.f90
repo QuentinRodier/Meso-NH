@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag.f90,v $ $Revision: 1.3.2.5.2.4.2.3.2.3.2.4 $
 ! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !################################
@@ -139,6 +139,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       G.Delautier    2014 : remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !!       C. Augros 2014 : new radar simulator (T matrice)
 !!       D.Ricard 2015 : add THETAES + POVOES  (LMOIST_ES=T)
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -181,8 +182,13 @@ USE MODD_ELEC_DESCR, ONLY : CELECNAMES
 USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_ICE_C1R3_PARAM
 USE MODD_PARAM_ICE,       ONLY : LSEDIC
-!USE MODD_PARAM_C2R2,      ONLY : LSEDC
-!USE MODD_PARAM_C1R3
+USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM,&
+                                 LSCAV, LHHONI, LAERO_MASS,                    &
+                                 LLIMA_DIAG,                                   &
+                                 NSPECIE, XMDIAM_IFN, XSIGMA_IFN, ZFRAC=>XFRAC,&
+                                 XR_MEAN_CCN, XLOGSIG_CCN 
+USE MODD_PARAM_LIMA_WARM, ONLY : CLIMA_WARM_CONC, CAERO_MASS
+USE MODD_PARAM_LIMA_COLD, ONLY : CLIMA_COLD_CONC
 USE MODD_LG,              ONLY : CLGNAMES
 USE MODD_PASPOL,          ONLY : LPASPOL
 USE MODD_CONDSAMP,        ONLY : LCONDSAMP
@@ -315,6 +321,9 @@ INTEGER :: ILUOUT0 ! Logical unit number for output-listing
 !
 CHARACTER(LEN=2)  :: INDICE
 INTEGER           :: I
+!
+! LIMA LIDAR
+REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZTMP1, ZTMP2, ZTMP3, ZTMP4
 !
 !-------------------------------------------------------------------------------
 !
@@ -804,7 +813,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR.&
-      CCLOUD == 'KHKO') THEN 
+      CCLOUD == 'KHKO' .OR. CCLOUD == 'LIMA') THEN 
     IF (SIZE(XINPRC) /= 0 ) THEN
       ZWORK21(:,:) = XINPRC(:,:)*3.6E6
       YRECFM      ='INPRC'
@@ -821,7 +830,7 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
     END IF 
   END IF 
-  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5') THEN                      
+  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'LIMA') THEN
     ZWORK21(:,:)  = XINPRS(:,:)*3.6E6
     YRECFM      = 'INPRS'
     YCOMMENT    = 'X_Y_INstantaneaous PRecipitation rate for Snow (MM/H)'
@@ -926,7 +935,7 @@ IF (LVAR_PR ) THEN
   ZWORK31(:,:,:) = DZF(1,IKU,1,XZZ(:,:,:))
   DO JK = IKB,IKE
     !* Calcul de qtot
-    IF  (CCLOUD(1:3) == 'ICE' ) THEN
+    IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
       ZWORK23(IIB:IIE,IJB:IJE) = XRT(IIB:IIE,IJB:IJE,JK,1) + &
       XRT(IIB:IIE,IJB:IJE,JK,2) + XRT(IIB:IIE,IJB:IJE,JK,3) + &
       XRT(IIB:IIE,IJB:IJE,JK,4) + XRT(IIB:IIE,IJB:IJE,JK,5) + &
@@ -956,7 +965,7 @@ IF (LHU_FLX) THEN
   ZWORK35(:,:,:) = XRHODREF(:,:,:) * XRT(:,:,:,1)
   ZWORK31(:,:,:) = MXM(ZWORK35(:,:,:)) * XUT(:,:,:)
   ZWORK32(:,:,:) = MYM(ZWORK35(:,:,:)) * XVT(:,:,:)
-  IF  (CCLOUD(1:3) == 'ICE' ) THEN
+  IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     ZWORK36(:,:,:) = ZWORK35(:,:,:) + XRHODREF(:,:,:) * (XRT(:,:,:,2) + &
     XRT(:,:,:,3) + XRT(:,:,:,4) + XRT(:,:,:,5) + XRT(:,:,:,6))
     ZWORK33(:,:,:) = MXM(ZWORK36(:,:,:)) * XUT(:,:,:)
@@ -993,7 +1002,7 @@ IF (LHU_FLX) THEN
       ENDIF
     ENDDO
   ENDDO
-  IF  (CCLOUD(1:3) == 'ICE' ) THEN
+  IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     ZWORK23(:,:) = 0.
     ZWORK24(:,:) = 0.
     ZWORK26(:,:) = 0.
@@ -1056,7 +1065,7 @@ IF (LHU_FLX) THEN
   ILENCH=LEN(YCOMMENT)
   CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK25*(-1),IGRID,ILENCH,YCOMMENT,IRESP)
   !
-  IF  (CCLOUD(1:3) == 'ICE' ) THEN
+  IF  (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'LIMA') THEN
     !  composantes U et V du flux surfacique d'hydrométéores  
     YRECFM='UM92'
     YCOMMENT='(kg / s / m²)'
@@ -1099,7 +1108,7 @@ ENDIF
 !
 !* Moist variables
 !
-IF (LVAR_MRW) THEN
+IF (LVAR_MRW .OR. LLIMA_DIAG) THEN
   IF (NRR >=1) THEN
     IRR=0                                      ! Moist variables are written
     IGRID=1                                    ! individually in file
@@ -1229,7 +1238,96 @@ IF(LVAR_MRW) THEN
          YCOMMENT,IRESP)   
   END DO
 END IF
-
+!
+! microphysical LIMA scheme scalar variables
+!
+IF (LLIMA_DIAG) THEN
+   DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
+! Nc
+      IF (JSV .EQ. NSV_LIMA_NC) THEN
+         YRECFM=TRIM(CLIMA_WARM_CONC(1))//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! Nr
+      IF (JSV .EQ. NSV_LIMA_NR) THEN
+         YRECFM=TRIM(CLIMA_WARM_CONC(2))//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! N CCN free
+      IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+         YRECFM=TRIM(CLIMA_WARM_CONC(3))//INDICE//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! N CCN acti
+      IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+         YRECFM=TRIM(CLIMA_WARM_CONC(4))//INDICE//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! Scavenging
+      IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
+         YRECFM=TRIM(CAERO_MASS(1))//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (kg/cm^3)'
+      END IF
+! Ni
+      IF (JSV .EQ. NSV_LIMA_NI) THEN
+         YRECFM=TRIM(CLIMA_COLD_CONC(1))//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! N IFN free
+      IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+         YRECFM=TRIM(CLIMA_COLD_CONC(2))//INDICE//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! N IFN nucl
+      IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+         YRECFM=TRIM(CLIMA_COLD_CONC(3))//INDICE//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! N IMM nucl
+      I = 0
+      IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+         I = I + 1
+         WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+         YRECFM=TRIM(CLIMA_COLD_CONC(4))//INDICE//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+! Hom. freez. of CCN
+      IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
+         YRECFM=TRIM(CLIMA_COLD_CONC(5))//'T'
+         WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/cm^3)'
+      END IF
+!
+!
+      ILENCH=LEN(YCOMMENT)
+      ZWORK31(:,:,:)=XSVT(:,:,:,JSV)*1.E-6*XRHODREF(:,:,:)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,    &
+                  YCOMMENT,IRESP)
+   END DO
+!
+   IF (LUSERC) THEN
+      YRECFM= 'LWC'
+      YCOMMENT='X_Y_Z_LWC (g/m^3)'
+      ILENCH=LEN(YCOMMENT)
+      ZWORK31(:,:,:)=XRT(:,:,:,2)*1.E3*XRHODREF(:,:,:)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+   END IF
+!
+   IF (LUSERI) THEN
+      YRECFM= 'IWC'
+      YCOMMENT='X_Y_Z_MRI (g/m^3)'
+      ILENCH=LEN(YCOMMENT)
+      ZWORK31(:,:,:)=XRT(:,:,:,4)*1.E3*XRHODREF(:,:,:)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+   END IF
+!
+END IF
+!
 ! chemical scalar variables in gas phase PPBV
 IF (LCHEMDIAG) THEN
   DO JSV = NSV_CHGSBEG,NSV_CHGSEND
@@ -2041,7 +2139,7 @@ IF (LTPZH .OR. LCOREF) THEN
     ZWORK33(:,:,:)=ZWORK31(:,:,:)
     ZWORK31(:,:,:)=(XMV/XMD)*ZWORK31(:,:,:)/(XPABST(:,:,:)-ZWORK31(:,:,:))
     ZWORK32(:,:,:)=100.*XRT(:,:,:,1)/ZWORK31(:,:,:)
-    IF (CCLOUD(1:3) =='ICE' .OR. CCLOUD =='C3R5')  THEN
+    IF (CCLOUD(1:3) =='ICE' .OR. CCLOUD =='C3R5' .OR. CCLOUD == 'LIMA')  THEN
       WHERE ( ZTEMP(:,:,:)< XTT)
         ZWORK31(:,:,:) = EXP( XALPI - XBETAI/ZTEMP(:,:,:) &
                        - XGAMI*ALOG(ZTEMP(:,:,:)) ) !saturation over ice
@@ -2588,14 +2686,15 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   IF (LUSERR) THEN
     ZWORK21(:,:) = XACPRR(:,:)*1E3      
   END IF
-  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' ) THEN
+  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'LIMA') THEN
     ZWORK21(:,:) = ZWORK21(:,:) + (XACPRS(:,:) + XACPRG(:,:))*1E3
     IF (SIZE(XINPRC) /= 0 ) &         
       ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:) *1E3
     IF (SIZE(XINPRH) /= 0 ) &        
       ZWORK21(:,:) = ZWORK21(:,:) + XACPRH(:,:) *1E3
   END IF
-  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' ) THEN
+  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' &
+                                             .OR. CCLOUD == 'LIMA' ) THEN
     IF (SIZE(XINPRC) /= 0 ) &         
       ZWORK21(:,:) = ZWORK21(:,:) + XACPRC(:,:) *1E3
   END IF
@@ -2603,7 +2702,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
     ZWORK21(:,:) = ZWORK21(:,:) + XPACCONV(:,:)*1E3    
   END IF
   IF (LUSERR .OR. CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
-      CDCONV /= 'NONE') THEN
+                  CCLOUD == 'LIMA' .OR. CDCONV /= 'NONE') THEN
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
   ELSE
     PRINT * ,'YOU WANT TO COMPUTE THE ACCUMULATED RAIN'
@@ -2639,14 +2738,15 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
   IF (LUSERR) THEN
     ZWORK21(:,:) = XINPRR(:,:)*3.6E6      
   END IF
-  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' ) THEN
+  IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'LIMA') THEN
     ZWORK21(:,:) = ZWORK21(:,:) + (XINPRS(:,:) + XINPRG(:,:))*3.6E6
     IF (SIZE(XINPRC) /= 0 ) &      
       ZWORK21(:,:) = ZWORK21(:,:) + XINPRC(:,:) *3.6E6       
     IF (SIZE(XINPRH) /= 0 ) &      
       ZWORK21(:,:) = ZWORK21(:,:) + XINPRH(:,:) *3.6E6       
   END IF
-  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' ) THEN
+  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' &
+                                             .OR. CCLOUD == 'LIMA' ) THEN
     IF (SIZE(XINPRC) /= 0 ) &         
       ZWORK21(:,:) = ZWORK21(:,:) + XINPRC(:,:) *3.6E6        
   END IF
@@ -2654,7 +2754,7 @@ IF (LTOTAL_PR .AND. SIZE (XACPRR)>0 ) THEN
     ZWORK21(:,:) = ZWORK21(:,:) + XPRCONV(:,:)*3.6E6  
   END IF
   IF (LUSERR .OR. CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
-      CDCONV /= 'NONE') THEN
+                  CCLOUD == 'LIMA' .OR. CDCONV /= 'NONE') THEN
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
   ELSE
     PRINT * ,'YOU WANT TO COMPUTE THE RAIN RATE'
@@ -2827,13 +2927,23 @@ IF(LRADAR .AND. LUSERR) THEN
     ALLOCATE(XCIT(IIU,IJU,IKU))    
     XCIT(:,:,:)=800.
     CALL INI_RADAR('PLAT')
+  ELSE IF (CCLOUD=='LIMA') THEN
+    DEALLOCATE(XCIT)
+    ALLOCATE(XCIT(IIU,IJU,IKU))    
+    XCIT(:,:,:)=XSVT(:,:,:,NSV_LIMA_NI)
+    CALL INI_RADAR('PLAT')
   END IF
 !       
   IF (NVERSION_RAD == 1) THEN 
 ! original version of radar diagnostics 
       WRITE(ILUOUT0,*) 'radar diagnostics from RADAR_RAIN_ICE routine'
+  IF (CCLOUD=='LIMA') THEN
+  CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
+                       ZWORK33, ZWORK34,XSVT(:,:,:,NSV_LIMA_NR) )
+  ELSE          
   CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
+  ENDIF                                                
 !
   YRECFM       ='RARE'
   YCOMMENT     ='X_Y_Z_RAdar REflectivity (dBZ)'
@@ -2933,12 +3043,12 @@ IF(LRADAR .AND. LUSERR) THEN
       ALLOCATE(ZWORK42_BIS(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,INBOUT))
     END IF
     !
-!    IF (CCLOUD=='LIMA') THEN
-!      CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XSVT(:,:,:,NSV_LIMA_NI),XRHODREF,&
-!                      ZTEMP,XPABST,ZWORK42,ZWORK43,XSVT(:,:,:,NSV_LIMA_NR))
-!    ELSE ! ICE3
+    IF (CCLOUD=='LIMA') THEN
+      CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XSVT(:,:,:,NSV_LIMA_NI),XRHODREF,&
+                      ZTEMP,XPABST,ZWORK42,ZWORK43,XSVT(:,:,:,NSV_LIMA_NR))
+    ELSE ! ICE3
       CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XCIT,XRHODREF,ZTEMP,XPABSM,ZWORK42,ZWORK43)      
-!    ENDIF
+    ENDIF
     ALLOCATE(YRAD(INBOUT))
     YRAD(1:9)=(/"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"/)
     ICURR=10
@@ -3044,27 +3154,48 @@ IF (LLIDAR) THEN
 !
   IF (LDUST) THEN
     IACCMODE=MIN(2,NMODE_DST)
+    ALLOCATE(ZTMP1(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), 1))
+    ALLOCATE(ZTMP2(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), 1))
+    ALLOCATE(ZTMP3(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), 1))
+    ZTMP1(:,:,:,1)=ZN0_DST(:,:,:,IACCMODE)
+    ZTMP2(:,:,:,1)=ZRG_DST(:,:,:,IACCMODE)
+    ZTMP3(:,:,:,1)=ZSIG_DST(:,:,:,IACCMODE)
     SELECT CASE ( CCLOUD )
     CASE('KESS','ICE2','ICE3','ICE4')
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
-           XRT, ZWORK31, ZWORK32,                                  &
-           PDSTC=ZN0_DST(:,:,:,IACCMODE),                          &
-           PDSTD=ZRG_DST(:,:,:,IACCMODE),                          &
-           PDSTS=ZSIG_DST(:,:,:,IACCMODE) )
+                 XRT, ZWORK31, ZWORK32,                                        &
+                 PDSTC=ZTMP1,                                                  &
+                 PDSTD=ZTMP2,                                                  &
+                 PDSTS=ZTMP3)
     CASE('C2R2')
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
-           XRT, ZWORK31, ZWORK32,                                  &
-           PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END),              &
-           PDSTC=ZN0_DST(:,:,:,IACCMODE),                          &
-           PDSTD=ZRG_DST(:,:,:,IACCMODE),                          &
-           PDSTS=ZSIG_DST(:,:,:,IACCMODE) )
+                 XRT, ZWORK31, ZWORK32,                                        &
+                 PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C2R2END),                    &
+                 PDSTC=ZTMP1,                                                  &
+                 PDSTD=ZTMP2,                                                  &
+                 PDSTS=ZTMP3)
     CASE('C3R5')
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
-           XRT, ZWORK31, ZWORK32,                                  &
-           PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1),            &
-           PDSTC=ZN0_DST(:,:,:,IACCMODE),                          &
-           PDSTD=ZRG_DST(:,:,:,IACCMODE),                          &
-           PDSTS=ZSIG_DST(:,:,:,IACCMODE) )
+                 XRT, ZWORK31, ZWORK32,                                        &
+                 PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1),                  &
+                 PDSTC=ZTMP1,                                                  &
+                 PDSTD=ZTMP2,                                                  &
+                 PDSTS=ZTMP3)
+    CASE('LIMA')
+! PCT(2) = droplets (3)=drops (4)=ice crystals
+       ALLOCATE(ZTMP4(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), 4))
+       ZTMP4(:,:,:,1)=0.
+       ZTMP4(:,:,:,2)=XSVT(:,:,:,NSV_LIMA_NC)
+       ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
+       ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
+!
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+            XRT, ZWORK31, ZWORK32,                                  &
+            PCT=ZTMP4,                            &
+            PDSTC=ZTMP1,                          &
+            PDSTD=ZTMP2,                          &
+            PDSTS=ZTMP3)
+!
     END SELECT
   ELSE
     SELECT CASE ( CCLOUD )
@@ -3079,8 +3210,24 @@ IF (LLIDAR) THEN
       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR, &
            XRT, ZWORK31, ZWORK32,                                  &
            PCT=XSVT(:,:,:,NSV_C2R2BEG+1:NSV_C1R3END-1))
+    CASE('LIMA')
+! PCT(2) = droplets (3)=drops (4)=ice crystals
+       ALLOCATE(ZTMP4(SIZE(XSVT,1), SIZE(XSVT,2), SIZE(XSVT,3), 4))
+       ZTMP4(:,:,:,1)=0.
+       ZTMP4(:,:,:,2)=XSVT(:,:,:,NSV_LIMA_NC)
+       ZTMP4(:,:,:,3)=XSVT(:,:,:,NSV_LIMA_NR)
+       ZTMP4(:,:,:,4)=XSVT(:,:,:,NSV_LIMA_NI)
+!
+       CALL LIDAR(CCLOUD, YVIEW, XALT_LIDAR, XWVL_LIDAR, XZZ, XRHODREF, XCLDFR,&
+            XRT, ZWORK31, ZWORK32,                                  &
+            PCT=ZTMP4)
     END SELECT
   ENDIF
+!
+  IF( ALLOCATED(ZTMP1) ) DEALLOCATE(ZTMP1)
+  IF( ALLOCATED(ZTMP2) ) DEALLOCATE(ZTMP2)
+  IF( ALLOCATED(ZTMP3) ) DEALLOCATE(ZTMP3)
+  IF( ALLOCATED(ZTMP4) ) DEALLOCATE(ZTMP4)
 !
   YRECFM       ='LIDAR'
   YCOMMENT     ='X_Y_Z_Normalized_Lidar_Profile (1/m/sr)'

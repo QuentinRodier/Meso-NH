@@ -38,6 +38,7 @@
 !!      P. Jabouille    07/07/04    add budget terms for microphysics
 !!      C. Barthe       19/11/09    add budget terms for electricity          
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!      C. Barthe            /16    add budget terms for LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -273,6 +274,12 @@ INTEGER, SAVE :: NBERFITH   ! BERgeron-FIndeisen gth. ICE3
 INTEGER, SAVE :: NCDEPITH   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NWETHTH    ! wet growth of hail      ICE4
 INTEGER, SAVE :: NHMLTTH    ! melting of hail         ICE4
+INTEGER, SAVE :: NHINDTH    ! Heterogeneous Nucleation by Deposition C3R5
+INTEGER, SAVE :: NHINCTH    ! Heterogeneous Nucleation by Contact    C3R5
+INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            C3R5
+INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         C3R5
+INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            C3R5
+INTEGER, SAVE :: NCEDSTH    ! adjustment                             C3R5
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
@@ -321,6 +328,9 @@ INTEGER, SAVE :: NHENURV   ! HEterogenous NUcleation ICE3
 INTEGER, SAVE :: NDEPSRV   ! DEPosition on Snow      ICE3
 INTEGER, SAVE :: NDEPGRV   ! DEPosition on Graupel   ICE3
 INTEGER, SAVE :: NCDEPIRV  ! Cond./DEPosition on ice ICE3
+INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition C3R5
+INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            C3R5
+INTEGER, SAVE :: NCEDSRV   ! adjustement                            C3R5
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
@@ -354,6 +364,10 @@ INTEGER, SAVE :: NCDEPIRC   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NHENURC    ! CCN Activation C2R2
 INTEGER, SAVE :: NSEDIRC    ! sedimentation  C2R2
 INTEGER, SAVE :: NWETHRC    ! wet growth of hail
+INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact C3R5
+INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      C3R5
+INTEGER, SAVE :: NCEDSRC    ! adjustment                          C3R5
+INTEGER, SAVE :: NREVARC    ! evaporation of rain drops
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
@@ -380,6 +394,7 @@ INTEGER, SAVE :: NDRYGRR    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NGMLTRR    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRR    ! wet growth of hail      ICE4
 INTEGER, SAVE :: NHMLTRR    ! melting of hail         ICE4
+INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation C3R5
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
@@ -409,6 +424,15 @@ INTEGER, SAVE :: NIMLTRI    ! Ice MeLTing             ICE3
 INTEGER, SAVE :: NBERFIRI   ! BERgeron-FIndeisen gth. ICE3
 INTEGER, SAVE :: NCDEPIRI   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NWETHRI    ! wet growth of hail      ICE4
+INTEGER, SAVE :: NHINDRI ! heterogeneous nucleation by deposition C3R5
+INTEGER, SAVE :: NHINCRI ! heterogeneous nucleation by contact    C3R5
+INTEGER, SAVE :: NHONHRI ! haze homogeneous nucleation source     C3R5
+INTEGER, SAVE :: NHONCRI ! droplet homogeneous nucleation         C3R5
+INTEGER, SAVE :: NCNVIRI ! Conversion of snow to r_i              C3R5
+INTEGER, SAVE :: NCNVSRI ! Conversion of pristine ice to r_s      C3R5
+INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow riming C3R5
+INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming C3R5
+INTEGER, SAVE :: NCEDSRI ! adjustement                            C3R5
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
@@ -433,6 +457,9 @@ INTEGER, SAVE :: NCMELRS    ! Conversion MeLTing      ICE3
 INTEGER, SAVE :: NWETGRS    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRS    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NWETHRS    ! wet growth of hail      ICE4
+INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         C3R5
+INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s C3R5
+INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming C3R5
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
 !
@@ -458,7 +485,9 @@ INTEGER, SAVE :: NWETGRG    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRG    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NGMLTRG    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRG    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NCOHGRG    ! reconversion from hail to graupel ICE4
+INTEGER, SAVE :: NHONRRG    ! drop homogeneous nucleation C3R5
+INTEGER, SAVE :: NHMGRG     ! Hallett-Mossop ice multiplication process due to graupel riming
+INTEGER, SAVE :: NCOHGRG    ! conversion of hail to graupel
 !
 !      Allowed processes for the budget of moist variable RRH (hail)
 !

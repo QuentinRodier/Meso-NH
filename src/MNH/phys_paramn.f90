@@ -222,6 +222,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!      J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                       2014  (M.Faivre)
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  2016 B.VIE LIMA
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -324,6 +325,8 @@ USE MODD_DEF_EDDYUV_FLUX_n         ! Ajout PP
 USE MODD_LATZ_EDFLX
 USE MODD_MNH_SURFEX_n
 USE MODI_SWITCH_SBG_LES_N
+!
+USE MODD_PARAM_LIMA,       ONLY : MSEDC => LSEDC, XRTMIN_LIMA=>XRTMIN
 !
 USE MODE_MPPDB
 IMPLICIT NONE
@@ -470,8 +473,11 @@ DO JKID = IMI+1,NMODEL  ! min value of the possible kids
 END DO
 !
  IF (IMODSON /= 0 ) THEN
-   IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-       (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+   IF (LUSERC .AND. (                                               &
+       (LSEDIC .AND. CCLOUD(1:3) == 'ICE')                     .OR. &
+       (LSEDC  .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR. &
+       (MSEDC  .AND. CCLOUD=='LIMA')                                &
+      )) THEN
      ALLOCATE( ZSAVE_INPRC(SIZE(XINPRC,1),SIZE(XINPRC,2),IMODSON))
    ELSE
      ALLOCATE( ZSAVE_INPRC(0,0,0))
@@ -521,8 +527,11 @@ DO JKID = IMI+1,NMODEL  ! min value of the possible kids
 ! BUG if number of the son does not follow the number of the dad
 ! IKIDM = JKID-IMI
   IKIDM = IKIDM + 1
-   IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR. &
-          (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+   IF (LUSERC .AND. (                                               &
+       (LSEDIC .AND. CCLOUD(1:3) == 'ICE')                     .OR. &
+       (LSEDC  .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR. &
+       (MSEDC  .AND. CCLOUD=='LIMA')                                &
+      )) THEN
      ZSAVE_INPRC(:,:,IKIDM) = XINPRC(:,:)
    END IF
    IF (LUSERR) THEN
@@ -623,6 +632,13 @@ IF (CRAD /='NONE') THEN
                                       ! refreshed but there is no cloudwater and ice
         END IF
       END IF
+      IF( CCLOUD=='LIMA' )THEN
+        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_LIMA(2) .AND.             &
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. GCLOUD_ONLY ) THEN
+            GRAD = .FALSE.            ! only the cloudy verticals would be 
+                                      ! refreshed but there is no cloudwater and ice
+        END IF
+      END IF      
     END IF
   END IF
 !
@@ -1082,11 +1098,14 @@ IF (CSURF=='EXTE') THEN
 ! BUG if number of the son does not follow the number of the dad
 !    IKIDM = JKID-IMI
       IKIDM = IKIDM + 1
-      IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-          (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
-        WHERE (OMASKkids(:,:) )
-          XINPRC(:,:) = ZSAVE_INPRC(:,:,IKIDM)
-        ENDWHERE
+     IF (LUSERC .AND. (                                               &
+         (LSEDIC .AND. CCLOUD(1:3) == 'ICE')                     .OR. &
+         (LSEDC  .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR. &
+         (MSEDC  .AND. CCLOUD=='LIMA')                                &
+        )) THEN
+         WHERE (OMASKkids(:,:) )
+            XINPRC(:,:) = ZSAVE_INPRC(:,:,IKIDM)
+          ENDWHERE
       END IF
       IF (LUSERR) THEN
         WHERE (OMASKkids(:,:) )
@@ -1457,6 +1476,13 @@ IF ((LDUST).OR.(LSALT)) THEN
       IF( CCLOUD=='C3R5' )THEN
         IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_C1R3(2) .AND.             &
             MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_C1R3(4) .AND. GCLOUD_ONLY ) THEN
+            GCLD = .FALSE.            ! only the cloudy verticals would be 
+                                      ! refreshed but there is no cloudwater and ice
+        END IF
+      END IF
+      IF( CCLOUD=='LIMA' )THEN
+        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_LIMA(2) .AND.             &
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. GCLOUD_ONLY ) THEN
             GCLD = .FALSE.            ! only the cloudy verticals would be 
                                       ! refreshed but there is no cloudwater and ice
         END IF

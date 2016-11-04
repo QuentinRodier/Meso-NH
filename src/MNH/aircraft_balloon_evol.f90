@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/aircraft_balloon_evol.f90,v $ $Revision: 1.1.8.1.2.4.2.1.10.1.2.4 $
 ! MASDEV4_7 balloon 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !      ##########################
@@ -19,10 +19,7 @@ INTERFACE
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
                        PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                       PTS, PRHODREF, PCIT,                  &
-                       PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG,   &
-                       PSPEEDH,                              &
-                       TPFLYER, PSEA                         )
+                       PTS, PRHODREF, PCIT,TPFLYER, PSEA     )
 !
 USE MODD_TYPE_DATE
 USE MODD_AIRCRAFT_BALLOON
@@ -50,11 +47,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC  ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR  ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS  ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG  ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH  ! Hail sedimentation speed
 !
 TYPE(FLYER),              INTENT(INOUT)  :: TPFLYER! balloon/aircraft
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
@@ -73,10 +65,7 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
                        PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                       PTS, PRHODREF, PCIT,                  &
-                       PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG,   &
-                       PSPEEDH,                              &                       
-                       TPFLYER, PSEA                         )
+                       PTS, PRHODREF, PCIT,TPFLYER, PSEA     )
 !     ########################################################
 !
 !
@@ -139,9 +128,10 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!     April, 2014 (C.Lac) allow RARE calculation only if CCLOUD=ICE3
 !!     May, 2014 (O.Caumont) modify RARE for hydrometeors containing ice
 !!                           add bright band calculation for RARE
-!!     Feb, 2015 (C.Lac) Correction to prevent aircraft crash
+!!     Feb, 2015 (C.Lac) Correction to prevent aircraft crash 
 !!     July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!      October, 2016 (G.DELAUTIER) LIMA
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -176,6 +166,17 @@ USE MODE_FSCATTER,ONLY : QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODE_FGAU,    ONLY : GAULAG
 USE MODD_REF_n,   ONLY : XRHODREF
 USE MODI_GAMMA,   ONLY : GAMMA
+USE MODD_PARAM_LIMA_WARM, ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
+                                XBC_L=>XBC,XAC_L=>XAC
+USE MODD_PARAM_LIMA_COLD, ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
+                                XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
+                                XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
+
+USE MODD_PARAM_LIMA_MIXED, ONLY:XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
+                                XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
+USE MODD_PARAM_LIMA, ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
+                           XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
+                           XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
 !
 USE MODE_ll
 USE MODE_IO_ll
@@ -185,6 +186,8 @@ USE MODI_WATER_SUM
 USE MODI_TEMPORAL_DIST
 !
 USE MODD_NESTING
+!
+USE MODD_NSV, ONLY : NSV_LIMA_NI,NSV_LIMA_NR,NSV_LIMA_NC
 !
 IMPLICIT NONE
 !
@@ -215,11 +218,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC  ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR  ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS  ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG  ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH  ! Hail sedimentation speed
 !
 TYPE(FLYER),              INTENT(INOUT)  :: TPFLYER! balloon/aircraft
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PSEA
@@ -325,6 +323,7 @@ INTEGER :: IRESP    ! return code
 REAL, DIMENSION(SIZE(PR,3))    :: ZTEMPZ! vertical profile of temperature
 REAL, DIMENSION(SIZE(PR,3))    :: ZRHODREFZ ! vertical profile of dry air density of the reference state
 REAL, DIMENSION(SIZE(PR,3))    :: ZCIT     ! pristine ice concentration
+REAL, DIMENSION(SIZE(PR,3))    :: ZCCI,ZCCR,ZCCC     ! ICE,RAIN CLOUD concentration (LIMA)
 REAL, DIMENSION(SIZE(PR,1),SIZE(PR,2),SIZE(PR,3))    :: ZR   
 REAL, DIMENSION(SIZE(PR,3),SIZE(PR,4)+1) :: ZRZ  ! vertical profile of hydrometeor mixing ratios
 REAL                           :: ZA,ZB,ZCC,ZCX,ZALPHA,ZNU,ZLB,ZLBEX,ZRHOHYD   ! generic microphysical parameters
@@ -340,6 +339,7 @@ REAL                           :: ZFW ! liquid fraction
 REAL                           :: ZFPW ! weight for mixed-phase reflectivity
 REAL,DIMENSION(:),ALLOCATABLE  :: ZX,ZW ! Gauss-Laguerre points and weights
 REAL,DIMENSION(:),ALLOCATABLE  :: ZRTMIN ! local values for XRTMIN
+LOGICAL                        :: GCALC
 !----------------------------------------------------------------------------
 !
 !*      1.   PRELIMINARIES
@@ -1008,24 +1008,31 @@ IF ( TPFLYER%FLY) THEN
         DO JLOOP=1,SIZE(PR,4)
           TPFLYER%RZ  (IN,:,JLOOP) = FLYER_INTERPZ(PR(:,:,:,JLOOP))
         END DO
-        TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))         
-        TPFLYER%FFZ  (IN,:) = FLYER_INTERPZ(SQRT(PU**2+PV**2)) 
-        TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))                               
-        TPFLYER%SPEEDCZ  (IN,:) = FLYER_INTERPZ(PSPEEDC(:,:,:))                               
-        TPFLYER%SPEEDRZ  (IN,:) = FLYER_INTERPZ(PSPEEDR(:,:,:))                               
-        TPFLYER%SPEEDSZ  (IN,:) = FLYER_INTERPZ(PSPEEDS(:,:,:))                               
-        TPFLYER%SPEEDGZ  (IN,:) = FLYER_INTERPZ(PSPEEDG(:,:,:))
-        ! initialization CRARE and CRARE_ATT
+        ! Fin Modifs ON
+        TPFLYER%FFZ  (IN,:) = FLYER_INTERPZ(SQRT(PU**2+PV**2))
+        IF (CCLOUD=="LIMA") THEN                                  
+          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))  
+          TPFLYER%CCZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))  
+          TPFLYER%CRZ  (IN,:) = FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))  
+        ELSE
+          TPFLYER%CIZ  (IN,:) = FLYER_INTERPZ(PCIT(:,:,:))      
+        ENDIF             
+        ! initialization CRARE and CRARE_ATT + LWC and IWC
         TPFLYER%CRARE(IN,:) = 0.
         TPFLYER%CRARE_ATT(IN,:) = 0.
         TPFLYER%LWCZ  (IN,:) = 0.
         TPFLYER%IWCZ  (IN,:) = 0.
-      IF (CCLOUD=="ICE3") THEN ! only for ICE3
-        TPFLYER%LWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,2)+PR(:,:,:,3))*PRHODREF(:,:,:))
-        TPFLYER%IWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
-        ZTEMPZ(:)=FLYER_INTERPZ(PTH(II:II+1,IJ:IJ+1,:) * ZEXN(:,:,:))
+      IF (CCLOUD=="LIMA" .OR. CCLOUD=="ICE3" ) THEN ! only for ICE3 and LIMA
+       TPFLYER%LWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,2)+PR(:,:,:,3))*PRHODREF(:,:,:))
+       TPFLYER%IWCZ  (IN,:) = FLYER_INTERPZ((PR(:,:,:,4)+PR(:,:,:,5)+PR(:,:,:,6))*PRHODREF(:,:,:))
+       ZTEMPZ(:)=FLYER_INTERPZ(PTH(II:II+1,IJ:IJ+1,:) * ZEXN(:,:,:))
         ZRHODREFZ(:)=FLYER_INTERPZ(PRHODREF(:,:,:))
         ZCIT(:)=FLYER_INTERPZ(PCIT(:,:,:))
+        IF (CCLOUD=="LIMA") THEN
+          ZCCI(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NI))
+          ZCCR(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NR))
+          ZCCC(:)=FLYER_INTERPZ(PSV(:,:,:,NSV_LIMA_NC))
+        ENDIF
         DO JLOOP=3,6
           ZRZ(:,JLOOP)=FLYER_INTERPZ(PR(:,:,:,JLOOP))
         END DO
@@ -1041,20 +1048,45 @@ IF ( TPFLYER%FLY) THEN
         CALL GAULAG(JPTS_GAULAG,ZX,ZW) ! for integration over diameters
         ! initialize minimum values
         ALLOCATE(ZRTMIN(SIZE(PR,4)+1))
-        ZRTMIN(2)=XRTMIN_I(2) ! cloud water over sea
-        ZRTMIN(3)=XRTMIN_I(3)
-        ZRTMIN(4)=XRTMIN_I(4)
-        ZRTMIN(5)=1E-10
-        ZRTMIN(6)=XRTMIN_I(6)
-        ZRTMIN(7)=XRTMIN_I(2) ! cloud water over land        ZRTMIN(2)=XRTMIN(2) ! cloud water over sea
+        IF (CCLOUD == 'LIMA') THEN
+          ZRTMIN(2)=XRTMIN_L(2) ! cloud water over sea
+          ZRTMIN(3)=XRTMIN_L(3)
+          ZRTMIN(4)=XRTMIN_L(4)
+          ZRTMIN(5)=1E-10
+          ZRTMIN(6)=XRTMIN_L(6)
+          ZRTMIN(7)=XRTMIN_L(2) ! cloud water over land
+        ELSE
+          ZRTMIN(2)=XRTMIN_I(2) ! cloud water over sea
+          ZRTMIN(3)=XRTMIN_I(3)
+          ZRTMIN(4)=XRTMIN_I(4)
+          ZRTMIN(5)=1E-10
+          ZRTMIN(6)=XRTMIN_I(6)
+          ZRTMIN(7)=XRTMIN_I(2) ! cloud water over land
+        ENDIF
         ! compute cloud radar reflectivity from vertical profiles of temperature and mixing ratios
         DO JK=1,IKU
           QMW=SQRT(QEPSW(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
           QMI=SQRT(QEPSI(ZTEMPZ(JK),XLIGHTSPEED/XLAM_CRAD))
           DO JLOOP=2,7
-            IF(ZRZ(JK,JLOOP)>ZRTMIN(JLOOP).AND.(JLOOP.NE.4.OR.ZCIT(JK)>0.)) THEN
+            IF (CCLOUD == 'LIMA') THEN
+              GCALC=(ZRZ(JK,JLOOP)>ZRTMIN(JLOOP).AND.(JLOOP.NE.4.OR.ZCCI(JK)>0.).AND.&
+                    (JLOOP.NE.3.OR.ZCCR(JK)>0.).AND.((JLOOP.NE.2.AND. JLOOP.NE.7).OR.ZCCC(JK)>0.))
+            ELSE
+              GCALC=(ZRZ(JK,JLOOP)>ZRTMIN(JLOOP).AND.(JLOOP.NE.4.OR.ZCIT(JK)>0.))
+            ENDIF
+            IF(GCALC) THEN
               SELECT CASE(JLOOP)
                 CASE(2) ! cloud water over sea
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAC_L
+                    ZB=XBC_L
+                    ZCC=ZCCC(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAC_L
+                    ZNU=XNUC_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
                     ZA=XAC_I
                     ZB=XBC_I
                     ZCC=XCONC_SEA
@@ -1063,7 +1095,18 @@ IF ( TPFLYER%FLY) THEN
                     ZNU=XNUC2_I
                     ZLBEX=1.0/(ZCX-ZB)
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ENDIF
                 CASE(3) ! rain water
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAR_L
+                    ZB=XBR_L
+                    ZCC=ZCCR(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAR_L
+                    ZNU=XNUR_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
                     ZA=XAR_I
                     ZB=XBR_I
                     ZCC=XCCR_I
@@ -1072,7 +1115,19 @@ IF ( TPFLYER%FLY) THEN
                     ZNU=XNUR_I
                     ZLB=XLBR_I
                     ZLBEX=XLBEXR_I
+                  ENDIF
                 CASE(4) ! pristine ice
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAI_L
+                    ZB=XBI_L
+                    ZCC=ZCCI(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAI_L
+                    ZNU=XNUI_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX) ! because ZCC not included in XLBI
+                    ZFW=0
+                  ELSE
                     ZA=XAI_I
                     ZB=XBI_I
                     ZCC=ZCIT(JK)
@@ -1082,7 +1137,19 @@ IF ( TPFLYER%FLY) THEN
                     ZLBEX=XLBEXI_I
                     ZLB=XLBI_I*ZCC**(-ZLBEX) ! because ZCC not included in XLBI
                     ZFW=0
+                  ENDIF                          
                 CASE(5) ! snow
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAS_L
+                    ZB=XBS_L
+                    ZCC=XCCS_L
+                    ZCX=XCXS_L
+                    ZALPHA=XALPHAS_L
+                    ZNU=XNUS_L
+                    ZLB=XLBS_L
+                    ZLBEX=XLBEXS_L
+                    ZFW=0
+                  ELSE
                     ZA=XAS_I
                     ZB=XBS_I
                     ZCC=XCCS_I
@@ -1092,6 +1159,7 @@ IF ( TPFLYER%FLY) THEN
                     ZLB=XLBS_I
                     ZLBEX=XLBEXS_I
                     ZFW=0
+                  ENDIF
                 CASE(6) ! graupel
                   !If temperature between -10 and 10°C and Mr and Mg over min threshold: melting graupel
                   ! with liquid water fraction Fw=Mr/(Mr+Mg) else dry graupel (Fw=0)    
@@ -1101,6 +1169,16 @@ IF ( TPFLYER%FLY) THEN
                   ELSE
                     ZFW=0
                   ENDIF
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAG_L
+                    ZB=XBG_L
+                    ZCC=XCCG_L
+                    ZCX=XCXG_L
+                    ZALPHA=XALPHAG_L
+                    ZNU=XNUG_L
+                    ZLB=XLBG_L
+                    ZLBEX=XLBEXG_L
+                  ELSE
                     ZA=XAG_I
                     ZB=XBG_I
                     ZCC=XCCG_I
@@ -1109,7 +1187,18 @@ IF ( TPFLYER%FLY) THEN
                     ZNU=XNUG_I
                     ZLB=XLBG_I
                     ZLBEX=XLBEXG_I
+                  ENDIF                          
                 CASE(7) ! cloud water over land
+                  IF (CCLOUD == 'LIMA') THEN
+                    ZA=XAC_L
+                    ZB=XBC_L
+                    ZCC=ZCCC(JK)*ZRHODREFZ(JK)
+                    ZCX=0.
+                    ZALPHA=XALPHAC_L
+                    ZNU=XNUC_L
+                    ZLBEX=1.0/(ZCX-ZB)
+                    ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ELSE
                     ZA=XAC_I
                     ZB=XBC_I
                     ZCC=XCONC_LAND
@@ -1118,6 +1207,7 @@ IF ( TPFLYER%FLY) THEN
                     ZNU=XNUC_I
                     ZLBEX=1.0/(ZCX-ZB)
                     ZLB=( ZA*ZCC*MOMG(ZALPHA,ZNU,ZB) )**(-ZLBEX)
+                  ENDIF
               END SELECT
               ZLBDA=ZLB*(ZRHODREFZ(JK)*ZRZ(JK,JLOOP))**ZLBEX
               ZREFLOC=0.
@@ -1386,12 +1476,12 @@ IF ( GSTORE ) THEN
     ENDDO
     CALL DISTRIBUTE_FLYER(TPFLYER%FFZ (IN,JLOOP))
     CALL DISTRIBUTE_FLYER(TPFLYER%CIZ (IN,JLOOP))
+    IF (CCLOUD== 'LIMA' ) THEN
+      CALL DISTRIBUTE_FLYER(TPFLYER%CRZ (IN,JLOOP))
+      CALL DISTRIBUTE_FLYER(TPFLYER%CCZ (IN,JLOOP))      
+    ENDIF
     CALL DISTRIBUTE_FLYER(TPFLYER%IWCZ (IN,JLOOP))
     CALL DISTRIBUTE_FLYER(TPFLYER%LWCZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%SPEEDCZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%SPEEDRZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%SPEEDSZ (IN,JLOOP))
-    CALL DISTRIBUTE_FLYER(TPFLYER%SPEEDGZ (IN,JLOOP))    
     CALL DISTRIBUTE_FLYER(TPFLYER%CRARE (IN,JLOOP))
     CALL DISTRIBUTE_FLYER(TPFLYER%CRARE_ATT (IN,JLOOP))
     CALL DISTRIBUTE_FLYER(TPFLYER%WZ (IN,JLOOP))

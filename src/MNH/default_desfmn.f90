@@ -209,6 +209,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   07/2013  (Bosseur & Filippi) adds Forefire
 !!                   08/2015  (Redelsperger & Pianezze) add XPOND coefficient for LBC
 !!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -249,6 +250,23 @@ USE MODD_PASPOL
 USE MODD_CONDSAMP
 USE MODD_MEAN_FIELD
 USE MODD_DRAGTREE
+!
+!
+USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
+                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,          &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                  &
+                            CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
+                            XFACTNUC_DEP, XFACTNUC_CON,                        &
+                            OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,   &
+                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,        &
+                            LCCN_HOM, CCCN_MODES,                                &
+                            YALPHAR=>XALPHAR, YNUR=>XNUR,                      &
+                            YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,  &
+                            CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
+                            YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,      &
+                            YAERHEIGHT=>XAERHEIGHT,                            &
+                            LSCAV, LAERO_MASS, NPHILLIPS
+!
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
 #ifdef MNH_FOREFIRE
@@ -386,6 +404,9 @@ LHORELAX_SVSLT  = .FALSE.
 LHORELAX_SVPP   = .FALSE.
 LHORELAX_SVCS   = .FALSE.
 LHORELAX_SVAER  = .FALSE.
+!
+LHORELAX_SVLIMA = .FALSE.
+!
 #ifdef MNH_FOREFIRE
 LHORELAX_SVFF   = .FALSE.
 #endif
@@ -1048,6 +1069,68 @@ IF (KMI == 1) THEN
   XLOGSIG_CCN = 0.0
   XFSOLUB_CCN = 1.0
   XACTEMP_CCN = 280.
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!*      19.BIS   SET DEFAULT VALUES FOR MODD_PARAM_LIMA :
+!                ----------------------------------------
+!
+IF (KMI == 1) THEN
+  YNUC    = 1.0
+  YALPHAC = 3.0
+  YNUR    = 2.0
+  YALPHAR = 1.0
+!
+  OWARM  = .TRUE.
+  LACTI  = .TRUE.
+  ORAIN  = .TRUE.
+  OSEDC  = .TRUE.
+  OACTIT = .FALSE.
+  LBOUND = .FALSE.
+!
+  CINI_CCN   = 'XXX'
+  CTYPE_CCN(:) = 'X'
+!
+  YAERDIFF    = 0.0
+  YAERHEIGHT  = 2000.
+!  YR_MEAN_CCN = 0.0   ! In case of 'CCN' initialization
+!  YLOGSIG_CCN = 0.0
+  YFSOLUB_CCN = 1.0
+  YACTEMP_CCN = 280.
+!
+  NMOD_CCN = 1
+!
+!* AP Scavenging
+!
+  LSCAV      = .FALSE.
+  LAERO_MASS = .FALSE.
+!
+  LCCN_HOM = .TRUE.
+  CCCN_MODES = ''
+  XCCN_CONC(:)=0.
+ENDIF
+!
+IF (KMI == 1) THEN
+  LHHONI = .FALSE.
+  LCOLD  = .TRUE.
+  LNUCL  = .TRUE.
+  LSEDI  = .TRUE.
+  LSNOW  = .TRUE.
+  LHAIL  = .FALSE.
+  CPRISTINE_ICE_LIMA = 'PLAT'
+  CHEVRIMED_ICE_LIMA = 'GRAU'
+  XFACTNUC_DEP = 1.0  
+  XFACTNUC_CON = 1.0
+  NMOD_IFN = 1
+  NIND_SPECIE = 1
+  LMEYERS = .FALSE.
+  LIFN_HOM = .TRUE.
+  CIFN_SPECIES = 'PHILLIPS'
+  CINT_MIXING = ''
+  XIFN_CONC(:) = 0.
+  NMOD_IMM = 0
+  NPHILLIPS=8
 ENDIF
 !
 !-------------------------------------------------------------------------------

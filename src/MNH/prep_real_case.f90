@@ -380,6 +380,7 @@
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!    M.Leriche        2015 : add LUSECHEM  dans NAM_CH_CONF 
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!     B.VIE 2016 : LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -770,6 +771,7 @@ LHORELAX_RH=LUSERH
 LHORELAX_SV(:)=.FALSE.
 LHORELAX_SVC2R2 = (NSV_C2R2 > 0)
 LHORELAX_SVC1R3 = (NSV_C1R3 > 0)
+LHORELAX_SVLIMA = (NSV_LIMA > 0)
 LHORELAX_SVELEC = (NSV_ELEC > 0)
 LHORELAX_SVCHEM = (NSV_CHEM > 0)
 LHORELAX_SVCHIC = (NSV_CHIC > 0)

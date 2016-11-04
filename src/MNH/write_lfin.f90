@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfin.f90,v $ $Revision: 1.2.2.4.2.4.2.8.2.4.2.5 $
 ! masdev4_7 BUG1 2007/06/20 16:58:20
 !-----------------------------------------------------------------
 !     #########################
@@ -161,6 +161,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J.-P. Pinty   Jan 2015 add LNOx and flash map diagnostics
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
+!!       Modification    01/2016  (JP Pinty) Add LIMA
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -221,6 +222,12 @@ USE MODD_CH_AEROSOL
 USE MODD_PAST_FIELD_n
 USE MODD_ADV_n, ONLY: CUVW_ADV_SCHEME,XRTKEMS
 USE MODD_ELEC_FLASH
+!
+USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
+                                NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM, LHHONI
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
+USE MODD_LIMA_PRECIP_SCAVENGING_n
 !
 USE MODE_FMWRIT
 USE MODE_ll
@@ -302,6 +309,9 @@ INTEGER           :: INFO_ll
 INTEGER :: IKRAD
 INTEGER           :: JI,JJ,JK   ! loop index
 INTEGER           :: IIU,IJU,IKU,IIB,IJB,IKB,IIE,IJE,IKE ! Arrays bounds
+!
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
 !-------------------------------------------------------------------------------
 !
 !*	0. Initialization
@@ -942,6 +952,106 @@ IF (NSV >=1) THEN
                 YCOMMENT,IRESP)
     JSA=JSA+1
   END DO
+!
+! microphysical LIMA variables
+!
+  DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
+! Nc
+     IF (JSV .EQ. NSV_LIMA_NC) THEN
+        YRECFM=TRIM(CLIMA_WARM_NAMES(1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! Nr
+     IF (JSV .EQ. NSV_LIMA_NR) THEN
+        YRECFM=TRIM(CLIMA_WARM_NAMES(2))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! N CCN free
+     IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+        YRECFM=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! N CCN acti
+     IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+        YRECFM=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! Scavenging
+     IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
+        YRECFM=TRIM(CAERO_MASS(1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (kg/kg)'
+     END IF
+! Ni
+     IF (JSV .EQ. NSV_LIMA_NI) THEN
+        YRECFM=TRIM(CLIMA_COLD_NAMES(1))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! N IFN free
+     IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+        YRECFM=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! N IFN nucl
+     IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+        YRECFM=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! N IMM nucl
+     I = 0
+     IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+        I = I + 1
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+        YRECFM=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+! Hom. freez. of CCN
+     IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
+        YRECFM=TRIM(CLIMA_COLD_NAMES(5))//'T'
+        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (/kg)'
+     END IF
+!
+!
+     ILENCH=LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
+          YCOMMENT,IRESP)
+     JSA=JSA+1
+  END DO
+!
+  IF (LSCAV .AND. LAERO_MASS) THEN
+  IF (ASSOCIATED(XINPAP)) THEN
+  IF (SIZE(XINPAP) /= 0 ) THEN
+     ZWORK2D(:,:)  = XINPAP(:,:)
+     YRECFM      = 'INPAP'
+     YCOMMENT    = 'X_Y_INstantaneous Precipitating Aerosol Rate (kg/m2/s)'
+     IGRID       = 1
+     ILENCH      = LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH, &
+                                             YCOMMENT,IRESP) ! unit conversion
+     ZWORK2D(:,:)  = XRHOLW*XINPRR(:,:)*XSVT(:,:,2,NSV_LIMA_SCAVMASS)/ &
+                                        max( 1.e-20,XRT(:,:,2,3) ) !~2=at ground level
+     YRECFM      = 'INPBP'
+     YCOMMENT    = 'X_Y_INstantaneous Precipitating Aerosol Rate (kg/m2/s)'
+     IGRID       = 1
+     ILENCH      = LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH, &
+                                             YCOMMENT,IRESP) ! unit conversion
+!
+     ZWORK2D(:,:)  = XACPAP(:,:)
+     YRECFM      = 'ACPAP'
+     YCOMMENT    = 'X_Y_ACcumulated Precipitating Aerosol Rate (kg/m2)'
+     IGRID       = 1
+     ILENCH      = LEN(YCOMMENT)
+     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH, &
+                                             YCOMMENT,IRESP) ! unit conversion
+  END IF
+  END IF
+  END IF
+!
+!
   ! electrical scalar variables
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'

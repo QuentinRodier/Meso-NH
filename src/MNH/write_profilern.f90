@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_profilern.f90,v $ $Revision: 1.2.2.3.2.1.2.2.10.2.2.2 $
 ! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !      ###########################
@@ -59,8 +59,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !!    MODIFICATIONS
 !!    -------------
 !!     Original 15/02/2002
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
+!!     2016 : G.DELAUTIER : LIMA
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -89,6 +88,9 @@ USE MODE_DUST_PSD
 USE MODE_AERO_PSD
 !
 USE MODI_WRITE_DIACHRO
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
+USE MODD_PARAM_LIMA     , ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
 !
 IMPLICIT NONE
 !
@@ -142,6 +144,8 @@ INTEGER :: JPROC    ! loop counter
 INTEGER :: JRR      ! loop counter
 INTEGER :: JSV      ! loop counter
 INTEGER :: IKU, IK  ! loop counter
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
 !
 !----------------------------------------------------------------------------
 !
@@ -149,7 +153,7 @@ IF (TPROFILER%X(II)==XUNDEF) RETURN
 IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
-IPROC = 27 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 22 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 13
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -190,66 +194,6 @@ YTITLE   (JPROC) = 'RARE'
 YUNIT    (JPROC) = 'dBz'
 YCOMMENT (JPROC) = 'Radar reflectivity'       
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%RARE(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'SPEEDC'
-YUNIT    (JPROC) = 'm/s'
-YCOMMENT (JPROC) = 'Cloud sedimentation speed'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDC(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'SPEEDR'
-YUNIT    (JPROC) = 'm/s'
-YCOMMENT (JPROC) = 'Rain sedimentation speed'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDR(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'SPEEDS'
-YUNIT    (JPROC) = 'm/s'
-YCOMMENT (JPROC) = 'Snow sedimentation speed'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDS(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'SPEEDG'
-YUNIT    (JPROC) = 'm/s'
-YCOMMENT (JPROC) = 'Graupel sedimentation speed'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDG(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'SPEEDH'
-YUNIT    (JPROC) = 'm/s'
-YCOMMENT (JPROC) = 'Hail sedimentation speed'
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SPEEDH(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'INPRC3D'
-YUNIT    (JPROC) = 'mm/h'
-YCOMMENT (JPROC) = 'Cloud sedimentation rate'   
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRC3D(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'INPRR3D'
-YUNIT    (JPROC) = 'mm/h'
-YCOMMENT (JPROC) = 'Rain sedimentation rate'   
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRR3D(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'INPRS3D'
-YUNIT    (JPROC) = 'mm/h'
-YCOMMENT (JPROC) = 'Snow sedimentation rate'   
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRS3D(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'INPRG3D'
-YUNIT    (JPROC) = 'mm/h'
-YCOMMENT (JPROC) = 'Graupel sedimentation rate'   
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRG3D(:,IK,II)
-!
-JPROC = JPROC + 1
-YTITLE   (JPROC) = 'INPRH3D'
-YUNIT    (JPROC) = 'mm/h'
-YCOMMENT (JPROC) = 'Hail sedimentation rate'   
-ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%INPRH3D(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'P'
@@ -477,6 +421,41 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
+  ! LIMA variables
+  DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
+    JPROC = JPROC+1
+    YUNIT    (JPROC) = '/kg'
+    YCOMMENT (JPROC) = ' '
+    IF (JSV==NSV_LIMA_NC) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(1))//'T' 
+    IF (JSV==NSV_LIMA_NR) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(2))//'T' 
+    IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
+    ENDIF
+    IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
+    ENDIF
+    IF (JSV .EQ. NSV_LIMA_SCAVMASS) YTITLE(JPROC)=TRIM(CAERO_MASS(1))//'T'
+    IF (JSV==NSV_LIMA_NI) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(1))//'T' 
+    IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+    ENDIF
+    IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+    ENDIF
+    I = 0
+    IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+        I = I + 1
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+    ENDIF
+    IF (JSV .EQ. NSV_LIMA_HOM_HAZE) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(5))//'T'
+
+    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
+  END DO 
   ! electrical scalar variables
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     JPROC = JPROC+1

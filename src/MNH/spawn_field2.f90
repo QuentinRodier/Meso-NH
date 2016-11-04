@@ -145,6 +145,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!      Modification 25/02/2015 (M.Moge) correction of the parallelization attempted by M.Faivre
 !!      Modification 15/04/2016 (P.Tulet) bug allocation ZSVT_C
 !!                   29/04/2016 (J.Escobar) bug in use of ZSVT_C in SET_LSFIELD_1WAY_ll        
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -180,6 +181,11 @@ USE MODE_FMREAD
 USE MODE_THERMO
 USE MODE_MODELN_HANDLER
 USE MODE_IO_ll, ONLY: UPCASE
+!
+USE MODD_PARAM_LIMA     , ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM, NINDICE_CCN_IMM,&
+                                 LSCAV, LAERO_MASS, LHHONI
+USE MODD_PARAM_LIMA_COLD, ONLY : CLIMA_COLD_NAMES
+USE MODD_PARAM_LIMA_WARM, ONLY : CLIMA_WARM_NAMES, CAERO_MASS
 !
 USE MODD_ADVFRC_n 
 USE MODD_RELFRC_n 
@@ -267,8 +273,13 @@ LOGICAL :: GUSERV
 !
 INTEGER             :: IGRID,ILENCH   !   File
 CHARACTER (LEN=16)  :: YRECFM         ! management
+CHARACTER (LEN=16)  :: YRECFM_T        ! management
+CHARACTER (LEN=16)  :: YRECFM_M        ! management
 CHARACTER (LEN=100) :: YCOMMENT       ! variables
 CHARACTER (LEN=2)   :: YDIR
+!
+CHARACTER(LEN=2)  :: INDICE
+INTEGER           :: I
 !
 !-------------------------------------------------------------------------------
 !
@@ -818,6 +829,63 @@ IF (PRESENT(HSONFILE)) THEN
                   YCOMMENT,IRESP)
       IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
     END DO
+!
+! LIMA variables
+!
+    DO JSV = NSV_LIMA_BEG,NSV_LIMA_END
+! Nc
+      IF (JSV .EQ. NSV_LIMA_NC) THEN
+         YRECFM_T=TRIM(CLIMA_WARM_NAMES(1))//'T'
+      END IF
+! Nr
+      IF (JSV .EQ. NSV_LIMA_NR) THEN
+         YRECFM_T=TRIM(CLIMA_WARM_NAMES(2))//'T'
+      END IF
+! N CCN free
+      IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+         YRECFM_T=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
+      END IF
+! N CCN acti
+      IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+         YRECFM_T=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
+      END IF
+! Scavenging
+      IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
+         YRECFM_T=TRIM(CAERO_MASS(1))//'T'
+      END IF
+! Ni
+      IF (JSV .EQ. NSV_LIMA_NI) THEN
+         YRECFM_T=TRIM(CLIMA_COLD_NAMES(1))//'T'
+      END IF
+! N IFN free
+      IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+         YRECFM_T=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+      END IF
+! N IFN nucl
+      IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+         WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+         YRECFM_T=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+      END IF
+! N IMM nucl
+      I = 0
+      IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+         I = I + 1
+         WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+         YRECFM_T=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+      END IF
+! Hom. freez. of CCN
+      IF (JSV .EQ. NSV_LIMA_HOM_HAZE) THEN
+         YRECFM_T=TRIM(CLIMA_COLD_NAMES(5))//'T'
+      END IF
+! time t
+      CALL FMREAD(HSONFILE,YRECFM_T,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &
+                  YCOMMENT,IRESP)
+      IF(IRESP==0) PSVT(KIB2:KIE2,KJB2:KJE2,:,JSV)=ZWORK3D(KIB1:KIE1,KJB1:KJE1,:)
+    END DO
+!
     DO JSV = NSV_ELECBEG,NSV_ELECEND  ! ELEC Scalar Variables
       YRECFM=TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))//'T'
       CALL FMREAD(HSONFILE,YRECFM,CLUOUT,YDIR,ZWORK3D,IGRID,ILENCH,  &

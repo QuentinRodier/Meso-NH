@@ -5,7 +5,8 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/one_wayn.f90,v $ $Revision: 1.3.2.3.2.1.2.2.10.1.2.3 $
+! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_ONE_WAY_n
@@ -190,6 +191,7 @@ SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                     &
 !!    Bosseur & Filippi 07/2013 Adds Forefire
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
+!!!      Modification    01/2016  (JP Pinty) Add LIMA
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -212,6 +214,7 @@ USE MODI_VER_INTERP_LIN
 USE MODI_SET_CONC_RAIN_C2R2
 USE MODI_SET_CONC_ICE_C1R3
 USE MODI_SET_CHEMAQ_1WAY
+USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -298,6 +301,8 @@ CHARACTER(LEN=4)                    :: ZINIT_TYPE
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCONCT
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMT
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZCHEMTI
+!
+INTEGER :: N_VAR_LIMA
 !
 !-------------------------------------------------------------------------------
 !
@@ -420,26 +425,26 @@ ENDDO
 !  concentrations to use the C2R2(or KHKO) microphysical scheme
 !  (FATHER does not use C2R2(or KHKO) and CHILD uses C2R2(or KHKO))
 !
- IF (HCLOUD=="C2R2" .OR. HCLOUD=="KHKO") THEN
+IF (HCLOUD=="C2R2" .OR. HCLOUD=="KHKO") THEN
   IF  (CCLOUD/="NONE" .AND. CCLOUD/="C2R2" .AND. CCLOUD/="KHKO") THEN
-  ZINIT_TYPE="NONE"
-  ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),3))
-  IF (CCLOUD == "REVE") THEN
+    ZINIT_TYPE="NONE"
+    ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),3))
+    IF (CCLOUD == "REVE") THEN
       ZINIT_TYPE = "INI1"
-  ELSE IF (CCLOUD == "KESS" ) THEN
-    ZINIT_TYPE = "INI2"
-  END IF
-  CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
-  DO JSV=1,3
-    CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
-         &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
-  ENDDO
- ELSE
-  DO JSV=1,NSV_C2R2_A(KMI)
-    CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KDAD)),&
-         &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
-  END DO
- ENDIF
+    ELSE IF (CCLOUD == "KESS" ) THEN
+      ZINIT_TYPE = "INI2"
+    END IF
+    CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+    DO JSV=1,3
+      CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
+           &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
+    ENDDO
+  ELSE
+    DO JSV=1,NSV_C2R2_A(KMI)
+      CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KDAD)),&
+           &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
+    END DO
+  ENDIF
 ENDIF
 !
 !  Checking also if it is necessary to compute the Ni
@@ -447,35 +452,59 @@ ENDIF
 !  (FATHER does not use C3R5 and CHILD uses C3R5)
 !
 IF (HCLOUD=="C3R5") THEN
- IF ( CCLOUD(1:3)=="ICE" ) THEN
-  ZINIT_TYPE="NONE"
-  ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),5))
-  IF (CCLOUD == "REVE") THEN
+  IF ( CCLOUD(1:3)=="ICE" ) THEN
+    ZINIT_TYPE="NONE"
+    ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),5))
+    IF (CCLOUD == "REVE") THEN
       ZINIT_TYPE = "INI1"
-  ELSE IF (CCLOUD == "KESS" ) THEN
-    ZINIT_TYPE = "INI2"
-  END IF
-  CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
-  DO JSV=1,3
-    CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
-         &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
-  ENDDO
-  ZINIT_TYPE="INI3"
-  CALL SET_CONC_ICE_C1R3 (HLUOUT,XRHODREF,XRT,ZCONCT)
-  DO JSV=4,5
-    CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
-         &ZTSVT(:,:,:,JSV-4+NSV_C1R3BEG_A(KMI)),KMI) 
-  ENDDO
- ELSE
-  DO JSV=1,NSV_C2R2_A(KMI)
-    CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KDAD)),&
-         &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
-  END DO
-  DO JSV=1,NSV_C1R3_A(KMI)
-    CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C1R3BEG_A(KDAD)),&
-         &ZTSVT(:,:,:,JSV-1+NSV_C1R3BEG_A(KMI)),KMI)
-  END DO
- ENDIF
+    ELSE IF (CCLOUD == "KESS" ) THEN
+      ZINIT_TYPE = "INI2"
+    END IF
+    CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+    DO JSV=1,3
+      CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
+           &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
+    ENDDO
+    ZINIT_TYPE="INI3"
+    CALL SET_CONC_ICE_C1R3 (HLUOUT,XRHODREF,XRT,ZCONCT)
+    DO JSV=4,5
+      CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
+           &ZTSVT(:,:,:,JSV-4+NSV_C1R3BEG_A(KMI)),KMI) 
+    ENDDO
+  ELSE
+    DO JSV=1,NSV_C2R2_A(KMI)
+      CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KDAD)),&
+           &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
+    END DO
+    DO JSV=1,NSV_C1R3_A(KMI)
+      CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_C1R3BEG_A(KDAD)),&
+           &ZTSVT(:,:,:,JSV-1+NSV_C1R3BEG_A(KMI)),KMI)
+    END DO
+  ENDIF
+ENDIF
+!
+! LIMA Scheme
+!
+IF (HCLOUD=="LIMA"  ) THEN
+   IF (CCLOUD/="LIMA") THEN
+      ALLOCATE(ZCONCT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),NSV_LIMA_A(KMI)))
+      IF (CCLOUD == "REVE") THEN
+         ZINIT_TYPE = "INI1"
+      ELSE
+         ZINIT_TYPE = "NONE"
+      END IF
+      CALL SET_CONC_LIMA (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+      DO JSV=1,NSV_LIMA_A(KMI)
+         CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
+              &ZTSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
+      ENDDO   
+   ELSE
+      IF (NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)) CALL ABORT
+      DO JSV=1,NSV_LIMA_A(KMI)
+         CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KDAD)),&
+              &ZTSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
+      END DO
+   END IF
 ENDIF
 !
 ! electrical variables

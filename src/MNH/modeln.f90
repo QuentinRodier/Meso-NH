@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modeln.f90,v $ $Revision: 1.3.2.5.2.5.2.9.2.12.2.5 $
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_MODEL_n
@@ -234,11 +234,12 @@ END MODULE MODI_MODEL_n
 !!       C.Lac    11/09/2015: correction of the budget due to FIT temporal scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!                   Sep 2015 (S. Bielli) : Remove YDADFILE from argument call 
-!!                              of write_phys_param
+!                              of write_phys_param
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!      M.Mazoyer : 04/2016      DTHRAD used for radiative cooling when LACTIT
+!!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  06/2016     (G.Delautier) phasage surfex 8
-!!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
@@ -262,8 +263,8 @@ USE MODD_FRC
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_STATION_n
 USE MODD_PROFILER_n
-USE MODD_PARAM_C2R2,      ONLY : LSEDC, LRAIN, LACTIT
-USE MODD_PARAM_C1R3,      ONLY : LSEDI, LHHONI
+USE MODD_PARAM_C2R2, ONLY : NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT
+USE MODD_PARAM_C1R3, ONLY : NSEDI => LSEDI, NHHONI => LHHONI
 USE MODD_LES
 USE MODD_LES_BUDGET
 USE MODD_LUNIT
@@ -371,6 +372,16 @@ USE MODE_MODELN_HANDLER
 USE MODD_2D_FRC
 USE MODD_TIMEZ
 USE MODE_MNH_TIMING
+!
+USE MODD_PARAM_LIMA,       ONLY : MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, LACTI,     &
+                                  MACTIT => LACTIT, LSCAV, NMOD_CCN, LCOLD,  &
+                                  MSEDI => LSEDI, MHHONI => LHHONI, NMOD_IFN, LHAIL
+USE MODD_BLANK 
+!
+USE MODI_FORC_WIND
+USE MODI_FORC_SQUALL_LINE
+USE MODI_LIMA_PRECIP_SCAVENGING
+USE MODD_LIMA_PRECIP_SCAVENGING_n
 !
 USE MODI_SETLB_LG
 USE MODI_WRITE_SURF_ATM_N
@@ -493,15 +504,20 @@ REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRC,DPTR_XINPRR,DPTR_XINPRS,DPTR_XINPRG
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRH,DPTR_XPRCONV,DPTR_XPRSCONV
 LOGICAL, DIMENSION(:,:),POINTER :: DPTR_GMASKkids
 !
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDC
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDR
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDS
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDG
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDH
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRC3D
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRS3D
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRG3D
-REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRH3D
+LOGICAL :: KWARM        
+LOGICAL :: KRAIN        
+LOGICAL :: KSEDC  
+LOGICAL :: KACTIT
+LOGICAL :: KSEDI
+LOGICAL :: KHHONI
+REAL :: TEMPS
+INTEGER :: NSV_END
+CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
+CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+!
+INTEGER             :: ILENG      ! Length of comment string in LFIFM file
+INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
+INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 !
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
 !
@@ -513,6 +529,36 @@ TYPE(LIST_ll), POINTER :: TZFIELDC_ll   ! list of fields to exchange
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2C_ll   ! list of fields to exchange
 !
 !-------------------------------------------------------------------------------
+!
+!*       0.    MICROPHYSICAL SCHEME
+!              ------------------- 
+SELECT CASE(CCLOUD)
+CASE('C2R2','KHKO','C3R5')
+  KWARM  = .TRUE.        
+  KRAIN  = NRAIN
+  KSEDC  = NSEDC
+  KACTIT = NACTIT
+!
+  KSEDI  = NSEDI
+  KHHONI = NHHONI
+CASE('LIMA')
+  KWARM  = MWARM        
+  KRAIN  = MRAIN
+  KSEDC  = MSEDC
+  KACTIT = MACTIT
+!
+  KSEDI  = MSEDI
+  KHHONI = MHHONI
+CASE('ICE3','ICE4') !default values
+  KWARM  = LWARM        
+  KRAIN  = .TRUE.
+  KSEDC  = .TRUE.
+  KACTIT = .FALSE.
+!
+  KSEDI  = .TRUE.
+  KHHONI = .FALSE.
+END SELECT
+!
 !
 !*        1    PRELIMINARY
 !              ------------
@@ -1632,7 +1678,8 @@ XTIME_LES_BU_PROCESS = 0.
 !
 IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
 !
-  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' .OR. CCLOUD == 'C3R5' ) THEN
+  IF (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO' .OR. CCLOUD == 'C3R5' &
+                                             .OR. CCLOUD == "LIMA" ) THEN
     IF ( LFORCING ) THEN
       ZWT_ACT_NUC(:,:,:) = XWT(:,:,:) + XWTFRC(:,:,:)
     ELSE
@@ -1666,12 +1713,10 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
+                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
-                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D,                    &
-                          XINPRH,ZINPRH3D, XSOLORG , XMI,                      &
-                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,         &
+                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,           &
+                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                      &
                           ZSEA, ZTOWN    )
     DEF_NC=.TRUE.
 #else    
@@ -1684,12 +1729,10 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC,LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,   &
+                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,           &
-                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
-                          XSOLORG , XMI,                                       &
-                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,         &
+                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,           &
+                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                                       &
                           ZSEA, ZTOWN    )
 #endif
     DEALLOCATE(ZTOWN)
@@ -1706,11 +1749,11 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
+                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
-                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
-                          XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH)
+                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,XINPRG,XINPRH   &
+                          XSOLORG, XMI)
     DEF_NC=.TRUE.
 #else
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
@@ -1722,12 +1765,11 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
-                          LSEDIC, LACTIT, LSEDC, LSEDI, LRAIN, LWARM, LHHONI,  &
+                          LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
-                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
-                          XSOLORG, XMI,                             &
-                          ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH          )
+                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,XINPRG, XINPRH,   &
+                          XSOLORG, XMI   )
 #endif
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
@@ -1745,15 +1787,26 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
       END WHERE
       END DO
       END IF
-    IF ((CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                       &
-        ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO') &
-                              .AND. LSEDC  )      )   THEN                  
+    IF ( (CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                     &
+        ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' &
+                           .OR. CCLOUD == 'LIMA' ) .AND. KSEDC ) )     &
       XACPRC = XACPRC + XINPRC * XTSTEP
-    END IF
-    IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5') THEN
+    IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
+                                 (CCLOUD == 'LIMA' .AND. LCOLD ) ) THEN
       XACPRS = XACPRS + XINPRS * XTSTEP
       XACPRG = XACPRG + XINPRG * XTSTEP
-      IF (CCLOUD == 'ICE4') XACPRH = XACPRH + XINPRH * XTSTEP          
+      IF (CCLOUD == 'ICE4' .OR. (CCLOUD == 'LIMA' .AND. LHAIL)) XACPRH = XACPRH + XINPRH * XTSTEP          
+    END IF
+!
+! Lessivage des CCN et IFN nucléables par Slinn
+!
+    IF (LSCAV .AND. (CCLOUD == 'LIMA')) THEN
+      CALL LIMA_PRECIP_SCAVENGING(CCLOUD, ILUOUT, KTCOUNT,XTSTEP,XRT(:,:,:,3), &
+                              XRHODREF, XRHODJ, XZZ, XPABST, XTHT,             &
+                              XSVT(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END),           &
+                              XRSVS(:,:,:,NSV_LIMA_BEG:NSV_LIMA_END), XINPAP   )
+!
+      XACPAP(:,:) = XACPAP(:,:) + XINPAP(:,:) * XTSTEP
     END IF
   END IF
 !
@@ -1912,8 +1965,7 @@ IF (LFLYER)                                                                   &
                       TDTEXP, TDTMOD, TDTSEG, TDTCUR,                         &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI,              &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT, XTKET, XTSRAD,  &
-                      XRHODREF,XCIT,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG,       &
-                      ZSPEEDH,PSEA=ZSEA(:,:))
+                      XRHODREF,XCIT,PSEA=ZSEA(:,:))
 
 
 !-------------------------------------------------------------------------------
@@ -1937,9 +1989,7 @@ IF (LPROFILER)                                                           &
                   TDTEXP, TDTMOD, TDTSEG, TDTCUR,                        &
                   XXHAT, XYHAT, XZZ,XRHODREF,                            &
                   XUT, XVT, XWT, XTHT, XRT, XSVT, XTKET, XTSRAD, XPABST, &
-                  XAER, XCLDFR, XCIT ,                                   &
-                  ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH,           &
-                  ZINPRC3D,XINPRR3D,ZINPRS3D,ZINPRG3D,ZINPRH3D           )
+                  XAER, XCLDFR, XCIT)
 !
 !
 CALL SECOND_MNH2(ZTIME2)

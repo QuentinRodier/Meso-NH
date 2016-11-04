@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_aircraft_balloon.f90,v $ $Revision: 1.3.4.2.2.1.2.1.2.2 $
 ! MASDEV4_7 balloon 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !      #########################
@@ -77,8 +77,7 @@ END MODULE MODI_INI_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!               Apr, 20 2001: G.Jaubert: use in diag  with stationnary fields
 !!               March, 2013 : O.Caumont, C.Lac : add vertical profiles
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
+!!               OCT,2016 : G.Delautier LIMA
 !!
 !! --------------------------------------------------------------------------
 !
@@ -100,6 +99,8 @@ USE MODD_DYN_n
 !
 USE MODI_INI_BALLOON
 USE MODI_INI_AIRCRAFT
+!
+USE MODD_PARAM_n, ONLY : CCLOUD
 !
 IMPLICIT NONE
 !
@@ -385,10 +386,10 @@ ALLOCATE(TPFLYER%FFZ (ISTORE,KKU))
 ALLOCATE(TPFLYER%IWCZ (ISTORE,KKU))
 ALLOCATE(TPFLYER%LWCZ (ISTORE,KKU))
 ALLOCATE(TPFLYER%CIZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%SPEEDCZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%SPEEDRZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%SPEEDSZ (ISTORE,KKU))
-ALLOCATE(TPFLYER%SPEEDGZ (ISTORE,KKU))
+IF (CCLOUD=='LIMA') THEN
+  ALLOCATE(TPFLYER%CCZ  (ISTORE,KKU))
+  ALLOCATE(TPFLYER%CRZ  (ISTORE,KKU))
+ENDIF
 ALLOCATE(TPFLYER%CRARE(ISTORE,KKU))
 ALLOCATE(TPFLYER%CRARE_ATT(ISTORE,KKU))
 ALLOCATE(TPFLYER%WZ(ISTORE,KKU))
@@ -424,12 +425,12 @@ TPFLYER%RTZ      = XUNDEF
 TPFLYER%RZ       = XUNDEF
 TPFLYER%FFZ      = XUNDEF
 TPFLYER%CIZ      = XUNDEF
+IF (CCLOUD=='LIMA') THEN
+  TPFLYER%CRZ      = XUNDEF
+  TPFLYER%CCZ      = XUNDEF
+ENDIF
 TPFLYER%IWCZ     = XUNDEF
 TPFLYER%LWCZ     = XUNDEF
-TPFLYER%SPEEDCZ  = XUNDEF
-TPFLYER%SPEEDRZ  = XUNDEF
-TPFLYER%SPEEDSZ  = XUNDEF
-TPFLYER%SPEEDGZ  = XUNDEF
 XLAM_CRAD        = 3.154E-3 ! (in m) <=> 95.04 GHz = Rasta cloud radar frequency
 TPFLYER%CRARE    = XUNDEF
 TPFLYER%CRARE_ATT= XUNDEF

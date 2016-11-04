@@ -5,7 +5,8 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/two_wayn.f90,v $ $Revision: 1.3.2.4.2.2.2.3.8.1.2.3 $
+! masdev4_8 nesting 2008/06/30 12:08:25
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_TWO_WAY_n
@@ -117,6 +118,7 @@ END MODULE MODI_TWO_WAY_n
 !!      J. Escobar   27/06/2011 correction for gridnesting with different SHAPE
 !!      Bosseur & Filippi 07/2013 Adds Forefire
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -130,6 +132,7 @@ USE MODD_CONF
 USE MODD_NSV
 USE MODD_PARAM_ICE,        ONLY : LSEDIC
 USE MODD_PARAM_C2R2,       ONLY : LSEDC
+USE MODD_PARAM_LIMA,       ONLY : NSEDC => LSEDC
 !
 USE MODD_FIELD_n          ! modules relative to the inner (fine scale) model $n
 USE MODD_PRECIP_n          , ONLY : XINPRC,XINPRR,XINPRS,XINPRG,XINPRH
@@ -253,8 +256,9 @@ ELSE
   ALLOCATE(ZTSVM(0,0,0,0))
 ENDIF
 !
-IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-       (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+IF (LUSERC .AND. ( (LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.                    &
+                   (LSEDC  .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR.&
+                   (NSEDC  .AND. CCLOUD == 'LIMA')                       )) THEN
   ALLOCATE(ZTINPRC(IDIMX, IDIMY))
 ELSE
   ALLOCATE(ZTINPRC(0,0))
@@ -413,6 +417,25 @@ IF (NSV_C1R3_A(IMI) > 0) THEN
              &ZTSVM(IIBC:IIEC,IJBC:IJEC,:,JVAR-1+NSV_C1R3BEG_A(KMI))+&
              &XRHODJ(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:)*&
              &XSVT(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:,JVAR-1+NSV_C1R3BEG_A(IMI))
+      END DO
+    END DO
+  END DO
+END IF
+! LIMA scalar variables 
+IF (NSV_LIMA_A(IMI) > 0) THEN
+  ! nested model uses LIMA microphysical scheme
+  DO JVAR=1,NSV_LIMA_A(KMI)
+    ZTSVM(:,:,:,JVAR-1+NSV_LIMA_BEG_A(KMI)) = 0.
+    DO JX=1,IDXRATIO
+      DO JY=1,IDYRATIO
+        II1 = IIB+JX-1
+        II2 = IIE+JX-IDXRATIO
+        IJ1 = IJB+JY-1
+        IJ2 = IJE+JY-IDYRATIO
+        ZTSVM(IIBC:IIEC,IJBC:IJEC,:,JVAR-1+NSV_LIMA_BEG_A(KMI)) = &
+             &ZTSVM(IIBC:IIEC,IJBC:IJEC,:,JVAR-1+NSV_LIMA_BEG_A(KMI))+&
+             &XRHODJ(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:)*&
+             &XSVT(II1:II2:IDXRATIO,IJ1:IJ2:IDYRATIO,:,JVAR-1+NSV_LIMA_BEG_A(IMI))
       END DO
     END DO
   END DO
@@ -669,8 +692,9 @@ END IF
     ZTINPRR(IIBC:IIEC,IJBC:IJEC)=ZTINPRR(IIBC:IIEC,IJBC:IJEC)/(IDXRATIO*IDYRATIO)
   END IF
 !
-   IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-       (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+  IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE')      .OR.              &
+                    (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR.&
+                    (NSEDC .AND. CCLOUD == 'LIMA')                       )) THEN
     ZTINPRC(:,:) = 0.
     DO JX=1,IDXRATIO
       DO JY=1,IDYRATIO
@@ -900,8 +924,9 @@ IF (LINTER) THEN
   ELSE
     ALLOCATE(ZINPRR(0,0))
   END IF
-  IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-     (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+  IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.                   &
+                    (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR.&
+                    (NSEDC .AND. CCLOUD == 'LIMA')                       )) THEN
     ALLOCATE(ZINPRC(IXOR:IXEND,IYOR:IYEND))
   ELSE
     ALLOCATE(ZINPRC(0,0))
@@ -974,8 +999,10 @@ ENDDO
 IF (LUSERR) THEN
   CALL SET_LSFIELD_2WAY_ll(ZINPRR , ZTINPRR) 
 END IF
-IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-     (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+!
+IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.                   &
+                  (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR.&
+                  (NSEDC .AND. CCLOUD == 'LIMA')                       )) THEN
   CALL SET_LSFIELD_2WAY_ll(ZINPRC , ZTINPRC) 
 END IF
 IF (LUSERS) THEN
@@ -1107,8 +1134,9 @@ ENDIF
   IF (LUSERR) THEN
     PINPRR(IXOR:IXEND,IYOR:IYEND)=ZINPRR(IXOR:IXEND,IYOR:IYEND)
   ENDIF
-  IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.  &
-       (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) )) THEN
+  IF (LUSERC .AND. ((LSEDIC .AND. CCLOUD(1:3) == 'ICE') .OR.                   &
+                    (LSEDC .AND. (CCLOUD == 'C2R2' .OR. CCLOUD == 'KHKO')) .OR.&
+                    (NSEDC .AND. CCLOUD == 'LIMA')                       )) THEN
     PINPRC(IXOR:IXEND,IYOR:IYEND)=ZINPRC(IXOR:IXEND,IYOR:IYEND)
   ENDIF
   IF (LUSERS) THEN
@@ -1163,6 +1191,12 @@ DO JVAR=NSV_C2R2BEG_A(KMI),NSV_C2R2END_A(KMI)
 ENDDO
 ! C1R3 scalar variables
 DO JVAR=NSV_C1R3BEG_A(KMI),NSV_C1R3END_A(KMI)
+  PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) = PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
+     -  ZK2W * PRHODJ(IXOR:IXEND,IYOR:IYEND,:) * (PSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
+                 -ZSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR)/ZRHODJ(IXOR:IXEND,IYOR:IYEND,:) )
+ENDDO
+! LIMA scalar variables
+DO JVAR=NSV_LIMA_BEG_A(KMI),NSV_LIMA_END_A(KMI)
   PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) = PRSVS(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
      -  ZK2W * PRHODJ(IXOR:IXEND,IYOR:IYEND,:) * (PSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR) &
                  -ZSVM(IXOR:IXEND,IYOR:IYEND,:,JVAR)/ZRHODJ(IXOR:IXEND,IYOR:IYEND,:) )

@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ecmwf_radiation_vers2.f90,v $ $Revision: 1.3.2.4.2.2.2.1 $
 ! masdev4_7 BUG1 2007/06/15 17:47:17
 !-----------------------------------------------------------------
 !      #################################
@@ -204,6 +204,7 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         B. Aouizerats 09/2010 Explicit aerosol optical properties computation
 !         G.Delautier 9/2014: remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !         M.Mazoyer 2016 :  limit of 100 microns for effective radius 
+!         B.VIE 2016 : LIMA
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -232,23 +233,33 @@ USE YOERRTWN , ONLY : NG ,NSPA ,NSPB ,WAVENUM1  ,&
 !
 !MESO-NH modules
 USE MODD_PARAMETERS
-USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XCREC, XCRER, XFREFFR
-USE MODD_RAIN_C2R2_DESCR, ONLY : XAC, XAR,       &
-                                 XLBEXC, XLBEXR, &
-                                 XRTMIN, XCTMIN
-USE MODD_ICE_C1R3_PARAM,  ONLY : XFREFFI
-USE MODD_ICE_C1R3_DESCR,  ONLY : XLBEXI,                      &
+USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : UCREC=>XCREC, UCRER=>XCRER, UFREFFR=>XFREFFR
+USE MODD_RAIN_C2R2_DESCR, ONLY : UAC=>XAC, UAR=>XAR,       &
+                                 ULBEXC=>XLBEXC, ULBEXR=>XLBEXR, &
+                                 URTMIN=>XRTMIN, UCTMIN=>XCTMIN
+USE MODD_ICE_C1R3_PARAM,  ONLY : YFREFFI=>XFREFFI
+USE MODD_ICE_C1R3_DESCR,  ONLY : YLBEXI=>XLBEXI,                      &
                                  YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
 USE MODD_CST
 USE MODD_CRAD
 
-USE MODD_PARAM_C2R2,  ONLY : XALPHAC,XNUC,XALPHAR,XNUR !
-USE MODD_PARAM_RAD_n,  ONLY : CAOP  
+USE MODD_PARAM_C2R2,  ONLY : UALPHAC=>XALPHAC,UNUC=>XNUC, &
+                             UALPHAR=>XALPHAR,UNUR=>XNUR !
+USE MODD_PARAM_RAD_n,  ONLY : CAOP                               
 !
 USE MODI_LW
 USE MODI_RRTM_RRTM_140GP
 USE MODI_SW
-!                             
+!
+! LIMA
+USE MODD_PARAM_n, ONLY : CCLOUD
+USE MODD_PARAM_LIMA, ONLY : ZRTMIN=>XRTMIN, ZCTMIN=>XCTMIN, &
+                            ZALPHAC=>XALPHAC, ZNUC=>XNUC,   &
+                            ZALPHAR=>XALPHAR, ZNUR=>XNUR
+USE MODD_PARAM_LIMA_WARM, ONLY : ZCREC=>XCREC, ZCRER=>XCRER, ZFREFFR=>XFREFFR, &
+                                 ZAC=>XAC, ZAR=>XAR, ZLBEXC=>XLBEXC, ZLBEXR=>XLBEXR
+USE MODD_PARAM_LIMA_COLD, ONLY : ZFREFFI=>XFREFFI, ZLBEXI=>XLBEXI
+!
 IMPLICIT NONE
 !
 !
@@ -405,7 +416,73 @@ REAL, DIMENSION(KLON,KLEV,16)  :: ZTAUCLD
 REAL, DIMENSION(KLON,KAER,KLEV) :: ZAER_SW,ZAER_LW ! Optical aerosol properties
 LOGICAL :: GPROP_OP             !drapeau sur les condition a remplir pour que le
                                 !calcul des propriétés optiques soit effectué
+!
+REAL, ALLOCATABLE, DIMENSION(:) :: XRTMIN, XCTMIN
+REAL :: XALPHAC,XNUC,XALPHAR,XNUR,XCREC,XCRER,XFREFFR,XAC,XAR,XLBEXC,XLBEXR,XFREFFI,XLBEXI
 !--------------------------------------------------------------
+!
+!          0. LIMA
+IF ( CCLOUD == "LIMA" ) THEN
+   ALLOCATE(XRTMIN(SIZE(ZRTMIN,1)))
+   ALLOCATE(XCTMIN(SIZE(ZCTMIN,1)))
+   XRTMIN(:)=ZRTMIN(:)
+   XCTMIN(:)=ZCTMIN(:)
+
+   XALPHAC = ZALPHAC
+   XNUC    = ZNUC
+   XALPHAR = ZALPHAR
+   XNUR    = ZNUR
+   XCREC   = ZCREC
+   XCRER   = ZCRER
+   XFREFFR = ZFREFFR
+   XAC     = ZAC
+   XAR     = ZAR
+   XLBEXC  = ZLBEXC
+   XLBEXR  = ZLBEXR
+   XFREFFI = ZFREFFI
+   XLBEXI  = ZLBEXI
+
+ELSE IF (CCLOUD == "C3R5") THEN
+   ALLOCATE(XRTMIN(SIZE(YRTMIN,1)))
+   ALLOCATE(XCTMIN(SIZE(YCTMIN,1)))
+   XRTMIN(:)=YRTMIN(:)
+   XCTMIN(:)=YCTMIN(:)
+
+   XALPHAC = UALPHAC
+   XNUC    = UNUC
+   XALPHAR = UALPHAR
+   XNUR    = UNUR
+   XCREC   = UCREC
+   XCRER   = UCRER
+   XFREFFR = UFREFFR
+   XAC     = UAC
+   XAR     = UAR
+   XLBEXC  = ULBEXC
+   XLBEXR  = ULBEXR
+   XFREFFI = YFREFFI
+   XLBEXI  = YLBEXI
+
+ELSE IF (CCLOUD == "C2R2" .OR. CCLOUD == "KHKO") THEN
+   ALLOCATE(XRTMIN(SIZE(URTMIN,1)))
+   ALLOCATE(XCTMIN(SIZE(UCTMIN,1)))
+   XRTMIN(:)=URTMIN(:)
+   XCTMIN(:)=UCTMIN(:)
+
+   XALPHAC = UALPHAC
+   XNUC    = UNUC
+   XALPHAR = UALPHAR
+   XNUR    = UNUR
+   XCREC   = UCREC
+   XCRER   = UCRER
+   XFREFFR = UFREFFR
+   XAC     = UAC
+   XAR     = UAR
+   XLBEXC  = ULBEXC
+   XLBEXR  = ULBEXR
+   XFREFFI = YFREFFI
+   XLBEXI  = YLBEXI
+
+END IF
 !
 !*         1.     SET-UP INPUT QUANTITIES FOR RADIATION
 !                 -------------------------------------
@@ -707,8 +784,10 @@ DO JK = 1 , KLEV
 ! based on the prediction of the number concentrations
 !
           ZRHO(JL) =  (1./XRD)*(PAP(JL,IKL)/ PT(JL,IKL)) 
-          ZRADIP(JL) = 0.0
-          IF (PCIT_C1R3(JL, IKL)>YCTMIN(4) .AND. PIWC(JL,IKL)>YRTMIN(4)) THEN
+!BVIE
+!          ZRADIP(JL) = 0.0
+          ZRADIP(JL) = 40.0
+          IF (PCIT_C1R3(JL, IKL)>XCTMIN(4) .AND. PIWC(JL,IKL)>XRTMIN(4)) THEN
             ZMR(JL) = PIWC(JL,IKL)
             ZRADIP(JL) = 1.0E6 * XFREFFI*(ZMR(JL)/PCIT_C1R3(JL,IKL))**(XLBEXI)
             ZDESR(JL)  = 2.0 * ZRADIP(JL)

@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_type_profiler.f90,v $ $Revision: 1.2.4.1.2.1.10.2.2.2 $
 ! MASDEV4_7 modd 2006/06/27 12:27:06
 !-----------------------------------------------------------------
 !     ############################
@@ -36,8 +36,6 @@ IMPLICIT NONE
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/01/02
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profile
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -80,16 +78,6 @@ REAL, DIMENSION(:,:,:),   POINTER :: TKE=>NULL()      ! tke(n)
 REAL, DIMENSION(:,:,:),   POINTER :: TH=>NULL()       ! th(n)
 REAL, DIMENSION(:,:,:),   POINTER :: THV=>NULL()      ! thv(n)
 REAL, DIMENSION(:,:,:),   POINTER :: RARE=>NULL()     ! radar reflectivity (n)
-REAL, DIMENSION(:,:,:),   POINTER :: SPEEDC=>NULL()   ! cloud sedim speed  (n)
-REAL, DIMENSION(:,:,:),   POINTER :: SPEEDR=>NULL()   ! rain  sedim speed  (n)
-REAL, DIMENSION(:,:,:),   POINTER :: SPEEDS=>NULL()   ! snow  sedim speed  (n)
-REAL, DIMENSION(:,:,:),   POINTER :: SPEEDG=>NULL()   ! graup sedim speed  (n)
-REAL, DIMENSION(:,:,:),   POINTER :: SPEEDH=>NULL()   ! hail sedim speed  (n)
-REAL, DIMENSION(:,:,:),   POINTER :: INPRC3D=>NULL()  ! sedimentation rate(n)
-REAL, DIMENSION(:,:,:),   POINTER :: INPRR3D=>NULL()  ! sedimentation rate(n)
-REAL, DIMENSION(:,:,:),   POINTER :: INPRS3D=>NULL()  ! sedimentation rate(n)
-REAL, DIMENSION(:,:,:),   POINTER :: INPRG3D=>NULL()  ! sedimentation rate(n)
-REAL, DIMENSION(:,:,:),   POINTER :: INPRH3D=>NULL()  ! sedimentation rate(n)
 REAL, DIMENSION(:,:,:),   POINTER :: RHOD=>NULL()     ! density of dry air/moist air
 REAL, DIMENSION(:,:,:,:), POINTER :: R=>NULL()        ! r*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: SV=>NULL()       ! Sv*(n)

@@ -187,6 +187,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification 05/02/2015 (M.Moge) parallelization of SPAWNING
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar   02/05/2016 : test ZZS_MAX in // 
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -276,6 +277,10 @@ USE MODD_2D_FRC
 !USE MODE_LB_ll, ONLY : SET_LB_FIELD_ll
 USE MODI_GET_SIZEX_LB
 USE MODI_GET_SIZEY_LB
+!
+USE MODD_LIMA_PRECIP_SCAVENGING_n
+USE MODD_PARAM_LIMA
+USE MODD_PASPOL, ONLY : LPASPOL
 !
 USE MODD_MPIF
 USE MODD_VAR_ll
@@ -379,6 +384,8 @@ INTEGER :: IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV     ! dimensions of the
 INTEGER :: IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2       ! North-south LB arrays
 !
 CHARACTER(LEN=4)    :: YLBTYPE
+!
+INTEGER,DIMENSION(:,:),ALLOCATABLE   :: IJCOUNT 
 !
 REAL                :: ZZS_MAX, ZZS_MAX_ll
 !-------------------------------------------------------------------------------
@@ -585,6 +592,18 @@ CCLOUD   =  HCLOUD
 CDCONV   = 'NONE'                 ! deep convection will have to be restarted
 CSCONV   = 'NONE'                 ! shallow convection will have to be restarted
 !
+! cas LIMA 
+!
+IF (HCLOUD=='LIMA') THEN
+  CCLOUD='LIMA'
+  NMOD_CCN=3
+  LSCAV=.FALSE.
+  LAERO_MASS=.FALSE.
+  NMOD_IFN=2
+  NMOD_IMM=1
+  LHHONI=.FALSE.
+ENDIF
+!
 CALL INI_NSV(2) ! NSV* are set equal for model 2 and model 1. 
                 ! NSV is set to the total number of SV for model 2
 !
@@ -656,6 +675,7 @@ IF (NSV_FF  > 0) LHORELAX_SVFF   = .TRUE.
 #endif
 IF (NSV_CS  > 0) LHORELAX_SVCS   = .TRUE.
 LHORELAX_SVLG   = .FALSE.
+IF (NSV_LIMA > 0) LHORELAX_SVLIMA = .TRUE.
 !
 !-------------------------------------------------------------------------------
 !
@@ -844,7 +864,7 @@ ELSE
 END IF
 !
 IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C2R2'  &
-         .OR. CCLOUD == 'KHKO' ) THEN
+         .OR. CCLOUD == 'KHKO' .OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRC(IIU,IJU))
   ALLOCATE(XACPRC(IIU,IJU))
 ELSE
@@ -852,7 +872,7 @@ ELSE
   ALLOCATE(XACPRC(0,0))
 END IF
 !
-IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5') THEN
+IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5'.OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRS(IIU,IJU))
   ALLOCATE(XACPRS(IIU,IJU))
 ELSE
@@ -860,7 +880,7 @@ ELSE
   ALLOCATE(XACPRS(0,0))
 END IF
 !
-IF (CCLOUD == 'C3R5' .OR. CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4' ) THEN
+IF (CCLOUD == 'C3R5' .OR. CCLOUD == 'ICE3' .OR. CCLOUD == 'ICE4'.OR. CCLOUD == 'LIMA' ) THEN
   ALLOCATE(XINPRG(IIU,IJU))
   ALLOCATE(XACPRG(IIU,IJU))
 ELSE
@@ -868,12 +888,19 @@ ELSE
   ALLOCATE(XACPRG(0,0))
 END IF
 !
-IF (CCLOUD == 'ICE4') THEN
+IF (CCLOUD == 'ICE4'.OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRH(IIU,IJU))
   ALLOCATE(XACPRH(IIU,IJU))
 ELSE
   ALLOCATE(XINPRH(0,0))
   ALLOCATE(XACPRH(0,0))
+END IF
+!
+IF ( CCLOUD=='LIMA' .AND. LSCAV ) THEN
+  ALLOCATE(XINPAP(IIU,IJU))
+  ALLOCATE(XACPAP(IIU,IJU))
+  XINPAP(:,:)=0.0
+  XACPAP(:,:)=0.0  
 END IF
 !
 !        4.8bis electric variables  

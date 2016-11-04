@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/resolved_cloud.f90,v $
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_RESOLVED_CLOUD
@@ -19,10 +19,9 @@ INTERFACE
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
-                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PSEA,PTOWN          )   
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
@@ -117,17 +116,8 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -147,10 +137,9 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
-                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PSEA,PTOWN          )   
 !     ##########################################################################
 !
@@ -253,6 +242,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      M.Mazoyer : 04/2016 : Temperature radiative tendency used for  
 !!                            activation by cooling (OACTIT)
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -272,6 +262,8 @@ USE MODD_CH_AEROSOL , ONLY : LORILAM
 USE MODD_DUST , ONLY : LDUST
 USE MODD_SALT , ONLY : LSALT
 !
+USE MODD_PARAM_LIMA, ONLY : LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM
+!
 USE MODI_SLOW_TERMS
 USE MODI_FAST_TERMS
 USE MODI_ICE_ADJUST
@@ -285,6 +277,10 @@ USE MODI_SHUMAN
 USE MODI_BUDGET
 USE MODI_GET_HALO
 !
+USE MODI_LIMA_WARM
+USE MODI_LIMA_COLD
+USE MODI_LIMA_MIXED
+USE MODI_LIMA_ADJUST
 !
 IMPLICIT NONE
 !
@@ -383,17 +379,8 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -409,7 +396,8 @@ INTEGER :: IKB           !
 INTEGER :: IKE           !
 INTEGER :: IKU
 INTEGER :: IINFO_ll      ! return code of parallel routine
-INTEGER :: JK,JI
+INTEGER :: JK,JI,JL
+INTEGER :: I, J, K
 !
 !
 !
@@ -430,6 +418,8 @@ INTEGER                               :: ISVEND ! last  scalar index for microph
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
 !
+INTEGER                               :: JMOD, JMOD_IFN
+!
 !------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARY COMPUTATIONS
@@ -446,12 +436,15 @@ IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO') THEN
 ELSE IF (HCLOUD == 'C3R5') THEN
   ISVBEG = NSV_C2R2BEG
   ISVEND = NSV_C1R3END
+ELSE IF (HCLOUD == 'LIMA') THEN
+  ISVBEG = NSV_LIMA_BEG
+  ISVEND = NSV_LIMA_END
 ELSE
   ISVBEG = 0
   ISVEND = 0
 END IF
 !
-IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
   ALLOCATE(ZSVT(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
   ALLOCATE(ZSVS(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3),ISVEND - ISVBEG + 1))
   ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
@@ -466,7 +459,7 @@ DO JRR = 1,KRR
   PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) / PRHODJ(:,:,:)
 END DO
 !
-IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
   DO JSV = 1,SIZE(ZSVS,4)
     ZSVS(:,:,:,JSV) = ZSVS(:,:,:,JSV) / PRHODJ(:,:,:)
   ENDDO
@@ -493,7 +486,7 @@ IF(LEAST_ll()  .AND. HLBCX(2) /= 'CYCL')  PRT(IIE+1:,:,:,2:) = 0.0
 IF(LSOUTH_ll() .AND. HLBCY(1) /= 'CYCL')  PRT(:,:IJB-1,:,2:) = 0.0
 IF(LNORTH_ll() .AND. HLBCY(2) /= 'CYCL')  PRT(:,IJE+1:,:,2:) = 0.0
 !
-IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
 DO JI=1,JPHEXT
   ZSVS(JI,:,:,:) = ZSVS(IIB,:,:,:)
   ZSVS(IIE+JI,:,:,:) = ZSVS(IIE,:,:,:)
@@ -520,7 +513,8 @@ PRS(:,:,IKE+1,:) = PRS(:,:,IKE,:)
 PRT(:,:,IKB-1,:) = PRT(:,:,IKB,:)
 PRT(:,:,IKE+1,:) = PRT(:,:,IKE,:)
 !
-IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' &
+                                           .OR. HCLOUD == 'LIMA') THEN
   ZSVS(:,:,IKB-1,:) = ZSVS(:,:,IKB,:)
   ZSVS(:,:,IKE+1,:) = ZSVS(:,:,IKE,:)
   ZSVT(:,:,IKB-1,:) = ZSVT(:,:,IKB,:)
@@ -543,8 +537,8 @@ ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
 !
 !*       3.1    Non local correction for precipitating species (Rood 87)
 !
-IF (HCLOUD == 'KESS' .OR. HCLOUD == 'ICE3'                       &
-    .OR.  HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD == 'KESS' .OR. HCLOUD == 'ICE3' .OR. HCLOUD == 'C2R2' .OR. &
+    HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' .OR. HCLOUD=='LIMA' ) THEN
 !
   DO JRR = 3,KRR
     SELECT CASE (JRR)
@@ -673,6 +667,62 @@ SELECT CASE ( HCLOUD )
     END WHERE
     PSVS(:,:,:,:) = MAX( 0.0,PSVS(:,:,:,:) )
 !
+   CASE('LIMA')   
+! Correction of CCN concentrations where rc<0 or Nc<0
+     IF (OWARM) THEN
+        DO JMOD = 1, NMOD_CCN 
+           WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.) ! rc or Nc < 0.
+              ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JMOD-1) =               &
+                   ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JMOD-1) + & ! NfreeCN = NfreeCN+
+                   ZSVS(:,:,:,NSV_LIMA_CCN_ACTI+JMOD-1)     ! N_activated_CCN
+              ZSVS(:,:,:,NSV_LIMA_CCN_ACTI+JMOD-1) = 0.0             ! N_activated_CCN=0
+           END WHERE
+        ENDDO
+     END IF
+! Correction where rc<0
+     IF (OWARM) THEN
+        WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.)
+           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+                ZCPH(:,:,:) / ZEXN(:,:,:)
+           PRS(:,:,:,2)  = 0.0
+           ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
+        END WHERE
+     END IF
+! Correction where rr<0
+     IF (OWARM .AND. ORAIN) THEN
+        WHERE (PRS(:,:,:,3) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NR) < 0.)
+           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
+           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
+                ZCPH(:,:,:) / ZEXN(:,:,:)
+           PRS(:,:,:,3)  = 0.0
+           ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
+        END WHERE
+     END IF
+! Correction of IFN concentrations where ri<0 or Ni<0
+     IF (LCOLD) THEN
+        DO JMOD = 1, NMOD_IFN 
+           WHERE (PRS(:,:,:,4) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NI) < 0.) ! ri or Ni < 0.
+              ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JMOD-1) =               &
+                   ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JMOD-1) + &
+                   ZSVS(:,:,:,NSV_LIMA_IFN_NUCL+JMOD-1)     ! N_IF =N_IF+N_IN
+              ZSVS(:,:,:,NSV_LIMA_IFN_NUCL+JMOD-1) = 0.0             ! N_IN =0.
+           END WHERE
+        ENDDO
+     END IF
+! Correction where ri<0
+     IF (LCOLD) THEN
+        WHERE (PRS(:,:,:,4) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NI) < 0.)
+           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
+           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
+                ZCPH(:,:,:) / ZEXN(:,:,:)
+           PRS(:,:,:,4)  = 0.0
+           ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
+        END WHERE
+     END IF
+!
+     ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+!
 END SELECT
 !
 !
@@ -689,6 +739,23 @@ IF (LBUDGET_RI) CALL BUDGET (PRS(:,:,:,4) * PRHODJ(:,:,:) ,9,'NEGA_BU_RRI')
 IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NEGA_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NEGA_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
+IF (LBUDGET_SV) THEN
+   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
+   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
+   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
+   IF (NMOD_CCN.GE.1) THEN
+      DO JL=1, NMOD_CCN
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'NEGA_BU_RSV') 
+      END DO
+   END IF
+   IF (NMOD_IFN.GE.1) THEN
+      DO JL=1, NMOD_IFN
+         CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JL-1)* &
+              PRHODJ(:,:,:),12+NSV_LIMA_IFN_FREE+JL-1,'NEGA_BU_RSV') 
+      END DO
+   END IF
+END IF
 !
 
 !*       3.4    Limitations of Na and Nc to the CCN max number concentration
@@ -806,9 +873,8 @@ SELECT CASE ( HCLOUD )
                     PRT(:,:,:,5), PRT(:,:,:,6),                          &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
-                    PINPRC,PINPRC3D,PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,             &
-                    PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
+                    PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
+                    PINPRS, PINPRG, PSIGS,             &
                     PSEA,PTOWN)
 !
 !*       9.2    Perform the saturation adjustment over cloud ice and cloud water
@@ -846,11 +912,10 @@ SELECT CASE ( HCLOUD )
                     PRT(:,:,:,5), PRT(:,:,:,6),                           &
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
-                    PINPRC,PINPRC3D, PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS,PINPRS3D, PINPRG,PINPRG3D, PSIGS,              &
-                    PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,          &
+                    PINPRC, PINPRR, PINPRR3D, PEVAP3D,           &
+                    PINPRS, PINPRG, PSIGS,              &
                     PSEA, PTOWN,                                          &
-                    PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,PINPRH3D,OCONVHG  )
+                    PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,OCONVHG  )
 
 !
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
@@ -917,6 +982,47 @@ SELECT CASE ( HCLOUD )
                        PINUCS=ZSVS(:,:,:,5), PCIS=ZSVS(:,:,:,4),               &
                        PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR                   )
 !
+!
+!*       12.    2-MOMENT MIXED-PHASE MICROPHYSICAL SCHEME LIMA
+!               --------------------------------------------------------------
+!
+!
+!*       12.1   Compute the explicit microphysical sources
+!
+  CASE ('LIMA')
+!
+    IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
+                              HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                              PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
+                              PTHM, PRCM,                                   &
+                              PTHT, PRT, ZSVT,                              &
+                              PTHS, PRS, ZSVS,                              &
+                              PINPRC, PINPRR, PINPRR3D, PEVAP3D    )
+!
+IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
+                          HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,     &
+                          PRHODREF, PEXNREF, PPABST, PW_ACT,                 &
+                          PTHM, PPABSM,                                      &
+                          PTHT, PRT, ZSVT,                                   &
+                          PTHS, PRS, ZSVS,                                   &
+                          PINPRS, PINPRG, PINPRH)
+!
+IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
+                                 HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                                 PRHODREF, PEXNREF, PPABST, PW_ACT,            &
+                                 PTHM, PPABSM,                                 &
+                                 PTHT, PRT, ZSVT,                              &
+                                 PTHS, PRS, ZSVS                               )
+!
+!
+!*       12.2   Perform the saturation adjustment
+!
+CALL LIMA_ADJUST(KRR, KMI, HFMFILE, HLUOUT, HRAD,                  &
+                 HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                 PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
+                 PRT, PRS, ZSVT, ZSVS,                             &
+                 PTHS, PSRCS, PCLDFR                               )
+!
 END SELECT
 !
 IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
@@ -942,7 +1048,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !
-!*      12.     SWITCH BACK TO THE PROGNOSTIC VARIABLES
+!*      13.     SWITCH BACK TO THE PROGNOSTIC VARIABLES
 !               ---------------------------------------
 !
 PTHS(:,:,:) = PTHS(:,:,:) * PRHODJ(:,:,:)
@@ -951,7 +1057,7 @@ DO JRR = 1,KRR
   PRS(:,:,:,JRR)  = PRS(:,:,:,JRR) * PRHODJ(:,:,:)
 END DO
 !
-IF (HCLOUD == 'C2R2' .OR. HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO') THEN
+IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') THEN
   DO JSV = 1,SIZE(ZSVS,4)
     PSVS(:,:,:,JSV+ISVBEG-1) = ZSVS(:,:,:,JSV) * PRHODJ(:,:,:)
   ENDDO

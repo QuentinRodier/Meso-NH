@@ -127,6 +127,7 @@ SUBROUTINE INI_LB(HINIFILE,HLUOUT,OLSOURCE,KSV,                    &
 !!      Pialat/tulet    15/02/12    Add ForeFire scalars 
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 27/04/2016 : bug , test only on ANY(HGETSVM({{1:KSV}})=='READ'
+!!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -138,6 +139,8 @@ USE MODD_CTURB
 USE MODD_DUST
 USE MODD_SALT
 USE MODD_CH_AEROSOL
+USE MODD_PARAM_LIMA
+USE MODD_PARAM_n
 !
 
 USE MODE_FM
@@ -150,6 +153,8 @@ USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
 USE MODD_PARAMETERS,      ONLY: JPHEXT
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -225,6 +230,7 @@ CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get i
 CHARACTER (LEN= 16), DIMENSION (7) :: YRECFMX,YRECFMY ! arrays with the name  of the LB fields
                                                       ! in FM files for the moist variables
 INTEGER :: IMASDEV                                                      
+CHARACTER(LEN=2)  :: INDICE ! to index CCN and IFN fields of LIMA scheme
 !-------------------------------------------------------------------------------
 !
 !
@@ -659,6 +665,111 @@ DO JSV = NSV_C1R3BEG, NSV_C1R3END
     IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
   END SELECT
 END DO
+!
+! LIMA: CCN and IFN scalar variables
+!
+IF (CCLOUD=='LIMA' ) THEN
+  DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
+    SELECT CASE(HGETSVM(JSV))
+    CASE ('READ')
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+      IF ( KSIZELBXSV_ll /= 0 ) THEN
+        YRECFM = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+        YDIRLB='LBX'
+        CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+        IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBXSVMM)) THEN
+              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
+            ELSE
+              WRITE(ILUOUT,*) 'Pb to initialize CCN PLBXSVM '
+!callabortstop
+              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+              CALL ABORT
+              STOP
+            ENDIF
+          END IF
+        END IF
+      END IF
+!
+      IF (KSIZELBYSV_ll  /= 0 ) THEN
+        YRECFM = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+        YDIRLB='LBY'
+        CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
+             & IGRID,ILENCH,YCOMMENT,IRESP)
+        IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBYSVMM)) THEN
+              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
+            ELSE
+              WRITE(ILUOUT,*) 'Pb to initialize CCN PLBYSVM '
+!callabortstop
+              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+              CALL ABORT
+              STOP
+            ENDIF
+          END IF
+        END IF
+      END IF
+    CASE('INIT')
+      IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+      IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+  DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
+    SELECT CASE(HGETSVM(JSV))
+    CASE ('READ')
+      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+      IF ( KSIZELBXSV_ll /= 0 ) THEN
+        YRECFM = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+        YDIRLB='LBX'
+        CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+        IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBXSVMM)) THEN
+              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
+            ELSE
+              WRITE(ILUOUT,*) 'Pb to initialize IFN'
+!callabortstop
+              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+              CALL ABORT
+              STOP
+            ENDIF
+          END IF
+        END IF
+      END IF
+!
+      IF (KSIZELBYSV_ll  /= 0 ) THEN
+        YRECFM = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+        YDIRLB='LBY'
+        CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+        IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+          IF (IRESP/=0) THEN
+            IF (PRESENT(PLBYSVMM)) THEN
+              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+              WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
+            ELSE
+              WRITE(ILUOUT,*) 'Pb to initialize IFN'
+!callabortstop
+              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+              CALL ABORT
+              STOP
+            ENDIF
+          END IF
+        END IF
+      END IF
+    CASE('INIT')
+      IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+      IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+ENDIF
 ! ELEC scalar variables 
 DO JSV = NSV_ELECBEG, NSV_ELECEND
   SELECT CASE(HGETSVM(JSV))

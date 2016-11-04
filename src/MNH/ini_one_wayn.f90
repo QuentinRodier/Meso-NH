@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_one_wayn.f90,v $ $Revision: 1.3.2.2.2.1.2.1.10.1.2.4.2.1 $
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_INI_ONE_WAY_n
@@ -142,6 +142,7 @@ SUBROUTINE INI_ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                 &
 !!    Bosseur & Filippi 07/2013 Adds Forefire
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
+!!      B.VIE   2016 : LIMA
 !!
 !------------------------------------------------------------------------------
 !
@@ -165,6 +166,8 @@ USE MODI_VER_INTERP_LIN
 USE MODI_SET_CONC_RAIN_C2R2
 USE MODI_SET_CONC_ICE_C1R3
 USE MODI_SET_CHEMAQ_1WAY
+!
+USE MODI_SET_CONC_LIMA
 !
 IMPLICIT NONE
 !
@@ -393,6 +396,32 @@ IF (HCLOUD=="C3R5"  ) THEN
          &ZTSVM(:,:,:,JSV-1+NSV_C1R3BEG_A(KMI)),KMI)
   END DO
  ENDIF
+ENDIF
+!
+!  Checking if it is necessary to compute the Nc, Nr, Ni
+!  concentrations to use the LIMA microphysical scheme
+!  (FATHER does not use LIMA and CHILD uses LIMA)
+!
+IF (HCLOUD=="LIMA"  ) THEN
+   IF (CCLOUD/="LIMA") THEN
+      ALLOCATE(ZCONCM(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),NSV_LIMA_A(KMI)))
+      IF (CCLOUD == "REVE") THEN
+         ZINIT_TYPE = "INI1"
+      ELSE
+         ZINIT_TYPE = "NONE"
+      END IF
+      CALL SET_CONC_LIMA (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCM)
+      DO JSV=1,NSV_LIMA_A(KMI)
+         CALL SET_LSFIELD_1WAY_ll(ZCONCM(:,:,:,JSV),&
+              &ZTSVM(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
+      ENDDO   
+   ELSE
+      IF (NSV_LIMA_A(KMI)/=NSV_LIMA_A(KDAD)) CALL ABORT
+      DO JSV=1,NSV_LIMA_A(KMI)
+         CALL SET_LSFIELD_1WAY_ll(XSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KDAD)),&
+              &ZTSVM(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
+      END DO
+   END IF
 ENDIF
 !
 ! electrical variables

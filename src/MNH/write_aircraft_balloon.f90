@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_aircraft_balloon.f90,v $ $Revision: 1.2.2.3.2.1.2.2.10.1.2.2 $
 ! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !      ###########################
@@ -61,8 +61,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!     10/01/2011 adding IMI, the model number
 !!     March, 2013 :  C.Lac : add vertical profiles
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
+!!     Oct 2016 : G.Delautier LIMA
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -84,6 +83,9 @@ USE MODD_DUST,            ONLY: CDUSTNAMES, LDUST, NMODE_DST
 USE MODD_SALT,            ONLY: CSALTNAMES
 USE MODD_NSV
 USE MODD_DIAG_IN_RUN
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES, CAERO_MASS
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
+USE MODD_PARAM_LIMA     , ONLY: NINDICE_CCN_IMM,NMOD_CCN,NMOD_IFN,NMOD_IMM
 !
 USE MODE_MODELN_HANDLER
 USE MODE_DUST_PSD
@@ -211,9 +213,9 @@ IPROC = 20 + SIZE(TPFLYER%R,2) + SIZE(TPFLYER%SV,2) &
 IPROCZ = SIZE(TPFLYER%RTZ,2)+ SIZE(TPFLYER%RZ,2)+ SIZE(TPFLYER%RZ,3)+  SIZE(TPFLYER%CRARE,2)+ &
          SIZE(TPFLYER%CRARE_ATT,2)+ SIZE(TPFLYER%WZ,2) + SIZE(TPFLYER%FFZ,2)+ &
          SIZE(TPFLYER%IWCZ,2)+ SIZE(TPFLYER%LWCZ,2) + SIZE(TPFLYER%CIZ,2) + &
-         SIZE(TPFLYER%ZZ,2) + SIZE(TPFLYER%SPEEDCZ,2) + &
-         SIZE(TPFLYER%SPEEDRZ,2) + SIZE(TPFLYER%SPEEDSZ,2)+ &
-         SIZE(TPFLYER%SPEEDGZ,2)
+         SIZE(TPFLYER%ZZ,2)
+
+IF (NSV_LIMA_BEG/=NSV_LIMA_END) IPROCZ= IPROCZ+ SIZE(TPFLYER%CCZ,2) + SIZE(TPFLYER%CRZ,2)
 IF (SIZE(TPFLYER%TKE  )>0) IPROC = IPROC + 1
 IF (LDIAG_IN_RUN) IPROC = IPROC + 1
 IF (LORILAM) IPROC = IPROC + JPMODE*3
@@ -421,6 +423,43 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
   END DO
+! LIMA variables
+  DO JSV=NSV_LIMA_BEG,NSV_LIMA_END
+    JPROC = JPROC+1
+    YUNIT    (JPROC) = '/kg'
+    YCOMMENT (JPROC) = ' '
+    IF (JSV==NSV_LIMA_NC) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(1))//'T' 
+    IF (JSV==NSV_LIMA_NR) YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(2))//'T' 
+    IF (JSV .GE. NSV_LIMA_CCN_FREE .AND. JSV .LT. NSV_LIMA_CCN_ACTI) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(3))//INDICE//'T'
+    ENDIF
+    IF (JSV .GE. NSV_LIMA_CCN_ACTI .AND. JSV .LT. NSV_LIMA_CCN_ACTI + NMOD_CCN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_ACTI + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_WARM_NAMES(4))//INDICE//'T'
+    ENDIF
+    IF (JSV .EQ. NSV_LIMA_SCAVMASS) THEN
+      YTITLE(JPROC)=TRIM(CAERO_MASS(1))//'T'
+      YUNIT    (JPROC) = 'kg/kg'
+    ENDIF
+    IF (JSV==NSV_LIMA_NI) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(1))//'T' 
+    IF (JSV .GE. NSV_LIMA_IFN_FREE .AND. JSV .LT. NSV_LIMA_IFN_NUCL) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(2))//INDICE//'T'
+    ENDIF
+    IF (JSV .GE. NSV_LIMA_IFN_NUCL .AND. JSV .LT. NSV_LIMA_IFN_NUCL + NMOD_IFN) THEN
+        WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_NUCL + 1)
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(3))//INDICE//'T'
+    ENDIF
+    I = 0
+    IF (JSV .GE. NSV_LIMA_IMM_NUCL .AND. JSV .LT. NSV_LIMA_IMM_NUCL + NMOD_IMM) THEN
+        I = I + 1
+        WRITE(INDICE,'(I2.2)')(NINDICE_CCN_IMM(I))
+        YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(4))//INDICE//'T'
+    ENDIF
+    IF (JSV .EQ. NSV_LIMA_HOM_HAZE) YTITLE(JPROC)=TRIM(CLIMA_COLD_NAMES(5))//'T'
+    ZWORK6 (1,1,1,:,1,JPROC) = TPFLYER%SV(:,JSV)
+  END DO 
   ! electrical scalar variables
   DO JSV = NSV_ELECBEG,NSV_ELECEND
     JPROC = JPROC+1
@@ -622,35 +661,31 @@ DO IK=1, IKU
   YCOMMENTZ(JPROCZ) = 'Liquid water content'                
   ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%LWCZ(:,IK)
 !
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'CIT'
-  YUNITZ   (JPROCZ) = '/m3'         
-  YCOMMENTZ(JPROCZ) = 'Ice concentration'                   
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+  IF (NSV_LIMA_BEG/=NSV_LIMA_END) THEN
+    JPROCZ = JPROCZ + 1
+    YTITLEZ  (JPROCZ) = 'CIT'
+    YUNITZ   (JPROCZ) = '/m3'         
+    YCOMMENTZ(JPROCZ) = 'Ice concentration'                   
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+  ELSE
+    JPROCZ = JPROCZ + 1
+    YTITLEZ  (JPROCZ) = 'CCLOUDT'
+    YUNITZ   (JPROCZ) = '/kg'         
+    YCOMMENTZ(JPROCZ) = 'liquid cloud concentration'                   
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CCZ(:,IK)
 !
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'SPEEDC'
-  YUNITZ   (JPROCZ) = 'm/s'         
-  YCOMMENTZ(JPROCZ) = 'Cloud fall speed'                    
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDCZ(:,IK)
+    JPROCZ = JPROCZ + 1
+    YTITLEZ  (JPROCZ) = 'CRAINT'
+    YUNITZ   (JPROCZ) = '/kg'         
+    YCOMMENTZ(JPROCZ) = 'Rain concentration'                   
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CRZ(:,IK)
 !
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'SPEEDR'
-  YUNITZ   (JPROCZ) = 'm/s'         
-  YCOMMENTZ(JPROCZ) = 'Rain fall speed'                    
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDRZ(:,IK)
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'SPEEDS'
-  YUNITZ   (JPROCZ) = 'm/s'         
-  YCOMMENTZ(JPROCZ) = 'Snow  fall speed'                    
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDSZ(:,IK)
-!
-  JPROCZ = JPROCZ + 1
-  YTITLEZ  (JPROCZ) = 'SPEEDG'
-  YUNITZ   (JPROCZ) = 'm/s'         
-  YCOMMENTZ(JPROCZ) = 'Graupel fall speed'                    
-  ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%SPEEDGZ(:,IK)
+    JPROCZ = JPROCZ + 1
+    YTITLEZ  (JPROCZ) = 'CICET'
+    YUNITZ   (JPROCZ) = '/kg'         
+    YCOMMENTZ(JPROCZ) = 'Ice concentration'                   
+    ZWORKZ6 (1,1,IK,:,1,JPROCZ) = TPFLYER%CIZ(:,IK)
+ ENDIF
 !
   JPROCZ = JPROCZ + 1
   YTITLEZ  (JPROCZ) = 'RARE'

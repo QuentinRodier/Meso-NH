@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/aircraft_balloon.f90,v $ $Revision: 1.1.10.1.16.1.2.2 $
 ! MASDEV4_7 balloon 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !      #####################
@@ -19,8 +19,7 @@ INTERFACE
                                   PXHAT, PYHAT, PZ,                     &
                                   PMAP, PLONOR, PLATOR,                 &
                                   PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                                  PTS, PRHODREF, PCIT, PSPEEDC, PSPEEDR,&
-                                  PSPEEDS, PSPEEDG, PSPEEDH, PSEA)
+                                  PTS, PRHODREF, PCIT, PSEA)
 !
 USE MODD_TYPE_DATE
 CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
@@ -47,11 +46,6 @@ REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 ! ++ OC
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
 ! -- OC
 !
@@ -69,8 +63,7 @@ END MODULE MODI_AIRCRAFT_BALLOON
                                   PXHAT, PYHAT, PZ,                     &
                                   PMAP, PLONOR, PLATOR,                 &
                                   PU, PV, PW, PP, PTH, PR, PSV, PTKE,   &
-                                  PTS, PRHODREF, PCIT, PSPEEDC, PSPEEDR,&
-                                  PSPEEDS, PSPEEDG, PSPEEDH, PSEA)
+                                  PTS, PRHODREF, PCIT,  PSEA)
 !     ###################################################################
 !
 !
@@ -103,8 +96,6 @@ END MODULE MODI_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!
 !!              March, 2008 (P.Lacarrere) Add 3D fluxes
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
-!!                                      aircraft, ballon and profiler
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -147,11 +138,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PTKE   ! turbulent kinetic energy
 REAL, DIMENSION(:,:),     INTENT(IN)     :: PTS    ! surface temperature
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PRHODREF ! dry air density of the reference state
 REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PCIT     ! pristine ice concentration
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDC ! Cloud sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDR ! Rain sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDS ! Snow sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDG ! Graupel sedimentation speed
-REAL, DIMENSION(:,:,:),   INTENT(IN)     :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:),INTENT(IN) :: PSEA
 !
 !-------------------------------------------------------------------------------
@@ -171,63 +157,54 @@ IF (TBALLOON1%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,                    &
                            TBALLOON1, PSEA                                            )
 ENDIF
 IF (TBALLOON2%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON2, PSEA                                            )
 ENDIF
 IF (TBALLOON3%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON3, PSEA                                            )
 ENDIF
 IF (TBALLOON4%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON4, PSEA                                            )
 ENDIF
 IF (TBALLOON5%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON5, PSEA                                            )
 ENDIF
 IF (TBALLOON6%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON6, PSEA                                            )
 ENDIF
 IF (TBALLOON7%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON7, PSEA                                            )
 ENDIF
 IF (TBALLOON8%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON8, PSEA                                            )
 ENDIF
 IF (TBALLOON9%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TBALLOON9, PSEA                                            )
 ENDIF
 !
@@ -235,210 +212,180 @@ IF (TAIRCRAFT1%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT1, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT2%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT2, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT3%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT3, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT4%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT4, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT5%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT5, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT6%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT6, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT7%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT7, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT8%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT8, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT9%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT9, PSEA                                           )
 ENDIF
 IF (TAIRCRAFT10%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT10, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT11%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT11, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT12%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT12, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT13%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT13, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT14%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT14, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT15%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT15, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT16%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT16, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT17%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT17, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT18%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT18, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT19%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT19, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT20%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT20, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT21%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT21, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT22%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT22, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT23%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT23, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT24%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT24, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT25%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT25, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT26%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT26, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT27%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT27, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT28%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT28, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT29%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT29, PSEA                                          )
 ENDIF
 IF (TAIRCRAFT30%NMODEL /= 0) THEN
 CALL AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP, TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,        &
                            PXHAT, PYHAT, PZ, PMAP, PLONOR, PLATOR,                    &
                            PU, PV, PW, PP, PTH, PR, PSV, PTKE, PTS, PRHODREF, PCIT,   &
-                           PSPEEDC,PSPEEDR,PSPEEDS,PSPEEDG,PSPEEDH,           &
                            TAIRCRAFT30, PSEA                                          )
 ENDIF
 !

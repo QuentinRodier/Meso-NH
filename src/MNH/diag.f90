@@ -75,6 +75,7 @@
 !!  09/2015     (S. Bielli)    Add netcdf call for phys_param
 !!  04/2016     (G.Delautier) replace print by write in OUTPUT LISTING
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  09/2016      (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -118,6 +119,7 @@ USE MODD_LES
 USE MODD_LES_BUDGET
 USE MODD_BUDGET
 USE MODD_RADAR
+USE MODD_PARAM_LIMA, ONLY : LLIMA_DIAG
 !
 USE MODN_DIAG_BLANK
 !
@@ -198,7 +200,6 @@ LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
 INTEGER :: IIU, IJU, IKU
 INTEGER :: IINFO_ll               ! return code for _ll routines 
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
-REAL, DIMENSION(:,:,:),ALLOCATABLE        :: ZWORK
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
@@ -221,7 +222,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
                    XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
-                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX
+                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX, LLIMA_DIAG
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
 NAMELIST/NAM_STO_FILE/ CFILES, NSTART_SUPP
@@ -291,6 +292,7 @@ LCHAQDIAG=.FALSE.
 XCHEMLAT(:)=XUNDEF
 XCHEMLON(:)=XUNDEF
 LTRAJ=.FALSE.
+LLIMA_DIAG=.FALSE.
 !
 LAIRCRAFT_BALLOON=.FALSE.
 NTIME_AIRCRAFT_BALLOON=NUNDEF
@@ -549,9 +551,8 @@ IF ( LAIRCRAFT_BALLOON ) THEN
                       TDTEXP, TDTMOD, TDTCUR, TXDTBAL, &
                       XXHAT, XYHAT, XZZ, XMAP, XLONORI, XLATORI, &
                       XUT, XVT, XWT, XPABST, XTHT, XRT, XSVT,    &
-                      XTKET, XTSRAD, XRHODREF,XCIT,    &
-                      ZWORK,ZWORK,ZWORK,ZWORK,ZWORK,ZSEA)
-  DEALLOCATE (ZSEA,ZTOWN,ZWORK)
+                      XTKET, XTSRAD, XRHODREF,XCIT,ZSEA)
+  DEALLOCATE (ZSEA,ZTOWN)
 !
 !-----------------------------
 !

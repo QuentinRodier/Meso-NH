@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_dynn.f90,v $ $Revision: 1.2.2.3.2.2.2.2.10.1.2.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_DYN_n
@@ -44,6 +44,7 @@
 !!      Modifications    07/05   (P.Tulet)       Add  relaxation for dust and aerosol
 !!      Modifications    05/07   (C.Lac)         Separation of num diffusion
 !!      Modifications    07/10   (M.Leriche)     Add relaxation for ice phase chemical
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -124,6 +125,7 @@ TYPE DYN_t
 !
   LOGICAL :: LHORELAX_SVC2R2
   LOGICAL :: LHORELAX_SVC1R3
+  LOGICAL :: LHORELAX_SVLIMA
   LOGICAL :: LHORELAX_SVELEC
   LOGICAL :: LHORELAX_SVCHEM
   LOGICAL :: LHORELAX_SVCHIC
@@ -212,6 +214,7 @@ LOGICAL, POINTER :: LHORELAX_RS=>NULL(), LHORELAX_RG=>NULL(), LHORELAX_RH=>NULL(
 LOGICAL, POINTER :: LHORELAX_TKE=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVC2R2=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVC1R3=>NULL()
+LOGICAL, POINTER :: LHORELAX_SVLIMA=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVELEC=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVCHEM=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVCHIC=>NULL()
@@ -318,6 +321,7 @@ LHORELAX_RH=>DYN_MODEL(KTO)%LHORELAX_RH
 LHORELAX_TKE=>DYN_MODEL(KTO)%LHORELAX_TKE
 LHORELAX_SVC2R2=>DYN_MODEL(KTO)%LHORELAX_SVC2R2
 LHORELAX_SVC1R3=>DYN_MODEL(KTO)%LHORELAX_SVC1R3
+LHORELAX_SVLIMA=>DYN_MODEL(KTO)%LHORELAX_SVLIMA
 LHORELAX_SVELEC=>DYN_MODEL(KTO)%LHORELAX_SVELEC
 LHORELAX_SVCHEM=>DYN_MODEL(KTO)%LHORELAX_SVCHEM
 LHORELAX_SVCHIC=>DYN_MODEL(KTO)%LHORELAX_SVCHIC
