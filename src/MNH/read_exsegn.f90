@@ -285,6 +285,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      P.Wautelet 08/07/2016 : removed MNH_NCWRIT define
 !!      Modification   10/2016    (C.LAC) Add OSPLIT_WENO + Add droplet
 !!                                deposition + Add max values
+!!      Modification   11/2016   (Ph. Wautelet) Allocate/initialise some output/backup structures
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -497,9 +498,13 @@ IF (KMI == 1) THEN
   IF (GFOUND) THEN
     !Should have been allocated before in READ_DESFM_n 
     IF (.NOT.ALLOCATED(XBAK_TIME)) ALLOCATE(XBAK_TIME(NMODEL,JPOUTMAX))
+    IF (.NOT.ALLOCATED(XOUT_TIME)) ALLOCATE(XOUT_TIME(NMODEL,JPOUTMAX))
     IF (.NOT.ALLOCATED(NBAK_STEP)) ALLOCATE(NBAK_STEP(NMODEL,JPOUTMAX))
+    IF (.NOT.ALLOCATED(NOUT_STEP)) ALLOCATE(NOUT_STEP(NMODEL,JPOUTMAX))
     XBAK_TIME(:,:) = XNEGUNDEF
+    XOUT_TIME(:,:) = XNEGUNDEF
     NBAK_STEP(:,:) = NNEGUNDEF
+    NOUT_STEP(:,:) = NNEGUNDEF
     READ(UNIT=ILUSEG,NML=NAM_FMOUT)
   END IF
   CALL POSNAM(ILUSEG,'NAM_BUDGET',GFOUND,ILUOUT)

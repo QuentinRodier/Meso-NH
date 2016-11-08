@@ -24,10 +24,6 @@
 !!      Module MODD_FMOUT : contains declaration of the variables describing 
 !!                          the instants for the outputs
 !!
-!!         XFMOUT :  XFMOUT(m,i) array of increments in seconds from 
-!!                 the beginning of the segment to the instant where the i-th
-!!                 fields output on FM-files is realized by model "m"
-!!
 !!    REFERENCE
 !!    ---------
 !!      Book2 of Meso-NH documentation (module MODD_FMOUT)
@@ -39,6 +35,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/07/96                      
+!!      Ph. Wautelet : 2016: new structures for outputs/backups
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -51,6 +48,10 @@ IMPLICIT NONE
 NAMELIST/NAM_FMOUT/LBAK_BEG,LBAK_END,&
                    XBAK_TIME,NBAK_STEP,&
                    NBAK_STEP_FREQ,NBAK_STEP_FREQ_FIRST,&
-                   XBAK_TIME_FREQ,XBAK_TIME_FREQ_FIRST
+                   XBAK_TIME_FREQ,XBAK_TIME_FREQ_FIRST, &
+                   LOUT_BEG,LOUT_END,&
+                   XOUT_TIME,NOUT_STEP,&
+                   NOUT_STEP_FREQ,NOUT_STEP_FREQ_FIRST,&
+                   XOUT_TIME_FREQ,XOUT_TIME_FREQ_FIRST
 !
 END MODULE MODN_FMOUT

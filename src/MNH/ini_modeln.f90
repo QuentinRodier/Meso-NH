@@ -1555,7 +1555,7 @@ CALL SET_GRID(KMI,HINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,         &
               XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
               XZS,XZZ,XZHAT,LSLEVE,XLEN1,XLEN2,XZSMT,                    &
               ZJ,                                                        &
-              TDTMOD,TDTCUR,NSTOP,NOUT_NUMB,TOUTBAKN)
+              TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
 !
 CALL METRICS(XMAP,XDXHAT,XDYHAT,XZZ,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !

@@ -25,7 +25,8 @@ INTERFACE
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
                           PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
                           PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,KOUT_NUMB,TPOUTBAKN           )
+                          TPDTMOD,TPDTCUR,KSTOP,                              &
+                          KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
 !
 USE MODD_TYPE_DATE
 USE MODD_IO_ll, ONLY:TOUTBAK
@@ -86,8 +87,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
+INTEGER,POINTER,        INTENT(OUT) :: KBAK_NUMB ! number of backups
 INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPBACKUPN ! List of backups
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTPUTN ! List of outputs
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
 !
@@ -113,7 +116,8 @@ END MODULE MODI_SET_GRID
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
                           PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
                           PJ,                                                 &
-                          TPDTMOD,TPDTCUR,KSTOP,KOUT_NUMB,TPOUTBAKN           )
+                          TPDTMOD,TPDTCUR,KSTOP,                              &
+                          KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
 !     #########################################################################
 !
 !!****  *SET_GRID* - routine to set grid variables
@@ -314,8 +318,10 @@ TYPE (DATE_TIME),       INTENT(OUT) :: TPDTMOD   ! date and time of the model
 TYPE (DATE_TIME),       INTENT(OUT) :: TPDTCUR   ! Current date and time
 INTEGER,                INTENT(OUT) :: KSTOP     ! number of time steps for
                                                  ! current segment
+INTEGER,POINTER,        INTENT(OUT) :: KBAK_NUMB ! number of backups
 INTEGER,POINTER,        INTENT(OUT) :: KOUT_NUMB ! number of outputs
-TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTBAKN ! List of outputs and backups
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPBACKUPN ! List of backups
+TYPE(TOUTBAK),DIMENSION(:),POINTER,INTENT(OUT) :: TPOUTPUTN ! List of outputs
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PJ        ! Jacobian
 !
@@ -512,8 +518,10 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 ! The output/backups times have been read only by model 1
 IF (KMI == 1) CALL IO_PREPARE_BAKOUT_STRUCT(ISUP,PTSTEP,PSEGLEN)
 !
+KBAK_NUMB => OUT_MODEL(KMI)%NBAK_NUMB
 KOUT_NUMB => OUT_MODEL(KMI)%NOUT_NUMB
-TPOUTBAKN => OUT_MODEL(KMI)%TOUTBAKN
+TPBACKUPN => OUT_MODEL(KMI)%TBACKUPN
+TPOUTPUTN => OUT_MODEL(KMI)%TOUTPUTN
 !
 !-------------------------------------------------------------------------------
 !

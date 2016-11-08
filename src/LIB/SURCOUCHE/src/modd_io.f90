@@ -38,8 +38,7 @@ END TYPE LFIPARAM
 
 !Structure describing the characteristics of an output or a backup
 TYPE TOUTBAK
-  INTEGER           :: NBAKID = -1  !Backup number
-  INTEGER           :: NOUTID = -1  !Output number
+  INTEGER           :: NID = -1     !Backup number
   INTEGER           :: NSTEP        !Timestep number
   REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
@@ -66,7 +65,9 @@ TYPE TFILEDATA
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
 
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_FIRST => NULL()
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_LAST  => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_FIRST => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUT_FIRST => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_LAST  => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUT_LAST  => NULL()
 
 END MODULE MODD_IO_ll

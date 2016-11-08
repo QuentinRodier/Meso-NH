@@ -191,6 +191,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   07/2013   (Bosseur & Filippi) Adds Forefire
 !!      Modification   01/2015   (C. Barthe) Add explicit LNOx
 !!      Modification   2016      (B.VIE) LIMA
+!!      Modification   11/2016   (Ph. Wautelet) Allocate/initialise some output/backup structures
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -425,10 +426,14 @@ IF (KMI == 1) THEN
   CALL POSNAM(ILUDES,'NAM_FMOUT',GFOUND)
   IF (GFOUND) THEN
     IF (.NOT.ALLOCATED(XBAK_TIME)) ALLOCATE(XBAK_TIME(NMODEL,JPOUTMAX))
+    IF (.NOT.ALLOCATED(XOUT_TIME)) ALLOCATE(XOUT_TIME(NMODEL,JPOUTMAX))
     IF (.NOT.ALLOCATED(NBAK_STEP)) ALLOCATE(NBAK_STEP(NMODEL,JPOUTMAX))
+    IF (.NOT.ALLOCATED(NOUT_STEP)) ALLOCATE(NOUT_STEP(NMODEL,JPOUTMAX))
     READ(UNIT=ILUDES,NML=NAM_FMOUT)
     XBAK_TIME(:,:) = XNEGUNDEF
+    XOUT_TIME(:,:) = XNEGUNDEF
     NBAK_STEP(:,:) = NNEGUNDEF
+    NOUT_STEP(:,:) = NNEGUNDEF
   END IF
   CALL POSNAM(ILUDES,'NAM_BUDGET',GFOUND)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_BUDGET)
