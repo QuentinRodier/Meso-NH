@@ -7,12 +7,12 @@
 !      ################################
 !
 INTERFACE
-      SUBROUTINE CH_AQUEOUS_SEDIM1MOM (PTIME, HCLOUD, OUSECHIC, PTSTEP, &
-                                       PZZ, PRHODREF, PRHODJ, PRRS,     &
-                                       PRSS, PRGS, PRRSVS, PSGRSVS      )
+      SUBROUTINE CH_AQUEOUS_SEDIM1MOM (KSPLITR, HCLOUD, OUSECHIC, PTSTEP,  &
+                                       PZZ, PRHODREF, PRHODJ, PRRS,        &
+                                       PRSS, PRGS, PRRSVS, PSGRSVS, PINPRR )
 !
 CHARACTER (LEN=4),        INTENT(IN)    :: HCLOUD  ! Cloud parameterization
-REAL,                     INTENT(IN)    :: PTIME  ! Current time
+INTEGER,                  INTENT(IN)    :: KSPLITR ! Current time
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 LOGICAL,                  INTENT(IN)    :: OUSECHIC ! flag for ice chem.
 !
@@ -24,16 +24,17 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRSS    ! Snow m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGS    ! Graupel m.r. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRSVS  ! Rainwater aq. species source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSGRSVS ! Precip. ice species source
+REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRR  ! instantaneaous precip.
 !
 END SUBROUTINE CH_AQUEOUS_SEDIM1MOM
 END INTERFACE
 END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !
-!     ###################################################################
-      SUBROUTINE CH_AQUEOUS_SEDIM1MOM (PTIME, HCLOUD, OUSECHIC, PTSTEP, &
-                                       PZZ, PRHODREF, PRHODJ, PRRS,     &
-                                       PRSS, PRGS, PRRSVS, PSGRSVS      )
-!     ###################################################################
+!     ######################################################################
+      SUBROUTINE CH_AQUEOUS_SEDIM1MOM (KSPLITR, HCLOUD, OUSECHIC, PTSTEP,  &
+                                       PZZ, PRHODREF, PRHODJ, PRRS,        &
+                                       PRSS, PRGS, PRRSVS, PSGRSVS, PINPRR )
+!     ######################################################################
 !
 !!****  * -  compute the explicit microphysical sources 
 !!
@@ -77,6 +78,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !!    04/11/08 (M Leriche) add ICE3    
 !!    17/09/10 (M Leriche) add LUSECHIC flag
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!    16/12/15 (M Leriche) compute instantaneous rain at the surface
 !!
 !-------------------------------------------------------------------------------
 !
@@ -85,6 +87,7 @@ END MODULE MODI_CH_AQUEOUS_SEDIM1MOM
 !
 USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_CONF
+USE MODD_CST,             ONLY : XRHOLW
 USE MODD_CLOUDPAR,        ONLY : VCEXVT=>XCEXVT, XCRS, XCEXRS
 USE MODD_RAIN_ICE_DESCR,  ONLY : WCEXVT=>XCEXVT, WRTMIN=>XRTMIN
 USE MODD_RAIN_ICE_PARAM,  ONLY : XFSEDR, XEXSEDR, &
@@ -97,7 +100,7 @@ IMPLICIT NONE
 !
 !
 CHARACTER (LEN=4),        INTENT(IN)    :: HCLOUD  ! Cloud parameterization
-REAL,                     INTENT(IN)    :: PTIME  ! Current time
+INTEGER,                  INTENT(IN)    :: KSPLITR ! Current time
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 LOGICAL,                  INTENT(IN)    :: OUSECHIC ! flag for ice chem.
 !
@@ -109,6 +112,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRSS    ! Snow m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRGS    ! Graupel m.r. source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRSVS  ! Rainwater aq. species source
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSGRSVS ! Precip. ice species source
+REAL, DIMENSION(:,:),     INTENT(OUT)   :: PINPRR  ! instantaneaous precip.
 !
 !*       0.2   Declarations of local variables :
 !
@@ -162,9 +166,8 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZRHODREF, & ! RHO Dry REFerence
                                    ZZW         ! Work array
 REAL, DIMENSION(7), SAVE        :: Z_XRTMIN
 !
-REAL                            :: ZVTRMAX, ZDZMIN, ZT
+REAL                            :: ZVTRMAX, ZT
 LOGICAL, SAVE                   :: GSFIRSTCALL = .TRUE.
-INTEGER, SAVE                   :: ISPLITR
 REAL,    SAVE                   :: ZFSEDR, ZEXSEDR, ZCEXVT
 !
 INTEGER , DIMENSION(SIZE(GSEDIMR)) :: IR1,IR2,IR3 ! Used to replace the COUNT
@@ -180,6 +183,7 @@ INTEGER                           :: JL       ! and PACK intrinsics
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT
+PINPRR(:,:) = 0. ! initialize instantaneous precip.
 !
 !-------------------------------------------------------------------------------
 !
@@ -197,7 +201,7 @@ ENDIF
 !*       3.     COMPUTE THE SEDIMENTATION (RS) SOURCE
 !	        -------------------------------------
 !
-!*       3.1    splitting factor for high Courant number C=v_fall*(del_Z/del_T)
+!*       3.1    Initialize some constants
 !  
 firstcall : IF (GSFIRSTCALL) THEN
   GSFIRSTCALL = .FALSE.
@@ -209,13 +213,6 @@ firstcall : IF (GSFIRSTCALL) THEN
     CASE('ICE4')
       ZVTRMAX = 40.
   END SELECT
-  ZDZMIN = MINVAL(PZZ(IIB:IIE,IJB:IJE,IKB+1:IKE+1)-PZZ(IIB:IIE,IJB:IJE,IKB:IKE))
-  ISPLITR = 1
-  SPLIT : DO
-    ZT = PTSTEP / FLOAT(ISPLITR)
-    IF ( ZT * ZVTRMAX / ZDZMIN .LT. 1.) EXIT SPLIT
-    ISPLITR = ISPLITR + 1
-  END DO SPLIT
 !
   SELECT CASE ( HCLOUD )  ! constants for rain sedimentation
     CASE('KESS')
@@ -233,7 +230,7 @@ END IF firstcall
 !
 !*       3.2    time splitting loop initialization
 !
-ZTSPLITR = PTSTEP / FLOAT(ISPLITR)       ! Small time step
+ZTSPLITR = PTSTEP / FLOAT(KSPLITR)       ! Small time step
 !
 !*       3.3    compute the fluxes
 !
@@ -245,7 +242,7 @@ IF (HCLOUD(1:3) == 'ICE') THEN
   ZSV_SEDIM_FACTS(:,:,:) = 1.0
   ZSV_SEDIM_FACTG(:,:,:) = 1.0
 ENDIF
-DO JN = 1 , ISPLITR
+DO JN = 1 , KSPLITR
   IF( JN==1 ) THEN
     ZW(:,:,:) = 0.0
     DO JK = IKB , IKE-1
@@ -275,6 +272,7 @@ DO JN = 1 , ISPLITR
       ZRR_SEDIM(:,:,JK) = ZW(:,:,JK)*(ZWSED(:,:,JK+1)-ZWSED(:,:,JK))
     END DO
     ZZRRS(:,:,:) = ZZRRS(:,:,:) + ZRR_SEDIM(:,:,:)
+    PINPRR(:,:) = PINPRR(:,:) + ZWSED(:,:,IKB)/XRHOLW/KSPLITR
 !
     ZZW(:) = ZFSEDR * ZZZRRS(:)**(ZEXSEDR-1.0) * ZRHODREF(:)**(ZEXSEDR-ZCEXVT)
     ZWSED(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIMR(:,:,:),FIELD=0.0 )

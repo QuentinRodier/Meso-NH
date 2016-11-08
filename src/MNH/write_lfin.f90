@@ -160,6 +160,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       C.Lac         Dec.2014 writing past wind fields for centred advection
 !!       J.-P. Pinty   Jan 2015 add LNOx and flash map diagnostics
 !!       J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!       P. Tulet & M. Leriche    Nov 2015 add mean pH value in the rain at the surface
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!                   
 !-------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ USE MODD_NESTING
 USE MODD_PARAMETERS
 USE MODD_GR_FIELD_n
 USE MODD_CH_MNHC_n,       ONLY: LUSECHEM,LCH_CONV_LINOX, &
-                                LUSECHAQ,LUSECHIC,LCH_PH
+                                LUSECHAQ,LUSECHIC,LCH_PH, XCH_PHINIT
 USE MODD_CH_PH_n
 USE MODD_CH_M9_n
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
@@ -1171,6 +1172,20 @@ IF (NSV >=1) THEN
         YCOMMENT='X_Y_Z_PHR'
         ILENCH=LEN(YCOMMENT)
         CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPHR,IGRID,ILENCH,YCOMMENT,IRESP)
+        ! compute mean pH in accumulated surface water
+        !ZWORK2D(:,:) = 10**(-XCH_PHINIT)
+        WHERE (XACPRR > 0.)
+        ZWORK2D(:,:) =  XACPHR(:,:) *1E3 / XACPRR(:,:) ! moles of H+ / l of water 
+        ELSE WHERE
+        ZWORK2D(:,:) = XUNDEF
+        END WHERE
+        WHERE ((ZWORK2D(:,:) < 1E-1).AND.(ZWORK2D(:,:) > 1E-14))
+        ZWORK2D(:,:) = -ALOG10(ZWORK2D(:,:))           ! mean pH of surface water
+        END WHERE
+        YRECFM = 'MEANPHR'
+        YCOMMENT='X_Y_MEAN_PH'
+        ILENCH=LEN(YCOMMENT)
+        CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH,YCOMMENT,IRESP)        
       ENDIF
     ENDIF
   ELSE IF (LCH_CONV_LINOX) THEN

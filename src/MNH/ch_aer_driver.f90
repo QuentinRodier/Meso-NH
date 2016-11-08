@@ -56,6 +56,7 @@ SUBROUTINE CH_AER_DRIVER(PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
 !!    -------------
 !!    Original
 !!       M.Leriche 2015 Calcul de la fraction massique entre les modes
+!!       M.Leriche 08/16 suppress moments index declaration already in modd_aerosol
 !!
 !!    EXTERNAL
 !!    --------
@@ -103,13 +104,6 @@ REAL, DIMENSION(SIZE(PM,1))   :: ZPKM, ZPKH2O, ZSUM
 !-----------------------------------------------------------------------------
 
 ZDT=PDTACT
-! Moments index
-NM0(1) = 1
-NM3(1) = 2
-NM6(1) = 3
-NM0(2) = 4
-NM3(2) = 5
-NM6(2) = 6
 
 !*************************************************************
 ! Calcul de la fraction massique entre les modes

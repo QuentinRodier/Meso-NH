@@ -107,6 +107,9 @@ END MODULE MODI_CH_MONITOR_n
 !!                         imply transfer H2SO4 AP in aqueous phase if aq.chem.
 !!    04/2014 (C.Lac) Remove GCENTER with FIT temporal scheme
 !!    06/11/14 (M Leriche) Bug in pH computing
+!!    11/12/15 (M. Leriche & P. Tulet) add ch_init_ice initialise index for ice chem.
+!!    18/01/16 (M Leriche) for sedimentation fusion C2R2 and khko
+!!    15/02/16 (M Leriche) call ch_init_rosenbrock only one time
 !!
 !!    EXTERNAL
 !!    --------
@@ -117,13 +120,13 @@ USE MODI_CH_SET_PHOTO_RATES
 USE MODI_CH_SOLVER_n
 USE MODI_CH_UPDATE_JVALUES
 USE MODI_BUDGET
+USE MODI_CH_INIT_ICE
 USE MODI_CH_AQUEOUS_TMICICE
 USE MODI_CH_AQUEOUS_TMICKESS
 USE MODI_CH_AQUEOUS_TMICC2R2
 USE MODI_CH_AQUEOUS_TMICKHKO
 USE MODI_CH_AQUEOUS_SEDIM1MOM
-USE MODI_CH_AQUEOUS_SEDIMC2R2
-USE MODI_CH_AQUEOUS_SEDIMKHKO
+USE MODI_CH_AQUEOUS_SEDIM2MOM
 USE MODI_CH_AQUEOUS_CHECK
 USE MODI_FM_ll
 USE MODI_SUM_ll
@@ -147,7 +150,7 @@ USE MODD_CST, ONLY : XMNH_TINY
 USE MODD_BUDGET
 USE MODD_LUNIT_n
 USE MODD_NSV, ONLY : NSV_CHEMBEG,NSV_CHEMEND,NSV_CHEM,& ! index for chemical SV
-                     NSV_CHACBEG,NSV_CHACEND,         & ! index for aqueous SV
+                     NSV_CHACBEG,NSV_CHACEND,NSV_CHAC,& ! index for aqueous SV
                      NSV_CHGSBEG,NSV_CHGSEND,         & ! index for gas phase SV
                      NSV_CHICBEG,NSV_CHICEND,         & ! index for ice phase SV
                      NSV_C2R2BEG,                     & ! index for number concentration
@@ -195,7 +198,7 @@ USE MODD_FIELD_n,   ONLY: XSVT,      &! scalar variable at t
 USE MODD_REF_n,     ONLY: XRHODREF,  &! dry density for ref. state
                           XRHODJ      ! ( rhod J ) = dry density
 !
-USE MODD_TIME 
+USE MODD_TIME,      ONLY: TDTEXP 
 !
 USE MODD_TIME_n,    ONLY: TDTCUR      ! Current Time and Date
 !
@@ -227,6 +230,10 @@ USE MODD_DYN_n,     ONLY: XTSTEP      ! time step of MesoNH
 !
 USE MODD_PRECIP_n, ONLY: XEVAP3D
 USE MODD_CLOUDPAR_n, ONLY: NSPLITR  ! Nb of required small time step integration
+!
+!variables used by microphysical mass transfer - sedimentation
+!
+USE MODD_CLOUDPAR_n, ONLY: NSPLITR
 !
 !variables used by rosenbrock solver
 !
@@ -329,7 +336,7 @@ INTEGER                :: IMI            ! model index
 !-------------------------------------------------------------------------------
 !   variables for the aerosol module
 !
-REAL                   :: ZTIME                ! time beginning at TDTEXP%TIME
+REAL                   :: ZTIME                ! current time 
 REAL, ALLOCATABLE, DIMENSION(:,:)   :: ZM, ZSIG0, ZN0, ZRG0, &   ! work array
                                        ZCTOTG, ZSEDA, ZFRAC, ZMI ! for aerosols
 REAL, ALLOCATABLE, DIMENSION(:,:,:) :: ZCTOTA, ZCCTOT
@@ -348,6 +355,7 @@ REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NSV_AER) :: ZCWETAERO
 INTEGER                :: JRR          ! Loop index for the moist variables
 REAL,DIMENSION(SIZE(XRT,1),SIZE(XRT,2),SIZE(XRT,3),SIZE(XRT,4))     :: ZRT_VOL
                                        ! liquid content in vol/vol
+REAL, DIMENSION(SIZE(XRT,1), SIZE(XRT,2))     :: ZINPRR! Rain instant precip
 !
 !-------------------------------------------------------------------------------
 !
@@ -529,6 +537,11 @@ IF (KTCOUNT == 1) THEN
   ALLOCATE(LU_DIM_SPECIES(ISVECNPT))
   LU_DIM_SPECIES(:) = NEQ
 !
+!        1.1.3 determine index for ice phase chemistry or degassing with ICE3/4
+  IF ((LUSECHAQ).AND.((CCLOUD=='ICE3' .OR. CCLOUD=='ICE4'))) THEN 
+     CALL CH_INIT_ICE(LUSECHIC,LCH_RET_ICE,CNAMES,CICNAMES,NEQ,NEQAQ) 
+  ENDIF
+!
 ENDIF  ! first time step
 !
 !*       1.2   calculate timestep variables
@@ -614,13 +627,10 @@ END IF
 !*       2.    UPDATE PHOTOLYSIS RATES
 !              -----------------------
 !
-ZTIME  = TDTCUR%TIME
-!
 IF (KTCOUNT==1 .OR. &
     (MOD(ISTCOUNT, MAX(1, INT(XCH_TUV_TUPDATE/XTSTEP)) ) .EQ. 0)) THEN
 !
-  WRITE(KLUOUT,*)"TIME: ", (TDTCUR%TIME - TDTEXP%TIME)                  &
-                     + 86400.*(TDTCUR%TDATE%DAY - TDTEXP%TDATE%DAY)
+  WRITE(KLUOUT,*)"TIME call update jvalue: ",TDTCUR%TIME
 !
   IF (.NOT.ASSOCIATED(XJVALUES)) &
              ALLOCATE(XJVALUES(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),JPJVMAX))
@@ -644,6 +654,7 @@ ISTCOUNT = ISTCOUNT + 1
 !*       3.1 sedimentation term and wet deposition for aerosols tendency (XSEDA)
 !
 IF (LORILAM) THEN
+  ZTIME  = TDTCUR%TIME ! need for ch_orilam
   XSEDA(:,:,:,:) = 0.
   ZSEDA(:,:) = 0.
 ! dry sedimentation
@@ -748,29 +759,23 @@ IF (LUSECHAQ.AND.(NRRL>=2) ) THEN
   IF (MAXVAL(ZRT_VOL(:,:,:,3))>XRTMIN_AQ) THEN
     SELECT CASE ( CCLOUD )
       CASE ('KESS','ICE3','ICE4')
-        CALL CH_AQUEOUS_SEDIM1MOM(TDTCUR%TIME, CCLOUD, LUSECHIC,                &
+        CALL CH_AQUEOUS_SEDIM1MOM(NSPLITR, CCLOUD, LUSECHIC,                    &
                                   PTSTEP , XZZ, XRHODREF,                       &
                                   XRHODJ, XRRS(:,:,:,3), XRRS(:,:,:,5),         &
                                   XRRS(:,:,:,6),                                &
                                   XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND), &
-                                  XRSVS(:,:,:,NSV_CHICBEG:NSV_CHICEND)          )
+                                  XRSVS(:,:,:,NSV_CHICBEG:NSV_CHICEND),         &
+                                  ZINPRR(:,:)                                   )
 
-      CASE ('C2R2','C3R5')
-        CALL CH_AQUEOUS_SEDIMC2R2(TDTCUR%TIME, PTSTEP, XRTMIN_AQ,              &
+      CASE ('C2R2','C3R5','KHKO')
+        CALL CH_AQUEOUS_SEDIM2MOM(NSPLITR, CCLOUD, PTSTEP, XRTMIN_AQ,         &
                                   XZZ, XRHODREF, XRHODJ,                       &
                                   XRT(:,:,:,3),XRRS(:,:,:,3),                  &
                                   XSVT(:,:,:,NSV_C2R2BEG+2),                   &
                                   XRSVS(:,:,:,NSV_C2R2BEG+2),                  &
                                   XSVT(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND), &
-                                  XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND) )
-
-      CASE ('KHKO')
-        CALL CH_AQUEOUS_SEDIMKHKO(PTSTEP , XZZ, XRHODREF, XRHODJ,                &
-                                  XRT(:,:,:,3), XRRS(:,:,:,3),                   &
-                                  XSVT(:,:,:,NSV_C2R2BEG+2),                     &
-                                  XRSVS(:,:,:,NSV_C2R2BEG+2),                    &
-                                  XSVT(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND),   &
-                                  XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND)   )
+                                  XRSVS(:,:,:,NSV_CHACBEG+NEQAQ/2:NSV_CHACEND),&
+                                  ZINPRR(:,:)                                  )
     END SELECT
   END IF
 ELSE IF (LUSECHAQ.AND.(NRRL==1) ) THEN
@@ -1104,6 +1109,27 @@ DO JL=1,ISVECNMASK
   ENDIF
 END DO
 !
+!*        4.9  compute accumalated concentrations in rain at the surface
+!
+IF (CCLOUD /= 'REVE' ) THEN
+  IF (LUSECHAQ) THEN
+    DO JSV=1,NSV_CHAC/2
+      WHERE((XRRS(:,:,IKB,3) .GT. 0.).AND.(XRSVS(:,:,IKB,JSV+NSV_CHACBEG+NSV_CHAC/2-1).GT.0.))
+          XACPRAQ(:,:,JSV) = XACPRAQ(:,:,JSV) + &
+              (XRSVS(:,:,IKB,JSV+NSV_CHACBEG+NSV_CHAC/2-1))/ (XMD*XRRS(:,:,IKB,3))*& ! moles i  / kg eau
+               1E3*ZINPRR(:,:) * XTSTEP ! moles i / m2
+      END WHERE
+    ENDDO
+    IF (LCH_PH) THEN
+      WHERE ((ZINPRR(:,:)>0.).AND.(XPHR(:,:,IKB)>0.))
+      ! moles of H+ / m2
+        XACPHR(:,:) =  XACPHR(:,:) + 1E3*ZINPRR(:,:) * XTSTEP * &
+                     10**(-XPHR(:,:,IKB))
+      END WHERE
+    END IF
+  END IF
+END IF
+
 !
 IF (LBUDGET_SV) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
@@ -1235,17 +1261,7 @@ END DO
 ! system dimensions.
 !
     IF (KTCOUNT == 1) THEN
-      IF( JL>1 ) THEN
-        DEALLOCATE(NSPARSE_IROW)
-        DEALLOCATE(NSPARSE_ICOL)
-        DEALLOCATE(NSPARSE_CROW)
-        DEALLOCATE(NSPARSE_DIAG)
-        DEALLOCATE(NSPARSE_IROW_NAQ)
-        DEALLOCATE(NSPARSE_ICOL_NAQ)
-        DEALLOCATE(NSPARSE_CROW_NAQ)
-        DEALLOCATE(NSPARSE_DIAG_NAQ)
-      END IF
-      CALL CH_INIT_ROSENBROCK(IMI,KLUOUT)
+      IF (JL==1) CALL CH_INIT_ROSENBROCK(IMI,KLUOUT)
       IF( ASSOCIATED(LU_DIM_SPECIES) ) THEN
         DEALLOCATE(LU_DIM_SPECIES)
       END IF

@@ -14,7 +14,6 @@
                     LUSECHIC = T,
                     LCH_CONV_LINOX = T,
                     LCH_INIT_FIELD = T,
-                    LCH_SURFACE_FLUX = F,
                     LCH_CONV_SCAV = T,
                     CCHEM_INPUT_FILE  = "MNHC.input",
                     LCH_RET_ICE = F,

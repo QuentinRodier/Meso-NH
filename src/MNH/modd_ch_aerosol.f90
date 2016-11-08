@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_ch_aerosol.f90,v $ $Revision: 1.1.2.2.2.1.2.1.2.1.2.2 $
 ! MASDEV4_7 modd 2007/03/02 13:59:38
 !-----------------------------------------------------------------
 !!     ######################
@@ -34,6 +34,7 @@
 !!     MODIFICATIONS
 !!     -------------
 !!     (30-01-01) P.Tulet (LA) * modifications for secondary biogenics aerosols
+!!     (25-08-16) M.Leriche (LA) * NM6_AER is now in SAVE and assign in ini_nsv
 !!
 !!--------------------------------------------------------------------
 !!     DECLARATIONS
@@ -80,7 +81,7 @@ INTEGER, PARAMETER :: JP_AER_DST = 7
 
 INTEGER            :: NSOA = 10    ! number of condensable species that may form
                                    ! secondary aerosols
-INTEGER            :: NM6_AER = 2  ! number of condensable species that may form
+INTEGER, SAVE      :: NM6_AER ! number of mode for which M6 is computed define in ini_sv
                                    ! secondary aerosols
 INTEGER            :: JP_AER_SOA1 = 8 
 INTEGER            :: JP_AER_SOA2 = 9

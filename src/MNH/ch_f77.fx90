@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ch_f77.fx90,v $ $Revision: 1.2.2.1.2.2.2.1.8.2.2.3 $ $Date: 2014/06/19 15:18:13 $
 !-----------------------------------------------------------------
 C**FILE:     svode.f
 C**AUTHOR:   Karsten Suhre
@@ -4788,6 +4788,7 @@ C
 *   alsurf = surface albedo, wavelength independent
 *   psurf = surface pressure, mbar.  Set to negative value to use
 *           US Standard Atmosphere, 1976 (USSA76)
+      psurf = -1.
 * Column amounts of absorbers (in Dobson Units, from surface to space):
 *          Vertical profile for O3 from USSA76.  For SO2 and NO2, vertical
 *          concentration profile is 2.69e10 molec cm-3 between 0 and 
@@ -8399,7 +8400,7 @@ C     srayl(iw) = 3.90e-28/(wmicrn)**xx
 
 c ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 c RCS version control information:
-c $Header$
+c $Header: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ch_f77.fx90,v 1.2.2.1.2.2.2.1.8.2.2.3 2014/06/19 15:18:13 escj Exp $
 c ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       SUBROUTINE SUNAE( YEAR, DAY, HOUR, LAT, LONG, lrefr,

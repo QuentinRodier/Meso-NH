@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ch_orilam.f90,v $ $Revision: 1.1.2.1.2.1.18.1 $
 ! MASDEV4_7 chimie 2007/03/02 13:59:37
 !-----------------------------------------------------------------
 !!   #########################
@@ -80,6 +80,7 @@ SUBROUTINE CH_ORILAM(PAERO, PCHEM, PM, PSIG0, PRG0, PN0, PCTOTG, PCTOTA,&
 !!    MODIFICATIONS
 !!    -------------
 !!    Original
+!!    M. Leriche (08/16) add initialization of ZMASK
 !!
 !!    EXTERNAL
 !!    --------
@@ -117,6 +118,9 @@ CHARACTER(LEN=10),                      INTENT(IN)    :: GSCHEME
 REAL, DIMENSION(SIZE(PAERO,1),JPMODE)                 :: ZMASK
 !
 !-------------------------------------------------------------------------------
+!initialize ZMASK
+ZMASK(:,:) = 1.
+!
 ! transfer gas phase variables into aerosol variables
 CALL CH_AER_TRANS(0, PM, PSIG0, PRG0, PN0, PRHOP0,PAERO, PCHEM, PCTOTG, PCTOTA, PCCTOT,&
                          PFRAC, PMI, ZMASK,GSCHEME)

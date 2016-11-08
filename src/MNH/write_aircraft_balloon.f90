@@ -61,8 +61,9 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!     10/01/2011 adding IMI, the model number
 !!     March, 2013 :  C.Lac : add vertical profiles
-!!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!     July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
+!!     August 2016 (M.Leriche) Add mass concentration of aerosol species
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -75,7 +76,13 @@ USE MODD_PARAMETERS
 !
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_CH_M9_n,         ONLY: CNAMES
-USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, JPMODE
+USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM, NSP, NCARB, NSOA,    & 
+                                JPMODE, JP_AER_BC, JP_AER_OC, JP_AER_DST, &
+                                JP_AER_H2O, JP_AER_SO4, JP_AER_NO3,       &
+                                JP_AER_NH3, JP_AER_SOA1, JP_AER_SOA2,     &
+                                JP_AER_SOA3, JP_AER_SOA4, JP_AER_SOA5,    &
+                                JP_AER_SOA6, JP_AER_SOA7, JP_AER_SOA8,    &
+                                JP_AER_SOA9, JP_AER_SOA10
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
@@ -172,6 +179,7 @@ REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZW6    ! contains temporal serie to
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWORKZ6! contains temporal serie
 REAL, DIMENSION(:,:,:,:,:,:), ALLOCATABLE :: ZWZ6   ! contains temporal serie
 REAL, DIMENSION(:,:,:,:),     ALLOCATABLE :: ZSV, ZN0, ZSIG, ZRG
+REAL, DIMENSION(:,:,:,:,:),   ALLOCATABLE :: ZPTOTA
 REAL, DIMENSION(:,:,:),       ALLOCATABLE :: ZRHO
 !
 INTEGER, DIMENSION(:),            ALLOCATABLE :: IGRID    ! grid indicator
@@ -460,6 +468,7 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ALLOCATE (ZN0(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
     ALLOCATE (ZRG(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
     ALLOCATE (ZSIG(1,1,SIZE(TPFLYER%TIME),JPMODE)) 
+    ALLOCATE (ZPTOTA(1,1,SIZE(TPFLYER%TIME),NSP+NCARB+NSOA,JPMODE))    
     ZSV(1,1,:,1:NSV_AER) = TPFLYER%SV(:,NSV_AERBEG:NSV_AEREND)
     IF (SIZE(TPFLYER%R,2) >0) THEN
       ZRHO(1,1,:) = 0.
@@ -473,7 +482,15 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
     ENDIF
     ZRHO(1,1,:) =  TPFLYER%P(:) / &
                   (XRD *ZRHO(1,1,:) *((TPFLYER%P(:)/XP00)**(XRD/XCPD))  )
-    CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0)
+    ZSIG = 0.
+    ZRG = 0.
+    ZN0 = 0.
+    ZPTOTA = 0.
+    DO JPT=1,SIZE(TPFLYER%TIME) ! prevent division by zero if ZSV = 0.
+      IF (ALL(ZSV(1,1,JPT,:)/=0.)) THEN
+        CALL PPP2AERO(ZSV,ZRHO, PSIG3D=ZSIG, PRG3D=ZRG, PN3D=ZN0, PCTOTA=ZPTOTA)
+      ENDIF
+    ENDDO
     DO JSV=1,JPMODE
       ! mean radius
       JPROC = JPROC+1
@@ -493,9 +510,114 @@ IF (SIZE(TPFLYER%SV,2)>=1) THEN
       YUNIT    (JPROC) = '  '
       WRITE(YCOMMENT(JPROC),'(A13,I1,A6)')'N0 AERO MODE ',JSV,' (1/m3)'
       ZWORK6 (1,1,1,:,1,JPROC) = ZN0(1,1,:,JSV)
+      ! mass concentration in microg/m3
+      ! sulfate
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MSO4',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SO4 AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SO4,JSV)
+      ! nitrate
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MNO3',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS NO3 AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_NO3,JSV)
+      ! amoniac
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MNH3',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS NH3 AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_NH3,JSV)
+      ! water
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MH2O',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS H2O AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_H2O,JSV)
+      IF (NSOA .EQ. 10) THEN
+        ! SOA1
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA1',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA1 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA1,JSV)
+        ! SOA2
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA2',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA2 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA2,JSV)
+        ! SOA3
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA3',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA3 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA3,JSV)
+        ! SOA4
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA4',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA4 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA4,JSV)
+        ! SOA5
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA5',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA5 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA5,JSV)
+        ! SOA6
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA6',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA6 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA6,JSV)
+        ! SOA7
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA7',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA7 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA7,JSV)
+        ! SOA8
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA8',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA8 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA8,JSV)
+        ! SOA9
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA9',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA9 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA9,JSV)
+        ! SOA10
+        JPROC = JPROC + 1
+        WRITE(YTITLE(JPROC),'(A4,I1)')'MSOA10',JSV
+        YUNIT    (JPROC) = 'ug/m3'
+        WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS SOA10 AEROSOL MODE ',JSV,'(ug/m3)'
+        ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_SOA10,JSV)
+      ENDIF
+      ! OC
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MOC',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS OC AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_OC,JSV)
+      ! BC
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MBC',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS BC AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_BC,JSV)
+      ! dust
+      JPROC = JPROC + 1
+      WRITE(YTITLE(JPROC),'(A4,I1)')'MDUST',JSV
+      YUNIT    (JPROC) = 'ug/m3'
+      WRITE(YCOMMENT(JPROC),'(A22,I1,A5)')'MASS DUST AEROSOL MODE ',JSV,'(ug/m3)'
+      ZWORK6(1,1,1,:,1,JPROC) = ZPTOTA(1,1,:,JP_AER_DST,JSV)      
     ENDDO
     DEALLOCATE (ZSV,ZRHO) 
-    DEALLOCATE (ZN0,ZRG,ZSIG) 
+    DEALLOCATE (ZN0,ZRG,ZSIG,ZPTOTA) 
   END IF
 ! dust scalar variables
   DO JSV = NSV_DSTBEG,NSV_DSTEND

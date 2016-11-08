@@ -131,7 +131,7 @@ C0 = 0.                             !NH3
 C1 = 0.                             !CO2
 C2 = 0.                             !SO2
 C3 = 0.                             !HCOOH = ORA1
-C4 = 0.                             !HNO3 + 2 x H2SO4 = strong acid
+C4 = 0.                             !HNO3 + 2 x H2SO4 + HCL = strong acid
 SOM = 0.
 IORDER = 8 !polynomial order
 ALLOCATE(ZCOEFS(KLW,IORDER+1))
@@ -153,6 +153,7 @@ SELECT CASE (KRR)
       IF (TRIM(CNAMES(JJ))=='WC_HNO3') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
       IF ((TRIM(CNAMES(JJ))=='WC_SULF') .OR. (TRIM(CNAMES(JJ))=='WC_H2SO4')) &
           C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
+      IF (TRIM(CNAMES(JJ))=='WC_HCL') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WC_A') SOM(:) = SOM(:) + PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WC_B') SOM(:) = SOM(:) + 2.*PCONC(:,JI)/(ZFACT(:))
     END DO
@@ -166,6 +167,7 @@ SELECT CASE (KRR)
       IF (TRIM(CNAMES(JJ))=='WR_HNO3') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
       IF ((TRIM(CNAMES(JJ))=='WR_SULF') .OR. (TRIM(CNAMES(JJ))=='WR_H2SO4')) &
           C4(:)= C4(:)+2.*PCONC(:,JI)/(ZFACT(:))
+      IF (TRIM(CNAMES(JJ))=='WR_HCL') C4(:)= C4(:)+PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WR_A') SOM(:) = SOM(:) + PCONC(:,JI)/(ZFACT(:))
       IF (CNAMES(JJ)(1:4)=='WR_B') SOM(:) = SOM(:) + 2.*PCONC(:,JI)/(ZFACT(:))
     END DO

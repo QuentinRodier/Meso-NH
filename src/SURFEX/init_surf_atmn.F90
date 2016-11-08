@@ -50,6 +50,7 @@ SUBROUTINE INIT_SURF_ATM_n(HPROGRAM,HINIT, OLAND_USE,                   &
 !!     (B. Decharme)   2013   Read grid only once in AROME case
 !!     (G. Tanguy)     2013   Add IF(ALLOCATED(NMASK_FULL))  before deallocate
 !!     (J.Durand)      2014   add activation of chemical deposition if LCH_EMIS=F
+!!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -70,7 +71,7 @@ USE MODD_SURF_ATM_SSO_n, ONLY : CROUGH, XAOSIP, XAOSIM, XAOSJP, XAOSJM, &
                                 XHO2IP, XHO2IM, XHO2JP, XHO2JM,         &
                                 XZ0EFFIP, XZ0EFFIM, XZ0EFFJP, XZ0EFFJM, &
                                 XZ0REL, XZ0EFFJPDIR, XFRACZ0, XCOEFBE
-USE MODD_CH_SURF_n,      ONLY : CCH_NAMES, LCH_EMIS, LRW_CH_EMIS, &
+USE MODD_CH_SURF_n,      ONLY : CCH_NAMES, LCH_EMIS,              &
                                 LCH_SURF_EMIS, CCHEM_SURF_FILE, CAER_NAMES,&
                                 CCH_EMIS
 USE MODD_SV_n,           ONLY : NBEQ, CSV, NSV_CHSBEG, NSV_CHSEND, &
@@ -128,8 +129,6 @@ USE MODI_INIT_CHEMICAL_n
 USE MODI_CH_INIT_DEPCONST
 USE MODI_CH_INIT_EMISSION_n
 USE MODI_CH_INIT_SNAP_n
-USE MODI_OPEN_NAMELIST
-USE MODI_CLOSE_NAMELIST
 USE MODI_READ_PRECIP_n
 USE MODI_ABOR1_SFX
 USE MODI_ALLOC_DIAG_SURF_ATM_n
@@ -196,7 +195,6 @@ INTEGER           :: ISWB     ! number of shortwave bands
 INTEGER           :: JTILE    ! loop counter on tiles
 INTEGER           :: IRESP    ! error return code
 INTEGER           :: ILUOUT   ! unit of output listing file
-INTEGER           :: ICH      ! unit of input chemical file
 INTEGER           :: IVERSION, IBUGFIX       ! surface version
 !
 REAL, DIMENSION(:,:), ALLOCATABLE                       :: ZFRAC_TILE     ! fraction of each surface type
@@ -405,21 +403,11 @@ IF (LCH_EMIS) THEN
     CALL READ_SURF(HPROGRAM,'CH_EMIS_OPT',CCH_EMIS,IRESP)
   END IF
   !
-  IF (CCH_EMIS=='AGGR') LRW_CH_EMIS = .TRUE.
-  !
-  IF (NBEQ > 0) THEN
-    !
-    CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=CCHEM_SURF_FILE)
-    !
-    IF (LCH_SURF_EMIS) THEN
-      IF (CCH_EMIS=='AGGR') THEN
-        CALL CH_INIT_EMISSION_n(HPROGRAM,NSIZE_FULL,ICH,PRHOA) 
-      ELSE
-        CALL CH_INIT_SNAP_n(HPROGRAM,NSIZE_FULL,HINIT,ICH,PRHOA)
-      END IF
-    ENDIF
-    CALL CLOSE_NAMELIST(HPROGRAM,ICH)
-  ENDIF
+  IF (CCH_EMIS=='AGGR') THEN
+     CALL CH_INIT_EMISSION_n(HPROGRAM,NSIZE_FULL,HINIT,PRHOA,CCHEM_SURF_FILE) 
+  ELSE
+     CALL CH_INIT_SNAP_n(HPROGRAM,NSIZE_FULL,HINIT,PRHOA,CCHEM_SURF_FILE)
+  END IF
   !
 END IF
     !
@@ -427,11 +415,8 @@ END IF
     !    
 !
 IF (NBEQ .GT. 0) THEN
- CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=CCHEM_SURF_FILE)
 
- IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(ICH,ILUOUT,CSV(NSV_CHSBEG:NSV_CHSEND))
-!
- CALL CLOSE_NAMELIST(HPROGRAM,ICH)
+ IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(HPROGRAM, CCHEM_SURF_FILE,ILUOUT,CSV(NSV_CHSBEG:NSV_CHSEND))
 !
 END IF
 !

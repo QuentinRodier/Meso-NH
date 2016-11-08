@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modn_ch_mnhcn.f90,v $ $Revision: 1.2.4.1.2.1.12.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !!    #####################
       MODULE MODN_CH_MNHC_n
@@ -32,6 +32,7 @@
 !!    25/04/08 (M. Leriche) add threshold for aqueous phase chemistry
 !!    16/09/10 (M. Leriche) add logical for ice phase chemistry
 !!    13/01/11 (M. Leriche) add logical for retention in ice
+!!    24/03/16 (M. Leriche) remove surface option -> manage them in SURFEX
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -40,7 +41,6 @@ USE MODD_CH_MNHC_n, ONLY: &
          LUSECHAQ_n => LUSECHAQ, &
          LUSECHIC_n => LUSECHIC, &
          LCH_INIT_FIELD_n => LCH_INIT_FIELD, &
-         LCH_SURFACE_FLUX_n => LCH_SURFACE_FLUX, &
          LCH_CONV_SCAV_n => LCH_CONV_SCAV, &
          LCH_CONV_LINOX_n => LCH_CONV_LINOX, &
          LCH_PH_n => LCH_PH, &
@@ -68,7 +68,6 @@ LOGICAL  :: LUSECHEM
 LOGICAL  :: LUSECHAQ
 LOGICAL  :: LUSECHIC
 LOGICAL  :: LCH_INIT_FIELD
-LOGICAL  :: LCH_SURFACE_FLUX
 LOGICAL  :: LCH_CONV_SCAV
 LOGICAL  :: LCH_CONV_LINOX
 LOGICAL  :: LCH_PH
@@ -90,13 +89,13 @@ REAL  :: XCH_TS1D_TSTEP
 CHARACTER*80  :: CCH_TS1D_COMMENT
 CHARACTER*80  :: CCH_TS1D_FILENAME
 !
-NAMELIST/NAM_CH_MNHCn/LUSECHEM,LUSECHAQ,LUSECHIC,LCH_INIT_FIELD,LCH_SURFACE_FLUX,&
-                      LCH_CONV_SCAV,LCH_CONV_LINOX,LCH_PH,LCH_RET_ICE,XCH_PHINIT,&
-                      XRTMIN_AQ,CCHEM_INPUT_FILE,CCH_TDISCRETIZATION,NCH_SUBSTEPS,&
-                      LCH_TUV_ONLINE,CCH_TUV_LOOKUP,CCH_TUV_CLOUDS,XCH_TUV_ALBNEW,&
-                      XCH_TUV_DOBNEW,XCH_TUV_TUPDATE,CCH_VEC_METHOD,&
-                      NCH_VEC_LENGTH,XCH_TS1D_TSTEP,CCH_TS1D_COMMENT,&
-                      CCH_TS1D_FILENAME
+NAMELIST/NAM_CH_MNHCn/LUSECHEM,LUSECHAQ,LUSECHIC,LCH_INIT_FIELD,LCH_CONV_SCAV,&
+                      LCH_CONV_LINOX,LCH_PH,LCH_RET_ICE,XCH_PHINIT,XRTMIN_AQ, &
+                      CCHEM_INPUT_FILE,CCH_TDISCRETIZATION,NCH_SUBSTEPS,      &
+                      LCH_TUV_ONLINE,CCH_TUV_LOOKUP,CCH_TUV_CLOUDS,           &
+                      XCH_TUV_ALBNEW,XCH_TUV_DOBNEW,XCH_TUV_TUPDATE,          &
+                      CCH_VEC_METHOD,NCH_VEC_LENGTH,XCH_TS1D_TSTEP,           &
+                      CCH_TS1D_COMMENT,CCH_TS1D_FILENAME
 !
 CONTAINS
 !
@@ -105,7 +104,6 @@ SUBROUTINE INIT_NAM_CH_MNHCn
   LUSECHAQ = LUSECHAQ_n
   LUSECHIC = LUSECHIC_n
   LCH_INIT_FIELD = LCH_INIT_FIELD_n
-  LCH_SURFACE_FLUX = LCH_SURFACE_FLUX_n
   LCH_CONV_SCAV = LCH_CONV_SCAV_n
   LCH_CONV_LINOX = LCH_CONV_LINOX_n
   LCH_PH = LCH_PH_n
@@ -133,7 +131,6 @@ SUBROUTINE UPDATE_NAM_CH_MNHCn
   LUSECHAQ_n = LUSECHAQ
   LUSECHIC_n = LUSECHIC
   LCH_INIT_FIELD_n = LCH_INIT_FIELD
-  LCH_SURFACE_FLUX_n = LCH_SURFACE_FLUX
   LCH_PH_n = LCH_PH
   LCH_RET_ICE_n = LCH_RET_ICE
   XCH_PHINIT_n = XCH_PHINIT

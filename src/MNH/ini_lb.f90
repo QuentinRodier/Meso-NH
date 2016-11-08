@@ -126,6 +126,7 @@ SUBROUTINE INI_LB(HINIFILE,HLUOUT,OLSOURCE,KSV,                    &
 !!      M.Leriche       16/07/10    Add ice phase chemical species
 !!      Pialat/tulet    15/02/12    Add ForeFire scalars 
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
 !!      J.Escobar : 27/04/2016 : bug , test only on ANY(HGETSVM({{1:KSV}})=='READ'
 !-------------------------------------------------------------------------------
 !
@@ -709,12 +710,12 @@ DO JSV = NSV_ELECBEG, NSV_ELECEND
     IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
   END SELECT
 END DO
-! Chemical scalar variables
-DO JSV = NSV_CHEMBEG, NSV_CHEMEND
+! Chemical gas phase scalar variables
+DO JSV = NSV_CHGSBEG, NSV_CHGSEND
   SELECT CASE(HGETSVM(JSV))
   CASE ('READ')
     IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
+      YRECFM = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
       YDIRLB='LBX'
       CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
            & IGRID,ILENCH,YCOMMENT,IRESP)
@@ -724,7 +725,7 @@ DO JSV = NSV_CHEMBEG, NSV_CHEMEND
             PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
             WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
           ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Chemical PLBXSVM '
+            WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBXSVM '
 !callabortstop
             CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
             CALL ABORT
@@ -735,7 +736,7 @@ DO JSV = NSV_CHEMBEG, NSV_CHEMEND
     END IF
 !
     IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
+      YRECFM = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
       YDIRLB='LBY'
       CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
            & IGRID,ILENCH,YCOMMENT,IRESP)
@@ -745,7 +746,57 @@ DO JSV = NSV_CHEMBEG, NSV_CHEMEND
             PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
             WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
           ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Chemical PLBYSVM '
+            WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBYSVM '
+!callabortstop
+            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+            CALL ABORT
+            STOP
+          ENDIF
+        END IF
+      END IF
+    END IF
+  CASE('INIT')
+    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+  END SELECT
+END DO
+! Chemical aqueous phase scalar variables
+DO JSV = NSV_CHACBEG, NSV_CHACEND
+  SELECT CASE(HGETSVM(JSV))
+  CASE ('READ')
+    IF ( KSIZELBXSV_ll /= 0 ) THEN
+      YRECFM = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
+      YDIRLB='LBX'
+      CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+        IF (IRESP/=0) THEN
+          IF (PRESENT(PLBXSVMM)) THEN
+            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+            WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
+          ELSE
+            WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBXSVM '
+!callabortstop
+            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+            CALL ABORT
+            STOP
+          ENDIF
+        END IF
+      END IF
+    END IF
+!
+    IF (KSIZELBYSV_ll  /= 0 ) THEN
+      YRECFM = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
+      YDIRLB='LBY'
+      CALL FMREAD_LB(HINIFILE,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
+           & IGRID,ILENCH,YCOMMENT,IRESP)
+      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+        IF (IRESP/=0) THEN
+          IF (PRESENT(PLBYSVMM)) THEN
+            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+            WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
+          ELSE
+            WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBYSVM '
 !callabortstop
             CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
             CALL ABORT
