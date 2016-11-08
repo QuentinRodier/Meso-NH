@@ -281,6 +281,7 @@ END MODULE MODI_READ_EXSEG_n
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      M.Leriche 18/12/2015 : bug chimie glace dans prep_real_case
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!      Modification   02/2016   (M.Leriche) treat gas and aq. chemicals separately
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1030,8 +1031,8 @@ LUSETKE(KMI) = (CTURB /= 'NONE')
 !*       2.3     Chemical and NSV_* variables initializations
 !
 CALL UPDATE_NAM_PARAMN
-CALL UPDATE_NAM_CH_MNHCN
 CALL UPDATE_NAM_DYNN
+CALL UPDATE_NAM_CONFN
 !
 IF (LORILAM .AND. .NOT. LUSECHEM) THEN
   WRITE(UNIT=ILUOUT,FMT=9002) KMI
@@ -1115,7 +1116,7 @@ IF (LUSECHEM) THEN
 END IF
 !
 
-CALL UPDATE_NAM_CONFN
+CALL UPDATE_NAM_CH_MNHCN
 CALL INI_NSV(KMI)
 !
 ! From this point, all NSV* variables contain valid values for model KMI
@@ -1495,18 +1496,31 @@ IF (CELEC /= 'NONE' .AND. LLNOX_EXPLICIT) THEN
   END IF
 END IF
 !
-! Chemical SV case (including aqueous chemical species)
+! Chemical SV case (excluding aqueous chemical species)
 !
 IF (LUSECHEM) THEN
   IF (OUSECHEM) THEN
-    CGETSVT(NSV_CHEMBEG:NSV_CHEMEND)='READ'
-    IF(CCONF=='START' .AND. LCH_INIT_FIELD ) CGETSVT(NSV_CHEMBEG:NSV_CHEMEND)='INIT'
+    CGETSVT(NSV_CHGSBEG:NSV_CHGSEND)='READ'
+    IF(CCONF=='START' .AND. LCH_INIT_FIELD ) CGETSVT(NSV_CHGSBEG:NSV_CHGSEND)='INIT'
   ELSE
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR CHEMICAL &
          &SCHEME IN INITIAL FMFILE",/,&
          & "THE CHEMICAL VARIABLES HAVE BEEN INITIALIZED TO ZERO ")') 
-    CGETSVT(NSV_CHEMBEG:NSV_CHEMEND)='INIT'
+    CGETSVT(NSV_CHGSBEG:NSV_CHGSEND)='INIT'
+  END IF
+END IF
+! add aqueous chemical species
+IF (LUSECHAQ) THEN
+  IF (OUSECHAQ) THEN
+    CGETSVT(NSV_CHACBEG:NSV_CHACEND)='READ'
+!    IF(CCONF=='START') CGETSVT(NSV_CHACBEG:NSV_CHACEND)='INIT'
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT=9001) KMI
+    WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR CHEMICAL &
+         &SCHEME IN AQUEOUS PHASE IN INITIAL FMFILE",/,&
+         & "THE AQUEOUS PHASE CHEMICAL VARIABLES HAVE BEEN INITIALIZED TO ZERO ")') 
+    CGETSVT(NSV_CHACBEG:NSV_CHACEND)='INIT'
   END IF
 END IF
 ! add ice phase chemical species

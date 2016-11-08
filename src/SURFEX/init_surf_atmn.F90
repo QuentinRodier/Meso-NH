@@ -56,6 +56,7 @@ SUBROUTINE INIT_SURF_ATM_n (YSC, &
 !!     (J.Escobar)      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
 !!     (J.Durand)      2014   add activation of chemical deposition if LCH_EMIS=F
 !!      R. Séférian 03/2014   Adding decoupling between CO2 seen by photosynthesis and radiative CO2
+!!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -114,8 +115,6 @@ USE MODI_INIT_CHEMICAL_n
 USE MODI_CH_INIT_DEPCONST
 USE MODI_CH_INIT_EMISSION_n
 USE MODI_CH_INIT_SNAP_n
-USE MODI_OPEN_NAMELIST
-USE MODI_CLOSE_NAMELIST
 USE MODI_ABOR1_SFX
 USE MODI_ALLOC_DIAG_SURF_ATM_n
 USE MODI_GET_1D_MASK
@@ -195,7 +194,6 @@ INTEGER           :: ISWB     ! number of shortwave bands
 INTEGER           :: JTILE    ! loop counter on tiles
 INTEGER           :: IRESP    ! error return code
 INTEGER           :: ILUOUT   ! unit of output listing file
-INTEGER           :: ICH      ! unit of input chemical file
 INTEGER           :: IVERSION, IBUGFIX       ! surface version
 !
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISIZE_OMP
@@ -479,23 +477,16 @@ IF (YSC%CHU%LCH_EMIS) THEN
                    HPROGRAM,'CH_EMIS_OPT',YSC%CHU%CCH_EMIS,IRESP)
   END IF
   !
-  IF (YSC%SV%NBEQ > 0) THEN
     !
-    CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=YSC%CHU%CCHEM_SURF_FILE)
-    !
-    IF (YSC%CHU%LCH_SURF_EMIS) THEN
-      IF (YSC%CHU%CCH_EMIS=='AGGR') THEN
-        CALL CH_INIT_EMISSION_n(&
-                                YSC%CHE, YSC%CHU, YSC%SV, &
-                                HPROGRAM,YSC%U%NSIZE_FULL,ICH,PRHOA) 
-      ELSE
-        CALL CH_INIT_SNAP_n(&
-                            YSC%CHN, YSC%SV, &
-                            HPROGRAM,YSC%U%NSIZE_FULL,HINIT,ICH,PRHOA)
-      END IF
-    ENDIF
-    CALL CLOSE_NAMELIST(HPROGRAM,ICH)
-  ENDIF
+  IF (YSC%CHU%CCH_EMIS=='AGGR') THEN
+    CALL CH_INIT_EMISSION_n(&
+                            YSC%CHE, YSC%CHU, YSC%SV, &
+                            HPROGRAM,YSC%U%NSIZE_FULL,HINIT,PRHOA,YSC%CHU%CCHEM_SURF_FILE) 
+  ELSE
+    CALL CH_INIT_SNAP_n(&
+                        YSC%CHN, YSC%SV, &
+                       HPROGRAM,YSC%U%NSIZE_FULL,HINIT,PRHOA,YSC%CHU%CCHEM_SURF_FILE)
+  END IF
   !
 END IF
     !
@@ -503,11 +494,9 @@ END IF
     !    
 !
 IF (YSC%SV%NBEQ .GT. 0) THEN
-  CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=YSC%CHU%CCHEM_SURF_FILE)
 !
-  IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(ICH,ILUOUT,YSC%SV%CSV(YSC%SV%NSV_CHSBEG:YSC%SV%NSV_CHSEND))
+  IF (HINIT=='ALL') CALL CH_INIT_DEPCONST(HPROGRAM, YSC%CHU%CCHEM_SURF_FILE,ILUOUT,YSC%SV%CSV(YSC%SV%NSV_CHSBEG:YSC%SV%NSV_CHSEND))
 !
-  CALL CLOSE_NAMELIST(HPROGRAM,ICH)
 !
 END IF
 !

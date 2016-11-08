@@ -231,6 +231,7 @@ END MODULE MODI_READ_FIELD
 !!          M. Leriche  11/14     correct bug in pH initialization
 !!          C.Lac       12/14     correction for reproducibility START/RESTA
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!          M. Leriche  02/16     treat gas and aq. chemicals separately
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -736,11 +737,24 @@ DO JSV = NSV_ELECBEG,NSV_ELECEND
   END SELECT
 END DO
 !
-DO JSV = NSV_CHEMBEG,NSV_CHEMEND
+DO JSV = NSV_CHGSBEG,NSV_CHGSEND
   SELECT CASE(HGETSVT(JSV))
   CASE ('READ')
-    CNAMES(JSV-NSV_CHEMBEG+1) = UPCASE(CNAMES(JSV-NSV_CHEMBEG+1))
-    YRECFM=TRIM(CNAMES(JSV-NSV_CHEMBEG+1))//'T'
+    CNAMES(JSV-NSV_CHGSBEG+1) = UPCASE(CNAMES(JSV-NSV_CHGSBEG+1))
+    YRECFM=TRIM(CNAMES(JSV-NSV_CHGSBEG+1))//'T'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
+         YCOMMENT,IRESP)
+    PSVT(:,:,:,JSV) = Z3D(:,:,:)
+  CASE ('INIT')
+    PSVT(:,:,:,JSV) = 0.
+  END SELECT    
+END DO
+!
+DO JSV = NSV_CHACBEG,NSV_CHACEND
+  SELECT CASE(HGETSVT(JSV))
+  CASE ('READ')
+    CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1) = UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))
+    YRECFM=TRIM(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1))//'T'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
          YCOMMENT,IRESP)
     PSVT(:,:,:,JSV) = Z3D(:,:,:)

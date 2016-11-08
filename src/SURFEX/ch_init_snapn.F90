@@ -5,7 +5,7 @@
 !     #########
       SUBROUTINE CH_INIT_SNAP_n (&
                                   CHN, SV, &
-                                 HPROGRAM,KLU,HINIT,KCH,PRHOA)
+                                 HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE)
 !     #######################################
 !
 !!****  *CH_INIT_EMIISION_TEMP_n* - routine to initialize chemical emissions data structure
@@ -28,6 +28,7 @@
 !!      Original        11/2011
 !!      J.Escobar       11/2013 : ajout use MODI_CH_OPEN_INPUTB
 !!        M.Moge    01/2016  using READ_SURF_FIELD2D for 2D surfex fields reads
+!!      M.Leriche & V. Masson 05/16 move open namelist for reading ascii chemi.file
 !!-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -47,6 +48,8 @@ USE MODI_READ_SURF_FIELD2D
 USE MODI_ABOR1_SFX
 USE MODI_CH_CONVERSION_FACTOR
 USE MODI_CH_OPEN_INPUTB
+USE MODI_OPEN_NAMELIST
+USE MODI_CLOSE_NAMELIST
 USE MODI_BUILD_PRONOSLIST_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -69,8 +72,8 @@ INTEGER,           INTENT(IN)  :: KLU      ! number of points
 !                                          ! 'ALL' : all variables for a run
 !                                          ! 'PRE' : only variables to build 
 !                                          !         an initial file
-INTEGER,           INTENT(IN)  :: KCH      ! logical unit of input chemistry file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
+ CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 !
 !*       0.2   declarations of local variables
 !
@@ -88,6 +91,7 @@ INTEGER             :: JSNAP                 ! Loop index for SNAP categories
 !
 INTEGER             :: IVERSION       ! version of surfex file being read
 INTEGER             :: IBUG           ! version of SURFEX bugfix
+INTEGER             :: ICH      ! unit of input chemical file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('CH_INIT_SNAP_N',0,ZHOOK_HANDLE)
@@ -163,7 +167,7 @@ DO JSPEC = 1,CHN%NEMIS_NBR ! Loop on the number of species
 ! 
 ! Read  the potential emission of species for each snap
   DO JSNAP=1,CHN%NEMIS_SNAP
-    WRITE(YRECFM,'("SNAP",I2.2,"_",A3)') JSNAP,CHN%CEMIS_NAME(JSPEC)
+    WRITE(YRECFM,'("SN",I2.2,"_",A7)') JSNAP,CHN%CEMIS_NAME(JSPEC)
     CALL READ_SURF(&
                 HPROGRAM,YRECFM,CHN%XEMIS_FIELDS_SNAP(:,JSNAP,JSPEC),IRESP,YCOMMENT)
   END DO
@@ -204,11 +208,12 @@ IF (HPROGRAM=="NC    ") DEALLOCATE(ZTEMP)
 !              -----------------
 !
 IF (HINIT=='ALL') THEN
+  CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
 !$OMP SINGLE        
-  CALL CH_OPEN_INPUTB("EMISUNIT", KCH, ILUOUT)
+  CALL CH_OPEN_INPUTB("EMISUNIT", ICH, ILUOUT)
 !
 ! read unit identifier
-  READ(KCH,'(A3)') YCONVERSION
+  READ(ICH,'(A3)') YCONVERSION
 !$OMP END SINGLE COPYPRIVATE(YCONVERSION)
 !
  CHN%CCONVERSION = YCONVERSION
@@ -222,7 +227,8 @@ IF (HINIT=='ALL') THEN
 !              -------------------------------------------------------------
 !
   CALL BUILD_PRONOSLIST_n(SV, &
-                          CHN%NEMIS_NBR,CHN%CEMIS_NAME,CHN%TSPRONOSLIST,KCH,ILUOUT,6)
+                          CHN%NEMIS_NBR,CHN%CEMIS_NAME,CHN%TSPRONOSLIST,ICH,ILUOUT,6)
+  CALL CLOSE_NAMELIST(HPROGRAM,ICH)                  
 !
 !-------------------------------------------------------------------------------
 END IF

@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/goto_model_wrapper.f90,v $ $Revision: 1.2.4.1.2.3.4.2.2.3 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/goto_model_wrapper.f90,v $ $Revision: 1.2.4.1.2.3.4.2.2.4.2.1 $
 ! MASDEV4_7 newsrc 2006/06/26 12:01:39
 !
 !!    MODIFICATIONS
@@ -13,6 +13,7 @@
 !!      06/12 (Tomasini) Grid-nesting of ADVFRC and EDDY_FLUX
 !!      07/13 (Bosseur & Filippi) adds Forefire
 !!      2014 (Faivre)
+!!      2016  (Leriche) Add MODD_CH_ICE Suppress MODD_CH_DEP_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
@@ -30,7 +31,6 @@ SUBROUTINE GOTO_MODEL_WRAPPER(KFROM, KTO)
 USE MODD_ADV_n
 USE MODD_BIKHARDT_n
 USE MODD_CH_AERO_n
-USE MODD_CH_DEP_n
 USE MODD_CH_JVALUES_n
 USE MODD_CH_MNHC_n
 USE MODD_CH_SOLVER_n
@@ -96,6 +96,7 @@ USE MODD_TIMEZ
 USE MODD_SUB_PASPOL_n
 USE MODD_SUB_ELEC_n
 USE MODD_CH_PH_n
+USE MODD_CH_ICE_n
 USE MODD_CH_M9_n
 USE MODD_CH_ROSENBROCK_n
 USE MODD_RBK90_Global_n
@@ -117,7 +118,6 @@ INTEGER,INTENT(IN) :: KFROM, KTO
 CALL ADV_GOTO_MODEL(KFROM, KTO)
 CALL BIKHARDT_GOTO_MODEL(KFROM, KTO)
 CALL CH_AERO_GOTO_MODEL(KFROM,KTO)
-CALL CH_DEP_GOTO_MODEL(KFROM, KTO)
 CALL CH_JVALUES_GOTO_MODEL(KFROM, KTO)
 CALL CH_MNHC_GOTO_MODEL(KFROM, KTO)
 CALL CH_SOLVER_GOTO_MODEL(KFROM, KTO)
@@ -182,6 +182,7 @@ CALL TIME_GOTO_MODEL(KFROM, KTO)
 CALL TURB_GOTO_MODEL(KFROM, KTO)
 CALL TIMEZ_GOTO_MODEL(KFROM, KTO)
 CALL CH_PH_GOTO_MODEL(KFROM, KTO)
+CALL CH_ICE_GOTO_MODEL(KFROM, KTO)
 CALL CH_M9_GOTO_MODEL(KFROM, KTO)
 CALL CH_ROSENBROCK_GOTO_MODEL(KFROM, KTO)
 CALL RBK90_Global_GOTO_MODEL(KFROM, KTO)

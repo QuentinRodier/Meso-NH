@@ -128,6 +128,7 @@ USE MODD_RAIN_ICE_PARAM,  ONLY : XTIMAUTC, XCRIAUTC, XFCACCR, XEXCACCR, &
                                  XKER_RDRYG, XLBRDRYG1, XLBRDRYG2, XLBRDRYG3,   &
                                  XCOLIG, XCOLEXIG, XCOLSG, XCOLEXSG
 USE MODD_CH_ICE                              ! value of retention coefficient
+USE MODD_CH_ICE_n                            ! index for ice phase chemistry with IC3/4
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -185,9 +186,6 @@ INTEGER :: IKB
 INTEGER :: IKE           
 !
 INTEGER :: IMICRO        ! case number of r_x>0 locations
-INTEGER, DIMENSION(SIZE(PSGRSVS,4))  ::  INDEXGI  ! index array for ice phase chemistry
-INTEGER, DIMENSION(SIZE(PSGRSVS,4))  ::  INDEXWI  ! index array for ice phase chemistry
-INTEGER, DIMENSION(SIZE(PRRSVS,4))   ::  INDEXWG  ! index array for degassing when freezing
 LOGICAL, DIMENSION(SIZE(PRCT,1),SIZE(PRCT,2),SIZE(PRCT,3))   &
                                 :: GMICRO   ! where to compute mic. processes
 REAL,    DIMENSION(SIZE(PRCT,1),SIZE(PRCT,2),SIZE(PRCT,3))   &
@@ -455,50 +453,10 @@ IF( IMICRO >= 1 ) THEN
 !
 !-------------------------------------------------------------------------------
 !
-!*       5.     PREPARE INDEX ARRAY FOR ICE PHASE CHEMISTRY
-!               -------------------------------------------
-!
-IF (OUSECHIC) THEN
-  DO JLI = 1, SIZE(PSGRSVS,4)
-    DO JLG = 1, SIZE(PGRSVS,4)
-      IF ( TRIM(HICNAMES(JLI)(4:32)) == TRIM(HNAMES(JLG)) ) THEN
-         INDEXGI(JLI) = JLG
-         EXIT
-      ELSE
-         INDEXGI(JLI) = 0
-      ENDIF
-    ENDDO
-    DO JLW = KEQ-KEQAQ+1, KEQ-KEQAQ/2  ! loop over cloud chem. species
-      IF ( TRIM(HICNAMES(JLI)(4:32)) == TRIM(HNAMES(JLW)(4:32))) THEN
-        INDEXWI(JLI) = JLW - (KEQ-KEQAQ)
-        EXIT
-      ELSE
-        INDEXWI(JLI) = 0
-      ENDIF
-    ENDDO
-  ENDDO
-ELSE
-  IF (.NOT.(OCH_RET_ICE)) THEN
-    DO JLW = KEQ-KEQAQ+1, KEQ-KEQAQ/2  ! loop over cloud chem. species
-      DO JLG = 1, SIZE(PGRSVS,4)
-        IF ( TRIM(HNAMES(JLW)(4:32)) == TRIM(HNAMES(JLG)) ) THEN
-          INDEXWG(JLW-(KEQ-KEQAQ)) = JLG
-          EXIT
-        ELSE
-          INDEXWG(JLW-(KEQ-KEQAQ)) = 0
-        ENDIF
-      ENDDO
-    ENDDO
-  ENDIF
-ENDIF
-!
-!
-!-------------------------------------------------------------------------------
-!
-!*       6.     COMPUTES THE SLOW COLD PROCESS SOURCES
+!*       5.     COMPUTES THE SLOW COLD PROCESS SOURCES
 !               --------------------------------------
 !
-!*       6.1    compute the spontaneous freezing source: RRHONG
+!*       5.1    compute the spontaneous freezing source: RRHONG
 !
  ZZW(:) = 0.0
  ZZW2(:,:) = 0.0
@@ -512,33 +470,35 @@ ENDIF
      IF (OUSECHIC) THEN
      DO JLI = 1, SIZE(PSGRSVS,4)
        IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-          .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))           
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+          .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+          .OR. NINDEXGI(JLI).EQ.0) THEN
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))           
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))  
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))  
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
        ELSE
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
        ENDIF
      ENDDO
      ELSE
        IF (.NOT.(OCH_RET_ICE)) THEN
          DO JLW = 1, SIZE(PRRSVS,4)
-            IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-              ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+            IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+              ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
             ENDIF
          ENDDO
        ENDIF
@@ -549,10 +509,10 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*       7.     COMPUTES THE FAST COLD PROCESS SOURCES
+!*       6.     COMPUTES THE FAST COLD PROCESS SOURCES
 !               --------------------------------------
 !
-!*       7.1    compute the slope parameter Lbda_s and Lbda_g
+!*       6.1    compute the slope parameter Lbda_s and Lbda_g
 !
  WHERE ( ZRST(:)>0.0 )
    ZLBDAS(:)  = MIN( XLBDAS_MAX,                                           &
@@ -563,7 +523,7 @@ ENDIF
    ZLBDAG(:)  = XLBG*( ZRHODREF(:)*MAX( ZRGT(:),PRTMIN_AQ*1.e3/ZRHODREF(:)))**XLBEXG
  END WHERE
 !
-!*       7.2    cloud droplet riming of the aggregates
+!*       6.2    cloud droplet riming of the aggregates
 !
  ZZW1(:,:) = 0.0
  ZZW(:) = 0.0
@@ -576,18 +536,18 @@ ENDIF
 !
  IF( IGRIM>0 ) THEN
 !
-!        7.2.0  allocations
+!        6.2.0  allocations
 !
    ALLOCATE(ZVEC1(IGRIM))
    ALLOCATE(ZVEC2(IGRIM))
    ALLOCATE(IVEC1(IGRIM))
    ALLOCATE(IVEC2(IGRIM))
 !
-!        7.2.1  select the ZLBDAS
+!        6.2.1  select the ZLBDAS
 !
    ZVEC1(:) = PACK( ZLBDAS(:),MASK=GRIM(:) )
 !
-!        7.2.2  find the next lower indice for the ZLBDAS in the geometrical
+!        6.2.2  find the next lower indice for the ZLBDAS in the geometrical
 !               set of Lbda_s used to tabulate some moments of the incomplete
 !               gamma function
 !
@@ -596,14 +556,14 @@ ENDIF
    IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
 !
-!        7.2.3  perform the linear interpolation of the normalized
+!        6.2.3  perform the linear interpolation of the normalized
 !               "2+XDS"-moment of the incomplete gamma function
 !
    ZVEC1(1:IGRIM) =   XGAMINC_RIM1( IVEC2(1:IGRIM)+1 )* ZVEC2(1:IGRIM)      &
                     - XGAMINC_RIM1( IVEC2(1:IGRIM)   )*(ZVEC2(1:IGRIM) - 1.0)
    ZZW(:) = UNPACK( VECTOR=ZVEC1(:),MASK=GRIM,FIELD=0.0 )
 !
-!        7.2.4  riming of the small sized aggregates
+!        6.2.4  riming of the small sized aggregates
 !
    ZZW2(:,:) = 0.0
    DO JL = 1,IMICRO
@@ -616,33 +576,35 @@ ENDIF
        IF (OUSECHIC) THEN
        DO JLI = 1, SIZE(PSGRSVS,4)
          IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-            .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+            .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+            .OR. NINDEXGI(JLI).EQ.0) THEN
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                  TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
          ELSE
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
          ENDIF
        ENDDO
        ELSE
          IF (.NOT.(OCH_RET_ICE)) THEN
            DO JLW = 1, SIZE(PCRSVS,4)
-             IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-               ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+             IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+               ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
              ENDIF
            ENDDO
          ENDIF
@@ -650,7 +612,7 @@ ENDIF
      ENDIF
    ENDDO
 !
-!        7.2.5  riming-conversion of the large sized aggregates into graupel
+!        6.2.5  riming-conversion of the large sized aggregates into graupel
 !
    ZZW2(:,:) = 0.0
    DO JL = 1,IMICRO
@@ -663,33 +625,35 @@ ENDIF
        IF (OUSECHIC) THEN
        DO JLI = 1, SIZE(PSGRSVS,4)
          IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-            .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+            .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+            .OR. NINDEXGI(JLI).EQ.0) THEN
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                  TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
          ELSE
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
          ENDIF
        ENDDO
        ELSE
          IF (.NOT.(OCH_RET_ICE)) THEN
            DO JLW = 1, SIZE(PCRSVS,4)
-             IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-               ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+             IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+               ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
              ENDIF
            ENDDO
          ENDIF
@@ -704,7 +668,7 @@ ENDIF
  END IF
  DEALLOCATE(GRIM)
 !
-!*       7.3    rain accretion onto the aggregates
+!*       6.3    rain accretion onto the aggregates
 !
  ZZW(:) = 0.0
  ZZW1(:,2:3) = 0.0
@@ -716,7 +680,7 @@ ENDIF
 !
  IF( IGACC>0 ) THEN
 !
-!        7.3.0  allocations
+!        6.3.0  allocations
 !
    ALLOCATE(ZVEC1(IGACC))
    ALLOCATE(ZVEC2(IGACC))
@@ -724,12 +688,12 @@ ENDIF
    ALLOCATE(IVEC1(IGACC))
    ALLOCATE(IVEC2(IGACC))
 !
-!        7.3.1  select the (ZLBDAS,ZLBDAR) couplet
+!        6.3.1  select the (ZLBDAS,ZLBDAR) couplet
 !
    ZVEC1(:) = PACK( ZLBDAS(:),MASK=GACC(:) )
    ZVEC2(:) = PACK( ZLBDAR(:),MASK=GACC(:) )
 !
-!        7.3.2  find the next lower indice for the ZLBDAS and for the ZLBDAR
+!        6.3.2  find the next lower indice for the ZLBDAS and for the ZLBDAR
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
@@ -743,7 +707,7 @@ ENDIF
    IVEC2(1:IGACC) = INT( ZVEC2(1:IGACC) )
    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - FLOAT( IVEC2(1:IGACC) )
 !
-!        7.3.3  perform the bilinear interpolation of the normalized
+!        6.3.3  perform the bilinear interpolation of the normalized
 !               RACCSS-kernel
 !
    DO JJ = 1,IGACC
@@ -756,7 +720,7 @@ ENDIF
    END DO
    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GACC,FIELD=0.0 )
 !
-!        7.3.4  raindrop accretion on the small sized aggregates
+!        6.3.4  raindrop accretion on the small sized aggregates
 !
    ZZW2(:,:) = 0.0
    DO JL = 1,IMICRO
@@ -773,33 +737,35 @@ ENDIF
        IF (OUSECHIC) THEN
        DO JLI = 1, SIZE(PSGRSVS,4)
          IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-            .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+            .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+            .OR. NINDEXGI(JLI).EQ.0) THEN
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                  TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
          ELSE
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
          ENDIF
        ENDDO
        ELSE
          IF (.NOT.(OCH_RET_ICE)) THEN
            DO JLW = 1, SIZE(PRRSVS,4)
-             IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-               ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+             IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+               ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
              ENDIF
            ENDDO
          ENDIF
@@ -807,7 +773,7 @@ ENDIF
      ENDIF
    ENDDO
 !
-!        7.3.4b perform the bilinear interpolation of the normalized
+!        6.3.4b perform the bilinear interpolation of the normalized
 !               RACCS-kernel
 !
    DO JJ = 1,IGACC
@@ -820,7 +786,7 @@ ENDIF
    END DO
    ZZW1(:,2) = ZZW1(:,2)*UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 )
 !
-!        7.3.5  raindrop accretion-conversion of the large sized aggregates
+!        6.3.5  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
    ZZW2(:,:) = 0.0
@@ -835,33 +801,35 @@ ENDIF
        IF (OUSECHIC) THEN
        DO JLI = 1, SIZE(PSGRSVS,4)
          IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-            .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+            .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+            .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+            .OR. NINDEXGI(JLI).EQ.0) THEN
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
             .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
          ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
             .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                  TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
          ELSE
-           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-           ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                     (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+           ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+           ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                     (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
          ENDIF
        ENDDO
        ELSE
          IF (.NOT.(OCH_RET_ICE)) THEN
            DO JLW = 1, SIZE(PRRSVS,4)
-             IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-               ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+             IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+               ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
              ENDIF
            ENDDO
          ENDIF
@@ -877,7 +845,7 @@ ENDIF
  END IF
  DEALLOCATE(GACC)
 !
-!*       7.4    rain contact freezing
+!*       6.4    rain contact freezing
 !
  ZZW1(:,4) = 0.0
  ZZW2(:,:) = 0.0
@@ -894,33 +862,35 @@ ENDIF
      IF (OUSECHIC) THEN
      DO JLI = 1, SIZE(PSGRSVS,4)
        IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-          .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+          .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+          .OR. NINDEXGI(JLI).EQ.0) THEN
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
        ELSE
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
        ENDIF
      ENDDO
      ELSE
        IF (.NOT.(OCH_RET_ICE)) THEN
          DO JLW = 1, SIZE(PRRSVS,4)
-           IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-             ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+           IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+             ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
            ENDIF
          ENDDO
        ENDIF
@@ -928,7 +898,7 @@ ENDIF
    ENDIF
  ENDDO
 !
-!*       7.5    compute the Dry growth case of graupel
+!*       6.5    compute the Dry growth case of graupel
 !
  ZZW(:) = 0.0
  ZZW1(:,:) = 0.0
@@ -944,7 +914,7 @@ ENDIF
                                     * ZRIT(:) * ZZW(:) )             ! RIDRYG
  END WHERE
 !
-!        7.5.1  accretion of aggregates on the graupeln
+!        6.5.1  accretion of aggregates on the graupeln
 !
  ALLOCATE(GDRY(IMICRO))
  GDRY(:) = (ZRST(:)>PRTMIN_AQ*1.e3/ZRHODREF(:)) .AND. &
@@ -953,7 +923,7 @@ ENDIF
 !
  IF( IGDRY>0 ) THEN
 !
-!        7.5.2  allocations
+!        6.5.2  allocations
 !
    ALLOCATE(ZVEC1(IGDRY))
    ALLOCATE(ZVEC2(IGDRY))
@@ -961,12 +931,12 @@ ENDIF
    ALLOCATE(IVEC1(IGDRY))
    ALLOCATE(IVEC2(IGDRY))
 !
-!        7.5.3  select the (ZLBDAG,ZLBDAS) couplet
+!        6.5.3  select the (ZLBDAG,ZLBDAS) couplet
 !
    ZVEC1(:) = PACK( ZLBDAG(:),MASK=GDRY(:) )
    ZVEC2(:) = PACK( ZLBDAS(:),MASK=GDRY(:) )
 !
-!        7.5.4  find the next lower indice for the ZLBDAG and for the ZLBDAS
+!        6.5.4  find the next lower indice for the ZLBDAG and for the ZLBDAS
 !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
 !               tabulate the SDRYG-kernel
 !
@@ -980,7 +950,7 @@ ENDIF
    IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
 !
-!        7.5.5  perform the bilinear interpolation of the normalized
+!        6.5.5  perform the bilinear interpolation of the normalized
 !               SDRYG-kernel
 !
    DO JJ = 1,IGDRY
@@ -1009,7 +979,7 @@ ENDIF
    DEALLOCATE(ZVEC1)
  END IF
 !
-!        7.5.6  accretion of raindrops on the graupeln
+!        6.5.6  accretion of raindrops on the graupeln
 !
  GDRY(:) = (ZRRT(:)>PRTMIN_AQ*1.e3/ZRHODREF(:)) .AND. &
            (ZRGT(:)>PRTMIN_AQ*1.e3/ZRHODREF(:)) .AND. (ZZRRS(:)>0.0)
@@ -1017,7 +987,7 @@ ENDIF
 !
  IF( IGDRY>0 ) THEN
 !
-!        7.5.7  allocations
+!        6.5.7  allocations
 !
    ALLOCATE(ZVEC1(IGDRY))
    ALLOCATE(ZVEC2(IGDRY))
@@ -1025,12 +995,12 @@ ENDIF
    ALLOCATE(IVEC1(IGDRY))
    ALLOCATE(IVEC2(IGDRY))
 !
-!        7.5.8  select the (ZLBDAG,ZLBDAR) couplet
+!        6.5.8  select the (ZLBDAG,ZLBDAR) couplet
 !
    ZVEC1(:) = PACK( ZLBDAG(:),MASK=GDRY(:) )
    ZVEC2(:) = PACK( ZLBDAR(:),MASK=GDRY(:) )
 !
-!        7.5.9  find the next lower indice for the ZLBDAG and for the ZLBDAR
+!        6.5.9  find the next lower indice for the ZLBDAG and for the ZLBDAR
 !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
 !               tabulate the RDRYG-kernel
 !
@@ -1044,7 +1014,7 @@ ENDIF
    IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
 !
-!        7.5.10 perform the bilinear interpolation of the normalized
+!        6.5.10 perform the bilinear interpolation of the normalized
 !               RDRYG-kernel
 !
    DO JJ = 1,IGDRY
@@ -1075,7 +1045,7 @@ ENDIF
  ZRDRYG(:) = ZZW1(:,1) + ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,4)
  DEALLOCATE(GDRY)
 !
-!*       7.6    compute the Wet growth case of the graupel
+!*       6.6    compute the Wet growth case of the graupel
 !
  ZZW(:) = 0.0
  ZRWETG(:) = 0.0
@@ -1104,7 +1074,7 @@ ENDIF
                                 ( ZRHODREF(:)*(XLMTT-XCL*(XTT-ZZT(:))) )   )
  END WHERE
 !
-!*       7.7    Select Wet or Dry case for the growth of the graupel
+!*       6.7    Select Wet or Dry case for the growth of the graupel
 !
  ZZW(:) = 0.0
  ZZW2(:,:) = 0.0
@@ -1121,26 +1091,28 @@ ENDIF
      ZZW3(:,:) = 0.0
      DO JLI = 1, SIZE(PSGRSVS,4)
        IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-          .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,INDEXWI(JLI))
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+          .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+          .OR. NINDEXGI(JLI).EQ.0) THEN
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * ZZW2(JL,NINDEXWI(JLI))
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETHP) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETHP) * ZZW2(JL,NINDEXWI(JLI))
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETSU) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETSU) * ZZW2(JL,NINDEXWI(JLI))
        ELSE
-         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,INDEXWI(JLI))
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) +                        &
-                                   (1. - XRETDF) * ZZW2(JL,INDEXWI(JLI))
+         ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF * ZZW2(JL,NINDEXWI(JLI))
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) +                        &
+                                   (1. - XRETDF) * ZZW2(JL,NINDEXWI(JLI))
        ENDIF
      ENDDO
      IF (ZRST(JL)>0.0) THEN
@@ -1148,14 +1120,14 @@ ENDIF
        ZZW3(JL,:) = MAX(MIN(ZZW3(JL,:),(ZSGSVT(JL,:)/PTSTEP)),0.0)
        ZSGRSVS(JL,:) = ZSGRSVS(JL,:) - ZZW3(JL,:) !snow->rain
        DO JLI = 1, SIZE(PSGRSVS,4)
-         ZRRSVS(JL,INDEXWI(JLI)) = ZRRSVS(JL,INDEXWI(JLI)) + ZZW3(JL,JLI)
+         ZRRSVS(JL,NINDEXWI(JLI)) = ZRRSVS(JL,NINDEXWI(JLI)) + ZZW3(JL,JLI)
        ENDDO
      ENDIF
      ELSE
        IF (.NOT.(OCH_RET_ICE)) THEN
          DO JLW = 1, SIZE(PRRSVS,4)
-           IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-             ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW)
+           IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+             ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW)
            ENDIF
          ENDDO
        ENDIF
@@ -1176,37 +1148,39 @@ ENDIF
      IF (OUSECHIC) THEN
      DO JLI = 1, SIZE(PSGRSVS,4)
        IF (TRIM(HICNAMES(JLI)) == 'IC_HNO3' .OR. TRIM(HICNAMES(JLI)) == 'IC_SULF' &
-          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. HICNAMES(JLI)(1:4) == 'IC_A' &
-          .OR. HICNAMES(JLI)(1:4) == 'IC_B' ) THEN
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_H2SO4' &
+          .OR. TRIM(HICNAMES(JLI)) == 'IC_NH3' .OR. TRIM(HICNAMES(JLI)) == 'IC_HCL' &
+          .OR. HICNAMES(JLI)(1:4) == 'IC_A' .OR. HICNAMES(JLI)(1:4) == 'IC_B' &
+          .OR. NINDEXGI(JLI).EQ.0) THEN
          ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETNA * (        &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_H2O2' .OR. TRIM(HICNAMES(JLI)) == 'IC_HO2' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HONO' .OR. TRIM(HICNAMES(JLI)) == 'IC_HNO4'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_HCHO' .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA1'&
           .OR. TRIM(HICNAMES(JLI)) == 'IC_ORA2') THEN
          ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETHP *  (       &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) + (1. - XRETHP) * (  &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) + (1. - XRETHP) * (  &
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
        ELSE IF (TRIM(HICNAMES(JLI)) == 'IC_SO2' .OR. TRIM(HICNAMES(JLI)) == 'IC_OH' &
           .OR. TRIM(HICNAMES(JLI)) == 'IC_MO2' .OR. &
                TRIM(HICNAMES(JLI)) == 'IC_OP1') THEN
          ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETSU *  (       &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) + (1. - XRETSU) * (  &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) + (1. - XRETSU) * (  &
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
        ELSE
          ZSGRSVS(JL,JLI) = ZSGRSVS(JL,JLI) + XRETDF *  (       &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
-         ZGRSVS(JL,INDEXGI(JLI)) = ZGRSVS(JL,INDEXGI(JLI)) + (1. - XRETDF) * (  &
-                           ZZW2(JL,INDEXWI(JLI)) +  ZZW4(JL,INDEXWI(JLI)) )
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
+         ZGRSVS(JL,NINDEXGI(JLI)) = ZGRSVS(JL,NINDEXGI(JLI)) + (1. - XRETDF) * (  &
+                           ZZW2(JL,NINDEXWI(JLI)) +  ZZW4(JL,NINDEXWI(JLI)) )
        ENDIF
      ENDDO
      ELSE
        IF (.NOT.(OCH_RET_ICE)) THEN
          DO JLW = 1, SIZE(PRRSVS,4)
-           IF (.NOT.(INDEXWG(JLW).EQ.0)) THEN
-             ZGRSVS(JL,INDEXWG(JLW)) = ZGRSVS(JL,INDEXWG(JLW)) + ZZW2(JL,JLW) &
+           IF (.NOT.(NINDEXWG(JLW).EQ.0)) THEN
+             ZGRSVS(JL,NINDEXWG(JLW)) = ZGRSVS(JL,NINDEXWG(JLW)) + ZZW2(JL,JLW) &
                                                               + ZZW4(JL,JLW)
            ENDIF
          ENDDO
@@ -1215,7 +1189,7 @@ ENDIF
    ENDIF
  ENDDO
 !
-!*       7.8    Melting of the graupel
+!*       6.8    Melting of the graupel
 !
  IF (OUSECHIC) THEN
  ZZW(:) = 0.0
@@ -1238,7 +1212,7 @@ ENDIF
      ZZW3(JL,:) = MAX(MIN(ZZW3(JL,:),(ZSGSVT(JL,:)/PTSTEP)),0.0)
      ZSGRSVS(JL,:) = ZSGRSVS(JL,:) - ZZW3(JL,:) !graupel->rain
      DO JLI = 1, SIZE(PSGRSVS,4)
-       ZRRSVS(JL,INDEXWI(JLI)) = ZRRSVS(JL,INDEXWI(JLI)) + ZZW3(JL,JLI)
+       ZRRSVS(JL,NINDEXWI(JLI)) = ZRRSVS(JL,NINDEXWI(JLI)) + ZZW3(JL,JLI)
      ENDDO
    ENDIF
  ENDDO
@@ -1247,7 +1221,7 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-!*       8.     UNPACK RESULTS AND DEALLOCATE ARRAYS
+!*       7.     UNPACK RESULTS AND DEALLOCATE ARRAYS
 !               ------------------------------------
 
 

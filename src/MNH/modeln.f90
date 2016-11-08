@@ -239,7 +239,9 @@ END MODULE MODI_MODEL_n
 !!      M.Mazoyer : 04/2016      DTHRAD used for radiative cooling when LACTIT
 !!!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  06/2016     (G.Delautier) phasage surfex 8
-!-------------------------------------------------------------------------------
+!!      M.Leriche : 03/2016 Move computation of accumulated chem. in rain to ch_monitor
+!!                  09/2016 Add filter on negative values on AERDEP SV before relaxation
+!!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
@@ -305,7 +307,6 @@ USE MODD_SERIES_n, ONLY: NFREQSERIES
 USE MODD_CH_AERO_n,    ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                              LCH_INIT_FIELD
-USE MODD_CH_PH_n
 USE MODD_CST, ONLY: XMD
 USE MODD_NUDGING_n
 USE MODD_PARAM_MFSHALL_n
@@ -1266,6 +1267,9 @@ END DO
 DO JSV = NSV_SLTDEPBEG,NSV_SLTDEPEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
+DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
+  XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
+END DO
 
 IF (CELEC .NE. 'NONE') THEN
   XRSVS(:,:,:,NSV_ELECBEG) = MAX(XRSVS(:,:,:,NSV_ELECBEG),0.)
@@ -1778,16 +1782,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
 !
   IF (CCLOUD /= 'REVE' ) THEN
     XACPRR = XACPRR + XINPRR * XTSTEP
-      IF (LUSECHAQ) THEN
-      DO JSV=1,NSV_CHAC/2
-      WHERE(XRT(:,:,IKB,3) .GT. 0.)
-      XACPRAQ(:,:,JSV) = XACPRAQ(:,:,JSV) + &
-              (XSVT(:,:,IKB,JSV+NSV_CHACBEG+NSV_CHAC/2-1))/ (XMD*XRT(:,:,IKB,3))*& ! moles i  / kg eau
-               XINPRR(:,:) * XTSTEP ! moles i / m2
-      END WHERE
-      END DO
-      END IF
-    IF ( (CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                     &
+          IF ( (CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                     &
         ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' &
                            .OR. CCLOUD == 'LIMA' ) .AND. KSEDC ) )     &
       XACPRC = XACPRC + XINPRC * XTSTEP

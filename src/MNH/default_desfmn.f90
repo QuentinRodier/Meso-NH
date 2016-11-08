@@ -210,6 +210,9 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   08/2015  (Redelsperger & Pianezze) add XPOND coefficient for LBC
 !!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 
+!!                                      put NCH_VEC_LENGTH = 50 instead of 1000
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1142,7 +1145,6 @@ LUSECHEM            = .FALSE.
 LUSECHAQ            = .FALSE.
 LUSECHIC            = .FALSE.
 LCH_INIT_FIELD      = .FALSE.
-LCH_SURFACE_FLUX    = .FALSE.
 LCH_CONV_SCAV       = .FALSE.
 LCH_CONV_LINOX      = .FALSE.
 LCH_PH              = .FALSE.
@@ -1159,7 +1161,7 @@ XCH_TUV_ALBNEW      = -1.
 XCH_TUV_DOBNEW      = -1.
 XCH_TUV_TUPDATE     = 600.
 CCH_VEC_METHOD      = 'MAX'
-NCH_VEC_LENGTH      = 1000
+NCH_VEC_LENGTH      = 50
 XCH_TS1D_TSTEP      = 600.
 CCH_TS1D_COMMENT    = 'no comment'
 CCH_TS1D_FILENAME   = 'IO1D'

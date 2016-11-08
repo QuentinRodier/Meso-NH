@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE CH_INIT_DEPCONST(KCH,KLUOUT,HSV)
+       SUBROUTINE CH_INIT_DEPCONST(HPROGRAM,HCHEM_SURF_FILE,KLUOUT,HSV)
 !!    ##################################################
 !!
 !!*** *CH_INIT_DEPCONST*
@@ -35,11 +35,14 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 16/02/01
-
+!!             2016 M.Leriche add open_namelist
 !!    EXTERNAL
 !!    --------
 !!
 ! open the general purpose ASCII input file
+USE MODI_OPEN_NAMELIST
+USE MODI_CLOSE_NAMELIST
+
 USE MODI_CH_OPEN_INPUTB
 USE MODD_CH_SURF
 !!
@@ -57,7 +60,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-INTEGER,                  INTENT(IN)  :: KCH      ! chemistry input namelist logical unit
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! Program name
+CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 INTEGER,                  INTENT(IN)  :: KLUOUT   ! output listing channel
  CHARACTER(LEN=*), DIMENSION(:),  INTENT(IN)  :: HSV      ! name of chemical species
 !
@@ -84,6 +88,7 @@ INTEGER :: IHENRY         ! number of chemical Henry constant to be read
 REAL             , DIMENSION(:,:), ALLOCATABLE :: ZHENRYVAL
                           !chemical Henry constant value
 !
+INTEGER :: ICH      ! unit of input chemical file
 INTEGER :: JI, JN, JNREAL ! loop control variables
 INTEGER :: INACT          ! array pointer
 logical :: lopened
@@ -100,20 +105,21 @@ IF(.NOT. ALLOCATED(XSREALMASSMOLVAL)) ALLOCATE( XSREALMASSMOLVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALREACTVAL)  ) ALLOCATE( XSREALREACTVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 !
+CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
 !
 !*       2.  read chemical molecular diffusivity MASS_MOL
 !
 ! open input file
   WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading  molar mass" 
-  CALL CH_OPEN_INPUTB("MASS_MOL", KCH, KLUOUT)
+  CALL CH_OPEN_INPUTB("MASS_MOL", ICH, KLUOUT)
 !
 ! read number of molecular diffusivity IMASS
-  READ(KCH, *) IMASS
+  READ(ICH, *) IMASS
   WRITE(KLUOUT,*) "number of molecular diffusivity: ", IMASS
 !
 ! read data input format
-  READ(KCH,"(A)") YFORMAT
+  READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
 !$OMP END SINGLE COPYPRIVATE(IMASS,YFORMAT)
 !
@@ -121,11 +127,11 @@ IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
   ALLOCATE(YMASSMOLNAME(IMASS))
   ALLOCATE(ZMASSMOLVAL(IMASS))
 !
-inquire(KCH,NAME=YNAME,opened=lopened)
+inquire(ICH,NAME=YNAME,opened=lopened)
 ! read molecular diffusivity
 !$OMP SINGLE
   DO JI = 1, IMASS
-    READ(KCH,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
+    READ(ICH,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
     WRITE(KLUOUT,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
   END DO
 !
@@ -159,14 +165,14 @@ inquire(KCH,NAME=YNAME,opened=lopened)
 !$OMP SINGLE
    WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading  reactivity factor "  
-  CALL CH_OPEN_INPUTB("REA_FACT", KCH, KLUOUT)
+  CALL CH_OPEN_INPUTB("REA_FACT", ICH, KLUOUT)
 !
 ! read number of molecular diffusivity IREACT
-  READ(KCH, *) IREACT
+  READ(ICH, *) IREACT
   WRITE(KLUOUT,*) "number of reactivity factor : ", IREACT
 !
 ! read data input format
-  READ(KCH,"(A)") YFORMAT
+  READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
 !$OMP END SINGLE COPYPRIVATE(IREACT,YFORMAT)
 !
@@ -176,7 +182,7 @@ inquire(KCH,NAME=YNAME,opened=lopened)
 ! read reactivity factor 
 !$OMP SINGLE
   DO JI = 1, IREACT
-    READ(KCH,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
+    READ(ICH,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
     WRITE(KLUOUT,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
   END DO
 !
@@ -210,14 +216,14 @@ inquire(KCH,NAME=YNAME,opened=lopened)
        "CH_INIT_CONST: reading effective Henry constant", &
        " and its temperature correction "  
 !$OMP SINGLE
-  CALL CH_OPEN_INPUTB("HENRY_SP", KCH, KLUOUT)
+  CALL CH_OPEN_INPUTB("HENRY_SP", ICH, KLUOUT)
 !
 ! read number of molecular diffusivity IHENRY
-  READ(KCH, *) IHENRY
+  READ(ICH, *) IHENRY
   WRITE(KLUOUT,*) "number of reactivity factor : ", IHENRY
 !
 ! read data input format
-  READ(KCH,"(A)") YFORMAT
+  READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
 !$OMP END SINGLE COPYPRIVATe(IHENRY,YFORMAT)  
 !
@@ -228,7 +234,7 @@ inquire(KCH,NAME=YNAME,opened=lopened)
 ! read reactivity factor 
 !$OMP SINGLE
   DO JNREAL = 1, IHENRY
-    READ(KCH,YFORMAT) YHENRYNAME(JNREAL), ZHENRYVAL(JNREAL,1),&
+    READ(ICH,YFORMAT) YHENRYNAME(JNREAL), ZHENRYVAL(JNREAL,1),&
                              ZHENRYVAL(JNREAL,2)  
     WRITE(KLUOUT,YFORMAT) YHENRYNAME(JNREAL), ZHENRYVAL(JNREAL,1),&
                              ZHENRYVAL(JNREAL,2)  
@@ -257,6 +263,9 @@ inquire(KCH,NAME=YNAME,opened=lopened)
                       XSREALHENRYVAL(JNREAL,1),&
                       XSREALHENRYVAL(JNREAL,2)  
   END DO
+
+CALL CLOSE_NAMELIST(HPROGRAM,ICH)
+
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEPCONST',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE CH_INIT_DEPCONST

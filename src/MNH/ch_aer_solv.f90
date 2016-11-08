@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ch_aer_solv.f90,v $ $Revision: 1.1.2.1.2.1.16.2.2.1.2.1 $ $Date: 2015/12/01 15:26:23 $
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !!   #######################
@@ -62,10 +62,14 @@ END MODULE MODI_CH_AER_SOLV
 !!    P. Tulet organic condensation
 !!    P. Tulet thermodynamic equilibrium for each mode
 !!    P. Tulet add third mode
+!!    M. Leriche 2015 correction bug
+!!    M. Leriche 08/16 suppress moments index declaration already in modd_aerosol
+!!    M. Leriche 08/16 add an other particular case for the M0 resolution to
+!!               avoid a division by zero (when ZK = 1)
 !!
 !!    EXTERNAL
 !!    --------
-!!    M.Leriche 2015 correction bug
+!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -131,16 +135,6 @@ LOGICAL, SAVE               :: GPHYSLIM = .TRUE. ! flag
   ZPMIN(5) = ZPMIN(4) * (ZINIRADIUSJ**3)*EXP(4.5 * LOG(XSIGJMIN)**2) 
   ZPMIN(6) = ZPMIN(4) * (ZINIRADIUSJ**6)*EXP(18. * LOG(XSIGJMIN)**2)
   !
-! Moments index
-NM0(1) = 1
-NM3(1) = 2
-NM6(1) = 3
-NM0(2) = 4
-NM3(2) = 5
-NM6(2) = 6
-!
-
-
 !write(*,*)
 !write(*,*) '******************************************'
 !write(*,*) '         Debut Solveur Aerosol            '
@@ -170,20 +164,22 @@ ZA(:)=PDMINTRA(:,NM0(JI))
 ZB(:)=PDMINTER(:,NM0(JI))
 ZC(:)=PDMCOND(:,NM0(JI))
 
+
 DO JK=1,SIZE(PM,1)
- IF  (ZB(JK) == 0. .AND. ZC(JK)/PM(JK,NM0(JI)) <= 1.e-10)  THEN
+ IF ((ZB(JK) == 0. .AND. ZC(JK)/PM(JK,NM0(JI)) <= 1.e-10).OR. &
+     (ZC(JK) <= 1.e-10 .AND. ZB(JK)/ZA(JK) <= 1.e-3))  THEN
+! type dY/dt=-AY^2
    Z0(JK)=PM(JK,NM0(JI)) 
    PM(JK,NM0(JI))=Z0(JK)/(1.+ZA(JK)*Z0(JK)*PDT)
  ELSE
-   ZD(JK)=SQRT(ZB(JK)**2+4.*ZA(JK)*ZC(JK))
-
    ZCONST1(JK)=ZB(JK)/(2.*ZA(JK))
-   ZCONST2(JK)=ZD(JK)/(2.*ABS(ZA(JK)))
    Z0(JK)=PM(JK,NM0(JI))+ZCONST1(JK)
-  
    IF (((ZB(JK)**2+4.*ZA(JK)*ZC(JK))) < 0.) THEN
+     ZD(JK)=SQRT(ABS(ZB(JK)**2+4.*ZA(JK)*ZC(JK)))
      PM(JK,NM0(JI))=-ZCONST1(JK)+ZD(JK)*TAN(ATAN(Z0(JK)/ZD(JK))-ZA(JK)*ZD(JK)*PDT)
    ELSE
+     ZD(JK)=SQRT(ZB(JK)**2+4.*ZA(JK)*ZC(JK))
+     ZCONST2(JK)=ZD(JK)/(2.*ABS(ZA(JK)))
      ZKEXP(JK)=EXP(-2.*ZA(JK)*ZCONST2(JK)*PDT)
      ZK(JK)=(Z0(JK)-ZCONST2(JK))/(Z0(JK)+ZCONST2(JK))*ZKEXP(JK)
      PM(JK,NM0(JI))=-ZCONST1(JK)+ZCONST2(JK)*(1.+ZK(JK))/(1.-ZK(JK))

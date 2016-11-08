@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/exchange.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5.2.1 $ $Date: 2015/12/01 15:26:23 $
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
@@ -82,13 +82,18 @@ END MODULE MODI_EXCHANGE
 !!    -------------
 !!
 !!    original     18/09/98
-!!                 05/2006   Remove KEPS
-!!                 10/2009 (C.Lac) FIT for variables advected by PPM
-!!                 05/2014 (C.Lac) Correction of negative values of chemical
+!!      05/2006   Remove KEPS
+!!      10/2009 (C.Lac) FIT for variables advected by PPM
+!!      05/2014 (C.Lac) Correction of negative values of chemical
 !!                   tracers moved from ch_monitor to the end of the time step
-!!                 11/2014 (G.Delautier) Call correction of negative values only
-!!                         if LUSECHEM 
-!------------------------------------------------------------------------------
+!!      11/2014 (G.Delautier) Call correction of negative values only if LUSECHEM 
+!!      16/02/16 (M. Leriche) conserve total mass for gas phase chem.
+!!                   species only, remove negative values without mass 
+!!                   corrections for aq. phase and ice phase (lost mass neglig.)
+!!      25/08/16 (M.Leriche) remove negative values for aerosols and conserve
+!!                   total mass for chemical species in aerosols
+!!            
+!-----------------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
 !            ------------
@@ -104,7 +109,8 @@ USE MODD_LUNIT_n,     ONLY : CLUOUT
 USE MODI_SHUMAN
 USE MODI_SUM_ll
 USE MODI_BUDGET
-USE MODD_CH_MNHC_n, ONLY : LUSECHEM
+USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHAQ, LUSECHIC
+USE MODD_CH_AEROSOL,  ONLY : LORILAM, NM6_AER
 !
 IMPLICIT NONE
 !
@@ -158,10 +164,10 @@ IF (SIZE(PRTKES,1) /= 0) PRTKES(:,:,:) = PRTKES(:,:,:)*PTSTEP/PRHODJ
 !      REMOVE NEGATIVE VALUES OF CHEM SCALAR
 !
 IF (LUSECHEM) THEN
-  DO JSV=NSV_CHEMBEG,NSV_CHEMEND
+  DO JSV=NSV_CHGSBEG,NSV_CHGSEND
     IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
 !
-! compute the total water mass computation
+! compute the total mass 
 !
       ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,JSV), IINFO_ll ) )
 !
@@ -178,15 +184,78 @@ IF (LUSECHEM) THEN
       ZRATIO = ZMASSTOT / ZMASSPOS
       PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) * ZRATIO
 !
-      WRITE(ILUOUT,*)'DUE TO CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
-      WRITE(ILUOUT,*)'SOURCES IS CORRECTED BY RATIO',ZRATIO
+      WRITE(ILUOUT,*)'CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+      WRITE(ILUOUT,*)'GAS SOURCES IS CORRECTED BY RATIO',ZRATIO
     END IF
   END DO
+  IF (LUSECHAQ) THEN
+    DO JSV =  NSV_CHACBEG, NSV_CHACEND
+      IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
+! remove the negative values
+        PRSVS(:,:,:,JSV) = MAX(0., PRSVS(:,:,:,JSV) )
+        WRITE(ILUOUT,*)'CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+        WRITE(ILUOUT,*)'CLOUD OR RAIN SOURCE IS SET TO ZERO'
+      END IF
+    END DO
+  ENDIF
+!
+  IF (LUSECHIC) THEN
+    DO JSV =  NSV_CHICBEG, NSV_CHICEND
+      IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
+! remove the negative values
+        PRSVS(:,:,:,JSV) = MAX(0., PRSVS(:,:,:,JSV) )
+        WRITE(ILUOUT,*)'CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+        WRITE(ILUOUT,*)'ICE PHASE SOURCE IS SET TO ZERO'
+      END IF
+    END DO
+  ENDIF
 !
   IF (LBUDGET_SV) THEN
     DO JSV=NSV_CHEMBEG,NSV_CHEMEND
       CALL BUDGET(PRSVS(:,:,:,JSV),JSV+12,'NEGA_BU_RSV')
     ENDDO
+  ENDIF
+!
+! aerosol sv
+  IF (LORILAM) THEN
+    DO JSV=NSV_AERBEG,NSV_AEREND-2-NM6_AER ! keep chem. species only
+      IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
+!
+! compute the total mass
+!
+        ZMASSTOT = MAX( 0. , SUM3D_ll( PRSVS(:,:,:,JSV), IINFO_ll ) )
+!
+! remove the negative values
+!
+        PRSVS(:,:,:,JSV) = MAX(0., PRSVS(:,:,:,JSV) )
+!
+! compute the new total mass
+!
+        ZMASSPOS = MAX(XMNH_TINY,SUM3D_ll( PRSVS(:,:,:,JSV), IINFO_ll ) )
+!
+! correct again in such a way to conserve the total mass 
+!
+        ZRATIO = ZMASSTOT / ZMASSPOS
+        PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV) * ZRATIO
+!
+        WRITE(ILUOUT,*)'CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+        WRITE(ILUOUT,*)'AP SOURCES IS CORRECTED BY RATIO',ZRATIO
+      END IF
+    END DO
+!
+    DO JSV=NSV_AEREND-2-NM6_AER+1,NSV_AEREND
+      IF ( MIN_ll( PRSVS(:,:,:,JSV), IINFO_ll) < 0.0 ) THEN
+! remove the negative values for M0 and M6
+         PRSVS(:,:,:,JSV) = MAX(0., PRSVS(:,:,:,JSV) )
+         WRITE(ILUOUT,*)'CHEMISTRY',JSV,'HAS NEGATIVE VALUES'
+         WRITE(ILUOUT,*)'AP MOMENT SOURCES IS SET TO ZERO'
+      END IF
+    END DO
+    IF (LBUDGET_SV) THEN
+      DO JSV=NSV_AERBEG,NSV_AEREND
+        CALL BUDGET(PRSVS(:,:,:,JSV),JSV+12,'NEGA_BU_RSV')
+      ENDDO
+    ENDIF
   ENDIF
 ENDIF
 !

@@ -22,7 +22,6 @@
 &NAM_CH_MNHCn       LUSECHEM = T,
                     LCH_CONV_LINOX = T,
                     LCH_INIT_FIELD = F,
-                    LCH_SURFACE_FLUX = T,
                     LCH_CONV_SCAV = T,
                     CCHEM_INPUT_FILE  = "ReLACS_poet.nam",
                     CCH_TDISCRETIZATION = "SPLIT"

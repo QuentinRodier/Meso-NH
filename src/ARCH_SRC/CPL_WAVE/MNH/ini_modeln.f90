@@ -267,6 +267,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   Jun.  2016 (G.Delautier) phasage surfex 8
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                   Aug.  2016 (J.Pianezze) Add SFX_OASIS_READ_NAM function from SurfEx
+!!                   M.Leriche 2016 Chemistry
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1456,10 +1457,14 @@ IF (LUSECHAQ.AND.(CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
     ALLOCATE(XPHC(IIU,IJU,IKU))
     IF (NRRL==2) THEN
       ALLOCATE(XPHR(IIU,IJU,IKU))
+      ALLOCATE(XACPHR(IIU,IJU))
+      XACPHR(:,:) =  0.
     ENDIF
   ENDIF
-  ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
-  XACPRAQ(:,:,:) = 0.
+  IF (NRRL==2) THEN
+    ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
+    XACPRAQ(:,:,:) = 0.
+  ENDIF
 ENDIF
 !
 !-------------------------------------------------------------------------------

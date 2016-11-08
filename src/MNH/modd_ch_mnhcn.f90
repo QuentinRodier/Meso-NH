@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_ch_mnhcn.f90,v $ $Revision: 1.2.4.1.2.1.12.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !!    #####################
       MODULE MODD_CH_MNHC_n
@@ -35,6 +35,7 @@
 !!    25/04/08 (M. Leriche) add threshold for aqueous phase chemistry
 !!    16/09/10 (M. Leriche) add flag for ice phase chemistry
 !!    13/01/11 (M. Leriche) add flag for retention in ice 
+!!    24/03/16 (M. Leriche) remove surface option -> manage them in SURFEX
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -64,21 +65,15 @@ TYPE CH_MNHC_t
 !* Initialization
 !
   LOGICAL :: LCH_INIT_FIELD ! flag indicating whether initialization
-		 ! of chemical fields shall be done during MesoNH run using
-		 ! CH_INIT_FIELD (overwrites initial values from FM-files)
-		 ! or not
-!
-!* Surface options
-!
-  LOGICAL :: LCH_SURFACE_FLUX  ! flag indicating whether surface flux
-		 ! for chemical species shall be calculated using 
-		 ! CH_SURFACE_FLUX or not (dry deposition and emission)
+                 ! of chemical fields shall be done during MesoNH run using
+                 ! CH_INIT_FIELD (overwrites initial values from FM-files)
+                 ! or not
 !
 !* Scavenging in parameterized convective clouds
 !
   LOGICAL :: LCH_CONV_SCAV 
                  ! flag for calculation of scavenging 
-		 ! by convective precipitations (active only if LCHTRANS=.TRUE.)
+                 ! by convective precipitations (active only if LCHTRANS=.TRUE.)
 !
 !* pH calculation
 !
@@ -104,23 +99,23 @@ TYPE CH_MNHC_t
 !
   CHARACTER(LEN=80) :: CCHEM_INPUT_FILE 
                  ! name of general 
-		 ! purpose ASCII input file (handeled by CH_OPEN_INPUT)
+                 ! purpose ASCII input file (handeled by CH_OPEN_INPUT)
 !
   CHARACTER(LEN=10) :: CCH_TDISCRETIZATION 
-		 ! temporal discretization:
+                 ! temporal discretization:
                  ! "SPLIT"  : use time-splitting, input fields for solver are
-		 !            scalar variables at t+dt (derived from XRSVS)
-		 ! "CENTER" : input fields for solver are 
-		 !            scalar variables at t (XSVT)
-		 ! "LAGGED" : input fields for solver are 
-		 !            scalar variables at t-dt (XSVM)
+                 !            scalar variables at t+dt (derived from XRSVS)
+                 ! "CENTER" : input fields for solver are 
+                 !            scalar variables at t (XSVT)
+                 ! "LAGGED" : input fields for solver are 
+                 !            scalar variables at t-dt (XSVM)
 !
   INTEGER           :: NCH_SUBSTEPS
                  ! number of chemical timesteps to be taken during one 
-		 ! double timestep of MesoNH (MesoNH integrates with timesteps
-		 ! of lenght 2*XTSTEP using leapfrog), the timestep of the 
-		 ! solver will be calculated as 
-		 ! ZDTSOLVER = 2*XTSTEP / NCH_SUBSTEPS
+                 ! double timestep of MesoNH (MesoNH integrates with timesteps
+                 ! of lenght 2*XTSTEP using leapfrog), the timestep of the 
+                 ! solver will be calculated as 
+                 ! ZDTSOLVER = 2*XTSTEP / NCH_SUBSTEPS
 !* LiNOx
 !
   LOGICAL :: LCH_CONV_LINOX
@@ -129,8 +124,8 @@ TYPE CH_MNHC_t
 !* photolysis rates (TUV)
 !
   LOGICAL      :: LCH_TUV_ONLINE  ! switch online/lookup table
-  CHARACTER*80 :: CCH_TUV_LOOKUP  ! name of lookup table file
-  CHARACTER*4  :: CCH_TUV_CLOUDS  ! method for calculating the
+  CHARACTER(LEN=80) :: CCH_TUV_LOOKUP  ! name of lookup table file
+  CHARACTER(LEN=4)  :: CCH_TUV_CLOUDS  ! method for calculating the
                                 ! impact of clouds on radiation
                                 ! "FOUQ" (model clouds, only 1-D)
   REAL :: XCH_TUV_ALBNEW  ! surface albedo (if negative the albedo
@@ -144,18 +139,18 @@ TYPE CH_MNHC_t
 !
 !* vectorization
 !
-  CHARACTER*3 :: CCH_VEC_METHOD          ! type of vectorization mask
+  CHARACTER(LEN=3) :: CCH_VEC_METHOD          ! type of vectorization mask
                                        ! 'MAX' take NCH_VEC_LENGTH points
                                        ! 'TOT' take all grid points
                                        ! 'HOR' take horizontal layers
                                        ! 'VER' take vertical columns
-  INTEGER     :: NCH_VEC_LENGTH          ! number of points for 'MAX' option
+  INTEGER          :: NCH_VEC_LENGTH          ! number of points for 'MAX' option
 !
 !* 1-D time series
 !
-  REAL         :: XCH_TS1D_TSTEP         ! time between two call to write_ts1d
-  CHARACTER*80 :: CCH_TS1D_COMMENT       ! comment for write_ts1d
-  CHARACTER*80 :: CCH_TS1D_FILENAME      ! filename for write_ts1d files
+  REAL              :: XCH_TS1D_TSTEP         ! time between two call to write_ts1d
+  CHARACTER(LEN=80) :: CCH_TS1D_COMMENT       ! comment for write_ts1d
+  CHARACTER(LEN=80) :: CCH_TS1D_FILENAME      ! filename for write_ts1d files
 !
 END TYPE CH_MNHC_t
 
@@ -165,7 +160,6 @@ LOGICAL, POINTER :: LUSECHEM=>NULL()
 LOGICAL, POINTER :: LUSECHAQ=>NULL()
 LOGICAL, POINTER :: LUSECHIC=>NULL()
 LOGICAL, POINTER :: LCH_INIT_FIELD=>NULL()
-LOGICAL, POINTER :: LCH_SURFACE_FLUX=>NULL()
 LOGICAL, POINTER :: LCH_CONV_SCAV=>NULL()
 LOGICAL, POINTER :: LCH_PH=>NULL()
 LOGICAL, POINTER :: LCH_RET_ICE=>NULL()
@@ -177,16 +171,16 @@ CHARACTER(LEN=10), POINTER :: CCH_TDISCRETIZATION=>NULL()
 INTEGER, POINTER :: NCH_SUBSTEPS=>NULL()
 LOGICAL, POINTER :: LCH_CONV_LINOX=>NULL()
 LOGICAL, POINTER :: LCH_TUV_ONLINE=>NULL()
-CHARACTER*80, POINTER :: CCH_TUV_LOOKUP=>NULL()
-CHARACTER*4, POINTER :: CCH_TUV_CLOUDS=>NULL()
+CHARACTER(LEN=80), POINTER :: CCH_TUV_LOOKUP=>NULL()
+CHARACTER(LEN=4), POINTER :: CCH_TUV_CLOUDS=>NULL()
 REAL, POINTER :: XCH_TUV_ALBNEW=>NULL()
 REAL, POINTER :: XCH_TUV_DOBNEW=>NULL()
 REAL, POINTER :: XCH_TUV_TUPDATE=>NULL()
-CHARACTER*3, POINTER :: CCH_VEC_METHOD=>NULL()
+CHARACTER(LEN=3), POINTER :: CCH_VEC_METHOD=>NULL()
 INTEGER, POINTER :: NCH_VEC_LENGTH=>NULL()
 REAL, POINTER :: XCH_TS1D_TSTEP=>NULL()
-CHARACTER*80, POINTER :: CCH_TS1D_COMMENT=>NULL()
-CHARACTER*80, POINTER :: CCH_TS1D_FILENAME=>NULL()
+CHARACTER(LEN=80), POINTER :: CCH_TS1D_COMMENT=>NULL()
+CHARACTER(LEN=80), POINTER :: CCH_TS1D_FILENAME=>NULL()
 
 CONTAINS
 
@@ -200,7 +194,6 @@ LUSECHEM=>CH_MNHC_MODEL(KTO)%LUSECHEM
 LUSECHAQ=>CH_MNHC_MODEL(KTO)%LUSECHAQ
 LUSECHIC=>CH_MNHC_MODEL(KTO)%LUSECHIC
 LCH_INIT_FIELD=>CH_MNHC_MODEL(KTO)%LCH_INIT_FIELD
-LCH_SURFACE_FLUX=>CH_MNHC_MODEL(KTO)%LCH_SURFACE_FLUX
 LCH_CONV_SCAV=>CH_MNHC_MODEL(KTO)%LCH_CONV_SCAV
 LCH_PH=>CH_MNHC_MODEL(KTO)%LCH_PH
 LCH_RET_ICE=>CH_MNHC_MODEL(KTO)%LCH_RET_ICE

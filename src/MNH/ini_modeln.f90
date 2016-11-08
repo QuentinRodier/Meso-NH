@@ -1,4 +1,3 @@
-
 !MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
@@ -267,6 +266,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!                   M.Leriche 2016 Chemistry
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1451,10 +1451,14 @@ IF (LUSECHAQ.AND.(CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
     ALLOCATE(XPHC(IIU,IJU,IKU))
     IF (NRRL==2) THEN
       ALLOCATE(XPHR(IIU,IJU,IKU))
+      ALLOCATE(XACPHR(IIU,IJU))
+      XACPHR(:,:) =  0.
     ENDIF
   ENDIF
-  ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
-  XACPRAQ(:,:,:) = 0.
+  IF (NRRL==2) THEN
+    ALLOCATE(XACPRAQ(IIU,IJU,NSV_CHAC/2))
+    XACPRAQ(:,:,:) = 0.
+  ENDIF
 ENDIF
 !
 !-------------------------------------------------------------------------------
