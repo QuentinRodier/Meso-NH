@@ -23,6 +23,8 @@ export MNH_IOCDF4=${MNH_IOCDF4:-1}
 export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
 
+export VERSION_NCL=${VERSION_NCL:-"ncl-6.3.0"}
+
 #
 export NEED_TOOLS=YES
 #
@@ -410,7 +412,7 @@ if [ "x${MVWORK}" == "xYES" ] ; then
    fi
 fi
 if [ "x${NEED_NCARG}" != "xNO" ] ; then
-( cd $LOCAL/pub ; [ ! -d ncl_ncarg-5.2.1.Linux_x86_64 ] && tar xvfz ncl_ncarg-5.2.1.Linux_x86_64.tar.gz )
+( cd $LOCAL/pub ; [ ! -d ${VERSION_NCL} ] && ( tar xvfz ${VERSION_NCL}.tar.gz ) )
 fi
 
 #

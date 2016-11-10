@@ -6,6 +6,9 @@ set -x
 
 ln -sf ../002_mesonh/REL3D.1.EXP01.002.nc4 .
 
+rm -f visu_3Drelief*
+
 ncl  plot_3Drelief.ncl
-display visu_3Drelief.000001.png
+#display visu_3Drelief.000001.png
+display visu_3Drelief.png
 exit 0
