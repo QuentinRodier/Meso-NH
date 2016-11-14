@@ -13,18 +13,11 @@
 !
 INTERFACE
 !
-      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         HFMFILE, HLUOUT)
+      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB)
 IMPLICIT NONE
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
 INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
 INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
-LOGICAL, INTENT(IN)          :: OCLOSE_OUT! conditional closure of the 
-                                               ! OUTPUT FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HFMFILE   ! Name of the output
-                                                  ! FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT    ! Output-listing name for
-                                                  ! model n
 !
 END SUBROUTINE CONDSAMP
 !
@@ -32,8 +25,7 @@ END INTERFACE
 !
 END MODULE MODI_CONDSAMP
 !     ######spl
-      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         HFMFILE, HLUOUT)
+      SUBROUTINE CONDSAMP (PSFSV, KLUOUT, KVERB)
 !     ############################################################
 !
 !
@@ -85,12 +77,6 @@ IMPLICIT NONE
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
 INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
 INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
-LOGICAL, INTENT(IN)          :: OCLOSE_OUT! conditional closure of the 
-                                               ! OUTPUT FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HFMFILE   ! Name of the output
-                                                  ! FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT    ! Output-listing name for
-                                                  ! model n
 !
 !*      0.2    declarations of local variables
 !

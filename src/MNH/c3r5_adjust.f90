@@ -14,9 +14,9 @@
 !
 INTERFACE
 !
-      SUBROUTINE C3R5_ADJUST( KRR, KMI, HFMFILE, HLUOUT, HRAD,                 &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST, &
+      SUBROUTINE C3R5_ADJUST( KRR, KMI, HRAD,                                  &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST,         &
                              PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,         &
                              PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,         &
                              PCCT, PCIT, PCNUCS, PCCS, PINUCS, PCIS,           &
@@ -24,14 +24,9 @@ INTERFACE
          !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          
@@ -79,9 +74,9 @@ END INTERFACE
 END MODULE MODI_C3R5_ADJUST
 !
 !     ##########################################################################
-      SUBROUTINE C3R5_ADJUST( KRR, KMI, HFMFILE, HLUOUT, HRAD,                 &
-                             HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST, &
+      SUBROUTINE C3R5_ADJUST( KRR, KMI, HRAD,                                  &
+                             HTURBDIM, OSUBG_COND, PTSTEP,                     &
+                             PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST,         &
                              PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PRHT,         &
                              PRVS, PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,         &
                              PCCT, PCIT, PCNUCS, PCCS, PINUCS, PCIS,           &
