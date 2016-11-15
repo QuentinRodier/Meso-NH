@@ -18,7 +18,7 @@ INTERFACE TEST_NAM_VAR
                                      HVALUE1,HVALUE2,HVALUE3, &
                                      HVALUE4,HVALUE5,HVALUE6, &
                                      HVALUE7,HVALUE8,HVALUE9, &
-                                     HVALUE10,HVALUE11        )
+                                     HVALUE10,HVALUE11,HVALUE12   )
 !
 INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
 CHARACTER(LEN=*) ,INTENT(IN)           ::HNAME    ! name of the variable to test
@@ -33,8 +33,9 @@ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE6  ! sixth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
-CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value             
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE11 ! eleventh possible value             
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE12 ! twelveth possible value             
 !
 END SUBROUTINE TEST_NAM_VARC0
 !
@@ -48,7 +49,7 @@ END MODULE MODI_TEST_NAM_VAR
                                      HVALUE1,HVALUE2,HVALUE3, &
                                      HVALUE4,HVALUE5,HVALUE6, &
                                      HVALUE7,HVALUE8,HVALUE9, &
-                                     HVALUE10,HVALUE11        )
+                                     HVALUE10,HVALUE11,HVALUE12   )
 !     #########################################################
 !
 !!****  *TEST_NAM_VARC0* - routine to test the value of a character var.
@@ -82,7 +83,7 @@ END MODULE MODI_TEST_NAM_VAR
 !!    -------------
 !!
 !!      original                                                     17/04/98
-!!      B.Vie 2016 : for LIMA add arguments
+!!      10/2016 (C.Lac) Increase of the number of values
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -105,8 +106,9 @@ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE6  ! sixth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
-CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE11 ! eleventh possible value
 CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value           
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE11 ! eleventh possible value             
+CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE12 ! twelveth possible value             
 !
 !*      0.2   Declarations of local variables
 !
@@ -157,6 +159,10 @@ IF ( PRESENT (HVALUE11) ) THEN
   IF ( HVAR==HVALUE11 ) RETURN
 END IF
 !
+IF ( PRESENT (HVALUE12) ) THEN  
+  IF ( HVAR==HVALUE12 ) RETURN
+END IF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -178,6 +184,7 @@ IF ( PRESENT (HVALUE8) ) WRITE (KLUOUT,*) '"',HVALUE8,'"'
 IF ( PRESENT (HVALUE9) ) WRITE (KLUOUT,*) '"',HVALUE9,'"'
 IF ( PRESENT (HVALUE10) ) WRITE (KLUOUT,*) '"',HVALUE10,'"'
 IF ( PRESENT (HVALUE11) ) WRITE (KLUOUT,*) '"',HVALUE11,'"'
+IF ( PRESENT (HVALUE12) ) WRITE (KLUOUT,*) '"',HVALUE12,'"'
 !
  !callabortstop
 CALL ABORT
