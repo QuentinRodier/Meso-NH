@@ -22,6 +22,7 @@ INTERFACE
                                   PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
                                   PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
+                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
@@ -118,6 +119,11 @@ REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP! Cloud instant deposition
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -140,6 +146,7 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
                                   PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
+                                  PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
 !     ##########################################################################
 !
@@ -243,6 +250,9 @@ END MODULE MODI_RESOLVED_CLOUD
 !!      M.Mazoyer : 04/2016 : Temperature radiative tendency used for  
 !!                            activation by cooling (OACTIT)
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!                     10/2016 M.Mazoyer New KHKO output fields
+!!                    10/2016 (C.Lac) Add droplet deposition
+
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -381,6 +391,11 @@ REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP! Cloud instant deposition
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO  !concentrtaion d'aérosols activés au temps t
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   !sursat
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSEA      ! Land Sea mask
 REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PTOWN      ! Town fraction
 !
@@ -468,15 +483,15 @@ ENDIF
 !  complete the lateral boundaries to avoid possible problems
 !
 DO JI=1,JPHEXT
-PTHS(JI,:,:) = PTHS(IIB,:,:)
-PTHS(IIE+JI,:,:) = PTHS(IIE,:,:)
-PTHS(:,JI,:) = PTHS(:,IJB,:)
-PTHS(:,IJE+JI,:) = PTHS(:,IJE,:)
+ PTHS(JI,:,:) = PTHS(IIB,:,:)
+ PTHS(IIE+JI,:,:) = PTHS(IIE,:,:)
+ PTHS(:,JI,:) = PTHS(:,IJB,:)
+ PTHS(:,IJE+JI,:) = PTHS(:,IJE,:)
 !
-PRS(JI,:,:,:) = PRS(IIB,:,:,:)
-PRS(IIE+JI,:,:,:) = PRS(IIE,:,:,:)
-PRS(:,JI,:,:) = PRS(:,IJB,:,:)
-PRS(:,IJE+JI,:,:) = PRS(:,IJE,:,:)
+ PRS(JI,:,:,:) = PRS(IIB,:,:,:)
+ PRS(IIE+JI,:,:,:) = PRS(IIE,:,:,:)
+ PRS(:,JI,:,:) = PRS(:,IJB,:,:)
+ PRS(:,IJE+JI,:,:) = PRS(:,IJE,:,:)
 END DO
 !
 !  complete the physical boundaries to avoid some computations
@@ -493,7 +508,7 @@ DO JI=1,JPHEXT
   ZSVS(:,JI,:,:) = ZSVS(:,IJB,:,:)
   ZSVS(:,IJE+JI,:,:) = ZSVS(:,IJE,:,:)
 END DO
-!
+ !
 !  complete the physical boundaries to avoid some computations
 !
   IF(LWEST_ll()  .AND. HLBCX(1) /= 'CYCL')  ZSVT(:IIB-1,:,:,:) = 0.0
@@ -830,7 +845,8 @@ SELECT CASE ( HCLOUD )
                      ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D ,                          &
-                     PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN           )
+                     PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN,                        &
+                     PINDEP, PSUPSAT, PNACT                               )
 !
 !
 !*       7.2    Perform the saturation adjustment
@@ -841,7 +857,7 @@ SELECT CASE ( HCLOUD )
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
                          ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
-                         ZSVS(:,:,:,4), PCLDFR, PSRCS                            )
+                         ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO                           )
 !
    ELSE
     CALL C2R2_ADJUST ( KRR,HFMFILE, HLUOUT, HRAD,                              &
@@ -874,7 +890,7 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
                     PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS, PINPRG, PSIGS,             &
+                    PINPRS, PINPRG, PSIGS,PINDEP,             &
                     PSEA,PTOWN)
 !
 !*       9.2    Perform the saturation adjustment over cloud ice and cloud water
@@ -913,7 +929,7 @@ SELECT CASE ( HCLOUD )
                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,           &
-                    PINPRS, PINPRG, PSIGS,              &
+                    PINPRS, PINPRG, PSIGS,PINDEP,              &
                     PSEA, PTOWN,                                          &
                     PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,OCONVHG  )
 
@@ -933,55 +949,6 @@ SELECT CASE ( HCLOUD )
                     PRST=PRT(:,:,:,5), PRSS=PRS(:,:,:,5),                    &
                     PRGT=PRT(:,:,:,6), PRGS=PRS(:,:,:,6),                    &
                     PRHT=PRT(:,:,:,7), PRHS=PRS(:,:,:,7)                     )
-!
-  CASE ('C3R5')
-!
-!*       11.    2-MOMENT MIXED-PHASE MICROPHYSICAL SCHEME (WITH 3 ICE SPECIES)
-!               --------------------------------------------------------------
-!
-!
-!*       11.1   Compute the explicit microphysical sources
-!
-    CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,                  &
-                     HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
-                     PPABST, PTHT,                                                &
-                     PRT(:,:,:,1), PRT(:,:,:,2),                                  &
-                     PRT(:,:,:,3),                                                &
-                     PTHM, PRCM, PPABSM,                                          &
-                     PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
-                     ZSVT(:,:,:,1), ZSVT(:,:,:,2), ZSVT(:,:,:,3),                 &
-                     ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
-                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,                           &
-                     PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN )
-!
-    CALL ICE_C1R3  ( OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,                    &
-                     PZZ, PRHODJ, PRHODREF, PEXNREF,                         &
-                     PPABST, PW_ACT, PTHT,                            &
-                     PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3),               &
-                     PRT(:,:,:,4), PRT(:,:,:,5), PRT(:,:,:,6),               &
-                     PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3), &
-                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),               &
-                                    ZSVT(:,:,:,2), ZSVT(:,:,:,3),            &
-                                    ZSVT(:,:,:,4),                           &
-                     ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),            &
-                     ZSVS(:,:,:,5), ZSVS(:,:,:,4),                           &
-                     PINPRS, PINPRG                                          )
-!
-!
-!*       11.2   Perform the saturation adjustment
-!
-    CALL C3R5_ADJUST ( KRR, KMI, HFMFILE, HLUOUT, HRAD,               &
-                       HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
-                       PRHODREF, PRHODJ, PEXNREF, PSIGS, PPABST,       &
-                       PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2), PRRT=PRT(:,:,:,3),&
-                       PRIT=PRT(:,:,:,4), PRST=PRT(:,:,:,5), PRGT=PRT(:,:,:,6),&
-                       PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2), PRRS=PRS(:,:,:,3),&
-                       PRIS=PRS(:,:,:,4), PRSS=PRS(:,:,:,5), PRGS=PRS(:,:,:,6),&
-                       PCCT=ZSVT(:,:,:,2), PCIT=ZSVT(:,:,:,4),                 &
-                       PCNUCS=ZSVS(:,:,:,1), PCCS=ZSVS(:,:,:,2),               &
-                       PINUCS=ZSVS(:,:,:,5), PCIS=ZSVS(:,:,:,4),               &
-                       PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR                   )
-!
 !
 !*       12.    2-MOMENT MIXED-PHASE MICROPHYSICAL SCHEME LIMA
 !               --------------------------------------------------------------
