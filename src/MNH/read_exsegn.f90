@@ -282,6 +282,9 @@ END MODULE MODI_READ_EXSEG_n
 !!      M.Leriche 18/12/2015 : bug chimie glace dans prep_real_case
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      Modification   02/2016   (M.Leriche) treat gas and aq. chemicals separately
+!!      Modification   10/2016    (C.LAC) Add OSPLIT_WENO + Add droplet
+!!                                deposition + Add max values
+
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -588,7 +591,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CMET_ADV_SCHEME',CMET_ADV_SCHEME, &
 CALL TEST_NAM_VAR(ILUOUT,'CSV_ADV_SCHEME',CSV_ADV_SCHEME,   &
       &'PPM_00','PPM_01','PPM_02')
 CALL TEST_NAM_VAR(ILUOUT,'CTEMP_SCHEME',CTEMP_SCHEME,       &
-      & 'RK11','RK21','RK33','RKC4','RK53','RK4B','RK62','RK65','NP32','SP32')
+  &'RK11','RK21','RK33','RKC4','RK53','RK4B','RK62','RK65','NP32','SP32','LEFR')
 !
 CALL TEST_NAM_VAR(ILUOUT,'CTURB',CTURB,'NONE','TKEL')
 CALL TEST_NAM_VAR(ILUOUT,'CRAD',CRAD,'NONE','FIXE','ECMW','TOPA')
@@ -636,7 +639,7 @@ CALL TEST_NAM_VAR(ILUOUT,'CTURBLEN_CLOUD',CTURBLEN_CLOUD,'NONE','DEAR','DELT','B
 !   The test on the mass flux scheme for shallow convection
 !
 CALL TEST_NAM_VAR(ILUOUT,'CMF_UPDRAFT',CMF_UPDRAFT,'NONE','EDKF','RHCJ',&
-                   'HRIO','BOUT')
+                   'HRIO','SURF','BOUT')
 CALL TEST_NAM_VAR(ILUOUT,'CMF_CLOUD',CMF_CLOUD,'NONE','STAT','DIRE')
 !
 !   The test on the CSOLVER name is made elsewhere
@@ -2108,6 +2111,25 @@ IF ( HEQNSYS /= CEQNSYS ) THEN
   CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
+END IF
+!
+!        3.9  Numerical schemes
+!
+IF ( (CUVW_ADV_SCHEME == 'CEN4TH') .AND. &
+      (CTEMP_SCHEME /= 'LEFR') .AND. (CTEMP_SCHEME /= 'RKC4') ) THEN
+   WRITE(UNIT=ILUOUT,FMT=9003) KMI
+   WRITE(UNIT=ILUOUT,FMT='("CEN4TH SCHEME HAS TO BE USED WITH ",&
+    &"CTEMP_SCHEME = LEFR of RKC4 ONLY")')   
+ !callabortstop
+   CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+   CALL ABORT
+   STOP
+END IF
+!
+IF ( (CUVW_ADV_SCHEME == 'WENO_K') .AND. LNUMDIFU ) THEN
+   WRITE(UNIT=ILUOUT,FMT=9002) KMI
+   WRITE(UNIT=ILUOUT,FMT='("YOU WANT TO USE NUMERICAL DIFFUSION ",&
+    &"WITH WENO SCHEME ALREADY DIFFUSIVE")')   
 END IF
 !-------------------------------------------------------------------------------
 !
