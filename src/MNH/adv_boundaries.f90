@@ -32,9 +32,10 @@ END MODULE MODI_ADV_BOUNDARIES
 !!
 !!    AUTHOR
 !!    ------
-!!
+!!   V.Masson
 !! Correction :	
-!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!   C.Lac     : 10/16 : top BC for W 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -119,6 +120,11 @@ IF( PRESENT(PFIELDI) )  THEN
   END IF
 END IF
 !
+!*       4. TOP BC for W
+!
+ IF (PRESENT(HFIELD)) THEN
+   IF (HFIELD=='W') PFIELD(:,:,IKE+1) = 0.
+ END IF
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE ADV_BOUNDARIES
