@@ -5,7 +5,8 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/khko_notadjust.f90,v $ $Revision: 1.1.2.1.2.1 $
+! MASDEV4_7 microph 2007/03/23 11:52:41
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_KHKO_NOTADJUST
@@ -17,7 +18,7 @@ INTERFACE
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
-                                PCLDFR, PSRCS                                       )
+                                PCLDFR, PSRCS, PNPRO,PSSPRO                          )
 
                                       !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
@@ -49,6 +50,8 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRRS     ! Rain  water m.r. source
                                                     ! the nucleation param.
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCS     ! Cloud water conc. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCNUCS   ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   ! Nucl. aero. conc. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSAT     ! Super saturation  source
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
@@ -67,7 +70,7 @@ END MODULE MODI_KHKO_NOTADJUST
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
-                                PCLDFR, PSRCS                                       )
+                                PCLDFR, PSRCS, PNPRO,PSSPRO                          )
 !     ################################################################################
 !
 !!****  * -  compute pseudo-prognostic of supersaturation according to Thouron
@@ -92,6 +95,8 @@ END MODULE MODI_KHKO_NOTADJUST
 !!    MODIFICATIONS
 !!    -------------
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!   M.Mazoyer : 04/16 : New dummy arguments
+!!   M.Mazoyer : 10/2016 New KHKO output fields
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -144,6 +149,8 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRRS     ! Rain  water m.r. source
                                                     ! the nucleation param.
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCS     ! Cloud water conc. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCNUCS   ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNPRO    ! Nucl. aero. conc. source
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSSPRO   ! Nucl. aero. conc. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSAT     ! pseudo-prognostic S
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
@@ -377,6 +384,11 @@ END IF
 IF ( HRAD /= 'NONE' ) THEN
      PCLDFR(:,:,:) = ZW1(:,:,:)
 END IF
+!
+  PSSPRO(:,:,:) = 0.0
+  PSSPRO(:,:,:) = ZWORK(:,:,:) 
+  PNPRO(:,:,:) = 0.0
+  PNPRO(:,:,:) = ZACT(:,:,:) 
 !
 IF ( OCLOSE_OUT ) THEN
   ILENCH=LEN(YCOMMENT)

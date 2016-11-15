@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_fieldn.f90,v $ $Revision: 1.2.4.1.18.2 $
 ! MASDEV4_7 modd 2006/06/27 14:17:24
 !-----------------------------------------------------------------
 !     ###################
@@ -52,6 +52,7 @@
 !!                               add pressure contribution to the tendencies for
 !!                               momentum (noted _PRES) + microphysics contrib
 !!                               for Theta and r (noted _CLD)
+!!                     04/16    (M.Mazoyer) New supersaturation fields
 !!
 !-------------------------------------------------------------------------------
 !
@@ -70,6 +71,14 @@ TYPE FIELD_t
   REAL, DIMENSION(:,:,:), POINTER :: XTHT=>NULL()     ! (rho theta) at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRTHS=>NULL()    ! Source of (rho theta)
   REAL, DIMENSION(:,:,:), POINTER :: XRTHS_CLD=>NULL()    ! Source of (rho theta) from resolved_cloud
+  REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()    ! Sursat
+                                                     ! at time t
+  REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()    ! Sursat
+                                                     ! at time t
+  REAL, DIMENSION(:,:,:), POINTER :: XNPRO=>NULL()    ! Sursat
+                                                     ! at time t
+  REAL, DIMENSION(:,:,:), POINTER :: XSSPRO=>NULL()    ! Sursat
+                                                     ! at time t
   REAL, DIMENSION(:,:,:), POINTER :: XTKET=>NULL()    ! Kinetic energy
                                                      ! at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()   ! Source of kinetic energy
@@ -109,6 +118,10 @@ REAL, DIMENSION(:,:,:), POINTER :: XRUS_PRES=>NULL(),XRVS_PRES=>NULL(),XRWS_PRES
 REAL, DIMENSION(:,:,:), POINTER :: XTHT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTHS_CLD=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XNPRO=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSSPRO=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTKET=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()
@@ -147,6 +160,10 @@ FIELD_MODEL(KFROM)%XRWS_PRES=>XRWS_PRES
 FIELD_MODEL(KFROM)%XTHT=>XTHT
 FIELD_MODEL(KFROM)%XRTHS=>XRTHS
 FIELD_MODEL(KFROM)%XRTHS_CLD=>XRTHS_CLD
+FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT
+FIELD_MODEL(KFROM)%XNACT=>XNACT
+FIELD_MODEL(KFROM)%XNPRO=>XNPRO
+FIELD_MODEL(KFROM)%XSSPRO=>XSSPRO
 FIELD_MODEL(KFROM)%XTKET=>XTKET
 FIELD_MODEL(KFROM)%XRTKES=>XRTKES
 FIELD_MODEL(KFROM)%XPABST=>XPABST
@@ -178,6 +195,10 @@ XRWS_PRES=>FIELD_MODEL(KTO)%XRWS_PRES
 XTHT=>FIELD_MODEL(KTO)%XTHT
 XRTHS=>FIELD_MODEL(KTO)%XRTHS
 XRTHS_CLD=>FIELD_MODEL(KTO)%XRTHS_CLD
+XSUPSAT=>FIELD_MODEL(KTO)%XSUPSAT
+XNACT=>FIELD_MODEL(KTO)%XNACT
+XSSPRO=>FIELD_MODEL(KTO)%XSSPRO
+XNPRO=>FIELD_MODEL(KTO)%XNPRO
 XTKET=>FIELD_MODEL(KTO)%XTKET
 XRTKES=>FIELD_MODEL(KTO)%XRTKES
 XPABST=>FIELD_MODEL(KTO)%XPABST
