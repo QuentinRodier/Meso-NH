@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/condensation.f90,v $ $Revision: 1.2.2.3.2.1.16.1.2.2.2.1 $
 ! masdev4_7 BUG1 2007/06/15 17:47:17
 !-----------------------------------------------------------------
 !     ########################
@@ -117,6 +117,7 @@ END MODULE MODI_CONDENSATION
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
 !!      2015   C.Lac   Change min value of ZSIGMA to be in agreement with AROME
 !!      2016   G.Delautier   Restore min value of ZSIGMA (instability)
+!!      2016   S.Riette Change INQ1 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -285,7 +286,7 @@ DO JK=IKTB,IKTE
       ZQSI   = XRD / XRV * ZPIV / ( PPABS(JI,JJ,JK) - ZPIV )
 
 ! interpolate between liquid and solid as function of temperature
-      ZFRAC = ( 273.16 - ZTEMP ) / 20.  ! liquid/solid fraction
+      ZFRAC = ( XTT - ZTEMP ) / 20.  ! liquid/solid fraction
       ZFRAC = MAX( 0., MIN(1., ZFRAC ) )
       IF(.NOT. OUSERI) ZFRAC=0.
       ZQSL = ( 1. - ZFRAC ) * ZQSL + ZFRAC * ZQSI
@@ -359,7 +360,9 @@ DO JK=IKTB,IKTE
 ! 
 !      PSIGRC(JI,JJ,JK) = 2.*PCLDFR(JI,JJ,JK) * MIN( 3. , MAX(1.,1.-ZQ1) )
 ! in the 3D case lambda_3 = 1.
-      INQ1 = MIN( MAX(-22,FLOOR(2*ZQ1) ), 10)
+!     INQ1 = MIN( MAX(-22,FLOOR(2*ZQ1) ), 10)
+      INQ1 = MIN( MAX(-22,FLOOR(MIN(100.,MAX(-100.,2*ZQ1))) ), 10)
+      !inner min/max prevent sigfpe when 2*zq1 does not fit into an int
       ZINC = 2.*ZQ1 - INQ1
       
       PSIGRC(JI,JJ,JK) =  MIN(1.,(1.-ZINC)*ZSRC_1D(INQ1)+ZINC*ZSRC_1D(INQ1+1))
