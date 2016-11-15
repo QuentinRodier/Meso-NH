@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modd_lesn.f90,v $ $Revision: 1.2.2.2.2.1.2.1.12.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ############### 
@@ -43,6 +43,7 @@
 !!       V. Masson  Jan.  20, 2000  New LES routines variables & //
 !!       V. Masson  Nov.   6, 2002  LES budgets
 !!       O.Thouron  June,     2008  New radiation diagnostics
+!!                    10/2016 (C.Lac) Add droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -574,6 +575,8 @@ TYPE LES_t
   REAL, DIMENSION(:), POINTER :: XLES_HWP=>NULL()       ! hail w path
   REAL, DIMENSION(:), POINTER :: XLES_INT_TKE=>NULL()   ! vert. integratedtke
   REAL, DIMENSION(:), POINTER :: XLES_INPRR=>NULL()     ! inst precip rate
+  REAL, DIMENSION(:), POINTER :: XLES_INPRC=>NULL()     ! inst cloud precip rate
+  REAL, DIMENSION(:), POINTER :: XLES_INDEP=>NULL()     ! inst cloud deposition rate
   REAL, DIMENSION(:), POINTER :: XLES_RAIN_INPRR=>NULL()!flux prec rainy cell
   REAL, DIMENSION(:), POINTER :: XLES_ACPRR=>NULL()     ! acc precip rate
   REAL, DIMENSION(:), POINTER :: XLES_ZMAXCF=>NULL()    ! z de max cf
@@ -1027,6 +1030,8 @@ REAL, DIMENSION(:), POINTER :: XLES_GWP=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_HWP=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_INT_TKE=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_INPRR=>NULL()
+REAL, DIMENSION(:), POINTER :: XLES_INPRC=>NULL()
+REAL, DIMENSION(:), POINTER :: XLES_INDEP=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_RAIN_INPRR=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_ACPRR=>NULL()
 REAL, DIMENSION(:), POINTER :: XLES_ZMAXCF=>NULL()
@@ -1452,6 +1457,8 @@ LES_MODEL(KFROM)%XLES_GWP=>XLES_GWP
 LES_MODEL(KFROM)%XLES_HWP=>XLES_HWP
 LES_MODEL(KFROM)%XLES_INT_TKE=>XLES_INT_TKE
 LES_MODEL(KFROM)%XLES_INPRR=>XLES_INPRR
+LES_MODEL(KFROM)%XLES_INPRC=>XLES_INPRC
+LES_MODEL(KFROM)%XLES_INDEP=>XLES_INDEP
 LES_MODEL(KFROM)%XLES_RAIN_INPRR=>XLES_RAIN_INPRR
 LES_MODEL(KFROM)%XLES_ACPRR=>XLES_ACPRR
 LES_MODEL(KFROM)%XLES_ZMAXCF=>XLES_ZMAXCF
@@ -1878,6 +1885,8 @@ XLES_GWP=>LES_MODEL(KTO)%XLES_GWP
 XLES_HWP=>LES_MODEL(KTO)%XLES_HWP
 XLES_INT_TKE=>LES_MODEL(KTO)%XLES_INT_TKE
 XLES_INPRR=>LES_MODEL(KTO)%XLES_INPRR
+XLES_INPRC=>LES_MODEL(KTO)%XLES_INPRC
+XLES_INDEP=>LES_MODEL(KTO)%XLES_INDEP
 XLES_RAIN_INPRR=>LES_MODEL(KTO)%XLES_RAIN_INPRR
 XLES_ACPRR=>LES_MODEL(KTO)%XLES_ACPRR
 XLES_ZMAXCF=>LES_MODEL(KTO)%XLES_ZMAXCF

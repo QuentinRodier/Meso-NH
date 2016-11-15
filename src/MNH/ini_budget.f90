@@ -16,7 +16,7 @@ INTERFACE
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
-      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,              &
+      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,ODEPOTREE,    &
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !
 INTEGER,         INTENT(IN) :: KLUOUT   ! Logical unit number for prints
@@ -54,6 +54,7 @@ LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective
                                         !transport for SV
 LOGICAL, INTENT(IN) :: ONUDGING         ! switch to activate nudging
 LOGICAL, INTENT(IN) :: ODRAGTREE        ! switch to activate vegetation drag
+LOGICAL, INTENT(IN) :: ODEPOTREE        ! switch to activate droplet deposition on tree
 CHARACTER (LEN=*), INTENT(IN) :: HRAD   ! type of the radiation scheme
 CHARACTER (LEN=*), INTENT(IN) :: HDCONV ! type of the deep convection scheme
 CHARACTER (LEN=*), INTENT(IN) :: HSCONV ! type of the deep convection scheme
@@ -75,7 +76,7 @@ END MODULE MODI_INI_BUDGET
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
-      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,              &
+      OHORELAX_SV,OVE_RELAX,OCHTRANS,ONUDGING,ODRAGTREE,ODEPOTREE,    &
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !     #################################################################
 !
@@ -155,6 +156,8 @@ END MODULE MODI_INI_BUDGET
 !!      C.Lac           04/12/15  Correction for LSUPSAT 
 !!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe       01/2016   Add budget for LIMA
+!!      C.LAc          10/2016   Add budget for droplet deposition
+
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -218,6 +221,7 @@ LOGICAL, INTENT(IN) :: OCHTRANS         ! switch to activate convective
                                         !transport for SV
 LOGICAL, INTENT(IN) :: ONUDGING         ! switch to activate nudging
 LOGICAL, INTENT(IN) :: ODRAGTREE        ! switch to activate vegetation drag
+LOGICAL, INTENT(IN) :: ODEPOTREE        ! switch to activate droplet deposition on tree
 CHARACTER (LEN=*), INTENT(IN) :: HRAD   ! type of the radiation scheme
 CHARACTER (LEN=*), INTENT(IN) :: HDCONV ! type of the deep convection scheme
 CHARACTER (LEN=*), INTENT(IN) :: HSCONV ! type of the shallow convection scheme
@@ -1283,6 +1287,8 @@ IF (LBU_RRC) THEN
   IPROC=IPROC+1
   IF( HDCONV /= 'NONE' .OR. HSCONV == 'KAFR') IPROACTV(7,IPROC)  = NDCONVRC
   IPROC=IPROC+1
+  IF( ODRAGTREE .AND. ODEPOTREE ) IPROACTV(7,IPROC) = NDEPOTRRC
+  IPROC=IPROC+1
   IF ( HTURB /= 'NONE' ) IPROACTV(7,IPROC) = NVTURBRC
   IPROC=IPROC+1
   IF ( HTURB /= 'NONE' .AND. HTURBDIM == '3DIM' ) THEN
@@ -1369,6 +1375,9 @@ IF (LBU_RRC) THEN
   IF (((HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO').AND. LSEDC) .OR.   &
      (HCLOUD(1:3) == 'ICE' .AND. LSEDIC)) IPROACTV(7,IPROC) = NSEDIRC
   IPROC=IPROC+1
+  IF (((HCLOUD == 'C2R2' .OR. HCLOUD == 'KHKO').AND. LDEPOC) .OR.   &
+     (HCLOUD(1:3) == 'ICE' .AND. LDEPOSC)) IPROACTV(7,IPROC) = NDEPORC
+  IPROC=IPROC+1
   IF (HCLOUD(1:3) == 'ICE') IPROACTV(7,IPROC) = NCDEPIRC
   IPROC=IPROC+1
   IF (HCLOUD == 'C2R2'.OR. HCLOUD == 'KHKO' .OR. &
@@ -1395,6 +1404,8 @@ IF (LBU_RRC) THEN
   YWORK2(7,IPROC) = 'REL_'
   IPROC=IPROC+1
   YWORK2(7,IPROC) = 'DCONV_'
+  IPROC=IPROC+1
+  YWORK2(7,IPROC) = 'DEPOTR'
   IPROC=IPROC+1
   YWORK2(7,IPROC) = 'VTURB_'
   IPROC=IPROC+1
@@ -1463,6 +1474,8 @@ IF (LBU_RRC) THEN
      YWORK2(7,IPROC) = 'BERFI_'
      IPROC=IPROC+1
      YWORK2(7,IPROC) = 'SEDI_'
+     IPROC=IPROC+1
+     YWORK2(7,IPROC) = 'DEPO_'
      IPROC=IPROC+1
      YWORK2(7,IPROC) = 'CDEPI_'
      IPROC=IPROC+1
@@ -2353,6 +2366,9 @@ IF (LBU_RSV) THEN
     IF ( (HDCONV /= 'NONE' .OR. HSCONV == 'KAFR') .AND. OCHTRANS ) &
         IPROACTV(12+JSV,IPROC) = NDCONVSV
     IPROC=IPROC+1
+    IF ( ODRAGTREE .AND. ODEPOTREE  ) &
+        IPROACTV(12+JSV,IPROC) = NDEPOTRSV
+    IPROC=IPROC+1    
     IF ( HTURB /= 'NONE' ) IPROACTV(12+JSV,IPROC) = NVTURBSV
     IPROC=IPROC+1
     IF ( HTURB /= 'NONE' .AND. HTURBDIM == '3DIM' ) THEN
@@ -2385,6 +2401,8 @@ IF (LBU_RSV) THEN
     YWORK2(12+JSV,IPROC) = 'REL_'
     IPROC=IPROC+1
     YWORK2(12+JSV,IPROC) = 'DCONV_'
+    IPROC=IPROC+1
+    YWORK2(12+JSV,IPROC) = 'DEPOTR'
     IPROC=IPROC+1
     YWORK2(12+JSV,IPROC) = 'VTURB_'
     IPROC=IPROC+1
@@ -2706,6 +2724,11 @@ USE MODD_PARAM_LIMA, ONLY : NMOD_CCN, NMOD_IFN, NMOD_IMM
       IF (LSEDC) THEN
         ILAST_PROC_NBR = ILAST_PROC_NBR + 1
         YWORK2(12+JSV,ILAST_PROC_NBR)= 'SEDI_'
+        IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
+      END IF
+      IF (LDEPOC) THEN
+        ILAST_PROC_NBR = ILAST_PROC_NBR + 1
+        YWORK2(12+JSV,ILAST_PROC_NBR)= 'DEPO_'
         IPROACTV(12+JSV,ILAST_PROC_NBR) = 1
       END IF
       ILAST_PROC_NBR = ILAST_PROC_NBR + 1

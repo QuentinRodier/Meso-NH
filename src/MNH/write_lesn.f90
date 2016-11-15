@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/write_lesn.f90,v $
 !-----------------------------------------------------------------
 !######################
 MODULE MODI_WRITE_LES_n
@@ -52,6 +52,7 @@ END MODULE MODI_WRITE_LES_n
 !!                       01/04/03 (V. Masson) idem
 !!                       10/10/09 (P. Aumond) Add user multimaskS
 !!                          11/15 (C.Lac) Add production terms of TKE
+!!                    10/2016 (C.Lac) Add droplet deposition
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -67,6 +68,8 @@ USE MODD_PARAM_n
 USE MODD_TURB_n
 USE MODD_GRID_n
 USE MODD_NSV, ONLY : NSV
+USE MODD_PARAM_ICE, ONLY : LDEPOSC
+USE MODD_PARAM_C2R2, ONLY : LDEPOC
 !
 USE MODD_LUNIT_n
 !
@@ -1361,6 +1364,14 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
   IF (LUSERR) &
   CALL LES_DIACHRO_SURF("INST_PREC    ",  &
      "Inst precip rate","mm/day",XLES_INPRR,HLES_AVG)
+
+  IF (LUSERC) &
+  CALL LES_DIACHRO_SURF("INST_SEDIM   ",  &
+     "Inst cloud precip rate","mm/day",XLES_INPRC,HLES_AVG)
+
+  IF (LUSERC .AND. (LDEPOSC .OR. LDEPOC)) &
+  CALL LES_DIACHRO_SURF("INST_DEPOS   ",  &
+     "Inst cloud deposi rate","mm/day",XLES_INDEP,HLES_AVG)
 
   IF (LUSERR) &
   CALL LES_DIACHRO_SURF("RAIN_PREC    ",  &

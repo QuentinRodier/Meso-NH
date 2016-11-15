@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/lesn.f90,v $
 !-----------------------------------------------------------------
 !     #################
       SUBROUTINE  LES_n
@@ -40,6 +40,7 @@
 !!                12/10    (R.Honnert) Add EDKF mass flux in BL height
 !!                10/09    (P. Aumond) Add possibility of user maskS
 !!                10/14    (C.Lac) Correction on user masks
+!!                10/16    (C.Lac) Add ground droplet deposition amount
 !!
 !! --------------------------------------------------------------------------
 !
@@ -62,8 +63,11 @@ USE MODD_PARAM_n
 USE MODD_TURB_n
 USE MODD_METRICS_n
 USE MODD_LUNIT_n
-USE MODD_PRECIP_n, ONLY: XINPRR,XACPRR,XINPRR3D,XEVAP3D
+USE MODD_PARAM_n, ONLY: CCLOUD
+USE MODD_PRECIP_n, ONLY: XINPRR,XACPRR,XINPRR3D,XEVAP3D,XINPRC,XINDEP
 USE MODD_NSV, ONLY : NSV, NSV_CS
+USE MODD_PARAM_ICE, ONLY: LDEPOSC
+USE MODD_PARAM_C2R2, ONLY: LDEPOC
 !
 USE MODI_SHUMAN
 USE MODI_GRADIENT_M
@@ -773,6 +777,21 @@ END IF
                      XLES_ACPRR(NLES_CURRENT_TCOUNT)    )
 !   conversion de m en mm
     XLES_ACPRR(NLES_CURRENT_TCOUNT)=XLES_ACPRR(NLES_CURRENT_TCOUNT)*1000.
+
+  ENDIF
+!
+  IF (LUSERC ) THEN
+    CALL LES_MEAN_ll ( XINPRC, LLES_CURRENT_CART_MASK(:,:,1),    &
+                     XLES_INPRC(NLES_CURRENT_TCOUNT)    )
+!   conversion from m/s to mm/day
+    XLES_INPRC(NLES_CURRENT_TCOUNT)=XLES_INPRC(NLES_CURRENT_TCOUNT)*3.6E6*24.
+    IF ( (((CCLOUD == 'KHKO') .OR.(CCLOUD == 'C2R2')) .AND. LDEPOC) &
+       .OR. ( (CCLOUD(1:3) == 'ICE') .AND. LDEPOSC) ) THEN
+      CALL LES_MEAN_ll ( XINDEP, LLES_CURRENT_CART_MASK(:,:,1),    &
+                     XLES_INDEP(NLES_CURRENT_TCOUNT)    )
+!   conversion from m/s to mm/day
+      XLES_INDEP(NLES_CURRENT_TCOUNT)=XLES_INDEP(NLES_CURRENT_TCOUNT)*3.6E6*24.
+    ENDIF
 
   ENDIF
 !

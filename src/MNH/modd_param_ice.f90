@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modd_param_ice.f90,v $ $Revision: 1.1.8.1.2.1.18.2 $
 ! MASDEV4_7 modd 2006/10/16 14:23:23
 !-----------------------------------------------------------------
 !     #####################
@@ -37,6 +37,7 @@
 !!    -------------
 !!      Original      14/12/95
 !!      01/04/14 (C.Lac)  Add LCONVHG
+!!      01/10/16 (C.Lac)  Add droplet deposition for fog
 !!
 !-------------------------------------------------------------------------------
 !
@@ -49,6 +50,9 @@ LOGICAL, SAVE :: LWARM       ! When .TRUE. activates the formation of rain by
                              ! the warm microphysical processes
 LOGICAL, SAVE :: LSEDIC      ! TRUE to enable the droplet sedimentation
 LOGICAL, SAVE :: LCONVHG     ! TRUE to allow the conversion from hail to graupel 
+LOGICAL, SAVE :: LDEPOSC     ! TRUE to enable cloud droplet deposition 
+REAL,    SAVE :: XVDEPOSC    ! Droplet deposition velocity        
+!
 !
 CHARACTER(LEN=4), SAVE :: CPRISTINE_ICE ! Pristine ice type PLAT, COLU or BURO
 CHARACTER(LEN=4), SAVE :: CSEDIM        ! Sedimentation calculation mode      

@@ -32,6 +32,7 @@
 !!      Original         07/02/00
 !!      Modification     01/02/01 (D.Gazen) add module MODD_NSV for NSV variable
 !!                       06/11/02 (V. Masson) add LES budgets
+!!                    10/2016 (C.Lac) Add droplet deposition
 !!
 !! --------------------------------------------------------------------------
 !
@@ -1718,6 +1719,8 @@ ALLOCATE(XLES_INT_TKE   (NLES_TIMES))
 ALLOCATE(XLES_ZMAXCF    (NLES_TIMES))
 ALLOCATE(XLES_ZMAXCF2   (NLES_TIMES))  
 ALLOCATE(XLES_INPRR     (NLES_TIMES))
+ALLOCATE(XLES_INPRC     (NLES_TIMES))
+ALLOCATE(XLES_INDEP     (NLES_TIMES))
 ALLOCATE(XLES_RAIN_INPRR(NLES_TIMES))
 ALLOCATE(XLES_ACPRR     (NLES_TIMES))
 ALLOCATE(XLES_PRECFR    (NLES_TIMES))
@@ -1754,6 +1757,8 @@ XLES_ZMAXCF2   = XUNDEF
 XLES_PRECFR    = XUNDEF
 XLES_ACPRR     = XUNDEF
 XLES_INPRR     = XUNDEF
+XLES_INPRC     = XUNDEF
+XLES_INDEP     = XUNDEF
 XLES_RAIN_INPRR = XUNDEF
 XLES_SWU        = XUNDEF
 XLES_SWD        = XUNDEF

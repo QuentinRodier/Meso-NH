@@ -5,8 +5,12 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modn_param_c2r2.f90,v $ $Revision: 1.1.8.1.2.1.16.1.2.1 $
 ! MASDEV4_7 modn 2006/10/16 14:23:23
+!!
+!!Modifications
+!!
+!!                    10/2016 (C.Lac) Add droplet deposition
 !-----------------------------------------------------------------
 !     ######spl
       MODULE MODN_PARAM_C2R2
@@ -27,6 +31,7 @@ NAMELIST/NAM_PARAM_C2R2/HPARAM_CCN,HINI_CCN,HTYPE_CCN,     &
                         XCONC_CCN,XR_MEAN_CCN,XLOGSIG_CCN, &
                         XFSOLUB_CCN,XACTEMP_CCN,           &
                         XALPHAC,XNUC,XALPHAR,XNUR,         &
-                        XAERDIFF, XAERHEIGHT
+                        XAERDIFF, XAERHEIGHT, LACTTKE,     &
+                        LDEPOC, XVDEPOC
 !
 END MODULE MODN_PARAM_C2R2

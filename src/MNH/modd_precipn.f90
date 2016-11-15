@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_precipn.f90,v $ $Revision: 1.2.2.1.2.1.18.1 $
 ! MASDEV4_7 modd 2006/10/17 13:34:38
 !-----------------------------------------------------------------
 !     ####################
@@ -35,6 +35,7 @@
 !!    -------------
 !!
 !!       J.-P. Pinty   29/11/02 add C3R5, ICE2, ICE4
+!!                    10/2016 (C.Lac) Add droplet deposition
 !!
 !-------------------------------------------------------------------------------
 !
@@ -47,6 +48,7 @@ IMPLICIT NONE
 TYPE PRECIP_t
 !
   REAL, DIMENSION(:,:), POINTER :: XINPRC=>NULL(), XACPRC=>NULL(),  &
+                   XINDEP=>NULL(), XACDEP=>NULL(),                  &
                    XINPRR=>NULL(), XACPRR=>NULL(),                  &
                    XINPRS=>NULL(), XACPRS=>NULL(), XINPRG=>NULL(),  &
                    XACPRG=>NULL(), XINPRH=>NULL(), XACPRH=>NULL()
@@ -54,18 +56,19 @@ TYPE PRECIP_t
                                          ! precipitation fields of Cloud,Rain, 
                                          !    Snow, Graupel and Hail
   REAL, DIMENSION(:,:,:), POINTER :: XINPRR3D=>NULL(), & !Instant precip 3D
-                   XEVAP3D=>NULL() ! Evap profile 3D
+                   XEVAP3D=>NULL()! Evap profile 3D
 !
 END TYPE PRECIP_t
 
 TYPE(PRECIP_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: PRECIP_MODEL
 
 REAL, DIMENSION(:,:), POINTER :: XINPRC=>NULL(), XACPRC=>NULL(),  &
+                 XINDEP=>NULL(), XACDEP=>NULL(),                  &
                  XINPRR=>NULL(), XACPRR=>NULL(),                  &
                  XINPRG=>NULL(), XINPRS=>NULL(), XACPRS=>NULL(),  &
                  XACPRG=>NULL(), XINPRH=>NULL(), XACPRH=>NULL()
   REAL, DIMENSION(:,:,:), POINTER :: XINPRR3D=>NULL(), & !Instant precip 3D
-                   XEVAP3D=>NULL() ! Evap profile 3D
+                   XEVAP3D=>NULL()! Evap profile 3D
 
 CONTAINS
 
@@ -75,6 +78,8 @@ INTEGER, INTENT(IN) :: KFROM, KTO
 ! Save current state for allocated arrays
 PRECIP_MODEL(KFROM)%XINPRC=>XINPRC
 PRECIP_MODEL(KFROM)%XACPRC=>XACPRC
+PRECIP_MODEL(KFROM)%XINDEP=>XINDEP
+PRECIP_MODEL(KFROM)%XACDEP=>XACDEP
 PRECIP_MODEL(KFROM)%XINPRR=>XINPRR
 PRECIP_MODEL(KFROM)%XINPRR3D=>XINPRR3D
 PRECIP_MODEL(KFROM)%XEVAP3D=>XEVAP3D
@@ -89,6 +94,8 @@ PRECIP_MODEL(KFROM)%XACPRH=>XACPRH
 ! Current model is set to model KTO
 XINPRC=>PRECIP_MODEL(KTO)%XINPRC
 XACPRC=>PRECIP_MODEL(KTO)%XACPRC
+XINDEP=>PRECIP_MODEL(KTO)%XINDEP
+XACDEP=>PRECIP_MODEL(KTO)%XACDEP
 XINPRR=>PRECIP_MODEL(KTO)%XINPRR
 XINPRR3D=>PRECIP_MODEL(KTO)%XINPRR3D
 XEVAP3D=>PRECIP_MODEL(KTO)%XEVAP3D

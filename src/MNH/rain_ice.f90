@@ -18,7 +18,7 @@ INTERFACE
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                   &
                             PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,       &
                             PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
-                            PINPRS, PINPRG, PSIGS,              &
+                            PINPRS, PINPRG, PSIGS,PINDEP,              &
                             PSEA, PTOWN,                                          &
                             PRHT,  PRHS, PINPRH,OCONVHG             )
 !
@@ -70,6 +70,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
@@ -94,7 +95,7 @@ END MODULE MODI_RAIN_ICE
                             PTHT, PRVT, PRCT, PRRT, PRIT, PRST,                       &
                             PRGT, PTHS, PRVS, PRCS, PRRS, PRIS, PRSS, PRGS,           &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,               &
-                            PINPRS, PINPRG, PSIGS,                  &
+                            PINPRS, PINPRG, PSIGS,PINDEP,                  &
                             PSEA, PTOWN,                                              &
                             PRHT,  PRHS, PINPRH,OCONVHG                 )
 !     #####################################################################
@@ -237,6 +238,7 @@ END MODULE MODI_RAIN_ICE
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      C.LAc : 10/2016 : add droplets depposition
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -311,6 +313,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRGS    ! Graupel m.r. source
 !
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Cloud instant precip
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evap profile
@@ -357,6 +360,7 @@ LOGICAL, DIMENSION(:), ALLOCATABLE :: GACC ! Test where to compute accretion
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GDRY ! Test where to compute dry growth
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GWET  ! Test where to compute wet growth
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GHAIL ! Test where to compute hail growth
+LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)):: GDEP
 INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1,IVEC2       ! Vectors of indices for
         ! interpolations
 REAL,    DIMENSION(:), ALLOCATABLE :: ZVEC1,ZVEC2,ZVEC3 ! Work vectors for 
@@ -1269,6 +1273,24 @@ IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11,'SEDI_BU_RRG')
 IF ( KRR == 7 .AND. LBUDGET_RH) &
                 CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'SEDI_BU_RRH')
 !
+!
+!*       2.4  DROPLET DEPOSITION AT THE 1ST LEVEL ABOVE GROUND
+!
+IF (LDEPOSC) THEN
+  GDEP(:,:) = .FALSE.
+  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 
+  WHERE (GDEP)
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+  END WHERE
+END IF
+!
+!*       2.5     budget storage
+!
+IF ( LBUDGET_RC .AND. LDEPOSC ) &
+   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'DEPO_BU_RRC')
+!
   END SUBROUTINE RAIN_ICE_SEDIMENTATION_SPLIT
 !
 !-------------------------------------------------------------------------------
@@ -1709,6 +1731,24 @@ IF ( KRR == 7 .AND. LBUDGET_RH) &
                 CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12,'SEDI_BU_RRH')
 
 !
+!
+!*       2.4  DROPLET DEPOSITION AT THE 1ST LEVEL ABOVE GROUND
+!
+IF (LDEPOSC) THEN
+  GDEP(:,:) = .FALSE.
+  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 
+  WHERE (GDEP)
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+  END WHERE
+END IF
+!
+!*       2.5     budget storage
+!
+IF ( LBUDGET_RC .AND. LDEPOSC ) &
+   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'DEPO_BU_RRC')
+
   END SUBROUTINE RAIN_ICE_SEDIMENTATION_STAT
 !
 !-------------------------------------------------------------------------------

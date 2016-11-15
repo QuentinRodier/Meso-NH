@@ -227,6 +227,7 @@
 !!      D. Gazen    22/01/01  add NCHEMSV
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe        /16  add budget terms for LIMA
+!!      C.Lac        10/2016  Add droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -269,7 +270,8 @@ NAMELIST/NAM_BU_RRC/LBU_RRC, NASSERC, NNESTRC, NADVRC, NFRCRC, &
                     NDIFRC, NRELRC, NDCONVRC, NHTURBRC, NVTURBRC, NNEGARC, NACCRRC, &
                     NAUTORC, NCONDRC, NHONRC, NRIMRC, NWETGRC, NDRYGRC, NIMLTRC,   &
                     NBERFIRC, NCDEPIRC, NHENURC, NSEDIRC, NWETHRC, NNETURRC, &
-                    NNEADVRC,NNECONRC, NHINCRC, NHONCRC, NCEDSRC, NREVARC 
+                    NNEADVRC,NNECONRC, NHINCRC, NHONCRC, NCEDSRC, NREVARC,&
+                    NDEPORC,NDEPOTRRC 
 ! 
 NAMELIST/NAM_BU_RRR/LBU_RRR, NASSERR, NNESTRR, NADVRR, NFRCRR, &
                     NDIFRR, NRELRR, NNEGARR, NACCRRR, NAUTORR, NREVARR, NSEDIRR,    &

@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/rain_c2r2_khko.f90,v $ $Revision: 1.1.2.1.2.3 $
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_RAIN_C2R2_KHKO
@@ -22,7 +22,8 @@ INTERFACE
                             PW_NU,PDTHRAD, PTHS, PRVS, PRCS, PRRS,              &
                             PCNT, PCCT, PCRT, PCNS, PCCS, PCRS,                 &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
-                            PSOLORG, PMI, HACTCCN                               )
+                            PSOLORG, PMI, HACTCCN,                              &
+                            PINDEP, PSUPSAT, PNACT                      )
 !
 !
 !
@@ -76,6 +77,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCS    ! Cloud water C. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRS    ! Rain water C. source
 !
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC  ! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR  ! Rain instant precip
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D! Rain evap profile
@@ -83,6 +85,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PAEROT  ! Aerosol concentration
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI
 CHARACTER(LEN=4),         INTENT(IN)    :: HACTCCN  ! kind of CCN activation scheme
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT   !concentrtaion d'aérosols activés au temps t
 !
 END SUBROUTINE RAIN_C2R2_KHKO
 END INTERFACE
@@ -96,7 +100,8 @@ END MODULE MODI_RAIN_C2R2_KHKO
                             PW_NU,PDTHRAD, PTHS, PRVS, PRCS, PRRS,              &
                             PCNT, PCCT,  PCRT, PCNS, PCCS, PCRS,                &
                             PINPRC, PINPRR, PINPRR3D, PEVAP3D,PAEROT,           &
-                            PSOLORG, PMI, HACTCCN                               )
+                            PSOLORG, PMI, HACTCCN,                              &
+                            PINDEP, PSUPSAT, PNACT                      )
 !     ######################################################################
 !
 !!****  * -  compute the explicit microphysical sources of cloud water and
@@ -211,6 +216,8 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      J.Escobar : 07/10/2015 , Bug in parallel run , => comment test on INUCT>1 containing GET_HALO  
 !!      M.Mazoyer : 04/2016 : Temperature radiative tendency used for  
 !!                            activation by cooling (OACTIT : mis en commentaires)
+!!      M.Mazoyer : 04/2016 : Add supersaturation diagnostics
+!!      C.Lac     : 07/2016 : Add droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -292,6 +299,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCS    ! Cloud water C. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCRS    ! Rain water C. source
 !
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC  ! Cloud instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP  ! Cloud instant deposition
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR  ! Rain instant precip
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D! Rain inst precip 3D
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D! Rain evap profile
@@ -299,6 +307,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PAEROT  ! Aerosol concentration
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI
 CHARACTER(LEN=4),         INTENT(IN)    :: HACTCCN  ! kind of CCN activation scheme
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT   !concentrtaion d'aérosols activés au temps t
 !
 !*       0.2   Declarations of local variables :
 !
@@ -328,6 +338,7 @@ INTEGER :: ISEDIM, INUCT, & ! Case number of sedimentation, nucleation,
            ISELF, IACCR, ISCBU
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) &
             :: GSEDIM ! Test where to compute the SED processes
+LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)):: GDEP
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) &
             :: GNUCT  ! Test where to compute the HEN process
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) &
@@ -790,6 +801,8 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
     END IF
   END IF
   ZZW1LOG(:,:,:) = UNPACK( 100*ZSMAX(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
+  PSUPSAT(:,:,:) = 0.0
+  PSUPSAT(:,:,:) = ZZW1LOG(:,:,:)
 !
 ! the CCN spectra formula uses ZSMAX in percent
 !
@@ -809,6 +822,9 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
   ZW(:,:,:)   = PCNS(:,:,:)
   PCNS(:,:,:) = UNPACK( MAX( ZZW1(:),ZCNS(:) ),MASK=GNUCT(:,:,:), &
                                                  FIELD=ZW(:,:,:)  )
+  PNACT(:,:,:) = 0.0
+  PNACT(:,:,:) = MAX( (UNPACK(ZZW1(:),MASK=GNUCT(:,:,:), &
+                 FIELD=ZW(:,:,:))- PCCS(:,:,:))*PTSTEP  ,0.0 )
 !
   DEALLOCATE(IVEC1)
   DEALLOCATE(ZVEC1)
@@ -860,8 +876,8 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 ! END IF
 !                      
 IF ( OCLOSE_OUT ) THEN
-  YRECFM  ='SURSAT'
-  YCOMMENT='X_Y_Z_SURSAT'
+  YRECFM  ='SMAX'  
+  YCOMMENT='X_Y_Z_SMAX'
   ILENCH=LEN(YCOMMENT)
   IGRID   = 1
   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZZW1LOG,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -1792,7 +1808,6 @@ DO JN = 1 , KSPLITR
       END WHERE
       ZWSEDR(:,:,:) = UNPACK( ZZW1(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
       ZWSEDC(:,:,:) = UNPACK( ZZW2(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
-      DEALLOCATE(ZRCT)
       DEALLOCATE(ZCCT)
       DEALLOCATE(ZLBDC)
     END IF
@@ -1876,6 +1891,26 @@ DO JN = 1 , KSPLITR
       PRRS(:,:,:) = ( PRRS(:,:,:) + ZPRRT(:,:,:) ) / PTSTEP
       PCRS(:,:,:) = ( PCRS(:,:,:) + ZPCRT(:,:,:) ) / PTSTEP
   END IF
+!   
+ IF (OSEDC .AND. OCLOSE_OUT) THEN
+    YRECFM  ='SEDFLUXC'
+    YCOMMENT='X_Y_Z_SEDFLUXC'
+    ILENCH=LEN(YCOMMENT)
+    IGRID   = 1
+    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWSEDC,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+    YRECFM  ='SEDFLUXR'
+    YCOMMENT='X_Y_Z_SEDFLUXR'
+    ILENCH=LEN(YCOMMENT)
+    IGRID   = 1
+    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWSEDR,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+!    YRECFM  ='SPEEDC'
+!    YCOMMENT='X_Y_Z_SPEEDC'
+!    ILENCH=LEN(YCOMMENT)
+!    IGRID   = 1
+!    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PSPEEDC,IGRID,ILENCH,YCOMMENT,IRESP)
+ END IF
 END DO
 !
 !*       2.5     budget storage
@@ -1889,6 +1924,27 @@ IF (LBUDGET_SV) THEN
   CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),15+(NSV_C2R2BEG-1),&
                     &'SEDI_BU_RSV') ! RCR
 END IF
+!
+!*       2.6  DROPLET DEPOSITION AT THE 1ST LEVEL ABOVE GROUND
+!
+IF (LDEPOC) THEN
+  GDEP(:,:) = .FALSE.
+  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 .AND. &
+                                  PCCS(IIB:IIE,IJB:IJE,2) >0
+  WHERE (GDEP)
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2)
+     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) * PRHODJ(:,:,2)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+  END WHERE
+END IF
+!
+!*       2.7     budget storage
+!
+IF ( LBUDGET_RC .AND. LDEPOC ) &
+   CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'DEPO_BU_RRC')
+IF ( LBUDGET_SV .AND. LDEPOC ) &
+   CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),14+(NSV_C2R2BEG-1),'DEPO_BU_RSV') 
 !
   END SUBROUTINE C2R2_KHKO_SEDIMENTATION
 !-------------------------------------------------------------------------------

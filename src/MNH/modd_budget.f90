@@ -39,6 +39,7 @@
 !!      C. Barthe       19/11/09    add budget terms for electricity          
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe            /16    add budget terms for LIMA
+!!      C. LAc          10/2016 add droplets deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -279,7 +280,7 @@ INTEGER, SAVE :: NHINCTH    ! Heterogeneous Nucleation by Contact    C3R5
 INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            C3R5
 INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         C3R5
 INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            C3R5
-INTEGER, SAVE :: NCEDSTH    ! adjustment                             C3R5
+INTEGER, SAVE :: NCEDSTH    ! adjustment
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
@@ -330,7 +331,7 @@ INTEGER, SAVE :: NDEPGRV   ! DEPosition on Graupel   ICE3
 INTEGER, SAVE :: NCDEPIRV  ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition C3R5
 INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            C3R5
-INTEGER, SAVE :: NCEDSRV   ! adjustement                            C3R5
+INTEGER, SAVE :: NCEDSRV   ! adjustement 
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
 !                                                  
@@ -363,6 +364,8 @@ INTEGER, SAVE :: NBERFIRC   ! BERgeron-FIndeisen gth. ICE3
 INTEGER, SAVE :: NCDEPIRC   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NHENURC    ! CCN Activation C2R2
 INTEGER, SAVE :: NSEDIRC    ! sedimentation  C2R2
+INTEGER, SAVE :: NDEPORC    ! ground deposition     
+INTEGER, SAVE :: NDEPOTRRC  ! deposition on tree
 INTEGER, SAVE :: NWETHRC    ! wet growth of hail
 INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact C3R5
 INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      C3R5
@@ -520,6 +523,8 @@ INTEGER, SAVE :: NDIFSV     ! numerical diffusion
 INTEGER, SAVE :: NRELSV     ! relaxation
 INTEGER, SAVE :: NDCONVSV   !  Deep CONVection
 INTEGER, SAVE :: NMAFLSV    ! mass flux            
+INTEGER, SAVE :: NDEPOSV    ! deposition on the ground
+INTEGER, SAVE :: NDEPOTRSV  ! deposition on tree    
 INTEGER, SAVE :: NHTURBSV   ! horizontal turbulence
 INTEGER, SAVE :: NVTURBSV   ! vertical turbulence
 INTEGER, SAVE :: NCHEMSV    ! chemistry activity

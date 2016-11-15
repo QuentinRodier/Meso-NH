@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/spawn_surf2_rain.f90,v $ $Revision: 1.2.2.3.2.1.18.3 $
 ! MASDEV4_7 spawn 2007/03/22 18:43:45
 !-----------------------------------------------------------------
 !###########################
@@ -15,7 +15,7 @@ MODULE MODI_SPAWN_SURF2_RAIN
 INTERFACE
 !
       SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,    &
-                              PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,           &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,           &
                               PACPRR,PINPRS,PACPRS,                            &
                               PINPRG,PACPRG,PINPRH,PACPRH,                     &
                               HSONFILE,KIUSON,KJUSON,                          &
@@ -32,6 +32,8 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRC,PACPRC   ! Precipitations
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRR,PACPRR   ! Precipitations
+REAL, DIMENSION(:,:), INTENT(OUT)     :: PINDEP! Droplet instant deposition
+REAL, DIMENSION(:,:), INTENT(OUT)     :: PACDEP! Droplet accumulated dep
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D  ! Rain precipitation
                                                        ! and evaporation fluxes
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRS,PACPRS   ! Precipitations
@@ -55,7 +57,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !
 !     #########################################################################
       SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,    &
-                              PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,           &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,           &
                               PACPRR,PINPRS,PACPRS,                            &
                               PINPRG,PACPRG,PINPRH,PACPRH,                     &
                               HSONFILE,KIUSON,KJUSON,                          &
@@ -108,6 +110,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!      Modification    20/05/06 Remove Clark and Farley interpolation
 !!      Modification    2014 (M.Faivre)
 !!      J.Escobar 2/05/2016 : bug in use of global/local bounds for call of BIKHARDT
+!!      C.Lac 10/2016 : Add droplet deposition for fog
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -138,6 +141,8 @@ INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
 INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRC,PACPRC   ! Precipitations
+REAL, DIMENSION(:,:), INTENT(OUT)     :: PINDEP! Droplet instant deposition
+REAL, DIMENSION(:,:), INTENT(OUT)     :: PACDEP! Droplet accumulated dep
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRR,PACPRR   ! Precipitations
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D  ! Rain precipitation
                                                        ! and evaporation fluxes
@@ -159,6 +164,7 @@ CHARACTER (LEN=2)   :: YMETHOD   ! Interpolation method ('BI', 'CF')
 INTEGER             :: IMI
 ! Variables for spawning with 2 input files (father+son1)
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZINPRC1, ZACPRC1,    &
+                                     ZINDEP1, ZACDEP1,    &
                                      ZINPRR1, ZACPRR1,    &
                                      ZINPRS1, ZACPRS1,    &
                                      ZINPRG1, ZACPRG1,    &
@@ -199,6 +205,11 @@ IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
   IF (SIZE(PRECIP_MODEL(1)%XINPRC) /= 0 ) THEN
     PINPRC(:,:) = PRECIP_MODEL(1)%XINPRC(KXOR:KXEND,KYOR:KYEND)
     PACPRC(:,:) = PRECIP_MODEL(1)%XACPRC(KXOR:KXEND,KYOR:KYEND)
+  END IF
+!
+  IF (SIZE(PRECIP_MODEL(1)%XINDEP) /= 0 ) THEN
+    PINDEP(:,:) = PRECIP_MODEL(1)%XINDEP(KXOR:KXEND,KYOR:KYEND)
+    PACDEP(:,:) = PRECIP_MODEL(1)%XACDEP(KXOR:KXEND,KYOR:KYEND)
   END IF
 !
   IF (SIZE(PRECIP_MODEL(1)%XINPRR) /= 0 ) THEN
@@ -249,6 +260,21 @@ ELSE
                     LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,PRECIP_MODEL(1)%XACPRC,PACPRC)
      PINPRC(:,:)=MAX(0.,PINPRC(:,:))
      PACPRC(:,:)=MAX(0.,PACPRC(:,:))
+    END IF
+!
+    IF (SIZE(PRECIP_MODEL(1)%XINDEP) /= 0 ) THEN
+      IDIMX = SIZE(PRECIP_MODEL(1)%XINDEP,1)
+      IDIMY = SIZE(PRECIP_MODEL(1)%XINDEP,2)
+      CALL BIKHARDT(XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
+                    XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
+                    2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,       &
+                    LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,PRECIP_MODEL(1)%XINDEP,PINDEP)
+      CALL BIKHARDT(XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
+                    XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
+                    2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,       &
+                    LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,PRECIP_MODEL(1)%XACDEP,PACDEP)
+     PINDEP(:,:)=MAX(0.,PINDEP(:,:))
+     PACDEP(:,:)=MAX(0.,PACDEP(:,:))
     END IF
 !
     IF (SIZE(PRECIP_MODEL(1)%XINPRR) /= 0 ) THEN
@@ -340,6 +366,15 @@ IF (PRESENT(HSONFILE)) THEN
     ALLOCATE(ZACPRC1(0,0))
     YGETRRT='SKIP'
   END IF
+  IF (SIZE(PRECIP_MODEL(1)%XINDEP) /= 0 ) THEN
+    ALLOCATE(ZINDEP1(KIUSON,KJUSON))
+    ALLOCATE(ZACDEP1(KIUSON,KJUSON))
+    YGETRRT='READ'
+  ELSE
+    ALLOCATE(ZINDEP1(0,0))
+    ALLOCATE(ZACDEP1(0,0))
+    YGETRRT='SKIP'
+  END IF
   IF (SIZE(PRECIP_MODEL(1)%XINPRR) /= 0 ) THEN
     ALLOCATE(ZINPRR1(KIUSON,KJUSON))
     ALLOCATE(ZINPRR3D1(KIUSON,KJUSON,ILU))
@@ -382,15 +417,21 @@ IF (PRESENT(HSONFILE)) THEN
   END IF
   CALL READ_PRECIP_FIELD(HSONFILE,CLUOUT,CPROGRAM,CCONF,                          &
                          YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT,                 &
-                         ZINPRC1,ZACPRC1,ZINPRR1,ZINPRR3D1,ZEVAP3D1,              &
+                         ZINPRC1,ZACPRC1,ZINDEP1,ZACDEP1,ZINPRR1,ZINPRR3D1,ZEVAP3D1,              &
                          ZACPRR1,ZINPRS1,ZACPRS1,                                 &
                          ZINPRG1,ZACPRG1,ZINPRH1,ZACPRH1                          )
   IF (SIZE(PRECIP_MODEL(1)%XINPRC) /= 0 ) THEN
     PINPRC(KIB2:KIE2,KJB2:KJE2) = ZINPRC1(KIB1:KIE1,KJB1:KJE1)
     PACPRC(KIB2:KIE2,KJB2:KJE2) = ZACPRC1(KIB1:KIE1,KJB1:KJE1)
   END IF
+  IF (SIZE(PRECIP_MODEL(1)%XINDEP) /= 0 ) THEN
+    PINDEP(KIB2:KIE2,KJB2:KJE2) = ZINDEP1(KIB1:KIE1,KJB1:KJE1)
+    PACDEP(KIB2:KIE2,KJB2:KJE2) = ZACDEP1(KIB1:KIE1,KJB1:KJE1)
+  END IF
   DEALLOCATE(ZINPRC1)
   DEALLOCATE(ZACPRC1)
+  DEALLOCATE(ZINDEP1)
+  DEALLOCATE(ZACDEP1)
   IF (SIZE(PRECIP_MODEL(1)%XINPRR) /= 0 ) THEN
     PINPRR(KIB2:KIE2,KJB2:KJE2) = ZINPRR1(KIB1:KIE1,KJB1:KJE1)
     PINPRR3D(KIB2:KIE2,KJB2:KJE2,:) = ZINPRR3D1(KIB1:KIE1,KJB1:KJE1,:)

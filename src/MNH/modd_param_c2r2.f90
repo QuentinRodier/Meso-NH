@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_param_c2r2.f90,v $ $Revision: 1.1.8.1.2.1.16.1.2.1 $
 ! MASDEV4_7 modd 2006/10/16 14:23:23
 !-----------------------------------------------------------------
 !     ######################
@@ -44,22 +44,26 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    04/11/2000
+!!                    10/2016 (C.Lac) Add droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
 !
 REAL,SAVE :: XALPHAR,XNUR,           & ! Raindrop       distribution parameters
-	     XALPHAC,XNUC              ! Cloud droplet  distribution parameters
+          XALPHAC,XNUC              ! Cloud droplet  distribution parameters
 !
 LOGICAL, SAVE :: LRAIN                 ! TRUE to enable the formation of rain
 LOGICAL, SAVE :: LSEDC                 ! TRUE to enable the droplet sedimentation
 LOGICAL, SAVE :: LACTIT                ! TRUE to enable the usage of
                                        ! dT/dt in CCN activation (twomey and CPB98)
 LOGICAL, SAVE :: LSUPSAT               ! TRUE for prognostic supersaturation
+LOGICAL, SAVE :: LDEPOC                ! TRUE to enable cloud droplet deposition 
+LOGICAL, SAVE :: LACTTKE               ! TRUE to take into account TKE in W for activation
 !
 REAL,SAVE ::  XCHEN,XKHEN,           & ! Parameters used to define the CCN
-	      XMUHEN,XBETAHEN          ! activation spectra (CPB or TWO)
+              XMUHEN,XBETAHEN          ! activation spectra (CPB or TWO)
+REAL,SAVE ::  XVDEPOC                  ! Droplet deposition velocity        
 !
 CHARACTER(LEN=3),SAVE :: HPARAM_CCN    ! Parameterization used for the CCN activation
 CHARACTER(LEN=3),SAVE :: HINI_CCN      ! Initialization type of the CCN activation

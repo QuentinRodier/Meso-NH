@@ -188,6 +188,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar   02/05/2016 : test ZZS_MAX in // 
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!                    10/2016 (C.Lac) Add droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -872,6 +873,15 @@ ELSE
   ALLOCATE(XACPRC(0,0))
 END IF
 !
+IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C2R2'  &
+         .OR. CCLOUD == 'KHKO' ) THEN
+  ALLOCATE(XINDEP(IIU,IJU))
+  ALLOCATE(XACDEP(IIU,IJU))
+ELSE
+  ALLOCATE(XINDEP(0,0))
+  ALLOCATE(XACDEP(0,0))
+END IF
+!
 IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5'.OR. CCLOUD == 'LIMA') THEN
   ALLOCATE(XINPRS(IIU,IJU))
   ALLOCATE(XACPRS(IIU,IJU))
@@ -1326,12 +1336,12 @@ ZPRESSURE2=ZTIME2-ZTIME1
 IF (SIZE(XINPRR) /= 0 ) THEN
   IF (GNOSON) &
     CALL SPAWN_SURF2_RAIN (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,   &
-              XINPRC,XACPRC,XINPRR,XINPRR3D,XEVAP3D,                  &
+              XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,                  &
               XACPRR,XINPRS,XACPRS,XINPRG,XACPRG,&
               XINPRH,XACPRH )
   IF (.NOT.GNOSON) &
     CALL SPAWN_SURF2_RAIN (NXOR,NYOR,NXEND,NYEND,NDXRATIO,NDYRATIO,  &
-           XINPRC,XACPRC,XINPRR,XINPRR3D,XEVAP3D,                    &
+           XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,                    &
            XACPRR,XINPRS,XACPRS,XINPRG,XACPRG,XINPRH,XACPRH,         &
            HSONFILE,IIUSON,IJUSON,                                   &
            IIB2,IJB2,IIE2,IJE2,                                      &

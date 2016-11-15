@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/ini_elecn.f90,v $ $Revision: 1.1.2.1.10.1.2.2 $ $Date: 2014/01/09 13:25:03 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_INI_ELEC_n
@@ -74,6 +74,7 @@ END MODULE MODI_INI_ELEC_n
 !!      J.-P. Pinty  01/07/12  Add a non-homogeneous Neuman fair-weather 
 !!                             boundary condition at the top
 !!      J.-P. Pinty  15/11/13  Initialize the flash maps
+!!                    10/2016 (C.Lac) Add droplet deposition
 !!
 !-------------------------------------------------------------------------------
 !
@@ -100,7 +101,10 @@ USE MODD_ELEC_FLASH
 USE MODD_GET_n, ONLY : CGETINPRC, CGETINPRR, CGETINPRS, CGETINPRG, CGETINPRH, &            
                        CGETCLOUD, CGETSVT
 USE MODD_PRECIP_n, ONLY : XINPRR, XACPRR, XINPRS, XACPRS, XINPRG, XACPRG, &
-                          XINPRH, XACPRH, XINPRC, XACPRC, XINPRR3D, XEVAP3D
+                          XINPRH, XACPRH, XINPRC, XACPRC, XINPRR3D, XEVAP3D,&
+                          XINDEP,XACDEP
+USE MODD_PARAM_ICE, ONLY : LDEPOSC
+USE MODD_PARAM_C2R2, ONLY : LDEPOC
 USE MODD_CLOUDPAR_n, ONLY : NSPLITR
 USE MODD_REF_n, ONLY : XRHODJ, XTHVREF
 USE MODD_GRID_n, ONLY : XMAP, XDXHAT, XDYHAT
@@ -206,6 +210,16 @@ ELSE
   ALLOCATE( XACPRH(0,0) )
 END IF
 !
+IF ( LDEPOSC) THEN
+  ALLOCATE(XINDEP(IIU,IJU))
+  ALLOCATE(XACDEP(IIU,IJU))
+  XINDEP(:,:)=0.0
+  XACDEP(:,:)=0.0
+ELSE
+  ALLOCATE(XINDEP(0,0))
+  ALLOCATE(XACDEP(0,0))
+END IF
+!
 IF(SIZE(XINPRR) == 0) RETURN
 !
 !
@@ -216,7 +230,7 @@ IF(SIZE(XINPRR) == 0) RETURN
 !
 CALL READ_PRECIP_FIELD (HINIFILE, HLUOUT, CPROGRAM, CCONF,                   &
                         CGETINPRC,CGETINPRR,CGETINPRS,CGETINPRG,CGETINPRH,   &
-                        XINPRC, XACPRC, XINPRR, XINPRR3D, XEVAP3D,           &
+                        XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D, &
                         XACPRR, XINPRS, XACPRS, XINPRG, XACPRG, XINPRH, XACPRH)
 !
 !

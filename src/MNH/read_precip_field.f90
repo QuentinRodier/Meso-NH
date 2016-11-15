@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/read_precip_field.f90,v $ $Revision: 1.1.8.2.2.1.2.1.12.2 $
 ! MASDEV4_7 init 2007/03/22 18:24:54
 !-----------------------------------------------------------------
 !     #############################
@@ -18,7 +18,7 @@ INTERFACE
 !
       SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HPROGRAM,HCONF,                          &
                               HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,                      &
-                              PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,                        &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,          &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH )           
 !
 !
@@ -35,6 +35,8 @@ CHARACTER (LEN=*),          INTENT(IN)  :: HGETRCT, HGETRRT, HGETRST, HGETRGT, H
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Droplet instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PACPRC! Droplet accumulated precip
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP! Droplet instant deposition
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PACDEP! Droplet accumulated dep
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain precipitation flux 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evaporation flux 3D
@@ -55,7 +57,7 @@ END MODULE MODI_READ_PRECIP_FIELD
 !     ################################################################################
       SUBROUTINE READ_PRECIP_FIELD(HINIFILE,HLUOUT,HPROGRAM,HCONF,                          &
                               HGETRCT,HGETRRT,HGETRST,HGETRGT,HGETRHT,                      &
-                              PINPRC,PACPRC,PINPRR,PINPRR3D,PEVAP3D,                        &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,          &
                               PACPRR,PINPRS,PACPRS,PINPRG,PACPRG,PINPRH,PACPRH )           
 !     ################################################################################
 !
@@ -94,11 +96,14 @@ END MODULE MODI_READ_PRECIP_FIELD
 !!      (V. Ducrocq)   14/08/98  // remove KIINF,KJINF,KISUP,KJSUP
 !!      (JP Pinty)     29/11/02  add C3R5, ICE2, ICE4
 !!      (C.Lac)        04/03/13  add YGETxxx for FIT scheme
+!!                    10/2016 (C.Lac) Add droplet deposition
 !!
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 USE MODE_FM
+USE MODD_PARAM_ICE , ONLY : LDEPOSC
+USE MODD_PARAM_C2R2, ONLY : LDEPOC
 !
 USE MODE_FMREAD
 !
@@ -117,6 +122,8 @@ CHARACTER (LEN=*),          INTENT(IN)  :: HCONF       !
 !
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRC! Droplet instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PACPRC! Droplet accumulated precip
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP! Droplet instant deposition
+REAL, DIMENSION(:,:), INTENT(INOUT)     :: PACDEP! Droplet accumulated dep
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRR! Rain instant precip
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRR3D! Rain precipitation flux 3D
 REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D! Rain evaporation flux 3D
@@ -179,6 +186,21 @@ IF (SIZE(PINPRC) /= 0 ) THEN
   CASE ('INIT')
     PINPRC(:,:) = 0.0
     PACPRC(:,:) = 0.0
+  END SELECT
+END IF
+!
+IF (SIZE(PINPRC) /= 0 .AND. (LDEPOSC .OR. LDEPOC) ) THEN
+  SELECT CASE(YGETRCT)
+  CASE ('READ')
+    YRECFM = 'INDEP'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (IRESP == 0) PINDEP(:,:)=Z2D(:,:)/(1000.*3600.)
+    YRECFM = 'ACPRC'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (IRESP == 0) PACDEP(:,:)=Z2D(:,:)/(1000.)
+  CASE ('INIT')
+    PINDEP(:,:) = 0.0
+    PACDEP(:,:) = 0.0
   END SELECT
 END IF
 !
