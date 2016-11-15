@@ -9,18 +9,20 @@
 !
 INTERFACE
 !
-      SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, KTCOUNT,              &
+      SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,              &
                           PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
                           PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
                           PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
                           PRTHS, PRTKES, PRRS, HMET_ADV_SCHEME    )
+!
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 CHARACTER (LEN=6),               INTENT(IN) :: HMET_ADV_SCHEME
 !
 INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: KTCOUNT! iteration count
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! Courant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  ! numbers
@@ -46,7 +48,7 @@ END INTERFACE
 END MODULE MODI_PPM_MET
 !
 !     ######################################################################
-      SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, KTCOUNT,              &
+      SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,              &
                           PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
                           PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
                           PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
@@ -80,6 +82,8 @@ END MODULE MODI_PPM_MET
 !!    -------------
 !!      Original 11.05.2006. T.Maric
 !!      Modification : 11.2011 C.Lac, V.Masson : Advection of (theta_l,r_t) 
+!!                  10/2016  (C.Lac) Correction on the flag for Strang splitting
+!!                                  to insure reproducibility between START and RESTA 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -90,6 +94,7 @@ END MODULE MODI_PPM_MET
 !
 USE MODD_PARAMETERS
 USE MODD_CONF
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 USE MODI_SHUMAN
 USE MODI_PPM
@@ -108,7 +113,7 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 CHARACTER (LEN=6),               INTENT(IN) :: HMET_ADV_SCHEME
 !
 INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: KTCOUNT! iteration count
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! contravariant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  !  components
@@ -154,7 +159,7 @@ IGRID = 1
 !
 CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, &
                     PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                    PRTHS, KTCOUNT, PCRU, PCRV, PCRW)
+                    PRTHS, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
 ! Turbulence variables
@@ -162,7 +167,7 @@ CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, 
 IF (GTKEALLOC) THEN
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTKET,PRHODJ,PTSTEP, &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRTKES, KTCOUNT, PCRU, PCRV, PCRW)
+                       PRTKES, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
 END IF
@@ -175,7 +180,7 @@ DO JRR=1,KRR
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID,           &
                        PRT(:,:,:,JRR), PRHODJ, PTSTEP,                 &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRRS(:,:,:,JRR), KTCOUNT, PCRU, PCRV, PCRW                 )
+                       PRRS(:,:,:,JRR), TPDTCUR, PCRU, PCRV, PCRW                 )
 END DO
 !
 !

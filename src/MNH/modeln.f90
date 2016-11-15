@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modeln.f90,v $ $Revision: 1.3.2.5.2.5.2.9.2.12.2.7.2.4 $
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_MODEL_n
@@ -1464,7 +1464,7 @@ CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
  CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
                  CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,    &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
-                 CLBCX, CLBCY, NRR, NSV, KTCOUNT, XTSTEP,            &
+                 CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,             &
                  XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT, XPABST,      &
                  XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
                  XRTHS, XRRS, XRTKES, XRSVS,                         &

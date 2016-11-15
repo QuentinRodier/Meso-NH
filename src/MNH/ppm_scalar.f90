@@ -10,20 +10,22 @@
 !
 INTERFACE
 !
-      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, KTCOUNT,   &
+      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,   &
                      PCRU, PCRV, PCRW, PTSTEP, PRHODJ,    &
                      PRHOX1, PRHOX2, PRHOY1, PRHOY2,      &
                      PRHOZ1, PRHOZ2,                      &
                      PSVT, PRSVS, HSV_ADV_SCHEME          ) 
 !
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
+USE MODD_TYPE_DATE,   ONLY : DATE_TIME
+!
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 CHARACTER (LEN=6),               INTENT(IN) :: HSV_ADV_SCHEME
 !
 INTEGER,                  INTENT(IN)    :: KSV    ! Number of Scalar Variables
-INTEGER,                  INTENT(IN)    :: KTCOUNT! iteration count
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! Courant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  ! numbers
@@ -48,7 +50,7 @@ END INTERFACE
 END MODULE MODI_PPM_SCALAR
 !
 !     ######################################################################
-      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, KTCOUNT,   &
+      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,   &
                      PCRU, PCRV, PCRW, PTSTEP, PRHODJ,    &
                      PRHOX1, PRHOX2, PRHOY1, PRHOY2,      &
                      PRHOZ1, PRHOZ2,                      &
@@ -82,7 +84,8 @@ END MODULE MODI_PPM_SCALAR
 !!    -------------
 !!      Original 11.05.2006. T.Maric
 !!      Modification : 11.2011 C.Lac, V.Masson : Advection of (theta_l,r_t) 
-!!
+!!                  10/2016  (C.Lac) Correction on the flag for Strang splitting
+!!                                  to insure reproducibility between START and RESTA!!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -93,6 +96,7 @@ END MODULE MODI_PPM_SCALAR
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 USE MODI_SHUMAN
 USE MODI_PPM
@@ -108,7 +112,7 @@ CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY ! Y direction LBC type
 CHARACTER (LEN=6),               INTENT(IN) :: HSV_ADV_SCHEME
 !
 INTEGER,                  INTENT(IN)    :: KSV    ! Number of Scalar Variables
-INTEGER,                  INTENT(IN)    :: KTCOUNT! iteration count
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRU  ! contravariant
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PCRV  !  components
@@ -145,7 +149,7 @@ DO JSV=1,KSV
    CALL ADVEC_PPM_ALGO(HSV_ADV_SCHEME, HLBCX, HLBCY, IGRID, PSVT(:,:,:,JSV), & 
                        PRHODJ, PTSTEP, & 
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRSVS(:,:,:,JSV), KTCOUNT, PCRU, PCRV, PCRW)
+                       PRSVS(:,:,:,JSV), TPDTCUR, PCRU, PCRV, PCRW)
 END DO
 !
 !
