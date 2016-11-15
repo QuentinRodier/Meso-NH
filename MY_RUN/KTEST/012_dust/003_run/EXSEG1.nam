@@ -20,7 +20,8 @@
 &NAM_ADVn   
             CUVW_ADV_SCHEME ="CEN4TH", 
             CMET_ADV_SCHEME = "PPM_01",
-            CSV_ADV_SCHEME = "PPM_01" /
+            CSV_ADV_SCHEME = "PPM_01",
+            CTEMP_SCHEME="LEFR" /
 &NAM_PARAMn 
             CTURB = "TKEL",
             CRAD = "ECMW",
