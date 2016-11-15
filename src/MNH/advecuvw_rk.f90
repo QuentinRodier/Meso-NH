@@ -61,7 +61,7 @@ END MODULE MODI_ADVECUVW_RK
 !     ##########################################################################
 !
 !!****  *ADVECUVW_RK * - routine to call the specialized advection routines for wind
-!!
+!!(:,:,IKE+
 !!    PURPOSE
 !!    -------
 !!
@@ -100,7 +100,9 @@ END MODULE MODI_ADVECUVW_RK
 !!                  04/2011  (V. Masson & C. Lac)    splits the routine and adds
 !!                                                   time splitting
 !!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
-!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!                  F.Auguste and C.Lac : 08/16 : CEN4TH with RKC4
+!!                  C.Lac   10/16 : Correction on RK loop
 !!
 !-------------------------------------------------------------------------------
 !
@@ -117,6 +119,8 @@ USE MODI_ADVECUVW_WENO_K
 USE MODI_ADV_BOUNDARIES
 USE MODI_GET_HALO
 USE MODE_MPPDB
+!
+USE MODI_ADVECUVW_4TH
 !
 !-------------------------------------------------------------------------------
 !
@@ -157,8 +161,6 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRUS_OTHER , PRVS_OTHER, PRWS_OTHER
 !  
 INTEGER             :: IKE       ! indice K End       in z direction
 !
-REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZU, ZV, ZW
-! Guesses at the beginning of the RK loop
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZUT, ZVT, ZWT
 ! Intermediate Guesses inside the RK loop              
 !
@@ -329,12 +331,7 @@ ZWT = PW
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZUT, PUT, 'U' )    
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
 CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
-ZWT (:,:,IKE+1 ) = 0.
 
-ZU = PU
-ZV = PV
-ZW = PW
-!
 NULLIFY(TZFIELDMT_ll)    
 CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZUT)
 CALL ADD3DFIELD_ll(TZFIELDMT_ll, ZVT)
@@ -356,19 +353,25 @@ ZRWS = 0.
     CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZVT, PVT, 'V' )    
     CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZWT, PWT, 'W' )
 !    
-    ZW (:,:,IKE+1 ) = 0.
-! 
     CALL UPDATE_HALO_ll(TZFIELDMT_ll,IINFO_ll)        
     CALL UPDATE_HALO2_ll(TZFIELDMT_ll, TZHALO2MT_ll, IINFO_ll)
 !
 !*       4.     Advection with WENO
 !	        -------------------
 !
+
+  IF (HUVW_ADV_SCHEME=='WENO_K') THEN                                                                         
     CALL ADVECUVW_WENO_K (HLBCX, HLBCY, KWENO_ORDER, ZUT, ZVT, ZWT,     &
                         PRUCT, PRVCT, PRWCT,                            &
                         ZRUS(:,:,:,JS), ZRVS(:,:,:,JS), ZRWS(:,:,:,JS), &
                         TZHALO2MT_ll                                    )
-!			
+  ELSE IF ((HUVW_ADV_SCHEME=='CEN4TH') .AND. (HTEMP_SCHEME=='RKC4')) THEN 
+    CALL ADVECUVW_4TH (HLBCX, HLBCY, PRUCT, PRVCT, PRWCT,               &
+                       ZUT, ZVT, ZWT,                                   &
+                       ZRUS(:,:,:,JS), ZRVS(:,:,:,JS), ZRWS(:,:,:,JS),  &
+                       TZHALO2MT_ll )
+  ENDIF
+!
      NULLIFY(TZFIELDS4_ll)
 !
     CALL ADD3DFIELD_ll(TZFIELDS4_ll, ZRUS(:,:,:,JS))
@@ -379,11 +382,11 @@ ZRWS = 0.
 !		
   IF ( JS /= ISPL ) THEN
 !
+      ZUT = PU
+      ZVT = PV
+      ZWT = PW
+!
    DO JI = 1, JS
-
-      ZUT = ZU
-      ZVT = ZV
-      ZWT = ZW
 !
 ! Intermediate guesses inside the RK loop
 !
