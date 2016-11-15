@@ -60,6 +60,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !!    -------------
 !!     Original 15/02/2002
 !!     2016 : G.DELAUTIER : LIMA
+!!              Oct, 2016 (C.Lac) Add visibility diagnostics for fog
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -153,7 +154,7 @@ IF (TPROFILER%X(II)==XUNDEF) RETURN
 IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
-IPROC = 22 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
+IPROC = 24 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
 IF (LDIAG_IN_RUN) IPROC = IPROC + 13
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
@@ -188,6 +189,18 @@ YTITLE   (JPROC) = 'Thv'
 YUNIT    (JPROC) = 'K'
 YCOMMENT (JPROC) = 'Virtual Potential temperature' 
 ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%THV(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'VISI'
+YUNIT    (JPROC) = 'km'
+YCOMMENT (JPROC) = 'Visibility'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%VISI(:,IK,II)
+!
+JPROC = JPROC + 1
+YTITLE   (JPROC) = 'VISIKUN'
+YUNIT    (JPROC) = 'km'
+YCOMMENT (JPROC) = 'Visibility Kunkel'
+ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%VISIKUN(:,IK,II)
 !
 JPROC = JPROC + 1
 YTITLE   (JPROC) = 'RARE'

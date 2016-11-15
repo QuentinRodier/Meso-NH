@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/profilern.f90,v $ $Revision: 1.3.4.1.2.1.10.2.2.3 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/profilern.f90,v $ $Revision: 1.3.4.1.2.1.10.2.2.4 $
 ! MASDEV4_7 profiler 2006/06/01 09:51:49
 !-----------------------------------------------------------------
 !      ##########################
@@ -18,7 +18,7 @@ INTERFACE
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                         PTS,PP, PAER, PCLDFR, PCIT)
+                            PTS,PP, PAER, PCLDFR, PCIT)
 !
 USE MODD_TYPE_DATE
 !
@@ -58,7 +58,7 @@ END MODULE MODI_PROFILER_n
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
-                         PTS,PP, PAER, PCLDFR, PCIT)
+                            PTS, PP, PAER, PCLDFR, PCIT)
 !     ########################################################
 !
 !
@@ -93,6 +93,7 @@ END MODULE MODI_PROFILER_n
 !!     Original 15/02/2002
 !!     March 2013 : C.Lac : Corrections for 1D + new fields (RARE,THV,DD,FF)
 !!     April 2014 : C.Lac : Call RADAR only if ICE3   
+!!     C.Lac 10/2016  Add visibility diagnostic
 !!
 !!
 !! --------------------------------------------------------------------------
@@ -109,6 +110,7 @@ USE MODD_CST
 USE MODD_GRID
 USE MODD_DIAG_IN_RUN
 USE MODD_CONF
+USE MODD_NSV
 !
 USE MODE_ll
 !
@@ -206,9 +208,6 @@ REAL                       :: ZZHD_PROFILER ! ZHD at station location
 REAL                       :: ZZWD_PROFILER ! ZWD at station location
 REAL                       :: ZZHDR         ! ZHD correction at station location
 REAL                       :: ZZWDR         ! ZWD correction at station location
-!-------- Calculation parameters --------
-REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
-REAL  :: ZRDSRV                 ! XRD/XRV
 !
 INTEGER                    :: IINFO_ll    ! return code
 INTEGER                    :: ILUOUT      ! logical unit
@@ -218,6 +217,9 @@ INTEGER                    :: I           ! loop for stations
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2))              :: ZZTD,ZZHD,ZZWD
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZTEMP,ZRARE,ZTHV,ZTEMPV
 REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZWORK32,ZWORK33,ZWORK34,ZCIT
+REAL,DIMENSION(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3))  :: ZVISI,ZVISIKUN
+REAL ::  ZK1,ZK2,ZK3            ! k1, k2 and K3 atmospheric refractivity constants
+REAL  :: ZRDSRV                 ! XRD/XRV
 !----------------------------------------------------------------------------
 !
 !*      2.   PRELIMINARIES
@@ -404,6 +406,19 @@ ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)
 ! virtual temperature
 ZTEMPV(:,:,:)=ZTHV(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 CALL GPS_ZENITH_GRID(PR(:,:,:,1),ZTEMP,PP,ZZTD,ZZHD,ZZWD)
+! Kunkel formulation
+IF (SIZE(PR,2) >= 2) THEN
+  WHERE ( PR(:,:,:,2) /=0 )
+    ZVISIKUN(:,:,:) =0.027/(PR(:,:,:,2)*PRHODREF(:,:,:))**0.88
+  END WHERE
+END IF
+! Gultepe formulation
+IF ((SIZE(PR,2) >= 2) .AND. NSV_C2R2END /= 0 ) THEN 
+  WHERE ( (PR(:,:,:,2) /=0. ) .AND. (PSV(:,:,:,NSV_C2R2BEG+1) /=0. ) )
+    ZVISI(:,:,:) =1.002/(PR(:,:,:,2)*PRHODREF(:,:,:)*PSV(:,:,:,NSV_C2R2BEG+1))**0.6473
+  END WHERE
+END IF
+!
 IF (GSTORE) THEN
  IF (TPROFILER%TIME(IN) /= XUNDEF) THEN
   DO I=1,NUMBPROFILER
@@ -493,6 +508,8 @@ IF (GSTORE) THEN
       TPROFILER%W   (IN,:,I) = PROFILER_INTERP(PW)
       TPROFILER%TH  (IN,:,I) = PROFILER_INTERP(PTH)
       TPROFILER%THV (IN,:,I) = PROFILER_INTERP(ZTHV)
+      TPROFILER%VISI(IN,:,I) = PROFILER_INTERP(ZVISI)
+      TPROFILER%VISIKUN(IN,:,I) = PROFILER_INTERP(ZVISIKUN)
       TPROFILER%ZZ  (IN,:,I) = ZZ(:)
       TPROFILER%RHOD(IN,:,I) = ZRHOD(:)
       IF (SIZE(PR,4) == 6) TPROFILER%RARE(IN,:,I) = PROFILER_INTERP(ZRARE)
@@ -574,6 +591,8 @@ IF (GSTORE) THEN
   CALL DISTRIBUTE_PROFILER(TPROFILER%ZZ  (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%TH  (IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%THV (IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%VISI(IN,JK,I))
+  CALL DISTRIBUTE_PROFILER(TPROFILER%VISIKUN(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RHOD(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%RARE(IN,JK,I))
   CALL DISTRIBUTE_PROFILER(TPROFILER%IWV(IN,I))

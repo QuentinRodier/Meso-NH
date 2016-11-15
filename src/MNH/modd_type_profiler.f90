@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_type_profiler.f90,v $ $Revision: 1.2.4.1.2.1.10.2.2.2 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_type_profiler.f90,v $ $Revision: 1.2.4.1.2.1.10.2.2.1 $
 ! MASDEV4_7 modd 2006/06/27 12:27:06
 !-----------------------------------------------------------------
 !     ############################
@@ -36,6 +36,7 @@ IMPLICIT NONE
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    15/01/02
+!!     C.Lac 10/2016  Add visibility diagnostic
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -77,6 +78,8 @@ REAL, DIMENSION(:,:,:),   POINTER :: ZZ=>NULL()       ! altitude(n)
 REAL, DIMENSION(:,:,:),   POINTER :: TKE=>NULL()      ! tke(n)
 REAL, DIMENSION(:,:,:),   POINTER :: TH=>NULL()       ! th(n)
 REAL, DIMENSION(:,:,:),   POINTER :: THV=>NULL()      ! thv(n)
+REAL, DIMENSION(:,:,:),   POINTER :: VISI=>NULL()     ! VISI(n)
+REAL, DIMENSION(:,:,:),   POINTER :: VISIKUN=>NULL()  ! VISI KUNKEL(n)
 REAL, DIMENSION(:,:,:),   POINTER :: RARE=>NULL()     ! radar reflectivity (n)
 REAL, DIMENSION(:,:,:),   POINTER :: RHOD=>NULL()     ! density of dry air/moist air
 REAL, DIMENSION(:,:,:,:), POINTER :: R=>NULL()        ! r*(n)
@@ -84,7 +87,7 @@ REAL, DIMENSION(:,:,:,:), POINTER :: SV=>NULL()       ! Sv*(n)
 REAL, DIMENSION(:,:,:,:), POINTER :: AER=>NULL()      ! AER*(n) aerosol extinction
 REAL, DIMENSION(:,:),     POINTER :: DATIME=>NULL()   ! record for diachro
 !
-REAL, DIMENSION(:,:),     POINTER :: T2M=>NULL()      ! 2 m air temperature (°C)
+REAL, DIMENSION(:,:),     POINTER :: T2M=>NULL()      ! 2 m air temperature (Â°C)
 REAL, DIMENSION(:,:),     POINTER :: Q2M=>NULL()      ! 2 m humidity (kg/kg)
 REAL, DIMENSION(:,:),     POINTER :: HU2M=>NULL()     ! 2 m relative humidity (%)
 REAL, DIMENSION(:,:),     POINTER :: ZON10M=>NULL()   ! 10 m zonal wind (m/s)  

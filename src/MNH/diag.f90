@@ -2,7 +2,7 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/diag.f90,v $ $Revision: 1.3.2.4.2.4.2.5.2.6.2.3.2.6 $ $Date: 2015/11/26 14:55:02 $
 !-----------------------------------------------------------------
 !     ############
       PROGRAM DIAG
@@ -76,6 +76,7 @@
 !!  04/2016     (G.Delautier) replace print by write in OUTPUT LISTING
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  09/2016      (JP Pinty) Add LIMA
+!!  10/2016      (C.LAC) add LVISI
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -222,7 +223,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
                    XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
-                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX, LLIMA_DIAG
+                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX,LVISI, LLIMA_DIAG
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
 NAMELIST/NAM_STO_FILE/ CFILES, NSTART_SUPP
@@ -285,6 +286,7 @@ NCAPE=-1
 LBV_FR=.FALSE.
 LRADAR=.FALSE.
 LBLTOP=.FALSE.
+LVISI=.FALSE.
 LVAR_FRC=.FALSE.
 LCHEMDIAG=.FALSE.
 CAERDIAG='CLIM'

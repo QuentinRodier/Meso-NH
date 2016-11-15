@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_diag_flag.f90,v $ $Revision: 1.2.4.1.2.2.10.2.2.1 $
 ! masdev4_8 modd 2008/06/30 15:13:13
 !-----------------------------------------------------------------
 !     #####################
@@ -37,6 +37,7 @@
 !!       J.-P. Chaboureau 15/04/03  add LRAD_SUBG_COND
 !!       L. Leriche 21/04/06 add aqueous phase chemistry LCHAQDIAG
 !!       D.Ricard 2015 : add LMOIST_ES
+!!     C.Lac 10/2016  Add visibility diagnostic
 !!
 !-------------------------------------------------------------------------------
 !
@@ -91,6 +92,7 @@ INTEGER     :: NCAPE       ! CAPE, DCAPE, CIN, CAPEMAX, CINMAX
 LOGICAL     :: LBV_FR
 LOGICAL     :: LRADAR
 LOGICAL     :: LBLTOP
+LOGICAL     :: LVISI 
 LOGICAL     :: LTRAJ       ! to compute trajectories
 LOGICAL     :: LCHEMDIAG = .FALSE.  ! flag for chemistry
 CHARACTER (LEN=4) :: CAERDIAG  ! aerosols optical thickness type
