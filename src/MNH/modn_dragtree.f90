@@ -22,6 +22,7 @@
 !!    -------------
 !!    Original 30/06/11
 !!
+!!    10/2016 : (C.Lac) Add droplet deposition on trees
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 USE MODD_DRAGTREE                           
@@ -33,7 +34,7 @@ USE MODD_DRAGTREE
 IMPLICIT NONE
 SAVE
 NAMELIST /NAM_DRAGTREE/  &
-     LDRAGTREE                                             
+     LDRAGTREE,LDEPOTREE,XVDEPOTREE                        
 
 !
 END MODULE MODN_DRAGTREE

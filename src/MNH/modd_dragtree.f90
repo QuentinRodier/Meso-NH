@@ -21,7 +21,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 30/06/11
-!!
+!!    06/16  (C.Lac) Add droplet deposition
 !-----------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -29,5 +29,8 @@
 IMPLICIT NONE
 LOGICAL    ::     LDRAGTREE    ! flag used to  take into account tree drag in 
 !                              ! the atmospheric model instead of SURFEX.
+LOGICAL    ::     LDEPOTREE    ! flag for droplet deposition on trees
+!
+REAL       ::     XVDEPOTREE   ! Droplet deposition velocity
 !
 END MODULE MODD_DRAGTREE

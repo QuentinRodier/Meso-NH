@@ -8,11 +8,21 @@
 !
 INTERFACE
 
-SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,PRHODJ,PZZ,PRUS, PRVS, PRTKES)
+SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
+                    HCLOUD,PPABST,PTHT,PRT,PSVT,         &
+                    PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
+                    PTHS,PRRS,PSVS)
 !
 
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET           !   at t
+LOGICAL,                  INTENT(IN)    :: ODEPOTREE ! Droplet deposition on tree
+REAL,                     INTENT(IN)    :: PVDEPOTREE! Velocity deposition on tree
+CHARACTER (LEN=4),        INTENT(IN)    :: HCLOUD       ! Kind of microphysical scheme
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST          !   at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT          !   at t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT             !   at t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT            !   at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ    ! dry Density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
@@ -21,6 +31,9 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PTHS          
 !
 !
 
@@ -31,7 +44,10 @@ END INTERFACE
 END MODULE MODI_DRAG_VEG
 !
 !     ###################################################################
-        SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,PRHODJ,PZZ,PRUS, PRVS, PRTKES)
+SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
+                    HCLOUD,PPABST,PTHT,PRT,PSVT,         &
+                    PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
+                    PTHS,PRRS,PSVS)
 !     ###################################################################
 !
 !!****  *DRAG_VEG_n * -
@@ -55,6 +71,7 @@ END MODULE MODI_DRAG_VEG
 !!      Original    07/2009
 !!       C.Lac      07/2011 : Add budgets
 !!       S. Donier  06/2015 : bug surface aerosols
+!!       C.Lac      07/2016 : Add droplet deposition
 !!---------------------------------------------------------------
 !
 !
@@ -67,6 +84,8 @@ USE MODD_DYN
 USE MODD_DYN_n
 USE MODD_VEG_n
 USE MODD_BUDGET
+USE MODD_PARAM_C2R2
+USE MODD_NSV
 
 !
 USE MODI_SHUMAN
@@ -82,6 +101,13 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET           !   at t
+LOGICAL,                  INTENT(IN)    :: ODEPOTREE ! Droplet deposition on tree
+REAL,                     INTENT(IN)    :: PVDEPOTREE! Velocity deposition on tree
+CHARACTER (LEN=4),        INTENT(IN)    :: HCLOUD       ! Kind of microphysical scheme
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PPABST          !   at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT          !   at t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT             !   at t
+REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT            !   at t
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ    ! dry Density * Jacobian
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
@@ -90,6 +116,9 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ       ! Height (z)
 !
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRUS, PRVS       ! Sources of Momentum
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTKES           ! Sources of Tke
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS         
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS          
 !
 !
 !*       0.2   Declarations of local variables :
@@ -106,7 +135,10 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) ::           &
                               ZCDRAG, ZDENSITY
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2)) ::           &
-                              ZVH,ZLAI           !  LAI, Hauteur de la vegetation
+                              ZVH,ZLAI           !  LAI, Vegetation height
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,ZEXN,ZLV,ZCPH                              
+LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) &
+            :: GDEP
 
 !
 !
@@ -154,30 +186,38 @@ ZTKET(:,:,:) = PTKET(:,:,:)
 !*      1.1    Drag coefficient by vegetation (Patton et al 2001)
 !              ------------------------------
 !
+GDEP(:,:,:) = .FALSE.
 DO JJ=2,(IJU-1)
  DO JI=2,(IIU-1)
    IF (ZVH(JI,JJ) /= 0) THEN
      DO JK=2,(IKU-1) 
          IF ((ZVH(JI,JJ)+PZZ(JI,JJ,2))<PZZ(JI,JJ,JK)) EXIT
-           ZCDRAG(JI,JJ,JK)  = 0.3 !0.075
-           ZDENSITY(JI,JJ,JK) = MAX((4 * (ZLAI(JI,JJ) *&
-                               (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                               (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                               (ZVH(JI,JJ)-(PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)))/&
-                                ZVH(JI,JJ)**3)-&
-                               (0.30*((ZLAI(JI,JJ) *&
-                               (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                               (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
-                               (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) /&
-                               (ZVH(JI,JJ)**3))-ZLAI(JI,JJ))))/&
-                                ZVH(JI,JJ), 0.)
+         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+           IF ((PRRS(JI,JJ,JK,2) >0.) .AND. (PSVS(JI,JJ,JK,NSV_C2R2BEG+1) >0.)) &
+                   GDEP(JI,JJ,JK) = .TRUE.
+         ELSE IF (HCLOUD /= 'NONE' .AND. HCLOUD /= 'REVE') THEN
+           IF (PRRS(JI,JJ,JK,2) >0.) GDEP(JI,JJ,JK) = .TRUE.
+         END IF
+         ZCDRAG(JI,JJ,JK)  = 0.2 !0.075
+         ZDENSITY(JI,JJ,JK) = MAX((4 * (ZLAI(JI,JJ) *&
+                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                              (ZVH(JI,JJ)-(PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)))/&
+                              ZVH(JI,JJ)**3)-&
+                              (0.30*((ZLAI(JI,JJ) *&
+                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) *&
+                              (PZZ(JI,JJ,JK)-PZZ(JI,JJ,2)) /&
+                              (ZVH(JI,JJ)**3))-ZLAI(JI,JJ))))/&
+                              ZVH(JI,JJ), 0.)
 
                                             
      END DO
    END IF
  END DO
 END DO
-!
+! To exclude the first vertical level already dealt in rain_ice or rain_c2r2_khko
+GDEP(:,:,2) = .FALSE.
 !
 !*      1.2    Drag force by wall surfaces
 !              ---------------------------
@@ -194,8 +234,27 @@ PRUS(:,:,:)=PRUS(:,:,:)+((ZUS(:,:,:)-ZUT(:,:,:))*PRHODJ(:,:,:))
 !
 PRVS(:,:,:)=PRVS(:,:,:)+((ZVS(:,:,:)-ZVT(:,:,:))*PRHODJ(:,:,:))
 !
+IF (ODEPOTREE) THEN
+  ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
+  ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
+  ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
+  ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+  WHERE (GDEP)
+   PRRS(:,:,:,2) = PRRS(:,:,:,2) - PVDEPOTREE * PRT(:,:,:,2) * PRHODJ(:,:,:)
+  END WHERE
+  IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+   WHERE (GDEP)
+    PSVS(:,:,:,NSV_C2R2BEG+1) =  PSVS(:,:,:,NSV_C2R2BEG+1)- PVDEPOTREE *  &
+     PSVT(:,:,:,NSV_C2R2BEG+1) * PRHODJ(:,:,:)
+   END WHERE
+  END IF
+!
+END IF
+!
 IF (LBUDGET_U) CALL BUDGET (PRUS,1,'DRAG_BU_RU')
 IF (LBUDGET_V) CALL BUDGET (PRVS,2,'DRAG_BU_RV')
+IF (LBUDGET_RC) CALL BUDGET (PRRS(:,:,:,2),7,'DEPOTR_BU_RRC')
+IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),14+(NSV_C2R2BEG-1),'DEPOTR_BU_RSV')
 !
 !
 !*      3.     Computations of TKE  tendency due to canopy drag
