@@ -443,7 +443,7 @@ endif
 #
 # NetCDF in beaufix (bull meteo-france)
 ifeq "$(VER_CDF)" "CDFBFIX"
-CDF_PATH?=/opt/softs/libraries/ICC13.1.4.183/netcdf-4.3.0
+CDF_PATH?=/opt/softs/libraries/ICC16.1.150/netcdf-4.4.0
 INC_NETCDF     ?= -I${CDF_PATH}/include
 LIB_NETCDF     ?= -L${CDF_PATH}/lib -lnetcdf -lnetcdff
 INC            += $(INC_NETCDF)
