@@ -29,7 +29,8 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/02/07       
+!!      Original    01/02/07  
+!!       10/16 R.Honnert Update with AROME
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -77,6 +78,14 @@ REAL          :: XA1
 REAL          :: XB
 REAL          :: XC  
 REAL          :: XBETA1
+!  Parameters for closure assumption of Hourdin et al 2002
+
+REAL          :: XR      ! Aspect ratio of updraft
+
+!  Thermodynamic parameter
+
+REAL          :: XLAMBDA      ! Lambda to compute ThetaS1 from ThetaL
+
 END TYPE PARAM_MFSHALL_t
 
 TYPE(PARAM_MFSHALL_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: PARAM_MFSHALL_MODEL
@@ -108,6 +117,8 @@ REAL, POINTER          :: XA1=>NULL()
 REAL, POINTER          :: XB=>NULL()
 REAL, POINTER          :: XC=>NULL()  
 REAL, POINTER          :: XBETA1=>NULL()
+REAL, POINTER          :: XR=>NULL() 
+REAL, POINTER          :: XLAMBDA=>NULL() 
 
 CONTAINS
 
@@ -144,6 +155,8 @@ XA1=>PARAM_MFSHALL_MODEL(KTO)%XA1
 XB=>PARAM_MFSHALL_MODEL(KTO)%XB
 XC=>PARAM_MFSHALL_MODEL(KTO)%XC
 XBETA1=>PARAM_MFSHALL_MODEL(KTO)%XBETA1
+XR=>PARAM_MFSHALL_MODEL(KTO)%XR
+XLAMBDA=>PARAM_MFSHALL_MODEL(KTO)%XLAMBDA
 
 END SUBROUTINE PARAM_MFSHALL_GOTO_MODEL
 

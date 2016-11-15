@@ -161,7 +161,9 @@ END MODULE MODI_SHALLOW_MF
 !!      S.Riette DUAL case
 !!      S. Riette Jan 2012: support for both order of vertical levels
 !!      R.Honnert 07/2012 : elemnts of Rio according to Bouteloup
-!!      R.Honnert 07/2012 : EDKF gray zone 
+!!      R.Honnert 07/2012 : MF gray zone 
+!!      R.Honnert 10/2016 : SURF=gray zone initilisation + EDKF  
+!!      R.Honnert 10/2016 : Update with Arome
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -174,8 +176,10 @@ USE MODD_PARAM_MFSHALL_n
 USE MODI_THL_RT_FROM_TH_R_MF
 USE MODI_COMPUTE_UPDRAFT
 USE MODI_COMPUTE_UPDRAFT_RHCJ10
+USE MODI_COMPUTE_UPDRAFT_RAHA
 USE MODI_COMPUTE_UPDRAFT_HRIO
 USE MODI_MF_TURB
+USE MODI_MF_TURB_EXPL
 USE MODI_MF_TURB_GREYZONE
 USE MODI_COMPUTE_MF_CLOUD
 USE MODI_COMPUTE_FRAC_ICE
@@ -284,6 +288,8 @@ INTEGER :: IKE         ! uppest atmosphere physical index
 REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) ::  ZG_O_THVREF,PTHVREF  
 REAL, DIMENSION(SIZE(PTHM,1)) ::  ZRESOL_NORM, ZRESOL_GRID,& ! normalized grid
                                   ZLUP, ZPLAW
+                               ! Test if the ascent continue, if LCL or ETL is reached
+LOGICAL                          ::  GLMIX 
     INTEGER :: JI,JJ,JK         ! loop counter
 !------------------------------------------------------------------------
 
@@ -294,8 +300,9 @@ IKB=KKA+KKL*JPVEXT
 IKE=KKU-KKL*JPVEXT
 
 ! updraft governing variables
-IF (HMF_UPDRAFT == 'EDKF'.OR. HMF_UPDRAFT == 'HRIO' .OR. &
-    HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT'  ) THEN
+IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'HRIO' .OR. &
+    HMF_UPDRAFT == 'RHCJ' .OR. HMF_UPDRAFT == 'BOUT' .OR. &
+    HMF_UPDRAFT == 'SURF' ) THEN
   PENTR      = 1.E20
   PDETR      = 1.E20
   PEMF       = 1.E20
@@ -317,9 +324,10 @@ ZTHVM(:,:) = PTHM(:,:)*((1.+XRV / XRD *PRM(:,:,1))/(1.+ZRTM(:,:)))
 !!! 2. Compute updraft
 !!!    ---------------
 !
-IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT') THEN
+IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT' .OR. HMF_UPDRAFT == 'SURF') THEN
   GENTR_DETR = .TRUE.
-  CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,&
+  CALL COMPUTE_UPDRAFT(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,HMF_UPDRAFT,&
+                       GENTR_DETR, OMIXUV,                       &
                        ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
                        PZZ,PDZZ,                                 &
                        PSFTH,PSFRV,PPABSM,PRHODREF,              &
@@ -329,18 +337,36 @@ IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'BOUT') THEN
                        PTHV_UP, PW_UP, PU_UP, PV_UP, ZSV_UP,     &
                        PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,PEMF,PDETR,&
                        PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
-ELSEIF (HMF_UPDRAFT == 'RHCJ') THEN                       
-  GENTR_DETR = .TRUE.
-  CALL COMPUTE_UPDRAFT_RHCJ10(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,GENTR_DETR,OMIXUV,&
+ELSEIF (HMF_UPDRAFT == 'RHCJ') THEN
+   CALL COMPUTE_UPDRAFT_RHCJ10(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,    &
+                       GENTR_DETR,OMIXUV,                        &
                        ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
                        PZZ,PDZZ,                                 &
-                       PSFTH,PSFRV,PPABSM,PRHODREF,              &
-                       PUM,PVM,PTKEM,                            &
-                       PTHM,PRM(:,:,1),ZTHLM,ZRTM,PSVM,          &
-                       PTHL_UP,PRT_UP,PRV_UP,PRC_UP,PRI_UP,      &
-                       PTHV_UP, PW_UP, PU_UP, PV_UP, ZSV_UP,     &
-                       PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,PEMF,PDETR,&
-                       PENTR,ZBUO_INTEG,KKLCL,KKETL,KKCTL,ZDEPTH )
+                       PSFTH,PSFRV,                              &
+                       PPABSM,PRHODREF,PUM,PVM,PTKEM,            &
+                       PTHM,PRM(:,:,1),ZTHLM,ZRTM,               &
+                       PSVM, PTHL_UP,PRT_UP,                     &
+                       PRV_UP,PRC_UP,PRI_UP,PTHV_UP,             &
+                       PW_UP, PU_UP, PV_UP, ZSV_UP,              &
+                       PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,           &
+                       PEMF,PDETR,PENTR,                         &
+                       ZBUO_INTEG,KKLCL,KKETL,KKCTL,             &
+                       ZDEPTH )
+ELSEIF (HMF_UPDRAFT == 'RAHA') THEN
+   CALL COMPUTE_UPDRAFT_RAHA(KKA,IKB,IKE,KKU,KKL,HFRAC_ICE,      &
+                       GENTR_DETR,OMIXUV,                        &
+                       ONOMIXLG,KSV_LGBEG,KSV_LGEND,             &
+                       PZZ,PDZZ,                                 &
+                       PSFTH,PSFRV,                              &
+                       PPABSM,PRHODREF,PUM,PVM,PTKEM,            &
+                       PEXNM,PTHM,PRM(:,:,1),ZTHLM,ZRTM,         &
+                       PSVM,PTHL_UP,PRT_UP,                      &
+                       PRV_UP,PRC_UP,PRI_UP, PTHV_UP,            &
+                       PW_UP, PU_UP, PV_UP, ZSV_UP,              &
+                       PFRAC_UP,ZFRAC_ICE_UP,ZRSAT_UP,           &
+                       PEMF,PDETR,PENTR,                         &
+                       ZBUO_INTEG,KKLCL,KKETL,KKCTL,             &
+                       ZDEPTH )
 ELSEIF (HMF_UPDRAFT == 'DUAL') THEN
   !Updraft characteristics are already computed and received by interface
 ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
@@ -385,7 +411,9 @@ CALL COMPUTE_MF_CLOUD(KKA,IKB,IKE,KKU,KKL,KRR,KRRL,KRRI,&
 !!!    ------------------------------------------------------------------------
 !
 ZEMF_O_RHODREF=PEMF/PRHODREF
-      IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT') THEN
+IF(HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'RHCJ'.OR. HMF_UPDRAFT == 'BOUT' &
+              .OR. HMF_UPDRAFT == 'SURF') THEN
+   IF ( PIMPL_MF > 1.E-10 ) THEN  
        CALL MF_TURB(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
                 PIMPL_MF, PTSTEP,                                        &
@@ -396,6 +424,14 @@ ZEMF_O_RHODREF=PEMF/PRHODREF
                 ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,ZSV_UP,&
                 PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF,         &
                 ZFLXZSVMF                                                )
+ELSE
+  CALL MF_TURB_EXPL(KKA, IKB, IKE, KKU, KKL, OMIXUV,                     &
+           PRHODJ,                                                       &
+           ZTHLM,ZTHVM,ZRTM,PUM,PVM,                                     &
+           PDTHLDT_MF,PDRTDT_MF,PDUDT_MF,PDVDT_MF,                       &
+           ZEMF_O_RHODREF,PTHL_UP,PTHV_UP,PRT_UP,PU_UP,PV_UP,            &
+           PFLXZTHMF,PFLXZTHVMF,PFLXZRMF,PFLXZUMF,PFLXZVMF)
+ENDIF
       ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
        CALL MF_TURB_GREYZONE(KKA, IKB, IKE, KKU, KKL,OMIXUV,             &
                 ONOMIXLG,KSV_LGBEG,KSV_LGEND,                            &
@@ -421,7 +457,8 @@ ZEMF_O_RHODREF=PEMF/PRHODREF
        PTHVREF(:,JK)=RESHAPE(XTHVREF(:,:,JK),(/SIZE(PTHM,1)*SIZE(PTHM,2)/) )
       ENDDO
       ZG_O_THVREF=XG/PTHVREF
-      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM,ZG_O_THVREF,ZTHVM,IKB,.TRUE.,ZLUP)
+      GLMIX=.TRUE.
+      CALL COMPUTE_BL89_ML(KKA,IKB,IKE,KKU,KKL,PDZZ,PTKEM(:,IKB)  ,ZG_O_THVREF(:,IKB),ZTHVM,IKB,GLMIX,.TRUE.,ZLUP)
       !! calcul de Dx/(h+hc)
       DO JI=1,SIZE(XDXHAT)
        DO JJ=1,SIZE(XDYHAT)

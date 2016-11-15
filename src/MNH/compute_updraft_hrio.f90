@@ -134,6 +134,7 @@ END MODULE MODI_COMPUTE_UPDRAFT_HRIO!     ######spl
 !!     S. Riette may 2011: ice added, interface modified
 !!     S. Riette Jan 2012: support for both order of vertical levels
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
+!!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -297,16 +298,6 @@ ZRMAX=1.E-3
 ZEPS=1.E-15
 XFRAC_LIM=0.5
 !
-if(LDUMMY1)THEN
-print*,"XPRES_UV=",XPRES_UV
-print*,"XALP_PERT=",XALP_PERT
-print*,"XCMF=",XCMF
-print*,"XFRAC_UP_MAX=",XFRAC_UP_MAX
-print*,"XA1=",XA1
-print*,"XB=",XB
-print*,"XC=",XC
-print*,"XBETA1=",XBETA1
-END IF 
 !------------------------------------------------------------------------
 
 !                     INITIALISATION
@@ -400,9 +391,6 @@ PSV_DO(:,:,:)=0.
 
 PTHL_UP(:,KKB)= ZTHLM_F(:,KKB)+MAX(0.,MIN(ZTMAX,(PSFTH(:)/SQRT(ZTKEM_F(:,KKB)))*XALP_PERT))
 PRT_UP(:,KKB) = ZRTM_F(:,KKB)+MAX(0.,MIN(ZRMAX,(PSFRV(:)/SQRT(ZTKEM_F(:,KKB)))*XALP_PERT)) 
-!------------------------
-print*,OENTR_DETR
-!------------------------
 IF (OENTR_DETR) THEN
   ZTHM_F (:,:) = MZM_MF(KKA,KKU,KKL,PTHM (:,:))
   ZPRES_F(:,:) = MZM_MF(KKA,KKU,KKL,PPABSM(:,:))
@@ -457,7 +445,8 @@ IF (OENTR_DETR) THEN
   GLMIX=.TRUE.
   ZTKEM_F(:,KKB)=0.
 
-  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F,ZG_O_THVREF,ZTHVM_F,KKB,GLMIX,ZLUP)
+  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB), &
+                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZLUP)
   ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
   ! Compute Buoyancy flux at the ground
@@ -481,13 +470,6 @@ IF (OENTR_DETR) THEN
 ELSE
   GTEST(:)=PEMF(:,KKB+KKL)>0.
 END IF
-      !=================
-      IF(LDUMMY1)THEN
-      print*,"PEMF(:,",KKB,")=", minval(PEMF(:,KKB)),maxval(PEMF(:,KKB))
-      print*,"PFRAC_UP(:,",KKB,")=", minval(PFRAC_UP(:,KKB)),maxval(PFRAC_UP(:,KKB))
-      print*,"ZW_UP2(:,",KKB,")=", minval(ZW_UP2(:,KKB)),maxval(ZW_UP2(:,KKB))
-      END IF
-      !=================
 
 !--------------------------------------------------------------------------
 
@@ -507,9 +489,6 @@ GTESTETL(:)=.FALSE.
    !  print*,"NLES_DTCOUNT doit être 1."   
    !STOP
    !ENDIF
-IF(LDUMMY1) THEN
-print*,"GTEST=",GTEST
-END IF
 
        WHERE (GTEST .AND. ZLUP(:)>0. )
         ! hauteur des thermiques du pas de temps precedent
@@ -521,9 +500,6 @@ END IF
          ZRESOL_NORM(:)=0.5 ! ARBITRAIRE
        ENDWHERE
  
-IF(LDUMMY1) THEN
-print*,"ZRESOL_NORM=",minval(ZRESOL_NORM),maxval(ZRESOL_NORM)
-END IF
 !       Loop on vertical level
 DO JK=KKB,KKE-KKL,KKL
 
@@ -531,12 +507,6 @@ DO JK=KKB,KKE-KKL,KKL
   ITEST=COUNT(GTEST)
   !IF (ITEST==0) print*,"cycle"
   IF (ITEST==0) CYCLE
-IF(LDUMMY1) THEN
-   print*,"JK=",JK
-   print*,"alt=",minval(PZZ(:,JK)),maxval(PZZ(:,JK))
-   print*,"ITEST=",ITEST
-   IF (ITEST==0) STOP
-END IF
 !       Computation of entrainment and detrainment with KF90
 !       parameterization in clouds and LR01 in subcloud layer
 
@@ -568,11 +538,6 @@ END IF
     ENDWHERE ! fin temporaire de GTEST 
 
    ! test sur le calcul de la flottabilité de 2 manières 
-   IF(LDUMMY1) THEN
-   print*,"PTHV_UP(:,",JK,")=",minval(PTHV_UP(:,JK)),maxval(PTHV_UP(:,JK))
-   print*,"ZTHVM_F(:,",JK,")=",minval(ZTHVM_F(:,JK)),maxval(ZTHVM_F(:,JK))
-   print*,"PTHVREF(:,",JK,")=",minval(PTHVREF(:,JK)),maxval(PTHVREF(:,JK))
-   END IF
    ! le calcul de la flottabilité est super important
    ! c'est ce qui decide de Wup
    !IF(NBUOY==1) THEN
@@ -626,9 +591,6 @@ END IF
    ! print*,"ZBUO_0(:,",JK,")=",minval(ZBUO(:,JK)),maxval(ZBUO(:,JK))
    !END IF
    !ENDIF
-   IF(LDUMMY1) THEN
-    print*,"ZBUO(:,",JK,")=",minval(ZBUO(:,JK)),maxval(ZBUO(:,JK))
-   END IF
 
     !WHERE (GTEST)      
       ! anomalie de flottabilité * DZ
@@ -655,17 +617,9 @@ END IF
       !END IF
        !
       
-   IF(LDUMMY1) THEN
-   print*,"ZA1=",minval(ZA1),maxval(ZA1)
-   END IF
    !================================================================================
    ! EQUATION DE LA DYNAMIQUE  
    !================================================================================  
-   IF(LDUMMY1) THEN
-   print*,"PBUO_INTEG(:,",JK,")=",minval(PBUO_INTEG(:,JK)),maxval(PBUO_INTEG(:,JK))
-   print*,"PWM(:,",JK,")=",minval(PWM(:,JK)),maxval(PWM(:,JK))      
-   print*,"ZWM_M(:,",JK,")=",minval(ZWM_M(:,JK)),maxval(ZWM_M(:,JK))      
-   END IF
       ! on calcule le vent vertical du thermique dans la zone grise
       ! ZA1 depend de la méthode utilisée
       ALLOCATE(ZWORK(SIZE(ZW_UP,1)))
@@ -694,10 +648,6 @@ END IF
        ENDWHERE
       DEALLOCATE(ZWORK)
    !
-   IF(LDUMMY1) THEN
-   print*,"ZW_UP(:,",JK+KKL,")=",minval(ZW_UP(:,JK+KKL)),maxval(ZW_UP(:,JK+KKL))
-   print*,"ZW_UP2(:,",JK+KKL,")=",minval(ZW_UP2(:,JK+KKL)),maxval(ZW_UP2(:,JK+KKL))
-   END IF
    !================================================================================
    ! CALCUL DE L ENTRAINEMENT ET DU DETRAINEMENT  
    !================================================================================  
@@ -716,10 +666,6 @@ END IF
         PDETR(:,JK)  = ZDETR_RT(:)+ZDETR_BUO(:)
        ENDWHERE
 !
-   IF(LDUMMY1) THEN
-   print*,"PENTR(:,",JK,")=",minval(PENTR(:,JK)),maxval(PENTR(:,JK))
-   print*,"PDETR(:,",JK,")=",minval(PDETR(:,JK)),maxval(PDETR(:,JK))
-   END IF
    !================================================================================
    ! VARIABLES THERMODYNAMIQUES   
    !================================================================================  
@@ -795,10 +741,6 @@ END IF
   WHERE(GTEST)
       PTHV_UP(:,JK+KKL) = ZTH_UP(:,JK+KKL)*((1+ZRVORD*PRV_UP(:,JK+KKL))/(1+PRT_UP(:,JK+KKL)))
  ENDWHERE
-   !IF(LDUMMY1) THEN
-   !print*,"PTHV_UP(:,",JK+KKL,")=",minval(PTHV_UP(:,JK+KKL)),maxval(PTHV_UP(:,JK+KKL))
-   !print*,"ZTHVM_F(:,",JK+KKL,")=",minval(ZTHVM_F(:,JK+KKL)),maxval(ZTHVM_F(:,JK+KKL))
-   !END IF
    !================================================================================
    ! CALCUL DU FLUX DE MASSE   
    !================================================================================
@@ -808,9 +750,6 @@ END IF
     ZMIX1(:)=ZZDZ(:,JK)*(PENTR(:,JK)-PDETR(:,JK))
     PEMF(:,JK+KKL)=PEMF(:,JK)*EXP(ZMIX1(:))
  ENDWHERE  
-   IF(LDUMMY1) THEN
-   print*,"PEMF(:,",JK+KKL,")=",minval(PEMF(:,JK+KKL)),maxval(PEMF(:,JK+KKL))
-   END IF
    !================================================================================
    ! FRACTION DE THERMIQUE   
    !================================================================================
@@ -831,9 +770,6 @@ ENDWHERE
 ENDWHERE
 
 
-   IF(LDUMMY1)THEN
-   print*,"PFRAC_UP(:,",JK+KKL,")=",minval(PFRAC_UP(:,JK+KKL)),maxval(PFRAC_UP(:,JK+KKL))
-   END IF
 ! calcul des termes environmentaux au point de flux
   WHERE(GTEST) 
      !WHERE(PFRAC_UP(:,JK+KKL)>0 .AND. PFRAC_UP(:,JK+KKL)< XFRAC_LIM) 
@@ -870,15 +806,8 @@ ENDWHERE
       KKETL(:) = JK+KKL
       GTESTETL(:)=.TRUE.
   ENDWHERE
-IF(LDUMMY1)THEN
-print*,"GTESTETL=",GTESTETL
-END IF
 
 ! Test is we have reached the top of the updraft
-IF(LDUMMY1)THEN
-print*,"ZW_UP2(:,",JK+KKL,")=",minval(ZW_UP2(:,JK+KKL)),maxval(ZW_UP2(:,JK+KKL))
-print*,"ZEPS=",ZEPS
-END IF
 
 !  WHERE (GTEST.AND.((ZW_UP2(:,JK+KKL)<=ZEPS).OR.(PEMF(:,JK+KKL)<=ZEPS) .OR. PFRAC_UP(:,JK+KKL)<= XALPHA_SEUIL))
   WHERE ( GTEST .AND. ( (ZW_UP2(:,JK+KKL)<=10E-5) .OR. (PEMF(:,JK+KKL)<=10E-5)) )
@@ -918,6 +847,5 @@ ENDDO ! boucle JK
 GWORK1(:)= (GTESTLCL(:) .AND. (PDEPTH(:) > ZDEPTH_MAX1) )
 GWORK2(:,:) = SPREAD( GWORK1(:), DIM=2, NCOPIES=MAX(KKU,KKA) )
 ZCOEF(:,:) = SPREAD( (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1)), DIM=2, NCOPIES=SIZE(ZCOEF,2))
-print*,"je sors de compute_updraft"
 
 END SUBROUTINE COMPUTE_UPDRAFT_HRIO

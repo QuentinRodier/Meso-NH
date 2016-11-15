@@ -3,6 +3,9 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+!!    MODIFICATIONS
+!!    -------------
+!!       10/16 R.Honnert Update with AROME
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODN_PARAM_MFSHALL_n
@@ -39,7 +42,9 @@ USE MODD_PARAM_MFSHALL_n, ONLY: &
          XA1_n => XA1, &
          XB_n => XB, &
          XC_n => XC, &
-         XBETA1_n => XBETA1
+         XBETA1_n => XBETA1, &
+         XR_n => XR, &
+         XLAMBDA_n => XLAMBDA
 !
 IMPLICIT NONE
 !
@@ -81,11 +86,16 @@ REAL,SAVE          :: XB
 REAL,SAVE          :: XC  
 REAL,SAVE          :: XBETA1
 
+! Tuning variables for RAHA updraft :
+
+REAL,SAVE          :: XR
+REAL,SAVE          :: XLAMBDA
+
 NAMELIST/NAM_PARAM_MFSHALLn/XIMPL_MF,CMF_UPDRAFT,CMF_CLOUD,LMIXUV,LMF_FLX,&
                             XALP_PERT,XABUO,XBENTR,XBDETR,XCMF,XENTR_MF,&
                             XCRAD_MF,XENTR_DRY,XDETR_DRY,XDETR_LUP,XKCF_MF,&
                             XKRC_MF,XTAUSIGMF,XPRES_UV,XALPHA_MF,XSIGMA_MF,&
-                            XFRAC_UP_MAX,XA1,XB,XC,XBETA1
+                            XFRAC_UP_MAX,XA1,XB,XC,XBETA1,XR,XLAMBDA
 
 
 !
@@ -118,6 +128,9 @@ SUBROUTINE INIT_NAM_PARAM_MFSHALLn
    XB = XB_n
    XC = XC_n
    XBETA1 = XBETA1_n
+   XR = XR_n
+   XLAMBDA = XLAMBDA_n
+
 END SUBROUTINE INIT_NAM_PARAM_MFSHALLn
 
 SUBROUTINE UPDATE_NAM_PARAM_MFSHALLn
@@ -147,6 +160,8 @@ SUBROUTINE UPDATE_NAM_PARAM_MFSHALLn
    XB_n = XB
    XC_n = XC
    XBETA1_n = XBETA1
+   XR_n = XR
+   XLAMBDA_n = XLAMBDA
 END SUBROUTINE UPDATE_NAM_PARAM_MFSHALLn
 
 END MODULE MODN_PARAM_MFSHALL_n
