@@ -163,6 +163,10 @@ wt2@units="m/s"
   resmap@cnFillOn               = True ; turn on color fill
   resmap@cnLinesOn               = False ; turn off contour lines
 
+  resmap@tmXBLabelStride = 2   ; to reduce the number of labels on xaxis
+  resmap@lbLabelStride = 2.   ; to reduce the number of labels on labelbar
+
+
 ;pour prendre en compte l'orographie sur la coupe verticale.
   resmap@sfYArray        = z             ; 2D                  
   resmap@sfXArray        = xconf             ; 2D                  
@@ -209,6 +213,7 @@ frame(wks)
 delete(opts)
 
 
+  resmap@lbLabelStride = 3.   ; to reduce the number of labels on labelbar
 opts=resmap
 opts@cnLevelSelectionMode = "ManualLevels"
 opts@cnLevelSpacingF    = 0.04
@@ -230,6 +235,7 @@ opts@cnLevelSpacingF    = 0.0002
 opts@cnMinLevelValF    = 0.0002
 opts@cnMaxLevelValF    = 0.0038
 opts@tiXAxisString="time="+time1+"s"
+;opts@lbLabelSride = 5.
 plot_rvt1 = gsn_csm_contour(wks,rvt1,opts)
 draw(plot_rvt1)
 frame(wks)
@@ -239,6 +245,7 @@ draw(plot_rvt2)
 frame(wks)
 delete(opts)
 
+  resmap@lbLabelStride = 2.   ; to reduce the number of labels on labelbar
 opts=resmap
 opts@cnLevelSelectionMode = "ManualLevels"
 opts@cnLevelSpacingF    = 0.003
@@ -284,7 +291,15 @@ res=resmap
  resmap@pmLegendParallelPosF   = .1
  resmap@lgLabelFontHeightF     = .01                   
  resmap@pmLegendOrthogonalPosF = -0.3                
+ resmap@tmXBLabelStride = 1   ; 
 
+; delete ressources not needed for vertcal profiles
+ delete(resmap@sfXArray)
+ delete(resmap@sfYArray)
+ delete(resmap@cnFillOn)
+ delete(resmap@cnLinesOn)
+ delete(resmap@gsnSpreadColors)
+ delete(resmap@lbLabelStride)
 
 
 res_w=resmap

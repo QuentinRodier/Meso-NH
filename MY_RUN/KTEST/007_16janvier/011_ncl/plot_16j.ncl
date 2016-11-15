@@ -195,6 +195,9 @@ alt@lon2d = lon2d
   resmap@mpGeophysicalLineThicknessF = 2.0
   resmap@mpGeophysicalLineColor = "Black"
   resmap@mpNationalLineColor    = "Black"
+  resmap@tmXBLabelStride = 2   ; to reduce the number of labels on xaxis
+  resmap@lbLabelStride = 2.   ; to reduce the number of labels on labelbar
+
 ;=================================================;
 ; OROGRAPHIE
 ;=================================================;
@@ -224,8 +227,6 @@ res2@cnLevelSelectionMode = "AutomaticLevels"
 res2@gsnScalarContour=True
 res2@vcMinDistanceF = 0.04 
 res2@vcRefLengthF=0.1      
-res2@cnLevelSpacingF    = 0.00005
-res2@cnMinLevelValF    = 0
 res2@tiXAxisString = "850 hPa"
 
 

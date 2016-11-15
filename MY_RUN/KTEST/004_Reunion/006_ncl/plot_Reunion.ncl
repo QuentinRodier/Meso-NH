@@ -183,12 +183,14 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   resmap@tiYAxisString =" "
   resmap@cnFillOn= True 
   resmap@cnLinesOn= False 
+  resmap@lbLabelStride = 3.
+  resmap@tmXBLabelStride = 3 
 
 ; If there is an error on HighRes, it means that you don't have the HighRes data
 ; You need to download them or the change HighRes by MediumRes
 ; See https://www.ncl.ucar.edu/Document/Graphics/rangs.shtml for info
 ; -------------------------------------
-  resmap@mpDataBaseVersion    	= "HighRes"	; choose highres map data version (must be donwloaded)
+  resmap@mpDataBaseVersion    	= "MediumRes"	; choose highres map data version (must be donwloaded)
 
   gsn_define_colormap(wks,"rainbow") 
 
@@ -216,8 +218,9 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   res2@vcMinDistanceF = 0.04 
   res2@vcRefLengthF=0.1      
   res2@mpFillOn              =  False          ; turn off map fill
-  res2@mpOutlineDrawOrder    = "PostDraw"      ; draw continental outline last
+;  res2@mpOutlineDrawOrder    = "PostDraw"      ; draw continental outline last
 
+  print("plot1")
   plot=gsn_csm_vector_scalar_map(wks,ut1(1,:,:),vt1(1,:,:),mod_utvt(:,:),res2)
   draw(plot)
   frame(wks)
@@ -230,6 +233,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   res3@cnMinLevelValF    = 302.4
   res3@cnMaxLevelValF    = 304
 
+  print("plot2")
   plot_tht = gsn_csm_contour_map(wks,tht_1500m,res3)
   draw(plot_tht)
   frame(wks)
@@ -253,6 +257,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   res4@vcMinDistanceF = 0.03 
   res4@vcRefLengthF=0.03     
 
+  print("plot3")
   plot_pabst=gsn_csm_vector_scalar_map(wks,ut_1500m,vt_1500m,pabst_1500m,res4)
   draw(plot_pabst)
   frame(wks)
@@ -277,14 +282,22 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   wt_plane=wrf_user_intrp3d(wt1,alt,"v",plane,angle,opts)
   lsvm_plane=wrf_user_intrp3d(lsvm,alt,"v",plane,angle,opts)
 
-  opts_cv=resmap
+  ;opts_cv=resmap
+  opts_cv                         = True
+  opts_cv@cnLinesOn               = False
+  opts_cv@cnFillOn                = True
+  opts_cv@gsnSpreadColors         = True
+  opts_cv@gsnFrame                = False
+  opts_cv@gsnDraw                 = False
+  opts_cv@lbLabelStride           = 5.
+
   opts_cv@tiXAxisString           = X_desc
   opts_cv@tiYAxisString           = "Height (km)"
   opts_cv@tiXAxisFontHeightF      = 0.020
   opts_cv@tiYAxisFontHeightF      = 0.020
   opts_cv@cnMissingValPerimOn     = True
   opts_cv@cnMissingValFillColor   = "gray"
-  opts_cv@cnMissingValFillPattern = 25
+  opts_cv@cnMissingValFillPattern = 17
 
   opts_cv@cnLevelSelectionMode = "ManualLevels"
   opts_cv@cnLevelSpacingF    =2.5
@@ -300,6 +313,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   opts_cv@cnMinLevelValF    = -1
   opts_cv@cnMaxLevelValF    = 1
   opts_cv@tiMainString="THT-LSTHM"
+  print("plot4")
   cv_tht_lsthm = gsn_csm_contour(wks,tht_plane(:,:)-lsthm_plane(:,:),opts_cv)
   draw(cv_tht_lsthm)
   frame(wks)
@@ -309,6 +323,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   opts_cv@cnMinLevelValF    = -5
   opts_cv@cnMaxLevelValF    = 6
   opts_cv@tiMainString="VT-LSVM"
+  print("plot5")
   cv_vt = gsn_csm_contour(wks,vt_plane(:,:)-lsvm_plane(:,:),opts_cv)
   draw(cv_vt)
   frame(wks)

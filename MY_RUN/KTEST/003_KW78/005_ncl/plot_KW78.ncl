@@ -101,6 +101,7 @@
   resmap@tiYAxisString =" "
   resmap@cnFillOn= True 
   resmap@cnLinesOn= False 
+  resmap@lbLabelStride = 2.   ; to reduce the number of labels on labelbar
 ;=================================================;
 ; Altitude des niveaux modèles
 ;=================================================;
@@ -125,26 +126,28 @@
 ;=================================================;
   gsn_define_colormap(wks,"rainbow") ; Choose colormap
 
+  resmap@lbLabelStride = 4.   ; to reduce the number of labels on labelbar
   opts=resmap
   opts@cnLevelSelectionMode = "ManualLevels"
   opts@cnLevelSpacingF    = 0.25
-  opts@cnMinLevelValF    = 0
-  opts@cnMaxLevelValF    = 6
-
+  opts@cnMinLevelValF    = 0.
+  opts@cnMaxLevelValF    = 6.
   plot_inprr = gsn_csm_contour(wks,inprr,opts)
   draw(plot_inprr)
   frame(wks)
 
   opts@cnLevelSpacingF    = 0.005
   opts@cnMinLevelValF    = 0
+  opts@cnMaxLevelValF    = 0.09
   plot_acprr = gsn_csm_contour(wks,acprr,opts)
   draw(plot_acprr)
   frame(wks)
 
+  resmap@lbLabelStride = 4.   ; to reduce the number of labels on labelbar
   res=resmap
   res@gsnScalarContour=True
   res@cnLevelSelectionMode = "ManualLevels"
-  res@cnLevelSpacingF= 5
+  res@cnLevelSpacingF= 10
   res@cnMinLevelValF= 98250
   res@cnMaxLevelValF= 98350
   res@vcMinDistanceF = 0.03 
@@ -161,6 +164,7 @@
   ut5000_plane = wrf_user_intrp3d(ut1,alt,"h",5000,0.,False)
   vt5000_plane = wrf_user_intrp3d(vt1,alt,"h",5000,0.,False)
 
+  resmap@lbLabelStride = 12.   ; to reduce the number of labels on labelbar
   res2=resmap
   res2@gsnScalarContour=True
   res2@vcMinDistanceF = 0.04

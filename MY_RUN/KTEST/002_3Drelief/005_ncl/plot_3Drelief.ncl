@@ -54,6 +54,9 @@
   resmap@cnFillOn= True
   resmap@cnLinesOn= False 
 
+  resmap@lbLabelStride = 4. ; to reduce number of labels on labelbar
+
+
 ;=================================================;
 ; TRACE
 ;=================================================;
