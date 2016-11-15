@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_advn.f90,v $ $Revision: 1.2.2.1.2.1.18.2 $
 ! MASDEV4_7 modd 2007/02/19 11:58:44
 !-----------------------------------------------------------------
 !     ################
@@ -39,6 +39,7 @@
 !!                            removal of CFV_ADV_SCHEME
 !!      J.-P. Pinty  20/03/10 Add NWENO_ORDER
 !!      C.Lac and V.Masson    Add CTEMP_SCHEME and TIME SPLITTING
+!!                  C.LAC 10/2016 : Add OSPLIT_WENO
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -59,8 +60,9 @@ TYPE ADV_t
   INTEGER                :: NSPLIT      ! Number of time splitting   
                                         ! for advection  
 !
-  LOGICAL                :: LSPLIT_CFL  ! Flag to automatically choose number of iterations
-  REAL                   :: XSPLIT_CFL  ! Limit of CFL to automatically choose number of iterations
+  LOGICAL                :: LSPLIT_CFL  ! Flag to split PPM advection as a function of CFL 
+  LOGICAL                :: LSPLIT_WENO ! Flag to split WENO momentum advection               
+  REAL                   :: XSPLIT_CFL  ! Limit of CFL to automatically choose number of iterations for PPM
 !
   LOGICAL                :: LCFL_WRIT   ! Flag to write CFL fields in output file               
 !
@@ -74,6 +76,7 @@ CHARACTER(LEN=4), POINTER :: CTEMP_SCHEME=>NULL()
 INTEGER, POINTER :: NWENO_ORDER=>NULL()
 INTEGER, POINTER :: NSPLIT=>NULL()
 LOGICAL, POINTER :: LSPLIT_CFL=>NULL()
+LOGICAL, POINTER :: LSPLIT_WENO=>NULL()
 LOGICAL, POINTER :: LCFL_WRIT=>NULL()
 REAL,    POINTER :: XSPLIT_CFL=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XRTKEMS=>NULL()
@@ -95,6 +98,7 @@ CTEMP_SCHEME=>ADV_MODEL(KTO)%CTEMP_SCHEME
 NWENO_ORDER=>ADV_MODEL(KTO)%NWENO_ORDER
 NSPLIT=>ADV_MODEL(KTO)%NSPLIT         
 LSPLIT_CFL=>ADV_MODEL(KTO)%LSPLIT_CFL         
+LSPLIT_WENO=>ADV_MODEL(KTO)%LSPLIT_WENO        
 LCFL_WRIT=>ADV_MODEL(KTO)%LCFL_WRIT          
 XSPLIT_CFL=>ADV_MODEL(KTO)%XSPLIT_CFL         
 XRTKEMS=>ADV_MODEL(KTO)%XRTKEMS

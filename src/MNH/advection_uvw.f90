@@ -9,7 +9,7 @@
 !
 INTERFACE
       SUBROUTINE ADVECTION_UVW (HUVW_ADV_SCHEME,                               &
-                            HTEMP_SCHEME, KWENO_ORDER, KSPLIT_PPM,             &
+                            HTEMP_SCHEME, KWENO_ORDER, OSPLIT_WENO,            &
                             HLBCX, HLBCY, PTSTEP,                              &
                             PUT, PVT, PWT,                                     &
                             PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,              &
@@ -21,8 +21,8 @@ CHARACTER(LEN=4),         INTENT(IN)    :: HTEMP_SCHEME   ! Temporal scheme
 !
 INTEGER,                  INTENT(IN)    :: KWENO_ORDER   ! Order of the WENO
                                                          ! scheme (3 or 5)
-INTEGER,                  INTENT(IN)    :: KSPLIT_PPM  ! Number of time splitting
-                                                   ! for PPM advection
+LOGICAL,                  INTENT(IN)   :: OSPLIT_WENO  ! flag to add a time
+                                                       ! splitting to RK for WENO
 !
 CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 !
@@ -44,7 +44,7 @@ END INTERFACE
 END MODULE MODI_ADVECTION_UVW
 !     ##########################################################################
       SUBROUTINE ADVECTION_UVW (HUVW_ADV_SCHEME,                               &
-                            HTEMP_SCHEME, KWENO_ORDER, KSPLIT_PPM,             &
+                            HTEMP_SCHEME, KWENO_ORDER, OSPLIT_WENO,            &
                             HLBCX, HLBCY, PTSTEP,                              &
                             PUT, PVT, PWT,                                     &
                             PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,              &
@@ -90,7 +90,7 @@ END MODULE MODI_ADVECTION_UVW
 !!                                                   time splitting
 !!                  J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
-!!
+!!                  C.LAC 10/2016 : Add OSPLIT_WENO
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -119,8 +119,8 @@ CHARACTER(LEN=4),         INTENT(IN)    :: HTEMP_SCHEME   ! Temporal scheme
 !
 INTEGER,                  INTENT(IN)    :: KWENO_ORDER   ! Order of the WENO
                                                          ! scheme (3 or 5)
-INTEGER,                  INTENT(IN)    :: KSPLIT_PPM  ! Number of time splitting
-                                                   ! for PPM advection
+LOGICAL,                  INTENT(IN)   :: OSPLIT_WENO  ! flag to add a time
+                                                       ! splitting to RK for WENO
 !
 CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 !
@@ -255,7 +255,13 @@ NULLIFY(TZFIELDS0_ll)
 !
 !-------------------------------------------------------------------------------
 !
-ISPLIT = 2                
+IF ( HUVW_ADV_SCHEME == 'CEN4TH' ) THEN
+  ISPLIT = 1
+ELSE IF (OSPLIT_WENO) THEN
+  ISPLIT = 2
+ELSE
+  ISPLIT = 1
+END IF
 ZTSTEP = PTSTEP / REAL(ISPLIT)
 !
 !-------------------------------------------------------------------------------
