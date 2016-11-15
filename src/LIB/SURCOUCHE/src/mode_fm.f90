@@ -257,26 +257,26 @@ IF (ISP == TZFDLFI%OWNER) THEN
      IF (HACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
         !! Open NetCDF File for reading
         TZFDLFI%CDF => NEWIOCDF()
-        INCERR = NF90_OPEN(ADJUSTL(TRIM(HFILEM))//".nc4", NF90_NOWRITE, TZFDLFI%CDF%NCID)
+        INCERR = NF90_OPEN(ADJUSTL(TRIM(HFILEM))//".nc", NF90_NOWRITE, TZFDLFI%CDF%NCID)
         IF (INCERR /= NF90_NOERR) THEN
            !PRINT *, 'FMOPEN_ll, NF90_OPEN error : ', NF90_STRERROR(INCERR)
-           PRINT *, 'Error in opening (FMOPEN_ll/NF90_OPEN) ', TRIM(HFILEM)//'.nc4', ' : ', NF90_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF90_OPEN) ', TRIM(HFILEM)//'.nc', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        PRINT *, 'NF90_OPEN: ', TRIM(HFILEM)//'.nc4'
+        PRINT *, 'NF90_OPEN: ', TRIM(HFILEM)//'.nc'
      END IF
      
      IF (HACTION == 'WRITE') THEN
         ! HACTION == 'WRITE'
         TZFDLFI%CDF => NEWIOCDF()
-        INCERR = NF90_CREATE(ADJUSTL(TRIM(HFILEM))//".nc4", &
+        INCERR = NF90_CREATE(ADJUSTL(TRIM(HFILEM))//".nc", &
              &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFDLFI%CDF%NCID)
         IF (INCERR /= NF90_NOERR) THEN
            !PRINT *, 'FMOPEN_ll, NF90_CREATE error : ', NF90_STRERROR(INCERR)
-           PRINT *, 'Error in opening (FMOPEN_ll/NF90_CREATE) ', TRIM(HFILEM)//'.nc4', ' : ', NF90_STRERROR(INCERR)
+           PRINT *, 'Error in opening (FMOPEN_ll/NF90_CREATE) ', TRIM(HFILEM)//'.nc', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        PRINT *, 'NF90_CREATE: ', TRIM(HFILEM)//'.nc4'
+        PRINT *, 'NF90_CREATE: ', TRIM(HFILEM)//'.nc'
      END IF
   END IF
 #endif

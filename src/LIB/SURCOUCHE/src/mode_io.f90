@@ -664,29 +664,29 @@ CONTAINS
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOSCDF = NF90_OPEN(TRIM(FILE)//cfile//".nc4", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      IOSCDF = NF90_OPEN(TRIM(FILE)//cfile//".nc", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF90_STRERROR(IOSCDF)
+   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(FILE)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
                       END IF
-                      PRINT *, 'NF90_OPEN(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                      PRINT *, 'NF90_OPEN(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc'
                    END IF
                    
                    IF (YACTION == 'WRITE') THEN
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      IOSCDF = NF90_CREATE(TRIM(FILE)//cfile//".nc4", &
+                      IOSCDF = NF90_CREATE(TRIM(FILE)//cfile//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(FILE)//cfile//'.nc4', ' : ', NF90_STRERROR(IOSCDF)
+                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(FILE)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
                       END IF
-                      PRINT *, 'NF90_CREATE(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc4'
+                      PRINT *, 'NF90_CREATE(IO_ZSPLIT): ',TRIM(FILE)//cfile//'.nc'
                    END IF
                 END IF
 #endif

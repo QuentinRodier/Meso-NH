@@ -1354,7 +1354,7 @@ END DO
       outfiles%files(idx)%var_id = ji
 
       IF (options(OPTCDF4)%set) THEN
-        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
       ELSE
         filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
