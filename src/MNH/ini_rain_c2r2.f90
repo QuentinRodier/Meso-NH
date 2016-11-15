@@ -5,10 +5,10 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$ $Log$
-! $Source$ $Revision$ $Date$ Revision 1.1  2006/03/13 15:14:51  lac
-! $Source$ $Revision$ $Date$ Initial revision
-! $Source$ $Revision$ $Date$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ $Log: ini_rain_c2r2.f90,v $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ Revision 1.1  2006/03/13 15:14:51  lac
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ Initial revision
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !      #########################
@@ -95,6 +95,7 @@ END MODULE MODI_INI_RAIN_C2R2
 !!      J.-P. Pinty 29/11/02  Add cloud doplet fall speed parameters
 !!      O.Geoffroy  03/2006   Add KHKO scheme
 !!      G.Delautier 09/2014   fusion MODD_RAIN_C2R2_PARAM et MODD_RAIN_KHKO_PARAM
+!!      M.Mazoyer   10/2016 Constants for Droplet sedimentation adapted to fog for KHKO
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -200,7 +201,6 @@ IF (ALLOCATED(XRTMIN)) RETURN     ! In case of nesting microphysics constants of
 !
 XAC = (XPI/6.0)*XRHOLW
 XBC = 3.0
-! CAREFUL : FOR FOG WITH KHKO, TAKE THE 2ND FORMULA
 IF (HCLOUD=='KHKO') THEN
  XCC = XRHOLW*XG/(18.0*1.816E-5) ! Stokes flow (Pruppacher p 322 for T=293K)
 ELSE
