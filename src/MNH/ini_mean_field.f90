@@ -47,6 +47,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        11/12/09
+!!                      10/2016 (C.Lac) Add max values
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -55,6 +56,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !
 USE MODD_MEAN_FIELD_n
 USE MODD_MEAN_FIELD
+USE MODD_PARAM_n        
 
 IMPLICIT NONE
 !
@@ -65,7 +67,7 @@ XVM_MEAN  = 0.0
 XWM_MEAN  = 0.0
 XTHM_MEAN = 0.0
 XTEMPM_MEAN = 0.0
-XTKEM_MEAN = 0.0
+IF (CTURB /= 'NONE') XTKEM_MEAN = 0.0
 XPABSM_MEAN = 0.0
 
 XU2_MEAN  = 0.0
@@ -74,5 +76,13 @@ XW2_MEAN  = 0.0
 XTH2_MEAN = 0.0
 XTEMP2_MEAN = 0.0
 XPABS2_MEAN = 0.0
+
+XUM_MAX  = 0.0
+XVM_MAX  = 0.0
+XWM_MAX  = 0.0
+XTHM_MAX = 0.0
+XTEMPM_MAX = 0.0
+IF (CTURB /= 'NONE') XTKEM_MAX = 0.0
+XPABSM_MAX = 0.0
 
 END SUBROUTINE INI_MEAN_FIELD
