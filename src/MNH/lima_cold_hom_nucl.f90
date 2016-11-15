@@ -90,6 +90,7 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
+!!      B.Vie 10/2016 Bug zero division
 !!
 !-------------------------------------------------------------------------------
 !
@@ -419,14 +420,15 @@ IF (INEGT.GT.0) THEN
             ZZW(:) = MIN( XRCOEF_HONH*ZZX(:)*(ZTAU(:)/ZBFACT(:))**1.5 , ZRVS(:) )
       END WHERE
 !
-! Apply the changes to ZNFS, 
-      DO JMOD_CCN = 1, NMOD_CCN
-         ZCCNFROZEN(:) = ZZX(:) * ZNFS(:,JMOD_CCN)/ZFREECCN(:)
-         ZNFS(:,JMOD_CCN) = ZNFS(:,JMOD_CCN) - ZCCNFROZEN(:) 
-         ZW(:,:,:)           = PNFS(:,:,:,JMOD_CCN)
-         PNFS(:,:,:,JMOD_CCN)=UNPACK( ZNFS(:,JMOD_CCN), MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:))
-      END DO
-!
+! Apply the changes to ZNFS,
+    DO JMOD_CCN = 1, NMOD_CCN
+        WHERE(ZFREECCN(:)>1.)
+            ZCCNFROZEN(:) = ZZX(:) * ZNFS(:,JMOD_CCN)/ZFREECCN(:)
+            ZNFS(:,JMOD_CCN) = ZNFS(:,JMOD_CCN) - ZCCNFROZEN(:)
+        END WHERE
+        ZW(:,:,:) = PNFS(:,:,:,JMOD_CCN)
+        PNFS(:,:,:,JMOD_CCN)=UNPACK( ZNFS(:,JMOD_CCN), MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:))
+    END DO
       ZZNHS(:)    = ZZNHS(:) + ZZX(:)
       ZNHS(:,:,:) = ZNHS(:,:,:) + UNPACK( ZZNHS(:), MASK=GNEGT(:,:,:),FIELD=0.0)
       PNHS(:,:,:) = ZNHS(:,:,:)
