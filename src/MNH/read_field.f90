@@ -12,7 +12,7 @@ INTERFACE
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
-            KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
+            HTEMP_SCHEME,KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                                     &
@@ -54,6 +54,7 @@ CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
 ! GET indicators to know wether a given  variable should or not be read in the
 ! FM file at time t-deltat and t
 CHARACTER(LEN=6),         INTENT(IN)    :: HUVW_ADV_SCHEME ! advection scheme for wind
+CHARACTER(LEN=4),         INTENT(IN)    :: HTEMP_SCHEME ! advection scheme for wind
 !
 ! sizes of the West-east total LB area
 INTEGER, INTENT(IN) :: KSIZELBX_ll,KSIZELBXU_ll      ! for T,V,W and u 
@@ -128,7 +129,7 @@ END MODULE MODI_READ_FIELD
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
-            KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
+            HTEMP_SCHEME,KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
             KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
             KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
             PUM,PVM,PWM,PDUM,PDVM,PDWM,                                                     &
@@ -232,6 +233,7 @@ END MODULE MODI_READ_FIELD
 !!          C.Lac       12/14     correction for reproducibility START/RESTA
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!          M. Leriche  02/16     treat gas and aq. chemicals separately
+!!          C.Lac        10/16 CEN4TH with RKC4 + Correction on RK loop
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -300,6 +302,7 @@ CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVT
 ! FM file at time t-deltat and t
 !
 CHARACTER(LEN=6),         INTENT(IN)    :: HUVW_ADV_SCHEME ! advection scheme for wind
+CHARACTER(LEN=4),         INTENT(IN)    :: HTEMP_SCHEME ! advection scheme for wind
 !
 ! sizes of the West-east total LB area
 INTEGER, INTENT(IN) :: KSIZELBX_ll,KSIZELBXU_ll      ! for T,V,W and u 
@@ -1005,7 +1008,8 @@ END IF
 !
 !*       2.1  Time t-dt:
 !
-IF (CPROGRAM=='MESONH' .AND. HUVW_ADV_SCHEME(1:3)=='CEN') THEN
+IF (CPROGRAM=='MESONH' .AND. HUVW_ADV_SCHEME(1:3)=='CEN' .AND. &
+        HTEMP_SCHEME == 'LEFR' ) THEN
   IF (CCONF=='RESTA') THEN
     YRECFM = 'UM'
     YDIR='XY'
