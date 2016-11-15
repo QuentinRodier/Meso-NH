@@ -212,7 +212,9 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 
 !!                                      put NCH_VEC_LENGTH = 50 instead of 1000
-!!
+!!                   10/2016 (C.Lac) VSIGQSAT change from 0 to 0.02 for coherence with AROME
+!!                    10/2016 (C.Lac) Add droplet deposition
+!!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -441,6 +443,7 @@ CTEMP_SCHEME    =  'RK53'
 NWENO_ORDER = 3
 NSPLIT      = 1
 LSPLIT_CFL  = .TRUE.
+LSPLIT_WENO = .TRUE.
 XSPLIT_CFL  = 0.8
 LCFL_WRIT   = .FALSE.
 !
@@ -505,13 +508,15 @@ LSIGMAS   =.TRUE.
 LSIG_CONV =.FALSE.
 LRMC01    =.FALSE.
 CTOM      ='NONE'
-VSIGQSAT  = 0.
+VSIGQSAT  = 0.02
 !-------------------------------------------------------------------------------
 !
 !*      10b.   SET DEFAULT VALUES FOR MODD_DRAGTREE :
 !             ----------------------------------
 !
 LDRAGTREE = .FALSE.
+LDEPOTREE = .FALSE.
+XVDEPOTREE = 0.02 ! 2 cm/s 
 !
 !-------------------------------------------------------------------------------
 !
@@ -698,6 +703,8 @@ IF (KMI == 1) THEN
   NBERFIRC = 0
   NCDEPIRC = 0
   NWETHRC = 0
+  NDEPORC = 0
+  NDEPOTRRC = 0  
 !
 !                    Budget of RRR
   LBU_RRR = .FALSE.
@@ -816,6 +823,8 @@ IF (KMI == 1) THEN
   NHTURBSV = 0
   NCHEMSV  = 0
   NNEGASV  = 0
+  NDEPOSV  = 0
+  NDEPOTRSV  = 0
 !
 !
 END IF
@@ -1039,6 +1048,8 @@ XA1    =  2./3.
 XB     =  0.002       
 XC     =  0.012     
 XBETA1 =  0.9         
+XR     =  2.
+XLAMBDA=  0.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1051,10 +1062,13 @@ IF (KMI == 1) THEN
   XNUR    = 2.0
   XALPHAR = 1.0
 !
-  LRAIN = .TRUE.
-  LSEDC = .TRUE.
-  LACTIT = .FALSE.
-  LSUPSAT= .FALSE.
+  LRAIN   = .TRUE.
+  LSEDC   = .TRUE.
+  LACTIT  = .FALSE.
+  LSUPSAT = .FALSE.
+  LDEPOC  = .FALSE.
+  XVDEPOC = 0.02 ! 2 cm/s
+  LACTTKE = .FALSE.
 !
   HPARAM_CCN = 'XXX'
   HINI_CCN   = 'XXX'
