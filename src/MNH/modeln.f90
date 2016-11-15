@@ -241,6 +241,11 @@ END MODULE MODI_MODEL_n
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!      M.Leriche : 03/2016 Move computation of accumulated chem. in rain to ch_monitor
 !!                  09/2016 Add filter on negative values on AERDEP SV before relaxation
+!!                  10/2016  (C.Lac) _ Correction on the flag for Strang splitting
+!!                                  to insure reproducibility between START and RESTA
+!!                                  _  Add OSPLIT_WENO
+!!                                  _ Add droplet deposition 
+!!                   10/2016 (M.Mazoyer) New KHKO output fields
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -260,12 +265,12 @@ USE MODD_NESTING
 USE MODD_FMOUT
 USE MODD_BUDGET
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,        ONLY : LWARM,LSEDIC,LCONVHG
+USE MODD_PARAM_ICE,        ONLY : LWARM,LSEDIC,LCONVHG,LDEPOSC
 USE MODD_FRC
 USE MODD_AIRCRAFT_BALLOON
 USE MODD_STATION_n
 USE MODD_PROFILER_n
-USE MODD_PARAM_C2R2, ONLY : NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT
+USE MODD_PARAM_C2R2, ONLY : NSEDC => LSEDC, NRAIN => LRAIN, NACTIT => LACTIT,LACTTKE,LDEPOC
 USE MODD_PARAM_C1R3, ONLY : NSEDI => LSEDI, NHHONI => LHHONI
 USE MODD_LES
 USE MODD_LES_BUDGET
@@ -1514,7 +1519,7 @@ CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
  CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
                  CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,    &
                  LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
-                 CLBCX, CLBCY, NRR, NSV, KTCOUNT, XTSTEP,            &
+                 CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,            &
                  XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT, XPABST,      &
                  XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
                  XRTHS, XRRS, XRTKES, XRSVS,                         &
@@ -1553,7 +1558,7 @@ XTIME_LES_BU_PROCESS = 0.
 !MPPDB_CHECK_LB=.TRUE.
 CALL MPPDB_CHECK3DM("before ADVEC_UVW:XU/V/W/TH/TKE/T,XRHODJ,XRU/V/Ws",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ,XRUS,XRVS,XRWS)
-IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
+IF ((CUVW_ADV_SCHEME(1:3)=='CEN') .AND. (CTEMP_SCHEME == 'LEFR')) THEN
   IF (CUVW_ADV_SCHEME=='CEN4TH') THEN
     NULLIFY(TZFIELDC_ll)
     NULLIFY(TZHALO2C_ll)
@@ -1581,7 +1586,7 @@ IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
 ELSE
 
   CALL ADVECTION_UVW(CUVW_ADV_SCHEME, CTEMP_SCHEME,                  &
-                 NWENO_ORDER, NSPLIT,                                &
+                 NWENO_ORDER, LSPLIT_WENO,                           &
                  CLBCX, CLBCY, XTSTEP,                               &
                  XUT, XVT, XWT,                                      &
                  XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,               &
@@ -1690,7 +1695,11 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
       ZWT_ACT_NUC(:,:,:) = XWT(:,:,:)
     END IF
     IF (CTURB /= 'NONE' ) THEN
-      ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) + (2./3. * XTKET(:,:,:))**0.5
+     IF (LACTTKE) THEN 
+       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
+     ELSE
+       ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) 
+     ENDIF
     ENDIF
   ELSE
     ZWT_ACT_NUC(:,:,:) = 0.
@@ -1721,6 +1730,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                      &
+                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO,               &
                           ZSEA, ZTOWN    )
     DEF_NC=.TRUE.
 #else    
@@ -1737,6 +1747,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,           &
                           XINPRS, XINPRG, XINPRH, XSOLORG , XMI,                                       &
+                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO,               &
                           ZSEA, ZTOWN    )
 #endif
     DEALLOCATE(ZTOWN)
@@ -1757,7 +1768,8 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS,XINPRG,XINPRH   &
-                          XSOLORG, XMI)
+                          XSOLORG, XMI, &
+                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO               )
     DEF_NC=.TRUE.
 #else
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
@@ -1773,7 +1785,8 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
                           XINPRC,XINPRR, XINPRR3D, XEVAP3D,             &
                           XINPRS,XINPRG, XINPRH,   &
-                          XSOLORG, XMI   )
+                          XSOLORG, XMI,&
+                          XINDEP, XSUPSAT,  XNACT, XNPRO,XSSPRO           )
 #endif
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
@@ -1784,8 +1797,10 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     XACPRR = XACPRR + XINPRR * XTSTEP
           IF ( (CCLOUD(1:3) == 'ICE' .AND. LSEDIC ) .OR.                     &
         ((CCLOUD == 'C2R2' .OR. CCLOUD == 'C3R5' .OR. CCLOUD == 'KHKO' &
-                           .OR. CCLOUD == 'LIMA' ) .AND. KSEDC ) )     &
+                           .OR. CCLOUD == 'LIMA' ) .AND. KSEDC ) )    THEN
       XACPRC = XACPRC + XINPRC * XTSTEP
+      IF (LDEPOSC .OR. LDEPOC) XACDEP = XACDEP + XINDEP * XTSTEP
+    END IF
     IF (CCLOUD(1:3) == 'ICE' .OR. CCLOUD == 'C3R5' .OR. &
                                  (CCLOUD == 'LIMA' .AND. LCOLD ) ) THEN
       XACPRS = XACPRS + XINPRS * XTSTEP
