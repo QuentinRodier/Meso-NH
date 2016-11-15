@@ -23,6 +23,8 @@ export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
 export VERSION_NCL=${VERSION_NCL:-"ncl-6.3.0"}
 
+export LEN_HREC=${LEN_HREC:-16}
+
 #
 export NEED_TOOLS=YES
 #

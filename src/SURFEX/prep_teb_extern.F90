@@ -68,7 +68,7 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZD  ! intermediate array
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZMASK
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: ILAYER         ! number of layers
 INTEGER           :: JLAYER         ! loop counter
@@ -399,11 +399,13 @@ ELSE
       CALL OPEN_AUX_IO_SURF(&
                       HFILE,HFILETYPE,'NATURE')
       IF (YSURF=='T_FLOO' .OR. YSURF=='T_CAN ' .OR. YSURF=='TI_ROA') THEN
+        YRECFM='TG2'
         CALL READ_SURF_FIELD2D(&
-               HFILETYPE,ZFIELD(:,:),'TG2         ',HDIR='A')
+               HFILETYPE,ZFIELD(:,:),YRECFM,HDIR='A')
       ELSE
+        YRECFM='TG1'
         CALL READ_SURF_FIELD2D(&
-               HFILETYPE,ZFIELD(:,:),'TG1         ',HDIR='A')
+               HFILETYPE,ZFIELD(:,:),YRECFM,HDIR='A')
       ENDIF
       CALL CLOSE_AUX_IO_SURF(HFILE,HFILETYPE)
       DO JLAYER=1,SIZE(ZFIELD,2)

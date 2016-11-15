@@ -56,7 +56,7 @@ TYPE CH_EMIS_SNAP_t
 !                          !  'LEGAL' : LEGAL time
 !                          !
 
-  CHARACTER(LEN=12), DIMENSION(:), POINTER :: CEMIS_NAME
+  CHARACTER(LEN=LEN_HREC), DIMENSION(:), POINTER :: CEMIS_NAME
 !                          ! name of the chemical fields (emitted species)
   CHARACTER(LEN=40), DIMENSION(:), POINTER :: CEMIS_COMMENT
 !                          ! comment on the chemical fields (emitted species)

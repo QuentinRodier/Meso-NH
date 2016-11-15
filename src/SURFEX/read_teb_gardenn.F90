@@ -90,7 +90,7 @@ LOGICAL           :: GTOWN          ! town variables written in the file
 INTEGER           :: IVERSION, IBUGFIX
 INTEGER           :: ILU            ! 1D physical dimension
 INTEGER           :: IRESP          ! Error code after redding
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4)  :: YLVL
 REAL, DIMENSION(:),ALLOCATABLE  :: ZWORK      ! 2D array to write data in file
 !

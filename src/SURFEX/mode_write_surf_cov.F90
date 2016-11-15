@@ -51,7 +51,7 @@ INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a proble
 !                                             ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=100) :: YCOMMENT
 INTEGER            :: IL1
 INTEGER            :: IL2

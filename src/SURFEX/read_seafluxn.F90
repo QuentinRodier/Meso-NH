@@ -85,7 +85,7 @@ INTEGER           :: ILU          ! 1D physical dimension
 !
 INTEGER           :: IRESP          ! Error code after redding
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !
 INTEGER           :: IVERSION       ! surface version
 !
@@ -239,7 +239,7 @@ SUBROUTINE CHECK_SEA(HFIELD,PFIELD)
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HFIELD
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HFIELD
 REAL, DIMENSION(:), INTENT(IN) :: PFIELD
 !
 REAL            :: ZMAX,ZMIN

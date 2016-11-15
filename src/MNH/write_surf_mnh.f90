@@ -65,7 +65,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12), INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC), INTENT(IN)  :: HREC     ! name of the article to be read
 REAL,              INTENT(IN)  :: PFIELD   ! the real scalar to be read
 INTEGER,           INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),INTENT(IN)  :: HCOMMENT ! Comment string
@@ -171,7 +171,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),   INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KL       ! number of points
 REAL, DIMENSION(KL), INTENT(IN)  :: PFIELD   ! array containing the data field
 INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
@@ -424,7 +424,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),   INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KL1,KL2       ! number of points
 REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
 LOGICAL,DIMENSION(JPCOVER),   INTENT(IN)  ::OFLAG  ! mask for array filling
@@ -452,7 +452,7 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZW1D   ! 1D work array
 INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
 !
-CHARACTER(LEN=16) :: YREC
+CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=100):: YCOMMENT
 !JUANZ
 INTEGER           :: NCOVER,ICOVER,IKL2, JL2
@@ -607,7 +607,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),        INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),        INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                  INTENT(IN)  :: KL1      ! number of points
 INTEGER,                  INTENT(IN)  :: KL2      ! 2nd dimension
 REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
@@ -757,7 +757,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),   INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KFIELD   ! the integer to be read
 INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
@@ -861,7 +861,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),      INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),      INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 INTEGER, DIMENSION(KL), INTENT(IN)  :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
@@ -964,7 +964,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 CHARACTER(LEN=40),  INTENT(IN)  :: HFIELD   ! the integer to be read
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
@@ -1056,7 +1056,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),      INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),      INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(IN)  :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
@@ -1186,7 +1186,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 LOGICAL,            INTENT(IN)  :: OFIELD   ! array containing the data field
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
@@ -1276,7 +1276,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN)  :: KYEAR    ! year
 INTEGER,            INTENT(IN)  :: KMONTH   ! month
 INTEGER,            INTENT(IN)  :: KDAY     ! day
@@ -1287,7 +1287,7 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 !
-CHARACTER(LEN=16)      :: YRECFM    ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
 INTEGER, DIMENSION(3)  :: ITDATE
 !-------------------------------------------------------------------------------
 !
@@ -1395,7 +1395,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN) :: KL1       ! number of points
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KYEAR    ! year
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KMONTH   ! month
@@ -1407,7 +1407,7 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !*      0.2   Declarations of local variables
 !
 !
-CHARACTER(LEN=16)      :: YRECFM    ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
 INTEGER, DIMENSION(3,KL1)  :: ITDATE
 !-------------------------------------------------------------------------------
 !

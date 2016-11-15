@@ -64,7 +64,7 @@ INTEGER,           INTENT(OUT)   :: KNI          ! number of points
 !* 0.2 Declaration of local variables
 !      ------------------------------
 !
- CHARACTER(LEN=12) :: YRECFM    ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM    ! Name of the article to be read
 INTEGER           :: IRESP
 !
 INTEGER           :: JL        ! loop counter

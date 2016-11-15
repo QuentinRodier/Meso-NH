@@ -274,7 +274,7 @@ REAL, DIMENSION(:,:), POINTER     :: ZIN     ! field  on all surface points
 REAL, DIMENSION(INI)              :: ZFIELD  ! field read
 REAL, DIMENSION(ILU,1)            :: ZOUT    ! final field
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_TEB:ZOOM_PGD_TEB_GARDEN',0,ZHOOK_HANDLE)
 !

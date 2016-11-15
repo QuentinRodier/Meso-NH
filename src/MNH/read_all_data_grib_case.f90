@@ -277,7 +277,7 @@ INTEGER  :: IDATE
 INTEGER  :: ITIMESTEP
 CHARACTER(LEN=10) :: CSTEPUNIT
 !chemistery field
-CHARACTER(LEN=12)                  :: YPRE_MOC="PRE_MOC1.nam"
+CHARACTER(LEN=LEN_HREC)                  :: YPRE_MOC="PRE_MOC1.nam"
 INTEGER, DIMENSION(:), ALLOCATABLE :: INUMGRIB, INUMLEV  ! grib
 INTEGER, DIMENSION(:), ALLOCATABLE :: INUMLEV1, INUMLEV2 !numbers
 INTEGER                            :: IMOC
@@ -286,7 +286,7 @@ INTEGER                            :: ICHANNEL
 INTEGER                            :: INDX
 INTEGER                            :: INACT
 CHARACTER(LEN=40)                  :: YINPLINE        ! input line
-CHARACTER(LEN=16)                  :: YFIELD
+CHARACTER(LEN=LEN_HREC)                  :: YFIELD
 CHARACTER, PARAMETER               :: YPTAB = CHAR(9) ! TAB character is ASCII : 9
 CHARACTER, PARAMETER               :: YPCOM = CHAR(44)! COMma character is ASCII : 44
 CHARACTER(LEN=40), DIMENSION(:), ALLOCATABLE :: YMNHNAME ! species names

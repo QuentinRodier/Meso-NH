@@ -82,7 +82,7 @@ LOGICAL, OPTIONAL,  INTENT(INOUT):: OKEY
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: INI            ! total 1D dimension
 INTEGER           :: IPATCH         ! number of patch

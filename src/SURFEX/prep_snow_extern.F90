@@ -103,7 +103,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDEPTH       ! thickness of each layer (m
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZGRID        ! normalized input grid
 !
 LOGICAL                           :: GTOWN          ! town variables written in the file
- CHARACTER(LEN=12)                 :: YRECFM         ! record name
+ CHARACTER(LEN=LEN_HREC)                 :: YRECFM         ! record name
 INTEGER                           :: IRESP          ! error return code
 INTEGER                           :: IVERSION       ! SURFEX version
 LOGICAL                           :: GOLD_NAME      ! old name flag 

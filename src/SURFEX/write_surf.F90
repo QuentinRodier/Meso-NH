@@ -50,7 +50,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 END SUBROUTINE WRITE_SURFX1
 !
      SUBROUTINE WRITE_SURFX2 (DGU, U, &
@@ -71,7 +71,7 @@ INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a proble
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 END SUBROUTINE WRITE_SURFX2
 !
 !RJ: interface to WRITE_SURFX2COV moved out
@@ -111,7 +111,7 @@ INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a probl
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 END SUBROUTINE WRITE_SURFN1
 !
      SUBROUTINE WRITE_SURFC0 (DGU, U, &
@@ -295,7 +295,7 @@ INTEGER,           INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem ap
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 LOGICAL :: LNOWRITE
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -453,10 +453,10 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
 LOGICAL :: LNOWRITE
@@ -606,10 +606,10 @@ INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a proble
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL1
 INTEGER            :: IL2
  CHARACTER(LEN=1)   :: YDIR
@@ -764,7 +764,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 LOGICAL :: LNOWRITE
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -919,10 +919,10 @@ INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a probl
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
 LOGICAL :: LNOWRITE
@@ -1074,7 +1074,7 @@ INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=40)  :: YFIELD
 LOGICAL :: LNOWRITE
 REAL   :: XTIME0
@@ -1234,7 +1234,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 LOGICAL :: LNOWRITE
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1390,7 +1390,7 @@ INTEGER,               INTENT(OUT) :: KRESP    ! KRESP  : return-code if a probl
 !                                             ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER            :: IL
  CHARACTER(LEN=1)   :: YDIR
 LOGICAL :: LNOWRITE
@@ -1538,7 +1538,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 REAL    :: ZTIME
 REAL   :: XTIME0
 INTEGER :: IDAY
@@ -1691,7 +1691,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER :: IL1
 REAL ,   DIMENSION(SIZE(TFIELD,1)) :: ZTIME
 INTEGER, DIMENSION(SIZE(TFIELD,1)) :: IDAY
@@ -1824,7 +1824,7 @@ INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem 
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=12)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
 INTEGER :: IL1, IL2
 REAL ,   DIMENSION(SIZE(TFIELD,1),SIZE(TFIELD,2)) :: ZTIME
 INTEGER, DIMENSION(SIZE(TFIELD,1),SIZE(TFIELD,2)) :: IDAY

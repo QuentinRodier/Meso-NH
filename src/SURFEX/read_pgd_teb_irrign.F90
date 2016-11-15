@@ -73,7 +73,7 @@ TYPE(TEB_IRRIG_t), INTENT(INOUT) :: TIR
 !
 INTEGER           :: ILUOUT         ! output listing logical unit
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=80) :: YCOMMENT       ! Comment of the article to be read
 INTEGER           :: JLAYER         ! loop index
 !

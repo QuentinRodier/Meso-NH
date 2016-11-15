@@ -81,7 +81,7 @@ REAL,DIMENSION(:,:,:), POINTER  :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: INI            ! total 1D dimension
 INTEGER           :: IPATCH         ! number of patch
@@ -93,7 +93,7 @@ REAL, DIMENSION(:,:), POINTER       :: ZD1            ! depth of field in the so
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZOUT           !
 LOGICAL                             :: GTEB           ! flag if TEB fields are present
 INTEGER                             :: JPATCH         ! loop counter for patch
- CHARACTER(LEN=12)                   :: YSURF          ! type of field
+ CHARACTER(LEN=LEN_HREC)                   :: YSURF          ! type of field
 INTEGER                             :: ITEB_PATCH     ! number of TEB patches in file
 INTEGER                             :: IVERSION       ! SURFEX version
 INTEGER                             :: IBUGFIX        ! SURFEX bug version

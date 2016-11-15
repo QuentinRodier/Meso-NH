@@ -85,7 +85,7 @@ IMPLICIT NONE
  CHARACTER(LEN=100),DIMENSION(NVARMAX) :: CPREFIX_M            ! The prefix of the control variables (in PREP.txt file) (max dim)      
  CHARACTER(LEN=10),DIMENSION(:), ALLOCATABLE  :: COBS          ! Identifier for simulated observations
  CHARACTER(LEN=3),DIMENSION(:), ALLOCATABLE   :: CVAR          ! Identifier for control variable
- CHARACTER(LEN=12)                     :: CBIO                 ! Name of Biomass variable
+ CHARACTER(LEN=LEN_HREC)                     :: CBIO                 ! Name of Biomass variable
  CHARACTER(LEN=100)                    :: CPREFIX_BIO          ! The prefix of the Biomass variable 
  CHARACTER(LEN=5)                      :: CASSIM_ISBA          ! OI/EKF
  CHARACTER(LEN=5)                      :: CASSIM               ! type of correction

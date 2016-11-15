@@ -97,10 +97,10 @@ REAL,    DIMENSION(:,:), ALLOCATABLE :: ZPAR_HC, ZPAR_TC, ZHC, ZTC ! work arrays
 INTEGER           :: IVERSION       ! surface version
 INTEGER           :: IBUGFIX        ! surface bugfix version
  CHARACTER(LEN=5)  :: YSURF          ! Type of surface
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=12) :: YRECFM0        ! Name of the article to be read
- CHARACTER(LEN=12) :: YRECFM1        ! Name of the article to be read
- CHARACTER(LEN=12) :: YRECFM2        ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM0        ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM1        ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM2        ! Name of the article to be read
  CHARACTER(LEN=3)  :: YAREA          ! Area where field is to be averaged
 INTEGER           :: IRESP          ! reading return code
 LOGICAL           :: GDATA          ! T if depth is to be read in the file

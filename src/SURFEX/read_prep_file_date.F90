@@ -59,7 +59,7 @@ INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=12), DIMENSION(3000) :: HREC   ! list of records already read/written
+ CHARACTER(LEN=LEN_HREC), DIMENSION(3000) :: HREC   ! list of records already read/written
 INTEGER                            :: IREC
  CHARACTER(LEN=6)              :: YINMODEL  ! model from which GRIB file originates
  CHARACTER(LEN=10)             :: YGRIDTYPE ! Grid type

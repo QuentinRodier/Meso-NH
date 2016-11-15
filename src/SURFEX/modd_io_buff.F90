@@ -32,7 +32,7 @@
 !
 IMPLICIT NONE
 
- CHARACTER(LEN=12), DIMENSION(3000) :: CREC   ! list of records already read/written
+ CHARACTER(LEN=LEN_HREC), DIMENSION(3000) :: CREC   ! list of records already read/written
 INTEGER                            :: NREC   ! number of records read/written
 
 !

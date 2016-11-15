@@ -30,7 +30,7 @@ LOGICAL,              INTENT(OUT)   :: OECOCLIMAP! flag for ecoclimap
 !* local variables
 !  ---------------
 !
- CHARACTER(LEN=12) :: YRECFM     ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM     ! Name of the article to be read
 INTEGER           :: IRESP      ! reading return code
 !
 INTEGER           :: IVERSION   ! surface version

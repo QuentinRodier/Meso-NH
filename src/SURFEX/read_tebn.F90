@@ -98,7 +98,7 @@ INTEGER           :: ILU          ! 1D physical dimension
 !
 INTEGER           :: IRESP          ! Error code after redding
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=3)  :: YPATCH         ! suffix if more than 1 patch
 !
 INTEGER           :: IVERSION, IBUGFIX

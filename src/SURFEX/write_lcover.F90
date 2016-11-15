@@ -68,7 +68,7 @@ LOGICAL, DIMENSION(JPCOVER)    :: OCOVER   ! list of covers
 TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER           :: IRESP          ! Error code after reading
-CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 LOGICAL, DIMENSION(JPCOVER)    :: GCOVER   ! tmp list of covers
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

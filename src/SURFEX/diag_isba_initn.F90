@@ -115,7 +115,7 @@ INTEGER, INTENT(IN)         :: KSW       ! spectral bands
 INTEGER           :: IVERSION, IBUG
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
- CHARACTER(LEN=12) :: YREC           ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YREC           ! Name of the article to be read
  CHARACTER(LEN=4) :: YREC2
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !

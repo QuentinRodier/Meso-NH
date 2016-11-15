@@ -69,7 +69,7 @@ LOGICAL,  INTENT(OUT) :: OPROVAR_TO_DIAG    ! switch to write (or not) prognosti
 LOGICAL,  INTENT(OUT) :: ODIAG_GRID    ! flag for mean grid diag
 LOGICAL,  INTENT(OUT) :: OFRAC         ! flag for fractions of tiles
 REAL,     INTENT(OUT) :: PDIAG_TSTEP   ! time-step for writing
- CHARACTER(LEN=12), DIMENSION(200), INTENT(OUT), OPTIONAL :: CSELECT  
+ CHARACTER(LEN=LEN_HREC), DIMENSION(200), INTENT(OUT), OPTIONAL :: CSELECT  
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables

@@ -75,13 +75,13 @@ REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 !
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
- CHARACTER (LEN=16)  :: YRECFM                ! management
+ CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
  CHARACTER (LEN=100) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter
 !
  CHARACTER(LEN=40)                 :: YSPEC_NAME ! species name
- CHARACTER(LEN=12), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! species name
+ CHARACTER(LEN=LEN_HREC), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! species name
 INTEGER,DIMENSION(:),ALLOCATABLE  :: INBTIMES! number of emission times array
 INTEGER,DIMENSION(:),ALLOCATABLE  :: ITIMES  ! emission times for a species
 INTEGER,DIMENSION(:),ALLOCATABLE  :: IOFFNDX ! index array of offline emission species

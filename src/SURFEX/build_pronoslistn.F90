@@ -58,7 +58,7 @@ IMPLICIT NONE
 TYPE(SV_t), INTENT(INOUT) :: SV
 !
 INTEGER,                       INTENT(IN)  :: KEMIS_NBR ! number of emitted species
- CHARACTER(LEN=12), DIMENSION(KEMIS_NBR), INTENT(IN) :: HEMIS_NAME ! name of emitted species
+ CHARACTER(LEN=LEN_HREC), DIMENSION(KEMIS_NBR), INTENT(IN) :: HEMIS_NAME ! name of emitted species
 TYPE(PRONOSVAR_T),             POINTER     :: TPPRONOS
 INTEGER,                       INTENT(IN)  :: KCH     ! logical unit of input chemistry file
 INTEGER,                       INTENT(IN)  :: KLUOUT  ! output listing channel

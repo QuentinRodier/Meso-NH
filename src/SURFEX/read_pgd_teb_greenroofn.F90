@@ -86,7 +86,7 @@ INTEGER,           INTENT(IN)  :: KVERSION ! version of SURFEX of the file being
 !
 INTEGER           :: IRESP          ! Error code after redding
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !
 !
 INTEGER           :: JLAYER         ! loop counter on layers ! not used

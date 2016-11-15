@@ -87,9 +87,9 @@ INTEGER           :: JMTH, INMTH
 !
  CHARACTER(LEN=6)  :: YICECAT
  CHARACTER(LEN=20) :: YFORM
- CHARACTER(LEN=12) :: YRECFM           ! Name of the article to be read
- CHARACTER(LEN=12) :: YCATEG           ! Category to write
- CHARACTER(LEN=12) :: YLEVEL           ! Level to write
+ CHARACTER(LEN=LEN_HREC) :: YRECFM           ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YCATEG           ! Category to write
+ CHARACTER(LEN=LEN_HREC) :: YLEVEL           ! Level to write
  CHARACTER(LEN=100):: YCOMMENT         ! Error Message
 !
 INTEGER :: JK,JL                   ! loop counter on ice categories and layes 

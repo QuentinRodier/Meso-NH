@@ -32,7 +32,7 @@ LOGICAL,           INTENT(OUT) :: OTOWN_TO_ROCK    ! T: Change Town into Rock
 !  ---------------
 !
  CHARACTER(LEN=1) :: YDIR
- CHARACTER(LEN=12) :: YRECFM     ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM     ! Name of the article to be read
 INTEGER           :: IRESP      ! reading return code
 !
 INTEGER           :: IVERSION   ! surface version

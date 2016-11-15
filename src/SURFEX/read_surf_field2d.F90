@@ -67,7 +67,7 @@ IMPLICIT NONE
 !
 CHARACTER(LEN=6),                 INTENT(IN) :: HPROGRAM     ! calling program
 REAL, DIMENSION(:,:),          INTENT(INOUT) :: PFIELD2D     ! 2D field to be read
-CHARACTER(LEN=12),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD2D. Example : 'X_Y_TG'
+CHARACTER(LEN=LEN_HREC),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD2D. Example : 'X_Y_TG'
 CHARACTER(LEN=*), OPTIONAL,      INTENT(OUT) :: HCOMMENT   !comment string
 CHARACTER(LEN=1),OPTIONAL,        INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -82,7 +82,7 @@ REAL, DIMENSION(SIZE(PFIELD2D,1)) :: ZWORK
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IPATCH         ! number of patches in PFIELD2D
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 INTEGER           :: INB_PROCIO     ! number of processes used for Z-parallel IO with MESO-NH
 !

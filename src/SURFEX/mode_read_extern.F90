@@ -88,8 +88,8 @@ INTEGER, DIMENSION(:,:), INTENT(OUT):: KWG_LAYER
 !  ---------------
 !
  CHARACTER(LEN=4 ) :: YLVL
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=16) :: YRECFM2
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM2
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: JLAYER         ! loop counter
@@ -433,7 +433,7 @@ LOGICAL, OPTIONAL,  INTENT(INOUT) :: OKEY
 !* local variables
 !  ---------------
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4)  :: YLVL
  CHARACTER(LEN=3)  :: YISBA          ! type of ISBA soil scheme
 #ifdef MNH_PARALLEL

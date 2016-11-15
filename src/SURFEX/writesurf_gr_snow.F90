@@ -81,7 +81,7 @@ TYPE(SURF_SNOW),    INTENT(IN) :: TPSNOW     ! snow characteristics
 INTEGER             :: ISURFTYPE_LEN
 !
  CHARACTER (LEN=100) :: YFMT           ! format for writing
- CHARACTER(LEN=12)   :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC)   :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100)  :: YCOMMENT       ! Comment string
  CHARACTER(LEN=100):: YCOMMENTUNIT     ! Comment string : unit of the datas in the field to write 
 INTEGER             :: IRESP          ! IRESP  : return-code if a problem appears

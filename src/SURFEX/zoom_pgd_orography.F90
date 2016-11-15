@@ -115,7 +115,7 @@ REAL, DIMENSION(:), POINTER :: ZHO2IP
 REAL, DIMENSION(:), POINTER :: ZHO2IM
 REAL, DIMENSION(:), POINTER :: ZHO2JP
 REAL, DIMENSION(:), POINTER :: ZHO2JM
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 INTEGER :: IINFO_ll
 !------------------------------------------------------------------------------

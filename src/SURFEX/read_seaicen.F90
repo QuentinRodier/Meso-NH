@@ -99,9 +99,9 @@ INTEGER           :: JMTH, INMTH
  CHARACTER(LEN=2 ) :: YMTH
  CHARACTER(LEN=5)  :: YLVL
 !
- CHARACTER(LEN=12) :: YCATEG         ! category to read
- CHARACTER(LEN=12) :: YLEVEL         ! Level to read
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YCATEG         ! category to read
+ CHARACTER(LEN=LEN_HREC) :: YLEVEL         ! Level to read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=200) :: YMESS         ! Error Message
 !
 INTEGER :: JX,JK,JL                 ! loop counter on ice categories and layers and grid points
@@ -447,7 +447,7 @@ SUBROUTINE CHECK_SEAICE(HFIELD,PFIELD)
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HFIELD
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HFIELD
 REAL, DIMENSION(:), INTENT(IN) :: PFIELD
 !
 REAL            :: ZMAX,ZMIN

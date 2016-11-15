@@ -120,7 +120,7 @@ INTEGER, DIMENSION(:), POINTER :: IMASK  ! mask for packing from complete field 
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4 ) :: YLVL
 !
 INTEGER :: ILU    ! expected physical size of full surface array

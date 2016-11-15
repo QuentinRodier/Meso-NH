@@ -102,7 +102,7 @@ LOGICAL,           INTENT(IN)  :: OLAND_USE !
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4 ) :: YLVL
  CHARACTER(LEN=3 ) :: YVAR
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string

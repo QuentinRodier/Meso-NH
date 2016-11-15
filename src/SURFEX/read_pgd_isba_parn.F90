@@ -101,8 +101,8 @@ REAL,    DIMENSION(:,:), ALLOCATABLE :: ZWORK
 INTEGER           :: ILUOUT
 INTEGER           :: ITIME
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
- CHARACTER(LEN=16) :: YRECFM2
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM2
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
  CHARACTER(LEN=1)  :: YDIR
 INTEGER           :: JTIME          ! loop index

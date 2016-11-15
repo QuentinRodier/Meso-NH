@@ -74,7 +74,7 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=3)  :: YREAD
 INTEGER :: ILU     ! 1D physical dimension
 INTEGER :: IRESP   ! Error code after redding

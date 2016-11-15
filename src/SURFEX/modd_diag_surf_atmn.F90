@@ -66,7 +66,7 @@ TYPE DIAG_SURF_ATM_t
 !  
   TYPE(DATE_TIME):: TIME_BUDGETC
 !                                  
-  CHARACTER(LEN=12), POINTER, DIMENSION(:) :: CSELECT  ! Name of ouput fields if LSELECT=true
+  CHARACTER(LEN=LEN_HREC), POINTER, DIMENSION(:) :: CSELECT  ! Name of ouput fields if LSELECT=true
 !
 !* variables for each tile
 !

@@ -51,7 +51,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 REAL,               INTENT(IN) :: PFIELD   ! the real scalar to be read
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -120,7 +120,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN) :: KFIELD   ! the integer to be read
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -189,7 +189,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 LOGICAL,            INTENT(IN) :: OFIELD   ! array containing the data field
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -258,7 +258,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN)  :: HREC      ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC      ! name of the article to be read
  CHARACTER(LEN=40),  INTENT(IN)  :: HFIELD    ! the integer to be read
 INTEGER,            INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT  ! comment string
@@ -336,7 +336,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),   INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),   INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN) :: KL       ! number of points
 REAL, DIMENSION(KL), INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,             INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
@@ -454,7 +454,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),        INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),        INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                  INTENT(IN) :: KL1      ! number of points
 INTEGER,                  INTENT(IN) :: KL2      ! 2nd dimension
 REAL, DIMENSION(KL1,KL2), INTENT(IN) :: PFIELD   ! array containing the data field
@@ -581,7 +581,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),      INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),      INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN) :: KL       ! number of points
 INTEGER, DIMENSION(KL), INTENT(IN) :: KFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
@@ -689,7 +689,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),      INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),      INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN) :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(IN) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
@@ -782,7 +782,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN)  :: KYEAR    ! year
 INTEGER,            INTENT(IN)  :: KMONTH   ! month
 INTEGER,            INTENT(IN)  :: KDAY     ! day
@@ -885,7 +885,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                      INTENT(IN) :: KL1      ! number of points
 INTEGER,                      INTENT(IN) :: KL2      ! 2nd dimension
 INTEGER, DIMENSION(KL1,KL2), INTENT(IN)  :: KYEAR    ! year

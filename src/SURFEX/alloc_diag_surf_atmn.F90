@@ -53,7 +53,7 @@ INTEGER,                 INTENT(IN) :: KSW       ! number of short-wave spectral
 !
 INTEGER           :: IVERSION
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YREC           ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YREC           ! Name of the article to be read
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

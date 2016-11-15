@@ -102,7 +102,7 @@ INTEGER           :: ILU          ! 1D physical dimension
 !
 INTEGER           :: IRESP          ! Error code after redding
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !
  CHARACTER(LEN=4)  :: YLVL
 !
@@ -612,7 +612,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PCOFSWI
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PVAR
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PRED_NOISE
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=4) :: YLVL
  CHARACTER(LEN=3) :: YVAR
 REAL :: ZWHITE_NOISE, ZVAR0

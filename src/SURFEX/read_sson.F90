@@ -85,7 +85,7 @@ TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !
 INTEGER           :: IRESP          ! Error code after redding
 ! 
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

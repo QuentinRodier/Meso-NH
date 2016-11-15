@@ -70,21 +70,21 @@ TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 CHARACTER(LEN=6),                 INTENT(IN) :: HPROGRAM     ! calling program
 REAL, DIMENSION(:,:),             INTENT(IN) :: PFIELD2D     ! 2D field to be written
-CHARACTER(LEN=12),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD2D. Example : 'X_Y_TG'
+CHARACTER(LEN=LEN_HREC),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD2D. Example : 'X_Y_TG'
 CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENT     ! Comment string
 CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENTUNIT ! unit of the datas in PFIELD2D
  CHARACTER(LEN=1),OPTIONAL,       INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
  !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IPATCH         ! number of patches in PFIELD2D
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: INB_PROCIO     ! number of processes used for Z-parallel IO with MESO-NH

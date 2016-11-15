@@ -68,7 +68,7 @@ CHARACTER(LEN=6),                 INTENT(IN) :: HPROGRAM     ! calling program
 REAL, DIMENSION(:,:,:),        INTENT(INOUT) :: PFIELD3D     ! 3D field to be read
 INTEGER,                          INTENT(IN) :: KFIRSTLAYER  ! first layer of PFIELD3D to be read
 INTEGER,                          INTENT(IN) :: KLASTLAYER   ! last layer of PFIELD3D to be read
-CHARACTER(LEN=12),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD3D. Example : 'X_Y_TG'
+CHARACTER(LEN=LEN_HREC),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD3D. Example : 'X_Y_TG'
  CHARACTER(LEN=*), OPTIONAL,     INTENT(OUT) :: HCOMMENT   !comment string
 CHARACTER(LEN=1),OPTIONAL,        INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
@@ -83,7 +83,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: ILAYER         ! number of layers in PFIELD3D
 INTEGER           :: IPATCH         ! number of patches in PFIELD3D
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YLVL           ! current level/layer
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 INTEGER           :: INB_PROCIO     ! number of processes used for Z-parallel IO with MESO-NH

@@ -50,7 +50,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 REAL,               INTENT(IN) :: PFIELD   ! the real scalar to be read
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -107,7 +107,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN) :: KFIELD   ! the integer to be read
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -164,7 +164,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
 LOGICAL,            INTENT(IN) :: OFIELD   ! array containing the data field
 INTEGER,            INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN) :: HCOMMENT ! comment string
@@ -221,7 +221,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN)  :: HREC      ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC      ! name of the article to be read
  CHARACTER(LEN=40),  INTENT(IN)  :: HFIELD    ! the integer to be read
 INTEGER,            INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT  ! comment string
@@ -285,7 +285,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),   INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),   INTENT(IN) :: HREC     ! name of the article to be read
 REAL, DIMENSION(:),  INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,             INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),  INTENT(IN) :: HCOMMENT ! comment string
@@ -385,7 +385,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),        INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),        INTENT(IN) :: HREC     ! name of the article to be read
 REAL, DIMENSION(:,:),     INTENT(IN) :: PFIELD   ! array containing the data field
 INTEGER,                  INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),       INTENT(IN) :: HCOMMENT ! comment string
@@ -485,7 +485,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),      INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),      INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER, DIMENSION(:),  INTENT(IN) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),     INTENT(IN) :: HCOMMENT ! comment string
@@ -582,7 +582,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),      INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),      INTENT(IN) :: HREC     ! name of the article to be read
 LOGICAL, DIMENSION(:),  INTENT(IN) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
  CHARACTER(LEN=100),     INTENT(IN) :: HCOMMENT ! comment string
@@ -663,7 +663,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=12),  INTENT(IN)  :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,            INTENT(IN)  :: KYEAR    ! year
 INTEGER,            INTENT(IN)  :: KMONTH   ! month
 INTEGER,            INTENT(IN)  :: KDAY     ! day
@@ -738,7 +738,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),     INTENT(IN) :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),     INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER, DIMENSION(:), INTENT(IN) :: KYEAR    ! year
 INTEGER, DIMENSION(:), INTENT(IN) :: KMONTH   ! month
 INTEGER, DIMENSION(:), INTENT(IN) :: KDAY     ! day
@@ -834,7 +834,7 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=12),       INTENT(IN)  :: HREC     ! name of the article to be read
+ CHARACTER(LEN=LEN_HREC),       INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER, DIMENSION(:,:), INTENT(IN)  :: KYEAR    ! year
 INTEGER, DIMENSION(:,:), INTENT(IN)  :: KMONTH   ! month
 INTEGER, DIMENSION(:,:), INTENT(IN)  :: KDAY     ! day

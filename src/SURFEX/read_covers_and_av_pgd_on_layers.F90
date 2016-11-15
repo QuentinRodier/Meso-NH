@@ -62,7 +62,7 @@ IMPLICIT NONE
 !            ------------------------
 !
 CHARACTER(LEN=6),   INTENT(IN)  :: HFILEPGDTYPE ! type of input file
-CHARACTER(LEN=12),   INTENT(IN) :: HRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC),   INTENT(IN) :: HRECFM         ! Name of the article to be read
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 INTEGER,   INTENT(IN) :: KLU                      ! number of points
 INTEGER,   INTENT(IN)  :: KDATA_LAYER  ! number of layers
@@ -92,7 +92,7 @@ LOGICAL, DIMENSION(JPCOVER)          :: GCOVER ! flag to read the covers
 REAL,    DIMENSION(KLU)		 :: ZCOVER ! cover fractions
 CHARACTER(LEN=100) :: YCOMMENT
 INTEGER           :: IRESP          ! reading return code
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_COVERS_AND_AV_PGD_1D_ON_LAYERS',0,ZHOOK_HANDLE)

@@ -93,7 +93,7 @@ TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
 !              -------------------------------
 !
 INTEGER                               :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12)                     :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC)                     :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100)                    :: YCOMMENT       ! Comment string
 INTEGER                               :: JI, JLAYER     ! loop index
 INTEGER                               :: JTIME          ! loop index

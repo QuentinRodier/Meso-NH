@@ -91,7 +91,7 @@ REAL, DIMENSION(SIZE(I%XDG,1)            ) :: ZDG2
 REAL, DIMENSION(SIZE(I%XDG,1)            ) :: ZDTOT
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
   CHARACTER(LEN=100):: YCOMMENTUNIT   ! Comment string : unit of the datas in the field to write
  CHARACTER(LEN=2)  :: YLVLV, YPAS

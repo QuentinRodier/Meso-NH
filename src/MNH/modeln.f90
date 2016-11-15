@@ -445,7 +445,7 @@ REAL*8,DIMENSION(2)         :: ZTIME,ZTIME1,ZTIME2,ZEND,ZTOT,ZALL,ZTOT_PT
 REAL*8,DIMENSION(2)         :: ZTIME_STEP,ZTIME_STEP_PTS
 CHARACTER                 :: YMI
 INTEGER                   :: IPOINTS
-CHARACTER(len=12)         :: YTCOUNT,YPOINTS
+CHARACTER(len=LEN_HREC)         :: YTCOUNT,YPOINTS
 
 REAL         :: ZSTAT_CSTORE,ZSTAT_CBOUND,ZSTAT_CGUESS,ZSTAT_CADV,ZSTAT_CSOURCES
 REAL         :: ZSTAT_CDIFF,ZSTAT_CRELAX,ZSTAT_CPARAM
@@ -519,7 +519,7 @@ LOGICAL :: KHHONI
 REAL :: TEMPS
 INTEGER :: NSV_END
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 INTEGER             :: ILENG      ! Length of comment string in LFIFM file
 INTEGER             :: IGRID      ! C-grid indicator in LFIFM file

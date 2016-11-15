@@ -85,7 +85,7 @@ REAL,DIMENSION(:,:,:), POINTER  :: PFIELD    ! field to interpolate horizontally
 !
 !*      0.2    declarations of local variables
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IRESP          ! reading return code
 INTEGER           :: INI            ! total 1D dimension
 INTEGER           :: IPATCH         ! number of patch
@@ -100,7 +100,7 @@ INTEGER                             :: ITEB_PATCH     ! number of TEB patches in
 INTEGER                             :: IVERSION       ! SURFEX version
 INTEGER                             :: IBUGFIX        ! SURFEX bug version
 LOGICAL                             :: GOLD_NAME      ! old name flag for temperatures
- CHARACTER(LEN=12)                   :: YSURF     ! type of field
+ CHARACTER(LEN=LEN_HREC)                   :: YSURF     ! type of field
  CHARACTER(LEN=3)                    :: YPATCH    ! indentificator for TEB patch
 LOGICAL                         :: GTEB      ! flag if TEB fields are present
 LOGICAL                         :: GGARDEN   ! T if gardens are present in the file

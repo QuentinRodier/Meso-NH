@@ -91,6 +91,10 @@ export LFI_INT=${LFI_INT}
 #
 export MNH_REAL=${MNH_REAL}
 #
+#  Len of HREC characters 
+#
+export LEN_HREC=${LEN_HREC}
+#
 #  FOREFIRE
 #
 export MNH_FOREFIRE=${MNH_FOREFIRE}

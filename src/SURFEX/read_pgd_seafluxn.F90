@@ -87,7 +87,7 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 INTEGER           :: IRESP          ! Error code after redding
 !
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 !
 INTEGER           :: IVERSION   ! surface version
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

@@ -72,14 +72,14 @@ CHARACTER(LEN=6),                 INTENT(IN) :: HPROGRAM     ! calling program
 REAL, DIMENSION(:,:,:),           INTENT(IN) :: PFIELD3D     ! 3D field to be written
 INTEGER,                          INTENT(IN) :: KFIRSTLAYER  ! first layer of PFIELD3D to be written
 INTEGER,                          INTENT(IN) :: KLASTLAYER   ! last layer of PFIELD3D to be written
-CHARACTER(LEN=12),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD3D. Example : 'X_Y_TG'
+CHARACTER(LEN=LEN_HREC),                INTENT(IN) :: HFIELDNAME   ! name of the field PFIELD3D. Example : 'X_Y_TG'
 CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENT     ! Comment string
 CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENTUNIT ! unit of the datas in PFIELD3D
  CHARACTER(LEN=1),OPTIONAL,       INTENT(IN) :: HDIR ! type of field :
 !                                             ! 'H' : field with
 !                                             !       horizontal spatial dim.
 !                                             ! '-' : no horizontal dim.
- CHARACTER(LEN=16), OPTIONAL,  INTENT(IN) :: HNAM_DIM
+ CHARACTER(LEN=LEN_HREC), OPTIONAL,  INTENT(IN) :: HNAM_DIM
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -87,7 +87,7 @@ CHARACTER(LEN=100),               INTENT(IN) :: HCOMMENTUNIT ! unit of the datas
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: ILAYER         ! number of layers in PFIELD3D
 INTEGER           :: IPATCH         ! number of patches in PFIELD3D
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=4 ) :: YLVL           ! current level/layer
 CHARACTER(LEN=4 ) :: YPATCH         ! current patch
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string

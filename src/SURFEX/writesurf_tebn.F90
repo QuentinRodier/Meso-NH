@@ -87,7 +87,7 @@ INTEGER,           INTENT(IN)  :: KPATCH   ! current TEB patch
 !              -------------------------------
 !
 INTEGER           :: IRESP           ! IRESP  : return-code if a problem appears
- CHARACTER(LEN=12) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
  CHARACTER(LEN=3)  :: YPATCH         ! Patch identificator
  CHARACTER(LEN=7)  :: YDIR           ! Direction identificator
