@@ -42,7 +42,7 @@
            /
 &NAM_DYN  XSEGLEN = 1800.,
           XASSELIN = 0.2, LCORIO = F,
-          LNUMDIFU = T /
+          LNUMDIFU = F/
 &NAM_FMOUT XFMOUT(1,1) = 450., XFMOUT(1,2) = 900.,
            XFMOUT(1,3) = 1350., XFMOUT(1,4) = 1800. /
 
