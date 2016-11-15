@@ -103,6 +103,10 @@ export MNH_RTTOV=${MNH_RTTOV}
 #
 export VER_OASIS=${VER_OASIS}
 #
+# NCL_NCARG
+#
+export VERSION_NCL=${VERSION_NCL}
+#
 ##########################################################
 ##########################################################
 ##########################################################
@@ -126,7 +130,7 @@ export PATH=.:\$SRC_MESONH/bin:\$SRC_MESONH/exe:\$SRC_MESONH/bin_tools/\${BIN_TO
 #  ( and also the full pacakge , source etc... 
 #    to be compiled for other plateforms )
 #
-export NCARG_ROOT=\${NCARG_ROOT:-\$SRC_MESONH/pub/ncl_ncarg-5.2.1.Linux_x86_64}
+export NCARG_ROOT=\${NCARG_ROOT:-\$SRC_MESONH/pub/\${VERSION_NCL}}
 export PATH=\$PATH:\$NCARG_ROOT/bin
 # WARNING : NCARG Man not installed in that version
 export MANPATH=\$MANPATH:\$NCARG_ROOT/man  
