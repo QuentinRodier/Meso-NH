@@ -11,11 +11,13 @@ INTERFACE
       SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
-                            HLBCX, HLBCY, KRR, KSV, KTCOUNT, PTSTEP,           &
+                            HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
                             PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT, PPABST,     &
                             PTHVREF, PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,     &
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
                             PRTHS_CLD, PRRS_CLD, PRSVS_CLD, PRTKES_ADV         )
+!
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening
@@ -39,7 +41,7 @@ CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 INTEGER,                  INTENT(IN)    :: KRR  ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KSV  ! Number of Scalar Variables
 !
-INTEGER,                  INTENT(IN)    :: KTCOUNT
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 REAL,                     INTENT(IN)    :: PTSTEP
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
@@ -67,7 +69,7 @@ END MODULE MODI_ADVECTION_METSV
       SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
-                            HLBCX, HLBCY, KRR, KSV, KTCOUNT, PTSTEP,           &
+                            HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
                             PUT, PVT, PWT, PTHT, PRT, PTKET, PSVT, PPABST,     &
                             PTHVREF, PRHODJ, PDXX, PDYY, PDZZ, PDZX, PDZY,     &
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
@@ -131,7 +133,8 @@ END MODULE MODI_ADVECTION_METSV
 !!                  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!                  J.Escobar : 01/10/2015 : add computation of CFL for L1D case
 !!                  04/2016  (C.Lac)       : correction of negativity for KHKO
-!!
+!!                  10/2016  (C.Lac) Correction on the flag for Strang splitting
+!!                                  to insure reproducibility between START and RESTA
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -145,6 +148,7 @@ USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
 USE MODD_CTURB, ONLY : XTKEMIN
 USE MODD_CST 
 USE MODD_BUDGET
+USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 USE MODI_CONTRAV
 USE MODI_PPM_RHODJ
@@ -183,7 +187,7 @@ CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
 INTEGER,                  INTENT(IN)    :: KRR  ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KSV  ! Number of Scalar Variables
 !
-INTEGER,                  INTENT(IN)    :: KTCOUNT
+TYPE (DATE_TIME),         INTENT(IN)    :: TPDTCUR ! current date and time
 REAL,                     INTENT(IN)    :: PTSTEP
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT , PVT  , PWT
@@ -475,12 +479,12 @@ DO JSPL=1,KSPLIT
    IF (KSV /=0) ZRSVS_PPM(:,:,:,:)   = 0.              
 !
    IF (LNEUTRAL) ZTH=ZTH-PTHVREF  !* To be removed with the new PPM scheme ?
-   CALL PPM_MET (HLBCX,HLBCY, KRR, KTCOUNT, ZRUCPPM, ZRVCPPM, ZRWCPPM, ZTSTEP_PPM,    &
-              PRHODJ,  ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2,               &
+   CALL PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,ZRUCPPM, ZRVCPPM, ZRWCPPM, ZTSTEP_PPM,    &
+              PRHODJ,  ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2,              &
               ZTH, ZTKE, ZR, ZRTHS_PPM, ZRTKES_PPM, ZRRS_PPM, HMET_ADV_SCHEME)
    IF (LNEUTRAL) ZTH=ZTH+PTHVREF  !* To be removed with the new PPM scheme ?
 !
-   CALL PPM_SCALAR (HLBCX,HLBCY, KSV, KTCOUNT, ZRUCPPM, ZRVCPPM, ZRWCPPM,             &
+   CALL PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR, ZRUCPPM, ZRVCPPM, ZRWCPPM,             &
                  ZTSTEP_PPM, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2, &
                  ZSV, ZRSVS_PPM, HSV_ADV_SCHEME                                       )
 !

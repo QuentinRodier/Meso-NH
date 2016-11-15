@@ -17,7 +17,9 @@ INTERFACE
       SUBROUTINE  ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, KGRID, PFIELDT, &
                                  PRHODJ, PTSTEP, &
                                  PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1,PRHOZ2,&
-                                 PSRC, KTCOUNT, PCRU, PCRV, PCRW)
+                                 PSRC,  TPDTCUR, PCRU, PCRV, PCRW)
+!
+USE MODD_TIME, ONLY: DATE_TIME
 !
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX  ! X direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY  ! Y direction LBC type
@@ -33,7 +35,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOX1, PRHOX2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOY1, PRHOY2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOZ1, PRHOZ2
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
-INTEGER,                INTENT(IN)  :: KTCOUNT ! iteration count
+TYPE (DATE_TIME),       INTENT(IN)  :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
 !
@@ -48,7 +50,7 @@ END MODULE MODI_ADVEC_PPM_ALGO
       SUBROUTINE  ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, KGRID, PFIELDT, &
                                  PRHODJ, PTSTEP, &
                                  PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1,PRHOZ2,&
-                                 PSRC, KTCOUNT, PCRU, PCRV, PCRW)
+                                 PSRC, TPDTCUR, PCRU, PCRV, PCRW)
 !     ##########################################################################
 !!
 !!****  *ADVEC_PPM_ALGO* - interface for 3D advection with PPM type scheme
@@ -73,12 +75,12 @@ END MODULE MODI_ADVEC_PPM_ALGO
 !!
 !!    MODIFICATIONS
 !!    -------------
+!       10/16 (C.Lac) : Correction on the flag for Strang splitting to insure
+!                       reproducibility between START and RESTA
 !
-!USE MODE_ll
 !
-!USE MODD_CONF
-!USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
-!USE MODI_ADVEC_4TH_ORDER_AUX
+USE MODD_TYPE_DATE
+!
 USE MODI_SHUMAN
 USE MODI_PPM
 !
@@ -100,7 +102,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOX1, PRHOX2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOY1, PRHOY2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOZ1, PRHOZ2
 REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
-INTEGER,                INTENT(IN)  :: KTCOUNT ! iteration count
+TYPE (DATE_TIME),       INTENT(IN)  :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
 !
@@ -108,7 +110,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
 !
 !*       0.2   Declarations of local variables :
 !
-!INTEGER:: IW,IE,IS,IN,IT,IB,IWF,IEF,ISF,INF   ! Coordinate of 4th order diffusion area
+LOGICAL  :: GFLAG   ! Logical flag
 !
 !-------------------------------------------------------------------------------
 !
@@ -121,6 +123,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
 !               ------------
 !
 PSRC = PFIELDT
+GFLAG = ABS(MOD(TPDTCUR%TIME/PTSTEP,2.)-1.) .LE. 0.5 
 !
 SELECT CASE (HMET_ADV_SCHEME)
 !
@@ -128,7 +131,8 @@ SELECT CASE (HMET_ADV_SCHEME)
 !
 CASE('PPM_00')
 !
-   IF (MODULO(KTCOUNT,2) .EQ. 0) THEN ! JUANTEST50
+!  IF (MODULO(KTCOUNT,2) .EQ. 0) THEN ! JUANTEST50
+   IF (GFLAG ) THEN 
 !
 !*       1.     ADVECTION IN X DIRECTION
 !               ------------------------
@@ -175,7 +179,7 @@ CASE('PPM_00')
 !
 CASE('PPM_01')
 !
-   IF (MODULO(KTCOUNT,2) .EQ. 0) THEN
+   IF (GFLAG ) THEN 
 !
 !*       1.     ADVECTION IN X DIRECTION
 !               ------------------------
@@ -227,7 +231,7 @@ CASE('PPM_01')
 !
 CASE('PPM_02')
 !
-   IF (MODULO(KTCOUNT,2) .EQ. 0) THEN
+   IF (GFLAG ) THEN 
 !
 !*       1.     ADVECTION IN X DIRECTION
 !               ------------------------
