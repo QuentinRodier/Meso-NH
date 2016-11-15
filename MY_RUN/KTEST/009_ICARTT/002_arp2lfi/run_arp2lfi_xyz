@@ -11,6 +11,6 @@ ln -sf ${CHIMIE_FILES}/*.20040810.18* .
 export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
 
 rm -f ICART* CPLCH20040810.18.* OUTPUT_LISTING* pipe* 
-ln -sf ../001_pgd1/ICARTT1008_PGD_15km.??? .
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,lfi,nc} .
 
 time ${MONORUN} PREP_REAL_CASE${XYZ}

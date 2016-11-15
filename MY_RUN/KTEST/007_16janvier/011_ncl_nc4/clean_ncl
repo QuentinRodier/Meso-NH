@@ -13,4 +13,4 @@ if [ "X$ANSWER" = "Xyes" ]
 then
 rm -fr  ran* gs*
 fi
-rm -f *.lfi *.nc4 
+rm -f *.lfi *.nc 

@@ -8,7 +8,7 @@ begin
 ; Open file
 ;=================================================;
 ; MESONH input file
-  mnh_file="REUNI.1.00A20.004.nc4"
+  mnh_file="REUNI.1.00A20.004.nc"
   a = addfile(mnh_file, "r")
 
 ;==================================================;

@@ -5,9 +5,9 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-rm -f 16JAN* *spa04.??? OUTPUT_LISTING* pipe* *.tex
-ln -sf  ../003_nest/16JAN98_9km.neste1.??? .
-ln -sf  ../003_nest/16JAN98_36km.neste1.??? .
-ln -sf  ../004_arp2lfi/16JAN_06_MNH.*??? .
+rm -f 16JAN* *spa04.{des,lfi,nc} OUTPUT_LISTING* pipe* *.tex
+ln -sf  ../003_nest/16JAN98_9km.neste1.{des,lfi,nc} .
+ln -sf  ../003_nest/16JAN98_36km.neste1.{des,lfi,nc} .
+ln -sf  ../004_arp2lfi/16JAN_06_MNH.*{des,lfi,nc} .
 time ${MPIRUN} SPAWNING${XYZ}             
 #ddd --directory=~/DEV/MNH.V4.6.2/src/dir_obj_bug2_nest SPAWNING${XYZ}

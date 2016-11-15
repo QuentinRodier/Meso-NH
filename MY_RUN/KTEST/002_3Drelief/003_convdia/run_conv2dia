@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../002_mesonh/REL3D.1.EXP01.002.??? .
-rm -f REL3D.1.EXP01.002dg.???
+ln -sf ../002_mesonh/REL3D.1.EXP01.002.{des,lfi,nc} .
+rm -f REL3D.1.EXP01.002dg.{des,lfi,nc}
 ${POSTRUN} conv2dia < dir_conv2dia
 

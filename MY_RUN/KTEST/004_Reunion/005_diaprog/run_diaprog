@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../004_convdia/REUNI.1.00A20.004dg.??? .
+ln -sf ../004_convdia/REUNI.1.00A20.004dg.{des,lfi} .
 rm -f dir.0*
 ${POSTRUN} diaprog < dir_Reunion
 mv gmeta gmeta_Reunion || echo pas de gmeta

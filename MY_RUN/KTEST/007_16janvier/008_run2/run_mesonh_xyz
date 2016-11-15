@@ -8,8 +8,8 @@ set -e
 rm -f 16JAN* OUT*  EXSEG?.nam 
 cp EXSEG1.nam.src EXSEG1.nam
 cp EXSEG2.nam.src EXSEG2.nam
-ln -sf  ../004_arp2lfi/16JAN_06_MNH.*??? .
-ln -sf  ../006_preal/16JAN_06_MNH2.*??? .
-ln -sf  ../003_nest/16JAN98_36km.neste1.* .
-ln -sf  ../003_nest/16JAN98_9km.neste1.* .
+ln -sf  ../004_arp2lfi/16JAN_06_MNH.{des,lfi,nc} .
+ln -sf  ../006_preal/16JAN_06_MNH2.{des,lfi,nc} .
+ln -sf  ../003_nest/16JAN98_36km.neste1.{des,lfi,nc} .
+ln -sf  ../003_nest/16JAN98_9km.neste1.{des,lfi,nc} .
 time ${MPIRUN} MESONH${XYZ}

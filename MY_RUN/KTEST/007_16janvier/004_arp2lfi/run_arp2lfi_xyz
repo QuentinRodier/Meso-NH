@@ -7,5 +7,5 @@ set -x
 set -e
 export GRIB_DEFINITION_PATH=$SRC_MESONH/src/LIB/grib_api-1.13.1/definitions
 rm -f 16JAN* OUTPUT_LISTING* pipe* *.tex
-ln -sf ../003_nest/16JAN98_36km.neste1.??? .
+ln -sf ../003_nest/16JAN98_36km.neste1.{des,lfi,nc} .
 time ${MPIRUN} PREP_REAL_CASE${XYZ}

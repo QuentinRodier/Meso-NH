@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../002_mesonh/KWRAI.1.SEG01.004.??? .
-rm -f KWRAI.1.SEG01.004dg.???
+ln -sf ../002_mesonh/KWRAI.1.SEG01.004.{des,lfi,nc} .
+rm -f KWRAI.1.SEG01.004dg.{des,lfi,nc}
 ${POSTRUN} conv2dia < dir_conv2dia
 

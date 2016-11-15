@@ -5,8 +5,8 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../002_pgd2/16JAN98_9km.??? .
-ln -sf ../001_pgd1/16JAN98_36km.??? .
+ln -sf ../002_pgd2/16JAN98_9km.{des,lfi,nc} .
+ln -sf ../001_pgd1/16JAN98_36km.{des,lfi,nc} .
 rm -f *e1.??? OUTPUT_LISTING* pipe* *.tex
 time ${MPIRUN} PREP_NEST_PGD${XYZ}
 #ddd --directory=~/DEV/.../PREP_NEST_PGD

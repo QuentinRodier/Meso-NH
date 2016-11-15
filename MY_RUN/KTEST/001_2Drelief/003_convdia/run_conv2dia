@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x 
 set -e
-ln -sf ../002_mesonh/EXPER.1.HYD2D.00?.??? .
-rm -f EXPER.1.HYD2D.002-3d.???
+ln -sf ../002_mesonh/EXPER.1.HYD2D.00?.{des,lfi,nc} .
+rm -f EXPER.1.HYD2D.002-3d.{des,lfi,nc}
 time ${POSTRUN} conv2dia < dir_conv2dia
 

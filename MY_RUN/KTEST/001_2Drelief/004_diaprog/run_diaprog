@@ -4,6 +4,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../003_convdia/EXPER.1.HYD2D.002-3d.??? .
+ln -sf ../003_convdia/EXPER.1.HYD2D.002-3d.{des,lfi} .
 rm -f dir.0*
 ${POSTRUN} diaprog < dir.2Drelief

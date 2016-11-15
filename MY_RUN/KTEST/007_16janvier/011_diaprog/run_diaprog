@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../010_conv2dia/16JAN.?.12B18.001cv.??? .
+ln -sf ../010_conv2dia/16JAN.?.12B18.001cv.{des,lfi} .
 rm -f dir.0*
 ${POSTRUN} diaprog < dir_16janv
 

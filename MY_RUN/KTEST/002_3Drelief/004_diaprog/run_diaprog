@@ -4,8 +4,8 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -sf ../003_convdia/REL3D.1.EXP01.002dg.??? .
-#ln -sf ../003_convdia/REL3D_autre_run.??? .
+ln -sf ../003_convdia/REL3D.1.EXP01.002dg.{des,lfi} .
+#ln -sf ../003_convdia/REL3D_autre_run.{des,lfi} .
 rm -f dir.0*
 ${POSTRUN} diaprog < dir_3Drelief
 

@@ -9,8 +9,8 @@ begin
 ;=================================================;
 ; open file and read in data
 ;=================================================;
-  fichier1 = addfile("EXPER.1.HYD2D.002.nc4", "r")
-  fichier2 = addfile("EXPER.1.HYD2D.003.nc4", "r")
+  fichier1 = addfile("EXPER.1.HYD2D.002.nc", "r")
+  fichier2 = addfile("EXPER.1.HYD2D.003.nc", "r")
 ;==================================================;
 ; Open the workstation
 ;==================================================;

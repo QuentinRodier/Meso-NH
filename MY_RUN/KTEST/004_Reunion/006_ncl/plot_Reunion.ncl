@@ -9,7 +9,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
 ;=================================================;
 ; open file and read in data
 ;=================================================;
-  fichier1 = addfile("REUNI.1.00A20.004.nc4", "r")
+  fichier1 = addfile("REUNI.1.00A20.004.nc", "r")
 ;==================================================;
 ; Open the workstation
 ;==================================================;

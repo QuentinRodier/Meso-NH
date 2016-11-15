@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 
-ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc4 .
+ln -sf ../002_mesonh/KWRAI.1.SEG01.004.nc .
 
 ncl  plot_KW78.ncl
 display visu_KW78.000001.png

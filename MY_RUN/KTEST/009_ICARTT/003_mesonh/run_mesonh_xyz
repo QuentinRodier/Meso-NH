@@ -13,6 +13,6 @@ ln -sf ${CHIMIE_FILES}/tuv50/DATAE1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAJ1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAS1 .
 cp EXSEG1.nam.src EXSEG1.nam
-ln -sf  ../002_arp2lfi/CPLCH20040810.18.*??? .
-ln -sf ../001_pgd1/ICARTT1008_PGD_15km.??? .
+ln -sf  ../002_arp2lfi/CPLCH20040810.18.{des,lfi,nc} .
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,lfi,nc} .
 time ${MPIRUN} MESONH${XYZ}
