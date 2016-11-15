@@ -87,7 +87,7 @@
 #ifdef CPLOASIS
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD, IP
   USE MODD_DYN_n, ONLY : XTSTEP
-  USE MODD_SFX_OASIS, ONLY : LOASIS_GRID
+  USE MODD_SFX_OASIS, ONLY : LOASIS, LOASIS_GRID
 #endif
 !
 USE MODD_CONF
@@ -177,7 +177,9 @@ ENDIF
 !                ------------------------------
 !
 #ifdef CPLOASIS
+IF (LOASIS) THEN
   CALL MNH_OASIS_DEFINE(CPROGRAM,IP)
+END IF
 #endif
 !
 !-------------------------------------------------------------------------------
@@ -222,7 +224,9 @@ IF (LCHECK) THEN
 ELSE
   CALL END_PARA_ll(IINFO_ll)
 #ifdef CPLOASIS
-  CALL SFX_OASIS_END 
+IF (LOASIS) THEN
+  CALL SFX_OASIS_END
+END IF
 #endif
 END IF
 !

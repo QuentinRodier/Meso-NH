@@ -522,17 +522,19 @@ CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
                        ZTIMEC)
 !
 #ifdef CPLOASIS
-IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
-  IF ( NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0 ) THEN
-    WRITE(NLUOUT,*) '----------------------------'
-    WRITE(NLUOUT,*) ' Reception des champs avec OASIS'
-    WRITE(NLUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
-    CALL MNH_OASIS_RECV(CPROGRAM,IDIM1D,SIZE(XSW_BANDS),ZTIMEC+XTSTEP,XTSTEP,         &
+IF (LOASIS) THEN
+  IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
+    IF ( NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0 ) THEN
+      WRITE(NLUOUT,*) '----------------------------'
+      WRITE(NLUOUT,*) ' Reception des champs avec OASIS'
+      WRITE(NLUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
+      CALL MNH_OASIS_RECV(CPROGRAM,IDIM1D,SIZE(XSW_BANDS),ZTIMEC+XTSTEP,XTSTEP,         &
                         ZP_ZENITH,XSW_BANDS                                         ,         &
                         ZP_TSRAD,ZP_DIR_ALB,ZP_SCA_ALB,ZP_EMIS,ZP_TSURF)
-    WRITE(NLUOUT,*) '----------------------------'
+      WRITE(NLUOUT,*) '----------------------------'
+    END IF
   END IF
-ENDIF
+END IF
 #endif
 !
 ! Call to surface schemes
@@ -550,13 +552,15 @@ CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                        
                'OK'                                                                           )
 !
 #ifdef CPLOASIS
-IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
-  IF (NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0) THEN
-    WRITE(NLUOUT,*) '----------------------------'
-    WRITE(NLUOUT,*) ' Envoi des champs avec OASIS'
-    WRITE(NLUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
-    CALL MNH_OASIS_SEND(CPROGRAM,IDIM1D,ZTIMEC+XTSTEP,XTSTEP)
-    WRITE(NLUOUT,*) '----------------------------'
+IF (LOASIS) THEN
+  IF ( MOD(ZTIMEC,1.0) .LE. 1E-2 .OR. (1.0 - MOD(ZTIMEC,1.0)) .LE. 1E-2 ) THEN
+    IF (NINT(ZTIMEC-(XSEGLEN-XTSTEP)) .LT. 0) THEN
+      WRITE(NLUOUT,*) '----------------------------'
+      WRITE(NLUOUT,*) ' Envoi des champs avec OASIS'
+      WRITE(NLUOUT,*) 'NINT(ZTIMEC)=', NINT(ZTIMEC)
+      CALL MNH_OASIS_SEND(CPROGRAM,IDIM1D,ZTIMEC+XTSTEP,XTSTEP)
+      WRITE(NLUOUT,*) '----------------------------'
+    END IF
   END IF
 END IF
 #endif

@@ -760,7 +760,7 @@
 !!    -------------
 !     Original 01/06/98
 !     R. Guivarch 15/09/99  deallocation of grid-nesting arrays
-!     J. Pianezze 01/11/2014 - add CPLOASIS cpp key
+!     J. Pianezze 11/2016 - add LOASIS flag
 !
 !-------------------------------------------------------------------------------
 !
@@ -770,6 +770,7 @@
 !  USE MODD_STRUCTURE_ll
 !  USE MODD_VAR_ll, ONLY : NIOUNIT, YOUTPUTFILE
   USE MODD_IO_ll,          ONLY : ISP
+  USE MODD_SFX_OASIS, ONLY : LOASIS
 !
 #ifdef MNH_GA
 USE MODE_GA
@@ -803,9 +804,9 @@ USE MODE_GA
   endif
 #endif
 !
-#ifndef CPLOASIS
+IF (.NOT. LOASIS) THEN
   CALL MPI_FINALIZE(KINFO_ll)
-#endif
+END IF
 !
 !-------------------------------------------------------------------------------
 !

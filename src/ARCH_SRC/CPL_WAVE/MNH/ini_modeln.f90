@@ -268,6 +268,8 @@ END MODULE MODI_INI_MODEL_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                   Aug.  2016 (J.Pianezze) Add SFX_OASIS_READ_NAM function from SurfEx
 !!                   M.Leriche 2016 Chemistry
+!!                   10/2016 M.Mazoyer New KHKO output fields
+!!                      10/2016 (C.Lac) Add max values
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -672,7 +674,10 @@ IF (LMEAN_FIELD) THEN
   ALLOCATE(XWM_MEAN(IIU,IJU,IKU))      ; XWM_MEAN  = 0.0
   ALLOCATE(XTHM_MEAN(IIU,IJU,IKU))     ; XTHM_MEAN = 0.0
   ALLOCATE(XTEMPM_MEAN(IIU,IJU,IKU))   ; XTEMPM_MEAN = 0.0
-  ALLOCATE(XTKEM_MEAN(IIU,IJU,IKU))    ; XTKEM_MEAN = 0.0
+  IF (CTURB/='NONE') THEN
+     ALLOCATE(XTKEM_MEAN(IIU,IJU,IKU))    
+     XTKEM_MEAN = 0.0
+  END IF
   ALLOCATE(XPABSM_MEAN(IIU,IJU,IKU))   ; XPABSM_MEAN = 0.0
 !
   ALLOCATE(XU2_MEAN(IIU,IJU,IKU))      ; XU2_MEAN  = 0.0
@@ -684,7 +689,7 @@ IF (LMEAN_FIELD) THEN
 !
 END IF
 !
-IF (CUVW_ADV_SCHEME(1:3)=='CEN') THEN
+IF ((CUVW_ADV_SCHEME(1:3)=='CEN') .AND. (CTEMP_SCHEME == 'LEFR') ) THEN
   ALLOCATE(XUM(IIU,IJU,IKU))
   ALLOCATE(XVM(IIU,IJU,IKU))
   ALLOCATE(XWM(IIU,IJU,IKU))
@@ -1442,6 +1447,13 @@ ELSE
   ALLOCATE(XCIT(0,0,0))
 END IF
 !
+IF ( CCLOUD == 'KHKO') THEN
+   ALLOCATE(XSUPSAT(IIU,IJU,IKU))
+   ALLOCATE(XNACT(IIU,IJU,IKU))
+   ALLOCATE(XNPRO(IIU,IJU,IKU))
+   ALLOCATE(XSSPRO(IIU,IJU,IKU))
+END IF
+!
 !*      3.12   Module MODD_TURB_CLOUD
 !
 IF (.NOT.(ALLOCATED(XCEI))) ALLOCATE(XCEI(0,0,0))
@@ -1477,7 +1489,7 @@ IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &
-             LHORELAX_SV,LVE_RELAX,LCHTRANS,LNUDGING,LDRAGTREE,               &
+             LHORELAX_SV,LVE_RELAX,LCHTRANS,LNUDGING,LDRAGTREE,LDEPOTREE,     &
              CRAD,CDCONV,CSCONV,CTURB,CTURBDIM,CCLOUD                         )
 END IF
 !
@@ -1556,7 +1568,7 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
-                NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,            &
+                CTEMP_SCHEME,NSIZELBX_ll,NSIZELBXU_ll,NSIZELBY_ll,NSIZELBYV_ll,&
                 NSIZELBXTKE_ll,NSIZELBYTKE_ll,                                &
                 NSIZELBXR_ll,NSIZELBYR_ll,NSIZELBXSV_ll,NSIZELBYSV_ll,        &
                 XUM,XVM,XWM,XDUM,XDVM,XDWM,                                   &

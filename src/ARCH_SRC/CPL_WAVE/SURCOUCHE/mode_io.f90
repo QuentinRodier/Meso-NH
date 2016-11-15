@@ -21,7 +21,7 @@
 !     J.Escobar   18/10/10   bug with PGI compiler on ADJUSTL
 !     Philippe 04/02/2016: bug with DELIM='NONE' and GCC 5.2/5.3
 !     D.Gazen   : avril 2016 change error message 
-!     J. Pianezze 01/08/2016  add CPLOASIS cpp key
+!     J. Pianezze 01/08/2016  add LOASIS flag
 !
 MODULE MODE_IO_ll
 
@@ -156,6 +156,7 @@ CONTAINS
   
   SUBROUTINE INITIO_ll()
     USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
+    USE MODD_SFX_OASIS, ONLY : LOASIS
     USE MODD_IO_ll
     IMPLICIT NONE
 
@@ -164,15 +165,15 @@ CONTAINS
 
     ISTDERR = 0
 
-#ifndef CPLOASIS
-    CALL MPI_INITIALIZED(GISINIT, IERR)
-    IF (.NOT. GISINIT) THEN
-       !CALL MPI_INIT(IERR)
-       CALL INIT_NMNH_COMM_WORLD(IERR)
-       if (IERR .NE.0) STOP "mode_io.f90::INITIO_ll() MPI_INIT ---> PROBLEME WITH REMAPPING NMNH_COMM_WORLD "
+    IF (.NOT. LOASIS) THEN
+      CALL MPI_INITIALIZED(GISINIT, IERR)
+      IF (.NOT. GISINIT) THEN
+         !CALL MPI_INIT(IERR)
+         CALL INIT_NMNH_COMM_WORLD(IERR)
+         if (IERR .NE.0) STOP "mode_io.f90::INITIO_ll() MPI_INIT ---> PROBLEME WITH REMAPPING NMNH_COMM_WORLD "
+      END IF
+      !! Now MPI is initialized for sure
     END IF
-    !! Now MPI is initialized for sure
-#endif
 
     CALL INITFD()
 
