@@ -3,7 +3,7 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 #MNH_LIC for details. version 1.
 set -x
-set -e
+#set -e
 
 ln -sf ../003_mesonh/ICART.1.SEG01.001.nc4 .
 ln -sf ../003_mesonh/ICART.1.SEG01.002.nc4 .
@@ -17,3 +17,4 @@ display zsection_1250.000003.png
 display zsection_1250.000004.png
 display zsection_1250.000005.png
 display zsection_1250.000006.png
+exit 0
