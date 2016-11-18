@@ -14,6 +14,7 @@
 !!      07/13 (Bosseur & Filippi) adds Forefire
 !!      2014 (Faivre)
 !!      2016  (Leriche) Add MODD_CH_ICE Suppress MODD_CH_DEP_n
+!!      Modification    01/2016  (JP Pinty) Add LIMA
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 

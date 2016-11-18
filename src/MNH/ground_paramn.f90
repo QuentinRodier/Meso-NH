@@ -90,21 +90,21 @@ END MODULE MODI_GROUND_PARAM_n
 !!                            recomputes z0 where snow is.
 !!                            pack and unpack of 2D fields into 1D fields
 !!      (V.Masson)  04/01/00  removes the TSZ0 case
-!!      (F.Solmon/V.Masson)   adapatation for patch approach
-!!                            modification of internal subroutine pack/ allocation in function 
-!!                            of patch indices
-!!                            calling of isba for each defined patch
-!!                            averaging of patch fluxes to get nat fluxes 
-!!      (P. Tulet/G.Guenais)  04/02/01  separation of vegetatives class
-!!                            for friction velocity and  aerodynamical resistance
-!!      (S Donnier)            09/12/02  add specific humidity at 2m for diagnostic
-!!      (V.Masson)             01/03/03  externalisation of the surface schemes!
-!!      (P.Tulet )             01/11/03  externalisation of the surface chemistry!
-!!      (D.Gazen)              01/12/03  change emissions handling for surf. externalization
-!!      (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
-!!      (J.escobar)            2/2014 add Forefire coupling
+!       (F.Solmon/V.Masson)   adapatation for patch approach
+!                             modification of internal subroutine pack/ allocation in function 
+!                              of patch indices
+!                             calling of isba for each defined patch
+!                             averaging of patch fluxes to get nat fluxes 
+!       (P. Tulet/G.Guenais)  04/02/01  separation of vegetatives class
+!                                           for friction velocity and 
+!                                           aerodynamical resistance
+!      (S Donnier)            09/12/02  add specific humidity at 2m for diagnostic
+!      (V.Masson)             01/03/03  externalisation of the surface schemes!
+!      (P.Tulet )             01/11/03  externalisation of the surface chemistry!
+!!     (D.Gazen)              01/12/03  change emissions handling for surf. externalization
+!!     (J.escobar)            18/10/2012 missing USE MODI_COUPLING_SURF_ATM_n & MODI_DIAG_SURF_ATM_n
+!      (J.escobar)            2/2014 add Forefire coupling
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
-!!
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -134,7 +134,7 @@ USE MODD_GRID,       ONLY : XLON0, XRPK, XBETA
 USE MODD_PARAM_ICE,  ONLY : LSEDIC
 USE MODD_PARAM_C2R2, ONLY : LSEDC
 USE MODD_DIAG_IN_RUN
-USE MODD_DUST,       ONLY : LDUST
+USE MODD_DUST,       ONLY : LDUST 
 USE MODD_SALT,       ONLY : LSALT
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_CSTS_DUST,  ONLY : XMOLARWEIGHT_DUST
