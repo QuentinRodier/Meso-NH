@@ -284,7 +284,6 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   02/2016   (M.Leriche) treat gas and aq. chemicals separately
 !!      Modification   10/2016    (C.LAC) Add OSPLIT_WENO + Add droplet
 !!                                deposition + Add max values
-
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

@@ -21,7 +21,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 END SUBROUTINE ADVEC_WENO_K_2_UX
@@ -41,7 +41,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 END SUBROUTINE ADVEC_WENO_K_2_MX
@@ -62,7 +62,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 END SUBROUTINE ADVEC_WENO_K_2_VY
@@ -82,7 +82,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 END SUBROUTINE ADVEC_WENO_K_2_MY
@@ -152,7 +152,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 !*       0.2   Declarations of local variables :
@@ -413,7 +413,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRUCT ! contrav. comp. on MASS GRID
 !
 ! output source term
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 !*       0.2   Declarations of local variables :
@@ -674,7 +674,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
 !
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2 ! halo2 for the field at t
 !
 !
@@ -931,7 +931,7 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PSRC  ! variable on U grid at t
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRVCT ! contrav. comp. on MASS GRID
 !
 ! output source term
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PR
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PR
 TYPE(HALO2_ll), OPTIONAL, POINTER :: TPHALO2      ! halo2 for the field at t
 !
 !*       0.2   Declarations of local variables :

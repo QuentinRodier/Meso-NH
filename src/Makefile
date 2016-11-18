@@ -14,7 +14,7 @@ dependance_flist = $(notdir $(shell find $(1) -follow -type f \
                -name '*.f' -o -name '*.f90' -o -name '*.fx90' -o -name '*.F90'\
                | grep -v ',v' | sed -e 's/\.f.*/.D/g' -e 's/\.F.*/.D/g' ))
 obj_flist        = $(notdir $(shell find $(1) -follow -type f \
-               -name 'spll_*.f*' | sed -e 's/\..*/.o/g' )) 
+               -name 'spll_*.f*' | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #
 ##########################################################
 #                                                        #
@@ -129,7 +129,7 @@ endif
 #
 # MASTER 
 #
-OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(notdir $(shell find $(OBJDIR_MASTER) -follow -type f -name "spll_*.f*" | sed -e 's/\..*/.o/g' )) 
+OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(notdir $(shell find $(OBJDIR_MASTER) -follow -type f -name "spll_*.f*" | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #OBJS_LISTE_MASTER :=  $(OBJS_LISTE_MASTER) $(obj_flist $(OBJDIR_MASTER)) 
 #
 OBJS_LISTE_MASTER := $(sort $(filter-out $(IGNORE_OBJS),$(OBJS_LISTE_MASTER))) 
@@ -139,7 +139,7 @@ LIB_MASTER=$(OBJDIR_MASTER)/$(LIB_OBJS_ROOT)-MASTER.a
 # USER
 #
 #ifdef DO_COMP_USER
-OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(notdir $(shell find $(OBJDIR_USER) -follow -type f -name "spll_*.f*" | sed -e 's/\..*/.o/g' )) 
+OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(notdir $(shell find $(OBJDIR_USER) -follow -type f -name "spll_*.f*" | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(obj_flist $(OBJDIR_USER)) 
 #
 OBJS_LISTE_USER := $(sort $(filter-out $(IGNORE_OBJS), $(OBJS_LISTE_USER) $(OBJS_LISTE_MASTER) )) 
@@ -157,7 +157,7 @@ DEP_ALL_MASTER = $(sort $(filter-out $(IGNORE_DEP_MASTER),$(DEP_MASTER)) )
 DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 #
 
-.PHONY : clean all objdir objdirmaster depall objs lib prog print
+.PHONY : clean objdir depall objs lib prog print
 
 .DELETE_ON_ERROR:  
 
@@ -166,12 +166,16 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 
 .INTERMEDIATE:   $(LIB_MASTER)
 
+.SECONDARY: mpi.mod netcdf.mod openacc.mod
 
 ##########################################################
 #                                                        #
 # MASTER RULES                                           #
 #                                                        #
 ##########################################################
+.PHONY : all objdirmaster libmaster bibmaster objmaster progmaster
+.PHONY : installmaster cleanlibmaster cleanmaster cleanobjmaster cleanprogmaster
+
 all : gribapi progmaster
 
 objdirmaster :  $(OBJDIR_MASTER)/.dummy
@@ -340,7 +344,7 @@ cdf : $(CDF_INC)
 $(CDF_INC) : 
 	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
 	FC="$(FC)" FCFLAGS="$(HDF_OPT)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install && $(MAKE) -j 1 clean
-	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --disable-dap \
+	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --enable-f90 --disable-dap \
         FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
 
 cleanmaster : cleancdf
@@ -391,6 +395,11 @@ ifndef DO_COMP_USER
 else
 #	ln -sf $(OBJDIR)/$(*F) $(SRC_MESONH)/exe/$(*F)-${ARCH_XYZ}-${VER_USER}
 	ln -sf $(OBJDIR)/$(*F) $(SRC_MESONH)/exe/$(*F)${XYZ}
+endif
+ifdef MNH_TOOLS
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/lfi2cdf
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2cdf
+	ln -sf $(OBJDIR)/LFI2CDF $(SRC_MESONH)/bin_tools/cdf2lfi
 endif
 	rm -f $(SRC_MESONH)/exe/$(*F)_${ARCH_XYZ}~
 
@@ -530,4 +539,10 @@ endif
 ifeq "$(DO_COMP_USER)" "YES"
 include  filedepalluser
 endif 
+
+mpi.mod:
+
+netcdf.mod:
+
+openacc.mod:
 

@@ -14,9 +14,9 @@
 !
 INTERFACE
 !
-      SUBROUTINE FAST_TERMS( KRR, KMI, HFMFILE, HLUOUT, HRAD,           &
+      SUBROUTINE FAST_TERMS( KRR, KMI, HLUOUT, HRAD,                    &
                              HTURBDIM, HSCONV, HMF_CLOUD,               &
-                             OCLOSE_OUT, OSUBG_COND, PTSTEP,            &
+                             OSUBG_COND, PTSTEP,                        &
                              PRHODJ, PSIGS, PPABST,                     &
                              PCF_MF,PRC_MF,                             &
                              PRVT, PRCT, PRVS, PRCS, PRRS,              &
@@ -24,7 +24,6 @@ INTERFACE
          !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
@@ -32,8 +31,6 @@ CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          
@@ -66,9 +63,9 @@ END INTERFACE
 END MODULE MODI_FAST_TERMS
 !
 !     ##########################################################################
-      SUBROUTINE FAST_TERMS( KRR, KMI, HFMFILE, HLUOUT, HRAD,           &
+      SUBROUTINE FAST_TERMS( KRR, KMI, HLUOUT, HRAD,                    &
                              HTURBDIM, HSCONV, HMF_CLOUD,               &
-                             OCLOSE_OUT, OSUBG_COND, PTSTEP,            &
+                             OSUBG_COND, PTSTEP,                        &
                              PRHODJ, PSIGS, PPABST,                     &
                              PCF_MF,PRC_MF,                             &                   
                              PRVT, PRCT, PRVS, PRCS, PRRS,              &
@@ -159,6 +156,7 @@ END MODULE MODI_FAST_TERMS
 !!                                                              Scheme
 !!                     J.Escobar 21/03/2013: for HALOK comment all NHALO=1 test
 !!                     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!                     June 17, 2016 (P. Wautelet) removed unused variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -182,7 +180,6 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
@@ -190,8 +187,6 @@ CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 REAL,                     INTENT(IN)    :: PTSTEP   ! Time step          
@@ -235,30 +230,15 @@ INTEGER             :: IRESP      ! Return code of FM routines
 INTEGER             :: ILENG      ! Length of comment string in LFIFM file
 INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
-INTEGER             :: IKB        ! K index value of the first inner mass point
-INTEGER             :: IKE        ! K index value of the last inner mass point
-INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
-INTEGER             :: IIE,IJE    ! Horz index values of the last inner mass points
-INTEGER             :: IPLAN      ! Number of horz inner points
 INTEGER             :: JK         ! Var for vertical DO loops
 INTEGER             :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !-------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARIES
 !               -------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-!!$IIB = 1 + JPHEXT
-!!$IIE = SIZE(PRHODJ,1) - JPHEXT
-!!$IJB = 1 + JPHEXT
-!!$IJE = SIZE(PRHODJ,2) - JPHEXT
-CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
-IPLAN = (SIZE(PRHODJ,1)-2*JPHEXT)*(SIZE(PRHODJ,2)-2*JPHEXT)
-IKB = 1 + JPVEXT
-IKE = SIZE(PRHODJ,3) - JPVEXT
 ZEPS= XMV / XMD
 !
 IF (OSUBG_COND) THEN

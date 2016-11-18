@@ -165,7 +165,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
+LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
                                                       ! file opening
 CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
                                                       ! FM-file
@@ -236,7 +236,7 @@ REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZSV
 ! Guess at the sub time step
 REAL, DIMENSION(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3), SIZE(PRT,4) ) :: ZRRS_OTHER
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZRSVS_OTHER
-! Tendencie since the beginning of the time step
+! Tendencies since the beginning of the time step
 REAL, DIMENSION(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3), SIZE(PRT,4) ) :: ZRRS_PPM
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZRSVS_PPM
 ! Guess at the end of the sub time step
@@ -462,7 +462,7 @@ CALL PPM_RHODJ(HLBCX,HLBCY, ZRUCPPM, ZRVCPPM, ZRWCPPM,              &
                ZTSTEP_PPM, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  &
                ZRHOZ1, ZRHOZ2                                       )
 !
-!* valuesw of the fields at the beginning of the time splitting loop
+!* values of the fields at the beginning of the time splitting loop
 ZTH   = PTHT
 ZTKE   = PTKET
 IF (KRR /=0 ) ZR    = PRT
@@ -473,10 +473,10 @@ IF (GTKE)    PRTKES_ADV(:,:,:)  = 0.
 !* time splitting loop
 DO JSPL=1,KSPLIT
 !
-   ZRTHS_PPM(:,:,:)   = 0.              
-   ZRTKES_PPM(:,:,:)   = 0.              
-   IF (KRR /=0) ZRRS_PPM(:,:,:,:)   = 0.              
-   IF (KSV /=0) ZRSVS_PPM(:,:,:,:)   = 0.              
+   !ZRTHS_PPM(:,:,:)   = 0.
+   !ZRTKES_PPM(:,:,:)   = 0.
+   !IF (KRR /=0) ZRRS_PPM(:,:,:,:)   = 0.
+   !IF (KSV /=0) ZRSVS_PPM(:,:,:,:)   = 0.
 !
    IF (LNEUTRAL) ZTH=ZTH-PTHVREF  !* To be removed with the new PPM scheme ?
    CALL PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,ZRUCPPM, ZRVCPPM, ZRWCPPM, ZTSTEP_PPM,    &
@@ -495,6 +495,7 @@ DO JSPL=1,KSPLIT
    IF (KRR /=0)  PRRS      (:,:,:,:) = PRRS      (:,:,:,:) + ZRRS_PPM  (:,:,:,:) / KSPLIT
    IF (KSV /=0 ) PRSVS     (:,:,:,:) = PRSVS     (:,:,:,:) + ZRSVS_PPM (:,:,:,:) / KSPLIT
 !
+   IF (JSPL<KSPLIT) THEN
 !
 !  Guesses of the field inside the time splitting loop
 !
@@ -513,7 +514,7 @@ DO JSPL=1,KSPLIT
 ! Top and bottom Boundaries and LBC for the guesses
 !
    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTH, PTHT )    
-   CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTKE, PTKET)
+    IF (GTKE) CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTKE, PTKET)
    DO JR = 1, KRR
      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZR(:,:,:,JR), PRT(:,:,:,JR))
    END DO
@@ -536,6 +537,7 @@ DO JSPL=1,KSPLIT
     CALL UPDATE_HALO_ll(TZFIELDS1_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS1_ll)
 !!$   END IF
+   END IF
 !
 END DO
 !

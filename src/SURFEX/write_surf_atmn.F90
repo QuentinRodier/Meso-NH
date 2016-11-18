@@ -44,6 +44,7 @@
 !       Modified    07/2011, B.Decharme: land_use key for writing semi-prognostic variables
 !       Modified    05/2012, B.Decharme: supress LPROVAR_TO_DIAG to write prognostic fields if user want
 !       Modified    05/2013, B.Decharme: WRITESURF_PRECIP becomes WRITESURF_CPL_GCM
+!       Modified    05/2016, M.Leriche & V.Masson suppress readwrite_ch_emis (only written in pgd step)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

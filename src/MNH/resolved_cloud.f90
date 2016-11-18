@@ -795,8 +795,8 @@ SELECT CASE ( HCLOUD )
 !*       4.     REVERSIBLE MICROPHYSICAL SCHEME
 !               -------------------------------
 !
-    CALL FAST_TERMS ( KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,               &
-                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP,       &
+    CALL FAST_TERMS ( KRR, KMI, HLUOUT, HRAD, HTURBDIM,                        &
+                      HSCONV, HMF_CLOUD, OSUBG_COND, PTSTEP,                   &
                       PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
                       PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
@@ -819,8 +819,8 @@ SELECT CASE ( HCLOUD )
 !
 !*       5.2    Perform the saturation adjustment
 !
-    CALL FAST_TERMS ( KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,               &
-                      HSCONV, HMF_CLOUD, OCLOSE_OUT, OSUBG_COND, PTSTEP,       &
+    CALL FAST_TERMS ( KRR, KMI, HLUOUT, HRAD, HTURBDIM,                        &
+                      HSCONV, HMF_CLOUD, OSUBG_COND, PTSTEP,                   &
                       PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
                       PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
@@ -896,7 +896,7 @@ SELECT CASE ( HCLOUD )
 !*       9.2    Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,     &
+    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HRAD, HTURBDIM,                      &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
                     PCF_MF,PRC_MF,PRI_MF,                                    &   
@@ -937,7 +937,7 @@ SELECT CASE ( HCLOUD )
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,     &
+    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HRAD, HTURBDIM,                      &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
                     PCF_MF,PRC_MF,PRI_MF,                                    &                     

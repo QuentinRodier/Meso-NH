@@ -292,6 +292,7 @@ DO JSPL=1,ISPLIT
   PRVS(:,:,:) = PRVS(:,:,:) + ZRVS_ADV(:,:,:) / ISPLIT
   PRWS(:,:,:) = PRWS(:,:,:) + ZRWS_ADV(:,:,:) / ISPLIT
 
+  IF (JSPL<ISPLIT) THEN
 !
 ! Guesses for next time splitting loop
 !
@@ -308,6 +309,7 @@ DO JSPL=1,ISPLIT
   CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZV, PVT, 'V' )    
   CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZW, PWT, 'W' )
   ZW (:,:,IKE+1 ) = 0.
+  END IF
 !
 ! End of the time splitting loop
 END DO

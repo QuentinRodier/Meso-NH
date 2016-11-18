@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/retrieve2_nest_infon.f90,v $ $Revision: 1.2.2.1.2.1.18.2.2.1 $
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_RETRIEVE2_NEST_INFO_n
@@ -93,6 +93,7 @@ END MODULE MODI_RETRIEVE2_NEST_INFO_n
 !!      J Stein         04/07/01 add cartesian case
 !!      M.Faivre            2014
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar : 01/06/2016 : Bug in type of ZBUF INTEGER => REAL & use MPI_PRECISION for r4/R8 compatibility
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -179,7 +180,7 @@ INTEGER     :: IXEND_F, IYEND_F    ! end of local father subdomain (global coord
 !INTEGER     :: IXEND_C, IYEND_C    ! end of local father subdomain (global coord)
 !INTEGER     :: IIMAX_C_ll, IJMAX_C_ll   ! global dimensions of child model
 INTEGER     :: II
-INTEGER     :: ZSENDBUF, ZRECVBUF
+REAL        :: ZSENDBUF, ZRECVBUF
 REAL        :: ZCOEF         ! ponderation coefficient for linear interpolation
 REAL, DIMENSION(:), ALLOCATABLE :: ZXHAT, ZYHAT ! coordinates of model 2
 !                            ! recomputed from coordinates of model 1 and ratios
@@ -398,9 +399,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! the index of the first physical point of the local son subdomain of IPROC is II on the current process
     ! send XPGDXHAT(II) to process IPROC
     ZSENDBUF = XPGDXHAT(II)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDXHATIXY1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -427,9 +428,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! the index of the first physical point of the local son subdomain is II on the current process
     ! send XPGDYHAT(II) to process IPROC
     ZSENDBUF = XPGDYHAT(II)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDYHATIXY1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -446,8 +447,8 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
   ZXHATFIRSTENTRY_C = XXHAT(JPHEXT+1)
   ZYHATFIRSTENTRY_C = XYHAT(JPHEXT+1)
   ! broadcast XXHAT(JPHEXT+1) and find which process' father subdomain contains the coords of the first physical entry of local son subdomain
-  CALL MPI_BCAST( ZXHATFIRSTENTRY_C, 1, MPI_DOUBLE_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
-  CALL MPI_BCAST( ZYHATFIRSTENTRY_C, 1, MPI_DOUBLE_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
+  CALL MPI_BCAST( ZXHATFIRSTENTRY_C, 1, MPI_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
+  CALL MPI_BCAST( ZYHATFIRSTENTRY_C, 1, MPI_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
   !
   ! communicating the value of XPGDXHAT (X direction) at the origin of local son subdomain
   IF (  IPROC == ISP-1 .AND. ZXHATFIRSTENTRY_C >= XPGDXHAT(JPHEXT+1) &
@@ -471,9 +472,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! XPGDXHAT(II+1) is also defined on current process since HALO is at least 1
     ! send XPGDXHAT(II+1) to process IPROC
     ZSENDBUF = XPGDXHAT(II+1)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II+1,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II+1,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDXHATIXY1_1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -501,9 +502,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! XPGDYHAT(II+1) is also defined on current process since HALO is at least 1
     ! send XPGDYHAT(II+1) to process IPROC
     ZSENDBUF = XPGDYHAT(II+1)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II+1,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II+1,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDYHATIXY1_1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -543,8 +544,8 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
   ZXHATLASTENTRY_C = XXHAT(SIZE(XXHAT)-JPHEXT)
   ZYHATLASTENTRY_C = XYHAT(SIZE(XYHAT)-JPHEXT)
   ! broadcast XXHAT(SIZE(XXHAT)-JPHEXT) and find which process' father subdomain contains the coords of the last physical entry of local son subdomain
-  CALL MPI_BCAST( ZXHATLASTENTRY_C, 1, MPI_DOUBLE_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
-  CALL MPI_BCAST( ZYHATLASTENTRY_C, 1, MPI_DOUBLE_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
+  CALL MPI_BCAST( ZXHATLASTENTRY_C, 1, MPI_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
+  CALL MPI_BCAST( ZYHATLASTENTRY_C, 1, MPI_PRECISION, IPROC, NMNH_COMM_WORLD, IINFO_ll )
   !
   ! communicating the value of XPGDXHAT (X direction) at the origin of local son subdomain
   IF (  IPROC == ISP-1 .AND. ZXHATLASTENTRY_C >= XPGDXHAT(JPHEXT+1) &
@@ -574,9 +575,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! send XPGDXHAT(II) to process IPROC
     ! XPGDYHAT(II+1) is also defined on current process since HALO is at least 1
     ZSENDBUF = XPGDXHAT(II)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDXHATIXY2_1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -609,9 +610,9 @@ DO IPROC = 0,ISNPROC-1  !loop on all processes
     ! the index of the last physical point of the local son subdomain is II on the current process
     ! send XPGDYHAT(II) to process IPROC
     ZSENDBUF = XPGDYHAT(II)
-    CALL MPI_SEND( ZSENDBUF,1,MPI_DOUBLE_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
+    CALL MPI_SEND( ZSENDBUF,1,MPI_PRECISION,IPROC,ISP+II,NMNH_COMM_WORLD,IINFO_ll )
   ELSE IF ( IPROC == ISP-1 ) THEN
-    CALL MPI_RECV( ZRECVBUF,1,MPI_DOUBLE_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
+    CALL MPI_RECV( ZRECVBUF,1,MPI_PRECISION,MPI_ANY_SOURCE,MPI_ANY_TAG,NMNH_COMM_WORLD,MPI_STATUS_IGNORE,IINFO_ll )
     ZPGDYHATIXY2_1 = ZRECVBUF
   ELSE
     ! the other processes do nothing...
@@ -625,8 +626,8 @@ ENDDO
 
 ! 3.3 - now we have the coordinates (ZPGDXHATIXY2_1, ZPGDYHATIXY2_1) of the point in father grid just right+north of the LOCAL son subdomain
 !       We compute the coordinates of the last point in father grid of the GLOBAL son subdomain
-CALL MPI_ALLREDUCE(ZPGDXHATIXY2_1, IXSUPCOORD1, 1,MPI_DOUBLE_PRECISION, MPI_MAX, NMNH_COMM_WORLD, IINFO_ll)
-CALL MPI_ALLREDUCE(ZPGDYHATIXY2_1, IYSUPCOORD1, 1,MPI_DOUBLE_PRECISION, MPI_MAX, NMNH_COMM_WORLD, IINFO_ll)
+CALL MPI_ALLREDUCE(ZPGDXHATIXY2_1, IXSUPCOORD1, 1,MPI_PRECISION, MPI_MAX, NMNH_COMM_WORLD, IINFO_ll)
+CALL MPI_ALLREDUCE(ZPGDYHATIXY2_1, IYSUPCOORD1, 1,MPI_PRECISION, MPI_MAX, NMNH_COMM_WORLD, IINFO_ll)
 
 !     we compute the index of this point in local father grid
 IF ( IXSUPCOORD1 >= XPGDXHAT(1+JPHEXT) .AND. IXSUPCOORD1 <= XPGDXHAT(SIZE(XPGDXHAT)-JPHEXT) .AND. &

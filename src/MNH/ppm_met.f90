@@ -38,8 +38,8 @@ REAL,                     INTENT(IN)    :: PTSTEP ! Single Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET        ! Vars at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT 
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES! Source terms
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS 
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRTHS, PRTKES! Source terms
+REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRRS 
 !
 END SUBROUTINE PPM_MET   
 !
@@ -129,8 +129,8 @@ REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET ! Vars at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT 
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRTHS, PRTKES! Source terms
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS 
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PRTHS, PRTKES! Source terms
+REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PRRS 
 !
 !*       0.2   Declarations of local variables :
 !
@@ -139,11 +139,6 @@ INTEGER :: JRR           ! Loop index for  moist variables
 LOGICAL :: GTKEALLOC     ! true if TKE arrays are not zero-sized
 !
 INTEGER :: IGRID ! localisation on the model grid
-!
-!*        Variables specific to ppm scheme
-!
-! Advection source term calulated in the PPM algorithm
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZSRC
 !
 !-------------------------------------------------------------------------------
 !
@@ -164,9 +159,7 @@ IGRID = 1
 !
 CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, &
                     PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                    ZSRC, TPDTCUR, PCRU, PCRV, PCRW)
-! add the advection to the sources
-PRTHS = PRTHS +  ZSRC 
+                    PRTHS, KTCOUNT, PCRU, PCRV, PCRW)
 !
 !
 ! Turbulence variables
@@ -174,8 +167,7 @@ PRTHS = PRTHS +  ZSRC
 IF (GTKEALLOC) THEN
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTKET,PRHODJ,PTSTEP, &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       ZSRC, TPDTCUR, PCRU, PCRV, PCRW)
-  PRTKES = PRTKES + ZSRC
+                       PRTKES, KTCOUNT, PCRU, PCRV, PCRW)
 !
 !
 END IF
@@ -185,13 +177,10 @@ END IF
 ! Case with KRR moist variables
 !
 DO JRR=1,KRR
-!
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID,           &
                        PRT(:,:,:,JRR), PRHODJ, PTSTEP,                 &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       ZSRC, TPDTCUR, PCRU, PCRV, PCRW                 )
-   PRRS(:,:,:,JRR) = PRRS(:,:,:,JRR) + ZSRC(:,:,:)
-!
+                       PRRS(:,:,:,JRR), KTCOUNT, PCRU, PCRV, PCRW                 )
 END DO
 !
 !

@@ -126,6 +126,7 @@ SUBROUTINE INI_LB(HINIFILE,HLUOUT,OLSOURCE,KSV,                    &
 !!      M.Leriche       16/07/10    Add ice phase chemical species
 !!      Pialat/tulet    15/02/12    Add ForeFire scalars 
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
 !!      J.Escobar : 27/04/2016 : bug , test only on ANY(HGETSVM({{1:KSV}})=='READ'
 !!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately

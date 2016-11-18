@@ -42,6 +42,7 @@
 !!    -------------
 !!      Original    4/03/2002
 !!                Oct. 2011 : (P.Le Moigne) Surface series
+!!      June 2016: P. Wautelet: corrected writes
 !!
 !-------------------------------------------------------------------------------
 !
@@ -296,9 +297,9 @@ WRITE(ILUOUT,*) 'NIBOXL=',NIBOXL,' NJBOXL=',NJBOXL, &
                 ' NIBOXH=',NIBOXH,' NJBOXH=',NJBOXH
 WRITE(ILUOUT,*) 'NIBOXSL=',NIBOXSL,' NJBOXSL=',NJBOXSL, &
                 ' NIBOXSH=',NIBOXSH,' NJBOXSH=',NJBOXSH
-WRITE(ILUOUT,*) 'NJSLICEL=', NJSLICEL(:),' NJSLICEH=',NJSLICEH(:)
-WRITE(ILUOUT,*) 'NISL=',NISL(:),' NJSLICESL=',NJSLICESL(:), &
-                ' NISH=',NISH(:),' NJSLICESH=',NJSLICESH(:)
+WRITE(ILUOUT,*) 'NJSLICEL=', NJSLICEL(1:NBJSLICE),' NJSLICEH=',NJSLICEH(1:NBJSLICE)
+WRITE(ILUOUT,*) 'NISL=',NISL(1:NBJSLICE),' NJSLICESL=',NJSLICESL(1:NBJSLICE), &
+                ' NISH=',NISH(1:NBJSLICE),' NJSLICESH=',NJSLICESH(1:NBJSLICE)
 WRITE(ILUOUT,*) 'IIDIM1=',IIDIM1,' NBJSLICE=',NBJSLICE
 !
 !-------------------------------------------------------------------------------

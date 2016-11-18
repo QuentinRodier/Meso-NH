@@ -1852,8 +1852,8 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
-                          CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
-                          GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,   &
+                          CLBCX, CLBCY, CRAD, CTURBDIM,                  &
+                          LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,       &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
                           XPABST, XTHT, XRTHS, XWT,  XRT, XRRS,          &
                           XSVT, XRSVS, XCIT,                             &
@@ -1866,8 +1866,8 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
   ELSE
     CALL RESOLVED_ELEC_n (CCLOUD, CSCONV, CMF_CLOUD,                     &
                           NRR, NSPLITR, IMI, KTCOUNT, OEXIT,             &
-                          CLBCX, CLBCY, YFMFILE, CLUOUT, CRAD, CTURBDIM, &
-                          GCLOSE_OUT, LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,   &
+                          CLBCX, CLBCY, CRAD, CTURBDIM,                  &
+                          LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,      &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
                           XPABST, XTHT, XRTHS, XWT,                      &
                           XRT, XRRS, XSVT, XRSVS, XCIT,                  &

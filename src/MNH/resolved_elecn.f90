@@ -10,8 +10,8 @@
 INTERFACE
       SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
                                   KRR, KSPLITR, KMI, KTCOUNT, OEXIT,                      &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,   &
+                                  HLBCX, HLBCY, HRAD, HTURBDIM,                           &
+                                  OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,               &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
                                   PPABST, PTHT, PTHS, PWT,                                & 
                                   PRT, PRS, PSVT, PSVS, PCIT,                             & 
@@ -31,14 +31,9 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
-                                                   ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
-                                                     ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                                    ! use values computed in CONDENSATION
@@ -102,8 +97,8 @@ END MODULE MODI_RESOLVED_ELEC_n
 !     #####################################################################################
       SUBROUTINE RESOLVED_ELEC_n (HCLOUD, HSCONV, HMF_CLOUD,                              &
                                   KRR, KSPLITR, KMI, KTCOUNT, OEXIT,                      &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,   &
+                                  HLBCX, HLBCY, HRAD, HTURBDIM,                           &
+                                  OSUBG_COND, OSIGMAS,PSIGQSAT, HSUBG_AUCV,               &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,                 &
                                   PPABST, PTHT, PTHS, PWT,                                & 
                                   PRT, PRS, PSVT, PSVS, PCIT,                             & 
@@ -229,14 +224,9 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 LOGICAL,                  INTENT(IN)   :: OEXIT    ! switch for the end of the temporal loop
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
-                                                   ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
-LOGICAL,                  INTENT(IN)   :: OCLOSE_OUT ! Conditional closure of
-                                                   ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)   :: OSUBG_COND ! Switch for Subgrid Cond.
 LOGICAL,                  INTENT(IN)   :: OSIGMAS  ! Switch for Sigma_s:
                                         ! use values computed in CONDENSATION
@@ -696,9 +686,9 @@ SELECT CASE (HCLOUD)
 !*       5.2    Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD, HTURBDIM,          &
+    CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD, HTURBDIM,                           &
                           HSCONV, HMF_CLOUD,                                  &
-                          OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,   &
+                          OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &
                           PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
                           PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    &
                           PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &
@@ -760,9 +750,9 @@ SELECT CASE (HCLOUD)
 !*       6.2    Perform the saturation adjustment over cloud ice and cloud water
 !
     ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,                    &
+    CALL ICE_ADJUST_ELEC (KRR, KMI, HRAD,                                     &
                           HTURBDIM, HSCONV, HMF_CLOUD,                        &
-                          OCLOSE_OUT,OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,    &
+                          OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,               &
                           PRHODJ, PEXNREF, PSIGS, PPABST, ZZZ,                &
                           PMFCONV, PCF_MF, PRC_MF, PRI_MF,                    & 
                           PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),               &

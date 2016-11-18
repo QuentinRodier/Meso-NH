@@ -165,6 +165,11 @@ CNAME_GRIBEX=""
 # Gribapi flags
 GRIBAPI_CONF= --host=powerpc64-bgq-linux 
 #
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+#MNH_TOOLS = no
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

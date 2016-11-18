@@ -61,6 +61,8 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !!     Original 15/05/2000
 !!     10/01/2011 adding IMI, the model number
 !!     March, 2013 :  C.Lac : add vertical profiles
+!!     July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
+!!                                      aircraft, ballon and profiler
 !!     Oct 2016 : G.Delautier LIMA
 !!     August 2016 (M.Leriche) Add mass concentration of aerosol species
 !!

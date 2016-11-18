@@ -91,6 +91,14 @@ CNAME_GRIBEX=_gfortran
 # Netcdf/HDF5 flags
 #
 HDF_CONF= CFLAGS=-std=c99
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools if gfortran >= 5.X
+ifeq ($(shell test $$( gfortran -dumpversion | cut -b1 ) -ge 5 ; echo $$?),0)
+MNH_TOOLS = yes
+endif
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

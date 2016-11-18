@@ -109,7 +109,12 @@ CPPFLAGS_MNH       = -DMNH -DMNH_PGI -DMNH_SFX
 #
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=_pgf77
-
+#
+# LIBTOOLS flags
+#
+#if MNH_TOOLS exists => compile the tools
+MNH_TOOLS = yes
+#
 ##########################################################
 #                                                        #
 # Source of MESONH PACKAGE  Distribution                 #

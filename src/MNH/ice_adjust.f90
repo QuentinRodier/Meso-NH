@@ -13,7 +13,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HFMFILE, HLUOUT, HRAD,   &
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HRAD,                    &
                              HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
                              PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
                              PCF_MF,PRC_MF, PRI_MF,                            &
@@ -26,9 +26,6 @@ INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
@@ -81,7 +78,7 @@ END INTERFACE
 END MODULE MODI_ICE_ADJUST
 !
 !     ##########################################################################
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HFMFILE, HLUOUT, HRAD,   &
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HRAD,                    &
                              HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
                              PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
                              PCF_MF,PRC_MF,PRI_MF,                             &
@@ -191,9 +188,6 @@ INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name

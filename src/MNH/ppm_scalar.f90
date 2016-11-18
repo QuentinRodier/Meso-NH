@@ -40,7 +40,7 @@ REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT         ! Vars at t
 !
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS ! Source terms
+REAL, DIMENSION(:,:,:,:), INTENT(OUT  ) :: PRSVS ! Source terms
 !
 !
 END SUBROUTINE PPM_SCALAR
@@ -127,7 +127,7 @@ REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT             
 !
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS         ! Source terms
+REAL, DIMENSION(:,:,:,:), INTENT(OUT)   :: PRSVS         ! Source terms
 !
 !
 !*       0.2   Declarations of local variables :
@@ -135,12 +135,6 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS         ! Source terms
 INTEGER :: JSV           ! Loop index for Scalar Variables
 !
 INTEGER :: IGRID ! localisation on the model grid
-!
-!*        Variables specific to ppm scheme
-!
-! Advection source term calulated in the PPM algorithm
-REAL, DIMENSION(SIZE(PCRU,1),SIZE(PCRU,2),SIZE(PCRU,3)) :: ZSRC
-!
 !
 !-------------------------------------------------------------------------------
 !
@@ -152,14 +146,10 @@ IGRID = 1
 ! Case with KSV tracers
 !
 DO JSV=1,KSV
-!
    CALL ADVEC_PPM_ALGO(HSV_ADV_SCHEME, HLBCX, HLBCY, IGRID, PSVT(:,:,:,JSV), & 
                        PRHODJ, PTSTEP, & 
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       ZSRC, TPDTCUR, PCRU, PCRV, PCRW)
-! add the advection to the sources
-   PRSVS(:,:,:,JSV) =  PRSVS(:,:,:,JSV) + ZSRC(:,:,:)   
-!
+                       PRSVS(:,:,:,JSV), KTCOUNT, PCRU, PCRV, PCRW)
 END DO
 !
 !

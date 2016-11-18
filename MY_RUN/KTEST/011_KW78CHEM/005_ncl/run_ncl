@@ -3,7 +3,7 @@
 #MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 #MNH_LIC for details. version 1.
 set -x
-set -e
+#set -e
 ln -sf ../002_mesonh/KWRAI.1.SEGCH.004.nc4 .
 
 ncl  plot_KW78_chem.ncl
@@ -11,3 +11,4 @@ for ECH in '000001' '000002' '000003' '000004' '000005' '000006' '000007' '00000
 do
 display visu_KW78_chem.${ECH}.png
 done
+exit 0

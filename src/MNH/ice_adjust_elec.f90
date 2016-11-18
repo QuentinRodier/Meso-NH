@@ -13,9 +13,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,                &
-                                  HTURBDIM, HSCONV, HMF_CLOUD,                    &
-                                  OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,&
+      SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HRAD, HTURBDIM, HSCONV, HMF_CLOUD,    &
+                                  OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,           &
                                   PRHODJ, PEXNREF, PSIGS, PPABST, PZZ,            &
                                   PMFCONV, PCF_MF, PRC_MF, PRI_MF,                &
                                   PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,   &
@@ -26,16 +25,11 @@ INTERFACE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -99,9 +93,8 @@ END INTERFACE
 END MODULE MODI_ICE_ADJUST_ELEC
 !
 !     ########################################################################
-      SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HFMFILE, HLUOUT, HRAD,           &
-                             HTURBDIM, HSCONV, HMF_CLOUD,                    &
-                             OCLOSE_OUT, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,&
+      SUBROUTINE ICE_ADJUST_ELEC (KRR, KMI, HRAD, HTURBDIM, HSCONV,          &
+                             HMF_CLOUD, OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,&
                              PRHODJ, PEXNREF, PSIGS, PPABST, PZZ,            &
                              PMFCONV, PCF_MF, PRC_MF, PRI_MF,                &  
                              PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,   &
@@ -202,16 +195,11 @@ IMPLICIT NONE
 !
 INTEGER,                INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),       INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
-CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                  ! model n
 CHARACTER*4,            INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                   ! turbulence scheme
 CHARACTER(LEN=4),       INTENT(IN)    :: HSCONV   ! Shallow convection scheme
 CHARACTER(LEN=4),       INTENT(IN)    :: HMF_CLOUD! Type of statistical cloud
 CHARACTER*4,            INTENT(IN)    :: HRAD     ! Radiation scheme name
-LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                    ! the OUTPUT FM-file
 LOGICAL,                INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                               :: OSIGMAS  ! Switch for Sigma_s: 

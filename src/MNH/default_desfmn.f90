@@ -208,6 +208,9 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   07/2013  (C.Lac) add WENO, LCHECK              
 !!                   07/2013  (Bosseur & Filippi) adds Forefire
 !!                   08/2015  (Redelsperger & Pianezze) add XPOND coefficient for LBC
+!!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 
+!!                                      put NCH_VEC_LENGTH = 50 instead of 1000
+!!
 !!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      Modification 24/03/16 (Leriche) remove LCH_SURFACE_FLUX 

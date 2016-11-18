@@ -192,7 +192,11 @@ YSC%DUU%NDUMMY_NBR = 0
 !*   10.      Chemical Emission fields
 !             ------------------------
 !
+<<<<<<< HEAD
 YSC%CHU%LCH_EMIS = .FALSE.
+=======
+LCH_EMIS = .FALSE.
+>>>>>>> MNH-52X-BUG2
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',1,ZHOOK_HANDLE)
 !_______________________________________________________________________________
 !

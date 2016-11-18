@@ -187,6 +187,7 @@ END MODULE MODI_SPAWN_MODEL2
 !!      Modification 05/02/2015 (M.Moge) parallelization of SPAWNING
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar   02/05/2016 : test ZZS_MAX in // 
+!!      J.Escobar   12/07/2016 : add test on NRIMY & change the one on NRIMX with >=
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                    10/2016 (C.Lac) Add droplet deposition
 !-------------------------------------------------------------------------------
@@ -641,9 +642,15 @@ IF ( .NOT. L2D ) THEN
 ELSE
   NRIMY=0
 END IF
-IF (NRIMX == IIU/2-1) THEN      ! Error ! this case is not supported - it should be, but there is a bug
-  WRITE(*,*) "Error : The size of the LB zone is too big for the size of the subdomains"
-  WRITE(*,*) "Try with less cores, a smaller LB size, or a bigger grid"
+IF (NRIMX >= IIU/2-1) THEN      ! Error ! this case is not supported - it should be, but there is a bug
+  WRITE(*,*) "Error : The size of the LBX zone is too big for the size of the subdomains"
+  WRITE(*,*) "Try with less cores, a smaller LBX size, or a bigger grid in X "
+  CALL ABORT
+  STOP
+ENDIF
+IF ( ( .NOT. L2D ) .AND. (NRIMY >= IJU/2-1) ) THEN  ! Error ! this case is not supported - it should be, but there is a bug
+  WRITE(*,*) "Error : The size of the LBY zone is too big for the size of the subdomains"
+  WRITE(*,*) "Try with less cores, a smaller LBY size, or a bigger grid in Y "
   CALL ABORT
   STOP
 ENDIF
