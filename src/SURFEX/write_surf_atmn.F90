@@ -42,6 +42,7 @@
 !       Modified    07/2011, B.Decharme: delete write pgd fields
 !       Modified    07/2011, B.Decharme: land_use key for writing semi-prognostic variables
 !       Modified    05/2012, B.Decharme: supress LPROVAR_TO_DIAG to write prognostic fields if user want
+!       Modified    05/2016, M.Leriche & V.Masson suppress readwrite_ch_emis (only written in pgd step)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -53,7 +54,7 @@ USE MODD_WRITE_SURF_ATM,  ONLY : LNOWRITE_CANOPY
 USE MODD_SURF_ATM_n,      ONLY : NDIM_FULL, NDIM_SEA, NDIM_WATER, NDIM_TOWN, NDIM_NATURE, TTIME
 USE MODD_SURF_ATM_SSO_n,  ONLY : CROUGH
 USE MODD_DIAG_SURF_ATM_n, ONLY : TIME_BUDGETC,LSURF_BUDGETC,LSELECT  
-USE MODD_CH_SURF_n,       ONLY : LCH_EMIS, LRW_CH_EMIS, CCH_EMIS
+USE MODD_CH_SURF_n,       ONLY : LCH_EMIS, CCH_EMIS
 USE MODD_SURF_ATM_GRID_n, ONLY : CGRID, XGRID_PAR, XLAT, XLON, XMESH_SIZE
 !
 USE MODI_INIT_IO_SURF_n
@@ -67,7 +68,6 @@ USE MODI_WRITE_GRID
 !
 USE MODI_WRITESURF_ATM_CONF_n
 USE MODI_WRITESURF_SSO_CANOPY_n
-USE MODI_READWRITE_EMIS_FIELD_n
 USE MODI_WRITESURF_PRECIP_n
 USE MODI_WRITE_DIAG_CH_SNAP_n
 !
@@ -143,9 +143,9 @@ END IF
 !               ---------
 !
 IF (LCH_EMIS) THEN
-  IF (CCH_EMIS=='AGGR') THEN 
-    IF (LRW_CH_EMIS) CALL READWRITE_EMIS_FIELD_n(HPROGRAM)
-  ELSE IF (CCH_EMIS=='SNAP') THEN
+!  IF (CCH_EMIS=='AGGR') THEN 
+! put here write diag for agg emission
+  IF (CCH_EMIS=='SNAP') THEN
     CALL WRITE_DIAG_CH_SNAP_n(HPROGRAM)
   END IF
 END IF
