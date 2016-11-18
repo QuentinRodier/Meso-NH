@@ -46,7 +46,7 @@ USE MODD_SURF_ATM_n,      ONLY : CNATURE, CSEA, CWATER, CTOWN, &
                                    NDIM_TOWN,NDIM_WATER,         &
                                    XNATURE, NDIM_FULL, LGARDEN,  &
                                    LECOCLIMAP
-USE MODD_CH_SURF_n,       ONLY : LCH_EMIS, LRW_CH_EMIS
+USE MODD_CH_SURF_n,       ONLY : LCH_EMIS
 USE MODD_DUMMY_SURF_FIELDS_n, ONLY : NDUMMY_NBR
 !
 USE MODI_INI_CSTS
@@ -186,7 +186,6 @@ NDUMMY_NBR = 0
 !             ------------------------
 !
 LCH_EMIS = .FALSE.
-LRW_CH_EMIS = .FALSE.
 IF (LHOOK) CALL DR_HOOK('ZOOM_PGD_SURF_ATM',1,ZHOOK_HANDLE)
 !_______________________________________________________________________________
 !
