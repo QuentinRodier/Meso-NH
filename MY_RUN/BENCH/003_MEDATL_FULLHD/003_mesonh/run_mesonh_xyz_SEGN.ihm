@@ -134,7 +134,7 @@ cat > EXSEG1.nam  << EOF
 /
 
 &NAM_FMOUT
- ${XFMOUT} 
+ ${XBAK_TIME} 
 / 
 EOF
 cp EXSEG1.nam SURF1.nam      
