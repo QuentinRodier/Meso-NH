@@ -48,7 +48,7 @@ IMPLICIT NONE
 
 TYPE OUT_t
 !
-  INTEGER             :: NBAK_NUMB, NOUT_NUMB ! number of outputs and backups performed by model n
+  INTEGER             :: NBAK_NUMB=0, NOUT_NUMB=0 ! Number of outputs and backups performed by model n
   TYPE(TOUTBAK),DIMENSION(:),POINTER :: TBACKUPN=>NULL(),TOUTPUTN=>NULL()
 ! Lists of the outputs and backups
 !
