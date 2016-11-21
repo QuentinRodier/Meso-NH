@@ -986,8 +986,34 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # --------------------------------------
 #
 # The RTTOV package was not included into the open source version of Meso-NH
-# because it needs a licence agrement .
+# because it needs a licence agrement.
 #
+# ----------------------------------
+# OPTION 1: Use version 11.3 of RTTOV 
+# -----------------------------------
+# Download the RTTOV package rttov113.tar.gz by following the instructions given on http://nwpsaf.eu/site/software/rttov/
+#
+# Install the RTTOV package rttov113.tar.gz
+cd MNH.../src/LIB
+mkdir RTTOV-11.3
+cd RTTOV-11.3
+tar xvfz rttov113.tar.gz
+cd src
+make ARCH=ifort        # Use Intel "ifort" compiler; other options: gfortran, NAG, pgf90, IBM
+#
+# And then for the compilation, run the 'configure' script preceded with the setting of the MNH_RTTOV variable:
+#
+
+cd MNH.../src/
+export MNH_RTTOV=1
+export VER_RTTOV=11.3
+./configure
+
+etc ...
+
+# ----------------------------------
+# OPTION 2: Use version 8.7 of RTTOV 
+# ----------------------------------
 # For already(old) licencied MesoNH users (MNH-4-X version with research licence see here: http://mesonh.aero.obs-mip.fr/mesonh410/UserInformation)
 #
 # the package could be reloaded in this way  
@@ -1014,6 +1040,7 @@ tar xvfz RTTOV.tar.gz
 
 cd MNH.../src/
 export MNH_RTTOV=1
+export VER_RTTOV=8.7
 ./configure
 
 etc ...

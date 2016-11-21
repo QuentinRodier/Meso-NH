@@ -162,12 +162,12 @@ INC         += $(INC_RTTOV)
 CPPFLAGS    += $(CPPFLAGS_RTTOV)
 CPPFLAGS_MNH += -DMNH_RTTOV_8=MNH_RTTOV_8
 endif
-ifeq "$(VER_RTTOV)" "11.1"
+ifeq "$(VER_RTTOV)" "11.3"
 DIR_RTTOV=${SRC_MESONH}/src/LIB/RTTOV-${VER_RTTOV}
 RTTOV_PATH=${DIR_RTTOV}
 #
 INC_RTTOV     ?= -I${RTTOV_PATH}/include -I${RTTOV_PATH}/mod
-LIB_RTTOV     ?= -L${RTTOV_PATH}/lib -lrttov11.1.0_coef_io -lrttov11.1.0_mw_scatt -lrttov11.1.0_main
+LIB_RTTOV     ?= -L${RTTOV_PATH}/lib -lrttov11_coef_io -lrttov11_mw_scatt -lrttov11_main
 INC            += $(INC_RTTOV)
 LIBS           += $(LIB_RTTOV)
 VPATH         += $(RTTOV_PATH)/mod
