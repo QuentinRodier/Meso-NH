@@ -16,23 +16,23 @@ CHARACTER(LEN=50) :: yexe
 
 
 INTEGER, PARAMETER :: FM_FIELD_SIZE = 16
-INTEGER, PARAMETER :: ISRCLU  = 11
-INTEGER, PARAMETER :: IDESTLU = 12
+INTEGER(KIND=LFI_INT), PARAMETER :: ISRCLU  = 11
+INTEGER(KIND=LFI_INT), PARAMETER :: IDESTLU = 12
 INTEGER :: JPHEXT
-INTEGER :: iverb
-INTEGER :: inap ! nb d'articles prevus (utile a la creation)
-INTEGER :: inaf ! nb d'articles presents dans un fichier existant
-INTEGER :: inafdest
+INTEGER(KIND=LFI_INT) :: iverb
+INTEGER(KIND=LFI_INT) :: inap ! nb d'articles prevus (utile a la creation)
+INTEGER(KIND=LFI_INT) :: inaf ! nb d'articles presents dans un fichier existant
+INTEGER(KIND=LFI_INT) :: inafdest
 
 CHARACTER(LEN=128) :: filename,DESTFNAME
 INTEGER :: JI,JJ
-INTEGER :: IRESP
+INTEGER(KIND=LFI_INT) :: IRESP
 CHARACTER(LEN=FM_FIELD_SIZE),DIMENSION(:),ALLOCATABLE :: yrecfm
-INTEGER,                     DIMENSION(:),ALLOCATABLE :: ileng
+INTEGER(KIND=LFI_INT),       DIMENSION(:),ALLOCATABLE :: ileng
 INTEGER(KIND=8),             DIMENSION(:),ALLOCATABLE :: iwork
 
-INTEGER :: ilengs
-INTEGER :: ipos
+INTEGER(KIND=LFI_INT) :: ilengs
+INTEGER(KIND=LFI_INT) :: ipos
 INTEGER :: sizemax
 
 INTEGER            :: IGRID
@@ -46,7 +46,9 @@ INTEGER :: LFICOMP
 INTEGER :: NEWSIZE
 INTEGER :: searchndx
 INTEGER :: INDDATIM
-INARG = IARGC()
+
+!OLD: INARG = IARGC()
+INARG = COMMAND_ARGUMENT_COUNT()
 
 #if defined(F90HP)
 #define HPINCR 1
@@ -54,6 +56,9 @@ INARG = IARGC()
 #define HPINCR 0
 #endif
 
+  CALL GET_COMMAND_ARGUMENT(0,yexe)
+#if 0
+!OLD:
 #if defined(FUJI) || defined(NAGf95) || defined(NEC) || defined(HP) || defined(pgf) || defined(G95) || defined(GFORTRAN)
   CALL GETARG(0+HPINCR,yexe)
   IF (LEN_TRIM(yexe) == 0) THEN
@@ -63,12 +68,17 @@ INARG = IARGC()
 #else
   CALL PXFGETARG(0,yexe,arglen,iresp)
 #endif
+#endif
 !  PRINT *,yexe, ' avec ',INARG,' arguments.'
   IF (INARG == 1) THEN 
+     CALL GET_COMMAND_ARGUMENT(1,filename)
+#if 0
+!OLD:
 #if defined(FUJI) || defined(NAGf95) || defined(NEC) || defined(HP) || defined(pgf) || defined(G95)|| defined(GFORTRAN)
      CALL GETARG(1+HPINCR,filename)
 #else
      CALL PXFGETARG(1,filename,arglen,iresp)
+#endif
 #endif
   ELSE 
      PRINT *,'Usage : ', TRIM(yexe), ' [fichier lfi]'
@@ -218,13 +228,13 @@ CALL LFIFER(IRESP,IDESTLU,'KEEP')
 CONTAINS 
 
 SUBROUTINE FMREADLFIN1(klu,hrecfm,kval,kresp)
-INTEGER, INTENT(IN)         :: klu ! logical fortran unit au lfi file
-CHARACTER(LEN=*),INTENT(IN) :: hrecfm ! article name to be read
-INTEGER, INTENT(OUT)        :: kval ! integer value for hrecfm article
-INTEGER, INTENT(OUT)        :: kresp! return code null if OK
+INTEGER(KIND=LFI_INT), INTENT(IN)  :: klu ! logical fortran unit au lfi file
+CHARACTER(LEN=*),      INTENT(IN)  :: hrecfm ! article name to be read
+INTEGER,               INTENT(OUT) :: kval ! integer value for hrecfm article
+INTEGER(KIND=LFI_INT), INTENT(OUT) :: kresp! return code null if OK
 !
-INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE::iwork
-INTEGER :: iresp,ilenga,iposex,icomlen
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
+INTEGER(KIND=LFI_INT)                    :: iresp,ilenga,iposex,icomlen
 !
 CALL LFINFO(iresp,klu,hrecfm,ilenga,iposex)
 IF (iresp /=0 .OR. ilenga == 0) THEN
