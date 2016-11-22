@@ -159,7 +159,7 @@ IGRID = 1
 !
 CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, &
                     PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                    PRTHS, KTCOUNT, PCRU, PCRV, PCRW)
+                    PRTHS, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
 ! Turbulence variables
@@ -167,7 +167,7 @@ CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, 
 IF (GTKEALLOC) THEN
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTKET,PRHODJ,PTSTEP, &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRTKES, KTCOUNT, PCRU, PCRV, PCRW)
+                       PRTKES, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
 END IF
@@ -180,7 +180,7 @@ DO JRR=1,KRR
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID,           &
                        PRT(:,:,:,JRR), PRHODJ, PTSTEP,                 &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRRS(:,:,:,JRR), KTCOUNT, PCRU, PCRV, PCRW                 )
+                       PRRS(:,:,:,JRR), TPDTCUR, PCRU, PCRV, PCRW                 )
 END DO
 !
 !

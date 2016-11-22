@@ -149,7 +149,7 @@ DO JSV=1,KSV
    CALL ADVEC_PPM_ALGO(HSV_ADV_SCHEME, HLBCX, HLBCY, IGRID, PSVT(:,:,:,JSV), & 
                        PRHODJ, PTSTEP, & 
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
-                       PRSVS(:,:,:,JSV), KTCOUNT, PCRU, PCRV, PCRW)
+                       PRSVS(:,:,:,JSV), TPDTCUR, PCRU, PCRV, PCRW)
 END DO
 !
 !
