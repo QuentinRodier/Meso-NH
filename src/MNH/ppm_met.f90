@@ -10,7 +10,7 @@
 INTERFACE
 !
       SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,              &
-                          PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
+                          PCRU, PCRV, PCRW, PTSTEP,PTSTEP_PPM, PRHODJ, &
                           PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
                           PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
                           PRTHS, PRTKES, PRRS, HMET_ADV_SCHEME    )
@@ -33,7 +33,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
-REAL,                     INTENT(IN)    :: PTSTEP ! Single Time step 
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step model  
+REAL,                     INTENT(IN)    :: PTSTEP_PPM ! Time Step PPM
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET        ! Vars at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT 
@@ -49,7 +50,7 @@ END MODULE MODI_PPM_MET
 !
 !     ######################################################################
       SUBROUTINE PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,              &
-                          PCRU, PCRV, PCRW, PTSTEP, PRHODJ,       &
+                          PCRU, PCRV, PCRW, PTSTEP,PTSTEP_PPM, PRHODJ, &
                           PRHOX1, PRHOX2, PRHOY1, PRHOY2,         &
                           PRHOZ1, PRHOZ2, PTHT, PTKET, PRT,       &
                           PRTHS, PRTKES, PRRS, HMET_ADV_SCHEME    )
@@ -124,7 +125,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
-REAL,                     INTENT(IN)    :: PTSTEP ! Time step 
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step model  
+REAL,                     INTENT(IN)    :: PTSTEP_PPM ! Time Step PPM
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTHT, PTKET ! Vars at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PRT 
@@ -158,7 +160,7 @@ IGRID = 1
 ! Potential temperature
 !
 CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, &
-                    PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
+                    PTSTEP_PPM,PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
                     PRTHS, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
@@ -166,7 +168,7 @@ CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTHT, PRHODJ, PTSTEP, 
 !
 IF (GTKEALLOC) THEN
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID, PTKET,PRHODJ,PTSTEP, &
-                       PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
+                       PTSTEP_PPM,PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
                        PRTKES, TPDTCUR, PCRU, PCRV, PCRW)
 !
 !
@@ -178,7 +180,7 @@ END IF
 !
 DO JRR=1,KRR
    CALL ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, IGRID,           &
-                       PRT(:,:,:,JRR), PRHODJ, PTSTEP,                 &
+                       PRT(:,:,:,JRR), PRHODJ, PTSTEP, PTSTEP_PPM,     &
                        PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
                        PRRS(:,:,:,JRR), TPDTCUR, PCRU, PCRV, PCRW                 )
 END DO
