@@ -10,11 +10,11 @@
 !
 INTERFACE
 !
-      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,   &
-                     PCRU, PCRV, PCRW, PTSTEP, PRHODJ,    &
-                     PRHOX1, PRHOX2, PRHOY1, PRHOY2,      &
-                     PRHOZ1, PRHOZ2,                      &
-                     PSVT, PRSVS, HSV_ADV_SCHEME          ) 
+      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,     &
+                     PCRU, PCRV, PCRW, PTSTEP, PTSTEP_PPM,  &
+                     PRHODJ, PRHOX1, PRHOX2, PRHOY1, PRHOY2,&
+                     PRHOZ1, PRHOZ2,                        &
+                     PSVT, PRSVS, HSV_ADV_SCHEME            ) 
 !
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 USE MODD_TYPE_DATE,   ONLY : DATE_TIME
@@ -36,7 +36,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
-REAL,                     INTENT(IN)    :: PTSTEP ! Time step 
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step model  
+REAL,                     INTENT(IN)    :: PTSTEP_PPM ! Time Step PPM
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT         ! Vars at t
 !
@@ -50,11 +51,11 @@ END INTERFACE
 END MODULE MODI_PPM_SCALAR
 !
 !     ######################################################################
-      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,   &
-                     PCRU, PCRV, PCRW, PTSTEP, PRHODJ,    &
-                     PRHOX1, PRHOX2, PRHOY1, PRHOY2,      &
-                     PRHOZ1, PRHOZ2,                      &
-                     PSVT, PRSVS, HSV_ADV_SCHEME          ) 
+      SUBROUTINE PPM_SCALAR (HLBCX,HLBCY, KSV, TPDTCUR,     &
+                     PCRU, PCRV, PCRW, PTSTEP, PTSTEP_PPM,  &
+                     PRHODJ, PRHOX1, PRHOX2, PRHOY1, PRHOY2,&
+                     PRHOZ1, PRHOZ2,                        &
+                     PSVT, PRSVS, HSV_ADV_SCHEME            ) 
 !     ######################################################################
 !
 !!****  *PPM_SCALAR * 
@@ -123,7 +124,8 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOX1,PRHOX2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOY1,PRHOY2
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHOZ1,PRHOZ2
 !
-REAL,                     INTENT(IN)    :: PTSTEP ! Time step 
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step model  
+REAL,                     INTENT(IN)    :: PTSTEP_PPM ! Time Step PPM
 !
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSVT             
 !
@@ -147,8 +149,8 @@ IGRID = 1
 !
 DO JSV=1,KSV
    CALL ADVEC_PPM_ALGO(HSV_ADV_SCHEME, HLBCX, HLBCY, IGRID, PSVT(:,:,:,JSV), & 
-                       PRHODJ, PTSTEP, & 
-                       PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2, &
+                       PRHODJ, PTSTEP, PTSTEP_PPM,                           & 
+                       PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1, PRHOZ2,       &
                        PRSVS(:,:,:,JSV), TPDTCUR, PCRU, PCRV, PCRW)
 END DO
 !

@@ -14,8 +14,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE  ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, KGRID, PFIELDT, &
-                                 PRHODJ, PTSTEP, &
+      SUBROUTINE  ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, KGRID, PFIELDT,&
+                                 PRHODJ, PTSTEP, PTSTEP_PPM,                   &
                                  PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1,PRHOZ2,&
                                  PSRC,  TPDTCUR, PCRU, PCRV, PCRW)
 !
@@ -34,7 +34,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHODJ  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOX1, PRHOX2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOY1, PRHOY2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOZ1, PRHOZ2
-REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
+REAL,                   INTENT(IN)  :: PTSTEP ! Time step model  
+REAL,                   INTENT(IN)  :: PTSTEP_PPM ! Time Step PPM
 TYPE (DATE_TIME),       INTENT(IN)  :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
@@ -48,7 +49,7 @@ END MODULE MODI_ADVEC_PPM_ALGO
 !
 !     ##########################################################################
       SUBROUTINE  ADVEC_PPM_ALGO(HMET_ADV_SCHEME, HLBCX, HLBCY, KGRID, PFIELDT, &
-                                 PRHODJ, PTSTEP, &
+                                 PRHODJ, PTSTEP, PTSTEP_PPM,                   &
                                  PRHOX1, PRHOX2, PRHOY1, PRHOY2, PRHOZ1,PRHOZ2,&
                                  PSRC, TPDTCUR, PCRU, PCRV, PCRW)
 !     ##########################################################################
@@ -101,7 +102,8 @@ REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHODJ  ! density
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOX1, PRHOX2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOY1, PRHOY2
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOZ1, PRHOZ2
-REAL,                   INTENT(IN)  :: PTSTEP  ! Time step 
+REAL,                   INTENT(IN)  :: PTSTEP ! Time step model  
+REAL,                   INTENT(IN)  :: PTSTEP_PPM ! Time Step PPM
 TYPE (DATE_TIME),       INTENT(IN)  :: TPDTCUR ! current date and time
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSRC    ! source term after advection
@@ -137,19 +139,19 @@ CASE('PPM_00')
 !*       1.     ADVECTION IN X DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PTSTEP)
+      PSRC = PPM_S0_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PTSTEP_PPM)
       PSRC = PSRC / PRHOX1
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PTSTEP)
+      PSRC = PPM_S0_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PTSTEP_PPM)
       PSRC = PSRC / PRHOY1
 !
 !*       3.     ADVECTION IN Z DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_Z(KGRID, PSRC, PCRW, PRHOY1, PTSTEP)
+      PSRC = PPM_S0_Z(KGRID, PSRC, PCRW, PRHOY1, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ1
 !
    ELSE
@@ -158,19 +160,19 @@ CASE('PPM_00')
 !*       1.     ADVECTION IN Z DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_Z(KGRID, PSRC, PCRW, PRHODJ, PTSTEP)
+      PSRC = PPM_S0_Z(KGRID, PSRC, PCRW, PRHODJ, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ2
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PTSTEP)
+      PSRC = PPM_S0_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PTSTEP_PPM)
       PSRC = PSRC / PRHOY2
 !
 !*       3.     ADVECTION IN X DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S0_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PTSTEP)
+      PSRC = PPM_S0_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PTSTEP_PPM)
       PSRC = PSRC / PRHOX2
 !
    END IF
@@ -185,21 +187,21 @@ CASE('PPM_01')
 !               ------------------------
 !
       PSRC = (PSRC * PRHODJ) - &
-           PPM_01_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PTSTEP)
+           PPM_01_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PTSTEP_PPM)
       PSRC = PSRC / PRHOX1
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
       PSRC = (PSRC * PRHOX1) - &
-           PPM_01_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PTSTEP)
+           PPM_01_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PTSTEP_PPM)
       PSRC = PSRC / PRHOY1
 !
 !*       3.     ADVECTION IN Z DIRECTION
 !               ------------------------
 !
       PSRC = (PSRC * PRHOY1) - &
-           PPM_01_Z(KGRID, PSRC, PCRW, PRHOY1, PTSTEP)
+           PPM_01_Z(KGRID, PSRC, PCRW, PRHOY1, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ1
 !
    ELSE
@@ -208,21 +210,21 @@ CASE('PPM_01')
 !               ------------------------
 !
       PSRC = (PSRC * PRHODJ) - &
-           PPM_01_Z(KGRID, PSRC, PCRW, PRHODJ, PTSTEP)
+           PPM_01_Z(KGRID, PSRC, PCRW, PRHODJ, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ2
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
       PSRC = (PSRC * PRHOZ2) - &
-           PPM_01_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PTSTEP)
+           PPM_01_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PTSTEP_PPM)
       PSRC = PSRC / PRHOY2
 !
 !*       3.     ADVECTION IN X DIRECTION
 !               ------------------------
 !
       PSRC = (PSRC * PRHOY2) - &
-           PPM_01_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PTSTEP)
+           PPM_01_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PTSTEP_PPM)
       PSRC = PSRC / PRHOX2
 !
    END IF
@@ -236,19 +238,19 @@ CASE('PPM_02')
 !*       1.     ADVECTION IN X DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PRHOX1, PTSTEP)
+      PSRC = PPM_S1_X(HLBCX, KGRID, PSRC, PCRU, PRHODJ, PRHOX1, PTSTEP_PPM)
       PSRC = PSRC / PRHOX1
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PRHOY1, PTSTEP)
+      PSRC = PPM_S1_Y(HLBCY, KGRID, PSRC, PCRV, PRHOX1, PRHOY1, PTSTEP_PPM)
       PSRC = PSRC / PRHOY1
 !
 !*       3.     ADVECTION IN Z DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_Z(KGRID, PSRC, PCRW, PRHOY1, PRHOZ1, PTSTEP)
+      PSRC = PPM_S1_Z(KGRID, PSRC, PCRW, PRHOY1, PRHOZ1, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ1
 !
    ELSE
@@ -256,19 +258,19 @@ CASE('PPM_02')
 !*       1.     ADVECTION IN Z DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_Z(KGRID, PSRC, PCRW, PRHODJ, PRHOZ2, PTSTEP)
+      PSRC = PPM_S1_Z(KGRID, PSRC, PCRW, PRHODJ, PRHOZ2, PTSTEP_PPM)
       PSRC = PSRC / PRHOZ2
 !
 !*       2.     ADVECTION IN Y DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PRHOY2, PTSTEP)
+      PSRC = PPM_S1_Y(HLBCY, KGRID, PSRC, PCRV, PRHOZ2, PRHOY2, PTSTEP_PPM)
       PSRC = PSRC / PRHOY2
 !
 !*       3.     ADVECTION IN X DIRECTION
 !               ------------------------
 !
-      PSRC = PPM_S1_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PRHOX2, PTSTEP)
+      PSRC = PPM_S1_X(HLBCX, KGRID, PSRC, PCRU, PRHOY2, PRHOX2, PTSTEP_PPM)
       PSRC = PSRC / PRHOX2
 !
    END IF
@@ -283,6 +285,6 @@ END SELECT
 ! compatible to the rest of the model forcings, we need to substract the
 ! initial field, devide by dt and muliplty by RHODJ
 !
-PSRC = (PSRC - PFIELDT)*PRHODJ/PTSTEP
+PSRC = (PSRC - PFIELDT)*PRHODJ/PTSTEP_PPM
 !
 END SUBROUTINE ADVEC_PPM_ALGO
