@@ -1268,7 +1268,7 @@ END DO
        outfiles%files(idx)%format = LFI_FORMAT
        outfiles%files(idx)%status = WRITING
        ilu = outfiles%files(idx)%lun_id
-       CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW' ,lfalse,lfalse,iverb,inap,inaf)
+       CALL LFIOUV(iresp,ilu,ltrue,TRIM(houtfile)//'.lfi','NEW' ,lfalse,lfalse,iverb,inap,inaf)
        outfiles%files(idx)%opened  = .TRUE.
     END IF
 

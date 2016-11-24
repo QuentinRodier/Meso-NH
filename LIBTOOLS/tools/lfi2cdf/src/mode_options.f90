@@ -31,7 +31,7 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
   character(len=:),allocatable,intent(out)          :: houtfile
   integer,intent(out)                               :: runmode
 
-  integer :: idx, ji, nbargs, status, sz
+  integer :: idx, nbargs, status, sz
   logical :: finished
   character(len=:),allocatable :: command, fullcommand
 
@@ -80,30 +80,13 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
 
   call check_options(options,hinfile,runmode)
 
+  houtfile = options(OPTOUTPUT)%cvalue
 
-  !Remove level in the filename if merging LFI splitted files
+  !Remove level in the filename if merging LFI splitted files and output name not set by option
   if (.NOT.options(OPTOUTPUT)%set) then
-    if (options(OPTMERGE)%set .AND. .NOT.options(OPTSPLIT)%set) then
-       houtfile=houtfile(1:len(houtfile)-9)//houtfile(len(houtfile)-3:)
+    if (options(OPTMERGE)%set) then
+      houtfile=hinfile(1:len(hinfile)-9)
     end if
-    if (.NOT.options(OPTMERGE)%set .AND. options(OPTSPLIT)%set) then
-       if (options(OPTCDF4)%set) then
-         ji=4
-       else
-         ji=3
-       end if
-       houtfile=houtfile(1:len(houtfile)-ji)
-    end if
-    if (options(OPTMERGE)%set .AND. options(OPTSPLIT)%set) then
-       if (options(OPTCDF4)%set) then
-         ji=9
-       else
-         ji=8
-       end if
-       houtfile=houtfile(1:len(houtfile)-ji)
-    end if
-  else
-    houtfile = options(OPTOUTPUT)%cvalue
   end if
 
 end subroutine read_commandline
