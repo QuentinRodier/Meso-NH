@@ -138,14 +138,14 @@ LIB_MASTER=$(OBJDIR_MASTER)/$(LIB_OBJS_ROOT)-MASTER.a
 #
 # USER
 #
-#ifdef DO_COMP_USER
+ifdef OBJDIR_USER
 OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(notdir $(shell find $(OBJDIR_USER) -follow -type f -name "spll_*.f*" | sed -e 's/\(.*\)\(\.\).*/\1.o/g' )) 
 #OBJS_LISTE_USER :=  $(OBJS_LISTE_USER) $(obj_flist $(OBJDIR_USER)) 
 #
 OBJS_LISTE_USER := $(sort $(filter-out $(IGNORE_OBJS), $(OBJS_LISTE_USER) $(OBJS_LISTE_MASTER) )) 
 #
 LIB_USER=$(OBJDIR_USER)/$(LIB_OBJS_ROOT)-$(VER_USER).a
-#endif
+endif
 ##########################################################
 #                                                        #
 # DEP_ALL : All dependance *.D to generate               #
