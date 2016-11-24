@@ -10,6 +10,7 @@ MODULE mode_util
   INTEGER,PARAMETER :: MAXRAW=10
   INTEGER,PARAMETER :: MAXLEN=512
   INTEGER,PARAMETER :: MAXFILES=100
+  INTEGER,PARAMETER :: MAXLFICOMMENTLENGTH=100
 
   INTEGER,PARAMETER :: UNDEFINED = -1, READING = 1, WRITING = 2
   INTEGER,PARAMETER :: UNKNOWN_FORMAT = -1, NETCDF_FORMAT = 1, LFI_FORMAT = 2
@@ -275,6 +276,8 @@ CONTAINS
                 END DO
               END IF
             END IF
+           !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
+           ileng = ileng + MAXLFICOMMENTLENGTH
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
@@ -347,6 +350,8 @@ END DO
            END IF
            IF (leng > sizemax) sizemax = leng
          END DO
+         !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
+         sizemax = sizemax + MAXLFICOMMENTLENGTH
        END IF
 
        maxvar = nbvar_infile
@@ -1034,6 +1039,10 @@ END DO
 
     DO ivar=1,SIZE(tpreclist)
        icomlen = LEN(tpreclist(ivar)%comment)
+       IF (icomlen > MAXLFICOMMENTLENGTH) THEN
+         PRINT *,'ERROR: comment length is too big. Please increase MAXLFICOMMENTLENGTH'
+         STOP
+       END IF
 
        ! traitement Grille et Commentaire
        iwork(1) = tpreclist(ivar)%grid
