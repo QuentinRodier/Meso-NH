@@ -254,6 +254,8 @@ export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
                 export OPTLEVEL=${OPTLEVEL:-O2}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
 
