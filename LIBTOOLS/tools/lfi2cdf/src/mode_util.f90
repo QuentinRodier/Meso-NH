@@ -1194,7 +1194,7 @@ END DO
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
          IF (options(OPTCDF4)%set) THEN
-            status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
+            status = NF90_CREATE(TRIM(houtfile)//'.nc4', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
             status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
          END IF
@@ -1345,13 +1345,12 @@ END DO
       outfiles%files(idx)%var_id = ji
 
       IF (options(OPTCDF4)%set) THEN
-        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
       ELSE
         filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
       END IF
-
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
       status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
