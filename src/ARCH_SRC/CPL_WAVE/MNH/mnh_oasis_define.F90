@@ -51,6 +51,7 @@ SUBROUTINE MNH_OASIS_DEFINE(HPROGRAM,IP)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    09/2014
+!!                  11/2016  Correction WENO5
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -62,6 +63,9 @@ USE MODD_DIM_n, ONLY : NIMAX, NJMAX, NIMAX_ll, NJMAX_ll
 USE MOD_OASIS
 USE MODD_MNH_SURFEX_n
 #endif
+!
+USE MODD_CONF, ONLY : NVERB
+USE MODD_PARAMETERS, ONLY : JPHEXT
 !
 USE MODE_ll
 !
@@ -121,7 +125,16 @@ JI=2
 INPTS=0
 DO JSEG=1,ISEGMENT
    JI=JI+1
-   IPARAL(JI) = (IIOR - 1) + NIMAX_ll*(IJOR -1) + NIMAX_ll*(JSEG-1)
+   IF (LWEST_ll() .AND. LSOUTH_ll()) THEN
+     IPARAL(JI) = (IIOR - JPHEXT) + NIMAX_ll*(IJOR - JPHEXT) + NIMAX_ll*(JSEG - 1)
+   ELSE IF (LWEST_ll() .AND. .NOT. LSOUTH_ll()) THEN
+     IPARAL(JI) = (IIOR - JPHEXT) + NIMAX_ll*(IJOR + NHALO - 2*JPHEXT) + NIMAX_ll*(JSEG - 1)
+   ELSE IF (LSOUTH_ll() .AND. .NOT. LWEST_ll()) THEN
+     IPARAL(JI) = (IIOR + NHALO - 2*JPHEXT) + NIMAX_ll*(IJOR - JPHEXT) + NIMAX_ll*(JSEG - 1)
+   ELSE IF (.NOT. LSOUTH_ll() .AND. .NOT. LWEST_ll()) THEN
+     IPARAL(JI) = (IIOR + NHALO - 2*JPHEXT) + NIMAX_ll*(IJOR + NHALO - 2*JPHEXT) + NIMAX_ll*(JSEG - 1)
+   END IF
+
    JI=JI+1
    IPARAL(JI) = NIMAX
 ENDDO
