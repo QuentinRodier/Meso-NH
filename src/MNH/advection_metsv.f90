@@ -473,10 +473,10 @@ IF (GTKE)    PRTKES_ADV(:,:,:)  = 0.
 !* time splitting loop
 DO JSPL=1,KSPLIT
 !
-   ZRTHS_PPM(:,:,:)   = 0.
-   ZRTKES_PPM(:,:,:)   = 0.
-   IF (KRR /=0) ZRRS_PPM(:,:,:,:)   = 0.
-   IF (KSV /=0) ZRSVS_PPM(:,:,:,:)   = 0.
+   !ZRTHS_PPM(:,:,:)   = 0.
+   !ZRTKES_PPM(:,:,:)   = 0.
+   !IF (KRR /=0) ZRRS_PPM(:,:,:,:)   = 0.
+   !IF (KSV /=0) ZRSVS_PPM(:,:,:,:)   = 0.
 !
    IF (LNEUTRAL) ZTH=ZTH-PTHVREF  !* To be removed with the new PPM scheme ?
    CALL PPM_MET (HLBCX,HLBCY, KRR, TPDTCUR,ZRUCPPM, ZRVCPPM, ZRWCPPM, PTSTEP,ZTSTEP_PPM, &
@@ -495,6 +495,7 @@ DO JSPL=1,KSPLIT
    IF (KRR /=0)  PRRS      (:,:,:,:) = PRRS      (:,:,:,:) + ZRRS_PPM  (:,:,:,:) / KSPLIT
    IF (KSV /=0 ) PRSVS     (:,:,:,:) = PRSVS     (:,:,:,:) + ZRSVS_PPM (:,:,:,:) / KSPLIT
 !
+   IF (JSPL<KSPLIT) THEN
 !
 !  Guesses of the field inside the time splitting loop
 !
@@ -513,7 +514,7 @@ DO JSPL=1,KSPLIT
 ! Top and bottom Boundaries and LBC for the guesses
 !
    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTH, PTHT )    
-   CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTKE, PTKET)
+    IF (GTKE) CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZTKE, PTKET)
    DO JR = 1, KRR
      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZR(:,:,:,JR), PRT(:,:,:,JR))
    END DO
@@ -536,6 +537,7 @@ DO JSPL=1,KSPLIT
     CALL UPDATE_HALO_ll(TZFIELDS1_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS1_ll)
 !!$   END IF
+   END IF
 !
 END DO
 !
