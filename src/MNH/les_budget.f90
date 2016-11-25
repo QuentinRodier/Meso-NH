@@ -51,7 +51,7 @@ END MODULE MODI_LES_BUDGET
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    September 19, 2002
-!!
+!!      25/11/2016  Q.Rodier correction bug variance u'^2  v'^2  w'^2
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -130,7 +130,7 @@ SELECT CASE (KBUDN)
     CALL LES_BUDGET_ANOMALY(PVARS,'X',ZANOM)
     !
     !* action in KE budget
-    ZWORK_LES = ( ZANOM ** 2 - XU_ANOM ** 2 ) / XCURRENT_TSTEP
+    ZWORK_LES = 0.5*( ZANOM ** 2 - XU_ANOM ** 2 ) / XCURRENT_TSTEP
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
@@ -144,7 +144,7 @@ SELECT CASE (KBUDN)
     CALL LES_BUDGET_ANOMALY(PVARS,'Y',ZANOM)
     !
     !* action in KE budget
-    ZWORK_LES = ( ZANOM ** 2 - XV_ANOM ** 2 ) / XCURRENT_TSTEP
+    ZWORK_LES = 0.5*( ZANOM ** 2 - XV_ANOM ** 2 ) / XCURRENT_TSTEP
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
@@ -158,7 +158,7 @@ SELECT CASE (KBUDN)
     CALL LES_BUDGET_ANOMALY(PVARS,'Z',ZANOM)
     !
     !* action in KE budget
-    ZWORK_LES = ( ZANOM ** 2 - XW_ANOM ** 2 ) / XCURRENT_TSTEP
+    ZWORK_LES = 0.5*( ZANOM ** 2 - XW_ANOM ** 2 ) / XCURRENT_TSTEP
     CALL LES_MEAN_ll( ZWORK_LES, LLES_CURRENT_CART_MASK, ZLES_PROF)
     X_LES_BU_RES_KE(:,ILES_BU) = X_LES_BU_RES_KE(:,ILES_BU) + ZLES_PROF(:)
     !
