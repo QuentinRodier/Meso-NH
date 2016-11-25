@@ -10,6 +10,7 @@ MODULE mode_util
   INTEGER,PARAMETER :: MAXRAW=10
   INTEGER,PARAMETER :: MAXLEN=512
   INTEGER,PARAMETER :: MAXFILES=100
+  INTEGER,PARAMETER :: MAXLFICOMMENTLENGTH=100
 
   INTEGER,PARAMETER :: UNDEFINED = -1, READING = 1, WRITING = 2
   INTEGER,PARAMETER :: UNKNOWN_FORMAT = -1, NETCDF_FORMAT = 1, LFI_FORMAT = 2
@@ -275,6 +276,8 @@ CONTAINS
                 END DO
               END IF
             END IF
+           !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
+           ileng = ileng + MAXLFICOMMENTLENGTH
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
@@ -347,6 +350,8 @@ END DO
            END IF
            IF (leng > sizemax) sizemax = leng
          END DO
+         !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
+         sizemax = sizemax + MAXLFICOMMENTLENGTH
        END IF
 
        maxvar = nbvar_infile
@@ -1034,6 +1039,10 @@ END DO
 
     DO ivar=1,SIZE(tpreclist)
        icomlen = LEN(tpreclist(ivar)%comment)
+       IF (icomlen > MAXLFICOMMENTLENGTH) THEN
+         PRINT *,'ERROR: comment length is too big. Please increase MAXLFICOMMENTLENGTH'
+         STOP
+       END IF
 
        ! traitement Grille et Commentaire
        iwork(1) = tpreclist(ivar)%grid
@@ -1194,7 +1203,7 @@ END DO
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
          IF (options(OPTCDF4)%set) THEN
-            status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
+            status = NF90_CREATE(TRIM(houtfile)//'.nc4', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
             status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
          END IF
@@ -1268,7 +1277,7 @@ END DO
        outfiles%files(idx)%format = LFI_FORMAT
        outfiles%files(idx)%status = WRITING
        ilu = outfiles%files(idx)%lun_id
-       CALL LFIOUV(iresp,ilu,ltrue,houtfile,'NEW' ,lfalse,lfalse,iverb,inap,inaf)
+       CALL LFIOUV(iresp,ilu,ltrue,TRIM(houtfile)//'.lfi','NEW' ,lfalse,lfalse,iverb,inap,inaf)
        outfiles%files(idx)%opened  = .TRUE.
     END IF
 
@@ -1345,13 +1354,12 @@ END DO
       outfiles%files(idx)%var_id = ji
 
       IF (options(OPTCDF4)%set) THEN
-        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
+        filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc4'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
       ELSE
         filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
         status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
       END IF
-
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
       status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
