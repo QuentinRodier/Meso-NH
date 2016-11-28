@@ -134,9 +134,9 @@ SUBROUTINE IO_FILE_OPEN_ll(TPFILE,HFIPRI,KRESP)
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN)  :: TPFILE ! File structure
-CHARACTER(LEN=*),       INTENT(IN)  :: HFIPRI ! File for prints in FM
-INTEGER,                INTENT(OUT) :: KRESP  ! Return code
+TYPE(TFILEDATA),  INTENT(INOUT) :: TPFILE ! File structure
+CHARACTER(LEN=*), INTENT(IN)    :: HFIPRI ! File for prints in FM
+INTEGER,          INTENT(OUT)   :: KRESP  ! Return code
 !
 INTEGER :: ININAR ! Number of articles present in LFI file (unused here)
 !
@@ -179,7 +179,7 @@ INTEGER,         INTENT(OUT)::KNINAR  ! number of articles
 INTEGER,         INTENT(OUT)::KRESP   ! return-code if a problem
 ! araised.
 LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
-TYPE(TFILEDATA),POINTER,INTENT(IN),OPTIONAL :: TPFILE ! File structure
+TYPE(TFILEDATA), INTENT(IN),  OPTIONAL :: TPFILE ! File structure
 !
 !   Local variable
 !
@@ -201,7 +201,7 @@ LOGICAL               :: GPARALLELIO
 #if defined(MNH_IOCDF4)
 INTEGER(KIND=IDCDF_KIND) :: INCERR
 #endif
-CHARACTER(LEN=7) :: YTYPE
+CHARACTER(LEN=13) :: YTYPE
 
 IF ( PRESENT(TPFILE) ) THEN
   YTYPE = TPFILE%CTYPE
@@ -379,9 +379,9 @@ SUBROUTINE IO_FILE_CLOSE_ll(TPFILE,HFIPRI,KRESP)
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-TYPE(TFILEDATA),POINTER,INTENT(IN)  :: TPFILE ! File structure
-CHARACTER(LEN=*),       INTENT(IN)  :: HFIPRI ! File for prints in FM
-INTEGER,                INTENT(OUT) :: KRESP  ! Return code
+TYPE(TFILEDATA),  INTENT(INOUT) :: TPFILE ! File structure
+CHARACTER(LEN=*), INTENT(IN)    :: HFIPRI ! File for prints in FM
+INTEGER,          INTENT(OUT)   :: KRESP  ! Return code
 !
 IF (.NOT.TPFILE%LOPENED) THEN
   PRINT *,'ERROR: IO_FILE_CLOSE_ll: trying to close a file not opened: ',TRIM(TPFILE%CNAME)
@@ -418,7 +418,7 @@ CHARACTER(LEN=*),     INTENT(IN) ::HSTATU  ! status for the closed file
 CHARACTER(LEN=*),     INTENT(IN) ::HFIPRI  ! file for prints in FM
 INTEGER,              INTENT(OUT)::KRESP   ! return-code if problems araised
 LOGICAL,              INTENT(IN),  OPTIONAL :: OPARALLELIO
-TYPE(TFILEDATA),POINTER,INTENT(IN),OPTIONAL :: TPFILE ! File structure
+TYPE(TFILEDATA),      INTENT(IN),  OPTIONAL :: TPFILE ! File structure
 
 INTEGER              ::IRESP,IROWF,IFMFNL
 CHARACTER(LEN=7)     ::YSTATU
@@ -434,7 +434,7 @@ TYPE(FD_ll), POINTER :: TZFDLFI
 INTEGER(KIND=LFI_INT) :: IRESP8,INUM8
 !JUAN
 LOGICAL :: GPARALLELIO
-CHARACTER(LEN=7) :: YTYPE
+CHARACTER(LEN=13) :: YTYPE
 
 IF ( PRESENT(TPFILE) ) THEN
   YTYPE = TPFILE%CTYPE

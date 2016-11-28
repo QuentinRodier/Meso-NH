@@ -49,7 +49,7 @@ END TYPE TOUTBAK
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
   CHARACTER(LEN=28) :: CNAME               !Filename
-  CHARACTER(LEN=7)  :: CTYPE   = "UNKNOWN" !Filetype (backup, output...)
+  CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
   LOGICAL           :: LOPENED = .FALSE.   !Is the file opened
