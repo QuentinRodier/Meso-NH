@@ -148,6 +148,8 @@ module load ga/\${VER_GA}
                 export MNHENV=${MNHENV:-"
 #export OBJDIR_PATH=$WORKDIR/DIR_OBJ_ADA
 export MP_MPILIB=pempi
+module purge
+module load intel/2013.1
 module load netcdf/seq/4.1.3
 "}
               ;;

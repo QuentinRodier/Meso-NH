@@ -276,8 +276,8 @@ CONTAINS
                 END DO
               END IF
             END IF
-           !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
-           ileng = ileng + MAXLFICOMMENTLENGTH
+            !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
+            leng = leng + MAXLFICOMMENTLENGTH
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
