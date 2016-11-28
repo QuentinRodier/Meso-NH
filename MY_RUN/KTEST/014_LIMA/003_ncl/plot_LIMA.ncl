@@ -71,8 +71,6 @@ xconf=conform(RI___0001_P3,xhat(0:179),1)
     do i=0,179
        z(:,i) = nzh*zcoef(i)+zs(i)
     end do
-printVarSummary(xconf)
-print(z)
 ;=================================================;
 ; Set some other basic resources
 ;=================================================;
