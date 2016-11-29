@@ -176,6 +176,10 @@ MODULE MODE_FMWRIT
 
   PRIVATE
 
+  INTERFACE IO_WRITE_FIELD
+     MODULE PROCEDURE IO_WRITE_FIELD_X3
+  END INTERFACE
+
   INTERFACE FMWRIT
      MODULE PROCEDURE FMWRITX0_ll,FMWRITX1_ll,FMWRITX2_ll,FMWRITX3_ll,&
           & FMWRITX4_ll,FMWRITX5_ll,FMWRITX6_ll,&
@@ -193,6 +197,7 @@ MODULE MODE_FMWRIT
        & FMWRITX4_ll,FMWRITX5_ll,FMWRITX6_ll,FMWRITN0_ll,FMWRITN1_ll,FMWRITN2_ll,&
        & FMWRITL0_ll,FMWRITL1_ll,FMWRITC0_ll,FMWRITC1_ll,FMWRITT0_ll,FMWRITBOXX2_ll,&
        & FMWRITBOXX3_ll,FMWRITBOXX4_ll,FMWRITBOXX5_ll,FMWRITBOXX6_ll
+  PUBLIC IO_WRITE_FIELD
 
   !INCLUDE 'mpif.h'
 
@@ -936,6 +941,374 @@ CONTAINS
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
   END SUBROUTINE FMWRITX3_ll
+
+  SUBROUTINE IO_WRITE_FIELD_X3(TPFILE,TPFIELD,HFIPRI,KRESP)
+    USE MODD_IO_ll
+    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
+    USE MODD_FM
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_ALLOCBUFFER_ll
+    USE MODE_GATHER_ll
+    !JUANZ    
+    USE MODD_IO_ll, ONLY : ISNPROC
+    USE MODE_IO_ll, ONLY : io_file,io_rank
+    USE MODD_TIMEZ, ONLY : TIMEZ
+    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+    !JUANZ 
+#ifdef MNH_GA
+    USE MODE_GA
+#endif
+    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=16)                        :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=2)                         :: YDIR     ! field form
+    CHARACTER(LEN=JPFINL)                    :: YFNLFI
+    CHARACTER(LEN=100)                       :: YCOMMENT ! comment string
+    REAL,DIMENSION(:,:,:),POINTER            :: ZFIELD   ! array containing the data field
+    INTEGER                                  :: IGRID    ! C-grid indicator (u,v,w,T)
+    INTEGER                                  :: IERR
+    TYPE(FD_ll), POINTER                     :: TZFD
+    INTEGER                                  :: IRESP
+    REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
+    TYPE(FMHEADER)                           :: TZFMH
+    LOGICAL                                  :: GALLOC
+    !JUAN
+    INTEGER                                  :: JK,JKK
+    CHARACTER(LEN=LEN(YRECFM))               :: YK,YRECZSLIDE
+    REAL,DIMENSION(:,:),POINTER              :: ZSLIDE_ll,ZSLIDE
+    INTEGER                                  :: IK_FILE,IK_rank,inb_proc_real,JK_MAX
+    CHARACTER(len=5)                         :: YK_FILE  
+    CHARACTER(len=128)                       :: YFILE_IOZ  
+    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    INTEGER                                  :: JI,IXO,IXE,IYO,IYE
+    REAL,DIMENSION(:,:),POINTER              :: TX2DP
+    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
+    INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: STATUSES
+    LOGICAL                                  :: GALLOC_ll
+    !JUANZIO
+    !INTEGER,SAVE,DIMENSION(100000)    :: REQ_TAB
+    INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
+    INTEGER                                  :: NB_REQ
+    TYPE TX_2DP
+       REAL,DIMENSION(:,:), POINTER    :: X
+    END TYPE TX_2DP
+    TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:) :: T_TX2DP
+    REAL*8,DIMENSION(2) :: T0,T1,T2
+    REAL*8,DIMENSION(2) :: T11,T22
+    !JUANZIO
+    !JUAN
+#ifdef MNH_GA
+    REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
+#endif
+    INTEGER                                  :: IHEXTOT
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YDIR     = TPFIELD%CDIR
+    YCOMMENT = TPFIELD%CCOMMENT
+    ZFIELD  => TPFIELD%XFIELDDATA3D
+    IGRID    = TPFIELD%NGRID
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    CALL SECOND_MNH2(T11)
+    IRESP = 0
+    GALLOC    = .FALSE.
+    GALLOC_ll = .FALSE.
+    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
+!
+    !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC .AND.  (TZFD%nb_procio.eq.1) ) THEN ! sequential execution
+          TZFMH%GRID=IGRID
+          TZFMH%COMLEN=LEN(YCOMMENT)
+          TZFMH%COMMENT=YCOMMENT
+          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
+          IF (LPACK .AND. L1D .AND. SIZE(ZFIELD,1)==IHEXTOT .AND. SIZE(ZFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>ZFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
+             IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,YRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
+             IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,YRECFM,YDIR,ZFIELDP,TZFMH,IRESP)
+             !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
+          ELSEIF (LPACK .AND. L2D .AND. SIZE(ZFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>ZFIELD(:,JPHEXT+1:JPHEXT+1,:)
+             IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,YRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH,IRESP)
+             IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,YRECFM,YDIR,ZFIELDP,TZFMH,IRESP)
+          ELSE
+             IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,YRECFM,.TRUE.,SIZE(ZFIELD),ZFIELD,TZFMH,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,IRESP)
+          END IF
+       ELSEIF ( (TZFD%nb_procio .eq. 1 ) .OR. ( YDIR == '--' ) ) THEN  ! multiprocessor execution & 1 proc IO
+          ! write 3D field in 1 time = output for graphique
+          IF (ISP == TZFD%OWNER)  THEN
+             CALL ALLOCBUFFER_ll(ZFIELDP,ZFIELD,YDIR,GALLOC)
+          ELSE
+             ALLOCATE(ZFIELDP(0,0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+             CALL GATHER_XXFIELD(YDIR,ZFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+          ELSEIF (YDIR == 'XY') THEN
+             IF (LPACK .AND. L2D) THEN
+                CALL GATHER_XXFIELD('XX',ZFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
+             ELSE
+                CALL GATHER_XYFIELD(ZFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+             END IF
+          END IF
+          !
+          IF (ISP == TZFD%OWNER)  THEN
+             TZFMH%GRID=IGRID
+             TZFMH%COMLEN=LEN(YCOMMENT)
+             TZFMH%COMMENT=YCOMMENT
+             IF (LLFIOUT) CALL FM_WRIT_ll(TZFD%FLU,YRECFM,.TRUE.,SIZE(ZFIELDP),ZFIELDP,TZFMH&
+                  & ,IRESP)
+             IF (LIOCDF4) CALL NCWRIT(TZFD%CDF,YRECFM,YDIR,ZFIELDP,TZFMH,IRESP)
+       END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
+               & %COMM,IERR)
+          !
+       ELSE ! multiprocessor execution & // IO
+          !
+          !JUAN BG Z SLIDE 
+          !
+          !
+#ifdef MNH_GA
+          !
+          ! init/create the ga
+          !
+          CALL SECOND_MNH2(T0)
+          CALL MNH_INIT_GA(SIZE(ZFIELD,1),SIZE(ZFIELD,2),SIZE(ZFIELD,3),YRECFM,"WRITE")
+         !
+         !   copy columun data to global arrays g_a 
+         !
+         ALLOCATE (ZFIELD_GA (SIZE(ZFIELD,1),SIZE(ZFIELD,2),SIZE(ZFIELD,3)))
+         ZFIELD_GA = ZFIELD
+         call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L,1) , ld_col)  
+         DEALLOCATE(ZFIELD_GA)
+!!$         print*," nga_put =",YRECFM,g_a," lo_col=",lo_col," hi_col=",hi_col,ZFIELD(NIXO_L,NIYO_L,1) &
+!!$          ," ld_col=",ld_col
+         call ga_sync
+         CALL SECOND_MNH2(T1)
+         TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
+         !
+         ! write the data
+         !
+         ALLOCATE(ZSLIDE_ll(0,0)) ! to avoid bug on test of size
+         GALLOC_ll = .TRUE.
+         !
+         DO JKK=1,IKU_ll
+            !
+            IK_FILE   =  io_file(JKK,TZFD%nb_procio)
+            write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
+            YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
+            TZFD_IOZ => GETFD(YFILE_IOZ)
+            !
+            IK_RANK   =  TZFD_IOZ%OWNER
+            !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+            !
+            IF (ISP == IK_RANK )  THEN 
+               CALL SECOND_MNH2(T0)
+               TZFMH%GRID=IGRID
+               TZFMH%COMLEN=LEN(YCOMMENT)
+               TZFMH%COMMENT=YCOMMENT
+               WRITE(YK,'(I4.4)')  JKK
+               YRECZSLIDE = TRIM(YRECFM)//YK
+               !
+               IF ( SIZE(ZSLIDE_ll) .EQ. 0 ) THEN
+                  DEALLOCATE(ZSLIDE_ll)
+                  CALL ALLOCBUFFER_ll(ZSLIDE_ll,ZSLIDE,YDIR,GALLOC_ll)
+               END IF
+               !
+               ! this proc get this JKK slide
+               !
+               lo_zplan(JPIZ) = JKK
+               hi_zplan(JPIZ) = JKK
+               call nga_get(g_a, lo_zplan, hi_zplan,ZSLIDE_ll, ld_zplan)
+               CALL SECOND_MNH2(T1)
+               TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
+               !
+               IF (LLFIOUT) CALL FM_WRIT_ll(TZFD_IOZ%FLU,YRECZSLIDE,.TRUE.,SIZE(ZSLIDE_ll),&
+                    &ZSLIDE_ll,TZFMH,IRESP)
+               IF (LIOCDF4) CALL NCWRIT(TZFD_IOZ%CDF,YRECZSLIDE,YDIR,ZSLIDE_ll,TZFMH,IRESP)
+               CALL SECOND_MNH2(T2)
+               TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
+            END IF
+         END DO
+         !call ga_sync
+         !
+         ! destroy the global array 
+         !
+!!$         IF (ISP .EQ. 1 ) THEN
+!!$         call ga_print_stats()
+!!$         call ga_summarize(1) 
+!!$         ENDIF
+         CALL SECOND_MNH2(T0) 
+         call ga_sync
+!!$         gstatus_ga =  ga_destroy(g_a)
+         CALL SECOND_MNH2(T1) 
+         TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0     
+#else
+          !
+          ALLOCATE(ZSLIDE_ll(0,0))
+          GALLOC_ll = .TRUE.
+          inb_proc_real = min(TZFD%nb_procio,ISNPROC)
+          Z_SLIDE: DO JK=1,SIZE(ZFIELD,3),inb_proc_real
+             !
+             ! collecte the data
+             !
+             JK_MAX=min(SIZE(ZFIELD,3),JK+inb_proc_real-1)
+             !
+             NB_REQ=0
+             ALLOCATE(REQ_TAB(inb_proc_real))
+             ALLOCATE(T_TX2DP(inb_proc_real))
+             DO JKK=JK,JK_MAX
+                !
+                ! get the file & rank to write this level
+                !
+                IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+                   IK_FILE   =  io_file(JKK,TZFD%nb_procio)
+                   write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
+                   YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
+                   TZFD_IOZ => GETFD(YFILE_IOZ)
+                ELSE
+                   TZFD_IOZ => TZFD
+                END IF
+                !
+                !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+                IK_RANK   =  TZFD_IOZ%OWNER
+                !
+                IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+                   STOP " XX NON PREVU SUR BG POUR LE MOMENT "
+                   CALL GATHER_XXFIELD(YDIR,ZFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+                ELSEIF (YDIR == 'XY') THEN
+                   IF (LPACK .AND. L2D) THEN
+                      STOP " L2D NON PREVU SUR BG POUR LE MOMENT "
+                      CALL GATHER_XXFIELD('XX',ZFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TZFD%OWNER,TZFD%COMM)
+                   ELSE
+                      !CALL GATHER_XYFIELD(ZSLIDE,ZSLIDE_ll,TZFD_IOZ%OWNER,TZFD_IOZ%COMM)
+                      !JUANIOZ
+                      CALL SECOND_MNH2(T0)
+                      IF ( ISP /= IK_RANK )  THEN
+                         ! Other processors
+                         CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
+                         IF (IXO /= 0) THEN ! intersection is not empty
+                            NB_REQ = NB_REQ + 1
+                            ALLOCATE(T_TX2DP(NB_REQ)%X(IXO:IXE,IYO:IYE))
+                            ZSLIDE => ZFIELD(:,:,JKK)
+                            TX2DP=>ZSLIDE(IXO:IXE,IYO:IYE)
+                            T_TX2DP(NB_REQ)%X=ZSLIDE(IXO:IXE,IYO:IYE)
+                            CALL MPI_ISEND(T_TX2DP(NB_REQ)%X,SIZE(TX2DP),MPI_FLOAT,IK_RANK-1,99+IK_RANK &
+                                          & ,TZFD_IOZ%COMM,REQ_TAB(NB_REQ),IERR)
+                            !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MPI_FLOAT,IK_RANK-1,99+IK_RANK,TZFD_IOZ%COMM,IERR)                       
+                         END IF
+                      END IF
+                      CALL SECOND_MNH2(T1)
+                      TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
+                      !JUANIOZ
+                   END IF
+                END IF
+             END DO
+             !
+             ! write the data
+             !
+             DO JKK=JK,JK_MAX
+                IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+                   IK_FILE   =  io_file(JKK,TZFD%nb_procio)
+                   write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
+                   YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
+                   TZFD_IOZ => GETFD(YFILE_IOZ)
+                ELSE
+                   TZFD_IOZ => TZFD
+                ENDIF
+                IK_RANK   =  TZFD_IOZ%OWNER
+                !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+                !
+                IF (ISP == IK_RANK )  THEN
+                   !JUANIOZ
+                   CALL SECOND_MNH2(T0)
+                   ! I/O proc case
+                   IF ( SIZE(ZSLIDE_ll) .EQ. 0 ) THEN
+                      DEALLOCATE(ZSLIDE_ll)
+                      CALL ALLOCBUFFER_ll(ZSLIDE_ll,ZSLIDE,YDIR,GALLOC_ll)
+                   END IF
+                   DO JI=1,ISNPROC
+                      CALL GET_DOMWRITE_ll(JI,'global',IXO,IXE,IYO,IYE)
+                      IF (IXO /= 0) THEN ! intersection is not empty
+                         TX2DP=>ZSLIDE_ll(IXO:IXE,IYO:IYE)
+                         IF (ISP == JI) THEN 
+                            CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE)
+                            ZSLIDE => ZFIELD(:,:,JKK)
+                            TX2DP = ZSLIDE(IXO:IXE,IYO:IYE)
+                         ELSE 
+                            CALL MPI_RECV(TX2DP,SIZE(TX2DP),MPI_FLOAT,JI-1,99+IK_RANK,TZFD_IOZ%COMM,STATUS,IERR)
+                         END IF
+                      END IF
+                   END DO
+                   CALL SECOND_MNH2(T1)
+                   TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
+                   !JUANIOZ 
+                   TZFMH%GRID=IGRID
+                   TZFMH%COMLEN=LEN(YCOMMENT)
+                   TZFMH%COMMENT=YCOMMENT
+                   WRITE(YK,'(I4.4)')  JKK
+                   YRECZSLIDE = TRIM(YRECFM)//YK
+                   IF (LLFIOUT) CALL FM_WRIT_ll(TZFD_IOZ%FLU,YRECZSLIDE,.TRUE.,SIZE(ZSLIDE_ll),ZSLIDE_ll,TZFMH&
+                        & ,IRESP)
+                   IF (LIOCDF4) CALL NCWRIT(TZFD_IOZ%CDF,YRECZSLIDE,YDIR,ZSLIDE_ll,TZFMH,IRESP)
+                   CALL SECOND_MNH2(T2)
+                   TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
+                END IF
+!!$           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD_IOZ%OWNER-1,TZFD_IOZ%COMM,IERR)
+             END DO
+             !CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD_IOZ%OWNER-1,TZFD_IOZ%COMM,IERR)
+             !CALL MPI_BARRIER(TZFD_IOZ%COMM,IERR)
+             !
+             CALL SECOND_MNH2(T0) 
+             IF (NB_REQ .GT.0 ) THEN
+                !ALLOCATE(STATUSES(MPI_STATUS_SIZE,NB_REQ))
+                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+                !CALL MPI_WAITALL(NB_REQ,REQ_TAB,STATUSES,IERR)
+                !DEALLOCATE(STATUSES)
+                DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
+             END IF
+             DEALLOCATE(T_TX2DP)
+             DEALLOCATE(REQ_TAB)
+             CALL SECOND_MNH2(T1) 
+             TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0
+          END DO Z_SLIDE
+          !JUAN BG Z SLIDE  
+! end of MNH_GA
+#endif
+       END IF ! multiprocessor execution
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_X3",YFILEM,HFIPRI,YRECFM,YDIR,IGRID,LEN(YCOMMENT),IRESP)
+    END IF
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+    IF (GALLOC_ll) DEALLOCATE(ZSLIDE_ll)
+    !IF (Associated(ZSLIDE_ll)) DEALLOCATE(ZSLIDE_ll)
+    KRESP = IRESP
+    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TZFD%COMM,IERR)
+    CALL SECOND_MNH2(T22)
+    TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
+  END SUBROUTINE IO_WRITE_FIELD_X3
 
   SUBROUTINE FMWRITX4_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)

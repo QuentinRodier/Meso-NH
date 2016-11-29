@@ -65,6 +65,17 @@ TYPE TFILEDATA
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
 
+!Structure describing the characteristics of a field
+TYPE TFIELDDATA
+  CHARACTER(LEN=16)  :: CMNHNAME = '' !Name of the field (for MesoNH, non CF convention)
+  CHARACTER(LEN=32)  :: CSTDNAME = '' !Standard name (CF convention)
+  CHARACTER(LEN=32)  :: CUNITS   = '' !Canonical units (CF convention)
+  CHARACTER(LEN=2)   :: CDIR     = '' !Type of the data field (XX,XY,--...)
+  CHARACTER(LEN=100) :: CCOMMENT = '' !Comment (for MesoNH, non CF convention)
+  INTEGER            :: NGRID    = -1 !Localization on the model grid
+  REAL,DIMENSION(:,:,:),POINTER :: XFIELDDATA3D => NULL() !Pointer to the field data
+END TYPE TFIELDDATA
+
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_FIRST => NULL()
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUT_FIRST => NULL()
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_LAST  => NULL()
