@@ -1071,7 +1071,7 @@ IF (KMI == 1) THEN
   LSUPSAT = .FALSE.
   LDEPOC  = .FALSE.
   XVDEPOC = 0.02 ! 2 cm/s
-  LACTTKE = .FALSE.
+  LACTTKE = .TRUE.
 !
   HPARAM_CCN = 'XXX'
   HINI_CCN   = 'XXX'
