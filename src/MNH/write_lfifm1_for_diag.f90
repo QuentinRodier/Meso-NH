@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag.f90,v $ $Revision: 1.3.2.5.2.4.2.3.2.3.2.4 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag.f90,v $ $Revision: 1.3.2.5.2.4.2.3.2.3.2.9.2.2 $
 ! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !################################
@@ -140,6 +140,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       C. Augros 2014 : new radar simulator (T matrice)
 !!       D.Ricard 2015 : add THETAES + POVOES  (LMOIST_ES=T)
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!       C.Lac  04/2016 : add visibility and droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -287,6 +288,7 @@ REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42 ! reflectivit
 REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42_BIS
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZWORK43 ! latlon coordinates of cartesian grid points (PLATLON)
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZPHI,ZTHETAE,ZTHETAV
+REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZVISIKUN,ZVISIGUL,ZVISIZHA 
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZTHETAES
 INTEGER, DIMENSION(:,:), ALLOCATABLE                    :: IWORK1
 integer :: ICURR,INBOUT,IERR
@@ -825,6 +827,21 @@ IF (LVAR_PR .AND. LUSERR .AND. SIZE(XINPRR)>0 ) THEN
       ZWORK21(:,:) = XACPRC(:,:)*1.E3
       YRECFM      ='ACPRC'
       YCOMMENT    ='X_Y_ACcumulated Cloud PRecipitation Rate (MM)'
+      IGRID       =1
+      ILENCH      =LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+    END IF 
+    IF (SIZE(XINDEP) /= 0 ) THEN
+      ZWORK21(:,:) = XINDEP(:,:)*3.6E6
+      YRECFM      ='INDEP'
+      YCOMMENT    ='X_Y_INstantaneous Cloud Deposition Rate (MM/H)'
+      IGRID       =1
+      ILENCH      =LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+  !
+      ZWORK21(:,:) = XACDEP(:,:)*1.E3
+      YRECFM      ='ACDEP'
+      YCOMMENT    ='X_Y_ACcumulated Cloud Deposition Rate (MM)'
       IGRID       =1
       ILENCH      =LEN(YCOMMENT)
       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
@@ -2218,6 +2235,57 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
+!* Fog Visibility
+!
+IF (LVISI) THEN
+!
+  IF ((CCLOUD /= 'NONE') .AND. (CCLOUD /='REVE')) ALLOCATE(ZVISIKUN(IIU,IJU,IKU))
+  IF ((CCLOUD == 'C2R2') .OR. (CCLOUD =='KHKO')) THEN
+    ALLOCATE(ZVISIGUL(IIU,IJU,IKU))
+    ALLOCATE(ZVISIZHA(IIU,IJU,IKU))
+  END IF
+!
+  IF ((CCLOUD /= 'NONE') .AND. (CCLOUD /='REVE')) THEN
+    ZVISIKUN(:,:,:) = 10000.
+    WHERE ( XRT(:,:,:,2) >= 1E-08 )
+     ZVISIKUN(:,:,:) =0.027/(XRT(:,:,:,2)*XRHODREF(:,:,:))**0.88*1000.
+    END WHERE
+! Visibity Kunkel                     
+      YRECFM='VISIKUN'
+      YCOMMENT='X_Y_Z_Visibility Kunkel (m)'
+      IGRID=1
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZVISIKUN,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+    IF ((CCLOUD == 'C2R2') .OR. (CCLOUD =='KHKO')) THEN
+      ZVISIGUL(:,:,:) = 10000.
+      ZVISIZHA(:,:,:) = 10000.
+      WHERE ( (XRT(:,:,:,2) >= 1E-08 ) .AND. (XSVT(:,:,:,NSV_C2R2BEG+1) >=0.001 ) )
+       ZVISIGUL(:,:,:) =1.002/(XRT(:,:,:,2)*XRHODREF(:,:,:)*XSVT(:,:,:,NSV_C2R2BEG+1))**0.6473*1000.
+       ZVISIZHA(:,:,:) =0.187/(XRT(:,:,:,2)*XRHODREF(:,:,:)*XSVT(:,:,:,NSV_C2R2BEG+1))**0.34*1000.
+      END WHERE
+! Visibity Gultepe                    
+      YRECFM='VISIGUL'
+      YCOMMENT='X_Y_Z_Visibility Gultepe (m)'
+      IGRID=1
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZVISIGUL,IGRID,ILENCH,YCOMMENT,IRESP)
+! Visibity Zhang                      
+      YRECFM='VISIZHA'
+      YCOMMENT='X_Y_Z_Visibility Zhang (m)'
+      IGRID=1
+      ILENCH=LEN(YCOMMENT)
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZVISIZHA,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+      DEALLOCATE(ZVISIGUL,ZVISIZHA)
+    END IF
+    DEALLOCATE(ZVISIKUN)
+  END IF
+!
+END IF
+!
+!-------------------------------------------------------------------------------
+!
 !* Thetae computation according eq.(21), (43) of Bolton 1980 (MWR108,p 1046-1053)
 !
 IF (( LMOIST_E .OR. LBV_FR ) .AND. (NRR>0)) THEN
@@ -2937,13 +3005,13 @@ IF(LRADAR .AND. LUSERR) THEN
   IF (NVERSION_RAD == 1) THEN 
 ! original version of radar diagnostics 
       WRITE(ILUOUT0,*) 'radar diagnostics from RADAR_RAIN_ICE routine'
-  IF (CCLOUD=='LIMA') THEN
-  CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
+    IF (CCLOUD=='LIMA') THEN
+      CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
                        ZWORK33, ZWORK34,XSVT(:,:,:,NSV_LIMA_NR) )
-  ELSE          
-  CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
+    ELSE          
+      CALL RADAR_RAIN_ICE (XRT, XCIT, XRHODREF, ZTEMP, ZWORK31, ZWORK32, &
                                                          ZWORK33, ZWORK34 )
-  ENDIF                                                
+  ENDIF 
 !
   YRECFM       ='RARE'
   YCOMMENT     ='X_Y_Z_RAdar REflectivity (dBZ)'
