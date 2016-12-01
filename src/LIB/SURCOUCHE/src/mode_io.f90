@@ -158,6 +158,7 @@ CONTAINS
   SUBROUTINE INITIO_ll()
     USE  MODE_MNH_WORLD , ONLY :  INIT_NMNH_COMM_WORLD
     USE MODD_IO_ll
+    USE MODE_FIELD
     IMPLICIT NONE
 
     INTEGER :: IERR, IOS
@@ -174,6 +175,8 @@ CONTAINS
     !! Now MPI is initialized for sure
 
     CALL INITFD()
+
+    CALL INI_FIELD_LIST()
 
     !! Default number for Processor I/O
     ISIOP = 1
