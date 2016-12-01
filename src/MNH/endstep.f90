@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/endstep.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5 $ $Date: 2014/04/22 14:31:38 $
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_ENDSTEP
@@ -14,7 +14,7 @@
 INTERFACE
 !
       SUBROUTINE ENDSTEP        (PTSTEP,KRR,KSV,KTCOUNT,KMI,               &
-                                 HUVW_ADV_SCHEME,PRHODJ,                   &
+                                 HUVW_ADV_SCHEME,HTEMP_SCHEME, PRHODJ,     &
                                  PUS,PVS,PWS,PDRYMASSS,                    &
                                  PTHS,PRS,PTKES,PSVS,                      &
                                  PLSUS,PLSVS,PLSWS,                        &
@@ -39,6 +39,7 @@ INTEGER,                  INTENT(IN) :: KSV           !  Number of scal. var.
 INTEGER,                  INTENT(IN) :: KTCOUNT       !  Temporal loop COUNTer
 INTEGER,                  INTENT(IN) :: KMI           !  Model index
 CHARACTER(LEN=6),         INTENT(IN) :: HUVW_ADV_SCHEME ! advection scheme for wind
+CHARACTER(LEN=4),         INTENT(IN) :: HTEMP_SCHEME  ! Temporal scheme
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ        ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUS,PVS,PWS,   & ! 
@@ -86,7 +87,7 @@ END MODULE MODI_ENDSTEP
 !
 !     ######################################################################
       SUBROUTINE ENDSTEP        (PTSTEP,KRR,KSV,KTCOUNT,KMI,               &
-                                 HUVW_ADV_SCHEME,PRHODJ,                   &
+                                 HUVW_ADV_SCHEME,HTEMP_SCHEME, PRHODJ,     &
                                  PUS,PVS,PWS,PDRYMASSS,                    &
                                  PTHS,PRS,PTKES,PSVS,                      &
                                  PLSUS,PLSVS,PLSWS,                        &
@@ -226,6 +227,7 @@ INTEGER,                  INTENT(IN) :: KSV           !  Number of scal. var.
 INTEGER,                  INTENT(IN) :: KTCOUNT       !  Temporal loop COUNTer
 INTEGER,                  INTENT(IN) :: KMI           !  Model index
 CHARACTER(LEN=6),         INTENT(IN) :: HUVW_ADV_SCHEME ! advection scheme for wind
+CHARACTER(LEN=4),         INTENT(IN) :: HTEMP_SCHEME  ! Temporal scheme
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ        ! (Rho) dry * Jacobian
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PUS,PVS,PWS,   & ! 
@@ -278,7 +280,7 @@ IKU=SIZE(XZHAT)
 !
 !*      1.   ASSELIN FILTER
 !
-IF (HUVW_ADV_SCHEME(1:3)=='CEN') THEN
+IF ((HUVW_ADV_SCHEME(1:3)=='CEN').AND. (HTEMP_SCHEME == 'LEFR')) THEN
   IF( KTCOUNT /= 1 .OR. CCONF /= 'START' ) THEN
      PUM(:,:,:)=(1.-XASSELIN)*PUT(:,:,:)+0.5*XASSELIN*(PUM(:,:,:)+PUS(:,:,:))
      PVM(:,:,:)=(1.-XASSELIN)*PVT(:,:,:)+0.5*XASSELIN*(PVM(:,:,:)+PVS(:,:,:))

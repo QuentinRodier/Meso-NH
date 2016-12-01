@@ -1939,7 +1939,7 @@ ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 !
 CALL ENDSTEP  ( XTSTEP,NRR,NSV,KTCOUNT,IMI,               &
-                CUVW_ADV_SCHEME,XRHODJ,                   &
+                CUVW_ADV_SCHEME,CTEMP_SCHEME,XRHODJ,      &
                 XRUS,XRVS,XRWS,XDRYMASSS,                 &
                 XRTHS,XRRS,XRTKES,XRSVS,                  &
                 XLSUS,XLSVS,XLSWS,                        &
