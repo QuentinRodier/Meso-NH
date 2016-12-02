@@ -4,11 +4,20 @@
 !MNH_LIC for details. version 1.
 MODULE MODE_FIELD
 !
-USE MODD_IO_ll, ONLY: TFIELDDATA
-!
 IMPLICIT NONE
 !
 INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 2
+!
+!Structure describing the characteristics of a field
+TYPE TFIELDDATA
+  CHARACTER(LEN=16)  :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
+  CHARACTER(LEN=32)  :: CSTDNAME  = '' !Standard name (CF convention)
+  CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
+  CHARACTER(LEN=32)  :: CUNITS    = '' !Canonical units (CF convention)
+  CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
+  CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
+  INTEGER            :: NGRID     = -1 !Localization on the model grid
+END TYPE TFIELDDATA
 !
 LOGICAL :: LFIELDLIST_ISINIT = .FALSE.
 TYPE(TFIELDDATA),DIMENSION(MAXFIELDS) :: TFIELDLIST
