@@ -179,8 +179,10 @@ MODULE MODE_FMWRIT
   PRIVATE
 
   INTERFACE IO_WRITE_FIELD
-     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_N0, IO_WRITE_FIELD_BYNAME_X3, &
-                      IO_WRITE_FIELD_BYFIELD_N0,IO_WRITE_FIELD_BYFIELD_X3
+     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_N0, IO_WRITE_FIELD_BYNAME_X3,  &
+                      IO_WRITE_FIELD_BYNAME_C0,                            &
+                      IO_WRITE_FIELD_BYFIELD_N0,IO_WRITE_FIELD_BYFIELD_X3, &
+                      IO_WRITE_FIELD_BYFIELD_C0
   END INTERFACE
 
   INTERFACE FMWRIT
@@ -1733,10 +1735,6 @@ CONTAINS
     !
     IDIMS(1) = 0
     !
-    !JUANZIO
-    !----------------------------------------------------------------
-    !
-    !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
     !------------------------------------------------------------------
@@ -2193,6 +2191,78 @@ CONTAINS
     IF (ALLOCATED(IFIELD)) DEALLOCATE(IFIELD)
     KRESP = IRESP
   END SUBROUTINE FMWRITC0_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_C0(TPFILE,HNAME,HFIPRI,KRESP,HFIELD)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,HFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_C0
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_C0(TPFILE,TPFIELD,HFIPRI,KRESP,HFIELD)
+    USE MODD_IO_ll
+    USE MODD_FM
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !*      0.    DECLARATIONS
+    !             ------------
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER                      :: IERR
+    TYPE(FD_ll), POINTER         :: TZFD
+    INTEGER                      :: IRESP
+    INTEGER,DIMENSION(1) :: IDIMS
+    !
+    IRESP = 0
+    !
+    !------------------------------------------------------------------
+    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,HFIELD,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,HFIELD,IRESP)
+       ELSE 
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,HFIELD,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,HFIELD,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF
+    ELSE 
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_C0",TPFILE%CNAME,HFIPRI,TPFIELD%CMNHNAME,TPFIELD%CDIR,TPFIELD%NGRID,&
+                        LEN(TPFIELD%CCOMMENT) ,IRESP)
+    END IF
+    KRESP = IRESP
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_C0
 
   SUBROUTINE FMWRITC1_ll(HFILEM,HRECFM,HFIPRI,HDIR,HFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
