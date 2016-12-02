@@ -7,6 +7,7 @@ MODULE MODE_FIELD
 IMPLICIT NONE
 !
 INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 2
+INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4
 !
 !Structure describing the characteristics of a field
 TYPE TFIELDDATA
@@ -17,6 +18,7 @@ TYPE TFIELDDATA
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
   CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
   INTEGER            :: NGRID     = -1 !Localization on the model grid
+  INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
 END TYPE TFIELDDATA
 !
 LOGICAL :: LFIELDLIST_ISINIT = .FALSE.
@@ -41,6 +43,7 @@ TFIELDLIST(IDX)%CUNITS     = ''
 TFIELDLIST(IDX)%CDIR       = '--'
 TFIELDLIST(IDX)%CCOMMENT   = ''
 TFIELDLIST(IDX)%NGRID      = 0
+TFIELDLIST(IDX)%NTYPE      = TYPEINT
 IDX = IDX+1
 !
 TFIELDLIST(IDX)%CMNHNAME   = 'UT'
@@ -50,6 +53,7 @@ TFIELDLIST(IDX)%CUNITS     = 'm s-1'
 TFIELDLIST(IDX)%CDIR       = 'XY'
 TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Z_U component of wind (m/s)'
 TFIELDLIST(IDX)%NGRID      = 2
+TFIELDLIST(IDX)%NTYPE      = TYPEREAL
 IDX = IDX+1
 !
 LFIELDLIST_ISINIT = .TRUE.
