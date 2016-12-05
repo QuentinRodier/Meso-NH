@@ -127,6 +127,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                                                         and aerosol fields
 !!                  08/06/2010 (G. Tanguy) replace GRIBEX by GRIB_API : change
 !!                                         of all the subroutine
+!!                  05/12/2016 (G.Delautier) length of HGRID for grib_api > 1.14
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -219,7 +220,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLATM         ! Lat of PGD mass points
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZLONM         ! Lon of PGD mass points
 ! Variable involved in the task of reading the grib file
 INTEGER(KIND=kindOfInt)                            :: IUNIT         ! unit of the grib file
-CHARACTER(LEN=20)                  :: HGRID         ! type of grid
+CHARACTER(LEN=50)                  :: HGRID         ! type of grid
 INTEGER                            :: IPAR          ! Parameter identifier
 INTEGER                            :: ITYP          ! type of level (Grib code table 3)
 INTEGER                            :: ILEV1         ! level definition
@@ -255,7 +256,7 @@ REAL, DIMENSION(:), ALLOCATABLE    :: ZLNPS_G  ! Grib data : ln(Ps)
 REAL, DIMENSION(:), ALLOCATABLE    :: ZWORK_LNPS ! Grib data on zs grid: ln(Ps)
 INTEGER                            :: INJ,INJ_ZS
 ! orography
-CHARACTER(LEN=20)                  :: HGRID_ZS         ! type of grid
+CHARACTER(LEN=50)                  :: HGRID_ZS         ! type of grid
 !
 ! Reading and projection of the wind vectors u, v
 REAL                               :: ZALPHA        ! Angle of rotation
@@ -459,7 +460,7 @@ SELECT CASE (ICENTER)
       IMODEL = 2
       ALLOCATE(ZPARAM(9))
 
-    CASE('unknown_PLPresent')
+    CASE('unknown_PLPresent','reduced_stretched_rotated_gg')
       WRITE (ILUOUT0,'(A)') ' | Grib file from French Weather Service - Arpege model'
       IMODEL = 3
       ALLOCATE(ZPARAM(10))
@@ -1789,7 +1790,6 @@ INTEGER                                       :: ILENX ! nb points in X
 INTEGER                                       :: ILENY ! nb points in Y
 INTEGER                                       :: IEARTH  ! 
 REAL                                          :: ZSTRECH ! streching of arpege grid
-CHARACTER(LEN=20)                             :: CGRID   ! type of the grid
 INTEGER(KIND=kindOfInt)                                       :: IMISSING ! dummy variable
 ! Aladin projection
 REAL                                          :: ZALALAT0  ! Grid definition parameters
@@ -1815,7 +1815,6 @@ INTEGER(KIND=kindOfInt),DIMENSION(:),ALLOCATABLE            :: INLO_GRIB   ! Num
 ALLOCATE(INLO_GRIB(SIZE(KINLO)))
 !JUAN
 INO= KNOLON*KNOLARG
-CALL GRIB_GET(KGRIB,'typeOfGrid',CGRID)
 SELECT CASE (KMODEL)
 !
 CASE(0,5) ! CEP/MOCAGE

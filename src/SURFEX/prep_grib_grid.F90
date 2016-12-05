@@ -35,6 +35,7 @@
 !!      Original   06/2003
 !!      S. Faroux 01/2011 : to use library GRIB_API instead of GRIBEX (from
 !!                          read_all_data_grib_case)
+!!                  05/12/2016 (G.Delautier) length of HGRID for grib_api > 1.14
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -78,7 +79,7 @@ INTEGER(KIND=kindOfInt)                            :: IMISSING
 INTEGER(KIND=kindOfInt)                            :: IUNIT
 INTEGER(KIND=kindOfInt)                            :: IGRIB
 INTEGER                            :: ICENTER       ! number of center
- CHARACTER(LEN=20)                  :: HGRID         ! type of grid
+ CHARACTER(LEN=40)                  :: HGRID         ! type of grid
 INTEGER                            :: ISCAN, JSCAN
 INTEGER                            :: ILENX ! nb points in X
 INTEGER                            :: ILENY ! nb points in Y
@@ -162,7 +163,7 @@ SELECT CASE (ICENTER)
         HINMODEL = 'MOCAGE'
         HGRIDTYPE= 'LATLON    '
 
-      CASE('unknown_PLPresent')
+      CASE('unknown_PLPresent','reduced_stretched_rotated_gg')
         WRITE (KLUOUT,'(A)') ' | Grib file from French Weather Service - Arpege model'
         HINMODEL = 'ARPEGE'
         HGRIDTYPE= 'ROTGAUSS  '
