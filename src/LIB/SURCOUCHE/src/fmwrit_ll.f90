@@ -998,7 +998,7 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
-    CHARACTER(LEN=16)                        :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR

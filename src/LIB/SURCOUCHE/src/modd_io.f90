@@ -44,6 +44,7 @@ TYPE TOUTBAK
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
   CHARACTER(LEN=28) :: CDADFILENAME !Filename of dad
   TYPE(TFILEDATA),POINTER :: TFILE => NULL() !Corresponding file
+  INTEGER,DIMENSION(:),POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
 END TYPE TOUTBAK
 
 !Structure describing the characteristics of a file

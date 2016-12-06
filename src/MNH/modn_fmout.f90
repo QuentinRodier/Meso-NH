@@ -52,6 +52,7 @@ NAMELIST/NAM_FMOUT/LBAK_BEG,LBAK_END,&
                    LOUT_BEG,LOUT_END,&
                    XOUT_TIME,NOUT_STEP,&
                    NOUT_STEP_FREQ,NOUT_STEP_FREQ_FIRST,&
-                   XOUT_TIME_FREQ,XOUT_TIME_FREQ_FIRST
+                   XOUT_TIME_FREQ,XOUT_TIME_FREQ_FIRST, &
+                   COUT_VAR
 !
 END MODULE MODN_FMOUT

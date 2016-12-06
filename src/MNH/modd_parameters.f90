@@ -77,7 +77,10 @@ INTEGER, PARAMETER :: NNEGUNDEF = -999  ! default value for undefined or unused
 !                                       ! field (negative value guaranteed)
 INTEGER, PARAMETER :: JPDUMMY  = 20   ! Size of dummy array
 !
-INTEGER, PARAMETER :: JPOUTMAX = 192 ! Maximum allowed number of OUTput files
+INTEGER, PARAMETER :: JPOUTMAX = 192    ! Maximum allowed number of OUTput files
+INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in an output file
+!
+INTEGER, PARAMETER :: NMNHNAMELGTMAX = 32 ! Maximum length of a MNH variable name
 !
 INTEGER, PARAMETER :: JPLIMACCNMAX = 10 ! Maximum allowed number of CCN modes in LIMA
 INTEGER, PARAMETER :: JPLIMAIFNMAX = 10 ! Maximum allowed number of IFN modes in LIMA

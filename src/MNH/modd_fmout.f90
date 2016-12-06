@@ -68,6 +68,7 @@ REAL,SAVE,DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ = XNEGUNDEF, XOUT_TIME_FREQ = 
 ! Time between 2 backups/outputs for each model
 REAL,SAVE,DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ_FIRST = 0., XOUT_TIME_FREQ_FIRST = 0.
 ! Time for first backup/output for each model (if XBAK/OUT_TIME_FREQ is set)
+CHARACTER(LEN=NMNHNAMELGTMAX),SAVE,ALLOCATABLE,DIMENSION(:,:) :: COUT_VAR ! Name of the fields to output
 !
 !
 END MODULE MODD_FMOUT

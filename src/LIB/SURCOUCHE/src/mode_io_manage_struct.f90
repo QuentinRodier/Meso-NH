@@ -30,6 +30,7 @@ USE MODD_NESTING,    ONLY : CDAD_NAME,NDAD
 USE MODD_NSV,        ONLY: NSV
 USE MODD_OUT_n,      ONLY : OUT_MODEL
 USE MODD_VAR_ll,     ONLY : IP
+USE MODE_FIELD
 !
 IMPLICIT NONE
 !
@@ -39,9 +40,11 @@ REAL,    INTENT(IN) :: PSEGLEN ! segment duration (in seconds)
 !
 INTEGER           :: IMI              ! Model number for loop
 INTEGER           :: IBAK_NUMB, IOUT_NUMB ! Number of backups/outputs
+INTEGER           :: IVAR             ! Number of variables
 INTEGER           :: ISTEP_MAX        ! Number of timesteps
-INTEGER           :: IPOS             ! Index
+INTEGER           :: IPOS,IFIELD      ! Indices
 INTEGER           :: JOUT,IDX         ! Loop indices
+INTEGER           :: IRESP
 INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP, IOUT_STEP
 ! Arrays to store list of backup/output steps (intermediate array)
 CHARACTER (LEN=4) :: YDADNUMBER       ! Character string for the DAD model file number
@@ -219,6 +222,40 @@ DO IMI = 1, NMODEL
     END DO
   END IF
   !
+  !Determine the list of the fields to write in each output
+  IF (IOUT_NUMB>0) THEN
+    !Count the number of fields to output
+    IVAR = 0
+    DO IPOS = 1,JPOUTVARMAX
+      IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
+    END DO
+    IF (IVAR==0) THEN
+      PRINT *,'ERROR: no fields chosen for output'
+    END IF
+    ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR))
+    !Determine the list of the outputs to do (by field number)
+    IVAR = 1
+    !Set the NFIELDLIST for the 1st output
+    !All the others will use the same list (for the moment)
+    DO IPOS = 1,JPOUTVARMAX
+      IF (COUT_VAR(IMI,IPOS)/='') THEN
+        CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
+        OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
+        IF (IRESP/=0) THEN
+          PRINT *,'FATAL: unknown field for output: ',TRIM(COUT_VAR(IMI,IPOS))
+          !MNH is killed to prevent problems with wrong values in NFIELDLIST
+          STOP
+        END IF
+        !
+        IVAR=IVAR+1
+      END IF
+    END DO
+    !All the outputs use the same field list (for the moment)
+    DO IPOS = 2,IOUT_NUMB
+      OUT_MODEL(IMI)%TOUTPUTN(IPOS)%NFIELDLIST => OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST
+    END DO
+  END IF  
+  !
   DEALLOCATE(IBAK_STEP)
   DEALLOCATE(IOUT_STEP)
   !
@@ -237,6 +274,11 @@ DO IMI = 1, NMODEL
   DO JOUT = 1,IOUT_NUMB
     WRITE(*,'( I9 F12.3 )'  ) OUT_MODEL(IMI)%TOUTPUTN(JOUT)%NSTEP,OUT_MODEL(IMI)%TOUTPUTN(JOUT)%XTIME
   END DO
+  PRINT *,'Field list:'
+  DO JOUT = 1,SIZE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST)
+    IDX=OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(JOUT)
+    PRINT *,'  ',TRIM(TFIELDLIST(IDX)%CMNHNAME)
+  END DO
   PRINT *,'-------------------------'
   END IF
   !
@@ -246,6 +288,7 @@ DEALLOCATE(NBAK_STEP)
 DEALLOCATE(NOUT_STEP)
 DEALLOCATE(XBAK_TIME)
 DEALLOCATE(XOUT_TIME)
+DEALLOCATE(COUT_VAR)
 !
 CONTAINS
 !
