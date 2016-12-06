@@ -179,9 +179,11 @@ MODULE MODE_FMWRIT
   PRIVATE
 
   INTERFACE IO_WRITE_FIELD
-     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_N0, IO_WRITE_FIELD_BYNAME_X3,  &
+     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_X2, IO_WRITE_FIELD_BYNAME_X3,  &
+                      IO_WRITE_FIELD_BYNAME_N0,                            &
                       IO_WRITE_FIELD_BYNAME_C0,                            &
-                      IO_WRITE_FIELD_BYFIELD_N0,IO_WRITE_FIELD_BYFIELD_X3, &
+                      IO_WRITE_FIELD_BYFIELD_X2,IO_WRITE_FIELD_BYFIELD_X3, &
+                      IO_WRITE_FIELD_BYFIELD_N0,                           &
                       IO_WRITE_FIELD_BYFIELD_C0
   END INTERFACE
 
@@ -584,6 +586,196 @@ CONTAINS
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
   END SUBROUTINE FMWRITX2_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_X2(TPFILE,HNAME,HFIPRI,KRESP,PFIELD)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),          INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),          INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                   INTENT(OUT):: KRESP    ! return-code 
+    REAL,DIMENSION(:,:),       INTENT(IN) :: PFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,PFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_X2
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_X2(TPFILE,TPFIELD,HFIPRI,KRESP,PFIELD)
+    USE MODD_IO_ll
+    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_ALLOCBUFFER_ll
+    USE MODE_GATHER_ll
+    !JUANZ
+    USE MODD_TIMEZ, ONLY : TIMEZ
+    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+    !JUANZ 
+#ifdef MNH_GA
+    USE MODE_GA
+#endif 
+    !
+    IMPLICIT NONE
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    REAL,DIMENSION(:,:),TARGET,  INTENT(IN) :: PFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=2)                         :: YDIR     ! field form
+    CHARACTER(LEN=JPFINL)                    :: YFNLFI
+    INTEGER                                  :: IERR
+    TYPE(FD_ll), POINTER                     :: TZFD
+    INTEGER                                  :: IRESP
+    REAL,DIMENSION(:,:),POINTER              :: ZFIELDP
+    LOGICAL                                  :: GALLOC
+    !
+    !JUANZ
+    REAL*8,DIMENSION(2) :: T0,T1,T2
+    REAL*8,DIMENSION(2) :: T11,T22
+    !JUANZ
+#ifdef MNH_GA
+    REAL,DIMENSION(:,:),POINTER            :: ZFIELDP_GA , ZFIELD_GA
+    REAL                                   :: ERROR
+    INTEGER                                :: JI
+#endif
+    INTEGER                      :: IHEXTOT
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YDIR     = TPFIELD%CDIR
+    !
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    CALL SECOND_MNH2(T11)
+    IRESP = 0
+    GALLOC = .FALSE.
+    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
+    !------------------------------------------------------------------
+    IHEXTOT = 2*JPHEXT+1
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
+          IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
+             ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+             !    ELSE IF (LPACK .AND. L2D .AND. YDIR=='XY') THEN
+          ELSEIF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+             ZFIELDP=>PFIELD(:,JPHEXT+1:JPHEXT+1)
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+          ELSE
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,PFIELD,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,PFIELD,IRESP)
+          END IF
+       ELSE ! multiprocessor execution
+          CALL SECOND_MNH2(T0)
+          IF (ISP == TZFD%OWNER)  THEN
+             ! I/O processor case
+             CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
+          ELSE
+             ALLOCATE(ZFIELDP(0,0))
+             GALLOC = .TRUE.
+          END IF
+          !   
+          IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+             CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+          ELSEIF (YDIR == 'XY') THEN
+             IF (LPACK .AND. L2D) THEN
+                CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1),ZFIELDP(:,1),TZFD%OWNER,TZFD%COMM)
+             ELSE
+#ifdef MNH_GA
+          !
+          ! init/create the ga , dim3 = 1
+          !
+          CALL MNH_INIT_GA(SIZE(PFIELD,1),SIZE(PFIELD,2),1,YRECFM,"WRITE")
+         !
+         !   copy columun data to global arrays g_a 
+         !
+         ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2)))
+         ZFIELD_GA = PFIELD
+         call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L) , ld_col)  
+!!$         print*," nga_put =",YRECFM,g_a," lo_col=",lo_col," hi_col=",hi_col,ZFIELD_GA(NIXO_L,NIYO_L), &
+!!$          " NIXO_L=",NIXO_L,"NIYO_L=",NIYO_L," ld_col=",ld_col," ISP=",ISP
+         call ga_sync
+         DEALLOCATE (ZFIELD_GA)
+         IF (ISP == TZFD%OWNER)  THEN      
+            !
+            ! this proc get the  Z slide to write
+            !
+            lo_zplan(JPIZ) = 1
+            hi_zplan(JPIZ) = 1
+!!$            ALLOCATE (ZFIELDP_GA(IIU_ll,IJU_ll))
+            call nga_get(g_a, lo_zplan, hi_zplan,ZFIELDP, ld_zplan)
+!!$            print*,"nga_get=",YRECFM,g_a," lo_zplan=",lo_zplan," hi_zplan=",hi_zplan &
+!!$                 ,ZFIELDP(1,1)," ld_zplan=",ld_zplan
+         END IF
+!!$         call ga_sync
+#else
+         CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+!!$         IF (ISP == TZFD%OWNER)  THEN   
+!!$            print*,YRECFM, "ERR=", MAXVAL (ZFIELDP_GA - ZFIELDP)
+!!$            DO JI=1,IJU_ll
+!!$            !print*,YRECFM, "ERR=", ZFIELDP_GA(:,JI) - ZFIELDP(:,JI)
+!!$            print*,YRECFM, "WX2::GA =", ZFIELDP_GA(:,JI) 
+!!$            print*,YRECFM, "WX2::MNH=", ZFIELDP(:,JI)
+!!$         END DO
+!!$         END IF
+#endif
+             END IF
+          END IF
+          CALL SECOND_MNH2(T1)
+          TIMEZ%T_WRIT2D_GATH=TIMEZ%T_WRIT2D_GATH + T1 - T0
+          !
+          IF (ISP == TZFD%OWNER)  THEN             
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+          END IF
+#ifdef MNH_GA
+!!$         IF (ISP .EQ. 1 ) THEN
+!!$         call ga_print_stats()
+!!$         call ga_summarize(1) 
+!!$         ENDIF
+         call ga_sync
+!!$         gstatus_ga =  ga_destroy(g_a)
+#endif     
+          CALL SECOND_MNH2(T2)
+          TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + T2 - T1
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
+               & %COMM,IERR)
+       END IF
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_X2",YFILEM,HFIPRI,YRECFM,YDIR,TPFIELD%NGRID,LEN(TPFIELD%CCOMMENT),IRESP)
+    END IF
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+    KRESP = IRESP
+    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TZFD%COMM,IERR)
+    CALL SECOND_MNH2(T22)
+    TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_X2
 
   SUBROUTINE FMWRITX3_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
