@@ -102,6 +102,7 @@ USE MODE_MODELN_HANDLER
 USE MODI_READ_ALL_NAMELISTS
 USE MODD_MNH_SURFEX_n
 USE MODI_INI_SPECTRE_n
+USE MODE_FIELD
 !JUAN
 USE MODE_SPLITTINGZ_ll
 !JUAN
@@ -219,6 +220,7 @@ DO JMI=1,NMODEL
 ENDDO
 !
 !
+CALL INI_FIELD_LIST()
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZE EACH MODEL
