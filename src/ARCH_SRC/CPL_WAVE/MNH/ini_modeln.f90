@@ -271,6 +271,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 2016 Chemistry
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!                      10/2016 (C.Lac) Add max values
+!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry       
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -327,7 +328,7 @@ USE MODD_VAR_ll,        ONLY : IP
 USE MODD_STAND_ATM,     ONLY : XSTROATM, XSMLSATM, XSMLWATM, XSPOSATM, XSPOWATM
 USE MODD_CH_MNHC_n, ONLY : LUSECHEM, LUSECHAQ, LUSECHIC, LCH_INIT_FIELD, &
                            CCHEM_INPUT_FILE, LCH_CONV_LINOX,             &
-                           XCH_TUV_DOBNEW, LCH_PH
+                           XCH_TUV_DOBNEW, LCH_PH, CSPEC_BUDGET, CSPEC_PRODLOSS
 USE MODD_CH_PH_n
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_CH_AERO_n,  ONLY : XSOLORG,XMI
@@ -337,7 +338,7 @@ USE MODD_DEEP_CONVECTION_n
 USE MODD_OUT_n
 USE MODD_BIKHARDT_n
 USE MODD_NUDGING_n, ONLY : LNUDGING
-USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG
+USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG, CSPEC_BU_DIAG
 USE MODD_CLOUD_MF_n
 USE MODD_NSV
 !
@@ -419,6 +420,13 @@ USE MODD_ADVFRC_n
 USE MODD_RELFRC_n
 USE MODD_2D_FRC
 !
+USE MODD_CH_PRODLOSSTOT_n
+USE MODI_CH_INIT_PRODLOSSTOT_n
+!
+USE MODD_CH_BUDGET_n
+USE MODI_CH_INIT_BUDGET_n
+USE MODD_CH_M9_n, ONLY:NNONZEROTERMS
+!
 USE MODE_MPPDB
 USE MODI_INIT_AEROSOL_PROPERTIES
 !
@@ -482,6 +490,12 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIR_ALB ! direct albedo
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSCA_ALB ! diffuse albedo
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTSRAD   ! surface temperature
+!
+!
+INTEGER, DIMENSION(:,:),ALLOCATABLE :: IINDEX   ! indices of non-zero terms
+INTEGER, DIMENSION(:),ALLOCATABLE   :: IIND
+INTEGER                             :: JM
+!
 !------------------------------------------
 ! Dummy pointers needed to correct an ifort Bug
 REAL, DIMENSION(:), POINTER :: DPTR_XZHAT
@@ -2173,6 +2187,51 @@ IF ( LFOREFIRE ) THEN
 		, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME, XTSTEP)
 END IF
 #endif
+
+!-------------------------------------------------------------------------------
+!
+!*      30.   Total production/Loss for chemical species
+!
+IF (LUSECHEM.OR.LCHEMDIAG)  THEN
+        CALL CH_INIT_PRODLOSSTOT_n(ILUOUT)
+        IF (NEQ_PLT>0) THEN
+                ALLOCATE(XPROD(IIU,IJU,IKU,NEQ_PLT))
+                ALLOCATE(XLOSS(IIU,IJU,IKU,NEQ_PLT))
+                XPROD=0.0
+                XLOSS=0.0
+        ELSE
+                ALLOCATE(XPROD(0,0,0,0))
+                ALLOCATE(XLOSS(0,0,0,0))
+        END IF
+ELSE
+        ALLOCATE(XPROD(0,0,0,0))
+        ALLOCATE(XLOSS(0,0,0,0))
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*     31. Extended production/loss terms for chemical species
+!
+IF (LUSECHEM.OR.LCHEMDIAG) THEN
+        CALL CH_INIT_BUDGET_n(ILUOUT)
+        IF (NEQ_BUDGET>0) THEN
+                ALLOCATE(IINDEX(2,NNONZEROTERMS))
+                ALLOCATE(IIND(NEQ_BUDGET))
+                CALL CH_NONZEROTERMS(KMI,IINDEX,NNONZEROTERMS)
+                ALLOCATE(XTCHEM(NEQ_BUDGET))
+                DO JM=1,NEQ_BUDGET
+                        IIND(JM)=COUNT((IINDEX(1,:))==NSPEC_BUDGET(JM))
+                        ALLOCATE(XTCHEM(JM)%NB_REAC(IIND(JM)))
+                        ALLOCATE(XTCHEM(JM)%XB_REAC(IIU,IJU,IKU,IIND(JM)))
+                END DO
+                DEALLOCATE(IIND)
+                DEALLOCATE(IINDEX)
+        ELSE
+                ALLOCATE(XTCHEM(0))
+        END IF
+ELSE
+        ALLOCATE(XTCHEM(0))
+END IF
 
 END SUBROUTINE INI_MODEL_n
 
