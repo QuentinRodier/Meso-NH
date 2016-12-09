@@ -1,2 +1,2 @@
 set -x
-rm -f zsection_1250.ps *.nc4
+rm -f *.png *.nc4

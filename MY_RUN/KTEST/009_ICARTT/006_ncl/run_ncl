@@ -5,16 +5,14 @@
 set -x
 #set -e
 
-ln -sf ../003_mesonh/ICART.1.SEG01.001.nc4 .
-ln -sf ../003_mesonh/ICART.1.SEG01.002.nc4 .
+ln -sf ../004_diag/ICART.1.SEG01.001dg.nc4 .
+ln -sf ../004_diag/ICART.1.SEG01.002dg.nc4 .
 
 rm -f *.png 
 ncl plot_ICARTT.ncl
+ncl plot_ICARTT_budget.ncl
 
-display zsection_1250.000001.png
-display zsection_1250.000002.png
-display zsection_1250.000003.png
-display zsection_1250.000004.png
-display zsection_1250.000005.png
-display zsection_1250.000006.png
+display zsection_1250.*.png
+display zsection_1250_bud.*.png
+
 exit 0
