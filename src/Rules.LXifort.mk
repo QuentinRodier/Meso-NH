@@ -155,7 +155,7 @@ include Makefile.MESONH.mk
 # Juan & Maud 20/03/2008 --> Ifort 10.1.008 Bug O2 optimization
 ifneq "$(OPTLEVEL)" "DEBUG"
 OPT_PERF1  =  -O1 
-OBJS_O1= spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o
+OBJS_O1= spll_mode_snow3l.o spll_schu.o spll_ps2str.o spll_p_abs.o spll_ini_one_way_n.o spll_urban_solar_abs.o
 $(OBJS_O1) : OPT = $(OPT_BASE) $(OPT_PERF1)
 endif
 
