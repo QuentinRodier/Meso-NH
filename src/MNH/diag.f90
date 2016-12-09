@@ -77,6 +77,7 @@
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  09/2016      (JP Pinty) Add LIMA
 !!  10/2016      (C.LAC) add LVISI
+!!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -212,7 +213,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
                    NCAPE, LBV_FR, LRADAR, LBLTOP, LTRAJ, &
                    LDIAG,XDIAG,LCHEMDIAG,LCHAQDIAG,XCHEMLAT,XCHEMLON,&
-                   LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
+                   CSPEC_BU_DIAG,CSPEC_DIAG,LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
                    XSTEP_AIRCRAFT_BALLOON,&
                    XLAT_BALLOON,XLON_BALLOON,XALT_BALLOON,&
                    LC2R2, LC3R5, LELECDIAG, CAERDIAG, &
@@ -293,6 +294,8 @@ CAERDIAG='CLIM'
 LCHAQDIAG=.FALSE.
 XCHEMLAT(:)=XUNDEF
 XCHEMLON(:)=XUNDEF
+CSPEC_BU_DIAG=''
+CSPEC_DIAG=''
 LTRAJ=.FALSE.
 LLIMA_DIAG=.FALSE.
 !

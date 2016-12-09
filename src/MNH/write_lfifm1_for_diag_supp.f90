@@ -3,6 +3,10 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag_supp.f90,v $ $Revision: 1.3.2.3.2.2.2.5.2.2.2.3.2.4 $ $Date: 2016/03/17 12:59:13 $
+!-----------------------------------------------------------------
 !     ######################################
       MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !     ######################################
@@ -80,6 +84,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      P.Tulet : Diag for salt and orilam
 !!      J.-P. Chaboureau 07/03/2016 fix the dimensions of local arrays
 !!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
+!!      F. Brosse 10/2016 add chemical production destruction terms outputs
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -114,6 +119,9 @@ USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_DUST,            ONLY: LDUST
 USE MODD_SALT,            ONLY: LSALT
 USE MODD_CH_AEROSOL,      ONLY: LORILAM
+USE MODD_CH_MNHC_n
+USE MODD_CH_BUDGET_n
+USE MODD_CH_PRODLOSSTOT_n
 USE MODD_RAD_TRANSF
 USE MODD_DIAG_IN_RUN, ONLY: XCURRENT_ZON10M,XCURRENT_MER10M,           &
                             XCURRENT_SFCO2, XCURRENT_SW, XCURRENT_LW
@@ -1074,6 +1082,49 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
   END DO
 !
   DEALLOCATE(ZWTH,ZTH,ZWORK32,ZWORK33,ZWORK34)
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*       6.     DIAGNOSTIC RELATED TO CHEMISTRY
+!               -------------------------------
+!
+IF (NEQ_BUDGET>0) THEN
+     IGRID=1
+     DO JSV = 1, NEQ_BUDGET
+       YRECFM=TRIM(CNAMES_BUDGET(JSV))//'_BUDGET'
+       WRITE(YCOMMENT,'(A6,A5,A7,A8)')'X_Y_Z_',CNAMES_BUDGET(JSV),'_BUDGET','(ppp/s)'
+       ILENCH=LEN(YCOMMENT)
+       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XTCHEM(JSV)%XB_REAC(:,:,:,:),IGRID,ILENCH,&
+                YCOMMENT,IRESP)
+     END DO
+!
+     DO JSV=1, NEQ_BUDGET
+       YRECFM=TRIM(CNAMES_BUDGET(JSV))//'_CHREACLIST'
+       WRITE(YCOMMENT,'(A5,A14)')CNAMES_BUDGET(JSV),'_REACTION_LIST'
+       ILENCH=LEN(YCOMMENT)
+       CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XTCHEM(JSV)%NB_REAC(:),IGRID,ILENCH,&
+                  YCOMMENT,IRESP)
+     END DO
+END IF
+!
+!
+! chemical prod/loss terms
+IF (NEQ_PLT>0) THEN
+        IGRID=1
+        DO JSV = 1, NEQ_PLT
+          YRECFM=TRIM(CNAMES_PRODLOSST(JSV))//'_PROD'
+          WRITE(YCOMMENT,'(A6,A8,A5,A8)')'X_Y_Z_',CNAMES_PRODLOSST(JSV),'_PROD','(ppp/s)'
+          ILENCH=LEN(YCOMMENT)
+          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XPROD(:,:,:,JSV),IGRID,ILENCH,&
+                  YCOMMENT,IRESP)
+!
+          YRECFM=TRIM(CNAMES_PRODLOSST(JSV))//'_LOSS'
+          WRITE(YCOMMENT,'(A6,A8,A5,A8)')'X_Y_Z_',CNAMES_PRODLOSST(JSV),'_LOSS','(ppp/s)'
+          ILENCH=LEN(YCOMMENT)
+          CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',XLOSS(:,:,:,JSV),IGRID,ILENCH,&
+                  YCOMMENT,IRESP)
+        END DO
 END IF
 !
 !

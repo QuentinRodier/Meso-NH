@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_diag_flag.f90,v $ $Revision: 1.2.4.1.2.2.10.2.2.1 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_diag_flag.f90,v $ $Revision: 1.2.4.1.2.2.10.2.2.2.2.2 $
 ! masdev4_8 modd 2008/06/30 15:13:13
 !-----------------------------------------------------------------
 !     #####################
@@ -38,6 +38,7 @@
 !!       L. Leriche 21/04/06 add aqueous phase chemistry LCHAQDIAG
 !!       D.Ricard 2015 : add LMOIST_ES
 !!     C.Lac 10/2016  Add visibility diagnostic
+!!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !!
 !-------------------------------------------------------------------------------
 !
@@ -92,12 +93,14 @@ INTEGER     :: NCAPE       ! CAPE, DCAPE, CIN, CAPEMAX, CINMAX
 LOGICAL     :: LBV_FR
 LOGICAL     :: LRADAR
 LOGICAL     :: LBLTOP
-LOGICAL     :: LVISI 
+LOGICAL     :: LVISI
 LOGICAL     :: LTRAJ       ! to compute trajectories
 LOGICAL     :: LCHEMDIAG = .FALSE.  ! flag for chemistry
 CHARACTER (LEN=4) :: CAERDIAG  ! aerosols optical thickness type
 LOGICAL     :: LCHAQDIAG   ! flag for aqueous phase chemistry
 REAL, DIMENSION(10)  :: XCHEMLAT,XCHEMLON ! positions of vertical profiles written by routine write_ts1d
+CHARACTER (LEN=1024) :: CSPEC_BU_DIAG
+CHARACTER (LEN=1024) :: CSPEC_DIAG
 LOGICAL     :: LAIRCRAFT_BALLOON    ! aircraft and balloon trajectories
 INTEGER     :: NTIME_AIRCRAFT_BALLOON ! time in seconds of trajectories computing
 REAL        :: XSTEP_AIRCRAFT_BALLOON ! minimum time step for trajectories calculations (s)

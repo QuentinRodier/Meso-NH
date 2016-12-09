@@ -218,6 +218,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   10/2016 (C.Lac) VSIGQSAT change from 0 to 0.02 for coherence with AROME
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
+!!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1182,6 +1183,8 @@ NCH_VEC_LENGTH      = 50
 XCH_TS1D_TSTEP      = 600.
 CCH_TS1D_COMMENT    = 'no comment'
 CCH_TS1D_FILENAME   = 'IO1D'
+CSPEC_PRODLOSS      = ''
+CSPEC_BUDGET        = ''
 !
 !-------------------------------------------------------------------------------
 !

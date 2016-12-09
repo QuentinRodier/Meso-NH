@@ -144,6 +144,7 @@ USE MODE_MODELN_HANDLER
 USE MODI_WRITE_TS1D
 USE MODD_CST, ONLY : XMNH_TINY
 !
+USE MODI_CH_PRODLOSS
 !     IMPLICIT ARGUMENTS
 !     ------------------
 ! 
@@ -161,7 +162,14 @@ USE MODD_CH_M9_n,   ONLY: NEQ,            &! number of prognostic chem. species
                           NMETEOVARS,     &! number of meteorological variables
                           CNAMES,         &! names of the chem. species
                           CICNAMES,       &! names of the ice chem. species
-                          METEOTRANSTYPE   ! type for meteo . transfer
+                          METEOTRANSTYPE, &! type for meteo . transfer
+                          NREAC,          &
+                          NNONZEROTERMS,  &
+                          CREACS          
+!
+USE MODI_CH_TERMS
+USE MODI_CH_NONZEROTERMS
+USE MODI_CH_GET_RATES
 !
 USE MODD_CH_MNHC_n, ONLY: CCH_TDISCRETIZATION
                   ! temporal discretization:
@@ -212,6 +220,12 @@ USE MODD_CST,       ONLY: XAVOGADRO, &! Avogadro number
                           XMD,       &! Molar mass of dry air
                           XP00, XRD, XCPD
 !
+USE MODD_CH_PRODLOSSTOT_n             ! Total production/loss for chemical
+                                      ! species
+USE MODD_CH_BUDGET_n                  ! Extended production/loss terms for
+                                      ! chemical species             
+!
+USE MODD_DIAG_FLAG,     ONLY: CSPEC_BU_DIAG,CSPEC_DIAG
 ! variables used by TUV
 !
 USE MODD_GRID_n,    ONLY: XZZ,&       ! height z
@@ -292,6 +306,28 @@ REAL, DIMENSION(:), ALLOCATABLE    :: ZCONV
         ! conversion factor mixing ratio * RhoDJ ! to molec./cm3
 !
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZPH
+!
+!Varibales for integrated prod/loss for given species
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZPRODTOT  ! Production/loss tables
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLOSSTOT  ! for all species
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZPROD     ! Production/loss tables
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZLOSS     ! for selected species
+!
+!Variables for detailed production/destruction terms for given species
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTCHEMTOT    ! detailed production/loss terms
+INTEGER, DIMENSION(:,:),ALLOCATABLE   :: IINDEX   ! indices of non-zero terms
+INTEGER                               :: IREAC    ! indices of reaction
+INTEGER, DIMENSION(:),ALLOCATABLE   :: IIND   
+TYPE REAC
+  INTEGER, DIMENSION(:), POINTER  :: IB_REAC
+  REAL   , DIMENSION(:,:), POINTER  :: ZB_REAC
+END TYPE
+TYPE (REAC), ALLOCATABLE, DIMENSION(:)  :: ZTCHEM
+!     
+INTEGER                                 :: JO
+INTEGER                                 :: JR
+INTEGER                                 :: JS
+!
 !
 REAL    :: ZDEN2MOL
         !  ZDEN2MOL = 6.0221367E+23 * 1E-6 / 28.9644E-3
@@ -585,6 +621,9 @@ SELECT CASE (CCH_TDISCRETIZATION)
 END SELECT
 !
 !
+IF (LEN_TRIM(CSPEC_BU_DIAG)/=0.OR.LEN_TRIM(CSPEC_DIAG)/=0) GSPLIT=.FALSE.  ! Modif. for DIAG
+!
+!
 !*       1.6   allocate tables
 !
 ALLOCATE(TZM(ISVECNPT))
@@ -593,6 +632,24 @@ ALLOCATE(ZNEWCHEM(ISVECNPT,NEQ)) !dimension of the 2nd row NEQ is provisional
 ALLOCATE(ZOLDCHEM(ISVECNPT,NEQ)) !dimension of the 2nd row NEQ is provisional
 ALLOCATE(ZCONV(ISVECNPT))
 IF (LUSECHAQ.AND.LCH_PH) ALLOCATE(ZPH(ISVECNPT,NRRL))
+IF (NEQ_PLT>0) THEN
+  ALLOCATE(ZPRODTOT(ISVECNPT,NEQ))
+  ALLOCATE(ZLOSSTOT(ISVECNPT,NEQ))
+  ALLOCATE(ZPROD(ISVECNPT,NEQ_PLT))
+  ALLOCATE(ZLOSS(ISVECNPT,NEQ_PLT))
+END IF
+IF (NEQ_BUDGET>0) THEN
+  ALLOCATE(ZTCHEMTOT(ISVECNPT,NEQ,NREAC))
+  ALLOCATE(ZTCHEM(NEQ_BUDGET))
+  ALLOCATE(IIND(NEQ_BUDGET))
+  ALLOCATE(IINDEX(2,NNONZEROTERMS))
+  CALL CH_NONZEROTERMS(IMI,IINDEX,NNONZEROTERMS)
+  DO JM=1,NEQ_BUDGET
+      IIND(JM)=COUNT((IINDEX(1,:))==NSPEC_BUDGET(JM))
+      ALLOCATE(ZTCHEM(JM)%IB_REAC(IIND(JM)))
+      ALLOCATE(ZTCHEM(JM)%ZB_REAC(ISVECNPT,IIND(JM)))
+  END DO
+END IF
 IF (LORILAM) THEN
   ALLOCATE(ZAERO(ISVECNPT,NSV_AER))
   ALLOCATE(ZNEWAERO(ISVECNPT,NSV_AER))
@@ -1050,7 +1107,41 @@ DO JL=1,ISVECNMASK
     END DO
   END IF
 !
-!*       4.8   return result to MesoNH scalar variables - chemical species
+!
+!*       4.8.1  read production/loss terms for chemical species and filter
+!               selected species
+!
+  IF (NEQ_PLT>0) THEN
+    CALL CH_PRODLOSS(TDTCUR%TIME,ZCHEM,ZPRODTOT,ZLOSSTOT,IMI,ISVECNPT,NEQ)
+    DO JM=1, NEQ_PLT
+      DO JN=1,ISVECNPT
+        ZPROD(JN,JM)=ZPRODTOT(JN,NIND_SPEC(JM))
+        ZLOSS(JN,JM)=ZLOSSTOT(JN,NIND_SPEC(JM))*ZCHEM(JN,NIND_SPEC(JM))
+      END DO
+    END DO
+  END IF
+!
+!
+!*       4.8.2  read extended production/loss terms for chemical species and
+!               filter selected species
+!
+  IF (NEQ_BUDGET>0) THEN
+        CALL CH_TERMS(TDTCUR%TIME,ZCHEM,ZTCHEMTOT,IMI,ISVECNPT,NEQ,NREAC)
+        DO JM=1,NEQ_BUDGET
+          DO JN=1,ISVECNPT    
+            JS=1      
+            DO JO=1,NNONZEROTERMS
+                IF(NSPEC_BUDGET(JM).EQ.IINDEX(1,JO)) THEN
+                  ZTCHEM(JM)%ZB_REAC(JN,JS)=ZTCHEMTOT(JN,IINDEX(1,JO),IINDEX(2,JO))
+                  ZTCHEM(JM)%IB_REAC(JS)=IINDEX(2,JO)
+                  JS=JS+1
+                END IF
+            END DO
+          END DO
+        END DO
+  END IF
+!
+!*       4.9   return result to MesoNH scalar variables - chemical species
 !
   IF (GSPLIT) THEN
     DO JM = 0, ISVECNPT-1
@@ -1086,7 +1177,7 @@ DO JL=1,ISVECNMASK
     DEALLOCATE(LU_DIM_SPECIES) 
   END IF
 !
-!*       4.8   return result to MesoNH scalar variables - pH values
+!*       4.10   return result to MesoNH scalar variables - pH values
 !
   IF (LUSECHAQ.AND.LCH_PH) THEN
     SELECT CASE(NRRL)
@@ -1107,9 +1198,43 @@ DO JL=1,ISVECNMASK
         END DO
     END SELECT
   ENDIF
+!
+!
+!*      4.11 return result to MesoNH scalar variables - prod/loss terms
+!
+  IF (NEQ_PLT>0) THEN
+        DO JM=0,ISVECNPT-1
+          JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
+          JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
+          JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
+          DO JN=1,NEQ_PLT
+            XPROD(JI,JJ,JK,JN) = ZPROD(JM+1,JN)/(ZDEN2MOL*XRHODREF(JI,JJ,JK))
+            XLOSS(JI,JJ,JK,JN) = ZLOSS(JM+1,JN)/(ZDEN2MOL*XRHODREF(JI,JJ,JK))
+          END DO
+        END DO
+  END IF
+!
+!
+!*      4.12 return result to MesoNH scalar variables - extended prod/loss terms
+!
+  IF (NEQ_BUDGET>0) THEN
+        DO JM=0,ISVECNPT-1
+          JI=JM-IDTI*(JM/IDTI)+ISVECMASK(1,JL)
+          JJ=JM/IDTI-IDTJ*(JM/(IDTI*IDTJ))+ISVECMASK(3,JL)
+          JK=JM/(IDTI*IDTJ)-IDTK*(JM/(IDTI*IDTJ*IDTK))+ISVECMASK(5,JL)
+          DO JN=1,NEQ_BUDGET
+            DO JS=1,IIND(JN)
+              XTCHEM(JN)%XB_REAC(JI,JJ,JK,JS)=(ZTCHEM(JN)%ZB_REAC(JM+1,JS))/(ZDEN2MOL*XRHODREF(JI,JJ,JK))
+              XTCHEM(JN)%NB_REAC(JS)=ZTCHEM(JN)%IB_REAC(JS)
+            END DO
+          END DO
+        END DO
+  END IF
+!
+!
 END DO
 !
-!*        4.9  compute accumalated concentrations in rain at the surface
+!*        4.13  compute accumalated concentrations in rain at the surface
 !
 IF (CCLOUD /= 'REVE' ) THEN
   IF (LUSECHAQ) THEN
@@ -1150,6 +1275,18 @@ DEALLOCATE(ZOLDCHEM)
 DEALLOCATE(ZCONV)
 IF (LUSECHAQ.AND.LCH_PH) DEALLOCATE(ZPH)
 !
+IF (NEQ_PLT>0) THEN
+  DEALLOCATE(ZPRODTOT)
+  DEALLOCATE(ZLOSSTOT)
+  DEALLOCATE(ZPROD)
+  DEALLOCATE(ZLOSS)
+END IF
+IF (NEQ_BUDGET>0) THEN
+  DEALLOCATE(ZTCHEMTOT)
+  DEALLOCATE(ZTCHEM)
+  DEALLOCATE(IIND)
+  DEALLOCATE(IINDEX)
+END IF
 IF (LORILAM) THEN
   DEALLOCATE(ZAERO)
   DEALLOCATE(ZNEWAERO)

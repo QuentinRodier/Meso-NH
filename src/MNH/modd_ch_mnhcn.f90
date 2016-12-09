@@ -36,6 +36,7 @@
 !!    16/09/10 (M. Leriche) add flag for ice phase chemistry
 !!    13/01/11 (M. Leriche) add flag for retention in ice 
 !!    24/03/16 (M. Leriche) remove surface option -> manage them in SURFEX
+!!    01/10/16 (F. Brosse)  add production/destruction terms computation
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -152,6 +153,15 @@ TYPE CH_MNHC_t
   CHARACTER(LEN=80) :: CCH_TS1D_COMMENT       ! comment for write_ts1d
   CHARACTER(LEN=80) :: CCH_TS1D_FILENAME      ! filename for write_ts1d files
 !
+!* total production/loss for chemical species
+! 
+  CHARACTER(LEN=1024)    :: CSPEC_PRODLOSS
+!
+!* extended production/loss terms for chemical species
+!
+  CHARACTER(LEN=1024)    :: CSPEC_BUDGET
+!
+!
 END TYPE CH_MNHC_t
 
 TYPE(CH_MNHC_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: CH_MNHC_MODEL
@@ -181,6 +191,8 @@ INTEGER, POINTER :: NCH_VEC_LENGTH=>NULL()
 REAL, POINTER :: XCH_TS1D_TSTEP=>NULL()
 CHARACTER(LEN=80), POINTER :: CCH_TS1D_COMMENT=>NULL()
 CHARACTER(LEN=80), POINTER :: CCH_TS1D_FILENAME=>NULL()
+CHARACTER(LEN=1024), POINTER :: CSPEC_PRODLOSS=>NULL()
+CHARACTER(LEN=1024), POINTER :: CSPEC_BUDGET=>NULL()
 
 CONTAINS
 
@@ -215,6 +227,8 @@ NCH_VEC_LENGTH=>CH_MNHC_MODEL(KTO)%NCH_VEC_LENGTH
 XCH_TS1D_TSTEP=>CH_MNHC_MODEL(KTO)%XCH_TS1D_TSTEP
 CCH_TS1D_COMMENT=>CH_MNHC_MODEL(KTO)%CCH_TS1D_COMMENT
 CCH_TS1D_FILENAME=>CH_MNHC_MODEL(KTO)%CCH_TS1D_FILENAME
+CSPEC_PRODLOSS=>CH_MNHC_MODEL(KTO)%CSPEC_PRODLOSS  
+CSPEC_BUDGET=>CH_MNHC_MODEL(KTO)%CSPEC_BUDGET
 
 END SUBROUTINE CH_MNHC_GOTO_MODEL
 
