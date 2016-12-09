@@ -7,6 +7,10 @@
 # Compiler Options                                       #
 #                                                        #
 ##########################################################
+#
+#   Gfortran version
+GFV=$(shell  gfortran --version | grep -E -m1 -o ' [[:digit:]\.]{2,}( |$$)'  | sed 's/\.//g' )
+#
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
 OPT_BASE  =  -g -fno-second-underscore -fpic  -ffpe-trap=overflow,zero,invalid  -fbacktrace
@@ -92,12 +96,15 @@ CNAME_GRIBEX=_gfortran
 #
 HDF_CONF= CFLAGS=-std=c99
 #
-# LIBTOOLS flags
+## LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools if gfortran >= 5.X
-ifeq ($(shell test $$( gfortran -dumpversion | cut -b1 ) -ge 5 ; echo $$?),0)
-MNH_TOOLS = yes
+#ifeq ($(shell test $$( gfortran -dumpversion | cut -b1 ) -ge 5 ; echo $$?),0)
+ifeq ($(shell test $(GFV) -ge 500 ; echo $$?),0)
+ MNH_TOOLS = yes
 endif
+#
+#
 #
 ##########################################################
 #                                                        #
@@ -124,5 +131,12 @@ endif
 ifeq "$(MNH_INT)" "8"
 OBJS_I4=spll_modd_netcdf.o
 $(OBJS_I4) : OPT = $(OPT_BASE_I4)
+endif
+
+ifeq ($(shell test $(GFV) -le 482 ; echo $$?),0)
+ifneq "$(OPTLEVEL)" "DEBUG"
+OBJS_O0= spll_lima_phillips_integ.o
+$(OBJS_O0) : OPT = $(OPT_BASE) $(OPT_PERF0)
+endif
 endif
 
