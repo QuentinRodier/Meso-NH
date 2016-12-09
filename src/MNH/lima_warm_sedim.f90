@@ -208,6 +208,10 @@ IKE=SIZE(PZZ,3) - JPVEXT
 !
 ZTSPLITR= PTSTEP / FLOAT(KSPLITR)
 !
+PINPRC(:,:) = 0.
+PINPRR(:,:) = 0.
+PINPRR3D(:,:,:) = 0.
+!
 IF (OSEDC) THEN
    ZWLBDA(:,:,:) = 0.
    ZRAY(:,:,:)   = 0.
@@ -312,7 +316,7 @@ DO JN = 1 , KSPLITR
          DEALLOCATE(ZTCC)
          DEALLOCATE(ZLBDC)
 !
-         PINPRC(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                        ! in m/s
+         PINPRC(:,:) = PINPRC(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/KSPLITR                        ! in m/s
       ELSE
          ZWSEDR(:,:,IKB) = 0.0
       END IF ! OSEDC
@@ -366,10 +370,8 @@ DO JN = 1 , KSPLITR
          ZWSEDR(:,:,IKB) = 0.0
       END IF ! max PRRS > ZRTMIN(3)
 !    
-      IF( JN.EQ.1 ) THEN
-         PINPRR(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                        ! in m/s
-         PINPRR3D(:,:,:) = ZWSEDR(:,:,:)/XRHOLW                      ! in m/s
-      END IF
+      PINPRR(:,:) = PINPRR(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/KSPLITR              ! in m/s
+      PINPRR3D(:,:,:) = PINPRR3D(:,:,:) + ZWSEDR(:,:,:)/XRHOLW/KSPLITR        ! in m/s
 !
       DEALLOCATE(ZRHODREF)
       DEALLOCATE(ZZW1)

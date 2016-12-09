@@ -180,6 +180,10 @@ ZRTMIN(:) = XRTMIN(:) / PTSTEP
 !
 ZTSPLITG= PTSTEP / FLOAT(KSPLITG)
 !
+PINPRS(:,:) = 0.
+PINPRG(:,:) = 0.
+PINPRH(:,:) = 0.
+!
 ! ################################
 ! Compute the sedimentation fluxes
 ! ################################
@@ -281,9 +285,7 @@ DO JN = 1 , KSPLITG
          ZWSEDR(:,:,IKB) = 0.0
       END IF
 !    
-      IF( JN.EQ.1 ) THEN 
-         PINPRS(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                          ! in m/s
-      END IF
+      PINPRS(:,:) = PINPRS(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/KSPLITG                          ! in m/s
 !
 !*       2.23   for graupeln
 !
@@ -308,9 +310,7 @@ DO JN = 1 , KSPLITG
          ZWSEDR(:,:,IKB) = 0.0
       END IF
 !    
-      IF( JN.EQ.1 ) THEN
-         PINPRG(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                        ! in m/s
-      END IF
+      PINPRG(:,:) = PINPRG(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/KSPLITG                        ! in m/s
 !
 !*       2.23   for hail
 !
@@ -335,9 +335,7 @@ DO JN = 1 , KSPLITG
          ZWSEDR(:,:,IKB) = 0.0
       END IF
 !    
-      IF( JN.EQ.1 ) THEN
-         PINPRH(:,:) = ZWSEDR(:,:,IKB)/XRHOLW                        ! in m/s
-      END IF
+      PINPRH(:,:) = PINPRH(:,:) + ZWSEDR(:,:,IKB)/XRHOLW/KSPLITG                        ! in m/s
 !
 !*       2.24 End of sedimentation  
 !

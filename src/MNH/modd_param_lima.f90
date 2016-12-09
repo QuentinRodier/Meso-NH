@@ -175,7 +175,9 @@ REAL, SAVE    :: XT_SUTH_A = 110.4      ![K] Sutherland Temperature for Air
 REAL, SAVE    :: XMFPA0    = 6.6E-08    ![m] Mean Free Path of Air under standard conditions
 !
 REAL, SAVE    :: XVISCW = 1.0E-3        ![Pa.s] water viscosity at 20°C
-REAL, SAVE    :: XRHO00 = 1.292         !rho on the floor    [Kg/m**3]
+! Correction
+!REAL, SAVE    :: XRHO00 = 1.292         !rho on the floor    [Kg/m**3]
+REAL, SAVE    :: XRHO00 = 1.2041         !rho at P=1013.25 and T=20°C
 !
 REAL,SAVE :: XCEXVT                    ! air density fall speed correction
 !

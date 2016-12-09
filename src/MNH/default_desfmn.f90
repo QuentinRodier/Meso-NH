@@ -1106,12 +1106,12 @@ IF (KMI == 1) THEN
   OWARM  = .TRUE.
   LACTI  = .TRUE.
   ORAIN  = .TRUE.
-  OSEDC  = .TRUE.
+  OSEDC  = .FALSE.
   OACTIT = .FALSE.
   LBOUND = .FALSE.
 !
-  CINI_CCN   = 'XXX'
-  CTYPE_CCN(:) = 'X'
+  CINI_CCN   = 'AER'
+  CTYPE_CCN(:) = 'M'
 !
   YAERDIFF    = 0.0
   YAERHEIGHT  = 2000.
@@ -1128,8 +1128,8 @@ IF (KMI == 1) THEN
   LAERO_MASS = .FALSE.
 !
   LCCN_HOM = .TRUE.
-  CCCN_MODES = ''
-  XCCN_CONC(:)=0.
+  CCCN_MODES = 'COPT'
+  XCCN_CONC(:)=300.
 ENDIF
 !
 IF (KMI == 1) THEN

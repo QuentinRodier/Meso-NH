@@ -94,8 +94,8 @@ LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
 !
 XAC = (XPI/6.0)*XRHOLW
 XBC = 3.0
-XCC = XRHOLW*XG/(18.0*1.816E-5) ! Stokes flow (Pruppacher p 322 for T=293K)
-XCC = XRHOLW*XG/(18.0*1.7E-5) ! Stokes flow (Pruppacher p 322 for T=273K)
+XCC = XRHOLW*XG/(18.0*1.816E-5) ! Stokes flow (Pruppacher eq. 10-138 for T=293K)
+!XCC = XRHOLW*XG/(18.0*1.7E-5) ! Stokes flow (Pruppacher eq. 10-138 for T=273K)
 XDC = 2.0
 !
 XF0C = 1.00
@@ -169,7 +169,9 @@ XLBEXR = 1.0/XBR
 !*       4.1    Exponent of the fall-speed air density correction
 !
 IKB = 1 + JPVEXT
-ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+! Correction
+!ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+ZRHO00 = 1.2041 ! at P=1013.25hPa and T=20°C
 !
 !*       4.2    Constants for sedimentation
 !

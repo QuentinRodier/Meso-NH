@@ -133,19 +133,19 @@ SELECT CASE (CPRISTINE_ICE_LIMA)
   CASE('PLAT')
     XAI = 0.82      ! Plates
     XBI = 2.5       ! Plates 
-    XC_I = 800.     ! Plates
+    XC_I = 747.     ! Plates
     XDI = 1.0       ! Plates
     XC1I = 1./XPI   ! Plates
   CASE('COLU')
     XAI = 2.14E-3   ! Columns
     XBI = 1.7       ! Columns
-    XC_I = 2.1E5    ! Columns
+    XC_I = 1.96E5   ! Columns
     XDI = 1.585     ! Columns
     XC1I = 0.8      ! Columns 
   CASE('BURO')
     XAI = 44.0      ! Bullet rosettes
     XBI = 3.0       ! Bullet rosettes
-    XC_I = 4.3E5    ! Bullet rosettes
+    XC_I = 4.E5     ! Bullet rosettes
     XDI = 1.663     ! Bullet rosettes
     XC1I = 0.5      ! Bullet rosettes
 END SELECT
@@ -163,7 +163,7 @@ XF1IS = 0.28
 !
 XAS = 0.02
 XBS = 1.9
-XCS = 5.1
+XCS = 5.
 XDS = 0.27
 !
 XCCS = 5.0
@@ -178,7 +178,7 @@ XC1S = 1./XPI
 !
 XAG = 19.6  ! Lump graupel case
 XBG = 2.8   ! Lump graupel case
-XCG = 124.  ! Lump graupel case
+XCG = 122.  ! Lump graupel case
 XDG = 0.66  ! Lump graupel case
 !
 XCCG = 5.E5
@@ -196,7 +196,7 @@ XC1G = 1./2.
 !
 XAH = 470.
 XBH = 3.0
-XCH = 207.
+XCH = 201.
 XDH = 0.64
 !
 !XCCH = 5.E-4
@@ -274,7 +274,9 @@ XLBDAS_MAX = ( ZCONC_MAX/XCCS )**(1./XCXS)
 !*       3.1    Exponent of the fall-speed air density correction
 !
 IKB = 1 + JPVEXT
-ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+! Correction
+! ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+ZRHO00 = 1.2041 ! at P=1013.25hPa and T=20°C
 !
 !*       3.2    Constants for sedimentation
 !

@@ -119,7 +119,7 @@ IF (LWARM) THEN
 !
 !  droplets
 !
-   ZCONCC = 300 ! droplet concentration set at 300 cm-3
+   ZCONCC = 300.E6 ! droplet concentration set at 300 cm-3
    WHERE ( PRT(:,:,:,2) > XRTMIN(2) )
       PSVT(:,:,:,NSV_LIMA_NC) = ZCONCC
       PSVT(:,:,:,NSV_LIMA_CCN_ACTI) = ZCONCC
@@ -162,9 +162,12 @@ IF (LCOLD) THEN
 !
    ZCONCI = 100.E3 ! maximum ice concentration set at 100/L
    WHERE ( PRT(:,:,:,4) > XRTMIN(4) )
-      PSVT(:,:,:,NSV_LIMA_NI) = MIN( PRHODREF(:,:,:) /                                     &
-           ( XRHOLI * XAI*(10.E-06)**XBI * PRT(:,:,:,4) ), &
-           ZCONCI )
+!
+!      PSVT(:,:,:,NSV_LIMA_NI) = MIN( PRHODREF(:,:,:) /                                     &
+!           ( XRHOLI * XAI*(10.E-06)**XBI * PRT(:,:,:,4) ), &
+!           ZCONCI )
+! Correction
+      PSVT(:,:,:,NSV_LIMA_NI) = MIN(PRT(:,:,:,4)/(XAI*(10.E-06)**XBI),ZCONCI )
       PSVT(:,:,:,NSV_LIMA_IFN_NUCL) = PSVT(:,:,:,NSV_LIMA_NI)
    END WHERE
    WHERE ( PRT(:,:,:,4) <= XRTMIN(4) )
