@@ -63,4 +63,10 @@ CHARACTER (LEN=28) :: CDADINIFILE ! DAD fm-file for initial file
 CHARACTER (LEN=28) :: CDADSPAFILE ! DAD fm-file for spawning file
                                     ! if LBAL_ONLY=T
 !
+! Pointers to the data of the mesh #1
+REAL,DIMENSION(:,:),  SAVE,POINTER :: XACPRR1
+REAL,DIMENSION(:,:,:),SAVE,POINTER :: XTHT1
+REAL,DIMENSION(:,:,:),SAVE,POINTER :: XUT1
+REAL,DIMENSION(:,:,:),SAVE,POINTER :: XVT1
+!
 END MODULE MODD_SPAWN
