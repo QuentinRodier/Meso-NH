@@ -234,33 +234,35 @@ INTEGER :: JI,JLOOP
   ZMIXRT(:)=0.1
 
 !                1.4 Estimation of PPART_DRY
-  WHERE(OTEST .AND. OTESTLCL)
+  DO JLOOP=1,SIZE(OTEST)
+    IF(OTEST(JLOOP) .AND. OTESTLCL(JLOOP)) THEN
       !No dry part when condensation level is reached
-      PPART_DRY(:)=0.
-      ZDZ_STOP(:)=0.
-      ZPRE(:)=PPRE_MINUS_HALF(:)
-  ELSEWHERE (OTEST .AND. .NOT. OTESTLCL)
+      PPART_DRY(JLOOP)=0.
+      ZDZ_STOP(JLOOP)=0.
+      ZPRE(JLOOP)=PPRE_MINUS_HALF(JLOOP)
+    ELSE IF (OTEST(JLOOP) .AND. .NOT. OTESTLCL(JLOOP)) THEN
       !Temperature at flux level KK
-      ZT(:)=PTH_UP(:)*(PPRE_MINUS_HALF(:)/XP00) ** (XRD/XCPD)
+      ZT(JLOOP)=PTH_UP(JLOOP)*(PPRE_MINUS_HALF(JLOOP)/XP00) ** (XRD/XCPD)
       !Saturating vapor pressure at flux level KK
-      ZFOESW(:) = MIN(EXP( XALPW - XBETAW/ZT(:) - XGAMW*LOG(ZT(:))  ), 0.99*PPRE_MINUS_HALF(:))
-      ZFOESI(:) = MIN(EXP( XALPI - XBETAI/ZT(:) - XGAMI*LOG(ZT(:))  ), 0.99*PPRE_MINUS_HALF(:))
+      ZFOESW(JLOOP) = MIN(EXP( XALPW - XBETAW/ZT(JLOOP) - XGAMW*LOG(ZT(JLOOP))  ), 0.99*PPRE_MINUS_HALF(JLOOP))
+      ZFOESI(JLOOP) = MIN(EXP( XALPI - XBETAI/ZT(JLOOP) - XGAMI*LOG(ZT(JLOOP))  ), 0.99*PPRE_MINUS_HALF(JLOOP))
       !Computation of d.Rsat / dP (partial derivations with respect to P and T
       !and use of T=Theta*(P/P0)**(R/Cp) to transform dT into dP with theta_up
       !constant at the vertical)
-      ZDRSATODP(:)=(XBETAW/ZT(:)-XGAMW)*(1-ZFRAC_ICE(:))+(XBETAI/ZT(:)-XGAMI)*ZFRAC_ICE(:)
-      ZDRSATODP(:)=((XRD/XCPD)*ZDRSATODP(:)-1.)*PRSAT_UP(:)/ &
-                  &(PPRE_MINUS_HALF(:)-(ZFOESW(:)*(1-ZFRAC_ICE(:)) + ZFOESI(:)*ZFRAC_ICE(:)))
+      ZDRSATODP(JLOOP)=(XBETAW/ZT(JLOOP)-XGAMW)*(1-ZFRAC_ICE(JLOOP))+(XBETAI/ZT(JLOOP)-XGAMI)*ZFRAC_ICE(JLOOP)
+      ZDRSATODP(JLOOP)=((XRD/XCPD)*ZDRSATODP(JLOOP)-1.)*PRSAT_UP(JLOOP)/ &
+                  &(PPRE_MINUS_HALF(JLOOP)-(ZFOESW(JLOOP)*(1-ZFRAC_ICE(JLOOP)) + ZFOESI(JLOOP)*ZFRAC_ICE(JLOOP)))
       !Use of d.Rsat / dP and pressure at flux level KK to find pressure (ZPRE)
       !where Rsat is equal to PRT_UP
-      ZPRE(:)=PPRE_MINUS_HALF(:)+(PRT_UP(:)-PRSAT_UP(:))/ZDRSATODP(:)
+      ZPRE(JLOOP)=PPRE_MINUS_HALF(JLOOP)+(PRT_UP(JLOOP)-PRSAT_UP(JLOOP))/ZDRSATODP(JLOOP)
       !Fraction of dry part (computed with pressure and used with heights, no
       !impact found when using log function here and for pressure on flux levels
       !computation)
-      PPART_DRY(:)=MAX(0., MIN(1., (PPRE_MINUS_HALF(:)-ZPRE(:))/(PPRE_MINUS_HALF(:)-PPRE_PLUS_HALF(:))))
+      PPART_DRY(JLOOP)=MAX(0., MIN(1., (PPRE_MINUS_HALF(JLOOP)-ZPRE(JLOOP))/(PPRE_MINUS_HALF(JLOOP)-PPRE_PLUS_HALF(JLOOP))))
       !Height above flux level KK of the cloudy part
-      ZDZ_STOP(:) = (PZZ(:,KK+KKL)-PZZ(:,KK))*PPART_DRY(:)
-  ENDWHERE
+      ZDZ_STOP(JLOOP) = (PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))*PPART_DRY(JLOOP)
+    END IF
+  END DO
 
 !               1.5 Gradient and flux values of thetav
   IF(KK/=KKB)THEN
@@ -332,29 +334,31 @@ ENDDO
   ZTHV_UP_F2(:) = ZTHMIX(:)*(1.+ZRVORD*ZRVMIX(:))/(1.+PRT_UP(:))
 
   ! Integral buoyancy for cloudy part
-  WHERE(OTEST .AND. PPART_DRY(:)<1.)
-    !Gradient of Theta V updraft over the cloudy part, assuming that thetaV updraft don't change
-    !between flux level KK and bottom of cloudy part
-    ZCOTHVU(:)=(ZTHV_UP_F2(:)-PTHV_UP(:))/((PZZ(:,KK+KKL)-PZZ(:,KK))*(1-PPART_DRY(:)))
+  DO JLOOP=1,SIZE(OTEST)
+    IF(OTEST(JLOOP) .AND. PPART_DRY(JLOOP)<1.) THEN
+      !Gradient of Theta V updraft over the cloudy part, assuming that thetaV updraft don't change
+      !between flux level KK and bottom of cloudy part
+      ZCOTHVU(JLOOP)=(ZTHV_UP_F2(JLOOP)-PTHV_UP(JLOOP))/((PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))*(1-PPART_DRY(JLOOP)))
 
-    !Computation in two parts to use change of gradient of theta v of environment
-    !Between bottom of cloudy part (if under mass level) and mass level KK
-    ZDZ(:)=MAX(0., 0.5*(PZZ(:,KK+KKL)-PZZ(:,KK))-ZDZ_STOP(:))
-    PBUO_INTEG_CLD(:) = ZG_O_THVREF(:)*ZDZ(:)*&
-              (0.5*( ZCOTHVU(:) - ZCOEFF_MINUS_HALF(:))*ZDZ(:) &
-                - (PTHVM(:,KK)-ZDZ(:)*ZCOEFF_MINUS_HALF(:)) + PTHV_UP(:) )
+      !Computation in two parts to use change of gradient of theta v of environment
+      !Between bottom of cloudy part (if under mass level) and mass level KK
+      ZDZ(JLOOP)=MAX(0., 0.5*(PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))-ZDZ_STOP(JLOOP))
+      PBUO_INTEG_CLD(JLOOP) = ZG_O_THVREF(JLOOP)*ZDZ(JLOOP)*&
+              (0.5*( ZCOTHVU(JLOOP) - ZCOEFF_MINUS_HALF(JLOOP))*ZDZ(JLOOP) &
+                - (PTHVM(JLOOP,KK)-ZDZ(JLOOP)*ZCOEFF_MINUS_HALF(JLOOP)) + PTHV_UP(JLOOP) )
 
-    !Between max(mass level, bottom of cloudy part) and flux level KK+KKL
-    ZDZ(:)=(PZZ(:,KK+KKL)-PZZ(:,KK))-MAX(ZDZ_STOP(:),0.5*(PZZ(:,KK+KKL)-PZZ(:,KK)))
-    PBUO_INTEG_CLD(:) = PBUO_INTEG_CLD(:)+ZG_O_THVREF(:)*ZDZ(:)*&
-                        (0.5*( ZCOTHVU(:) - ZCOEFF_PLUS_HALF(:))*ZDZ(:)&
-                - (PTHVM(:,KK)+(0.5*((PZZ(:,KK+KKL)-PZZ(:,KK)))-ZDZ(:))*ZCOEFF_PLUS_HALF(:)) +&
-                PTHV_UP(:) )
+      !Between max(mass level, bottom of cloudy part) and flux level KK+KKL
+      ZDZ(JLOOP)=(PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))-MAX(ZDZ_STOP(JLOOP),0.5*(PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK)))
+      PBUO_INTEG_CLD(JLOOP) = PBUO_INTEG_CLD(JLOOP)+ZG_O_THVREF(JLOOP)*ZDZ(JLOOP)*&
+                        (0.5*( ZCOTHVU(JLOOP) - ZCOEFF_PLUS_HALF(JLOOP))*ZDZ(JLOOP)&
+                - (PTHVM(JLOOP,KK)+(0.5*((PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK)))-ZDZ(JLOOP))*ZCOEFF_PLUS_HALF(JLOOP)) +&
+                PTHV_UP(JLOOP) )
 
-  ELSEWHERE
-    !No cloudy part
-    PBUO_INTEG_CLD(:)=0.
-  ENDWHERE
+    ELSE
+      !No cloudy part
+      PBUO_INTEG_CLD(JLOOP)=0.
+    END IF
+  END DO
 
 !               3.2 Critical mixed fraction for KK+KKL flux level (ZKIC_F2) and
 !                   for bottom of cloudy part (ZKIC), then a mean for the cloudy part
@@ -372,26 +376,27 @@ ENDDO
 
   !   JI computed to avoid KKL(KK-KKL) being < KKL*KKB
   JI=KKL*MAX(KKL*(KK-KKL),KKL*KKB)
-
-  WHERE(OTEST .AND. PPART_DRY(:)>0.5)
-    ZDZ(:)=ZDZ_STOP(:)-0.5*(PZZ(:,KK+KKL)-PZZ(:,KK))
-    ZTHV(:)= PTHVM(:,KK)+ZCOEFF_PLUS_HALF(:)*ZDZ(:)
-    ZMIXTHL(:) = ZKIC_INIT * &
-                 (PTHLM(:,KK)+ZDZ(:)*(PTHLM(:,KK+KKL)-PTHLM(:,KK))/PDZZ(:,KK+KKL)) + &
-                 (1. - ZKIC_INIT)*PTHL_UP(:)
-    ZMIXRT(:)  = ZKIC_INIT * &
-                 (PRTM(:,KK)+ZDZ(:)*(PRTM(:,KK+KKL)-PRTM(:,KK))/PDZZ(:,KK+KKL)) +   &
-                 (1. - ZKIC_INIT)*PRT_UP(:)
-  ELSEWHERE(OTEST)
-    ZDZ(:)=0.5*(PZZ(:,KK+KKL)-PZZ(:,KK))-ZDZ_STOP(:)
-    ZTHV(:)= PTHVM(:,KK)-ZCOEFF_MINUS_HALF(:)*ZDZ(:)
-    ZMIXTHL(:) = ZKIC_INIT * &
-                 (PTHLM(:,KK)-ZDZ(:)*(PTHLM(:,KK)-PTHLM(:,JI))/PDZZ(:,KK)) + &
-                 (1. - ZKIC_INIT)*PTHL_UP(:)
-    ZMIXRT(:)  = ZKIC_INIT * &
-                 (PRTM(:,KK)-ZDZ(:)*(PRTM(:,KK)-PRTM(:,JI))/PDZZ(:,KK)) + &
-                 (1. - ZKIC_INIT)*PRT_UP(:)
-  ENDWHERE
+  DO JLOOP=1,SIZE(OTEST)
+    IF(OTEST(JLOOP) .AND. PPART_DRY(JLOOP)>0.5) THEN
+      ZDZ(JLOOP)=ZDZ_STOP(JLOOP)-0.5*(PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))
+      ZTHV(JLOOP)= PTHVM(JLOOP,KK)+ZCOEFF_PLUS_HALF(JLOOP)*ZDZ(JLOOP)
+      ZMIXTHL(JLOOP) = ZKIC_INIT * &
+                 (PTHLM(JLOOP,KK)+ZDZ(JLOOP)*(PTHLM(JLOOP,KK+KKL)-PTHLM(JLOOP,KK))/PDZZ(JLOOP,KK+KKL)) + &
+                 (1. - ZKIC_INIT)*PTHL_UP(JLOOP)
+      ZMIXRT(JLOOP)  = ZKIC_INIT * &
+                 (PRTM(JLOOP,KK)+ZDZ(JLOOP)*(PRTM(JLOOP,KK+KKL)-PRTM(JLOOP,KK))/PDZZ(JLOOP,KK+KKL)) +   &
+                 (1. - ZKIC_INIT)*PRT_UP(JLOOP)
+     ELSEIF(OTEST(JLOOP)) THEN
+      ZDZ(JLOOP)=0.5*(PZZ(JLOOP,KK+KKL)-PZZ(JLOOP,KK))-ZDZ_STOP(JLOOP)
+      ZTHV(JLOOP)= PTHVM(JLOOP,KK)-ZCOEFF_MINUS_HALF(JLOOP)*ZDZ(JLOOP)
+      ZMIXTHL(JLOOP) = ZKIC_INIT * &
+                 (PTHLM(JLOOP,KK)-ZDZ(JLOOP)*(PTHLM(JLOOP,KK)-PTHLM(JLOOP,JI))/PDZZ(JLOOP,KK)) + &
+                 (1. - ZKIC_INIT)*PTHL_UP(JLOOP)
+      ZMIXRT(JLOOP)  = ZKIC_INIT * &
+                 (PRTM(JLOOP,KK)-ZDZ(JLOOP)*(PRTM(JLOOP,KK)-PRTM(JLOOP,JI))/PDZZ(JLOOP,KK)) + &
+                 (1. - ZKIC_INIT)*PRT_UP(JLOOP)
+    ENDIF
+  ENDDO
   CALL TH_R_FROM_THL_RT_1D(HFRAC_ICE,ZFRAC_ICE,&
                ZPRE,ZMIXTHL,ZMIXRT,&
                ZTHMIX,ZRVMIX,PRC_MIX,PRI_MIX,&
@@ -408,50 +413,28 @@ ENDDO
   ZTHVMIX_F2(:) = ZTHMIX(:)*(1.+ZRVORD*ZRVMIX(:))/(1.+ZMIXRT(:))
 
   !Computation of mean ZKIC over the cloudy part
-  WHERE (OTEST)
+  DO JLOOP=1,SIZE(OTEST) 
+    IF (OTEST(JLOOP)) THEN
     ! Compute ZKIC at the bottom of cloudy part
     ! Thetav_up at bottom is equal to Thetav_up at flux level KK
-    WHERE (ABS(PTHV_UP(:)-ZTHVMIX(:))<1.E-10)
-      ZKIC(:)=1.
-    ELSEWHERE
-      ZKIC(:) = MAX(0.,PTHV_UP(:)-ZTHV(:))*ZKIC_INIT /  &  
-                   (PTHV_UP(:)-ZTHVMIX(:))
-    ENDWHERE
-    ! Compute ZKIC_F2 at flux level KK+KKL
-    WHERE (ABS(ZTHV_UP_F2(:)-ZTHVMIX_F2(:))<1.E-10)
-      ZKIC_F2(:)=1.
-    ELSEWHERE
-      ZKIC_F2(:) = MAX(0.,ZTHV_UP_F2(:)-ZTHV_PLUS_HALF(:))*ZKIC_INIT /  &  
-                   (ZTHV_UP_F2(:)-ZTHVMIX_F2(:))
-    ENDWHERE
-    !Mean ZKIC over the cloudy part
-    ZKIC(:)=MAX(MIN(0.5*(ZKIC(:)+ZKIC_F2(:)),1.),0.)
-  ENDWHERE
+      IF (ABS(PTHV_UP(JLOOP)-ZTHVMIX(JLOOP))<1.E-10) THEN
+        ZKIC(JLOOP)=1.
+      ELSE
+        ZKIC(JLOOP) = MAX(0.,PTHV_UP(JLOOP)-ZTHV(JLOOP))*ZKIC_INIT /  &  
+                   (PTHV_UP(JLOOP)-ZTHVMIX(JLOOP))
+      END IF
+      ! Compute ZKIC_F2 at flux level KK+KKL
+      IF (ABS(ZTHV_UP_F2(JLOOP)-ZTHVMIX_F2(JLOOP))<1.E-10) THEN
+        ZKIC_F2(JLOOP)=1.
+      ELSE
+        ZKIC_F2(JLOOP) = MAX(0.,ZTHV_UP_F2(JLOOP)-ZTHV_PLUS_HALF(JLOOP))*ZKIC_INIT /  &  
+                   (ZTHV_UP_F2(JLOOP)-ZTHVMIX_F2(JLOOP))
+      END IF
+      !Mean ZKIC over the cloudy part
+      ZKIC(JLOOP)=MAX(MIN(0.5*(ZKIC(JLOOP)+ZKIC_F2(JLOOP)),1.),0.)
+    END IF
+  END DO
 
-
-
-!====
-  !Computation of mean ZKIC over the cloudy part
-!  WHERE (OTEST .AND. ABS(PTHV_UP(:)-ZTHVMIX(:))<1.E-10)
-!    ! Compute ZKIC at the bottom of cloudy part
-!    ! Thetav_up at bottom is equal to Thetav_up at flux level KK
-!      ZKIC(:)=1.
-!    ELSEWHERE (OTEST .AND. ABS(PTHV_UP(:)-ZTHVMIX(:))>=1.E-10)
-!      ZKIC(:) = MAX(0.,PTHV_UP(:)-ZTHV(:))*ZKIC_INIT /  &  
-!                   (PTHV_UP(:)-ZTHVMIX(:))
-!  ENDWHERE
-    ! Compute ZKIC_F2 at flux level KK+KKL
-!  WHERE (OTEST .AND. ABS(ZTHV_UP_F2(:)-ZTHVMIX_F2(:))<1.E-10)
-!      ZKIC_F2(:)=1.
-!  ELSEWHERE (OTEST .AND. ABS(ZTHV_UP_F2(:)-ZTHVMIX_F2(:))>=1.E-10)
-!      ZKIC_F2(:) = MAX(0.,ZTHV_UP_F2(:)-ZTHV_PLUS_HALF(:))*ZKIC_INIT /  &  
-!                   (ZTHV_UP_F2(:)-ZTHVMIX_F2(:))
-!  ENDWHERE
-!  WHERE (OTEST)
-!    !Mean ZKIC over the cloudy part
-!    ZKIC(:)=MAX(MIN(0.5*(ZKIC(:)+ZKIC_F2(:)),1.),0.)
-!  ENDWHERE
-!======
 
 !               3.3 Integration of PDF
 !                   According to Kain and Fritsch (1990), we replace delta Mt
@@ -460,10 +443,12 @@ ENDDO
 
   !Constant PDF
   !For this PDF, eq. (5) is delta Me=0.5*delta Mt
-  WHERE(OTEST)
-    ZEPSI(:) = ZKIC(:)**2. !integration multiplied by 2
-    ZDELTA(:) = (1.-ZKIC(:))**2. !idem
-  ENDWHERE
+  DO JLOOP=1,SIZE(OTEST)
+    IF(OTEST(JLOOP)) THEN
+      ZEPSI(JLOOP) = ZKIC(JLOOP)**2. !integration multiplied by 2
+      ZDELTA(JLOOP) = (1.-ZKIC(JLOOP))**2. !idem
+    ENDIF
+  ENDDO
 
   !Triangular PDF
   !Calculus must be verified before activating this part, but in this state,
@@ -481,15 +466,17 @@ ENDDO
   !ENDWHERE
 
 !               3.4 Computation of PENTR and PDETR
-  WHERE (OTEST)
-    ZEPSI_CLOUD=MIN(ZDELTA,ZEPSI)
-    PENTR_CLD(:) = (1.-PPART_DRY(:))*ZCOEFFMF_CLOUD*PRHODREF(:)*ZEPSI_CLOUD(:)
-    PDETR_CLD(:) = (1.-PPART_DRY(:))*ZCOEFFMF_CLOUD*PRHODREF(:)*ZDELTA(:)
-    PENTR(:) = PENTR(:)+PENTR_CLD(:)
-    PDETR(:) = PDETR(:)+PDETR_CLD(:)
-  ELSEWHERE
-    PENTR_CLD(:) = 0.
-    PDETR_CLD(:) = 0.
-  ENDWHERE
+  DO JLOOP=1,SIZE(OTEST)
+    IF(OTEST(JLOOP)) THEN
+      ZEPSI_CLOUD=MIN(ZDELTA,ZEPSI)
+      PENTR_CLD(JLOOP) = (1.-PPART_DRY(JLOOP))*ZCOEFFMF_CLOUD*PRHODREF(JLOOP)*ZEPSI_CLOUD(JLOOP)
+      PDETR_CLD(JLOOP) = (1.-PPART_DRY(JLOOP))*ZCOEFFMF_CLOUD*PRHODREF(JLOOP)*ZDELTA(JLOOP)
+      PENTR(JLOOP) = PENTR(JLOOP)+PENTR_CLD(JLOOP)
+      PDETR(JLOOP) = PDETR(JLOOP)+PDETR_CLD(JLOOP)
+    ELSE
+      PENTR_CLD(JLOOP) = 0.
+      PDETR_CLD(JLOOP) = 0.
+    ENDIF
+  ENDDO 
 
 END SUBROUTINE COMPUTE_ENTR_DETR  
