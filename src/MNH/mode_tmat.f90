@@ -366,7 +366,7 @@
 !C      IMK=AIMAG(((MRR+(0,1)*MRI)**2-1.)/((MRR+(0,1)*MRI)**2+2.))
 !c      PRINT*,K2,IMK,'>0'
 
-      P=DACOS(-1D0)             !calcul de pi!
+      P=ACOS(-1D0)             !calcul de pi!
       
 !****  Lecture du fichier de DSD**************************************       
 !*********************spectre théorique**********************
@@ -803,7 +803,7 @@
             
 !*     ecart type de beta
             IF (Deq.LE.2D-3) THEN
-               SIGBETA=90D0*DEXP(-0.95D0*((Deq*1D3)**2))
+               SIGBETA=90D0*EXP(-0.95D0*((Deq*1D3)**2))
             ELSE
                SIGBETA=2D0
             ENDIF
@@ -812,7 +812,7 @@
 !******************************************
             BETA=0D0
             DO WHILE (BETA.LE.(2*SIGBETA))
-               Fbeta=DEXP(-(BETA**2)/(2*SIGBETA**2))/&
+               Fbeta=EXP(-(BETA**2)/(2*SIGBETA**2))/&
                    (SQRT(2*P*SIGBETA**2))
                Poids=Poids+Fbeta
                BETA=BETA+PAS
@@ -828,7 +828,7 @@
                
                DO WHILE (BETA.LE.(2*SIGBETA))
                   
-                  Fbeta=DEXP(-(BETA**2)/(2*SIGBETA**2))/&
+                  Fbeta=EXP(-(BETA**2)/(2*SIGBETA**2))/&
                   (SQRT(2*P*SIGBETA**2))
                   PDbeta=Fbeta/Poids 
                   
@@ -915,7 +915,7 @@
             
 !*     ecart type de beta
             IF (Deq.LE.2D-3) THEN
-               SIGBETA=90D0*DEXP(-0.95D0*((Deq*1D3)**2))
+               SIGBETA=90D0*EXP(-0.95D0*((Deq*1D3)**2))
             ELSE
                SIGBETA=2D0
             ENDIF
@@ -924,7 +924,7 @@
 !******************************************
             BETA=0D0
             DO WHILE (BETA.LE.(2*SIGBETA))
-               Fbeta=DEXP(-(BETA**2)/(2*SIGBETA**2))/&
+               Fbeta=EXP(-(BETA**2)/(2*SIGBETA**2))/&
                    (SQRT(2*P*SIGBETA**2))
                Poids=Poids+Fbeta
                BETA=BETA+PAS
@@ -940,7 +940,7 @@
                
                DO WHILE (BETA.LE.(2*SIGBETA))
                   
-                  Fbeta=DEXP(-(BETA**2)/(2*SIGBETA**2))/&
+                  Fbeta=EXP(-(BETA**2)/(2*SIGBETA**2))/&
                       (SQRT(2*P*SIGBETA**2))
                   PDbeta=Fbeta/Poids 
                   
@@ -1198,7 +1198,7 @@
 
 ! 2000 FORMAT ('AN ANGULAR PARAMETER IS OUTSIDE ITS',&
 !             ' ALLOWABLE RANGE')
-      PIN=DACOS(-1D0)
+      PIN=ACOS(-1D0)
 
       PIN2=PIN*0.5D0
       PI=PIN/180D0
@@ -1221,39 +1221,39 @@
       
 !C_____________COMPUTE THETP, PHIP, THETP1, AND PHIP1, EQS. (8), (19), AND (20)
 
-      CB=DCOS(BET)
-      SB=DSIN(BET)
-      CT=DCOS(THETL)
-      ST=DSIN(THETL)
-      CP=DCOS(PHIL-ALPH)
-      SP=DSIN(PHIL-ALPH)
+      CB=COS(BET)
+      SB=SIN(BET)
+      CT=COS(THETL)
+      ST=SIN(THETL)
+      CP=COS(PHIL-ALPH)
+      SP=SIN(PHIL-ALPH)
       CTP=CT*CB+ST*SB*CP
-      THETP=DACOS(CTP)
+      THETP=ACOS(CTP)
       CPP=CB*ST*CP-SB*CT
       SPP=ST*SP
-      PHIP=DATAN(SPP/CPP)
+      PHIP=ATAN(SPP/CPP)
 
       IF (PHIP.GT.0D0.AND.SP.LT.0D0) PHIP=PHIP+PIN
       IF (PHIP.LT.0D0.AND.SP.GT.0D0) PHIP=PHIP+PIN
       IF (PHIP.LT.0D0) PHIP=PHIP+2D0*PIN
 
-      CT1=DCOS(THETL1)
-      ST1=DSIN(THETL1)
-      CP1=DCOS(PHIL1-ALPH)
-      SP1=DSIN(PHIL1-ALPH)
+      CT1=COS(THETL1)
+      ST1=SIN(THETL1)
+      CP1=COS(PHIL1-ALPH)
+      SP1=SIN(PHIL1-ALPH)
       CTP1=CT1*CB+ST1*SB*CP1
-      THETP1=DACOS(CTP1)
+      THETP1=ACOS(CTP1)
       CPP1=CB*ST1*CP1-SB*CT1
       SPP1=ST1*SP1
-      PHIP1=DATAN(SPP1/CPP1)
+      PHIP1=ATAN(SPP1/CPP1)
       IF (PHIP1.GT.0D0.AND.SP1.LT.0D0) PHIP1=PHIP1+PIN
       IF (PHIP1.LT.0D0.AND.SP1.GT.0D0) PHIP1=PHIP1+PIN
       IF (PHIP1.LT.0D0) PHIP1=PHIP1+2D0*PIN
 
 !C____________COMPUTE MATRIX BETA, EQ. (21)
 
-      CA=DCOS(ALPH)
-      SA=DSIN(ALPH)
+      CA=COS(ALPH)
+      SA=SIN(ALPH)
       B(1,1)=CA*CB
       B(1,2)=SA*CB
       B(1,3)=-SB
@@ -1266,10 +1266,10 @@
 
 !C____________COMPUTE MATRICES AL AND AL1, EQ. (14) 
 
-      CP=DCOS(PHIL)
-      SP=DSIN(PHIL)
-      CP1=DCOS(PHIL1)
-      SP1=DSIN(PHIL1)
+      CP=COS(PHIL)
+      SP=SIN(PHIL)
+      CP1=COS(PHIL1)
+      SP1=SIN(PHIL1)
       AL(1,1)=CT*CP
       AL(1,2)=-SP
       AL(2,1)=CT*SP
@@ -1286,13 +1286,13 @@
 !C____________COMPUTE MATRICES AP^(-1) AND AP1^(-1), EQ. (15) 
 
       CT=CTP
-      ST=DSIN(THETP) 
-      CP=DCOS(PHIP)
-      SP=DSIN(PHIP)
+      ST=SIN(THETP) 
+      CP=COS(PHIP)
+      SP=SIN(PHIP)
       CT1=CTP1
-      ST1=DSIN(THETP1)
-      CP1=DCOS(PHIP1)
-      SP1=DSIN(PHIP1)
+      ST1=SIN(THETP1)
+      CP1=COS(PHIP1)
+      SP1=SIN(PHIP1)
       AP(1,1)=CT*CP
       AP(1,2)=CT*SP
       AP(1,3)=-ST  
@@ -1381,8 +1381,8 @@
          CALL VIGAMPL(DCTH, NMAX, M, DV1, DV2)
          CALL VIGAMPL(DCTH0, NMAX, M, DV01, DV02)
     
-         FC=2D0*DCOS(M*PH)
-         FS=2D0*DSIN(M*PH)
+         FC=2D0*COS(M*PH)
+         FS=2D0*SIN(M*PH)
          
          DO NN=NMIN,NMAX
             DV1NN=M*DV01(NN)
@@ -1738,7 +1738,7 @@
       ENDDO
 
       Z0=1D0/(XX-Z(1))
-      Y0=Z0*DCOS(X)*XX
+      Y0=Z0*COS(X)*XX
       Y1=Y0*Z(1)
       U(1)=Y0-Y1*XX
       Y(1)=Y1
@@ -1759,8 +1759,8 @@
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 Y(NMAX),V(NMAX)
 
-      C=DCOS(X)
-      S=DSIN(X)
+      C=COS(X)
+      S=SIN(X)
       X1=1D0/X
       X2=X1*X1
       X3=X2*X1
@@ -1822,8 +1822,8 @@
       ARI=1D0/(AR*AR+AI*AI)
       CZ0R=AR*ARI
       CZ0I=-AI*ARI
-      CR=DCOS(XR)*DCOSH(XI)
-      CI=-DSIN(XR)*DSINH(XI)
+      CR=COS(XR)*COSH(XI)
+      CI=-SIN(XR)*SINH(XI)
       AR=CZ0R*CR-CZ0I*CI
       AI=CZ0I*CR+CZ0R*CI
       CY0R=AR*CXXR-AI*CXXI
@@ -2756,7 +2756,7 @@ DEALLOCATE(IG22)
           EK=1D0
               IF (T.LT.0D0) EK=-1D0
               IF (A(K,K).EQ.0D0) THEN 
-              COND=1D52
+!               COND=1D52
               RETURN
               ELSE
               WORK(K)=-(EK+T)/A(K,K)
