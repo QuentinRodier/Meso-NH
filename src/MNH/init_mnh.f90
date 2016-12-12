@@ -214,13 +214,14 @@ DO JMI=1,NMODEL
 !
   IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  ') THEN 
     CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
+    CALL INI_FIELD_LIST(2)
   ELSE
     CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','ALL',.TRUE.)
+    CALL INI_FIELD_LIST()
   ENDIF
 ENDDO
 !
 !
-CALL INI_FIELD_LIST()
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZE EACH MODEL

@@ -176,8 +176,6 @@ CONTAINS
 
     CALL INITFD()
 
-!    CALL INI_FIELD_LIST()
-
     !! Default number for Processor I/O
     ISIOP = 1
 
