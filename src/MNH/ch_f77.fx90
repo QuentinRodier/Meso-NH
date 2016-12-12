@@ -6899,8 +6899,8 @@ c      c      INCLUDE 'params'
         rm(iz) = 0.D+00
         ro2(iz) = 0.D+00
         DO i = 1, 3
-          rm(iz) = rm(iz) + b(i) * DEXP(-c(i) * DBLE(o2col(iz)))
-          ro2(iz) = ro2(iz) + d(i) * DEXP(-e(i) * DBLE(o2col(iz)))
+          rm(iz) = rm(iz) + b(i) * EXP(-c(i) * DBLE(o2col(iz)))
+          ro2(iz) = ro2(iz) + d(i) * EXP(-e(i) * DBLE(o2col(iz)))
         ENDDO
       ENDDO
 
