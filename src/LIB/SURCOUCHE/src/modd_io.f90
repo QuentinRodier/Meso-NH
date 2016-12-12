@@ -13,6 +13,9 @@
 !-----------------------------------------------------------------
 
 MODULE MODD_IO_ll
+!
+USE MODD_NETCDF, ONLY: IDCDF_KIND
+!
 IMPLICIT NONE 
 !
 !
@@ -61,6 +64,12 @@ TYPE TFILEDATA
   INTEGER :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
   INTEGER :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
   INTEGER :: NLFIVERB  = 1  !LFI verbosity level
+  INTEGER :: NLFIFLU   = -1 !File identifier
+  !
+  ! Fields for netCDF files
+  INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
+  LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
+                                                                  ! instead of double precision (for netCDF)
   !
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
