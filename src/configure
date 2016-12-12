@@ -193,7 +193,7 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
               ;;
 'Linux cc'*) # ECMWF Cray plateforme
                 export MNH_ARCH=`echo $ARCH | grep LX`
-                export     ARCH=${MNH_ARCH:-LXcray}
+                export     ARCH=${MNH_ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPICRAY}
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
@@ -203,14 +203,20 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                 export MNHENV=${MNHENV:-"
 . /opt/modules/default/init/bash
 module rm grib_api
+module rm craype-broadwell
+export CRAY_CPU_TARGET=ivybridge
+module swap cdt/1.15_8.2.7
+module use /opt/cray/craype/default/modulefiles
 "}
                 else
                 if [ "${ARCH}" == "LXifort" ]
                 then
                 export MNHENV=${MNHENV:-"
 . /opt/modules/default/init/bash
-module switch PrgEnv-cray PrgEnv-intel
 module rm grib_api
+prgenvswitchto intel
+module rm intel
+module load intel/16.0.3.210
 "}
                 fi
                 fi
