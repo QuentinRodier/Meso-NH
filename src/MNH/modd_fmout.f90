@@ -52,6 +52,10 @@ LOGICAL,SAVE :: LBAK_BEG = .FALSE. ! Force a backup/output at the first timestep
 LOGICAL,SAVE :: LOUT_BEG = .FALSE. ! of the segment for all models
 LOGICAL,SAVE :: LBAK_END = .FALSE. ! Force a backup/output at the last timestep
 LOGICAL,SAVE :: LOUT_END = .FALSE. ! of the segment for all models
+LOGICAL,SAVE,DIMENSION(JPMODELMAX) :: LOUT_REDUCE_FLOAT_PRECISION = .FALSE.
+! Reduce the precision of floats to single precision instead of double precision (for netCDF)
+LOGICAL,SAVE,DIMENSION(JPMODELMAX) :: LOUT_COMPRESS = .FALSE. ! Compress (float) arrays (for netCDF)
+INTEGER,SAVE,DIMENSION(JPMODELMAX) :: NOUT_COMPRESS_LEVEL = 4 ! Compression level (for netCDF)
 REAL,SAVE,ALLOCATABLE,DIMENSION(:,:)  ::   XBAK_TIME, XOUT_TIME
 ! XBAK_TIME(m,i) / XOUT_TIME(m,i) array of 
 ! the increments in seconds from the beginning of the segment to the

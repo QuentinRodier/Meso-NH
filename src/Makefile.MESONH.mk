@@ -433,7 +433,7 @@ CDF_PATH?=${DIR_CDF}-${ARCH}I${MNH_INT}
 CDF_INC?=${CDF_PATH}/include/netcdf.inc
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lz
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #

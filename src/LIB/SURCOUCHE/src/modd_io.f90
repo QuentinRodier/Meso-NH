@@ -33,7 +33,6 @@ LOGICAL, SAVE :: LPACK = .FALSE. ! TRUE if FM compression occurs in 1D or 2D mod
 LOGICAL, SAVE :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
 LOGICAL, SAVE :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)  
 LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)  
-LOGICAL, SAVE :: LDEFLATEX2 = .FALSE. ! TRUE to enable Zlib deflate compression on X2 fields  
 
 TYPE LFIPARAM
   INTEGER :: FITYP   ! FM File Type (used in FMCLOSE)
@@ -69,7 +68,9 @@ TYPE TFILEDATA
   ! Fields for netCDF files
   INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
   LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
-                                                                  ! instead of double precision (for netCDF)
+                                                                  ! instead of double precision
+  LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
+  INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL     ! Compression level
   !
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
