@@ -38,6 +38,12 @@ TYPE LFIPARAM
   INTEGER :: FITYP   ! FM File Type (used in FMCLOSE)
 END TYPE LFIPARAM
 
+!Structure containing one pointer to a file
+!Useful to create arrays of pointers to files
+TYPE TFILE_ELT
+  TYPE(TFILEDATA),POINTER :: TFILE
+END TYPE TFILE_ELT
+
 !Structure describing the characteristics of an output or a backup
 TYPE TOUTBAK
   INTEGER           :: NID = -1     !Backup number
@@ -46,6 +52,7 @@ TYPE TOUTBAK
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
   CHARACTER(LEN=28) :: CDADFILENAME !Filename of dad
   TYPE(TFILEDATA),POINTER :: TFILE => NULL() !Corresponding file
+  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILE_IOZ !Corresponding Z-splitted files
   INTEGER,DIMENSION(:),POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
 END TYPE TOUTBAK
 
@@ -76,9 +83,7 @@ TYPE TFILEDATA
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA
 
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_FIRST => NULL()
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUT_FIRST => NULL()
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_BAK_LAST  => NULL()
-TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUT_LAST  => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_FIRST => NULL()
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_LAST  => NULL()
 
 END MODULE MODD_IO_ll
