@@ -64,6 +64,7 @@
 !
 USE MODD_BUDGET
 USE MODE_ll
+USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
 USE MODD_FIELD_n, ONLY : FIELD_MODEL
 !
 !
@@ -76,7 +77,7 @@ INTEGER                    :: IIB,IJB       ! Lower bounds of the physical
                                             ! sub-domain in x and y directions
 INTEGER                    :: IIE,IJE       ! Upper bounds of the physical
                                             ! sub-domain in x and y directions
-
+INTEGER :: IID, IRESP
 !-------------------------------------------------------------------------------
 !
 !*       1.    COMPUTES THE PHYSICAL SUBDOMAIN BOUNDS
@@ -94,7 +95,9 @@ LBU_MASK(:,:,:)=.FALSE.
 ! Change the following lines to set the criterion for each of the NBUMASK masks
 ! 
 ! 1st mask on vertical velocity at level k=10
-LBU_MASK(IIB:IIE,IJB:IJE,1)=FIELD_MODEL(NBUMOD)%XWT(IIB:IIE,IJB:IJE,10)>0.
+!LBU_MASK(IIB:IIE,IJB:IJE,1)=FIELD_MODEL(NBUMOD)%XWT(IIB:IIE,IJB:IJE,10)>0.
+CALL FIND_FIELD_ID_FROM_MNHNAME('WT',IID,IRESP)
+LBU_MASK(IIB:IIE,IJB:IJE,1)=TFIELDLIST(IID)%TFIELD_X3D(NBUMOD)%DATA(IIB:IIE,IJB:IJE,10)>0.
 !
 !2rd mask on rain mixing ratio at level k=2
 IF (NBUMASK>=2) &

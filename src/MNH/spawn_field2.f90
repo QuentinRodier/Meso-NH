@@ -328,12 +328,12 @@ IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
 !
   PUT  (:,:,:)   =  XUT1(KXOR:KXEND,KYOR:KYEND,:)
   PVT  (:,:,:)   =  XVT1(KXOR:KXEND,KYOR:KYEND,:)
-  PWT  (:,:,:)   =  FIELD_MODEL(1)%XWT  (KXOR:KXEND,KYOR:KYEND,:)
+  PWT  (:,:,:)   =  XWT1(KXOR:KXEND,KYOR:KYEND,:)
   PTHVT(:,:,:)   =  ZTHVT(KXOR:KXEND,KYOR:KYEND,:)
 !
-  PLSUM (:,:,:)  =  PUT  (:,:,:) 
-  PLSVM (:,:,:)  =  PVT  (:,:,:) 
-  PLSWM (:,:,:)  =  FIELD_MODEL(1)%XWT (KXOR:KXEND,KYOR:KYEND,:)
+  PLSUM (:,:,:)  =  PUT(:,:,:) 
+  PLSVM (:,:,:)  =  PVT(:,:,:) 
+  PLSWM (:,:,:)  =  PWT(:,:,:)
   PLSTHM(:,:,:)  =  XTHT1(KXOR:KXEND,KYOR:KYEND,:)
 !
   PLSRVM(:,:,:)  = 0.
@@ -476,7 +476,7 @@ ELSE
     CALL SET_LSFIELD_1WAY_ll(XVT1(:,:,JI),ZVT_C(:,:,JI),2)
     CALL SET_LSFIELD_1WAY_ll(LSFIELD_MODEL(1)%XLSVM(:,:,JI),ZLSVM_C(:,:,JI),2)
     !
-    CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XWT(:,:,JI),ZWT_C(:,:,JI),2)
+    CALL SET_LSFIELD_1WAY_ll(XWT1(:,:,JI),ZWT_C(:,:,JI),2)
     CALL SET_LSFIELD_1WAY_ll(LSFIELD_MODEL(1)%XLSWM(:,:,JI),ZLSWM_C(:,:,JI),2)
     !
     CALL SET_LSFIELD_1WAY_ll(ZTHVT(:,:,JI), ZTHVT_C(:,:,JI),2)
