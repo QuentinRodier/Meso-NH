@@ -56,6 +56,7 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODI_ABOR1_SFX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
