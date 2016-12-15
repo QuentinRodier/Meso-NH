@@ -134,7 +134,6 @@ END MODULE MODI_COMPUTE_UPDRAFT_HRIO!     ######spl
 !!     S. Riette may 2011: ice added, interface modified
 !!     S. Riette Jan 2012: support for both order of vertical levels
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
-!!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -445,8 +444,7 @@ IF (OENTR_DETR) THEN
   GLMIX=.TRUE.
   ZTKEM_F(:,KKB)=0.
 
-  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB), &
-                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZLUP)
+  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F,ZG_O_THVREF,ZTHVM_F,KKB,GLMIX,ZLUP)
   ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
   ! Compute Buoyancy flux at the ground

@@ -10,7 +10,6 @@ INTERFACE
 !
 !     #################################################################
       SUBROUTINE COMPUTE_UPDRAFT(KKA,KKB,KKE,KKU,KKL, HFRAC_ICE,  &
-                                 HMF_UPDRAFT,                     &
                                  OENTR_DETR,OMIXUV,               &
                                  ONOMIXLG,KSV_LGBEG,KSV_LGEND,    &
                                  PZZ,PDZZ,                        &
@@ -36,7 +35,6 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
 LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
 LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer
@@ -85,7 +83,6 @@ END INTERFACE
 END MODULE MODI_COMPUTE_UPDRAFT
 !     ######spl
       SUBROUTINE COMPUTE_UPDRAFT(KKA,KKB,KKE,KKU,KKL,HFRAC_ICE,   &
-                                 HMF_UPDRAFT,                     &
                                  OENTR_DETR,OMIXUV,               &
                                  ONOMIXLG,KSV_LGBEG,KSV_LGEND,    &
                                  PZZ,PDZZ,                        &
@@ -132,8 +129,6 @@ END MODULE MODI_COMPUTE_UPDRAFT
 !!     S. Riette may 2011: ice added, interface modified
 !!     S. Riette Jan 2012: support for both order of vertical levels
 !!     V.Masson, C.Lac : 02/2011 : SV_UP initialized by a non-zero value
-!!     S. Riette Apr 2013: improvement of continuity at the condensation level
-!!     R.Honnert Oct 2016 : Add ZSURF and Update with AROME
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -147,7 +142,6 @@ USE MODI_TH_R_FROM_THL_RT_1D
 USE MODI_SHUMAN_MF
 
 USE MODI_COMPUTE_BL89_ML
-USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
 
 
 IMPLICIT NONE
@@ -162,9 +156,8 @@ INTEGER,                INTENT(IN)   :: KKE          ! uppest atmosphere physica
 INTEGER,                INTENT(IN)   :: KKU          ! uppest atmosphere array index
 INTEGER,                INTENT(IN)   :: KKL          ! +1 if grid goes from ground to atmosphere top, -1 otherwise
 CHARACTER*1,            INTENT(IN)   :: HFRAC_ICE    ! partition liquid/ice scheme
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
-LOGICAL,                INTENT(IN)   :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
-LOGICAL,                INTENT(IN)   :: OMIXUV    ! True if mixing of momentum
+LOGICAL,                INTENT(IN) :: OENTR_DETR! flag to recompute entrainment, detrainment and mass flux
+LOGICAL,                INTENT(IN) :: OMIXUV    ! True if mixing of momentum
 LOGICAL,                INTENT(IN)   :: ONOMIXLG  ! False if mixing of lagrangian tracer
 INTEGER,                INTENT(IN)   :: KSV_LGBEG ! first index of lag. tracer
 INTEGER,                INTENT(IN)   :: KSV_LGEND ! last  index of lag. tracer
@@ -214,9 +207,7 @@ REAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) ::    &
                         ZUM_F,ZVM_F,ZRHO_F,      &    ! density,momentum
                         ZPRES_F,ZTHVM_F,ZTHVM,   &    ! interpolated at the flux point
                         ZG_O_THVREF,             &    ! g*ThetaV ref
-                        ZW_UP2,                  &    ! w**2  of the updraft
-                        ZBUO_INTEG_DRY, ZBUO_INTEG_CLD,&! Integrated Buoyancy
-                        ZENTR_CLD,ZDETR_CLD           ! wet entrainment and detrainment
+                        ZW_UP2                        ! w**2  of the updraft
 
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PTHM,2),SIZE(PSVM,3)) :: &
                         ZSVM_F ! scalar variables 
@@ -234,7 +225,7 @@ REAL  :: ZRDORV       ! RD/RV
 REAL  :: ZRVORD       ! RV/RD
 
 
-REAL, DIMENSION(SIZE(PTHM,1)) :: ZMIX1,ZMIX2,ZMIX3_CLD,ZMIX2_CLD
+REAL, DIMENSION(SIZE(PTHM,1)) :: ZMIX1,ZMIX2,ZMIX3
 
 REAL, DIMENSION(SIZE(PTHM,1)) :: ZLUP         ! Upward Mixing length from the ground
 
@@ -250,15 +241,11 @@ LOGICAL, DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2)) :: GWORK2
 
 INTEGER  :: ITEST
 
-REAL, DIMENSION(SIZE(PTHM,1)) :: ZRC_UP, ZRI_UP, ZRV_UP,&
-                                 ZRSATW, ZRSATI,&
-                                 ZPART_DRY
+REAL, DIMENSION(SIZE(PTHM,1)) :: ZRC_UP, ZRI_UP, ZRV_UP, ZRSATW, ZRSATI
 
 REAL  :: ZDEPTH_MAX1, ZDEPTH_MAX2 ! control auto-extinction process
 
 REAL  :: ZTMAX,ZRMAX  ! control value
-
-REAL, DIMENSION(SIZE(PTHM,1)) :: ZSURF
 
 ! Thresholds for the  perturbation of
 ! theta_l and r_t at the first level of the updraft
@@ -276,6 +263,7 @@ ZDEPTH_MAX1=3000. ! clouds with depth inferior to this value are keeped untouche
 ZDEPTH_MAX2=4000. ! clouds with depth superior to this value are suppressed
 
 !                 Local variables, internal domain
+
 !number of scalar variables
 ISV=SIZE(PSVM,3)
 
@@ -373,13 +361,13 @@ IF (OENTR_DETR) THEN
   ! Closure assumption for mass flux at KKB level
   !
 
-  ZG_O_THVREF(:,:)=XG/ZTHVM_F(:,:)
+  ZG_O_THVREF=XG/ZTHVM_F
 
   ! compute L_up
   GLMIX=.TRUE.
   ZTKEM_F(:,KKB)=0.
 
-  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB),ZTHVM,KKB,GLMIX,.TRUE.,ZLUP)
+  CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F,ZG_O_THVREF,ZTHVM_F,KKB,GLMIX,ZLUP)
   ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
   ! Compute Buoyancy flux at the ground
@@ -387,14 +375,8 @@ IF (OENTR_DETR) THEN
                 (0.61*ZTHM_F(:,KKB))*PSFRV(:)
 
   ! Mass flux at KKB level (updraft triggered if PSFTH>0.)
-  IF (HMF_UPDRAFT=='SURF') THEN
-    ZSURF(:)=TANH(1.83*SQRT(XDXHAT(1)*XDYHAT(1))/ZLUP)
-  ELSE
-    ZSURF(:)=1.
-  END IF
   WHERE (ZWTHVSURF(:)>0.)
-    PEMF(:,KKB) = XCMF * ZSURF(:) * ZRHO_F(:,KKB) *  &
-            ((ZG_O_THVREF(:,KKB))*ZWTHVSURF*ZLUP)**(1./3.)
+    PEMF(:,KKB) = XCMF * ZRHO_F(:,KKB) * ((ZG_O_THVREF(:,KKB))*ZWTHVSURF*ZLUP)**(1./3.)
     PFRAC_UP(:,KKB)=MIN(PEMF(:,KKB)/(SQRT(ZW_UP2(:,KKB))*ZRHO_F(:,KKB)),XFRAC_UP_MAX)
     ZW_UP2(:,KKB)=(PEMF(:,KKB)/(PFRAC_UP(:,KKB)*ZRHO_F(:,KKB)))**2
     GTEST(:)=.TRUE.
@@ -436,6 +418,7 @@ DO JK=KKB,KKE-KKL,KKL
       GTESTLCL(:)=.TRUE.
   ENDWHERE
 
+
 ! COMPUTE PENTR and PDETR at mass level JK
   IF (OENTR_DETR) THEN
     IF(JK/=KKB) THEN
@@ -443,20 +426,14 @@ DO JK=KKB,KKE-KKL,KKL
       ZRI_MIX(:,JK) = ZRI_MIX(:,JK-KKL) ! guess of Ri of mixture
     ENDIF
     CALL COMPUTE_ENTR_DETR(JK,KKB,KKE,KKL,GTEST,GTESTLCL,HFRAC_ICE,PFRAC_ICE_UP(:,JK),&
-                           PRHODREF(:,JK),ZPRES_F(:,JK),ZPRES_F(:,JK+KKL),&
-                           PZZ(:,:),PDZZ(:,:),ZTHVM(:,:),  &
-                           PTHLM(:,:),PRTM(:,:),ZW_UP2(:,:),ZTH_UP(:,JK),   &
+                           PPABSM(:,:),PZZ(:,:),PDZZ(:,:),ZTHVM(:,:),  &
+                           PTHLM(:,JK),PRTM(:,JK),ZW_UP2(:,:),         &
                            PTHL_UP(:,JK),PRT_UP(:,JK),ZLUP(:),         &
-                           PRC_UP(:,JK),PRI_UP(:,JK),PTHV_UP(:,JK),&
-                           PRSAT_UP(:,JK),ZRC_MIX(:,JK),ZRI_MIX(:,JK),                 &
-                           PENTR(:,JK),PDETR(:,JK),ZENTR_CLD(:,JK),ZDETR_CLD(:,JK),&
-                           ZBUO_INTEG_DRY(:,JK), ZBUO_INTEG_CLD(:,JK), &
-                           ZPART_DRY(:)   )
-    PBUO_INTEG(:,JK)=ZBUO_INTEG_DRY(:,JK)+ZBUO_INTEG_CLD(:,JK)
+                           PRC_UP(:,JK),PRI_UP(:,JK),ZRC_MIX(:,JK),ZRI_MIX(:,JK),                 &
+                           PENTR(:,JK),PDETR(:,JK),PBUO_INTEG(:,JK)    )
 
     IF (JK==KKB) THEN
        PDETR(:,JK)=0.
-       ZDETR_CLD(:,JK)=0.
     ENDIF   
  
 !       Computation of updraft characteristics at level JK+KKL
@@ -482,8 +459,7 @@ DO JK=KKB,KKE-KKL,KKL
 ! If the updraft did not stop, compute cons updraft characteritics at jk+KKL
   WHERE(GTEST)     
     ZMIX2(:) = (PZZ(:,JK+KKL)-PZZ(:,JK))*PENTR(:,JK) !&
-    ZMIX3_CLD(:) = (PZZ(:,JK+KKL)-PZZ(:,JK))*(1.-ZPART_DRY(:))*ZDETR_CLD(:,JK) !&                   
-    ZMIX2_CLD(:) = (PZZ(:,JK+KKL)-PZZ(:,JK))*(1.-ZPART_DRY(:))*ZENTR_CLD(:,JK)
+    ZMIX3(:) = (PZZ(:,JK+KKL)-PZZ(:,JK))*PDETR(:,JK) !&                   
                 
     PTHL_UP(:,JK+KKL)=(PTHL_UP(:,JK)*(1.-0.5*ZMIX2(:)) + PTHLM(:,JK)*ZMIX2(:)) &
                           /(1.+0.5*ZMIX2(:))   
@@ -546,15 +522,20 @@ DO JK=KKB,KKE-KKL,KKL
 
 ! Compute the updraft theta_v, buoyancy and w**2 for level JK+KKL
   WHERE(GTEST)
-    PTHV_UP(:,JK+KKL) = ZTH_UP(:,JK+KKL)*((1+ZRVORD*PRV_UP(:,JK+KKL))/(1+PRT_UP(:,JK+KKL)))
-    WHERE (ZBUO_INTEG_DRY(:,JK)>0.)
-      ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK) + 2.*(XABUO-XBENTR*XENTR_DRY)* ZBUO_INTEG_DRY(:,JK)
-    ELSEWHERE
-      ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK) + 2.*XABUO* ZBUO_INTEG_DRY(:,JK)
-    ENDWHERE
-    ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK+KKL)*(1.-(XBDETR*ZMIX3_CLD(:)+XBENTR*ZMIX2_CLD(:)))&
-            /(1.+(XBDETR*ZMIX3_CLD(:)+XBENTR*ZMIX2_CLD(:))) &
-            +2.*(XABUO)*ZBUO_INTEG_CLD(:,JK)/(1.+(XBDETR*ZMIX3_CLD(:)+XBENTR*ZMIX2_CLD(:)))
+      PTHV_UP(:,JK+KKL) = ZTH_UP(:,JK+KKL)*((1+ZRVORD*PRV_UP(:,JK+KKL))/(1+PRT_UP(:,JK+KKL)))
+   WHERE (.NOT.(GTESTLCL)) 
+      WHERE (PBUO_INTEG(:,JK)>0.)
+        ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK) + 2.*(XABUO-XBENTR*XENTR_DRY)* PBUO_INTEG(:,JK)              
+      ENDWHERE
+      WHERE (PBUO_INTEG(:,JK)<=0.)
+        ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK) + 2.*XABUO* PBUO_INTEG(:,JK)
+      ENDWHERE      
+   ENDWHERE      
+   WHERE (GTESTLCL)
+      ZW_UP2(:,JK+KKL)  = ZW_UP2(:,JK)*(1.-(XBDETR*ZMIX3(:)+XBENTR*ZMIX2(:)))&
+            /(1.+(XBDETR*ZMIX3(:)+XBENTR*ZMIX2(:))) &
+            +2.*(XABUO)*PBUO_INTEG(:,JK)/(1.+(XBDETR*ZMIX3(:)+XBENTR*ZMIX2(:)))
+   ENDWHERE
  ENDWHERE
 
 
@@ -621,14 +602,10 @@ IF(OENTR_DETR) THEN
      PDEPTH(JI) = MAX(0., PZZ(JI,KKCTL(JI)) -  PZZ(JI,KKLCL(JI)) )
   END DO
 
-  GWORK1(:)= (GTESTLCL(:) .AND. (PDEPTH(:) > ZDEPTH_MAX1) )
-  GWORK2(:,:) = SPREAD( GWORK1(:), DIM=2, NCOPIES=MAX(KKU,KKA) )
-  ZCOEF(:,:) = SPREAD( (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1)), DIM=2, NCOPIES=SIZE(ZCOEF,2))
-  ZCOEF=MIN(MAX(ZCOEF,0.),1.)
-  WHERE (GWORK2) 
-    PEMF(:,:)     = PEMF(:,:)     * ZCOEF(:,:)
-    PFRAC_UP(:,:) = PFRAC_UP(:,:) * ZCOEF(:,:)
-  ENDWHERE
-ENDIF
+ENDIF   
+
+GWORK1(:)= (GTESTLCL(:) .AND. (PDEPTH(:) > ZDEPTH_MAX1) )
+GWORK2(:,:) = SPREAD( GWORK1(:), DIM=2, NCOPIES=MAX(KKU,KKA) )
+ZCOEF(:,:) = SPREAD( (1.-(PDEPTH(:)-ZDEPTH_MAX1)/(ZDEPTH_MAX2-ZDEPTH_MAX1)), DIM=2, NCOPIES=SIZE(ZCOEF,2))
 
 END SUBROUTINE COMPUTE_UPDRAFT

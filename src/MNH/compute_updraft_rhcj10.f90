@@ -124,7 +124,6 @@ SUBROUTINE COMPUTE_UPDRAFT_RHCJ10(KKA,KKB,KKE,KKU,KKL,HFRAC_ICE,       &
 !!     ------
 !!     Y. Bouteloup (2012)
 !!     R. Honert Janv 2013 ==> corection of some bugs
-!!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !! --------------------------------------------------------------------------
 
 ! WARNING ==>  This updraft is not yet ready to use scalar variables 
@@ -391,8 +390,8 @@ ENDDO
 GLMIX=.TRUE.
 ZTKEM_F(:,KKB)=0.
 
-CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F(:,KKB),ZG_O_THVREF(:,KKB), &
-                       ZTHVM_F,KKB,GLMIX,.TRUE.,ZLUP)
+
+CALL COMPUTE_BL89_ML(KKA,KKB,KKE,KKU,KKL,PDZZ,ZTKEM_F,ZG_O_THVREF,ZTHVM_F,KKB,GLMIX,ZLUP)
 ZLUP(:)=MAX(ZLUP(:),1.E-10)
 
 ! Compute Buoyancy flux at the ground
