@@ -181,9 +181,11 @@ MODULE MODE_FMWRIT
   INTERFACE IO_WRITE_FIELD
      MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_X2, IO_WRITE_FIELD_BYNAME_X3,  &
                       IO_WRITE_FIELD_BYNAME_N0,                            &
+                      IO_WRITE_FIELD_BYNAME_L0,                            &
                       IO_WRITE_FIELD_BYNAME_C0,                            &
                       IO_WRITE_FIELD_BYFIELD_X2,IO_WRITE_FIELD_BYFIELD_X3, &
                       IO_WRITE_FIELD_BYFIELD_N0,                           &
+                      IO_WRITE_FIELD_BYFIELD_L0,                           &
                       IO_WRITE_FIELD_BYFIELD_C0
   END INTERFACE
 
@@ -2235,6 +2237,56 @@ CONTAINS
     END IF
     KRESP = IRESP
   END SUBROUTINE FMWRITL0_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_L0(TPFILE,HNAME,HFIPRI,KRESP,OFIELD)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    LOGICAL,                     INTENT(IN) :: OFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,OFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_L0
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_L0(TPFILE,TPFIELD,HFIPRI,KRESP,OFIELD)
+    USE MODD_IO_ll
+    !*      0.    DECLARATIONS
+    !             ------------
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    LOGICAL,                     INTENT(IN) :: OFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: IFIELD
+    !
+    IF (OFIELD) THEN
+      IFIELD = 1
+    ELSE
+      IFIELD = 0
+    END IF
+    !
+    CALL IO_WRITE_FIELD(TPFILE,TPFIELD,HFIPRI,KRESP,IFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_L0
 
   SUBROUTINE FMWRITL1_ll(HFILEM,HRECFM,HFIPRI,HDIR,OFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
