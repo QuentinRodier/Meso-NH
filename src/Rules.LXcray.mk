@@ -63,7 +63,7 @@ OPT_NOCB  = $(OPT_BASE) $(OPT_PERF1)
 endif
 #
 #
-FC = ftn
+FC = ftn -em -ef
 FCFLAGS = -em -ef
 CC=gcc
 export FC CC FCFLAGS
@@ -98,6 +98,11 @@ endif
 #
 TARGET_GRIBEX=linux
 CNAME_GRIBEX=_gfortran
+#
+# GRIB_API
+#
+GRIBAPI_CONF="FCFLAGS= -em -ef "
+
 #
 # LIBTOOLS flags
 #
