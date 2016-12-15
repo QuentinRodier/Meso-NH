@@ -75,7 +75,7 @@
            XT4DIFU = 300.,
            XT4DIFTH = 300. /
 
-&NAM_ADVn CUVW_ADV_SCHEME = "CEN4TH",
+&NAM_ADVn CUVW_ADV_SCHEME = "CEN4TH",CTEMP_SCHEME='LEFR',
           CMET_ADV_SCHEME = "PPM_01",
           CSV_ADV_SCHEME = "PPM_01" /
 
