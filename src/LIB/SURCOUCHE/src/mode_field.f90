@@ -275,12 +275,13 @@ CHARACTER(LEN=*),            INTENT(IN) :: HMNHNAME !Name of the field to find
 INTEGER,                     INTENT(OUT):: KID      !Index of the field
 INTEGER,                     INTENT(OUT):: KRESP    !Return-code 
 !
-INTEGER :: JI
+INTEGER :: IDX,JI
+INTEGER :: ICOUNT
+INTEGER,SAVE :: IFIRSTGUESS=1 !Store first field to test
 !
-!PW: TODO: to optimize
-!Ideas :
+!PW: TODO: possible optimizations:
 ! * Classement alphanumerique + index vers 1er champ commencant par caractere
-! * Classement dans l'ordre des ecritures + stockage dernier hit + reboucler depuis le debut
+! * Classement dans l'ordre des ecritures + stockage dernier hit + reboucler depuis le debut => DONE
 !
 IF (.NOT.LFIELDLIST_ISINIT) THEN
   PRINT *,'FATAL: FIND_FIELD_ID_FROM_MNHNAME: TFIELDLIST not yet initialized'
@@ -289,19 +290,30 @@ END IF
 !
 KID = 0
 KRESP = 0
+ICOUNT = 0
+IDX = IFIRSTGUESS
 !
-DO JI = 1,MAXFIELDS
-  IF (TRIM(TFIELDLIST(JI)%CMNHNAME)=='') EXIT !Last entry
-  IF (TRIM(TFIELDLIST(JI)%CMNHNAME)==TRIM(HMNHNAME)) THEN
-    KID = JI
+DO
+  ICOUNT = ICOUNT + 1
+  IF (TRIM(TFIELDLIST(IDX)%CMNHNAME)=='') THEN !Last entry
+    IDX = 1
+  ELSE IF (TRIM(TFIELDLIST(IDX)%CMNHNAME)==TRIM(HMNHNAME)) THEN
+    KID = IDX
     EXIT
+  ELSE 
+    IDX = IDX + 1
+    IF (IDX>MAXFIELDS) IDX = 1
   END IF
+  IF (IDX == IFIRSTGUESS) EXIT !All entries have been tested
 END DO
 !
 IF (KID==0) THEN
   !Field not found
   KRESP = -1
   PRINT *,'WARNING: FIND_FIELD_ID_FROM_MNHNAME: field ',TRIM(HMNHNAME),' not known'
+ELSE
+  IFIRSTGUESS = IDX+1
+  IF (IFIRSTGUESS>MAXFIELDS) IFIRSTGUESS = 1
 END IF
 !
 END SUBROUTINE FIND_FIELD_ID_FROM_MNHNAME
