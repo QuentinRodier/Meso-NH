@@ -179,12 +179,12 @@ MODULE MODE_FMWRIT
   PRIVATE
 
   INTERFACE IO_WRITE_FIELD
-     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_X0,                            &
+     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_X0, IO_WRITE_FIELD_BYNAME_X1,  &
                       IO_WRITE_FIELD_BYNAME_X2, IO_WRITE_FIELD_BYNAME_X3,  &
                       IO_WRITE_FIELD_BYNAME_N0,                            &
                       IO_WRITE_FIELD_BYNAME_L0,                            &
                       IO_WRITE_FIELD_BYNAME_C0,                            &
-                      IO_WRITE_FIELD_BYFIELD_X0,                           &
+                      IO_WRITE_FIELD_BYFIELD_X0,IO_WRITE_FIELD_BYFIELD_X1, &
                       IO_WRITE_FIELD_BYFIELD_X2,IO_WRITE_FIELD_BYFIELD_X3, &
                       IO_WRITE_FIELD_BYFIELD_N0,                           &
                       IO_WRITE_FIELD_BYFIELD_L0,                           &
@@ -521,6 +521,108 @@ CONTAINS
     IF (GALLOC) DEALLOCATE(ZFIELDP)
     KRESP = IRESP
   END SUBROUTINE FMWRITX1_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_X1(TPFILE,HNAME,HFIPRI,KRESP,PFIELD)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),           INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),          INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),          INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                   INTENT(OUT):: KRESP    ! return-code 
+    REAL,DIMENSION(:),         INTENT(IN) :: PFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,PFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_X1
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_X1(TPFILE,TPFIELD,HFIPRI,KRESP,PFIELD)
+    USE MODD_IO_ll
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_ALLOCBUFFER_ll
+    USE MODE_GATHER_ll
+    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+    !
+    IMPLICIT NONE
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    REAL,DIMENSION(:),TARGET,    INTENT(IN) :: PFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=2)                         :: YDIR     ! field form
+    CHARACTER(LEN=JPFINL)                    :: YFNLFI
+    INTEGER                                  :: IERR
+    TYPE(FD_ll), POINTER                     :: TZFD
+    INTEGER                                  :: IRESP
+    REAL,DIMENSION(:),POINTER                :: ZFIELDP
+    LOGICAL                                  :: GALLOC
+    !
+    INTEGER                                  :: IK_FILE,IK_RANK
+    CHARACTER(len=5)                         :: YK_FILE  
+    CHARACTER(len=128)                       :: YFILE_IOZ  
+    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    TYPE(TFILEDATA),POINTER                  :: TZFILE
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YDIR     = TPFIELD%CDIR
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    IRESP = 0
+    GALLOC = .FALSE.
+    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
+    !------------------------------------------------------------------
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,PFIELD,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
+       ELSE ! multiprocessor execution
+          IF (ISP == TZFD%OWNER)  THEN
+             CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
+          ELSE
+             ALLOCATE(ZFIELDP(0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+             CALL GATHER_XXFIELD(YDIR,PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM)
+          END IF
+          !
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF ! multiprocessor execution
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_X1",YFILEM,HFIPRI,YRECFM,YDIR,TPFIELD%NGRID,LEN(TPFIELD%CCOMMENT),IRESP)
+    END IF
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+    KRESP = IRESP
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_X1
 
   SUBROUTINE FMWRITX2_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
