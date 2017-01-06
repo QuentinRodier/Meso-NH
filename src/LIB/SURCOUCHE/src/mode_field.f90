@@ -11,6 +11,10 @@ IMPLICIT NONE
 INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 100
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4
 !
+TYPE TFIELDPTR_X1D
+  REAL,DIMENSION(:),    POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_X1D
+!
 TYPE TFIELDPTR_X2D
   REAL,DIMENSION(:,:),  POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_X2D
@@ -30,6 +34,7 @@ TYPE TFIELDDATA
   INTEGER            :: NGRID     = -1 !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
+  TYPE(TFIELDPTR_X1D),DIMENSION(:),ALLOCATABLE :: TFIELD_X1D !Pointer to the real 1D fields (one per nested mesh)
   TYPE(TFIELDPTR_X2D),DIMENSION(:),ALLOCATABLE :: TFIELD_X2D !Pointer to the real 2D fields (one per nested mesh)
   TYPE(TFIELDPTR_X3D),DIMENSION(:),ALLOCATABLE :: TFIELD_X3D !Pointer to the real 3D fields (one per nested mesh)
 END TYPE TFIELDDATA
