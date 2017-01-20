@@ -270,7 +270,8 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 2016 Chemistry
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!                      10/2016 (C.Lac) Add max values
-!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry       
+!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry  
+!!                   01/2017 (G.Delautier) bug chemistry : modify test for prod/loss terms computation
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -2174,12 +2175,11 @@ IF ( LFOREFIRE ) THEN
 		, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME, XTSTEP)
 END IF
 #endif
-
 !-------------------------------------------------------------------------------
 !
 !*      30.   Total production/Loss for chemical species
 !
-IF (LUSECHEM.OR.LCHEMDIAG)  THEN
+IF (LCHEMDIAG)  THEN
         CALL CH_INIT_PRODLOSSTOT_n(ILUOUT)
         IF (NEQ_PLT>0) THEN
                 ALLOCATE(XPROD(IIU,IJU,IKU,NEQ_PLT))
@@ -2199,7 +2199,7 @@ END IF
 !
 !*     31. Extended production/loss terms for chemical species
 !
-IF (LUSECHEM.OR.LCHEMDIAG) THEN
+IF (LCHEMDIAG) THEN
         CALL CH_INIT_BUDGET_n(ILUOUT)
         IF (NEQ_BUDGET>0) THEN
                 ALLOCATE(IINDEX(2,NNONZEROTERMS))
