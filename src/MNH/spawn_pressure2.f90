@@ -259,7 +259,7 @@ END IF
 !
 !* iterative loop
   DO JCOUNT=1,10
-    CALL COMPUTE_EXNER_FROM_TOP(ZTHV1(:,:,IKE-1:IKE+1),GRID_MODEL(1)%XZZ(:,:,IKE-1:IKE+1),   &
+    CALL COMPUTE_EXNER_FROM_TOP(ZTHV1(:,:,IKE-1:IKE+1),XZZ1(:,:,IKE-1:IKE+1),   &
                                 ZHYDEXNTOP1(:,:),                              &
                                 ZWORK(:,:,IKE-1:IKE+1),ZHYDEXN1(:,:,IKE-1:IKE+1))
     ZHYDEXNTOP1(:,:)=ZHYDEXNTOP1(:,:)+ZEXN1(:,:,IKE)-ZHYDEXN1(:,:,IKE)
@@ -269,7 +269,7 @@ END IF
 !*       2.3      Model 1 hydrostatic pressure
 !                 ----------------------------
 !
-  CALL COMPUTE_EXNER_FROM_TOP(ZTHV1,GRID_MODEL(1)%XZZ,ZHYDEXNTOP1,ZWORK,ZHYDEXN1)
+  CALL COMPUTE_EXNER_FROM_TOP(ZTHV1,XZZ1,ZHYDEXNTOP1,ZWORK,ZHYDEXN1)
 !
   DEALLOCATE(ZTHV1)
   DEALLOCATE(ZWORK)

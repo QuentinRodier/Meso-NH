@@ -45,9 +45,9 @@
 !
 IMPLICIT NONE
 !          
-REAL,SAVE, DIMENSION(:), ALLOCATABLE :: XRHODREFZ ! rhod(z) for reference
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XRHODREFZ ! rhod(z) for reference
                                              ! state without orography
-REAL,SAVE, DIMENSION(:), ALLOCATABLE :: XTHVREFZ  ! Thetav(z) for reference
+REAL,SAVE, DIMENSION(:), ALLOCATABLE, TARGET :: XTHVREFZ  ! Thetav(z) for reference
                                              ! state without orography    
 REAL,SAVE                            :: XEXNTOP   ! Exner function at model top 
 LOGICAL, SAVE                        :: LBOUSS    ! Boussinesq approximation

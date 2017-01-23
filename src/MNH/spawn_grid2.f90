@@ -142,7 +142,7 @@ END MODULE MODI_SPAWN_GRID2
 !!      Modification 20/04/99 (J. Stein) bug on the last point if the whole
 !!                             domain is used (2D case along y for instance
 !!      Modification 15/03/99 (V.Masson) cover types
-!!      Modification 04/07/01 (J.Stein)  convergence test set to 1 millimeter for GRID_MODEL(1)%XZS
+!!      Modification 04/07/01 (J.Stein)  convergence test set to 1 millimeter for XZS1
 !!      Modification 05/09/05 (J. Escobar) change INTENT(OUT) --> INTENT(INOUT)
 !!                             to avoid problem when Input parameter and GRID1 parameter
 !!                             are exactly the same !!!
@@ -157,6 +157,7 @@ END MODULE MODI_SPAWN_GRID2
 !
 USE MODD_PARAMETERS       ! Declarative modules
 USE MODD_CONF
+USE MODD_SPAWN
 !
 USE MODD_GRID, ONLY: XLONORI,XLATORI 
 USE MODD_GRID_n,    ONLY: GRID_MODEL
@@ -285,19 +286,19 @@ ENDIF
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 !*       1.3  checks that model 2 domain is included in the one of model 1
-IF ( (IXEND_F) > SIZE(GRID_MODEL(1)%XXHAT) )  THEN   
+IF ( (IXEND_F) > SIZE(XXHAT1) )  THEN   
   WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
                   ' IXOR_F = ', IXOR_F,' IXEND_F = ', IXEND_F,                      &
-                  ' IIU of model1 = ',SIZE(GRID_MODEL(1)%XXHAT)
+                  ' IIU of model1 = ',SIZE(XXHAT1)
  !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
 END IF 
-IF ( (IYEND_F) > SIZE(GRID_MODEL(1)%XYHAT) )  THEN  
+IF ( (IYEND_F) > SIZE(XYHAT1) )  THEN  
   WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
                   ' IYOR_F = ', IYOR_F,' IYEND_F = ', IYEND_F,                  &
-                  ' IJU of model1 = ',SIZE(GRID_MODEL(1)%XYHAT)
+                  ' IJU of model1 = ',SIZE(XYHAT1)
  !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
   CALL ABORT
@@ -309,8 +310,8 @@ END IF
 !*       2.    INITIALIZATION OF THE GRID OF MODEL 2:
 !              --------------------------------------
 !
-PZHAT(:) = GRID_MODEL(1)%XZHAT(:) 
-OSLEVE   = GRID_MODEL(1)%LSLEVE
+PZHAT(:) = XZHAT1(:) 
+OSLEVE   = LSLEVE1
 PLEN1    = GRID_MODEL(1)%XLEN1
 PLEN2    = GRID_MODEL(1)%XLEN2
 !
@@ -318,12 +319,12 @@ IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
 !
 !*       2.1   special case of spawning - no change of resolution :
 !$ in our case we don't get them here !
-  PXHAT(:) = GRID_MODEL(1)%XXHAT(KXOR:KXEND)
-  PYHAT(:) = GRID_MODEL(1)%XYHAT(KYOR:KYEND)
-  PZS  (:,:) = GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
-  PZS_LS(:,:)= GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
-  PZSMT   (:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
-  PZSMT_LS(:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
+  PXHAT(:) = XXHAT1(KXOR:KXEND)
+  PYHAT(:) = XYHAT1(KYOR:KYEND)
+  PZS  (:,:) = XZS1  (KXOR:KXEND,KYOR:KYEND)
+  PZS_LS(:,:)= XZS1  (KXOR:KXEND,KYOR:KYEND)
+  PZSMT   (:,:) = XZSMT1(KXOR:KXEND,KYOR:KYEND)
+  PZSMT_LS(:,:) = XZSMT1(KXOR:KXEND,KYOR:KYEND)
 !
 ELSE
 !
@@ -336,13 +337,13 @@ ELSE
 !
 !JUAN A REVOIR TODO_JPHEXT
 ! <<<<<<< spawn_grid2.f90
-  IXSIZE1_F=SIZE(GRID_MODEL(1)%XXHAT)
-  IYSIZE1_F=SIZE(GRID_MODEL(1)%XYHAT)
+  IXSIZE1_F=SIZE(XXHAT1)
+  IYSIZE1_F=SIZE(XYHAT1)
 ! before the interpolation of XXHAT into PXHAT, we need to use LS_FORCING_ll
 ! to communicate the values on the subdomains of the son grid to the appropriate processes
 ! LS_FORCING_ll does not work on 1D arrays, so we have to construct a temporary pseudo-2D array
   ALLOCATE(ZXHAT_2D_F(IXSIZE1_F,IYSIZE1_F))
-  ZXHAT_2D_F(:,:) = SPREAD(GRID_MODEL(1)%XXHAT(:),DIM=2,NCOPIES=IYSIZE1_F)
+  ZXHAT_2D_F(:,:) = SPREAD(XXHAT1(:),DIM=2,NCOPIES=IYSIZE1_F)
   CALL GOTO_MODEL(1)
   CALL GO_TOMODEL_ll(1, IINFO_ll)
   CALL GET_CHILD_DIM_ll(IMI, IDIMX_C, IDIMY_C, IINFO_ll)
@@ -403,7 +404,7 @@ ELSE
 ! to communicate the values on the subdomains of the son grid to the appropriate processes
 ! LS_FORCING_ll does not work on 1D arrays, so we have to construct a temporary pseudo-2D array
   ALLOCATE(ZYHAT_2D_F(IXSIZE1_F,IYSIZE1_F))
-  ZYHAT_2D_F(:,:) = SPREAD(GRID_MODEL(1)%XYHAT(:),DIM=1,NCOPIES=IXSIZE1_F)
+  ZYHAT_2D_F(:,:) = SPREAD(XYHAT1(:),DIM=1,NCOPIES=IXSIZE1_F)
   CALL GOTO_MODEL(1)
   CALL GO_TOMODEL_ll(1, IINFO_ll)
   CALL GET_CHILD_DIM_ll(IMI, IDIMX_C, IDIMY_C, IINFO_ll)
@@ -455,10 +456,10 @@ ELSE
   DEALLOCATE(ZYHAT_EXTENDED_C)
   DEALLOCATE(ZYHAT_2D_C)
 !!$=======
-!!$  IXSIZE1=SIZE(GRID_MODEL(1)%XXHAT)
+!!$  IXSIZE1=SIZE(XXHAT1)
 !!$  ALLOCATE(ZXHAT_EXTENDED(IXSIZE1+1))
-!!$  ZXHAT_EXTENDED(1:IXSIZE1)=GRID_MODEL(1)%XXHAT(:)
-!!$  ZXHAT_EXTENDED(IXSIZE1+1)=2.*GRID_MODEL(1)%XXHAT(IXSIZE1)-GRID_MODEL(1)%XXHAT(IXSIZE1-1)
+!!$  ZXHAT_EXTENDED(1:IXSIZE1)=XXHAT1(:)
+!!$  ZXHAT_EXTENDED(IXSIZE1+1)=2.*XXHAT1(IXSIZE1)-XXHAT1(IXSIZE1-1)
 !!$  DO JEPSX = 1,KDXRATIO
 !!$    ZPOND2 = FLOAT(JEPSX-1)/FLOAT(KDXRATIO)
 !!$    ZPOND1 = 1.-ZPOND2
@@ -471,10 +472,10 @@ ELSE
 !!$  END DO
 !!$  DEALLOCATE(ZXHAT_EXTENDED)
 !!$!
-!!$  IYSIZE1=SIZE(GRID_MODEL(1)%XYHAT)
+!!$  IYSIZE1=SIZE(XYHAT1)
 !!$  ALLOCATE(ZYHAT_EXTENDED(IYSIZE1+1))
-!!$  ZYHAT_EXTENDED(1:IYSIZE1)=GRID_MODEL(1)%XYHAT(:)
-!!$  ZYHAT_EXTENDED(IYSIZE1+1)=2.*GRID_MODEL(1)%XYHAT(IYSIZE1)-GRID_MODEL(1)%XYHAT(IYSIZE1-1)
+!!$  ZYHAT_EXTENDED(1:IYSIZE1)=XYHAT1(:)
+!!$  ZYHAT_EXTENDED(IYSIZE1+1)=2.*XYHAT1(IYSIZE1)-XYHAT1(IYSIZE1-1)
 !!$  DO JEPSY = 1,KDYRATIO
 !!$    ZPOND2 = FLOAT(JEPSY-1)/FLOAT(KDYRATIO)
 !!$    ZPOND1 = 1.-ZPOND2
@@ -501,9 +502,9 @@ PLATOR = XLATORI
 !*       3.    INITIALIZATION OF ZS and ZSMT:
 !              ------------------------------
 CALL SPAWN_ZS(IXOR_F,IXEND_F,IYOR_F,IYEND_F,KDXRATIO,KDYRATIO,IDIMX_C,IDIMY_C,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
-              GRID_MODEL(1)%XZS,  PZS,  'ZS    ',PZS_LS)
+              XZS1,  PZS,  'ZS    ',PZS_LS)
 CALL SPAWN_ZS(IXOR_F,IXEND_F,IYOR_F,IYEND_F,KDXRATIO,KDYRATIO,IDIMX_C,IDIMY_C,LBC_MODEL(1)%CLBCX,LBC_MODEL(1)%CLBCY,CLUOUT,  &
-              GRID_MODEL(1)%XZSMT,PZSMT,'ZSMT  ',PZSMT_LS)
+              XZSMT1,PZSMT,'ZSMT  ',PZSMT_LS)
 !
 CALL MPPDB_CHECK2D(PZS,"SPAWN_GRID2:PZS",PRECISION)
 CALL MPPDB_CHECK2D(PZSMT,"SPAWN_GRID2:PZSMT",PRECISION)
