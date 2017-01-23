@@ -28,6 +28,31 @@ DO JI = 1,SIZE(TPOUTPUT%NFIELDLIST)
   IDX = TPOUTPUT%NFIELDLIST(JI)
   SELECT CASE (TFIELDLIST(IDX)%NDIMS)
     !
+    !0D output
+    !
+    CASE (0)
+      SELECT CASE (TFIELDLIST(IDX)%NTYPE)
+        !
+        !0D logical
+        !
+        CASE (TYPELOG)
+          IF ( .NOT.ALLOCATED(TFIELDLIST(IDX)%TFIELD_L0D) ) THEN
+            PRINT *,'FATAL: IO_WRITE_FIELDLIST: TFIELD_L0D is NOT allocated for ',TRIM(TFIELDLIST(IDX)%CMNHNAME)
+            STOP
+          END IF
+          IF ( .NOT.ASSOCIATED(TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA) ) THEN
+            PRINT *,'FATAL: IO_WRITE_FIELDLIST: TFIELD_L0D%DATA is not associated for ',TRIM(TFIELDLIST(IDX)%CMNHNAME)
+            STOP
+          END IF
+          CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TFIELDLIST(IDX),HFIPRI,IRESP,TFIELDLIST(IDX)%TFIELD_L0D(IMI)%DATA)
+        !
+        !0D other types
+        !
+        CASE DEFAULT
+          PRINT *,'FATAL: IO_WRITE_FIELDLIST: type not yet supported for 0D output of ',TRIM(TFIELDLIST(IDX)%CMNHNAME)
+          STOP
+      END SELECT
+    !
     !1D output
     !
     CASE (1)
