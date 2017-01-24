@@ -11,7 +11,10 @@
 !
 MODULE MODE_IO_MANAGE_STRUCT
 !
-  IMPLICIT NONE
+USE MODD_IO_ll
+USE MODE_MSG
+!
+IMPLICIT NONE
 !
 CONTAINS
 !
@@ -24,7 +27,6 @@ USE MODD_CONF_n
 USE MODD_DYN,        ONLY : XSEGLEN
 USE MODD_DYN_n,      ONLY : DYN_MODEL
 USE MODD_FMOUT
-USE MODD_IO_ll
 USE MODD_IO_SURF_MNH,ONLY : IO_SURF_MNH_MODEL
 USE MODD_NESTING,    ONLY : CDAD_NAME,NDAD
 USE MODD_NSV,        ONLY: NSV
@@ -49,6 +51,8 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IBAK_STEP, IOUT_STEP
 ! Arrays to store list of backup/output steps (intermediate array)
 CHARACTER (LEN=4) :: YDADNUMBER       ! Character string for the DAD model file number
 !
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_PREPARE_BAKOUT_STRUCT','called')
 !
 DO IMI = 1, NMODEL
   IBAK_NUMB = 0
@@ -170,10 +174,7 @@ DO IMI = 1, NMODEL
   !* Find dad output number
   !
   !Security check (if it happens, this part of the code should be exported outside of the IMI loop)
-  IF (NDAD(IMI)>IMI) THEN
-    print *,'ERROR in SET_GRID'
-    STOP
-  END IF
+  IF (NDAD(IMI)>IMI) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_PREPARE_BAKOUT_STRUCT','NDAD(IMI)>IMI')
   IF (NDAD(IMI) == IMI .OR.  IMI == 1) THEN
     OUT_MODEL(IMI)%TBACKUPN(:)%NOUTDAD = 0
     DO IPOS = 1,OUT_MODEL(IMI)%NBAK_NUMB
@@ -229,9 +230,7 @@ DO IMI = 1, NMODEL
     DO IPOS = 1,JPOUTVARMAX
       IF (COUT_VAR(IMI,IPOS)/='') IVAR = IVAR + 1
     END DO
-    IF (IVAR==0) THEN
-      PRINT *,'ERROR: no fields chosen for output'
-    END IF
+    IF (IVAR==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_PREPARE_BAKOUT_STRUCT','no fields chosen for output')
     ALLOCATE(OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR))
     !Determine the list of the outputs to do (by field number)
     IVAR = 1
@@ -242,9 +241,8 @@ DO IMI = 1, NMODEL
         CALL FIND_FIELD_ID_FROM_MNHNAME(COUT_VAR(IMI,IPOS),IFIELD,IRESP)
         OUT_MODEL(IMI)%TOUTPUTN(1)%NFIELDLIST(IVAR) = IFIELD
         IF (IRESP/=0) THEN
-          PRINT *,'FATAL: unknown field for output: ',TRIM(COUT_VAR(IMI,IPOS))
+          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_PREPARE_BAKOUT_STRUCT','unknown field for output: '//TRIM(COUT_VAR(IMI,IPOS)))
           !MNH is killed to prevent problems with wrong values in NFIELDLIST
-          STOP
         END IF
         !
         IVAR=IVAR+1
@@ -389,11 +387,7 @@ SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT(PTIMES,kIDX)
   !Find next (starting from KIDX) non 'allocated' element
   DO WHILE ( PTIMES(KIDX) >= 0. )
     KIDX = KIDX + 1
-    IF (KIDX > JPOUTMAX) THEN
-      PRINT *,'Error in SET_GRID when treating backup/output list (JPOUTMAX too small)'
-      CALL ABORT
-      STOP
-    END IF
+    IF (KIDX > JPOUTMAX) CALL PRINT_MSG(NVERB_FATAL,'IO','FIND_NEXT_AVAIL_SLOT_FLOAT','JPOUTMAX too small')
   END DO
 END SUBROUTINE FIND_NEXT_AVAIL_SLOT_FLOAT
 !
@@ -407,11 +401,7 @@ SUBROUTINE FIND_NEXT_AVAIL_SLOT_INT(KSTEPS,KIDX)
   !Find next (starting from KIDX) non 'allocated' element
   DO WHILE ( KSTEPS(IDX) >= 0 )
     KIDX = KIDX + 1
-    IF (KIDX > JPOUTMAX) THEN
-      PRINT *,'Error in SET_GRID when treating backup/output list (JPOUTMAX too small)'
-      CALL ABORT
-      STOP
-    END IF
+    IF (KIDX > JPOUTMAX) CALL PRINT_MSG(NVERB_FATAL,'IO','FIND_NEXT_AVAIL_SLOT_INT','JPOUTMAX too small')
   END DO
 END SUBROUTINE FIND_NEXT_AVAIL_SLOT_INT
 !
@@ -427,7 +417,7 @@ SUBROUTINE FIND_REMOVE_DUPLICATES(KNUMB,KSTEPS)
   DO JOUT = 1,KNUMB
     DO JKLOOP = JOUT+1,KNUMB
       IF ( KSTEPS(JKLOOP) == KSTEPS(JOUT) .AND. KSTEPS(JKLOOP) > 0 ) THEN
-        print *,'WARNING: found duplicated backup/output step (removed extra one)'
+        CALL PRINT_MSG(NVERB_INFO,'IO','FIND_REMOVE_DUPLICATES','found duplicated backup/output step (removed extra one)')
         KSTEPS(JKLOOP) = NNEGUNDEF
       END IF
     END DO
@@ -483,8 +473,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
         TPBAKOUTN(IPOS)%NSTEP = KSTEPS(JOUT)
         TPBAKOUTN(IPOS)%XTIME = (KSTEPS(JOUT)-1)*DYN_MODEL(IMI)%XTSTEP
         IF (IPOS>999) THEN
-          print *,'ERROR in SET_GRID: more than 999 backups/outputs'
-          STOP
+          CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','more than 999 backups/outputs')
         END IF
         IF (.NOT.ASSOCIATED(TPFILE_FIRST)) THEN
           ALLOCATE(TPFILE_FIRST)
@@ -506,15 +495,15 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
           !Set compression if asked
           TPBAKOUTN(IPOS)%TFILE%LNCCOMPRESS = LOUT_COMPRESS(IMI)
           IF ( NOUT_COMPRESS_LEVEL(IMI)<0 .OR. NOUT_COMPRESS_LEVEL(IMI)>9 ) THEN
-            PRINT *,'ERROR: NOUT_COMPRESS_LEVEL must be in the [0..9] range. Value forced to 4'
+            CALL PRINT_MSG(NVERB_WARNING,'IO','POPULATE_STRUCT',&
+                           'NOUT_COMPRESS_LEVEL must be in the [0..9] range. Value forced to 4')
             NOUT_COMPRESS_LEVEL(IMI) = 4
           END IF
           TPBAKOUTN(IPOS)%TFILE%NNCCOMPRESS_LEVEL = NOUT_COMPRESS_LEVEL(IMI)
         ELSE IF (HFILETYPE=='BACKUP') THEN
           TPBAKOUTN(IPOS)%TFILE%CNAME=ADJUSTL(ADJUSTR(IO_SURF_MNH_MODEL(IMI)%COUTFILE)//'.'//YNUMBER)
         ELSE
-          PRINT *,'Error: unknown filetype (',TRIM(HFILETYPE),')'
-          CALL ABORT
+          CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown filetype ('//TRIM(HFILETYPE)//')')
         ENDIF
         TPBAKOUTN(IPOS)%TFILE%NLFITYPE=1 !1: to be transfered
 !PW: TODO: set NLFIVERB only when useful (only if LFI file...)
@@ -530,16 +519,14 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
           TPBAKOUTN(IPOS)%TFILE%CFORMAT='LFI'
           IF (HFILETYPE=='BACKUP') TPBAKOUTN(IPOS)%TFILE%NLFINPRAR= 22+2*(4+NRR+NSV)
         ELSE
-          PRINT *,'Error: unknown backup/output fileformat'
-          CALL ABORT
+          CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
         ENDIF
         !
         !Create file structures if Z-splitted files
         IF (NB_PROCIO_W>1) THEN
           ALLOCATE(TPBAKOUTN(IPOS)%TFILE_IOZ(NB_PROCIO_W))
           IF (NB_PROCIO_W>999) THEN
-            print *,'ERROR in SET_GRID: more than 999 z-levels'
-            STOP
+            CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','more than 999 z-levels')
           END IF
           DO JI = 1,NB_PROCIO_W
             ALLOCATE(TPFILE_LAST%TFILE_NEXT)
@@ -574,8 +561,7 @@ SUBROUTINE POPULATE_STRUCT(TPFILE_FIRST,TPFILE_LAST,KSTEPS,HFILETYPE,TPBAKOUTN)
               TPBAKOUTN(IPOS)%TFILE_IOZ(JI)%TFILE%CFORMAT='LFI'
               !TPBAKOUTN(IPOS)%TFILE_IOZ(JI)%TFILE%NLFINPRAR= 0
             ELSE
-              PRINT *,'Error: unknown backup/output fileformat'
-              CALL ABORT
+              CALL PRINT_MSG(NVERB_FATAL,'IO','POPULATE_STRUCT','unknown backup/output fileformat')
             ENDIF
           END DO
         END IF
@@ -588,13 +574,13 @@ END SUBROUTINE IO_PREPARE_BAKOUT_STRUCT
 !
 SUBROUTINE IO_FILE_FIND_BYNAME(HNAME,TPFILE,KRESP)
 !
-USE MODD_IO_ll, ONLY: TFILE_FIRST,TFILEDATA
-!
 CHARACTER(LEN=*),       INTENT(IN)  :: HNAME  ! Name of the file to find
 TYPE(TFILEDATA),POINTER,INTENT(OUT) :: TPFILE ! File structure to return
 INTEGER,                INTENT(OUT) :: KRESP  ! Return value
 !
 TYPE(TFILEDATA),POINTER :: TZFILE ! File structure
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME','looking for: '//TRIM(HNAME))
 !
 NULLIFY(TPFILE)
 KRESP = 0
@@ -611,8 +597,10 @@ DO
 END DO
 !
 IF (.NOT.ASSOCIATED(TPFILE)) THEN
-  PRINT *,'ERROR: IO_FILE_FIND_BYNAME: file ',TRIM(HNAME),' not found in list'
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_FIND_BYNAME','file '//TRIM(HNAME)//' not found in list')
   KRESP = -1 !File not found
+ELSE
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found')
 END IF  
 !
 END SUBROUTINE IO_FILE_FIND_BYNAME

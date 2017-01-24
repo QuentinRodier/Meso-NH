@@ -105,7 +105,7 @@ CHARACTER(LEN=10),SAVE :: CBIBUSER! CBIBUSER is the name of the user binary libr
 !
 CHARACTER(LEN=6),SAVE :: CPROGRAM ! CPROGRAM is the program currently running:
 !                                 ! 'PGD   ','ADVPGD','NESPGD','REAL  ','IDEAL '
-!                                 ! 'MESONH','SPAWN ','DIAG  '
+!                                 ! 'MESONH','SPAWN ','DIAG  ','SPEC  '
 !
 INTEGER,SAVE      :: NHALO        ! Size of the halo for parallel distribution
 !
