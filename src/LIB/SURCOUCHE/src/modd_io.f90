@@ -19,6 +19,9 @@ USE MODD_NETCDF, ONLY: IDCDF_KIND
 IMPLICIT NONE 
 !
 !
+INTEGER, PARAMETER :: NVERB_NO=0, NVERB_FATAL=1, NVERB_ERROR=2, NVERB_WARNING=3, NVERB_INFO=4, NVERB_DEBUG=5
+
+
 INTEGER, SAVE :: ISTDOUT, ISTDERR
 
 INTEGER, SAVE :: ISIOP   !! IOproc number
@@ -33,6 +36,12 @@ LOGICAL, SAVE :: LPACK = .FALSE. ! TRUE if FM compression occurs in 1D or 2D mod
 LOGICAL, SAVE :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
 LOGICAL, SAVE :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)  
 LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)  
+
+INTEGER, SAVE :: NIO_VERB        = NVERB_WARNING ! Verbosity level for IO
+INTEGER, SAVE :: NIO_ABORT_LEVEL = NVERB_ERROR   ! Level of IO error necessary to force stop of application
+
+INTEGER, SAVE :: NGEN_VERB        = NVERB_WARNING ! Verbosity level for 'GEN' (generic) messages
+INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessary to force stop of application
 
 TYPE LFIPARAM
   INTEGER :: FITYP   ! FM File Type (used in FMCLOSE)

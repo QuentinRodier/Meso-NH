@@ -29,14 +29,16 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_IO_ll, ONLY : NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL
+!
 IMPLICIT NONE
 !
 LOGICAL,SAVE :: LCDF4    = .FALSE. ! TRUE : enable NetCDF4 Input/Output
 LOGICAL,SAVE :: LLFIOUT  = .FALSE. ! TRUE : add LFI output when NetCDF4 I/O is enabled (debug)
 LOGICAL,SAVE :: LLFIREAD = .FALSE. ! TRUE : enable LFI reading (disable NetCDF4 reading)
                                    !        when NetCDF4 I/O is enabled (debug)
-!
-NAMELIST/NAM_CONFIO/ LCDF4, LLFIOUT, LLFIREAD
+
+NAMELIST/NAM_CONFIO/ LCDF4, LLFIOUT, LLFIREAD, NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL
 !
 END MODULE MODN_CONFIO
 
