@@ -865,6 +865,10 @@ CALL INI_NSV(1)
 LHORELAX_SV(:)=.FALSE.
 IF(.NOT. L1D) LHORELAX_SV(1:NSV)=.TRUE.
 !
+CALL INI_FIELD_LIST()
+!
+CALL INI_FIELD_SCALARS()
+!
 !-------------------------------------------------------------------------------
 !
 !*       4.    ALLOCATE MEMORY FOR ARRAYS :  
@@ -1748,8 +1752,6 @@ ENDIF
 TZFILE%CMODE      = 'WRITE'
 TZFILE%NLFITYPE   = NTYPE
 TZFILE%NLFIVERB   = NVERB
-!
-CALL INI_FIELD_LIST()
 !
 CALL IO_FILE_OPEN_ll(TZFILE,CLUOUT,NRESP)
 !

@@ -48,102 +48,23 @@
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
-TYPE GRID_t
-!  REAL, DIMENSION(:,:), POINTER :: XLON=>NULL(),XLAT=>NULL() ! Longitude and latitude  
-!
-!  REAL, DIMENSION(:),   POINTER :: XXHAT=>NULL()   ! Position x in the 
-!                                         ! conformal or cartesian plane
-!  REAL, DIMENSION(:),   POINTER :: XYHAT=>NULL()   ! Position y in the 
-!                                         ! conformal or cartesian plane
-  REAL, DIMENSION(:),   POINTER :: XDXHAT=>NULL()  ! horizontal stretching in x
-  REAL, DIMENSION(:),   POINTER :: XDYHAT=>NULL()  ! horizontal stretching in y
-  REAL, DIMENSION(:,:), POINTER :: XMAP=>NULL()    ! Map factor 
-!
-!  REAL, DIMENSION(:,:),   POINTER :: XZS=>NULL()   ! orography
-!  REAL, DIMENSION(:,:,:), POINTER :: XZZ=>NULL()   ! height z 
-!  REAL, DIMENSION(:),     POINTER :: XZHAT=>NULL() ! height level without orography
-!
-  REAL, DIMENSION(:,:)  , POINTER :: XDIRCOSXW=>NULL(),XDIRCOSYW=>NULL(),XDIRCOSZW=>NULL() 
-                                               ! director cosinus of the normal 
-                                               ! to the ground surface 
-!  
-  REAL, DIMENSION(:,:),  POINTER  ::  XCOSSLOPE=>NULL()  ! cosinus of the angle
-                                 ! between i and the slope vector
-  REAL, DIMENSION(:,:),  POINTER  ::  XSINSLOPE=>NULL()  ! sinus of the angle
-                                 ! between i and the slope vector
-! quantities for SLEVE vertical coordinate
-!  LOGICAL                         :: LSLEVE    ! Logical for SLEVE coordinate
-  REAL                            :: XLEN1     ! Decay scale for smooth topography
-  REAL                            :: XLEN2     ! Decay scale for small-scale topography deviation
-!  REAL, DIMENSION(:,:),   POINTER :: XZSMT=>NULL()   ! smooth orography for SLEVE coordinate
-END TYPE GRID_t
-
-TYPE(GRID_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: GRID_MODEL
-
-REAL, DIMENSION(:,:), POINTER :: XLON=>NULL(),XLAT=>NULL()
-REAL, DIMENSION(:),   POINTER :: XXHAT=>NULL()
-REAL, DIMENSION(:),   POINTER :: XYHAT=>NULL()
-REAL, DIMENSION(:),   POINTER :: XDXHAT=>NULL()
-REAL, DIMENSION(:),   POINTER :: XDYHAT=>NULL()
-REAL, DIMENSION(:,:), POINTER :: XMAP=>NULL()
-REAL, DIMENSION(:,:),   POINTER :: XZS=>NULL()
-REAL, DIMENSION(:,:,:), POINTER :: XZZ=>NULL()
-REAL, DIMENSION(:),     POINTER :: XZHAT=>NULL()
-REAL, DIMENSION(:,:)  , POINTER :: XDIRCOSXW=>NULL(),XDIRCOSYW=>NULL(),XDIRCOSZW=>NULL()
-REAL, DIMENSION(:,:),  POINTER  :: XCOSSLOPE=>NULL()
-REAL, DIMENSION(:,:),  POINTER  :: XSINSLOPE=>NULL()
-LOGICAL,               POINTER  :: LSLEVE=>NULL()
-REAL,                  POINTER  :: XLEN1=>NULL()
-REAL,                  POINTER  :: XLEN2=>NULL()
-REAL, DIMENSION(:,:),  POINTER  :: XZSMT=>NULL()
-
-CONTAINS
-
-SUBROUTINE GRID_GOTO_MODEL(KFROM, KTO)
-!
-INTEGER, INTENT(IN) :: KFROM, KTO
-!
-! Save current state for allocated arrays
-!GRID_MODEL(KFROM)%XLON=>XLON !Done in FIELDLIST_GOTO_MODEL
-!GRID_MODEL(KFROM)%XLAT=>XLAT !Done in FIELDLIST_GOTO_MODEL
-!GRID_MODEL(KFROM)%XXHAT=>XXHAT !Done in FIELDLIST_GOTO_MODEL
-!GRID_MODEL(KFROM)%XYHAT=>XYHAT !Done in FIELDLIST_GOTO_MODEL
-GRID_MODEL(KFROM)%XDXHAT=>XDXHAT
-GRID_MODEL(KFROM)%XDYHAT=>XDYHAT
-GRID_MODEL(KFROM)%XMAP=>XMAP
-!GRID_MODEL(KFROM)%XZS=>XZS !Done in FIELDLIST_GOTO_MODEL
-!GRID_MODEL(KFROM)%XZZ=>XZZ !Done in FIELDLIST_GOTO_MODEL
-!GRID_MODEL(KFROM)%XZHAT=>XZHAT !Done in FIELDLIST_GOTO_MODEL
-GRID_MODEL(KFROM)%XDIRCOSXW=>XDIRCOSXW
-GRID_MODEL(KFROM)%XDIRCOSYW=>XDIRCOSYW
-GRID_MODEL(KFROM)%XDIRCOSZW=>XDIRCOSZW
-GRID_MODEL(KFROM)%XCOSSLOPE=>XCOSSLOPE
-GRID_MODEL(KFROM)%XSINSLOPE=>XSINSLOPE
-!GRID_MODEL(KFROM)%XZSMT=>XZSMT !Done in FIELDLIST_GOTO_MODEL
-!
-! Current model is set to model KTO
-!XLON=>GRID_MODEL(KTO)%XLON !Done in FIELDLIST_GOTO_MODEL
-!XLAT=>GRID_MODEL(KTO)%XLAT !Done in FIELDLIST_GOTO_MODEL
-!XXHAT=>GRID_MODEL(KTO)%XXHAT !Done in FIELDLIST_GOTO_MODEL
-!XYHAT=>GRID_MODEL(KTO)%XYHAT !Done in FIELDLIST_GOTO_MODEL
-XDXHAT=>GRID_MODEL(KTO)%XDXHAT
-XDYHAT=>GRID_MODEL(KTO)%XDYHAT
-XMAP=>GRID_MODEL(KTO)%XMAP
-!XZS=>GRID_MODEL(KTO)%XZS !Done in FIELDLIST_GOTO_MODEL
-!XZZ=>GRID_MODEL(KTO)%XZZ !Done in FIELDLIST_GOTO_MODEL
-!XZHAT=>GRID_MODEL(KTO)%XZHAT !Done in FIELDLIST_GOTO_MODEL
-XDIRCOSXW=>GRID_MODEL(KTO)%XDIRCOSXW
-XDIRCOSYW=>GRID_MODEL(KTO)%XDIRCOSYW
-XDIRCOSZW=>GRID_MODEL(KTO)%XDIRCOSZW
-XCOSSLOPE=>GRID_MODEL(KTO)%XCOSSLOPE
-XSINSLOPE=>GRID_MODEL(KTO)%XSINSLOPE
-!LSLEVE=>GRID_MODEL(KTO)%LSLEVE !Done in FIELDLIST_GOTO_MODEL
-XLEN1=>GRID_MODEL(KTO)%XLEN1
-XLEN2=>GRID_MODEL(KTO)%XLEN2
-!XZSMT=>GRID_MODEL(KTO)%XZSMT !Done in FIELDLIST_GOTO_MODEL
-
-IF (.NOT.ASSOCIATED(LSLEVE)) ALLOCATE(LSLEVE)
-
-END SUBROUTINE GRID_GOTO_MODEL
+REAL, DIMENSION(:,:),  POINTER :: XLON=>NULL(),XLAT=>NULL() ! Longitude and latitude  
+REAL, DIMENSION(:),    POINTER :: XXHAT=>NULL()             ! Position x in the conformal or cartesian plane
+REAL, DIMENSION(:),    POINTER :: XYHAT=>NULL()             ! Position y in the conformal or cartesian plane
+REAL, DIMENSION(:),    POINTER :: XDXHAT=>NULL()            ! horizontal stretching in x
+REAL, DIMENSION(:),    POINTER :: XDYHAT=>NULL()            ! horizontal stretching in y
+REAL, DIMENSION(:,:),  POINTER :: XMAP=>NULL()              ! Map factor 
+REAL, DIMENSION(:,:),  POINTER :: XZS=>NULL()               ! orography
+REAL, DIMENSION(:,:,:),POINTER :: XZZ=>NULL()               ! height z 
+REAL, DIMENSION(:),    POINTER :: XZHAT=>NULL()             ! height level without orography
+REAL, DIMENSION(:,:),  POINTER :: XDIRCOSXW=>NULL(),XDIRCOSYW=>NULL(),XDIRCOSZW=>NULL() ! director cosinus of the normal
+                                                                                        ! to the ground surface
+REAL, DIMENSION(:,:),  POINTER  :: XCOSSLOPE=>NULL()         ! cosinus of the angle between i and the slope vector
+REAL, DIMENSION(:,:),  POINTER  :: XSINSLOPE=>NULL()         ! sinus   of the angle between i and the slope vector
+! Quantities for SLEVE vertical coordinate
+LOGICAL,               POINTER  :: LSLEVE=>NULL()            ! Logical for SLEVE coordinate
+REAL,                  POINTER  :: XLEN1=>NULL()             ! Decay scale for smooth topography
+REAL,                  POINTER  :: XLEN2=>NULL()             ! Decay scale for small-scale topography deviation
+REAL, DIMENSION(:,:),  POINTER  :: XZSMT=>NULL()             ! smooth orography for SLEVE coordinate
 
 END MODULE MODD_GRID_n
