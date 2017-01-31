@@ -7,12 +7,13 @@ MODULE MODE_FIELD
 USE MODD_CONF, ONLY : CPROGRAM
 USE MODD_IO_ll, ONLY : NVERB_DEBUG,NVERB_INFO,NVERB_WARNING,NVERB_ERROR,NVERB_FATAL
 USE MODD_PARAMETERS
+USE MODD_TYPE_DATE
 USE MODE_MSG
 !
 IMPLICIT NONE
 !
 INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 100
-INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4
+INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
 !
 TYPE TFIELDPTR_L0D
   LOGICAL,              POINTER :: DATA => NULL()
@@ -34,12 +35,16 @@ TYPE TFIELDPTR_X3D
   REAL,DIMENSION(:,:,:),POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_X3D
 !
+TYPE TFIELDPTR_T0D
+  TYPE(DATE_TIME),      POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_T0D
+!
 !Structure describing the characteristics of a field
 TYPE TFIELDDATA
   CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
   CHARACTER(LEN=32)  :: CSTDNAME  = '' !Standard name (CF convention)
   CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
-  CHARACTER(LEN=32)  :: CUNITS    = '' !Canonical units (CF convention)
+  CHARACTER(LEN=40)  :: CUNITS    = '' !Canonical units (CF convention)
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
   CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
   INTEGER            :: NGRID     = -1 !Localization on the model grid
@@ -52,6 +57,8 @@ TYPE TFIELDDATA
   TYPE(TFIELDPTR_X1D),DIMENSION(:),ALLOCATABLE :: TFIELD_X1D !Pointer to the real 1D fields (one per nested mesh)
   TYPE(TFIELDPTR_X2D),DIMENSION(:),ALLOCATABLE :: TFIELD_X2D !Pointer to the real 2D fields (one per nested mesh)
   TYPE(TFIELDPTR_X3D),DIMENSION(:),ALLOCATABLE :: TFIELD_X3D !Pointer to the real 3D fields (one per nested mesh)
+  !
+  TYPE(TFIELDPTR_T0D),DIMENSION(:),ALLOCATABLE :: TFIELD_T0D !Pointer to the scalar date/time fields (one per nested mesh)
 END TYPE TFIELDDATA
 !
 LOGICAL,SAVE :: LFIELDLIST_ISINIT = .FALSE.

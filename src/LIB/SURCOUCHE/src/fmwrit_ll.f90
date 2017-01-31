@@ -184,11 +184,13 @@ MODULE MODE_FMWRIT
                       IO_WRITE_FIELD_BYNAME_N0,                            &
                       IO_WRITE_FIELD_BYNAME_L0,                            &
                       IO_WRITE_FIELD_BYNAME_C0,                            &
+                      IO_WRITE_FIELD_BYNAME_T0,                            &
                       IO_WRITE_FIELD_BYFIELD_X0,IO_WRITE_FIELD_BYFIELD_X1, &
                       IO_WRITE_FIELD_BYFIELD_X2,IO_WRITE_FIELD_BYFIELD_X3, &
                       IO_WRITE_FIELD_BYFIELD_N0,                           &
                       IO_WRITE_FIELD_BYFIELD_L0,                           &
-                      IO_WRITE_FIELD_BYFIELD_C0
+                      IO_WRITE_FIELD_BYFIELD_C0,                           &
+                      IO_WRITE_FIELD_BYFIELD_T0
   END INTERFACE
 
   INTERFACE FMWRIT
@@ -2919,6 +2921,82 @@ CONTAINS
     END IF
     KRESP = IRESP
   END SUBROUTINE FMWRITT0_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_T0(TPFILE,HNAME,HFIPRI,KRESP,TFIELD)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    TYPE (DATE_TIME),            INTENT(IN) :: TFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYNAME_T0','writing '//TRIM(HNAME))
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,TFIELD)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_T0
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_T0(TPFILE,TPFIELD,HFIPRI,KRESP,TFIELD)
+    USE MODD_IO_ll
+    USE MODD_FM
+    USE MODD_TYPE_DATE
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !*      0.    DECLARATIONS
+    !             ------------
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    TYPE (DATE_TIME),            INTENT(IN) :: TFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER                      :: IERR
+    TYPE(FD_ll), POINTER         :: TZFD
+    INTEGER                      :: IRESP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_T0','writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    IRESP = 0
+    !
+    !------------------------------------------------------------------
+    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,TFIELD,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,TFIELD,IRESP)
+       ELSE 
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,TFIELD,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,TFIELD,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF
+    ELSE 
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_T0",TPFILE%CNAME,HFIPRI,TPFIELD%CMNHNAME,TPFIELD%CDIR,TPFIELD%NGRID,&
+                        LEN(TPFIELD%CCOMMENT) ,IRESP)
+    END IF
+    KRESP = IRESP
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_T0
 
   SUBROUTINE FMWRIT_LB(HFILEM,HRECFM,HFIPRI,HLBTYPE,PLB,KRIM,KL3D,&
        & KGRID,KLENCH,HCOMMENT,KRESP)
