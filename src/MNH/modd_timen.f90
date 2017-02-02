@@ -47,41 +47,16 @@ USE MODD_TYPE_DATE
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
-TYPE TIME_t
-!
-  TYPE (DATE_TIME) :: TDTMOD        ! Time and Date of the  model beginning 
-  TYPE (DATE_TIME) :: TDTCUR        ! Current Time and Date  
-  TYPE (DATE_TIME) :: TDTRAD_FULL   ! Time and Date of the last full
-                                       ! radiation call
-  TYPE (DATE_TIME) :: TDTRAD_CLONLY ! Time and Date of the last radiation 
-                                       ! call for only the cloudy verticals
-  TYPE (DATE_TIME) :: TDTDCONV ! Time and Date of the last deep convection
-                                  ! call
-!
-END TYPE TIME_t
-
-TYPE(TIME_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: TIME_MODEL
-
-TYPE (DATE_TIME), POINTER :: TDTMOD=>NULL()
-TYPE (DATE_TIME), POINTER :: TDTCUR=>NULL()
-TYPE (DATE_TIME), POINTER :: TDTRAD_FULL=>NULL()
-TYPE (DATE_TIME), POINTER :: TDTRAD_CLONLY=>NULL()
-TYPE (DATE_TIME), POINTER :: TDTDCONV=>NULL()
+TYPE (DATE_TIME), POINTER :: TDTMOD=>NULL()        ! Time and date of model beginning
+TYPE (DATE_TIME), POINTER :: TDTCUR=>NULL()        ! Current time and date
+TYPE (DATE_TIME), POINTER :: TDTRAD_FULL=>NULL()   ! Time and date of last full radiation call
+TYPE (DATE_TIME), POINTER :: TDTRAD_CLONLY=>NULL() ! Time and date of last radiation call for only cloudy verticals
+TYPE (DATE_TIME), POINTER :: TDTDCONV=>NULL()      ! Time and date of the last deep convection call
 
 CONTAINS
 
 SUBROUTINE TIME_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
-!
-! Save current state for allocated arrays
-!
-! Current model is set to model KTO
-TDTMOD=>TIME_MODEL(KTO)%TDTMOD
-TDTCUR=>TIME_MODEL(KTO)%TDTCUR
-TDTRAD_FULL=>TIME_MODEL(KTO)%TDTRAD_FULL
-TDTRAD_CLONLY=>TIME_MODEL(KTO)%TDTRAD_CLONLY
-TDTDCONV=>TIME_MODEL(KTO)%TDTDCONV
-
 END SUBROUTINE TIME_GOTO_MODEL
 
 END MODULE MODD_TIME_n

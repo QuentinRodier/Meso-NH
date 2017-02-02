@@ -75,14 +75,15 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_FIELD
 !
 USE MODD_REF_n,      ONLY : XRHODREF
-USE MODD_TIME_n,     ONLY : TIME_MODEL ! To address TDTCUR of model number 1 (see code below)
 USE MODD_CH_M9_n,    ONLY : CNAMES
 USE MODD_NSV
 USE MODD_DUST,       ONLY : CDUSTNAMES
 USE MODD_SALT,       ONLY : CSALTNAMES
 USE MODD_CH_AEROSOL, ONLY : CAERONAMES
+USE MODD_TYPE_DATE
 !
 USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
 !
@@ -130,6 +131,8 @@ INTEGER :: IJE   ! Y array physical boundary
 INTEGER :: ILU   ! total physical size
 INTEGER :: JLAYER! loop index
 INTEGER :: ISV
+INTEGER :: IID,IRESP
+TYPE (DATE_TIME), POINTER :: TZTCUR=>NULL()
 !
 !-------------------------------------------------------------------------------
 !
@@ -170,15 +173,17 @@ DO JLAYER=NSV_AERBEG,NSV_AEREND
 END DO
 !
 ISV = SIZE(HSV)
-CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                                        &
-                     ILU,ISV,SIZE(PSW_BANDS),                         &
-                     HSV,ZCO2,ZRHODREF,                                     &
-                     ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,             &
-                     ZEMIS,ZTSRAD,ZTSURF,                                          &
-                     TIME_MODEL(1)%TDTCUR%TDATE%YEAR, TIME_MODEL(1)%TDTCUR%TDATE%MONTH,&
-                     TIME_MODEL(1)%TDTCUR%TDATE%DAY, TIME_MODEL(1)%TDTCUR%TIME,        &
-                     '                            ','      ',               &
-                     'OK'                                                   )
+CALL FIND_FIELD_ID_FROM_MNHNAME('DTCUR',IID,IRESP)
+TZTCUR=>TFIELDLIST(IID)%TFIELD_T0D(1)%DATA
+CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,          &
+                     ILU,ISV,SIZE(PSW_BANDS),                   &
+                     HSV,ZCO2,ZRHODREF,                         &
+                     ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB, &
+                     ZEMIS,ZTSRAD,ZTSURF,                       &
+                     TZTCUR%TDATE%YEAR, TZTCUR%TDATE%MONTH,     &
+                     TZTCUR%TDATE%DAY, TZTCUR%TIME,             &
+                     '                            ','      ',   &
+                     'OK'                                       )
 !
 PDIR_ALB = XUNDEF
 PSCA_ALB = XUNDEF
