@@ -36,6 +36,19 @@ cd ${LOCAL}/conf
 TARG=$(uname -s -n)
 #
 case "$TARG" in
+'Linux'*'occigen'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+ulimit -s unlimited
+module purge
+module load intel/17.0 intelmpi/2017.0.098
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
 'Linux service'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIICE}
@@ -262,20 +275,6 @@ export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
                 export OPTLEVEL=${OPTLEVEL:-O2}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
-export SLURM_CPU_BIND=none
-export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
-"}
-              ;;
-
-'Linux occigen'*)
-                export     ARCH=${ARCH:-LXifort}
-                export  VER_MPI=${VER_MPI:-MPIINTEL}
-                export OPTLEVEL=${OPTLEVEL:-O2}
-		export VER_CDF=${VER_CDF:-CDFAUTO}
-                export   MNHENV=${MNHENV:-"
-ulimit -s unlimited
-module load intel/15.0.3.187
-module load intelmpi/5.0.1.035
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
