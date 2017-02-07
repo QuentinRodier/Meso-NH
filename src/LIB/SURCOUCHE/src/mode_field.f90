@@ -15,6 +15,10 @@ IMPLICIT NONE
 INTEGER,PRIVATE,PARAMETER :: MAXFIELDS = 100
 INTEGER,PARAMETER :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4, TYPEDATE = 5
 !
+TYPE TFIELDPTR_C0D
+  CHARACTER(LEN=:),     POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_C0D
+!
 TYPE TFIELDPTR_L0D
   LOGICAL,              POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_L0D
@@ -50,6 +54,8 @@ TYPE TFIELDDATA
   INTEGER            :: NGRID     = -1 !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
+  !
+  TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_L0D),DIMENSION(:),ALLOCATABLE :: TFIELD_L0D !Pointer to the scalar logical fields (one per nested mesh)
   !
