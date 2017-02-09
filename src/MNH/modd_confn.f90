@@ -59,6 +59,14 @@ TYPE CONF_t
   INTEGER :: NRRL    ! Number of liquid water variables
   INTEGER :: NRRI    ! Number of solid water variables
 !
+  INTEGER :: IDX_RVT = -1 ! Position in array for rv
+  INTEGER :: IDX_RCT = -1 ! Position in array for rc
+  INTEGER :: IDX_RRT = -1 ! Position in array for rr
+  INTEGER :: IDX_RIT = -1 ! Position in array for ri
+  INTEGER :: IDX_RST = -1 ! Position in array for rs
+  INTEGER :: IDX_RGT = -1 ! Position in array for rg
+  INTEGER :: IDX_RHT = -1 ! Position in array for rh
+!
   CHARACTER (LEN=2) :: CSTORAGE_TYPE ! storage type for the informations 
                                  ! written in the FM files ( 'TT' if the MesoNH 
                                  ! prognostic fields are at the same instant;
@@ -80,6 +88,13 @@ LOGICAL, POINTER :: LUSERH=>NULL()
 INTEGER, POINTER :: NRR=>NULL()
 INTEGER, POINTER :: NRRL=>NULL()
 INTEGER, POINTER :: NRRI=>NULL()
+INTEGER, POINTER :: IDX_RVT=>NULL()
+INTEGER, POINTER :: IDX_RCT=>NULL()
+INTEGER, POINTER :: IDX_RRT=>NULL()
+INTEGER, POINTER :: IDX_RIT=>NULL()
+INTEGER, POINTER :: IDX_RST=>NULL()
+INTEGER, POINTER :: IDX_RGT=>NULL()
+INTEGER, POINTER :: IDX_RHT=>NULL()
 LOGICAL, POINTER :: LUSECI=>NULL()
 CHARACTER (LEN=2),POINTER :: CSTORAGE_TYPE=>NULL()
 
@@ -101,6 +116,13 @@ LUSERH=>CONF_MODEL(KTO)%LUSERH
 NRR=>CONF_MODEL(KTO)%NRR
 NRRL=>CONF_MODEL(KTO)%NRRL
 NRRI=>CONF_MODEL(KTO)%NRRI
+IDX_RVT=>CONF_MODEL(KTO)%IDX_RVT
+IDX_RCT=>CONF_MODEL(KTO)%IDX_RCT
+IDX_RRT=>CONF_MODEL(KTO)%IDX_RRT
+IDX_RIT=>CONF_MODEL(KTO)%IDX_RIT
+IDX_RST=>CONF_MODEL(KTO)%IDX_RST
+IDX_RGT=>CONF_MODEL(KTO)%IDX_RGT
+IDX_RHT=>CONF_MODEL(KTO)%IDX_RHT
 LUSECI=>CONF_MODEL(KTO)%LUSECI
 CSTORAGE_TYPE=>CONF_MODEL(KTO)%CSTORAGE_TYPE
 
