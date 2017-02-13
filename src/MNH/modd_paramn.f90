@@ -60,8 +60,8 @@ TYPE PARAM_t
                                    ! 'NONE' if no parameterization
   CHARACTER (LEN=4) :: CSCONV   ! Kind of shallow convection
                                    ! 'NONE' if no parameterization
-  CHARACTER (LEN=4) :: CSURF    ! Kind of surface processes parameterization
-                                   ! 'NONE' if no parameterization
+!  CHARACTER (LEN=4) :: CSURF    ! Kind of surface processes parameterization
+!                                   ! 'NONE' if no parameterization
   CHARACTER (LEN=4) :: CELEC    ! Kind of  atmospheric electricity scheme
   CHARACTER (LEN=4) :: CACTCCN  ! Kind of CCN activation scheme
 !
@@ -91,7 +91,7 @@ CRAD=>PARAM_MODEL(KTO)%CRAD
 CCLOUD=>PARAM_MODEL(KTO)%CCLOUD
 CDCONV=>PARAM_MODEL(KTO)%CDCONV
 CSCONV=>PARAM_MODEL(KTO)%CSCONV
-CSURF=>PARAM_MODEL(KTO)%CSURF
+!CSURF=>PARAM_MODEL(KTO)%CSURF !Done in FIELDLIST_GOTO_MODEL
 CELEC=>PARAM_MODEL(KTO)%CELEC
 CACTCCN=>PARAM_MODEL(KTO)%CACTCCN
 

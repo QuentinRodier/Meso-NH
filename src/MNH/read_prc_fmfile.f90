@@ -121,6 +121,7 @@ USE MODD_PREP_REAL
 USE MODE_FMREAD
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_FIELD
 !
 USE MODI_TRUNC_FIELD
 USE MODI_DEALLOCATE_MODEL1
@@ -177,6 +178,7 @@ INTEGER :: IINFO_ll
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll   ! list of fields to exchange
 !
 INTEGER         :: IIB, IIE, IJB, IJE
+INTEGER         :: IID
 !-------------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATIONS
@@ -203,10 +205,13 @@ NULLIFY(TZFIELDS_ll)
 !
 IF (.NOT. LUSERV) THEN
   NRR=1
+  IDX_RVT=1
   LUSERV=.TRUE.
   DEALLOCATE(XRT)
   ALLOCATE(XRT(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3),NRR))
   XRT(:,:,:,:) = 0.
+  CALL FIND_FIELD_ID_FROM_MNHNAME('RT', IID,IRESP); TFIELDLIST(IID)%TFIELD_X4D(IMI)%DATA=>XRT
+  CALL FIND_FIELD_ID_FROM_MNHNAME('RVT',IID,IRESP); TFIELDLIST(IID)%TFIELD_X3D(IMI)%DATA=>XRT(:,:,:,IDX_RVT)
 END IF
 !-------------------------------------------------------------------------------
 !

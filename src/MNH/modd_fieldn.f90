@@ -79,23 +79,23 @@ TYPE FIELD_t
                                                      ! at time t
   REAL, DIMENSION(:,:,:), POINTER :: XSSPRO=>NULL()    ! Sursat
                                                      ! at time t
-  REAL, DIMENSION(:,:,:), POINTER :: XTKET=>NULL()    ! Kinetic energy
-                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XTKET=>NULL()    ! Kinetic energy
+!                                                     ! at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()   ! Source of kinetic energy
                                                      ! (rho e)
-  REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()   ! absolute pressure at
-                                                     ! time t
-  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn) 
-                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XPABST=>NULL()   ! absolute pressure at
+!                                                     ! time t
+!  REAL, DIMENSION(:,:,:,:), POINTER :: XRT=>NULL()    ! Moist variables (rho Rn) 
+!                                                     ! at time t
   REAL, DIMENSION(:,:,:,:), POINTER :: XRRS=>NULL()   ! Source of Moist variables
                                                      ! (rho Rn) 
-  REAL, DIMENSION(:,:,:,:), POINTER :: XRRS_CLD=>NULL()   ! Source of Moist variables
+!  REAL, DIMENSION(:,:,:,:), POINTER :: XRRS_CLD=>NULL()   ! Source of Moist variables
   REAL, DIMENSION(:,:,:,:), POINTER :: XSVT=>NULL()   ! Additionnal scalar
                                                      ! variables at time t  
   REAL, DIMENSION(:,:,:,:), POINTER :: XRSVS=>NULL()  ! Source of addi. scalar
                                                      !  variables (rho Sn.) 
   REAL, DIMENSION(:,:,:,:), POINTER :: XRSVS_CLD=>NULL() ! Source of (rho Sn) from resolved_cloud
-  REAL                          ::   XDRYMASST    ! Mass of dry air Md
+!  REAL                          ::   XDRYMASST    ! Mass of dry air Md
   REAL                          ::   XDRYMASSS    ! LS sources of Md
   REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()     ! turbulent flux <s'Rc'>
   REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()    ! =sqrt(<s's'>) for the
@@ -167,12 +167,12 @@ FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT
 FIELD_MODEL(KFROM)%XNACT=>XNACT
 FIELD_MODEL(KFROM)%XNPRO=>XNPRO
 FIELD_MODEL(KFROM)%XSSPRO=>XSSPRO
-FIELD_MODEL(KFROM)%XTKET=>XTKET
+!FIELD_MODEL(KFROM)%XTKET=>XTKET !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRTKES=>XRTKES
-FIELD_MODEL(KFROM)%XPABST=>XPABST
-FIELD_MODEL(KFROM)%XRT=>XRT
+!FIELD_MODEL(KFROM)%XPABST=>XPABST !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XRT=>XRT !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRRS=>XRRS
-FIELD_MODEL(KFROM)%XRRS_CLD=>XRRS_CLD
+!FIELD_MODEL(KFROM)%XRRS_CLD=>XRRS_CLD !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XSVT=>XSVT
 FIELD_MODEL(KFROM)%XRSVS=>XRSVS
 FIELD_MODEL(KFROM)%XRSVS_CLD=>XRSVS_CLD
@@ -202,16 +202,16 @@ XSUPSAT=>FIELD_MODEL(KTO)%XSUPSAT
 XNACT=>FIELD_MODEL(KTO)%XNACT
 XSSPRO=>FIELD_MODEL(KTO)%XSSPRO
 XNPRO=>FIELD_MODEL(KTO)%XNPRO
-XTKET=>FIELD_MODEL(KTO)%XTKET
+!XTKET=>FIELD_MODEL(KTO)%XTKET !Done in FIELDLIST_GOTO_MODEL
 XRTKES=>FIELD_MODEL(KTO)%XRTKES
-XPABST=>FIELD_MODEL(KTO)%XPABST
-XRT=>FIELD_MODEL(KTO)%XRT
+!XPABST=>FIELD_MODEL(KTO)%XPABST !Done in FIELDLIST_GOTO_MODEL
+!XRT=>FIELD_MODEL(KTO)%XRT !Done in FIELDLIST_GOTO_MODEL
 XRRS=>FIELD_MODEL(KTO)%XRRS
-XRRS_CLD=>FIELD_MODEL(KTO)%XRRS_CLD
+!XRRS_CLD=>FIELD_MODEL(KTO)%XRRS_CLD !Done in FIELDLIST_GOTO_MODEL
 XSVT=>FIELD_MODEL(KTO)%XSVT
 XRSVS=>FIELD_MODEL(KTO)%XRSVS
 XRSVS_CLD=>FIELD_MODEL(KTO)%XRSVS_CLD
-XDRYMASST=>FIELD_MODEL(KTO)%XDRYMASST
+!XDRYMASST=>FIELD_MODEL(KTO)%XDRYMASST !Done in FIELDLIST_GOTO_MODEL
 XDRYMASSS=>FIELD_MODEL(KTO)%XDRYMASSS
 XSRC=>FIELD_MODEL(KTO)%XSRC
 XSIGS=>FIELD_MODEL(KTO)%XSIGS
