@@ -59,6 +59,7 @@ TYPE TFIELDDATA
   CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
   CHARACTER(LEN=40)  :: CUNITS    = '' !Canonical units (CF convention)
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
+  CHARACTER(LEN=4)   :: CLBTYPE   = 'NONE' !Type of the lateral boundary (LBX,LBY,LBXU,LBYV)
   CHARACTER(LEN=100) :: CCOMMENT  = '' !Comment (for MesoNH, non CF convention)
   INTEGER            :: NGRID     = -1 !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
@@ -1518,6 +1519,7 @@ TFIELDLIST(IDX)%CSTDNAME   = ''
 TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH: '
 TFIELDLIST(IDX)%CUNITS     = ''
 TFIELDLIST(IDX)%CDIR       = ''
+TFIELDLIST(IDX)%CLBTYPE    = ''
 TFIELDLIST(IDX)%CCOMMENT   = ''
 TFIELDLIST(IDX)%NGRID      = 
 TFIELDLIST(IDX)%NTYPE      = 

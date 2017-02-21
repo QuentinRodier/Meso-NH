@@ -193,6 +193,10 @@ MODULE MODE_FMWRIT
                       IO_WRITE_FIELD_BYFIELD_T0
   END INTERFACE
 
+  INTERFACE IO_WRITE_FIELD_LB
+     MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_LB, IO_WRITE_FIELD_BYFIELD_LB
+  END INTERFACE
+
   INTERFACE FMWRIT
      MODULE PROCEDURE FMWRITX0_ll,FMWRITX1_ll,FMWRITX2_ll,FMWRITX3_ll,&
           & FMWRITX4_ll,FMWRITX5_ll,FMWRITX6_ll,&
@@ -210,7 +214,7 @@ MODULE MODE_FMWRIT
        & FMWRITX4_ll,FMWRITX5_ll,FMWRITX6_ll,FMWRITN0_ll,FMWRITN1_ll,FMWRITN2_ll,&
        & FMWRITL0_ll,FMWRITL1_ll,FMWRITC0_ll,FMWRITC1_ll,FMWRITT0_ll,FMWRITBOXX2_ll,&
        & FMWRITBOXX3_ll,FMWRITBOXX4_ll,FMWRITBOXX5_ll,FMWRITBOXX6_ll
-  PUBLIC IO_WRITE_FIELD
+  PUBLIC IO_WRITE_FIELD, IO_WRITE_FIELD_LB
 
   !INCLUDE 'mpif.h'
 
@@ -3274,6 +3278,178 @@ CONTAINS
     IF (ALLOCATED(Z3D)) DEALLOCATE(Z3D)
     KRESP = IRESP
   END SUBROUTINE FMWRIT_LB
+
+  SUBROUTINE IO_WRITE_FIELD_BYNAME_LB(TPFILE,HNAME,HFIPRI,KL3D,KRESP,PLB)
+    !
+    USE MODD_IO_ll, ONLY : TFILEDATA
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
+    CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
+    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                     INTENT(IN) :: KL3D     ! size of the LB array in FM
+    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
+    REAL,DIMENSION(:,:,:),       INTENT(IN) :: PLB      ! array containing the LB field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    INTEGER :: ID ! Index of the field
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYNAME_LB','writing '//TRIM(HNAME))
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,KRESP)
+    !
+    IF(KRESP==0) CALL IO_WRITE_FIELD_LB(TPFILE,TFIELDLIST(ID),HFIPRI,KL3D,KRESP,PLB)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYNAME_LB
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_LB(TPFILE,TPFIELD,HFIPRI,KL3D,KRESP,PLB)
+    !
+    USE MODD_IO_ll
+    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
+    USE MODD_FM
+    USE MODE_DISTRIB_LB
+    USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
+    USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_ll
+    !
+    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),             INTENT(IN)    :: TPFILE
+    TYPE(TFIELDDATA),            INTENT(INOUT) :: TPFIELD
+    CHARACTER(LEN=*),            INTENT(IN)    :: HFIPRI ! file for prints in FM
+    INTEGER,                     INTENT(IN)    :: KL3D   ! size of the LB array in FM
+    INTEGER,                     INTENT(OUT)   :: KRESP  ! return-code
+    REAL,DIMENSION(:,:,:),TARGET,INTENT(IN)    :: PLB    ! array containing the LB field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=4)                         :: YLBTYPE  ! 'LBX','LBXU','LBY' or 'LBYV'
+    CHARACTER(LEN=JPFINL)                    :: YFNLFI
+    INTEGER                                  :: IRIM     ! size of the LB area
+    INTEGER                                  :: IERR
+    TYPE(FD_ll), POINTER                     :: TZFD
+    INTEGER                                  :: IRESP
+    REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
+    REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
+    INTEGER                                  :: IIMAX_ll,IJMAX_ll
+    INTEGER                                  :: JI
+    INTEGER :: IIB,IIE,IJB,IJE
+    INTEGER, DIMENSION(MPI_STATUS_SIZE) :: STATUS
+    INTEGER,ALLOCATABLE,DIMENSION(:)    :: REQ_TAB
+    INTEGER                           :: NB_REQ,IKU
+    TYPE TX_3DP
+       REAL,DIMENSION(:,:,:), POINTER    :: X
+    END TYPE TX_3DP
+    TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:) :: T_TX3DP
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YLBTYPE  = TPFIELD%CLBTYPE
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_LB','writing '//TRIM(YRECFM))
+    !
+    IF (YLBTYPE/='LBX' .AND. YLBTYPE/='LBXU' .AND. YLBTYPE/='LBY' .AND. YLBTYPE/='LBYV') THEN
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_LB','unknown LBTYPE ('//YLBTYPE//')')
+      RETURN
+    END IF
+    !
+    IF (TPFIELD%CDIR/='XY') THEN
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_BYFIELD_LB','CDIR was not set to "XY" for '//TRIM(YRECFM))
+      TPFIELD%CDIR='XY'
+    END IF
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    IRESP = 0
+    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
+    !
+    IRIM = (KL3D-2*JPHEXT)/2
+    IF (KL3D /= 2*(IRIM+JPHEXT)) THEN
+       IRESP = -30
+       GOTO 1000
+    END IF
+    !
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN  ! sequential execution
+          IF (LPACK .AND. L2D) THEN
+             TX3DP=>PLB(:,JPHEXT+1:JPHEXT+1,:)
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,TX3DP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,TX3DP,IRESP)
+          ELSE
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,PLB,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PLB,IRESP)
+          END IF
+       ELSE
+          IF (ISP == TZFD%OWNER)  THEN
+             ! I/O proc case
+             CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
+             IF (YLBTYPE == 'LBX' .OR. YLBTYPE == 'LBXU') THEN 
+                ALLOCATE(Z3D((IRIM+JPHEXT)*2,IJMAX_ll+2*JPHEXT,SIZE(PLB,3)))
+             ELSE ! YLBTYPE == 'LBY' .OR. YLBTYPE == 'LBYV' 
+                ALLOCATE(Z3D(IIMAX_ll+2*JPHEXT,(IRIM+JPHEXT)*2,SIZE(PLB,3)))
+             END IF
+             DO JI = 1,ISNPROC
+                CALL GET_DISTRIB_LB(YLBTYPE,JI,'FM','WRITE',IRIM,IIB,IIE,IJB,IJE)
+                IF (IIB /= 0) THEN
+                   TX3DP=>Z3D(IIB:IIE,IJB:IJE,:)
+                   IF (ISP /= JI) THEN
+                      CALL MPI_RECV(TX3DP,SIZE(TX3DP),MPI_FLOAT,JI-1,99,TZFD%COMM,STATUS,IERR) 
+                   ELSE
+                      CALL GET_DISTRIB_LB(YLBTYPE,JI,'LOC','WRITE',IRIM,IIB,IIE,IJB,IJE)
+                      TX3DP = PLB(IIB:IIE,IJB:IJE,:)
+                   END IF
+                END IF
+             END DO
+             IF (LPACK .AND. L2D) THEN
+                TX3DP=>Z3D(:,JPHEXT+1:JPHEXT+1,:)
+             ELSE
+                TX3DP=>Z3D
+             END IF
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,TX3DP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,TX3DP,IRESP)
+          ELSE
+             NB_REQ=0
+             ALLOCATE(REQ_TAB(1))
+             ALLOCATE(T_TX3DP(1))
+             IKU = SIZE(PLB,3)
+             ! Other processors
+             CALL GET_DISTRIB_LB(YLBTYPE,ISP,'LOC','WRITE',IRIM,IIB,IIE,IJB,IJE)
+             IF (IIB /= 0) THEN
+                TX3DP=>PLB(IIB:IIE,IJB:IJE,:)
+                NB_REQ = NB_REQ + 1
+                ALLOCATE(T_TX3DP(NB_REQ)%X(IIB:IIE,IJB:IJE,IKU))  
+                T_TX3DP(NB_REQ)%X=PLB(IIB:IIE,IJB:IJE,:)
+                CALL MPI_ISEND(T_TX3DP(NB_REQ)%X,SIZE(TX3DP),MPI_FLOAT,TZFD%OWNER-1,99,TZFD%COMM,REQ_TAB(NB_REQ),IERR)
+                !CALL MPI_BSEND(TX3DP,SIZE(TX3DP),MPI_FLOAT,TZFD%OWNER-1,99,TZFD%COMM,IERR)
+             END IF
+             IF (NB_REQ .GT.0 ) THEN
+                CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+                DEALLOCATE(T_TX3DP(1)%X) 
+             END IF
+             DEALLOCATE(T_TX3DP,REQ_TAB)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD&
+               & %COMM,IERR)
+       END IF !(GSMONOPROC)
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+1000 CONTINUE
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_LB",YFILEM,HFIPRI,YRECFM,YLBTYPE,TPFIELD%NGRID,LEN(TPFIELD%CCOMMENT),IRESP)
+    END IF
+    !
+    IF (ALLOCATED(Z3D)) DEALLOCATE(Z3D)
+    KRESP = IRESP
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_LB
 
   SUBROUTINE FMWRITBOXX2_ll(HFILEM,HRECFM,HFIPRI,HBUDGET,PFIELD,KGRID,&
        HCOMMENT,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
