@@ -646,6 +646,8 @@ CALL INI_NEB
 !
 !*       2.1  For variables in DESFM file
 !
+CALL ALLOC_FIELD_SCALARS()
+!
 CALL DEFAULT_DESFM_n(1)
 !
 CSURF = "NONE"
