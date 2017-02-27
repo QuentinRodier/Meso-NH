@@ -14,9 +14,11 @@ MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 !
 INTERFACE
 !
-      SUBROUTINE WRITE_DUMMY_GR_FIELD_n(HFMFILE)
+      SUBROUTINE WRITE_DUMMY_GR_FIELD_n(TPFILE)
 !
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 END SUBROUTINE WRITE_DUMMY_GR_FIELD_n
 !
@@ -25,7 +27,7 @@ END INTERFACE
 END MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 !
 !     ##########################################
-      SUBROUTINE WRITE_DUMMY_GR_FIELD_n(HFMFILE)
+      SUBROUTINE WRITE_DUMMY_GR_FIELD_n(TPFILE)
 !     ##########################################
 !
 !!****  *WRITE_DUMMY_GR_FIELD_n* - routine to write in LFIFM file the
@@ -66,6 +68,8 @@ END MODULE MODI_WRITE_DUMMY_GR_FIELD_n
 USE MODD_DUMMY_GR_FIELD_n, ONLY : NDUMMY_GR_NBR, CDUMMY_GR_NAME,    &
                                   CDUMMY_GR_AREA, XDUMMY_GR_FIELDS
 USE MODD_LUNIT_n,          ONLY : CLUOUT
+USE MODE_FIELD,            ONLY : TFIELDDATA,TYPEINT,TYPEREAL
+USE MODD_IO_ll,            ONLY : TFILEDATA
 !
 USE MODE_FMWRIT
 !
@@ -74,23 +78,22 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
                                     ! at the open of the file in LFI  routines 
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: JDUMMY         ! loop counter
 !
 CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
-CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER(LEN=20 ):: YSTRING20      ! string
 CHARACTER(LEN=3  ):: YSTRING03      ! string
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2D
+!
+TYPE(TFIELDDATA)  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -107,23 +110,35 @@ ALLOCATE(ZWORK2D(SIZE(XDUMMY_GR_FIELDS,1),SIZE(XDUMMY_GR_FIELDS,2)))
 !*       3.     Dummy fields :
 !               ------------
 !
-YRECFM='DUMMY_GR_NBR'
-YCOMMENT='INTEGER'
-ILENCH=LEN(YCOMMENT)
-!
-CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'--',NDUMMY_GR_NBR,0,ILENCH,YCOMMENT,IRESP)
+TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'MesoNH: DUMMY_GR_NBR'
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEINT
+TZFIELD%NDIMS      = 0
+CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,NDUMMY_GR_NBR)
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
-  !
   WRITE(YRECFM,'(A8,I3.3,A5)') 'DUMMY_GR',JDUMMY,'     '
   YSTRING20=CDUMMY_GR_NAME(JDUMMY)
   YSTRING03=CDUMMY_GR_AREA(JDUMMY)
-  YCOMMENT='X_Y_'//YRECFM//YSTRING20//YSTRING03//  &
-           '                                                             '
-  IGRID=4
-  ILENCH=LEN(YCOMMENT)
+  !
+  TZFIELD%CMNHNAME   = TRIM(YRECFM)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(YRECFM)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_'//YRECFM//YSTRING20//YSTRING03
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  !
   ZWORK2D(:,:) = XDUMMY_GR_FIELDS(:,:,JDUMMY)
-  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWORK2D,IGRID,ILENCH,YCOMMENT,IRESP)
+  !
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK2D)
 END DO
 !
 !-------------------------------------------------------------------------------
