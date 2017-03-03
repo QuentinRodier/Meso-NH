@@ -55,57 +55,56 @@
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEREAL
+USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, COUTFILE, NLUOUT
-USE MODD_CONF_n,               ONLY : CSTORAGE_TYPE
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC), INTENT(IN)  :: HREC     ! name of the article to be read
-REAL,              INTENT(IN)  :: PFIELD   ! the real scalar to be read
-INTEGER,           INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+REAL,                   INTENT(IN)  :: PFIELD   ! the real scalar to write
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
+CHARACTER(LEN=5) :: YMSG
+TYPE(TFIELDDATA) :: TZFIELD
+!
 !-------------------------------------------------------------------------------
 !
-
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX0_MNH','writing '//TRIM(HREC))
+!
 IF( ( HREC=='LAT0' .OR. HREC=='LON0' .OR. HREC=='RPK' .OR. HREC=='BETA'  &
                  .OR. HREC=='LATORI'.OR. HREC=='LONORI'                  )&
    .AND. CSTORAGE_TYPE/='PG' .AND. CSTORAGE_TYPE/='SU'                   ) THEN
-
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX0_MNH',TRIM(HREC)//' not written in file by externalized surface')
     RETURN
 !
 ELSE
-
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--',PFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
-  IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
- !callabortstop
-    CALL ABORT
-    STOP
-
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 0
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,PFIELD)
+!
+  IF (KRESP /=0) THEN
+    WRITE ( YMSG, '( I5 )' ) KRESP
+    CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFX0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
   END IF
 END IF
-
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFX0_MNH
 !
@@ -150,56 +149,57 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_IO_ll
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEREAL
+USE MODE_MSG
+USE MODE_TOOLS_ll
 !
-USE MODD_PARAMETERS,  ONLY : XUNDEF, JPHEXT
-USE MODD_CONF_n,        ONLY : CSTORAGE_TYPE
-!
-USE MODD_IO_SURF_MNH, ONLY :COUT, COUTFILE , NLUOUT, NMASK, CMASK, &
-                            NIU, NJU, NIB, NJB, NIE, NJE,          &
-                            NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
-                            NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
-
-USE MODI_UNPACK_1D_2D
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY :COUT, NLUOUT, NMASK, CMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE,          &
+                              NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
+                              NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
+USE MODD_PARAMETERS,    ONLY: XUNDEF, JPHEXT
 !
 USE MODI_GET_SURF_UNDEF
+USE MODI_UNPACK_1D_2D
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
-INTEGER,             INTENT(IN)  :: KL       ! number of points
-REAL, DIMENSION(KL), INTENT(IN)  :: PFIELD   ! array containing the data field
-INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
-CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :
-!                                            ! 'H' : field with
-!                                            !       horizontal spatial dim.
-!                                            ! 'A' : entire field with
-!                                            !       horizontal spatial dim. :
-!                                            !       It is not distributed on
-!                                            !       the processors
-!                                            ! '-' : no horizontal dim.
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+INTEGER,                INTENT(IN)  :: KL       ! number of points
+REAL, DIMENSION(KL),    INTENT(IN)  :: PFIELD   ! array containing the data field
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
+!                                               ! 'H' : field with
+!                                               !       horizontal spatial dim.
+!                                               ! 'A' : entire field with
+!                                               !       horizontal spatial dim. :
+!                                               !       It is not distributed on
+!                                               !       the processors
+!                                               ! '-' : no horizontal dim.
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: J1D            ! loop counter
-INTEGER           :: I1D            ! 1D array size
 INTEGER           :: JILOOP,JJLOOP  ! loop indexes
-
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
+!
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array written in the file
 REAL, DIMENSION(:),   ALLOCATABLE :: ZW1D   ! 1D work array
 !
 INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
-REAL              :: ZUNDEF         ! undefined value in SURFEX
-
+REAL              :: ZUNDEF                       ! undefined value in SURFEX
+!
+CHARACTER(LEN=5) :: YMSG
+TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH','writing '//TRIM(HREC))
 !
 !*       1.    Special cases with no writing
 !        -----------------------------------
@@ -209,25 +209,15 @@ IF(        HREC=='LAT'                                  &
       .OR. HREC=='MESH_SIZE'                            &
       .OR. HREC=='DX'                                   &
       .OR. HREC=='DY'                                   ) THEN
-
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC,'  with mask ', CMASK
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH',TRIM(HREC)//' with mask '// &
+                   TRIM(CMASK)//' not written in file by externalized surface')
     RETURN
 !
 ELSE IF( (   (CSTORAGE_TYPE/='PG' .AND. CSTORAGE_TYPE/='SU') &
               .OR. CMASK/='FULL  ')                          &
           .AND. ( HREC=='ZS' .OR. HREC=='XX' .OR. HREC=='YY') ) THEN
-
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC,'  with mask ', CMASK
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH',TRIM(HREC)//' with mask '// &
+                   TRIM(CMASK)//' not written in file by externalized surface')
     RETURN
 !
 END IF
@@ -285,8 +275,6 @@ IF (HDIR=='H' .OR. HDIR=='A') THEN
   END IF
 END IF
 
-IGRID=4
-
  CALL GET_SURF_UNDEF(ZUNDEF)
  WHERE (ZWORK==ZUNDEF) ZWORK=XUNDEF
 !
@@ -308,10 +296,30 @@ IF (      (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
     ZW1D(IIB+1) =   1.5 * ZWORK(IIB,1+JPHEXT)
   END IF
 !
-  IF (HDIR=='A') &
-  CALL FMWRIT(COUTFILE,'XHAT',COUT,'--', ZW1D(:),4,LEN(HCOMMENT),HCOMMENT,KRESP)
-  IF (HDIR=='H') &
-  CALL FMWRIT(COUTFILE,'XHAT',COUT,'XX', ZW1D(1+NHALO:IIU-NHALO),4,LEN(HCOMMENT),HCOMMENT,KRESP)
+  IF (HDIR=='A') THEN
+    TZFIELD%CMNHNAME   = 'XHAT'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: XHAT'
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZW1D(:))
+  END IF
+  IF (HDIR=='H') THEN
+    TZFIELD%CMNHNAME   = 'XHAT'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: XHAT'
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = 'XX'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZW1D(1+NHALO:IIU-NHALO))
+  END IF
   DEALLOCATE(ZW1D)
 ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
          .AND. CMASK=='FULL  ' .AND. (HREC=='YY' .OR. HREC=='DY') ) THEN
@@ -328,32 +336,70 @@ ELSE IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
     ZW1D(IJB)   =   0.5 * ZWORK(1+JPHEXT,IJB)
     ZW1D(IJB+1) =   1.5 * ZWORK(1+JPHEXT,IJB)
   END IF
-  IF (HDIR=='A') &
-  CALL FMWRIT(COUTFILE,'YHAT',COUT,'--', ZW1D(:),4,LEN(HCOMMENT),HCOMMENT,KRESP)
-  IF (HDIR=='H') &
-  CALL FMWRIT(COUTFILE,'YHAT',COUT,'YY', ZW1D(1+NHALO:IJU-NHALO),4,LEN(HCOMMENT),HCOMMENT,KRESP)
+  IF (HDIR=='A') THEN
+    TZFIELD%CMNHNAME   = 'YHAT'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: YHAT'
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZW1D(:))
+  END IF
+  IF (HDIR=='H') THEN
+    TZFIELD%CMNHNAME   = 'YHAT'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: YHAT'
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = 'YY'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 1
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZW1D(1+NHALO:IJU-NHALO))
+  END IF
   DEALLOCATE(ZW1D)
 ELSE IF (HDIR=='H') THEN
-  CALL FMWRIT(COUTFILE,HREC,COUT,'XY', ZWORK(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO))
 ELSE IF (HDIR=='A') THEN
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--', ZWORK(:,:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK(:,:))
 ELSE
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--', PFIELD(:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,PFIELD(:))
 END IF
 !
-
- IF (KRESP /=0) THEN
-!
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    stop
-
- END IF
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFX1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !
 DEALLOCATE(ZWORK)
 DEALLOCATE(IMASK)
@@ -403,64 +449,65 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_IO_ll
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG,TYPEREAL
+USE MODE_MSG
+USE MODE_TOOLS_ll
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_PARAMETERS,  ONLY : XUNDEF, JPHEXT
-USE MODD_CONF_n,        ONLY : CSTORAGE_TYPE
-USE MODD_CONFZ ,        ONLY : NB_PROCIO_W
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_DATA_COVER_PAR,ONLY : JPCOVER
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY :COUT, NLUOUT, NMASK, CMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE,          &
+                              NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
+                              NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
+USE MODD_PARAMETERS,    ONLY: XUNDEF, JPHEXT
 !
-USE MODD_IO_SURF_MNH, ONLY :COUT, COUTFILE , NLUOUT, NMASK, CMASK, &
-                            NIU, NJU, NIB, NJB, NIE, NJE,          &
-                            NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
-                            NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
-
+USE MODI_GET_SURF_UNDEF
 USE MODI_UNPACK_1D_2D
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
-INTEGER,             INTENT(IN)  :: KL1,KL2       ! number of points
-REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
-LOGICAL,DIMENSION(JPCOVER),   INTENT(IN)  ::OFLAG  ! mask for array filling
-INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
-CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :
-!                                            ! 'H' : field with
-!                                            !       horizontal spatial dim.
-!                                            ! 'A' : entire field with
-!                                            !       horizontal spatial dim. :
-!                                            !       It is not distributed on
-!                                            !       the processors
-!                                            ! '-' : no horizontal dim.
+CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
+INTEGER,                   INTENT(IN)  :: KL1,KL2  ! number of points
+REAL, DIMENSION(KL1,KL2),  INTENT(IN)  :: PFIELD   ! array containing the data field
+LOGICAL,DIMENSION(JPCOVER),INTENT(IN)  :: OFLAG    ! mask for array filling
+INTEGER,                   INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),        INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=1),          INTENT(IN)  :: HDIR     ! type of field :
+   !                                               ! 'H' : field with
+!                                                  !       horizontal spatial dim.
+!                                                  ! 'A' : entire field with
+!                                                  !       horizontal spatial dim. :
+!                                                  !       It is not distributed on
+!                                                  !       the processors
+!                                                  ! '-' : no horizontal dim.
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: J1D            ! loop counter
-INTEGER           :: I1D            ! 1D array size
-INTEGER           :: JILOOP,JJLOOP  ! loop indexes
-
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
-REAL, DIMENSION(:),   ALLOCATABLE :: ZW1D   ! 1D work array
+!
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array written in the file
 !
 INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
 INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
-!
+REAL              :: ZUNDEF                       ! undefined value in SURFEX
+CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=LEN_HREC) :: YREC
-CHARACTER(LEN=100):: YCOMMENT
+!
 !JUANZ
 INTEGER           :: NCOVER,ICOVER,IKL2, JL2
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D
 !JUANZ
-CHARACTER(LEN=2)  :: YDIR
 LOGICAL           :: GCOVER_PACKED   ! .T. if cover fields are all packed together
+!
+CHARACTER(LEN=5)  :: YMSG
+TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2COV_MNH','writing '//TRIM(HREC))
 !
 !*       2.    Ecriture
 !        --------------
@@ -493,10 +540,18 @@ END IF
 ! with Z-splitting using NB_PROC_IO_W / NB_PROC_IO_W, so we do not use GCOVER_PACKED 
 !GCOVER_PACKED = ( NB_PROCIO_W /= 1 )
 GCOVER_PACKED = .FALSE.
-IGRID=0
-YREC='COVER_PACKED'
-YCOMMENT=''
-CALL FMWRIT(COUTFILE,YREC,COUT,'--',GCOVER_PACKED,IGRID,LEN(YCOMMENT),YCOMMENT,KRESP)
+!
+TZFIELD%CMNHNAME   = 'COVER_PACKED'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SURFEX: COVER_PACKED'
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = ''
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPELOG
+TZFIELD%NDIMS      = 0
+CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,GCOVER_PACKED)
+
 !
 ALLOCATE(ZWORK(IIU,IJU))
 ZWORK(:,:) = XUNDEF
@@ -508,35 +563,44 @@ ICOVER=0
 DO IKL2=1,NCOVER
   CALL UNPACK_1D_2D(IMASK,PFIELD(:,IKL2),ZWORK3D(IIB:IIE,IJB:IJE,IKL2))
 END DO
-
-IGRID=4
-
+!
 IF (.NOT. GCOVER_PACKED) THEN
   ICOVER=0
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
   DO JL2=1,SIZE(OFLAG)
     WRITE(YREC,'(A5,I3.3)') 'COVER',JL2
+    TZFIELD%CMNHNAME   = TRIM(YREC)
+    TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(YREC)
+    TZFIELD%CDIR       = YDIR
     IF (OFLAG(JL2)) THEN
       ICOVER=ICOVER+1
-      CALL FMWRIT(COUTFILE,YREC,COUT,YDIR, ZWORK3D(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,ICOVER),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+      CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK3D(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,ICOVER))
     END IF
   END DO
 ELSE 
-  CALL FMWRIT(COUTFILE,HREC,COUT,YDIR, ZWORK3D(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = YDIR
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK3D(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,:))
 END IF
 !
 DEALLOCATE(ZWORK3D)
-
- IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    stop
-
- END IF
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFX2COV_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !
 DEALLOCATE(ZWORK)
 DEALLOCATE(IMASK)
@@ -586,53 +650,55 @@ END SUBROUTINE WRITE_SURFX2COV_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_IO_ll
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG,TYPEREAL
+USE MODE_MSG
+USE MODE_TOOLS_ll
 !
-USE MODD_PARAMETERS,     ONLY : XUNDEF
-!
-USE MODD_IO_SURF_MNH, ONLY :COUT, COUTFILE , NLUOUT, NMASK,        &
-                            NIU, NJU, NIB, NJB, NIE, NJE,          &
-                            NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
-                            NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
-!
-!
-USE MODI_UNPACK_1D_2D
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_DATA_COVER_PAR,ONLY : JPCOVER
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY :COUT, NLUOUT, NMASK, CMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE,          &
+                              NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,    &
+                              NIE_ALL, NJE_ALL, NMASK_ALL, NHALO
+USE MODD_PARAMETERS,    ONLY: XUNDEF
 !
 USE MODI_GET_SURF_UNDEF
+USE MODI_UNPACK_1D_2D
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),        INTENT(IN)  :: HREC     ! name of the article to be read
-INTEGER,                  INTENT(IN)  :: KL1      ! number of points
-INTEGER,                  INTENT(IN)  :: KL2      ! 2nd dimension
-REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
-INTEGER,                  INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),       INTENT(IN)  :: HCOMMENT ! Comment string
-CHARACTER(LEN=1),         INTENT(IN)  :: HDIR     ! type of field :
-!                                                 ! 'H' : field with
-!                                                 !       horizontal spatial dim.
-!                                                 ! 'A' : entire field with
-!                                                 !       horizontal spatial dim. :
-!                                                 !       It is not distributed on
-!                                                 !       the processors
-!                                                 ! '-' : no horizontal dim.
+CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to write
+INTEGER,                   INTENT(IN)  :: KL1,KL2  ! number of points
+REAL, DIMENSION(KL1,KL2),  INTENT(IN)  :: PFIELD   ! array containing the data field
+INTEGER,                   INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),        INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=1),          INTENT(IN)  :: HDIR     ! type of field :
+   !                                               ! 'H' : field with
+!                                                  !       horizontal spatial dim.
+!                                                  ! 'A' : entire field with
+!                                                  !       horizontal spatial dim. :
+!                                                  !       It is not distributed on
+!                                                  !       the processors
+!                                                  ! '-' : no horizontal dim.
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
-
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZFIELD  ! work array read in the file
-INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
-REAL              :: ZUNDEF         ! undefined value in SURFEX
-
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK  ! work array written in the file
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZFIELD ! work array written in the file
+!
 INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
+INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for unpacking
+REAL              :: ZUNDEF                       ! undefined value in SURFEX
+!
+CHARACTER(LEN=5)  :: YMSG
+TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2_MNH','writing '//TRIM(HREC))
 !
 IF (HDIR=='A') THEN
   IIU = NIU_ALL
@@ -654,44 +720,64 @@ ELSE
   IMASK = NMASK
 END IF
 !
-IGRID=4
 CALL GET_SURF_UNDEF(ZUNDEF)
-
+!
 IF (HDIR=='H' .OR. HDIR=='A') THEN
   ALLOCATE(ZWORK(IIU,IJU,SIZE(PFIELD,2)))
   ZWORK(:,:,:) = XUNDEF
   CALL UNPACK_1D_2D(NMASK,PFIELD(:,:),ZWORK(IIB:IIE,IJB:IJE,:))
   WHERE (ZWORK==ZUNDEF) ZWORK=XUNDEF
-
-  IF (HDIR=='H') &
-  CALL FMWRIT(COUTFILE,HREC,COUT,'XY', ZWORK(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
-  IF (HDIR=='A') &
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--', ZWORK(:,:,:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
-
+!
+  IF (HDIR=='H') THEN
+    TZFIELD%CMNHNAME   = TRIM(HREC)
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK(1+NHALO:IIU-NHALO,1+NHALO:IJU-NHALO,:))
+  END IF
+  IF (HDIR=='A') THEN
+    TZFIELD%CMNHNAME   = TRIM(HREC)
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZWORK(:,:,:))
+  END IF
+!
   DEALLOCATE(ZWORK)
   DEALLOCATE(IMASK)
 ELSE IF (HDIR=='-') THEN
   ALLOCATE(ZFIELD(KL1,KL2))
   ZFIELD=PFIELD
   WHERE (ZFIELD==ZUNDEF) ZFIELD=XUNDEF
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--', ZFIELD(:,:),IGRID,LEN(HCOMMENT),HCOMMENT,KRESP)
+!
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,ZFIELD(:,:))
+!
   DEALLOCATE(ZFIELD)
 END IF
 !
-!
 IF (KRESP /=0) THEN
-!
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
- END IF
-!
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFX2_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFX2_MNH
@@ -737,68 +823,60 @@ END SUBROUTINE WRITE_SURFX2_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_IO_ll
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT
+USE MODE_MSG
 !
-!
-USE MODD_PARAMETERS,     ONLY : XUNDEF
-!
-USE MODD_IO_SURF_MNH,    ONLY : COUT, COUTFILE, NLUOUT, NIU_ALL, NJU_ALL
-USE MODD_CONF_n,           ONLY : CSTORAGE_TYPE
-!
-!
-USE MODI_UNPACK_1D_2D
-!
-USE MODD_PARAMETERS, ONLY : JPHEXT
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT, NIU_ALL, NJU_ALL
+USE MODD_PARAMETERS,    ONLY: JPHEXT
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
-INTEGER,             INTENT(IN)  :: KFIELD   ! the integer to be read
-INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+INTEGER,                INTENT(IN)  :: KFIELD   ! the integer to write
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER :: IFIELD
+INTEGER          :: IFIELD
+TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN0_MNH','writing '//TRIM(HREC))
 !
 IF( (HREC=='IMAX' .OR. HREC=='JMAX' .OR. HREC=='KMAX') .AND.  &
      CSTORAGE_TYPE/='PG' .AND. CSTORAGE_TYPE/='SU'            ) THEN
-
-
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN0_MNH',TRIM(HREC)//' not written in file by externalized surface')
     RETURN
 !
 ELSE
   IFIELD = KFIELD
   IF (HREC=='IMAX') IFIELD = NIU_ALL-2*JPHEXT
   IF (HREC=='JMAX') IFIELD = NJU_ALL-2*JPHEXT
-  CALL FMWRIT(COUTFILE,HREC,COUT,'--',IFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
-  IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
-  END IF
- END IF
-
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 0
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,IFIELD)
+END IF
+!
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFN0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
+!
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFN0_MNH
 !
@@ -843,17 +921,14 @@ END SUBROUTINE WRITE_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
-USE MODE_ll
-USE MODE_IO_ll
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT
+USE MODE_MSG
 !
-!
-USE MODD_PARAMETERS,  ONLY : NUNDEF
-!
-USE MODD_IO_SURF_MNH, ONLY :COUT, COUTFILE , NLUOUT, NMASK, CMASK, &
-                            NIU, NJU, NIB, NJB, NIE, NJE
-!
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT, NMASK, CMASK,  &
+                              NIU, NJU, NIB, NJB, NIE, NJE
+USE MODD_PARAMETERS,    ONLY: NUNDEF
 !
 USE MODI_UNPACK_1D_2D
 !
@@ -861,10 +936,10 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),      INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KL       ! number of points
-INTEGER, DIMENSION(KL), INTENT(IN)  :: KFIELD   ! the integer to be read
-INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER, DIMENSION(KL), INTENT(IN)  :: KFIELD   ! the integers to be written
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !                                               ! 'H' : field with
@@ -873,42 +948,54 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 !*      0.2   Declarations of local variables
 !
-
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array written in the file
 !
+CHARACTER(LEN=5) :: YMSG
+TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN1_MNH','writing '//TRIM(HREC))
 !
 IF (HDIR=='-') THEN
 !
- CALL FMWRIT(COUTFILE,HREC,COUT,'--',KFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 1
+CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFN1_MNH','not yet fully implemented')
+RETURN
+!PW: TODO !  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,KFIELD)
 !
 ELSE IF (HDIR=='H') THEN
-
+!
   ALLOCATE(IWORK(NIU,NJU))
   IWORK(:,:) = NUNDEF
-  !
-  !
-  CALL UNPACK_1D_2D(NMASK,KFIELD,IWORK(NIB:NIE,NJB:NJE))
-
-  CALL FMWRIT(COUTFILE,HREC,COUT,'XY', IWORK(:,:),4,LEN(HCOMMENT),HCOMMENT,KRESP)
-  !
-  DEALLOCATE(IWORK)
-
-  IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
-  END IF
-
+  CALL UNPACK_1D_2D(NMASK,KFIELD,IWORK(NIB:NIE,NJB:NJE))
+!
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,IWORK(:,:))
+!
+  DEALLOCATE(IWORK)
 END IF
-
+!
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFN1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFN1_MNH
 !
@@ -953,27 +1040,31 @@ END SUBROUTINE WRITE_SURFN1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPECHAR,TYPELOG
+USE MODE_MSG
 !
-USE MODD_CONF_n,               ONLY : CSTORAGE_TYPE
-USE MODD_IO_SURF_MNH,        ONLY : COUT, COUTFILE, NLUOUT
-!
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT, NIU_ALL, NJU_ALL
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
-CHARACTER(LEN=40),  INTENT(IN)  :: HFIELD   ! the integer to be read
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+CHARACTER(LEN=40),      INTENT(IN)  :: HFIELD   ! the string to write
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-LOGICAL            :: GCARTESIAN
-CHARACTER(LEN=100) :: YCOMMENT
+LOGICAL          :: GCARTESIAN
+TYPE(TFIELDDATA) :: TZFIELD
+CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFC0_MNH','writing '//TRIM(HREC))
 !
 IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
      .AND. HREC=='GRID_TYPE       '                  ) THEN
@@ -982,24 +1073,35 @@ IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
   ELSE IF (HFIELD(1:10)=='CARTESIAN ') THEN
     GCARTESIAN = .TRUE.
   END IF
-  YCOMMENT = '(-)'
-  CALL FMWRIT(COUTFILE,'CARTESIAN',COUT,'--',GCARTESIAN,0,LEN(YCOMMENT),YCOMMENT,KRESP)
-END IF
-
-CALL FMWRIT(COUTFILE,HREC,COUT,'--',HFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
- END IF
+  TZFIELD%CMNHNAME   = 'CARTESIAN'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: CARTESIAN'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = ''
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPELOG
+  TZFIELD%NDIMS      = 0
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,GCARTESIAN)
+!
+END IF
+!
+TZFIELD%CMNHNAME   = TRIM(HREC)
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPECHAR
+TZFIELD%NDIMS      = 0
+CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,HFIELD)
+!
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFC0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFC0_MNH
 !
@@ -1044,22 +1146,25 @@ END SUBROUTINE WRITE_SURFC0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEINT,TYPELOG
+USE MODE_MSG
+!
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT, NMASK, CMASK, &
+                              NIU, NJU, NIB, NJB, NIE, NJE
+!
 USE MODI_UNPACK_1D_2D
-!
-USE MODD_IO_SURF_MNH, ONLY :COUT, COUTFILE , NLUOUT, NMASK, CMASK, &
-                            NIU, NJU, NIB, NJB, NIE, NJE
-!
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),      INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(KL), INTENT(IN)  :: OFIELD   ! array containing the data field
-INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
 CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !                                               ! 'H' : field with
@@ -1070,68 +1175,64 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 LOGICAL, DIMENSION(:,:), ALLOCATABLE :: GWORK  ! work array written in the file
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array written in the file
-
+!
+CHARACTER(LEN=5) :: YMSG
+TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL1_MNH','writing '//TRIM(HREC))
+!
 IF (HDIR=='-') THEN
   IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC,'  with MASK ',CMASK
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL1_MNH',TRIM(HREC)//' with mask '// &
+                   TRIM(CMASK)//' not written in file by externalized surface')
     RETURN
-  !
   ELSE
-    CALL FMWRIT(COUTFILE,HREC,COUT,'--',OFIELD(:),0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
-    IF (KRESP /=0) THEN
-!
-      WRITE(NLUOUT,*) ' '
-      WRITE(NLUOUT,*) 'WARNING'
-      WRITE(NLUOUT,*) '-------'
-      WRITE(NLUOUT,*) ' '
-      WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-      WRITE(NLUOUT,*) ' '
-      CALL ABORT
-      STOP
-
-    END IF
-
+    TZFIELD%CMNHNAME   = TRIM(HREC)
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+    TZFIELD%CUNITS     = ''
+    TZFIELD%CDIR       = '--'
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+    TZFIELD%NGRID      = 0
+    TZFIELD%NTYPE      = TYPELOG
+    TZFIELD%NDIMS      = 1
+CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFL1_MNH','not yet fully implemented')
+RETURN
+!PW: TODO !  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,OFIELD(:))
   END IF
-
+!
 ELSE IF (HDIR=='H') THEN
-
+!
   ALLOCATE(GWORK(NIU,NJU))
   GWORK(:,:) = .FALSE.
-  !
-  !
+!
   CALL UNPACK_1D_2D(NMASK,OFIELD,GWORK(NIB:NIE,NJB:NJE))
-
+!
   ALLOCATE(IWORK(NIU,NJU))
   IWORK = 0
   WHERE(GWORK) IWORK = 1
-  CALL FMWRIT(COUTFILE,HREC,COUT,'XY', IWORK(:,:),4,LEN(HCOMMENT),HCOMMENT,KRESP)
-  DEALLOCATE(IWORK)
-  !
-  DEALLOCATE(GWORK)
-
-  IF (KRESP /=0) THEN
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
-  END IF
-
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,IWORK(:,:))
+  !
+  DEALLOCATE(IWORK)
+  DEALLOCATE(GWORK)
+!
 END IF
 !
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFL1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+END IF
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFL1_MNH
 !
@@ -1176,50 +1277,50 @@ END SUBROUTINE WRITE_SURFL1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-USE MODE_FMWRIT
+USE MODE_IO_WRITE_FIELD
+USE MODE_FIELD,         ONLY: TFIELDDATA,TYPELOG
+USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, COUTFILE, NLUOUT, CMASK
-!
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,         ONLY: TFILE_SURFEX
+USE MODD_IO_SURF_MNH,   ONLY: COUT, NLUOUT, CMASK
 !
 IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
-LOGICAL,            INTENT(IN)  :: OFIELD   ! array containing the data field
-INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
-CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
+CHARACTER(LEN=LEN_HREC),INTENT(IN)  :: HREC     ! name of the article to write
+LOGICAL,                INTENT(IN)  :: OFIELD   ! array containing the data field
+INTEGER,                INTENT(OUT) :: KRESP    ! return-code if a problem appears
+CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 !
 !*      0.2   Declarations of local variables
 !
-
-
+CHARACTER(LEN=5) :: YMSG
+TYPE(TFIELDDATA) :: TZFIELD
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH','writing '//TRIM(HREC))
+!
 IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC,'  with MASK ',CMASK
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
-    RETURN
-!
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH',TRIM(HREC)//' with mask '// &
+                 TRIM(CMASK)//' not written in file by externalized surface')
+  RETURN
 ELSE
-CALL FMWRIT(COUTFILE,HREC,COUT,'--',OFIELD,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
+  TZFIELD%CMNHNAME   = TRIM(HREC)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(HREC)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPELOG
+  TZFIELD%NDIMS      = 0
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,OFIELD)
+END IF
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
- END IF
-
+IF (KRESP /=0) THEN
+  WRITE ( YMSG, '( I5 )' ) KRESP
+  CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFL0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
 END IF
 !-------------------------------------------------------------------------------
 END SUBROUTINE WRITE_SURFL0_MNH
@@ -1267,6 +1368,7 @@ END SUBROUTINE WRITE_SURFL0_MNH
 !
 USE MODE_FM
 USE MODE_FMWRIT
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, COUTFILE, NLUOUT
 USE MODD_CONF_n,               ONLY : CSTORAGE_TYPE
@@ -1289,61 +1391,39 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
 INTEGER, DIMENSION(3)  :: ITDATE
+CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH','writing '//TRIM(HREC))
 !
 IF( HREC=='DTCUR' .AND. CSTORAGE_TYPE/='SU' ) THEN
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
-    RETURN
-!
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH',TRIM(HREC)//' not written in file by externalized surface')
+  RETURN
 ELSE
 
-
-YRECFM=TRIM(HREC)//'%TDATE'
+  YRECFM=TRIM(HREC)//'%TDATE'
 !
-ITDATE(1)=KYEAR
-ITDATE(2)=KMONTH
-ITDATE(3)=KDAY
-CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',ITDATE,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
+  ITDATE(1)=KYEAR
+  ITDATE(2)=KMONTH
+  ITDATE(3)=KDAY
+  CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',ITDATE,0,LEN(HCOMMENT),HCOMMENT,KRESP)
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
- END IF
+  IF (KRESP /=0) THEN
+    WRITE ( YMSG, '( I5 )' ) KRESP
+    CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+  END IF
 !
-YRECFM=TRIM(HREC)//'%TIME'
-CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',PTIME,0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
+  YRECFM=TRIM(HREC)//'%TIME'
+  CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',PTIME,0,LEN(HCOMMENT),HCOMMENT,KRESP)
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    CALL ABORT
-    STOP
-
- END IF
-
+  IF (KRESP /=0) THEN
+    WRITE ( YMSG, '( I5 )' ) KRESP
+    CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT0_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+  END IF
 END IF
-
+!
 END SUBROUTINE WRITE_SURFT0_MNH
-
+!
 !     #############################################################
       SUBROUTINE WRITE_SURFT1_MNH(HREC,KL1,KYEAR,KMONTH,KDAY,PTIME,KRESP,HCOMMENT)
 !     #############################################################
@@ -1386,6 +1466,7 @@ END SUBROUTINE WRITE_SURFT0_MNH
 !
 USE MODE_FM
 USE MODE_FMWRIT
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, COUTFILE, NLUOUT
 USE MODD_CONF_n,               ONLY : CSTORAGE_TYPE
@@ -1409,55 +1490,36 @@ CHARACTER(LEN=100), INTENT(IN)  :: HCOMMENT ! Comment string
 !
 CHARACTER(LEN=LEN_HREC)      :: YRECFM    ! Name of the article to be written
 INTEGER, DIMENSION(3,KL1)  :: ITDATE
+CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH','writing '//TRIM(HREC))
 !
 IF( HREC=='DTCUR' .AND. CSTORAGE_TYPE/='SU' ) THEN
-!    WRITE(NLUOUT,*) ' MESO-NH writing'
-!    WRITE(NLUOUT,*) '-------'
-!    WRITE(NLUOUT,*) ' '
-!    WRITE(NLUOUT,*) 'article ', HREC
-!    WRITE(NLUOUT,*) 'not written in file by externalized surface'
-!    WRITE(NLUOUT,*) ' '
-    RETURN
-!
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH',TRIM(HREC)//' not written in file by externalized surface')
+  RETURN
 ELSE
-
-
-YRECFM=TRIM(HREC)//'%TDATE'
 !
-ITDATE(1,:) = KYEAR  (:)
-ITDATE(2,:) = KMONTH (:)
-ITDATE(3,:) = KDAY   (:)
-CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',ITDATE(:,:),0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
+  YRECFM=TRIM(HREC)//'%TDATE'
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    stop
-
- END IF
+  ITDATE(1,:) = KYEAR  (:)
+  ITDATE(2,:) = KMONTH (:)
+  ITDATE(3,:) = KDAY   (:)
+  CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',ITDATE(:,:),0,LEN(HCOMMENT),HCOMMENT,KRESP)
 !
-YRECFM=TRIM(HREC)//'%TIME'
-CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',PTIME(:),0,LEN(HCOMMENT),HCOMMENT,KRESP)
-
- IF (KRESP /=0) THEN
+  IF (KRESP /=0) THEN
+    WRITE ( YMSG, '( I5 )' ) KRESP
+    CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+  END IF
 !
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) ' '
-    WRITE(NLUOUT,*) 'error when writing article', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) ' '
-    stop
-
- END IF
-
+  YRECFM=TRIM(HREC)//'%TIME'
+  CALL FMWRIT(COUTFILE,YRECFM,COUT,'--',PTIME(:),0,LEN(HCOMMENT),HCOMMENT,KRESP)
+!
+  IF (KRESP /=0) THEN
+    WRITE ( YMSG, '( I5 )' ) KRESP
+    CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFT1_MNH','error when writing article '//TRIM(HREC)//' KRESP='//YMSG)
+  END IF
+!
 END IF
-
+!
 END SUBROUTINE WRITE_SURFT1_MNH
