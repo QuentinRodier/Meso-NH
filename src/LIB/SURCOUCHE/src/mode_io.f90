@@ -32,6 +32,7 @@ MODULE MODE_IO_ll
   !JUANZ
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
   !JUANZ
+  USE MODE_MSG
 
   IMPLICIT NONE 
 
@@ -290,6 +291,12 @@ CONTAINS
     TYPE(FD_ll), POINTER :: TZJUAN
     LOGICAL               :: GPARALLELIO
 
+    IF ( PRESENT(FILE) ) THEN
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(FILE)//' for '//TRIM(ACTION))
+    ELSE
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','called for '//TRIM(ACTION)//' (filename not provided)')
+    ENDIF
+    !
     IF ( PRESENT(OPARALLELIO) ) THEN
       GPARALLELIO = OPARALLELIO
     ELSE  !par defaut on active les IO paralleles en Z si possible
@@ -795,6 +802,8 @@ CONTAINS
     CHARACTER(LEN=7)                      :: YSTATU  
     LOGICAL                               :: GPARALLELIO
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(HFILE))
+
     IF ( PRESENT(OPARALLELIO) ) THEN
       GPARALLELIO = OPARALLELIO
     ELSE  !par defaut on active les IO paralleles en Z si possible
@@ -956,13 +965,15 @@ END MODULE MODE_IO_ll
 
 MODULE MODE_MSG
 !
+USE MODD_IO_ll, ONLY : NVERB_FATAL,NVERB_ERROR,NVERB_WARNING,NVERB_INFO,NVERB_DEBUG,&
+                       NIO_VERB,NIO_ABORT_LEVEL,NGEN_VERB,NGEN_ABORT_LEVEL
+!
 IMPLICIT NONE
 !
 CONTAINS
 !
 SUBROUTINE PRINT_MSG(KVERB,HDOMAIN,HSUBR,HMSG)
 !
-USE MODD_IO_ll
 USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
 !
 INTEGER,         INTENT(IN) :: KVERB   !Verbosity level

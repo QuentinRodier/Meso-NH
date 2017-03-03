@@ -289,6 +289,8 @@ CONTAINS
     TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
     !JUANZIO
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX0_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -431,8 +433,8 @@ CONTAINS
                 IF (LIOCDF4) THEN
                   CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
                   IF (IRESP/=0) THEN
-                    PRINT *,'FATAL: IO_WRITE_FIELD_BYFIELD_X0: file ',TRIM(TRIM(TPFILE%CNAME)//YK_FILE),' not found in list'
-                    STOP
+                    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_X0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
+                                   ' not found in list')
                   END IF
                   CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,TZFD_IOZ%CDF,PFIELD,IRESP)
                 END IF
@@ -482,6 +484,8 @@ CONTAINS
     TYPE(FMHEADER)               :: TZFMH
     REAL,DIMENSION(:),POINTER    :: ZFIELDP
     LOGICAL                      :: GALLOC
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX1_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -688,6 +692,8 @@ CONTAINS
     INTEGER                                :: JI
 #endif
     INTEGER                      :: IHEXTOT
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX2_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1075,6 +1081,8 @@ CONTAINS
     REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
 #endif
     INTEGER                                  :: IHEXTOT
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX3_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1766,6 +1774,8 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     INTEGER                                  :: IHEXTOT
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX4_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -1866,6 +1876,8 @@ CONTAINS
     LOGICAL                                  :: GALLOC
     INTEGER                                  :: IHEXTOT
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX5_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -1965,6 +1977,8 @@ CONTAINS
     TYPE(FMHEADER)                           :: TZFMH
     LOGICAL                                  :: GALLOC
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITX6_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -2050,6 +2064,8 @@ CONTAINS
     CHARACTER(len=5)                         :: YK_FILE  
     CHARACTER(len=128)                       :: YFILE_IOZ  
     TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITN0_ll','writing '//TRIM(HRECFM))
     !JUANZIO
     !----------------------------------------------------------------
     !
@@ -2192,8 +2208,8 @@ CONTAINS
                 IF (LIOCDF4) THEN
                   CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
                   IF (IRESP/=0) THEN
-                    PRINT *,'FATAL: IO_WRITE_FIELD_BYFIELD_N0: file ',TRIM(TRIM(TPFILE%CNAME)//YK_FILE),' not found in list'
-                    STOP
+                    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_N0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
+                                   ' not found in list')
                   END IF
                   CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,TZFD_IOZ%CDF,KFIELD,IRESP)
                 END IF
@@ -2243,6 +2259,8 @@ CONTAINS
     TYPE(FMHEADER)               :: TZFMH
     INTEGER,DIMENSION(:),POINTER :: IFIELDP
     LOGICAL                      :: GALLOC
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITN1_ll','writing '//TRIM(HRECFM))
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -2327,6 +2345,8 @@ CONTAINS
     TYPE(FMHEADER)                           :: TZFMH
     LOGICAL                                  :: GALLOC
     INTEGER                                  :: IHEXTOT
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITN2_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -2569,6 +2589,8 @@ CONTAINS
     INTEGER                      :: IRESP
     TYPE(FMHEADER)               :: TZFMH
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITL0_ll','writing '//TRIM(HRECFM))
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -2652,6 +2674,7 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER :: IFIELD
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L0','writing '//TRIM(TPFIELD%CMNHNAME))
     !
     !
@@ -2695,6 +2718,8 @@ CONTAINS
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITL1_ll','writing '//TRIM(HRECFM))
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -2771,6 +2796,8 @@ CONTAINS
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITC0_ll','writing '//TRIM(HRECFM))
     !----------------------------------------------------------------
     !*      1.1   THE NAME OF LFIFM
     !
@@ -2930,6 +2957,8 @@ CONTAINS
     TYPE(FD_ll), POINTER             :: TZFD
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITC1_ll','writing '//TRIM(HRECFM))
     !----------------------------------------------------------------
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3014,6 +3043,8 @@ CONTAINS
     INTEGER                      :: IRESP
     TYPE(FMHEADER)               :: TZFMH
     INTEGER, DIMENSION(3)        :: ITDATE    ! date array
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITT0_ll','writing '//TRIM(HRECFM))
     !
     !-------------------------------------------------------------------------------
     IRESP = 0
@@ -3185,6 +3216,8 @@ CONTAINS
        REAL,DIMENSION(:,:,:), POINTER    :: X
     END TYPE TX_3DP
     TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:) :: T_TX3DP
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRIT_LB','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3485,6 +3518,8 @@ CONTAINS
     LOGICAL                          :: GALLOC
 
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITBOXX2_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -3576,6 +3611,8 @@ CONTAINS
     TYPE(FMHEADER)                      :: TZFMH
     LOGICAL                             :: GALLOC
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITBOXX3_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3669,6 +3706,8 @@ CONTAINS
     LOGICAL                             :: GALLOC
 
     !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITBOXX4_ll','writing '//TRIM(HRECFM))
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     IRESP = 0
@@ -3760,6 +3799,8 @@ CONTAINS
     TYPE(FMHEADER)                      :: TZFMH
     LOGICAL                             :: GALLOC
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITBOXX5_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3853,6 +3894,8 @@ CONTAINS
     TYPE(FMHEADER)                      :: TZFMH
     LOGICAL                             :: GALLOC
 
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITBOXX6_ll','writing '//TRIM(HRECFM))
     !
     !*      1.1   THE NAME OF LFIFM
     !
