@@ -126,8 +126,10 @@ CONTAINS
 
     LOGICAL :: GFORCELFIOUT, GFORCELFIREAD
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','SET_CONFIO_ll','called')
+
     IF (GCONFIO) THEN
-       PRINT *, 'SET_CONFIO_ll already called (ignoring this call).' 
+      CALL PRINT_MSG(NVERB_WARNING,'IO','SET_CONFIO_ll','already called (ignoring this call)')
     ELSE
        IF (PRESENT(OFORCELFIOUT)) THEN
           GFORCELFIOUT = OFORCELFIOUT
@@ -165,13 +167,15 @@ CONTAINS
     INTEGER :: IERR, IOS
     LOGICAL :: GISINIT
 
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','INITIO_ll','called')
+
     ISTDERR = 0
 
     CALL MPI_INITIALIZED(GISINIT, IERR)
     IF (.NOT. GISINIT) THEN
        !CALL MPI_INIT(IERR)
        CALL INIT_NMNH_COMM_WORLD(IERR)
-       if (IERR .NE.0) STOP "mode_io.f90::INITIO_ll() MPI_INIT ---> PROBLEME WITH REMAPPING NMNH_COMM_WORLD "
+       if (IERR .NE.0) CALL PRINT_MSG(NVERB_FATAL,'IO','SET_CONFIO_ll','problem with remapping of NMNH_COMM_WORLD')
     END IF
     !! Now MPI is initialized for sure
 

@@ -30,6 +30,8 @@ USE MODD_MPIF
 #if defined(MNH_IOCDF4)
 USE MODE_NETCDF
 #endif
+USE MODE_MSG
+
 IMPLICIT NONE 
 
 PRIVATE
@@ -119,6 +121,8 @@ TYPE(FD_ll), POINTER         :: TZFD
 INTEGER                      :: IRESP
 TYPE(FMHEADER)               :: TZFMH
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX0_ll','reading '//TRIM(HRECFM))
+!
 !*      1.1   THE NAME OF LFIFM
 !
 IRESP = 0
@@ -204,6 +208,8 @@ INTEGER                   :: IRESP
 REAL,DIMENSION(:),POINTER :: ZFIELDP
 LOGICAL                   :: GALLOC
 TYPE(FMHEADER)            :: TZFMH
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX1_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -327,6 +333,8 @@ REAL*8,DIMENSION(2) :: T11,T22
 REAL,DIMENSION(:,:),POINTER    :: ZFIELD_GA
 #endif
 INTEGER                      :: IHEXTOT
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX2_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -533,6 +541,8 @@ REAL*8,DIMENSION(2) :: T0,T1,T2
 REAL*8,DIMENSION(2) :: T11,T22
 INTEGER             :: IHEXTOT
 !JUAN
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX3_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -848,6 +858,8 @@ LOGICAL                         :: GALLOC
 TYPE(FMHEADER)                  :: TZFMH
 INTEGER                         :: IHEXTOT
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX4_ll','reading '//TRIM(HRECFM))
+!
 !*      1.1   THE NAME OF LFIFM
 !
 GALLOC = .FALSE.
@@ -970,6 +982,8 @@ LOGICAL                           :: GALLOC
 TYPE(FMHEADER)                    :: TZFMH
 INTEGER                           :: IHEXTOT
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX5_ll','reading '//TRIM(HRECFM))
+!
 !*      1.1   THE NAME OF LFIFM
 !
 GALLOC = .FALSE.
@@ -1090,6 +1104,8 @@ REAL,DIMENSION(:,:,:,:,:,:),POINTER :: ZFIELDP
 LOGICAL                             :: GALLOC
 TYPE(FMHEADER)                      :: TZFMH
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADX6_ll','reading '//TRIM(HRECFM))
+!
 !*      1.1   THE NAME OF LFIFM
 !
 GALLOC = .FALSE.
@@ -1183,7 +1199,8 @@ INTEGER                      :: IERR
 TYPE(FD_ll), POINTER         :: TZFD
 INTEGER                      :: IRESP
 TYPE(FMHEADER)               :: TZFMH
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADN0_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1265,6 +1282,8 @@ INTEGER                          :: IRESP
 INTEGER,DIMENSION(:),POINTER     :: IFIELDP
 LOGICAL                          :: GALLOC
 TYPE(FMHEADER)                   :: TZFMH
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADN1_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1356,6 +1375,8 @@ INTEGER,DIMENSION(:,:),POINTER :: IFIELDP
 LOGICAL                        :: GALLOC
 TYPE(FMHEADER)                 :: TZFMH
 INTEGER                        :: IHEXTOT
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADN2_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1482,7 +1503,8 @@ TYPE(FD_ll), POINTER         :: TZFD
 INTEGER                      :: IRESP
 INTEGER                      :: IFIELD
 TYPE(FMHEADER)               :: TZFMH
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADL0_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1569,7 +1591,8 @@ TYPE(FD_ll), POINTER             :: TZFD
 INTEGER                          :: IRESP
 INTEGER, DIMENSION(SIZE(OFIELD)) :: IFIELD
 TYPE(FMHEADER)                   :: TZFMH
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADL1_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1659,7 +1682,8 @@ INTEGER, DIMENSION(LEN(HFIELD))   :: IFIELD
 CHARACTER(LEN(HFIELD))            :: YFIELD
 INTEGER                           :: ILENG
 TYPE(FMHEADER)                    :: TZFMH
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADC0_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1762,7 +1786,8 @@ INTEGER                      :: IRESP
 INTEGER,DIMENSION(3)         :: ITDATE
 REAL                         :: ZTIME
 TYPE(FMHEADER)               :: TZFMH
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREADT0_ll','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -1876,7 +1901,8 @@ REAL*8,DIMENSION(2) :: T0,T1,T2,T3
 REAL*8,DIMENSION(2) :: T11,T22
 !JUANZIO
 INTEGER             :: IHEXTOT
-
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','FMREAD_LB','reading '//TRIM(HRECFM))
 !
 !*      1.1   THE NAME OF LFIFM
 !
@@ -2041,6 +2067,3 @@ TIMEZ%T_READLB_ALL=TIMEZ%T_READLB_ALL + T22 - T11
 END SUBROUTINE FMREAD_LB
 
 END MODULE MODE_FMREAD
-
-
-!
