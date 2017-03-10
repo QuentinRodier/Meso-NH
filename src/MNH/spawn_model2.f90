@@ -228,11 +228,12 @@ USE MODD_CH_MNHC_n
 USE MODD_PASPOL_n
 !$20140515
 USE MODD_VAR_ll, ONLY : NPROC
-USE MODD_IO_ll, ONLY: TFILEDATA,LIOCDF4,LLFIOUT
+USE MODD_IO_ll, ONLY: TFILEDATA,LIOCDF4,LLFIOUT,TFILE_SURFEX
 !
 USE MODE_GRIDCART         ! Executive modules
 USE MODE_GRIDPROJ
 USE MODE_ll
+USE MODE_MSG
 !
 USE MODI_READ_HGRID
 USE MODI_SPAWN_GRID2  
@@ -388,7 +389,7 @@ INTEGER,DIMENSION(:,:),ALLOCATABLE   :: IJCOUNT
 !
 REAL                :: ZZS_MAX, ZZS_MAX_ll
 !
-TYPE(TFILEDATA)     :: TZFILE
+TYPE(TFILEDATA),TARGET :: TZFILE
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -608,13 +609,35 @@ ENDIF
 CALL INI_NSV(2) ! NSV* are set equal for model 2 and model 1. 
                 ! NSV is set to the total number of SV for model 2
 !
-IF (NRR==0) LUSERV=.FALSE.        ! as the default is .T.
-IF (NRR>1)  LUSERC=.TRUE.
-IF (NRR>2)  LUSERR=.TRUE.
-IF (NRR>3)  LUSERI=.TRUE.
-IF (NRR>4)  LUSERS=.TRUE.
-IF (NRR>5)  LUSERG=.TRUE.
-IF (NRR>6)  LUSERH=.TRUE.
+IF (NRR==0) THEN
+  LUSERV=.FALSE.        ! as the default is .T.
+ELSE
+  IDX_RVT = 1
+END IF
+IF (NRR>1) THEN
+  LUSERC=.TRUE.
+  IDX_RCT = 2
+END IF
+IF (NRR>2) THEN
+  LUSERR=.TRUE.
+  IDX_RRT = 2
+END IF
+IF (NRR>3) THEN
+  LUSERI=.TRUE.
+  IDX_RIT = 2
+END IF
+IF (NRR>4) THEN
+  LUSERS=.TRUE.
+  IDX_RST = 2
+END IF
+IF (NRR>5) THEN
+  LUSERG=.TRUE.
+  IDX_RGT = 2
+END IF
+IF (NRR>6) THEN
+  LUSERH=.TRUE.
+  IDX_RHT = 2
+END IF
 !
 !
 !
@@ -1442,8 +1465,7 @@ ELSE IF (LLFIOUT) THEN
   TZFILE%CFORMAT='LFI'
   TZFILE%NLFINPRAR= INPRAR
 ELSE
-  PRINT *,'Error: unknown backup/output fileformat'
-  CALL ABORT
+  CALL PRINT_MSG(NVERB_FATAL,'IO','SPAWN_MODEL2','unknown backup/output fileformat')
 ENDIF
 TZFILE%CMODE      = 'WRITE'
 TZFILE%NLFITYPE   = ITYPE
@@ -1489,7 +1511,9 @@ ZWRITE = ZTIME2 - ZTIME1
 !
 ZTIME1 = ZTIME2
 !
+TFILE_SURFEX => TZFILE
 CALL SPAWN_SURF(HINIFILE,HINIFILEPGD,OSPAWN_SURF)
+NULLIFY(TFILE_SURFEX)
 !
 CALL SECOND_MNH(ZTIME2)
 !

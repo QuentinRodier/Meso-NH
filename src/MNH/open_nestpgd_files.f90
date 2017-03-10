@@ -12,16 +12,19 @@ MODULE MODI_OPEN_NESTPGD_FILES
 !#############################
 !
 INTERFACE
-      SUBROUTINE OPEN_NESTPGD_FILES(HPGD,HNESTPGD)
+      SUBROUTINE OPEN_NESTPGD_FILES(TPFILEPGD,TPFILENESTPGD)
 !
-CHARACTER(LEN=28), DIMENSION(:), INTENT(OUT) :: HPGD     ! name of the input  pgd files
-CHARACTER(LEN=28), DIMENSION(:), INTENT(OUT) :: HNESTPGD ! name of the output pgd files
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: TPFILEPGD     ! Input  PGD files
+TYPE(TFILEDATA),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: TPFILENESTPGD ! Output PGD files
+!
 END SUBROUTINE OPEN_NESTPGD_FILES
 END INTERFACE
 END MODULE MODI_OPEN_NESTPGD_FILES
-!     ############################################
-      SUBROUTINE OPEN_NESTPGD_FILES(HPGD,HNESTPGD)
-!     ############################################
+!     ######################################################
+      SUBROUTINE OPEN_NESTPGD_FILES(TPFILEPGD,TPFILENESTPGD)
+!     ######################################################
 !
 !!****  *OPEN_NESTPGD_FILES* - openning of the files used in PREP_NEST_PGD
 !!                         
@@ -78,6 +81,7 @@ USE MODD_LUNIT
 USE MODD_CONF
 USE MODD_NESTING
 USE MODD_PARAMETERS
+USE MODD_IO_ll, ONLY : TFILEDATA
 !
 USE MODI_OPEN_LUOUTn
 !
@@ -85,6 +89,7 @@ USE MODE_FIELD, ONLY : INI_FIELD_LIST
 USE MODE_IO_ll
 USE MODE_FM
 USE MODE_POS
+USE MODE_MSG
 !
 USE MODE_MODELN_HANDLER
 !
@@ -100,34 +105,32 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-CHARACTER(LEN=28), DIMENSION(:), INTENT(OUT) :: HPGD     ! name of the input  pgd files
-CHARACTER(LEN=28), DIMENSION(:), INTENT(OUT) :: HNESTPGD ! name of the output pgd files
+TYPE(TFILEDATA),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: TPFILEPGD     ! Input  PGD files
+TYPE(TFILEDATA),DIMENSION(:),ALLOCATABLE,INTENT(OUT) :: TPFILENESTPGD ! Output PGD files
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
 !
 INTEGER :: IRESP      ! return-code if problems eraised
 INTEGER :: ILUOUT0    ! logical unit for listing file
-INTEGER :: ININAR     ! number of articles initially present in a FM file
 LOGICAL :: GFOUND     ! Return code when searching namelist
 !
 CHARACTER(LEN=28) :: HPRE_NEST_PGD ! name of namelist file
 INTEGER           :: IPRE_NEST_PGD ! logical unit of namelist file
 !
-CHARACTER(LEN=28)                        :: YPGD      ! name of the pgd file for each model
-CHARACTER(LEN=28)                        :: YLUOUT    ! name of output listing file for each model
-CHARACTER(LEN=2)                         :: YNEST     ! to define the output pgd file names
-CHARACTER(LEN=28)                        :: YPGD1, YPGD2, YPGD3, YPGD4, &
-                                            YPGD5, YPGD6, YPGD7, YPGD8
-!                                                     ! name of all pgd files
-!                                                     ! in the namelist
-INTEGER                        :: IDAD    ! father of one model
-INTEGER                        :: JPGD    ! loop counter
-LOGICAL                        :: GADD    !
-CHARACTER(LEN=21), DIMENSION(JPMODELMAX) :: YSHORTPGD 
-INTEGER                                  :: NHALO_MNH
+CHARACTER(LEN=28) :: YPGD      ! name of the pgd file for each model
+CHARACTER(LEN=28) :: YLUOUT    ! name of output listing file for each model
+CHARACTER(LEN=2)  :: YNEST     ! to define the output pgd file names
+CHARACTER(LEN=28) :: YPGD1, YPGD2, YPGD3, YPGD4, &
+                     YPGD5, YPGD6, YPGD7, YPGD8
+!                    ! name of all pgd files
+!                    ! in the namelist
+INTEGER           :: IDAD    ! father of one model
+INTEGER           :: JPGD    ! loop counter
+LOGICAL           :: GADD    !
+INTEGER           :: NHALO_MNH
 !
-INTEGER :: ILUNAM,ILUOUT              ! Logical unit number for the EXSPA file
+INTEGER           :: ILUOUT  ! Logical unit number for the EXSPA file
 !
 !*       0.3   Declaration of namelists
 !              ------------------------
@@ -146,11 +149,6 @@ NAMELIST/NAM_CONF_NEST/JPHEXT, NHALO_MNH
 !
 !*       1.    SET DEFAULT NAMES
 !              -----------------
-!
-DO JPGD=1,JPMODELMAX
-  HPGD    (JPGD)='                           '
-  HNESTPGD(JPGD)='                           '
-END DO
 !
 HPRE_NEST_PGD='PRE_NEST_PGD1.nam'
 CLUOUT0='OUTPUT_LISTING0'
@@ -278,7 +276,6 @@ DO JPGD=1,JPMODELMAX
     END IF
     !
     NDAD(JPGD)=IDAD
-    HPGD(JPGD)=YPGD
   END IF
 END DO
 !
@@ -289,17 +286,49 @@ END DO
 !
 CALL POSNAM(IPRE_NEST_PGD,'NAM_NEST_PGD',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_NEST_PGD)
-HNESTPGD(:) = '                            '
-!
-YSHORTPGD(:)=HPGD(:)
-DO JPGD=1,NMODEL
-  HNESTPGD(JPGD) = ADJUSTR( YSHORTPGD(JPGD))//'.nest'//ADJUSTL(YNEST)
-  HNESTPGD(JPGD) = ADJUSTL(HNESTPGD(JPGD))
-END DO
 !
 CALL POSNAM(IPRE_NEST_PGD,'NAM_CONFIO',GFOUND,ILUOUT0)
 IF (GFOUND) READ(UNIT=IPRE_NEST_PGD,NML=NAM_CONFIO)
 CALL SET_CONFIO_ll(LCDF4, LLFIOUT, LLFIREAD)
+!
+ALLOCATE(TPFILEPGD    (NMODEL))
+ALLOCATE(TPFILENESTPGD(NMODEL))
+!
+IF (NMODEL>=1) TPFILEPGD(1)%CNAME = TRIM(YPGD1)
+IF (NMODEL>=2) TPFILEPGD(2)%CNAME = TRIM(YPGD2)
+IF (NMODEL>=3) TPFILEPGD(3)%CNAME = TRIM(YPGD3)
+IF (NMODEL>=4) TPFILEPGD(4)%CNAME = TRIM(YPGD4)
+IF (NMODEL>=5) TPFILEPGD(5)%CNAME = TRIM(YPGD5)
+IF (NMODEL>=6) TPFILEPGD(6)%CNAME = TRIM(YPGD6)
+IF (NMODEL>=7) TPFILEPGD(7)%CNAME = TRIM(YPGD7)
+IF (NMODEL>=8) TPFILEPGD(8)%CNAME = TRIM(YPGD8)
+!
+DO JPGD=1,NMODEL
+  TPFILENESTPGD(JPGD)%CNAME = TRIM(TPFILEPGD(JPGD)%CNAME)//'.nest'//ADJUSTL(YNEST)
+END DO
+!
+TPFILEPGD(:)    %CTYPE = 'PREPPGD'
+TPFILENESTPGD(:)%CTYPE = 'PREPNESTPGD'
+IF (LCDF4) THEN
+  IF (.NOT.LLFIOUT) THEN
+    TPFILEPGD(:)    %CFORMAT = 'NETCDF4'
+    TPFILENESTPGD(:)%CFORMAT = 'NETCDF4'
+  ELSE
+    TPFILEPGD(:)    %CFORMAT = 'LFICDF4'
+    TPFILENESTPGD(:)%CFORMAT = 'LFICDF4'
+  END IF
+ELSE IF (LLFIOUT) THEN
+  TPFILEPGD(:)    %CFORMAT = 'LFI'
+  TPFILENESTPGD(:)%CFORMAT = 'LFI'
+ELSE
+  CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_NESTPGD_FILES','unknown backup/output fileformat')
+ENDIF
+TPFILEPGD(:)    %CMODE    = 'READ'
+TPFILENESTPGD(:)%CMODE    = 'WRITE'
+TPFILEPGD(:)    %NLFITYPE = 2
+TPFILENESTPGD(:)%NLFITYPE = 1
+TPFILEPGD(:)    %NLFIVERB = NVERB
+TPFILENESTPGD(:)%NLFIVERB = NVERB
 !
 !-------------------------------------------------------------------------------
 CALL CLOSE_ll(HPRE_NEST_PGD)
@@ -309,13 +338,13 @@ CALL CLOSE_ll(HPRE_NEST_PGD)
 !              -------------------------------------
 !
 DO JPGD=1,NMODEL
-  CALL FMOPEN_ll(HPGD(JPGD),'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
-  CALL FMOPEN_ll(HNESTPGD(JPGD),'WRITE',CLUOUT0,0,1,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TPFILEPGD(JPGD),    CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_OPEN_ll(TPFILENESTPGD(JPGD),CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
 END DO
 !
 !-------------------------------------------------------------------------------
 !
-!*       7.    OPENING OF OUPUT LISTING FILES FOR ALL MODELS
+!*       7.    OPENING OF OUTPUT LISTING FILES FOR ALL MODELS
 !              ----------------------------------------------
 !
 CALL INI_FIELD_LIST()

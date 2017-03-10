@@ -11,12 +11,12 @@
       SUBROUTINE WRITE_SURFX0_MNH(HREC,PFIELD,KRESP,HCOMMENT)
 !     #############################################################
 !
-!!****  *READX0* - routine to read a real scalar
+!!****  *WRITEX0* - routine to write a real scalar
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READX0 is
+!       The purpose of WRITEX0 is
 !
 !!**  METHOD
 !!    ------
@@ -112,7 +112,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
       SUBROUTINE WRITE_SURFX1_MNH(HREC,KL,PFIELD,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
-!!****  *READX1* - routine to fill a real 1D array for the externalised surface
+!!****  *WRITEX1* - routine to fill a real 1D array for the externalised surface
 !!
 !!    PURPOSE
 !!    -------
@@ -411,7 +411,7 @@ END SUBROUTINE WRITE_SURFX1_MNH
       SUBROUTINE WRITE_SURFX2COV_MNH(HREC,KL1,KL2,PFIELD,OFLAG,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
-!!****  *READX1* - routine to fill a real 1D array for the externalised surface
+!!****  *WRITEX1* - routine to fill a real 1D array for the externalised surface
 !!
 !!    PURPOSE
 !!    -------
@@ -612,7 +612,7 @@ END SUBROUTINE WRITE_SURFX2COV_MNH
       SUBROUTINE WRITE_SURFX2_MNH(HREC,KL1,KL2,PFIELD,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
-!!****  *READX2* - routine to fill a real 2D array for the externalised surface
+!!****  *WRITEX2* - routine to fill a real 2D array for the externalised surface
 !!
 !!    PURPOSE
 !!    -------
@@ -786,12 +786,12 @@ END SUBROUTINE WRITE_SURFX2_MNH
       SUBROUTINE WRITE_SURFN0_MNH(HREC,KFIELD,KRESP,HCOMMENT)
 !     #############################################################
 !
-!!****  *READN0* - routine to read an integer
+!!****  *WRITEN0* - routine to write an integer
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READN0 is
+!       The purpose of WRITEN0 is
 !
 !!**  METHOD
 !!    ------
@@ -884,12 +884,12 @@ END SUBROUTINE WRITE_SURFN0_MNH
       SUBROUTINE WRITE_SURFN1_MNH(HREC,KL,KFIELD,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
-!!****  *READN0* - routine to read an integer
+!!****  *WRITEN0* - routine to write an integer
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READN0 is
+!       The purpose of WRITEN0 is
 !
 !!**  METHOD
 !!    ------
@@ -967,9 +967,7 @@ IF (HDIR=='-') THEN
   TZFIELD%NGRID      = 0
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 1
-CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFN1_MNH','not yet fully implemented')
-RETURN
-!PW: TODO !  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,KFIELD)
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,KFIELD)
 !
 ELSE IF (HDIR=='H') THEN
 !
@@ -1003,12 +1001,12 @@ END SUBROUTINE WRITE_SURFN1_MNH
       SUBROUTINE WRITE_SURFC0_MNH(HREC,HFIELD,KRESP,HCOMMENT)
 !     #############################################################
 !
-!!****  *READC0* - routine to read an integer
+!!****  *WRITEC0* - routine to write an integer
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READC0 is
+!       The purpose of WRITEC0 is
 !
 !!**  METHOD
 !!    ------
@@ -1109,12 +1107,12 @@ END SUBROUTINE WRITE_SURFC0_MNH
       SUBROUTINE WRITE_SURFL1_MNH(HREC,KL,OFIELD,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
-!!****  *READL1* - routine to read a logical array
+!!****  *WRITEL1* - routine to write a logical array
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READL1 is
+!       The purpose of WRITEL1 is
 !
 !!**  METHOD
 !!    ------
@@ -1197,9 +1195,7 @@ IF (HDIR=='-') THEN
     TZFIELD%NGRID      = 0
     TZFIELD%NTYPE      = TYPELOG
     TZFIELD%NDIMS      = 1
-CALL PRINT_MSG(NVERB_ERROR,'IO','WRITE_SURFL1_MNH','not yet fully implemented')
-RETURN
-!PW: TODO !  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,OFIELD(:))
+    CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,COUT,KRESP,OFIELD(:))
   END IF
 !
 ELSE IF (HDIR=='H') THEN
@@ -1241,7 +1237,7 @@ END SUBROUTINE WRITE_SURFL1_MNH
       SUBROUTINE WRITE_SURFL0_MNH(HREC,OFIELD,KRESP,HCOMMENT)
 !     #############################################################
 !
-!!****  *WRITEL1* - routine to read a logical
+!!****  *WRITEL1* - routine to write a logical
 !!
 !!    PURPOSE
 !!    -------
@@ -1329,12 +1325,12 @@ END SUBROUTINE WRITE_SURFL0_MNH
       SUBROUTINE WRITE_SURFT0_MNH(HREC,KYEAR,KMONTH,KDAY,PTIME,KRESP,HCOMMENT)
 !     #############################################################
 !
-!!****  *READT0* - routine to read a MESO-NH date_time scalar
+!!****  *WRITET0* - routine to write a MESO-NH date_time scalar
 !!
 !!    PURPOSE
 !!    -------
 !
-!       The purpose of READT0 is
+!       The purpose of WRITET0 is
 !
 !!**  METHOD
 !!    ------
@@ -1378,7 +1374,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN)  :: HREC     ! name of the article to be written
 INTEGER,            INTENT(IN)  :: KYEAR    ! year
 INTEGER,            INTENT(IN)  :: KMONTH   ! month
 INTEGER,            INTENT(IN)  :: KDAY     ! day
@@ -1476,7 +1472,7 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be read
+CHARACTER(LEN=LEN_HREC),  INTENT(IN) :: HREC     ! name of the article to be written
 INTEGER,            INTENT(IN) :: KL1       ! number of points
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KYEAR    ! year
 INTEGER, DIMENSION(KL1), INTENT(IN)  :: KMONTH   ! month
