@@ -14,9 +14,11 @@ MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !
 INTERFACE
 !
-      SUBROUTINE WRITE_AIRCRAFT_BALLOON(HFMDIAC)
+      SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
 !
-CHARACTER(LEN=*), INTENT(IN) :: HFMDIAC  ! diachronic file name
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
 !
 END SUBROUTINE WRITE_AIRCRAFT_BALLOON
 !
@@ -25,7 +27,7 @@ END INTERFACE
 END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !
 !     ##########################################
-      SUBROUTINE WRITE_AIRCRAFT_BALLOON(HFMDIAC)
+      SUBROUTINE WRITE_AIRCRAFT_BALLOON(TPDIAFILE)
 !     ##########################################
 !
 !
@@ -72,6 +74,7 @@ END MODULE MODI_WRITE_AIRCRAFT_BALLOON
 !          ------------
 !
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
@@ -107,7 +110,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER(LEN=*), INTENT(IN) :: HFMDIAC  ! diachronic file name
+TYPE(TFILEDATA), INTENT(IN) :: TPDIAFILE ! file to write
 !
 !-------------------------------------------------------------------------------
 !
@@ -841,11 +844,11 @@ ALLOCATE (ZWZ6(1,1,IKU,SIZE(TPFLYER%TIME),1,JPROCZ))
 ZWZ6 = ZWORKZ6(:,:,:,:,:,:JPROCZ)
 DEALLOCATE(ZWORKZ6)
 !
-CALL WRITE_DIACHRO(HFMDIAC,CLUOUT0,YGROUP,"RSPL",IGRID, TPFLYER%DATIME, ZW6, &
-                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,                             &
-                   PTRAJX=ZTRAJX, PTRAJY=ZTRAJY, PTRAJZ=ZTRAJZ               )
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"RSPL",IGRID, TPFLYER%DATIME, ZW6, &
+                   ZTRAJT,YTITLE,YUNIT,YCOMMENT,                               &
+                   PTRAJX=ZTRAJX, PTRAJY=ZTRAJY, PTRAJZ=ZTRAJZ                 )
 !
-CALL WRITE_DIACHRO(HFMDIAC,CLUOUT0,YGROUPZ,"CART",IGRIDZ, TPFLYER%DATIME,    &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUPZ,"CART",IGRIDZ, TPFLYER%DATIME,  &
                    ZWZ6,ZTRAJT,YTITLEZ,YUNITZ,YCOMMENTZ,                     &
                    .TRUE.,.TRUE.,.FALSE.,                                    &
                    KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=IKU                     )

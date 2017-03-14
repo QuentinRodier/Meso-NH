@@ -572,7 +572,6 @@ IF (ISP == TZFDLFI%OWNER) THEN
     YTRANS='fujitransfer.x'
 #endif
     IFITYP = TZFDLFI%PARAM%FITYP
-    PRINT *,'KTYPE=', IFITYP
     
     SELECT CASE (IFITYP)
     CASE(:-1)

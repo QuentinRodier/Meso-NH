@@ -14,10 +14,13 @@ MODULE MODI_WRITE_LES_SV_BUDGET_n
 !
 INTERFACE
 !
-      SUBROUTINE  WRITE_LES_SV_BUDGET_n(HLES_AVG)
+      SUBROUTINE  WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
 !
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
+!                                         ! or normalizations
 END SUBROUTINE WRITE_LES_SV_BUDGET_n
 !
 END INTERFACE
@@ -25,7 +28,7 @@ END INTERFACE
 END MODULE MODI_WRITE_LES_SV_BUDGET_n
 
 !     ######################
-      SUBROUTINE  WRITE_LES_SV_BUDGET_n(HLES_AVG)
+      SUBROUTINE  WRITE_LES_SV_BUDGET_n(TPDIAFILE,HLES_AVG)
 !     ######################
 !
 !
@@ -58,6 +61,7 @@ END MODULE MODI_WRITE_LES_SV_BUDGET_n
 !          ------------
 !
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_LES_n
 USE MODD_CONF_n
@@ -76,9 +80,9 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
-!
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
+!                                         ! or normalizations
 !
 !*      0.2  declaration of local variables
 !
@@ -389,7 +393,7 @@ DO JSV=1,NSV
 END DO
 
 YTITLE = "Sv variance budget  "
-CALL LES_DIACHRO_SV_MASKS(YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"kg2/kg2/s",ZSV_BUDGET,HLES_AVG)
+CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"kg2/kg2/s",ZSV_BUDGET,HLES_AVG)
 !
 DEALLOCATE(ZSV_BUDGET)
 !-------------------------------------------------------------------------------
@@ -759,7 +763,7 @@ DO JSV=1,NSV
 END DO
 
 YTITLE = "Sv flux budget      "
-CALL LES_DIACHRO_SV_MASKS(YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"mkg/kg/s2",ZSV_BUDGET,HLES_AVG)
+CALL LES_DIACHRO_SV_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),YTITLE//YSUBTITLE(:ILES),"mkg/kg/s2",ZSV_BUDGET,HLES_AVG)
 !
 DEALLOCATE(ZSV_BUDGET)
 !-------------------------------------------------------------------------------

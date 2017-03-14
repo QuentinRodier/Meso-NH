@@ -14,9 +14,11 @@ MODULE MODI_WRITE_PROFILER_n
 !
 INTERFACE
 !
-      SUBROUTINE WRITE_PROFILER_n(HFMDIAC)
+      SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
 !
-CHARACTER(LEN=*), INTENT(IN) :: HFMDIAC  ! diachronic file name
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 END SUBROUTINE WRITE_PROFILER_n
 !
@@ -25,7 +27,7 @@ END INTERFACE
 END MODULE MODI_WRITE_PROFILER_n
 !
 !     ##########################################
-      SUBROUTINE WRITE_PROFILER_n(HFMDIAC)
+      SUBROUTINE WRITE_PROFILER_n(TPDIAFILE)
 !     ##########################################
 !
 !
@@ -68,6 +70,7 @@ END MODULE MODI_WRITE_PROFILER_n
 !          ------------
 !
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
@@ -98,7 +101,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER(LEN=*), INTENT(IN) :: HFMDIAC  ! diachronic file name
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! diachronic file to write
 !
 !-------------------------------------------------------------------------------
 !
@@ -607,7 +610,7 @@ ALLOCATE (ZW6(1,1,IKU,SIZE(TPROFILER%TIME),1,JPROC))
 ZW6 = ZWORK6(:,:,:,:,:,:JPROC)
 DEALLOCATE(ZWORK6)
 
-CALL WRITE_DIACHRO(HFMDIAC,CLUOUT0,YGROUP,"CART",IGRID(:JPROC), TPROFILER%DATIME,&
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"CART",IGRID(:JPROC), TPROFILER%DATIME,&
                    ZW6,ZTRAJT,YTITLE(:JPROC),YUNIT(:JPROC),YCOMMENT(:JPROC),     &
                    .TRUE.,.TRUE.,.FALSE.,                                        &
                    KIL=1,KIH=1,KJL=1,KJH=1,KKL=1,KKH=IKU                         )

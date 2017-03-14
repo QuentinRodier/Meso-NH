@@ -172,10 +172,7 @@ TYPE(DATE_TIME)   :: TXDTBAL   ! current time and date for BALLOON and AIRCRAFT 
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILE ! names of the INPUT FM-file
 CHARACTER (LEN=28), DIMENSION(1) :: YINIFILEPGD ! names of the INPUT FM-file
 CHARACTER (LEN=28) :: YFMFILE   ! name of the OUTPUT FM-file
-CHARACTER (LEN=28) :: YFMFILE_SUP   ! name of the OUTPUT FM-file for diag_sup
-CHARACTER (LEN=28) :: YFMDIAC   ! name of the OUTPUT Diachronic file
 CHARACTER (LEN=5)  :: YSUFFIX   ! character string for the OUTPUT FM-file number
-!CHARACTER (LEN=32) :: YDESFM    ! name of the desfm part of this FM-file
 CHARACTER (LEN=4)  :: YRAD      ! initial flag to call to radiation schemes
 CHARACTER (LEN=4)  :: YDCONV    ! initial flag to call to deep convection schemes
 CHARACTER (LEN=4)  :: YSCONV    ! initial flag to call to shallow convection schemes
@@ -188,7 +185,6 @@ REAL*8,DIMENSION(2)     :: ZTIME0,ZTIME1,ZTIME2,ZRAD,ZDCONV,ZSHADOWS,ZGROUND, &
 REAL*8,DIMENSION(2)     :: ZSTART,ZINIT,ZWRIT,ZBALL,ZPHYS,ZSURF,ZWRITS,ZTRAJ ! storing variables
 INTEGER :: INPRAR               ! number of articles predicted  in
                                 !  the LFIFM file
-INTEGER :: ITYPE=1              ! type of file (conv2dia and transfer)
 LOGICAL :: GCLOSE_OUT = .FALSE. ! conditional closure of the OUTPUT FM-file
 INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
 INTEGER :: ILUNAM      ! Logical unit numbers for the namelist file
@@ -203,6 +199,7 @@ INTEGER :: IINFO_ll               ! return code for _ll routines
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
 !
 TYPE(TFILEDATA),TARGET :: TZFILE
+TYPE(TFILEDATA)        :: TZDIACFILE
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
@@ -468,7 +465,7 @@ ELSE
   CALL PRINT_MSG(NVERB_FATAL,'IO','DIAG','unknown backup/output fileformat')
 ENDIF
 TZFILE%CMODE      = 'WRITE'
-TZFILE%NLFITYPE   = ITYPE
+TZFILE%NLFITYPE   = 1
 TZFILE%NLFIVERB   = NVERB
 !
 CALL IO_FILE_OPEN_ll(TZFILE,CLUOUT,IRESP)
@@ -533,8 +530,28 @@ ZTIME1=ZTIME2
 !*       4.1    BALLOON and AIRCRAFT
 !
 IF ( LAIRCRAFT_BALLOON ) THEN
-  YFMDIAC=ADJUSTL(ADJUSTR(CINIFILE)//'BAL')
-  CALL FMOPEN_ll(YFMDIAC,'WRITE',CLUOUT,INPRAR,ITYPE,NVERB,INPRAR,IRESP)
+!
+  TZDIACFILE%CNAME = TRIM(CINIFILE)//'BAL'
+  TZDIACFILE%CTYPE = 'DIACHRONIC'
+  IF (LCDF4) THEN
+    IF (.NOT.LLFIOUT) THEN
+      TZDIACFILE%CFORMAT = 'NETCDF4'
+    ELSE
+      TZDIACFILE%CFORMAT = 'LFICDF4'
+      TZDIACFILE%NLFINPRAR = INPRAR
+    END IF
+  ELSE IF (LLFIOUT) THEN
+    TZDIACFILE%CFORMAT = 'LFI'
+    TZDIACFILE%NLFINPRAR = INPRAR
+  ELSE
+    CALL PRINT_MSG(NVERB_FATAL,'IO','DIAG','unknown backup/output fileformat')
+  ENDIF
+  TZDIACFILE%CMODE      = 'WRITE'
+  TZDIACFILE%NLFITYPE   = 1
+  TZDIACFILE%NLFIVERB   = NVERB
+!
+  CALL IO_FILE_OPEN_ll(TZDIACFILE,CLUOUT,IRESP)
+!
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'DIAG AFTER OPEN DIACHRONIC FILE'
   WRITE(ILUOUT0,*) ' '
@@ -570,10 +587,10 @@ IF ( LAIRCRAFT_BALLOON ) THEN
                           TXDTBAL%TDATE%DAY,  &
                           TXDTBAL%TIME        )
   ENDDO
-  CALL WRITE_LFIFMN_FORDIACHRO_n(YFMDIAC)
-  CALL WRITE_AIRCRAFT_BALLOON(YFMDIAC)
-  CALL MENU_DIACHRO(YFMDIAC,CLUOUT,'END')
-  CALL FMCLOS_ll(YFMDIAC,'KEEP',CLUOUT,IRESP)
+  CALL WRITE_LFIFMN_FORDIACHRO_n(TZDIACFILE)
+  CALL WRITE_AIRCRAFT_BALLOON(TZDIACFILE)
+  CALL MENU_DIACHRO(TZDIACFILE,CLUOUT,'END')
+  CALL IO_FILE_CLOSE_ll(TZDIACFILE,CLUOUT,IRESP)
   WRITE(ILUOUT0,*) ' '
   WRITE(ILUOUT0,*) 'DIAG AFTER CLOSE DIACHRONIC FILE'
   WRITE(ILUOUT0,*) ' '

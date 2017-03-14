@@ -176,9 +176,6 @@ INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: NKLIN_CURRENT_SPEC
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XCOEFLIN_CURRENT_SPEC
 ! coefficients for vertical interpolation
 !
-CHARACTER(LEN=28) :: CCURRENT_FMDIAC
-! current CFMDIAC file
-!
 REAL,DIMENSION(2) :: XTIME_LES
 ! time spent in subgrid LES computations in this time-step in TURB
 !

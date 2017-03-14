@@ -14,10 +14,13 @@ MODULE MODI_WRITE_LES_RT_BUDGET_n
 !
 INTERFACE
 !
-      SUBROUTINE  WRITE_LES_RT_BUDGET_n(HLES_AVG)
+      SUBROUTINE  WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
 !
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
+!                                         ! or normalizations
 END SUBROUTINE WRITE_LES_RT_BUDGET_n
 !
 END INTERFACE
@@ -25,7 +28,7 @@ END INTERFACE
 END MODULE MODI_WRITE_LES_RT_BUDGET_n
 !
 !     ######################
-      SUBROUTINE  WRITE_LES_RT_BUDGET_n(HLES_AVG)
+      SUBROUTINE  WRITE_LES_RT_BUDGET_n(TPDIAFILE,HLES_AVG)
 !     ######################
 !
 !
@@ -58,6 +61,7 @@ END MODULE MODI_WRITE_LES_RT_BUDGET_n
 !          ------------
 !
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_LES_n
 USE MODD_LES_BUDGET
@@ -74,8 +78,9 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
-CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
-!                                        ! or normalizations
+TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE ! file to write
+CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
+!                                         ! or normalizations
 !
 !
 !*      0.2  declaration of local variables
@@ -345,7 +350,8 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(YGROUP,YSUBTITLE(:ILES),"Rt variance budget"//YSUBTITLE(:ILES),"kg2/kg2/s",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt variance budget"//YSUBTITLE(:ILES),"kg2/kg2/s", &
+                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !
 !-------------------------------------------------------------------------------
@@ -651,7 +657,8 @@ ZLES_BUDGET(:,:,ILES)=-XLES_RES_ddxa_Rt_SBG_UaW(:,:,1)       &
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(YGROUP,YSUBTITLE(:ILES),"Rt flux budget"//YSUBTITLE(:ILES),"mkg/kg/s2",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Rt flux budget"//YSUBTITLE(:ILES),"mkg/kg/s2", &
+                       ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !
 !-------------------------------------------------------------------------------
@@ -897,7 +904,7 @@ ZLES_BUDGET(NLES_K,:,ILES) = ZLES_BUDGET(NLES_K-1,:,ILES)
 !       -------
 !
 !
-CALL LES_DIACHRO_MASKS(YGROUP,YSUBTITLE(:ILES),"Thl-Rt covariance budget"//YSUBTITLE(:ILES), &
+CALL LES_DIACHRO_MASKS(TPDIAFILE,YGROUP,YSUBTITLE(:ILES),"Thl-Rt covariance budget"//YSUBTITLE(:ILES), &
                                               "Kkg/kg/s",ZLES_BUDGET(:,:,:ILES),HLES_AVG)
 !
 !-------------------------------------------------------------------------------

@@ -733,9 +733,10 @@ END SUBROUTINE LES_TIME_AVG
 !------------------------------------------------------------------------------
 !
 !########################################################
-SUBROUTINE LES_DIACHRO(HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -745,6 +746,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),      INTENT(IN)       :: TPDIAFILE! file to write
 CHARACTER(LEN=*),     INTENT(IN)       :: HGROUP   ! group title
 CHARACTER(LEN=*),     INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),     INTENT(IN)       :: HUNIT    ! physical unit
@@ -839,7 +841,7 @@ YTITLE(1) = YGROUP
 !            ----------------------
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -859,9 +861,10 @@ DEALLOCATE (ZDATIME)
 END SUBROUTINE LES_DIACHRO
 !-------------------------------------------------------------------------------
 !###########################################################
-SUBROUTINE LES_DIACHRO_SV(HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !###########################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -871,6 +874,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),        INTENT(IN)       :: TPDIAFILE! file to write
 CHARACTER(LEN=*),       INTENT(IN)       :: HGROUP   ! group title
 CHARACTER(LEN=*),       INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),       INTENT(IN)       :: HUNIT    ! physical unit
@@ -963,7 +967,7 @@ YTITLE(1) = YGROUP
 !
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -983,9 +987,10 @@ DEALLOCATE(ZDATIME)
 END SUBROUTINE LES_DIACHRO_SV
 !-------------------------------------------------------------------------------
 !#####################################################################
-SUBROUTINE LES_DIACHRO_MASKS(HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#####################################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -995,6 +1000,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),                    INTENT(IN) :: TPDIAFILE! file to write
 CHARACTER(LEN=*),                   INTENT(IN) :: HGROUP   ! group title
 CHARACTER(LEN=*), DIMENSION(:),     INTENT(IN) :: HTITLE   ! title
 CHARACTER(LEN=*), DIMENSION(:),     INTENT(IN) :: HCOMMENT ! comment string
@@ -1092,7 +1098,7 @@ YTITLE  (:) = YGROUP//HTITLE(:)
 !            ----------------------
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -1112,9 +1118,10 @@ DEALLOCATE(ZDATIME)
 END SUBROUTINE LES_DIACHRO_MASKS
 !-------------------------------------------------------------------------------
 !########################################################################
-SUBROUTINE LES_DIACHRO_SV_MASKS(HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO_SV_MASKS(TPDIAFILE,HGROUP,HTITLE,HCOMMENT,HUNIT,PFIELD,HAVG)
 !########################################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -1124,6 +1131,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),                      INTENT(IN) :: TPDIAFILE! file to write
 CHARACTER(LEN=*),                     INTENT(IN) :: HGROUP   ! group title
 CHARACTER(LEN=*), DIMENSION(:),       INTENT(IN) :: HTITLE   ! title
 CHARACTER(LEN=*), DIMENSION(:),       INTENT(IN) :: HCOMMENT ! comment string
@@ -1225,7 +1233,7 @@ YTITLE  (:) = YGROUP//HTITLE(:)
 !
 !
 IF (IRESP==0 .AND. ANY(ZWORK6/=XUNDEF)) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -1246,9 +1254,10 @@ END SUBROUTINE LES_DIACHRO_SV_MASKS
 !-------------------------------------------------------------------------------
 
 !#############################################################
-SUBROUTINE LES_DIACHRO_SURF(HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO_SURF(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !#############################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -1258,6 +1267,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),      INTENT(IN)       :: TPDIAFILE! file to write
 CHARACTER(LEN=*),     INTENT(IN)       :: HGROUP   ! group title
 CHARACTER(LEN=*),     INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),     INTENT(IN)       :: HUNIT    ! physical unit
@@ -1338,7 +1348,7 @@ YTITLE(1) = HGROUP
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -1358,9 +1368,10 @@ DEALLOCATE(ZDATIME)
 END SUBROUTINE LES_DIACHRO_SURF
 !-------------------------------------------------------------------------------
 !################################################################
-SUBROUTINE LES_DIACHRO_SURF_SV(HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
+SUBROUTINE LES_DIACHRO_SURF_SV(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELD,HAVG)
 !################################################################
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODI_WRITE_DIACHRO
@@ -1370,6 +1381,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),        INTENT(IN)       :: TPDIAFILE! file to write
 CHARACTER(LEN=*),       INTENT(IN)       :: HGROUP   ! group title
 CHARACTER(LEN=*),       INTENT(IN)       :: HCOMMENT ! comment string
 CHARACTER(LEN=*),       INTENT(IN)       :: HUNIT    ! physical unit
@@ -1451,7 +1463,7 @@ YTITLE(1) = HGROUP
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SSOL",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH,                                    &
                    PTRAJX=ZTRAJX,PTRAJY=ZTRAJY,PTRAJZ=ZTRAJZ                   )
@@ -1471,12 +1483,13 @@ DEALLOCATE(ZDATIME)
 END SUBROUTINE LES_DIACHRO_SURF_SV
 !-------------------------------------------------------------------------------
 !#####################################################################
-SUBROUTINE LES_DIACHRO_2PT(HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
+SUBROUTINE LES_DIACHRO_2PT(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PFIELDX,PFIELDY,HAVG)
 !#####################################################################
 !
 !* Modification 01/04/03 (V. Masson) safer use of ZWORK6 with loops
 !
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODD_CONF
@@ -1487,6 +1500,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),                    INTENT(IN) :: TPDIAFILE! file to write
 CHARACTER(LEN=*),                   INTENT(IN) :: HGROUP   ! group title
 CHARACTER(LEN=*),                   INTENT(IN) :: HCOMMENT ! comment string
 CHARACTER(LEN=*),                   INTENT(IN) :: HUNIT    ! physical unit
@@ -1572,7 +1586,7 @@ END IF
 !            ----------------------
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )
 !
@@ -1614,7 +1628,7 @@ IF (GAVG) THEN
   YGROUP    = 'T_'//YGROUP
 END IF
 !
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )
 !
@@ -1628,12 +1642,13 @@ END SUBROUTINE LES_DIACHRO_2PT
 !------------------------------------------------------------------------------
 !
 !#####################################################################
-SUBROUTINE LES_DIACHRO_SPEC(HGROUP,HCOMMENT,HUNIT,PSPECTRAX,PSPECTRAY)
+SUBROUTINE LES_DIACHRO_SPEC(TPDIAFILE,HGROUP,HCOMMENT,HUNIT,PSPECTRAX,PSPECTRAY)
 !#####################################################################
 !
 !* Modification 01/04/03 (V. Masson) safer use of ZWORK6 with loops
 !
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_GRID
 USE MODD_CONF
@@ -1644,6 +1659,7 @@ IMPLICIT NONE
 !
 !*      0.1  declarations of arguments
 !
+TYPE(TFILEDATA),                      INTENT(IN) :: TPDIAFILE! file to write
 CHARACTER(LEN=*),                     INTENT(IN) :: HGROUP   ! group title
 CHARACTER(LEN=*),                     INTENT(IN) :: HCOMMENT ! comment string
 CHARACTER(LEN=*),                     INTENT(IN) :: HUNIT    ! physical unit
@@ -1714,7 +1730,7 @@ WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAX )
 YCOMMENT(:) = " DOMEGAX="//YSTRING//' '//HCOMMENT
 !
 !
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )
 !
@@ -1726,7 +1742,7 @@ CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )
 DEALLOCATE(ZWORK6)
@@ -1762,7 +1778,7 @@ YTITLE(:) = YGROUP
 WRITE(YSTRING,FMT="(I6.6)") NINT( XLES_CURRENT_DOMEGAY )
 YCOMMENT(:) = " DOMEGAY="//YSTRING//' '//HCOMMENT
 !
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )
 !
@@ -1773,7 +1789,7 @@ CALL LES_TIME_AVG(ZTRAJT,ZWORK6,IRESP,ZDATIME)
 YGROUP    = 'T_'//YGROUP
 !
 IF (IRESP==0) &
-CALL WRITE_DIACHRO(CCURRENT_FMDIAC,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
+CALL WRITE_DIACHRO(TPDIAFILE,CLUOUT0,YGROUP,"SPXY",IGRID,ZDATIME, ZWORK6,     &
                    ZTRAJT,YTITLE,YUNIT,YCOMMENT,.FALSE.,.FALSE.,.FALSE.,   &
                    IIL,IIH,IJL,IJH,IKL,IKH                                     )                   
 !

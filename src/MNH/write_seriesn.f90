@@ -11,11 +11,15 @@
  MODULE MODI_WRITE_SERIES_n
 !########################
 !
+IMPLICIT NONE
+!
 INTERFACE
 !
-      SUBROUTINE WRITE_SERIES_n(HFILEDIA,HLUOUT )
+      SUBROUTINE WRITE_SERIES_n(TPDIAFILE,HLUOUT)
 !
-CHARACTER (LEN=*),  INTENT(IN) :: HFILEDIA     ! name of FM-file to write
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
 CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT       ! name of output listing
 !
 END SUBROUTINE WRITE_SERIES_n
@@ -24,7 +28,7 @@ END INTERFACE
 !
 END MODULE MODI_WRITE_SERIES_n
 !     ###################
-      SUBROUTINE WRITE_SERIES_n (HFILEDIA,HLUOUT)
+      SUBROUTINE WRITE_SERIES_n (TPDIAFILE,HLUOUT)
 
 !     #######################################################################################       
 !
@@ -71,6 +75,7 @@ USE MODD_SERIES
 USE MODD_SERIES_n
 USE MODD_CONF, ONLY: NVERB
 USE MODD_PARAMETERS
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODI_WRITE_DIACHRO
 USE MODI_GATHER_ll
 USE MODE_ll
@@ -80,7 +85,7 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER (LEN=*),  INTENT(IN) :: HFILEDIA     ! name of FM-file to write
+TYPE(TFILEDATA),    INTENT(IN) :: TPDIAFILE    ! file to write
 CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT       ! name of output listing
 !
 !*       0.2     Local variables 
@@ -249,7 +254,7 @@ ENDIF
 !*      2.3  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-CALL WRITE_DIACHRO(HFILEDIA,HLUOUT,'TSERIES','CART',NSGRIDD1,XSDATIME(:,1:NSNBSTEPT),   &
+CALL WRITE_DIACHRO(TPDIAFILE,HLUOUT,'TSERIES','CART',NSGRIDD1,XSDATIME(:,1:NSNBSTEPT),   &
                    XSSERIES1(1:1,1:1,1:1,1:NSNBSTEPT,:,:),               &
                    XSTRAJT(1:NSNBSTEPT,:),CSTITLE1,CSUNIT1,CSCOMMENT1,   &
                    GICP,GJCP,GKCP,                               &
@@ -310,7 +315,7 @@ DEALLOCATE(ZVAR3D)
 !*      3.2  Write in diachro file
 !
 GICP=.TRUE. ; GJCP=.TRUE. ; GKCP=.FALSE.
-CALL WRITE_DIACHRO(HFILEDIA,HLUOUT,'ZTSERIES','CART',NSGRIDD2,XSDATIME(:,1:NSNBSTEPT),   &
+CALL WRITE_DIACHRO(TPDIAFILE,HLUOUT,'ZTSERIES','CART',NSGRIDD2,XSDATIME(:,1:NSNBSTEPT),   &
                    XSSERIES2(1:1,1:1,1:IKMAX,1:NSNBSTEPT,:,:),            &
                    XSTRAJT(1:NSNBSTEPT,:),CSTITLE2,CSUNIT2,CSCOMMENT2,    &
                    GICP,GJCP,GKCP,                 &
@@ -370,7 +375,7 @@ DO JS=1,NBJSLICE
     YSTITLE3S(JT)=ADJUSTL(ADJUSTR(CSTITLE3(JT))//'Y'//YSL//'-'//YSH)
   END DO
   GICP=.FALSE. ; GJCP=.TRUE. ; GKCP=.TRUE.
-  CALL WRITE_DIACHRO(HFILEDIA,HLUOUT,YGROUP,'CART',NSGRIDD3,XSDATIME(:,1:NSNBSTEPT),    &
+  CALL WRITE_DIACHRO(TPDIAFILE,HLUOUT,YGROUP,'CART',NSGRIDD3,XSDATIME(:,1:NSNBSTEPT),    &
                       ZSERIES3_ll(1:IIU_ll,1:1,1:1,1:NSNBSTEPT,1:1,ISB1:ISB2),&
                       XSTRAJT(1:NSNBSTEPT,:),YSTITLE3S,CSUNIT3,CSCOMMENT3,     &
                       GICP,GJCP,GKCP,                               &
