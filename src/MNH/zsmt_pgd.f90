@@ -8,9 +8,11 @@
 !
 INTERFACE 
 !
-      SUBROUTINE ZSMT_PGD(HFILE,KZSFILTER,KSLEVE,PSMOOTH_ZS)
+      SUBROUTINE ZSMT_PGD(TPFILE,KZSFILTER,KSLEVE,PSMOOTH_ZS)
 !
-CHARACTER(LEN=28),   INTENT(IN)  :: HFILE      ! name of the input/output file
+USE MODD_IO_ll,      ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),     INTENT(IN)  :: TPFILE     ! File characteristics
 INTEGER,             INTENT(IN)  :: KZSFILTER  ! number of iterations for fine orography
 INTEGER,             INTENT(IN)  :: KSLEVE     ! number of iterations
 REAL,                INTENT(IN)  :: PSMOOTH_ZS ! optional uniform smooth orography for SLEVE coordinate
@@ -24,7 +26,7 @@ END MODULE MODI_ZSMT_PGD
 !
 !
 !     #############################
-      SUBROUTINE ZSMT_PGD(HFILE,KZSFILTER,KSLEVE,PSMOOTH_ZS)
+      SUBROUTINE ZSMT_PGD(TPFILE,KZSFILTER,KSLEVE,PSMOOTH_ZS)
 !     #############################
 !
 !!****  *ZSMT_PGD* computes smoothed orography for SLEVE coordinate
@@ -58,6 +60,7 @@ END MODULE MODI_ZSMT_PGD
 !
 !*       0.    DECLARATIONS
 !
+USE MODD_IO_ll,      ONLY : TFILEDATA
 USE MODD_LUNIT,      ONLY : CLUOUT0
 USE MODD_PARAMETERS, ONLY : JPHEXT, XUNDEF
 !
@@ -71,7 +74,7 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER(LEN=28),   INTENT(IN)  :: HFILE      ! name of the input/output file
+TYPE(TFILEDATA),     INTENT(IN)  :: TPFILE     ! File characteristics
 INTEGER,             INTENT(IN)  :: KZSFILTER  ! number of iterations for fine orography
 INTEGER,             INTENT(IN)  :: KSLEVE     ! number of iterations
 REAL,                INTENT(IN)  :: PSMOOTH_ZS ! optional uniform smooth orography for SLEVE coordinate
@@ -127,7 +130,7 @@ ALLOCATE(ZSLEVE_ZS(IIU,IJU))
 ALLOCATE(ZMASK(IIU,IJU))
 !
 YRECFM = 'ZS              '
-CALL FMREAD(HFILE,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(TPFILE%CNAME,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 DO JI=1,JPHEXT
 ZZS(JI,:) = ZZS(IIB,:)
@@ -210,17 +213,8 @@ END IF
 !              ---------------------------------------
 !
 !
-YRECFM='ZS'
-YCOMMENT='X_Y_ZS (m)'
-IGRID=4
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFILE,YRECFM,CLUOUT0,'XY',ZFINE_ZS,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='ZSMT'
-YCOMMENT='X_Y_ZSMT (m)'
-IGRID=4
-ILENCH=LEN(YCOMMENT)
-CALL FMWRIT(HFILE,YRECFM,CLUOUT0,'XY',ZSLEVE_ZS,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_WRITE_FIELD(TPFILE,'ZS',  CLUOUT0,IRESP,ZFINE_ZS)
+CALL IO_WRITE_FIELD(TPFILE,'ZSMT',CLUOUT0,IRESP,ZSLEVE_ZS)
 !
 DEALLOCATE(ZZS)
 DEALLOCATE(ZFINE_ZS)
