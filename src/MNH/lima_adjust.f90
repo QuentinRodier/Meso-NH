@@ -128,6 +128,7 @@ END MODULE MODI_LIMA_ADJUST
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
+!!      JP Chaboureau *LA*   March 2014  fix the calculation of icy cloud fraction
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1105,7 +1106,7 @@ DEALLOCATE(ZCTMIN)
 !*       5.2    compute the cloud fraction PCLDFR (binary !!!!!!!)
 !
 IF ( .NOT. OSUBG_COND ) THEN
-   WHERE (PRCS(:,:,:) > 1.E-12 / ZDT)
+   WHERE (PRCS(:,:,:) + PRIS(:,:,:) + PRSS(:,:,:) > 1.E-12 / ZDT)
       ZW(:,:,:)  = 1.
    ELSEWHERE
       ZW(:,:,:)  = 0. 
