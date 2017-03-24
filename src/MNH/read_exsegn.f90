@@ -284,6 +284,8 @@ END MODULE MODI_READ_EXSEG_n
 !!      Modification   02/2016   (M.Leriche) treat gas and aq. chemicals separately
 !!      Modification   10/2016    (C.LAC) Add OSPLIT_WENO + Add droplet
 !!                                deposition + Add max values
+!!      Modification   03/2017   (JP Chaboureau) Fix the initialization of
+!!                                               LUSERx-type variables for LIMA
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -869,6 +871,20 @@ SELECT CASE ( CCLOUD )
                 ) )  THEN
         WRITE(UNIT=ILUOUT,FMT=9002) KMI
         WRITE(UNIT=ILUOUT,FMT='("YOU WANT TO USE THE C3R5 MICROPHYS. SCHEME.",&
+        &" YOU WILL HAVE VAPOR, CLOUD WATER/ICE, RAIN, SNOW AND GRAUPEL ",/,  &
+        &"LUSERV, LUSERC, LUSERR, LUSERI, LUSERS, LUSERG ARE SET TO TRUE")' )
+!
+        LUSERV=.TRUE. ; LUSERC=.TRUE. ; LUSERR=.TRUE.
+        LUSERI=.TRUE. ; LUSECI=.TRUE.
+        LUSERS=.TRUE. ; LUSERG=.TRUE.
+        LUSERH=.FALSE.
+      END IF
+    ELSE IF (CCLOUD == 'LIMA') THEN
+      IF (.NOT. ( LUSERV .AND. LUSERC .AND. LUSERR .AND. LUSERI .AND. &
+                  LUSERS .AND. LUSERG .AND. (.NOT. LUSERH)            &
+                ) )  THEN
+        WRITE(UNIT=ILUOUT,FMT=9002) KMI
+        WRITE(UNIT=ILUOUT,FMT='("YOU WANT TO USE THE LIMA MICROPHYS. SCHEME.",&
         &" YOU WILL HAVE VAPOR, CLOUD WATER/ICE, RAIN, SNOW AND GRAUPEL ",/,  &
         &"LUSERV, LUSERC, LUSERR, LUSERI, LUSERS, LUSERG ARE SET TO TRUE")' )
 !
