@@ -98,11 +98,11 @@ TYPE FIELD_t
 !  REAL                          ::   XDRYMASST    ! Mass of dry air Md
   REAL                          ::   XDRYMASSS    ! LS sources of Md
   REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()     ! turbulent flux <s'Rc'>
-  REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()    ! =sqrt(<s's'>) for the
-                                                     ! Subgrid Condensation
-  REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()   ! cloud fraction
-  REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()    ! turbulent flux <s'Rc'>
-                                                     ! at t
+!  REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()    ! turbulent flux <s'Rc'>
+!                                                     ! at t
+!  REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()    ! =sqrt(<s's'>) for the
+!                                                     ! Subgrid Condensation
+!  REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()   ! cloud fraction
   REAL, DIMENSION(:,:,:), POINTER :: XCIT=>NULL()     ! Pristine ice concentration
   REAL, DIMENSION(:,:,:), POINTER :: XTHM=>NULL()      ! Theta at Previous time step 
   REAL, DIMENSION(:,:,:), POINTER :: XRCM=>NULL()      ! Cloud mixing ratio at Previous time step
@@ -134,9 +134,9 @@ REAL, DIMENSION(:,:,:,:), POINTER :: XRSVS_CLD=>NULL()
 REAL, POINTER :: XDRYMASST=>NULL()
 REAL, POINTER :: XDRYMASSS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSRC=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XSIGS=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCLDFR=>NULL()
-REAL, DIMENSION(:,:,:), POINTER :: XSRCT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XCIT=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XTHM=>NULL()
 REAL, DIMENSION(:,:,:), POINTER :: XPABSM=>NULL()
@@ -177,9 +177,9 @@ FIELD_MODEL(KFROM)%XSVT=>XSVT
 FIELD_MODEL(KFROM)%XRSVS=>XRSVS
 FIELD_MODEL(KFROM)%XRSVS_CLD=>XRSVS_CLD
 FIELD_MODEL(KFROM)%XSRC=>XSRC
-FIELD_MODEL(KFROM)%XSIGS=>XSIGS
-FIELD_MODEL(KFROM)%XCLDFR=>XCLDFR
-FIELD_MODEL(KFROM)%XSRCT=>XSRCT
+!FIELD_MODEL(KFROM)%XSRCT=>XSRCT !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XSIGS=>XSIGS !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XCLDFR=>XCLDFR !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XCIT=>XCIT
 FIELD_MODEL(KFROM)%XTHM=>XTHM
 FIELD_MODEL(KFROM)%XPABSM=>XPABSM
@@ -214,9 +214,9 @@ XRSVS_CLD=>FIELD_MODEL(KTO)%XRSVS_CLD
 !XDRYMASST=>FIELD_MODEL(KTO)%XDRYMASST !Done in FIELDLIST_GOTO_MODEL
 XDRYMASSS=>FIELD_MODEL(KTO)%XDRYMASSS
 XSRC=>FIELD_MODEL(KTO)%XSRC
-XSIGS=>FIELD_MODEL(KTO)%XSIGS
-XCLDFR=>FIELD_MODEL(KTO)%XCLDFR
-XSRCT=>FIELD_MODEL(KTO)%XSRCT
+!XSRCT=>FIELD_MODEL(KTO)%XSRCT !Done in FIELDLIST_GOTO_MODEL
+!XSIGS=>FIELD_MODEL(KTO)%XSIGS !Done in FIELDLIST_GOTO_MODEL
+!XCLDFR=>FIELD_MODEL(KTO)%XCLDFR !Done in FIELDLIST_GOTO_MODEL
 XCIT=>FIELD_MODEL(KTO)%XCIT
 XTHM=>FIELD_MODEL(KTO)%XTHM
 XPABSM=>FIELD_MODEL(KTO)%XPABSM

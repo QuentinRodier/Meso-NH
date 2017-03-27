@@ -239,8 +239,6 @@ INTEGER             :: IRR       ! Number of moist variables
 !
 REAL, DIMENSION(SIZE(XRT1,1),SIZE(XRT1,2),SIZE(XRT1,3)) :: ZHUT ! relative humidity
                                                              ! (model 1)
-!REAL, DIMENSION(SIZE(FIELD_MODEL(1)%XTHT,1),SIZE(FIELD_MODEL(1)%XTHT,2),SIZE(FIELD_MODEL(1)%XTHT,3)) :: ZTHVT! virtual pot. T
-!REAL, DIMENSION(:,:,:),ALLOCATABLE :: ZTHVT! virtual pot. T
 REAL, DIMENSION(SIZE(XTHT1,1),SIZE(XTHT1,2),SIZE(XTHT1,3)) :: ZTHVT! virtual pot. T
                                                                 ! (model 1)          
 !$20140708
@@ -363,8 +361,8 @@ CALL MPPDB_CHECK3D(PVT,"SPAWN_FIELD2:PVT",PRECISION)
 !*       2.1.5  secondary prognostic variables
 !
   IF (CONF_MODEL(1)%NRR > 1) THEN
-    PSRCT (:,:,:) =  FIELD_MODEL(1)%XSRCT (KXOR:KXEND,KYOR:KYEND,:)
-    PSIGS(:,:,:) =  FIELD_MODEL(1)%XSIGS(KXOR:KXEND,KYOR:KYEND,:)
+    PSRCT(:,:,:) = XSRCT1 (KXOR:KXEND,KYOR:KYEND,:)
+    PSIGS(:,:,:) = XSIGS1(KXOR:KXEND,KYOR:KYEND,:)
   ENDIF
 !
 !*       2.1.6  Large scale variables
@@ -488,8 +486,8 @@ ELSE
       CALL SET_LSFIELD_1WAY_ll(ZHUT(:,:,JI),ZHUT_C(:,:,JI),2)
     ENDIF
     IF (CONF_MODEL(1)%NRR>1 .AND. HTURB /='NONE') THEN
-      CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XSRCT(:,:,JI),ZSRCT_C(:,:,JI),2)
-      CALL SET_LSFIELD_1WAY_ll(FIELD_MODEL(1)%XSIGS(:,:,JI),ZSIGS_C(:,:,JI),2)
+      CALL SET_LSFIELD_1WAY_ll(XSRCT1(:,:,JI),ZSRCT_C(:,:,JI),2)
+      CALL SET_LSFIELD_1WAY_ll(XSIGS1(:,:,JI),ZSIGS_C(:,:,JI),2)
     ENDIF
     IF (LUV_FLX)                                    &
       CALL SET_LSFIELD_1WAY_ll(EDDYUV_FLUX_MODEL(1)%XVU_FLUX_M(:,:,JI),ZVU_FLUX_M_C(:,:,JI),2)
