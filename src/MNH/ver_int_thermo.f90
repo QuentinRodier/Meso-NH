@@ -11,11 +11,14 @@
       MODULE MODI_VER_INT_THERMO
 !     ##########################
 INTERFACE
-      SUBROUTINE VER_INT_THERMO(OSHIFT,                                   &
+      SUBROUTINE VER_INT_THERMO(TPFILE,OSHIFT,                                     &
                                 PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX, &
-                                PPMHP_MX,PEXNTOP2D,PTHV,PR,PPMHP,PDIAG,   &
-                                PLSTH_MX, PLSRV_MX, PLSTHM, PLSRVM        )
+                                PPMHP_MX,PEXNTOP2D,PTHV,PR,PPMHP,PDIAG,            &
+                                PLSTH_MX, PLSRV_MX, PLSTHM, PLSRVM                 )
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
 !                                                   ! F: no vertical shift (used for MESONH data)
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PTHV_MX    ! thetav on mixed grid
@@ -42,10 +45,10 @@ END SUBROUTINE VER_INT_THERMO
 END INTERFACE
 END MODULE MODI_VER_INT_THERMO
 !     #######################################################################
-      SUBROUTINE VER_INT_THERMO(OSHIFT,                                   &
+      SUBROUTINE VER_INT_THERMO(TPFILE,OSHIFT,                                     &
                                 PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX, &
-                                PPMHP_MX,PEXNTOP2D,PTHV,PR,PPMHP,PDIAG,   &
-                                PLSTH_MX, PLSRV_MX, PLSTHM, PLSRVM        )
+                                PPMHP_MX,PEXNTOP2D,PTHV,PR,PPMHP,PDIAG,            &
+                                PLSTH_MX, PLSRV_MX, PLSTHM, PLSRVM                 )
 !     #######################################################################
 !
 !!****  *VER_INT_THERMO* - Vertical shift and interpolation of thetav and rv.
@@ -154,6 +157,7 @@ USE MODI_WATER_SUM
 !
 USE MODD_CONF      ! declaration modules
 USE MODD_CONF_n
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_GRID_n
 USE MODD_PARAMETERS
@@ -172,6 +176,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
 !                                                   ! F: no vertical shift (used for MESONH data)
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PTHV_MX    ! thetav on mixed grid
@@ -346,7 +351,7 @@ CALL MPPDB_CHECK3D(ZPMHPOHP_SH,"ver_int_thermo2a::ZPMHPOHP_SH",PRECISION)
 !              --------------------------------
 !
 ZTHVCLIMGR=3.5E-3 ! K/m
-CALL FREE_ATM_PROFILE(PTHV_MX,PZMASS_MX,PZS_LS,PZSMT_LS,ZTHVCLIMGR,ZTHV_FREE,ZZ_FREE)
+CALL FREE_ATM_PROFILE(TPFILE,PTHV_MX,PZMASS_MX,PZS_LS,PZSMT_LS,ZTHVCLIMGR,ZTHV_FREE,ZZ_FREE)
 CALL MPPDB_CHECK3D(ZTHV_FREE,"VER_INT_THERMO:ZTHV_FREE",PRECISION)
 !
 !*       3.2   Computation of the value of thetav on the shifted grid

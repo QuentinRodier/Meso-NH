@@ -13,8 +13,11 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_CSTN(HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+SUBROUTINE SET_CSTN(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
@@ -40,7 +43,7 @@ END MODULE MODI_SET_CSTN
 !
 !
 !     ##################################################################################
-      SUBROUTINE SET_CSTN(HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+      SUBROUTINE SET_CSTN(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !     ##################################################################################
 !
 !!****  *SET_CSTN * - routine to initialize mass and wind fields from a Nv=cste 
@@ -170,6 +173,7 @@ END MODULE MODI_SET_CSTN
 !              ------------
 !
 USE MODD_CST             ! declarative modules
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_CONF
 USE MODD_GRID_n
@@ -192,6 +196,7 @@ IMPLICIT NONE
 !  
 !*       0.1   Declarations of arguments :
 !
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
@@ -418,13 +423,13 @@ ZMRM(:) = SM_PMR_HU(CLUOUT,ZPM(:),ZTVM(:),ZHUM(:), &
 !	        -------------------------------------------------
 !
 IF (PRESENT(PCORIOZ)) THEN
-    CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-              KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-              ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PCORIOZ=PCORIOZ)
+    CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                       &
+                  KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND, &
+                  ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PCORIOZ=PCORIOZ)
 ELSE
-    CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-              KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-              ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV)
+    CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                       &
+                  KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND, &
+                  ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV)
 ENDIF
 !-------------------------------------------------------------------------------
 !

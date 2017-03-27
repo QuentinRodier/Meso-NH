@@ -13,8 +13,12 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_RSOU(HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ)
+      SUBROUTINE SET_RSOU(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
+                          ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
@@ -37,12 +41,10 @@ END INTERFACE
 !
 END MODULE MODI_SET_RSOU
 !
-!
-!
-!     ######spl
-      SUBROUTINE SET_RSOU(HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
+!     ###########################################################################
+      SUBROUTINE SET_RSOU(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
                           ORMV_BL,PJ,OSHIFT,PCORIOZ) 
-!     ##########################################################################################
+!     ###########################################################################
 !
 !!****  *SET_RSOU * -  to initialize mass fiels from a radiosounding 
 !!
@@ -251,6 +253,7 @@ END MODULE MODI_SET_RSOU
 !              ------------
 !
 USE MODD_CST          ! declarative modules
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_CONF
 USE MODD_CONF_n
@@ -281,6 +284,7 @@ IMPLICIT NONE
 !  
 !*       0.1   Declarations of arguments :
 !
+TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
@@ -1266,15 +1270,15 @@ DEALLOCATE(ZMRT)
 !*	 4.     COMPUTE FIELDS ON THE MODEL GRID (WITH OROGRAPHY)
 !	        -------------------------------------------------
 IF (PRESENT(PCORIOZ)) THEN
-  CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-               KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-               ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,&
-               PMRCM=ZMRCM,PMRIM=ZMRIM,PCORIOZ=PCORIOZ)
+  CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
+                KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
+                ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
+                PMRCM=ZMRCM,PMRIM=ZMRIM,PCORIOZ=PCORIOZ)
 ELSE  
-  CALL SET_MASS(GPROFILE_IN_PROC, ZZFLUX_PROFILE,              &
-               KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
-               ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,&
-               PMRCM=ZMRCM,PMRIM=ZMRIM)
+  CALL SET_MASS(TPFILE,GPROFILE_IN_PROC, ZZFLUX_PROFILE,                      &
+                KILOC+JPHEXT,KJLOC+JPHEXT,ZZS_LS,ZZMASS_MX,ZZFLUX_MX,ZPGROUND,&
+                ZTHVM,ZMRM,ZUW,ZVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,              &
+                PMRCM=ZMRCM,PMRIM=ZMRIM)
 ENDIF
 !
 !-------------------------------------------------------------------------------

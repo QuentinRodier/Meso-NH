@@ -11,11 +11,14 @@
       MODULE MODI_VER_THERMO
 !     ######################
 INTERFACE
-      SUBROUTINE VER_THERMO(OSHIFT,                                               &
+      SUBROUTINE VER_THERMO(TPFILE,OSHIFT,                                                 &
                             PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PJ, &
-                            PDXX,PDYY,PEXNTOP2D,PPSURF,PDIAG,                     &
-                            PLSTH_MX,PLSRV_MX                                     )
+                            PDXX,PDYY,PEXNTOP2D,PPSURF,PDIAG,                              &
+                            PLSTH_MX,PLSRV_MX                                              )
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
 !                                                   ! F: no vertical shift (used for MESONH data)
 REAL,   DIMENSION(:,:,:), INTENT(IN)     :: PTHV_MX   ! thetav on mixed grid
@@ -39,11 +42,11 @@ REAL,DIMENSION(:,:,:), INTENT(IN), OPTIONAL :: PLSRV_MX ! large scale vapor mixi
 END SUBROUTINE VER_THERMO
 END INTERFACE
 END MODULE MODI_VER_THERMO
-!     ######spl
-      SUBROUTINE VER_THERMO(OSHIFT,                                               &
+!     ######################################################################
+      SUBROUTINE VER_THERMO(TPFILE,OSHIFT,                                                 &
                             PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PJ, &
-                            PDXX,PDYY,PEXNTOP2D,PPSURF,PDIAG,                     &
-                            PLSTH_MX,PLSRV_MX                                     )
+                            PDXX,PDYY,PEXNTOP2D,PPSURF,PDIAG,                              &
+                            PLSTH_MX,PLSRV_MX                                              )
 !     ######################################################################
 !
 !!****  *VER_THERMO* - initializes the thermodynamic and reference state
@@ -164,6 +167,7 @@ USE MODI_WATER_SUM
 !
 USE MODD_CONF           ! declaration modules
 USE MODD_CONF_n
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_CST
 USE MODD_FIELD_n, ONLY: XTHT,XRT,XPABST,XDRYMASST
@@ -190,6 +194,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE     ! File characteristics
 LOGICAL,                  INTENT(IN)  :: OSHIFT     ! T: vertical shift of BL (used for GRIB file data)
 !                                                   ! F: no vertical shift (used for MESONH data)
 REAL,   DIMENSION(:,:,:), INTENT(IN)     :: PTHV_MX   ! thetav on mixed grid
@@ -268,10 +273,10 @@ IF ( PRESENT(PLSTH_MX)) THEN
   CALL MPPDB_CHECK3D(PLSTH_MX,"PLSTH_MX",PRECISION)
   CALL MPPDB_CHECK3D(PLSRV_MX,"PLSRV_MX",PRECISION)
   !
-  CALL VER_INT_THERMO(OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
+  CALL VER_INT_THERMO(TPFILE,OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
                       ZTHV,XRT,ZPMHP,PDIAG,PLSTH_MX,PLSRV_MX,XLSTHM,XLSRVM)
 ELSE
-  CALL VER_INT_THERMO(OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
+  CALL VER_INT_THERMO(TPFILE,OSHIFT,PTHV_MX,PR_MX,PZS_LS,PZSMT_LS,PZMASS_MX,PZFLUX_MX,PPMHP_MX,PEXNTOP2D, &
                       ZTHV,XRT,ZPMHP,PDIAG)
 END IF
 !

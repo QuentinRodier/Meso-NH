@@ -8,9 +8,13 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_MASS(OPROFILE_IN_PROC, PZFLUX_PROFILE,            &
-                 KILOC,KJLOC,PZS_MX,PZMASS_MX,PZFLUX_MX,PPGROUND,&
-                 PTHVM,PMRM,PUW,PVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PMRCM,PMRIM,PCORIOZ)
+SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                           &
+                    KILOC,KJLOC,PZS_MX,PZMASS_MX,PZFLUX_MX,PPGROUND,                   &
+                    PTHVM,PMRM,PUW,PVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PMRCM,PMRIM,PCORIOZ)
+!
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),        INTENT(IN) :: TPFILE    ! File characteristics
 LOGICAL,                INTENT(IN) :: OPROFILE_IN_PROC ! initialization profile in current processor
 REAL, DIMENSION(:),     INTENT(IN) :: PZFLUX_PROFILE   ! Z at flux points on the initialization point column
 INTEGER,                INTENT(IN) :: KILOC     ! I Localisation of vertical profile
@@ -44,9 +48,9 @@ END MODULE MODI_SET_MASS
 !
 !
 !     ##########################################################################
-      SUBROUTINE SET_MASS(OPROFILE_IN_PROC, PZFLUX_PROFILE,            &
-                 KILOC,KJLOC,PZS_MX,PZMASS_MX,PZFLUX_MX,PPGROUND,&
-                 PTHVM,PMRM,PUW,PVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PMRCM,PMRIM,PCORIOZ)
+SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                           &
+                    KILOC,KJLOC,PZS_MX,PZMASS_MX,PZFLUX_MX,PPGROUND,                   &
+                    PTHVM,PMRM,PUW,PVW,OSHIFT,OBOUSS,PJ,HFUNU,HFUNV,PMRCM,PMRIM,PCORIOZ)
 !     ##########################################################################
 !
 !!****  *SET_MASS * - routine to initialize mass and wind fields on MESONH grid
@@ -119,6 +123,7 @@ END MODULE MODI_SET_MASS
 ! use des modules
 USE MODD_GRID_n ! declarative modules
 USE MODD_GRID
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_FIELD_n
@@ -147,8 +152,9 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments :
 !
-LOGICAL,                INTENT(IN) :: OPROFILE_IN_PROC ! initialization profile in current processor
-REAL, DIMENSION(:),     INTENT(IN) :: PZFLUX_PROFILE   ! Z at flux points on the initialization point column
+TYPE(TFILEDATA),        INTENT(IN)             :: TPFILE    ! File characteristics
+LOGICAL,                INTENT(IN)             :: OPROFILE_IN_PROC ! initialization profile in current processor
+REAL, DIMENSION(:),     INTENT(IN)             :: PZFLUX_PROFILE   ! Z at flux points on the initialization point column
 INTEGER,                INTENT(IN)             :: KILOC     ! I Localisation of vertical profile
 INTEGER,                INTENT(IN)             :: KJLOC     ! J Localisation of vertical profile
 REAL, DIMENSION(:,:),   INTENT(IN)             :: PZS_MX    ! zs on the mixed grid
@@ -445,7 +451,7 @@ ELSE
 ! Interpolation of theta and r
 !
  IF (SIZE(ZTHV3D_MX,3) > 3) THEN
-  CALL VER_INT_THERMO(OSHIFT,ZTHV3D_MX,ZMR3D_MX,PZS_MX,PZS_MX,PZMASS_MX,&
+  CALL VER_INT_THERMO(TPFILE,OSHIFT,ZTHV3D_MX,ZMR3D_MX,PZS_MX,PZS_MX,PZMASS_MX,&
                       PZFLUX_MX,ZPMHP_MX,ZEXNTOP2D, &
                       ZTHV3D,XRT,ZPMHP,ZDIAG)
  ELSE

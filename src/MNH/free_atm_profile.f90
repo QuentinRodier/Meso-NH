@@ -11,9 +11,12 @@
       MODULE MODI_FREE_ATM_PROFILE
 !     ############################
 INTERFACE
-      SUBROUTINE FREE_ATM_PROFILE(PVAR_MX,PZMASS_MX,PZS_LS,PZSMT_LS,PCLIMGR,&
+      SUBROUTINE FREE_ATM_PROFILE(TPFILE,PVAR_MX,PZMASS_MX,PZS_LS,PZSMT_LS,PCLIMGR,&
                            PF_FREE,PZ_FREE)
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE    ! File characteristics
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PVAR_MX   ! thermodynamical field
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PZMASS_MX ! mass points altitude
 REAL,   DIMENSION(:,:),   INTENT(IN)  :: PZS_LS    ! large scale orography
@@ -30,7 +33,7 @@ END SUBROUTINE FREE_ATM_PROFILE
 END INTERFACE
 END MODULE MODI_FREE_ATM_PROFILE
 !     ##############################################################
-      SUBROUTINE FREE_ATM_PROFILE(PVAR_MX,PZMASS_MX,PZS_LS,PZSMT_LS,PCLIMGR,&
+      SUBROUTINE FREE_ATM_PROFILE(TPFILE,PVAR_MX,PZMASS_MX,PZS_LS,PZSMT_LS,PCLIMGR,&
                             PF_FREE,PZ_FREE)
 !     ##############################################################
 !
@@ -98,10 +101,12 @@ USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
 USE MODI_VERT_COORD
 !
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
 USE MODE_FM
 !
 USE MODD_CONF  ! declaration modules
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n
 USE MODD_GRID_n
@@ -115,6 +120,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
+TYPE(TFILEDATA),          INTENT(IN)  :: TPFILE    ! File characteristics
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PVAR_MX   ! thermodynamical field
 REAL,   DIMENSION(:,:,:), INTENT(IN)  :: PZMASS_MX ! mass points altitude
 REAL,   DIMENSION(:,:),   INTENT(IN)  :: PZS_LS    ! large scale orography
@@ -171,6 +177,7 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
                                       :: Z3D ! field to be recorded
 REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
                                       :: ZZMASS ! MESO-NH output mass grid
+TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
@@ -479,7 +486,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   YCOMMENT='Height of Boundary Layer TOP (M)'
   ILENCH=LEN(YCOMMENT)
   IGRID=4
-  CALL FMWRIT(CINIFILE,YRECFM,CLUOUT0,'XY',Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(TPFILE%CNAME,YRECFM,CLUOUT0,'XY',Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 !*      11.2  Writing of level of boundary layer top
 !             --------------------------------------
@@ -489,7 +496,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   YCOMMENT='Index of Boundary Layer TOP ( )'
   ILENCH=LEN(YCOMMENT)
   IGRID=4
-  CALL FMWRIT(CINIFILE,YRECFM,CLUOUT0,'XY',Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(TPFILE%CNAME,YRECFM,CLUOUT0,'XY',Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
@@ -498,11 +505,17 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !             -----------------------------------
 !
   Z2D(:,:)=ZFREE_GR(:,:)
-  YRECFM='FREE_ATM_GR'
-  YCOMMENT='K/M'
-  ILENCH=LEN(YCOMMENT)
-  IGRID=4
-  CALL FMWRIT(CINIFILE,YRECFM,CLUOUT0,'XY',Z2D,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  TZFIELD%CMNHNAME   = 'FREE_ATM_GR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: FREE_ATM_GR'
+  TZFIELD%CUNITS     = 'K m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'Free atmosphere gradient'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,Z2D)
 !
 !*      11.4  Writing of free atmosphere 3D profiles
 !             --------------------------------------
@@ -512,11 +525,17 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !
   CALL COEF_VER_INTERP_LIN(PZ_FREE(:,:,:),ZZMASS(:,:,:),OLEUG=.TRUE.)
   Z3D(:,:,:)=VER_INTERP_LIN(PF_FREE(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
-  YRECFM='THV_FREE'
-  YCOMMENT='X_Y_Z_THV_FREE (K)'
-  ILENCH=LEN(YCOMMENT)
-  IGRID=4
-  CALL FMWRIT(CINIFILE,YRECFM,CLUOUT0,'XY',Z3D,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+  TZFIELD%CMNHNAME   = 'THV_FREE'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: THV_FREE'
+  TZFIELD%CUNITS     = 'K'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_THV_FREE'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,Z3D)
 !
 END IF
 !-------------------------------------------------------------------------------
