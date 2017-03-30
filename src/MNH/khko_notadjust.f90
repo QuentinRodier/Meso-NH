@@ -14,16 +14,17 @@
 !
 INTERFACE
 !
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,    &
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HLUOUT, HRAD, OCLOSE_OUT,     &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
                                 PCLDFR, PSRCS, PNPRO,PSSPRO                          )
-
-                                      !
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
@@ -66,7 +67,7 @@ END INTERFACE
 END MODULE MODI_KHKO_NOTADJUST
 !
 !     ################################################################################
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,    &
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HLUOUT, HRAD, OCLOSE_OUT,     &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
@@ -105,6 +106,7 @@ USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
 USE MODD_BUDGET
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_NSV, ONLY : NSV_C2R2BEG
 USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN
 
@@ -122,7 +124,7 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
@@ -166,6 +168,7 @@ INTEGER             :: IRESP      ! Return code of FM routines
 INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
+CHARACTER (LEN=28)  :: YFMFILE    ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 
@@ -197,6 +200,8 @@ INTEGER :: JK            ! For loop
 !
 !*       1.     PRELIMINARIES
 !               -------------
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
@@ -395,12 +400,12 @@ IF ( OCLOSE_OUT ) THEN
   YRECFM  ='SURSAT'
   YCOMMENT='X_Y_Z_NEB (0)'
   IGRID   = 1
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
   ILENCH=LEN(YCOMMENT)
   YRECFM  ='ACT_OD'
   YCOMMENT='X_Y_Z_NEB (0)'
   IGRID   = 1
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZACT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZACT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !*       7.  STORE THE BUDGET TERMS

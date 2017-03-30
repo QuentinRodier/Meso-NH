@@ -3,21 +3,16 @@
 !      #########################
 !
 INTERFACE
-      SUBROUTINE LIMA_PHILLIPS (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,         &
-                                PTHS, PRVS, PRCS, PRIS,                           &
-                                PCIT, PCCS, PCIS,                                 &
+      SUBROUTINE LIMA_PHILLIPS (OHHONI, PTSTEP, KMI,                      &
+                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,   &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                                PTHS, PRVS, PRCS, PRIS,                   &
+                                PCIT, PCCS, PCIS,                         &
                                 PNAS, PIFS, PINS, PNIS   )
 !
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
@@ -58,14 +53,14 @@ END SUBROUTINE LIMA_PHILLIPS
 END INTERFACE
 END MODULE MODI_LIMA_PHILLIPS
 !
-!     ######################################################################
-      SUBROUTINE LIMA_PHILLIPS (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,         &
-                                PTHS, PRVS, PRCS, PRIS,                           &
-                                PCIT, PCCS, PCIS,                                 &
+!     #####################################################################
+      SUBROUTINE LIMA_PHILLIPS (OHHONI, PTSTEP, KMI,                      &
+                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,   &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                                PTHS, PRVS, PRCS, PRIS,                   &
+                                PCIT, PCCS, PCIS,                         &
                                 PNAS, PIFS, PINS, PNIS   )
-!     ######################################################################
+!     #####################################################################
 !!
 !!    PURPOSE
 !!    -------
@@ -146,11 +141,6 @@ IMPLICIT NONE
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian

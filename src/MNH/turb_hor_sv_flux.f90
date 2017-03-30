@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -25,14 +25,14 @@ INTERFACE
                       PSVM,                                          &
                       PRSVS                                          )
 !
-
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
 LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
                                                          ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -67,7 +67,7 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 !     ################################################################
       SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -121,6 +121,7 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_NSV, ONLY : NSV_LGBEG,NSV_LGEND
 USE MODD_LES
@@ -148,8 +149,7 @@ LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
                                                          ! file opening       
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -191,6 +191,7 @@ INTEGER             :: IKB,IKE
                                     ! mass points of the domain  
 INTEGER             :: JSV          ! loop counter
 INTEGER             :: ISV          ! number of scalar var.
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
@@ -203,6 +204,8 @@ REAL :: ZTIME1, ZTIME2
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
+!
+YFMFILE = TPFILE%CNAME
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PSVM,3)-JPVEXT   
@@ -257,7 +260,7 @@ DO JSV=1,ISV
     YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
     IGRID   = 2
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXX,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXX,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
 !
   IF (LLES_CALL .AND. KSPLT==1) THEN
@@ -302,7 +305,7 @@ DO JSV=1,ISV
       YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
       IGRID   = 3
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXY,IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXY,IGRID,ILENCH,YCOMMENT,IRESP)
     END IF
 !
   ELSE

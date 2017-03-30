@@ -17,8 +17,10 @@ INTERFACE
                       PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,                  &
                       PTSTEP,PIMPL,PEXPL,                                   &
                       HTURBLEN,HTURBDIM,                                    &
-                      HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,                 &
+                      TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,                  &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                 INTENT(IN)   ::  KKA          !near ground array index  
 INTEGER,                 INTENT(IN)   ::  KKU          !uppest atmosphere array index
@@ -36,8 +38,7 @@ REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
 CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
                                                        ! turbulence scheme
 CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
-CHARACTER(LEN=*),        INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                       ! FM-file
+TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),        INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                        ! model n
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
@@ -67,7 +68,7 @@ END MODULE MODI_TKE_EPS_SOURCES
                       PTRH,PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,        &
                       PTSTEP,PIMPL,PEXPL,                              &
                       HTURBLEN,HTURBDIM,                               &
-                      HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
+                      TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,             &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS  )
 !     ##################################################################
 !
@@ -181,6 +182,7 @@ END MODULE MODI_TKE_EPS_SOURCES
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_BUDGET
 USE MODD_LES
@@ -225,8 +227,7 @@ REAL,                    INTENT(IN)   ::  PEXPL, PIMPL ! Coef. temporal. disc.
 CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the 
                                                        ! turbulence scheme
 CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
-CHARACTER(LEN=*),        INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                       ! FM-file
+TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),        INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                        ! model n
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
@@ -267,6 +268,7 @@ INTEGER             :: IIU,IJU,IKU  ! array size in the 3 dimensions
 INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -279,6 +281,7 @@ NULLIFY(TZFIELDDISS_ll)
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
 !
+YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PTKEM,1)
@@ -430,7 +433,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_DP (M**2/S**3)'
   IGRID   = 1
   ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PDP,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PDP,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 ! stores the thermal production 
 !
@@ -438,7 +441,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_TP (M**2/S**3)'
   IGRID   = 1
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PTP,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PTP,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 ! stores the whole turbulent transport
 !
@@ -446,7 +449,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_TR (M**2/S**3)'
   IGRID   = 1
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZTR,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZTR,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 ! stores the dissipation of TKE 
 !
@@ -455,7 +458,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   IGRID   = 1
   ILENCH=LEN(YCOMMENT)
   ZFLX(:,:,:) =-XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:) 
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and

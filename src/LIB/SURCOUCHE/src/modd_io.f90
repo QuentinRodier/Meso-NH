@@ -86,7 +86,7 @@ TYPE TFILEDATA
   LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
                                                                   ! instead of double precision
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
-  INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL     ! Compression level
+  INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
   !
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
@@ -96,5 +96,7 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_FIRST => NULL()
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_LAST  => NULL()
 
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_SURFEX  => NULL() !Pointer used to find the file used when writing SURFEX fields in write_surf_mnh.f90
+
+TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy") !Non existing file which can be used as a dummy target
 
 END MODULE MODD_IO_ll

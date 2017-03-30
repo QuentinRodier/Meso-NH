@@ -3,13 +3,13 @@
 !      #####################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                            HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
-                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
-                            PTHM, PRCM,                                   &
-                            PTHT, PRT, PSVT,                              &
-                            PTHS, PRS, PSVS,                              &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D      )
+      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
+                            KRR, PZZ, PRHODJ,                           &
+                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,   &
+                            PTHM, PRCM,                                 &
+                            PTHT, PRT, PSVT,                            &
+                            PTHS, PRS, PSVS,                            &
+                            PINPRC, PINPRR, PINPRR3D, PEVAP3D           )
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -23,11 +23,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -62,15 +57,15 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 END SUBROUTINE LIMA_WARM
 END INTERFACE
 END MODULE MODI_LIMA_WARM
-!     #####################################################################
-      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                            HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
-                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
-                            PTHM, PRCM,                                   &
-                            PTHT, PRT, PSVT,                              &
-                            PTHS, PRS, PSVS,                              &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D             )
-!     #####################################################################
+!     ###################################################################
+      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
+                            KRR, PZZ, PRHODJ,                           &
+                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,   &
+                            PTHM, PRCM,                                 &
+                            PTHT, PRT, PSVT,                            &
+                            PTHS, PRS, PSVS,                            &
+                            PINPRC, PINPRR, PINPRR3D, PEVAP3D           )
+!     ###################################################################
 !
 !!
 !!    PURPOSE
@@ -160,11 +155,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -304,7 +294,6 @@ ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
 !
 !
 CALL LIMA_WARM_SEDIM (OSEDC, KSPLITR, PTSTEP, KMI,  &
-                      HFMFILE, HLUOUT, OCLOSE_OUT,  &
                       PZZ, PRHODREF, PPABST, ZT,    &
                       ZWLBDC,                       &
                       PRCT, PRRT, PCCT, PCRT,       &
@@ -331,10 +320,10 @@ END IF
 !
 IF (LACTI) THEN
 !
-   CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,&
-                        PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                        PRCM, PRVT, PRCT, PRRT,                          &
-                        PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+   CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI,                       &
+                        PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU, &
+                        PRCM, PRVT, PRCT, PRRT,                    &
+                        PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
 !
    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HENU_BU_RTH')
    IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
@@ -357,7 +346,7 @@ END IF ! LACTI
 !              ---------------------
 !
 !
-   CALL LIMA_WARM_COAL (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
+   CALL LIMA_WARM_COAL (PTSTEP, KMI,                                &
                         PRHODREF, ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR, &
                         PRCT, PRRT, PCCT, PCRT,                     &
                         PRCS, PRRS, PCCS, PCRS,                     &
@@ -372,12 +361,12 @@ END IF ! LACTI
 !
 IF (ORAIN) THEN
 !
-   CALL LIMA_WARM_EVAP (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
-                        PRHODREF, PEXNREF, PPABST, ZT,              &
-                        ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
-                        PRVT, PRCT, PRRT, PCRT,                     &
-                        PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
-                        PEVAP3D                                     )
+   CALL LIMA_WARM_EVAP (PTSTEP, KMI,                        &
+                        PRHODREF, PEXNREF, PPABST, ZT,      &
+                        ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
+                        PRVT, PRCT, PRRT, PCRT,             &
+                        PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
+                        PEVAP3D                             )
 !
    IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6 ,'REVA_BU_RRV')
    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'REVA_BU_RRC')

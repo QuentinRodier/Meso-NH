@@ -17,7 +17,7 @@ INTERFACE
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP, HFMFILE,HLUOUT,                       &
+                      PTSTEP, TPFILE,HLUOUT,                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -32,6 +32,8 @@ INTERFACE
                       PDP,PTP,PSIGS,PWTH,PWRC,PWSV                  )
 
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
 INTEGER,                INTENT(IN)   :: KRRI          ! number of ice water var.
@@ -44,8 +46,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -128,7 +129,7 @@ END MODULE MODI_TURB_VER
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,              &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP, HFMFILE,HLUOUT,                       &
+                      PTSTEP, TPFILE,HLUOUT,                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -331,6 +332,7 @@ END MODULE MODI_TURB_VER
 !
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_NSV, ONLY : NSV
@@ -376,8 +378,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -486,6 +487,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:,:)  ::  &
 INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -527,6 +529,7 @@ ALLOCATE ( &
 !
 !*       1.   PRELIMINARIES
 !             -------------
+YFMFILE = TPFILE%CNAME
 !
 PTP (:,:,:) = 0.
 PDP (:,:,:) = 0.
@@ -541,7 +544,7 @@ IKE=KKU-JPVEXT_TURB*KKL
 !
 CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_FLX,        &
              HTURBDIM,                             &
-             HFMFILE,HLUOUT,                       &
+             TPFILE,HLUOUT,                        &
              PDXX,PDYY,PDZZ,PDZX,PDZY,             &
              PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
              PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -614,7 +617,7 @@ END IF
   CALL  TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
                         OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                         PIMPL,PEXPL,PTSTEP,                           &
-                        HFMFILE,HLUOUT,                               &
+                        TPFILE,HLUOUT,                                &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                         PRHODJ,PTHVREF,                               &
                         PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -630,7 +633,7 @@ END IF
   CALL  TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
                         OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                         PIMPL,PEXPL,                                  &
-                        HFMFILE,HLUOUT,                               &
+                        TPFILE,HLUOUT,                                &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                         PRHODJ,PTHVREF,                               &
                         PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -659,7 +662,7 @@ END IF
 CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
                       OCLOSE_OUT,OTURB_FLX,KRR,                     &
                       HTURBDIM,PIMPL,PEXPL,PTSTEP,                  &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,                                       &
@@ -679,7 +682,7 @@ IF (SIZE(PSVM,4)>0)                                                 &
 CALL  TURB_VER_SV_FLUX(KKA,KKU,KKL,                                 &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,PTSTEP,                           &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
@@ -689,7 +692,7 @@ CALL  TURB_VER_SV_FLUX(KKA,KKU,KKL,                                 &
 !
 !
 IF (SIZE(PSVM,4)>0 .AND. LLES_CALL)                                 &
-CALL  TURB_VER_SV_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,                               &
+CALL  TURB_VER_SV_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,                   &
                       PDZZ,                                         &
                       PTHLM,PRM,PTHVREF,                            &
                       PLOCPEXNM,PATHETA,PAMOIST,PSRCM,ZPHI3,ZPSI3,  &
@@ -719,7 +722,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_PHI3 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL  FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZPHI3,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL  FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPHI3,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 ! stores the Turbulent Schmidt number
 ! 
@@ -728,7 +731,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
 !
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZPSI3,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPSI3,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
@@ -738,7 +741,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     YCOMMENT='X_Y_Z_'//YRECFM//' (0)'
     IGRID   = 4
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZPSI_SV(:,:,:,JSV),   &
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPSI_SV(:,:,:,JSV),   &
                 IGRID,ILENCH,YCOMMENT,IRESP)
   END DO
 

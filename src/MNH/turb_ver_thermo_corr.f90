@@ -17,7 +17,7 @@ INTERFACE
       SUBROUTINE TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,    &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -29,6 +29,8 @@ INTERFACE
                       PEMOIST, PREDTH1, PREDR1, PPHI3, PPSI3, PD,   &
                       PFWTH,PFWR,PFTH2,PFR2,PFTHR,                  &
                       PTHLP,PRP,PSIGS                          )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -44,8 +46,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -119,7 +120,7 @@ END MODULE MODI_TURB_VER_THERMO_CORR
       SUBROUTINE TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR, KRRL, KRRI,  &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -319,6 +320,7 @@ END MODULE MODI_TURB_VER_THERMO_CORR
 !
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_LES
@@ -358,8 +360,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -440,6 +441,7 @@ INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: I1,I2        ! For ZCOEFF allocation
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(:,:,:),ALLOCATABLE  :: ZCOEFF
@@ -459,7 +461,8 @@ LOGICAL :: GFTHR    ! flag to use w'th'r'
 !*       1.   PRELIMINARIES
 !             -------------
 !
-
+YFMFILE = TPFILE%CNAME
+!
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
 I1=MIN(KKA+JPVEXT_TURB*KKL,KKA+JPVEXT_TURB*KKL+2*KKL)
@@ -587,7 +590,7 @@ END IF
     YCOMMENT='X_Y_Z_THL_VVAR (KELVIN**2)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
 !
 ! and we store in LES configuration
@@ -708,7 +711,7 @@ END IF
       YCOMMENT='X_Y_Z_THLRCONS_VCOR (KELVIN*KG/KG)'
       IGRID   = 1
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
     END IF
 !
 ! and we store in LES configuration
@@ -809,7 +812,7 @@ END IF
       YCOMMENT='X_Y_Z_RTOT_VVAR (KG/KG **2)'
       IGRID   = 1
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
     END IF
     !
     ! and we store in LES configuration

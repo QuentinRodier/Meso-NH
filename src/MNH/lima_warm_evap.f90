@@ -3,21 +3,16 @@
 !      ##########################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
-                                 PRHODREF, PEXNREF, PPABST, ZT,              &
-                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
-                                 PRVT, PRCT, PRRT, PCRT,                     &
-                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
+      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                        &
+                                 PRHODREF, PEXNREF, PPABST, ZT,      &
+                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
+                                 PRVT, PRCT, PRRT, PCRT,             &
+                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
                                  PEVAP3D)
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -47,14 +42,14 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
       END SUBROUTINE LIMA_WARM_EVAP
 END INTERFACE
 END MODULE MODI_LIMA_WARM_EVAP
-!     #############################################################################
-      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
-                                 PRHODREF, PEXNREF, PPABST, ZT,              &
-                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
-                                 PRVT, PRCT, PRRT, PCRT,                     &
-                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
+!     ################################################################
+      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                        &
+                                 PRHODREF, PEXNREF, PPABST, ZT,      &
+                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
+                                 PRVT, PRCT, PRRT, PCRT,             &
+                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
                                  PEVAP3D)
-!     #############################################################################
+!     ################################################################
 !
 !!
 !!    PURPOSE
@@ -93,11 +88,6 @@ IMPLICIT NONE
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function

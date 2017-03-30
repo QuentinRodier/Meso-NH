@@ -17,7 +17,7 @@ INTERFACE
                       OCLOSE_OUT,OTURB_FLX,KRR,                     &
                       HTURBDIM,PIMPL,PEXPL,                         &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,                                       &
@@ -27,6 +27,7 @@ INTERFACE
                       PRUS,PRVS,PRWS,                               &
                       PDP,PTP                                       )
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -40,8 +41,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -98,7 +98,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
                       OCLOSE_OUT,OTURB_FLX,KRR,                     &
                       HTURBDIM,PIMPL,PEXPL,                         &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,                                       &
@@ -294,6 +294,7 @@ END MODULE MODI_TURB_VER_DYN_FLUX
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_NSV
@@ -330,8 +331,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -403,6 +403,7 @@ INTEGER             :: IIB,IIE, &   ! I index values for the Beginning and End
 INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JSV          ! scalar loop counter
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1) :: ZCOEFFLXU, &
@@ -417,6 +418,8 @@ REAL :: ZTIME1, ZTIME2
 !
 !*       1.   PRELIMINARIES
 !             -------------
+!
+YFMFILE = TPFILE%CNAME
 !
 IIU=SIZE(PUM,1)
 IJU=SIZE(PUM,2)
@@ -524,7 +527,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_UW_VFLX (M**2/S**2)'
   IGRID   = 4  
   ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 ! first part of total momentum flux
@@ -693,7 +696,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_VW_VFLX (M**2/S**2)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)  
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 ! second part of total momentum flux
@@ -808,7 +811,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
   YCOMMENT='X_Y_Z_W_VVAR (M**2/S**2)'
   IGRID   = 1  
   ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !----------------------------------------------------------------------------

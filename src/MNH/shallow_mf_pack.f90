@@ -10,40 +10,40 @@ INTERFACE
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,HFMFILE,HLUOUT,PTIME_LES,          &
+                OCLOSE_OUT,OMF_FLX,TPFILE,HLUOUT,PTIME_LES,           &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                      &
                 PRTHS,PRRS,PRUS,PRVS,PRSVS,                           &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
 !!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !               
 !*               1.1  Declaration of Arguments
 !                
 !
-INTEGER,                INTENT(IN)   :: KRR          ! number of moist var.
-INTEGER,                INTENT(IN)   :: KRRL         ! number of liquid water var.
-INTEGER,                INTENT(IN)   :: KRRI         ! number of ice water var.
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
+INTEGER,                INTENT(IN)   :: KRR        ! number of moist var.
+INTEGER,                INTENT(IN)   :: KRRL       ! number of liquid water var.
+INTEGER,                INTENT(IN)   :: KRRI       ! number of ice water var.
+CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT! Type of Mass Flux Scheme
                                      ! 'NONE' if no parameterization 
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD    ! Type of statistical cloud
-                                                     ! scheme
-LOGICAL,                INTENT(IN)   :: OMIXUV    ! True if mixing of momentum
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
-                                                      ! file opening
-LOGICAL,                INTENT(IN)   ::  OMF_FLX      ! switch to write the
-                                 ! MF fluxes in the synchronous FM-file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
+CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD  ! Type of statistical cloud
+                                                   ! scheme
+LOGICAL,                INTENT(IN)   :: OMIXUV     ! True if mixing of momentum
+LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
+                                                   ! file opening
+LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
+                                                   ! MF fluxes in the synchronous FM-file
+TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
+CHARACTER(LEN=*),       INTENT(IN)   :: HLUOUT     ! Output-listing name for
+                                                   ! model n
 REAL*8,DIMENSION(2),                  INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
-REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
-REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
+REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
+REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -59,7 +59,7 @@ REAL, DIMENSION(:,:,:,:),INTENT(IN)::  PRM         ! water var. at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PUM,PVM,PWM ! wind components at t-dt
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PTKEM       ! tke at t-dt
 
-REAL, DIMENSION(:,:,:,:), INTENT(IN) ::  PSVM        ! scalar variable a t-dt
+REAL, DIMENSION(:,:,:,:), INTENT(IN) ::  PSVM      ! scalar variable a t-dt
 
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRUS,PRVS,PRTHS ! Meso-NH sources
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) ::  PRRS 
@@ -77,13 +77,13 @@ END MODULE MODI_SHALLOW_MF_PACK
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,HFMFILE,HLUOUT,PTIME_LES,          &
+                OCLOSE_OUT,OMF_FLX,TPFILE,HLUOUT,PTIME_LES,          &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
                 PPABSM, PEXN,                                         &
                 PSFTH,PSFRV,                                          &
-                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                          &
+                PTHM,PRM,PUM,PVM,PWM,PTKEM,PSVM,                      &
                 PRTHS,PRRS,PRUS,PRVS,PRSVS,                           &
                 PSIGMF,PRC_MF,PRI_MF,PCF_MF,PFLXZTHVMF  )
 !     #################################################################
@@ -122,6 +122,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_NSV
 
 USE MODD_PARAM_MFSHALL_n
@@ -140,25 +141,24 @@ IMPLICIT NONE
 !
 !
 !
-INTEGER,                INTENT(IN)   :: KRR          ! number of moist var.
-INTEGER,                INTENT(IN)   :: KRRL         ! number of liquid water var.
-INTEGER,                INTENT(IN)   :: KRRI         ! number of ice water var.
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT  ! Type of Mass Flux Scheme
+INTEGER,                INTENT(IN)   :: KRR        ! number of moist var.
+INTEGER,                INTENT(IN)   :: KRRL       ! number of liquid water var.
+INTEGER,                INTENT(IN)   :: KRRI       ! number of ice water var.
+CHARACTER (LEN=4),      INTENT(IN)   :: HMF_UPDRAFT! Type of Mass Flux Scheme
                                      ! 'NONE' if no parameterization 
-CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD    ! Type of statistical cloud
-                                                     ! scheme
-LOGICAL,                INTENT(IN)   :: OMIXUV    ! True if mixing of momentum
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
-                                                      ! file opening
-LOGICAL,                INTENT(IN)   ::  OMF_FLX      ! switch to write the
-                                 ! MF fluxes in the synchronous FM-file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
-REAL*8,DIMENSION(2),                   INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
-REAL,                   INTENT(IN)   :: PIMPL_MF     ! degre of implicitness
-REAL,              INTENT(IN)     ::  PTSTEP   ! Dynamical timestep 
+CHARACTER (LEN=4),      INTENT(IN)   :: HMF_CLOUD  ! Type of statistical cloud
+                                                   ! scheme
+LOGICAL,                INTENT(IN)   :: OMIXUV     ! True if mixing of momentum
+LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
+                                                   ! file opening
+LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
+                                                   ! MF fluxes in the synchronous FM-file
+TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
+CHARACTER(LEN=*),       INTENT(IN)   :: HLUOUT     ! Output-listing name for
+                                                   ! model n
+REAL*8,DIMENSION(2),                  INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
+REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
+REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PZZ         ! Height of flux point
 REAL, DIMENSION(:,:,:), INTENT(IN) ::  PDZZ        ! Metric coefficients
@@ -257,6 +257,7 @@ INTEGER :: JK,JRR,JSV                          ! Loop counters
 INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER(LEN=28)   :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !------------------------------------------------------------------------
@@ -282,6 +283,8 @@ ZSVM(:,:,:) = 0.
 ZUMM=MXF(PUM)
 ZVMM=MYF(PVM)
 ZWMM=MZF(1,IKU,1,PWM)
+!
+YFMFILE = TPFILE%CNAME
 !
 !!! 2. Pack input variables
 !
@@ -388,20 +391,20 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   ILENCH  = LEN(YCOMMENT)
   IGRID   = 4   
   ZWORK(:,:,:)=RESHAPE(ZFLXZTHMF (:,:),(/ IIU,IJU,IKU /) )
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
   ! stores the conservative mixing ratio vertical flux
   YRECFM  ='MF_RCONSW_FLX'
   YCOMMENT='X_Y_Z_MF_RCONSW_FLX (K*M/S)'
   ILENCH  = LEN(YCOMMENT)
   IGRID   = 4   
   ZWORK(:,:,:)=RESHAPE(ZFLXZRMF(:,:),(/ IIU,IJU,IKU /) )
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
   ! stores the theta_v vertical flux
    YRECFM  ='MF_THVW_FLX'
    YCOMMENT='X_Y_Z_MF_THVW_FLX (K*M/S)'
    ILENCH  = LEN(YCOMMENT)
    IGRID   = 4   
-   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PFLXZTHVMF,IGRID,ILENCH,YCOMMENT,IRESP)
+   CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PFLXZTHVMF,IGRID,ILENCH,YCOMMENT,IRESP)
  IF (OMIXUV) THEN
   ! stores the U momentum vertical flux
   YRECFM  ='MF_UW_FLX'
@@ -409,14 +412,14 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   ILENCH  = LEN(YCOMMENT)
   IGRID   = 4   
   ZWORK(:,:,:)=RESHAPE(ZFLXZUMF(:,:),(/ IIU,IJU,IKU /) )
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
   ! stores the V momentum vertical flux
   YRECFM  ='MF_VW_FLX'
   YCOMMENT='X_Y_Z_MF_VW_FLX (M2/S2)'
   ILENCH  = LEN(YCOMMENT)
   IGRID   = 4   
   ZWORK(:,:,:)=RESHAPE(ZFLXZVMF(:,:),(/ IIU,IJU,IKU /) )
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
   !
  END IF
 END IF

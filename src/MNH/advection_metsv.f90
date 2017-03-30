@@ -8,7 +8,7 @@
 !     ###########################
 !
 INTERFACE
-      SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
+      SUBROUTINE ADVECTION_METSV (HLUOUT, TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,  &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -17,12 +17,12 @@ INTERFACE
                             PRTHS, PRRS, PRTKES, PRSVS,                        &
                             PRTHS_CLD, PRRS_CLD, PRSVS_CLD, PRTKES_ADV         )
 !
+USE MODD_IO_ll,     ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
@@ -66,7 +66,7 @@ END INTERFACE
 !
 END MODULE MODI_ADVECTION_METSV
 !     ##########################################################################
-      SUBROUTINE ADVECTION_METSV (HLUOUT, HFMFILE, OCLOSE_OUT,HUVW_ADV_SCHEME, &
+      SUBROUTINE ADVECTION_METSV (HLUOUT, TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,  &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -148,6 +148,7 @@ USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
 USE MODD_CTURB, ONLY : XTKEMIN
 USE MODD_CST 
 USE MODD_BUDGET
+USE MODD_IO_ll,     ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
 USE MODI_CONTRAV
@@ -167,8 +168,7 @@ IMPLICIT NONE
 !
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
                                                       ! file opening
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
@@ -258,6 +258,7 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS1_ll ! list of fields to exchange
 INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER             :: ILUOUT       ! logical unit
@@ -267,6 +268,8 @@ INTEGER             :: IIB, IIE, IJB, IJE
 !
 !*       0.     INITIALIZATION                        
 !	        --------------
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
@@ -312,25 +315,25 @@ IF (OCLOSE_OUT .AND. OCFL_WRIT .AND. (.NOT. L1D)) THEN
     YCOMMENT='X_Y_Z_CFLU (-)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCFLU,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLU,IGRID,ILENCH,YCOMMENT,IRESP)
 
     YRECFM  ='CFLV'
     YCOMMENT='X_Y_Z_CFLV (-)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCFLV,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLV,IGRID,ILENCH,YCOMMENT,IRESP)
 
     YRECFM  ='CFLW'
     YCOMMENT='X_Y_Z_CFLW (-)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCFLW,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLW,IGRID,ILENCH,YCOMMENT,IRESP)
 
     YRECFM  ='CFL'
     YCOMMENT='X_Y_Z_CFL  (-)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCFL,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFL,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !* prints in the output file the maximum CFL

@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
                          HTURBDIM,                             &
-                         HFMFILE,HLUOUT,                       &
+                         TPFILE,HLUOUT,                        &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
                          PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
                          PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -26,6 +26,8 @@ INTERFACE
                          PBLL_O_E,                             &
                          PETHETA, PEMOIST                      )
 !
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -38,8 +40,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
@@ -84,9 +85,9 @@ END MODULE MODI_PRANDTL
 !
 !
 !     ###########################################################
-      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,       &
+      SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
                          HTURBDIM,                             &
-                         HFMFILE,HLUOUT,                       &
+                         TPFILE,HLUOUT,                        &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
                          PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
                          PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -201,6 +202,7 @@ END MODULE MODI_PRANDTL
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 !
 USE MODI_GRADIENT_M
@@ -226,8 +228,7 @@ LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
@@ -276,6 +277,7 @@ INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: ILENG        ! Length of the data field in LFIFM file
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER::  ISV                      ! number of scalar variables       
@@ -285,6 +287,7 @@ INTEGER :: JLOOP
 REAL    :: ZMINVAL
 ! ---------------------------------------------------------------------------
 !
+YFMFILE = TPFILE%CNAME
 !
 !*      1.  DEFAULT VALUES,  1D REDELSPERGER NUMBERS 
 !           ----------------------------------------
@@ -528,35 +531,35 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_RED_TH1 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PREDTH1,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PREDTH1,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   ! stores the RED_R1
   YRECFM  ='RED_R1'
   YCOMMENT='X_Y_Z_RED_R1 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PREDR1,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PREDR1,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   ! stores the RED2_TH3
   YRECFM  ='RED2_TH3'
   YCOMMENT='X_Y_Z_RED2_TH3 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PRED2TH3,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PRED2TH3,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   ! stores the RED2_R3
   YRECFM  ='RED2_R3'
   YCOMMENT='X_Y_Z_RED2_R3 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PRED2R3,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PRED2R3,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   ! stores the RED2_THR3
   YRECFM  ='RED2_THR3'
   YCOMMENT='X_Y_Z_RED2_THR3 (0)'
   IGRID   = 4
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PRED2THR3,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PRED2THR3,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !---------------------------------------------------------------------------

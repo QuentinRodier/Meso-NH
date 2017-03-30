@@ -13,16 +13,18 @@
 !     ###############################
 !
 INTERFACE
-SUBROUTINE COMPUTE_R00(HFMFILE)       
+SUBROUTINE COMPUTE_R00(TPFILE)
 !
-CHARACTER (LEN=28), INTENT(IN) :: HFMFILE   ! name of the OUTPUT FM-file
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! Output file
 !
 END SUBROUTINE COMPUTE_R00
 END INTERFACE
 END MODULE MODI_COMPUTE_R00
 !
 !     ###############################
-      SUBROUTINE COMPUTE_R00(HFMFILE)       
+      SUBROUTINE COMPUTE_R00(TPFILE)
 !     ###############################
 !
 !!**** 
@@ -65,6 +67,7 @@ END MODULE MODI_COMPUTE_R00
 !    
 USE MODD_FIELD_n
 USE MODD_GRID_n
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_GRID_n
 USE MODD_STO_FILE
@@ -87,7 +90,7 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER (LEN=28), INTENT(IN) :: HFMFILE   ! name of the OUTPUT FM-file
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! Output file
 !
 !*       0.2   declarations of local variables
 !
@@ -98,8 +101,9 @@ INTEGER  :: ININAR               ! number of articles  present in
                                  !  the LFIFM file
 INTEGER  :: ITYPE                ! type of file (conv2dia and transfer)
 !
-CHARACTER (LEN=100)                :: YCOMMENT
-CHARACTER (LEN=16)                 :: YRECFM
+CHARACTER(LEN=100)                 :: YCOMMENT
+CHARACTER(LEN=28)                  :: YFMFILE ! Name of FM-file to write
+CHARACTER(LEN=16)                  :: YRECFM
 INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU,IGRID,ILENCH
 INTEGER                            :: NFILES,JLOOP
 REAL                               :: ZXOR,ZYOR,ZDX,ZDY
@@ -131,6 +135,8 @@ INTEGER                            :: IKU
 ITYPE=2
 ZSPVAL=-1.E+11
 IKU=SIZE(XZHAT)
+!
+YFMFILE = TPFILE%CNAME
 !
 !-------------------------------------------------------------------------------
 !
@@ -298,7 +304,7 @@ DO JFILECUR=1,NFILES
     YCOMMENT=YCOMMENT(1:10)//YDATE//' (KM)'
     PRINT *,'YCOMMENT = ',YCOMMENT
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZX00(:,:,:),IGRID,ILENCH,   &
+    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZX00(:,:,:),IGRID,ILENCH,   &
                 YCOMMENT,IRESP)
     !
     WRITE(YRECFM,'(A2,I2.2)')'Y0',INBR_START
@@ -306,7 +312,7 @@ DO JFILECUR=1,NFILES
     YCOMMENT=YCOMMENT(1:10)//YDATE//' (KM)'
     PRINT *,'YCOMMENT = ',YCOMMENT
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZY00(:,:,:),IGRID,ILENCH,   &
+    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZY00(:,:,:),IGRID,ILENCH,   &
                 YCOMMENT,IRESP)
     !
     WRITE(YRECFM,'(A2,I2.2)')'Z0',INBR_START
@@ -314,7 +320,7 @@ DO JFILECUR=1,NFILES
     YCOMMENT=YCOMMENT(1:10)//YDATE//' (KM)'
     PRINT *,'YCOMMENT = ',YCOMMENT
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZZ00(:,:,:),IGRID,ILENCH,   &
+    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZZ00(:,:,:),IGRID,ILENCH,   &
                 YCOMMENT,IRESP)
   END IF
 !
@@ -338,7 +344,7 @@ DO JFILECUR=1,NFILES
     YCOMMENT=YCOMMENT(1:11)//YDATE//' (K)'
     PRINT *,'YCOMMENT = ',YCOMMENT
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',   &
+    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',   &
                 ZWORK1(:,:,:),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
     !
@@ -347,7 +353,7 @@ DO JFILECUR=1,NFILES
     YCOMMENT=YCOMMENT(1:11)//YDATE//' (G/KG)'
     PRINT *,'YCOMMENT = ',YCOMMENT
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',   &
+    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',   &
                 ZWORK2(:,:,:),IGRID,ILENCH,  &
                 YCOMMENT,IRESP)
   ENDIF

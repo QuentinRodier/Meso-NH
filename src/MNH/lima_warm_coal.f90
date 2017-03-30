@@ -3,7 +3,7 @@
 !      ##########################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_COAL (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
+      SUBROUTINE LIMA_WARM_COAL (PTSTEP, KMI,                                &
                                  PRHODREF, ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR, &
                                  PRCT, PRRT, PCCT, PCRT,                     &
                                  PRCS, PRRS, PCCS, PCRS,                     &
@@ -12,11 +12,6 @@ INTERFACE
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 !
@@ -41,7 +36,7 @@ REAL,    DIMENSION(:,:,:), INTENT(IN) :: PRHODJ
 END INTERFACE
 END MODULE MODI_LIMA_WARM_COAL
 !     #############################################################################
-      SUBROUTINE LIMA_WARM_COAL (PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,   &
+      SUBROUTINE LIMA_WARM_COAL (PTSTEP, KMI,                                &
                                  PRHODREF, ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR, &
                                  PRCT, PRRT, PCCT, PCRT,                     &
                                  PRCS, PRRS, PCCS, PCRS,                     &
@@ -118,11 +113,6 @@ IMPLICIT NONE
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 !

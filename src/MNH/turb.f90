@@ -12,7 +12,7 @@ INTERFACE
                 KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
-                PTSTEP,HFMFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,   &
+                PTSTEP,TPFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,    &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
@@ -23,6 +23,8 @@ INTERFACE
                 PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS,PRTKES,PRTKEMS,PSIGS,&
                 PFLXZTHVMF,PWTH,PWRC,PWSV,PDYP,PTHP,PTR,PDISS,PLEM    )
 
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -52,8 +54,7 @@ CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing len
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -140,7 +141,7 @@ END MODULE MODI_TURB
       SUBROUTINE TURB(KKA,KKU,KKL,KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
-                PTSTEP,HFMFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,   &
+                PTSTEP,TPFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,    &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
@@ -350,6 +351,7 @@ USE MODD_CST
 USE MODD_CTURB
 USE MODD_CONF
 USE MODD_BUDGET
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
 !
@@ -410,8 +412,7 @@ CHARACTER*4           , INTENT(IN)   ::  HTURBLEN_CL  ! kind of cloud mixing len
 REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -537,6 +538,7 @@ INTEGER             :: JI,JJ        ! loop counters
 INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL                :: ZL0          ! Max. Mixing Length in Blakadar formula
@@ -592,6 +594,8 @@ ALLOCATE ( &
 !
 !*      1.PRELIMINARIES
 !         -------------
+!
+YFMFILE = TPFILE%CNAME
 !
 !*      1.1 Set the internal domains, ZEXPL 
 !
@@ -685,13 +689,13 @@ IF (KRRL >=1) THEN
     YCOMMENT='X_Y_Z_ATHETA (M)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZATHETA,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZATHETA,IGRID,ILENCH,YCOMMENT,IRESP)
 ! 
     YRECFM  ='AMOIST'
     YCOMMENT='X_Y_Z_AMOIST (M)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZAMOIST,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZAMOIST,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
 !
 ELSE
@@ -880,7 +884,7 @@ ZFTHR(:,:,:IKTB) = 0.
 CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           OCLOSE_OUT,OTURB_FLX,                          &
           HTURBDIM,HTOM,PIMPL,ZEXPL,                     &
-          PTSTEP,HFMFILE,HLUOUT,                         &
+          PTSTEP,TPFILE,HLUOUT,                          &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,        &
           PCOSSLOPE,PSINSLOPE,                           &
           PRHODJ,PTHVREF,                                &
@@ -928,7 +932,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9,'VTURB_BU_RRI')
 IF (HTURBDIM=='3DIM') THEN
     CALL TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,        &
           HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,         &
-          HFMFILE,HLUOUT,                                      &
+          TPFILE,HLUOUT,                                       &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                        &
           PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                       &
           PCOSSLOPE,PSINSLOPE,                                 &
@@ -990,7 +994,7 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,ZLM,ZLEPS,ZDP,ZTRH,       &
                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,            &
                      PTSTEP,PIMPL,ZEXPL,                             &
                      HTURBLEN,HTURBDIM,                              &
-                     HFMFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,           &
+                     TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
                      ZTP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS  )
 !
 PDYP = ZDP
@@ -1023,7 +1027,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_LM (M)'
   IGRID   = 1
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
 !
   IF (KRR /= 0) THEN
 !
@@ -1033,7 +1037,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
     YCOMMENT='X_Y_Z_THLM (KELVIN)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PTHLT,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PTHLT,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 ! stores the conservative mixing ratio
 !
@@ -1041,7 +1045,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
     YCOMMENT='X_Y_Z_RNPM (KG/KG)'
     IGRID   = 1
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PRT(:,:,:,1),IGRID,ILENCH,       &
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PRT(:,:,:,1),IGRID,ILENCH,       &
                                                                YCOMMENT,IRESP)
    END IF
 END IF
@@ -1636,7 +1640,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_LM CLEAR SKY (M)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
 ENDIF
 !
 ! Amplification of the mixing length when the criteria are verified
@@ -1656,13 +1660,13 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_COEF AMPL (-)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCOEF_AMPL,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCOEF_AMPL,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='LM_CLOUD'
   YCOMMENT='X_Y_Z_LM CLOUD (M)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZLM_CLOUD,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM_CLOUD,IGRID,ILENCH,YCOMMENT,IRESP)
   !
 ENDIF
 !

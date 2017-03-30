@@ -14,14 +14,15 @@
 !
 INTERFACE
 !
-      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,HFMFILE,HLUOUT,                    &
+      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,HLUOUT,                     &
                                   OTURB_DIAG,OCLOSE_OUT,KRRI,               &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -46,7 +47,7 @@ END INTERFACE
 END MODULE MODI_TURB_CLOUD_INDEX
 !
 !     #######################
-      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,HFMFILE,HLUOUT,                    &
+      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,HLUOUT,                     &
                                   OTURB_DIAG,OCLOSE_OUT,KRRI,               &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
@@ -90,6 +91,7 @@ END MODULE MODI_TURB_CLOUD_INDEX
 !
 !-------------------------------------------------------------------------------
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS, ONLY: JPVEXT
 USE MODE_FMWRIT
 USE MODI_GRADIENT_M
@@ -102,8 +104,7 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -144,6 +145,7 @@ INTEGER, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3)) :: IMASK_CLOUD
 INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -151,6 +153,8 @@ CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 !*       1.     INITIALISATION
 !               --------------
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1   + JPVEXT
@@ -261,49 +265,49 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_RVCI (kg/kg)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZRVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZRVCI,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='GX_RVCI'
   YCOMMENT='X_Y_Z_GX_RVCI (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='GY_RVCI'
   YCOMMENT='X_Y_Z_GY_RVCI (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='GNORM_RVCI'
   YCOMMENT='X_Y_Z_NORM G (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZGNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZGNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='QX_RVCI'
   YCOMMENT='X_Y_Z_QX_RVCI (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='QY_RVCI'
   YCOMMENT='X_Y_Z_QY_RVCI (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='QNORM_RVCI'
   YCOMMENT='X_Y_Z_QNORM_RVCI (kg/kg/m)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZQNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
   !
   YRECFM  ='CEI'
   YCOMMENT='X_Y_Z_CEI (kg/kg/m/s)'
   IGRID   = 1
   ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PCEI,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PCEI,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 END SUBROUTINE TURB_CLOUD_INDEX

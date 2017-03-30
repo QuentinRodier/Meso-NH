@@ -3,12 +3,12 @@
 !      #####################
 !
 INTERFACE
-      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
-                           HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,  &
-                           PRHODREF, PEXNREF, PPABST, PW_NU,               &
-                           PTHM, PPABSM,                                   &
-                           PTHT, PRT, PSVT,                                &
-                           PTHS, PRS, PSVS,                                &
+      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
+                           KRR, PZZ, PRHODJ,                     &
+                           PRHODREF, PEXNREF, PPABST, PW_NU,     &
+                           PTHM, PPABSM,                         &
+                           PTHT, PRT, PSVT,                      &
+                           PTHS, PRS, PSVS,                      &
                            PINPRS, PINPRG, PINPRH)
 !
 LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the 
@@ -19,11 +19,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
@@ -53,15 +48,15 @@ END SUBROUTINE LIMA_COLD
 END INTERFACE
 END MODULE MODI_LIMA_COLD
 !
-!     ######################################################################
-      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
-                           HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,  &
-                           PRHODREF, PEXNREF, PPABST, PW_NU,               &
-                           PTHM, PPABSM,                                   &
-                           PTHT, PRT, PSVT,                                &
-                           PTHS, PRS, PSVS,                                &
+!     ############################################################
+      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
+                           KRR, PZZ, PRHODJ,                     &
+                           PRHODREF, PEXNREF, PPABST, PW_NU,     &
+                           PTHM, PPABSM,                         &
+                           PTHT, PRT, PSVT,                      &
+                           PTHS, PRS, PSVS,                      &
                            PINPRS, PINPRG, PINPRH)
-!     ######################################################################
+!     ############################################################
 !
 !!
 !!    PURPOSE
@@ -132,11 +127,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
@@ -303,7 +293,6 @@ END IF
 !	        -------------------------------------
 !
 CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
-                              HFMFILE, HLUOUT, OCLOSE_OUT,     &
                               PZZ, PRHODJ, PRHODREF,           &
                               PRIT, PCIT,                      &
                               PRIS, PRSS, PRGS, PRHS, PCIS,    &
@@ -320,23 +309,23 @@ IF (LNUCL) THEN
    IF ( LMEYERS ) THEN
       PIFS(:,:,:,:) = 0.0
       PNIS(:,:,:,:) = 0.0
-      CALL LIMA_MEYERS (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                        PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                        PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT,   &
-                        PTHS, PRVS, PRCS, PRIS,                           &
+      CALL LIMA_MEYERS (OHHONI, PTSTEP, KMI,                            &
+                        PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,         &
+                        PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT, &
+                        PTHS, PRVS, PRCS, PRIS,                         &
                         PCCS, PCIS, PINS )
    ELSE
-      CALL LIMA_PHILLIPS (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                          PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,         &
-                          PTHS, PRVS, PRCS, PRIS,                           &
-                          PCIT, PCCS, PCIS,                                 &
+      CALL LIMA_PHILLIPS (OHHONI, PTSTEP, KMI,                      &
+                          PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,   &
+                          PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
+                          PTHS, PRVS, PRCS, PRIS,                   &
+                          PCIT, PCCS, PCIS,                         &
                           PNAS, PIFS, PINS, PNIS   )
    END IF
 !
    IF (LWARM) THEN
       CALL LIMA_COLD_HOM_NUCL (OHHONI, PTSTEP, KMI,                         &
-                               HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,    &
+                               PZZ, PRHODJ,                                 &
                                PRHODREF, PEXNREF, PPABST, PW_NU,            &
                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,    &
                                PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,          &
@@ -355,8 +344,7 @@ END IF
 !
 IF (LSNOW) THEN
 !
-   CALL LIMA_COLD_SLOW_PROCESSES(PTSTEP, KMI, HFMFILE, HLUOUT,             &
-                                 OCLOSE_OUT, PZZ, PRHODJ,                  &
+   CALL LIMA_COLD_SLOW_PROCESSES(PTSTEP, KMI, PZZ, PRHODJ,                 &
                                  PRHODREF, PEXNREF, PPABST,                &
                                  PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, &
                                  PTHS, PRVS, PRIS, PRSS,                   &

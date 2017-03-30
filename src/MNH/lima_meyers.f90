@@ -3,20 +3,15 @@
 !      #######################
 !
 INTERFACE
-      SUBROUTINE LIMA_MEYERS   (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT,   &
-                                PTHS, PRVS, PRCS, PRIS,                           &
+      SUBROUTINE LIMA_MEYERS   (OHHONI, PTSTEP, KMI,                            &
+                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,         &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT, &
+                                PTHS, PRVS, PRCS, PRIS,                         &
                                 PCCS, PCIS, PINS )
 !
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
@@ -50,13 +45,13 @@ END SUBROUTINE LIMA_MEYERS
 END INTERFACE
 END MODULE MODI_LIMA_MEYERS
 !
-!     ######################################################################
-      SUBROUTINE LIMA_MEYERS   (OHHONI, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT, &
-                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,           &
-                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT,   &
-                                PTHS, PRVS, PRCS, PRIS,                           &
+!     ###########################################################################
+      SUBROUTINE LIMA_MEYERS   (OHHONI, PTSTEP, KMI,                            &
+                                PZZ, PRHODJ, PRHODREF, PEXNREF, PPABST,         &
+                                PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT, PCCT, &
+                                PTHS, PRVS, PRCS, PRIS,                         &
                                 PCCS, PCIS, PINS )
-!     ######################################################################
+!     ###########################################################################
 !!
 !!    PURPOSE
 !!    -------
@@ -131,11 +126,6 @@ IMPLICIT NONE
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian

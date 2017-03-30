@@ -4,7 +4,6 @@
 !
 INTERFACE
       SUBROUTINE LIMA_WARM_SEDIM (OSEDC, KSPLITR, PTSTEP, KMI,  &
-                                  HFMFILE, HLUOUT, OCLOSE_OUT,  &
                                   PZZ, PRHODREF, PPABST, ZT,    &
                                   ZWLBDC,                       &
                                   PRCT, PRRT, PCCT, PCRT,       &
@@ -18,11 +17,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
@@ -50,7 +44,6 @@ END INTERFACE
 END MODULE MODI_LIMA_WARM_SEDIM
 !     #####################################################################
       SUBROUTINE LIMA_WARM_SEDIM (OSEDC, KSPLITR, PTSTEP, KMI,  &
-                                  HFMFILE, HLUOUT, OCLOSE_OUT,  &
                                   PZZ, PRHODREF, PPABST, ZT,    &
                                   ZWLBDC,                       &
                                   PRCT, PRRT, PCCT, PCRT,       &
@@ -118,11 +111,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density

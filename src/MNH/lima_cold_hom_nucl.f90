@@ -4,7 +4,7 @@
 !
 INTERFACE
       SUBROUTINE LIMA_COLD_HOM_NUCL (OHHONI, PTSTEP, KMI,             &
-                           HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,  &
+                           PZZ, PRHODJ,                               &
                            PRHODREF, PEXNREF, PPABST, PW_NU,          &
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
@@ -15,12 +15,6 @@ INTERFACE
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-!
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian
@@ -64,7 +58,7 @@ END MODULE MODI_LIMA_COLD_HOM_NUCL
 !
 !     ######################################################################
       SUBROUTINE LIMA_COLD_HOM_NUCL (OHHONI, PTSTEP, KMI,             &
-                           HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,  &
+                           PZZ, PRHODJ,                               &
                            PRHODREF, PEXNREF, PPABST, PW_NU,          &
                            PTHT, PRVT, PRCT, PRRT, PRIT, PRST, PRGT,  &
                            PTHS, PRVS, PRCS, PRRS, PRIS, PRGS,        &
@@ -122,12 +116,6 @@ IMPLICIT NONE
 LOGICAL,                  INTENT(IN)    :: OHHONI  ! enable haze freezing
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-!
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ  ! Dry density * Jacobian

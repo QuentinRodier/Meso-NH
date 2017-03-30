@@ -15,7 +15,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
                       HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -30,6 +30,8 @@ INTERFACE
                       PRUS,PRVS,PRWS,PRTHLS,PRRS,PRSVS               )
 
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,                INTENT(IN)   :: KSPLIT        ! number of time splitting
 INTEGER,                INTENT(IN)   :: KRR           ! number of moist var.
 INTEGER,                INTENT(IN)   :: KRRL          ! number of liquid water var.
@@ -42,8 +44,7 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -112,7 +113,7 @@ END MODULE MODI_TURB_HOR_SPLT
 !     ################################################################
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
                       HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -261,6 +262,7 @@ END MODULE MODI_TURB_HOR_SPLT
 USE MODD_CONF
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 !
 !
@@ -288,8 +290,7 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -473,7 +474,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 ! compute the turbulent tendencies for the small time step
     CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP,                 &
                    OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                   HFMFILE,HLUOUT,                                &
+                   TPFILE,HLUOUT,                                 &
                    PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                    PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                    PCOSSLOPE,PSINSLOPE,                           &
@@ -614,7 +615,7 @@ ELSE
 !
   CALL TURB_HOR(1, KRR, KRRL, KRRI,  PTSTEP,                   &
                 OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                HFMFILE,HLUOUT,                                &
+                TPFILE,HLUOUT,                                 &
                 PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                 PCOSSLOPE,PSINSLOPE,                           &

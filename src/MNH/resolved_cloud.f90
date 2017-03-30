@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,       &
+                                  HLBCX, HLBCY, TPFILE, HLUOUT, HRAD, HTURBDIM,        &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -19,11 +19,13 @@ INTERFACE
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRG,PINPRH,     &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
+                                  PINPRS,PINPRG,PINPRH,                                &
                                   PSOLORG,PMI,                                         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 CHARACTER(LEN=4),         INTENT(IN)   :: HCLOUD   ! kind of cloud
 CHARACTER(LEN=4),         INTENT(IN)   :: HACTCCN  ! kind of CCN activation scheme
@@ -38,7 +40,7 @@ INTEGER,                  INTENT(IN)   :: KSPLITG  ! Number of small time step
 INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
                                                    ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
@@ -134,7 +136,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !     ##########################################################################
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, HFMFILE, HLUOUT, HRAD, HTURBDIM,       &
+                                  HLBCX, HLBCY, TPFILE, HLUOUT, HRAD, HTURBDIM,        &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -143,8 +145,8 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRG,PINPRH,     &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
+                                  PINPRS,PINPRG,PINPRH,                                &
                                   PSOLORG,PMI,                                         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
@@ -262,6 +264,7 @@ USE MODE_FM
 !
 USE MODD_CONF
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE,  ONLY : CSEDIM
 USE MODD_RAIN_ICE_DESCR
@@ -311,7 +314,7 @@ INTEGER,                  INTENT(IN)   :: KSPLITG  ! Number of small time step
 INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
                                                    ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
@@ -815,7 +818,7 @@ SELECT CASE ( HCLOUD )
                       PZZ, PRHODJ, PRHODREF, PCLDFR,                          &
                       PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3), PPABST, &
                       PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),         &
-                      PINPRR, PINPRR3D, PEVAP3D                         )
+                      PINPRR, PINPRR3D, PEVAP3D                               )
 !
 !*       5.2    Perform the saturation adjustment
 !
@@ -837,8 +840,8 @@ SELECT CASE ( HCLOUD )
 !*       7.1    Compute the explicit microphysical sources
 !
 !
-    CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,          &
-                     HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF, &
+    CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,     &
+                     TPFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF,  &
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
                      PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &
@@ -846,21 +849,21 @@ SELECT CASE ( HCLOUD )
                      ZSVS(:,:,:,1), ZSVS(:,:,:,2), ZSVS(:,:,:,3),                 &
                      PINPRC, PINPRR, PINPRR3D, PEVAP3D ,                          &
                      PSVT(:,:,:,:), PSOLORG, PMI, HACTCCN,                        &
-                     PINDEP, PSUPSAT, PNACT                               )
+                     PINDEP, PSUPSAT, PNACT                                       )
 !
 !
 !*       7.2    Perform the saturation adjustment
 !
    IF (LSUPSAT) THEN
-    CALL KHKO_NOTADJUST (KRR, KTCOUNT,HFMFILE, HLUOUT, HRAD, OCLOSE_OUT,         &
+    CALL KHKO_NOTADJUST (KRR, KTCOUNT,TPFILE, HLUOUT, HRAD, OCLOSE_OUT,          &
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
                          ZSVS(:,:,:,2),ZSVS(:,:,:,1),                            &
-                         ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO                           )
+                         ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO             )
 !
    ELSE
-    CALL C2R2_ADJUST ( KRR,HFMFILE, HLUOUT, HRAD,                              &
+    CALL C2R2_ADJUST ( KRR,TPFILE, HLUOUT, HRAD,                               &
                        HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
                        PRHODJ, PSIGS, PPABST,                                  &
                        PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
@@ -958,33 +961,33 @@ SELECT CASE ( HCLOUD )
 !
   CASE ('LIMA')
 !
-    IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
-                              HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
-                              PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
-                              PTHM, PRCM,                                   &
-                              PTHT, PRT, ZSVT,                              &
-                              PTHS, PRS, ZSVS,                              &
-                              PINPRC, PINPRR, PINPRR3D, PEVAP3D    )
+    IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
+                              KRR, PZZ, PRHODJ,                           &
+                              PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,  &
+                              PTHM, PRCM,                                 &
+                              PTHT, PRT, ZSVT,                            &
+                              PTHS, PRS, ZSVS,                            &
+                              PINPRC, PINPRR, PINPRR3D, PEVAP3D           )
 !
-IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
-                          HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,     &
-                          PRHODREF, PEXNREF, PPABST, PW_ACT,                 &
-                          PTHM, PPABSM,                                      &
-                          PTHT, PRT, ZSVT,                                   &
-                          PTHS, PRS, ZSVS,                                   &
+IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,          &
+                          KRR, PZZ, PRHODJ, &
+                          PRHODREF, PEXNREF, PPABST, PW_ACT,            &
+                          PTHM, PPABSM,                                 &
+                          PTHT, PRT, ZSVT,                              &
+                          PTHS, PRS, ZSVS,                              &
                           PINPRS, PINPRG, PINPRH)
 !
-IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
-                                 HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
-                                 PRHODREF, PEXNREF, PPABST, PW_ACT,            &
-                                 PTHM, PPABSM,                                 &
-                                 PTHT, PRT, ZSVT,                              &
-                                 PTHS, PRS, ZSVS                               )
+IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
+                                 KRR, PZZ, PRHODJ,                          &
+                                 PRHODREF, PEXNREF, PPABST, PW_ACT,         &
+                                 PTHM, PPABSM,                              &
+                                 PTHT, PRT, ZSVT,                           &
+                                 PTHS, PRS, ZSVS                            )
 !
 !
 !*       12.2   Perform the saturation adjustment
 !
-CALL LIMA_ADJUST(KRR, KMI, HFMFILE, HLUOUT, HRAD,                  &
+CALL LIMA_ADJUST(KRR, KMI, TPFILE, HLUOUT, HRAD,                   &
                  HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
                  PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
                  PRT, PRS, ZSVT, ZSVS,                             &

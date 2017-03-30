@@ -9,19 +9,20 @@
 INTERFACE
 !
       SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         HFMFILE, HLUOUT)
+                         TPFILE, HLUOUT)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 IMPLICIT NONE
-REAL,  INTENT(IN)            ::  PTSTEP    ! Double timestep except 
-                                  ! for the first time step (single one)
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
-INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
-INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
-LOGICAL, INTENT(IN)          :: OCLOSE_OUT! conditional closure of the 
-                                               ! OUTPUT FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HFMFILE   ! Name of the output
-                                                  ! FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT    ! Output-listing name for
-                                                  ! model n
+!
+REAL,                   INTENT(IN)    :: PTSTEP     ! Double timestep except 
+                                                    ! for the first time step (single one)
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PSFSV      ! surface flux of scalars
+INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing count
+INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
+TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
+CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT     ! Output-listing name for model n
 !
 END SUBROUTINE PASPOL
 !
@@ -30,7 +31,7 @@ END INTERFACE
 END MODULE MODI_PASPOL
 !     ######spl
       SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         HFMFILE, HLUOUT)
+                         TPFILE, HLUOUT)
 !     ############################################################
 !
 !
@@ -67,6 +68,7 @@ END MODULE MODI_PASPOL
 USE MODD_PARAMETERS
 USE MODD_NSV
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODE_GRIDPROJ
 USE MODD_PASPOL
 USE MODD_CTURB
@@ -98,17 +100,14 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-REAL,  INTENT(IN)            ::  PTSTEP    ! Double timestep except 
-                                  ! for the first time step (single one)
-REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PSFSV ! surface flux of scalars
-INTEGER, INTENT(IN)          :: KLUOUT     ! unit for output listing count
-INTEGER, INTENT(IN)          :: KVERB      ! verbosity level
-LOGICAL, INTENT(IN)          :: OCLOSE_OUT! conditional closure of the 
-CHARACTER(LEN=*), INTENT(IN) :: HFMFILE   ! Name of the output
-                                                  ! FM-file
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT    ! Output-listing name for
-                                                  ! model n
-!
+REAL,                   INTENT(IN)    :: PTSTEP     ! Double timestep except 
+                                                    ! for the first time step (single one)
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PSFSV      ! surface flux of scalars
+INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing count
+INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
+TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
+CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT     ! Output-listing name for model n
 !
 !*      0.2    declarations of local variables
 !
@@ -146,6 +145,7 @@ REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZTEMPO, ZSVT ! Work array
 INTEGER           :: IGRID     ! IGRID : grid indicator
 INTEGER           :: ILENCH    ! ILENCH : length of comment string
 !
+CHARACTER(LEN=28) :: YFMFILE   ! Name of FM-file to write
 CHARACTER(LEN=16) :: YRECFM    ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT  ! Comment string
 CHARACTER (LEN=2) :: YDIR      ! Type of the data field
@@ -160,6 +160,8 @@ INTEGER           :: IRESP     ! IRESP  : return-code if a problem appears
 !
 !*	0. Initialisation
 !
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 CALL GET_PHYSICAL_ll (IIB,IJB,IIE,IJE)
@@ -594,7 +596,7 @@ IF (OCLOSE_OUT) THEN
       WRITE(YRECFM,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
       WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1,' (1/M3) '
       ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,YDIR,ZTEMPO,IGRID,ILENCH,    &
+      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,YDIR,ZTEMPO,IGRID,ILENCH,    &
                 YCOMMENT,IRESP)
    END DO
 ENDIF

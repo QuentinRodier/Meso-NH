@@ -18,13 +18,15 @@ INTERFACE
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
                       PSVM,                                         &
                       PTKEM,PLM,PPSI_SV,                            &
                       PRSVS,PWSV                                    )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -37,8 +39,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -78,7 +79,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
@@ -274,6 +275,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_CONF
@@ -309,8 +311,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                       ! turbulence scheme
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -362,6 +363,7 @@ INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JSV          ! loop counters
 INTEGER             :: JK           ! loop
 INTEGER             :: ISV          ! number of scalar var.
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -373,7 +375,8 @@ REAL :: ZCSVP = 4.0  ! constant for scalar flux presso-correlation (RS81)
 !*       1.   PRELIMINARIES
 !             -------------
 !
-
+YFMFILE = TPFILE%CNAME
+!
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
 IKT=SIZE(PSVM,3)
@@ -457,7 +460,7 @@ DO JSV=1,ISV
     YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
     IGRID   = 4  
     ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
   !
   ! Storage in the LES configuration

@@ -12,9 +12,9 @@
 !      ######################
 !
 INTERFACE
-      SUBROUTINE RAIN_C2R2_KHKO(HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,          &
+      SUBROUTINE RAIN_C2R2_KHKO(HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,   &
                             KMI,                                                &
-                            HFMFILE, HLUOUT, OCLOSE_OUT,                        &
+                            TPFILE, HLUOUT, OCLOSE_OUT,                         &
                             PZZ, PRHODJ,                                        &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT, PRCT,                           &
@@ -25,7 +25,7 @@ INTERFACE
                             PSOLORG, PMI, HACTCCN,                              &
                             PINDEP, PSUPSAT, PNACT                      )
 !
-!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 CHARACTER(LEN=*),         INTENT(IN)    :: HCLOUD   !  kind of cloud
 
@@ -40,7 +40,7 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
                                       ! integration for  rain sedimendation
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
@@ -92,8 +92,8 @@ END SUBROUTINE RAIN_C2R2_KHKO
 END INTERFACE
 END MODULE MODI_RAIN_C2R2_KHKO
 !     ######################################################################
-      SUBROUTINE RAIN_C2R2_KHKO (HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,         &
-                            KMI, HFMFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,      &
+      SUBROUTINE RAIN_C2R2_KHKO (HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,  &
+                            KMI, TPFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,       &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT,  PRCT,                          &
                             PRRT, PTHM, PRCM, PPABSM,                           &
@@ -226,6 +226,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAM_C2R2
 USE MODD_RAIN_C2R2_DESCR
 USE MODD_RAIN_C2R2_KHKO_PARAM
@@ -262,7 +263,7 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
                                       ! integration for  rain sedimendation
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE  ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
                                                     ! model n
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
@@ -424,6 +425,7 @@ REAL  :: ZFACT, JSV, ZMU, ZALPHA
 REAL, DIMENSION(:), ALLOCATABLE    :: ZRTMIN
 REAL, DIMENSION(:), ALLOCATABLE    :: ZCTMIN
 REAL :: ZTMP
+CHARACTER (LEN=28)  :: YFMFILE    ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
@@ -433,6 +435,8 @@ CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 !*       1.     COMPUTE THE SLOPE PARAMETERS ZLBDC,ZLBDR
 !   	        ----------------------------------------
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
@@ -602,7 +606,7 @@ INTEGER                           :: J1
 !   YCOMMENT='X_Y_Z_ZCHEN'
 !   ILENCH=LEN(YCOMMENT)
 !   IGRID   = 1
-!   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZCHEN,IGRID,ILENCH,YCOMMENT,IRESP)
+!   CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCHEN,IGRID,ILENCH,YCOMMENT,IRESP)
 !END IF
 !
 !-------------------------------------------------------------------------------
@@ -880,7 +884,7 @@ IF ( OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_SMAX'
   ILENCH=LEN(YCOMMENT)
   IGRID   = 1
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZZW1LOG,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZZW1LOG,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !*       3.4   budget storage
@@ -1898,19 +1902,19 @@ DO JN = 1 , KSPLITR
     YCOMMENT='X_Y_Z_SEDFLUXC'
     ILENCH=LEN(YCOMMENT)
     IGRID   = 1
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWSEDC,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWSEDC,IGRID,ILENCH,YCOMMENT,IRESP)
 !
     YRECFM  ='SEDFLUXR'
     YCOMMENT='X_Y_Z_SEDFLUXR'
     ILENCH=LEN(YCOMMENT)
     IGRID   = 1
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZWSEDR,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWSEDR,IGRID,ILENCH,YCOMMENT,IRESP)
 !
 !    YRECFM  ='SPEEDC'
 !    YCOMMENT='X_Y_Z_SPEEDC'
 !    ILENCH=LEN(YCOMMENT)
 !    IGRID   = 1
-!    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',PSPEEDC,IGRID,ILENCH,YCOMMENT,IRESP)
+!    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PSPEEDC,IGRID,ILENCH,YCOMMENT,IRESP)
  END IF
 END DO
 !

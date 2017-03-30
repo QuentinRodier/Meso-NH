@@ -280,7 +280,7 @@ USE MODD_LUNIT
 USE MODD_GRID, ONLY: XLONORI,XLATORI
 USE MODD_SERIES, ONLY: LSERIES
 USE MODD_TURB_CLOUD, ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
-USE MODD_IO_ll, ONLY: LIOCDF4,LLFIOUT,TFILEDATA,TFILE_SURFEX
+USE MODD_IO_ll, ONLY: LIOCDF4,LLFIOUT,TFILEDATA,TFILE_SURFEX,TFILE_DUMMY
 !
 USE MODD_SUB_MODEL_n
 USE MODD_GET_n
@@ -420,9 +420,7 @@ INTEGER :: ILUOUT      ! Logical unit number for the output listing
 INTEGER :: IIU,IJU,IKU ! array size in first, second and third dimensions
 INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
-CHARACTER (LEN=28) :: YFMFILE   ! name of the OUTPUT FM-file
 CHARACTER (LEN=28) :: YDADFILE  ! name of the corresponding DAD model OUTPUT FM-file
-CHARACTER (LEN=32) :: YDESFM    ! name of the desfm part of this FM-file
 INTEGER  :: INBVAR              ! number of HALO2_lls to allocate
 INTEGER  :: IRESP               ! return code in FM routines
 INTEGER  :: IINFO_ll            ! return code of parallel routine
@@ -528,6 +526,9 @@ TYPE(TFILEDATA),POINTER :: TZBAKFILE, TZOUTFILE
 ! TYPE(TFILEDATA),SAVE    :: TZDIACFILE
 !-------------------------------------------------------------------------------
 !
+TZBAKFILE=> NULL()
+TZOUTFILE=> NULL()
+!
 !*       0.    MICROPHYSICAL SCHEME
 !              ------------------- 
 SELECT CASE(CCLOUD)
@@ -603,8 +604,7 @@ IF (KTCOUNT == 1) THEN
 !
   CALL IO_FILE_OPEN_ll(TDIAFILE,CLUOUT,IRESP)
 !
-  YDESFM=TRIM(TDIAFILE%CNAME)//'.des'
-  CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
+  CALL WRITE_DESFM_n(IMI,TRIM(TDIAFILE%CNAME)//'.des',CLUOUT)
   CALL WRITE_LFIFMN_FORDIACHRO_n(TDIAFILE)
 !
 !*       1.4   Initialization of the list of fields for the halo updates
@@ -902,25 +902,21 @@ IF (CSURF=='EXTE') CALL GOTO_SURFEX(IMI)
 !
 ZTIME1 = ZTIME2
 !
-YFMFILE='                            '
 IF (IBAK < NBAK_NUMB ) THEN
   IF (KTCOUNT == TBACKUPN(IBAK+1)%NSTEP) THEN
     IBAK=IBAK+1
     GCLOSE_OUT=.TRUE.
     !
     TZBAKFILE => TBACKUPN(IBAK)%TFILE
-    YFMFILE  = TZBAKFILE%CNAME
     YDADFILE = TBACKUPN(IBAK)%CDADFILENAME
     IVERB    = TZBAKFILE%NLFIVERB
     !
     CALL IO_FILE_OPEN_ll(TZBAKFILE,CLUOUT,IRESP)
     !
-    YDESFM=ADJUSTL(ADJUSTR(YFMFILE)//'.des')
-    !    
-    CALL WRITE_DESFM_n(IMI,YDESFM,CLUOUT)
+    CALL WRITE_DESFM_n(IMI,TRIM(TZBAKFILE%CNAME)//'.des',CLUOUT)
     CALL IO_WRITE_HEADER_NC4(TBACKUPN(IBAK)%TFILE,CLUOUT)
     CALL WRITE_LFIFM_n(TBACKUPN(IBAK)%TFILE,YDADFILE)
-    COUTFMFILE = YFMFILE
+    COUTFMFILE = TZBAKFILE%CNAME
     CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
     IF (CSURF=='EXTE') THEN
       TFILE_SURFEX => TZBAKFILE
@@ -934,7 +930,7 @@ IF (IBAK < NBAK_NUMB ) THEN
       CALL INI_LG(XXHAT,XYHAT,XZZ,XSVT,XLBXSVM,XLBYSVM)
       IF (IVERB>=5) THEN
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
-        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(YFMFILE),' backup'
+        WRITE(UNIT=ILUOUT,FMT=*) '*** Lagrangian variables refreshed after ',TRIM(TZBAKFILE%CNAME),' backup'
         WRITE(UNIT=ILUOUT,FMT=*) '************************************'
       END IF
     END IF
@@ -943,7 +939,13 @@ IF (IBAK < NBAK_NUMB ) THEN
        CALL INI_MEAN_FIELD
     END IF
 !
+  ELSE
+    !Necessary to have a 'valid' CNAME when calling some subroutines
+    TZBAKFILE => TFILE_DUMMY
   END IF
+ELSE
+  !Necessary to have a 'valid' CNAME when calling some subroutines
+  TZBAKFILE => TFILE_DUMMY
 END IF
 !
 IF (IOUT < NOUT_NUMB ) THEN
@@ -1297,10 +1299,10 @@ XT_RELAX = XT_RELAX + ZTIME2 - ZTIME1 &
 !
 ZTIME1 = ZTIME2
 !
-!!Was called if MNH_NCWRIT: CALL WRITE_PHYS_PARAM(YFMFILE)
-CALL PHYS_PARAM_n(KTCOUNT,YFMFILE, GCLOSE_OUT,                        &
-                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL,       &
-                  XT_DRAG,XT_TURB,XT_TRACER,                          &
+!!Was called if MNH_NCWRIT: CALL WRITE_PHYS_PARAM(TZBAKFILE%CNAME)
+CALL PHYS_PARAM_n(KTCOUNT,TZBAKFILE, GCLOSE_OUT,                &
+                  XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL, &
+                  XT_DRAG,XT_TURB,XT_TRACER,                    &
                   XT_CHEM,ZTIME,GMASKkids)
 !
 IF (CDCONV/='NONE') THEN
@@ -1444,14 +1446,14 @@ XTIME_LES_BU_PROCESS = 0.
 !
 CALL MPPDB_CHECK3DM("before ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
- CALL ADVECTION_METSV ( CLUOUT, YFMFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
-                 CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,    &
-                 LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                  &
-                 CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,             &
-                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT, XPABST,      &
-                 XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,      &
-                 XRTHS, XRRS, XRTKES, XRSVS,                         &
-                 XRTHS_CLD, XRRS_CLD, XRSVS_CLD, XRTKEMS             )
+ CALL ADVECTION_METSV ( CLUOUT, TZBAKFILE, GCLOSE_OUT,CUVW_ADV_SCHEME, &
+                 CMET_ADV_SCHEME, CSV_ADV_SCHEME, CCLOUD, NSPLIT,      &
+                 LSPLIT_CFL, XSPLIT_CFL, LCFL_WRIT,                    &
+                 CLBCX, CLBCY, NRR, NSV, TDTCUR, XTSTEP,               &
+                 XUT, XVT, XWT, XTHT, XRT, XTKET, XSVT, XPABST,        &
+                 XTHVREF, XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,        &
+                 XRTHS, XRRS, XRTKES, XRSVS,                           &
+                 XRTHS_CLD, XRRS_CLD, XRSVS_CLD, XRTKEMS               )
 CALL MPPDB_CHECK3DM("after  ADVEC_METSV:XU/V/W/TH/TKE/T,XRHODJ ",PRECISION,&
                    &  XUT, XVT, XWT, XTHT, XTKET,XRHODJ)
 !
@@ -1533,7 +1535,7 @@ XT_ADVUVW = XT_ADVUVW + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCES
 !-------------------------------------------------------------------------------
 !
 IF (NMODEL_CLOUD==IMI .AND. CTURBLEN_CLOUD/='NONE') THEN
-  CALL TURB_CLOUD_INDEX(XTSTEP,YFMFILE,CLUOUT,                    &
+  CALL TURB_CLOUD_INDEX(XTSTEP,TZBAKFILE,CLUOUT,                  &
                         LTURB_DIAG,GCLOSE_OUT,NRRI,               &
                         XRRS,XRT,XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY, &
                         XCEI )
@@ -1644,7 +1646,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
     CALL MNHGET_SURF_PARAM_n (PSEA=ZSEA(:,:),PTOWN=ZTOWN(:,:))
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
+                          CLBCX,CLBCY,TZBAKFILE, CLUOUT, CRAD, CTURBDIM,       &
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
@@ -1661,7 +1663,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
   ELSE
     CALL RESOLVED_CLOUD ( CCLOUD, CACTCCN, CSCONV, CMF_CLOUD, NRR, NSPLITR,    &
                           NSPLITG, IMI, KTCOUNT,                               &
-                          CLBCX,CLBCY,YFMFILE, CLUOUT, CRAD, CTURBDIM,         &
+                          CLBCX,CLBCY,TZBAKFILE, CLUOUT, CRAD, CTURBDIM,       &
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
                           XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &

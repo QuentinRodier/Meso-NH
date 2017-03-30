@@ -334,6 +334,8 @@ REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZTMP1, ZTMP2, ZTMP3, ZTMP4
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
 !
+YFMFILE2 = TPFILE%CNAME
+!
 CALL GET_DIM_EXT_ll ('B',IIU,IJU)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU=NKMAX+2*JPVEXT
@@ -705,7 +707,7 @@ IF (LVAR_RS) THEN
   IF (LWIND_ZM) THEN
     YCOMMENT='X_Y_Z_Zonal and Meridian components of horizontal wind (M/S)'
     CALL UV_TO_ZONAL_AND_MERID(XUT,XVT,23, &
-            HFMFILE=YFMFILE2,HRECU='UM_ZM',HRECV='VM_ZM',HCOMMENT=YCOMMENT)
+            TPFILE=TPFILE,HRECU='UM_ZM',HRECV='VM_ZM',HCOMMENT=YCOMMENT)
   END IF
   !
   YRECFM='WT'
@@ -2019,7 +2021,7 @@ IF (LVAR_LS) THEN
   IF (LWIND_ZM) THEN
     YCOMMENT='X_Y_Z_Large Scale Zonal and Meridian components of horizontal wind (M/S)'
     CALL UV_TO_ZONAL_AND_MERID(XLSUM,XLSVM,23, &
-              HFMFILE=YFMFILE2,HRECU='LSUM_ZM',HRECV='LSVM_ZM',HCOMMENT=YCOMMENT)
+              TPFILE=TPFILE,HRECU='LSUM_ZM',HRECV='LSVM_ZM',HCOMMENT=YCOMMENT)
   ENDIF
   !
   YRECFM='LSWM'
@@ -2354,7 +2356,7 @@ IF (LVORT) THEN
   IF (LWIND_ZM) THEN
     YCOMMENT='X_Y_Z_Zonal and Meridian components of horizontal vorticity (M/S)'
     CALL UV_TO_ZONAL_AND_MERID(ZWORK31,ZWORK32,23, &
-                HFMFILE=YFMFILE2,HRECU='UM1_ZM',HRECV='VM1_ZM',HCOMMENT=YCOMMENT)
+                TPFILE=TPFILE,HRECU='UM1_ZM',HRECV='VM1_ZM',HCOMMENT=YCOMMENT)
   ENDIF
 !    
 ! Vorticity z
@@ -2568,7 +2570,7 @@ IF (LGEO .OR. LAGEO) THEN
     IF (LWIND_ZM) THEN
     YCOMMENT='X_Y_Z_Zonal and Meridian components of GEOstrophic wind (m/s)'
       CALL UV_TO_ZONAL_AND_MERID(ZWORK31,ZWORK32,23, &
-              HFMFILE=YFMFILE2,HRECU='UM88_ZM',HRECV='VM88_ZM',HCOMMENT=YCOMMENT)
+              TPFILE=TPFILE,HRECU='UM88_ZM',HRECV='VM88_ZM',HCOMMENT=YCOMMENT)
     ENDIF
 !
 ! wm necessary to plot vertical cross sections of wind vectors
@@ -2598,7 +2600,7 @@ IF (LGEO .OR. LAGEO) THEN
     IF (LWIND_ZM) THEN
       YCOMMENT='X_Y_Z_Zonal and Meridian components of AGEOstrophic wind (m/s)'
       CALL UV_TO_ZONAL_AND_MERID(ZWORK31,ZWORK32,23, &
-              HFMFILE=YFMFILE2,HRECU='UM89_ZM',HRECV='VM89_ZM',HCOMMENT=YCOMMENT)
+              TPFILE=TPFILE,HRECU='UM89_ZM',HRECV='VM89_ZM',HCOMMENT=YCOMMENT)
     ENDIF
 !
 ! wm necessary to plot vertical cross sections of wind vectors

@@ -3,12 +3,12 @@
 !      ######################
 !
 INTERFACE
-      SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
-                             HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ, &
-                             PRHODREF, PEXNREF, PPABST, PW_NU,              &
-                             PTHM, PPABSM,                                  &
-                             PTHT, PRT, PSVT,                               &
-                             PTHS, PRS, PSVS                                )
+      SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
+                             KRR, PZZ, PRHODJ,                    &
+                             PRHODREF, PEXNREF, PPABST, PW_NU,    &
+                             PTHM, PPABSM,                        &
+                             PTHT, PRT, PSVT,                     &
+                             PTHS, PRS, PSVS                      )
 !
 LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the 
                                                    ! cloud ice sedimentation
@@ -18,11 +18,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
@@ -49,14 +44,14 @@ END SUBROUTINE LIMA_MIXED
 END INTERFACE
 END MODULE MODI_LIMA_MIXED
 !
-!     #######################################################################
-      SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
-                             HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ, &
-                             PRHODREF, PEXNREF, PPABST, PW_NU,              &
-                             PTHM, PPABSM,                                  &
-                             PTHT, PRT, PSVT,                               &
-                             PTHS, PRS, PSVS                                )
-!     #######################################################################
+!     #############################################################
+      SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
+                             KRR, PZZ, PRHODJ,                    &
+                             PRHODREF, PEXNREF, PPABST, PW_NU,    &
+                             PTHM, PPABSM,                        &
+                             PTHT, PRT, PSVT,                     &
+                             PTHS, PRS, PSVS                      )
+!     #############################################################
 !
 !!
 !!    PURPOSE
@@ -129,11 +124,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP  ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT  ! Output-listing name for
-                                                   ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                   ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR     ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)

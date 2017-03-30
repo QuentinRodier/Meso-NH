@@ -9,14 +9,15 @@
 !
 INTERFACE
 !
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
+      SUBROUTINE PHYS_PARAM_n(KTCOUNT,TPFILE,OCLOSE_OUT,                                   &
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
                               PTIME_BU, OMASKkids                                          )           
 
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
-CHARACTER (LEN=28),INTENT(IN)     :: HFMFILE   ! name of the synchronous 
-                                               ! OUTPUT FM-file
+TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
 ! advection schemes                   
@@ -34,7 +35,7 @@ END INTERFACE
 END MODULE MODI_PHYS_PARAM_n
 !
 !     ######################################################################
-      SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
+      SUBROUTINE PHYS_PARAM_n(KTCOUNT,TPFILE,OCLOSE_OUT,                                   &
                               PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
                               PTIME_BU, OMASKkids                                          )           
 !     ######################################################################
@@ -237,6 +238,7 @@ USE MODD_CST
 USE MODD_DYN
 USE MODD_CONF
 USE MODD_FRC
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID
 USE MODD_NSV
@@ -334,8 +336,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
-CHARACTER (LEN=28),INTENT(IN)     :: HFMFILE   ! name of the synchronous 
-                                               ! OUTPUT FM-file
+TYPE(TFILEDATA),   INTENT(IN)     :: TPFILE    ! Synchronous output file
 LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the 
                                                ! OUTPUT FM-file
 ! advection schemes                   
@@ -720,7 +721,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XLWD(:,:,:)=0.0
       XDTHRADSW(:,:,:)=0.0
       XDTHRADLW(:,:,:)=0.0
-      CALL RADIATIONS   ( OCLOSE_OUT, HFMFILE, CLUOUT,                             &
+      CALL RADIATIONS   ( OCLOSE_OUT, TPFILE, CLUOUT,                               &
                LCLEAR_SKY,GCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
                COPWLW,COPILW, XFUDG,                                                &
                NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER,NSWB, NSTATM, NRAD_COLNBR,&
@@ -1215,7 +1216,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, HFMFILE, CLUOUT )
+IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, TPFILE, CLUOUT )
 !
 !
 !*        4b.  PASSIVE POLLUTANTS FOR MASS-FLUX SCHEME DIAGNOSTICS
@@ -1350,7 +1351,7 @@ END IF
    CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,     &
       OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
       CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,CCLOUD,XIMPL,                   &
-      XTSTEP,HFMFILE,CLUOUT,                                                &
+      XTSTEP,TPFILE,CLUOUT,                                                 &
       XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
       XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
       XRHODJ,XTHVREF,XRHODREF,                                              &
@@ -1400,11 +1401,11 @@ IF (CSCONV == 'EDKF') THEN
      CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
  !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
-                   OCLOSE_OUT,LMF_FLX,HFMFILE,CLUOUT,ZTIME_LES_MF,        &
+                   OCLOSE_OUT,LMF_FLX,TPFILE,CLUOUT,ZTIME_LES_MF,         &
                    XIMPL_MF, XTSTEP,                                      &
                    XDZZ, XZZ,                                             &
                    XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &
-                   XTHT,XRT,XUT,XVT,XWT,XTKET,XSVT,                           &
+                   XTHT,XRT,XUT,XVT,XWT,XTKET,XSVT,                       &
                    XRTHS,XRRS,XRUS,XRVS,XRSVS,                            &
                    ZSIGMF,XRC_MF, XRI_MF, XCF_MF, XWTHVMF)
 !

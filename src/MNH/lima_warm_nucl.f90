@@ -3,10 +3,10 @@
 !      ##########################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI,                       &
+                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU, &
+                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -14,11 +14,6 @@ LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function
@@ -46,12 +41,12 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAS       ! CCN C. activated source
 END SUBROUTINE LIMA_WARM_NUCL
 END INTERFACE
 END MODULE MODI_LIMA_WARM_NUCL
-!     #############################################################################
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, HFMFILE, HLUOUT, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
-!     #############################################################################
+!     #######################################################################
+      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI,                       &
+                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU, &
+                                 PRCM, PRVT, PRCT, PRRT,                    &
+                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
+!     #######################################################################
 !
 !!
 !!    PURPOSE
@@ -119,11 +114,6 @@ LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the output FM file
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODREF   ! Reference density
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PEXNREF    ! Reference Exner function

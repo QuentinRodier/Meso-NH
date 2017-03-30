@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_VW(KSPLT,                                  &
                       OCLOSE_OUT,OTURB_FLX,KRR,                      &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDYY,PDZZ,PDZY,                                &
                       PRHODJ,PTHVREF,                                &
@@ -25,7 +25,7 @@ INTERFACE
                       PDP,                                           &
                       PRVS,PRWS                                      )
 !
-
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    ::  KSPLT        ! split process index
 LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
@@ -33,8 +33,7 @@ LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 INTEGER,                  INTENT(IN)    ::  KRR          ! number of moist var.
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -67,7 +66,7 @@ END MODULE MODI_TURB_HOR_VW
 !     ################################################################
       SUBROUTINE TURB_HOR_VW(KSPLT,                                  &
                       OCLOSE_OUT,OTURB_FLX,KRR,                      &
-                      HFMFILE,HLUOUT,                                &
+                      TPFILE,HLUOUT,                                 &
                       PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDYY,PDZZ,PDZY,                                &
                       PRHODJ,PTHVREF,                                &
@@ -122,6 +121,7 @@ END MODULE MODI_TURB_HOR_VW
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_NSV
@@ -152,8 +152,7 @@ LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 INTEGER,                  INTENT(IN)    ::  KRR          ! number of moist var.
-CHARACTER(LEN=*),         INTENT(IN)    ::  HFMFILE      ! Name of the output
-                                                         ! FM-file 
+TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
 CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
                                                          ! for model n
 !
@@ -194,6 +193,7 @@ INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 INTEGER             :: JSV          ! scalar loop counter
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -204,6 +204,8 @@ REAL :: ZTIME1, ZTIME2
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
+!
+YFMFILE = TPFILE%CNAME
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PWM,3)-JPVEXT    
@@ -243,7 +245,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   YCOMMENT='X_Y_Z_VW_HFLX ( (M/S) **2 )  '
   IGRID   = 7
   ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 ! compute the source for rho*V due to this residual flux ( the other part is

@@ -4,7 +4,6 @@
 !
 INTERFACE
       SUBROUTINE LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
-                                          HFMFILE, HLUOUT, OCLOSE_OUT,     &
                                           PZZ, PRHODJ, PRHODREF,           &
                                           PRIT, PCIT,                      &
                                           PRIS, PRSS, PRGS, PRHS, PCIS,    &
@@ -16,11 +15,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG    ! Number of small time ste
                                                       ! for ice sedimendation
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the FM file output
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian (Budgets)
@@ -45,7 +39,6 @@ END MODULE MODI_LIMA_COLD_SEDIMENTATION
 !
 !     ######################################################################
       SUBROUTINE LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
-                                          HFMFILE, HLUOUT, OCLOSE_OUT,     &
                                           PZZ, PRHODJ, PRHODREF,           &
                                           PRIT, PCIT,                      &
                                           PRIS, PRSS, PRGS, PRHS, PCIS,    &
@@ -106,11 +99,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITG    ! Number of small time ste
                                                       ! for ice sedimendation
 REAL,                     INTENT(IN)    :: PTSTEP     ! Time step          
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HFMFILE    ! Name of the output FM-file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT     ! Output-listing name for
-                                                      ! model n
-LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
-                                                      ! the FM file output
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ     ! Dry density * Jacobian (Budgets)

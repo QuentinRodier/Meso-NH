@@ -17,7 +17,7 @@ INTERFACE
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -29,6 +29,8 @@ INTERFACE
                       PEMOIST, PREDTH1, PREDR1, PPHI3, PPSI3, PD,   &
                       PFWTH,PFWR,PFTH2,PFR2,PFTHR,PBL_DEPTH,        &
                       PWTHV,PRTHLS,PRRS,PTHLP,PRP,PTP,PWTH,PWRC     )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                INTENT(IN)   :: KKA           !near ground array index  
 INTEGER,                INTENT(IN)   :: KKU           !uppest atmosphere array index
@@ -45,8 +47,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -130,7 +131,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      HFMFILE,HLUOUT,                               &
+                      TPFILE,HLUOUT,                                &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -336,6 +337,7 @@ END MODULE MODI_TURB_VER_THERMO_FLUX
 !
 USE MODD_CST
 USE MODD_CTURB
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_LES
@@ -377,8 +379,7 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file 
+TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 !
@@ -469,6 +470,7 @@ INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain 
+CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
 CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
@@ -485,6 +487,8 @@ LOGICAL :: GFTHR    ! flag to use w'th'r'
 !
 !*       1.   PRELIMINARIES
 !             -------------
+!
+YFMFILE = TPFILE%CNAME
 !
 IKT  =SIZE(PTHLM,3)  
 IKTE =IKT-JPVEXT_TURB  
@@ -620,7 +624,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_THW_FLX (K*M/S)'
   IGRID   = 4  
   ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 ! Contribution of the conservative temperature flux to the buoyancy flux
@@ -792,7 +796,7 @@ IF (KRR /= 0) THEN
     YCOMMENT='X_Y_Z_RCONSW_FLX (KG*M/S/KG)'
     IGRID   = 4  
     ILENCH=LEN(YCOMMENT) 
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
   !
   ! Contribution of the conservative water flux to the Buoyancy flux
@@ -868,7 +872,7 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
     YCOMMENT='X_Y_Z_RCW_FLX (KG*M/S/KG)'
     IGRID   = 4  
     ILENCH=LEN(YCOMMENT) 
-    CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
   END IF
   !  
 ! and we store in LES configuration this subgrid flux <w'rc'>

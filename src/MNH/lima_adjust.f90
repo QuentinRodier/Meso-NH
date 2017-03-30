@@ -4,15 +4,17 @@
 !
 INTERFACE
 !
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, HFMFILE, HLUOUT, HRAD,                  &
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HLUOUT, HRAD,                   &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
                              PRT, PRS, PSVT, PSVS,                             &
                              PTHS, PSRCS, PCLDFR                               )
-         !
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE    ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT     ! Output-listing name for
                                                      ! model n
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
@@ -54,7 +56,7 @@ END INTERFACE
 END MODULE MODI_LIMA_ADJUST
 !
 !     ##########################################################################
-      SUBROUTINE LIMA_ADJUST(KRR, KMI, HFMFILE, HLUOUT, HRAD,                  &
+      SUBROUTINE LIMA_ADJUST(KRR, KMI, TPFILE, HLUOUT, HRAD,                   &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
                              PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
                              PRT, PRS, PSVT, PSVS,                             &
@@ -137,6 +139,7 @@ END MODULE MODI_LIMA_ADJUST
 USE MODD_PARAMETERS
 USE MODD_CST
 USE MODD_CONF
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAM_LIMA
 USE MODD_PARAM_LIMA_WARM
 USE MODD_PARAM_LIMA_COLD
@@ -158,7 +161,7 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)   :: KRR        ! Number of moist variables
 INTEGER,                  INTENT(IN)   :: KMI        ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)   :: HFMFILE    ! Name of the output FM-file
+TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
 CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT     ! Output-listing name for
                                                      ! model n
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM   ! Dimensionality of the
@@ -263,6 +266,7 @@ INTEGER                  :: IIB,IJB    ! Horz index values of the first inner ma
 INTEGER                  :: IIE,IJE    ! Horz index values of the last inner mass points
 INTEGER                  :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER                  :: ILUOUT     ! Logical unit of output listing 
+CHARACTER (LEN=28)       :: YFMFILE      ! Name of FM-file to write
 CHARACTER (LEN=100)      :: YCOMMENT   ! Comment string in LFIFM file
 CHARACTER (LEN=16)       :: YRECFM     ! Name of the desired field in LFIFM file
 !
@@ -280,6 +284,8 @@ INTEGER , DIMENSION(3) :: BV
 !
 !*       1.     PRELIMINARIES
 !               -------------
+!
+YFMFILE = TPFILE%CNAME
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
@@ -1125,7 +1131,7 @@ IF ( OCLOSE_OUT ) THEN
   YCOMMENT='X_Y_Z_NEB (0)'
   IGRID   = 1
   ILENG = SIZE(ZW,1)*SIZE(ZW,2)*SIZE(ZW,3)
-  CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !
@@ -1175,7 +1181,7 @@ IF ( OCLOSE_OUT ) THEN
    YCOMMENT='X_Y_Z_SSI'
    IGRID   = 1
    ILENG = SIZE(ZW,1)*SIZE(ZW,2)*SIZE(ZW,3)
-   CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
+   CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !
