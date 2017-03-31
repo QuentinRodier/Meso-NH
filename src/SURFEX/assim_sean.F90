@@ -29,6 +29,7 @@ SUBROUTINE ASSIM_SEA_n (S, U, &
 !!    -------------
 !!      Original       04/2012
 !!      Trygve Aspelien, Separating IO  06/2013 
+!!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !!--------------------------------------------------------------------
 !
 !
@@ -65,8 +66,8 @@ REAL,DIMENSION(KI), INTENT(IN) :: PITM
  CHARACTER(LEN=2),   INTENT(IN) :: HTEST ! must be equal to 'OK'
 LOGICAL, INTENT(IN) :: OLKEEPEXTZONE
 LOGICAL, DIMENSION(KI), INTENT(IN) :: OD_MASKEXT
-REAL(KIND=JPRB), DIMENSION (:), INTENT(IN) ::  PLON_IN
-REAL(KIND=JPRB), DIMENSION (:), INTENT(IN) ::  PLAT_IN
+REAL           , DIMENSION (:), INTENT(IN) ::  PLON_IN
+REAL           , DIMENSION (:), INTENT(IN) ::  PLAT_IN
 !
 !*      0.2    declarations of local variables
 !

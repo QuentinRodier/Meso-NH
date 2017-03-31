@@ -3,10 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_AEROZON
 !     ##########################
@@ -142,12 +138,14 @@ END MODULE MODI_AEROZON
 !!    MODIFICATIONS
 !!    -------------
 !!      (P.Peyrille) 20/07/04 : add LFIX_DAT to have perpetual day
+!!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !ECMWF radiation scheme specific modules 
 !
+USE PARKIND1 , ONLY : JPRB
 USE YOEAERD  , ONLY : RCAEOPS  ,RCAEOPL  ,RCAEOPU  ,RCAEOPD  ,RCTRBGA  ,&
      RCVOBGA  ,RCSTBGA  ,RCTRPT   ,RCAEADM  ,RCAEROS  ,&
      RCAEADK
@@ -234,13 +232,18 @@ REAL :: ZA1, ZA2      ! Ancillary variables
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner function
 !
 ! Variables for aerosols and ozone climatologies set up
-REAL, DIMENSION (:),     ALLOCATABLE  :: ZAESEA, ZAELAN, ZAEURB, ZAEDES
-REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZPRES_HL,ZT_HL, ZPAVE, ZOZON, ZWORK_GRID
-REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZCVDAES, ZCVDAEL, ZCVDAEU, ZCVDAED,ZETAH
-REAL, DIMENSION (:),     ALLOCATABLE  :: ZGEMU 
+
+REAL, DIMENSION (:,:),   ALLOCATABLE  :: ZPAVE, ZWORK_GRID
+REAL, DIMENSION (:),   ALLOCATABLE  :: ZAESEA, ZAELAN, ZAEURB, ZAEDES
+!
+REAL(KIND=JPRB), DIMENSION (:,:),   ALLOCATABLE  :: ZT_HL
+REAL(KIND=JPRB), DIMENSION (:),   ALLOCATABLE  :: ZAESEA_RAD, ZAELAN_RAD, ZAEURB_RAD, ZAEDES_RAD
+REAL(KIND=JPRB), DIMENSION (:,:), ALLOCATABLE  :: ZCVDAES, ZCVDAEL, ZCVDAEU, ZCVDAED
+REAL(KIND=JPRB), DIMENSION (:,:), ALLOCATABLE  :: ZPRES_HL,ZOZON,ZETAH
+REAL(KIND=JPRB), DIMENSION (:),   ALLOCATABLE  :: ZGEMU 
 INTEGER :: ZYMD, ZHOURS   ! date for climatology initialisation
 INTEGER :: JKCEP,JK_NH
-REAL, DIMENSION (:,:,:), ALLOCATABLE  :: ZAER
+REAL(KIND=JPRB), DIMENSION (:,:,:), ALLOCATABLE  :: ZAER
 REAL, DIMENSION(:),      ALLOCATABLE  :: ZAECOV_SEA, ZAECOV_URB, ZAECOV_LAN, ZAECOV_DES
 !
 !-------------------------------------------------------------------------------
@@ -430,6 +433,11 @@ IF(HAER /= 'NONE') THEN
   ALLOCATE (ZAELAN(KDLON))
   ALLOCATE (ZAEURB(KDLON))
   ALLOCATE (ZAEDES(KDLON))
+
+  ALLOCATE (ZAESEA_RAD(KDLON)) 
+  ALLOCATE (ZAELAN_RAD(KDLON))
+  ALLOCATE (ZAEURB_RAD(KDLON))
+  ALLOCATE (ZAEDES_RAD(KDLON))
 !
 ! AEROSOLS ECMWF climatologies
 !
@@ -464,9 +472,10 @@ IF(HAER /= 'NONE') THEN
 !
 ! final aerosol profiles on mnh grid
 !
+  ZAESEA_RAD = ZAESEA ; ZAELAN_RAD = ZAELAN ; ZAEURB_RAD = ZAEURB ; ZAEDES_RAD = ZAEDES
   CALL RADAER (1, KDLON, KDLON, 1, KFLEV, ZPRES_HL,ZT_HL, &
        ZCVDAES ,ZCVDAEL ,ZCVDAEU ,ZCVDAED, &
-       ZAESEA, ZAELAN, ZAEURB, ZAEDES, &
+       ZAESEA_RAD, ZAELAN_RAD, ZAEURB_RAD, ZAEDES_RAD, &
        ZAER )
 !
 !!- VOLCANIC AEROSOL SET TO epsilon IN ABSENCE OF ERUPTION 
@@ -480,6 +489,11 @@ IF(HAER /= 'NONE') THEN
   DEALLOCATE (ZAELAN)
   DEALLOCATE (ZAEURB)
   DEALLOCATE (ZAEDES)
+
+  DEALLOCATE (ZAESEA_RAD)
+  DEALLOCATE (ZAELAN_RAD)
+  DEALLOCATE (ZAEURB_RAD)
+  DEALLOCATE (ZAEDES_RAD)
 ELSE
   ZAER(:,:,:)= 1E-12
 END IF
