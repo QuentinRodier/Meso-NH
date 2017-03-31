@@ -138,9 +138,9 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-!
-!
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -213,32 +213,23 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))       &
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2)) ::ZDIRSINZW 
       ! sinus of the angle between the vertical and the normal to the orography
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GY_U_UV_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GX_V_UV_PVM
 !
 REAL :: ZTIME1, ZTIME2
+TYPE(TFIELDDATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
 !
-YFMFILE = TPFILE%CNAME
-!
 IKB = 1+JPVEXT               
 IKE = SIZE(PUM,3)-JPVEXT    
 IKU = SIZE(PUM,3)
-!
-!
-ILENCH=LEN(YCOMMENT)
 !
 ZDIRSINZW(:,:) = SQRT( 1. - PDIRCOSZW(:,:)**2 )
 !
@@ -293,10 +284,16 @@ ZFLX(:,:,IKB-1:IKB-1) = 2. * MXM( MYM( ZFLX(:,:,IKB-1:IKB-1) ) )  &
 !     
 ! stores  <U V>
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-  YRECFM  ='UV_FLX'
-  YCOMMENT='X_Y_Z_UV_FLX ( (M/S) **2 )  '
-  IGRID   = 5
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'UV_FLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: UV_FLX'
+  TZFIELD%CUNITS     = '(m s-1)^2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_UV_FLX'
+  TZFIELD%NGRID      = 5
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 !

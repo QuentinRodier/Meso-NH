@@ -134,9 +134,9 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-!
-!
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -204,25 +204,19 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))       &
     ! work arrays
 !   
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
 REAL :: ZTIME1, ZTIME2
+TYPE(TFIELDDATA) :: TZFIELD
 !
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PTHLM,3)-JPVEXT   
@@ -287,11 +281,16 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
   !
   ! stores <THl THl>
   IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-    YRECFM  ='THL_HVAR'
-    YCOMMENT='X_Y_Z_THL_HVAR (KELVIN**2)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'THL_HVAR'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: THL_HVAR'
+    TZFIELD%CUNITS     = 'K2'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_THL_HVAR'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
   END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
@@ -369,11 +368,16 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     !
     ! stores <THl Rnp>
     IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-      YRECFM  ='THLR_HCOR'
-      YCOMMENT='X_Y_Z_THLR_HCOR (KELVIN*KG/KG)'
-      IGRID   = 1
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+      TZFIELD%CMNHNAME   = 'THLR_HCOR'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: THLR_HCOR'
+      TZFIELD%CUNITS     = 'K kg kg-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Z_THLR_HCOR'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
     END IF
 !
 !   Storage in the LES configuration (addition to TURB_VER computation)
@@ -431,11 +435,16 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     !
     ! stores <Rnp Rnp>
     IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-      YRECFM  ='R_HVAR'
-      YCOMMENT='X_Y_Z_R_HVAR (KG/KG **2)'
-      IGRID   = 1
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+      TZFIELD%CMNHNAME   = 'R_HVAR'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: R_HVAR'
+      TZFIELD%CUNITS     = '(kg kg-1)^2'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Z_R_HVAR'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
     END IF
     !
     !   Storage in the LES configuration (addition to TURB_VER computation)

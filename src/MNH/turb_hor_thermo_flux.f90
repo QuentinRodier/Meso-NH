@@ -142,9 +142,9 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 !
-!
-!
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -219,25 +219,19 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))       &
 !   
 !! REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))  :: ZVPTV
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
 !
 REAL :: ZTIME1, ZTIME2
+TYPE(TFIELDDATA) :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PTHLM,3)-JPVEXT    
@@ -330,11 +324,16 @@ END IF
 !
 ! stores the horizontal  <U THl>
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-  YRECFM  ='UTHL_FLX'
-  YCOMMENT='X_Y_Z_UTHL_FLX (KELVIN*M/S)  '
-  IGRID   = 2
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'UTHL_FLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: UTHL_FLX'
+  TZFIELD%CUNITS     = 'K m s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_UTHL_FLX'
+  TZFIELD%NGRID      = 2
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -427,11 +426,16 @@ IF (KRR/=0) THEN
   !
   ! stores the horizontal  <U Rnp>
   IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-    YRECFM  ='UR_FLX'
-    YCOMMENT='X_Y_Z_UR_FLX (KG/KG * M/S)  '
-    IGRID   = 2
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'UR_FLX'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: UR_FLX'
+    TZFIELD%CUNITS     = 'kg kg-1 m s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_UR_FLX'
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -470,10 +474,16 @@ END IF
 !!  !
 !!  ! stores the horizontal  <U VPT>
 !!  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-!!    YRECFM  ='UVPT_FLX'
-!!    YCOMMENT='X_Y_Z_UVPT_FLX (KELVIN * M/S)  '
-!!    IGRID   = 2
-!!    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZVPTU,IGRID,ILENCH,YCOMMENT,IRESP)
+!!    TZFIELD%CMNHNAME   = 'UVPT_FLX'
+!!    TZFIELD%CSTDNAME   = ''
+!!    TZFIELD%CLONGNAME  = 'MesoNH: UVPT_FLX'
+!!    TZFIELD%CUNITS     = 'K m s-1'
+!!    TZFIELD%CDIR       = 'XY'
+!!    TZFIELD%CCOMMENT   = 'X_Y_Z_UVPT_FLX'
+!!    TZFIELD%NGRID      = 2
+!!    TZFIELD%NTYPE      = TYPEREAL
+!!    TZFIELD%NDIMS      = 3
+!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZVPTU)
 !!  END IF
 !!!
 !!ELSE
@@ -566,11 +576,16 @@ END IF
 !
 ! stores the horizontal  <V THl>
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-  YRECFM  ='VTHL_FLX'
-  YCOMMENT='X_Y_Z_VTHL_FLX (KELVIN*M/S)  '
-  IGRID   = 3
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'VTHL_FLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: VTHL_FLX'
+  TZFIELD%CUNITS     = 'K m s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_VTHL_FLX'
+  TZFIELD%NGRID      = 3
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -672,11 +687,16 @@ IF (KRR/=0) THEN
   !
   ! stores the horizontal  <V Rnp>
   IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-    YRECFM  ='VR_FLX'
-    YCOMMENT='X_Y_Z_VR_FLX (KG/KG * M/S)  '
-    IGRID   = 3
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'VR_FLX'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: VR_FLX'
+    TZFIELD%CUNITS     = 'kg kg-1 m s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_VR_FLX'
+    TZFIELD%NGRID      = 3
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -719,10 +739,16 @@ END IF
 !!  !
 !!  ! stores the horizontal  <V VPT>
 !!  IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-!!    YRECFM  ='VVPT_FLX'
-!!    YCOMMENT='X_Y_Z_VVPT_FLX (KELVIN * M/S)  '
-!!    IGRID   = 3
-!!    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZVPTV,IGRID,ILENCH,YCOMMENT,IRESP)
+!!    TZFIELD%CMNHNAME   = 'VVPT_FLX'
+!!    TZFIELD%CSTDNAME   = ''
+!!    TZFIELD%CLONGNAME  = 'MesoNH: VVPT_FLX'
+!!    TZFIELD%CUNITS     = 'K m s-1'
+!!    TZFIELD%CDIR       = 'XY'
+!!    TZFIELD%CCOMMENT   = 'X_Y_Z_VVPT_FLX'
+!!    TZFIELD%NGRID      = 3
+!!    TZFIELD%NTYPE      = TYPEREAL
+!!    TZFIELD%NDIMS      = 3
+!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZVPTV)
 !!  END IF
 !!!
 !!ELSE

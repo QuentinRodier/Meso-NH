@@ -354,6 +354,7 @@ USE MODI_PRANDTL
 USE MODI_TRIDIAG_THERMO
 USE MODI_TM06_H
 !
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_PRANDTL
 !
 USE MODI_SECOND_MNH
@@ -464,15 +465,10 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))  ::  &
        ZDFDDRDZ, & ! dF/d(dr/dz)
        Z3RDMOMENT  ! 3 order term in flux or variance equation
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain 
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL :: ZTIME1, ZTIME2
 !
@@ -483,12 +479,11 @@ LOGICAL :: GFWTH    ! flag to use w'2th'
 LOGICAL :: GFR2     ! flag to use w'r'2
 LOGICAL :: GFWR     ! flag to use w'2r'
 LOGICAL :: GFTHR    ! flag to use w'th'r'
+TYPE(TFIELDDATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
 !             -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKT  =SIZE(PTHLM,3)  
 IKTE =IKT-JPVEXT_TURB  
@@ -620,11 +615,16 @@ ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
 
 IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the conservative potential temperature vertical flux
-  YRECFM  ='THW_FLX'
-  YCOMMENT='X_Y_Z_THW_FLX (K*M/S)'
-  IGRID   = 4  
-  ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'THW_FLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: THW_FLX'
+  TZFIELD%CUNITS     = 'K m s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'Conservative potential temperature vertical flux'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
 END IF
 !
 ! Contribution of the conservative temperature flux to the buoyancy flux
@@ -792,11 +792,16 @@ IF (KRR /= 0) THEN
   !
   IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     ! stores the conservative mixing ratio vertical flux
-    YRECFM  ='RCONSW_FLX'
-    YCOMMENT='X_Y_Z_RCONSW_FLX (KG*M/S/KG)'
-    IGRID   = 4  
-    ILENCH=LEN(YCOMMENT) 
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'RCONSW_FLX'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: RCONSW_FLX'
+    TZFIELD%CUNITS     = 'kg m s-1 kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'Conservative mixing ratio vertical flux'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
   END IF
   !
   ! Contribution of the conservative water flux to the Buoyancy flux
@@ -868,11 +873,16 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   !                 
   ! store the liquid water mixing ratio vertical flux
   IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-    YRECFM  ='RCW_FLX'
-    YCOMMENT='X_Y_Z_RCW_FLX (KG*M/S/KG)'
-    IGRID   = 4  
-    ILENCH=LEN(YCOMMENT) 
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'RCW_FLX'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: RCW_FLX'
+    TZFIELD%CUNITS     = 'kg m s-1 kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'Liquid water mixing ratio vertical flux'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
   END IF
   !  
 ! and we store in LES configuration this subgrid flux <w'rc'>

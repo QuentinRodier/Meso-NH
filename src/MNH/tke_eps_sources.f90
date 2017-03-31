@@ -45,7 +45,8 @@ LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                   ! diagnostic fields in the syncronous FM-file
-REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP, PTRH          ! Dyn. prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PDP          ! Dyn. prod. of TKE
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PTRH
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PTP          ! Ther. prod. of TKE
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRTKES       ! RHOD * Jacobian *
                                                        ! TKE at t+deltat
@@ -188,6 +189,10 @@ USE MODD_BUDGET
 USE MODD_LES
 USE MODD_DIAG_IN_RUN, ONLY : LDIAG_IN_RUN, XCURRENT_TKE_DISS
 !
+USE MODE_ll
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -196,10 +201,8 @@ USE MODI_SHUMAN
 USE MODI_TRIDIAG 
 USE MODI_TRIDIAG_TKE
 USE MODI_BUDGET
-USE MODE_FMWRIT
 USE MODI_LES_MEAN_SUBGRID
 !
-USE MODE_ll          
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 USE MODI_GET_HALO
@@ -257,7 +260,6 @@ REAL, DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3))::         &
                    ! temporarily store some diagnostics stored in FM file
        ZFLX,     & ! horizontal or vertical flux of the treated variable
        ZSOURCE,  & ! source of evolution for the treated variable
-       ZTR,      & ! turbulent transport of TKE 
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
 LOGICAL,DIMENSION(SIZE(PTKEM,1),SIZE(PTKEM,2),SIZE(PTKEM,3)) :: GTKENEG
                    ! 3D mask .T. if TKE < XTKEMIN
@@ -266,22 +268,16 @@ INTEGER             :: IIB,IIE,IJB,IJE,IKB,IKE
                                     ! mass points of the domain 
 INTEGER             :: IIU,IJU,IKU  ! array size in the 3 dimensions 
 INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 TYPE(LIST_ll), POINTER :: TZFIELDDISS_ll ! list of fields to exchange
 INTEGER                :: IINFO_ll       ! return code of parallel routine
+TYPE(TFIELDDATA) :: TZFIELD
 !
 !----------------------------------------------------------------------------
 NULLIFY(TZFIELDDISS_ll)
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PTKEM,1)
@@ -303,9 +299,9 @@ ZKEFF(:,:,:) = PLM(:,:,:) * SQRT(PTKEM(:,:,:))
 ! Complete the sources of TKE with the horizontal turbulent explicit transport
 !
 IF (HTURBDIM=='3DIM') THEN
-  ZTR=PTRH
+  PTR=PTRH
 ELSE
-  ZTR=0.
+  PTR=0.
 END IF
 !
 !
@@ -322,7 +318,7 @@ PDP(:,:,IKB) = PDP(:,:,IKB) * (1. + PDZZ(:,:,IKB+KKL)/PDZZ(:,:,IKB))
 ZFLX(:,:,:) = XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:)
 ZSOURCE(:,:,:) = PRTKES(:,:,:) / PRHODJ(:,:,:)  +  PRTKESM(:,:,:) / PRHODJ(:,:,:) &
    - PTKEM(:,:,:) / PTSTEP &
-   + PDP(:,:,:) + PTP(:,:,:) + ZTR(:,:,:) - PEXPL * ZFLX(:,:,:) * PTKEM(:,:,:)
+   + PDP(:,:,:) + PTP(:,:,:) + PTR(:,:,:) - PEXPL * ZFLX(:,:,:) * PTKEM(:,:,:)
 !
 !*       2.2  implicit vertical TKE transport
 !
@@ -371,13 +367,13 @@ IF ( LLES_CALL .OR.                         &
 !
 ! Compute the whole turbulent TRansport of TKE:
 !
-  ZTR(:,:,:)= ZTR - DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL,PRHODJ) * ZFLX / PDZZ ) /PRHODJ
+  PTR(:,:,:)= PTR - DZF(KKA,KKU,KKL, MZM(KKA,KKU,KKL,PRHODJ) * ZFLX / PDZZ ) /PRHODJ
 !
 ! Storage in the LES configuration
 !
   IF (LLES_CALL) THEN
     CALL LES_MEAN_SUBGRID( MZF(KKA,KKU,KKL,ZFLX), X_LES_SUBGRID_WTke )
-    CALL LES_MEAN_SUBGRID( -ZTR, X_LES_SUBGRID_ddz_WTke )
+    CALL LES_MEAN_SUBGRID( -PTR, X_LES_SUBGRID_ddz_WTke )
   END IF
 !
 END IF
@@ -425,54 +421,70 @@ PRTHLS(:,:,:) = PRTHLS(:,:,:) + XCED * SQRT(PTKEM(:,:,:)) / PLEPS(:,:,:) * &
 !*       4.   STORES SOME DIAGNOSTICS
 !             -----------------------
 !
+PDISS(:,:,:) =  -XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:)
+!
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
 !
 ! stores the dynamic production 
 !
-  YRECFM  ='DP'
-  YCOMMENT='X_Y_Z_DP (M**2/S**3)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PDP,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'DP'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: DP'
+  TZFIELD%CUNITS     = 'm2 s-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_DP'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PDP)
 !
 ! stores the thermal production 
 !
-  YRECFM  ='TP'
-  YCOMMENT='X_Y_Z_TP (M**2/S**3)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PTP,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'TP'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: TP'
+  TZFIELD%CUNITS     = 'm2 s-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_TP'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PTP)
 !
 ! stores the whole turbulent transport
 !
-  YRECFM  ='TR'
-  YCOMMENT='X_Y_Z_TR (M**2/S**3)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZTR,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'TR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: TR'
+  TZFIELD%CUNITS     = 'm2 s-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_TR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PTR)
 !
 ! stores the dissipation of TKE 
 !
-  YRECFM  ='DISS'
-  YCOMMENT='X_Y_Z_DISS (M**2/S**3)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  ZFLX(:,:,:) =-XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:) 
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'DISS'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: DISS'
+  TZFIELD%CUNITS     = 'm2 s-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_DISS'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PDISS)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and
 ! the dissipation of TKE 
 ! 
 IF (LLES_CALL ) THEN
-  ZFLX(:,:,:) =-XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:) 
-  CALL LES_MEAN_SUBGRID( ZFLX, X_LES_SUBGRID_DISS_Tke )
+  CALL LES_MEAN_SUBGRID( PDISS, X_LES_SUBGRID_DISS_Tke )
 END IF
 !
-PTR=0.
-PDISS=0.
-PTR(:,:,:)   = ZTR(:,:,:)
-PDISS(:,:,:) =  -XCED * (PTKEM(:,:,:)**1.5) / PLEPS(:,:,:)
 !----------------------------------------------------------------------------
 ! 
 !

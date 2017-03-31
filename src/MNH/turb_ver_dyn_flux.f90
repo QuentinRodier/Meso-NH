@@ -312,6 +312,7 @@ USE MODI_LES_MEAN_SUBGRID
 !
 USE MODI_SECOND_MNH
 USE MODE_ll
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 !
 IMPLICIT NONE
 !
@@ -395,17 +396,12 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  ::  &
        ZSOURCE,  & ! source of evolution for the treated variable
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IIB,IIE, &   ! I index values for the Beginning and End
                        IJB,IJE, &   ! mass points of the domain in the 3 direct.
                        IKB,IKE      !
 INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JSV          ! scalar loop counter
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1) :: ZCOEFFLXU, &
                                     ZCOEFFLXV, ZUSLOPEM, ZVSLOPEM
                                     ! coefficients for the surface flux
@@ -414,12 +410,11 @@ REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1) :: ZCOEFFLXU, &
 INTEGER             :: IIU,IJU      ! size of array in x,y,z directions
 !
 REAL :: ZTIME1, ZTIME2
+TYPE(TFIELDDATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
 !             -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IIU=SIZE(PUM,1)
 IJU=SIZE(PUM,2)
@@ -523,11 +518,16 @@ ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
 !
 IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the U wind component vertical flux
-  YRECFM  ='UW_VFLX'
-  YCOMMENT='X_Y_Z_UW_VFLX (M**2/S**2)'
-  IGRID   = 4  
-  ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'UW_VFLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: UW_VFLX'
+  TZFIELD%CUNITS     = 'm^2 s-2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'U wind component vertical flux'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
 END IF
 !
 ! first part of total momentum flux
@@ -692,11 +692,16 @@ ZFLXZ(:,:,KKA) = ZFLXZ(:,:,IKB)
 !
 IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the V wind component vertical flux
-  YRECFM  ='VW_VFLX'
-  YCOMMENT='X_Y_Z_VW_VFLX (M**2/S**2)'
-  IGRID   = 4
-  ILENCH=LEN(YCOMMENT)  
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'VW_VFLX'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: VW_VFLX'
+  TZFIELD%CUNITS     = 'm^2 s-2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'V wind component vertical flux'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
 END IF
 !
 ! second part of total momentum flux
@@ -807,11 +812,16 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
   ! to be tested &
   !   +XCMFB*(4./3.)*PLM(:,:,:)/SQRT(PTKEM(:,:,:))*PTP(:,:,:) 
   ! stores the W variance
-  YRECFM  ='W_VVAR'
-  YCOMMENT='X_Y_Z_W_VVAR (M**2/S**2)'
-  IGRID   = 1  
-  ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'W_VVAR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: W_VVAR'
+  TZFIELD%CUNITS     = 'm^2 s-2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_W_VVAR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
 END IF
 !
 !----------------------------------------------------------------------------

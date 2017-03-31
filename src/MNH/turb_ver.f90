@@ -352,6 +352,7 @@ USE MODI_TURB_VER_SV_CORR
 USE MODI_LES_MEAN_SUBGRID
 USE MODI_SBL_DEPTH
 !
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
 USE MODE_PRANDTL
 !
@@ -485,11 +486,6 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:,:)  ::  &
        ZRED2THS, & ! 3D Redeslperger number R*2_thsv
        ZRED2RS     ! 3D Redeslperger number R*2_rsv
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 LOGICAL :: GUSERV    ! flag to use water vapor
 INTEGER :: IKB,IKE   ! index value for the Beginning
@@ -497,6 +493,7 @@ INTEGER :: IKB,IKE   ! index value for the Beginning
 INTEGER :: JSV       ! loop counter on scalar variables
 REAL    :: ZTIME1
 REAL    :: ZTIME2
+TYPE(TFIELDDATA) :: TZFIELD
 !----------------------------------------------------------------------------
 ALLOCATE (      ZBETA(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))    ,&
        ZSQRT_TKE(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3)),& 
@@ -529,8 +526,6 @@ ALLOCATE ( &
 !
 !*       1.   PRELIMINARIES
 !             -------------
-YFMFILE = TPFILE%CNAME
-!
 PTP (:,:,:) = 0.
 PDP (:,:,:) = 0.
 !
@@ -718,33 +713,46 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
 !
 ! stores the Turbulent Prandtl number
 ! 
-  YRECFM  ='PHI3'
-  YCOMMENT='X_Y_Z_PHI3 (0)'
-  IGRID   = 4
-  ILENCH=LEN(YCOMMENT)
-  CALL  FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPHI3,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'PHI3'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: PHI3'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'Turbulent Prandtl number'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPHI3)
 !
 ! stores the Turbulent Schmidt number
 ! 
-  YRECFM  ='PSI3'
-  YCOMMENT='X_Y_Z_PSI3 (0)'
-  IGRID   = 4
-  ILENCH=LEN(YCOMMENT)
-!
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPSI3,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'PSI3'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: PSI3'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'Turbulent Schmidt number'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPSI3)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
 ! 
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
   DO JSV=1,NSV
-    WRITE(YRECFM, '("PSI_SV_",I3.3)') JSV
-    YCOMMENT='X_Y_Z_'//YRECFM//' (0)'
-    IGRID   = 4
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZPSI_SV(:,:,:,JSV),   &
-                IGRID,ILENCH,YCOMMENT,IRESP)
+    WRITE(TZFIELD%CMNHNAME, '("PSI_SV_",I3.3)') JSV
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPSI_SV(:,:,:,JSV))
   END DO
-
+!
 END IF
 !
 !

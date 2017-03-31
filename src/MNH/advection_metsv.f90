@@ -140,9 +140,6 @@ END MODULE MODI_ADVECTION_METSV
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-USE MODE_ll
-USE MODE_IO_ll
 USE MODD_PARAM_n
 USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
 USE MODD_CTURB, ONLY : XTKEMIN
@@ -150,6 +147,12 @@ USE MODD_CST
 USE MODD_BUDGET
 USE MODD_IO_ll,     ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
+!
+USE MODE_ll
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
+USE MODE_FM
+USE MODE_FMWRIT
+USE MODE_IO_ll
 !
 USE MODI_CONTRAV
 USE MODI_PPM_RHODJ
@@ -159,7 +162,6 @@ USE MODI_ADV_BOUNDARIES
 USE MODI_BUDGET
 USE MODI_GET_HALO
 !
-USE MODE_FMWRIT
 !-------------------------------------------------------------------------------
 !
 IMPLICIT NONE
@@ -256,20 +258,14 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS1_ll ! list of fields to exchange
 !
 !
 INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER             :: ILUOUT       ! logical unit
 INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
 INTEGER             :: IIB, IIE, IJB, IJE
+TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     INITIALIZATION                        
 !	        --------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
@@ -311,29 +307,49 @@ END IF
 !* prints in the file the 3D Courant numbers (one should flag this)
 !
 IF (OCLOSE_OUT .AND. OCFL_WRIT .AND. (.NOT. L1D)) THEN
-    YRECFM  ='CFLU'
-    YCOMMENT='X_Y_Z_CFLU (-)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLU,IGRID,ILENCH,YCOMMENT,IRESP)
-
-    YRECFM  ='CFLV'
-    YCOMMENT='X_Y_Z_CFLV (-)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLV,IGRID,ILENCH,YCOMMENT,IRESP)
-
-    YRECFM  ='CFLW'
-    YCOMMENT='X_Y_Z_CFLW (-)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFLW,IGRID,ILENCH,YCOMMENT,IRESP)
-
-    YRECFM  ='CFL'
-    YCOMMENT='X_Y_Z_CFL  (-)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCFL,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'CFLU'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: CFLU'
+    TZFIELD%CUNITS     = '1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLU'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZCFLU)
+!
+    TZFIELD%CMNHNAME   = 'CFLV'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: CFLV'
+    TZFIELD%CUNITS     = '1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLV'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZCFLV)
+!
+    TZFIELD%CMNHNAME   = 'CFLW'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: CFLW'
+    TZFIELD%CUNITS     = '1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_CFLW'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZCFLW)
+!
+    TZFIELD%CMNHNAME   = 'CFL'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: CFL'
+    TZFIELD%CUNITS     = '1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_CFL'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZCFL)
 END IF
 !
 !* prints in the output file the maximum CFL

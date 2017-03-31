@@ -370,8 +370,9 @@ USE MODI_TM06
 USE MODI_UPDATE_LM
 USE MODI_GET_HALO
 !
-USE MODE_SBL
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
+USE MODE_SBL
 !
 USE MODI_EMOIST
 USE MODI_ETHETA
@@ -536,17 +537,13 @@ INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JRR,JK,JSV   ! loop counters
 INTEGER             :: JI,JJ        ! loop counters
 INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL                :: ZL0          ! Max. Mixing Length in Blakadar formula
 REAL                :: ZALPHA       ! proportionnality constant between Dz/2 and 
 !                                   ! BL89 mixing length near the surface
 !
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH
+TYPE(TFIELDDATA) :: TZFIELD
 !
 !------------------------------------------------------------------------------------------
 ALLOCATE (                                                        &
@@ -594,8 +591,6 @@ ALLOCATE ( &
 !
 !*      1.PRELIMINARIES
 !         -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 !*      1.1 Set the internal domains, ZEXPL 
 !
@@ -685,17 +680,27 @@ IF (KRRL >=1) THEN
 !
 !
   IF (OCLOSE_OUT .AND. OTURB_DIAG) THEN
-    YRECFM  ='ATHETA'
-    YCOMMENT='X_Y_Z_ATHETA (M)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZATHETA,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'ATHETA'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: ATHETA'
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_ATHETA'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZATHETA)
 ! 
-    YRECFM  ='AMOIST'
-    YCOMMENT='X_Y_Z_AMOIST (M)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZAMOIST,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'AMOIST'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: AMOIST'
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_AMOIST'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZAMOIST)
   END IF
 !
 ELSE
@@ -1019,34 +1024,47 @@ END IF
 PLEM = ZLM
 !
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
-  YCOMMENT=' '
 ! 
 ! stores the mixing length
 ! 
-  YRECFM  ='LM'
-  YCOMMENT='X_Y_Z_LM (M)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'LM'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: LM'
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'Mixing length'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZLM)
 !
   IF (KRR /= 0) THEN
 !
 ! stores the conservative potential temperature
 !
-    YRECFM  ='THLM'
-    YCOMMENT='X_Y_Z_THLM (KELVIN)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PTHLT,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'THLM'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: THLM'
+    TZFIELD%CUNITS     = 'K'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'Conservative potential temperature'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PTHLT)
 !
 ! stores the conservative mixing ratio
 !
-    YRECFM  ='RNPM'
-    YCOMMENT='X_Y_Z_RNPM (KG/KG)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PRT(:,:,:,1),IGRID,ILENCH,       &
-                                                               YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'RNPM'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: RNPM'
+    TZFIELD%CUNITS     = 'kg kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'Conservative mixing ratio'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PRT(:,:,:,1))
    END IF
 END IF
 !
@@ -1636,11 +1654,16 @@ ENDIF
 !
 ! Impression before modification of the mixing length
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
-  YRECFM  ='LM_CLEAR_SKY'
-  YCOMMENT='X_Y_Z_LM CLEAR SKY (M)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'LM_CLEAR_SKY'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: LM_CLEAR_SKY'
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_LM CLEAR SKY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZLM)
 ENDIF
 !
 ! Amplification of the mixing length when the criteria are verified
@@ -1656,17 +1679,27 @@ WHERE (PCEI(:,:,:) == -1.) ZLM(:,:,:) = ZLM_CLOUD(:,:,:)
 !              ----------
 !
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
-  YRECFM  ='COEF_AMPL'
-  YCOMMENT='X_Y_Z_COEF AMPL (-)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZCOEF_AMPL,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'COEF_AMPL'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: COEF_AMPL'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_COEF AMPL'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZCOEF_AMPL)
   !
-  YRECFM  ='LM_CLOUD'
-  YCOMMENT='X_Y_Z_LM CLOUD (M)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZLM_CLOUD,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'LM_CLOUD'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: LM_CLOUD'
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_LM CLOUD'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZLM_CLOUD)
   !
 ENDIF
 !

@@ -146,6 +146,7 @@ END MODULE MODI_TURB_HOR_DYN_CORR
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODD_CST
 USE MODD_CONF
 USE MODD_CTURB
@@ -154,11 +155,10 @@ USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_NSV
 !
-!
 USE MODE_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-!
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -237,16 +237,11 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))       &
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2)) ::ZDIRSINZW 
       ! sinus of the angle between the vertical and the normal to the orography
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 INTEGER             :: IKU                                   
 INTEGER             :: JSV          ! scalar loop counter
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GX_U_M_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GY_V_M_PVM
@@ -272,12 +267,11 @@ REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF , ZDZZ
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
+TYPE(TFIELDDATA) :: TZFIELD
 ! --------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
-YFMFILE = TPFILE%CNAME
-!
 NULLIFY(TZFIELDS_ll)
 !
 IKB = 1+JPVEXT               
@@ -389,11 +383,16 @@ ZFLX(:,:,IKB-1:IKB-1) = 2. * ZFLX(:,:,IKB-1:IKB-1) -  ZFLX(:,:,IKB:IKB)
 CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   ! stores <U U>  
-  YRECFM  ='U_VAR'
-  YCOMMENT='X_Y_Z_U_VAR ( (M/S)**2)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'U_VAR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: U_VAR'
+  TZFIELD%CUNITS     = '(m s-1)^2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_U_VAR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 ! Complete the U tendency
@@ -479,11 +478,16 @@ CALL UPDATE_HALO_ll(TZFIELDS_ll, IINFO_ll)
 !
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   ! stores <V V>  
-  YRECFM  ='V_VAR'
-  YCOMMENT='X_Y_Z_V_VAR ( (M/S)**2)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'V_VAR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: V_VAR'
+  TZFIELD%CUNITS     = '(m s-1)^2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_V_VAR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 ! Complete the V tendency
@@ -560,11 +564,16 @@ ZFLX(:,:,IKB-1) = 2. * ZFLX(:,:,IKB-1) - ZFLX(:,:,IKB)
 !
 IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   ! stores <W W>  
-  YRECFM  ='W_VAR'
-  YCOMMENT='X_Y_Z_W_VAR ( (M/S)**2)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLX,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'W_VAR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: W_VAR'
+  TZFIELD%CUNITS     = '(m s-1)^2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_W_VAR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
 END IF
 !
 ! Complete the W tendency

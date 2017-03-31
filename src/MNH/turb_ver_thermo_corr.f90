@@ -336,6 +336,7 @@ USE MODI_LES_MEAN_SUBGRID
 USE MODI_PRANDTL
 USE MODI_TRIDIAG_THERMO
 !
+USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_PRANDTL
 !
 USE MODI_SECOND_MNH
@@ -436,14 +437,9 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))  ::  &
        ZDFDDRDZ, & ! dF/d(dr/dz)
        Z3RDMOMENT  ! 3 order term in flux or variance equation
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: I1,I2        ! For ZCOEFF allocation
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(:,:,:),ALLOCATABLE  :: ZCOEFF
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
@@ -456,12 +452,11 @@ LOGICAL :: GFWTH    ! flag to use w'2th'
 LOGICAL :: GFR2     ! flag to use w'r'2
 LOGICAL :: GFWR     ! flag to use w'2r'
 LOGICAL :: GFTHR    ! flag to use w'th'r'
+TYPE(TFIELDDATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
 !             -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
@@ -586,11 +581,16 @@ END IF
   !
   ! stores <THl THl>  
   IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-    YRECFM  ='THL_VVAR'
-    YCOMMENT='X_Y_Z_THL_VVAR (KELVIN**2)'
-    IGRID   = 1
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'THL_VVAR'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: THL_VVAR'
+    TZFIELD%CUNITS     = 'K^2'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_THL_VVAR'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
   END IF
 !
 ! and we store in LES configuration
@@ -707,11 +707,16 @@ END IF
     END IF
     ! stores <THl Rnp>   
     IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-      YRECFM  ='THLRCONS_VCOR'
-      YCOMMENT='X_Y_Z_THLRCONS_VCOR (KELVIN*KG/KG)'
-      IGRID   = 1
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+      TZFIELD%CMNHNAME   = 'THLRCONS_VCOR'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: THLRCONS_VCOR'
+      TZFIELD%CUNITS     = 'K kg kg-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Z_THLRCONS_VCOR'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
     END IF
 !
 ! and we store in LES configuration
@@ -808,11 +813,16 @@ END IF
     END IF
     ! stores <Rnp Rnp>    
     IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
-      YRECFM  ='RTOT_VVAR'
-      YCOMMENT='X_Y_Z_RTOT_VVAR (KG/KG **2)'
-      IGRID   = 1
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+      TZFIELD%CMNHNAME   = 'RTOT_VVAR'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: RTOT_VVAR'
+      TZFIELD%CUNITS     = '(kg kg-1)^2'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Z_RTOT_VVAR'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
     END IF
     !
     ! and we store in LES configuration
