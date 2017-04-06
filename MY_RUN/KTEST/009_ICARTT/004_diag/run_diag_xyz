@@ -13,9 +13,9 @@ ln -sf ${CHIMIE_FILES}/tuv50/DATAE1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAJ1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAS1 .
 
-ln -sf  ../003_mesonh/ICART.1.SEG01.002.*??? .
-ln -sf  ../003_mesonh/ICART.1.SEG01.001.*??? .
-ln -sf ../001_pgd1/ICARTT1008_PGD_15km.* .
+ln -sf  ../003_mesonh/ICART.1.SEG01.002.{des,lfi,nc} .
+ln -sf  ../003_mesonh/ICART.1.SEG01.001.{des,lfi,nc} .
+ln -sf ../001_pgd1/ICARTT1008_PGD_15km.{des,lfi,nc} .
 
 cp  DIAG1.nam1 DIAG1.nam
 time ${MPIRUN} DIAG${XYZ}
