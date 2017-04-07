@@ -45,30 +45,14 @@
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 IMPLICIT NONE
 
-TYPE PRECIP_t
-!
-  REAL, DIMENSION(:,:), POINTER :: XINPRC=>NULL(), XACPRC=>NULL(),  &
-                   XINDEP=>NULL(), XACDEP=>NULL(),                  &
-!                   XINPRR=>NULL(), XACPRR=>NULL(),                  &
-                   XINPRS=>NULL(), XACPRS=>NULL(), XINPRG=>NULL(),  &
-                   XACPRG=>NULL(), XINPRH=>NULL(), XACPRH=>NULL()
-                                         ! Instant and cumul of ground
-                                         ! precipitation fields of Cloud,Rain, 
-                                         !    Snow, Graupel and Hail
-!  REAL, DIMENSION(:,:,:), POINTER :: XINPRR3D=>NULL(), & !Instant precip 3D
-!                   XEVAP3D=>NULL()! Evap profile 3D
-!
-END TYPE PRECIP_t
-
-TYPE(PRECIP_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: PRECIP_MODEL
-
-REAL, DIMENSION(:,:), POINTER :: XINPRC=>NULL(), XACPRC=>NULL(),  &
-                 XINDEP=>NULL(), XACDEP=>NULL(),                  &
-                 XINPRR=>NULL(), XACPRR=>NULL(),                  &
-                 XINPRG=>NULL(), XINPRS=>NULL(), XACPRS=>NULL(),  &
-                 XACPRG=>NULL(), XINPRH=>NULL(), XACPRH=>NULL()
-  REAL, DIMENSION(:,:,:), POINTER :: XINPRR3D=>NULL(), & !Instant precip 3D
-                   XEVAP3D=>NULL()! Evap profile 3D
+REAL, DIMENSION(:,:), POINTER :: XINPRC=>NULL(), XACPRC=>NULL(), & ! Instant and cumul of ground
+                                 XINDEP=>NULL(), XACDEP=>NULL(), & ! precipitation fields of Cloud, Rain,
+                                 XINPRR=>NULL(), XACPRR=>NULL(), & ! Snow, Graupel and Hail
+                                 XINPRS=>NULL(), XACPRS=>NULL(), &
+                                 XINPRG=>NULL(), XACPRG=>NULL(), &
+                                 XINPRH=>NULL(), XACPRH=>NULL()
+REAL, DIMENSION(:,:,:), POINTER :: XINPRR3D=>NULL(), & !Instant precip 3D
+                                   XEVAP3D =>NULL()    ! Evap profile 3D
 
 CONTAINS
 
@@ -76,40 +60,6 @@ SUBROUTINE PRECIP_GOTO_MODEL(KFROM, KTO)
 !
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
-INTEGER :: IID,IRESP
-!
-! Save current state for allocated arrays
-PRECIP_MODEL(KFROM)%XINPRC=>XINPRC
-PRECIP_MODEL(KFROM)%XACPRC=>XACPRC
-PRECIP_MODEL(KFROM)%XINDEP=>XINDEP
-PRECIP_MODEL(KFROM)%XACDEP=>XACDEP
-!PRECIP_MODEL(KFROM)%XINPRR=>XINPRR !Done in FIELDLIST_GOTO_MODEL
-!PRECIP_MODEL(KFROM)%XINPRR3D=>XINPRR3D !Done in FIELDLIST_GOTO_MODEL
-!PRECIP_MODEL(KFROM)%XEVAP3D=>XEVAP3D !Done in FIELDLIST_GOTO_MODEL
-!PRECIP_MODEL(KFROM)%XACPRR=>XACPRR !Done in FIELDLIST_GOTO_MODEL
-PRECIP_MODEL(KFROM)%XINPRS=>XINPRS
-PRECIP_MODEL(KFROM)%XACPRS=>XACPRS
-PRECIP_MODEL(KFROM)%XINPRG=>XINPRG
-PRECIP_MODEL(KFROM)%XACPRG=>XACPRG
-PRECIP_MODEL(KFROM)%XINPRH=>XINPRH
-PRECIP_MODEL(KFROM)%XACPRH=>XACPRH
-!
-! Current model is set to model KTO
-XINPRC=>PRECIP_MODEL(KTO)%XINPRC
-XACPRC=>PRECIP_MODEL(KTO)%XACPRC
-XINDEP=>PRECIP_MODEL(KTO)%XINDEP
-XACDEP=>PRECIP_MODEL(KTO)%XACDEP
-!XINPRR=>PRECIP_MODEL(KTO)%XINPRR !Done in FIELDLIST_GOTO_MODEL
-!XINPRR3D=>PRECIP_MODEL(KTO)%XINPRR3D !Done in FIELDLIST_GOTO_MODEL
-!XEVAP3D=>PRECIP_MODEL(KTO)%XEVAP3D !Done in FIELDLIST_GOTO_MODEL
-!XACPRR=>PRECIP_MODEL(KTO)%XACPRR !Done in FIELDLIST_GOTO_MODEL
-XINPRS=>PRECIP_MODEL(KTO)%XINPRS
-XACPRS=>PRECIP_MODEL(KTO)%XACPRS
-XINPRG=>PRECIP_MODEL(KTO)%XINPRG
-XACPRG=>PRECIP_MODEL(KTO)%XACPRG
-XINPRH=>PRECIP_MODEL(KTO)%XINPRH
-XACPRH=>PRECIP_MODEL(KTO)%XACPRH
-
 END SUBROUTINE PRECIP_GOTO_MODEL
 
 END MODULE MODD_PRECIP_n
