@@ -44,8 +44,8 @@ IMPLICIT NONE
 TYPE CH_PH_t
 !
 
-  REAL, POINTER, DIMENSION(:,:,:) :: XPHC ! cloud
-  REAL, POINTER, DIMENSION(:,:,:) :: XPHR ! rain
+!  REAL, POINTER, DIMENSION(:,:,:) :: XPHC ! cloud
+!  REAL, POINTER, DIMENSION(:,:,:) :: XPHR ! rain
   REAL, POINTER, DIMENSION(:,:,:) :: XACPRAQ ! sum of aqueous chemical species fall at the surface by rain
                                              ! in moles i / m2 (ratio with XACPRR for concentration
   REAL, POINTER, DIMENSION(:,:) :: XACPHR !  mean PH in accumulated surface rain
@@ -66,14 +66,14 @@ SUBROUTINE CH_PH_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
 ! Save current state for allocated arrays
-CH_PH_MODEL(KFROM)%XPHC=>XPHC
-CH_PH_MODEL(KFROM)%XPHR=>XPHR
+!CH_PH_MODEL(KFROM)%XPHC=>XPHC !Done in FIELDLIST_GOTO_MODEL
+!CH_PH_MODEL(KFROM)%XPHR=>XPHR !Done in FIELDLIST_GOTO_MODEL
 CH_PH_MODEL(KFROM)%XACPHR=>XACPHR
 CH_PH_MODEL(KFROM)%XACPRAQ=>XACPRAQ
 !
 ! Current model is set to model KTO
-XPHC=>CH_PH_MODEL(KTO)%XPHC
-XPHR=>CH_PH_MODEL(KTO)%XPHR
+!XPHC=>CH_PH_MODEL(KTO)%XPHC !Done in FIELDLIST_GOTO_MODEL
+!XPHR=>CH_PH_MODEL(KTO)%XPHR !Done in FIELDLIST_GOTO_MODEL
 XACPHR=>CH_PH_MODEL(KTO)%XACPHR
 XACPRAQ=>CH_PH_MODEL(KTO)%XACPRAQ
 

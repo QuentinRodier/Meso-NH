@@ -1020,48 +1020,50 @@ IF (NSV >=1) THEN
     !
     IF (LUSECHIC) THEN
       DO JSV = NSV_CHICBEG,NSV_CHICEND
-        YRECFM=TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
-        WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,YDIR,XSVT(:,:,:,JSV),IGRID,ILENCH,    &
-                    YCOMMENT,IRESP)
-        YCHNAMES(JSV-JSA)=YRECFM(1:LEN_TRIM(YRECFM)-1) ! without M
+        TZFIELD%CMNHNAME   = TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))//'T'
+        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+        WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (ppp)'
+        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,XSVT(:,:,:,JSV))
+        !
+        YCHNAMES(JSV-JSA)=TZFIELD%CMNHNAME(1:LEN_TRIM(TZFIELD%CMNHNAME)-1) ! without M
       END DO
     ENDIF
     IF (LUSECHAQ.AND.NRR>=3) THEN ! accumulated moles of aqueous species that fall at the surface (mol i/m2) 
-    DO JSV = NSV_CHACBEG+NSV_CHAC/2,NSV_CHACEND
-    YRECFM='ACPR_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
-    ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
-    YCOMMENT    = 'X_Y_Accumulated moles of aqueous species at the surface (mol i/m2)'
-    IGRID       = 1
-    ILENCH      = LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH,YCOMMENT,IRESP)
-    END DO
+      TZFIELD%NDIMS = 2
+      DO JSV = NSV_CHACBEG+NSV_CHAC/2,NSV_CHACEND
+        TZFIELD%CMNHNAME   = 'ACPR_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHEMBEG+1)))
+        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CUNITS     = 'mol i m-2'
+        TZFIELD%CCOMMENT   = 'X_Y_Accumulated moles of aqueous species at the surface'
+        ZWORK2D(:,:)  = XACPRAQ(:,:,JSV-NSV_CHACBEG-NSV_CHAC/2+1)
+        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK2D)
+      END DO
+      TZFIELD%NDIMS = 3
     END IF
     IF (LUSECHAQ.AND.LCH_PH) THEN  ! pH values in cloud
-      YRECFM = 'PHC'
-      YCOMMENT='X_Y_Z_PHC'
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,YDIR,XPHC,IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL IO_WRITE_FIELD(TPFILE,'PHC',CLUOUT,IRESP,XPHC)
       IF (NRR>=3) THEN
-        YRECFM = 'PHR'
-        YCOMMENT='X_Y_Z_PHR'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,YDIR,XPHR,IGRID,ILENCH,YCOMMENT,IRESP)
+        CALL IO_WRITE_FIELD(TPFILE,'PHR',CLUOUT,IRESP,XPHR)
         ! compute mean pH in accumulated surface water
         !ZWORK2D(:,:) = 10**(-XCH_PHINIT)
         WHERE (XACPRR > 0.)
-        ZWORK2D(:,:) =  XACPHR(:,:) *1E3 / XACPRR(:,:) ! moles of H+ / l of water 
+          ZWORK2D(:,:) =  XACPHR(:,:) *1E3 / XACPRR(:,:) ! moles of H+ / l of water 
         ELSE WHERE
-        ZWORK2D(:,:) = XUNDEF
+          ZWORK2D(:,:) = XUNDEF
         END WHERE
         WHERE ((ZWORK2D(:,:) < 1E-1).AND.(ZWORK2D(:,:) > 1E-14))
-        ZWORK2D(:,:) = -ALOG10(ZWORK2D(:,:))           ! mean pH of surface water
+          ZWORK2D(:,:) = -LOG10(ZWORK2D(:,:))           ! mean pH of surface water
         END WHERE
-        YRECFM = 'MEANPHR'
-        YCOMMENT='X_Y_MEAN_PH'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D,IGRID,ILENCH,YCOMMENT,IRESP)        
+        TZFIELD%CMNHNAME   = 'MEANPHR'
+        TZFIELD%CSTDNAME   = ''
+        TZFIELD%CLONGNAME  = 'MesoNH: MEANPHR'
+        TZFIELD%CUNITS     = '1'
+        TZFIELD%CDIR       = 'XY'
+        TZFIELD%CCOMMENT   = 'X_Y_MEAN_PH'
+        TZFIELD%NGRID      = 1
+        TZFIELD%NTYPE      = TYPEREAL
+        TZFIELD%NDIMS      = 2
+        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK2D)
       ENDIF
     ENDIF
   ELSE IF (LCH_CONV_LINOX) THEN
