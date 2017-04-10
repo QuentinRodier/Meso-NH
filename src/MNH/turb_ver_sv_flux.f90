@@ -281,6 +281,9 @@ USE MODD_LES
 USE MODD_CONF
 USE MODD_NSV, ONLY : NSV_LGBEG,NSV_LGEND
 !
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
+USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
 USE MODI_GRADIENT_W
@@ -290,7 +293,6 @@ USE MODI_TRIDIAG
 USE MODI_TRIDIAG_WIND 
 USE MODI_EMOIST
 USE MODI_ETHETA
-USE MODE_FMWRIT
 USE MODI_LES_MEAN_SUBGRID
 !
 USE MODI_SECOND_MNH
@@ -354,8 +356,6 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))  ::  &
        ZSOURCE,  & ! source of evolution for the treated variable
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: IKT          ! array size in k direction
@@ -363,19 +363,15 @@ INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JSV          ! loop counters
 INTEGER             :: JK           ! loop
 INTEGER             :: ISV          ! number of scalar var.
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL :: ZTIME1, ZTIME2
 
 REAL :: ZCSVP = 4.0  ! constant for scalar flux presso-correlation (RS81)
+TYPE(TFIELDDATA)  :: TZFIELD
 !----------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARIES
 !             -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKB=KKA+JPVEXT_TURB*KKL
 IKE=KKU-JPVEXT_TURB*KKL
@@ -456,11 +452,18 @@ DO JSV=1,ISV
   !
   IF (OTURB_FLX .AND. OCLOSE_OUT) THEN
     ! stores the JSVth vertical flux
-    WRITE(YRECFM,'("WSV_FLX_",I3.3)') JSV 
-    YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
-    IGRID   = 4  
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXZ,IGRID,ILENCH,YCOMMENT,IRESP)
+    WRITE(TZFIELD%CMNHNAME,'("WSV_FLX_",I3.3)') JSV
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    !PW: TODO: use the correct units of the JSV variable (and multiply it by m s-1)
+    TZFIELD%CUNITS     = 'SVUNIT m s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    !
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
   END IF
   !
   ! Storage in the LES configuration

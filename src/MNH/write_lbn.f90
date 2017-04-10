@@ -565,7 +565,14 @@ IF (NSV >=1) THEN
         CALL ABORT
         STOP
       END IF ! Test IMOMENTS
-      
+      !
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'ppp'
+      TZFIELD%CDIR       = '--'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      !
       IF (IMOMENTS == 1) THEN
         DO JMODE=1, NMODE_DST
           !Index from which names are picked
@@ -575,19 +582,18 @@ IF (NSV >=1) THEN
                 + (NSV_DSTBEG -1)      !Previous list of tracers
 
           IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction             
-            YRECFM = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
-            ILENCH=LEN(YCOMMENT)
-            CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
-                           IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBX'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
+            CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBXSV_ll,IRESP,XLBXSVM(:,:,:,JSV))
           ENDIF !Check on border points in X direction
           IF(NSIZELBYSV_ll /= 0) THEN
-            YRECFM = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-            WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
-            ILENCH=LEN(YCOMMENT)
-            CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
-                           IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
-
+            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBY'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
+            CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBYSV_ll,IRESP,XLBYSVM(:,:,:,JSV))
           ENDIF  !Check on points in Y direction
         ENDDO ! Loop on mode
       ELSE  ! valeur IMOMENTS =/ 1
@@ -599,18 +605,18 @@ IF (NSV >=1) THEN
                 + (NSV_DSTBEG -1)
 !
             IF(NSIZELBXSV_ll /= 0) THEN !Check on border points in X direction
-              YRECFM = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (ppp)'
-              ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),&
-                             IRIMX,NSIZELBXSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+              TZFIELD%CMNHNAME   = 'LBX_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+              TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+              TZFIELD%CLBTYPE    = 'LBX'
+              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
+              CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBXSV_ll,IRESP,XLBXSVM(:,:,:,JSV))
             ENDIF !Check on border points in X direction
             IF(NSIZELBYSV_ll /= 0) THEN
-              YRECFM = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
-              WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (ppp)'
-              ILENCH=LEN(YCOMMENT)
-              CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),&
-                             IRIMY,NSIZELBYSV_ll, IGRID,ILENCH,YCOMMENT,IRESP)
+              TZFIELD%CMNHNAME   = 'LBY_'//TRIM(YPDUST_INI(ISV_NAME_IDX))
+              TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+              TZFIELD%CLBTYPE    = 'LBY'
+              WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
+              CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBYSV_ll,IRESP,XLBYSVM(:,:,:,JSV))
             ENDIF  !Check on points in Y direction
           ENDDO ! Loop on moments
         ENDDO    ! Loop on modes
@@ -619,22 +625,30 @@ IF (NSV >=1) THEN
     ELSE  ! Test CPROGRAM
       ! We are in the subprogram MESONH, CDUSTNAMES are allocated and are 
       !in the same order as the variables in XSVM (i.e. following JPDUSTORDER)
+      !
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CUNITS     = 'kg kg-1'
+      TZFIELD%CDIR       = '--'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      !
       DO JSV = NSV_DSTBEG,NSV_DSTEND
         IF(NSIZELBXSV_ll /= 0) THEN
-           YRECFM = 'LBX_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBX",XLBXSVM(:,:,:,JSV),IRIMX,NSIZELBXSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBXSV_ll,IRESP,XLBXSVM(:,:,:,JSV))
         END IF             
         !
         IF(NSIZELBYSV_ll /= 0) THEN
-           YRECFM = 'LBY_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
-        WRITE(YCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV,' (KG/KG)'
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT_LB(YFMFILE,YRECFM,CLUOUT,"LBY",XLBYSVM(:,:,:,JSV),IRIMY,NSIZELBYSV_ll,&
-             & IGRID,ILENCH,YCOMMENT,IRESP)
-         END IF            
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDUSTNAMES(JSV-NSV_DSTBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_WRITE_FIELD_LB(TPFILE,TZFIELD,CLUOUT,NSIZELBYSV_ll,IRESP,XLBYSVM(:,:,:,JSV))
+        END IF
       END DO
       IF (LDEPOS_DST(IMI)) THEN
         DO JSV = NSV_DSTDEPBEG,NSV_DSTDEPEND
