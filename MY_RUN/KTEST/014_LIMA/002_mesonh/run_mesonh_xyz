@@ -4,6 +4,6 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../001_prep_ideal_case/SCHAR-JUNGFRAU.??? .
+ln -fs ../001_prep_ideal_case/SCHAR-JUNGFRAU.{des,lfi,nc} .
 rm -f XPREF.1.SEG01* OUT*
 time ${MONORUN} MESONH${XYZ}
