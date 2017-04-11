@@ -151,6 +151,7 @@ USE MODI_CONDENS
 USE MODI_BUDGET
 USE MODI_LIMA_FUNCTIONS
 !
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMWRIT
 !
@@ -257,18 +258,12 @@ REAL, DIMENSION(:), ALLOCATABLE &
                             ZDELTI, ZDELT1, ZDELT2, ZCND, ZDEP
 !
 INTEGER                  :: IRESP      ! Return code of FM routines
-INTEGER                  :: ILENG      ! Length of comment string in LFIFM file
-INTEGER                  :: IGRID      ! C-grid indicator in LFIFM file
-INTEGER                  :: ILENCH     ! Length of comment string in LFIFM file
 INTEGER                  :: IKB        ! K index value of the first inner mass point
 INTEGER                  :: IKE        ! K index value of the last inner mass point
 INTEGER                  :: IIB,IJB    ! Horz index values of the first inner mass points
 INTEGER                  :: IIE,IJE    ! Horz index values of the last inner mass points
 INTEGER                  :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER                  :: ILUOUT     ! Logical unit of output listing 
-CHARACTER (LEN=28)       :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100)      :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)       :: YRECFM     ! Name of the desired field in LFIFM file
 !
 INTEGER                           :: ISIZE
 REAL, DIMENSION(:), ALLOCATABLE   :: ZRTMIN
@@ -279,13 +274,12 @@ INTEGER                           :: JL       ! and PACK intrinsics
 INTEGER                           :: JMOD, JMOD_IFN, JMOD_IMM
 !
 INTEGER , DIMENSION(3) :: BV
+TYPE(TFIELDDATA)  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARIES
 !               -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
@@ -1126,12 +1120,16 @@ IF ( HRAD /= 'NONE' ) THEN
 END IF
 !
 IF ( OCLOSE_OUT ) THEN
-  ILENCH=LEN(YCOMMENT)
-  YRECFM  ='NEB'
-  YCOMMENT='X_Y_Z_NEB (0)'
-  IGRID   = 1
-  ILENG = SIZE(ZW,1)*SIZE(ZW,2)*SIZE(ZW,3)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'NEB'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: NEB'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZW)
 END IF
 !
 !
@@ -1171,17 +1169,21 @@ END IF
 ! write SSI in LFI
 !
 IF ( OCLOSE_OUT ) THEN
-   ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
-   ZW(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:) ) )
-   ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
-   ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
+  ZT(:,:,:) = ( PTHS(:,:,:) * ZDT ) * ZEXNS(:,:,:)
+  ZW(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:) ) )
+  ZW1(:,:,:)= 2.0*PPABST(:,:,:)-PPABSM(:,:,:)
+  ZW(:,:,:) = PRVT(:,:,:)*( ZW1(:,:,:)-ZW(:,:,:) ) / ( (XMV/XMD) * ZW(:,:,:) ) - 1.0
 
-   ILENCH=LEN(YCOMMENT)
-   YRECFM  ='SSI'
-   YCOMMENT='X_Y_Z_SSI'
-   IGRID   = 1
-   ILENG = SIZE(ZW,1)*SIZE(ZW,2)*SIZE(ZW,3)
-   CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZW,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'SSI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: SSI'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_SSI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZW)
 END IF
 !
 !
