@@ -945,24 +945,6 @@ END IF
 !               ----------------------------
 !
 WRITE(COUTFILE,'(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))
-WRITE(TDIAFILE%CNAME, '(A,".",I1,".",A)') CEXP,KMI,TRIM(ADJUSTL(CSEG))//'.000'
-TDIAFILE%CTYPE = 'DIACHRONIC'
-IF (LIOCDF4) THEN
-  IF (.NOT.LLFIOUT) THEN
-    TDIAFILE%CFORMAT = 'NETCDF4'
-  ELSE
-    TDIAFILE%CFORMAT = 'LFICDF4'
-    TDIAFILE%NLFINPRAR = 50
-  END IF
-ELSE IF (LLFIOUT) THEN
-  TDIAFILE%CFORMAT = 'LFI'
-  TDIAFILE%NLFINPRAR = 50
-ELSE
-  CALL PRINT_MSG(NVERB_FATAL,'IO','INI_SPECTRE_n','unknown backup/output fileformat')
-ENDIF
-TDIAFILE%CMODE      = 'WRITE'
-TDIAFILE%NLFITYPE   = 1
-TDIAFILE%NLFIVERB   = NVERB
 
 !-------------------------------------------------------------------------------
 !
