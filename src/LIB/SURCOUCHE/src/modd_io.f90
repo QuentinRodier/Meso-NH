@@ -59,7 +59,6 @@ TYPE TOUTBAK
   INTEGER           :: NSTEP        !Timestep number
   REAL              :: XTIME        !Time from start of the segment (in seconds and rounded to a timestep)
   INTEGER           :: NOUTDAD = -1 !Index of the corresponding dad file (file with same time)
-  CHARACTER(LEN=28) :: CDADFILENAME !Filename of dad
   TYPE(TFILEDATA),POINTER :: TFILE => NULL() !Corresponding file
   TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILE_IOZ !Corresponding Z-splitted files
   INTEGER,DIMENSION(:),POINTER :: NFIELDLIST => NULL() !List of the fields to read or write
@@ -88,6 +87,7 @@ TYPE TFILEDATA
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
   INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
   !
+  TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
   TYPE(TFILEDATA),POINTER :: TFILE_NEXT => NULL()
 END TYPE TFILEDATA

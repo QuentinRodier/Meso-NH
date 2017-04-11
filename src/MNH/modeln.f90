@@ -420,7 +420,6 @@ INTEGER :: ILUOUT      ! Logical unit number for the output listing
 INTEGER :: IIU,IJU,IKU ! array size in first, second and third dimensions
 INTEGER :: IIB,IIE,IJB,IJE,IKB,IKE ! index values for the physical subdomain
 INTEGER :: JSV,JRR     ! Loop index for scalar and moist variables
-CHARACTER (LEN=28) :: YDADFILE  ! name of the corresponding DAD model OUTPUT FM-file
 INTEGER  :: INBVAR              ! number of HALO2_lls to allocate
 INTEGER  :: IRESP               ! return code in FM routines
 INTEGER  :: IINFO_ll            ! return code of parallel routine
@@ -908,14 +907,13 @@ IF (IBAK < NBAK_NUMB ) THEN
     GCLOSE_OUT=.TRUE.
     !
     TZBAKFILE => TBACKUPN(IBAK)%TFILE
-    YDADFILE = TBACKUPN(IBAK)%CDADFILENAME
     IVERB    = TZBAKFILE%NLFIVERB
     !
     CALL IO_FILE_OPEN_ll(TZBAKFILE,CLUOUT,IRESP)
     !
     CALL WRITE_DESFM_n(IMI,TRIM(TZBAKFILE%CNAME)//'.des',CLUOUT)
     CALL IO_WRITE_HEADER_NC4(TBACKUPN(IBAK)%TFILE,CLUOUT)
-    CALL WRITE_LFIFM_n(TBACKUPN(IBAK)%TFILE,YDADFILE)
+    CALL WRITE_LFIFM_n(TBACKUPN(IBAK)%TFILE,TBACKUPN(IBAK)%TFILE%TDADFILE%CNAME)
     COUTFMFILE = TZBAKFILE%CNAME
     CALL MNHWRITE_ZS_DUMMY_n(TZBAKFILE)
     IF (CSURF=='EXTE') THEN
