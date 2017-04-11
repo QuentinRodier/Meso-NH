@@ -197,6 +197,10 @@ MODULE MODE_FMWRIT
                       IO_WRITE_FIELD_BYFIELD_T0
   END INTERFACE
 
+  INTERFACE IO_WRITE_FIELD_BOX
+     MODULE PROCEDURE IO_WRITE_FIELD_BOX_BYFIELD_X5
+  END INTERFACE
+
   INTERFACE IO_WRITE_FIELD_LB
      MODULE PROCEDURE IO_WRITE_FIELD_BYNAME_LB, IO_WRITE_FIELD_BYFIELD_LB
   END INTERFACE
@@ -218,7 +222,7 @@ MODULE MODE_FMWRIT
        & FMWRITX4_ll,FMWRITX5_ll,FMWRITX6_ll,FMWRITN0_ll,FMWRITN1_ll,FMWRITN2_ll,&
        & FMWRITL0_ll,FMWRITL1_ll,FMWRITC0_ll,FMWRITC1_ll,FMWRITT0_ll,FMWRITBOXX2_ll,&
        & FMWRITBOXX3_ll,FMWRITBOXX4_ll,FMWRITBOXX5_ll,FMWRITBOXX6_ll
-  PUBLIC IO_WRITE_FIELD, IO_WRITE_FIELD_LB
+  PUBLIC IO_WRITE_FIELD, IO_WRITE_FIELD_BOX, IO_WRITE_FIELD_LB
 
   !INCLUDE 'mpif.h'
 
@@ -4368,6 +4372,89 @@ CONTAINS
     IF (GALLOC) DEALLOCATE(ZFIELDP)
     KRESP = IRESP
   END SUBROUTINE FMWRITBOXX5_ll
+
+  SUBROUTINE IO_WRITE_FIELD_BOX_BYFIELD_X5(TPFILE,TPFIELD,HFIPRI,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
+    !
+    USE MODD_IO_ll
+    USE MODD_FM
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_GATHER_ll
+    !
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),                 INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),                INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),                INTENT(IN) :: HFIPRI   ! output file for error messages
+    CHARACTER(LEN=*),                INTENT(IN) :: HBUDGET  ! 'BUDGET' (budget)  or 'OTHER' (MesoNH field)
+    REAL,DIMENSION(:,:,:,:,:),TARGET,INTENT(IN) :: PFIELD   ! array containing the data field
+    INTEGER,                         INTENT(IN) :: KXOBOX   ! 
+    INTEGER,                         INTENT(IN) :: KXEBOX   ! Global coordinates of the box
+    INTEGER,                         INTENT(IN) :: KYOBOX   ! 
+    INTEGER,                         INTENT(IN) :: KYEBOX   ! 
+    INTEGER,                         INTENT(OUT):: KRESP    ! return-code 
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=JPFINL)               :: YFNLFI
+    INTEGER                             :: IERR
+    TYPE(FD_ll), POINTER                :: TZFD
+    INTEGER                             :: IRESP
+    REAL,DIMENSION(:,:,:,:,:),POINTER   :: ZFIELDP
+    LOGICAL                             :: GALLOC
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BOX_BYFIELD_X5','writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    IRESP = 0
+    GALLOC = .FALSE.
+    YFNLFI=TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi'
+    !------------------------------------------------------------------
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (HBUDGET /= 'BUDGET') THEN
+             ! take the sub-section of PFIELD defined by the box
+             ZFIELDP=>PFIELD(KXOBOX:KXEBOX,KYOBOX:KYEBOX,:,:,:)
+          ELSE
+             ! take the field as a budget
+             ZFIELDP=>PFIELD
+          END IF
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+       ELSE ! multiprocessor execution
+          IF (ISP == TZFD%OWNER)  THEN
+             ! Allocate the box
+             ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1,SIZE(PFIELD,3),&
+                  & SIZE(PFIELD,4),SIZE(PFIELD,5)))
+             GALLOC = .TRUE.
+          ELSE
+             ALLOCATE(ZFIELDP(0,0,0,0,0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TZFD%OWNER,TZFD%COMM,&
+               & KXOBOX,KXEBOX,KYOBOX,KYEBOX,HBUDGET)
+          !
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,ZFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,ZFIELDP,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF ! multiprocessor execution
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BOX_BYFIELD_X5",TPFILE%CNAME,HFIPRI,TPFIELD%CMNHNAME,&
+                        'XY',TPFIELD%NGRID,LEN(TPFIELD%CCOMMENT),IRESP)
+    END IF
+    IF (GALLOC) DEALLOCATE(ZFIELDP)
+    KRESP = IRESP
+  END SUBROUTINE IO_WRITE_FIELD_BOX_BYFIELD_X5
 
   SUBROUTINE FMWRITBOXX6_ll(HFILEM,HRECFM,HFIPRI,HBUDGET,PFIELD,KGRID,&
        HCOMMENT,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
