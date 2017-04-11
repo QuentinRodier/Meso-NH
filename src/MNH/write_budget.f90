@@ -309,7 +309,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along X axis'
       IWORKGRID(:)       = 2
 
@@ -333,7 +333,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(1))
 !
       YBUCOMMENT(1)      = 'RhodJX'
-      YWORKUNIT(1)       = 'KG'
+      YWORKUNIT(1)       = 'kg'
       YWORKCOMMENT(1)    = 'RhodJ for momentum along X axis'
       IWORKGRID(1)       = 2
       WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
@@ -382,7 +382,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
                                 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along Y axis'
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
@@ -404,7 +404,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(1))
 !
       YBUCOMMENT(1)      = 'RhodJY'
-      YWORKUNIT(1)       = 'KG'
+      YWORKUNIT(1)       = 'kg'
       YWORKCOMMENT(1)    = 'RhodJ for momentum along Y axis'
       IWORKGRID(1)       = 3
       WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
@@ -454,7 +454,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along Z axis'
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
@@ -475,7 +475,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(1))
 !
       YBUCOMMENT(1)      = 'RhodJZ'
-      YWORKUNIT(1)       = 'KG'
+      YWORKUNIT(1)       = 'kg'
       YWORKCOMMENT(1)    = 'RhodJ for momentum along Z axis'
       IWORKGRID(1)       = 4
       WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
@@ -508,7 +508,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(IWORKGRID(1))
 !
       YBUCOMMENT(1)      = 'RhodJS'
-      YWORKUNIT(1)       = 'KG'
+      YWORKUNIT(1)       = 'kg'
       YWORKCOMMENT(1)    = 'RhodJ for Scalars variables'
       IWORKGRID(1)       = 1
       WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
@@ -558,7 +558,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = 'K/S' ; YWORKUNIT(1:3) = 'K'
+      YWORKUNIT(:)       = 'K s-1' ; YWORKUNIT(1:3) = 'K'
       YWORKCOMMENT(:)    = 'Budget of potential temperature'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
@@ -604,7 +604,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = 'M**2/S**3' ; YWORKUNIT(1:3) = 'M**2/S**2'
+      YWORKUNIT(:)       = 'm^2 s-3' ; YWORKUNIT(1:3) = 'm^2 s-1'
       YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT 
@@ -650,7 +650,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of water vapor mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
@@ -696,7 +696,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of cloud water mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT 
@@ -741,7 +741,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of rain water mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
@@ -786,7 +786,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of cloud ice mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
@@ -831,7 +831,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of snow/aggregate mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
@@ -876,7 +876,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of graupel mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
@@ -921,7 +921,7 @@ SELECT CASE (CBUTYPE)
       ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
       ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-      YWORKUNIT(:)       = '/S' ; YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ; YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of hail mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
@@ -968,7 +968,7 @@ SELECT CASE (CBUTYPE)
         ALLOCATE(YWORKCOMMENT(NBUPROCNBR(IP)))
         ALLOCATE(IWORKGRID(NBUPROCNBR(IP)))
 !
-        YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = '  '
+        YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = '  '
         DO JT = 1,NBUPROCNBR(IP)
           WRITE(YWORKCOMMENT(JT),FMT="('Budget of SVx=',I3.3)") JSV
         END DO
@@ -1063,7 +1063,7 @@ SELECT CASE (CBUTYPE)
       WHERE  (ZWORK(1,1,:,:,:,1) <= 0.)
           ZWORK(1,1,:,:,:,1)=-999.
       END WHERE
-      YWORKUNIT(:)       = 'KG'
+      YWORKUNIT(:)       = 'kg'
       YWORKCOMMENT(:)    = 'RhodJ for momentum along X axis'
       IWORKGRID(:)       = 2
       WRITE(YGROUP_NAME,FMT="('RJX__',I4.4)") NBUTSHIFT
@@ -1094,7 +1094,7 @@ SELECT CASE (CBUTYPE)
       DEALLOCATE(ZCONVERT, ZWORK)
       
 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along X axis'
       IWORKGRID(:)       = 2
       WRITE(YGROUP_NAME,FMT="('UU___',I4.4)") NBUTSHIFT
@@ -1121,7 +1121,7 @@ SELECT CASE (CBUTYPE)
       WHERE ( ZWORK(1,1,:,:,:,1) <= 0.)
         ZWORK(1,1,:,:,:,1)=-999.
       END WHERE
-      YWORKUNIT(:)       = 'KG'
+      YWORKUNIT(:)       = 'kg'
       YWORKCOMMENT(:)    = 'RhodJ for momentum along Y axis'
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('RJY__',I4.4)") NBUTSHIFT
@@ -1150,7 +1150,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT, ZWORK)
 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along Y axis'
       IWORKGRID(:)       = 3
       WRITE(YGROUP_NAME,FMT="('VV___',I4.4)") NBUTSHIFT
@@ -1177,7 +1177,7 @@ SELECT CASE (CBUTYPE)
       WHERE (ZWORK(1,1,:,:,:,1) <= 0.)
         ZWORK(1,1,:,:,:,1)=-999.
       END WHERE
-      YWORKUNIT(:)       = 'KG'
+      YWORKUNIT(:)       = 'kg'
       YWORKCOMMENT(:)    = 'RhodJ for momentum along Z axis'
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('RJZ__',I4.4)") NBUTSHIFT
@@ -1206,7 +1206,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT, ZWORK)
 !
-      YWORKUNIT(:)       = 'M/S**2'; YWORKUNIT(1:3) = 'M/S'
+      YWORKUNIT(:)       = 'm s-2'; YWORKUNIT(1:3) = 'm s-1'
       YWORKCOMMENT(:)    = 'Budget of momentum along Z axis'
       IWORKGRID(:)       = 4
       WRITE(YGROUP_NAME,FMT="('WW___',I4.4)") NBUTSHIFT
@@ -1233,7 +1233,7 @@ SELECT CASE (CBUTYPE)
         WHERE (ZWORK(1,1,:,:,:,1) <= 0.)
          ZWORK(1,1,:,:,:,1)=-999.
         END WHERE
-      YWORKUNIT(:)       = 'KG'
+      YWORKUNIT(:)       = 'kg'
       YWORKCOMMENT(:)    = 'RhodJ for Scalars'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RJS__',I4.4)") NBUTSHIFT
@@ -1264,7 +1264,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = 'K/S' ; YWORKUNIT(1:3) = 'K'
+      YWORKUNIT(:)       = 'K s-1' ; YWORKUNIT(1:3) = 'K'
       YWORKCOMMENT(:)    = 'Budget of potential temperature'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TH___',I4.4)") NBUTSHIFT
@@ -1295,7 +1295,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = 'M**2/S**3' ; YWORKUNIT(1:3) = 'M**2/S**2'
+      YWORKUNIT(:)       = 'm^2 s-3' ; YWORKUNIT(1:3) = 'm^2 s-2'
       YWORKCOMMENT(:)    = 'Budget of turbulent kinetic energy'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('TK___',I4.4)") NBUTSHIFT
@@ -1326,7 +1326,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of water vapor mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RV___',I4.4)") NBUTSHIFT
@@ -1357,7 +1357,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of cloud water mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RC___',I4.4)") NBUTSHIFT
@@ -1388,7 +1388,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of rain water mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RR___',I4.4)") NBUTSHIFT
@@ -1419,7 +1419,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of cloud ice mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RI___',I4.4)") NBUTSHIFT
@@ -1450,7 +1450,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of snow/aggregate mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RS___',I4.4)") NBUTSHIFT
@@ -1481,7 +1481,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT )
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of graupel mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RG___',I4.4)") NBUTSHIFT
@@ -1512,7 +1512,7 @@ SELECT CASE (CBUTYPE)
       END DO
       DEALLOCATE(ZCONVERT)
 !
-      YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = 'KG/KG'
+      YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = 'kg kg-1'
       YWORKCOMMENT(:)    = 'Budget of hail mixing ratio'
       IWORKGRID(:)       = 1
       WRITE(YGROUP_NAME,FMT="('RH___',I4.4)") NBUTSHIFT
@@ -1544,7 +1544,7 @@ SELECT CASE (CBUTYPE)
         END DO
         DEALLOCATE(ZCONVERT)
 !
-        YWORKUNIT(:)       = '/S' ;  YWORKUNIT(1:3) = '  '
+        YWORKUNIT(:)       = 's-1' ;  YWORKUNIT(1:3) = '  '
         DO JT = 1,NBUPROCNBR(12+JSV)
           WRITE(YWORKCOMMENT(JT),FMT="('Budget of SVx=',I3.3)") JSV
         END DO
