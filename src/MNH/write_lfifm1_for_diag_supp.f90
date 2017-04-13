@@ -253,62 +253,50 @@ ZTEMP(:,:,:)=XTHT(:,:,:)*(XPABST(:,:,:)/ XP00) **(XRD/XCPD)
 !
 IF (NCONV_KF >= 0) THEN
 !
-  YRECFM      = 'CAPE'
-  YCOMMENT    = 'X_Y_Convective Available Potentiel Energy (J/kg)'
-  IGRID       = 4
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XCAPE,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_WRITE_FIELD(TPFILE,'CAPE',CLUOUT,IRESP,XCAPE)
 !
-  YRECFM      = 'CLTOPCONV'                              ! top height (km) of
-  ZWORK21(:,:)= 0.                                       ! convective clouds
+  ! top height (km) of convective clouds
+  ZWORK21(:,:)= 0.
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
       IF (NCLTOPCONV(JI,JJ)/=0) ZWORK21(JI,JJ)= XZZ(JI,JJ,NCLTOPCONV(JI,JJ))/1.E3
     END DO
   END DO
-  YCOMMENT    = 'X_Y_Top of Convective Cloud (km)'
-  IGRID       = 4
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'CLTOPCONV'
+  TZFIELD%CSTDNAME   = 'convective_cloud_top_altitude'
+  TZFIELD%CLONGNAME  = 'MesoNH: CLTOPCONV'
+  TZFIELD%CUNITS     = 'km'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Top of Convective Cloud'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
 !
-  YRECFM      = 'CLBASCONV'                              ! base height (km) of
-  ZWORK21(:,:)= 0.                                       ! convective clouds
+  ! base height (km) of convective clouds
+  ZWORK21(:,:)= 0.
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
       IF (NCLBASCONV(JI,JJ)/=0) ZWORK21(JI,JJ)= XZZ(JI,JJ,NCLBASCONV(JI,JJ))/1.E3
     END DO
   END DO
-  YCOMMENT    = 'X_Y_Base of Convective Cloud (km)'
-  IGRID       = 4
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'CLBASCONV'
+  TZFIELD%CSTDNAME   = 'convective_cloud_base_altitude'
+  TZFIELD%CLONGNAME  = 'MesoNH: CLBASCONV'
+  TZFIELD%CUNITS     = 'km'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Base of Convective Cloud'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK21)
 !
 END IF
 IF (NCONV_KF >= 1) THEN
 !
-  YRECFM      = 'DTHCONV'
-  YCOMMENT    = 'X_Y_Z_CONVective heating/cooling rate (K/s)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XDTHCONV,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM      = 'DRVCONV'
-  YCOMMENT    = 'X_Y_Z_CONVective R_v tendency (1/s)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XDRVCONV,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM      = 'DRCCONV'
-  YCOMMENT    = 'X_Y_Z_CONVective R_c tendency (1/s)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XDRCCONV,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM      = 'DRICONV'
-  YCOMMENT    = 'X_Y_Z_CONVective R_i tendency (1/s)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XDRICONV,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_WRITE_FIELD(TPFILE,'DTHCONV',CLUOUT,IRESP,XDTHCONV)
+  CALL IO_WRITE_FIELD(TPFILE,'DRVCONV',CLUOUT,IRESP,XDRVCONV)
+  CALL IO_WRITE_FIELD(TPFILE,'DRCCONV',CLUOUT,IRESP,XDRCCONV)
+  CALL IO_WRITE_FIELD(TPFILE,'DRICONV',CLUOUT,IRESP,XDRICONV)
 !  
   IF ( LCHTRANS .AND. NSV > 0 ) THEN
     IGRID=1                                    
@@ -444,11 +432,16 @@ IF (LCLD_COV .AND. LUSERC) THEN
                                                   ! 0 if there is no cloud
   ZWORK21(:,:)=ZWORK21(:,:)/1.E3            ! height (km) of explicit clouds
 !
-  YRECFM='HECL'
-  YCOMMENT='X_Y_Height of Explicit CLoud top (km)'
-  IGRID=4
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'HECL'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: HECL'
+  TZFIELD%CUNITS     = 'km'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Height of Explicit CLoud top'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK21)
 !
 !  Higher top of the different species of clouds
 !
@@ -475,24 +468,30 @@ IF (LCLD_COV .AND. LUSERC) THEN
                                                          ! 0 if there is no cloud
     ZWORK21(:,:)=ZWORK21(:,:)/1.E3                 ! max. cloud height (km)
 !
-    YRECFM='HCL'
-    YCOMMENT='X_Y_Height of CLoud top (km)'
-    IGRID=4
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK21,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'HCL'
+    TZFIELD%CSTDNAME   = 'cloud_top_altitude'
+    TZFIELD%CLONGNAME  = 'MesoNH: HCL'
+    TZFIELD%CUNITS     = 'km'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Height of CLoud top'
+    TZFIELD%NGRID      = 4
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 2
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK21)
   ENDIF
 !
-  YRECFM='TCL'
-  YCOMMENT='X_Y_Temperature of CLoud top (C)'
-  IGRID=4
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK22,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'TCL'
+  TZFIELD%CSTDNAME   = 'air_temperature_at_cloud_top'
+  TZFIELD%CLONGNAME  = 'MesoNH: TCL'
+  TZFIELD%CUNITS     = 'celsius'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Height of CLoud top'
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK22)
 !
-  YRECFM='CLDFR'
-  YCOMMENT='X_Y_Z_Cloud Fraction (0)'
-  IGRID=1
-  ILENCH=LEN(YCOMMENT) 
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',XCLDFR,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_WRITE_FIELD(TPFILE,'CLDFR',CLUOUT,IRESP,XCLDFR)
 !
 !  Visibility                                    
 !
@@ -501,12 +500,17 @@ IF (LCLD_COV .AND. LUSERC) THEN
     ZWORK31(:,:,:)=3.9E3/(144.7*(XRHODREF(:,:,:)*1.E3*XRT(:,:,:,2)/(1.+XRT(:,:,:,2)))**0.88)
   END WHERE
 !
-  YRECFM  ='VISI_HOR'
-  YCOMMENT='X_Y_Z_VISI_HOR (m)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,CLUOUT,'XY',ZWORK31,IGRID,ILENCH,YCOMMENT,IRESP)
-
+  TZFIELD%CMNHNAME   = 'VISI_HOR'
+  TZFIELD%CSTDNAME   = 'visibility_in_air'
+  TZFIELD%CLONGNAME  = 'MesoNH: VISI_HOR'
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_VISI_HOR'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK31)
+!
   DEALLOCATE(IWORK1,IWORK2,ICL_HE_ST,GMASK2,ZWORK22)
 END IF
 !
