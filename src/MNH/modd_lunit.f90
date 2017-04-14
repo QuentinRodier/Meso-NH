@@ -35,7 +35,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    05/05/94                      
-!!      V. Masson   01/2004 add file names for use in externalized surface!-------------------------------------------------------------------------------
+!!      V. Masson   01/2004 add file names for use in externalized surface
+!-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
