@@ -289,6 +289,15 @@ Linux*)
 		export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_NCARG=${NEED_NCARG:-YES}
               ;;
+Darwin*)
+                echo "WARNING:: Darwin for Mac not tested "
+                export     ARCH=${ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-NO}
+              ;;
 *)
                 echo "WARNING ; system not yet tested "
                 echo "WARNING ; edit profile_mesonh & set correct variables ARCH , VER_MPI & OPTLEVEL "
