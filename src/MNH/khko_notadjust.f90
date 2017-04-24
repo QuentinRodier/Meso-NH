@@ -111,11 +111,13 @@ USE MODD_NSV, ONLY : NSV_C2R2BEG
 USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN
 
 !
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMWRIT
+USE MODE_IO_ll
+!
 USE MODI_BUDGET
 USE MODI_PROGNOS
-USE MODE_IO_ll
 !
 IMPLICIT NONE
 !
@@ -165,12 +167,7 @@ REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction
 !
 !
 INTEGER             :: IRESP      ! Return code of FM routines
-INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
-CHARACTER (LEN=28)  :: YFMFILE    ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 
 ! For Activation :                       
 LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) &
@@ -194,14 +191,13 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1             ! Vectors of indices for
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) ::&
                        ZEXNT,ZEXNS,ZT,ZRVSAT,ZWORK,ZLV,ZCPH, ZW1,        &
                        ZACT, ZDZ
-INTEGER :: JK            ! For loop
-                        
+INTEGER           :: JK            ! For loop
+TYPE(TFIELDDATA)  :: TZFIELD
+
 !-------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARIES
 !               -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
@@ -396,16 +392,27 @@ END IF
   PNPRO(:,:,:) = ZACT(:,:,:) 
 !
 IF ( OCLOSE_OUT ) THEN
-  ILENCH=LEN(YCOMMENT)
-  YRECFM  ='SURSAT'
-  YCOMMENT='X_Y_Z_NEB (0)'
-  IGRID   = 1
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZWORK,IGRID,ILENCH,YCOMMENT,IRESP)
-  ILENCH=LEN(YCOMMENT)
-  YRECFM  ='ACT_OD'
-  YCOMMENT='X_Y_Z_NEB (0)'
-  IGRID   = 1
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZACT,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'SURSAT'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: SURSAT'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZWORK)
+  !
+  TZFIELD%CMNHNAME   = 'ACT_OD'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: ACT_OD'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZACT)
 END IF
 !
 !*       7.  STORE THE BUDGET TERMS

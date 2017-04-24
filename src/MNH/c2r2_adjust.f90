@@ -165,6 +165,7 @@ USE MODD_NSV, ONLY : NSV_C2R2BEG
 USE MODI_CONDENS
 USE MODI_BUDGET
 !
+USE MODE_FIELD
 USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_IO_ll
@@ -219,19 +220,13 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2),SIZE(PRHODJ,3)) &
                                          ! fields
 !
 INTEGER             :: IRESP      ! Return code of FM routines
-INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 INTEGER             :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
-CHARACTER (LEN=28)  :: YFMFILE    ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+TYPE(TFIELDDATA)    :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARIES
 !               -------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 ZEPS= XMV / XMD
@@ -428,11 +423,16 @@ IF ( HRAD /= 'NONE' ) THEN
 END IF
 !
 IF ( OCLOSE_OUT ) THEN
-  YRECFM  ='NEB'
-  YCOMMENT='X_Y_Z_NEB (0)'
-  IGRID   = 1
-  ILENCH=LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZW1,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'NEB'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: NEB'
+  TZFIELD%CUNITS     = '1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_NEB'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZW1)
 END IF
 !
 !

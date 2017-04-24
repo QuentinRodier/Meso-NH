@@ -126,7 +126,9 @@ USE MODD_PARAMETERS
 USE MODD_NSV, ONLY : NSV_LGBEG,NSV_LGEND
 USE MODD_LES
 !
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
 USE MODI_GRADIENT_V
@@ -184,28 +186,22 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))       &
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),1) :: ZWORK2D
 !
 INTEGER             :: IRESP        ! Return code of FM routines 
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 INTEGER             :: JSV          ! loop counter
 INTEGER             :: ISV          ! number of scalar var.
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground
 !
 INTEGER :: IKU
+TYPE(TFIELDDATA) :: TZFIELD
 REAL :: ZTIME1, ZTIME2
 ! ---------------------------------------------------------------------------
 !
 !*       1.   PRELIMINARY COMPUTATIONS
 !             ------------------------
-!
-YFMFILE = TPFILE%CNAME
 !
 IKB = 1+JPVEXT               
 IKE = SIZE(PSVM,3)-JPVEXT   
@@ -256,11 +252,16 @@ DO JSV=1,ISV
   !
   ! stores  <U SVth>
   IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-    WRITE(YRECFM,'("USV_FLX_",I3.3)') JSV 
-    YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
-    IGRID   = 2
-    ILENCH=LEN(YCOMMENT)
-    CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXX,IGRID,ILENCH,YCOMMENT,IRESP)
+    WRITE(TZFIELD%CMNHNAME,'("USV_FLX_",I3.3)') JSV
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'SVUNIT m s-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%NGRID      = 2
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXX)
   END IF
 !
   IF (LLES_CALL .AND. KSPLT==1) THEN
@@ -301,11 +302,16 @@ DO JSV=1,ISV
   !
   ! stores  <V SVth>
     IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
-      WRITE(YRECFM,'("VSV_FLX_",I3.3)') JSV 
-      YCOMMENT='X_Y_Z_'//YRECFM//' (SVUNIT*M/S)'
-      IGRID   = 3
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZFLXY,IGRID,ILENCH,YCOMMENT,IRESP)
+      WRITE(TZFIELD%CMNHNAME,'("VSV_FLX_",I3.3)') JSV
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'SVUNIT m s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%NGRID      = 3
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXY)
     END IF
 !
   ELSE

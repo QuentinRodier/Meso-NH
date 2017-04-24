@@ -92,6 +92,8 @@ USE MODD_GRID_n
 USE MODD_TIME_n
 USE MODD_SUB_PASPOL_n
 !
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
+!
 !*      0. DECLARATIONS
 !          ------------
 !
@@ -139,20 +141,10 @@ REAL    :: ZP, ZTH, ZT, ZRHO, ZMASAIR
 !INTEGER                    :: J4PTI,J4PTJ,J9PTI,J9PTJ
 !
 REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZRHOM  ! 
-REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZTEMPO, ZSVT ! Work array           
+REAL,  DIMENSION(:,:,:), ALLOCATABLE :: ZTEMPO, ZSVT ! Work arrays
 !
-! in LFI subroutines at the open of the file
-INTEGER           :: IGRID     ! IGRID : grid indicator
-INTEGER           :: ILENCH    ! ILENCH : length of comment string
-!
-CHARACTER(LEN=28) :: YFMFILE   ! Name of FM-file to write
-CHARACTER(LEN=16) :: YRECFM    ! Name of the article to be written
-CHARACTER(LEN=100):: YCOMMENT  ! Comment string
-CHARACTER (LEN=2) :: YDIR      ! Type of the data field
-INTEGER           :: IRESP     ! IRESP  : return-code if a problem appears
-                               !in LFI subroutines at the open of the file
-!
-
+INTEGER           :: IRESP
+TYPE(TFIELDDATA)  :: TZFIELD
 !
 !
 !--------------------------------------------------------------------------------------
@@ -160,8 +152,6 @@ INTEGER           :: IRESP     ! IRESP  : return-code if a problem appears
 !
 !*	0. Initialisation
 !
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 CALL GET_PHYSICAL_ll (IIB,IJB,IIE,IJE)
@@ -171,7 +161,6 @@ IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 !
 ALLOCATE( ZRHOM(IIU,IJU,IKU) )
-ALLOCATE( ZTEMPO(IIU,IJU,IKU) )
 ALLOCATE( ZSVT(IIU,IJU,IKU) )
 !
 ZSURF = (XXHAT(2)-XXHAT(1))*(XYHAT(2)-XYHAT(1))   ! Surface d'une maille.
@@ -587,21 +576,29 @@ END DO
 !*	3.4 Ecriture conditionnelle.
 !
 IF (OCLOSE_OUT) THEN
-   DO JSV=1,NSV_PP
-      !
-      ZTEMPO(:,:,:)=XATC(:,:,:,JSV)
-      !
-      IGRID =  1
-      YDIR  = 'XY'
-      WRITE(YRECFM,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
-      WRITE(YCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1,' (1/M3) '
-      ILENCH=LEN(YCOMMENT)
-      CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,YDIR,ZTEMPO,IGRID,ILENCH,    &
-                YCOMMENT,IRESP)
-   END DO
+  ALLOCATE( ZTEMPO(IIU,IJU,IKU) )
+  !
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'm-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV=1,NSV_PP
+    ZTEMPO(:,:,:)=XATC(:,:,:,JSV)
+    !
+    WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'ATC',JSV+NSV_PPBEG-1
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1
+    !
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZTEMPO)
+  END DO
+  !
+  DEALLOCATE(ZTEMPO)
 ENDIF
 !
-DEALLOCATE(ZRHOM, ZTEMPO, ZSVT)
+DEALLOCATE(ZRHOM, ZSVT)
 !
 !
 !-------------------------------------------------------------------------------

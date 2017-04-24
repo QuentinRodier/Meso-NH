@@ -37,7 +37,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ  ! Jacobian * dry density of
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(OUT):: PCEI ! Cloud Entrainment instability
-                                             ! index to emphasize localy
+                                             ! index to emphasize locally
                                              ! turbulent fluxes
 !
 END SUBROUTINE TURB_CLOUD_INDEX
@@ -93,7 +93,10 @@ END MODULE MODI_TURB_CLOUD_INDEX
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS, ONLY: JPVEXT
+!
+USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
+!
 USE MODI_GRADIENT_M
 !
 IMPLICIT NONE
@@ -119,7 +122,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN) :: PRHODJ  ! Jacobian * dry density of
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   !  metric coefficients
 REAL, DIMENSION(:,:,:),   INTENT(OUT):: PCEI ! Cloud Entrainment instability
-                                             ! index to emphasize localy
+                                             ! index to emphasize locally
                                              ! turbulent fluxes
 !
 !*       0.2   declarations of local variables
@@ -143,18 +146,12 @@ INTEGER             :: IKU          ! array size in k
 INTEGER, DIMENSION(SIZE(PRM,1),SIZE(PRM,2),SIZE(PRM,3)) :: IMASK_CLOUD
                              ! 0 except cloudy points or adjacent points (1)
 INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+TYPE(TFIELDDATA)    :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.     INITIALISATION
 !               --------------
-!
-YFMFILE = TPFILE%CNAME
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB = 1   + JPVEXT
@@ -261,53 +258,93 @@ ENDDO
 !*       2.5    Writing
 !
 IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
-  YRECFM  ='RVCI'
-  YCOMMENT='X_Y_Z_RVCI (kg/kg)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZRVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZRVCI)
   !
-  YRECFM  ='GX_RVCI'
-  YCOMMENT='X_Y_Z_GX_RVCI (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'GX_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: GX_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_GX_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZG_RVCI(:,:,:,1))
   !
-  YRECFM  ='GY_RVCI'
-  YCOMMENT='X_Y_Z_GY_RVCI (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZG_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'GY_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: GY_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_GY_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZG_RVCI(:,:,:,2))
   !
-  YRECFM  ='GNORM_RVCI'
-  YCOMMENT='X_Y_Z_NORM G (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZGNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'GNORM_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: GNORM_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_NORM G'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZGNORM_RVCI)
   !
-  YRECFM  ='QX_RVCI'
-  YCOMMENT='X_Y_Z_QX_RVCI (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'QX_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: QX_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_QX_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZQ_RVCI(:,:,:,1))
   !
-  YRECFM  ='QY_RVCI'
-  YCOMMENT='X_Y_Z_QY_RVCI (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQ_RVCI(:,:,:,2),IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'QY_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: QY_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_QY_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZQ_RVCI(:,:,:,2))
   !
-  YRECFM  ='QNORM_RVCI'
-  YCOMMENT='X_Y_Z_QNORM_RVCI (kg/kg/m)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',ZQNORM_RVCI,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'QNORM_RVCI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: QNORM_RVCI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_QNORM_RVCI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZQNORM_RVCI)
   !
-  YRECFM  ='CEI'
-  YCOMMENT='X_Y_Z_CEI (kg/kg/m/s)'
-  IGRID   = 1
-  ILENCH  = LEN(YCOMMENT)
-  CALL FMWRIT(YFMFILE,YRECFM,HLUOUT,'XY',PCEI,IGRID,ILENCH,YCOMMENT,IRESP)
+  TZFIELD%CMNHNAME   = 'CEI'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: CEI'
+  TZFIELD%CUNITS     = 'kg kg-1 m-1 s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Z_CEI'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PCEI)
 END IF
 !
 END SUBROUTINE TURB_CLOUD_INDEX

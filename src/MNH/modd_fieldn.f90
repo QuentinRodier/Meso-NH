@@ -71,14 +71,14 @@ TYPE FIELD_t
 !  REAL, DIMENSION(:,:,:), POINTER :: XTHT=>NULL()     ! (rho theta) at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRTHS=>NULL()    ! Source of (rho theta)
 !  REAL, DIMENSION(:,:,:), POINTER :: XRTHS_CLD=>NULL()    ! Source of (rho theta) from resolved_cloud
-  REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()    ! Sursat
-                                                     ! at time t
-  REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()    ! Sursat
-                                                     ! at time t
-  REAL, DIMENSION(:,:,:), POINTER :: XNPRO=>NULL()    ! Sursat
-                                                     ! at time t
-  REAL, DIMENSION(:,:,:), POINTER :: XSSPRO=>NULL()    ! Sursat
-                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XSUPSAT=>NULL()    ! Sursat
+!                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XNACT=>NULL()    ! Sursat
+!                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XNPRO=>NULL()    ! Sursat
+!                                                     ! at time t
+!  REAL, DIMENSION(:,:,:), POINTER :: XSSPRO=>NULL()    ! Sursat
+!                                                     ! at time t
 !  REAL, DIMENSION(:,:,:), POINTER :: XTKET=>NULL()    ! Kinetic energy
 !                                                     ! at time t
   REAL, DIMENSION(:,:,:), POINTER :: XRTKES=>NULL()   ! Source of kinetic energy
@@ -163,10 +163,10 @@ FIELD_MODEL(KFROM)%XRWS=>XRWS
 !FIELD_MODEL(KFROM)%XTHT=>XTHT !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRTHS=>XRTHS
 !FIELD_MODEL(KFROM)%XRTHS_CLD=>XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL
-FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT
-FIELD_MODEL(KFROM)%XNACT=>XNACT
-FIELD_MODEL(KFROM)%XNPRO=>XNPRO
-FIELD_MODEL(KFROM)%XSSPRO=>XSSPRO
+!FIELD_MODEL(KFROM)%XSUPSAT=>XSUPSAT !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XNACT=>XNACT !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XNPRO=>XNPRO !Done in FIELDLIST_GOTO_MODEL
+!FIELD_MODEL(KFROM)%XSSPRO=>XSSPRO !Done in FIELDLIST_GOTO_MODEL
 !FIELD_MODEL(KFROM)%XTKET=>XTKET !Done in FIELDLIST_GOTO_MODEL
 FIELD_MODEL(KFROM)%XRTKES=>XRTKES
 !FIELD_MODEL(KFROM)%XPABST=>XPABST !Done in FIELDLIST_GOTO_MODEL
@@ -198,10 +198,10 @@ XRWS=>FIELD_MODEL(KTO)%XRWS
 !XTHT=>FIELD_MODEL(KTO)%XTHT !Done in FIELDLIST_GOTO_MODEL
 XRTHS=>FIELD_MODEL(KTO)%XRTHS
 !XRTHS_CLD=>FIELD_MODEL(KTO)%XRTHS_CLD !Done in FIELDLIST_GOTO_MODEL
-XSUPSAT=>FIELD_MODEL(KTO)%XSUPSAT
-XNACT=>FIELD_MODEL(KTO)%XNACT
-XSSPRO=>FIELD_MODEL(KTO)%XSSPRO
-XNPRO=>FIELD_MODEL(KTO)%XNPRO
+!XSUPSAT=>FIELD_MODEL(KTO)%XSUPSAT !Done in FIELDLIST_GOTO_MODEL
+!XNACT=>FIELD_MODEL(KTO)%XNACT !Done in FIELDLIST_GOTO_MODEL
+!XSSPRO=>FIELD_MODEL(KTO)%XSSPRO !Done in FIELDLIST_GOTO_MODEL
+!XNPRO=>FIELD_MODEL(KTO)%XNPRO !Done in FIELDLIST_GOTO_MODEL
 !XTKET=>FIELD_MODEL(KTO)%XTKET !Done in FIELDLIST_GOTO_MODEL
 XRTKES=>FIELD_MODEL(KTO)%XRTKES
 !XPABST=>FIELD_MODEL(KTO)%XPABST !Done in FIELDLIST_GOTO_MODEL
