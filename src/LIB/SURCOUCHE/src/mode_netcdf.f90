@@ -53,6 +53,16 @@ PUBLIC NEWIOCDF,CLEANIOCDF,NCWRIT,NCREAD,IO_WRITE_FIELD_NC4,IO_WRITE_HEADER_NC4
 
 CONTAINS
 
+SUBROUTINE CLEANMNHNAME(HINNAME,HOUTNAME)
+  CHARACTER(LEN=*),INTENT(IN)  :: HINNAME
+  CHARACTER(LEN=*),INTENT(OUT) :: HOUTNAME
+
+  ! NetCDF var names can't contain '%' nor '.'
+  ! CF convention allows only letters, digits and underscores
+  HOUTNAME = str_replace(HINNAME,  '%', '__')
+  HOUTNAME = str_replace(HOUTNAME, '.', '___')
+END SUBROUTINE
+
 FUNCTION NEWIOCDF()
 TYPE(IOCDF), POINTER :: NEWIOCDF
 TYPE(IOCDF), POINTER :: TZIOCDF
@@ -448,9 +458,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -490,9 +498,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -534,9 +540,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -580,9 +584,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TRIM(TPFIELD%CMNHNAME), '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -641,9 +643,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -682,7 +682,7 @@ INTEGER(KIND=IDCDF_KIND) :: STATUS
 INTEGER(KIND=IDCDF_KIND) :: INCID
 CHARACTER(LEN=4)         :: YSUFFIX
 CHARACTER(LEN=3)         :: YNUMBER
-CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4) :: YVARNAME
+CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4) :: YTMP,YVARNAME
 INTEGER(KIND=IDCDF_KIND) :: IVARID
 INTEGER(KIND=IDCDF_KIND), DIMENSION(SIZE(SHAPE(PFIELD))) :: IVDIMS
 INTEGER                  :: IRESP
@@ -697,7 +697,7 @@ IF (PRESENT(KVERTLEVEL)) THEN
     RETURN
   END IF
   WRITE(YNUMBER,'(I3.3)') KZFILE
-  YVARNAME = TRIM(TPFIELD%CMNHNAME)//YSUFFIX
+  YTMP = TRIM(TPFIELD%CMNHNAME)//YSUFFIX
 !PW: TODO: try to not do a find (for better perf)
   CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//'.Z'//YNUMBER,TZFILE,IRESP)
   IF (IRESP/=0) THEN
@@ -705,17 +705,16 @@ IF (PRESENT(KVERTLEVEL)) THEN
     RETURN
   END IF
 ELSE
-  YVARNAME = TRIM(TPFIELD%CMNHNAME)
+  YTMP = TRIM(TPFIELD%CMNHNAME)
   TZFILE => TPFILE
 ENDIF
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_X2','writing '//TRIM(YVARNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_X2','writing '//TRIM(YTMP))
 !
 ! Get the Netcdf file ID
 INCID = TZFILE%NNCID
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(YVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+
+CALL CLEANMNHNAME(YTMP,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -774,9 +773,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -821,9 +818,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -882,9 +877,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -929,9 +922,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -990,9 +981,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1037,9 +1026,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1098,9 +1085,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1146,9 +1131,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1213,9 +1196,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1277,9 +1258,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1332,9 +1311,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1388,9 +1365,7 @@ IRESP = 0
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1433,16 +1408,13 @@ INTEGER(KIND=IDCDF_KIND), DIMENSION(SIZE(SHAPE(KFIELD))) :: IVDIMS
 INTEGER                  :: IRESP
 !
 IRESP = 0
-
-YVARNAME = TRIM(TPFIELD%CMNHNAME)
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_N2','writing '//TRIM(YVARNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_N2','writing '//TRIM(TPFIELD%CMNHNAME))
 !
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(YVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1508,9 +1480,7 @@ END IF
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1563,9 +1533,7 @@ IF (ILEN==0) ILEN = IMULT
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1619,9 +1587,7 @@ ISIZE = SIZE(HFIELD)
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TPFIELD%CMNHNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1672,9 +1638,7 @@ ISIZE = SIZE(HFIELD)
 ! Get the Netcdf file ID
 INCID = PZCDF%NCID
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! The variable should not already exist but who knows ?
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
@@ -1731,9 +1695,7 @@ ITDATE(3)=TPDATA%TDATE%DAY
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 !
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(TRIM(TPFIELD%CMNHNAME), '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 !
 TZFIELD%CMNHNAME = TRIM(YVARNAME)
 WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') ITDATE(1),ITDATE(2),ITDATE(3)
@@ -1872,9 +1834,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX0','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -1928,9 +1888,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX1','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -1998,9 +1956,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX2','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2080,9 +2036,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX3','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2149,9 +2103,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX4','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2218,9 +2170,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX5','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2287,9 +2237,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADX6','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2352,9 +2300,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADN0','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2412,9 +2358,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADN1','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2485,9 +2429,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADN2','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
@@ -2558,9 +2500,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','NCREADC0','reading '//TRIM(HVARNAME))
 
 IRESP = 0
 
-! NetCDF var names can't contain '%' nor '.' 
-YVARNAME = str_replace(HVARNAME, '%', '__')
-YVARNAME = str_replace(YVARNAME, '.', '--')
+CALL CLEANMNHNAME(HVARNAME,YVARNAME)
 
 ! Get variable ID, NDIMS and TYPE
 STATUS = NF90_INQ_VARID(KNCID, YVARNAME, IVARID)
