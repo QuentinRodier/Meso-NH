@@ -383,7 +383,7 @@ install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST)) install_tools
 
 $(PROG_LIST) : OBJ_PROG=$(shell find $(PROG_DIR) -follow -type f -name "spll_*.f*" \
               | xargs grep -l -E -i "^[[:space:]]*program *$@" |  sed -e 's/\.f.*/.o/g' | head -1 \
-	      | xargs basename | xargs -i find $(PROG_DIR) -follow -name {} -print | head -1 )  
+	      | xargs basename | xargs -I{} find $(PROG_DIR) -follow -name {} -print | head -1 )  
 
 $(PROG_LIST) :  $(LIB_MNH)  $(LIB_GRIBEX)
 #	echo OBJ_PROG=$(OBJ_PROG)
