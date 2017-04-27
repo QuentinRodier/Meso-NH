@@ -32,6 +32,10 @@ TYPE TFIELDPTR_N2D
   INTEGER,DIMENSION(:,:), POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_N2D
 !
+TYPE TFIELDPTR_N3D
+  INTEGER,DIMENSION(:,:,:),POINTER :: DATA => NULL()
+END TYPE TFIELDPTR_N3D
+!
 TYPE TFIELDPTR_X0D
   REAL,                 POINTER :: DATA => NULL()
 END TYPE TFIELDPTR_X0D
@@ -75,6 +79,7 @@ TYPE TFIELDDATA
   !
   TYPE(TFIELDPTR_N0D),DIMENSION(:),ALLOCATABLE :: TFIELD_N0D !Pointer to the scalar integer fields (one per nested mesh)
   TYPE(TFIELDPTR_N2D),DIMENSION(:),ALLOCATABLE :: TFIELD_N2D !Pointer to the integer 2D fields (one per nested mesh)
+  TYPE(TFIELDPTR_N3D),DIMENSION(:),ALLOCATABLE :: TFIELD_N3D !Pointer to the integer 3D fields (one per nested mesh)
   !
   TYPE(TFIELDPTR_X0D),DIMENSION(:),ALLOCATABLE :: TFIELD_X0D !Pointer to the scalar real fields (one per nested mesh)
   TYPE(TFIELDPTR_X1D),DIMENSION(:),ALLOCATABLE :: TFIELD_X1D !Pointer to the real 1D fields (one per nested mesh)
