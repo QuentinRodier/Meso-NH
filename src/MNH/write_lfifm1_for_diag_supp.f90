@@ -781,12 +781,12 @@ IF (NRTTOVINFO(1,1) /= NUNDEF) THEN
 #ifdef MNH_RTTOV_8
   CALL CALL_RTTOV8(NDLON, NFLEV, NSTATM, XEMIS, XTSRAD, XSTATM, XTHT, XRT,    &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
-                  LUSERI, NRTTOVINFO, YFMFILE                                 )
+                  LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
 #ifdef MNH_RTTOV_11
   CALL CALL_RTTOV11(NDLON, NFLEV, XEMIS, XTSRAD, XTHT, XRT,    &
                   XPABST, XZZ, XMFCONV, XCLDFR, XUT(:,:,IKB), XVT(:,:,IKB),   &
-                  LUSERI, NRTTOVINFO, YFMFILE                                 )
+                  LUSERI, NRTTOVINFO, TPFILE                                  )
 #else
 PRINT *, "RTTOV LIBRARY NOT AVAILABLE = ###CALL_RTTOV####"
 #endif

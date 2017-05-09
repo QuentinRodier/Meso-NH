@@ -10,7 +10,9 @@ INTERFACE
 !
      SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,   &
                 PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
-                OUSERI, KRTTOVINFO, HFMFILE    )
+                OUSERI, KRTTOVINFO, TPFILE    )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER, INTENT(IN)   :: KDLON !number of columns where the
                                !radiation calculations are performed
@@ -37,7 +39,7 @@ LOGICAL, INTENT(IN)                  :: OUSERI ! logical switch to compute both
 !
 INTEGER, DIMENSION(:,:), INTENT(IN) :: KRTTOVINFO ! platform, satelit, sensor,
                                                   ! and selection calculations
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 END SUBROUTINE CALL_RTTOV11
 END INTERFACE
@@ -45,7 +47,7 @@ END MODULE MODI_CALL_RTTOV11
 !    #####################################################################
 SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
            PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
-           OUSERI, KRTTOVINFO, HFMFILE    )
+           OUSERI, KRTTOVINFO, TPFILE    )
 !    #####################################################################
 !!
 !!****  *CALL_RTTOV* - 
@@ -86,6 +88,7 @@ SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
 USE MODD_CST
 USE MODD_PARAMETERS
 USE MODD_GRID_n
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_REF_n
@@ -96,6 +99,7 @@ USE MODN_CONF
 USE MODI_DETER_ANGLE
 USE MODI_PINTER
 !
+USE MODE_FIELD
 USE MODE_FMWRIT
 USE MODE_FMREAD
 USE MODE_ll
@@ -155,7 +159,7 @@ LOGICAL, INTENT(IN)                  :: OUSERI ! logical switch to compute both
 !!!
 INTEGER, DIMENSION(:,:), INTENT(IN) :: KRTTOVINFO ! platform, satelit, sensor,
                                                   ! and selection calculations
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 #ifdef MNH_RTTOV_11
 !!!
@@ -216,11 +220,6 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZPIN, ZFIN, ZOUT
 ! variables for FMWRIT
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !  at the open of the file LFI routines 
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string 
-
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
-CHARACTER(LEN=22) :: YCOMMENT       ! Comment string
 CHARACTER(LEN=8)  :: YINST  
 CHARACTER(LEN=4)  :: YBEG, YEND
 CHARACTER(LEN=2)  :: YCHAN, YTWO   
@@ -266,8 +265,8 @@ real    (kind=jprb) :: zenangle
 integer (kind=jpim), parameter :: fin = 10
 character (len=256) :: outstring
 ! -----------------------------------------------------------------------------
-
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZTEMP
+TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -562,18 +561,24 @@ DO JSAT=1,IJSAT ! loop over sensors
     ELSE
       YEND=YTWO//YCHAN
     END IF
+
 !    IF (INRAD==1) THEN
-!      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
-!      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' rad (mw/cm-1/ster/sq.m)'
+!    TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
+!    TZFIELD%CUNITS     = 'mw/cm-1/ster/sq.m'
+!    TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' rad'
 !    ELSE
-      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' BT (K)'
+    TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
+    TZFIELD%CUNITS     = 'K'
+    TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
 !    ENDIF
-    IGRID       =1
-    ILENCH      =LEN(YCOMMENT)
-    PRINT *,'YRECFM='//TRIM(YRECFM)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZBT(:,:,JCH), &
-         IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 2
+    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZBT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)
   DEALLOCATE(ZBT)

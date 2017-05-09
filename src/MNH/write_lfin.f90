@@ -1979,7 +1979,7 @@ IF ( LUV_FLX) CALL IO_WRITE_FIELD(TPFILE,'VU_FLX',CLUOUT,IRESP,XVU_FLUX_M)
 !*       1.12   Balloon variables
 !
 !
-IF (LFLYER) CALL WRITE_BALLOON_n(TPFILE%CNAME)
+IF (LFLYER) CALL WRITE_BALLOON_n(TPFILE)
 !
 !
 !*       1.13    Filtered variables for hurricane initialization

@@ -10,7 +10,9 @@ INTERFACE
 !
      SUBROUTINE CALL_RTTOV8(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,   &
                 PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
-                OUSERI, KRTTOVINFO, HFMFILE    )
+                OUSERI, KRTTOVINFO, TPFILE    )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER, INTENT(IN)   :: KDLON !number of columns where the
                                !radiation calculations are performed
@@ -40,7 +42,7 @@ LOGICAL, INTENT(IN)                  :: OUSERI ! logical switch to compute both
 !
 INTEGER, DIMENSION(:,:), INTENT(IN) :: KRTTOVINFO ! platform, satelit, sensor,
                                                   ! and selection calculations
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 END SUBROUTINE CALL_RTTOV8
 END INTERFACE
@@ -48,7 +50,7 @@ END MODULE MODI_CALL_RTTOV8
 !    #####################################################################
 SUBROUTINE CALL_RTTOV8(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
            PTHT, PRT, PPABST, PZZ, PMFCONV, PCLDFR, PULVLKB, PVLVLKB,  &
-           OUSERI, KRTTOVINFO, HFMFILE    )
+           OUSERI, KRTTOVINFO, TPFILE    )
 !    #####################################################################
 !!
 !!****  *CALL_RTTOV* - 
@@ -87,6 +89,7 @@ SUBROUTINE CALL_RTTOV8(KDLON, KFLEV, KSTATM, PEMIS, PTSRAD, PSTATM,     &
 !!              ------------
 !!
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID_n
 USE MODD_LUNIT_n
@@ -101,6 +104,7 @@ USE MODD_RAD_TRANSF
 USE MODI_DETER_ANGLE
 USE MODI_PINTER
 !
+USE MODE_FIELD
 USE MODE_FMWRIT
 USE MODE_FMREAD
 USE MODE_ll
@@ -521,7 +525,7 @@ LOGICAL, INTENT(IN)                  :: OUSERI ! logical switch to compute both
 !!!
 INTEGER, DIMENSION(:,:), INTENT(IN) :: KRTTOVINFO ! platform, satelit, sensor,
                                                   ! and selection calculations
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE      ! Name of FM-file to write
+TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 #ifdef MNH_RTTOV_8
 !!!
@@ -619,11 +623,6 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZPIN, ZFIN, ZOUT
 ! variables for FMWRIT
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !  at the open of the file LFI routines 
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string 
-
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
-CHARACTER(LEN=22) :: YCOMMENT       ! Comment string
 CHARACTER(LEN=8)  :: YINST  
 CHARACTER(LEN=4)  :: YBEG, YEND
 CHARACTER(LEN=2)  :: YCHAN, YTWO   
@@ -691,6 +690,8 @@ REAL(Kind=jprb),    ALLOCATABLE       :: emissivity_k (:)
 REAL(Kind=jprb), PARAMETER :: q_mixratio_to_ppmv  = 1.60771704e+6_JPRB
 REAL(Kind=jprb), PARAMETER :: o3_mixratio_to_ppmv = 6.03504e+5_JPRB
 INTEGER(Kind=jpim) :: alloc_status(40)
+
+TYPE(TFIELDDATA) :: TZFIELD
 
 ! - End of header --------------------------------------------------------
 !!!----------------------------------------------------------------------------
@@ -1575,12 +1576,17 @@ DO JSAT=1,IJSAT ! loop over sensors
 !    DO JK1=1,LEN_TRIM(inst_name(KRTTOVINFO(3,JSAT)))
 !      YINST(JK1:JK1)=CHAR(ICHAR(YINST(JK1:JK1))-32)
 !    END DO
-    YRECFM      =TRIM(YINST)//'_ANGL'
-    YCOMMENT    =TRIM(YINST)//' ANGLE  (deg)'
-    PRINT *,YRECFM//YCOMMENT
-    IGRID       =1
-    ILENCH      =LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZANTMP,IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = TRIM(YINST)//'_ANGL'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = 'degree'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = TRIM(YINST)//' ANGLE'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 2
+    PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZANTMP)
   END IF
   DEALLOCATE(ZANTMP)
 ! -----------------------------------------------------------------------------
@@ -1621,24 +1627,34 @@ DO JSAT=1,IJSAT ! loop over sensors
       YEND=YTWO//YCHAN
     END IF
     IF (INRAD==1) THEN
-      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
-      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' rad (mw/cm-1/ster/sq.m)'
+      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'rad'
+      TZFIELD%CUNITS     = 'mw/cm-1/ster/sq.m'
+      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' rad'
     ELSE
-      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
-      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' BT (K)'
+      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'BT'
+      TZFIELD%CUNITS     = 'K'
+      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' BT'
     ENDIF
-    PRINT *,YRECFM//YCOMMENT, &
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 2
+    PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
          MINVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF), &
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
-    IGRID       =1
-    ILENCH      =LEN(YCOMMENT)
-    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZTBTMP(:,:,JCH), &
-         IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZTBTMP(:,:,JCH))
     IF (KRTTOVINFO(3,JSAT) == 4.AND. JCH==3 ) THEN ! AMSU-B
-      YRECFM      =TRIM(YBEG)//'_UTH'
-      YCOMMENT    =TRIM(YBEG)//'_UTH (%)'
-      IGRID       =1
-      ILENCH      =LEN(YCOMMENT)
+      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_UTH'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'percent'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_UTH'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 2
 ! UTH computation from Buehler and John JGR 2005
       ZZH= 833000. ! (m) nominal altitude of the satellite
       zdeg_to_rad = XPI / 180.0
@@ -1656,8 +1672,7 @@ DO JSAT=1,IJSAT ! loop over sensors
           END IF
         END DO
       END DO
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZUTH, &
-           IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZUTH)
       DEALLOCATE(ZUTH)
     END IF
   END DO
@@ -1710,26 +1725,36 @@ DO JSAT=1,IJSAT ! loop over sensors
                1, 1, JPLEV, 1, IKR, 'LOG', 'RHU.')
         END DO
       END DO
-      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'JAT'
-      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' JATEMP (K/K)'
-      PRINT *,YRECFM//YCOMMENT, &
+      !
+      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAT'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'K K-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JATEMP'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 2
+      PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
-      IGRID       =1
-      ILENCH      =LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZTEMPK(:,:,:), &
-           IGRID,ILENCH,YCOMMENT,IRESP)
-      YRECFM      =TRIM(YBEG)//'_'//TRIM(YEND)//'JAV'
-      YCOMMENT    =TRIM(YBEG)//'_'//TRIM(YEND)//' JAWVAP (K)'
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZTEMPK(:,:,:))
+      !
+      TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'K'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = TRIM(YBEG)//'_'//TRIM(YEND)//' JAWVAP'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 2
       WHERE (ZWVAPK(:,:,:) /= XUNDEF) &
            ZWVAPK(:,:,:)=ZWVAPK(:,:,:)*(-0.1*PRT(:,:,:,1))
-      PRINT *,YRECFM//YCOMMENT, &
+      PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF)
-      IGRID       =1
-      ILENCH      =LEN(YCOMMENT)
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWVAPK(:,:,:), &
-           IGRID,ILENCH,YCOMMENT,IRESP)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWVAPK(:,:,:))
     END DO
     DEALLOCATE(ZTEMPKP,ZWVAPKP,ZFIN)
   ENDIF
