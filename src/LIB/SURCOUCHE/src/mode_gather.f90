@@ -1045,8 +1045,6 @@ INTEGER,                     INTENT(IN) :: KCOMM
 INTEGER,            OPTIONAL,INTENT(IN) :: KXOBOX,KXEBOX,KYOBOX,KYEBOX
 CHARACTER(LEN=*),   OPTIONAL,INTENT(IN) :: HINTER
 
-!INCLUDE 'mpif.h'
-
 INTEGER                       :: JI
 INTEGER                       :: IXO,IXE,IYO,IYE
 INTEGER, DIMENSION(:,:,:),POINTER:: IP

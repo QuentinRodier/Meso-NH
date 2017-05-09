@@ -72,7 +72,9 @@ USE MODI_GRADIENT_U
 USE MODI_BIKHARDT
 USE MODD_BIKHARDT_n
 USE MODD_NESTING
-
+!
+USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
+!
 IMPLICIT NONE
 !
 INTEGER, INTENT(IN) :: KMI     ! Model index
@@ -96,7 +98,8 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFLUX2 ! Work array=Dad interpolated flux
                                               ! on the son grid
 INTEGER :: IKU                                              
 !
-INTEGER             :: IDIMX,IDIMY
+INTEGER :: IDIMX,IDIMY
+INTEGER :: IID, IRESP
 !-------------------------------------------------------------------------------
 !
 !
@@ -115,22 +118,28 @@ IF (ISYNCHRO==1 .OR. IDTRATIO_KMI_1 == 1) THEN
 
    ! v'T' (EDDY_FLUX_MODEL(1)%XVTH_FLUX_M) of model1 interpolation on the son grid put into ZFLUX2
    ZFLUX2 = 0.
-   IDIMX = SIZE(EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,1)
-   IDIMY = SIZE(EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,2) 
+   !IDIMX = SIZE(EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,1)
+   !IDIMY = SIZE(EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,2)
+   CALL FIND_FIELD_ID_FROM_MNHNAME('VT_FLX',IID,IRESP)
+   IDIMX = SIZE(TFIELDLIST(IID)%TFIELD_X3D(1)%DATA,1)
+   IDIMY = SIZE(TFIELDLIST(IID)%TFIELD_X3D(1)%DATA,2)
    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
                   2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,&
-                  HLBCX,HLBCY,EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,ZFLUX2)
+!                  HLBCX,HLBCY,EDDY_FLUX_MODEL(1)%XVTH_FLUX_M,ZFLUX2)
+                  HLBCX,HLBCY,TFIELDLIST(IID)%TFIELD_X3D(1)%DATA,ZFLUX2)
 
    ! operator GX_U_M used for gradient of v'T' (flux point) placed at a mass point
    XRTHS_EDDY_FLUX(:,:,:) = - XRHODJ(:,:,:)* GX_U_M(1,IKU,1,ZFLUX2,XDXX,XDZZ,XDZX)
         
    ! w'T' (EDDY_FLUX_MODEL(1)%XWTH_FLUX_M) of model1 interpolation on the son grid put into ZFLUX2
    ZFLUX2 = 0.
+   CALL FIND_FIELD_ID_FROM_MNHNAME('WT_FLX',IID,IRESP)
    CALL BIKHARDT (XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4, &
                   XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4, &
                   2,2,IDIMX-1,IDIMY-1,KDXRATIO,KDYRATIO,1,&
-                  HLBCX,HLBCY,EDDY_FLUX_MODEL(1)%XWTH_FLUX_M,ZFLUX2)
+!                  HLBCX,HLBCY,EDDY_FLUX_MODEL(1)%XWTH_FLUX_M,ZFLUX2)
+                  HLBCX,HLBCY,TFIELDLIST(IID)%TFIELD_X3D(1)%DATA,ZFLUX2)
 
    ! DIV(W'T') put into the source term
    XRTHS_EDDY_FLUX(:,:,:) = XRTHS_EDDY_FLUX(:,:,:) &
