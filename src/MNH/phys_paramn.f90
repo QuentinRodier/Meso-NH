@@ -223,6 +223,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!                       2014  (M.Faivre)
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  2016 B.VIE LIMA
+!!      M. Leriche 02/2017 Avoid negative fluxes if sv=0 outside the physics domain
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -1292,7 +1293,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(IIB-1,:)=ZSFRV(IIB,:)
     ZSFU(IIB-1,:)=ZSFU(IIB,:)
     ZSFV(IIB-1,:)=ZSFV(IIB,:)
-    IF (NSV>0)           ZSFSV(IIB-1,:,:)=ZSFSV(IIB,:,:)
+    IF (NSV>0)  THEN
+      ZSFSV(IIB-1,:,:)=ZSFSV(IIB,:,:)
+      WHERE ((ZSFSV(IIB-1,:,:).LT.0.).AND.(XSVT(IIB-1,:,IKB,:).EQ.0.))
+          ZSFSV(IIB-1,:,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(IIB-1,:)=ZSFCO2(IIB,:)
   END IF
   IF ( CLBCX(2) /= "CYCL" .AND. LEAST_ll()) THEN
@@ -1300,7 +1306,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(IIE+1,:)=ZSFRV(IIE,:)
     ZSFU(IIE+1,:)=ZSFU(IIE,:)
     ZSFV(IIE+1,:)=ZSFV(IIE,:)
-    IF (NSV>0)           ZSFSV(IIE+1,:,:)=ZSFSV(IIE,:,:)
+    IF (NSV>0) THEN
+      ZSFSV(IIE+1,:,:)=ZSFSV(IIE,:,:)
+      WHERE ((ZSFSV(IIE+1,:,:).LT.0.).AND.(XSVT(IIE+1,:,IKB,:).EQ.0.))
+          ZSFSV(IIE+1,:,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(IIE+1,:)=ZSFCO2(IIE,:)
   END IF
   IF ( CLBCY(1) /= "CYCL" .AND. LSOUTH_ll()) THEN
@@ -1308,7 +1319,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(:,IJB-1)=ZSFRV(:,IJB)
     ZSFU(:,IJB-1)=ZSFU(:,IJB)
     ZSFV(:,IJB-1)=ZSFV(:,IJB)
-    IF (NSV>0)           ZSFSV(:,IJB-1,:)=ZSFSV(:,IJB,:)
+    IF (NSV>0) THEN
+      ZSFSV(:,IJB-1,:)=ZSFSV(:,IJB,:)
+      WHERE ((ZSFSV(:,IJB-1,:).LT.0.).AND.(XSVT(:,IJB-1,IKB,:).EQ.0.))
+          ZSFSV(:,IJB-1,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(:,IJB-1)=ZSFCO2(:,IJB)
   END IF
   IF ( CLBCY(2) /= "CYCL" .AND. LNORTH_ll()) THEN
@@ -1316,7 +1332,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(:,IJE+1)=ZSFRV(:,IJE)
     ZSFU(:,IJE+1)=ZSFU(:,IJE)
     ZSFV(:,IJE+1)=ZSFV(:,IJE)
-    IF (NSV>0)           ZSFSV(:,IJE+1,:)=ZSFSV(:,IJE,:)
+    IF (NSV>0) THEN
+      ZSFSV(:,IJE+1,:)=ZSFSV(:,IJE,:)
+      WHERE ((ZSFSV(:,IJE+1,:).LT.0.).AND.(XSVT(:,IJE+1,IKB,:).EQ.0.))
+          ZSFSV(:,IJE+1,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(:,IJE+1)=ZSFCO2(:,IJE)
   END IF
 !
@@ -1454,6 +1475,9 @@ XTIME_LES_BU_PROCESS = 0.
 IF (LUSECHEM) THEN
   CALL CH_MONITOR_n(ZWETDEPAER,KTCOUNT,XTSTEP, ILUOUT, NVERB)
 END IF
+DO JSV=1,NSV
+ XRSVS(:,:,:,JSV)   = MAX((XRSVS(:,:,:,JSV)),XSVMIN(JSV))
+END DO
 !
 ! For inert aerosol (dust and sea salt) => aer_monitor_n
 IF ((LDUST).OR.(LSALT)) THEN
