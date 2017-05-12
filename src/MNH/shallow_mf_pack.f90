@@ -114,6 +114,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !!      V.Masson 09/2010
 !!      Modification R. Honnert 07/2012 : introduction of vertical wind 
 !!                                        for the height of the thermal
+!!                   M. Leriche 02/2017 : avoid negative values for sv tendencies
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -365,8 +366,8 @@ PRVS(:,:,:)   = PRVS(:,:,:)  +MYM(  &
 
 DO JSV=1,ISV 
   IF (LNOMIXLG .AND. JSV >= NSV_LGBEG .AND. JSV<= NSV_LGEND) CYCLE
-  PRSVS(:,:,:,JSV)   = PRSVS(:,:,:,JSV)  +    &
-                  PRHODJ(:,:,:)*ZDSVDT(:,:,:,JSV)
+  PRSVS(:,:,:,JSV)   = MAX((PRSVS(:,:,:,JSV)  +    &
+                  PRHODJ(:,:,:)*ZDSVDT(:,:,:,JSV)),XSVMIN(JSV))
 END DO     
 
 !!! 7. call to MesoNH budgets
