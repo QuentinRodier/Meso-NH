@@ -238,7 +238,8 @@ END MODULE MODI_RAIN_ICE
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
-!!      C.LAc : 10/2016 : add droplets depposition
+!!      C.Lac : 10/2016 : add droplet deposition
+!!      C.Lac : 01/2017 : correction on droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1738,9 +1739,9 @@ IF (LDEPOSC) THEN
   GDEP(:,:) = .FALSE.
   GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 
   WHERE (GDEP)
-     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2)
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
-     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCS(:,:,2)*PTSTEP / PDZZ(:,:,2)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCS(:,:,2) * PTSTEP * PRHODREF(:,:,2) /XRHOLW 
+     PINDEP(:,:) = XVDEPOSC * PRCS(:,:,2) * PTSTEP * PRHODREF(:,:,2) /XRHOLW 
   END WHERE
 END IF
 !
