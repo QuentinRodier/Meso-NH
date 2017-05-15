@@ -167,11 +167,7 @@ INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
                                     !  at the open of the file
                                     !  LFI  routines 
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string 
-!
 CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
-CHARACTER(LEN=20) :: YCOMMENT       ! Comment string
 INTEGER           :: JT,JPROC,JMASK
 !
 !
@@ -1038,11 +1034,16 @@ SELECT CASE (CBUTYPE)
 !
 !*     3.1    storage of the masks  array
 !
-        WRITE(YRECFM,FMT="('MASK_',I4.4,'.MASK')") NBUTSHIFT
-        WRITE(YCOMMENT,FMT="('X_Y_MASK',I4.4)") NBUTSHIFT
-        ILENCH=LEN(YCOMMENT)
-        CALL FMWRIT(YFILEDIA,YRECFM,HLUOUT,'XY',ZWORKMASK(:,:,:,:,:,:),IGRID, &
-                                   ILENCH,YCOMMENT,IRESP)
+        WRITE(TZFIELD%CMNHNAME,FMT="('MASK_',I4.4,'.MASK')") NBUTSHIFT
+        TZFIELD%CSTDNAME   = ''
+        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+        TZFIELD%CUNITS     = ''
+        TZFIELD%CDIR       = 'XY'
+        WRITE(TZFIELD%CCOMMENT,FMT="('X_Y_MASK',I4.4)") NBUTSHIFT
+        TZFIELD%NGRID      = 0
+        TZFIELD%NTYPE      = TYPEREAL
+        TZFIELD%NDIMS      = 6
+        CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,IRESP,ZWORKMASK(:,:,:,:,:,:))
         WRITE(YRECFM,FMT="('MASK_',I4.4)") NBUTSHIFT
         CALL MENU_DIACHRO(TPDIAFILE,HLUOUT,YRECFM)
         DEALLOCATE(ZWORKMASK)
