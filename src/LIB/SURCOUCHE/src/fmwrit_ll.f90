@@ -3298,6 +3298,9 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_L0(TPFILE,TPFIELD,HFIPRI,KRESP,OFIELD)
     USE MODD_IO_ll
+    USE MODD_FM
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
     !*      0.    DECLARATIONS
     !             ------------
     !
@@ -3312,20 +3315,66 @@ CONTAINS
     !
     !*      0.2   Declarations of local variables
     !
-    INTEGER :: IFIELD
+    INTEGER                      :: IERR
+    TYPE(FD_ll), POINTER         :: TZFD
+    INTEGER                      :: IRESP
+    !JUANZIO
+    INTEGER                                  :: IK_FILE,IK_RANK
+    CHARACTER(len=5)                         :: YK_FILE
+    CHARACTER(len=128)                       :: YFILE_IOZ
+    TYPE(FD_ll), POINTER                     :: TZFD_IOZ
+    TYPE(TFILEDATA),POINTER                  :: TZFILE
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L0','writing '//TRIM(TPFIELD%CMNHNAME))
     !
     !
-    IF (OFIELD) THEN
-      IFIELD = 1
+    IRESP = 0
+    !------------------------------------------------------------------
+    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,OFIELD,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,OFIELD,IRESP)
+       ELSE
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,OFIELD,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,OFIELD,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF ! multiprocessor execution
+       IF (TZFD%nb_procio.gt.1) THEN
+          ! write the data in all Z files
+          DO IK_FILE=1,TZFD%nb_procio
+             write(YK_FILE ,'(".Z",i3.3)')  IK_FILE
+             YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
+             TZFD_IOZ => GETFD(YFILE_IOZ)
+             IK_RANK = TZFD_IOZ%OWNER
+             IF ( ISP == IK_RANK )  THEN
+                IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD_IOZ%FLU,OFIELD,IRESP)
+                IF (LIOCDF4) THEN
+                  CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
+                  IF (IRESP/=0) THEN
+                    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_L0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
+                                   ' not found in list')
+                  END IF
+                  CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,TZFD_IOZ%CDF,OFIELD,IRESP)
+                END IF
+             END IF
+          END DO
+       ENDIF
     ELSE
-      IFIELD = 0
+       IRESP = -61
     END IF
-    !
-    CALL IO_WRITE_FIELD(TPFILE,TPFIELD,HFIPRI,KRESP,IFIELD)
-    !
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_L0",TPFILE%CNAME,HFIPRI,TPFIELD%CMNHNAME,TPFIELD%CDIR,TPFIELD%NGRID,&
+                        LEN(TPFIELD%CCOMMENT) ,IRESP)
+    END IF
+    KRESP = IRESP
   END SUBROUTINE IO_WRITE_FIELD_BYFIELD_L0
+
+
 
   SUBROUTINE FMWRITL1_ll(HFILEM,HRECFM,HFIPRI,HDIR,OFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)
@@ -3356,9 +3405,9 @@ CONTAINS
     TYPE(FD_ll), POINTER             :: TZFD
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
-
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITL1_ll','writing '//TRIM(HRECFM))
+    !
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -3402,36 +3451,6 @@ CONTAINS
     KRESP = IRESP
   END SUBROUTINE FMWRITL1_ll
 
-  SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1(TPFILE,TPFIELD,HFIPRI,KRESP,OFIELD)
-    USE MODD_IO_ll
-    !*      0.    DECLARATIONS
-    !             ------------
-    !
-    !
-    !*      0.1   Declarations of arguments
-    !
-    TYPE(TFILEDATA),             INTENT(IN) :: TPFILE
-    TYPE(TFIELDDATA),            INTENT(IN) :: TPFIELD
-    CHARACTER(LEN=*),            INTENT(IN) :: HFIPRI   ! output file for error messages
-    INTEGER,                     INTENT(OUT):: KRESP    ! return-code 
-    LOGICAL,DIMENSION(:),        INTENT(IN) :: OFIELD   ! array containing the data field
-    !
-    !*      0.2   Declarations of local variables
-    !
-    INTEGER, DIMENSION(SIZE(OFIELD)) :: IFIELD
-    !
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L1','writing '//TRIM(TPFIELD%CMNHNAME))
-    !
-    WHERE (OFIELD)
-      IFIELD = 1
-    ELSEWHERE
-      IFIELD = 0
-    END WHERE
-    !
-    CALL IO_WRITE_FIELD(TPFILE,TPFIELD,HFIPRI,KRESP,IFIELD)
-    !
-  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1
-
   SUBROUTINE IO_WRITE_FIELD_BYNAME_L1(TPFILE,HNAME,HFIPRI,KRESP,OFIELD)
     !
     USE MODD_IO_ll, ONLY : TFILEDATA
@@ -3455,6 +3474,86 @@ CONTAINS
     IF(KRESP==0) CALL IO_WRITE_FIELD(TPFILE,TFIELDLIST(ID),HFIPRI,KRESP,OFIELD)
     !
   END SUBROUTINE IO_WRITE_FIELD_BYNAME_L1
+
+  SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1(TPFILE,TPFIELD,HFIPRI,KRESP,OFIELD)
+    !
+    USE MODD_IO_ll, ONLY : ISP,GSMONOPROC,LIOCDF4,LLFIOUT,TFILEDATA
+    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODE_ALLOCBUFFER_ll
+    USE MODE_GATHER_ll
+    !
+    IMPLICIT NONE
+    !
+    !*      0.1   Declarations of arguments
+    !
+    TYPE(TFILEDATA),              INTENT(IN) :: TPFILE
+    TYPE(TFIELDDATA),             INTENT(IN) :: TPFIELD
+    CHARACTER(LEN=*),             INTENT(IN) :: HFIPRI   ! output file for error messages
+    INTEGER,                      INTENT(OUT):: KRESP    ! return-code 
+    LOGICAL,DIMENSION(:),TARGET,  INTENT(IN) :: OFIELD   ! array containing the data field
+    !
+    !*      0.2   Declarations of local variables
+    !
+    CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
+    CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
+    CHARACTER(LEN=2)                         :: YDIR     ! field form
+    CHARACTER(LEN=JPFINL)                    :: YFNLFI
+    INTEGER                                  :: IERR
+    TYPE(FD_ll), POINTER                     :: TZFD
+    INTEGER                                  :: IRESP
+    LOGICAL,DIMENSION(:),POINTER             :: GFIELDP
+    LOGICAL                                  :: GALLOC
+    !
+    YFILEM   = TPFILE%CNAME
+    YRECFM   = TPFIELD%CMNHNAME
+    YDIR     = TPFIELD%CDIR
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L1','writing '//TRIM(YRECFM))
+    !
+    !
+    !*      1.1   THE NAME OF LFIFM
+    !
+    IRESP = 0
+    GALLOC = .FALSE.
+    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
+    !------------------------------------------------------------------
+    TZFD=>GETFD(YFNLFI)
+    IF (ASSOCIATED(TZFD)) THEN
+       IF (GSMONOPROC) THEN ! sequential execution
+          IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,OFIELD,IRESP)
+          IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,OFIELD,IRESP)
+       ELSE ! multiprocessor execution
+          IF (ISP == TZFD%OWNER)  THEN
+             CALL ALLOCBUFFER_ll(GFIELDP,OFIELD,YDIR,GALLOC)
+          ELSE
+             ALLOCATE(GFIELDP(0))
+             GALLOC = .TRUE.
+          END IF
+          !
+          IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+             CALL GATHER_XXFIELD(YDIR,OFIELD,GFIELDP,TZFD%OWNER,TZFD%COMM)
+          END IF
+          !
+          IF (ISP == TZFD%OWNER)  THEN
+             IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,GFIELDP,IRESP)
+             IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,GFIELDP,IRESP)
+          END IF
+          !
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+       END IF
+    ELSE
+       IRESP = -61
+    END IF
+    !----------------------------------------------------------------
+    IF (IRESP.NE.0) THEN
+       CALL FM_WRIT_ERR("IO_WRITE_FIELD_BYFIELD_L1",YFILEM,HFIPRI,YRECFM,YDIR,TPFIELD%NGRID,LEN(TPFIELD%CCOMMENT),IRESP)
+    END IF
+    IF (GALLOC) DEALLOCATE(GFIELDP)
+    KRESP = IRESP
+    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TZFD%COMM,IERR)
+    !
+  END SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1
+
 
   SUBROUTINE FMWRITC0_ll(HFILEM,HRECFM,HFIPRI,HDIR,HFIELD,KGRID,&
        KLENCH,HCOMMENT,KRESP)

@@ -278,6 +278,7 @@ INTERFACE IO_WRITE_FIELD_LFI
                     IO_WRITE_FIELD_LFI_X6,                       &
                     IO_WRITE_FIELD_LFI_N0,IO_WRITE_FIELD_LFI_N1, &
                     IO_WRITE_FIELD_LFI_N2,IO_WRITE_FIELD_LFI_N3, &
+                    IO_WRITE_FIELD_LFI_L0,IO_WRITE_FIELD_LFI_L1, &
                     IO_WRITE_FIELD_LFI_C0,                       &
                     IO_WRITE_FIELD_LFI_T0
 END INTERFACE IO_WRITE_FIELD_LFI
@@ -723,6 +724,100 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_WRITE_FIELD_LFI_N3
+!
+SUBROUTINE IO_WRITE_FIELD_LFI_L0(TPFIELD,KFLU,OFIELD,KRESP)
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+INTEGER,                 INTENT(IN) :: KFLU   ! Fortran Logical Unit
+LOGICAL,                 INTENT(IN) :: OFIELD ! array containing the data field
+INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER                                  :: IFIELD
+INTEGER                                  :: ILENG
+INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=16)                        :: YRECFM
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_L0','writing '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = 1
+!
+!Convert LOGICAL to INTEGER (LOGICAL format not supported by LFI files)
+IF (OFIELD) THEN
+  IFIELD = 1
+ELSE
+  IFIELD = 0
+END IF
+!
+CALL WRITE_PREPARE(TPFIELD,ILENG,IWORK,ITOTAL,IRESP)
+!
+IF (IRESP==0) THEN
+  IWORK(LEN_TRIM(TPFIELD%CCOMMENT)+3)=IFIELD
+  YRECFM=TRIM(TPFIELD%CMNHNAME)
+  IF( LEN_TRIM(TPFIELD%CMNHNAME) > LEN(YRECFM) ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_LFI_L0','field name was truncated to '&
+                   //YRECFM//' for '//TRIM(TPFIELD%CMNHNAME))
+  CALL LFIECR(IRESP,KFLU,YRECFM,IWORK,ITOTAL)
+ENDIF
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_WRITE_FIELD_LFI_L0
+!
+SUBROUTINE IO_WRITE_FIELD_LFI_L1(TPFIELD,KFLU,OFIELD,KRESP)
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFIELDDATA),        INTENT(IN) :: TPFIELD
+INTEGER,                 INTENT(IN) :: KFLU   ! Fortran Logical Unit
+LOGICAL,DIMENSION(:),    INTENT(IN) :: OFIELD ! array containing the data field
+INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
+INTEGER                                  :: ILENG
+INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+CHARACTER(LEN=16)                        :: YRECFM
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_L1','writing '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = SIZE(OFIELD)
+!
+!Convert LOGICAL to INTEGER (LOGICAL format not supported by LFI files)
+WHERE (OFIELD)
+  IFIELD = 1
+ELSEWHERE
+  IFIELD = 0
+END WHERE
+!
+CALL WRITE_PREPARE(TPFIELD,ILENG,IWORK,ITOTAL,IRESP)
+!
+IF (IRESP==0) THEN
+  IWORK(LEN_TRIM(TPFIELD%CCOMMENT)+3:) = IFIELD(:)
+  YRECFM=TRIM(TPFIELD%CMNHNAME)
+  IF( LEN_TRIM(TPFIELD%CMNHNAME) > LEN(YRECFM) ) &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_WRITE_FIELD_LFI_L1','field name was truncated to '&
+                   //YRECFM//' for '//TRIM(TPFIELD%CMNHNAME))
+  CALL LFIECR(IRESP,KFLU,YRECFM,IWORK,ITOTAL)
+ENDIF
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_WRITE_FIELD_LFI_L1
 !
 SUBROUTINE IO_WRITE_FIELD_LFI_C0(TPFIELD,KFLU,HFIELD,KRESP)
 !
