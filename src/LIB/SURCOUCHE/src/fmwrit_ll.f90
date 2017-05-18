@@ -258,6 +258,55 @@ CONTAINS
   END SUBROUTINE FM_WRIT_ERR
 
 
+  SUBROUTINE FIELD_METADATA_CHECK(TPFIELD,KTYPE,KDIMS,HCALLER)
+    TYPE(TFIELDDATA), INTENT(IN) :: TPFIELD ! Field to check
+    INTEGER,          INTENT(IN) :: KTYPE   ! Expected datatype
+    INTEGER,          INTENT(IN) :: KDIMS   ! Expected number of dimensions
+    CHARACTER(LEN=*), INTENT(IN) :: HCALLER ! name of the calling subroutine
+    !
+    CHARACTER(LEN=2) :: YDIMOK,YDIMKO
+    CHARACTER(LEN=8) :: YTYPEOK,YTYPEKO
+    !
+    IF (TPFIELD%NGRID<0 .OR. TPFIELD%NGRID>4) THEN
+      CALL PRINT_MSG(NVERB_WARNING,'IO',HCALLER,'TPFIELD%NGRID is invalid for '//TRIM(TPFIELD%CMNHNAME))
+    END IF
+    IF (TPFIELD%NTYPE/=KTYPE) THEN
+      CALL TYPE_WRITE(KTYPE,YTYPEOK)
+      CALL TYPE_WRITE(TPFIELD%NTYPE,YTYPEKO)
+      CALL PRINT_MSG(NVERB_WARNING,'IO',HCALLER,&
+                     'TPFIELD%NTYPE should be '//YTYPEOK//' instead of '//YTYPEKO//' for '//TRIM(TPFIELD%CMNHNAME))
+    END IF
+    IF (TPFIELD%NDIMS/=KDIMS) THEN
+      WRITE (YDIMOK,'(I2)') KDIMS
+      WRITE (YDIMKO,'(I2)') TPFIELD%NDIMS
+      CALL PRINT_MSG(NVERB_WARNING,'IO',HCALLER,&
+                     'TPFIELD%NDIMS should be '//YDIMOK//' instead of '//YDIMKO//' for '//TRIM(TPFIELD%CMNHNAME))
+    END IF
+    !
+    CONTAINS
+    SUBROUTINE TYPE_WRITE(KTYPEINT,HTYPE)
+      INTEGER,         INTENT(IN)  :: KTYPEINT
+      CHARACTER(LEN=8),INTENT(OUT) :: HTYPE
+      !
+      SELECT CASE(KTYPEINT)
+        CASE(TYPEINT)
+          HTYPE = 'TYPEINT'
+        CASE(TYPELOG)
+          HTYPE = 'TYPELOG'
+        CASE(TYPEREAL)
+          HTYPE = 'TYPEREAL'
+        CASE(TYPECHAR)
+          HTYPE = 'TYPECHAR'
+        CASE(TYPEDATE)
+          HTYPE = 'TYPEDATE'
+        CASE DEFAULT
+          HTYPE = 'UNKNOWN'
+      END SELECT
+      !
+    END SUBROUTINE TYPE_WRITE
+  END SUBROUTINE FIELD_METADATA_CHECK
+
+
   SUBROUTINE IO_WRITE_HEADER(TPFILE,HLUOUT,HDAD_NAME)
     !
     USE MODD_CONF
@@ -451,6 +500,8 @@ CONTAINS
     YDIR     = TPFIELD%CDIR
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X0','writing '//TRIM(YRECFM))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,0,'IO_WRITE_FIELD_BYFIELD_X0')
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -648,6 +699,9 @@ CONTAINS
     YDIR     = TPFIELD%CDIR
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X1','writing '//TRIM(YRECFM))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,1,'IO_WRITE_FIELD_BYFIELD_X1')
+    !
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -943,6 +997,8 @@ CONTAINS
     YDIR     = TPFIELD%CDIR
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X2','writing '//TRIM(YRECFM))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,2,'IO_WRITE_FIELD_BYFIELD_X2')
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -1519,6 +1575,8 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X3','writing '//TRIM(YRECFM))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,3,'IO_WRITE_FIELD_BYFIELD_X3')
+    !
     !*      1.1   THE NAME OF LFIFM
     !
     CALL SECOND_MNH2(T11)
@@ -1957,6 +2015,8 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X4','writing '//TRIM(YRECFM))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,4,'IO_WRITE_FIELD_BYFIELD_X4')
+    !
     IRESP = 0
     GALLOC    = .FALSE.
     YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
@@ -2182,6 +2242,8 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X5','writing '//TRIM(YRECFM))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,5,'IO_WRITE_FIELD_BYFIELD_X5')
+    !
     IRESP = 0
     GALLOC    = .FALSE.
     YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
@@ -2389,6 +2451,8 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X6','writing '//TRIM(YRECFM))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,6,'IO_WRITE_FIELD_BYFIELD_X6')
+    !
     IRESP = 0
     GALLOC    = .FALSE.
     YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
@@ -2468,6 +2532,7 @@ CONTAINS
     TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITN0_ll','writing '//TRIM(HRECFM))
+    !
     !JUANZIO
     !----------------------------------------------------------------
     !
@@ -2576,12 +2641,10 @@ CONTAINS
     CHARACTER(len=128)                       :: YFILE_IOZ  
     TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
     TYPE(TFILEDATA),POINTER                  :: TZFILE
-    INTEGER,DIMENSION(1) :: IDIMS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N0','writing '//TRIM(TPFIELD%CMNHNAME))
     !
-    IDIMS(1) = 0
-    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,0,'IO_WRITE_FIELD_BYFIELD_N0')
     !
     IRESP = 0
     !------------------------------------------------------------------
@@ -2663,6 +2726,7 @@ CONTAINS
     LOGICAL                      :: GALLOC
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITN1_ll','writing '//TRIM(HRECFM))
+    !
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -2775,6 +2839,8 @@ CONTAINS
     YDIR     = TPFIELD%CDIR
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N1','writing '//TRIM(YRECFM))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,1,'IO_WRITE_FIELD_BYFIELD_N1')
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -2992,6 +3058,8 @@ CONTAINS
     YDIR     = TPFIELD%CDIR
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N2','writing '//TRIM(YRECFM))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,2,'IO_WRITE_FIELD_BYFIELD_N2')
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3227,9 +3295,9 @@ CONTAINS
     TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
     TYPE(FMHEADER)               :: TZFMH
-
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITL0_ll','writing '//TRIM(HRECFM))
+    !
     !----------------------------------------------------------------
     !
     !*      1.1   THE NAME OF LFIFM
@@ -3327,6 +3395,7 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L0','writing '//TRIM(TPFIELD%CMNHNAME))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPELOG,0,'IO_WRITE_FIELD_BYFIELD_L0')
     !
     IRESP = 0
     !------------------------------------------------------------------
@@ -3510,6 +3579,7 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L1','writing '//TRIM(YRECFM))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPELOG,1,'IO_WRITE_FIELD_BYFIELD_L1')
     !
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3587,9 +3657,9 @@ CONTAINS
     TYPE(FD_ll), POINTER             :: TZFD
     INTEGER                          :: IRESP
     TYPE(FMHEADER)                   :: TZFMH
-
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','FMWRITC0_ll','writing '//TRIM(HRECFM))
+    !
     !----------------------------------------------------------------
     !*      1.1   THE NAME OF LFIFM
     !
@@ -3685,12 +3755,17 @@ CONTAINS
     INTEGER                      :: IERR
     TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
-    INTEGER,DIMENSION(1) :: IDIMS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_C0','writing '//TRIM(TPFIELD%CMNHNAME))
     !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPECHAR,0,'IO_WRITE_FIELD_BYFIELD_C0')
+    !
     IRESP = 0
     !
+    IF (LEN(HFIELD)==0 .AND. LLFIOUT) THEN
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_C0',&
+                     'zero-size string not allowed if LFI output for '//TRIM(TPFIELD%CMNHNAME))
+    END IF
     !------------------------------------------------------------------
     TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
     IF (ASSOCIATED(TZFD)) THEN
@@ -3857,7 +3932,10 @@ CONTAINS
     INTEGER                          :: ILE, IP
     INTEGER,DIMENSION(:),ALLOCATABLE :: IFIELD
     INTEGER                          :: ILENG
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_C1','writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPECHAR,1,'IO_WRITE_FIELD_BYFIELD_C1')
     !
     IRESP = 0
     !
@@ -4036,6 +4114,8 @@ CONTAINS
     INTEGER                      :: IRESP
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_T0','writing '//TRIM(TPFIELD%CMNHNAME))
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEDATE,0,'IO_WRITE_FIELD_BYFIELD_T0')
     !
     IRESP = 0
     !
@@ -4932,5 +5012,3 @@ CONTAINS
   END SUBROUTINE FMWRITBOXX6_ll
 
 END MODULE MODE_FMWRIT
-
-
