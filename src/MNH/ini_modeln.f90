@@ -270,9 +270,9 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 2016 Chemistry
 !!                   10/2016 M.Mazoyer New KHKO output fields
 !!                      10/2016 (C.Lac) Add max values
-!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry
-!!                   01/2017 (G.Delautier) bug chemistry : modify test for prod/loss terms computation
-!!                   Apr. 2017 (P. Wautelet) allocate MAX variables if LMEAN_FIELD and call INI_MEAN_FIELD
+!!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry       
+!!                   M.Leriche 2016 Chemistry
+!!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS 
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -686,31 +686,34 @@ IF (LMEAN_FIELD) THEN
 !
   MEAN_COUNT = 0
 !
-  ALLOCATE(XUM_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XVM_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XWM_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XTHM_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XTEMPM_MEAN(IIU,IJU,IKU))
-  IF (CTURB/='NONE') ALLOCATE(XTKEM_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XPABSM_MEAN(IIU,IJU,IKU))
+  ALLOCATE(XUM_MEAN(IIU,IJU,IKU))      ; XUM_MEAN  = 0.0
+  ALLOCATE(XVM_MEAN(IIU,IJU,IKU))      ; XVM_MEAN  = 0.0
+  ALLOCATE(XWM_MEAN(IIU,IJU,IKU))      ; XWM_MEAN  = 0.0
+  ALLOCATE(XTHM_MEAN(IIU,IJU,IKU))     ; XTHM_MEAN = 0.0
+  ALLOCATE(XTEMPM_MEAN(IIU,IJU,IKU))   ; XTEMPM_MEAN = 0.0
+  IF (CTURB/='NONE') THEN
+     ALLOCATE(XTKEM_MEAN(IIU,IJU,IKU))    
+     XTKEM_MEAN = 0.0
+  END IF
+  ALLOCATE(XPABSM_MEAN(IIU,IJU,IKU))   ; XPABSM_MEAN = 0.0
 !
-  ALLOCATE(XU2_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XV2_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XW2_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XTH2_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XTEMP2_MEAN(IIU,IJU,IKU))
-  ALLOCATE(XPABS2_MEAN(IIU,IJU,IKU))
+  ALLOCATE(XU2_MEAN(IIU,IJU,IKU))      ; XU2_MEAN  = 0.0
+  ALLOCATE(XV2_MEAN(IIU,IJU,IKU))      ; XV2_MEAN  = 0.0
+  ALLOCATE(XW2_MEAN(IIU,IJU,IKU))      ; XW2_MEAN  = 0.0
+  ALLOCATE(XTH2_MEAN(IIU,IJU,IKU))     ; XTH2_MEAN = 0.0
+  ALLOCATE(XTEMP2_MEAN(IIU,IJU,IKU))   ; XTEMP2_MEAN = 0.0
+  ALLOCATE(XPABS2_MEAN(IIU,IJU,IKU))   ; XPABS2_MEAN = 0.0
 !
-  ALLOCATE(XUM_MAX(IIU,IJU,IKU))
-  ALLOCATE(XVM_MAX(IIU,IJU,IKU))
-  ALLOCATE(XWM_MAX(IIU,IJU,IKU))
-  ALLOCATE(XTHM_MAX(IIU,IJU,IKU))
-  ALLOCATE(XTEMPM_MAX(IIU,IJU,IKU))
-  IF (CTURB/='NONE') ALLOCATE(XTKEM_MAX(IIU,IJU,IKU))
-  ALLOCATE(XPABSM_MAX(IIU,IJU,IKU))
-!
-  CALL INI_MEAN_FIELD()
-!
+  ALLOCATE(XUM_MAX(IIU,IJU,IKU))      ; XUM_MAX  = -1.E20
+  ALLOCATE(XVM_MAX(IIU,IJU,IKU))      ; XVM_MAX  = -1.E20
+  ALLOCATE(XWM_MAX(IIU,IJU,IKU))      ; XWM_MAX  = -1.E20
+  ALLOCATE(XTHM_MAX(IIU,IJU,IKU))     ; XTHM_MAX = 0.0
+  ALLOCATE(XTEMPM_MAX(IIU,IJU,IKU))   ; XTEMPM_MAX = 0.0
+  IF (CTURB/='NONE') THEN
+     ALLOCATE(XTKEM_MAX(IIU,IJU,IKU))    
+     XTKEM_MAX = 0.0
+  END IF
+  ALLOCATE(XPABSM_MAX(IIU,IJU,IKU))   ; XPABSM_MAX = 0.0
 END IF
 !
 IF ((CUVW_ADV_SCHEME(1:3)=='CEN') .AND. (CTEMP_SCHEME == 'LEFR') ) THEN
@@ -1708,6 +1711,59 @@ IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
                XLBXUS,XLBXVS,XLBXWS,XLBXTHS,XLBXTKES,XLBXRS,XLBXSVS,          &
                XLBYUS,XLBYVS,XLBYWS,XLBYTHS,XLBYTKES,XLBYRS,XLBYSVS           )
   CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-after ini_cpl::XUT",PRECISION)
+!
+      DO JSV=NSV_CHEMBEG,NSV_CHEMEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_LNOXBEG,NSV_LNOXEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_AERBEG,NSV_AEREND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_DSTBEG,NSV_DSTEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_DSTDEPBEG,NSV_DSTDEPEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_SLTBEG,NSV_SLTEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_SLTDEPBEG,NSV_SLTDEPEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+      DO JSV=NSV_PPBEG,NSV_PPEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+#ifdef MNH_FOREFIRE
+      DO JSV=NSV_FFBEG,NSV_FFEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
+#endif
+      DO JSV=NSV_CSBEG,NSV_CSEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+!
 END IF
 !
 IF ( KMI > 1) THEN
@@ -2183,11 +2239,12 @@ IF ( LFOREFIRE ) THEN
 		, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME, XTSTEP)
 END IF
 #endif
+
 !-------------------------------------------------------------------------------
 !
 !*      30.   Total production/Loss for chemical species
 !
-IF (LCHEMDIAG)  THEN
+IF (LUSECHEM.OR.LCHEMDIAG)  THEN
         CALL CH_INIT_PRODLOSSTOT_n(ILUOUT)
         IF (NEQ_PLT>0) THEN
                 ALLOCATE(XPROD(IIU,IJU,IKU,NEQ_PLT))
@@ -2207,7 +2264,7 @@ END IF
 !
 !*     31. Extended production/loss terms for chemical species
 !
-IF (LCHEMDIAG) THEN
+IF (LUSECHEM.OR.LCHEMDIAG) THEN
         CALL CH_INIT_BUDGET_n(ILUOUT)
         IF (NEQ_BUDGET>0) THEN
                 ALLOCATE(IINDEX(2,NNONZEROTERMS))

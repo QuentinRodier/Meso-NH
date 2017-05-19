@@ -47,9 +47,7 @@ END MODULE MODI_INI_MEAN_FIELD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        11/12/09
-!!      Modifications   10/2016 (C.Lac) Add max values
-!!                      04/2017 (P. Wautelet) Initialize MAX variables to lowest possible value
-!!
+!!                      10/2016 (C.Lac) Add max values
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -61,10 +59,6 @@ USE MODD_MEAN_FIELD
 USE MODD_PARAM_n        
 
 IMPLICIT NONE
-!
-REAL :: ZMIN !Largest real negative value
-!
-ZMIN = -HUGE(ZMIN)
 !
 MEAN_COUNT = 0
 
@@ -83,12 +77,12 @@ XTH2_MEAN = 0.0
 XTEMP2_MEAN = 0.0
 XPABS2_MEAN = 0.0
 
-XUM_MAX  = ZMIN
-XVM_MAX  = ZMIN
-XWM_MAX  = ZMIN
-XTHM_MAX = ZMIN
-XTEMPM_MAX = ZMIN
-IF (CTURB /= 'NONE') XTKEM_MAX = ZMIN
-XPABSM_MAX = ZMIN
+XUM_MAX  = -1.E20
+XVM_MAX  = -1.E20
+XWM_MAX  = -1.E20
+XTHM_MAX = 0.0
+XTEMPM_MAX = 0.0
+IF (CTURB /= 'NONE') XTKEM_MAX = 0.0
+XPABSM_MAX = 0.0
 
 END SUBROUTINE INI_MEAN_FIELD
