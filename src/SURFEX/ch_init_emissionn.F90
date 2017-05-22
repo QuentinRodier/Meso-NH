@@ -29,6 +29,7 @@
 !!      P.Tulet  01/01/04  introduction of rhodref for externalization
 !!      M.Leriche 04/2014  change length of CHARACTER for emission 6->12
 !!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
+!!      J. Pianezze 04/17 wrong length of YCOMMENT (100 instead of 40)
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,13 +76,12 @@ REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 !
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
- CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
- CHARACTER (LEN=100) :: YCOMMENT              ! variables
+CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
+CHARACTER (LEN=40) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter
-!
- CHARACTER(LEN=40)                 :: YSPEC_NAME ! species name
- CHARACTER(LEN=LEN_HREC), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! species name
+CHARACTER(LEN=40)                 :: YSPEC_NAME ! species name
+CHARACTER(LEN=LEN_HREC), DIMENSION(:),ALLOCATABLE :: YEMIS_NAME ! species name
 INTEGER,DIMENSION(:),ALLOCATABLE  :: INBTIMES! number of emission times array
 INTEGER,DIMENSION(:),ALLOCATABLE  :: ITIMES  ! emission times for a species
 INTEGER,DIMENSION(:),ALLOCATABLE  :: IOFFNDX ! index array of offline emission species
@@ -89,7 +89,7 @@ INTEGER                           :: INBTS   ! number of emission times for a sp
 INTEGER                           :: INBOFF  ! Number of offline emissions
 INTEGER                           :: IVERB   ! verbose level
 INTEGER                           :: ICH      ! logical unit of input chemistry file
- CHARACTER(LEN=3)                  :: YSURF   ! surface type
+CHARACTER(LEN=3)                  :: YSURF   ! surface type
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2D ! work array to read emission fields
 !
 INTEGER           :: IVERSION       ! version of surfex file being read
@@ -211,7 +211,7 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
   CHE%CEMIS_AREA(JSPEC) = YSURF
 !
 !*      2.     Simple reading of emission fields
-
+!
   IF (HINIT /= "ALL") THEN
     YRECFM='E_'//TRIM(ADJUSTL(YSPEC_NAME))
     ALLOCATE(ZWORK2D(KLU,INBTS))
