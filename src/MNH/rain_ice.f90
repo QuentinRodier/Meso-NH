@@ -870,6 +870,7 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !        O. Initialization of for sedimentation                  
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
+IF (LDEPOSC) PINDEP (:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
@@ -1317,6 +1318,7 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !-------------------------------------------------------------------------------
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
+IF (LDEPOSC) PINDEP (:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
