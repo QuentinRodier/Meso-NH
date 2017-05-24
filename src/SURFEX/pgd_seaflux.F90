@@ -35,6 +35,7 @@
 !!
 !!    Original    03/2004
 !!    Lebeaupin-B C. 01/2008 : include bathymetry
+!!    M.Moge      02/2015 check with MPPDB
 !!
 !----------------------------------------------------------------------------
 !
@@ -67,6 +68,11 @@ USE MODI_PGD_SEAFLUX_PAR
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+USE MODI_GET_LUOUT
+!
+#endif
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -88,6 +94,9 @@ TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 !            ------------------------------
 !
 REAL, DIMENSION(NL)               :: ZSEABATHY ! bathymetry on all surface points
+#ifdef MNH_PARALLEL
+INTEGER :: ILUOUT
+#endif
 !
 !*    0.3    Declaration of namelists
 !            ------------------------
@@ -111,6 +120,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !             -------------------
 !
 IF (LHOOK) CALL DR_HOOK('PGD_SEAFLUX',0,ZHOOK_HANDLE)
+#ifdef MNH_PARALLEL
+ CALL GET_LUOUT(HPROGRAM,ILUOUT)
+#endif
  CALL READ_NAM_PGD_SEABATHY(HPROGRAM,YSEABATHY,YSEABATHYFILETYPE,YNCVARNAME,&
        XUNIF_SEABATHY)  
 !
@@ -145,7 +157,12 @@ ALLOCATE(SG%XMESH_SIZE (SG%NDIM))
                HPROGRAM, 'SEA   ',                    &
                 SG%CGRID,  SG%XGRID_PAR,                     &
                 S%LCOVER, S%XCOVER, S%XZS,                   &
-                SG%XLAT, SG%XLON, SG%XMESH_SIZE                 )  
+                SG%XLAT, SG%XLON, SG%XMESH_SIZE                 ) 
+#ifdef MNH_PARALLEL 
+ CALL MPPDB_CHECK_SURFEX2D(SG%XLAT,"PGD_SEAFLUX after PACK_PGD:XLAT",PRECISION,ILUOUT,'SEA')
+ CALL MPPDB_CHECK_SURFEX2D(SG%XLON,"PGD_SEAFLUX after PACK_PGD:XLON",PRECISION,ILUOUT,'SEA')
+ CALL MPPDB_CHECK_SURFEX2D(SG%XMESH_SIZE,"PGD_SEAFLUX after PACK_PGD:XMESH_SIZE",PRECISION,ILUOUT,'SEA')
+#endif
 !
  CALL PACK_PGD_SEAFLUX(DTCO, SG, S, U, &
                        HPROGRAM, ZSEABATHY)

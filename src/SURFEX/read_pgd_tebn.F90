@@ -34,7 +34,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
-!!      M. Moge     02/2015 READ_SURF
+!!      M. Moge     02/2015 READ_SURF // + MPPDB_CHECK
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -66,6 +66,11 @@ USE MODI_GET_TYPE_DIM_n
 !
 USE MODI_READ_LECOCLIMAP
 !
+#ifdef MNH_PARALLEL
+USE MODI_GET_LUOUT
+USE MODE_MPPDB
+!
+#endif
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -83,6 +88,9 @@ TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !              -------------------------------
 !
 INTEGER           :: IRESP          ! Error code after redding
+#ifdef MNH_PARALLEL
+INTEGER :: ILUOUT  ! output listing logical unit
+#endif
 !
  CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 INTEGER           :: IVERSION
@@ -94,6 +102,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !* 1D physical dimension
 !
 IF (LHOOK) CALL DR_HOOK('READ_PGD_TEB_N',0,ZHOOK_HANDLE)
+#ifdef MNH_PARALLEL
+ CALL GET_LUOUT(HPROGRAM,ILUOUT)
+#endif
 YRECFM='SIZE_TOWN'
  CALL GET_TYPE_DIM_n(DTCO, U, &
                      'TOWN  ',TM%TG%NDIM)
@@ -208,6 +219,7 @@ ALLOCATE(TM%TOP%XCOVER(TM%TG%NDIM,COUNT(TM%TOP%LCOVER)))
 #ifdef MNH_PARALLEL
  CALL READ_SURF_COV(&
                     HPROGRAM,'COVER',TM%TOP%XCOVER(:,:),TM%TOP%LCOVER,IRESP,HDIR='H')
+ CALL MPPDB_CHECK_SURFEX3D(TM%TOP%XCOVER,"READ_PGD_TEB_n after READ_SURF:XCOVER",PRECISION,ILUOUT, 'TOWN  ',JPCOVER)
 #else
  CALL READ_SURF_COV(&
                     HPROGRAM,'COVER',TM%TOP%XCOVER(:,:),TM%TOP%LCOVER,IRESP)

@@ -36,6 +36,7 @@
 !!    Original    09/2008
 !!    G. TANGUY   03/2009 : add reading and interpolation of XDATA_SST and 
 !!                          TDATA_SST in the case LDATA_SST=T
+!     Modification 05/02/15 M.Moge : MPPDB_CHECK
 !!
 !----------------------------------------------------------------------------
 !
@@ -73,6 +74,10 @@ USE MODI_CLEAN_PREP_OUTPUT_GRID
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+!
+#endif
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -142,7 +147,12 @@ ALLOCATE(SG%XMESH_SIZE (SG%NDIM))
                HPROGRAM, 'SEA   ',                      &
                 SG%CGRID,  SG%XGRID_PAR, S%LCOVER,             &
                 S%XCOVER, S%XZS,                           &
-                SG%XLAT, SG%XLON, SG%XMESH_SIZE                 )  
+                SG%XLAT, SG%XLON, SG%XMESH_SIZE                 ) 
+#ifdef MNH_PARALLEL 
+ CALL MPPDB_CHECK_SURFEX3D(S%XCOVER,"ZOOM_PGD_SEAFLUX:XCOVER",PRECISION,ILUOUT, 'SEA',JPCOVER)
+ CALL MPPDB_CHECK_SURFEX2D(SG%XMESH_SIZE,"ZOOM_PGD_SEAFLUX:XMESH_SIZE",PRECISION,ILUOUT, 'SEA')
+ CALL MPPDB_CHECK_SURFEX2D(S%XZS,"ZOOM_PGD_SEAFLUX:XZS",PRECISION,ILUOUT, 'SEA')
+#endif
 !
 !------------------------------------------------------------------------------
 !
@@ -154,6 +164,10 @@ ALLOCATE(SG%XMESH_SIZE (SG%NDIM))
 !
  CALL PREP_OUTPUT_GRID(UG, U, &
                        ILUOUT,SG%CGRID,SG%XGRID_PAR,SG%XLAT,SG%XLON)
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX2D(SG%XLAT,"ZOOM_PGD_SEAFLUX:XLAT",PRECISION,ILUOUT, 'SEA')
+ CALL MPPDB_CHECK_SURFEX2D(SG%XLON,"ZOOM_PGD_SEAFLUX:XLON",PRECISION,ILUOUT, 'SEA')
+#endif
 !
 !* mask where interpolations must be done
 !
