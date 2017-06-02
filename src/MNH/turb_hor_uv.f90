@@ -212,7 +212,6 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))       &
 !   
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2)) ::ZDIRSINZW 
       ! sinus of the angle between the vertical and the normal to the orography
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
@@ -293,7 +292,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NGRID      = 5
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
 END IF
 !
 !

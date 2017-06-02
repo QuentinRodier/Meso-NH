@@ -82,14 +82,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
-                                    ! at the open of the file in LFI  routines 
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string 
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
-CHARACTER(LEN=100):: YCOMMENT       ! Comment string
-!
-!
 !-------------------------------------------------------------------------------
 !
 !*       1.     Orography :
@@ -105,14 +97,14 @@ IF (CSURF /='EXTE') RETURN
 !*       2.     Orographic characteristics :
 !               --------------------------
 !
-CALL IO_WRITE_FIELD(TPFILE,'SSO_ANIS', CLUOUT,IRESP,XSSO_ANISOTROPY)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_SLOPE',CLUOUT,IRESP,XSSO_SLOPE)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_DIR',  CLUOUT,IRESP,XSSO_DIRECTION)
-CALL IO_WRITE_FIELD(TPFILE,'AVG_ZS',   CLUOUT,IRESP,XAVG_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'SIL_ZS',   CLUOUT,IRESP,XSIL_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'MAX_ZS',   CLUOUT,IRESP,XMAX_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'MIN_ZS',   CLUOUT,IRESP,XMIN_ZS)
-CALL IO_WRITE_FIELD(TPFILE,'SSO_STDEV',CLUOUT,IRESP,XSSO_STDEV)
+CALL IO_WRITE_FIELD(TPFILE,'SSO_ANIS', CLUOUT,XSSO_ANISOTROPY)
+CALL IO_WRITE_FIELD(TPFILE,'SSO_SLOPE',CLUOUT,XSSO_SLOPE)
+CALL IO_WRITE_FIELD(TPFILE,'SSO_DIR',  CLUOUT,XSSO_DIRECTION)
+CALL IO_WRITE_FIELD(TPFILE,'AVG_ZS',   CLUOUT,XAVG_ZS)
+CALL IO_WRITE_FIELD(TPFILE,'SIL_ZS',   CLUOUT,XSIL_ZS)
+CALL IO_WRITE_FIELD(TPFILE,'MAX_ZS',   CLUOUT,XMAX_ZS)
+CALL IO_WRITE_FIELD(TPFILE,'MIN_ZS',   CLUOUT,XMIN_ZS)
+CALL IO_WRITE_FIELD(TPFILE,'SSO_STDEV',CLUOUT,XSSO_STDEV)
 !
 !-------------------------------------------------------------------------------
 !

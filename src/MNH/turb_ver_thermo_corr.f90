@@ -436,7 +436,6 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))  ::  &
        ZDFDDTDZ, & ! dF/d(dTh/dz)
        ZDFDDRDZ, & ! dF/d(dr/dz)
        Z3RDMOMENT  ! 3 order term in flux or variance equation
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: I1,I2        ! For ZCOEFF allocation
@@ -590,7 +589,7 @@ END IF
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
   END IF
 !
 ! and we store in LES configuration
@@ -716,7 +715,7 @@ END IF
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
     END IF
 !
 ! and we store in LES configuration
@@ -822,7 +821,7 @@ END IF
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
     END IF
     !
     ! and we store in LES configuration

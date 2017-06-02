@@ -217,8 +217,6 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZQVSAT, ZVINT !Array used in interpolation
 REAL, DIMENSION(:), ALLOCATABLE :: ZPSUM, ZTSUM, ZQVSUM, ZO3SUM !Array used in interpolation
 REAL :: zconst, ZPS, ZTGRAD, ZQGRAD, ZOGRAD !variables used in interpolation
 REAL, DIMENSION(:), ALLOCATABLE :: ZPIN, ZFIN, ZOUT
-! variables for FMWRIT
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !  at the open of the file LFI routines 
 CHARACTER(LEN=8)  :: YINST  
 CHARACTER(LEN=4)  :: YBEG, YEND
@@ -323,14 +321,14 @@ DO JSAT=1,IJSAT ! loop over sensors
   CALL rttov_read_coefs (errorstatus, coef_rttov, opts, instrument=instrument)
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_readcoeffs :',errorstatus
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+    CALL CLOSE_ll(CLUOUT)
     CALL ABORT
     STOP "error rttov_readcoeffs"
   ENDIF
 !  CALL rttov_initcoeffs (errorstatus,coef_rttov)
 !  IF( errorstatus/= 0) THEN
 !    WRITE(*,*) 'error rttov_initcoeffs :',errorstatus
-!    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+!    CALL CLOSE_ll(CLUOUT)
 !    CALL ABORT
 !    STOP "error rttov_initcoeffs"
 !  ENDIF
@@ -578,7 +576,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
     PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZBT(:,:,JCH))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZBT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)
   DEALLOCATE(ZBT)

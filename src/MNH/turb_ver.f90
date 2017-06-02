@@ -485,7 +485,6 @@ REAL, ALLOCATABLE, DIMENSION(:,:,:,:)  ::  &
        ZREDS1,   & ! 1D Redeslperger number R_sv
        ZRED2THS, & ! 3D Redeslperger number R*2_thsv
        ZRED2RS     ! 3D Redeslperger number R*2_rsv
-INTEGER             :: IRESP        ! Return code of FM routines 
 !
 LOGICAL :: GUSERV    ! flag to use water vapor
 INTEGER :: IKB,IKE   ! index value for the Beginning
@@ -722,7 +721,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPHI3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPHI3)
 !
 ! stores the Turbulent Schmidt number
 ! 
@@ -735,7 +734,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPSI3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPSI3)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
@@ -750,7 +749,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     WRITE(TZFIELD%CMNHNAME, '("PSI_SV_",I3.3)') JSV
     TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZPSI_SV(:,:,:,JSV))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPSI_SV(:,:,:,JSV))
   END DO
 !
 END IF

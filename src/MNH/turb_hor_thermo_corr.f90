@@ -203,7 +203,6 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3))       &
                                      :: ZFLX,ZWORK,ZA
     ! work arrays
 !   
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
@@ -290,7 +289,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
   END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
@@ -377,7 +376,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
     END IF
 !
 !   Storage in the LES configuration (addition to TURB_VER computation)
@@ -444,7 +443,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLX)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
     END IF
     !
     !   Storage in the LES configuration (addition to TURB_VER computation)

@@ -491,7 +491,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 2
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,Z2D)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,Z2D)
 !
 !*      11.2  Writing of level of boundary layer top
 !             --------------------------------------
@@ -506,7 +506,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEINT
   TZFIELD%NDIMS      = 2
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,IK_BL_TOP)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IK_BL_TOP)
 END IF
 !
 IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
@@ -525,7 +525,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 2
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,Z2D)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,Z2D)
 !
 !*      11.4  Writing of free atmosphere 3D profiles
 !             --------------------------------------
@@ -545,7 +545,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,IRESP,Z3D)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,Z3D)
 !
 END IF
 !-------------------------------------------------------------------------------

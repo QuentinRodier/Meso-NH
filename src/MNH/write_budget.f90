@@ -164,9 +164,6 @@ INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
 !  
 !*       0.2   Declarations of local variables :
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
-                                    !  at the open of the file
-                                    !  LFI  routines 
 CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
 INTEGER           :: JT,JPROC,JMASK
 !
@@ -207,7 +204,7 @@ TZFIELD%CCOMMENT   = 'Time step'
 TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 0
-CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,IRESP,PTSTEP)
+CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,PTSTEP)
 !
 TZFIELD%CMNHNAME   = 'BULEN'
 TZFIELD%CSTDNAME   = ''
@@ -218,7 +215,7 @@ TZFIELD%CCOMMENT   = 'Time step'
 TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 0
-CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,IRESP,XBULEN)
+CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,XBULEN)
 !
 !*   1.1   initialize NBUTSHIFT
 !           ---------------------
@@ -1043,7 +1040,7 @@ SELECT CASE (CBUTYPE)
         TZFIELD%NGRID      = 0
         TZFIELD%NTYPE      = TYPEREAL
         TZFIELD%NDIMS      = 6
-        CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,IRESP,ZWORKMASK(:,:,:,:,:,:))
+        CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUT,ZWORKMASK(:,:,:,:,:,:))
         WRITE(YRECFM,FMT="('MASK_',I4.4)") NBUTSHIFT
         CALL MENU_DIACHRO(TPDIAFILE,HLUOUT,YRECFM)
         DEALLOCATE(ZWORKMASK)

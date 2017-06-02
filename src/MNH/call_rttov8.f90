@@ -620,8 +620,6 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZQVSAT, ZVINT !Array used in interpolation
 REAL, DIMENSION(:), ALLOCATABLE :: ZPSUM, ZTSUM, ZQVSUM, ZO3SUM !Array used in interpolation
 REAL :: zconst, ZPS, ZTGRAD, ZQGRAD, ZOGRAD !variables used in interpolation
 REAL, DIMENSION(:), ALLOCATABLE :: ZPIN, ZFIN, ZOUT
-! variables for FMWRIT
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 !  at the open of the file LFI routines 
 CHARACTER(LEN=8)  :: YINST  
 CHARACTER(LEN=4)  :: YBEG, YEND
@@ -1163,7 +1161,7 @@ DO JSAT=1,IJSAT ! loop over sensors
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_readcoeffs :',errorstatus
 !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+    CALL CLOSE_ll(CLUOUT)
     CALL ABORT
     STOP "error rttov_readcoeffs"
   ENDIF
@@ -1171,7 +1169,7 @@ DO JSAT=1,IJSAT ! loop over sensors
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_initcoeffs :',errorstatus
 !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+    CALL CLOSE_ll(CLUOUT)
     CALL ABORT
     STOP "error rttov_initcoeffs"
   ENDIF
@@ -1586,7 +1584,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZANTMP)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZANTMP)
   END IF
   DEALLOCATE(ZANTMP)
 ! -----------------------------------------------------------------------------
@@ -1644,7 +1642,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
          MINVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF), &
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZTBTMP(:,:,JCH))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZTBTMP(:,:,JCH))
     IF (KRTTOVINFO(3,JSAT) == 4.AND. JCH==3 ) THEN ! AMSU-B
       TZFIELD%CMNHNAME   = TRIM(YBEG)//'_UTH'
       TZFIELD%CSTDNAME   = ''
@@ -1672,7 +1670,7 @@ DO JSAT=1,IJSAT ! loop over sensors
           END IF
         END DO
       END DO
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZUTH)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZUTH)
       DEALLOCATE(ZUTH)
     END IF
   END DO
@@ -1738,7 +1736,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZTEMPK(:,:,:))
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZTEMPK(:,:,:))
       !
       TZFIELD%CMNHNAME   = TRIM(YBEG)//'_'//TRIM(YEND)//'JAV'
       TZFIELD%CSTDNAME   = ''
@@ -1754,7 +1752,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZWVAPK(:,:,:),ZWVAPK(:,:,:)/=XUNDEF)
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWVAPK(:,:,:))
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZWVAPK(:,:,:))
     END DO
     DEALLOCATE(ZTEMPKP,ZWVAPKP,ZFIN)
   ENDIF

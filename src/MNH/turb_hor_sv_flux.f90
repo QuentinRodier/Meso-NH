@@ -185,7 +185,6 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))       &
     ! work arrays
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),1) :: ZWORK2D
 !
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
@@ -261,7 +260,7 @@ DO JSV=1,ISV
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXX)
   END IF
 !
   IF (LLES_CALL .AND. KSPLT==1) THEN
@@ -311,7 +310,7 @@ DO JSV=1,ISV
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXY)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXY)
     END IF
 !
   ELSE

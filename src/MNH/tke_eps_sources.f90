@@ -267,7 +267,6 @@ INTEGER             :: IIB,IIE,IJB,IJE,IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain 
 INTEGER             :: IIU,IJU,IKU  ! array size in the 3 dimensions 
-INTEGER             :: IRESP        ! Return code of FM routines
 !
 TYPE(LIST_ll), POINTER :: TZFIELDDISS_ll ! list of fields to exchange
 INTEGER                :: IINFO_ll       ! return code of parallel routine
@@ -436,7 +435,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PDP)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PDP)
 !
 ! stores the thermal production 
 !
@@ -449,7 +448,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PTP)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PTP)
 !
 ! stores the whole turbulent transport
 !
@@ -462,7 +461,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PTR)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PTR)
 !
 ! stores the dissipation of TKE 
 !
@@ -475,7 +474,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PDISS)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PDISS)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and

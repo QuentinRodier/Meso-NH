@@ -275,13 +275,6 @@ REAL, DIMENSION(SIZE(PTHLM,1),SIZE(PTHLM,2),SIZE(PTHLM,3)) ::  &
 !                                                     
 INTEGER :: IKB      ! vertical index value for the first inner mass point
 INTEGER :: IKE      ! vertical index value for the last inner mass point
-INTEGER             :: IRESP        ! Return code of FM routines
-INTEGER             :: ILENG        ! Length of the data field in LFIFM file
-INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
-CHARACTER (LEN=28)  :: YFMFILE      ! Name of FM-file to write
-CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER::  ISV                      ! number of scalar variables       
 INTEGER::  JSV                      ! loop index for the scalar variables  
 
@@ -290,14 +283,11 @@ REAL    :: ZMINVAL
 TYPE(TFIELDDATA)  :: TZFIELD
 ! ---------------------------------------------------------------------------
 !
-YFMFILE = TPFILE%CNAME
-!
 !*      1.  DEFAULT VALUES,  1D REDELSPERGER NUMBERS 
 !           ----------------------------------------
 !
 IKB = KKA+JPVEXT_TURB*KKL
 IKE = KKU-JPVEXT_TURB*KKL 
-ILENG=SIZE(PTHLM,1)*SIZE(PTHLM,2)*SIZE(PTHLM,3)
 ISV  =SIZE(PSVM,4)
 !
 PETHETA(:,:,:) = MZM(KKA,KKU,KKL, ETHETA(KRR,KRRI,PTHLM,PRM,PLOCPEXNM,PATHETA,PSRCM) )
@@ -539,7 +529,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PREDTH1)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PREDTH1)
   !
   ! stores the RED_R1
   TZFIELD%CMNHNAME   = 'RED_R1'
@@ -551,7 +541,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PREDR1)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PREDR1)
   !
   ! stores the RED2_TH3
   TZFIELD%CMNHNAME   = 'RED2_TH3'
@@ -563,7 +553,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PRED2TH3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2TH3)
   !
   ! stores the RED2_R3
   TZFIELD%CMNHNAME   = 'RED2_R3'
@@ -575,7 +565,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PRED2R3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2R3)
   !
   ! stores the RED2_THR3
   TZFIELD%CMNHNAME   = 'RED2_THR3'
@@ -587,7 +577,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,PRED2THR3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2THR3)
   !
 END IF
 !

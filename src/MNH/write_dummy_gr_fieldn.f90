@@ -83,8 +83,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
-                                    ! at the open of the file in LFI  routines 
 INTEGER           :: JDUMMY         ! loop counter
 !
 CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
@@ -119,7 +117,7 @@ TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
 TZFIELD%NGRID      = 0
 TZFIELD%NTYPE      = TYPEINT
 TZFIELD%NDIMS      = 0
-CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,NDUMMY_GR_NBR)
+CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,NDUMMY_GR_NBR)
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
   WRITE(YRECFM,'(A8,I3.3,A5)') 'DUMMY_GR',JDUMMY,'     '
@@ -138,7 +136,7 @@ DO JDUMMY=1,NDUMMY_GR_NBR
   !
   ZWORK2D(:,:) = XDUMMY_GR_FIELDS(:,:,JDUMMY)
   !
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,IRESP,ZWORK2D)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZWORK2D)
 END DO
 !
 !-------------------------------------------------------------------------------

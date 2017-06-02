@@ -395,7 +395,6 @@ REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  ::  &
        ZFLXZ,  &   ! vertical flux of the treated variable
        ZSOURCE,  & ! source of evolution for the treated variable
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IIB,IIE, &   ! I index values for the Beginning and End
                        IJB,IJE, &   ! mass points of the domain in the 3 direct.
                        IKB,IKE      !
@@ -527,7 +526,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
 END IF
 !
 ! first part of total momentum flux
@@ -701,7 +700,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
 END IF
 !
 ! second part of total momentum flux
@@ -821,7 +820,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
 END IF
 !
 !----------------------------------------------------------------------------

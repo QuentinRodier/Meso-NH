@@ -355,7 +355,6 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))  ::  &
        ZFLXZ,  &   ! vertical flux of the treated variable
        ZSOURCE,  & ! source of evolution for the treated variable
        ZKEFF       ! effectif diffusion coeff = LT * SQRT( TKE )
-INTEGER             :: IRESP        ! Return code of FM routines 
 INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: IKT          ! array size in k direction
@@ -463,7 +462,7 @@ DO JSV=1,ISV
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     !
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,IRESP,ZFLXZ)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
   END IF
   !
   ! Storage in the LES configuration
