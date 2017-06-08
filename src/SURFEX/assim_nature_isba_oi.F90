@@ -31,6 +31,7 @@ SUBROUTINE ASSIM_NATURE_ISBA_OI (I, &
 !   (07/2011)  : Read pgd+prep (B. Decharme)
 !   (04/2012)  : Made as a subroutine (T. Aspelien)
 !   (06/2013)  : Separating IO (T. Aspelien)
+!   J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 ! ******************************************************************************************
 ! ------------------------------------------------------------------------------------------
 !
@@ -75,8 +76,8 @@ REAL, DIMENSION(KI), INTENT(IN) :: PHU2M_O
 REAL, DIMENSION(KI), INTENT(OUT):: PSWE
  CHARACTER(LEN=2),    INTENT(IN) :: HTEST ! must be equal to 'OK'
 LOGICAL,  DIMENSION (KI) ::  OD_MASKEXT
-REAL(KIND=JPRB), DIMENSION (:), INTENT(IN) ::  PLON_IN
-REAL(KIND=JPRB), DIMENSION (:), INTENT(IN) ::  PLAT_IN
+REAL           , DIMENSION (:), INTENT(IN) ::  PLON_IN
+REAL           , DIMENSION (:), INTENT(IN) ::  PLAT_IN
 
 !    Declarations of local variables
 !

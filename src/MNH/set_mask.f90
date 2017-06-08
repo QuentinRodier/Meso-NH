@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/set_mask.f90,v $ $Revision: 1.2.2.1.2.1.18.2 $
 ! MASDEV4_7 budget 2006/09/08 10:35:15
 !-----------------------------------------------------------------
 !     ###################
@@ -57,6 +57,7 @@
 !!      Modification 18/06/99  (N.Asencio) : //  , computation are performed on the extended
 !!                                           domain but logical array mask is initialized
 !!                                           to FALSE outside the physical domain
+!!                   02/02/2017 (J.Escobar & JPP ) bug for 1 model only <-> remove unneeded FIELD_MODEL%
 !---------------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -64,8 +65,7 @@
 !
 USE MODD_BUDGET
 USE MODE_ll
-USE MODE_FIELD, ONLY : TFIELDLIST, FIND_FIELD_ID_FROM_MNHNAME
-!USE MODD_FIELD_n, ONLY : FIELD_MODEL
+USE MODD_FIELD_n , ONLY : XWT , XRT
 !
 !
 IMPLICIT NONE
@@ -95,16 +95,11 @@ LBU_MASK(:,:,:)=.FALSE.
 ! Change the following lines to set the criterion for each of the NBUMASK masks
 ! 
 ! 1st mask on vertical velocity at level k=10
-!LBU_MASK(IIB:IIE,IJB:IJE,1)=FIELD_MODEL(NBUMOD)%XWT(IIB:IIE,IJB:IJE,10)>0.
-CALL FIND_FIELD_ID_FROM_MNHNAME('WT',IID,IRESP)
-LBU_MASK(IIB:IIE,IJB:IJE,1)=TFIELDLIST(IID)%TFIELD_X3D(NBUMOD)%DATA(IIB:IIE,IJB:IJE,10)>0.
+LBU_MASK(IIB:IIE,IJB:IJE,1)=XWT(IIB:IIE,IJB:IJE,10)>0.
 !
 !2rd mask on rain mixing ratio at level k=2
-IF (NBUMASK>=2) THEN
-  !LBU_MASK(IIB:IIE,IJB:IJE,2)=FIELD_MODEL(NBUMOD)%XRT(IIB:IIE,IJB:IJE,2,3)>1.E-8
-  CALL FIND_FIELD_ID_FROM_MNHNAME('RT',IID,IRESP)
-  LBU_MASK(IIB:IIE,IJB:IJE,2)=TFIELDLIST(IID)%TFIELD_X4D(NBUMOD)%DATA(IIB:IIE,IJB:IJE,2,3)>1.E-8
-END IF
+IF (NBUMASK>=2) &
+  LBU_MASK(IIB:IIE,IJB:IJE,2)=XRT(IIB:IIE,IJB:IJE,2,3)>1.E-8
 !
 !==============================================================================
 !

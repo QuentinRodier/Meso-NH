@@ -3,11 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/radiations.f90,v $ $Revision: 1.3.2.3.2.2.2.4 $
-! masdev4_7 BUG1 2007/06/15 17:47:18
-!-----------------------------------------------------------------
 !    ########################
      MODULE MODI_RADIATIONS   
 !    ########################
@@ -214,10 +209,13 @@ END MODULE MODI_RADIATIONS
 !!      B.Aouizerats 2010     Explicit aerosol optical properties
 !!      C.Lac       11/2015   Correction on aerosols
 !!      B.Vie            /13  LIMA
+!!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+USE PARKIND1 , ONLY : JPRB
 !
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
@@ -379,9 +377,11 @@ INTEGER :: IDIM          ! effective number of columns for which the radiation
 INTEGER :: INIR          ! index corresponding to NIR fisrt band (in SW)
 !
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZTAVE    ! mean-layer temperature
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZTAVE_RAD    ! mean-layer temperature
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZPAVE    ! mean-layer pressure
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQSAVE   ! saturation specific humidity
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQVAVE   ! mean-layer specific humidity
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZPAVE_RAD    ! mean-layer pressure
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQSAVE   ! saturation specific humidity
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQVAVE   ! mean-layer specific humidity
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQLAVE   ! Liquid water KG/KG
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQRAVE   ! Rain water  KG/KG
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQIAVE   ! Ice water Kg/KG
@@ -390,9 +390,9 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQRWC   ! Rain water  content kg/m3
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQIWC   ! ice water content  kg/m3
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCFAVE   ! mean-layer cloud fraction
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZO3AVE   ! mean-layer ozone content 
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZPRES_HL ! half-level pressure
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZT_HL    ! half-level temperature
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZDPRES   ! layer pressure thickness
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZPRES_HL ! half-level pressure
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZT_HL    ! half-level temperature
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZDPRES   ! layer pressure thickness
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2! Cloud water Concentarion (C2R2)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2! Rain water Concentarion (C2R2)
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3! Ice water Concentarion (C2R2)
@@ -404,10 +404,10 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBP    ! spectral surface albedo for di
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBD    ! spectral surface albedo for diffuse radiations 
 REAL, DIMENSION (:),  ALLOCATABLE   :: ZEMIS    ! surface LW  emissivity 
 REAL, DIMENSION (:), ALLOCATABLE    :: ZEMIW    ! surface LW  WINDOW emissivity
-REAL, DIMENSION(:), ALLOCATABLE     :: ZTS      ! reformatted surface PTSRAD array 
+REAL(KIND=JPRB), DIMENSION(:), ALLOCATABLE     :: ZTS      ! reformatted surface PTSRAD array 
 REAL, DIMENSION(:), ALLOCATABLE     :: ZLSM     ! reformatted land sea mask
 REAL, DIMENSION(:),   ALLOCATABLE   :: ZRMU0    ! Reformatted ZMU0 array
-REAL                                :: ZRII0    ! corrected solar constant
+REAL(KIND=JPRB)                     :: ZRII0    ! corrected solar constant
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZDTLW    ! LW temperature tendency
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZDTSW    ! SW temperature tendency
@@ -507,15 +507,15 @@ REAL, DIMENSION(:),     ALLOCATABLE :: ZEMIS_SPLIT, ZEMIW_SPLIT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZRMU0_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCFAVE_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZO3AVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZT_HL_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZPRES_HL_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZPAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZT_HL_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZPRES_HL_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZTAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZPAVE_SPLIT
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZAER_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZDPRES_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZDPRES_SPLIT
 REAL, DIMENSION(:),     ALLOCATABLE :: ZLSM_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQVAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQSAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQVAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQSAVE_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQLAVE_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQIAVE_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQRAVE_SPLIT
@@ -529,7 +529,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA_SPLIT
 REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA_SPLIT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZTS_SPLIT
+REAL(KIND=JPRB), DIMENSION(:),     ALLOCATABLE :: ZTS_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIR_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIF_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZNFLW_CS_SPLIT
@@ -583,12 +583,12 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: PAER_AER      !tau/tau_{550} aerosol from
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: PAER_SLT      !tau/tau_{550} sea salt               (lon,lat,lev,wvl)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: PAER_DST     !tau/tau_{550} dust               (lon,lat,lev,wvl)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTAU550_EQ_TMP      !tau/tau_{550} aerosols               (lon,lat,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZPIZA_EQ            !Single scattering albedo of aerosols (points,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZCGA_EQ             !Assymetry factor aerosols            (points,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ          !tau/tau_{550} aerosols               (points,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZPIZA_EQ_SPLIT      !Single scattering albedo of aerosols (points,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZCGA_EQ_SPLIT       !Assymetry factor aerosols            (points,lev,wvl)
-REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ_SPLIT    !tau/tau_{550} aerosols               (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZPIZA_EQ            !Single scattering albedo of aerosols (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZCGA_EQ             !Assymetry factor aerosols            (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ          !tau/tau_{550} aerosols               (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZPIZA_EQ_SPLIT      !Single scattering albedo of aerosols (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZCGA_EQ_SPLIT       !Assymetry factor aerosols            (points,lev,wvl)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ_SPLIT    !tau/tau_{550} aerosols               (points,lev,wvl)
 REAL, DIMENSION(KFLEV,KSWB)           :: ZPIZA_EQ_CLEAR      !Single scattering albedo of aerosols (lev,wvl)
 REAL, DIMENSION(KFLEV,KSWB)           :: ZCGA_EQ_CLEAR       !Assymetry factor aerosols            (lev,wvl)
 REAL, DIMENSION(KFLEV,KSWB)           :: ZTAUREL_EQ_CLEAR    !tau/tau_{550} aerosols               (lev,wvl)
@@ -1949,13 +1949,17 @@ IF( IDIM <= KRAD_COLNBR ) THEN
 ! there is less than KRAD_COLNBR verticals to be considered therefore
 ! no split of the arrays is performed
 !
+ ALLOCATE(ZTAVE_RAD(SIZE(ZTAVE,1),SIZE(ZTAVE,2)))
+ ALLOCATE(ZPAVE_RAD(SIZE(ZPAVE,1),SIZE(ZPAVE,2)))
+ ZTAVE_RAD = ZTAVE
+ ZPAVE_RAD = ZPAVE
  IF (CCLOUD == 'LIMA') THEN
   CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
-       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE,               &
+       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
        PCCO2, ZCFAVE, ZDPRES, ZEMIS, ZEMIW, ZLSM, ZRMU0,          &
        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
-       ZT_HL,ZTAVE, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
+       ZT_HL,ZTAVE_RAD, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
        ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
        ZSFSWDIR, ZSFSWDIF,                                        &
@@ -1970,10 +1974,10 @@ IF( IDIM <= KRAD_COLNBR ) THEN
  ELSE
    CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
-       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE,               &
+       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
        PCCO2, ZCFAVE, ZDPRES, ZEMIS, ZEMIW, ZLSM, ZRMU0,          &
        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
-       ZT_HL,ZTAVE, ZTS, ZCCT_C2R2, ZCRT_C2R2, ZCIT_C1R3,         &
+       ZT_HL,ZTAVE_RAD, ZTS, ZCCT_C2R2, ZCRT_C2R2, ZCIT_C1R3,         &
        ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
        ZSFSWDIR, ZSFSWDIF,                                        &
@@ -1986,6 +1990,7 @@ IF( IDIM <= KRAD_COLNBR ) THEN
        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
  END IF
+ DEALLOCATE(ZTAVE_RAD,ZPAVE_RAD)
 !
 ELSE
 !

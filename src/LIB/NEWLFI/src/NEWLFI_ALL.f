@@ -6737,6 +6737,9 @@ C
       IRANMS=0
       INBARI=0
       LLVERG=.FALSE.
+CJUAN
+      CLACTI='UNKNOWN'      
+
 C
 C        Appel legerement anticipe a LFINUM, permettant une initialisa-
 C     tion des variables globales du logiciel a la 1ere utilisation.

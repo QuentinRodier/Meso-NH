@@ -32,6 +32,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/2008 
+!!      16/01/2017 J.Escobar :  For MNH , Pb with CLOSE_FILE  // if not all proc abort  
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -94,7 +95,11 @@ WRITE(ILUOUT,*)YTEXT
 WRITE(ILUOUT,*) '-                                                                         -'
 WRITE(ILUOUT,*) '---------------------------------------------------------------------------'
 WRITE(ILUOUT,*) '---------------------------------------------------------------------------'
+#ifndef SFX_MNH
  CALL CLOSE_FILE(YPROGRAM,ILUOUT)
+#else
+ CLOSE(UNIT=ILUOUT)
+#endif
 !
 #ifdef SFX_ARO
 call abor1('abort by abor1_sfx')

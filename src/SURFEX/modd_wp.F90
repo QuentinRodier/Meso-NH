@@ -5,5 +5,7 @@
 MODULE modd_wp
   !! necessary for compiling Gelato, but not included in LIB/GELATO for reasons relevant to 
   !! Gelato build process
-   INTEGER, PUBLIC, PARAMETER ::   wp = SELECTED_REAL_KIND(12,307)   !: double precision (real 8)
+  !! Modi J.Escobar 24/03/2017 : auto detection of size of real for possible compilation in 4/8bytes
+   REAL , PRIVATE             :: REAL_DEF_WP
+   INTEGER, PUBLIC, PARAMETER ::   wp =  KIND(REAL_DEF_WP) ! SELECTED_REAL_KIND(12,307)   !: double precision (real 8)
 END MODULE modd_wp
