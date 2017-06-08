@@ -36,6 +36,19 @@ cd ${LOCAL}/conf
 TARG=$(uname -s -n)
 #
 case "$TARG" in
+'Linux'*'occigen'*)
+                export     ARCH=${ARCH:-LXifort}
+                export  VER_MPI=${VER_MPI:-MPIINTEL}
+                export OPTLEVEL=${OPTLEVEL:-O2}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export   MNHENV=${MNHENV:-"
+ulimit -s unlimited
+module purge
+module load intel/17.0 intelmpi/2017.0.098
+export SLURM_CPU_BIND=none
+export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
+"}
+              ;;
 'Linux service'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIICE}
@@ -267,20 +280,6 @@ export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
               ;;
 
-'Linux occigen'*)
-                export     ARCH=${ARCH:-LXifort}
-                export  VER_MPI=${VER_MPI:-MPIINTEL}
-                export OPTLEVEL=${OPTLEVEL:-O2}
-		export VER_CDF=${VER_CDF:-CDFAUTO}
-                export   MNHENV=${MNHENV:-"
-ulimit -s unlimited
-module load intel/15.0.3.187
-module load intelmpi/5.0.1.035
-export SLURM_CPU_BIND=none
-export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
-"}
-              ;;
-
 Linux*)
                 export     ARCH=${ARCH:-LXgfortran}
                 export  VER_MPI=${VER_MPI:-MPIVIDE}
@@ -289,6 +288,15 @@ Linux*)
 		#export VER_CDF=${VER_CDF:-CDFGFOR}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_NCARG=${NEED_NCARG:-YES}
+              ;;
+Darwin*)
+                echo "WARNING:: Darwin for Mac not tested "
+                export     ARCH=${ARCH:-LXgfortran}
+                export  VER_MPI=${VER_MPI:-MPIVIDE}
+                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export MVWORK=${MVWORK:-NO}
+		export VER_CDF=${VER_CDF:-CDFAUTO}
+		export NEED_NCARG=${NEED_NCARG:-NO}
               ;;
 *)
                 echo "WARNING ; system not yet tested "

@@ -2,142 +2,6 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ecmwf_radiation_vers2.f90,v $ $Revision: 1.3.2.4.2.2.2.1 $
-! masdev4_7 BUG1 2007/06/15 17:47:17
-!-----------------------------------------------------------------
-!      #################################
-       MODULE MODI_ECMWF_RADIATION_VERS2
-!      #################################
-INTERFACE
-! 
-SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
-     PDZ,HEFRADL, HEFRADI, HOPWSW, HOPISW, HOPWLW, HOPILW, PFUDG, &
-     PRII0, PAER , PALBD , PALBP, PAPH , PAP,                 &
-     PCCO2, PCLFR , PDP  , PEMIS, PEMIW , PLSM , PMU0, POZON, &
-     PQ   , PQIWC ,PIWC, PQLWC, PLWC,PQS  , PQRWC,PRWC,               &
-     PTH  , PT    , PTS, PCCT_C2R2, PCRT_C2R2, PCIT_C1R3,     &
-     PFCT  , PFLT , PFCS , PFLS  ,                            &  
-     PDTLW, PDTSW ,PFLUX_TOP_GND_IRVISNIR,                    & 
-     PSFSWDIR, PSFSWDIF,                                      &
-     PFSDWN, PFSUP, PFLUX_LW ,                                &
-     PDTLW_CS, PDTSW_CS ,PFLUX_TOP_GND_IRVISNIR_CS,           &
-     PFCDWN, PFCUP, PFLUX_CLW,                                & 
-     PPLAN_ALB_VIS, PPLAN_ALB_NIR, PPLAN_TRA_VIS, PPLAN_TRA_NIR,&
-     PPLAN_ABS_VIS, PPLAN_ABS_NIR, PEFCL_LWD, PEFCL_LWU,      &
-     PFLWP,PFIWP, PRADLP, PRADIP,PEFCL_RRTM, PCLSW_TOTAL,     &
-     PTAU_TOTAL, POMEGA_TOTAL, PCG_TOTAL,                     &
-     ODUST,PPIZA_DST,PCGA_DST,PTAUREL_DST )
-!  
-INTEGER, INTENT(IN) :: KAER !number of aerosol class     
-REAL, DIMENSION (:,:), INTENT (IN) ::PDZ !thickness of the mesh (m)
-INTEGER, INTENT(IN) :: KLEV ! number of vertical level for radiation calulation 
-INTEGER, INTENT(IN) :: KLON ! number of columns            " 
-INTEGER, INTENT(IN) :: KRAD_DIAG ! index for the number of diagnostic fields 
-!                                        choice in
-CHARACTER (LEN=*), INTENT (IN) :: HEFRADL !cloud water effective radius calculation  
-CHARACTER (LEN=*), INTENT (IN) :: HEFRADI !ice water effective radius calculation
-CHARACTER (LEN=*), INTENT (IN) :: HOPWSW !cloud water SW optical properties  
-CHARACTER (LEN=*), INTENT (IN) :: HOPISW !ice water SW optical properties 
-CHARACTER (LEN=*), INTENT (IN) :: HOPWLW !cloud water LW optical properties
-CHARACTER (LEN=*), INTENT (IN) :: HOPILW !ice water  LW optical properties
-REAL, INTENT(IN)               :: PFUDG  ! subgrid cloud inhomogeneity factor 
-!
-!
-REAL, INTENT(INOUT)                  :: PRII0 ! corrected solar constant
-REAL, INTENT(IN)                     :: PCCO2 ! CO2 content (Pa/Pa)
-REAL, DIMENSION (:,:,:), INTENT (IN) :: PAER  ! aerosol optical thickness
-REAL, DIMENSION (:,:), INTENT (IN)   :: PALBD ! surface diffuse spectral albedo
-REAL, DIMENSION (:,:), INTENT (IN)   :: PALBP ! surface direct spectral albedo
-REAL, DIMENSION (:), INTENT (IN)     :: PEMIS ! surface emissivity
-REAL, DIMENSION (:), INTENT (IN)     :: PEMIW ! surface emissivity in LW window
-REAL, DIMENSION (:), INTENT (IN)     :: PLSM  ! land sea mask
-REAL, DIMENSION (:), INTENT (IN)     :: PMU0  ! cosine of solar angle 
-REAL, DIMENSION (:,:), INTENT (IN)   :: POZON ! ozone content (Pa/Pa)
-REAL, DIMENSION (:), INTENT (IN)     :: PTS   ! surfaec temperature
-REAL, DIMENSION (:,:), INTENT (IN)   :: PT    ! mean layer  temperature (mass point) 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PAP   ! mean layer  pressure (mass point)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PTH   ! half-level temperature
-REAL, DIMENSION (:,:), INTENT (IN)   :: PAPH  ! half-level pressure 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PDP   ! layer pressure thickness
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQ    ! mean layer specific humidity  (Pa/pa) 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQS   ! mean layer saturation spec. humid.
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQIWC ! mean-layer ice specific water content (kg/kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PIWC ! mean-layer ice water content (kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQLWC ! mean-layer liquid specific water content(kg/Kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PLWC ! mean-layer liquid water content(kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQRWC ! mean-layer rain specific water content(kg/kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PRWC ! mean-layer rain water content(kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCLFR  ! mean-layer cloud fraction
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCCT_C2R2 ! cloud water concentration (C2R2)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCRT_C2R2 ! rain water concentration (C2R2)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCIT_C1R3 ! ice crystal concentration (C1R3)
-REAL, DIMENSION(:,:,:),INTENT(IN)    :: PPIZA_DST   !Single scattering albedo of dust (wvl dependent)
-REAL, DIMENSION(:,:,:),INTENT(IN)   :: PCGA_DST    !Assymetry factor for dust (wvl dependent)
-REAL, DIMENSION(:,:,:),INTENT(IN)   :: PTAUREL_DST !Optical depth of dust relative to the one at 550nm
-
-LOGICAL, INTENT (IN)                 :: ODUST  ! flag for dust
-!
-! OUTPUTS 
-!
-REAL, DIMENSION (:,:), INTENT (OUT) :: PDTLW   ! LW temperature tendency
-REAL, DIMENSION (:,:), INTENT (OUT) :: PDTSW   ! SW temperature tendency
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFLUX_TOP_GND_IRVISNIR ! Top and Ground rad. FLUX.
-REAL, DIMENSION (:,:), INTENT (OUT) :: PSFSWDIR ! surface SW direct flux
-REAL, DIMENSION (:,:), INTENT (OUT) :: PSFSWDIF ! surface SW diffuse flux
-! 
-!KRAD_DIAG >=1 --> optional: flux profiles
-!
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFCT ! Total LW net flux
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFLT ! Total SW net flux
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFSDWN! Downward SW flux
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFSUP ! Upward SW flux
-REAL, DIMENSION (:,:,:), INTENT (OUT) :: PFLUX_LW ! LW flux (upward and downward)
-!
-!KRAD_DIAG >=2 --> optional: clear-sky outputs
-!
-REAL, DIMENSION (:,:), INTENT (OUT) :: PDTLW_CS   ! LW clear sky temperature tendancy
-REAL, DIMENSION (:,:), INTENT (OUT) :: PDTSW_CS   ! SW  clear sky temperature tendancy
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFLUX_TOP_GND_IRVISNIR_CS !  Top and
-                                                    !  Ground radiative Clear-sky FLUXes
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFCS ! Clear-sky LW net flux 
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFLS ! Clear-sky SW net flux
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFCDWN  ! Downward SW Clear sky flux 
-REAL, DIMENSION (:,:), INTENT (OUT)  :: PFCUP   ! Upward SW Clear sky flux 
-REAL, DIMENSION (:,:,:), INTENT (OUT):: PFLUX_CLW !Clear sky  LW flux (upward and downward)
-!
-!KRAD_DIAG >=3 --> optional: other macroscpic radiative parameteres
-!
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_ALB_VIS !PLANetary ALBedo in VISible 
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_ALB_NIR !     "          Near-InfraRed
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_TRA_VIS !PLANetary TRANsmission in VISible
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_TRA_NIR !     "          Near-InfraRed
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_ABS_VIS !PLANetary ABSorption in VISible
-REAL, DIMENSION (:), INTENT (OUT) :: PPLAN_ABS_NIR !     "          Near-InfraRed 
-
-
-!
-!KRAD_DIAG >=4 --> optional: more cloud effect radiative parameters 
-!
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFLWP       ! Liquid water path
-REAL, DIMENSION (:,:), INTENT (OUT) :: PFIWP       ! Ice water path
-REAL, DIMENSION (:,:), INTENT (OUT) :: PRADLP      ! Cloud water effective radius  
-REAL, DIMENSION (:,:), INTENT (OUT) :: PRADIP      ! Cloud ice effective radius
-REAL, DIMENSION (:,:), INTENT (OUT) :: PEFCL_LWD   ! effective downward LW nebulosity 
-REAL, DIMENSION (:,:), INTENT (OUT) :: PEFCL_LWU   ! effective upward LW nebulosity
-                                                   ! Note: not meaningfull when using RRTM 
-REAL, DIMENSION (:,:), INTENT (OUT) :: PEFCL_RRTM ! Effective LW nebuloisty (RRTM case)
-REAL, DIMENSION (:,:), INTENT (OUT) :: PCLSW_TOTAL ! Effective SW cloud fraction(mixed phase)
-REAL, DIMENSION (:,:,:), INTENT (OUT) :: PTAU_TOTAL !Effective cloud optical thickness
-REAL, DIMENSION (:,:,:), INTENT (OUT) :: POMEGA_TOTAL! "   single scattering albedo
-REAL, DIMENSION (:,:,:), INTENT (OUT) :: PCG_TOTAL   ! "   asymetry factor 
-!
-END SUBROUTINE ECMWF_RADIATION_VERS2
-END INTERFACE
-END MODULE MODI_ECMWF_RADIATION_VERS2
-!
 !##############################################################
 !OPTION! -Ni
 SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
@@ -205,12 +69,14 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         G.Delautier 9/2014: remplace MODD_RAIN_C2R2_PARAM par MODD_RAIN_C2R2_KHKO_PARAM
 !         M.Mazoyer 2016 :  limit of 100 microns for effective radius 
 !         B.VIE 2016 : LIMA
+!         J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !ECMWF radiation scheme specific modules 
 !
+USE PARKIND1 , ONLY : JPRB
 USE YOMCST   , ONLY : RG ,RD ,RTT ,RPI
 USE YOERAD   , ONLY : NMODE, NSW ,LRRTM ,LINHOM ,LRADIP, LRADLP 
 USE YOELW    , ONLY : NSIL     ,NTRA     ,NUA      ,TSTAND   ,XP
@@ -279,7 +145,7 @@ CHARACTER (LEN=*), INTENT (IN) :: HOPWLW !cloud water LW optical properties
 CHARACTER (LEN=*), INTENT (IN) :: HOPILW !ice water  LW optical properties
 REAL, INTENT(IN)               :: PFUDG  !subgrid cloud inhomogeneity factor
 !
-REAL, INTENT(INOUT)                     :: PRII0 ! corrected solar constant
+REAL(KIND=JPRB), INTENT(INOUT)       :: PRII0 ! corrected solar constant
 REAL, INTENT(IN)                     :: PCCO2 ! CO2 content (Pa/Pa)
 REAL, DIMENSION (:,:,:), INTENT (IN) :: PAER  ! aerosol optical thickness
 REAL, DIMENSION (:,:), INTENT (IN)   :: PALBD ! surface diffuse spectral albedo
@@ -289,14 +155,14 @@ REAL, DIMENSION (:), INTENT (IN)     :: PEMIW ! surface emissivity in LW window
 REAL, DIMENSION (:), INTENT (IN)     :: PLSM  ! land sea mask
 REAL, DIMENSION (:), INTENT (IN)     :: PMU0  ! cosine of solar angle 
 REAL, DIMENSION (:,:), INTENT (IN)   :: POZON ! ozone content (Pa/Pa)
-REAL, DIMENSION (:), INTENT (IN)     :: PTS   ! surfaec temperature
-REAL, DIMENSION (:,:), INTENT (IN)   :: PT    ! mean layer  temperature (mass point) 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PAP   ! mean layer  pressure (mass point)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PTH   ! half-level temperature
-REAL, DIMENSION (:,:), INTENT (IN)   :: PAPH  ! half-level pressure 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PDP   ! layer pressure thickness
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQ    ! mean layer specific humidity  (Pa/pa) 
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQS   ! mean layer saturation spec. humid.
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PTS   ! surfaec temperature
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PT    ! mean layer  temperature (mass point) 
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PAP   ! mean layer  pressure (mass point)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PTH   ! half-level temperature
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PAPH  ! half-level pressure 
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PDP   ! layer pressure thickness
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQ    ! mean layer specific humidity  (Pa/pa) 
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQS   ! mean layer saturation spec. humid.
 REAL, DIMENSION (:,:), INTENT (IN)   :: PQIWC ! mean-layer ice specific water content (kg/kg)
 REAL, DIMENSION (:,:), INTENT (IN)   :: PIWC ! mean-layer ice water content (kg/m3)
 REAL, DIMENSION (:,:), INTENT (IN)   :: PQLWC ! mean-layer liquid specific water content(kg/Kg)
@@ -307,9 +173,9 @@ REAL, DIMENSION (:,:), INTENT (IN)   :: PCLFR  ! mean-layer cloud fraction
 REAL, DIMENSION (:,:), INTENT (IN)   :: PCCT_C2R2 ! cloud water concentration (C2R2)
 REAL, DIMENSION (:,:), INTENT (IN)   :: PCRT_C2R2 ! rain water concentration (C2R2)
 REAL, DIMENSION (:,:), INTENT (IN)   :: PCIT_C1R3 ! ice crystal concentration (C1R3)
-REAL, DIMENSION(:,:,:),INTENT(IN)    :: PPIZA_DST   !Single scattering albedo of dust (wvl dependent)
-REAL, DIMENSION(:,:,:),INTENT(IN)    :: PCGA_DST    !Assymetry factor for dust (wvl dependent)
-REAL, DIMENSION(:,:,:),INTENT(IN)    :: PTAUREL_DST !Optical depth of dust relative to the one at 550nm
+REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PPIZA_DST   !Single scattering albedo of dust (wvl dependent)
+REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PCGA_DST    !Assymetry factor for dust (wvl dependent)
+REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PTAUREL_DST !Optical depth of dust relative to the one at 550nm
 LOGICAL, INTENT (IN)                 :: ODUST  ! flag for dust
 !
 !
@@ -384,7 +250,7 @@ REAL          :: ZALND, ZASEA, ZD, ZDEN, ZNTOT, ZNUM, ZRATIO, Z1RADI,&
      ZBETAI, ZOMGI, ZOMGP, ZFDEL,  ZTCELS, ZFSR,  ZAIWC, ZBIWC,  &
      ZTBLAY, ZADDPLK,  ZPLANCK, Z1RADL, Z1RADR
 
-REAL, DIMENSION(KLON) ::  ZTCLEAR, ZDT0, ZEMIS, ZEMIW, &
+REAL(KIND=JPRB), DIMENSION(KLON) ::  ZTCLEAR, ZDT0, ZEMIS, ZEMIW, &
      ZFIWP , ZFLWP, ZFRWP, ZIWC,      &
      ZLWC, ZMU0, ZPSOL, ZVIEW,        &
      ZBICFU,  ZKICFU1, ZKICFU2,       &
@@ -397,29 +263,32 @@ REAL, DIMENSION(KLON) ::  ZTCLEAR, ZDT0, ZEMIS, ZEMIW, &
      ZUVDF, ZPARF
 !cc           , ZRADRD
 !
-REAL, DIMENSION(KLON,NSW)    :: ZALBD , ZALBP , ZDIRFS, ZDIFFS
-REAL, DIMENSION(KLON,KLEV)   :: ZCLFR,  ZCLDLD  , ZCLDLU, ZCLDSW,        &  
+REAL(KIND=JPRB), DIMENSION(KLON,NSW)    :: ZALBD , ZALBP , ZDIRFS, ZDIFFS
+REAL(KIND=JPRB), DIMENSION(KLON,KLEV)   :: ZCLFR,  ZCLDLD  , ZCLDLU, ZCLDSW,        &  
      ZOZON, ZOZ   , ZOZN,    ZTAVE ,  ZDPGCP, &
      ZCOOLR  , ZCOOLC, ZHEATR  , ZHEATC,      & 
      ZDFLWT  , ZDFLWC, ZDFSWT  , ZDFSWC
 !
-REAL, DIMENSION(KLON,KLEV+1) :: ZPMB  , ZTL, & 
+REAL(KIND=JPRB), DIMENSION(KLON,KLEV+1) :: ZPMB  , ZTL, & 
      ZFCDWN, ZFCUP, ZFSDWN, ZFSUP, &
      ZFLT, ZFCT,ZFCS, ZFLS
 !
-REAL, DIMENSION(KLON,NSW,KLEV) :: ZCG ,ZOMEGA, ZTAU
+REAL(KIND=JPRB), DIMENSION(KLON,NSW,KLEV) :: ZCG ,ZOMEGA, ZTAU
 !
-REAL, DIMENSION(KLON,2,KLEV+1) :: ZFLUX_LW, ZFLUX_CLW      
+REAL(KIND=JPRB), DIMENSION(KLON,2,KLEV+1) :: ZFLUX_LW, ZFLUX_CLW      
 !
-REAL, DIMENSION(KLON,KLEV,16)  :: ZTAUCLD
+REAL(KIND=JPRB), DIMENSION(KLON,KLEV,16)  :: ZTAUCLD
 !
-REAL, DIMENSION(KLON,KAER,KLEV) :: ZAER_SW,ZAER_LW ! Optical aerosol properties
+REAL(KIND=JPRB), DIMENSION(KLON,KAER,KLEV) :: ZAER_SW,ZAER_LW ! Optical aerosol properties
 LOGICAL :: GPROP_OP             !drapeau sur les condition a remplir pour que le
                                 !calcul des propriétés optiques soit effectué
 !
 REAL, ALLOCATABLE, DIMENSION(:) :: XRTMIN, XCTMIN
 REAL :: XALPHAC,XNUC,XALPHAR,XNUR,XCREC,XCRER,XFREFFR,XAC,XAR,XLBEXC,XLBEXR,XFREFFI,XLBEXI
+!
+REAL(KIND=JPRB) :: ZCCO2_RAD
 !--------------------------------------------------------------
+ZCCO2_RAD = PCCO2
 !
 !          0. LIMA
 IF ( CCLOUD == "LIMA" ) THEN
@@ -1239,7 +1108,7 @@ ENDDO
 !                 ------------------------------------
 IF ( .NOT. LRRTM) THEN
   CALL LW ( IKIDIA , IKFDIA , KLON  , KLEV , NMODE, &
-       PCCO2 , ZCLDLD, ZCLDLU,                     &
+       ZCCO2_RAD , ZCLDLD, ZCLDLU,                     &
        PDP   , ZDT0  , ZEMIS , ZEMIW,              &
        ZPMB  , ZOZON , ZTL,                        &
        ZAER_LW  , ZTAVE , ZVIEW , PQ,                 &
@@ -1263,7 +1132,7 @@ ELSE
 !
   CALL RRTM_RRTM_140GP(IKIDIA,IKFDIA,KLON,KLEV,   &
        ZAER_LW,PAPH,PAP,PTS,PTH,PT,ZEMIS,ZEMIW,      &
-       PQ    , PCCO2 , ZOZN  , ZCLDSW  , ZTAUCLD, &
+       PQ    , ZCCO2_RAD , ZOZN  , ZCLDSW  , ZTAUCLD, &
        ZEMIT , ZFLUX_LW , ZFLUX_CLW , ZTCLEAR )
 ENDIF
 
@@ -1277,7 +1146,7 @@ ENDDO
 !
 IF (ZRMUZ > 0.) THEN
       CALL SW ( IKIDIA , IKFDIA , KLON  , KLEV  , KAER,     &
-           PRII0 , PCCO2 , ZPSOL , ZALBD , ZALBP , PQ   , PQS,  &
+           PRII0 , ZCCO2_RAD , ZPSOL , ZALBD , ZALBP , PQ   , PQS,  &
            ZMU0  , ZCG   , ZCLDSW, PDP   , ZOMEGA, ZOZ  , ZPMB, &
            ZTAU  , ZTAVE , ZAER_SW,                                &
            ZHEATR, ZFSDWN, ZFSUP , ZHEATC, ZFCDWN, ZFCUP,       &

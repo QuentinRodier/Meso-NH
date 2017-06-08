@@ -110,6 +110,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    11/12/15 (M. Leriche & P. Tulet) add ch_init_ice initialise index for ice chem.
 !!    18/01/16 (M Leriche) for sedimentation fusion C2R2 and khko
 !!    15/02/16 (M Leriche) call ch_init_rosenbrock only one time
+!!    20/01/17 (G.Delautier) bug if CPROGRAM/=DIAG
 !!
 !!    EXTERNAL
 !!    --------
@@ -621,7 +622,9 @@ SELECT CASE (CCH_TDISCRETIZATION)
 END SELECT
 !
 !
-IF (LEN_TRIM(CSPEC_BU_DIAG)/=0.OR.LEN_TRIM(CSPEC_DIAG)/=0) GSPLIT=.FALSE.  ! Modif. for DIAG
+IF (CPROGRAM=='DIAG  ') THEN
+  IF (LEN_TRIM(CSPEC_BU_DIAG)/=0.OR.LEN_TRIM(CSPEC_DIAG)/=0) GSPLIT=.FALSE.  ! Modif. for DIAG
+END IF
 !
 !
 !*       1.6   allocate tables
