@@ -70,6 +70,8 @@
 !!                                          routine.
 !!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable 
 !!      D.Gazen+ G.Delautier 06/2016 modif for ncl files
+!!      P. Wautelet     09/06/2017: name of the variable added to the name of the written field
+!!                                  and better comment (true comment + units)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -383,36 +385,36 @@ DO J = 1,IP
 ! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
 IF (PRESENT(OICP) .AND. PRESENT(OJCP)) THEN
   IF(HTYPE == 'CART' .AND. .NOT. OICP .AND. .NOT. OJCP) THEN
-    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
+    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.'//TRIM(HTITRE(J))
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(HGROUP)//'.PROC'//YJ
-    TZFIELD%CUNITS     = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = TRIM(HUNITE(J))
     TZFIELD%CDIR       = 'XY'
-    TZFIELD%CCOMMENT   = TRIM(HTITRE(J))
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT(J))
     TZFIELD%NGRID      = KGRID(J)
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 5
     CALL IO_WRITE_FIELD_BOX(TPDIAFILE,TZFIELD,HLUOUTDIA,'BUDGET',PVAR(:,:,:,:,:,J), &
                             KIL+JPHEXT,KIH+JPHEXT,KJL+JPHEXT,KJH+JPHEXT)
   ELSE
-    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
+    TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.'//TRIM(HTITRE(J))
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(HGROUP)//'.PROC'//YJ
-    TZFIELD%CUNITS     = ''
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CUNITS     = TRIM(HUNITE(J))
     TZFIELD%CDIR       = '--'
-    TZFIELD%CCOMMENT   = TRIM(HTITRE(J))
+    TZFIELD%CCOMMENT   = TRIM(HCOMMENT(J))
     TZFIELD%NGRID      = KGRID(J)
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 5
     CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,HLUOUTDIA,PVAR(:,:,:,:,:,J))
   ENDIF
 ELSE
-  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.PROC'//YJ
+  TZFIELD%CMNHNAME   = TRIM(HGROUP)//'.'//TRIM(HTITRE(J))
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(HGROUP)//'.PROC'//YJ
-  TZFIELD%CUNITS     = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+  TZFIELD%CUNITS     = TRIM(HUNITE(J))
   TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = TRIM(HTITRE(J))
+  TZFIELD%CCOMMENT   = TRIM(HCOMMENT(J))
   TZFIELD%NGRID      = KGRID(J)
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 5
