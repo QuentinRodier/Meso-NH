@@ -286,6 +286,8 @@ END MODULE MODI_READ_EXSEG_n
 !!                                deposition + Add max values
 !!      Modification   03/2017   (JP Chaboureau) Fix the initialization of
 !!                                               LUSERx-type variables for LIMA
+!!      M.Leriche      06/2017 for spawn and prep_real avoid abort if wet dep for 
+!!                             aerosol and no cloud scheme defined
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1592,7 +1594,8 @@ IF (LDUST) THEN
   IF (LDEPOS_DST(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF DUST IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 
@@ -1677,7 +1680,8 @@ IF (LSALT) THEN
   IF (LDEPOS_SLT(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF SEA SALT AEROSOLS IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 
@@ -1760,7 +1764,8 @@ IF (LORILAM) THEN
   IF (LDEPOS_AER(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF ORILAM AEROSOLS IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 
