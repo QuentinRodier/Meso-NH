@@ -40,6 +40,7 @@
 !!                                     ABOR1_SFX if (.NOT.OECOCLIMAP) in comment
 !     Modification 05/02/15 M.Moge : MPPDB_CHECK + use NSIZE_FULL instead of SIZE(XLAT) (for clarity)
 !!      J.Escobar 18/12/2015 : missing interface
+!!      J.Escobar 12/06/2015 : Bug in SPAWNING in // , compute/update LCOVER in // with SUM_ON_ALL_PROCS
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -246,7 +247,7 @@ ICPT2 = 0
 DO JCOVER = 1,JPCOVER
   IF (U%LCOVER(JCOVER)) THEN
     ICPT1 = ICPT1 + 1
-    IF (ALL(U%XCOVER(:,ICPT1)==0.)) THEN
+    IF ( SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,U%XCOVER(:,ICPT1)/=0., 'COV') == 0 ) THEN
       U%LCOVER(JCOVER) = .FALSE.
     ELSE
       ICPT2 = ICPT2 + 1
@@ -315,7 +316,9 @@ DO JCOVER=1,SIZE(U%XCOVER,2)
 END DO
 !
 DO JCOVER=1,SIZE(U%XCOVER,2)
-  IF (ALL(U%XCOVER(:,JCOVER)==0.)) U%LCOVER(JCOVER) = .FALSE.
+   IF ( SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,U%XCOVER(:,JCOVER)/=0., 'COV') == 0 ) THEN
+      U%LCOVER(JCOVER) = .FALSE.
+   END IF
 END DO
 !------------------------------------------------------------------------------
 !
