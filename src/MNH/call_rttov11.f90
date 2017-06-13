@@ -576,7 +576,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
     PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT,ZBT(:,:,JCH))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZBT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)
   DEALLOCATE(ZBT)

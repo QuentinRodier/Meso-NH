@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PTHVREF,                                       &
@@ -37,8 +37,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
@@ -77,7 +75,7 @@ END MODULE MODI_TURB_HOR_THERMO_CORR
 !     ################################################################
       SUBROUTINE TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,               &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PTHVREF,                                       &
@@ -166,8 +164,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDXX   ! 1./PDXX
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PINV_PDYY   ! 1./PDYY
@@ -289,7 +285,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
   END IF
 !
 ! Storage in the LES configuration (addition to TURB_VER computation)
@@ -376,7 +372,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
     END IF
 !
 !   Storage in the LES configuration (addition to TURB_VER computation)
@@ -443,7 +439,7 @@ IF ( ( KRRL > 0 .AND. OSUBG_COND) .OR. ( OTURB_FLX .AND. OCLOSE_OUT ) &
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
     END IF
     !
     !   Storage in the LES configuration (addition to TURB_VER computation)

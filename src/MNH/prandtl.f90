@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
                          HTURBDIM,                             &
-                         TPFILE,HLUOUT,                        &
+                         TPFILE,                               &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
                          PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
                          PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -41,8 +41,6 @@ LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   ! metric coefficients
 !
@@ -87,7 +85,7 @@ END MODULE MODI_PRANDTL
 !     ###########################################################
       SUBROUTINE PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_DIAG,&
                          HTURBDIM,                             &
-                         TPFILE,HLUOUT,                        &
+                         TPFILE,                               &
                          PDXX,PDYY,PDZZ,PDZX,PDZY,             &
                          PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
                          PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -231,8 +229,6 @@ LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 CHARACTER*4           , INTENT(IN)   ::  HTURBDIM     ! Kind of turbulence param.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX,PDYY,PDZZ,PDZX,PDZY
                                                   ! metric coefficients
 !
@@ -529,7 +525,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PREDTH1)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PREDTH1)
   !
   ! stores the RED_R1
   TZFIELD%CMNHNAME   = 'RED_R1'
@@ -541,7 +537,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PREDR1)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PREDR1)
   !
   ! stores the RED2_TH3
   TZFIELD%CMNHNAME   = 'RED2_TH3'
@@ -553,7 +549,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2TH3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PRED2TH3)
   !
   ! stores the RED2_R3
   TZFIELD%CMNHNAME   = 'RED2_R3'
@@ -565,7 +561,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2R3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PRED2R3)
   !
   ! stores the RED2_THR3
   TZFIELD%CMNHNAME   = 'RED2_THR3'
@@ -577,7 +573,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRED2THR3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PRED2THR3)
   !
 END IF
 !

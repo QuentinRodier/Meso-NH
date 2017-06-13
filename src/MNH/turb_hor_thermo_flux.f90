@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,        &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -39,8 +39,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
                                                         ! PK = PLM * SQRT(PTKEM)
@@ -83,7 +81,7 @@ END MODULE MODI_TURB_HOR_THERMO_FLUX
 !     ################################################################
       SUBROUTINE TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,        &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -174,8 +172,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
                                                         ! PK = PLM * SQRT(PTKEM)
@@ -332,7 +328,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NGRID      = 2
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -434,7 +430,7 @@ IF (KRR/=0) THEN
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -482,7 +478,7 @@ END IF
 !!    TZFIELD%NGRID      = 2
 !!    TZFIELD%NTYPE      = TYPEREAL
 !!    TZFIELD%NDIMS      = 3
-!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZVPTU)
+!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZVPTU)
 !!  END IF
 !!!
 !!ELSE
@@ -584,7 +580,7 @@ IF ( OCLOSE_OUT .AND. OTURB_FLX ) THEN
   TZFIELD%NGRID      = 3
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
 END IF
 !
 IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -695,7 +691,7 @@ IF (KRR/=0) THEN
     TZFIELD%NGRID      = 3
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLX)
   END IF
   !
   IF (KSPLT==1 .AND. LLES_CALL) THEN
@@ -747,7 +743,7 @@ END IF
 !!    TZFIELD%NGRID      = 3
 !!    TZFIELD%NTYPE      = TYPEREAL
 !!    TZFIELD%NDIMS      = 3
-!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZVPTV)
+!!    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZVPTV)
 !!  END IF
 !!!
 !!ELSE

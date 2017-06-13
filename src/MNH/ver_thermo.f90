@@ -314,7 +314,7 @@ IF (NVERB>=10) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,CLUOUT0,ZTHV)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTHV)
 END IF
 !-------------------------------------------------------------------------------
 !

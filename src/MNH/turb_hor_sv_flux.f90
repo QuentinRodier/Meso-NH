@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -33,8 +33,6 @@ LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
                                                         ! PK = PLM * SQRT(PTKEM)
@@ -67,7 +65,7 @@ END MODULE MODI_TURB_HOR_SV_FLUX
 !     ################################################################
       SUBROUTINE TURB_HOR_SV_FLUX(KSPLT,                             &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -152,8 +150,6 @@ LOGICAL,                  INTENT(IN)    ::  OCLOSE_OUT   ! switch for syncronous
 LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
                                  ! turbulent fluxes in the syncronous FM-file
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PK          ! Turbulent diffusion doef.
                                                         ! PK = PLM * SQRT(PTKEM)
@@ -260,7 +256,7 @@ DO JSV=1,ISV
     TZFIELD%NGRID      = 2
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXX)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXX)
   END IF
 !
   IF (LLES_CALL .AND. KSPLT==1) THEN
@@ -310,7 +306,7 @@ DO JSV=1,ISV
       TZFIELD%NGRID      = 3
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXY)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXY)
     END IF
 !
   ELSE

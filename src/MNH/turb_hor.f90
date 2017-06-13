@@ -16,7 +16,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR(KSPLT, KRR, KRRL, KRRI, PTSTEP,            &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -46,8 +46,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                          ! Metric coefficients
@@ -119,7 +117,7 @@ END MODULE MODI_TURB_HOR
 !     ################################################################
       SUBROUTINE TURB_HOR(KSPLT, KRR, KRRL, KRRI, PTSTEP,            &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -299,8 +297,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                          ! Metric coefficients
@@ -384,7 +380,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       CALL      TURB_HOR_THERMO_FLUX(KSPLT, KRR, KRRL, KRRI,         &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &
@@ -400,7 +396,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
       IF (KSPLT==1)                                                  &
       CALL      TURB_HOR_THERMO_CORR(KRR, KRRL, KRRI,                &
                       OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PINV_PDXX,PINV_PDYY,                           &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PTHVREF,                                       &
@@ -416,7 +412,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 ! 
       CALL       TURB_HOR_DYN_CORR(KSPLT, PTSTEP,                    &
                       OCLOSE_OUT,OTURB_FLX,KRR,                      &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDZZ,                                  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSZW,                                     &
@@ -434,7 +430,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       CALL      TURB_HOR_UV(KSPLT,                                   &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSZW,                                     &
@@ -450,7 +446,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       CALL      TURB_HOR_UW(KSPLT,                                   &
                       OCLOSE_OUT,OTURB_FLX,KRR,                      &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDXX,PDZZ,PDZX,                                &
                       PRHODJ,PTHVREF,                                &
@@ -464,7 +460,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       CALL      TURB_HOR_VW(KSPLT,                                   &
                       OCLOSE_OUT,OTURB_FLX,KRR,                      &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,            &
                       PDYY,PDZZ,PDZY,                                &
                       PRHODJ,PTHVREF,                                &
@@ -479,7 +475,7 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PSIGS
 !
       CALL      TURB_HOR_SV_FLUX(KSPLT,                              &
                       OCLOSE_OUT,OTURB_FLX,                          &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PK,PINV_PDXX,PINV_PDYY,PINV_PDZZ,PMZM_PRHODJ,  &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,                      &
                       PDIRCOSXW,PDIRCOSYW,                           &

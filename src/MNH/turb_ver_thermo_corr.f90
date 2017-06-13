@@ -17,7 +17,7 @@ INTERFACE
       SUBROUTINE TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,    &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -47,8 +47,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDZZ, PDXX, PDYY, PDZX, PDZY
                                                       ! Metric coefficients
@@ -120,7 +118,7 @@ END MODULE MODI_TURB_VER_THERMO_CORR
       SUBROUTINE TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR, KRRL, KRRI,  &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                       PIMPL,PEXPL,                                  &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                       PRHODJ,PTHVREF,                               &
                       PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -362,8 +360,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Moment
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDZZ, PDXX, PDYY, PDZX, PDZY
                                                       ! Metric coefficients
@@ -589,7 +585,7 @@ END IF
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
   END IF
 !
 ! and we store in LES configuration
@@ -715,7 +711,7 @@ END IF
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
     END IF
 !
 ! and we store in LES configuration
@@ -821,7 +817,7 @@ END IF
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 3
-      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
     END IF
     !
     ! and we store in LES configuration

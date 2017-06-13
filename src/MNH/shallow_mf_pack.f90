@@ -10,7 +10,7 @@ INTERFACE
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,TPFILE,HLUOUT,PTIME_LES,           &
+                OCLOSE_OUT,OMF_FLX,TPFILE,PTIME_LES,                  &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
@@ -39,9 +39,7 @@ LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   :: HLUOUT     ! Output-listing name for
-                                                   ! model n
-REAL*8,DIMENSION(2),                  INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
+REAL*8,DIMENSION(2),    INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
 REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
@@ -77,7 +75,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !     #################################################################
       SUBROUTINE SHALLOW_MF_PACK(KRR,KRRL,KRRI,                       &
                 HMF_UPDRAFT, HMF_CLOUD, OMIXUV,                       &
-                OCLOSE_OUT,OMF_FLX,TPFILE,HLUOUT,PTIME_LES,          &
+                OCLOSE_OUT,OMF_FLX,TPFILE,PTIME_LES,                  &
                 PIMPL_MF, PTSTEP,                                     &
                 PDZZ, PZZ,                                            &
                 PRHODJ, PRHODREF,                                     &
@@ -155,9 +153,7 @@ LOGICAL,                INTENT(IN)   :: OCLOSE_OUT ! switch for synchronous
 LOGICAL,                INTENT(IN)   :: OMF_FLX    ! switch to write the
                                                    ! MF fluxes in the synchronous FM-file
 TYPE(TFILEDATA),        INTENT(IN)   :: TPFILE     ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   :: HLUOUT     ! Output-listing name for
-                                                   ! model n
-REAL*8,DIMENSION(2),                  INTENT(OUT)  :: PTIME_LES     ! time spent in LES computations
+REAL*8,DIMENSION(2),    INTENT(OUT)  :: PTIME_LES  ! time spent in LES computations
 REAL,                   INTENT(IN)   :: PIMPL_MF   ! degre of implicitness
 REAL,                   INTENT(IN)   :: PTSTEP     ! Dynamical timestep 
 
@@ -390,7 +386,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWORK)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the conservative mixing ratio vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZRMF(:,:),(/ IIU,IJU,IKU /) )
@@ -403,7 +399,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWORK)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the theta_v vertical flux
   TZFIELD%CMNHNAME   = 'MF_THVW_FLX'
@@ -415,7 +411,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PFLXZTHVMF)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PFLXZTHVMF)
   !
  IF (OMIXUV) THEN
   ! stores the U momentum vertical flux
@@ -429,7 +425,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWORK)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
   !
   ! stores the V momentum vertical flux
   ZWORK(:,:,:)=RESHAPE(ZFLXZVMF(:,:),(/ IIU,IJU,IKU /) )
@@ -442,7 +438,7 @@ IF ( OMF_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWORK)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK)
   !
  END IF
 END IF

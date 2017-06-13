@@ -17,7 +17,7 @@ INTERFACE
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR,KRRL,KRRI,                &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP, TPFILE,HLUOUT,                        &
+                      PTSTEP, TPFILE,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -47,8 +47,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Mome
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                       ! Metric coefficients
@@ -129,7 +127,7 @@ END MODULE MODI_TURB_VER
       SUBROUTINE TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,              &
                       OCLOSE_OUT,OTURB_FLX,                         &
                       HTURBDIM,HTOM,PIMPL,PEXPL,                    & 
-                      PTSTEP, TPFILE,HLUOUT,                        &
+                      PTSTEP, TPFILE,                               &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,PTHVREF,                               &
@@ -380,8 +378,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTOM         ! type of Third Order Mome
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                       ! Metric coefficients
@@ -538,7 +534,7 @@ IKE=KKU-JPVEXT_TURB*KKL
 !
 CALL PRANDTL(KKA,KKU,KKL,KRR,KRRI,OCLOSE_OUT,OTURB_FLX,        &
              HTURBDIM,                             &
-             TPFILE,HLUOUT,                        &
+             TPFILE,                               &
              PDXX,PDYY,PDZZ,PDZX,PDZY,             &
              PTHVREF,PLOCPEXNM,PATHETA,PAMOIST,    &
              PLM,PLEPS,PTKEM,PTHLM,PRM,PSVM,PSRCM, &
@@ -611,7 +607,7 @@ END IF
   CALL  TURB_VER_THERMO_FLUX(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
                         OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                         PIMPL,PEXPL,PTSTEP,                           &
-                        TPFILE,HLUOUT,                                &
+                        TPFILE,                                       &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                         PRHODJ,PTHVREF,                               &
                         PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -627,7 +623,7 @@ END IF
   CALL  TURB_VER_THERMO_CORR(KKA,KKU,KKL,KRR,KRRL,KRRI,               &
                         OCLOSE_OUT,OTURB_FLX,HTURBDIM,HTOM,           &
                         PIMPL,PEXPL,                                  &
-                        TPFILE,HLUOUT,                                &
+                        TPFILE,                                       &
                         PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,           &
                         PRHODJ,PTHVREF,                               &
                         PSFTHM,PSFRM,PSFTHP,PSFRP,                    &
@@ -656,7 +652,7 @@ END IF
 CALL  TURB_VER_DYN_FLUX(KKA,KKU,KKL,                                &
                       OCLOSE_OUT,OTURB_FLX,KRR,                     &
                       HTURBDIM,PIMPL,PEXPL,PTSTEP,                  &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,       &
                       PCOSSLOPE,PSINSLOPE,                          &
                       PRHODJ,                                       &
@@ -676,7 +672,7 @@ IF (SIZE(PSVM,4)>0)                                                 &
 CALL  TURB_VER_SV_FLUX(KKA,KKU,KKL,                                 &
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,PTSTEP,                           &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
@@ -721,7 +717,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPHI3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPHI3)
 !
 ! stores the Turbulent Schmidt number
 ! 
@@ -734,7 +730,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 4
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPSI3)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPSI3)
 !
 !
 ! stores the Turbulent Schmidt number for the scalar variables
@@ -749,7 +745,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     WRITE(TZFIELD%CMNHNAME, '("PSI_SV_",I3.3)') JSV
     TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
     TZFIELD%CCOMMENT   = 'X_Y_Z_'//TRIM(TZFIELD%CMNHNAME)
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZPSI_SV(:,:,:,JSV))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZPSI_SV(:,:,:,JSV))
   END DO
 !
 END IF

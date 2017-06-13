@@ -14,7 +14,7 @@
 INTERFACE
       SUBROUTINE RAIN_C2R2_KHKO(HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,   &
                             KMI,                                                &
-                            TPFILE, HLUOUT, OCLOSE_OUT,                         &
+                            TPFILE, OCLOSE_OUT,                                 &
                             PZZ, PRHODJ,                                        &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT, PRCT,                           &
@@ -41,8 +41,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
                                                     ! the tput FM fileoutp
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
@@ -93,7 +91,7 @@ END INTERFACE
 END MODULE MODI_RAIN_C2R2_KHKO
 !     ######################################################################
       SUBROUTINE RAIN_C2R2_KHKO (HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,  &
-                            KMI, TPFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ,       &
+                            KMI, TPFILE, OCLOSE_OUT, PZZ, PRHODJ,               &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT,  PRCT,                          &
                             PRRT, PTHM, PRCM, PPABSM,                           &
@@ -265,8 +263,6 @@ INTEGER,                  INTENT(IN)    :: KSPLITR ! Number of small time step
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step :XTSTEP in namelist
 INTEGER,                  INTENT(IN)    :: KMI     ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT  ! Conditional closure of 
                                                     ! the tput FM fileoutp
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ     ! Height (z)
@@ -604,7 +600,7 @@ INTEGER                           :: J1
 !   TZFIELD%NGRID      = 1
 !   TZFIELD%NTYPE      = TYPEREAL
 !   TZFIELD%NDIMS      = 3
-!   CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZCHEN)
+!   CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZCHEN)
 ! END IF
 !
 !-------------------------------------------------------------------------------
@@ -887,7 +883,7 @@ IF ( OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZZW1LOG)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZZW1LOG)
 END IF
 !
 !*       3.4   budget storage
@@ -1910,7 +1906,7 @@ DO JN = 1 , KSPLITR
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWSEDC)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWSEDC)
   !
   TZFIELD%CMNHNAME   = 'SEDFLUXR'
   TZFIELD%CSTDNAME   = ''
@@ -1921,7 +1917,7 @@ DO JN = 1 , KSPLITR
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZWSEDR)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWSEDR)
  END IF
 END DO
 !

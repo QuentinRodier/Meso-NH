@@ -18,7 +18,7 @@ INTERFACE
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
@@ -40,8 +40,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDZZ 
                                                       ! Metric coefficients
@@ -79,7 +77,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
                       OCLOSE_OUT,OTURB_FLX,HTURBDIM,                &
                       PIMPL,PEXPL,                                  &
                       PTSTEP,                                       &
-                      TPFILE,HLUOUT,                                &
+                      TPFILE,                                       &
                       PDZZ,PDIRCOSZW,                               &
                       PRHODJ,PWM,                                   &
                       PSFSVM,PSFSVP,                                &
@@ -314,8 +312,6 @@ CHARACTER*4,            INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
 REAL,                   INTENT(IN)   ::  PIMPL, PEXPL ! Coef. for temporal disc.
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time Step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   ::  PDZZ
                                                       ! Metric coefficients
@@ -462,7 +458,7 @@ DO JSV=1,ISV
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
     !
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZFLXZ)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZFLXZ)
   END IF
   !
   ! Storage in the LES configuration

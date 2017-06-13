@@ -12,7 +12,7 @@ INTERFACE
                 KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
-                PTSTEP,TPFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,    &
+                PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
@@ -55,8 +55,6 @@ REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   :: PDXX,PDYY,PDZZ,PDZX,PDZY
                                         ! metric coefficients
@@ -141,7 +139,7 @@ END MODULE MODI_TURB
       SUBROUTINE TURB(KKA,KKU,KKL,KMI,KRR,KRRL,KRRI,HLBCX,HLBCY,KSPLIT,KMODEL_CL, &
                 OCLOSE_OUT,OTURB_FLX,OTURB_DIAG,OSUBG_COND,ORMC01,    &
                 HTURBDIM,HTURBLEN,HTOM,HTURBLEN_CL,HCLOUD,PIMPL,      &
-                PTSTEP,TPFILE,HLUOUT,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,    &
+                PTSTEP,TPFILE,PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,           &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,PCOSSLOPE,PSINSLOPE,    &
                 PRHODJ,PTHVREF,PRHODREF,                              &
                 PSFTH,PSFRV,PSFSV,PSFU,PSFV,                          &
@@ -414,8 +412,6 @@ REAL,                   INTENT(IN)   ::  PIMPL        ! degree of implicitness
 CHARACTER (LEN=4),      INTENT(IN)   ::  HCLOUD       ! Kind of microphysical scheme
 REAL,                   INTENT(IN)   ::  PTSTEP       ! timestep 
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 !
 REAL, DIMENSION(:,:,:), INTENT(IN)   :: PDXX,PDYY,PDZZ,PDZX,PDZY
                                         ! metric coefficients
@@ -688,7 +684,7 @@ IF (KRRL >=1) THEN
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZATHETA)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZATHETA)
 ! 
     TZFIELD%CMNHNAME   = 'AMOIST'
     TZFIELD%CSTDNAME   = ''
@@ -699,7 +695,7 @@ IF (KRRL >=1) THEN
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZAMOIST)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZAMOIST)
   END IF
 !
 ELSE
@@ -888,7 +884,7 @@ ZFTHR(:,:,:IKTB) = 0.
 CALL TURB_VER(KKA,KKU,KKL,KRR, KRRL, KRRI,               &
           OCLOSE_OUT,OTURB_FLX,                          &
           HTURBDIM,HTOM,PIMPL,ZEXPL,                     &
-          PTSTEP,TPFILE,HLUOUT,                          &
+          PTSTEP,TPFILE,                                 &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PDIRCOSZW,PZZ,        &
           PCOSSLOPE,PSINSLOPE,                           &
           PRHODJ,PTHVREF,                                &
@@ -936,7 +932,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRRS(:,:,:,4),9,'VTURB_BU_RRI')
 IF (HTURBDIM=='3DIM') THEN
     CALL TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,        &
           HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,         &
-          TPFILE,HLUOUT,                                       &
+          TPFILE,                                              &
           PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                        &
           PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                       &
           PCOSSLOPE,PSINSLOPE,                                 &
@@ -998,7 +994,7 @@ CALL TKE_EPS_SOURCES(KKA,KKU,KKL,KMI,PTKET,ZLM,ZLEPS,ZDP,ZTRH,       &
                      PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,            &
                      PTSTEP,PIMPL,ZEXPL,                             &
                      HTURBLEN,HTURBDIM,                              &
-                     TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,            &
+                     TPFILE,OCLOSE_OUT,OTURB_DIAG,                   &
                      ZTP,PRTKES,PRTKEMS,PRTHLS,ZCOEF_DISS,PTR,PDISS  )
 !
 PDYP = ZDP
@@ -1035,7 +1031,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZLM)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZLM)
 !
   IF (KRR /= 0) THEN
 !
@@ -1050,7 +1046,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PTHLT)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PTHLT)
 !
 ! stores the conservative mixing ratio
 !
@@ -1063,7 +1059,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 3
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PRT(:,:,:,1))
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PRT(:,:,:,1))
    END IF
 END IF
 !
@@ -1662,7 +1658,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZLM)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZLM)
 ENDIF
 !
 ! Amplification of the mixing length when the criteria are verified
@@ -1687,7 +1683,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZCOEF_AMPL)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZCOEF_AMPL)
   !
   TZFIELD%CMNHNAME   = 'LM_CLOUD'
   TZFIELD%CSTDNAME   = ''
@@ -1698,7 +1694,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZLM_CLOUD)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZLM_CLOUD)
   !
 ENDIF
 !

@@ -8,8 +8,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         TPFILE, HLUOUT)
+      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, TPFILE)
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
@@ -22,7 +21,6 @@ INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing co
 INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
 LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
-CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT     ! Output-listing name for model n
 !
 END SUBROUTINE PASPOL
 !
@@ -30,8 +28,7 @@ END INTERFACE
 !
 END MODULE MODI_PASPOL
 !     ######spl
-      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, &
-                         TPFILE, HLUOUT)
+      SUBROUTINE PASPOL (PTSTEP, PSFSV, KLUOUT, KVERB, OCLOSE_OUT, TPFILE)
 !     ############################################################
 !
 !
@@ -109,7 +106,6 @@ INTEGER,                INTENT(IN)    :: KLUOUT     ! unit for output listing co
 INTEGER,                INTENT(IN)    :: KVERB      ! verbosity level
 LOGICAL,                INTENT(IN)    :: OCLOSE_OUT ! conditional closure of the OUTPUT FM-file
 TYPE(TFILEDATA),        INTENT(IN)    :: TPFILE     ! Output file
-CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT     ! Output-listing name for model n
 !
 !*      0.2    declarations of local variables
 !
@@ -591,7 +587,7 @@ IF (OCLOSE_OUT) THEN
     TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
     WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','ATC',JSV+NSV_PPBEG-1
     !
-    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZTEMPO)
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTEMPO)
   END DO
   !
   DEALLOCATE(ZTEMPO)

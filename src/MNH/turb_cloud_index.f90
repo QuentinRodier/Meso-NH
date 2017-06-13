@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,HLUOUT,                     &
+      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,                            &
                                   OTURB_DIAG,OCLOSE_OUT,KRRI,               &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
@@ -23,8 +23,6 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 !
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
@@ -47,7 +45,7 @@ END INTERFACE
 END MODULE MODI_TURB_CLOUD_INDEX
 !
 !     #######################
-      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,HLUOUT,                     &
+      SUBROUTINE TURB_CLOUD_INDEX(PTSTEP,TPFILE,                            &
                                   OTURB_DIAG,OCLOSE_OUT,KRRI,               &
                                   PRRS,PRM,PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY, &
                                   PCEI                                      )
@@ -108,8 +106,6 @@ IMPLICIT NONE
 !
 REAL,                   INTENT(IN)   ::  PTSTEP       ! Double Time step
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 LOGICAL,                INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
                                  ! diagnostic fields in the syncronous FM-file
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
@@ -266,7 +262,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZRVCI)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZRVCI)
   !
   TZFIELD%CMNHNAME   = 'GX_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -277,7 +273,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZG_RVCI(:,:,:,1))
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZG_RVCI(:,:,:,1))
   !
   TZFIELD%CMNHNAME   = 'GY_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -288,7 +284,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZG_RVCI(:,:,:,2))
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZG_RVCI(:,:,:,2))
   !
   TZFIELD%CMNHNAME   = 'GNORM_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -299,7 +295,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZGNORM_RVCI)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZGNORM_RVCI)
   !
   TZFIELD%CMNHNAME   = 'QX_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -310,7 +306,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZQ_RVCI(:,:,:,1))
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,1))
   !
   TZFIELD%CMNHNAME   = 'QY_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -321,7 +317,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZQ_RVCI(:,:,:,2))
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZQ_RVCI(:,:,:,2))
   !
   TZFIELD%CMNHNAME   = 'QNORM_RVCI'
   TZFIELD%CSTDNAME   = ''
@@ -332,7 +328,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,ZQNORM_RVCI)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZQNORM_RVCI)
   !
   TZFIELD%CMNHNAME   = 'CEI'
   TZFIELD%CSTDNAME   = ''
@@ -343,7 +339,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PCEI)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PCEI)
 END IF
 !
 END SUBROUTINE TURB_CLOUD_INDEX

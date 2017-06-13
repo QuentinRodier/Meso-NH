@@ -1216,7 +1216,7 @@ END IF
 !
 ZTIME1 = ZTIME2
 !
-IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, TPFILE, CLUOUT )
+IF (LPASPOL) CALL PASPOL(XTSTEP, ZSFSV, ILUOUT, NVERB, OCLOSE_OUT, TPFILE)
 !
 !
 !*        4b.  PASSIVE POLLUTANTS FOR MASS-FLUX SCHEME DIAGNOSTICS
@@ -1351,7 +1351,7 @@ END IF
    CALL TURB(1,IKU,1,IMI,NRR, NRRL, NRRI, CLBCX, CLBCY, 1,NMODEL_CLOUD,     &
       OCLOSE_OUT,LTURB_FLX,LTURB_DIAG,LSUBG_COND,LRMC01,                    &
       CTURBDIM,CTURBLEN,CTOM,CTURBLEN_CLOUD,CCLOUD,XIMPL,                   &
-      XTSTEP,TPFILE,CLUOUT,                                                 &
+      XTSTEP,TPFILE,                                                        &
       XDXX,XDYY,XDZZ,XDZX,XDZY,XZZ,                                         &
       XDIRCOSXW,XDIRCOSYW,XDIRCOSZW,XCOSSLOPE,XSINSLOPE,                    &
       XRHODJ,XTHVREF,XRHODREF,                                              &
@@ -1401,7 +1401,7 @@ IF (CSCONV == 'EDKF') THEN
      CALL MPPDB_CHECK3D(ZEXN,"physparam.7::ZEXN",PRECISION)
  !    
      CALL SHALLOW_MF_PACK(NRR,NRRL,NRRI, CMF_UPDRAFT, CMF_CLOUD, LMIXUV,  &
-                   OCLOSE_OUT,LMF_FLX,TPFILE,CLUOUT,ZTIME_LES_MF,         &
+                   OCLOSE_OUT,LMF_FLX,TPFILE,ZTIME_LES_MF,                &
                    XIMPL_MF, XTSTEP,                                      &
                    XDZZ, XZZ,                                             &
                    XRHODJ, XRHODREF, XPABST, ZEXN, ZSFTH, ZSFRV,          &

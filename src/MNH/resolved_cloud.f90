@@ -841,7 +841,7 @@ SELECT CASE ( HCLOUD )
 !
 !
     CALL RAIN_C2R2_KHKO ( HCLOUD, OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,     &
-                     TPFILE, HLUOUT, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF,  &
+                     TPFILE, OCLOSE_OUT, PZZ, PRHODJ, PRHODREF, PEXNREF,          &
                      PPABST, PTHT, PRT(:,:,:,1), PRT(:,:,:,2),  PRT(:,:,:,3),     &
                      PTHM, PRCM, PPABSM,                                          &
                      PW_ACT,PDTHRAD,PTHS, PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3), &

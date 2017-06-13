@@ -15,7 +15,7 @@ INTERFACE
 !
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
                       HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -45,8 +45,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                          ! Metric coefficients
@@ -113,7 +111,7 @@ END MODULE MODI_TURB_HOR_SPLT
 !     ################################################################
       SUBROUTINE TURB_HOR_SPLT(KSPLIT, KRR, KRRL, KRRI, PTSTEP,      &
                       HLBCX,HLBCY,OCLOSE_OUT,OTURB_FLX,OSUBG_COND,   &
-                      TPFILE,HLUOUT,                                 &
+                      TPFILE,                                        &
                       PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                       PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                       PCOSSLOPE,PSINSLOPE,                           &
@@ -291,8 +289,6 @@ LOGICAL,                  INTENT(IN)    ::  OTURB_FLX    ! switch to write the
 LOGICAL,                 INTENT(IN)  ::   OSUBG_COND ! Switch for sub-grid 
 !                                                    condensation
 TYPE(TFILEDATA),          INTENT(IN)    ::  TPFILE       ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    ::  HLUOUT       ! Output-listing name
-                                                         ! for model n
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PDXX, PDYY, PDZZ, PDZX, PDZY 
                                                          ! Metric coefficients
@@ -474,7 +470,7 @@ IF (KSPLIT>1 .AND. CPROGRAM=='MESONH') THEN
 ! compute the turbulent tendencies for the small time step
     CALL TURB_HOR(JSPLT, KRR, KRRL, KRRI, PTSTEP,                 &
                    OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                   TPFILE,HLUOUT,                                 &
+                   TPFILE,                                        &
                    PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                    PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                    PCOSSLOPE,PSINSLOPE,                           &
@@ -615,7 +611,7 @@ ELSE
 !
   CALL TURB_HOR(1, KRR, KRRL, KRRI,  PTSTEP,                   &
                 OCLOSE_OUT,OTURB_FLX,OSUBG_COND,               &
-                TPFILE,HLUOUT,                                 &
+                TPFILE,                                        &
                 PDXX,PDYY,PDZZ,PDZX,PDZY,PZZ,                  &
                 PDIRCOSXW,PDIRCOSYW,PDIRCOSZW,                 &
                 PCOSSLOPE,PSINSLOPE,                           &

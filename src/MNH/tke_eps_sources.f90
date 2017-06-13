@@ -17,7 +17,7 @@ INTERFACE
                       PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,                  &
                       PTSTEP,PIMPL,PEXPL,                                   &
                       HTURBLEN,HTURBDIM,                                    &
-                      TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,                  &
+                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                         &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS       )
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
@@ -39,8 +39,6 @@ CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
 CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),        INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                       ! model n
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -69,7 +67,7 @@ END MODULE MODI_TKE_EPS_SOURCES
                       PTRH,PRHODJ,PDZZ,PDXX,PDYY,PDZX,PDZY,PZZ,        &
                       PTSTEP,PIMPL,PEXPL,                              &
                       HTURBLEN,HTURBDIM,                               &
-                      TPFILE,HLUOUT,OCLOSE_OUT,OTURB_DIAG,             &
+                      TPFILE,OCLOSE_OUT,OTURB_DIAG,                    &
                       PTP,PRTKES,PRTKESM, PRTHLS,PCOEF_DISS,PTR,PDISS  )
 !     ##################################################################
 !
@@ -231,8 +229,6 @@ CHARACTER*4,             INTENT(IN)   ::  HTURBDIM     ! dimensionality of the
                                                        ! turbulence scheme
 CHARACTER*4,             INTENT(IN)   ::  HTURBLEN     ! kind of mixing length 
 TYPE(TFILEDATA),         INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),        INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                       ! model n
 LOGICAL,                 INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                        ! file opening
 LOGICAL,                 INTENT(IN)   ::  OTURB_DIAG   ! switch to write some
@@ -435,7 +431,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PDP)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PDP)
 !
 ! stores the thermal production 
 !
@@ -448,7 +444,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PTP)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PTP)
 !
 ! stores the whole turbulent transport
 !
@@ -461,7 +457,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PTR)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PTR)
 !
 ! stores the dissipation of TKE 
 !
@@ -474,7 +470,7 @@ IF ( OTURB_DIAG .AND. OCLOSE_OUT ) THEN
   TZFIELD%NGRID      = 1
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 3
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,HLUOUT,PDISS)
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,PDISS)
 END IF
 !
 ! Storage in the LES configuration of the Dynamic Production of TKE and
