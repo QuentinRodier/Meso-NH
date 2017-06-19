@@ -169,21 +169,22 @@ END MODULE MODI_INI_SEG_n
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_LUNIT
 USE MODD_CONF
-USE MODN_CONFZ
 USE MODD_CONF_n, ONLY : CSTORAGE_TYPE
-USE MODD_LUNIT_n, ONLY : CINIFILE_n=> CINIFILE,CINIFILEPGD_n=> CINIFILEPGD
-USE MODN_LUNIT_n
-USE MODD_PARAMETERS
+USE MODN_CONFZ
 USE MODD_DYN
-USE MODD_REF,   ONLY : LBOUSS
-USE MODD_IO_ll, ONLY : GSMONOPROC
+USE MODD_IO_ll,   ONLY : LIOCDF4,LLFIREAD,NVERB_FATAL,NVERB_WARNING,TFILEDATA
+USE MODD_LUNIT
+USE MODD_LUNIT_n, ONLY : CINIFILE_n=> CINIFILE,CINIFILEPGD_n=> CINIFILEPGD
 USE MODD_PARAM_n, ONLY : CSURF
+USE MODD_PARAMETERS
+USE MODD_REF,   ONLY : LBOUSS
 !
+USE MODE_FIELD
 USE MODE_FMREAD
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_POS
 !
 USE MODI_DEFAULT_DESFM_n
@@ -192,6 +193,7 @@ USE MODI_READ_EXSEG_n
 USE MODI_WRITE_DESFM_n
 !
 USE MODN_CONFIO, ONLY : NAM_CONFIO
+USE MODN_LUNIT_n
 !
 IMPLICIT NONE
 !
@@ -256,6 +258,7 @@ CHARACTER (LEN=4)  :: YSCONV
 CHARACTER (LEN=4)  :: YCLOUD
 CHARACTER (LEN=4)  :: YELEC
 CHARACTER (LEN=3)  :: YEQNSYS
+TYPE(TFILEDATA)    :: TZFILE
 !
 !-------------------------------------------------------------------------------
 !
@@ -348,49 +351,78 @@ IF (CPROGRAM=='MESONH') THEN
   HINIFILE=CINIFILE_n
   CALL FMOPEN_ll(HINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
 END IF
-
-CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
-
-IF (CPROGRAM=='MESONH') THEN
-  IF (IMASDEV > 49) THEN
-    YRECFM='COUPLING' 
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
-    IF (LCOUPLING) THEN
-    WRITE(ILUOUT,*) 'Error with the initial file'
-    WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
-    WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
-    WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
-    !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
-    ENDIF
-  ENDIF
-END IF
-
-IF (CPROGRAM=='SPAWN ') THEN
-  IF (IMASDEV > 49) THEN
-    YRECFM='COUPLING' 
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
-    IF (LCOUPLING) THEN
-    WRITE(ILUOUT,*) 'Error with the initial file'
-    WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
-    WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
-    WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
-    !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    ENDIF
-  ENDIF
-END IF
-
 !
 !-------------------------------------------------------------------------------
 !
-!*      4.    READ in the LFI file SOME VARIABLES of MODD_CONF
+!*      4.    READ DESFM FILE
+!             ---------------
+!
+YDESFM=TRIM(ADJUSTL(HINIFILE))//'.des'
+!
+CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
+                GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
+                GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
+                GDEPOS_DST, GCHTRANS, GORILAM,                              &
+                GDEPOS_AER, GLG, GPASPOL, &
+#ifdef MNH_FOREFIRE
+                GFOREFIRE, &
+#endif
+                GLNOX_EXPLICIT,                                             &
+                GCONDSAMP, IRIMX,IRIMY,ISV,       &
+                YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
+!
+!-------------------------------------------------------------------------------
+!
+!*      5.    Initialize fieldlist
+!             --------------------
+!
+IF (KMI==1) THEN !Do this only 1 time
+  IF (CPROGRAM=='SPAWN ') THEN
+    CALL INI_FIELD_LIST(2)
+  ELSE IF (CPROGRAM/='REAL  ' .AND. CPROGRAM/='IDEAL ' ) THEN
+    CALL INI_FIELD_LIST()
+  END IF
+  IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  ' .OR. CPROGRAM=='MESONH') THEN
+    CALL INI_FIELD_SCALARS()
+  END IF
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*      6.    READ in the LFI file SOME VARIABLES of MODD_CONF
 !             ------------------------------------------------
+!
+TZFILE%CNAME  = HINIFILE
+!TZFILE%CTYPE  = ''
+CALL PRINT_MSG(NVERB_WARNING,'IO','INI_SEG_n','filetype not (yet) set')
+IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
+  TZFILE%CFORMAT = 'NETCDF4'
+ELSE
+  TZFILE%CFORMAT   = 'LFI'
+  TZFILE%NLFINPRAR = 0
+ENDIF
+TZFILE%CMODE    = 'READ'
+TZFILE%NLFITYPE = 2
+TZFILE%NLFIVERB = NVERB
+CALL IO_READ_FIELD(TZFILE,'MASDEV',IMASDEV)
+!
+IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
+  IF (IMASDEV > 49) THEN
+    YRECFM='COUPLING' 
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,LCOUPLING,IGRID,ILENCH,YCOMMENT,IRESP)
+    IF (LCOUPLING) THEN
+      WRITE(ILUOUT,*) 'Error with the initial file'
+      WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
+      WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
+      WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
+      !callabortstop
+      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+      CALL ABORT
+      STOP
+    ENDIF
+  ENDIF
+END IF
 !
 ! Read the storage type
   YRECFM = 'STORAGE_TYPE'
@@ -444,27 +476,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*      5.    READ DESFM FILE
-!             ---------------
-!
-YDESFM=TRIM(ADJUSTL(HINIFILE))//'.des'
-!
-CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
-                GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
-                GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
-                GDEPOS_DST, GCHTRANS, GORILAM,                              &
-                GDEPOS_AER, GLG, GPASPOL, &
-#ifdef MNH_FOREFIRE
-                GFOREFIRE, &
-#endif
-                GLNOX_EXPLICIT,                                             &
-                GCONDSAMP, IRIMX,IRIMY,ISV,       &
-                YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
-!
-!
-!-------------------------------------------------------------------------------
-!
-!*      6.    READ EXSEG FILE
+!*      7.    READ EXSEG FILE
 !             ---------------
 !   We pass by arguments the informations read in DESFM descriptor to the
 ! routine which read related informations in the EXSEG descriptor in order to 
