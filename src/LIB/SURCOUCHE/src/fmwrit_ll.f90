@@ -692,6 +692,7 @@ CONTAINS
     INTEGER                                  :: IERR
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
+    INTEGER                                  :: ISIZEMAX
     REAL,DIMENSION(:),POINTER                :: ZFIELDP
     LOGICAL                                  :: GALLOC
     !
@@ -724,6 +725,17 @@ CONTAINS
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,PFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
        ELSE ! multiprocessor execution
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
           ELSE
@@ -989,6 +1001,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:),POINTER              :: ZFIELDP
@@ -1042,6 +1055,17 @@ CONTAINS
           END IF
        ELSE ! multiprocessor execution
           CALL SECOND_MNH2(T0)
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              ! I/O processor case
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
@@ -1555,6 +1579,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
@@ -1626,6 +1651,17 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
           END IF
        ELSEIF ( (TZFD%nb_procio .eq. 1 ) .OR. ( YDIR == '--' ) ) THEN  ! multiprocessor execution & 1 proc IO
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           ! write 3D field in 1 time = output for graphique
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
@@ -1653,6 +1689,16 @@ CONTAINS
                & %COMM,IERR)
           !
        ELSE ! multiprocessor execution & // IO
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
           !
           !JUAN BG Z SLIDE 
           !
@@ -2028,6 +2074,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:),POINTER          :: ZFIELDP
@@ -2066,6 +2113,17 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
           END IF
        ELSE
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X4','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
           ELSE
@@ -2261,6 +2319,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:,:),POINTER        :: ZFIELDP
@@ -2299,6 +2358,17 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
           END IF
        ELSE
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X5','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
           ELSE
@@ -2476,6 +2546,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:,:,:),POINTER      :: ZFIELDP
@@ -2504,6 +2575,17 @@ CONTAINS
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,PFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,PFIELD,IRESP)
        ELSE
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_X6','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
           ELSE
@@ -2877,6 +2959,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:),POINTER             :: IFIELDP
@@ -2904,6 +2987,17 @@ CONTAINS
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,KFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,KFIELD,IRESP)
        ELSE ! multiprocessor execution
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_N1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
           ELSE
@@ -3096,6 +3190,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:,:),POINTER           :: IFIELDP
@@ -3142,6 +3237,17 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,KFIELD,IRESP)
           END IF
        ELSE ! multiprocessor execution
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_N2','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           CALL SECOND_MNH2(T0)
           IF (ISP == TZFD%OWNER)  THEN
              ! I/O processor case
@@ -3242,6 +3348,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:,:,:),POINTER         :: IFIELDP
@@ -3285,6 +3392,17 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,KFIELD,IRESP)
           END IF
        ELSE ! multiprocessor execution
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_N3','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              ! I/O processor case
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
@@ -3639,6 +3757,7 @@ CONTAINS
     CHARACTER(LEN=2)                         :: YDIR     ! field form
     CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
+    INTEGER                                  :: ISIZEMAX
     TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     LOGICAL,DIMENSION(:),POINTER             :: GFIELDP
@@ -3666,6 +3785,17 @@ CONTAINS
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFIELD,TZFD%FLU,OFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TZFD%CDF,OFIELD,IRESP)
        ELSE ! multiprocessor execution
+#ifndef MNH_INT8
+          CALL MPI_ALLREDUCE(SIZE(OFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TZFD%COMM,IRESP)
+#else
+          CALL MPI_ALLREDUCE(SIZE(OFIELD),ISIZEMAX,1,MPI_INTEGER8,MPI_MAX,TZFD%COMM,IRESP)
+#endif
+          IF (ISIZEMAX==0) THEN
+             CALL PRINT_MSG(NVERB_INFO,'IO','IO_WRITE_FIELD_BYFIELD_L1','ignoring variable with a zero size ('//TRIM(YRECFM)//')')
+             IF (PRESENT(KRESP)) KRESP=0
+             RETURN
+          END IF
+
           IF (ISP == TZFD%OWNER)  THEN
              CALL ALLOCBUFFER_ll(GFIELDP,OFIELD,YDIR,GALLOC)
           ELSE
