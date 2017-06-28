@@ -28,6 +28,7 @@ MODULE MODD_SURF_PAR
 !!    -------------
 !!      Original       02/2004
 !!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
+!!      J.Escobar     06/2017  for REAL4 put greater value for XUNDEF=1.e+9  <-> elsif problem with X/YHAT value == XUNDEF
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -45,7 +46,7 @@ REAL,    PARAMETER :: XUNDEF = 1.E+20
 #ifdef MNH_MPI_DOUBLE_PRECISION
 REAL,    PARAMETER :: XUNDEF = 1.E+20! HUGE(XUNDEF) ! Z'7FFFFFFFFFFFFFFF' !  undefined value
 #else
-REAL,    PARAMETER :: XUNDEF = 1.E+6 ! HUGE(XUNDEF) ! Z'7FBFFFFF' ! undefined value
+REAL,    PARAMETER :: XUNDEF = 1.E+9 ! HUGE(XUNDEF) ! Z'7FBFFFFF' ! undefined value
 #endif
 #endif
 INTEGER, PARAMETER :: NUNDEF = 1E+9   !  HUGE(NUNDEF) !  undefined value
