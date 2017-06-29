@@ -208,6 +208,7 @@ END MODULE MODI_RADIATIONS
 !!      C.Lac       11/2015   Correction on aerosols
 !!      B.Vie            /13  LIMA
 !!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
+!!      J.Escobar 29/06/2017  : Check if Pressure Decreasing with height <-> elsif PB & STOP 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -248,6 +249,8 @@ USE MODD_PARAM_LIMA
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
+!
+USE MODI_SUM_ll , ONLY : GMINLOC_ll , MIN_ll
 !  
 IMPLICIT NONE
 !
@@ -619,6 +622,11 @@ INTEGER :: ISWB ! number of SW spectral bands (between radiations and surface sc
 INTEGER :: JSWB ! loop on SW spectral bands
 INTEGER :: JAE  ! loop on aerosol class
 !
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZDZPABST
+REAL :: ZMINVAL
+INTEGER, DIMENSION(3) :: IMINLOC
+INTEGER :: IINFO_ll
+!
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -637,6 +645,22 @@ IKUP   = IKE-JPVEXT+1
 ! 
 ISWB   = SIZE(PSRFSWD_DIR,3)
 !
+!-------------------------------------------------------------------------------
+!*       1.1   CHECK PRESSURE DECREASING
+!              -------------------------
+ZDZPABST(:,:,1:IKU-1) = PPABST(:,:,1:IKU-1) - PPABST(:,:,2:IKU)
+ZDZPABST(:,:,IKU) = ZDZPABST(:,:,IKU-1)
+!
+ZMINVAL=MIN_ll(ZDZPABST,IINFO_ll)
+!
+IF ( ZMINVAL <= 0.0 ) THEN
+   CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+   IMINLOC=GMINLOC_ll( ZDZPABST )
+   WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
+   WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
+   CALL FLUSH(ILUOUT)
+   STOP ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST < 0.0  '
+ENDIF 
 !-------------------------------------------------------------------------------
 !
 !*       2.    INITIALIZES THE MEAN-LAYER VARIABLES
