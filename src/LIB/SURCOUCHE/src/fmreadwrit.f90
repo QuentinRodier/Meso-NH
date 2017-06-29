@@ -272,14 +272,15 @@ IMPLICIT NONE
 PRIVATE
 !
 INTERFACE IO_READ_FIELD_LFI
-   MODULE PROCEDURE IO_READ_FIELD_LFI_N0
+   MODULE PROCEDURE IO_READ_FIELD_LFI_N0, &
+                    IO_READ_FIELD_LFI_L0
 !                     IO_READ_FIELD_LFI_X0,IO_READ_FIELD_LFI_X1, &
 !                     IO_READ_FIELD_LFI_X2,IO_READ_FIELD_LFI_X3, &
 !                     IO_READ_FIELD_LFI_X4,IO_READ_FIELD_LFI_X5, &
 !                     IO_READ_FIELD_LFI_X6,                       &
 !                     IO_READ_FIELD_LFI_N1, &
 !                     IO_READ_FIELD_LFI_N2,IO_READ_FIELD_LFI_N3, &
-!                     IO_READ_FIELD_LFI_L0,IO_READ_FIELD_LFI_L1, &
+!                     IO_READ_FIELD_LFI_L1, &
 !                     IO_READ_FIELD_LFI_C0,                       &
 !                     IO_READ_FIELD_LFI_T0
 END INTERFACE IO_READ_FIELD_LFI
@@ -319,14 +320,15 @@ INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
 INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
 INTEGER                                  :: ILENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                  :: GGOOD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_LFI_N0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
 !
 ILENG = 1
 !
-CALL IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP)
+CALL IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP,GGOOD)
 !
-IF (IRESP==0) KFIELD = IWORK(IWORK(2)+3)
+IF (GGOOD) KFIELD = IWORK(IWORK(2)+3)
 !
 KRESP=IRESP
 !
@@ -335,7 +337,56 @@ IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 END SUBROUTINE IO_READ_FIELD_LFI_N0
 !
 !
-SUBROUTINE IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,KLENG,KWORK,KTOTAL,KRESP)
+SUBROUTINE IO_READ_FIELD_LFI_L0(TPFILE,TPFIELD,OFIELD,KRESP)
+USE MODD_FM
+USE MODD_CONFZ, ONLY : NZ_VERB
+USE MODE_MSG
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA), INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),INTENT(INOUT) :: TPFIELD
+LOGICAL,         INTENT(OUT)   :: OFIELD  ! array containing the data field
+INTEGER,         INTENT(OUT)   :: KRESP   ! return-code if problems occured
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER                                  :: ILENG
+INTEGER                                  :: IFIELD
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                  :: GGOOD
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_LFI_L0',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = 1
+!
+CALL IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP,GGOOD)
+!
+IF (GGOOD) THEN
+  IFIELD = IWORK(IWORK(2)+3)
+  IF (IFIELD==0) THEN
+    OFIELD = .FALSE.
+  ELSE IF (IFIELD==1) THEN
+    OFIELD = .TRUE.
+  ELSE
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_LFI_L0',TRIM(TPFILE%CNAME)//': invalid value in file for ' &
+                                                           //TRIM(TPFIELD%CMNHNAME))
+    OFIELD = .TRUE.
+    IRESP = -112
+  END IF
+END IF
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_READ_FIELD_LFI_L0
+!
+!
+SUBROUTINE IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,KLENG,KWORK,KTOTAL,KRESP,OGOOD)
 !
 TYPE(TFILEDATA),                         INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),                        INTENT(INOUT) :: TPFIELD
@@ -343,6 +394,7 @@ INTEGER,                                 INTENT(IN)    :: KLENG
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE,INTENT(OUT)   :: KWORK
 INTEGER(KIND=LFI_INT),                   INTENT(OUT)   :: KTOTAL
 INTEGER(KIND=LFI_INT),                   INTENT(OUT)   :: KRESP
+LOGICAL,                                 INTENT(OUT)   :: OGOOD
 !
 INTEGER                      :: IROW,J
 INTEGER,DIMENSION(JPXKRK)    :: ICOMMENT
@@ -353,6 +405,8 @@ CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=JPXKRK)        :: YCOMMENT
 CHARACTER(LEN=12)            :: YRESP
 !
+OGOOD = .TRUE.
+!
 !*      2.a   LET'S GET SOME INFORMATION ON THE DESIRED ARTICLE
 !
 INUMBR = TPFILE%NLFIFLU
@@ -362,16 +416,19 @@ IF (KRESP.NE.0) THEN
   WRITE(YRESP, '( I12 )') KRESP
   YMSG = 'RESP='//TRIM(ADJUSTL(YRESP))//' in call to LFINFO when reading '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_LFI',YMSG)
+  OGOOD = .FALSE.
   RETURN
 ELSEIF (KTOTAL.EQ.0) THEN
   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_LFI',TRIM(TPFILE%CNAME)//': record length is zero for ' &
                                                                   //TRIM(TPFIELD%CMNHNAME))
   KRESP=-47
+  OGOOD = .FALSE.
   RETURN
 ELSEIF (KTOTAL.GT.JPXFIE) THEN
   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_LFI',TRIM(TPFILE%CNAME)// &
                                ': record length exceeds the maximum value in FM for '//TRIM(TPFIELD%CMNHNAME))
   KRESP=-48
+  OGOOD = .FALSE.
   RETURN
 ENDIF
 !
@@ -384,6 +441,7 @@ IF (KRESP.NE.0) THEN
   WRITE(YRESP, '( I12 )') KRESP
   YMSG = 'RESP='//TRIM(ADJUSTL(YRESP))//' in call to LFILEC when reading '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_LFI',YMSG)
+  OGOOD = .FALSE.
   RETURN
 ENDIF
 !
@@ -399,6 +457,7 @@ IF (KTOTAL.NE.IROW) THEN
                                      //' (expected: '//TRIM(ADJUSTL(YRECLENGTH_MEM))//                            &
                                      ', in file: '   //TRIM(ADJUSTL(YRECLENGTH_FILE))//')')
   KRESP=-63
+  OGOOD = .FALSE.
   RETURN
 ENDIF
 !
@@ -417,9 +476,10 @@ ENDIF
 YCOMMENT=''
 SELECT CASE (ICOMLEN)
 CASE(:-1)
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_LFI',TRIM(TPFILE%CNAME)//': comment length is negative for ' &
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_LFI',TRIM(TPFILE%CNAME)//': comment length is negative for ' &
                                                                   //TRIM(TPFIELD%CMNHNAME))
   KRESP=-58
+  OGOOD = .FALSE.
   RETURN
 CASE(0)
   KRESP = 0
