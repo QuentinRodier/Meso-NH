@@ -10,12 +10,14 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
+       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+!
+       USE MODD_IO_ll, ONLY : TFILEDATA
 !
        INTEGER, INTENT(IN)              :: KMI      ! Model index 
        CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
        !  of nested models
-       CHARACTER (LEN=28), INTENT(IN)   :: HINIFILE ! name of
+       TYPE(TFILEDATA),    INTENT(IN)   :: TPINIFILE    !Initial file
        CHARACTER (LEN=28), INTENT(IN)   :: HINIFILEPGD
 !
 END SUBROUTINE INI_MODEL_n
@@ -24,7 +26,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_MODEL_n
 !     ######################################################
-      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
+      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
 !     ######################################################
 !
 !!****  *INI_MODEL_n* - routine to initialize the nested model _n
@@ -417,7 +419,7 @@ USE MODD_ADVFRC_n
 USE MODD_RELFRC_n
 USE MODD_2D_FRC
 USE MODD_IO_SURF_MNH, ONLY : IO_SURF_MNH_MODEL
-USE MODD_IO_ll,       ONLY : LIOCDF4,LLFIOUT
+USE MODD_IO_ll,       ONLY : LIOCDF4,LLFIOUT,TFILEDATA
 !
 USE MODD_CH_PRODLOSSTOT_n
 USE MODI_CH_INIT_PRODLOSSTOT_n
@@ -438,8 +440,7 @@ INTEGER, INTENT(IN)              :: KMI      ! Model Index
 
 CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
                                              !  of nested models
-CHARACTER (LEN=28),  INTENT(IN)   :: HINIFILE ! name of
-                                             ! the initial file
+TYPE(TFILEDATA),    INTENT(IN)   :: TPINIFILE    !Initial file
 CHARACTER (LEN=28), INTENT(IN)   :: HINIFILEPGD       
 !
 !*       0.2   declarations of local variables
@@ -447,9 +448,9 @@ CHARACTER (LEN=28), INTENT(IN)   :: HINIFILEPGD
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
 INTEGER             :: ININAR  ! File management variable
-INTEGER             :: IMASDEV ! version of MESOHN in the input file
+INTEGER             :: IMASDEV ! version of MESONH in the input file
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
-CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
+CHARACTER(LEN=2)    :: YDIR    ! Type  of the data field in LFIFM file
 INTEGER             :: IGRID   ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH  ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT!comment string in LFIFM file
@@ -539,10 +540,10 @@ NULLIFY(TZINITHALO3D_ll)
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CLUOUT = HLUOUT
-CINIFILE=HINIFILE
+CINIFILE=TPINIFILE%CNAME
 CINIFILEPGD=HINIFILEPGD
 !
-CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !-------------------------------------------------------------------------------
 !
 !*       2.   END OF READING
@@ -550,13 +551,11 @@ CALL FMREAD(HINIFILE,'MASDEV',HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
 !*       2.1  Read number of forcing fields
 !
 IF (LFORCING) THEN ! Retrieve the number of time-dependent forcings.
-  YRECFM='FRC'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NFRC,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'FRC',NFRC,IRESP)
   IF ( (IRESP /= 0) .OR. (NFRC <=0) ) THEN
     WRITE(ILUOUT,'(A/A)') &
      "INI_MODEL_n ERROR: you want to read forcing variables from FMfile", &
-     "                   but no fields have been found by FMREAD"
+     "                   but no fields have been found by IO_READ_FIELD"
 !callabortstop
     CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
     CALL ABORT
@@ -567,13 +566,11 @@ END IF
 ! Modif PP for time evolving adv forcing
   IF ( L2D_ADV_FRC ) THEN ! Retrieve the number of time-dependent forcings.
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ENTER ADV_FORCING"
-    YRECFM='NADVFRC1'
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NADVFRC,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TPINIFILE,'NADVFRC1',NADVFRC,IRESP)
     IF ( (IRESP /= 0) .OR. (NADVFRC <=0) ) THEN
       WRITE(ILUOUT,'(A/A)') &
       "INI_MODELn ERROR: you want to read forcing ADV variables from FMfile", &
-      "                   but no fields have been found by FMREAD"
+      "                   but no fields have been found by IO_READ_FIELD"
     !callabortstop
     CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
     CALL ABORT
@@ -584,13 +581,11 @@ END IF
 !
 IF ( L2D_REL_FRC ) THEN ! Retrieve the number of time-dependent forcings.
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ENTER REL_FORCING"
-    YRECFM='NRELFRC1'
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NRELFRC,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TPINIFILE,'NRELFRC1',NRELFRC,IRESP)
     IF ( (IRESP /= 0) .OR. (NRELFRC <=0) ) THEN
       WRITE(ILUOUT,'(A/A)') &
       "INI_MODELn ERROR: you want to read forcing REL variables from FMfile", &
-      "                   but no fields have been found by FMREAD"
+      "                   but no fields have been found by IO_READ_FIELD"
     !callabortstop
     CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
     CALL ABORT
@@ -602,10 +597,8 @@ END IF
 !
 IKU=NKMAX+2*JPVEXT
 !
-YRECFM = 'ZHAT'
 ALLOCATE(XZHAT(IKU))
- YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XZHAT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'ZHAT',XZHAT)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -1580,7 +1573,7 @@ END IF
 !*       7.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,HINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,         &
+CALL SET_GRID(KMI,TPINIFILE%CNAME,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,  &
               XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4,           &
               XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4,           &
               NXOR_ALL(KMI),NYOR_ALL(KMI),NXEND_ALL(KMI),NYEND_ALL(KMI), &
@@ -1639,7 +1632,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
+CALL READ_FIELD(TPINIFILE%CNAME,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,           &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
@@ -1670,10 +1663,10 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,HINIFILE,HLUOUT,                                &
-             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,                 &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,                      &
-             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ              )
+CALL SET_REF(KMI,TPINIFILE%CNAME,HLUOUT,            &
+             XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
+             XREFMASS,XMASS_O_PHI0,XLINMASS,        &
+             XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )
 !
 !-------------------------------------------------------------------------------
 !
@@ -1906,7 +1899,7 @@ IF (CRAD   /= 'NONE') THEN
   ELSE
     GINIRAD  =.FALSE.
   END IF
-  CALL INI_RADIATIONS(HINIFILE,HLUOUT,GINIRAD,TDTCUR,TDTEXP,XZZ, &
+  CALL INI_RADIATIONS(TPINIFILE%CNAME,HLUOUT,GINIRAD,TDTCUR,TDTEXP,XZZ, &
                       XDXX, XDYY,                         &
                       XSINDEL,XCOSDEL,XTSIDER,XCORSOL,    &
                       XSLOPANG,XSLOPAZI,                  &
@@ -1963,7 +1956,7 @@ ALLOCATE(ZEMIS  (IIU,IJU))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
 IF (IMASDEV>=46) THEN
-  CALL FMREAD(HINIFILE,'SURF',HLUOUT,'--',CSURF,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'SURF',CSURF)
 ELSE
   CSURF = "EXTE"
 END IF
@@ -1983,7 +1976,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
     ENDIF
   ELSE
   ! case after a spawning
-    CINIFILEPGD = HINIFILE
+    CINIFILEPGD = TPINIFILE%CNAME
   END IF
   !
   CALL GOTO_SURFEX(KMI)
@@ -2036,7 +2029,7 @@ DEALLOCATE(ZCO2)
 !* in a RESTART case, reads surface radiative quantities in the MESONH file
 !
 IF (CRAD   == 'ECMW' .AND. CGETRAD=='READ') THEN
-  CALL INI_SURF_RAD(HINIFILE, CLUOUT, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD)
+  CALL INI_SURF_RAD(TPINIFILE%CNAME, CLUOUT, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD)
 END IF
 !
 !
@@ -2067,10 +2060,10 @@ IF (CRAD   == 'ECMW') THEN
       ZBARE(:,:) = 0.
     END IF
 !
-    CALL INI_RADIATIONS_ECMWF (HINIFILE,HLUOUT,                                           &
-                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,          &
-                               CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB,CAER,NAER,NSTATM,          &
-                               XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND              )
+    CALL INI_RADIATIONS_ECMWF (TPINIFILE%CNAME,HLUOUT,                                 &
+                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,       &
+                               CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB,CAER,NAER,NSTATM,       &
+                               XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND )
 !
     DEALLOCATE(ZSEA,ZTOWN,ZBARE)
     ALLOCATE (XAER_CLIM(SIZE(XAER,1),SIZE(XAER,2),SIZE(XAER,3),SIZE(XAER,4)))
@@ -2100,14 +2093,14 @@ IF (CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') THEN
   IF (NVERB>=10) THEN
     WRITE(ILUOUT,*) 'XDTCONV has been set to : ',XDTCONV
   END IF
-  CALL INI_DEEP_CONVECTION (HINIFILE,HLUOUT,GINIDCONV,TDTCUR,        &
-                           NCOUNTCONV,XDTHCONV,XDRVCONV,XDRCCONV,    &
-                           XDRICONV,XPRCONV,XPRSCONV,XPACCONV,       &
+  CALL INI_DEEP_CONVECTION (TPINIFILE%CNAME,HLUOUT,GINIDCONV,TDTCUR,         &
+                           NCOUNTCONV,XDTHCONV,XDRVCONV,XDRCCONV,            &
+                           XDRICONV,XPRCONV,XPRSCONV,XPACCONV,               &
                            XUMFCONV,XDMFCONV,XMFCONV,XPRLFLXCONV,XPRSFLXCONV,&
-                           XCAPE,NCLTOPCONV,NCLBASCONV,              &
-                           TDTDCONV, CGETSVCONV, XDSVCONV,           &
-                           LCH_CONV_LINOX, XIC_RATE, XCG_RATE,       &
-                           XIC_TOTAL_NUMBER, XCG_TOTAL_NUMBER        )
+                           XCAPE,NCLTOPCONV,NCLBASCONV,                      &
+                           TDTDCONV, CGETSVCONV, XDSVCONV,                   &
+                           LCH_CONV_LINOX, XIC_RATE, XCG_RATE,               &
+                           XIC_TOTAL_NUMBER, XCG_TOTAL_NUMBER                )
 
 END IF
 !
@@ -2162,9 +2155,9 @@ DEALLOCATE(XSPOWATM)
 !*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
-CALL INI_AIRCRAFT_BALLOON(HINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                          IKU,CTURB=="TKEL" ,                                 &
-                          XLATORI, XLONORI                                    )
+CALL INI_AIRCRAFT_BALLOON(TPINIFILE%CNAME,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
+                          IKU,CTURB=="TKEL" ,                                        &
+                          XLATORI, XLONORI                                           )
 !
 !-------------------------------------------------------------------------------
 !
