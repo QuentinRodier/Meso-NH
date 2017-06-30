@@ -13,14 +13,14 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_SIZE_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
+SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
 !
-       INTEGER, INTENT(IN)              :: KMI      ! Model Index 
-       CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-       !  of nested models
-       CHARACTER (LEN=*),  INTENT(IN)   :: HINIFILE ! name of
-                                             ! the initial file
-       CHARACTER (LEN=*),  INTENT(IN)   :: HINIFILEPGD                                      
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+INTEGER,            INTENT(IN)    :: KMI          !Model Index
+CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
        END SUBROUTINE INI_SIZE_n
 !
@@ -28,9 +28,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SIZE_n
 !-----------------------------------------------------------------
-!     ##########################################
-      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD)
-!     ##########################################
+!     #######################################################
+      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+!     #######################################################
 !
 !!
 !!****  *INI_SIZE_n* - routine to initialize the sizes ratio positions of nested model _n
@@ -118,7 +118,7 @@ USE MODD_NESTING, ONLY: CMY_NAME, CDAD_NAME, NDAD, NDXRATIO_ALL, NDYRATIO_ALL, &
 USE MODD_DIM_n, ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 USE MODD_LBC_n, ONLY: CLBCX, CLBCY
 USE MODD_LUNIT_n, ONLY: CLUOUT, CINIFILE,CINIFILEPGD
-USE MODD_IO_ll,   ONLY : GSMONOPROC
+USE MODD_IO_ll,   ONLY : GSMONOPROC, TFILEDATA
 !
 USE MODE_ll
 USE MODE_IO_ll
@@ -135,22 +135,15 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-INTEGER, INTENT(IN)              :: KMI      ! Model Index 
-CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-                                             !  of nested models
-CHARACTER (LEN=*),  INTENT(IN)   :: HINIFILE ! name of
-                                             ! the initial file
-CHARACTER (LEN=*),  INTENT(IN)   :: HINIFILEPGD                                                                                           
+INTEGER,            INTENT(IN)    :: KMI          !Model Index
+CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
 !*       0.2   declarations of local variables
 !
 INTEGER             :: IRESP   ! Return code of FM routines 
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
-CHARACTER(LEN=2)    :: YDIR    ! Type  of the data field in LFIFM file
-INTEGER             :: IGRID   ! C-grid indicator in LFIFM file 
-INTEGER             :: ILENCH  ! Length of comment string in LFIFM file
-CHARACTER (LEN=100) :: YCOMMENT! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM  ! Name of the desired field in LFIFM file
 INTEGER             :: IJPHEXT
 !
 !-------------------------------------------------------------------------------
@@ -160,7 +153,7 @@ INTEGER             :: IJPHEXT
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CLUOUT = HLUOUT
-CINIFILE=HINIFILE
+CINIFILE=TPINIFILE%CNAME
 CINIFILEPGD=HINIFILEPGD
 !
 !-------------------------------------------------------------------------------
@@ -170,22 +163,18 @@ CINIFILEPGD=HINIFILEPGD
 !
 !*       2.0   Retrieve DAD_NAME and MY_NAME to check the DAD model identity
 !
-YRECFM = 'MY_NAME'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,CMY_NAME(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'MY_NAME',CMY_NAME(KMI),IRESP)
 IF (IRESP /= 0)  THEN
-  WRITE(ILUOUT,FMT=9000) YRECFM,IRESP
+  WRITE(ILUOUT,FMT=9000) 'MY_NAME',IRESP
 !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
 END IF
 !
-YRECFM = 'DAD_NAME'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,CDAD_NAME(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'DAD_NAME',CDAD_NAME(KMI),IRESP)
 IF (IRESP /= 0)  THEN
-  WRITE(ILUOUT,FMT=9000) YRECFM,IRESP
+  WRITE(ILUOUT,FMT=9000) 'DAD_NAME',IRESP
 !callabortstop
   CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
   CALL ABORT
@@ -215,26 +204,15 @@ END IF
 !*       3.1  Read dimensions in initial file and initialize  subdomain 
 !             dimensions and parallel variables
 !
-YRECFM='IMAX'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NIMAX_ll,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='JMAX'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NJMAX_ll,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='KMAX'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,NKMAX,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='JPHEXT'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,IJPHEXT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'IMAX',  NIMAX_ll)
+CALL IO_READ_FIELD(TPINIFILE,'JMAX',  NJMAX_ll)
+CALL IO_READ_FIELD(TPINIFILE,'KMAX',  NKMAX)
+CALL IO_READ_FIELD(TPINIFILE,'JPHEXT',IJPHEXT)
 !
 IF ( IJPHEXT .NE. JPHEXT ) THEN
    WRITE(ILUOUT,FMT=*) ' INI_SIZE_N : JPHEXT in namelist NAM_CONF ( or default or .des value )&
         & JPHEXT=',JPHEXT
-   WRITE(ILUOUT,FMT=*)' different from LFI file=',HINIFILE ,' value JPHEXT=',IJPHEXT
+   WRITE(ILUOUT,FMT=*)' different from LFI file=',TPINIFILE%CNAME ,' value JPHEXT=',IJPHEXT
    WRITE(ILUOUT,FMT=*) '-> JOB ABORTED'
    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
    CALL ABORT   
@@ -261,11 +239,10 @@ ENDIF
 !   read the nested model location in its father's grid
 !   and compute the coordinates of the corner points
 IF (LEN_TRIM(CDAD_NAME(KMI))>0) THEN
-  YDIR='--'
-  CALL FMREAD(HINIFILE,'DXRATIO',HLUOUT,YDIR,NDXRATIO_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
-  CALL FMREAD(HINIFILE,'DYRATIO',HLUOUT,YDIR,NDYRATIO_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
-  CALL FMREAD(HINIFILE,'XOR',HLUOUT,YDIR,NXOR_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
-  CALL FMREAD(HINIFILE,'YOR',HLUOUT,YDIR,NYOR_ALL(KMI),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'DXRATIO',NDXRATIO_ALL(KMI))
+  CALL IO_READ_FIELD(TPINIFILE,'DYRATIO',NDYRATIO_ALL(KMI))
+  CALL IO_READ_FIELD(TPINIFILE,'XOR',NXOR_ALL(KMI))
+  CALL IO_READ_FIELD(TPINIFILE,'YOR',NYOR_ALL(KMI))
   NXEND_ALL(KMI)=NXOR_ALL(KMI)-1 + NIMAX_ll/NDXRATIO_ALL(KMI) +2*JPHEXT
   NYEND_ALL(KMI)=NYOR_ALL(KMI)-1 + NJMAX_ll/NDYRATIO_ALL(KMI) +2*JPHEXT
 ELSE

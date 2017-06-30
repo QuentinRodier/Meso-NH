@@ -14,15 +14,16 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_ALL)
-INTEGER,              INTENT(IN)  :: KMI      ! Model index
-
-CHARACTER(LEN=16), INTENT(OUT)     :: HLUOUT  ! name of the  listing-
-                                              ! output of nested models
-CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILE! name of
-                                              ! the initial file
-CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILEPGD
-REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL ! Time STEP of ALL models
+SUBROUTINE INI_SEG_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
+!
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+INTEGER,            INTENT(IN)    :: KMI          !Model index
+CHARACTER (LEN=*),  INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),    INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER (LEN=28), INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
+!
 END SUBROUTINE INI_SEG_n
 !
 END INTERFACE
@@ -33,7 +34,7 @@ END MODULE MODI_INI_SEG_n
 !
 !
 !     #############################################################
-      SUBROUTINE INI_SEG_n(KMI,HLUOUT,HINIFILE,HINIFILEPGD,PTSTEP_ALL)
+      SUBROUTINE INI_SEG_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !     #############################################################
 !
 !!****  *INI_SEG_n * - routine to read and update the descriptor files for 
@@ -200,14 +201,11 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments 
 !
-INTEGER,              INTENT(IN)  :: KMI      ! Model index
-
-CHARACTER(LEN=16), INTENT(OUT)     :: HLUOUT  ! name of the  listing-
-                                              ! output of nested models
-CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILE! name of
-                                              ! the initial file
-CHARACTER (LEN=28),   INTENT(OUT)  :: HINIFILEPGD                                              
-REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL ! Time STEP of ALL models
+INTEGER,            INTENT(IN)    :: KMI          !Model index
+CHARACTER (LEN=*),  INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),    INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER (LEN=28), INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
 !
 !*       0.1   declarations of local variables
 !
@@ -220,10 +218,6 @@ INTEGER            :: ILUOUT                      ! Logical unit number
                                                   ! associated with CLUOUT 
                                                   !
 INTEGER            :: IRESP,ILUSEG,ININAR         ! File management variables
-INTEGER            :: IGRID,ILENCH                !             "
-CHARACTER(LEN=100) :: YCOMMENT                    !             "
-CHARACTER(LEN=2)   :: YDIR    ! Type  of the data field in LFIFM file
-CHARACTER (LEN=16) :: YRECFM  ! Name of the desired field in LFIFM file
 CHARACTER (LEN=5)  :: YCONF                       ! Local variables which have
 LOGICAL            :: GFLAT                       ! the same definition as the
 LOGICAL            :: GUSERV,GUSERC,GUSERR,GUSERI ! variables in module MODD_CONF,
@@ -259,13 +253,12 @@ CHARACTER (LEN=4)  :: YSCONV
 CHARACTER (LEN=4)  :: YCLOUD
 CHARACTER (LEN=4)  :: YELEC
 CHARACTER (LEN=3)  :: YEQNSYS
-TYPE(TFILEDATA)    :: TZFILE
 TYPE(FD_ll), POINTER         :: TZFD
 !
 !-------------------------------------------------------------------------------
 !
-!*       1.    OPEN OUPUT-LISTING FILE AND EXSEG FILE
-!              --------------------------------------
+!*       1.    OPEN OUPTUT-LISTING FILE AND EXSEG FILE
+!              ---------------------------------------
 !
 WRITE(YMI,'(I2.0)') KMI
 HLUOUT='OUTPUT_LISTING'//ADJUSTL(YMI)
@@ -287,7 +280,6 @@ IF (CPROGRAM=='MESONH') THEN
 !
 ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
   YINIFILE    = CINIFILE_n
-  HINIFILE    = CINIFILE_n
   HINIFILEPGD = CINIFILEPGD_n
   YEXSEG=TRIM(ADJUSTL(CINIFILE_n))//'.des'
   CALL FMOPEN_ll(CINIFILE_n,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
@@ -297,7 +289,6 @@ ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
 !
 ELSE IF (CPROGRAM=='DIAG  ') THEN
   YINIFILE    = CINIFILE_n
-  HINIFILE    = CINIFILE_n
   YEXSEG=TRIM(ADJUSTL(CINIFILE_n))//'.des'
   CALL FMOPEN_ll(CINIFILE_n,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
   CALL FMLOOK_ll(YEXSEG,CLUOUT0,ILUSEG,IRESP)
@@ -350,8 +341,8 @@ IF (CPROGRAM=='MESONH') THEN
       CALL SET_CONFIO_ll()
    END IF
   HINIFILEPGD=CINIFILEPGD_n
-  HINIFILE=CINIFILE_n
-  CALL FMOPEN_ll(HINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
+  YINIFILE=CINIFILE_n
+  CALL FMOPEN_ll(YINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -359,7 +350,7 @@ END IF
 !*      4.    READ DESFM FILE
 !             ---------------
 !
-YDESFM=TRIM(ADJUSTL(HINIFILE))//'.des'
+YDESFM=TRIM(ADJUSTL(YINIFILE))//'.des'
 !
 CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
@@ -394,30 +385,30 @@ END IF
 !*      6.    READ in the LFI file SOME VARIABLES of MODD_CONF
 !             ------------------------------------------------
 !
-TZFILE%CNAME  = HINIFILE
-!TZFILE%CTYPE  = ''
+TPINIFILE%CNAME  = YINIFILE
+!TPINIFILE%CTYPE  = ''
 CALL PRINT_MSG(NVERB_WARNING,'IO','INI_SEG_n','filetype not (yet) set')
-TZFD=>GETFD(TRIM(ADJUSTL(TZFILE%CNAME))//'.lfi')
-IF (.NOT.ASSOCIATED(TZFD)) CALL PRINT_MSG(NVERB_FATAL,'IO','INI_SEG_n','file '//TRIM(TZFILE%CNAME)//' not found')
+TZFD=>GETFD(TRIM(ADJUSTL(TPINIFILE%CNAME))//'.lfi')
+IF (.NOT.ASSOCIATED(TZFD)) CALL PRINT_MSG(NVERB_FATAL,'IO','INI_SEG_n','file '//TRIM(TPINIFILE%CNAME)//' not found')
 IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
-  TZFILE%CFORMAT = 'NETCDF4'
-  IF (ISP == TZFD%OWNER) TZFILE%NNCID = TZFD%CDF%NCID
+  TPINIFILE%CFORMAT = 'NETCDF4'
+  IF (ISP == TZFD%OWNER) TPINIFILE%NNCID = TZFD%CDF%NCID
 ELSE
-  TZFILE%CFORMAT   = 'LFI'
-  TZFILE%NLFINPRAR = 0
-  IF (ISP == TZFD%OWNER) TZFILE%NLFIFLU = TZFD%FLU
+  TPINIFILE%CFORMAT   = 'LFI'
+  TPINIFILE%NLFINPRAR = 0
+  IF (ISP == TZFD%OWNER) TPINIFILE%NLFIFLU = TZFD%FLU
 ENDIF
-TZFILE%CMODE    = 'READ'
-TZFILE%NLFITYPE = 2
-TZFILE%NLFIVERB = NVERB
-CALL IO_READ_FIELD(TZFILE,'MASDEV',IMASDEV)
+TPINIFILE%CMODE    = 'READ'
+TPINIFILE%NLFITYPE = 2
+TPINIFILE%NLFIVERB = NVERB
+CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !
 IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
   IF (IMASDEV > 49) THEN
-    CALL IO_READ_FIELD(TZFILE,'COUPLING',LCOUPLING)
+    CALL IO_READ_FIELD(TPINIFILE,'COUPLING',LCOUPLING)
     IF (LCOUPLING) THEN
       WRITE(ILUOUT,*) 'Error with the initial file'
-      WRITE(ILUOUT,*) 'The file',HINIFILE,' was created with LCOUPLING=.TRUE.'
+      WRITE(ILUOUT,*) 'The file',YINIFILE,' was created with LCOUPLING=.TRUE.'
       WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
       WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
       !callabortstop
@@ -429,9 +420,9 @@ IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
 END IF
 !
 ! Read the storage type
-  CALL IO_READ_FIELD(TZFILE,'STORAGE_TYPE',CSTORAGE_TYPE)
+  CALL IO_READ_FIELD(TPINIFILE,'STORAGE_TYPE',CSTORAGE_TYPE)
   IF (IRESP /= 0) THEN
-    WRITE(ILUOUT,FMT=9002) YRECFM,IRESP
+    WRITE(ILUOUT,FMT=9002) 'STORAGE_TYPE',IRESP
 !callabortstop
     CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
     CALL ABORT
@@ -439,18 +430,18 @@ END IF
   END IF
 IF (KMI == 1) THEN 
 ! Read the geometry kind 
-  CALL IO_READ_FIELD(TZFILE,'CARTESIAN',LCARTESIAN)
+  CALL IO_READ_FIELD(TPINIFILE,'CARTESIAN',LCARTESIAN)
 ! Read the thinshell approximation
-  CALL IO_READ_FIELD(TZFILE,'THINSHELL',LTHINSHELL)
+  CALL IO_READ_FIELD(TPINIFILE,'THINSHELL',LTHINSHELL)
 !
   IF (IMASDEV>=46) THEN
-   CALL IO_READ_FIELD(TZFILE,'L1D',L1D)
+   CALL IO_READ_FIELD(TPINIFILE,'L1D',L1D)
    IF (IRESP/=0)  L1D=.FALSE.
 !
-   CALL IO_READ_FIELD(TZFILE,'L2D',L2D)
+   CALL IO_READ_FIELD(TPINIFILE,'L2D',L2D)
    IF (IRESP/=0)  L2D=.FALSE.
 !
-   CALL IO_READ_FIELD(TZFILE,'PACK',LPACK)
+   CALL IO_READ_FIELD(TPINIFILE,'PACK',LPACK)
    IF (IRESP/=0) LPACK=.TRUE.
   ELSE
    L1D=.FALSE.
@@ -458,7 +449,7 @@ IF (KMI == 1) THEN
    LPACK=.TRUE.
   END IF
   IF (IMASDEV>=410) THEN
-   CALL IO_READ_FIELD(TZFILE,'LBOUSS',LBOUSS)
+   CALL IO_READ_FIELD(TPINIFILE,'LBOUSS',LBOUSS)
   END IF
 !
 END IF
@@ -488,7 +479,6 @@ CALL READ_EXSEG_n(KMI,YEXSEG,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
 IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='DIAG  ' .OR. CPROGRAM=='SPEC  '      &
      .OR. CPROGRAM=='REAL  ') THEN
   CINIFILE_n    = YINIFILE
-  HINIFILE    = YINIFILE
   CCPLFILE(:) = '                            '
   NMODEL=1
   LSTEADYLS=.TRUE.
