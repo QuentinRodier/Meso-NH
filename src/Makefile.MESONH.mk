@@ -427,7 +427,7 @@ endif
 ##########################################################
 # NETCDF4 INPUT/OUTPUT in MesoNH 
 ifdef MNH_IOCDF4
-CPPFLAGS_MNH += -DMNH_IOCDF4
+CPPFLAGS_MNH += -DMNH_IOCDF4=$(MNH_IOCDF4)
 endif
 #
 # NetCDF  : AUTO install of netcdf-4.X.X on PC linux to avoid problem with compiler
@@ -437,9 +437,13 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 DIR_CDF?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDF}
 CDF_PATH?=${DIR_CDF}-${ARCH}I${MNH_INT}
 CDF_INC?=${CDF_PATH}/include/netcdf.inc
+# if MNH_IOCDF4=2  use libz
+ifeq "$(MNH_IOCDF4)" "2"
+ZLIB=-lz
+endif
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 $(ZLIB)
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #
