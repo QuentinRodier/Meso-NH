@@ -273,6 +273,7 @@ END MODULE MODI_INI_MODEL_n
 !!       F. Brosse   Oct.  2016 add prod/loss terms computation for chemistry       
 !!                   M.Leriche 2016 Chemistry
 !!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS 
+!!                   M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -328,6 +329,7 @@ USE MODD_CH_MNHC_n, ONLY : LUSECHEM, LUSECHAQ, LUSECHIC, LCH_INIT_FIELD, &
 USE MODD_CH_PH_n
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_CH_AERO_n,  ONLY : XSOLORG,XMI
+USE MODD_CH_FLX_n,  ONLY : XCHFLX
 USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_MFSHALL_n
 USE MODD_DEEP_CONVECTION_n
@@ -1505,6 +1507,10 @@ IF (LUSECHAQ.AND.(CPROGRAM == 'DIAG  '.OR.CPROGRAM == 'MESONH')) THEN
     XACPRAQ(:,:,:) = 0.
   ENDIF
 ENDIF
+IF ((LUSECHEM).AND.(CPROGRAM == 'DIAG  ')) THEN
+  ALLOCATE(XCHFLX(IIU,IJU,NSV_CHEM))
+  XCHFLX(:,:,:) = 0.
+END IF
 !
 !-------------------------------------------------------------------------------
 !
