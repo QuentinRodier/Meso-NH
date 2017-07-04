@@ -11,12 +11,13 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,HINIFILE)
+       SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
 !
-       INTEGER, INTENT(IN)              :: KMI      ! Model index 
-       CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-       !  of nested models
-       CHARACTER (LEN=28), INTENT(IN)   :: HINIFILE ! name of
+       USE MODD_IO_ll, ONLY: TFILEDATA
+!
+       INTEGER,           INTENT(IN) :: KMI       ! Model index 
+       CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
+       TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_SPECTRE_n
 !
@@ -24,7 +25,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_SPECTRE_n
 !     ######################################################
-      SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,HINIFILE)
+      SUBROUTINE INI_SPECTRE_n(KMI,HLUOUT,TPINIFILE)
 !     ######################################################
 !
 !!****  *INI_SPECTRE_n* - routine to initialize SPECTRE (based on ini_modeln.f90)
@@ -56,7 +57,7 @@ USE MODD_DUST
 USE MODD_DYN
 USE MODD_DYNZD
 USE MODD_FRC
-USE MODD_IO_ll, ONLY : LIOCDF4,LLFIOUT
+USE MODD_IO_ll, ONLY : LIOCDF4,LLFIOUT,TFILEDATA
 USE MODD_REF
 USE MODD_SERIES, ONLY: LSERIES
 USE MODD_TIME
@@ -141,12 +142,9 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 !
-INTEGER, INTENT(IN)              :: KMI      ! Model Index 
-
-CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-                                             !  of nested models
-CHARACTER (LEN=28),  INTENT(IN)   :: HINIFILE ! name of
-                                             ! the initial file
+INTEGER,           INTENT(IN) :: KMI       ! Model index 
+CHARACTER (LEN=*), INTENT(IN) :: HLUOUT    ! Name for output-listing of nested models
+TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
 !
@@ -230,7 +228,7 @@ NULLIFY(TZINITHALO3D_ll)
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CLUOUT = HLUOUT
-CINIFILE=HINIFILE
+CINIFILE=TPINIFILE%CNAME
 !
 !-------------------------------------------------------------------------------
 !
@@ -245,7 +243,7 @@ IKU=NKMAX+2*JPVEXT
 YRECFM = 'ZHAT'
 ALLOCATE(XZHAT(IKU))
  YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XZHAT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XZHAT,IGRID,ILENCH,YCOMMENT,IRESP)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_SPECTRE_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -731,7 +729,7 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,HINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,         &
+CALL SET_GRID(KMI,TPINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,        &
               XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4,           &
               XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4,           &
               NXOR_ALL(KMI),NYOR_ALL(KMI),NXEND_ALL(KMI),NYEND_ALL(KMI), &
@@ -769,35 +767,35 @@ IF (LSPECTRE_U) THEN
   ALLOCATE(XUT(IIU,IJU,IKU))      ; XUT  = 0.0
   YRECFM = 'UT'
   YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 IF (LSPECTRE_V) THEN
   ALLOCATE(XVT(IIU,IJU,IKU))      ; XVT  = 0.0
   YRECFM = 'VT'
   YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XVT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XVT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 IF (LSPECTRE_W) THEN  
   ALLOCATE(XWT(IIU,IJU,IKU))      ; XWT  = 0.0
   YRECFM = 'WT'
   YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XWT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XWT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 IF (LSPECTRE_TH) THEN
   ALLOCATE(XTHT(IIU,IJU,IKU))     ; XTHT = 0.0
   YRECFM = 'THT'
   YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 IF (LSPECTRE_RV) THEN
   ALLOCATE(XRT(IIU,IJU,IKU,NRR))
   YRECFM = 'RVT'
   YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XRT(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XRT(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -807,9 +805,9 @@ END IF
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,HINIFILE,HLUOUT,                                &
+CALL SET_REF(KMI,TPINIFILE%CNAME,HLUOUT,                         &
              XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,                 &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,                      &
+             XREFMASS,XMASS_O_PHI0,XLINMASS,                     &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ              )
 !-------------------------------------------------------------------------------
 !

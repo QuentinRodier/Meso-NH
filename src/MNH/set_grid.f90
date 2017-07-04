@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_GRID(KMI,HINIFILE,HLUOUT,                                &
+      SUBROUTINE SET_GRID(KMI,TPINIFILE,HLUOUT,                               &
                           KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
                           PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
                           PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
@@ -29,10 +29,10 @@ INTERFACE
                           KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
 !
 USE MODD_TYPE_DATE
-USE MODD_IO_ll, ONLY:TOUTBAK
+USE MODD_IO_ll, ONLY: TFILEDATA,TOUTBAK
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
                                                  !  of nested models
 INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
@@ -41,9 +41,9 @@ INTEGER,                INTENT(IN)  :: KJU       ! Upper dimension in y directio
                                                  ! for sub-domain arrays
 INTEGER,                INTENT(IN)  :: KKU       ! Upper dimension in z direction
                                                  ! for domain arrays
-INTEGER,               INTENT(IN)   :: KIMAX_ll  !  Dimensions  in x direction
+INTEGER,                INTENT(IN)  :: KIMAX_ll  !  Dimensions  in x direction
                                                  ! of the physical domain,
-INTEGER,               INTENT(IN)   :: KJMAX_ll  !  Dimensions  in y direction
+INTEGER,                INTENT(IN)  :: KJMAX_ll  !  Dimensions  in y direction
                                                  ! of the physical domain,
 REAL, DIMENSION(:), INTENT(IN) :: PBMX1,PBMX2,PBMX3,PBMX4 ! Mass points in X-direc.
 REAL, DIMENSION(:), INTENT(IN) :: PBMY1,PBMY2,PBMY3,PBMY4 ! Mass points in Y-direc.
@@ -105,7 +105,7 @@ END MODULE MODI_SET_GRID
 !
 !
 !     #########################################################################
-      SUBROUTINE SET_GRID(KMI,HINIFILE,HLUOUT,                                &
+      SUBROUTINE SET_GRID(KMI,TPINIFILE,HLUOUT,                               &
                           KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
                           PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
                           PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
@@ -243,7 +243,7 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_GRID
-USE MODD_IO_ll, ONLY:TOUTBAK
+USE MODD_IO_ll, ONLY:TFILEDATA,TOUTBAK
 USE MODD_BUDGET
 USE MODD_DYN
 USE MODD_NESTING
@@ -263,7 +263,7 @@ IMPLICIT NONE
 !*       0.1   declarations of argument
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
                                                  !  of nested models
 INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
@@ -333,11 +333,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
-INTEGER                :: IGRID,ILENCH,IRESP  !   File
-CHARACTER (LEN=16)     :: YRECFM              ! management
-CHARACTER (LEN=100)    :: YCOMMENT            ! variables
-CHARACTER (LEN=2)      :: YDIR                !
-INTEGER, DIMENSION(3)  :: ITDATE           ! date array
+INTEGER                :: IRESP
 CHARACTER (LEN=40)     :: YTITLE                    ! Title for date print
 INTEGER                :: ILUOUT                    ! Logical unit number for
                                                     ! output-listing
@@ -348,59 +344,43 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
 INTEGER                :: IMASDEV                   ! masdev of the file
 !-------------------------------------------------------------------------------
 !
-YRECFM='MASDEV'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !
 !*       1.    READ GRID  VARIABLES IN INITIAL FILE
 !              ------------------------------------
 !
 !*       1.1   Spatial grid
 !
-  YRECFM='STORAGE_TYPE'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,CSTORAGE_TYPE,IGRID,ILENCH,YCOMMENT,IRESP)
-  IF (IRESP /= 0) CSTORAGE_TYPE='TT'
-  !
+CALL IO_READ_FIELD(TPINIFILE,'STORAGE_TYPE',CSTORAGE_TYPE,IRESP)
+IF (IRESP /= 0) CSTORAGE_TYPE='TT'
+!
 IF (KMI == 1) THEN
-  YRECFM='LON0'     ! this parameter is also useful in the cartesian to
-  YDIR='--'        ! compute the sun position for the radiation scheme
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XLON0,IGRID,ILENCH,YCOMMENT,IRESP)
+  ! this parameter is also useful in the cartesian to
+  ! compute the sun position for the radiation scheme
+  CALL IO_READ_FIELD(TPINIFILE,'LON0',XLON0)
   !
-  YRECFM='LAT0'     ! this parameter is also useful in the cartesian to
-  YDIR='--'        ! compute the Coriolis parameter
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XLAT0,IGRID,ILENCH,YCOMMENT,IRESP)
+  ! this parameter is also useful in the cartesian to
+  ! compute the Coriolis parameter
+  CALL IO_READ_FIELD(TPINIFILE,'LAT0',XLAT0)
   !
-  YRECFM='BETA'     ! this parameter is also useful in the cartesian to
-  YDIR='--'           ! rotate the simulatin domain
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XBETA,IGRID,ILENCH,YCOMMENT,IRESP)
+  ! this parameter is also useful in the cartesian to
+  ! rotate the simulatin domain
+  CALL IO_READ_FIELD(TPINIFILE,'BETA',XBETA)
 END IF
 !
-YRECFM='XHAT'
-YDIR='XX'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PXHAT,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='YHAT'
-YDIR='YY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PYHAT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'XHAT',PXHAT)
+CALL IO_READ_FIELD(TPINIFILE,'YHAT',PYHAT)
 !
 IF (.NOT.LCARTESIAN) THEN
-  YRECFM='RPK'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XRPK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'RPK',XRPK)
   !
   IF (IMASDEV > 45) THEN
-    YRECFM='LONORI'
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLONORI,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-    YRECFM='LATORI'
-    YDIR='--'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLATORI,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TPINIFILE,'LONORI',PLONORI)
+    CALL IO_READ_FIELD(TPINIFILE,'LATORI',PLATORI)
   !
   ELSE                     
-    CALL FMREAD(HINIFILE,'LONOR',HLUOUT,'--',PLONORI,IGRID,ILENCH,YCOMMENT,IRESP)
-    CALL FMREAD(HINIFILE,'LATOR',HLUOUT,'--',PLATORI,IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TPINIFILE,'LONOR',PLONORI)
+    CALL IO_READ_FIELD(TPINIFILE,'LATOR',PLATORI)
     ALLOCATE(ZXHAT_ll(KIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(KJMAX_ll+2 * JPHEXT))
     CALL GATHERALL_FIELD_ll('XX',PXHAT,ZXHAT_ll,IRESP) !//
     CALL GATHERALL_FIELD_ll('YY',PYHAT,ZYHAT_ll,IRESP) !//
@@ -414,13 +394,8 @@ IF (.NOT.LCARTESIAN) THEN
   !
 END IF
 
-YRECFM='ZS'
-YDIR='XY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PZS,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='ZHAT'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PZHAT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'ZS',PZS)
+CALL IO_READ_FIELD(TPINIFILE,'ZHAT',PZHAT)
 !
 CALL DEFAULT_SLEVE(OSLEVE,PLEN1,PLEN2)
 !
@@ -428,64 +403,25 @@ IF (IMASDEV<=46) THEN
   PZSMT  = PZS
   OSLEVE = .FALSE.
 ELSE
-  YRECFM='SLEVE'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,OSLEVE,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM='ZSMT'
-  YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PZSMT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'ZSMT',PZSMT)
+  CALL IO_READ_FIELD(TPINIFILE,'SLEVE',OSLEVE)
 END IF
 !
 IF (OSLEVE) THEN
-  YRECFM='LEN1'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLEN1,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM='LEN2'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLEN2,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'LEN1',PLEN1)
+  CALL IO_READ_FIELD(TPINIFILE,'LEN2',PLEN2)
 END IF
 !
 !*       1.2   Temporal grid
 !
+CALL IO_READ_FIELD(TPINIFILE,'DTMOD',TPDTMOD)
+CALL IO_READ_FIELD(TPINIFILE,'DTCUR',TPDTCUR)
+!
 IF (KMI == 1) THEN
-  YRECFM='DTEXP%TDATE'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
-  TDTEXP%TDATE=DATE(ITDATE(1),ITDATE(2),ITDATE(3))
-  YRECFM='DTEXP%TIME'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TDTEXP%TIME,IGRID,ILENCH,           &
-             YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'DTEXP',TDTEXP)
 END IF
 !
-YRECFM='DTCUR%TDATE'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
-TPDTCUR%TDATE=DATE(ITDATE(1),ITDATE(2),ITDATE(3))
-YRECFM='DTCUR%TIME'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TPDTCUR%TIME,IGRID,ILENCH,           &
-            YCOMMENT,IRESP)
-!
-YRECFM='DTMOD%TDATE'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
-TPDTMOD%TDATE=DATE(ITDATE(1),ITDATE(2),ITDATE(3))
-YRECFM='DTMOD%TIME'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TPDTMOD%TIME,IGRID,ILENCH,           &
-            YCOMMENT,IRESP)
-!
-YRECFM='DTSEG%TDATE'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,ITDATE,IGRID,ILENCH,YCOMMENT,IRESP)
-TDTSEG%TDATE=DATE(ITDATE(1),ITDATE(2),ITDATE(3))
-YRECFM='DTSEG%TIME'
-YDIR='--'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,TDTSEG%TIME,IGRID,ILENCH,           &
-            YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'DTSEG',TDTSEG)
 !
 !-------------------------------------------------------------------------------
 !
