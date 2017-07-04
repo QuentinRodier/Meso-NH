@@ -70,8 +70,7 @@
 !!                                          routine.
 !!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable  
 !!      D.Gazen+ G.Delautier 06/2016 modif for ncl files
-!!      P. Wautelet     09/06/2017: name of the variable added to the name of the written field
-!!                                  and better comment (true comment + units)
+!!      P. Wautelet     06-07/2017: improved comment (name of field + true comment + units)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -435,9 +434,9 @@ DO J = 1,IP
   ELSE IF(J >= 100 .AND. J < 1000) THEN 
           WRITE(YJ,'(I3)')J
   ENDIF
-  YRECFM = TRIM(HGROUP)//'.'//TRIM(HTITRE(J))
+  YRECFM = TRIM(HGROUP)//'.PROC'//YJ
   ILENG = II*IJ*IK*IT*IN
-  YCOMMENT = TRIM(HCOMMENT(J))//' ('//TRIM(HUNITE(J))//')'
+  YCOMMENT = TRIM(HTITRE(J))//' - '//TRIM(HCOMMENT(J))//' ('//TRIM(HUNITE(J))//')'
   ILENCH = LEN_TRIM(YCOMMENT)
 !print *,' PVAR '
 !print *,' YJ ILENG YRECFM KGRID(J) ',YJ,ILENG,YRECFM,KGRID(J)
