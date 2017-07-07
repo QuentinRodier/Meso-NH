@@ -225,7 +225,8 @@ CONTAINS
        PAD,      &
        KNB_PROCIO,& 
        KMELEV,&
-       OPARALLELIO)
+       OPARALLELIO,&
+       TPFILE)
 #if defined(MNH_IOCDF4)
   USE MODD_NETCDF, ONLY:IDCDF_KIND
   USE MODE_NETCDF
@@ -251,6 +252,7 @@ CONTAINS
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     !JUANZ
+    TYPE(TFILEDATA), INTENT(IN),  OPTIONAL :: TPFILE
     !
     ! local var
     !
@@ -653,6 +655,7 @@ CONTAINS
           TZFD%FLU = -1
        END IF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+          IF (.NOT.PRESENT(TPFILE)) CALL PRINT_MSG(NVERB_FATAL,'IO','INI_MODEL_n','TPFILE not provided for IO_ZSPLIT case')
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
              write(cfile ,'(".Z",i3.3)') ifile+1
@@ -665,6 +668,22 @@ CONTAINS
              TZFD_IOZ%NB_PROCIO = TZFD%NB_PROCIO
              TZFD_IOZ%FLU       = -1
              TZFD_IOZ%PARAM     =>LFIPAR
+
+             ALLOCATE(TFILE_LAST%TFILE_NEXT)
+             TFILE_LAST%TFILE_NEXT%TFILE_PREV => TFILE_LAST
+             TFILE_LAST => TFILE_LAST%TFILE_NEXT
+             ! Copy values from 'main' (non-splitted) file
+             TFILE_LAST%CNAME    = TRIM(TPFILE%CNAME)//TRIM(CFILE)
+             TFILE_LAST%CTYPE    = TPFILE%CTYPE
+             TFILE_LAST%CFORMAT  = TPFILE%CFORMAT
+             TFILE_LAST%CMODE    = TPFILE%CMODE
+             !
+             TFILE_LAST%NLFITYPE = TPFILE%NLFITYPE
+             TFILE_LAST%NLFIVERB = TPFILE%NLFIVERB
+             !
+             TFILE_LAST%LNCREDUCE_FLOAT_PRECISION = TPFILE%LNCREDUCE_FLOAT_PRECISION
+             TFILE_LAST%LNCCOMPRESS               = TPFILE%LNCCOMPRESS
+             TFILE_LAST%NNCCOMPRESS_LEVEL         = TPFILE%NNCCOMPRESS_LEVEL
 
              IF ( irank_procio .EQ. ISP ) THEN
 #if defined(MNH_IOCDF4)                   
