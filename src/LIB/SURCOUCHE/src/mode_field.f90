@@ -101,7 +101,7 @@ USE MODD_CONF, ONLY: NMODEL
 INTEGER,INTENT(IN),OPTIONAL :: KMODEL
 !
 INTEGER :: IDX, IMODEL
-CHARACTER(LEN=40) :: YMSG
+CHARACTER(LEN=42) :: YMSG
 !
 !F90/95: TFIELDLIST(1) = TFIELDDATA('UT','x_wind','m s-1','XY','X_Y_Z_U component of wind (m/s)',2)
 !F2003:
@@ -118,11 +118,15 @@ LFIELDLIST_ISINIT = .TRUE.
 IF (PRESENT(KMODEL)) THEN
   IMODEL = KMODEL
 ELSE
-  IMODEL = NMODEL
+  IF (NMODEL/=1) THEN
+    IMODEL = NMODEL
+  ELSE !NMODEL is not necessary known here => allocating for max allowed number of models
+    IMODEL = JPMODELMAX
+  END IF
 END IF
 IF (IMODEL==0) CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_FIELD_LIST','allocating fields for zero models not allowed')
 !
-WRITE(YMSG,'("allocating fields for ",I4," models")') IMODEL
+WRITE(YMSG,'("allocating fields for up to ",I4," model(s)")') IMODEL
 CALL PRINT_MSG(NVERB_DEBUG,'GEN','INI_FIELD_LIST',YMSG)
 !
 IDX = 1
