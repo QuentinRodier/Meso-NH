@@ -273,12 +273,11 @@ PRIVATE
 !
 INTERFACE IO_READ_FIELD_LFI
    MODULE PROCEDURE IO_READ_FIELD_LFI_X0, IO_READ_FIELD_LFI_X1, &
-                    IO_READ_FIELD_LFI_X2, &
+                    IO_READ_FIELD_LFI_X2, IO_READ_FIELD_LFI_X3, &
                     IO_READ_FIELD_LFI_N0, &
                     IO_READ_FIELD_LFI_L0, &
                     IO_READ_FIELD_LFI_C0, &
                     IO_READ_FIELD_LFI_T0
-!                     IO_READ_FIELD_LFI_X3, &
 !                     IO_READ_FIELD_LFI_X4,IO_READ_FIELD_LFI_X5, &
 !                     IO_READ_FIELD_LFI_X6,                       &
 !                     IO_READ_FIELD_LFI_N1, &
@@ -408,6 +407,42 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_READ_FIELD_LFI_X2
+!
+!
+SUBROUTINE IO_READ_FIELD_LFI_X3(TPFILE,TPFIELD,PFIELD,KRESP)
+USE MODD_FM
+USE MODD_CONFZ, ONLY : NZ_VERB
+USE MODE_MSG
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA),      INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),     INTENT(INOUT) :: TPFIELD
+REAL,DIMENSION(:,:,:),INTENT(OUT)   :: PFIELD  ! array containing the data field
+INTEGER,              INTENT(OUT)   :: KRESP   ! return-code if problems occured
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER                                  :: ILENG
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                  :: GGOOD
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_LFI_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = SIZE(PFIELD)
+!
+CALL IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP,GGOOD)
+!
+IF (GGOOD) CALL TRANSFR(PFIELD,IWORK(IWORK(2)+3),ILENG)
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_READ_FIELD_LFI_X3
 !
 !
 SUBROUTINE IO_READ_FIELD_LFI_N0(TPFILE,TPFIELD,KFIELD,KRESP)
@@ -687,7 +722,7 @@ IF (KWORK(1)/=TPFIELD%NGRID) THEN
   TPFIELD%NGRID = KWORK(1)
   KRESP = -111 !Used later to broadcast modified metadata
 ELSE
-  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_LFI','expected GRID found in file for field ' &
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_LFI','expected GRID    found in file for field ' &
                                                             //TRIM(TPFIELD%CMNHNAME))
 ENDIF
 !

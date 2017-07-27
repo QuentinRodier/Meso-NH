@@ -42,25 +42,23 @@ PRIVATE
 
 INTERFACE IO_READ_FIELD
    MODULE PROCEDURE IO_READ_FIELD_BYNAME_X0, IO_READ_FIELD_BYNAME_X1,  &
-                    IO_READ_FIELD_BYNAME_X2,                           &
+                    IO_READ_FIELD_BYNAME_X2, IO_READ_FIELD_BYNAME_X3,  &
                     IO_READ_FIELD_BYNAME_N0,                           &
                     IO_READ_FIELD_BYNAME_L0,                           &
                     IO_READ_FIELD_BYNAME_C0,                           &
                     IO_READ_FIELD_BYNAME_T0,                           &
                     IO_READ_FIELD_BYFIELD_X0,IO_READ_FIELD_BYFIELD_X1, &
-                    IO_READ_FIELD_BYFIELD_X2,                          &
+                    IO_READ_FIELD_BYFIELD_X2,IO_READ_FIELD_BYFIELD_X3, &
                     IO_READ_FIELD_BYFIELD_N0,                          &
                     IO_READ_FIELD_BYFIELD_L0,                          &
                     IO_READ_FIELD_BYFIELD_C0,                          &
                     IO_READ_FIELD_BYFIELD_T0
-!                        IO_READ_FIELD_BYNAME_X3,  &
 !                       IO_READ_FIELD_BYNAME_X4, IO_READ_FIELD_BYNAME_X5,  &
 !                       IO_READ_FIELD_BYNAME_X6,                            &
 !                       IO_READ_FIELD_BYNAME_N1,  &
 !                       IO_READ_FIELD_BYNAME_N2, IO_READ_FIELD_BYNAME_N3,  &
 !                       IO_READ_FIELD_BYNAME_L1,  &
 !                       IO_READ_FIELD_BYNAME_C1,  &
-!                       IO_READ_FIELD_BYFIELD_X3, &
 !                       IO_READ_FIELD_BYFIELD_X4,IO_READ_FIELD_BYFIELD_X5, &
 !                       IO_READ_FIELD_BYFIELD_X6,                           &
 !                       IO_READ_FIELD_BYFIELD_N1, &
@@ -1232,6 +1230,363 @@ TIMEZ%T_READ3D_ALL=TIMEZ%T_READ3D_ALL + T22 - T11
 
 !------------------------------------------------------------------
 END SUBROUTINE FMREADX3_ll
+
+
+SUBROUTINE IO_READ_FIELD_BYNAME_X3(TPFILE,HNAME,PFIELD,KRESP)
+!
+USE MODD_IO_ll,        ONLY : ISNPROC
+!
+!
+TYPE(TFILEDATA),      INTENT(IN)    :: TPFILE
+CHARACTER(LEN=*),     INTENT(IN)    :: HNAME    ! name of the field to write
+REAL,DIMENSION(:,:,:),INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER,OPTIONAL,     INTENT(OUT)   :: KRESP    ! return-code
+!
+INTEGER :: ID ! Index of the field
+INTEGER :: IRESP ! return_code
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYNAME_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(HNAME))
+!
+CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
+!
+IF(IRESP==0) CALL IO_READ_FIELD(TPFILE,TFIELDLIST(ID),PFIELD,IRESP)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+END SUBROUTINE IO_READ_FIELD_BYNAME_X3
+
+SUBROUTINE IO_READ_FIELD_BYFIELD_X3(TPFILE,TPFIELD,PFIELD,KRESP)
+!
+USE MODD_IO_ll,        ONLY : GSMONOPROC,ISP,ISNPROC,LPACK,L1D,L2D
+USE MODD_TIMEZ,        ONLY : TIMEZ
+USE MODD_VAR_ll,       ONLY : MNH_STATUSES_IGNORE
+!
+USE MODE_ALLOCBUFFER_ll
+USE MODE_FD_ll,            ONLY : GETFD,FD_LL
+USE MODE_IO_ll,            ONLY : IO_FILE
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
+USE MODE_MNH_TIMING,       ONLY : SECOND_MNH2
+USE MODE_SCATTER_ll
+!
+TYPE(TFILEDATA),TARGET,      INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),            INTENT(INOUT) :: TPFIELD
+REAL,DIMENSION(:,:,:),TARGET,INTENT(INOUT) :: PFIELD   ! array containing the data field
+INTEGER, OPTIONAL,           INTENT(OUT)   :: KRESP    ! return-code
+!
+TYPE TX_2DP
+   REAL,DIMENSION(:,:), POINTER :: X
+END TYPE TX_2DP
+!
+INTEGER                               :: IERR,IRESP
+INTEGER                               :: IHEXTOT
+INTEGER                               :: IK_FILE,IK_RANK,INB_PROC_REAL,JK_MAX
+INTEGER                               :: JI,IXO,IXE,IYO,IYE
+INTEGER                               :: JK,JKK
+INTEGER                               :: NB_REQ
+INTEGER,ALLOCATABLE,DIMENSION(:)      :: REQ_TAB
+INTEGER, DIMENSION(MPI_STATUS_SIZE)   :: STATUS
+LOGICAL                               :: GALLOC, GALLOC_ll
+REAL,DIMENSION(:,:),POINTER           :: TX2DP
+REAL,DIMENSION(:,:),POINTER           :: ZSLICE_ll,ZSLICE
+REAL,DIMENSION(:,:,:),POINTER         :: ZFIELDP
+REAL(KIND=8),DIMENSION(2)             :: T0,T1,T2
+REAL(KIND=8),DIMENSION(2)             :: T11,T22
+CHARACTER(LEN=2)                      :: YDIR
+CHARACTER(LEN=128)                    :: YFILE_IOZ
+CHARACTER(LEN=4)                      :: YK
+CHARACTER(LEN=5)                      :: YK_FILE
+CHARACTER(LEN=NMNHNAMELGTMAX+4)       :: YRECZSLICE
+CHARACTER(LEN=4)                      :: YSUFFIX
+TYPE(FD_ll), POINTER                  :: TZFD
+TYPE(FD_ll), POINTER                  :: TZFD_IOZ
+TYPE(TFILEDATA),POINTER               :: TZFILE
+TYPE(TFIELDDATA)                      :: TZFIELD
+TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:) :: T_TX2DP
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X3',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+CALL SECOND_MNH2(T11)
+GALLOC    = .FALSE.
+GALLOC_ll = .FALSE.
+IRESP = 0
+YDIR = TPFIELD%CDIR
+!
+IHEXTOT = 2*JPHEXT+1
+TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
+IF (ASSOCIATED(TZFD)) THEN
+  IF (GSMONOPROC  .AND.  (TZFD%NB_PROCIO==1) ) THEN ! sequential execution
+    IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+      ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
+    ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+      ALLOCATE (ZFIELDP(SIZE(PFIELD,1),1,SIZE(PFIELD,3)))
+      GALLOC = .TRUE.
+    ELSE
+      ZFIELDP=>PFIELD(:,:,:)
+    END IF
+    IF (TPFILE%CFORMAT=='NETCDF4') THEN
+      CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+      CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+    ELSE
+      CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                     TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+    END IF
+    IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+      PFIELD(:,:,:)=SPREAD(SPREAD(PFIELD(JPHEXT+1,JPHEXT+1,:),DIM=1,NCOPIES=IHEXTOT),DIM=2,NCOPIES=IHEXTOT)
+    ELSE IF (LPACK .AND. L2D .AND. SIZE(PFIELD,2)==IHEXTOT) THEN
+      PFIELD(:,:,:)=SPREAD(ZFIELDP(:,1,:),DIM=2,NCOPIES=IHEXTOT)
+    END IF
+  ELSE IF ( TZFD%NB_PROCIO==1 .OR. YDIR == '--' ) THEN ! multiprocesses execution & 1 IO proc
+    IF (ISP == TZFD%OWNER)  THEN
+      ! I/O process case
+      CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
+      IF (TPFILE%CFORMAT=='NETCDF4') THEN
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+        CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      ELSE
+         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+      END IF
+    END IF
+    !
+    CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+    !
+    !Broadcast header only if IRESP==-111
+    !because metadata of field has been modified in IO_READ_FIELD_xxx
+    IF (IRESP==-111) CALL IO_BCAST_FIELD_METADATA(TZFD,TPFIELD)
+    !
+    IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+      ! XX or YY Scatter Field
+      CALL SCATTER_XXFIELD(YDIR,ZFIELDP,PFIELD,TZFD%OWNER,TZFD%COMM)
+    ELSE IF (YDIR == 'XY') THEN
+      IF (LPACK .AND. L2D) THEN
+        ! 2D compact case
+        CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:),PFIELD(:,JPHEXT+1,:),TZFD%OWNER,TZFD%COMM)
+        PFIELD(:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+      ELSE
+        ! XY Scatter Field
+        CALL SCATTER_XYFIELD(ZFIELDP,PFIELD,TZFD%OWNER,TZFD%COMM)
+      END IF
+    ELSE
+      ! Broadcast Field
+      CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MPI_FLOAT,TZFD%OWNER-1,TZFD%COMM,IERR)
+    END IF
+  ELSE  ! multiprocesses execution & // IO
+!
+!JUAN BG Z SLICE
+!
+#ifdef MNH_GA
+    !
+    ! init/create the ga
+    !
+    CALL SECOND_MNH2(T0)
+    CALL MNH_INIT_GA(SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3),TPFIELD%CMNHNAME,"READ")
+    !
+    ! read the data
+    !
+    ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
+    GALLOC_ll = .TRUE.
+    DO JKK=1,IKU_ll
+      IK_FILE   =  IO_FILE(JKK,TZFD%NB_PROCIO)
+      write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
+      YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
+      TZFD_IOZ => GETFD(YFILE_IOZ)
+      CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(YK_FILE),TZFILE,IRESP)
+      TZFIELD = TPFIELD
+      WRITE(YSUFFIX,'(I4.4)') JKK
+      TZFIELD%CMNHNAME = TRIM(TPFIELD%CMNHNAME)//TRIM(YSUFFIX)
+      !
+      IK_RANK   =  TZFD_IOZ%OWNER
+      !
+      IF (ISP == IK_RANK )  THEN
+        IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
+          DEALLOCATE(ZSLICE_ll)
+          CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
+        END IF
+        !
+        CALL SECOND_MNH2(T0)
+        WRITE(YK,'(I4.4)')  JKK
+        YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
+        IF (TPFILE%CFORMAT=='NETCDF4') THEN
+          CALL IO_READ_FIELD_NC4(TZFILE,TZFIELD,ZSLICE_ll,IRESP)
+        ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+          CALL IO_READ_FIELD_LFI(TZFILE,TZFIELD,ZSLICE_ll,IRESP)
+        ELSE
+          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+          END IF
+        CALL SECOND_MNH2(T1)
+        TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
+        !
+        ! put the data in the g_a , this proc get this JKK slide
+        !
+        LO_ZPLAN(JPIZ) = JKK
+        HI_ZPLAN(JPIZ) = JKK
+        CALL NGA_PUT(G_A, LO_ZPLAN, HI_ZPLAN,ZSLICE_LL, LD_ZPLAN)
+      END IF
+    END DO
+    CALL GA_SYNC
+    !
+    ! get the columun data in this proc
+    !
+    ! temp buf to avoid problem with none stride PFIELDS buffer  with HALO
+    ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2),SIZE(PFIELD,3)))
+    CALL NGA_GET(G_A, LO_COL, HI_COL,ZFIELD_GA(1,1,1) , LD_COL)
+    PFIELD = ZFIELD_GA
+    DEALLOCATE(ZFIELD_GA)
+#else
+    ALLOCATE(ZSLICE_ll(0,0))
+    GALLOC_ll = .TRUE.
+    INB_PROC_REAL = MIN(TZFD%NB_PROCIO,ISNPROC)
+    Z_SLICE: DO JK=1,SIZE(PFIELD,3),INB_PROC_REAL
+      !
+      ! read the data
+      !
+      JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
+      !
+      NB_REQ=0
+      ALLOCATE(REQ_TAB(ISNPROC-1))
+      ALLOCATE(T_TX2DP(ISNPROC-1))
+      DO JKK=JK,JK_MAX
+        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+          IK_FILE   =  IO_FILE(JKK,TZFD%NB_PROCIO)
+          WRITE(YK_FILE ,'(".Z",I3.3)') IK_FILE+1
+          YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
+          TZFD_IOZ => GETFD(YFILE_IOZ)
+          CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(YK_FILE),TZFILE,IRESP)
+          TZFIELD = TPFIELD
+          WRITE(YSUFFIX,'(I4.4)') JKK
+          TZFIELD%CMNHNAME = TRIM(TPFIELD%CMNHNAME)//TRIM(YSUFFIX)
+        ELSE
+          TZFD_IOZ => TZFD
+          TZFILE => TPFILE
+          TZFIELD = TPFIELD
+        END IF
+        IK_RANK   =  TZFD_IOZ%OWNER
+        IF (ISP == IK_RANK )  THEN
+          IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
+            DEALLOCATE(ZSLICE_ll)
+            CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
+          END IF
+          !JUAN
+          CALL SECOND_MNH2(T0)
+          WRITE(YK,'(I4.4)')  JKK
+          YRECZSLICE = TRIM(TPFIELD%CMNHNAME)//YK
+          IF (TPFILE%CFORMAT=='NETCDF4') THEN
+            CALL IO_READ_FIELD_NC4(TZFILE,TZFIELD,ZSLICE_ll,IRESP)
+          ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+            CALL IO_READ_FIELD_LFI(TZFILE,TZFIELD,ZSLICE_ll,IRESP)
+          ELSE
+            CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                           TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+          END IF
+          !JUANIOZ
+          CALL SECOND_MNH2(T1)
+          TIMEZ%T_READ3D_READ=TIMEZ%T_READ3D_READ + T1 - T0
+          DO JI = 1,ISNPROC
+            CALL GET_DOMREAD_ll(JI,IXO,IXE,IYO,IYE)
+            TX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
+            IF (ISP /= JI) THEN
+              NB_REQ = NB_REQ + 1
+              ALLOCATE(T_TX2DP(NB_REQ)%X(IXO:IXE,IYO:IYE))
+              T_TX2DP(NB_REQ)%X=TX2DP
+              CALL MPI_ISEND(T_TX2DP(NB_REQ)%X,SIZE(TX2DP),MPI_FLOAT,JI-1,199+IK_RANK &
+                          & ,TZFD_IOZ%COMM,REQ_TAB(NB_REQ),IERR)
+              !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MPI_FLOAT,JI-1,199+IK_RANK,TZFD_IOZ%COMM,IERR)
+            ELSE
+              PFIELD(:,:,JKK) = TX2DP(:,:)
+            END IF
+          END DO
+          CALL SECOND_MNH2(T2)
+          TIMEZ%T_READ3D_SEND=TIMEZ%T_READ3D_SEND + T2 - T1
+          !JUANIOZ
+        END IF
+      END DO
+      !
+      ! broadcast the data
+      !
+      IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
+        ! XX or YY Scatter Field
+        STOP " XX ou YY NON PREVU SUR BG POUR LE MOMENT "
+        CALL SCATTER_XXFIELD(YDIR,ZFIELDP,PFIELD,TZFD%OWNER,TZFD%COMM)
+      ELSE IF (YDIR == 'XY') THEN
+        IF (LPACK .AND. L2D) THEN
+          ! 2D compact case
+          STOP " L2D NON PREVU SUR BG POUR LE MOMENT "
+          CALL SCATTER_XXFIELD('XX',ZFIELDP(:,1,:),PFIELD(:,JPHEXT+1,:),TZFD%OWNER,TZFD%COMM)
+          PFIELD(:,:,:) = SPREAD(PFIELD(:,JPHEXT+1,:),DIM=2,NCOPIES=IHEXTOT)
+        ELSE
+          !
+          ! XY Scatter Field
+          !
+          CALL SECOND_MNH2(T0)
+          DO JKK=JK,JK_MAX
+            !
+            ! get the file & rank
+            !
+            IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+              IK_FILE   =  IO_FILE(JKK,TZFD%NB_PROCIO)
+              WRITE(YK_FILE ,'(".Z",I3.3)') IK_FILE+1
+              YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
+              TZFD_IOZ => GETFD(YFILE_IOZ)
+            ELSE
+              TZFD_IOZ => TZFD
+            END IF
+            !
+            !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+            IK_RANK    =  TZFD_IOZ%OWNER
+            !
+            ZSLICE => PFIELD(:,:,JKK)
+!JUANIOZ
+            !CALL SCATTER_XYFIELD(ZSLICE_ll,ZSLICE,TZFD_IOZ%OWNER,TZFD_IOZ%COMM)
+            IF (ISP .NE. IK_RANK) THEN
+              CALL MPI_RECV(ZSLICE,SIZE(ZSLICE),MPI_FLOAT,IK_RANK-1,199+IK_RANK,TZFD_IOZ%COMM&
+                    & ,STATUS,IERR)
+            END IF
+!JUAN IOZ
+          END DO
+          CALL SECOND_MNH2(T1)
+          TIMEZ%T_READ3D_RECV=TIMEZ%T_READ3D_RECV + T1 - T0
+        END IF
+      ELSE
+        ! Broadcast Field
+        STOP "  Broadcast Field NON PREVU SUR BG POUR LE MOMENT "
+        CALL MPI_BCAST(PFIELD,SIZE(PFIELD),MPI_FLOAT,TZFD%OWNER-1,TZFD%COMM,IERR)
+      END IF
+      CALL SECOND_MNH2(T0)
+      IF (NB_REQ .GT.0 ) THEN
+        CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
+        DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
+      END IF
+      DEALLOCATE(T_TX2DP)
+      DEALLOCATE(REQ_TAB)
+      CALL SECOND_MNH2(T1)
+      TIMEZ%T_READ3D_WAIT=TIMEZ%T_READ3D_WAIT + T1 - T0
+    END DO Z_SLICE
+    !
+    !Broadcast header only if IRESP==-111
+    !because metadata of field has been modified in IO_READ_FIELD_xxx
+    IF (IRESP==-111) CALL IO_BCAST_FIELD_METADATA(TZFD,TPFIELD)
+    !
+#endif
+!JUAN BG Z SLICE
+  END IF !(GSMONOPROC)
+ELSE
+  IRESP = -61
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_X3','file '//TRIM(TPFILE%CNAME)//' not found')
+END IF
+!
+IF (GALLOC)    DEALLOCATE (ZFIELDP)
+IF (GALLOC_ll) DEALLOCATE (ZSLICE_ll)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+CALL SECOND_MNH2(T22)
+TIMEZ%T_READ3D_ALL=TIMEZ%T_READ3D_ALL + T22 - T11
+!
+END SUBROUTINE IO_READ_FIELD_BYFIELD_X3
+
 
 SUBROUTINE FMREADX4_ll(HFILEM,HRECFM,HFIPRI,HDIR,PFIELD,KGRID,&
      KLENCH,HCOMMENT,KRESP)
