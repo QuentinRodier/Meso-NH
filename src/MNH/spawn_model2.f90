@@ -259,6 +259,7 @@ USE MODI_UPDATE_METRICS
 USE MODE_FM
 USE MODE_FMWRIT, ONLY : IO_WRITE_HEADER
 USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_MODELN_HANDLER
 USE MODE_FMREAD
 USE MODE_MPPDB
@@ -315,7 +316,6 @@ INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER :: INPRAR   ! Number of articles predicted in the LFIFM file
 INTEGER :: ININAR   ! Number of articles present in the LFIFM file
-INTEGER :: ITYPE    ! Type of file (cpio or not)
 INTEGER             :: IGRID,ILENCH   !   File management
 CHARACTER (LEN=100) :: YCOMMENT       ! variables
 !
@@ -390,7 +390,7 @@ INTEGER,DIMENSION(:,:),ALLOCATABLE   :: IJCOUNT
 !
 REAL                :: ZZS_MAX, ZZS_MAX_ll
 !
-TYPE(TFILEDATA),TARGET :: TZFILE
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -431,6 +431,7 @@ ZTIME1 = ZSTART
 CALL DEALLOCATE_MODEL1(1)
 CALL DEALLOCATE_MODEL1(2)
 !
+TZFILE => NULL()
 !-------------------------------------------------------------------------------
 !
 !
@@ -1443,8 +1444,6 @@ INPRAR = 22 + 2*(4+NRR+NSV) ! 22 = number of grid variables + reference state
                             ! variables +dimension variables
                             ! 2*(4+NRR+NSV) = number of prognostic variables
                             ! at time t and t-dt
-ITYPE=1
-!
 IF ( ( LEN_TRIM(HSPAFILE) /= 0 ) .AND. ( ADJUSTL(HSPAFILE) /= ADJUSTL(CINIFILE) ) ) THEN
   CMY_NAME(2)=HSPAFILE
 ELSE
@@ -1453,24 +1452,7 @@ ELSE
      CMY_NAME(2)=ADJUSTL(ADJUSTR(CINIFILE)//'.spr'//ADJUSTL(HSPANBR))
 END IF
 !
-TZFILE%CNAME      = CMY_NAME(2)
-TZFILE%CTYPE      = 'SPAWNING'
-IF (LIOCDF4) THEN
-  IF (.NOT.LLFIOUT) THEN
-    TZFILE%CFORMAT='NETCDF4'
-  ELSE
-    TZFILE%CFORMAT='LFICDF4'
-    TZFILE%NLFINPRAR= INPRAR
-  END IF
-ELSE IF (LLFIOUT) THEN
-  TZFILE%CFORMAT='LFI'
-  TZFILE%NLFINPRAR= INPRAR
-ELSE
-  CALL PRINT_MSG(NVERB_FATAL,'IO','SPAWN_MODEL2','unknown backup/output fileformat')
-ENDIF
-TZFILE%CMODE      = 'WRITE'
-TZFILE%NLFITYPE   = ITYPE
-TZFILE%NLFIVERB   = NVERB
+CALL IO_FILE_ADD2LIST(TZFILE,CMY_NAME(2),'SPAWNING','WRITE',KLFINPRAR=INPRAR,KLFITYPE=1,KLFIVERB=NVERB)
 !
 CALL IO_FILE_OPEN_ll(TZFILE,CLUOUT,IRESP)
 !

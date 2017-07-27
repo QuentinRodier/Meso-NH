@@ -18,11 +18,11 @@ SUBROUTINE INI_SEG_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD,PTSTEP_ALL)
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
-INTEGER,            INTENT(IN)    :: KMI          !Model index
-CHARACTER (LEN=*),  INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
-TYPE(TFILEDATA),    INTENT(OUT)   :: TPINIFILE    !Initial file
-CHARACTER (LEN=28), INTENT(OUT)   :: HINIFILEPGD
-REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
+INTEGER,                    INTENT(IN)    :: KMI          !Model index
+CHARACTER (LEN=*),          INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
 !
 END SUBROUTINE INI_SEG_n
 !
@@ -186,6 +186,7 @@ USE MODE_FIELD
 USE MODE_FMREAD
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_MSG
 USE MODE_POS
 !
@@ -201,11 +202,11 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments 
 !
-INTEGER,            INTENT(IN)    :: KMI          !Model index
-CHARACTER (LEN=*),  INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
-TYPE(TFILEDATA),    INTENT(OUT)   :: TPINIFILE    !Initial file
-CHARACTER (LEN=28), INTENT(OUT)   :: HINIFILEPGD
-REAL,DIMENSION(:),  INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
+INTEGER,                    INTENT(IN)    :: KMI          !Model index
+CHARACTER (LEN=*),          INTENT(OUT)   :: HLUOUT       !Name for output-listing of nested models
+TYPE(TFILEDATA),   POINTER, INTENT(OUT)   :: TPINIFILE    !Initial file
+CHARACTER (LEN=28),         INTENT(OUT)   :: HINIFILEPGD
+REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL models
 !
 !*       0.1   declarations of local variables
 !
@@ -255,6 +256,7 @@ CHARACTER (LEN=4)  :: YELEC
 CHARACTER (LEN=3)  :: YEQNSYS
 TYPE(FD_ll), POINTER         :: TZFD
 !
+TPINIFILE => NULL()
 !-------------------------------------------------------------------------------
 !
 !*       1.    OPEN OUPTUT-LISTING FILE AND EXSEG FILE
@@ -342,7 +344,10 @@ IF (CPROGRAM=='MESONH') THEN
    END IF
   HINIFILEPGD=CINIFILEPGD_n
   YINIFILE=CINIFILE_n
-  CALL FMOPEN_ll(YINIFILE,'READ',HLUOUT,0,2,NVERB,ININAR,IRESP)
+
+  CALL IO_FILE_ADD2LIST(TPINIFILE,TRIM(YINIFILE),'PREPIDEALCASE','READ',KLFINPRAR=0,KLFITYPE=2,KLFIVERB=NVERB)
+
+  CALL IO_FILE_OPEN_ll(TPINIFILE,HLUOUT,IRESP)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -384,6 +389,9 @@ END IF
 !
 !*      6.    READ in the LFI file SOME VARIABLES of MODD_CONF
 !             ------------------------------------------------
+!
+NULLIFY(TPINIFILE)
+ALLOCATE(TPINIFILE) !TODO: deallocate it
 !
 TPINIFILE%CNAME  = YINIFILE
 !TPINIFILE%CTYPE  = ''

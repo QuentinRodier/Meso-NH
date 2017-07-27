@@ -232,6 +232,8 @@ CONTAINS
   USE MODE_NETCDF
 #endif
   USE MODD_IO_ll
+  USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
+
     INTEGER,         INTENT(OUT)           :: UNIT  !! Different from fortran OPEN
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: FILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
@@ -252,7 +254,7 @@ CONTAINS
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     !JUANZ
-    TYPE(TFILEDATA), INTENT(IN),  OPTIONAL :: TPFILE
+    TYPE(TFILEDATA), INTENT(INOUT), OPTIONAL :: TPFILE
     !
     ! local var
     !
@@ -280,7 +282,7 @@ CONTAINS
 #endif
     CHARACTER(len=20)    :: YACTION
     CHARACTER(len=20)    :: YMODE
-    INTEGER              :: IOS,IERR
+    INTEGER              :: IOS,IERR,IRESP
     INTEGER(KIND=IDCDF_KIND) :: IOSCDF
     INTEGER              :: ICOMM
     INTEGER              :: ICMPRES
@@ -292,6 +294,7 @@ CONTAINS
     !JUAN SX5 : probleme function retournant un pointer
     TYPE(FD_ll), POINTER :: TZJUAN
     LOGICAL               :: GPARALLELIO
+    TYPE(TFILEDATA),POINTER :: TZSPLITFILE
 
     IF ( PRESENT(FILE) ) THEN
       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(FILE)//' for '//TRIM(ACTION))
@@ -534,7 +537,7 @@ CONTAINS
        ELSE 
           !! NON I/O processors case
           IOS = 0
-          TZFD%FLU = JPFNULL 
+          TZFD%FLU = JPFNULL
        END IF
 
     CASE('SPECIFIC')
@@ -655,7 +658,8 @@ CONTAINS
           TZFD%FLU = -1
        END IF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
-          IF (.NOT.PRESENT(TPFILE)) CALL PRINT_MSG(NVERB_FATAL,'IO','INI_MODEL_n','TPFILE not provided for IO_ZSPLIT case')
+          IF (.NOT.PRESENT(TPFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','OPEN_ll','TPFILE not provided for IO_ZSPLIT case for file '&
+                                                   //TRIM(FILE))
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
              write(cfile ,'(".Z",i3.3)') ifile+1
@@ -669,21 +673,14 @@ CONTAINS
              TZFD_IOZ%FLU       = -1
              TZFD_IOZ%PARAM     =>LFIPAR
 
-             ALLOCATE(TFILE_LAST%TFILE_NEXT)
-             TFILE_LAST%TFILE_NEXT%TFILE_PREV => TFILE_LAST
-             TFILE_LAST => TFILE_LAST%TFILE_NEXT
-             ! Copy values from 'main' (non-splitted) file
-             TFILE_LAST%CNAME    = TRIM(TPFILE%CNAME)//TRIM(CFILE)
-             TFILE_LAST%CTYPE    = TPFILE%CTYPE
-             TFILE_LAST%CFORMAT  = TPFILE%CFORMAT
-             TFILE_LAST%CMODE    = TPFILE%CMODE
-             !
-             TFILE_LAST%NLFITYPE = TPFILE%NLFITYPE
-             TFILE_LAST%NLFIVERB = TPFILE%NLFIVERB
-             !
-             TFILE_LAST%LNCREDUCE_FLOAT_PRECISION = TPFILE%LNCREDUCE_FLOAT_PRECISION
-             TFILE_LAST%LNCCOMPRESS               = TPFILE%LNCCOMPRESS
-             TFILE_LAST%NNCCOMPRESS_LEVEL         = TPFILE%NNCCOMPRESS_LEVEL
+             IF (PRESENT(TPFILE)) THEN
+               CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
+
+               IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
+                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
+                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
+               END IF
+             END IF
 
              IF ( irank_procio .EQ. ISP ) THEN
 #if defined(MNH_IOCDF4)                   
@@ -750,12 +747,17 @@ CONTAINS
                         ININAR8)
                    !KNINAR = ININAR8
                 END IF
+
+                IF (PRESENT(TPFILE)) CALL UPDATE_METADATA(TZSPLITFILE)
+
              ENDIF
           ENDDO
        END IF
 
 
     END SELECT
+
+!    CALL UPDATE_METADATA(TPFILE)
 
     ! Recherche d'un communicateur a reutiliser
     ! TZFD is the first element
@@ -794,6 +796,52 @@ CONTAINS
 
     END FUNCTION SUFFIX
 
+    SUBROUTINE UPDATE_METADATA(TPFILEMD)
+      TYPE(TFILEDATA), INTENT(INOUT), OPTIONAL :: TPFILEMD
+
+      TYPE(FD_ll), POINTER  :: TZFDLFI
+
+      IF(.NOT.PRESENT(TPFILEMD)) RETURN
+
+      TPFILEMD%LOPENED = .TRUE.
+      TPFILEMD%NOPEN   = TPFILEMD%NOPEN + 1
+
+      NULLIFY(TZFDLFI)
+
+      TZFDLFI=>GETFD(ADJUSTL(TRIM(TPFILEMD%CNAME)//'.lfi'))
+
+      IF(.NOT.ASSOCIATED(TZFDLFI)) &
+        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','TZFDLFI not found for '&
+                                               //TRIM(TPFILEMD%CNAME))
+
+      !TZFDLFI%CDF exists only if ISP == TZFDLFI%OWNER
+      IF (TRIM(TPFILEMD%CMODE) == 'READ' .AND. ISP == TZFDLFI%OWNER) THEN
+        IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
+          TPFILEMD%NNCID = TZFDLFI%CDF%NCID
+          IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
+                                               //TRIM(TPFILEMD%CNAME))
+        ELSE
+          TPFILEMD%NLFIFLU = TZFDLFI%FLU
+          IF (TPFILEMD%NLFIFLU<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NLFIFLU for '&
+                                                //TRIM(TPFILEMD%CNAME))
+        ENDIF
+      ELSE IF (TRIM(TPFILEMD%CMODE) == 'WRITE' .AND. ISP == TZFDLFI%OWNER) THEN
+        IF (LIOCDF4) THEN
+          TPFILEMD%NNCID = TZFDLFI%CDF%NCID
+          IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
+                                               //TRIM(TPFILEMD%CNAME))
+        END IF
+        IF (.NOT.LIOCDF4 .OR. LLFIOUT) THEN
+          TPFILEMD%NLFIFLU = TZFDLFI%FLU
+          IF (TPFILEMD%NLFIFLU<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NLFIFLU for '&
+                                                 //TRIM(TPFILEMD%CNAME))
+        END IF
+      ELSE IF (TRIM(TPFILEMD%CMODE) /= 'READ' .AND. TRIM(TPFILEMD%CMODE) /= 'WRITE') THEN
+        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','unknown opening mode ('//TRIM(TPFILEMD%CMODE)//') for '&
+                                                          //TRIM(TPFILEMD%CNAME))
+      END IF
+
+    END SUBROUTINE UPDATE_METADATA
   END SUBROUTINE OPEN_ll
 
   SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS,OPARALLELIO)

@@ -55,7 +55,7 @@ TYPE LUNIT_t
   CHARACTER(LEN=28) :: CINIFILE      ! Name of the input FM-file
   CHARACTER(LEN=28) :: CINIFILEPGD   ! Name of the PGD associated to input FM-file  
   CHARACTER(LEN=24) :: COUTFILE      ! Generic name of the output FM-files
-  TYPE(TFILEDATA)   :: TDIAFILE      ! diachronic output file 
+  TYPE(TFILEDATA),POINTER :: TDIAFILE => NULL() ! diachronic output file
 !
   CHARACTER(LEN=16) :: CLUOUT        ! Name of output_listing file
 !JUAN
