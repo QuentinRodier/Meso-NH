@@ -13,14 +13,15 @@ MODULE MODI_SET_REF
 !
 INTERFACE
 !
-      SUBROUTINE SET_REF(KMI,HINIFILE,HLUOUT,                              &
+      SUBROUTINE SET_REF(KMI,TPINIFILE,HLUOUT,                             &
                          PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,               &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,                   &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ            )
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index 
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listings
                                                  !  of nested models
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
@@ -58,7 +59,7 @@ END MODULE MODI_SET_REF
 !
 !
 !     #########################################################################
-      SUBROUTINE SET_REF(KMI,HINIFILE,HLUOUT,                          &
+      SUBROUTINE SET_REF(KMI,TPINIFILE,HLUOUT,                         &
                          PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,           &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,               &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ        )
@@ -75,7 +76,7 @@ END MODULE MODI_SET_REF
 !!    ------
 !!      The vertical profiles of thetav, rho (dry) for anelastic reference
 !!    state and the Exner function at model top are read in LFIFM file
-!!    (HINIFILE). These vertical profiles do not take 
+!!    (TPINIFILE). These vertical profiles do not take
 !!    into account the orography. Since these vertical profiles are the same for 
 !!    all nested models, they are only read at the first call  by INI_MODEL1 
 !!    (i.e. KMI=1). Variables in module MODD_REF are therefore initialized during
@@ -158,6 +159,7 @@ END MODULE MODI_SET_REF
 !*       0.    DECLARATIONS
 USE MODE_FM
 !              ------------ 
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_REF
 USE MODD_CST
@@ -179,7 +181,7 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !  
 INTEGER,                INTENT(IN)  :: KMI       ! Model index 
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
                                                  !  of nested models
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
@@ -269,19 +271,10 @@ CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !*       2.    READ REFERENCE STATE WITHOUT OROGRAPHY IN LFIFM FILE
 !              ----------------------------------------------------
 !
-!
 IF (KMI == 1) THEN
-  YRECFM='RHOREFZ'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XRHODREFZ,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM='THVREFZ'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XTHVREFZ,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-  YRECFM='EXNTOP'
-  YDIR='--'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,XEXNTOP,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'RHOREFZ',XRHODREFZ)
+  CALL IO_READ_FIELD(TPINIFILE,'THVREFZ',XTHVREFZ)
+  CALL IO_READ_FIELD(TPINIFILE,'EXNTOP', XEXNTOP)
 !
   LNEUTRAL=.FALSE.
   IF (MAXVAL(XTHVREFZ(IKB:IKE))-MINVAL(XTHVREFZ(IKB:IKE)) < 1.E-10) LNEUTRAL=.TRUE.

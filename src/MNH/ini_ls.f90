@@ -14,29 +14,29 @@
 !
 INTERFACE 
 !
-      SUBROUTINE INI_LS(HINIFILE,HLUOUT,HGETRVM,OLSOURCE,              &
-           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                            &
-           PDRYMASSS,                                                  &
-           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG,       &
+      SUBROUTINE INI_LS(TPINIFILE,HLUOUT,HGETRVM,OLSOURCE,       &
+           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
+           PDRYMASSS,                                            &
+           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
            OSTEADY_DMASS)
-
-CHARACTER (LEN=*),       INTENT(IN) :: HINIFILE       
-                             ! name of the initial file
-CHARACTER (LEN=*),       INTENT(IN) :: HLUOUT        
-                             ! name for output-listing of nested models
-CHARACTER (LEN=*),       INTENT(IN) :: HGETRVM ! GET indicator
-LOGICAL,                 INTENT(IN) :: OLSOURCE ! switch for the source term 
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
+CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! Name for output-listing of nested models
+CHARACTER (LEN=*),      INTENT(IN)    :: HGETRVM   ! GET indicator
+LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
-REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSUM,PLSVM,PLSWM    ! Wind
-REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSTHM,  PLSRVM      ! Mass
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM  ! Wind
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSTHM,PLSRVM      ! Mass
 !if OLSOURCE=T : 
-REAL,                   INTENT(INOUT), OPTIONAL  :: PDRYMASSS   !  Md source 
+REAL,                   INTENT(INOUT), OPTIONAL :: PDRYMASSS             ! Md source
 !Large Scale  fields at time t-dt (if OLSOURCE=T) : 
-REAL, DIMENSION(:,:,:), INTENT(IN), OPTIONAL  :: PLSUMM,PLSVMM,PLSWMM  ! Wind
-REAL, DIMENSION(:,:,:), INTENT(IN), OPTIONAL  :: PLSTHMM,PLSRVMM    ! Mass
-REAL,                  INTENT(IN),   OPTIONAL :: PDRYMASST       ! Md(t)
-REAL,                  INTENT(IN),   OPTIONAL :: PLENG     ! interpolation length
-LOGICAL,               INTENT(IN),   OPTIONAL :: OSTEADY_DMASS ! Md evolution logical switch
+REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSUMM,PLSVMM,PLSWMM  ! Wind
+REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSTHMM,PLSRVMM       ! Mass
+REAL,                   INTENT(IN),    OPTIONAL :: PDRYMASST             ! Md(t)
+REAL,                   INTENT(IN),    OPTIONAL :: PLENG                 ! Interpolation length
+LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md evolution logical switch
 !
 END SUBROUTINE INI_LS
 !
@@ -46,11 +46,11 @@ END MODULE MODI_INI_LS
 !
 !
 !     ############################################################
-      SUBROUTINE INI_LS( HINIFILE,HLUOUT,HGETRVM,OLSOURCE,            &
-           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                           &
-           PDRYMASSS,                                                 &
-           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG,      &
-           OSTEADY_DMASS   )
+      SUBROUTINE INI_LS(TPINIFILE,HLUOUT,HGETRVM,OLSOURCE,       &
+           PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
+           PDRYMASSS,                                            &
+           PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
+           OSTEADY_DMASS)
 !     ############################################################
 !
 !!****  *INI_LS* - routine to initialize  Larger Scale fields
@@ -90,11 +90,12 @@ END MODULE MODI_INI_LS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-USE MODE_FM
 !
 USE MODD_CONF
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
+USE MODE_FM
 USE MODE_FMREAD
 !
 IMPLICIT NONE
@@ -103,23 +104,21 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER (LEN=*),       INTENT(IN) :: HINIFILE       
-                             ! name of the initial file
-CHARACTER (LEN=*),       INTENT(IN) :: HLUOUT        
-                             ! name for output-listing of nested models
-CHARACTER (LEN=*),       INTENT(IN) :: HGETRVM ! GET indicator
-LOGICAL,                 INTENT(IN) :: OLSOURCE ! switch for the source term 
+TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
+CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! Name for output-listing of nested models
+CHARACTER (LEN=*),      INTENT(IN)    :: HGETRVM   ! GET indicator
+LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
-REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSUM,PLSVM,PLSWM    ! Wind
-REAL, DIMENSION(:,:,:),          INTENT(INOUT) :: PLSTHM,  PLSRVM      ! Mass
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSUM,PLSVM,PLSWM  ! Wind
+REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PLSTHM,PLSRVM      ! Mass
 !if OLSOURCE=T : 
-REAL,                   INTENT(INOUT), OPTIONAL  :: PDRYMASSS   !  Md source 
+REAL,                   INTENT(INOUT), OPTIONAL :: PDRYMASSS             ! Md source
 !Large Scale  fields at time t-dt (if OLSOURCE=T) : 
-REAL, DIMENSION(:,:,:), INTENT(IN), OPTIONAL  :: PLSUMM,PLSVMM,PLSWMM  ! Wind
-REAL, DIMENSION(:,:,:), INTENT(IN), OPTIONAL  :: PLSTHMM,PLSRVMM    ! Mass
-REAL,                  INTENT(IN),   OPTIONAL :: PDRYMASST       ! Md(t)
-REAL,                  INTENT(IN),   OPTIONAL :: PLENG    ! Interpolation length
-LOGICAL,               INTENT(IN),   OPTIONAL :: OSTEADY_DMASS ! Md evolution logical switch
+REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSUMM,PLSVMM,PLSWMM  ! Wind
+REAL, DIMENSION(:,:,:), INTENT(IN),    OPTIONAL :: PLSTHMM,PLSRVMM       ! Mass
+REAL,                   INTENT(IN),    OPTIONAL :: PDRYMASST             ! Md(t)
+REAL,                   INTENT(IN),    OPTIONAL :: PLENG                 ! Interpolation length
+LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md evolution logical switch
 !
 !
 !*       0.2   declarations of local variables
@@ -128,8 +127,7 @@ INTEGER             :: IGRID,ILENCH,IRESP  !   File
 CHARACTER (LEN=16)  :: YRECFM              ! management
 CHARACTER (LEN=100) :: YCOMMENT            ! variables  
 CHARACTER(LEN=2)    :: YDIR                ! 
-INTEGER                :: ILUOUT                     !  Logical unit number
-                                                     ! associated with HLUOUT 
+INTEGER             :: ILUOUT              !  Logical unit number associated with HLUOUT
 !
 !-------------------------------------------------------------------------------
 !
@@ -146,26 +144,13 @@ CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !*       2.    READ LARGE SCALE FIELDS
 !              -----------------------
 !
-YRECFM = 'LSUM'
-YDIR='XY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLSUM,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM = 'LSVM'
-YDIR='XY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLSVM,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM = 'LSWM'
-YDIR='XY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLSWM,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM = 'LSTHM'
-YDIR='XY'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLSTHM,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'LSUM', PLSUM)
+CALL IO_READ_FIELD(TPINIFILE,'LSVM', PLSVM)
+CALL IO_READ_FIELD(TPINIFILE,'LSWM', PLSWM)
+CALL IO_READ_FIELD(TPINIFILE,'LSTHM',PLSTHM)
 !
 IF (HGETRVM == 'READ') THEN         ! LS-vapor                                    
-  YRECFM = 'LSRVM'
-  YDIR='XY'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PLSRVM,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'LSRVM',PLSRVM)
 ENDIF
 !
 !
@@ -199,10 +184,7 @@ IF (OLSOURCE) THEN
 ! Dry mass
    IF(.NOT. OSTEADY_DMASS) THEN
      IF (PRESENT(PDRYMASSS).AND.PRESENT(PDRYMASST)) THEN
-       YRECFM = 'DRYMASST'
-       YDIR='XY'
-       CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PDRYMASSS,IGRID,  &
-            ILENCH,YCOMMENT,IRESP)
+       CALL IO_READ_FIELD(TPINIFILE,'DRYMASST',PDRYMASSS)
        PDRYMASSS   = (PDRYMASSS - PDRYMASST) / PLENG
      ENDIF
    ENDIF

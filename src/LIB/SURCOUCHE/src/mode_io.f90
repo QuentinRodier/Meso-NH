@@ -757,6 +757,7 @@ CONTAINS
 
     END SELECT
 
+!PW: not done here because TZFDLFI%CDF not yet set
 !    CALL UPDATE_METADATA(TPFILE)
 
     ! Recherche d'un communicateur a reutiliser

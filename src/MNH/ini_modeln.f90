@@ -1647,7 +1647,7 @@ CALL READ_FIELD(TPINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                 &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE%CNAME,HLUOUT,            &
+CALL SET_REF(KMI,TPINIFILE,HLUOUT,                  &
              XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
              XREFMASS,XMASS_O_PHI0,XLINMASS,        &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )

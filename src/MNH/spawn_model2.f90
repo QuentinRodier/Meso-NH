@@ -391,6 +391,7 @@ INTEGER,DIMENSION(:,:),ALLOCATABLE   :: IJCOUNT
 REAL                :: ZZS_MAX, ZZS_MAX_ll
 !
 TYPE(TFILEDATA),POINTER :: TZFILE
+TYPE(TFILEDATA),POINTER :: TZFILEDUMMY => NULL()
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -1112,7 +1113,7 @@ CALL MPPDB_CHECK3D(XDZY,"spawnmod2-aftrupdate_metrics:XDZY",PRECISION)
 !
 !*       5.5    3D Reference state variables :
 !
-CALL SET_REF(0,'NIL',CLUOUT,                        &
+CALL SET_REF(0,TZFILEDUMMY,CLUOUT,                  &
              XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &  
              XREFMASS,XMASS_O_PHI0,XLINMASS,        &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)

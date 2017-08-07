@@ -577,6 +577,7 @@ REAL              :: ZZS_MAX, ZZS_MAX_ll
 INTEGER           :: IJPHEXT
 !
 TYPE(TFILEDATA),POINTER :: TZFILE
+TYPE(TFILEDATA),POINTER :: TZFILEDUMMY => NULL()
 TYPE(TFILEDATA),POINTER :: TZINIFILEPGD
 !
 !
@@ -1582,7 +1583,7 @@ CALL UPDATE_METRICS(CLBCX,CLBCY,XDXX,XDYY,XDZX,XDZY,XDZZ)
 !
 !*       5.4.2  3D reference state :
 !
-CALL SET_REF(0,'NIL',CLUOUT,                                     &
+CALL SET_REF(0,TZFILEDUMMY,CLUOUT,                               &
              XZZ,XZHAT,XJ,XDXX,XDYY,CLBCX,CLBCY,                 &
              XREFMASS,XMASS_O_PHI0,XLINMASS,                     &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ              )
