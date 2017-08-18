@@ -572,33 +572,53 @@ END SUBROUTINE POPULATE_STRUCT
 !
 END SUBROUTINE IO_PREPARE_BAKOUT_STRUCT
 !
-SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE,KLFINPRAR,KLFITYPE,KLFIVERB,TPDADFILE)
+SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE,KLFINPRAR,KLFITYPE,KLFIVERB,TPDADFILE,OOLD)
 !
 USE MODD_FMOUT,          ONLY : LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
 USE MODE_MODELN_HANDLER, ONLY : GET_CURRENT_MODEL_INDEX
 !
-TYPE(TFILEDATA),POINTER,         INTENT(OUT) :: TPFILE    !File structure to return
-CHARACTER(LEN=*),                INTENT(IN)  :: HNAME     !Filename
-CHARACTER(LEN=*),                INTENT(IN)  :: HTYPE     !Filetype (backup, output, prepidealcase...)
-CHARACTER(LEN=*),                INTENT(IN)  :: HMODE     !Opening mode (read, write...)
-INTEGER,                OPTIONAL,INTENT(IN)  :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
-INTEGER,                OPTIONAL,INTENT(IN)  :: KLFITYPE  !Type of the file (used to generate list of files to transfers)
-INTEGER,                OPTIONAL,INTENT(IN)  :: KLFIVERB  !LFI verbosity level
-TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)  :: TPDADFILE !Corresponding dad file
+TYPE(TFILEDATA),POINTER,         INTENT(INOUT) :: TPFILE    !File structure to return
+CHARACTER(LEN=*),                INTENT(IN)    :: HNAME     !Filename
+CHARACTER(LEN=*),                INTENT(IN)    :: HTYPE     !Filetype (backup, output, prepidealcase...)
+CHARACTER(LEN=*),                INTENT(IN)    :: HMODE     !Opening mode (read, write...)
+INTEGER,                OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
+INTEGER,                OPTIONAL,INTENT(IN)    :: KLFITYPE  !Type of the file (used to generate list of files to transfers)
+INTEGER,                OPTIONAL,INTENT(IN)    :: KLFIVERB  !LFI verbosity level
+TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDADFILE !Corresponding dad file
+LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (should not be found)
+                                                            !TRUE if the file could already be in the list
+                                                            !     (add it only if not yet present)
 !
 INTEGER :: IMI,IRESP
 INTEGER :: ILFINPRAR
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
-TYPE(TFILEDATA),POINTER :: TZFILE_DUMMY
+LOGICAL :: GOLD
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','called for '//TRIM(HNAME))
 !
-IF (ASSOCIATED(TPFILE)) CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already associated')
+IF (PRESENT(OOLD)) THEN
+  GOLD = OOLD
+ELSE
+  GOLD = .FALSE. !By default, we assume file is not yet in list
+END IF
 !
-CALL IO_FILE_FIND_BYNAME(HNAME,TZFILE_DUMMY,IRESP,OOLD=.FALSE.)
+IF (ASSOCIATED(TPFILE)) THEN
+  IF (GOLD) THEN
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already associated. Pointer will be overwritten')
+    TPFILE => NULL()
+  ELSE
+    CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already associated')
+  END IF
+END IF
+!
+CALL IO_FILE_FIND_BYNAME(HNAME,TPFILE,IRESP,OOLD=GOLD)
 IF (IRESP==0) THEN
-  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+  IF (.NOT.GOLD) THEN
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+  ELSE
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist (not unexpected)')
+  END IF
   RETURN
 END IF
 !
