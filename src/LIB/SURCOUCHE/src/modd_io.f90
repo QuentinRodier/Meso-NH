@@ -71,6 +71,7 @@ TYPE TFILEDATA
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
   LOGICAL           :: LOPENED = .FALSE.   !Is the file opened
+  INTEGER           :: NOPEN_CURRENT = 0   !Number of times the file is currently opened (several opens without close are allowed)
   INTEGER           :: NOPEN   = 0         !Number of times the file has been opened (during the current execution)
   INTEGER           :: NCLOSE  = 0         !Number of times the file has been closed (during the current execution)
   !
