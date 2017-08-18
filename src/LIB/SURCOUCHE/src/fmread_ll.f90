@@ -272,6 +272,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -282,6 +288,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -480,6 +492,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -491,6 +509,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -790,6 +814,12 @@ IF (ASSOCIATED(TZFD)) THEN
       CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
     ELSE IF (TPFILE%CFORMAT=='LFI') THEN
       CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+      !Only detected if CFORMAT='LFICDF4'
+      !This seems to be allowed for netCDF4 but it is not clean
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X2',&
+                     TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+      CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
     ELSE
       CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X2',&
                      TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -808,6 +838,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X2',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X2',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -1328,6 +1364,12 @@ IF (ASSOCIATED(TZFD)) THEN
       CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
     ELSE IF (TPFILE%CFORMAT=='LFI') THEN
       CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+      !Only detected if CFORMAT='LFICDF4'
+      !This seems to be allowed for netCDF4 but it is not clean
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                     TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+      CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
     ELSE
       CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
                      TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -1345,9 +1387,15 @@ IF (ASSOCIATED(TZFD)) THEN
         CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
         CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE
-         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
-                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+        CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
+                       TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
     END IF
     !
@@ -2056,6 +2104,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2066,6 +2120,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2380,6 +2440,12 @@ IF (ASSOCIATED(TZFD)) THEN
       CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
     ELSE IF (TPFILE%CFORMAT=='LFI') THEN
       CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,IFIELDP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+      !Only detected if CFORMAT='LFICDF4'
+      !This seems to be allowed for netCDF4 but it is not clean
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N2',&
+                     TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+      CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
     ELSE
       CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N2',&
                      TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2397,6 +2463,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,IFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N2',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N2',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2571,6 +2643,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_L0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_L0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2581,6 +2659,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_L0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_L0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2740,6 +2824,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_L1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_L1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2750,6 +2840,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_L1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_L1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2921,6 +3017,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,HFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_C0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_C0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -2931,6 +3033,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,HFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_C0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_C0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -3099,6 +3207,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TPDATA,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,TPDATA,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_T0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TPDATA,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_T0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -3109,6 +3223,12 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TPDATA,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
          CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,TPDATA,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_T0',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TPDATA,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_T0',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -3458,6 +3578,12 @@ IF (ASSOCIATED(TZFD)) THEN
       CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TX3DP,IRESP)
     ELSE IF (TPFILE%CFORMAT=='LFI') THEN
       CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,TX3DP,IRESP)
+    ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+      !Only detected if CFORMAT='LFICDF4'
+      !This seems to be allowed for netCDF4 but it is not clean
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_LB',&
+                     TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+      CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TX3DP,IRESP)
     ELSE
       CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_LB',&
                      TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -3491,6 +3617,12 @@ IF (ASSOCIATED(TZFD)) THEN
         CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TX3DP,IRESP)
       ELSE IF (TPFILE%CFORMAT=='LFI') THEN
         CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,TX3DP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_LB',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,TX3DP,IRESP)
       ELSE
         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_LB',&
                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
