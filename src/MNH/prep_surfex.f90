@@ -86,15 +86,14 @@ INTEGER               :: IINFO_ll        ! return code of // routines
 CHARACTER (LEN=100)   :: HCOMMENT
 INTEGER               :: II, IJ, IGRID, ILENGTH
 !
-TYPE(TFILEDATA),POINTER :: TZFILE
+TYPE(TFILEDATA),POINTER :: TZFILE    => NULL()
+TYPE(TFILEDATA),POINTER :: TZPGDFILE => NULL()
 !
 !-------------------------------------------------------------------------------
 !
 !
 !*       1.    SET DEFAULT VALUES
 !              ------------------
-!
-TZFILE => NULL()
 !
 CALL GOTO_MODEL(1)
 !
@@ -111,7 +110,7 @@ CALL INITIO_ll()
 CALL OPEN_PRC_FILES(YPRE_REAL1,YATMFILE, YATMFILETYPE  &
                               ,YCHEMFILE,YCHEMFILETYPE &
                               ,YSURFFILE,YSURFFILETYPE &
-                              ,YPGDFILE)
+                              ,YPGDFILE,TZPGDFILE)
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 CPGDFILE = YPGDFILE

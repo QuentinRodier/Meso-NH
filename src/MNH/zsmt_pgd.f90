@@ -92,12 +92,6 @@ INTEGER :: IJMAX      ! number of physical points in Y direction
 INTEGER :: IIU        ! number of points in X direction
 INTEGER :: IJU        ! number of points in Y direction
 !
-INTEGER           :: IRESP    ! return code for I/O
-CHARACTER(LEN=16) :: YRECFM   ! name of record
-INTEGER           :: IGRID    ! grid location
-INTEGER           :: ILENCH   ! length of comment string
-CHARACTER(LEN=100):: YCOMMENT ! comment string
-
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZSMOOTH_ZS ! smooth orography
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZFINE_ZS   ! smoothed fine orography
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZSLEVE_ZS  ! smooth orography for sleve coordinate
@@ -129,8 +123,9 @@ ALLOCATE(ZFINE_ZS(IIU,IJU))
 ALLOCATE(ZSLEVE_ZS(IIU,IJU))
 ALLOCATE(ZMASK(IIU,IJU))
 !
-YRECFM = 'ZS              '
-CALL FMREAD(TPFILE%CNAME,YRECFM,CLUOUT0,'XY',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
+!PW: bug/TODO: read a field in a file opened in WRITE mode
+!There is a test in IO_READ_FIELD_BYFIELD_X2 to allow this if TPFILE%CMODE='LFICDF4'
+CALL IO_READ_FIELD(TPFILE,'ZS',ZZS)
 !
 DO JI=1,JPHEXT
 ZZS(JI,:) = ZZS(IIB,:)

@@ -36,7 +36,7 @@
 !
 !*       0.   DECLARATIONS
 !
-!$20140403
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_PARAMETERS, ONLY: JPMODELMAX
 
 IMPLICIT NONE
@@ -53,6 +53,7 @@ TYPE IO_SURF_MNH_t
 !INTEGER                :: NLUOUT      ! output listing logical unit
 !CHARACTER(LEN=6),SAVE          :: CMASK
 CHARACTER(LEN=28)              :: CFILE       ! Name of the input FM-file
+TYPE(TFILEDATA),POINTER        :: TPINFILE => NULL() ! Input FM-file
 CHARACTER(LEN=28)              :: COUTFILE    ! Name of the output FM-file
 CHARACTER(LEN=28)              :: COUT        ! Name of output_listing file
 INTEGER                        :: NLUOUT      ! output listing logical unit
@@ -85,6 +86,7 @@ TYPE(IO_SURF_MNH_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: IO_SURF_MNH_MODEL
 !!!!!!!!!!!!!!!!!!!! LOCAL VARIABLE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
 CHARACTER(LEN=28)     ,POINTER :: CFILE =>NULL()      ! Name of the input FM-file
+TYPE(TFILEDATA)       ,POINTER :: TPINFILE => NULL()  ! Input FM-file
 CHARACTER(LEN=28)     ,POINTER :: COUTFILE =>NULL()   ! Name of the output FM-file
 CHARACTER(LEN=28)     ,POINTER :: COUT =>NULL()       ! Name of output_listing file
 INTEGER               ,POINTER :: NLUOUT =>NULL()     ! output listing logical unit
@@ -119,6 +121,7 @@ IO_SURF_MNH_MODEL(KFROM)%NMASK_ALL=>NMASK_ALL
 
 ! current model is set for model KTO 
 CFILE=>IO_SURF_MNH_MODEL(KTO)%CFILE
+TPINFILE=>IO_SURF_MNH_MODEL(KTO)%TPINFILE
 COUTFILE=>IO_SURF_MNH_MODEL(KTO)%COUTFILE
 COUT=>IO_SURF_MNH_MODEL(KTO)%COUT
 NLUOUT=>IO_SURF_MNH_MODEL(KTO)%NLUOUT

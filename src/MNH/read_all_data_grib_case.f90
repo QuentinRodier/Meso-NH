@@ -12,22 +12,25 @@
       MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !     #################################
 INTERFACE
-SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,HPGDFILE,      &
+SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,TPPGDFILE,     &
                     PTIME_HORI,KVERB,ODUMMY_REAL                         ) 
 !
-CHARACTER(LEN=4),   INTENT(IN) :: HFILE    !which file ('ATM0','ATM1' or 'CHEM')
-CHARACTER(LEN=28),  INTENT(IN) :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN) :: HGRIB    ! name of the GRIB file
-CHARACTER(LEN=28),  INTENT(IN) :: HPGDFILE ! name of the physiographic data file
-INTEGER,           INTENT(IN)  :: KVERB    ! verbosity level
-LOGICAL,           INTENT(IN)  :: ODUMMY_REAL! flag to interpolate dummy fields
-REAL,           INTENT(INOUT)  :: PTIME_HORI ! time spent in hor. interpolations
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
+CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1  ! name of the PRE_REAL1 file
+CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
+TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,           INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
+REAL,              INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
+!
 END SUBROUTINE READ_ALL_DATA_GRIB_CASE
 !
 END INTERFACE
 END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !     ##########################################################################
-      SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,HPGDFILE,      &
+      SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,TPPGDFILE,     &
                        PTIME_HORI,KVERB,ODUMMY_REAL                            )
 !     ##########################################################################
 !
@@ -135,6 +138,7 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 USE MODE_FM
 USE MODE_IO_ll
 USE MODE_TIME
+USE MODE_THERMO
 !
 USE MODI_ADD_FORECAST_TO_DATE
 USE MODI_READ_HGRID_n
@@ -147,7 +151,9 @@ USE MODI_REMOVAL_VORTEX
 USE MODI_CH_INIT_CCS
 USE MODI_CH_AER_INIT_SOA
 USE MODI_INI_CTURB
+USE MODI_CH_OPEN_INPUT
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
@@ -170,23 +176,21 @@ USE MODE_MODELN_HANDLER
 !JUAN REALZ
 USE MODE_MPPDB
 !JUAN REALZ
+!
 USE GRIB_API
-USE MODI_CH_OPEN_INPUT  
-USE MODE_THERMO
-
 !
 IMPLICIT NONE
 !
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
-CHARACTER(LEN=4),       INTENT(IN) :: HFILE !which file ('ATM0','ATM1' or 'CHEM')
-CHARACTER(LEN=28),      INTENT(IN) :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),      INTENT(IN) :: HGRIB      ! name of the GRIB file
-CHARACTER(LEN=28),      INTENT(IN) :: HPGDFILE   ! name of the physiographic data file
-INTEGER,               INTENT(IN)  :: KVERB    ! verbosity level
-LOGICAL,               INTENT(IN)  :: ODUMMY_REAL! flag to interpolate dummy fields
-REAL,                INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
+CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1  ! name of the PRE_REAL1 file
+CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
+TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
+INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
+LOGICAL,           INTENT(IN)    :: ODUMMY_REAL ! flag to interpolate dummy fields
+REAL,              INTENT(INOUT) :: PTIME_HORI  ! time spent in hor. interpolations
 !
 !* 0.2 Declaration of local variables
 !      ------------------------------
@@ -194,7 +198,7 @@ REAL,                INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolat
 INTEGER                            :: ILUOUT0       ! Unit used for output msg.
 INTEGER                            :: IRESP   ! Return code of FM-routines
 INTEGER                            :: IRET          ! Return code from subroutines
-INTEGER(KIND=kindOfInt)                  :: IRET_GRIB          ! Return code from subroutines
+INTEGER(KIND=kindOfInt)            :: IRET_GRIB          ! Return code from subroutines
 REAL                               :: ZA,ZB,ZC      ! Dummy variables
 REAL                               :: ZD,ZE,ZF      !  |
 REAL                               :: ZTEMP         !  |
@@ -325,7 +329,7 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !     -------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
-CALL READ_HGRID_n(HPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
+CALL READ_HGRID_n(TPPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
 !
 ! 1.1 Domain restriction
 !

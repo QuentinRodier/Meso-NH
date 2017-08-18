@@ -13,18 +13,21 @@
 !      ########################
 !
 INTERFACE
-      SUBROUTINE INI_MICRO_n  ( KLUOUT )
+      SUBROUTINE INI_MICRO_n  ( TPINIFILE,KLUOUT )
 !
-INTEGER,                 INTENT(IN) :: KLUOUT    ! Logical unit number for prints
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA), INTENT(IN) :: TPINIFILE ! Initial file
+INTEGER,         INTENT(IN) :: KLUOUT    ! Logical unit number for prints
 !
 END SUBROUTINE INI_MICRO_n 
 !
 END INTERFACE
 !
 END MODULE MODI_INI_MICRO_n 
-!     ##################################
-      SUBROUTINE  INI_MICRO_n ( KLUOUT )
-!     ##################################
+!     ############################################
+      SUBROUTINE INI_MICRO_n  ( TPINIFILE,KLUOUT )
+!     ############################################
 !
 !
 !!****  *INI_MICRO_n* allocates and fills MODD_PRECIP_n variables 
@@ -60,7 +63,8 @@ END MODULE MODI_INI_MICRO_n
 !
 !
 USE MODD_CONF, ONLY : CCONF,CPROGRAM       
-USE MODD_LUNIT_n, ONLY : CINIFILE,CLUOUT
+USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_LUNIT_n, ONLY : CLUOUT
 USE MODD_GET_n, ONLY : CGETRCT,CGETRRT, CGETRST, CGETRGT, CGETRHT, CGETCLOUD
 USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
 USE MODD_PARAMETERS, ONLY : JPVEXT, JPHEXT
@@ -111,8 +115,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER,                 INTENT(IN) :: KLUOUT    ! Logical unit number for prints
-!
+TYPE(TFILEDATA), INTENT(IN) :: TPINIFILE ! Initial file
+INTEGER,         INTENT(IN) :: KLUOUT    ! Logical unit number for prints
 !
 !       0.2  declaration of local variables
 !
@@ -238,7 +242,7 @@ END IF
 !*       3.    INITIALIZE MODD_PRECIP_n variables
 !              ----------------------------------
 !
-CALL READ_PRECIP_FIELD(CINIFILE,CLUOUT,CPROGRAM,CCONF,                &
+CALL READ_PRECIP_FIELD(TPINIFILE,CLUOUT,CPROGRAM,CCONF,               &
                   CGETRCT,CGETRRT,CGETRST,CGETRGT,CGETRHT,            &
                   XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,&
                   XACPRR,XINPRS,XACPRS,XINPRG,XACPRG, XINPRH,XACPRH )           

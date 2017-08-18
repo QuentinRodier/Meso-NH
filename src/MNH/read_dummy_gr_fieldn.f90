@@ -14,31 +14,19 @@ MODULE MODI_READ_DUMMY_GR_FIELD_n
 !
 INTERFACE
 !
-      SUBROUTINE READ_DUMMY_GR_FIELD_n(HINIFILE,HLUOUT,                     &
+      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,HLUOUT,                    &
                                        KIINF,KISUP,KJINF,KJSUP,             &
                                        OREAD_ALL                            )
 !
+USE MODD_IO_ll, ONLY : TFILEDATA
 !
 !*       0.1   declarations of arguments
 !
-!
-CHARACTER (LEN=*),               INTENT(IN)  :: HINIFILE       ! name of the 
-                                                               ! initial file
-CHARACTER (LEN=*),               INTENT(IN)  :: HLUOUT         ! name for
-                                                               ! output-listing
-                                                               !  of nested models
-INTEGER,                         INTENT(IN)  :: KIINF,KISUP    ! Lower and upper
-                                                               ! dimensions in x
-                                                               ! direction  for
-                                                               ! working window
-INTEGER,                         INTENT(IN)  :: KJINF,KJSUP    ! Lower and upper
-                                                               ! dimensions in y
-                                                               ! direction  for
-                                                               ! working window 
-LOGICAL,                         INTENT(IN) :: OREAD_ALL       ! flag to read the
-!                                                              ! entire 2D fields
-!                                                              ! in the file.
-!
+TYPE(TFILEDATA),  INTENT(IN)  :: TPINIFILE    ! Initial file
+CHARACTER(LEN=*), INTENT(IN)  :: HLUOUT       ! Name for output-listing of nested models
+INTEGER,          INTENT(IN)  :: KIINF,KISUP  ! Lower and upper Dimensions in x direction for working window
+INTEGER,          INTENT(IN)  :: KJINF,KJSUP  ! Lower and upper dimensions in y direction for working window
+LOGICAL,          INTENT(IN)  :: OREAD_ALL    ! Flag to read the entire 2D fields in the file.
 !
 END SUBROUTINE READ_DUMMY_GR_FIELD_n
 !
@@ -53,7 +41,7 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !
 !
 !     #######################################################################
-      SUBROUTINE READ_DUMMY_GR_FIELD_n(HINIFILE,HLUOUT,                     &
+      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,HLUOUT,                    &
                                        KIINF,KISUP,KJINF,KJSUP,             &
                                        OREAD_ALL                            )
 !     #######################################################################
@@ -94,9 +82,11 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !
 !*       0.    DECLARATIONS
 !
-USE MODD_PARAMETERS
-USE MODD_GRID_n
 USE MODD_DUMMY_GR_FIELD_n
+USE MODE_FIELD, ONLY : TFIELDDATA,TYPEINT,TYPEREAL
+USE MODD_GRID_n
+USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_PARAMETERS
 !
 USE MODE_FMREAD
 USE MODE_FM
@@ -106,32 +96,20 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER (LEN=*),               INTENT(IN)  :: HINIFILE       ! name of the 
-                                                               ! initial file
-CHARACTER (LEN=*),               INTENT(IN)  :: HLUOUT         ! name for
-                                                               ! output-listing
-                                                               !  of nested models
-INTEGER,                         INTENT(IN)  :: KIINF,KISUP    ! Lower and upper
-                                                               ! dimensions in x
-                                                               ! direction  for
-                                                               ! working window
-INTEGER,                         INTENT(IN)  :: KJINF,KJSUP    ! Lower and upper
-                                                               ! dimensions in y
-                                                               ! direction  for
-                                                               ! working window
-LOGICAL,                         INTENT(IN) :: OREAD_ALL       ! flag to read the
-!                                                              ! entire 2D fields
-!                                                              ! in the file.
+TYPE(TFILEDATA),  INTENT(IN)  :: TPINIFILE    ! Initial file
+CHARACTER(LEN=*), INTENT(IN)  :: HLUOUT       ! Name for output-listing of nested models
+INTEGER,          INTENT(IN)  :: KIINF,KISUP  ! Lower and upper Dimensions in x direction for working window
+INTEGER,          INTENT(IN)  :: KJINF,KJSUP  ! Lower and upper dimensions in y direction for working window
+LOGICAL,          INTENT(IN)  :: OREAD_ALL    ! Flag to read the entire 2D fields in the file.
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: IGRID,ILENCH,IRESP         !   File 
-CHARACTER (LEN=16)  :: YRECFM                     ! management
-CHARACTER (LEN=100) :: YCOMMENT                   ! variables
-CHARACTER (LEN=20 ) :: YSTRING20                  ! string
-CHARACTER (LEN=3  ) :: YSTRING03                  ! string
-INTEGER             :: ILUOUT                     ! Unit number for prints
-INTEGER             :: JDUMMY                     ! Loop index for cover data
+INTEGER             :: IRESP       ! File management
+CHARACTER (LEN=16)  :: YRECFM      ! variables
+CHARACTER (LEN=20 ) :: YSTRING20   ! string
+CHARACTER (LEN=3  ) :: YSTRING03   ! string
+INTEGER             :: ILUOUT      ! Unit number for prints
+INTEGER             :: JDUMMY      ! Loop index for cover data
 !
 INTEGER             :: IMASDEV ! masdev used for creation of input FM file
 !
@@ -142,6 +120,7 @@ INTEGER                           :: IIINF  ! lower I index
 INTEGER                           :: IISUP  ! upper I index
 INTEGER                           :: IJINF  ! lower J index
 INTEGER                           :: IJSUP  ! upper J index
+TYPE(TFIELDDATA)                  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
@@ -150,8 +129,7 @@ CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !*       1..   TEST MASDEV VERSION OF INPUT FILE
 !              ---------------------------------
 !
-YRECFM = 'MASDEV'
-CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'--',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV,IRESP)
 IF (IRESP /= 0) IMASDEV=33
 !
 !-------------------------------------------------------------------------------
@@ -180,11 +158,8 @@ ELSE
   IJINF = KJINF
   IJSUP = KJSUP
   !
-  YRECFM='IMAX'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'--',IIWORK,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM='JMAX'
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'--',IJWORK,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'IMAX',IIWORK)
+  CALL IO_READ_FIELD(TPINIFILE,'JMAX',IJWORK)
   !
   ALLOCATE(ZWORK(IIWORK+2*JPHEXT,IJWORK+2*JPHEXT))
 END IF
@@ -196,10 +171,20 @@ END IF
 !
 !
 IF (IMASDEV>=40) THEN
-  CALL FMREAD(HINIFILE,'DUMMY_GR_NBR',HLUOUT,'--', &
-            NDUMMY_GR_NBR,IGRID,ILENCH,YCOMMENT,IRESP)
-  IF (IRESP/=0) THEN
-     !callabortstop
+  TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: DUMMY_GR_NBR'
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEINT
+  TZFIELD%NDIMS      = 0
+  !
+  CALL IO_READ_FIELD(TPINIFILE,TZFIELD,NDUMMY_GR_NBR,IRESP)
+  !
+  IF (IRESP/=0 .AND. IRESP/=-111) THEN
+    !callabortstop
     CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
     CALL ABORT
     STOP
@@ -216,18 +201,30 @@ ALLOCATE(XDUMMY_GR_FIELDS(SIZE(XXHAT),SIZE(XYHAT),NDUMMY_GR_NBR))
 !
 DO JDUMMY=1,NDUMMY_GR_NBR
   WRITE(YRECFM,'(A8,I3.3,A5)') 'DUMMY_GR',JDUMMY,'     '
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY', &
-              ZWORK(:,:),IGRID,ILENCH,YCOMMENT,IRESP)
-  IF (IRESP/=0) THEN
-     !callabortstop
+  TZFIELD%CMNHNAME   = TRIM(YRECFM)
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(YRECFM)
+  TZFIELD%CUNITS     = ''
+  TZFIELD%CDIR       = 'XY'
+  ! Expected comment is not known but is in the following form:
+  ! 'X_Y_'//YRECFM//YSTRING20//YSTRING03
+  TZFIELD%CCOMMENT   = ''
+  TZFIELD%NGRID      = 4
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  !
+  CALL IO_READ_FIELD(TPINIFILE,TZFIELD,ZWORK(:,:))
+  !
+  IF (IRESP/=0 .AND. IRESP/=-111) THEN
+    !callabortstop
     CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
     CALL ABORT
     STOP
   ENDIF
   XDUMMY_GR_FIELDS(:,:,JDUMMY) = ZWORK(IIINF:IISUP,IJINF:IJSUP)
   !
-  YSTRING20=YCOMMENT(21:40)
-  YSTRING03=YCOMMENT(41:43)
+  YSTRING20=TZFIELD%CCOMMENT( 4+LEN(YRECFM)+1                : 4+LEN(YRECFM)+LEN(YSTRING20) )
+  YSTRING03=TZFIELD%CCOMMENT( 4+LEN(YRECFM)+LEN(YSTRING20)+1 : 4+LEN(YRECFM)+LEN(YSTRING20)+LEN(YSTRING03) )
   !
   CDUMMY_GR_NAME(JDUMMY) = YSTRING20
   CDUMMY_GR_AREA(JDUMMY) = YSTRING03

@@ -37,7 +37,7 @@
 !-------------------------------------------------------------------------------
 !
 USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_ll
-USE MODD_IO_SURF_MNH,  ONLY : COUT, CFILE
+USE MODD_IO_SURF_MNH,  ONLY : COUT, TPINFILE
 !
 IMPLICIT NONE
 !
@@ -61,7 +61,7 @@ INTEGER                      :: ILUPRI
 !*      1. get the number of processes used for IO
 !
 IRESP = 0
-YFNLFI=TRIM(ADJUSTL(CFILE))//'.lfi'
+YFNLFI=TRIM(ADJUSTL(TPINFILE%CNAME))//'.lfi'
 !
 TZFD=>GETFD(YFNLFI)
 IF (ASSOCIATED(TZFD)) THEN
@@ -74,7 +74,7 @@ END IF
 IF (IRESP.NE.0) THEN
   CALL FMLOOK_ll(COUT,COUT,ILUPRI,IRESP)
   WRITE (ILUPRI,*) ' exit from GET_NB_PROCIO_READ_MNH with RESP:',IRESP
-  WRITE (ILUPRI,*) '   | CFILE = ',CFILE
+  WRITE (ILUPRI,*) '   | TPINFILE%CNAME = ',TRIM(ADJUSTL(TPINFILE%CNAME))
 END IF
 KRESP = IRESP
 !

@@ -12,9 +12,12 @@
 !     ##########################
 !
 INTERFACE
-      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE           &
-                                          ,HCHEMFILE,HCHEMFILETYPE         &
-                                          ,HSURFFILE,HSURFFILETYPE,HPGDFILE)
+      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE,   &
+                                           HCHEMFILE,HCHEMFILETYPE, &
+                                           HSURFFILE,HSURFFILETYPE, &
+                                           HPGDFILE,TPPGDFILE)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 CHARACTER(LEN=28), INTENT(OUT) :: HPRE_REAL1   ! name of the PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
@@ -24,15 +27,18 @@ CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
 CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
 CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
 CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
+!
 END SUBROUTINE OPEN_PRC_FILES
 END INTERFACE
 END MODULE MODI_OPEN_PRC_FILES
 !
-!     ######################################################################
-      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE           &
-                                          ,HCHEMFILE,HCHEMFILETYPE         &
-                                          ,HSURFFILE,HSURFFILETYPE,HPGDFILE)
-!     ######################################################################
+!     ###############################################################
+      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE,   &
+                                           HCHEMFILE,HCHEMFILETYPE, &
+                                           HSURFFILE,HSURFFILETYPE, &
+                                           HPGDFILE,TPPGDFILE)
+!     ###############################################################
 !
 !!****  *OPEN_PRC_FILES* - openning of the files used in PREP_REAL_CASE
 !!
@@ -97,20 +103,22 @@ END MODULE MODI_OPEN_PRC_FILES
 USE MODD_CONF  ! declaration modules
 USE MODD_CONF_n
 !JUAN Z_SPLITTING
-USE MODD_CONFZ
+!USE MODD_CONFZ
 !JUAN Z_SPLITTING
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n, CINIFILE_n=>CINIFILE , CINIFILEPGD_n=>CINIFILEPGD
 !
-!JUAN Z_SPLITTING
-USE MODN_CONFZ
-!JUAN Z_SPLITTING
 !
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_POS
 USE MODE_FM
 USE MODE_IO_ll
 !
 USE MODN_CONFIO, ONLY : NAM_CONFIO
+!JUAN Z_SPLITTING
+USE MODN_CONFZ
+!JUAN Z_SPLITTING
 !
 IMPLICIT NONE
 !
@@ -125,6 +133,7 @@ CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
 CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
 CHARACTER(LEN=6),  INTENT(OUT) :: HSURFFILETYPE! type of the input surface file
 CHARACTER(LEN=28), INTENT(OUT) :: HPGDFILE     ! name of the physiographic data file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
@@ -261,10 +270,11 @@ IF (LEN_TRIM(HPGDFILE)==0) THEN
 ELSE
 !-------------------------------------------------------------------------------
 !
-!*       5.    OPENNING THE PHYSIOGRAPHIC DATA FILE
-!              ------------------------------------
+!*       5.    OPENING THE PHYSIOGRAPHIC DATA FILE
+!              -----------------------------------
 !
-  CALL FMOPEN_ll(HPGDFILE,'READ',CLUOUT0,0,2,NVERB,ININAR,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'UNKNOWN','READ',KLFINPRAR=0,KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_OPEN_ll(TPPGDFILE,CLUOUT0,IRESP,OPARALLELIO=.FALSE.)
   IF (IRESP/=0) THEN
     WRITE(ILUOUT0,*) 'STOP: problem during opening of PGD file ',HPGDFILE
 !callabortstop
@@ -285,8 +295,8 @@ WRITE(ILUOUT0,*) 'HPGDFILE= ', HPGDFILE
 !
 !  because of new parallel IO, FMATTR must be called just before opening the Aladin file
 !
-!*       6.2   OPENNING INPUT MESONH FILE
-!              --------------------------
+!*       6.2   OPENING INPUT MESONH FILE
+!              -------------------------
 !
 !  done during INIT
 !

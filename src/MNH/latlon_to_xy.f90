@@ -67,16 +67,17 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODE_FM
-USE MODE_IO_ll
-!
 USE MODD_GRID      
+USE MODD_IO_ll,  ONLY: TFILEDATA
 USE MODD_PGDDIM
 USE MODD_PGDGRID
 USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
+USE MODE_FM
 USE MODE_GRIDPROJ
+USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
@@ -102,6 +103,7 @@ REAL    :: ZXHAT               ! output conformal coodinate x
 REAL    :: ZYHAT               ! output conformal coodinate y
 INTEGER :: II,IJ               ! indexes of the point
 REAL    :: ZI,ZJ               ! fractionnal indexes of the point
+TYPE(TFILEDATA),POINTER :: TZINIFILE
 !
 !*    0.3    Declaration of namelists
 !            ------------------------
@@ -136,17 +138,18 @@ CALL CLOSE_ll('LATLON2XY1.nam',IOSTAT=IRESP)
 !*    1.     Opening of MESONH file
 !            ----------------------
 !
-CALL FMOPEN_ll(YINIFILE,'READ',CLUOUT0,0,2,2,ININAR,IRESP)
+CALL IO_FILE_ADD2LIST(TZINIFILE,TRIM(YINIFILE),'UNKNOWN','READ',KLFINPRAR=0,KLFITYPE=2,KLFIVERB=2)
+CALL IO_FILE_OPEN_ll(TZINIFILE,CLUOUT0,IRESP)
 !
 !*    2.     Reading of MESONH file
 !            ----------------------
 !
-CALL READ_HGRID(0,YINIFILE,YNAME,YDAD,YSTORAGE_TYPE)
+CALL READ_HGRID(0,TZINIFILE,YNAME,YDAD,YSTORAGE_TYPE)
 !
 !*    3.     Closing of MESONH file
 !            ----------------------
 !
-CALL FMCLOS_ll(YINIFILE,'KEEP',CLUOUT0,IRESP)
+CALL IO_FILE_CLOSE_ll(TZINIFILE,CLUOUT0,IRESP)
 !
 !-------------------------------------------------------------------------------
 !

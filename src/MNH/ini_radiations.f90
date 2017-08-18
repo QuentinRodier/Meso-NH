@@ -13,18 +13,19 @@
 !
 INTERFACE
 !
-    SUBROUTINE INI_RADIATIONS(HINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,PZZ,     &
-         PDXX,PDYY,                                                    &
+    SUBROUTINE INI_RADIATIONS(TPINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,&
+         PZZ,PDXX,PDYY,                                                &
          PSINDEL,PCOSDEL,PTSIDER,PCORSOL,PSLOPANG,PSLOPAZI,            &
          PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
          PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
          PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
-         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW               ) 
+         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW               )
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODD_IO_ll,       ONLY : TFILEDATA
 USE MODD_TYPE_DATE
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
                                                  !  of nested models
 LOGICAL,                INTENT(IN)  :: OINIRAD   ! switch to initialize or read
@@ -71,15 +72,15 @@ END INTERFACE
 END MODULE MODI_INI_RADIATIONS
 !
 !
-!   #######################################################################
-    SUBROUTINE INI_RADIATIONS(HINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,PZZ,  &
-         PDXX,PDYY,                                                 &
-         PSINDEL,PCOSDEL,PTSIDER,PCORSOL,PSLOPANG,PSLOPAZI,         &
-         PDTHRAD,PDIRFLASWD,PSCAFLASWD,                             &
-         PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                          &
-         PZENITH,PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,&
-         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW            )
-!   #######################################################################
+!   ####################################################################
+    SUBROUTINE INI_RADIATIONS(TPINIFILE,HLUOUT,OINIRAD,TPDTCUR,TPDTEXP,&
+         PZZ,PDXX,PDYY,                                                &
+         PSINDEL,PCOSDEL,PTSIDER,PCORSOL,PSLOPANG,PSLOPAZI,            &
+         PDTHRAD,PDIRFLASWD,PSCAFLASWD,                                &
+         PFLALWD,PDIRSRFSWD,KCLEARCOL_TM1,                             &
+         PZENITH, PAZIM, TPDTRAD_FULL,TPDTRAD_CLONLY,TPINITHALO2D_ll,  &
+         PRADEFF,PSWU,PSWD,PLWU,PLWD,PDTHRADSW,PDTHRADLW               )
+!   ####################################################################
 !
 !!****  *INI_RADIATION_TIME * - initialisation for radiation scheme in the MesoNH framework
 !!
@@ -119,23 +120,24 @@ END MODULE MODI_INI_RADIATIONS
 !MESO-NH modules
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_TYPE_DATE
 USE MODD_CST,         ONLY : XPI
 USE MODD_CONF,        ONLY : LFLAT, L2D
-USE MODD_PARAMETERS,  ONLY : JPVEXT
+USE MODD_IO_ll,       ONLY : TFILEDATA
 USE MODD_LES
-USE MODD_PARAM_RAD_n,  ONLY: LFIX_DAT
+USE MODD_PARAMETERS,  ONLY : JPVEXT
+USE MODD_PARAM_RAD_n, ONLY : LFIX_DAT
+USE MODD_TYPE_DATE
 !
 USE MODE_FMREAD
-USE MODI_SHUMAN
 USE MODE_ll
 !
+USE MODI_SHUMAN
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
                                                  !  of nested models
 LOGICAL,                INTENT(IN)  :: OINIRAD   ! switch to initialize or read
@@ -175,10 +177,6 @@ REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PDTHRADLW !  dthrad lw
 REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PRADEFF ! effective radius
 !
 !*       0.2   declarations of local variables
-!
-INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM              ! management
-CHARACTER (LEN=100)    :: YCOMMENT            ! variables  
 !
 INTEGER, DIMENSION(0:11) :: IBIS, INOBIS ! Cumulative number of days per month
                                          ! for bissextile and regular years
@@ -316,61 +314,16 @@ IF ( OINIRAD ) THEN
   PDIRSRFSWD(:,:,:)= 0.
   KCLEARCOL_TM1    = 0
 ELSE
-  YRECFM='DTRAD_FULL' 
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'--',TPDTRAD_FULL,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM='DTRAD_CLLY' 
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'--',TPDTRAD_CLONLY,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'ZENITH'
-  YCOMMENT    = 'X_Y_ZENITH (RAD)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PZENITH,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'AZIM'
-  YCOMMENT    = 'X_Y_AZIM (RAD)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PAZIM,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'DTHRAD'
-  YCOMMENT    = 'X_Y_Z_DTHRAD (K/S)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PDTHRAD,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'FLALWD'
-  YCOMMENT    = 'X_Y_FLALWD (W/M2)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PFLALWD,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'DIRFLASWD'
-  YCOMMENT    = 'X_Y_DIRFLASWD (W/M2)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PDIRFLASWD,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'SCAFLASWD'
-  YCOMMENT    = 'X_Y_SCAFLASWD (W/M2)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PSCAFLASWD,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'DIRSRFSWD'
-  YCOMMENT    = 'X_Y_DIRSRFSWD (W/M2)'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',PDIRSRFSWD,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-  YRECFM      = 'CLEARCOL_TM1'
-  YCOMMENT    = 'TRACE OF CLOUD'
-  IGRID       = 1
-  ILENCH      = LEN(YCOMMENT)
-  CALL FMREAD(HINIFILE,YRECFM,HLUOUT,'XY',KCLEARCOL_TM1,IGRID,ILENCH,YCOMMENT,IRESP)
-  !
-!
+  CALL IO_READ_FIELD(TPINIFILE,'DTRAD_FULL',  TPDTRAD_FULL)
+  CALL IO_READ_FIELD(TPINIFILE,'DTRAD_CLLY',  TPDTRAD_CLONLY)
+  CALL IO_READ_FIELD(TPINIFILE,'DTHRAD',      PDTHRAD)
+  CALL IO_READ_FIELD(TPINIFILE,'FLALWD',      PFLALWD)
+  CALL IO_READ_FIELD(TPINIFILE,'DIRFLASWD',   PDIRFLASWD)
+  CALL IO_READ_FIELD(TPINIFILE,'SCAFLASWD',   PSCAFLASWD)
+  CALL IO_READ_FIELD(TPINIFILE,'DIRSRFSWD',   PDIRSRFSWD)
+  CALL IO_READ_FIELD(TPINIFILE,'CLEARCOL_TM1',KCLEARCOL_TM1)
+  CALL IO_READ_FIELD(TPINIFILE,'ZENITH',      PZENITH)
+  CALL IO_READ_FIELD(TPINIFILE,'AZIM',        PAZIM)
 END IF
 !-------------------------------------------------------------------------------
 !

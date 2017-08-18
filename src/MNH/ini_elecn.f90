@@ -12,17 +12,19 @@
 !     ######################
 !
 INTERFACE
-      SUBROUTINE INI_ELEC_n (KLUOUT, HELEC, HCLOUD, HLUOUT, HINIFILE, &
-                             PTSTEP, PZZ,                             &
-                             PDXX, PDYY, PDZZ, PDZX, PDZY             )
+      SUBROUTINE INI_ELEC_n (KLUOUT, HELEC, HCLOUD, HLUOUT, TPINIFILE, &
+                             PTSTEP, PZZ,                              &
+                             PDXX, PDYY, PDZZ, PDZX, PDZY              )
+!
+USE MODD_IO_ll,  ONLY : TFILEDATA
 !
 INTEGER,           INTENT(IN) :: KLUOUT   ! Logical unit number for prints
 CHARACTER (LEN=4), INTENT(IN) :: HELEC    ! atmospheric electricity scheme
 CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
 CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
                                           !  of nested models
-CHARACTER (LEN=*), INTENT(IN) :: HINIFILE ! name of the initial file
-REAL,              INTENT(IN) :: PTSTEP   ! Time STEP  
+TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
+REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX    ! metric coefficient dxx
@@ -35,11 +37,11 @@ END SUBROUTINE INI_ELEC_n
 END INTERFACE
 END MODULE MODI_INI_ELEC_n
 !
-!     ################################################################
-      SUBROUTINE INI_ELEC_n(KLUOUT, HELEC, HCLOUD, HLUOUT, HINIFILE, &
-                            PTSTEP, PZZ,                             &
-                            PDXX, PDYY, PDZZ, PDZX, PDZY             )
-!     ################################################################
+!     #################################################################
+      SUBROUTINE INI_ELEC_n(KLUOUT, HELEC, HCLOUD, HLUOUT, TPINIFILE, &
+                            PTSTEP, PZZ,                              &
+                            PDXX, PDYY, PDZZ, PDZX, PDZY              )
+!     #################################################################
 !
 !!    PURPOSE
 !!    -------
@@ -91,6 +93,7 @@ USE MODD_DIM_n, ONLY : NIMAX_ll, NJMAX_ll
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n, ONLY : XRHOM_E, XAF_E, XCF_E, XBFY_E, XBFB_E, XBF_SXP2_YP1_Z_E
 USE MODD_CONF_n, ONLY : NRR
+USE MODD_IO_ll,  ONLY : TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPVEXT, JPHEXT
 USE MODD_CST
 USE MODD_CONF, ONLY : CEQNSYS,CCONF,CPROGRAM
@@ -126,13 +129,13 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of dummy arguments
 !
-INTEGER,            INTENT(IN)  :: KLUOUT    ! Logical unit number for prints
-CHARACTER (LEN=4),  INTENT(IN)  :: HELEC    ! atmospheric electricity scheme
-CHARACTER (LEN=4),  INTENT(IN)  :: HCLOUD   ! microphysics scheme
-CHARACTER (LEN=*),  INTENT(IN)  :: HLUOUT   ! name for output-listing
-                                            !  of nested models
-CHARACTER (LEN=*), INTENT(IN)  :: HINIFILE ! name of the initial file
-REAL,              INTENT(IN)  :: PTSTEP   ! Time STEP 
+INTEGER,           INTENT(IN) :: KLUOUT   ! Logical unit number for prints
+CHARACTER (LEN=4), INTENT(IN) :: HELEC    ! atmospheric electricity scheme
+CHARACTER (LEN=4), INTENT(IN) :: HCLOUD   ! microphysics scheme
+CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
+                                          !  of nested models
+TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE! Initial file
+REAL,              INTENT(IN) :: PTSTEP   ! Time STEP
 !
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PZZ     ! height z
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PDXX    ! metric coefficient dxx
@@ -140,7 +143,6 @@ REAL, DIMENSION(:,:,:), INTENT(IN) :: PDYY    ! metric coefficient dyy
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZZ    ! metric coefficient dzz
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZX    ! metric coefficient dzx
 REAL, DIMENSION(:,:,:), INTENT(IN) :: PDZY    ! metric coefficient dzy
-!
 !
 !*       0.2   declarations of local variables
 !
@@ -228,9 +230,9 @@ IF(SIZE(XINPRR) == 0) RETURN
 !*       2.    Initialize MODD_PRECIP_n variables
 !              -----------------------------------
 !
-CALL READ_PRECIP_FIELD (HINIFILE, HLUOUT, CPROGRAM, CCONF,                   &
-                        CGETINPRC,CGETINPRR,CGETINPRS,CGETINPRG,CGETINPRH,   &
-                        XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D, &
+CALL READ_PRECIP_FIELD (TPINIFILE, HLUOUT, CPROGRAM, CCONF,                   &
+                        CGETINPRC,CGETINPRR,CGETINPRS,CGETINPRG,CGETINPRH,    &
+                        XINPRC,XACPRC,XINDEP,XACDEP,XINPRR,XINPRR3D,XEVAP3D,  &
                         XACPRR, XINPRS, XACPRS, XINPRG, XACPRG, XINPRH, XACPRH)
 !
 !
@@ -270,7 +272,7 @@ IF (HELEC(1:3) == 'ELE') THEN
 !
   ZRHO00 = XP00 / (XRD * XTHVREFZ(IKB))
 !
-  CALL INI_PARAM_ELEC (HINIFILE, HLUOUT, CGETSVT, ZRHO00, NRR, IINTVL, &
+  CALL INI_PARAM_ELEC (TPINIFILE%CNAME, HLUOUT, CGETSVT, ZRHO00, NRR, IINTVL, &
                        ZFDINFTY, IIU, IJU, IKU)
 !
 !

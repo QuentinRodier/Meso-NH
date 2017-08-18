@@ -63,7 +63,7 @@ USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
 
-USE MODD_IO_SURF_MNH, ONLY : COUT, CACTION, NMASK_ALL, NMASK
+USE MODD_IO_SURF_MNH, ONLY : COUT, TPINFILE, CACTION, NMASK_ALL, NMASK
 !
 IMPLICIT NONE
 !
@@ -82,7 +82,7 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !-------------------------------------------------------------------------------
 !
 IF (CACTION=='OPEN  ') THEN
-  CALL FMCLOS_ll(HFILE,'KEEP',COUT,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_CLOSE_ll(TPINFILE,COUT,IRESP,OPARALLELIO=.FALSE.)
   CACTION='      '
 END IF
 !

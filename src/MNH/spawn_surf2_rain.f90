@@ -14,14 +14,15 @@ MODULE MODI_SPAWN_SURF2_RAIN
 !
 INTERFACE
 !
-      SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,    &
-                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,           &
-                              PACPRR,PINPRS,PACPRS,                            &
-                              PINPRG,PACPRG,PINPRH,PACPRH,                     &
-                              HSONFILE,KIUSON,KJUSON,                          &
-                              KIB2,KJB2,KIE2,KJE2,                             &
-                              KIB1,KJB1,KIE1,KJE1                              )
+      SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,        &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D, &
+                              PACPRR,PINPRS,PACPRS,                                &
+                              PINPRG,PACPRG,PINPRH,PACPRH,                         &
+                              TPSONFILE,KIUSON,KJUSON,                             &
+                              KIB2,KJB2,KIE2,KJE2,                                 &
+                              KIB1,KJB1,KIE1,KJE1                                  )
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
@@ -31,17 +32,17 @@ INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
 INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRC,PACPRC   ! Precipitations
+REAL, DIMENSION(:,:),   INTENT(OUT) :: PINDEP          ! Droplet instant deposition
+REAL, DIMENSION(:,:),   INTENT(OUT) :: PACDEP          ! Droplet accumulated dep
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRR,PACPRR   ! Precipitations
-REAL, DIMENSION(:,:), INTENT(OUT)     :: PINDEP! Droplet instant deposition
-REAL, DIMENSION(:,:), INTENT(OUT)     :: PACDEP! Droplet accumulated dep
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D  ! Rain precipitation
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D! Rain precipitation
                                                        ! and evaporation fluxes
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRS,PACPRS   ! Precipitations
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRG,PACPRG   ! Precipitations
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRH,PACPRH   ! Precipitations
 !
            ! Arguments for spawning with 2 input files (father+son1)
-CHARACTER (LEN=*), OPTIONAL, INTENT(IN) :: HSONFILE  ! name of the input FM-file SON
+TYPE(TFILEDATA),POINTER, OPTIONAL, INTENT(IN) :: TPSONFILE  ! Input FM-file SON
 INTEGER,           OPTIONAL, INTENT(IN) :: KIUSON    ! upper dimensions of the
 INTEGER,           OPTIONAL, INTENT(IN) :: KJUSON    !input FM-file SON
 INTEGER,           OPTIONAL, INTENT(IN) :: KIB2,KJB2 ! indexes for common
@@ -55,15 +56,15 @@ END INTERFACE
 END MODULE MODI_SPAWN_SURF2_RAIN
 !
 !
-!     #########################################################################
-      SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,    &
-                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D,           &
-                              PACPRR,PINPRS,PACPRS,                            &
-                              PINPRG,PACPRG,PINPRH,PACPRH,                     &
-                              HSONFILE,KIUSON,KJUSON,                          &
-                              KIB2,KJB2,KIE2,KJE2,                             &
-                              KIB1,KJB1,KIE1,KJE1                              )
-!     #########################################################################
+!     ##############################################################################
+      SUBROUTINE SPAWN_SURF2_RAIN (KXOR,KYOR,KXEND,KYEND,KDXRATIO,KDYRATIO,        &
+                              PINPRC,PACPRC,PINDEP,PACDEP,PINPRR,PINPRR3D,PEVAP3D, &
+                              PACPRR,PINPRS,PACPRS,                                &
+                              PINPRG,PACPRG,PINPRH,PACPRH,                         &
+                              TPSONFILE,KIUSON,KJUSON,                             &
+                              KIB2,KJB2,KIE2,KJE2,                                 &
+                              KIB1,KJB1,KIE1,KJE1                                  )
+!     ##############################################################################
 !
 !!****  *SPAWN_SURF2_RAIN * - subroutine to interpolate surface precipitations
 !
@@ -115,20 +116,19 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !
 !*       0.     DECLARATIONS
 !               ------------
-USE MODD_LBC_n,   ONLY : LBC_MODEL
+!
 USE MODD_BIKHARDT_n
-USE MODD_LUNIT_n, ONLY : CLUOUT
-USE MODD_FIELD_n, ONLY : XTHT
 USE MODD_CONF,    ONLY : CCONF,CPROGRAM
-!
+USE MODD_FIELD_n, ONLY : XTHT
+USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_LBC_n,   ONLY : LBC_MODEL
+USE MODD_LUNIT_n, ONLY : CLUOUT
 USE MODD_SPAWN
-!
-USE MODI_BIKHARDT         ! Interface modules
 !
 USE MODE_MODELN_HANDLER
 !
+USE MODI_BIKHARDT         ! Interface modules
 USE MODI_READ_PRECIP_FIELD
-!
 !
 IMPLICIT NONE
 !
@@ -142,16 +142,16 @@ INTEGER,   INTENT(IN)  :: KDXRATIO   !  x and y-direction Resolution ratio
 INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 !
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRC,PACPRC   ! Precipitations
-REAL, DIMENSION(:,:), INTENT(OUT)     :: PINDEP! Droplet instant deposition
-REAL, DIMENSION(:,:), INTENT(OUT)     :: PACDEP! Droplet accumulated dep
+REAL, DIMENSION(:,:),   INTENT(OUT) :: PINDEP          ! Droplet instant deposition
+REAL, DIMENSION(:,:),   INTENT(OUT) :: PACDEP          ! Droplet accumulated dep
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRR,PACPRR   ! Precipitations
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D  ! Rain precipitation
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PINPRR3D,PEVAP3D! Rain precipitation
                                                        ! and evaporation fluxes
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRS,PACPRS   ! Precipitations
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRG,PACPRG   ! Precipitations
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PINPRH,PACPRH   ! Precipitation!
 ! Arguments for spawning with 2 input files (father+son1)
-CHARACTER (LEN=*), OPTIONAL, INTENT(IN) :: HSONFILE  ! name of the input FM-file SON
+TYPE(TFILEDATA),POINTER, OPTIONAL, INTENT(IN) :: TPSONFILE  ! Input FM-file SON
 INTEGER,           OPTIONAL, INTENT(IN) :: KIUSON    ! upper dimensions of the
 INTEGER,           OPTIONAL, INTENT(IN) :: KJUSON    !input FM-file SON
 INTEGER,           OPTIONAL, INTENT(IN) :: KIB2,KJB2 ! indexes for common
@@ -357,7 +357,7 @@ END IF
 !*       3.3  Informations from model SON1
 !             ----------------------------
 !
-IF (PRESENT(HSONFILE)) THEN
+IF (PRESENT(TPSONFILE)) THEN
   IF (SIZE(XINPRC1) /= 0 ) THEN
     ALLOCATE(ZINPRC1(KIUSON,KJUSON))
     ALLOCATE(ZACPRC1(KIUSON,KJUSON))
@@ -416,11 +416,11 @@ IF (PRESENT(HSONFILE)) THEN
     ALLOCATE(ZACPRH1(0,0))
     YGETRHT='SKIP'
   END IF
-  CALL READ_PRECIP_FIELD(HSONFILE,CLUOUT,CPROGRAM,CCONF,                          &
-                         YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT,                 &
-                         ZINPRC1,ZACPRC1,ZINDEP1,ZACDEP1,ZINPRR1,ZINPRR3D1,ZEVAP3D1,              &
-                         ZACPRR1,ZINPRS1,ZACPRS1,                                 &
-                         ZINPRG1,ZACPRG1,ZINPRH1,ZACPRH1                          )
+  CALL READ_PRECIP_FIELD(TPSONFILE,CLUOUT,CPROGRAM,CCONF,                            &
+                         YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT,                    &
+                         ZINPRC1,ZACPRC1,ZINDEP1,ZACDEP1,ZINPRR1,ZINPRR3D1,ZEVAP3D1, &
+                         ZACPRR1,ZINPRS1,ZACPRS1,                                    &
+                         ZINPRG1,ZACPRG1,ZINPRH1,ZACPRH1                             )
   IF (SIZE(XINPRC1) /= 0 ) THEN
     PINPRC(KIB2:KIE2,KJB2:KJE2) = ZINPRC1(KIB1:KIE1,KJB1:KJE1)
     PACPRC(KIB2:KIE2,KJB2:KJE2) = ZACPRC1(KIB1:KIE1,KJB1:KJE1)

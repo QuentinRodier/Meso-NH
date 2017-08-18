@@ -12,13 +12,15 @@
 MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !####################################
 INTERFACE
-      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,HPGDFILE,        &
-                              HDAD_NAME                                        )
-
-CHARACTER(LEN=28),  INTENT(IN)  :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)  :: HFMFILE    ! name of the Mesonh input file
-CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE   ! name of the physiographic data file
-CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME! true name of the Mesonh input file
+      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,TPPGDFILE, &
+                              HDAD_NAME                                  )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
+TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
 !
 END SUBROUTINE READ_ALL_DATA_MESONH_CASE
 !
@@ -26,10 +28,10 @@ END INTERFACE
 !
 END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !
-!     #########################################################################
-      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,HPGDFILE,        &
-                              HDAD_NAME                                        )
-!     #########################################################################
+!     ####################################################################
+      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,TPPGDFILE, &
+                              HDAD_NAME                                  )
+!     ####################################################################
 !
 !!****  *READ_ALL_DATA_MESONH_CASE* - reads data for the initialization of real cases.
 !! 
@@ -131,6 +133,7 @@ USE MODI_ZS_BOUNDARY
 !
 USE MODD_CONF           ! declaration modules
 USE MODD_CONF_n
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAM_n
 USE MODD_LUNIT
 USE MODD_LUNIT_n
@@ -160,10 +163,10 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-CHARACTER(LEN=28),  INTENT(IN)  :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN)  :: HFMFILE    ! name of the Mesonh input file
-CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE   ! name of the physiographic data file
-CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME! true name of the Mesonh input file
+CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
+TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
 !
 !
 !*       0.2   Declaration of local variables
@@ -247,7 +250,7 @@ XRES = ZRES
 !*            2. Reading of physiographic data domain
 !                ------------------------------------
 !
-CALL READ_HGRID(0,HPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
+CALL READ_HGRID(0,TPPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
 !
 !*            3. Reading of large-scale grid and time
 !                ------------------------------------
@@ -323,15 +326,15 @@ CALL READ_PRC_FMFILE(IIINF_LS,IISUP_LS,IJINF_LS,IJSUP_LS                     )
 !                 ---------
 !
 ALLOCATE(XZS(IISUP_LS-IIINF_LS+1,IJSUP_LS-IJINF_LS+1))
-CALL FMREAD(HPGDFILE,'ZS',CLUOUT,'XY',XZS,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(TPPGDFILE%CNAME,'ZS',CLUOUT,'XY',XZS,IGRID,ILENCH,YCOMMENT,IRESP)
 CALL ZS_BOUNDARY(XZS,XZS_LS)
 !
 ALLOCATE(XZSMT(IISUP_LS-IIINF_LS+1,IJSUP_LS-IJINF_LS+1))
-CALL FMREAD(HPGDFILE,'MASDEV',CLUOUT,'XY',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL FMREAD(TPPGDFILE%CNAME,'MASDEV',CLUOUT,'XY',IMASDEV,IGRID,ILENCH,YCOMMENT,IRESP)
 IF (IMASDEV<=46) THEN
   XZSMT = XZS
 ELSE
-  CALL FMREAD(HPGDFILE,'ZSMT',CLUOUT,'XY',XZSMT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL FMREAD(TPPGDFILE%CNAME,'ZSMT',CLUOUT,'XY',XZSMT,IGRID,ILENCH,YCOMMENT,IRESP)
 END IF 
 CALL ZS_BOUNDARY(XZSMT,XZSMT_LS)
 !
