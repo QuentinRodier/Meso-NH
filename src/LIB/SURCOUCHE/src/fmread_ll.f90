@@ -43,26 +43,24 @@ PRIVATE
 INTERFACE IO_READ_FIELD
    MODULE PROCEDURE IO_READ_FIELD_BYNAME_X0, IO_READ_FIELD_BYNAME_X1,  &
                     IO_READ_FIELD_BYNAME_X2, IO_READ_FIELD_BYNAME_X3,  &
-                    IO_READ_FIELD_BYNAME_N0,                           &
+                    IO_READ_FIELD_BYNAME_N0, IO_READ_FIELD_BYNAME_N1,  &
                     IO_READ_FIELD_BYNAME_N2,                           &
                     IO_READ_FIELD_BYNAME_L0, IO_READ_FIELD_BYNAME_L1,  &
                     IO_READ_FIELD_BYNAME_C0,                           &
                     IO_READ_FIELD_BYNAME_T0,                           &
                     IO_READ_FIELD_BYFIELD_X0,IO_READ_FIELD_BYFIELD_X1, &
                     IO_READ_FIELD_BYFIELD_X2,IO_READ_FIELD_BYFIELD_X3, &
-                    IO_READ_FIELD_BYFIELD_N0,                          &
+                    IO_READ_FIELD_BYFIELD_N0,IO_READ_FIELD_BYFIELD_N1, &
                     IO_READ_FIELD_BYFIELD_N2,                          &
                     IO_READ_FIELD_BYFIELD_L0,IO_READ_FIELD_BYFIELD_L1, &
                     IO_READ_FIELD_BYFIELD_C0,                          &
                     IO_READ_FIELD_BYFIELD_T0
 !                       IO_READ_FIELD_BYNAME_X4, IO_READ_FIELD_BYNAME_X5,  &
 !                       IO_READ_FIELD_BYNAME_X6,                            &
-!                       IO_READ_FIELD_BYNAME_N1,  &
 !                       IO_READ_FIELD_BYNAME_N3,  &
 !                       IO_READ_FIELD_BYNAME_C1,  &
 !                       IO_READ_FIELD_BYFIELD_X4,IO_READ_FIELD_BYFIELD_X5, &
 !                       IO_READ_FIELD_BYFIELD_X6,                           &
-!                       IO_READ_FIELD_BYFIELD_N1, &
 !                       IO_READ_FIELD_BYFIELD_N3, &
 !                       IO_READ_FIELD_BYFIELD_C1, &
 END INTERFACE
@@ -2245,6 +2243,112 @@ KRESP = IRESP
 RETURN
   
 END SUBROUTINE FMREADN1_ll
+
+SUBROUTINE IO_READ_FIELD_BYNAME_N1(TPFILE,HNAME,KFIELD,KRESP)
+!
+TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
+CHARACTER(LEN=*),    INTENT(IN)    :: HNAME    ! name of the field to write
+INTEGER,DIMENSION(:),INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER,OPTIONAL,    INTENT(OUT)   :: KRESP    ! return-code
+!
+INTEGER :: ID ! Index of the field
+INTEGER :: IRESP ! return_code
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYNAME_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(HNAME))
+!
+CALL FIND_FIELD_ID_FROM_MNHNAME(HNAME,ID,IRESP)
+!
+IF(IRESP==0) CALL IO_READ_FIELD(TPFILE,TFIELDLIST(ID),KFIELD,IRESP)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+END SUBROUTINE IO_READ_FIELD_BYNAME_N1
+
+SUBROUTINE IO_READ_FIELD_BYFIELD_N1(TPFILE,TPFIELD,KFIELD,KRESP)
+!
+USE MODD_IO_ll, ONLY : ISP,GSMONOPROC
+!
+USE MODE_ALLOCBUFFER_ll
+USE MODE_FD_ll, ONLY : GETFD,FD_LL
+USE MODE_SCATTER_ll
+!
+TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
+INTEGER,DIMENSION(:),INTENT(INOUT) :: KFIELD   ! array containing the data field
+INTEGER,OPTIONAL,    INTENT(OUT)   :: KRESP    ! return-code
+!
+INTEGER                      :: IERR
+TYPE(FD_ll), POINTER         :: TZFD
+INTEGER                      :: IRESP
+INTEGER,DIMENSION(:),POINTER :: IFIELDP
+LOGICAL                      :: GALLOC
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+GALLOC = .FALSE.
+IRESP = 0
+!
+TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
+IF (ASSOCIATED(TZFD)) THEN
+  IF (GSMONOPROC) THEN ! sequential execution
+      IF (TPFILE%CFORMAT=='NETCDF4') THEN
+         CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+         CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE
+         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N1',&
+                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+      END IF
+  ELSE
+    IF (ISP == TZFD%OWNER)  THEN
+      CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,TPFIELD%CDIR,GALLOC)
+      IF (TPFILE%CFORMAT=='NETCDF4') THEN
+         CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFI') THEN
+         CALL IO_READ_FIELD_LFI(TPFILE,TPFIELD,IFIELDP,IRESP)
+      ELSE IF (TPFILE%CFORMAT=='LFICDF4') THEN
+        !Only detected if CFORMAT='LFICDF4'
+        !This seems to be allowed for netCDF4 but it is not clean
+        CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N1',&
+                       TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
+      ELSE
+         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N1',&
+                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+      END IF
+    END IF
+    !
+    CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+    !
+    !Broadcast header only if IRESP==-111
+    !because metadata of field has been modified in IO_READ_FIELD_xxx
+    IF (IRESP==-111) CALL IO_BCAST_FIELD_METADATA(TZFD,TPFIELD)
+    !
+    IF (TPFIELD%CDIR /= 'XX' .AND. TPFIELD%CDIR /='YY') THEN
+      ! Broadcast Field
+      CALL MPI_BCAST(KFIELD,SIZE(KFIELD),MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
+    ELSE
+      !Scatter Field
+      CALL SCATTER_XXFIELD(TPFIELD%CDIR,IFIELDP,KFIELD,TZFD%OWNER,TZFD%COMM)
+    END IF
+  END IF
+ELSE
+  IRESP = -61
+  CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_N1','file '//TRIM(TPFILE%CNAME)//' not found')
+END IF
+!
+IF (GALLOC) DEALLOCATE (IFIELDP)
+!
+IF (PRESENT(KRESP)) KRESP = IRESP
+!
+END SUBROUTINE IO_READ_FIELD_BYFIELD_N1
+
 
 SUBROUTINE FMREADN2_ll(HFILEM,HRECFM,HFIPRI,HDIR,KFIELD,KGRID,&
      KLENCH,HCOMMENT,KRESP)

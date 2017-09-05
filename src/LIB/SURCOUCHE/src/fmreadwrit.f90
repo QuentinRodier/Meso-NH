@@ -274,14 +274,13 @@ PRIVATE
 INTERFACE IO_READ_FIELD_LFI
    MODULE PROCEDURE IO_READ_FIELD_LFI_X0, IO_READ_FIELD_LFI_X1, &
                     IO_READ_FIELD_LFI_X2, IO_READ_FIELD_LFI_X3, &
-                    IO_READ_FIELD_LFI_N0,                       &
+                    IO_READ_FIELD_LFI_N0, IO_READ_FIELD_LFI_N1, &
                     IO_READ_FIELD_LFI_N2,                       &
                     IO_READ_FIELD_LFI_L0, IO_READ_FIELD_LFI_L1, &
                     IO_READ_FIELD_LFI_C0,                       &
                     IO_READ_FIELD_LFI_T0
 !                     IO_READ_FIELD_LFI_X4,IO_READ_FIELD_LFI_X5, &
 !                     IO_READ_FIELD_LFI_X6,                      &
-!                     IO_READ_FIELD_LFI_N1, &
 !                     IO_READ_FIELD_LFI_N3, &
 END INTERFACE IO_READ_FIELD_LFI
 !
@@ -479,6 +478,42 @@ KRESP=IRESP
 IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
 !
 END SUBROUTINE IO_READ_FIELD_LFI_N0
+!
+!
+SUBROUTINE IO_READ_FIELD_LFI_N1(TPFILE,TPFIELD,KFIELD,KRESP)
+USE MODD_FM
+USE MODD_CONFZ, ONLY : NZ_VERB
+USE MODE_MSG
+!
+IMPLICIT NONE
+!
+!*      0.1   Declarations of arguments
+!
+TYPE(TFILEDATA),     INTENT(IN)    :: TPFILE
+TYPE(TFIELDDATA),    INTENT(INOUT) :: TPFIELD
+INTEGER,DIMENSION(:),INTENT(OUT)   :: KFIELD  ! array containing the data field
+INTEGER,             INTENT(OUT)   :: KRESP   ! return-code if problems occured
+!
+!*      0.2   Declarations of local variables
+!
+INTEGER(KIND=LFI_INT)                    :: IRESP,ITOTAL
+INTEGER                                  :: ILENG
+INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
+LOGICAL                                  :: GGOOD
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_LFI_N1',TRIM(TPFILE%CNAME)//': reading '//TRIM(TPFIELD%CMNHNAME))
+!
+ILENG = SIZE(KFIELD)
+!
+CALL IO_READ_CHECK_FIELD_LFI(TPFILE,TPFIELD,ILENG,IWORK,ITOTAL,IRESP,GGOOD)
+!
+IF (GGOOD) KFIELD(:) = IWORK(IWORK(2)+3:)
+!
+KRESP=IRESP
+!
+IF (ALLOCATED(IWORK)) DEALLOCATE(IWORK)
+!
+END SUBROUTINE IO_READ_FIELD_LFI_N1
 !
 !
 SUBROUTINE IO_READ_FIELD_LFI_N2(TPFILE,TPFIELD,KFIELD,KRESP)
