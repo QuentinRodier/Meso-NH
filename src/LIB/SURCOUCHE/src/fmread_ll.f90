@@ -312,6 +312,8 @@ ELSE
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_X0','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
 !
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
+!
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_READ_FIELD_BYFIELD_X0
@@ -539,6 +541,8 @@ ELSE
 END IF
 !
 IF (GALLOC) DEALLOCATE (ZFIELDP)
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -906,6 +910,8 @@ ELSE
 END IF
 !
 IF (GALLOC) DEALLOCATE (ZFIELDP)
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -1627,6 +1633,8 @@ END IF
 IF (GALLOC)    DEALLOCATE (ZFIELDP)
 IF (GALLOC_ll) DEALLOCATE (ZSLICE_ll)
 !
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
+!
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 CALL SECOND_MNH2(T22)
@@ -2143,6 +2151,8 @@ ELSE
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_N0','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
 !
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
+!
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_READ_FIELD_BYFIELD_N0
@@ -2344,6 +2354,8 @@ ELSE
 END IF
 !
 IF (GALLOC) DEALLOCATE (IFIELDP)
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -2611,6 +2623,8 @@ END IF
 !
 IF (GALLOC) DEALLOCATE (IFIELDP)
 !
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
+!
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
 END SUBROUTINE IO_READ_FIELD_BYFIELD_N2
@@ -2787,6 +2801,8 @@ ELSE
   IRESP = -61
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_L0','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -2968,6 +2984,8 @@ ELSE
   IRESP = -61
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_L1','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -3161,6 +3179,8 @@ ELSE
   IRESP = -61
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_C0','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -3358,6 +3378,8 @@ ELSE
   IRESP = -61
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_BYFIELD_T0','file '//TRIM(TPFILE%CNAME)//' not found')
 END IF
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !
@@ -3811,6 +3833,8 @@ END IF
 !----------------------------------------------------------------
 !
 IF (ALLOCATED(Z3D)) DEALLOCATE (Z3D)
+!
+IF (IRESP==-111) IRESP = 0 !-111 is not really an error (metadata has changed)
 !
 IF (PRESENT(KRESP)) KRESP = IRESP
 !

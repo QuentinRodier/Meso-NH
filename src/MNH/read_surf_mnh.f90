@@ -138,7 +138,7 @@ ELSE
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,PFIELD,KRESP)
 END IF
 
-IF (KRESP /=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
   WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -438,7 +438,7 @@ ELSE
     CALL IO_READ_FIELD(TPINFILE,TZFIELD,PFIELD,KRESP)
   END IF
 !
-  IF (KRESP /=0 .AND. KRESP/=-111) THEN
+  IF (KRESP /=0) THEN
     WRITE(NLUOUT,*) 'WARNING'
     WRITE(NLUOUT,*) '-------'
     WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -581,7 +581,7 @@ ELSE
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,PFIELD,KRESP)
 END IF
 !
- IF (KRESP /=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
     WRITE(NLUOUT,*) 'WARNING'
     WRITE(NLUOUT,*) '-------'
     WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -769,7 +769,7 @@ IF (.NOT. GCOVER_PACKED) THEN
       ICOVER=ICOVER+1
       CALL IO_READ_FIELD(TPINFILE,TZFIELD,ZWORK3D(:,:,ICOVER),IRESP)
     END IF
-    IF (IRESP/=0 .AND. IRESP/=-111) KRESP=IRESP
+    IF (IRESP/=0) KRESP=IRESP
   END DO
 ELSE
   TZFIELD%CMNHNAME   = TRIM(HREC)
@@ -784,7 +784,7 @@ ELSE
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,ZWORK3D(:,:,:),KRESP)
 END IF
 !
-IF (KRESP /=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
   WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -968,7 +968,7 @@ ELSE
   CALL ABORT
 END IF
 !
-IF (KRESP/=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
   WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1159,7 +1159,7 @@ ELSE
    TZFIELD%NDIMS      = 0
    CALL IO_READ_FIELD(TPINFILE,TZFIELD,KFIELD,KRESP)
 
-   IF (KRESP/=0 .AND. KRESP/=-111) THEN
+    IF (KRESP /=0) THEN
       WRITE(NLUOUT,*) 'WARNING'
       WRITE(NLUOUT,*) '-------'
       WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1252,8 +1252,7 @@ ELSE IF (HDIR=='H') THEN
 !
  CALL FMREAD(CFILE,HREC,COUT,'XY',IWORK(:,:),IGRID,ILENCH,HCOMMENT,KRESP)
 !
-
- IF (KRESP /=0 .AND. KRESP/=-111) THEN
+ IF (KRESP /=0) THEN
     WRITE(NLUOUT,*) 'WARNING'
     WRITE(NLUOUT,*) '-------'
     WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1414,7 +1413,7 @@ ELSE
    TZFIELD%NDIMS      = 0
    CALL IO_READ_FIELD(TPINFILE,TZFIELD,HFIELD,KRESP)
    !
-   IF (KRESP/=0 .AND. KRESP/=-111) THEN
+   IF (KRESP /=0) THEN
       WRITE(NLUOUT,*) 'WARNING'
       WRITE(NLUOUT,*) '-------'
       WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1518,7 +1517,7 @@ IF (HDIR=='-') THEN
   TZFIELD%NDIMS      = 1
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,OFIELD,KRESP)
 
-  IF (KRESP/=0 .AND. KRESP/=-111) THEN
+  IF (KRESP /=0) THEN
     WRITE(NLUOUT,*) 'WARNING'
     WRITE(NLUOUT,*) '-------'
     WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1543,7 +1542,7 @@ ELSE IF (HDIR=='H') THEN
   WHERE (IWORK==1) GWORK = .TRUE.
   DEALLOCATE(IWORK)
 !
-  IF (KRESP/=0 .AND. KRESP/=-111) THEN
+  IF (KRESP /=0) THEN
     WRITE(NLUOUT,*) 'WARNING'
     WRITE(NLUOUT,*) '-------'
     WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1650,7 +1649,7 @@ TZFIELD%NDIMS      = 0
 CALL IO_READ_FIELD(TPINFILE,TZFIELD,OFIELD,KRESP)
 HCOMMENT = TZFIELD%CCOMMENT
 !
-IF (KRESP/=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
   WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
@@ -1764,7 +1763,7 @@ END IF
 !
 CALL IO_READ_FIELD(TPINFILE,HREC,TZDATETIME,KRESP)
 !
-IF (KRESP/=0 .AND. KRESP/=-111) THEN
+IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
   WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
@@ -1888,23 +1887,23 @@ KYEAR(:)  = ITDATE(1,:)
 KMONTH(:) = ITDATE(2,:)
 KDAY(:)   = ITDATE(3,:)
 
-   IF (KRESP/=0 .AND. KRESP/=-111) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
-  ENDIF
+IF (KRESP /=0) THEN
+  WRITE(NLUOUT,*) 'WARNING'
+  WRITE(NLUOUT,*) '-------'
+  WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
+  WRITE(NLUOUT,*) 'default value may be used, who knows???'
+  WRITE(NLUOUT,*) ' '
+ENDIF
 !
 YRECFM=TRIM(HREC)//'%TIME'
 CALL FMREAD(CFILE,YRECFM,COUT,'--',PTIME(:),IGRID,ILENCH,HCOMMENT,KRESP)
 
-   IF (KRESP/=0 .AND. KRESP/=-111) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
-  ENDIF
+IF (KRESP /=0) THEN
+  WRITE(NLUOUT,*) 'WARNING'
+  WRITE(NLUOUT,*) '-------'
+  WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
+  WRITE(NLUOUT,*) 'default value may be used, who knows???'
+  WRITE(NLUOUT,*) ' '
+ENDIF
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFT1_MNH
