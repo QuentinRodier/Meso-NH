@@ -834,54 +834,65 @@ DO JSV = NSV_ELECBEG, NSV_ELECEND
   END SELECT
 END DO
 ! Chemical gas phase scalar variables
-DO JSV = NSV_CHGSBEG, NSV_CHGSEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBXSVM '
+IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_CHGSBEG, NSV_CHGSEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHGSBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
 END DO
 ! Chemical aqueous phase scalar variables
 DO JSV = NSV_CHACBEG, NSV_CHACEND
@@ -1084,55 +1095,67 @@ DO JSV = NSV_AERDEPBEG, NSV_AERDEPEND
   END SELECT
 END DO
 ! Dust scalar variables
-DO JSV = NSV_DSTBEG, NSV_DSTEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Dust PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
+IF (NSV_DSTEND>=NSV_DSTBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_DSTBEG, NSV_DSTEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Dust PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Dust PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
+!callabortstop
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
+        END IF
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 !
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CDUSTNAMES(JSV-NSV_DSTBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Dust PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
-!callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
-        END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
 DO JSV = NSV_DSTDEPBEG, NSV_DSTDEPEND
   SELECT CASE(HGETSVM(JSV))
   CASE ('READ')

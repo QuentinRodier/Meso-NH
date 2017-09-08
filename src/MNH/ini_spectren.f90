@@ -150,14 +150,7 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 !
 INTEGER             :: JSV     ! Loop index
 INTEGER             :: IRESP   ! Return code of FM routines
-INTEGER             :: ININAR  ! File management variable
-INTEGER             :: IMASDEV ! version of MESOHN in the input file
 INTEGER             :: ILUOUT  ! Logical unit number of output-listing
-CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
-INTEGER             :: IGRID   ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH  ! Length of comment string in LFIFM file
-CHARACTER (LEN=100) :: YCOMMENT!comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM  ! Name of the desired field in LFIFM file
 INTEGER             :: IIU     ! Upper dimension in x direction (local)
 INTEGER             :: IJU     ! Upper dimension in y direction (local)
 INTEGER             :: IIU_ll  ! Upper dimension in x direction (global)
@@ -240,10 +233,8 @@ CINIFILE=TPINIFILE%CNAME
 !
 IKU=NKMAX+2*JPVEXT
 !
-YRECFM = 'ZHAT'
 ALLOCATE(XZHAT(IKU))
- YDIR='--'
-CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XZHAT,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPINIFILE,'ZHAT',XZHAT)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_SPECTRE_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -765,37 +756,27 @@ NDT_2_WAY(KMI)=4
 
 IF (LSPECTRE_U) THEN
   ALLOCATE(XUT(IIU,IJU,IKU))      ; XUT  = 0.0
-  YRECFM = 'UT'
-  YDIR='XY'
-  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XUT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'UT',XUT)
 END IF
 !
 IF (LSPECTRE_V) THEN
   ALLOCATE(XVT(IIU,IJU,IKU))      ; XVT  = 0.0
-  YRECFM = 'VT'
-  YDIR='XY'
-  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XVT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'VT',XVT)
 END IF
 !
 IF (LSPECTRE_W) THEN  
   ALLOCATE(XWT(IIU,IJU,IKU))      ; XWT  = 0.0
-  YRECFM = 'WT'
-  YDIR='XY'
-  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XWT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'WT',XWT)
 END IF
 !
 IF (LSPECTRE_TH) THEN
   ALLOCATE(XTHT(IIU,IJU,IKU))     ; XTHT = 0.0
-  YRECFM = 'THT'
-  YDIR='XY'
-  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XTHT,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'THT',XTHT)
 END IF
 !
 IF (LSPECTRE_RV) THEN
   ALLOCATE(XRT(IIU,IJU,IKU,NRR))
-  YRECFM = 'RVT'
-  YDIR='XY'
-  CALL FMREAD(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIR,XRT(:,:,:,1),IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPINIFILE,'RVT',XRT(:,:,:,1))
 END IF
 !
 !-------------------------------------------------------------------------------
