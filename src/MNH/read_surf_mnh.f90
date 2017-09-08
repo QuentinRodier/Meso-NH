@@ -52,6 +52,7 @@ USE MODE_FIELD,       ONLY : TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_GRIDPROJ
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, TPINFILE, NLUOUT
 !
@@ -80,6 +81,8 @@ REAL              :: ZRPK, ZBETA, ZLAT0, ZLON0
 CHARACTER(LEN=100):: YCOMMENT ! comment
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 IF (HREC=='LONORI' .OR. HREC=='LATORI') THEN
   CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
@@ -194,6 +197,7 @@ USE MODE_FM
 USE MODE_FMREAD
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_CST,         ONLY : XPI
 !
@@ -242,6 +246,8 @@ INTEGER, DIMENSION(:), ALLOCATABLE :: IMASK       ! mask for packing
 REAL              :: ZUNDEF         ! undefined value in SURFEX
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
 !
@@ -513,6 +519,7 @@ USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE , NLUOUT, TPINFILE, NMASK, NIU, NJU, NIB, NJB, NIE, NJE, &
                              NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, NMASK_ALL
@@ -549,6 +556,7 @@ REAL              :: ZUNDEF         ! undefined value in SURFEX
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 !! Reading of a 3D field, masked (2 first dimensions) and with
 !! 2 first dimensions packed into only 1 (results in a 2D array instead of 3D)
@@ -653,6 +661,7 @@ USE MODE_FIELD, ONLY: TFIELDDATA,TYPELOG,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
 USE MODD_CST,         ONLY : XPI
@@ -701,6 +710,8 @@ INTEGER  :: IVERSION, IBUGFIX
 LOGICAL  :: GCOVER_PACKED ! .T. if COVER are all packed into one field
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
 IRESP = 0
@@ -849,6 +860,7 @@ USE MODE_FM
 USE MODE_FMREAD
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_CST,         ONLY : XPI
 !
@@ -896,6 +908,8 @@ LOGICAL  :: GCOVER_PACKED ! .T. if COVER are all packed into one field
 CHARACTER(LEN=1) :: YDIR1
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_1COV_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
 !YDIR1 = 'H'
@@ -1029,6 +1043,7 @@ USE MODE_ll
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
                                  NIU, NJU, NIB, NJB, NIE, NJE
@@ -1068,6 +1083,8 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D
 TYPE(TFIELDDATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP=0
 !
@@ -1215,6 +1232,7 @@ END SUBROUTINE READ_SURFN0_MNH
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
                                  NIU, NJU, NIB, NJB, NIE, NJE
@@ -1243,6 +1261,8 @@ INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
 TYPE(TFIELDDATA) :: TZFIELD
 !---------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 IF (HDIR=='-') THEN
 !
@@ -1332,7 +1352,7 @@ USE MODE_ll
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPECHAR
 USE MODE_FM
 USE MODE_FMREAD
-!
+USE MODE_MSG
 USE MODE_POS
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
@@ -1365,6 +1385,8 @@ CHARACTER(LEN=6)  :: CSEA_FLUX
 TYPE(TFIELDDATA)  :: TZFIELD
 NAMELIST/NAM_PARAMn/CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CSEA_FLUX, CELEC
 !----------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
 ! On lit la version de Mesonh usilisée pour fabriquer le fichier
@@ -1494,6 +1516,7 @@ USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE , TPINFILE, NLUOUT, NMASK, &
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT,TYPELOG
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODI_PACK_2D_1D
 !
@@ -1522,7 +1545,8 @@ LOGICAL, DIMENSION(:,:), ALLOCATABLE :: GWORK  ! work array read in the file
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
-
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
 IF (HDIR=='-') THEN
   TZFIELD%CMNHNAME   = TRIM(HREC)
   TZFIELD%CSTDNAME   = ''
@@ -1618,6 +1642,7 @@ END SUBROUTINE READ_SURFL1_MNH
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPELOG
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
 !
@@ -1636,7 +1661,8 @@ CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
 INTEGER           :: IMASDEV        ! MESONH version
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
-
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
 IF (HREC(1:4)=='BUDC') THEN
   CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
   IF (IMASDEV<=45) THEN
@@ -1721,6 +1747,7 @@ END SUBROUTINE READ_SURFL0_MNH
 USE MODE_FIELD,       ONLY : TFIELDDATA,TYPECHAR
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
 USE MODD_TYPE_DATE
@@ -1752,6 +1779,7 @@ TYPE(TFIELDDATA)       :: TZFIELD
 TYPE(DATE_TIME)        :: TZDATETIME
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
 IF (IMASDEV<46) THEN
@@ -1841,6 +1869,7 @@ END SUBROUTINE READ_SURFT0_MNH
 USE MODE_FIELD,       ONLY : TFIELDDATA,TYPECHAR
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
 !
@@ -1872,6 +1901,7 @@ INTEGER                :: IMASDEV           ! MESONH version
 TYPE(TFIELDDATA)       :: TZFIELD
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
 IF (IMASDEV<46) THEN

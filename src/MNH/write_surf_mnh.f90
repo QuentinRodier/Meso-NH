@@ -78,7 +78,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX0_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( ( HREC=='LAT0' .OR. HREC=='LON0' .OR. HREC=='RPK' .OR. HREC=='BETA'  &
                  .OR. HREC=='LATORI'.OR. HREC=='LONORI'                  )&
@@ -198,7 +198,7 @@ CHARACTER(LEN=5) :: YMSG
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 !*       1.    Special cases with no writing
 !        -----------------------------------
@@ -506,7 +506,7 @@ CHARACTER(LEN=5)  :: YMSG
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2COV_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2COV_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 !*       2.    Ecriture
 !        --------------
@@ -701,7 +701,7 @@ CHARACTER(LEN=5)  :: YMSG
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFX2_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF (HDIR=='A') THEN
   IIU = NIU_ALL
@@ -851,7 +851,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN0_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( (HREC=='IMAX' .OR. HREC=='JMAX' .OR. HREC=='KMAX') .AND.  &
      CSTORAGE_TYPE/='PG' .AND. CSTORAGE_TYPE/='SU'            ) THEN
@@ -960,7 +960,7 @@ CHARACTER(LEN=5) :: YMSG
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN1_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFN1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF (HDIR=='-') THEN
 !
@@ -1068,7 +1068,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 CHARACTER(LEN=5) :: YMSG
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFC0_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFC0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
      .AND. HREC=='GRID_TYPE       '                  ) THEN
@@ -1189,7 +1189,7 @@ CHARACTER(LEN=5) :: YMSG
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL1_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF (HDIR=='-') THEN
   IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
@@ -1306,7 +1306,7 @@ CHARACTER(LEN=100),     INTENT(IN)  :: HCOMMENT ! Comment string
 CHARACTER(LEN=5) :: YMSG
 TYPE(TFIELDDATA) :: TZFIELD
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( (CMASK /= 'FULL  ').AND. (HREC=='COVER') ) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFL0_MNH',TRIM(HREC)//' with mask '// &
@@ -1405,7 +1405,7 @@ TYPE (DATE_TIME) :: TZDATA
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( HREC=='DTCUR' .AND. CSTORAGE_TYPE/='SU' ) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT0_MNH',TRIM(HREC)//' not written in file by externalized surface')
@@ -1504,7 +1504,7 @@ CHARACTER(LEN=5) :: YMSG
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH','writing '//TRIM(HREC))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH',TRIM(TFILE_SURFEX%CNAME)//': writing '//TRIM(HREC))
 !
 IF( HREC=='DTCUR' .AND. CSTORAGE_TYPE/='SU' ) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_SURFT1_MNH',TRIM(HREC)//' not written in file by externalized surface')
