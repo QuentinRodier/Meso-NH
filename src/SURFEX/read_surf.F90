@@ -273,7 +273,7 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -424,7 +424,7 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL, IOK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -550,7 +550,7 @@ INTEGER, INTENT(OUT) :: KRESP               ! KRESP  : return-code if a problem 
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL1, IL2, IOK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -657,7 +657,7 @@ INTEGER, INTENT(OUT) :: KRESP                 ! KRESP  : return-code if a proble
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL1, IL2, IL3
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -752,7 +752,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -905,7 +905,7 @@ INTEGER, INTENT(OUT) :: KRESP                ! KRESP  : return-code if a problem
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1019,7 +1019,7 @@ INTEGER, INTENT(OUT) :: KRESP             ! KRESP  : return-code if a problem ap
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -1164,7 +1164,7 @@ INTEGER, INTENT(OUT) :: KRESP           ! KRESP  : return-code if a problem appe
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 REAL   :: XTIME0
 INTEGER            :: INFOMPI
@@ -1305,7 +1305,7 @@ INTEGER, INTENT(OUT) :: KRESP                ! KRESP  : return-code if a problem
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: IL
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1413,7 +1413,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 !
 REAL   :: XTIME0
@@ -1586,7 +1586,7 @@ INTEGER, INTENT(OUT) :: KRESP              ! KRESP  : return-code if a problem a
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: ILUOUT
 INTEGER            :: INFOMPI
@@ -1755,7 +1755,7 @@ INTEGER, INTENT(OUT) :: KRESP            ! KRESP  : return-code if a problem app
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: ILUOUT
 INTEGER            :: INFOMPI

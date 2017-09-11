@@ -114,7 +114,7 @@ REAL, DIMENSION(:,:), POINTER     :: ZCOVER
 REAL, DIMENSION(:,:), POINTER :: ZSEA1, ZWATER1, ZNATURE1, ZTOWN1
 REAL, DIMENSION(:,:), POINTER :: ZSEA2, ZWATER2, ZNATURE2, ZTOWN2
 REAL, DIMENSION(:),   ALLOCATABLE :: ZSUM
- CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be read
+ CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
  CHARACTER(LEN=100) :: YCOMMENT
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------

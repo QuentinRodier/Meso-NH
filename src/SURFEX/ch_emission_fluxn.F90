@@ -89,7 +89,7 @@ INTEGER :: INBTS       ! Number of emission times for a species
 INTEGER :: ITIM1,ITIM2 ! first/last time for interpolation
 INTEGER :: INDX1,INDX2 ! first/next index for data interpolation
 INTEGER :: ISIMTIME, ITPERIOD
- CHARACTER (LEN=16)  :: YRECFM          ! LFI article name
+CHARACTER (LEN=LEN_HREC)  :: YRECFM          ! LFI article name
 TYPE(PRONOSVAR_T),POINTER :: CURPRONOS !Current pronostic variable
 !
 !*       0.3  declaration of saved local variables
