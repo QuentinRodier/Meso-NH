@@ -782,13 +782,19 @@ CHARACTER(LEN=12)            :: YRECLENGTH_FILE, YRECLENGTH_MEM
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=JPXKRK)        :: YCOMMENT
 CHARACTER(LEN=12)            :: YRESP
+CHARACTER(LEN=LEN_HREC)      :: YRECFM
 !
 OGOOD = .TRUE.
+!
+YRECFM=TRIM(TPFIELD%CMNHNAME)
+IF( LEN_TRIM(TPFIELD%CMNHNAME) > LEN(YRECFM) ) &
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_LFI','field name was truncated to '&
+                 //YRECFM//' for '//TRIM(TPFIELD%CMNHNAME))
 !
 !*      2.a   LET'S GET SOME INFORMATION ON THE DESIRED ARTICLE
 !
 INUMBR = TPFILE%NLFIFLU
-CALL LFINFO(KRESP,INUMBR,TRIM(TPFIELD%CMNHNAME),KTOTAL,IPOSEX)
+CALL LFINFO(KRESP,INUMBR,YRECFM,KTOTAL,IPOSEX)
 !
 IF (KRESP.NE.0) THEN
   WRITE(YRESP, '( I12 )') KRESP
@@ -814,7 +820,7 @@ ENDIF
 !
 ALLOCATE(KWORK(KTOTAL))
 !
-CALL LFILEC(KRESP,INUMBR,TRIM(TPFIELD%CMNHNAME),KWORK,KTOTAL)
+CALL LFILEC(KRESP,INUMBR,YRECFM,KWORK,KTOTAL)
 IF (KRESP.NE.0) THEN
   WRITE(YRESP, '( I12 )') KRESP
   YMSG = 'RESP='//TRIM(ADJUSTL(YRESP))//' in call to LFILEC when reading '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -902,7 +908,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(KIND=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -941,7 +947,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -983,7 +989,7 @@ INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
 CHARACTER(LEN=4)                         :: YSUFFIX
 CHARACTER(LEN=LEN(TPFIELD%CMNHNAME)+4)   :: YVARNAME
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 ILENG = SIZE(PFIELD)
 IF (PRESENT(KVERTLEVEL)) THEN
@@ -1028,7 +1034,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X3','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1067,7 +1073,7 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X4','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1106,7 +1112,7 @@ INTEGER,                  INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X5','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1145,7 +1151,7 @@ INTEGER,                    INTENT(OUT):: KRESP  ! return-code if problems arais
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_X6','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1184,7 +1190,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_N0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1223,7 +1229,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_N1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1262,7 +1268,7 @@ INTEGER,               INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_N2','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1301,7 +1307,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_N3','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1341,7 +1347,7 @@ INTEGER                                  :: IFIELD
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_L0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1388,7 +1394,7 @@ INTEGER, DIMENSION(SIZE(OFIELD))         :: IFIELD
 INTEGER                                  :: ILENG
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_L1','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1434,7 +1440,7 @@ INTEGER,                 INTENT(OUT):: KRESP  ! return-code if problems araised
 INTEGER                                  :: ILENG, JLOOP
 INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_C0','writing '//TRIM(TPFIELD%CMNHNAME))
 !
@@ -1484,7 +1490,7 @@ INTEGER(kind=LFI_INT)                    :: IRESP, ITOTAL
 TYPE(TFIELDDATA)                         :: TZFIELD
 INTEGER, DIMENSION(3)                    :: ITDATE    ! date array
 INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: IWORK
-CHARACTER(LEN=16)                        :: YRECFM
+CHARACTER(LEN=LEN_HREC)                  :: YRECFM
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_LFI_T0','writing '//TRIM(TPFIELD%CMNHNAME))
 !

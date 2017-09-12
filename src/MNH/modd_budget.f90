@@ -16,7 +16,7 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX
+!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX, NMNHNAMELGTMAX
 !!
 !!    REFERENCE
 !!    ---------
@@ -44,7 +44,7 @@
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX
+USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NMNHNAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -74,7 +74,7 @@ CHARACTER(LEN=2), SAVE, DIMENSION(:,:),  & ! resulting string character of the
         ALLOCATABLE :: CBUACTION           ! transcription of the budget actions 
                                            ! (integer) read in  namelists or 
                                            ! set by default
-CHARACTER (LEN=16), SAVE, DIMENSION(:,:),& ! names of records on the FM file 
+CHARACTER (LEN=NMNHNAMELGTMAX), SAVE, DIMENSION(:,:),& ! names of records on the FM file 
                  ALLOCATABLE :: CBURECORD  ! for the budgets 
 !
 CHARACTER (LEN=99), SAVE, DIMENSION(:,:),& ! name of a process for a budget. It

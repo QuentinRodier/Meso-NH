@@ -144,7 +144,7 @@ CHARACTER(LEN=*), INTENT(IN), OPTIONAL  :: HCHEMFILE  ! Name of the chem file
 INTEGER                :: ILUOUT                     !  Logical unit number
                                                      ! associated with HLUOUT 
 INTEGER                :: IGRID,ILENCH,IRESP,ININAR      !  File 
-CHARACTER (LEN=16)     :: YRECFM                               ! management
+CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM                       ! management
 CHARACTER (LEN=100)    :: YCOMMENT                             ! variables 
 CHARACTER(LEN=2)       :: YDIR 
 CHARACTER(LEN=32)      :: YDESFM

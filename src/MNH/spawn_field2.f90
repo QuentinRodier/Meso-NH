@@ -272,9 +272,9 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZRT1
 LOGICAL :: GUSERV
 !
 INTEGER             :: IGRID,ILENCH   !   File
-CHARACTER (LEN=16)  :: YRECFM         ! management
-CHARACTER (LEN=16)  :: YRECFM_T        ! management
-CHARACTER (LEN=16)  :: YRECFM_M        ! management
+CHARACTER (LEN=NMNHNAMELGTMAX)  :: YRECFM         ! management
+CHARACTER (LEN=NMNHNAMELGTMAX)  :: YRECFM_T        ! management
+CHARACTER (LEN=NMNHNAMELGTMAX)  :: YRECFM_M        ! management
 CHARACTER (LEN=100) :: YCOMMENT       ! variables
 CHARACTER (LEN=2)   :: YDIR
 !

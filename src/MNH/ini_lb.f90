@@ -157,7 +157,7 @@ USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
 USE MODD_LG,              ONLY: CLGNAMES
 USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_PARAMETERS,      ONLY: JPHEXT
+USE MODD_PARAMETERS,      ONLY: JPHEXT,NMNHNAMELGTMAX
 USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
 USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 IMPLICIT NONE
@@ -221,7 +221,7 @@ INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND
                                                   !  additional scalar variables 
 INTEGER             :: IRR                        !  counter for moist variables
 INTEGER             :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)  :: YRECFM              ! management
+CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM   ! management
 CHARACTER (LEN=100) :: YCOMMENT            ! variables  
 CHARACTER (LEN=2)   :: YDIR
 CHARACTER (LEN=4)   :: YDIRLB

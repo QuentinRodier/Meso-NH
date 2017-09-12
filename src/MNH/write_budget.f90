@@ -164,7 +164,7 @@ INTEGER,            INTENT(IN) :: KSV          ! Number of Scalar Variables
 !  
 !*       0.2   Declarations of local variables :
 !
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=NMNHNAMELGTMAX) :: YRECFM        ! Name of the article to be written
 INTEGER           :: JT,JPROC,JMASK
 !
 !

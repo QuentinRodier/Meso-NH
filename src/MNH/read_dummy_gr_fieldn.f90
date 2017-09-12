@@ -105,7 +105,7 @@ LOGICAL,          INTENT(IN)  :: OREAD_ALL    ! Flag to read the entire 2D field
 !*       0.2   declarations of local variables
 !
 INTEGER             :: IRESP       ! File management
-CHARACTER (LEN=16)  :: YRECFM      ! variables
+CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM ! variables
 CHARACTER (LEN=20 ) :: YSTRING20   ! string
 CHARACTER (LEN=3  ) :: YSTRING03   ! string
 INTEGER             :: ILUOUT      ! Unit number for prints

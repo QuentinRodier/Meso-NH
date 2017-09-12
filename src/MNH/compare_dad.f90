@@ -74,7 +74,7 @@ USE MODE_FMREAD
 USE MODE_GRIDPROJ
 USE MODD_LUNIT_n
 USE MODD_CONF
-USE MODD_PARAMETERS, ONLY: JPHEXT,JPVEXT
+USE MODD_PARAMETERS, ONLY: JPHEXT,JPVEXT,NMNHNAMELGTMAX
 !
 !
 IMPLICIT NONE
@@ -98,7 +98,7 @@ INTEGER             :: IIU_1,IIU_2    ! Upper dimension in x direction
 INTEGER             :: IJU_1,IJU_2    ! Upper dimension in y direction
 INTEGER             :: IKU_1,IKU_2    ! Upper dimension in z direction
 !
-CHARACTER (LEN=16) :: YRECFM
+CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM
 INTEGER            :: ILENCH, IGRID
 CHARACTER (LEN=100):: YCOMMENT
 CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
