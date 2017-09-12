@@ -12,11 +12,13 @@
       MODULE MODI_SET_SUBDOMAIN
 !     #########################
 INTERFACE
-      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,HFMFILE,KXOR_DAD,KYOR_DAD, &
-                               KXOR,KYOR,KDXRATIO,KDYRATIO          )
+      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,TPATMFILE,KXOR_DAD,KYOR_DAD, &
+                               KXOR,KYOR,KDXRATIO,KDYRATIO            )
+!
+USE MODD_IO_ll, ONLY : TFILEDATA
 !
 CHARACTER(LEN=28), INTENT(IN) :: HNAMELIST ! name of the namelist file
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE   ! name of the atmospheric MNH file
+TYPE(TFILEDATA),   INTENT(IN) :: TPATMFILE ! atmospheric MNH file
 INTEGER,           INTENT(OUT):: KXOR_DAD  ! XOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KYOR_DAD  ! YOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KXOR      ! XOR given or computed
@@ -28,10 +30,10 @@ END SUBROUTINE SET_SUBDOMAIN
 END INTERFACE
 END MODULE MODI_SET_SUBDOMAIN
 !
-!     #######################################################################
-      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,HFMFILE,KXOR_DAD,KYOR_DAD, &
-                               KXOR,KYOR,KDXRATIO,KDYRATIO          )
-!     #######################################################################
+!     #################################################################
+      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,TPATMFILE,KXOR_DAD,KYOR_DAD, &
+                               KXOR,KYOR,KDXRATIO,KDYRATIO            )
+!     #################################################################
 !
 !!****  *SET_SUBDOMAIN* - computes the horizontal MESO-NH domain
 !! 
@@ -93,6 +95,7 @@ USE MODE_FM
 USE MODE_IO_ll
 !
 USE MODD_CONF           ! declaration modules
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_GRID
 USE MODD_GRID_n
@@ -109,7 +112,7 @@ IMPLICIT NONE
 !              ------------------------
 !
 CHARACTER(LEN=28), INTENT(IN) :: HNAMELIST ! name of the namelist file
-CHARACTER(LEN=28), INTENT(IN) :: HFMFILE   ! name of the atmospheric MNH file
+TYPE(TFILEDATA),   INTENT(IN) :: TPATMFILE ! atmospheric MNH file
 INTEGER,           INTENT(OUT):: KXOR_DAD  ! XOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KYOR_DAD  ! YOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KXOR      ! XOR given or computed
@@ -123,7 +126,7 @@ INTEGER,           INTENT(OUT):: KDYRATIO  ! DYRATIO compared to Dad file, if an
 CHARACTER(LEN=28) :: YDADFILE ! name of atmospheric file father (if any)
 INTEGER :: ILUNAM     ! logical unit for namelist file HNAMELIST
 INTEGER :: ILUOUT0    ! logical unit for listing file
-INTEGER :: IRESP      ! return-code if problems eraised
+INTEGER :: IRESP      ! return-code if problems araised
 INTEGER :: IIU,IJU    ! number of points in x,y directions of the large grid
 INTEGER :: IIINF      ! left point index
 INTEGER :: IISUP      ! right point index
@@ -136,9 +139,6 @@ INTEGER :: NIMAX,NJMAX         ! Dimensions respectively in x,  y directions
 REAL, DIMENSION(:),   ALLOCATABLE :: ZXHAT      ! = XXHAT(:)
 REAL, DIMENSION(:),   ALLOCATABLE :: ZYHAT      ! = XYHAT(:)
 !
-INTEGER             :: IGRID,ILENCH         !   File
-CHARACTER (LEN=16)  :: YRECFM               ! management
-CHARACTER (LEN=100) :: YCOMMENT             ! variables
 LOGICAL :: GFOUND     ! return code when searching namelist
 !
 !*       0.3   Declaration of namelists
@@ -231,29 +231,24 @@ WRITE(ILUOUT0,*) 'given or computed NYOR  = ',NYOR
 !*       4.1   TEST if FATHER of atmospheric MNH file exists:
 !              ---------------------------------------------
 !
-YRECFM = 'DAD_NAME'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',YDADFILE,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TPATMFILE,'DAD_NAME',YDADFILE,IRESP)
 IF ( IRESP /= 0  ) YDADFILE='                          '
 !
 IF (LEN_TRIM(YDADFILE)/=0) THEN
-  YRECFM='DXRATIO'
-  CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',KDXRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPATMFILE,'DXRATIO',KDXRATIO,IRESP)
   IF ( IRESP /= 0 .OR. KDXRATIO == 0 ) THEN
     KDXRATIO=1
   END IF
   !
-  YRECFM='DYRATIO'
-  CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',KDYRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPATMFILE,'DYRATIO',KDYRATIO,IRESP)
   IF ( IRESP /= 0 .OR. KDYRATIO == 0 ) THEN
     KDYRATIO=1
   END IF
   !
-  YRECFM='XOR'
-  CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',KXOR_DAD,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPATMFILE,'XOR',KXOR,IRESP)
   IF ( IRESP /= 0 ) KXOR_DAD=1
   !
-  YRECFM='YOR'
-  CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',KYOR_DAD,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TPATMFILE,'YOR',KYOR,IRESP)
   IF ( IRESP /= 0 ) KYOR_DAD=1
 END IF
 !

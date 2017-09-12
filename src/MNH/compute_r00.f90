@@ -84,6 +84,7 @@ USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_FMREAD
 USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_ll
 USE MODD_TYPE_DATE
 !
@@ -100,11 +101,8 @@ INTEGER  :: INPRAR               ! number of articles predicted  in
                                  !  the LFIFM file
 INTEGER  :: ININAR               ! number of articles  present in
                                  !  the LFIFM file
-INTEGER  :: ITYPE                ! type of file (conv2dia and transfer)
 !
-CHARACTER(LEN=100)                 :: YCOMMENT
-CHARACTER(LEN=16)                  :: YRECFM
-INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU,IGRID,ILENCH
+INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU
 INTEGER                            :: NFILES,JLOOP
 REAL                               :: ZXOR,ZYOR,ZDX,ZDY
 REAL                               :: ZSPVAL
@@ -127,13 +125,13 @@ REAL                               :: ZXMAX,ZYMAX,ZZMAX  ! domain extrema
 INTEGER, DIMENSION(100)            :: NBRFILES 
 INTEGER                            :: IKU
 TYPE(TFIELDDATA)                   :: TZFIELD
+TYPE(TFILEDATA),POINTER            :: TZTRACFILE
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.0    INITIALIZATION
 !               --------------
 !
-ITYPE=2
 ZSPVAL=-1.E+11
 IKU=SIZE(XZHAT)
 !
@@ -252,8 +250,8 @@ END IF
 ! is performed
 DO JFILECUR=1,NFILES
   !
-  CALL FMOPEN_ll(CFILES(NBRFILES(JFILECUR)),'READ',CLUOUT,   &
-                 INPRAR,ITYPE,NVERB,ININAR,IRESP)
+  CALL IO_FILE_ADD2LIST(TZTRACFILE,CFILES(NBRFILES(JFILECUR)),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
+  CALL IO_FILE_OPEN_ll(TZTRACFILE,CLUOUT,IRESP)
 !
 !*       4.1  check if this file is a start instant
 !
@@ -270,9 +268,7 @@ DO JFILECUR=1,NFILES
 !
   IF (GSTART) THEN
     !
-    YRECFM='DTCUR'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'--',TDTCUR_START, &
-                IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TZTRACFILE,'DTCUR',TDTCUR_START)
     IHOUR   = INT(TDTCUR_START%TIME/3600.)
     ZREMAIN = MOD(TDTCUR_START%TIME,3600.)
     IMINUTE = INT(ZREMAIN/60.)
@@ -280,14 +276,9 @@ DO JFILECUR=1,NFILES
     WRITE(YDATE,FMT='(1X,I4.4,I2.2,I2.2,2X,I2.2,"H",I2.2,"M", &
          & F5.2,"S")') TDTCUR_START%TDATE, IHOUR,IMINUTE,ZSECOND  
     !
-    YRECFM='THT'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
-                ZTH0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
+    CALL IO_READ_FIELD(TZTRACFILE,'THT',ZTH0(:,:,:))
     !
-    YRECFM='RVT'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
-                ZRV0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
-    !
+    CALL IO_READ_FIELD(TZTRACFILE,'RVT',ZRV0(:,:,:))
     ZRV0(:,:,:)=ZRV0(:,:,:)*1.E+3  ! ZRV0 in g/kg
     !
   END IF
@@ -376,19 +367,27 @@ DO JFILECUR=1,NFILES
 !*       4.4   compute the origin of the particules using one more segment
 !
   IF (JFILECUR /= NFILES) THEN
-    YRECFM='LGXT'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
-              ZX0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'm'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = '' !Unknown comment
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    !
+    TZFIELD%CMNHNAME   = 'LGXT'
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_READ_FIELD(TZTRACFILE,TZFIELD,ZX0)
     ZX0(:,:,:)=ZX0(:,:,:)*1.E-3   ! ZX0 in km
     !
-    YRECFM='LGYT'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
-              ZY0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'LGYT'
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_READ_FIELD(TZTRACFILE,TZFIELD,ZY0)
     ZY0(:,:,:)=ZY0(:,:,:)*1.E-3   ! ZY0 in km
     !
-    YRECFM='LGZT'
-    CALL FMREAD(CFILES(NBRFILES(JFILECUR)),YRECFM,CLUOUT,'XY', &
-              ZZ0(:,:,:),IGRID,ILENCH,YCOMMENT,IRESP)
+    TZFIELD%CMNHNAME   = 'LGZT'
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    CALL IO_READ_FIELD(TZTRACFILE,TZFIELD,ZZ0)
     ZZ0(:,:,:)=ZZ0(:,:,:)*1.E-3   ! ZZ0 in km
     !
     ! old position of the set of particles
@@ -424,7 +423,7 @@ DO JFILECUR=1,NFILES
 !
 !*       4.5   close the input file
 !
-  CALL FMCLOS_ll(CFILES(NBRFILES(JFILECUR)),'KEEP',CLUOUT,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZTRACFILE,CLUOUT,IRESP)
 !
 END DO
 !

@@ -166,10 +166,7 @@ REAL, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &
                                       :: ZK_BL_TOP  ! as K_BL_TOP but real
 INTEGER                               :: IIMIN, IIMAX, IJMIN, IJMAX
 
-INTEGER           :: IRESP                !
-INTEGER           :: IGRID, ILENCH        !
-CHARACTER(LEN=16) :: YRECFM               ! name of field to be recorded
-CHARACTER(LEN=100):: YCOMMENT             ! comment to be recorded
+INTEGER           :: IRESP
 
 REAL, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &
                                       :: Z2D ! field to be recorded

@@ -279,15 +279,10 @@ REAL :: ZLAT_POLAR    ! POLAR circle LATitude
 REAL, DIMENSION(:,:),ALLOCATABLE :: ZLON          ! longitude
 REAL, DIMENSION(SIZE(PSTATM,1)) :: ZZSTAT ! half level altitudes of standard atm.
 !
-INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM              ! management
-CHARACTER (LEN=100)    :: YCOMMENT            ! variables  
-!
 INTEGER :: IINFO_ll                   ! return code of parallel routine
 INTEGER :: IIMAX_ll,IJMAX_ll          ! Number of points of
                                       ! Global physical domain
                                       ! in the x and y directions
-INTEGER :: ILUOUT   !  Logical unit number associated with HLUOUT
 !
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner function
 !
@@ -309,8 +304,6 @@ INTEGER :: ZYMD, ZHOURS   ! date for climatology initialisation
 !-------------------------------------------------------------------------------
 !
 !*       0.1  INITIALIZATIONS
-!
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 !*       0.2  COMPUTES THE PHYSICAL SUBDOMAIN BOUNDS
 !

@@ -8,12 +8,12 @@
 !
 INTERFACE
 !
-        SUBROUTINE INI_PARAM_ELEC (HINIFILE, HLUOUT, HGETSVM, PRHO00,  &
-                                   KRR, KND, PFDINFTY, IIU, IJU, IKU   )
+        SUBROUTINE INI_PARAM_ELEC (TPINIFILE, HGETSVM, PRHO00,       &
+                                   KRR, KND, PFDINFTY, IIU, IJU, IKU )
 !
-CHARACTER (LEN=*), INTENT(IN) :: HINIFILE ! name of the initial file
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
-                                          !  of nested models
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVM
 INTEGER, INTENT(IN) :: KND      ! Number of intervals to integrate kernels
 INTEGER, INTENT(IN) :: KRR      ! Number of moist variables
@@ -27,10 +27,10 @@ END SUBROUTINE INI_PARAM_ELEC
 END INTERFACE
 END MODULE MODI_INI_PARAM_ELEC
 !
-!      	#################################################################
-        SUBROUTINE INI_PARAM_ELEC (HINIFILE, HLUOUT, HGETSVM, PRHO00,  &
-                                   KRR, KND, PFDINFTY, IIU, IJU, IKU   )
-!      	#################################################################
+!       ##############################################################
+        SUBROUTINE INI_PARAM_ELEC (TPINIFILE, HGETSVM, PRHO00,       &
+                                   KRR, KND, PFDINFTY, IIU, IJU, IKU )
+!       ##############################################################
 !
 !!****  *INI_PARAM_ELEC* -  initialize the constants necessary 
 !!                          for the electrical scheme.
@@ -89,31 +89,30 @@ END MODULE MODI_INI_PARAM_ELEC
 !		------------
 !
 USE MODD_CST
+USE MODD_ELEC_n
+USE MODD_ELEC_DESCR
+USE MODD_ELEC_PARAM
+USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_NSV,   ONLY : NSV_ELECEND
 USE MODD_PARAMETERS
 USE MODD_PARAM_ICE
 USE MODD_RAIN_ICE_DESCR
 USE MODD_RAIN_ICE_PARAM
-USE MODD_ELEC_DESCR
-USE MODD_ELEC_PARAM
-USE MODD_ELEC_n
-USE MODD_NSV, ONLY : NSV_ELECEND
+USE MODD_VAR_ll
+!
+USE MODE_FMREAD
 !
 USE MODI_MOMG
 USE MODI_RRCOLSS
-USE MODI_RZCOLX
 USE MODI_RSCOLRG
+USE MODI_RZCOLX
 USE MODI_VQZCOLX
-!
-USE MODD_VAR_ll
-USE MODE_FMREAD
 !
 IMPLICIT NONE
 !
 !*	0.1	 Declaration of dummy arguments
-!		
-CHARACTER (LEN=*), INTENT(IN) :: HINIFILE ! name of the initial file
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT   ! name for output-listing
-                                          !  of nested models
+!
+TYPE(TFILEDATA),   INTENT(IN) :: TPINIFILE ! Initial file
 CHARACTER (LEN=*), DIMENSION(:),INTENT(IN)  :: HGETSVM
 INTEGER, INTENT(IN) :: KND      ! Number of intervals to integrate kernels
 INTEGER, INTENT(IN) :: KRR      ! Number of moist variables
@@ -125,18 +124,11 @@ INTEGER, INTENT(IN) :: IKU      ! Upper dimension in z direction
 !
 !*	0.2	 Declaration of local variables
 !
-REAL, DIMENSION(IIU,IJU,IKU) :: Z3D               ! 3D array used to read  data
-                                                  ! in initial file
-INTEGER :: JK                 ! Loop index
 REAL    :: ZESR               ! Mean efficiency of rain-aggregate collection
 REAL    :: ZEGS               !  
 REAL    :: ZEGR
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZMANSELL1, ZMANSELL2 ! Used to initialize
                                                           ! XMANSELL array
-INTEGER             :: IGRID,ILENCH,IRESP
-CHARACTER (LEN=100) :: YCOMMENT
-CHARACTER (LEN=16)  :: YRECFM
-CHARACTER (LEN=2)   :: YDIR
 !
 INTEGER             :: JLWC, JTEMP
 REAL, DIMENSION(:), ALLOCATABLE :: ZT, ZLWCC, ZEW
@@ -354,23 +346,10 @@ XEW(:,:,:) = 0.
 !
 SELECT CASE(HGETSVM(NSV_ELECEND))
   CASE ('READ')
-    YRECFM='NI_IAGGS'
-    YDIR='XY'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
-         YCOMMENT,IRESP)
-    XNI_IAGGS(:,:,:) = Z3D(:,:,:)
-    YRECFM='NI_IDRYG'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
-         YCOMMENT,IRESP)
-    XNI_IDRYG(:,:,:) = Z3D(:,:,:)
-    YRECFM='NI_SDRYG'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
-         YCOMMENT,IRESP)
-    XNI_SDRYG(:,:,:) = Z3D(:,:,:)
-    YRECFM='INDUC_CG'
-    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z3D,IGRID,ILENCH,  &
-         YCOMMENT,IRESP)
-    XIND_RATE(:,:,:) = Z3D(:,:,:)
+    CALL IO_READ_FIELD(TPINIFILE,'NI_IAGGS',XNI_IAGGS)
+    CALL IO_READ_FIELD(TPINIFILE,'NI_IDRYG',XNI_IDRYG)
+    CALL IO_READ_FIELD(TPINIFILE,'NI_SDRYG',XNI_SDRYG)
+    CALL IO_READ_FIELD(TPINIFILE,'INDUC_CG',XIND_RATE)
   CASE ('INIT')
     XNI_IAGGS(:,:,:) = 0.
     XNI_IDRYG(:,:,:) = 0.

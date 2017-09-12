@@ -133,12 +133,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !
 INTEGER            :: ILUOUT        ! logical unit
 INTEGER            :: IRESP         ! IRESP  : return-code for fmwrit
-INTEGER            :: IGRID         ! IGRID : grid indicator
-CHARACTER (LEN=2)  :: YDIR          ! Type of the data field
-INTEGER            :: ILENCH        ! ILENCH : length of comment string 
-CHARACTER(LEN=28)  :: YFMFILE       ! Name of FM-file to write
-CHARACTER(LEN=16)  :: YRECFM        ! Name of the article to be written
-CHARACTER(LEN=100) :: YCOMMENT      ! Comment string
 !
 INTEGER            :: IRR           ! Index for moist variables
 INTEGER            :: JRR,JSV       ! loop index for moist and scalar variables
@@ -164,8 +158,6 @@ CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
-YFMFILE = TPFILE%CNAME
-!
 !        2.  WRITE THE DIMENSION OF LB FIELDS
 !            --------------------------------
 !
@@ -189,11 +181,6 @@ IF(NSIZELBY_ll  /= 0) CALL IO_WRITE_FIELD_LB(TPFILE,'LBYTHM',NSIZELBY_ll,XLBYTHM
 !
 !*        4  LB-TKE
 !            ------
-!
-IGRID=1
-YDIR='--'
-YCOMMENT=''
-ILENCH=LEN(YCOMMENT)
 !
 IF(CTURB/='NONE') THEN
   CALL IO_WRITE_FIELD(TPFILE,'HORELAX_TKE',LHORELAX_TKE)
@@ -276,7 +263,6 @@ IF (NSV >=1) THEN
   TZFIELD%NDIMS      = 0
   CALL IO_WRITE_FIELD(TPFILE,TZFIELD,GHORELAX_SV)
 !
-  IGRID=1
   IRIMX =(NSIZELBXSV_ll-2*JPHEXT)/2
   IRIMY =(NSIZELBYSV_ll-2*JPHEXT)/2
   IF (NSV_USER>0) THEN

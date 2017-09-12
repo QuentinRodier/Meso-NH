@@ -214,10 +214,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PRHODJ    ! rhod J
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: IGRID,ILENCH,IRESP        !   File 
-CHARACTER (LEN=16)  :: YRECFM                    ! management
-CHARACTER (LEN=100) :: YCOMMENT                  ! variables  
-CHARACTER  (LEN=2)  :: YDIR 
+INTEGER             :: IRESP
 INTEGER             :: ILUOUT                    ! Unit number for prints
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZZM 
                                                  ! height of the mass levels

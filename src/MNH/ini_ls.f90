@@ -123,10 +123,7 @@ LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md ev
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)  :: YRECFM              ! management
-CHARACTER (LEN=100) :: YCOMMENT            ! variables  
-CHARACTER(LEN=2)    :: YDIR                ! 
+INTEGER             :: IRESP
 INTEGER             :: ILUOUT              !  Logical unit number associated with HLUOUT
 !
 !-------------------------------------------------------------------------------

@@ -282,13 +282,6 @@ REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
                                              ! to add to positive
                                              ! or negative ion number
 !
-INTEGER             :: IRESP      ! Return code of FM routines
-INTEGER             :: ILENG      ! Length of comment string in LFIFM file
-INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
-INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
-!
 INTEGER             :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
 INTEGER             :: IIE,IJE    ! Horz index values of the last inner mass points

@@ -2141,9 +2141,9 @@ DEALLOCATE(XSPOWATM)
 !*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
-CALL INI_AIRCRAFT_BALLOON(TPINIFILE%CNAME,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                          IKU,CTURB=="TKEL" ,                                        &
-                          XLATORI, XLONORI                                           )
+CALL INI_AIRCRAFT_BALLOON(TPINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
+                          IKU,CTURB=="TKEL" ,                                  &
+                          XLATORI, XLONORI                                     )
 !
 !-------------------------------------------------------------------------------
 !

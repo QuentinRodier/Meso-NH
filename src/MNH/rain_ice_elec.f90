@@ -457,8 +457,6 @@ REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
 !
 INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
-CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 LOGICAL, DIMENSION(:,:),ALLOCATABLE :: GELEC ! Logical of work for elec
 REAL, DIMENSION(:),   ALLOCATABLE :: ZRSMIN_ELEC  ! Limit value of ZRXS where charge is available

@@ -893,7 +893,7 @@ IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
         IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
     END SELECT
   END DO
-END DO
+END IF
 ! Chemical aqueous phase scalar variables
 DO JSV = NSV_CHACBEG, NSV_CHACEND
   SELECT CASE(HGETSVM(JSV))
