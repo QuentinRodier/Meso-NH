@@ -106,7 +106,7 @@ CHARACTER(LEN=*),       INTENT(IN)    :: HLUOUT      ! output listing
 !*       0.2   Local variables
 !
 INTEGER  :: IGRID,ILENCH,IRESP,ILUOUT          ! return code of file management
-CHARACTER (LEN=16)     :: YRECFM               ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM               ! management
 CHARACTER (LEN=100)    :: YCOMMENT             ! variables
 CHARACTER (LEN=2)      :: YDIR                 !
 INTEGER, DIMENSION(3)  :: ITDATE               ! date array

@@ -268,7 +268,7 @@ INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 TYPE(LIST_ll), POINTER :: TZFIELDDISS_ll ! list of fields to exchange
 INTEGER                :: IINFO_ll       ! return code of parallel routine

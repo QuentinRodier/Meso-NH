@@ -99,7 +99,7 @@ INTEGER  :: ININAR               ! number of articles  present in
 INTEGER  :: ITYPE                ! type of file (conv2dia and transfer)
 !
 CHARACTER (LEN=100)                :: YCOMMENT
-CHARACTER (LEN=16)                 :: YRECFM
+CHARACTER (LEN=LEN_HREC)                 :: YRECFM
 INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU,IGRID,ILENCH
 INTEGER                            :: NFILES,JLOOP
 REAL                               :: ZXOR,ZYOR,ZDX,ZDY

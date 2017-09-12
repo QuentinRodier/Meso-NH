@@ -132,7 +132,7 @@ CHARACTER (LEN=5)  :: YPRESOPT        ! Pressure solver option of model 1
 INTEGER            :: IITR            ! Iterations of pressure solver of model 1
 CHARACTER (LEN=28) :: YMY_NAME, YDAD_NAME
 CHARACTER (LEN=2)  :: YSTORAGE_TYPE
-CHARACTER (LEN=16) :: YRECFM
+CHARACTER (LEN=LEN_HREC) :: YRECFM
 INTEGER            :: ILENCH, IGRID
 CHARACTER (LEN=100):: YCOMMENT
 INTEGER            :: IMI

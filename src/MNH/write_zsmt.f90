@@ -77,7 +77,7 @@ CHARACTER(LEN=28),   INTENT(IN)  :: HFILE ! name of the input/output file
 !
 !
 INTEGER           :: IRESP    ! return code for I/O
-CHARACTER(LEN=16) :: YRECFM   ! name of record
+CHARACTER(LEN=LEN_HREC) :: YRECFM   ! name of record
 INTEGER           :: IGRID    ! grid location
 INTEGER           :: ILENCH   ! length of comment string
 CHARACTER(LEN=100):: YCOMMENT ! comment string

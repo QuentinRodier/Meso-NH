@@ -162,7 +162,7 @@ INTEGER                               :: IIMIN, IIMAX, IJMIN, IJMAX
 
 INTEGER           :: IRESP                !
 INTEGER           :: IGRID, ILENCH        !
-CHARACTER(LEN=16) :: YRECFM               ! name of field to be recorded
+CHARACTER(LEN=LEN_HREC) :: YRECFM               ! name of field to be recorded
 CHARACTER(LEN=100):: YCOMMENT             ! comment to be recorded
 
 REAL, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &

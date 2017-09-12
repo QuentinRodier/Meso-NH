@@ -487,7 +487,7 @@ INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file 
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 LOGICAL :: GUSERV    ! flag to use water vapor
 INTEGER :: IKB,IKE   ! index value for the Beginning

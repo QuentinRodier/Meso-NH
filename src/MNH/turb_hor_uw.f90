@@ -198,7 +198,7 @@ INTEGER             :: IKB,IKE,IKU
                                     ! mass points of the domain  
 INTEGER             :: JSV          ! scalar loop counter
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL, DIMENSION(SIZE(PWM,1),SIZE(PWM,2),SIZE(PWM,3))  :: GX_W_UW_PWM
 !

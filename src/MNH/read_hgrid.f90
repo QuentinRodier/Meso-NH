@@ -110,7 +110,7 @@ CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
 !
 !*       0.2   declarations of local variables
 !
-CHARACTER(LEN=16)      :: YRECFM
+CHARACTER(LEN=LEN_HREC)      :: YRECFM
 INTEGER                :: IGRID,ILENCH,IRESP
 CHARACTER(LEN=100)     :: YCOMMENT
 INTEGER                :: IMASDEV

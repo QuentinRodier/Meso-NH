@@ -330,7 +330,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
 INTEGER                :: IGRID,ILENCH,IRESP  !   File
-CHARACTER (LEN=16)     :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM              ! management
 CHARACTER (LEN=100)    :: YCOMMENT            ! variables
 CHARACTER (LEN=2)      :: YDIR                !
 INTEGER, DIMENSION(3)  :: ITDATE           ! date array

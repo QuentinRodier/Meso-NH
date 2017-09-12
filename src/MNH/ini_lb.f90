@@ -218,7 +218,7 @@ INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND
                                                   !  additional scalar variables 
 INTEGER             :: IRR                        !  counter for moist variables
 INTEGER             :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)  :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)  :: YRECFM              ! management
 CHARACTER (LEN=100) :: YCOMMENT            ! variables  
 CHARACTER (LEN=2)   :: YDIR
 CHARACTER (LEN=4)   :: YDIRLB

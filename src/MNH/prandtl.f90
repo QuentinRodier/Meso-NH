@@ -277,7 +277,7 @@ INTEGER             :: ILENG        ! Length of the data field in LFIFM file
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER::  ISV                      ! number of scalar variables       
 INTEGER::  JSV                      ! loop index for the scalar variables  
 

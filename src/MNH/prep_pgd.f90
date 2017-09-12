@@ -137,7 +137,7 @@ REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LAT ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZWORK_LON ! work array for lat and lon reshape
 REAL, DIMENSION(:,:),ALLOCATABLE   :: ZZS ! work array for lat and lon reshape
-CHARACTER(LEN=16) :: YRECFM   ! name of record
+CHARACTER(LEN=LEN_HREC) :: YRECFM   ! name of record
 INTEGER           :: IGRID    ! grid location
 INTEGER           :: ILENCH   ! length of comment string
 CHARACTER(LEN=100):: YCOMMENT ! comment string

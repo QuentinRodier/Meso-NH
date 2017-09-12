@@ -279,7 +279,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
 !
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER (LEN=2) :: YDIR           ! Type of the data field
 !
@@ -306,7 +306,7 @@ INTEGER :: IMI ! Current model index
 !
 INTEGER           :: ICH_NBR        ! to write number and names of scalar 
 INTEGER,DIMENSION(:),ALLOCATABLE :: ICH_NAMES !(chem+aero+dust) variables
-CHARACTER(LEN=16),DIMENSION(:),ALLOCATABLE :: YDSTNAMES,YCHNAMES, YSLTNAMES
+CHARACTER(LEN=LEN_HREC),DIMENSION(:),ALLOCATABLE :: YDSTNAMES,YCHNAMES, YSLTNAMES
 INTEGER           :: ILREC,ILENG    !in NSV.DIM and NSV.TITRE
 INTEGER           :: INFO_ll
 INTEGER :: IKRAD

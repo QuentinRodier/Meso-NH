@@ -177,7 +177,7 @@ REAL, DIMENSION(:,:,:),     INTENT(OUT) :: PRADEFF ! effective radius
 !*       0.2   declarations of local variables
 !
 INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM              ! management
 CHARACTER (LEN=100)    :: YCOMMENT            ! variables  
 !
 INTEGER, DIMENSION(0:11) :: IBIS, INOBIS ! Cumulative number of days per month

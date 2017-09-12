@@ -377,7 +377,7 @@ REAL, DIMENSION(KIU,KJU,KKU) :: Z3D               ! 3D array used to read  data
                                                   ! in initial file 
 REAL, DIMENSION(KIU,KJU,KKU) :: ZWORK             ! to compute supersaturation 
 INTEGER             :: IGRID,ILENCH,IRESP         !   File 
-CHARACTER (LEN=16)  :: YRECFM                     ! management
+CHARACTER (LEN=LEN_HREC)  :: YRECFM                     ! management
 CHARACTER (LEN=100) :: YCOMMENT                   ! variables 
 CHARACTER (LEN=2)   :: YDIR                       !
 INTEGER             :: ILUOUT                     ! Unit number for prints

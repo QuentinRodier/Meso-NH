@@ -226,7 +226,7 @@ REAL,DIMENSION(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3))   :: ZRHOD,ZSUMRT
 !
 CHARACTER(LEN=100) :: YCOMMENT
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
-CHARACTER(LEN=16)  :: YRECFM
+CHARACTER(LEN=LEN_HREC)  :: YRECFM
 INTEGER      :: IINFO_ll
 TYPE(LIST_ll), POINTER :: TZFIELDS_ll => NULL()  ! list of fields to exchange
 !
