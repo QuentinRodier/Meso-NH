@@ -231,6 +231,7 @@ END MODULE MODI_SET_GRID
 !!      J. STEIN    01/02/99  change the orography at the boundary for the
 !!                            grid-nesting lbc
 !!     V.MASSON 12/10/00 read of the orography in all cases, even if LFLAT=T
+!!     V. MASSON     07/2017  adds time step for output files writing.
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -513,6 +514,15 @@ KSTOP = NINT(PSEGLEN/PTSTEP)
 !
 !
 !*       2.3    Temporal grid - outputs managment
+!
+!*       2.3.0  case of regular temporal outputs: initializes XFMOUT arrays (MODD_FMOUT)
+!
+IF (XTSTEP_OUTPUT /= XUNDEF .AND. XTSTEP_OUTPUT>0.) THEN
+  XFMOUT(:,:) = XUNDEF
+  DO JOUT=1,NINT(PSEGLEN/XTSTEP_OUTPUT)
+    XFMOUT(:,JOUT) = JOUT*XTSTEP_OUTPUT
+  END DO
+END IF
 !
 !*       2.3.1  a) synchronization between nested models through XFMOUT arrays (MODD_FMOUT)
 !

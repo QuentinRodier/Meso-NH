@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
+!!                   07/2017  (V. Masson) adds time step for output files writing.
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -492,7 +493,10 @@ XTNUDGING = 21600.
 !*      9.    SET DEFAULT VALUES FOR MODD_FMOUT and MODD_OUT_n :
 !             ------------------------------------------------
 !
-IF (KMI == 1) XFMOUT (:,:) = XUNDEF
+IF (KMI == 1) THEN
+  XFMOUT (:,:) = XUNDEF
+  XTSTEP_OUTPUT = XUNDEF
+END IF
 !
 !
 !-------------------------------------------------------------------------------
