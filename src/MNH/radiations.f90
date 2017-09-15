@@ -209,6 +209,7 @@ END MODULE MODI_RADIATIONS
 !!      B.Vie            /13  LIMA
 !!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !!      J.Escobar 29/06/2017  : Check if Pressure Decreasing with height <-> elsif PB & STOP 
+!!      Q.LIBOIS  06/2017     : correction on CLOUD_ONLY
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -626,6 +627,7 @@ REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZDZPABST
 REAL :: ZMINVAL
 INTEGER, DIMENSION(3) :: IMINLOC
 INTEGER :: IINFO_ll
+LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: GCLOUD_SURF
 !
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -2533,8 +2535,17 @@ END DO
 !final  THETA_radiative tendency and surface fluxes 
 !
 IF(OCLOUD_ONLY) THEN
-  !
-  ZWORKL(:,:) = SUM(PCLDFR(:,:,:),DIM=3) > 0.0
+  !! Q.LIBOIS 06/2017
+  !ZWORKL(:,:) = SUM(PCLDFR(:,:,:),DIM=3) > 0.0
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+        GCLOUD_SURF(JI,JJ) = GCLOUD(IIJ,1)
+    END DO
+  END DO
+ 
+  ZWORKL(:,:) = GCLOUD_SURF(:,:) ! nouvelle condition
+  !! Q.LIBOIS 06/2017
   DO JK = IKB,IKE
     WHERE( ZWORKL(:,:) )
       PDTHRAD(:,:,JK) = (ZDTRAD_LW(:,:,JK)+ZDTRAD_SW(:,:,JK))/ZEXNT(:,:,JK)
