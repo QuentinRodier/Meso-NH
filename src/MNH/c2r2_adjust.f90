@@ -221,7 +221,7 @@ INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 INTEGER             :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER             :: ILUOUT     ! Logical unit of output listing 
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM     ! Name of the desired field in LFIFM file
 !-------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARIES

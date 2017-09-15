@@ -244,7 +244,7 @@ INTEGER             :: IKB,IKE
 INTEGER             :: IKU                                   
 INTEGER             :: JSV          ! scalar loop counter
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GX_U_M_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GY_V_M_PVM

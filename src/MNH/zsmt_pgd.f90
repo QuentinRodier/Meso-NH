@@ -90,7 +90,7 @@ INTEGER :: IIU        ! number of points in X direction
 INTEGER :: IJU        ! number of points in Y direction
 !
 INTEGER           :: IRESP    ! return code for I/O
-CHARACTER(LEN=16) :: YRECFM   ! name of record
+CHARACTER(LEN=LEN_HREC) :: YRECFM   ! name of record
 INTEGER           :: IGRID    ! grid location
 INTEGER           :: ILENCH   ! length of comment string
 CHARACTER(LEN=100):: YCOMMENT ! comment string

@@ -48,7 +48,7 @@ INTEGER, INTENT(OUT) :: KRESP               ! KRESP  : return-code if a problem 
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=100) :: YCOMMENT
- CHARACTER(LEN=16)  :: YREC
+ CHARACTER(LEN=LEN_HREC) :: YREC
  CHARACTER(LEN=1)   :: YDIR
 INTEGER            :: JJ
 INTEGER            :: JCOVER

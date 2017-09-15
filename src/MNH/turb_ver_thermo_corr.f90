@@ -441,7 +441,7 @@ INTEGER             :: IKB,IKE      ! I index values for the Beginning and End
                                     ! mass points of the domain in the 3 direct.
 INTEGER             :: I1,I2        ! For ZCOEFF allocation
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(:,:,:),ALLOCATABLE  :: ZCOEFF
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground

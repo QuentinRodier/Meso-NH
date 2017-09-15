@@ -81,7 +81,8 @@ INTEGER                         :: IRESP
 INTEGER                         :: I1, I2
 INTEGER                         :: JL
 INTEGER                         :: ITOT
- CHARACTER(LEN=100)              :: YCOMMENT
+CHARACTER(LEN=LEN_HREC)         :: YRECFM
+CHARACTER(LEN=100)              :: YCOMMENT
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
@@ -102,9 +103,10 @@ ZWORK(5) = FLOAT(BDD%NDESC_ROOF_LAYER)
 ZWORK(6) = FLOAT(BDD%NDESC_ROAD_LAYER)
 ZWORK(7) = FLOAT(BDD%NDESC_FLOOR_LAYER)
 !
+YRECFM='Bld_dimensions'
 YCOMMENT='Configuration numbers for descriptive building data'
  CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'BLD_DESC_CNF',ZWORK,IRESP,YCOMMENT,'-','Bld_dimensions  ')
+                 HPROGRAM,'BLD_DESC_CNF',ZWORK,IRESP,YCOMMENT,'-',YRECFM)
 DEALLOCATE(ZWORK)
 !
 !-------------------------------------------------------------------------------
@@ -192,9 +194,10 @@ END DO
  CALL UP_DESC_IND_W(BDD%NDESC_AGE) ; ZWORK(I1:I2) = FLOAT(BDD%NDESC_AGE_LIST(:))
  CALL UP_DESC_IND_W(BDD%NDESC_AGE) ; ZWORK(I1:I2) = FLOAT(BDD%NDESC_AGE_DATE(:))
 !
+YRECFM='Bld_parameters  '
 YCOMMENT='Descriptive building data'
  CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'BLD_DESC_DAT',ZWORK,IRESP,YCOMMENT,'-','Bld_parameters  ')
+                 HPROGRAM,'BLD_DESC_DAT',ZWORK,IRESP,YCOMMENT,'-',YRECFM)
 DEALLOCATE(ZWORK)
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_BLD_DESCRIPTION_n',1,ZHOOK_HANDLE)

@@ -219,7 +219,7 @@ INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 !
 REAL, DIMENSION(SIZE(PUM,1),SIZE(PUM,2),SIZE(PUM,3))  :: GY_U_UV_PUM
 REAL, DIMENSION(SIZE(PVM,1),SIZE(PVM,2),SIZE(PVM,3))  :: GX_V_UV_PVM

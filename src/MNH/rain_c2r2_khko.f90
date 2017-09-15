@@ -426,7 +426,7 @@ REAL, DIMENSION(:), ALLOCATABLE    :: ZRTMIN
 REAL, DIMENSION(:), ALLOCATABLE    :: ZCTMIN
 REAL :: ZTMP
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 !
 !

@@ -252,7 +252,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
 !
 CHARACTER(LEN=28) :: YFMFILE        ! Temporary variable to store FM-file name
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 !
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE  ! type of the new DIAG file ('DI')

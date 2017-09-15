@@ -82,7 +82,7 @@ REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !*       0.2   declarations of local variables
 !
 INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM              ! management
 CHARACTER (LEN=100)    :: YCOMMENT            ! variables  
 !
 !-------------------------------------------------------------------------------

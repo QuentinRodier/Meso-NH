@@ -74,7 +74,7 @@ CHARACTER(LEN=2), SAVE, DIMENSION(:,:),  & ! resulting string character of the
         ALLOCATABLE :: CBUACTION           ! transcription of the budget actions 
                                            ! (integer) read in  namelists or 
                                            ! set by default
-CHARACTER (LEN=16), SAVE, DIMENSION(:,:),& ! names of records on the FM file 
+CHARACTER (LEN=LEN_HREC), SAVE, DIMENSION(:,:),& ! names of records on the FM file 
                  ALLOCATABLE :: CBURECORD  ! for the budgets 
 !
 CHARACTER (LEN=99), SAVE, DIMENSION(:,:),& ! name of a process for a budget. It

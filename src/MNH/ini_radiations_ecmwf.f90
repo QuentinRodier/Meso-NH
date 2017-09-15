@@ -280,7 +280,7 @@ REAL, DIMENSION(:,:),ALLOCATABLE :: ZLON          ! longitude
 REAL, DIMENSION(SIZE(PSTATM,1)) :: ZZSTAT ! half level altitudes of standard atm.
 !
 INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM              ! management
 CHARACTER (LEN=100)    :: YCOMMENT            ! variables  
 !
 INTEGER :: IINFO_ll                   ! return code of parallel routine

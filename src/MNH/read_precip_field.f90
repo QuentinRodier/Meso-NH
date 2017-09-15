@@ -141,7 +141,7 @@ REAL, DIMENSION(SIZE(PINPRR,1),SIZE(PINPRR,2)) :: Z2D ! 2D array to read  data
 REAL, DIMENSION(SIZE(PINPRR3D,1),SIZE(PINPRR3D,2),SIZE(PINPRR3D,3)) :: Z3D ! 3D array to read  data
                                                   ! in initial file 
 INTEGER             :: IGRID,ILENCH,IRESP         !   File 
-CHARACTER (LEN=16)  :: YRECFM                     ! management
+CHARACTER (LEN=LEN_HREC)  :: YRECFM                     ! management
 CHARACTER (LEN=100) :: YCOMMENT                   ! variables   
 CHARACTER(LEN=2)    :: YDIR
 CHARACTER(LEN=4)    :: YGETRCT,YGETRRT,YGETRST,YGETRGT,YGETRHT                    

@@ -219,7 +219,7 @@ INTEGER            :: IRESP,ILUSEG,ININAR         ! File management variables
 INTEGER            :: IGRID,ILENCH                !             "
 CHARACTER(LEN=100) :: YCOMMENT                    !             "
 CHARACTER(LEN=2)   :: YDIR    ! Type  of the data field in LFIFM file
-CHARACTER (LEN=16) :: YRECFM  ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC) :: YRECFM  ! Name of the desired field in LFIFM file
 CHARACTER (LEN=5)  :: YCONF                       ! Local variables which have
 LOGICAL            :: GFLAT                       ! the same definition as the
 LOGICAL            :: GUSERV,GUSERC,GUSERR,GUSERI ! variables in module MODD_CONF,

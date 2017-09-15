@@ -128,7 +128,7 @@ INTEGER            :: ILENCH     ! length of comment string
 INTEGER            :: IMASDEV    ! Masdev version
 
 CHARACTER(LEN=100) :: YCOMMENT   ! comment string
-CHARACTER(LEN=16)  :: YRECFM     ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC)  :: YRECFM     ! Name of the article to be read
 INTEGER            :: JL         ! loop controls
 INTEGER            :: ILMAX_LS
 !

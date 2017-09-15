@@ -404,7 +404,7 @@ INTEGER             :: IKT          ! array size in k direction
 INTEGER             :: IKTB,IKTE    ! start, end of k loops in physical domain
 INTEGER             :: JSV          ! scalar loop counter
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1) :: ZCOEFFLXU, &
                                     ZCOEFFLXV, ZUSLOPEM, ZVSLOPEM
                                     ! coefficients for the surface flux

@@ -265,7 +265,7 @@ INTEGER                  :: IIE,IJE    ! Horz index values of the last inner mas
 INTEGER                  :: JITER,ITERMAX  ! iterative loop for first order adjustment
 INTEGER                  :: ILUOUT     ! Logical unit of output listing 
 CHARACTER (LEN=100)      :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)       :: YRECFM     ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)       :: YRECFM     ! Name of the desired field in LFIFM file
 !
 INTEGER                           :: ISIZE
 REAL, DIMENSION(:), ALLOCATABLE   :: ZRTMIN
