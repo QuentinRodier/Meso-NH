@@ -2250,7 +2250,7 @@ END IF
 !
 !*      30.   Total production/Loss for chemical species
 !
-IF (LUSECHEM.OR.LCHEMDIAG)  THEN
+IF (LCHEMDIAG)  THEN
         CALL CH_INIT_PRODLOSSTOT_n(ILUOUT)
         IF (NEQ_PLT>0) THEN
                 ALLOCATE(XPROD(IIU,IJU,IKU,NEQ_PLT))
@@ -2270,7 +2270,7 @@ END IF
 !
 !*     31. Extended production/loss terms for chemical species
 !
-IF (LUSECHEM.OR.LCHEMDIAG) THEN
+IF (LCHEMDIAG) THEN
         CALL CH_INIT_BUDGET_n(ILUOUT)
         IF (NEQ_BUDGET>0) THEN
                 ALLOCATE(IINDEX(2,NNONZEROTERMS))
