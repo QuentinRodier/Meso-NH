@@ -84,7 +84,7 @@ INTEGER_M :: KFDIA
 INTEGER_M :: KIDIA
 INTEGER_M :: KLEV
 INTEGER_M :: KLON
-INTEGER_M :: KNU
+INTEGER_M :: KNU   ! index of wl
 
 
 
@@ -102,9 +102,9 @@ REAL_B :: PAER(KLON,6,KLEV)&
   &,  PRMU(KLON)           , PSEC(KLON)&
   &,  PTAU(KLON,NSW,KLEV)  , PUD(KLON,5,KLEV+1)
 
-REAL_B :: PFD(KLON,KLEV+1) , PFU(KLON,KLEV+1)&
-  &,  PCD(KLON,KLEV+1)     , PCU(KLON,KLEV+1)&
-  &,  PSUDU1(KLON)         , PDIFF(KLON,KLEV)&
+REAL_B :: PFD(KLON,KLEV+1) , PFU(KLON,KLEV+1)&  ! Fluxes down and up
+  &,  PCD(KLON,KLEV+1)     , PCU(KLON,KLEV+1)&  ! Fluxes clear down and up
+  &,  PSUDU1(KLON)         , PDIFF(KLON,KLEV)&  
   &,  PDIRF(KLON,KLEV)
 
 !++MODIF_MESONH
@@ -136,6 +136,11 @@ REAL_B :: ZCGAZ(KLON,KLEV)&
   &,  ZTRA1(KLON,KLEV+1), ZTRA2(KLON,KLEV+1)&
   &,  ZTRCLD(KLON)      , ZTRCLR(KLON)&
   &,  ZW6(KLON,6)       , ZW4(KLON,4), ZO(KLON,2) ,ZT(KLON,2) 
+  
+REAL_B :: ZTA1(KLON), ZTO1(KLON)
+REAL_B :: ZCLDIR 
+  
+  
 
 !     LOCAL INTEGER SCALARS
 INTEGER_M :: IKL, IKM1, JAJ, JK, JL
@@ -152,13 +157,18 @@ INTEGER_M :: IKL, IKM1, JAJ, JK, JL
 !*         1.1    OPTICAL THICKNESS FOR RAYLEIGH SCATTERING
 !                 -----------------------------------------
 
+! PRINT *,"PCLEAR ",PCLEAR
+! PAUSE
 
+! Rayleigh optical depth (Deschamps 1983)
 DO JL = KIDIA,KFDIA
   ZRAYL(JL) =  RRAY(KNU,1) + PRMU(JL) * (RRAY(KNU,2) + PRMU(JL)&
    &* (RRAY(KNU,3) + PRMU(JL) * (RRAY(KNU,4) + PRMU(JL)&
    &* (RRAY(KNU,5) + PRMU(JL) *  RRAY(KNU,6)       ))))
 ENDDO
 
+! PRINT *,"SW1S.F90 ZRAYL ", ZRAYL(1)
+! PRINT *,"YEAH"
 
 !     ------------------------------------------------------------------
 
@@ -178,17 +188,28 @@ ENDDO
         &, ODUST  , PPIZA_DST,PCGA_DST  &
        &, PTAUREL_DST )
 !--MODIF_MESONH
+! ZRJ0 and ZRK0 are downard and upward fluxes
+
+! PRINT *,"SW1S.F90 ZTAUAZ ",ZTAUAZ(1,1),ZTAUAZ(1,2)
 
 !*         2.2   CLOUDY FRACTION OF THE COLUMN
 !                -----------------------------
 
-
+! PTAU is cloud optical depth
+! PAER is aerosol optical depth
+! ZRAYL is rayleigh optical depth
+! NB : cloudy columns are further splitted into cloudy and clear portions
 CALL SWR &
   &( KIDIA ,KFDIA ,KLON  ,KLEV  , KNU &
   &, PALBD ,PCG   ,PCLD  ,POMEGA, PSEC , PTAU &
   &, ZCGAZ ,ZPIZAZ,ZRAY1 ,ZRAY2 , ZREFZ, ZRJ  ,ZRK , ZRMUE &
   &, ZTAUAZ,ZTRA1 ,ZTRA2 ,ZTRCLD &
   &)
+! PRINT *,"SW1S.F90 ZTAUAZ ",ZTAUAZ(1,1)
+! PRINT *,"ZRJ ",ZRJ(1,3,5),ZRK(1,3,5)
+! PRINT *,"ZRMU0 ",ZRMU0(1,1)
+! 
+! PRINT*,"ZTRCLD ZTRCLR ",ZTRCLD(:5),ZTRCLR(:5)
 
 !     ------------------------------------------------------------------
 
@@ -251,13 +272,16 @@ IF (NSW <= 4) THEN
       PCD(JL,IKL) = ZDIRF(JL) * RSUN(KNU)
     ENDDO
   ENDDO
-
+  
+  
   DO JL=KIDIA,KFDIA
-    ZDIFT(JL) = ZR6(JL,1)*ZR6(JL,2)*ZR6(JL,3)*ZTRCLD(JL)
-    ZDIRT(JL) = ZR6(JL,4)*ZR6(JL,5)*ZR6(JL,6)*ZTRCLR(JL)
-    PSUDU1(JL) = ((_ONE_-PCLEAR(JL)) * ZDIFT(JL)&
+    ZDIFT(JL) = ZR6(JL,1)*ZR6(JL,2)*ZR6(JL,3)*ZTRCLD(JL) ! t for true ?
+    ZDIRT(JL) = ZR6(JL,4)*ZR6(JL,5)*ZR6(JL,6)*ZTRCLR(JL) 
+    PSUDU1(JL) = ((_ONE_-PCLEAR(JL)) * ZDIFT(JL)&        ! quantity not used by ECMWF_VERSION_2
      &+PCLEAR(JL) * ZDIRT(JL)) * RSUN(KNU)
   ENDDO
+  
+
 
 
 !*         3.1.2  UPWARD FLUXES
@@ -313,7 +337,6 @@ ELSE IF (NSW == 6) THEN
 !*         3.2,1  DOWNWARD FLUXES
 !                 ---------------
 
-
   JAJ = 2
 
   DO JL = KIDIA,KFDIA
@@ -324,10 +347,18 @@ ELSE IF (NSW == 6) THEN
   
     ZO(JL,1)=_ZERO_
     ZO(JL,2)=_ZERO_
-    PFD(JL,KLEV+1)=((_ONE_-PCLEAR(JL))*ZRJ(JL,JAJ,KLEV+1)&
+    PFD(JL,KLEV+1)=((_ONE_-PCLEAR(JL))*ZRJ(JL,JAJ,KLEV+1)& ! TOA flux
       &+ PCLEAR(JL) *ZRJ0(JL,JAJ,KLEV+1)) * RSUN(KNU)
-    PCD(JL,KLEV+1)= ZRJ0(JL,JAJ,KLEV+1) * RSUN(KNU)
+    PCD(JL,KLEV+1)= ZRJ0(JL,JAJ,KLEV+1) * RSUN(KNU)        ! TOA flux CS
   ENDDO
+  
+  ! Quentin
+  DO JL = KIDIA,KFDIA
+     ZTA1(JL)=_ZERO_
+     ZTO1(JL)=_ZERO_
+  ENDDO
+  ! Quentin
+  
   DO JK = 1 , KLEV
     IKL = KLEV+1-JK
     DO JL = KIDIA,KFDIA
@@ -340,31 +371,58 @@ ELSE IF (NSW == 6) THEN
       ZO(JL,2)=ZO(JL,2)+POZ(JL,  IKL)/ZRMU0(JL,IKL)
     ENDDO
  
+    ! transmission fucntion for all absorbers
     CALL SWTT1 ( KIDIA, KFDIA, KLON, KNU, 4 &
       &, IIND4 &
       &, ZW4  &
       &, ZR4  &
       & )
+      ! ZR4 transmission fucntion
 
     CALL SWUVO3 ( KIDIA, KFDIA, KLON, KNU, 2 &
       &, ZO  &
       &, ZT  &
       & )
+      ! ZT transmission function
 
     DO JL = KIDIA,KFDIA
-      ZDIFF(JL) = ZR4(JL,1)*ZR4(JL,2)*ZT(JL,1)*ZRJ(JL,JAJ,IKL)
-      ZDIRF(JL) = ZR4(JL,3)*ZR4(JL,4)*ZT(JL,2)*ZRJ0(JL,JAJ,IKL)
-      PDIFF(JL,IKL) = ZDIFF(JL) * RSUN(KNU)*(_ONE_-PCLEAR(JL))
-      PDIRF(JL,IKL) = ZDIRF(JL) * RSUN(KNU)*PCLEAR(JL)
-      PFD(JL,IKL) = ((_ONE_-PCLEAR(JL)) * ZDIFF(JL)&
+      ZDIFF(JL) = ZR4(JL,1)*ZR4(JL,2)*ZT(JL,1)*ZRJ(JL,JAJ,IKL) ! multiplication of absorber contributions for clouds
+      ZDIRF(JL) = ZR4(JL,3)*ZR4(JL,4)*ZT(JL,2)*ZRJ0(JL,JAJ,IKL) ! flux in clear sky part
+    ! PDIFF(JL,IKL) = ZDIFF(JL) * RSUN(KNU)*(_ONE_-PCLEAR(JL))
+    ! PDIRF(JL,IKL) = ZDIRF(JL) * RSUN(KNU)*PCLEAR(JL)
+      PFD(JL,IKL) = ((_ONE_-PCLEAR(JL)) * ZDIFF(JL)&  ! total downward flux
         &+PCLEAR(JL)  * ZDIRF(JL)) * RSUN(KNU)
-      PCD(JL,IKL) = ZDIRF(JL) * RSUN(KNU)
+      PCD(JL,IKL) = ZDIRF(JL) * RSUN(KNU)             ! total downward clear-sky
+      
+    ! Quentin
+      ZTA1(JL) = ZTA1(JL) + ZTAUAZ(JL,IKL)            ! aerosol + rayleigh OD
+      ZTO1(JL) = PTAU(JL,KNU,IKL)*(1.-(POMEGA(JL,KNU,IKL)* &  ! cloud OD
+      &           PCG(JL,KNU,IKL)*PCG(JL,KNU,IKL))) + ZTO1(JL)
+      ZCLDIR = ZDIRF(JL)/ZRJ0(JL,JAJ,1)*EXP(-ZTA1(JL)/PRMU(JL))   ! remaining direct in clear-sky (otherwise diffuse)
+      PDIRF(JL,IKL) = ((_ONE_-PCLEAR(JL))*ZCLDIR*EXP(-ZTO1(JL)/PRMU(JL))+& ! some direct through cloud
+      &              PCLEAR(JL)*ZCLDIR) * RSUN(KNU)
+      PDIRF(JL,IKL) = MIN(PFD(JL,IKL),PDIRF(JL,IKL))
+      PDIFF(JL,IKL) = PFD(JL,IKL) - PDIRF(JL,IKL)
+    ! Quentin
+    
+!     PRINT *,"IKL",IKL
+!     PRINT *,"SW1.f90 PDIFF ",PDIFF(:5,1)
+!     PRINT *,"SW1.f90 PDIRF ",PDIRF(:5,1)
     ENDDO
+      
   ENDDO
+!   PRINT *,"SW1.f90 PDIFF ",PDIFF(:5,1)
+!   PRINT *,"SW1.f90 PDIRF ",PDIRF(:5,1)
+!   PRINT *,"SW1.f90 ZDIFF ",ZDIFF(1)
+!   PRINT *,"SW1.f90 ZDIRF ",ZDIRF(1)
+!   PRINT *,"SW1.f90 RSUN ",RSUN(KNU)
+!   PRINT *,"SW1.f90 PCLEAR ",PCLEAR(1)
+!   PRINT *,"SW1.f90 SIZE(PDIFF,1) ",SIZE(PDIFF,1),SIZE(PDIFF,2)
+  
   DO JL=KIDIA,KFDIA
-    ZDIFT(JL) = ZR4(JL,1)*ZR4(JL,2)*ZT(JL,1)*ZTRCLD(JL)
+    ZDIFT(JL) = ZR4(JL,1)*ZR4(JL,2)*ZT(JL,1)*ZTRCLD(JL)     ! true components with corrected cloudiness
     ZDIRT(JL) = ZR4(JL,3)*ZR4(JL,4)*ZT(JL,2)*ZTRCLR(JL)
-    PSUDU1(JL) = ((_ONE_-PCLEAR(JL)) * ZDIFT(JL)&
+    PSUDU1(JL) = ((_ONE_-PCLEAR(JL)) * ZDIFT(JL)&           ! not used by ECMWF_VERSION_2
       &+PCLEAR(JL) * ZDIRT(JL)) * RSUN(KNU)
   ENDDO
 
