@@ -102,6 +102,7 @@ export MNH_FOREFIRE=${MNH_FOREFIRE}
 #  RTTOV
 #
 export MNH_RTTOV=${MNH_RTTOV}
+export VER_RTTOV=${VER_RTTOV}
 #
 #  OASIS
 #
