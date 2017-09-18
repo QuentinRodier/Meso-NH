@@ -1058,6 +1058,8 @@ XA1    =  2./3.
 XB     =  0.002       
 XC     =  0.012     
 XBETA1 =  0.9         
+XR     =  2.
+XLAMBDA=  0.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1167,6 +1169,7 @@ LUSECHEM            = .FALSE.
 LUSECHAQ            = .FALSE.
 LUSECHIC            = .FALSE.
 LCH_INIT_FIELD      = .FALSE.
+!LCH_SURFACE_FLUX    = .FALSE.
 LCH_CONV_SCAV       = .FALSE.
 LCH_CONV_LINOX      = .FALSE.
 LCH_PH              = .FALSE.
