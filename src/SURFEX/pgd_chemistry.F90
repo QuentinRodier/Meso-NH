@@ -34,6 +34,8 @@
 !!    ------------
 !!
 !!    Original    10/12/97
+!!    (V.Masson & M.Leriche) 06/06/17 add a missed value in NEMISPEC_NBR
+!!                to count the number of emitted species in case of writing pgd
 !!
 !----------------------------------------------------------------------------
 !
@@ -152,6 +154,7 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_CH_EMIS_PGD)
 !*    3.      Allocation
 !             ----------
 !
+ CHE%NEMISPEC_NBR = -999  ! will be counted in writesurf_ch_emisn.f90
  CHE%NEMIS_NBR = NEMIS_PGD_NBR
 !
  CALL GET_SURF_SIZE_n(DTCO, U, &
