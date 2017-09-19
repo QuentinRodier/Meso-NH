@@ -359,7 +359,6 @@ YSUFFIX='_DIAG'
 !
 CFILES(:) = '                         '
 NSTART_SUPP(:) = NUNDEF
-CFILES_STA(:) = 'INIT_SV'
 !
 LLIDAR=.FALSE.
 CVIEW_LIDAR='NADIR'

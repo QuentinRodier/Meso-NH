@@ -162,8 +162,7 @@ ENDIF
 !have been reinitialized 
 NFILES=0
 DO JFILECUR=IFILECUR+1,100
-  IF (LEN_TRIM(CFILES(JFILECUR)) /= 0 .AND.        &
-      CFILES_STA(JFILECUR) == 'INIT_SV') THEN
+  IF (LEN_TRIM(CFILES(JFILECUR)) /= 0) THEN
     NFILES= NFILES +1 
     NBRFILES(NFILES)=JFILECUR       ! contains the number of the files where
                                     ! the Lag. tracers have been restarted
