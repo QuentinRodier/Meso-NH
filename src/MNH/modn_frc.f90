@@ -47,6 +47,7 @@
 !!      27/01/98 (P. Bechtold) use tendency forcing
 !!                             add SST and surf pressure forcing
 !!      06/2003  (V. Masson)   removes SST forcing (externalisation of surface)
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !-------------------------------------------------------------------------------
 USE MODD_FRC
 !
@@ -55,6 +56,7 @@ IMPLICIT NONE
 NAMELIST /NAM_FRC/ LGEOST_UV_FRC      , &
                    LGEOST_TH_FRC      , &
                    LTEND_THRV_FRC     , &
+                   LTEND_UV_FRC       , &
                    LVERT_MOTION_FRC   , &
                    LRELAX_THRV_FRC    , &
                    LRELAX_UV_FRC      , &

@@ -24,6 +24,7 @@ INTERFACE
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
             KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
             PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
+            PTENDUFRC,PTENDVFRC,                                             &            
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
@@ -104,6 +105,7 @@ INTEGER,              INTENT(IN)  :: KFRC              ! number of forcing
 TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTFRC ! date of forcing profs.
 REAL, DIMENSION(:,:), INTENT(OUT) :: PUFRC,PVFRC,PWFRC ! forcing variables
 REAL, DIMENSION(:,:), INTENT(OUT) :: PTHFRC,PRVFRC
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDUFRC,PTENDVFRC
 REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC
 REAL, DIMENSION(:),   INTENT(OUT) :: PPGROUNDFRC
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PATC
@@ -141,6 +143,7 @@ END MODULE MODI_READ_FIELD
             PLBYUM,PLBYVM,PLBYWM,PLBYTHM,PLBYTKEM,PLBYRM,PLBYSVM,            &
             KFRC,TPDTFRC,PUFRC,PVFRC,PWFRC,PTHFRC,PRVFRC,                    &
             PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC,PPGROUNDFRC,PATC,        &
+            PTENDUFRC,PTENDVFRC,                                             &            
             KADVFRC,TPDTADVFRC,PDTHFRC,PDRVFRC,                              &
             KRELFRC,TPDTRELFRC, PTHREL, PRVREL,                              &
             PVTH_FLUX_M,PWTH_FLUX_M,PVU_FLUX_M,                              &
@@ -234,6 +237,7 @@ END MODULE MODI_READ_FIELD
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!          M. Leriche  02/16     treat gas and aq. chemicals separately
 !!          C.Lac        10/16 CEN4TH with RKC4 + Correction on RK loop
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -356,6 +360,7 @@ INTEGER,              INTENT(IN)  :: KFRC              ! number of forcing
 TYPE (DATE_TIME), DIMENSION(:), INTENT(OUT) :: TPDTFRC ! date of forcing profs.
 REAL, DIMENSION(:,:), INTENT(OUT) :: PUFRC,PVFRC,PWFRC ! forcing variables
 REAL, DIMENSION(:,:), INTENT(OUT) :: PTHFRC,PRVFRC
+REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDUFRC,PTENDVFRC
 REAL, DIMENSION(:,:), INTENT(OUT) :: PTENDTHFRC,PTENDRVFRC,PGXTHFRC,PGYTHFRC
 REAL, DIMENSION(:),   INTENT(OUT) :: PPGROUNDFRC
 REAL, DIMENSION(:,:,:,:), INTENT(OUT) :: PATC
@@ -1236,6 +1241,15 @@ IF ( LFORCING ) THEN
     YDIR='--'
     CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,PPGROUNDFRC(JT),IGRID,ILENCH,YCOMMENT,IRESP)
 !
+    YRECFM='TENDUFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PTENDUFRC(:,JT)=Z1D(:)
+!
+    YRECFM='TENDVFRC'//YFRC
+    YDIR='--'
+    CALL FMREAD(HINIFILE,YRECFM,HLUOUT,YDIR,Z1D,IGRID,ILENCH,YCOMMENT,IRESP)
+    PTENDVFRC(:,JT)=Z1D(:)
   END DO
 END IF
 !

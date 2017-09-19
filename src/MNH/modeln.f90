@@ -245,6 +245,7 @@ END MODULE MODI_MODEL_n
 !!                                  _  Add OSPLIT_WENO
 !!                                  _ Add droplet deposition 
 !!                   10/2016 (M.Mazoyer) New KHKO output fields
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -372,6 +373,8 @@ USE MODI_TURB_CLOUD_INDEX
 USE MODI_INI_LG
 USE MODI_INI_MEAN_FIELD
 !
+USE MODE_GRIDCART         
+USE MODE_GRIDPROJ
 USE MODE_MODELN_HANDLER
 !
 USE MODD_2D_FRC
@@ -525,6 +528,7 @@ INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 !
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZJ
 !
 ! for various testing
 INTEGER :: IK
@@ -1137,12 +1141,19 @@ XT_2WAY = XT_2WAY + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
+IF (LCARTESIAN) THEN
+  CALL SM_GRIDCART(CLUOUT,XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XDXHAT,XDYHAT,XZZ,ZJ)
+  XMAP=1.
+ELSE
+  CALL SM_GRIDPROJ(CLUOUT,XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XLATORI,XLONORI, &
+                   XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,ZJ)
+END IF
 !
 IF ( LFORCING ) THEN
   CALL FORCING(XTSTEP,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
                XUFRC_PAST, XVFRC_PAST,                &
                XUT,XVT,XWT,XTHT,XTKET,XRT,XSVT,       &
-               XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI)
+               XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI,ZJ)
 END IF
 !
 IF ( L2D_ADV_FRC ) THEN 

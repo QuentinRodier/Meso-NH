@@ -220,6 +220,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
 !!                   07/2017  (V. Masson) adds time step for output files writing.
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -979,6 +980,7 @@ IF (KMI == 1) THEN
   LGEOST_UV_FRC      = .FALSE.
   LGEOST_TH_FRC      = .FALSE.
   LTEND_THRV_FRC      = .FALSE.
+  LTEND_UV_FRC       = .FALSE. 
   LVERT_MOTION_FRC   = .FALSE.
   LRELAX_THRV_FRC    = .FALSE.
   LRELAX_UV_FRC      = .FALSE.

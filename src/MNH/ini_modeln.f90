@@ -274,6 +274,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 2016 Chemistry
 !!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS 
 !!                   M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1394,6 +1395,8 @@ IF (KMI == 1) THEN
     ALLOCATE(XGXTHFRC(IKU,NFRC))
     ALLOCATE(XGYTHFRC(IKU,NFRC))
     ALLOCATE(XPGROUNDFRC(NFRC))
+    ALLOCATE(XTENDUFRC(IKU,NFRC))
+    ALLOCATE(XTENDVFRC(IKU,NFRC))    
   ELSE
     ALLOCATE(TDTFRC(0))
     ALLOCATE(XUFRC(0,0))
@@ -1406,6 +1409,8 @@ IF (KMI == 1) THEN
     ALLOCATE(XGXTHFRC(0,0))
     ALLOCATE(XGYTHFRC(0,0))
     ALLOCATE(XPGROUNDFRC(0))
+    ALLOCATE(XTENDUFRC(0,0))
+    ALLOCATE(XTENDVFRC(0,0))
   END IF
   IF ( LFORCING ) THEN
     ALLOCATE(XWTFRC(IIU,IJU,IKU))
@@ -1616,6 +1621,7 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 NFRC,TDTFRC,XUFRC,XVFRC,XWFRC,XTHFRC,XRVFRC,                  &
                 XTENDTHFRC,XTENDRVFRC,XGXTHFRC,XGYTHFRC,                      &
                 XPGROUNDFRC, XATC,                                            &
+                XTENDUFRC, XTENDVFRC,                                         &
                 NADVFRC,TDTADVFRC,XDTHFRC,XDRVFRC,                            &
                 NRELFRC,TDTRELFRC,XTHREL,XRVREL,                              &
                 XVTH_FLUX_M,XWTH_FLUX_M,XVU_FLUX_M,                           &
