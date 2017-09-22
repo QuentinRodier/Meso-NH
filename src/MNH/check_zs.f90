@@ -83,6 +83,7 @@ END MODULE MODI_CHECK_ZS
 !              ------------
 !
 USE MODD_CONF           ! declaration modules
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_LUNIT
 USE MODD_GRID_n
 USE MODD_DIM_n
@@ -91,6 +92,7 @@ USE MODD_NESTING
 !
 USE MODE_FM
 USE MODE_FMREAD
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
 !
 IMPLICIT NONE
 !
@@ -109,9 +111,6 @@ INTEGER,             INTENT(IN)    :: KJINF     ! domain, compared to the old
 !
 INTEGER             :: IRESP                ! return-code if problems occured
 INTEGER             :: ILUOUT0              ! logical unit for file CLUOUT0
-INTEGER             :: IGRID,ILENCH         !   File 
-CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM    ! management
-CHARACTER (LEN=100) :: YCOMMENT             ! variables 
 !
 INTEGER             :: IDXRATIO = 0         ! aspect ratios during previous
 INTEGER             :: IDYRATIO = 0         ! spawning (if any)
@@ -124,6 +123,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZZS2   !
 INTEGER                           :: IIMAXC ! inner dimensions of coarse
 INTEGER                           :: IJMAXC ! definition arrays
 INTEGER                           :: JI,JJ  ! loop counters
+TYPE(TFILEDATA),POINTER           :: TZFMFILE
 !-------------------------------------------------------------------------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
@@ -133,8 +133,9 @@ CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !*            1. Reading of aspect ratios and dimensions
 !                ---------------------------------------
 !
-YRECFM='DXRATIO'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',IDXRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_FILE_FIND_BYNAME(TRIM(HFMFILE),TZFMFILE,IRESP)
+!
+CALL IO_READ_FIELD(TZFMFILE,'DXRATIO',IDXRATIO,IRESP)
 IF ( IRESP /= 0 .OR. IDXRATIO == 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution ratio in x direction not present in fmfile; no nesting allowed'
@@ -143,8 +144,7 @@ IF ( IRESP /= 0 .OR. IDXRATIO == 0 ) THEN
   RETURN
 END IF
 !
-YRECFM='DYRATIO'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',IDYRATIO,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TZFMFILE,'DYRATIO',IDYRATIO,IRESP)
 IF ( IRESP /= 0 .OR. IDYRATIO == 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution ratio in y direction not present in fmfile; no nesting allowed'
@@ -153,8 +153,7 @@ IF ( IRESP /= 0 .OR. IDYRATIO == 0 ) THEN
   RETURN 
 END IF
 !
-YRECFM='XOR'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',NXOR_ALL(1),IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TZFMFILE,'XOR',NXOR_ALL(1),IRESP)
 IF ( IRESP /= 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'position XOR not present in fmfile; no nesting allowed'
@@ -163,8 +162,7 @@ IF ( IRESP /= 0 ) THEN
   RETURN
 END IF
 !
-YRECFM='YOR'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',NYOR_ALL(1),IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TZFMFILE,'YOR',NYOR_ALL(1),IRESP)
 IF ( IRESP /= 0 ) THEN
   WRITE (ILUOUT0,*) '********************************************************'
   WRITE (ILUOUT0,*) 'resolution YOR not present in fmfile; no nesting allowed'
@@ -173,15 +171,11 @@ IF ( IRESP /= 0 ) THEN
   RETURN 
 END IF
 !
-YRECFM='IMAX'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',IIMAX,IGRID,ILENCH,YCOMMENT,IRESP)
-!
-YRECFM='JMAX'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',IJMAX,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TZFMFILE,'IMAX',IIMAX)
+CALL IO_READ_FIELD(TZFMFILE,'JMAX',IJMAX)
 !
 ALLOCATE(ZZS(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-YRECFM='ZS'
-CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
+CALL IO_READ_FIELD(TZFMFILE,'ZS',ZZS)
 !
 !*            2. Allocate coarse arrays
 !                ----------------------
@@ -247,8 +241,7 @@ END IF
 !
 IF (LSLEVE) THEN
 !
-  YRECFM='ZSMT'
-  CALL FMREAD(HFMFILE,YRECFM,CLUOUT0,'--',ZZS,IGRID,ILENCH,YCOMMENT,IRESP)
+  CALL IO_READ_FIELD(TZFMFILE,'ZSMT',ZZS)
 !
 !*            5. Average the smooth orographies
 !                ------------------------------

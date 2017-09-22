@@ -1062,24 +1062,7 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
-INTEGER           :: IGRID          ! IGRID : grid indicator
-INTEGER           :: ILENCH         ! ILENCH : length of comment string
-INTEGER           :: IMASDEV        ! mesonh version of the input file
-INTEGER           :: IBUGFIX        ! mesonh bugfix version of the input file
-INTEGER           :: IIMAX, IJMAX
-!
-REAL              :: ZDIM_SUM
-INTEGER           :: INFO_ll
-!
-!* variables for reading of old (masdev4_5 and before) files
-LOGICAL, DIMENSION(255) :: GCOVER
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCOVER
-INTEGER :: JCOVER
-CHARACTER(LEN=LEN_HREC) :: YRECFM
-!JUANZ
-INTEGER           :: NCOVER,ICOVER,IKL2
-REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZWORK3D
-!JUANZ
+INTEGER          :: IIMAX, IJMAX
 TYPE(TFIELDDATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
@@ -1088,78 +1071,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN0_MNH',TRIM(TPINFILE%CNAME)//': readi
 !
 KRESP=0
 !
-CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
-CALL IO_READ_FIELD(TPINFILE,'BUGFIX',IBUGFIX)
-!
-IF ((HREC=='DIM_FULL' .OR. HREC=='DIM_NATURE' .OR. HREC=='DIM_SEA'  &
-                      .OR. HREC=='DIM_WATER'  .OR. HREC=='DIM_TOWN')&
-    .AND. (IMASDEV<46 .OR. (IMASDEV==46 .AND. IBUGFIX<=2))          ) THEN
-
-  IF (HREC=='DIM_FULL') THEN
-    KFIELD=SIZE(NMASK)
-  ELSE
-    YRECFM='LCOVER'
-    CALL FMREAD(CFILE,YRECFM,COUT,'XY',GCOVER(:),IGRID,ILENCH,HCOMMENT,KRESP)
-    IF (KRESP/=0) THEN
-      !* ground_ocean case
-      KFIELD=SIZE(NMASK)
-      KRESP=0
-    ELSE
-      ALLOCATE(ZCOVER(NIU,NJU,255))
-      ZCOVER(:,:,:) = 0.
-      DO JCOVER=1,255
-        IF (.NOT. GCOVER(JCOVER)) CYCLE
-        WRITE(YRECFM,'(A5,I3.3)') 'COVER',JCOVER
-        CALL FMREAD(CFILE,YRECFM,COUT,'XY',ZCOVER(:,:,JCOVER),IGRID,ILENCH,HCOMMENT,KRESP)
-      END DO
-      SELECT CASE (HREC)
-         CASE('DIM_SEA')
-           KFIELD=COUNT(ZCOVER(NIB:NIE,NJB:NJE,1)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,242) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,243)>0.)
-         CASE('DIM_TOWN')
-           KFIELD=COUNT(ZCOVER(NIB:NIE,NJB:NJE,7)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,151) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,152) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,153) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,154) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,155) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,156) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,157) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,158) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,159) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,160) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,161)>0.)
-         CASE('DIM_WATER')
-           KFIELD=COUNT(ZCOVER(NIB:NIE,NJB:NJE,2)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,3)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,124) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,125) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,176) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,238) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,239) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,240) &
-                       +ZCOVER(NIB:NIE,NJB:NJE,241)>0.)
-         CASE('DIM_NATURE')
-           KFIELD=COUNT(ZCOVER(NIB:NIE,NJB:NJE,1)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,2)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,3)   &
-                       +ZCOVER(NIB:NIE,NJB:NJE,243)<1.-1.E-8)
-      END SELECT
-      DEALLOCATE(ZCOVER)
-    END IF
-  END IF
-
-  ZDIM_SUM = FLOAT(KFIELD)
-  IF (CPROGRAM/='PGD   ' .AND. CPROGRAM/='NESPGD') THEN
-     CALL REDUCESUM_ll(ZDIM_SUM,INFO_ll)
-     KFIELD=NINT(ZDIM_SUM)
-  ENDIF
-  HCOMMENT = ' '
-  KRESP = 0
-  WRITE(NLUOUT,*) 'HREC=', HREC, 'KFIELD=', KFIELD
-
-ELSE IF (HREC=='DIM_FULL' .AND. ( CPROGRAM=='IDEAL ' .OR.  &
+IF (HREC=='DIM_FULL' .AND. ( CPROGRAM=='IDEAL ' .OR.  &
                                   CPROGRAM=='SPAWN ' .OR. CPROGRAM=='ZOOMPG' ))THEN
    CALL IO_READ_FIELD(TPINFILE,'IMAX',IIMAX)
    CALL IO_READ_FIELD(TPINFILE,'JMAX',IJMAX)
@@ -1866,7 +1778,7 @@ END SUBROUTINE READ_SURFT0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD,       ONLY : TFIELDDATA,TYPECHAR
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPECHAR,TYPEINT,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
@@ -1929,12 +1841,22 @@ END IF
 !  RETURN
 !END IF
 !
-YRECFM=TRIM(HREC)//'%TDATE'
-CALL FMREAD(CFILE,YRECFM,COUT,'--',ITDATE(:,:),IGRID,ILENCH,HCOMMENT,KRESP)
+TZFIELD%CMNHNAME   = TRIM(HREC)//'%TDATE'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(TZFIELD%CMNHNAME)
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEINT
+TZFIELD%NDIMS      = 2
+!
+CALL IO_READ_FIELD(TPINFILE,TZFIELD,ITDATE(:,:),KRESP)
+!
 KYEAR(:)  = ITDATE(1,:)
 KMONTH(:) = ITDATE(2,:)
 KDAY(:)   = ITDATE(3,:)
-
+!
 IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'
@@ -1943,9 +1865,18 @@ IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) ' '
 ENDIF
 !
-YRECFM=TRIM(HREC)//'%TIME'
-CALL FMREAD(CFILE,YRECFM,COUT,'--',PTIME(:),IGRID,ILENCH,HCOMMENT,KRESP)
-
+TZFIELD%CMNHNAME   = TRIM(HREC)//'%TIME'
+TZFIELD%CSTDNAME   = ''
+TZFIELD%CLONGNAME  = 'SURFEX: '//TRIM(TZFIELD%CMNHNAME)
+TZFIELD%CUNITS     = ''
+TZFIELD%CDIR       = '--'
+TZFIELD%CCOMMENT   = TRIM(HCOMMENT)
+TZFIELD%NGRID      = 0
+TZFIELD%NTYPE      = TYPEREAL
+TZFIELD%NDIMS      = 1
+!
+CALL IO_READ_FIELD(TPINFILE,TZFIELD,PTIME(:),KRESP)
+!
 IF (KRESP /=0) THEN
   WRITE(NLUOUT,*) 'WARNING'
   WRITE(NLUOUT,*) '-------'

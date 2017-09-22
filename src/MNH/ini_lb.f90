@@ -220,11 +220,7 @@ INTEGER             :: IRIMXU,IRIMYV ! Total size of the LB area (for the RIM di
 INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND 
                                                   !  additional scalar variables 
 INTEGER             :: IRR                        !  counter for moist variables
-INTEGER             :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM   ! management
-CHARACTER (LEN=100) :: YCOMMENT            ! variables  
-CHARACTER (LEN=2)   :: YDIR
-CHARACTER (LEN=4)   :: YDIRLB
+INTEGER             :: IRESP
 INTEGER                :: ILUOUT   !  Logical unit number associated with HLUOUT
 LOGICAL :: GHORELAX_UVWTH  ! switch for the horizontal relaxation for U,V,W,TH in the FM file 
 LOGICAL :: GHORELAX_TKE    ! switch for the horizontal relaxation for tke in the FM file
@@ -511,328 +507,376 @@ IF (KSV > 0) THEN
   END IF
 END IF
 ! User scalar variables
-DO JSV = 1, NSV_USER     
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      WRITE(YRECFM,'(A6,I3.3)')'LBXSVM',JSV
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'PLXYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialze PLBXSVM '
+IF (NSV_USER>0) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = 1, NSV_USER
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          WRITE(TZFIELD%CMNHNAME,'(A6,I3.3)')'LBXSVM',JSV
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'PLXYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialze PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      WRITE(YRECFM,'(A6,I3.3)')'LBYSVM',JSV
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialze PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          WRITE(TZFIELD%CMNHNAME,'(A6,I3.3)')'LBYSVM',JSV
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3,A8)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialze PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
-! C2R2 scalar variables 
-DO JSV = NSV_C2R2BEG, NSV_C2R2END
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM='LBX_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'C2R2 PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBXSVM '
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
+! C2R2 scalar variables
+IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'm-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_C2R2BEG, NSV_C2R2END
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'C2R2 PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM='LBY_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'C2R2 PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(C2R2NAMES(JSV-NSV_C2R2BEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'C2R2 PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
-! C1R3 scalar variables 
-DO JSV = NSV_C1R3BEG, NSV_C1R3END
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM='LBX_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'C1R3 PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBXSVM '
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
+! C1R3 scalar variables
+IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'm-3'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_C1R3BEG, NSV_C1R3END
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'C1R3 PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM='LBY_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'C1R3 PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(C1R3NAMES(JSV-NSV_C1R3BEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'C1R3 PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 !
 ! LIMA: CCN and IFN scalar variables
 !
 IF (CCLOUD=='LIMA' ) THEN
-  DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
-    SELECT CASE(HGETSVM(JSV))
-    CASE ('READ')
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      !
-      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
-      IF ( KSIZELBXSV_ll /= 0 ) THEN
-        TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
-        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CLBTYPE    = 'LBX'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-        CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
-        IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-          IF (IRESP/=0) THEN
-            IF (PRESENT(PLBXSVMM)) THEN
-              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-              WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
-            ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize CCN PLBXSVM '
+  IF (NSV_LIMA_CCN_FREE+NMOD_CCN-1 >= NSV_LIMA_CCN_FREE) THEN
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    !
+    DO JSV = NSV_LIMA_CCN_FREE,NSV_LIMA_CCN_FREE+NMOD_CCN-1
+      SELECT CASE(HGETSVM(JSV))
+        CASE ('READ')
+          WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_CCN_FREE + 1)
+          IF ( KSIZELBXSV_ll /= 0 ) THEN
+            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBX'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+            CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+            IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+              IF (IRESP/=0) THEN
+                IF (PRESENT(PLBXSVMM)) THEN
+                  PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                  WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
+                ELSE
+                  WRITE(ILUOUT,*) 'Pb to initialize CCN PLBXSVM '
 !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
-            ENDIF
+                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                  CALL ABORT
+                  STOP
+                ENDIF
+              END IF
+            END IF
           END IF
-        END IF
-      END IF
-!
-      IF (KSIZELBYSV_ll  /= 0 ) THEN
-        TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
-        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CLBTYPE    = 'LBY'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-        CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
-        IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-          IF (IRESP/=0) THEN
-            IF (PRESENT(PLBYSVMM)) THEN
-              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-              WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
-            ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize CCN PLBYSVM '
+          !
+          IF (KSIZELBYSV_ll  /= 0 ) THEN
+            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_WARM_NAMES(3))//INDICE)
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBY'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+            CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+            IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+              IF (IRESP/=0) THEN
+                IF (PRESENT(PLBYSVMM)) THEN
+                  PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                  WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
+                ELSE
+                  WRITE(ILUOUT,*) 'Pb to initialize CCN PLBYSVM '
 !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
-            ENDIF
+                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                  CALL ABORT
+                  STOP
+                ENDIF
+              END IF
+            END IF
           END IF
-        END IF
-      END IF
-    CASE('INIT')
-      IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-      IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
-  DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
-    SELECT CASE(HGETSVM(JSV))
-    CASE ('READ')
-      TZFIELD%CSTDNAME   = ''
-      TZFIELD%CUNITS     = 'kg-1'
-      TZFIELD%CDIR       = 'XY'
-      TZFIELD%NGRID      = 1
-      TZFIELD%NTYPE      = TYPEREAL
-      TZFIELD%NDIMS      = 3
-      !
-      WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
-      IF ( KSIZELBXSV_ll /= 0 ) THEN
-        TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
-        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CLBTYPE    = 'LBX'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
-        CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
-        IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-          IF (IRESP/=0) THEN
-            IF (PRESENT(PLBXSVMM)) THEN
-              PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-              WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
-            ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize IFN'
+        CASE('INIT')
+          IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+          IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+      END SELECT
+    END DO
+  END IF
+  !
+  IF (NSV_LIMA_IFN_FREE+NMOD_IFN-1 >= NSV_LIMA_IFN_FREE) THEN
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    !
+    DO JSV = NSV_LIMA_IFN_FREE,NSV_LIMA_IFN_FREE+NMOD_IFN-1
+      SELECT CASE(HGETSVM(JSV))
+        CASE ('READ')
+          WRITE(INDICE,'(I2.2)')(JSV - NSV_LIMA_IFN_FREE + 1)
+          IF ( KSIZELBXSV_ll /= 0 ) THEN
+            TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBX'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+            CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+            IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+              IF (IRESP/=0) THEN
+                IF (PRESENT(PLBXSVMM)) THEN
+                  PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                  WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
+                ELSE
+                  WRITE(ILUOUT,*) 'Pb to initialize IFN'
 !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
-            ENDIF
+                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                  CALL ABORT
+                  STOP
+                ENDIF
+              END IF
+            END IF
           END IF
-        END IF
-      END IF
-!
-      IF (KSIZELBYSV_ll  /= 0 ) THEN
-        TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
-        TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
-        TZFIELD%CLBTYPE    = 'LBY'
-        WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
-        CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
-        IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-          IF (IRESP/=0) THEN
-            IF (PRESENT(PLBYSVMM)) THEN
-              PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-              WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
-            ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize IFN'
+          !
+          IF (KSIZELBYSV_ll  /= 0 ) THEN
+            TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CLIMA_COLD_NAMES(2))//INDICE)
+            TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+            TZFIELD%CLBTYPE    = 'LBY'
+            WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+            CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+            IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+              IF (IRESP/=0) THEN
+                IF (PRESENT(PLBYSVMM)) THEN
+                  PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                  WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
+                ELSE
+                  WRITE(ILUOUT,*) 'Pb to initialize IFN'
 !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
-            ENDIF
+                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                  CALL ABORT
+                  STOP
+                ENDIF
+              END IF
+            END IF
           END IF
-        END IF
-      END IF
-    CASE('INIT')
-      IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-      IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-    END SELECT
-  END DO
+        CASE('INIT')
+          IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+          IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+      END SELECT
+    END DO
+  END IF
 ENDIF
-! ELEC scalar variables 
-DO JSV = NSV_ELECBEG, NSV_ELECEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM='LBX_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'ELEC PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBXSVM '
+! ELEC scalar variables
+IF (NSV_ELECEND>=NSV_ELECBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_ELECBEG, NSV_ELECEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'ELEC PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM='LBY_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'ELEC PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CELECNAMES(JSV-NSV_ELECBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'ELEC PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Chemical gas phase scalar variables
 IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
   TZFIELD%CSTDNAME   = ''
@@ -895,205 +939,249 @@ IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
   END DO
 END IF
 ! Chemical aqueous phase scalar variables
-DO JSV = NSV_CHACBEG, NSV_CHACEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBXSVM '
+IF (NSV_CHACEND>=NSV_CHACBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_CHACBEG, NSV_CHACEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CNAMES(JSV-NSV_CHACBEG+NSV_CHGS+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Chemical ice phase scalar variables
-DO JSV = NSV_CHICBEG, NSV_CHICEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Ice phase chemical PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize ice phase chemical PLBXSVM '
+IF (NSV_CHICEND>=NSV_CHICBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_CHICBEG, NSV_CHICEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Ice phase chemical PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize ice phase chemical PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Ice phase chemical PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Ice phase chemical PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CICNAMES(JSV-NSV_CHICBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Ice phase chemical PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Ice phase chemical PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Orilam aerosol scalar variables
-DO JSV = NSV_AERBEG, NSV_AEREND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
+IF (NSV_AEREND>=NSV_AERBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_AERBEG, NSV_AEREND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CAERONAMES(JSV-NSV_AERBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Orilam aerosols moist scalar variables
-DO JSV = NSV_AERDEPBEG, NSV_AERDEPEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CDEAERNAMES(JSV-NSV_AERDEPBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
+IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_AERDEPBEG, NSV_AERDEPEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CDEAERNAMES(JSV-NSV_AERDEPBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CDEAERNAMES(JSV-NSV_AERDEPBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CDEAERNAMES(JSV-NSV_AERDEPBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Dust scalar variables
 IF (NSV_DSTEND>=NSV_DSTBEG) THEN
   TZFIELD%CSTDNAME   = ''
@@ -1156,341 +1244,418 @@ IF (NSV_DSTEND>=NSV_DSTBEG) THEN
   END DO
 END IF
 !
-DO JSV = NSV_DSTDEPBEG, NSV_DSTDEPEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Dust Desposition PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
+IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_DSTDEPBEG, NSV_DSTDEPEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Dust Desposition PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Dust Depoistion  PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(UPCASE(CDEDSTNAMES(JSV-NSV_DSTDEPBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Dust Depoistion  PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Sea salt scalar variables
-DO JSV = NSV_SLTBEG, NSV_SLTEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(UPCASE(CSALTNAMES(JSV-NSV_SLTBEG+1)))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Sea Salt PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBXSVM '
+IF (NSV_SLTEND>=NSV_SLTBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_SLTBEG, NSV_SLTEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(UPCASE(CSALTNAMES(JSV-NSV_SLTBEG+1)))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Sea Salt PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(UPCASE(CSALTNAMES(JSV-NSV_SLTBEG+1)))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Sea Salt PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CSALTNAMES(JSV-NSV_SLTBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Sea Salt PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Passive pollutant variables
-DO JSV = NSV_PPBEG, NSV_PPEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_PP'
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Passive pollutant PLBXSVM   will be initialized to 0'
-          ELSE
-            PLBXSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'Passive pollutant PLBXSVM   will be initialized to 0'
-          ENDIF
+IF (NSV_PPEND>=NSV_PPBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_PPBEG, NSV_PPEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_PP'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Passive pollutant PLBXSVM   will be initialized to 0'
+              ELSE
+                PLBXSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'Passive pollutant PLBXSVM   will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_PP'
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Passive pollutant PLBYSVM   will be initialized to 0'
-          ELSE
-            PLBYSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'Passive pollutant PLBYSVM   will be initialized to 0'
-          ENDIF
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_PP'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Passive pollutant PLBYSVM   will be initialized to 0'
+              ELSE
+                PLBYSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'Passive pollutant PLBYSVM   will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 #ifdef MNH_FOREFIRE
 ! ForeFire scalar variables
-DO JSV = NSV_FFBEG, NSV_FFEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_FF'
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-       WRITE(ILUOUT,*) 'ForeFire LBX_FF ', IRESP
-       IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
-          ELSE
-            PLBXSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
-          ENDIF
+IF (NSV_FFEND>=NSV_FFBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_FFBEG, NSV_FFEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_FF'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          WRITE(ILUOUT,*) 'ForeFire LBX_FF ', IRESP
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
+              ELSE
+                PLBXSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'ForeFire pollutant PLBXSVM   will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_FF'
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
-          ELSE
-            PLBYSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
-          ENDIF
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_FF'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
+              ELSE
+                PLBYSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'ForeFire scalar variable PLBYSVM will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 #endif
 ! Conditional sampling variables
-DO JSV = NSV_CSBEG, NSV_CSEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_CS'
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Conditional sampling LBXSVM   will be initialized to 0'
-          ELSE
-            PLBXSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'Conditional sampling PLBXSVM   will be initialized to 0'
-          ENDIF
+IF (NSV_CSEND>=NSV_CSBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_CSBEG, NSV_CSEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_CS'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Conditional sampling LBXSVM   will be initialized to 0'
+              ELSE
+                PLBXSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'Conditional sampling PLBXSVM   will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_CS'
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Conditional sampling PLBYSVM   will be initialized to 0'
-          ELSE
-            PLBYSVM(:,:,:,JSV)=0.
-            WRITE(ILUOUT,*) 'Conditional sampling PLBYSVM   will be initialized to 0'
-          ENDIF
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_CS'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Conditional sampling PLBYSVM   will be initialized to 0'
+              ELSE
+                PLBYSVM(:,:,:,JSV)=0.
+                WRITE(ILUOUT,*) 'Conditional sampling PLBYSVM   will be initialized to 0'
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Linox scalar variables
-DO JSV = NSV_LNOXBEG, NSV_LNOXEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_LINOX'
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Linox PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Linox PLBXSVM '
+IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'kg kg-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_LNOXBEG, NSV_LNOXEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_LINOX'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Linox PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Linox PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_LINOX'
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'Linox PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize Linox PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_LINOX'
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'Linox PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize Linox PLBYSVM '
 !calla bortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 ! Lagrangian variables
-DO JSV = NSV_LGBEG, NSV_LGEND
-  SELECT CASE(HGETSVM(JSV))
-  CASE ('READ')
-    IF ( KSIZELBXSV_ll /= 0 ) THEN
-      YRECFM = 'LBX_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
-      YDIRLB='LBX'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBXSVM(:,:,:,JSV),IRIMX,IL3DX,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBXSVMM)) THEN
-            PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'lagrangian PLBXSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBXSVM '
+IF (NSV_LGEND>=NSV_LGBEG) THEN
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  !
+  DO JSV = NSV_LGBEG, NSV_LGEND
+    SELECT CASE(HGETSVM(JSV))
+      CASE ('READ')
+        IF ( KSIZELBXSV_ll /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBX_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBX'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'2_Y_Z_','LBXSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DX,IRIMX,PLBXSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBXSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBXSVMM)) THEN
+                PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'lagrangian PLBXSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBXSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-    IF (KSIZELBYSV_ll  /= 0 ) THEN
-      YRECFM = 'LBY_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
-      YDIRLB='LBY'
-      CALL FMREAD_LB(TPINIFILE%CNAME,YRECFM,HLUOUT,YDIRLB,PLBYSVM(:,:,:,JSV),IRIMY,IL3DY,&
-           & IGRID,ILENCH,YCOMMENT,IRESP)
-      IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
-        IF (IRESP/=0) THEN
-          IF (PRESENT(PLBYSVMM)) THEN
-            PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
-            WRITE(ILUOUT,*) 'lagrangian PLBYSVM   will be initialized to 0'
-          ELSE
-            WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBYSVM '
+        !
+        IF (KSIZELBYSV_ll  /= 0 ) THEN
+          TZFIELD%CMNHNAME   = 'LBY_'//TRIM(CLGNAMES(JSV-NSV_LGBEG+1))
+          TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+          TZFIELD%CLBTYPE    = 'LBY'
+          WRITE(TZFIELD%CCOMMENT,'(A6,A6,I3.3)')'X_2_Z_','LBYSVM',JSV
+          CALL IO_READ_FIELD_LB(TPINIFILE,TZFIELD,IL3DY,IRIMY,PLBYSVM(:,:,:,JSV),IRESP)
+          IF ( SIZE(PLBYSVM,1) /= 0 ) THEN
+            IF (IRESP/=0) THEN
+              IF (PRESENT(PLBYSVMM)) THEN
+                PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
+                WRITE(ILUOUT,*) 'lagrangian PLBYSVM   will be initialized to 0'
+              ELSE
+                WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBYSVM '
 !callabortstop
-            CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
-          ENDIF
+                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
+                CALL ABORT
+                STOP
+              ENDIF
+            END IF
+          END IF
         END IF
-      END IF
-    END IF
-!
-  CASE('INIT')
-    IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
-    IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
-  END SELECT
-END DO
+      !
+      CASE('INIT')
+        IF ( SIZE(PLBXSVM,1) /= 0 ) PLBXSVM(:,:,:,JSV) = 0.
+        IF ( SIZE(PLBYSVM,1) /= 0 ) PLBYSVM(:,:,:,JSV) = 0.
+    END SELECT
+  END DO
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       3.    COMPUTE THE LB SOURCES
