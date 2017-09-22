@@ -252,8 +252,6 @@ CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of
 !
 INTEGER           :: IRESP          ! return-code for the file routines 
 !
-CHARACTER(LEN=28) :: YFMFILE        ! Temporary variable to store FM-file name
-!
 CHARACTER(LEN=3)  :: YFRC           ! to mark the time of the forcing
 CHARACTER(LEN=31) :: YFGRI          ! file name for GPS stations
 !
@@ -3543,10 +3541,7 @@ IF (LBLTOP) THEN
   ZGAMREF=3.5E-3 ! K/m
   ZWORK31(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
   ZWORK31(:,:,IKU)=2.*ZWORK31(:,:,IKU-1)-ZWORK31(:,:,IKU-2)
-  YFMFILE=CINIFILE
-  CINIFILE=TPFILE%CNAME
   CALL FREE_ATM_PROFILE(TPFILE,ZTHETAV,ZWORK31,XZS,XZSMT,ZGAMREF,ZWORK32,ZWORK33)
-  CINIFILE=YFMFILE
 END IF
 !
 IF (ALLOCATED(ZTHETAV)) DEALLOCATE(ZTHETAV)

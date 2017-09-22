@@ -220,8 +220,6 @@ NULLIFY(TZINITHALO3D_ll)
 !              ----------------------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-CLUOUT = HLUOUT
-CINIFILE=TPINIFILE%CNAME
 !
 !-------------------------------------------------------------------------------
 !
@@ -240,7 +238,7 @@ IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
   WRITE(ILUOUT,FMT=*) "                  is upper than model top    (",XZHAT(IKU),")"
 !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
   CALL ABORT
   STOP
 END IF
@@ -903,7 +901,7 @@ IF ( KMI > 1) THEN
   DPTR_XLBYRM=>XLBYRM
   DPTR_XLBXSVM=>XLBXSVM
   DPTR_XLBYSVM=>XLBYSVM
-  CALL INI_ONE_WAY_n(NDAD(KMI),CLUOUT,XTSTEP,KMI,1,                         &
+  CALL INI_ONE_WAY_n(NDAD(KMI),HLUOUT,XTSTEP,KMI,1,                         &
        DPTR_XBMX1,DPTR_XBMX2,DPTR_XBMX3,DPTR_XBMX4,DPTR_XBMY1,DPTR_XBMY2,DPTR_XBMY3,DPTR_XBMY4,        &
        DPTR_XBFX1,DPTR_XBFX2,DPTR_XBFX3,DPTR_XBFX4,DPTR_XBFY1,DPTR_XBFY2,DPTR_XBFY3,DPTR_XBFY4,        &
        NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),NDTRATIO(KMI),      &

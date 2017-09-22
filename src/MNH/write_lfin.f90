@@ -20,9 +20,8 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
-                                              ! its DAD model
-TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
+TYPE(TFILEDATA), INTENT(IN) :: TPFILE   ! File characteristics
+CHARACTER(LEN=*),INTENT(IN) :: HDADFILE ! Corresponding FM-file name of its DAD model
 END SUBROUTINE WRITE_LFIFM_n
 !
 END INTERFACE
@@ -270,9 +269,8 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !
-CHARACTER(LEN=28), INTENT(IN) :: HDADFILE     ! corresponding FM-file name of 
-                                              ! its DAD model
-TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
+TYPE(TFILEDATA), INTENT(IN) :: TPFILE   ! File characteristics
+CHARACTER(LEN=*),INTENT(IN) :: HDADFILE ! Corresponding FM-file name of its DAD model
 !
 !*       0.2   Declarations of local variables
 !

@@ -10,24 +10,22 @@
 !
 INTERFACE
 !
-       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+       SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
 !
-       USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO_ll, ONLY : TFILEDATA
 !
-       INTEGER, INTENT(IN)              :: KMI      ! Model index 
-       CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-       !  of nested models
-       TYPE(TFILEDATA),    INTENT(IN)   :: TPINIFILE    !Initial file
-       CHARACTER (LEN=28), INTENT(IN)   :: HINIFILEPGD
+INTEGER,          INTENT(IN)   :: KMI       ! Model Index
+CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
+TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 END SUBROUTINE INI_MODEL_n
 !
 END INTERFACE
 !
 END MODULE MODI_INI_MODEL_n
-!     ######################################################
-      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
-!     ######################################################
+!     ############################################
+      SUBROUTINE INI_MODEL_n(KMI,HLUOUT,TPINIFILE)
+!     ############################################
 !
 !!****  *INI_MODEL_n* - routine to initialize the nested model _n
 !!
@@ -437,12 +435,9 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments
 !
 !
-INTEGER, INTENT(IN)              :: KMI      ! Model Index 
-
-CHARACTER (LEN=*), INTENT(IN)    :: HLUOUT   ! name for output-listing
-                                             !  of nested models
-TYPE(TFILEDATA),    INTENT(IN)   :: TPINIFILE    !Initial file
-CHARACTER (LEN=28), INTENT(IN)   :: HINIFILEPGD       
+INTEGER,          INTENT(IN)   :: KMI       ! Model Index
+CHARACTER(LEN=*), INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
+TYPE(TFILEDATA),  INTENT(IN)   :: TPINIFILE ! Initial file
 !
 !*       0.2   declarations of local variables
 !
@@ -536,9 +531,6 @@ NULLIFY(TZINITHALO3D_ll)
 !              ----------------------------
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-CLUOUT = HLUOUT
-CINIFILE=TPINIFILE%CNAME
-CINIFILEPGD=HINIFILEPGD
 !
 CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !-------------------------------------------------------------------------------

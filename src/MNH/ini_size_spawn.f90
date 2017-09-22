@@ -121,7 +121,6 @@ INTEGER :: ININAR   ! Number of articles present in the LFIFM file
 INTEGER :: IMASDEV
 CHARACTER(LEN=2)    :: YDIR   ! Type  of the data field in LFIFM file
 !
-CHARACTER (LEN=28) :: YINIFILE        ! Name of the model 1 FM-file
 CHARACTER (LEN=5)  :: YPRESOPT        ! Pressure solver option of model 1
 INTEGER            :: IITR            ! Iterations of pressure solver of model 1
 CHARACTER (LEN=28) :: YMY_NAME, YDAD_NAME
@@ -152,11 +151,9 @@ CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 !*     1.1   set default values :
 !
-YINIFILE = CINIFILE
 YPRESOPT = HPRESOPT
 IITR     = KITR
 CALL DEFAULT_DESFM_n(2)
-CINIFILE = YINIFILE
 CPRESOPT = YPRESOPT
 NITR     = IITR
 !

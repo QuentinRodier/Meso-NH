@@ -297,8 +297,8 @@ INTEGER             :: JM      ! loop index
 !*      1.    SET DEFAULT VALUES FOR MODD_LUNIT_n :
 !             ----------------------------------
 !
-CINIFILE='INIFILE'
-CINIFILEPGD=''
+! CINIFILE='INIFILE'
+! CINIFILEPGD=''
 CCPLFILE(:)='    '
 !
 !-------------------------------------------------------------------------------

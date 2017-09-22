@@ -14,7 +14,7 @@ MODULE MODI_READ_EXSPA
 !
 INTERFACE
 !
-      SUBROUTINE READ_EXSPA(HINIFILE,HINIFILEPGD,&
+      SUBROUTINE READ_EXSPA(HINIFILE,HINIFILEPGD,                     &
                             KXOR,KYOR,KXSIZE,KYSIZE,KDXRATIO,KDYRATIO,&
                             OBAL_ONLY,HDOMAIN,HSPAFILE,HSPANBR,       &
                             HDADINIFILE,HDADSPAFILE,HSONFILE)
@@ -35,9 +35,10 @@ CHARACTER (LEN=28), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-fil
 CHARACTER (LEN= 2), INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
 CHARACTER (LEN=28), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
 CHARACTER (LEN=28), INTENT(OUT) :: HDADINIFILE ! name of the initial dad file
-                                                  ! of the model 1 only for 
-                                                  ! spawning 1 with GBAL_ONLY
-CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the                                                   ! model 2 only for spawning 1 
+                                               ! of the model 1 only for
+                                               ! spawning 1 with GBAL_ONLY
+CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the
+                                                ! model 2 only for spawning 1
                                                   ! with GBAL_ONLY
 LOGICAL,            INTENT(OUT) :: OBAL_ONLY      ! compute anelastique balance
                                                   ! without change in the file
@@ -50,12 +51,12 @@ END INTERFACE
 END MODULE MODI_READ_EXSPA
 !
 !
-!     #########################################################################
-      SUBROUTINE READ_EXSPA(HINIFILE,HINIFILEPGD, &
+!     #################################################################
+      SUBROUTINE READ_EXSPA(HINIFILE,HINIFILEPGD,                     &
                             KXOR,KYOR,KXSIZE,KYSIZE,KDXRATIO,KDYRATIO,&
                             OBAL_ONLY,HDOMAIN,HSPAFILE,HSPANBR,       &
                             HDADINIFILE,HDADSPAFILE,HSONFILE)
-!     #########################################################################
+!     #################################################################
 !
 !!****  *READ_EXSPA * - subroutine to read spawning namelist
 !!
@@ -104,7 +105,7 @@ END MODULE MODI_READ_EXSPA
 !               ------------
 !
 USE MODD_CONF
-USE MODD_LUNIT_n, CINIFILE_n=>CINIFILE, CINIFILEPGD_n=>CINIFILEPGD
+USE MODD_LUNIT_n, ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS
 !
 USE MODE_IO_ll
@@ -131,9 +132,10 @@ CHARACTER (LEN=28), INTENT(OUT) :: HSPAFILE ! possible name of the output FM-fil
 CHARACTER (LEN= 2), INTENT(OUT) :: HSPANBR  ! NumBeR associated to the SPAwned file
 CHARACTER (LEN=28), INTENT(OUT) :: HSONFILE ! Name of the SON 1 file
 CHARACTER (LEN=28), INTENT(OUT) :: HDADINIFILE ! name of the initial dad file
-                                                  ! of the model 1 only for 
-                                                  ! spawning 1 with GBAL_ONLY
-CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the                                                   ! model 2 only for spawning 1 
+                                               ! of the model 1 only for
+                                               ! spawning 1 with GBAL_ONLY
+CHARACTER (LEN=28), INTENT(OUT) :: HDADSPAFILE  ! name of the dad file of the
+                                                ! model 2 only for spawning 1
                                                   ! with GBAL_ONLY
 LOGICAL,            INTENT(OUT) :: OBAL_ONLY      ! compute anelastique balance
                                                   ! without change in the file
@@ -157,15 +159,14 @@ INTEGER :: IDYRATIO            !      between model 2 and model 1
 INTEGER :: IXSIZE,IYSIZE       ! number of model 1 grid points in x and y-directions
                                ! in the model 2 physical domain
 LOGICAL :: GBAL_ONLY           !  compute only anelastique balance
-CHARACTER (LEN=28) :: YDOMAIN = ' '   ! input fm-file for grid definition
-CHARACTER (LEN=28) :: YSPAFILE = ' '  ! possible name of the output FM-file
-CHARACTER (LEN= 2) :: YSPANBR = '00'  ! NumBeR associated to the SPAwned file
-CHARACTER (LEN=28) :: YDADINIFILE = ' ' ! Name of dad model for model 1  
-CHARACTER (LEN=28) :: YDADSPAFILE = ' '  ! Name of dad model for model 2 
-CHARACTER(LEN=28) :: CINIFILE ! re-declaration because of namelist
+CHARACTER(LEN=28) :: YDOMAIN     ! input fm-file for grid definition
+CHARACTER(LEN=28) :: YSPAFILE    ! possible name of the output FM-file
+CHARACTER(LEN= 2) :: YSPANBR     ! NumBeR associated to the SPAwned file
+CHARACTER(LEN=28) :: YDADINIFILE ! Name of dad model for model 1
+CHARACTER(LEN=28) :: YDADSPAFILE ! Name of dad model for model 2
+CHARACTER(LEN=28) :: CINIFILE    ! re-declaration because of namelist
 CHARACTER(LEN=28) :: CINIFILEPGD ! re-declaration because of namelist
 
-INTEGER :: IMI
 CHARACTER (LEN=28) :: YSONFILE = ' '  ! Name of SON input file
 !
 !*       0.3    Namelist declarations
@@ -193,13 +194,17 @@ NAMELIST/NAM_LUNIT2_SPA/ CINIFILE,  &! In file name (model 1)
 !
 !*       1.    initialize logical unit number of the EXSPA file :
 !
-IMI = GET_CURRENT_MODEL_INDEX()
-CALL GOTO_MODEL(2)
+YDOMAIN     = ' '
+YSPAFILE    = ' '
+YSPANBR     = '00'
+YDADINIFILE = ' '
+YDADSPAFILE = ' '
 !
-CLUOUT  = 'OUTPUT_LISTING2'
-YEXSPA  = 'SPAWN1.nam'
-CALL OPEN_ll(UNIT=ILUOUT,FILE=CLUOUT,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
+LUNIT_MODEL(2)%CLUOUT = 'OUTPUT_LISTING2'
+CALL OPEN_ll(UNIT=ILUOUT,FILE=LUNIT_MODEL(2)%CLUOUT,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
      MODE=GLOBAL)
+!
+YEXSPA  = 'SPAWN1.nam'
 CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
              form='FORMATTED',position="REWIND",mode=GLOBAL) 
 !
@@ -216,23 +221,27 @@ GBAL_ONLY=.FALSE.
 !
 CALL POSNAM(ILUSPA,'NAM_GRID2_SPA',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_GRID2_SPA)
-CINIFILE=CINIFILE_n
+!
+CINIFILE    = LUNIT_MODEL(1)%CINIFILE    !To respect default values
+CINIFILEPGD = LUNIT_MODEL(1)%CINIFILEPGD !To respect default values
+!
 CALL POSNAM(ILUSPA,'NAM_LUNIT2_SPA',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_LUNIT2_SPA)
-CINIFILE_n=CINIFILE
-CINIFILEPGD_n=CINIFILEPGD
-!!
+LUNIT_MODEL(2)%CINIFILE    = CINIFILE
+LUNIT_MODEL(2)%CINIFILEPGD = CINIFILEPGD
+!
 CALL POSNAM(ILUSPA,'NAM_CONFIO',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_CONFIO)
+!
 CALL SET_CONFIO_ll()
 CALL CLOSE_ll(YEXSPA)
 !
 !
-!*       3.    model 1 and SON1 FM file name
+!*       3.    model 1 and SON1 FM file name (passed as arguments)
 !
-HINIFILE = CINIFILE_n
-HINIFILEPGD = CINIFILEPGD_n
-HSONFILE = YSONFILE
+HINIFILE    = CINIFILE
+HINIFILEPGD = CINIFILEPGD
+HSONFILE    = YSONFILE
 !
 !*       4.    CINIFILE value is also used for model 2 (cf SPAWN_MODEL2)
 !
@@ -256,9 +265,7 @@ KXOR     = IXOR
 KYOR     = IYOR
 !
 OBAL_ONLY=GBAL_ONLY
+!
 !-------------------------------------------------------------------------------
 !
-CALL GOTO_MODEL(IMI)
-!
 END SUBROUTINE READ_EXSPA
-
