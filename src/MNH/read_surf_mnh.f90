@@ -238,7 +238,7 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1D! work array read in the file
 REAL                              :: ZW     ! work value
 
 INTEGER           :: IMASDEV
-CHARACTER(LEN=20) :: YREC
+CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
 INTEGER           :: IIU, IJU, IIB, IJB, IIE, IJE ! dimensions of horizontal fields
@@ -695,7 +695,7 @@ CHARACTER(LEN=1),          INTENT(IN) :: HDIR     ! type of field :
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 
-CHARACTER(LEN=20) :: YREC
+CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
@@ -893,7 +893,7 @@ CHARACTER(LEN=1),       INTENT(IN) :: HDIR     ! type of field :
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 
-CHARACTER(LEN=20) :: YREC
+CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
 !
