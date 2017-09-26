@@ -254,6 +254,7 @@ USE MODE_TIME
 USE MODE_ll
 USE MODI_GATHER_ll  !!!! a mettre dans mode_ll
 !
+USE MODE_FIELD, ONLY : TFIELDDATA,TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
 USE MODE_FMREAD
 USE MODD_OUT_n,       ONLY : OUT_MODEL
 USE MODE_IO_MANAGE_STRUCT
@@ -333,7 +334,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll    !   Position y in the conformal
                                                  ! plane (array on the complete domain)
 REAL                         :: ZXHATM,ZYHATM    ! coordinates of mass point
 REAL                         :: ZLATORI, ZLONORI ! lat and lon of left-bottom point
-INTEGER                :: IRESP
+INTEGER                :: IID,IRESP
 CHARACTER (LEN=40)     :: YTITLE                    ! Title for date print
 INTEGER                :: ILUOUT                    ! Logical unit number for
                                                     ! output-listing
@@ -342,6 +343,7 @@ INTEGER                :: IIUP,IJUP ,ISUP=1         ! size  of working
                                                     ! supp. time steps
 !
 INTEGER                :: IMASDEV                   ! masdev of the file
+TYPE(TFIELDDATA)       :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
@@ -379,8 +381,16 @@ IF (.NOT.LCARTESIAN) THEN
     CALL IO_READ_FIELD(TPINIFILE,'LATORI',PLATORI)
   !
   ELSE                     
-    CALL IO_READ_FIELD(TPINIFILE,'LONOR',PLONORI)
-    CALL IO_READ_FIELD(TPINIFILE,'LATOR',PLATORI)
+    CALL FIND_FIELD_ID_FROM_MNHNAME('LONORI',IID,IRESP)
+    TZFIELD = TFIELDLIST(IID)
+    TZFIELD%CMNHNAME = 'LONOR'
+    CALL IO_READ_FIELD(TPINIFILE,TZFIELD,PLONORI)
+    !
+    CALL FIND_FIELD_ID_FROM_MNHNAME('LATORI',IID,IRESP)
+    TZFIELD = TFIELDLIST(IID)
+    TZFIELD%CMNHNAME = 'LATOR'
+    CALL IO_READ_FIELD(TPINIFILE,TZFIELD,PLATORI)
+    !
     ALLOCATE(ZXHAT_ll(KIMAX_ll+ 2 * JPHEXT),ZYHAT_ll(KJMAX_ll+2 * JPHEXT))
     CALL GATHERALL_FIELD_ll('XX',PXHAT,ZXHAT_ll,IRESP) !//
     CALL GATHERALL_FIELD_ll('YY',PYHAT,ZYHAT_ll,IRESP) !//
