@@ -8,25 +8,27 @@
 ! $Source$ $Revision$
 ! MASDEV4_7 modn 2006/05/18 13:07:25
 !-----------------------------------------------------------------
-!     #################
-      MODULE MODN_FMOUT
-!     #################
+!     ##################
+      MODULE MODN_OUTPUT
+!     ##################
 !
-!!****  *MODN_FMOUT* - declaration of namelist NAM_FMOUT
+!!****  *MODN_OUTPUT* - declaration of namelist NAM_OUTPUT
 !!
 !!    PURPOSE
 !!    -------
-!       The purpose of this  module is to specify the namelist  NAM_FMOUT
-!     which concerns the instants for the outputs realized by all models.         
+!       The purpose of this  module is to specify the namelist  NAM_OUTPUT
+!       which concerns the instants and some parameters (compression and precision reduction)
+!       of the outputs realized by all models.
 !
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      Module MODD_FMOUT : contains declaration of the variables describing 
-!!                          the instants for the outputs
+!!      Module MODD_OUTPUT : contains declaration of the variables describing
+!!                           the instants and some parameters (compression and
+!!                           precision reduction) of the outputs
 !!
 !!    REFERENCE
 !!    ---------
-!!      Book2 of Meso-NH documentation (module MODD_FMOUT)
+!!      Book2 of Meso-NH documentation (module MODD_OUTPUT)
 !!          
 !!    AUTHOR
 !!    ------
@@ -41,11 +43,11 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
-USE MODD_FMOUT
+USE MODD_OUTPUT
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_FMOUT/LBAK_BEG,LBAK_END,&
+NAMELIST/NAM_OUTPUT/LBAK_BEG,LBAK_END,&
                    XBAK_TIME,NBAK_STEP,&
                    NBAK_STEP_FREQ,NBAK_STEP_FREQ_FIRST,&
                    XBAK_TIME_FREQ,XBAK_TIME_FREQ_FIRST, &
@@ -57,4 +59,4 @@ NAMELIST/NAM_FMOUT/LBAK_BEG,LBAK_END,&
                    LOUT_REDUCE_FLOAT_PRECISION, &
                    LOUT_COMPRESS, NOUT_COMPRESS_LEVEL
 !
-END MODULE MODN_FMOUT
+END MODULE MODN_OUTPUT

@@ -47,7 +47,7 @@
          XALKTOP = 0.001,
          XALZBOT = 1200. /
 
-&NAM_FMOUT  XFMOUT(1,1)=360. /
+&NAM_OUTPUT  XFMOUT(1,1)=360. /
 
 &NAM_CONFn LUSERV=.TRUE.,
            LUSECI=.TRUE.,

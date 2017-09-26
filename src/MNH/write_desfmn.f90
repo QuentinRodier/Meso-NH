@@ -133,7 +133,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Temporary Modification (Masson 06/09/96) manual write of the first and
 !!                              third namelists because of compiler version.
 !!      Modifications  J.-P. Lafore   22/07/96 gridnesting implementation
-!!      Modifications  J.-P. Lafore   29/07/96 add NAM_FMOUT
+!!      Modifications  J.-P. Lafore   29/07/96 add NAM_FMOUT (renamed in NAM_OUTPUT)
 !!      Modifications  V. Masson      10/07/97 add NAM_PARAM_GROUNDn
 !!      Modifications  V. Masson      28/07/97 supress LSTEADY_DMASS
 !!      Modifications  P. Jabouille   03/10/01 LHORELAX_ modifications
@@ -156,7 +156,7 @@ USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA
 USE MODN_CONF
 USE MODN_DYN
 USE MODN_NESTING
-USE MODN_FMOUT
+USE MODN_OUTPUT
 USE MODN_BUDGET
 USE MODN_LES
 USE MODN_DYN_n
@@ -368,7 +368,7 @@ END IF
 WRITE(UNIT=ILUSEG,NML=NAM_CONF)
 WRITE(UNIT=ILUSEG,NML=NAM_DYN)
 WRITE(UNIT=ILUSEG,NML=NAM_NESTING)
-!WRITE(UNIT=ILUSEG,NML=NAM_FMOUT)
+!WRITE(UNIT=ILUSEG,NML=NAM_OUTPUT)
 IF(CBUTYPE /= 'NONE') THEN
   IF(CBUTYPE=='SKIP') CBUTYPE='CART'
   WRITE(UNIT=ILUSEG,NML=NAM_BUDGET)
@@ -470,8 +470,8 @@ IF (NVERB >= 5) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'********** NESTING **************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_NESTING)
 !
-!    WRITE(UNIT=ILUOUT,FMT="(/,'********** FMOUT ****************************')")
-!    WRITE(UNIT=ILUOUT,NML=NAM_FMOUT)
+!    WRITE(UNIT=ILUOUT,FMT="(/,'********** OUTPUT ***************************')")
+!    WRITE(UNIT=ILUOUT,NML=NAM_OUTPUT)
 !    
     WRITE(UNIT=ILUOUT,FMT="('************ BUDGET ***************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_BUDGET)
