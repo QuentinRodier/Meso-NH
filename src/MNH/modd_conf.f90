@@ -99,6 +99,7 @@ CHARACTER (LEN=3),SAVE :: CEQNSYS! EQuatioN SYStem resolved by the MESONH model
 LOGICAL,SAVE      :: LPACK       ! Logical to compress 1D or 2D FM files
 !
 !
+INTEGER,DIMENSION(3),SAVE :: NMNHVERSION ! Version of MesoNH
 INTEGER,SAVE :: NMASDEV           ! NMASDEV=XY corresponds to the masdevX_Y
 INTEGER,SAVE :: NBUGFIX           ! NBUGFIX=n corresponds to the BUGn of masdevX_Y
 CHARACTER(LEN=10),SAVE :: CBIBUSER! CBIBUSER is the name of the user binary library
