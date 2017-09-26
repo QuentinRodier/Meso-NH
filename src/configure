@@ -257,13 +257,13 @@ module load intel/16.0.3.210
 'Linux nuwa'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
-                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_NCARG=${NEED_NCARG:-YES}
                       export MNHENV=${MNHENV:-"
-. /home/tools/intel/composer_xe_2013_sp1.1.106/bin/ifortvars.sh intel64
-export MPI_ROOT=/usr/local/OpenMPI/1.6.3/ifort13.0.0.079/
+. /home/tools/intel/psxe2017/bin/ifortvars.sh intel64
+export MPI_ROOT=/usr/local/openmpi/1.6.5/ifort17.0.1.132
 export PATH=\$MPI_ROOT/bin:\$PATH
 export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
 export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
