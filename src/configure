@@ -87,6 +87,9 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module load ncl_ncarg/6.3.0
+"}
               ;;
 'Linux beaufix'*|'Linux prolix'*)
                 export     ARCH=${ARCH:-LXifort}
