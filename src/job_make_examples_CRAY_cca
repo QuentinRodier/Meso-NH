@@ -20,6 +20,7 @@ ulimit -a
 #ulimit -s unlimited
 # Arrete du job des la premiere erreur
 set -e
+set -x
 # Nom de la machine
 hostname 
 
@@ -72,4 +73,9 @@ make -k << EOF
 
 EOF
 #
+echo "#################################################################################"
+echo "##CAS SUIVANT####################################################################"
+echo "#################################################################################"
+cd $SRC_MESONH/MY_RUN/KTEST/014_LIMA 
+make -k
 
