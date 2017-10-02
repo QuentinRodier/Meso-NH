@@ -134,7 +134,7 @@ NDAD(2) 	= 1 		; model number of the father of each model (here the father of mo
 NDTRATIO(2) 	= 4 		; ratio between time step of model 2 and its father (model 1)
 XWAY(2) 	= 2. 		; interactive nesting level for model 2 and its father 
 
-&NAM_OUTPUT 
+&NAM_BACKUP 
 XBAK_TIME(1,1) 	= 300.		; an array of increments (in second) from the beginning of the segment 
 				to the instant where the i-th fields output on FM-files is realized by model "m" 
 

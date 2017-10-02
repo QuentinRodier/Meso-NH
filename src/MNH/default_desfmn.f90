@@ -60,7 +60,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Module MODD_DYN        : XSEGLEN,XASSELIN,LCORIO,LNUMDIFF
 !!                               XALKTOP,XALZBOT
 !!
-!!      Module MODD_OUTPUT     : XOUT
+!!      Module MODD_BAKOUT
 !!
 !!      Module MODD_NESTING    : NDAD(m),NDTRATIO(m),XWAY(m)
 !!
@@ -174,7 +174,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!      Modifications 24/11/96  (Masson)  add LREFRESH_ALL in deep convection
 !!      Modifications 12/02/96  (Lafore) transformation to DEFAULT_DESFM_n for spawning
 !!      Modifications 22/07/96  (Lafore) gridnesting implementation
-!!      Modifications 29/07/96  (Lafore) add the module MODD_FMOUT (renamed MODD_OUTPUT)
+!!      Modifications 29/07/96  (Lafore) add the module MODD_FMOUT (renamed MODD_BAKOUT)
 !!      Modifications 23/06/97  (Stein)  add the equation system name
 !!      Modifications 10/07/97  (Masson) add MODD_PARAM_GROUNDn : CROUGH
 !!      Modifications 28/07/97  (Masson) remove LREFRESH_ALL and LSTEADY_DMASS
@@ -228,7 +228,7 @@ USE MODD_CONF             !        For INIT only DEFAULT_DESFM1
 USE MODD_CONFZ
 USE MODD_DYN
 USE MODD_NESTING
-USE MODD_OUTPUT
+USE MODD_BAKOUT
 USE MODD_SERIES
 USE MODD_CONF_n           ! modules used to set the default values is only
 USE MODD_LUNIT_n          ! the one corresponding to model 1. These memory
@@ -489,7 +489,7 @@ XTNUDGING = 21600.
 !
 !-------------------------------------------------------------------------------
 !
-!*      9.    SET DEFAULT VALUES FOR MODD_OUTPUT and MODD_OUT_n :
+!*      9.    SET DEFAULT VALUES FOR MODD_BAKOUT and MODD_OUT_n :
 !             ------------------------------------------------
 !
 !

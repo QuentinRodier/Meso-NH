@@ -9,16 +9,17 @@
 ! MASDEV4_7 modd 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##################
-      MODULE MODD_OUTPUT
+      MODULE MODD_BAKOUT
 !     ##################
 !
-!!****  *MODD_OUTPUT* - declaration of informations on the instants for the
-!!      outputs of all models
+!!****  *MODD_BAKOUT* - declaration of informations on the instants for the
+!!      outputs and backups of all models
 !!
 !!    PURPOSE
 !!    -------
 !       The purpose of this  module is to declare the instants and some parameters
-!       (compression and precision reduction) of the outputs realized by all models.
+!       (compression and precision reduction) of the outputs and backups realized by
+!       all models.
 !       Introduced to facilitate the output FM-file managment in case of nesting
 !     
 !!**  IMPLICIT ARGUMENTS
@@ -29,7 +30,7 @@
 !!
 !!    REFERENCE
 !!    ---------
-!!      Book2 of Meso-NH documentation (module MODD_OUTPUT)
+!!      Book2 of Meso-NH documentation (module MODD_BAKOUT)
 !!          
 !!    AUTHOR
 !!    ------
@@ -75,4 +76,4 @@ REAL,SAVE,DIMENSION(JPMODELMAX) :: XBAK_TIME_FREQ_FIRST = 0., XOUT_TIME_FREQ_FIR
 CHARACTER(LEN=NMNHNAMELGTMAX),SAVE,ALLOCATABLE,DIMENSION(:,:) :: COUT_VAR ! Name of the fields to output
 !
 !
-END MODULE MODD_OUTPUT
+END MODULE MODD_BAKOUT

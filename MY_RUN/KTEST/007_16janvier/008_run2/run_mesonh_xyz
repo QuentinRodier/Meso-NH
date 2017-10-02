@@ -5,7 +5,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-rm -f 16JAN* OUT*  EXSEG?.nam 
+#rm -f 16JAN* OUT*  EXSEG?.nam 
 cp EXSEG1.nam.src EXSEG1.nam
 cp EXSEG2.nam.src EXSEG2.nam
 ln -sf  ../004_arp2lfi/16JAN_06_MNH.{des,lfi,nc} .

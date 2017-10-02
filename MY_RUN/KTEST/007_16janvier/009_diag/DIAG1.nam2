@@ -3,6 +3,7 @@
  ! NZ_VERB=5 , NZ_PROC=0 , NB_PROCIO_R=8 , NB_PROCIO_W=1
 /
 &NAM_DIAG             
+LHU_FLX=T,LTRAJ=T,
   CISO='TKPREV',
   LVAR_RS=T, 
   LVAR_TURB=F,

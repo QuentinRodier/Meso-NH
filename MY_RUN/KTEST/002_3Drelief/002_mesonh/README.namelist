@@ -69,7 +69,7 @@ XALKTOP 	= 0.005 	; maximum value of the Rayleigh damping (in s-1)
 XALZBOT 	= 12570. 	; height (in meter) in the physical space of the upper absorbing layer base
 LNUMDIFU 	=.F. 		; switch to activate the numerical diffusion for momentum
 
-&NAM_OUTPUT 
+&NAM_BACKUP 
 XBAK_TIME(1,1) 	= 500.		; an array of increments (in second) from the beginning of the segment 
 				to the instant where the i-th fields output on FM-files is realized by model "m" 
 XBAK_TIME(1,2) 	= 1000. 

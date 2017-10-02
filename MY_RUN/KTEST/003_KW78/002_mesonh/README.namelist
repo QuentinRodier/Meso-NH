@@ -87,7 +87,7 @@ LCORIO 		= F 		; switch for the Coriolis parameters
 				   .TRUE. the Earth rotation is taken into account )
 LNUMDIFU 	=.T. 		; switch to activate the numerical diffusion for momentum
 
-&NAM_OUTPUT 
+&NAM_BACKUP 
 XBAK_TIME(1,1) 	= 450.		; an array of increments (in second) from the beginning of the segment 
 				to the instant where the i-th fields output on FM-files is realized by model "m" 
 XBAK_TIME(1,2) 	= 900. 
