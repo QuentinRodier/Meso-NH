@@ -229,8 +229,11 @@ IF (OACTIT) THEN
    ZDRC(:,:,:)   = PRCS(:,:,:)-(PRCT(:,:,:)/PTSTEP)                ! drc/dt
 !!! JPP
 !!! JPP
-   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
+!!
+!! BV - W and drc/dt effect should not be included in ZTDT (already accounted for in the computations) ?  
+!!
+!!   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
+!!        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
 END IF
 !
 !  find locations where CCN are available
@@ -622,7 +625,6 @@ DO JL = 1, NPTS
             PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
             fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
             go to 100
-            print*, 'PZRIDDR: never get here'
             STOP
          end if
          if (abs(xh-xl) <= PXACC) then
@@ -635,7 +637,6 @@ DO JL = 1, NPTS
 !!$      endif   
 !!SB
       end do
-      print*, 'PZRIDDR: exceeded maximum iterations',j
       STOP
    else if (fl(JL) == 0.0) then
       PZRIDDR(JL)=PX1

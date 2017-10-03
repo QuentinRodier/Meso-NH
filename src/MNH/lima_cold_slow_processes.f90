@@ -339,7 +339,7 @@ IF( IMICRO >= 1 ) THEN
 !        ----------------------------------------
 !
 !
-      WHERE ( ZRST(:)>0.0 )
+      WHERE ( ZRST(:)>XRTMIN(5) )
          ZLBDAS(:)  = MIN( XLBDAS_MAX,                                           &
                            XLBS*( ZRHODREF(:)*MAX( ZRST(:),XRTMIN(5) ) )**XLBEXS )
       END WHERE
@@ -379,7 +379,7 @@ IF( IMICRO >= 1 ) THEN
 !
 !
       ZZW(:) = 0.0
-      WHERE ( (ZRST(:)>0.0) .AND. (ZRSS(:)>0.0) )
+      WHERE ( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>ZRTMIN(5)) )
 !Correction BVIE rhodref
 !         ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
          ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
@@ -445,8 +445,8 @@ IF( IMICRO >= 1 ) THEN
 !        ---------------------------------------------------
 !
 !
-      WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>0.0) &
-                                                            .AND. (ZCIS(:)>0.0) )
+      WHERE ( (ZRIT(:)>XRTMIN(4)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRIS(:)>ZRTMIN(4)) &
+                                                            .AND. (ZCIS(:)>ZCTMIN(4)) )
          ZZW1(:,3) = (ZLBDAI(:) / ZLBDAS(:))**3
          ZZW1(:,1) = (ZCIT(:)*(XCCS*ZLBDAS(:)**XCXS)*EXP( XCOLEXIS*(ZZT(:)-XTT) )) &
                                                     / (ZLBDAI(:)**3)

@@ -241,7 +241,7 @@ IF (LSNOW) THEN
 !
 ZZW1(:,:) = 0.0
 !
-GRIM(:) = (ZRCT(:)>0.0) .AND. (ZRST(:)>0.0) .AND. (ZRCS(:)>0.0) .AND. (ZZT(:)<XTT)
+GRIM(:) = (ZRCT(:)>XRTMIN(2)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRCS(:)>XRTMIN(2)/PTSTEP) .AND. (ZZT(:)<XTT)
 IGRIM = COUNT( GRIM(:) )
 !
 IF( IGRIM>0 ) THEN
@@ -297,7 +297,7 @@ IF( IGRIM>0 ) THEN
 !        1.1.6  riming-conversion of the large sized aggregates into graupeln
 !
 !
-   WHERE ( GRIM(:) .AND. (ZRSS(:)>0.0) )
+   WHERE ( GRIM(:) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) )
       ZZW1(:,2) = MIN( ZRCS(:),                     &
     	           XCRIMSG * ZRCT(:)                & ! RCRIMSG
     	                   *  ZLBDAS(:)**XEXCRIMSG  &
@@ -395,7 +395,7 @@ END IF
 !
 !
 ZZW1(:,2:3) = 0.0
-GACC(:) = (ZRRT(:)>0.0) .AND. (ZRST(:)>0.0) .AND. (ZRRS(:)>0.0) .AND. (ZZT(:)<XTT)
+GACC(:) = (ZRRT(:)>XRTMIN(3)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) .AND. (ZZT(:)<XTT)
 IGACC = COUNT( GACC(:) )
 !
 IF( IGACC>0 ) THEN
@@ -485,7 +485,7 @@ IF( IGACC>0 ) THEN
 !        1.3.6  raindrop accretion-conversion of the large sized aggregates
 !               into graupeln
 !
-   WHERE ( GACC(:) .AND. (ZRSS(:)>0.0) )
+   WHERE ( GACC(:) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) )
       ZZW1(:,2) = MIN( ZRRS(:),ZZW1(:,2)-ZZW1(:,4) )                  ! RRACCSG
       ZZW1(:,3) = MIN( ZRSS(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
             ( ZLBDAS(:)**(XCXS-XBS) )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
@@ -531,7 +531,7 @@ END IF
 !
 !
 ZZW(:) = 0.0
-WHERE( (ZRST(:)>0.0) .AND. (ZRSS(:)>0.0) .AND. (ZZT(:)>XTT) )
+WHERE( (ZRST(:)>XRTMIN(5)) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) .AND. (ZZT(:)>XTT) )
    ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
    ZZW(:) =  ZKA(:)*(XTT-ZZT(:)) +                                 &
               ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
@@ -577,7 +577,7 @@ END IF ! LSNOW
 !
 !
 ZZW1(:,3:4) = 0.0
-WHERE( (ZRIT(:)>0.0) .AND. (ZRRT(:)>0.0) .AND. (ZRIS(:)>0.0) .AND. (ZRRS(:)>0.0) )
+WHERE( (ZRIT(:)>XRTMIN(4)) .AND. (ZRRT(:)>XRTMIN(3)) .AND. (ZRIS(:)>XRTMIN(4)/PTSTEP) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) )
    ZZW1(:,3) = MIN( ZRIS(:),XICFRR * ZRIT(:) * ZCRT(:)          & ! RICFRRG
                                    * ZLBDAR(:)**XEXICFRR        &
                                    * ZRHODREF(:)**(-XCEXVT-1.0) )
@@ -621,8 +621,8 @@ END IF
 !
 !
 ZZW1(:,:) = 0.0
-WHERE( ((ZRCT(:)>0.0) .AND. (ZRGT(:)>0.0) .AND. (ZRCS(:)>0.0)) .OR. &
-       ((ZRIT(:)>0.0) .AND. (ZRGT(:)>0.0) .AND. (ZRIS(:)>0.0))      )
+WHERE( ((ZRCT(:)>XRTMIN(2)) .AND. (ZRGT(:)>XRTMIN(6)) .AND. (ZRCS(:)>XRTMIN(2)/PTSTEP)) .OR. &
+       ((ZRIT(:)>XRTMIN(4)) .AND. (ZRGT(:)>XRTMIN(6)) .AND. (ZRIS(:)>XRTMIN(4)/PTSTEP))      )
    ZZW(:) = ZLBDAG(:)**(XCXG-XDG-2.0) * ZRHODREF(:)**(-XCEXVT)
    ZZW1(:,1) = MIN( ZRCS(:),XFCDRYG * ZRCT(:) * ZZW(:) )             ! RCDRYG
    ZZW1(:,2) = MIN( ZRIS(:),XFIDRYG * EXP( XCOLEXIG*(ZZT(:)-XTT) ) &
@@ -632,7 +632,7 @@ END WHERE
 !*       2.2.1  accretion of aggregates on the graupeln
 !        ----------------------------------------------
 !
-GDRY(:) = (ZRST(:)>0.0) .AND. (ZRGT(:)>0.0) .AND. (ZRSS(:)>0.0)
+GDRY(:) = (ZRST(:)>XRTMIN(5)) .AND. (ZRGT(:)>XRTMIN(6)) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP)
 IGDRY = COUNT( GDRY(:) )
 !
 IF( IGDRY>0 ) THEN
@@ -696,7 +696,7 @@ END IF
 !*       2.2.6  accretion of raindrops on the graupeln
 !        ---------------------------------------------
 !
-GDRY(:) = (ZRRT(:)>0.0) .AND. (ZRGT(:)>0.0) .AND. (ZRRS(:)>0.0)
+GDRY(:) = (ZRRT(:)>XRTMIN(3)) .AND. (ZRGT(:)>XRTMIN(6)) .AND. (ZRRS(:)>XRTMIN(3))
 IGDRY = COUNT( GDRY(:) )
 !
 IF( IGDRY>0 ) THEN
@@ -765,7 +765,7 @@ ZRDRYG(:) = ZZW1(:,1) + ZZW1(:,2) + ZZW1(:,3) + ZZW1(:,4)
 !
 ZZW(:) = 0.0
 ZRWETG(:) = 0.0
-WHERE( ZRGT(:)>0.0 )
+WHERE( ZRGT(:)>XRTMIN(6) )
    ZZW1(:,5) = MIN( ZRIS(:),                                    &
                ZZW1(:,2) / (XCOLIG*EXP(XCOLEXIG*(ZZT(:)-XTT)) ) ) ! RIWETG
    ZZW1(:,6) = MIN( ZRSS(:),                                    &
@@ -965,7 +965,7 @@ END IF
 !
 !
 ZZW(:) = 0.0
-WHERE( (ZRGT(:)>0.0) .AND. (ZRGS(:)>0.0) .AND. (ZZT(:)>XTT) )
+WHERE( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) .AND. (ZZT(:)>XTT) )
    ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
    ZZW(:) =  ZKA(:)*(XTT-ZZT(:)) +                                 &
               ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &
@@ -1023,8 +1023,8 @@ IF( IHAIL>0 ) THEN
 !        ----------------------------
 !
    ZZW1(:,:) = 0.0
-   WHERE( GHAIL(:) .AND. ( (ZRCT(:)>XRTMIN(2) .AND. ZRCS(:)>0.0) .OR. &
-                           (ZRIT(:)>XRTMIN(4) .AND. ZRIS(:)>0.0) )    )    
+   WHERE( GHAIL(:) .AND. ( (ZRCT(:)>XRTMIN(2) .AND. ZRCS(:)>XRTMIN(2)/PTSTEP) .OR. &
+                           (ZRIT(:)>XRTMIN(4) .AND. ZRIS(:)>XRTMIN(4)/PTSTEP) )    )    
       ZZW(:) = ZLBDAH(:)**(XCXH-XDH-2.0) * ZRHODREF(:)**(-XCEXVT)
       ZZW1(:,1) = MIN( ZRCS(:),XFWETH * ZRCT(:) * ZZW(:) )             ! RCWETH
       ZZW1(:,2) = MIN( ZRIS(:),XFWETH * ZRIT(:) * ZZW(:) )             ! RIWETH
@@ -1033,7 +1033,7 @@ IF( IHAIL>0 ) THEN
 !*       3.1.1  accretion of aggregates on the hailstones
 !        ------------------------------------------------
 !
-   GWET(:) = GHAIL(:) .AND. (ZRST(:)>XRTMIN(5) .AND. ZRSS(:)>0.0)
+   GWET(:) = GHAIL(:) .AND. (ZRST(:)>XRTMIN(5) .AND. ZRSS(:)>XRTMIN(5)/PTSTEP)
    IGWET = COUNT( GWET(:) )
 !
    IF( IGWET>0 ) THEN
@@ -1096,7 +1096,7 @@ IF( IHAIL>0 ) THEN
 !*       3.1.6  accretion of graupeln on the hailstones
 !        ----------------------------------------------
 !
-    GWET(:) = GHAIL(:) .AND. (ZRGT(:)>XRTMIN(6) .AND. ZRGS(:)>0.0)
+    GWET(:) = GHAIL(:) .AND. (ZRGT(:)>XRTMIN(6) .AND. ZRGS(:)>XRTMIN(6)/PTSTEP)
     IGWET = COUNT( GWET(:) )
 !
     IF( IGWET>0 ) THEN
@@ -1276,7 +1276,7 @@ END IF
 !
 IF ( IHAIL>0 ) THEN
     ZZW(:) = 0.0
-    WHERE( GHAIL(:) .AND. (ZRHS(:)>0.0) .AND. (ZRHT(:)>0.0) .AND. (ZZT(:)>XTT) )
+    WHERE( GHAIL(:) .AND. (ZRHS(:)>XRTMIN(7)/PTSTEP) .AND. (ZRHT(:)>XRTMIN(7)) .AND. (ZZT(:)>XTT) )
        ZZW(:) = ZRVT(:)*ZPRES(:)/((XMV/XMD)+ZRVT(:)) ! Vapor pressure
        ZZW(:) = ZKA(:)*(XTT-ZZT(:)) +                              &
             ( ZDV(:)*(XLVTT + ( XCPV - XCL ) * ( ZZT(:) - XTT )) &

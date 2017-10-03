@@ -66,7 +66,8 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZMAX, &
                                      ZZY1, &
                                      ZZY2, &
                                      Z1,   &
-                                     Z2
+                                     Z2,   &
+                                     ZSI2
 !
 REAL                              :: XPSI
 !
@@ -78,25 +79,28 @@ ALLOCATE(ZZY1(SIZE(ZZT))) ; ZZY1(:)= 0.0
 ALLOCATE(ZZY2(SIZE(ZZT))) ; ZZY2(:)= 0.0
 ALLOCATE(Z1(SIZE(ZZT)))   ; Z1(:)  = 0.0
 ALLOCATE(Z2(SIZE(ZZT)))   ; Z2(:)  = 0.0
+ALLOCATE(ZSI2(SIZE(ZZT))) ; ZSI2(:)= 0.0
 !
 ZZY(:) = 0.0   
 !
 XPSI   = 0.058707*XGAMMA/XRHO_CFDC
+!
+ZSI2(:)=min(ZSI(:),ZSI_W(:))
 !
 WHERE( ZSI(:)>1.0 )
 !
 !* T <= -35 C 
 !
    ZZY(:)  =1000.*XGAMMA/XRHO_CFDC                  &
-        * ( EXP(12.96*(MIN(ZSI(:),7.)-1.1)) )**0.3          &
+        * ( EXP(12.96*(MIN(ZSI2(:),7.)-1.1)) )**0.3          &
         * RECT(1.,0.,ZZT(:),(XTT-80.),(XTT-35.))
 !
 !* -35 C < T <= -25 C (in Appendix A) 
 !
    ZZY1(:) =1000.*XGAMMA/XRHO_CFDC                  &
-        * ( EXP(12.96*(MIN(ZSI(:),7.)-1.1)) )**0.3
+        * ( EXP(12.96*(MIN(ZSI2(:),7.)-1.1)) )**0.3
    ZZY2(:) =1000.*XPSI                              &
-        *   EXP(12.96*(MIN(ZSI(:),7.)-1.0)-0.639)
+        *   EXP(12.96*(MIN(ZSI2(:),7.)-1.0)-0.639)
 !
 !* -35 C < T <= -30 C
 !
@@ -115,7 +119,7 @@ WHERE( ZSI(:)>1.0 )
 !* T > -25 C 
 !
    ZZY(:)  = ZZY(:) + 1000.*XPSI                    &
-        * EXP( 12.96*(MIN(ZSI(:),7.)-1.0)-0.639 )           &
+        * EXP( 12.96*(MIN(ZSI2(:),7.)-1.0)-0.639 )           &
         * RECT(1.,0.,ZZT(:),(XTT-25.),(XTT-2.))
 END WHERE
 !

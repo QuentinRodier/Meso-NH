@@ -527,7 +527,7 @@ IF( IMICRO >= 1 ) THEN
 !*       2.     Compute the slow processes involving cloud water and graupel
 !	        ------------------------------------------------------------
 !
-   CALL LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI,          &
+   CALL LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI, PTSTEP,  &
                                   ZLSFACT, ZLVFACT, ZAI, ZCJ,   &
                                   ZRGT, ZCIT,                   &
                                   ZRVS, ZRCS, ZRIS, ZRGS, ZTHS, &
