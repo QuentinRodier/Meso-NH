@@ -22,7 +22,7 @@ CONTAINS
 #ifdef MNH_GA
     USE MODD_MPIF  , ONLY :  MPI_THREAD_MULTIPLE
 #endif
-    USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
+    USE MODD_VAR_ll, ONLY : IP, NPROC, NMNH_COMM_WORLD
     !JUANZ
     IMPLICIT NONE
 
@@ -107,7 +107,10 @@ CONTAINS
        !
        !JUANZ create new/remapped communicator 
        !
-
+       CALL MPI_COMM_RANK(NMNH_COMM_WORLD, IP, KINFO_ll)
+       IP = IP + 1
+       !
+       CALL MPI_COMM_SIZE(NMNH_COMM_WORLD, NPROC, KINFO_ll)
        !
     END IF
 
