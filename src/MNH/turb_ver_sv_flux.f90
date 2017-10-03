@@ -425,8 +425,10 @@ DO JSV=1,ISV
   CALL TRIDIAG(KKA,KKU,KKL,PSVM(:,:,:,JSV),ZA,PTSTEP,PEXPL,PIMPL,PRHODJ,ZSOURCE,ZRES)
 !
 !  Compute the equivalent tendency for the JSV scalar variable
-  PRSVS(:,:,:,JSV)= MAX((PRSVS(:,:,:,JSV)+    &
-                    PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP),XSVMIN(JSV))
+  PRSVS(:,:,:,JSV)= PRSVS(:,:,:,JSV)+    &
+                    PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP
+! PRSVS(:,:,:,JSV)= MAX((PRSVS(:,:,:,JSV)+    &
+!                   PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP),XSVMIN(JSV))
 !
   IF ( (OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL ) THEN
     ! Diagnostic of the cartesian vertical flux

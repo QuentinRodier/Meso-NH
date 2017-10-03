@@ -198,10 +198,13 @@ CHARACTER (LEN=9) :: YNAM ! name of the namelist file
 INTEGER        :: JF =0   !  loop index
 LOGICAL :: GFOUND         ! Return code when searching namelist
 LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
+LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
+                                !      the only cloudy columns
 !
 INTEGER :: IIU, IJU, IKU
 INTEGER :: IINFO_ll               ! return code for _ll routines 
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
+REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
@@ -480,6 +483,7 @@ IKU=NKMAX+2*JPVEXT
 !* allocation of variables used 
 !
 ALLOCATE(GMASKkids  (IIU,IJU))
+ALLOCATE(ZWETDEPAER (IIU,IJU,IKU,NSV_AER))
 GMASKkids(:,:)=.FALSE.
 ! 
 CALL INI_DIAG_IN_RUN(IIU,IJU,IKU,LFLYER,LSTATION,LPROFILER)
@@ -509,7 +513,6 @@ NC_WRITE = LNETCDF
 CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
 IF ( LNETCDF ) THEN
   DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
   CALL WRITE_LFIFM1_FOR_DIAG(YFMFILE,CDAD_NAME(1))
   DEF_NC=.TRUE.
 END IF
@@ -723,14 +726,18 @@ END IF
 !
 CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
-                  ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
+                  ZTURB,ZTRACER, ZTIME_BU,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)          
 DEF_NC=.TRUE.
 #else
 CALL PHYS_PARAM_n(1,YFMFILE,GCLOSE_OUT,                           &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG,       &
-                  ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
+                  ZTURB,ZTRACER, ZTIME_BU,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)
 #endif       
 WRITE(ILUOUT0,*) 'DIAG AFTER PHYS_PARAM1'
+IF (LCHEMDIAG) THEN
+  CALL CH_MONITOR_n(ZWETDEPAER,1,XTSTEP, ILUOUT0, NVERB)
+END IF
+
 !
 !* restores the initial flags
 !
@@ -753,7 +760,6 @@ IF (CSURF=='EXTE') THEN
   CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
   IF ( LNETCDF ) THEN
     DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
     CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
     DEF_NC=.TRUE.
   END IF
@@ -765,7 +771,6 @@ IF (CSURF=='EXTE') THEN
   CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
   IF ( LNETCDF ) THEN
     DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
     CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
     DEF_NC=.TRUE.
   END IF
@@ -795,7 +800,6 @@ NC_FILE='dgs'
 CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
 IF ( LNETCDF ) THEN
   DEF_NC=.FALSE.
-!     print * , ' SECOND WRITE '
   CALL WRITE_LFIFM1_FOR_DIAG_SUPP(YFMFILE)
   DEF_NC=.TRUE.
 END IF
@@ -823,6 +827,7 @@ ZTIME1=ZTIME2
 !*       9.0    Closes the FM files
 !
 DEALLOCATE(GMASKkids)
+DEALLOCATE(ZWETDEPAER)
 IF (GCLOSE_OUT) THEN
   GCLOSE_OUT=.FALSE.
   CALL FMCLOS_ll(YFMFILE,'KEEP',CLUOUT,IRESP)
