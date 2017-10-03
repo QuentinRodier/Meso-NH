@@ -72,6 +72,7 @@ SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
 !!       C.Lac      07/2011 : Add budgets
 !!       S. Donier  06/2015 : bug surface aerosols
 !!       C.Lac      07/2016 : Add droplet deposition
+!!       C.Lac      10/2017 : Correction on deposition
 !!---------------------------------------------------------------
 !
 !
@@ -139,6 +140,7 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2)) ::           &
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZT,ZEXN,ZLV,ZCPH                              
 LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) &
             :: GDEP
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: ZWDEPR,ZWDEPS
 
 !
 !
@@ -239,15 +241,31 @@ IF (ODEPOTREE) THEN
   ZT(:,:,:)= PTHT(:,:,:)*ZEXN(:,:,:)
   ZLV(:,:,:)=XLVTT +(XCPV-XCL) *(ZT(:,:,:)-XTT)
   ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
+  ZWDEPR(:,:,:)= 0.
+  ZWDEPS(:,:,:)= 0.
   WHERE (GDEP)
-   PRRS(:,:,:,2) = PRRS(:,:,:,2) - PVDEPOTREE * PRT(:,:,:,2) * PRHODJ(:,:,:)
+   ZWDEPR(:,:,:)= PVDEPOTREE * PRT(:,:,:,2) * PRHODJ(:,:,:)
   END WHERE
-  IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+  IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')  .OR.  (HCLOUD=='LIMA')) THEN
    WHERE (GDEP)
-    PSVS(:,:,:,NSV_C2R2BEG+1) =  PSVS(:,:,:,NSV_C2R2BEG+1)- PVDEPOTREE *  &
-     PSVT(:,:,:,NSV_C2R2BEG+1) * PRHODJ(:,:,:)
+   ZWDEPS(:,:,:)= PVDEPOTREE * PSVT(:,:,:,NSV_C2R2BEG+1) * PRHODJ(:,:,:)
    END WHERE
   END IF
+  DO JJ=2,(IJU-1)
+   DO JI=2,(IIU-1)
+     DO JK=2,(IKU-2) 
+       IF (GDEP(JI,JJ,JK)) THEN
+          PRRS(JI,JJ,JK,2) = PRRS(JI,JJ,JK,2) + (ZWDEPR(JI,JJ,JK+1)-ZWDEPR(JI,JJ,JK))/ &
+                             (PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
+         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+          PSVS(JI,JJ,JK,NSV_C2R2BEG+1) =  PSVS(JI,JJ,JK,NSV_C2R2BEG+1) + &
+                   (ZWDEPS(JI,JJ,JK+1)-ZWDEPS(JI,JJ,JK))/(PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
+         END IF
+       END IF
+     END DO
+    END DO
+   END DO
+!
 !
 END IF
 !
