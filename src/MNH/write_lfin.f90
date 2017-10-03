@@ -2141,7 +2141,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (SIZE(XINPRC) /= 0 ) THEN
     ZWORK2D(:,:)  = XINPRC(:,:)
     YRECFM      = 'INPRC'
-    YCOMMENT    = 'X_Y_INstantaneous Cloud Precipitation Rain Rate (MM/H)'
+    YCOMMENT    = 'X_Y_INstantaneous Cloud Precipitation Rate (MM/H)'
     IGRID       = 1
     ILENCH      = LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*3.6E6,IGRID,ILENCH, &
@@ -2149,7 +2149,27 @@ IF (CPROGRAM /= 'IDEAL') THEN
 !
     ZWORK2D(:,:)  = XACPRC(:,:)
     YRECFM      = 'ACPRC'
-    YCOMMENT    = 'X_Y_ACcumulated Cloud Precipitation Rain Rate (MM)'
+    YCOMMENT    = 'X_Y_ACcumulated Cloud Precipitation Rate (MM)'
+    IGRID       = 1
+    ILENCH      = LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*1.0E3,IGRID,ILENCH, &
+                                                 YCOMMENT,IRESP) ! unit conversion
+  ENDIF
+  ENDIF
+!
+  IF (ASSOCIATED(XINDEP)) THEN
+  IF (SIZE(XINDEP) /= 0 ) THEN
+    ZWORK2D(:,:)  = XINDEP(:,:)
+    YRECFM      = 'INDEP'
+    YCOMMENT    = 'X_Y_INstantaneous Cloud Deposition Rate (MM/H)'
+    IGRID       = 1
+    ILENCH      = LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*3.6E6,IGRID,ILENCH, &
+                                               YCOMMENT,IRESP) ! unit conversion
+!
+    ZWORK2D(:,:)  = XACDEP(:,:)
+    YRECFM      = 'ACDEP'
+    YCOMMENT    = 'X_Y_ACcumulated Cloud Deposition Rate (MM)'
     IGRID       = 1
     ILENCH      = LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*1.0E3,IGRID,ILENCH, &

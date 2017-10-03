@@ -276,7 +276,8 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
                             CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
                             YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,      &
                             YAERHEIGHT=>XAERHEIGHT,                            &
-                            LSCAV, LAERO_MASS, NPHILLIPS
+                            LSCAV, LAERO_MASS, NPHILLIPS,                      &
+                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC
 !
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
@@ -1059,7 +1060,7 @@ XSIGMA_MF = 20.
 XA1    =  2./3.  
 XB     =  0.002       
 XC     =  0.012     
-XBETA1 =  0.9         
+XBETA1 =  0.9 
 XR     =  2.
 XLAMBDA=  0.
 !
@@ -1116,7 +1117,10 @@ IF (KMI == 1) THEN
   ORAIN  = .TRUE.
   OSEDC  = .FALSE.
   OACTIT = .FALSE.
+  ODEPOC = .FALSE.
   LBOUND = .FALSE.
+!
+  OVDEPOC = 0.02 ! 2 cm/s
 !
   CINI_CCN   = 'AER'
   CTYPE_CCN(:) = 'M'
@@ -1171,7 +1175,6 @@ LUSECHEM            = .FALSE.
 LUSECHAQ            = .FALSE.
 LUSECHIC            = .FALSE.
 LCH_INIT_FIELD      = .FALSE.
-!LCH_SURFACE_FLUX    = .FALSE.
 LCH_CONV_SCAV       = .FALSE.
 LCH_CONV_LINOX      = .FALSE.
 LCH_PH              = .FALSE.

@@ -1937,12 +1937,10 @@ IF (LDEPOC) THEN
   GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 .AND. &
                                   PCCS(IIB:IIE,IJB:IJE,2) >0
   WHERE (GDEP)
-     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCS(:,:,2)*PTSTEP / &
-                  ( PZZ(:,:,3) - PZZ(:,:,2))
-     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCS(:,:,2)*PTSTEP / &          
-                  ( PZZ(:,:,3) - PZZ(:,:,2))
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCS(:,:,2) * PTSTEP * PRHODREF(:,:,2) /XRHOLW
-     PINDEP(:,:) = XVDEPOC * PRCS(:,:,2) * PTSTEP * PRHODREF(:,:,2) /XRHOLW
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW             
+     PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
   END WHERE
 END IF
 !
