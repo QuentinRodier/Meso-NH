@@ -250,7 +250,7 @@ DEALLOCATE (ZXM)
 !     ------------------
 !
 ! 2.1 Open netcdf files
-print*,'Open netcdf files:',HFILE
+!print*,'Open netcdf files:',HFILE
 !
 status = nf_open(HFILE, nf_nowrite, ncid) 
 if (status /= nf_noerr) call handle_err(status)
@@ -280,7 +280,7 @@ status = nf_inq_dimlen(ncid, lonid, lonlen)
 if (status /= nf_noerr) call handle_err(status)
 status = nf_inq_dimlen(ncid, levid, levlen)
 if (status /= nf_noerr) call handle_err(status)
-print*, latlen, lonlen, levlen, nrecs
+!print*, latlen, lonlen, levlen, nrecs
 !
 ! get variable IDs
 !
