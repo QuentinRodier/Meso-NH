@@ -37,6 +37,9 @@ LOGICAL, SAVE :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O
 LOGICAL, SAVE :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)  
 LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)  
 
+LOGICAL, SAVE :: LVERB_OUTLST = .TRUE.  ! TRUE will PRINT_MSG in OUTPUT_LISTINGn files
+LOGICAL, SAVE :: LVERB_STDOUT = .FALSE. ! TRUE will also PRINT_MSG on standard output
+LOGICAL, SAVE :: LVERB_ALLPRC = .FALSE. ! FALSE: only process 0 do PRINT_MSG, TRUE: all processes
 INTEGER, SAVE :: NIO_VERB        = NVERB_WARNING ! Verbosity level for IO
 INTEGER, SAVE :: NIO_ABORT_LEVEL = NVERB_ERROR   ! Level of IO error necessary to force stop of application
 
@@ -105,6 +108,8 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_FIRST => NULL()
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_LAST  => NULL()
 
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_SURFEX  => NULL() !Pointer used to find the file used when writing SURFEX fields in write_surf_mnh.f90
+
+TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to point to the file used when writing to OUTPUT_LISTINGn file
 
 TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy") !Non existing file which can be used as a dummy target
 

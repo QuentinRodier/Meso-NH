@@ -166,7 +166,7 @@ DEP_ALL_USER   = $(sort $(filter-out $(IGNORE_DEP_USER)  ,$(DEP_USER)) )
 
 .INTERMEDIATE:   $(LIB_MASTER)
 
-.SECONDARY: mpi.mod netcdf.mod openacc.mod
+.SECONDARY: iso_fortran_env.mod mpi.mod netcdf.mod openacc.mod
 
 ##########################################################
 #                                                        #
@@ -541,6 +541,8 @@ endif
 ifeq "$(DO_COMP_USER)" "YES"
 include  filedepalluser
 endif 
+
+iso_fortran_env.mod:
 
 mpi.mod:
 
