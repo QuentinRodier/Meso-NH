@@ -129,12 +129,12 @@ CALL INITIO_ll()
 CLUOUT0='OUTPUT_LISTING0'                    ! name of the output-listing
 !
 CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,    &
-             FORM='FORMATTED',ACTION='WRITE',MODE=GLOBAL)
+             FORM='FORMATTED',ACTION='WRITE',MODE='GLOBAL')
 !
 YNAMELIST = 'PRE_ZOOM1.nam'                  ! name of the namelist file
  
 CALL OPEN_ll(UNIT=ILUNAM,FILE=YNAMELIST,IOSTAT=IRESP,    &
-             FORM='FORMATTED',ACTION='READ',MODE=GLOBAL)
+             FORM='FORMATTED',ACTION='READ',MODE='GLOBAL')
 !
 CPGDFILE  = 'PGDFILE'                         ! name of the input file
 YZOOMFILE = ''

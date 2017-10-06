@@ -99,7 +99,7 @@ INTEGER           :: ILENCH         ! ILENCH : length of comment string
 !
 YNAM  = 'DIAG1.nam'
 CALL OPEN_ll (UNIT=ILUNAM,FILE=YNAM,IOSTAT=IRESP,STATUS="OLD",ACTION='READ', &
-     FORM="FORMATTED",POSITION="REWIND",MODE=GLOBAL)
+     FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
 !
 !-------------------------------------------------------------------------------
 !

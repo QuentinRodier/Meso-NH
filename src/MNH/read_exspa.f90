@@ -202,11 +202,11 @@ YDADSPAFILE = ' '
 !
 LUNIT_MODEL(2)%CLUOUT = 'OUTPUT_LISTING2'
 CALL OPEN_ll(UNIT=ILUOUT,FILE=LUNIT_MODEL(2)%CLUOUT,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
-     MODE=GLOBAL)
+     MODE='GLOBAL')
 !
 YEXSPA  = 'SPAWN1.nam'
 CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode=GLOBAL) 
+             form='FORMATTED',position="REWIND",mode='GLOBAL')
 !
 !
 !*       2.    read the EXSPA file :

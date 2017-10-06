@@ -127,7 +127,7 @@ ELSE
 END IF
 !
 CALL OPEN_ll(KLUNAM,FILE=CNAM,IOSTAT=IRESP,ACTION='READ', &
-             FORM="FORMATTED",POSITION="REWIND",MODE=GLOBAL)
+             FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
 !
 !-------------------------------------------------------------------------------
 !

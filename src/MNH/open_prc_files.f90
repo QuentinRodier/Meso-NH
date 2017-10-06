@@ -174,7 +174,7 @@ CLUOUT = CLUOUT0
 !              -----------------------------------
 !
 CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
-     MODE=GLOBAL)
+     MODE='GLOBAL')
 !
 IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !-------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !              -------------------------
 !
 CALL OPEN_ll(UNIT=IPRE_REAL1,FILE=HPRE_REAL1,IOSTAT=IRESP,ACTION='READ', &
-     DELIM='QUOTE',MODE=GLOBAL,STATUS='OLD')
+     DELIM='QUOTE',MODE='GLOBAL',STATUS='OLD')
 IF (IRESP.NE.0 ) THEN
    PRINT "(' STOP :: Routine OPEN_PRC_FILES :: IRESP=',I6,' --> file PRE_REAL1.nam not found ')", IRESP
    !callabortstop

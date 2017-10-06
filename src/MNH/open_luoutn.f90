@@ -88,7 +88,7 @@ INTEGER :: ILUOUT     ! logical unit for listing file for model _n
 !
 CLUOUT=HLUOUT
 CALL OPEN_ll(UNIT=ILUOUT,FILE=CLUOUT,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
-     MODE=GLOBAL)
+     MODE='GLOBAL')
 !
 !-------------------------------------------------------------------------------
 !

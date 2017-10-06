@@ -68,7 +68,7 @@ CHARACTER(LEN=20) :: YTEX           ! name of tex file
 IF (CPROGRAM =='PGD   ') THEN
   YTEX='class_cover_data.tex'
   CALL OPEN_ll(unit=KTEX,file=YTEX,iostat=IRESP,action='WRITE', &
-               form='FORMATTED',position="REWIND",mode=GLOBAL)
+               form='FORMATTED',position="REWIND",mode='GLOBAL')
 ELSE
   KTEX=0
 END IF

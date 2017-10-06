@@ -181,7 +181,7 @@ CALL READ_EXSPA(CINIFILE,CINIFILEPGD,&
 !
 YEXSPA  = 'SPAWN1.nam'
 CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode=GLOBAL) 
+             form='FORMATTED',position="REWIND",mode='GLOBAL')
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 CALL INIT_NMLVAR
@@ -227,7 +227,7 @@ CALL MPPDB_CHECK3D(XUT,"SPAWNING-after boundaries::XUT",PRECISION)
 !              --------------------------------
 !
 CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode=GLOBAL)
+             form='FORMATTED',position="REWIND",mode='GLOBAL')
 CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 CALL SET_POINTERS_TO_MODEL1()
 CALL GOTO_MODEL(2)

@@ -87,15 +87,15 @@ CFILE = HFILE
 !
 IF (HFORM=='FORMATTED') THEN
   CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-               FORM=HFORM, MODE=GLOBAL                              )
+               FORM=HFORM, MODE='GLOBAL'                            )
 ELSE 
   IF (HACCESS=='DIRECT') THEN
     CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
                  FORM=HFORM,ACCESS=HACCESS,RECL=KRECL,                &
-                 MODE=GLOBAL                                          )
+                 MODE='GLOBAL'                                        )
   ELSE
     CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-                 FORM=HFORM, MODE=GLOBAL                               )
+                 FORM=HFORM, MODE='GLOBAL'                             )
   END IF
 END IF
 !

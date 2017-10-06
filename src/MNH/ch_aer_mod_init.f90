@@ -85,7 +85,7 @@ INTEGER :: ILU                     ! logical unit
 IF (CMINERAL == 'NARES') THEN
 !       .. the file ares.w contains the weights of the model
         CALL OPEN_ll(UNIT=ILU,FILE="ares1A.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE=GLOBAL) 
+        MODE='GLOBAL')
         !OPEN(1,FILE="ares1A.w",STATUS="OLD") 
         READ(ILU,*) I1IA,J1JA,K1KA 
         DO JI=1,I1IA 
@@ -104,7 +104,7 @@ IF (CMINERAL == 'NARES') THEN
         !
         !OPEN(1,FILE="ares1C.w",STATUS="OLD") 
         CALL OPEN_ll(UNIT=ILU,FILE="ares1C.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE=GLOBAL)
+        MODE='GLOBAL')
 
         READ(ILU,*) I1IC,J1JC,K1KC 
         DO JI=1,I1IC 
@@ -122,7 +122,7 @@ IF (CMINERAL == 'NARES') THEN
         CALL CLOSE_ll("ares1C.w",IOSTAT=IRESP)
         !
         CALL OPEN_ll(UNIT=ILU,FILE="ares2A.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE=GLOBAL)
+        MODE='GLOBAL')
         !OPEN(1,FILE="ares2A.w",STATUS="OLD") 
         READ(ILU,*) I2IA,J2JA,K2KA 
         DO JI=1,I2IA 
@@ -140,7 +140,7 @@ IF (CMINERAL == 'NARES') THEN
         CALL CLOSE_ll("ares2A.w",IOSTAT=IRESP)
         !
         CALL OPEN_ll(UNIT=ILU,FILE="ares2B.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE=GLOBAL)
+        MODE='GLOBAL')
         !OPEN(1,FILE="ares2B.w",STATUS="OLD") 
         READ(ILU,*) I2IB,J2JB,K2KB 
         DO JI=1,I2IB 
@@ -158,7 +158,7 @@ IF (CMINERAL == 'NARES') THEN
         CALL CLOSE_ll("ares2B.w",IOSTAT=IRESP)
         !
         CALL OPEN_ll(UNIT=ILU,FILE="ares2C.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE=GLOBAL)
+        MODE='GLOBAL')
         !OPEN(1,FILE="ares2C.w",STATUS="OLD") 
         READ(ILU,*) I2IC,J2JC,K2KC 
         DO JI=1,I2IC 
@@ -185,7 +185,7 @@ IF (CMINERAL == 'TABUL') THEN
   IF(.NOT.ALLOCATED(zni)) ALLOCATE(zni(22))
   IF(.NOT.ALLOCATED(zf)) ALLOCATE(zf(16,11,22,22,22,3))
   CALL OPEN_ll(UNIT=ILU,FILE="AEROMIN_NEW",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-     MODE=GLOBAL)
+     MODE='GLOBAL')
 
   WRITE(*,*) 'LOADING MINERAL AEROSOL DATA ...'
   DO JI=1,nh
