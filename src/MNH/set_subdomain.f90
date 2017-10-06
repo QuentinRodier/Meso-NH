@@ -51,7 +51,7 @@ END MODULE MODI_SET_SUBDOMAIN
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_PARAMETERS
 !!         JPHEXT
 !!      Module MODD_GRID1
@@ -93,6 +93,7 @@ USE MODE_GRIDPROJ       ! executive module
 USE MODE_POS
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_CONF           ! declaration modules
 USE MODD_IO_ll, ONLY : TFILEDATA
@@ -147,7 +148,7 @@ NAMELIST/NAM_MESONH_DOM/ NIMAX,NJMAX,NXOR,NYOR
 !                                                    ! definition of MESO-NH
 !                                                    ! horizontal domain
 !-------------------------------------------------------------------------------
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !-------------------------------------------------------------------------------
 !
 !*       1.    COMPUTATION OF THE LATITUDE AND LONGITUDE OF LARGE DOMAIN POINTS
@@ -199,18 +200,14 @@ IF ( NXOR==NUNDEF .OR. NYOR==NUNDEF ) THEN
     WRITE(ILUOUT0,*) 'NXOR = ',NXOR
     WRITE(ILUOUT0,*) 'Please also define NYOR or choose an other domain initialization mode'
  !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_SUBDOMAIN','bottom-left domain X index is given, but not its Y index')
   END IF
   IF ( NYOR/=NUNDEF ) THEN
     WRITE(ILUOUT0,*) 'bottom-left domain Y index is given, but not its X index'
     WRITE(ILUOUT0,*) 'NYOR = ',NYOR
     WRITE(ILUOUT0,*) 'Please also define NXOR or choose an other domain initialization mode'
  !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_SUBDOMAIN','bottom-left domain Y index is given, but not its X index')
   END IF
   NXOR= (IIU - NIMAX)/2
   NYOR= (IJU - NJMAX)/2
@@ -262,9 +259,7 @@ IF ( MOD(NIMAX,KDXRATIO) /= 0 ) THEN
   WRITE(ILUOUT0,*) 'Your NIMAX is :', NIMAX
   WRITE(ILUOUT0,*) '**************************************'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_SUBDOMAIN','')
 END IF
 !
 IF ( MOD(NJMAX,KDYRATIO) /= 0 ) THEN
@@ -274,9 +269,7 @@ IF ( MOD(NJMAX,KDYRATIO) /= 0 ) THEN
   WRITE(ILUOUT0,*) 'Your NJMAX is :', NJMAX
   WRITE(ILUOUT0,*) '**************************************'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_SUBDOMAIN','')
 END IF
 !
 IF ( MOD(NXOR-1,KDXRATIO) /= 0 ) THEN
@@ -330,9 +323,7 @@ THEN
   WRITE(ILUOUT0,*) '  +----------------------------------------------------------+'
   WRITE(ILUOUT0,*)
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_SUBDOMAIN','input PGD domain too small or output domain not well centered')
 ENDIF
 !
 !-------------------------------------------------------------------------------

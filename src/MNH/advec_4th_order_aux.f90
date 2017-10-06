@@ -113,7 +113,6 @@ END MODULE MODI_ADVEC_4TH_ORDER_AUX
 !
 USE MODE_ll
 !
-USE MODD_LUNIT
 USE MODD_CONF
 USE MODD_ARGSLIST_ll, ONLY : HALO2LIST_ll
 USE MODE_IO_ll
@@ -167,21 +166,8 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
     IW=IIB+1
     IE=IIE
-!    IE=IIE-1
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    !callabortstop
-!!$    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-!!$    CALL ABORT
-!!$    STOP
-!!$!    IW=IIB
-!!$!    IE=IIE
-!!$  END IF  
 !
   IF(KGRID == 2) THEN
     IWF=IW-1
@@ -294,21 +280,8 @@ IF ( .NOT. L2D ) THEN
   CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
 !
-!!$    IF(NHALO == 1) THEN
       IS=IJB+1
       IN=IJE
-!      IN=IJE-1
-!!$    ELSE
-!!$      CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$      WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$      WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$!callabortstop
-!!$      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-!!$      CALL ABORT
-!!$      STOP
-!!$!      IS=IJB
-!!$!      IN=IJE
-!!$    END IF
 !
     IF(KGRID == 3) THEN
       ISF=IS-1

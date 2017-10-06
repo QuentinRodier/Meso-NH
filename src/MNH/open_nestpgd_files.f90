@@ -78,14 +78,14 @@ END MODULE MODI_OPEN_NESTPGD_FILES
 !              ------------
 !
 USE MODD_LUNIT
+USE MODD_LUNIT_n
 USE MODD_CONF
 USE MODD_NESTING
 USE MODD_PARAMETERS
-USE MODD_IO_ll, ONLY : LIOCDF4,LLFIOUT,TFILEDATA,TPTR2FILE
+USE MODD_IO_ll, ONLY : LIOCDF4,LLFIOUT,TFILE_OUTPUTLISTING,TFILEDATA,TPTR2FILE
 !
 USE MODI_OPEN_LUOUTn
 !
-USE MODE_FIELD, ONLY : INI_FIELD_LIST
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_FM
@@ -125,6 +125,7 @@ CHARACTER(LEN=28) :: YPGD1, YPGD2, YPGD3, YPGD4, &
                      YPGD5, YPGD6, YPGD7, YPGD8
 !                    ! name of all pgd files
 !                    ! in the namelist
+CHARACTER(LEN=100) :: YMSG
 INTEGER           :: IDAD    ! father of one model
 INTEGER           :: JPGD    ! loop counter
 LOGICAL           :: GADD    !
@@ -159,8 +160,12 @@ CLUOUT0='OUTPUT_LISTING0'
 !*       2.    OPENNING OF CLUOUT0
 !              -------------------
 !
-CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
-     MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
+CALL IO_FILE_OPEN_ll(TLUOUT0)
+!Set output file for PRINT_MSG
+TFILE_OUTPUTLISTING => TLUOUT0
+!
+ILUOUT0=TLUOUT0%NLU
 !
 !-------------------------------------------------------------------------------
 !
@@ -247,9 +252,7 @@ DO JPGD=1,JPMODELMAX
     IF (JPGD==1) THEN
       WRITE(ILUOUT0,*) 'No pgd file was present for model 1 in namelist NAM_PGD1'
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_NESTPGD_FILES','No pgd file was present for model 1 in namelist NAM_PGD1')
     ELSE
       GADD=.FALSE.
       CYCLE
@@ -257,11 +260,9 @@ DO JPGD=1,JPMODELMAX
   END IF
   !
   IF ( (IDAD<1 .OR. IDAD>JPMODELMAX) .AND. (JPGD>1) ) THEN
-      WRITE(ILUOUT0,*) 'No father indicated for model ',JPGD,' in namelist NAM_PGD',JPGD
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      WRITE(YMSG,*) 'No father indicated for model ',JPGD,' in namelist NAM_PGD',JPGD
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_NESTPGD_FILES',YMSG)
   END IF
   !
   IF (GADD) THEN
@@ -271,9 +272,7 @@ DO JPGD=1,JPMODELMAX
       WRITE(ILUOUT0,*) 'pgd files are not correctly ordered:'
       WRITE(ILUOUT0,*) ' in namelist NAM_PGD',JPGD,' was found IDAD= ', IDAD
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_NESTPGD_FILES','')
     END IF
     !
     NDAD(JPGD)=IDAD
@@ -282,7 +281,18 @@ END DO
 !
 !-------------------------------------------------------------------------------
 !
-!*       5.    NAMES OF OUTPUT PGD FILES
+!*       5.    OPENING OF OUTPUT LISTING FILES FOR ALL MODELS
+!              ----------------------------------------------
+!
+DO JPGD=1,NMODEL
+  WRITE(YLUOUT,'("OUTPUT_LISTING",I0)') JPGD
+  CALL IO_FILE_ADD2LIST(LUNIT_MODEL(JPGD)%TLUOUT,YLUOUT,'OUTPUTLISTING','WRITE')
+  CALL IO_FILE_OPEN_ll(LUNIT_MODEL(JPGD)%TLUOUT)
+END DO
+!
+!-------------------------------------------------------------------------------
+!
+!*       6.    NAMES OF OUTPUT PGD FILES
 !              -------------------------
 !
 CALL POSNAM(IPRE_NEST_PGD,'NAM_NEST_PGD',GFOUND,ILUOUT0)
@@ -311,23 +321,12 @@ END DO
 CALL CLOSE_ll(HPRE_NEST_PGD)
 !-------------------------------------------------------------------------------
 !
-!*       6.    OPENING OF INPUT AND OUTPUT PGD FILES
+!*       7.    OPENING OF INPUT AND OUTPUT PGD FILES
 !              -------------------------------------
 !
 DO JPGD=1,NMODEL
   CALL IO_FILE_OPEN_ll(TPFILEPGD(JPGD)    %TZFILE,OPARALLELIO=.FALSE.)
   CALL IO_FILE_OPEN_ll(TPFILENESTPGD(JPGD)%TZFILE,OPARALLELIO=.FALSE.)
-END DO
-!
-!-------------------------------------------------------------------------------
-!
-!*       7.    OPENING OF OUTPUT LISTING FILES FOR ALL MODELS
-!              ----------------------------------------------
-!
-DO JPGD=1,NMODEL
-  CALL GOTO_MODEL(JPGD)
-  WRITE(YLUOUT,'("OUTPUT_LISTING",I0)') JPGD
-  CALL OPEN_LUOUT_n(YLUOUT)
 END DO
 !
 !-------------------------------------------------------------------------------

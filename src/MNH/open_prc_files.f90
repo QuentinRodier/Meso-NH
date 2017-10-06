@@ -105,7 +105,7 @@ USE MODD_CONF_n
 !JUAN Z_SPLITTING
 !USE MODD_CONFZ
 !JUAN Z_SPLITTING
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_IO_ll, ONLY: TFILE_OUTPUTLISTING,TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n, CINIFILE_n=>CINIFILE , CINIFILEPGD_n=>CINIFILEPGD
 !
@@ -114,6 +114,7 @@ USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_POS
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODN_CONFIO, ONLY : NAM_CONFIO
 !JUAN Z_SPLITTING
@@ -173,8 +174,12 @@ CLUOUT = CLUOUT0
 !*       2.    OPENNING OF THE OUTPUT LISTING FILE
 !              -----------------------------------
 !
-CALL OPEN_ll(UNIT=ILUOUT0,FILE=CLUOUT0,IOSTAT=IRESP,FORM='FORMATTED',ACTION='WRITE', &
-     MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TLUOUT0,'OUTPUT_LISTING0','OUTPUTLISTING','WRITE')
+CALL IO_FILE_OPEN_ll(TLUOUT0)
+!Set output file for PRINT_MSG
+TFILE_OUTPUTLISTING => TLUOUT0
+!
+ILUOUT0=TLUOUT0%NLU
 !
 IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !-------------------------------------------------------------------------------
@@ -185,11 +190,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 CALL OPEN_ll(UNIT=IPRE_REAL1,FILE=HPRE_REAL1,IOSTAT=IRESP,ACTION='READ', &
      DELIM='QUOTE',MODE='GLOBAL',STATUS='OLD')
 IF (IRESP.NE.0 ) THEN
-   PRINT "(' STOP :: Routine OPEN_PRC_FILES :: IRESP=',I6,' --> file PRE_REAL1.nam not found ')", IRESP
    !callabortstop
-   CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-   CALL ABORT
-   STOP
+   CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES','file PRE_REAL1.nam not found')
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -228,11 +230,9 @@ IF (ILEN>0) THEN
   IF (HCHEMFILE==HATMFILE) HCHEMFILE=''
 END IF
 IF (LEN_TRIM(HCHEMFILE)>0 .AND. HATMFILETYPE/='GRIBEX') THEN
-  WRITE(ILUOUT0,*) 'Additional CHEMical file is only possible when ATMospheric file is of GRIBEX type'
 !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',&
+                 'Additional CHEMical file is only possible when ATMospheric file is of GRIBEX type')
 END IF
 WRITE(ILUOUT0,*) 'HCHEMFILE=', HCHEMFILE
 !
@@ -262,10 +262,8 @@ IF (LEN_TRIM(HPGDFILE)==0) THEN
 !    HPGDFILE = HATMFILE
 !    WRITE(ILUOUT0,*) 'HPGDFILE set to ', HPGDFILE
 !  ELSE
-    WRITE(ILUOUT0,*) 'You need the HPGDFILE file when starting from a large-scale file'
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',&
+                   'You need the HPGDFILE file when starting from a large-scale file')
 !  END IF
 ELSE
 !-------------------------------------------------------------------------------
@@ -276,11 +274,8 @@ ELSE
   CALL IO_FILE_ADD2LIST(TPPGDFILE,TRIM(HPGDFILE),'UNKNOWN','READ',KLFINPRAR=0,KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPPGDFILE,IRESP,OPARALLELIO=.FALSE.)
   IF (IRESP/=0) THEN
-    WRITE(ILUOUT0,*) 'STOP: problem during opening of PGD file ',HPGDFILE
 !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES',' problem during opening of PGD file '//TRIM(HPGDFILE))
   END IF
 END IF
 !

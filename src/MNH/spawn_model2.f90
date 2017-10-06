@@ -397,7 +397,7 @@ IMI = GET_CURRENT_MODEL_INDEX()
 CALL GOTO_MODEL(2)
 CSTORAGE_TYPE='TT'
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT=TLUOUT%NLU
 !
 !*   1.    INITIALIZATIONS :
 !           ---------------
@@ -473,9 +473,7 @@ IKE = IKU - JPVEXT
 !  WRITE(ILUOUT,*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN X-SIZE INCOHERENT WITH THE',  &
 !       ' MODEL1 MESH  ',' IIB = ',IIB,' IIE = ', IIE ,'NDXRATIO = ',NDXRATIO
 ! !callabortstop
-!  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-!  CALL ABORT
-!  STOP
+!  CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_MODEL2','')
 !END IF
 !$
 !$20140506 the condition on NXSIZE*NXRATIO ==IIE-IIB+1 only works for monoproc
@@ -484,9 +482,7 @@ IKE = IKU - JPVEXT
 !  WRITE(ILUOUT,*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN Y-SIZE INCOHERENT WITH THE',  &
 !       ' MODEL1 MESH  ',' IJB = ',IJB,' IJE = ', IJE ,'NDYRATIO = ',NDYRATIO
 ! !callabortstop
-!  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-!  CALL ABORT
-!  STOP
+!  CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_MODEL2','')
 !END IF
 !$
 !
@@ -510,26 +506,20 @@ IF (LEN_TRIM(HSONFILE) /= 0 ) THEN
   IF (ADJUSTL(ADJUSTR(YDAD_SON)).NE.ADJUSTL(ADJUSTR(CMY_NAME(1)))) THEN 
     WRITE(ILUOUT,*) 'SPAWN_MODEL2: DAD of SON file is different from the one of model2'
     WRITE(ILUOUT,*) ' DAD of SON = ',TRIM(YDAD_SON),'  DAD of model2 = ',TRIM(CMY_NAME(1))
- !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    !callabortstop
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_MODEL2','DAD of SON file is different from the one of model2')
   END IF
   IF ( IDXRATIOSON /= NDXRATIO ) THEN
     WRITE(ILUOUT,*) 'SPAWN_MODEL2: RATIOX of input SON file is different from the one of model2' ,&
        ' RATIOX SON = ',IDXRATIOSON,' RATIOX model2 = ',NDXRATIO
- !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    !callabortstop
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_MODEL2','RATIOX of input SON file is different from the one of model2')
   END IF
   IF ( IDYRATIOSON /= NDYRATIO ) THEN
     WRITE(ILUOUT,*) 'SPAWN_MODEL2: RATIOY of input SON file is different from the one of model2' ,&
        ' RATIOY SON = ',IDYRATIOSON,' RATIOY model2 = ',NDYRATIO
- !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    !callabortstop
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_MODEL2','RATIOY of input SON file is different from the one of model2')
   END IF
   !
   IIUSON=IIMAXSON+2*JPHEXT
@@ -1670,7 +1660,7 @@ WRITE(ILUOUT,*) ' ------------------------------------------------------------ '
 6  FORMAT(' |    SPAWN_MODEL2     |     ',F8.3,'      |     ',F8.3,'     |')
 !
 !
-CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+CALL IO_FILE_CLOSE_ll(TLUOUT)
 !
 9900  FORMAT(' K = 001    ZHAT = ',E14.7)
 9901  FORMAT(' K = ',I3.3,'    ZHAT = ',E14.7,'    DZ = ' ,E14.7)

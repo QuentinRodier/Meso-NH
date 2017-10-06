@@ -546,9 +546,7 @@ IF (LFORCING) THEN ! Retrieve the number of time-dependent forcings.
      "INI_MODEL_n ERROR: you want to read forcing variables from FMfile", &
      "                   but no fields have been found by IO_READ_FIELD"
 !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP 1
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
   END IF
 END IF
 !
@@ -561,9 +559,7 @@ END IF
       "INI_MODELn ERROR: you want to read forcing ADV variables from FMfile", &
       "                   but no fields have been found by IO_READ_FIELD"
     !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-      STOP 1
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
     END IF
     WRITE(ILUOUT,*) 'NADVFRC = ', NADVFRC
 END IF
@@ -576,9 +572,7 @@ IF ( L2D_REL_FRC ) THEN ! Retrieve the number of time-dependent forcings.
       "INI_MODELn ERROR: you want to read forcing REL variables from FMfile", &
       "                   but no fields have been found by IO_READ_FIELD"
     !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-      STOP 1
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
     END IF
     WRITE(ILUOUT,*) 'NRELFRC = ', NRELFRC
 END IF
@@ -593,9 +587,7 @@ IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
   WRITE(ILUOUT,FMT=*) "                  is upper than model top    (",XZHAT(IKU),")"
 !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
 END IF
 IF (LVE_RELAX) THEN
  IF (XALZBOT>=XZHAT(IKU-4) ) THEN
@@ -1947,9 +1939,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
       WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
       WRITE(ILUOUT,FMT=*) "CHECK YOUR NAMELIST NAM_LUNITn"
     !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
     ENDIF
   ELSE
   ! case after a spawning
@@ -1987,9 +1977,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='SPAWN ')) THEN
     WRITE(ILUOUT,FMT=*) "INI_MODEL_n ERROR TO OPEN THE FILE CINIFILEPGD=",CINIFILEPGD
     WRITE(ILUOUT,FMT=*) "CHECK YOUR NAMELIST NAM_LUNIT2_SPA"
     !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_MODEL_n','')
   ENDIF
 ENDIF
 !

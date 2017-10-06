@@ -79,12 +79,13 @@ END MODULE MODI_SET_BOGUS_VORTEX
 USE MODE_ll
 USE MODE_IO_ll
 USE MODE_GRIDPROJ
+USE MODE_MSG
 !
 USE MODD_HURR_CONF,  ONLY: XLATBOG,XLONBOG,XVTMAXSURF,XRADWINDSURF, &
                            XANGCONV0,XANGCONV1000,XANGCONV2000, &
 			   XB_0, XMAX
 USE MODD_PARAMETERS, ONLY: XUNDEF,JPVEXT
-USE MODD_LUNIT,      ONLY: CLUOUT0
+USE MODD_LUNIT,      ONLY: TLUOUT0
 USE MODD_CST,        ONLY: XPI,XOMEGA 
 USE MODD_CONF,       ONLY: NVERB
 USE MODD_GRID,       ONLY: XLONORI,XLATORI
@@ -134,13 +135,14 @@ INTEGER          :: II,IJ        ! Indexes of the point of the 1st guess
 INTEGER          :: IIBOG,IJBOG
 INTEGER          :: IIU,IJU,IKU,IKB,IKE
 INTEGER          :: IRESP   ! Return code of FM-routines
+CHARACTER(LEN=100) :: YMSG
 !
 !-------------------------------------------------------------------------------
 !
 !*       1. INITIALIZATION
 !           --------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
+ILUOUT0 = TLUOUT0%NLU
 !
 WRITE(ILUOUT0,'(A)')' Begin of SET_BOGUS_VORTEX routine'
 !
@@ -153,25 +155,17 @@ IKE = IKU-JPVEXT
 ZRADSDG = XPI / 180.
 !
 IF (XLATBOG == XUNDEF .OR. XLONBOG == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a first guess position of the bogus (XLATBOG, XLONBOG) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_BOGUS_VORTEX','You do not specify a first guess position of the bogus (XLATBOG, XLONBOG)')
 END IF
 IF (XVTMAXSURF == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a maximum for the tangential wind (XVTMAXSURF,m/s) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_BOGUS_VORTEX','You do not specify a maximum for the tangential wind (XVTMAXSURF,m/s)')
 END IF
 IF (XRADWINDSURF == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a radius for the maximum tangential wind (XRADWINDSURF,m) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN',&
+                 'SET_BOGUS_VORTEX','You do not specify a radius for the maximum tangential wind (XRADWINDSURF,m)')
 END IF
 !
 ZU_BOG(:,:,:) = 0.
@@ -197,11 +191,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,'(A,I3,A,I3)')' equivalent indexes in the Meso-NH gr
 !
 IF ( (IIBOG<1) .OR. (IIBOG>IIU+1) .OR. &
      (IJBOG<1) .OR. (IJBOG>IJU+1)      ) THEN
-  WRITE(ILUOUT0,'(A)')' -> The first guess position of the vortex is not in the Meso-NH domain - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_BOGUS_VORTEX','The first guess position of the vortex is not in the Meso-NH domain')
 END IF
 !
 !
@@ -278,12 +269,9 @@ DO JK = IKB+1, IKE
   IF((ZZHATM(1,1,JK+1).GT.XMAX).AND.(XMAX.GE.ZZHATM(1,1,JK))) IREF_MAX=JK-1
 END DO
 IF (IREF_MAX==-1) THEN
-  WRITE(ILUOUT0,'(A,F4.1,A)')' -> The maximum height for the bogus vortex (',&
-       XMAX,'km) is not in the vertical grid - abort'
+  WRITE(YMSG,'(A,F4.1,A)')'The maximum height for the bogus vortex (',XMAX,' km) is not in the vertical grid'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_BOGUS_VORTEX',YMSG)
 END IF
 ZTH_REF_MEAN = SUM(XTHVREFZ(IKB:IREF_MAX)) / (IREF_MAX-IKB+1)
 IF (NVERB>=10) THEN

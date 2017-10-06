@@ -41,6 +41,7 @@
 !
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_MODELN_HANDLER
 !
 USE MODD_LES
@@ -103,7 +104,7 @@ CALL GET_GLOBALDIMS_ll(IIMAX_ll,IJMAX_ll)
 IIU_ll = IIMAX_ll+2*JPHEXT
 IJU_ll = IJMAX_ll+2*JPHEXT
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 NLES_TOTADV  = 1
 NLES_RELA  = 2
@@ -163,9 +164,7 @@ IF (CTURB=='NONE') THEN
   WRITE(ILUOUT,FMT=*) 'You have chosen CTURB="NONE". You must choose a turbulence scheme.'
   WRITE(ILUOUT,FMT=*) 'STOP'
 !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n','')
 END IF
 !-------------------------------------------------------------------------------
 !

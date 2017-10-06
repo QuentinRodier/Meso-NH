@@ -139,7 +139,7 @@ USE MODD_PARAMETERS
 USE MODD_LUNIT
 !
 USE MODE_IO_ll
-USE MODE_FM
+USE MODE_MSG
 !
 USE MODD_GR_FIELD_n
 USE MODD_GRID_n
@@ -266,7 +266,7 @@ REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE :: ZWORK
 !
 !*       1.1 IO and dimensions initialization
 !   
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 IIU=SIZE(PTEMP,1)
 IJU=SIZE(PTEMP,2)
@@ -531,12 +531,9 @@ DO JI=1,NBRAD
             IF(XRPK<0.)  ZLAT(JH,JV)=-ZLAT(JH,JV)     ! projection from north pole 
                
             IF(ABS(ZRPK-1.)>1.E-10 .AND. ABS(COS(ZRDSDG*ZLAT(JH,JV)))<1.E-10) THEN
-              WRITE(ILUOUT0,*) 'Error in projection : '
-              WRITE(ILUOUT0,*) 'pole in the domain, but not with stereopolar projection'
               !callabortstop
-              CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','RADAR_SIMULATOR',&
+                             'Error in projection: pole in the domain, but not with stereopolar projection')
             ENDIF
             !
             IF(ABS(ZCLAT0)<1.E-10 .AND. ABS(ZRPK-1.)<1.E-10) THEN

@@ -60,6 +60,8 @@ END MODULE MODI_CLOSE_FILE_MNH
 USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
+!
 USE MODD_LUNIT,       ONLY : CLUOUT0
 USE MODD_CONF,        ONLY : CPROGRAM
 USE MODD_IO_NAM,      ONLY : CFILE
@@ -118,9 +120,7 @@ ELSE
   WRITE(ILUOUT,*) 'Error for closing a file: '
   WRITE(ILUOUT,*) 'logical unit ',KUNIT,' does not correspond to file', CFILE
 !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','CLOSE_FILE_MNH','')
 END IF
 !
 !-------------------------------------------------------------------------------

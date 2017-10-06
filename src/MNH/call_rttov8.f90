@@ -92,7 +92,6 @@ USE MODD_CST
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_GRID_n
-USE MODD_LUNIT_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_REF_n
 USE MODD_RADIATIONS_n,  ONLY : XSEA
@@ -110,6 +109,7 @@ USE MODE_FMREAD
 USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_POS
 !
 #ifdef MNH_RTTOV_8
@@ -1161,17 +1161,13 @@ DO JSAT=1,IJSAT ! loop over sensors
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_readcoeffs :',errorstatus
 !callabortstop
-    CALL CLOSE_ll(CLUOUT)
-    CALL ABORT
-    STOP "error rttov_readcoeffs"
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV8','error rttov_readcoeffs')
   ENDIF
   CALL rttov_initcoeffs (errorstatus,coef)
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_initcoeffs :',errorstatus
 !callabortstop
-    CALL CLOSE_ll(CLUOUT)
-    CALL ABORT
-    STOP "error rttov_initcoeffs"
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV8','error rttov_initcoeffs')
   ENDIF
 
   ! Read coef file for cloud/rain absorption/scattering

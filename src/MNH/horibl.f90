@@ -144,6 +144,7 @@ END MODULE MODI_HORIBL
 !
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_LUNIT
 !
@@ -220,7 +221,6 @@ REAL                               :: ZVECT     ! -1 if input is vectorial
 LOGICAL                            :: LDLSM     ! Specify if land/sea mask is present or not
  ! Variables used for the out put listing
 INTEGER                            :: ILUOUT0   ! Logical unit number
-INTEGER                            :: IRET      ! Return code of FMLOOK
  ! Loop counters
 INTEGER                            :: JOPOS     ! Output position
 INTEGER                            :: JIPOS     ! Input position
@@ -239,7 +239,7 @@ INTEGER                            :: IRESP     ! Return code of FM-routines
 !
 CALL SECOND_MNH(ZTIME1)
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
+ILUOUT0 = TLUOUT0%NLU
 !
 !------------------------------------------------------------------------------
 !
@@ -525,12 +525,8 @@ DO JLOOP1 = 1, KOLEN
 !
   IF ((IOSS<1).OR.(IONN>IINLA).OR. &
      (IOSS<1).OR.(IONN>IINLA)) THEN
-    WRITE (ILUOUT0,'(A)') &
-      ' -> [HORIBL.F90] Input domain is smaller than output one - latitude. Abort'
 !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','HORIBL','input domain is smaller than output one')
  END IF
 !
       ! 3.1.2. northern
@@ -575,26 +571,16 @@ DO JLOOP1 = 1, KOLEN
         (IP3 <-2) .OR. (IP6 >IINLO(ION )+1) .OR. &
         (IP7 <-2) .OR. (IP10>IINLO(IOS )+1) .OR. &
       (IP11<-2) .OR. (IP12>IINLO(IOSS)+1)) THEN
-      WRITE (ILUOUT0,'(A,A)')                                         &
-         ' -> [HORIBL.F90] Input domain is smaller than output one ', &
-         '- longitude global, abort'
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','HORIBL','input domain is smaller than output one - longitude global')
     END IF
   ELSE
     IF ((IP1 <0) .OR. (IP2 >IINLO(IONN)-1) .OR. &
         (IP3 <0) .OR. (IP6 >IINLO(ION )-1) .OR. &
         (IP7 <0) .OR. (IP10>IINLO(IOS )-1) .OR. &
         (IP11<0) .OR. (IP12>IINLO(IOSS)-1)) THEN
-      WRITE (ILUOUT0,'(A,A)')                                        &
-        ' -> [HORIBL.F90] Input domain is smaller than output one ', &
-        '- longitude local, abort'
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','HORIBL','input domain is smaller than output one - longitude local')
     END IF
   END IF
 !

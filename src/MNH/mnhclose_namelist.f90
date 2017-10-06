@@ -60,6 +60,8 @@ END MODULE MODI_MNHCLOSE_NAMELIST
 USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
+!
 USE MODD_LUNIT,       ONLY : CLUOUT0
 USE MODD_CONF,        ONLY : CPROGRAM
 USE MODD_IO_NAM,      ONLY : CNAM
@@ -106,9 +108,7 @@ ELSE
   WRITE(ILUOUT,*) 'Error for closing a namelist file: '
   WRITE(ILUOUT,*) 'logical unit ',KLUNAM,' does not correspond to namelist file', CNAM 
 !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','MNHCLOSE_NAMELIST','')
 END IF
 !
 !-------------------------------------------------------------------------------

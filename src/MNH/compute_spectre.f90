@@ -58,9 +58,10 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODD_LUNIT_n,  ONLY: CLUOUT
+USE MODD_LUNIT_n,  ONLY: TLUOUT
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_SPLITTINGZ_ll
 !
 USE MODI_FFT55
@@ -146,6 +147,8 @@ INTEGER                         :: IRESP     ! return code in FM routines
 REAL                            :: ZMOY_C, ZMOY_S, ZVAR_C, ZVAR_S, ZVAR_S2 !computation of statistical moments
 !-------------------------------------------------------------------------------
 !
+ILUOUT = TLUOUT%NLU
+!
 !*       1.    COMPUTE LOOP BOUNDS
 !              -------------------
 !
@@ -179,13 +182,8 @@ ALLOCATE(ZTRIGSY(3*IJMAX_ll))
 
 !-- Safety limitation
 IF(PDXHATM/PDYHATM>1.2 .OR. PDYHATM/PDXHATM>1.2) THEN
-  WRITE(UNIT=ILUOUT,FMT="('   ERROR',/,                               &
-  & '     DELTA X AND DELTA Y MUST BE CLOSE'         ,/,&
-  & '     TOGETHER.')")
   !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_SPECTRE','delta X and delta Y must be close')
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -196,15 +194,12 @@ ENDIF
 !
 CALL SET99(ZTRIGSX,IIFAXX,IIMAX_ll)
 IF (IIFAXX(10) /=  IIMAX_ll) THEN
-      CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)  
       WRITE(UNIT=ILUOUT,FMT="('   ERROR',/,                               &
       & '     THE FORM OF THE FFT REQUIRES'         ,/,&
       & '     THAT NIMAX MUST BE FACTORIZABLE'         ,/,&
       & '     AS A PRODUCT OF POWERS OF 2, 3 AND 5.')")
       !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_SPECTRE','')
 END IF 
 !
 !     extra trigs for shifted (co) sine transform (FFT55)
@@ -222,15 +217,12 @@ END IF
 IF (.NOT. L2D) THEN 
   CALL SET99(ZTRIGSY,IIFAXY,IJMAX_ll)
   IF (IIFAXY(10) /=  IJMAX_ll) THEN
-      CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)  
       WRITE(UNIT=ILUOUT,FMT="('   ERROR',/,                               &
       & '     THE FORM OF THE FFT REQUIRES'         ,/,&
       & '     THAT NJMAX MUST BE FACTORIZABLE'         ,/,&
       & '     AS A PRODUCT OF POWERS OF 2, 3 AND 5.')")
       !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_SPECTRE','')
   END IF 
  !
  !     extra trigs for shifted (co) sine transform

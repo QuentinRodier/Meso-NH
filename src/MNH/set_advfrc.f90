@@ -78,19 +78,18 @@ END MODULE MODI_SETADVFRC
 !
 USE MODD_CST 
 USE MODD_LUNIT_n
-USE MODD_LUNIT
 USE MODD_GRID_n
 USE MODD_CONF
 USE MODD_FRC
-
 USE MODD_GRID
 USE MODD_REF
 USE MODD_PARAMETERS  ! JPHEXT
 ! 
-USE MODE_THERMO 
 USE MODE_FM
-!
 USE MODE_IO_ll
+USE MODE_MSG
+USE MODE_THERMO
+!
 USE MODI_HEIGHT_PRESS  ! interface modules
 USE MODI_PRESS_HEIGHT
 USE MODI_THETAVPU_THETAVPM 
@@ -114,7 +113,6 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
 !*       0.2   Declarations of local variables :
 !
 INTEGER :: ILUPRE,IRESP ! logical unit number of the  EXPRE and FM return code
-INTEGER :: ILUOUT0 ! Logical unit number for output-listing
 INTEGER :: ILUOUT       ! Logical unit number for output-listing   
 INTEGER :: JKT,JL,JK,JI! Loop control   
 INTEGER :: IIU,IIB,IIE !dimensions du modele
@@ -144,9 +142,7 @@ print*,"!*	 1.     PROLOGUE : RETRIEVE LOGICAL UNIT NUMBERS "
 !	        ----------------------------------------
 !                           
 CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
-!
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !-------------------------------------------------------------------------------
 !
@@ -165,18 +161,12 @@ READ(ILUPRE,*) NPRESSLEV_ADV      ! nb of levels for low leves forcing=nb lev in
 !          and also by the name of forcing variables (format I3.3)
 !          You have to modify those if you need more forcing times :-(
 !
-IF (NADVFRC > 99*8) THEN
-  WRITE(ILUOUT,*) "SET_FRC ERROR: maximum forcing times NADVFRC is ", 99*8
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP 1
-END IF
+IF (NADVFRC > 99*8) CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_ADVFRC','maximum forcing times NADVFRC is 99*8')
 !
-
 IIU=SIZE(XXHAT)
 IJU=SIZE(XYHAT)
 IKU=SIZE(XZHAT)
-
+!
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB= 1+ JPVEXT 
 IKE= IKU-JPVEXT 
@@ -353,10 +343,7 @@ DO JKT = 2,NADVFRC-1
                     TDTADVFRC(JKT)%TDATE%DAY,   &
                     TDTADVFRC(JKT)%TIME
  !callabortstop
- ! depuis m48
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP 1
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_ADVFRC','')
   END IF
 END DO
 

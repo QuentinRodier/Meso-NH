@@ -57,7 +57,7 @@ USE MODD_TYPE_DATE
 USE MODD_CONF_n,   ONLY: LUSERV,LUSERC,LUSERR,LUSERI,LUSERS,LUSERG,LUSERH
 USE MODD_FIELD_n,  ONLY: XTHT,XWT,XUT,XPABST,XRT
 USE MODD_GRID_n,   ONLY: XZZ
-USE MODD_LUNIT_n,  ONLY: CLUOUT
+USE MODD_LUNIT_n,  ONLY: TLUOUT
 USE MODD_PRECIP_n, ONLY: XINPRC,XINPRR,XINPRS,XINPRG,XINPRH, &
                          XACPRC,XACPRR,XACPRS,XACPRG,XACPRH
 USE MODD_TIME_n, ONLY: TDTCUR
@@ -66,6 +66,7 @@ USE MODI_GET_SURF_VAR_n
 !
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODI_TEMPORAL_DIST
 USE MODD_MNH_SURFEX_n
@@ -106,7 +107,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZSERIES
 !*      1.   INITIALIZATIONS
 !            ---------------
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 IKU=SIZE(XTHT,3)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
@@ -218,9 +219,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'INPRT','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
 !
@@ -251,9 +250,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'ACPRT','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
 !
@@ -273,9 +270,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RVT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -293,9 +288,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RCT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -313,9 +306,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RRT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -333,9 +324,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RIT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -353,9 +342,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RST  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -373,9 +360,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RGT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
      !
@@ -393,9 +378,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'RHT  ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      END IF
 !SURFACE FIELDS
@@ -441,9 +424,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'WMAX ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
        ! Min vertical velocity
        ISB1=ISB1+1
@@ -453,9 +434,7 @@ IF (LSERIES1) THEN
        ELSE
          WRITE(UNIT=ILUOUT,FMT=1) 'WMIN ','1',CSTITLE1(ISB1)
  !callabortstop
-         CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-         CALL ABORT
-         STOP
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
        END IF
      ENDIF
    END DO
@@ -483,9 +462,7 @@ IF (LSERIES2) THEN
     ELSE
       WRITE(UNIT=ILUOUT,FMT=1) 'WT   ','2',CSTITLE2(ISB2)
  !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
     END IF
 !
 !*      3.2  Potential Temperature
@@ -500,9 +477,7 @@ IF (LSERIES2) THEN
     ELSE
       WRITE(UNIT=ILUOUT,FMT=1) 'THT  ','2',CSTITLE2(ISB2)
  !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
     END IF
 !
 !*      3.3  Pressure
@@ -517,9 +492,7 @@ IF (LSERIES2) THEN
     ELSE
       WRITE(UNIT=ILUOUT,FMT=1) 'PASBT','2',CSTITLE2(ISB2)
  !callabortstop
-      CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
     END IF
 !
 !*      3.4  Vapor
@@ -535,9 +508,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RVT  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !
@@ -554,9 +525,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RCT  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !
@@ -573,9 +542,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RRT  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !
@@ -592,9 +559,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RIT  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !
@@ -611,9 +576,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RST  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !
@@ -630,9 +593,7 @@ IF (LSERIES2) THEN
       ELSE
         WRITE(UNIT=ILUOUT,FMT=1) 'RGT  ','2',CSTITLE2(ISB2)
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','SERIES_n','')
       END IF
     END IF
 !

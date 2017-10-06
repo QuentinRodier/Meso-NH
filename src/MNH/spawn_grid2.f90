@@ -175,7 +175,8 @@ USE MODI_BIKHARDT
 USE MODI_SPAWN_ZS
 !
 USE MODE_MODELN_HANDLER
-USE MODE_MPPDB  
+USE MODE_MPPDB
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -281,26 +282,22 @@ ENDIF
 !
 !*       1.2  recovers logical unit number of output listing
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       1.3  checks that model 2 domain is included in the one of model 1
 IF ( (IXEND_F) > SIZE(XXHAT1) )  THEN   
   WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
                   ' IXOR_F = ', IXOR_F,' IXEND_F = ', IXEND_F,                      &
                   ' IIU of model1 = ',SIZE(XXHAT1)
- !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  !callabortstop
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_GRID2','MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN')
 END IF 
 IF ( (IYEND_F) > SIZE(XYHAT1) )  THEN  
   WRITE(ILUOUT,FMT=*) 'SPAWN_MODEL2:  MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN  ',  &
                   ' IYOR_F = ', IYOR_F,' IYEND_F = ', IYEND_F,                  &
                   ' IJU of model1 = ',SIZE(XYHAT1)
- !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  !callabortstop
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SPAWN_GRID2','MODEL 2 DOMAIN OUTSIDE THE MODEL1 DOMAIN')
 END IF
 !
 !-------------------------------------------------------------------------------

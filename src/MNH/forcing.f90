@@ -115,7 +115,7 @@ END MODULE MODI_FORCING
 !!        XGXTHFRC,XGYTHFRC: large scale gradient of Theta
 !!        XTENDTHFRC,XTENDRVFRC: large scale tendencies for Theta and Rv
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_PARAMETERS: declaration of parameter variables
 !!        JPVEXT: define the number of marginal points out of the 
 !!        physical domain along the vertical direction.    
@@ -152,6 +152,7 @@ END MODULE MODI_FORCING
 !
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_CONF
 USE MODD_DYN
@@ -242,14 +243,14 @@ IIU=SIZE(PUT,1)
 IJU=SIZE(PUT,2) 
 IKU=SIZE(PUT,3) 
 !
+ILUOUT0 = TLUOUT0%NLU
+!
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
 !
 IF (GSFIRSTCALL) THEN
 !
   GSFIRSTCALL = .FALSE.
-!
-  CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 !*        1.1  printout number of forcing profiles
 !
@@ -390,7 +391,6 @@ ELSE
   IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(JXP) ) ) THEN
     JSX = JSX +1
     JXP= JSX +1
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
     WRITE(UNIT=ILUOUT0,FMT='(" THE FORCING FIELDS ARE INTERPOLATED NOW" ,&
     & " BETWEEN SOUNDING NUMBER ",I2," AND SOUNDING NUMBER ",I2)') JSX,JXP
     CALL TEMPORAL_DIST ( TDTFRC(JXP)%TDATE%YEAR,TDTFRC(JXP)%TDATE%MONTH,   &
@@ -728,9 +728,7 @@ IF( LRELAX_THRV_FRC .OR. LRELAX_UV_FRC ) THEN
     CASE DEFAULT
       ! the following error should not occur, since tests are made earlier
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP "Error in FORCING: wrong CRELAX_HEIGHT_TYPE option."
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','FORCING','wrong CRELAX_HEIGHT_TYPE option')
   END SELECT
   WHERE ( MZF(1,IKU,1,PZZ(:,:,:)) .LE. XRELAX_HEIGHT_FRC )
     GRELAX_MASK_FRC = .FALSE.
@@ -863,7 +861,6 @@ CONTAINS
   END DO
 !
   IF (NVERB >= 10) THEN
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
     WRITE(ILUOUT0,*) 'DEFINE_RELAX_FORCING: IKGRAD_TH_MAX = ',IKGRAD_TH_MAX
   END IF
 !

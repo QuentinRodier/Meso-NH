@@ -112,6 +112,7 @@ USE MODD_PARAMETERS
 USE MODE_THERMO
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODI_HEIGHT_PRESS  ! interface modules
 USE MODI_PRESS_HEIGHT
@@ -155,6 +156,7 @@ REAL, DIMENSION(SIZE(XZHAT))    :: ZZHATM      ! Height of mass model grid
                                                ! levels  without orography
 REAL, DIMENSION(SIZE(XZHAT))    :: ZSHEAR      ! vertical wind shear
 CHARACTER(LEN=4)                :: YZP         ! choice of zfrc or pfrc
+CHARACTER(LEN=100)              :: YMSG
 !
 REAL, DIMENSION(SIZE(XZHAT))    :: ZEXREFZ,  & ! Pi_ref
                                    ZRVREFZ,  & ! r_vref
@@ -168,7 +170,7 @@ REAL                            :: ZEPS,     & ! XRV/XRD-1.0
 !               ----------------------------------------
 !
 CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 ZRVSRD  = XRV/XRD
 !
@@ -181,12 +183,9 @@ BACKSPACE(ILUPRE)
 READ(ILUPRE,*) YZP   ! Z-altitude or P-altitude
 !
 IF( YZP/='PFRC' .AND. YZP/='ZFRC' ) THEN
-  WRITE(ILUOUT,*) "SET_FRC ERROR: undefined type of forcing:", YZP
-  WRITE(ILUOUT,*) "               it should be PFRC or ZFRC"
  !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP 1
+  WRITE(YMSG,*) 'undefined type of forcing: ',TRIM(YZP),'. It should be PFRC or ZFRC'
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_FRC',YMSG)
 END IF
 !
 READ(ILUPRE,*) NFRC  ! Number of time-dependent forcing soundings
@@ -195,11 +194,8 @@ READ(ILUPRE,*) NFRC  ! Number of time-dependent forcing soundings
 !          and also by the name of forcing variables (format I3.3)
 !          You have to modify those if you need more forcing times :-(
 IF (NFRC > 99*8) THEN
-  WRITE(ILUOUT,*) "SET_FRC ERROR: maximum forcing times NFRC is ", 99*8
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_FRC','maximum forcing times NFRC is 99*8')
  !callabortstop
-  CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP 1
 END IF
 !
 !* Allocate the MODD_FRC forcing arrays
@@ -447,9 +443,7 @@ DO JKT = 2,NFRC-1
                     TDTFRC(JKT)%TDATE%DAY,   &
                     TDTFRC(JKT)%TIME
  !callabortstop
-    CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP 1
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SET_FRC','')
   END IF
 END DO
 !

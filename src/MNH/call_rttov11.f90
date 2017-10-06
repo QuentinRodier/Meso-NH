@@ -105,6 +105,7 @@ USE MODE_FMREAD
 USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_POS
 !
 #ifdef MNH_RTTOV_11
@@ -321,16 +322,12 @@ DO JSAT=1,IJSAT ! loop over sensors
   CALL rttov_read_coefs (errorstatus, coef_rttov, opts, instrument=instrument)
   IF(errorstatus /= 0) THEN
     WRITE(*,*) 'error rttov_readcoeffs :',errorstatus
-    CALL CLOSE_ll(CLUOUT)
-    CALL ABORT
-    STOP "error rttov_readcoeffs"
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV11','error rttov_readcoeffs')
   ENDIF
 !  CALL rttov_initcoeffs (errorstatus,coef_rttov)
 !  IF( errorstatus/= 0) THEN
 !    WRITE(*,*) 'error rttov_initcoeffs :',errorstatus
-!    CALL CLOSE_ll(CLUOUT)
-!    CALL ABORT
-!    STOP "error rttov_initcoeffs"
+!    CALL PRINT_MSG(NVERB_FATAL,'GEN','CALL_RTTOV11','error rttov_initcoeffs')
 !  ENDIF
   
 ! Read coef file for cloud/rain absorption/scattering

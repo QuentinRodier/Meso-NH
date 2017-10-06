@@ -420,13 +420,8 @@ IF (LTRAJ) THEN
   !
   IF (JF/=1) THEN
     IF (CINIFILE==CFILES(JF-1)) THEN
-      PRINT*,'*****************************'
-      PRINT*,'* INITIAL FILE NON TREATED  *'
-      PRINT*,'*****************************'
 !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','DIAG','initial file not treated')
     END IF
   END IF
 !
@@ -439,10 +434,8 @@ END IF
 !              -----------
 !
 IF ( LEN_TRIM(CINIFILE)==0 ) THEN
-       !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
- STOP
+  !callabortstop
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','DIAG','LEN_TRIM(CINIFILE)==0')
 ENDIF
 !
 INPRAR = 24 +2*(4+NRR+NSV)
@@ -461,7 +454,7 @@ ZTIME1=ZTIME2
 !
 CALL INIT_MNH
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) '****************************************'
@@ -489,10 +482,7 @@ IF (LRADAR .AND. NVERSION_RAD==2 .AND. NPROC/=1) THEN
       PRINT*, '-> JOB ABORTED'
       PRINT*, '***************************************'
      !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
-
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','DIAG','')
 ENDIF
 !-------------------------------------------------------------------------------
 !
@@ -747,13 +737,11 @@ IF (GCLOSE_OUT) THEN
   CALL IO_FILE_CLOSE_ll(TINIFILE)
 END IF
 !
-CALL CLOSE_ll (CLUOUT,IOSTAT=IRESP)
+CALL IO_FILE_CLOSE_ll(TLUOUT)
 !
 CALL SECOND_MNH2(ZTIME2)
 ZTIME2=ZTIME2-ZTIME0
 !-------------------------------------------------------------------------------
-!
-!CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 !WRITE(ILUOUT0,*) '+--------------------------------------------------------------+'
 !WRITE(ILUOUT0,*) '|                                                              |'
@@ -799,9 +787,9 @@ WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) '***************************** **************'
 WRITE(ILUOUT0,*) '*            EXIT  DIAG CORRECTLY          *'
 WRITE(ILUOUT0,*) '**************************** ***************'
-!WRITE(ILUOUT0,*) '  (see time analysis in ',TRIM(CLUOUT0),' )'
+!WRITE(ILUOUT0,*) '  (see time analysis in ',TRIM(TLUOUT0%CNAME),' )'
 WRITE(ILUOUT0,*) ' '
-CALL CLOSE_ll (CLUOUT0,IOSTAT=IRESP)
+CALL IO_FILE_CLOSE_ll(TLUOUT0)
 !-------------------------------------------------------------------------------
 !
 !*      10.    FINALIZE THE PARALLEL SESSION

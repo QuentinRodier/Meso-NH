@@ -316,7 +316,7 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT=TLUOUT%NLU
 !
 ALLOCATE(ZWORK2D(SIZE(XTHT,1),SIZE(XTHT,2)))
 ALLOCATE(ZWORK3D(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)))
@@ -1124,7 +1124,7 @@ IF (NSV >=1) THEN
         WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must equal or inferior to 3'
         WRITE(ILUOUT,*) NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TLUOUT)
         CALL ABORT
         STOP
       END IF ! Test IMOMENTS
@@ -1227,7 +1227,7 @@ IF (NSV >=1) THEN
         WRITE(ILUOUT,*) 'Error in write_lfin: number of moments must be 3'
         WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
  !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TLUOUT)
         CALL ABORT
         STOP
       END IF

@@ -53,7 +53,7 @@ END MODULE MODI_COMPARE_WITH_PGD_DOMAIN
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_GRID
 !!         XBETA   : rotation of the domain
 !!         XRPK    : parameter of projection
@@ -87,6 +87,7 @@ END MODULE MODI_COMPARE_WITH_PGD_DOMAIN
 !
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODD_CONF        ! declaration modules
 USE MODD_LUNIT
@@ -123,7 +124,7 @@ REAL, DIMENSION(SIZE(XPGDYHAT)) :: ZDIFFY ! difference between the two y coordin
 !*       1.    INITIALIZATIONS
 !              ---------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 ZEPS=1.E-7
 !
 !-------------------------------------------------------------------------------
@@ -187,9 +188,7 @@ IF (     (ABS(PLAT0-XLAT0)>ZEPS*MAX(1.,ABS(XLAT0)))                      &
   WRITE(ILUOUT0,*) '  +----------------------------------------------------------+'
   WRITE(ILUOUT0,*)
 !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPARE_WITH_PGD_DOMAIN','')
 ENDIF
 !
 !-------------------------------------------------------------------------------

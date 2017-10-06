@@ -200,6 +200,7 @@ USE MODE_REPRO_SUM
 USE MODE_ll
 USE MODE_EXTRAPOL
 !JUAN REALZ
+USE MODE_MSG
 USE MODE_REPRO_SUM
 !
 IMPLICIT NONE
@@ -260,7 +261,7 @@ INTEGER                                                  :: IINFO_ll
 
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IIU=SIZE(PZMASS_LS,1)
@@ -286,9 +287,7 @@ IF (MINVAL(PZMASS_LS (:,:,ILU))<0.5*(XZHAT(IKE)+XZHAT(IKE+1))) THEN
   WRITE(ILUOUT0,*) 'MESONH highest physical mass level    : ', 0.5*(XZHAT(IKE)+XZHAT(IKE+1))
   WRITE(ILUOUT0,*) 'input  highest mass level             : ', MINVAL(PZMASS_LS (:,:,ILU))
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','VER_INTERP_TO_MIXED_GRID','MESONH highest mass level above highest input level')
 ENDIF
 !
 IF (HFILE=='ATM ') THEN
@@ -384,11 +383,7 @@ IF (HFILE=='ATM ') THEN
       XLSW_MX(:,:,:)  =VER_INTERP_LIN(PLSW_LS(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
     END IF
   ELSE
-    WRITE (ILUOUT0,'(A)') ' -> Bad input argument in ver_interp_to_mixed_grid - abort'
- !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','VER_INTERP_TO_MIXED_GRID','Bad HWLOC_LS input argument')
   END IF
 !
 !-------------------------------------------------------------------------------

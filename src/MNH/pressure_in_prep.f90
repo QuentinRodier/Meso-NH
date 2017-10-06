@@ -73,9 +73,9 @@ END MODULE MODI_PRESSURE_IN_PREP
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODI_ANEL_BALANCE_n
 USE MODI_GDIV
@@ -134,7 +134,7 @@ INTEGER               :: I,J,K
 !*       1.    Initialisations
 !              ---------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 IKB=1+JPVEXT
 IKE=NKMAX+JPVEXT
@@ -282,9 +282,7 @@ CALL EXTRAPOL('S',ZRV)
       WRITE(ILUOUT0,*) '******************************************************************************'
       WRITE(ILUOUT0,*) ' '
  !callabortstop
-CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','PRESSURE_IN_PREP','')
     END IF
   ELSE
 !*       7.    Happy conclusion

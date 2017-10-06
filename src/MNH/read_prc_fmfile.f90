@@ -118,9 +118,6 @@ USE MODD_GRID_n
 USE MODD_TIME_n
 USE MODD_PREP_REAL
 !
-USE MODE_FMREAD
-USE MODE_FM
-USE MODE_IO_ll
 USE MODE_FIELD
 !
 USE MODI_TRUNC_FIELD
@@ -193,7 +190,7 @@ IJU=KJSUP-KJINF+1
 ILU=SIZE(XTHT,3)
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !20131105 nullify tzfield
 NULLIFY(TZFIELDS_ll)
@@ -392,13 +389,6 @@ END IF
 !*       7.    ERASES LATERAL BOUNDARIES
 !              -------------------------
 !
-!!$IF (JPHEXT>1) THEN
-!!$  WRITE (ILUOUT0,*) 'READ_PRC_FMFILE: abort (JPHEXT= ',JPHEXT,' )'
-!!$ !callabortstop
-!!$  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-!!$  CALL ABORT
-!!$  STOP
-!!$END IF
 !
 !*       7.1   left boundary I=1+JPHEXT for U
 !              ------------------------------

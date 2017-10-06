@@ -99,6 +99,7 @@ USE MODD_PARAM_n
 USE MODE_FMWRIT
 USE MODE_ll
 USE MODE_IO_ll, ONLY: UPCASE, CLOSE_ll
+USE MODE_MSG
 USE MODE_MODELN_HANDLER
 !
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
@@ -148,13 +149,14 @@ INTEGER            :: JK
 INTEGER            :: JMOM, IMOMENTS, JMODE, ISV_NAME_IDX
 INTEGER            :: IMI    ! Current model index
 CHARACTER(LEN=2)   :: INDICE ! to index CCN and IFN fields of LIMA scheme
+CHARACTER(LEN=100) :: YMSG
 TYPE(TFIELDDATA)   :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 !*       1.    SOME INITIALIZATIONS
 !              --------------------
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
@@ -591,12 +593,8 @@ IF (NSV >=1) THEN
       IMOMENTS = INT(NSV_DSTEND - NSV_DSTBEG + 1)/NMODE_DST
       !Should equal 3 at this point
       IF (IMOMENTS >  3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lbn: number of moments DST must be 3'
-        WRITE(ILUOUT,*) NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
- !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        WRITE(YMSG,*) 'number of DST moments must be 3',NSV_DSTBEG, NSV_DSTEND,NMODE_DST,IMOMENTS
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n',YMSG)
       END IF ! Test IMOMENTS
       !
       TZFIELD%CSTDNAME   = ''
@@ -741,12 +739,8 @@ IF (NSV >=1) THEN
       IMOMENTS = INT(NSV_SLTEND - NSV_SLTBEG + 1)/NMODE_SLT
       !Should equal 3 at this point
       IF (IMOMENTS >  3) THEN
-        WRITE(ILUOUT,*) 'Error in write_lbn: number of moments must be 3'
-        WRITE(ILUOUT,*) NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
- !callabortstop
-        CALL CLOSE_ll(CLUOUT,IOSTAT=IRESP)
-        CALL ABORT
-        STOP
+        WRITE(YMSG,*) 'number of SLT moments must be 3',NSV_SLTBEG, NSV_SLTEND,NMODE_SLT,IMOMENTS
+        CALL PRINT_MSG(NVERB_FATAL,'GEN','WRITE_LB_n',YMSG)
       END IF ! Test IMOMENTS
       !
       TZFIELD%CSTDNAME   = ''

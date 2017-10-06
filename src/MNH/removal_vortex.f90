@@ -81,15 +81,14 @@ USE MODD_HURR_CONF
 USE MODD_CONF, ONLY: NVERB
 USE MODD_CST, ONLY: XPI
 USE MODD_PARAMETERS, ONLY: JPHEXT,XUNDEF
-USE MODD_LUNIT, ONLY: CLUOUT0
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_HURR_FIELD_n
 USE MODD_DIM_n, ONLY: NIMAX,NJMAX
 USE MODD_GRID, ONLY: XLONORI,XLATORI
 USE MODD_GRID_n, ONLY: XXHAT,XYHAT
 !
-USE MODE_FM
 USE MODE_GRIDPROJ
-USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODI_SHUMAN
 USE MODI_BARNES_FILTER
@@ -112,7 +111,7 @@ REAL,DIMENSION(:,:), OPTIONAL, INTENT(INOUT)   :: PPS_LS ! Pressure (mass points
 !
 !*       0.2   Declarations of local variables
 !
-INTEGER                                                   :: IRET,ILUOUT0
+INTEGER                                                   :: ILUOUT0
 !
 REAL,DIMENSION(SIZE(PT_LS,1),SIZE(PT_LS,2),SIZE(PT_LS,3)) :: ZUMASS,ZVMASS
 REAL,DIMENSION(SIZE(PT_LS,1),SIZE(PT_LS,2),SIZE(PT_LS,3)) :: ZUDIS,ZVDIS
@@ -156,7 +155,7 @@ INTEGER          :: IRESP   ! Return code of FM-routines
 !*	 1. INITIALIZATIONS
 !           ---------------
 !             
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
+ILUOUT0 = TLUOUT0%NLU
 IIU= SIZE(PT_LS,1)
 IJU= SIZE(PT_LS,2)
 IP= SIZE(PT_LS,3)
@@ -165,25 +164,19 @@ ZDELTAY= XYHAT(3) - XYHAT(2)
 ZDELTAR= MAX(ZDELTAX,ZDELTAY)
 !
 IF (XLATGUESS == XUNDEF .AND. XLONGUESS == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a first guess position of the cyclone (XLATGUESS, XLONGUESS) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','REMOVAL_VORTEX',&
+                 'You do not specify a first guess position of the cyclone (XLATGUESS, XLONGUESS)')
 END IF
 IF (XBOXWIND == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a radius to determine the cyclone center inside (XBOXWIND,km) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','REMOVAL_VORTEX',&
+                 'ou do not specify a radius to determine the cyclone center inside (XBOXWIND,km)')
 END IF
 IF (XRADGUESS == XUNDEF) THEN
-  WRITE(ILUOUT0,'(A)')' -> You do not specify a guess for the filtered radius (XRADGUESS,km) - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','REMOVAL_VORTEX',&
+                 'You do not specify a guess for the filtered radius (XRADGUESS,km)')
 END IF
 !
 ! Allocations
@@ -245,11 +238,8 @@ IF (NVERB>=5) WRITE(ILUOUT0,'(A,I3,A,I3)')' equivalent indexes in the Meso-NH gr
 !
 IF ( (IIMIN<1) .OR. (IIMIN>IIU+1) .OR. &
      (IJMIN<1) .OR. (IJMIN>IJU+1)      ) THEN
-  WRITE(ILUOUT0,'(A)')' -> The first guess position of the fix is not in the Meso-NH domain - abort'
  !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','REMOVAL_VORTEX','The first guess position of the fix is not in the Meso-NH domain')
 END IF
 !
 IAVGWINDI = NINT(XBOXWIND*1000./ZDELTAX)

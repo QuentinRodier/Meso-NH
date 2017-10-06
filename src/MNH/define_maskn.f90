@@ -68,6 +68,7 @@ USE MODD_NEST_PGD_n
 !
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_MSG
 USE MODE_MODELN_HANDLER
 !
 USE MODD_VAR_ll, ONLY : YSPLITTING
@@ -95,7 +96,7 @@ TYPE(ZONE_ll) :: TZCOARSESONGLB ! global son domain in father grid
 TYPE(ZONE_ll), DIMENSION(1) :: TZCOARSESONLCL ! intersection of global son domain and local father subdomain
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 IMI=GET_CURRENT_MODEL_INDEX()
 !
 ALLOCATE ( NNESTMASK (NIMAX+2*JPHEXT,NJMAX+2*JPHEXT,1+COUNT(NDAD(:)==IMI)))
@@ -145,11 +146,8 @@ DO JLOOP=1,NMODEL
 END DO
 !
 IF (ANY (SUM(NNESTMASK(:,:,:),DIM=3)>1) ) THEN
-  WRITE(ILUOUT0,*) 'Two nested models in the same father are overlapping each other'
 !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','DEFINE_MASK_n','two nested models with the same father are overlapping each other')
 END IF
 !
 NNESTMASK(:,:,1) = 1.-SUM(NNESTMASK(:,:,:),DIM=3)

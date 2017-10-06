@@ -75,7 +75,7 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB : verbosity level for output-listing
 !!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_PGDDIM    : contains dimension of PGD fields
 !!         NPGDIMAX: dimension along x (no external point)
 !!         NPGDJMAX: dimension along y (no external point)
@@ -117,9 +117,9 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
 USE MODE_IO_ll
 USE MODE_FMREAD
+USE MODE_MSG
 !
 USE MODI_READ_GRID_TIME_MESONH_CASE ! interface modules
 USE MODI_READ_HGRID
@@ -184,7 +184,7 @@ INTEGER :: IXOR_LS    ! I shift between PGD file and LS atmospheric file
 INTEGER :: IYOR_LS    ! J shift between PGD file and LS atmospheric file
 !
 INTEGER :: IRESP      ! return-code if problems occured
-INTEGER :: ILUOUT0    ! logical unit for file CLUOUT0
+INTEGER :: ILUOUT0    ! logical unit for file TLUOUT0
 !
 CHARACTER(LEN=28) :: YPGD_NAME, YPGD_DAD_NAME
 CHARACTER(LEN=28) :: YOUTFILE
@@ -207,7 +207,7 @@ TYPE(LIST_ll), POINTER :: TZFIELDS_ll => NULL() ! list of fields to exchange
 !
 !------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !-------------------------------------------------------------------------------
 !
@@ -275,12 +275,8 @@ CALL READ_VER_GRID(HPRE_REAL1,XZHAT_LS,LSLEVE_LS,XLEN1_LS,XLEN2_LS)
 IF (LBOGUSSING) THEN
   IF (LEN_TRIM(CDADBOGFILE) >0 ) THEN
     IF (LEN_TRIM(CDADATMFILE) == 0 ) THEN
-      WRITE(ILUOUT0,*) 'READ_ALL_DATA_MESONH_CASE: CDADATMFILE not initialized in nml NAM_HURR_CONF'
-      WRITE(ILUOUT0,*) '-> JOB ABORTED'
  !callabortstop
-      CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_MESONH_CASE','CDADATMFILE not initialized in nml NAM_HURR_CONF')
     ELSE 
       IF (LEN_TRIM(HDAD_NAME) >0 ) THEN
         IF (ADJUSTL(ADJUSTR(HDAD_NAME)) .NE. ADJUSTL(ADJUSTR(CDADATMFILE))) THEN
@@ -290,19 +286,13 @@ IF (LBOGUSSING) THEN
           WRITE(ILUOUT0,*) ' DAD_NAME of model1='//TRIM(HDAD_NAME)
           WRITE(ILUOUT0,*) '-> JOB ABORTED'
  !callabortstop
-          CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-          CALL ABORT
-          STOP
+          CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_MESONH_CASE','')
         ELSE    
           CALL COMPARE_DAD(CDADATMFILE,CDADBOGFILE,IRESP)
           IF (IRESP .NE. 0) THEN
-            WRITE(ILUOUT0,*) &
-              'READ_ALL_DATA_MESONH_CASE: Unable to replace the DAD of output file with CDADBOGFILE'
-            WRITE(ILUOUT0,*) '-> JOB ABORTED'
  !callabortstop
-            CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-            CALL ABORT
-            STOP
+            CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_ALL_DATA_MESONH_CASE',&
+                           'unable to replace the DAD of output file with CDADBOGFILE')
           ENDIF
           HDAD_NAME=CDADBOGFILE
         ENDIF

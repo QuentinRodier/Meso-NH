@@ -59,8 +59,7 @@ END MODULE MODI_SELECT_AVG_PGD
 !            -----------
 !
 USE MODD_LUNIT
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -283,7 +282,7 @@ SELECT CASE (YFIELD)
 !-------------------------------------------------------------------------------
 !
   CASE DEFAULT
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+    ILUOUT0 = TLUOUT0%NLU
     WRITE(ILUOUT0) '*****************************************************************************'
     WRITE(ILUOUT0) ' '
     WRITE(ILUOUT0) 'Error in field name specification for a personal initialization:'
@@ -306,9 +305,7 @@ SELECT CASE (YFIELD)
     WRITE(ILUOUT0) ' '
     WRITE(ILUOUT0) '*****************************************************************************'
  !callabortstop
-    CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','SELECT_AVG_PGD','')
 !
 END SELECT
 !
