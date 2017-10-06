@@ -324,8 +324,6 @@ END DO
 !*       7.    OPENING OF OUTPUT LISTING FILES FOR ALL MODELS
 !              ----------------------------------------------
 !
-CALL INI_FIELD_LIST()
-!
 DO JPGD=1,NMODEL
   CALL GOTO_MODEL(JPGD)
   WRITE(YLUOUT,'("OUTPUT_LISTING",I0)') JPGD

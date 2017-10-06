@@ -203,6 +203,8 @@ CALL READ_ALL_NAMELISTS(YSURF_CUR,'MESONH','PRE',.FALSE.)
 !*       3.    READING OF THE GRIDS
 !              --------------------
 !
+CALL INI_FIELD_LIST()
+!
 CALL SET_DAD0_ll()
 DO JPGD=1,NMODEL
   ! read and set dimensions and ratios of model JPGD
