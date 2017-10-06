@@ -71,7 +71,7 @@ TYPE(DATE_TIME)      :: TZDTCUR
 !
 !*	2.1 Ouverture du fichier Meso-NH.
 !
-CALL IO_FILE_OPEN_ll(TPFILE,HFLOG,IREP)
+CALL IO_FILE_OPEN_ll(TPFILE)
 !
 !*	2.2 Date et heure courante.
 !
@@ -116,7 +116,7 @@ CALL IO_READ_FIELD(TPFILE,'RRT',    XRMRT)
 !
 !*	2.4 Fermeture du fichier Meso-NH.
 !
-CALL IO_FILE_CLOSE_ll(TPFILE,HFLOG,IREP)
+CALL IO_FILE_CLOSE_ll(TPFILE)
 !
 !
 !*	3.  PREPARATION DES DONNEES.

@@ -82,7 +82,7 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !-------------------------------------------------------------------------------
 !
 IF (CACTION=='OPEN  ') THEN
-  CALL IO_FILE_CLOSE_ll(TPINFILE,COUT,IRESP,OPARALLELIO=.FALSE.)
+  CALL IO_FILE_CLOSE_ll(TPINFILE,OPARALLELIO=.FALSE.)
   CACTION='      '
 END IF
 !

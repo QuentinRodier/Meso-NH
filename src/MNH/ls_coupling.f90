@@ -352,7 +352,7 @@ CALL INI_LB(TCPLFILE(NCPL_CUR)%TZFILE,HLUOUT,GLSOURCE,KSV,            &
 !
 !*      1.4  Close the coupling file
 !
-CALL IO_FILE_CLOSE_ll(TCPLFILE(NCPL_CUR)%TZFILE,HLUOUT,IRESP)
+CALL IO_FILE_CLOSE_ll(TCPLFILE(NCPL_CUR)%TZFILE)
 !
 !-------------------------------------------------------------------------------
 

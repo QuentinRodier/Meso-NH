@@ -68,7 +68,7 @@ END TYPE TOUTBAK
 TYPE TFILEDATA
   CHARACTER(LEN=28) :: CNAME               !Filename
   CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
-  CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI...)
+  CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
   LOGICAL           :: LOPENED = .FALSE.   !Is the file opened
   INTEGER           :: NOPEN_CURRENT = 0   !Number of times the file is currently opened (several opens without close are allowed)
@@ -87,6 +87,9 @@ TYPE TFILEDATA
                                                                   ! instead of double precision
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
   INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  !
+  !Fields for ASCII files
+  INTEGER :: NLU = -1 !Logical unit number
   !
   TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()

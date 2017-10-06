@@ -137,7 +137,7 @@ CALL CLOSE_ll('XY2LATLON1.nam',IOSTAT=IRESP)
 !            ----------------------
 !
 CALL IO_FILE_ADD2LIST(TZINIFILE,TRIM(YINIFILE),'UNKNOWN','READ',KLFINPRAR=0,KLFITYPE=2,KLFIVERB=2)
-CALL IO_FILE_OPEN_ll(TZINIFILE,CLUOUT0,IRESP)
+CALL IO_FILE_OPEN_ll(TZINIFILE)
 !
 !*    2.     Reading of MESONH file
 !            ----------------------
@@ -147,7 +147,7 @@ CALL READ_HGRID(0,TZINIFILE,YNAME,YDAD,YSTORAGE_TYPE)
 !*    3.     Closing of MESONH file
 !            ----------------------
 !
-CALL IO_FILE_CLOSE_ll(TZINIFILE,CLUOUT0,IRESP)
+CALL IO_FILE_CLOSE_ll(TZINIFILE)
 !
 !-------------------------------------------------------------------------------
 !

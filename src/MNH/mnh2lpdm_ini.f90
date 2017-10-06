@@ -94,8 +94,8 @@ CALL GOTO_MODEL(1)
 !
 !*	2.1 Ouverture du fichier Meso-NH.
 !
-CALL IO_FILE_OPEN_ll(TPFILE1,HFLOG,IREP)
-CALL IO_FILE_OPEN_ll(TPFILE2,HFLOG,IREP)
+CALL IO_FILE_OPEN_ll(TPFILE1)
+CALL IO_FILE_OPEN_ll(TPFILE2)
 !
 !
 !*      2.2 Date et heure du modele.
@@ -426,8 +426,8 @@ DEALLOCATE(XZHAT)
 !
 !	 Fermeture du fichier Meso-NH.
 !
-CALL IO_FILE_CLOSE_ll(TPFILE1,HFLOG,IREP)
-CALL IO_FILE_CLOSE_ll(TPFILE2,HFLOG,IREP)
+CALL IO_FILE_CLOSE_ll(TPFILE1)
+CALL IO_FILE_CLOSE_ll(TPFILE2)
 !
 !
 !-------------------------------------------'
