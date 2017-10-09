@@ -190,6 +190,7 @@ USE MODD_PARAMETERS
 USE MODE_ll
 USE MODE_IO_ll
 USE MODE_FM
+USE MODE_MSG
 !
 !JUAN
 USE MODE_REPRO_SUM
@@ -622,9 +623,7 @@ IF (KIFAXX(10) /=  IIMAX_ll) THEN
       &'    OPERATOR REQUIRES THAT KIMAX MUST BE FACTORIZABLE'         ,/,&
       & '         AS A PRODUCT OF POWERS OF 2, 3 AND 5.')")
  !callabortstop
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','ELEC_TRID','')
 END IF 
 !
 IF (HLBCX(1) /= 'CYCL') THEN
@@ -656,9 +655,7 @@ IF (.NOT. L2D) THEN
       &'    OPERATOR REQUIRES THAT KJMAX MUST BE FACTORIZABLE'         ,/,&
       & '         AS A PRODUCT OF POWERS OF 2, 3 AND 5.')")
  !callabortstop
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','ELEC_TRID','')
  END IF 
  !
  !       8.3 top boundary conditions

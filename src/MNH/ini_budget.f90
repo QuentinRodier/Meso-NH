@@ -12,7 +12,7 @@
       MODULE MODI_INI_BUDGET
 !     ###################### 
 INTERFACE
-      SUBROUTINE INI_BUDGET(KLUOUT, HLUOUT,PTSTEP,KSV,KRR,            &
+      SUBROUTINE INI_BUDGET(KLUOUT,PTSTEP,KSV,KRR,                    &
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
@@ -20,7 +20,6 @@ INTERFACE
       HRAD,HDCONV,HSCONV,HTURB,HTURBDIM,HCLOUD                        )
 !
 INTEGER,         INTENT(IN) :: KLUOUT   ! Logical unit number for prints
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT ! name of output listing
 REAL, INTENT(IN) :: PTSTEP              ! time step
 INTEGER, INTENT(IN) :: KSV              ! number of scalar variables
 INTEGER, INTENT(IN) :: KRR              ! number of moist variables
@@ -72,7 +71,7 @@ END MODULE MODI_INI_BUDGET
 !
 !
 !     #################################################################
-      SUBROUTINE INI_BUDGET(KLUOUT, HLUOUT,PTSTEP,KSV,KRR,            &
+      SUBROUTINE INI_BUDGET(KLUOUT,PTSTEP,KSV,KRR,                    &
       ONUMDIFU,ONUMDIFTH,ONUMDIFSV,                                   &
       OHORELAX_UVWTH,OHORELAX_RV,OHORELAX_RC,OHORELAX_RR,             &
       OHORELAX_RI,OHORELAX_RS, OHORELAX_RG, OHORELAX_RH,OHORELAX_TKE, & 
@@ -180,6 +179,7 @@ USE MODD_PARAM_LIMA, ONLY : OWARM=>LWARM, OCOLD=>LCOLD, OSEDI=>LSEDI,   &
 !
 USE MODE_ll
 USE MODE_IO_ll
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -187,7 +187,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,         INTENT(IN) :: KLUOUT   ! Logical unit number for prints
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT ! name of output listing
 REAL, INTENT(IN) :: PTSTEP              ! time step
 INTEGER, INTENT(IN) :: KSV              ! number of scalar variables
 INTEGER, INTENT(IN) :: KRR              ! number of moist variables
@@ -2585,9 +2584,7 @@ IF (CBUTYPE=='MASK') THEN
 END IF
 IF (GERROR) THEN
    !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_BUDGET','')
 ENDIF
 !-------------------------------------------------------------------------------
 !*       5.    ALLOCATE MEMORY FOR BUDGET STORAGE ARRAYS

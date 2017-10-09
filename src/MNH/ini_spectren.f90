@@ -238,9 +238,7 @@ IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
   WRITE(ILUOUT,FMT=*) "                  is upper than model top    (",XZHAT(IKU),")"
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SPECTRE_n','')
 END IF
 IF (LVE_RELAX) THEN
  IF (XALZBOT>=XZHAT(IKU-4) ) THEN

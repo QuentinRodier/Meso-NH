@@ -8,10 +8,8 @@
 !
 INTERFACE
 !
-SUBROUTINE PROGNOS(HLUOUT,PDT,PDZ,PLV,PCPH,PPRES,PRHOD,PRR,PTT,PRV,PRC,PS0,PCN,PCL)
+SUBROUTINE PROGNOS(PDT,PDZ,PLV,PCPH,PPRES,PRHOD,PRR,PTT,PRV,PRC,PS0,PCN,PCL)
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 REAL,                     INTENT(IN)    :: PDT
 REAL, DIMENSION(:),       INTENT(IN)    :: PPRES
 REAL, DIMENSION(:),       INTENT(IN)    :: PDZ
@@ -33,7 +31,7 @@ END INTERFACE
 END MODULE MODI_PROGNOS
 !
 !     ###################################################################################
-      SUBROUTINE PROGNOS(HLUOUT,PDT,PDZ,PLV,PCPH,PPRES,PRHOD,PRR,PTT,PRV,PRC,PS0,PCN,PCL)
+      SUBROUTINE PROGNOS(PDT,PDZ,PLV,PCPH,PPRES,PRHOD,PRR,PTT,PRV,PRC,PS0,PCN,PCL)
 !     ###################################################################################
 !
 !!****  * -  compute pseudo-prognostic of supersaturation according to Thouron
@@ -65,10 +63,13 @@ END MODULE MODI_PROGNOS
 !*       0.    DECLARATIONS
 !
 USE MODD_CST
-USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_PARAM_C2R2
-USE MODI_GAMMA
+USE MODD_RAIN_C2R2_KHKO_PARAM
+!
 USE MODE_IO_ll
+USE MODE_MSG
+!
+USE MODI_GAMMA
 !
 IMPLICIT NONE
 !
@@ -76,8 +77,6 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 REAL,                     INTENT(IN)    :: PDT
 REAL, DIMENSION(:),       INTENT(IN)    :: PPRES
 REAL, DIMENSION(:),       INTENT(IN)    :: PDZ
@@ -109,7 +108,8 @@ REAL, DIMENSION(SIZE(PRHOD,1))   :: ZFLAG_ACT   !Flag for activation
 !
 INTEGER                          :: IRESP      ! Return code of FM routines
 INTEGER                          :: ILUOUT     ! Logical unit of output listing
-
+CHARACTER(LEN=100)               :: YMSG
+!
 !minimum radius of cloud droplet
 AER_RAD=1.0E-6
 !
@@ -195,10 +195,8 @@ ZRVSAT2(:)=(XMV / XMD)*ZZW1(:)/(PPRES(:)-ZZW1(:))
 ZTT2_TEMP(:)=PPRES(:)*((((XMV / XMD)/ZRVSAT2(:))+1.0)**(-1D0))
 !ZTT2<--T' de es(T')
 IF (MINVAL(ZTT2_TEMP).LT.0.0) THEN
-  PRINT*,'ZTT2_TEMP',MINVAL(ZTT2_TEMP),MINLOC(ZTT2_TEMP)
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  WRITE(YMSG,*) 'ZTT2_TEMP',MINVAL(ZTT2_TEMP),MINLOC(ZTT2_TEMP)
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','PROGNOS',YMSG)
 ENDIF
 !
 ZTT2_TEMP(:)=LOG(ZZW1(:)/610.8)

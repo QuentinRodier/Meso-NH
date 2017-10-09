@@ -13,7 +13,7 @@ MODULE MODI_PRESSURE
 !
 INTERFACE
 !
-      SUBROUTINE PRESSURE(OCLOSE_OUT,HFMFILE,HLUOUT,                       &
+      SUBROUTINE PRESSURE(HLUOUT,                                          &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
@@ -23,10 +23,6 @@ INTERFACE
 !
 IMPLICIT NONE
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
@@ -108,7 +104,7 @@ END INTERFACE
 !
 END MODULE MODI_PRESSURE
 !     ######################################################################
-      SUBROUTINE PRESSURE(OCLOSE_OUT,HFMFILE,HLUOUT,                       &
+      SUBROUTINE PRESSURE(HLUOUT,                                          &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
@@ -237,10 +233,6 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
-                                                      ! file opening
-CHARACTER(LEN=*),       INTENT(IN)   ::  HFMFILE      ! Name of the output
-                                                      ! FM-file
 CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
                                                       ! model n
   CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type

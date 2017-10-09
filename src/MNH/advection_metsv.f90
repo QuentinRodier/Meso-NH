@@ -148,11 +148,12 @@ USE MODD_BUDGET
 USE MODD_IO_ll,     ONLY: TFILEDATA
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
-USE MODE_ll
 USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_IO_ll
+USE MODE_ll
+USE MODE_MSG
 !
 USE MODI_CONTRAV
 USE MODI_PPM_RHODJ
@@ -408,9 +409,7 @@ IF (( (ZCFLU_MAX>=3.) .AND. (.NOT.L1D) ) .OR. &
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
   WRITE(ILUOUT,*) ' |                   MODEL STOPS                     |'
   WRITE(ILUOUT,*) ' +---------------------------------------------------+'
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','ADVECTION_METSV','')
 END IF
 !
 !

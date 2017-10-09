@@ -14,16 +14,13 @@ MODULE MODI_READ_DUMMY_GR_FIELD_n
 !
 INTERFACE
 !
-      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,HLUOUT,                    &
-                                       KIINF,KISUP,KJINF,KJSUP,             &
-                                       OREAD_ALL                            )
+      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,KIINF,KISUP,KJINF,KJSUP,OREAD_ALL)
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 !*       0.1   declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN)  :: TPINIFILE    ! Initial file
-CHARACTER(LEN=*), INTENT(IN)  :: HLUOUT       ! Name for output-listing of nested models
 INTEGER,          INTENT(IN)  :: KIINF,KISUP  ! Lower and upper Dimensions in x direction for working window
 INTEGER,          INTENT(IN)  :: KJINF,KJSUP  ! Lower and upper dimensions in y direction for working window
 LOGICAL,          INTENT(IN)  :: OREAD_ALL    ! Flag to read the entire 2D fields in the file.
@@ -40,11 +37,9 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !
 !
 !
-!     #######################################################################
-      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,HLUOUT,                    &
-                                       KIINF,KISUP,KJINF,KJSUP,             &
-                                       OREAD_ALL                            )
-!     #######################################################################
+!     #############################################################################
+      SUBROUTINE READ_DUMMY_GR_FIELD_n(TPINIFILE,KIINF,KISUP,KJINF,KJSUP,OREAD_ALL)
+!     #############################################################################
 !
 !!****  *READ_DUMMY_GR_FIELD_n* - routine to read dummy surface fields
 !!
@@ -83,21 +78,19 @@ END MODULE MODI_READ_DUMMY_GR_FIELD_n
 !*       0.    DECLARATIONS
 !
 USE MODD_DUMMY_GR_FIELD_n
-USE MODE_FIELD, ONLY : TFIELDDATA,TYPEINT,TYPEREAL
+USE MODE_FIELD,      ONLY : TFIELDDATA,TYPEINT,TYPEREAL
 USE MODD_GRID_n
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_PARAMETERS
+USE MODD_IO_ll,      ONLY : TFILEDATA
+USE MODD_PARAMETERS, ONLY : JPHEXT, NMNHNAMELGTMAX
 !
 USE MODE_FMREAD
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
 TYPE(TFILEDATA),  INTENT(IN)  :: TPINIFILE    ! Initial file
-CHARACTER(LEN=*), INTENT(IN)  :: HLUOUT       ! Name for output-listing of nested models
 INTEGER,          INTENT(IN)  :: KIINF,KISUP  ! Lower and upper Dimensions in x direction for working window
 INTEGER,          INTENT(IN)  :: KJINF,KJSUP  ! Lower and upper dimensions in y direction for working window
 LOGICAL,          INTENT(IN)  :: OREAD_ALL    ! Flag to read the entire 2D fields in the file.
@@ -108,7 +101,6 @@ INTEGER             :: IRESP       ! File management
 CHARACTER (LEN=NMNHNAMELGTMAX) :: YRECFM ! variables
 CHARACTER (LEN=20 ) :: YSTRING20   ! string
 CHARACTER (LEN=3  ) :: YSTRING03   ! string
-INTEGER             :: ILUOUT      ! Unit number for prints
 INTEGER             :: JDUMMY      ! Loop index for cover data
 !
 INTEGER             :: IMASDEV ! masdev used for creation of input FM file
@@ -123,8 +115,6 @@ INTEGER                           :: IJSUP  ! upper J index
 TYPE(TFIELDDATA)                  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
-!
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 !*       1..   TEST MASDEV VERSION OF INPUT FILE
 !              ---------------------------------
@@ -185,9 +175,7 @@ IF (IMASDEV>=40) THEN
   !
   IF (IRESP/=0) THEN
     !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_DUMMY_GR_FIELD_n','problem when reading DUMMY_GR_NBR')
   ENDIF
 ELSE
   NDUMMY_GR_NBR = 0
@@ -217,9 +205,7 @@ DO JDUMMY=1,NDUMMY_GR_NBR
   !
   IF (IRESP/=0) THEN
     !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'IO','READ_DUMMY_GR_FIELD_n','problem when reading '//TRIM(TZFIELD%CMNHNAME))
   ENDIF
   XDUMMY_GR_FIELDS(:,:,JDUMMY) = ZWORK(IIINF:IISUP,IJINF:IJSUP)
   !

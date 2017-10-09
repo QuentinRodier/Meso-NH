@@ -13,12 +13,10 @@
 !
 INTERFACE
 !
-      SUBROUTINE EDDYUV_FLUX_n (KMI,HLUOUT,KTCOUNT,PVM,PTHM,PRHODJ,PRHODREF,PPABSM,PRVS,PVU_FLUX_M)
+      SUBROUTINE EDDYUV_FLUX_n (KMI,KTCOUNT,PVM,PTHM,PRHODJ,PRHODREF,PPABSM,PRVS,PVU_FLUX_M)
 !
 !
 INTEGER,               INTENT(IN)    :: KMI   ! Model index
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! iteration count
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PVM
@@ -38,7 +36,7 @@ END INTERFACE
 END MODULE MODI_EDDYUV_FLUX_n
 
 !     #############################################################################################
-      SUBROUTINE EDDYUV_FLUX_n (KMI,HLUOUT,KTCOUNT,PVM,PTHM,PRHODJ,PRHODREF,PPABSM,PRVS,PVU_FLUX_M)
+      SUBROUTINE EDDYUV_FLUX_n (KMI,KTCOUNT,PVM,PTHM,PRHODJ,PRHODREF,PPABSM,PRVS,PVU_FLUX_M)
 !     #############################################################################################
 !!!
 !!
@@ -104,14 +102,12 @@ USE MODD_LUNIT_n
 USE MODI_TEMPORAL_DIST
 USE MODD_LATZ_EDFLX
 !
-USE MODE_IO_ll  ! For call abort
+USE MODE_MSG
 !
 IMPLICIT NONE
 !       0.01 Arguments declarations
 !
 INTEGER,                  INTENT(IN)    :: KMI   ! Model index
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 INTEGER,                  INTENT(IN)    :: KTCOUNT  ! iteration count
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRHODJ            ! dry density of
@@ -157,12 +153,12 @@ REAL                                 :: ZFHMW,ZPHI0
 REAL                                 :: JNEG
 REAL                                 :: JNEG2
 INTEGER                              :: JIDIFF
-INTEGER                              :: ILUOUT
 INTEGER                              :: JP
 INTEGER                              :: JNI ! Nb of point where neg Pv gradiebnt  depiected 
 INTEGER                              :: JNB ! nb of areas of pv gradioent neg
 INTEGER                              :: JPI  ! loop index
 INTEGER                              :: IRESP
+CHARACTER(LEN=100)                   :: YMSG
 !
 !-------------------------------------------------------------------------
 !
@@ -177,7 +173,6 @@ IKE=IKU-JPVEXT
 IIU = SIZE(XXHAT)
 IJU = SIZE(XYHAT)
 
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 ! allocation of temporary array
 ! ---------------------------------------------------------
 ! 1D arrays X direction
@@ -329,17 +324,11 @@ DO JK=IKB,IKE
   !     Test  of JI_MIN_IMAX value
      IF ((JI_MAX(JP) > IIE) .OR. (JI_MAX(JP)<JI_MIN(JP)) & 
                            .OR. (JI_MAX(JP)<IIB)) THEN
-     WRITE(ILUOUT,*) "PB WITH JI_MAX, WONGG VALUE IN EDDYUV_FLUX"
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+       CALL PRINT_MSG(NVERB_FATAL,'GEN','EDDYUV_FLUX_n','wrong value of JI_MAX')
      END IF
 !
      IF ((JI_MIN(JP) > IIE) .OR. (JI_MIN(JP)<IIB)) THEN
-      WRITE(ILUOUT,*) "PB WITH JI_MIN, WORNG VALUE IN EDDYUV_FLUX"
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+       CALL PRINT_MSG(NVERB_FATAL,'GEN','EDDYUV_FLUX_n','wrong value of JI_MIN')
      END IF
 
      JIDIFF=JI_MAX(JP) - JI_MIN(JP)
@@ -380,12 +369,9 @@ DO JK=IKB,IKE
 
 !
  ! Control of ZKVU value
- IF (ZKVU(JI,IJB,JK) < 0.0 ) THEN 
-  WRITE(ILUOUT,FMT=*) "PB KUV<0"
-  WRITE(ILUOUT,FMT=*) JI,JK
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+ IF (ZKVU(JI,IJB,JK) < 0.0 ) THEN
+   WRITE(YMSG,*) 'ZKVU(',JI,',',IJB,',',JK,') < 0.0'
+   CALL PRINT_MSG(NVERB_FATAL,'GEN','EDDYUV_FLUX_n',YMSG)
  ENDIF           
 
  END DO ! end of loot JI

@@ -168,7 +168,7 @@ USE MODI_BUDGET
 USE MODE_FIELD
 USE MODE_FM
 USE MODE_FMWRIT
-USE MODE_IO_ll
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -259,9 +259,7 @@ IF (ANY(PRCS(:,:,:)+PRVS(:,:,:) < 0.) .AND. NVERB>5) THEN
   WRITE(ILUOUT,*) '  location of minimum:', MINLOC(PRCS(:,:,:)+PRVS(:,:,:))
   WRITE(ILUOUT,*) '  value of minimum   :', MINVAL(PRCS(:,:,:)+PRVS(:,:,:))
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','C2R2_ADJUST','')
 END IF
 !
 WHERE ( PRCS(:,:,:)+PRVS(:,:,:) < 0.)

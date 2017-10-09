@@ -115,6 +115,7 @@ USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_IO_ll
+USE MODE_MSG
 !
 USE MODI_BUDGET
 USE MODI_PROGNOS
@@ -225,9 +226,7 @@ IF (ANY(PRCS(:,:,:)+PRVS(:,:,:) < 0.) .AND. NVERB>5) THEN
   WRITE(ILUOUT,*) '  location of minimum:', MINLOC(PRCS(:,:,:)+PRVS(:,:,:))
   WRITE(ILUOUT,*) '  value of minimum   :', MINVAL(PRCS(:,:,:)+PRVS(:,:,:))
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','KHKO_NOTADJUST','')
 END IF
 !
 ZACT(:,:,:)   = PCCS(:,:,:)
@@ -304,7 +303,7 @@ IF( INUCT >= 1 ) THEN
   ENDDO
   !
   !Evaporation/Condensation/activation
-  CALL PROGNOS(HLUOUT,PTSTEP,ZZDZ,ZZLV,ZZCPH,ZPRES,ZRHOD,  &
+  CALL PROGNOS(PTSTEP,ZZDZ,ZZLV,ZZCPH,ZPRES,ZRHOD,  &
                 ZRR,ZTT,ZRV,ZRC,ZS0,ZCCN,ZCCL)
   !
 !1D array to 3D array
@@ -361,9 +360,7 @@ IF (ANY(PRCS(:,:,:)+PRVS(:,:,:) < 0.) .AND. NVERB>5) THEN
   WRITE(*,*) 'KHKO_NOTADJUST:  negative values of total water (reset to zero)'
   WRITE(*,*) '  location of minimum:', MINLOC(PRCS(:,:,:)+PRVS(:,:,:))
   WRITE(*,*) '  value of minimum   :', MINVAL(PRCS(:,:,:)+PRVS(:,:,:))
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','KHKO_NOTADJUST','')
 END IF
 !
 !number of activated aerosols

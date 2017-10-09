@@ -181,7 +181,6 @@ END MODULE MODI_LS_COUPLING
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
-USE MODE_FM
 !            ------------
 USE MODD_PARAMETERS
 USE MODD_CTURB
@@ -193,8 +192,11 @@ USE MODD_PASPOL
 #endif
 USE MODD_CH_MNHC_n
 !
+USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll
+USE MODE_MSG
+!
 USE MODI_INI_LS
 USE MODI_INI_LB
 !
@@ -294,9 +296,7 @@ IF ( (IIMAX/=KIMAX_ll) .OR. (IJMAX/=KJMAX_ll)                    &
   WRITE(ILUOUT,*) 'AND IN THE COUPLING FILE :',TCPLFILE(NCPL_CUR)%TZFILE%CNAME
   WRITE(ILUOUT,*) IIMAX,'*',IJMAX,'*',IKMAX
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','LS_COUPLING','')
 END IF
 !
 !*      1.2  Read  new scalar Large Scale fields and update sources

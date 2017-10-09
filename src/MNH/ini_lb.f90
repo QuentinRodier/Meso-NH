@@ -150,7 +150,7 @@ USE MODD_PARAM_n
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPELOG,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
-USE MODE_IO_ll,           ONLY: CLOSE_ll
+USE MODE_MSG
 !
 USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
@@ -327,11 +327,8 @@ CASE('READ')
       PLBXTKEM(:,:,:) = PLBXTKEMM(:,:,:)    
       PLBYTKEM(:,:,:) = PLBYTKEMM(:,:,:)
     ELSE
-      WRITE ( ILUOUT,*) 'PB TO INITIALIZE LBXTKES AND LBYTKES  '
 !callabortstop
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize LBXTKES and LBYTKES')
     ENDIF
   ELSE
     CALL IO_READ_FIELD(TPINIFILE,'HORELAX_TKE',GHORELAX_TKE)
@@ -435,11 +432,8 @@ IF(KSIZELBXR_ll  > 0 ) THEN
               PLBXRM(:,:,:,IRR)=PLBXRMM(:,:,:,IRR)
               WRITE(ILUOUT,*) 'PLBXRS  will be initialized to 0 for LBXR'//YC(JRR)//'M'
             ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize PLBXRM for LBXR'//YC(JRR)//'M'
               !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize PLBXRM for LBXR'//YC(JRR)//'M')
             ENDIF
         ELSE
           TZFIELD%CMNHNAME   = 'LBXR'//YC(JRR)//'M'
@@ -456,11 +450,8 @@ IF(KSIZELBXR_ll  > 0 ) THEN
               PLBYRM(:,:,:,IRR)=PLBYRMM(:,:,:,IRR)
               WRITE(ILUOUT,*) 'PLBYRS  will be initialized to 0 for LBYR'//YC(JRR)//'M'
             ELSE
-              WRITE(ILUOUT,*) 'Pb to initialize PLBYRM for LBYR'//YC(JRR)//'M'
               !callabortstop
-              CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-              CALL ABORT
-              STOP
+              CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize PLBYRM for LBYR'//YC(JRR)//'M')
             ENDIF
          ELSE
            TZFIELD%CMNHNAME   = 'LBYR'//YC(JRR)//'M'
@@ -530,11 +521,8 @@ IF (NSV_USER>0) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'PLXYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialze PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -552,11 +540,8 @@ IF (NSV_USER>0) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialze PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -591,11 +576,8 @@ IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'C2R2 PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize C2R2 PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -613,11 +595,8 @@ IF (NSV_C2R2END>=NSV_C2R2BEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'C2R2 PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize C2R2 PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize C2R2 PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -652,11 +631,8 @@ IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'C1R3 PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize C1R3 PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -674,11 +650,8 @@ IF (NSV_C1R3END>=NSV_C1R3BEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'C1R3 PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize C1R3 PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize C1R3 PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -717,11 +690,8 @@ IF (CCLOUD=='LIMA' ) THEN
                   PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                   WRITE(ILUOUT,*) 'CCN PLBXSVM   will be initialized to 0'
                 ELSE
-                  WRITE(ILUOUT,*) 'Pb to initialize CCN PLBXSVM '
 !callabortstop
-                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                  CALL ABORT
-                  STOP
+                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBXSVM')
                 ENDIF
               END IF
             END IF
@@ -739,11 +709,8 @@ IF (CCLOUD=='LIMA' ) THEN
                   PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                   WRITE(ILUOUT,*) 'CCN PLBYSVM   will be initialized to 0'
                 ELSE
-                  WRITE(ILUOUT,*) 'Pb to initialize CCN PLBYSVM '
 !callabortstop
-                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                  CALL ABORT
-                  STOP
+                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize CCN PLBYSVM')
                 ENDIF
               END IF
             END IF
@@ -779,11 +746,8 @@ IF (CCLOUD=='LIMA' ) THEN
                   PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                   WRITE(ILUOUT,*) 'IFN PLBXSVM   will be initialized to 0'
                 ELSE
-                  WRITE(ILUOUT,*) 'Pb to initialize IFN'
 !callabortstop
-                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                  CALL ABORT
-                  STOP
+                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
                 ENDIF
               END IF
             END IF
@@ -801,11 +765,8 @@ IF (CCLOUD=='LIMA' ) THEN
                   PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                   WRITE(ILUOUT,*) 'IFN PLBYSVM   will be initialized to 0'
                 ELSE
-                  WRITE(ILUOUT,*) 'Pb to initialize IFN'
 !callabortstop
-                  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                  CALL ABORT
-                  STOP
+                  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize IFN')
                 ENDIF
               END IF
             END IF
@@ -841,11 +802,8 @@ IF (NSV_ELECEND>=NSV_ELECBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'ELEC PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize ELEC PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -862,11 +820,8 @@ IF (NSV_ELECEND>=NSV_ELECBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'ELEC PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize ELEC PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize ELEC PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -901,11 +856,8 @@ IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize gas phase chemical PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -923,11 +875,8 @@ IF (NSV_CHGSEND>=NSV_CHGSBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize gas phase Chemical PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize gas phase chemical PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -962,11 +911,8 @@ IF (NSV_CHACEND>=NSV_CHACBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Chemical PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aqueous phase chemical PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -984,11 +930,8 @@ IF (NSV_CHACEND>=NSV_CHACBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Chemical PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize aqueous phase chemical PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aqueous phase chemical PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1023,11 +966,8 @@ IF (NSV_CHICEND>=NSV_CHICBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Ice phase chemical PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize ice phase chemical PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize ice phase chemical PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1045,11 +985,8 @@ IF (NSV_CHICEND>=NSV_CHICBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Ice phase chemical PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Ice phase chemical PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize ice phase chemical PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1084,11 +1021,8 @@ IF (NSV_AEREND>=NSV_AERBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aerosol PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1106,11 +1040,8 @@ IF (NSV_AEREND>=NSV_AERBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aerosol PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1145,11 +1076,8 @@ IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Aerosol PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aerosol PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1167,11 +1095,8 @@ IF (NSV_AERDEPEND>=NSV_AERDEPBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Aerosol PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Aerosol PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize aerosol PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1206,11 +1131,8 @@ IF (NSV_DSTEND>=NSV_DSTBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Dust PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize dust PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1228,11 +1150,8 @@ IF (NSV_DSTEND>=NSV_DSTBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Dust PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize dust PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1267,11 +1186,8 @@ IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Dust Desposition PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize dust PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize dust PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1291,9 +1207,7 @@ IF (NSV_DSTDEPEND>=NSV_DSTDEPBEG) THEN
               ELSE
                 WRITE(ILUOUT,*) 'Pb to initialize dust PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize dust PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1328,11 +1242,8 @@ IF (NSV_SLTEND>=NSV_SLTBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Sea Salt PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize sea salt PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1350,11 +1261,8 @@ IF (NSV_SLTEND>=NSV_SLTBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Sea Salt PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize sea salt PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize sea salt PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1557,11 +1465,8 @@ IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Linox PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Linox PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize linox PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1579,11 +1484,8 @@ IF (NSV_LNOXEND>=NSV_LNOXBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'Linox PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize Linox PLBYSVM '
 !calla bortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize linox PLBYSVM')
               ENDIF
             END IF
           END IF
@@ -1618,11 +1520,8 @@ IF (NSV_LGEND>=NSV_LGBEG) THEN
                 PLBXSVM(:,:,:,JSV)=PLBXSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'lagrangian PLBXSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBXSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize lagrangian PLBXSVM')
               ENDIF
             END IF
           END IF
@@ -1640,11 +1539,8 @@ IF (NSV_LGEND>=NSV_LGBEG) THEN
                 PLBYSVM(:,:,:,JSV)=PLBYSVMM(:,:,:,JSV)
                 WRITE(ILUOUT,*) 'lagrangian PLBYSVM   will be initialized to 0'
               ELSE
-                WRITE(ILUOUT,*) 'Pb to initialize lagrangian PLBYSVM '
 !callabortstop
-                CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-                CALL ABORT
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LB','problem to initialize lagrangian PLBYSVM')
               ENDIF
             END IF
           END IF

@@ -65,7 +65,6 @@ USE MODD_GRID_n,     ONLY : XZS
 USE MODD_GR_FIELD_n, ONLY : XSSO_STDEV, XSSO_ANISOTROPY, XSSO_DIRECTION, XSSO_SLOPE, &
                             XAVG_ZS, XSIL_ZS, XMIN_ZS, XMAX_ZS
 USE MODD_IO_ll,      ONLY : TFILEDATA
-USE MODD_LUNIT_n,    ONLY : CLUOUT
 USE MODD_PARAM_n,    ONLY : CSURF
 !
 USE MODI_READ_DUMMY_GR_FIELD_n
@@ -146,7 +145,7 @@ CALL IO_READ_FIELD(TPINIFILE,'SSO_STDEV',XSSO_STDEV(:,:))
 !*      3.     Dummy fields
 !              ------------
 !
-CALL READ_DUMMY_GR_FIELD_n(TPINIFILE,CLUOUT,1,IIU,1,IJU,.TRUE.)
+CALL READ_DUMMY_GR_FIELD_n(TPINIFILE,1,IIU,1,IJU,.TRUE.)
 !
 !-------------------------------------------------------------------------------
 !

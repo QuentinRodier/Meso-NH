@@ -306,12 +306,8 @@ ELSE IF (CPROGRAM=='DIAG  ') THEN
 !              -------------------
 !
 ELSE
-  WRITE(UNIT=ILUOUT,FMT=*) 'INI_SEG_n should not be called for CPROGRAM=',CPROGRAM
-  WRITE(UNIT=ILUOUT,FMT=*) '-> STOP'
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','should not be called for CPROGRAM='//TRIM(CPROGRAM))
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -332,11 +328,8 @@ IF (GFOUND) THEN
   READ(UNIT=ILUSEG,NML=NAM_LUNITn)
   CALL UPDATE_NAM_LUNITn
   IF (LEN_TRIM(CINIFILEPGD)==0 .AND. CSURF=='EXTE') THEN
-    WRITE(ILUOUT,*) 'Error in namelist NAM_LUNITn : you need to specify CINIFILEPGD'
     !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','error in namelist NAM_LUNITn: you need to specify CINIFILEPGD')
   ENDIF
 END IF
 
@@ -426,9 +419,7 @@ IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='SPAWN ') THEN
       WRITE(ILUOUT,*) 'You can not use it as initial file, only as coupling file'
       WRITE(ILUOUT,*) 'Run PREP_REAL_CASE with LCOUPLING=.FALSE.'
       !callabortstop
-      CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-      CALL ABORT
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','')
     ENDIF
   ENDIF
 END IF
@@ -438,9 +429,7 @@ END IF
   IF (IRESP /= 0) THEN
     WRITE(ILUOUT,FMT=9002) 'STORAGE_TYPE',IRESP
 !callabortstop
-    CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-    CALL ABORT
-    STOP
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','')
   END IF
 IF (KMI == 1) THEN 
 ! Read the geometry kind 

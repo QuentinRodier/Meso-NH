@@ -1493,7 +1493,7 @@ ENDIF
 !              ---------------------------
 !
 IF ( CBUTYPE /= "NONE" .AND. NBUMOD == KMI ) THEN
-  CALL INI_BUDGET(ILUOUT, HLUOUT,XTSTEP,NSV,NRR,                              &
+  CALL INI_BUDGET(ILUOUT,XTSTEP,NSV,NRR,                                      &
              LNUMDIFU,LNUMDIFTH,LNUMDIFSV,                                    &
              LHORELAX_UVWTH,LHORELAX_RV, LHORELAX_RC,LHORELAX_RR,             &
              LHORELAX_RI,LHORELAX_RS,LHORELAX_RG, LHORELAX_RH,LHORELAX_TKE,   &

@@ -87,9 +87,10 @@ USE MODD_DYN_n
 USE MODD_CONF
 USE MODD_GRID
 !
-USE MODE_ll
-USE MODE_IO_ll
 USE MODE_GRIDPROJ
+USE MODE_IO_ll
+USE MODE_ll
+USE MODE_MSG
 !
 USE MODI_INI_STATION_N
 !
@@ -262,11 +263,9 @@ IF ( ANY(TSTATION%LAT(:)==XUNDEF) .OR. ANY(TSTATION%LON(:)==XUNDEF) ) THEN
   WRITE(ILUOUT,*) 'Error in station position '
   WRITE(ILUOUT,*) 'either LATitude or LONgitude segment'
   WRITE(ILUOUT,*) 'or I and J segment'
-  WRITE(ILUOUT,*) 'definiton is not complete.'
+  WRITE(ILUOUT,*) 'definition is not complete.'
 !callabortstop
-  CALL CLOSE_ll(HLUOUT,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SURFSTATION_n','')
 END IF
 !
 TSTATION%STEP  = MAX ( PTSTEP, TSTATION%STEP )
