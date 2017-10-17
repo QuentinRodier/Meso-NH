@@ -13,13 +13,14 @@
 !
 INTERFACE
 !
-SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE)
+SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
 CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
        END SUBROUTINE INI_SIZE_n
 !
@@ -27,9 +28,9 @@ END INTERFACE
 !
 END MODULE MODI_INI_SIZE_n
 !-----------------------------------------------------------------
-!     ###########################################
-      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE)
-!     ###########################################
+!     #######################################################
+      SUBROUTINE INI_SIZE_n(KMI,HLUOUT,TPINIFILE,HINIFILEPGD)
+!     #######################################################
 !
 !!
 !!****  *INI_SIZE_n* - routine to initialize the sizes ratio positions of nested model _n
@@ -138,6 +139,7 @@ IMPLICIT NONE
 INTEGER,            INTENT(IN)    :: KMI          !Model Index
 CHARACTER (LEN=*),  INTENT(IN)    :: HLUOUT       !Name for output-listing of nested models
 TYPE(TFILEDATA),    INTENT(IN)    :: TPINIFILE    !Initial file
+CHARACTER (LEN=*),  INTENT(IN)    :: HINIFILEPGD
 !
 !*       0.2   declarations of local variables
 !
@@ -152,6 +154,7 @@ INTEGER             :: IJPHEXT
 !
 CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 CLUOUT = HLUOUT
+CINIFILEPGD=HINIFILEPGD
 !
 !-------------------------------------------------------------------------------
 !

@@ -298,7 +298,7 @@ INTEGER             :: JM      ! loop index
 !             ----------------------------------
 !
 ! CINIFILE='INIFILE'
-! CINIFILEPGD=''
+CINIFILEPGD='' !Necessary to keep this line to prevent problems with spawning
 CCPLFILE(:)='    '
 !
 !-------------------------------------------------------------------------------

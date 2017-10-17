@@ -2699,7 +2699,7 @@ IF ( LEN_TRIM(HINIFILEPGD)>0 ) THEN
   IF ( CINIFILEPGD/=HINIFILEPGD ) THEN 
     WRITE(UNIT=ILUOUT,FMT=9001) KMI
     WRITE(ILUOUT,FMT=*) ' ERROR : in EXSEG1.nam, in NAM_LUNITn you have CINIFILEPGD= ',CINIFILEPGD
-    WRITE(ILUOUT,FMT=*) ' whereas in .des you have CINIFLEPGD= ',HINIFILEPGD
+    WRITE(ILUOUT,FMT=*) ' whereas in .des you have CINIFILEPGD= ',HINIFILEPGD
     WRITE(ILUOUT,FMT=*) ' Please check your Namelist '
     WRITE(ILUOUT,FMT=*) ' For example, you may have specified the un-nested PGD file instead of the nested PGD file '
     WRITE(ILUOUT,FMT=*) 

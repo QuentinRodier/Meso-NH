@@ -557,8 +557,6 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE ::ZTHL,ZT,ZRT,ZFRAC_ICE,&
                                       ZEXN,ZLVOCPEXN,ZLSOCPEXN,ZCPH, &
                                       ZRSATW, ZRSATI
                                  ! variables for adjustement
-INTEGER             :: ILENCH, IGRID, IRESP
-CHARACTER (LEN=100) :: YCOMMENT
 REAL                :: ZDIST
 !
 !JUAN TIMING
@@ -679,8 +677,8 @@ CLUOUT  = 'OUTPUT_LISTING1'
 CLUOUT0 = CLUOUT
 CEXPRE  = 'PRE_IDEA1.nam'
 CALL IO_FILE_ADD2LIST(TLUOUT0,CLUOUT0,'OUTPUTLISTING','WRITE')
-CALL IO_FILE_OPEN_ll(TLUOUT)
-NLUOUT = TLUOUT%NLU
+CALL IO_FILE_OPEN_ll(TLUOUT0)
+NLUOUT = TLUOUT0%NLU
 !Set output files for PRINT_MSG
 TLUOUT              => TLUOUT0
 TFILE_OUTPUTLISTING => TLUOUT0
