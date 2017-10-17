@@ -95,6 +95,7 @@ END MODULE MODI_LIMA_WARM_NUCL
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      J. Escobar : 10/2017 , for real*4 use XMNH_EPSILON
 !!
 !-------------------------------------------------------------------------------
 !
@@ -739,7 +740,7 @@ INTEGER                        :: PIVEC1
 ALLOCATE(PFUNCSMAX(NPTS))
 !
 PFUNCSMAX(:) = 0.
-PZVEC1 = MAX( 1.00001,MIN( FLOAT(NHYP)-0.00001,               &
+PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
                            XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
 PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )

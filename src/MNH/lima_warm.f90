@@ -120,6 +120,7 @@ END MODULE MODI_LIMA_WARM
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
+!!      J. Escobar : for real*4 , use XMNH_HUGE
 !!
 !-------------------------------------------------------------------------------
 !
@@ -283,7 +284,7 @@ END IF
 !   	        ----------------------------------------
 !
 !
-ZWLBDC3(:,:,:) = 1.E45
+ZWLBDC3(:,:,:) = XMNH_HUGE
 ZWLBDC(:,:,:)  = 1.E15
 !
 WHERE (PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2))
