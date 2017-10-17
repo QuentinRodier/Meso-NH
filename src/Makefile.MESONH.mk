@@ -50,7 +50,7 @@ CPPFLAGS   += $(CPPFLAGS_MNH)
 INC        += $(INC_MNH)
 
 ifeq "$(MNH_INT)" "8"
-CPPFLAGS   += -DMNH_INT8
+CPPFLAGS   += -DMNH_INT=8
 endif
 
 #
@@ -251,7 +251,12 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT)\
+ifneq "$(MNH_REAL)" "R4"
+MNH_REALS=8
+else
+MNH_REALS=4
+endif
+mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT) -DMNH_REALS=$(MNH_REALS) \
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif
