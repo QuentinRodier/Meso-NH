@@ -41,6 +41,7 @@
 !!      V. Masson   05/10/98  add XRHOLI
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add conductivity of ice
+!!      J.Escobar : 10/2017 : for real*4 , add XMNH_HUGE_12_LOG
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -93,7 +94,8 @@ INTEGER, SAVE :: NDAYSEC        ! Number of seconds in a day
 REAL,SAVE     :: XMNH_TINY          ! minimum real on this machine
 REAL,SAVE     :: XMNH_TINY_12       ! sqrt(minimum real on this machine)
 REAL,SAVE     :: XMNH_EPSILON       ! minimum space with 1.0
-REAL,SAVE     :: XMNH_HUGE          ! minimum real on this machine
+REAL,SAVE     :: XMNH_HUGE          ! maximum real on this machine
+REAL,SAVE     :: XMNH_HUGE_12_LOG   ! maximum log(sqrt(real)) on this machine
 
 REAL,SAVE     :: XEPS_DT            ! default value for DT test 
 REAL,SAVE     :: XRES_FLAT_CART     ! default     flat&cart residual tolerance

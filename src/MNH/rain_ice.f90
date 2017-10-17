@@ -240,6 +240,7 @@ END MODULE MODI_RAIN_ICE
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      C.Lac : 10/2016 : add droplet deposition
 !!      C.Lac : 01/2017 : correction on droplet deposition
+!!      J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1867,6 +1868,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HENU_BU_RRI')
 !
 !*      0. DECLARATIONS
 !          ------------
+USE MODD_CST, ONLY : XMNH_HUGE_12_LOG
 !
 IMPLICIT NONE
 !
@@ -1878,7 +1880,7 @@ IMPLICIT NONE
   ZZW(:) = 0.0
   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRCT(:)>XRTMIN(2)) .AND. (ZRCS(:)>0.) )
     ZZW(:) = MIN( ZRCS(:),XHON*ZRHODREF(:)*ZRCT(:)       &
-                                 *EXP( XALPHA3*(ZZT(:)-XTT)-XBETA3 ) )
+                                 *EXP( MIN(XMNH_HUGE_12_LOG,XALPHA3*(ZZT(:)-XTT)-XBETA3) ) )
     ZRIS(:) = ZRIS(:) + ZZW(:)
     ZRCS(:) = ZRCS(:) - ZZW(:)
     ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))
