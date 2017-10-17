@@ -19,6 +19,7 @@ C     THE AMBIENT RELATIVE HUMIDITY.
 C
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
+C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
 C
 C=======================================================================
 C
@@ -775,7 +776,7 @@ C
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, ZERO)
          Y2 = FUNCN2 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -809,7 +810,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCN2 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE

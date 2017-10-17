@@ -19,6 +19,7 @@ C     THE AMBIENT RELATIVE HUMIDITY.
 C
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
+C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
 C
 C=======================================================================
 C
@@ -474,7 +475,7 @@ C
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, OMELO)
          Y2 = FUNCA2 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -490,7 +491,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCA2 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -760,7 +761,7 @@ C
       DO 10 I=1,NDIV
          Z2 = Z1+DZ
          Y2 = FUNCB3A (Z2, TLC, TNH42S4)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          Z1 = Z2
          Y1 = Y2
 10    CONTINUE
@@ -794,7 +795,7 @@ C
 20    DO 30 I=1,MAXIT
          Z3 = 0.5*(Z1+Z2)
          Y3 = FUNCB3A (Z3, TLC, TNH42S4)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             Z2    = Z3
          ELSE
@@ -1127,7 +1128,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCB2B (X2,TNH4HS4,TLC)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -1161,7 +1162,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCB2B (X3,TNH4HS4,TLC)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -1496,7 +1497,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCC1 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2) .LT. ZERO) GOTO 20 ! (Y1*Y2 .LT. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2) .LT. ZERO) GOTO 20 ! (Y1*Y2 .LT. ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -1528,7 +1529,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCC1 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -1672,7 +1673,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCD3 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -1719,7 +1720,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCD3 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -1890,7 +1891,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNCD2 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) THEN
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) THEN
 C
 C This is done, in case if Y(PSI4LO)>0, but Y(PSI4LO+DX) < 0 (i.e.undersat)
 C
@@ -1942,7 +1943,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCD2 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -2213,7 +2214,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCG5A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -2228,7 +2229,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCG5A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -2315,7 +2316,7 @@ C
 C
 CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
          DD   = MAX(BB*BB-4.d0*CC,ZERO)           ! Patch proposed by Uma Shankar, 19/11/01
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -2420,7 +2421,7 @@ C
       DO 10 I=1,NDIV
          X2  = X1+DX
          Y2  = FUNCG4A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1  = X2
          Y1  = Y2
 10    CONTINUE
@@ -2435,7 +2436,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCG4A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -2522,7 +2523,7 @@ C
 C
 CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
          DD   = MAX(BB*BB-4.d0*CC,ZERO) ! Patch proposed by Uma shankar, 19/11/2001
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -2706,7 +2707,7 @@ C
          X2  = X1+DX 
          Y2  = FUNCG3A (X2)
 C
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1  = X2
          Y1  = Y2
 10    CONTINUE
@@ -2721,7 +2722,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCG3A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -2827,7 +2828,7 @@ C
 C
 CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
          DD   = MAX(BB*BB-4.d0*CC,ZERO)  ! Patch proposed by Uma Shankar, 19/11/01
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -3006,7 +3007,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCG2A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -3021,7 +3022,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCG2A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -3443,7 +3444,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH6A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -3458,7 +3459,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCH6A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -3547,7 +3548,7 @@ C
       PSI5 = MAX(PSI5, TINY)
 C
       IF (CHI1.GT.TINY .AND. WATER.GT.TINY) THEN  ! First try 3rd order soln
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6)
          DD   = BB*BB-4.d0*CC
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -3660,7 +3661,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH5A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -3675,7 +3676,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCH5A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -3764,7 +3765,7 @@ C
       PSI5 = MAX(PSI5, TINY)
 C
       IF (CHI1.GT.TINY .AND. WATER.GT.TINY) THEN  ! First try 3rd order soln
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6)
          DD   = BB*BB-4.d0*CC
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -3889,7 +3890,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH4A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -3904,7 +3905,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCH4A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -3993,7 +3994,7 @@ C
       PSI5 = MAX(PSI5, TINY)
 C
       IF (CHI1.GT.TINY .AND. WATER.GT.TINY) THEN  ! First try 3rd order soln
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6)
          DD   = BB*BB-4.d0*CC
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -4143,7 +4144,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH3A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -4158,7 +4159,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCH3A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -4247,7 +4248,7 @@ C
       PSI5 = MAX(PSI5, TINY)
 C
       IF (CHI1.GT.TINY .AND. WATER.GT.TINY) THEN  ! First try 3rd order soln
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6)
          DD   = BB*BB-4.d0*CC
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -4452,7 +4453,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX 
          Y2 = FUNCH2A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -4467,7 +4468,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCH2A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -4558,7 +4559,7 @@ C
       PSI5 = MAX(PSI5, TINY)
 C
       IF (CHI1.GT.TINY .AND. WATER.GT.TINY) THEN  ! First try 3rd order soln
-         BB   =-(CHI4 + PSI6 + PSI5 + 1.d0/A4)
+         BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6)
          DD   = BB*BB-4.d0*CC
          PSI4 =0.5d0*(-BB - SQRT(DD))
@@ -4996,7 +4997,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCI5A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -5019,7 +5020,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCI5A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -5187,7 +5188,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCI4A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -5210,7 +5211,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCI4A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -5439,7 +5440,7 @@ C
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI2LO)
          Y2 = FUNCI3A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -5454,7 +5455,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCI3A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -5533,7 +5534,7 @@ C
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI4LO)
          Y2 = FUNCI3B (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -5548,7 +5549,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCI3B (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -5782,7 +5783,7 @@ C
       DO 10 I=1,NDIV
          X2 = MAX(X1-DX, PSI2LO)
          Y2 = FUNCI2A (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -5797,7 +5798,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCI2A (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -6154,7 +6155,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCJ2 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -6177,7 +6178,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCJ2 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
@@ -6325,7 +6326,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1-DX
          Y2 = FUNCJ1 (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y2).LT.ZERO) GOTO 20  ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -6348,7 +6349,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNCJ1 (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(1.,Y1)*SIGN(1.,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE
