@@ -78,6 +78,7 @@
 !!  09/2016      (JP Pinty) Add LIMA
 !!  10/2016      (C.LAC) add LVISI
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
+!! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -214,7 +215,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LVORT, LDIV, LMEAN_POVO, XMEAN_POVO, &
                    LGEO, LAGEO, LWIND_ZM, LMSLP, LTHW, &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
-                   NCAPE, LBV_FR, LRADAR, LBLTOP, LTRAJ, &
+                   NCAPE, LBV_FR, LRADAR, CBLTOP, LTRAJ, &
                    LDIAG,XDIAG,LCHEMDIAG,LCHAQDIAG,XCHEMLAT,XCHEMLON,&
                    CSPEC_BU_DIAG,CSPEC_DIAG,LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
                    XSTEP_AIRCRAFT_BALLOON,&
@@ -289,7 +290,7 @@ XMEAN_PR(1:2)=1.
 NCAPE=-1
 LBV_FR=.FALSE.
 LRADAR=.FALSE.
-LBLTOP=.FALSE.
+CBLTOP='NONE'
 LVISI=.FALSE.
 LVAR_FRC=.FALSE.
 LCHEMDIAG=.FALSE.
