@@ -66,7 +66,7 @@ END MODULE MODI_MODEL_n
 !!    EXTERNAL
 !!    --------
 !!      Subroutine FMLOOK: to recover the logical unit number linked to a FMfile
-!!      Subroutine FMOPEN: to open a FMfile
+!!      Subroutine IO_FILE_OPEN_ll: to open a file
 !!      Subroutine WRITE_DESFM: to write the descriptive part of a FMfile
 !!      Subroutine WRITE_LFIFM: to write the binary part of a FMfile
 !!      Subroutine SET_MASK   : to compute all the masks selected for budget
@@ -93,7 +93,7 @@ END MODULE MODI_MODEL_n
 !!                                 compute the large scale fields, used to
 !!                                 couple Model_n with outer informations.
 !!      Subroutine ENDSTEP_BUDGET: writes the budget informations.
-!!      Subroutine FMCLOS        : closes a FM file
+!!      Subroutine IO_FILE_CLOSE_ll: closes a file
 !!      Subroutine ADD_FORECAST_TO_DATE : transform the current time in GMT
 !!      Subroutine FORCING : computes forcing terms
 !!      Subroutine ADD3DFIELD_ll : add a field to 3D-list
@@ -1965,7 +1965,7 @@ IF (OEXIT) THEN
   CALL IO_FILE_CLOSE_ll(TDIAFILE)
   !
   CALL IO_FILE_CLOSE_ll(TINIFILE)
-  IF (CSURF=="EXTE") CALL FMCLOS_ll(CINIFILEPGD,'KEEP',IRESP,OPARALLELIO=.FALSE.)
+  IF (CSURF=="EXTE") CALL IO_FILE_CLOSE_ll(TINIFILEPGD,OPARALLELIO=.FALSE.)
 !
 !*       28.1   print statistics!
 !

@@ -131,8 +131,8 @@ END MODULE MODI_LS_COUPLING
 !!    EXTERNAL
 !!    --------
 !!      FMLOOK      : to retrieve a logical unit number 
-!!      FMREAD      : to read data in LFI_FM file
-!!      FMCLOS      : to close a FM-file
+!!      IO_READ_FIELD : to read data in file
+!!      IO_FILE_CLOSE_ll : to close a file
 !!      INI_LS      : to initialize larger scale fields
 !!      INI_LB      : to initialize "2D" surfacic LB fields 
 !!

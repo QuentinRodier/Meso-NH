@@ -264,9 +264,7 @@
 !!      Routine WRITE_DESFM1  : to write a DESFM file.
 !!      Routine WRITE_LFIFM1  : to write a LFIFM file.
 !!      Routine FMLOOK        : to retrieve the logical unit of a file.
-!!      Routine FMCLOS        : to close a FM-file (DESFM + LFIFM).
-!!      Routine FMFREE        : to relase a logical unit number linked to a 
-!!                              file.
+!!      Routine IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM).
 !!
 !!      Module MODE_GRIDPROJ  : contains conformal projection routines
 !!    
@@ -393,7 +391,7 @@ USE MODE_POS
 USE MODE_FM
 USE MODE_FMWRIT, ONLY : IO_WRITE_HEADER
 USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
 USE MODE_ll
 USE MODE_MSG
 USE MODE_MODELN_HANDLER
@@ -1075,7 +1073,10 @@ CALL MNHWRITE_ZS_DUMMY_n(TINIFILE)
 !
 CALL DEALLOCATE_MODEL1(3)
 !
-IF (YATMFILETYPE=='MESONH'.AND. YATMFILE/=YPGDFILE) CALL FMCLOS_ll(YATMFILE,'KEEP',IRESP)
+IF (YATMFILETYPE=='MESONH'.AND. YATMFILE/=YPGDFILE) THEN
+  CALL IO_FILE_FIND_BYNAME(TRIM(YATMFILE),TZATMFILE,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZATMFILE)
+END IF
 !-------------------------------------------------------------------------------
 !
 !*      18.    INTERPOLATION OF SURFACE VARIABLES

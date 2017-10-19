@@ -79,7 +79,7 @@ END MODULE MODI_INI_SEG_n
 !!      The  name of the initial file is read in EXSEG file.     
 !!         - Default values are supplied for variables in descriptor files
 !!      (by DEFAULT_DESFM).
-!!         - The Initial file (LFIFM + DESFM) is opened by FMOPEN.
+!!         - The Initial file (LFIFM + DESFM) is opened by IO_FILE_OPEN_ll.
 !!         - The descriptor DESFM file is read (by READ_DESFM_n). 
 !!         - The descriptor file EXSEG is read (by READ_EXSEG_n) and coherence
 !!      between the initial file and the description of segment is also checked 
@@ -96,7 +96,7 @@ END MODULE MODI_INI_SEG_n
 !!    EXTERNAL
 !!    --------
 !!      FMATTR        : to associate a logical unit number to a file 
-!!      FMOPEN        : to open descriptor file or LFI file
+!!      IO_FILE_OPEN_ll : to open descriptor file or LFI file
 !!      DEFAULT_DESFM1: to set default values
 !!      READ_DESFM_n    : to read a DESFM file 
 !!      READ_EXSEG_n    : to read a EXSEG file

@@ -47,7 +47,7 @@ INTEGER, SAVE :: NGEN_VERB        = NVERB_WARNING ! Verbosity level for 'GEN' (g
 INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessary to force stop of application
 
 TYPE LFIPARAM
-  INTEGER :: FITYP   ! FM File Type (used in FMCLOSE)
+  INTEGER :: FITYP   ! FM File Type (used in FMCLOS_ll)
 END TYPE LFIPARAM
 
 !Structure containing one pointer to a file

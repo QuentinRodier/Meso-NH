@@ -175,10 +175,10 @@
 !!      SET_REF       : to compute  rhoJ 
 !!      RESSURE_IN_PREP : to apply an anelastic correction in the case of
 !!                        non-vanishing orography 
-!!      FMOPEN        : to open a FM-file (DESFM + LFIFM)
+!!      IO_FILE_OPEN_ll : to open a FM-file (DESFM + LFIFM)
 !!      WRITE_DESFM   : to write the  DESFM file
 !!      WRI_LFIFM     : to write the   LFIFM file  
-!!      FMCLOS        : to close a FM-file (DESFM + LFIFM)
+!!      IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM)
 !!
 !!      MXM,MYM,MZM   : Shuman operators
 !!      WGUESS        : to compute W with the continuity equation from 

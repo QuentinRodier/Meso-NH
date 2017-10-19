@@ -47,11 +47,10 @@ END MODULE MODI_INI_SIZE_SPAWN
 !
 !!    EXTERNAL
 !!    --------
-!!    FMLOOK_ll
 !!    DEFAULT_DESFM2
-!!    FMOPEN_ll
+!!    IO_FILE_OPEN_ll
 !!    READ_HGRID
-!!    FMCLOS_ll
+!!    IO_FILE_CLOSE_ll
 !!    RETRIEVE_NEST_INFO
 !!
 !!    IMPLICIT ARGUMENTS

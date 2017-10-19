@@ -48,9 +48,8 @@ END MODULE MODI_COMPARE_DAD
 !!    EXTERNAL
 !!    --------
 !!
-!!      FMATTR        : to associate a logical unit number to a file
-!!      FMOPEN        : to open a FM-file (DESFM + LFIFM)
-!!      FMCLOS        : to close a FM-file (DESFM + LFIFM)
+!!      IO_FILE_OPEN_ll  : to open a FM-file (DESFM + LFIFM)
+!!      IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM)
 !!
 !!
 !!

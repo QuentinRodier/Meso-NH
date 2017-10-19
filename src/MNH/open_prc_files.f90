@@ -62,9 +62,6 @@ END MODULE MODI_OPEN_PRC_FILES
 !!    EXTERNAL
 !!    --------
 !!
-!!    Routine FMATTR
-!!    Routine FMOPEN
-!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!

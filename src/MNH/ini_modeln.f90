@@ -65,7 +65,7 @@ END MODULE MODI_INI_MODEL_n
 !!    INI_CPL.
 !!       - The initialization of the parameters needed for the dynamics
 !!         of the model n is realized in INI_DYNAMICS.
-!!       - Then the initial file (DESFM+LFIFM files) is closed by FMCLOS.
+!!       - Then the initial file (DESFM+LFIFM files) is closed by IO_FILE_CLOSE_ll.
 !!       - The initialization of the parameters needed for the ECMWF radiation
 !!         code is realized in INI_RADIATIONS.
 !!       - The contents of the scalar variables are overwritten by

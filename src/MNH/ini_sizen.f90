@@ -60,8 +60,7 @@ END MODULE MODI_INI_SIZE_n
 !!    EXTERNAL
 !!    --------
 !!      FMLOOK_ll   : to retrieve a logical unit number associated with a file 
-!!      FMREAD      : to read a LFIFM file
-!!      FMCLOS      : to close a FM-file
+!!      IO_READ_FIELD : to read a LFIFM file
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 

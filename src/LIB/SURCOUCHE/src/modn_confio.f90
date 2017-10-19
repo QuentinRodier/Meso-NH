@@ -8,7 +8,7 @@
 !!    -------
 !     Define I/O configuration variables that can be set with the NAM_CONFIO namelist
 !!    /!\ These variables must be transmitted to the SURCOUCHE library via the
-!!    SET_CONFIO_ll subroutine before the FIRST call to FMOPEN_ll.
+!!    SET_CONFIO_ll subroutine before the FIRST call to IO_FILE_OPEN_ll
 !
 !!
 !!**  IMPLICIT ARGUMENTS

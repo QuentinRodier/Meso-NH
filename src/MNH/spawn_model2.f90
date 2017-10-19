@@ -80,7 +80,6 @@ END MODULE MODI_SPAWN_MODEL2
 !!    EXTERNAL
 !!    --------
 !!
-!!      FMATTR        : to associate a logical unit number to a file
 !!      Module MODE_GRIDPROJ : contains conformal projection routines
 !!           SM_GRIDPROJ   : to compute some grid variables, in
 !!                           case of conformal projection.
@@ -91,10 +90,10 @@ END MODULE MODI_SPAWN_MODEL2
 !!      TOTAL_DMASS   : to compute the total mass of dry air
 !!      ANEL_BALANCE2  : to apply an anelastic correction in the case of changing
 !!                      resolution between the two models
-!!      FMOPEN        : to open a FM-file (DESFM + LFIFM)
+!!      IO_FILE_OPEN_ll : to open a FM-file (DESFM + LFIFM)
 !!      WRITE_DESFM   : to write the  DESFM file
 !!      WRITE_LFIFM   : to write the  LFIFM file  
-!!      FMCLOS        : to close a FM-file (DESFM + LFIFM)
+!!      IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM)
 !!      INI_BIKHARDT2     : initializes Bikhardt coefficients
 !!
 !!
@@ -312,7 +311,6 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !*       0.1.3  Declarations of local variables :
 !
 !
-INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER :: INPRAR   ! Number of articles predicted in the LFIFM file
 !
