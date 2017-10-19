@@ -172,6 +172,7 @@ REAL, DIMENSION(:)  , ALLOCATABLE  :: ZZT      ! Temperature
 REAL, DIMENSION(:), ALLOCATABLE    :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5, ZZW6, &
                                       ZCTMIN, &
                                       ZZTDT,          & ! dT/dt
+                                      ZSW,            & ! real supersaturation                                      
                                       ZSMAX,          & ! Maximum supersaturation
                                       ZVEC1
 !
@@ -273,6 +274,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZCCS(INUCT))
    ALLOCATE(ZZT(INUCT)) 
    ALLOCATE(ZZTDT(INUCT)) 
+   ALLOCATE(ZSW(INUCT))    
    ALLOCATE(ZZW1(INUCT))
    ALLOCATE(ZZW2(INUCT))
    ALLOCATE(ZZW3(INUCT))
@@ -290,6 +292,7 @@ IF( INUCT >= 1 ) THEN
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
       ZZTDT(JL)  = ZTDT(I1(JL),I2(JL),I3(JL))
+      ZSW(JL)  = PRVT(I1(JL),I2(JL),I3(JL))/ZRVSAT(I1(JL),I2(JL),I3(JL)) - 1.
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
       ZEXNREF(JL)  = PEXNREF(I1(JL),I2(JL),I3(JL))
       DO JMOD = 1,NMOD_CCN
@@ -385,6 +388,7 @@ IF( INUCT >= 1 ) THEN
    ZXACC = 1.0E-7                 ! Accuracy needed for the search in [NO UNITS]
 !
    ZSMAX(:) = ZRIDDR(ZS1,ZS2,ZXACC,ZZW3(:),INUCT)    ! ZSMAX(:) is in [NO UNITS]
+   ZSMAX(:) = MIN(MAX(ZSMAX(:), ZSW(:)),ZS2)
 !
 !
 !-------------------------------------------------------------------------------
@@ -492,6 +496,7 @@ IF( INUCT >= 1 ) THEN
    DEALLOCATE(ZZW5)
    DEALLOCATE(ZZW6)
    DEALLOCATE(ZZTDT)
+   DEALLOCATE(ZSW)
    DEALLOCATE(ZRHODREF)
    DEALLOCATE(ZCHEN_MULTI)
    DEALLOCATE(ZEXNREF)
