@@ -129,9 +129,9 @@ DO JJ=1,U%NSIZE_NATURE
     !
   END IF
   !
+  ZLAI(JJ) = U%XNATURE(U%NR_NATURE(JJ)) * ZLAI(JJ)
+  !
 END DO
-!
-ZLAI(:) = U%XNATURE(:) * ZLAI(:)
 !
 !*       2. Envoi les variables vers mesonH 
 !             ------------------------------
