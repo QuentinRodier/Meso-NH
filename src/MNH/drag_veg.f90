@@ -257,7 +257,7 @@ IF (ODEPOTREE) THEN
        IF (GDEP(JI,JJ,JK)) THEN
           PRRS(JI,JJ,JK,2) = PRRS(JI,JJ,JK,2) + (ZWDEPR(JI,JJ,JK+1)-ZWDEPR(JI,JJ,JK))/ &
                              (PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
-         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO')) THEN
+         IF ((HCLOUD=='C2R2') .OR.  (HCLOUD=='KHKO').OR.  (HCLOUD=='LIMA')) THEN
           PSVS(JI,JJ,JK,NSV_C2R2BEG+1) =  PSVS(JI,JJ,JK,NSV_C2R2BEG+1) + &
                    (ZWDEPS(JI,JJ,JK+1)-ZWDEPS(JI,JJ,JK))/(PZZ(JI,JJ,JK+1)-PZZ(JI,JJ,JK))
          END IF
