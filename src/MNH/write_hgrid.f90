@@ -82,8 +82,6 @@ TYPE(TFILEDATA), INTENT(IN)  :: TPFILE    ! File to write
 !
 !*       0.2   declarations of local variables
 !
-INTEGER               :: IRESP
-!
 !-------------------------------------------------------------------------------
 !
 !*       1.     TEST ON MODEL INDEX

@@ -26,7 +26,7 @@
 !              ------------
 !
 USE MODD_PARAM_n,         ONLY : CCLOUD
-USE MODD_LUNIT,           ONLY : CLUOUT0
+USE MODD_LUNIT,           ONLY : TLUOUT0
 USE MODD_PARAM_LIMA,      ONLY : LWARM, LACTI, NMOD_CCN, HINI_CCN, HTYPE_CCN,        &
                                  XR_MEAN_CCN, XLOGSIG_CCN, XRHO_CCN,                 &
                                  XKHEN_MULTI, XMUHEN_MULTI, XBETAHEN_MULTI,          &
@@ -70,7 +70,7 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !!!!!!!!!!!!!!!!
 ! CCN properties

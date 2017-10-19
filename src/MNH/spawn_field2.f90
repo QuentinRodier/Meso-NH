@@ -168,7 +168,7 @@ USE MODD_IO_ll,           ONLY : TFILEDATA
 USE MODD_LATZ_EDFLX
 USE MODD_LBC_n,           ONLY:  LBC_MODEL
 USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_LUNIT_n,         ONLY:  CLUOUT,LUNIT_MODEL
+USE MODD_LUNIT_n,         ONLY:  LUNIT_MODEL,TLUOUT
 USE MODD_NSV
 USE MODD_REF_n,           ONLY:  REF_MODEL
 USE MODD_PARAMETERS
@@ -279,7 +279,7 @@ CALL GO_TOMODEL_ll(2, IINFO_ll)
 !
 !*       1.0  recovers logical unit number of output listing
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       1.1   Secondary variables
 !

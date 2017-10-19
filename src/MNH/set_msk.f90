@@ -85,7 +85,7 @@ USE MODD_CST  , ONLY : XRHOLW
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODE_ll
-USE MODD_LUNIT
+USE MODD_LUNIT, ONLY : TLUOUT0
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 !
@@ -125,7 +125,7 @@ INTEGER :: IBUIL,IBUJL,IBUIH,IBUJH
 !TYPE(LIST_ll), POINTER :: TZFIELDS_ll    ! list of fields to exchange
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !*       1.    COMPUTES THE PHYSICAL SUBDOMAIN BOUNDS
 !              ---------------------------------------

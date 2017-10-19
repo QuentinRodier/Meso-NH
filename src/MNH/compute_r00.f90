@@ -97,12 +97,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! Output file
 !
 !*       0.2   declarations of local variables
 !
-INTEGER  :: IRESP                ! return code in FM routines
-INTEGER  :: INPRAR               ! number of articles predicted  in
-                                 !  the LFIFM file
-INTEGER  :: ININAR               ! number of articles  present in
-                                 !  the LFIFM file
-!
 INTEGER                            :: IFILECUR,JFILECUR,NIU,NJU,NKU
 INTEGER                            :: NFILES,JLOOP
 REAL                               :: ZXOR,ZYOR,ZDX,ZDY

@@ -69,8 +69,6 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!    subroutine HORIBL            : horizontal bilinear interpolation
 !!    subroutine XYTOLATLON        : projection from conformal to lat,lon
 !!
-!!    function   FMLOOK_ll         : to retrieve the logical unit associated with a file
-!!
 !!    Module     MODI_SET_SUBDOMAIN     : interface for subroutine SET_SUBDOMAIN
 !!    Module     MODI_READ_VER_GRID     : interface for subroutine READ_VER_GRID
 !!    Module     MODI_HORIBL            : interface for subroutine HORIBL

@@ -287,7 +287,7 @@ END DO
 !
 ! Apply the rain sedimentation rate to the WR_xxx aqueous species
 !
-!CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+!ILUOUT = TLUOUT%NLU
 !WRITE(ILUOUT,*) 'valuers ZSV_SEDIM_FACT TIME =', PTIME-59400.
 !DO JI=IIB,IIE
 !  DO JJ = IJB,IJE

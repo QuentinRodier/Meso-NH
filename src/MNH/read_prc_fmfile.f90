@@ -42,8 +42,6 @@ END MODULE MODI_READ_PRC_FMFILE
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMREAD   : to read data in LFIFM file
-!!      FMLOOK   : to retrieve the logical unit of a file
 !!       
 !!    IMPLICIT ARGUMENTS
 !!    ------------------ 

@@ -37,6 +37,7 @@
 !-------------------------------------------------------------------------------
 !
 USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_ll
+USE MODE_FM,           ONLY : FMLOOK_ll
 USE MODD_IO_SURF_MNH,  ONLY : COUT, COUTFILE
 !
 IMPLICIT NONE

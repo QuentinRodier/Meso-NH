@@ -37,7 +37,7 @@ SUBROUTINE GATHERALL_BORDER_ll(HCODE,PA,PA_ll,KINFO_ll)
 
 USE MODD_PARAMETERS
 USE MODE_ll
-USE MODI_GATHER_ll
+USE MODE_GATHER_ll
 !
 !---------------------------------------------------------------------
 !

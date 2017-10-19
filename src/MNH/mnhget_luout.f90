@@ -57,6 +57,7 @@ END MODULE MODI_MNHGET_LUOUT
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODE_FM, ONLY : FMLOOK_ll
 USE MODE_ll
 USE MODD_CONF, ONLY : CPROGRAM
 !

@@ -42,7 +42,6 @@ END MODULE MODI_INI_CST
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK : to retrieve logical unit number associated to a file
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------

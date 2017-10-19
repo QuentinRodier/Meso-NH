@@ -147,7 +147,7 @@ INTEGER, DIMENSION(JPMODELMAX) :: NXSIZE   ! number of grid points for each mode
 INTEGER, DIMENSION(JPMODELMAX) :: NYSIZE   ! in x and y-directions
                                            ! relatively to its father grid
 !
-INTEGER                        :: ILUOUT0, IRESP
+INTEGER                        :: ILUOUT0
 INTEGER                        :: IINFO_ll ! return code of // routines
 INTEGER                        :: JPGD     ! loop control
 CHARACTER(LEN=28)              :: YMY_NAME,YDAD_NAME

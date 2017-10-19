@@ -133,7 +133,6 @@ TYPE(TFILEDATA),   INTENT(IN) :: TPFILE ! File characteristics
 !*       0.2   Declarations of local variables
 !
 INTEGER            :: ILUOUT        ! logical unit
-INTEGER            :: IRESP         ! IRESP  : return-code for fmwrit
 !
 INTEGER            :: IRR           ! Index for moist variables
 INTEGER            :: JRR,JSV       ! loop index for moist and scalar variables

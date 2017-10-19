@@ -223,16 +223,8 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IW=IIB
-    IE=IIE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF
+  IW=IIB
+  IE=IIE
 !
 ! r: many left cells in regard to 'i' cell for each stencil
 !
@@ -485,16 +477,8 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IW=IIB
-    IE=IIE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF  
+  IW=IIB
+  IE=IIE
 !
 ! intermediate fluxes for positive wind case
 !
@@ -747,16 +731,8 @@ SELECT CASE ( HLBCY(1) ) !
 !
 CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IS=IJB
-    IN=IJE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF
+  IS=IJB
+  IN=IJE
 !
 ! intermediate fluxes for positive wind case
 !
@@ -1003,16 +979,8 @@ SELECT CASE ( HLBCY(1) ) ! Y direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IS=IJB
-    IN=IJE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF
+  IS=IJB
+  IN=IJE
 !
 ! intermediate fluxes for positive wind case
 !

@@ -105,7 +105,7 @@ USE MODD_GRID_n
 USE MODD_NSV
 USE MODD_BUDGET,      ONLY : LBUDGET_SV
 USE MODD_CST,         ONLY : XMNH_TINY
-USE MODD_LUNIT_n,     ONLY : CLUOUT
+USE MODD_LUNIT_n,     ONLY : TLUOUT
 USE MODI_SHUMAN
 USE MODI_SUM_ll
 USE MODI_BUDGET
@@ -140,7 +140,7 @@ REAL      :: ZRATIO, ZMASSTOT, ZMASSPOS
 !------------------------------------------------------------------------------
 !
 IKU=SIZE(XZHAT)
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       1.     TRANSFORMS THE SOURCE TERMS INTO PROGNOSTIC VARIABLES
 !               -----------------------------------------------------

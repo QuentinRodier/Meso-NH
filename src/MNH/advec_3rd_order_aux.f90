@@ -189,16 +189,8 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IW=IIB+1
-    IE=IIE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF  
+  IW=IIB+1
+  IE=IIE
 !
   IWF=IW-1
   IEF=IE-1
@@ -345,16 +337,8 @@ SELECT CASE ( HLBCX(1) ) ! X direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IW=IIB+1
-    IE=IIE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 3rd order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF  
+  IW=IIB+1
+  IE=IIE
 !
   IWF=IW
   IEF=IE
@@ -500,16 +484,8 @@ SELECT CASE ( HLBCY(1) ) !
 !
 CASE ('CYCL')          ! In that case one must have HLBCY(1) == HLBCY(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IS=IJB+1
-    IN=IJE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF
+  IS=IJB+1
+  IN=IJE
 !
   ISF=IS-1
   INF=IN-1
@@ -656,16 +632,8 @@ SELECT CASE ( HLBCY(1) ) ! Y direction LBC type: (1) for left side
 !
 CASE ('CYCL')          ! In that case one must have HLBCX(1) == HLBCX(2)
 !
-!!$  IF(NHALO == 1) THEN
-    IS=IJB+1
-    IN=IJE
-!!$  ELSE
-!!$    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-!!$    WRITE(ILUOUT,*) 'ERROR : 4th order advection in CYCLic case '
-!!$    WRITE(ILUOUT,*) 'cannot be used with NHALO=2'
-!!$    CALL ABORT
-!!$    STOP
-!!$  END IF
+  IS=IJB+1
+  IN=IJE
 !
   ISF=IS
   INF=IN
