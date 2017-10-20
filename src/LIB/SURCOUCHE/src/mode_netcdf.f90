@@ -1397,7 +1397,7 @@ IF (IRESP/=0) THEN
   RETURN
 END IF
 
-#if 1
+#if 0
 !This part is to keep backward compatibility with MesoNH files
 !but date/time is not conform to CF convention
 !
