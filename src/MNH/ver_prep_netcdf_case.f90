@@ -78,6 +78,7 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !!                  Nov, 22 2000 (I. Mallet) add scalar variables
 !!                  Nov, 22 2000 (P. Jabouille) change routine name
 !!                  May 2006                 Remove EPS
+!!                  Oct 2017 (J.Escobar) minor, missing USE MODI_SECOND_MNH
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -92,6 +93,7 @@ USE MODI_VER_INTERP_TO_MIXED_GRID
 USE MODI_RMS_AT_Z
 USE MODI_COMPUTE_EXNER_FROM_TOP
 USE MODI_WATER_SUM
+USE MODI_SECOND_MNH
 !
 USE MODD_CONF           ! declaration modules
 USE MODD_CONF_n
