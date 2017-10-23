@@ -2404,6 +2404,20 @@ IF (LFORCING) THEN
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPGROUNDFRC(JT),IGRID,ILENCH,  &
                                                             YCOMMENT,IRESP)
 !
+    YRECFM='TENDUFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDUFRC(:,JT),IGRID,ILENCH,  &
+                                                            YCOMMENT,IRESP)
+
+    YRECFM='TENDVFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDVFRC(:,JT),IGRID,ILENCH,  &
+                                                            YCOMMENT,IRESP)
+!
   END DO
 !
 !
