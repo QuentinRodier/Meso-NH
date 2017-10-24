@@ -100,7 +100,7 @@ USE MODD_NSV,        ONLY : NSV,NSV_CHEM,NSV_C2R2BEG,NSV_C2R2END, &
                             NSV_LIMA_NI,                          &
                             NSV_LIMA_IFN_FREE, NSV_LIMA_IFN_NUCL, &
                             NSV_LIMA_IMM_NUCL, NSV_LIMA_HOM_HAZE
-USE MODD_PARAM_LIMA, ONLY : LSCAV, MSEDC=>LSEDC, MACTIT=>LACTIT
+USE MODD_PARAM_LIMA, ONLY : LSCAV, MSEDC=>LSEDC, MACTIT=>LACTIT, MDEPOC=>LDEPOC
 USE MODD_LIMA_PRECIP_SCAVENGING_n
 !
 USE MODI_INIT_AEROSOL_CONCENTRATION
@@ -169,8 +169,9 @@ ELSE
   ALLOCATE(XACPRC(0,0))
 END IF
 !
-IF ( (((CCLOUD == 'KHKO') .OR.(CCLOUD == 'C2R2')) .AND. LDEPOC) &
-       .OR. ( (CCLOUD(1:3) == 'ICE') .AND. LDEPOSC) ) THEN
+IF (( CCLOUD(1:3) == 'ICE'                                   .AND.LDEPOSC) .OR. &
+    ((CCLOUD=='C2R2' .OR. CCLOUD=='KHKO').AND.LDEPOC)  .OR. &
+    ( CCLOUD=='LIMA'                                         .AND.MDEPOC))  THEN
   ALLOCATE(XINDEP(IIU,IJU))
   ALLOCATE(XACDEP(IIU,IJU))
   XINDEP(:,:)=0.0

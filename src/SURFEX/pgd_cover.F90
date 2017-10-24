@@ -91,6 +91,10 @@ USE MODD_IO_SURF_LFI, ONLY : CFILEIN_LFI
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+!
+#endif
 !
 IMPLICIT NONE
 !
@@ -286,6 +290,9 @@ ELSE
   WRITE(YFIELD,FMT='(A)') 'covers'
   CALL INTERPOL_FIELD2D(UG, U, &
                         HPROGRAM,ILUOUT,NSIZE,U%XCOVER(:,:),YFIELD)
+#ifdef MNH_PARALLEL
+  CALL MPPDB_CHECK_SURFEX3D(U%XCOVER,"PGD_COVER:XCOVER",PRECISION,ILUOUT,'FULL',SIZE(U%XCOVER,2))
+#endif
 !
 !-------------------------------------------------------------------------------
 !

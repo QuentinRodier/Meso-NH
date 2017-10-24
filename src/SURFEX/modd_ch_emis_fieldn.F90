@@ -30,6 +30,7 @@
 !!    -------------
 !!      Original    08/03/2001                      
 !!      01/12/03    (D.Gazen) change emissions handling for surf. externalization
+!!      06/06/17    (V.Masson & M. Leriche) add emission time by species
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -64,6 +65,8 @@ TYPE CH_EMIS_FIELD_t
   CHARACTER(LEN=40), DIMENSION(:), POINTER :: CEMIS_NAME
 !                          ! name of the chemical pgd fields (emitted species)
 !
+  INTEGER,           DIMENSION(:), POINTER :: NEMIS_NBT    ! number of emission time by species
+!
   INTEGER,           DIMENSION(:), POINTER :: NEMIS_TIME   ! emission time
 !
   REAL,              DIMENSION(:,:), POINTER:: XEMIS_FIELDS ! emission pgd fields values
@@ -94,6 +97,7 @@ IF (LHOOK) CALL DR_HOOK("MODD_CH_EMIS_FIELD_N:CH_EMIS_FIELD_INIT",0,ZHOOK_HANDLE
   NULLIFY(YCH_EMIS_FIELD%CEMIS_AREA)
   NULLIFY(YCH_EMIS_FIELD%CEMIS_COMMENT)
   NULLIFY(YCH_EMIS_FIELD%CEMIS_NAME)
+  NULLIFY(YCH_EMIS_FIELD%NEMIS_NBT)
   NULLIFY(YCH_EMIS_FIELD%NEMIS_TIME)
   NULLIFY(YCH_EMIS_FIELD%XEMIS_FIELDS)
   NULLIFY(YCH_EMIS_FIELD%TSEMISS)

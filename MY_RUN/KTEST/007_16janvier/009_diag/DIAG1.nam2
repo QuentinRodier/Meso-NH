@@ -11,7 +11,7 @@
   LVAR_MRSV=F,
   LTRAJ=F,
   LTPZH=T,
-  LBLTOP=T,
+  CBLTOP="RICHA",
   LMSLP=T,
   LAGEO=T, 
   LTHW=T, 

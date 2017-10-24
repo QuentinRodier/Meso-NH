@@ -135,7 +135,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: ZMANSELL1, ZMANSELL2 ! Used to initialize
                                                           ! XMANSELL array
 INTEGER             :: IGRID,ILENCH,IRESP
 CHARACTER (LEN=100) :: YCOMMENT
-CHARACTER (LEN=16)  :: YRECFM
+CHARACTER (LEN=LEN_HREC)  :: YRECFM
 CHARACTER (LEN=2)   :: YDIR
 !
 INTEGER             :: JLWC, JTEMP

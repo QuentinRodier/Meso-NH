@@ -9,6 +9,7 @@
 ! $Name$ 
 ! $Revision$ 
 ! $Date$
+!   J.Escobar 30/06/2017 : Add activation of ZLIB compression if MNH_IOCDF4 == 2
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
@@ -34,5 +35,9 @@ LOGICAL, SAVE :: LPACK = .FALSE. ! TRUE if FM compression occurs in 1D or 2D mod
 LOGICAL, SAVE :: LIOCDF4    = .FALSE. ! TRUE will enable full NetCDF4 (HDF5) I/O support
 LOGICAL, SAVE :: LLFIOUT    = .FALSE. ! TRUE will also force LFI output when LIOCDF4 is on (debug only)  
 LOGICAL, SAVE :: LLFIREAD   = .FALSE. ! TRUE will force LFI read (instead of NetCDF) when LIOCDF4 is on (debug only)  
-LOGICAL, SAVE :: LDEFLATEX2 = .FALSE. ! TRUE to enable Zlib deflate compression on X2 fields  
+#if MNH_IOCDF4 == 2
+LOGICAL, SAVE :: LDEFLATEX2 = .TRUE. ! TRUE to enable Zlib deflate compression on X2/X3 fields
+#else
+LOGICAL, SAVE :: LDEFLATEX2 = .FALSE. ! TRUE to enable Zlib deflate compression on X2/X3 fields
+#endif
 END MODULE MODD_IO_ll

@@ -79,7 +79,7 @@ END MODULE MODI_SET_CONC_LIMA
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN
 USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
 USE MODD_NSV,             ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_ACTI, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
 USE MODD_CST,             ONLY : XPI, XRHOLW, XRHOLI
@@ -133,6 +133,9 @@ IF (LWARM) THEN
       WRITE (UNIT=ILUOUT,FMT=*) "!INI_MODEL$n: The droplet concentration has "
       WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
    END IF
+END IF
+!
+IF (LWARM .AND. LRAIN) THEN
 !
 !  drops
 !
@@ -153,8 +156,7 @@ IF (LWARM) THEN
          WRITE (UNIT=ILUOUT,FMT=*) "been roughly initialised"
       END IF
    END IF
-!
-ENDIF
+END IF
 !
 IF (LCOLD) THEN
 !

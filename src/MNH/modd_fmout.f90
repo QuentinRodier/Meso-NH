@@ -38,6 +38,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/07/96                     
+!!                   07/2017  (V. Masson) adds time step for output files writing.
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -47,6 +48,7 @@ USE MODD_PARAMETERS
 !
 IMPLICIT NONE
 !
+REAL                                       ::   XTSTEP_OUTPUT   ! constant timestep during each output
 REAL,SAVE, DIMENSION(JPMODELMAX,JPOUTMAX)  ::   XFMOUT    ! XFMOUT(m,i) array of 
 ! the increments in seconds from the beginning of the segment to the
 ! instant where the i-th fields output on FM-files is realized by model "m"

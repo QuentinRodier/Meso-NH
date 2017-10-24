@@ -85,7 +85,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
 INTEGER           :: JDUMMY         ! loop counter
 !
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER(LEN=20 ):: YSTRING20      ! string
 CHARACTER(LEN=3  ):: YSTRING03      ! string

@@ -308,7 +308,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRS  ,PLBYSVS  ! in x and y-d
 INTEGER                :: ILUOUT                     !  Logical unit number
                                                      ! associated with HLUOUT 
 INTEGER                :: IGRID,ILENCH,IRESP,ININAR      !  File 
-CHARACTER (LEN=16)     :: YRECFM                               ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM                               ! management
 CHARACTER (LEN=100)    :: YCOMMENT                             ! variables 
 CHARACTER(LEN=2)       :: YDIR 
 CHARACTER (LEN=40)     :: YTITLE                     !  Title for date print 

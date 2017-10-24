@@ -218,7 +218,7 @@ INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND
                                                   !  additional scalar variables 
 INTEGER             :: IRR                        !  counter for moist variables
 INTEGER             :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)  :: YRECFM              ! management
+CHARACTER (LEN=LEN_HREC)  :: YRECFM              ! management
 CHARACTER (LEN=100) :: YCOMMENT            ! variables  
 CHARACTER (LEN=2)   :: YDIR
 CHARACTER (LEN=4)   :: YDIRLB
@@ -229,7 +229,7 @@ LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation
                                    ! for moist and scalar variables
 CHARACTER (LEN= LEN(HGETRVM)), DIMENSION (7) :: YGETRXM ! Arrays with  the get indicators 
                                                         !  for the moist variables
-CHARACTER (LEN= 16), DIMENSION (7) :: YRECFMX,YRECFMY ! arrays with the name  of the LB fields
+CHARACTER (LEN=LEN_HREC), DIMENSION (7) :: YRECFMX,YRECFMY ! arrays with the name  of the LB fields
                                                       ! in FM files for the moist variables
 INTEGER :: IMASDEV                                                      
 CHARACTER(LEN=2)  :: INDICE ! to index CCN and IFN fields of LIMA scheme

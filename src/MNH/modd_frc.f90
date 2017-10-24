@@ -49,6 +49,7 @@
 !!      27/01/98 P. Bechtold   use tendency forcing
 !!                             add SST and surface pressure forcing
 !!      01/2004  V. Masson     surface externalization: removes SST forcing
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -79,6 +80,8 @@ REAL, SAVE                              :: XUTRANS, &! horizontal components of
                                            XVTRANS   !        a constant
                                                      !   Galilean TRANSlation
 REAL, SAVE, DIMENSION(:), ALLOCATABLE   :: XPGROUNDFRC! surf. pressure 
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XTENDUFRC   ! large scale U tendency
+REAL, SAVE, DIMENSION(:,:), ALLOCATABLE :: XTENDVFRC   ! large scale V tendency
 !
 !*            control parameters for FORCING
 !             ------------------------------
@@ -86,6 +89,7 @@ REAL, SAVE, DIMENSION(:), ALLOCATABLE   :: XPGROUNDFRC! surf. pressure
 LOGICAL, SAVE     :: LGEOST_UV_FRC      ! enables geostrophic wind term
 LOGICAL, SAVE     :: LGEOST_TH_FRC      ! enables thermal wind advection
 LOGICAL, SAVE     :: LTEND_THRV_FRC     ! enables tendency forcing
+LOGICAL, SAVE     :: LTEND_UV_FRC     ! enables tendency forcing of the wind
 LOGICAL, SAVE     :: LVERT_MOTION_FRC   ! enables prescribed a forced vertical
 					                    ! transport for all prognostic variables
 LOGICAL, SAVE     :: LRELAX_THRV_FRC    ! enables temp. and humidity relaxation

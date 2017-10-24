@@ -39,6 +39,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    26/07/96                      
+!!                   07/2017  (V. Masson) adds time step for output files writing.
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -48,6 +49,6 @@ USE MODD_FMOUT
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_FMOUT/XFMOUT
+NAMELIST/NAM_FMOUT/XFMOUT, XTSTEP_OUTPUT
 !
 END MODULE MODN_FMOUT

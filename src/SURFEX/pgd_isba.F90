@@ -44,6 +44,7 @@
 !!    R. Alkama     05/2012 : npatch must be 12 or 19 if CPHOTO/='NON'
 !!    B. Decharme   11/2013 : groundwater distribution for water table/surface coupling
 !!    P. Samuelsson 02/2012 : MEB
+!!    M. Moge       02/2015 : MPPDB_CHECK
 !!
 !----------------------------------------------------------------------------
 !
@@ -106,6 +107,10 @@ USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+!
+#endif
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
@@ -430,6 +435,11 @@ ALLOCATE(I%XZ0EFFJPDIR(ILU))
                 IG%CGRID,  IG%XGRID_PAR,                     &
                 I%LCOVER, I%XCOVER, I%XZS,                   &
                 IG%XLAT, IG%XLON, IG%XMESH_SIZE, I%XZ0EFFJPDIR    )  
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX2D(IG%XLAT,"PGD_ISBA after PACK_PGD:XLAT",PRECISION,ILUOUT, 'NATURE')
+ CALL MPPDB_CHECK_SURFEX2D(IG%XLON,"PGD_ISBA after PACK_PGD:XLON",PRECISION,ILUOUT, 'NATURE')
+ CALL MPPDB_CHECK_SURFEX2D(IG%XMESH_SIZE,"PGD_ISBA after PACK_PGD:XMESH_SIZE",PRECISION,ILUOUT, 'NATURE')
+#endif
 !
 !-------------------------------------------------------------------------------
 !

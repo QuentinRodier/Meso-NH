@@ -118,6 +118,7 @@ LOGICAL, SAVE :: LACTIT        ! TRUE to enable the usage of dT/dt in CCN activa
 LOGICAL, SAVE :: LBOUND        ! TRUE to enable the continuously replenishing
                                ! aerosol concentrations through the open
                                ! lateral boundaries -> boundaries.f90
+LOGICAL, SAVE :: LDEPOC        ! Deposition of rc at 1st level above ground
 !
 ! 2.2 CCN initialisation
 !
@@ -147,6 +148,10 @@ CHARACTER(LEN=1),DIMENSION(JPLIMACCNMAX),SAVE :: HTYPE_CCN ! 'M' or 'C' CCN type
 REAL,SAVE             :: XFSOLUB_CCN,       & ! Fractionnal solubility of the CCN
                          XACTEMP_CCN,       & ! Expected temperature of CCN activation
                          XAERDIFF, XAERHEIGHT ! For the vertical gradient of aerosol distribution
+!
+! Cloud droplet deposition
+!
+REAL, SAVE :: XVDEPOC
 !
 !-------------------------------------------------------------------------------
 !

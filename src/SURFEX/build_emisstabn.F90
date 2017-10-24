@@ -85,7 +85,7 @@ INTEGER         :: IIND1, IIND2
 INTEGER         :: JSPEC       ! loop index
 INTEGER         :: ITIME       ! loop index
 INTEGER         :: IWS_DEFAULT ! Default Memory window size for emission reading
- CHARACTER (LEN=16):: YRECFM    ! LFI article name
+CHARACTER (LEN=LEN_HREC):: YRECFM    ! LFI article name
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 !

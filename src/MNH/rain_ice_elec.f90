@@ -228,6 +228,7 @@ END MODULE MODI_RAIN_ICE_ELEC
 !!         M. Chong      15/11/13  Bug in the computation of RGWETH (wrong sign)
 !!         J-P Pinty     25/04/14  Many bugs with ZWQ1(:,...) = 0.0
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!         J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_ELEC_SLOW with XMNH_HUGE_12_LOG
 !!
 !-------------------------------------------------------------------------------
 !
@@ -458,7 +459,7 @@ REAL, DIMENSION(SIZE(XRTMIN))     :: ZRTMIN
 INTEGER , DIMENSION(SIZE(GMICRO)) :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                           :: JL       ! and PACK intrinsics
 CHARACTER (LEN=100) :: YCOMMENT   ! Comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM     ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM     ! Name of the desired field in LFIFM file
 !
 LOGICAL, DIMENSION(:,:),ALLOCATABLE :: GELEC ! Logical of work for elec
 REAL, DIMENSION(:),   ALLOCATABLE :: ZRSMIN_ELEC  ! Limit value of ZRXS where charge is available
@@ -2500,6 +2501,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HENU_BU_RRI')
 !
 !*      0. DECLARATIONS
 !          ------------
+USE MODD_CST, ONLY : XMNH_HUGE_12_LOG
 !
 IMPLICIT NONE
 !
@@ -2517,7 +2519,7 @@ IMPLICIT NONE
 !
   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRCT(:)>XRTMIN(2)) .AND. (ZRCS(:)>0.) )
     ZZW(:) = MIN( ZRCS(:),XHON*ZRHODREF(:)*ZRCT(:)       &
-                                 *EXP( XALPHA3*(ZZT(:)-XTT)-XBETA3 ) )
+                                 *EXP( MIN(XMNH_HUGE_12_LOG,XALPHA3*(ZZT(:)-XTT)-XBETA3) ) )
     ZRIS(:) = ZRIS(:) + ZZW(:)
     ZRCS(:) = ZRCS(:) - ZZW(:)
     ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))

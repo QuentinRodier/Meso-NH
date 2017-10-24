@@ -68,7 +68,7 @@ REAL, DIMENSION(:,:), INTENT(INOUT) :: Z_FRAC_ACT
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER :: JSPECIE, JL 
+INTEGER :: JSPECIE, JL, JL2
 REAL :: XB
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZZX,      & ! Work array
@@ -105,11 +105,20 @@ DO JSPECIE = 1, NSPECIE        ! = 4 = {DM1, DM2, BC, O} respectively
 ! For T warmer than -35°C, the integration is approximated with µ_X << 1
 ! Error function : GAMMA_INC(1/2, x**2) = ERF(x) !!! for x>=0 !!!
 !   
-   WHERE (ZZT(:)>(XTT-35.) .AND. ZEMBRYO(:)>1.0E-8)   
-      ZZX(:) = ZZX(:) + ZEMBRYO(:) * XPI * (XMDIAM_IFN(JSPECIE))**2 / 2.0           &
-           * EXP(2*(LOG(XSIGMA_IFN(JSPECIE)))**2)                                   &
-           * (1.0+GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2))     
-   END WHERE
+!   WHERE (ZZT(:)>(XTT-35.) .AND. ZEMBRYO(:)>1.0E-8)   
+!      ZZX(:) = ZZX(:) + ZEMBRYO(:) * XPI * (XMDIAM_IFN(JSPECIE))**2 / 2.0           &
+!           * EXP(2*(LOG(XSIGMA_IFN(JSPECIE)))**2)                                   &
+!           * (1.0+GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2))     
+!   END WHERE
+
+   DO JL = 1, SIZE(ZZT)
+      IF (ZZT(JL)>(XTT-35.) .AND. ZEMBRYO(JL)>1.0E-8) THEN
+         ZZX(JL) = ZZX(JL) + ZEMBRYO(JL) * XPI * (XMDIAM_IFN(JSPECIE))**2 / 2.0        &
+              * EXP(2*(LOG(XSIGMA_IFN(JSPECIE)))**2)                                   &
+              * (1.0+SIGN(1.,SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)*GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2))     
+      END IF
+   ENDDO
+
 !
 ! For other T, integration between 0 and infinity is made with a Gauss-Hermite
 ! quadrature method and integration between 0 and 0.1 uses e(x) ~ 1+x+O(x**2)
@@ -118,17 +127,28 @@ DO JSPECIE = 1, NSPECIE        ! = 4 = {DM1, DM2, BC, O} respectively
    GINTEG(:) = ZZT(:)<=(XTT-35.) .AND. ZSI(:)>1.0 .AND. ZEMBRYO(:)>1.0E-8
 !
    DO JL = 1, NDIAM
-      WHERE (GINTEG(:))
-         ZZX(:) = ZZX(:) - XWEIGHT(JL)*EXP(-ZEMBRYO(:)*XPI*(XMDIAM_IFN(JSPECIE))**2 & 
-              * EXP(2.0*SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE)) * XABSCISS(JL)) )     
-     END WHERE
+      DO JL2 = 1, SIZE(GINTEG)
+         IF (GINTEG(JL2)) THEN
+            ZZX(JL2) = ZZX(JL2) - XWEIGHT(JL)*EXP(-ZEMBRYO(JL2)*XPI*(XMDIAM_IFN(JSPECIE))**2 & 
+                 * EXP(2.0*SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE)) * XABSCISS(JL)) ) 
+         END IF
+      ENDDO
    ENDDO
 !
-   WHERE (GINTEG(:))
-      ZZX(:) = ZZX(:) + 0.5* XPI*ZEMBRYO(:)*(XMDIAM_IFN(JSPECIE))**2                &
-           * (1.0-( 1.0-GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2))  &
-           * EXP( 2.0*(LOG(XSIGMA_IFN(JSPECIE)))**2)  )
-   END WHERE
+!   DO JL2 = 1, SIZE(GINTEG)
+!      IF (GINTEG(JL2)) THEN
+!         ZZX(JL2) = ZZX(JL2) + 0.5* XPI*ZEMBRYO(JL2)*(XMDIAM_IFN(JSPECIE))**2                &
+!              * (1.0-( 1.0-GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2))  &
+!              * EXP( 2.0*(LOG(XSIGMA_IFN(JSPECIE)))**2)  )
+!      END IF
+!   ENDDO
+   DO JL2 = 1, SIZE(GINTEG)
+      IF (GINTEG(JL2)) THEN
+         ZZX(JL2) = 1 + ZZX(JL2)  &
+              - ( 0.5* XPI*ZEMBRYO(JL2)*(XMDIAM_IFN(JSPECIE))**2 * EXP( 2.0*(LOG(XSIGMA_IFN(JSPECIE)))**2)   &
+              * ( 1.0-SIGN(1.,SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)*GAMMA_INC(0.5,(SQRT(2.0)*LOG(XSIGMA_IFN(JSPECIE))-XB)**2)) )
+      END IF
+   ENDDO
 ! 
    Z_FRAC_ACT(:,JSPECIE)=ZZX(:)
 !

@@ -3,7 +3,7 @@
 !      #####################################
 !
 INTERFACE
-      SUBROUTINE LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI,          &
+      SUBROUTINE LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI, PTSTEP,  &
                                            ZLSFACT, ZLVFACT, ZAI, ZCJ,   &
                                            ZRGT, ZCIT,                   &
                                            ZRVS, ZRCS, ZRIS, ZRGS, ZTHS, &
@@ -16,6 +16,7 @@ INTERFACE
 REAL, DIMENSION(:),   INTENT(IN)    :: ZRHODREF  ! RHO Dry REFerence
 REAL, DIMENSION(:),   INTENT(IN)    :: ZZT       ! Temperature
 REAL, DIMENSION(:),   INTENT(IN)    :: ZSSI      ! Supersaturation over ice
+REAL,                 INTENT(IN)    :: PTSTEP    ! Time-step
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLSFACT   ! L_s/(Pi_ref*C_ph)
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLVFACT   ! L_v/(Pi_ref*C_ph)
@@ -57,7 +58,7 @@ END INTERFACE
 END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !
 !     #######################################################################
-      SUBROUTINE LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI,          &
+      SUBROUTINE LIMA_MIXED_SLOW_PROCESSES(ZRHODREF, ZZT, ZSSI, PTSTEP,  &
                                            ZLSFACT, ZLVFACT, ZAI, ZCJ,   &
                                            ZRGT, ZCIT,                   &
                                            ZRVS, ZRCS, ZRIS, ZRGS, ZTHS, &
@@ -128,6 +129,7 @@ IMPLICIT NONE
 REAL, DIMENSION(:),   INTENT(IN)    :: ZRHODREF  ! RHO Dry REFerence
 REAL, DIMENSION(:),   INTENT(IN)    :: ZZT       ! Temperature
 REAL, DIMENSION(:),   INTENT(IN)    :: ZSSI      ! Supersaturation over ice
+REAL,                 INTENT(IN)    :: PTSTEP    ! Time-step
 !
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLSFACT   ! L_s/(Pi_ref*C_ph)
 REAL, DIMENSION(:),   INTENT(IN)    :: ZLVFACT   ! L_v/(Pi_ref*C_ph)
@@ -177,7 +179,7 @@ INTEGER :: JMOD_IFN
 !
 !
    ZZW(:) = 0.0
-   WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>0.0) )
+   WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) )
 !Correction BVIE RHODREF
 !      ZZW(:) = ( ZSSI(:)/(ZRHODREF(:)*ZAI(:)) ) *                               &
       ZZW(:) = ( ZSSI(:)/(ZAI(:)) ) *                               &
@@ -208,7 +210,7 @@ INTEGER :: JMOD_IFN
 !
 !
    ZMASK(:) = 1.0
-   WHERE( (ZRIS(:)>0.0) .AND. (ZZT(:)>XTT) )
+   WHERE( (ZRIS(:)>XRTMIN(4)/PTSTEP) .AND. (ZZT(:)>XTT) )
       ZRCS(:) = ZRCS(:) + ZRIS(:)
       ZTHS(:) = ZTHS(:) - ZRIS(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(-RIMLTC))
       ZRIS(:) = 0.0
@@ -248,7 +250,7 @@ INTEGER :: JMOD_IFN
 !
 !
    ZZW(:) = 0.0
-   WHERE( (ZRCS(:)>0.0) .AND. (ZRIS(:)>0.0) .AND. (ZCIT(:)>XCTMIN(4)) )
+   WHERE( (ZRCS(:)>XRTMIN(2)/PTSTEP) .AND. (ZRIS(:)>XRTMIN(4)/PTSTEP) .AND. (ZCIT(:)>XCTMIN(4)) )
       ZZW(:) = EXP( (XALPW-XALPI) - (XBETAW-XBETAI)/ZZT(:)          &
                                   - (XGAMW-XGAMI)*ALOG(ZZT(:)) ) -1.0 
                                       ! supersaturation of saturated water over ice

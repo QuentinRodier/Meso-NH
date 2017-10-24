@@ -9,5 +9,5 @@ ln -sf ${CHIMIE_FILES}/tuv50/DATAE1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAJ1 .
 ln -sf ${CHIMIE_FILES}/tuv50/DATAS1 .
 ln -fs ../001_prep_ideal_case/KWRAIN.??? .
-rm -f KWRAI.1.SEGCH OUT*
+rm -f KWRAI.1.SEGCH* OUT*
 time ${MPIRUN} MESONH${XYZ}

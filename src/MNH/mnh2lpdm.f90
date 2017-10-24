@@ -23,8 +23,11 @@
 !*	0.1 Modules.
 !
 USE MODD_MNH2LPDM
-USE MODI_IO_LL
+USE MODE_IO_LL
 USE MODD_CONF, ONLY : CPROGRAM
+USE MODE_MODELN_HANDLER
+USE MODN_CONFIO
+USE MODE_POS
 !
 USE MODI_MNH2LPDM_INI
 USE MODI_MNH2LPDM_ECH
@@ -38,12 +41,16 @@ CHARACTER(LEN=28) :: YFNML,YFLOG        ! Nom   NAMELIST et LOG.
 INTEGER           :: IFNML,IFLOG        ! Unite NAMELIST et LOG.
 INTEGER           :: IFMTO,IFGRI,IFDAT  ! Unite METEO et GRILLE.
 INTEGER           :: IREP,IVERB,JFIC
+LOGICAL :: GFOUND         ! Return code when searching namelist
 !
 !
 !
 !
 !*	1.  INITIALISATION.
 !	    ---------------
+!
+CPROGRAM='M2LPDM'
+CALL GOTO_MODEL(1)
 !
 !*	1.1 Variables generales.
 !
@@ -58,7 +65,7 @@ IFDAT = 53
 !
 !*	1.2 Initialisation routines LL.
 !
-CALL INITIO_LL
+CALL INITIO_ll()
 !
 !
 !*	1.3 Ouverture du fichier log.
@@ -75,6 +82,12 @@ print *,'Ouverture fichier Namlist OK'
 READ(UNIT=IFNML,NML=NAM_TURB)
 READ(UNIT=IFNML,NML=NAM_FIC)
 print *,'Lecture de NAM_FIC OK.'
+
+CALL POSNAM(IFNML,'NAM_CONFIO',GFOUND)
+IF (GFOUND) THEN
+  READ(UNIT=IFNML,NML=NAM_CONFIO)
+END IF
+CALL SET_CONFIO_ll(.FALSE., .FALSE., .FALSE.)
 CALL CLOSE_LL(YFNML,IREP,'KEEP')
 !
 !

@@ -107,6 +107,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!     (B.Vie)                2016 LIMA
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
+!!      (M.Leriche)           01/07/2017 Add DIAG chimical surface fluxes
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -141,6 +142,8 @@ USE MODD_SALT,       ONLY : LSALT
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_CSTS_DUST,  ONLY : XMOLARWEIGHT_DUST
 USE MODD_CSTS_SALT,  ONLY : XMOLARWEIGHT_SALT
+USE MODD_CH_FLX_n, ONLY : XCHFLX
+USE MODD_DIAG_FLAG, ONLY : LCHEMDIAG
 !
 USE MODI_NORMAL_INTERPOL
 USE MODI_ROTATE_WIND
@@ -598,6 +601,7 @@ END IF
 IF (LUSECHEM) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND
     PSFSV(:,:,JSV) = ZSFTS(:,:,JSV) * XMD / ( XAVOGADRO * XRHODREF(:,:,IKB)) 
+    IF ((LCHEMDIAG).AND.(CPROGRAM == 'DIAG  ')) XCHFLX(:,:,JSV) = PSFSV(:,:,JSV)
   END DO
 ELSE
   PSFSV(:,:,NSV_CHEMBEG:NSV_CHEMEND) = 0.

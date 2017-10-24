@@ -67,6 +67,7 @@ END MODULE MODI_INI_CST
 !!      C. Mari     31/10/00  add NDAYSEC
 !!      V. Masson   01/03/03  add XCONDI
 !!      J. Escobar  28/03/2014 for pb with emissivity/aerosol reset XMNH_TINY=1.0e-80 in real8 case 
+!!      J.Escobar : 10/2017 : for real*4 , add XMNH_HUGE_12_LOG
 !!
 !-------------------------------------------------------------------------------
 !
@@ -160,6 +161,7 @@ XALPI  = LOG(XESTT) + (XBETAI /XTT) + (XGAMI *LOG(XTT))
 
 XMNH_EPSILON = EPSILON (XMNH_EPSILON )
 XMNH_HUGE    = HUGE    (XMNH_HUGE )
+XMNH_HUGE_12_LOG = LOG ( SQRT(XMNH_HUGE)  )
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
 XMNH_TINY      = 1.0e-80

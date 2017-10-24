@@ -1,3 +1,12 @@
+!      ####################
+       MODULE MODI_INIT_AEROSOL_PROPERTIES
+INTERFACE
+   SUBROUTINE INIT_AEROSOL_PROPERTIES
+   END SUBROUTINE INIT_AEROSOL_PROPERTIES
+END INTERFACE
+END MODULE MODI_INIT_AEROSOL_PROPERTIES
+!      ####################
+!
 !     #############################################################
       SUBROUTINE INIT_AEROSOL_PROPERTIES
 !     #############################################################
@@ -108,6 +117,10 @@ IF ( NMOD_CCN .GE. 1 ) THEN
       RCCN(:)   = (/ 0.0218E-6 , 0.058E-6 , 0.763E-6 /)
       LOGSIGCCN(:) = (/ 1.16 , 0.57 , 0.34 /)
       RHOCCN(:) = (/ 1500. , 1500. , 1500. /)
+   CASE ('MOCAGE') ! ordre : sulfates, sels marins, BC+O
+      RCCN(:)   = (/ 0.01E-6 , 0.05E-6 , 0.008E-6 /)
+      LOGSIGCCN(:) = (/ 0.788 , 0.993 , 0.916 /)
+      RHOCCN(:) = (/ 1000. , 2200. , 1000. /)
    CASE DEFAULT
 ! d'après Jaenicke 1993, aerosols troposphere libre, masse volumique typique
       RCCN(:)   = (/ 0.0035E-6 , 0.125E-6 , 0.26E-6 /)
@@ -235,6 +248,14 @@ END IF ! NMOD_CCN > 0
 !
 IF ( NMOD_IFN .GE. 1 ) THEN
   SELECT CASE (CIFN_SPECIES)
+   CASE ('MOCAGE')
+         NSPECIE = 4
+         IF (.NOT.(ALLOCATED(XMDIAM_IFN))) ALLOCATE(XMDIAM_IFN(NSPECIE))
+         IF (.NOT.(ALLOCATED(XSIGMA_IFN))) ALLOCATE(XSIGMA_IFN(NSPECIE))
+         IF (.NOT.(ALLOCATED(XRHO_IFN)))   ALLOCATE(XRHO_IFN(NSPECIE))
+         XMDIAM_IFN = (/ 0.05E-6 , 3.E-6 , 0.016E-6 , 0.016E-6 /)
+         XSIGMA_IFN = (/ 2.4 , 1.6 , 2.5 , 2.5 /)
+         XRHO_IFN   = (/ 2650. , 2650. , 1000. , 1000. /)
    CASE ('MACC_JPP')
 ! sea-salt, sulfate, hydrophilic (GADS data)
 ! 2 species, dust-metallic and hydrophobic (as BC)
@@ -299,6 +320,15 @@ IF ( NMOD_IFN .GE. 1 ) THEN
       XFRAC(2,2)=0.0
       XFRAC(3,2)=0.5
       XFRAC(4,2)=0.5
+   CASE ('MOCAGE')
+      XFRAC(1,1)=1.
+      XFRAC(2,1)=0.
+      XFRAC(3,1)=0.
+      XFRAC(4,1)=0.
+      XFRAC(1,2)=0.
+      XFRAC(2,2)=0.
+      XFRAC(3,2)=0.7
+      XFRAC(4,2)=0.3
    CASE DEFAULT
       XFRAC(1,:)=0.6
       XFRAC(2,:)=0.009

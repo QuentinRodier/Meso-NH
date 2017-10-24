@@ -24,6 +24,6 @@ NAMELIST/NAM_PARAM_LIMA/LCOLD, LNUCL, LSEDI, LSNOW, LHAIL, LHHONI, LMEYERS,&
                         LCCN_HOM, CCCN_MODES, HINI_CCN, HTYPE_CCN,           &
                         XALPHAC, XNUC, XALPHAR, XNUR,                      &
                         XFSOLUB_CCN, XACTEMP_CCN, XAERDIFF, XAERHEIGHT,    &
-                        LSCAV, LAERO_MASS
+                        LSCAV, LAERO_MASS, LDEPOC, XVDEPOC
 !
 END MODULE MODN_PARAM_LIMA

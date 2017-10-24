@@ -390,7 +390,7 @@ IF (INEGT.GT.0) THEN
       ALLOCATE(ZTAU(INEGT))
       ALLOCATE(ZBFACT(INEGT))
 !
-      WHERE( (ZZT(:)<XTT-35.0) .AND. (ZSI(:)>ZZY(:)) .AND. (ZTHS(:)<-1.0E-6) )
+      WHERE( (ZZT(:)<XTT-35.0) .AND. (ZSI(:)>ZZY(:)) )
             ZLS(:)   = XLSTT+(XCPV-XCI)*ZTCELSIUS(:)          ! Ls
 !
             ZPSI1(:) = ZZY(:) * (XG/(XRD*ZZT(:)))*(ZEPS*ZLS(:)/(XCPD*ZZT(:))-1.)
@@ -430,7 +430,7 @@ IF (INEGT.GT.0) THEN
         PNFS(:,:,:,JMOD_CCN)=UNPACK( ZNFS(:,JMOD_CCN), MASK=GNEGT(:,:,:),FIELD=ZW(:,:,:))
     END DO
       ZZNHS(:)    = ZZNHS(:) + ZZX(:)
-      ZNHS(:,:,:) = ZNHS(:,:,:) + UNPACK( ZZNHS(:), MASK=GNEGT(:,:,:),FIELD=0.0)
+      ZNHS(:,:,:) = UNPACK( ZZNHS(:), MASK=GNEGT(:,:,:),FIELD=0.0)
       PNHS(:,:,:) = ZNHS(:,:,:)
 !
       DEALLOCATE(ZFREECCN)
@@ -468,6 +468,9 @@ IF (INEGT.GT.0) THEN
              CALL BUDGET ( UNPACK(ZNFS(:,JL),MASK=GNEGT(:,:,:),FIELD=PNFS(:,:,:,JL))*PRHODJ(:,:,:),&
                   12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
           END DO
+          CALL BUDGET ( UNPACK(ZZNHS(:),MASK=GNEGT(:,:,:),FIELD=ZNHS(:,:,:))*PRHODJ(:,:,:),&
+                  12+NSV_LIMA_HOM_HAZE,'HONH_BU_RSV') 
+
        END IF
      END IF
    END IF
@@ -534,7 +537,7 @@ IF (INEGT.GT.0) THEN
 !  Compute the drop homogeneous nucleation source: RRHONG
 !
    ZZW(:) = 0.0
-   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRRS(:)>0.) )
+   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) )
       ZZW(:)  = ZRRS(:) ! Instantaneous freezing of the raindrops
       ZRRS(:) = ZRRS(:) - ZZW(:)
       ZRGS(:) = ZRGS(:) + ZZW(:)
@@ -669,11 +672,13 @@ ELSE
        ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
        IF( OHHONI ) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONH_BU_RSV')
        CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONC_BU_RSV')
-       IF (NMOD_CCN.GE.1) THEN
+       IF (NMOD_CCN.GE.1 .AND. OHHONI) THEN
           DO JL=1, NMOD_CCN
-             CALL BUDGET ( UNPACK(ZNFS(:,JL),MASK=GNEGT(:,:,:),FIELD=PNFS(:,:,:,JL))*PRHODJ(:,:,:),&
-                  12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
+             ZW(:,:,:) = PNFS(:,:,:,JL)*PRHODJ(:,:,:)
+             CALL BUDGET (ZW,12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 
           END DO
+          ZW(:,:,:) = ZNHS(:,:,:)*PRHODJ(:,:,:)
+          CALL BUDGET (ZW,12+NSV_LIMA_HOM_HAZE,'HONH_BU_RSV')
        END IF
      END IF
    END IF

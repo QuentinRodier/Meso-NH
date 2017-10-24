@@ -286,6 +286,8 @@ END MODULE MODI_READ_EXSEG_n
 !!                                deposition + Add max values
 !!      Modification   03/2017   (JP Chaboureau) Fix the initialization of
 !!                                               LUSERx-type variables for LIMA
+!!      M.Leriche      06/2017 for spawn and prep_real avoid abort if wet dep for 
+!!                             aerosol and no cloud scheme defined
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -330,7 +332,7 @@ USE MODN_PARAM_C1R3, ONLY : NAM_PARAM_C1R3, CPRISTINE_ICE_C1R3,    &
                             CHEVRIMED_ICE_C1R3
 USE MODN_PARAM_LIMA, ONLY : FINI_CCN=>HINI_CCN,NAM_PARAM_LIMA,NMOD_CCN,LSCAV, &
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA, NMOD_IFN, &
-                            LCOLD, LACTI, LNUCL, XALPHAC, XNUC, LMEYERS
+                            LCOLD, LACTI, LNUCL, XALPHAC, XNUC, LMEYERS, LHAIL
 USE MODN_ELEC
 USE MODN_SERIES
 USE MODN_SERIES_n 
@@ -889,7 +891,7 @@ SELECT CASE ( CCLOUD )
         &"LUSERV, LUSERC, LUSERR, LUSERI, LUSERS, LUSERG ARE SET TO TRUE")' )
 !
         LUSERV=.TRUE. ; LUSERC=.TRUE. ; LUSERR=.TRUE.
-        LUSERI=.TRUE. ; LUSECI=.TRUE.
+        LUSERI=.TRUE. ; LUSECI=.TRUE.        
         LUSERS=.TRUE. ; LUSERG=.TRUE. 
         LUSERH=.FALSE.
       END IF
@@ -977,7 +979,8 @@ SELECT CASE ( CCLOUD )
 !
     IF (LCOLD) THEN
       LUSERV=.TRUE. ; LUSERC=.TRUE. ; LUSERR=.TRUE.
-      LUSERI=.TRUE. ; LUSERS=.TRUE. ; LUSERG=.TRUE. ; LUSERH=.TRUE.
+      LUSERI=.TRUE. ; LUSERS=.TRUE. ; LUSERG=.TRUE.
+      LUSERH=LHAIL
     END IF
 !
     IF (LSUBG_COND .AND. LCOLD)  THEN
@@ -1592,7 +1595,8 @@ IF (LDUST) THEN
   IF (LDEPOS_DST(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF DUST IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 
@@ -1677,7 +1681,8 @@ IF (LSALT) THEN
   IF (LDEPOS_SLT(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF SEA SALT AEROSOLS IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 
@@ -1760,7 +1765,8 @@ IF (LORILAM) THEN
   IF (LDEPOS_AER(KMI)) THEN
 
   IF((CCLOUD /= 'ICE3').AND.(CCLOUD /= 'ICE4').AND.(CCLOUD /= 'KESS')&
-  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2'))  THEN
+  .AND.(CCLOUD /= 'KHKO').AND.(CCLOUD /= 'C2R2').AND.                &
+       (CPROGRAM/='SPAWN').AND.(CPROGRAM/='REAL'))  THEN
     WRITE(UNIT=ILUOUT,FMT=9003) KMI
     WRITE(UNIT=ILUOUT,FMT='("ERROR: WET DEPOSITION OF ORILAM AEROSOLS IS ONLY CODED FOR THE",/,&
          & "MICROPHYSICAL SCHEME as ICE3, ICE4, KESS, KHKO and C2R2")') 

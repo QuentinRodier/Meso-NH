@@ -340,9 +340,16 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 HDF_OPT    = ${OPT_BASE_I4:-$OPT_BASE}
 NETCDF_OPT = ${OPT_BASE_I4:-$OPT_BASE}
 #
+# if MNH_IOCDF4=2  use libz
+ifeq "$(MNH_IOCDF4)" "2"
+LZLIB=yes
+else
+LZLIB=no
+endif
+#
 cdf : $(CDF_INC)
 $(CDF_INC) : 
-	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=no \
+	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-zlib=$(LZLIB) \
 	FC="$(FC)" FCFLAGS="$(HDF_OPT)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install && $(MAKE) -j 1 clean
 	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --enable-f90 --disable-dap \
         FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
@@ -383,7 +390,7 @@ install : $(patsubst %,%-${ARCH_XYZ},$(PROG_LIST)) install_tools
 
 $(PROG_LIST) : OBJ_PROG=$(shell find $(PROG_DIR) -follow -type f -name "spll_*.f*" \
               | xargs grep -l -E -i "^[[:space:]]*program *$@" |  sed -e 's/\.f.*/.o/g' | head -1 \
-	      | xargs basename | xargs -i find $(PROG_DIR) -follow -name {} -print | head -1 )  
+	      | xargs basename | xargs -I{} find $(PROG_DIR) -follow -name {} -print | head -1 )  
 
 $(PROG_LIST) :  $(LIB_MNH)  $(LIB_GRIBEX)
 #	echo OBJ_PROG=$(OBJ_PROG)

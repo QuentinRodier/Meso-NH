@@ -137,7 +137,7 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZXHAT      ! = XXHAT(:)
 REAL, DIMENSION(:),   ALLOCATABLE :: ZYHAT      ! = XYHAT(:)
 !
 INTEGER             :: IGRID,ILENCH         !   File
-CHARACTER (LEN=16)  :: YRECFM               ! management
+CHARACTER (LEN=LEN_HREC)  :: YRECFM               ! management
 CHARACTER (LEN=100) :: YCOMMENT             ! variables
 LOGICAL :: GFOUND     ! return code when searching namelist
 !

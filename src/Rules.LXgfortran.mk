@@ -70,7 +70,7 @@ F77FLAGS      =  $(OPT)
 FX90 = $(F90)
 FX90FLAGS     =  $(OPT) 
 #
-LDFLAGS   =   -Wl,-warn-once
+#LDFLAGS   =   -Wl,-warn-once
 #
 # preprocessing flags 
 #

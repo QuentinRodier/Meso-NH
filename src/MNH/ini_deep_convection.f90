@@ -180,7 +180,7 @@ REAL, DIMENSION(:,:),   INTENT(INOUT) :: PCG_TOTAL_NUMBER ! Total number of CG
 !
 INTEGER                :: ILUOUT
 INTEGER                :: IGRID,ILENCH,IRESP  !   File 
-CHARACTER (LEN=16)     :: YRECFM                    ! management
+CHARACTER (LEN=LEN_HREC)     :: YRECFM                    ! management
 CHARACTER (LEN=100)    :: YCOMMENT                  ! variables  
 INTEGER                :: JSV                       ! number of tracers
 !

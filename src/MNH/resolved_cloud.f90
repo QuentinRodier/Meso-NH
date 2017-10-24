@@ -960,16 +960,16 @@ SELECT CASE ( HCLOUD )
 !
     IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
                               HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
-                              PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
-                              PTHM, PRCM,                                   &
+                              PRHODREF, PEXNREF, PW_ACT, PPABST, PPABST,    &
+                              PTHT, PRCM,                                   &
                               PTHT, PRT, ZSVT,                              &
                               PTHS, PRS, ZSVS,                              &
-                              PINPRC, PINPRR, PINPRR3D, PEVAP3D    )
+                              PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !
 IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
                           HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,     &
                           PRHODREF, PEXNREF, PPABST, PW_ACT,                 &
-                          PTHM, PPABSM,                                      &
+                          PTHT, PPABST,                                      &
                           PTHT, PRT, ZSVT,                                   &
                           PTHS, PRS, ZSVS,                                   &
                           PINPRS, PINPRG, PINPRH)
@@ -977,7 +977,7 @@ IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
 IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
                                  HFMFILE, HLUOUT, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
                                  PRHODREF, PEXNREF, PPABST, PW_ACT,            &
-                                 PTHM, PPABSM,                                 &
+                                 PTHT, PPABST,                                 &
                                  PTHT, PRT, ZSVT,                              &
                                  PTHS, PRS, ZSVS                               )
 !
@@ -986,7 +986,7 @@ IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
 !
 CALL LIMA_ADJUST(KRR, KMI, HFMFILE, HLUOUT, HRAD,                  &
                  HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                 PRHODREF, PRHODJ, PEXNREF, PPABSM, PSIGS, PPABST, &
+                 PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
                  PRT, PRS, ZSVT, ZSVS,                             &
                  PTHS, PSRCS, PCLDFR                               )
 !

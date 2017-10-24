@@ -226,7 +226,7 @@ INTEGER             :: IKB,IKE,IKU
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDZZ,1),SIZE(PDZZ,2),1+JPVEXT:3+JPVEXT) :: ZCOEFF 
                                     ! coefficients for the uncentred gradient 
                                     ! computation near the ground

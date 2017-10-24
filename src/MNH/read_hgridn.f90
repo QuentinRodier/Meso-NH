@@ -105,7 +105,7 @@ CHARACTER(LEN=2) , INTENT(OUT) :: HSTORAGE_TYPE
 !*       0.2   declarations of local variables
 !
 INTEGER             :: ILUOUT
-CHARACTER (LEN=16)  :: YRECFM
+CHARACTER (LEN=LEN_HREC)  :: YRECFM
 INTEGER             :: ILENCH, IGRID, IRESP
 CHARACTER (LEN=100) :: YCOMMENT
 REAL                :: ZLAT0,ZLON0,ZRPK,ZBETA

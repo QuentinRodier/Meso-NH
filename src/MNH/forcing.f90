@@ -19,7 +19,7 @@ INTERFACE
                            PUFRC_PAST, PVFRC_PAST,                         &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
-                           KMI)
+                           KMI,PJ)
 !
 USE MODD_TIME, ONLY: DATE_TIME
 !
@@ -46,6 +46,8 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS ! moist variables at time t+1
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS! scalar variables at time t+1
 !
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PJ
+
 !
 END SUBROUTINE FORCING
 !
@@ -59,7 +61,7 @@ END MODULE MODI_FORCING
                            PUFRC_PAST, PVFRC_PAST,                         &
                            PUT,  PVT,  PWT,  PTHT,  PTKET,  PRT,  PSVT,    &
                            PRUS, PRVS, PRWS, PRTHS, PRTKES, PRRS, PRSVS,   &
-                           KMI)
+                           KMI,PJ)
 !     ######################################################################
 !
 !!***  *FORCING* - routine to compute the forced terms 
@@ -145,6 +147,7 @@ END MODULE MODI_FORCING
 !!                                    forcing
 !!      06/2012  V. Masson            Adds tendency of geostrophic wind itself to wind tendency
 !!      01/2014  J. escobar           correction for // initialisation geostrophic ZUF,ZVF,ZWF 
+!!      09/2017 Q.Rodier add LTEND_UV_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -160,6 +163,7 @@ USE MODD_LUNIT
 USE MODD_PARAMETERS
 USE MODD_TIME
 USE MODD_BUDGET
+USE MODD_CST
 !
 USE MODI_SHUMAN
 USE MODI_UPSTREAM_Z
@@ -196,6 +200,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRRS ! moist variables at time t+1
 REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PRSVS! scalar variables at time t+1
 !
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PJ
 !
 !*       0.2   Declarations of local variables
 !
@@ -207,6 +212,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWF, ZUF, ZVF  ! 3D forcing fields on
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTHF, ZRVF     !  the model grid mesh
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZGXTHF, ZGYTHF !          at
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTENDTHF, ZTENDRVF   !        time t
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZTENDVF, ZTENDUF
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDUF, ZDVF     ! evolution of geostrophic wind
 !                                                     ! during the time step
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZCOEF          ! coefficient to take into
@@ -223,7 +229,9 @@ REAL, DIMENSION(SIZE(PUT,3)) :: ZXWFRC, ZXUFRC, ZXVFRC! 1D forcing fields
 REAL, DIMENSION(SIZE(PUT,3)) :: ZXTHFRC, ZXRVFRC      !       after
 REAL, DIMENSION(SIZE(PUT,3)) :: ZXGXTHFRC, ZXGYTHFRC  !       time
 REAL, DIMENSION(SIZE(PUT,3)) :: ZXTENDTHFRC, ZXTENDRVFRC  !   interpolation 
+REAL, DIMENSION(SIZE(PUT,3)) :: ZXTENDUFRC, ZXTENDVFRC
 REAL                         :: ZXPGROUNDFRC          ! ground fields interpol.
+REAL,DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZOMEGA ! vertical velocity forcing (Pa/s)
 !
 LOGICAL, SAVE :: GSFIRSTCALL = .TRUE. ! control switch for the first call
 !
@@ -350,6 +358,20 @@ IF (GSFIRSTCALL) THEN
       WRITE(UNIT=ILUOUT0,FMT='(I10,99(/8E10.3))') &
            JK, (XTENDRVFRC(JK,JL), JL=1, NFRC)       
     END DO
+!    
+    WRITE(UNIT=ILUOUT0,FMT='(A)') &
+       "XTENDUFRC : wind advection tendency in X"
+    DO JK = 1, IKU
+     WRITE(UNIT=ILUOUT0,FMT='(I10,99(/8E10.3))') &
+         JK, (XTENDUFRC(JK,JL), JL=1, NFRC)
+    END DO
+!
+    WRITE(UNIT=ILUOUT0,FMT='(A)') &
+       "XTENDVFRC : wind advection tendency in Y"
+    DO JK = 1, IKU
+     WRITE(UNIT=ILUOUT0,FMT='(I10,99(/8E10.3))') &
+         JK, (XTENDVFRC(JK,JL), JL=1, NFRC)
+    END DO
 !
     WRITE(UNIT=ILUOUT0,FMT='(A)') &
          "XPGROUNDFRC: SURF PRESSURE FORCING"
@@ -373,6 +395,8 @@ IF( TEMPORAL_LT ( TPDTCUR, TDTFRC(1) ) ) THEN
   ZXTENDRVFRC(:) = XTENDRVFRC(:,1)
   ZXGXTHFRC(:) = XGXTHFRC(:,1)
   ZXGYTHFRC(:) = XGYTHFRC(:,1)
+  ZXTENDUFRC(:) = XTENDUFRC(:,1)
+  ZXTENDVFRC(:) = XTENDVFRC(:,1)
   ZXPGROUNDFRC  = XPGROUNDFRC(1)
 ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(NFRC) ) ) THEN
   ZXUFRC(:)    = XUFRC(:,NFRC)
@@ -384,6 +408,8 @@ ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(NFRC) ) ) THEN
   ZXTENDRVFRC(:) = XTENDRVFRC(:,NFRC)
   ZXGXTHFRC(:) = XGXTHFRC(:,NFRC)
   ZXGYTHFRC(:) = XGYTHFRC(:,NFRC)
+  ZXTENDUFRC(:) = XTENDUFRC(:,NFRC)
+  ZXTENDVFRC(:) = XTENDVFRC(:,NFRC)
   ZXPGROUNDFRC  = XPGROUNDFRC(NFRC)
 ELSE
   JXP = JSX + 1
@@ -415,6 +441,8 @@ ELSE
   ZXRVFRC(:)   = XRVFRC(:,JSX)  +(XRVFRC(:,JXP)-XRVFRC(:,JSX))*ZALPHA
   ZXTENDTHFRC(:) = XTENDTHFRC(:,JSX)+(XTENDTHFRC(:,JXP)-XTENDTHFRC(:,JSX))*ZALPHA
   ZXTENDRVFRC(:) = XTENDRVFRC(:,JSX)+(XTENDRVFRC(:,JXP)-XTENDRVFRC(:,JSX))*ZALPHA
+  ZXTENDUFRC(:) = XTENDUFRC(:,JSX)+(XTENDUFRC(:,JXP)-XTENDUFRC(:,JSX))*ZALPHA
+  ZXTENDVFRC(:) = XTENDVFRC(:,JSX)+(XTENDVFRC(:,JXP)-XTENDVFRC(:,JSX))*ZALPHA
   ZXGXTHFRC(:) = XGXTHFRC(:,JSX)+(XGXTHFRC(:,JXP)-XGXTHFRC(:,JSX))*ZALPHA
   ZXGYTHFRC(:) = XGYTHFRC(:,JSX)+(XGYTHFRC(:,JXP)-XGYTHFRC(:,JSX))*ZALPHA
   ZXPGROUNDFRC  = XPGROUNDFRC(JSX) +(XPGROUNDFRC(JXP)-XPGROUNDFRC(JSX))*ZALPHA
@@ -436,6 +464,8 @@ ALLOCATE(ZTENDTHF(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)))
 ALLOCATE(ZTENDRVF(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)))
 ALLOCATE(ZDUF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
 ALLOCATE(ZDVF(SIZE(PVT,1),SIZE(PVT,2),SIZE(PVT,3)))
+ALLOCATE(ZTENDUF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
+ALLOCATE(ZTENDVF(SIZE(PVT,1),SIZE(PVT,2),SIZE(PVT,3)))
 !
 IF (LFLAT) THEN
 !
@@ -448,6 +478,8 @@ IF (LFLAT) THEN
   ZRVF(:,:,:)   = SPREAD( SPREAD( ZXRVFRC(:),1,IIU ) ,2,IJU )
   ZTENDTHF(:,:,:)  = SPREAD( SPREAD( ZXTENDTHFRC(:),1,IIU ),2,IJU )
   ZTENDRVF(:,:,:)  = SPREAD( SPREAD( ZXTENDRVFRC(:),1,IIU ),2,IJU )
+  ZTENDUF(:,:,:)  = SPREAD( SPREAD( ZXTENDUFRC(:),1,IIU ),2,IJU )
+  ZTENDVF(:,:,:)  = SPREAD( SPREAD( ZXTENDVFRC(:),1,IIU ),2,IJU )
   ZGXTHF(:,:,:) = SPREAD( SPREAD( ZXGXTHFRC(:),1,IIU ),2,IJU )
   ZGYTHF(:,:,:) = SPREAD( SPREAD( ZXGYTHFRC(:),1,IIU ),2,IJU )
 ELSE
@@ -542,6 +574,8 @@ ELSE
             ZGYTHF(JI,JJ,JK) = ZXGYTHFRC(JL+1)*ZDZ + ZXGYTHFRC(JL)*(1-ZDZ)
             ZTENDTHF(JI,JJ,JK)  = ZXTENDTHFRC(JL+1)*ZDZ + ZXTENDTHFRC(JL)*(1-ZDZ)
             ZTENDRVF(JI,JJ,JK)  = ZXTENDRVFRC(JL+1)*ZDZ + ZXTENDRVFRC(JL)*(1-ZDZ)
+            ZTENDUF(JI,JJ,JK)  = ZXTENDUFRC(JL+1)*ZDZ + ZXTENDUFRC(JL)*(1-ZDZ)
+            ZTENDVF(JI,JJ,JK)  = ZXTENDVFRC(JL+1)*ZDZ + ZXTENDVFRC(JL)*(1-ZDZ)
           ELSE IF( ZZF(JI,JJ,JK) > PZHAT(IKU) ) THEN
             ZDZ = (ZZF(JI,JJ,JK)-PZHAT(IKU)) * ZDZHAT_INV_IKU
             ZTHF(JI,JJ,JK)   = ZXTHFRC(IKU)*ZDZ   + ZXTHFRC(IKU-1)*(1-ZDZ)
@@ -550,12 +584,23 @@ ELSE
             ZGYTHF(JI,JJ,JK) = ZXGYTHFRC(IKU)*ZDZ + ZXGYTHFRC(IKU-1)*(1-ZDZ)
             ZTENDTHF(JI,JJ,JK)  = ZXTENDTHFRC(IKU)*ZDZ + ZXTENDTHFRC(IKU-1)*(1-ZDZ)
             ZTENDRVF(JI,JJ,JK)  = ZXTENDRVFRC(IKU)*ZDZ + ZXTENDRVFRC(IKU-1)*(1-ZDZ)
+            ZTENDUF(JI,JJ,JK)  = ZXTENDUFRC(IKU)*ZDZ + ZXTENDUFRC(IKU-1)*(1-ZDZ)
+            ZTENDVF(JI,JJ,JK)  = ZXTENDVFRC(IKU)*ZDZ + ZXTENDVFRC(IKU-1)*(1-ZDZ)                  
           END IF
         END DO
       END DO
     END DO
   END DO
 END IF
+!
+!!============================
+!!
+!! Ligne to add if you want W in Pa/s in namelist instead of m/s (omega = - w/(rho*g))
+!!
+!ZWF(:,:,:) = - ZWF(:,:,:)/(XG*MZM(1,IKU,1,(PRHODJ(:,:,:)/PJ(:,:,:))))
+!
+!!============================
+!
 !
 !
 ! under the ground, forcings do not exist.
@@ -570,6 +615,8 @@ DO JK=1,JPVEXT
   ZGYTHF(:,:,JK) = 0.
   ZTENDTHF(:,:,JK)  = 0.
   ZTENDRVF(:,:,JK)  = 0.
+  ZTENDUF(:,:,JK)  = 0.
+  ZTENDVF(:,:,JK)  = 0.
 END DO
 !
 ! store large scale w in module to be used later
@@ -658,6 +705,13 @@ IF ( LTEND_THRV_FRC ) THEN
   END IF
 END IF
 !
+!*       4.2.1    integration of the tendency forcing for uv
+!
+IF ( LTEND_UV_FRC ) THEN
+ PRUS(:,:,:) = PRUS(:,:,:) +  MXM(PRHODJ) * ZTENDUF(:,:,:)
+ PRVS(:,:,:) = PRVS(:,:,:) +  MYM(PRHODJ) * ZTENDVF(:,:,:)
+END IF
+!
 !*       4.3    integration of the thermal and geostrophic wind
 !
 IF( LCORIO ) THEN
@@ -681,27 +735,29 @@ IF( LCORIO ) THEN
     ! adds tendency of geostrophic wind to force wind in the free troposphere to
     ! follow the geostrophic wind when the latter changes. 
     ! When winds differs from the geotrophic wind, the impact of this tendency is reduced.
-    ALLOCATE(ZCOEF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
-    ZCOEF(:,:,:) = (MXF(PUT       **2)+MYF(PVT       **2))        &
-               /MAX(MXF(PUFRC_PAST**2)+MYF(PVFRC_PAST**2), 1.E-3)
+    IF ( .NOT. LTEND_UV_FRC ) THEN
+      ALLOCATE(ZCOEF(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)))
+      ZCOEF(:,:,:) = (MXF(PUT       **2)+MYF(PVT       **2))        &
+                 /MAX(MXF(PUFRC_PAST**2)+MYF(PVFRC_PAST**2), 1.E-3)
+      !
+      ZCOEF(:,:,:) = MIN(1.,SQRT(ZCOEF))
+      !
+      ZDUT(:,:,:) = ZDUF(:,:,:) * MXM(ZCOEF) 
+      ZDVT(:,:,:) = ZDVF(:,:,:) * MYM(ZCOEF) 
+      !
+      PRUS(:,:,:) = PRUS(:,:,:) + ZDUT(:,:,:) * MXM(PRHODJ) / PTSTEP
+      !
+      PRVS(:,:,:) = PRVS(:,:,:) + ZDVT(:,:,:) * MYM(PRHODJ) / PTSTEP
+      !
+      !
+      ! Takes into acount the Coriolis force due to this evolution
+      PRUS(:,:,:) = PRUS(:,:,:)                                                    &
+                  + MXM( MYF(ZDVT(:,:,:))*PRHODJ(:,:,:)*SPREAD(PCORIOZ(:,:),3,IKU))
+      PRVS(:,:,:) = PRVS(:,:,:)                                                    &
+                  - MYM( MXF(ZDUT(:,:,:))*PRHODJ(:,:,:)*SPREAD(PCORIOZ(:,:),3,IKU))
     !
-    ZCOEF(:,:,:) = MIN(1.,SQRT(ZCOEF))
-    !
-    ZDUT(:,:,:) = ZDUF(:,:,:) * MXM(ZCOEF) 
-    ZDVT(:,:,:) = ZDVF(:,:,:) * MYM(ZCOEF) 
-    !
-    PRUS(:,:,:) = PRUS(:,:,:) + ZDUT(:,:,:) * MXM(PRHODJ) / PTSTEP
-    !
-    PRVS(:,:,:) = PRVS(:,:,:) + ZDVT(:,:,:) * MYM(PRHODJ) / PTSTEP
-    !
-    !
-    ! Takes into acount the Coriolis force due to this evolution
-    PRUS(:,:,:) = PRUS(:,:,:)                                                    &
-                + MXM( MYF(ZDVT(:,:,:))*PRHODJ(:,:,:)*SPREAD(PCORIOZ(:,:),3,IKU))
-    PRVS(:,:,:) = PRVS(:,:,:)                                                    &
-                - MYM( MXF(ZDUT(:,:,:))*PRHODJ(:,:,:)*SPREAD(PCORIOZ(:,:),3,IKU))
-    !
-    DEALLOCATE(ZCOEF)
+      DEALLOCATE(ZCOEF)
+    END IF
   END IF
 !
 END IF
@@ -818,6 +874,8 @@ DEALLOCATE(ZGXTHF)
 DEALLOCATE(ZGYTHF)
 DEALLOCATE(ZTENDTHF)
 DEALLOCATE(ZTENDRVF)
+DEALLOCATE(ZTENDUF)
+DEALLOCATE(ZTENDVF)
 DEALLOCATE(ZDZZ)
 DEALLOCATE(ZRWCF)
 DEALLOCATE(ZDUF)

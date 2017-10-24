@@ -130,7 +130,7 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE  :: ZVEGTYPE_PATCH    ! fraction of each vegt
 INTEGER                             :: JPATCH    ! loop counter on patches
 INTEGER                             :: JLAYER    ! loop counter on layers
 INTEGER                             :: IVERSION  ! surface version
- CHARACTER(LEN=16)                   :: YRECFM    ! record name
+CHARACTER(LEN=LEN_HREC)             :: YRECFM    ! record name
 INTEGER                             :: IRESP     ! error return code
 LOGICAL                             :: GGLACIER
 !

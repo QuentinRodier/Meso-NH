@@ -141,6 +141,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       D.Ricard 2015 : add THETAES + POVOES  (LMOIST_ES=T)
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!       C.Lac  04/2016 : add visibility and droplet deposition
+!! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -252,7 +253,7 @@ INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
 !
 CHARACTER(LEN=28) :: YFMFILE        ! Temporary variable to store FM-file name
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 !
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE  ! type of the new DIAG file ('DI')
@@ -326,6 +327,14 @@ INTEGER           :: I
 !
 ! LIMA LIDAR
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE :: ZTMP1, ZTMP2, ZTMP3, ZTMP4
+!
+! hauteur couche limite
+REAL,DIMENSION(:,:,:),ALLOCATABLE :: ZZZ_GRID1
+REAL,DIMENSION(:,:),ALLOCATABLE :: ZTHVSOL,ZSHMIX
+REAL,DIMENSION(:,:,:),ALLOCATABLE :: ZZONWIND,ZMERWIND,ZFFWIND2,ZRIB
+
+  !
+
 !
 !-------------------------------------------------------------------------------
 !
@@ -2205,7 +2214,7 @@ END IF
 !
 !* Virtual potential temperature
 !
-IF ( LMOIST_V .OR. LMSLP .OR. LBLTOP ) THEN
+IF ( LMOIST_V .OR. LMSLP .OR. CBLTOP/='NONE' ) THEN
   ALLOCATE(ZTHETAV(IIU,IJU,IKU))
 !
   IF(NRR > 0) THEN
@@ -2990,7 +2999,7 @@ END IF
 !
 IF(LRADAR .AND. LUSERR) THEN
 ! CASE  PREP_REAL_CASE after arome
-  IF (CCLOUD=='NONE') THEN
+  IF (CCLOUD=='NONE' .OR. CCLOUD=='KESS') THEN
     DEALLOCATE(XCIT)
     ALLOCATE(XCIT(IIU,IJU,IKU))    
     XCIT(:,:,:)=800.
@@ -3315,15 +3324,84 @@ END IF
 !
 !* Height of boundary layer
 !
-IF (LBLTOP) THEN
-  ZGAMREF=3.5E-3 ! K/m
+IF (CBLTOP == 'THETA') THEN
+  !
+  ! méthode de la parcelle
+  !
+  ALLOCATE(ZSHMIX(IIU,IJU))
+
   ZWORK31(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
   ZWORK31(:,:,IKU)=2.*ZWORK31(:,:,IKU-1)-ZWORK31(:,:,IKU-2)
-  YFMFILE=CINIFILE
-  CINIFILE=HFMFILE
-  CALL FREE_ATM_PROFILE(ZTHETAV,ZWORK31,XZS,XZSMT,ZGAMREF,ZWORK32,ZWORK33)
-  CINIFILE=YFMFILE
-END IF
+  ZWORK21(:,:) = ZTHETAV(:,:,IKB)+0.5
+  ZSHMIX(:,:)  = 0.0
+  DO JJ=1,IJU
+    DO JI=1,IIU 
+      DO JK=IKB,IKE
+        IF ( ZTHETAV(JI,JJ,JK).GT.ZWORK21(JI,JJ) ) THEN
+          ZSHMIX(JI,JJ) =  ZWORK31(JI,JJ,JK-1)  &
+                        +( ZWORK31(JI,JJ,JK) - ZWORK31 (JI,JJ,JK-1) )  &
+                        /( ZTHETAV(JI,JJ,JK) - ZTHETAV(JI,JJ,JK-1) )  &
+                        *( ZWORK21(JI,JJ)    - ZTHETAV(JI,JJ,JK-1) )
+          EXIT
+        END IF
+      END DO
+    END DO
+  END DO
+  ZSHMIX(:,:)=ZSHMIX(:,:)-XZS(:,:)
+  ZSHMIX(:,:)=MAX(ZSHMIX(:,:),50.0)
+  YRECFM='HBLTOP'
+  YCOMMENT='Height of Boundary Layer TOP (M)'
+  ILENCH=LEN(YCOMMENT)
+  IGRID=1
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZSHMIX,IGRID,ILENCH,YCOMMENT,IRESP)  !
+  DEALLOCATE(ZSHMIX)
+
+ELSEIF (CBLTOP == 'RICHA') THEN
+  !
+  ! méthode du "bulk Richardson number"
+  !
+  ALLOCATE(ZRIB(IIU,IJU,IKU))
+  ALLOCATE(ZSHMIX(IIU,IJU))
+
+  ZWORK31(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
+  ZWORK31(:,:,IKU)=2.*ZWORK31(:,:,IKU-1)-ZWORK31(:,:,IKU-2)
+  ZWORK32=MXF(XUT)
+  ZWORK33=MYF(XVT)
+  ZWORK34=ZWORK32**2+ZWORK33**2
+  DO JK=IKB,IKE  
+    ZRIB(:,:,JK)=XG*ZWORK31(:,:,JK)*(ZTHETAV(:,:,JK)-ZTHETAV(:,:,IKB))/(ZTHETAV(:,:,IKB)*ZWORK34(:,:,JK))
+  ENDDO
+  ZSHMIX=0.0
+  DO JJ=1,IJU
+    DO JI=1,IIU 
+      DO JK=IKB,IKE
+        IF ( ZRIB(JI,JJ,JK).GT.0.25 ) THEN
+          ZSHMIX(JI,JJ) = ZWORK31(JI,JJ,JK-1)  &
+                        +( ZWORK31(JI,JJ,JK) - ZWORK31(JI,JJ,JK-1) )  &
+                        *( 0.25 - ZRIB(JI,JJ,JK-1) )  &
+                        /( ZRIB(JI,JJ,JK)    - ZRIB(JI,JJ,JK-1) )
+          EXIT
+        END IF
+      END DO
+    END DO
+  END DO
+  ZSHMIX(:,:)=ZSHMIX(:,:)-XZS(:,:)
+  YRECFM='HBLTOP'
+  YCOMMENT='Height of Boundary Layer TOP (M)'
+  ILENCH=LEN(YCOMMENT)
+  IGRID=1
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZSHMIX,IGRID,ILENCH,YCOMMENT,IRESP)  !
+  DEALLOCATE(ZRIB,ZSHMIX)
+ENDIF
+  ! used before 5-3-1 version
+  !
+  !ZGAMREF=3.5E-3 ! K/m
+  !ZWORK31(:,:,1:IKU-1)=0.5*(XZZ(:,:,1:IKU-1)+XZZ(:,:,2:IKU))
+  !ZWORK31(:,:,IKU)=2.*ZWORK31(:,:,IKU-1)-ZWORK31(:,:,IKU-2)
+  !YFMFILE=CINIFILE
+  !CINIFILE=HFMFILE
+  !CALL FREE_ATM_PROFILE(ZTHETAV,ZWORK31,XZS,XZSMT,ZGAMREF,ZWORK32,ZWORK33)
+  !CINIFILE=YFMFILE
 !
 IF (ALLOCATED(ZTHETAV)) DEALLOCATE(ZTHETAV)
 !

@@ -46,7 +46,7 @@ USE MODD_LUNIT
 !
 USE MODI_INI_CST
 USE MODI_READ_HGRID
-USE MODI_FMREAD_LL
+USE MODE_FMREAD
 !
 USE MODE_GRIDPROJ
 USE MODI_XYTOLATLON
@@ -229,9 +229,11 @@ NSJMAX = NSJE-NSJB+1
 !	    -------------------------------
 !
 !           Domaine horizontal Meso-NH.
+!modif 12.2014 : passage a 1 seul domaine MesoNH
 !           ---------------------------
 WRITE(KFLOG,'(I1,a12)') IGRILLE,'      ngrid '
-WRITE(KFLOG,'(a13)') '2      ngrids'
+!WRITE(KFLOG,'(a13)') '2      ngrids'
+WRITE(KFLOG,'(a13)') '1      ngrids'
 WRITE(KFLOG,'(i4,3x,a6)') NSIMAX,'nx    '
 WRITE(KFLOG,'(i4,3x,a6)') NSJMAX,'ny    '
 WRITE(KFLOG,'(i4,3x,a6)') NKU-2,'nz    '
@@ -396,9 +398,13 @@ WRITE(KFLOG,*)'   =================================================='
 WRITE(KFLOG,*) 'TERRAIN TOPOGRAPHY'
 c=1
 a=0
-300 format(i2,'|',18i4)
-400 format(i2,'|',18(f4.2))
-301 format(3x,18('__',i2))
+!modif 12/2014 : passage a une grille haute resolution MesoNH, on depasse 99
+!300 format(i2,'|',18i4)
+300 format(i3,'|',18i5)
+!400 format(i2,'|',18(f4.2))
+!400 format(i3,'|',18(f5.2))
+!301 format(3x,18('__',i2))
+301 format(3x,18('__',i3))
 ALLOCATE(TAB2D(NSIMAX,NSJMAX))
 ALLOCATE(TAB1D(NSIMAX))
 DO I=1,NSIMAX

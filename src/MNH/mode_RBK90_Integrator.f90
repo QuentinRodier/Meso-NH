@@ -303,7 +303,7 @@ INTEGER, INTENT(IN) :: KMI      ! model number
    REAL :: ros_A(15), ros_C(15), ros_M(6), ros_E(6), &
                     ros_Alpha(6), ros_Gamma(6), ros_ELO
    LOGICAL :: ros_NewF(6)
-   CHARACTER(LEN=LEN_HREC) :: ros_Name
+   CHARACTER(LEN=16) :: ros_Name
 !~~~>  Local variables
    REAL :: Roundoff, FacMin, FacMax, FacRej, FacSafe
    REAL :: Hmin, Hmax, Hstart

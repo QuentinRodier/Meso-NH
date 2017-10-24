@@ -16,6 +16,7 @@
 !!      2016  (Leriche) Add MODD_CH_ICE Suppress MODD_CH_DEP_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
+!!                      07/2017 (M.Leriche) Add DIAG chimical surface fluxes
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -32,6 +33,7 @@ SUBROUTINE GOTO_MODEL_WRAPPER(KFROM, KTO)
 USE MODD_ADV_n
 USE MODD_BIKHARDT_n
 USE MODD_CH_AERO_n
+USE MODD_CH_FLX_n
 USE MODD_CH_JVALUES_n
 USE MODD_CH_MNHC_n
 USE MODD_CH_SOLVER_n
@@ -122,6 +124,7 @@ INTEGER,INTENT(IN) :: KFROM, KTO
 CALL ADV_GOTO_MODEL(KFROM, KTO)
 CALL BIKHARDT_GOTO_MODEL(KFROM, KTO)
 CALL CH_AERO_GOTO_MODEL(KFROM,KTO)
+CALL CH_FLX_GOTO_MODEL(KFROM, KTO)
 CALL CH_JVALUES_GOTO_MODEL(KFROM, KTO)
 CALL CH_MNHC_GOTO_MODEL(KFROM, KTO)
 CALL CH_SOLVER_GOTO_MODEL(KFROM, KTO)

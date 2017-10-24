@@ -35,6 +35,7 @@
 !!
 !!    Original    03/2004
 !!    04/2013, P. Le Moigne : allow limitation of lake depth
+!!    M. Moge     02/2015 : MPPDB_CHECK
 !!
 !----------------------------------------------------------------------------
 !
@@ -72,6 +73,9 @@ USE MODI_TREAT_GLOBAL_LAKE_DEPTH
 !
 USE MODE_POS_SURF
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+#endif
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -201,6 +205,12 @@ ALLOCATE(FG%XMESH_SIZE (FG%NDIM))
                 FG%CGRID,  FG%XGRID_PAR,                     &
                 F%LCOVER, F%XCOVER, F%XZS,                   &
                 FG%XLAT, FG%XLON, FG%XMESH_SIZE                 )  
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX3D(F%XCOVER,"PGD_FLAKE after PACK_PGD:XCOVER",PRECISION,ILUOUT,'WATER',SIZE(F%XCOVER,2))
+ CALL MPPDB_CHECK_SURFEX2D(FG%XLAT,"PGD_FLAKE after PACK_PGD:XLAT",PRECISION,ILUOUT,'WATER')
+ CALL MPPDB_CHECK_SURFEX2D(FG%XLON,"PGD_FLAKE after PACK_PGD:XLON",PRECISION,ILUOUT,'WATER')
+ CALL MPPDB_CHECK_SURFEX2D(FG%XMESH_SIZE,"PGD_FLAKE after PACK_PGD:XMESH_SIZE",PRECISION,ILUOUT,'WATER')
+#endif
 !
 !-------------------------------------------------------------------------------
 !

@@ -164,6 +164,7 @@ DO JL=1,IL
     END IF
     INPTS     = KNPTS
     ISCAN     = ISCAN_ALL
+    ICOUNT    = ISCAN
     IINDEX(:) = IINDEX_ALL(:)
     !
   ELSE
@@ -178,19 +179,19 @@ DO JL=1,IL
       END IF
     END DO
     !
-    !IF (ICOUNT>=1) THEN
-    IF (ICOUNT>=KNPTS) THEN
-      ISCAN = ICOUNT
-      !INPTS = MIN(ICOUNT,KNPTS)
-      INPTS = KNPTS
-    ELSEIF (KNEAR_NBR>=U%NDIM_FULL .AND. ICOUNT>=1) THEN
-      ISCAN = ICOUNT
-      INPTS = ICOUNT      
-    ELSE
-      KCODE(JL) = -4
-      CYCLE
-    END IF
-    !
+  ENDIF
+  !
+  !IF (ICOUNT>=1) THEN
+  IF (ICOUNT>=KNPTS) THEN
+    ISCAN = ICOUNT
+    !INPTS = MIN(ICOUNT,KNPTS)
+    INPTS = KNPTS
+  ELSEIF (KNEAR_NBR>=U%NDIM_FULL .AND. ICOUNT>=1) THEN
+    ISCAN = ICOUNT
+    INPTS = ICOUNT      
+  ELSE
+    KCODE(JL) = -4
+    CYCLE
   END IF
   !
   DO JS=1,ISCAN

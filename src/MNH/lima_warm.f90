@@ -9,7 +9,7 @@ INTERFACE
                             PTHM, PRCM,                                   &
                             PTHT, PRT, PSVT,                              &
                             PTHS, PRS, PSVS,                              &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D      )
+                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -56,6 +56,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations source
 !
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC     ! Cloud instant precip
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR     ! Rain instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP     ! Cloud droplets deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D   ! Rain inst precip 3D
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
@@ -69,7 +70,7 @@ END MODULE MODI_LIMA_WARM
                             PTHM, PRCM,                                   &
                             PTHT, PRT, PSVT,                              &
                             PTHS, PRS, PSVS,                              &
-                            PINPRC, PINPRR, PINPRR3D, PEVAP3D             )
+                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
 !     #####################################################################
 !
 !!
@@ -119,6 +120,7 @@ END MODULE MODI_LIMA_WARM
 !!    -------------
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy *  jan. 2014   add budgets
+!!      J. Escobar : for real*4 , use XMNH_HUGE
 !!
 !-------------------------------------------------------------------------------
 !
@@ -193,6 +195,7 @@ REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PSVS       ! Concentrations source
 !
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRC     ! Cloud instant precip
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINPRR     ! Rain instant precip
+REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP     ! Cloud droplets deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PINPRR3D   ! Rain inst precip 3D
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 !
@@ -226,6 +229,8 @@ REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
                                   :: ZWLBDR,ZWLBDR3,ZWLBDC,ZWLBDC3
 INTEGER :: JL
+!
+LOGICAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2)) :: GDEP
 !
 !-------------------------------------------------------------------------------
 !
@@ -279,7 +284,7 @@ END IF
 !   	        ----------------------------------------
 !
 !
-ZWLBDC3(:,:,:) = 1.E45
+ZWLBDC3(:,:,:) = XMNH_HUGE
 ZWLBDC(:,:,:)  = 1.E15
 !
 WHERE (PRCT(:,:,:)>XRTMIN(2) .AND. PCCT(:,:,:)>XCTMIN(2))
@@ -294,7 +299,11 @@ WHERE (PRRT(:,:,:)>XRTMIN(3) .AND. PCRT(:,:,:)>XCTMIN(3))
    ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
 END WHERE
 ZT(:,:,:)  = PTHT(:,:,:) * (PPABST(:,:,:)/XP00)**(XRD/XCPD)
-ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+IF( OACTIT ) THEN
+   ZTM(:,:,:) = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
+ELSE 
+   ZTM(:,:,:) = ZT(:,:,:)
+END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -309,7 +318,7 @@ CALL LIMA_WARM_SEDIM (OSEDC, KSPLITR, PTSTEP, KMI,  &
                       ZWLBDC,                       &
                       PRCT, PRRT, PCCT, PCRT,       &
                       PRCS, PRRS, PCCS, PCRS,       &
-                      PINPRC, PINPRR,      &
+                      PINPRC, PINPRR,               &
                       PINPRR3D    )
 !
 IF (LBUDGET_RC .AND. OSEDC)                                              &
@@ -322,6 +331,22 @@ IF (LBUDGET_SV) THEN
                     &'SEDI_BU_RSV') ! RCR
 END IF
 !
+! 2.bis Deposition at 1st level above ground
+!
+IF (LDEPOC) THEN
+  PINDEP(:,:)=0.
+  GDEP(:,:) = .FALSE.
+  GDEP(:,:) =    PRCS(:,:,2) >0 .AND. PCCS(:,:,2) >0
+  WHERE (GDEP)
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
+     PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) *  PRHODREF(:,:,2) /XRHOLW
+  END WHERE
+!
+  IF ( LBUDGET_RC ) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7             ,'DEPO_BU_RRC')
+  IF ( LBUDGET_SV ) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'DEPO_BU_RSV') 
+END IF
 ! 
 !-------------------------------------------------------------------------------
 !
@@ -393,7 +418,7 @@ IF (ORAIN) THEN
 !              --------------------
 !
    ZWLBDR(:,:,:) = 1.E10
-   WHERE (PRRS(:,:,:)>0.0.AND.PCRS(:,:,:)>0.0 )
+   WHERE (PRRS(:,:,:)>XRTMIN(3)/PTSTEP.AND.PCRS(:,:,:)>XCTMIN(3)/PTSTEP )
       ZWLBDR3(:,:,:) = XLBR * PCRS(:,:,:) / PRRS(:,:,:)
       ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
    END WHERE

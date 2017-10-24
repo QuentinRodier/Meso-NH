@@ -193,6 +193,7 @@ END MODULE MODI_PRANDTL
 !!                                              change of YCOMMENT
 !!                     2012-02 Y. Seity,  add possibility to run with reversed 
 !!                                               vertical levels
+!!                     2017-09 J.Escobar, use epsilon XMNH_TINY_12 for R*4 
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -277,7 +278,7 @@ INTEGER             :: ILENG        ! Length of the data field in LFIFM file
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 INTEGER::  ISV                      ! number of scalar variables       
 INTEGER::  JSV                      ! loop index for the scalar variables  
 
@@ -366,7 +367,7 @@ END DO
 !
 DO JSV=1,ISV
   ZW2=SIGN(1.,PREDS1(:,:,:,JSV))
-  PREDS1(:,:,:,JSV)= ZW2(:,:,:) * MAX(1.E-30, ZW2(:,:,:)*PREDS1(:,:,:,JSV))
+  PREDS1(:,:,:,JSV)= ZW2(:,:,:) * MAX(XMNH_TINY_12, ZW2(:,:,:)*PREDS1(:,:,:,JSV))
 END DO
 !
 !---------------------------------------------------------------------------

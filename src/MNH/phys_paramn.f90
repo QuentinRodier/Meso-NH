@@ -10,8 +10,8 @@
 INTERFACE
 !
       SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
-                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
-                              PTIME_BU, OMASKkids                                          )           
+                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
+                              PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
 
 !
 INTEGER,           INTENT(IN)     :: KTCOUNT   ! temporal iteration count
@@ -23,10 +23,13 @@ LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the
 REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                ! time for computing time
                                         
-REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PCHEM     ! to store CPU time for chemistry
 REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PTIME_BU  ! time used in budget&LES budgets
      !        statistics
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
 LOGICAL, DIMENSION(:,:), INTENT(IN) :: OMASKkids ! kids domains mask
+LOGICAL, INTENT(OUT) :: OCLOUD_ONLY ! conditionnal radiation computations for
+                                !      the only cloudy columns
+                                !
 END SUBROUTINE PHYS_PARAM_n
 !
 END INTERFACE
@@ -35,8 +38,8 @@ END MODULE MODI_PHYS_PARAM_n
 !
 !     ######################################################################
       SUBROUTINE PHYS_PARAM_n(KTCOUNT,HFMFILE,OCLOSE_OUT,                                  &
-                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,PCHEM, &
-                              PTIME_BU, OMASKkids                                          )           
+                              PRAD,PSHADOWS,PKAFR,PGROUND,PMAFL,PDRAG,PTURB,PTRACER,       &
+                              PTIME_BU, PWETDEPAER, OMASKkids,OCLOUD_ONLY                  )           
 !     ######################################################################
 !
 !!****  *PHYS_PARAM_n * -monitor of the parameterizations used by model _n
@@ -223,6 +226,9 @@ END MODULE MODI_PHYS_PARAM_n
 !!                       2014  (M.Faivre)
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  2016 B.VIE LIMA
+!!      M. Leriche 02/2017 Avoid negative fluxes if sv=0 outside the physics domain
+!!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
+!!                       to be called directly by modeln as the last process 
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -232,7 +238,8 @@ USE MODE_ll
 USE MODE_FM
 USE MODE_FMWRIT
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-! 
+!
+USE MODD_BLANK
 USE MODD_CST
 USE MODD_DYN
 USE MODD_CONF
@@ -289,8 +296,6 @@ USE MODI_SUNPOS_n
 USE MODI_RADIATIONS
 USE MODI_CONVECTION
 USE MODI_TEMPORAL_DIST
-USE MODI_CH_MONITOR_n
-USE MODI_AER_MONITOR_n
 USE MODI_BUDGET
 USE MODI_PASPOL
 USE MODI_CONDSAMP
@@ -342,9 +347,12 @@ LOGICAL,           INTENT(IN)     :: OCLOSE_OUT! conditional closure of the
 REAL*8,DIMENSION(2), INTENT(INOUT)  :: PRAD,PSHADOWS,PKAFR,PGROUND,PTURB,PMAFL,PDRAG,PTRACER ! to store CPU
                                                ! time for computing time
                                                !        statistics
-REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PCHEM     ! to store CPU time for chemistry
 REAL*8,DIMENSION(2),              INTENT(INOUT)  :: PTIME_BU  ! time used in budget&LES budgets
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT)  :: PWETDEPAER
 LOGICAL, DIMENSION(:,:), INTENT(IN) :: OMASKkids ! kids domains mask
+LOGICAL, INTENT(OUT) :: OCLOUD_ONLY ! conditionnal radiation computations for
+                                !      the only cloudy columns
+                                !
 !
 !*      0.2    declarations of local variables
 !
@@ -389,7 +397,6 @@ LOGICAL :: GRAD                 ! conditionnal call for the full radiation
                                 !         computations
 REAL    :: ZRAD_GLOB_ll         ! 'real' global parallel mask of 'GRAD'
 INTEGER :: INFO_ll              ! error report of parallel routines
-LOGICAL :: GCLOUD_ONLY          ! conditionnal radiation computations for
                                 !      the only cloudy columns
 !
 REAL*8,DIMENSION(2)    :: ZTIME1,ZTIME2,ZTIME3,ZTIME4       ! for computing time analysis
@@ -422,7 +429,6 @@ REAL              :: ZINIRADIUSI, ZINIRADIUSJ ! ORILAM initial radius
 REAL, DIMENSION(NMODE_DST)    :: ZINIRADIUS  ! DUST initial radius
 REAL, DIMENSION(NMODE_SLT)    :: ZINIRADIUS_SLT  ! Sea Salt initial radius
 REAL, DIMENSION(SIZE(XRSVS,1), SIZE(XRSVS,2), SIZE(XRSVS,3), SIZE(XRSVS,4))  :: ZRSVS
-REAL, DIMENSION(SIZE(XRSVS,1), SIZE(XRSVS,2), SIZE(XRSVS,3), NSV_AER)  :: ZWETDEPAER
 LOGICAL :: GCLD                     ! conditionnal call for dust wet deposition
 ! * arrays to store the surface fields before radiation and convection scheme
 !  calls
@@ -450,7 +456,7 @@ ZTIME3 = 0.0
 ZTIME4 = 0.0
 PTIME_BU = 0.
 ZTIME_LES_MF = 0.0
-ZWETDEPAER(:,:,:,:) = 0.
+PWETDEPAER(:,:,:,:) = 0.
 !
 !* allocation of variables used in more than one parameterization
 !
@@ -575,7 +581,7 @@ CALL SECOND_MNH2(ZTIME1)
 !
 !
 GRAD = .FALSE.
-GCLOUD_ONLY = .FALSE.
+OCLOUD_ONLY = .FALSE.
 !
 IF (CRAD /='NONE') THEN
 !
@@ -590,7 +596,7 @@ IF (CRAD /='NONE') THEN
     IF( MOD(NINT(ZTEMP_DIST/XTSTEP),NINT(XDTRAD_CLONLY/XTSTEP))==0 ) THEN
       TDTRAD_CLONLY = TDTCUR
       GRAD = .TRUE.
-      GCLOUD_ONLY = .TRUE.
+      OCLOUD_ONLY = .TRUE.
     END IF
   END IF
 !   
@@ -604,14 +610,14 @@ IF (CRAD /='NONE') THEN
   IF( MOD(NINT(ZTEMP_DIST/XTSTEP),NINT(XDTRAD/XTSTEP))==0 ) THEN
     TDTRAD_FULL = TDTCUR
     GRAD = .TRUE.
-    GCLOUD_ONLY = .FALSE.
+    OCLOUD_ONLY = .FALSE.
   END IF
 !
 ! tests to see if any cloud exists
 !   
   IF (CRAD =='ECMW') THEN
     IF (GRAD .AND. NRR.LE.3 ) THEN 
-      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. GCLOUD_ONLY ) THEN
+      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. OCLOUD_ONLY ) THEN
           GRAD = .FALSE.                ! only the cloudy verticals would be 
                                         ! refreshed but there is no clouds 
       END IF
@@ -620,21 +626,21 @@ IF (CRAD /='NONE') THEN
     IF (GRAD .AND. NRR.GE.4 ) THEN 
       IF( CCLOUD(1:3)=='ICE' )THEN
         IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN(4) .AND. GCLOUD_ONLY ) THEN
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN(4) .AND. OCLOUD_ONLY ) THEN
             GRAD = .FALSE.            ! only the cloudy verticals would be 
                                       ! refreshed but there is no cloudwater and ice
         END IF
       END IF
       IF( CCLOUD=='C3R5' )THEN
         IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_C1R3(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_C1R3(4) .AND. GCLOUD_ONLY ) THEN
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_C1R3(4) .AND. OCLOUD_ONLY ) THEN
             GRAD = .FALSE.            ! only the cloudy verticals would be 
                                       ! refreshed but there is no cloudwater and ice
         END IF
       END IF
       IF( CCLOUD=='LIMA' )THEN
         IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_LIMA(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. GCLOUD_ONLY ) THEN
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. OCLOUD_ONLY ) THEN
             GRAD = .FALSE.            ! only the cloudy verticals would be 
                                       ! refreshed but there is no cloudwater and ice
         END IF
@@ -661,7 +667,7 @@ IF( GRAD ) THEN
 !               -------------------------
 !
 ! Ajout PP
-IF (.NOT. GCLOUD_ONLY .AND. KTCOUNT /= 1)  THEN 
+IF (.NOT. OCLOUD_ONLY .AND. KTCOUNT /= 1)  THEN 
  IF (LAERO_FT) THEN 
   CALL AEROZON (XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,   &
          NDLON,NFLEV,CAER,NAER,NSTATM,                             &
@@ -712,7 +718,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !               ----------------------------------------------
 !
     CASE('ECMW')
-      IF (LLES_MEAN) GCLOUD_ONLY=.FALSE.
+      IF (LLES_MEAN) OCLOUD_ONLY=.FALSE.
       XRADEFF(:,:,:)=0.0
       XSWU(:,:,:)=0.0
       XSWD(:,:,:)=0.0
@@ -721,7 +727,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XDTHRADSW(:,:,:)=0.0
       XDTHRADLW(:,:,:)=0.0
       CALL RADIATIONS   ( OCLOSE_OUT, HFMFILE, CLUOUT,                             &
-               LCLEAR_SKY,GCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
+               LCLEAR_SKY,OCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
                COPWLW,COPILW, XFUDG,                                                &
                NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER,NSWB, NSTATM, NRAD_COLNBR,&
                ZCOSZEN, XSEA, XCORSOL,                                              &
@@ -732,7 +738,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
 !
 
       WRITE(UNIT=ILUOUT,FMT='("  RADIATIONS called for KTCOUNT=",I6,       &
-         &  "with the CLOUD_ONLY option set ",L2)')   KTCOUNT,GCLOUD_ONLY
+         &  "with the CLOUD_ONLY option set ",L2)')   KTCOUNT,OCLOUD_ONLY
 !
       WHERE( XDIRFLASWD(:,:,1) + XSCAFLASWD(:,:,1) >0. )
         XALBUV(:,:) = (  XDIR_ALB(:,:,1) * XDIRFLASWD(:,:,1)   &
@@ -962,7 +968,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
     END DO
     IF (LORILAM) THEN
       DO JSV = NSV_AERBEG,NSV_AEREND
-        ZWETDEPAER(:,:,:,JSV-NSV_AERBEG+1) = XDSVCONV(:,:,:,JSV) * XRHODJ(:,:,:)
+        PWETDEPAER(:,:,:,JSV-NSV_AERBEG+1) = XDSVCONV(:,:,:,JSV) * XRHODJ(:,:,:)
         XRSVS(:,:,:,JSV) = ZRSVS(:,:,:,JSV) 
       END DO
     END IF  
@@ -1292,7 +1298,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(IIB-1,:)=ZSFRV(IIB,:)
     ZSFU(IIB-1,:)=ZSFU(IIB,:)
     ZSFV(IIB-1,:)=ZSFV(IIB,:)
-    IF (NSV>0)           ZSFSV(IIB-1,:,:)=ZSFSV(IIB,:,:)
+    IF (NSV>0)  THEN
+      ZSFSV(IIB-1,:,:)=ZSFSV(IIB,:,:)
+      WHERE ((ZSFSV(IIB-1,:,:).LT.0.).AND.(XSVT(IIB-1,:,IKB,:).EQ.0.))
+          ZSFSV(IIB-1,:,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(IIB-1,:)=ZSFCO2(IIB,:)
   END IF
   IF ( CLBCX(2) /= "CYCL" .AND. LEAST_ll()) THEN
@@ -1300,7 +1311,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(IIE+1,:)=ZSFRV(IIE,:)
     ZSFU(IIE+1,:)=ZSFU(IIE,:)
     ZSFV(IIE+1,:)=ZSFV(IIE,:)
-    IF (NSV>0)           ZSFSV(IIE+1,:,:)=ZSFSV(IIE,:,:)
+    IF (NSV>0) THEN
+      ZSFSV(IIE+1,:,:)=ZSFSV(IIE,:,:)
+      WHERE ((ZSFSV(IIE+1,:,:).LT.0.).AND.(XSVT(IIE+1,:,IKB,:).EQ.0.))
+          ZSFSV(IIE+1,:,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(IIE+1,:)=ZSFCO2(IIE,:)
   END IF
   IF ( CLBCY(1) /= "CYCL" .AND. LSOUTH_ll()) THEN
@@ -1308,7 +1324,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(:,IJB-1)=ZSFRV(:,IJB)
     ZSFU(:,IJB-1)=ZSFU(:,IJB)
     ZSFV(:,IJB-1)=ZSFV(:,IJB)
-    IF (NSV>0)           ZSFSV(:,IJB-1,:)=ZSFSV(:,IJB,:)
+    IF (NSV>0) THEN
+      ZSFSV(:,IJB-1,:)=ZSFSV(:,IJB,:)
+      WHERE ((ZSFSV(:,IJB-1,:).LT.0.).AND.(XSVT(:,IJB-1,IKB,:).EQ.0.))
+          ZSFSV(:,IJB-1,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(:,IJB-1)=ZSFCO2(:,IJB)
   END IF
   IF ( CLBCY(2) /= "CYCL" .AND. LNORTH_ll()) THEN
@@ -1316,7 +1337,12 @@ IF ( CTURB == 'TKEL' ) THEN
     ZSFRV(:,IJE+1)=ZSFRV(:,IJE)
     ZSFU(:,IJE+1)=ZSFU(:,IJE)
     ZSFV(:,IJE+1)=ZSFV(:,IJE)
-    IF (NSV>0)           ZSFSV(:,IJE+1,:)=ZSFSV(:,IJE,:)
+    IF (NSV>0) THEN
+      ZSFSV(:,IJE+1,:)=ZSFSV(:,IJE,:)
+      WHERE ((ZSFSV(:,IJE+1,:).LT.0.).AND.(XSVT(:,IJE+1,IKB,:).EQ.0.))
+          ZSFSV(:,IJE+1,:) = 0.
+      END WHERE
+    ENDIF
     ZSFCO2(:,IJE+1)=ZSFCO2(:,IJE)
   END IF
 !
@@ -1442,67 +1468,6 @@ PMAFL = PMAFL + ZTIME4 - ZTIME3 - ZTIME_LES_MF
 !
 PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
-!-------------------------------------------------------------------------------
-!
-!*        8.    CHEMISTRY-AEROSOLS
-!               ------------------
-!
-ZTIME1 = ZTIME2
-XTIME_BU_PROCESS = 0.
-XTIME_LES_BU_PROCESS = 0.
-!
-IF (LUSECHEM) THEN
-  CALL CH_MONITOR_n(ZWETDEPAER,KTCOUNT,XTSTEP, ILUOUT, NVERB)
-END IF
-!
-! For inert aerosol (dust and sea salt) => aer_monitor_n
-IF ((LDUST).OR.(LSALT)) THEN
-!
-! tests to see if any cloud exists
-!   
-    GCLD=.TRUE.
-    IF (GCLD .AND. NRR.LE.3 ) THEN 
-      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. GCLOUD_ONLY ) THEN
-          GCLD = .FALSE.                ! only the cloudy verticals would be 
-                                        ! refreshed but there is no clouds 
-      END IF
-    END IF
-!
-    IF (GCLD .AND. NRR.GE.4 ) THEN 
-      IF( CCLOUD(1:3)=='ICE' )THEN
-        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN(4) .AND. GCLOUD_ONLY ) THEN
-            GCLD = .FALSE.            ! only the cloudy verticals would be 
-                                      ! refreshed but there is no cloudwater and ice
-        END IF
-      END IF
-      IF( CCLOUD=='C3R5' )THEN
-        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_C1R3(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_C1R3(4) .AND. GCLOUD_ONLY ) THEN
-            GCLD = .FALSE.            ! only the cloudy verticals would be 
-                                      ! refreshed but there is no cloudwater and ice
-        END IF
-      END IF
-      IF( CCLOUD=='LIMA' )THEN
-        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_LIMA(2) .AND.             &
-            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. GCLOUD_ONLY ) THEN
-            GCLD = .FALSE.            ! only the cloudy verticals would be 
-                                      ! refreshed but there is no cloudwater and ice
-        END IF
-      END IF
-    END IF
-
-!
-        CALL AER_MONITOR_n(KTCOUNT,XTSTEP, ILUOUT, NVERB, GCLD)
-END IF
-!
-!
-CALL SECOND_MNH2(ZTIME2)
-!
-PCHEM = PCHEM + ZTIME2 - ZTIME1 &
-      - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
-!
-PTIME_BU = PTIME_BU + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
 !
 !
 !-------------------------------------------------------------------------------

@@ -50,7 +50,7 @@ CPPFLAGS   += $(CPPFLAGS_MNH)
 INC        += $(INC_MNH)
 
 ifeq "$(MNH_INT)" "8"
-CPPFLAGS   += -DMNH_INT8
+CPPFLAGS   += -DMNH_INT=8
 endif
 
 #
@@ -65,7 +65,8 @@ OBJS_NOCB +=  spll_dxf.o spll_dxm.o spll_dyf.o spll_dym.o \
         spll_mzm.o spll_mzf4.o spll_mzm4.o  \
         spll_gx_m_m.o spll_gx_m_u.o spll_gy_m_m.o \
         spll_gy_m_v.o spll_gz_m_m.o spll_gz_m_w.o \
-        spll_dzf_mf.o spll_dzm_mf.o spll_mzf_mf.o spll_mzm_mf.o
+        spll_dzf_mf.o spll_dzm_mf.o spll_mzf_mf.o spll_mzm_mf.o \
+        spll_modi_gradient_m_d.o
 
 $(OBJS_NOCB) : OPT = $(OPT_NOCB)
 
@@ -250,7 +251,12 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT)\
+ifneq "$(MNH_REAL)" "R4"
+MNH_REALS=8
+else
+MNH_REALS=4
+endif
+mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT) -DMNH_REALS=$(MNH_REALS) \
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif
@@ -427,7 +433,7 @@ endif
 ##########################################################
 # NETCDF4 INPUT/OUTPUT in MesoNH 
 ifdef MNH_IOCDF4
-CPPFLAGS_MNH += -DMNH_IOCDF4
+CPPFLAGS_MNH += -DMNH_IOCDF4=$(MNH_IOCDF4)
 endif
 #
 # NetCDF  : AUTO install of netcdf-4.X.X on PC linux to avoid problem with compiler
@@ -437,9 +443,13 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 DIR_CDF?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDF}
 CDF_PATH?=${DIR_CDF}-${ARCH}I${MNH_INT}
 CDF_INC?=${CDF_PATH}/include/netcdf.inc
+# if MNH_IOCDF4=2  use libz
+ifeq "$(MNH_IOCDF4)" "2"
+ZLIB=-lz
+endif
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 $(ZLIB)
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #

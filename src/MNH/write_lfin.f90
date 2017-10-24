@@ -279,7 +279,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string 
 !
-CHARACTER(LEN=16) :: YRECFM         ! Name of the article to be written
+CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be written
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER (LEN=2) :: YDIR           ! Type of the data field
 !
@@ -306,7 +306,7 @@ INTEGER :: IMI ! Current model index
 !
 INTEGER           :: ICH_NBR        ! to write number and names of scalar 
 INTEGER,DIMENSION(:),ALLOCATABLE :: ICH_NAMES !(chem+aero+dust) variables
-CHARACTER(LEN=16),DIMENSION(:),ALLOCATABLE :: YDSTNAMES,YCHNAMES, YSLTNAMES
+CHARACTER(LEN=LEN_HREC),DIMENSION(:),ALLOCATABLE :: YDSTNAMES,YCHNAMES, YSLTNAMES
 INTEGER           :: ILREC,ILENG    !in NSV.DIM and NSV.TITRE
 INTEGER           :: INFO_ll
 INTEGER :: IKRAD
@@ -2141,7 +2141,7 @@ IF (CPROGRAM /= 'IDEAL') THEN
   IF (SIZE(XINPRC) /= 0 ) THEN
     ZWORK2D(:,:)  = XINPRC(:,:)
     YRECFM      = 'INPRC'
-    YCOMMENT    = 'X_Y_INstantaneous Cloud Precipitation Rain Rate (MM/H)'
+    YCOMMENT    = 'X_Y_INstantaneous Cloud Precipitation Rate (MM/H)'
     IGRID       = 1
     ILENCH      = LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*3.6E6,IGRID,ILENCH, &
@@ -2149,7 +2149,27 @@ IF (CPROGRAM /= 'IDEAL') THEN
 !
     ZWORK2D(:,:)  = XACPRC(:,:)
     YRECFM      = 'ACPRC'
-    YCOMMENT    = 'X_Y_ACcumulated Cloud Precipitation Rain Rate (MM)'
+    YCOMMENT    = 'X_Y_ACcumulated Cloud Precipitation Rate (MM)'
+    IGRID       = 1
+    ILENCH      = LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*1.0E3,IGRID,ILENCH, &
+                                                 YCOMMENT,IRESP) ! unit conversion
+  ENDIF
+  ENDIF
+!
+  IF (ASSOCIATED(XINDEP)) THEN
+  IF (SIZE(XINDEP) /= 0 ) THEN
+    ZWORK2D(:,:)  = XINDEP(:,:)
+    YRECFM      = 'INDEP'
+    YCOMMENT    = 'X_Y_INstantaneous Cloud Deposition Rate (MM/H)'
+    IGRID       = 1
+    ILENCH      = LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*3.6E6,IGRID,ILENCH, &
+                                               YCOMMENT,IRESP) ! unit conversion
+!
+    ZWORK2D(:,:)  = XACDEP(:,:)
+    YRECFM      = 'ACDEP'
+    YCOMMENT    = 'X_Y_ACcumulated Cloud Deposition Rate (MM)'
     IGRID       = 1
     ILENCH      = LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,ZWORK2D*1.0E3,IGRID,ILENCH, &
@@ -2382,6 +2402,20 @@ IF (LFORCING) THEN
     IGRID=0
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XPGROUNDFRC(JT),IGRID,ILENCH,  &
+                                                            YCOMMENT,IRESP)
+!
+    YRECFM='TENDUFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDUFRC(:,JT),IGRID,ILENCH,  &
+                                                            YCOMMENT,IRESP)
+
+    YRECFM='TENDVFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDVFRC(:,JT),IGRID,ILENCH,  &
                                                             YCOMMENT,IRESP)
 !
   END DO

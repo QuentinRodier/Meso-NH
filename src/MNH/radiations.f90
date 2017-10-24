@@ -208,6 +208,8 @@ END MODULE MODI_RADIATIONS
 !!      C.Lac       11/2015   Correction on aerosols
 !!      B.Vie            /13  LIMA
 !!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
+!!      J.Escobar 29/06/2017  : Check if Pressure Decreasing with height <-> elsif PB & STOP 
+!!      Q.LIBOIS  06/2017     : correction on CLOUD_ONLY
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -248,6 +250,8 @@ USE MODD_PARAM_LIMA
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
+!
+USE MODI_SUM_ll , ONLY : GMINLOC_ll , MIN_ll
 !  
 IMPLICIT NONE
 !
@@ -606,7 +610,7 @@ INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: IGRID        ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH       ! Length of comment string in LFIFM file
 CHARACTER (LEN=100) :: YCOMMENT     ! comment string in LFIFM file
-CHARACTER (LEN=16)  :: YRECFM       ! Name of the desired field in LFIFM file
+CHARACTER (LEN=LEN_HREC)  :: YRECFM       ! Name of the desired field in LFIFM file
 REAL, DIMENSION(SIZE(PDTHRAD,1),SIZE(PDTHRAD,2),SIZE(PDTHRAD,3)) &
      :: ZSTORE_3D, ZSTORE_3D2! 3D work array for storage
 REAL, DIMENSION(SIZE(PDTHRAD,1),SIZE(PDTHRAD,2)) &
@@ -618,6 +622,12 @@ CHARACTER (LEN=2)               :: YDIR        ! Type of the data field
 INTEGER :: ISWB ! number of SW spectral bands (between radiations and surface schemes)
 INTEGER :: JSWB ! loop on SW spectral bands
 INTEGER :: JAE  ! loop on aerosol class
+!
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZDZPABST
+REAL :: ZMINVAL
+INTEGER, DIMENSION(3) :: IMINLOC
+INTEGER :: IINFO_ll
+LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: GCLOUD_SURF
 !
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -637,6 +647,22 @@ IKUP   = IKE-JPVEXT+1
 ! 
 ISWB   = SIZE(PSRFSWD_DIR,3)
 !
+!-------------------------------------------------------------------------------
+!*       1.1   CHECK PRESSURE DECREASING
+!              -------------------------
+ZDZPABST(:,:,1:IKU-1) = PPABST(:,:,1:IKU-1) - PPABST(:,:,2:IKU)
+ZDZPABST(:,:,IKU) = ZDZPABST(:,:,IKU-1)
+!
+ZMINVAL=MIN_ll(ZDZPABST,IINFO_ll)
+!
+IF ( ZMINVAL <= 0.0 ) THEN
+   CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+   IMINLOC=GMINLOC_ll( ZDZPABST )
+   WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
+   WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
+   CALL FLUSH(ILUOUT)
+   STOP ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST < 0.0  '
+ENDIF 
 !-------------------------------------------------------------------------------
 !
 !*       2.    INITIALIZES THE MEAN-LAYER VARIABLES
@@ -2509,8 +2535,17 @@ END DO
 !final  THETA_radiative tendency and surface fluxes 
 !
 IF(OCLOUD_ONLY) THEN
-  !
-  ZWORKL(:,:) = SUM(PCLDFR(:,:,:),DIM=3) > 0.0
+  !! Q.LIBOIS 06/2017
+  !ZWORKL(:,:) = SUM(PCLDFR(:,:,:),DIM=3) > 0.0
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+        GCLOUD_SURF(JI,JJ) = GCLOUD(IIJ,1)
+    END DO
+  END DO
+ 
+  ZWORKL(:,:) = GCLOUD_SURF(:,:) ! nouvelle condition
+  !! Q.LIBOIS 06/2017
   DO JK = IKB,IKE
     WHERE( ZWORKL(:,:) )
       PDTHRAD(:,:,JK) = (ZDTRAD_LW(:,:,JK)+ZDTRAD_SW(:,:,JK))/ZEXNT(:,:,JK)
