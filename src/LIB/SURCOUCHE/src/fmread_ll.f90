@@ -240,6 +240,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X1',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 !
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
 IF (ASSOCIATED(TZFD)) THEN
@@ -275,6 +276,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -365,6 +370,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X2',TRIM(TPFILE%CNAME)//'
 CALL SECOND_MNH2(T11)
 GALLOC = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
@@ -415,6 +421,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X2',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0,0))
+      GALLOC = .TRUE.
     END IF
     CALL SECOND_MNH2(T1)
     TIMEZ%T_READ2D_READ=TIMEZ%T_READ2D_READ + T1 - T0
@@ -558,6 +568,7 @@ CALL SECOND_MNH2(T11)
 GALLOC    = .FALSE.
 GALLOC_ll = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 YDIR = TPFIELD%CDIR
 !
 IHEXTOT = 2*JPHEXT+1
@@ -609,6 +620,10 @@ IF (ASSOCIATED(TZFD)) THEN
         CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X3',&
                        TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0,0,0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -902,6 +917,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X4',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
@@ -951,6 +967,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X4',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0,0,0,0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1040,6 +1060,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X5',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
@@ -1089,6 +1110,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X5',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0,0,0,0,0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1178,6 +1203,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_X6',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+ZFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
@@ -1215,6 +1241,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X6',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(ZFIELDP(0,0,0,0,0,0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1383,6 +1413,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_N1',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+IFIELDP => NULL()
 !
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
 IF (ASSOCIATED(TZFD)) THEN
@@ -1418,6 +1449,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(IFIELDP(0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
@@ -1498,6 +1533,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_FIELD_BYFIELD_N2',TRIM(TPFILE%CNAME)//'
 !
 GALLOC = .FALSE.
 IRESP = 0
+IFIELDP => NULL()
 !
 IHEXTOT = 2*JPHEXT+1
 TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
@@ -1547,6 +1583,10 @@ IF (ASSOCIATED(TZFD)) THEN
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N2',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
       END IF
+    ELSE
+      !Not really necessary but useful to suppress alerts with Valgrind
+      ALLOCATE(IFIELDP(0,0))
+      GALLOC = .TRUE.
     END IF
     !
     CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD%OWNER-1,TZFD%COMM,IERR)
