@@ -271,7 +271,7 @@ IF (ASSOCIATED(TZFD)) THEN
         !This seems to be allowed for netCDF4 but it is not clean
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_X1',&
                        TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
-        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_X1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
@@ -1444,7 +1444,7 @@ IF (ASSOCIATED(TZFD)) THEN
         !This seems to be allowed for netCDF4 but it is not clean
         CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_FIELD_BYFIELD_N1',&
                        TRIM(TPFILE%CNAME)//': reading in a file opened in WRITE mode')
-        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
+        CALL IO_READ_FIELD_NC4(TPFILE,TPFIELD,IFIELDP,IRESP)
       ELSE
          CALL PRINT_MSG(NVERB_FATAL,'IO','IO_READ_FIELD_BYFIELD_N1',&
                         TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
