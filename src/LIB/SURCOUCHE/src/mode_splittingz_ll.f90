@@ -49,6 +49,8 @@ MODULE MODE_SPLITTINGZ_ll
   !
   USE MODE_SPLITTING_ll
   !
+  LOGICAL,SAVE :: LINI_PARAZ = .FALSE. !Useful to know if a call to INI_PARAZ_ll or INI_PARAZ_CHILD_ll has already be done
+  !
 CONTAINS
   !       ################################
   SUBROUTINE INI_PARAZ_ll(KINFO_ll)
@@ -471,6 +473,7 @@ CONTAINS
     !
     DEALLOCATE(TZDZP)
     !
+    LINI_PARAZ = .TRUE.
     !-------------------------------------------------------------------------------
     !
   END SUBROUTINE INI_PARAZ_ll
@@ -860,6 +863,7 @@ CONTAINS
     !
     DEALLOCATE(TZDZP)
     !
+    LINI_PARAZ = .TRUE.
     !-------------------------------------------------------------------------------
     !
     CONTAINS

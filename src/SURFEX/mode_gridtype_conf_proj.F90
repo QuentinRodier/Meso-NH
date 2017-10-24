@@ -42,6 +42,7 @@ USE MODD_SURF_PAR, ONLY : XUNDEF, NUNDEF
 #ifdef MNH_PARALLEL
 USE MODD_VAR_ll, ONLY : NPROC, IP, MPI_PRECISION, NMNH_COMM_WORLD, YSPLITTING
 USE MODD_MPIF
+USE MODE_SPLITTINGZ_ll, ONLY : LINI_PARAZ
 USE MODE_TOOLS_ll, ONLY : GET_OR_ll
 #endif
 !
@@ -114,7 +115,8 @@ END IF
 #ifdef MNH_PARALLEL
 !get the index of the process with IL>0 that own the southmost and the westmost point
 !then broadcast the value of PDX and PDY at these points
-IF ( NPROC > 1 ) THEN
+!Call this only if INI_PARAZ_ll has already been called (to prevent problemns in GET_OR_ll)
+IF ( NPROC > 1 .AND. LINI_PARAZ) THEN
 ! we need to determine wich processes own the southmost and the westmost point
   CALL GET_OR_ll( YSPLITTING, IXOR, IYOR )
   IF ( IL==0 ) THEN ! we don't consider processes with IL==0
