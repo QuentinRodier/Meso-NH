@@ -52,12 +52,10 @@ IMPLICIT NONE
 
 TYPE LBC_t
 !
-!JUAN
-  CHARACTER(LEN=4), DIMENSION(:),POINTER  :: CLBCX =>NULL() ! X-direction LBC type at left(1)
-                                             ! and right(2) boundaries 
-  CHARACTER(LEN=4), DIMENSION(:),POINTER  :: CLBCY =>NULL() ! Y-direction LBC type at left(1)
-                                             ! and right(2) boundaries 
-!JUAN
+  CHARACTER(LEN=4), DIMENSION(2) :: CLBCX = '' ! X-direction LBC type at left(1)
+                                             ! and right(2) boundaries
+  CHARACTER(LEN=4), DIMENSION(2) :: CLBCY = '' ! Y-direction LBC type at left(1)
+                                             ! and right(2) boundaries
   INTEGER, DIMENSION(2)          :: NLBLX ! X-direction characteristic large
                                              ! scale length at left(1) and 
                                              ! right(2) boundaries ( number of
@@ -76,7 +74,6 @@ TYPE LBC_t
 END TYPE LBC_t
 
 TYPE(LBC_t), DIMENSION(JPMODELMAX), TARGET, SAVE :: LBC_MODEL
-LOGICAL    , DIMENSION(JPMODELMAX),         SAVE :: LBC_FIRST_CALL = .TRUE.
 
 CHARACTER(LEN=4), DIMENSION(:), POINTER :: CLBCX=>NULL()
 CHARACTER(LEN=4), DIMENSION(:), POINTER :: CLBCY=>NULL()
@@ -92,13 +89,6 @@ CONTAINS
 SUBROUTINE LBC_GOTO_MODEL(KFROM, KTO)
 INTEGER, INTENT(IN) :: KFROM, KTO
 !
-!JUAN
-IF (LBC_FIRST_CALL(KTO)) THEN
-ALLOCATE (LBC_MODEL(KTO)%CLBCX(2))
-ALLOCATE (LBC_MODEL(KTO)%CLBCY(2))
-LBC_FIRST_CALL(KTO) = .FALSE.
-ENDIF
-!JUAN
 !
 ! Save current state for allocated arrays
 !

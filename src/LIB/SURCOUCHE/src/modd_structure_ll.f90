@@ -49,10 +49,12 @@
 !     Original 04/05/98
 !     Juan     19/08/2005: distinction Halo NORD/SUD & EST/WEST
 !     M.Moge   05/02/2015: extended HALO (halo size + 1)
+!     P. Wautelet 24/10/2017: initialize ZONE_ll type
 !
 !-------------------------------------------------------------------------------
 !
-  USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+  USE MODD_ARGSLIST_ll,   ONLY : LIST_ll
+  USE MODD_PARAMETERS,    ONLY : NNEGUNDEF
   USE MODD_PARAMETERS_ll, ONLY : NMAXRIM
 !
 !-------------------------------------------------------------------------------
@@ -91,11 +93,11 @@ END INTERFACE
 !
   SEQUENCE
 !
-  INTEGER :: NUMBER       ! zone's number
-  INTEGER :: MSSGTAG      ! Message Tag
-  INTEGER :: NXOR, NXEND  ! coordinate of the origine point
-  INTEGER :: NYOR, NYEND  ! coordinate of the last point
-  INTEGER :: NZOR, NZEND  !
+  INTEGER :: NUMBER = NNEGUNDEF ! zone's number
+  INTEGER :: MSSGTAG = NNEGUNDEF      ! Message Tag
+  INTEGER :: NXOR = NNEGUNDEF, NXEND = NNEGUNDEF  ! coordinate of the origin point
+  INTEGER :: NYOR = NNEGUNDEF, NYEND = NNEGUNDEF  ! coordinate of the last point
+  INTEGER :: NZOR = NNEGUNDEF, NZEND = NNEGUNDEF  !
 !!$  INTEGER :: NXOR, NYOR, NZOR    ! coordinate of the origine point
 !!$  INTEGER :: NXEND, NYEND, NZEND ! coordinate of the last point
 
