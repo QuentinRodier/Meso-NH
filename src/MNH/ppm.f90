@@ -570,6 +570,7 @@ CONTAINS
 !!    
 !!    18.3.2006.  T. Maric - original version
 !!    07/2010     J.Escobar : Correction for reproducility
+!!    04/2017     J.Escobar : initialize realistic value in all HALO pts
 !-------------------------------------------------------------------------------
 !
 !
@@ -592,7 +593,9 @@ INTEGER :: IIE,IJE        ! End useful area in x,y directions
 !*       1.0.     COMPUTE THE DOMAIN DIMENSIONS
 !                 -----------------------------
 !
-CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+!!$CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+IIB=2 ; IIE = SIZE(PQ,1) -1
+IJB=2 ; IJE = SIZE(PQ,2) -1
 !
 !-------------------------------------------------------------------------------
 !
@@ -984,6 +987,7 @@ CONTAINS
 !!    
 !!    18.3.2006.  T. Maric - original version, works only for periodic boundary
 !!                           conditions and on one domain
+!!    04/2017     J.Escobar : initialize realistic value in all HALO pts
 !!
 !-------------------------------------------------------------------------------
 !
@@ -1007,7 +1011,9 @@ INTEGER :: IIE,IJE        ! End useful area in x,y directions
 !*       1.0.     COMPUTE THE DOMAIN DIMENSIONS
 !                 -----------------------------
 !
-CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+!!$CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+IIB=2 ; IIE = SIZE(PQ,1) -1
+IJB=2 ; IJE = SIZE(PQ,2) -1
 !
 !-------------------------------------------------------------------------------
 !

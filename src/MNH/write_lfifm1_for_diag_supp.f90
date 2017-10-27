@@ -88,6 +88,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      P.Wautelet : 11/07/2016 : removed MNH_NCWRIT define
 !!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
 !!      F. Brosse 10/2016 add chemical production destruction terms outputs
+!!      M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -126,6 +127,7 @@ USE MODD_CH_AEROSOL,      ONLY: LORILAM
 USE MODD_CH_MNHC_n
 USE MODD_CH_BUDGET_n
 USE MODD_CH_PRODLOSSTOT_n
+USE MODD_CH_FLX_n,          ONLY: XCHFLX
 USE MODD_RAD_TRANSF
 USE MODD_DIAG_IN_RUN, ONLY: XCURRENT_ZON10M,XCURRENT_MER10M,           &
                             XCURRENT_SFCO2, XCURRENT_SW, XCURRENT_LW
@@ -702,6 +704,22 @@ IF (NRAD_3D >= 1) THEN
   END IF
 END IF
 !
+!-------------------------------------------------------------------------------
+! Net surface gaseous fluxes
+!print*,'LCHEMDIAG, NSV_CHEMBEG, NSV_CHEMEND=',&
+!LCHEMDIAG, NSV_CHEMBEG, NSV_CHEMEND
+
+IF (LCHEMDIAG) THEN
+    DO JSV = NSV_CHEMBEG, NSV_CHEMEND
+      YRECFM = 'FLX_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
+      WRITE(YCOMMENT,'(A6,A,A26)')'X_Y_Z_',TRIM(CNAMES(JSV-NSV_CHEMBEG+1)), &
+                                  ' Net chemical flux ppb.m/s'
+      ILENCH = LEN(YCOMMENT)
+      ZWORK21(:,:) = XCHFLX(:,:,JSV-NSV_CHEMBEG+1) * 1E9
+      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY', ZWORK21(:,:),           &
+                  IGRID,ILENCH,YCOMMENT,IRESP)
+    END DO
+END IF
 !-------------------------------------------------------------------------------
 !
 !* Brightness temperatures from the radiatif transfer code (Morcrette, 1991)

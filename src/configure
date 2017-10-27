@@ -9,9 +9,9 @@ if [ "x$XYZ" = "x" ]
 then
 # 
 export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-3}
-export VERSION_BUG=${VERSION_BUG:-0}
+export VERSION_BUG=${VERSION_BUG:-1}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
-export VERSION_DATE=${VERSION_DATE:-"15/12/2016"}
+export VERSION_DATE=${VERSION_DATE:-"25/09/2017"}
 export VERSION_CDF=${VERSION_CDF:-"4.1.3"}
 export VERSION_HDF=${VERSION_HDF:-"1.8.9"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.13.1"}
@@ -44,7 +44,7 @@ case "$TARG" in
                 export   MNHENV=${MNHENV:-"
 ulimit -s unlimited
 module purge
-module load intel/17.0 intelmpi/2017.0.098
+module load intel/17.0 intelmpi/2017.2.174
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}
@@ -87,6 +87,9 @@ export MPI_DSM_CPULIST=0-7:allhosts
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
+                export MNHENV=${MNHENV:-"
+module load ncl_ncarg/6.3.0
+"}
               ;;
 'Linux beaufix'*|'Linux prolix'*)
                 export     ARCH=${ARCH:-LXifort}
@@ -215,7 +218,7 @@ export LIB_GRIBAPI='${GRIB_API_LIB}'
                 then
                 export MNHENV=${MNHENV:-"
 . /opt/modules/default/init/bash
-module rm grib_api
+module rm grib_api eccodes
 module rm craype-broadwell
 export CRAY_CPU_TARGET=ivybridge
 module swap cdt/1.15_8.2.7
@@ -226,10 +229,10 @@ module use /opt/cray/craype/default/modulefiles
                 then
                 export MNHENV=${MNHENV:-"
 . /opt/modules/default/init/bash
-module rm grib_api
+module rm grib_api eccodes
 prgenvswitchto intel
 module rm intel
-module load intel/16.0.3.210
+module load intel/17.0.3.053
 "}
                 fi
                 fi
@@ -257,13 +260,13 @@ module load intel/16.0.3.210
 'Linux nuwa'*)
                 export     ARCH=${ARCH:-LXifort}
                 export  VER_MPI=${VER_MPI:-MPIAUTO}
-                export OPTLEVEL=${OPTLEVEL:-DEBUG}
+                export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-NO}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
 		export NEED_NCARG=${NEED_NCARG:-YES}
                       export MNHENV=${MNHENV:-"
-. /home/tools/intel/composer_xe_2013_sp1.1.106/bin/ifortvars.sh intel64
-export MPI_ROOT=/usr/local/OpenMPI/1.6.3/ifort13.0.0.079/
+. /home/tools/intel/psxe2017/bin/ifortvars.sh intel64
+export MPI_ROOT=/usr/local/openmpi/1.6.5/ifort17.0.1.132
 export PATH=\$MPI_ROOT/bin:\$PATH
 export LD_LIBRARY_PATH=\$MPI_ROOT/lib64:\$LD_LIBRARY_PATH
 export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
@@ -275,6 +278,8 @@ export MANPATH=\$MPI_ROOT/share/man:\$MANPATH
                 export OPTLEVEL=${OPTLEVEL:-O2}
 		export VER_CDF=${VER_CDF:-CDFAUTO}
                 export   MNHENV=${MNHENV:-"
+module purge
+module load intel/17.0.4 intelmpi/2017.3.196 ncl/6.2.0
 export SLURM_CPU_BIND=none
 export I_MPI_PIN_PROCESSOR_LIST=all:map=spread
 "}

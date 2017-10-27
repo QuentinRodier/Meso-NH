@@ -39,6 +39,7 @@
 !!       D.Ricard 2015 : add LMOIST_ES
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
+!! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -92,7 +93,7 @@ REAL, DIMENSION(2) :: XMEAN_PR
 INTEGER     :: NCAPE       ! CAPE, DCAPE, CIN, CAPEMAX, CINMAX
 LOGICAL     :: LBV_FR
 LOGICAL     :: LRADAR
-LOGICAL     :: LBLTOP
+CHARACTER (LEN=5)  :: CBLTOP
 LOGICAL     :: LVISI
 LOGICAL     :: LTRAJ       ! to compute trajectories
 LOGICAL     :: LCHEMDIAG = .FALSE.  ! flag for chemistry

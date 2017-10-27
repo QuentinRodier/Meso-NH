@@ -368,6 +368,9 @@
 !!                  Jun   01, 2002 (O.Nuissier) filtering of tropical cyclone
 !!                  Aou   09, 2005 (D.Barbary) add CDADATMFILE CDADBOGFILE
 !!                   May   2006    Remove KEPS
+!!                  Feb   02, 2012 (C. Mari) interpolation from MOZART
+!!                                  add call to READ_CHEM_NETCDF_CASE &
+!!                                  VER_PREP_NETCDF_CASE 
 !!                  Mar   2012    Add NAM_NCOUT for netcdf output
 !!                  July  2013     (Bosseur & Filippi) Adds Forefire
 !!                  Mars  2014     (J.Escobar) Missing 'full' UPDATE_METRICS for arp2lfi // run
@@ -421,6 +424,8 @@ USE MODI_MNHREAD_ZS_DUMMY_n
 USE MODI_MNHWRITE_ZS_DUMMY_n
 USE MODI_COMPARE_DAD 
 USE MODI_PREP_SURF_MNH
+USE MODI_READ_CHEM_DATA_NETCDF_CASE
+USE MODI_VER_PREP_NETCDF_CASE
 !
 USE MODD_CONF            ! declaration modules
 USE MODD_CONF_n
@@ -746,6 +751,8 @@ IF(LEN_TRIM(YCHEMFILE)>0)THEN
   IF (GFOUND) READ(IPRE_REAL1,NAM_AERO_CONF)
   IF(YCHEMFILETYPE=='GRIBEX') &
   CALL READ_ALL_DATA_GRIB_CASE('CHEM',YPRE_REAL1,YCHEMFILE,TZPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
+  IF (YCHEMFILETYPE=='NETCDF') &
+  CALL READ_CHEM_DATA_NETCDF_CASE(YPRE_REAL1,YCHEMFILE,YPGDFILE,ZHORI,NVERB,LDUMMY_REAL)
 END IF
 !
 CALL CLOSE_ll(YPRE_REAL1, IOSTAT=IRESP)
@@ -882,6 +889,9 @@ END IF
 !
 IF (LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='GRIBEX') THEN
   CALL VER_PREP_GRIBEX_CASE('CHEM',ZDG)
+END IF
+IF (LEN_TRIM(YCHEMFILE)>0 .AND. YCHEMFILETYPE=='NETCDF') THEN
+  CALL VER_PREP_NETCDF_CASE(ZDG)
 END IF
 !
 CALL SECOND_MNH(ZTIME2)

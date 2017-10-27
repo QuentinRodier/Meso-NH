@@ -68,7 +68,7 @@
 !!                                            add the initialization of the dimensions of
 !!                                          MASK array in MASK case with write outside the 
 !!                                          routine.
-!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable 
+!!      J.Escobar       02/10/2015 modif for JPHEXT(JPVEXT) variable
 !!      D.Gazen+ G.Delautier 06/2016 modif for ncl files
 !!      P. Wautelet     09/06/2017: name of the variable added to the name of the written field
 !!                                  and better comment (true comment + units)

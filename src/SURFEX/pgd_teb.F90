@@ -36,6 +36,7 @@
 !!    Original    10/12/97
 !!    A. Lemonsu      05/2009         Key for garden option
 !!    G. Pigeon     /09/12: WALL, ROOF, FLOOR, MASS LAYER default to 5
+!!    M. Moge       02/2015 : MPPDB_CHECK
 !!
 !----------------------------------------------------------------------------
 !
@@ -70,6 +71,10 @@ USE MODI_ABOR1_SFX
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+!
+#endif
 USE MODI_WRITE_COVER_TEX_TEB
 !
 IMPLICIT NONE
@@ -156,7 +161,13 @@ ALLOCATE(TM%TG%XMESH_SIZE (TM%TG%NDIM))
                HPROGRAM, 'TOWN  ',                    &
                 TM%TG%CGRID,  TM%TG%XGRID_PAR,      &
                 TM%TOP%LCOVER, TM%TOP%XCOVER, TM%TOP%XZS,  &
-                TM%TG%XLAT, TM%TG%XLON, TM%TG%XMESH_SIZE      )  
+                TM%TG%XLAT, TM%TG%XLON, TM%TG%XMESH_SIZE      )
+#ifdef MNH_PARALLEL  
+ CALL MPPDB_CHECK_SURFEX3D(TM%TOP%XCOVER,"PGD_TEB after PACK_PGD:XCOVER",PRECISION,ILUOUT, 'TOWN  ',SIZE(TM%TOP%XCOVER,2))
+ CALL MPPDB_CHECK_SURFEX2D(TM%TG%XLAT,"PGD_TEB after PACK_PGD:XLAT",PRECISION,ILUOUT, 'TOWN  ')
+ CALL MPPDB_CHECK_SURFEX2D(TM%TG%XLON,"PGD_TEB after PACK_PGD:XLON",PRECISION,ILUOUT, 'TOWN  ')
+ CALL MPPDB_CHECK_SURFEX2D(TM%TG%XMESH_SIZE,"PGD_TEB after PACK_PGD:XMESH_SIZE",PRECISION,ILUOUT, 'TOWN  ')
+#endif
 !
 !-------------------------------------------------------------------------------
 !

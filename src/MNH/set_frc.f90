@@ -94,6 +94,7 @@ END MODULE MODI_SET_FRC
 !!                             add SST and ground pressure forcing
 !!         06/12    (Masson)   Removes extrapolations below or above forcing
 !!                             data. Reproduces the same data instead.
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!
 !-------------------------------------------------------------------------------
 !
@@ -145,6 +146,7 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZWF,ZUF,ZVF ! Local variables for
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHF,ZRVF   ! the data reading
 REAL, DIMENSION(:), ALLOCATABLE :: ZGXRF,ZGYRF !          "
 REAL, DIMENSION(:), ALLOCATABLE :: ZHEIGHTF    !          "
+REAL, DIMENSION(:), ALLOCATABLE :: ZTUF, ZTVF
 REAL, DIMENSION(:), ALLOCATABLE :: ZPRESSUF    !          "
 REAL, DIMENSION(:), ALLOCATABLE :: ZPRESSMF    !          "
 REAL, DIMENSION(:), ALLOCATABLE :: ZTHVUF      ! Thetav at wind levels
@@ -213,6 +215,8 @@ ALLOCATE(XTENDRVFRC(IKU,NFRC))
 ALLOCATE(XGXTHFRC(IKU,NFRC))
 ALLOCATE(XGYTHFRC(IKU,NFRC))
 ALLOCATE(XPGROUNDFRC(NFRC))
+ALLOCATE(XTENDUFRC(IKU,NFRC))
+ALLOCATE(XTENDVFRC(IKU,NFRC))
 !
 ! Reading the forcing sounding written in prep_idea1.nam
 !
@@ -240,6 +244,8 @@ DO JKT = 1,NFRC
       DEALLOCATE(ZRVF)
       DEALLOCATE(ZGXRF)
       DEALLOCATE(ZGYRF)
+      DEALLOCATE(ZTUF)
+      DEALLOCATE(ZTVF)
     ENDIF
     ALLOCATE(ZHEIGHTF(ILEVELF))
     ALLOCATE(ZUF(ILEVELF))
@@ -249,11 +255,15 @@ DO JKT = 1,NFRC
     ALLOCATE(ZRVF(ILEVELF))
     ALLOCATE(ZGXRF(ILEVELF))
     ALLOCATE(ZGYRF(ILEVELF))
+    ALLOCATE(ZTUF(ILEVELF))
+    ALLOCATE(ZTVF(ILEVELF))
 !
     DO JKU =1,ILEVELF
       READ(ILUPRE,*) ZHEIGHTF(JKU)                         &
                     ,ZUF(JKU),ZVF(JKU),ZTHF(JKU),ZRVF(JKU) &
-                    ,ZWF(JKU),ZGXRF(JKU),ZGYRF(JKU)
+                    ,ZWF(JKU),ZGXRF(JKU),ZGYRF(JKU),ZTUF(JKU)&
+                    ,ZTVF(JKU)
+
     END DO
   END IF
 !
@@ -386,6 +396,8 @@ DO JKT = 1,NFRC
       XRVFRC(JK,JKT) = ZRVF(1)
       XTENDTHFRC(JK,JKT) = ZGXRF(1)
       XTENDRVFRC(JK,JKT) = ZGYRF(1)
+      XTENDUFRC(JK,JKT) = ZTUF(1)
+      XTENDVFRC(JK,JKT) = ZTVF(1)        
     ELSE IF (ZZHATM(JK) > ZHEIGHTF(ILEVELF) ) THEN
 !
 ! copy above the last level
@@ -396,6 +408,8 @@ DO JKT = 1,NFRC
       XRVFRC(JK,JKT) = ZRVF(ILEVELF)
       XTENDTHFRC(JK,JKT)=ZGXRF(ILEVELF)
       XTENDRVFRC(JK,JKT)=ZGYRF(ILEVELF)
+      XTENDUFRC(JK,JKT)=ZTUF(ILEVELF)
+      XTENDVFRC(JK,JKT)=ZTVF(ILEVELF)
     ELSE
 !
 ! interpolation between first and last levels
@@ -412,6 +426,8 @@ DO JKT = 1,NFRC
           XRVFRC(JK,JKT) = ZRVF(JKLEV)*ZDZ2SDH + ZRVF(JKLEV+1)*ZDZ1SDH
           XTENDTHFRC(JK,JKT)=ZGXRF(JKLEV)*ZDZ2SDH + ZGXRF(JKLEV+1)*ZDZ1SDH
           XTENDRVFRC(JK,JKT)=ZGYRF(JKLEV)*ZDZ2SDH + ZGYRF(JKLEV+1)*ZDZ1SDH
+          XTENDUFRC(JK,JKT)=ZTUF(JKLEV)*ZDZ2SDH + ZTUF(JKLEV+1)*ZDZ1SDH    
+          XTENDVFRC(JK,JKT)=ZTVF(JKLEV)*ZDZ2SDH + ZTVF(JKLEV+1)*ZDZ1SDH
         END IF
       END DO
     END IF
@@ -576,6 +592,20 @@ IF (NVERB >= 10) THEN
   DO JK = 1, IKU
     WRITE(UNIT=ILUOUT,FMT='(I10,99(/8E10.3))') &
          JK, (XTENDRVFRC(JK,JL), JL=1, NFRC)
+  END DO
+!
+  WRITE(UNIT=ILUOUT,FMT='(A)') &
+       "XTENDUFRC : wind advection tendency in X"
+  DO JK = 1, IKU
+    WRITE(UNIT=ILUOUT,FMT='(I10,99(/8E10.3))') &
+         JK, (XTENDUFRC(JK,JL), JL=1, NFRC)
+  END DO
+!
+  WRITE(UNIT=ILUOUT,FMT='(A)') &
+       "XTENDVFRC : wind advection tendency in Y"
+  DO JK = 1, IKU
+    WRITE(UNIT=ILUOUT,FMT='(I10,99(/8E10.3))') &
+         JK, (XTENDVFRC(JK,JL), JL=1, NFRC)
   END DO
 !
   WRITE(UNIT=ILUOUT,FMT='(A)') &

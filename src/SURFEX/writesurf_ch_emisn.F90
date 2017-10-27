@@ -21,6 +21,8 @@
 !!    -------------
 !!      Original    03/2004
 !!      M.Moge    01/2016  using WRITE_SURF_FIELD2D/3D for 2D/3D surfex fields writes
+!!      V.Masson & M. Leriche 06/06/17 do not count emitted species in nest case
+!!                                     do not write CEMIS_AREA no longer used
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -90,6 +92,7 @@ YCOMMENT='Total number of 2D emission files.'
                  HPROGRAM,YRECFM,CHE%NEMIS_NBR,IRESP,HCOMMENT=YCOMMENT)
 !
 ! count emitted species 
+IF (CHE%NEMISPEC_NBR==-999) THEN
 IEMISPEC_NBR = 0
 DO JI=1,CHE%NEMIS_NBR
   YNAME = TRIM(ADJUSTL(CHE%CEMIS_NAME(JI)))
@@ -114,6 +117,25 @@ DO JI=1,CHE%NEMIS_NBR
     INBTIMES(JSPEC) = INBTIMES(JSPEC)+1
   END IF
 END DO
+ELSE
+  IEMISPEC_NBR=CHE%NEMISPEC_NBR
+  INBTIMES(:CHE%NEMISPEC_NBR)=CHE%NEMIS_NBT(:)
+  YEMISPEC_NAMES(:IEMISPEC_NBR) = CHE%CEMIS_NAME(:)
+  IFIRST=1
+  ILAST=0
+  INEXT=0
+  JI=0
+  DO JSPEC=1,IEMISPEC_NBR
+    IF (JSPEC>1) IFIRST(JSPEC)=ILAST(JSPEC-1)+1
+    ILAST(JSPEC) = IFIRST(JSPEC) + INBTIMES(JSPEC) - 1
+    JI=JI+1
+    IF (JSPEC>1) INEXT(ILAST(JSPEC-1))=0
+    DO JT=2,INBTIMES(JSPEC)
+      JI=JI+1
+      INEXT(JI-1) = JI
+    END DO
+  END DO
+END IF
 !
 YRECFM='EMISPEC_NBR '
 YCOMMENT='Number of emitted chemical species.'
@@ -176,18 +198,13 @@ END DO
 ! Now fill the ZWORK2D array for writing
 ZWORK2D(:,:) = CHE%XEMIS_FIELDS(:,IINDEX(:))
 ! 
-! Write NAME of species JSPEC with AREA and number of emission times 
+! Write NAME of species JSPEC with number of emission times 
 ! stored in the commentary
 WRITE(YRECFM,'("EMISNAME",I3.3)') JSPEC
-WRITE(YCOMMENT,'(A3,", emission times number:",I5)') CHE%CEMIS_AREA(IINDEX(1)),KSIZE
+YCOMMENT = "Emission species name" 
  CALL WRITE_SURF(DGU, U, &
                  HPROGRAM,YRECFM,YEMISPEC_NAMES(JSPEC),IRESP,HCOMMENT=YCOMMENT)
 ! 
-WRITE(YRECFM,'("EMISAREA",I3.3)') JSPEC
-YCOMMENT = "Emission area" 
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,YRECFM,CHE%CEMIS_AREA(IINDEX(1)),IRESP,HCOMMENT=YCOMMENT)
-!
 WRITE(YRECFM,'("EMISNBT",I3.3)') JSPEC
 YCOMMENT = "Emission times number" 
  CALL WRITE_SURF(DGU, U, &

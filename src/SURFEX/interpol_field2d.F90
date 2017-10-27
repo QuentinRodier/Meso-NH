@@ -33,6 +33,7 @@
 !!    Modification
 !!      A. Alias        07/2013 add MODI_ABOR1_SFX
 !!      A. Alias        05/2016 add MODI_GET_INTERP_HALO
+!!      J. Escobar      09/2017 differencied error message :: SFX / NAM_IO_OFFLINE <=> MNH / NAM_PGDFILE 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -144,7 +145,7 @@ IF (IERR1>0 .OR. IERR2>0) THEN
   WRITE(KLUOUT,*) ' ----------------------'
   WRITE(KLUOUT,*) ' '
   WRITE(KLUOUT,*) ' Number of points interpolated with ',INPTS,' nearest points: ', &
-                    IERR1
+                    IERR1,' Total=',U%NDIM_FULL
   !
   !
   IF (IERR2>0) THEN
@@ -164,9 +165,17 @@ END IF
 !
 IF (IERR2>0) THEN
   !
-  IF (.NOT.PRESENT(PDEF) .OR. (INEAR_NBR<U%NDIM_FULL .AND. IERR2/=IERR0)) &
-          CALL ABOR1_SFX('Some points lack data and are too far away from other points. &
-                Please define a higher halo value in NAM_IO_OFFLINE.')
+  IF (.NOT.PRESENT(PDEF) .OR. (INEAR_NBR<U%NDIM_FULL .AND. IERR2/=IERR0)) THEN
+#ifdef MNH
+     WRITE(KLUOUT,*) 'NDIM_FULL=',U%NDIM_FULL,',NHALO=',IHALO,',Pts to interpol=',IERR0 &
+          ,',Pts interpolated=',IERR1,',Pts missing=',IERR2 
+     CALL ABOR1_SFX('Some points lack data and are too far away from other points. &
+          Please define a higher halo value in &NAM_PGDFILE NHALO=xxx /')
+#else
+     CALL ABOR1_SFX('Some points lack data and are too far away from other points. &
+          Please define a higher halo value in NAM_IO_OFFLINE.')
+#endif
+  ENDIF
   !
 ENDIF
 !

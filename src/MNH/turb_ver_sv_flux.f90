@@ -266,6 +266,9 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !!                                              change of YCOMMENT
 !!                     Feb 2012(Y. Seity) add possibility to run with reversed 
 !!                                              vertical levels
+!!                     Feb 2017(M. Leriche) add initialisation of ZSOURCE
+!!                                   to avoid unknwon values outside physical domain
+!!                                   and avoid negative values in sv tendencies
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -277,7 +280,7 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_CONF
-USE MODD_NSV, ONLY : NSV_LGBEG,NSV_LGEND
+USE MODD_NSV, ONLY : XSVMIN,NSV_LGBEG,NSV_LGEND
 !
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
@@ -391,6 +394,7 @@ DO JSV=1,ISV
   ZA(:,:,:)    = -PTSTEP*XCHF*PPSI_SV(:,:,:,JSV) *   &
                  ZKEFF * MZM(KKA,KKU,KKL,PRHODJ) /   &
                  PDZZ**2
+  ZSOURCE(:,:,:) = 0.
 !
 ! Compute the sources for the JSVth scalar variable
 
@@ -417,6 +421,8 @@ DO JSV=1,ISV
 !  Compute the equivalent tendency for the JSV scalar variable
   PRSVS(:,:,:,JSV)= PRSVS(:,:,:,JSV)+    &
                     PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP
+! PRSVS(:,:,:,JSV)= MAX((PRSVS(:,:,:,JSV)+    &
+!                   PRHODJ(:,:,:)*(ZRES(:,:,:)-PSVM(:,:,:,JSV))/PTSTEP),XSVMIN(JSV))
 !
   IF ( (OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL ) THEN
     ! Diagnostic of the cartesian vertical flux

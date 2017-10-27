@@ -80,6 +80,7 @@ SUBROUTINE CALL_RTTOV11(KDLON, KFLEV, PEMIS, PTSRAD,     &
 !!      JP Chaboureau 27/03/2008 Vectorization
 !!      JP Chaboureau 02/11/2009 move GANGL deallocation outside the sensor loop
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      JP Chaboureau 30/05/2017 exclude the first layer when considering clouds
 !!----------------------------------------------------------------------------
 !!
 !!*       0.    DECLARATIONS
@@ -316,6 +317,9 @@ DO JSAT=1,IJSAT ! loop over sensors
   ELSE
     opts % rt_ir % addclouds          = .FALSE.  ! Include cloud effects
   END IF
+  opts % config % verbose            = .FALSE.  ! Enable printing of warnings
+  opts % config % do_checkinput      = .FALSE.
+
 
 ! Read and initialise coefficients
 ! -----------------------------------------------------------------------------
@@ -455,7 +459,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       IF( coef_rttov%coef% id_sensor /= sensor_id_mw) THEN
         profiles(1)%ish = 2 ! Aggregates
         profiles(1)%idg = 4 ! McFarquar et al (2003)
-        DO JK=IKB,IKE-1 ! nlayers
+        DO JK=IKB+1,IKE-1 ! nlayers
           JKRAD = nlev-JK+1 !INVERSION OF VERTICAL LEVELS!
           profiles(1) %cfrac(JKRAD) = PCLDFR(JI,JJ,JK)
           profiles(1) %cloud(1,JKRAD) = PRT(JI,JJ,JK,2)*XRHODREF(JI,JJ,JK)*1.0E03
@@ -572,7 +576,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
-    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
+!    PRINT *,'YRECFM='//TRIM(TZFIELD%CMNHNAME)
     CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZBT(:,:,JCH))
   END DO
   DEALLOCATE(chanprof,frequencies,emissivity,calcemis,profiles,cld_profiles)

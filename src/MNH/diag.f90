@@ -79,7 +79,7 @@
 !!  09/2016      (JP Pinty) Add LIMA
 !!  10/2016      (C.LAC) add LVISI
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
-!!
+!! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -194,10 +194,13 @@ CHARACTER (LEN=9) :: YNAM ! name of the namelist file
 INTEGER        :: JF =0   !  loop index
 LOGICAL :: GFOUND         ! Return code when searching namelist
 LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
+LOGICAL:: GCLOUD_ONLY          ! conditionnal radiation computations for
+                                !      the only cloudy columns
 !
 INTEGER :: IIU, IJU, IKU
 INTEGER :: IINFO_ll               ! return code for _ll routines 
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
+REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
 TYPE(TFILEDATA),POINTER :: TZDIACFILE
 !
@@ -209,7 +212,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LVORT, LDIV, LMEAN_POVO, XMEAN_POVO, &
                    LGEO, LAGEO, LWIND_ZM, LMSLP, LTHW, &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
-                   NCAPE, LBV_FR, LRADAR, LBLTOP, LTRAJ, &
+                   NCAPE, LBV_FR, LRADAR, CBLTOP, LTRAJ, &
                    LDIAG,XDIAG,LCHEMDIAG,LCHAQDIAG,XCHEMLAT,XCHEMLON,&
                    CSPEC_BU_DIAG,CSPEC_DIAG,LAIRCRAFT_BALLOON,NTIME_AIRCRAFT_BALLOON,&
                    XSTEP_AIRCRAFT_BALLOON,&
@@ -285,7 +288,7 @@ XMEAN_PR(1:2)=1.
 NCAPE=-1
 LBV_FR=.FALSE.
 LRADAR=.FALSE.
-LBLTOP=.FALSE.
+CBLTOP='NONE'
 LVISI=.FALSE.
 LVAR_FRC=.FALSE.
 LCHEMDIAG=.FALSE.
@@ -467,6 +470,7 @@ IKU=NKMAX+2*JPVEXT
 !* allocation of variables used 
 !
 ALLOCATE(GMASKkids  (IIU,IJU))
+ALLOCATE(ZWETDEPAER (IIU,IJU,IKU,NSV_AER))
 GMASKkids(:,:)=.FALSE.
 ! 
 CALL INI_DIAG_IN_RUN(IIU,IJU,IKU,LFLYER,LSTATION,LPROFILER)
@@ -674,8 +678,12 @@ XTIME_LES_BU_PROCESS=0.
 XTIME_BU_PROCESS=0.
 CALL PHYS_PARAM_n(1,TINIFILE,GCLOSE_OUT,                      &
                   ZRAD,ZSHADOWS,ZDCONV,ZGROUND,ZMAFL,ZDRAG, &
-                  ZTURB,ZTRACER, ZCHEM,ZTIME_BU,GMASKkids)
+                  ZTURB,ZTRACER, ZTIME_BU,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)
 WRITE(ILUOUT0,*) 'DIAG AFTER PHYS_PARAM1'
+IF (LCHEMDIAG) THEN
+  CALL CH_MONITOR_n(ZWETDEPAER,1,XTSTEP, ILUOUT0, NVERB)
+END IF
+
 !
 !* restores the initial flags
 !
@@ -732,6 +740,7 @@ ZTIME1=ZTIME2
 !*       9.0    Closes the FM files
 !
 DEALLOCATE(GMASKkids)
+DEALLOCATE(ZWETDEPAER)
 IF (GCLOSE_OUT) THEN
   GCLOSE_OUT=.FALSE.
   CALL IO_FILE_CLOSE_ll(TINIFILE)

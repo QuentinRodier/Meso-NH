@@ -246,6 +246,9 @@ END MODULE MODI_MODEL_n
 !!                                  _ Add droplet deposition 
 !!                   10/2016 (M.Mazoyer) New KHKO output fields
 !!      P.Wautelet : 11/07/2016 : removed MNH_NCWRIT define
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!                   10/2017 (C.Lac) Necessity to have chemistry processes as
+!!                            the las process modifying XRSVS
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -315,10 +318,15 @@ USE MODD_SERIES_n, ONLY: NFREQSERIES
 USE MODD_CH_AERO_n,    ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,    ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                              LCH_INIT_FIELD
+USE MODD_DUST,    ONLY: LDUST
+USE MODD_SALT,    ONLY: LSALT
 USE MODD_CST, ONLY: XMD
 USE MODD_NUDGING_n
 USE MODD_PARAM_MFSHALL_n
 USE MODD_ELEC_DESCR
+USE MODD_RAIN_ICE_DESCR,  ONLY : XRTMIN
+USE MODD_ICE_C1R3_DESCR,  ONLY : XRTMIN_C1R3=>XRTMIN
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN_LIMA=>XRTMIN
 !
 USE MODD_CLOUD_MF_n      
 USE MODI_INITIAL_GUESS
@@ -375,7 +383,11 @@ USE MODI_END_DIAG_IN_RUN
 USE MODI_TURB_CLOUD_INDEX
 USE MODI_INI_LG
 USE MODI_INI_MEAN_FIELD
+USE MODI_CH_MONITOR_n
+USE MODI_AER_MONITOR_n
 !
+USE MODE_GRIDCART         
+USE MODE_GRIDPROJ
 USE MODE_MODELN_HANDLER
 !
 USE MODD_2D_FRC
@@ -513,6 +525,7 @@ INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 !
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZJ
 !
 ! for various testing
 INTEGER :: IK
@@ -520,6 +533,12 @@ REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZTMP
 !
 TYPE(LIST_ll), POINTER :: TZFIELDC_ll   ! list of fields to exchange
 TYPE(HALO2LIST_ll), POINTER :: TZHALO2C_ll   ! list of fields to exchange
+LOGICAL :: GCLD                     ! conditionnal call for dust wet deposition
+LOGICAL :: GCLOUD_ONLY              ! conditionnal radiation computations for
+                                !      the only cloudy columns
+REAL, DIMENSION(SIZE(XRSVS,1), SIZE(XRSVS,2), SIZE(XRSVS,3), NSV_AER)  :: ZWETDEPAER
+
+
 !
 TYPE(TFILEDATA),POINTER :: TZBAKFILE, TZOUTFILE
 ! TYPE(TFILEDATA),SAVE    :: TZDIACFILE
@@ -1095,12 +1114,19 @@ XT_2WAY = XT_2WAY + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
+IF (LCARTESIAN) THEN
+  CALL SM_GRIDCART(CLUOUT,XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XDXHAT,XDYHAT,XZZ,ZJ)
+  XMAP=1.
+ELSE
+  CALL SM_GRIDPROJ(CLUOUT,XXHAT,XYHAT,XZHAT,XZS,LSLEVE,XLEN1,XLEN2,XZSMT,XLATORI,XLONORI, &
+                   XMAP,XLAT,XLON,XDXHAT,XDYHAT,XZZ,ZJ)
+END IF
 !
 IF ( LFORCING ) THEN
   CALL FORCING(XTSTEP,LUSERV,XRHODJ,XCORIOZ,XZHAT,XZZ,TDTCUR,&
                XUFRC_PAST, XVFRC_PAST,                &
                XUT,XVT,XWT,XTHT,XTKET,XRT,XSVT,       &
-               XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI)
+               XRUS,XRVS,XRWS,XRTHS,XRTKES,XRRS,XRSVS,IMI,ZJ)
 END IF
 !
 IF ( L2D_ADV_FRC ) THEN 
@@ -1301,7 +1327,7 @@ ZTIME1 = ZTIME2
 CALL PHYS_PARAM_n(KTCOUNT,TZBAKFILE, GCLOSE_OUT,                &
                   XT_RAD,XT_SHADOWS,XT_DCONV,XT_GROUND,XT_MAFL, &
                   XT_DRAG,XT_TURB,XT_TRACER,                    &
-                  XT_CHEM,ZTIME,GMASKkids)
+                  ZTIME,ZWETDEPAER,GMASKkids,GCLOUD_ONLY)
 !
 IF (CDCONV/='NONE') THEN
   XPACCONV = XPACCONV + XPRCONV * XTSTEP
@@ -1461,6 +1487,7 @@ CALL SECOND_MNH2(ZTIME2)
 !
 XT_ADV = XT_ADV + ZTIME2 - ZTIME1 - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 !
+!-------------------------------------------------------------------------------
 ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
@@ -1606,6 +1633,68 @@ CALL SECOND_MNH2(ZTIME2)
 XT_PRESS = XT_PRESS + ZTIME2 - ZTIME1 &
            - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
 !
+!-------------------------------------------------------------------------------
+!
+!*       20.    CHEMISTRY/AEROSOLS
+!               ------------------
+!
+ZTIME1 = ZTIME2
+XTIME_BU_PROCESS = 0.
+XTIME_LES_BU_PROCESS = 0.
+!
+IF (LUSECHEM) THEN
+  CALL CH_MONITOR_n(ZWETDEPAER,KTCOUNT,XTSTEP, ILUOUT, NVERB)
+END IF
+!
+! For inert aerosol (dust and sea salt) => aer_monitor_n
+IF ((LDUST).OR.(LSALT)) THEN
+!
+! tests to see if any cloud exists
+!   
+    GCLD=.TRUE.
+    IF (GCLD .AND. NRR.LE.3 ) THEN 
+      IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. GCLOUD_ONLY ) THEN
+          GCLD = .FALSE.                ! only the cloudy verticals would be 
+                                        ! refreshed but there is no clouds 
+      END IF
+    END IF
+!
+    IF (GCLD .AND. NRR.GE.4 ) THEN 
+      IF( CCLOUD(1:3)=='ICE' )THEN
+        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN(2) .AND.             &
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN(4) .AND. GCLOUD_ONLY ) THEN
+            GCLD = .FALSE.            ! only the cloudy verticals would be 
+                                      ! refreshed but there is no cloudwater and ice
+        END IF
+      END IF
+      IF( CCLOUD=='C3R5' )THEN
+        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_C1R3(2) .AND.             &
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_C1R3(4) .AND. GCLOUD_ONLY ) THEN
+            GCLD = .FALSE.            ! only the cloudy verticals would be 
+                                      ! refreshed but there is no cloudwater and ice
+        END IF
+      END IF
+      IF( CCLOUD=='LIMA' )THEN
+        IF( MAXVAL(XRT(:,:,:,2)).LE.XRTMIN_LIMA(2) .AND.             &
+            MAXVAL(XRT(:,:,:,4)).LE.XRTMIN_LIMA(4) .AND. GCLOUD_ONLY ) THEN
+            GCLD = .FALSE.            ! only the cloudy verticals would be 
+                                      ! refreshed but there is no cloudwater and ice
+        END IF
+      END IF
+    END IF
+
+!
+        CALL AER_MONITOR_n(KTCOUNT,XTSTEP, ILUOUT, NVERB, GCLD)
+END IF
+!
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+XT_CHEM = XT_CHEM + ZTIME2 - ZTIME1 &
+      - XTIME_LES_BU_PROCESS - XTIME_BU_PROCESS
+!
+ZTIME = ZTIME + XTIME_LES_BU_PROCESS + XTIME_BU_PROCESS
+
 !-------------------------------------------------------------------------------
 !
 !*       20.    WATER MICROPHYSICS

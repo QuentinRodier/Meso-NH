@@ -408,13 +408,13 @@ ZTHV(:,:,:) = PTH(:,:,:) / (1.+WATER_SUM(PR(:,:,:,:)))*(1.+PR(:,:,:,1)/ZRDSRV)
 ZTEMPV(:,:,:)=ZTHV(:,:,:)*(PP(:,:,:)/ XP00) **(XRD/XCPD)
 CALL GPS_ZENITH_GRID(PR(:,:,:,1),ZTEMP,PP,ZZTD,ZZHD,ZZWD)
 ! Kunkel formulation
-IF (SIZE(PR,2) >= 2) THEN
+IF (SIZE(PR,4) >= 2) THEN
   WHERE ( PR(:,:,:,2) /=0 )
     ZVISIKUN(:,:,:) =0.027/(PR(:,:,:,2)*PRHODREF(:,:,:))**0.88
   END WHERE
 END IF
 ! Gultepe formulation
-IF ((SIZE(PR,2) >= 2) .AND. NSV_C2R2END /= 0 ) THEN 
+IF ((SIZE(PR,4) >= 2) .AND. NSV_C2R2END /= 0 ) THEN 
   WHERE ( (PR(:,:,:,2) /=0. ) .AND. (PSV(:,:,:,NSV_C2R2BEG+1) /=0. ) )
     ZVISI(:,:,:) =1.002/(PR(:,:,:,2)*PRHODREF(:,:,:)*PSV(:,:,:,NSV_C2R2BEG+1))**0.6473
   END WHERE

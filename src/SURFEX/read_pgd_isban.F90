@@ -42,6 +42,7 @@
 !!                   11/2013  : same for groundwater distribution
 !!                   11/2014  : Read XSOILGRID as a series of real 
 !!      P. Samuelsson 10/2014 : MEB
+!!      M. Moge      02/2015 READ_SURF // + MPPDB_CHECK
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -91,6 +92,10 @@ USE MODI_GET_LUOUT
 USE MODI_PACK_SAME_RANK
 USE MODI_GET_SURF_MASK_n
 !
+#ifdef MNH_PARALLEL
+USE MODE_MPPDB
+!
+#endif
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -301,6 +306,7 @@ ALLOCATE(I%XCOVER(IG%NDIM,COUNT(I%LCOVER)))
 #ifdef MNH_PARALLEL
  CALL READ_SURF_COV(&
                     HPROGRAM,'COVER',I%XCOVER(:,:),I%LCOVER,IRESP,HDIR='H')
+ CALL MPPDB_CHECK_SURFEX3D(I%XCOVER,"READ_PGD_ISBA_n after READ_SURF:XCOVER",PRECISION,ILUOUT,'NATURE',SIZE(I%XCOVER,2))
 #else
  CALL READ_SURF_COV(&
                     HPROGRAM,'COVER',I%XCOVER(:,:),I%LCOVER,IRESP)
@@ -324,6 +330,11 @@ ALLOCATE(IG%XMESH_SIZE (IG%NDIM))
 ALLOCATE(I%XZ0EFFJPDIR(IG%NDIM))
  CALL READ_GRID(&
                 HPROGRAM,IG%CGRID,IG%XGRID_PAR,IG%XLAT,IG%XLON,IG%XMESH_SIZE,IRESP,I%XZ0EFFJPDIR)
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX2D(IG%XLAT,"READ_PGD_ISBA_n after READ_GRID:XLAT",PRECISION,ILUOUT,'NATURE')
+ CALL MPPDB_CHECK_SURFEX2D(IG%XLON,"READ_PGD_ISBA_n after READ_GRID:XLON",PRECISION,ILUOUT,'NATURE')
+ CALL MPPDB_CHECK_SURFEX2D(IG%XMESH_SIZE,"READ_PGD_ISBA_n after READ_GRID:XMESH_SIZE",PRECISION,ILUOUT,'NATURE')
+#endif
 !
 !* clay fraction : attention, seul un niveau est present dans le fichier
 !* on rempli tout les niveaux de  XCLAY avec les valeurs du fichiers

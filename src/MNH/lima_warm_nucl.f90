@@ -90,6 +90,7 @@ END MODULE MODI_LIMA_WARM_NUCL
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
+!!      J. Escobar : 10/2017 , for real*4 use XMNH_EPSILON
 !!
 !-------------------------------------------------------------------------------
 !
@@ -161,6 +162,7 @@ REAL, DIMENSION(:)  , ALLOCATABLE  :: ZZT      ! Temperature
 REAL, DIMENSION(:), ALLOCATABLE    :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5, ZZW6, &
                                       ZCTMIN, &
                                       ZZTDT,          & ! dT/dt
+                                      ZSW,            & ! real supersaturation                                      
                                       ZSMAX,          & ! Maximum supersaturation
                                       ZVEC1
 !
@@ -219,8 +221,11 @@ IF (OACTIT) THEN
    ZDRC(:,:,:)   = PRCS(:,:,:)-(PRCT(:,:,:)/PTSTEP)                ! drc/dt
 !!! JPP
 !!! JPP
-   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
+!!
+!! BV - W and drc/dt effect should not be included in ZTDT (already accounted for in the computations) ?  
+!!
+!!   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
+!!        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
 END IF
 !
 !  find locations where CCN are available
@@ -259,6 +264,7 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZCCS(INUCT))
    ALLOCATE(ZZT(INUCT)) 
    ALLOCATE(ZZTDT(INUCT)) 
+   ALLOCATE(ZSW(INUCT))    
    ALLOCATE(ZZW1(INUCT))
    ALLOCATE(ZZW2(INUCT))
    ALLOCATE(ZZW3(INUCT))
@@ -276,6 +282,7 @@ IF( INUCT >= 1 ) THEN
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
       ZZTDT(JL)  = ZTDT(I1(JL),I2(JL),I3(JL))
+      ZSW(JL)  = PRVT(I1(JL),I2(JL),I3(JL))/ZRVSAT(I1(JL),I2(JL),I3(JL)) - 1.
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
       ZEXNREF(JL)  = PEXNREF(I1(JL),I2(JL),I3(JL))
       DO JMOD = 1,NMOD_CCN
@@ -371,6 +378,7 @@ IF( INUCT >= 1 ) THEN
    ZXACC = 1.0E-7                 ! Accuracy needed for the search in [NO UNITS]
 !
    ZSMAX(:) = ZRIDDR(ZS1,ZS2,ZXACC,ZZW3(:),INUCT)    ! ZSMAX(:) is in [NO UNITS]
+   ZSMAX(:) = MIN(MAX(ZSMAX(:), ZSW(:)),ZS2)
 !
 !
 !-------------------------------------------------------------------------------
@@ -478,6 +486,7 @@ IF( INUCT >= 1 ) THEN
    DEALLOCATE(ZZW5)
    DEALLOCATE(ZZW6)
    DEALLOCATE(ZZTDT)
+   DEALLOCATE(ZSW)
    DEALLOCATE(ZRHODREF)
    DEALLOCATE(ZCHEN_MULTI)
    DEALLOCATE(ZEXNREF)
@@ -612,7 +621,6 @@ DO JL = 1, NPTS
             PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
             fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
             go to 100
-            print*, 'PZRIDDR: never get here'
             STOP
          end if
          if (abs(xh-xl) <= PXACC) then
@@ -625,7 +633,6 @@ DO JL = 1, NPTS
 !!$      endif   
 !!SB
       end do
-      print*, 'PZRIDDR: exceeded maximum iterations',j
       STOP
    else if (fl(JL) == 0.0) then
       PZRIDDR(JL)=PX1
@@ -728,7 +735,7 @@ INTEGER                        :: PIVEC1
 ALLOCATE(PFUNCSMAX(NPTS))
 !
 PFUNCSMAX(:) = 0.
-PZVEC1 = MAX( 1.00001,MIN( FLOAT(NHYP)-0.00001,               &
+PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
                            XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
 PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )

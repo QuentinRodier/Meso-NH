@@ -7,10 +7,11 @@ C     AND VARIABLES.
 C
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
+C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
 C
 C=======================================================================
 C
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      IMPLICIT  REAL (A-H,O-Z)
       PARAMETER (NCOMP=5,NIONS=7,NGASAQ=3,NSLDS=9,NPAIR=13,NZSR=100,
      &           NERRMX=25)
 C
@@ -39,7 +40,7 @@ C
 C
 C *** VARIABLES FOR LIQUID AEROSOL PHASE *******************************
 C
-      DOUBLE PRECISION MOLAL, MOLALR, M0
+      REAL MOLAL, MOLALR, M0
       REAL IONIC
       LOGICAL CALAOU, CALAIN, FRST, DRYF
       COMMON /IONS/ MOLAL(NIONS), MOLALR(NPAIR), GAMA(NPAIR), ZZ(NPAIR),
@@ -66,7 +67,7 @@ C
 C
 C *** MOLECULAR WEIGHTS ************************************************
 C
-      DOUBLE PRECISION IMW
+      REAL IMW
       COMMON /OTHR/ R, IMW(NIONS), WMW(NCOMP), SMW(NPAIR)
 C
 C *** SOLUTION/INFO VARIABLES ******************************************

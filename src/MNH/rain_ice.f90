@@ -238,7 +238,9 @@ END MODULE MODI_RAIN_ICE
 !!              July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
-!!      C.LAc : 10/2016 : add droplets depposition
+!!      C.Lac : 10/2016 : add droplet deposition
+!!      C.Lac : 01/2017 : correction on droplet deposition
+!!      J.Escobar : 10/2017 : for real*4 , limit exp() in RAIN_ICE_SLOW with XMNH_HUGE_12_LOG
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -869,6 +871,7 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !        O. Initialization of for sedimentation                  
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
+IF (LDEPOSC) PINDEP (:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
@@ -1278,11 +1281,11 @@ IF ( KRR == 7 .AND. LBUDGET_RH) &
 !
 IF (LDEPOSC) THEN
   GDEP(:,:) = .FALSE.
-  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 
+  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,IKB) >0 
   WHERE (GDEP)
-     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2)
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
-     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PRCS(:,:,IKB) = PRCS(:,:,IKB) - XVDEPOSC * PRCT(:,:,IKB) / PDZZ(:,:,IKB)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,IKB) * PRHODREF(:,:,IKB) /XRHOLW 
+     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,IKB) * PRHODREF(:,:,IKB) /XRHOLW 
   END WHERE
 END IF
 !
@@ -1316,6 +1319,7 @@ REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3)) :: ZCONC3D !
 !-------------------------------------------------------------------------------
 !
 IF (OSEDIC) PINPRC (:,:) = 0.
+IF (LDEPOSC) PINDEP (:,:) = 0.
 PINPRR (:,:) = 0.
 PINPRR3D (:,:,:) = 0.
 PINPRS (:,:) = 0.
@@ -1736,11 +1740,11 @@ IF ( KRR == 7 .AND. LBUDGET_RH) &
 !
 IF (LDEPOSC) THEN
   GDEP(:,:) = .FALSE.
-  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 
+  GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,IKB) >0 
   WHERE (GDEP)
-     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2)
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
-     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PRCS(:,:,IKB) = PRCS(:,:,IKB) - XVDEPOSC * PRCT(:,:,IKB) / PDZZ(:,:,IKB)
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOSC * PRCT(:,:,IKB) * PRHODREF(:,:,IKB) /XRHOLW 
+     PINDEP(:,:) = XVDEPOSC * PRCT(:,:,IKB) * PRHODREF(:,:,IKB) /XRHOLW 
   END WHERE
 END IF
 !
@@ -1864,6 +1868,7 @@ IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9,'HENU_BU_RRI')
 !
 !*      0. DECLARATIONS
 !          ------------
+USE MODD_CST, ONLY : XMNH_HUGE_12_LOG
 !
 IMPLICIT NONE
 !
@@ -1875,7 +1880,7 @@ IMPLICIT NONE
   ZZW(:) = 0.0
   WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRCT(:)>XRTMIN(2)) .AND. (ZRCS(:)>0.) )
     ZZW(:) = MIN( ZRCS(:),XHON*ZRHODREF(:)*ZRCT(:)       &
-                                 *EXP( XALPHA3*(ZZT(:)-XTT)-XBETA3 ) )
+                                 *EXP( MIN(XMNH_HUGE_12_LOG,XALPHA3*(ZZT(:)-XTT)-XBETA3) ) )
     ZRIS(:) = ZRIS(:) + ZZW(:)
     ZRCS(:) = ZRCS(:) - ZZW(:)
     ZTHS(:) = ZTHS(:) + ZZW(:)*(ZLSFACT(:)-ZLVFACT(:)) ! f(L_f*(RCHONI))

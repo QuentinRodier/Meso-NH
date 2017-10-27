@@ -111,6 +111,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    18/01/16 (M Leriche) for sedimentation fusion C2R2 and khko
 !!    15/02/16 (M Leriche) call ch_init_rosenbrock only one time
 !!    20/01/17 (G.Delautier) bug if CPROGRAM/=DIAG
+!!    01/10/17 (C.Lac) add correction of negativity
 !!
 !!    EXTERNAL
 !!    --------
@@ -155,7 +156,8 @@ USE MODD_NSV, ONLY : NSV_CHEMBEG,NSV_CHEMEND,NSV_CHEM,& ! index for chemical SV
                      NSV_CHGSBEG,NSV_CHGSEND,         & ! index for gas phase SV
                      NSV_CHICBEG,NSV_CHICEND,         & ! index for ice phase SV
                      NSV_C2R2BEG,                     & ! index for number concentration
-                     NSV_AERBEG, NSV_AEREND, NSV_AER    ! index for aerosols SV
+                     NSV_AERBEG, NSV_AEREND, NSV_AER, & ! index for aerosols SV
+                     XSVMIN
 !
 USE MODD_CH_M9_n,   ONLY: NEQ,            &! number of prognostic chem. species
                           NEQAQ,          &! number of aqueous chem. species
@@ -408,6 +410,12 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKU = SIZE(XRSVS,3)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
+!
+! Correction of negativity
+!
+DO JSV = 1, SIZE(XSVT,4)
+ XRSVS(:,:,:,JSV)   = MAX((XRSVS(:,:,:,JSV)),XSVMIN(JSV))
+END DO
 !
 !
 IF (KTCOUNT == 1) THEN
@@ -1257,6 +1265,11 @@ IF (CCLOUD /= 'REVE' ) THEN
   END IF
 END IF
 
+! Correction of negativity
+!
+DO JSV = 1, SIZE(XSVT,4)
+ XRSVS(:,:,:,JSV)   = MAX((XRSVS(:,:,:,JSV)),XSVMIN(JSV))
+END DO
 !
 IF (LBUDGET_SV) THEN
   DO JSV=NSV_CHEMBEG,NSV_CHEMEND

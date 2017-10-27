@@ -690,7 +690,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),   INTENT(IN) :: HREC     ! name of the article to be read
 INTEGER,                   INTENT(IN) :: KL1,KL2  !  number of points
 REAL, DIMENSION(KL1,KL2),  INTENT(OUT):: PFIELD   ! array containing the data field
-LOGICAL,DIMENSION(JPCOVER),INTENT(IN) ::OFLAG     ! mask for array filling
+LOGICAL,DIMENSION(JPCOVER),INTENT(IN) :: OFLAG    ! mask for array filling
 INTEGER,                   INTENT(OUT):: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),        INTENT(OUT):: HCOMMENT ! comment
 CHARACTER(LEN=1),          INTENT(IN) :: HDIR     ! type of field :

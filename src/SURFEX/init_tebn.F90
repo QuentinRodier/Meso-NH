@@ -44,6 +44,7 @@
 !!      G. Pigeon   09/2012: add ROUGH_WALL/ROUGH_ROOF/CH_BEM for conv. coef.
 !!      B. Decharme  04/2013 new coupling variables
 !!                           delete CTOPREG option (never used)
+!!      M.Moge      02/2015 MPPDB_CHECK
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -119,6 +120,11 @@ USE MODI_SET_SURFEX_FILEIN
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
+#ifdef MNH_PARALLEL
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODE_MPPDB
+!
+#endif
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
@@ -304,6 +310,9 @@ END SELECT
 !
  CALL READ_PGD_TEB_n(DTCO, U, TM,GCP, &
                      HPROGRAM)
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX3D(TM%TOP%XCOVER,"INIT_TEB_n after READ_PGD_TEB_n:XCOVER",PRECISION,ILUOUT, 'TOWN  ',SIZE(TM%TOP%XCOVER,2))
+#endif
 !
  CALL END_IO_SURF_n(HPROGRAM)
 ! 
@@ -314,6 +323,9 @@ ILU = SIZE(TM%TOP%XCOVER,1)
 ALLOCATE(TM%TOP%XTEB_PATCH(ILU,TM%TOP%NTEB_PATCH))
  CALL CONVERT_TEB(TM%TOP, &
                   TM%TOP%XCOVER,TM%TOP%XTEB_PATCH)
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX3D(TM%TOP%XCOVER,"INIT_TEB_n after CONVERT_TEB:XCOVER",PRECISION,ILUOUT, 'TOWN  ',SIZE(TM%TOP%XCOVER,2))
+#endif
 !
  CALL SET_SURFEX_FILEIN(HPROGRAM,'PREP') ! restore input file name
  CALL INIT_IO_SURF_n(DTCO, DGU, U, &
@@ -680,6 +692,9 @@ DO JPATCH=1,TM%TOP%NTEB_PATCH
   CALL DIAG_MISC_TEB_INIT_n(TM%DGCT, TM%DGMT, TM%DGMTO, TM%TOP, &
                             HPROGRAM,ILU,ISWB)
 END DO ! end of loop on patches
+#ifdef MNH_PARALLEL
+ CALL MPPDB_CHECK_SURFEX3D(TM%TOP%XCOVER,"INIT_TEB_n end:XCOVER",PRECISION,ILUOUT, 'TOWN  ',SIZE(TM%TOP%XCOVER,2))
+#endif
 !
 !-------------------------------------------------------------------------------
 !

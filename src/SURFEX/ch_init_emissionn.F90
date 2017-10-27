@@ -29,6 +29,8 @@
 !!      P.Tulet  01/01/04  introduction of rhodref for externalization
 !!      M.Leriche 04/2014  change length of CHARACTER for emission 6->12
 !!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
+!!      J. Pianezze 04/17 wrong length of YCOMMENT (100 instead of 40)
+!!      06/06/17    (V.Masson & M. Leriche) add emission time by species
 !-----------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -76,7 +78,7 @@ REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
  CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
- CHARACTER (LEN=100) :: YCOMMENT              ! variables
+ CHARACTER (LEN=40) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter
 !
@@ -138,7 +140,7 @@ ELSE
   WRITE(ILUOUT,*) 'CEMIS_NAME already allocated with SIZE :',SIZE(CHE%CEMIS_NAME)
 END IF
 
-IF (.NOT. ASSOCIATED(CHE%CEMIS_AREA))   ALLOCATE(CHE%CEMIS_AREA(CHE%NEMISPEC_NBR))
+IF (.NOT. ASSOCIATED(CHE%NEMIS_NBT))    ALLOCATE(CHE%NEMIS_NBT(CHE%NEMISPEC_NBR))
 IF (.NOT. ASSOCIATED(CHE%NEMIS_TIME))   ALLOCATE(CHE%NEMIS_TIME(CHE%NEMIS_NBR))
  CHE%NEMIS_TIME(:) = -1
 !
@@ -169,9 +171,6 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
     CALL ABOR1_SFX('CH_INIT_EMISSIONN: PROBLEM WHEN READING NAME OF EMITTED CHEMICAL SPECIES')
   END IF
 
-  WRITE(YRECFM,'("EMISAREA",I3.3)') JSPEC
-  CALL READ_SURF( &
-                HPROGRAM,YRECFM,YSURF,IRESP,YCOMMENT)
   WRITE(YRECFM,'("EMISNBT",I3.3)') JSPEC
   CALL READ_SURF( &
                 HPROGRAM,YRECFM,INBTS,IRESP,YCOMMENT)
@@ -205,10 +204,9 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
 !
  CHE%NTIME_MAX = MAXVAL(CHE%NEMIS_TIME)
 !
-! INBTIMES, CEMIS_AREA and CEMIS_NAME 
+! INBTIMES  and CEMIS_NAME 
 ! are updated for ALL species
   CHE%CEMIS_NAME(JSPEC) = YSPEC_NAME
-  CHE%CEMIS_AREA(JSPEC) = YSURF
 !
 !*      2.     Simple reading of emission fields
 
@@ -223,6 +221,8 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
 ! 
 END DO
 !
+CHE%NEMIS_NBT(:) = INBTIMES(:)
+
 WRITE(ILUOUT,*) '---- Nunmer of OFFLINE species = ',INBOFF
 WRITE(ILUOUT,*) 'INBTIMES=',INBTIMES
 WRITE(ILUOUT,*) 'IOFFNDX=',IOFFNDX

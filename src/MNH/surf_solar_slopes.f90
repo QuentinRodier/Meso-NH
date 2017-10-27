@@ -75,13 +75,14 @@ END MODULE MODI_SURF_SOLAR_SLOPES
 !!      Original    15/01/02
 !!      V. Masson   01/03/03 add multiple wavelengths
 !!      V. Masson   04/01/11 standard definition of azimuthal angle
+!!      J.P. Chaboureau & Juan 21/08/2017 correction for tiny solar zenithal angle in R*4
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST, ONLY : XPI
+USE MODD_CST, ONLY : XPI, XMNH_TINY
 !
 IMPLICIT NONE
 !
@@ -173,14 +174,14 @@ DO JT=1,4
 !* slope angles
 !
       ZSLOPANG = ATAN(SQRT(ZDZSDX**2+ZDZSDY**2))
-      ZSLOPAZI = - 0.5*XPI - ATAN2( ZDZSDY, ZDZSDX + SIGN(1.E-30,ZDZSDX) )
+      ZSLOPAZI = - 0.5*XPI - ATAN2( ZDZSDY, ZDZSDX + SIGN(XMNH_TINY,ZDZSDX) )
 !
 !* modification of radiation received by 1 square meter of surface 
 ! (of the triangle) because of its orientation relative to the sun
 !
       PDIRSWDT(JI,JJ,JT,:) = MAX( 0.0 , PDIRSRFSWD(JI,JJ,:) * ( &
          COS(ZSLOPANG)                                          &
-       + SIN(ZSLOPANG) * PSINZEN(JI,JJ) / PCOSZEN(JI,JJ)        &
+       + SIN(ZSLOPANG) * PSINZEN(JI,JJ) / MAX(PCOSZEN(JI,JJ), XMNH_TINY) &
          *  COS(PAZIMSOL(JI,JJ)-ZSLOPAZI)                     ) &
                                 )
 !

@@ -737,9 +737,10 @@ DO JK = 1 , KLEV
                 IF (ZRADLP(JL)>1) then
                  ZTOL =ZFLWP(JL)*(XSWSAVIA(JSW)+(XSWSAVIB(JSW)/ZRADLP(JL)))/ZRADLP(JL)
                  ZGL  = RYFWCF(JSW)
+                 ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*ZRADLP(JL)
+! Test for Sc and fog but not to generalize :
 ! M.Mazoyer, O.Thouron effective radius does not exceed 100 microns
-!                ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*ZRADLP(JL)
-                 ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*MIN(ZRADLP(JL),100.0)
+!                ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*MIN(ZRADLP(JL),100.0)                 
                 ENDIF
               ELSE IF (ZRADLP(JL)>1.) THEN
                  write(*,*)'PROGRAM ERROR: STOP'

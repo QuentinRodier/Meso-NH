@@ -219,6 +219,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
+!!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -274,7 +275,8 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
                             CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
                             YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,      &
                             YAERHEIGHT=>XAERHEIGHT,                            &
-                            LSCAV, LAERO_MASS, NPHILLIPS
+                            LSCAV, LAERO_MASS, NPHILLIPS,                      &
+                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC
 !
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
@@ -477,7 +479,7 @@ NLBLY(:) = 1
 XCPHASE = 20.
 XCPHASE_PBL = 0.
 XCARPKMAX = XUNDEF
-XPOND = 1.0
+XPOND = 0.2
 !
 !-------------------------------------------------------------------------------
 !
@@ -974,6 +976,7 @@ IF (KMI == 1) THEN
   LGEOST_UV_FRC      = .FALSE.
   LGEOST_TH_FRC      = .FALSE.
   LTEND_THRV_FRC      = .FALSE.
+  LTEND_UV_FRC       = .FALSE. 
   LVERT_MOTION_FRC   = .FALSE.
   LRELAX_THRV_FRC    = .FALSE.
   LRELAX_UV_FRC      = .FALSE.
@@ -1052,7 +1055,9 @@ XSIGMA_MF = 20.
 XA1    =  2./3.  
 XB     =  0.002       
 XC     =  0.012     
-XBETA1 =  0.9         
+XBETA1 =  0.9 
+XR     =  2.
+XLAMBDA=  0.
 !
 !-------------------------------------------------------------------------------
 !
@@ -1107,7 +1112,10 @@ IF (KMI == 1) THEN
   ORAIN  = .TRUE.
   OSEDC  = .FALSE.
   OACTIT = .FALSE.
+  ODEPOC = .FALSE.
   LBOUND = .FALSE.
+!
+  OVDEPOC = 0.02 ! 2 cm/s
 !
   CINI_CCN   = 'AER'
   CTYPE_CCN(:) = 'M'

@@ -216,6 +216,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!                            activation by cooling (OACTIT : mis en commentaires)
 !!      M.Mazoyer : 04/2016 : Add supersaturation diagnostics
 !!      C.Lac     : 07/2016 : Add droplet deposition
+!!      C.Lac     : 01/2017 : Correction on droplet deposition
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -1744,6 +1745,9 @@ INTEGER                           :: JL       ! and PACK intrinsics
 !  optimization by looking for locations where
 !  the precipitating fields are larger than a minimal value only !!!
 !
+IF (OSEDC) PINPRC (:,:) = 0.
+IF (LDEPOC) PINDEP (:,:) = 0.
+!
 DO JN = 1 , KSPLITR
   GSEDIM(:,:,:) = .FALSE.
   IF( OSEDC ) THEN
@@ -1940,10 +1944,10 @@ IF (LDEPOC) THEN
   GDEP(IIB:IIE,IJB:IJE) =    PRCS(IIB:IIE,IJB:IJE,2) >0 .AND. &
                                   PCCS(IIB:IIE,IJB:IJE,2) >0
   WHERE (GDEP)
-     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2)
-     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) * PRHODJ(:,:,2)
-     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
-     PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) * PRHODJ(:,:,2) /XRHOLW 
+     PRCS(:,:,2) = PRCS(:,:,2) - XVDEPOC * PRCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PCCS(:,:,2) = PCCS(:,:,2) - XVDEPOC * PCCT(:,:,2) / ( PZZ(:,:,3) - PZZ(:,:,2))
+     PINPRC(:,:) = PINPRC(:,:) + XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW             
+     PINDEP(:,:) = XVDEPOC * PRCT(:,:,2) * PRHODREF(:,:,2) /XRHOLW
   END WHERE
 END IF
 !

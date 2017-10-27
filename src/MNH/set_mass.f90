@@ -181,9 +181,8 @@ INTEGER :: JI,JK,JJ
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZTHV3D_MX     ! virtual potential temperature (mass level)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZTHVREF3D     ! virtual potential temperature (mass level)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT),NRR):: ZMR3D_MX      ! vapor mixing ratio (mass level)
-REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZUW3D_MX      ! zonal wind component (flux level)
-REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZVW3D_MX      ! meridian wind component (flux level)
-REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZWW3D_MX      ! vertical wind speed (flux level)
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZUW3D_FL      ! zonal wind component (flux level)
+REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZVW3D_FL      ! meridian wind component (flux level)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZPMHP_MX      ! pressure minus hyd. pressure (mass level)
 REAL,DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT))    :: ZRHOD_MX      ! local rhod (mass level)
 REAL,DIMENSION(SIZE(XZHAT))                            :: ZRHOD_PROFILE ! local rhod (mass level) at initialization profile column
@@ -255,7 +254,6 @@ DO JI=1,IIU
     ZMR3D_MX(JI,JJ,:,1)=PMRM(:)
   ENDDO
 ENDDO
-ZWW3D_MX(:,:,:)=0.
 ZPMHP_MX(:,:,:)=0.
 ZMR3D_MX(:,:,:,2:)=0.
 IF(PRESENT(PMRCM)) THEN
@@ -286,6 +284,7 @@ ZRHOD_MX(:,:,:)=ZPMASS_MX(:,:,:)/(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD) &
                  /(XRD*ZTHV3D_MX(:,:,:)*(1.+WATER_SUM(ZMR3D_MX(:,:,:,:))))
 
 XEXNTOP=SUM_DD_R2_ll(ZHEXNFLUX_MX(IIB:IIE,IJB:IJE,IKE+1))/FLOAT(NIMAX_ll*NJMAX_ll)
+
 
 !------------------------------
 !*  2.3 Rotate wind in model axis and take into account variations in x,y
@@ -377,7 +376,7 @@ ZNFLXZ_TOT_ll=SIGN(1.,ZNFLXZ_TOT_ll)*MAX(ABS(ZNFLXZ_TOT_ll),TINY(ZNFLXZ_TOT_ll))
 
 DO JI=1,IIU
 !!$  ZUW3D_MX(JI,:,:)=ZUYZ(:,:)* ( ZNFLX_TOT_ll(KILOC,1)/ZNFLX_TOT_ll(IXOR_ll-1+JI,1) ) ! add () for reproductibility
-  ZUW3D_MX(JI,:,:)=ZUYZ(:,:)* ( ZNFLXZ_TOT_ll(KILOC)/ZNFLXZ_TOT_ll(IXOR_ll-1+JI) ) 
+  ZUW3D_FL(JI,:,:)=ZUYZ(:,:)* ( ZNFLXZ_TOT_ll(KILOC)/ZNFLXZ_TOT_ll(IXOR_ll-1+JI) ) 
 END DO
 
 !!$DEALLOCATE(ZNFLX_TOT_ll)
@@ -426,12 +425,12 @@ ZNFLYZ_TOT_ll=SIGN(1.,ZNFLYZ_TOT_ll)*MAX(ABS(ZNFLYZ_TOT_ll),TINY(ZNFLYZ_TOT_ll))
 !
 !
 DO JJ=1,IJU
-!!$    ZVW3D_MX(:,JJ,:)= ZVXZ(:,:) * ( ZNFLY_TOT_ll(KJLOC,1)/ZNFLY_TOT_ll(IYOR_ll-1+JJ,1) ) ! add () for reproductibility
-    ZVW3D_MX(:,JJ,:)= ZVXZ(:,:) * ( ZNFLYZ_TOT_ll(KJLOC)/ZNFLYZ_TOT_ll(IYOR_ll-1+JJ) )
+!!$    ZVW3D_FL(:,JJ,:)= ZVXZ(:,:) * ( ZNFLY_TOT_ll(KJLOC,1)/ZNFLY_TOT_ll(IYOR_ll-1+JJ,1) ) ! add () for reproductibility
+    ZVW3D_FL(:,JJ,:)= ZVXZ(:,:) * ( ZNFLYZ_TOT_ll(KJLOC)/ZNFLYZ_TOT_ll(IYOR_ll-1+JJ) )
 END DO
 
-  CALL MPPDB_CHECK3DM("SET_MASS:ZUW3D_MX,ZVW3D_MX",PRECISION,&
-                   & ZUW3D_MX,ZVW3D_MX   )
+  CALL MPPDB_CHECK3DM("SET_MASS:ZUW3D_FL,ZVW3D_FL",PRECISION,&
+                   & ZUW3D_FL,ZVW3D_FL   )
 
 !!$DEALLOCATE(ZNFLY_TOT_ll)
 DEALLOCATE(ZNFLYZ_TOT,ZNFLYZ_TOT_ll)
@@ -442,7 +441,7 @@ DEALLOCATE(ZNFLYZ_TOT,ZNFLYZ_TOT_ll)
 !
 
 IF (PRESENT(PCORIOZ)) THEN
-  CALL SET_GEOSBAL(ZUW3D_MX,ZVW3D_MX,PTHVM,PMRM, &
+  CALL SET_GEOSBAL(ZUW3D_FL,ZVW3D_FL,PTHVM,PMRM, &
                     KILOC,KJLOC,OBOUSS,ZTHV3D,PCORIOZ)
   CALL COMPUTE_EXNER_FROM_TOP(ZTHV3D,XZZ,ZEXNTOP2D,ZHEXNFLUX,ZHEXNMASS)
   XPABSM(:,:,:)=XP00*ZHEXNMASS(:,:,:) ** (XCPD/XRD)
@@ -479,8 +478,8 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
 !
 ! Interpolation of the wind      
 !
-  ZRHODU_MX=ZUW3D_MX*ZRHOD_MX
-  ZRHODV_MX=ZVW3D_MX*ZRHOD_MX
+  ZRHODU_MX=MZF(1,IKU,1,ZUW3D_FL)*ZRHOD_MX
+  ZRHODV_MX=MZF(1,IKU,1,ZVW3D_FL)*ZRHOD_MX
   CALL MPPDB_CHECK3DM("SET_MASS:ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX",PRECISION,&
                    &  ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX  )
   CALL VER_INT_DYN(OSHIFT,ZRHODU_MX,ZRHODV_MX,PZFLUX_MX,PZMASS_MX,PZS_MX,ZRHODUA,ZRHODVA)

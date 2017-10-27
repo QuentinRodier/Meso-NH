@@ -176,7 +176,7 @@ ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:) * &
 !
 GEVAP(:,:,:) = .FALSE.
 GEVAP(IIB:IIE,IJB:IJE,IKB:IKE) =                              &
-     PRRS(IIB:IIE,IJB:IJE,IKB:IKE)> 0.0 .AND.                    &
+     PRRS(IIB:IIE,IJB:IJE,IKB:IKE)>ZRTMIN(3) .AND.                    &
      PRVT(IIB:IIE,IJB:IJE,IKB:IKE)<ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)
 !
 IEVAP = COUNTJV( GEVAP(:,:,:),I1(:),I2(:),I3(:))

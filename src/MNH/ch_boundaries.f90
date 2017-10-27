@@ -15,11 +15,12 @@ MODULE MODI_CH_BOUNDARIES
 INTERFACE
 !
       SUBROUTINE CH_BOUNDARIES (HLBCX,HLBCY,                 &
-                                PUT,PVT,PSVBT          )
+                                PUT,PVT,PSVBT,PSVMIN         )
 !
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:),       INTENT(INOUT) :: PSVBT
 REAL, DIMENSION(:,:,:),         INTENT(IN) :: PUT,PVT
+REAL                                        :: PSVMIN
 !
 END SUBROUTINE CH_BOUNDARIES
 !
@@ -30,7 +31,7 @@ END MODULE MODI_CH_BOUNDARIES
 !
 !     ####################################################################
 SUBROUTINE CH_BOUNDARIES (HLBCX,HLBCY,                           &
-                          PUT,PVT,PSVBT                    )
+                          PUT,PVT,PSVBT,PSVMIN                   )
 !     ####################################################################
 !
 !!****  *CH_BOUNDARIES* - routine to prepare the Lateral Boundary Conditions for
@@ -69,6 +70,7 @@ SUBROUTINE CH_BOUNDARIES (HLBCX,HLBCY,                           &
 !!     Original        06/06/00
 !!     06/06/00 (C. Mari) embedded into mesonh routines
 !!     15/02/01 (P. Tulet) update for MOCAGE lateral boundary conditions
+!!     10/02/17 (M. Leriche) prevent negative values
 !!	
 !-------------------------------------------------------------------------------
 !
@@ -90,6 +92,7 @@ IMPLICIT NONE
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN)  :: HLBCX,HLBCY  
 REAL, DIMENSION(:,:,:),     INTENT(INOUT)   :: PSVBT
 REAL, DIMENSION(:,:,:),          INTENT(IN) :: PUT,PVT
+REAL                                        :: PSVMIN
 !
 !
 !
@@ -170,12 +173,12 @@ IF (LWEST_ll( ) .AND. HLBCX(1)=='OPEN') THEN
     DO IK= 1,IKU
       IF ( PUT(IIB,IJ,IK) <= 0. ) THEN         !  OUTFLOW condition
         PSVBT(IIB-1,IJ,IK) = &
-             2.*PSVBT (IIB,IJ,IK) -PSVBT (IIB+1,IJ,IK)
+             MAX(PSVMIN,2.*PSVBT (IIB,IJ,IK) -PSVBT (IIB+1,IJ,IK))
       ELSE                                     !  INFLOW  condition
         IF (ZZZW(1,IJ,IK) > -999.) THEN
-          PSVBT(IIB-1,IJ,IK) = PSVBT(IIB+1,IJ,IZZW(1,IJ,IK))+&
+          PSVBT(IIB-1,IJ,IK) = MAX(PSVMIN,PSVBT(IIB+1,IJ,IZZW(1,IJ,IK))+&
                (PSVBT(IIB+1,IJ,IZZW(1,IJ,IK)+1)-&
-               PSVBT(IIB+1,IJ,IZZW(1,IJ,IK))) * ZZZW(1,IJ,IK)
+               PSVBT(IIB+1,IJ,IZZW(1,IJ,IK))) * ZZZW(1,IJ,IK))
           !
         ELSE
           PSVBT(IIB-1,IJ,IK) =  PSVBT(IIB+1,IJ,IK)
@@ -218,13 +221,13 @@ IF (LEAST_ll( ) .AND. HLBCX(1)=='OPEN') THEN
     DO IK=1,IKU
       IF ( PUT(IIE+1,IJ,IK) >= 0. ) THEN         !  OUTFLOW condition
         PSVBT(IIE+1,IJ,IK) = &
-             2.*PSVBT (IIE,IJ,IK) -PSVBT (IIE-1,IJ,IK)
+             MAX(PSVMIN,2.*PSVBT (IIE,IJ,IK) -PSVBT (IIE-1,IJ,IK))
       ELSE                                       !  INFLOW  condition
         IF (ZZZE(1,IJ,IK) > -999.) THEN
           PSVBT(IIE+1,IJ,IK) = &
-               PSVBT(IIE-1,IJ,IZZE(1,IJ,IK))+&
+               MAX(PSVMIN,PSVBT(IIE-1,IJ,IZZE(1,IJ,IK))+&
                (PSVBT(IIE-1,IJ,IZZE(1,IJ,IK)+1)-&
-               PSVBT(IIE-1,IJ,IZZE(1,IJ,IK))) * ZZZE(1,IJ,IK)
+               PSVBT(IIE-1,IJ,IZZE(1,IJ,IK))) * ZZZE(1,IJ,IK))
           !
         ELSE
           PSVBT(IIE+1,IJ,IK) =  PSVBT(IIE-1,IJ,IK)
@@ -268,13 +271,13 @@ IF (LSOUTH_ll( ) .AND. HLBCY(1)=='OPEN') THEN
     DO IK=1,IKU
       IF ( PVT(II,IJB,IK) <= 0. ) THEN         !  OUTFLOW condition
         PSVBT(II,IJB-1,IK) = &
-             2.*PSVBT (II,IJB,IK) -PSVBT (II,IJB+1,IK)
+             MAX(PSVMIN,2.*PSVBT (II,IJB,IK) -PSVBT (II,IJB+1,IK))
       ELSE                                     !  INFLOW  condition
         IF (ZZZS(II,1,IK) > -999.) THEN
           PSVBT(II,IJB-1,IK) = &
-               PSVBT(II,IJB+1,IZZS(II,1,IK))+&
+               MAX(PSVMIN,PSVBT(II,IJB+1,IZZS(II,1,IK))+&
                (PSVBT(II,IJB+1,IZZS(II,1,IK)+1)-&
-               PSVBT(II,IJB+1,IZZS(II,1,IK))) * ZZZS(II,1,IK)
+               PSVBT(II,IJB+1,IZZS(II,1,IK))) * ZZZS(II,1,IK))
           !
         ELSE
           PSVBT(II,IJB-1,IK) =  PSVBT(II,IJB+1,IK)
@@ -319,13 +322,13 @@ IF (LNORTH_ll( ) .AND. HLBCY(2)=='OPEN') THEN
     DO IK=1,IKU
       IF ( PVT(II,IJE+1,IK) >= 0. ) THEN         !  OUTFLOW condition
         PSVBT(II,IJE+1,IK) = &
-             2.*PSVBT (II,IJE,IK) -PSVBT (II,IJE-1,IK)
+             MAX(PSVMIN,2.*PSVBT (II,IJE,IK) -PSVBT (II,IJE-1,IK))
       ELSE                                       !  INFLOW  condition
         IF (ZZZN(II,1,IK) > -999.) THEN
           PSVBT(II,IJE+1,IK) = &
-               PSVBT(II,IJE-1,IZZN(II,1,IK))+&
+               MAX(PSVMIN,PSVBT(II,IJE-1,IZZN(II,1,IK))+&
                (PSVBT(II,IJE-1,IZZN(II,1,IK)+1)-&
-               PSVBT(II,IJE-1,IZZN(II,1,IK))) * ZZZN(II,1,IK)
+               PSVBT(II,IJE-1,IZZN(II,1,IK))) * ZZZN(II,1,IK))
           !
         ELSE
           PSVBT(II,IJE+1,IK) =  PSVBT(II,IJE-1,IK)
