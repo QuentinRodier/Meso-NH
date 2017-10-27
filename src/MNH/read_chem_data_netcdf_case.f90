@@ -2,23 +2,25 @@
       MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !     #################################
 INTERFACE
-SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,HPGDFILE,      &
-                    PTIME_HORI,KVERB,ODUMMY_REAL                         ) 
+SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,TPPGDFILE,  &
+                                      PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !
-CHARACTER(LEN=28),  INTENT(IN) :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),  INTENT(IN) :: HFILE    ! name of the NETCDF file
-CHARACTER(LEN=28),  INTENT(IN) :: HPGDFILE ! name of the physiographic data file
-INTEGER,           INTENT(IN)  :: KVERB    ! verbosity level
-LOGICAL,           INTENT(IN)  :: ODUMMY_REAL! flag to interpolate dummy fields
-REAL,           INTENT(INOUT)  :: PTIME_HORI ! time spent in hor. interpolations
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+CHARACTER(LEN=28),  INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
+TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
 END SUBROUTINE READ_CHEM_DATA_NETCDF_CASE
 !
 END INTERFACE
 END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
-!     ##########################################################################
-      SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,HPGDFILE,      &
-                       PTIME_HORI,KVERB,ODUMMY_REAL                            )
-!     ##########################################################################
+!     ####################################################################
+      SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,TPPGDFILE,  &
+                                            PTIME_HORI,KVERB,ODUMMY_REAL ) 
+!     ####################################################################
 !
 !!****  *READ_CHEM_DATA_NETCDF_CASE* - reads data for the initialization of real cases.
 !!
@@ -96,6 +98,7 @@ USE MODI_CH_AER_INIT_SOA
 USE MODD_CONF
 USE MODD_CONF_n
 USE MODD_CST
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
 USE MODD_GRID
@@ -126,12 +129,12 @@ include 'netcdf.inc'
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
-CHARACTER(LEN=28),      INTENT(IN) :: HPRE_REAL1 ! name of the PRE_REAL1 file
-CHARACTER(LEN=28),      INTENT(IN) :: HFILE      ! name of the GRIB file
-CHARACTER(LEN=28),      INTENT(IN) :: HPGDFILE   ! name of the physiographic data file
-INTEGER,               INTENT(IN)  :: KVERB    ! verbosity level
-LOGICAL,               INTENT(IN)  :: ODUMMY_REAL! flag to interpolate dummy fields
-REAL,                INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+CHARACTER(LEN=28),  INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
+TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
+REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
+INTEGER,            INTENT(IN)    :: KVERB      ! verbosity level
+LOGICAL,            INTENT(IN)    :: ODUMMY_REAL! flag to interpolate dummy fields
 !
 !* 0.2 Declaration of local variables
 !      ------------------------------
@@ -212,7 +215,7 @@ IMI = GET_CURRENT_MODEL_INDEX()
 !     -------------
 !
 CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
-CALL READ_HGRID_n(HPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
+CALL READ_HGRID_n(TPPGDFILE,YPGD_NAME,YPGD_DAD_NAME,YPGD_TYPE)
 !
 ! 1.1 Domain restriction
 !

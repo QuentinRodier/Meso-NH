@@ -710,15 +710,19 @@ END IF
 !LCHEMDIAG, NSV_CHEMBEG, NSV_CHEMEND
 
 IF (LCHEMDIAG) THEN
-    DO JSV = NSV_CHEMBEG, NSV_CHEMEND
-      YRECFM = 'FLX_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
-      WRITE(YCOMMENT,'(A6,A,A26)')'X_Y_Z_',TRIM(CNAMES(JSV-NSV_CHEMBEG+1)), &
-                                  ' Net chemical flux ppb.m/s'
-      ILENCH = LEN(YCOMMENT)
-      ZWORK21(:,:) = XCHFLX(:,:,JSV-NSV_CHEMBEG+1) * 1E9
-      CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY', ZWORK21(:,:),           &
-                  IGRID,ILENCH,YCOMMENT,IRESP)
-    END DO
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CUNITS     = 'ppb m s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 2
+  !
+  DO JSV = NSV_CHEMBEG, NSV_CHEMEND
+    TZFIELD%CMNHNAME   = 'FLX_'//TRIM(CNAMES(JSV-NSV_CHEMBEG+1))
+    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    WRITE(TZFIELD%CCOMMENT,'(A6,A,A)')'X_Y_Z_',TRIM(CNAMES(JSV-NSV_CHEMBEG+1)),' Net chemical flux'
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XCHFLX(:,:,JSV-NSV_CHEMBEG+1) * 1E9)
+  END DO
 END IF
 !-------------------------------------------------------------------------------
 !

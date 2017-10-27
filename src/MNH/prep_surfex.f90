@@ -88,6 +88,7 @@ CHARACTER (LEN=100)   :: HCOMMENT
 INTEGER               :: II, IJ, IGRID, ILENGTH
 !
 TYPE(TFILEDATA),POINTER :: TZFILE    => NULL()
+TYPE(TFILEDATA),POINTER :: TZATMFILE => NULL()
 TYPE(TFILEDATA),POINTER :: TZPGDFILE => NULL()
 !
 !-------------------------------------------------------------------------------
