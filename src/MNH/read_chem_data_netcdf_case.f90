@@ -79,6 +79,7 @@ END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !!    -------------
 !!      Original    23/01/12 (C. Mari) 
 !!      A. Berger   20/03/12 adapt whatever the chemical mechanism in BASIC
+!!      P. Wautelet 30/10/17 use F90 module for netCDF
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -121,10 +122,11 @@ USE MODI_CH_OPEN_INPUT
 USE MODE_THERMO
 !
 USE MODD_BLANK
+USE MODD_NETCDF, ONLY:IDCDF_KIND
+!
+USE NETCDF
 !
 IMPLICIT NONE
-!
-include 'netcdf.inc'
 !
 !* 0.1. Declaration of arguments
 !       ------------------------
@@ -185,12 +187,12 @@ INTEGER                           :: IMI
 !
 ! For netcdf 
 !
-integer                               :: status, ncid, varid
-integer :: lat_varid, lon_varid, lev_varid, time_varid 
-integer :: hyam_varid, hybm_varid, p0_varid, t_varid, q_varid, ps_varid 
-integer :: recid, latid, lonid, levid, timeid
-integer :: latlen, lonlen, levlen, nrecs,timelen
-integer :: itimeindex, KILEN, jrec
+integer(kind=IDCDF_KIND) :: status, ncid, varid
+integer(kind=IDCDF_KIND) :: lat_varid, lon_varid, lev_varid, time_varid 
+integer(kind=IDCDF_KIND) :: hyam_varid, hybm_varid, p0_varid, t_varid, q_varid, ps_varid 
+integer(kind=IDCDF_KIND) :: recid, latid, lonid, levid, timeid
+integer(kind=IDCDF_KIND) :: latlen, lonlen, levlen, nrecs,timelen
+integer(kind=IDCDF_KIND) :: itimeindex, KILEN, jrec
 CHARACTER(LEN=40)                     :: recname
 REAL, DIMENSION(:), ALLOCATABLE       :: lats
 REAL, DIMENSION(:), ALLOCATABLE       :: lons 
@@ -255,58 +257,58 @@ DEALLOCATE (ZXM)
 ! 2.1 Open netcdf files
 !print*,'Open netcdf files:',HFILE
 !
-status = nf_open(HFILE, nf_nowrite, ncid) 
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_open(HFILE, nf90_nowrite, ncid) 
+if (status /= nf90_noerr) call handle_err(status)
 !
 ! 2.2 Read netcdf files
 !
 ! get dimension IDs
 !
 !* get dimension ID of unlimited variable in netcdf file
-status = nf_inq_unlimdim(ncid, recid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimid(ncid, "lat", latid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimid(ncid, "lon", lonid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimid(ncid, "lev", levid)
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_inquire(ncid, unlimitedDimId = recid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_dimid(ncid, "lat", latid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_dimid(ncid, "lon", lonid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_dimid(ncid, "lev", levid)
+if (status /= nf90_noerr) call handle_err(status)
 !
 ! get dimensions
 !
 !* get dimension and name of unlimited variable in netcdf file
-status = nf_inq_dim(ncid, recid, recname, nrecs)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimlen(ncid, latid, latlen)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimlen(ncid, lonid, lonlen)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_dimlen(ncid, levid, levlen)
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_inquire_dimension(ncid, recid, name=recname, len=nrecs)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inquire_dimension(ncid, latid, len=latlen)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inquire_dimension(ncid, lonid, len=lonlen)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inquire_dimension(ncid, levid, len=levlen)
+if (status /= nf90_noerr) call handle_err(status)
 !print*, latlen, lonlen, levlen, nrecs
 !
 ! get variable IDs
 !
-status = nf_inq_varid(ncid, "lat", lat_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "lon", lon_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "lev", lev_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "time", time_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "P0", p0_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "hyam", hyam_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "hybm", hybm_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "T", t_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "Q", q_varid)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_inq_varid(ncid, "PS", ps_varid)
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "lat", lat_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "lon", lon_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "lev", lev_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "time", time_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "P0", p0_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "hyam", hyam_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "hybm", hybm_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "T", t_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "Q", q_varid)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_inq_varid(ncid, "PS", ps_varid)
+if (status /= nf90_noerr) call handle_err(status)
 !
 KILEN = latlen * lonlen
 !
@@ -343,20 +345,20 @@ XZS_SV_LS(:,:) = XZS_LS(:,:)
 !
 ! get values of variables
 !
-status = nf_get_var_double(ncid, lat_varid, lats(:))
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, lon_varid, lons(:))
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, lev_varid, levs(:))
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, time_varid, time(:))
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, hyam_varid, hyam)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, hybm_varid, hybm)
-if (status /= nf_noerr) call handle_err(status)
-status = nf_get_var_double(ncid, p0_varid, p0)
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_get_var(ncid, lat_varid, lats(:))
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, lon_varid, lons(:))
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, lev_varid, levs(:))
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, time_varid, time(:))
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, hyam_varid, hyam)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, hybm_varid, hybm)
+if (status /= nf90_noerr) call handle_err(status)
+status = nf90_get_var(ncid, p0_varid, p0)
+if (status /= nf90_noerr) call handle_err(status)
 XP00_SV_LS = p0
 !
 ! hyam and hybm coefficients for pressure calculations have to be reversed 
@@ -390,18 +392,16 @@ ELSEIF (CDUMMY1=="18") THEN
 ENDIF
  start3d(4) = itimeindex
 !
-  status = nf_get_vara_double(ncid, t_varid, start3d, count3d, &
-           vartemp3d)
-  if (status /= nf_noerr) call handle_err(status)
+  status = nf90_get_var(ncid, t_varid, vartemp3d, start=start3d, count=count3d)
+  if (status /= nf90_noerr) call handle_err(status)
 !
 do JJ=1,levlen
 ! lev, lat, lon
  TMOZ(:,:,JJ) = vartemp3d(:,:,levlen+1-JJ)
 enddo
 !
-  status = nf_get_vara_double(ncid, q_varid, start3d, count3d, &
-           vartemp3d)
-  if (status /= nf_noerr) call handle_err(status)
+  status = nf90_get_var(ncid, q_varid, vartemp3d, start=start3d, count=count3d)
+  if (status /= nf90_noerr) call handle_err(status)
 !
 do JJ=1,levlen
 ! lev, lat, lon
@@ -414,8 +414,8 @@ enddo
  start2d(1) = 1
  start2d(2) = 1
  start2d(3) = itimeindex
-  status = nf_get_vara_double(ncid, ps_varid, start2d, count2d, PSMOZ(:,:))
-  if (status /= nf_noerr) call handle_err(status)
+  status = nf90_get_var(ncid, ps_varid, PSMOZ(:,:), start=start2d, count=count2d)
+  if (status /= nf90_noerr) call handle_err(status)
 
   
 !------------------------------------------------------------------------
@@ -498,71 +498,61 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
   DO JNCHEM = NSV_CHEMBEG, NSV_CHEMEND  !loop on all MNH species
     IF (trim(CNAMES(JNCHEM-NSV_CHEMBEG+1))==trim(YSPCMNH(JI))) THEN !MNH mechanism species
        IF (ISPCMOZ(JI)==1) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)
          ENDDO
        ELSE IF (ISPCMOZ(JI)==2) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ) + &
                                ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ) 
          ENDDO
        ELSE IF (ISPCMOZ(JI)==3) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dter)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dter, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)+&
                             ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ)+&
                             ZCOEFMOZART(JI,3)*vartemp3dter(:,:,levlen+1-JJ)
          ENDDO
        ELSE IF (ISPCMOZ(JI)==4) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dter)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,4)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                         vartemp3dquater)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dter, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,4)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dquater, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)+&
                                ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ)+&
@@ -589,71 +579,61 @@ DO JI = 1,IMOZ               !for every MNH species existing in MOZ1.nam
   DO JNAER = NSV_AERBEG, NSV_AEREND 
     IF (trim(CAERONAMES(JNAER-NSV_AERBEG+1))==trim(YSPCMNH(JI))) THEN !MNH mechanism species
        IF (ISPCMOZ(JI)==1) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)
          ENDDO
        ELSE IF (ISPCMOZ(JI)==2) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ) + &
                                ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ) 
          ENDDO
        ELSE IF (ISPCMOZ(JI)==3) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dter)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dter, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)+&
                             ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ)+&
                             ZCOEFMOZART(JI,3)*vartemp3dter(:,:,levlen+1-JJ)
          ENDDO
        ELSE IF (ISPCMOZ(JI)==4) THEN
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                               vartemp3d)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dbis)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                            vartemp3dter)
-         if (status /= nf_noerr) call  handle_err(status)
-         status = nf_inq_varid(ncid, trim(YCHANGE(JI,4)), ind_netcdf)
-         if (status /= nf_noerr) call handle_err(status)
-         status = nf_get_vara_double(ncid,ind_netcdf, start3d, count3d, &
-                                                         vartemp3dquater)
-         if (status /= nf_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,1)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3d, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,2)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dbis, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,3)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dter, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
+         status = nf90_inq_varid(ncid, trim(YCHANGE(JI,4)), ind_netcdf)
+         if (status /= nf90_noerr) call handle_err(status)
+         status = nf90_get_var(ncid, ind_netcdf, vartemp3dquater, start=start3d, count=count3d)
+         if (status /= nf90_noerr) call  handle_err(status)
          DO JJ=1,levlen ! lev, lat, lon
            ZCHEMMOZ(:,:,JJ)=ZCOEFMOZART(JI,1)*vartemp3d(:,:,levlen+1-JJ)+&
                                ZCOEFMOZART(JI,2)*vartemp3dbis(:,:,levlen+1-JJ)+&
@@ -734,9 +714,8 @@ XPS_SV_LS(:,:) = MAX(XPS_SV_LS(:,:),0.)
 !
 !
 ! close the netcdf file
-!nf_close
-status = nf_close(ncid) 
-if (status /= nf_noerr) call handle_err(status)
+status = nf90_close(ncid) 
+if (status /= nf90_noerr) call handle_err(status)
 !
   DEALLOCATE (ZVALUE)
   DEALLOCATE (ZOUT)
@@ -781,9 +760,9 @@ CONTAINS
 !     #############################
       SUBROUTINE HANDLE_ERR(STATUS)
 !     #############################
-     INTEGER STATUS
-     IF (STATUS .NE. NF_NOERR) THEN
-        PRINT *, NF_STRERROR(STATUS)
+     INTEGER(KIND=IDCDF_KIND) STATUS
+     IF (STATUS .NE. NF90_NOERR) THEN
+        PRINT *, NF90_STRERROR(STATUS)
      STOP 'Stopped'
      ENDIF
      END SUBROUTINE HANDLE_ERR
