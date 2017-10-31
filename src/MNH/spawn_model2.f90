@@ -312,7 +312,7 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
-INTEGER :: INPRAR   ! Number of articles predicted in the LFIFM file
+INTEGER(KIND=LFI_INT) :: INPRAR ! Number of articles predicted in the LFIFM file
 !
 CHARACTER (LEN=32) :: YDESFM          ! Name of the desfm part of the FM-file
 !  

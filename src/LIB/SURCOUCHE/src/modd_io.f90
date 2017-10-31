@@ -79,7 +79,7 @@ TYPE TFILEDATA
   INTEGER           :: NCLOSE  = 0         !Number of times the file has been closed (during the current execution)
   !
   ! Fields for LFI files
-  INTEGER :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
+  INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
   INTEGER :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
   INTEGER :: NLFIVERB  = 1  !LFI verbosity level
   INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier

@@ -581,7 +581,7 @@ TYPE(TFILEDATA),POINTER,         INTENT(INOUT) :: TPFILE    !File structure to r
 CHARACTER(LEN=*),                INTENT(IN)    :: HNAME     !Filename
 CHARACTER(LEN=*),                INTENT(IN)    :: HTYPE     !Filetype (backup, output, prepidealcase...)
 CHARACTER(LEN=*),                INTENT(IN)    :: HMODE     !Opening mode (read, write...)
-INTEGER,                OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
+INTEGER(KIND=LFI_INT),  OPTIONAL,INTENT(IN)    :: KLFINPRAR !Number of predicted articles of the LFI file (non crucial)
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFITYPE  !Type of the file (used to generate list of files to transfers)
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFIVERB  !LFI verbosity level
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDADFILE !Corresponding dad file
@@ -590,7 +590,7 @@ LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (
                                                             !     (add it only if not yet present)
 !
 INTEGER :: IMI,IRESP
-INTEGER :: ILFINPRAR
+INTEGER(KIND=LFI_INT) :: ILFINPRAR
 INTEGER :: ILFITYPE
 INTEGER :: ILFIVERB
 LOGICAL :: GOLD
