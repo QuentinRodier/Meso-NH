@@ -82,7 +82,7 @@ TYPE TFILEDATA
   INTEGER :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
   INTEGER :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
   INTEGER :: NLFIVERB  = 1  !LFI verbosity level
-  INTEGER :: NLFIFLU   = -1 !File identifier
+  INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier
   !
   ! Fields for netCDF files
   INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
