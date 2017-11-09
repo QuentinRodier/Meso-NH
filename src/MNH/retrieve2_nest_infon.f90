@@ -261,9 +261,6 @@ IF(.NOT.LCARTESIAN) THEN
                  XXHAT(JPHEXT+1),XYHAT(JPHEXT+1), &
                  ZLAT2,ZLON2)
 
-  !20131024 MPPDB CHECK
-  CALL MPPDB_CHECK2D(ZPGDLAT1,"retrieve2_nest_info:ZPGDLAT1",PRECISION)
-  CALL MPPDB_CHECK2D(ZPGDLON1,"retrieve2_nest_info:ZPGDLON1",PRECISION)
 !
 !*      1.2   latitude and longitude of all local flux points (model1)
 !             --------------------------------------------------
@@ -273,6 +270,8 @@ IF(.NOT.LCARTESIAN) THEN
   CALL SM_LATLON(XPGDLATOR,XPGDLONOR,                                 &
                  SPREAD(XPGDXHAT(:),2,IJU),SPREAD(XPGDYHAT(:),1,IIU), &
                  ZPGDLAT1(:,:),ZPGDLON1(:,:))
+  CALL MPPDB_CHECK2D(ZPGDLAT1,"retrieve2_nest_info:ZPGDLAT1",PRECISION)
+  CALL MPPDB_CHECK2D(ZPGDLON1,"retrieve2_nest_info:ZPGDLON1",PRECISION)
 ENDIF  
 !
 !*      1.3   KXOR_C_ll, KYOR_C_ll - origin (global) of son model in father grid

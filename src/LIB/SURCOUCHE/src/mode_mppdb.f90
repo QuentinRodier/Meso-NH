@@ -73,7 +73,7 @@ CONTAINS
 
     !NMNH_COMM_WORLD = MPI_COMM_WORLD
 
-    ! If already initialized , no think to do
+    ! If already initialized, nothing to do
     IF (MPPDB_INITIALIZED) RETURN
     !
     MPPDB_INITIALIZED = .TRUE.

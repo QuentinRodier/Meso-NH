@@ -153,7 +153,6 @@ CPROGRAM='PGD   '
 !
 TZFILE => NULL()
 !
-CALL MPPDB_INIT()
 !*    1.      Set default names and parallelized I/O
 !             --------------------------------------
 !
