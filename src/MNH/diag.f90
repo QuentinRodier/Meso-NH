@@ -103,6 +103,7 @@ USE MODD_ADV_n
 USE MODD_DEEP_CONVECTION_n
 USE MODD_FIELD_n
 USE MODD_GRID_n
+USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG
 USE MODD_LBC_n
 USE MODD_PARAM_n
 USE MODD_PARAM_KAFR_n
@@ -141,7 +142,7 @@ USE MODE_TIME
 USE MODE_FM
 USE MODE_FMWRIT, ONLY : IO_WRITE_HEADER
 USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST,IO_FILE_PRINT_LIST
 USE MODE_ll
 USE MODE_MODELN_HANDLER
 USE MODE_MSG
@@ -791,12 +792,15 @@ ZTIME2=ZTIME2-ZTIME0
 !WRITE(ILUOUT0,*) '|---------------------| -------------------|-------------------|'
 !
 !
+IF(NIO_VERB>=NVERB_DEBUG) CALL IO_FILE_PRINT_LIST()
+!
 WRITE(ILUOUT0,*) ' '
 WRITE(ILUOUT0,*) '***************************** **************'
 WRITE(ILUOUT0,*) '*            EXIT  DIAG CORRECTLY          *'
 WRITE(ILUOUT0,*) '**************************** ***************'
 !WRITE(ILUOUT0,*) '  (see time analysis in ',TRIM(TLUOUT0%CNAME),' )'
 WRITE(ILUOUT0,*) ' '
+!
 CALL IO_FILE_CLOSE_ll(TLUOUT0)
 !-------------------------------------------------------------------------------
 !
