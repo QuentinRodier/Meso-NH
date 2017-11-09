@@ -91,8 +91,11 @@ TYPE TFILEDATA
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
   INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
   !
-  !Fields for ASCII files
-  INTEGER :: NLU = -1 !Logical unit number
+  !Fields for other files
+  INTEGER :: NLU = -1                      !Logical unit number
+  INTEGER :: NRECL = -1                    !Fortran RECL (record length)
+  CHARACTER(LEN=11) :: CFORM   = "UNKNOWN" !Fortran FORM (FORMATTED/UNFORMATTED)
+  CHARACTER(LEN=10) :: CACCESS = "UNKNOWN" !Fortran ACCESS (DIRECT/SEQUENTIAL)
   !
   TYPE(TFILEDATA),POINTER :: TDADFILE   => NULL() !Corresponding dad file
   TYPE(TFILEDATA),POINTER :: TFILE_PREV => NULL()
