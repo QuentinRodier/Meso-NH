@@ -57,15 +57,12 @@ END MODULE MODI_MNHCLOSE_NAMELIST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_IO_ll,       ONLY : TFILEDATA
-USE MODD_IO_NAM,      ONLY : CNAM
-USE MODD_LUNIT,       ONLY : CLUOUT0
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_NAM,           ONLY: TNAM
+USE MODD_LUNIT,            ONLY: CLUOUT0
 !
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_FM,               ONLY: FMLOOK_ll,IO_FILE_CLOSE_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
-USE MODE_ll
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -82,14 +79,14 @@ INTEGER,           INTENT(IN)  :: KLUNAM   ! logical unit of namelist
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
                                     ! at the open of the file in LFI  routines 
 !
-INTEGER           :: INAM           ! logical unit of namelist
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
 CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
-TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHCLOSE_NAMELIST','called for '//TRIM(CNAM))
+IF (.NOT.ASSOCIATED(TNAM)) CALL PRINT_MSG(NVERB_FATAL,'IO','CLOSE_FILE_MNH','TNAM not associated')
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHCLOSE_NAMELIST','called for '//TRIM(TNAM%CNAME))
 !
 SELECT CASE(CPROGRAM)
   CASE('REAL  ','IDEAL ','DIAG  ')
@@ -104,17 +101,13 @@ END SELECT
 !* closes the namelist
 !  -------------------
 !
-TZFILE => NULL()
-CALL IO_FILE_FIND_BYNAME(TRIM(CNAM),TZFILE,IRESP)
-!
-CALL FMLOOK_ll(CNAM,YLUOUT,INAM,IRESP)
-IF (INAM==KLUNAM) THEN
-  CALL IO_FILE_CLOSE_ll(TZFILE)
-  CNAM = "                            "
+IF (TNAM%NLU==KLUNAM) THEN
+  CALL IO_FILE_CLOSE_ll(TNAM)
+  TNAM => NULL()
 ELSE
   CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
   WRITE(ILUOUT,*) 'Error for closing a namelist file: '
-  WRITE(ILUOUT,*) 'logical unit ',KLUNAM,' does not correspond to namelist file', CNAM 
+  WRITE(ILUOUT,*) 'logical unit ',KLUNAM,' does not correspond to namelist file', TNAM%CNAME
 !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','MNHCLOSE_NAMELIST','')
 END IF

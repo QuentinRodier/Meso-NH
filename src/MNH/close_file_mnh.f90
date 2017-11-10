@@ -57,15 +57,13 @@ END MODULE MODI_CLOSE_FILE_MNH
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_IO_ll,       ONLY : TFILEDATA
-USE MODD_IO_NAM,      ONLY : CFILE
-USE MODD_LUNIT,       ONLY : CLUOUT0
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_NAM,           ONLY: TFILE
+USE MODD_LUNIT,            ONLY: CLUOUT0
 !
-USE MODE_FM
-USE MODE_IO_ll
+USE MODE_FM,               ONLY: FMLOOK_ll,IO_FILE_CLOSE_ll
+USE MODE_IO_ll,            ONLY: CLOSE_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
-USE MODE_ll
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -82,11 +80,9 @@ INTEGER,           INTENT(IN)  :: KUNIT    ! logical unit of file
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
                                     ! at the open of the file in LFI  routines 
 !
-INTEGER           :: INAM           ! logical unit of namelist
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
 CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
-TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 SELECT CASE(CPROGRAM)
@@ -116,20 +112,18 @@ END IF
 !* closes the namelist
 !  -------------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(CFILE))
+IF (.NOT.ASSOCIATED(TFILE)) CALL PRINT_MSG(NVERB_FATAL,'IO','CLOSE_FILE_MNH','TFILE not associated')
 !
-TZFILE => NULL()
-CALL IO_FILE_FIND_BYNAME(TRIM(CFILE),TZFILE,IRESP)
+CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(TFILE%CNAME))
 !
-CALL FMLOOK_ll(CFILE,YLUOUT,INAM,IRESP)
-IF (INAM==KUNIT) THEN
-  CALL IO_FILE_CLOSE_ll(TZFILE)
-  CFILE = "                            "
+IF (TFILE%NLU==KUNIT) THEN
+  CALL IO_FILE_CLOSE_ll(TFILE)
+  TFILE => NULL()
 ELSE
   WRITE(ILUOUT,*) 'Error for closing a file: '
-  WRITE(ILUOUT,*) 'logical unit ',KUNIT,' does not correspond to file', CFILE
+  WRITE(ILUOUT,*) 'logical unit ',KUNIT,' does not correspond to file', TFILE%CNAME
 !callabortstop
-  CALL PRINT_MSG(NVERB_FATAL,'GEN','CLOSE_FILE_MNH','')
+  CALL PRINT_MSG(NVERB_FATAL,'IO','CLOSE_FILE_MNH','')
 END IF
 !
 !-------------------------------------------------------------------------------

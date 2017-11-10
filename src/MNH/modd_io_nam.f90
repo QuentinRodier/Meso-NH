@@ -35,12 +35,13 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
 IMPLICIT NONE
 !------------------------------------------------------------------------------
 !
-CHARACTER(LEN=28), SAVE :: CNAM ="                            " ! name of namelist
-CHARACTER(LEN=28), SAVE :: CFILE="                            " ! name of file
+TYPE(TFILEDATA),POINTER :: TNAM  => NULL() ! namelist file
+TYPE(TFILEDATA),POINTER :: TFILE => NULL() ! file
 !
 !------------------------------------------------------------------------------
 !

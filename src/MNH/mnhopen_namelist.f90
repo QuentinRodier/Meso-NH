@@ -58,17 +58,12 @@ END MODULE MODI_MNHOPEN_NAMELIST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_IO_ll,       ONLY : TFILEDATA
-USE MODD_IO_NAM,      ONLY : CNAM
-USE MODD_LUNIT,       ONLY : CLUOUT0
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_NAM,           ONLY: TNAM
 !
-USE MODE_FM
-USE MODE_IO_ll
-USE MODE_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 USE MODE_MSG
-USE MODE_IO_MANAGE_STRUCT, ONLY : io_file_print_list
 !
 IMPLICIT NONE
 !
@@ -86,49 +81,46 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: IMI            ! model index
 !
-TYPE(TFILEDATA),POINTER :: TZFILE
-!-------------------------------------------------------------------------------
-!
-TZFILE => NULL()
+CHARACTER(LEN=28) :: YNAM ! name of namelist
 !-------------------------------------------------------------------------------
 !
 !* reading of namelist
 !  -------------------
 !
 IF (LEN_TRIM(HFILE)>0) THEN
-  CNAM = HFILE
+  YNAM = HFILE
 ELSE
  SELECT CASE(CPROGRAM)
   CASE('PGD   ')
-    CNAM='PRE_PGD1.nam '
+    YNAM='PRE_PGD1.nam '
   CASE('REAL  ')
-    CNAM='PRE_REAL1.nam'
+    YNAM='PRE_REAL1.nam'
   CASE('IDEAL ')
-    CNAM='PRE_IDEA1.nam'
+    YNAM='PRE_IDEA1.nam'
   CASE('MESONH')
     CALL GET_MODEL_NUMBER_ll(IMI)
-    WRITE(CNAM,FMT='(A5,I1,A22)') 'EXSEG',IMI,'.nam                  '
+    WRITE(YNAM,FMT='(A5,I1,A22)') 'EXSEG',IMI,'.nam                  '
   CASE('DIAG  ')
-    CNAM='DIAG1.nam    '
+    YNAM='DIAG1.nam    '
   CASE('SPAWN ')
-    CNAM='SPAWN1.nam   '
+    YNAM='SPAWN1.nam   '
   CASE('NESPGD')
-    CNAM='PRE_NEST_PGD1.nam'
+    YNAM='PRE_NEST_PGD1.nam'
   CASE('ZOOMPG')
-    CNAM='PRE_ZOOM1.nam'
+    YNAM='PRE_ZOOM1.nam'
   CASE('SPEC ')
-    CNAM='SPEC1.nam'
+    YNAM='SPEC1.nam'
   CASE DEFAULT
     CALL PRINT_MSG(NVERB_FATAL,'IO','MNHOPEN_NAMELIST','CPROGRAM '//TRIM(CPROGRAM)//' not allowed')
  END SELECT
 END IF
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHOPEN_NAMELIST','called for '//TRIM(CNAM))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHOPEN_NAMELIST','called for '//TRIM(YNAM))
 !
-CALL IO_FILE_ADD2LIST(TZFILE,TRIM(CNAM),'NML','READ',OOLD=.TRUE.) !OOLD=T because the file may already be in list
-CALL IO_FILE_OPEN_ll(TZFILE)
+CALL IO_FILE_ADD2LIST(TNAM,TRIM(YNAM),'NML','READ',OOLD=.TRUE.) !OOLD=T because the file may already be in list
+CALL IO_FILE_OPEN_ll(TNAM)
 !
-KLUNAM = TZFILE%NLU
+KLUNAM = TNAM%NLU
 !
 !-------------------------------------------------------------------------------
 !
