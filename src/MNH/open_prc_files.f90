@@ -12,16 +12,17 @@
 !     ##########################
 !
 INTERFACE
-      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE,   &
-                                           HCHEMFILE,HCHEMFILETYPE, &
-                                           HSURFFILE,HSURFFILETYPE, &
-                                           HPGDFILE,TPPGDFILE)
+      SUBROUTINE OPEN_PRC_FILES(TPPRE_REAL1FILE,HATMFILE,HATMFILETYPE,TPATMFILE, &
+                                                HCHEMFILE,HCHEMFILETYPE, &
+                                                HSURFFILE,HSURFFILETYPE, &
+                                                HPGDFILE,TPPGDFILE)
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-CHARACTER(LEN=28), INTENT(OUT) :: HPRE_REAL1   ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
 CHARACTER(LEN=6),  INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPATMFILE ! physiographic data file
 CHARACTER(LEN=28), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
 CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
 CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
@@ -34,10 +35,10 @@ END INTERFACE
 END MODULE MODI_OPEN_PRC_FILES
 !
 !     ###############################################################
-      SUBROUTINE OPEN_PRC_FILES(HPRE_REAL1,HATMFILE,HATMFILETYPE,   &
-                                           HCHEMFILE,HCHEMFILETYPE, &
-                                           HSURFFILE,HSURFFILETYPE, &
-                                           HPGDFILE,TPPGDFILE)
+      SUBROUTINE OPEN_PRC_FILES(TPPRE_REAL1FILE,HATMFILE,HATMFILETYPE,TPATMFILE, &
+                                                HCHEMFILE,HCHEMFILETYPE, &
+                                                HSURFFILE,HSURFFILETYPE, &
+                                                HPGDFILE,TPPGDFILE)
 !     ###############################################################
 !
 !!****  *OPEN_PRC_FILES* - openning of the files used in PREP_REAL_CASE
@@ -123,9 +124,10 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-CHARACTER(LEN=28), INTENT(OUT) :: HPRE_REAL1   ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPRE_REAL1FILE ! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(OUT) :: HATMFILE     ! name of the input atmospheric file
 CHARACTER(LEN=6),  INTENT(OUT) :: HATMFILETYPE ! type of the input atmospheric file
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPATMFILE ! physiographic data file
 CHARACTER(LEN=28), INTENT(OUT) :: HCHEMFILE    ! name of the input chemical file
 CHARACTER(LEN=6),  INTENT(OUT) :: HCHEMFILETYPE! type of the input chemical file
 CHARACTER(LEN=28), INTENT(OUT) :: HSURFFILE    ! name of the input surface file
@@ -137,7 +139,7 @@ TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPPGDFILE ! physiographic data file
 !              ------------------------------
 !
 INTEGER :: IRESP      ! return-code if problems eraised
-INTEGER :: IPRE_REAL1 ! logical unit for file HPRE_REAL1
+INTEGER :: IPRE_REAL1 ! logical unit for file PRE_REAL1
 INTEGER :: ILUOUT0    ! logical unit for listing file
 INTEGER :: ININAR     ! number of articles initially present in a FM file
 LOGICAL :: GFOUND     ! Return code when searching namelist
@@ -162,7 +164,6 @@ HCHEMFILE='                            '
 HCHEMFILETYPE='MESONH'
 HSURFFILE='                            '
 HSURFFILETYPE='MESONH'
-HPRE_REAL1='PRE_REAL1.nam               '
 CLUOUT0   ='OUTPUT_LISTING0             '
 CLUOUT = CLUOUT0
 !
@@ -184,8 +185,9 @@ IF (NVERB>=5) WRITE(ILUOUT0,*) 'Routine OPEN_PRC_FILES started'
 !*       3.    OPENNING OF PRE_REAL1.nam
 !              -------------------------
 !
-CALL OPEN_ll(UNIT=IPRE_REAL1,FILE=HPRE_REAL1,IOSTAT=IRESP,ACTION='READ', &
-     DELIM='QUOTE',MODE='GLOBAL',STATUS='OLD')
+CALL IO_FILE_ADD2LIST(TPPRE_REAL1FILE,'PRE_REAL1.nam','NML','READ')
+CALL IO_FILE_OPEN_ll(TPPRE_REAL1FILE,KRESP=IRESP)
+IPRE_REAL1=TPPRE_REAL1FILE%NLU
 IF (IRESP.NE.0 ) THEN
    !callabortstop
    CALL PRINT_MSG(NVERB_FATAL,'GEN','OPEN_PRC_FILES','file PRE_REAL1.nam not found')

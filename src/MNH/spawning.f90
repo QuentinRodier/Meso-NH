@@ -142,14 +142,15 @@ CHARACTER (LEN=28) :: YSPAFILE = ' '  ! possible name of the output FM-file
 CHARACTER (LEN= 2) :: YSPANBR = '00'  ! NumBeR associated to the SPAwned file
 INTEGER            :: IINFO_ll        ! return code of // routines
 INTEGER :: IRESP                      ! Return codes in FM routines
-INTEGER :: ILUSPA,ILUOUT              ! Logical unit number for the EXSPA file
-CHARACTER (LEN=32) :: YEXSPA          ! Name of the EXSPA file
+INTEGER :: ILUSPA                     ! Logical unit number for the EXSPA file
 LOGICAL :: GFOUND                     ! Return code when searching namelist
 !
 LOGICAL :: LSPAWN_SURF = .TRUE.  ! .TRUE. : surface fields are spawned
 LOGICAL                           :: LRES
 REAL                              :: XRES
-TYPE(TFILEDATA),POINTER :: TZINIFILE => NULL()
+TYPE(TFILEDATA),POINTER :: TZINIFILE  => NULL()
+TYPE(TFILEDATA),POINTER :: TZEXPAFILE => NULL()
+!
 NAMELIST/NAM_SPAWN_SURF/LSPAWN_SURF, LRES, XRES  
 NAMELIST/NAM_CONF_SPAWN/JPHEXT, NHALO
 !
@@ -179,9 +180,9 @@ CALL READ_EXSPA(CINIFILE,CINIFILEPGD,&
 !*       2.    NAM_BLANK, NAM_SPAWN_SURF and NAM_CONFZ READING AND EXSPA file CLOSURE
 !              ----------------------------------------
 !
-YEXSPA  = 'SPAWN1.nam'
-CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode='GLOBAL')
+CALL IO_FILE_FIND_BYNAME('SPAWN1.nam',TZEXPAFILE,IRESP)
+CALL IO_FILE_OPEN_ll(TZEXPAFILE)
+ILUSPA = TZEXPAFILE%NLU
 !
 CALL INIT_NMLVAR
 CALL POSNAM(ILUSPA,'NAM_SPAWN_SURF',GFOUND)
@@ -193,7 +194,7 @@ CALL POSNAM(ILUSPA,'NAM_CONFZ',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONFZ)
 CALL POSNAM(ILUSPA,'NAM_CONF_SPAWN',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_CONF_SPAWN)
-CALL CLOSE_ll(YEXSPA)
+CALL IO_FILE_CLOSE_ll(TZEXPAFILE)
 !
 !-------------------------------------------------------------------------------
 !
@@ -225,18 +226,17 @@ CALL MPPDB_CHECK3D(XUT,"SPAWNING-after boundaries::XUT",PRECISION)
 !*       5.    SPAWNING OF MODEL 2 FROM MODEL 1
 !              --------------------------------
 !
-CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode='GLOBAL')
-ILUOUT = TLUOUT%NLU
+CALL IO_FILE_OPEN_ll(TZEXPAFILE)
+ILUSPA = TZEXPAFILE%NLU
+!
 CALL SET_POINTERS_TO_MODEL1()
 CALL GOTO_MODEL(2)
-ILUOUT = TLUOUT%NLU
 CALL INIT_NMLVAR
 CALL POSNAM(ILUSPA,'NAM_SPAWN_SURF',GFOUND)
 IF (GFOUND) READ(UNIT=ILUSPA,NML=NAM_SPAWN_SURF)
 CALL UPDATE_MODD_FROM_NMLVAR
 CALL GOTO_MODEL(1)
-CALL CLOSE_ll(YEXSPA)
+CALL IO_FILE_CLOSE_ll(TZEXPAFILE)
 !
 CALL GO_TOMODEL_ll(2,IINFO_ll)
 !

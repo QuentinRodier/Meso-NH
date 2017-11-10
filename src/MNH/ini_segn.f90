@@ -253,8 +253,10 @@ CHARACTER (LEN=4)  :: YSCONV
 CHARACTER (LEN=4)  :: YCLOUD
 CHARACTER (LEN=4)  :: YELEC
 CHARACTER (LEN=3)  :: YEQNSYS
+TYPE(TFILEDATA),POINTER :: TZFILE_DES
 !
-TPINIFILE => NULL()
+TPINIFILE  => NULL()
+TZFILE_DES => NULL()
 !-------------------------------------------------------------------------------
 !
 !*       1.    OPEN OUPTUT-LISTING FILE AND EXSEG FILE
@@ -276,9 +278,9 @@ WRITE(UNIT=ILUOUT,FMT='(50("*"),/,"*",17X,"MODEL ",I1," LISTING",16X,"*",/,  &
 !
 IF (CPROGRAM=='MESONH') THEN
   YEXSEG='EXSEG'//TRIM(ADJUSTL(YMI))//'.nam'
-
-  CALL OPEN_ll(UNIT=ILUSEG,FILE=YEXSEG,IOSTAT=IRESP,ACTION='READ', &
-       DELIM='QUOTE',MODE='GLOBAL')
+  CALL IO_FILE_ADD2LIST(TZFILE_DES,TRIM(YEXSEG),'NML','READ')
+  CALL IO_FILE_OPEN_ll(TZFILE_DES)
+  ILUSEG=TZFILE_DES%NLU
 !
 !*       1.3   SPAWNING or SPEC or REAL program case
 !              ---------------------
@@ -475,7 +477,7 @@ END IF
 !*      7.    CLOSE  FILES
 !             ------------
 !
-IF (CPROGRAM=='MESONH') CALL CLOSE_ll(YEXSEG,IOSTAT=IRESP)
+IF (CPROGRAM=='MESONH') CALL IO_FILE_CLOSE_ll(TZFILE_DES)
 !
 !-------------------------------------------------------------------------------
 9002  FORMAT(/,'FATAL ERROR IN INI_SEG_n: pb to read ',A16,' IRESP=',I3)

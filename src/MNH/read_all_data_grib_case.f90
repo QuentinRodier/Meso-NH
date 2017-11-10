@@ -12,13 +12,13 @@
       MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !     #################################
 INTERFACE
-SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,TPPGDFILE,     &
+SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,TPPRE_REAL1,HGRIB,TPPGDFILE,    &
                     PTIME_HORI,KVERB,ODUMMY_REAL                         ) 
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
 CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1  ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
 INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
@@ -30,7 +30,7 @@ END SUBROUTINE READ_ALL_DATA_GRIB_CASE
 END INTERFACE
 END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !     ##########################################################################
-      SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,HPRE_REAL1,HGRIB,TPPGDFILE,     &
+      SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,TPPRE_REAL1,HGRIB,TPPGDFILE,    &
                        PTIME_HORI,KVERB,ODUMMY_REAL                            )
 !     ##########################################################################
 !
@@ -182,7 +182,7 @@ IMPLICIT NONE
 !       ------------------------
 !
 CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1  ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
 INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
@@ -1402,9 +1402,9 @@ IF (ODUMMY_REAL) THEN
   !*       2.10.1   read 2D dummy fields
   !
   ! close file
-  CALL CLOSE_ll(HPRE_REAL1,IOSTAT=IRET)
+  CALL IO_FILE_CLOSE_ll(TPPRE_REAL1)
   ! open input file
-  CALL CH_OPEN_INPUT(HPRE_REAL1, "DUMMY_2D", ICHANNEL, ILUOUT0, KVERB)
+  CALL CH_OPEN_INPUT(TPPRE_REAL1%CNAME, "DUMMY_2D", ICHANNEL, ILUOUT0, KVERB)
   !
   ! read number of dummy 2D fields to transfer into mesonh
   READ(ICHANNEL, *) IMOC
@@ -1518,7 +1518,7 @@ ENDIF
 !
 IF (HFILE(1:3)=='ATM') THEN
   WRITE (ILUOUT0,'(A)') ' | Reading of vertical grid in progress'
-  CALL READ_VER_GRID(HPRE_REAL1)
+  CALL READ_VER_GRID(TPPRE_REAL1)
 END IF
 
 !

@@ -2,12 +2,12 @@
       MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !     #################################
 INTERFACE
-SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,TPPGDFILE,  &
+SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(TPPRE_REAL1,HFILE,TPPGDFILE, &
                                       PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-CHARACTER(LEN=28),  INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
 CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
 TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
 REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
@@ -18,7 +18,7 @@ END SUBROUTINE READ_CHEM_DATA_NETCDF_CASE
 END INTERFACE
 END MODULE MODI_READ_CHEM_DATA_NETCDF_CASE
 !     ####################################################################
-      SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(HPRE_REAL1,HFILE,TPPGDFILE,  &
+      SUBROUTINE READ_CHEM_DATA_NETCDF_CASE(TPPRE_REAL1,HFILE,TPPGDFILE, &
                                             PTIME_HORI,KVERB,ODUMMY_REAL ) 
 !     ####################################################################
 !
@@ -131,7 +131,7 @@ IMPLICIT NONE
 !* 0.1. Declaration of arguments
 !       ------------------------
 !
-CHARACTER(LEN=28),  INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
 CHARACTER(LEN=28),  INTENT(IN)    :: HFILE      ! name of the NETCDF file
 TYPE(TFILEDATA),    INTENT(IN)    :: TPPGDFILE  ! physiographic data file
 REAL,               INTENT(INOUT) :: PTIME_HORI ! time spent in hor. interpolations
@@ -735,7 +735,7 @@ CALL CLOSE_ll(YMOZ,IOSTAT=IRET)
 !* 4.1 Read VERTICAL GRID
 !
 WRITE (ILUOUT0,'(A)') ' | Reading of vertical grid in progress'
-CALL READ_VER_GRID(HPRE_REAL1)
+CALL READ_VER_GRID(TPPRE_REAL1)
 !
 !--------------------------------------------------------------
 !

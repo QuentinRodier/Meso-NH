@@ -12,9 +12,11 @@
       MODULE MODI_READ_VER_GRID
 !     #########################
 INTERFACE
-      SUBROUTINE READ_VER_GRID(HPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
+      SUBROUTINE READ_VER_GRID(TPPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
 !
-CHARACTER(LEN=*),             INTENT(IN) :: HPRE_REAL1 ! name of the namelist file
+USE MODD_IO_ll, ONLY : TFILEDATA
+!
+TYPE(TFILEDATA),POINTER,      INTENT(IN) :: TPPRE_REAL1! namelist file
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PZHAT      ! vertival grid of input fmfile
 LOGICAL,            OPTIONAL, INTENT(IN) :: OSLEVE     ! flag for SLEVE coordinate
 REAL,               OPTIONAL, INTENT(IN) :: PLEN1      ! Decay scale for smooth topography
@@ -24,9 +26,9 @@ END SUBROUTINE READ_VER_GRID
 END INTERFACE
 END MODULE MODI_READ_VER_GRID
 !
-!     ##########################################
-      SUBROUTINE READ_VER_GRID(HPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
-!     ##########################################
+!     ##############################################################
+      SUBROUTINE READ_VER_GRID(TPPRE_REAL1,PZHAT,OSLEVE,PLEN1,PLEN2)
+!     ##############################################################
 !
 !!****  *READ_VER_GRID* - reads namelist data in file PRE_REAL1 for the 
 !!                        initialization of the vertical grid for real cases.
@@ -67,10 +69,6 @@ END MODULE MODI_READ_VER_GRID
 !!      The NKMAX+1 levels are read in * format after the namelists, from 
 !!      ground level to rigid top level
 !!
-!!    EXTERNAL
-!!    --------
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!
@@ -107,25 +105,26 @@ END MODULE MODI_READ_VER_GRID
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_CONF           ! declaration modules
+USE MODD_DIM_n, NKMAX_n=>NKMAX
+USE MODD_GRID_n, LSLEVE_n=>LSLEVE, XLEN1_n=>XLEN1, XLEN2_n=>XLEN2
+USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_LUNIT
+USE MODD_PARAMETERS
+!
 USE MODE_FM
 USE MODE_MSG
 USE MODE_POS
 !
 USE MODI_DEFAULT_SLEVE
 !
-USE MODD_CONF           ! declaration modules
-USE MODD_LUNIT
-USE MODD_GRID_n, LSLEVE_n=>LSLEVE, XLEN1_n=>XLEN1, XLEN2_n=>XLEN2
-USE MODD_DIM_n, NKMAX_n=>NKMAX
-USE MODD_PARAMETERS
-USE MODD_CONF, ONLY : CCONF
 USE MODN_BLANK
 !
 IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
-CHARACTER(LEN=*),             INTENT(IN) :: HPRE_REAL1 ! name of the namelist file
+TYPE(TFILEDATA),POINTER,      INTENT(IN) :: TPPRE_REAL1! namelist file
 LOGICAL,            OPTIONAL, INTENT(IN) :: OSLEVE     ! flag for SLEVE coordinate
 REAL,               OPTIONAL, INTENT(IN) :: PLEN1      ! Decay scale for smooth topography
 REAL,               OPTIONAL, INTENT(IN) :: PLEN2      ! Decay scale for small-scale topography deviation
@@ -166,7 +165,7 @@ NAMELIST/NAM_VER_GRID/ LTHINSHELL,NKMAX,YZGRID_TYPE,ZDZGRD,ZDZTOP,ZZMAX_STRGRD,Z
 !*       1.    READING OF THE NAMELIST IN FILE HPRE_REAL1 :  
 !              ------------------------------------------
 ILUOUT0 = TLUOUT0%NLU
-CALL FMLOOK_ll(HPRE_REAL1,CLUOUT0,IPRE_REAL1,IRESP)
+IPRE_REAL1 = TPPRE_REAL1%NLU
 !
 !*       1.1   Vertical grid default value
 !              ---------------------------

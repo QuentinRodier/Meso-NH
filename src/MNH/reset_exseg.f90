@@ -64,14 +64,17 @@ END MODULE MODI_RESET_EXSEG
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODE_POS
-USE MODE_IO_ll
+USE MODE_FM, ONLY : IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
 USE MODE_FMREAD
+USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_POS
 !
 USE MODD_DIAG_FLAG
 USE MODD_CH_MNHC_n, ONLY: LUSECHEM
 USE MODD_CONF_n, ONLY: LUSERV
 USE MODD_GET_n
+USE MODD_IO_ll,   ONLY: TFILEDATA
 USE MODD_PARAM_n, ONLY: CDCONV, CRAD
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_RAD_n
@@ -85,21 +88,23 @@ CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name for output listing
 !
 !*       0.2   declarations of local variables
 !
-CHARACTER (LEN=9) :: YNAM      ! name of the namelist file
 INTEGER :: IRESP,ILUNAM        ! return code of FMLOOK and logical unit number
 LOGICAL :: GFOUND              ! Return code when searching namelist
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+TYPE(TFILEDATA),POINTER :: TZNMLFILE! Namelist file
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.    OPENING NAMELIST FILE
 !              ---------------------
 !
-YNAM  = 'DIAG1.nam'
-CALL OPEN_ll (UNIT=ILUNAM,FILE=YNAM,IOSTAT=IRESP,STATUS="OLD",ACTION='READ', &
-     FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
+TZNMLFILE  => NULL()
+!
+CALL IO_FILE_FIND_BYNAME('DIAG1.nam',TZNMLFILE,IRESP)
+CALL IO_FILE_OPEN_ll(TZNMLFILE)
+ILUNAM = TZNMLFILE%NLU
 !
 !-------------------------------------------------------------------------------
 !
@@ -177,6 +182,6 @@ PRINT*,' '
 !
 !-------------------------------------------------------------------------------
 !
-CALL CLOSE_ll(YNAM)
+CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 END SUBROUTINE RESET_EXSEG

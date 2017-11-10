@@ -78,7 +78,6 @@ INTEGER, INTENT(OUT) :: KLUDES ! logical unit of .des file
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: ILUOUT         !
 INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines
 INTEGER           :: IMI            ! model index
@@ -92,7 +91,7 @@ CHARACTER(LEN=32) :: YDESFM         ! .des file name
 !*       1.    initialisation of logical unit of output listing
 !
 SELECT CASE(CPROGRAM)
-  CASE('REAL  ','IDEAL ','DIAG  ')
+  CASE('REAL  ','IDEAL ','DIAG  ','PGD   ')
     YLUOUT = CLUOUT0
   CASE('MESONH','SPAWN ')
     IMI = GET_CURRENT_MODEL_INDEX() 
@@ -100,8 +99,6 @@ SELECT CASE(CPROGRAM)
   CASE DEFAULT
     YLUOUT = ''
 END SELECT
-!
-CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
 !
 !*       2.    initialisation of logical units of  .des files
 !

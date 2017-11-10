@@ -12,12 +12,12 @@
       MODULE MODI_SET_SUBDOMAIN
 !     #########################
 INTERFACE
-      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,TPATMFILE,KXOR_DAD,KYOR_DAD, &
+      SUBROUTINE SET_SUBDOMAIN(TPNMLFILE,TPATMFILE,KXOR_DAD,KYOR_DAD, &
                                KXOR,KYOR,KDXRATIO,KDYRATIO            )
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
-CHARACTER(LEN=28), INTENT(IN) :: HNAMELIST ! name of the namelist file
+TYPE(TFILEDATA),   INTENT(IN) :: TPNMLFILE ! namelist file
 TYPE(TFILEDATA),   INTENT(IN) :: TPATMFILE ! atmospheric MNH file
 INTEGER,           INTENT(OUT):: KXOR_DAD  ! XOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KYOR_DAD  ! YOR compared to Dad file, if any
@@ -31,7 +31,7 @@ END INTERFACE
 END MODULE MODI_SET_SUBDOMAIN
 !
 !     #################################################################
-      SUBROUTINE SET_SUBDOMAIN(HNAMELIST,TPATMFILE,KXOR_DAD,KYOR_DAD, &
+      SUBROUTINE SET_SUBDOMAIN(TPNMLFILE,TPATMFILE,KXOR_DAD,KYOR_DAD, &
                                KXOR,KYOR,KDXRATIO,KDYRATIO            )
 !     #################################################################
 !
@@ -112,7 +112,7 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-CHARACTER(LEN=28), INTENT(IN) :: HNAMELIST ! name of the namelist file
+TYPE(TFILEDATA),   INTENT(IN) :: TPNMLFILE ! namelist file
 TYPE(TFILEDATA),   INTENT(IN) :: TPATMFILE ! atmospheric MNH file
 INTEGER,           INTENT(OUT):: KXOR_DAD  ! XOR compared to Dad file, if any
 INTEGER,           INTENT(OUT):: KYOR_DAD  ! YOR compared to Dad file, if any
@@ -181,15 +181,13 @@ NYOR=NUNDEF
 !*       2.2   Reading of the namelist file (or given as dummy argument)
 !              ---------------------------- 
 !
-CALL OPEN_ll(UNIT=ILUNAM,FILE=HNAMELIST,IOSTAT=IRESP,    &
-             FORM='FORMATTED',ACTION='READ',MODE='GLOBAL')
+ILUNAM = TPNMLFILE%NLU
 CALL POSNAM(ILUNAM,'NAM_MESONH_DOM',GFOUND,ILUOUT0)  
 IF (GFOUND) THEN
   NIMAX=NIMAX_n ; NJMAX=NJMAX_n
   READ(UNIT=ILUNAM,NML=NAM_MESONH_DOM)
   NIMAX_n=NIMAX ; NJMAX_n=NJMAX
 END IF
-CALL CLOSE_ll(HNAMELIST,IOSTAT=IRESP)
 !
 !*       2.3   Default values if none was given in namelist: domain is centered
 !              ---------------------------- ---------------

@@ -66,7 +66,6 @@ END MODULE MODI_FILL_ZSMTn
 !*       0.    DECLARATIONS
 !
 USE MODD_GRID_n,  ONLY : XZSMT
-USE MODD_LUNIT_n, ONLY : CLUOUT
 USE MODD_LBC_n,   ONLY : CLBCX,CLBCY
 USE MODD_NESTING
 USE MODD_PARAMETERS
@@ -143,7 +142,7 @@ DPTR_CLBCY=>CLBCY
 DPTR_XZSMT=>XZSMT
 CALL SPAWN_ZS(NXOR_ALL(KSON),NXEND_ALL(KSON),NYOR_ALL(KSON),NYEND_ALL(KSON), &
               NDXRATIO_ALL(KSON),NDYRATIO_ALL(KSON),IDIMX,IDIMY,DPTR_CLBCX,DPTR_CLBCY,         &
-              CLUOUT,PFIELD,DPTR_XZSMT,HFIELD                             )
+              PFIELD,DPTR_XZSMT,HFIELD                             )
 !-------------------------------------------------------------------------------
 !
 CALL GOTO_MODEL(IMI)

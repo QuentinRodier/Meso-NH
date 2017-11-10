@@ -575,6 +575,7 @@ REAL              :: XHSLOP=1.2           ! if LHSLOP filtering of slopes higher
 REAL              :: ZZS_MAX, ZZS_MAX_ll
 INTEGER           :: IJPHEXT
 !
+TYPE(TFILEDATA),POINTER :: TZEXPREFILE  => NULL()
 TYPE(TFILEDATA),POINTER :: TZFILE       => NULL()
 TYPE(TFILEDATA),POINTER :: TZFILEDUMMY  => NULL()
 TYPE(TFILEDATA),POINTER :: TZINIFILEPGD => NULL()
@@ -682,8 +683,9 @@ NLUOUT = TLUOUT0%NLU
 TLUOUT              => TLUOUT0
 TFILE_OUTPUTLISTING => TLUOUT0
 !
-CALL OPEN_ll(UNIT=NLUPRE,FILE=CEXPRE,IOSTAT=NRESP,ACTION='READ', &
-     DELIM='QUOTE',MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZEXPREFILE,TRIM(CEXPRE),'NML','READ')
+CALL IO_FILE_OPEN_ll(TZEXPREFILE)
+NLUPRE=TZEXPREFILE%NLU
 !
 !*       3.2   read in NLUPRE the namelist informations
 !
@@ -907,7 +909,7 @@ IF(.NOT. L1D) LHORELAX_SV(1:NSV)=.TRUE.
 !
 !*       4.1  Vertical Spatial grid 
 !
-CALL READ_VER_GRID(CEXPRE)
+CALL READ_VER_GRID(TZEXPREFILE)
 !
 !*       4.2  Initialize parallel variables and compute array's dimensions
 !
@@ -1722,7 +1724,7 @@ END IF
 !  before calling chemistry
 CCONF = 'START'
 CSTORAGE_TYPE='TT'                  
-CALL CLOSE_ll(CEXPRE,IOSTAT=NRESP)  ! Close the EXPRE file 
+CALL IO_FILE_CLOSE_ll(TZEXPREFILE)  ! Close the EXPRE file
 !
 IF ( LCH_INIT_FIELD ) CALL CH_INIT_FIELD_n(1, NLUOUT, NVERB)
 !

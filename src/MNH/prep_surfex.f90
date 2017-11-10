@@ -65,7 +65,6 @@ IMPLICIT NONE
 !*       0.1   Declaration of local variables
 !              ------------------------------
 !
-CHARACTER(LEN=28)     :: YPRE_REAL1      ! name of the PRE_REAL1 file
 CHARACTER(LEN=28)     :: YATMFILE        ! name of the Atmospheric file
 CHARACTER(LEN=6)      :: YATMFILETYPE    ! type of the Atmospheric file
 CHARACTER(LEN=28)     :: YCHEMFILE       ! name of the Chemical file (not used)
@@ -78,7 +77,6 @@ CHARACTER(LEN=28)     :: YPGDFILE        ! name of the physiographic data
 !* file management variables and counters
 !
 INTEGER               :: ILUOUT0         ! logical unit for listing file
-INTEGER               :: IPRE_REAL1      ! logical unit for namelist file
 INTEGER               :: IRESP           ! return code in FM routines
 INTEGER               :: ININAR          ! number of articles initially
                                                   ! present in a FM file
@@ -90,6 +88,7 @@ INTEGER               :: II, IJ, IGRID, ILENGTH
 TYPE(TFILEDATA),POINTER :: TZFILE    => NULL()
 TYPE(TFILEDATA),POINTER :: TZATMFILE => NULL()
 TYPE(TFILEDATA),POINTER :: TZPGDFILE => NULL()
+TYPE(TFILEDATA),POINTER :: TZPRE_REAL1FILE => NULL()
 !
 !-------------------------------------------------------------------------------
 !
@@ -109,10 +108,10 @@ CSTORAGE_TYPE='SU'
 !              ---------------------
 CALL INITIO_ll()
 !
-CALL OPEN_PRC_FILES(YPRE_REAL1,YATMFILE, YATMFILETYPE  &
-                              ,YCHEMFILE,YCHEMFILETYPE &
-                              ,YSURFFILE,YSURFFILETYPE &
-                              ,YPGDFILE,TZPGDFILE)
+CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
+                                   ,YCHEMFILE,YCHEMFILETYPE &
+                                   ,YSURFFILE,YSURFFILETYPE &
+                                   ,YPGDFILE,TZPGDFILE)
 ILUOUT0 = TLUOUT0%NLU
 !
 CPGDFILE = YPGDFILE
@@ -135,10 +134,8 @@ CALL INI_CST
 !
 !*       4.1   reading of configuration variables
 !
-CALL FMLOOK_ll(YPRE_REAL1,CLUOUT0,IPRE_REAL1,IRESP)
+CALL IO_FILE_CLOSE_ll(TZPRE_REAL1FILE)
 !
-CALL CLOSE_ll(YPRE_REAL1, IOSTAT=IRESP)
-
 !*       4.2   reading of values of some configuration variables in namelist
 !
 CALL INI_FIELD_LIST(1)

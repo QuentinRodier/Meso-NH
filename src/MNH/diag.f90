@@ -190,7 +190,6 @@ LOGICAL :: GCLOSE_OUT = .FALSE. ! conditional closure of the OUTPUT FM-file
 INTEGER :: ISTEPBAL   ! loop indice for balloons and aircraft
 INTEGER :: ILUNAM      ! Logical unit numbers for the namelist file
                        ! and for output_listing file
-CHARACTER (LEN=9) :: YNAM ! name of the namelist file
 INTEGER        :: JF =0   !  loop index
 LOGICAL :: GFOUND         ! Return code when searching namelist
 LOGICAL, DIMENSION(:,:),ALLOCATABLE     :: GMASKkids ! kids domains mask
@@ -202,7 +201,8 @@ INTEGER :: IINFO_ll               ! return code for _ll routines
 REAL, DIMENSION(:,:),ALLOCATABLE          :: ZSEA,ZTOWN
 REAL, DIMENSION(:,:,:,:),ALLOCATABLE          :: ZWETDEPAER
 !
-TYPE(TFILEDATA),POINTER :: TZDIACFILE
+TYPE(TFILEDATA),POINTER :: TZDIACFILE => NULL()
+TYPE(TFILEDATA),POINTER :: TZNMLFILE  => NULL() !Namelist file
 !
 NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
@@ -235,8 +235,6 @@ NAMELIST/NAM_CONF_DIAG/JPHEXT, NHALO
 !
 !*       0.0   Initializations
 !              ---------------
-!
-TZDIACFILE => NULL()
 !
 CALL GOTO_MODEL(1)
 !
@@ -376,9 +374,9 @@ XISOTH(:)=0.
 !*       1.0   Namelist reading
 !              ----------------
 !
-YNAM  = 'DIAG1.nam'
-CALL OPEN_ll (UNIT=ILUNAM,FILE=YNAM,IOSTAT=IRESP,STATUS="OLD",ACTION='READ', &
-     FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZNMLFILE,'DIAG1.nam','NML','READ')
+CALL IO_FILE_OPEN_ll(TZNMLFILE)
+ILUNAM = TZNMLFILE%NLU
 !
 !
 CALL POSNAM(ILUNAM,'NAM_DIAG',GFOUND)
@@ -410,7 +408,7 @@ IF (GFOUND) THEN
 END IF
 CALL SET_CONFIO_ll()
 !
-CALL CLOSE_ll(YNAM)
+CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 CINIFILE = YINIFILE(1)
 CINIFILEPGD = YINIFILEPGD(1)

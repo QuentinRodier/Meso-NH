@@ -22,7 +22,7 @@
 !
 !
 USE MODD_CONF
-USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG
+USE MODD_IO_ll, ONLY: NIO_VERB,NVERB_DEBUG,TFILEDATA
 USE MODD_LUNIT
 USE MODD_LUNIT_n
 USE MODD_TIME_n
@@ -35,7 +35,7 @@ USE MODI_SPECTRE_AROME
 USE MODE_MSG
 USE MODE_POS
 USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_PRINT_LIST
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST,IO_FILE_PRINT_LIST
 USE MODE_MODELN_HANDLER
 USE MODE_FM
 !USE MODD_TYPE_DATE
@@ -54,7 +54,6 @@ INTEGER                          :: IRESP         ! return code in FM routines
 INTEGER                          :: ILUOUT0       ! Logical unit number for the output listing
 INTEGER                          :: ILUNAM        ! Logical unit numbers for the namelist file
                                                   ! and for output_listing file
-CHARACTER (LEN=9)                :: YNAM          ! name of the namelist file
 LOGICAL                          :: GFOUND        ! Return code when searching namelist
 !
 INTEGER                          :: IINFO_ll      ! return code for _ll routines 
@@ -63,9 +62,7 @@ REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORK         ! work array
 REAL,DIMENSION(:,:,:),ALLOCATABLE:: ZWORKAROME    ! work array
 INTEGER :: NI,NJ,NK
 REAL    ::XDELTAX,XDELTAY
-
-
-
+TYPE(TFILEDATA),POINTER :: TZNMLFILE  => NULL()
 !
 NAMELIST/NAM_SPECTRE/ LSPECTRE_U,LSPECTRE_V,LSPECTRE_W,LSPECTRE_TH,LSPECTRE_RV,&
                       LSPECTRE_LSU,LSPECTRE_LSV,LSPECTRE_LSW,LSPECTRE_LSTH,LSPECTRE_LSRV,LSMOOTH
@@ -121,9 +118,9 @@ PRINT*, '*********************************************************************'
 PRINT*, '*********************************************************************'
 PRINT*, ' '
 !
-YNAM  = 'SPEC1.nam'
-CALL OPEN_ll (UNIT=ILUNAM,FILE=YNAM,IOSTAT=IRESP,STATUS="OLD",ACTION='READ', &
-     FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZNMLFILE,'SPEC1.nam','NML','READ')
+CALL IO_FILE_OPEN_ll(TZNMLFILE)
+ILUNAM = TZNMLFILE%NLU
 !
 PRINT*, 'READ THE SPEC1.NAM FILE'
 !
@@ -165,7 +162,7 @@ IF (GFOUND) THEN
 END IF
 CALL SET_CONFIO_ll()
 !
-CALL CLOSE_ll(YNAM)
+CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 CINIFILE = YINIFILE(1)
 !

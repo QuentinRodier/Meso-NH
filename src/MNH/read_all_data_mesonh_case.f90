@@ -12,12 +12,12 @@
 MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !####################################
 INTERFACE
-      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,TPPGDFILE, &
-                              HDAD_NAME                                  )
+      SUBROUTINE READ_ALL_DATA_MESONH_CASE(TZPRE_REAL1,HFMFILE,TPPGDFILE, &
+                              HDAD_NAME                                   )
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER, INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
 CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
@@ -28,10 +28,10 @@ END INTERFACE
 !
 END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !
-!     ####################################################################
-      SUBROUTINE READ_ALL_DATA_MESONH_CASE(HPRE_REAL1,HFMFILE,TPPGDFILE, &
-                              HDAD_NAME                                  )
-!     ####################################################################
+!     #####################################################################
+      SUBROUTINE READ_ALL_DATA_MESONH_CASE(TZPRE_REAL1,HFMFILE,TPPGDFILE, &
+                              HDAD_NAME                                   )
+!     #####################################################################
 !
 !!****  *READ_ALL_DATA_MESONH_CASE* - reads data for the initialization of real cases.
 !! 
@@ -117,8 +117,9 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_IO_ll
+USE MODE_FM
 USE MODE_FMREAD
+USE MODE_IO_ll
 USE MODE_MSG
 !
 USE MODI_READ_GRID_TIME_MESONH_CASE ! interface modules
@@ -163,7 +164,7 @@ IMPLICIT NONE
 !*       0.1   Declaration of arguments
 !              ------------------------
 !
-CHARACTER(LEN=28), INTENT(IN)    :: HPRE_REAL1 ! name of the PRE_REAL1 file
+TYPE(TFILEDATA),POINTER, INTENT(INOUT) :: TZPRE_REAL1 !PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HFMFILE    ! name of the Mesonh input file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE  ! physiographic data file
 CHARACTER(LEN=*),  INTENT(INOUT) :: HDAD_NAME  ! true name of the Mesonh input file
@@ -228,10 +229,9 @@ ZRES    = XRES
 YOUTFILE=CINIFILE
 CINIFILE=HFMFILE
 !
-CALL CLOSE_ll(HPRE_REAL1, IOSTAT=IRESP)
+CALL IO_FILE_CLOSE_ll(TZPRE_REAL1)
 CALL INIT_MNH
-CALL OPEN_ll(UNIT=IPRE_REAL1,FILE=HPRE_REAL1,IOSTAT=IRESP,ACTION='READ', &
-     DELIM='QUOTE',MODE='GLOBAL',STATUS='OLD')
+CALL IO_FILE_OPEN_ll(TZPRE_REAL1)
 !
 CINIFILE=YOUTFILE
 !
@@ -267,7 +267,7 @@ IJSUP_LS = NJMAX + 2* JPHEXT
 !*            5. Reading of vertical grid
 !                ------------------------
 !
-CALL READ_VER_GRID(HPRE_REAL1,XZHAT_LS,LSLEVE_LS,XLEN1_LS,XLEN2_LS)
+CALL READ_VER_GRID(TZPRE_REAL1,XZHAT_LS,LSLEVE_LS,XLEN1_LS,XLEN2_LS)
 !
 !*            6. Add a bogus vortex from observations (radar, satellite,...)
 !                -----------------------------------------------------------

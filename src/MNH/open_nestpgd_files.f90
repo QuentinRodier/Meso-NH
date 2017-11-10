@@ -129,6 +129,7 @@ INTEGER           :: NHALO_MNH
 !
 INTEGER           :: ILUOUT  ! Logical unit number for the EXSPA file
 TYPE(TFILEDATA),POINTER :: TZDADFILE
+TYPE(TFILEDATA),POINTER :: TZPRE_NEST_PGD
 !
 !*       0.3   Declaration of namelists
 !              ------------------------
@@ -144,6 +145,9 @@ NAMELIST/NAM_PGD8/ YPGD8, IDAD
 NAMELIST/NAM_NEST_PGD/ YNEST
 NAMELIST/NAM_CONF_NEST/JPHEXT, NHALO_MNH
 !-------------------------------------------------------------------------------
+!
+TZDADFILE      => NULL()
+TZPRE_NEST_PGD => NULL()
 !
 !*       1.    SET DEFAULT NAMES
 !              -----------------
@@ -168,8 +172,9 @@ ILUOUT0=TLUOUT0%NLU
 !*       3.    OPENNING OF PRE_NEST_PGD1.nam
 !              -----------------------------
 !
-CALL OPEN_ll(UNIT=IPRE_NEST_PGD,FILE=HPRE_NEST_PGD,IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-     MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZPRE_NEST_PGD,TRIM(HPRE_NEST_PGD),'NML','READ')
+CALL IO_FILE_OPEN_ll(TZPRE_NEST_PGD)
+IPRE_NEST_PGD = TZPRE_NEST_PGD%NLU
 !reading of NAM_CONFZ
 CALL FMLOOK_ll(HPRE_NEST_PGD,HPRE_NEST_PGD,ILUOUT,IRESP)
 CALL POSNAM(IPRE_NEST_PGD,'NAM_CONFZ',GFOUND)
@@ -313,8 +318,7 @@ DO JPGD=1,NMODEL
                         'WRITE',KLFITYPE=1,KLFIVERB=NVERB,TPDADFILE=TZDADFILE)
 END DO
 !
-!-------------------------------------------------------------------------------
-CALL CLOSE_ll(HPRE_NEST_PGD)
+CALL IO_FILE_CLOSE_ll(TZPRE_NEST_PGD)
 !-------------------------------------------------------------------------------
 !
 !*       7.    OPENING OF INPUT AND OUTPUT PGD FILES

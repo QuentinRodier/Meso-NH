@@ -105,11 +105,11 @@ END MODULE MODI_READ_EXSPA
 !               ------------
 !
 USE MODD_CONF
-USE MODD_IO_ll,   ONLY : TFILE_OUTPUTLISTING
+USE MODD_IO_ll,   ONLY : TFILEDATA,TFILE_OUTPUTLISTING
 USE MODD_LUNIT_n, ONLY : LUNIT_MODEL
 USE MODD_PARAMETERS
 !
-USE MODE_FM, ONLY : IO_FILE_OPEN_ll
+USE MODE_FM, ONLY : IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
 USE MODE_POS
@@ -150,7 +150,6 @@ LOGICAL,            INTENT(OUT) :: OBAL_ONLY      ! compute anelastique balance
 INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER :: ILUSPA   ! Logical unit number for the EXSPA file
-CHARACTER (LEN=32) :: YEXSPA          ! Name of the EXSPA file
 LOGICAL :: GFOUND   ! Return code when searching namelist
 !
 !* prefixes in the namelists are such because of code history
@@ -171,6 +170,7 @@ CHARACTER(LEN=28) :: CINIFILE    ! re-declaration because of namelist
 CHARACTER(LEN=28) :: CINIFILEPGD ! re-declaration because of namelist
 
 CHARACTER (LEN=28) :: YSONFILE = ' '  ! Name of SON input file
+TYPE(TFILEDATA),POINTER :: TZNMLFILE  ! Namelist file
 !
 !*       0.3    Namelist declarations
 !
@@ -197,6 +197,8 @@ NAMELIST/NAM_LUNIT2_SPA/ CINIFILE,  &! In file name (model 1)
 !
 !*       1.    initialize logical unit number of the EXSPA file :
 !
+TZNMLFILE  => NULL()
+!
 YDOMAIN     = ' '
 YSPAFILE    = ' '
 YSPANBR     = '00'
@@ -212,9 +214,9 @@ TFILE_OUTPUTLISTING => LUNIT_MODEL(2)%TLUOUT
 !
 ILUOUT=LUNIT_MODEL(2)%TLUOUT%NLU
 !
-YEXSPA  = 'SPAWN1.nam'
-CALL OPEN_ll(unit=ILUSPA,FILE=YEXSPA,iostat=IRESP,status="OLD",action='READ',  &
-             form='FORMATTED',position="REWIND",mode='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZNMLFILE,'SPAWN1.nam','NML','READ')
+CALL IO_FILE_OPEN_ll(TZNMLFILE)
+ILUSPA = TZNMLFILE%NLU
 !
 !
 !*       2.    read the EXSPA file :
@@ -242,7 +244,7 @@ CALL POSNAM(ILUSPA,'NAM_CONFIO',GFOUND,ILUOUT)
 IF (GFOUND) READ(ILUSPA,NAM_CONFIO)
 !
 CALL SET_CONFIO_ll()
-CALL CLOSE_ll(YEXSPA)
+CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 !
 !*       3.    model 1 and SON1 FM file name (passed as arguments)

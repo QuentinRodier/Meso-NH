@@ -103,7 +103,8 @@ REAL    :: ZXHAT               ! output conformal coodinate x
 REAL    :: ZYHAT               ! output conformal coodinate y
 INTEGER :: II,IJ               ! indexes of the point
 REAL    :: ZI,ZJ               ! fractionnal indexes of the point
-TYPE(TFILEDATA),POINTER :: TZINIFILE
+TYPE(TFILEDATA),POINTER :: TZINIFILE => NULL()
+TYPE(TFILEDATA),POINTER :: TZNMLFILE => NULL()
 !
 !*    0.3    Declaration of namelists
 !            ------------------------
@@ -127,13 +128,14 @@ CALL INI_CST
 !
 CALL INITIO_ll()
 !
-CALL OPEN_ll(UNIT=INAM,FILE='LATLON2XY1.nam',IOSTAT=IRESP,ACTION='READ', &
-     DELIM='QUOTE',MODE='GLOBAL')
+CALL IO_FILE_ADD2LIST(TZNMLFILE,'LATLON2XY1.nam','NML','READ')
+CALL IO_FILE_OPEN_ll(TZNMLFILE)
+INAM=TZNMLFILE%NLU
 READ(INAM,NAM_INIFILE)
 !
 READ(INAM,NAM_CONFIO)
 CALL SET_CONFIO_ll()
-CALL CLOSE_ll('LATLON2XY1.nam',IOSTAT=IRESP)
+CALL IO_FILE_CLOSE_ll(TZNMLFILE)
 !
 !*    1.     Opening of MESONH file
 !            ----------------------

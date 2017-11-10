@@ -61,8 +61,13 @@ END MODULE MODI_OPEN_FILE_MNH
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_IO_ll
+USE MODD_IO_ll,  ONLY : TFILEDATA
 USE MODD_IO_NAM, ONLY : CFILE
+!
+USE MODE_FM, ONLY : IO_FILE_OPEN_ll
+USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -80,24 +85,22 @@ INTEGER,           INTENT(IN) :: KRECL    ! record length
 !              -------------------------------
 !
 INTEGER :: IRESP
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !-------------------------------------------------------------------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_FILE_MNH','called for '//TRIM(HFILE))
+!
+TZFILE => NULL()
+!
 CFILE = HFILE
 !
-IF (HFORM=='FORMATTED') THEN
-  CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-               FORM=HFORM, MODE='GLOBAL'                            )
-ELSE 
-  IF (HACCESS=='DIRECT') THEN
-    CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-                 FORM=HFORM,ACCESS=HACCESS,RECL=KRECL,                &
-                 MODE='GLOBAL'                                        )
-  ELSE
-    CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-                 FORM=HFORM, MODE='GLOBAL'                             )
-  END IF
-END IF
+CALL IO_FILE_ADD2LIST(TZFILE,TRIM(HFILE),'SURFACE_DATA',HACTION, &
+                      HFORM=HFORM,HACCESS=HACCESS,KRECL=KRECL,   &
+                      OOLD=.TRUE.) !OOLD=T because the file may already be in list
+CALL IO_FILE_OPEN_ll(TZFILE)
+!
+KUNIT = TZFILE%NLU
 !
 !-------------------------------------------------------------------------------
 !

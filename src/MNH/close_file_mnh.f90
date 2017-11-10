@@ -57,14 +57,16 @@ END MODULE MODI_CLOSE_FILE_MNH
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
+USE MODD_CONF,        ONLY : CPROGRAM
+USE MODD_IO_ll,       ONLY : TFILEDATA
+USE MODD_IO_NAM,      ONLY : CFILE
+USE MODD_LUNIT,       ONLY : CLUOUT0
+!
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_ll
 USE MODE_MSG
-!
-USE MODD_LUNIT,       ONLY : CLUOUT0
-USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_IO_NAM,      ONLY : CFILE
 !
 IMPLICIT NONE
 !
@@ -84,10 +86,11 @@ INTEGER           :: INAM           ! logical unit of namelist
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
 CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 SELECT CASE(CPROGRAM)
-  CASE('REAL  ','IDEAL ','DIAG  ')
+  CASE('REAL  ','IDEAL ','DIAG  ','PGD   ')
     YLUOUT = CLUOUT0
   CASE('MESONH','SPAWN ')
     CALL GET_MODEL_NUMBER_ll  (IMI)
@@ -103,6 +106,7 @@ END SELECT
 !
 CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
 IF (ILUOUT==KUNIT) THEN
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(YLUOUT))
   CALL CLOSE_ll(YLUOUT,IRESP)
   RETURN
 END IF
@@ -112,9 +116,14 @@ END IF
 !* closes the namelist
 !  -------------------
 !
+CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(CFILE))
+!
+TZFILE => NULL()
+CALL IO_FILE_FIND_BYNAME(TRIM(CFILE),TZFILE,IRESP)
+!
 CALL FMLOOK_ll(CFILE,YLUOUT,INAM,IRESP)
 IF (INAM==KUNIT) THEN
-  CALL CLOSE_ll(CFILE,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
   CFILE = "                            "
 ELSE
   WRITE(ILUOUT,*) 'Error for closing a file: '

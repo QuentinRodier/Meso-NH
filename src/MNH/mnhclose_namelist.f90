@@ -57,14 +57,16 @@ END MODULE MODI_MNHCLOSE_NAMELIST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
+USE MODD_CONF,        ONLY : CPROGRAM
+USE MODD_IO_ll,       ONLY : TFILEDATA
+USE MODD_IO_NAM,      ONLY : CNAM
+USE MODD_LUNIT,       ONLY : CLUOUT0
+!
 USE MODE_FM
 USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_ll
 USE MODE_MSG
-!
-USE MODD_LUNIT,       ONLY : CLUOUT0
-USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_IO_NAM,      ONLY : CNAM
 !
 IMPLICIT NONE
 !
@@ -84,7 +86,10 @@ INTEGER           :: INAM           ! logical unit of namelist
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
 CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
+!
+CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHCLOSE_NAMELIST','called for '//TRIM(CNAM))
 !
 SELECT CASE(CPROGRAM)
   CASE('REAL  ','IDEAL ','DIAG  ')
@@ -99,9 +104,12 @@ END SELECT
 !* closes the namelist
 !  -------------------
 !
+TZFILE => NULL()
+CALL IO_FILE_FIND_BYNAME(TRIM(CNAM),TZFILE,IRESP)
+!
 CALL FMLOOK_ll(CNAM,YLUOUT,INAM,IRESP)
 IF (INAM==KLUNAM) THEN
-  CALL CLOSE_ll(CNAM,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
   CNAM = "                            "
 ELSE
   CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)

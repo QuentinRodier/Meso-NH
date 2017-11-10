@@ -13,8 +13,8 @@ MODULE MODI_SPAWN_ZS
 !
 INTERFACE
 !
-     SUBROUTINE SPAWN_ZS (KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,KDIMX_C,KDIMY_C,HLBCX,HLBCY,&
-                          HLUOUT,PZS1_F,PZS2_C,HFIELD,PZS2_LS   )
+     SUBROUTINE SPAWN_ZS (KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,KDIMX_C,KDIMY_C,&
+                          HLBCX,HLBCY,PZS1_F,PZS2_C,HFIELD,PZS2_LS                )
 !
 INTEGER,   INTENT(IN)  :: KXOR,KXEND !  horizontal position (i,j) of the ORigin and END
 INTEGER,   INTENT(IN)  :: KYOR,KYEND ! of the model 2 domain, relative to model 1
@@ -23,7 +23,6 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 INTEGER,   INTENT(IN)  :: KDIMX_C    ! dimension (X dir) of local son subdomain in father grid
 INTEGER,   INTENT(IN)  :: KDIMY_C    ! dimension (Y dir) of local son subdomain in father grid
 CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
-CHARACTER(LEN=*),     INTENT(IN)  :: HLUOUT  ! output-listing file
 REAL, DIMENSION(:,:), INTENT(IN)  :: PZS1_F    ! model 1 orography
 REAL, DIMENSION(:,:), INTENT(OUT) :: PZS2_C    ! interpolated orography with iterative correction
 CHARACTER(LEN=6),     INTENT(IN)  :: HFIELD ! name of the field to nest
@@ -36,10 +35,10 @@ END INTERFACE
 END MODULE MODI_SPAWN_ZS
 !
 !
-!     #########################################################################
-     SUBROUTINE SPAWN_ZS (KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,KDIMX_C,KDIMY_C,HLBCX,HLBCY,&
-                          HLUOUT,PZS1_F,PZS2_C,HFIELD,PZS2_LS   )
-!     #########################################################################
+!     #############################################################################
+     SUBROUTINE SPAWN_ZS (KXOR,KXEND,KYOR,KYEND,KDXRATIO,KDYRATIO,KDIMX_C,KDIMY_C,&
+                          HLBCX,HLBCY,PZS1_F,PZS2_C,HFIELD,PZS2_LS                )
+!     #############################################################################
 !
 !!****  *SPAWN_ZS * - subroutine to spawn zs field
 !!
@@ -110,6 +109,7 @@ END MODULE MODI_SPAWN_ZS
 !
 USE MODD_PARAMETERS, ONLY : JPHEXT       ! Declarative modules
 USE MODD_CONF,       ONLY : NVERB
+USE MODD_LUNIT_n,    ONLY: TLUOUT
 !
 USE MODD_BIKHARDT_n
 !
@@ -147,7 +147,6 @@ INTEGER,   INTENT(IN)  :: KDYRATIO   ! between model 2 and model 1
 INTEGER,   INTENT(IN)  :: KDIMX_C    ! dimension (X dir) of local son subdomain in father grid
 INTEGER,   INTENT(IN)  :: KDIMY_C    ! dimension (Y dir) of local son subdomain in father grid
 CHARACTER(LEN=4),DIMENSION(2),INTENT(IN):: HLBCX, HLBCY  ! X- and Y-direc LBC
-CHARACTER(LEN=*),     INTENT(IN)  :: HLUOUT  ! output-listing file
 REAL, DIMENSION(:,:), INTENT(IN)  :: PZS1_F    ! model 1 orography
 REAL, DIMENSION(:,:), INTENT(OUT) :: PZS2_C    ! interpolated orography with iterative correction
 CHARACTER(LEN=6),     INTENT(IN)  :: HFIELD ! name of the field to nest
@@ -240,7 +239,7 @@ CALL GOTO_MODEL(IMI)
 !
 !*       1.2  recovers logical unit number of output listing
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !-------------------------------------------------------------------------------
 !

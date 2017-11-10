@@ -58,12 +58,17 @@ END MODULE MODI_MNHOPEN_NAMELIST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
-USE MODE_IO_ll
-USE MODE_FM
 USE MODD_CONF,        ONLY : CPROGRAM
-USE MODD_LUNIT,       ONLY : CLUOUT0
+USE MODD_IO_ll,       ONLY : TFILEDATA
 USE MODD_IO_NAM,      ONLY : CNAM
+USE MODD_LUNIT,       ONLY : CLUOUT0
+!
+USE MODE_FM
+USE MODE_IO_ll
+USE MODE_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_MSG
+USE MODE_IO_MANAGE_STRUCT, ONLY : io_file_print_list
 !
 IMPLICIT NONE
 !
@@ -81,18 +86,10 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
                                     ! at the open of the file in LFI  routines 
 INTEGER           :: IMI            ! model index
 !
-INTEGER           :: ILUOUT         ! output listing logical unit
-CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
-SELECT CASE(CPROGRAM)
-  CASE('MESONH','SPAWN ')
-    CALL GET_MODEL_NUMBER_ll  (IMI)
-    WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
-  CASE DEFAULT
-    YLUOUT = CLUOUT0
-END SELECT
-!
+TZFILE => NULL()
 !-------------------------------------------------------------------------------
 !
 !* reading of namelist
@@ -109,6 +106,7 @@ ELSE
   CASE('IDEAL ')
     CNAM='PRE_IDEA1.nam'
   CASE('MESONH')
+    CALL GET_MODEL_NUMBER_ll(IMI)
     WRITE(CNAM,FMT='(A5,I1,A22)') 'EXSEG',IMI,'.nam                  '
   CASE('DIAG  ')
     CNAM='DIAG1.nam    '
@@ -121,13 +119,16 @@ ELSE
   CASE('SPEC ')
     CNAM='SPEC1.nam'
   CASE DEFAULT
-     print*,"MNHOPEN_NAMELIST :: CPROGRAM=", CPROGRAM,"####"
-     STOP "MNHOPEN_NAMELIST : CPROGRAM NOT ALLOWED " 
+    CALL PRINT_MSG(NVERB_FATAL,'IO','MNHOPEN_NAMELIST','CPROGRAM '//TRIM(CPROGRAM)//' not allowed')
  END SELECT
 END IF
 !
-CALL OPEN_ll(KLUNAM,FILE=CNAM,IOSTAT=IRESP,ACTION='READ', &
-             FORM="FORMATTED",POSITION="REWIND",MODE='GLOBAL')
+CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHOPEN_NAMELIST','called for '//TRIM(CNAM))
+!
+CALL IO_FILE_ADD2LIST(TZFILE,TRIM(CNAM),'NML','READ',OOLD=.TRUE.) !OOLD=T because the file may already be in list
+CALL IO_FILE_OPEN_ll(TZFILE)
+!
+KLUNAM = TZFILE%NLU
 !
 !-------------------------------------------------------------------------------
 !
