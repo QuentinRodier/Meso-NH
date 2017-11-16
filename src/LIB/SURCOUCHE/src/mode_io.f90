@@ -203,7 +203,9 @@ CONTAINS
 
   END SUBROUTINE INITIO_ll
 
-  SUBROUTINE OPEN_ll(UNIT,    &
+  SUBROUTINE OPEN_ll(&
+       TPFILE,  &
+       UNIT,    &
        FILE,    &
        MODE,    &
        LFIPAR,  &
@@ -220,8 +222,7 @@ CONTAINS
        PAD,      &
        KNB_PROCIO,& 
        KMELEV,&
-       OPARALLELIO,&
-       TPFILE)
+       OPARALLELIO)
 #if defined(MNH_IOCDF4)
   USE MODD_NETCDF, ONLY:IDCDF_KIND
   USE MODE_NETCDF
@@ -229,6 +230,7 @@ CONTAINS
   USE MODD_IO_ll
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
 
+    TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
     INTEGER,         INTENT(OUT)           :: UNIT  !! Different from fortran OPEN
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: FILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
@@ -249,7 +251,6 @@ CONTAINS
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
     !JUANZ
-    TYPE(TFILEDATA), INTENT(INOUT), OPTIONAL :: TPFILE
     !
     ! local var
     !
@@ -653,8 +654,6 @@ CONTAINS
           TZFD%FLU = -1
        END IF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
-          IF (.NOT.PRESENT(TPFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','OPEN_ll','TPFILE not provided for IO_ZSPLIT case for file '&
-                                                   //TRIM(FILE))
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
              write(cfile ,'(".Z",i3.3)') ifile+1
@@ -668,13 +667,11 @@ CONTAINS
              TZFD_IOZ%FLU       = -1
              TZFD_IOZ%PARAM     =>LFIPAR
 
-             IF (PRESENT(TPFILE)) THEN
-               CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
+             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
 
-               IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
-                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
-                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
-               END IF
+             IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
+               CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
+                                     KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
              END IF
 
              IF ( irank_procio .EQ. ISP ) THEN
@@ -743,7 +740,7 @@ CONTAINS
                    !KNINAR = ININAR8
                 END IF
 
-                IF (PRESENT(TPFILE)) CALL UPDATE_METADATA(TZSPLITFILE)
+                CALL UPDATE_METADATA(TZSPLITFILE)
 
              ENDIF
           ENDDO
@@ -751,6 +748,7 @@ CONTAINS
 
 
     END SELECT
+print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,TPFILE%LMULTIMASTERS
 
 !PW: not done here because TZFDLFI%CDF not yet set
 !    CALL UPDATE_METADATA(TPFILE)
