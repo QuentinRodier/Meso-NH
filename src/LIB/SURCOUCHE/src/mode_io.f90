@@ -205,8 +205,6 @@ CONTAINS
 
   SUBROUTINE OPEN_ll(&
        TPFILE,  &
-       UNIT,    &
-       FILE,    &
        MODE,    &
        LFIPAR,  &
        COMM,    &
@@ -217,7 +215,6 @@ CONTAINS
        RECL,    &
        BLANK,   &
        POSITION,&
-       ACTION,  &
        DELIM,    &
        PAD,      &
        KNB_PROCIO,& 
@@ -231,8 +228,6 @@ CONTAINS
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST, IO_FILE_FIND_BYNAME
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
-    INTEGER,         INTENT(OUT)           :: UNIT  !! Different from fortran OPEN
-    CHARACTER(len=*),INTENT(IN),  OPTIONAL :: FILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
     TYPE(LFIPARAM),  POINTER,     OPTIONAL :: LFIPAR
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
@@ -242,7 +237,6 @@ CONTAINS
     INTEGER,         INTENT(IN),  OPTIONAL :: RECL
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: BLANK
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: POSITION
-    CHARACTER(len=*),INTENT(IN)            :: ACTION
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: DELIM
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: PAD
     INTEGER,         INTENT(IN),  OPTIONAL :: COMM
@@ -292,11 +286,7 @@ CONTAINS
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
 
-    IF ( PRESENT(FILE) ) THEN
-      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(FILE)//' for '//TRIM(ACTION))
-    ELSE
-      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','called for '//TRIM(ACTION)//' (filename not provided)')
-    ENDIF
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
     !
     IF ( PRESENT(OPARALLELIO) ) THEN
       GPARALLELIO = OPARALLELIO
@@ -328,25 +318,25 @@ CONTAINS
        YMODE = 'GLOBAL'         ! Default Mode
     END IF
 
-    YACTION = ACTION
+    YACTION = TPFILE%CMODE
     YACTION = UPCASE(TRIM(ADJUSTL(YACTION)))
     IF (YACTION /= "READ" .AND. YACTION /= "WRITE") THEN
        IOSTAT = 99
-       UNIT = -1
+       TPFILE%NLU = -1
        WRITE(ISTDERR,*) 'Erreur OPEN_ll : ACTION=',YACTION,' non supportee'
        RETURN
     END IF
 
     IF (.NOT. ANY(YMODE == (/'GLOBAL     ','SPECIFIC   ','DISTRIBUTED' , 'IO_ZSPLIT  '/))) THEN
        IOSTAT = 99
-       UNIT = -1
+       TPFILE%NLU = -1
        WRITE(ISTDERR,*) 'OPEN_ll error : MODE UNKNOWN'
        RETURN
     END IF
 
     !JUAN SX5 : probleme function retournant un pointer
-    !IF (.NOT. ASSOCIATED(GETFD(FILE))) THEN
-    TZJUAN=>GETFD(FILE)
+    !IF (.NOT. ASSOCIATED(GETFD(TPFILE%CNAME))) THEN
+    TZJUAN=>GETFD(TPFILE%CNAME)
     IF (.NOT. ASSOCIATED(TZJUAN)) THEN 
        !JUAN SX5 : probleme function retournant un pointer
        !! File is not already opened : GOOD
@@ -355,8 +345,8 @@ CONTAINS
     ELSE 
        !! Error : File already opened
        IOSTAT = 99
-       UNIT = -1
-       WRITE(ISTDERR,*) 'OPEN_ll error : File', FILE, 'already opened'
+       TPFILE%NLU = -1
+       WRITE(ISTDERR,*) 'OPEN_ll error : File', TPFILE%CNAME, 'already opened'
        RETURN
     END IF
 
@@ -364,13 +354,13 @@ CONTAINS
 !!$         & ICOMM, IERR)
 !!$    IF (IGLOBALERR /= NOERROR) THEN 
 !!$       IOSTAT = GLOBALERR
-!!$       UNIT = -1
+!!$       TPFILE%NLU = -1
 !!$       RETURN 
 !!$    END IF
 
 
 
-    TZFD%NAME = FILE
+    TZFD%NAME = TPFILE%CNAME
     TZFD%MODE = YMODE
     NULLIFY(TZFD%PARAM)
 
@@ -459,7 +449,7 @@ CONTAINS
                   ACTION=YACTION)
           ELSE
              IF (YFORM=="FORMATTED") THEN
-               IF (ACTION=='READ') THEN
+               IF (YACTION=='READ') THEN
                 OPEN(UNIT=TZFD%FLU,       &
                      FILE=TRIM(TZFD%NAME),&
                      STATUS=YSTATUS,       &
@@ -566,7 +556,7 @@ CONTAINS
                RECL=YRECL,           &
                ACTION=YACTION)
        ELSE
-        IF (ACTION=='READ') THEN
+        IF (YACTION=='READ') THEN
           OPEN(UNIT=TZFD%FLU,                      &
                FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
                STATUS=YSTATUS,                         &
@@ -630,7 +620,7 @@ CONTAINS
     CASE('IO_ZSPLIT')
 
        TZFD%OWNER = ISIOP
-       TZFD%NAME  = TRIM(FILE)//".lfi"
+       TZFD%NAME  = TRIM(TPFILE%CNAME)//".lfi"
        IF (PRESENT(KNB_PROCIO)) THEN
           TZFD%NB_PROCIO = KNB_PROCIO
        ELSE
@@ -657,7 +647,7 @@ CONTAINS
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
              write(cfile ,'(".Z",i3.3)') ifile+1
-             YFILE_IOZ           = TRIM(FILE)//cfile//".lfi"
+             YFILE_IOZ           = TRIM(TPFILE%CNAME)//cfile//".lfi"
              TZFD_IOZ           =>NEWFD()
              TZFD_IOZ%NAME      = YFILE_IOZ
              TZFD_IOZ%MODE      = 'IO_ZSPLIT'
@@ -680,10 +670,10 @@ CONTAINS
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(FILE)//cfile//'.nc')
-                      IOSCDF = NF90_OPEN(TRIM(FILE)//cfile//".nc", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
+                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//cfile//".nc", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(FILE)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
+   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
@@ -694,11 +684,11 @@ CONTAINS
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZFD_IOZ%CDF => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(FILE)//cfile//'.nc')
-                      IOSCDF = NF90_CREATE(TRIM(FILE)//cfile//".nc", &
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
+                      IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//cfile//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFD_IOZ%CDF%NCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(FILE)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
+                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
@@ -778,7 +768,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
 !!$    END IF
 
     IOSTAT = IOS
-    UNIT = TZFD%FLU
+    TPFILE%NLU = TZFD%FLU
 
   CONTAINS
     FUNCTION SUFFIX(HEXT)
