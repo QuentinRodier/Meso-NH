@@ -79,6 +79,8 @@
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 
+USE MODE_FM,              ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
+USE MODE_IO_MANAGE_STRUCT,ONLY: IO_FILE_ADD2LIST
 USE MODE_IO_ll
 USE MODE_GRIDPROJ
 USE MODE_ll
@@ -88,6 +90,7 @@ USE MODD_NSV,             ONLY: NSV,NSV_CHEMBEG,NSV_CHEMEND,  &
 USE MODD_CH_AEROSOL,      ONLY: CAERONAMES, LORILAM
 USE MODD_DYN_n,           ONLY: XTSTEP       ! time-step of the model
 USE MODD_DIM_n,           ONLY: NKMAX        ! # of points in Z of the physical grid
+USE MODD_IO_ll,           ONLY: TFILEDATA
 USE MODD_PARAMETERS,      ONLY: JPVEXT   ! vertical external points number
 USE MODD_GRID,      ONLY: XLATORI,XLONORI
 USE MODD_GRID_n,    ONLY: XXHAT,XYHAT,XZZ
@@ -132,7 +135,6 @@ IMPLICIT NONE
 REAL  :: ZTIME
 LOGICAL, SAVE     :: GSFIRSTCALL = .TRUE.
 INTEGER, SAVE     :: ISIO1D                 ! IO-channel 
-INTEGER           :: IFAIL                  ! return code from OPEN_ll
 CHARACTER(LEN=80), SAVE :: YSIO1DDEF        ! name of def-file
 CHARACTER(LEN=80), SAVE :: YSIO1DDAT        ! name of dat-file
 CHARACTER(LEN=40) :: YFORM = "(E15.8)"      ! data output format
@@ -146,7 +148,7 @@ INTEGER           :: IINDEX, JINDEX         ! index of each profile
 REAL              :: ZXINDEX, ZYINDEX       ! distance from origin of each profile
 REAL              :: ZX, ZY                 ! poisition of each profile
 REAL, DIMENSION(SIZE(XCHEMLAT)) ::  ZLAT, ZLON
-
+TYPE(TFILEDATA),POINTER,SAVE :: TZFILE
 !
 CHARACTER*8  :: YDATE  ! for retrieval of date and time
 CHARACTER*10 :: YTIME  ! dito
@@ -160,6 +162,7 @@ CHARACTER*5  :: YCTIME  ! current time
 !!    EXECUTABLE STATEMENTS
 !!    ---------------------
 !
+TZFILE => NULL()
 NBPROF = 0
 
 CALL TEMPORAL_DIST (   TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,              &
@@ -235,8 +238,9 @@ DO JN=1,NBPROF
       (JINDEX >= 1).AND.(JINDEX <= IJU)) THEN  
   ! write picasso def-file
     IF (GSFIRSTCALL) THEN
-      CALL OPEN_ll(UNIT=ISIO1D,FILE=YSIO1DDEF,IOSTAT=IFAIL ,MODE='GLOBAL',  &
-             POSITION='REWIND',ACTION='WRITE',STATUS='NEW',FORM='FORMATTED')
+      CALL IO_FILE_ADD2LIST(TZFILE,YSIO1DDEF,'TXT','WRITE')
+      CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
+      ISIO1D = TZFILE%NLU
 
     ! write comment
       CALL DATE_AND_TIME(YDATE, YTIME)
@@ -278,12 +282,14 @@ DO JN=1,NBPROF
       END IF
     END DO
   
-    CALL CLOSE_ll(YSIO1DDEF)
+    CALL IO_FILE_CLOSE_ll(TZFILE)
+    TZFILE => NULL()
     CALL TRANSFER_FILE('fujitransfer.x','NIL',YSIO1DDEF)
 
     ! open picasso dat-file
-    CALL OPEN_ll(UNIT=ISIO1D,FILE=YSIO1DDAT,IOSTAT=IFAIL ,MODE='GLOBAL',  &
-               POSITION='REWIND',ACTION='WRITE',STATUS='NEW',FORM='FORMATTED')
+    CALL IO_FILE_ADD2LIST(TZFILE,YSIO1DDAT,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND',HSTATUS='NEW')
+    ISIO1D = TZFILE%NLU
 
     ! calculate ISSKIP
     IF (L1D) THEN
@@ -390,7 +396,8 @@ DO JN=1,NBPROF
     ENDDO
 
     IF ((CPROGRAM =='DIAG  ').AND.(LCHEMDIAG)) THEN
-      CALL CLOSE_ll(YSIO1DDAT)
+      CALL IO_FILE_CLOSE_ll(TZFILE)
+      TZFILE => NULL()
       CALL TRANSFER_FILE('fujitransfer.x','NIL',YSIO1DDAT)
     END IF
  

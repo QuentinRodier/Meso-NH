@@ -78,7 +78,8 @@ END MODULE MODI_CH_FIELD_VALUE_n
 !!    EXTERNAL
 !!    --------
 USE MODI_CH_OPEN_INPUT  ! open general purpose ASCII input file
-USE MODE_IO_ll
+USE MODD_IO_ll,         ONLY: TFILEDATA
+USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -118,7 +119,9 @@ INTEGER :: IZINDEX   ! lower index for interpolation
 !
 REAL    :: ZRETURN   ! return value for function
 !
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
+TZFILE => NULL()
 !
 !*       1.    READ DATA FROM GENERAL PURPOSE INPUT FILE
 !              -----------------------------------------
@@ -137,7 +140,8 @@ firstcall: IF (GSFIRSTCALL) THEN
 !
 ! open input file
   IF (KVERB >= 5) WRITE(KLUOUT,*) "CH_FIELD_VALUE_n: reading form-profiles"
-  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "FORMPROF", ICHANNEL, KLUOUT, KVERB)
+  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "FORMPROF", TZFILE, KLUOUT, KVERB)
+  ICHANNEL = TZFILE%NLU
 !
 ! read number of profiles ISPROF and number of levels ISLEVEL
   READ(ICHANNEL,*) ISPROF, ISLEVEL
@@ -169,7 +173,8 @@ firstcall: IF (GSFIRSTCALL) THEN
   END IF
 !
 ! close file
-  CALL CLOSE_ll (CCHEM_INPUT_FILE, IOSTAT=IFAIL)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
 !
 ! check if Z-profile is given in increasing order, otherwise stop
   ZINF = ZSZPROF(1) ; IINF=1
@@ -191,7 +196,8 @@ firstcall: IF (GSFIRSTCALL) THEN
 ! open input file
   IF (KVERB >= 5) WRITE(KLUOUT,*) &
      "CH_FIELD_VALUE_n: reading species <--> form-profile association"
-  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "PROFASSO", ICHANNEL, KLUOUT, KVERB)
+  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "PROFASSO", TZFILE, KLUOUT, KVERB)
+  ICHANNEL = TZFILE%NLU
 !
 ! read number of associations ISASSO
   READ(ICHANNEL, *) ISASSO
@@ -212,14 +218,16 @@ firstcall: IF (GSFIRSTCALL) THEN
   ENDDO
 !
 ! close file
-  CALL CLOSE_ll (CCHEM_INPUT_FILE, IOSTAT=IFAIL)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
 !
 !
 !*       1.3   read norm-initial values
 !
 ! open input file
   IF (KVERB >= 5) WRITE(KLUOUT,*) "CH_FIELD_VALUE_n:reading norm-initial values"
-  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "NORMINIT", ICHANNEL, KLUOUT, KVERB)
+  CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "NORMINIT", TZFILE, KLUOUT, KVERB)
+  ICHANNEL = TZFILE%NLU
 !
 ! read units for initial data (may be "CON" for molec./cm3 or "MIX" for ppp)
   READ(ICHANNEL,"(A)") HUNIT
@@ -257,7 +265,8 @@ firstcall: IF (GSFIRSTCALL) THEN
   ENDDO
 !
 ! close file
-  CALL CLOSE_ll (CCHEM_INPUT_FILE, IOSTAT=IFAIL)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
 !
 ENDIF firstcall
 !

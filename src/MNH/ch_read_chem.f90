@@ -65,7 +65,8 @@ END MODULE MODI_CH_READ_CHEM
 !!    --------
 USE MODI_CH_OPEN_INPUT
 USE MODI_CH_READ_VECTOR
-USE MODE_IO_ll
+USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODE_FM,    ONLY: IO_FILE_CLOSE_ll
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -89,10 +90,12 @@ CHARACTER(LEN=80) :: YINPUT
 INTEGER :: JI, JJ, IIN
 REAL :: ZMD
 REAL, DIMENSION(NSP+NCARB+NSOA) :: ZMI ! aerosol molecular mass in g/mol
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !*    EXECUTABLE STATEMENTS
 !     ---------------------
 !
+TZFILE => NULL()
 !
 ! if the namelist file is the input file, position file pointer after keyword
 !
@@ -102,12 +105,13 @@ IF (HFILE(1:14) .EQ. "CHCONTROL1.nam") THEN
 !
 ! open the namelist file for input
 !
-  CALL CH_OPEN_INPUT("CHCONTROL1.nam", "INITCHEM", IIN, 6, NVERB)
+  CALL CH_OPEN_INPUT("CHCONTROL1.nam", "INITCHEM", TZFILE, 6, NVERB)
+  IIN = TZFILE%NLU
 !
   CALL CH_READ_VECTOR(NEQ, CNAMES, PCONC, 0.0, IIN, 6, NVERB)
   IF (LORILAM) CALL CH_READ_VECTOR(SIZE(PAERO,1), CAERONAMES, PAERO, 0.0, IIN, 6, NVERB)
 !
-  CALL CLOSE_LL("CHCONTROL1.nam")
+  CALL IO_FILE_CLOSE_ll(TZFILE)
 !
 ELSE
 !

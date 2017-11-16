@@ -53,11 +53,13 @@ END MODULE MODI_CH_AER_MOD_INIT
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 USE MODD_CH_AEROSOL
-USE MODE_ll
-USE MODE_IO_ll
-USE MODD_UNIFACPARAM
-USE MODE_UNIFAC
 USE MODD_GLO
+USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_UNIFACPARAM
+!
+USE MODE_FM,               ONLY: IO_FILE_OPEN_ll,IO_FILE_CLOSE_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+USE MODE_UNIFAC
 !
 !
 !*       0.     DECLARATIONS
@@ -73,6 +75,7 @@ INTEGER, PARAMETER :: nc=22, nh=16, nt=11 ! inorganic interpolation
 INTEGER            :: JI, JJ, JK, JL, JM ! loop counter
 INTEGER :: IRESP                   ! return code in FM routines
 INTEGER :: ILU                     ! logical unit
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !---------------------------------------------------------------------------
 !
@@ -80,13 +83,14 @@ INTEGER :: ILU                     ! logical unit
 !
 !        1.1    initialisation
 !
+TZFILE => NULL()
 !
-! Initialize the mineral tablution 
+! Initialize the mineral tabulation 
 IF (CMINERAL == 'NARES') THEN
 !       .. the file ares.w contains the weights of the model
-        CALL OPEN_ll(UNIT=ILU,FILE="ares1A.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE='GLOBAL')
-        !OPEN(1,FILE="ares1A.w",STATUS="OLD") 
+        CALL IO_FILE_ADD2LIST(TZFILE,'ares1A.w','CHEMTAB','READ')
+        CALL IO_FILE_OPEN_ll(TZFILE)
+        ILU = TZFILE%NLU
         READ(ILU,*) I1IA,J1JA,K1KA 
         DO JI=1,I1IA 
           READ(ILU,*) X1MAXA(1,JI),X1MINA(1,JI),X1MODA(1,JI) 
@@ -100,12 +104,12 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J1JA+1 
           READ(ILU,*) (W1JKA(JJ,JK),JK=1,K1KA) 
         ENDDO
-        CALL CLOSE_ll("ares1A.w",IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TZFILE)
+        TZFILE => NULL()
         !
-        !OPEN(1,FILE="ares1C.w",STATUS="OLD") 
-        CALL OPEN_ll(UNIT=ILU,FILE="ares1C.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE='GLOBAL')
-
+        CALL IO_FILE_ADD2LIST(TZFILE,'ares1C.w','CHEMTAB','READ')
+        CALL IO_FILE_OPEN_ll(TZFILE)
+        ILU = TZFILE%NLU
         READ(ILU,*) I1IC,J1JC,K1KC 
         DO JI=1,I1IC 
           READ(ILU,*) X1MAXC(1,JI),X1MINC(1,JI),X1MODC(1,JI) 
@@ -119,11 +123,12 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J1JC+1 
           READ(ILU,*) (W1JKC(JJ,JK),JK=1,K1KC) 
         ENDDO
-        CALL CLOSE_ll("ares1C.w",IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TZFILE)
+        TZFILE => NULL()
         !
-        CALL OPEN_ll(UNIT=ILU,FILE="ares2A.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE='GLOBAL')
-        !OPEN(1,FILE="ares2A.w",STATUS="OLD") 
+        CALL IO_FILE_ADD2LIST(TZFILE,'ares2A.w','CHEMTAB','READ')
+        CALL IO_FILE_OPEN_ll(TZFILE)
+        ILU = TZFILE%NLU
         READ(ILU,*) I2IA,J2JA,K2KA 
         DO JI=1,I2IA 
           READ(ILU,*) X2MAXA(1,JI),X2MINA(1,JI),X2MODA(1,JI) 
@@ -137,11 +142,12 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JA+1 
           READ(ILU,*) (W2JKA(JJ,JK),JK=1,K2KA) 
         ENDDO
-        CALL CLOSE_ll("ares2A.w",IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TZFILE)
+        TZFILE => NULL()
         !
-        CALL OPEN_ll(UNIT=ILU,FILE="ares2B.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE='GLOBAL')
-        !OPEN(1,FILE="ares2B.w",STATUS="OLD") 
+        CALL IO_FILE_ADD2LIST(TZFILE,'ares2B.w','CHEMTAB','READ')
+        CALL IO_FILE_OPEN_ll(TZFILE)
+        ILU = TZFILE%NLU
         READ(ILU,*) I2IB,J2JB,K2KB 
         DO JI=1,I2IB 
           READ(ILU,*) X2MAXB(1,JI),X2MINB(1,JI),X2MODB(1,JI) 
@@ -155,11 +161,12 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JB+1 
           READ(ILU,*) (W2JKB(JJ,JK),JK=1,K2KB) 
         ENDDO
-        CALL CLOSE_ll("ares2B.w",IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TZFILE)
+        TZFILE => NULL()
         !
-        CALL OPEN_ll(UNIT=ILU,FILE="ares2C.w",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-        MODE='GLOBAL')
-        !OPEN(1,FILE="ares2C.w",STATUS="OLD") 
+        CALL IO_FILE_ADD2LIST(TZFILE,'ares2C.w','CHEMTAB','READ')
+        CALL IO_FILE_OPEN_ll(TZFILE)
+        ILU = TZFILE%NLU
         READ(ILU,*) I2IC,J2JC,K2KC 
         DO JI=1,I2IC 
           READ(ILU,*) X2MAXC(1,JI),X2MINC(1,JI),X2MODC(1,JI) 
@@ -173,7 +180,8 @@ IF (CMINERAL == 'NARES') THEN
         DO JJ=1,J2JC+1 
           READ(ILU,*) (W2JKC(JJ,JK),JK=1,K2KC) 
         ENDDO
-        CALL CLOSE_ll("ares2C.w",IOSTAT=IRESP)
+        CALL IO_FILE_CLOSE_ll(TZFILE)
+        TZFILE => NULL()
         !
 END IF
 !
@@ -184,8 +192,9 @@ IF (CMINERAL == 'TABUL') THEN
   IF(.NOT.ALLOCATED(znh)) ALLOCATE(znh(22))
   IF(.NOT.ALLOCATED(zni)) ALLOCATE(zni(22))
   IF(.NOT.ALLOCATED(zf)) ALLOCATE(zf(16,11,22,22,22,3))
-  CALL OPEN_ll(UNIT=ILU,FILE="AEROMIN_NEW",IOSTAT=IRESP,FORM='FORMATTED',ACTION='READ', &
-     MODE='GLOBAL')
+  CALL IO_FILE_ADD2LIST(TZFILE,'AEROMIN_NEW','CHEMTAB','READ')
+  CALL IO_FILE_OPEN_ll(TZFILE)
+  ILU = TZFILE%NLU
 
   WRITE(*,*) 'LOADING MINERAL AEROSOL DATA ...'
   DO JI=1,nh
@@ -215,7 +224,8 @@ IF (CMINERAL == 'TABUL') THEN
   ENDDO
   ENDDO
   WRITE(*,*) 'END LOADING'
-  CALL CLOSE_ll("AEROMIN_NEW",IOSTAT=IRESP)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
 ENDIF
 
 IF(TRIM(CORGANIC).eq."MPMPO")THEN

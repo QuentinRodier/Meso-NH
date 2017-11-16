@@ -173,15 +173,16 @@ END MODULE MODI_RESOLVED_ELEC_n
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_ll
-USE MODE_FM
 USE MODE_ELEC_ll
-USE MODE_IO_ll, ONLY : CLOSE_ll, OPEN_ll
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
+USE MODE_ll
 !
 USE MODD_METRICS_n, ONLY : XDXX, XDYY, XDZX, XDZY, XDZZ 
 USE MODD_FIELD_n, ONLY : XRSVS
 USE MODD_CONF, ONLY : L1D, L2D, CEXP
 USE MODD_CST
+USE MODD_IO_ll,            ONLY: TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPVEXT
 USE MODD_ELEC_DESCR
 USE MODD_ELEC_n          
@@ -342,8 +343,10 @@ CHARACTER (LEN=32) :: YASCFILE
 REAL               :: ZTEMP_DIST
 CHARACTER (LEN=18) :: YNAME
 LOGICAL            :: GLMA_FILE
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 NULLIFY(TZFIELDS_ll)
+TZFILE => NULL()
 !
 !------------------------------------------------------------------------------
 !
@@ -836,9 +839,9 @@ ENDIF
 IF (KTCOUNT .EQ. 1) THEN
   IF (LFLASH_GEOM) THEN
     YASCFILE = CEXP//"_fgeom_diag.asc"
-    CALL OPEN_ll (FILE=YASCFILE, ACTION="WRITE", STATUS="NEW",                 &
-                  FORM="FORMATTED", POSITION="APPEND",                         &
-                  UNIT=NLU_fgeom_diag, IOSTAT= NIOSTAT_fgeom_diag              )
+    CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_fgeom_diag)
+    NLU_fgeom_diag = TZFILE%NLU
     IF ( IPROC .EQ. 0) THEN
       WRITE (NLU_fgeom_diag, FMT='(A)') '--------------------------------------------------------'
       WRITE (NLU_fgeom_diag, FMT='(A)') '*FLASH CHARACTERISTICS FROM FLASH_GEOM_ELEC*'
@@ -859,14 +862,15 @@ IF (KTCOUNT .EQ. 1) THEN
       WRITE (NLU_fgeom_diag, FMT='(A)') '--------------------------------------------'
     END IF
 !  
-    CALL CLOSE_ll (YASCFILE)
+    CALL IO_FILE_CLOSE_ll(TZFILE)
+    TZFILE => NULL()
     CALL MPI_BCAST (NLU_fgeom_diag,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
 !
     IF (LSAVE_COORD) THEN
       YASCFILE = CEXP//"_fgeom_coord.asc"
-      CALL OPEN_ll (FILE=YASCFILE, ACTION="WRITE", STATUS="NEW",&
-                    FORM="FORMATTED", POSITION="APPEND",                        &
-                    UNIT=NLU_fgeom_coord, IOSTAT= NIOSTAT_fgeom_coord     )
+      CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
+      CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_fgeom_coord)
+      NLU_fgeom_coord = TZFILE%NLU
       IF ( IPROC .EQ. 0) THEN
         WRITE (NLU_fgeom_coord,FMT='(A)') '------------------------------------------'
         WRITE (NLU_fgeom_coord,FMT='(A)') '*****FLASH COORD. FROM FLASH_GEOM_ELEC****'
@@ -879,16 +883,17 @@ IF (KTCOUNT .EQ. 1) THEN
         WRITE (NLU_fgeom_coord,FMT='(A)') '------------------------------------------'
       END IF
 !
-      CALL CLOSE_ll (YASCFILE)
+      CALL IO_FILE_CLOSE_ll(TZFILE)
+      TZFILE => NULL()
       CALL MPI_BCAST (NLU_fgeom_coord,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
     END IF
   END IF
 !
   IF (LSERIES_ELEC) THEN
     YASCFILE = CEXP//"_series_cloud_elec.asc"                              
-    CALL OPEN_ll (FILE=YASCFILE, ACTION="WRITE", STATUS="NEW", &
-                  FORM="FORMATTED", POSITION="APPEND",         &
-                  UNIT=NLU_series_cloud_elec, IOSTAT= NIOSTAT_series_cloud_elec)
+    CALL IO_FILE_ADD2LIST(TZFILE,YASCFILE,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=NIOSTAT_series_cloud_elec)
+    NLU_series_cloud_elec = TZFILE%NLU
     IF ( IPROC .EQ. 0) THEN
       WRITE (NLU_series_cloud_elec, FMT='(A)') '----------------------------------------------------'
       WRITE (NLU_series_cloud_elec, FMT='(A)') '********* RESULTS FROM of LSERIES_ELEC *************'
@@ -915,7 +920,8 @@ IF (KTCOUNT .EQ. 1) THEN
       WRITE (NLU_series_cloud_elec, FMT='(A)') '----------------------------------------------------'
     END IF
 !
-    CALL CLOSE_ll (YASCFILE)
+    CALL IO_FILE_CLOSE_ll(TZFILE)
+    TZFILE => NULL()
     CALL MPI_BCAST (NLU_series_cloud_elec,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
   END IF
 END IF
@@ -936,8 +942,10 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
   END IF
 !
   IF (GLMA_FILE) THEN
-    IF(CLMA_FILE(1:5) /= "BEGIN") THEN ! close preceeding file when existing
-      CALL CLOSE_ll (CLMA_FILE)
+    IF(CLMA_FILE(1:5) /= "BEGIN") THEN ! close previous file if exists
+      CALL IO_FILE_FIND_BYNAME(CLMA_FILE,TZFILE,IERR)
+      CALL IO_FILE_CLOSE_ll(TZFILE)
+      TZFILE => NULL()
     ENDIF
 !
     TDTLMA%TIME = TDTLMA%TIME - XDTLMA
@@ -948,8 +956,9 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
     TDTLMA%TIME = MOD(TDTLMA%TIME + XDTLMA,86400.)
     CLMA_FILE = CEXP//"_SIMLMA_"//YNAME//".dat"
 !
-    CALL OPEN_ll (FILE=CLMA_FILE, ACTION="WRITE",    FORM="FORMATTED", STATUS="NEW", &
-                  UNIT=ILMA_UNIT, POSITION="APPEND", IOSTAT=ILMA_IOSTAT )
+    CALL IO_FILE_ADD2LIST(TZFILE,CLMA_FILE,'TXT','WRITE')
+    CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='APPEND',HSTATUS='NEW',KRESP=ILMA_IOSTAT)
+    ILMA_UNIT = TZFILE%NLU
     IF ( IPROC .EQ. 0 ) THEN
       WRITE (UNIT=ILMA_UNIT,FMT='(A)') '----------------------------------------'
       WRITE (UNIT=ILMA_UNIT,FMT='(A)') '*** FLASH COORD. FROM LMA SIMULATOR ****'
@@ -972,7 +981,8 @@ IF (LFLASH_GEOM .AND. LLMA) THEN
       WRITE (UNIT=ILMA_UNIT,FMT='(A)') '-- Column 17 : negative ions neut     --'
       WRITE (UNIT=ILMA_UNIT,FMT='(A)') '----------------------------------------'
     END IF
-    CALL CLOSE_ll (CLMA_FILE)
+    CALL IO_FILE_CLOSE_ll(TZFILE)
+    TZFILE => NULL()
     CALL MPI_BCAST (ILMA_UNIT,1, MPI_INTEGER, 0, NMNH_COMM_WORLD, IERR)
   END IF
 END IF

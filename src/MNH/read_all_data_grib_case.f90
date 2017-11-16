@@ -318,8 +318,11 @@ REAL, DIMENSION(:), ALLOCATABLE     :: ZPV      ! vertical level in grib file
 INTEGER                             :: IPVPRESENT ,IPV
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZR_DUM
 INTEGER                            :: IMI
+TYPE(TFILEDATA),POINTER             :: TZFILE
 !
 !---------------------------------------------------------------------------------------
+!
+TZFILE => NULL()
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
@@ -1006,7 +1009,8 @@ IF (IMODEL==5) THEN
 !*       2.6.1  read mocage species
 !
 ! open input file
-  CALL CH_OPEN_INPUT(YPRE_MOC, "MOC2MESONH", ICHANNEL, ILUOUT0, KVERB)
+  CALL CH_OPEN_INPUT(YPRE_MOC, "MOC2MESONH", TZFILE, ILUOUT0, KVERB)
+  ICHANNEL = TZFILE%NLU
 !
 ! read number of mocage species to transfer into mesonh
   READ(ICHANNEL, *) IMOC
@@ -1035,7 +1039,8 @@ IF (IMODEL==5) THEN
   ENDIF
   !
   ! close file
-  CALL CLOSE_ll(YPRE_MOC,IOSTAT=IRET)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
   !
   !*  2.6.2   exchange mocage values onto prognostic variables XSV_LS
   !
@@ -1404,7 +1409,8 @@ IF (ODUMMY_REAL) THEN
   ! close file
   CALL IO_FILE_CLOSE_ll(TPPRE_REAL1)
   ! open input file
-  CALL CH_OPEN_INPUT(TPPRE_REAL1%CNAME, "DUMMY_2D", ICHANNEL, ILUOUT0, KVERB)
+  CALL CH_OPEN_INPUT(TPPRE_REAL1%CNAME, "DUMMY_2D", TZFILE, ILUOUT0, KVERB)
+  ICHANNEL = TZFILE%NLU
   !
   ! read number of dummy 2D fields to transfer into mesonh
   READ(ICHANNEL, *) IMOC
@@ -1467,6 +1473,9 @@ IF (ODUMMY_REAL) THEN
     INUMLEV(IVAR)=ITYP     ; INUMLEV1(IVAR)=ILEV1 ; INUMLEV2(IVAR)=ILEV2
     !
   END DO
+  !
+  CALL IO_FILE_CLOSE_ll(TZFILE)
+  TZFILE => NULL()
   !
   IF (NVERB>=10) THEN
     WRITE(ILUOUT0,*) CDUMMY_2D(1:IVAR)

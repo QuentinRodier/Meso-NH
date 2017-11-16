@@ -77,8 +77,11 @@ END MODULE MODI_CH_EMISSION_FLUX0D
 !!
 !!    EXTERNAL
 !!    --------
-USE MODI_CH_OPEN_INPUT
+USE MODD_IO_ll,         ONLY: TFILEDATA
+USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
 USE MODE_IO_ll
+!
+USE MODI_CH_OPEN_INPUT
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -120,6 +123,7 @@ CHARACTER(LEN=32), ALLOCATABLE, DIMENSION(:)  :: YNAMEIN
 REAL,             ALLOCATABLE, DIMENSION(:,:) :: ZFLUXIN 
                              ! fluxes as given in file:
                              ! first index is the species,second index the time
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !*       0.3  declaration of saved local variables
 !
@@ -135,19 +139,22 @@ REAL,    SAVE, ALLOCATABLE, DIMENSION(:,:) :: ZSFLUX
 INTEGER, SAVE                              :: ISACT = 1 
                                            ! actual record (for interpolation)
 LOGICAL, SAVE                              :: LSFIRSTCALL = .TRUE.  
-                                           ! flag to identify first call 
+                                           ! flag to identify first call
 !
 !------------------------------------------------------------------------------
 !
 !*    EXECUTABLE STATEMENTS
 !     ---------------------
 !
+TZFILE => NULL()
+!
 IF (LSFIRSTCALL) THEN
 !
 !*       1.   READ DATA 
 !        --------------
 !
-  CALL CH_OPEN_INPUT(HINPUTFILE, "EMISDATA", IIO, KLUOUT, KVERB)
+  CALL CH_OPEN_INPUT(HINPUTFILE, "EMISDATA", TZFILE, KLUOUT, KVERB)
+  IIO = TZFILE%NLU
 !
 ! read unit identifier
   READ(IIO,'(A3)') YUNIT
@@ -196,7 +203,7 @@ IF (LSFIRSTCALL) THEN
 !
 ! close file
 !
-  CALL CLOSE_ll(HINPUTFILE,IOSTAT=IFAIL)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
 !
 !*       2.   MAP DATA ONTO PROGNOSTIC VARIABLES
 !        ---------------------------------------

@@ -58,6 +58,7 @@ END MODULE MODI_CLOSE_FILE_MNH
 !              ------------
 !
 USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_ll,            ONLY: TFILEDATA
 USE MODD_IO_NAM,           ONLY: TFILE
 USE MODD_LUNIT,            ONLY: CLUOUT0
 !
@@ -83,6 +84,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
 INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
 CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 SELECT CASE(CPROGRAM)
@@ -103,7 +105,9 @@ END SELECT
 CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
 IF (ILUOUT==KUNIT) THEN
   CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(YLUOUT))
-  CALL CLOSE_ll(YLUOUT,IRESP)
+  TZFILE => NULL()
+  CALL IO_FILE_FIND_BYNAME(YLUOUT,TZFILE,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
   RETURN
 END IF
 !

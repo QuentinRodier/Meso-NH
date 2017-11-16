@@ -3,7 +3,7 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !     ######spl
-        SUBROUTINE MNH2LPDM_ECH(TPFILE,KFMTO,HFLOG)
+        SUBROUTINE MNH2LPDM_ECH(TPFILE,TPMETEOFILE)
 !	##################################################
 !-----------------------------------------------------------------------
 !****	MNH2S2_ECH TRAITEMENT D'UNE ECHEANCE.
@@ -30,9 +30,9 @@ USE MODD_TIME
 !
 USE MODD_MNH2LPDM
 !
-USE MODE_FM
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
 USE MODE_FMREAD
-USE MODE_IO_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 !
 USE MODI_INI_CST
 !
@@ -42,19 +42,19 @@ IMPLICIT NONE
 !*	0.2 Arguments.
 !
 TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPFILE
-CHARACTER(LEN=*),       INTENT(IN)    :: HFLOG
-INTEGER,                INTENT(IN)    :: KFMTO
+TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPMETEOFILE
 !
 !
 !*	0.3 Variables locales.
 !
 CHARACTER(LEN=100)   :: YFTURB                       ! Stockage champs de turbulence.
-INTEGER              :: KFTURB
-INTEGER              :: IREP
+INTEGER              :: IFTURB
+INTEGER              :: IFMTO,IREP
 INTEGER              :: ICURAA,ICURMM,ICURJJ         ! Date  courante.
 INTEGER              :: ICURHH,ICURMN,ICURSS         ! Heure courante.
 INTEGER              :: JI,JJ,JK
 TYPE(DATE_TIME)      :: TZDTCUR
+TYPE(TFILEDATA),POINTER :: TZFILE
 !
 !
 !
@@ -64,6 +64,8 @@ TYPE(DATE_TIME)      :: TZDTCUR
 !
 !*	1.1 Blabla.
 !
+TZFILE => NULL()
+IFMTO = TPMETEOFILE%NLU
 !
 !*	2.  LECTURE DES DONNEES MESO-NH DE BASE.
 !	    ------------------------------------
@@ -370,29 +372,29 @@ XSSFV(:,:) = XSFV(NSIB:NSIE,NSJB:NSJE)
   !
      IF (IGRILLE.EQ.2) THEN
      WRITE(YFTURB,'("TURB_LPDM",5I2.2)') ICURAA,ICURMM,ICURJJ,ICURHH,ICURMN
-     KFTURB=50
-     CALL OPEN_LL(UNIT=KFTURB,FILE=YFTURB,IOSTAT=IREP,FORM='FORMATTED', &
-      ACTION='WRITE',MODE='GLOBAL')
-     WRITE(UNIT=KFTURB,FMT='(5A12)') "WSTAR       ","USTAR       ", &
+     CALL IO_FILE_ADD2LIST(TZFILE,YFTURB,'TXT','WRITE')
+     CALL IO_FILE_OPEN_ll(TZFILE)
+     IFTURB = TZFILE%NLU
+     WRITE(UNIT=IFTURB,FMT='(5A12)') "WSTAR       ","USTAR       ", &
                                      "HMIX        ","LMO         ", &
                                      "WPTHP"
-     WRITE(UNIT=KFTURB,FMT='(5F12.5)') XSWSTAR(15,15),XSUSTAR(15,15), &
+     WRITE(UNIT=IFTURB,FMT='(5F12.5)') XSWSTAR(15,15),XSUSTAR(15,15), &
                                        XSHMIX(15,15),XSLMO(15,15),    &
                                        XSWPTHP(15,15,1)
 
 
-     WRITE(UNIT=KFTURB,FMT='(8A12)') "HAUT          ","TKE           ", &
+     WRITE(UNIT=IFTURB,FMT='(8A12)') "HAUT          ","TKE           ", &
                                      "DISS          ","THETA         ", &
                                      "SIGU          ","SIGW          ", &
                                      "TIMEU         ","TIMEW         "
      DO JK=1,NKMAX
-     WRITE(UNIT=KFTURB,FMT='(6F12.5,2F12.1)') XSHAUT(JK),XSTKE(15,15,JK), &
+     WRITE(UNIT=IFTURB,FMT='(6F12.5,2F12.1)') XSHAUT(JK),XSTKE(15,15,JK), &
                                     XSDISSIP(15,15,JK),XSTH(15,15,JK), &
                                     XSSIGU(15,15,JK),XSSIGW(15,15,JK), &
                                     XSTIMEU(15,15,JK),XSTIMEW(15,15,JK)
   
      ENDDO
-     CALL CLOSE_LL(YFTURB,IREP,'KEEP')
+     CALL IO_FILE_CLOSE_ll(TZFILE)
      ENDIF
 !
                
@@ -403,38 +405,38 @@ XSSFV(:,:) = XSFV(NSIB:NSIE,NSJB:NSJE)
 !
 !
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSU(:,:,JK)        ! Composante zonale du vent.
+WRITE(IFMTO) XSU(:,:,JK)        ! Composante zonale du vent.
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSV(:,:,JK)        ! Composante meridienne du vent.
+WRITE(IFMTO) XSV(:,:,JK)        ! Composante meridienne du vent.
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSW(:,:,JK)        ! Vitesse verticale.
+WRITE(IFMTO) XSW(:,:,JK)        ! Vitesse verticale.
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSTH(:,:,JK)     ! Temperature potentielle.
+WRITE(IFMTO) XSTH(:,:,JK)     ! Temperature potentielle.
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSTKE(:,:,JK)       ! Energie cinetique Turbulence
+WRITE(IFMTO) XSTKE(:,:,JK)       ! Energie cinetique Turbulence
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) (XSSIGU(:,:,JK))**2       ! SigmaU
+WRITE(IFMTO) (XSSIGU(:,:,JK))**2       ! SigmaU
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) (XSSIGU(:,:,JK))**2       ! SigmaV
+WRITE(IFMTO) (XSSIGU(:,:,JK))**2       ! SigmaV
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) (XSSIGW(:,:,JK))**2       ! SigmaW
+WRITE(IFMTO) (XSSIGW(:,:,JK))**2       ! SigmaW
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSTIMEU(:,:,JK)       ! Temps lagrangien U
+WRITE(IFMTO) XSTIMEU(:,:,JK)       ! Temps lagrangien U
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSTIMEU(:,:,JK)       ! Temps lagrangien V
+WRITE(IFMTO) XSTIMEU(:,:,JK)       ! Temps lagrangien V
 ENDDO
 DO JK = 1,NKMAX
-WRITE(KFMTO) XSTIMEW(:,:,JK)       ! Dissipation de TKE
+WRITE(IFMTO) XSTIMEW(:,:,JK)       ! Dissipation de TKE
 ENDDO
-WRITE(KFMTO) XSINRT
+WRITE(IFMTO) XSINRT
 !
 END SUBROUTINE MNH2LPDM_ECH

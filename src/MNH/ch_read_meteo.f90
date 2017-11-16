@@ -47,7 +47,7 @@ END MODULE MODI_CH_READ_METEO
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
-USE MODD_CH_MODEL0D,  ONLY: NMETEOIO, XTNEXTMETEO, NVERB
+USE MODD_CH_MODEL0D,  ONLY: TMETEOFILE, XTNEXTMETEO, NVERB
 USE MODD_CH_M9_n,     ONLY: NMETEOVARS, METEOTRANSTYPE
 !!
 !------------------------------------------------------------------------------
@@ -70,8 +70,8 @@ INTEGER :: JI   ! loop control
 !     ---------------------
 !
 ! read meteo variables and time of next update
-READ(NMETEOIO,*) (TPM%XMETEOVAR(JI), JI = 1, NMETEOVARS)
-READ(NMETEOIO,*) XTNEXTMETEO
+READ(TMETEOFILE%NLU,*) (TPM%XMETEOVAR(JI), JI = 1, NMETEOVARS)
+READ(TMETEOFILE%NLU,*) XTNEXTMETEO
 !
 ! print what has been read
 IF (NVERB >= 7) THEN

@@ -43,9 +43,11 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF, ONLY : CPROGRAM
-USE MODE_ll
-USE MODE_IO_ll
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_ll,            ONLY: TFILEDATA
+!
+USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 !
 !
 IMPLICIT NONE
@@ -58,17 +60,20 @@ INTEGER, INTENT(OUT) :: KTEX ! logical unit of Tex file
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP
-CHARACTER(LEN=20) :: YTEX           ! name of tex file
+CHARACTER(LEN=*),PARAMETER :: YTEX = 'class_cover_data.tex' ! name of tex file
+!
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 !*       5.     Prints of cover parameters in a tex file
 !               ----------------------------------------
 !
-IF (CPROGRAM =='PGD   ') THEN
-  YTEX='class_cover_data.tex'
-  CALL OPEN_ll(unit=KTEX,file=YTEX,iostat=IRESP,action='WRITE', &
-               form='FORMATTED',position="REWIND",mode='GLOBAL')
+TZFILE => NULL()
+!
+IF (TRIM(CPROGRAM)=='PGD') THEN
+  CALL IO_FILE_ADD2LIST(TZFILE,YTEX,'TXT','WRITE')
+  CALL IO_FILE_OPEN_ll(TZFILE,HPOSITION='REWIND')
+  KTEX = TZFILE%NLU
 ELSE
   KTEX=0
 END IF

@@ -46,6 +46,8 @@
 !*       0.   DECLARATIONS
 !        -----------------
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
 IMPLICIT NONE
 SAVE
 !
@@ -66,6 +68,7 @@ REAL :: XTNEXTMETEO   ! time of next meteo update
 !
 CHARACTER*128 :: CINITFILE  = "CHCONTROL1.nam" ! name of initial value file
 CHARACTER*128 :: CMETEOFILE = "CHCONTROL1.nam" ! meteo update file
+TYPE(TFILEDATA),POINTER :: TMETEOFILE => NULL() ! meteo update file
 !
 CHARACTER*128 :: COUTFILE    = "BOX.OUT"      ! name of final output file 
 CHARACTER*128 :: CRESULTFILE = "BOX.RESULT"   ! regular output file 
@@ -76,7 +79,6 @@ CHARACTER*40  :: CRESULTFORMAT = "(5E16.8)" ! Format for results
 CHARACTER*40  :: CDIAGFORMAT   = "(5E16.8)" ! Format for diagnostics
 !
 INTEGER :: NFILEIO   = 42 ! channel to be used for all intermediate file I/O
-INTEGER :: NMETEOIO  = 43 ! channel to be used for all meteo I/O
 INTEGER :: NRESULTIO = 44 ! channel to be used for all regular result file I/O
 INTEGER :: NDIAGIO   = 45 ! channel to be used for all diagnostics file I/O
 !

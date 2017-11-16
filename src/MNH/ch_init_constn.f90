@@ -64,8 +64,9 @@ END MODULE MODI_CH_INIT_CONST_n
 
 !!    EXTERNAL
 !!    --------
-USE MODE_IO_ll
 USE MODI_CH_OPEN_INPUT  ! open the general purpose ASCII input file
+USE MODD_IO_ll,         ONLY: TFILEDATA
+USE MODE_FM,            ONLY: IO_FILE_CLOSE_ll
 
 !!
 !!    IMPLICIT ARGUMENTS
@@ -114,13 +115,12 @@ CHARACTER(LEN=40), DIMENSION(:), ALLOCATABLE :: YHENRYNAME !species names
 REAL             , DIMENSION(:,:), ALLOCATABLE :: ZHENRYVAL
                           !chemical Henry constant value
 !
-
 INTEGER :: IFAIL          ! return code from CLOSE_ll
 INTEGER :: JI, JN, JNREAL ! loop control variables
 INTEGER :: INACT          ! array pointer
-
-
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
+TZFILE => NULL()
 !
 !*       1.    ALLOCATE FIELD
 !              --------------
@@ -134,7 +134,8 @@ IF (.NOT. ASSOCIATED(XSREALHENRYVAL))   ALLOCATE( XSREALHENRYVAL(NEQ,2) )
 ! open input file
 IF (KVERB >= 5) WRITE(KLUOUT,*) &
    "CH_INIT_CONST: reading  molar mass"
-CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "MASS_MOL", ICHANNEL, KLUOUT, KVERB)
+CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "MASS_MOL", TZFILE, KLUOUT, KVERB)
+ICHANNEL = TZFILE%NLU
 !
 ! read number of molecular diffusivity IMASS
 READ(ICHANNEL, *) IMASS
@@ -155,7 +156,8 @@ DO JI = 1, IMASS
 END DO
 !
 ! close file
-CALL CLOSE_ll(CCHEM_INPUT_FILE,IOSTAT=IFAIL)
+CALL IO_FILE_CLOSE_ll(TZFILE)
+TZFILE => NULL()
 !
 !
 IF (KVERB >= 10) THEN
@@ -187,7 +189,8 @@ END DO
 ! open input file
 IF (KVERB >= 5) WRITE(KLUOUT,*) &
    "CH_INIT_CONST: reading  reactivity factor "
-CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "REA_FACT", ICHANNEL, KLUOUT, KVERB)
+CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "REA_FACT", TZFILE, KLUOUT, KVERB)
+ICHANNEL = TZFILE%NLU
 !
 ! read number of molecular diffusivity IREACT
 READ(ICHANNEL, *) IREACT
@@ -207,7 +210,8 @@ DO JI = 1, IREACT
 END DO
 !
 ! close file
-CALL CLOSE_ll(CCHEM_INPUT_FILE,IOSTAT=IFAIL)
+CALL IO_FILE_CLOSE_ll(TZFILE)
+TZFILE => NULL()
 !
 !
 IF (KVERB >= 10) THEN
@@ -240,7 +244,7 @@ END DO
 IF (KVERB >= 5) WRITE(KLUOUT,*) &
    "CH_INIT_CONST: reading effective Henry constant", &
    " and its temperature correction "
-CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "HENRY_SP", ICHANNEL, KLUOUT, KVERB)
+CALL CH_OPEN_INPUT(CCHEM_INPUT_FILE, "HENRY_SP", TZFILE, KLUOUT, KVERB)
 !
 ! read number of molecular diffusivity IHENRY
 READ(ICHANNEL, *) IHENRY
@@ -263,7 +267,8 @@ DO JNREAL = 1, IHENRY
 END DO
 !
 ! close file
-CALL CLOSE_ll(CCHEM_INPUT_FILE,IOSTAT=IFAIL)
+CALL IO_FILE_CLOSE_ll(TZFILE)
+TZFILE => NULL()
 !
 IF (KVERB >= 10) THEN
   WRITE(KLUOUT,'(A)') '----------------------------------------------------'

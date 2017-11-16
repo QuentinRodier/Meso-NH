@@ -663,7 +663,7 @@ ELSE
   ILFIVERB = -1
 END IF
 !
-IF(     PRESENT(KRECL) .AND. TRIM(HTYPE)/='SURFACE_DATA') &
+IF(     PRESENT(KRECL) .AND. TRIM(HTYPE)/='SURFACE_DATA' .AND. TRIM(HTYPE)/='TXT') &
     CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument KRECL is not used by '//TRIM(HTYPE)//' files')
 IF(.NOT.PRESENT(KRECL) .AND. TRIM(HTYPE)=='SURFACE_DATA') THEN
     IF(TRIM(HACCESS)=='DIRECT') &
@@ -692,28 +692,62 @@ END IF
 TPFILE%CMODE = HMODE
 !
 SELECT CASE(TPFILE%CTYPE)
+  !Chemistry input files
+  CASE('CHEMINPUT')
+    IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CFORMAT = 'TEXT'
+
+
+  !Chemistry tabulation files
+  CASE('CHEMTAB')
+    IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CFORMAT = 'TEXT'
+
+
+  !GPS files
+  CASE('GPS')
+    IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CFORMAT = 'TEXT'
+
+
+  !Meteo files
+  CASE('METEO')
+    IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
+    TPFILE%CFORMAT = 'BINARY'
+
+
   !Namelist files
   CASE('NML')
-    IF (TRIM(HMODE)/='READ') &
+    IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
     TPFILE%CFORMAT = 'TEXT'
 
 
   !OUTPUTLISTING files
   CASE('OUTPUTLISTING')
-    IF (TRIM(HMODE)/='WRITE') &
+    IF (TRIM(HMODE)/='WRITE') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
     TPFILE%CFORMAT = 'TEXT'
 
 
   !SURFACE_DATA files
   CASE('SURFACE_DATA')
-    IF (TRIM(HMODE)/='READ') &
+    IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
     TPFILE%CFORMAT = 'SURFACE_DATA'
     TPFILE%CFORM   = HFORM
     TPFILE%CACCESS = HACCESS
     IF(TRIM(HACCESS)=='DIRECT') TPFILE%NRECL   = KRECL
+
+
+  !Text files
+  CASE('TXT')
+    TPFILE%CFORMAT = 'TEXT'
+    IF(PRESENT(KRECL)) TPFILE%NRECL = KRECL
 
 
   CASE DEFAULT

@@ -14,13 +14,17 @@
 !!
 INTERFACE
 !!
-SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,KCHANNEL,KLUOUT,KVERB)
+SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
+!
+USE MODD_IO_ll,            ONLY: TFILEDATA
+!
 IMPLICIT NONE
-CHARACTER(LEN=*), INTENT(IN) :: HCHEM_INPUT_FILE ! general purpose input file
-CHARACTER(LEN=*), INTENT(IN) :: HKEYWORD         ! keyword for positioning
-INTEGER         , INTENT(OUT):: KCHANNEL         ! I/O channel to choose
-INTEGER,          INTENT(IN) :: KLUOUT           ! output listing channel
-INTEGER,          INTENT(IN) :: KVERB            ! verbosity level
+!
+CHARACTER(LEN=*),        INTENT(IN)  :: HCHEM_INPUT_FILE ! general purpose input file
+CHARACTER(LEN=*),        INTENT(IN)  :: HKEYWORD         ! keyword for positioning
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPFILE           ! Newly opened file
+INTEGER,                 INTENT(IN)  :: KLUOUT           ! output listing channel
+INTEGER,                 INTENT(IN)  :: KVERB            ! verbosity level
 END SUBROUTINE CH_OPEN_INPUT
 !!
 END INTERFACE
@@ -28,7 +32,7 @@ END INTERFACE
 END MODULE MODI_CH_OPEN_INPUT
 !!
 !!    ######################################################################### 
-      SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,KCHANNEL,KLUOUT,KVERB)
+SUBROUTINE CH_OPEN_INPUT(HCHEM_INPUT_FILE,HKEYWORD,TPFILE,KLUOUT,KVERB)
 !!    #########################################################################
 !!
 !!*** *CH_OPEN_INPUT*
@@ -62,10 +66,6 @@ END MODULE MODI_CH_OPEN_INPUT
 !!    05/08/96 (K. Suhre) restructured
 !!    11/08/98 (N. Asencio) add parallel code
 !!
-!!    EXTERNAL
-!!    --------
-!!    OPEN_ll  ! attribute a free I/O unit
-USE MODE_IO_ll
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -76,34 +76,43 @@ USE MODE_IO_ll
 !
 !*       0.     DECLARATIONS
 !               ------------
+!
+USE MODD_IO_ll,            ONLY: TFILEDATA
+!
+USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+!
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-CHARACTER(LEN=*), INTENT(IN) :: HCHEM_INPUT_FILE ! general purpose input file
-CHARACTER(LEN=*), INTENT(IN) :: HKEYWORD         ! keyword for positioning
-INTEGER         , INTENT(OUT):: KCHANNEL         ! I/O channel to choose
-INTEGER,          INTENT(IN) :: KLUOUT           ! output listing channel
-INTEGER,          INTENT(IN) :: KVERB            ! verbosity level
+CHARACTER(LEN=*),        INTENT(IN)  :: HCHEM_INPUT_FILE ! general purpose input file
+CHARACTER(LEN=*),        INTENT(IN)  :: HKEYWORD         ! keyword for positioning
+TYPE(TFILEDATA),POINTER, INTENT(OUT) :: TPFILE           ! Newly opened file
+INTEGER,                 INTENT(IN)  :: KLUOUT           ! output listing channel
+INTEGER,                 INTENT(IN)  :: KVERB            ! verbosity level
 !
 !*      0.2    declarations of local variables
 !
 CHARACTER(LEN=79) :: YIN ! character string for line-by-line read
-INTEGER :: IFAIL         ! return code from OPEN_ll
+INTEGER :: ILU
+INTEGER :: IRESP         ! return code from OPEN_ll
 !
 !-------------------------------------------------------------------------------
 !
+TPFILE => NULL()
 !
 !*       1.    FIND A FREE I/O CHANNEL
 !              -----------------------
 !
 IF (KVERB >= 5) WRITE(KLUOUT,*) "CH_OPEN_INPUT: opening file ", HCHEM_INPUT_FILE
-CALL OPEN_ll(UNIT=KCHANNEL,FILE=HCHEM_INPUT_FILE,IOSTAT=IFAIL ,MODE='GLOBAL',  &
-             POSITION='REWIND', ACTION='READ', STATUS='OLD', FORM='FORMATTED')
+CALL IO_FILE_ADD2LIST(TPFILE,HCHEM_INPUT_FILE,'CHEMINPUT','READ',OOLD=.TRUE.)
+CALL IO_FILE_OPEN_ll(TPFILE,KRESP=IRESP)
+ILU = TPFILE%NLU
 !
-IF (IFAIL /= 0) THEN
+IF (IRESP /= 0) THEN
   WRITE(KLUOUT,*) "CH_OPEN_INPUT ERROR: unable to open file", HCHEM_INPUT_FILE
-  WRITE(KLUOUT,*) "                     OPEN_ll return code is: ", IFAIL
+  WRITE(KLUOUT,*) "                     IO_FILE_OPEN_ll return code is: ", IRESP
   WRITE(KLUOUT,*) "                     the program will be stopped now"
   ! callabortstop
   CALL ABORT
@@ -116,23 +125,23 @@ END IF
 !              --------------------------------------
 !
 ! open the input file
-REWIND(KCHANNEL)
-WRITE(KLUOUT,*) "CH_OPEN_INPUT: opened channel ", KCHANNEL, &
+REWIND(ILU)
+WRITE(KLUOUT,*) "CH_OPEN_INPUT: opened channel ", ILU, &
                 " for file ", HCHEM_INPUT_FILE
 !
 ! read general comment line and print it
-READ(KCHANNEL,"(A)") YIN
+READ(ILU,"(A)") YIN
 IF (KVERB >= 5) WRITE(KLUOUT, *) YIN
 !
 search_key : DO
-  READ(KCHANNEL,"(A8)", END=100) YIN
+  READ(ILU,"(A8)", END=100) YIN
   IF (HKEYWORD(1:8) .EQ. YIN(1:8)) EXIT search_key
 ENDDO search_key
 !
 ! read specific comment line and print it
 IF (KVERB >= 5) WRITE(KLUOUT,*) &
    "Keyword ", HKEYWORD(1:8), " has been found, the specific comment is:"
-READ(KCHANNEL,"(A)") YIN
+READ(ILU,"(A)") YIN
 IF (KVERB >= 5) WRITE(KLUOUT, *) YIN
 !
 RETURN

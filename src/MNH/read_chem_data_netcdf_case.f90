@@ -184,6 +184,7 @@ end type TZMOZ
 type(TZMOZ), DIMENSION(:,:),ALLOCATABLE       :: TZSTOC
 ! model indice
 INTEGER                           :: IMI
+TYPE(TFILEDATA),POINTER                       :: TZFILE
 !
 ! For netcdf 
 !
@@ -210,6 +211,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE     :: PSMOZ
 real ::a,b
 
 !----------------------------------------------------------------------
+TZFILE => NULL()
 !
 IMI = GET_CURRENT_MODEL_INDEX()
 !
@@ -449,7 +451,8 @@ ALLOCATE(ZOUT1D(INO))
 !*       2.6.1  read MOZART species from the file MOZ1.nam
 !
 ! open input file
-CALL CH_OPEN_INPUT(YMOZ,"MOZ2MESONH",ICHANNEL,ILUOUT0,KVERB)
+CALL CH_OPEN_INPUT(YMOZ,"MOZ2MESONH",TZFILE,ILUOUT0,KVERB)
+ICHANNEL = TZFILE%NLU
 !
 !read number of mocage species to transfer into mesonh
 READ(ICHANNEL, *) IMOZ
@@ -725,7 +728,7 @@ if (status /= nf90_noerr) call handle_err(status)
 
 ! close
 ! file
-CALL CLOSE_ll(YMOZ,IOSTAT=IRET)
+CALL IO_FILE_CLOSE_ll(TZFILE)
 
 
 !-------------------------------------------------------------
@@ -774,6 +777,7 @@ CONTAINS
 !
 !       Small routine used to store a linear array into a 2 dimension array
 !
+USE MODE_MSG
 IMPLICIT NONE
 INTEGER,                INTENT(IN)  :: KN1
 REAL,DIMENSION(KN1),    INTENT(IN)  :: P1
@@ -785,11 +789,7 @@ INTEGER                 :: JLOOP2_A1T2
 INTEGER                 :: JPOS_A1T2
 !
 IF (KN1 < KL1*KL2) THEN
-  WRITE (ILUOUT0,'(A)') ' | Error in "ARRAY_1D_TO_2D", sizes do not match - abort'
- !callabortstop
-  CALL CLOSE_ll(CLUOUT0,IOSTAT=IRESP)
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','ARRAY_1D_TO_2D','sizes do not match')
 END IF
 JPOS_A1T2 = 1
 DO JLOOP2_A1T2 = 1, KL2

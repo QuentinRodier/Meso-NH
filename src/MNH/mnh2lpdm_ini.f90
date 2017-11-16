@@ -3,7 +3,7 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !     ######spl
-        SUBROUTINE MNH2LPDM_INI(TPFILE1,TPFILE2,HFLOG,KFLOG,KFGRI,KFDAT)
+        SUBROUTINE MNH2LPDM_INI(TPFILE1,TPFILE2,TPLOGFILE,TPGRIDFILE,TPDATEFILE)
 !--------------------------------------------------------------------------
 !* MNH2S2_INI    : INITIALISATION DU COUPLAGE MESO-NH / LPDM.
 !
@@ -13,11 +13,10 @@
 !
 !	Arguments explicites.
 !	---------------------
-!	HFM1,HFM2     Nom du premier et du dernier Fichier FM à traiter.
-!	HFLOG   Nom du fichier-log.
-!	KFLOG   Unite logique du fichier-log.
-!	IFGRI   Unite logique du fichier GRILLE.
-!       IFDAT   Unite logique du fichier DATE
+! TPFILE1,TPFILE2 First and last files to treat
+! TPLOGFILE       Log file
+! TPGRIDFILE      Grid file
+! TPDATEFILE      Date file
 !
 !--------------------------------------------------------------------------
 !
@@ -55,8 +54,9 @@ USE MODI_TEMPORAL_DIST
 IMPLICIT NONE
 !
 TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPFILE1,TPFILE2
-CHARACTER(LEN=*),       INTENT(IN)    :: HFLOG
-INTEGER,                INTENT(IN)    :: KFLOG,KFGRI,KFDAT
+TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPLOGFILE
+TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPGRIDFILE
+TYPE(TFILEDATA),POINTER,INTENT(IN)    :: TPDATEFILE
 !
 !
 !*	0.3 Variables locales.
@@ -70,7 +70,6 @@ INTEGER               :: IHHCUR1,IMNCUR1,ISSCUR1
 INTEGER               :: IHHCUR2,IMNCUR2,ISSCUR2
 CHARACTER(LEN=14)     :: YDATMDL,YDATCUR1,YDATCUR2
 !
-INTEGER               :: IREP
 REAL                  :: XLATOR,XLONOR,XPTLAT,XPTLON
 REAL                  :: XXPTSOMNH,XYPTSOMNH
 INTEGER               :: JI,JJ,JK,a
@@ -78,11 +77,16 @@ INTEGER               :: b,c,I
 INTEGER, DIMENSION(:),   ALLOCATABLE   :: TAB1D
 INTEGER, DIMENSION(:,:), ALLOCATABLE   :: TAB2D
 TYPE(DATE_TIME)         :: TZDTCUR1,TZDTCUR2,TZDTEXP1
+INTEGER                :: IFDAT,IFGRI,IFLOG
 !
 !
 !
 !*	1.  INITIALISATION.
 !	    ---------------
+!
+IFDAT = TPDATEFILE%NLU
+IFGRI = TPGRIDFILE%NLU
+IFLOG = TPLOGFILE%NLU
 !
 CALL INI_CST
 !
@@ -163,7 +167,7 @@ NJE=NJU-JPHEXT
 !*	2.4 Nombre de niveaux-verticaux.
 !
 CALL IO_READ_FIELD(TPFILE1,'KMAX',NKMAX)
-!WRITE(KFLOG,*) '%%% MNH2S2_INI Lecture du nombre de niveau OK.'
+!WRITE(IFLOG,*) '%%% MNH2S2_INI Lecture du nombre de niveau OK.'
 !
 NKU = NKMAX+2*JPVEXT
 NKB = 1+JPVEXT
@@ -225,36 +229,36 @@ NSJMAX = NSJE-NSJB+1
 !           Domaine horizontal Meso-NH.
 !modif 12.2014 : passage a 1 seul domaine MesoNH
 !           ---------------------------
-WRITE(KFLOG,'(I1,a12)') IGRILLE,'      ngrid '
-!WRITE(KFLOG,'(a13)') '2      ngrids'
-WRITE(KFLOG,'(a13)') '1      ngrids'
-WRITE(KFLOG,'(i4,3x,a6)') NSIMAX,'nx    '
-WRITE(KFLOG,'(i4,3x,a6)') NSJMAX,'ny    '
-WRITE(KFLOG,'(i4,3x,a6)') NKU-2,'nz    '
-WRITE(KFLOG,'(i4,3x,a6)') NKU-3,'nzg   ' 
-WRITE(KFLOG,'(a13)') '12     npatch'
-WRITE(KFLOG,'(a13)') '0      icloud'
-WRITE(KFLOG,'(a11)') '0.0  wlon  '
-WRITE(KFLOG,'(a11)') '45.0 rnlat '
-WRITE(KFLOG,'(f10.1,3x,a6)') XZHAT(NKE),'s     '
-WRITE(KFLOG,'(f8.0,a8)') ZECHEANCE1,'  time1 '
-WRITE(KFLOG,'(f8.0,a8)') ZECHEANCE2,'  time2 '
-WRITE(KFLOG,'(a13)') '3600    dtmet '
-WRITE(KFLOG,'(a13)') 'm       tunits'
-WRITE(KFLOG,'(a13)') '12     nvout '
-WRITE(KFLOG,'(6x,a8,i4)') 'u       ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'v       ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'w       ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'tp      ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'tke     ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'uu      ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'vv      ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'ww      ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'tlx     ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'tly     ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'tlz     ',1
-WRITE(KFLOG,'(6x,a8,i4)') 'intopr  ',1
-WRITE(KFLOG,*) '  grid structure'
+WRITE(IFLOG,'(I1,a12)') IGRILLE,'      ngrid '
+!WRITE(IFLOG,'(a13)') '2      ngrids'
+WRITE(IFLOG,'(a13)') '1      ngrids'
+WRITE(IFLOG,'(i4,3x,a6)') NSIMAX,'nx    '
+WRITE(IFLOG,'(i4,3x,a6)') NSJMAX,'ny    '
+WRITE(IFLOG,'(i4,3x,a6)') NKU-2,'nz    '
+WRITE(IFLOG,'(i4,3x,a6)') NKU-3,'nzg   ' 
+WRITE(IFLOG,'(a13)') '12     npatch'
+WRITE(IFLOG,'(a13)') '0      icloud'
+WRITE(IFLOG,'(a11)') '0.0  wlon  '
+WRITE(IFLOG,'(a11)') '45.0 rnlat '
+WRITE(IFLOG,'(f10.1,3x,a6)') XZHAT(NKE),'s     '
+WRITE(IFLOG,'(f8.0,a8)') ZECHEANCE1,'  time1 '
+WRITE(IFLOG,'(f8.0,a8)') ZECHEANCE2,'  time2 '
+WRITE(IFLOG,'(a13)') '3600    dtmet '
+WRITE(IFLOG,'(a13)') 'm       tunits'
+WRITE(IFLOG,'(a13)') '12     nvout '
+WRITE(IFLOG,'(6x,a8,i4)') 'u       ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'v       ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'w       ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'tp      ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'tke     ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'uu      ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'vv      ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'ww      ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'tlx     ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'tly     ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'tlz     ',1
+WRITE(IFLOG,'(6x,a8,i4)') 'intopr  ',1
+WRITE(IFLOG,*) '  grid structure'
 !
 !*	4.  FICHIER METEO.
 !	    --------------
@@ -341,9 +345,9 @@ print*,MINVAL(XSZ0),MAXVAL(XSZ0)
 !* 5   FICHIER DATES.
 !      -------------
 !
-WRITE(KFDAT,'(A14)') YDATMDL 
-WRITE(KFDAT,'(A14)') YDATCUR1 
-WRITE(KFDAT,'(A14)') YDATCUR2
+WRITE(IFDAT,'(A14)') YDATMDL 
+WRITE(IFDAT,'(A14)') YDATCUR1 
+WRITE(IFDAT,'(A14)') YDATCUR2
 !
 !* 5.  FICHIER GRILLE.
 !      --------------
@@ -351,21 +355,21 @@ WRITE(KFDAT,'(A14)') YDATCUR2
 !
 !* 5.1 Infos franchement utiles.
 !
-WRITE(KFGRI,'(F15.8,1X,A)') &
+WRITE(IFGRI,'(F15.8,1X,A)') &
                   XLON0,   'XLON0   Longitude reference (deg.deci.)'
-WRITE(KFGRI,'(F15.8,1X,A)') &
+WRITE(IFGRI,'(F15.8,1X,A)') &
                   XLAT0,   'XLAT0   Latitude  reference (deg.deci.)'
-WRITE(KFGRI,'(F15.8,1X,A)') &
+WRITE(IFGRI,'(F15.8,1X,A)') &
                   XBETA,   'XBETA   Rotation  grille    (deg.deci.)'
-WRITE(KFGRI,'(F15.8,1X,A)') XRPK,    'XRPK    Facteur de conicite'
-WRITE(KFGRI,'(F15.8,1X,A)') &
+WRITE(IFGRI,'(F15.8,1X,A)') XRPK,    'XRPK    Facteur de conicite'
+WRITE(IFGRI,'(F15.8,1X,A)') &
                   XLONOR,  'XLONOR  Longitude origine   (deg.deci.)'
-WRITE(KFGRI,'(F15.8,1X,A)') &
+WRITE(IFGRI,'(F15.8,1X,A)') &
                   XLATOR,  'XLATOR  Latitude  origine   (deg.deci.)'
-WRITE(KFGRI,'(F15.1,1X,A)') XXHAT(1),'XHAT(1) Coord. Cartesienne  (m)'
-WRITE(KFGRI,'(F15.1,1X,A)') XXHAT(2),'XHAT(2) Coord. Cartesienne  (m)'
-WRITE(KFGRI,'(F15.1,1X,A)') XYHAT(1),'YHAT(1) Coord. Cartesienne  (m)'
-WRITE(KFGRI,'(F15.1,1X,A)') XYHAT(2),'YHAT(2) Coord. Cartesienne  (m)'
+WRITE(IFGRI,'(F15.1,1X,A)') XXHAT(1),'XHAT(1) Coord. Cartesienne  (m)'
+WRITE(IFGRI,'(F15.1,1X,A)') XXHAT(2),'XHAT(2) Coord. Cartesienne  (m)'
+WRITE(IFGRI,'(F15.1,1X,A)') XYHAT(1),'YHAT(1) Coord. Cartesienne  (m)'
+WRITE(IFGRI,'(F15.1,1X,A)') XYHAT(2),'YHAT(2) Coord. Cartesienne  (m)'
 !
 print*,"GRILLE"
 print*,"LON0 : ",XLON0
@@ -377,19 +381,19 @@ print*,"LATOR: ",XLATOR
 !
 !* 5.2  Points de grille x y z zg
 !
-WRITE(KFLOG,*)NSIMAX,' gridpoints in x direction'
-WRITE(KFLOG,'(8f10.0)')XXHAT(NSIB:NSIE)
-WRITE(KFLOG,*)NSJMAX,' gridpoints y direction'
-WRITE(KFLOG,'(8f10.0)')XYHAT(NSJB:NSJE)
-WRITE(KFLOG,*)NKMAX,'  main gridpoints in z direction'
-WRITE(KFLOG,'(8f10.2)')XSHAUT(1:NKMAX)
-WRITE(KFLOG,'(i4,3x,a38)')NKU-2,'intermediate gridpoints in z direction'
-WRITE(KFLOG,'(8f10.2)')XZHAT(2:NKU-1)
-WRITE(KFLOG,*)'   =================================================='
+WRITE(IFLOG,*)NSIMAX,' gridpoints in x direction'
+WRITE(IFLOG,'(8f10.0)')XXHAT(NSIB:NSIE)
+WRITE(IFLOG,*)NSJMAX,' gridpoints y direction'
+WRITE(IFLOG,'(8f10.0)')XYHAT(NSJB:NSJE)
+WRITE(IFLOG,*)NKMAX,'  main gridpoints in z direction'
+WRITE(IFLOG,'(8f10.2)')XSHAUT(1:NKMAX)
+WRITE(IFLOG,'(i4,3x,a38)')NKU-2,'intermediate gridpoints in z direction'
+WRITE(IFLOG,'(8f10.2)')XZHAT(2:NKU-1)
+WRITE(IFLOG,*)'   =================================================='
 !
 !     Topographie
 !
-WRITE(KFLOG,*) 'TERRAIN TOPOGRAPHY'
+WRITE(IFLOG,*) 'TERRAIN TOPOGRAPHY'
 c=1
 a=0
 !modif 12/2014 : passage a une grille haute resolution MesoNH, on depasse 99
@@ -409,16 +413,16 @@ DO WHILE (c.lt.(NSIMAX+1))
   DO b=NSJB,NSJE
      IF ((c+17).LT.(NSIMAX+1)) then
         a=NSJMAX-b+NSJB
-        WRITE(KFLOG,300) a,TAB2D(c:c+17,a)
+        WRITE(IFLOG,300) a,TAB2D(c:c+17,a)
      ELSE  
         a=NSJMAX-b+NSJB
-        WRITE(KFLOG,300) a,TAB2D(c:NSIMAX,a)
+        WRITE(IFLOG,300) a,TAB2D(c:NSIMAX,a)
      ENDIF
   ENDDO
 IF ((c+17).LT.(NSIMAX+1)) then
-   WRITE(KFLOG,301) TAB1D(c:c+17)
+   WRITE(IFLOG,301) TAB1D(c:c+17)
 ELSE
-   WRITE(KFLOG,301) TAB1D(c:NSIMAX)
+   WRITE(IFLOG,301) TAB1D(c:NSIMAX)
 ENDIF
 
 c=c+18

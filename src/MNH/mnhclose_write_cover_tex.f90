@@ -43,8 +43,12 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF, ONLY : CPROGRAM
-USE MODE_IO_ll
+USE MODD_CONF,             ONLY: CPROGRAM
+USE MODD_IO_ll,            ONLY: TFILEDATA
+!
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+!
 USE MODI_TRANSFER_FILE
 !
 !
@@ -58,16 +62,20 @@ IMPLICIT NONE
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-CHARACTER(LEN=20) :: YTEX           ! name of tex file
+CHARACTER(LEN=*),PARAMETER :: YTEX = 'class_cover_data.tex' ! name of tex file
+!
+INTEGER                 :: IRESP
+TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 !*       5.     Prints of cover parameters in a tex file
 !               ----------------------------------------
 !
-IF (CPROGRAM =='PGD   ') THEN
-  YTEX='class_cover_data.tex'
-  !
-  CALL CLOSE_ll(YTEX)
+TZFILE => NULL()
+!
+IF (TRIM(CPROGRAM)=='PGD') THEN
+  CALL IO_FILE_FIND_BYNAME(YTEX,TZFILE,IRESP)
+  CALL IO_FILE_CLOSE_ll(TZFILE)
   CALL TRANSFER_FILE('fujitransfer.x','NIL',YTEX)
 END IF
 !-------------------------------------------------------------------------------
