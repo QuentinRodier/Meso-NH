@@ -78,10 +78,15 @@ TYPE TFILEDATA
   INTEGER           :: NOPEN   = 0         !Number of times the file has been opened (during the current execution)
   INTEGER           :: NCLOSE  = 0         !Number of times the file has been closed (during the current execution)
   !
+  INTEGER           :: NMPICOMM      = -1      !MPI communicator used for IO on this file
+  INTEGER           :: NMASTER_RANK  = -1      !Rank of the master process (no meaning if LMULTIMASTERS=.T.)
+  LOGICAL           :: LMASTER       = .FALSE. !True if process is master of the file (process that open/read/write/close)
+  LOGICAL           :: LMULTIMASTERS = .FALSE. !True if several processes may access the file
+  !
   ! Fields for LFI files
   INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
-  INTEGER :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
-  INTEGER :: NLFIVERB  = 1  !LFI verbosity level
+  INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
+  INTEGER               :: NLFIVERB  = 1  !LFI verbosity level
   INTEGER(KIND=LFI_INT) :: NLFIFLU   = -1 !File identifier
   !
   ! Fields for netCDF files

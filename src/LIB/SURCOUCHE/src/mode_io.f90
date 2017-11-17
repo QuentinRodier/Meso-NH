@@ -413,8 +413,21 @@ CONTAINS
     CASE('GLOBAL')
        IF (YACTION == 'READ') THEN
           TZFD%OWNER = ISP
-       ELSE 
+          TPFILE%NMASTER_RANK  = -1
+          TPFILE%LMASTER       = .TRUE. !Every process read the file
+          TPFILE%LMULTIMASTERS = .TRUE.
+       ELSE
           TZFD%OWNER = ISIOP
+          IF (TPFILE%CTYPE=='OUTPUTLISTING') THEN
+            TZFD%OWNER = ISP
+            TPFILE%NMASTER_RANK  = -1
+            TPFILE%LMASTER       = .TRUE. !Every process may write in the file
+            TPFILE%LMULTIMASTERS = .TRUE.
+          ELSE
+            TPFILE%NMASTER_RANK  = ISIOP
+            TPFILE%LMASTER       = (ISP == ISIOP)
+            TPFILE%LMULTIMASTERS = .FALSE.
+          END IF
        END IF
 
        IF (ISP == TZFD%OWNER) THEN 
@@ -529,6 +542,9 @@ CONTAINS
     CASE('SPECIFIC')
        TZFD%OWNER = ISP
        TZFD%FLU = IONEWFLU()
+       TPFILE%NMASTER_RANK  = -1
+       TPFILE%LMASTER       = .TRUE. !Every process use the file
+       TPFILE%LMULTIMASTERS = .TRUE.
 
 #ifdef MNH_VPP
        OPEN(UNIT=TZFD%FLU,                      &
@@ -609,6 +625,10 @@ CONTAINS
        END IF
        TZFD%PARAM=>LFIPAR
 
+       TPFILE%NMASTER_RANK  = ISIOP
+       TPFILE%LMASTER       = (ISP == ISIOP)
+       TPFILE%LMULTIMASTERS = .FALSE.
+
        IF (ISP == TZFD%OWNER) THEN 
           TZFD%FLU = IONEWFLU()
        ELSE 
@@ -617,7 +637,11 @@ CONTAINS
           TZFD%FLU = -1
        END IF
 
+
     CASE('IO_ZSPLIT')
+       TPFILE%NMASTER_RANK  = ISIOP
+       TPFILE%LMASTER       = (ISP == ISIOP)
+       TPFILE%LMULTIMASTERS = .FALSE.
 
        TZFD%OWNER = ISIOP
        TZFD%NAME  = TRIM(TPFILE%CNAME)//".lfi"
@@ -663,6 +687,11 @@ CONTAINS
                CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
                                      KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
              END IF
+             !Done outside of the previous IF to prevent problems with .OUT files
+             TZSPLITFILE%NMPICOMM      = ICOMM
+             TZSPLITFILE%NMASTER_RANK  = irank_procio
+             TZSPLITFILE%LMASTER       = (ISP == irank_procio)
+             TZSPLITFILE%LMULTIMASTERS = .FALSE.
 
              IF ( irank_procio .EQ. ISP ) THEN
 #if defined(MNH_IOCDF4)                   
@@ -746,6 +775,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
     ! Recherche d'un communicateur a reutiliser
     ! TZFD is the first element
 
+    TPFILE%NMPICOMM = ICOMM
     TZFD%COMM = ICOMM
 !!$    TZFD%COMM = MPI_COMM_NULL
 
@@ -799,7 +829,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
                                                //TRIM(TPFILEMD%CNAME))
 
       !TZFDLFI%CDF exists only if ISP == TZFDLFI%OWNER
-      IF (TRIM(TPFILEMD%CMODE) == 'READ' .AND. ISP == TZFDLFI%OWNER) THEN
+      IF (TRIM(TPFILEMD%CMODE) == 'READ' .AND. ISP == TPFILEMD%NMASTER_RANK) THEN
         IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
           TPFILEMD%NNCID = TZFDLFI%CDF%NCID
           IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
@@ -809,7 +839,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
           IF (TPFILEMD%NLFIFLU<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NLFIFLU for '&
                                                 //TRIM(TPFILEMD%CNAME))
         ENDIF
-      ELSE IF (TRIM(TPFILEMD%CMODE) == 'WRITE' .AND. ISP == TZFDLFI%OWNER) THEN
+      ELSE IF (TRIM(TPFILEMD%CMODE) == 'WRITE' .AND. ISP == TPFILEMD%NMASTER_RANK) THEN
         IF (LIOCDF4) THEN
           TPFILEMD%NNCID = TZFDLFI%CDF%NCID
           IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
