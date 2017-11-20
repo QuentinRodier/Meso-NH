@@ -29,7 +29,6 @@ TYPE FD_ll
   CHARACTER(LEN=15)        :: MODE  ! Flag mode acces ('distrib','global','specific')   
   INTEGER                  :: OWNER ! I/O Processor number 
   TYPE(LFIPARAM),  POINTER :: PARAM
-  TYPE(IOCDF),     POINTER :: CDF
 !JUANZ
   INTEGER                  :: NB_PROCIO = 1
 !JUANZ
@@ -97,7 +96,6 @@ IF (IRESP > 0) THEN
   PRINT *, 'NEWFD : Erreur d"allocation memoire...'
 END IF
 
-NULLIFY(TZFD%CDF)
 !! Add TZFD to top of list TPFDLIST
 TZFD%NEXT=>TFDLIST
 TFDLIST=>TZFD

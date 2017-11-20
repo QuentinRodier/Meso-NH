@@ -698,9 +698,10 @@ CONTAINS
                 IF (LIOCDF4) THEN
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
-                      TZFD_IOZ%CDF => NEWIOCDF()
+                      TZSPLITFILE%TNCDIMS => NEWIOCDF()
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
-                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//cfile//".nc", NF90_NOWRITE, TZFD_IOZ%CDF%NCID)
+                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//cfile//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
+                      TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
    PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
@@ -712,10 +713,11 @@ CONTAINS
                    IF (YACTION == 'WRITE') THEN
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
-                      TZFD_IOZ%CDF => NEWIOCDF()
+                      TZSPLITFILE%TNCDIMS => NEWIOCDF()
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
                       IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//cfile//".nc", &
-                           &IOR(NF90_CLOBBER,NF90_NETCDF4), TZFD_IOZ%CDF%NCID)
+                           &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
+                      TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
                          PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
@@ -769,7 +771,6 @@ CONTAINS
     END SELECT
 print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,TPFILE%LMULTIMASTERS
 
-!PW: not done here because TZFDLFI%CDF not yet set
 !    CALL UPDATE_METADATA(TPFILE)
 
     ! Recherche d'un communicateur a reutiliser
@@ -831,7 +832,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
       !TZFDLFI%CDF exists only if ISP == TZFDLFI%OWNER
       IF (TRIM(TPFILEMD%CMODE) == 'READ' .AND. ISP == TPFILEMD%NMASTER_RANK) THEN
         IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
-          TPFILEMD%NNCID = TZFDLFI%CDF%NCID
+!           TPFILEMD%NNCID = TZFDLFI%CDF%NCID
           IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
                                                //TRIM(TPFILEMD%CNAME))
         ELSE
@@ -841,7 +842,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
         ENDIF
       ELSE IF (TRIM(TPFILEMD%CMODE) == 'WRITE' .AND. ISP == TPFILEMD%NMASTER_RANK) THEN
         IF (LIOCDF4) THEN
-          TPFILEMD%NNCID = TZFDLFI%CDF%NCID
+!           TPFILEMD%NNCID = TZFDLFI%CDF%NCID
           IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
                                                //TRIM(TPFILEMD%CNAME))
         END IF
@@ -860,6 +861,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
 
   SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS,OPARALLELIO)
   USE MODD_IO_ll
+  USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 #if defined(MNH_IOCDF4)
   USE MODE_NETCDF
 #endif
@@ -882,6 +884,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
     INTEGER(KIND=LFI_INT)                 :: IRESP8,INUM8
     CHARACTER(LEN=7)                      :: YSTATU  
     LOGICAL                               :: GPARALLELIO
+    TYPE(TFILEDATA),POINTER               :: TZFILE
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(HFILE))
 
@@ -934,6 +937,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
              ilen = len_trim(TZFD%NAME)
              YFILE_IOZ   = TRIM(TZFD%NAME(1:ilen-4))//yfile//".lfi"
              TZFD_IOZ => GETFD(YFILE_IOZ)
+             CALL IO_FILE_FIND_BYNAME(TRIM(TZFD%NAME(1:ilen-4))//yfile,TZFILE,IRESP)
              IF (ISP == TZFD_IOZ%OWNER) THEN
                 IF (TZFD_IOZ%FLU > 0) THEN
                    INUM8=TZFD_IOZ%FLU
@@ -941,7 +945,7 @@ print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,T
                    CALL IOFREEFLU(TZFD_IOZ%FLU)
                    IRESP = IRESP8
                 END IF
-                IF (ASSOCIATED(TZFD_IOZ%CDF)) CALL CLEANIOCDF(TZFD_IOZ%CDF)
+                IF (ASSOCIATED(TZFILE%TNCDIMS)) CALL CLEANIOCDF(TZFILE%TNCDIMS)
              END IF
           END DO
        END IF

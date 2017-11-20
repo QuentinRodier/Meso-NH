@@ -14,7 +14,7 @@
 
 MODULE MODD_IO_ll
 !
-USE MODD_NETCDF, ONLY: IDCDF_KIND
+USE MODD_NETCDF, ONLY: IDCDF_KIND, IOCDF
 !
 IMPLICIT NONE 
 !
@@ -95,6 +95,7 @@ TYPE TFILEDATA
                                                                   ! instead of double precision
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields
   INTEGER(KIND=IDCDF_KIND) :: NNCCOMPRESS_LEVEL = 0 ! Compression level
+  TYPE(IOCDF),POINTER      :: TNCDIMS => NULL()     ! Structure containing netCDF dimensions
   !
   !Fields for other files
   INTEGER :: NLU = -1                      !Logical unit number
