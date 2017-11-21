@@ -112,7 +112,7 @@ MODULE MODE_GA
       END IF
       !----------------------------------------------------------------------!
       !                                                                      !
-      ! Define/describe local column data owned by this processor to write   !
+      ! Define/describe local column data owned by this process to write     !
       !                                                                      !
       !----------------------------------------------------------------------!
       IF ( HRW_MODE .EQ. "WRITE" ) THEN
@@ -142,7 +142,7 @@ MODULE MODE_GA
       !
       !-----------------------------------------------------!
       !                                                     !
-      !  Size of local ZSLIDE_ll Write buffer on I/O proc   !
+      !  Size of local ZSLICE_ll Write buffer on I/O proc   !
       !                                                     !
       !-----------------------------------------------------!
       !
@@ -263,6 +263,37 @@ CONTAINS
   END SUBROUTINE FIELD_METADATA_CHECK
 
 
+  SUBROUTINE IO_FILE_WRITE_CHECK(TPFILE,HSUBR,KRESP)
+    TYPE(TFILEDATA),  INTENT(IN)  :: TPFILE
+    CHARACTER(LEN=*), INTENT(IN)  :: HSUBR
+    INTEGER,          INTENT(OUT) :: KRESP
+    !
+    KRESP = 0
+    !
+    !Check if file is opened
+    IF (.NOT.TPFILE%LOPENED) THEN
+      CALL PRINT_MSG(NVERB_ERROR,'IO',HSUBR,TRIM(TPFILE%CNAME)//' is not opened')
+      KRESP = -201
+      RETURN
+    END IF
+    !
+    !Check if file is in the right opening mode
+    IF (TPFILE%CMODE/='WRITE') THEN
+      CALL PRINT_MSG(NVERB_WARNING,'IO',HSUBR,&
+                    TRIM(TPFILE%CNAME)//': writing in a file opened in '//TRIM(TPFILE%CMODE)//' mode')
+    END IF
+    !
+    !Check fileformat
+    IF (TPFILE%CFORMAT/='NETCDF4' .AND. TPFILE%CFORMAT=='LFI' .AND. TPFILE%CFORMAT=='LFICDF4') THEN
+      CALL PRINT_MSG(NVERB_FATAL,'IO',HSUBR,&
+                    TRIM(TPFILE%CNAME)//': invalid fileformat ('//TRIM(TPFILE%CFORMAT)//')')
+      KRESP = -202
+      RETURN
+    END IF
+    !
+  END SUBROUTINE IO_FILE_WRITE_CHECK
+
+
   SUBROUTINE IO_WRITE_HEADER(TPFILE,HDAD_NAME)
     !
     USE MODD_CONF
@@ -330,7 +361,7 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X0(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
     !
     IMPLICIT NONE
@@ -347,15 +378,10 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     !
-    INTEGER                                  :: IK_FILE,IK_RANK
-    CHARACTER(len=5)                         :: YK_FILE  
-    CHARACTER(len=128)                       :: YFILE_IOZ  
-    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    INTEGER                                  :: IK_FILE
     TYPE(TFILEDATA),POINTER                  :: TZFILE
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -364,51 +390,39 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    TZFILE => NULL()
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X0',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,0,'IO_WRITE_FIELD_BYFIELD_X0')
     !
-    !*      1.1   THE NAME OF LFIFM
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X0',IRESP)
     !
-    IRESP = 0
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
              IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-       IF (TZFD%nb_procio.gt.1) THEN
+       END IF ! multiprocesses execution
+       IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
-          DO IK_FILE=1,TZFD%nb_procio
-             write(YK_FILE ,'(".Z",i3.3)')  IK_FILE
-             YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
-             TZFD_IOZ => GETFD(YFILE_IOZ)   
-             IK_RANK = TZFD_IOZ%OWNER
-             IF ( ISP == IK_RANK )  THEN
-                CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
-                IF (IRESP/=0) THEN
-                  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_X0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
-                                 ' not found in list')
-                END IF
+          DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
+             TZFILE => TPFILE%TFILES_IOZ(IK_FILE)%TFILE
+             IF ( ISP == TZFILE%NMASTER_RANK )  THEN
                 IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TZFILE,TPFIELD,PFIELD,IRESP)
                 IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,PFIELD,IRESP)
              END IF
           END DO
        ENDIF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X0','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -447,7 +461,7 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X1(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
@@ -466,19 +480,17 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER                                  :: ISIZEMAX
     REAL,DIMENSION(:),POINTER                :: ZFIELDP
     LOGICAL                                  :: GALLOC
     !
-    INTEGER                                  :: IK_FILE,IK_RANK
-    CHARACTER(len=5)                         :: YK_FILE  
-    CHARACTER(len=128)                       :: YFILE_IOZ  
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
+    !
+    IRESP = 0
+    GALLOC = .FALSE.
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
@@ -488,19 +500,13 @@ CONTAINS
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,1,'IO_WRITE_FIELD_BYFIELD_X1')
     !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X1',IRESP)
     !
-    !*      1.1   THE NAME OF LFIFM
-    !
-    IRESP = 0
-    GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -529,12 +535,9 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X1','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocesses execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -574,17 +577,15 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X2(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
-    USE MODE_GATHER_ll
-    !JUANZ
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
-    !JUANZ 
 #ifdef MNH_GA
     USE MODE_GA
 #endif 
+    USE MODE_GATHER_ll
+    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
     !
     IMPLICIT NONE
     !
@@ -600,22 +601,16 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:),POINTER              :: ZFIELDP
     LOGICAL                                  :: GALLOC
     !
-    !JUANZ
     REAL*8,DIMENSION(2) :: T0,T1,T2
     REAL*8,DIMENSION(2) :: T11,T22
-    !JUANZ
 #ifdef MNH_GA
-    REAL,DIMENSION(:,:),POINTER            :: ZFIELDP_GA , ZFIELD_GA
-    REAL                                   :: ERROR
-    INTEGER                                :: JI
+    REAL,DIMENSION(:,:),POINTER            :: ZFIELD_GA
 #endif
     INTEGER                                :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE           :: YMSG
@@ -625,20 +620,19 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC = .FALSE.
+    IHEXTOT = 2*JPHEXT+1
+    !
+    CALL SECOND_MNH2(T11)
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X2',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,2,'IO_WRITE_FIELD_BYFIELD_X2')
     !
-    !*      1.1   THE NAME OF LFIFM
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X2',IRESP)
     !
-    CALL SECOND_MNH2(T11)
-    IRESP = 0
-    GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
@@ -654,7 +648,7 @@ CONTAINS
              IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
           END IF
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
           CALL SECOND_MNH2(T0)
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
@@ -668,7 +662,7 @@ CONTAINS
           END IF
 
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
-             ! I/O processor case
+             ! I/O process case
              CALL ALLOCBUFFER_ll(ZFIELDP,PFIELD,YDIR,GALLOC)
           ELSE
              ALLOCATE(ZFIELDP(0,0))
@@ -692,8 +686,6 @@ CONTAINS
          ALLOCATE (ZFIELD_GA (SIZE(PFIELD,1),SIZE(PFIELD,2)))
          ZFIELD_GA = PFIELD
          call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L) , ld_col)  
-!!$         print*," nga_put =",YRECFM,g_a," lo_col=",lo_col," hi_col=",hi_col,ZFIELD_GA(NIXO_L,NIYO_L), &
-!!$          " NIXO_L=",NIXO_L,"NIYO_L=",NIYO_L," ld_col=",ld_col," ISP=",ISP
          call ga_sync
          DEALLOCATE (ZFIELD_GA)
          IF (ISP == TPFILE%NMASTER_RANK) THEN
@@ -702,22 +694,10 @@ CONTAINS
             !
             lo_zplan(JPIZ) = 1
             hi_zplan(JPIZ) = 1
-!!$            ALLOCATE (ZFIELDP_GA(IIU_ll,IJU_ll))
             call nga_get(g_a, lo_zplan, hi_zplan,ZFIELDP, ld_zplan)
-!!$            print*,"nga_get=",YRECFM,g_a," lo_zplan=",lo_zplan," hi_zplan=",hi_zplan &
-!!$                 ,ZFIELDP(1,1)," ld_zplan=",ld_zplan
          END IF
-!!$         call ga_sync
 #else
          CALL GATHER_XYFIELD(PFIELD,ZFIELDP,TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
-!!$         IF (ISP == TPFILE%NMASTER_RANK)  THEN
-!!$            print*,YRECFM, "ERR=", MAXVAL (ZFIELDP_GA - ZFIELDP)
-!!$            DO JI=1,IJU_ll
-!!$            !print*,YRECFM, "ERR=", ZFIELDP_GA(:,JI) - ZFIELDP(:,JI)
-!!$            print*,YRECFM, "WX2::GA =", ZFIELDP_GA(:,JI) 
-!!$            print*,YRECFM, "WX2::MNH=", ZFIELDP(:,JI)
-!!$         END DO
-!!$         END IF
 #endif
              END IF
           END IF
@@ -729,23 +709,15 @@ CONTAINS
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
           END IF
 #ifdef MNH_GA
-!!$         IF (ISP .EQ. 1 ) THEN
-!!$         call ga_print_stats()
-!!$         call ga_summarize(1) 
-!!$         ENDIF
          call ga_sync
-!!$         gstatus_ga =  ga_destroy(g_a)
 #endif     
           CALL SECOND_MNH2(T2)
           TIMEZ%T_WRIT2D_WRIT=TIMEZ%T_WRIT2D_WRIT + T2 - T1
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X2','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -753,7 +725,6 @@ CONTAINS
     END IF
     IF (GALLOC) DEALLOCATE(ZFIELDP)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
   END SUBROUTINE IO_WRITE_FIELD_BYFIELD_X2
@@ -788,16 +759,14 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X3(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll,    ONLY : JPHEXT
+    USE MODD_TIMEZ,            ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    !JUANZ
-    USE MODE_IO_ll, ONLY : io_file,io_rank
-    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
-    !JUANZ 
+    USE MODE_IO_ll,            ONLY : IO_FILE
+    USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
+    USE MODE_MNH_TIMING,       ONLY : SECOND_MNH2
 #ifdef MNH_GA
     USE MODE_GA
 #endif
@@ -816,27 +785,18 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:),POINTER            :: ZFIELDP
     LOGICAL                                  :: GALLOC
-    !JUAN
     INTEGER                                  :: JK,JKK
-    REAL,DIMENSION(:,:),POINTER              :: ZSLIDE_ll,ZSLIDE
-    INTEGER                                  :: IK_FILE,IK_rank,inb_proc_real,JK_MAX
-    CHARACTER(len=5)                         :: YK_FILE  
-    CHARACTER(len=128)                       :: YFILE_IOZ  
-    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
+    REAL,DIMENSION(:,:),POINTER              :: ZSLICE_ll,ZSLICE
+    INTEGER                                  :: IK_FILE,IK_RANK,INB_PROC_REAL,JK_MAX
     INTEGER                                  :: JI,IXO,IXE,IYO,IYE
     REAL,DIMENSION(:,:),POINTER              :: TX2DP
     INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
-    INTEGER, ALLOCATABLE,DIMENSION(:,:)      :: STATUSES
     LOGICAL                                  :: GALLOC_ll
-    !JUANZIO
-    !INTEGER,SAVE,DIMENSION(100000)    :: REQ_TAB
     INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
     INTEGER                                  :: NB_REQ
     TYPE TX_2DP
@@ -845,8 +805,6 @@ CONTAINS
     TYPE(TX_2DP),ALLOCATABLE,DIMENSION(:) :: T_TX2DP
     REAL*8,DIMENSION(2) :: T0,T1,T2
     REAL*8,DIMENSION(2) :: T11,T22
-    !JUANZIO
-    !JUAN
 #ifdef MNH_GA
     REAL,DIMENSION(:,:,:),POINTER          :: ZFIELD_GA
 #endif
@@ -861,23 +819,21 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
-    !
-    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,3,'IO_WRITE_FIELD_BYFIELD_X3')
-    !
-    !*      1.1   THE NAME OF LFIFM
-    !
-    CALL SECOND_MNH2(T11)
     IRESP = 0
     GALLOC    = .FALSE.
     GALLOC_ll = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-!
-    !------------------------------------------------------------------
     IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
-       IF (GSMONOPROC .AND.  (TZFD%nb_procio.eq.1) ) THEN ! sequential execution
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
+    !
+    CALL SECOND_MNH2(T11)
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,3,'IO_WRITE_FIELD_BYFIELD_X3')
+    !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X3',IRESP)
+    !
+    IF (IRESP==0) THEN
+       IF (GSMONOPROC .AND. TPFILE%NSUBFILES_IOZ==0 ) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
              ZFIELDP=>PFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
@@ -892,7 +848,7 @@ CONTAINS
              IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
           END IF
-       ELSEIF ( (TZFD%nb_procio .eq. 1 ) .OR. ( YDIR == '--' ) ) THEN  ! multiprocessor execution & 1 proc IO
+       ELSEIF ( TPFILE%NSUBFILES_IOZ==0 .OR. YDIR=='--' ) THEN  ! multiprocesses execution & 1 proc IO
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -929,7 +885,7 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
           !
-       ELSE ! multiprocessor execution & // IO
+       ELSE ! multiprocesses execution & // IO
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(PFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -941,7 +897,7 @@ CONTAINS
              RETURN
           END IF
           !
-          !JUAN BG Z SLIDE 
+          !JUAN BG Z SLICE
           !
           !
 #ifdef MNH_GA
@@ -957,102 +913,75 @@ CONTAINS
          ZFIELD_GA = PFIELD
          call nga_put(g_a, lo_col, hi_col,ZFIELD_GA(NIXO_L,NIYO_L,1) , ld_col)  
          DEALLOCATE(ZFIELD_GA)
-!!$         print*," nga_put =",YRECFM,g_a," lo_col=",lo_col," hi_col=",hi_col,PFIELD(NIXO_L,NIYO_L,1) &
-!!$          ," ld_col=",ld_col
          call ga_sync
          CALL SECOND_MNH2(T1)
          TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
          !
          ! write the data
          !
-         ALLOCATE(ZSLIDE_ll(0,0)) ! to avoid bug on test of size
+         ALLOCATE(ZSLICE_ll(0,0)) ! to avoid bug on test of size
          GALLOC_ll = .TRUE.
          !
          DO JKK=1,IKU_ll
             !
-            IK_FILE   =  io_file(JKK,TZFD%nb_procio)
-            write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
-            YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
-            TZFD_IOZ => GETFD(YFILE_IOZ)
-            CALL IO_FILE_FIND_BYNAME(TRIM(YFILEM)//YK_FILE,TZFILE,IRESP)
-            IF (IRESP/=0) THEN
-              CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_X3','file '//TRIM(YFILE_IOZ)//&
-                             ' not found in list')
-            END IF
+            IK_FILE = IO_FILE(JKK,TPFILE%NSUBFILES_IOZ)
+            TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
             !
-            IK_RANK   =  TZFD_IOZ%OWNER
-            !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+            IK_RANK = TZFILE%NMASTER_RANK
             !
             IF (ISP == IK_RANK )  THEN 
                CALL SECOND_MNH2(T0)
                !
-               IF ( SIZE(ZSLIDE_ll) .EQ. 0 ) THEN
-                  DEALLOCATE(ZSLIDE_ll)
-                  CALL ALLOCBUFFER_ll(ZSLIDE_ll,ZSLIDE,YDIR,GALLOC_ll)
+               IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
+                  DEALLOCATE(ZSLICE_ll)
+                  CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
                END IF
                !
                ! this proc get this JKK slide
                !
                lo_zplan(JPIZ) = JKK
                hi_zplan(JPIZ) = JKK
-               call nga_get(g_a, lo_zplan, hi_zplan,ZSLIDE_ll, ld_zplan)
+               call nga_get(g_a, lo_zplan, hi_zplan,ZSLICE_ll, ld_zplan)
                CALL SECOND_MNH2(T1)
                TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
                !
-               IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLIDE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-               IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLIDE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+               IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+               IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                CALL SECOND_MNH2(T2)
                TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
             END IF
          END DO
-         !call ga_sync
          !
-         ! destroy the global array 
-         !
-!!$         IF (ISP .EQ. 1 ) THEN
-!!$         call ga_print_stats()
-!!$         call ga_summarize(1) 
-!!$         ENDIF
          CALL SECOND_MNH2(T0) 
          call ga_sync
-!!$         gstatus_ga =  ga_destroy(g_a)
          CALL SECOND_MNH2(T1) 
          TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0     
 #else
           !
-          ALLOCATE(ZSLIDE_ll(0,0))
+          ALLOCATE(ZSLICE_ll(0,0))
           GALLOC_ll = .TRUE.
-          inb_proc_real = min(TZFD%nb_procio,ISNPROC)
-          Z_SLIDE: DO JK=1,SIZE(PFIELD,3),inb_proc_real
+          INB_PROC_REAL = MIN(TPFILE%NSUBFILES_IOZ,ISNPROC)
+          Z_SLICE: DO JK=1,SIZE(PFIELD,3),INB_PROC_REAL
              !
-             ! collecte the data
+             ! collect the data
              !
-             JK_MAX=min(SIZE(PFIELD,3),JK+inb_proc_real-1)
+             JK_MAX=MIN(SIZE(PFIELD,3),JK+INB_PROC_REAL-1)
              !
              NB_REQ=0
-             ALLOCATE(REQ_TAB(inb_proc_real))
-             ALLOCATE(T_TX2DP(inb_proc_real))
+             ALLOCATE(REQ_TAB(INB_PROC_REAL))
+             ALLOCATE(T_TX2DP(INB_PROC_REAL))
              DO JKK=JK,JK_MAX
                 !
                 ! get the file & rank to write this level
                 !
-                IF (TZFD%NB_PROCIO .GT. 1 ) THEN
-                   IK_FILE   =  io_file(JKK,TZFD%nb_procio)
-                   write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
-                   YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
-                   TZFD_IOZ => GETFD(YFILE_IOZ)
-                   CALL IO_FILE_FIND_BYNAME(TRIM(YFILEM)//YK_FILE,TZFILE,IRESP)
-                   IF (IRESP/=0) THEN
-                     CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_X3','file '//TRIM(YFILE_IOZ)//&
-                                    ' not found in list')
-                   END IF
+                IF (TPFILE%NSUBFILES_IOZ .GT. 1 ) THEN
+                   IK_FILE = IO_FILE(JKK,TPFILE%NSUBFILES_IOZ)
+                   TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
                 ELSE
-                   TZFD_IOZ => TZFD
                    TZFILE => TPFILE
                 END IF
                 !
-                !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
-                IK_RANK   =  TZFD_IOZ%OWNER
+                IK_RANK = TZFILE%NMASTER_RANK
                 !
                 IF (YDIR == 'XX' .OR. YDIR =='YY') THEN
                    STOP " XX NON PREVU SUR BG POUR LE MOMENT "
@@ -1062,26 +991,23 @@ CONTAINS
                       STOP " L2D NON PREVU SUR BG POUR LE MOMENT "
                       CALL GATHER_XXFIELD('XX',PFIELD(:,JPHEXT+1,:),ZFIELDP(:,1,:),TPFILE%NMASTER_RANK,TPFILE%NMPICOMM)
                    ELSE
-                      !CALL GATHER_XYFIELD(ZSLIDE,ZSLIDE_ll,TZFD_IOZ%OWNER,TZFD_IOZ%COMM)
-                      !JUANIOZ
                       CALL SECOND_MNH2(T0)
                       IF ( ISP /= IK_RANK )  THEN
-                         ! Other processors
+                         ! Other processes
                          CALL GET_DOMWRITE_ll(ISP,'local',IXO,IXE,IYO,IYE)
                          IF (IXO /= 0) THEN ! intersection is not empty
                             NB_REQ = NB_REQ + 1
                             ALLOCATE(T_TX2DP(NB_REQ)%X(IXO:IXE,IYO:IYE))
-                            ZSLIDE => PFIELD(:,:,JKK)
-                            TX2DP=>ZSLIDE(IXO:IXE,IYO:IYE)
-                            T_TX2DP(NB_REQ)%X=ZSLIDE(IXO:IXE,IYO:IYE)
+                            ZSLICE => PFIELD(:,:,JKK)
+                            TX2DP=>ZSLICE(IXO:IXE,IYO:IYE)
+                            T_TX2DP(NB_REQ)%X=ZSLICE(IXO:IXE,IYO:IYE)
                             CALL MPI_ISEND(T_TX2DP(NB_REQ)%X,SIZE(TX2DP),MPI_FLOAT,IK_RANK-1,99+IK_RANK &
-                                          & ,TZFD_IOZ%COMM,REQ_TAB(NB_REQ),IERR)
-                            !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MPI_FLOAT,IK_RANK-1,99+IK_RANK,TZFD_IOZ%COMM,IERR)                       
+                                          & ,TZFILE%NMPICOMM,REQ_TAB(NB_REQ),IERR)
+                            !CALL MPI_BSEND(TX2DP,SIZE(TX2DP),MPI_FLOAT,IK_RANK-1,99+IK_RANK,TZFILE%NMPICOMM,IERR)
                          END IF
                       END IF
                       CALL SECOND_MNH2(T1)
                       TIMEZ%T_WRIT3D_SEND=TIMEZ%T_WRIT3D_SEND + T1 - T0
-                      !JUANIOZ
                    END IF
                 END IF
              END DO
@@ -1089,90 +1015,67 @@ CONTAINS
              ! write the data
              !
              DO JKK=JK,JK_MAX
-                IF (TZFD%NB_PROCIO .GT. 1 ) THEN
-                   IK_FILE   =  io_file(JKK,TZFD%nb_procio)
-                   write(YK_FILE ,'(".Z",i3.3)') IK_FILE+1
-                   YFILE_IOZ =  TRIM(YFILEM)//YK_FILE//".lfi"
-                   TZFD_IOZ => GETFD(YFILE_IOZ)
-                   CALL IO_FILE_FIND_BYNAME(TRIM(YFILEM)//YK_FILE,TZFILE,IRESP)
-                   IF (IRESP/=0) THEN
-                     CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_X3','file '//TRIM(YFILE_IOZ)//&
-                                    ' not found in list')
-                   END IF
+                IF (TPFILE%NSUBFILES_IOZ .GT. 1 ) THEN
+                   IK_FILE = IO_FILE(JKK,TPFILE%NSUBFILES_IOZ)
+                   TZFILE => TPFILE%TFILES_IOZ(IK_FILE+1)%TFILE
                 ELSE
-                   TZFD_IOZ => TZFD
                    TZFILE => TPFILE
                 ENDIF
-                IK_RANK   =  TZFD_IOZ%OWNER
-                !IK_RANK   =  1 + io_rank(IK_FILE,ISNPROC,TZFD%nb_procio)
+                IK_RANK = TZFILE%NMASTER_RANK
                 !
                 IF (ISP == IK_RANK )  THEN
-                   !JUANIOZ
                    CALL SECOND_MNH2(T0)
                    ! I/O proc case
-                   IF ( SIZE(ZSLIDE_ll) .EQ. 0 ) THEN
-                      DEALLOCATE(ZSLIDE_ll)
-                      CALL ALLOCBUFFER_ll(ZSLIDE_ll,ZSLIDE,YDIR,GALLOC_ll)
+                   IF ( SIZE(ZSLICE_ll) .EQ. 0 ) THEN
+                      DEALLOCATE(ZSLICE_ll)
+                      CALL ALLOCBUFFER_ll(ZSLICE_ll,ZSLICE,YDIR,GALLOC_ll)
                    END IF
                    DO JI=1,ISNPROC
                       CALL GET_DOMWRITE_ll(JI,'global',IXO,IXE,IYO,IYE)
                       IF (IXO /= 0) THEN ! intersection is not empty
-                         TX2DP=>ZSLIDE_ll(IXO:IXE,IYO:IYE)
+                         TX2DP=>ZSLICE_ll(IXO:IXE,IYO:IYE)
                          IF (ISP == JI) THEN 
                             CALL GET_DOMWRITE_ll(JI,'local',IXO,IXE,IYO,IYE)
-                            ZSLIDE => PFIELD(:,:,JKK)
-                            TX2DP = ZSLIDE(IXO:IXE,IYO:IYE)
+                            ZSLICE => PFIELD(:,:,JKK)
+                            TX2DP = ZSLICE(IXO:IXE,IYO:IYE)
                          ELSE 
-                            CALL MPI_RECV(TX2DP,SIZE(TX2DP),MPI_FLOAT,JI-1,99+IK_RANK,TZFD_IOZ%COMM,STATUS,IERR)
+                            CALL MPI_RECV(TX2DP,SIZE(TX2DP),MPI_FLOAT,JI-1,99+IK_RANK,TZFILE%NMPICOMM,STATUS,IERR)
                          END IF
                       END IF
                    END DO
                    CALL SECOND_MNH2(T1)
                    TIMEZ%T_WRIT3D_RECV=TIMEZ%T_WRIT3D_RECV + T1 - T0
-                   !JUANIOZ 
-                   IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLIDE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
-                   IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLIDE_ll,IRESP, &
-                                                        KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+                   IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
+                   IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZSLICE_ll,IRESP,KVERTLEVEL=JKK,KZFILE=IK_FILE+1)
                    CALL SECOND_MNH2(T2)
                    TIMEZ%T_WRIT3D_WRIT=TIMEZ%T_WRIT3D_WRIT + T2 - T1
                 END IF
-!!$           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD_IOZ%OWNER-1,TZFD_IOZ%COMM,IERR)
              END DO
-             !CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TZFD_IOZ%OWNER-1,TZFD_IOZ%COMM,IERR)
-             !CALL MPI_BARRIER(TZFD_IOZ%COMM,IERR)
              !
              CALL SECOND_MNH2(T0) 
              IF (NB_REQ .GT.0 ) THEN
-                !ALLOCATE(STATUSES(MPI_STATUS_SIZE,NB_REQ))
                 CALL MPI_WAITALL(NB_REQ,REQ_TAB,MNH_STATUSES_IGNORE,IERR)
-                !CALL MPI_WAITALL(NB_REQ,REQ_TAB,STATUSES,IERR)
-                !DEALLOCATE(STATUSES)
                 DO JI=1,NB_REQ ;  DEALLOCATE(T_TX2DP(JI)%X) ; ENDDO
              END IF
              DEALLOCATE(T_TX2DP)
              DEALLOCATE(REQ_TAB)
              CALL SECOND_MNH2(T1) 
              TIMEZ%T_WRIT3D_WAIT=TIMEZ%T_WRIT3D_WAIT + T1 - T0
-          END DO Z_SLIDE
-          !JUAN BG Z SLIDE  
+          END DO Z_SLICE
+          !JUAN BG Z SLICE
 ! end of MNH_GA
 #endif
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X3','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocesses execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X3',YMSG)
     END IF
-    IF (GALLOC) DEALLOCATE(ZFIELDP)
-    IF (GALLOC_ll) DEALLOCATE(ZSLIDE_ll)
-    !IF (Associated(ZSLIDE_ll)) DEALLOCATE(ZSLIDE_ll)
+    IF (GALLOC)    DEALLOCATE(ZFIELDP)
+    IF (GALLOC_ll) DEALLOCATE(ZSLICE_ll)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
   END SUBROUTINE IO_WRITE_FIELD_BYFIELD_X3
@@ -1207,16 +1110,14 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X4(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    !JUANZ
-    USE MODE_IO_ll, ONLY : io_file,io_rank
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
-    !JUANZ 
-    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    USE MODE_IO_ll,         ONLY : IO_FILE,IO_RANK
+    USE MODE_MNH_TIMING,    ONLY : SECOND_MNH2
+    USE MODD_VAR_ll,        ONLY : MNH_STATUSES_IGNORE
     !
     !
     !*      0.1   Declarations of arguments
@@ -1231,10 +1132,8 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:),POINTER          :: ZFIELDP
     LOGICAL                                  :: GALLOC
@@ -1246,18 +1145,18 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC    = .FALSE.
+    !
+    IHEXTOT = 2*JPHEXT+1
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X4',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,4,'IO_WRITE_FIELD_BYFIELD_X4')
     !
-    IRESP = 0
-    GALLOC    = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-!
-    !------------------------------------------------------------------
-    IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X4',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
@@ -1306,12 +1205,9 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X4','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocess execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -1351,16 +1247,14 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X5(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    !JUANZ
-    USE MODE_IO_ll, ONLY : io_file,io_rank
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
-    !JUANZ 
-    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    USE MODE_IO_ll,         ONLY : IO_FILE,IO_RANK
+    USE MODE_MNH_TIMING,    ONLY : SECOND_MNH2
+    USE MODD_VAR_ll,        ONLY : MNH_STATUSES_IGNORE
     !
     !
     !*      0.1   Declarations of arguments
@@ -1375,10 +1269,8 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:,:),POINTER        :: ZFIELDP
     LOGICAL                                  :: GALLOC
@@ -1390,18 +1282,18 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC    = .FALSE.
+    !
+    IHEXTOT = 2*JPHEXT+1
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X5',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,5,'IO_WRITE_FIELD_BYFIELD_X5')
     !
-    IRESP = 0
-    GALLOC    = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-!
-    !------------------------------------------------------------------
-    IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X5',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           !    IF (LPACK .AND. L1D .AND. YDIR=='XY') THEN 
           IF (LPACK .AND. L1D .AND. SIZE(PFIELD,1)==IHEXTOT .AND. SIZE(PFIELD,2)==IHEXTOT) THEN 
@@ -1451,12 +1343,9 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X5','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocess execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -1495,16 +1384,14 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_X6(TPFILE,TPFIELD,PFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    !JUANZ
-    USE MODE_IO_ll, ONLY : io_file,io_rank
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
-    !JUANZ 
-    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    USE MODE_IO_ll,         ONLY : IO_FILE,IO_RANK
+    USE MODE_MNH_TIMING,    ONLY : SECOND_MNH2
+    USE MODD_VAR_ll,        ONLY : MNH_STATUSES_IGNORE
     !
     !
     !*      0.1   Declarations of arguments
@@ -1519,10 +1406,8 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:,:,:,:),POINTER      :: ZFIELDP
     LOGICAL                                  :: GALLOC
@@ -1534,18 +1419,18 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC    = .FALSE.
+    !
+    IHEXTOT = 2*JPHEXT+1
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_X6',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEREAL,6,'IO_WRITE_FIELD_BYFIELD_X6')
     !
-    IRESP = 0
-    GALLOC    = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-!
-    !------------------------------------------------------------------
-    IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_X6',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,PFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,PFIELD,IRESP)
@@ -1580,12 +1465,9 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_X6','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocess execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -1625,8 +1507,6 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_N0(TPFILE,TPFIELD,KFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
-    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
     !*      0.    DECLARATIONS
     !             ------------
     !
@@ -1641,25 +1521,22 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER                      :: IERR
-    TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
-    !JUANZIO
-    INTEGER                                  :: IK_FILE,IK_RANK
-    CHARACTER(len=5)                         :: YK_FILE  
-    CHARACTER(len=128)                       :: YFILE_IOZ  
-    TYPE(FD_ll), POINTER                     :: TZFD_IOZ 
-    TYPE(TFILEDATA),POINTER                  :: TZFILE
-    CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
-    CHARACTER(LEN=6)                         :: YRESP
+    INTEGER                      :: IK_FILE
+    TYPE(TFILEDATA),POINTER      :: TZFILE
+    CHARACTER(LEN=:),ALLOCATABLE :: YMSG
+    CHARACTER(LEN=6)             :: YRESP
+    !
+    IRESP = 0
+    TZFILE => NULL()
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,0,'IO_WRITE_FIELD_BYFIELD_N0')
     !
-    IRESP = 0
-    !------------------------------------------------------------------
-    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_N0',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
@@ -1670,30 +1547,19 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-       IF (TZFD%nb_procio.gt.1) THEN
+       END IF ! multiprocess execution
+       IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
-          DO IK_FILE=1,TZFD%nb_procio
-             write(YK_FILE ,'(".Z",i3.3)')  IK_FILE
-             YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
-             TZFD_IOZ => GETFD(YFILE_IOZ)   
-             IK_RANK = TZFD_IOZ%OWNER
-             IF ( ISP == IK_RANK )  THEN
-                CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
-                IF (IRESP/=0) THEN
-                  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_N0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
-                                  ' not found in list')
-                END IF
+          DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
+             TZFILE => TPFILE%TFILES_IOZ(IK_FILE)%TFILE
+             IF ( ISP == TZFILE%NMASTER_RANK )  THEN
                 IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TZFILE,TPFIELD,KFIELD,IRESP)
                 IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,KFIELD,IRESP)
              END IF
           END DO
        ENDIF
-    ELSE 
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_N0','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -1733,7 +1599,7 @@ CONTAINS
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_N1(TPFILE,TPFIELD,KFIELD,KRESP)
     !
     USE MODD_IO_ll, ONLY : ISP,GSMONOPROC,LIOCDF4,LLFIOUT,TFILEDATA
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
     !
@@ -1751,10 +1617,8 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:),POINTER             :: IFIELDP
     LOGICAL                                  :: GALLOC
@@ -1765,22 +1629,20 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC = .FALSE.
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N1',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,1,'IO_WRITE_FIELD_BYFIELD_N1')
     !
-    !*      1.1   THE NAME OF LFIFM
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_N1',IRESP)
     !
-    IRESP = 0
-    GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -1810,11 +1672,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_N1','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -1822,7 +1681,6 @@ CONTAINS
     END IF
     IF (GALLOC) DEALLOCATE(IFIELDP)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     !
   END SUBROUTINE IO_WRITE_FIELD_BYFIELD_N1
 
@@ -1856,12 +1714,12 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_N2(TPFILE,TPFIELD,KFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+    USE MODE_MNH_TIMING,    ONLY : SECOND_MNH2
     !
     IMPLICIT NONE
     !
@@ -1877,18 +1735,14 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:,:),POINTER           :: IFIELDP
     LOGICAL                                  :: GALLOC
     !
-    !JUANZ
     REAL*8,DIMENSION(2) :: T0,T1,T2
     REAL*8,DIMENSION(2) :: T11,T22
-    !JUANZ
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -1897,20 +1751,20 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC = .FALSE.
+    !
+    IHEXTOT = 2*JPHEXT+1
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N2',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
+    !
+    CALL SECOND_MNH2(T11)
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,2,'IO_WRITE_FIELD_BYFIELD_N2')
     !
-    !*      1.1   THE NAME OF LFIFM
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_N2',IRESP)
     !
-    CALL SECOND_MNH2(T11)
-    IRESP = 0
-    GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
              IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1)
@@ -1925,7 +1779,7 @@ CONTAINS
              IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
           END IF
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -1939,7 +1793,7 @@ CONTAINS
 
           CALL SECOND_MNH2(T0)
           IF (ISP == TPFILE%NMASTER_RANK) THEN
-             ! I/O processor case
+             ! I/O process case
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
           ELSE
              ALLOCATE(IFIELDP(0,0))
@@ -1967,11 +1821,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_N2','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -1979,7 +1830,6 @@ CONTAINS
     END IF
     IF (GALLOC) DEALLOCATE(IFIELDP)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT2D_ALL=TIMEZ%T_WRIT2D_ALL + T22 - T11
     !
@@ -2014,12 +1864,12 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_N3(TPFILE,TPFIELD,KFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_TIMEZ,         ONLY : TIMEZ
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
-    USE MODD_TIMEZ, ONLY : TIMEZ
-    USE MODE_MNH_TIMING, ONLY : SECOND_MNH2
+    USE MODE_MNH_TIMING,    ONLY : SECOND_MNH2
     !
     IMPLICIT NONE
     !
@@ -2035,17 +1885,13 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     INTEGER,DIMENSION(:,:,:),POINTER         :: IFIELDP
     LOGICAL                                  :: GALLOC
     !
-    !JUANZ
     REAL*8,DIMENSION(2) :: T11,T22
-    !JUANZ
     INTEGER                                  :: IHEXTOT
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
@@ -2054,18 +1900,20 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
-    !
-    !*      1.1   THE NAME OF LFIFM
-    !
-    CALL SECOND_MNH2(T11)
     IRESP = 0
     GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
+    !
     IHEXTOT = 2*JPHEXT+1
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    !
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_N3',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
+    !
+    CALL SECOND_MNH2(T11)
+    !
+    CALL FIELD_METADATA_CHECK(TPFIELD,TYPEINT,3,'IO_WRITE_FIELD_BYFIELD_N3')
+    !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_N3',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LPACK .AND. L1D .AND. SIZE(KFIELD,1)==IHEXTOT .AND. SIZE(KFIELD,2)==IHEXTOT) THEN 
              IFIELDP=>KFIELD(JPHEXT+1:JPHEXT+1,JPHEXT+1:JPHEXT+1,:)
@@ -2080,7 +1928,7 @@ CONTAINS
              IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,KFIELD,IRESP)
              IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,KFIELD,IRESP)
           END IF
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(KFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -2093,7 +1941,7 @@ CONTAINS
           END IF
 
           IF (ISP == TPFILE%NMASTER_RANK) THEN
-             ! I/O processor case
+             ! I/O process case
              CALL ALLOCBUFFER_ll(IFIELDP,KFIELD,YDIR,GALLOC)
           ELSE
              ALLOCATE(IFIELDP(0,0,0))
@@ -2117,11 +1965,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_N3','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -2129,7 +1974,6 @@ CONTAINS
     END IF
     IF (GALLOC) DEALLOCATE(IFIELDP)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     CALL SECOND_MNH2(T22)
     TIMEZ%T_WRIT3D_ALL=TIMEZ%T_WRIT3D_ALL + T22 - T11
     !
@@ -2164,7 +2008,7 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_L0(TPFILE,TPFIELD,OFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
     !*      0.    DECLARATIONS
     !             ------------
@@ -2180,25 +2024,22 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER                      :: IERR
-    TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
-    !JUANZIO
-    INTEGER                                  :: IK_FILE,IK_RANK
-    CHARACTER(len=5)                         :: YK_FILE
-    CHARACTER(len=128)                       :: YFILE_IOZ
-    TYPE(FD_ll), POINTER                     :: TZFD_IOZ
-    TYPE(TFILEDATA),POINTER                  :: TZFILE
-    CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
-    CHARACTER(LEN=6)                         :: YRESP
+    INTEGER                      :: IK_FILE
+    TYPE(TFILEDATA),POINTER      :: TZFILE
+    CHARACTER(LEN=:),ALLOCATABLE :: YMSG
+    CHARACTER(LEN=6)             :: YRESP
+    !
+    IRESP = 0
+    TZFILE => NULL()
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPELOG,0,'IO_WRITE_FIELD_BYFIELD_L0')
     !
-    IRESP = 0
-    !------------------------------------------------------------------
-    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_L0',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
@@ -2209,30 +2050,19 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-       IF (TZFD%nb_procio.gt.1) THEN
+       END IF ! multiprocesses execution
+       IF (TPFILE%NSUBFILES_IOZ>0) THEN
           ! write the data in all Z files
-          DO IK_FILE=1,TZFD%nb_procio
-             write(YK_FILE ,'(".Z",i3.3)')  IK_FILE
-             YFILE_IOZ =  TRIM(TPFILE%CNAME)//YK_FILE//".lfi"
-             TZFD_IOZ => GETFD(YFILE_IOZ)
-             IK_RANK = TZFD_IOZ%OWNER
-             IF ( ISP == IK_RANK )  THEN
-                CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//YK_FILE,TZFILE,IRESP)
-                IF (IRESP/=0) THEN
-                  CALL PRINT_MSG(NVERB_FATAL,'IO','IO_WRITE_FIELD_BYFIELD_L0','file '//TRIM(TRIM(TPFILE%CNAME)//YK_FILE)//&
-                                 ' not found in list')
-                END IF
+          DO IK_FILE=1,TPFILE%NSUBFILES_IOZ
+             TZFILE => TPFILE%TFILES_IOZ(IK_FILE)%TFILE
+             IF ( ISP == TZFILE%NMASTER_RANK )  THEN
                 IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TZFILE,TPFIELD,OFIELD,IRESP)
                 IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TZFILE,TPFIELD,OFIELD,IRESP)
              END IF
           END DO
        ENDIF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_L0','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -2272,7 +2102,7 @@ CONTAINS
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1(TPFILE,TPFIELD,OFIELD,KRESP)
     !
     USE MODD_IO_ll, ONLY : ISP,GSMONOPROC,LIOCDF4,LLFIOUT,TFILEDATA
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_ALLOCBUFFER_ll
     USE MODE_GATHER_ll
     !
@@ -2290,10 +2120,8 @@ CONTAINS
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=2)                         :: YDIR     ! field form
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IERR
     INTEGER                                  :: ISIZEMAX
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     LOGICAL,DIMENSION(:),POINTER             :: GFIELDP
     LOGICAL                                  :: GALLOC
@@ -2304,22 +2132,20 @@ CONTAINS
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR
     !
+    IRESP = 0
+    GALLOC = .FALSE.
+    !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_L1',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPELOG,1,'IO_WRITE_FIELD_BYFIELD_L1')
     !
-    !*      1.1   THE NAME OF LFIFM
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_L1',IRESP)
     !
-    IRESP = 0
-    GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !------------------------------------------------------------------
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,OFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,OFIELD,IRESP)
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
 #ifndef MNH_INT8
           CALL MPI_ALLREDUCE(SIZE(OFIELD),ISIZEMAX,1,MPI_INTEGER,MPI_MAX,TPFILE%NMPICOMM,IRESP)
 #else
@@ -2349,11 +2175,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_L1','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(YRECFM)//' in '//TRIM(TPFILE%CNAME)
@@ -2361,7 +2184,6 @@ CONTAINS
     END IF
     IF (GALLOC) DEALLOCATE(GFIELDP)
     IF (PRESENT(KRESP)) KRESP = IRESP
-    IF (ASSOCIATED(TZFD)) CALL MPI_BARRIER(TPFILE%NMPICOMM,IERR)
     !
   END SUBROUTINE IO_WRITE_FIELD_BYFIELD_L1
 
@@ -2395,7 +2217,7 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_C0(TPFILE,TPFIELD,HFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     !*      0.    DECLARATIONS
     !             ------------
     !
@@ -2410,24 +2232,24 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER                      :: IERR
-    TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
     CHARACTER(LEN=:),ALLOCATABLE :: YMSG
     CHARACTER(LEN=6)             :: YRESP
+    !
+    IRESP = 0
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_C0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
     !
     CALL FIELD_METADATA_CHECK(TPFIELD,TYPECHAR,0,'IO_WRITE_FIELD_BYFIELD_C0')
     !
-    IRESP = 0
-    !
     IF (LEN(HFIELD)==0 .AND. LLFIOUT) THEN
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_C0',&
                      'zero-size string not allowed if LFI output for '//TRIM(TPFIELD%CMNHNAME))
     END IF
-    !------------------------------------------------------------------
-    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
-    IF (ASSOCIATED(TZFD)) THEN
+    !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_C0',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,HFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
@@ -2439,11 +2261,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE 
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_C0','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -2482,7 +2301,7 @@ CONTAINS
 
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_C1(TPFILE,TPFIELD,HFIELD,KRESP)
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     !*      0.    DECLARATIONS
     !             ------------
     !
@@ -2497,7 +2316,6 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER                          :: IERR
-    TYPE(FD_ll), POINTER             :: TZFD
     INTEGER                          :: IRESP
     INTEGER                          :: J,JJ
     INTEGER                          :: ILE, IP
@@ -2532,9 +2350,10 @@ CONTAINS
         END DO
       END IF
     END IF
-    !------------------------------------------------------------------
-    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
-    IF (ASSOCIATED(TZFD)) THEN
+    !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_C1',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,IFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,HFIELD,IRESP)
@@ -2546,11 +2365,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE 
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_C1','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -2591,7 +2407,7 @@ CONTAINS
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_T0(TPFILE,TPFIELD,TFIELD,KRESP)
     USE MODD_IO_ll
     USE MODD_TYPE_DATE
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     !*      0.    DECLARATIONS
     !             ------------
     !
@@ -2606,7 +2422,6 @@ CONTAINS
     !*      0.2   Declarations of local variables
     !
     INTEGER                      :: IERR
-    TYPE(FD_ll), POINTER         :: TZFD
     INTEGER                      :: IRESP
     CHARACTER(LEN=:),ALLOCATABLE :: YMSG
     CHARACTER(LEN=6)             :: YRESP
@@ -2617,9 +2432,9 @@ CONTAINS
     !
     IRESP = 0
     !
-    !------------------------------------------------------------------
-    TZFD=>GETFD(TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi')
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_T0',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,TFIELD,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,TFIELD,IRESP)
@@ -2631,11 +2446,8 @@ CONTAINS
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
        END IF
-    ELSE 
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_T0','file '//TRIM(TPFILE%CNAME)//' not found')
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)
@@ -2655,7 +2467,7 @@ CONTAINS
     CHARACTER(LEN=*),            INTENT(IN) :: HNAME    ! name of the field to write
     INTEGER,                     INTENT(IN) :: KL3D     ! size of the LB array in FM
     REAL,DIMENSION(:,:,:),       INTENT(IN) :: PLB      ! array containing the LB field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code
     !
     !*      0.2   Declarations of local variables
     !
@@ -2676,12 +2488,12 @@ CONTAINS
   SUBROUTINE IO_WRITE_FIELD_BYFIELD_LB(TPFILE,TPFIELD,KL3D,PLB,KRESP)
     !
     USE MODD_IO_ll
-    USE MODD_PARAMETERS_ll,ONLY : JPHEXT
-    USE MODE_DISTRIB_LB
-    USE MODE_TOOLS_ll,     ONLY : GET_GLOBALDIMS_ll
-    USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_ll
+    USE MODD_PARAMETERS_ll, ONLY : JPHEXT
+    USE MODD_VAR_ll,        ONLY : MNH_STATUSES_IGNORE
     !
-    USE MODD_VAR_ll, ONLY : MNH_STATUSES_IGNORE
+    USE MODE_DISTRIB_LB
+    USE MODE_TOOLS_ll,      ONLY : GET_GLOBALDIMS_ll
+    !
     !
     !*      0.1   Declarations of arguments
     !
@@ -2689,36 +2501,36 @@ CONTAINS
     TYPE(TFIELDDATA),            INTENT(INOUT) :: TPFIELD
     INTEGER,                     INTENT(IN)    :: KL3D   ! size of the LB array in FM
     REAL,DIMENSION(:,:,:),TARGET,INTENT(IN)    :: PLB    ! array containing the LB field
-    INTEGER,OPTIONAL,            INTENT(OUT):: KRESP    ! return-code 
+    INTEGER,OPTIONAL,            INTENT(OUT)   :: KRESP  ! return-code 
     !
     !*      0.2   Declarations of local variables
     !
     CHARACTER(LEN=28)                        :: YFILEM   ! FM-file name
     CHARACTER(LEN=NMNHNAMELGTMAX)            :: YRECFM   ! name of the article to write
     CHARACTER(LEN=4)                         :: YLBTYPE  ! 'LBX','LBXU','LBY' or 'LBYV'
-    CHARACTER(LEN=JPFINL)                    :: YFNLFI
     INTEGER                                  :: IRIM     ! size of the LB area
     INTEGER                                  :: IERR
-    TYPE(FD_ll), POINTER                     :: TZFD
     INTEGER                                  :: IRESP
     REAL,DIMENSION(:,:,:),ALLOCATABLE,TARGET :: Z3D
     REAL,DIMENSION(:,:,:), POINTER           :: TX3DP
     INTEGER                                  :: IIMAX_ll,IJMAX_ll
     INTEGER                                  :: JI
-    INTEGER :: IIB,IIE,IJB,IJE
-    INTEGER, DIMENSION(MPI_STATUS_SIZE) :: STATUS
-    INTEGER,ALLOCATABLE,DIMENSION(:)    :: REQ_TAB
-    INTEGER                           :: NB_REQ,IKU
+    INTEGER                                  :: IIB,IIE,IJB,IJE
+    INTEGER, DIMENSION(MPI_STATUS_SIZE)      :: STATUS
+    INTEGER,ALLOCATABLE,DIMENSION(:)         :: REQ_TAB
+    INTEGER                                  :: NB_REQ,IKU
     TYPE TX_3DP
        REAL,DIMENSION(:,:,:), POINTER    :: X
     END TYPE TX_3DP
-    TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:) :: T_TX3DP
+    TYPE(TX_3DP),ALLOCATABLE,DIMENSION(:)    :: T_TX3DP
     CHARACTER(LEN=:),ALLOCATABLE             :: YMSG
     CHARACTER(LEN=6)                         :: YRESP
     !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
     YLBTYPE  = TPFIELD%CLBTYPE
+    !
+    IRESP = 0
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BYFIELD_LB',TRIM(YFILEM)//': writing '//TRIM(YRECFM))
     !
@@ -2732,19 +2544,15 @@ CONTAINS
       TPFIELD%CDIR='XY'
     END IF
     !
-    !*      1.1   THE NAME OF LFIFM
-    !
-    IRESP = 0
-    YFNLFI=TRIM(ADJUSTL(YFILEM))//'.lfi'
-    !
     IRIM = (KL3D-2*JPHEXT)/2
     IF (KL3D /= 2*(IRIM+JPHEXT)) THEN
        IRESP = -30
        GOTO 1000
     END IF
     !
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BYFIELD_LB',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN  ! sequential execution
           IF (LPACK .AND. L2D) THEN
              TX3DP=>PLB(:,JPHEXT+1:JPHEXT+1,:)
@@ -2787,7 +2595,7 @@ CONTAINS
              ALLOCATE(REQ_TAB(1))
              ALLOCATE(T_TX3DP(1))
              IKU = SIZE(PLB,3)
-             ! Other processors
+             ! Other processes
              CALL GET_DISTRIB_LB(YLBTYPE,ISP,'LOC','WRITE',IRIM,IIB,IIE,IJB,IJE)
              IF (IIB /= 0) THEN
                 TX3DP=>PLB(IIB:IIE,IJB:IJE,:)
@@ -2805,14 +2613,10 @@ CONTAINS
              DEALLOCATE(T_TX3DP,REQ_TAB)
           END IF
           !
-          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TZFD&
-               & %COMM,IERR)
-       END IF !(GSMONOPROC)
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BYFIELD_LB','file '//TRIM(TPFILE%CNAME)//' not found')
+          CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
+       END IF
     END IF
-    !----------------------------------------------------------------
+    !
 1000 CONTINUE
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
@@ -2828,7 +2632,7 @@ CONTAINS
   SUBROUTINE IO_WRITE_FIELD_BOX_BYFIELD_X5(TPFILE,TPFIELD,HBUDGET,PFIELD,KXOBOX,KXEBOX,KYOBOX,KYEBOX,KRESP)
     !
     USE MODD_IO_ll
-    USE MODE_FD_ll, ONLY : GETFD,JPFINL,FD_LL
+    !
     USE MODE_GATHER_ll
     !
     !
@@ -2846,9 +2650,7 @@ CONTAINS
     !
     !*      0.2   Declarations of local variables
     !
-    CHARACTER(LEN=JPFINL)               :: YFNLFI
     INTEGER                             :: IERR
-    TYPE(FD_ll), POINTER                :: TZFD
     INTEGER                             :: IRESP
     REAL,DIMENSION(:,:,:,:,:),POINTER   :: ZFIELDP
     LOGICAL                             :: GALLOC
@@ -2857,14 +2659,12 @@ CONTAINS
     !
     CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_BOX_BYFIELD_X5',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
     !
-    !*      1.1   THE NAME OF LFIFM
-    !
     IRESP = 0
     GALLOC = .FALSE.
-    YFNLFI=TRIM(ADJUSTL(TPFILE%CNAME))//'.lfi'
-    !------------------------------------------------------------------
-    TZFD=>GETFD(YFNLFI)
-    IF (ASSOCIATED(TZFD)) THEN
+    !
+    CALL IO_FILE_WRITE_CHECK(TPFILE,'IO_WRITE_FIELD_BOX_BYFIELD_X5',IRESP)
+    !
+    IF (IRESP==0) THEN
        IF (GSMONOPROC) THEN ! sequential execution
           IF (HBUDGET /= 'BUDGET') THEN
              ! take the sub-section of PFIELD defined by the box
@@ -2875,7 +2675,7 @@ CONTAINS
           END IF
           IF (LLFIOUT) CALL IO_WRITE_FIELD_LFI(TPFILE,TPFIELD,ZFIELDP,IRESP)
           IF (LIOCDF4) CALL IO_WRITE_FIELD_NC4(TPFILE,TPFIELD,ZFIELDP,IRESP)
-       ELSE ! multiprocessor execution
+       ELSE ! multiprocesses execution
           IF (ISP == TPFILE%NMASTER_RANK)  THEN
              ! Allocate the box
              ALLOCATE(ZFIELDP(KXEBOX-KXOBOX+1,KYEBOX-KYOBOX+1,SIZE(PFIELD,3),&
@@ -2895,12 +2695,9 @@ CONTAINS
           END IF
           !
           CALL MPI_BCAST(IRESP,1,MPI_INTEGER,TPFILE%NMASTER_RANK-1,TPFILE%NMPICOMM,IERR)
-       END IF ! multiprocessor execution
-    ELSE
-       IRESP = -61
-       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_WRITE_FIELD_BOX_BYFIELD_X5','file '//TRIM(TPFILE%CNAME)//' not found')
+       END IF ! multiprocesses execution
     END IF
-    !----------------------------------------------------------------
+    !
     IF (IRESP.NE.0) THEN
       WRITE(YRESP, '( I6 )') IRESP
       YMSG = 'RESP='//YRESP//' when writing '//TRIM(TPFIELD%CMNHNAME)//' in '//TRIM(TPFILE%CNAME)

@@ -429,6 +429,7 @@ CONTAINS
             TPFILE%LMULTIMASTERS = .FALSE.
           END IF
        END IF
+       TPFILE%NSUBFILES_IOZ = 0
 
        IF (ISP == TZFD%OWNER) THEN 
           !! I/O processor case
@@ -545,6 +546,7 @@ CONTAINS
        TPFILE%NMASTER_RANK  = -1
        TPFILE%LMASTER       = .TRUE. !Every process use the file
        TPFILE%LMULTIMASTERS = .TRUE.
+       TPFILE%NSUBFILES_IOZ = 0
 
 #ifdef MNH_VPP
        OPEN(UNIT=TZFD%FLU,                      &
@@ -628,6 +630,7 @@ CONTAINS
        TPFILE%NMASTER_RANK  = ISIOP
        TPFILE%LMASTER       = (ISP == ISIOP)
        TPFILE%LMULTIMASTERS = .FALSE.
+       TPFILE%NSUBFILES_IOZ = 0
 
        IF (ISP == TZFD%OWNER) THEN 
           TZFD%FLU = IONEWFLU()
@@ -642,6 +645,12 @@ CONTAINS
        TPFILE%NMASTER_RANK  = ISIOP
        TPFILE%LMASTER       = (ISP == ISIOP)
        TPFILE%LMULTIMASTERS = .FALSE.
+       TPFILE%NSUBFILES_IOZ = 0
+       IF ( GPARALLELIO .AND. PRESENT(KNB_PROCIO) ) THEN
+         IF (KNB_PROCIO>1) THEN
+           TPFILE%NSUBFILES_IOZ = KNB_PROCIO
+         END IF
+       END IF
 
        TZFD%OWNER = ISIOP
        TZFD%NAME  = TRIM(TPFILE%CNAME)//".lfi"
@@ -668,6 +677,11 @@ CONTAINS
           TZFD%FLU = -1
        END IF
        IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+          IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
+            ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
+          ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
+            CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(PFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
+          END IF
           DO ifile=0,TZFD%NB_PROCIO-1
              irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
              write(cfile ,'(".Z",i3.3)') ifile+1
@@ -687,11 +701,13 @@ CONTAINS
                CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
                                      KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
              END IF
+             TPFILE%TFILES_IOZ(ifile+1)%TFILE => TZSPLITFILE
              !Done outside of the previous IF to prevent problems with .OUT files
              TZSPLITFILE%NMPICOMM      = ICOMM
              TZSPLITFILE%NMASTER_RANK  = irank_procio
              TZSPLITFILE%LMASTER       = (ISP == irank_procio)
              TZSPLITFILE%LMULTIMASTERS = .FALSE.
+             TZSPLITFILE%NSUBFILES_IOZ = 0
 
              IF ( irank_procio .EQ. ISP ) THEN
 #if defined(MNH_IOCDF4)                   
@@ -769,7 +785,6 @@ CONTAINS
 
 
     END SELECT
-print *,'PW: TPFILE%CNAME=',TPFILE%CNAME,'master,multimasters=',TPFILE%LMASTER,TPFILE%LMULTIMASTERS
 
 !    CALL UPDATE_METADATA(TPFILE)
 

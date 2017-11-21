@@ -26,7 +26,7 @@ INTEGER, SAVE :: ISTDOUT, ISTDERR
 
 INTEGER, SAVE :: ISIOP   !! IOproc number
 INTEGER, SAVE :: ISP     !! Actual proc number
-INTEGER, SAVE :: ISNPROC !! Total number of allocated processors 
+INTEGER, SAVE :: ISNPROC !! Total number of allocated processes
 LOGICAL, SAVE :: GSMONOPROC = .FALSE. !! True if sequential execution (ISNPROC = 1) 
 
 LOGICAL, SAVE :: L1D   = .FALSE. ! TRUE if 1D model version
@@ -78,10 +78,15 @@ TYPE TFILEDATA
   INTEGER           :: NOPEN   = 0         !Number of times the file has been opened (during the current execution)
   INTEGER           :: NCLOSE  = 0         !Number of times the file has been closed (during the current execution)
   !
-  INTEGER           :: NMPICOMM      = -1      !MPI communicator used for IO on this file
   INTEGER           :: NMASTER_RANK  = -1      !Rank of the master process (no meaning if LMULTIMASTERS=.T.)
+  INTEGER           :: NMPICOMM      = -1      !MPI communicator used for IO on this file
   LOGICAL           :: LMASTER       = .FALSE. !True if process is master of the file (process that open/read/write/close)
   LOGICAL           :: LMULTIMASTERS = .FALSE. !True if several processes may access the file
+  !
+  INTEGER           :: NSUBFILES_IOZ = 0       !Number of sub-files (Z-splitted files based on this file)
+                                               !For example if 2 sub-files and this file is abcd,
+                                               !the 2 sub-files are abcd.Z001 and abcd.Z002
+  TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-splitted files
   !
   ! Fields for LFI files
   INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
