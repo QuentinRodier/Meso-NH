@@ -206,7 +206,6 @@ CONTAINS
   SUBROUTINE OPEN_ll(&
        TPFILE,  &
        MODE,    &
-       LFIPAR,  &
        COMM,    &
        STATUS,  &
        ACCESS,  &
@@ -229,7 +228,6 @@ CONTAINS
 
     TYPE(TFILEDATA), INTENT(INOUT)         :: TPFILE
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: MODE
-    TYPE(LFIPARAM),  POINTER,     OPTIONAL :: LFIPAR
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: STATUS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: ACCESS
     INTEGER,         INTENT(OUT)           :: IOSTAT
@@ -240,11 +238,9 @@ CONTAINS
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: DELIM
     CHARACTER(len=*),INTENT(IN),  OPTIONAL :: PAD
     INTEGER,         INTENT(IN),  OPTIONAL :: COMM
-    !JUANZ
     INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
-    !JUANZ
     !
     ! local var
     !
@@ -362,7 +358,6 @@ CONTAINS
 
     TZFD%NAME = TPFILE%CNAME
     TZFD%MODE = YMODE
-    NULLIFY(TZFD%PARAM)
 
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
     !JUAN
@@ -621,11 +616,6 @@ CONTAINS
 
     CASE('DISTRIBUTED')
        TZFD%OWNER = ISIOP
-       IF (.NOT. PRESENT(LFIPAR)) THEN
-          PRINT *,"ERROR OPEN_ll : LFI non present"
-          RETURN
-       END IF
-       TZFD%PARAM=>LFIPAR
 
        TPFILE%NMASTER_RANK  = ISIOP
        TPFILE%LMASTER       = (ISP == ISIOP)
@@ -663,7 +653,6 @@ CONTAINS
          TZFD%NB_PROCIO = 1
        ENDIF
        TZFD%COMM = NMNH_COMM_WORLD
-       TZFD%PARAM     =>LFIPAR
 #if defined(MNH_IOCDF4)
        IF (ISP == TZFD%OWNER .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
             &                                     .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
@@ -693,7 +682,6 @@ CONTAINS
              TZFD_IOZ%COMM      = NMNH_COMM_WORLD
              TZFD_IOZ%NB_PROCIO = TZFD%NB_PROCIO
              TZFD_IOZ%FLU       = -1
-             TZFD_IOZ%PARAM     =>LFIPAR
 
              CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
 

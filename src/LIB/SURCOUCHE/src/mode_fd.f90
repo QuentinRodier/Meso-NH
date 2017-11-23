@@ -13,7 +13,6 @@
 !-----------------------------------------------------------------
 
 MODULE MODE_FD_ll
-USE MODD_IO_ll,  ONLY : LFIPARAM
 USE MODD_NETCDF, ONLY : IOCDF
 
 IMPLICIT NONE 
@@ -28,7 +27,6 @@ TYPE FD_ll
   INTEGER                  :: COMM  ! Local MPI communicator
   CHARACTER(LEN=15)        :: MODE  ! Flag mode acces ('distrib','global','specific')   
   INTEGER                  :: OWNER ! I/O Processor number 
-  TYPE(LFIPARAM),  POINTER :: PARAM
 !JUANZ
   INTEGER                  :: NB_PROCIO = 1
 !JUANZ
