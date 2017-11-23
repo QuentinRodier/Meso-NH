@@ -776,10 +776,10 @@ CONTAINS
                         ININAR8)
                    !KNINAR = ININAR8
                 END IF
-
-                CALL UPDATE_METADATA(TZSPLITFILE)
-
              ENDIF
+             !
+             CALL UPDATE_METADATA(TZSPLITFILE) !Done outside of the IF == ISP
+             !
           ENDDO
        END IF
 
@@ -834,7 +834,8 @@ CONTAINS
       IF(.NOT.PRESENT(TPFILEMD)) RETURN
 
       TPFILEMD%LOPENED = .TRUE.
-      TPFILEMD%NOPEN   = TPFILEMD%NOPEN + 1
+      TPFILEMD%NOPEN         = TPFILEMD%NOPEN         + 1
+      TPFILEMD%NOPEN_CURRENT = TPFILEMD%NOPEN_CURRENT + 1
 
       NULLIFY(TZFDLFI)
 
