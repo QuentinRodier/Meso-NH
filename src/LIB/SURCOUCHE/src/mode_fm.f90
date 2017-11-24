@@ -73,7 +73,6 @@ IF (GSMONOPROC) THEN ! sequential execution
     !! Add a new FD element
     TZFD=>NEWFD()
     TZFD%NAME = HFILEM
-    TZFD%MODE = 'GLOBAL'
     TZFD%FLU   = IONEWFLU()
     !
     KNUMBR = TZFD%FLU

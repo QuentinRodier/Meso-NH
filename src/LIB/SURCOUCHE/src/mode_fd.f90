@@ -24,7 +24,6 @@ INTEGER, PARAMETER :: JPFINL = 32 ! File name length
 TYPE FD_ll
   CHARACTER(LEN=JPFINL)    :: NAME  ! File name 
   INTEGER                  :: FLU   ! Fortran logical unit
-  CHARACTER(LEN=15)        :: MODE  ! Flag mode acces ('distrib','global','specific')   
   TYPE(FD_ll),     POINTER :: NEXT
 END TYPE FD_ll
 
