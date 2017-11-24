@@ -50,10 +50,10 @@ MODULE MODE_IO_ll
   !
   LOGICAL,SAVE :: GCONFIO = .FALSE. ! Turn TRUE when SET_CONFIO_ll is called.
 
-  PUBLIC IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll,FLUSH_ll
+  PUBLIC IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
   !JUANZ
-  PUBLIC  io_file,io_rank
+  PUBLIC  io_file,IO_RANK
   !JUANZ
 
 CONTAINS 
@@ -245,12 +245,12 @@ CONTAINS
     ! local var
     !
     !JUANZ
-    CHARACTER(len=5)                      :: cfile
-    INTEGER                               :: ifile, irank_procio   
+    CHARACTER(len=5)                      :: CFILE
+    INTEGER                               :: IFILE, IRANK_PROCIO
     TYPE(FD_ll), POINTER                  :: TZFD_IOZ  
     CHARACTER(len=128)                    :: YFILE_IOZ
     INTEGER(KIND=LFI_INT)                 :: IRESOU,IMELEV,INPRAR
-    INTEGER(KIND=LFI_INT)                 :: INUMBR8,ININAR8    
+    INTEGER(KIND=LFI_INT)                 :: INUMBR8,ININAR8
     LOGICAL(KIND=LFI_INT)                 :: GNAMFI8,GFATER8,GSTATS8 
     !JUANZ
 
@@ -654,10 +654,10 @@ CONTAINS
        ENDIF
        TZFD%COMM = NMNH_COMM_WORLD
 #if defined(MNH_IOCDF4)
-       IF (ISP == TZFD%OWNER .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
-            &                                     .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
+       IF (ISP == TPFILE%NMASTER_RANK .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
+            &                                .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
 #else
-       IF (ISP == TZFD%OWNER) THEN
+       IF (ISP == TPFILE%NMASTER_RANK) THEN
 #endif
              TZFD%FLU = IONEWFLU()
        ELSE 
@@ -665,22 +665,22 @@ CONTAINS
           IOS = 0
           TZFD%FLU = -1
        END IF
-       IF (TZFD%NB_PROCIO .GT. 1 ) THEN
+       IF (TPFILE%NSUBFILES_IOZ > 0) THEN
           IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
             ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
           ELSE IF ( SIZE(TPFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ ) THEN
             CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','SIZE(PFILE%TFILES_IOZ) /= TPFILE%NSUBFILES_IOZ for '//TRIM(TPFILE%CNAME))
           END IF
-          DO ifile=0,TZFD%NB_PROCIO-1
-             irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
-             write(cfile ,'(".Z",i3.3)') ifile+1
-             YFILE_IOZ           = TRIM(TPFILE%CNAME)//cfile//".lfi"
+          DO IFILE=1,TPFILE%NSUBFILES_IOZ
+             IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
+             WRITE(CFILE ,'(".Z",i3.3)') IFILE
+             YFILE_IOZ           = TRIM(TPFILE%CNAME)//CFILE//".lfi"
              TZFD_IOZ           =>NEWFD()
              TZFD_IOZ%NAME      = YFILE_IOZ
              TZFD_IOZ%MODE      = 'IO_ZSPLIT'
-             TZFD_IOZ%OWNER     = irank_procio
+             TZFD_IOZ%OWNER     = IRANK_PROCIO
              TZFD_IOZ%COMM      = NMNH_COMM_WORLD
-             TZFD_IOZ%NB_PROCIO = TZFD%NB_PROCIO
+             TZFD_IOZ%NB_PROCIO = TPFILE%NSUBFILES_IOZ
              TZFD_IOZ%FLU       = -1
 
              CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
@@ -689,25 +689,25 @@ CONTAINS
                CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
                                      KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
              END IF
-             TPFILE%TFILES_IOZ(ifile+1)%TFILE => TZSPLITFILE
+             TPFILE%TFILES_IOZ(IFILE)%TFILE => TZSPLITFILE
              !Done outside of the previous IF to prevent problems with .OUT files
              TZSPLITFILE%NMPICOMM      = ICOMM
-             TZSPLITFILE%NMASTER_RANK  = irank_procio
-             TZSPLITFILE%LMASTER       = (ISP == irank_procio)
+             TZSPLITFILE%NMASTER_RANK  = IRANK_PROCIO
+             TZSPLITFILE%LMASTER       = (ISP == IRANK_PROCIO)
              TZSPLITFILE%LMULTIMASTERS = .FALSE.
              TZSPLITFILE%NSUBFILES_IOZ = 0
 
-             IF ( irank_procio .EQ. ISP ) THEN
+             IF ( IRANK_PROCIO .EQ. ISP ) THEN
 #if defined(MNH_IOCDF4)                   
                 IF (LIOCDF4) THEN
                    IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
                       ! Open NetCDF File for reading
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
-                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//cfile//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
+                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//CFILE//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
                       TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
-   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
+   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
@@ -718,12 +718,12 @@ CONTAINS
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//cfile//'.nc')
-                      IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//cfile//".nc", &
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
+                      IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//CFILE//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
                       TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
-                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//cfile//'.nc', ' : ', NF90_STRERROR(IOSCDF)
+                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
                       ELSE
                          IOS = 0
@@ -737,6 +737,7 @@ CONTAINS
                    ! Open LFI File for reading
                    !this proc must write on this file open it ...    
                    TZFD_IOZ%FLU       = IONEWFLU()
+                   TZSPLITFILE%NLU    = TZFD_IOZ%FLU
                    !! LFI-File case
                    IRESOU = 0
                    GNAMFI8 = .TRUE.
@@ -755,7 +756,7 @@ CONTAINS
                    CALL LFIOUV(IRESOU,     &
                         INUMBR8,           &
                         GNAMFI8,           &
-                        TZFD_IOZ%NAME,     &
+                        TZSPLITFILE%CNAME, &
                         "UNKNOWN",         &
                         GFATER8,           &
                         GSTATS8,           &
@@ -863,34 +864,30 @@ CONTAINS
     END SUBROUTINE UPDATE_METADATA
   END SUBROUTINE OPEN_ll
 
-  SUBROUTINE CLOSE_ll(HFILE,IOSTAT,STATUS,OPARALLELIO)
+  SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,STATUS,OPARALLELIO)
   USE MODD_IO_ll
   USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 #if defined(MNH_IOCDF4)
   USE MODE_NETCDF
 #endif
-    CHARACTER(LEN=*), INTENT(IN)            :: HFILE
+    TYPE(TFILEDATA),  INTENT(IN)            :: TPFILE
     INTEGER,          INTENT(OUT), OPTIONAL :: IOSTAT
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: STATUS
     LOGICAL,          INTENT(IN),  OPTIONAL :: OPARALLELIO
 
     TYPE(FD_ll), POINTER :: TZFD
-    INTEGER :: OLDCOMM
 
     INTEGER :: IERR, IGLOBALERR, IRESP
 
-    CHARACTER(LEN=100)                      :: STATUSL
-    !JUANZ
-    CHARACTER(len=5)                      :: yfile
-    INTEGER                               :: ifile, irank_procio,ilen   
+    CHARACTER(LEN=100)                    :: STATUSL
+    INTEGER                               :: IFILE
     TYPE(FD_ll), POINTER                  :: TZFD_IOZ  
-    CHARACTER(len=128)                    :: YFILE_IOZ
-    INTEGER(KIND=LFI_INT)                 :: IRESP8,INUM8
+    INTEGER(KIND=LFI_INT)                 :: IRESP8
     CHARACTER(LEN=7)                      :: YSTATU  
     LOGICAL                               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER               :: TZFILE
 
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(HFILE))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_ll','closing '//TRIM(TPFILE%CNAME))
 
     IF ( PRESENT(OPARALLELIO) ) THEN
       GPARALLELIO = OPARALLELIO
@@ -899,10 +896,16 @@ CONTAINS
     ENDIF
     !JUANZ
 
-    TZFD=>GETFD(HFILE)
+    TZFD => NULL()
+    TZFD => GETFD(TPFILE%CNAME)
+
+    !Temporary fix: try with a .lfi extension
+    IF (.NOT. ASSOCIATED(TZFD)) THEN
+      TZFD => GETFD(TRIM(TPFILE%CNAME)//'.lfi')
+    END IF
 
     IF (.NOT. ASSOCIATED(TZFD)) THEN
-       WRITE(ISTDOUT,*) 'Erreur CLOSE_ll : Fichier : ', HFILE, ' non&
+       WRITE(ISTDOUT,*) 'Erreur CLOSE_ll : Fichier : ', TPFILE%CNAME, ' non&
             & present...'
        IF (PRESENT(IOSTAT)) IOSTAT = BADVALUE
        RETURN
@@ -932,20 +935,11 @@ CONTAINS
        ! close LFI file in the different PROC
        !
        IF( .NOT. GPARALLELIO ) THEN
-         TZFD%NB_PROCIO = 1
-       ENDIF
-       IF (TZFD%NB_PROCIO .GT. 1 ) THEN
-          DO ifile=0,TZFD%NB_PROCIO-1
-             irank_procio = 1 + io_rank(ifile,ISNPROC,TZFD%NB_PROCIO)
-             write(yfile ,'(".Z",i3.3)') ifile+1
-             ilen = len_trim(TZFD%NAME)
-             YFILE_IOZ   = TRIM(TZFD%NAME(1:ilen-4))//yfile//".lfi"
-             TZFD_IOZ => GETFD(YFILE_IOZ)
-             CALL IO_FILE_FIND_BYNAME(TRIM(TZFD%NAME(1:ilen-4))//yfile,TZFILE,IRESP)
-             IF (ISP == TZFD_IOZ%OWNER) THEN
-                IF (TZFD_IOZ%FLU > 0) THEN
-                   INUM8=TZFD_IOZ%FLU
-                   CALL LFIFER(IRESP8,INUM8,YSTATU)
+          DO IFILE=1,TPFILE%NSUBFILES_IOZ
+             TZFILE => TPFILE%TFILES_IOZ(IFILE)%TFILE
+             IF (ISP == TZFILE%NMASTER_RANK) THEN
+                IF (TZFILE%NLU > 0) THEN !if LFI
+                   CALL LFIFER(IRESP8,TZFILE%NLFIFLU,YSTATU)
                    CALL IOFREEFLU(TZFD_IOZ%FLU)
                    IRESP = IRESP8
                 END IF
@@ -955,55 +949,11 @@ CONTAINS
        END IF
     END SELECT
 
-    OLDCOMM = TZFD%COMM   !! Recopie dans var. temporaire
-
     CALL DELFD(TZFD)
-
-!!$    IF (IRESP == IGLOBALERR) THEN
-!!$
-!!$       ! liberation du communicateur
-!!$       !
-!!$       TZFD=>GETFD(OLDCOMM)
-!!$
-!!$       IF (.NOT. ASSOCIATED(TZFD)) THEN
-!!$          CALL MPI_COMM_FREE(OLDCOMM, IERR)
-!!$       END IF
-!!$    END IF
 
     IF (PRESENT(IOSTAT)) IOSTAT = IGLOBALERR
 
   END SUBROUTINE CLOSE_ll
-
-  SUBROUTINE FLUSH_ll(HFILE,IRESP)
-#if defined(NAGf95)
-    USE F90_UNIX
-#endif
-    USE MODD_IO_ll
-    CHARACTER(LEN=*), INTENT(IN)            :: HFILE
-    INTEGER,          INTENT(OUT), OPTIONAL :: IRESP
-
-    TYPE(FD_ll), POINTER :: TZFD
-    INTEGER              :: IUNIT
-
-    IRESP=0
-    TZFD=>GETFD(HFILE)
-    IF (.NOT. ASSOCIATED(TZFD)) THEN
-       WRITE(ISTDOUT,*) 'Error in FLUSH_ll : file ',TRIM(HFILE),&
-            &' not present !'
-       IF (PRESENT(IRESP)) IRESP = BADVALUE
-       RETURN
-    END IF
-
-    IUNIT=TZFD%FLU
-    IF (TZFD%OWNER == ISP .AND. TZFD%MODE /= 'DISTRIBUTED') THEN
-#if defined(MNH_SP4)
-       CALL FLUSH(IUNIT)
-#else
-       CALL FLUSH(IUNIT)
-#endif
-    END IF
-
-  END SUBROUTINE FLUSH_ll
 
   FUNCTION io_file(k,nb_proc_io)
     !
@@ -1017,15 +967,15 @@ CONTAINS
 
   END FUNCTION io_file
 
-  FUNCTION io_rank(ifile,nb_proc,nb_proc_io,offset_rank)
+  FUNCTION IO_RANK(IFILE,nb_proc,nb_proc_io,offset_rank)
     !
-    ! return the proc number which must write the 'ifile' file
+    ! return the proc number which must write the 'IFILE' file
     !
     IMPLICIT NONE
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: ifile,nb_proc,nb_proc_io
+    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IFILE,nb_proc,nb_proc_io
     INTEGER(kind=MNH_MPI_RANK_KIND),OPTIONAL         :: offset_rank
 
-    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: io_rank
+    INTEGER(kind=MNH_MPI_RANK_KIND)                  :: IO_RANK
 
     INTEGER(kind=MNH_MPI_RANK_KIND)                  :: ipas,irest
 
@@ -1033,20 +983,20 @@ CONTAINS
     irest =  MOD ( nb_proc , nb_proc_io )
 
     IF  (ipas /= 0 ) THEN
-       io_rank=ipas * ifile + MIN(ifile , irest )
+       IO_RANK=ipas * IFILE + MIN(IFILE , irest )
     ELSE
-       io_rank=MOD(ifile , nb_proc )
+       IO_RANK=MOD(IFILE , nb_proc )
     ENDIF
 
     !
     ! optional rank to shift for read test
     !
     IF (PRESENT(offset_rank)) THEN
-       IF ( offset_rank .GT.0 ) io_rank=MOD(io_rank+offset_rank,nb_proc)
-       IF ( offset_rank .LT.0 ) io_rank=MOD(nb_proc-io_rank+offset_rank,nb_proc)
+       IF ( offset_rank .GT.0 ) IO_RANK=MOD(IO_RANK+offset_rank,nb_proc)
+       IF ( offset_rank .LT.0 ) IO_RANK=MOD(nb_proc-IO_RANK+offset_rank,nb_proc)
     ENDIF
 
-  END FUNCTION io_rank
+  END FUNCTION IO_RANK
   !
   !
 END MODULE MODE_IO_ll
