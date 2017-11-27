@@ -250,7 +250,7 @@ CONTAINS
     TYPE(FD_ll), POINTER                  :: TZFD_IOZ  
     CHARACTER(len=128)                    :: YFILE_IOZ
     INTEGER(KIND=LFI_INT)                 :: IRESOU,IMELEV,INPRAR
-    INTEGER(KIND=LFI_INT)                 :: INUMBR8,ININAR8
+    INTEGER(KIND=LFI_INT)                 :: ININAR8
     LOGICAL(KIND=LFI_INT)                 :: GNAMFI8,GFATER8,GSTATS8 
     !JUANZ
 
@@ -425,79 +425,79 @@ CONTAINS
        IF (TPFILE%LMASTER) THEN
           !! I/O processor case
 
-          TZFD%FLU = IONEWFLU()
+          TPFILE%NLU = IONEWFLU()
 #ifdef MNH_VPP
-          OPEN(UNIT=TZFD%FLU,       &
-               FILE=TRIM(TZFD%NAME),&
-               STATUS=STATUS,       &
-               ACCESS=ACCESS,       &
-               IOSTAT=IOS,          &
-               FORM=FORM,           &
-               RECL=IRECSIZE,       &
-               BLANK=BLANK,         &
-               POSITION=POSITION,   &
-               ACTION=YACTION,      &
-               DELIM=DELIM,         &
+          OPEN(UNIT=TPFILE%NLU,        &
+               FILE=TRIM(TPFILE%CNAME),&
+               STATUS=STATUS,          &
+               ACCESS=ACCESS,          &
+               IOSTAT=IOS,             &
+               FORM=FORM,              &
+               RECL=IRECSIZE,          &
+               BLANK=BLANK,            &
+               POSITION=POSITION,      &
+               ACTION=YACTION,         &
+               DELIM=DELIM,            &
                PAD=PAD)
 
 #else
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
           !JUAN : 31/03/2000 modif pour acces direct
           IF (YACCESS=='DIRECT') THEN
-             OPEN(UNIT=TZFD%FLU,       &
-                  FILE=TRIM(TZFD%NAME),&
-                  STATUS=YSTATUS,       &
-                  ACCESS=YACCESS,       &
-                  IOSTAT=IOS,          &
-                  FORM=YFORM,           &
-                  RECL=YRECL,           &
+             OPEN(UNIT=TPFILE%NLU,        &
+                  FILE=TRIM(TPFILE%CNAME),&
+                  STATUS=YSTATUS,         &
+                  ACCESS=YACCESS,         &
+                  IOSTAT=IOS,             &
+                  FORM=YFORM,             &
+                  RECL=YRECL,             &
                   ACTION=YACTION)
           ELSE
              IF (YFORM=="FORMATTED") THEN
                IF (YACTION=='READ') THEN
-                OPEN(UNIT=TZFD%FLU,       &
-                     FILE=TRIM(TZFD%NAME),&
-                     STATUS=YSTATUS,       &
-                     ACCESS=YACCESS,       &
-                     IOSTAT=IOS,          &
-                     FORM=YFORM,           &
-                     RECL=YRECL,           &
-                     BLANK=YBLANK,         &
-                     POSITION=YPOSITION,   &
-                     ACTION=YACTION,      &
-                     !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
+                OPEN(UNIT=TPFILE%NLU,        &
+                     FILE=TRIM(TPFILE%CNAME),&
+                     STATUS=YSTATUS,         &
+                     ACCESS=YACCESS,         &
+                     IOSTAT=IOS,             &
+                     FORM=YFORM,             &
+                     RECL=YRECL,             &
+                     BLANK=YBLANK,           &
+                     POSITION=YPOSITION,     &
+                     ACTION=YACTION,         &
+                     !DELIM=YDELIM,          & !Philippe: commented because bug with GCC 5.X
                      PAD=YPAD)
                ELSE
-                OPEN(UNIT=TZFD%FLU,       &
-                     FILE=TRIM(TZFD%NAME),&
-                     STATUS=YSTATUS,       &
-                     ACCESS=YACCESS,       &
-                     IOSTAT=IOS,          &
-                     FORM=YFORM,           &
-                     RECL=YRECL,           &
-                     BLANK=YBLANK,         &
-                     POSITION=YPOSITION,   &
-                     ACTION=YACTION,      &
-                     DELIM=YDELIM,         &
+                OPEN(UNIT=TPFILE%NLU,        &
+                     FILE=TRIM(TPFILE%CNAME),&
+                     STATUS=YSTATUS,         &
+                     ACCESS=YACCESS,         &
+                     IOSTAT=IOS,             &
+                     FORM=YFORM,             &
+                     RECL=YRECL,             &
+                     BLANK=YBLANK,           &
+                     POSITION=YPOSITION,     &
+                     ACTION=YACTION,         &
+                     DELIM=YDELIM,           &
                      PAD=YPAD)
                ENDIF
              ELSE
-                OPEN(UNIT=TZFD%FLU,       &
-                     FILE=TRIM(TZFD%NAME),&
-                     STATUS=YSTATUS,       &
-                     ACCESS=YACCESS,       &
-                     IOSTAT=IOS,          &
-                     FORM=YFORM,           &
-                     RECL=YRECL,           &
-                     POSITION=YPOSITION,   &
+                OPEN(UNIT=TPFILE%NLU,        &
+                     FILE=TRIM(TPFILE%CNAME),&
+                     STATUS=YSTATUS,         &
+                     ACCESS=YACCESS,         &
+                     IOSTAT=IOS,             &
+                     FORM=YFORM,             &
+                     RECL=YRECL,             &
+                     POSITION=YPOSITION,     &
                      ACTION=YACTION)
              ENDIF
           ENDIF
 
 
           !print*,' OPEN_ll'
-          !print*,' OPEN(UNIT=',TZFD%FLU       
-          !print*,' FILE=',TRIM(TZFD%NAME)
+          !print*,' OPEN(UNIT=',TPFILE%NLU
+          !print*,' FILE=',TRIM(TPFILE%CNAME)
           !print*,' STATUS=',YSTATUS       
           !print*,' ACCESS=',YACCESS
           !print*,' IOSTAT=',IOS
@@ -509,17 +509,17 @@ CONTAINS
           !print*,' DELIM=',YDELIM
           !print*,' PAD=',YPAD
 #else
-          OPEN(UNIT=TZFD%FLU,       &
-               FILE=TRIM(TZFD%NAME),&
-               STATUS=STATUS,       &
-               ACCESS=ACCESS,       &
-               IOSTAT=IOS,          &
-               FORM=FORM,           &
-               RECL=RECL,           &
-               BLANK=BLANK,         &
-               POSITION=POSITION,   &
-               ACTION=YACTION,      &
-               DELIM=DELIM,         &
+          OPEN(UNIT=TPFILE%NLU,        &
+               FILE=TRIM(TPFILE%CNAME),&
+               STATUS=STATUS,          &
+               ACCESS=ACCESS,          &
+               IOSTAT=IOS,             &
+               FORM=FORM,              &
+               RECL=RECL,              &
+               BLANK=BLANK,            &
+               POSITION=POSITION,      &
+               ACTION=YACTION,         &
+               DELIM=DELIM,            &
                PAD=PAD)
 #endif
 
@@ -528,21 +528,21 @@ CONTAINS
        ELSE 
           !! NON I/O processors case
           IOS = 0
-          TZFD%FLU = JPFNULL
+          TPFILE%NLU = JPFNULL
        END IF
 
-      TPFILE%NLU = TZFD%FLU
+      TZFD%FLU = TPFILE%NLU
 
     CASE('SPECIFIC')
-       TZFD%FLU = IONEWFLU()
+       TPFILE%NLU = IONEWFLU()
        TPFILE%NMASTER_RANK  = -1
        TPFILE%LMASTER       = .TRUE. !Every process use the file
        TPFILE%LMULTIMASTERS = .TRUE.
        TPFILE%NSUBFILES_IOZ = 0
 
 #ifdef MNH_VPP
-       OPEN(UNIT=TZFD%FLU,                      &
-            FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
+       OPEN(UNIT=TPFILE%NLU,                       &
+            FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
@@ -557,18 +557,18 @@ CONTAINS
 #else
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
        IF (ACCESS=='DIRECT') THEN
-          OPEN(UNIT=TZFD%FLU,       &
-               FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
-               STATUS=YSTATUS,       &
-               ACCESS=YACCESS,       &
-               IOSTAT=IOS,          &
-               FORM=YFORM,           &
-               RECL=YRECL,           &
+          OPEN(UNIT=TPFILE%NLU,                       &
+               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
+               STATUS=YSTATUS,                        &
+               ACCESS=YACCESS,                        &
+               IOSTAT=IOS,                            &
+               FORM=YFORM,                            &
+               RECL=YRECL,                            &
                ACTION=YACTION)
        ELSE
         IF (YACTION=='READ') THEN
-          OPEN(UNIT=TZFD%FLU,                      &
-               FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
+          OPEN(UNIT=TPFILE%NLU,                        &
+               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
@@ -580,8 +580,8 @@ CONTAINS
                !DELIM=YDELIM,         & !Philippe: commented because bug with GCC 5.X
                PAD=YPAD)
          ELSE
-          OPEN(UNIT=TZFD%FLU,                      &
-               FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
+          OPEN(UNIT=TPFILE%NLU,                        &
+               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
@@ -595,8 +595,8 @@ CONTAINS
          ENDIF
        ENDIF
 #else
-       OPEN(UNIT=TZFD%FLU,                      &
-            FILE=TRIM(TZFD%NAME)//SUFFIX(".P"), &
+       OPEN(UNIT=TPFILE%NLU,                       &
+            FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
@@ -611,7 +611,7 @@ CONTAINS
 
 #endif
 
-       TPFILE%NLU = TZFD%FLU
+       TZFD%FLU = TPFILE%NLU
 
 
     CASE('DISTRIBUTED')
@@ -621,14 +621,14 @@ CONTAINS
        TPFILE%NSUBFILES_IOZ = 0
 
        IF (TPFILE%LMASTER) THEN
-          TZFD%FLU = IONEWFLU()
+          TPFILE%NLU = IONEWFLU()
        ELSE 
           !! NON I/O processors case
           IOS = 0
-          TZFD%FLU = -1
+          TPFILE%NLU = -1
        END IF
 
-       TPFILE%NLU = TZFD%FLU
+       TZFD%FLU = TPFILE%NLU
 
 
     CASE('IO_ZSPLIT')
@@ -649,14 +649,14 @@ CONTAINS
 #else
        IF (TPFILE%LMASTER) THEN
 #endif
-             TZFD%FLU = IONEWFLU()
+             TPFILE%NLFIFLU = IONEWFLU()
        ELSE 
           !! NON I/O processors OR NetCDF read case 
           IOS = 0
-          TZFD%FLU = -1
+          TPFILE%NLFIFLU = -1
        END IF
 
-       TPFILE%NLFIFLU = TZFD%FLU
+       TZFD%FLU = TPFILE%NLFIFLU
 
        IF (TPFILE%NSUBFILES_IOZ > 0) THEN
           IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
@@ -725,8 +725,8 @@ CONTAINS
                    ! LFI case
                    ! Open LFI File for reading
                    !this proc must write on this file open it ...    
-                   TZFD_IOZ%FLU       = IONEWFLU()
-                   TZSPLITFILE%NLFIFLU = TZFD_IOZ%FLU
+                   TZSPLITFILE%NLFIFLU = IONEWFLU()
+                   TZFD_IOZ%FLU = TZSPLITFILE%NLFIFLU
                    !! LFI-File case
                    IRESOU = 0
                    GNAMFI8 = .TRUE.
@@ -741,9 +741,8 @@ CONTAINS
                    !
                    ! JUAN open lfi file temporary modif
                    !
-                   INUMBR8 = TZFD_IOZ%FLU
                    CALL LFIOUV(IRESOU,     &
-                        INUMBR8,           &
+                        TZSPLITFILE%NLFIFLU, &
                         GNAMFI8,           &
                         TZSPLITFILE%CNAME, &
                         "UNKNOWN",         &
@@ -756,15 +755,15 @@ CONTAINS
                 END IF
              ENDIF
              !
-             CALL UPDATE_METADATA(TZSPLITFILE) !Done outside of the IF == ISP
+             TZSPLITFILE%LOPENED = .TRUE.
+             TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
+             TZSPLITFILE%NOPEN_CURRENT = TZSPLITFILE%NOPEN_CURRENT + 1
              !
           ENDDO
        END IF
 
 
     END SELECT
-
-!    CALL UPDATE_METADATA(TPFILE)
 
     TPFILE%NMPICOMM = ICOMM
 
@@ -780,50 +779,6 @@ CONTAINS
 
     END FUNCTION SUFFIX
 
-    SUBROUTINE UPDATE_METADATA(TPFILEMD)
-      TYPE(TFILEDATA), INTENT(INOUT), OPTIONAL :: TPFILEMD
-
-      TYPE(FD_ll), POINTER  :: TZFDLFI
-
-      IF(.NOT.PRESENT(TPFILEMD)) RETURN
-
-      TPFILEMD%LOPENED = .TRUE.
-      TPFILEMD%NOPEN         = TPFILEMD%NOPEN         + 1
-      TPFILEMD%NOPEN_CURRENT = TPFILEMD%NOPEN_CURRENT + 1
-
-      NULLIFY(TZFDLFI)
-
-      TZFDLFI=>GETFD(ADJUSTL(TRIM(TPFILEMD%CNAME)//'.lfi'))
-
-      IF(.NOT.ASSOCIATED(TZFDLFI)) &
-        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','TZFDLFI not found for '&
-                                               //TRIM(TPFILEMD%CNAME))
-
-      IF (TRIM(TPFILEMD%CMODE) == 'READ' .AND. TPFILEMD%LMASTER) THEN
-        IF (LIOCDF4 .AND. .NOT.LLFIREAD) THEN
-          IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
-                                               //TRIM(TPFILEMD%CNAME))
-        ELSE
-          TPFILEMD%NLFIFLU = TZFDLFI%FLU
-          IF (TPFILEMD%NLFIFLU<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NLFIFLU for '&
-                                                //TRIM(TPFILEMD%CNAME))
-        ENDIF
-      ELSE IF (TRIM(TPFILEMD%CMODE) == 'WRITE' .AND. TPFILEMD%LMASTER) THEN
-        IF (LIOCDF4) THEN
-          IF (TPFILEMD%NNCID<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NNCID for '&
-                                               //TRIM(TPFILEMD%CNAME))
-        END IF
-        IF (.NOT.LIOCDF4 .OR. LLFIOUT) THEN
-          TPFILEMD%NLFIFLU = TZFDLFI%FLU
-          IF (TPFILEMD%NLFIFLU<0) CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','invalid NLFIFLU for '&
-                                                 //TRIM(TPFILEMD%CNAME))
-        END IF
-      ELSE IF (TRIM(TPFILEMD%CMODE) /= 'READ' .AND. TRIM(TPFILEMD%CMODE) /= 'WRITE') THEN
-        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll::UPDATE_METADATA','unknown opening mode ('//TRIM(TPFILEMD%CMODE)//') for '&
-                                                          //TRIM(TPFILEMD%CNAME))
-      END IF
-
-    END SUBROUTINE UPDATE_METADATA
   END SUBROUTINE OPEN_ll
 
   SUBROUTINE CLOSE_ll(TPFILE,IOSTAT,STATUS,OPARALLELIO)

@@ -36,9 +36,9 @@
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODE_FD_ll,        ONLY : GETFD,JPFINL,FD_ll
-USE MODE_FM,           ONLY : FMLOOK_ll
 USE MODD_IO_SURF_MNH,  ONLY : COUT, TPINFILE
+!
+USE MODE_FM,           ONLY : FMLOOK_ll
 !
 IMPLICIT NONE
 !
@@ -47,26 +47,20 @@ IMPLICIT NONE
 !
 !*      0.1   Declarations of arguments
 !
-!CHARACTER(LEN=*), INTENT(IN)  :: HFILEM  ! FM-file name
-INTEGER,          INTENT(OUT) :: KNB_PROCIO    ! number of processes used for IO
-INTEGER,          INTENT(OUT) :: KRESP   ! return-code 
+INTEGER, INTENT(OUT) :: KNB_PROCIO ! number of processes used for IO
+INTEGER, INTENT(OUT) :: KRESP      ! return-code
 !
 !*      0.2   Declarations of local variables
 !
 !----------------------------------------------------------------
-CHARACTER(LEN=JPFINL)        :: YFNLFI
-TYPE(FD_ll), POINTER         :: TZFD
-INTEGER                      :: IRESP
-INTEGER                      :: ILUPRI
+INTEGER :: IRESP
+INTEGER :: ILUPRI
 !
 !*      1. get the number of processes used for IO
 !
 IRESP = 0
-YFNLFI=TRIM(ADJUSTL(TPINFILE%CNAME))//'.lfi'
 !
-TZFD=>GETFD(YFNLFI)
-IF (ASSOCIATED(TZFD)) THEN
-!!$  KNB_PROCIO = TZFD%nb_procio
+IF (ASSOCIATED(TPINFILE)) THEN
   KNB_PROCIO = 2
 ELSE
   IRESP = -61
