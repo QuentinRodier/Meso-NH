@@ -95,6 +95,7 @@ END MODULE MODI_SET_FRC
 !!         06/12    (Masson)   Removes extrapolations below or above forcing
 !!                             data. Reproduces the same data instead.
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!      27/11/17    (Chaboureau) fix bug in allocation relative to LTEND_UV_FRC 
 !!
 !-------------------------------------------------------------------------------
 !
@@ -295,6 +296,8 @@ DO JKT = 1,NFRC
       DEALLOCATE(ZRVF)
       DEALLOCATE(ZGXRF)
       DEALLOCATE(ZGYRF)
+      DEALLOCATE(ZTUF)
+      DEALLOCATE(ZTVF)
     END IF
     ALLOCATE(ZPRESSUF(ILEVELF))
     ALLOCATE(ZTHVUF(ILEVELF))
@@ -306,11 +309,14 @@ DO JKT = 1,NFRC
     ALLOCATE(ZRVF(ILEVELF))
     ALLOCATE(ZGXRF(ILEVELF))
     ALLOCATE(ZGYRF(ILEVELF))
+    ALLOCATE(ZTUF(ILEVELF))
+    ALLOCATE(ZTVF(ILEVELF))
 !
     DO JKU =1,ILEVELF
       READ(ILUPRE,*) ZPRESSUF(JKU)                         &
                     ,ZUF(JKU),ZVF(JKU),ZTHF(JKU),ZRVF(JKU) &
-                    ,ZWF(JKU),ZGXRF(JKU),ZGYRF(JKU)
+                    ,ZWF(JKU),ZGXRF(JKU),ZGYRF(JKU),ZTUF(JKU)&
+                    ,ZTVF(JKU)
     END DO
 !
 !  read sounding
