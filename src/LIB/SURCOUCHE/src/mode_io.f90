@@ -27,18 +27,14 @@
 MODULE MODE_IO_ll
 
   USE MODD_ERRCODES
-  USE MODE_FD_ll
   USE MODD_MPIF
-  !JUANZ
   USE MODD_VAR_ll, ONLY : NMNH_COMM_WORLD
-  !JUANZ
+
   USE MODE_MSG
 
   IMPLICIT NONE 
 
   PRIVATE
-
-  !INCLUDE 'mpif.h'
 
   INTEGER, PARAMETER :: JPFNULL = 9       !! /dev/null fortran unit
   INTEGER, PARAMETER :: JPRESERVED_UNIT   = 11
@@ -52,9 +48,7 @@ MODULE MODE_IO_ll
 
   PUBLIC IONEWFLU,UPCASE,INITIO_ll,OPEN_ll,CLOSE_ll
   PUBLIC SET_CONFIO_ll,GCONFIO
-  !JUANZ
   PUBLIC  io_file,IO_RANK
-  !JUANZ
 
 CONTAINS 
 
@@ -170,8 +164,6 @@ CONTAINS
     END IF
     !! Now MPI is initialized for sure
 
-    CALL INITFD()
-
     !! Default number for Processor I/O
     ISIOP = 1
 
@@ -247,7 +239,6 @@ CONTAINS
     !JUANZ
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
-    TYPE(FD_ll), POINTER                  :: TZFD_IOZ  
     CHARACTER(len=128)                    :: YFILE_IOZ
     INTEGER(KIND=LFI_INT)                 :: IRESOU,IMELEV,INPRAR
     INTEGER(KIND=LFI_INT)                 :: ININAR8
@@ -272,13 +263,10 @@ CONTAINS
     INTEGER(KIND=IDCDF_KIND) :: IOSCDF
     INTEGER              :: ICOMM
     INTEGER              :: ICMPRES
-    TYPE(FD_ll), POINTER :: TZFD, TZFDTEMP
     ! didier
     LOGICAL :: GEXISTS,GOPENED
     INTEGER :: IUNIT
     ! didier
-    !JUAN SX5 : probleme function retournant un pointer
-    TYPE(FD_ll), POINTER :: TZJUAN
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
 
@@ -329,34 +317,6 @@ CONTAINS
        WRITE(ISTDERR,*) 'OPEN_ll error : MODE UNKNOWN'
        RETURN
     END IF
-
-    !JUAN SX5 : probleme function retournant un pointer
-    !IF (.NOT. ASSOCIATED(GETFD(TPFILE%CNAME))) THEN
-    TZJUAN=>GETFD(TPFILE%CNAME)
-    IF (.NOT. ASSOCIATED(TZJUAN)) THEN 
-       !JUAN SX5 : probleme function retournant un pointer
-       !! File is not already opened : GOOD
-       !! Add a new FD element
-       TZFD=>NEWFD()
-    ELSE 
-       !! Error : File already opened
-       IOSTAT = 99
-       TPFILE%NLU = -1
-       WRITE(ISTDERR,*) 'OPEN_ll error : File', TPFILE%CNAME, 'already opened'
-       RETURN
-    END IF
-
-!!$    CALL MPI_ALLREDUCE(ILOCALERR, IGLOBALERR, 1, MPI_INTEGER, MPI_BOR,&
-!!$         & ICOMM, IERR)
-!!$    IF (IGLOBALERR /= NOERROR) THEN 
-!!$       IOSTAT = GLOBALERR
-!!$       TPFILE%NLU = -1
-!!$       RETURN 
-!!$    END IF
-
-
-
-    TZFD%NAME = TPFILE%CNAME
 
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
     !JUAN
@@ -531,7 +491,6 @@ CONTAINS
           TPFILE%NLU = JPFNULL
        END IF
 
-      TZFD%FLU = TPFILE%NLU
 
     CASE('SPECIFIC')
        TPFILE%NLU = IONEWFLU()
@@ -611,7 +570,6 @@ CONTAINS
 
 #endif
 
-       TZFD%FLU = TPFILE%NLU
 
 
     CASE('DISTRIBUTED')
@@ -628,7 +586,6 @@ CONTAINS
           TPFILE%NLU = -1
        END IF
 
-       TZFD%FLU = TPFILE%NLU
 
 
     CASE('IO_ZSPLIT')
@@ -642,7 +599,6 @@ CONTAINS
          END IF
        END IF
 
-       TZFD%NAME  = TRIM(TPFILE%CNAME)//".lfi"
 #if defined(MNH_IOCDF4)
        IF (TPFILE%LMASTER .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
             &                    .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
@@ -656,8 +612,6 @@ CONTAINS
           TPFILE%NLFIFLU = -1
        END IF
 
-       TZFD%FLU = TPFILE%NLFIFLU
-
        IF (TPFILE%NSUBFILES_IOZ > 0) THEN
           IF (.NOT.ALLOCATED(TPFILE%TFILES_IOZ)) THEN
             ALLOCATE(TPFILE%TFILES_IOZ(TPFILE%NSUBFILES_IOZ))
@@ -668,9 +622,6 @@ CONTAINS
              IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
              WRITE(CFILE ,'(".Z",i3.3)') IFILE
              YFILE_IOZ           = TRIM(TPFILE%CNAME)//CFILE//".lfi"
-             TZFD_IOZ           =>NEWFD()
-             TZFD_IOZ%NAME      = YFILE_IOZ
-             TZFD_IOZ%FLU       = -1
 
              CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
 
@@ -726,7 +677,6 @@ CONTAINS
                    ! Open LFI File for reading
                    !this proc must write on this file open it ...    
                    TZSPLITFILE%NLFIFLU = IONEWFLU()
-                   TZFD_IOZ%FLU = TZSPLITFILE%NLFIFLU
                    !! LFI-File case
                    IRESOU = 0
                    GNAMFI8 = .TRUE.
@@ -792,13 +742,10 @@ CONTAINS
     CHARACTER(LEN=*), INTENT(IN),  OPTIONAL :: STATUS
     LOGICAL,          INTENT(IN),  OPTIONAL :: OPARALLELIO
 
-    TYPE(FD_ll), POINTER :: TZFD
-
     INTEGER :: IERR, IGLOBALERR, IGLOBALERR2, IRESP, IRESP2
 
     CHARACTER(LEN=100)                    :: STATUSL
     INTEGER                               :: IFILE
-    TYPE(FD_ll), POINTER                  :: TZFD_IOZ  
     INTEGER(KIND=LFI_INT)                 :: IRESP8
     CHARACTER(LEN=7)                      :: YSTATU  
     LOGICAL                               :: GPARALLELIO
@@ -812,21 +759,6 @@ CONTAINS
       GPARALLELIO = .TRUE.
     ENDIF
     !JUANZ
-
-    TZFD => NULL()
-    TZFD => GETFD(TPFILE%CNAME)
-
-    !Temporary fix: try with a .lfi extension
-    IF (.NOT. ASSOCIATED(TZFD)) THEN
-      TZFD => GETFD(TRIM(TPFILE%CNAME)//'.lfi')
-    END IF
-
-    IF (.NOT. ASSOCIATED(TZFD)) THEN
-       WRITE(ISTDOUT,*) 'Erreur CLOSE_ll : Fichier : ', TPFILE%CNAME, ' non&
-            & present...'
-       IF (PRESENT(IOSTAT)) IOSTAT = BADVALUE
-       RETURN
-    END IF
 
     IRESP       = 0
     IRESP2      = 0
@@ -862,8 +794,6 @@ CONTAINS
     END IF
     !
     CALL MPI_ALLREDUCE(IRESP, IGLOBALERR, 1,MPI_INTEGER,MPI_BOR,TPFILE%NMPICOMM,IERR)
-
-    CALL DELFD(TZFD)
 
     IF (PRESENT(IOSTAT)) THEN
       IF (IGLOBALERR/=0) THEN
