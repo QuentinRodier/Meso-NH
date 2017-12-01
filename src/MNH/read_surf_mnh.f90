@@ -54,7 +54,7 @@ USE MODE_FMREAD
 USE MODE_GRIDPROJ
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, TPINFILE, NLUOUT
+USE MODD_IO_SURF_MNH,        ONLY : TOUT, TPINFILE
 !
 USE MODI_GET_SURF_UNDEF
 !
@@ -71,7 +71,7 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
-
+INTEGER           :: ILUOUT
 INTEGER           :: IMASDEV
 INTEGER           :: IID,IRESP
 INTEGER           :: IIMAX,IJMAX
@@ -83,6 +83,8 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 IF (HREC=='LONORI' .OR. HREC=='LATORI') THEN
   CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
@@ -151,11 +153,11 @@ ELSE
 END IF
 
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-  WRITE(NLUOUT,*) 'default value may be used, who knows???'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+  WRITE(ILUOUT,*) 'default value may be used, who knows???'
+  WRITE(ILUOUT,*) ' '
 ENDIF
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFX0_MNH
@@ -210,7 +212,7 @@ USE MODE_MSG
 !
 USE MODD_CST,         ONLY : XPI
 !
-USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE, TPINFILE, NLUOUT,  NMASK, &
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, &
                              NIU, NJU, NIB, NJB, NIE, NJE, &
                              NIU_ALL, NJU_ALL, NIB_ALL,    &
                              NJB_ALL, NIE_ALL, NJE_ALL,    &
@@ -240,6 +242,7 @@ CHARACTER(LEN=1),       INTENT(IN) :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+INTEGER           :: ILUOUT
 INTEGER           :: JI, JJ         ! loop counters
 
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
@@ -259,6 +262,7 @@ TYPE(TFIELDDATA)  :: TZFIELD
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
+ILUOUT = TOUT%NLU
 !
 IF (HDIR=='A') THEN
   IIU = NIU_ALL
@@ -454,11 +458,11 @@ ELSE
   END IF
 !
   IF (KRESP /=0) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
+    WRITE(ILUOUT,*) 'WARNING'
+    WRITE(ILUOUT,*) '-------'
+    WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+    WRITE(ILUOUT,*) 'default value may be used, who knows???'
+    WRITE(ILUOUT,*) ' '
   ELSE IF (HDIR=='H' .OR. HDIR=='A') THEN
     CALL PACK_2D_1D(IMASK,ZWORK(IIB:IIE,IJB:IJE),PFIELD)
     CALL GET_SURF_UNDEF(ZUNDEF)
@@ -524,15 +528,15 @@ END SUBROUTINE READ_SURFX1_MNH
 !             ------------
 !
 USE MODE_ll
-USE MODE_FIELD,         ONLY: TFIELDDATA,TYPEREAL
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE , NLUOUT, TPINFILE, NMASK, NIU, NJU, NIB, NJB, NIE, NJE, &
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, NIU, NJU, NIB, NJB, NIE, NJE, &
                              NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, NMASK_ALL
-USE MODD_PARAMETERS, ONLY: XUNDEF
+USE MODD_PARAMETERS,  ONLY : XUNDEF
 !
 USE MODI_PACK_2D_1D
 !
@@ -557,7 +561,7 @@ CHARACTER(LEN=1),        INTENT(IN)  :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
-
+INTEGER           :: ILUOUT
 INTEGER           :: JP             ! loop index
 
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK  ! work array read in the file
@@ -566,6 +570,8 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 !! Reading of a 3D field, masked (2 first dimensions) and with
 !! 2 first dimensions packed into only 1 (results in a 2D array instead of 3D)
@@ -599,11 +605,11 @@ ELSE
 END IF
 !
 IF (KRESP /=0) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
+    WRITE(ILUOUT,*) 'WARNING'
+    WRITE(ILUOUT,*) '-------'
+    WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+    WRITE(ILUOUT,*) 'default value may be used, who knows???'
+    WRITE(ILUOUT,*) ' '
     DEALLOCATE(ZWORK)
  ELSE IF (HDIR=='H') THEN
     DO JP=1,SIZE(PFIELD,2)
@@ -666,20 +672,20 @@ END SUBROUTINE READ_SURFX2_MNH
 !             ------------
 !
 USE MODE_ll
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPELOG,TYPEREAL
+USE MODE_FIELD,          ONLY: TFIELDDATA,TYPELOG,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll
 USE MODE_MSG
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_CST,         ONLY : XPI
+USE MODD_CST,            ONLY : XPI
 !
-USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
-                             NIU, NJU, NIB, NJB, NIE, NJE, &
-                             NIU_ALL, NJU_ALL, NIB_ALL,    &
-                             NJB_ALL, NIE_ALL, NJE_ALL,    &
-                             NMASK_ALL
+USE MODD_IO_SURF_MNH,    ONLY : TOUT, TPINFILE, NMASK, &
+                                NIU, NJU, NIB, NJB, NIE, NJE, &
+                                NIU_ALL, NJU_ALL, NIB_ALL,    &
+                                NJB_ALL, NIE_ALL, NJE_ALL,    &
+                                NMASK_ALL
 !
 USE MODI_PACK_2D_1D
 !
@@ -703,7 +709,8 @@ CHARACTER(LEN=1),          INTENT(IN) :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
-
+INTEGER           :: ILUOUT
+!
 CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
@@ -724,6 +731,7 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_MNH',TRIM(TPINFILE%CNAME)//': re
 !
 KRESP = 0
 IRESP = 0
+ILUOUT = TOUT%NLU
 !
 IF (HDIR=='A') THEN
   YDIR="--"
@@ -805,10 +813,10 @@ ELSE
 END IF
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+  WRITE(ILUOUT,*) ' '
 ELSE IF (HDIR=='H' .OR. HDIR=='A') THEN
    ICOVER=0
    DO JL2=1,NCOVER
@@ -864,7 +872,7 @@ END SUBROUTINE READ_SURFX2COV_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPELOG,TYPEREAL
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPELOG,TYPEREAL
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_ll
@@ -873,7 +881,7 @@ USE MODE_MSG
 !
 USE MODD_CST,         ONLY : XPI
 !
-USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, &
                              NIU, NJU, NIB, NJB, NIE, NJE, &
                              NIU_ALL, NJU_ALL, NIB_ALL,    &
                              NJB_ALL, NIE_ALL, NJE_ALL,    &
@@ -901,7 +909,8 @@ CHARACTER(LEN=1),       INTENT(IN) :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
-
+INTEGER           :: ILUOUT
+!
 CHARACTER(LEN=LEN_HREC) :: YREC
 CHARACTER(LEN=2)  :: YDIR
 CHARACTER(LEN=2)  :: YSTORAGE_TYPE
@@ -921,6 +930,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFX2COV_1COV_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
+ILUOUT = TOUT%NLU
 !YDIR1 = 'H'
 !IF (PRESENT(HDIR)) YDIR1 = HDIR
 YDIR1 = HDIR
@@ -984,18 +994,18 @@ IF (.NOT. GCOVER_PACKED) THEN
   TZFIELD%NDIMS      = 2
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,ZWORK2D,KRESP)
 ELSE
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error : GCOVER_PACKED = ', GCOVER_PACKED, ' and we try to read the covers one by one '
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error : GCOVER_PACKED = ', GCOVER_PACKED, ' and we try to read the covers one by one '
+  WRITE(ILUOUT,*) ' '
   CALL ABORT
 END IF
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+  WRITE(ILUOUT,*) ' '
 ELSE IF (YDIR1=='H' .OR. YDIR1=='A') THEN
    CALL PACK_2D_1D(IMASK,ZWORK2D(IIB:IIE,IJB:IJE),PFIELD(:))
 END IF
@@ -1049,14 +1059,14 @@ END SUBROUTINE READ_SURFX2COV_1COV_MNH
 !             ------------
 !
 USE MODE_ll
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT
+USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEINT
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
-                                 NIU, NJU, NIB, NJB, NIE, NJE
-USE MODD_CONF,            ONLY : CPROGRAM
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, &
+                             NIU, NJU, NIB, NJB, NIE, NJE
+USE MODD_CONF,        ONLY : CPROGRAM
 !
 !
 !
@@ -1072,6 +1082,7 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 !*      0.2   Declarations of local variables
 !
 INTEGER          :: IIMAX, IJMAX
+INTEGER          :: ILUOUT
 TYPE(TFIELDDATA) :: TZFIELD
 !
 !-------------------------------------------------------------------------------
@@ -1079,6 +1090,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP=0
+ILUOUT = TOUT%NLU
 !
 IF (HREC=='DIM_FULL' .AND. ( CPROGRAM=='IDEAL ' .OR.  &
                                   CPROGRAM=='SPAWN ' .OR. CPROGRAM=='ZOOMPG' ))THEN
@@ -1098,11 +1110,11 @@ ELSE
    CALL IO_READ_FIELD(TPINFILE,TZFIELD,KFIELD,KRESP)
 
     IF (KRESP /=0) THEN
-      WRITE(NLUOUT,*) 'WARNING'
-      WRITE(NLUOUT,*) '-------'
-      WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-      WRITE(NLUOUT,*) 'default value may be used, who knows???'
-      WRITE(NLUOUT,*) ' '
+      WRITE(ILUOUT,*) 'WARNING'
+      WRITE(ILUOUT,*) '-------'
+      WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+      WRITE(ILUOUT,*) 'default value may be used, who knows???'
+      WRITE(ILUOUT,*) ' '
    ENDIF
 
 ENDIF
@@ -1150,13 +1162,13 @@ END SUBROUTINE READ_SURFN0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT
+USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEINT
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE, TPINFILE, NLUOUT, NMASK, &
-                                 NIU, NJU, NIB, NJB, NIE, NJE
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, &
+                             NIU, NJU, NIB, NJB, NIE, NJE
 !
 USE MODI_PACK_2D_1D
 !
@@ -1178,12 +1190,15 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+INTEGER           :: ILUOUT
 !
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
 TYPE(TFIELDDATA) :: TZFIELD
 !---------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFN1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 IF (HDIR=='-') THEN
 !
@@ -1213,11 +1228,11 @@ ELSE IF (HDIR=='H') THEN
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,IWORK,KRESP)
 !
  IF (KRESP /=0) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
+    WRITE(ILUOUT,*) 'WARNING'
+    WRITE(ILUOUT,*) '-------'
+    WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+    WRITE(ILUOUT,*) 'default value may be used, who knows???'
+    WRITE(ILUOUT,*) ' '
  ELSE
     CALL PACK_2D_1D(NMASK,IWORK(NIB:NIE,NJB:NJE),KFIELD)
  END IF
@@ -1270,15 +1285,15 @@ END SUBROUTINE READ_SURFN1_MNH
 !             ------------
 !
 USE MODE_ll
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPECHAR
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPECHAR
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 USE MODE_POS
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
-USE MODD_CONF,               ONLY : LCARTESIAN, CPROGRAM
-USE MODD_LUNIT,              ONLY : CPGDFILE
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE
+USE MODD_CONF,        ONLY : LCARTESIAN, CPROGRAM
+USE MODD_LUNIT,       ONLY : CPGDFILE
 !
 !
 IMPLICIT NONE
@@ -1295,6 +1310,7 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT  ! comment
 INTEGER           :: IRESP          ! return code
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+INTEGER           :: ILUOUT
 !
 INTEGER           :: IMASDEV      ! mesonh version of the input file
 INTEGER           :: ILUDES       ! .des file logical unit
@@ -1304,12 +1320,14 @@ LOGICAL           :: GFOUND
 CHARACTER(LEN=4)  :: CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CELEC
 CHARACTER(LEN=6)  :: CSEA_FLUX
 TYPE(TFIELDDATA)  :: TZFIELD
+!
 NAMELIST/NAM_PARAMn/CTURB,CRAD,CGROUND,CCLOUD,CDCONV,CSEA_FLUX, CELEC
 !----------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFC0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
 !
 KRESP = 0
+ILUOUT = TOUT%NLU
 ! On lit la version de Mesonh usilisée pour fabriquer le fichier
 !
 CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
@@ -1323,8 +1341,8 @@ ELSE IF (HREC=='SNOW_ROOF_TYPE'.AND.IMASDEV<46) THEN
 ELSE IF (HREC=='PHOTO'.AND.IMASDEV<46) THEN
   HFIELD='NON'
 ELSE IF ( HREC=='GRID_TYPE'.AND. (IMASDEV<46 .OR. &
-                           (CPROGRAM=='IDEAL ' .AND. CPGDFILE/=COUT) .OR. &
-                           (CPROGRAM=='SPAWN ' .AND. CPGDFILE/=COUT) .OR. &
+                           (CPROGRAM=='IDEAL ' .AND. CPGDFILE/=TOUT%CNAME) .OR. &
+                           (CPROGRAM=='SPAWN ' .AND. CPGDFILE/=TOUT%CNAME) .OR. &
                            CPROGRAM=='ZOOMPG'                         )) THEN
   IF (LCARTESIAN) THEN
     HFIELD="CARTESIAN "
@@ -1339,9 +1357,9 @@ ELSE IF ( (HREC=='NATURE'.OR.HREC=='SEA   '.OR.HREC=='WATER ' &
        CGROUND='ISBA'
      ELSE
        CGROUND='NONE'
-       YDESFM=ADJUSTL(ADJUSTR(CFILE)//'.des')
-       CALL FMLOOK_ll(YDESFM,COUT,ILUDES,IRESP)
-       CALL POSNAM(ILUDES,'NAM_PARAMN',GFOUND,NLUOUT)
+       YDESFM=ADJUSTL(ADJUSTR(TPINFILE%CNAME)//'.des')
+       CALL FMLOOK_ll(YDESFM,TOUT%CNAME,ILUDES,IRESP)
+       CALL POSNAM(ILUDES,'NAM_PARAMN',GFOUND,ILUOUT)
        IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_PARAMn)
      END IF
      IF (CGROUND=='NONE') THEN
@@ -1354,9 +1372,9 @@ ELSE IF ( (HREC=='NATURE'.OR.HREC=='SEA   '.OR.HREC=='WATER ' &
        IF(HREC=='NATURE') HFIELD ='ISBA  '
        IF(HREC=='TOWN  ') HFIELD ='TEB   '
      ELSE
-       WRITE(NLUOUT,*) ' '
-       WRITE(NLUOUT,*) 'error when reading article', HREC,'KRESP=',KRESP
-       WRITE(NLUOUT,*) 'avec CGROUND = "',CGROUND,'"'
+       WRITE(ILUOUT,*) ' '
+       WRITE(ILUOUT,*) 'error when reading article', HREC,'KRESP=',KRESP
+       WRITE(ILUOUT,*) 'avec CGROUND = "',CGROUND,'"'
  !callabortstop
 CALL ABORT
        STOP
@@ -1375,11 +1393,11 @@ ELSE
    CALL IO_READ_FIELD(TPINFILE,TZFIELD,HFIELD,KRESP)
    !
    IF (KRESP /=0) THEN
-      WRITE(NLUOUT,*) 'WARNING'
-      WRITE(NLUOUT,*) '-------'
-      WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-      WRITE(NLUOUT,*) 'default value may be used, who knows???'
-      WRITE(NLUOUT,*) ' '
+      WRITE(ILUOUT,*) 'WARNING'
+      WRITE(ILUOUT,*) '-------'
+      WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+      WRITE(ILUOUT,*) 'default value may be used, who knows???'
+      WRITE(ILUOUT,*) ' '
  !callabortstop
 CALL ABORT
       STOP
@@ -1431,10 +1449,10 @@ END SUBROUTINE READ_SURFC0_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODD_IO_SURF_MNH,     ONLY : COUT, CFILE , TPINFILE, NLUOUT, NMASK, &
-                                 NIU, NJU, NIB, NJB, NIE, NJE
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, NMASK, &
+                             NIU, NJU, NIB, NJB, NIE, NJE
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEINT,TYPELOG
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPEINT,TYPELOG
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
@@ -1461,12 +1479,14 @@ CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
-
+INTEGER           :: ILUOUT
 LOGICAL, DIMENSION(:,:), ALLOCATABLE :: GWORK  ! work array read in the file
 INTEGER, DIMENSION(:,:), ALLOCATABLE :: IWORK  ! work array read in the file
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 IF (HDIR=='-') THEN
   TZFIELD%CMNHNAME   = TRIM(HREC)
@@ -1481,11 +1501,11 @@ IF (HDIR=='-') THEN
   CALL IO_READ_FIELD(TPINFILE,TZFIELD,OFIELD,KRESP)
 
   IF (KRESP /=0) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
+    WRITE(ILUOUT,*) 'WARNING'
+    WRITE(ILUOUT,*) '-------'
+    WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+    WRITE(ILUOUT,*) 'default value may be used, who knows???'
+    WRITE(ILUOUT,*) ' '
   ENDIF
 ELSE IF (HDIR=='H') THEN
   ALLOCATE(GWORK(NIU,NJU))
@@ -1506,11 +1526,11 @@ ELSE IF (HDIR=='H') THEN
   DEALLOCATE(IWORK)
 !
   IF (KRESP /=0) THEN
-    WRITE(NLUOUT,*) 'WARNING'
-    WRITE(NLUOUT,*) '-------'
-    WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-    WRITE(NLUOUT,*) 'default value may be used, who knows???'
-    WRITE(NLUOUT,*) ' '
+    WRITE(ILUOUT,*) 'WARNING'
+    WRITE(ILUOUT,*) '-------'
+    WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+    WRITE(ILUOUT,*) 'default value may be used, who knows???'
+    WRITE(ILUOUT,*) ' '
   ELSE
     CALL PACK_2D_1D(NMASK,GWORK(NIB:NIE,NJB:NJE),OFIELD)
   END IF
@@ -1560,12 +1580,12 @@ END SUBROUTINE READ_SURFL1_MNH
 !*      0.    DECLARATIONS
 !             ------------
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPELOG
+USE MODE_FIELD,       ONLY : TFIELDDATA,TYPELOG
 USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE
 !
 !
 IMPLICIT NONE
@@ -1580,9 +1600,12 @@ CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
 !*      0.2   Declarations of local variables
 !
 INTEGER           :: IMASDEV        ! MESONH version
+INTEGER           :: ILUOUT
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFL0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 IF (HREC(1:4)=='BUDC') THEN
   CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
@@ -1615,11 +1638,11 @@ CALL IO_READ_FIELD(TPINFILE,TZFIELD,OFIELD,KRESP)
 HCOMMENT = TZFIELD%CCOMMENT
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
-  WRITE(NLUOUT,*) 'default value may be used, who knows???'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ', HREC,'KRESP=',KRESP
+  WRITE(ILUOUT,*) 'default value may be used, who knows???'
+  WRITE(ILUOUT,*) ' '
 ENDIF
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFL0_MNH
@@ -1670,7 +1693,7 @@ USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE
 USE MODD_TYPE_DATE
 !
 !
@@ -1690,6 +1713,7 @@ CHARACTER(LEN=100),     INTENT(OUT)   :: HCOMMENT ! comment
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+INTEGER           :: ILUOUT
 !
 CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
@@ -1701,6 +1725,8 @@ TYPE(DATE_TIME)        :: TZDATETIME
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT0_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
 IF (IMASDEV<46) THEN
@@ -1719,11 +1745,11 @@ ELSE
   YFILETYPE2 = YFILETYPE40(1:2)
 END IF
 IF (YFILETYPE2(1:2)=='PG') THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'Date is not read in a PGD file'
-  WRITE(NLUOUT,*) 'Atmospheric model value is kept'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'Date is not read in a PGD file'
+  WRITE(ILUOUT,*) 'Atmospheric model value is kept'
+  WRITE(ILUOUT,*) ' '
   KRESP = -2
   RETURN
 END IF
@@ -1731,11 +1757,11 @@ END IF
 CALL IO_READ_FIELD(TPINFILE,HREC,TZDATETIME,KRESP)
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
-  WRITE(NLUOUT,*) 'default value may be used, who knows???'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
+  WRITE(ILUOUT,*) 'default value may be used, who knows???'
+  WRITE(ILUOUT,*) ' '
 ENDIF
 !
 KYEAR  = TZDATETIME%TDATE%YEAR
@@ -1792,7 +1818,7 @@ USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_IO_SURF_MNH,        ONLY : COUT, CFILE, TPINFILE, NLUOUT
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE
 !
 !
 IMPLICIT NONE
@@ -1813,6 +1839,7 @@ CHARACTER(LEN=100),      INTENT(OUT)   :: HCOMMENT ! comment
 !
 INTEGER           :: IGRID          ! IGRID : grid indicator
 INTEGER           :: ILENCH         ! ILENCH : length of comment string
+INTEGER           :: ILUOUT
 !
 CHARACTER(LEN=LEN_HREC)        :: YRECFM     ! Name of the article to be written
 CHARACTER(LEN=40)              :: YFILETYPE40! MESONH file type
@@ -1823,6 +1850,8 @@ TYPE(TFIELDDATA)       :: TZFIELD
 !-------------------------------------------------------------------------------
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_SURFT1_MNH',TRIM(TPINFILE%CNAME)//': reading '//TRIM(HREC))
+!
+ILUOUT = TOUT%NLU
 !
 CALL IO_READ_FIELD(TPINFILE,'MASDEV',IMASDEV)
 IF (IMASDEV<46) THEN
@@ -1841,11 +1870,11 @@ ELSE
   YFILETYPE2 = YFILETYPE40(1:2)
 END IF
 !IF (YFILETYPE2(1:2)=='PG') THEN
-!  WRITE(NLUOUT,*) 'WARNING'
-!  WRITE(NLUOUT,*) '-------'
-!  WRITE(NLUOUT,*) 'Date is not read in a PGD file'
-!  WRITE(NLUOUT,*) 'Atmospheric model value is kept'
-!  WRITE(NLUOUT,*) ' '
+!  WRITE(ILUOUT,*) 'WARNING'
+!  WRITE(ILUOUT,*) '-------'
+!  WRITE(ILUOUT,*) 'Date is not read in a PGD file'
+!  WRITE(ILUOUT,*) 'Atmospheric model value is kept'
+!  WRITE(ILUOUT,*) ' '
 !  KRESP = -2
 !  RETURN
 !END IF
@@ -1867,11 +1896,11 @@ KMONTH(:) = ITDATE(2,:)
 KDAY(:)   = ITDATE(3,:)
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
-  WRITE(NLUOUT,*) 'default value may be used, who knows???'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
+  WRITE(ILUOUT,*) 'default value may be used, who knows???'
+  WRITE(ILUOUT,*) ' '
 ENDIF
 !
 TZFIELD%CMNHNAME   = TRIM(HREC)//'%TIME'
@@ -1887,11 +1916,11 @@ TZFIELD%NDIMS      = 1
 CALL IO_READ_FIELD(TPINFILE,TZFIELD,PTIME(:),KRESP)
 !
 IF (KRESP /=0) THEN
-  WRITE(NLUOUT,*) 'WARNING'
-  WRITE(NLUOUT,*) '-------'
-  WRITE(NLUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
-  WRITE(NLUOUT,*) 'default value may be used, who knows???'
-  WRITE(NLUOUT,*) ' '
+  WRITE(ILUOUT,*) 'WARNING'
+  WRITE(ILUOUT,*) '-------'
+  WRITE(ILUOUT,*) 'error when reading article ',YRECFM,'KRESP=',KRESP
+  WRITE(ILUOUT,*) 'default value may be used, who knows???'
+  WRITE(ILUOUT,*) ' '
 ENDIF
 !-------------------------------------------------------------------------------
 END SUBROUTINE READ_SURFT1_MNH

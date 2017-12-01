@@ -36,9 +36,7 @@
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODD_IO_SURF_MNH,  ONLY : COUT, TPINFILE
-!
-USE MODE_FM,           ONLY : FMLOOK_ll
+USE MODD_IO_SURF_MNH,  ONLY : TOUT, TPINFILE
 !
 IMPLICIT NONE
 !
@@ -52,9 +50,8 @@ INTEGER, INTENT(OUT) :: KRESP      ! return-code
 !
 !*      0.2   Declarations of local variables
 !
-!----------------------------------------------------------------
 INTEGER :: IRESP
-INTEGER :: ILUPRI
+!----------------------------------------------------------------
 !
 !*      1. get the number of processes used for IO
 !
@@ -67,9 +64,8 @@ ELSE
 END IF
 !----------------------------------------------------------------
 IF (IRESP.NE.0) THEN
-  CALL FMLOOK_ll(COUT,COUT,ILUPRI,IRESP)
-  WRITE (ILUPRI,*) ' exit from GET_NB_PROCIO_READ_MNH with RESP:',IRESP
-  WRITE (ILUPRI,*) '   | TPINFILE%CNAME = ',TRIM(ADJUSTL(TPINFILE%CNAME))
+  WRITE (TOUT%NLU,*) ' exit from GET_NB_PROCIO_READ_MNH with RESP:',IRESP
+  WRITE (TOUT%NLU,*) '   | TPINFILE%CNAME = ',TRIM(ADJUSTL(TPINFILE%CNAME))
 END IF
 KRESP = IRESP
 !

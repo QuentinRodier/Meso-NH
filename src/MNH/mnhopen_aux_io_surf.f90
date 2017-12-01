@@ -57,15 +57,16 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !              ------------
 !
 !
-USE MODD_IO_SURF_MNH, ONLY : COUT, CFILE, TPINFILE, COUTFILE, NLUOUT, &
+USE MODD_IO_SURF_MNH, ONLY : TOUT, TPINFILE, COUTFILE, &
          NMASK_ALL, CMASK, NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL, NIE_ALL, NJE_ALL, CACTION, &
          NMASK, NIU, NJU, NIB, NJB, NIE, NJE
 !
 USE MODD_CONF,           ONLY : CPROGRAM
 USE MODD_PARAMETERS,     ONLY : JPHEXT
-USE MODD_LUNIT,          ONLY : CLUOUT0, COUTFMFILE, CPGDFILE
+USE MODD_LUNIT,          ONLY : CLUOUT0, COUTFMFILE, CPGDFILE, TLUOUT0
+USE MODD_LUNIT_n,        ONLY : TLUOUT
 !
-USE MODE_FM
+USE MODE_FM,     ONLY: IO_FILE_OPEN_ll
 USE MODE_FMREAD
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST,IO_FILE_FIND_BYNAME
@@ -93,6 +94,7 @@ INTEGER           :: IJMAX          ! number of points in Y direction
 !
 !
 INTEGER           :: ILU            ! 1D physical dimension of XCOVER
+INTEGER           :: ILUOUT
 REAL, DIMENSION(:),   ALLOCATABLE :: ZFULL  ! total cover
 INTEGER           :: IJPHEXT
 !-------------------------------------------------------------------------------
@@ -105,19 +107,18 @@ INTEGER           :: IJPHEXT
 !
 SELECT CASE(CPROGRAM)
   CASE('MESONH','SPAWN ')
-    CALL GET_MODEL_NUMBER_ll  (IMI)
-    WRITE(COUT,FMT='(A14,I1,A13)') 'OUTPUT_LISTING',IMI,'            '
+    TOUT => TLUOUT
   CASE DEFAULT
-    COUT = CLUOUT0
+    TOUT => TLUOUT0
 END SELECT
 !
-CALL FMLOOK_ll(COUT,COUT,NLUOUT,IRESP)
+ILUOUT = TOUT%NLU
 !
 !
 !*       2.    initialization of surface file
 !
 IF (LEN_TRIM(CACTION)>0) THEN
-  WRITE(NLUOUT,*) 'file ',HFILE,' cannot be opened because another MESONH file is in use'
+  WRITE(ILUOUT,*) 'file ',HFILE,' cannot be opened because another MESONH file is in use'
 END IF
 !
 IF (HFILE/=COUTFMFILE .AND. HFILE/=CPGDFILE) THEN
@@ -133,7 +134,6 @@ ELSE
   CALL IO_FILE_FIND_BYNAME(TRIM(HFILE),TPINFILE,IRESP)
 END IF
 !
-CFILE    = HFILE
 COUTFILE = HFILE
 !
 !
@@ -145,9 +145,9 @@ CALL MNH_SURF_GRID_IO_INIT(IIMAX,IJMAX)
 IJPHEXT= 1
 CALL IO_READ_FIELD(TPINFILE,'JPHEXT',IJPHEXT)
 IF ( IJPHEXT .NE. JPHEXT ) THEN
-   WRITE(NLUOUT,FMT=*) ' MNHOPEN_AUX_IO : JPHEXT in PRE_PGD1.nam/NAM_CONF_PGD ( or default value )&
+   WRITE(ILUOUT,FMT=*) ' MNHOPEN_AUX_IO : JPHEXT in PRE_PGD1.nam/NAM_CONF_PGD ( or default value )&
       & JPHEXT=',JPHEXT
-   WRITE(NLUOUT,FMT=*) ' different from PGD files=',HFILE ,' value JPHEXT=',IJPHEXT
+   WRITE(ILUOUT,FMT=*) ' different from PGD files=',HFILE ,' value JPHEXT=',IJPHEXT
    CALL PRINT_MSG(NVERB_FATAL,'IO','MNHOPEN_AUX_IO_SURF','')
 END IF
 !
@@ -171,7 +171,7 @@ CMASK=HMASK
   CALL GET_1D_MASK(ILU,ILU,ZFULL,NMASK_ALL)
   DEALLOCATE(ZFULL)
 !ELSE
-!  WRITE(NLUOUT,*) 'mask "',HMASK,'" for reading not supported for auxilliary MESONH file'
+!  WRITE(ILUOUT,*) 'mask "',HMASK,'" for reading not supported for auxilliary MESONH file'
 !END IF
 !
 !

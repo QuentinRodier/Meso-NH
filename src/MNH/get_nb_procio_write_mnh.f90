@@ -36,11 +36,6 @@
 !!
 !-------------------------------------------------------------------------------
 !
-USE MODD_IO_ll,            ONLY : TFILEDATA
-USE MODD_IO_SURF_MNH,      ONLY : COUT, COUTFILE
-!
-USE MODE_FM,               ONLY : FMLOOK_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
 !
 IMPLICIT NONE
 !
@@ -54,28 +49,9 @@ INTEGER, INTENT(OUT) :: KRESP      ! return-code
 !
 !*      0.2   Declarations of local variables
 !
+!NONE
 !----------------------------------------------------------------
-INTEGER                 :: IRESP
-INTEGER                 :: ILUPRI
-TYPE(TFILEDATA),POINTER :: TZFILE
-!
-!*      1. get the number of processes used for IO
-!
-IRESP = 0
-!
-TZFILE => NULL()
-CALL IO_FILE_FIND_BYNAME(TRIM(COUTFILE),TZFILE,IRESP)
-IF (IRESP==0) THEN
-  KNB_PROCIO = 2
-ELSE
-  IRESP = -61
-END IF
-!----------------------------------------------------------------
-IF (IRESP.NE.0) THEN
-  CALL FMLOOK_ll(COUT,COUT,ILUPRI,IRESP)
-  WRITE (ILUPRI,*) ' exit from GET_NB_PROCIO_WRITE_MNH with RESP:',IRESP
-  WRITE (ILUPRI,*) '   | COUTFILE = ',COUTFILE
-END IF
-KRESP = IRESP
+KNB_PROCIO = 2
+KRESP = 0
 !
   END SUBROUTINE GET_NB_PROCIO_WRITE_MNH

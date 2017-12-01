@@ -59,8 +59,8 @@ END MODULE MODI_MNHEND_IO_SURF_n
 USE MODE_ll
 USE MODE_FM
 USE MODE_IO_ll
-
-USE MODD_IO_SURF_MNH, ONLY : CACTION, CFILE, TPINFILE, COUTFILE, NMASK, NMASK_ALL
+!
+USE MODD_IO_SURF_MNH, ONLY : CACTION, TPINFILE, COUTFILE, NMASK, NMASK_ALL
 !
 IMPLICIT NONE
 !
@@ -78,7 +78,6 @@ INTEGER           :: IRESP          ! return-code if a problem appears
 !
 CACTION='     '
 !
-CFILE    = '                           '
 COUTFILE = '                           '
 TPINFILE => NULL()
 !
