@@ -43,9 +43,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_TIME
-USE MODE_FM
-USE MODE_IO_ll
 !
 IMPLICIT NONE
 !-------------------------------------------------------------------------------
@@ -57,9 +56,9 @@ CONTAINS
 !*       1.   ROUTINE SM_PRINT_TIME
 !             ---------------------
 !-------------------------------------------------------------------------------
-!     #################################################
-      SUBROUTINE SM_PRINT_TIME(TPDATETIME,HLUOUT,HTITLE)
-!     ################################################
+!     #####################################################
+      SUBROUTINE SM_PRINT_TIME(TPDATETIME,TPOUTFILE,HTITLE)
+!     #####################################################
 !
 !!****  *SM_PRINT_TIME * - routine to print a variable of type DATE_TIME
 !!
@@ -79,8 +78,6 @@ CONTAINS
 !!   
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK : to retrieve a logical unit number for a file
-!!      FMATTR : to associate  a logical unit number to  a file name 
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -108,8 +105,8 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-TYPE (DATE_TIME),  INTENT(IN)           :: TPDATETIME   ! Date and time variable
-CHARACTER (LEN=*), INTENT(IN)           :: HLUOUT      ! Name of output listing
+TYPE(DATE_TIME),   INTENT(IN)           :: TPDATETIME  ! Date and time variable
+TYPE(TFILEDATA),   INTENT(IN)           :: TPOUTFILE   ! Output listing file
 CHARACTER (LEN=*), INTENT(IN), OPTIONAL :: HTITLE      ! Title for Date and time
                                                        ! variable 
 !
@@ -118,7 +115,7 @@ CHARACTER (LEN=*), INTENT(IN), OPTIONAL :: HTITLE      ! Title for Date and time
 !
 INTEGER :: IHOUR,IMINUTE
 REAL    :: ZSECOND,ZREMAIN
-INTEGER :: ILUOUT,IRESP
+INTEGER :: ILUOUT
 !-------------------------------------------------------------------------------
 !
 !*       1.    CONVERT TIME IN HOURS,MINUTES AND SECONDS :
@@ -134,7 +131,7 @@ ZSECOND = MOD(ZREMAIN,60.)
 !*       2.    PRINT ON OUTPUT-LISTING
 !              -----------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TPOUTFILE%NLU
 !
 IF (PRESENT(HTITLE)) THEN
   IF ((TPDATETIME%TDATE%YEAR < 0).OR.(TPDATETIME%TDATE%MONTH < 0).OR.    &

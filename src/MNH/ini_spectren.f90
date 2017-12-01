@@ -707,7 +707,7 @@ CALL INI_BIKHARDT_n (NDXRATIO_ALL(KMI),NDYRATIO_ALL(KMI),KMI)
 !*       6.    INITIALIZE GRIDS AND METRIC COEFFICIENTS
 !              ----------------------------------------
 !
-CALL SET_GRID(KMI,TPINIFILE,HLUOUT,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,        &
+CALL SET_GRID(KMI,TPINIFILE,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,               &
               XBMX1,XBMX2,XBMX3,XBMX4,XBMY1,XBMY2,XBMY3,XBMY4,           &
               XBFX1,XBFX2,XBFX3,XBFX4,XBFY1,XBFY2,XBFY3,XBFY4,           &
               NXOR_ALL(KMI),NYOR_ALL(KMI),NXEND_ALL(KMI),NYEND_ALL(KMI), &
@@ -795,7 +795,7 @@ END IF
 IF ((KMI==1).AND.(.NOT. LSTEADYLS)) THEN
   IF (LSPECTRE_LSU.OR.LSPECTRE_LSV.OR.LSPECTRE_LSW.OR. &
       LSPECTRE_LSRV.OR.LSPECTRE_LSTH) THEN 
-    CALL INI_CPL(HLUOUT,NSTOP,XTSTEP,LSTEADYLS,CCONF,                         &
+    CALL INI_CPL(NSTOP,XTSTEP,LSTEADYLS,CCONF,                                &
                CGETTKET,                                                      &
                CGETRVT,CGETRCT,CGETRRT,CGETRIT,                               &
                CGETRST,CGETRGT,CGETRHT,CGETSVT,LCH_INIT_FIELD,                &

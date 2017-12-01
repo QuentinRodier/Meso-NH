@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE INI_CPL(HLUOUT,KSTOP,PTSTEP,OSTEADY_DMASS,HCONF,            &
+      SUBROUTINE INI_CPL(KSTOP,PTSTEP,OSTEADY_DMASS,HCONF,                   &
             HGETTKEM,                                                        &
             HGETRVM,HGETRCM,HGETRRM,HGETRIM,                                 &
             HGETRSM,HGETRGM,HGETRHM,HGETSVM,OCH_INIT_FIELD,                  &
@@ -29,7 +29,6 @@ INTERFACE
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,            &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS             )
 !
-CHARACTER(LEN=*), INTENT(IN)       :: HLUOUT      ! Name of the output-listing
 INTEGER,          INTENT(IN)       :: KSTOP       ! Number of time steps for
                                                   ! current segment
 REAL,             INTENT(IN)       :: PTSTEP      ! Time step
@@ -92,7 +91,7 @@ END MODULE MODI_INI_CPL
 !
 !
 !     #####################################################################
-      SUBROUTINE INI_CPL(HLUOUT,KSTOP,PTSTEP,OSTEADY_DMASS,HCONF,            &
+      SUBROUTINE INI_CPL(KSTOP,PTSTEP,OSTEADY_DMASS,HCONF,                   &
             HGETTKEM,                                                        &
             HGETRVM,HGETRCM,HGETRRM,HGETRIM,                                 &
             HGETRSM,HGETRGM,HGETRHM,HGETSVM,OCH_INIT_FIELD,                  &
@@ -231,6 +230,7 @@ USE MODD_TIME_n
 ! USE MODD_FOREFIRE_n
 ! #endif
 !
+USE MODE_FM, ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
 USE MODE_FMREAD
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
@@ -248,7 +248,6 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER(LEN=*), INTENT(IN)       :: HLUOUT      ! Name of the output-listing
 INTEGER,          INTENT(IN)       :: KSTOP       ! Number of time steps for
                                                   ! current segment
 REAL,             INTENT(IN)       :: PTSTEP      ! Time step
@@ -306,7 +305,6 @@ REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRS  ,PLBYSVS  ! in x and y-d
 !*       0.2   declarations of local variables
 !
 INTEGER                :: ILUOUT                     !  Logical unit number
-                                                     ! associated with HLUOUT 
 INTEGER                :: IRESP
 CHARACTER (LEN=40)     :: YTITLE                     !  Title for date print 
 INTEGER                :: JCI                        !  Loop index on number of
@@ -372,9 +370,9 @@ DO JCI=1,NCPL_NBR
                & CORRESPONDING TO THE BEGINNING OF THE SEGMENT. IT WILL &
                & NOT BE TAKEN INTO ACCOUNT.'
     YTITLE='CURRENT DATE AND TIME IN THE INITIAL FILE'
-    CALL SM_PRINT_TIME(TDTCUR,HLUOUT,YTITLE)         
+    CALL SM_PRINT_TIME(TDTCUR,TLUOUT,YTITLE)
     YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-    CALL SM_PRINT_TIME(TDTCPL(JCI),HLUOUT,YTITLE)     
+    CALL SM_PRINT_TIME(TDTCPL(JCI),TLUOUT,YTITLE)
     GSKIP(JCI)=.TRUE.      ! flag to skip after this coupling file
   ELSE
     NCPL_TIMES(JCI,1) = NINT( ZDIST / PTSTEP ) + 2
@@ -392,10 +390,10 @@ DO JCI=1,NCPL_NBR
       WRITE(ILUOUT,*) 'YOU MUST SPECIFY THE COUPLING FILES IN A CHRONOLOGICAL &
                        & ORDER'
       YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-      CALL SM_PRINT_TIME(TDTCPL(JCI),HLUOUT,YTITLE)
+      CALL SM_PRINT_TIME(TDTCPL(JCI),TLUOUT,YTITLE)
       WRITE(YCI,'(I2.0)') JCI-1        
       YTITLE='CURRENT DATE AND TIME OF THE FILE'//YCI
-      CALL SM_PRINT_TIME(TDTCPL(JCI-1),HLUOUT,YTITLE)
+      CALL SM_PRINT_TIME(TDTCPL(JCI-1),TLUOUT,YTITLE)
       GEND=.TRUE.           ! error flag set to true   
     END IF
   !   
@@ -431,9 +429,9 @@ IF (ICPLEND==NCPL_NBR .AND. NCPL_TIMES(NCPL_NBR,1) < KSTOP) THEN
   WRITE(ILUOUT,*) 'PLEASE, REFER TO THE USER GUIDE TO OBTAIN MORE INFORMATIONS'
   WRITE(ILUOUT,*) 'ON THE TEMPORAL GRID.'
   YTITLE='CURRENT DATE AND TIME OF THE LAST FILE'
-  CALL SM_PRINT_TIME(TDTCPL(NCPL_NBR),HLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TDTCPL(NCPL_NBR),TLUOUT,YTITLE)
   YTITLE='DATE AND TIME OF THE BEGINNING OF THE SEGMENT YOU WANT TO BE PERFORMED'
-  CALL SM_PRINT_TIME(TDTCUR,HLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TDTCUR,TLUOUT,YTITLE)
   WRITE(ILUOUT,*) 'XSEGLEN = ', XSEGLEN 
 !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_CPL','')

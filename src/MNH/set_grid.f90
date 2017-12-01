@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_GRID(KMI,TPINIFILE,HLUOUT,                               &
+      SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
                           KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
                           PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
                           PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
@@ -33,8 +33,6 @@ USE MODD_IO_ll, ONLY: TFILEDATA,TOUTBAK
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
                                                  ! for sub-domain arrays
 INTEGER,                INTENT(IN)  :: KJU       ! Upper dimension in y direction
@@ -105,7 +103,7 @@ END MODULE MODI_SET_GRID
 !
 !
 !     #########################################################################
-      SUBROUTINE SET_GRID(KMI,TPINIFILE,HLUOUT,                               &
+      SUBROUTINE SET_GRID(KMI,TPINIFILE,                                      &
                           KIU,KJU,KKU,KIMAX_ll,KJMAX_ll,                      &
                           PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,    &
                           PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,    &
@@ -264,8 +262,6 @@ IMPLICIT NONE
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE !Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 INTEGER,                INTENT(IN)  :: KIU       ! Upper dimension in x direction
                                                  ! for sub-domain arrays
 INTEGER,                INTENT(IN)  :: KJU       ! Upper dimension in y direction
@@ -507,16 +503,16 @@ IF  (NVERB >= 10) THEN
   WRITE(ILUOUT,FMT=*) PZS(1,1),PZS(IIUP/2,IJUP/2),PZS(IIUP,IJUP)
 !
   YTITLE='CURRENT DATE AND TIME'
-  CALL SM_PRINT_TIME(TPDTCUR,HLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TPDTCUR,TLUOUT,YTITLE)
 END IF
 IF (NVERB >= 5) THEN
   YTITLE='DATE AND TIME OF EXPERIMENT BEGINNING'
-  CALL SM_PRINT_TIME(TDTEXP,HLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TDTEXP,TLUOUT,YTITLE)
   YTITLE='DATE AND TIME OF MODEL BEGINNING'
-  CALL SM_PRINT_TIME(TPDTMOD,HLUOUT,YTITLE)
+  CALL SM_PRINT_TIME(TPDTMOD,TLUOUT,YTITLE)
 END IF
 YTITLE='DATE AND TIME OF SEGMENT BEGINNING'
-CALL SM_PRINT_TIME(TDTSEG,HLUOUT,YTITLE)
+CALL SM_PRINT_TIME(TDTSEG,TLUOUT,YTITLE)
 !
 !-------------------------------------------------------------------------------
 !

@@ -133,6 +133,9 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !
 !*      0. DECLARATIONS
 !------------
+!
+USE MODE_FM,    ONLY: IO_FILE_CLOSE_ll
+USE MODE_IO_ll, ONLY: UPCASE
 USE MODE_MSG
 USE MODE_TIME
 USE MODE_THERMO
@@ -1388,13 +1391,13 @@ CALL ADD_FORECAST_TO_DATE(TPTCUR%TDATE%YEAR, &
                           TPTCUR%TDATE%DAY,  &
                           TPTCUR%TIME        )
 IF (HFILE(1:3)=='ATM') THEN
-  CALL SM_PRINT_TIME(TPTCUR,CLUOUT0,'MESONH current date')
+  CALL SM_PRINT_TIME(TPTCUR,TLUOUT0,'MESONH current date')
   TDTCUR = TPTCUR
   TDTMOD = TPTCUR
   TDTSEG = TPTCUR
   TDTEXP = TPTCUR
 ELSE IF (HFILE=='CHEM') THEN
-  CALL SM_PRINT_TIME(TPTCUR,CLUOUT0,'current date in MesoNH format')
+  CALL SM_PRINT_TIME(TPTCUR,TLUOUT0,'current date in MesoNH format')
 ENDIF
 !
 !-------------------------------------------------------------------------------
