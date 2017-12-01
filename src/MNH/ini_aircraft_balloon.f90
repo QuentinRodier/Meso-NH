@@ -14,7 +14,7 @@ MODULE MODI_INI_AIRCRAFT_BALLOON
 !
 INTERFACE
 !
-      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,HLUOUT,             &
+      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
                                       PTSTEP, TPDTSEG, PSEGLEN,     &
                                       KRR, KSV, KKU, OUSETKE,       &
                                       PLATOR, PLONOR                )
@@ -23,7 +23,6 @@ USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_TYPE_DATE
 !
 TYPE(TFILEDATA),    INTENT(IN) :: TPINIFILE !Initial file
-CHARACTER(LEN=*),   INTENT(IN) :: HLUOUT  ! output listing
 REAL,               INTENT(IN) :: PTSTEP  ! time step
 TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
@@ -43,7 +42,7 @@ END INTERFACE
 END MODULE MODI_INI_AIRCRAFT_BALLOON
 !
 !     ###############################################################
-      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,HLUOUT,             &
+      SUBROUTINE INI_AIRCRAFT_BALLOON(TPINIFILE,                    &
                                       PTSTEP, TPDTSEG, PSEGLEN,     &
                                       KRR, KSV, KKU, OUSETKE,       &
                                       PLATOR, PLONOR                )
@@ -90,11 +89,12 @@ USE MODD_CONF
 USE MODD_DIAG_FLAG
 USE MODD_DYN_n
 USE MODD_GRID
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_IO_ll,   ONLY : TFILEDATA
+USE MODD_LUNIT_n, ONLY : TLUOUT
 USE MODD_PARAM_n, ONLY : CCLOUD
 USE MODD_PARAMETERS
 !
-USE MODE_FIELD, ONLY : TFIELDDATA, TYPEREAL
+USE MODE_FIELD,   ONLY : TFIELDDATA, TYPEREAL
 USE MODE_GRIDPROJ
 USE MODE_IO_ll
 USE MODE_ll
@@ -109,7 +109,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 TYPE(TFILEDATA),    INTENT(IN) :: TPINIFILE !Initial file
-CHARACTER(LEN=*),   INTENT(IN) :: HLUOUT  ! output listing
 REAL,               INTENT(IN) :: PTSTEP  ! time step
 TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
@@ -134,7 +133,7 @@ TYPE(TFIELDDATA) :: TZFIELD
 !----------------------------------------------------------------------------
 !
 IMI=GET_CURRENT_MODEL_INDEX()
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !----------------------------------------------------------------------------
 !
 !*      1.   Default values

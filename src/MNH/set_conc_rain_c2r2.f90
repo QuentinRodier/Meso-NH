@@ -14,9 +14,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_CONC_RAIN_C2R2 (HLUOUT,HGETCLOUD,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_RAIN_C2R2 (HGETCLOUD,PRHODREF,PRT,PSVT)
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
@@ -31,9 +30,9 @@ END INTERFACE
 !
 END MODULE MODI_SET_CONC_RAIN_C2R2
 !
-!     ###########################################################################
-      SUBROUTINE SET_CONC_RAIN_C2R2 (HLUOUT,HGETCLOUD,PRHODREF,PRT,PSVT)
-!     ###########################################################################
+!     ###########################################################
+      SUBROUTINE SET_CONC_RAIN_C2R2 (HGETCLOUD,PRHODREF,PRT,PSVT)
+!     ###########################################################
 !
 !!****  *SET_CONC_RAIN_C2R2 * - initialize droplet and raindrop
 !!                   concentration for a RESTArt simulation of the C2R2 scheme
@@ -90,17 +89,15 @@ END MODULE MODI_SET_CONC_RAIN_C2R2
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN
+USE MODD_CONF,                 ONLY : NVERB
+USE MODD_LUNIT_n,              ONLY : TLUOUT
+USE MODD_RAIN_C2R2_DESCR,      ONLY : XRTMIN, XCTMIN
 USE MODD_RAIN_C2R2_KHKO_PARAM, ONLY : XCONCC_INI, XCONCR_PARAM_INI
-USE MODD_CONF,            ONLY : NVERB
-!
-USE MODE_FM
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
@@ -123,7 +120,7 @@ REAL       :: ZCONCC, ZCONCR
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    INITIALIZATION
 !              --------------

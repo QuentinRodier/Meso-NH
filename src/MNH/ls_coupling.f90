@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE LS_COUPLING (HLUOUT,PTSTEP, OSTEADY_DMASS, HCONF,           &
+      SUBROUTINE LS_COUPLING (PTSTEP, OSTEADY_DMASS, HCONF,                  &
             HGETTKEM,                                                        &
             HGETRVM,HGETRCM,HGETRRM,HGETRIM,                                 &
             HGETRSM,HGETRGM,HGETRHM,HGETSVM,OCH_INIT_FIELD,KSV,              &
@@ -29,7 +29,6 @@ INTERFACE
             PLBXUS,PLBXVS,PLBXWS,PLBXTHS,PLBXTKES,PLBXRS,PLBXSVS,            &
             PLBYUS,PLBYVS,PLBYWS,PLBYTHS,PLBYTKES,PLBYRS,PLBYSVS             )
 !
-CHARACTER(LEN=*), INTENT(IN)       :: HLUOUT      ! Name of the output-listing
 REAL,             INTENT(IN)       :: PTSTEP      ! Time step
 LOGICAL,          INTENT(IN)       :: OSTEADY_DMASS ! Md evolution logical switch
 !
@@ -93,7 +92,7 @@ END MODULE MODI_LS_COUPLING
 !
 !
 !     ######################################################################
-      SUBROUTINE LS_COUPLING (HLUOUT,PTSTEP, OSTEADY_DMASS, HCONF,           &
+      SUBROUTINE LS_COUPLING (PTSTEP, OSTEADY_DMASS, HCONF,                  &
             HGETTKEM,                                                        &
             HGETRVM,HGETRCM,HGETRRM,HGETRIM,                                 &
             HGETRSM,HGETRGM,HGETRHM,HGETSVM,OCH_INIT_FIELD,                  &
@@ -206,7 +205,6 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER(LEN=*), INTENT(IN)       :: HLUOUT      ! Name of the output-listing
 REAL,             INTENT(IN)       :: PTSTEP      ! Time step
 LOGICAL,          INTENT(IN)       :: OSTEADY_DMASS ! Md evolution logical switch
 CHARACTER(LEN=*), INTENT(IN) :: HCONF  ! configuration var. linked to FMfile
@@ -263,7 +261,7 @@ REAL, DIMENSION(:,:,:,:),        INTENT(OUT) :: PLBYRS  ,PLBYSVS  ! in x and y-d
 !*       0.2   declarations of local variables
 !
 INTEGER                :: ILUOUT                     !  Logical unit number
-                                                     ! associated with HLUOUT 
+                                                     ! associated with TLUOUT 
 INTEGER                :: IRESP
 REAL                   :: ZLENG                      ! Interpolation length
 INTEGER                :: IIMAX,IJMAX,IKMAX       !  Dimensions  of the physical 
@@ -289,7 +287,7 @@ IKU=SIZE(PLSTHM,3)
 !
 IF ( (IIMAX/=KIMAX_ll) .OR. (IJMAX/=KJMAX_ll)                    &
                              .OR. (IKMAX/=(IKU-2*JPVEXT)) ) THEN
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT = TLUOUT%NLU
   WRITE(ILUOUT,FMT=9003)
   WRITE(ILUOUT,*) 'THE GRIDS ARE DIFFERENT IN THE INITIAL FILE :'
   WRITE(ILUOUT,*) KIMAX_ll,'*',KJMAX_ll,'*',IKU-2*JPVEXT
@@ -304,7 +302,7 @@ END IF
 GLSOURCE=.TRUE.
 ZLENG = (NCPL_TIMES(NCPL_CUR,1) - NCPL_TIMES(NCPL_CUR-1,1)) * PTSTEP 
 !
-CALL INI_LS(TCPLFILE(NCPL_CUR)%TZFILE,HLUOUT,HGETRVM,GLSOURCE,PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS, &
+CALL INI_LS(TCPLFILE(NCPL_CUR)%TZFILE,HGETRVM,GLSOURCE,PLSUS,PLSVS,PLSWS,PLSTHS,PLSRVS, &
              PDRYMASSS,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,PDRYMASST,ZLENG,OSTEADY_DMASS)
 
 !
@@ -337,7 +335,7 @@ GLSOURCE=.TRUE.
 #endif
 !END IF
 !
-CALL INI_LB(TCPLFILE(NCPL_CUR)%TZFILE,HLUOUT,GLSOURCE,KSV,            &
+CALL INI_LB(TCPLFILE(NCPL_CUR)%TZFILE,GLSOURCE,KSV,                   &
      KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
      KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
      KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &

@@ -8,7 +8,7 @@
 !     ###########################
 !
 INTERFACE
-      SUBROUTINE ADVECTION_METSV (HLUOUT, TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,  &
+      SUBROUTINE ADVECTION_METSV (TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,          &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -23,8 +23,6 @@ USE MODD_TYPE_DATE, ONLY: DATE_TIME
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for syncronous
                                                       ! file opening
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
                                         HUVW_ADV_SCHEME
@@ -66,7 +64,7 @@ END INTERFACE
 !
 END MODULE MODI_ADVECTION_METSV
 !     ##########################################################################
-      SUBROUTINE ADVECTION_METSV (HLUOUT, TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,  &
+      SUBROUTINE ADVECTION_METSV (TPFILE, OCLOSE_OUT,HUVW_ADV_SCHEME,          &
                             HMET_ADV_SCHEME,HSV_ADV_SCHEME, HCLOUD, KSPLIT,    &
                             OSPLIT_CFL, PSPLIT_CFL, OCFL_WRIT,                 &
                             HLBCX, HLBCY, KRR, KSV, TPDTCUR, PTSTEP,           &
@@ -140,28 +138,28 @@ END MODULE MODI_ADVECTION_METSV
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_n
-USE MODD_CONF,  ONLY : LNEUTRAL,NHALO,L1D, L2D
-USE MODD_CTURB, ONLY : XTKEMIN
-USE MODD_CST 
 USE MODD_BUDGET
+USE MODD_CST 
+USE MODD_CTURB,     ONLY: XTKEMIN
+USE MODD_CONF,      ONLY: LNEUTRAL,NHALO,L1D, L2D
 USE MODD_IO_ll,     ONLY: TFILEDATA
+USE MODD_LUNIT_n,   ONLY: TLUOUT
+USE MODD_PARAM_n
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
-USE MODE_FM
+USE MODE_FIELD,     ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
 USE MODE_IO_ll
 USE MODE_ll
 USE MODE_MSG
 !
+USE MODI_ADV_BOUNDARIES
+USE MODI_BUDGET
 USE MODI_CONTRAV
+USE MODI_GET_HALO
 USE MODI_PPM_RHODJ
 USE MODI_PPM_MET
 USE MODI_PPM_SCALAR
-USE MODI_ADV_BOUNDARIES
-USE MODI_BUDGET
-USE MODI_GET_HALO
 !
 !-------------------------------------------------------------------------------
 !
@@ -172,8 +170,6 @@ IMPLICIT NONE
 LOGICAL,                INTENT(IN)   ::  OCLOSE_OUT   ! switch for synchronous
                                                       ! file opening
 TYPE(TFILEDATA),        INTENT(IN)   ::  TPFILE       ! Output file
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 CHARACTER(LEN=6),       INTENT(IN)   :: HMET_ADV_SCHEME, & ! Control of the 
                                         HSV_ADV_SCHEME, &  ! scheme applied 
                                         HUVW_ADV_SCHEME
@@ -268,6 +264,8 @@ TYPE(TFIELDDATA) :: TZFIELD
 !*       0.     INITIALIZATION                        
 !	        --------------
 !
+ILUOUT = TLUOUT%NLU
+!
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 !
 GTKE=(SIZE(PTKET)/=0)
@@ -354,8 +352,6 @@ IF (OCLOSE_OUT .AND. OCFL_WRIT .AND. (.NOT. L1D)) THEN
 END IF
 !
 !* prints in the output file the maximum CFL
-!
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 ZCFLU_MAX = MAX_ll(ZCFLU,IINFO_ll)
 ZCFLV_MAX = MAX_ll(ZCFLV,IINFO_ll)

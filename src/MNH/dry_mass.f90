@@ -12,9 +12,8 @@
       MODULE MODI_DRY_MASS
 !     ####################
 INTERFACE
-      SUBROUTINE DRY_MASS(HLUOUT,PTHV,PR,PJ,PPABS,PDRYMASS)
+      SUBROUTINE DRY_MASS(PTHV,PR,PJ,PPABS,PDRYMASS)
 !
-CHARACTER(LEN=*),         INTENT(IN)  :: HLUOUT    ! output listing
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHV      ! virtual potential temperature
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PR        ! water mixing ratio
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PJ        ! jacobian
@@ -26,7 +25,7 @@ END SUBROUTINE DRY_MASS
 END INTERFACE
 END MODULE MODI_DRY_MASS
 !     ######spl
-      SUBROUTINE DRY_MASS(HLUOUT,PTHV,PR,PJ,PPABS,PDRYMASS)
+      SUBROUTINE DRY_MASS(PTHV,PR,PJ,PPABS,PDRYMASS)
 !     ##########################################
 !
 !!****  *DRY_MASS* - computation of the total dry air mass 
@@ -117,18 +116,16 @@ END MODULE MODI_DRY_MASS
 !        ------------
 !
 USE MODD_CONF                   ! declaration modules
-USE MODD_LUNIT
+USE MODD_LUNIT_n, ONLY : TLUOUT
 USE MODD_CST
 USE MODD_PARAMETERS
 !
 USE MODE_ll
-USE MODE_FM
 !
 IMPLICIT NONE
 !
 !*       0.1   Declaration of arguments
 !              ------------------------
-CHARACTER(LEN=*),         INTENT(IN)  :: HLUOUT    ! output listing
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHV      ! virtual potential temperature
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PR        ! water mixing ratio
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PJ        ! jacobian
@@ -138,7 +135,6 @@ REAL,                   INTENT(OUT) :: PDRYMASS  ! dry mass
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER :: ILUOUT,IRESP
 INTEGER :: JRR
 REAL,   DIMENSION(SIZE(PJ,1),SIZE(PJ,2),SIZE(PJ,3)) :: ZRHOD, ZSUMR
 INTEGER :: IINFO_ll       ! return code of parallel routine
@@ -166,7 +162,6 @@ PDRYMASS=SUM3D_ll(PJ(:,:,:)*ZRHOD(:,:,:),IINFO_ll)
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-WRITE(ILUOUT,*) 'Routine DRYMASS completed'
+WRITE(TLUOUT%NLU,*) 'Routine DRYMASS completed'
 !
 END SUBROUTINE DRY_MASS

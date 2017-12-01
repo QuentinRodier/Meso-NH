@@ -14,14 +14,13 @@
 !
 INTERFACE
 !
-      SUBROUTINE ENDSTEP_BUDGET(TPDIAFILE,HLUOUT,KTCOUNT,              &
-                               TPDTCUR,TPDTMOD,PTSTEP,KSV            )
+      SUBROUTINE ENDSTEP_BUDGET(TPDIAFILE,KTCOUNT,       &
+                               TPDTCUR,TPDTMOD,PTSTEP,KSV)
 !
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_TYPE_DATE
 !
 TYPE(TFILEDATA),   INTENT(IN) :: TPDIAFILE  ! file to write
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT     ! name of output listing
 INTEGER,           INTENT(IN) :: KTCOUNT    ! temporal loop counter
 TYPE (DATE_TIME),  INTENT(IN) :: TPDTCUR    ! Current date and time
 TYPE (DATE_TIME),  INTENT(IN) :: TPDTMOD    ! Creation date and time
@@ -34,10 +33,10 @@ END INTERFACE
 !
 END MODULE MODI_ENDSTEP_BUDGET
 !
-!     ###############################################################
-      SUBROUTINE ENDSTEP_BUDGET(TPDIAFILE,HLUOUT,KTCOUNT,             &
-                               TPDTCUR,TPDTMOD,PTSTEP,KSV           )
-!     ###############################################################
+!     ####################################################
+      SUBROUTINE ENDSTEP_BUDGET(TPDIAFILE,KTCOUNT,       &
+                               TPDTCUR,TPDTMOD,PTSTEP,KSV)
+!     ####################################################
 !
 !!****  *ENDSTEP_BUDGET* - routine to call the routine write_budget 
 !!                           
@@ -118,7 +117,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments :
 !
 TYPE(TFILEDATA),   INTENT(IN) :: TPDIAFILE  ! file to write
-CHARACTER (LEN=*), INTENT(IN) :: HLUOUT     ! name of output listing
 INTEGER,           INTENT(IN) :: KTCOUNT    ! temporal loop counter
 TYPE (DATE_TIME),  INTENT(IN) :: TPDTCUR    ! Current date and time
 TYPE (DATE_TIME),  INTENT(IN) :: TPDTMOD    ! Creation date and time
@@ -138,7 +136,7 @@ SELECT CASE(CBUTYPE)
 !*	 1.1    storage of the budget fields 
 !
     IF( MODULO(KTCOUNT,NBUSTEP*NBUWRNB) == 0 ) THEN  
-      CALL WRITE_BUDGET(TPDIAFILE,HLUOUT,TPDTCUR,TPDTMOD,PTSTEP, KSV )
+      CALL WRITE_BUDGET(TPDIAFILE,TPDTCUR,TPDTMOD,PTSTEP, KSV )
 !
 !*	 1.2    resetting the budget arrays to 0.
 !
@@ -174,7 +172,7 @@ SELECT CASE(CBUTYPE)
 !
 !*	 2.1    storage of the budget fields
 ! 
-      CALL WRITE_BUDGET(TPDIAFILE,HLUOUT,TPDTCUR,TPDTMOD,PTSTEP, KSV)
+      CALL WRITE_BUDGET(TPDIAFILE,TPDTCUR,TPDTMOD,PTSTEP, KSV)
 !
 !*	 2.2    reset the budget fields to 0.
 !

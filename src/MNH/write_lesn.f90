@@ -75,10 +75,7 @@ USE MODD_NSV, ONLY : NSV
 USE MODD_PARAM_ICE, ONLY : LDEPOSC
 USE MODD_PARAM_C2R2, ONLY : LDEPOC
 !
-USE MODD_LUNIT_n
-!
 USE MODE_ll
-USE MODE_FM
 !
 USE MODE_LES_DIACHRO
 USE MODE_LES_SPEC_N
@@ -100,7 +97,6 @@ CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG ! flag to perform the averages
 !
 !*      0.2  declaration of local variables
 !
-INTEGER :: IRESP, ILUOUT
 INTEGER :: IMASK
 !
 INTEGER :: JSV       ! scalar loop counter
@@ -130,8 +126,6 @@ IF (HLES_AVG=='H' .AND. (CLES_NORM_TYPE=='NONE'                          &
 !            ---------------
 !
 IMI = GET_CURRENT_MODEL_INDEX()
-!
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 !
 !*      1.1  Normalization variables

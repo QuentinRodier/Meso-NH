@@ -73,7 +73,6 @@ END MODULE MODI_SPAWN_SURF
 !               ------------
 !
 USE MODD_LUNIT,        ONLY : CPGDFILE, COUTFMFILE
-USE MODD_LUNIT_n,      ONLY : CLUOUT
 USE MODD_PARAM_n,      ONLY : CSURF
 USE MODD_NESTING,      ONLY : CMY_NAME, CDAD_NAME
 USE MODD_CONF,         ONLY : NVERB
@@ -86,7 +85,6 @@ USE MODI_MNHPUT_ZS_n
 !
 USE MODE_ll
 USE MODE_FMWRIT
-USE MODE_FM
 USE MODE_IO_ll
  !JUAN REALZ
 USE MODE_MODELN_HANDLER
@@ -112,14 +110,8 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !*       0.1.3  Declarations of local variables :
 !
-INTEGER :: IRESP    ! Return codes in FM routines
-INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER :: IINFO_ll
 !  
-!-------------------------------------------------------------------------------
-!
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
-!
 !-------------------------------------------------------------------------------
 !
 !*       7.      Surface variables :

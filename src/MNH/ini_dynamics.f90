@@ -6,7 +6,7 @@
       MODULE MODI_INI_DYNAMICS
 !     ########################
 INTERFACE
-SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
+SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
                PDXHAT,PDYHAT,PZHAT,HLBCX,HLBCY,PTSTEP,                       &
                OVE_RELAX,OVE_RELAX_GRD,OHORELAX_UVWTH,OHORELAX_RV,           &
                OHORELAX_RC,OHORELAX_RR,OHORELAX_RI,OHORELAX_RS,OHORELAX_RG,  &
@@ -32,7 +32,6 @@ SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
 USE MODE_TYPE_ZDIFFU
 IMPLICIT NONE
 !
-CHARACTER(LEN=*),       INTENT(IN)        :: HLUOUT    ! name for output-listing
 REAL, DIMENSION(:,:),   INTENT(IN)        :: PLON,PLAT !Longitude and latitude
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PRHODJ    ! rho J
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PTHVREF   ! virtual potential 
@@ -176,7 +175,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_DYNAMICS
 !     ######################################################################
-SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
+SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
                PDXHAT,PDYHAT,PZHAT,HLBCX,HLBCY,PTSTEP,                       &
                OVE_RELAX,OVE_RELAX_GRD,OHORELAX_UVWTH,OHORELAX_RV,           &
                OHORELAX_RC,OHORELAX_RR,OHORELAX_RI,OHORELAX_RS,OHORELAX_RG,  &
@@ -284,14 +283,14 @@ SUBROUTINE INI_DYNAMICS(HLUOUT,PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,            &
 USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID
+USE MODD_LUNIT_n, ONLY: TLUOUT
 !
-USE MODI_TRID
-USE MODI_TRIDZ
 USE MODI_RELAXDEF
+! USE MODI_TRID
+USE MODI_TRIDZ
 USE MODI_ZDIFFUSETUP
-USE MODE_ll
-USE MODE_FM
 !
+USE MODE_ll
 USE MODE_TYPE_ZDIFFU
 !
 IMPLICIT NONE
@@ -300,7 +299,6 @@ IMPLICIT NONE
 !
 !  intent in arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)        :: HLUOUT    ! name for output-listing
 REAL, DIMENSION(:,:),   INTENT(IN)        :: PLON,PLAT !Longitude and latitude
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PRHODJ    ! rho J
 REAL, DIMENSION(:,:,:), INTENT(IN)        :: PTHVREF   ! virtual potential 
@@ -443,8 +441,7 @@ REAL, DIMENSION(SIZE(PRHODJ,1),SIZE(PRHODJ,2)) :: ZGAMMA ! Gamma =K(lambda-lambd
 REAL                                       :: ZMBETA ! -beta
 REAL                                       :: ZCDR   ! to convert degrees in
                                                      ! radians 
-INTEGER                                    :: ILUOUT,IRESP ! Logical unit number
-                                      !  for output_listing file, and return code
+INTEGER                                    :: ILUOUT ! Logical unit number for output_listing file
 INTEGER                                    :: IIU,IJU !  Upper bounds in x,y directions
 LOGICAL                                    :: GHORELAX
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
@@ -484,11 +481,11 @@ END IF
 !              ---------------------------------
 !
 IF (.NOT.L1D) THEN
-! CALL TRID(HLUOUT,HLBCX,HLBCY,                                           &
+! CALL TRID(HLBCX,HLBCY,                                                  &
 !           PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,PAF,                 &
 !           PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                            &
 !           PRHODJ,PTHVREF,PZZ,PBFY)
-  CALL TRIDZ(HLUOUT,HLBCX,HLBCY,                                          &
+  CALL TRIDZ(HLBCX,HLBCY,                                                 &
             PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,PAF,                 &
             PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                            &
             PRHODJ,PTHVREF,PZZ,PBFY,PBFB,                                 &
@@ -572,7 +569,7 @@ ENDIF
 !
 IF (NVERB >= 10) THEN
   CALL GET_DIM_EXT_ll ('B',IIU,IJU)
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT = TLUOUT%NLU
 !
   WRITE(ILUOUT,*) 'INI_DYNAMICS : Some PCORIOZ values'
   WRITE(ILUOUT,*) '(1,1)          (IIU/2,IJU/2)         (IIU,IJU)  '

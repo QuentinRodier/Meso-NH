@@ -13,12 +13,12 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_CSTN(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPEXPREFILE ! input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
@@ -43,7 +43,7 @@ END MODULE MODI_SET_CSTN
 !
 !
 !     ##################################################################################
-      SUBROUTINE SET_CSTN(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
+      SUBROUTINE SET_CSTN(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !     ##################################################################################
 !
 !!****  *SET_CSTN * - routine to initialize mass and wind fields from a Nv=cste 
@@ -172,32 +172,29 @@ END MODULE MODI_SET_CSTN
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST             ! declarative modules
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT_n
 USE MODD_CONF
+USE MODD_CST
 USE MODD_GRID_n
+USE MODD_IO_ll,      ONLY : TFILEDATA
+USE MODD_LUNIT_n,    ONLY: CLUOUT, TLUOUT
+USE MODD_PARAMETERS, ONLY: JPHEXT
 !
 USE MODE_FM
-USE MODE_THERMO          ! executive modules
-!
-USE MODI_PRESS_HEIGHT    ! interface modules
-USE MODI_SET_MASS
-USE MODI_VERT_COORD
-USE MODI_SHUMAN
-!
+USE MODE_THERMO
 USE MODE_ll
-USE MODD_PARAMETERS, ONLY : JPHEXT
-!
 USE MODE_MPPDB
 !
+USE MODI_PRESS_HEIGHT
+USE MODI_SET_MASS
+USE MODI_SHUMAN
+USE MODI_VERT_COORD
+!
 IMPLICIT NONE
-!  
 !  
 !*       0.1   Declarations of arguments :
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPEXPREFILE ! input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
@@ -272,8 +269,8 @@ LOGICAL         :: GPROFILE_IN_PROC   ! T : initialization profile is in current
 !                          CONSTANTS
 !	        ------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
-CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+ILUPRE = TPEXPREFILE%NLU
+ILUOUT = TLUOUT%NLU
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 CALL GET_OR_ll('B',IXOR_ll,IYOR_ll)
@@ -414,7 +411,7 @@ ZEXNGRDM= ( ZPGROUND / XP00) ** ZRDSCPD  &
 ZPGRDM = XP00 * ZEXNGRDM ** (1./ZRDSCPD)
 ZPM(:)  = PRESS_HEIGHT(ZZMASS_PROFILE(:),ZTHVM,ZPGRDM,ZTHVM(1),ZZMASS_PROFILE(1)) ! compute P
 ZTVM(:) = ZTHVM(:) * (ZPM(:) / XP00) ** ZRDSCPD                ! compute Tv
-ZMRM(:) = SM_PMR_HU(CLUOUT,ZPM(:),ZTVM(:),ZHUM(:), &
+ZMRM(:) = SM_PMR_HU(ZPM(:),ZTVM(:),ZHUM(:),      &
                               SPREAD(ZMRM(:),2,1))             ! compute vapor
                                                                ! mixing ratio  
 !-------------------------------------------------------------------------------

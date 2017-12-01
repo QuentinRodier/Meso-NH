@@ -59,8 +59,6 @@ END MODULE MODI_MEAN_PROF
 !!
 !!    function ZSECT   : to compute the mean of a 3D field at a constant 
 !!                       altitude
-!!    function FMLOOK  : to retrieve a logical unit number associated
-!!                       with a file 
 !!    Module MODI_ZSECT: contains interface for function ZSECT
 !!
 !!    IMPLICIT ARGUMENTS
@@ -94,12 +92,12 @@ END MODULE MODI_MEAN_PROF
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-USE MODI_ZSECT ! interface module
-USE MODD_CONF  ! declaration modules
-USE MODD_LUNIT
+USE MODD_CONF
 USE MODD_GRID_n
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
+!
+USE MODI_ZSECT
 !
 IMPLICIT NONE
 !
@@ -120,7 +118,6 @@ REAL,   DIMENSION(:,:,:), INTENT(OUT) :: PZ_FREE   ! discretization in x,y,z
 !*       0.2   Declaration of local variables
 !              ------------------------------
 !
-INTEGER :: ILUOUT0, IRESP
 INTEGER :: ILEVEL,IKB,IKE,ILB,ILE,JK
 REAL    :: ZMIN
 REAL, DIMENSION(SIZE(PF_FREE,3)) :: ZF_FREE
@@ -198,7 +195,6 @@ PF_FREE(:,:,:)=SPREAD(SPREAD(ZF_FREE(:),1,SIZE(PF_FREE,1)),2,SIZE(PF_FREE,2))
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
-WRITE(ILUOUT0,*) 'Routine MEAN_PROF completed'
+WRITE(TLUOUT0%NLU,*) 'Routine MEAN_PROF completed'
 !
 END SUBROUTINE MEAN_PROF

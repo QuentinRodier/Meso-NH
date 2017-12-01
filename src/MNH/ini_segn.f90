@@ -357,7 +357,7 @@ END IF
 !
 YDESFM=TRIM(ADJUSTL(YINIFILE))//'.des'
 !
-CALL READ_DESFM_n(KMI,YDESFM,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
+CALL READ_DESFM_n(KMI,YDESFM,YCONF,GFLAT,GUSERV,GUSERC,                     &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
                 GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
                 GDEPOS_DST, GCHTRANS, GORILAM,                              &
@@ -447,7 +447,7 @@ END IF
 ! routine which read related informations in the EXSEG descriptor in order to 
 ! check coherence between both informations.
 !
-CALL READ_EXSEG_n(KMI,YEXSEG,HLUOUT,YCONF,GFLAT,GUSERV,GUSERC,              &
+CALL READ_EXSEG_n(KMI,YEXSEG,YCONF,GFLAT,GUSERV,GUSERC,                     &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &
                 GUSECHAQ,GUSECHIC,GCH_PH,                                   &
                 GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,GDEPOS_DST,GCHTRANS,  &

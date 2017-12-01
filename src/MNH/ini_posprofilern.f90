@@ -14,13 +14,12 @@ MODULE MODI_INI_POSPROFILER_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_POSPROFILER_n(HLUOUT,                          &
-                                      PTSTEP, TPDTSEG, PSEGLEN,     &
-                                      KRR, KSV, OUSETKE,            &
-                                      PLATOR, PLONOR                )
+      SUBROUTINE INI_POSPROFILER_n(PTSTEP, TPDTSEG, PSEGLEN, &
+                                   KRR, KSV, OUSETKE,        &
+                                   PLATOR, PLONOR            )
 !
 USE MODD_TYPE_DATE
-CHARACTER(LEN=*),   INTENT(IN) :: HLUOUT  ! output listing
+!
 REAL,               INTENT(IN) :: PTSTEP  ! time step
 TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
@@ -38,12 +37,11 @@ END INTERFACE
 !
 END MODULE MODI_INI_POSPROFILER_n
 !
-!     ###############################################################
-      SUBROUTINE INI_POSPROFILER_n(HLUOUT,                       &
-                                   PTSTEP, TPDTSEG, PSEGLEN,     &
-                                   KRR, KSV, OUSETKE,            &
-                                   PLATOR, PLONOR                )
-!     ###############################################################
+!     ########################################################
+      SUBROUTINE INI_POSPROFILER_n(PTSTEP, TPDTSEG, PSEGLEN, &
+                                   KRR, KSV, OUSETKE,        &
+                                   PLATOR, PLONOR            )
+!     ########################################################
 !
 !
 !!****  *INI_POSPROFILER_n* - 
@@ -78,17 +76,17 @@ END MODULE MODI_INI_POSPROFILER_n
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_CONF
+USE MODD_DYN_n
+USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_LUNIT_n,      ONLY: TLUOUT
 USE MODD_PARAMETERS
+USE MODD_PROFILER_n
+USE MODD_RADIATIONS_n, ONLY: NAER
 USE MODD_TYPE_PROFILER
 USE MODD_TYPE_DATE
-USE MODD_PROFILER_n
-USE MODD_GRID_n
-USE MODD_DYN_n
-USE MODD_CONF
-USE MODD_GRID
-USE MODD_RADIATIONS_n, ONLY: NAER
 !
-USE MODE_FM, ONLY : FMLOOK_ll
 USE MODE_GRIDPROJ
 USE MODE_IO_ll
 USE MODE_ll
@@ -102,7 +100,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-CHARACTER(LEN=*),   INTENT(IN) :: HLUOUT  ! output listing
 REAL,               INTENT(IN) :: PTSTEP  ! time step
 TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
@@ -118,11 +115,10 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
 INTEGER :: ISTORE   ! number of storage instants
 INTEGER :: ILUOUT   ! logical unit
-INTEGER :: IRESP    ! return code
 INTEGER :: IKU      !
 !
 !----------------------------------------------------------------------------
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !----------------------------------------------------------------------------
 !
 !*      1.   Default values

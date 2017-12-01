@@ -13,14 +13,13 @@
 !
 INTERFACE
 !
-      SUBROUTINE ELEC_TRID(HLUOUT,HLBCX,HLBCY,                          &
+      SUBROUTINE ELEC_TRID(HLBCX,HLBCY,                                 &
                       PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,         &
                       PAF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,            &
                       PRHODJ,PTHVREF,PZZ,PBFY,PEPOTFW_TOP               )
 !
 IMPLICIT NONE
 !
-CHARACTER (LEN=*),               INTENT(IN) :: HLUOUT   ! output listing name
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -71,7 +70,7 @@ END INTERFACE
 END MODULE MODI_ELEC_TRID
 !
 !     ###################################################################
-      SUBROUTINE ELEC_TRID(HLUOUT,HLBCX,HLBCY,                          &
+      SUBROUTINE ELEC_TRID(HLBCX,HLBCY,                                 &
                       PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,         &
                       PAF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,            &
                       PRHODJ,PTHVREF,PZZ,PBFY,PEPOTFW_TOP               )
@@ -185,11 +184,11 @@ END MODULE MODI_ELEC_TRID
 !              ------------
 USE MODD_CST
 USE MODD_CONF
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 !
 USE MODE_ll
 USE MODE_IO_ll
-USE MODE_FM
 USE MODE_MSG
 !
 !JUAN
@@ -203,7 +202,6 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER (LEN=*),               INTENT(IN) :: HLUOUT   ! output listing name
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -302,7 +300,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:)              :: ZRHOM_2D   , ZDZM_2D
 !*       1.1  retrieve a logical unit number
 !             ------------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       1.2  compute loop bounds
 !             -------------------

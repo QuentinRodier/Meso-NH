@@ -90,15 +90,13 @@ END MODULE MODI_RADAR_C2R2
 !
 USE MODD_CONF
 USE MODD_CST
-USE MODD_REF
 USE MODD_PARAMETERS
-USE MODD_LUNIT
 USE MODD_PARAM_C2R2
 USE MODD_RAIN_C2R2_KHKO_PARAM
 USE MODD_RAIN_C2R2_DESCR
+USE MODD_REF
 !
 USE MODI_GAMMA
-USE MODE_FM
 !
 IMPLICIT NONE
 !
@@ -147,11 +145,6 @@ REAL                                                          :: ZFRAC_WATER
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZWLBDR
 REAL, DIMENSION(:,:,:), ALLOCATABLE   :: ZWLBDC
 !
-INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
-INTEGER  :: IRESP   ! Return code of FM-routines
-LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
-                    ! listing
-!  
 !-------------------------------------------------------------------------------
 !
 !
@@ -170,8 +163,6 @@ LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
 !        2.     INTIALIZE OUTPUT LISTING AND OTHER ARRAYS
 !               -----------------------------------------
 !
-!
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 PRARE(:,:,:) = 0.0    ! radar reflectivity
 PVDOP(:,:,:) = 0.0    ! radar Doppler fall speed

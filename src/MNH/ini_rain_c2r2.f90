@@ -102,17 +102,15 @@ END MODULE MODI_INI_RAIN_C2R2
 !              ------------
 !
 USE MODD_CST
-USE MODD_REF
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAM_C2R2
+USE MODD_PARAMETERS
 USE MODD_RAIN_C2R2_DESCR
 USE MODD_RAIN_C2R2_KHKO_PARAM
-USE MODD_PARAMETERS
-USE MODD_LUNIT
+USE MODD_REF
 !
-USE MODI_HYPGEO
 USE MODI_GAMMA
-!
-USE MODE_FM
+USE MODI_HYPGEO
 !
 IMPLICIT NONE
 !
@@ -153,7 +151,6 @@ REAL :: ZSMIN, ZSMAX          ! Minimal and maximal supersaturation used to
 !
 !
 INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
-INTEGER  :: IRESP   ! Return code of FM-routines
 LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
                     ! listing
 !  
@@ -173,7 +170,7 @@ LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
 !        1.     INTIALIZE OUTPUT LISTING AND COMPUTE KSPLITR FOR EACH MODEL
 !               -----------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !*       1.1    Set the raindrop maximum fall velocity
 !
@@ -579,7 +576,6 @@ XCRER = 1.0/ (ZGAMR(6) * XAR**(2.0/3.0))
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
-  CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
   WRITE(UNIT=ILUOUT0,FMT='(" Summary of the cloud particule characteristics")')
   WRITE(UNIT=ILUOUT0,FMT='("             CLOUD")')
   WRITE(UNIT=ILUOUT0,FMT='("                   masse: A=",E13.6," B=",E13.6)') &

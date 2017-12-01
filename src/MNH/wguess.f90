@@ -62,8 +62,6 @@ END MODULE MODI_WGUESS
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!    
 !!    DXF,DYF,MXF,MYF,MZM             : Shuman operators
 !!    Module MODI_SHUMAN              : interface for Shuman operators
 !!
@@ -72,8 +70,6 @@ END MODULE MODI_WGUESS
 !!
 !!      Module MODD_CONF      : contains configuration variables for all models.
 !!         NVERB   : verbosity level for output-listing
-!!      Module MODD_LUNIT     : contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
 !!      Module MODD_PARAMETERS
 !!         JPVEXT
 !!
@@ -96,11 +92,8 @@ END MODULE MODI_WGUESS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-!
 USE MODI_SHUMAN ! interface module
 USE MODD_CONF   ! declaration modules
-USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
 IMPLICIT NONE
@@ -119,7 +112,6 @@ REAL,   DIMENSION(:,:,:), INTENT(OUT) :: PRHODJW ! rhodJw on the MESO-NH grid
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER :: ILUOUT0, IRESP
 INTEGER :: IIU,IJU
 INTEGER :: IKB,IKU
 INTEGER :: JK
@@ -177,7 +169,5 @@ END DO
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
-WRITE(ILUOUT0,*) 'Routine WGUESS completed'
 !
 END SUBROUTINE WGUESS

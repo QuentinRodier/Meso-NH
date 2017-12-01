@@ -257,20 +257,17 @@ END MODULE MODI_SET_GEOSBAL
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-USE MODE_GATHER_ll
-USE MODE_ll
-!
-USE MODD_PARAMETERS  ! declarative modules
 USE MODD_CONF
 USE MODD_CST 
-USE MODD_LUNIT_n
-USE MODD_CONF
-USE MODD_GRID
-USE MODD_GRID_n
 USE MODD_DIM_n
 USE MODD_FIELD_n
+USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_PARAMETERS
 USE MODD_REF
+!
+USE MODE_GATHER_ll
+USE MODE_ll
 !
 USE MODI_SHUMAN
 !
@@ -304,9 +301,6 @@ REAL, DIMENSION(SIZE(XZHAT))    :: ZZHATM  ! Height of mass model grid levels
 
 INTEGER             :: IITRREF  !  iteration number for the determination of
                                  !  the thetav field
-INTEGER             :: IRESP     !  FM return code
-INTEGER             :: ILUOUT    ! Logical unit number for
-                                             ! output-listing
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZGAMMA,ZGAMMA_ll ! K(lambda-lambda0) -beta
 REAL                            :: ZGAMMALOC
 REAL, DIMENSION(SIZE(XXHAT),SIZE(XYHAT),SIZE(XZHAT)) :: ZTHV3D ! Potential
@@ -343,8 +337,6 @@ REAL, DIMENSION(:,:), ALLOCATABLE        ::ZTHVREF2D
 !*       1.     PROLOGUE : RETRIEVE LOGICAL UNIT NUMBER, INITIALIZE SOME
 !                          CONSTANTS
 !               ------------------------------------------------------------
-!
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 ZRVSRD  = XRV / XRD
 ZRADSDG = XPI/180.

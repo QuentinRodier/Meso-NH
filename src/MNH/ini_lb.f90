@@ -8,7 +8,7 @@
 !
 INTERFACE 
 !
-SUBROUTINE INI_LB(TPINIFILE,HLUOUT,OLSOURCE,KSV,                            &
+SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                                   &
      KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,                     &
      KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                         &
      KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,                 &
@@ -23,7 +23,6 @@ SUBROUTINE INI_LB(TPINIFILE,HLUOUT,OLSOURCE,KSV,                            &
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),       INTENT(IN)   :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),     INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 LOGICAL,               INTENT(IN)   :: OLSOURCE  ! switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
 INTEGER,               INTENT(IN)   :: KSV       ! number of passive variables
@@ -66,7 +65,7 @@ END INTERFACE
 !
 END MODULE MODI_INI_LB
 !     ############################################################
-SUBROUTINE INI_LB(TPINIFILE,HLUOUT,OLSOURCE,KSV,                   &
+SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
      KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,            &
      KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                &
      KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,        &
@@ -136,30 +135,29 @@ SUBROUTINE INI_LB(TPINIFILE,HLUOUT,OLSOURCE,KSV,                   &
 !
 !*       0.    DECLARATIONS
 !
-
-USE MODD_NSV
-USE MODD_CONF
-USE MODD_CTURB
-USE MODD_DUST
-USE MODD_IO_ll,           ONLY: TFILEDATA
-USE MODD_SALT
 USE MODD_CH_AEROSOL
+USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
+USE MODD_CTURB
+USE MODD_CONF
+USE MODD_DUST
+USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
+USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
+USE MODD_IO_ll,           ONLY: TFILEDATA
+USE MODD_LG,              ONLY: CLGNAMES
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_NSV
+USE MODD_PARAMETERS,      ONLY: JPHEXT,NMNHNAMELGTMAX
 USE MODD_PARAM_LIMA
+USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
+USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
 USE MODD_PARAM_n
+USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
+USE MODD_SALT
 !
 USE MODE_FIELD,           ONLY: TFIELDDATA,TYPELOG,TYPEREAL
-USE MODE_FM
 USE MODE_FMREAD
 USE MODE_MSG
 !
-USE MODD_RAIN_C2R2_DESCR, ONLY: C2R2NAMES
-USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
-USE MODD_CH_M9_n,         ONLY: CNAMES, CICNAMES
-USE MODD_LG,              ONLY: CLGNAMES
-USE MODD_ELEC_DESCR,      ONLY: CELECNAMES
-USE MODD_PARAMETERS,      ONLY: JPHEXT,NMNHNAMELGTMAX
-USE MODD_PARAM_LIMA_WARM, ONLY: CLIMA_WARM_NAMES
-USE MODD_PARAM_LIMA_COLD, ONLY: CLIMA_COLD_NAMES
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
@@ -167,7 +165,6 @@ IMPLICIT NONE
 !
 !
 TYPE(TFILEDATA),       INTENT(IN)   :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),     INTENT(IN)   :: HLUOUT    ! name for output-listing of nested models
 LOGICAL,               INTENT(IN)   :: OLSOURCE  ! switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
 INTEGER,               INTENT(IN)   :: KSV       ! number of passive variables
@@ -221,7 +218,7 @@ INTEGER             :: JSV,JRR                    ! Loop index for MOIST AND
                                                   !  additional scalar variables 
 INTEGER             :: IRR                        !  counter for moist variables
 INTEGER             :: IRESP
-INTEGER                :: ILUOUT   !  Logical unit number associated with HLUOUT
+INTEGER             :: ILUOUT   !  Logical unit number associated with TLUOUT
 LOGICAL :: GHORELAX_UVWTH  ! switch for the horizontal relaxation for U,V,W,TH in the FM file 
 LOGICAL :: GHORELAX_TKE    ! switch for the horizontal relaxation for tke in the FM file
 LOGICAL :: GHORELAX_R, GHORELAX_SV ! switch for the horizontal relaxation 
@@ -248,7 +245,7 @@ ENDIF
 !*       1.    SOME INITIALIZATIONS
 !              --------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !
 !-------------------------------------------------------------------------------

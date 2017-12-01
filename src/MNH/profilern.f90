@@ -14,7 +14,7 @@ MODULE MODI_PROFILER_n
 !
 INTERFACE
 !
-      SUBROUTINE PROFILER_n(HLUOUT, PTSTEP,                       &
+      SUBROUTINE PROFILER_n(PTSTEP,                               &
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
@@ -22,7 +22,6 @@ INTERFACE
 !
 USE MODD_TYPE_DATE
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -54,7 +53,7 @@ END INTERFACE
 END MODULE MODI_PROFILER_n
 !
 !  ########################################################
-      SUBROUTINE PROFILER_n(HLUOUT, PTSTEP,                       &
+      SUBROUTINE PROFILER_n(PTSTEP,                               &
                             TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                             PXHAT, PYHAT, PZ,PRHODREF,            &
                             PU, PV, PW, PTH, PR, PSV, PTKE,       &
@@ -112,7 +111,6 @@ USE MODD_DIAG_IN_RUN
 USE MODD_CONF
 USE MODD_NSV
 !
-USE MODE_FM, ONLY : FMLOOK_ll
 USE MODE_ll
 !
 USE MODI_WATER_SUM
@@ -130,7 +128,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -225,8 +222,6 @@ REAL  :: ZRDSRV                 ! XRD/XRV
 !
 !*      2.   PRELIMINARIES
 !            -------------
-!
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 !*      2.0   Refractivity coeficients
 !             ------------------------

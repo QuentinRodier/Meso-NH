@@ -79,13 +79,12 @@ END MODULE MODI_POLAR_CALC
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF, ONLY: NVERB
-USE MODD_CST, ONLY: XPI
-USE MODD_LUNIT, ONLY: CLUOUT0
+USE MODD_CONF,   ONLY: NVERB
+USE MODD_CST,    ONLY: XPI
 USE MODD_DIM_n,  ONLY: NIMAX,NJMAX
 USE MODD_GRID_n, ONLY: XXHAT,XYHAT
+USE MODD_LUNIT,  ONLY: TLUOUT0
 !
-USE MODE_FM
 USE MODE_ll
 !
 IMPLICIT NONE
@@ -107,9 +106,9 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE       :: ZVARCYL2
 REAL, DIMENSION(SIZE(PVARCYL,1))          :: ZRADIUS
 REAL                                      :: ZXI0,ZYJ0,ZX00,ZY00,ZXK,ZYK
 REAL                                      :: ZDELTAX,ZDELTAY,ZDELTAR,ZDPHI,ZPHI
+INTEGER                                   :: ILUOUT0
 INTEGER                                   :: IIX,IIY
 INTEGER                                   :: IR,IPHI,IP ! arrays dimensions
-INTEGER                                   :: IRET, ILUOUT0
 INTEGER                                   :: IIB,IJB,IIE,IJE
 INTEGER                                   :: JR,JPHI,JP
 INTEGER,DIMENSION(SIZE(PVARCYL,2))        :: IPBL
@@ -119,7 +118,7 @@ INTEGER,DIMENSION(SIZE(PVARCYL,2))        :: IPBL
 !*	 1.     INITIALIZATIONS
 !               ---------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRET)
+ILUOUT0 = TLUOUT0%NLU
 !
 IR=SIZE(PVARCYL,1)
 IPHI=SIZE(PVARCYL,2)

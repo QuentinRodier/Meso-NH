@@ -49,19 +49,16 @@ END MODULE MODI_PREP_SURF_MNH
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !------------------------------------------------------------------
 !
-
-!
-USE MODD_LUNIT_n,     ONLY : CINIFILE
-USE MODD_TIME_n,      ONLY : TDTCUR
-USE MODD_LUNIT,       ONLY : CLUOUT0, COUTFMFILE
 USE MODD_IO_SURF_MNH, ONLY : COUTFILE
-USE MODE_FM
+USE MODD_LUNIT,       ONLY : COUTFMFILE, TLUOUT0
+USE MODD_LUNIT_n,     ONLY : CINIFILE
+USE MODD_MNH_SURFEX_n
+USE MODD_TIME_n,      ONLY : TDTCUR
 !
 USE MODI_INIT_PGD_SURF_ATM
 USE MODI_PREP_SURF_ATM
-USE MODI_WRITE_SURF_ATM_N
 USE MODI_WRITE_DIAG_SURF_ATM_N
-USE MODD_MNH_SURFEX_n
+USE MODI_WRITE_SURF_ATM_N
 !
 IMPLICIT NONE
 !
@@ -76,12 +73,11 @@ CHARACTER(LEN=6),  INTENT(IN)   :: HATMFILETYPE! type of the Atmospheric file
 !
 CHARACTER(LEN=28)  :: YPGDFILE  ='                            '  ! name of the pgd file
 CHARACTER(LEN=6)   :: YPGDFILETYPE ='      '                     ! type of the pgd file
-INTEGER  :: ILUOUT0  ! logical unit for listing file
-INTEGER  :: IRESP    ! return code in FM routines
-CHARACTER(LEN=6) :: YATMFILETYPE    ! type of the Atmospheric file
+INTEGER            :: ILUOUT0  ! logical unit for listing file
+CHARACTER(LEN=6)   :: YATMFILETYPE    ! type of the Atmospheric file
 !------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 WRITE(ILUOUT0,*) '***************************************************'
 WRITE(ILUOUT0,*) '***************** EXTERNALIZED SURFACE ************'
 WRITE(ILUOUT0,*) '***************************************************'

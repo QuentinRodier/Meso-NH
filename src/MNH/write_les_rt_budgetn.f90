@@ -66,10 +66,7 @@ USE MODD_LES
 USE MODD_LES_n
 USE MODD_LES_BUDGET
 !
-USE MODD_LUNIT_n
-!
 USE MODE_ll
-USE MODE_FM
 !
 USE MODE_LES_DIACHRO
 !
@@ -84,8 +81,6 @@ CHARACTER(LEN=1), INTENT(IN) :: HLES_AVG  ! flag to perform the averages
 !
 !
 !*      0.2  declaration of local variables
-!
-INTEGER :: IRESP, ILUOUT
 !
 INTEGER :: ILES
 INTEGER :: ILES_STA
@@ -104,8 +99,6 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLES_BUDGET
 !
 !*          Initializations
 !            ---------------
-!
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
 !
 ALLOCATE(ZLES_BUDGET(NLES_K,NLES_TIMES,40))
 ALLOCATE(YSUBTITLE(40))

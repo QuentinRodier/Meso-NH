@@ -13,7 +13,7 @@ MODULE MODI_PRESSURE
 !
 INTERFACE
 !
-      SUBROUTINE PRESSURE(HLUOUT,                                          &
+      SUBROUTINE PRESSURE(                                                 &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
@@ -23,8 +23,6 @@ INTERFACE
 !
 IMPLICIT NONE
 !
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -104,7 +102,7 @@ END INTERFACE
 !
 END MODULE MODI_PRESSURE
 !     ######################################################################
-      SUBROUTINE PRESSURE(HLUOUT,                                          &
+      SUBROUTINE PRESSURE(                                                 &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOM,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,PPABSM,                    &
@@ -214,6 +212,7 @@ USE MODD_PARAMETERS
 USE MODD_BUDGET
 USE MODD_CONF
 USE MODD_CST
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODI_MASS_LEAK
 USE MODI_GDIV
 USE MODI_FLAT_INV
@@ -227,14 +226,11 @@ USE MODI_BUDGET
 !
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODE_ll
-USE MODE_FM
 !
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
   CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
   CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -323,7 +319,6 @@ INTEGER :: IJE          ! indice J for the last inner mass point along y
 INTEGER :: IKB          ! indice K for the first inner mass point along z
 INTEGER :: IKE          ! indice K for the last inner mass point along z
 INTEGER :: ILUOUT       ! Logical unit of output listing
-INTEGER :: IRESP        ! Return code of FM routines
 !
 REAL, DIMENSION(SIZE(PPABSM,1),SIZE(PPABSM,2),SIZE(PPABSM,3)) :: ZTHETAV, &
                         ! virtual potential temperature
@@ -356,7 +351,7 @@ NULLIFY(TZFIELDS_2_ll)
 !*       1.      PRELIMINARIES
 !                -------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 CALL GET_PHYSICAL_ll(IIB,IJB,IIE,IJE)
 CALL GET_DIM_EXT_ll('B',IIU,IJU)

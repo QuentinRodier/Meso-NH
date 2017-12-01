@@ -14,15 +14,13 @@ MODULE MODI_INI_SURFSTATION_n
 !
 INTERFACE
 !
-      SUBROUTINE INI_SURFSTATION_n(HLUOUT,                          &
-                                      PTSTEP, TPDTSEG, PSEGLEN,     &
-                                      KRR, KSV, OUSETKE,            &
-                                      PLATOR, PLONOR                )
+      SUBROUTINE INI_SURFSTATION_n(PTSTEP, TPDTSEG, PSEGLEN, &
+                                   KRR, KSV, OUSETKE,        &
+                                   PLATOR, PLONOR            )
 !
 USE MODD_TYPE_DATE
-CHARACTER(LEN=*),  INTENT(IN)  :: HLUOUT  ! output listing
 REAL,               INTENT(IN) :: PTSTEP  ! time step
-TYPE(DATE_TIME),     INTENT(IN):: TPDTSEG ! segment date and time
+TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
 INTEGER,            INTENT(IN) :: KRR     ! number of moist variables
 INTEGER,            INTENT(IN) :: KSV     ! number of scalar variables
@@ -38,12 +36,11 @@ END INTERFACE
 !
 END MODULE MODI_INI_SURFSTATION_n
 !
-!     ###############################################################
-      SUBROUTINE INI_SURFSTATION_n(HLUOUT,                       &
-                                   PTSTEP, TPDTSEG, PSEGLEN,     &
-                                   KRR, KSV, OUSETKE,            &
-                                   PLATOR, PLONOR                )
-!     ###############################################################
+!     ########################################################
+      SUBROUTINE INI_SURFSTATION_n(PTSTEP, TPDTSEG, PSEGLEN, &
+                                   KRR, KSV, OUSETKE,        &
+                                   PLATOR, PLONOR            )
+!     ########################################################
 !
 !
 !!****  *INI_SURFSTATION_n* - 
@@ -79,15 +76,15 @@ END MODULE MODI_INI_SURFSTATION_n
 !*      0. DECLARATIONS
 !          ------------
 !
-USE MODD_TYPE_DATE
+USE MODD_CONF
+USE MODD_DYN_n
+USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_STATION_n
-USE MODD_GRID_n
-USE MODD_DYN_n
-USE MODD_CONF
-USE MODD_GRID
+USE MODD_TYPE_DATE
 !
-USE MODE_FM, ONLY : FMLOOK_ll
 USE MODE_GRIDPROJ
 USE MODE_IO_ll
 USE MODE_ll
@@ -101,7 +98,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-CHARACTER(LEN=*),   INTENT(IN) :: HLUOUT  ! output listing
 REAL,               INTENT(IN) :: PTSTEP  ! time step
 TYPE(DATE_TIME),    INTENT(IN) :: TPDTSEG ! segment date and time
 REAL,               INTENT(IN) :: PSEGLEN ! segment length
@@ -117,10 +113,9 @@ REAL,               INTENT(IN) :: PLONOR  ! longitude of origine point
 !
 INTEGER :: ISTORE ! number of storage instants
 INTEGER :: ILUOUT ! logical unit
-INTEGER :: IRESP  ! return code
 !
 !----------------------------------------------------------------------------
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !----------------------------------------------------------------------------
 !
 !*      1.   Default values

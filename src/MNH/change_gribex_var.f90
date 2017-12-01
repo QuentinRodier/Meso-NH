@@ -106,7 +106,6 @@ END MODULE MODI_CHANGE_GRIBEX_VAR
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    Module MODI_SHUMAN     : interface for Shuman operators
 !!
 !!    IMPLICIT ARGUMENTS
@@ -162,19 +161,18 @@ END MODULE MODI_CHANGE_GRIBEX_VAR
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
+USE MODD_CONF
+USE MODD_CONF_n
+USE MODD_CST
+USE MODD_GRID_n
+USE MODD_LUNIT, ONLY: CLUOUT0, TLUOUT0
+USE MODD_PARAMETERS
+USE MODD_REF
+!
 USE MODE_THERMO
 !
 USE MODI_SHUMAN
 USE MODI_WATER_SUM
-!
-USE MODD_CONF           ! declaration modules
-USE MODD_CONF_n
-USE MODD_LUNIT
-USE MODD_CST
-USE MODD_REF
-USE MODD_GRID_n
-USE MODD_PARAMETERS
 !
 IMPLICIT NONE
 !
@@ -203,7 +201,7 @@ REAL,DIMENSION(:,:,:), INTENT(OUT),OPTIONAL:: PW_LS      ! vertical wind compone
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER                                                  :: IRESP, ILUOUT0
+!
 INTEGER                                                  :: IIU,IJU,ILU
 INTEGER                                                  :: JL,JRR
 REAL,DIMENSION(:,:,:), ALLOCATABLE                       :: ZPFLUX_LS
@@ -292,7 +290,7 @@ DO JRR=2,SIZE(PR_LS,4)
   PR_LS(:,:,:,JRR) =  1. / (1./MAX(PQ_LS(:,:,:,JRR),1.E-12) - 1.)
 END DO
 !
-PR_LS(:,:,:,1)=SM_PMR_HU(CLUOUT0,PPMASS_LS(:,:,:),                    &
+PR_LS(:,:,:,1)=SM_PMR_HU(PPMASS_LS(:,:,:),                              &
                          PT_LS(:,:,:)*(1.+(XRV/XRD-1.)*PQ_LS(:,:,:,1)), &
                          PHU_LS(:,:,:),PR_LS(:,:,:,:),KITERMAX=100)
 !
@@ -434,7 +432,6 @@ IF (PRESENT(PW_LS)) THEN
 END IF
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
-WRITE(ILUOUT0,*) 'Routine CHANGE_GRIBEX_VAR completed'
+WRITE(TLUOUT0%NLU,*) 'Routine CHANGE_GRIBEX_VAR completed'
 !
 END SUBROUTINE CHANGE_GRIBEX_VAR

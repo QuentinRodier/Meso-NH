@@ -14,7 +14,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE INI_LS(TPINIFILE,HLUOUT,HGETRVM,OLSOURCE,       &
+      SUBROUTINE INI_LS(TPINIFILE,HGETRVM,OLSOURCE,              &
            PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
            PDRYMASSS,                                            &
            PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
@@ -23,7 +23,6 @@ INTERFACE
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! Name for output-listing of nested models
 CHARACTER (LEN=*),      INTENT(IN)    :: HGETRVM   ! GET indicator
 LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
@@ -46,7 +45,7 @@ END MODULE MODI_INI_LS
 !
 !
 !     ############################################################
-      SUBROUTINE INI_LS(TPINIFILE,HLUOUT,HGETRVM,OLSOURCE,       &
+      SUBROUTINE INI_LS(TPINIFILE,HGETRVM,OLSOURCE,              &
            PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM,                      &
            PDRYMASSS,                                            &
            PLSUMM,PLSVMM,PLSWMM,PLSTHMM,PLSRVMM,PDRYMASST,PLENG, &
@@ -95,8 +94,8 @@ USE MODD_CONF
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_TIME ! for type DATE_TIME
 !
-USE MODE_FM
 USE MODE_FMREAD
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -105,7 +104,6 @@ IMPLICIT NONE
 !
 !
 TYPE(TFILEDATA),        INTENT(IN)    :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)    :: HLUOUT    ! Name for output-listing of nested models
 CHARACTER (LEN=*),      INTENT(IN)    :: HGETRVM   ! GET indicator
 LOGICAL,                INTENT(IN)    :: OLSOURCE  ! Switch for the source term
 ! Larger Scale fields (source if OLSOURCE=T,  fields at time t-dt if OLSOURCE=F) :
@@ -123,8 +121,7 @@ LOGICAL,                INTENT(IN),    OPTIONAL :: OSTEADY_DMASS         ! Md ev
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: IRESP
-INTEGER             :: ILUOUT              !  Logical unit number associated with HLUOUT
+!NONE
 !
 !-------------------------------------------------------------------------------
 !
@@ -133,7 +130,7 @@ INTEGER             :: ILUOUT              !  Logical unit number associated wit
 !*       1.    SOME INITIALIZATIONS
 !              --------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+!NONE
 !
 !
 !-------------------------------------------------------------------------------
@@ -165,17 +162,15 @@ IF (OLSOURCE) THEN
     PLSVM(:,:,:) = (PLSVM(:,:,:) - PLSVMM(:,:,:))   / PLENG
     PLSWM(:,:,:) = (PLSWM(:,:,:) - PLSWMM(:,:,:))   / PLENG
     PLSTHM(:,:,:)= (PLSTHM(:,:,:) - PLSTHMM(:,:,:)) / PLENG
-  ELSE 
-    WRITE(ILUOUT,*) 'MISSING argument in INI_LS'
-    STOP
+  ELSE
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LS','missing argument')
   ENDIF
 !  LS-vapor  
   IF (HGETRVM == 'READ') THEN        
     IF (PRESENT(PLSRVMM))   THEN                           
       PLSRVM(:,:,:)  = (PLSRVM(:,:,:) - PLSRVMM(:,:,:)) / PLENG
     ELSE
-      WRITE(ILUOUT,*) 'MISSING argument PLSRVMM in INI_LS'
-      STOP
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_LS','missing argument (PLSRVMM)')
     ENDIF
   ENDIF
 ! Dry mass

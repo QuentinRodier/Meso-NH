@@ -76,7 +76,6 @@ END MODULE MODI_INI_MODEL_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK      : to retrieve a logical unit number associated with a file
 !!      FMREAD      : to read a LFIFM file
 !!      FMFREE      : to release a logical unit number
 !!      SET_DIM     : to initialize dimensions
@@ -283,7 +282,7 @@ USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 USE MODE_IO_ll
 USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
-USE MODE_FM
+USE MODE_FM, ONLY: IO_FILE_OPEN_ll
 USE MODE_FMREAD
 USE MODE_GATHER_ll
 USE MODE_MSG
@@ -533,7 +532,7 @@ NULLIFY(TZINITHALO3D_ll)
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 CALL IO_READ_FIELD(TPINIFILE,'MASDEV',IMASDEV)
 !-------------------------------------------------------------------------------
@@ -964,8 +963,8 @@ ELSEIF( L2D ) THEN                         ! 2D case
   ALLOCATE(XLBYRM(0,0,0,0))
   ALLOCATE(XLBYSVM(0,0,0,0))
 !
-  CALL GET_SIZEX_LB(HLUOUT,NIMAX_ll,NJMAX_ll,NRIMX,   &
-       IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU,         &
+  CALL GET_SIZEX_LB(NIMAX_ll,NJMAX_ll,NRIMX,  &
+       IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU, &
        IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2)
 !
   IF ( LHORELAX_UVWTH ) THEN
@@ -1028,12 +1027,12 @@ ELSEIF( L2D ) THEN                         ! 2D case
 ELSE                                   ! 3D case
 !
 !
-  CALL GET_SIZEX_LB(HLUOUT,NIMAX_ll,NJMAX_ll,NRIMX,   &
-       IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU,          &
-       IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2)
-  CALL GET_SIZEY_LB(HLUOUT,NIMAX_ll,NJMAX_ll,NRIMY,   &
-       IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV,          &
-       IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
+  CALL GET_SIZEX_LB(NIMAX_ll,NJMAX_ll,NRIMX,               &
+                    IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU, &
+                    IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2)
+  CALL GET_SIZEY_LB(NIMAX_ll,NJMAX_ll,NRIMY,               &
+                    IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV, &
+                    IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
 !
 ! check if local domain not to small for NRIMX NRIMY
 !
@@ -1614,7 +1613,7 @@ IF (CCLOUD=='LIMA') CALL INIT_AEROSOL_PROPERTIES
 !              --------------------------------
 !
 CALL MPPDB_CHECK3D(XUT,"INI_MODEL_N-before read_field::XUT",PRECISION)
-CALL READ_FIELD(TPINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                 &
+CALL READ_FIELD(TPINIFILE,IMASDEV, IIU,IJU,IKU,XTSTEP,                        &
                 CGETTKET,CGETRVT,CGETRCT,CGETRRT,CGETRIT,CGETCIT,             &
                 CGETRST,CGETRGT,CGETRHT,CGETSVT,CGETSRCT,CGETSIGS,CGETCLDFR,  &
                 CGETBL_DEPTH,CGETSBL_DEPTH,CGETPHC,CGETPHR,CUVW_ADV_SCHEME,   &
@@ -1646,7 +1645,7 @@ CALL READ_FIELD(TPINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                 &
 !              ---------------------------
 !
 !
-CALL SET_REF(KMI,TPINIFILE,HLUOUT,                  &
+CALL SET_REF(KMI,TPINIFILE,                         &
              XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,    &
              XREFMASS,XMASS_O_PHI0,XLINMASS,        &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ )
@@ -1899,7 +1898,7 @@ IF (LLG .AND. LINIT_LG .AND. CPROGRAM=='MESONH') &
 !*       16.    INITIALIZE THE PARAMETERS FOR THE DYNAMICS
 !               ------------------------------------------
 !
-CALL INI_DYNAMICS(HLUOUT,XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,     &
+CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              XZHAT,CLBCX,CLBCY,XTSTEP,                                        &
              LVE_RELAX,LVE_RELAX_GRD,LHORELAX_UVWTH,LHORELAX_RV,              &
              LHORELAX_RC,LHORELAX_RR,LHORELAX_RI,LHORELAX_RS,LHORELAX_RG,     &
@@ -2191,27 +2190,27 @@ DEALLOCATE(XSPOWATM)
 !*      23.     BALLOON and AIRCRAFT initializations
 !              ------------------------------------
 !
-CALL INI_AIRCRAFT_BALLOON(TPINIFILE,CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                          IKU,CTURB=="TKEL" ,                                  &
-                          XLATORI, XLONORI                                     )
+CALL INI_AIRCRAFT_BALLOON(TPINIFILE,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
+                          IKU,CTURB=="TKEL" ,                          &
+                          XLATORI, XLONORI                             )
 !
 !-------------------------------------------------------------------------------
 !
 !*      24.     STATION initializations
 !              -----------------------
 !
-CALL INI_SURFSTATION_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL" ,                            &
-                       XLATORI, XLONORI                           )
+CALL INI_SURFSTATION_n(XTSTEP, TDTSEG, XSEGLEN, NRR, NSV, &
+                       CTURB=="TKEL" ,                    &
+                       XLATORI, XLONORI                   )
 !
 !-------------------------------------------------------------------------------
 !
 !*      25.     PROFILER initializations
 !              ------------------------
 !
-CALL INI_POSPROFILER_n(CLUOUT,XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
-                       CTURB=="TKEL",                             &
-                       XLATORI, XLONORI                           )
+CALL INI_POSPROFILER_n(XTSTEP, TDTSEG, XSEGLEN, NRR, NSV,  &
+                       CTURB=="TKEL",                      &
+                       XLATORI, XLONORI                    )
 !
 !-------------------------------------------------------------------------------
 !

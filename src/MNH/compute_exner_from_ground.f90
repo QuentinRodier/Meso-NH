@@ -119,11 +119,9 @@ END MODULE MODI_COMPUTE_EXNER_FROM_GROUND3
 !* 0.    DECLARATIONS
 !        ------------
 !
-USE MODE_FM
-!
-USE MODD_CONF  ! declaration modules
-USE MODD_LUNIT
+USE MODD_CONF
 USE MODD_CST
+USE MODD_LUNIT
 USE MODD_PARAMETERS
 !
 USE MODI_SHUMAN
@@ -141,7 +139,7 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PEXNMASS  ! Exner function at mass points
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER :: ILUOUT0,IRESP
+!
 INTEGER :: IKB,IKU,JK
 REAL    :: ZD1      ! switch for thinshell approximation
 REAL    :: ZGSCPD   ! = g/Cpd
@@ -155,8 +153,6 @@ REAL, DIMENSION(SIZE(PZFLUX,1),SIZE(PZFLUX,2),SIZE(PZFLUX,3)) :: ZZM
 IKB=JPVEXT+1
 IKU=SIZE(PZFLUX,3)
 ZGSCPD = XG/XCPD
-!
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 !-------------------------------------------------------------------------------
 !

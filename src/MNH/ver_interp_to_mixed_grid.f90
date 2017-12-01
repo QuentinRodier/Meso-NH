@@ -404,7 +404,7 @@ IF (HFILE=='ATM ') THEN
 !
   ZPMASS_MX(:,:,:)=XP00*(ZHEXNMASS_MX(:,:,:))**(XCPD/XRD) + XPMHP_MX(:,:,:)
   !
-  XR_MX(:,:,:,1)=SM_PMR_HU(CLUOUT0,ZPMASS_MX(:,:,:),                           &
+  XR_MX(:,:,:,1)=SM_PMR_HU(ZPMASS_MX(:,:,:),                                   &
                            XTHV_MX(:,:,:)*(ZPMASS_MX(:,:,:)/XP00)**(XRD/XCPD), &
                            ZHU_MX(:,:,:),XR_MX(:,:,:,:),KITERMAX=100)
 !

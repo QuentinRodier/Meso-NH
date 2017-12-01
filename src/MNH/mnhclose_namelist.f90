@@ -88,14 +88,6 @@ IF (.NOT.ASSOCIATED(TNAM)) CALL PRINT_MSG(NVERB_FATAL,'IO','CLOSE_FILE_MNH','TNA
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','MNHCLOSE_NAMELIST','called for '//TRIM(TNAM%CNAME))
 !
-SELECT CASE(CPROGRAM)
-  CASE('REAL  ','IDEAL ','DIAG  ')
-    YLUOUT = CLUOUT0
-  CASE('MESONH','SPAWN ')
-    CALL GET_MODEL_NUMBER_ll  (IMI)
-    WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
-END SELECT
-!
 !-------------------------------------------------------------------------------
 !
 !* closes the namelist
@@ -105,6 +97,14 @@ IF (TNAM%NLU==KLUNAM) THEN
   CALL IO_FILE_CLOSE_ll(TNAM)
   TNAM => NULL()
 ELSE
+  SELECT CASE(CPROGRAM)
+    CASE('REAL  ','IDEAL ','DIAG  ')
+      YLUOUT = CLUOUT0
+    CASE('MESONH','SPAWN ')
+      CALL GET_MODEL_NUMBER_ll  (IMI)
+      WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
+  END SELECT
+  !
   CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
   WRITE(ILUOUT,*) 'Error for closing a namelist file: '
   WRITE(ILUOUT,*) 'logical unit ',KLUNAM,' does not correspond to namelist file', TNAM%CNAME

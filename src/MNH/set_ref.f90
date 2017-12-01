@@ -13,7 +13,7 @@ MODULE MODI_SET_REF
 !
 INTERFACE
 !
-      SUBROUTINE SET_REF(KMI,TPINIFILE,HLUOUT,                             &
+      SUBROUTINE SET_REF(KMI,TPINIFILE,                                    &
                          PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,               &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,                   &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ            )
@@ -22,8 +22,6 @@ USE MODD_IO_ll, ONLY : TFILEDATA
 !
 INTEGER,                INTENT(IN)  :: KMI       ! Model index 
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listings
-                                                 !  of nested models
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
                                                  ! with orography                                          
 REAL, DIMENSION(:),     INTENT(IN)  :: PZHAT     ! Height of the w levels
@@ -59,7 +57,7 @@ END MODULE MODI_SET_REF
 !
 !
 !     #########################################################################
-      SUBROUTINE SET_REF(KMI,TPINIFILE,HLUOUT,                         &
+      SUBROUTINE SET_REF(KMI,TPINIFILE,                                &
                          PZZ,PZHAT,PJ,PDXX,PDYY,HLBCX,HLBCY,           &
                          PREFMASS,PMASS_O_PHI0,PLINMASS,               &
                          PRHODREF,PTHVREF,PRVREF,PEXNREF,PRHODJ        )
@@ -157,24 +155,18 @@ END MODULE MODI_SET_REF
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-USE MODE_FM
 !              ------------ 
-USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_CONF
+USE MODD_CST
+USE MODD_IO_ll,   ONLY : TFILEDATA
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 USE MODD_REF
-USE MODD_CST
-USE MODD_CONF
-USE MODD_REF, ONLY : LBOUSS
-!
-USE MODE_ll
-!JUAN REALZ
-USE MODE_MPPDB
-!JUAN REALZ
 !
 USE MODE_FMREAD
-!JUAN
+USE MODE_ll
+USE MODE_MPPDB
 USE MODE_REPRO_SUM
-!JUAN
 !
 IMPLICIT NONE
 !
@@ -182,8 +174,6 @@ IMPLICIT NONE
 !  
 INTEGER,                INTENT(IN)  :: KMI       ! Model index 
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PZZ       ! Height  of the w levels
                                                  ! with orography                                          
 REAL, DIMENSION(:),     INTENT(IN)  :: PZHAT     ! Height of the w levels
@@ -214,7 +204,6 @@ REAL, DIMENSION(:,:,:), INTENT(OUT) :: PRHODJ    ! rhod J
 !
 !*       0.2   declarations of local variables
 !
-INTEGER             :: IRESP
 INTEGER             :: ILUOUT                    ! Unit number for prints
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)) :: ZZM 
                                                  ! height of the mass levels
@@ -263,7 +252,7 @@ IKU = SIZE(PEXNREF,3)
 IKB = 1 + JPVEXT
 IKE = IKU - JPVEXT
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    READ REFERENCE STATE WITHOUT OROGRAPHY IN LFIFM FILE
 !              ----------------------------------------------------

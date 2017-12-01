@@ -242,7 +242,7 @@ PFOES(:) = EXP( XALPW - XBETAW/PT(:) - XGAMW*LOG(PT(:))  )
 END FUNCTION SM_FOES_1D
 !-------------------------------------------------------------------------------
 !     ####################################################
-      FUNCTION SM_PMR_HU_3D(HLUOUT,PP,PTV,PHU,PR,KITERMAX) RESULT(PMR)
+      FUNCTION SM_PMR_HU_3D(PP,PTV,PHU,PR,KITERMAX) RESULT(PMR)
 !     ####################################################
 !
 !!****  *SM_PMR_HU_3D * - function to compute vapor mixing ratio
@@ -267,7 +267,6 @@ END FUNCTION SM_FOES_1D
 !!          
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK    : to retrieve logical unit number
 !!      SM_FOES   : to compute saturation vapor pressure
 !!
 !!    IMPLICIT ARGUMENTS
@@ -297,16 +296,13 @@ END FUNCTION SM_FOES_1D
 !              ------------
 !
 USE MODD_CST   
-!
-USE MODE_FM
+USE MODD_LUNIT_n, ONLY: TLUOUT
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
 !
-CHARACTER(LEN=*)                                 :: HLUOUT ! name for output-
-                                                           ! listing  
 REAL, DIMENSION(:,:,:), INTENT(IN)               :: PP     ! Pressure
                                                            ! (Pa) 
 REAL, DIMENSION(:,:,:), INTENT(IN)               :: PTV    ! Virtual Temperature
@@ -337,7 +333,7 @@ INTEGER                                           :: ITER    ! iteration number 
 REAL                                              :: ZEPS    ! a small number
 INTEGER, DIMENSION(3)                             :: IMAXLOC ! localisation of
                                                              ! a maximum    
-INTEGER                                           :: ILUOUT,IRESP 
+INTEGER                                           :: ILUOUT 
                                                              ! logical unit for
                                                              ! output-listing
                                                              ! and error code  
@@ -372,7 +368,7 @@ END DO
 !              --------------
 !
 IF ( ANY(ZDT > ZEPS) ) THEN
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT = TLUOUT%NLU
   WRITE(ILUOUT,*) 'ERROR IN FUNCTION SM_PMR_HU (module MODE_THERMO)'
   WRITE(ILUOUT,*) 'FUNCTION FAILS TO CONVERGE AFTER ', ITER,' ITERATIONS'
   WRITE(ILUOUT,*) 'EPS = ' , ZEPS
@@ -389,7 +385,7 @@ END IF
 !-------------------------------------------------------------------------------
 END FUNCTION SM_PMR_HU_3D
 !     ################################################################
-      FUNCTION SM_PMR_HU_1D(HLUOUT,PP,PTV,PHU,PR,KITERMAX) RESULT(PMR)
+      FUNCTION SM_PMR_HU_1D(PP,PTV,PHU,PR,KITERMAX) RESULT(PMR)
 !     ################################################################
 !
 !!****  *SM_PMR_HU_1D * - function to compute vapor mixing ratio
@@ -414,7 +410,6 @@ END FUNCTION SM_PMR_HU_3D
 !!          
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK    : to retrieve logical unit number
 !!      SM_FOES   : to compute saturation vapor pressure
 !!
 !!    IMPLICIT ARGUMENTS
@@ -444,16 +439,13 @@ END FUNCTION SM_PMR_HU_3D
 !              ------------
 !
 USE MODD_CST       
-!
-USE MODE_FM
+USE MODD_LUNIT_n, ONLY: TLUOUT
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments and results
 !
 !
-CHARACTER(LEN=*)                             :: HLUOUT ! name for output-
-                                                       ! listing  
 REAL, DIMENSION(:), INTENT(IN)               :: PP     ! Pressure
                                                        ! (Pa) 
 REAL, DIMENSION(:), INTENT(IN)               :: PTV    ! Virtual Temperature
@@ -517,7 +509,7 @@ END DO
 !              --------------
 !
 IF (ANY(ZDT>ZEPS)) THEN
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT = TLUOUT%NLU
   WRITE(ILUOUT,*) 'ERROR IN FUNCTION SM_PMR_HU (module MODE_THERMO)'
   WRITE(ILUOUT,*) 'FUNCTION FAILS TO CONVERGE AFTER ', ITER,' ITERATIONS'
   WRITE(ILUOUT,*) 'EPS = ' , ZEPS

@@ -13,7 +13,7 @@ MODULE MODI_PRESSUREZ
 !
 INTERFACE
 !
-      SUBROUTINE PRESSUREZ(HLUOUT,                                         &
+      SUBROUTINE PRESSUREZ(                                                &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOT,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                           &
@@ -26,8 +26,6 @@ INTERFACE
 !
 IMPLICIT NONE
 !
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -110,7 +108,7 @@ END INTERFACE
 !
 END MODULE MODI_PRESSUREZ
 !     ######################################################################
-      SUBROUTINE PRESSUREZ(HLUOUT,                                         &
+      SUBROUTINE PRESSUREZ(                                                &
       HLBCX,HLBCY,HPRESOPT,KITR,OITRADJ,KTCOUNT,PRELAX,KMI,                &
       PRHODJ,PDXX,PDYY,PDZZ,PDZX,PDZY,PDXHATM,PDYHATM,PRHOT,               &
       PAF,PBF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,                           &
@@ -226,43 +224,40 @@ END MODULE MODI_PRESSUREZ
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll
 USE MODD_BUDGET
-USE MODD_CONF
 USE MODD_CST
-USE MODD_REF, ONLY : LBOUSS
-USE MODI_MASS_LEAK
-USE MODI_GDIV
-USE MODI_FLAT_INV
-USE MODI_FLAT_INVZ
-USE MODI_RICHARDSON
+USE MODD_CONF
+USE MODD_DYN_n,       ONLY: LRES, XRES
+USE MODD_LUNIT_n,     ONLY: TLUOUT
+USE MODD_MPIF
+USE MODD_PARAMETERS
+USE MODD_REF,         ONLY: LBOUSS
+USE MODD_VAR_ll,      ONLY: MPI_PRECISION, NMNH_COMM_WORLD , NPROC
+!
+USE MODE_IO_ll,       ONLY: CLOSE_ll
+USE MODE_ll
+USE MODE_MPPDB
+USE MODE_MSG
+!
+USE MODI_BUDGET
 USE MODI_CONJGRAD
 USE MODI_CONRESOL
 USE MODI_CONRESOLZ
+USE MODI_FLAT_INV
+USE MODI_FLAT_INVZ
+USE MODI_GDIV
 USE MODI_GRADIENT_M
-USE MODI_SHUMAN
+USE MODI_MASS_LEAK
 USE MODI_P_ABS
-USE MODI_BUDGET
-!
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
-USE MODE_ll
-USE MODE_FM
-USE MODE_MSG
-!JUANZ
+USE MODI_RICHARDSON
+USE MODI_SHUMAN
 USE MODI_SUM_ll , ONLY : GMAXLOC_ll
-USE MODD_DYN_n  , ONLY : LRES, XRES
-USE MODD_MPIF
-USE MODD_VAR_ll, ONLY : MPI_PRECISION, NMNH_COMM_WORLD , NPROC
-!JUANZ
-USE MODE_MPPDB
-USE MODE_IO_ll, ONLY: CLOSE_ll
 !
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)   ::  HLUOUT       ! Output-listing name for
-                                                      ! model n
   CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCX    ! x-direction LBC type
   CHARACTER (LEN=*), DIMENSION(:), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -386,7 +381,7 @@ INTEGER :: IIMAX_ll,IJMAX_ll
 !*       1.      PRELIMINARIES
 !                -------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 CALL GET_GLOBALDIMS_ll (IIMAX_ll,IJMAX_ll)
 IF ( ( MIN(IIMAX_ll,IJMAX_ll) < NPROC  ) .AND. ( HPRESOPT /= 'ZRESI' ) ) THEN

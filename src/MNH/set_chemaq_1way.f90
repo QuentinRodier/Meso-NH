@@ -10,9 +10,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_CHEMAQ_1WAY (HLUOUT,PRHODREF,PSVTOLD,PSVTNEW)
+      SUBROUTINE SET_CHEMAQ_1WAY (PRHODREF,PSVTOLD,PSVTNEW)
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(IN) :: PSVTOLD    ! chemical concentrations dad model
@@ -27,7 +26,7 @@ END INTERFACE
 END MODULE MODI_SET_CHEMAQ_1WAY
 !
 !     ###########################################################
-      SUBROUTINE SET_CHEMAQ_1WAY (HLUOUT,PRHODREF,PSVTOLD,PSVTNEW)
+      SUBROUTINE SET_CHEMAQ_1WAY (PRHODREF,PSVTOLD,PSVTNEW)
 !     ###########################################################
 !
 !!****  *SET_CHEMAQ_1WAY * - transfer chemical concentrations in gas phase from
@@ -78,13 +77,12 @@ END MODULE MODI_SET_CHEMAQ_1WAY
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
+USE MODD_LUNIT_n, ONLY: TLUOUT
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(IN) :: PSVTOLD    ! chemical concentrations dad model
@@ -102,7 +100,7 @@ INTEGER    :: ILUOUT  ! Logical unit number of output-listing
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    TRANSFER DATA FROM OLD TO NEW ARRAY
 !              -----------------------------------

@@ -14,9 +14,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_CONC_ICE_C1R3 (HLUOUT,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_ICE_C1R3 (PRHODREF,PRT,PSVT)
 !
-CHARACTER (LEN=*),         INTENT(IN)    :: HLUOUT ! name of the output-listing
 REAL, DIMENSION(:,:,:),    INTENT(IN)    :: PRHODREF   ! Reference density
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PRT    ! microphysical mixing ratios
@@ -31,7 +30,7 @@ END INTERFACE
 END MODULE MODI_SET_CONC_ICE_C1R3
 !
 !     ##########################################################
-      SUBROUTINE SET_CONC_ICE_C1R3 (HLUOUT,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_ICE_C1R3 (PRHODREF,PRT,PSVT)
 !     ##########################################################
 !
 !!****  *SET_CONC_ICE_C1R3 * - initialize the ice crystal
@@ -80,19 +79,17 @@ END MODULE MODI_SET_CONC_ICE_C1R3
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_CST,            ONLY : XRHOLI
+USE MODD_CONF,           ONLY : NVERB
 USE MODD_ICE_C1R3_DESCR, ONLY : XRTMIN, XCTMIN
 USE MODD_ICE_C1R3_PARAM, ONLY : XCONCI_MAX, XNUC_CON, XEXTT_CON, XEX_CON
-USE MODD_CONF,           ONLY : NVERB
+USE MODD_LUNIT_n,        ONLY : TLUOUT
 USE MODD_RAIN_ICE_DESCR, ONLY : XAI, XBI
-USE MODD_CST,            ONLY : XRHOLI
-!
-USE MODE_FM
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),         INTENT(IN)    :: HLUOUT ! name of the output-listing
 REAL, DIMENSION(:,:,:),    INTENT(IN)    :: PRHODREF   ! Reference density
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PRT    ! microphysical mixing ratios
@@ -109,7 +106,7 @@ INTEGER    :: ILUOUT  ! Logical unit number of output-listing
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    INITIALIZATION
 !              --------------

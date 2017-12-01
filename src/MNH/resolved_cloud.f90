@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, TPFILE, HLUOUT, HRAD, HTURBDIM,        &
+                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -41,8 +41,6 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
-                                                   ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
@@ -136,7 +134,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !     ##########################################################################
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, TPFILE, HLUOUT, HRAD, HTURBDIM,        &
+                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -315,8 +313,6 @@ INTEGER,                  INTENT(IN)   :: KMI      ! Model index
 INTEGER,                  INTENT(IN)   :: KTCOUNT  ! Temporal loop counter
 CHARACTER(LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX,HLBCY   ! X and Y-direc. LBC type
 TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)   :: HLUOUT   ! Output-listing name for
-                                                   ! model n
 CHARACTER*4,              INTENT(IN)   :: HRAD     ! Radiation scheme name
 CHARACTER*4,              INTENT(IN)   :: HTURBDIM ! Dimensionality of the
                                                    ! turbulence scheme
@@ -798,7 +794,7 @@ SELECT CASE ( HCLOUD )
 !*       4.     REVERSIBLE MICROPHYSICAL SCHEME
 !               -------------------------------
 !
-    CALL FAST_TERMS ( KRR, KMI, HLUOUT, HRAD, HTURBDIM,                        &
+    CALL FAST_TERMS ( KRR, KMI, HRAD, HTURBDIM,                                &
                       HSCONV, HMF_CLOUD, OSUBG_COND, PTSTEP,                   &
                       PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
@@ -822,7 +818,7 @@ SELECT CASE ( HCLOUD )
 !
 !*       5.2    Perform the saturation adjustment
 !
-    CALL FAST_TERMS ( KRR, KMI, HLUOUT, HRAD, HTURBDIM,                        &
+    CALL FAST_TERMS ( KRR, KMI, HRAD, HTURBDIM,                                &
                       HSCONV, HMF_CLOUD, OSUBG_COND, PTSTEP,                   &
                       PRHODJ, PSIGS, PPABST,                                   &
                       PCF_MF,PRC_MF,                                           &
@@ -855,7 +851,7 @@ SELECT CASE ( HCLOUD )
 !*       7.2    Perform the saturation adjustment
 !
    IF (LSUPSAT) THEN
-    CALL KHKO_NOTADJUST (KRR, KTCOUNT,TPFILE, HLUOUT, HRAD, OCLOSE_OUT,          &
+    CALL KHKO_NOTADJUST (KRR, KTCOUNT,TPFILE, HRAD, OCLOSE_OUT,                  &
                          PTSTEP, PRHODJ, PPABSM, PPABST, PRHODREF, PZZ,          &
                          PTHT,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),            &
                          PTHS,PRS(:,:,:,1),PRS(:,:,:,2),PRS(:,:,:,3),            &
@@ -863,7 +859,7 @@ SELECT CASE ( HCLOUD )
                          ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO             )
 !
    ELSE
-    CALL C2R2_ADJUST ( KRR,TPFILE, HLUOUT, HRAD,                               &
+    CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                                       &
                        HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
                        PRHODJ, PSIGS, PPABST,                                  &
                        PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
@@ -987,7 +983,7 @@ IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
 !
 !*       12.2   Perform the saturation adjustment
 !
-CALL LIMA_ADJUST(KRR, KMI, TPFILE, HLUOUT, HRAD,                   &
+CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
                  HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
                  PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
                  PRT, PRS, ZSVT, ZSVS,                             &

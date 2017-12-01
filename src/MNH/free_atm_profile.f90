@@ -60,8 +60,6 @@ END MODULE MODI_FREE_ATM_PROFILE
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  : to retrieve a logical unit number associated
-!!                       with a file
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -96,25 +94,21 @@ END MODULE MODI_FREE_ATM_PROFILE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODI_PGDFILTER
+USE MODD_CONF
+USE MODD_GRID_n
+USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_LUNIT, ONLY: TLUOUT0
+USE MODD_PARAMETERS
+USE MODD_VER_INTERP_LIN
+!
 USE MODI_COEF_VER_INTERP_LIN
+USE MODI_PGDFILTER
 USE MODI_VER_INTERP_LIN
 USE MODI_VERT_COORD
 !
 USE MODE_FIELD, ONLY: TFIELDDATA, TYPEINT, TYPEREAL
 USE MODE_FMWRIT
-USE MODE_FM
-!
-USE MODD_CONF  ! declaration modules
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT
-USE MODD_LUNIT_n
-USE MODD_GRID_n
-USE MODD_PARAMETERS
-USE MODD_VER_INTERP_LIN
-!JUAN REALZ
 USE MODE_MPPDB
-!JUAN REALZ
 !
 IMPLICIT NONE
 !
@@ -165,9 +159,6 @@ INTEGER, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &
 REAL, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &
                                       :: ZK_BL_TOP  ! as K_BL_TOP but real
 INTEGER                               :: IIMIN, IIMAX, IJMIN, IJMAX
-
-INTEGER           :: IRESP
-
 REAL, DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2)) &
                                       :: Z2D ! field to be recorded
 REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
@@ -176,8 +167,8 @@ REAL, DIMENSION(SIZE(XZZ,1),SIZE(XZZ,2),SIZE(XZZ,3)) &
                                       :: ZZMASS ! MESO-NH output mass grid
 TYPE(TFIELDDATA)  :: TZFIELD
 !-------------------------------------------------------------------------------
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
+ILUOUT0 = TLUOUT0%NLU
 !
 IIU=SIZE(PZMASS_MX,1)
 IJU=SIZE(PZMASS_MX,2)

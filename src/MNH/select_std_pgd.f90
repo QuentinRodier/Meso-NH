@@ -66,7 +66,6 @@ USE MODD_GROUND_PAR
 !
 !
 USE MODI_PGD_INDEX
-USE MODE_FM
 !
 IMPLICIT NONE
 !
@@ -83,10 +82,7 @@ REAL, DIMENSION(:,:), INTENT(IN) :: PFIELD      ! pgd field
 !
 CHARACTER(LEN=20) :: YFIELD
 !
-INTEGER :: IRESP, ILUOUT0
 !-------------------------------------------------------------------------------
-!
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 YFIELD='                    '
 YFIELD=HFIELD_NAME//YFIELD
@@ -307,11 +303,6 @@ SELECT CASE (YFIELD)
   PRINT*, 'IT WILL NOT BE SAVED ON THE PGD FILE.'
   PRINT*, ' '
 
-!  WRITE(ILUOUT0,FMT=*) ' '
-!  WRITE(ILUOUT0,FMT=*) 'The field ',HFIELD_NAME, ' is not yet a standard PGD field.'
-!  WRITE(ILUOUT0,FMT=*) 'IT WILL NOT BE SAVED ON THE PGD FILE.'
-!  WRITE(ILUOUT0,FMT=*) ' '
-!
 END SELECT
 !
 !-------------------------------------------------------------------------------

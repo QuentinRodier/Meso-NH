@@ -4,9 +4,8 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_CONC_LIMA (HLUOUT,HGETCLOUD,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_LIMA (HGETCLOUD,PRHODREF,PRT,PSVT)
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
@@ -22,7 +21,7 @@ END INTERFACE
 END MODULE MODI_SET_CONC_LIMA
 !
 !     ###########################################################################
-      SUBROUTINE SET_CONC_LIMA (HLUOUT,HGETCLOUD,PRHODREF,PRT,PSVT)
+      SUBROUTINE SET_CONC_LIMA (HGETCLOUD,PRHODREF,PRT,PSVT)
 !     ###########################################################################
 !
 !!****  *SET_CONC_LIMA * - initialize droplet, raindrop and ice
@@ -79,11 +78,12 @@ END MODULE MODI_SET_CONC_LIMA
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN
-USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
-USE MODD_NSV,             ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_ACTI, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
 USE MODD_CST,             ONLY : XPI, XRHOLW, XRHOLI
 USE MODD_CONF,            ONLY : NVERB
+USE MODD_LUNIT_n,         ONLY : TLUOUT
+USE MODD_NSV,             ONLY : NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_CCN_ACTI, NSV_LIMA_NI, NSV_LIMA_IFN_NUCL
+USE MODD_PARAM_LIMA,      ONLY : XRTMIN, XCTMIN, LCOLD, LWARM, LRAIN
+USE MODD_PARAM_LIMA_COLD, ONLY : XAI, XBI
 !
 USE MODE_FM
 !
@@ -91,7 +91,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT     ! name of the output-listing
 CHARACTER (LEN=4),         INTENT(IN) :: HGETCLOUD  ! Get indicator
 REAL, DIMENSION(:,:,:),    INTENT(IN) :: PRHODREF   ! Reference density
 !
@@ -110,7 +109,7 @@ REAL       :: ZCONCC, ZCONCR, ZCONCI
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    INITIALIZATION
 !              --------------

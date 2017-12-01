@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE ELEC_TRIDZ(HLUOUT,HLBCX,HLBCY,                         &
+      SUBROUTINE ELEC_TRIDZ(HLBCX,HLBCY,                                &
                       PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,         &
                       PAF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,            &
                       PRHODJ,PTHVREF,PZZ,PBFY,PEPOTFW_TOP,              &
@@ -22,7 +22,6 @@ INTERFACE
 !
 IMPLICIT NONE
 !
-CHARACTER (LEN=*),               INTENT(IN) :: HLUOUT   ! output listing name
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -79,7 +78,7 @@ END INTERFACE
 END MODULE MODI_ELEC_TRIDZ
 !
 !     ###################################################################
-      SUBROUTINE ELEC_TRIDZ(HLUOUT,HLBCX,HLBCY,                         &
+      SUBROUTINE ELEC_TRIDZ(HLBCX,HLBCY,                                &
                       PMAP,PDXHAT,PDYHAT,PDXHATM,PDYHATM,PRHOM,         &
                       PAF,PCF,PTRIGSX,PTRIGSY,KIFAXX,KIFAXY,            &
                       PRHODJ,PTHVREF,PZZ,PBFY,PEPOTFW_TOP,              &
@@ -194,11 +193,11 @@ END MODULE MODI_ELEC_TRIDZ
 !              ------------
 USE MODD_CST
 USE MODD_CONF
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 !
 USE MODE_ll
 USE MODE_IO_ll
-USE MODE_FM
 USE MODE_MSG
 !++cb - Z_SPLITTING
 USE MODE_SPLITTINGZ_ll , ONLY : GET_DIM_EXTZ_ll,GET_ORZ_ll,LWESTZ_ll,LSOUTHZ_ll
@@ -213,7 +212,6 @@ IMPLICIT NONE
 !
 !
 !
-CHARACTER (LEN=*),               INTENT(IN) :: HLUOUT   ! output listing name
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCX    ! x-direction LBC type
 CHARACTER (LEN=4), DIMENSION(2), INTENT(IN) :: HLBCY    ! y-direction LBC type
 !
@@ -328,7 +326,7 @@ REAL, ALLOCATABLE, DIMENSION(:,:)              :: ZRHOM_2D   , ZDZM_2D
 !*       1.1  retrieve a logical unit number
 !             ------------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       1.2  compute loop bounds
 !             -------------------

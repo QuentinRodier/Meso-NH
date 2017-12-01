@@ -46,7 +46,6 @@
 !------------------------------------------------------------------------------
 !
 !*                0.  DECLARATIONS
-USE MODE_FM
 USE MODE_MPPDB
 USE MODD_CONF
 !------------
@@ -67,7 +66,7 @@ CONTAINS
 !                     --------------------
 !-------------------------------------------------------------------------------
 !      ####################################################################
-       SUBROUTINE SM_GRIDPROJ(HLUOUT,PXHAT,PYHAT,PZHAT,PZS,           &
+       SUBROUTINE SM_GRIDPROJ(PXHAT,PYHAT,PZHAT,PZS,                  &
                               OSLEVE,PLEN1,PLEN2,PZSMT,PLATOR,PLONOR, &
                               PMAP,PLAT,PLON,PDXHAT,PDYHAT,PZZ,PJ     )
 !      ####################################################################
@@ -181,6 +180,7 @@ CONTAINS
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll, LIST1D_ll
+USE MODD_LUNIT_n,     ONLY : TLUOUT
 !
 USE MODD_CONF          
 USE MODD_CST          
@@ -193,7 +193,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !
-CHARACTER(LEN=*),        INTENT(IN) :: HLUOUT            ! Name of output-listing
 REAL, DIMENSION(:),      INTENT(IN) :: PXHAT,PYHAT,PZHAT ! Positions x,y,z in 
                                                          ! the cartesian plane
 REAL, DIMENSION(:,:),    INTENT(IN) :: PZS               ! Orography
@@ -250,7 +249,7 @@ INTEGER      :: JI,JJ,JK         ! loop index
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER FOR OUTPUT-LISTING AND DIMENSIONS 
 !              --------------------------------------------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 IIU = UBOUND(PXHAT,1)     
 IJU = UBOUND(PYHAT,1)    
@@ -1540,7 +1539,7 @@ ENDIF
 !
 IF(ITER <= ITERMAX)  RETURN
 !
-CALL FMLOOK_ll(CLUOUT,CLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 WRITE(ILUOUT,*) ' Error in function LATREF2 (module MODE_GRIDPROJ)'
 WRITE(ILUOUT,*) ' Function fails to converge after ',ITER,' iterations.'

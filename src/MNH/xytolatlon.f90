@@ -117,11 +117,8 @@ END MODULE  MODI_XYTOLATLON
 !*     0.     DECLARATIONS
 !             ------------
 !
-USE MODE_FM
-!
 USE MODD_CST
 USE MODD_GRID
-USE MODD_LUNIT
 !
 IMPLICIT NONE
 !
@@ -154,11 +151,9 @@ REAL :: ZBETA
 !
 REAL, DIMENSION(SIZE(PXA,1),SIZE(PXA,2)) :: ZATA,ZRO2,ZT2,ZXMI0,ZYMI0
 !
-INTEGER :: ILUOUT0
 INTEGER :: IRESP
 !
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !--------------------------------------------------------------------------------
 !
 !*     1.     Preliminary calculations for all projections

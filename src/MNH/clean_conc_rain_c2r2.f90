@@ -14,9 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE CLEAN_CONC_RAIN_C2R2 (HLUOUT,PR,PSV)
-!
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT    ! name of the output-listing
+      SUBROUTINE CLEAN_CONC_RAIN_C2R2 (PR,PSV)
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PR     ! microphysical mixing 
 REAL,  DIMENSION(:,:,:,:), INTENT(INOUT) :: PSV    ! microphys. concentrations
@@ -28,7 +26,7 @@ END INTERFACE
 END MODULE MODI_CLEAN_CONC_RAIN_C2R2
 !
 !     ########################################################
-      SUBROUTINE CLEAN_CONC_RAIN_C2R2 (HLUOUT,PR,PSV)
+      SUBROUTINE CLEAN_CONC_RAIN_C2R2 (PR,PSV)
 !     ########################################################
 !
 !!****  *CLEAN_CONC_RAIN_C2R2 * - reinitialize the droplet/raindrop
@@ -72,16 +70,13 @@ END MODULE MODI_CLEAN_CONC_RAIN_C2R2
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN
 USE MODD_CONF,            ONLY : NVERB
-!
-USE MODE_FM
+USE MODD_LUNIT_n,         ONLY : TLUOUT
+USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN, XCTMIN
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
-!
-CHARACTER (LEN=*),         INTENT(IN) :: HLUOUT    ! name of the output-listing
 !
 REAL, DIMENSION(:,:,:,:),  INTENT(INOUT) :: PR     ! microphysical mixing 
 REAL,  DIMENSION(:,:,:,:), INTENT(INOUT) :: PSV    ! microphys. concentrations
@@ -89,7 +84,6 @@ REAL,  DIMENSION(:,:,:,:), INTENT(INOUT) :: PSV    ! microphys. concentrations
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER    :: IRESP   ! Return code of FM routines
 INTEGER    :: ILUOUT  ! Logical unit number of output-listing
 !  
 !-------------------------------------------------------------------------------
@@ -97,7 +91,7 @@ INTEGER    :: ILUOUT  ! Logical unit number of output-listing
 !*       1.    RETRIEVE LOGICAL UNIT NUMBER
 !              ----------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !*       2.    INITIALIZATION
 !              --------------

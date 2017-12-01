@@ -71,7 +71,7 @@ END MODULE MODI_ADV_FORCING_n
 !!        TDTADVFRC: date of each advecting-forcing profile
 !!        XUFRC,XVFRC,XWFRC,XTHFRC,XRVFRC: advecting-forcing variables
 !!      Module MODD_LUNIT :  contains logical unit names for all models
-!!        CLUOUT0 : name of output-listing
+!!        TLUOUT0 : output-listing
 !!      Module MODD_PARAMETERS: declaration of parameter variables
 !!        JPVEXT: define the number of marginal points out of the 
 !!        physical domain along the vertical direction.    
@@ -101,7 +101,7 @@ USE MODE_FM
 USE MODE_IO_ll
 !
 USE MODD_DYN
-USE MODD_LUNIT
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_TIME
 USE MODD_BUDGET
@@ -149,12 +149,11 @@ LOGICAL,DIMENSION(SIZE(PTHM,1),SIZE(PTHM,2),SIZE(PTHM,3)) :: GRELAX_MASK_FRC ! M
 !*        1.   PREPARATION OF FORCING
 !              ----------------------
 !
-
+ILUOUT0 = TLUOUT0%NLU
+!
 IF (GSFIRSTCALL) THEN
 !
   GSFIRSTCALL = .FALSE.
-!
-  CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !!*        1.1  printout number of forcing profiles
 !
   WRITE(UNIT=ILUOUT0,FMT='(" THERE ARE ",I2," ADV FORCING FIELDs  AT:")') NADVFRC
@@ -201,7 +200,6 @@ ELSE
   IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTADVFRC(JXP) ) ) THEN
     JSX_ADV = JSX_ADV +1
     JXP= JSX_ADV +1
-    CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
     WRITE(UNIT=ILUOUT0,FMT='(" THE ADV FORCING FIELDS ARE INTERPOLATED NOW" ,&
     & " BETWEEN SOUNDING NUMBER ",I2," AND SOUNDING NUMBER ",I2)') JSX_ADV,JXP
     CALL TEMPORAL_DIST ( TDTADVFRC(JXP)%TDATE%YEAR,TDTADVFRC(JXP)%TDATE%MONTH,   &

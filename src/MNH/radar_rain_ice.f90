@@ -95,7 +95,6 @@ END MODULE MODI_RADAR_RAIN_ICE
 !
 USE MODD_CST
 USE MODD_REF
-!USE MODD_RAIN_ICE_PARAM
 USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
                                XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
                                XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
@@ -129,7 +128,6 @@ USE MODD_PARAM_n, ONLY : CCLOUD
 USE MODD_LUNIT
 !
 USE MODE_IO_ll
-USE MODE_FM
 !
 IMPLICIT NONE
 !
@@ -177,8 +175,6 @@ REAL,    DIMENSION(SIZE(PTEMP,1),SIZE(PTEMP,2),SIZE(PTEMP,3)) :: ZREFL_MELT_CONV
 INTEGER                                                       :: JLBDA
 REAL                                                          :: ZFRAC_WATER
 !
-INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
-INTEGER  :: IRESP   ! Return code of FM-routines
 LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
                     ! listing
 !
@@ -212,8 +208,6 @@ REAL :: ZLB,ZLBEX ,  ZCC,ZCX,ZC,ZD
 !        2.     INTIALIZE OUTPUT LISTING AND OTHER ARRAYS
 !               -----------------------------------------
 !
-!
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 !
 PRARE(:,:,:) = 0.0    ! radar reflectivity
 PVDOP(:,:,:) = 0.0    ! radar Doppler fall speed

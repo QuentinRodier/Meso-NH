@@ -14,8 +14,12 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_FRC(HEXPRE)
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+SUBROUTINE SET_FRC(TPEXPREFILE)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
+!
 END SUBROUTINE SET_FRC
 !
 END INTERFACE
@@ -23,7 +27,7 @@ END INTERFACE
 END MODULE MODI_SET_FRC
 !
 !     ##########################
-      SUBROUTINE SET_FRC(HEXPRE)
+      SUBROUTINE SET_FRC(TPEXPREFILE)
 !     ##########################
 !
 !!*** *SET_FRC * -  to initialize forcing fields from successive soundings
@@ -107,6 +111,7 @@ USE MODD_GRID_n
 USE MODD_CONF
 USE MODD_FRC
 USE MODD_GRID
+USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_REF
 USE MODD_PARAMETERS
 !
@@ -125,7 +130,7 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments :
 !
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
 !
 !*       0.2   Declarations of local variables :
 !
@@ -171,7 +176,7 @@ REAL                            :: ZEPS,     & ! XRV/XRD-1.0
 !*       1.     PROLOGUE : RETRIEVE LOGICAL UNIT NUMBERS
 !               ----------------------------------------
 !
-CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+ILUPRE = TPEXPREFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 ZRVSRD  = XRV/XRD

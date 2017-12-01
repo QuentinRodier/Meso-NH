@@ -9,7 +9,7 @@
 ! MASDEV4_7 diachro 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     #################################################################
-      SUBROUTINE WRITE_DIACHRO(TPDIAFILE,HLUOUTDIA,HGROUP,HTYPE,      &
+      SUBROUTINE WRITE_DIACHRO(TPDIAFILE,TPLUOUTDIA,HGROUP,HTYPE,     &
       KGRID,PDATIME,PVAR,PTRAJT,                                     &
       HTITRE,HUNITE,HCOMMENT,OICP,OJCP,OKCP,KIL,KIH,KJL,KJH,KKL,KKH, &
       PTRAJX,PTRAJY,PTRAJZ,PMASK)
@@ -84,7 +84,6 @@ USE MODD_IO_ll,      ONLY : TFILEDATA
 USE MODD_PARAMETERS, ONLY : JPHEXT
 !
 USE MODE_ll
-USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_IO_ll
 !
@@ -95,7 +94,7 @@ IMPLICIT NONE
 !*       0.1   Dummy arguments
 !              ---------------
 TYPE(TFILEDATA),              INTENT(IN)          :: TPDIAFILE    ! file to write
-CHARACTER(LEN=*),             INTENT(IN)          :: HLUOUTDIA
+TYPE(TFILEDATA),              INTENT(IN)          :: TPLUOUTDIA
 CHARACTER(LEN=*),             INTENT(IN)          :: HGROUP, HTYPE
 INTEGER,DIMENSION(:),         INTENT(IN)          :: KGRID
 REAL,DIMENSION(:,:),          INTENT(IN)          :: PDATIME
@@ -132,6 +131,8 @@ TYPE(TFIELDDATA)  :: TZFIELD
 GPACK=LPACK
 LPACK=.FALSE.
 YCOMMENT='NOTHING'
+!
+ILUOUTDIA = TPLUOUTDIA%NLU
 !
 ! BUG ...ca passe que si PRESENT(OICP) sinon OICP non defini 
 ! Question: doit-on mettre condition comme:
@@ -214,11 +215,6 @@ ENDIF
 IF(OKCP)THEN
   ICOMPZ=1
 ENDIF
-ENDIF
-!
-CALL FMLOOK_ll(HLUOUTDIA,HLUOUTDIA,ILUOUTDIA,IRESP)
-IF (NVERB>=5) THEN
-  WRITE(ILUOUTDIA,*)' WRITE_DIACHRO: ',TRIM(HLUOUTDIA),' IRESP=',IRESP
 ENDIF
 !
 IF (NVERB>=5) THEN
@@ -512,7 +508,7 @@ TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
 CALL IO_WRITE_FIELD(TPDIAFILE,TZFIELD,PDATIME)
 !
-CALL MENU_DIACHRO(TPDIAFILE,HLUOUTDIA,HGROUP)
+CALL MENU_DIACHRO(TPDIAFILE,HGROUP)
 LPACK=GPACK
 !-----------------------------------------------------------------------------
 !

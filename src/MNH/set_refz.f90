@@ -75,7 +75,6 @@ END MODULE MODI_SET_REFZ
 !!
 !!    subroutine COMPUTE_EXNER_FROM_TOP : to compute hydrostatic Exner function
 !!    subroutine ZSECT :to compute the mean of a 3D field at a constant altitude
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    MZF              : Shuman operator
 !!
 !!    Module MODI_SHUMAN    : interface for Shuman operators
@@ -128,20 +127,18 @@ END MODULE MODI_SET_REFZ
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-!
-USE MODI_ZSECT ! interface module
-USE MODI_SHUMAN
-USE MODI_COMPUTE_EXNER_FROM_TOP
-USE MODD_CONF  ! declaration modules
-USE MODD_LUNIT
+USE MODD_CONF
 USE MODD_CST
 USE MODD_GRID_n
-USE MODD_REF
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
+USE MODD_REF
 !
-!20131024 mppdb
 USE MODE_MPPDB
+!
+USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_SHUMAN
+USE MODI_ZSECT
 !
 IMPLICIT NONE
 !
@@ -267,7 +264,7 @@ XRHODREFZ(:)=(XP00*(ZEXNMASSREFZ(:))**(XCPD/XRD-1.))                           &
 XRHODREFZ(1)=XRHODREFZ(2)
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 WRITE(ILUOUT0,*)
 WRITE(ILUOUT0,*) 'REFERENCE STATE VARIABLES WITHOUT OROGRAPHY'
 WRITE(ILUOUT0,*) 'level   altitude     theta          rhod      pressure'

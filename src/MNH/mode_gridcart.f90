@@ -40,7 +40,6 @@
 !--------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
-USE MODE_FM
 !              ------------
 !
 !-------------------------------------------------------------------------------
@@ -53,7 +52,7 @@ CONTAINS
 !             -------------------
 !-------------------------------------------------------------------------------
 !     #########################################################################
-      SUBROUTINE SM_GRIDCART(HLUOUT,PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
+      SUBROUTINE SM_GRIDCART(PXHAT,PYHAT,PZHAT,PZS,OSLEVE,PLEN1,PLEN2,PZSMT,PDXHAT,PDYHAT,PZZ,PJ)
 !     #########################################################################
 !
 !!****  *SM_GRIDCART * - routine to compute J 
@@ -109,6 +108,7 @@ CONTAINS
 !
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST1D_ll
+USE MODD_LUNIT_n,     ONLY : TLUOUT
 !
 USE MODD_PARAMETERS       
 USE MODD_CONF
@@ -119,7 +119,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of arguments
 !
-CHARACTER(LEN=*),       INTENT(IN)  :: HLUOUT            ! Output-listing name 
 REAL, DIMENSION(:),     INTENT(IN)  :: PXHAT,PYHAT,PZHAT ! positions x,y,z in 
                                                          ! the cartesian plane
 REAL, DIMENSION(:,:),   INTENT(IN)  :: PZS               ! orography
@@ -160,7 +159,7 @@ INTEGER      :: JI,JJ,JK         ! loop index
 !*       1    RETRIEVE LOGICAL UNIT NUMBERFOR OUTPUT-LISTING AND  DIMENSIONS 
 !             --------------------------------------------------------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 IIU = UBOUND(PXHAT,1)         
 IJU = UBOUND(PYHAT,1)        

@@ -12,8 +12,12 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_RELFRC(HEXPRE)
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+SUBROUTINE SET_RELFRC(TPEXPREFILE)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
+!
 END SUBROUTINE SET_RELFRC
 !
 END INTERFACE
@@ -21,7 +25,7 @@ END INTERFACE
 END MODULE MODI_SET_RELFRC
 !
 !     ##########################
-      SUBROUTINE SET_RELFRC(HEXPRE)
+      SUBROUTINE SET_RELFRC(TPEXPREFILE)
 !     ##########################
 !
 !!*** *SET_RELFRC * -  to initialize Advective or relaxation forcing fields for different months
@@ -76,40 +80,36 @@ END MODULE MODI_SET_RELFRC
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST 
-USE MODD_LUNIT_n
-USE MODD_GRID_n
 USE MODD_CONF
+USE MODD_CST 
 USE MODD_FRC
-
 USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_IO_ll, ONLY : TFILEDATA
+USE MODD_LUNIT_n
+USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_REF
-USE MODD_PARAMETERS  ! JPHEXT
-! 
-USE MODE_THERMO 
-USE MODE_FM
-USE MODE_MSG
-!
-USE MODE_IO_ll
-USE MODI_HEIGHT_PRESS  ! interface modules
-USE MODI_PRESS_HEIGHT
-USE MODI_THETAVPU_THETAVPM 
-USE MODI_TEMPORAL_LT
-USE MODD_DIM_n 
-!
-USE MODI_READ_ASCP
-USE MODI_READ_ASC_LATPRESS
-!
 USE MODD_RELFRC_n
-
+! 
+USE MODE_FM
+USE MODE_IO_ll
+USE MODE_MSG
+USE MODE_THERMO 
+!
+USE MODD_DIM_n 
+USE MODI_HEIGHT_PRESS
+USE MODI_PRESS_HEIGHT
+USE MODI_READ_ASC_LATPRESS
+USE MODI_READ_ASCP
+USE MODI_TEMPORAL_LT
+USE MODI_THETAVPU_THETAVPM 
+!
 IMPLICIT NONE
 !  
 !  
 !*       0.1   Declarations of arguments :
 !
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
-
-
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
 !
 !*       0.2   Declarations of local variables :
 !
@@ -143,7 +143,7 @@ CHARACTER(LEN=6)                :: YREL         ! choice of zfrc or pfrc
 print*,"!*	 1.     PROLOGUE : RETRIEVE LOGICAL UNIT NUMBERS" 
 !	        ----------------------------------------
 !                           
-CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+ILUPRE = TPEXPREFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 !-------------------------------------------------------------------------------

@@ -40,8 +40,6 @@ END MODULE MODI_READ_GRID_TIME_MESONH_CASE
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!
@@ -49,7 +47,7 @@ END MODULE MODI_READ_GRID_TIME_MESONH_CASE
 !!         NVERB : verbosity level for output-listing
 !!         LTHINSHELL
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_GRID
 !!         XBETA   : rotation of the domain
 !!         XRPK    : parameter of projection
@@ -93,19 +91,18 @@ END MODULE MODI_READ_GRID_TIME_MESONH_CASE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF        ! declaration modules
+USE MODD_CONF
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_IO_ll,  ONLY: TFILEDATA
-USE MODD_LUNIT
+USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_LUNIT,            ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_PREP_REAL
 USE MODD_TIME
 USE MODD_TIME_n
 !
-USE MODE_FM
 USE MODE_FMREAD
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 !
 USE MODI_DEFAULT_SLEVE
 USE MODI_READ_HGRID
@@ -123,7 +120,7 @@ CHARACTER(LEN=*),  INTENT(OUT):: HDAD_NAME! dad name of the FM file
 !*       0.2   Declaration of local variables
 !              ------------------------------
 REAL               :: ZEPS       ! a little number
-INTEGER            :: IRESP      ! return-code if problem eraised in FMLOOK
+INTEGER            :: IRESP      ! return-code
 INTEGER            :: ILUOUT0    ! logical number for listing file
 INTEGER            :: IMASDEV    ! Masdev version
 INTEGER            :: JL         ! loop controls
@@ -155,7 +152,7 @@ TYPE(TFILEDATA),POINTER :: TZFMFILE => NULL()
 !*       1.    INITIALIZATIONS
 !              ---------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 ZEPS=1.E-10
 !
 !PW: TODO: temporary: look for file from its name

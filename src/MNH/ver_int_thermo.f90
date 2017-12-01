@@ -84,8 +84,6 @@ END MODULE MODI_VER_INT_THERMO
 !!    subroutine MEAN_PROF  : to compute the shift profiles
 !!    function VER_SHIFT    : to shift a array of altitudes
 !!    function VER_INTERP   : to interpolate one field from one grid to another
-!!    function FMLOOK       : to retrieve a logical unit number associated
-!!                            with a file
 !!    MZF                   : Shuman operator
 !!    function SM_FOES      : to compute saturation vapor pressure
 !!    function SM_PMR_HU    : function to compute vapor mixing ratio from HU
@@ -144,33 +142,30 @@ END MODULE MODI_VER_INT_THERMO
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_THERMO           ! executive module
-USE MODE_FM
-USE MODI_FREE_ATM_PROFILE ! interface module
-USE MODI_VER_SHIFT
-USE MODI_COEF_VER_INTERP_LIN
-USE MODI_VER_INTERP_LIN
-USE MODI_SHUMAN
-USE MODI_COMPUTE_EXNER_FROM_TOP
-USE MODI_RMS_AT_Z
-USE MODI_WATER_SUM
-!
-USE MODD_CONF      ! declaration modules
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll
+USE MODD_CONF
 USE MODD_CONF_n
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT
-USE MODD_GRID_n
-USE MODD_PARAMETERS
 USE MODD_CST
+USE MODD_GRID_n
+USE MODD_IO_ll,       ONLY: TFILEDATA
+USE MODD_LUNIT,       ONLY: CLUOUT0, TLUOUT0
+USE MODD_PARAMETERS
 USE MODD_VER_INTERP_LIN
-!JUAN REALZ
-USE MODE_MPPDB
-USE MODE_EXTRAPOL
-!JUAN REALZ
-USE MODI_SECOND_MNH
 !
+USE MODE_EXTRAPOL
 USE MODE_ll
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
+USE MODE_MPPDB
+USE MODE_THERMO
+!
+USE MODI_COEF_VER_INTERP_LIN
+USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_FREE_ATM_PROFILE
+USE MODI_RMS_AT_Z
+USE MODI_SECOND_MNH
+USE MODI_SHUMAN
+USE MODI_VER_INTERP_LIN
+USE MODI_VER_SHIFT
+USE MODI_WATER_SUM
 !
 IMPLICIT NONE
 !
@@ -271,7 +266,7 @@ TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 !
 !------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=JPVEXT+1
@@ -499,7 +494,7 @@ IF (NVERB>4) THEN
   !20131113 check3d
   CALL MPPDB_CHECK3D(ZTV_SH,"ver_int_thermo5b::ZTV_SH",PRECISION)
 !
-  ZR_SH(:,:,:,1)=SM_PMR_HU(CLUOUT0,ZPMASS_SH(:,:,:),ZTV_SH(:,:,:),ZHU_SH(:,:,:),&
+  ZR_SH(:,:,:,1)=SM_PMR_HU(ZPMASS_SH(:,:,:),ZTV_SH(:,:,:),ZHU_SH(:,:,:),&
                            ZR_SH(:,:,:,:),KITERMAX=100)
   CALL RMS_AT_Z(PTHV_MX/(1.+XRV/XRD*PR_MX(:,:,:,1))*(1.+WATER_SUM(PR_MX(:,:,:,:))),          &
                     PZS_LS,PZMASS_MX,                                                        &
@@ -564,7 +559,7 @@ CALL CLEANLIST_ll(TZFIELDS_ll)
 !20131112 check3d
 CALL MPPDB_CHECK3D(ZP,"ver_int_thermo6b::ZP",PRECISION)
 !
-PR(:,:,:,1)=SM_PMR_HU(CLUOUT0,ZP(:,:,:),                        &
+PR(:,:,:,1)=SM_PMR_HU(ZP(:,:,:),                                &
                       PTHV(:,:,:)*(ZP(:,:,:)/XP00)**(XRD/XCPD), &
                       ZHU(:,:,:),PR(:,:,:,:),KITERMAX=100)
 CALL ADD3DFIELD_ll(TZFIELDS_ll,PR(:,:,:,1))

@@ -9,7 +9,7 @@
 ! MASDEV4_7 diachro 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##################################################
-      SUBROUTINE MENU_DIACHRO(TPDIAFILE,HLUOUTDIA,HGROUP)
+      SUBROUTINE MENU_DIACHRO(TPDIAFILE,HGROUP)
 !     ##################################################
 !
 !!****  *MENU_DIACHRO* - Creation, ecriture (eventuellement lecture) de
@@ -70,7 +70,6 @@ IMPLICIT NONE
 !              ---------------
 
 TYPE(TFILEDATA),  INTENT(IN) :: TPDIAFILE    ! file to write
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUTDIA
 CHARACTER(LEN=*), INTENT(IN) :: HGROUP
 !
 !*       0.1   Local variables

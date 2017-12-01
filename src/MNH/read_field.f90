@@ -8,7 +8,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE READ_FIELD(TPINIFILE,HLUOUT,KMASDEV,KIU,KJU,KKU,PTSTEP,     &
+      SUBROUTINE READ_FIELD(TPINIFILE,KMASDEV,KIU,KJU,KKU,PTSTEP,            &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -35,8 +35,6 @@ USE MODD_TIME ! for type DATE_TIME
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-CHARACTER (LEN=*),         INTENT(IN)  :: HLUOUT        
-                             ! name for output-listing of nested models
 INTEGER,                   INTENT(IN)  :: KMASDEV
                              ! version of the input file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
@@ -128,7 +126,7 @@ END INTERFACE
 END MODULE MODI_READ_FIELD
 !
 !     ########################################################################
-      SUBROUTINE READ_FIELD(TPINIFILE,HLUOUT,KMASDEV,KIU,KJU,KKU,PTSTEP,     &
+      SUBROUTINE READ_FIELD(TPINIFILE,KMASDEV,KIU,KJU,KKU,PTSTEP,            &
             HGETTKET,HGETRVT,HGETRCT,HGETRRT,HGETRIT,HGETCIT,                &
             HGETRST,HGETRGT,HGETRHT,HGETSVT,HGETSRCT,HGETSIGS,HGETCLDFR,     &
             HGETBL_DEPTH,HGETSBL_DEPTH,HGETPHC,HGETPHR,HUVW_ADV_SCHEME,      &
@@ -258,9 +256,10 @@ USE MODD_FOREFIRE
 #endif
 USE MODD_ICE_C1R3_DESCR,  ONLY: C1R3NAMES
 USE MODD_IO_ll,           ONLY: TFILEDATA
-USE MODD_NSV
 USE MODD_LATZ_EDFLX
 USE MODD_LG,              ONLY: CLGNAMES
+USE MODD_LUNIT_N,         ONLY: TLUOUT
+USE MODD_NSV
 USE MODD_PARAM_C2R2,      ONLY: LSUPSAT
 !
 USE MODD_PARAM_LIMA     , ONLY: NMOD_CCN, LSCAV, LAERO_MASS,                &
@@ -273,7 +272,6 @@ USE MODD_SALT
 USE MODD_TIME ! for type DATE_TIME
 !
 USE MODE_FIELD,           ONLY: TFIELDDATA,TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME,TYPEDATE,TYPEREAL
-USE MODE_FM
 USE MODE_FMREAD
 USE MODE_IO_ll,           ONLY: UPCASE
 USE MODE_MSG
@@ -288,8 +286,6 @@ IMPLICIT NONE
 !
 !
 TYPE(TFILEDATA),           INTENT(IN)  :: TPINIFILE    !Initial file
-CHARACTER (LEN=*),         INTENT(IN)  :: HLUOUT        
-                             ! name for output-listing of nested models
 INTEGER,                   INTENT(IN)  :: KMASDEV
                              ! version of the input file
 INTEGER,                   INTENT(IN)  :: KIU, KJU, KKU   
@@ -1129,13 +1125,13 @@ END IF
 !*       2.2a  3D LS fields  
 !
 !
-CALL INI_LS(TPINIFILE,HLUOUT,HGETRVT,GLSOURCE,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM)
+CALL INI_LS(TPINIFILE,HGETRVT,GLSOURCE,PLSUM,PLSVM,PLSWM,PLSTHM,PLSRVM)
 !
 !
 !*       2.2b  2D "surfacic" LB fields   
 !
 !
-CALL INI_LB(TPINIFILE,HLUOUT,GLSOURCE,ISV,                            &
+CALL INI_LB(TPINIFILE,GLSOURCE,ISV,                                   &
      KSIZELBX_ll,KSIZELBXU_ll,KSIZELBY_ll,KSIZELBYV_ll,               &
      KSIZELBXTKE_ll,KSIZELBYTKE_ll,                                   &
      KSIZELBXR_ll,KSIZELBYR_ll,KSIZELBXSV_ll,KSIZELBYSV_ll,           &
@@ -1486,7 +1482,7 @@ ENDIF
 IF (NVERB >= 10 .AND. .NOT. L1D) THEN
   IIUP = SIZE(PUT,1)
   IJUP = SIZE(PVT,2) 
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT= TLUOUT%NLU
 ! 
   WRITE(ILUOUT,FMT=*) 'READ_FIELD: Some PUT values:'
   WRITE(ILUOUT,FMT=*) '(1,1,JK)   (IIU/2,IJU/2,JK)   (IIU,IJU,JK)    JK  '

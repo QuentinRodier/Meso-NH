@@ -44,7 +44,6 @@ END MODULE MODI_CHECK_ZS
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    function FMREAD
 !!
 !!    IMPLICIT ARGUMENTS
@@ -82,17 +81,16 @@ END MODULE MODI_CHECK_ZS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CONF           ! declaration modules
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT
-USE MODD_GRID_n
+USE MODD_CONF
 USE MODD_DIM_n
-USE MODD_PARAMETERS
+USE MODD_GRID_n
+USE MODD_IO_ll,            ONLY: TFILEDATA
+USE MODD_LUNIT,            ONLY: TLUOUT0
 USE MODD_NESTING
+USE MODD_PARAMETERS
 !
-USE MODE_FM
 USE MODE_FMREAD
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
 !
 IMPLICIT NONE
 !
@@ -126,7 +124,7 @@ INTEGER                           :: JI,JJ  ! loop counters
 TYPE(TFILEDATA),POINTER           :: TZFMFILE
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !-------------------------------------------------------------------------------
 !

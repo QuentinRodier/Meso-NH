@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HLUOUT, HRAD, OCLOSE_OUT,     &
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD, OCLOSE_OUT,             &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
@@ -25,8 +25,6 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                     ! the OUTPUT FM-file
@@ -67,7 +65,7 @@ END INTERFACE
 END MODULE MODI_KHKO_NOTADJUST
 !
 !     ################################################################################
-      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HLUOUT, HRAD, OCLOSE_OUT,     &
+      SUBROUTINE KHKO_NOTADJUST(KRR, KTCOUNT, TPFILE, HRAD, OCLOSE_OUT,             &
                                 PTSTEP, PRHODJ, PPABSM,  PPABST, PRHODREF, PZZ,     &
                                 PTHT,PRVT,PRCT,PRRT,                                &
                                 PTHS, PRVS, PRCS, PRRS, PCCS, PCNUCS, PSAT,         &
@@ -102,17 +100,17 @@ END MODULE MODI_KHKO_NOTADJUST
 !
 !*       0.    DECLARATIONS
 !
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_CONF
 USE MODD_BUDGET
-USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODD_NSV, ONLY : NSV_C2R2BEG
-USE MODD_RAIN_C2R2_DESCR, ONLY : XRTMIN
+USE MODD_CONF
+USE MODD_CST
+USE MODD_IO_ll,           ONLY: TFILEDATA
+USE MODD_LUNIT_n,         ONLY: TLUOUT
+USE MODD_NSV,             ONLY: NSV_C2R2BEG
+USE MODD_PARAMETERS
+USE MODD_RAIN_C2R2_DESCR, ONLY: XRTMIN
 
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FM
+USE MODE_FIELD,           ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
 USE MODE_IO_ll
 USE MODE_MSG
@@ -128,8 +126,6 @@ IMPLICIT NONE
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                     ! the OUTPUT FM-file
@@ -200,7 +196,7 @@ TYPE(TFIELDDATA)  :: TZFIELD
 !*       1.     PRELIMINARIES
 !               -------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=1+JPVEXT
 IKE=SIZE(PZZ,3) - JPVEXT

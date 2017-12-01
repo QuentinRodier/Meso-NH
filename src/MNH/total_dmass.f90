@@ -14,12 +14,10 @@
 !
 INTERFACE
 !
-      SUBROUTINE TOTAL_DMASS(HLUOUT,PJ,PRHOD,PDRYMASS)
+      SUBROUTINE TOTAL_DMASS(PJ,PRHOD,PDRYMASS)
 !
 IMPLICIT NONE
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models                                       
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian             
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOD     ! dry density
 !
@@ -36,7 +34,7 @@ END MODULE MODI_TOTAL_DMASS
 !
 !
 !     #########################################################################
-      SUBROUTINE TOTAL_DMASS(HLUOUT,PJ,PRHOD,PDRYMASS)
+      SUBROUTINE TOTAL_DMASS(PJ,PRHOD,PDRYMASS)
 !     #########################################################################
 !
 !!****  *TOTAL_DMASS* - routine to set reference state for anelastic approximation
@@ -86,17 +84,15 @@ END MODULE MODI_TOTAL_DMASS
 !
 !*       0.    DECLARATIONS
 !              ------------ 
-USE MODE_FM
+USE MODD_CONF,    ONLY: NVERB
+USE MODD_LUNIT_n, ONLY: TLUOUT
+!
 USE MODE_ll
 !  
-USE MODD_CONF,     ONLY : NVERB
-!
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models                                       
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PJ        ! Jacobian             
 REAL, DIMENSION(:,:,:), INTENT(IN)  :: PRHOD     ! dry density
 !
@@ -104,9 +100,6 @@ REAL,                   INTENT(OUT) :: PDRYMASS ! Mass of dry air Md
                                           !  contained in the simulation domain                        
 !
 !*       0.2   declarations of local variables
-!
-INTEGER             :: IRESP      ! File management variable
-INTEGER             :: ILUOUT     ! Unit number for prints
 !
 INTEGER             :: IINFO_ll   ! Return code of parallel routine
 !
@@ -123,10 +116,7 @@ PDRYMASS=SUM3D_ll(PJ(:,:,:)*PRHOD(:,:,:),IINFO_ll)
 !              -----------------------
 !
 IF(NVERB >= 5) THEN  
-!
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-!
-  WRITE(ILUOUT,*) 'TOTAL_DMASS:    M= ',PDRYMASS
+  WRITE(TLUOUT%NLU,*) 'TOTAL_DMASS:    M= ',PDRYMASS
 END IF
 !
 !-------------------------------------------------------------------------------

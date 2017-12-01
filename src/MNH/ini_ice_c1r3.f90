@@ -98,26 +98,25 @@ END MODULE MODI_INI_ICE_C1R3
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
 USE MODD_CST
-USE MODD_LUNIT
+USE MODD_ICE_C1R3_DESCR
+USE MODD_ICE_C1R3_PARAM
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
+USE MODD_PARAM_C1R3
 USE MODD_PARAM_C2R2,      ONLY : XALPHAC,XNUC,XALPHAR,XNUR
 USe MODD_RAIN_C2R2_DESCR, ONLY : XAR,XBR,XCR,XDR,XF0R,XF1R,XAC,XBC,XCC,XDC, &
                                  XLBC,XLBEXC,XLBR,XLBEXR
-USE MODD_PARAM_C1R3
-USE MODD_ICE_C1R3_DESCR
-USE MODD_ICE_C1R3_PARAM
 USE MODD_REF
 !
 USE MODI_GAMMA
 USE MODI_GAMMA_INC
-USE MODI_RRCOLSS
-USE MODI_RZCOLX
-USE MODI_RSCOLRG
 USE MODI_READ_XKER_RACCS
-USE MODI_READ_XKER_SDRYG
 USE MODI_READ_XKER_RDRYG
+USE MODI_READ_XKER_SDRYG
+USE MODI_RRCOLSS
+USE MODI_RSCOLRG
+USE MODI_RZCOLX
 !
 !
 IMPLICIT NONE
@@ -160,7 +159,6 @@ REAL :: ZFDINFTY              ! Factor used to define the "infinite" diameter
 !
 !
 INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
-INTEGER  :: IRESP   ! Return code of FM-routines
 LOGICAL  :: GFLAG   ! Logical flag for printing the constatnts on the output
                     ! listing
 REAL     :: ZCONC_MAX ! Maximal concentration for snow
@@ -197,7 +195,7 @@ REAL     :: ZFAC_ZRNIC ! Zrnic factor used to decrease Long Kernels
 !        1.     INTIALIZE OUTPUT LISTING AND COMPUTE KSPLITG FOR EACH MODEL
 !               -----------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !*       1.1    Set the graupel maximum fall velocity
 !

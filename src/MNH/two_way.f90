@@ -14,14 +14,12 @@
 !
 INTERFACE 
 !
-      SUBROUTINE TWO_WAY   (     HLUOUT,KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,         &
+      SUBROUTINE TWO_WAY   (     KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                &
                             PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
                             PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
                             PDIRFLASWD,PSCAFLASWD,PDIRSRFSWD,OMASKkids             )
 ! 
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT ! Name of the output-listing
-!
 INTEGER,                  INTENT(IN)  :: KRR     ! Number of moist variables
 INTEGER,                  INTENT(IN)  :: KSV     ! Number of Scalar Variables
 INTEGER,                  INTENT(IN)  :: KTCOUNT ! Temporal loop COUNTer
@@ -54,7 +52,7 @@ END INTERFACE
 END MODULE MODI_TWO_WAY 
 !
 !     ########################################################################
-      SUBROUTINE TWO_WAY   (     HLUOUT,KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,         &
+      SUBROUTINE TWO_WAY   (     KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                &
                             PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
                             PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
                             PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &
@@ -121,8 +119,6 @@ IMPLICIT NONE
 !*       0.1   declarations of arguments 
 ! 
 !
-CHARACTER(LEN=*), INTENT(IN) :: HLUOUT ! Name of the output-listing
-!
 INTEGER,                  INTENT(IN)  :: KRR     ! Number of moist variables
 INTEGER,                  INTENT(IN)  :: KSV     ! Number of Scalar Variables
 INTEGER,                  INTENT(IN)  :: KTCOUNT ! Temporal loop COUNTer
@@ -161,7 +157,7 @@ DO JKID = KMI+1,NMODEL  ! min value of the possible kids
   IF (KMI == NDAD(JKID) .AND. (XWAY(JKID) == 2. ) &
    .AND. (CCONF == 'RESTA' .OR. (CCONF == 'START' .AND. KTCOUNT /= 1))) THEN
     CALL GOTO_MODEL(JKID)
-    CALL TWO_WAY_n (HLUOUT,KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,              &
+    CALL TWO_WAY_n (KRR,KSV,KTCOUNT,PRHODJ,KMI,PTSTEP,                     &
                     PUM ,PVM, PWM, PTHM, PRM, PTKEM, PSVM,                 &
                     PRUS,PRVS,PRWS,PRTHS,PRRS,PRTKES,PRSVS,                &
                     PINPRC,PINPRR,PINPRS,PINPRG,PINPRH,PPRCONV,PPRSCONV,   &

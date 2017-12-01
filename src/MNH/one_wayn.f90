@@ -14,7 +14,7 @@
 !
 INTERFACE 
 !
-      SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,               &
+      SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                      &
                     PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
                     PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
                     KDXRATIO,KDYRATIO,KDTRATIO,                          &
@@ -36,7 +36,6 @@ INTERFACE
 !
 !
 INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-CHARACTER (LEN=*),INTENT(IN)    :: HLUOUT   ! name of the output-listing
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
 INTEGER,          INTENT(IN)    :: KMI      ! model number
 
@@ -93,7 +92,7 @@ END INTERFACE
 END MODULE MODI_ONE_WAY_n
 !
 !     ####################################################################
-SUBROUTINE ONE_WAY_n(KDAD,HLUOUT,PTSTEP,KMI,KTCOUNT,                     &
+SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
                     PBMX1,PBMX2,PBMX3,PBMX4,PBMY1,PBMY2,PBMY3,PBMY4,     &
                     PBFX1,PBFX2,PBFX3,PBFX4,PBFY1,PBFY2,PBFY3,PBFY4,     &
                     KDXRATIO,KDYRATIO,KDTRATIO,                          &
@@ -222,7 +221,6 @@ IMPLICIT NONE
 !
 !
 INTEGER,          INTENT(IN)    :: KDAD     !  Number of the DAD model
-CHARACTER (LEN=*),INTENT(IN)    :: HLUOUT   ! name for output-listing
 REAL,             INTENT(IN)    :: PTSTEP   !  Time step
 INTEGER,          INTENT(IN)    :: KMI      ! model number
 INTEGER,          INTENT(IN)    :: KTCOUNT  !  Temporal loop COUNTer
@@ -434,7 +432,7 @@ IF (HCLOUD=="C2R2" .OR. HCLOUD=="KHKO") THEN
     ELSE IF (CCLOUD == "KESS" ) THEN
       ZINIT_TYPE = "INI2"
     END IF
-    CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+    CALL SET_CONC_RAIN_C2R2(ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
     DO JSV=1,3
       CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
            &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
@@ -460,13 +458,13 @@ IF (HCLOUD=="C3R5") THEN
     ELSE IF (CCLOUD == "KESS" ) THEN
       ZINIT_TYPE = "INI2"
     END IF
-    CALL SET_CONC_RAIN_C2R2 (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+    CALL SET_CONC_RAIN_C2R2(ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
     DO JSV=1,3
       CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
            &ZTSVT(:,:,:,JSV-1+NSV_C2R2BEG_A(KMI)),KMI)
     ENDDO
     ZINIT_TYPE="INI3"
-    CALL SET_CONC_ICE_C1R3 (HLUOUT,XRHODREF,XRT,ZCONCT)
+    CALL SET_CONC_ICE_C1R3 (XRHODREF,XRT,ZCONCT)
     DO JSV=4,5
       CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
            &ZTSVT(:,:,:,JSV-4+NSV_C1R3BEG_A(KMI)),KMI) 
@@ -493,7 +491,7 @@ IF (HCLOUD=="LIMA"  ) THEN
       ELSE
          ZINIT_TYPE = "NONE"
       END IF
-      CALL SET_CONC_LIMA (HLUOUT,ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
+      CALL SET_CONC_LIMA (ZINIT_TYPE,XRHODREF,XRT,ZCONCT)
       DO JSV=1,NSV_LIMA_A(KMI)
          CALL SET_LSFIELD_1WAY_ll(ZCONCT(:,:,:,JSV),&
               &ZTSVT(:,:,:,JSV-1+NSV_LIMA_BEG_A(KMI)),KMI)
@@ -523,7 +521,7 @@ IF (OUSECHAQ) THEN
   IF (.NOT.(LUSECHAQ)) THEN
     ALLOCATE(ZCHEMT(SIZE(XRHODJ,1),SIZE(XRHODJ,2),SIZE(XRHODJ,3),&
                    NSV_CHEM_A(KMI)))
-    CALL SET_CHEMAQ_1WAY(HLUOUT,XRHODREF,&
+    CALL SET_CHEMAQ_1WAY(XRHODREF,&
          XSVT(:,:,:,NSV_CHEMBEG_A(KDAD):NSV_CHEMEND_A(KDAD)),ZCHEMT)
     DO JSV=1,NSV_CHEM_A(KMI)
       CALL SET_LSFIELD_1WAY_ll(ZCHEMT(:,:,:,JSV),&

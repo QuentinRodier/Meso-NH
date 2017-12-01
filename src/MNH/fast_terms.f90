@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE FAST_TERMS( KRR, KMI, HLUOUT, HRAD,                    &
+      SUBROUTINE FAST_TERMS( KRR, KMI, HRAD,                            &
                              HTURBDIM, HSCONV, HMF_CLOUD,               &
                              OSUBG_COND, PTSTEP,                        &
                              PRHODJ, PSIGS, PPABST,                     &
@@ -24,8 +24,6 @@ INTERFACE
          !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
@@ -63,7 +61,7 @@ END INTERFACE
 END MODULE MODI_FAST_TERMS
 !
 !     ##########################################################################
-      SUBROUTINE FAST_TERMS( KRR, KMI, HLUOUT, HRAD,                    &
+      SUBROUTINE FAST_TERMS( KRR, KMI, HRAD,                            &
                              HTURBDIM, HSCONV, HMF_CLOUD,               &
                              OSUBG_COND, PTSTEP,                        &
                              PRHODJ, PSIGS, PPABST,                     &
@@ -162,15 +160,16 @@ END MODULE MODI_FAST_TERMS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
+USE MODD_BUDGET
 USE MODD_CST
 USE MODD_CONF
-USE MODD_BUDGET
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_PARAMETERS
 !
-USE MODI_CONDENS
-USE MODI_BUDGET
-USE MODE_FM
 USE MODE_FMWRIT
+!
+USE MODI_BUDGET
+USE MODI_CONDENS
 USE MODI_GET_HALO
 !
 IMPLICIT NONE
@@ -180,8 +179,6 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER(LEN=4),         INTENT(IN)    :: HSCONV   ! Shallow convection scheme
@@ -238,7 +235,8 @@ INTEGER             :: ILUOUT     ! Logical unit of output listing
 !*       1.     PRELIMINARIES
 !               -------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
+!
 ZEPS= XMV / XMD
 !
 IF (OSUBG_COND) THEN

@@ -13,12 +13,10 @@
 !
 INTERFACE
 !
-      SUBROUTINE GET_SIZEX_LB(HLUOUT,KIMAX_ll,KJMAX_ll,KRIMX,   &
-           KISIZEXF,KJSIZEXF,KISIZEXFU,KJSIZEXFU,                &
-           KISIZEX4,KJSIZEX4,KISIZEX2,KJSIZEX2)
+      SUBROUTINE GET_SIZEX_LB(KIMAX_ll,KJMAX_ll,KRIMX,               &
+                              KISIZEXF,KJSIZEXF,KISIZEXFU,KJSIZEXFU, &
+                              KISIZEX4,KJSIZEX4,KISIZEX2,KJSIZEX2    )
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 INTEGER,               INTENT(IN)   :: KIMAX_ll  !  Dimensions  in x direction 
                                                  ! of the physical domain,
 INTEGER,               INTENT(IN)   :: KJMAX_ll  !  Dimensions  in y direction 
@@ -39,11 +37,11 @@ END MODULE MODI_GET_SIZEX_LB
 !
 !
 !
-!     #############################################################
-      SUBROUTINE GET_SIZEX_LB(HLUOUT,KIMAX_ll,KJMAX_ll,KRIMX,   &
-           KISIZEXF,KJSIZEXF,KISIZEXFU,KJSIZEXFU,               &
-           KISIZEX4,KJSIZEX4,KISIZEX2,KJSIZEX2)
-!     #############################################################
+!     #################################################################
+      SUBROUTINE GET_SIZEX_LB(KIMAX_ll,KJMAX_ll,KRIMX,               &
+                              KISIZEXF,KJSIZEXF,KISIZEXFU,KJSIZEXFU, &
+                              KISIZEX4,KJSIZEX4,KISIZEX2,KJSIZEX2    )
+!     ################################################################
 !
 !!****  *GET_SIZEX_LB* - routine to get the size of the West-East LB arrays
 !!                       for each sub-domain
@@ -95,14 +93,11 @@ END MODULE MODI_GET_SIZEX_LB
 !              ------------ 
 USE MODD_PARAMETERS
 USE MODE_ll
-USE MODE_FM
 !
 IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
-                                                 !  of nested models
 INTEGER,               INTENT(IN)   :: KIMAX_ll  !  Dimensions  in x direction 
                                                  ! of the physical domain,
 INTEGER,               INTENT(IN)   :: KJMAX_ll  !  Dimensions  in y direction 
@@ -121,15 +116,11 @@ INTEGER :: IXOR, IYOR, IXEND, IYEND ! Coordinates of the LB zone
                                     ! (in global coordinates)
 INTEGER :: IXORI, IYORI, IXENDI, IYENDI ! Coordinates of
                                         ! the intersection in local coordinates
-INTEGER :: ILUOUT,IRESP   !  Logical unit number and status code
-                          ! associated with HLUOUT 
 !-------------------------------------------------------------------------------
 !
 !*       1.   INITIALIZATIONS
 !              -------------- 
 !   
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
-!
 KISIZEXF=0
 KJSIZEXF=0
 KISIZEXFU=0

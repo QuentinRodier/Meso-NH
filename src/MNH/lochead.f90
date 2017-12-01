@@ -81,8 +81,9 @@ END MODULE MODI_LOCHEAD
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_LUNIT
-USE MODE_FM
+USE MODD_IO_ll,            ONLY : TFILEDATA
+!
+USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_FIND_BYNAME
 !
 IMPLICIT NONE
 !
@@ -124,9 +125,13 @@ INTEGER, DIMENSION(1)      :: INB1       ! number of lines   in local file
 INTEGER, DIMENSION(1)      :: INB2       ! number of columns in local file
 INTEGER                    :: JLAT       ! loop control
 INTEGER                    :: JLON       ! loop control
+TYPE(TFILEDATA),POINTER    :: TZFILE
 !-------------------------------------------------------------------------------
 !
-IF (ODATASAVE) CALL FMLOOK_ll(HSAVEDDATAFILE,CLUOUT0,ISAVE,IRESP)
+IF (ODATASAVE) THEN
+  CALL IO_FILE_FIND_BYNAME(HSAVEDDATAFILE,TZFILE,IRESP)
+  ISAVE = TZFILE%NLU
+END IF
 !
 ZDLAT=(PGLBLATMAX-PGLBLATMIN)/KGLBNBLAT
 ZDLON=(PGLBLONMAX-PGLBLONMIN)/KGLBNBLON

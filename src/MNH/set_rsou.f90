@@ -13,13 +13,13 @@
 !
 INTERFACE
 !
-      SUBROUTINE SET_RSOU(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
+      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
                           ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !
 USE MODD_IO_ll, ONLY : TFILEDATA
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPEXPREFILE ! input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
@@ -42,7 +42,7 @@ END INTERFACE
 END MODULE MODI_SET_RSOU
 !
 !     ###########################################################################
-      SUBROUTINE SET_RSOU(TPFILE,HEXPRE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
+      SUBROUTINE SET_RSOU(TPFILE,TPEXPREFILE,HFUNU,HFUNV,KILOC,KJLOC,OBOUSS,OPV_PERT,&
                           ORMV_BL,PJ,OSHIFT,PCORIOZ) 
 !     ###########################################################################
 !
@@ -252,33 +252,31 @@ END MODULE MODI_SET_RSOU
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST          ! declarative modules
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT_n
 USE MODD_CONF
 USE MODD_CONF_n
+USE MODD_CST
+USE MODD_FIELD_n
 USE MODD_GRID
 USE MODD_GRID_n
-USE MODD_FIELD_n
-USE MODD_PARAM_n, ONLY : CCLOUD
-USE MODD_PARAMETERS
+USE MODD_IO_ll,      ONLY: TFILEDATA
+USE MODD_LUNIT_n
+USE MODD_PARAMETERS, ONLY: JPHEXT
+USE MODD_PARAM_n,    ONLY: CCLOUD
 ! 
-USE MODE_THERMO
 USE MODE_FM
 USE MODE_IO_ll
 USE MODE_ll
 USE MODE_MSG
+USE MODE_THERMO
 !
-USE MODI_HEIGHT_PRESS  ! interface modules
+USE MODI_COMPUTE_EXNER_FROM_GROUND
+USE MODI_HEIGHT_PRESS
 USE MODI_PRESS_HEIGHT
-USE MODI_THETAVPU_THETAVPM
 USE MODI_SET_MASS
 USE MODI_SHUMAN
-USE MODI_VERT_COORD
+USE MODI_THETAVPU_THETAVPM
 USE MODI_TH_R_FROM_THL_RT_1D
-USE MODI_COMPUTE_EXNER_FROM_GROUND
-!
-USE MODD_PARAMETERS, ONLY : JPHEXT
+USE MODI_VERT_COORD
 !
 IMPLICIT NONE
 !  
@@ -286,7 +284,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments :
 !
 TYPE(TFILEDATA),        INTENT(IN)  :: TPFILE ! outpput data file
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+TYPE(TFILEDATA),        INTENT(IN)  :: TPEXPREFILE ! input data file
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNU  ! type of variation of U
                                               ! in y direction
 CHARACTER(LEN=*),       INTENT(IN)  :: HFUNV  ! type of variation of V
@@ -401,7 +399,7 @@ ZRDSRV = XRD/XRV
 !*       1.2  Retrieve logical unit numbers 
 !
 !                           
-CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+ILUPRE = TPEXPREFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 !*       1.3  Read data kind in EXPRE file 
@@ -619,7 +617,7 @@ SELECT CASE(YKIND)
     ZTV(:)=ZTHV(:) * (ZPRESSM(:) / XP00) ** ZRDSCPD  
 !
 !     Compte mixing ratio      
-    ZMR(:)=SM_PMR_HU(CLUOUT,ZPRESSM(:),ZTV(:),ZHU(:),SPREAD(ZMR(:),2,1))     
+    ZMR(:)=SM_PMR_HU(ZPRESSM(:),ZTV(:),ZHU(:),SPREAD(ZMR(:),2,1))     
 !                                                          
 !     Compute height of the mass levels of the RS
     ZHEIGHTM(:) = HEIGHT_PRESS(ZPRESSM,ZTHV,ZPGROUND,ZTHV(1),ZZGROUND)
@@ -685,7 +683,7 @@ SELECT CASE(YKIND)
 !                                                       
 !     Compute Tv and the mixing ratio at the mass levels of the RS
     ZTV(:)=ZTHV(:) * (ZPRESSM(:) / XP00) ** ZRDSCPD   
-    ZMR(:)=SM_PMR_HU(CLUOUT,ZPRESSM(:),ZTV(:),ZHU(:),SPREAD(ZMR(:),2,1)) 
+    ZMR(:)=SM_PMR_HU(ZPRESSM(:),ZTV(:),ZHU(:),SPREAD(ZMR(:),2,1)) 
 !
 ! on interpole thetal(=theta quand il n'y a pas d'eau liquide) et r total
     ZRT(:)=ZMR(:)

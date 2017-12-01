@@ -13,7 +13,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HLUOUT,HCONF,OFLAT,OUSERV,              &
+      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HCONF,OFLAT,OUSERV,                     &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
@@ -28,7 +28,6 @@ INTERFACE
 USE MODD_PARAMETERS
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
 CHARACTER (LEN=32), INTENT(IN)  :: HDESFM ! name of the DESFM file
-CHARACTER (LEN=16), INTENT(IN)  :: HLUOUT ! Name  for outputlisting   
 CHARACTER (LEN=5),  INTENT(OUT) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(OUT) :: OFLAT  ! Logical for zero orography 
 LOGICAL,            INTENT(OUT) :: OUSERV ! use Rv mixing ratio               
@@ -78,7 +77,7 @@ END INTERFACE
 !
 END MODULE MODI_READ_DESFM_n
 !     #########################################################################
-      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HLUOUT,HCONF,OFLAT,OUSERV,              &
+      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HCONF,OFLAT,OUSERV,                     &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
@@ -196,7 +195,8 @@ END MODULE MODI_READ_DESFM_n
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_IO_ll, ONLY : NVERB_FATAL
+USE MODD_IO_ll,   ONLY: NVERB_FATAL
+USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 !
 USE MODN_BACKUP
@@ -269,7 +269,6 @@ IMPLICIT NONE
 !
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
 CHARACTER (LEN=32), INTENT(IN)  :: HDESFM ! name of the DESFM file
-CHARACTER (LEN=16), INTENT(IN)  :: HLUOUT ! Name  for outputlisting   
 CHARACTER (LEN=5),  INTENT(OUT) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(OUT) :: OFLAT  ! Logical for zero orography 
 LOGICAL,            INTENT(OUT) :: OUSERV ! use Rv mixing ratio               
@@ -329,8 +328,8 @@ LOGICAL,DIMENSION(JPMODELMAX),SAVE :: LTEMPDEPOS_AER ! Orilam Moist flag
 !*       1.    READ DESFM FILE
 !              ---------------
 !
-CALL FMLOOK_ll(HDESFM,HLUOUT,ILUDES,IRESP)
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+CALL FMLOOK_ll(HDESFM,TLUOUT%CNAME,ILUDES,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 !
 CALL POSNAM(ILUDES,'NAM_LUNITN',GFOUND)

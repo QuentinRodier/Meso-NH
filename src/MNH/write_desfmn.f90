@@ -13,10 +13,9 @@
 !
 INTERFACE
 !
-SUBROUTINE WRITE_DESFM_n(KMI,HDESFM,HLUOUT)   
+SUBROUTINE WRITE_DESFM_n(KMI,HDESFM)   
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
 CHARACTER (LEN=*),  INTENT(IN)  :: HDESFM ! name of the DESFM file
-CHARACTER (LEN=*),  INTENT(IN)  :: HLUOUT ! Name  for outputlisting   
 END SUBROUTINE WRITE_DESFM_n
 !
 END INTERFACE
@@ -25,7 +24,7 @@ END MODULE MODI_WRITE_DESFM_n
 !
 !
 !     ###################################################
-      SUBROUTINE WRITE_DESFM_n(KMI,HDESFM,HLUOUT)
+      SUBROUTINE WRITE_DESFM_n(KMI,HDESFM)
 !     ###################################################
 !
 !!****  *WRITE_DESFM_n * - routine to write a descriptor file ( DESFM )
@@ -152,6 +151,7 @@ USE MODE_FM
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA
+USE MODD_LUNIT_n, ONLY : TLUOUT
 !
 USE MODN_BACKUP
 USE MODN_CONF
@@ -202,13 +202,12 @@ IMPLICIT NONE
 !
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
 CHARACTER (LEN=*),  INTENT(IN)  :: HDESFM ! name of the DESFM part
-CHARACTER (LEN=*),  INTENT(IN)  :: HLUOUT ! Name  for outputlisting   
 !
 !*       0.2   declarations of local variables
 !
 INTEGER :: IRESP,ILUSEG  ! return code of FMLOOK and logical unit number of
                          ! EXSEG file 
-INTEGER :: ILUOUT        ! Logical unit number for output-listing HLUOUT file
+INTEGER :: ILUOUT        ! Logical unit number for output-listing TLUOUT file
 !
 LOGICAL                     ::  GHORELAX_UVWTH,                               &
                                 GHORELAX_RV,  GHORELAX_RC, GHORELAX_RR,       &
@@ -228,7 +227,7 @@ LOGICAL, DIMENSION(JPSVMAX) ::  GHORELAX_SV
 !*       1.    UPDATE DESFM FILE
 !              -----------------
 !
-CALL FMLOOK_ll(HDESFM,HLUOUT,ILUSEG,IRESP)
+CALL FMLOOK_ll(HDESFM,TLUOUT%CNAME,ILUSEG,IRESP)
 !
 !
 CALL INIT_NAM_LUNITn
@@ -411,7 +410,7 @@ IF(CTURB /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_TURB)
 !
 IF (NVERB >= 5) THEN
 !
-  CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+  ILUOUT = TLUOUT%NLU
 !
   WRITE(UNIT=ILUOUT,FMT="(/,'DESCRIPTOR OF SEGMENT FOR MODEL ',I2)") KMI
   WRITE(UNIT=ILUOUT,FMT="(  '------------------------------- '   )")

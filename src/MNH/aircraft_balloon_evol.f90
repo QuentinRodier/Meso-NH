@@ -14,7 +14,7 @@ MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !
 INTERFACE
 !
-      SUBROUTINE AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP,       &
+      SUBROUTINE AIRCRAFT_BALLOON_EVOL(PTSTEP,               &
                        TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
@@ -24,7 +24,6 @@ INTERFACE
 USE MODD_TYPE_DATE
 USE MODD_AIRCRAFT_BALLOON
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -60,7 +59,7 @@ END INTERFACE
 END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !
 !     ########################################################
-      SUBROUTINE AIRCRAFT_BALLOON_EVOL(HLUOUT, PTSTEP,       &
+      SUBROUTINE AIRCRAFT_BALLOON_EVOL(PTSTEP,               &
                        TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
                        PMAP, PLONOR, PLATOR,                 &
@@ -138,58 +137,53 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !*      0. DECLARATIONS
 !          ------------
 !
+USE MODD_AIRCRAFT_BALLOON
+USE MODD_CONF
+USE MODD_CST
+USE MODD_DIAG_IN_RUN
+USE MODD_GRID
+USE MODD_LUNIT_n,          ONLY: TLUOUT
+USE MODD_NESTING
+USE MODD_NSV,              ONLY : NSV_LIMA_NI,NSV_LIMA_NR,NSV_LIMA_NC
+USE MODD_PARAMETERS
+USE MODD_PARAM_LIMA,       ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
+                                 XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
+                                 XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
+USE MODD_PARAM_LIMA_COLD,  ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
+                                 XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
+                                 XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
+USE MODD_PARAM_LIMA_MIXED, ONLY: XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
+                                 XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
+USE MODD_PARAM_LIMA_WARM,  ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
+                                 XBC_L=>XBC,XAC_L=>XAC
+USE MODD_PARAM_n,          ONLY: CCLOUD
+USE MODD_RAIN_ICE_DESCR,   ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
+                                 XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
+                                 XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
+                                 XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
+                                 XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
+                                 XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
+                                 XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
+                                 XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
+                                 XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
+                                 XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
+                                 XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
+                                 XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA
+USE MODD_REF_n,            ONLY: XRHODREF
+USE MODD_TIME
+USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
 USE MODD_TYPE_DATE
 !
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_AIRCRAFT_BALLOON
-USE MODD_GRID
-USE MODD_TIME
-USE MODD_CONF
-USE MODD_DIAG_IN_RUN
-USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
-USE MODD_PARAM_n, ONLY : CCLOUD
-!
-USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XLBEXR_I=>XLBEXR,&
-                               XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XAR_I=>XAR,&
-                               XALPHAC_I=>XALPHAC,XNUC_I=>XNUC,&
-                               XLBC_I=>XLBC,XBC_I=>XBC,XAC_I=>XAC,&
-                               XALPHAC2_I=>XALPHAC2,XNUC2_I=>XNUC2,&
-                               XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XLBEXS_I=>XLBEXS,&
-                               XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,&
-                               XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
-                               XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
-                               XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
-                               XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
-                               XRTMIN_I=>XRTMIN,XCONC_LAND,XCONC_SEA
-USE MODE_FSCATTER,ONLY : QEPSW,QEPSI,BHMIE,MOMG,MG
-USE MODE_FGAU,    ONLY : GAULAG
-USE MODD_REF_n,   ONLY : XRHODREF
-USE MODI_GAMMA,   ONLY : GAMMA
-USE MODD_PARAM_LIMA_WARM, ONLY: XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XAR_L=>XAR,&
-                                XBC_L=>XBC,XAC_L=>XAC
-USE MODD_PARAM_LIMA_COLD, ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
-                                XLBEXS_L=>XLBEXS,XLBS_L=>XLBS,XCCS_L=>XCCS,&
-                                XAS_L=>XAS,XBS_L=>XBS,XCXS_L=>XCXS
-
-USE MODD_PARAM_LIMA_MIXED, ONLY:XDG_L=>XDG,XLBEXG_L=>XLBEXG,XLBG_L=>XLBG,XCCG_L=>XCCG,&
-                                XAG_L=>XAG,XBG_L=>XBG,XCXG_L=>XCXG,XCG_L=>XCG
-USE MODD_PARAM_LIMA, ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XNUS_L=>XNUS,&
-                           XALPHAG_L=>XALPHAG,XNUG_L=>XNUG, XALPHAI_L=>XALPHAI,XNUI_L=>XNUI,&
-                           XRTMIN_L=>XRTMIN,XALPHAC_L=>XALPHAC,XNUC_L=>XNUC
-!
-USE MODE_FM, ONLY : FMLOOK_ll
-USE MODE_IO_ll
+USE MODE_FGAU,             ONLY: GAULAG
+USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODE_GRIDPROJ
+USE MODE_IO_ll
 USE MODE_ll
 USE MODE_MSG
 !
-USE MODI_WATER_SUM
+USE MODI_GAMMA,            ONLY: GAMMA
 USE MODI_TEMPORAL_DIST
-!
-USE MODD_NESTING
-!
-USE MODD_NSV, ONLY : NSV_LIMA_NI,NSV_LIMA_NR,NSV_LIMA_NC
+USE MODI_WATER_SUM
 !
 IMPLICIT NONE
 !
@@ -197,7 +191,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -353,7 +346,7 @@ IF(.NOT. ALLOCATED(XRCW_FLUX)) &
 ALLOCATE(XRCW_FLUX(SIZE(PTH,1),SIZE(PTH,2),SIZE(PTH,3)))
 IF(.NOT. ALLOCATED(XSVW_FLUX)) &
 ALLOCATE(XSVW_FLUX(SIZE(PSV,1),SIZE(PSV,2),SIZE(PSV,3),SIZE(PSV,4)))
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 ZR = 0.
 !

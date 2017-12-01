@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HLUOUT, HRAD,                   &
+      SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HRAD,                           &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
                              PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
@@ -24,8 +24,6 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
@@ -58,7 +56,7 @@ END INTERFACE
 !
 END MODULE MODI_C2R2_ADJUST
 !     ##########################################################################
-      SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HLUOUT, HRAD,                   &
+      SUBROUTINE C2R2_ADJUST(KRR, TPFILE, HRAD,                           &
                              HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,    &
                              PRHODJ, PSIGS, PPABST,                       &
                              PTHS, PRVS, PRCS, PCNUCS,                    &
@@ -155,18 +153,18 @@ END MODULE MODI_C2R2_ADJUST
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS
-USE MODD_CST
-USE MODD_CONF
 USE MODD_BUDGET
-USE MODD_IO_ll, ONLY: TFILEDATA
-USE MODD_NSV, ONLY : NSV_C2R2BEG
+USE MODD_CONF
+USE MODD_CST
+USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_NSV,     ONLY: NSV_C2R2BEG
+USE MODD_PARAMETERS
 !
 USE MODI_CONDENS
 USE MODI_BUDGET
 !
 USE MODE_FIELD
-USE MODE_FM
 USE MODE_FMWRIT
 USE MODE_MSG
 !
@@ -177,8 +175,6 @@ IMPLICIT NONE
 !
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE   ! Output file
-CHARACTER(LEN=*),         INTENT(IN)    :: HLUOUT   ! Output-listing name for
-                                                    ! model n
 CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
                                                     ! turbulence scheme
 CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
@@ -228,7 +224,7 @@ TYPE(TFIELDDATA)    :: TZFIELD
 !*       1.     PRELIMINARIES
 !               -------------
 !
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+ILUOUT = TLUOUT%NLU
 ZEPS= XMV / XMD
 !
 IF (OSUBG_COND) THEN

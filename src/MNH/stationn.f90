@@ -14,7 +14,7 @@ MODULE MODI_STATION_n
 !
 INTERFACE
 !
-      SUBROUTINE STATION_n(HLUOUT, PTSTEP,                       &
+      SUBROUTINE STATION_n(PTSTEP,                               &
                            TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                            PXHAT, PYHAT, PZ,                     &
                            PU, PV, PW, PTH, PR, PSV, PTKE,       &
@@ -22,7 +22,6 @@ INTERFACE
 !
 USE MODD_TYPE_DATE
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT  ! output listing       
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -50,7 +49,7 @@ END INTERFACE
 END MODULE MODI_STATION_n
 !
 !     ########################################################
-      SUBROUTINE STATION_n(HLUOUT, PTSTEP,       &
+      SUBROUTINE STATION_n(PTSTEP,                           &
                        TPDTEXP, TPDTMOD, TPDTSEG, TPDTCUR,   &
                        PXHAT, PYHAT, PZ,                     &
                        PU, PV, PW, PTH, PR, PSV, PTKE,   &
@@ -106,7 +105,6 @@ USE MODD_GRID
 USE MODD_TIME
 USE MODD_CONF
 !
-USE MODE_FM
 USE MODE_ll
 !
 USE MODI_WATER_SUM
@@ -120,7 +118,6 @@ IMPLICIT NONE
 !*      0.1  declarations of arguments
 !
 !
-CHARACTER(LEN=*),         INTENT(IN)     :: HLUOUT ! output listing
 REAL,                     INTENT(IN)     :: PTSTEP ! time step
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTEXP! experiment date and time
 TYPE(DATE_TIME),          INTENT(IN)     :: TPDTMOD! model start date and time
@@ -168,7 +165,6 @@ REAL    :: ZV_STAT     ! horizontal wind speed at station location (along y)
 REAL    :: ZGAM        ! rotation between meso-nh base and spherical lat-lon base.
 !
 INTEGER :: IINFO_ll   ! return code
-INTEGER :: ILUOUT     ! logical unit
 INTEGER :: IRESP      ! return code
 INTEGER :: I          ! loop for stations
 INTEGER :: J          ! loop for levels
@@ -178,8 +174,6 @@ INTEGER :: J          ! loop for levels
 !
 !*      2.   PRELIMINARIES
 !            -------------
-!
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
 !
 !*      2.1  Indices
 !            -------

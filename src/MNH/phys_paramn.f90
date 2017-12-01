@@ -726,7 +726,7 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XLWD(:,:,:)=0.0
       XDTHRADSW(:,:,:)=0.0
       XDTHRADLW(:,:,:)=0.0
-      CALL RADIATIONS   ( OCLOSE_OUT, TPFILE, CLUOUT,                               &
+      CALL RADIATIONS   ( OCLOSE_OUT, TPFILE,                                       &
                LCLEAR_SKY,OCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
                COPWLW,COPILW, XFUDG,                                                &
                NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER,NSWB, NSTATM, NRAD_COLNBR,&

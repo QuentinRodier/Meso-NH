@@ -63,8 +63,6 @@ END MODULE MODI_VER_INT_DYN
 !!
 !!    function VER_SHIFT    : to shift a array of altitudes
 !!    function VER_INTERP   : to interpolate one field from one grid to another
-!!    subroutine FMLOOK     : to retrieve a logical unit number associated
-!!                            with a file
 !!    MZF                   : Shuman operator
 !!
 !!    Module MODI_SHUMAN    : interface for Shuman operators
@@ -104,17 +102,16 @@ END MODULE MODI_VER_INT_DYN
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
-!
-USE MODI_VER_SHIFT   ! interface module
-USE MODI_COEF_VER_INTERP_LIN
-USE MODI_VER_INTERP_LIN
-USE MODI_SHUMAN
-USE MODD_CONF      ! declaration modules
-USE MODD_LUNIT
+USE MODD_CONF
 USE MODD_GRID_n
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS
 USE MODD_VER_INTERP_LIN
+!
+USE MODI_COEF_VER_INTERP_LIN
+USE MODI_SHUMAN
+USE MODI_VER_INTERP_LIN
+USE MODI_VER_SHIFT
 !
 IMPLICIT NONE
 !
@@ -135,7 +132,6 @@ REAL,   DIMENSION(:,:,:), INTENT(OUT) :: PRHODVA   ! rhodV on MESO-NH A-grid
 !*       0.2   Declaration of local variables
 !              ------------------------------
 !
-INTEGER                    ::ILUOUT0, IRESP
 INTEGER                    ::IKU
 !
 REAL,DIMENSION(SIZE(PZMASS_MX,1),SIZE(PZMASS_MX,2),SIZE(PZMASS_MX,3))  &
@@ -206,7 +202,6 @@ PRHODVA(:,:,:)=VER_INTERP_LIN(ZRHODV_SH(:,:,:),NKLIN(:,:,:),XCOEFLIN(:,:,:))
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
-WRITE(ILUOUT0,*) 'Routine VER_INT_DYN completed'
+WRITE(TLUOUT0%NLU,*) 'Routine VER_INT_DYN completed'
 !
 END SUBROUTINE VER_INT_DYN

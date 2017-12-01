@@ -889,7 +889,7 @@ ALLOCATE (ZR_DUM(IIU,IJU,INLEVEL,1))
 ALLOCATE (ZRV_LS(IIU,IJU,INLEVEL))
 ALLOCATE (ZTEV_LS(IIU,IJU,INLEVEL))
 ZTEV_LS(:,:,:) = ZTHV_LS(:,:,:) * ZEXNM_LS(:,:,:)
-ZRV_LS(:,:,:) = SM_PMR_HU(CLUOUT0, ZPM_LS(:,:,:),      &
+ZRV_LS(:,:,:) = SM_PMR_HU(ZPM_LS(:,:,:),                &
 ZTEV_LS(:,:,:),ZH_LS(:,:,:),ZR_DUM(:,:,:,:),KITERMAX=100)
 IF (HFILE(1:3)=='ATM') THEN
   XQ_LS(:,:,:,1) = ZRV_LS(:,:,:) / (1. + ZRV_LS(:,:,:))

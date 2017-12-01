@@ -49,7 +49,6 @@ END MODULE MODI_ANEL_BALANCE_n
 !!
 !!    EXTERNAL
 !!    --------
-!!    FMLOOK   : to retrieve a logical unit number associated with a file
 !!    TRID     : to compute coefficients for the flat operator
 !!    PRESSURE : to solve the pressure equation and add the pressure term to
 !!               wind
@@ -117,7 +116,6 @@ END MODULE MODI_ANEL_BALANCE_n
 !
 USE MODE_ll
 USE MODE_IO_ll
-USE MODE_FM
 USE MODE_MODELN_HANDLER
 !
 USE MODD_CONF    ! declarative modules
@@ -130,7 +128,6 @@ USE MODD_REF_n
 USE MODD_FIELD_n
 USE MODD_DYN_n
 USE MODD_LBC_n
-USE MODD_LUNIT_n
 !
 USE MODI_TRIDZ    ! interface modules
 USE MODI_PRESSUREZ
@@ -149,8 +146,7 @@ REAL, OPTIONAL                 :: PRESIDUAL
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER :: ILUOUT,IRESP           ! Logical unit number for output listing and
-                                  ! return code
+INTEGER :: IRESP                  ! return code
 INTEGER :: IIY,IJY                ! same variable for Y decomposition
 INTEGER :: ITCOUNT                ! counter value of temporal loop set to 1 ( this
                                   ! means that no guess of the pressure is available for
@@ -198,8 +194,6 @@ TYPE(LIST_ll), POINTER :: TZFIELDS_ll=>NULL()   ! list of fields to exchange
 !*       1.     PROLOGUE  :
 !               --------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT,IRESP)
-
 CALL GET_DIM_EXT_ll('Y',IIY,IJY)
 IF (L2D) THEN
   ALLOCATE(ZBFY(IIY,IJY,SIZE(XRHODJ,3)))
@@ -224,7 +218,7 @@ CALL MPPDB_CHECK3D(XUT,"anel_balancen1-::XUT",PRECISION)
 !               -------------------------------
 !
 !
-CALL TRIDZ(CLUOUT0,CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,  &
+CALL TRIDZ(CLBCX,CLBCY,XMAP,XDXHAT,XDYHAT,ZDXHATM,ZDYHATM,ZRHOM,        &
           ZAF,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,XRHODJ,XTHVREF,XZZ,ZBFY,&
           ZBFB,ZBF_SXP2_YP1_Z) 
 CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen1-after TRIDZ::XRHODJ",PRECISION)
@@ -284,14 +278,13 @@ GCLOSE_OUT=.FALSE.
 YFMFILE='UNUSED'
 !
 IMI = GET_CURRENT_MODEL_INDEX()
-CALL PRESSUREZ(CLUOUT,                                               &
-              CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,ITCOUNT,XRELAX,IMI,  &
-              XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,ZDXHATM,ZDYHATM,ZRHOM, &
-              ZAF,ZBFY,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,            &
-              IRR,IRRL,IRRI,ZDRYMASST,ZREFMASS,ZMASS_O_PHI0,         &
-              ZTH,ZRR,XRHODREF,XTHVREF,XRVREF,XEXNREF, XLINMASS,     &
-              ZRU,ZRV,ZRW,ZPABST,                                    &
-              ZBFB,ZBF_SXP2_YP1_Z,PRESIDUAL                          )
+CALL PRESSUREZ(CLBCX,CLBCY,CPRESOPT,NITR,LITRADJ,ITCOUNT,XRELAX,IMI,  &
+               XRHODJ,XDXX,XDYY,XDZZ,XDZX,XDZY,ZDXHATM,ZDYHATM,ZRHOM, &
+               ZAF,ZBFY,ZCF,ZTRIGSX,ZTRIGSY,IIFAXX,IIFAXY,            &
+               IRR,IRRL,IRRI,ZDRYMASST,ZREFMASS,ZMASS_O_PHI0,         &
+               ZTH,ZRR,XRHODREF,XTHVREF,XRVREF,XEXNREF, XLINMASS,     &
+               ZRU,ZRV,ZRW,ZPABST,                                    &
+               ZBFB,ZBF_SXP2_YP1_Z,PRESIDUAL                          )
 !
 CALL MPPDB_CHECK3D(XRHODJ,"anel_balancen3.2-after pressurez halo::XRHODJ",PRECISION)
 CALL MPPDB_CHECK3D(ZRU,"anel_balancen3.2-after pressurez::ZRU",PRECISION)

@@ -69,17 +69,15 @@ END MODULE MODI_ERROR_ON_TEMPERATURE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM
+USE MODD_CONF
+USE MODD_CST
+USE MODD_FIELD_n, ONLY: XTHT
+USE MODD_LUNIT,   ONLY: TLUOUT0
+USE MODD_REF_n
+USE MODD_VER_INTERP_LIN
 !
 USE MODI_COEF_VER_INTERP_LIN
 USE MODI_VER_INTERP_LIN
-!
-USE MODD_CONF           ! declaration modules
-USE MODD_LUNIT
-USE MODD_CST
-USE MODD_REF_n
-USE MODD_FIELD_n, ONLY: XTHT
-USE MODD_VER_INTERP_LIN
 !
 IMPLICIT NONE
 !
@@ -104,7 +102,7 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZP1,ZT1  ! work arrays
 REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZP2,ZT2  ! work arrays
 LOGICAL,DIMENSION(:,:,:), ALLOCATABLE :: GMASK! .T. where pressure level is significant
 !
-INTEGER                           :: IRESP, ILUOUT0
+INTEGER                           :: ILUOUT0
 INTEGER                           :: IIU,IJU,ILU,IKU
 INTEGER                           :: JP
 !
@@ -198,7 +196,7 @@ END DO
 !*     4.     Prints
 !             ------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 WRITE(ILUOUT0,*) ''
 WRITE(ILUOUT0,*) 'Temperature RMS between begin and end of PREP_REAL_CASE :'

@@ -84,8 +84,6 @@ END MODULE MODI_VER_THERMO
 !!    subroutine SET_REFZ       : to initialize the reference state 1D variables
 !!    subroutine TOTAL_DMASS    : to compute the total dry mass
 !!    subroutine SET_REF        : to compute  rhoJ
-!!    subroutine FMLOOK         : to retrieve a logical unit number associated
-!!                                with a file
 !!
 !!    Module MODI_VER_INT_THERMO: interface for subroutine VER_INT_THERMO
 !!    Module MODI_SET_REFZ      : interface for subroutine SET_REFZ
@@ -158,38 +156,34 @@ END MODULE MODI_VER_THERMO
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODI_VER_INT_THERMO ! interface modules
+USE MODD_ARGSLIST_ll, ONLY: LIST_ll
+USE MODD_CONF
+USE MODD_CONF_n
+USE MODD_CST
+USE MODD_DYN_n
+USE MODD_FIELD_n,     ONLY: XTHT,XRT,XPABST,XDRYMASST
+USE MODD_GRID_n
+USE MODD_IO_ll,       ONLY: TFILEDATA
+USE MODD_LBC_n
+USE MODD_LSFIELD_n
+USE MODD_LUNIT,       ONLY: CLUOUT0,TLUOUT0
+USE MODD_LUNIT_n,     ONLY: CLUOUT
+USE MODD_PARAMETERS
+USE MODD_REF_n
+!
+USE MODD_DIM_n
+USE MODE_EXTRAPOL
+USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEREAL
+USE MODE_FMWRIT
+USE MODE_ll
+USE MODE_MPPDB
+!
+USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_SET_REF
 USE MODI_SET_REFZ
 USE MODI_TOTAL_DMASS
-USE MODI_SET_REF
-USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_VER_INT_THERMO
 USE MODI_WATER_SUM
-!
-USE MODD_CONF           ! declaration modules
-USE MODD_CONF_n
-USE MODD_IO_ll, ONLY : TFILEDATA
-USE MODD_LUNIT
-USE MODD_CST
-USE MODD_FIELD_n, ONLY: XTHT,XRT,XPABST,XDRYMASST
-USE MODD_LSFIELD_n
-USE MODD_DYN_n
-USE MODD_REF_n
-USE MODD_GRID_n
-USE MODD_LBC_n
-USE MODD_LUNIT_n
-USE MODD_PARAMETERS
-!
-!
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
-USE MODE_FM
-USE MODD_DIM_n
-USE MODE_MPPDB
-USE MODE_ll
-USE MODE_EXTRAPOL
-!
-!20131113
-USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 !
 IMPLICIT NONE
 !
@@ -218,7 +212,6 @@ REAL,DIMENSION(:,:,:), INTENT(IN), OPTIONAL :: PLSRV_MX ! large scale vapor mixi
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER                                          :: ILUOUT0, IRESP
 INTEGER                                          :: ILBX,ILBY
 INTEGER                                          :: IIB,IIE,IIU
 INTEGER                                          :: IJB,IJE,IJU
@@ -341,8 +334,8 @@ ALLOCATE(XRVREF(IIU,IJU,IKU))
 ALLOCATE(XEXNREF(IIU,IJU,IKU))
 ALLOCATE(XRHODJ(IIU,IJU,IKU))
 XRVREF(:,:,:) = 0.
-CALL SET_REF(0,TZFILEDUMMY,CLUOUT0,XZZ,XZHAT,PJ,PDXX,PDYY,CLBCX,CLBCY, &
-             XREFMASS,XMASS_O_PHI0,XLINMASS,XRHODREF,XTHVREF,XRVREF,   &
+CALL SET_REF(0,TZFILEDUMMY,XZZ,XZHAT,PJ,PDXX,PDYY,CLBCX,CLBCY,       &
+             XREFMASS,XMASS_O_PHI0,XLINMASS,XRHODREF,XTHVREF,XRVREF, &
              XEXNREF,XRHODJ)
 
 CALL MPPDB_CHECK3D(XRHODREF,"VERTHERMO::XRHODREF",PRECISION)
@@ -380,7 +373,7 @@ END DO
 ZRHOD(:,:,:)=XPABST(:,:,:)/(XPABST(:,:,:)/XP00)**(XRD/XCPD) &
             /(XRD*ZTHV(:,:,:)*(1.+ZSUMRT(:,:,:)))
 !
-CALL TOTAL_DMASS(CLUOUT0,PJ,ZRHOD,XDRYMASST)
+CALL TOTAL_DMASS(PJ,ZRHOD,XDRYMASST)
 !
 !-------------------------------------------------------------------------------
 !
@@ -389,12 +382,12 @@ CALL TOTAL_DMASS(CLUOUT0,PJ,ZRHOD,XDRYMASST)
 !
                                  ! 3D case
 !
-  CALL GET_SIZEX_LB(CLUOUT,NIMAX_ll,NJMAX_ll,NRIMX,   &
-       IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU,         &
-       IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2)
-  CALL GET_SIZEY_LB(CLUOUT,NIMAX_ll,NJMAX_ll,NRIMY,   &
-       IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV,         &
-       IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
+  CALL GET_SIZEX_LB(NIMAX_ll,NJMAX_ll,NRIMX,               &
+                    IISIZEXF,IJSIZEXF,IISIZEXFU,IJSIZEXFU, &
+                    IISIZEX4,IJSIZEX4,IISIZEX2,IJSIZEX2)
+  CALL GET_SIZEY_LB(NIMAX_ll,NJMAX_ll,NRIMY,               &
+                    IISIZEYF,IJSIZEYF,IISIZEYFV,IJSIZEYFV, &
+                    IISIZEY4,IJSIZEY4,IISIZEY2,IJSIZEY2)
 
 IF ( .NOT. PRESENT(PLSTH_MX) ) THEN
   ALLOCATE(XLSTHM(IIU,IJU,IKU))
@@ -494,7 +487,6 @@ ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
-WRITE(ILUOUT0,*) 'Routine VER_THERMO completed'
+WRITE(TLUOUT0%NLU,*) 'Routine VER_THERMO completed'
 !
 END SUBROUTINE VER_THERMO

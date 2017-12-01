@@ -78,9 +78,7 @@ END MODULE MODI_GPS_ZENITH_GRID
 !
 !
 USE MODD_PARAMETERS
-USE MODD_LUNIT
 USE MODD_CST
-USE MODE_FM
 USE MODD_GR_FIELD_n
 USE MODD_DIAG_FLAG
 USE MODD_GRID, ONLY: XLONORI,XLATORI
@@ -112,7 +110,6 @@ INTEGER :: IJB,IJE          ! Loop limits for coordinate Y
 INTEGER :: IKB,IKE          ! Loop limits for coordinate Z
 INTEGER :: JK               ! Loop variables of control
 INTEGER :: IIU,IJU,IKU      ! Loop variables of model 
-INTEGER :: ILUOUT0, IRESP   ! file unit and return code for output
 REAL,  DIMENSION(:),ALLOCATABLE         :: ZXHATM,ZYHATM   ! mass-point positions 
 REAL,  DIMENSION(:,:,:),ALLOCATABLE     :: ZZHATM   ! mass level altitude  
 !-------- Physical parameters for the integration ----------------------------
@@ -134,7 +131,6 @@ REAL, DIMENSION(:,:),ALLOCATABLE   :: ZGTOP            !  gravity of top of mode
 !*       1.     INTIALIZE DIMENSIONS AND ALLOCATE ARRAYS
 !               ----------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 IIU = SIZE (PTEMP,1)
 IJU = SIZE (PTEMP,2)

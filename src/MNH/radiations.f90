@@ -9,7 +9,7 @@
 !
 INTERFACE 
 !
-    SUBROUTINE RADIATIONS (OCLOSE_OUT,TPFILE,HLUOUT,OCLEAR_SKY,OCLOUD_ONLY,    &
+    SUBROUTINE RADIATIONS (OCLOSE_OUT,TPFILE,OCLEAR_SKY,OCLOUD_ONLY,           &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
                PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB,KSTATM, &
                KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,                              &
@@ -24,8 +24,6 @@ LOGICAL, INTENT(IN)                  :: OCLOSE_OUT! flag indicating that a FM
                                                   ! file is opened during this 
                                                   ! time-step
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
-CHARACTER(LEN=*), INTENT(IN)         :: HLUOUT    ! Output-listing name for
-                                                  ! model n
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
                                                    !    computations only
 LOGICAL, INTENT(IN)                  :: OCLEAR_SKY ! 
@@ -108,7 +106,7 @@ END INTERFACE
 END MODULE MODI_RADIATIONS  
 !
 !   ############################################################################
-    SUBROUTINE RADIATIONS (OCLOSE_OUT,TPFILE,HLUOUT,OCLEAR_SKY,OCLOUD_ONLY,    &
+    SUBROUTINE RADIATIONS (OCLOSE_OUT,TPFILE,OCLEAR_SKY,OCLOUD_ONLY,           &
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,      &
                PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB,KSTATM, &
                KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,                              &
@@ -217,46 +215,42 @@ END MODULE MODI_RADIATIONS
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE PARKIND1 , ONLY : JPRB
+USE PARKIND1,         ONLY: JPRB
+USE YOESW,            ONLY: RTAUA, RPIZA, RCGA
 !
-USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
-USE MODE_FMWRIT
-USE MODE_FM
-USE MODE_ll
-USE MODI_ECMWF_RADIATION_VERS2
-USE YOESW    , ONLY : RTAUA    ,RPIZA    ,RCGA
-
-!
-USE MODD_TIME
+USE MODD_CH_AEROSOL,  ONLY: LORILAM
 USE MODD_CST
-USE MODD_IO_ll, ONLY: TFILEDATA
+USE MODD_DUST,        ONLY: LDUST
+USE MODD_IO_ll,       ONLY: TFILEDATA
+USE MODD_LUNIT_n,     ONLY: TLUOUT
+USE MODD_NSV,         ONLY: NSV_C2R2,NSV_C2R2BEG,NSV_C2R2END,     &
+                            NSV_C1R3,NSV_C1R3BEG,NSV_C1R3END,     &
+                            NSV_DSTBEG, NSV_DSTEND,               &
+                            NSV_AERBEG, NSV_AEREND,               &
+                            NSV_SLTBEG, NSV_SLTEND,               &
+                            NSV_LIMA,NSV_LIMA_BEG,NSV_LIMA_END,   &
+                            NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_NI
 USE MODD_PARAMETERS
-USE MODD_RAIN_ICE_DESCR
-USE MODD_NSV, ONLY : NSV_C2R2,NSV_C2R2BEG,NSV_C2R2END, &
-                     NSV_C1R3,NSV_C1R3BEG,NSV_C1R3END, &
-                     NSV_DSTBEG, NSV_DSTEND, &
-                     NSV_AERBEG, NSV_AEREND, &
-                     NSV_SLTBEG, NSV_SLTEND, &
-                     NSV_LIMA,NSV_LIMA_BEG,NSV_LIMA_END, &
-                     NSV_LIMA_NC, NSV_LIMA_NR, NSV_LIMA_NI
-USE MODD_PARAM_n, ONLY : CCLOUD
-!
-USE MODE_THERMO
-
-USE MODD_DUST, ONLY: LDUST
-USE MODD_SALT, ONLY: LSALT
-USE MODD_CH_AEROSOL, ONLY: LORILAM
-USE MODD_PARAM_RAD_n, ONLY: CAOP
-USE MODE_DUSTOPT
-USE MODE_SALTOPT
-USE MODI_AEROOPT_GET
 USE MODD_PARAM_LIMA
+USE MODD_PARAM_n,     ONLY: CCLOUD
+USE MODD_PARAM_RAD_n, ONLY: CAOP
+USE MODD_RAIN_ICE_DESCR
+USE MODD_SALT,        ONLY: LSALT
+USE MODD_TIME
 !
+USE MODE_DUSTOPT
+USE MODE_FIELD,       ONLY: TFIELDDATA,TYPEREAL
+USE MODE_FMWRIT
+USE MODE_ll
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
 #endif
+USE MODE_SALTOPT
+USE MODE_THERMO
 !
-USE MODI_SUM_ll , ONLY : GMINLOC_ll , MIN_ll
+USE MODI_AEROOPT_GET
+USE MODI_ECMWF_RADIATION_VERS2
+USE MODI_SUM_ll,      ONLY: GMINLOC_ll, MIN_ll
 !  
 IMPLICIT NONE
 !
@@ -266,8 +260,6 @@ LOGICAL, INTENT(IN)                  :: OCLOSE_OUT! flag indicating that a FM
                                                   ! file is opened during this 
                                                   ! time-step
 TYPE(TFILEDATA),  INTENT(IN)         :: TPFILE    ! Output file
-CHARACTER(LEN=*), INTENT(IN)         :: HLUOUT    ! Output-listing name for
-                                                  ! model n
 LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
                                                    !    computations only
 LOGICAL, INTENT(IN)                  :: OCLEAR_SKY ! 
@@ -658,7 +650,7 @@ ZDZPABST(:,:,IKU) = ZDZPABST(:,:,IKU-1)
 ZMINVAL=MIN_ll(ZDZPABST,IINFO_ll)
 !
 IF ( ZMINVAL <= 0.0 ) THEN
-   CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+   ILUOUT = TLUOUT%NLU
    IMINLOC=GMINLOC_ll( ZDZPABST )
    WRITE(ILUOUT,*) ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST <= 0.0 '  
    WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
@@ -2612,7 +2604,7 @@ IF( OCLOSE_OUT .AND. (KRAD_DIAG >= 1) ) THEN
   !
   IF( KRAD_DIAG >= 1) THEN
     !
-    CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+    ILUOUT = TLUOUT%NLU
     WRITE(UNIT=ILUOUT,FMT='(/," STORE ADDITIONNAL RADIATIVE FIELDS:", &
          & " KRAD_DIAG=",I1,/)') KRAD_DIAG
     DO JK=IKB,IKE

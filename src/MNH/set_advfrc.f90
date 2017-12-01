@@ -12,17 +12,21 @@
 !
 INTERFACE
 !
-SUBROUTINE SET_ADVFRC(HEXPRE)
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
+SUBROUTINE SET_ADVFRC(TPEXPREFILE)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
+!
 END SUBROUTINE SET_ADVFRC
 !
 END INTERFACE
 !
 END MODULE MODI_SETADVFRC
 !
-!     ##########################
-      SUBROUTINE SET_ADVFRC(HEXPRE)
-!     ##########################
+!     ##################################
+      SUBROUTINE SET_ADVFRC(TPEXPREFILE)
+!     ##################################
 !
 !!*** *SET_ADVFRC * -  to initialize Advective forcing fields for different months
 !!    
@@ -76,39 +80,35 @@ END MODULE MODI_SETADVFRC
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_CST 
-USE MODD_LUNIT_n
-USE MODD_GRID_n
+USE MODD_ADVFRC_n
 USE MODD_CONF
+USE MODD_CST 
+USE MODD_DIM_n 
 USE MODD_FRC
 USE MODD_GRID
+USE MODD_GRID_n
+USE MODD_IO_ll,      ONLY: TFILEDATA
+USE MODD_LUNIT_n,    ONLY: TLUOUT
+USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 USE MODD_REF
-USE MODD_PARAMETERS  ! JPHEXT
 ! 
-USE MODE_FM
 USE MODE_IO_ll
 USE MODE_MSG
 USE MODE_THERMO
 !
-USE MODI_HEIGHT_PRESS  ! interface modules
+USE MODI_HEIGHT_PRESS
 USE MODI_PRESS_HEIGHT
-USE MODI_THETAVPU_THETAVPM 
-USE MODI_TEMPORAL_LT
-USE MODD_DIM_n 
-!
-USE MODI_READ_ASCP
 USE MODI_READ_ASC_LATPRESS
+USE MODI_READ_ASCP
+USE MODI_TEMPORAL_LT
+USE MODI_THETAVPU_THETAVPM 
 !
-USE MODD_ADVFRC_n
-
 IMPLICIT NONE
 !  
 !  
 !*       0.1   Declarations of arguments :
 !
-CHARACTER(LEN=*),       INTENT(IN)  :: HEXPRE ! name of input data file
-
-
+TYPE(TFILEDATA), INTENT(IN)  :: TPEXPREFILE ! input data file
 !
 !*       0.2   Declarations of local variables :
 !
@@ -141,7 +141,7 @@ CHARACTER(LEN=6)                :: YADV         ! choice of zfrc or pfrc
 print*,"!*	 1.     PROLOGUE : RETRIEVE LOGICAL UNIT NUMBERS "
 !	        ----------------------------------------
 !                           
-CALL FMLOOK_ll(HEXPRE,CLUOUT,ILUPRE,IRESP)
+ILUPRE = TPEXPREFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 !-------------------------------------------------------------------------------

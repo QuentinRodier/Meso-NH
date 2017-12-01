@@ -28,7 +28,6 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !!    --------
 !!
 !!    function MZF
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    routine VER_INTERP_TO_MIXED_GRID
 !!    routine CHANGE_GRIBEX_VAR
 !!
@@ -42,7 +41,7 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !!      Module MODD_CONF1     : contains configuration variables for all models.
 !!         NVERB      : verbosity level for output-listing
 !!      Module MODD_LUNIT     :  contains logical unit names for all models
-!!         CLUOUT0 : name of output-listing
+!!         TLUOUT0 : output-listing file
 !!      Module MODD_CST       : contains physical constants
 !!         XRD : gas constant for dry air
 !!         XRV : gas constant for vapor
@@ -84,23 +83,22 @@ END MODULE MODI_VER_PREP_NETCDF_CASE
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_THERMO
-USE MODE_FM
-!
-USE MODI_SHUMAN         ! interface modules
-USE MODI_CHANGE_GRIBEX_VAR
-USE MODI_VER_INTERP_TO_MIXED_GRID
-USE MODI_RMS_AT_Z
-USE MODI_COMPUTE_EXNER_FROM_TOP
-USE MODI_WATER_SUM
-USE MODI_SECOND_MNH
-!
-USE MODD_CONF           ! declaration modules
+USE MODD_CONF
 USE MODD_CONF_n
-USE MODD_LUNIT
 USE MODD_CST
-USE MODD_PREP_REAL
+USE MODD_LUNIT, ONLY: TLUOUT0
 USE MODD_PARAMETERS, ONLY : JPVEXT, XUNDEF
+USE MODD_PREP_REAL
+!
+USE MODE_THERMO
+!
+USE MODI_CHANGE_GRIBEX_VAR
+USE MODI_COMPUTE_EXNER_FROM_TOP
+USE MODI_RMS_AT_Z
+USE MODI_SECOND_MNH
+USE MODI_SHUMAN
+USE MODI_VER_INTERP_TO_MIXED_GRID
+USE MODI_WATER_SUM
 !
 IMPLICIT NONE
 !
@@ -111,7 +109,7 @@ REAL, INTENT(OUT)                 :: PDIAG    ! diagnostics computing time
 !
 !*       0.2   Declaration of local variables
 !              ------------------------------
-INTEGER                            :: IRESP, ILUOUT0
+INTEGER                            :: ILUOUT0
 INTEGER                            :: IIU,IJU,ILU
 REAL                               :: ZTIME1, ZTIME2
 REAL,DIMENSION(:,:,:), ALLOCATABLE :: ZTH_LS    ! potential temperature
@@ -136,7 +134,7 @@ INTEGER                            :: JSV     ! loop counter
 INTEGER                            :: JK      ! loop counter
 !-------------------------------------------------------------------------------
 !
-CALL FMLOOK_ll(CLUOUT0,CLUOUT0,ILUOUT0,IRESP)
+ILUOUT0 = TLUOUT0%NLU
 !
 !*       1.    CHANGING OF VARIABLES
 !              ---------------------

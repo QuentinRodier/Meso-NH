@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HLUOUT,HCONF,OFLAT,OUSERV,                &
+      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HCONF,OFLAT,OUSERV,                       &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
@@ -29,7 +29,6 @@ INTERFACE
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
 INTEGER,            INTENT(IN) :: KMI    ! Model index
 CHARACTER (LEN=*),  INTENT(IN) :: HEXSEG ! name of the EXSEG file
-CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name  for outputlisting  
 !     The following variables are read by READ_DESFM in DESFM descriptor : 
 CHARACTER (LEN=*),  INTENT(IN) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(IN) :: OFLAT  ! Logical for zero orography
@@ -84,7 +83,7 @@ END MODULE MODI_READ_EXSEG_n
 !
 !
 !     #########################################################################
-      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HLUOUT,HCONF,OFLAT,OUSERV,                &
+      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HCONF,OFLAT,OUSERV,                       &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
@@ -297,9 +296,10 @@ END MODULE MODI_READ_EXSEG_n
 USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_CONFZ
-USE MODD_CONF_n, ONLY : CSTORAGE_TYPE
-USE MODD_IO_ll,  ONLY : NVERB_FATAL
-USE MODD_VAR_ll,    ONLY:  NPROC
+USE MODD_CONF_n,  ONLY: CSTORAGE_TYPE
+USE MODD_IO_ll,   ONLY: NVERB_FATAL
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_VAR_ll,  ONLY: NPROC
 !
 USE MODN_BACKUP
 USE MODN_BUDGET
@@ -380,7 +380,6 @@ IMPLICIT NONE
 !
 INTEGER,            INTENT(IN) :: KMI    ! Model index
 CHARACTER (LEN=*),  INTENT(IN) :: HEXSEG ! name of the EXSEG file
-CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name  for outputlisting  
 !     The following variables are read by READ_DESFM in DESFM descriptor : 
 CHARACTER (LEN=*),  INTENT(IN) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(IN) :: OFLAT  ! Logical for zero orography
@@ -444,8 +443,8 @@ INTEGER :: IMOMENTS, JMODE, IMODEIDX, JMOM, JSV_NAME, JMOD, I
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_EXSEG_n','called for '//TRIM(HEXSEG))
 !
-CALL FMLOOK_ll(HEXSEG,HLUOUT,ILUSEG,IRESP)
-CALL FMLOOK_ll(HLUOUT,HLUOUT,ILUOUT,IRESP)
+CALL FMLOOK_ll(HEXSEG,TLUOUT%CNAME,ILUSEG,IRESP)
+ILUOUT = TLUOUT%NLU
 !
 CALL INIT_NAM_LUNITN
 CCPLFILE(:)="                            "
