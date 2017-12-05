@@ -214,6 +214,7 @@ END MODULE MODI_NUM_DIFF
 !!                 05/07    (C.Lac)        Separation between variables
 !!                 07/09    (C.Lac)        Correction on budget calls
 !!     J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!     J.Escobar : 05/12/2017 : Pb SegFault , correct IF(ONUMDIFTH/OZDIFFU) nesting
 !!
 !-------------------------------------------------------------------------------
 !
@@ -347,20 +348,20 @@ IF (ONUMDIFTH) THEN
    CALL NUM_DIFF_ALGO_Z(PRTHS, PTHM, IGRID, PRHODJ,            &
                          PDK2TH, PDK4TH, PLSTHM,               &
                          TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-!!$  ELSE
-!!$   CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ,              &
-!!$                      PDK2TH, PDK4TH, PLSTHM,                  &
-!!$                     TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-!!$  ENDIF
- ELSE
-  IF (OZDIFFU) THEN   ! call z-diffusion for potential temperature
-    CALL NUM_DIFF_ALGO_Z(PRTHS, PTHM, IGRID, PRHODJ, &
-                         PDK2TH, PDK4TH, PLSTHM )
   ELSE
-    CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ, &
-                         PDK2TH, PDK4TH, PLSTHM )
+   CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ,              &
+                      PDK2TH, PDK4TH, PLSTHM,                  &
+                     TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
   ENDIF
- ENDIF
+!!$ ELSE
+!!$  IF (OZDIFFU) THEN   ! call z-diffusion for potential temperature
+!!$    CALL NUM_DIFF_ALGO_Z(PRTHS, PTHM, IGRID, PRHODJ, &
+!!$                         PDK2TH, PDK4TH, PLSTHM )
+!!$  ELSE
+!!$    CALL NUM_DIFF_ALGO(PRTHS, PTHM, IGRID, PRHODJ, &
+!!$                         PDK2TH, PDK4TH, PLSTHM )
+!!$  ENDIF
+!!$ ENDIF
 !
  IF ( GTKEALLOC ) THEN
 !!$  IF(NHALO == 1) THEN
@@ -383,20 +384,20 @@ IF (ONUMDIFTH) THEN
       CALL NUM_DIFF_ALGO_Z(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
                            PDK2TH, PDK4TH,                             &
                            PLSRVM, TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-!!$    ELSE
-!!$      CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, & 
-!!$                         PDK2TH, PDK4TH, PLSRVM,                     &
-!!$                         TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
-!!$    ENDIF
-  ELSE
-    IF (OZDIFFU) THEN   ! call z-diffusion for wv mixing ratio
-      CALL NUM_DIFF_ALGO_Z(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
-                           PDK2TH, PDK4TH, PLSRVM)
     ELSE
-     CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
-                        PDK2TH, PDK4TH, PLSRVM)
+      CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, & 
+                         PDK2TH, PDK4TH, PLSRVM,                     &
+                         TZHALO2LIST%HALO2, TZHALO2LSLIST%HALO2)
     ENDIF
-  ENDIF
+!!$  ELSE
+!!$    IF (OZDIFFU) THEN   ! call z-diffusion for wv mixing ratio
+!!$      CALL NUM_DIFF_ALGO_Z(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
+!!$                           PDK2TH, PDK4TH, PLSRVM)
+!!$    ELSE
+!!$     CALL NUM_DIFF_ALGO(PRRS(:,:,:,1), PRM(:,:,:,1), IGRID, PRHODJ, &
+!!$                        PDK2TH, PDK4TH, PLSRVM)
+!!$    ENDIF
+!!$  ENDIF
  ENDIF
 !
 ! In some situations, it makes sense to use the z-diffusion also for cloud water, but it is
