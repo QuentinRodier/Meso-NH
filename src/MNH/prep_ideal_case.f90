@@ -459,7 +459,6 @@ INTEGER :: JLOOP,JILOOP,JJLOOP     ! Loop indexes
 INTEGER :: NIB,NJB,NKB             ! Begining useful area  in x,y,z directions
 INTEGER :: NIE,NJE                 ! Ending useful area  in x,y directions
 INTEGER :: NIU,NJU,NKU             ! Upper bounds in x,y,z directions
-CHARACTER (LEN=32) :: CDESFM             ! Name of DESFM file 
 CHARACTER(LEN=4)   :: CIDEAL ='CSTN'     ! kind of idealized fields
                                          ! 'CSTN' : Nv=cste case 
                                          ! 'RSOU' : radiosounding case
@@ -1738,7 +1737,6 @@ NNPRAR = 22 + 2*(NRR+NSV)   &    ! 22 = number of grid variables + reference
                                  ! 2*(8+NRR+NSV) + 1 = number of prognostic
                                  ! variables at time t and t-dt
 NTYPE=1
-CDESFM=ADJUSTL(ADJUSTR(CINIFILE)//'.des')
 !
 CALL IO_FILE_ADD2LIST(TINIFILE,TRIM(CINIFILE),'PREPIDEALCASE','WRITE',KLFINPRAR=NNPRAR,KLFITYPE=NTYPE,KLFIVERB=NVERB)
 !
@@ -1746,7 +1744,7 @@ CALL IO_FILE_OPEN_ll(TINIFILE)
 !
 CALL IO_WRITE_HEADER(TINIFILE)
 !
-CALL WRITE_DESFM_n(1,CDESFM)
+CALL WRITE_DESFM_n(1,TINIFILE)
 !
 CALL WRITE_LFIFM_n(TINIFILE,'')  ! There is no DAD model for PREP_IDEAL_CASE
 !

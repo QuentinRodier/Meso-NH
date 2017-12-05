@@ -493,7 +493,6 @@ REAL,DIMENSION(:,:,:), ALLOCATABLE:: ZJ       ! Jacobian
 !
 !* file management variables and counters
 !
-CHARACTER (LEN=32)                :: YDESFM   ! Name of DESFM file 
 INTEGER                           :: ILUOUT0  ! logical unit for listing file
 INTEGER                           :: IPRE_REAL1 ! logical unit for namelist file
 INTEGER                           :: IRESP    ! return code in FM routines
@@ -1061,8 +1060,7 @@ IF (YATMFILETYPE=='GRIBEX') THEN
   END DO
 END IF
 !
-YDESFM=TRIM(TINIFILE%CNAME)//'.des'
-CALL WRITE_DESFM_n(1,YDESFM)
+CALL WRITE_DESFM_n(1,TINIFILE)
 CALL IO_WRITE_HEADER(TINIFILE,HDAD_NAME=YDAD_NAME)
 CALL WRITE_LFIFM_n(TINIFILE,YDAD_NAME)
 ! 

@@ -13,9 +13,13 @@
 !
 INTERFACE
 !
-SUBROUTINE WRITE_DESFM_n(KMI,HDESFM)   
-INTEGER,            INTENT(IN)  :: KMI    ! Model index
-CHARACTER (LEN=*),  INTENT(IN)  :: HDESFM ! name of the DESFM file
+SUBROUTINE WRITE_DESFM_n(KMI,TPDATAFILE)
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
+!
+INTEGER,            INTENT(IN)  :: KMI        ! Model index
+TYPE(TFILEDATA),    INTENT(IN)  :: TPDATAFILE ! Datafile
+!
 END SUBROUTINE WRITE_DESFM_n
 !
 END INTERFACE
@@ -24,7 +28,7 @@ END MODULE MODI_WRITE_DESFM_n
 !
 !
 !     ###################################################
-      SUBROUTINE WRITE_DESFM_n(KMI,HDESFM)
+      SUBROUTINE WRITE_DESFM_n(KMI,TPDATAFILE)
 !     ###################################################
 !
 !!****  *WRITE_DESFM_n * - routine to write a descriptor file ( DESFM )
@@ -146,12 +150,13 @@ END MODULE MODI_WRITE_DESFM_n
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODE_FM
-!
-USE MODD_PARAMETERS
 USE MODD_CONF
-USE MODD_DYN_n, ONLY : LHORELAX_SVLIMA
-USE MODD_LUNIT_n, ONLY : TLUOUT
+USE MODD_DYN_n,   ONLY: LHORELAX_SVLIMA
+USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_LUNIT_n, ONLY: TLUOUT
+USE MODD_PARAMETERS
+!
+USE MODE_MSG
 !
 USE MODN_BACKUP
 USE MODN_CONF
@@ -200,8 +205,8 @@ IMPLICIT NONE
 !
 !*       0.1   declarations of arguments
 !
-INTEGER,            INTENT(IN)  :: KMI    ! Model index
-CHARACTER (LEN=*),  INTENT(IN)  :: HDESFM ! name of the DESFM part
+INTEGER,            INTENT(IN)  :: KMI     ! Model index
+TYPE(TFILEDATA),    INTENT(IN)  :: TPDATAFILE ! Datafile
 !
 !*       0.2   declarations of local variables
 !
@@ -227,8 +232,12 @@ LOGICAL, DIMENSION(JPSVMAX) ::  GHORELAX_SV
 !*       1.    UPDATE DESFM FILE
 !              -----------------
 !
-CALL FMLOOK_ll(HDESFM,TLUOUT%CNAME,ILUSEG,IRESP)
+CALL PRINT_MSG(NVERB_DEBUG,'IO','WRITE_DESFM_n','called for '//TRIM(TPDATAFILE%CNAME))
 !
+IF (.NOT.ASSOCIATED(TPDATAFILE%TDESFILE)) &
+  CALL PRINT_MSG(NVERB_FATAL,'IO','WRITE_DESFM_n','TDESFILE not associated for '//TRIM(TPDATAFILE%CNAME))
+!
+ILUSEG = TPDATAFILE%TDESFILE%NLU
 !
 CALL INIT_NAM_LUNITn
 WRITE(UNIT=ILUSEG,NML=NAM_LUNITn)

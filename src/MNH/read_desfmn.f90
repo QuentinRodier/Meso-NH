@@ -13,7 +13,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HCONF,OFLAT,OUSERV,                     &
+      SUBROUTINE READ_DESFM_n(KMI,TPDATAFILE,HCONF,OFLAT,OUSERV,                 &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
@@ -25,9 +25,12 @@ INTERFACE
                    OCONDSAMP,                                                    &
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
+!
+USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
+!
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
-CHARACTER (LEN=32), INTENT(IN)  :: HDESFM ! name of the DESFM file
+TYPE(TFILEDATA),    INTENT(IN)  :: TPDATAFILE ! Datafile
 CHARACTER (LEN=5),  INTENT(OUT) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(OUT) :: OFLAT  ! Logical for zero orography 
 LOGICAL,            INTENT(OUT) :: OUSERV ! use Rv mixing ratio               
@@ -77,7 +80,7 @@ END INTERFACE
 !
 END MODULE MODI_READ_DESFM_n
 !     #########################################################################
-      SUBROUTINE READ_DESFM_n(KMI,HDESFM,HCONF,OFLAT,OUSERV,                     &
+      SUBROUTINE READ_DESFM_n(KMI,TPDATAFILE,HCONF,OFLAT,OUSERV,                 &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,             &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,       &
                    ODEPOS_SLT,ODUST,ODEPOS_DST, OCHTRANS,                        &
@@ -101,8 +104,7 @@ END MODULE MODI_READ_DESFM_n
 !!
 !!**  METHOD
 !!    ------
-!!      Logical unit number of DESFM file is retrieved by calling FMLOOK.
-!!      Then, the descriptor file is read. Namelists (NAMXXXn) which contain
+!!      The descriptor file is read. Namelists (NAMXXXn) which contain
 !!    informations linked to one nested model are at the beginning of the file.
 !!    Namelists (NAMXXX) which contain variables common to all models
 !!    are at the end of the file. When the  model index is different from 1, 
@@ -129,7 +131,6 @@ END MODULE MODI_READ_DESFM_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK : to retrieve the logical unit number of descriptor or LFI files
 !!
 !!
 !!    IMPLICIT ARGUMENTS
@@ -195,7 +196,7 @@ END MODULE MODI_READ_DESFM_n
 !
 !*       0.    DECLARATIONS
 !              ------------
-USE MODD_IO_ll,   ONLY: NVERB_FATAL
+USE MODD_IO_ll,   ONLY: NVERB_FATAL, TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_PARAMETERS
 !
@@ -259,7 +260,6 @@ USE MODN_PARAM_LIMA
 !
 USE MODE_MSG
 USE MODE_POS
-USE MODE_FM
 !
 IMPLICIT NONE
 !
@@ -268,7 +268,7 @@ IMPLICIT NONE
 !
 !
 INTEGER,            INTENT(IN)  :: KMI    ! Model index
-CHARACTER (LEN=32), INTENT(IN)  :: HDESFM ! name of the DESFM file
+TYPE(TFILEDATA),    INTENT(IN)  :: TPDATAFILE ! Datafile
 CHARACTER (LEN=5),  INTENT(OUT) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(OUT) :: OFLAT  ! Logical for zero orography 
 LOGICAL,            INTENT(OUT) :: OUSERV ! use Rv mixing ratio               
@@ -316,8 +316,8 @@ LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_AER    ! Aerosols Wet Deposi
 !
 !*       0.2   declarations of local variables 
 !
-INTEGER :: IRESP,ILUDES, & ! return code of FMLOOK and logical unit numbers of
-              ILUOUT       ! DESFM file and output listing
+INTEGER :: ILUDES, & ! logical unit numbers of
+           ILUOUT    ! DESFM file and output listing
 LOGICAL :: GFOUND          ! Return code when searching namelist
 LOGICAL,DIMENSION(JPMODELMAX),SAVE :: LTEMPDEPOS_DST ! Dust Moist flag
 LOGICAL,DIMENSION(JPMODELMAX),SAVE :: LTEMPDEPOS_SLT ! Sea Salt Moist flag
@@ -328,9 +328,13 @@ LOGICAL,DIMENSION(JPMODELMAX),SAVE :: LTEMPDEPOS_AER ! Orilam Moist flag
 !*       1.    READ DESFM FILE
 !              ---------------
 !
-CALL FMLOOK_ll(HDESFM,TLUOUT%CNAME,ILUDES,IRESP)
-ILUOUT = TLUOUT%NLU
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_DESFM_n','called for '//TRIM(TPDATAFILE%CNAME))
 !
+IF (.NOT.ASSOCIATED(TPDATAFILE%TDESFILE)) &
+  CALL PRINT_MSG(NVERB_FATAL,'IO','READ_DESFM_n','TDESFILE not associated for '//TRIM(TPDATAFILE%CNAME))
+!
+ILUDES = TPDATAFILE%TDESFILE%NLU
+ILUOUT = TLUOUT%NLU
 !
 CALL POSNAM(ILUDES,'NAM_LUNITN',GFOUND)
 CALL INIT_NAM_LUNITN

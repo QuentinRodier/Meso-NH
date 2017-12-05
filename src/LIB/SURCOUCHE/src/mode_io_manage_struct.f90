@@ -573,7 +573,8 @@ END SUBROUTINE POPULATE_STRUCT
 !
 END SUBROUTINE IO_PREPARE_BAKOUT_STRUCT
 !
-SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE,HFORM,HACCESS,KLFINPRAR,KLFITYPE,KLFIVERB,KRECL,TPDADFILE,OOLD)
+SUBROUTINE IO_FILE_ADD2LIST(TPFILE,HNAME,HTYPE,HMODE, &
+                            HFORM,HACCESS,KLFINPRAR,KLFITYPE,KLFIVERB,KRECL,TPDADFILE,TPDATAFILE,OOLD)
 !
 USE MODD_BAKOUT,         ONLY : LOUT_COMPRESS,LOUT_REDUCE_FLOAT_PRECISION,NOUT_COMPRESS_LEVEL
 USE MODE_MODELN_HANDLER, ONLY : GET_CURRENT_MODEL_INDEX
@@ -589,6 +590,7 @@ INTEGER,                OPTIONAL,INTENT(IN)    :: KLFITYPE  !Type of the file (u
 INTEGER,                OPTIONAL,INTENT(IN)    :: KLFIVERB  !LFI verbosity level
 INTEGER,                OPTIONAL,INTENT(IN)    :: KRECL     !Record length
 TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDADFILE !Corresponding dad file
+TYPE(TFILEDATA),POINTER,OPTIONAL,INTENT(IN)    :: TPDATAFILE!Corresponding data file (used only for DES files)
 LOGICAL,                OPTIONAL,INTENT(IN)    :: OOLD      !FALSE if new file (should not be found)
                                                             !TRUE if the file could already be in the list
                                                             !     (add it only if not yet present)
@@ -672,6 +674,9 @@ IF(.NOT.PRESENT(KRECL) .AND. TRIM(HTYPE)=='SURFACE_DATA') THEN
                                                          ' files in DIRECT access')
 END IF
 !
+IF (PRESENT(TPDATAFILE) .AND. TRIM(HTYPE)/='DES') &
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','optional argument TPDATAFILE is not used by '//TRIM(HTYPE)//' files')
+!
 IF (.NOT.ASSOCIATED(TFILE_LAST)) THEN
   ALLOCATE(TFILE_LAST)
   TFILE_FIRST => TFILE_LAST
@@ -705,6 +710,19 @@ SELECT CASE(TPFILE%CTYPE)
     IF (TRIM(HMODE)/='READ') & !Invalid because not (yet) necessary
       CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','invalid mode '//TRIM(HMODE)//' for file '//TRIM(HNAME))
     TPFILE%CFORMAT = 'TEXT'
+
+
+  !DES files
+  CASE('DES')
+    TPFILE%CFORMAT = 'TEXT'
+    IF (.NOT.PRESENT(TPDATAFILE)) THEN
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','missing TPDATAFILE argument for DES file '//TRIM(HNAME))
+    ELSE
+      IF (.NOT.ASSOCIATED(TPDATAFILE)) &
+        CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','TPDATAFILE is not associated for DES file '//TRIM(HNAME))
+      TPFILE%TDATAFILE => TPDATAFILE
+      TPDATAFILE%TDESFILE => TPFILE
+    END IF
 
 
   !GPS files

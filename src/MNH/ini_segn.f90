@@ -171,21 +171,21 @@ END MODULE MODI_INI_SEG_n
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_CONF
-USE MODD_CONF_n, ONLY : CSTORAGE_TYPE
+USE MODD_CONF_n,           ONLY: CSTORAGE_TYPE
 USE MODN_CONFZ
 USE MODD_DYN
-USE MODD_IO_ll,   ONLY : ISP,LIOCDF4,LLFIREAD,NVERB_FATAL,NVERB_WARNING,TFILE_OUTPUTLISTING,TFILEDATA
+USE MODD_IO_ll,            ONLY: ISP,LIOCDF4,LLFIREAD,NVERB_FATAL,NVERB_WARNING,TFILE_OUTPUTLISTING,TFILEDATA
 USE MODD_LUNIT
-USE MODD_LUNIT_n, ONLY : CINIFILE_n=> CINIFILE, TINIFILE_n => TINIFILE, CINIFILEPGD_n=> CINIFILEPGD, TLUOUT, LUNIT_MODEL
-USE MODD_PARAM_n, ONLY : CSURF
+USE MODD_LUNIT_n,          ONLY: CINIFILE_n=> CINIFILE, TINIFILE_n => TINIFILE, CINIFILEPGD_n=> CINIFILEPGD, TLUOUT, LUNIT_MODEL
+USE MODD_PARAM_n,          ONLY: CSURF
 USE MODD_PARAMETERS
-USE MODD_REF,   ONLY : LBOUSS
+USE MODD_REF,              ONLY: LBOUSS
 !
 USE MODE_FIELD
 USE MODE_FMREAD
-USE MODE_FM
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll, IO_FILE_OPEN_ll
 USE MODE_IO_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY : IO_FILE_ADD2LIST
+USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 USE MODE_MSG
 USE MODE_POS
 !
@@ -194,7 +194,7 @@ USE MODI_READ_DESFM_n
 USE MODI_READ_EXSEG_n
 USE MODI_WRITE_DESFM_n
 !
-USE MODN_CONFIO, ONLY : NAM_CONFIO
+USE MODN_CONFIO,           ONLY: NAM_CONFIO
 USE MODN_LUNIT_n
 !
 IMPLICIT NONE
@@ -210,7 +210,6 @@ REAL,DIMENSION(:),          INTENT(INOUT) :: PTSTEP_ALL   ! Time STEP of ALL mod
 !*       0.1   declarations of local variables
 !
 LOGICAL            :: GFOUND              ! Return code when searching namelist
-CHARACTER (LEN=32) :: YEXSEG,YDESFM               ! name of descriptor files
 CHARACTER (LEN=28) :: YINIFILE                    ! name of initial file
 CHARACTER (LEN=2)  :: YMI                         ! string for model index
 INTEGER            :: IMASDEV                     ! version of MESOHN file  
@@ -277,10 +276,8 @@ WRITE(UNIT=ILUOUT,FMT='(50("*"),/,"*",17X,"MODEL ",I1," LISTING",16X,"*",/,  &
             & 50("*"))') KMI
 !
 IF (CPROGRAM=='MESONH') THEN
-  YEXSEG='EXSEG'//TRIM(ADJUSTL(YMI))//'.nam'
-  CALL IO_FILE_ADD2LIST(TZFILE_DES,TRIM(YEXSEG),'NML','READ')
+  CALL IO_FILE_ADD2LIST(TZFILE_DES,'EXSEG'//TRIM(ADJUSTL(YMI))//'.nam','NML','READ')
   CALL IO_FILE_OPEN_ll(TZFILE_DES)
-  ILUSEG=TZFILE_DES%NLU
 !
 !*       1.3   SPAWNING or SPEC or REAL program case
 !              ---------------------
@@ -288,20 +285,18 @@ IF (CPROGRAM=='MESONH') THEN
 ELSE IF (CPROGRAM=='SPAWN ' .OR. CPROGRAM=='REAL  '.OR. CPROGRAM=='SPEC  ') THEN
   YINIFILE    = CINIFILE_n
   HINIFILEPGD = CINIFILEPGD_n
-  YEXSEG=TRIM(ADJUSTL(CINIFILE_n))//'.des'
   CALL IO_FILE_ADD2LIST(TPINIFILE,TRIM(YINIFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPINIFILE)
-  CALL FMLOOK_ll(YEXSEG,CLUOUT0,ILUSEG,IRESP)
+  TZFILE_DES => TPINIFILE%TDESFILE
 !
 !*       1.3bis   DIAG program case
 !
 ELSE IF (CPROGRAM=='DIAG  ') THEN
   YINIFILE    = CINIFILE_n
   HINIFILEPGD = CINIFILEPGD_n
-  YEXSEG=TRIM(ADJUSTL(CINIFILE_n))//'.des'
   CALL IO_FILE_ADD2LIST(TPINIFILE,TRIM(YINIFILE),'UNKNOWN','READ',KLFITYPE=2,KLFIVERB=NVERB)
   CALL IO_FILE_OPEN_ll(TPINIFILE)
-  CALL FMLOOK_ll(YEXSEG,CLUOUT0,ILUSEG,IRESP)
+  TZFILE_DES => TPINIFILE%TDESFILE
 !   
 !*       1.4   Other program cases
 !              -------------------
@@ -310,6 +305,8 @@ ELSE
 !callabortstop
   CALL PRINT_MSG(NVERB_FATAL,'GEN','INI_SEG_n','should not be called for CPROGRAM='//TRIM(CPROGRAM))
 ENDIF
+!
+ILUSEG = TZFILE_DES%NLU
 !
 !-------------------------------------------------------------------------------
 !
@@ -355,18 +352,16 @@ END IF
 !*      4.    READ DESFM FILE
 !             ---------------
 !
-YDESFM=TRIM(ADJUSTL(YINIFILE))//'.des'
-!
-CALL READ_DESFM_n(KMI,YDESFM,YCONF,GFLAT,GUSERV,GUSERC,                     &
+CALL READ_DESFM_n(KMI,TPINIFILE,YCONF,GFLAT,GUSERV,GUSERC,                  &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,GUSECHAQ,&
                 GUSECHIC,GCH_PH,GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,      &
                 GDEPOS_DST, GCHTRANS, GORILAM,                              &
-                GDEPOS_AER, GLG, GPASPOL, &
+                GDEPOS_AER, GLG, GPASPOL,                                   &
 #ifdef MNH_FOREFIRE
-                GFOREFIRE, &
+                GFOREFIRE,                                                  &
 #endif
                 GLNOX_EXPLICIT,                                             &
-                GCONDSAMP, IRIMX,IRIMY,ISV,       &
+                GCONDSAMP, IRIMX,IRIMY,ISV,                                 &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
 !
 !-------------------------------------------------------------------------------
@@ -447,7 +442,7 @@ END IF
 ! routine which read related informations in the EXSEG descriptor in order to 
 ! check coherence between both informations.
 !
-CALL READ_EXSEG_n(KMI,YEXSEG,YCONF,GFLAT,GUSERV,GUSERC,                     &
+CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GUSERR,GUSERI,GUSECI,GUSERS,GUSERG,GUSERH,GUSECHEM,         &
                 GUSECHAQ,GUSECHIC,GCH_PH,                                   &
                 GCH_CONV_LINOX,GSALT,GDEPOS_SLT,GDUST,GDEPOS_DST,GCHTRANS,  &

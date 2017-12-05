@@ -314,8 +314,6 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER(KIND=LFI_INT) :: INPRAR ! Number of articles predicted in the LFIFM file
 !
-CHARACTER (LEN=32) :: YDESFM          ! Name of the desfm part of the FM-file
-!  
 !
 INTEGER             :: IIU            ! Upper dimension in x direction
 INTEGER             :: IJU            ! Upper dimension in y direction
@@ -1441,9 +1439,7 @@ CALL IO_FILE_ADD2LIST(TZFILE,CMY_NAME(2),'SPAWNING','WRITE',KLFINPRAR=INPRAR,KLF
 !
 CALL IO_FILE_OPEN_ll(TZFILE)
 !
-YDESFM=ADJUSTL(ADJUSTR(CMY_NAME(2))//'.des')
-!
-CALL WRITE_DESFM_n(2,YDESFM)
+CALL WRITE_DESFM_n(2,TZFILE)
 !
 IF (LBAL_ONLY) THEN  ! same relation with its DAD for model2 and for model1
   NDXRATIO_ALL(2) = NDXRATIO_ALL(1)

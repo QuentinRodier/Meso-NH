@@ -14,7 +14,7 @@
 !
 INTERFACE
 !
-      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HCONF,OFLAT,OUSERV,                       &
+      SUBROUTINE READ_EXSEG_n(KMI,TPEXSEGFILE,HCONF,OFLAT,OUSERV,                  &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
@@ -27,8 +27,11 @@ INTERFACE
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
+!
+USE MODD_IO_ll,   ONLY: TFILEDATA
+!
 INTEGER,            INTENT(IN) :: KMI    ! Model index
-CHARACTER (LEN=*),  INTENT(IN) :: HEXSEG ! name of the EXSEG file
+TYPE(TFILEDATA),    INTENT(IN) :: TPEXSEGFILE ! EXSEG file
 !     The following variables are read by READ_DESFM in DESFM descriptor : 
 CHARACTER (LEN=*),  INTENT(IN) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(IN) :: OFLAT  ! Logical for zero orography
@@ -83,7 +86,7 @@ END MODULE MODI_READ_EXSEG_n
 !
 !
 !     #########################################################################
-      SUBROUTINE READ_EXSEG_n(KMI,HEXSEG,HCONF,OFLAT,OUSERV,                       &
+      SUBROUTINE READ_EXSEG_n(KMI,TPEXSEGFILE,HCONF,OFLAT,OUSERV,                  &
                    OUSERC,OUSERR,OUSERI,OUSECI,OUSERS,OUSERG,OUSERH,               &
                    OUSECHEM,OUSECHAQ,OUSECHIC,OCH_PH,OCH_CONV_LINOX,OSALT,         &
                    ODEPOS_SLT, ODUST,ODEPOS_DST, OCHTRANS,                         &
@@ -160,8 +163,6 @@ END MODULE MODI_READ_EXSEG_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK      : to retrieve the logical unit number of descriptor
-!!                    or LFI files
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -297,7 +298,7 @@ USE MODD_PARAMETERS
 USE MODD_CONF
 USE MODD_CONFZ
 USE MODD_CONF_n,  ONLY: CSTORAGE_TYPE
-USE MODD_IO_ll,   ONLY: NVERB_FATAL
+USE MODD_IO_ll,   ONLY: TFILEDATA
 USE MODD_LUNIT_n, ONLY: TLUOUT
 USE MODD_VAR_ll,  ONLY: NPROC
 !
@@ -348,7 +349,6 @@ USE MODD_GET_n
 USE MODD_GR_FIELD_n
 !
 USE MODE_POS
-USE MODE_FM
 USE MODE_IO_ll
 USE MODE_MSG
 !
@@ -379,7 +379,7 @@ IMPLICIT NONE
 !
 !
 INTEGER,            INTENT(IN) :: KMI    ! Model index
-CHARACTER (LEN=*),  INTENT(IN) :: HEXSEG ! name of the EXSEG file
+TYPE(TFILEDATA),    INTENT(IN) :: TPEXSEGFILE ! EXSEG file
 !     The following variables are read by READ_DESFM in DESFM descriptor : 
 CHARACTER (LEN=*),  INTENT(IN) :: HCONF  ! configuration var. linked to FMfile
 LOGICAL,            INTENT(IN) :: OFLAT  ! Logical for zero orography
@@ -428,8 +428,7 @@ CHARACTER (LEN=*),  INTENT(IN) :: HINIFILEPGD ! name of PGD file
 !
 !*       0.2   declarations of local variables
 !
-INTEGER :: IRESP,ILUSEG,ILUOUT ! return code of FMLOOK and logical unit numbers
-                               ! of EXSEG file and outputlisting
+INTEGER :: ILUSEG,ILUOUT ! logical unit numbers of EXSEG file and outputlisting
 INTEGER :: JS,JCI,JI,JSV       ! Loop indexes 
 LOGICAL :: GRELAX              
 LOGICAL :: GFOUND              ! Return code when searching namelist
@@ -441,9 +440,9 @@ INTEGER :: IMOMENTS, JMODE, IMODEIDX, JMOM, JSV_NAME, JMOD, I
 !*       1.    READ EXSEG FILE
 !              ---------------
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_EXSEG_n','called for '//TRIM(HEXSEG))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','READ_EXSEG_n','called for '//TRIM(TPEXSEGFILE%CNAME))
 !
-CALL FMLOOK_ll(HEXSEG,TLUOUT%CNAME,ILUSEG,IRESP)
+ILUSEG = TPEXSEGFILE%NLU
 ILUOUT = TLUOUT%NLU
 !
 CALL INIT_NAM_LUNITN
