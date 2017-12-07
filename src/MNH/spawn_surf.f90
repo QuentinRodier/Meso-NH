@@ -14,11 +14,15 @@ MODULE MODI_SPAWN_SURF
 !
 INTERFACE
 !
-      SUBROUTINE SPAWN_SURF (HINIFILE, HINIFILEPGD, OSPAWN_SURF)
+      SUBROUTINE SPAWN_SURF (HINIFILE, HINIFILEPGD, TPOUTDATAFILE, OSPAWN_SURF)
 !
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILE     ! Input file
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILEPGD
-LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
+USE MODD_IO_ll, ONLY: TFILEDATA
+
+!
+CHARACTER (LEN=*),      INTENT(IN) :: HINIFILE     ! Input file
+CHARACTER (LEN=*),      INTENT(IN) :: HINIFILEPGD
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPOUTDATAFILE
+LOGICAL,                INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 END SUBROUTINE SPAWN_SURF
 !
@@ -27,9 +31,9 @@ END INTERFACE
 END MODULE MODI_SPAWN_SURF
 !
 !
-!     #######################################################################
-      SUBROUTINE SPAWN_SURF (HINIFILE, HINIFILEPGD, OSPAWN_SURF)
-!     #######################################################################
+!     #########################################################################
+      SUBROUTINE SPAWN_SURF (HINIFILE, HINIFILEPGD, TPOUTDATAFILE, OSPAWN_SURF)
+!     #########################################################################
 !
 !!****  *SPAWN_SURF * - subroutine to  call spawning of surface fields
 !!
@@ -72,31 +76,29 @@ END MODULE MODI_SPAWN_SURF
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_LUNIT,        ONLY : CPGDFILE, COUTFMFILE
-USE MODD_PARAM_n,      ONLY : CSURF
-USE MODD_NESTING,      ONLY : CMY_NAME, CDAD_NAME
 USE MODD_CONF,         ONLY : NVERB
 USE MODD_GRID_n,       ONLY : XZS
-USE MODD_TIME_n,       ONLY : TDTCUR
+USE MODD_IO_ll,        ONLY : TFILEDATA
 USE MODD_IO_SURF_MNH,  ONLY : COUTFILE
-!
-USE MODI_WRITE_HGRIDn
-USE MODI_MNHPUT_ZS_n
+USE MODD_LUNIT,        ONLY : CPGDFILE, TOUTDATAFILE
+USE MODD_MNH_SURFEX_n
+USE MODD_NESTING,      ONLY : CMY_NAME, CDAD_NAME
+USE MODD_PARAM_n,      ONLY : CSURF
+USE MODD_TIME_n,       ONLY : TDTCUR
 !
 USE MODE_ll
 USE MODE_FMWRIT
 USE MODE_IO_ll
- !JUAN REALZ
 USE MODE_MODELN_HANDLER
- !JUAN REALZ
-USE MODI_ZOOM_PGD_SURF_ATM
-USE MODI_WRITE_PGD_SURF_ATM_N
-USE MODI_WRITE_SURF_ATM_N
+!
 USE MODI_INIT_PGD_SURF_ATM
+USE MODI_MNHPUT_ZS_n
 USE MODI_PREP_SURF_ATM
 USE MODI_WRITE_DIAG_SURF_ATM_N
-USE MODD_MNH_SURFEX_n
-!
+USE MODI_WRITE_HGRIDn
+USE MODI_WRITE_PGD_SURF_ATM_N
+USE MODI_WRITE_SURF_ATM_N
+USE MODI_ZOOM_PGD_SURF_ATM
 !
 IMPLICIT NONE
 !
@@ -104,9 +106,10 @@ IMPLICIT NONE
 !
 !*       0.1.2  Declarations of dummy arguments :
 !
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILE     ! Input file
-CHARACTER (LEN=*),     INTENT(IN) :: HINIFILEPGD
-LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
+CHARACTER (LEN=*),      INTENT(IN) :: HINIFILE     ! Input file
+CHARACTER (LEN=*),      INTENT(IN) :: HINIFILEPGD
+TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPOUTDATAFILE
+LOGICAL,                INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !*       0.1.3  Declarations of local variables :
 !
@@ -119,7 +122,7 @@ INTEGER :: IINFO_ll
 IF (CSURF=='EXTE') THEN
   IF (OSPAWN_SURF) THEN
     CPGDFILE   = CMY_NAME(2)
-    COUTFMFILE = CMY_NAME(2)
+    TOUTDATAFILE => TPOUTDATAFILE !Corresponding to file with CNAME = CMY_NAME(2)
     COUTFILE   = CMY_NAME(2)
     !* spawn PGD fields
     CALL GOTO_SURFEX(1)

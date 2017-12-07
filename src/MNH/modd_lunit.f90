@@ -47,7 +47,7 @@ IMPLICIT NONE
 !
 CHARACTER(LEN=16),SAVE :: CLUOUT0    ! Name of output_listing file
 TYPE(TFILEDATA),POINTER :: TLUOUT0 => NULL() ! output_listing file
-CHARACTER(LEN=28),SAVE :: COUTFMFILE ! name of the output FM-file being written
+TYPE(TFILEDATA),POINTER :: TOUTDATAFILE => NULL() ! output data file being written
 CHARACTER(LEN=28),SAVE :: CPGDFILE   ! name of the PGD file for PREP_REAL_CASE
 !
 END MODULE MODD_LUNIT
