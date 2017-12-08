@@ -182,7 +182,6 @@ END MODULE MODI_SET_GEOSBAL
 !!    X direction
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK : to retrieve logical unit number
 !!
 !!      Module MODI_SHUMAN: interface for shuman operators
 !!

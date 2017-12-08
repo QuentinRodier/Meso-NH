@@ -45,8 +45,6 @@ END MODULE MODI_COMPARE_WITH_PGD_DOMAIN
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!
@@ -111,7 +109,6 @@ REAL,DIMENSION(:), INTENT(IN) :: PYHAT    ! y coordinate of flux points
 !*       0.2   Declaration of local variables
 !              ------------------------------
 REAL               :: ZEPS       ! a little number
-INTEGER            :: IRESP      ! return-code if problem eraised in FMLOOK
 INTEGER            :: ILUOUT0    ! logical number for listing file
 INTEGER            :: IIU,    IJU
 INTEGER            :: IPGDIU, IPGDJU

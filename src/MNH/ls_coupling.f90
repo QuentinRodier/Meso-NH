@@ -129,7 +129,6 @@ END MODULE MODI_LS_COUPLING
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK      : to retrieve a logical unit number 
 !!      IO_READ_FIELD : to read data in file
 !!      IO_FILE_CLOSE_ll : to close a file
 !!      INI_LS      : to initialize larger scale fields

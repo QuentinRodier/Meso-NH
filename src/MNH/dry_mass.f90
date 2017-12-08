@@ -65,7 +65,6 @@ END MODULE MODI_DRY_MASS
 !!    --------
 !!
 !!    routine COMPUTE_EXNER_FROM_TOP : to compute the hydrostatic Exner function
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    
 !!    module MODI_COMPUTE_EXNER_FROM_TOP
 !!    SUM3D_ll : distributed function equivalent to SUM

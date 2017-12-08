@@ -111,8 +111,7 @@ END MODULE MODI_READ_EXSEG_n
 !!
 !!**  METHOD
 !!    ------
-!!      Logical unit number of EXSEG file is retrieved by calling FMLOOK.
-!!      Then, the descriptor file is read. Namelists (NAMXXXn) which contain
+!!      The descriptor file is read. Namelists (NAMXXXn) which contain
 !!    variables linked to one nested model are at the beginning of the file.
 !!    Namelists (NAMXXX) which contain variables common to all models
 !!    are at the end of the file. When the  model index is different from 1, 

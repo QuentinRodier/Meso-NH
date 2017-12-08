@@ -47,7 +47,6 @@ END MODULE MODI_SET_FRC
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK   : to retrieve a logical unit number
 !!      Module MODE_THERMO : contains thermodynamic routines
 !!      Module  MODI_HEIGHT_PRESS: to compute height from pressure and
 !!                                 potential virtual temperature

@@ -65,7 +65,6 @@ END MODULE MODI_GET_SIZEY_LB
 !!  
 !!    EXTERNAL
 !!    --------   
-!!      FMLOOK      : to retrieve a logical unit number 
 !!      Module MODE_TOOLS_ll : 
 !!             GET_INTERSECTION_ll : to get the global indices of the LB 
 !!     arrays for each sub-domain.

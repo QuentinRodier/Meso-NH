@@ -227,7 +227,6 @@ SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
 !!    --------   
 !!      TRID    : to initialize pressure solver
 !!      RELAXDEF: to compute the relaxation coefficients
-!!      FMLOOK  : to retrieve logical unit number linked to a file
 !!      GET_DIM_EXT_ll : get extended sub-domain sizes
 !!
 !!     Module MODI_TRID   : interface for routine TRID

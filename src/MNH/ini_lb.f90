@@ -97,7 +97,6 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK    : to retrieve logical number 
 !!      FMREAD    : to read data in LFIFM file
 !!      FMREAD_LB : to read LB data in LFIFM file
 !!

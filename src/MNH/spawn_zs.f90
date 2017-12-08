@@ -72,7 +72,6 @@ END MODULE MODI_SPAWN_ZS
 !!    EXTERNAL
 !!    --------
 !!
-!!      FMLOOK        : to recover a logical unit number
 !!      Routine BIKHARDT2     : to perform horizontal interpolations
 !!
 !!

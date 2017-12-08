@@ -88,7 +88,7 @@ CHARACTER (LEN=*),  INTENT(IN) :: HLUOUT ! Name for output listing
 !
 !*       0.2   declarations of local variables
 !
-INTEGER :: IRESP,ILUNAM        ! return code of FMLOOK and logical unit number
+INTEGER :: IRESP,ILUNAM        ! return code and logical unit number
 LOGICAL :: GFOUND              ! Return code when searching namelist
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 INTEGER           :: IGRID          ! IGRID : grid indicator

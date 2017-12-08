@@ -92,7 +92,6 @@ END MODULE MODI_SPAWN_GRID2
 !!    EXTERNAL
 !!    --------
 !!
-!!      FMLOOK        : to recover a logical unit number
 !!      Module MODE_TIME : contains SM_PRINT_TIME routine
 !!      Routine BIKHARDT2     : to perform horizontal interpolations
 !!

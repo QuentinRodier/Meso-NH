@@ -82,8 +82,6 @@ END MODULE MODI_COMPUTE_EXNER_FROM_GROUND3
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !!

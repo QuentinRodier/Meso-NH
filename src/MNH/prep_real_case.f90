@@ -263,7 +263,6 @@
 !!                              initialized
 !!      Routine WRITE_DESFM1  : to write a DESFM file.
 !!      Routine WRITE_LFIFM1  : to write a LFIFM file.
-!!      Routine FMLOOK        : to retrieve the logical unit of a file.
 !!      Routine IO_FILE_CLOSE_ll : to close a FM-file (DESFM + LFIFM).
 !!
 !!      Module MODE_GRIDPROJ  : contains conformal projection routines

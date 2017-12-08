@@ -65,7 +65,6 @@ END MODULE MODI_MODEL_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      Subroutine FMLOOK: to recover the logical unit number linked to a FMfile
 !!      Subroutine IO_FILE_OPEN_ll: to open a file
 !!      Subroutine WRITE_DESFM: to write the descriptive part of a FMfile
 !!      Subroutine WRITE_LFIFM: to write the binary part of a FMfile

@@ -24,9 +24,6 @@
 !!    EXTERNAL
 !!    --------
 !!
-!!    module FMLOOK        : to retrieve a logical unit number 
-!!                           associated with a file
-!!
 !!    module MODE_GRIDPROJ : contains projection routines
 !!                         SM_LATLON and SM_XYHAT
 !!                           

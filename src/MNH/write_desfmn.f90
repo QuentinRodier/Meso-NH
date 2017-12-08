@@ -49,7 +49,6 @@ END MODULE MODI_WRITE_DESFM_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK : to retrieve the logical unit number of descriptor or LFI files
 !!
 !!
 !!    IMPLICIT ARGUMENTS
@@ -210,9 +209,8 @@ TYPE(TFILEDATA),    INTENT(IN)  :: TPDATAFILE ! Datafile
 !
 !*       0.2   declarations of local variables
 !
-INTEGER :: IRESP,ILUSEG  ! return code of FMLOOK and logical unit number of
-                         ! EXSEG file 
-INTEGER :: ILUOUT        ! Logical unit number for output-listing TLUOUT file
+INTEGER :: ILUSEG  ! logical unit number of EXSEG file
+INTEGER :: ILUOUT  ! Logical unit number for output-listing TLUOUT file
 !
 LOGICAL                     ::  GHORELAX_UVWTH,                               &
                                 GHORELAX_RV,  GHORELAX_RC, GHORELAX_RR,       &

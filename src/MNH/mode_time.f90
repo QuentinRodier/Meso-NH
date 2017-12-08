@@ -69,11 +69,7 @@ CONTAINS
 !
 !!**  METHOD
 !!    ------
-!!       The logical unit number of output-listing file is retrieved (by FMLOOK)
-!!   If a logical unit number have never been attributed to this output-listing
-!!   file, a logical unit number is attributed (by FMATTR) and  this file is 
-!!   opened  
-!!       Then the date and time are printed with or without a title.
+!!       The date and time are printed with or without a title.
 !!   If it is an idealized case, no date is printed (only time).
 !!   
 !!    EXTERNAL

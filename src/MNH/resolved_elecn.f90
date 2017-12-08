@@ -135,7 +135,6 @@ END MODULE MODI_RESOLVED_ELEC_n
 !!
 !!    EXTERNAL
 !!    --------
-!!      Subroutine FMLOOK: to recover the logical unit number linked to a FMfile
 !!      Subroutine SLOW_TERMS: Computes the explicit microphysical sources
 !!      Subroutine FAST_TERMS: Performs the saturation adjustment for l
 !!      Subroutine RAIN_ICE  : Computes the explicit microphysical sources for i

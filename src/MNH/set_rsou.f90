@@ -182,7 +182,6 @@ END MODULE MODI_SET_RSOU
 !!
 !!    EXTERNAL
 !!    --------
-!!      FMLOOK   : to retrieve a logical unit number
 !!      SET_MASS : to compute mass field on 3D-model grid
 !!      Module MODE_THERMO : contains thermodynamic routines
 !!         SM_FOES : To compute saturation vapor pressure from 

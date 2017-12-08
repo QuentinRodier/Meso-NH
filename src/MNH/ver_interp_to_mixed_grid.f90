@@ -99,7 +99,6 @@ END MODULE MODI_VER_INTERP_TO_MIXED_GRID
 !!    EXTERNAL
 !!    --------
 !!
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
 !!    routine  VER_INTERP    : to vertically interpolate a field
 !!    routine COMPUTE_EXNER_FROM_GROUND : to compute hydrostatic Exner function
 !!    Module MODI_VER_INTERP : interface for function VER_INTERP

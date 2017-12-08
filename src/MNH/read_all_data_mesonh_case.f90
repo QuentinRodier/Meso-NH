@@ -61,8 +61,6 @@ END MODULE MODI_READ_ALL_DATA_MESONH_CASE
 !!    subroutine READ_PRC_FMFILE : to read the large scale fields on the MESO-NH
 !!                               domain.
 !!    
-!!    function FMLOOK  :to retrieve a logical unit number associated with a file
-!!    
 !!    Module MODI_READ_GRID_TIME_MESONH_CASE  : interface for subroutine
 !!                                              READ_GRID_TIME_MESONH_CASE
 !!    Module MODI_SET_SUBDOMAIN : interface for subroutine SET_SUBDOMAIN

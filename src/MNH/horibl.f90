@@ -102,8 +102,6 @@ END MODULE MODI_HORIBL
 !!   EXTERNAL
 !!   --------
 !!
-!!   subroutine FMLOOK_ll : to retrieve the logical unit number of the listing file
-!!
 !!   IMPLICIT ARGUMENTS
 !!   ------------------
 !!
