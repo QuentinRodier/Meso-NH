@@ -60,11 +60,10 @@ END MODULE MODI_CLOSE_FILE_MNH
 USE MODD_CONF,             ONLY: CPROGRAM
 USE MODD_IO_ll,            ONLY: TFILEDATA
 USE MODD_IO_NAM,           ONLY: TFILE
-USE MODD_LUNIT,            ONLY: CLUOUT0
+USE MODD_LUNIT,            ONLY: TLUOUT0
+USE MODD_LUNIT_n,          ONLY: TLUOUT
 !
-USE MODE_FM,               ONLY: FMLOOK_ll,IO_FILE_CLOSE_ll
-USE MODE_IO_ll,            ONLY: CLOSE_ll
-USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_FIND_BYNAME
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -78,23 +77,20 @@ INTEGER,           INTENT(IN)  :: KUNIT    ! logical unit of file
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
-                                    ! at the open of the file in LFI  routines 
-!
-INTEGER           :: IMI            ! model index
 INTEGER           :: ILUOUT         ! output listing logical unit
-CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
 TYPE(TFILEDATA),POINTER :: TZFILE
 !-------------------------------------------------------------------------------
 !
 SELECT CASE(CPROGRAM)
   CASE('REAL  ','IDEAL ','DIAG  ','PGD   ')
-    YLUOUT = CLUOUT0
+    TZFILE => TLUOUT0
+    ILUOUT = TLUOUT0%NLU
   CASE('MESONH','SPAWN ')
-    CALL GET_MODEL_NUMBER_ll  (IMI)
-    WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
+    TZFILE => TLUOUT
+    ILUOUT = TLUOUT%NLU
   CASE DEFAULT
-    YLUOUT = ''
+    TZFILE => NULL()
+    ILUOUT = -1
 END SELECT
 !
 !-------------------------------------------------------------------------------
@@ -102,11 +98,8 @@ END SELECT
 !* special case: closing of the output listing file
 !  ------------------------------------------------
 !
-CALL FMLOOK_ll(YLUOUT,YLUOUT,ILUOUT,IRESP)
 IF (ILUOUT==KUNIT) THEN
-  CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(YLUOUT))
-  TZFILE => NULL()
-  CALL IO_FILE_FIND_BYNAME(YLUOUT,TZFILE,IRESP)
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','CLOSE_FILE_MNH','called for '//TRIM(TZFILE%CNAME))
   CALL IO_FILE_CLOSE_ll(TZFILE)
   RETURN
 END IF

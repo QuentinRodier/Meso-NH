@@ -57,9 +57,10 @@ END MODULE MODI_MNHGET_LUOUT
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODE_FM, ONLY : FMLOOK_ll
+USE MODD_CONF,    ONLY: CPROGRAM
 USE MODE_ll
-USE MODD_CONF, ONLY : CPROGRAM
+USE MODD_LUNIT,   ONLY: TLUOUT0
+USE MODD_LUNIT_n, ONLY: LUNIT_MODEL,TLUOUT
 !
 IMPLICIT NONE
 !
@@ -72,27 +73,21 @@ INTEGER,           INTENT(OUT) :: KLUOUT   ! Logical unit of output listing
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears 
-                                    ! at the open of the file in LFI  routines 
-INTEGER           :: IMI            ! model index
+INTEGER :: IMI ! model index
 !
-CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
 !-------------------------------------------------------------------------------
-!
 !
 SELECT CASE (CPROGRAM)
   CASE ('REAL  ','PGD   ','NESPGD')
-    YLUOUT = 'OUTPUT_LISTING0'
+    KLUOUT = TLUOUT0%NLU
   CASE ('IDEAL ')
-    YLUOUT = 'OUTPUT_LISTING1'
+    KLUOUT = TLUOUT%NLU
   CASE ('MESONH','DIAG  ','SPAWN ')
-    CALL GET_MODEL_NUMBER_ll  (IMI)
-    WRITE(YLUOUT,FMT='(A14,I1,A1)')  'OUTPUT_LISTING',IMI,' '
+    CALL GET_MODEL_NUMBER_ll(IMI)
+    KLUOUT = LUNIT_MODEL(IMI)%TLUOUT%NLU
   CASE DEFAULT
-    YLUOUT = 'OUTPUT_LISTING0'
+    KLUOUT = TLUOUT0%NLU
 END SELECT
-!
-CALL FMLOOK_ll(YLUOUT,YLUOUT,KLUOUT,IRESP)
 !
 !-------------------------------------------------------------------------------
 !
