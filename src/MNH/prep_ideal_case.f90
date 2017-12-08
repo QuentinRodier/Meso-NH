@@ -1775,13 +1775,13 @@ IF (CSURF =='EXTE') THEN
   !* definition of physiographic fields
   ! computed ...
   IF (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM) THEN
-    CPGDFILE = TINIFILE%CNAME
+    TPGDFILE => TINIFILE
     CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',TINIFILE%CNAME,'MESONH',.TRUE.)
     CALL PGD_SURF_ATM     (YSURF_CUR,'MESONH',TINIFILE%CNAME,'MESONH',.TRUE.)
-    CPGDFILE = CINIFILEPGD                                   
+    TPGDFILE => TINIFILEPGD
   ELSE
   ! ... or read from file.
-    CPGDFILE = CPGD_FILE
+    TPGDFILE => TZPGDFILE
     CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PGD',                         &
                             '                            ','      ',&
                             TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH,  &

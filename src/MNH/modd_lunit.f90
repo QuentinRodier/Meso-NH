@@ -48,6 +48,6 @@ IMPLICIT NONE
 CHARACTER(LEN=16),SAVE :: CLUOUT0    ! Name of output_listing file
 TYPE(TFILEDATA),POINTER :: TLUOUT0 => NULL() ! output_listing file
 TYPE(TFILEDATA),POINTER :: TOUTDATAFILE => NULL() ! output data file being written
-CHARACTER(LEN=28),SAVE :: CPGDFILE   ! name of the PGD file for PREP_REAL_CASE
+TYPE(TFILEDATA),POINTER :: TPGDFILE     => NULL() ! PGD file
 !
 END MODULE MODD_LUNIT

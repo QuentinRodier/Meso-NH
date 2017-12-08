@@ -59,13 +59,8 @@ END MODULE MODI_MNHGET_DESFM_n
 !
 !
 USE MODD_CONF,           ONLY : CPROGRAM
-USE MODD_LUNIT_n,        ONLY : CINIFILE
-USE MODD_LUNIT,          ONLY : CLUOUT0, CPGDFILE, TOUTDATAFILE
-!
-USE MODE_FM
-USE MODE_ll
-USE MODE_MODELN_HANDLER
-!
+USE MODD_LUNIT_n,        ONLY : TINIFILE
+USE MODD_LUNIT,          ONLY : TPGDFILE,TOUTDATAFILE
 !
 IMPLICIT NONE
 !
@@ -73,45 +68,24 @@ IMPLICIT NONE
 !              -------------------------
 !
 CHARACTER(LEN=5), INTENT(IN)  :: HACTION ! 'READ ', 'WRITE'
-INTEGER, INTENT(OUT) :: KLUDES ! logical unit of .des file
+INTEGER,          INTENT(OUT) :: KLUDES  ! logical unit of .des file
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
-                                    ! at the open of the file in LFI  routines
-INTEGER           :: IMI            ! model index
-!
-CHARACTER(LEN=16) :: YLUOUT         ! output listing file name
-CHARACTER(LEN=32) :: YDESFM         ! .des file name
-!
+!NONE
 !-------------------------------------------------------------------------------
 !
+!*       1.    Return logical unit of .des files
 !
-!*       1.    initialisation of logical unit of output listing
-!
-SELECT CASE(CPROGRAM)
-  CASE('REAL  ','IDEAL ','DIAG  ','PGD   ')
-    YLUOUT = CLUOUT0
-  CASE('MESONH','SPAWN ')
-    IMI = GET_CURRENT_MODEL_INDEX() 
-    WRITE(YLUOUT,FMT='(A14,I1,A1)') 'OUTPUT_LISTING',IMI,' '
-  CASE DEFAULT
-    YLUOUT = ''
-END SELECT
-!
-!*       2.    initialisation of logical units of  .des files
-!
-YDESFM =' '
 KLUDES=0
+!
 IF (HACTION=='READ ') THEN
   SELECT CASE(CPROGRAM)
     CASE('MESONH','DIAG  ')
-      YDESFM=ADJUSTL(ADJUSTR(CINIFILE)//'.des')
-      CALL FMLOOK_ll(YDESFM,YLUOUT,KLUDES,IRESP)
+      KLUDES = TINIFILE%TDESFILE%NLU
     CASE('REAL  ')
-      YDESFM=ADJUSTL(ADJUSTR(CPGDFILE)//'.des')
-      CALL FMLOOK_ll(YDESFM,YLUOUT,KLUDES,IRESP)
+      KLUDES = TPGDFILE%TDESFILE%NLU
     CASE('IDEAL ')
       KLUDES = 0
   END SELECT
