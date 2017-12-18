@@ -78,6 +78,7 @@ endif
 
 #-Mcuda -ta=nvidia,host,time -Minfo=accel,intensity
 #
+CC = pgcc
 FC = pgf90
 ifeq "$(VER_MPI)" "MPIAUTO"
 F90 = mpif90

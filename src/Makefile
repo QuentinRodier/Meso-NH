@@ -326,7 +326,7 @@ A64=A64
 endif
 gribapi : $(GRIBAPI_INC)
 $(GRIBAPI_INC) : 
-	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} FC="$(FC)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && $(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
+	cd ${DIR_GRIBAPI} && ./configure --disable-shared --disable-jpeg --prefix=${GRIBAPI_PATH} CC="$(CC)" FC="$(FC)" ${GRIBAPI_CONF} && $(MAKE) -j 1 clean && $(MAKE) -j 1 && $(MAKE) -j 1 install && $(MAKE) -j 1 clean
 
 gribapi_clean :
 	- [  -d ${GRIBAPI_PATH} ] && rm -fr ${GRIBAPI_PATH} 
@@ -340,12 +340,19 @@ ifeq "$(VER_CDF)" "CDFAUTO"
 HDF_OPT    = ${OPT_BASE_I4:-$OPT_BASE}
 NETCDF_OPT = ${OPT_BASE_I4:-$OPT_BASE}
 #
-cdf : $(CDF_INC)
-$(CDF_INC) : 
-	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
-	FC="$(FC)" FCFLAGS="$(HDF_OPT)" CPPFLAGS="-DpgiFortran" ${HDF_CONF} && make && make install && $(MAKE) -j 1 clean
-	cd ${DIR_CDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-cxx --enable-f90 --disable-dap \
-	FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="-DpgiFortran ${INC_NETCDF}" ${CDF_CONF} LDFLAGS=" -L${CDF_PATH}/lib64" && make && make install && $(MAKE) -j 1 clean
+cdf : $(CDF_MOD)
+$(CDF_MOD) :
+	cd ${DIR_LIBAEC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 CC="$(CC)" CFLAGS="$(HDF_OPT)" && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+	cd ${DIR_HDF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --with-szlib=${CDF_PATH}/include,${CDF_PATH}/lib64 \
+	CC="$(CC)" CFLAGS="$(HDF_OPT)" LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lsz -laec -lz" && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+	cd ${DIR_CDFC} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 --disable-dap \
+	CC="$(CC)" CFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
+	cd ${DIR_CDFF} && ./configure --disable-shared --prefix=${CDF_PATH} --libdir=${CDF_PATH}/lib64 \
+	FC="$(FC)" FCFLAGS="$(NETCDF_OPT)" CPPFLAGS="${INC_NETCDF}" ${CDF_CONF} LDFLAGS="-L${CDF_PATH}/lib64" LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lsz -laec -lz" && \
+	$(MAKE) && $(MAKE) install && $(MAKE) clean
 
 cleanmaster : cleancdf
 cleancdf :

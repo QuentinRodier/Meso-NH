@@ -434,16 +434,19 @@ endif
 #  
 #
 ifeq "$(VER_CDF)" "CDFAUTO"
-DIR_CDF?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDF}
-CDF_PATH?=${DIR_CDF}-${ARCH}I${MNH_INT}
-CDF_INC?=${CDF_PATH}/include/netcdf.inc
+DIR_CDFC?=${SRC_MESONH}/src/LIB/netcdf-${VERSION_CDFC}
+DIR_CDFF?=${SRC_MESONH}/src/LIB/netcdf-fortran-${VERSION_CDFF}
+CDF_PATH?=${SRC_MESONH}/src/LIB/netcdf-${ARCH}I${MNH_INT}
+CDF_MOD?=${CDF_PATH}/include/netcdf.mod
 #
 INC_NETCDF     ?= -I${CDF_PATH}/include
-LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lz
+LIB_NETCDF     ?= -L${CDF_PATH}/lib -L${CDF_PATH}/lib64 -lnetcdff -lnetcdf  -lhdf5_hl -lhdf5 -lsz -laec -lz -ldl
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
 #
 DIR_HDF?=${SRC_MESONH}/src/LIB/hdf5-${VERSION_HDF}
+#
+DIR_LIBAEC?=${SRC_MESONH}/src/LIB/libaec-${VERSION_LIBAEC}
 endif
 #
 # NetCDF : CDF LaReunion Local

@@ -57,6 +57,7 @@ CFLAGS    += -g -O0
 endif
 #
 #  
+CC = gcc
 FC = gfortran 
 ifeq "$(VER_MPI)" "MPIAUTO"
 F90 = mpif90
