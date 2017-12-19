@@ -12,8 +12,10 @@ export VERSION_MASTER=${VERSION_MASTER:-MNH-V5-4}
 export VERSION_BUG=${VERSION_BUG:-0}
 export VERSION_XYZ=${VERSION_XYZ:-${VERSION_MASTER}-${VERSION_BUG}${VER_OASIS:+-${VER_OASIS}}}
 export VERSION_DATE=${VERSION_DATE:-"dd/mm/yyyy"}
-export VERSION_CDF=${VERSION_CDF:-"4.1.3"}
-export VERSION_HDF=${VERSION_HDF:-"1.8.9"}
+export VERSION_LIBAEC=${VERSION_LIBAEC:-"0.3.2"}
+export VERSION_HDF=${VERSION_HDF:-"1.8.20"}
+export VERSION_CDFC=${VERSION_CDFC:-"4.5.0"}
+export VERSION_CDFF=${VERSION_CDFF:-"4.4.4"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.13.1"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
@@ -429,8 +431,10 @@ fi
 #  Install CDF if VER_CDF=CDFAUTO
 #
 if [ "x${VER_CDF}" == "xCDFAUTO" ] ;then
-( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDF} ] && tar xvfz netcdf-${VERSION_CDF}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d libaec-${VERSION_LIBAEC} ] && tar xvfz libaec-${VERSION_LIBAEC}.tar.gz )
 ( cd $LOCAL/src/LIB ; [ ! -d hdf5-${VERSION_HDF} ] && tar xvfz hdf5-${VERSION_HDF}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-${VERSION_CDFC} ] && tar xvfz netcdf-${VERSION_CDFC}.tar.gz )
+( cd $LOCAL/src/LIB ; [ ! -d netcdf-fortran-${VERSION_CDFF} ] && tar xvfz netcdf-fortran-${VERSION_CDFF}.tar.gz )
 fi
 #
 #  Install OASIS if VER_OASIS=OASISAUTO
