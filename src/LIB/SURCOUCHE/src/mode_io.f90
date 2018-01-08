@@ -786,7 +786,16 @@ CONTAINS
             CALL IOFREEFLU(INT(TPFILE%NLFIFLU))
             IRESP2 = IRESP8
           END IF
-          IF (ASSOCIATED(TZFILE%TNCDIMS)) CALL CLEANIOCDF(TZFILE%TNCDIMS)
+#if defined(MNH_IOCDF4)
+          IF (TZFILE%NNCID/=-1) THEN
+            ! Close Netcdf File
+            IRESP = NF90_CLOSE(TZFILE%NNCID)
+            IF (IRESP /= NF90_NOERR) THEN
+              CALL PRINT_MSG(NVERB_WARNING,'IO','CLOSE_ll','NF90_CLOSE error: '//TRIM(NF90_STRERROR(IRESP)))
+            END IF
+            IF (ASSOCIATED(TZFILE%TNCDIMS)) CALL CLEANIOCDF(TZFILE%TNCDIMS)
+          END IF
+#endif
         END IF
       END DO
       !
