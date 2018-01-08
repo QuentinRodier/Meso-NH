@@ -331,7 +331,6 @@ IF (TPFILE%LMASTER) THEN
            PRINT *, 'Error in opening (FMOPEN_ll/NF90_OPEN) ', TRIM(YFILEM)//'.nc', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        TPFILE%TNCDIMS%NCID = TPFILE%NNCID
      END IF
      
      IF (YACTION == 'WRITE') THEN
@@ -344,7 +343,6 @@ IF (TPFILE%LMASTER) THEN
            PRINT *, 'Error in opening (FMOPEN_ll/NF90_CREATE) ', TRIM(YFILEM)//'.nc', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
-        TPFILE%TNCDIMS%NCID = TPFILE%NNCID
      END IF
   END IF
 #endif

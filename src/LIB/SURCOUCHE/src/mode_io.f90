@@ -645,7 +645,6 @@ CONTAINS
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
                       IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//CFILE//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
-                      TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
    PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
@@ -661,7 +660,6 @@ CONTAINS
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
                       IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//CFILE//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
-                      TZSPLITFILE%TNCDIMS%NCID = TZSPLITFILE%NNCID
                       IF (IOSCDF /= NF90_NOERR) THEN
                          PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
                          STOP
