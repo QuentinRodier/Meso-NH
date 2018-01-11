@@ -646,8 +646,8 @@ CONTAINS
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
                       IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//CFILE//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-   PRINT *, 'Error in opening (NF90_OPEN) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
-                         STOP
+                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_OPEN for '//TRIM(TPFILE%CNAME)//CFILE//'.nc: '// &
+                                                                  NF90_STRERROR(IOSCDF))
                       ELSE
                          IOS = 0
                       END IF
@@ -661,11 +661,13 @@ CONTAINS
                       IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//CFILE//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-                         PRINT *, 'Error in opening (NF90_CREATE) ', TRIM(TPFILE%CNAME)//CFILE//'.nc', ' : ', NF90_STRERROR(IOSCDF)
-                         STOP
+                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_CREATE for '//TRIM(TPFILE%CNAME)//CFILE//'.nc: '// &
+                                                                  NF90_STRERROR(IOSCDF))
                       ELSE
                          IOS = 0
                       END IF
+                      CALL IO_SET_KNOWNDIMS_NC4(TPFILE)
+                      CALL IO_WRITE_COORDVAR_NC4(TPFILE)
                    END IF
                 END IF
 #endif

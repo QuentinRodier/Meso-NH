@@ -343,6 +343,8 @@ IF (TPFILE%LMASTER) THEN
            PRINT *, 'Error in opening (FMOPEN_ll/NF90_CREATE) ', TRIM(YFILEM)//'.nc', ' : ', NF90_STRERROR(INCERR)
            STOP
         END IF
+        CALL IO_SET_KNOWNDIMS_NC4(TPFILE)
+        CALL IO_WRITE_COORDVAR_NC4(TPFILE)
      END IF
   END IF
 #endif
