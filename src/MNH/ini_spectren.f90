@@ -224,6 +224,7 @@ IKU=NKMAX+2*JPVEXT
 !
 ALLOCATE(XZHAT(IKU))
 CALL IO_READ_FIELD(TPINIFILE,'ZHAT',XZHAT)
+CALL IO_READ_FIELD(TPINIFILE,'ZTOP',XZTOP)
 IF (XALZBOT>=XZHAT(IKU) .AND. LVE_RELAX) THEN
   WRITE(ILUOUT,FMT=*) "INI_SPECTRE_n ERROR: you want to use vertical relaxation"
   WRITE(ILUOUT,FMT=*) "                  but bottom of layer XALZBOT(",XALZBOT,")"
@@ -716,7 +717,7 @@ CALL SET_GRID(KMI,TPINIFILE,IIU,IJU,IKU,NIMAX_ll,NJMAX_ll,               &
               XTSTEP,XSEGLEN,                                            &
               XLONORI,XLATORI,XLON,XLAT,                                 &
               XXHAT,XYHAT,XDXHAT,XDYHAT, XMAP,                           &
-              XZS,XZZ,XZHAT,LSLEVE,XLEN1,XLEN2,XZSMT,                    &
+              XZS,XZZ,XZHAT,XZTOP,LSLEVE,XLEN1,XLEN2,XZSMT,              &
               ZJ,                                                        &
               TDTMOD,TDTCUR,NSTOP,NBAK_NUMB,NOUT_NUMB,TBACKUPN,TOUTPUTN)
 !

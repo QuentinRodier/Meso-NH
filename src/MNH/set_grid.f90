@@ -23,7 +23,7 @@ INTERFACE
                           PTSTEP,PSEGLEN,                                     &
                           PLONORI,PLATORI,PLON,PLAT,                          &
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
-                          PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
+                          PZS,PZZ,PZHAT,PZTOP,OSLEVE,PLEN1,PLEN2,PZSMT,       &
                           PJ,                                                 &
                           TPDTMOD,TPDTCUR,KSTOP,                              &
                           KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
@@ -75,6 +75,7 @@ REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PZZ       ! Height z
 REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height  level
+REAL,                   INTENT(OUT) :: PZTOP     ! Model top
 LOGICAL,                INTENT(OUT) :: OSLEVE    ! flag for SLEVE coordinate
 REAL,                   INTENT(OUT) :: PLEN1     ! Decay scale for smooth topography
 REAL,                   INTENT(OUT) :: PLEN2     ! Decay scale for small-scale topography deviation
@@ -112,7 +113,7 @@ END MODULE MODI_SET_GRID
                           PTSTEP,PSEGLEN,                                     &
                           PLONORI,PLATORI,PLON,PLAT,                          &
                           PXHAT,PYHAT,PDXHAT,PDYHAT, PMAP,                    &
-                          PZS,PZZ,PZHAT,OSLEVE,PLEN1,PLEN2,PZSMT,             &
+                          PZS,PZZ,PZHAT,PZTOP,OSLEVE,PLEN1,PLEN2,PZSMT,       &
                           PJ,                                                 &
                           TPDTMOD,TPDTCUR,KSTOP,                              &
                           KBAK_NUMB,KOUT_NUMB,TPBACKUPN,TPOUTPUTN             )
@@ -304,6 +305,7 @@ REAL, DIMENSION(:,:),   INTENT(OUT) :: PMAP      ! Map factor
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PZS       ! orography
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PZZ       ! Height z
 REAL, DIMENSION(:),     INTENT(OUT) :: PZHAT     ! Height  level
+REAL,                   INTENT(OUT) :: PZTOP     ! Model top
 LOGICAL,                INTENT(OUT) :: OSLEVE    ! flag for SLEVE coordinate
 REAL,                   INTENT(OUT) :: PLEN1     ! Decay scale for smooth topography
 REAL,                   INTENT(OUT) :: PLEN2     ! Decay scale for small-scale topography deviation
@@ -401,6 +403,7 @@ END IF
 
 CALL IO_READ_FIELD(TPINIFILE,'ZS',PZS)
 CALL IO_READ_FIELD(TPINIFILE,'ZHAT',PZHAT)
+CALL IO_READ_FIELD(TPINIFILE,'ZTOP',PZTOP)
 !
 CALL DEFAULT_SLEVE(OSLEVE,PLEN1,PLEN2)
 !

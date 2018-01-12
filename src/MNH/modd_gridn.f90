@@ -56,6 +56,7 @@ REAL, DIMENSION(:),    POINTER :: XDYHAT=>NULL()            ! horizontal stretch
 REAL, DIMENSION(:,:),  POINTER :: XMAP=>NULL()              ! Map factor 
 REAL, DIMENSION(:,:),  POINTER :: XZS=>NULL()               ! orography
 REAL, DIMENSION(:,:,:),POINTER :: XZZ=>NULL()               ! height z 
+REAL,                  POINTER :: XZTOP=>NULL()             ! model top (m)
 REAL, DIMENSION(:),    POINTER :: XZHAT=>NULL()             ! height level without orography
 REAL, DIMENSION(:,:),  POINTER :: XDIRCOSXW=>NULL(),XDIRCOSYW=>NULL(),XDIRCOSZW=>NULL() ! director cosinus of the normal
                                                                                         ! to the ground surface

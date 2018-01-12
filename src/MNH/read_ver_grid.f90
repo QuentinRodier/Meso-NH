@@ -320,6 +320,9 @@ CASE DEFAULT
   CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_VER_GRID','')
 END SELECT
 !
+!Set model top
+XZTOP = XZHAT(IKU)
+!
 !-------------------------------------------------------------------------------
 !
 !*       5.    TEST ON STRETCHING :
