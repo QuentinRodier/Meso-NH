@@ -311,7 +311,7 @@ ELSE IF (HREC=='XX') THEN
   TZFIELD%CLONGNAME  = 'SURFEX: XHAT'
   TZFIELD%CUNITS     = ''
   TZFIELD%CCOMMENT   = '' !Expected comment is not known
-  TZFIELD%NGRID      = 4
+  TZFIELD%NGRID      = 2
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 1
   IF (HDIR/='A') THEN
@@ -336,7 +336,7 @@ ELSE IF (HREC=='DX') THEN
   TZFIELD%CLONGNAME  = 'SURFEX: XHAT'
   TZFIELD%CUNITS     = ''
   TZFIELD%CCOMMENT   = '' !Expected comment is not known
-  TZFIELD%NGRID      = 4
+  TZFIELD%NGRID      = 2
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 1
   IF (HDIR/='A') THEN
@@ -361,7 +361,7 @@ ELSE IF (HREC=='YY') THEN
   TZFIELD%CLONGNAME  = 'SURFEX: YHAT'
   TZFIELD%CUNITS     = ''
   TZFIELD%CCOMMENT   = '' !Expected comment is not known
-  TZFIELD%NGRID      = 4
+  TZFIELD%NGRID      = 3
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 1
   IF (HDIR/='A') THEN
@@ -386,7 +386,7 @@ ELSE IF (HREC=='DY') THEN
   TZFIELD%CLONGNAME  = 'SURFEX: YHAT'
   TZFIELD%CUNITS     = ''
   TZFIELD%CCOMMENT   = '' !Expected comment is not known
-  TZFIELD%NGRID      = 4
+  TZFIELD%NGRID      = 3
   TZFIELD%NTYPE      = TYPEREAL
   TZFIELD%NDIMS      = 1
   IF (HDIR/='A') THEN
