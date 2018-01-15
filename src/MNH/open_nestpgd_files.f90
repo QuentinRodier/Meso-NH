@@ -319,12 +319,13 @@ END DO
 CALL IO_FILE_CLOSE_ll(TZPRE_NEST_PGD)
 !-------------------------------------------------------------------------------
 !
-!*       7.    OPENING OF INPUT AND OUTPUT PGD FILES
-!              -------------------------------------
+!*       7.    OPENING OF INPUT PGD FILES
+!              --------------------------
+!
+!Remark: output PGD files are opened later when the mesh dimensions are known
 !
 DO JPGD=1,NMODEL
   CALL IO_FILE_OPEN_ll(TPFILEPGD(JPGD)    %TZFILE,OPARALLELIO=.FALSE.)
-  CALL IO_FILE_OPEN_ll(TPFILENESTPGD(JPGD)%TZFILE,OPARALLELIO=.FALSE.)
 END DO
 !
 !-------------------------------------------------------------------------------
