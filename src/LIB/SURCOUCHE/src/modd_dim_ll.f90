@@ -49,7 +49,7 @@
 ! 
 ! Dimensions respectively  in x and y directions of the physical domain
 !
-  INTEGER :: NIMAX_ll,NJMAX_ll, NKMAX_ll
+  INTEGER :: NIMAX_TMP_ll,NJMAX_TMP_ll, NKMAX_TMP_ll
 !
 ! Lower bound and upper bound of the arrays in x direction
 !

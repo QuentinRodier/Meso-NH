@@ -853,9 +853,7 @@
 !
   USE MODD_DIM_ll, ONLY : NDXRATIO_ALL, NXOR_ALL, NXEND_ALL, &
                           NDYRATIO_ALL, NYOR_ALL, NYEND_ALL, NDAD,&
-!JUAN
-                          NKMAX_ll
-!JUAN
+                          NKMAX_TMP_ll
   USE MODD_PARAMETERS_ll, ONLY : JPHEXT, JPMODELMAX, NMAXRIM
   USE MODD_STRUCTURE_ll, ONLY : PROC_COM_DATA_ll, PROCONF_ll, LPROCONF_ll,   &
                                 PARENT2CHILD_DATA_ll, LPARENT2CHILD_DATA_ll, &
@@ -978,9 +976,7 @@
   ALLOCATE(TZCOARSE(NPROC))
   CALL SPLIT2(NXEND_ALL(KMODEL)-NXOR_ALL(KMODEL)-1, &
               NYEND_ALL(KMODEL)-NYOR_ALL(KMODEL)-1, &
-!JUAN
-              NKMAX_ll,&              
-!JUAN
+              NKMAX_TMP_ll,                         &
               NPROC,TZCOARSE, YSPLITTING)
 !
 !  WRITE(NIOUNIT,*) 'TZCOARSE',NPROC,KMODEL

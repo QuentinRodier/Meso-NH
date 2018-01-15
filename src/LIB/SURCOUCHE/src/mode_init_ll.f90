@@ -171,7 +171,7 @@
 !
 !-------------------------------------------------------------------------------
 !
-  USE MODD_DIM_ll, ONLY : NIMAX_ll, NJMAX_ll, NKMAX_ll
+  USE MODD_DIM_ll, ONLY : NIMAX_TMP_ll, NJMAX_TMP_ll, NKMAX_TMP_ll
 !
   IMPLICIT NONE
 !
@@ -179,9 +179,9 @@
 !
 !-------------------------------------------------------------------------------
 !
-  NIMAX_ll = KX
-  NJMAX_ll = KY
-  NKMAX_ll = KZ
+  NIMAX_TMP_ll = KX
+  NJMAX_TMP_ll = KY
+  NKMAX_TMP_ll = KZ
 !
 !-------------------------------------------------------------------------------
 !
@@ -610,13 +610,13 @@
         !*       4.    SPLITTING OF THE DOMAIN :
         !              -----------------------
         !
-        DIMX = NIMAX_ll + 2*JPHEXT
-        DIMY = NJMAX_ll + 2*JPHEXT
-        DIMZ = NKMAX_ll + 2*JPVEXT
+        DIMX = NIMAX_TMP_ll + 2*JPHEXT
+        DIMY = NJMAX_TMP_ll + 2*JPHEXT
+        DIMZ = NKMAX_TMP_ll + 2*JPVEXT
         !
         TCRRT_PROCONF%NUMBER = 1
         !
-        CALL SPLIT2(NIMAX_ll,NJMAX_ll,NKMAX_ll,NPROC,TZDZP,YSPLITTING)
+        CALL SPLIT2(NIMAX_TMP_ll,NJMAX_TMP_ll,NKMAX_TMP_ll,NPROC,TZDZP,YSPLITTING)
         !    
         !-------------------------------------------------------------------------------
         !

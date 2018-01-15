@@ -53,7 +53,7 @@
 !     Module MODD_DIM_ll
 !       CLBCX - X-direction LBC type at left(1) and right(2) boundaries
 !       CLBCY - Y-direction LBC type at left(1) and right(2) boundaries
-!       NKMAX_ll - maximum vertical dimension
+!       NKMAX_TMP_ll - maximum vertical dimension
 !
 !     Module MODD_PARAMETERS_ll
 !       JPVEXT - vertical halo size
@@ -1911,7 +1911,7 @@ INTEGER                                               :: NB_REQ
 !       JPVEXT - vertical halo size
 !
 !     Module MODD_DIM_ll
-!       NKMAX_ll - maximum vertical dimension
+!       NKMAX_TMP_ll - maximum vertical dimension
 !
 !!    Reference
 !!    ---------
@@ -1930,7 +1930,7 @@ INTEGER                                               :: NB_REQ
   USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, NTRANS_COM, MPI_PRECISION, &
                           NNEXTTAG, NMAXTAG
   USE MODD_PARAMETERS_ll, ONLY : JPVEXT
-  USE MODD_DIM_ll, ONLY : NKMAX_ll
+  USE MODD_DIM_ll, ONLY : NKMAX_TMP_ll
 !
   USE MODE_TOOLS_ll, ONLY : GET_MAX_SIZE
 !
@@ -2018,7 +2018,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
   IBUFFSIZE = IMAXSIZESEND 
   IF (IMAXSIZERECV > IBUFFSIZE) IBUFFSIZE = IMAXSIZERECV
 !
-  IBUFFSIZE = IBUFFSIZE * (NKMAX_ll + 2 * JPVEXT)
+  IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
 !
 ! JUAN
 !if defined (MNH_MPI_ISEND)
@@ -2301,7 +2301,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
 !       JPVEXT - vertical halo size
 !
 !     Module MODD_DIM_ll
-!       NKMAX_ll - maximum vertical dimension
+!       NKMAX_TMP_ll - maximum vertical dimension
 !
 !!    Reference
 !!    ---------
@@ -2315,7 +2315,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
   USE MODD_ARGSLIST_ll, ONLY : LIST_ll
   USE MODD_STRUCTURE_ll, ONLY : CRSPD_ll, ZONE_ll
   USE MODD_VAR_ll, ONLY : NCOMBUFFSIZE1, IP, MPI_PRECISION, NNEXTTAG, NMAXTAG
-  USE MODD_DIM_ll, ONLY : NKMAX_ll
+  USE MODD_DIM_ll, ONLY : NKMAX_TMP_ll
   USE MODD_PARAMETERS_ll, ONLY : JPVEXT
 !
   USE MODE_TOOLS_ll, ONLY : GET_MAX_SIZE
@@ -2402,7 +2402,7 @@ INTEGER                                               :: NB_REQ,NFIRST_REQ_RECV
   IBUFFSIZE = IMAXSIZESEND 
   IF (IMAXSIZERECV > IBUFFSIZE) IBUFFSIZE = IMAXSIZERECV
 !
-  IBUFFSIZE = IBUFFSIZE * (NKMAX_ll + 2 * JPVEXT) 
+  IBUFFSIZE = IBUFFSIZE * (NKMAX_TMP_ll + 2 * JPVEXT)
 ! JUAN
 !if defined (MNH_MPI_ISEND)
   IF ( .NOT. LMNH_MPI_BSEND) THEN

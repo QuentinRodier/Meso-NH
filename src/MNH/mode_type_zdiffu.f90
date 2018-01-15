@@ -18,7 +18,7 @@ SUBROUTINE INIT_TYPE_ZDIFFU_HALO2(PTYPE_ZDIFFU_HALO2,KSIZE_ZERO)
 !*       0.    DECLARATIONS
 !              ------------
 USE MODD_PARAMETERS , ONLY : JPVEXT
-USE MODD_DIM_ll     , ONLY : NKMAX_ll
+USE MODD_DIM_ll     , ONLY : NKMAX_TMP_ll
 !
 IMPLICIT NONE
 !
@@ -43,7 +43,7 @@ IF (.NOT.PRESENT(KSIZE_ZERO)) THEN
 ! Init all array with halo2  size
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
-IKU = NKMAX_ll + 2*JPVEXT
+IKU = NKMAX_TMP_ll + 2*JPVEXT
 !
 ! initialisation of data array
 ! 
