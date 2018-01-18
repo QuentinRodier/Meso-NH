@@ -60,14 +60,14 @@ END MODULE MODI_MNHINIT_IO_SURF_n
 !              ------------
 !
 USE MODD_CONF,             ONLY: CPROGRAM
-USE MODD_DIM_n,            ONLY: NIMAX, NJMAX, NIMAX_ll, NJMAX_ll
+USE MODD_DIM_n,            ONLY: NIMAX_ll, NJMAX_ll
 USE MODD_IO_SURF_MNH,      ONLY: TOUT, TPINFILE, COUTFILE,                             &
                                  NMASK, CMASK, NIU, NJU, NIB, NJB, NIE, NJE, CACTION,  &
                                  NMASK_ALL, NIU_ALL, NJU_ALL, NIB_ALL, NJB_ALL,        &
                                  NIE_ALL, NJE_ALL, NHALO
 USE MODD_LUNIT,            ONLY: CLUOUT0, TPGDFILE, TLUOUT0, TOUTDATAFILE
-USE MODD_LUNIT_n,          ONLY: CINIFILE,CINIFILEPGD,CMASK_SURFEX, TLUOUT
-USE MODD_MNH_SURFEX_n
+USE MODD_LUNIT_n,          ONLY: CMASK_SURFEX, TINIFILE, TINIFILEPGD, TLUOUT
+USE MODD_MNH_SURFEX_n,     ONLY: YSURF_CUR
 USE MODD_PARAMETERS,       ONLY: JPHEXT
 !
 USE MODE_IO_ll
@@ -91,16 +91,9 @@ CHARACTER(LEN=5),  INTENT(IN)  :: HACTION  ! action performed ('READ ','WRITE')
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-INTEGER           :: IRESP,ININAR,NVERB   ! IRESP  : return-code if a problem appears 
-                                    ! at the open of the file in LFI  routines 
-INTEGER           :: IMI            ! model index
-!
-!
 INTEGER           :: ILU            ! 1D physical dimension of entire surface on all processors
 INTEGER           :: ILU_ALL        ! 1D physical dimension of entire surface on all processors
 INTEGER           :: ILM            ! 1D physical dimension of any surface type
-INTEGER           :: IIMAX_ll       ! size of total field in X direction on all processors
-INTEGER           :: IJMAX_ll       ! size of total field in Y direction on all processors
 REAL, DIMENSION(:),   ALLOCATABLE :: ZFULL  ! total cover
 !-------------------------------------------------------------------------------
 !
@@ -122,9 +115,9 @@ IF (HACTION=='READ ') THEN
   SELECT CASE(CPROGRAM)
     CASE('MESONH','DIAG  ')
       IF(CMASK_SURFEX=="PGD") THEN
-        CALL IO_FILE_FIND_BYNAME(TRIM(CINIFILEPGD),TPINFILE,IRESP)
+        TPINFILE=>TINIFILEPGD
       ELSE
-        CALL IO_FILE_FIND_BYNAME(TRIM(CINIFILE),TPINFILE,IRESP)
+        TPINFILE=>TINIFILE
       ENDIF
     CASE('REAL  ','IDEAL ','NESPGD','SPAWN ','ZOOMPG')
       TPINFILE => TPGDFILE
