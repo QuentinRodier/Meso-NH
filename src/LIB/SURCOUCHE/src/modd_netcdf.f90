@@ -18,10 +18,13 @@ TYPE IOCDF
 END TYPE IOCDF
 
 TYPE DIMCDF
-   CHARACTER(LEN=8)         :: NAME
-   INTEGER(KIND=IDCDF_KIND) :: LEN
-   INTEGER(KIND=IDCDF_KIND) :: ID
-   TYPE(DIMCDF), POINTER    :: NEXT
+   CHARACTER(LEN=8)         :: NAME = ''
+   INTEGER(KIND=IDCDF_KIND) :: LEN  = 0
+   INTEGER(KIND=IDCDF_KIND) :: ID   = -1
+   TYPE(DIMCDF), POINTER    :: NEXT => NULL()
 END TYPE DIMCDF
+
+TYPE(DIMCDF),DIMENSION(3,0:4) :: NCOORDID !X,Y,Z coordinates for the 4 Arakawa points
+                                          !0 2nd-dimension is to treat NGRID=0 case without crash
 
 END MODULE MODD_NETCDF
