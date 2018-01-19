@@ -162,12 +162,13 @@ END SUBROUTINE IO_SET_KNOWNDIMS_NC4
 
 
 SUBROUTINE IO_WRITE_COORDVAR_NC4(TPFILE)
-USE MODD_CONF,       ONLY: CPROGRAM
+USE MODD_CONF,       ONLY: CPROGRAM, LCARTESIAN
 USE MODD_GRID_n,     ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
 USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
 TYPE(TFILEDATA),INTENT(IN) :: TPFILE
 
+CHARACTER(LEN=:),ALLOCATABLE  :: YSTDNAMEPREFIX
 INTEGER                       :: IIU, IJU, IKU
 INTEGER(KIND=IDCDF_KIND)      :: INCID
 REAL,DIMENSION(:),ALLOCATABLE :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
@@ -191,37 +192,47 @@ IF (TPFILE%LMASTER) THEN
     ZYHATM(1:IJU-1) = 0.5*(XYHAT(1:IJU-1)+XYHAT(2:IJU))
     ZYHATM(IJU)     = 2.*XYHAT(IJU)-ZYHATM(IJU-1)
     !
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid','projection_x_coordinate','X',0.,JPHEXT,ZXHATM)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid','projection_y_coordinate','Y',0.,JPHEXT,ZYHATM)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location','projection_x_coordinate_at_u_location',&
-                        'X',-0.5,JPHEXT,XXHAT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location','projection_y_coordinate_at_u_location',&
-                        'Y', 0., JPHEXT,ZYHATM)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location','projection_x_coordinate_at_v_location',&
-                        'X', 0., JPHEXT,ZXHATM)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location','projection_y_coordinate_at_v_location',&
-                        'Y',-0.5,JPHEXT,XYHAT)
+    IF (LCARTESIAN) THEN
+      YSTDNAMEPREFIX = 'plane'
+    ELSE
+      YSTDNAMEPREFIX = 'projection'
+    ENDIF
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location', &
+                         TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_u_location','X',-0.5,JPHEXT,0,     XXHAT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location', &
+                         TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_u_location','Y', 0., JPHEXT,JPHEXT,ZYHATM)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location', &
+                         TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_v_location','X', 0., JPHEXT,JPHEXT,ZXHATM)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location', &
+                         TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_v_location','Y',-0.5,JPHEXT,0,     XYHAT)
     !
     DEALLOCATE(ZXHATM,ZYHATM)
   ELSE
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid','x_grid_index','X',0.,JPHEXT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid','y_grid_index','Y',0.,JPHEXT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location','x_grid_index_at_u_location','X',-0.5,JPHEXT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location','y_grid_index_at_u_location','Y', 0., JPHEXT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location','x_grid_index_at_v_location','X', 0., JPHEXT)
-    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location','y_grid_index_at_v_location','Y',-0.5,JPHEXT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid','x_grid_index','X',0.,JPHEXT,JPHEXT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid','y_grid_index','Y',0.,JPHEXT,JPHEXT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location','x_grid_index_at_u_location','X',-0.5,JPHEXT,0)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location','y_grid_index_at_u_location',&
+                         'Y', 0., JPHEXT,JPHEXT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location','x_grid_index_at_v_location',&
+                         'X', 0., JPHEXT,JPHEXT)
+    CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location','y_grid_index_at_v_location','Y',-0.5,JPHEXT,0)
   ENDIF
   !
   IF (TRIM(CPROGRAM)/='PGD' .AND. TRIM(CPROGRAM)/='NESPGD' &
       .AND. .NOT.(TRIM(CPROGRAM)=='REAL'.AND. .NOT.ASSOCIATED(XXHAT)) ) THEN !condition to detect PREP_SURFEX
+    !
     IKU = SIZE(XZHAT)
     ALLOCATE(ZZHATM(IKU))
     ZZHATM(1:IKU-1) = 0.5 * (XZHAT(2:IKU)+XZHAT(1:IKU-1))
     ZZHATM(IKU)     = 2.* XZHAT(IKU) - ZZHATM(IKU-1)
     !
-    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL,  'position z in the transformed space',              '', 0., JPVEXT,ZZHATM)
+    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL,  'position z in the transformed space',              '', &
+                         'altitude',               0., JPVEXT,JPVEXT,ZZHATM)
     !
-    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL_W,'position z in the transformed space at w location','',-0.5,JPVEXT,XZHAT)
+    CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL_W,'position z in the transformed space at w location','', &
+                         'altitude_at_w_location',-0.5,JPVEXT,0,     XZHAT)
     !
     DEALLOCATE(ZZHATM)
   END IF
@@ -230,13 +241,14 @@ ENDIF
 
 
 CONTAINS
-SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUND,PCOORDS)
+SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
   TYPE(DIMCDF), POINTER,     INTENT(IN) :: TDIM
   CHARACTER(LEN=*),          INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),          INTENT(IN) :: HSTDNAME
   CHARACTER(LEN=*),          INTENT(IN) :: HAXIS
   REAL,                      INTENT(IN) :: PSHIFT
-  INTEGER,                   INTENT(IN) :: KBOUND
+  INTEGER,                   INTENT(IN) :: KBOUNDLOW
+  INTEGER,                   INTENT(IN) :: KBOUNDHIGH
   REAL,DIMENSION(:),OPTIONAL,INTENT(IN) :: PCOORDS
 
   CHARACTER(LEN=64)             :: YRANGE
@@ -282,7 +294,7 @@ SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUND,PCOORDS)
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
-  WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUND,ISIZE-KBOUND
+  WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUNDLOW,ISIZE-KBOUNDHIGH
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
 
@@ -297,12 +309,14 @@ SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUND,PCOORDS)
 
 END SUBROUTINE WRITE_HOR_COORD
 
-SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,PSHIFT,KBOUND,PCOORDS)
+SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
   TYPE(DIMCDF), POINTER, INTENT(IN) :: TDIM
   CHARACTER(LEN=*),      INTENT(IN) :: HLONGNAME
   CHARACTER(LEN=*),      INTENT(IN) :: HSTDNAME
+  CHARACTER(LEN=*),      INTENT(IN) :: HCOMPNAME
   REAL,                  INTENT(IN) :: PSHIFT
-  INTEGER,               INTENT(IN) :: KBOUND
+  INTEGER,               INTENT(IN) :: KBOUNDLOW
+  INTEGER,               INTENT(IN) :: KBOUNDHIGH
   REAL,DIMENSION(:),     INTENT(IN) :: PCOORDS
 
   CHARACTER(LEN=64)             :: YRANGE
@@ -340,15 +354,28 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,PSHIFT,KBOUND,PCOORDS)
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_axis_shift',PSHIFT)
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
-  WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUND,ISIZE-KBOUND
+  WRITE(YRANGE,'( I0,":",I0 )') 1+KBOUNDLOW,ISIZE-KBOUNDHIGH
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
-  !Remark: ZS and ZTOP in the formula are the same for mass point or flux point
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
-  IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
-  IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
-  STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
+  !
+  IF (LSLEVE) THEN
+    !Remark: ZS, ZSMT and ZTOP in the formula are the same for mass point or flux point
+    STATUS = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
+                                        ' height: ZTOP oro_ls: ZSMT oro: ZS len1: LEN1 len2: LEN2')
+    IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
+    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)'//                                      &
+                          '+ oro_ls(j,i)*sinh((height/len1)**1.35-(s(k)/len1)**1.35)/sinh((s(k)/len1)**1.35)'//        &
+                          '+(oro(j,i)-oro_ls(j,i))*sinh((height/len2)**1.35-(s(k)/len2)**1.35)/sinh((s(k)/len2)**1.35)')
+    IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
+  ELSE
+    !Remark: ZS and ZTOP in the formula are the same for mass point or flux point
+    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_terms','s: '//TRIM(YVARNAME)//' height: ZTOP orog: ZS')
+    IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
+    STATUS = NF90_PUT_ATT(INCID, IVARID, 'formula_definition','z(n,k,j,i)=s(k)*(height-orog(j,i))/height+orog(j,i)')
+    IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
+  ENDIF
+  !
+  STATUS = NF90_PUT_ATT(INCID, IVARID, 'computed_standard_name',HCOMPNAME)
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
 
   ! Write the data
@@ -416,7 +443,7 @@ IF (TRIM(TPFILE%CFORMAT)/='NETCDF4' .AND. TRIM(TPFILE%CFORMAT)/='LFICDF4') RETUR
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_HEADER_NC4','called for file '//TRIM(TPFILE%CNAME))
 !
 IF (TPFILE%LMASTER)  THEN
-  ISTATUS = NF90_PUT_ATT(TPFILE%NNCID, NF90_GLOBAL, 'Conventions', 'CF-1.7')
+  ISTATUS = NF90_PUT_ATT(TPFILE%NNCID, NF90_GLOBAL, 'Conventions', 'CF-1.7 COMODO-1.4')
   IF (ISTATUS /= NF90_NOERR) CALL HANDLE_ERR(ISTATUS,__LINE__,'IO_FILE_WRITE_HEADER[NF90_PUT_ATT]')
 
 !title
