@@ -666,8 +666,8 @@ CONTAINS
                       ELSE
                          IOS = 0
                       END IF
-                      CALL IO_SET_KNOWNDIMS_NC4(TPFILE)
-                      CALL IO_WRITE_COORDVAR_NC4(TPFILE)
+                      CALL IO_SET_KNOWNDIMS_NC4(TZSPLITFILE)
+                      CALL IO_WRITE_COORDVAR_NC4(TZSPLITFILE)
                    END IF
                 END IF
 #endif
