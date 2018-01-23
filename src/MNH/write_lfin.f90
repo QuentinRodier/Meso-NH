@@ -164,6 +164,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!       Modification    01/2016  (JP Pinty) Add LIMA
 !!       M.Mazoyer     04/16 : Add supersaturation fields
+!!       JP Chaboureau 27/11/2017 add wind tendency forcing
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -2379,6 +2380,22 @@ IF (LFORCING) THEN
     ILENCH=LEN(YCOMMENT)
     CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDRVFRC(:,JT),IGRID,ILENCH,  &
                                                             YCOMMENT,IRESP)
+!
+!
+    YRECFM='TENDUFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDUFRC(:,JT),IGRID,ILENCH,  &
+                                                           YCOMMENT,IRESP)
+!
+!
+    YRECFM='TENDVFRC'//YFRC
+    YCOMMENT=' '
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,YDIR,XTENDVFRC(:,JT),IGRID,ILENCH,  &
+                                                           YCOMMENT,IRESP)
 !
 !
     YRECFM='GXTHFRC'//YFRC

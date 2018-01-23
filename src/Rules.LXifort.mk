@@ -13,7 +13,7 @@ OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -
 OPT_PERF0  =  -O0
 OPT_PERF2  =  -O2
 OPT_PERF3  =  -O3 -xHost
-OPT_CHECK  =  -CB -ftrapuv 
+OPT_CHECK  =  -CB -ftrapuv -debug-parameters all
 OPT_I8     =  -i8
 OPT_R8     =  -r8
 #
@@ -130,7 +130,9 @@ CNAME_GRIBEX=ifort
 # LIBTOOLS flags
 #
 #if MNH_TOOLS exists => compile the tools
-MNH_TOOLS = yes
+ifeq "$(MNH_INT)" "4"
+MNH_TOOLS=yes
+endif
 #
 ##########################################################
 #                                                        #

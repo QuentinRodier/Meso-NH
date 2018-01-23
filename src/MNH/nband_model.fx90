@@ -16,6 +16,7 @@
 *                               and changed name of variables concerned
 *                               indicated by "*MNH"
 *                                named nband_model.f90 and compiled with -Fixed
+*           J.Escobar (1/12/2017) bug => intialized all ZV=0.0 in spectr
       SUBROUTINE NBMVEC
      I ( KIDIA  ,KFDIA ,KLON,KLEV,KGL,KCABS,KNG1,KUABS
      I , KH2O   ,KCO2  ,KO3,KCNT,KN2O,KCH4,KCO,KC11,KC12,KCFC
@@ -526,11 +527,12 @@ C
  221  CONTINUE
       DO 223 JABS=1,KUABS
       DO 222 JL=KIDIA,KFDIA
-      ZV(JL,JABS,JKSL)=0.
+C       ZV(JL,JABS,JKSL)=0.
  222  CONTINUE
  223  CONTINUE
  224  CONTINUE
 C
+      ZV = 0.0
 C
       LLCNT=.FALSE.
 *MNH      IF (WNU(1).LT.CLIM(1) .OR. WNU(1).GE.CLIM(2)) ICNT=0
