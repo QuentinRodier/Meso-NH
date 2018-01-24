@@ -84,7 +84,7 @@ LIBS += -lz
 else
 F90 = mpiifort
 endif
-ifeq "$(MNH_INT)" "I8"
+ifeq "$(MNH_INT)" "8"
 OPT_BASE         += -ilp64
 endif
 else
