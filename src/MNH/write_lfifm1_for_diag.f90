@@ -142,6 +142,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!       C.Lac  04/2016 : add visibility and droplet deposition
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
+!!       T.Dauhut      10/2017 : add parallel 3D clustering
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -234,6 +235,7 @@ USE MODE_IO_ll
 USE MODE_THERMO
 USE MODE_MODELN_HANDLER
 USE MODI_LIDAR
+USE MODI_CLUSTERING
 !
 USE MODD_MPIF
 USE MODD_VAR_ll
@@ -300,6 +302,12 @@ REAL,DIMENSION(SIZE(XSVT,1),SIZE(XSVT,2),SIZE(XSVT,3),NMODE_SLT*2):: ZSSLTDEP
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSIG_DST, ZRG_DST, ZN0_DST
 REAL,DIMENSION(:,:,:,:), ALLOCATABLE  :: ZSIG_SLT, ZRG_SLT, ZN0_SLT
 REAL,DIMENSION(:,:,:), ALLOCATABLE  :: ZRHOT, ZTMP ! work array
+!
+! GBOTUP = True does clustering from bottom up to top, False top down to surface
+LOGICAL                                                   :: GBOTUP ! clustering propagation
+LOGICAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: GCLOUD ! mask
+INTEGER,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ICLUSTERID, ICLUSTERLV
+REAL,   DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZCLUSTERID, ZCLUSTERLV, ZCLDSIZE
 
 !ECRITURE DANS UN FICHIER ASCII DE RESULTATS 
 !INITIALISATION DU NOM DE FICHIER CREE EN PARALLELE AVEC CELUI LFI
@@ -313,6 +321,7 @@ CHARACTER(LEN=3)  :: YGRID_SIZE
 INTEGER :: IEL,IIELV
 CHARACTER(LEN=5)  :: YVIEW   ! Upward or Downward integration
 INTEGER           :: IACCMODE
+!
 !-------------------------------------------------------------------------------
 INTEGER :: IAUX ! work variable 
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZWORK35,ZWORK36
@@ -2518,6 +2527,45 @@ IF (LDIV) THEN
  END IF
 !
 ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!* Clustering
+!
+IF (LCLSTR) THEN
+  GCLOUD(:,:,:)=.FALSE.
+  GBOTUP=LBOTUP
+  IF (CFIELD=='W') THEN
+  WHERE(XWT(:,:,:).GT.XTHRES) GCLOUD(:,:,:)=.TRUE.
+  END IF
+  IF (CFIELD=='CLOUD') THEN
+  WHERE((XRT(:,:,:,2)+XRT(:,:,:,4)+XRT(:,:,:,5)+XRT(:,:,:,6)).GT.XTHRES) GCLOUD(:,:,:)=.TRUE.
+  END IF
+  PRINT *,'CALL CLUSTERING COUNT(GCLOUD)=',COUNT(GCLOUD)
+  CALL CLUSTERING(GBOTUP,GCLOUD,XWT,ICLUSTERID,ICLUSTERLV,ZCLDSIZE)
+  PRINT *,'GOT OUT OF CLUSTERING'
+  !
+  ZCLUSTERID=ICLUSTERID
+  ZCLUSTERLV=ICLUSTERLV
+  !
+  YRECFM='CLUSTERID'
+  YCOMMENT='X_Y_Z_CLUSTER (ID NUMBER)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZCLUSTERID,IGRID,ILENCH,YCOMMENT,IRESP)
+  !
+  YRECFM='CLUSTERLV'
+  YCOMMENT='X_Y_Z_CLUSTER (BASE OR TOP LEVEL)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZCLUSTERLV,IGRID,ILENCH,YCOMMENT,IRESP)
+  !
+  YRECFM='CLDSIZE'
+  YCOMMENT='X_Y_Z_CLDSIZE (HOR. SECTION)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZCLDSIZE,IGRID,ILENCH,YCOMMENT,IRESP)
+END IF
 !
 !-------------------------------------------------------------------------------
 !

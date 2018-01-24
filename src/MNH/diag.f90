@@ -79,6 +79,7 @@
 !!  10/2016      (C.LAC) add LVISI
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
+!!  10/2017     (T Dauhut) Add parallel 3D clustering
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -228,7 +229,8 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
                    XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
-                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX,LVISI, LLIMA_DIAG
+                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX,LVISI, LLIMA_DIAG,&
+                   LCLSTR,LBOTUP,CFIELD,XTHRES
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
 NAMELIST/NAM_STO_FILE/ CFILES, NSTART_SUPP
@@ -316,6 +318,11 @@ XLAT_GPS(:)=XUNDEF
 XLON_GPS(:)=XUNDEF
 XZS_GPS(:)=-999.0
 XDIFFORO=150.0
+!
+LCLSTR=.FALSE.
+LBOTUP=.TRUE.
+CFIELD='CLOUD'
+XTHRES=0.00001
 
 !! initialization of radar parameters
 NVERSION_RAD=1
