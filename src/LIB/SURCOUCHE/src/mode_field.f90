@@ -4,10 +4,14 @@
 !MNH_LIC for details. version 1.
 MODULE MODE_FIELD
 !
-USE MODD_CONF, ONLY : CPROGRAM
+USE MODD_CONF,  ONLY : CPROGRAM
 USE MODD_IO_ll, ONLY : NVERB_DEBUG,NVERB_INFO,NVERB_WARNING,NVERB_ERROR,NVERB_FATAL
 USE MODD_PARAMETERS
 USE MODD_TYPE_DATE
+#if defined(MNH_IOCDF4)
+USE NETCDF, ONLY : NF90_FILL_INT, NF90_FILL_REAL
+#endif
+!
 USE MODE_MSG
 !
 IMPLICIT NONE
@@ -71,6 +75,21 @@ TYPE TFIELDDATA
   INTEGER            :: NGRID     = -1 !Localization on the model grid
   INTEGER            :: NTYPE     = TYPEUNDEF !Datatype
   INTEGER            :: NDIMS     = 0  !Number of dimensions
+  !
+#if defined(MNH_IOCDF4)
+  INTEGER            :: NFILLVALUE =  NF90_FILL_INT  !Fill value for integer fields
+  REAL               :: XFILLVALUE =  NF90_FILL_REAL !Fill value for real fields
+                                                     !NF90_FILL_REAL is the default fill value
+                                                     !used by netCDF to pre-fill real and also double
+                                                     !variables
+#else
+  INTEGER            :: NFILLVALUE =  -2147483647            !Fill value for integer fields
+  REAL               :: XFILLVALUE =  9.9692099683868690e+36 !Fill value for real fields
+#endif
+  INTEGER            :: NVALIDMIN  = -2147483646 !Minimum valid value for integer fields
+  INTEGER            :: NVALIDMAX  =  2147483647 !Maximum valid value for integer fields
+  REAL               :: XVALIDMIN  = -1.E36 !Minimum valid value for real fields
+  REAL               :: XVALIDMAX  =  1.E36 !Maximum valid value for real fields
   !
   TYPE(TFIELDPTR_C0D),DIMENSION(:),ALLOCATABLE :: TFIELD_C0D !Pointer to the character string fields (one per nested mesh)
   !
