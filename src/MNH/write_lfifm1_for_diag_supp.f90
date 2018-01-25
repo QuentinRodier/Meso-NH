@@ -86,6 +86,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
 !!      F. Brosse 10/2016 add chemical production destruction terms outputs
 !!      M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
+!!      J.-P. Chaboureau 01/2018 add altitude interpolation
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -209,6 +210,12 @@ REAL, DIMENSION(:), ALLOCATABLE :: ZTH
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZPOVO
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZVOX,ZVOY,ZVOZ
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZCORIOZ
+!
+! variables needed for altitude interpolation                                 
+INTEGER :: IAL
+REAL :: ZFILLVAL
+REAL, DIMENSION(:), ALLOCATABLE :: ZAL
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWAL
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -1101,10 +1108,149 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 !
   DEALLOCATE(ZWTH,ZTH,ZWORK32,ZWORK33,ZWORK34)
 END IF
+!-------------------------------------------------------------------------------
+!
+!*       6.     DIAGNOSTIC ON ALTITUDE LEVELS
+!               -----------------------------
+!
+IF (LISOAL .AND.XISOAL(1)/=0.) THEN
+!
+!
+  ZFILLVAL = -99999.
+  ALLOCATE(ZWORK32(IIU,IJU,IKU))
+  ALLOCATE(ZWORK33(IIU,IJU,IKU))
+!
+! *************************************************
+! Determine the altitude level where to interpolate
+! *************************************************
+  IAL=0
+  DO JI=1,SIZE(XISOAL)
+    IF (XISOAL(JI)<0.) EXIT
+    IAL=IAL+1
+  END DO
+  ALLOCATE(ZWAL(IIU,IJU,IAL))
+  ZWAL(:,:,:)=XUNDEF
+  ALLOCATE(ZAL(IAL))
+  ZAL(:) = XISOAL(1:IAL)
+  PRINT *,'ALTITUDE LEVELS WHERE TO INTERPOLATE=',ZAL(:)
+! *********************
+! Altitude
+! *********************
+  YRECFM='ALT_ALT'
+  YCOMMENT='Z_alt ALT (m)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'--',ZAL,IGRID,ILENCH,YCOMMENT,IRESP)
+!
+!*       Standard Variables
+!
+! *********************
+! Cloud
+! *********************
+  IF (SIZE(XRT,4) >= 5) THEN
+    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,4)+XRT(:,:,:,5))*1.E3
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    YRECFM='ALT_CLOUD'
+    YCOMMENT='X_Y_cloud ALT (g/kg)'
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+  END IF
+! *********************
+! Precipitation
+! *********************
+  IF (SIZE(XRT,4) >= 6) THEN
+    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,6))*1.E3
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    YRECFM='ALT_PRECIP'
+    YCOMMENT='X_Y_precipitation ALT (g/kg)'
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+  END IF
+! *********************
+! Pressure
+! *********************
+  CALL ZINTER(XPABST, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  YRECFM='ALT_PRESSURE'
+  YCOMMENT='X_Y_pressure ALT (Pa)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+! *********************
+! Potential Vorticity
+! *********************
+  ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
+  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
+  ZVOX(:,:,2)=ZVOX(:,:,3)
+  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
+  ZVOY(:,:,2)=ZVOY(:,:,3)
+  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
+  ZVOZ(:,:,2)=ZVOZ(:,:,3)
+  ZVOZ(:,:,1)=ZVOZ(:,:,3)
+  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
+  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
+  + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+   + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
+  ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
+  ZPOVO(:,:,1)  =-1.E+11
+  ZPOVO(:,:,IKU)=-1.E+11
+  CALL ZINTER(ZPOVO, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  YRECFM='ALT_PV'
+  YCOMMENT='X_Y_Potential Vorticity ALT (PVU)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+! *********************
+! Wind
+! *********************
+  ZWORK31(:,:,:) = MXF(XUT(:,:,:))
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  YRECFM='ALT_U'
+  YCOMMENT='X_Y_U component of wind ALT (m/s)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+  !
+  ZWORK31(:,:,:) = MYF(XVT(:,:,:))
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  YRECFM='ALT_V'
+  YCOMMENT='X_Y_V component of wind - ALT (m/s)'
+  IGRID=1
+  ILENCH=LEN(YCOMMENT)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+! *********************
+! Dust extinction (optical depth per km)
+! *********************
+  IF (NRAD_3D >= 1.AND.LDUST) THEN
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,3)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
+    ENDDO
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    YRECFM='ALT_DSTEXT'
+    YCOMMENT='X_Y_DuST EXTinction ALT (/km)'
+    IGRID=1
+    ILENCH=LEN(YCOMMENT)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    CALL FMWRIT(HFMFILE,YRECFM,CLUOUT,'XY',ZWAL,IGRID,ILENCH,YCOMMENT,IRESP)
+  END IF
+!
+! *********************
+  DEALLOCATE(ZWAL,ZAL,ZWORK32,ZWORK33)
+END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       6.     DIAGNOSTIC RELATED TO CHEMISTRY
+!*       7.     DIAGNOSTIC RELATED TO CHEMISTRY
 !               -------------------------------
 !
 IF (NEQ_BUDGET>0) THEN

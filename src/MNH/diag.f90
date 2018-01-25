@@ -80,6 +80,7 @@
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !!  10/2017     (T Dauhut) Add parallel 3D clustering
+!!  01/2018     (J.-P. Chaboureau) Add altitude interpolation
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -229,7 +230,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
                    XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
-                   LISOPR,XISOPR,LISOTH,XISOTH, LHU_FLX,LVISI, LLIMA_DIAG,&
+                   LISOPR,XISOPR,LISOTH,XISOTH,LISOAL,XISOAL,LHU_FLX,LVISI,LLIMA_DIAG,&
                    LCLSTR,LBOTUP,CFIELD,XTHRES
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
@@ -380,6 +381,8 @@ LISOPR=.FALSE.
 XISOPR(:)=0.
 LISOTH=.FALSE.
 XISOTH(:)=0.
+LISOAL=.FALSE.
+XISOAL(:)=-1.
 !
 !-------------------------------------------------------------------------------
 !
