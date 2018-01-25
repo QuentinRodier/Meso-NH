@@ -81,6 +81,7 @@
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !!  10/2017     (T Dauhut) Add parallel 3D clustering
 !!  01/2018     (J.-P. Chaboureau) Add altitude interpolation
+!!  01/2018     (J.-P. Chaboureau) Add coarse graining
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -230,7 +231,8 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    XGRID,NBELEV,XELEV,NBRAD,LQUAD,LFALL,LWBSCS,LWREFL,&
                    XREFLMIN,XREFLVDOPMIN,LSNRT,XSNRMIN,&
                    LLIDAR,CVIEW_LIDAR,XALT_LIDAR,XWVL_LIDAR,&
-                   LISOPR,XISOPR,LISOTH,XISOTH,LISOAL,XISOAL,LHU_FLX,LVISI,LLIMA_DIAG,&
+                   LISOPR,XISOPR,LISOTH,XISOTH,LISOAL,XISOAL,LCOARSE,NDXCOARSE, &
+                   LHU_FLX,LVISI,LLIMA_DIAG,&
                    LCLSTR,LBOTUP,CFIELD,XTHRES
 !
 NAMELIST/NAM_DIAG_FILE/ YINIFILE,YINIFILEPGD, YSUFFIX
@@ -383,6 +385,9 @@ LISOTH=.FALSE.
 XISOTH(:)=0.
 LISOAL=.FALSE.
 XISOAL(:)=-1.
+!
+LCOARSE=.FALSE.
+NDXCOARSE=1
 !
 !-------------------------------------------------------------------------------
 !
