@@ -66,7 +66,7 @@ END TYPE TFIELDPTR_T0D
 !Structure describing the characteristics of a field
 TYPE TFIELDDATA
   CHARACTER(LEN=NMNHNAMELGTMAX) :: CMNHNAME  = '' !Name of the field (for MesoNH, non CF convention)
-  CHARACTER(LEN=32)  :: CSTDNAME  = '' !Standard name (CF convention)
+  CHARACTER(LEN=NSTDNAMELGTMAX) :: CSTDNAME  = '' !Standard name (CF convention)
   CHARACTER(LEN=32)  :: CLONGNAME = '' !Long name (CF convention)
   CHARACTER(LEN=40)  :: CUNITS    = '' !Canonical units (CF convention)
   CHARACTER(LEN=2)   :: CDIR      = '' !Type of the data field (XX,XY,--...)
@@ -2499,11 +2499,11 @@ IDX = IDX+1
 !
 IF(IDX>MAXFIELDS) CALL ERR_INI_FIELD_LIST()
 TFIELDLIST(IDX)%CMNHNAME   = 'DMFCONV'
-TFIELDLIST(IDX)%CSTDNAME   = 'X_Y_Downdraft Convective Mass Flux'
+TFIELDLIST(IDX)%CSTDNAME   = ''
 TFIELDLIST(IDX)%CLONGNAME  = 'MesoNH: DMFCONV'
 TFIELDLIST(IDX)%CUNITS     = 'kg s-1 m-2'
 TFIELDLIST(IDX)%CDIR       = 'XY'
-TFIELDLIST(IDX)%CCOMMENT   = ''
+TFIELDLIST(IDX)%CCOMMENT   = 'X_Y_Downdraft Convective Mass Flux'
 TFIELDLIST(IDX)%NGRID      = 4
 TFIELDLIST(IDX)%NTYPE      = TYPEREAL
 TFIELDLIST(IDX)%NDIMS      = 3

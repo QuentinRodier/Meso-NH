@@ -14,7 +14,8 @@
 
 MODULE MODD_IO_ll
 !
-USE MODD_NETCDF, ONLY: IDCDF_KIND, IOCDF
+USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF
+USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
 !
 IMPLICIT NONE 
 !
@@ -65,7 +66,7 @@ END TYPE TOUTBAK
 
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
-  CHARACTER(LEN=28) :: CNAME               !Filename
+  CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME  !Filename
   CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
