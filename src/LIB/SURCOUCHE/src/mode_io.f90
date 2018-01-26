@@ -437,7 +437,15 @@ CONTAINS
 #else
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
           !JUAN : 31/03/2000 modif pour acces direct
-          IF (YACCESS=='DIRECT') THEN
+          IF (YACCESS=='STREAM') THEN
+             OPEN(UNIT=TZFD%FLU,       &
+                  FILE=TRIM(TZFD%NAME),&
+                  STATUS=YSTATUS,       &
+                  ACCESS=YACCESS,       &
+                  IOSTAT=IOS,          &
+                  FORM=YFORM,           &
+                  ACTION=YACTION)
+          ELSEIF (YACCESS=='DIRECT') THEN
              OPEN(UNIT=TZFD%FLU,       &
                   FILE=TRIM(TZFD%NAME),&
                   STATUS=YSTATUS,       &
