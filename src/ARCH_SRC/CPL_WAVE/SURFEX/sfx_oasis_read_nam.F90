@@ -32,6 +32,7 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    05/2008 
+!!    10/2016 B. Decharme : bug surface/groundwater coupling 
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
 !!                                          and surface pressure for ocean coupling
 !-------------------------------------------------------------------------------
@@ -44,8 +45,7 @@ USE MODN_SFX_OASIS
 USE MODD_SFX_OASIS, ONLY : LOASIS, XRUNTIME,               &
                            LCPL_LAND, LCPL_GW, LCPL_FLOOD, &
                            LCPL_CALVING, LCPL_LAKE,        &
-                           LCPL_SEA, LCPL_SEAICE,          &
-                           LCPL_WAVE
+                           LCPL_SEA, LCPL_SEAICE, LCPL_WAVE
 !
 USE MODE_POS_SURF
 !
@@ -65,7 +65,7 @@ IMPLICIT NONE
 !
 CHARACTER(LEN=6), INTENT(IN)           :: HPROGRAM    ! program calling surf. schemes
 REAL,             INTENT(IN)           :: PTSTEP_SURF ! Surfex time step
-CHARACTER(LEN=3), INTENT(IN), OPTIONAL :: HINIT       ! choice of fields to initialize
+CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: HINIT       ! choice of fields to initialize
 !
 !*       0.2   Declarations of local parameter
 !              -------------------------------
@@ -145,7 +145,7 @@ ELSE
    WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 ENDIF
 !
- CALL POSNAM(ILUNAM,'NAM_SFX_LAKE_CPL',GFOUND,ILUOUT)
+CALL POSNAM(ILUNAM,'NAM_SFX_LAKE_CPL',GFOUND,ILUOUT)
 !
 IF (GFOUND) THEN
    READ(UNIT=ILUNAM,NML=NAM_SFX_LAKE_CPL)
@@ -234,17 +234,11 @@ IF(LCPL_LAND)THEN
 !
 ! Particular case due to water table depth / surface coupling
 !    
-  IF(LEN_TRIM(CWTD)>0.OR.LEN_TRIM(CFWTD)>0.OR.LEN_TRIM(CRECHARGE)>0)THEN
+  IF(LEN_TRIM(CWTD)>0.OR.LEN_TRIM(CFWTD)>0)THEN
     LCPL_GW = .TRUE.
   ENDIF
 !
   IF(LCPL_GW)THEN
-!
-!   Output variable
-!
-    YKEY  ='CRECHARGE'
-    YCOMMENT='Groundwater recharge'
-    CALL CHECK_FIELD(CRECHARGE,YKEY,YCOMMENT,YLAND,KOUT)
 !
 !   Input variable
 !
@@ -537,7 +531,7 @@ IF(LEN_TRIM(HFIELD)==0)THEN
      CASE(YSEA)
           YNAMELIST='NAM_SFX_SEA_CPL'
      CASE(YLAKE)
-          YNAMELIST='NAM_SFX_LAKE_CPL'          
+          YNAMELIST='NAM_SFX_LAKE_CPL' 
      CASE(YWAVE)
           YNAMELIST='NAM_SFX_WAVE_CPL'
      CASE DEFAULT
@@ -550,8 +544,8 @@ IF(LEN_TRIM(HFIELD)==0)THEN
   WRITE(ILUOUT,*)TRIM(YCOMMENT1)
   WRITE(ILUOUT,*)TRIM(YCOMMENT2)
 !
-! For oceanic and wave coupling do not stop the model if a field from surfex to ocean/wave is
-! not done because many particular case can be used
+! For oceanic coupling do not stop the model if a field from surfex to ocean is
+! not  done because many particular case can be used
 !
   IF((KID==0.OR.KID==1).AND.HTYP/=YLAND)THEN
     LSTOP=.FALSE.

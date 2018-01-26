@@ -39,7 +39,7 @@
 !              ------------
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_DIAG_SEAFLUX_n, ONLY : DIAG_SEAFLUX_t
+USE MODD_DIAG_n, ONLY : DIAG_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -55,7 +55,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(DIAG_SEAFLUX_t), INTENT(INOUT) :: DGS
+TYPE(DIAG_t), INTENT(INOUT) :: DGS
 !
 REAL, DIMENSION(:), INTENT(OUT) :: PWAVE_U10  ! 10 meter u-wind (m/s)
 REAL, DIMENSION(:), INTENT(OUT) :: PWAVE_V10  ! 10 meter v-wind (m/s)
