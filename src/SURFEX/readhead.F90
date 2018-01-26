@@ -4,7 +4,8 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READHEAD(KGLB,PGLBLATMIN,PGLBLATMAX,PGLBLONMIN,PGLBLONMAX,&
-                           KNBLAT,KNBLON,PCUTVAL,PDLAT,PDLON,PLAT,PLON,KERR)  
+                           KNBLAT,KNBLON,PCUTVAL,PDLAT,PDLON,PLAT,PLON,KERR,KFACT,&
+                           OCOMPRESS)  
 !     ################################################################
 !
 !!**** *READHEAD* writes the head a the local 'latlon' file.
@@ -76,6 +77,8 @@ REAL,              INTENT(OUT) :: PDLON       ! longitude mesh in the data file
 REAL, DIMENSION(:), POINTER    :: PLAT        ! latitude  of data points
 REAL, DIMENSION(:), POINTER    :: PLON        ! longitude of data points
 INTEGER,           INTENT(OUT) :: KERR        ! return code
+LOGICAL, INTENT(OUT) :: OCOMPRESS
+INTEGER, INTENT(OUT) :: KFACT
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -87,7 +90,7 @@ INTEGER                    :: ININDEX    ! index of character 'N' in YSTRING1
 INTEGER                    :: ISINDEX    ! index of character 'S' in YSTRING1
 INTEGER                    :: IEINDEX    ! index of character 'E' in YSTRING1
 INTEGER                    :: IWINDEX    ! index of character 'W' in YSTRING1
-REAL, DIMENSION(7)         :: ZVAL       ! values of the head data
+REAL, DIMENSION(9)         :: ZVAL       ! values of the head data
 INTEGER                    :: IHEAD      ! index of the data in the array ZVAL
  CHARACTER(LEN=100)         :: YSTRING    ! total string in the head
  CHARACTER(LEN=100)         :: YSTRING1   ! string less the begining line descriptor
@@ -107,6 +110,9 @@ KERR=0
 !*         1.    Line of comments
 !                ----------------
 !
+ZVAL(1:8) = 1.
+ZVAL(9)   = 0.
+!
 READ (KGLB,'(A100)',END=99) YSTRING
 !
 !-------------------------------------------------------------------------------
@@ -114,7 +120,7 @@ READ (KGLB,'(A100)',END=99) YSTRING
 !*         2.    Other lines
 !                -----------
 !
-DO JHEAD=1,7
+DO JHEAD=1,9
   READ (KGLB,'(A100)',END=99) YSTRING
   YSTRING=ADJUSTL(YSTRING)
 !
@@ -145,7 +151,13 @@ DO JHEAD=1,7
            YSTRING1=YSTRING(6:100) 
          CASE('cols:')
            IHEAD=7
-           YSTRING1=YSTRING(6:100) 
+           YSTRING1=YSTRING(6:100)
+         CASE('fact:')
+           IHEAD=8
+           YSTRING1=YSTRING(6:100)
+         CASE('compr')
+           IHEAD=9
+           YSTRING1=YSTRING(10:100)          
   END SELECT
 !
 !*         2.2   Test on presence of geographical descritor (N, E, S or W)
@@ -183,6 +195,7 @@ DO JHEAD=1,7
 !
 ENDDO
 !
+99 CONTINUE
 !-------------------------------------------------------------------------------
 !
 !*         3.    Initialization of arguments, longitudes and latitudes
@@ -195,6 +208,9 @@ PGLBLONMIN=ZVAL(5)
 PGLBLONMAX=ZVAL(4)+NINT((ZVAL(5)-ZVAL(4)+180.*(1.0+XSURF_EPSILON))/360.)*360.
 KNBLAT=NINT(ZVAL(6))
 KNBLON=NINT(ZVAL(7))
+KFACT=NINT(ZVAL(8))
+OCOMPRESS = .FALSE.
+IF (ZVAL(9)==1.) OCOMPRESS = .TRUE.
 !
 PDLAT=(PGLBLATMAX-PGLBLATMIN)/KNBLAT
 PDLON=(PGLBLONMAX-PGLBLONMIN)/KNBLON
@@ -203,10 +219,9 @@ ALLOCATE(PLON(KNBLON))
 PLAT(:)=(/ (PGLBLATMAX-(JLAT-0.5)*PDLAT, JLAT=1,KNBLAT) /)
 PLON(:)=(/ (PGLBLONMIN+(JLON-0.5)*PDLON, JLON=1,KNBLON) /)
 !
-IF (LHOOK) CALL DR_HOOK('READHEAD',1,ZHOOK_HANDLE)
-RETURN
-99 CONTINUE
-KERR=-1
+!IF (LHOOK) CALL DR_HOOK('READHEAD',1,ZHOOK_HANDLE)
+!RETURN
+!KERR=-1
 IF (LHOOK) CALL DR_HOOK('READHEAD',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 END SUBROUTINE READHEAD

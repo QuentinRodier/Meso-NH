@@ -88,6 +88,10 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+#ifdef SFX_ARO
+#include "get_bufc0.h"
+#endif
+!
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
@@ -165,6 +169,10 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
+#ifdef SFX_ARO
+#include "get_bufn0.h"
+#endif
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
@@ -244,6 +252,10 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+#ifdef SFX_ARO
+#include "get_bufn1.h"
+#endif
+!
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
@@ -322,6 +334,10 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+#ifdef SFX_ARO
+#include "get_bufx0.h"
+#endif
+!
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
@@ -399,6 +415,10 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
+#ifdef SFX_ARO
+#include "get_bufx1.h"
+#endif
 !
 !*       0.1   Declarations of arguments
 !              -------------------------

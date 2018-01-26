@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_CTRL_TEB (K2M,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET,OCOEF,OSURF_VARS,&
-                                  OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OUTCI,KLUOUT)  
+      SUBROUTINE PREP_CTRL_TEB (DGO, OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OUTCI,KLUOUT)  
 !     #################################################################################################################
 !
 !!****  *PREP_CTRL_TEB * - routine to check that diagnostics are switched off
@@ -38,6 +37,10 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t
+!
+USE MODI_PREP_CTRL
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -46,13 +49,8 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 !
-INTEGER,  INTENT(INOUT) :: K2M                ! flag for 2m parameters
-LOGICAL,  INTENT(INOUT) :: OSURF_BUDGET       ! flag for surface budget
-LOGICAL,  INTENT(INOUT) :: O2M_MIN_ZS         ! flag for 2m parameters at min zs
-LOGICAL,  INTENT(INOUT) :: ORAD_BUDGET        ! flag for radiative budget
-LOGICAL,  INTENT(INOUT) :: OCOEF              ! flag for turbulent coefficients
-LOGICAL,  INTENT(INOUT) :: OSURF_VARS         ! flag for other surface variables
 LOGICAL,  INTENT(INOUT) :: OSURF_EVAP_BUDGET  ! flag for surface evaporation budget
 LOGICAL,  INTENT(INOUT) :: OSURF_MISC_BUDGET  ! flag for surface miscellaneous budget
 LOGICAL,  INTENT(INOUT) :: OUTCI              ! flag for UTCI fields
@@ -65,13 +63,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_CTRL_TEB',0,ZHOOK_HANDLE)
-K2M = 0
 !
-OSURF_BUDGET  = .FALSE.
-O2M_MIN_ZS    = .FALSE.
-ORAD_BUDGET   = .FALSE.
-OCOEF         = .FALSE.
-OSURF_VARS    = .FALSE.
+ CALL PREP_CTRL(DGO,KLUOUT)
 !
 OSURF_EVAP_BUDGET = .FALSE.
 OSURF_MISC_BUDGET = .FALSE.

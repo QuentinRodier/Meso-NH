@@ -4,8 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #####################################################
 !      SUBROUTINE SOILEMISNO_n(PSW_FORBIO, PUA, PVA, KSV, HSV, PFLUX)
-      SUBROUTINE SOILEMISNO_n (GB, I, &
-                                PUA, PVA)
+      SUBROUTINE SOILEMISNO_n (GB, S, K, NP, NPE, PUA, PVA)
 !     #####################################################
 !!
 !!****** *SOILEMISNO*
@@ -54,12 +53,13 @@
 !       0. DECLARATIONS
 !          ------------
 !
-!
 USE MODD_GR_BIOG_n, ONLY : GR_BIOG_t
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t, ISBA_NP_t, ISBA_NPE_t
 !
 USE MODD_EMIS_NOX
 USE MODD_CSTS,       ONLY : XAVOGADRO
+!
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -72,14 +72,13 @@ IMPLICIT NONE
 !REAL, DIMENSION(:,:), INTENT(IN)              :: PSW_FORBIO
 !
 TYPE(GR_BIOG_t), INTENT(INOUT) :: GB
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(ISBA_S_t), INTENT(INOUT) :: S
+TYPE(ISBA_K_t), INTENT(INOUT) :: K
+TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
 !
 REAL, DIMENSION(:), INTENT(IN)                :: PUA        ! wind module
 REAL, DIMENSION(:), INTENT(IN)                :: PVA
-!INTEGER,             INTENT(IN)               :: KSV       ! number of scalars
-!CHARACTER(LEN=6), DIMENSION(KSV),  INTENT(IN) :: HSV        ! chemical species name
-!REAL, DIMENSION(:,:), INTENT(INOUT)           :: PFLUX      ! NO flux from soil
-!                                                control switch for the first call
 INTEGER                                       :: JI         ! index
 INTEGER                                       :: JSV
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -107,7 +106,7 @@ REAL, DIMENSION(SIZE(PUA,1),3)   :: ZS            ! normalized sum
 !
  CHARACTER(LEN=2)               :: TEST_CRF ! 'OK' if VEG<60% (i.e. soils with sparse vegetation)
 !
-INTEGER :: J
+INTEGER :: J, IMASK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !=============================================================================
 IF (LHOOK) CALL DR_HOOK('SOILEMISNO_n',0,ZHOOK_HANDLE)
@@ -116,12 +115,24 @@ IF (.NOT.ASSOCIATED(GB%XNOFLUX))  ALLOCATE(GB%XNOFLUX(SIZE(PUA,1)))
 !
 ! Calculation of WFPS
 ! coefficients obtenus a partir des donnees Grignon+Hombori+Escompte(0.536 0.4 0.43)
-ZWFPS_S(:) = (I%XWG(:,1,1) / 0.45) * 100.      
-! Change unity of temperatures from Kelvin to Celsius
-ZTG_D(:) = I%XTG(:,2,1)  - 273.15
-ZTG_S(:) = I%XTG(:,1,1)  - 273.15
+ZWFPS_S(:) = XUNDEF
+ZTG_D  (:) = XUNDEF
+ZSAND  (:) = XUNDEF
+!
+DO JI = 1,NP%AL(1)%NSIZE_P
+  !
+  IMASK = NP%AL(1)%NR_P(JI)
+  !
+  ZWFPS_S(IMASK) = (NPE%AL(1)%XWG(JI,1) / 0.45) * 100.      
+  ! Change unity of temperatures from Kelvin to Celsius
+  ZTG_D  (IMASK) = NPE%AL(1)%XTG(JI,2)  - 273.15
+  ZTG_S  (IMASK) = NPE%AL(1)%XTG(JI,1)  - 273.15
+  !
+ENDDO
+!
 ! Change sand fraction into sand percentage
-ZSAND(:) = I%XSAND(:,1) * 100.
+ZSAND(:) = K%XSAND(:,1) * 100.
+!
 ! Calculate wind module
 ZWIND(:) = SQRT( PUA(:)**2 + PVA(:)**2 )
 !
@@ -129,13 +140,13 @@ ZWIND(:) = SQRT( PUA(:)**2 + PVA(:)**2 )
 !------------------------------------
 ! 1- Normalized centered entries
 !
-ZN_ZTG_S(:)   = XCOEF_TG_S(1)   + XCOEF_TG_S(2) * ZTG_S(:)
+ZN_ZTG_S  (:) = XCOEF_TG_S  (1) + XCOEF_TG_S  (2) * ZTG_S  (:)
 ZN_ZWFPS_S(:) = XCOEF_WFPS_S(1) + XCOEF_WFPS_S(2) * ZWFPS_S(:)
-ZN_ZTG_D(:)   = XCOEF_TG_D(1)   + XCOEF_TG_D(2) * ZTG_D(:)
-ZN_FERT(:)    = XCOEF_FERT(1)   + XCOEF_FERT(2) * I%XFERT(:)
-ZN_ZSAND(:)   = XCOEF_SAND(1)   + XCOEF_SAND(2) * ZSAND(:)
-ZN_PH(:)      = XCOEF_PH(1)     + XCOEF_PH(2) * I%XPH(:)
-ZN_WIND(:)    = XCOEF_WIND(1)   + XCOEF_WIND(2) * ZWIND(:)
+ZN_ZTG_D  (:) = XCOEF_TG_D  (1) + XCOEF_TG_D  (2) * ZTG_D  (:)
+ZN_FERT   (:) = XCOEF_FERT  (1) + XCOEF_FERT  (2) * S%XFERT(:)
+ZN_ZSAND  (:) = XCOEF_SAND  (1) + XCOEF_SAND  (2) * ZSAND  (:)
+ZN_PH     (:) = XCOEF_PH    (1) + XCOEF_PH    (2) * S%XPH  (:)
+ZN_WIND   (:) = XCOEF_WIND  (1) + XCOEF_WIND  (2) * ZWIND  (:)
 !
 ! 2- weighted sums
 !
@@ -153,7 +164,7 @@ ZN_Y(:) = XWGT_TOT(1) + XWGT_TOT(2)*TANH(ZS(:,1)) + XWGT_TOT(3)*TANH(ZS(:,2)) + 
 !  4- Flux calculation
 !       If  pH> 6, pulse effect, amplitude coefficient is maximum.
 !       If pH < 6, amplitude coefficient is reduced to avoid strong emissions
-WHERE (I%XPH(:) .GE. 6.0)
+WHERE (S%XPH(:) .GE. 6.0)
   GB%XNOFLUX(:) = XCOEF_NO0 + XCOEF_NO1_s*ZN_Y(:)
 ELSEWHERE
   GB%XNOFLUX(:) = XCOEF_NO0 + XCOEF_NO1_l*ZN_Y(:)
@@ -175,13 +186,15 @@ GB%XNOFLUX(:) = GB%XNOFLUX(:)*XAVOGADRO/(1.0E4*8.64E4*14)
 !  7- Reduction du flux dans la canopee
 !          WHERE (XLAI(:,1)/=XUNDEF) 
 !         ZCRF(:) = -0.0917*XLAI(:,1) + 0.9429
-WHERE (I%XLAI(:,1) > 1.9 .AND. I%XLAI(:,1) < 5.)
-  ZCRF(:) = 0.5
-ELSEWHERE (I%XLAI(:,1) > 5.)
-  ZCRF(:) = 0.2
-ELSEWHERE
-  ZCRF(:) = 1.
-ENDWHERE
+ZCRF(:) = 1.
+DO JI = 1,NP%AL(1)%NSIZE_P
+  IMASK = NP%AL(1)%NR_P(JI)
+  IF (NPE%AL(1)%XLAI(JI) > 1.9 .AND. NPE%AL(1)%XLAI(JI) < 5.) THEN
+    ZCRF(IMASK) = 0.5
+  ELSEIF (NPE%AL(1)%XLAI(JI) > 5.) THEN
+    ZCRF(IMASK) = 0.2
+  ENDIF
+ENDDO
 !       PRINT*,'LAI, CRF', XLAI(:), ZCRF(:)
 GB%XNOFLUX(:) = GB%XNOFLUX(:)*ZCRF(:)
 !       PRINT*,'flux de NO en molec/m2/s apres CRF = ',XNOFLUX(:)

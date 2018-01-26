@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_VAR_TOWN_n (DGT, &
-                                 HPROGRAM,KI,PQS,PZ0,PZ0H)
+      SUBROUTINE GET_VAR_TOWN_n (DGO, D, HPROGRAM,KI,PQS,PZ0,PZ0H)
 !     ###################################################
 !
 !!****  *GET_VAR_TOWN_n* - routine to get variables defined only over town
@@ -40,7 +39,7 @@
 !              ------------
 !
 !
-USE MODD_DIAG_TEB_n, ONLY : DIAG_TEB_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 USE MODI_GET_LUOUT
 USE MODD_SURF_PAR,   ONLY   : XUNDEF
@@ -55,8 +54,8 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
-TYPE(DIAG_TEB_t), INTENT(INOUT) :: DGT
+TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
+TYPE(DIAG_t), INTENT(IN) :: D
 !
  CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
 INTEGER,              INTENT(IN)     :: KI      ! Number of points
@@ -76,14 +75,14 @@ IF (LHOOK) CALL DR_HOOK('GET_VAR_TOWN_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF (DGT%LSURF_VARS) THEN 
-        PQS      = DGT%XQS      
+IF (DGO%LSURF_VARS) THEN 
+        PQS      = D%XQS      
    ELSE 
         PQS      = XUNDEF      
 ENDIF           
-IF (DGT%LCOEF) THEN 
-        PZ0      = DGT%XZ0      
-        PZ0H     = DGT%XZ0H
+IF (DGO%LCOEF) THEN 
+        PZ0      = D%XZ0      
+        PZ0H     = D%XZ0H
    ELSE 
         PZ0      = XUNDEF      
         PZ0H     = XUNDEF

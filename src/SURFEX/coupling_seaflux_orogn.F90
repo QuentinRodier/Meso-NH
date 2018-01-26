@@ -3,16 +3,15 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, &
-                                    HPROGRAM, HCOUPLING, PTIMEC,                              &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, &
-                 PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,          &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                       )  
+SUBROUTINE COUPLING_SEAFLUX_OROG_n (SM, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,   &
+                                    KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN,     &
+                                    PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, & 
+                                    PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,  &
+                                    PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, &
+                                    PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB,&
+                                    PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,       &
+                                    PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,  &
+                                    PPEQ_B_COEF, HTEST                        )  
 !     ###############################################################################
 !
 !!****  *COUPLING_SEAFLUX_OROG_n * - Modifies the input forcing if not
@@ -196,8 +195,8 @@ ELSE
 !
 ENDIF
 !
- CALL COUPLING_SEAFLUX_SBL_n(SM, DST, SLT, &
-                             HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,                   &
+ CALL COUPLING_SEAFLUX_SBL_n(SM%CHS, SM%DTS, SM%SD, SM%O, SM%OR, SM%G, SM%S, SM%SB, &
+                             DST, SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,         &
                              KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,              &
                              PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
                              ZQA, ZTA, ZRHOA, PSV, PCO2, HSV, ZRAIN, ZSNOW, ZLW,    &

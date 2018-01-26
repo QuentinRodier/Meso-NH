@@ -3,9 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE INIT_WATER_SBL(KLVL, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,     &
-                              PSFTH, PSFTQ, PZREF, PUREF, PTS, PZ0, PZ,                  &
-                              PT, PQ, PWIND, PTKE, PP)
+    SUBROUTINE INIT_WATER_SBL(SB, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,     &
+                              PSFTH, PSFTQ, PZREF, PUREF, PTS, PZ0 )
 !     #################################################################################
 !
 !!****  *INIT_WATER_SBL* - inits water SBL profiles
@@ -29,6 +28,8 @@
 !!      Original    03/2010
 !!------------------------------------------------------------------
 !
+USE MODD_CANOPY_n, ONLY : CANOPY_t
+!
 USE MODD_CSTS,             ONLY : XCPD, XRD, XP00, XTT, XG
 USE MODD_CANOPY_TURB,      ONLY : XALPSBL
 !
@@ -43,7 +44,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-INTEGER           , INTENT(IN)  :: KLVL      ! number      of levels in canopy
+TYPE(CANOPY_t), INTENT(INOUT) :: SB
+!
 REAL, DIMENSION(:), INTENT(IN)  :: PPA       ! pressure at forcing level             (Pa)
 REAL, DIMENSION(:), INTENT(IN)  :: PPS       ! pressure at atmospheric model surface (Pa)
 REAL, DIMENSION(:), INTENT(IN)  :: PTA       ! air temperature forcing               (K)
@@ -56,16 +58,10 @@ REAL, DIMENSION(:), INTENT(IN)  :: PRAIN     ! liquid precipitation             
 REAL, DIMENSION(:), INTENT(IN)  :: PZREF     ! height of T,q forcing                 (m)
 REAL, DIMENSION(:), INTENT(IN)  :: PUREF     ! height of wind forcing                (m)
 REAL, DIMENSION(:), INTENT(IN)  :: PTS       ! surface temperature
-REAL, DIMENSION(:,:), INTENT(IN):: PZ        ! height of middle of each level grid   (m)
+!
 REAL, DIMENSION(:), INTENT(INOUT) :: PZ0       ! roughness length
 REAL, DIMENSION(:), INTENT(OUT) :: PSFTH     ! flux of heat                          (W/m2)
 REAL, DIMENSION(:), INTENT(OUT) :: PSFTQ     ! flux of water vapor                   (kg/m2/s)
-!
-REAL, DIMENSION(:,:), INTENT(OUT) :: PT   ! temperature at each level in SBL      (m/s)
-REAL, DIMENSION(:,:), INTENT(OUT) :: PQ   ! humidity    at each level in SBL      (kg/m3)
-REAL, DIMENSION(:,:), INTENT(OUT) :: PWIND! wind        at each level in SBL      (m/s)
-REAL, DIMENSION(:,:), INTENT(OUT) :: PTKE ! Tke         at each level in SBL      (m2/s2)
-REAL, DIMENSION(:,:), INTENT(OUT) :: PP   ! pressure    at each level in SBL      (kg/m3)
 !
 !*      0.2    declarations of local variables
 !
@@ -112,8 +108,7 @@ ZWIND(:) = SQRT(PU**2+PV**2)
 !We choose the case CSEA_FLUX=DIRECT to compute CD, CDN, CH, RI and ZZ0H
 !Iterative computation of PZ0 / CD, CDN, CH, ZH0
 DO J=1,5
-  CALL WATER_FLUX(PZ0,                                            &
-                  PTA, ZEXNA, PRHOA, PTS, ZEXNS, ZQA, PRAIN,      &
+  CALL WATER_FLUX(PZ0, PTA, ZEXNA, PRHOA, PTS, ZEXNS, ZQA, PRAIN, &
                   PSNOW, XTT, ZWIND, PZREF, PUREF,                &
                   PPS, GHANDLE_SIC, ZQSAT,  PSFTH, PSFTQ, ZUSTAR, &
                   ZCD, ZCDN, ZCH, ZRI, ZRESA_SEA, ZZ0H            )
@@ -121,20 +116,20 @@ ENDDO
 !
 !Initialisation of T, Q, Wind and TKE on all canopy levels
 ZHU(:)=1.
-DO JLAYER=1,KLVL
+DO JLAYER=1,SB%NLVL
   !
   CALL CLS_TQ(PTA, ZQA, PPA, PPS, PZREF, ZCD, ZCH, ZRI, PTS, ZHU, ZZ0H, &
-              PZ(:,JLAYER), ZTNM, ZQNM, ZHUNM                           )
+              SB%XZ(:,JLAYER), ZTNM, ZQNM, ZHUNM                        )
   !
-  PT(:,JLAYER)=ZTNM
-  PQ(:,JLAYER)=ZQNM
+  SB%XT(:,JLAYER)=ZTNM
+  SB%XQ(:,JLAYER)=ZQNM
   !
-  CALL CLS_WIND(PU, PV, PUREF, ZCD, ZCDN, ZRI, PZ(:,JLAYER), &
+  CALL CLS_WIND(PU, PV, PUREF, ZCD, ZCDN, ZRI, SB%XZ(:,JLAYER), &
                 ZCLS_WIND_ZON, ZCLS_WIND_MER                 )
   !
-  PWIND(:,JLAYER) = SQRT( ZCLS_WIND_ZON(:)**2 + ZCLS_WIND_MER(:)**2 )
-  PTKE (:,JLAYER) = XALPSBL * ZCD(:) * ( PU(:)**2 + PV(:)**2 )
-  PP   (:,JLAYER) = PPA(:) + XG * PRHOA(:) * ( PZ(:,KLVL) - PZ(:,JLAYER) )
+  SB%XU   (:,JLAYER) = SQRT( ZCLS_WIND_ZON(:)**2 + ZCLS_WIND_MER(:)**2 )
+  SB%XTKE (:,JLAYER) = XALPSBL * ZCD(:) * ( PU(:)**2 + PV(:)**2 )
+  SB%XP   (:,JLAYER) = PPA(:) + XG * PRHOA(:) * ( SB%XZ(:,SB%NLVL) - SB%XZ(:,JLAYER) )
   !
 ENDDO
 !

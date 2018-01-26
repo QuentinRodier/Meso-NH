@@ -82,6 +82,7 @@
 !!  10/2017     (T Dauhut) Add parallel 3D clustering
 !!  01/2018     (J.-P. Chaboureau) Add altitude interpolation
 !!  01/2018     (J.-P. Chaboureau) Add coarse graining
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -779,9 +780,7 @@ IF (CSURF=='EXTE') THEN
     CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
     DEF_NC=.TRUE.
   END IF
-  CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
-                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
-                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
+  CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
   NC_WRITE= LNETCDF
   NC_FILE = 'sf2'
   CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
@@ -793,9 +792,7 @@ IF (CSURF=='EXTE') THEN
   !!!!!! MODIF SB
 #else
   CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','ALL',.FALSE.)
-  CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
-                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
-                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
+  CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
   CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','ALL')
 #endif
   WRITE(ILUOUT0,*) ' '

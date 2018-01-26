@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_IO_SURF_n (DTCO, DGU, U, &
-                                 HPROGRAM,HMASK,HSCHEME,HACTION)
+      SUBROUTINE INIT_IO_SURF_n (DTCO, U, HPROGRAM,HMASK,HSCHEME,HACTION,HNAME)
 !     #######################################################
 !
 !
@@ -36,6 +35,7 @@
 !!      Original    09/2003 
 !!      Modified    04/2004 by P. LeMoigne: add HACTION if ASCII mode selected
 !!      Modified    01/2009 by B. Decjharme: add HPROGRAM if FA mode selected
+!!      Modified    08/2015 by S. Senesi : handle XIOS output mode
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -44,7 +44,6 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 #ifdef SFX_ASC
@@ -71,29 +70,37 @@ USE MODI_INIT_IO_SURF_TXT_n
 #ifdef SFX_MNH
 USE MODI_MNHINIT_IO_SURF_n
 #endif
+#ifdef SFX_ARO
+USE MODI_AROINIT_IO_SURF_n
+#endif
+!
+#ifdef WXIOS
+USE MODD_XIOS, ONLY : YXIOS_DOMAIN
+#endif
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+!
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! main program
  CHARACTER(LEN=6),  INTENT(IN)  :: HMASK
  CHARACTER(LEN=6),  INTENT(IN)  :: HSCHEME  ! scheme used
  CHARACTER(LEN=5),  INTENT(IN)  :: HACTION  ! action performed ('READ ','WRITE')
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+ CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: HNAME
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('INIT_IO_SURF_N',0,ZHOOK_HANDLE)
@@ -105,29 +112,29 @@ END IF
 !
 IF (HPROGRAM=='OFFLIN' ) THEN
 #ifdef SFX_OL
-  CALL INIT_IO_SURF_OL_n(DTCO, DGU, U, &
-                         HPROGRAM,HMASK,HSCHEME,HACTION)
+  IF(PRESENT(HNAME)) THEN
+    CALL INIT_IO_SURF_OL_n(DTCO, U, HPROGRAM,HMASK,HSCHEME,HACTION,HNAME)
+  ELSE
+    CALL INIT_IO_SURF_OL_n(DTCO, U, HPROGRAM,HMASK,HSCHEME,HACTION,HNAME)
+  ENDIF
 #endif
 ENDIF
 !
 IF (HPROGRAM=='ASCII ' ) THEN
 #ifdef SFX_ASC
-  CALL INIT_IO_SURF_ASC_n(DTCO, U, &
-                          HMASK,HACTION)
+  CALL INIT_IO_SURF_ASC_n(DTCO, U, HMASK,HACTION)
 #endif
 ENDIF
 !
 IF (HPROGRAM=='TEXTE ' ) THEN
 #ifdef SFX_TXT
-  CALL INIT_IO_SURF_TXT_n(DTCO, U, &
-                          HMASK,HACTION)
+  CALL INIT_IO_SURF_TXT_n(DTCO, U, HMASK,HACTION)
 #endif
 ENDIF
 !
 IF (HPROGRAM=='BINARY' ) THEN
 #ifdef SFX_BIN
-  CALL INIT_IO_SURF_BIN_n(DTCO, U, &
-                          HMASK,HACTION)
+  CALL INIT_IO_SURF_BIN_n(DTCO, U, HMASK,HACTION)
 #endif
 ENDIF
 !
@@ -139,22 +146,25 @@ ENDIF
 !
 IF (HPROGRAM=='FA    ' ) THEN
 #ifdef SFX_FA
-  CALL INIT_IO_SURF_FA_n(DTCO, U, &
-                         HPROGRAM,HMASK,HACTION)
+  CALL INIT_IO_SURF_FA_n(DTCO, U, HPROGRAM,HMASK,HACTION)
 #endif
 ENDIF
 !
 IF (HPROGRAM=='LFI   ' ) THEN
 #ifdef SFX_LFI
-  CALL INIT_IO_SURF_LFI_n(DTCO, U, &
-                          HMASK,HACTION)
+  CALL INIT_IO_SURF_LFI_n(DTCO, U, HMASK,HACTION)
 #endif
 ENDIF
 !
 IF (HPROGRAM=='NC    ' ) THEN
 #ifdef SFX_NC
-  CALL INIT_IO_SURF_NC_n(DTCO, U, DGU, &
-                         HMASK,HACTION)
+  CALL INIT_IO_SURF_NC_n(DTCO, U, HMASK,HACTION)
+#endif
+ENDIF
+!
+IF (TRIM(HPROGRAM)=='XIOS' ) THEN
+#ifdef WXIOS
+  YXIOS_DOMAIN = HMASK
 #endif
 ENDIF
 !

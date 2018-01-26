@@ -3,16 +3,15 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGS, DGSI, S, &
-                                  PTSTEP, PTA, PQA, &
-     PPA, PPS, PRHOA, PZONA,                             &
-     PMERA, PHT, PHW, PCD, PCDN, PCH, PCE, PRI, PHU,     &
-     PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,     &
-     PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB, &
-     PEMIS, PTRAD, PRAIN, PSNOW,                         & 
-     PCD_ICE, PCDN_ICE, PCH_ICE, PCE_ICE, PRI_ICE,       &
-     PZ0_ICE, PZ0H_ICE, PQSAT_ICE, PSFTH_ICE, PSFTQ_ICE, &
-     PSFZON_ICE, PSFMER_ICE )
+SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGO, D, DC, DI, DIC, DGMSI, S,              &
+                                  PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,           &
+                                  PMERA, PHT, PHW, PCD, PCDN, PCH, PCE, PRI, PHU,     &
+                                  PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,          &
+                                  PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB,          &
+                                  PEMIS, PTRAD, PRAIN, PSNOW,                         & 
+                                  PCD_ICE, PCDN_ICE, PCH_ICE, PCE_ICE, PRI_ICE,       &
+                                  PZ0_ICE, PZ0H_ICE, PQSAT_ICE, PSFTH_ICE, PSFTQ_ICE, &
+                                   PSFZON_ICE, PSFMER_ICE )
                                           
 !     #####################################################################################
 !
@@ -43,12 +42,8 @@ SUBROUTINE DIAG_INLINE_SEAFLUX_n (DGS, DGSI, S, &
 !!      S. Senesi   01/2014 ! introduce fractional seaice and sea-ice model 
 !!------------------------------------------------------------------
 !
-
-!
-!
-!
-USE MODD_DIAG_SEAFLUX_n, ONLY : DIAG_SEAFLUX_t
-USE MODD_DIAG_SEAICE_n, ONLY : DIAG_SEAICE_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
+USE MODD_DIAG_MISC_SEAICE_n, ONLY : DIAG_MISC_SEAICE_t
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 !
 USE MODD_CSTS,           ONLY : XTTS
@@ -58,11 +53,10 @@ USE MODD_SFX_OASIS,      ONLY : LCPL_SEA
 USE MODD_TYPES_GLT,     ONLY : T_GLT
 USE MODD_GLT_PARAM ,    ONLY : GELATO_DIM=>NX
 USE MODE_GLT_STATS ,    ONLY : GLT_AVHICEM, GLT_AVHSNWM
-USE MODI_PARAM_CLS
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
 USE MODI_DIAG_SURF_BUDGET_SEA
-USE MODI_DIAG_SURF_BUDGETC_SEA
+USE MODI_DIAG_SURF_BUDGETC
 USE MODI_DIAG_CPL_ESM_SEA
 !
 USE MODI_SEAFLUX_ALBEDO
@@ -75,8 +69,12 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_SEAFLUX_t), INTENT(INOUT) :: DGS
-TYPE(DIAG_SEAICE_t), INTENT(INOUT) :: DGSI
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
+TYPE(DIAG_t), INTENT(INOUT) :: DI
+TYPE(DIAG_t), INTENT(INOUT) :: DIC
+TYPE(DIAG_MISC_SEAICE_t), INTENT(INOUT) :: DGMSI
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 !
 REAL,               INTENT(IN) :: PTSTEP ! atmospheric time-step                 (s)
@@ -141,174 +139,152 @@ IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SEAFLUX_N',0,ZHOOK_HANDLE)
 ! * Mean surface temperature need to couple with AGCM
 !
 IF (S%LHANDLE_SIC) THEN
-   DGS%XTS   (:) = (1 - S%XSIC(:)) * S%XSST(:) + S%XSIC(:) * S%XTICE(:)
-   DGS%XTSRAD(:) = PTRAD(:)
+   D%XTS   (:) = (1 - S%XSIC(:)) * S%XSST(:) + S%XSIC(:) * S%XTICE(:)
+   D%XTSRAD(:) = PTRAD(:)
 ELSE
-   DGS%XTS   (:) = S%XSST (:)
-   DGS%XTSRAD(:) = PTRAD(:)
+   D%XTS   (:) = S%XSST (:)
+   D%XTSRAD(:) = PTRAD(:)
 ENDIF
 !
 IF (.NOT. S%LSBL) THEN
 !
-  IF (DGS%N2M==1) THEN        
-    CALL PARAM_CLS(PTA, S%XSST, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
-         PSFTH, PSFTQ, PSFZON, PSFMER,                                 &
-         DGS%XT2M, DGS%XQ2M, DGS%XHU2M, DGS%XZON10M, DGS%XMER10M )  
-    IF (S%LHANDLE_SIC) THEN
-       CALL PARAM_CLS(PTA, S%XTICE, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
-            PSFTH_ICE, PSFTQ_ICE, PSFZON_ICE, PSFMER_ICE,                  &
-            DGS%XT2M_ICE, DGS%XQ2M_ICE, DGS%XHU2M_ICE, DGS%XZON10M_ICE, DGS%XMER10M_ICE  )  
-    ENDIF
-  ELSE IF (DGS%N2M==2) THEN
+  IF (DGO%N2M==2) THEN
     ZH(:)=2.          
-    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,          &
-                  PCD, PCH, PRI,                  &
-                  S%XSST, PHU, PZ0H, ZH,            &
-                  DGS%XT2M, DGS%XQ2M, DGS%XHU2M)
+    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD, PCH, PRI, &
+                S%XSST, PHU, PZ0H, ZH,D%XT2M, D%XQ2M, D%XHU2M)
     ZH(:)=10.                
-    CALL CLS_WIND(PZONA, PMERA, PHW,              &
-                    PCD, PCDN, PRI, ZH,           &
-                    DGS%XZON10M, DGS%XMER10M)  
+    CALL CLS_WIND(PZONA, PMERA, PHW,PCD, PCDN, PRI, ZH,  &
+                  D%XZON10M, D%XMER10M)  
     IF (S%LHANDLE_SIC) THEN
        ZH(:)=2.          
-       CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,  &
-            PCD_ICE, PCH_ICE, PRI_ICE,       &
-            S%XTICE, PHU, PZ0H_ICE, ZH,        &
-            DGS%XT2M_ICE, DGS%XQ2M_ICE, DGS%XHU2M_ICE)  
+       CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD_ICE, PCH_ICE, PRI_ICE,       &
+            S%XTICE, PHU, PZ0H_ICE, ZH, DI%XT2M, DI%XQ2M, DI%XHU2M)  
        ZH(:)=10.                
-       CALL CLS_WIND(PZONA, PMERA, PHW,      &
-            PCD_ICE, PCDN_ICE, PRI_ICE, ZH,  &
-            DGS%XZON10M_ICE, DGS%XMER10M_ICE  )  
+       CALL CLS_WIND(PZONA, PMERA, PHW, PCD_ICE, PCDN_ICE, PRI_ICE, ZH,  &
+            DI%XZON10M, DI%XMER10M  )  
     ENDIF 
   END IF
 !
-  IF (DGS%N2M>=1) THEN
+  IF (DGO%N2M>=1) THEN
      IF (S%LHANDLE_SIC) THEN
         !
-        DGS%XT2M    = DGS%XT2M    * (1 - S%XSIC) + DGS%XT2M_ICE    * S%XSIC
-        DGS%XQ2M    = DGS%XQ2M    * (1 - S%XSIC) + DGS%XQ2M_ICE    * S%XSIC
-        DGS%XHU2M   = DGS%XHU2M   * (1 - S%XSIC) + DGS%XHU2M_ICE   * S%XSIC
+        D%XT2M    = D%XT2M    * (1 - S%XSIC) + DI%XT2M    * S%XSIC
+        D%XQ2M    = D%XQ2M    * (1 - S%XSIC) + DI%XQ2M    * S%XSIC
+        D%XHU2M   = D%XHU2M   * (1 - S%XSIC) + DI%XHU2M   * S%XSIC
         !
-        DGS%XZON10M(:) = DGS%XZON10M(:) * (1 - S%XSIC(:)) + DGS%XZON10M_ICE(:) * S%XSIC(:)
-        DGS%XMER10M(:) = DGS%XMER10M(:) * (1 - S%XSIC(:)) + DGS%XMER10M_ICE(:) * S%XSIC(:)
-        DGS%XWIND10M_ICE(:) = SQRT(DGS%XZON10M_ICE(:)**2+DGS%XMER10M_ICE(:)**2)
+        D%XZON10M(:) = D%XZON10M(:) * (1 - S%XSIC(:)) + DI%XZON10M(:) * S%XSIC(:)
+        D%XMER10M(:) = D%XMER10M(:) * (1 - S%XSIC(:)) + DI%XMER10M(:) * S%XSIC(:)
+        DI%XWIND10M(:) = SQRT(DI%XZON10M(:)**2+DI%XMER10M(:)**2)
         !
-        DGS%XRI    = PRI     * (1 - S%XSIC) + PRI_ICE     * S%XSIC
-        DGS%XRI_ICE=PRI_ICE
+        D%XRI    = PRI     * (1 - S%XSIC) + PRI_ICE     * S%XSIC
+        DI%XRI   =PRI_ICE
      ELSE
-        DGS%XRI    =PRI
+        D%XRI    =PRI
      ENDIF
     !
-    DGS%XT2M_MIN(:) = MIN(DGS%XT2M_MIN(:),DGS%XT2M(:))
-    DGS%XT2M_MAX(:) = MAX(DGS%XT2M_MAX(:),DGS%XT2M(:))
+    D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
+    D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
     !
-    DGS%XHU2M_MIN(:) = MIN(DGS%XHU2M_MIN(:),DGS%XHU2M(:))
-    DGS%XHU2M_MAX(:) = MAX(DGS%XHU2M_MAX(:),DGS%XHU2M(:))
+    D%XHU2M_MIN(:) = MIN(D%XHU2M_MIN(:),D%XHU2M(:))
+    D%XHU2M_MAX(:) = MAX(D%XHU2M_MAX(:),D%XHU2M(:))
     !
-    DGS%XWIND10M(:) = SQRT(DGS%XZON10M(:)**2+DGS%XMER10M(:)**2)
-    DGS%XWIND10M_MAX(:) = MAX(DGS%XWIND10M_MAX(:),DGS%XWIND10M(:))
+    D%XWIND10M(:) = SQRT(D%XZON10M(:)**2+D%XMER10M(:)**2)
+    D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
   ENDIF
 !
 ELSE
-  IF (DGS%N2M>=1) THEN
-    DGS%XT2M    = XUNDEF
-    DGS%XQ2M    = XUNDEF
-    DGS%XHU2M   = XUNDEF
-    DGS%XZON10M = XUNDEF
-    DGS%XMER10M = XUNDEF
-    DGS%XRI     = PRI
+  IF (DGO%N2M>=1) THEN
+    D%XT2M    = XUNDEF
+    D%XQ2M    = XUNDEF
+    D%XHU2M   = XUNDEF
+    D%XZON10M = XUNDEF
+    D%XMER10M = XUNDEF
+    D%XRI     = PRI
   ENDIF
 ENDIF
 !
-IF (DGS%LSURF_BUDGET.OR.DGS%LSURF_BUDGETC) THEN
+IF (DGO%LSURF_BUDGET.OR.DGO%LSURF_BUDGETC) THEN
 !
-  CALL SEAFLUX_ALBEDO(PDIR_SW,PSCA_SW,PDIR_ALB,PSCA_ALB,DGS%XALBT)
+  CALL SEAFLUX_ALBEDO(PDIR_SW,PSCA_SW,PDIR_ALB,PSCA_ALB,D%XALBT)
 !
-  CALL DIAG_SURF_BUDGET_SEA   (XTTS, S%XSST, PRHOA, PSFTH, PSFTH_ICE,    &
-                                 PSFTQ, PSFTQ_ICE,                     &
-                                 PDIR_SW, PSCA_SW, PLW, PDIR_ALB,      &
-                                 PSCA_ALB,S%XICE_ALB, PEMIS, PTRAD,      &
-                                 PSFZON, PSFZON_ICE, PSFMER,           &
-                                 PSFMER_ICE, S%LHANDLE_SIC, S%XSIC, S%XTICE, &
-                                 DGS%XRN, DGS%XH, DGS%XLE, DGS%XLE_ICE, DGS%XGFLUX,        &
-                                 DGS%XSWD, DGS%XSWU, DGS%XSWBD, DGS%XSWBU, DGS%XLWD, DGS%XLWU, &
-                                 DGS%XFMU, DGS%XFMV, DGS%XEVAP, DGS%XSUBL,             &
-                                 DGS%XRN_ICE, DGS%XH_ICE, DGS%XGFLUX_ICE,          &
-                                 DGS%XSWU_ICE, DGS%XSWBU_ICE, DGS%XLWU_ICE,        &
-                                 DGS%XFMU_ICE, DGS%XFMV_ICE                    ) 
+  CALL DIAG_SURF_BUDGET_SEA   (D, DI, S, XTTS, PRHOA, PSFTH, PSFTH_ICE, &
+                               PSFTQ, PSFTQ_ICE, PDIR_SW, PSCA_SW, PLW,   &
+                               PDIR_ALB, PSCA_ALB, PEMIS, PTRAD,          &
+                               PSFZON, PSFZON_ICE, PSFMER, PSFMER_ICE   ) 
+  IF (S%LHANDLE_SIC) DI%XLE = D%XLEI
 !
 END IF
 !
-IF(DGS%LSURF_BUDGETC)THEN
-  CALL DIAG_SURF_BUDGETC_SEA(DGS, &
-                             PTSTEP, DGS%XRN, DGS%XH, DGS%XLE, DGS%XLE_ICE, DGS%XGFLUX,  &
-                               DGS%XSWD, DGS%XSWU, DGS%XLWD, DGS%XLWU, DGS%XFMU, DGS%XFMV,   &
-                               DGS%XEVAP, DGS%XSUBL, S%LHANDLE_SIC,            &
-                               DGS%XRN_ICE, DGS%XH_ICE, DGS%XGFLUX_ICE,          &
-                               DGS%XSWU_ICE, DGS%XLWU_ICE, DGS%XFMU_ICE, DGS%XFMV_ICE)
+IF(DGO%LSURF_BUDGETC)THEN
+  !
+  CALL DIAG_SURF_BUDGETC(D, DC, PTSTEP, .TRUE.)
+  !
+  IF (S%LHANDLE_SIC) THEN
+     CALL DIAG_SURF_BUDGETC(DI, DIC, PTSTEP, .FALSE.)
+     DIC%XLE = DC%XLEI
+  ENDIF
+  !
 ENDIF
 !
-IF (DGS%LCOEF) THEN
+IF (DGO%LCOEF) THEN
    IF (S%LHANDLE_SIC) THEN 
       !
       !* Transfer coefficients
       !
-      DGS%XCD = (1 - S%XSIC) * PCD + S%XSIC * PCD_ICE
-      DGS%XCH = (1 - S%XSIC) * PCH + S%XSIC * PCH_ICE
-      DGS%XCE = (1 - S%XSIC) * PCE + S%XSIC * PCE_ICE
+      D%XCD = (1 - S%XSIC) * PCD + S%XSIC * PCD_ICE
+      D%XCH = (1 - S%XSIC) * PCH + S%XSIC * PCH_ICE
+      D%XCE = (1 - S%XSIC) * PCE + S%XSIC * PCE_ICE
       !
       !* Roughness lengths
       !
-      ZZ0W = ( 1 - S%XSIC ) * 1.0/(LOG(PHW/S%XZ0)    **2)  +  &
-                   S%XSIC   * 1.0/(LOG(PHW/PZ0_ICE)**2)  
-      DGS%XZ0  = PHW  * EXP ( - SQRT ( 1./  ZZ0W ))
-      ZZ0W = ( 1 - S%XSIC ) * 1.0/(LOG(PHW/PZ0H)    **2)  +  &
-                   S%XSIC   * 1.0/(LOG(PHW/PZ0H_ICE)**2)  
-      DGS%XZ0H = PHW  * EXP ( - SQRT ( 1./  ZZ0W ))
+      ZZ0W = ( 1 - S%XSIC ) * 1.0/(LOG(PHW/S%XZ0)    **2)  +  S%XSIC   * 1.0/(LOG(PHW/PZ0_ICE)**2)  
+      D%XZ0  = PHW  * EXP ( - SQRT ( 1./  ZZ0W ))
+      ZZ0W = ( 1 - S%XSIC ) * 1.0/(LOG(PHW/PZ0H)    **2)  +  S%XSIC   * 1.0/(LOG(PHW/PZ0H_ICE)**2)  
+      D%XZ0H = PHW  * EXP ( - SQRT ( 1./  ZZ0W ))
 
-      DGS%XCD_ICE  = PCD_ICE
-      DGS%XCH_ICE  = PCH_ICE
-      DGS%XZ0_ICE  = PZ0_ICE
-      DGS%XZ0H_ICE = PZ0H_ICE
+      DI%XCD  = PCD_ICE
+      DI%XCH  = PCH_ICE
+      DI%XZ0  = PZ0_ICE
+      DI%XZ0H = PZ0H_ICE
       !
    ELSE
       !
       !* Transfer coefficients
       !
-      DGS%XCD = PCD
-      DGS%XCH = PCH
-      DGS%XCE = PCE
+      D%XCD = PCD
+      D%XCH = PCH
+      D%XCE = PCE
       !
       !* Roughness lengths
       !
-      DGS%XZ0  = S%XZ0
-      DGS%XZ0H = PZ0H
+      D%XZ0  = S%XZ0
+      D%XZ0H = PZ0H
    ENDIF
    !
 ENDIF
 !
-IF (DGS%LSURF_VARS) THEN
+IF (DGO%LSURF_VARS) THEN
   !
   !* Humidity at saturation
   !
    IF (S%LHANDLE_SIC) THEN 
-      DGS%XQS     = (1 - S%XSIC) * PQSAT + S%XSIC * PQSAT_ICE
-      DGS%XQS_ICE = PQSAT_ICE
+      D%XQS     = (1 - S%XSIC) * PQSAT + S%XSIC * PQSAT_ICE
+      DI%XQS = PQSAT_ICE
    ELSE 
-      DGS%XQS = PQSAT
+      D%XQS = PQSAT
    ENDIF
 ENDIF
 !
 ! Diags from embedded Seaice model
 ! CALL DIAG_INLINE_SEAICE() : simply  : 
 !
-IF (DGSI%LDIAG_SEAICE) THEN
+IF (DGMSI%LDIAG_MISC_SEAICE) THEN
    IF (TRIM(S%CSEAICE_SCHEME) == 'GELATO') THEN 
       GELATO_DIM=SIZE(PTA)
-      DGSI%XSIT  = RESHAPE(glt_avhicem(S%TGLT%dom,S%TGLT%sit),(/GELATO_DIM/))
-      DGSI%XSND  = RESHAPE(glt_avhsnwm(S%TGLT%dom,S%TGLT%sit),(/GELATO_DIM/))
-      DGSI%XMLT  = S%TGLT%oce_all(:,1)%tml
+      DGMSI%XSIT  = RESHAPE(glt_avhicem(S%TGLT%dom,S%TGLT%sit),(/GELATO_DIM/))
+      DGMSI%XSND  = RESHAPE(glt_avhsnwm(S%TGLT%dom,S%TGLT%sit),(/GELATO_DIM/))
+      DGMSI%XMLT  = S%TGLT%oce_all(:,1)%tml
    ELSE
       ! Placeholder for an alternate seaice scheme
    ENDIF
@@ -321,12 +297,8 @@ GSIC=(S%LHANDLE_SIC.AND.(S%CSEAICE_SCHEME /= 'NONE  '))
 !
 IF (LCPL_SEA.OR.GSIC) THEN
 !
-  CALL DIAG_CPL_ESM_SEA(S, &
-                        PTSTEP,DGS%XZON10M,DGS%XMER10M,DGS%XFMU,DGS%XFMV,  &
-                          DGS%XSWD,DGS%XSWU,DGS%XGFLUX,PSFTQ,PRAIN,    &
-                          PSNOW,PLW,S%XTICE,PSFTH_ICE,       &
-                          PSFTQ_ICE,PDIR_SW,PSCA_SW,       &
-                          DGS%XSWU_ICE,DGS%XLWU_ICE,GSIC           )
+  CALL DIAG_CPL_ESM_SEA(S, D, DI, PTSTEP, PSFTQ, PRAIN, PSNOW, &
+                        PLW, PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW, GSIC )
 ! 
 ENDIF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SEAFLUX_N',1,ZHOOK_HANDLE)

@@ -48,7 +48,7 @@ MODULE mode_glt_dia_lu
 !END INTERFACE
 !END MODULE mode_glt_dia_lu
 !
- CONTAINS
+CONTAINS
 !
 !
 !

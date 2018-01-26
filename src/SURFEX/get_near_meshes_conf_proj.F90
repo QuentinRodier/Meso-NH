@@ -32,6 +32,8 @@
 !*    0.     DECLARATION
 !            -----------
 !
+USE MODD_SURFEX_MPI, ONLY : NINDEX, NRANK, NNUM
+!
 USE MODE_GRIDTYPE_CONF_PROJ
 !
 !
@@ -73,15 +75,17 @@ IF (IIMAX*IJMAX==KL) THEN
     DO JI=1,IIMAX
       ICOUNT = 0
       JL = JI + IIMAX * (JJ-1)
-      KNEAR(JL,:) = 0      
-      DO JX=-(IDIST-1)/2,IDIST/2
-        DO JY=-(IDIST-1)/2,IDIST/2
-          IF (JI+JX>0 .AND. JI+JX<IIMAX+1 .AND. JJ+JY>0 .AND. JJ+JY<IJMAX+1) THEN
-            ICOUNT = ICOUNT + 1
-            KNEAR(JL,ICOUNT) = (JI+JX) + IIMAX * (JJ+JY-1)
-          END IF
+      IF (NINDEX(JL)==NRANK) THEN
+        KNEAR(NNUM(JL),:) = 0      
+        DO JX=-(IDIST-1)/2,IDIST/2
+          DO JY=-(IDIST-1)/2,IDIST/2
+            IF (JI+JX>0 .AND. JI+JX<IIMAX+1 .AND. JJ+JY>0 .AND. JJ+JY<IJMAX+1) THEN
+              ICOUNT = ICOUNT + 1
+              KNEAR(NNUM(JL),ICOUNT) = (JI+JX) + IIMAX * (JJ+JY-1)
+            END IF
+          END DO
         END DO
-      END DO
+      ENDIF
     END DO
   END DO
 END IF

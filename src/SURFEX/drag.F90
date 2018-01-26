@@ -3,16 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE DRAG(HISBA, HSNOW_ISBA, HCPSURF, PTSTEP,                  &
-                      PTG, PWG, PWGI,                                    &
-                      PEXNS, PEXNA, PTA, PVMOD, PQA, PRR, PSR,           &
-                      PPS, PRS, PVEG, PZ0, PZ0EFF, PZ0H,                 &
-                      PWFC, PWSAT, PPSNG, PPSNV, PZREF, PUREF,           &
-                      PDIRCOSZW, PDELTA, PF5, PRA,                       &
-                      PCH, PCD, PCDN, PRI, PHUG, PHUGI,                  &
-                      PHV, PHU, PCPS, PQS, PFFG, PFFV, PFF,              &
-                      PFFG_NOSNOW, PFFV_NOSNOW,                          &
-                      PLEG_DELTA, PLEGI_DELTA, PWR, PRHOA, PLVTT, PQSAT  )  
+    SUBROUTINE DRAG(HISBA, HSNOW_ISBA, HCPSURF, PTSTEP, PTG, PWG, PWGI,  &
+                    PEXNS, PEXNA, PTA, PVMOD, PQA, PRR, PSR, PPS, PRS,   &
+                    PVEG, PZ0, PZ0EFF, PZ0H, PWFC, PWSAT, PPSNG, PPSNV,  &
+                    PZREF, PUREF, PDIRCOSZW, PDELTA, PF5, PRA, PCH, PCD, &
+                    PCDN, PRI, PHUG, PHUGI, PHV, PHU, PCPS, PQS, PFFG,   &
+                    PFFV, PFF, PFFG_NOSNOW, PFFV_NOSNOW, PLEG_DELTA,     &
+                    PLEGI_DELTA, PWR, PRHOA, PLVTT, PQSAT  )  
 !   ############################################################################
 !
 !!****  *DRAG*  
@@ -104,15 +101,15 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
- CHARACTER(LEN=*),     INTENT(IN)  :: HISBA      ! type of ISBA version:
+CHARACTER(LEN=*),     INTENT(IN)  :: HISBA      ! type of ISBA version:
 !                                               ! '2-L' (default)
 !                                               ! '3-L'
 !                                               ! 'DIF'
- CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
+CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
 !                                               !         (Douville et al. 1995)
 !                                               ! '3-L' = 3-L snow scheme (option)
 !                                               !         (Boone and Etchevers 2000)
- CHARACTER(LEN=*),     INTENT(IN)  :: HCPSURF    ! option for specific heat Cp:
+CHARACTER(LEN=*),     INTENT(IN)  :: HCPSURF    ! option for specific heat Cp:
 !                                               ! 'DRY' = dry Cp
 !                                               ! 'HUM' = Cp as a function of qs
 !
@@ -234,7 +231,7 @@ PRI(:)      =0.
 !
 ZVMOD = WIND_THRESHOLD(PVMOD,PUREF)
 !
-ZQSAT(:) = QSAT(PTG(:),PPS(:)) 
+ZQSAT(:) = QSAT(PTG(:),PPS(:))
 !
 IF(PRESENT(PQSAT))PQSAT(:)=ZQSAT(:)
 !
@@ -350,7 +347,7 @@ ENDIF
 !*       6.     COMPUTATION OF RESISTANCE AND DRAG COEFFICIENT
 !               ----------------------------------------------
 !
- CALL SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,                    &
+CALL SURFACE_RI(PTG, PQS, PEXNS, PEXNA, PTA, PQA,                    &
                 PZREF, PUREF, PDIRCOSZW, PVMOD, PRI                  )  
 !
 !-------------------------------------------------------------------------------
@@ -416,7 +413,7 @@ PHV(:)        = PDELTA(:) + (1.- PDELTA(:))*                                    
                 ( PRA(:) + PRS(:)*(1.0 - ZZHV(:)) )*                               &
                 ( (1/(PRA(:)+PRS(:))) - (ZZHV(:)*(1.-PF5(:))/(PRA(:)+XRS_MAX)) )
 !
- CALL LIMIT_LER(PDELTA)
+CALL LIMIT_LER(PDELTA)
 !
 WHERE(PHV(:)<ZHVLIM)
       PHV(:)=0.0
@@ -426,7 +423,7 @@ IF (LHOOK) CALL DR_HOOK('DRAG',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 !
- CONTAINS
+CONTAINS
 !
 !-------------------------------------------------------------------------------
 !
@@ -473,7 +470,6 @@ ENDIF
 !  In DRAG, we use the timestep of ISBA (PTSTEP) and not the split time step (ZTSTEP)
 !  because diagnostic canopy evaporation (Er) must be consistent with PWR to
 !  limit negative dripping in hydro_veg
-
 !
 ZLEV(:)  = PRHOA(:) * PLVTT(:) * PVEG(:) * (1-ZPSNV(:)) * PHV(:) * (ZQSAT(:) - PQA(:)) / PRA(:)
 !

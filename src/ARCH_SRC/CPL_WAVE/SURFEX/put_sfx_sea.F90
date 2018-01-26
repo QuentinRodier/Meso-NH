@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PUT_SFX_SEA (S, U, W, &
-                              KLUOUT,OCPL_SEAICE,OWATER,PSEA_SST,PSEA_UCU,        &
+      SUBROUTINE PUT_SFX_SEA (S, U, W, KLUOUT,OCPL_SEAICE,OWATER,PSEA_SST,PSEA_UCU, &
                              PSEA_VCU,PSEAICE_SIT,PSEAICE_CVR,PSEAICE_ALB )  
 !     ####################################################
 !
@@ -44,8 +43,8 @@ USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
-USE MODD_SURF_PAR,   ONLY : NUNDEF, XUNDEF
 USE MODD_SFX_OASIS
+USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
 USE MODD_CSTS,       ONLY : XTT, XTTS, XICEC
 !
 !
@@ -80,7 +79,7 @@ REAL, DIMENSION(:), INTENT(IN) :: PSEAICE_ALB
 !              -------------------------------
 !
 !
- CHARACTER(LEN=50)     :: YCOMMENT
+CHARACTER(LEN=50)     :: YCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -113,7 +112,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('PUT_SFX_SEA',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE TREAT_SEA(KLU)
@@ -128,7 +127,7 @@ REAL,    DIMENSION(KLU) :: ZSST     ! sea surface temperature
 REAL,    DIMENSION(KLU) :: ZICE_FRAC! ice fraction
 REAL                    :: ZTMIN    ! Minimum temperature over this proc
 REAL                    :: ZTMAX    ! Maximum temperature over this proc
- CHARACTER(LEN=50)       :: YCOMMENT
+CHARACTER(LEN=50)       :: YCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -139,10 +138,10 @@ IF(NSEA_SST_ID/=NUNDEF)THEN
   CALL PACK_SAME_RANK(U%NR_SEA(:),PSEA_SST(:),ZSST(:))
   WHERE (ZSST(:)/=0.0) S%XSST(:)=ZSST(:)
   CALL CHECK_SEA(YCOMMENT,S%XSST(:))
-!
+  !
   ZTMIN=MINVAL(S%XSST(:))
   ZTMAX=MAXVAL(S%XSST(:))
-!
+  !
   IF(ZTMIN<=0.0.OR.ZTMAX>500.)THEN
     WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     WRITE(KLUOUT,*)'SST from ocean model not define or not physic'
@@ -211,15 +210,15 @@ INTEGER,     INTENT(IN) :: KLU
 REAL,    DIMENSION(KLU) :: ZICE_FRAC! ice fraction
 REAL                    :: ZTMIN    ! Minimum temperature over this proc
 REAL                    :: ZTMAX    ! Maximum temperature over this proc
- CHARACTER(LEN=50)       :: YCOMMENT
+CHARACTER(LEN=50)       :: YCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PUT_SFX_SEA:TREAT_WATER',0,ZHOOK_HANDLE)
 !
 YCOMMENT='Water surface temperature'
- CALL PACK_SAME_RANK(U%NR_WATER(:),PSEA_SST(:),W%XTS(:))
- CALL CHECK_SEA(YCOMMENT,W%XTS(:))
+CALL PACK_SAME_RANK(U%NR_WATER(:),PSEA_SST(:),W%XTS(:))
+CALL CHECK_SEA(YCOMMENT,W%XTS(:))
 !
 ZTMIN=MINVAL(W%XTS(:))
 ZTMAX=MAXVAL(W%XTS(:))
@@ -235,12 +234,12 @@ IF(ZTMIN<=0.0.OR.ZTMAX>500.)THEN
 ENDIF
 !
 YCOMMENT='Water-ice Temperature'
- CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_SIT(:),W%XTICE(:))
- CALL CHECK_SEA(YCOMMENT,W%XTICE(:))
+CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_SIT(:),W%XTICE(:))
+CALL CHECK_SEA(YCOMMENT,W%XTICE(:))
 !
 YCOMMENT='Water-ice cover'
- CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_CVR(:),ZICE_FRAC(:))
- CALL CHECK_SEA(YCOMMENT,ZICE_FRAC(:))
+CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_CVR(:),ZICE_FRAC(:))
+CALL CHECK_SEA(YCOMMENT,ZICE_FRAC(:))
 !
 WHERE(ZICE_FRAC(:)>=XICEC)
   W%XTS(:) = MIN(W%XTS(:),XTT-0.01)
@@ -249,8 +248,8 @@ ELSEWHERE
 ENDWHERE
 !
 YCOMMENT='Water-ice albedo'
- CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_ALB(:),W%XICE_ALB(:))
- CALL CHECK_SEA(YCOMMENT,W%XICE_ALB(:))
+CALL PACK_SAME_RANK(U%NR_WATER(:),PSEAICE_ALB(:),W%XICE_ALB(:))
+CALL CHECK_SEA(YCOMMENT,W%XICE_ALB(:))
 !
 ! Fill the table with sea ice albedo where temperature is lower than the freezing
 ! point
@@ -269,7 +268,7 @@ SUBROUTINE CHECK_SEA(HCOMMENT,PFIELD)
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=*),   INTENT(IN) :: HCOMMENT
+CHARACTER(LEN=*),   INTENT(IN) :: HCOMMENT
 REAL, DIMENSION(:), INTENT(IN) :: PFIELD
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

@@ -3,15 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_SEA_n (DTCO, DGU, UG, U, SM, DGL,GCP, &
-                             HPROGRAM,HINIT,                            &
-                              KI,KSV,KSW,                                &
-                              HSV,PCO2,PRHOA,                            &
-                              PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                              PEMIS,PTSRAD,PTSURF,                       &
-                              KYEAR, KMONTH,KDAY, PTIME,                 &
-                              HATMFILE,HATMFILETYPE,                     &
-                              HTEST                                      )  
+      SUBROUTINE INIT_SEA_n (DTCO, OREAD_BUDGETC, UG, U, GCP, SM, &
+                             DGO, DL, DLC, HPROGRAM,HINIT,KI,KSV,KSW,  &
+                             HSV,PCO2,PRHOA,                            &
+                             PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
+                             PEMIS,PTSRAD,PTSURF,                       &
+                             KYEAR, KMONTH,KDAY, PTIME,                 &
+                             HATMFILE,HATMFILETYPE,                     &
+                             HTEST                                      )  
 !     #############################################################
 !
 !!****  *INIT_SEA_n* - routine to initialize SEA
@@ -46,16 +45,14 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
 USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -74,12 +71,14 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: DL
+TYPE(DIAG_t), INTENT(INOUT) :: DLC
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -125,17 +124,16 @@ IF (U%CSEA=='NONE  ') THEN
   PTSRAD  =XTT
   PTSURF  =XTT
 ELSE IF (U%CSEA=='FLUX  ') THEN
-  CALL INIT_IDEAL_FLUX(DGL, DGU%LREAD_BUDGETC, &
-                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
-                           PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
-                           PEMIS,PTSRAD,PTSURF,'OK'                    )  
+  CALL INIT_IDEAL_FLUX(DGO, DL, DLC, OREAD_BUDGETC, &
+                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PDIR_ALB,PSCA_ALB,  &
+                       PEMIS,PTSRAD,PTSURF,'OK'                    )  
 ELSE IF (U%CSEA=='SEAFLX') THEN
-  CALL INIT_SEAFLUX_n(DTCO, DGU, UG, U, SM,GCP, &
-                      HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
-                        PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                        PEMIS,PTSRAD,PTSURF,                          &
-                        KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
-                        'OK'                                          )  
+ CALL INIT_SEAFLUX_n(DTCO, OREAD_BUDGETC, UG, U, GCP, SM, &
+                     HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
+                     PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
+                     PEMIS,PTSRAD,PTSURF,                          &
+                     KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
+                     'OK'                                          )  
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_SEA_N',1,ZHOOK_HANDLE)
 !

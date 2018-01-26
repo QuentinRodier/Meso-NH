@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ####################################
-      SUBROUTINE WRITE_SURF_ATM_n (YSC, &
-                                   HPROGRAM,HWRITE,OLAND_USE)
+      SUBROUTINE WRITE_SURF_ATM_n (YSC, HPROGRAM,HWRITE,OLAND_USE)
 !     ####################################
 !
 !!****  *WRITE_SURF_ATM_n* - routine to write surface variables 
@@ -44,18 +43,20 @@
 !       Modified    07/2011, B.Decharme: land_use key for writing semi-prognostic variables
 !       Modified    05/2012, B.Decharme: supress LPROVAR_TO_DIAG to write prognostic fields if user want
 !       Modified    05/2013, B.Decharme: WRITESURF_PRECIP becomes WRITESURF_CPL_GCM
-!       Modified    05/2016, M.Leriche & V.Masson suppress readwrite_ch_emis (only written in pgd step)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURFEX_MPI, ONLY : NRANK
 !
 USE MODD_SURFEX_n, ONLY : SURFEX_t
 !
+USE MODN_PREP_SURF_ATM,   ONLY : LWRITE_EXTERN
+!
 USE MODD_SURF_CONF,       ONLY : CPROGNAME
 USE MODD_SURF_PAR,        ONLY : NVERSION, NBUGFIX
-USE MODD_WRITE_SURF_ATM,  ONLY : LNOWRITE_CANOPY
+USE MODD_WRITE_SURF_ATM,  ONLY : LNOWRITE_CANOPY, LSPLIT_PATCH
 !
 USE MODI_INIT_IO_SURF_n
 USE MODI_WRITE_SURF
@@ -96,58 +97,48 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_SURF_ATM_N',0,ZHOOK_HANDLE)
- CPROGNAME = HPROGRAM
+CPROGNAME = HPROGRAM
 !
 !*       1.     Configuration and cover fields:
 !               ------------------------------
 !
-!
 !         Initialisation for IO
 !
- CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
-                        HPROGRAM,'FULL  ','SURF  ','WRITE')
+CALL INIT_IO_SURF_n(YSC%DTCO, YSC%U, HPROGRAM,'FULL  ','SURF  ','WRITE')
 !
-LSAVE_SELECT=YSC%DGU%LSELECT
-YSC%DGU%LSELECT     =.FALSE.
+LSAVE_SELECT=YSC%DUO%LSELECT
+YSC%DUO%LSELECT     =.FALSE.
 !
 YCOMMENT='(-)'
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'VERSION',NVERSION,IRESP,YCOMMENT)
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'BUG    ',NBUGFIX ,IRESP,YCOMMENT)
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'STORAGETYPE',HWRITE,IRESP,YCOMMENT)
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'DIM_FULL  ',YSC%U%NDIM_FULL,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'VERSION',NVERSION,IRESP,YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'BUG    ',NBUGFIX ,IRESP,YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'STORAGETYPE',HWRITE,IRESP,YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'DIM_FULL  ',YSC%U%NDIM_FULL,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'WRITE_EXT ',LWRITE_EXTERN,IRESP,HCOMMENT=YCOMMENT)   
+!
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'SPLIT_PATCH',LSPLIT_PATCH,IRESP,HCOMMENT=YCOMMENT)  
 !
 YCOMMENT='s'
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'DTCUR',YSC%U%TTIME,IRESP,YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'DTCUR',YSC%U%TTIME,IRESP,YCOMMENT)
 !
-YSC%DGU%LSELECT=LSAVE_SELECT
+YSC%DUO%LSELECT=LSAVE_SELECT
 !
- CALL WRITE_GRID(YSC%DGU, YSC%U, &
-                 HPROGRAM,YSC%UG%CGRID,YSC%UG%XGRID_PAR,YSC%UG%XLAT,YSC%UG%XLON,YSC%UG%XMESH_SIZE,IRESP)
+ CALL WRITE_GRID(YSC%DUO%CSELECT, HPROGRAM,YSC%UG%G%CGRID,YSC%UG%G%XGRID_PAR,&
+                 YSC%UG%G%XLAT,YSC%UG%G%XLON,YSC%UG%G%XMESH_SIZE,IRESP)
 !
- CALL WRITESURF_ATM_CONF_n(YSC%CHU, YSC%DGU, YSC%USS, &
-                           HPROGRAM)
+ CALL WRITESURF_ATM_CONF_n(YSC%CHU, YSC%DUO, YSC%USS, HPROGRAM)
 !
-IF (HWRITE/='PRE') CALL WRITESURF_SSO_CANOPY_n(YSC%DGU, YSC%U, &
-                                               YSC%SSCP, &
-                                               HPROGRAM,(YSC%USS%CROUGH=='BE04' .AND. .NOT. LNOWRITE_CANOPY))
+IF (HWRITE/='PRE') CALL WRITESURF_SSO_CANOPY_n(YSC%DUO%CSELECT, YSC%SB, HPROGRAM,&
+                                (YSC%USS%CROUGH=='BE04' .AND. .NOT. LNOWRITE_CANOPY))
 !
- CALL WRITESURF_CPL_GCM_n(YSC%DGU, &
-                          YSC%U, &
-                          HPROGRAM)
+ CALL WRITESURF_CPL_GCM_n(YSC%DUO%CSELECT, YSC%U, HPROGRAM)
 !
 YCOMMENT='flag for accumulated variables'
- CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'BUDC',YSC%DGU%LSURF_BUDGETC,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'BUDC',YSC%DUO%LSURF_BUDGETC,IRESP,HCOMMENT=YCOMMENT)
 !
-IF (YSC%DGU%LSURF_BUDGETC) THEN
+IF (YSC%DUO%LSURF_BUDGETC) THEN
    YCOMMENT='time of beginning of accumulation'
-   CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                 HPROGRAM,'TBUDC',YSC%DGU%TIME_BUDGETC,IRESP,HCOMMENT=YCOMMENT)   
+   CALL WRITE_SURF(YSC%DUO%CSELECT, HPROGRAM,'TBUDC',YSC%DUO%TIME_BUDGETC,IRESP,HCOMMENT=YCOMMENT)   
 END IF
 !  
 !         End of IO
@@ -157,29 +148,28 @@ END IF
 !*       3.     Sea
 !               ---
 !
-IF (YSC%U%NDIM_SEA>0) CALL WRITE_SEA_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%SM, &
-                                       HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_SEA>0) CALL WRITE_SEA_n(YSC%DTCO,YSC%DUO%CSELECT,YSC%U,YSC%SM,HPROGRAM,HWRITE)
 !
 !
 !*       4.     Inland water
 !               ------------
 !
-IF (YSC%U%NDIM_WATER>0) CALL WRITE_INLAND_WATER_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%WM, YSC%FM,  &
-                                                  HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_WATER>0) CALL WRITE_INLAND_WATER_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%U, &
+                                                  YSC%WM, YSC%FM, HPROGRAM,HWRITE)
 !
 !
 !*       5.     Vegetation scheme
 !               -----------------
 !
-IF (YSC%U%NDIM_NATURE>0) CALL WRITE_NATURE_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%IM, YSC%DST, &
-                                         HPROGRAM,HWRITE,OLAND_USE)
+IF (YSC%U%NDIM_NATURE>0) CALL WRITE_NATURE_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%DUO%LSNOWDIMNC, &
+                                             YSC%U, YSC%IM, YSC%NDST, HPROGRAM,HWRITE,OLAND_USE)
 !
 !
 !*       6.     Urban scheme
 !               ------------
 !
-IF (YSC%U%NDIM_TOWN>0) CALL WRITE_TOWN_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%TM, YSC%GDM, YSC%GRM, &
-                                         HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_TOWN>0) CALL WRITE_TOWN_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%DUO%LSNOWDIMNC, &
+                                         YSC%U, YSC%TM, YSC%GDM, YSC%GRM, HPROGRAM,HWRITE)
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_SURF_ATM_N',1,ZHOOK_HANDLE)
 !

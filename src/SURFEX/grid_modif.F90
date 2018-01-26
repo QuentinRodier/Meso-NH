@@ -39,8 +39,8 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -54,6 +54,7 @@ IMPLICIT NONE
 !            ------------------------------
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
 INTEGER,           INTENT(IN)   :: KLUOUT     ! output listing logical unit
 INTEGER,           INTENT(IN)   :: KLUNAM     ! namelist file logical unit
  CHARACTER(LEN=10), INTENT(IN)   :: HGRID      ! type of horizontal grid
@@ -99,7 +100,7 @@ DEALLOCATE(ZGRID_PAR)
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF',1,ZHOOK_HANDLE)
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_EMISSION_FLUX_n (YSC, &
-                                     HPROGRAM,PSIMTIME,PSFSV, PRHOA, PTSTEP, KNBTS_MAX)
+      SUBROUTINE CH_EMISSION_FLUX_n (DTCO, U, CHE, SV, CHU, HPROGRAM,PSIMTIME,PSFSV, PRHOA, PTSTEP, KNBTS_MAX)
 !     ######################################################################
 !!
 !!***  *CH_EMISSION_FLUX_n* - 
@@ -37,8 +36,11 @@
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 !
-!
-USE MODD_SURFEX_n, ONLY : SURFEX_t
+USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_CH_EMIS_FIELD_n, ONLY : CH_EMIS_FIELD_t
+USE MODD_SV_n, ONLY : SV_t
+USE MODD_CH_SURF_n, ONLY : CH_SURF_t
 !
 USE MODD_TYPE_EFUTIL,      ONLY: EMISSVAR_T, PRONOSVAR_T
 USE MODD_CSTS,             ONLY: NDAYSEC
@@ -66,7 +68,11 @@ IMPLICIT NONE
 !
 !*       0.1  declaration of arguments
 !
-TYPE(SURFEX_t), INTENT(INOUT) :: YSC
+TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(CH_EMIS_FIELD_t), INTENT(INOUT) :: CHE
+TYPE(SV_t), INTENT(INOUT) :: SV
+TYPE(CH_SURF_t), INTENT(INOUT) :: CHU
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM    ! program calling surf. schemes
 REAL,               INTENT(IN)  :: PSIMTIME    ! time of simulation in sec UTC
@@ -89,7 +95,7 @@ INTEGER :: INBTS       ! Number of emission times for a species
 INTEGER :: ITIM1,ITIM2 ! first/last time for interpolation
 INTEGER :: INDX1,INDX2 ! first/next index for data interpolation
 INTEGER :: ISIMTIME, ITPERIOD
-CHARACTER (LEN=LEN_HREC)  :: YRECFM          ! LFI article name
+ CHARACTER (LEN=LEN_HREC)  :: YRECFM          ! LFI article name
 TYPE(PRONOSVAR_T),POINTER :: CURPRONOS !Current pronostic variable
 !
 !*       0.3  declaration of saved local variables
@@ -126,51 +132,51 @@ INEQ    = SIZE(PSFSV,2)
 !*    3.  INTERPOLATE SURFACE FLUXES IN TIME IF NEEDED
 !     ------------------------------------------------
 !
-IF (YSC%CHE%XTIME_SIMUL == 0.) THEN
-   YSC%CHE%XTIME_SIMUL = PSIMTIME
+IF (CHE%XTIME_SIMUL == 0.) THEN
+   CHE%XTIME_SIMUL = PSIMTIME
 ELSE
-   YSC%CHE%XTIME_SIMUL = YSC%CHE%XTIME_SIMUL + PTSTEP
+   CHE%XTIME_SIMUL = CHE%XTIME_SIMUL + PTSTEP
 END IF
 
 IF (IVERB >= 5) WRITE(ILUOUT,*) '******** CH_EMISSION_FLUX  ********'
-DO JI=1,SIZE(YSC%CHE%TSEMISS)
+DO JI=1,SIZE(CHE%TSEMISS)
 ! Simulation time (counting from midnight) is saved
-  ISIMTIME = YSC%CHE%XTIME_SIMUL
+  ISIMTIME = CHE%XTIME_SIMUL
 !
-  INBTS = SIZE(YSC%CHE%TSEMISS(JI)%NETIMES) ! 
-  IWS   = YSC%CHE%TSEMISS(JI)%NWS           ! Window Size for I/O
-  INDX1 = YSC%CHE%TSEMISS(JI)%NDX           ! Current data index
+  INBTS = SIZE(CHE%TSEMISS(JI)%NETIMES) ! 
+  IWS   = CHE%TSEMISS(JI)%NWS           ! Window Size for I/O
+  INDX1 = CHE%TSEMISS(JI)%NDX           ! Current data index
 !
   IF (INBTS == 1) THEN
 !   Time Constant Flux
 !   XFWORK already points on data (see ch_buildemiss.f90)
     IF (IVERB >= 6) THEN
-      WRITE(ILUOUT,*) 'NO interpolation for ',TRIM(YSC%CHE%TSEMISS(JI)%CNAME)
-      IF (IVERB >= 10 ) WRITE(ILUOUT,*) YSC%CHE%TSEMISS(JI)%XFWORK
+      WRITE(ILUOUT,*) 'NO interpolation for ',TRIM(CHE%TSEMISS(JI)%CNAME)
+      IF (IVERB >= 10 ) WRITE(ILUOUT,*) CHE%TSEMISS(JI)%XFWORK
     END IF
   ELSE
     IF (IVERB >= 6) THEN
-      WRITE(ILUOUT,*) 'Interpolation (T =',ISIMTIME,') : ',YSC%CHE%TSEMISS(JI)%CNAME
+      WRITE(ILUOUT,*) 'Interpolation (T =',ISIMTIME,') : ',CHE%TSEMISS(JI)%CNAME
     END IF
-    IF (ISIMTIME < YSC%CHE%TSEMISS(JI)%NETIMES(1)) THEN
+    IF (ISIMTIME < CHE%TSEMISS(JI)%NETIMES(1)) THEN
 !     Tsim < T(1)=Tmin should not happen but who knows ?
-      YSC%CHE%TSEMISS(JI)%NTX = 1
+      CHE%TSEMISS(JI)%NTX = 1
     ELSE
 !     Check for periodicity when ISIMTIME is beyond last emission time
 !     and probably correct ISIMTIME
-      IF (ISIMTIME > YSC%CHE%TSEMISS(JI)%NETIMES(INBTS)) THEN 
+      IF (ISIMTIME > CHE%TSEMISS(JI)%NETIMES(INBTS)) THEN 
 !       Tsim > T(INBTS)=Tmax
-        ITPERIOD = (1+(YSC%CHE%TSEMISS(JI)%NETIMES(INBTS)-&
-                YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NPX))/NDAYSEC)*NDAYSEC  
-        ISIMTIME = MODULO(ISIMTIME-YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NPX),ITPERIOD)+&
-                YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NPX)  
+        ITPERIOD = (1+(CHE%TSEMISS(JI)%NETIMES(INBTS)-&
+                CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NPX))/NDAYSEC)*NDAYSEC  
+        ISIMTIME = MODULO(ISIMTIME-CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NPX),ITPERIOD)+&
+                CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NPX)  
         IF (IVERB >= 6) THEN
           WRITE(ILUOUT,*) '  ITPERIOD = ', ITPERIOD
           WRITE(ILUOUT,*) '  ISIMTIME modifie = ', ISIMTIME
         END IF
-        IF (YSC%CHE%TSEMISS(JI)%NTX == INBTS .AND. ISIMTIME<YSC%CHE%TSEMISS(JI)%NETIMES(INBTS)) THEN
+        IF (CHE%TSEMISS(JI)%NTX == INBTS .AND. ISIMTIME<CHE%TSEMISS(JI)%NETIMES(INBTS)) THEN
 !         Update time index NTX 
-          YSC%CHE%TSEMISS(JI)%NTX = YSC%CHE%TSEMISS(JI)%NPX
+          CHE%TSEMISS(JI)%NTX = CHE%TSEMISS(JI)%NPX
 !         Increment data index NDX : NDX correction will occur later
 !                                    to assure 1 <= NDX <= IWS
           INDX1 = INDX1 + 1
@@ -180,9 +186,9 @@ DO JI=1,SIZE(YSC%CHE%TSEMISS)
 !     search NTX such that : ETIMES(NTX) < ISIMTIME <= ETIMES(NTX+1)
 !     and make NDX follow NTX : NDX correction will occur later
 !                               to assure 1 <= NDX <= IWS
-      DO WHILE (YSC%CHE%TSEMISS(JI)%NTX < INBTS)
-        IF (ISIMTIME >= YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NTX+1)) THEN
-          YSC%CHE%TSEMISS(JI)%NTX = YSC%CHE%TSEMISS(JI)%NTX + 1
+      DO WHILE (CHE%TSEMISS(JI)%NTX < INBTS)
+        IF (ISIMTIME >= CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NTX+1)) THEN
+          CHE%TSEMISS(JI)%NTX = CHE%TSEMISS(JI)%NTX + 1
           INDX1 = INDX1 + 1
           INDX2 = INDX1 + 1
         ELSE
@@ -196,18 +202,17 @@ DO JI=1,SIZE(YSC%CHE%TSEMISS)
 !
 !     Data index reached the memory window limits
 !
-      IF (YSC%CHE%TSEMISS(JI)%LREAD) THEN 
+      IF (CHE%TSEMISS(JI)%LREAD) THEN 
 !
 !       File must be read to update XEMISDATA array for this species 
 !
         IF (.NOT. LIOINIT) THEN
 !         Must be done once before reading
-CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
-                        HPROGRAM,'FULL  ','SURF  ','READ ')
+          CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','SURF  ','READ ')
           IF (IVERB >= 6) WRITE(ILUOUT,*) 'INIT des I/O DONE.'
           LIOINIT=.TRUE.
         END IF
-        YRECFM='E_'//TRIM(YSC%CHE%TSEMISS(JI)%CNAME)
+        YRECFM='E_'//TRIM(CHE%TSEMISS(JI)%CNAME)
         IF (IVERB >= 6)&
                WRITE (ILUOUT,*) 'READ emission :',TRIM(YRECFM),&
                ', SIZE(ZWORK)=',SIZE(ZWORK,1),INBTS 
@@ -221,17 +226,17 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
           ZWORK(:,1:INBTS) = 0. 
         END WHERE
         DO ITIME=1,INBTS
-        ZWORK(:,ITIME) = ZWORK(:,ITIME)*YSC%CHU%XCONVERSION(:)
+        ZWORK(:,ITIME) = ZWORK(:,ITIME)*CHU%XCONVERSION(:)
         END DO
 !
 !       
-        IF ((YSC%CHE%TSEMISS(JI)%NTX+IWS-1) > INBTS) THEN
+        IF ((CHE%TSEMISS(JI)%NTX+IWS-1) > INBTS) THEN
 !
 !         ===== Periodic CASE =====
 !
           IF (IVERB >= 6)&
-                 WRITE (ILUOUT,*) 'Periodic CASE : NPX =',YSC%CHE%TSEMISS(JI)%NPX  
-          IF (IWS <  (INBTS-YSC%CHE%TSEMISS(JI)%NPX+1)) THEN
+                 WRITE (ILUOUT,*) 'Periodic CASE : NPX =',CHE%TSEMISS(JI)%NPX  
+          IF (IWS <  (INBTS-CHE%TSEMISS(JI)%NPX+1)) THEN
 !           Window size is smaller then number of periodical times
 !
 !           example : IWS=5, NPX=2, INBTS=11, NTX=9
@@ -243,23 +248,23 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !                                |  
 !                               NDX    
 !
-            YSC%CHE%TSEMISS(JI)%XEMISDATA(:,1:INBTS-YSC%CHE%TSEMISS(JI)%NTX+1) = &
-                   ZWORK(:,YSC%CHE%TSEMISS(JI)%NTX:INBTS)  
+            CHE%TSEMISS(JI)%XEMISDATA(:,1:INBTS-CHE%TSEMISS(JI)%NTX+1) = &
+                   ZWORK(:,CHE%TSEMISS(JI)%NTX:INBTS)  
 !
             IF (IVERB >= 6) THEN
               WRITE(ILUOUT,*) 'Window SIZE smaller than INBTS !'
               WRITE(ILUOUT,*) 'Window index, Time index'
-              DO JW=1,INBTS-YSC%CHE%TSEMISS(JI)%NTX+1
-                WRITE(ILUOUT,*) JW,YSC%CHE%TSEMISS(JI)%NTX+JW-1
+              DO JW=1,INBTS-CHE%TSEMISS(JI)%NTX+1
+                WRITE(ILUOUT,*) JW,CHE%TSEMISS(JI)%NTX+JW-1
               END DO
             END IF
 !
-            YSC%CHE%TSEMISS(JI)%XEMISDATA(:,INBTS-YSC%CHE%TSEMISS(JI)%NTX+2:IWS) = &
-                   ZWORK(:,YSC%CHE%TSEMISS(JI)%NPX:YSC%CHE%TSEMISS(JI)%NPX+IWS-INBTS+YSC%CHE%TSEMISS(JI)%NTX-2)  
+            CHE%TSEMISS(JI)%XEMISDATA(:,INBTS-CHE%TSEMISS(JI)%NTX+2:IWS) = &
+                   ZWORK(:,CHE%TSEMISS(JI)%NPX:CHE%TSEMISS(JI)%NPX+IWS-INBTS+CHE%TSEMISS(JI)%NTX-2)  
 !
             IF (IVERB >= 6) THEN
-              DO JW=INBTS-YSC%CHE%TSEMISS(JI)%NTX+2,IWS
-                WRITE(ILUOUT,*) JW,YSC%CHE%TSEMISS(JI)%NPX+JW-(INBTS-YSC%CHE%TSEMISS(JI)%NTX+2)
+              DO JW=INBTS-CHE%TSEMISS(JI)%NTX+2,IWS
+                WRITE(ILUOUT,*) JW,CHE%TSEMISS(JI)%NPX+JW-(INBTS-CHE%TSEMISS(JI)%NTX+2)
               END DO
             END IF
             INDX1 = 1
@@ -277,19 +282,19 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !                                        |
 !                                       NDX=NTX-NPX+1
 !
-            IWS = INBTS-YSC%CHE%TSEMISS(JI)%NPX+1
-            YSC%CHE%TSEMISS(JI)%NWS = IWS
-            YSC%CHE%TSEMISS(JI)%XEMISDATA(:,1:IWS) = ZWORK(:,YSC%CHE%TSEMISS(JI)%NPX:INBTS)
+            IWS = INBTS-CHE%TSEMISS(JI)%NPX+1
+            CHE%TSEMISS(JI)%NWS = IWS
+            CHE%TSEMISS(JI)%XEMISDATA(:,1:IWS) = ZWORK(:,CHE%TSEMISS(JI)%NPX:INBTS)
             IF (IVERB >= 6) THEN
               WRITE(ILUOUT,*) 'Window SIZE equal or greater than INBTS !'
               WRITE(ILUOUT,*) 'Window index, Time index'
               DO JW=1,IWS
-                WRITE(ILUOUT,*) JW,YSC%CHE%TSEMISS(JI)%NPX+JW-1
+                WRITE(ILUOUT,*) JW,CHE%TSEMISS(JI)%NPX+JW-1
               END DO
             END IF
-            INDX1 = YSC%CHE%TSEMISS(JI)%NTX-YSC%CHE%TSEMISS(JI)%NPX+1
+            INDX1 = CHE%TSEMISS(JI)%NTX-CHE%TSEMISS(JI)%NPX+1
             INDX2 = MOD((INDX1+1),IWS)
-            YSC%CHE%TSEMISS(JI)%LREAD = .FALSE. ! no more reading
+            CHE%TSEMISS(JI)%LREAD = .FALSE. ! no more reading
           END IF
         ELSE
 !
@@ -304,11 +309,11 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !                              |
 !                             NDX
 !
-          YSC%CHE%TSEMISS(JI)%XEMISDATA(:,1:IWS) = ZWORK(:,YSC%CHE%TSEMISS(JI)%NTX:YSC%CHE%TSEMISS(JI)%NTX+IWS-1)
+          CHE%TSEMISS(JI)%XEMISDATA(:,1:IWS) = ZWORK(:,CHE%TSEMISS(JI)%NTX:CHE%TSEMISS(JI)%NTX+IWS-1)
           IF (IVERB >= 6) THEN
             WRITE(ILUOUT,*) 'Window index, Time index'
             DO JW=1,IWS
-              WRITE(ILUOUT,*) JW,YSC%CHE%TSEMISS(JI)%NTX+JW-1
+              WRITE(ILUOUT,*) JW,CHE%TSEMISS(JI)%NTX+JW-1
             END DO
           END IF
           INDX1 = 1
@@ -330,9 +335,9 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !                                 |
 !                                NDX
 
-          INDX1 = YSC%CHE%TSEMISS(JI)%NTX
+          INDX1 = CHE%TSEMISS(JI)%NTX
           INDX2 = INDX1+1
-          IF (INDX2 > IWS) INDX2=YSC%CHE%TSEMISS(JI)%NPX
+          IF (INDX2 > IWS) INDX2=CHE%TSEMISS(JI)%NPX
         ELSE
 !          
 !         Windows size changed during periodic case
@@ -345,7 +350,7 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !         data index : [1    2    3    ...   IWS]
 !                                 |
 !                                NDX
-          INDX1 = YSC%CHE%TSEMISS(JI)%NTX-YSC%CHE%TSEMISS(JI)%NPX+1
+          INDX1 = CHE%TSEMISS(JI)%NTX-CHE%TSEMISS(JI)%NPX+1
           INDX2 = MOD((INDX1+1),IWS)
         END IF
       END IF
@@ -354,15 +359,15 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
     END IF
 !
 !   Don't forget to update NDX with new value INDX1
-    YSC%CHE%TSEMISS(JI)%NDX = INDX1
+    CHE%TSEMISS(JI)%NDX = INDX1
 !
 !   Compute both times for interpolation
-    IF (YSC%CHE%TSEMISS(JI)%NTX < INBTS) THEN 
-      ITIM1 = YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NTX)
-      ITIM2 = YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NTX+1)
+    IF (CHE%TSEMISS(JI)%NTX < INBTS) THEN 
+      ITIM1 = CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NTX)
+      ITIM2 = CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NTX+1)
     ELSE
-      ITIM1 = YSC%CHE%TSEMISS(JI)%NETIMES(INBTS)
-      ITIM2 = YSC%CHE%TSEMISS(JI)%NETIMES(YSC%CHE%TSEMISS(JI)%NPX)+ITPERIOD
+      ITIM1 = CHE%TSEMISS(JI)%NETIMES(INBTS)
+      ITIM2 = CHE%TSEMISS(JI)%NETIMES(CHE%TSEMISS(JI)%NPX)+ITPERIOD
     END IF
 !
 ! Interpolate variables in time -> update XFWORK
@@ -374,14 +379,14 @@ CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
 !
 !
     ZALPHA = (REAL(ISIMTIME) - ITIM1) / (ITIM2-ITIM1)
-    YSC%CHE%TSEMISS(JI)%XFWORK(:) = ZALPHA*YSC%CHE%TSEMISS(JI)%XEMISDATA(:,INDX2) +&
-            (1.-ZALPHA)*YSC%CHE%TSEMISS(JI)%XEMISDATA(:,INDX1)  
+    CHE%TSEMISS(JI)%XFWORK(:) = ZALPHA*CHE%TSEMISS(JI)%XEMISDATA(:,INDX2) +&
+            (1.-ZALPHA)*CHE%TSEMISS(JI)%XEMISDATA(:,INDX1)  
     IF (IVERB >= 6) THEN
-      WRITE(ILUOUT,*) '  Current time INDEX : ',YSC%CHE%TSEMISS(JI)%NTX
+      WRITE(ILUOUT,*) '  Current time INDEX : ',CHE%TSEMISS(JI)%NTX
       WRITE(ILUOUT,*) '  TIME : ',ISIMTIME, ' (',ITIM1,',',ITIM2,')'
-      WRITE(ILUOUT,*) '  Window size : ',YSC%CHE%TSEMISS(JI)%NWS
+      WRITE(ILUOUT,*) '  Window size : ',CHE%TSEMISS(JI)%NWS
       WRITE(ILUOUT,*) '  Current data INDEX : ',INDX1,INDX2
-      IF (IVERB >= 10) WRITE(ILUOUT,*) '  FLUX : ',YSC%CHE%TSEMISS(JI)%XFWORK
+      IF (IVERB >= 10) WRITE(ILUOUT,*) '  FLUX : ',CHE%TSEMISS(JI)%XFWORK
     END IF
   END IF
 END DO
@@ -392,12 +397,12 @@ ZEMIS(:,:) = 0.
 !
 ! Point on head of Pronostic variable list
 ! to cover the entire list.
-IF (YSC%SV%NSV_AEREND > 0) THEN
- CNAMES=>YSC%SV%CSV(YSC%SV%NSV_CHSBEG:YSC%SV%NSV_AEREND)
+IF (SV%NSV_AEREND > 0) THEN
+CNAMES=>SV%CSV(SV%NSV_CHSBEG:SV%NSV_AEREND)
 ELSE
- CNAMES=>YSC%SV%CSV(YSC%SV%NSV_CHSBEG:YSC%SV%NSV_CHSEND)
+CNAMES=>SV%CSV(SV%NSV_CHSBEG:SV%NSV_CHSEND)
 END IF
- CURPRONOS=>YSC%CHE%TSPRONOSLIST
+CURPRONOS=>CHE%TSPRONOSLIST
 DO WHILE(ASSOCIATED(CURPRONOS))
   IF (CURPRONOS%NAMINDEX > INEQ) THEN
     WRITE(ILUOUT,*) 'FATAL ERROR in CH_EMISSION_FLUXN : SIZE(ZEMIS,2) =',&
@@ -411,7 +416,7 @@ DO WHILE(ASSOCIATED(CURPRONOS))
   DO JI=1,CURPRONOS%NBCOEFF
 !   Compute agregated flux    
     ZEMIS(:,CURPRONOS%NAMINDEX) = ZEMIS(:,CURPRONOS%NAMINDEX)+&
-            CURPRONOS%XCOEFF(JI)*YSC%CHE%TSEMISS(CURPRONOS%NEFINDEX(JI))%XFWORK(:)  
+            CURPRONOS%XCOEFF(JI)*CHE%TSEMISS(CURPRONOS%NEFINDEX(JI))%XFWORK(:)  
   END DO
 
   IF (IVERB >= 6) THEN
@@ -427,11 +432,11 @@ DO WHILE(ASSOCIATED(CURPRONOS))
 !
 END DO
 !
-IF ((LCH_AERO_FLUX).AND.(YSC%SV%NSV_AERBEG > 0)) THEN
+IF ((LCH_AERO_FLUX).AND.(SV%NSV_AERBEG > 0)) THEN
   IF (GCO) THEN
-    CALL CH_AER_EMISSION(ZEMIS, PRHOA, YSC%SV%CSV, YSC%SV%NSV_CHSBEG, PFCO=ZFCO)
+    CALL CH_AER_EMISSION(ZEMIS, PRHOA, SV%CSV, SV%NSV_CHSBEG, PFCO=ZFCO)
   ELSE
-    CALL CH_AER_EMISSION(ZEMIS, PRHOA, YSC%SV%CSV, YSC%SV%NSV_CHSBEG)
+    CALL CH_AER_EMISSION(ZEMIS, PRHOA, SV%CSV, SV%NSV_CHSBEG)
   ENDIF
 END IF
 !

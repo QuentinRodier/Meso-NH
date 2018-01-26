@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE LAIGAIN(PBSLAI, PLAIMIN, PVEG, PBIOMASS, PLAI, PANDAY)
+    SUBROUTINE LAIGAIN(PBSLAI, PEK, PBIOMASS)
 !   ######################################################################
 !!****  *LAIGAIN*  
 !!
@@ -42,14 +42,15 @@
 !!      Original    27/10/97 
 !!      V. Masson   01/03/03 daily assimilation.
 !!      P Le Moigne 09/2005 AGS modifs of L. Jarlan
-!!      S Lafont    03/2011 PANDAY calcul move to lailoss, nitro_decline
+!!      S Lafont    03/2011 R%XANDAY(:,1) calcul move to lailoss, nitro_decline
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !
-USE MODD_CO2V_PAR, ONLY : XMC, XMCO2, XPCCO2
+USE MODD_ISBA_n, ONLY : ISBA_PE_t
 !
+USE MODD_CO2V_PAR, ONLY : XMC, XMCO2, XPCCO2
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -58,14 +59,10 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-REAL,DIMENSION(:),INTENT(IN)   :: PBSLAI   ! ratio of biomass to LAI
-REAL,DIMENSION(:),INTENT(IN)   :: PLAIMIN  ! minimum LAI
-REAL,DIMENSION(:),INTENT(IN)   :: PVEG     ! vegetation fraction
+REAL, DIMENSION(:), INTENT(IN) :: PBSLAI
 !
-REAL,DIMENSION(:),INTENT(INOUT):: PANDAY   ! daily net CO2 assimilation (kgCO2 m-2)
-REAL,DIMENSION(:),INTENT(INOUT):: PLAI     ! LAI as a function of time:
-!                                          ! as a function of growth,
-!                                          ! decay, assimilation.
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+!
 REAL,DIMENSION(:),INTENT(INOUT):: PBIOMASS ! total dry canopy biomass (kgDM m-2)
 !
 !*      0.2    declarations of local variables
@@ -77,30 +74,30 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-----------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('LAIGAIN',0,ZHOOK_HANDLE)
-ZBMCOEF     = XMC/(XMCO2*XPCCO2)
 !
+ZBMCOEF     = XMC/(XMCO2*XPCCO2)
 !
 ! Once a day (at midnight), adjust biomass:
 ! ----------------------------------------
 !
-WHERE( (PVEG(:)>0.) )
+WHERE( (PEK%XVEG(:)>0.) )
 !
 ! change biomass in time due to assimilation of CO2:
 ! 2011 :this computation have been move to lailoss and nitro_decline
 !
-!  PBIOMASS(:) = PBIOMASS(:) + PANDAY(:)*ZBMCOEF
+!  PBIOMASS(:) = PBIOMASS(:) + R%XANDAY(:,1)(:)*ZBMCOEF
 !
 ! make sure biomass doesn't fall below minimum threshold:
 !
-  PBIOMASS(:) = MAX(PLAIMIN(:)*PBSLAI(:),PBIOMASS(:))
+  PBIOMASS(:) = MAX(PEK%XLAIMIN(:)*PBSLAI(:),PBIOMASS(:))
 !
 ! change in LAI in time due to biomass changes:
 !
-  PLAI(:)     = PBIOMASS(:)/PBSLAI(:)
+  PEK%XLAI(:) = PBIOMASS(:)/PBSLAI(:)
 !
 ! reset to zero the daily net assimilation for next day:
 !
-  PANDAY(:)   = 0.
+  PEK%XANDAY(:) = 0.
 !
 END WHERE
 IF (LHOOK) CALL DR_HOOK('LAIGAIN',1,ZHOOK_HANDLE)

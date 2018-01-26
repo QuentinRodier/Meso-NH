@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE MINZS_VERT_SHIFT(PZS_MOY,PZS_MIN,PTA_2M,PQA_2M,PPA_2M,PRHOA_2M, &
-                                   PTA_2M_MIN,PQA_2M_MIN,PPA_2M_MIN,PRHOA_2M_MIN  )  
+       SUBROUTINE MINZS_VERT_SHIFT(D, PZS_MOY, PZS_MIN, PPS_MIN, PRHOA_2M_MIN  )  
 !      #########################################
 !
 !
@@ -42,6 +41,8 @@
 !
 !*       0. DECLARATIONS
 !
+USE MODD_DIAG_n, ONLY : DIAG_t
+!
 USE MODD_CSTS,    ONLY : XRD, XG, XRV
 USE MODD_ATM_CST, ONLY : XCLIM_T_GRAD
 !
@@ -56,24 +57,20 @@ IMPLICIT NONE
 !
 !*       0.1 declarations of arguments
 !
+TYPE(DIAG_t), INTENT(INOUT) :: D
+!
 REAL,    DIMENSION(:), INTENT(IN)  :: PZS_MOY    ! mean orography of atmospheric grid
 REAL,    DIMENSION(:), INTENT(IN)  :: PZS_MIN    ! min orography of atmospheric grid
-REAL,    DIMENSION(:), INTENT(IN)  :: PTA_2M     ! temperature at 2m
-REAL,    DIMENSION(:), INTENT(IN)  :: PQA_2M     ! humidity    at 2m (kg/m3)
-REAL,    DIMENSION(:), INTENT(IN)  :: PPA_2M     ! pressure    at 2m
-REAL,    DIMENSION(:), INTENT(IN)  :: PRHOA_2M   ! density     at 2m
 !
-REAL,    DIMENSION(:), INTENT(OUT) :: PTA_2M_MIN    ! temperature at surface     altitude
-REAL,    DIMENSION(:), INTENT(OUT) :: PQA_2M_MIN    ! humidity    at surface     altitude (kg/m3)
-REAL,    DIMENSION(:), INTENT(OUT) :: PPA_2M_MIN    ! pressure    at surface     altitude
+REAL,    DIMENSION(:), INTENT(OUT) :: PPS_MIN    ! pressure    at surface     altitude
 REAL,    DIMENSION(:), INTENT(OUT) :: PRHOA_2M_MIN  ! density     at surface     altitude
 !
 !*       0.2 declarations of local variables
 !
-REAL, DIMENSION(SIZE(PQA_2M  )) :: ZQA_2M       ! air humidity (kg/kg)
-REAL, DIMENSION(SIZE(PQA_2M  )) :: ZQA_2M_MIN   ! air humidity (kg/kg)
-REAL, DIMENSION(SIZE(PRHOA_2M)) :: ZRHOA_2M     ! approximated density
-REAL, DIMENSION(SIZE(PRHOA_2M)) :: ZRHOA_2M_MIN ! approximated density
+REAL, DIMENSION(SIZE(D%XQ2M  )) :: ZQA_2M       ! air humidity (kg/kg)
+REAL, DIMENSION(SIZE(D%XQ2M  )) :: ZQA_2M_MIN   ! air humidity (kg/kg)
+REAL, DIMENSION(SIZE(D%XRHOA)) :: ZRHOA_2M     ! approximated density
+REAL, DIMENSION(SIZE(D%XRHOA)) :: ZRHOA_2M_MIN ! approximated density
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -81,19 +78,19 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MINZS_VERT_SHIFT',0,ZHOOK_HANDLE)
 !
-ZQA_2M = PQA_2M / PRHOA_2M
+ZQA_2M = D%XQ2M / D%XRHOA
 !
 !*       1.  climatological gradient for temperature
 !            ---------------------------------------
 !
-PTA_2M_MIN = PTA_2M + XCLIM_T_GRAD * (PZS_MIN - PZS_MOY)
+D%XT2M_MIN_ZS = D%XT2M + XCLIM_T_GRAD * (PZS_MIN - PZS_MOY)
 !
 !-------------------------------------------------------------------------------
 !
 !*       2.  hydrostatism for pressure
 !            -------------------------
 !
-PPA_2M_MIN = PPA_2M * EXP ( - XG/XRD/(0.5*(PTA_2M+PTA_2M_MIN)*( 1.+((XRV/XRD)-1.)*ZQA_2M(:) )) &
+PPS_MIN = D%XPS * EXP ( - XG/XRD/(0.5*(D%XT2M+D%XT2M_MIN_ZS)*( 1.+((XRV/XRD)-1.)*ZQA_2M(:) )) &
                               * (PZS_MIN-PZS_MOY)                                              )  
 !
 !-------------------------------------------------------------------------------
@@ -101,24 +98,24 @@ PPA_2M_MIN = PPA_2M * EXP ( - XG/XRD/(0.5*(PTA_2M+PTA_2M_MIN)*( 1.+((XRV/XRD)-1.
 !*       3.  conservation of relative humidity for humidity
 !            ----------------------------------------------
 !
-ZQA_2M_MIN = ZQA_2M / QSAT(PTA_2M, PPA_2M) * QSAT(PTA_2M_MIN,PPA_2M_MIN)
+ZQA_2M_MIN = ZQA_2M / QSAT(D%XT2M, D%XPS) * QSAT(D%XT2M_MIN_ZS,PPS_MIN)
 !
 !-------------------------------------------------------------------------------
 !
 !*       4.  estimation of air density from temperature and humidity
 !            -------------------------------------------------------
 !
-ZRHOA_2M    (:) = PPA_2M    (:) / XRD /  PTA_2M    (:) / ( 1.+((XRV/XRD)-1.)*ZQA_2M    (:) )
-ZRHOA_2M_MIN(:) = PPA_2M_MIN(:) / XRD /  PTA_2M_MIN(:) / ( 1.+((XRV/XRD)-1.)*ZQA_2M_MIN(:) )
+ZRHOA_2M    (:) = D%XPS (:) / XRD /  D%XT2M       (:) / ( 1.+((XRV/XRD)-1.)*ZQA_2M(:) )
+ZRHOA_2M_MIN(:) = PPS_MIN(:) / XRD /  D%XT2M_MIN_ZS(:) / ( 1.+((XRV/XRD)-1.)*ZQA_2M_MIN(:) )
 !
-PRHOA_2M_MIN(:) = PRHOA_2M(:) * ZRHOA_2M_MIN(:) / ZRHOA_2M (:)
+PRHOA_2M_MIN(:) = D%XRHOA(:) * ZRHOA_2M_MIN(:) / ZRHOA_2M (:)
 !
 !-------------------------------------------------------------------------------
 !
 !*       5.  new humidity in kg/m3
 !            ---------------------
 !
-PQA_2M_MIN = ZQA_2M_MIN * PRHOA_2M_MIN
+D%XQ2M_MIN_ZS = ZQA_2M_MIN * PRHOA_2M_MIN
 !
 IF (LHOOK) CALL DR_HOOK('MINZS_VERT_SHIFT',1,ZHOOK_HANDLE)
 !

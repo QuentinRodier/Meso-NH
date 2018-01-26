@@ -55,11 +55,15 @@ USE MODI_END_IO_SURF_OL_n
 #ifdef SFX_MNH
 USE MODI_MNHEND_IO_SURF_n
 #endif
+#ifdef SFX_ARO
+USE MODI_AROEND_IO_SURF_n
+#endif
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
 !
 !*       0.1   Declarations of arguments
 !              -------------------------

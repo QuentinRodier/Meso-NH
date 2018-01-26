@@ -63,11 +63,11 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_WATFLUX',0,ZHOOK_HANDLE)
- CFILE_WATFLX = '                          '
- CTYPE        = 'GRIB  '
+CFILE_WATFLX = '                          '
+CTYPE        = 'GRIB  '
 !
- CFILEPGD_WATFLX = '                          '
- CTYPEPGD        = '      '
+CFILEPGD_WATFLX = '                          '
+CTYPEPGD        = '      '
 !
 XTS_WATER_UNIF = XUNDEF
 !

@@ -37,7 +37,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NFULL, CMASK, LOPEN
+USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NFULL, CMASK, LOPEN, CFILEIN_FA, CFILEOUT_FA, CFILE_FA, &
+                            NMASK
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, WLOG_MPI
 !
@@ -61,17 +62,19 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('END_IO_SURF_FA_N',0,ZHOOK_HANDLE)
 !
-!$OMP BARRIER
-!
 NFULL = 0
 !
- CMASK = '      '
+CMASK = '      '
 !
-IF (NRANK==NPIO .AND. LOPEN) THEN
-!$OMP SINGLE         
+IF ((CFILE_FA==CFILEOUT_FA .AND. NRANK==NPIO .OR. CFILE_FA==CFILEIN_FA).AND.LOPEN) THEN
   CALL FAIRME(IRET,NUNIT_FA,'UNKNOWN')
-!$OMP END SINGLE
+  NUNIT_FA = 0
+  LOPEN = .FALSE.
 END IF
+!
+CFILE_FA = '                            '
+!
+NMASK=>NULL()
 !
 IF (LHOOK) CALL DR_HOOK('END_IO_SURF_FA_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

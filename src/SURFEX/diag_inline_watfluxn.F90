@@ -3,13 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_WATFLUX_n (DGW, W, &
-                                          PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,  &
-                                           PMERA, PHT, PHW, PCD, PCDN, PCH, PRI, PHU,  &
-                                           PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,      &
-                                           PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB,      &
-                                           PEMIS, PTRAD, PRAIN, PSNOW, PSFTH_ICE,   &
-                                           PSFTQ_ICE                                       )  
+       SUBROUTINE DIAG_INLINE_WATFLUX_n (DGO, D, DC, W, &
+                                         PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,  &
+                                         PMERA, PHT, PHW, PCD, PCDN, PCH, PRI, PHU, &
+                                         PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER, &
+                                         PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB, &
+                                         PEMIS, PTRAD, PRAIN, PSNOW, PSFTH_ICE,     &
+                                         PSFTQ_ICE                                  )  
 !     ###############################################################################
 !
 !!****  *DIAG_INLINE_WATFLUX_n * - computes diagnostics during WATFLUX time-step
@@ -41,18 +41,17 @@
 !
 !
 !
-USE MODD_DIAG_WATFLUX_n, ONLY : DIAG_WATFLUX_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODD_CSTS,           ONLY : XTT
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_SFX_OASIS,      ONLY : LCPL_SEA, LCPL_SEAICE
 !
-USE MODI_PARAM_CLS
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
 USE MODI_DIAG_SURF_BUDGET_WATER
-USE MODI_DIAG_SURF_BUDGETC_WATER
+USE MODI_DIAG_SURF_BUDGETC
 USE MODI_DIAG_CPL_ESM_WATER
 ! 
 !
@@ -64,7 +63,9 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_WATFLUX_t), INTENT(INOUT) :: DGW
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
 TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
 REAL,               INTENT(IN) :: PTSTEP ! atmospheric time-step                 (s)
@@ -113,92 +114,74 @@ IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_WATFLUX_N',0,ZHOOK_HANDLE)
 !
 ! * Mean surface temperature need to couple with AGCM
 !
-DGW%XDIAG_TS(:) = W%XTS(:)
+D%XTS(:) = W%XTS(:)
 !
 IF (.NOT. W%LSBL) THEN
 !
-  IF (DGW%N2M==1) THEN
-    CALL PARAM_CLS(PTA, W%XTS, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
-                     PSFTH, PSFTQ, PSFZON, PSFMER,                    &
-                     DGW%XT2M, DGW%XQ2M, DGW%XHU2M, DGW%XZON10M, DGW%XMER10M              )  
-  ELSE IF (DGW%N2M==2) THEN
+  IF (DGO%N2M==2) THEN
     ZH(:)=2.          
-    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,         &
-                  PCD, PCH, PRI,                   &
-                  W%XTS, PHU, PZ0H, ZH,              &
-                  DGW%XT2M, DGW%XQ2M, DGW%XHU2M                )  
+    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD, PCH, PRI, &
+                W%XTS, PHU, PZ0H, ZH, D%XT2M, D%XQ2M, D%XHU2M )  
     ZH(:)=10.                
-    CALL CLS_WIND(PZONA, PMERA, PHW,             &
-                    PCD, PCDN, PRI, ZH,            &
-                    DGW%XZON10M, DGW%XMER10M               )  
+    CALL CLS_WIND(PZONA, PMERA, PHW, PCD, PCDN, PRI, ZH, D%XZON10M, D%XMER10M )  
   END IF
 !
-  IF (DGW%N2M>=1) THEN
+  IF (DGO%N2M>=1) THEN
     !
-    DGW%XT2M_MIN(:) = MIN(DGW%XT2M_MIN(:),DGW%XT2M(:))
-    DGW%XT2M_MAX(:) = MAX(DGW%XT2M_MAX(:),DGW%XT2M(:))
+    D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
+    D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
     !
-    DGW%XHU2M_MIN(:) = MIN(DGW%XHU2M_MIN(:),DGW%XHU2M(:))
-    DGW%XHU2M_MAX(:) = MAX(DGW%XHU2M_MAX(:),DGW%XHU2M(:))
+    D%XHU2M_MIN(:) = MIN(D%XHU2M_MIN(:),D%XHU2M(:))
+    D%XHU2M_MAX(:) = MAX(D%XHU2M_MAX(:),D%XHU2M(:))
     !
-    DGW%XWIND10M  (:) = SQRT(DGW%XZON10M(:)**2+DGW%XMER10M(:)**2)
-    DGW%XWIND10M_MAX(:) = MAX(DGW%XWIND10M_MAX(:),DGW%XWIND10M(:))
+    D%XWIND10M (:) = SQRT(D%XZON10M(:)**2+D%XMER10M(:)**2)
+    D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
     !* Richardson number
-    DGW%XRI = PRI
+    D%XRI = PRI
     !
   ENDIF
 !
 ELSE
-  IF (DGW%N2M>=1) THEN
-    DGW%XT2M    = XUNDEF
-    DGW%XQ2M    = XUNDEF
-    DGW%XHU2M   = XUNDEF
-    DGW%XZON10M = XUNDEF
-    DGW%XMER10M = XUNDEF
-    DGW%XRI     = PRI
+  IF (DGO%N2M>=1) THEN
+    D%XT2M    = XUNDEF
+    D%XQ2M    = XUNDEF
+    D%XHU2M   = XUNDEF
+    D%XZON10M = XUNDEF
+    D%XMER10M = XUNDEF
+    D%XRI     = PRI
   ENDIF
 ENDIF
 !
-IF (DGW%LSURF_BUDGET.OR.DGW%LSURF_BUDGETC) THEN
+IF (DGO%LSURF_BUDGET.OR.DGO%LSURF_BUDGETC) THEN
   !
-  CALL  DIAG_SURF_BUDGET_WATER (XTT, W%XTS, PRHOA, PSFTH, PSFTQ,          &
-                                  PDIR_SW, PSCA_SW, PLW,                &
-                                  PDIR_ALB, PSCA_ALB, PEMIS, PTRAD,     &
-                                  PSFZON, PSFMER,                       &
-                                  DGW%XRN, DGW%XH, DGW%XLE, DGW%XLEI, DGW%XGFLUX,           &
-                                  DGW%XSWD, DGW%XSWU, DGW%XSWBD, DGW%XSWBU, DGW%XLWD, DGW%XLWU, &
-                                  DGW%XFMU, DGW%XFMV, DGW%XEVAP, DGW%XSUBL )  
+  CALL  DIAG_SURF_BUDGET_WATER (D, XTT, W%XTS, PRHOA, PSFTH, PSFTQ, PDIR_SW, PSCA_SW, PLW,  &
+                                PDIR_ALB, PSCA_ALB, PEMIS, PTRAD, PSFZON, PSFMER )  
   !
 END IF
 !
-IF(DGW%LSURF_BUDGETC)THEN
-  CALL DIAG_SURF_BUDGETC_WATER(DGW, &
-                               PTSTEP, DGW%XRN, DGW%XH, DGW%XLE, DGW%XLEI, DGW%XGFLUX,  &
-                                 DGW%XSWD, DGW%XSWU, DGW%XLWD, DGW%XLWU, DGW%XFMU, DGW%XFMV,&
-                                 DGW%XEVAP, DGW%XSUBL                       )  
-ENDIF
+IF(DGO%LSURF_BUDGETC) CALL DIAG_SURF_BUDGETC(D, DC, PTSTEP, .TRUE.)  
 !
-IF (DGW%LCOEF) THEN
+IF (DGO%LCOEF) THEN
   !
   !* Transfer coefficients
   !
-  DGW%XCD = PCD
-  DGW%XCH = PCH
-  DGW%XCE = PCH
+  D%XCD = PCD
+  D%XCH = PCH
+  D%XCE = PCH
   !
   !* Roughness lengths
   !
-  DGW%XZ0  = W%XZ0
-  DGW%XZ0H = PZ0H
+  D%XZ0  = W%XZ0
+  D%XZ0H = PZ0H
   !
 ENDIF
 !
-IF (DGW%LSURF_VARS) THEN
+IF (DGO%LSURF_VARS) THEN
   !
   !* Humidity at saturation
   !
-  DGW%XQS = PQSAT
+  D%XQS = PQSAT
   !
 ENDIF
 !
@@ -206,10 +189,8 @@ ENDIF
 !
 IF (LCPL_SEA) THEN
 !
-  CALL DIAG_CPL_ESM_WATER(W,                                                             &
-                          LCPL_SEAICE,PTSTEP,DGW%XZON10M,DGW%XMER10M,DGW%XFMU,DGW%XFMV,  &
-                          DGW%XSWD,DGW%XSWU,DGW%XGFLUX,PSFTQ,PRAIN,PSNOW,PLW,W%XTICE,    &
-                          PSFTH_ICE,PSFTQ_ICE,PDIR_SW,PSCA_SW                            )  
+  CALL DIAG_CPL_ESM_WATER(W, D, LCPL_SEAICE, PTSTEP, PSFTQ, PRAIN, PSNOW, PLW, &
+                          PSFTH_ICE, PSFTQ_ICE, PDIR_SW, PSCA_SW )  
 ! 
 ENDIF
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_WATFLUX_N',1,ZHOOK_HANDLE)

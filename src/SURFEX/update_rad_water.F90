@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE UPDATE_RAD_WATER(HALB,PSST,PZENITH,PTT,PEMIS,PDIR_ALB,PSCA_ALB, &
-                            PDIR_ALB_ATMOS,PSCA_ALB_ATMOS,PEMIS_ATMOS,PTRAD)  
+SUBROUTINE UPDATE_RAD_WATER(W,PZENITH,PTT,PDIR_ALB_ATMOS,PSCA_ALB_ATMOS,PEMIS_ATMOS,PTRAD)  
 !     #######################################################################
 !
 !!****  *UPDATE_RAD_WATER * - update the radiative properties at time t+1 (see by the atmosphere) 
@@ -32,6 +31,8 @@ SUBROUTINE UPDATE_RAD_WATER(HALB,PSST,PZENITH,PTT,PEMIS,PDIR_ALB,PSCA_ALB, &
 !!      Modified    02/2014 : split from update_rad_seawat.F90
 !!------------------------------------------------------------------
 !
+USE MODD_WATFLUX_n, ONLY : WATFLUX_t
+!
 USE MODD_WATER_PAR, ONLY : XEMISWAT, XEMISWATICE, &
                            XALBWAT, XALBSCA_WAT,  &
                            XALBWATICE
@@ -49,15 +50,10 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
- CHARACTER(LEN=4),       INTENT(IN)   :: HALB
+TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
-REAL, DIMENSION(:),     INTENT(IN)   :: PSST      ! Sea surface temperature
 REAL, DIMENSION(:),     INTENT(IN)   :: PZENITH   ! Zenithal angle at t+1
 REAL,                   INTENT(IN)   :: PTT       ! Sea/ice transition temperature (different according to sea or inland water)
-!
-REAL, DIMENSION(:),     INTENT(INOUT):: PDIR_ALB  ! Direct albedo at t+1
-REAL, DIMENSION(:),     INTENT(INOUT):: PSCA_ALB  ! Diffuse albedo at t+1
-REAL, DIMENSION(:),     INTENT(OUT)  :: PEMIS     ! emissivity (soil+vegetation) at t+1
 !
 REAL, DIMENSION(:,:),   INTENT(OUT)  :: PDIR_ALB_ATMOS ! Direct albedo at t+1 for the atmosphere
 REAL, DIMENSION(:,:),   INTENT(OUT)  :: PSCA_ALB_ATMOS ! Diffuse albedo at t+1 for the atmosphere
@@ -67,7 +63,7 @@ REAL, DIMENSION(:),     INTENT(OUT)  :: PTRAD          ! radiative temp at t+1 f
 !*      0.2    declarations of local variables
 !
 INTEGER :: JSWB
-REAL, DIMENSION(SIZE(PSST)) :: ZALBEDO
+REAL, DIMENSION(SIZE(W%XTS)) :: ZALBEDO
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -75,9 +71,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_WATER',0,ZHOOK_HANDLE)
 !
 ZALBEDO(:) = 0.
-IF (HALB=='TA96') THEN
+IF (W%CWAT_ALB=='TA96') THEN
   ZALBEDO(:) = ALBEDO_TA96(PZENITH(:))
-ELSEIF (HALB=='MK10') THEN
+ELSEIF (W%CWAT_ALB=='MK10') THEN
   ZALBEDO(:) = ALBEDO_MK10(PZENITH(:))
 ENDIF
 !
@@ -87,50 +83,50 @@ IF(LCPL_SEA.AND.LWATER)THEN !Earth System Model
 !Except for Taylor et al (1996) formulation
 !
   !
-  WHERE (PSST(:)>=PTT  )
+  WHERE (W%XTS(:)>=PTT  )
     !* open water
-    PEMIS   (:) = XEMISWAT
+    W%XEMIS   (:) = XEMISWAT
   ELSEWHERE
     !* sea ice
-    PEMIS   (:) = XEMISWATICE
+    W%XEMIS   (:) = XEMISWATICE
   END WHERE
   !
-  IF (HALB=='TA96' .OR. HALB=='MK10') THEN
+  IF (W%CWAT_ALB=='TA96' .OR. W%CWAT_ALB=='MK10') THEN
     !* Taylor et al 1996
     !* open water
-    WHERE (PSST(:)>=PTT) PDIR_ALB(:) = ZALBEDO(:)
-    WHERE (PSST(:)>=PTT) PSCA_ALB(:) = XALBSCA_WAT
+    WHERE (W%XTS(:)>=PTT) W%XDIR_ALB(:) = ZALBEDO(:)
+    WHERE (W%XTS(:)>=PTT) W%XSCA_ALB(:) = XALBSCA_WAT
   ENDIF
   !
 ELSE
   !
-  IF (HALB=='UNIF') THEN
+  IF (W%CWAT_ALB=='UNIF') THEN
   !* uniform albedo
-    WHERE (PSST(:)>=PTT  )
+    WHERE (W%XTS(:)>=PTT  )
     !* open water
-      PDIR_ALB  (:) = XALBWAT
-      PSCA_ALB  (:) = XALBWAT
-      PEMIS     (:) = XEMISWAT
+      W%XDIR_ALB  (:) = XALBWAT
+      W%XSCA_ALB  (:) = XALBWAT
+      W%XEMIS     (:) = XEMISWAT
     ELSEWHERE
     !* sea ice
-      PDIR_ALB(:) = XALBWATICE
-      PSCA_ALB(:) = XALBWATICE
-      PEMIS   (:) = XEMISWATICE
+      W%XDIR_ALB(:) = XALBWATICE
+      W%XSCA_ALB(:) = XALBWATICE
+      W%XEMIS   (:) = XEMISWATICE
     END WHERE
   !
-  ELSE IF (HALB=='TA96' .OR. HALB=='MK10') THEN
+  ELSE IF (W%CWAT_ALB=='TA96' .OR. W%CWAT_ALB=='MK10') THEN
     !* Taylor et al 1996
-    WHERE (PSST(:)>=PTT) PDIR_ALB(:) = ZALBEDO(:)
+    WHERE (W%XTS(:)>=PTT) W%XDIR_ALB(:) = ZALBEDO(:)
     !
-    WHERE (PSST(:)>=PTT)
+    WHERE (W%XTS(:)>=PTT)
     !* open water
-      PSCA_ALB  (:) = XALBSCA_WAT
-      PEMIS     (:) = XEMISWAT
+      W%XSCA_ALB  (:) = XALBSCA_WAT
+      W%XEMIS     (:) = XEMISWAT
     ELSEWHERE
     !* sea ice
-      PDIR_ALB(:) = XALBWATICE
-      PSCA_ALB(:) = XALBWATICE
-      PEMIS   (:) = XEMISWATICE
+      W%XDIR_ALB(:) = XALBWATICE
+      W%XSCA_ALB(:) = XALBWATICE
+      W%XEMIS   (:) = XEMISWATICE
     END WHERE
     !
   ENDIF
@@ -140,12 +136,12 @@ ENDIF
 !-------------------------------------------------------------------------------------
 !
 DO JSWB=1,SIZE(PDIR_ALB_ATMOS,2)
-  PDIR_ALB_ATMOS(:,JSWB) = PDIR_ALB(:)
-  PSCA_ALB_ATMOS(:,JSWB) = PSCA_ALB(:)
+  PDIR_ALB_ATMOS(:,JSWB) = W%XDIR_ALB(:)
+  PSCA_ALB_ATMOS(:,JSWB) = W%XSCA_ALB(:)
 END DO
 !
-PEMIS_ATMOS(:) = PEMIS(:)
-PTRAD      (:) = PSST (:)
+PEMIS_ATMOS(:) = W%XEMIS(:)
+PTRAD      (:) = W%XTS (:)
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_WATER',1,ZHOOK_HANDLE)
 !

@@ -140,7 +140,7 @@ MODULE mode_glt_nemo_bound
    !!----------------------------------------------------------------------
 #endif
 
- CONTAINS
+CONTAINS
 
 
 #if ! defined in_surfex

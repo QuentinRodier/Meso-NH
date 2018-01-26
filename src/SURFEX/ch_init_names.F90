@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE CH_INIT_NAMES (KLUOUT,HSV,KBEQ,KBAER,HSVO,&
-                            KSV_CHSBEG,KSV_CHSEND, KSV_AERBEG, KSV_AEREND,&
-                            OVARSIGI, OVARSIGJ)  
+SUBROUTINE CH_INIT_NAMES (KLUOUT,HSV, SV, OVARSIGI, OVARSIGJ)  
 !!    ###########################################
 !!
 !!*** *CH_INIT_NAMES*
@@ -34,6 +32,8 @@ SUBROUTINE CH_INIT_NAMES (KLUOUT,HSV,KBEQ,KBAER,HSVO,&
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
+USE MODD_SV_n, ONLY : SV_t
+!
 USE MODD_CHS_AEROSOL
 !-------------------------------------------------------------------------------
 !
@@ -52,13 +52,8 @@ INTEGER,                         INTENT(IN)  :: KLUOUT ! output listing channel
  CHARACTER(LEN=*), DIMENSION(:),  INTENT(IN)  :: HSV    ! name of chemical species
                                                        ! with character # (gas chemistry )
                                                        ! and  character @ (aerosols)
-INTEGER,                         INTENT(OUT) :: KBEQ     ! number of chemical variables
-INTEGER,                         INTENT(OUT) :: KBAER    ! number of aerosol variables
- CHARACTER(LEN=*), DIMENSION(SIZE(HSV)),  INTENT(OUT) :: HSVO ! name of scalar species without # and @
-INTEGER,                         INTENT(OUT) :: KSV_CHSBEG  ! first chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_CHSEND  ! last  chemical var.
-INTEGER,                         INTENT(OUT) :: KSV_AERBEG  ! first aerosol var.
-INTEGER,                         INTENT(OUT) :: KSV_AEREND  ! last  aerosol var.
+TYPE(SV_t), INTENT(INOUT) :: SV
+!
 LOGICAL,                         INTENT(OUT) :: OVARSIGI, OVARSIGJ ! type of standard deviation
 !
 !*      0.2    declarations of local variables
@@ -70,12 +65,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 
 IF (LHOOK) CALL DR_HOOK('CH_INIT_NAMES',0,ZHOOK_HANDLE)
-KBEQ = 0
-KBAER = 0
-KSV_CHSBEG = 0
-KSV_AERBEG = 0
-KSV_CHSEND = 0
-KSV_AEREND = 0
+SV%NBEQ = 0
+SV%NAEREQ = 0
+SV%NSV_CHSBEG = 0
+SV%NSV_AERBEG = 0
+SV%NSV_CHSEND = 0
+SV%NSV_AEREND = 0
 OVARSIGI = .FALSE.
 OVARSIGJ = .FALSE.
 NSOA = 0
@@ -83,48 +78,48 @@ NSOA = 0
 
 DO JSV=1, SIZE(HSV)
 
-  HSVO(JSV) = HSV(JSV)
+  SV%CSV(JSV) = HSV(JSV)
   YRC1= HSV(JSV)(1:1)
   YRC2 = HSV(JSV)(2:)
 
   IF (YRC1 == '#') THEN
-    HSVO(JSV) = TRIM(YRC2)
-    KBEQ = KBEQ + 1
-    IF (KBEQ == 1) KSV_CHSBEG=JSV
+    SV%CSV(JSV) = TRIM(YRC2)
+    SV%NBEQ = SV%NBEQ + 1
+    IF (SV%NBEQ == 1) SV%NSV_CHSBEG=JSV
   ELSE IF (YRC1 == '@') THEN
-    HSVO(JSV) = TRIM(YRC2)
-    KBAER = KBAER + 1
-    IF (KBAER == 1) KSV_AERBEG=JSV
-    IF (HSVO(JSV) == "M6I") OVARSIGI = .TRUE.
-    IF (HSVO(JSV) == "M6J") OVARSIGJ = .TRUE.
-    IF (HSVO(JSV) == "SOA1I") NSOA = 10
+    SV%CSV(JSV) = TRIM(YRC2)
+    SV%NAEREQ = SV%NAEREQ + 1
+    IF (SV%NAEREQ == 1) SV%NSV_AERBEG=JSV
+    IF (SV%CSV(JSV) == "M6I") OVARSIGI = .TRUE.
+    IF (SV%CSV(JSV) == "M6J") OVARSIGJ = .TRUE.
+    IF (SV%CSV(JSV) == "SOA1I") NSOA = 10
   ENDIF
 
 ENDDO
 
-KSV_CHSEND = KSV_CHSBEG + KBEQ -1
-KSV_AEREND = KSV_AERBEG + KBAER -1
+SV%NSV_CHSEND = SV%NSV_CHSBEG + SV%NBEQ -1
+SV%NSV_AEREND = SV%NSV_AERBEG + SV%NAEREQ -1
 
-IF (KBAER .GT. 0) THEN
-DO JSV=1, size(HSVO)
-   IF (TRIM(HSVO(JSV)) == "M0I") JP_CH_M0i=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "M0J") JP_CH_M0j=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "M6I") JP_CH_M6i=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "M6J") JP_CH_M6j=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "H2OI") JP_CH_H2Oi=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "H2OJ") JP_CH_H2Oj=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "SO4I") JP_CH_SO4i=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "SO4J") JP_CH_SO4j=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "NO3I") JP_CH_NO3i=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "NO3J") JP_CH_NO3j=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "NH3I") JP_CH_NH3i=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "NH3J") JP_CH_NH3j=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "OCI") JP_CH_OCi=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "OCJ") JP_CH_OCj=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "BCI") JP_CH_BCi=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "BCJ") JP_CH_BCj=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "DSTI") JP_CH_DSTi=JSV-KSV_CHSEND
-   IF (TRIM(HSVO(JSV)) == "DSTJ") JP_CH_DSTj=JSV-KSV_CHSEND
+IF (SV%NAEREQ .GT. 0) THEN
+DO JSV=1, size(SV%CSV)
+   IF (TRIM(SV%CSV(JSV)) == "M0I") JP_CH_M0i=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "M0J") JP_CH_M0j=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "M6I") JP_CH_M6i=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "M6J") JP_CH_M6j=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "H2OI") JP_CH_H2Oi=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "H2OJ") JP_CH_H2Oj=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "SO4I") JP_CH_SO4i=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "SO4J") JP_CH_SO4j=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "NO3I") JP_CH_NO3i=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "NO3J") JP_CH_NO3j=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "NH3I") JP_CH_NH3i=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "NH3J") JP_CH_NH3j=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "OCI") JP_CH_OCi=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "OCJ") JP_CH_OCj=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "BCI") JP_CH_BCi=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "BCJ") JP_CH_BCj=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "DSTI") JP_CH_DSTi=JSV-SV%NSV_CHSEND
+   IF (TRIM(SV%CSV(JSV)) == "DSTJ") JP_CH_DSTj=JSV-SV%NSV_CHSEND
 END DO
 
 END IF

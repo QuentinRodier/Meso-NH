@@ -4,13 +4,13 @@
 !SFX_LIC for details. version 1.
 !#########
 SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,OSEND_WAVE,  &
-                          PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,PLAND_RECHARGE,&
+                          PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,               &
                           PLAND_SRCFLOOD,                                       &
                           PLAKE_EVAP,PLAKE_RAIN,PLAKE_SNOW,PLAKE_WATF,          &
                           PSEA_FWSU,PSEA_FWSV,PSEA_HEAT,PSEA_SNET,PSEA_WIND,    &
                           PSEA_FWSM,PSEA_EVAP,PSEA_RAIN,PSEA_SNOW,PSEA_EVPR,    &
                           PSEA_WATF,PSEA_PRES,PSEAICE_HEAT,PSEAICE_SNET,        &
-                          PSEAICE_EVAP,PWAVE_U10,PWAVE_V10      )
+                          PSEAICE_EVAP,PWAVE_U10,PWAVE_V10            )
 !###########################################
 !
 !!****  *SFX_OASIS_SEND* - Send coupling fields
@@ -45,6 +45,7 @@ SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,OSEND_
 !!      Original    10/2013
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
 !!                                          and surface pressure for ocean coupling
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -82,7 +83,6 @@ LOGICAL,             INTENT(IN) :: OSEND_WAVE
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RUNOFF    ! Cumulated Surface runoff             (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_CALVING   ! Cumulated Calving flux               (kg/m2)
-REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RECHARGE  ! Cumulated Recharge to groundwater    (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_SRCFLOOD  ! Cumulated flood freshwater flux      (kg/m2)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PLAKE_EVAP  ! Cumulated Evaporation              (kg/m2)
@@ -154,13 +154,6 @@ IF(OSEND_LAND)THEN
     YCOMMENT='calving flux over land'
     CALL OUTVAR(PLAND_CALVING,XTSTEP_CPL_LAND,ZWRITE(:,1))
     CALL OASIS_PUT(NCALVING_ID,KDATE,ZWRITE(:,:),IERR)
-    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
-  ENDIF
-!
-  IF(LCPL_GW)THEN
-    YCOMMENT='groundwater recharge over land'
-    CALL OUTVAR(PLAND_RECHARGE,XTSTEP_CPL_LAND,ZWRITE(:,1))
-    CALL OASIS_PUT(NRECHARGE_ID,KDATE,ZWRITE(:,:),IERR)
     CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
   ENDIF
 !
@@ -372,7 +365,7 @@ IMPLICIT NONE
 !
 INTEGER,          INTENT(IN) :: KLUOUT
 INTEGER,          INTENT(IN) :: KERR
- CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
+CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
 !
 REAL, DIMENSION(:), INTENT(OUT):: PWRITE
 !

@@ -12,7 +12,7 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
- CONTAINS
+CONTAINS
 !!
 !!   ############################################################
 SUBROUTINE MASSFLUX2MOMENTFLUX(     &

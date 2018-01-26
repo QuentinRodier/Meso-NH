@@ -86,7 +86,7 @@ ELSE
                    FORM=HFORM,ACCESS=HACCESS,RECL=KRECL, ERR=100       )  
   ELSE
     OPEN(UNIT=KUNIT,FILE=HFILE,ACTION=HACTION, &
-           FORM=HFORM, ERR=100           )  
+           FORM=HFORM, ACCESS=HACCESS, ERR=100           )  
   END IF
 END IF
 !

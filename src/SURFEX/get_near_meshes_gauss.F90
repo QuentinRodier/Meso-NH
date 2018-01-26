@@ -33,6 +33,9 @@
 !            -----------
 !
 !
+USE MODE_GRIDTYPE_GAUSS
+!
+USE MODD_SURFEX_MPI, ONLY : NINDEX, NRANK, NNUM
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -47,15 +50,54 @@ INTEGER,                         INTENT(IN)    :: KL        ! number of points
 INTEGER,                         INTENT(IN)    :: KNEAR_NBR ! number of nearest points wanted
 REAL,    DIMENSION(KGRID_PAR),   INTENT(IN)    :: PGRID_PAR ! grid parameters
 INTEGER, DIMENSION(:,:),POINTER :: KNEAR     ! near mesh indices
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
+REAL, DIMENSION(KL) :: ZDIS
+REAL,DIMENSION(KL)    :: ZLON
+REAL,DIMENSION(KL)    :: ZLAT
+REAL :: ZDMAX
+INTEGER :: ID0
+INTEGER :: JP1, JP2, JN, IL
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('GET_NEAR_MESHES_GAUSS',0,ZHOOK_HANDLE)
+!
+ CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,KL=IL,PLON_XY=ZLON,PLAT_XY=ZLAT)
+!
 KNEAR  (:,:) = 0
+!
+! calcul de la distance de tous les points 2 à 2
+!
+ZDIS = 1.E20
+!
+DO JP1=1,KL
+  !
+  IF (NINDEX(JP1)==NRANK) THEN
+    !
+    DO JP2=1,KL
+      ZDIS(JP2) = SQRT((ZLON(JP1)-ZLON(JP2))**2+(ZLAT(JP1)-ZLAT(JP2))**2)
+    ENDDO
+    ZDMAX = MAXVAL(ZDIS(:)) + 1.
+    ZDIS(JP1) = ZDMAX
+    !
+    ! on prend les knear_nbr premiers, pour chaque
+    !
+    DO JN=1,MIN(KL-1,KNEAR_NBR)
+      !
+      ID0 = MAXVAL(MINLOC(ZDIS(:)))       
+      !
+      KNEAR(NNUM(JP1),JN) = ID0
+      ZDIS(ID0) = ZDMAX
+      !
+    ENDDO
+    !
+  ENDIF
+  !
+ENDDO
+!
 IF (LHOOK) CALL DR_HOOK('GET_NEAR_MESHES_GAUSS',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

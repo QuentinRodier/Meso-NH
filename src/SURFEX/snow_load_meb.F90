@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !   ############################################################################
-SUBROUTINE SNOW_LOAD_MEB(PTSTEP,PSR,PTV,PWRVNMAX,PKVN,PCHEATV,PLERCV,PLESC,PMELTVN, &
-          PVELC,PMELTCV,PFRZCV,PUNLOADSNOW,PWRV,PWRVN,PSUBVCOR,PLVTT,PLSTT)
+SUBROUTINE SNOW_LOAD_MEB(PK, PEK, DEK, PTSTEP, PSR, PWRVNMAX, PKVN, PCHEATV, PMELTVN, &
+                         PVELC, PSUBVCOR)
 !   ############################################################################
 !
 !!****  *SNOW_LOAD_MEB*
@@ -45,6 +45,9 @@ SUBROUTINE SNOW_LOAD_MEB(PTSTEP,PSR,PTV,PWRVNMAX,PKVN,PCHEATV,PLERCV,PLESC,PMELT
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_ISBA_n, ONLY : ISBA_PE_t, ISBA_P_t
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+!
 USE MODD_CSTS,     ONLY : XTT, XLMTT
 !
 USE MODD_SNOW_PAR, ONLY : XRHOSMAX_ES
@@ -56,15 +59,15 @@ IMPLICIT NONE
 !
 !*      0.1    Declaration of Arguments
 !
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
+!
 REAL,               INTENT(IN)    :: PTSTEP
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PLVTT, PLSTT
-REAL, DIMENSION(:), INTENT(IN)    :: PSR,PCHEATV, PLERCV, PVELC,              &
-                                     PLESC, PMELTVN, PWRVNMAX, PKVN
+REAL, DIMENSION(:), INTENT(IN)    :: PSR, PCHEATV, PVELC, PMELTVN, PWRVNMAX, PKVN
 !
-REAL, DIMENSION(:), INTENT(INOUT) :: PWRVN, PWRV, PTV
-!
-REAL, DIMENSION(:), INTENT(OUT)   :: PMELTCV, PFRZCV, PUNLOADSNOW, PSUBVCOR
+REAL, DIMENSION(:), INTENT(OUT)   :: PSUBVCOR
 !
 !
 !*      0.2    declarations of local variables
@@ -98,16 +101,17 @@ ZUNLOAD(:)     = 0.0
 ! only during the timestep when vegetation has just been buried:
 !
 !
+!
 WHERE(PWRVNMAX(:) == 0.0)
 !
-   PUNLOADSNOW(:) = PWRVN(:)/PTSTEP    ! kg m-2 s-1
-   PWRVN(:)       = 0.0
+   DEK%XSR_GN(:) = PEK%XWRVN(:)/PTSTEP    ! kg m-2 s-1
+   PEK%XWRVN(:)    = 0.0
 
 ! for a totally buried canopy, the following are zero:
 
-   PMELTCV(:)     = 0.0
-   PFRZCV(:)      = 0.0
-   PSUBVCOR(:)    = 0.0
+   DEK%XMELT_CV(:) = 0.0
+   DEK%XFRZ_CV(:)  = 0.0
+   PSUBVCOR(:)     = 0.0
 !
 !
 ELSEWHERE
@@ -120,26 +124,31 @@ ELSEWHERE
 !
 ! Interception: gain
 
-   ZSRINT(:)      = MAX(0.0,PWRVNMAX(:)-PWRVN(:))*(1.0-EXP(-PKVN(:)*PSR(:)*PTSTEP)) ! kg m-2
-   ZSRINT(:)      = MIN(PSR(:)*PTSTEP, ZSRINT(:))  ! kg m-2 
-   ZWRVN(:)       = PWRVN(:) + ZSRINT(:)           ! kg m-2 
 
-   PUNLOADSNOW(:) = MAX(0.0, PSR(:) - ZSRINT(:)/PTSTEP) ! kg m-2 s-1
+   ZSRINT(:)      = MAX(0.0,PWRVNMAX(:)-PEK%XWRVN(:))*(1.0-EXP(-PKVN(:)*PSR(:)*PTSTEP)) ! kg m-2
+   ZSRINT(:)      = MIN(PSR(:)*PTSTEP, ZSRINT(:))  ! kg m-2 
+   ZWRVN(:)       = PEK%XWRVN(:) + ZSRINT(:)           ! kg m-2 
+
+   DEK%XSR_GN(:)  = MAX(0.0, PSR(:) - ZSRINT(:)/PTSTEP) ! kg m-2 s-1
+
+END WHERE
+
+      WHERE(PWRVNMAX(:) /= 0.0)
 
 ! Sublimation: gain or loss
 ! NOTE for the rare case that sublimation exceeds snow mass (possible as traces of snow disappear)
 ! compute a mass correction to be removed from soil (to conserve mass): PSUBVCOR
 
-   ZSUB(:)        = PLESC(:)*(PTSTEP/PLSTT(:))           ! kg m-2
+   ZSUB(:)        = DEK%XLES_CV(:)*(PTSTEP/PK%XLSTT(:))    ! kg m-2
    PSUBVCOR(:)    = MAX(0.0, ZSUB(:) - ZWRVN(:))/PTSTEP  ! kg m-2 s-1
    ZWRVN(:)       = MAX(0.0, ZWRVN(:) - ZSUB(:))         ! kg m-2
 
 ! Phase change: loss (melt of snow mass)
 
-   PMELTCV(:)     = PTSTEP*MAX(0.0, PMELTVN(:))         ! kg m-2  
-   PMELTCV(:)     = MIN(PMELTCV(:), ZWRVN(:))
-   ZWRVN(:)       = ZWRVN(:) - PMELTCV(:)
-   PWRV(:)        = PWRV(:)  + PMELTCV(:)               ! NOTE...liq reservoir can exceed maximum holding
+   DEK%XMELT_CV(:) = PTSTEP*MAX(0.0, PMELTVN(:))         ! kg m-2  
+   DEK%XMELT_CV(:) = MIN(DEK%XMELT_CV(:), ZWRVN(:))
+   ZWRVN(:)        = ZWRVN(:)    - DEK%XMELT_CV(:)
+   PEK%XWR(:)      = PEK%XWR(:)  + DEK%XMELT_CV(:)        ! NOTE...liq reservoir can exceed maximum holding
                                                         !        capacity here, but this is accounted for
                                                         !        in main prognostic PWRV routine.
 
@@ -148,30 +157,30 @@ ELSEWHERE
 ! estimation of water for freezing:
 ! Also, update liquid water stored on the canopy here:
 
-   PFRZCV(:)      = PTSTEP*MAX(0.0, -PMELTVN(:))        ! kg m-2  
-   PFRZCV(:)      = MIN(PFRZCV(:), MAX(0.0,PWRV(:)-PLERCV(:)*(PTSTEP/PLVTT(:))))
-   ZWRVN(:)       = ZWRVN(:) + PFRZCV(:)
-   PWRV(:)        = PWRV(:)  - PFRZCV(:)
+   DEK%XFRZ_CV(:) = PTSTEP*MAX(0.0, -PMELTVN(:))        ! kg m-2  
+   DEK%XFRZ_CV(:) = MIN(DEK%XFRZ_CV(:), MAX(0.0,PEK%XWR(:)-DEK%XLER_CV(:)*(PTSTEP/PK%XLVTT(:))))
+   ZWRVN(:)       = ZWRVN(:)   + DEK%XFRZ_CV(:)
+   PEK%XWR(:)     = PEK%XWR(:) - DEK%XFRZ_CV(:)
 
 ! Unloading (falling off branches, etc...): loss
 ! Note, the temperature effect is assumed to vanish for cold temperatures.
 
-   ZUNLOAD(:)     = MIN(ZWRVN(:), PWRVN(:)*( PVELC(:)*(PTSTEP/ZUNLOAD_V)          &
-                     + MAX(0.0, PTV(:)-ZUNLOAD_TT)*(PTSTEP/ZUNLOAD_T) ))            ! kg m-2 
-   ZWRVN(:)       = ZWRVN(:) - ZUNLOAD(:)                                           ! kg m-2 
-   PUNLOADSNOW(:) = PUNLOADSNOW(:) + ZUNLOAD(:)/PTSTEP
+   ZUNLOAD(:)    = MIN(ZWRVN(:), PEK%XWRVN(:)*( PVELC(:)*(PTSTEP/ZUNLOAD_V)          &
+                     + MAX(0.0, PEK%XTV(:)-ZUNLOAD_TT)*(PTSTEP/ZUNLOAD_T) ))            ! kg m-2 
+   ZWRVN(:)      = ZWRVN(:) - ZUNLOAD(:)                                           ! kg m-2 
+   DEK%XSR_GN(:) = DEK%XSR_GN(:) + ZUNLOAD(:)/PTSTEP
 
 ! Diagnostic updates:
 ! final phase change (units)
 
-   PMELTCV(:)     = PMELTCV(:)/PTSTEP ! kg m-2 s-1
-   PFRZCV(:)      = PFRZCV(:) /PTSTEP ! kg m-2 s-1
+   DEK%XMELT_CV(:) = DEK%XMELT_CV(:)/PTSTEP ! kg m-2 s-1
+   DEK%XFRZ_CV(:)  = DEK%XFRZ_CV(:) /PTSTEP ! kg m-2 s-1
 
 ! Prognostic Updates:
 
-   PWRVN(:)       = ZWRVN(:)
+   PEK%XWRVN(:)       = ZWRVN(:)
 
-   PTV(:)         = PTV(:) + (PFRZCV(:) - PMELTCV(:))*(XLMTT*PTSTEP)/PCHEATV(:) ! K
+   PEK%XTV(:)         = PEK%XTV(:) + (DEK%XFRZ_CV(:) - DEK%XMELT_CV(:))*(XLMTT*PTSTEP)/PCHEATV(:) ! K
 
 END WHERE
 !

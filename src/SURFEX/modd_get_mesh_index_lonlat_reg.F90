@@ -36,6 +36,9 @@ IMPLICIT NONE
 REAL, DIMENSION(:), ALLOCATABLE   :: XLONLIM  ! longitude left   limit of grid mesh (dim ILON+1)
 REAL, DIMENSION(:), ALLOCATABLE   :: XLATLIM  ! latitude  bottom limit of grid mesh (dim ILAT+1)
 !
+INTEGER, DIMENSION(:), ALLOCATABLE :: NFRACDLON
+INTEGER, DIMENSION(:), ALLOCATABLE :: NFRACDLAT
+!
 INTEGER :: NLON    ! number of points in longitude
 INTEGER :: NLAT    ! number of points in latitude
 REAL    :: XLON0   ! centre longitude of the grid

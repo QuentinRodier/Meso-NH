@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE READ_NAMELISTS_ISBA_n (IM, &
-                                  HPROGRAM, HINIT)
+SUBROUTINE READ_NAMELISTS_ISBA_n (IM, HPROGRAM, HINIT)
 !     #######################################################
 !
 !---------------------------    
@@ -54,8 +53,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_ISBA_N',0,ZHOOK_HANDLE)
- CALL DEFAULT_ISBA(XTSTEP, XOUT_TSTEP,                            &
-                     CROUGH,CRUNOFF,CALBEDO,CSCOND,              &
+ CALL DEFAULT_ISBA(XTSTEP, XOUT_TSTEP,                           &
+                     CRUNOFF, CSCOND,                            &
                      CC1DRY, CSOILFRZ, CDIFSFCOND, CSNOWRES,     &
                      CCPSURF, XCGMAX, XCDRAG, CKSAT, LSOC,       &
                      CRAIN, CHORT, LGLACIER, LCANOPY_DRAG,       &
@@ -66,21 +65,19 @@ IF (LHOOK) CALL DR_HOOK('READ_NAMELISTS_ISBA_N',0,ZHOOK_HANDLE)
  CALL DEFAULT_CH_DEP(CCH_DRY_DEP)
  CALL DEFAULT_CH_BIO_FLUX(LCH_BIO_FLUX) 
 !           
- CALL DEFAULT_DIAG_ISBA(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,   &
+ CALL DEFAULT_DIAG_ISBA(N2M,LSURF_BUDGET,L2M_MIN_ZS,LRAD_BUDGET,  &
                        LCOEF,LSURF_VARS,LSURF_EVAP_BUDGET,        &
                        LSURF_MISC_BUDGET,LSURF_DIAG_ALBEDO,       &
                        LSURF_BUDGETC,LSURF_MISC_DIF,LPATCH_BUDGET,&
-                       LPGD,LRESET_BUDGETC,LWATER_BUDGET,         &
-                       XDIAG_TSTEP                                )     
+                       LPGD,LRESET_BUDGETC,LWATER_BUDGET,LPROSNOW,&
+                       LVOLUMETRIC_SNOWLIQ,XDIAG_TSTEP           ) 
 !      
  CALL DEFAULT_CROCUS(LSNOWDRIFT,LSNOWDRIFT_SUBLIM,LSNOW_ABS_ZENITH,&
                      CSNOWMETAMO,CSNOWRAD)
 !
- CALL READ_DEFAULT_ISBA_n(IM%CHI, IM%DGEI, IM%DGI, IM%DGMI, IM%I, &
-                          HPROGRAM)
+ CALL READ_DEFAULT_ISBA_n(IM%CHI, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
 !
- CALL READ_ISBA_CONF_n(IM%CHI, IM%DGEI, IM%DGI, IM%DGMI, IM%I, &
-                       HPROGRAM)
+ CALL READ_ISBA_CONF_n(IM%CHI, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
 !
 !
 SODELX(:)      = XUNDEF

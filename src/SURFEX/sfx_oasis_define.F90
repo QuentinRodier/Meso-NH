@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#########
-SUBROUTINE SFX_OASIS_DEFINE (I, U, &
-                             HPROGRAM,KNPTS,KPARAL)
+SUBROUTINE SFX_OASIS_DEFINE (IO, U, HPROGRAM,KNPTS,KPARAL)
 !###################################################
 !
 !!****  *SFX_OASIS_DEFINE* - Definitions for exchange of coupling fields
@@ -33,6 +32,7 @@ SUBROUTINE SFX_OASIS_DEFINE (I, U, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -40,7 +40,7 @@ SUBROUTINE SFX_OASIS_DEFINE (I, U, &
 !
 !
 !
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_SURF_PAR,  ONLY : NUNDEF
@@ -65,10 +65,10 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
- CHARACTER(LEN=6),        INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=6),        INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
 INTEGER,                 INTENT(IN) :: KNPTS  ! Number of grid point on this proc
 INTEGER, DIMENSION(:),   INTENT(IN) :: KPARAL
 !
@@ -103,17 +103,16 @@ IF (LHOOK) CALL DR_HOOK('SFX_OASIS_DEFINE',0,ZHOOK_HANDLE)
 !*       0.     Initialize :
 !               ------------
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
- CALL SFX_OASIS_CHECK(I, U, &
-                     ILUOUT)
+CALL SFX_OASIS_CHECK(IO, U, ILUOUT)
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.     Define parallel partitions:
 !               ---------------------------
 !
- CALL OASIS_DEF_PARTITION(IPART_ID,KPARAL(:),IERR)
+CALL OASIS_DEF_PARTITION(IPART_ID,KPARAL(:),IERR)
 !
 IF(IERR/=OASIS_OK)THEN
    WRITE(ILUOUT,*)'SFX_OASIS_DEFINE: OASIS def partition problem, err = ',IERR
@@ -330,10 +329,6 @@ IF(LCPL_LAND)THEN
 !
   IF(LCPL_GW)THEN
 !
-!     Output groundwater recharge
-      CALL OASIS_DEF_VAR(NRECHARGE_ID,CRECHARGE,IPART_ID,IVAR_NODIMS,OASIS_OUT,IVAR_SHAPE,OASIS_DOUBLE,IERR)  
-      IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for land groundwater recharge')
-!      
 !     Input Water table depth
       CALL OASIS_DEF_VAR(NWTD_ID,CWTD,IPART_ID,IVAR_NODIMS,OASIS_IN,IVAR_SHAPE,OASIS_DOUBLE,IERR)  
       IF(IERR/=OASIS_OK) CALL ABOR1_SFX('SFX_OASIS_DEFINE: OASIS def var problem for land Water table depth')
@@ -369,7 +364,7 @@ ENDIF
 !*       6.     End of declaration phase:
 !               --------------
 !
- CALL OASIS_ENDDEF(IERR)
+CALL OASIS_ENDDEF(IERR)
 !
 IF(IERR/=OASIS_OK)THEN
    WRITE(ILUOUT,*)'SFX_OASIS_DEFINE: OASIS enddef problem, err = ',IERR

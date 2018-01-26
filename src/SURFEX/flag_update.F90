@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE FLAG_UPDATE (DGI, DGU, &
+      SUBROUTINE FLAG_UPDATE (DIO, DUO, &
                               ONOWRITE_CANOPY,OPGD,OPROVAR_TO_DIAG,OSELECT)
 !     ############################################################
 !
@@ -41,8 +41,7 @@
 !              ------------
 !
 !
-USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t
 !
 USE MODD_WRITE_SURF_ATM, ONLY : LNOWRITE_CANOPY
 !
@@ -56,8 +55,8 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DIO
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DUO
 !
 LOGICAL, INTENT(IN) :: ONOWRITE_CANOPY ! flag to (des)activate writing of canopy fields
 LOGICAL, INTENT(IN) :: OPGD            ! flag to (des)activate writing of pgd field
@@ -71,9 +70,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('FLAG_UPDATE',0,ZHOOK_HANDLE)
 LNOWRITE_CANOPY = ONOWRITE_CANOPY
-DGI%LPGD            = OPGD
-DGU%LPROVAR_TO_DIAG = OPROVAR_TO_DIAG
-DGU%LSELECT         = OSELECT
+DIO%LPGD            = OPGD
+DUO%LPROVAR_TO_DIAG = OPROVAR_TO_DIAG
+DUO%LSELECT         = OSELECT
 IF (LHOOK) CALL DR_HOOK('FLAG_UPDATE',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !

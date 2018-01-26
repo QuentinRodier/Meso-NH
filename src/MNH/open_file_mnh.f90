@@ -56,6 +56,7 @@ END MODULE MODI_OPEN_FILE_MNH
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2003 
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -95,7 +96,7 @@ ELSE
                  MODE=GLOBAL                                          )
   ELSE
     CALL OPEN_ll(UNIT=KUNIT,FILE=HFILE,IOSTAT=IRESP,ACTION=HACTION,   &
-                 FORM=HFORM, MODE=GLOBAL                               )
+                 FORM=HFORM, ACCESS=HACCESS, MODE=GLOBAL                               )
   END IF
 END IF
 !

@@ -13,7 +13,7 @@
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
- CONTAINS
+CONTAINS
 !############################################################################
 !############################################################################
 !############################################################################
@@ -27,11 +27,11 @@ USE PARKIND1  ,ONLY : JPRB
 !!
 !!    AUTHOR
 !!    ------
-!!      V. Masson   *Meteo France*
+!!	V. Masson   *Meteo France*	
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004 
+!!      Original    01/2004
 !!        M.Moge    06/2015 broadcast the space step to all MPI processes (necessary for reproductibility)
 !-------------------------------------------------------------------------------
 !
@@ -77,13 +77,15 @@ REAL, DIMENSION(:), POINTER     :: PGRID_PAR! parameters defining this grid
 LOGICAL                         :: GFULL    ! T : entire grid is stored
 INTEGER                         :: IL       ! number of points
 INTEGER                         :: JJ       ! loop counter
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
 #ifdef SFX_MNH
 INTEGER                         :: IINFO_ll
 INTEGER                         :: IXOR, IYOR
 INTEGER                         :: IXORMIN, IYORMIN
 INTEGER                         :: IROOT, IROOTPROC
 #endif
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:PUT_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
 !
@@ -110,7 +112,8 @@ PGRID_PAR(8) = FLOAT(KJMAX)
 IF (IL>0) THEN
   PGRID_PAR(9) = PDX(1)
   PGRID_PAR(10)= PDY(1)
-END IF
+ENDIF
+!
 #ifdef MNH_PARALLEL
 !get the index of the process with IL>0 that own the southmost and the westmost point
 !then broadcast the value of PDX and PDY at these points
@@ -144,6 +147,7 @@ IF ( NPROC > 1 ) THEN
   CALL MPI_BCAST(PGRID_PAR(10), 1, MPI_PRECISION, IROOTPROC, NMNH_COMM_WORLD, IINFO_ll)
 ENDIF
 #endif
+!
 IF (IL<=0) THEN
   PGRID_PAR(9) = XUNDEF
   PGRID_PAR(10)= XUNDEF
@@ -182,7 +186,7 @@ END SUBROUTINE PUT_GRIDTYPE_CONF_PROJ
 !!
 !!    AUTHOR
 !!    ------
-!!      V. Masson   *Meteo France*
+!!	V. Masson   *Meteo France*	
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -259,7 +263,6 @@ IF (PRESENT(PX)) THEN
     PX(:) = PGRID_PAR(12+1:12+IL)
   END IF        
 END IF
-
 IF (PRESENT(PY)) THEN
   IF (GFULL) THEN
     DO JJ=1,IJMAX
@@ -340,6 +343,7 @@ END SUBROUTINE GET_GRIDTYPE_CONF_PROJ
 !*     0.     DECLARATIONS
 !             ------------
 !
+USE MODD_SURFEX_OMP, ONLY : NBLOCKTOT
 USE MODD_CSTS,ONLY : XPI, XRADIUS
 !
 IMPLICIT NONE
@@ -366,22 +370,23 @@ REAL, DIMENSION(:),   INTENT(OUT):: PLAT,PLON
                                            ! (degrees).
 !
 !*     0.2    Declarations of local variables
-! 
+!
+INTEGER :: JI, ISIZE_OMP
 REAL, DIMENSION(SIZE(PX)) :: ZY
 REAL                      :: ZRPK,ZBETA,ZLAT0,ZLON0,ZLATOR,ZLONOR
 REAL                      :: ZRDSDG,ZCLAT0,ZSLAT0,ZCLATOR,ZSLATOR
 REAL                      :: ZXBM0,ZYBM0,ZRO0,ZGA0 
 REAL                      :: ZXP,ZYP,ZEPSI,ZT1,ZCGAM,ZSGAM,ZRACLAT0
 !
-REAL, DIMENSION(SIZE(PX)) :: ZATA,ZRO2,ZT2,ZXMI0,ZYMI0
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL :: ZATA,ZRO2,ZT2,ZXMI0,ZYMI0, ZXI, ZYI, ZIRDSDG
+REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
 !
 !--------------------------------------------------------------------------------
 !
 !*     1.     Preliminary calculations for all projections
 !             --------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_1',0,ZHOOK_HANDLE)
 ZRDSDG = XPI/180.         ! Degree to radian conversion factor
 ZEPSI  = 10.*EPSILON(1.)      ! A small number
 !
@@ -433,28 +438,47 @@ IF(PRPK /= 0.) THEN
 !
 !*    2.2    Longitude
 !
-  WHERE  (ABS(ZY(:)-ZYP) < ZEPSI    &
-       .AND.ABS(PX(:)-ZXP) < ZEPSI)  
-    ZATA(:) = 0.
-  ELSEWHERE
-    ZATA(:) = ATAN2(-(ZXP-PX(:)),(ZYP-ZY(:)))/ZRDSDG
-  END WHERE
-  !
-  PLON(:) = (ZBETA+ZATA(:))/ZRPK+ZLON0
+ZT1     = (XRADIUS*(ABS(ZCLAT0))**(1.-ZRPK))**(2./ZRPK) * (1+ZSLAT0)**2 
 !
-!*   2.3     Latitude
+ZIRDSDG = 1./ZRDSDG
 !
-  ZRO2(:) = (PX(:)-ZXP)**2+(ZY(:)-ZYP)**2
-  ZT1     = (XRADIUS*(ABS(ZCLAT0))**(1.-ZRPK))**(2./ZRPK)   &
-            * (1+ZSLAT0)**2  
-  ZT2(:)  = (ZRPK**2*ZRO2(:))**(1./ZRPK)
-  !
-  PLAT(:) = (XPI/2.-ACOS((ZT1-ZT2(:))/(ZT1+ZT2(:))))/ZRDSDG
+ISIZE_OMP = MAX(1,SIZE(ZY)/NBLOCKTOT)
 !
-  IF (PRPK<0.) THEN     ! projection from north pole
-    PLAT(:)=-PLAT(:)
-    PLON(:)=PLON(:)+180.
-  ENDIF
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_1',1,ZHOOK_HANDLE)
+!
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_21',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(STATIC,ISIZE_OMP) PRIVATE(JI,ZXI,ZYI,ZATA,ZRO2,ZT2)
+  DO JI = 1,SIZE(ZY)
+  
+    ZXI = PX(JI)-ZXP
+    ZYI = ZY(JI)-ZYP
+
+    IF  (ABS(ZYI) < ZEPSI .AND.ABS(ZXI) < ZEPSI)  THEN
+      ZATA = 0.
+    ELSE
+      ZATA = ATAN2(ZXI,-ZYI)*ZIRDSDG
+    ENDIF
+    !
+    PLON(JI) = (ZBETA+ZATA)/ZRPK+ZLON0
+    !
+    !*   2.3     Latitude
+    !
+    ZRO2 = ZXI**2+ZYI**2
+    !    
+    ZT2  = (ZRPK**2*ZRO2)**(1./ZRPK)
+    !
+    PLAT(JI) = (XPI/2.-ACOS((ZT1-ZT2)/(ZT1+ZT2)))*ZIRDSDG
+    !
+    IF (PRPK<0.) THEN     ! projection from north pole
+      PLAT(JI)=-PLAT(JI)
+      PLON(JI)=PLON(JI)+180.
+    ENDIF
+    !
+  ENDDO
+!$OMP END DO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_21',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
 !
 !-------------------------------------------------------------------------------
 !
@@ -472,27 +496,39 @@ ELSE
 !
 !*  3.2       Longitude
 !
-  ZXMI0(:) = PX(:)-ZXBM0
-  ZYMI0(:) = PY(:)-ZYBM0
+  ZT1     = ALOG(TAN(XPI/4.+PLATOR*ZRDSDG/2.))
   !
-  PLON(:) = (ZXMI0(:)*ZCGAM+ZYMI0(:)*ZSGAM)     &
-            / (ZRACLAT0*ZRDSDG)+PLONOR  
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_1',1,ZHOOK_HANDLE)
+
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_22',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(DYNAMIC,1) PRIVATE(JI,ZXMI0,ZYMI0,ZT2)
+  DO JI = 1,SIZE(PX)
+
+    ZXMI0 = PX(JI)-ZXBM0
+    ZYMI0 = PY(JI)-ZYBM0
+   !
+     PLON(JI) = (ZXMI0*ZCGAM+ZYMI0*ZSGAM) / (ZRACLAT0*ZRDSDG)+PLONOR  
 !
 !*  3.3       Latitude
 !
-  ZT1     = ALOG(TAN(XPI/4.+PLATOR*ZRDSDG/2.))
-  ZT2(:)  = (-ZXMI0(:)*ZSGAM+ZYMI0(:)*ZCGAM)/ZRACLAT0
-  !
-  PLAT(:) = (-XPI/2.+2.*ATAN(EXP(ZT1+ZT2(:))))/ZRDSDG
-!
+    ZT2  = (-ZXMI0*ZSGAM+ZYMI0*ZCGAM)/ZRACLAT0
+    !
+    PLAT(JI) = (-XPI/2.+2.*ATAN(EXP(ZT1+ZT2)))/ZRDSDG
+    !
+  ENDDO
+!$OMP END DO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_22',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
 !---------------------------------------------------------------------------------
 !
 !*  4.        EXIT
 !             ----
 !
 END IF
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_3',0,ZHOOK_HANDLE)
 PLON(:)=PLON(:)+NINT((PLON0-PLON(:))/360.)*360.
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:LATLON_CONF_PROJ_3',1,ZHOOK_HANDLE)
 !---------------------------------------------------------------------------------
 END SUBROUTINE LATLON_CONF_PROJ
 !---------------------------------------------------------------------------------
@@ -562,6 +598,7 @@ END SUBROUTINE LATLON_CONF_PROJ
 !*     0.     DECLARATIONS
 !             ------------
 !
+USE MODD_SURFEX_OMP, ONLY : NBLOCKTOT
 USE MODD_CSTS, ONLY : XPI, XRADIUS
 !
 IMPLICIT NONE
@@ -589,14 +626,17 @@ REAL, DIMENSION(:),   INTENT(IN) :: PLAT,PLON
 !
 !*     0.2    Declarations of local variables
 ! 
-REAL,DIMENSION(SIZE(PLAT)) :: ZLAT,ZLON
+REAL :: ZLAT,ZLON
 REAL :: ZRPK,ZBETA,ZLAT0,ZLON0,ZLATOR,ZLONOR
 REAL :: ZRDSDG,ZCLAT0,ZSLAT0,ZCLATOR,ZSLATOR
 REAL :: ZXBM0,ZYBM0,ZRO0,ZGA0 
 REAL :: ZXP,ZYP,ZCGAM,ZSGAM,ZRACLAT0,ZXE,ZYE
 !
-REAL,DIMENSION(SIZE(PLAT)) :: ZCLAT,ZSLAT,ZRO,ZGA,ZXPR,ZYPR
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL :: ZCLAT,ZSLAT,ZRO,ZGA,ZXPR,ZYPR
+!
+INTEGER :: J, ISIZE_OMP
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
 !
 !
 !-------------------------------------------------------------------------------
@@ -604,7 +644,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*     1.     PRELIMINARY CALCULATION FOR ALL PROJECTIONS
 !             -------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_1',0,ZHOOK_HANDLE)
 ZRDSDG = XPI/180.         ! Degree to radian conversion factor
 !
 ! By definition, (PLONOR,PLATOR) are the geographical 
@@ -614,9 +654,6 @@ ZRDSDG = XPI/180.         ! Degree to radian conversion factor
 ZXBM0 = 0.
 ZYBM0 = 0.
 !
-ZLON(:)=PLON(:)
-ZLON(:)=ZLON(:)+NINT((PLON0-ZLON(:))/360.)*360.
-!
 ZLONOR=PLONOR
 ZLONOR=ZLONOR+NINT((PLON0-ZLONOR)/360.)*360.
 !------------------------------------------------------------------------------
@@ -624,6 +661,11 @@ ZLONOR=ZLONOR+NINT((PLON0-ZLONOR)/360.)*360.
 !*     2.     POLAR SEREOGRAPHIC AND LAMBERT CONFORMAL CASES
 !             ----------------------------------------------
 !                   (PRPK=1 P-stereo, 0<PRPK<1 Lambert)
+!
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_1',1,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_2',0,ZHOOK_HANDLE)
+!
+ISIZE_OMP = MAX(1,SIZE(PLAT)/NBLOCKTOT)
 !
 IF(PRPK  /=  0.) THEN
 !
@@ -634,8 +676,6 @@ IF(PRPK  /=  0.) THEN
     ZLON0=PLON0+180.
     ZLATOR=-PLATOR
     ZLONOR=ZLONOR+180.
-    ZLAT(:)=-PLAT(:)
-    ZLON(:)=ZLON(:)+180.
     ZYBM0=-ZYBM0
   ELSE                  ! projection from south pole
     ZRPK=PRPK
@@ -644,8 +684,6 @@ IF(PRPK  /=  0.) THEN
     ZLON0=PLON0
     ZLATOR=PLATOR
     ZLONOR=ZLONOR
-    ZLAT(:)=PLAT(:)
-    ZLON(:)=ZLON(:)
   ENDIF    
 !
 !*     2.1    Preliminary calculations
@@ -662,19 +700,40 @@ IF(PRPK  /=  0.) THEN
 !
 !*    2.2    Conformal coordinates in meters
 !
-  ZCLAT(:)  = COS(ZRDSDG*ZLAT(:))
-  ZSLAT(:)  = SIN(ZRDSDG*ZLAT(:))
-  ZRO(:)    = (XRADIUS/ZRPK)*(ABS(ZCLAT0))**(1.-ZRPK)    &
-            * ((1.+ZSLAT0)*ABS(ZCLAT(:))/(1.+ZSLAT(:)))**ZRPK  
-  ZGA(:)    = (ZRPK*(ZLON(:)-ZLON0)-ZBETA)*ZRDSDG
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_2',1,ZHOOK_HANDLE)
 !
-  PX(:) = ZXP+ZRO(:)*SIN(ZGA(:))
-  PY(:) = ZYP-ZRO(:)*COS(ZGA(:))
-!
-  IF (PRPK<0.) THEN     ! projection from north pole
-    PY(:)=-PY(:)
-  ENDIF
-!
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_3',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(STATIC,ISIZE_OMP) PRIVATE(J,ZLON,ZLAT,ZCLAT,ZSLAT,ZRO,ZGA)
+  DO J=1,SIZE(PLAT)
+    !
+    ZLON = PLON(J)+NINT((PLON0-PLON(J))/360.)*360.
+    !
+    IF (PRPK<0.) THEN     ! projection from north pole
+      ZLAT =-PLAT(J)
+      ZLON = ZLON+180.
+    ELSE                  ! projection from south pole
+      ZLAT = PLAT(J)
+    ENDIF    
+    !
+    ZCLAT = COS(ZRDSDG*ZLAT)
+    ZSLAT = SIN(ZRDSDG*ZLAT)
+    ZRO   = (XRADIUS/ZRPK)*(ABS(ZCLAT0))**(1.-ZRPK)    &
+              * ((1.+ZSLAT0)*ABS(ZCLAT)/(1.+ZSLAT))**ZRPK  
+    ZGA   = (ZRPK*(ZLON-ZLON0)-ZBETA)*ZRDSDG
+    !
+    PX(J) = ZXP+ZRO*SIN(ZGA)
+    PY(J) = ZYP-ZRO*COS(ZGA)
+    !
+    IF (PRPK<0.) THEN     ! projection from north pole
+      PY(J)=-PY(J)
+    ENDIF
+    !
+  ENDDO
+!$OMP ENDDO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_3',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
+  !
 !-------------------------------------------------------------------------------
 !
 !*  3.        MERCATOR PROJECTION WITH ROTATION
@@ -695,19 +754,32 @@ ELSE
 !
 !*  3.2       Conformal coordinates
 !
-  ZXPR(:)   = ZRACLAT0*(ZLON(:)-PLON0)*ZRDSDG+ZXE
-  ZYPR(:)   = ZRACLAT0*LOG(TAN(XPI/4.+PLAT(:)*ZRDSDG/2.))+ZYE
-  !
-  PX(:) = ZXPR(:)*ZCGAM-ZYPR(:)*ZSGAM
-  PY(:) = ZXPR(:)*ZSGAM+ZYPR(:)*ZCGAM
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_2',1,ZHOOK_HANDLE)
 !
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_31',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(STATIC,ISIZE_OMP) PRIVATE(J,ZLON,ZXPR,ZYPR)
+  DO J=1,SIZE(PLAT)
+    !
+    ZLON = PLON(J)+NINT((PLON0-PLON(J))/360.)*360.
+    !
+    ZXPR = ZRACLAT0*(ZLON-PLON0)*ZRDSDG+ZXE
+    ZYPR = ZRACLAT0*LOG(TAN(XPI/4.+PLAT(J)*ZRDSDG/2.))+ZYE
+    !
+    PX(J) = ZXPR*ZCGAM-ZYPR*ZSGAM
+    PY(J) = ZXPR*ZSGAM+ZYPR*ZCGAM
+    !
+  ENDDO
+!$OMP ENDDO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ_31',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
+  !
 !-------------------------------------------------------------------------------
 !
 !*  4.        EXIT
 !             ----
 !
 END IF
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:XY_CONF_PROJ',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 END SUBROUTINE XY_CONF_PROJ
 !-------------------------------------------------------------------------------
@@ -756,6 +828,7 @@ END SUBROUTINE XY_CONF_PROJ
 !*     0.     DECLARATIONS
 !             ------------
 !
+USE MODD_SURFEX_OMP, ONLY : NBLOCKTOT
 USE MODD_CSTS, ONLY : XPI, XRADIUS
 !
 IMPLICIT NONE
@@ -789,14 +862,15 @@ REAL                              :: ZCLAT0   ! cos(lat0)
 REAL                              :: ZSLAT0   ! sin(lat0)
 REAL                              :: ZRDSDG   ! pi/180
 LOGICAL                           :: GNORTHPROJ! T: projection from north pole
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
+INTEGER :: J, ISIZE_OMP
 !
 !-------------------------------------------------------------------------------
 !
 !*     1.     PRELIMINARY CALCULATION FOR ALL PROJECTIONS
 !             -------------------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_1',0,ZHOOK_HANDLE)
 ZRDSDG = XPI/180.         ! Degree to radian conversion factor
 !
 GNORTHPROJ = PRPK < 0.
@@ -814,17 +888,36 @@ ZRDSDG = XPI/180.
 ZCLAT0 = COS(ZRDSDG*ZLAT0)
 ZSLAT0 = SIN(ZRDSDG*ZLAT0)
 !
+ISIZE_OMP = MAX(1,SIZE(PMAP)/NBLOCKTOT)
+!
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_1',1,ZHOOK_HANDLE)
+!
 IF (ABS(ZCLAT0)<1.E-10 .AND. (ABS(ZRPK-1.)<1.E-10)) THEN
-  PMAP(:) = (1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(:)))
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_2a',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(STATIC,ISIZE_OMP) PRIVATE(J)
+  DO J=1,SIZE(PMAP)
+    PMAP(J) = (1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(J)))
+  ENDDO
+!$OMP ENDDO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_2a',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
 ELSE
-  WHERE (ABS(COS(ZRDSDG*ZLAT(:)))>1.E-10)
-    PMAP(:) = ((ZCLAT0/COS(ZRDSDG*ZLAT(:)))**(1.-ZRPK))      &
-              * ((1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(:))))**ZRPK  
-  ELSEWHERE
-    PMAP(:) = (1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(:)))
-  ENDWHERE
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_2b',0,ZHOOK_HANDLE_OMP)
+!$OMP DO SCHEDULE(STATIC,ISIZE_OMP) PRIVATE(J)
+  DO J=1,SIZE(PMAP)
+    IF (ABS(COS(ZRDSDG*ZLAT(J)))>1.E-10) THEN
+      PMAP(J) = ((ZCLAT0/COS(ZRDSDG*ZLAT(J)))**(1.-ZRPK))      &
+              * ((1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(J))))**ZRPK  
+    ELSE
+      PMAP(J) = (1.+ZSLAT0)/(1.+SIN(ZRDSDG*ZLAT(J)))
+    ENDIF
+  ENDDO
+!$OMP ENDDO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ_2b',1,ZHOOK_HANDLE_OMP)
+!$OMP END PARALLEL
 END IF
-IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_CONF_PROJ:MAP_FACTOR_CONF_PROJ',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
 END SUBROUTINE MAP_FACTOR_CONF_PROJ

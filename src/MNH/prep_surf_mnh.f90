@@ -46,9 +46,10 @@ END MODULE MODI_PREP_SURF_MNH
 !!    -------------
 !!      Original    01/2004
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !------------------------------------------------------------------
 !
-
+USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODD_LUNIT_n,     ONLY : CINIFILE
 USE MODD_TIME_n,      ONLY : TDTCUR
@@ -78,6 +79,8 @@ CHARACTER(LEN=6),  INTENT(IN)   :: HATMFILETYPE! type of the Atmospheric file
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
+TYPE (PREP_CTL) :: YLCTL
+!
 CHARACTER(LEN=28)  :: YPGDFILE  ='                            '  ! name of the pgd file
 CHARACTER(LEN=6)   :: YPGDFILETYPE ='      '                     ! type of the pgd file
 INTEGER  :: ILUOUT0  ! logical unit for listing file
@@ -101,7 +104,7 @@ IF (LEN_TRIM(HATMFILE)==0) YATMFILETYPE='      '
 CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HATMFILE,YATMFILETYPE,  &
                        TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
                        TDTCUR%TDATE%DAY, TDTCUR%TIME          )
-CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE)
+CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE,YLCTL)
 #ifdef MNH_NCWRIT
 NC_WRITE=LNETCDF
 NC_FILE='sf2'

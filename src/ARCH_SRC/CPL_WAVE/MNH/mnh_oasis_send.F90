@@ -73,7 +73,6 @@ USE MODD_SFX_OASIS,  ONLY : LCPL_LAND,LCPL_GW,       &
 !                           
 USE MODD_MNH_SURFEX_n
 !
-USE MODI_GOTO_SURFEX
 USE MODI_GET_SFX_LAND
 USE MODI_GET_SFX_LAKE
 USE MODI_GET_SFX_SEA
@@ -99,7 +98,6 @@ REAL, DIMENSION(KI)   :: ZLAND_RUNOFF    ! Cumulated Surface runoff             
 REAL, DIMENSION(KI)   :: ZLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAND_CALVING   ! Cumulated Calving flux               (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAND_RECHARGE  ! Cumulated Recharge to groundwater    (kg/m2)
-REAL, DIMENSION(KI)   :: ZLAND_WATFLD    ! Cumulated net freshwater rate        (kg/m2)
 !
 REAL, DIMENSION(KI)   :: ZLAKE_EVAP  ! Cumulated Evaporation             (kg/m2)
 REAL, DIMENSION(KI)   :: ZLAKE_RAIN  ! Cumulated Rainfall rate           (kg/m2)
@@ -158,7 +156,6 @@ IF(GSEND_LAND)THEN
   ZLAND_DRAIN   (:) = XUNDEF
   ZLAND_CALVING (:) = XUNDEF
   ZLAND_RECHARGE(:) = XUNDEF
-  ZLAND_WATFLD  (:) = XUNDEF  
 ENDIF
 !
 IF(GSEND_LAKE)THEN
@@ -201,11 +198,10 @@ IF(GSEND_LAND)THEN
 !
 ! * Get river output fields
 !
-  CALL GET_SFX_LAND(YSURF_CUR%IM%I,YSURF_CUR%U,         &
+  CALL GET_SFX_LAND(YSURF_CUR%IM%O, YSURF_CUR%IM%S, YSURF_CUR%U,   &
                     LCPL_GW,LCPL_FLOOD,LCPL_CALVING,    &
                     ZLAND_RUNOFF (:),ZLAND_DRAIN   (:), &
-                    ZLAND_CALVING(:),ZLAND_RECHARGE(:), &
-                    ZLAND_WATFLD (:)                    )
+                    ZLAND_CALVING(:),ZLAND_RECHARGE(:)   )
 !
 ENDIF
 !
@@ -237,7 +233,7 @@ IF(GSEND_WAVE)THEN
 !
 ! * Get wave output fields
 !
-  CALL GET_SFX_WAVE(YSURF_CUR%U,  YSURF_CUR%SM%DGS, &
+  CALL GET_SFX_WAVE(YSURF_CUR%U,  YSURF_CUR%SM%SD%D, &
                     ZWAVE_U10(:), ZWAVE_V10(:)      )
 !
 ENDIF
@@ -250,7 +246,6 @@ ENDIF
 !
 CALL SFX_OASIS_SEND(ILUOUT,KI,IDATE,GSEND_LAND,GSEND_LAKE,GSEND_SEA,GSEND_WAVE, &
                     ZLAND_RUNOFF,ZLAND_DRAIN,ZLAND_CALVING,ZLAND_RECHARGE,      &
-                    ZLAND_WATFLD,                                               &
                     ZLAKE_EVAP,ZLAKE_RAIN,ZLAKE_SNOW,ZLAKE_WATF,                &
                     ZSEA_FWSU,ZSEA_FWSV,ZSEA_HEAT,ZSEA_SNET,ZSEA_WIND,          &
                     ZSEA_FWSM,ZSEA_EVAP,ZSEA_RAIN,ZSEA_SNOW,                    &

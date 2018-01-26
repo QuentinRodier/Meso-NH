@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE AVERAGE2_COVER (U, &
-                                 HPROGRAM)
+      SUBROUTINE AVERAGE2_COVER (U, HPROGRAM)
 !     #########################
 !
 !!**** *AVERAGE2_COVER* computes the cover fractions
@@ -40,9 +39,10 @@
 !            -----------
 !
 !
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SURFEX_MPI, ONLY : NRANK
+USE MODD_PGDWORK,   ONLY : NSIZE, XSUMVAL, XPREC
 !
-USE MODD_PGDWORK,   ONLY : NSIZE, XSUMCOVER
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_PGD_GRID,       ONLY : CGRID
 !
@@ -66,7 +66,9 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZUNITY
 !
-INTEGER :: JCOVER, ICPT ! loop counter on cover classes
+REAL :: ZINT
+INTEGER :: JI, JJ
+INTEGER :: JCOV ! loop counter on cover classes
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -77,29 +79,33 @@ IF (LHOOK) CALL DR_HOOK('AVERAGE2_COVER',0,ZHOOK_HANDLE)
 ALLOCATE(ZUNITY(SIZE(NSIZE)))
 ZUNITY (:) = 0.
 !
-DO JCOVER=1,SIZE(XSUMCOVER,2)
-  ICPT = SUM_ON_ALL_PROCS(HPROGRAM,CGRID,XSUMCOVER(:,JCOVER)/=0., 'HAL')
-  IF (ICPT>0) U%LCOVER(JCOVER) = .TRUE.
-ENDDO
+ALLOCATE(U%XCOVER(SIZE(NSIZE,1),SIZE(XSUMVAL,2)))
 !
-ALLOCATE(U%XCOVER(SIZE(NSIZE),COUNT(U%LCOVER)))
-!
-ICPT = 0
-DO JCOVER=1,SIZE(XSUMCOVER,2)
-  IF (U%LCOVER(JCOVER)) THEN
-    ICPT = ICPT+1
-    WHERE (NSIZE(:)/=0)
-      U%XCOVER(:,ICPT)=XSUMCOVER(:,JCOVER) /NSIZE(:)
-      ZUNITY(:)=ZUNITY(:) + U%XCOVER(:,ICPT)
-    ENDWHERE
-  ENDIF
-END DO
-!
-DO JCOVER=1,SIZE(U%XCOVER,2)
-  WHERE (NSIZE(:) /=0 )
-    U%XCOVER(:,JCOVER)=U%XCOVER(:,JCOVER) / ZUNITY(:)
+DO JCOV=1,SIZE(XSUMVAL,2)
+  WHERE (NSIZE(:,1)/=0)
+    U%XCOVER(:,JCOV) = XSUMVAL(:,JCOV) /NSIZE(:,1)
+    ZUNITY(:)=ZUNITY(:) + U%XCOVER(:,JCOV)
+  ELSEWHERE
+    U%XCOVER(:,JCOV) = 0.
   END WHERE
 END DO
+!
+DO JCOV=1,SIZE(U%XCOVER,2)
+  WHERE (NSIZE(:,1) /=0 )
+    U%XCOVER(:,JCOV)=U%XCOVER(:,JCOV) / ZUNITY(:)
+  END WHERE
+END DO
+!
+DO JJ=1,SIZE(U%XCOVER,2)
+  DO JI = 1,SIZE(U%XCOVER,1)
+
+    ZINT = AINT(U%XCOVER(JI,JJ))
+    IF (U%XCOVER(JI,JJ)/=ZINT) THEN
+      U%XCOVER(JI,JJ) = ZINT + ANINT((U%XCOVER(JI,JJ)-ZINT)*XPREC)/XPREC
+    ENDIF
+
+  ENDDO
+ENDDO
 !
 !-------------------------------------------------------------------------------
 DEALLOCATE(ZUNITY)

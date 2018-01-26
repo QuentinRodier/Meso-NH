@@ -73,11 +73,11 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
- CHARACTER(LEN=3),  INTENT(OUT) :: HSNOW    ! snow scheme
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
+CHARACTER(LEN=3),  INTENT(OUT) :: HSNOW    ! snow scheme
 INTEGER, INTENT(OUT)           :: KSNOW_LAYER  ! number of snow layers
- CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
- CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
+CHARACTER(LEN=28), OPTIONAL, INTENT(OUT) :: HFILE        ! file name
+CHARACTER(LEN=6),  OPTIONAL, INTENT(OUT) :: HFILETYPE    ! file type
  CHARACTER(LEN=28),OPTIONAL, INTENT(OUT) :: HFILEPGD     ! file name
  CHARACTER(LEN=6), OPTIONAL, INTENT(OUT) :: HFILEPGDTYPE ! file type 
  LOGICAL,          OPTIONAL, INTENT(OUT) :: OUNIF        ! uniform snow
@@ -85,9 +85,9 @@ INTEGER, INTENT(OUT)           :: KSNOW_LAYER  ! number of snow layers
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
- CHARACTER(LEN=3) :: CSNOW
+CHARACTER(LEN=3) :: CSNOW
 INTEGER :: NSNOW_LAYER
- CHARACTER(LEN=28) :: CFILE_SNOW, CFILEPGD_SNOW
+CHARACTER(LEN=28) :: CFILE_SNOW, CFILEPGD_SNOW
 LOGICAL :: LSNOW_IDEAL, LSNOW_FRAC_TOT, LSWEMAX
 REAL :: XASNOW, XSWEMAX
 REAL, DIMENSION(NSNOW_LAYER_MAX) :: XWSNOW, XZSNOW, XRSNOW, XTSNOW, XLWCSNOW, XSG1SNOW, XSG2SNOW,&
@@ -199,7 +199,7 @@ IF (LNAM_READ) THEN
   IF (GFOUND) THEN
     READ(UNIT=ILUNAM,NML=NAM_PREP_GARDEN_SNOW)
     !crocus can't be used in garden if not used in isba scheme
-    CALL TEST_NAM_VAR_SURF(ILUOUT,'CSNOW',CSNOW_GD,'D95','3-L','EBA','NON')
+    CALL TEST_NAM_VAR_SURF(ILUOUT,'CSNOW',CSNOW_GD,'D95','3-L','EBA','NON','CRO')
   ENDIF
   !
   IF (CSNOW_GD=='NON') NSNOW_LAYER_GD = 0

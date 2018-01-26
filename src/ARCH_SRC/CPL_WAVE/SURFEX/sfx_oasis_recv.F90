@@ -40,7 +40,7 @@ SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KI,KSW,PTIMEC,                &
 !!    -------------
 !!      Original    10/2013
 !!      Modified    11/2014 : J. Pianezze - add wave coupling parameters
-!!
+!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -49,8 +49,6 @@ SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KI,KSW,PTIMEC,                &
 USE MODD_SURF_PAR,   ONLY : XUNDEF, NUNDEF
 !
 USE MODD_SFX_OASIS
-!
-USE MODD_SGH_PAR,    ONLY :
 !
 USE MODI_GET_LUOUT
 !
@@ -232,7 +230,6 @@ IF(ORECV_SEA)THEN
   ENDIF
 !
 ENDIF
-!
 !-------------------------------------------------------------------------------
 !
 !*       4.     Get Wave variables :
@@ -305,7 +302,7 @@ IMPLICIT NONE
 !
 INTEGER,          INTENT(IN)  :: KLUOUT
 INTEGER,          INTENT(IN)  :: KERR
- CHARACTER(LEN=*), INTENT(IN)  :: HCOMMENT
+CHARACTER(LEN=*), INTENT(IN)  :: HCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !

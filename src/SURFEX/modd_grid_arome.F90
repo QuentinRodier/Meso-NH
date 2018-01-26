@@ -45,4 +45,8 @@ REAL    :: XLONOR ! origin longitude
 REAL    :: XRPK   ! projection parameter for the conformal projection
 REAL    :: XBETA  ! rotation   parameter for the conformal projection
 !
+REAL, DIMENSION(:), ALLOCATABLE :: XZX       ! X coordinate
+REAL, DIMENSION(:), ALLOCATABLE :: XZY       ! Y coordinate
+INTEGER, DIMENSION(:), ALLOCATABLE  :: NIX  ! number of points on each line
+!
 END MODULE MODD_GRID_AROME

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ##########################################
-      SUBROUTINE PGD_BEM_PAR (DTCO, DGU, UG, U, USS, DTB, DTI, TG, &
+      SUBROUTINE PGD_BEM_PAR (DTCO, UG, U, USS, DTB, KDIM, &
                               HPROGRAM,OAUTOSIZE)
 !     ##########################################
 !
@@ -44,13 +44,10 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_DATA_BEM_n, ONLY : DATA_BEM_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -74,13 +71,12 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(DATA_BEM_t), INTENT(INOUT) :: DTB
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
-TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
+!
+INTEGER, INTENT(IN) :: KDIM
 !
  CHARACTER(LEN=6), INTENT(IN) :: HPROGRAM     ! Type of program
 LOGICAL,          INTENT(IN) :: OAUTOSIZE    ! T for automatic determination
@@ -203,7 +199,7 @@ REAL                                    :: XUNIF_T_SIZE_MIN    !
  CHARACTER(LEN=6)                        :: CFTYP_T_SIZE_MAX    !
  CHARACTER(LEN=6)                        :: CFTYP_T_SIZE_MIN    !
 !
-REAL, DIMENSION(TG%NDIM) :: ZWORK
+REAL, DIMENSION(KDIM) :: ZWORK
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 NAMELIST/NAM_DATA_BEM/ NPAR_FLOOR_LAYER,                          &
@@ -281,63 +277,63 @@ XUNIF_COP_RAT      = XUNDEF
 XUNIF_T_SIZE_MAX   = XUNDEF
 XUNIF_T_SIZE_MIN   = XUNDEF
 !
- CFNAM_SHADE        = '                            '
- CFNAM_NATVENT      = '                            '
- CFNAM_HC_FLOOR (:) = '                            '
- CFNAM_TC_FLOOR (:) = '                            '
- CFNAM_D_FLOOR  (:) = '                            '
- CFNAM_TCOOL_TARGET = '                            '
- CFNAM_THEAT_TARGET = '                            '
- CFNAM_F_WASTE_CAN  = '                            '
- CFNAM_EFF_HEAT     = '                            '
- CFNAM_QIN          = '                            '
- CFNAM_QIN_FRAD     = '                            '
- CFNAM_SHGC         = '                            '
- CFNAM_U_WIN        = '                            '
- CFNAM_GR           = '                            '
- CFNAM_SHGC_SH      = '                            '
- CFNAM_FLOOR_HEIGHT = '                            '
- CFNAM_INF          = '                            '
- CFNAM_F_WATER_COND = '                            '
- CFNAM_QIN_FLAT     = '                            '
- CFNAM_HR_TARGET    = '                            '
- CFNAM_V_VENT       = '                            '
- CFNAM_CAP_SYS_HEAT = '                            '
- CFNAM_CAP_SYS_RAT  = '                            '
- CFNAM_T_ADP        = '                            '
- CFNAM_M_SYS_RAT    = '                            '
- CFNAM_COP_RAT      = '                            '
- CFNAM_T_SIZE_MAX   = '                            '
- CFNAM_T_SIZE_MIN   = '                            '
+CFNAM_SHADE        = '                            '
+CFNAM_NATVENT      = '                            '
+CFNAM_HC_FLOOR (:) = '                            '
+CFNAM_TC_FLOOR (:) = '                            '
+CFNAM_D_FLOOR  (:) = '                            '
+CFNAM_TCOOL_TARGET = '                            '
+CFNAM_THEAT_TARGET = '                            '
+CFNAM_F_WASTE_CAN  = '                            '
+CFNAM_EFF_HEAT     = '                            '
+CFNAM_QIN          = '                            '
+CFNAM_QIN_FRAD     = '                            '
+CFNAM_SHGC         = '                            '
+CFNAM_U_WIN        = '                            '
+CFNAM_GR           = '                            '
+CFNAM_SHGC_SH      = '                            '
+CFNAM_FLOOR_HEIGHT = '                            '
+CFNAM_INF          = '                            '
+CFNAM_F_WATER_COND = '                            '
+CFNAM_QIN_FLAT     = '                            '
+CFNAM_HR_TARGET    = '                            '
+CFNAM_V_VENT       = '                            '
+CFNAM_CAP_SYS_HEAT = '                            '
+CFNAM_CAP_SYS_RAT  = '                            '
+CFNAM_T_ADP        = '                            '
+CFNAM_M_SYS_RAT    = '                            '
+CFNAM_COP_RAT      = '                            '
+CFNAM_T_SIZE_MAX   = '                            '
+CFNAM_T_SIZE_MIN   = '                            '
 !
- CFTYP_SHADE        = '      '
- CFTYP_NATVENT      = '      '
- CFTYP_HC_FLOOR(:)  = '      '
- CFTYP_TC_FLOOR(:)  = '      '
- CFTYP_D_FLOOR(:)   = '      '
- CFTYP_TCOOL_TARGET = '      '
- CFTYP_THEAT_TARGET = '      '
- CFTYP_F_WASTE_CAN  = '      '
- CFTYP_EFF_HEAT     = '      '
- CFTYP_QIN          = '      '
- CFTYP_QIN_FRAD     = '      '
- CFTYP_SHGC         = '      '
- CFTYP_U_WIN        = '      '
- CFTYP_GR           = '      '
- CFTYP_SHGC_SH      = '      '
- CFTYP_FLOOR_HEIGHT = '      '
- CFTYP_INF          = '      '
- CFTYP_F_WATER_COND = '      '
- CFTYP_QIN_FLAT     = '      '
- CFTYP_HR_TARGET    = '      '
- CFTYP_V_VENT       = '      '
- CFTYP_CAP_SYS_HEAT = '      '
- CFTYP_CAP_SYS_RAT  = '      '
- CFTYP_T_ADP        = '      '
- CFTYP_M_SYS_RAT    = '      '
- CFTYP_COP_RAT      = '      '
- CFTYP_T_SIZE_MAX   = '      '
- CFTYP_T_SIZE_MIN   = '      '
+CFTYP_SHADE        = '      '
+CFTYP_NATVENT      = '      '
+CFTYP_HC_FLOOR(:)  = '      '
+CFTYP_TC_FLOOR(:)  = '      '
+CFTYP_D_FLOOR(:)   = '      '
+CFTYP_TCOOL_TARGET = '      '
+CFTYP_THEAT_TARGET = '      '
+CFTYP_F_WASTE_CAN  = '      '
+CFTYP_EFF_HEAT     = '      '
+CFTYP_QIN          = '      '
+CFTYP_QIN_FRAD     = '      '
+CFTYP_SHGC         = '      '
+CFTYP_U_WIN        = '      '
+CFTYP_GR           = '      '
+CFTYP_SHGC_SH      = '      '
+CFTYP_FLOOR_HEIGHT = '      '
+CFTYP_INF          = '      '
+CFTYP_F_WATER_COND = '      '
+CFTYP_QIN_FLAT     = '      '
+CFTYP_HR_TARGET    = '      '
+CFTYP_V_VENT       = '      '
+CFTYP_CAP_SYS_HEAT = '      '
+CFTYP_CAP_SYS_RAT  = '      '
+CFTYP_T_ADP        = '      '
+CFTYP_M_SYS_RAT    = '      '
+CFTYP_COP_RAT      = '      '
+CFTYP_T_SIZE_MAX   = '      '
+CFTYP_T_SIZE_MIN   = '      '
 !
 !-------------------------------------------------------------------------------
 !
@@ -368,40 +364,6 @@ IF ((     ANY(XUNIF_HC_FLOOR/=XUNDEF) .OR. ANY(LEN_TRIM(CFNAM_HC_FLOOR)>0) &
 END IF
 !
 !-------------------------------------------------------------------------------
-!
-ALLOCATE(DTB%XPAR_HC_FLOOR    (TG%NDIM,NPAR_FLOOR_LAYER))
-ALLOCATE(DTB%XPAR_TC_FLOOR    (TG%NDIM,NPAR_FLOOR_LAYER))
-ALLOCATE(DTB%XPAR_D_FLOOR     (TG%NDIM,NPAR_FLOOR_LAYER))
-!
-ALLOCATE(DTB%XPAR_TCOOL_TARGET  (TG%NDIM))
-ALLOCATE(DTB%XPAR_THEAT_TARGET  (TG%NDIM))
-ALLOCATE(DTB%XPAR_F_WASTE_CAN   (TG%NDIM))
-ALLOCATE(DTB%XPAR_EFF_HEAT      (TG%NDIM))
-ALLOCATE(DTB%XPAR_QIN           (TG%NDIM))
-ALLOCATE(DTB%XPAR_QIN_FRAD      (TG%NDIM))
-ALLOCATE(DTB%XPAR_SHGC          (TG%NDIM))
-ALLOCATE(DTB%XPAR_U_WIN         (TG%NDIM))
-ALLOCATE(DTB%XPAR_GR            (TG%NDIM))
-ALLOCATE(DTB%XPAR_SHGC_SH       (TG%NDIM))
-ALLOCATE(DTB%XPAR_FLOOR_HEIGHT  (TG%NDIM))
-ALLOCATE(DTB%XPAR_INF           (TG%NDIM))
-!
-ALLOCATE(DTB%XPAR_F_WATER_COND (TG%NDIM))
-ALLOCATE(DTB%XPAR_QIN_FLAT     (TG%NDIM))
-ALLOCATE(DTB%XPAR_HR_TARGET    (TG%NDIM))
-ALLOCATE(DTB%XPAR_V_VENT       (TG%NDIM))
-ALLOCATE(DTB%XPAR_CAP_SYS_HEAT (TG%NDIM))
-ALLOCATE(DTB%XPAR_CAP_SYS_RAT  (TG%NDIM))
-ALLOCATE(DTB%XPAR_T_ADP        (TG%NDIM))
-ALLOCATE(DTB%XPAR_M_SYS_RAT    (TG%NDIM))
-ALLOCATE(DTB%XPAR_COP_RAT      (TG%NDIM))
-ALLOCATE(DTB%XPAR_T_SIZE_MAX   (TG%NDIM))
-ALLOCATE(DTB%XPAR_T_SIZE_MIN   (TG%NDIM))
-!
-ALLOCATE(DTB%XPAR_SHADE        (TG%NDIM))
-ALLOCATE(DTB%XPAR_NATVENT      (TG%NDIM))
-!
-!-------------------------------------------------------------------------------
 IF (NFLOOR_MAX < NPAR_FLOOR_LAYER) THEN
   WRITE(ILUOUT,*) '---------------------------------------------'
   WRITE(ILUOUT,*) 'Please update pgd_bem_par.F90 routine :      '
@@ -417,128 +379,155 @@ END IF
 !             ----------------------------------
 !
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_SHADE        (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'MAJ','SHADE      ','TWN', CFNAM_SHADE, CFTYP_SHADE, XUNIF_SHADE, &
         DTB%XPAR_SHADE, DTB%LDATA_SHADE )
 IF (.NOT.DTB%LDATA_SHADE) DEALLOCATE(DTB%XPAR_SHADE)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_NATVENT      (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'MAJ','NATVENT   ','TWN', CFNAM_NATVENT, CFTYP_NATVENT, XUNIF_NATVENT, &
         DTB%XPAR_NATVENT, DTB%LDATA_NATVENT )
 IF (.NOT.DTB%LDATA_NATVENT) DEALLOCATE(DTB%XPAR_NATVENT)
 !
- CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+ALLOCATE(DTB%XPAR_HC_FLOOR    (KDIM,NPAR_FLOOR_LAYER))
+CALL INI_VAR_FROM_DATA(DTCO, UG, U, USS,  &
                         HPROGRAM,'INV','HC_FLOOR  ','TWN',CFNAM_HC_FLOOR,CFTYP_HC_FLOOR, &
         XUNIF_HC_FLOOR,DTB%XPAR_HC_FLOOR,DTB%LDATA_HC_FLOOR )
 IF (.NOT.DTB%LDATA_HC_FLOOR) DEALLOCATE(DTB%XPAR_HC_FLOOR)
 !
- CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+ALLOCATE(DTB%XPAR_TC_FLOOR    (KDIM,NPAR_FLOOR_LAYER))
+CALL INI_VAR_FROM_DATA(DTCO, UG, U, USS,  &
                         HPROGRAM,'ARI','TC_FLOOR  ','TWN',CFNAM_TC_FLOOR,CFTYP_TC_FLOOR, &
                  XUNIF_TC_FLOOR ,DTB%XPAR_TC_FLOOR, DTB%LDATA_TC_FLOOR )
 IF (.NOT.DTB%LDATA_TC_FLOOR) DEALLOCATE(DTB%XPAR_TC_FLOOR)
 !
- CALL INI_VAR_FROM_DATA(DTCO, DGU, UG, U, USS, DTI, &
+ALLOCATE(DTB%XPAR_D_FLOOR     (KDIM,NPAR_FLOOR_LAYER))
+CALL INI_VAR_FROM_DATA(DTCO, UG, U, USS,  &
                         HPROGRAM,'ARI','D_FLOOR   ','TWN',CFNAM_D_FLOOR,CFTYP_D_FLOOR, &
                  XUNIF_D_FLOOR  ,DTB%XPAR_D_FLOOR , DTB%LDATA_D_FLOOR )
 IF (.NOT.DTB%LDATA_D_FLOOR) DEALLOCATE(DTB%XPAR_D_FLOOR)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+!-------------------------------------------------------------------------------
+!
+ALLOCATE(DTB%XPAR_TCOOL_TARGET  (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','TCOOL_TARGET','TWN',CFNAM_TCOOL_TARGET, CFTYP_TCOOL_TARGET, XUNIF_TCOOL_TARGET, &
         DTB%XPAR_TCOOL_TARGET, DTB%LDATA_TCOOL_TARGET)
 IF (.NOT.DTB%LDATA_TCOOL_TARGET) DEALLOCATE(DTB%XPAR_TCOOL_TARGET)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_THEAT_TARGET  (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','THEAT_TARGET','TWN',CFNAM_THEAT_TARGET, CFTYP_THEAT_TARGET, XUNIF_THEAT_TARGET, &
         DTB%XPAR_THEAT_TARGET, DTB%LDATA_THEAT_TARGET)
 IF (.NOT.DTB%LDATA_THEAT_TARGET) DEALLOCATE(DTB%XPAR_THEAT_TARGET)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_F_WASTE_CAN   (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','F_WASTE_CAN','TWN',CFNAM_F_WASTE_CAN, CFTYP_F_WASTE_CAN, XUNIF_F_WASTE_CAN, &
         DTB%XPAR_F_WASTE_CAN, DTB%LDATA_F_WASTE_CAN)
 IF (.NOT.DTB%LDATA_F_WASTE_CAN) DEALLOCATE(DTB%XPAR_F_WASTE_CAN)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_EFF_HEAT      (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','EFF_HEAT','TWN',CFNAM_EFF_HEAT, CFTYP_EFF_HEAT, XUNIF_EFF_HEAT, &
         DTB%XPAR_EFF_HEAT, DTB%LDATA_EFF_HEAT)
 IF (.NOT.DTB%LDATA_EFF_HEAT) DEALLOCATE(DTB%XPAR_EFF_HEAT)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_QIN           (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','QIN','TWN',CFNAM_QIN, CFTYP_QIN, XUNIF_QIN, DTB%XPAR_QIN, DTB%LDATA_QIN)
 IF (.NOT.DTB%LDATA_QIN) DEALLOCATE(DTB%XPAR_QIN)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_QIN_FRAD      (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','QIN_FRAD','TWN',CFNAM_QIN_FRAD, CFTYP_QIN_FRAD, XUNIF_QIN_FRAD, &
         DTB%XPAR_QIN_FRAD, DTB%LDATA_QIN_FRAD)
 IF (.NOT.DTB%LDATA_QIN_FRAD) DEALLOCATE(DTB%XPAR_QIN_FRAD)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_SHGC          (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','SHGC','TWN',CFNAM_SHGC, CFTYP_SHGC, XUNIF_SHGC, DTB%XPAR_SHGC, DTB%LDATA_SHGC)
 IF (.NOT.DTB%LDATA_SHGC) DEALLOCATE(DTB%XPAR_SHGC)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_U_WIN         (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','U_WIN','TWN',CFNAM_U_WIN, CFTYP_U_WIN, XUNIF_U_WIN, DTB%XPAR_U_WIN, DTB%LDATA_U_WIN)
 IF (.NOT.DTB%LDATA_U_WIN) DEALLOCATE(DTB%XPAR_U_WIN)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_GR            (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','GR','TWN',CFNAM_GR, CFTYP_GR, XUNIF_GR, DTB%XPAR_GR, DTB%LDATA_GR)
 IF (.NOT.DTB%LDATA_GR) DEALLOCATE(DTB%XPAR_GR)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_SHGC_SH       (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','SHGC_SH','TWN',CFNAM_SHGC_SH, CFTYP_SHGC_SH, XUNIF_SHGC_SH, &
         DTB%XPAR_SHGC_SH, DTB%LDATA_SHGC_SH)
 IF (.NOT.DTB%LDATA_SHGC_SH) DEALLOCATE(DTB%XPAR_SHGC_SH)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_FLOOR_HEIGHT  (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','FLOOR_HEIGHT','TWN',CFNAM_FLOOR_HEIGHT, CFTYP_FLOOR_HEIGHT, XUNIF_FLOOR_HEIGHT, &
         DTB%XPAR_FLOOR_HEIGHT, DTB%LDATA_FLOOR_HEIGHT)
 IF (.NOT.DTB%LDATA_FLOOR_HEIGHT) DEALLOCATE(DTB%XPAR_FLOOR_HEIGHT)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_INF           (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','INF','TWN',CFNAM_INF, CFTYP_INF, XUNIF_INF, DTB%XPAR_INF, DTB%LDATA_INF)
 IF (.NOT.DTB%LDATA_INF) DEALLOCATE(DTB%XPAR_INF)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_F_WATER_COND (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','F_WATER_COND','TWN',CFNAM_F_WATER_COND, CFTYP_F_WATER_COND, XUNIF_F_WATER_COND, &
         DTB%XPAR_F_WATER_COND, DTB%LDATA_F_WATER_COND)
 IF (.NOT.DTB%LDATA_F_WATER_COND) DEALLOCATE(DTB%XPAR_F_WATER_COND)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_QIN_FLAT     (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','QIN_FLAT','TWN',CFNAM_QIN_FLAT, CFTYP_QIN_FLAT, XUNIF_QIN_FLAT, &
         DTB%XPAR_QIN_FLAT, DTB%LDATA_QIN_FLAT)
 IF (.NOT.DTB%LDATA_QIN_FLAT) DEALLOCATE(DTB%XPAR_QIN_FLAT)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_HR_TARGET    (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','HR_TARGET','TWN',CFNAM_HR_TARGET, CFTYP_HR_TARGET, XUNIF_HR_TARGET, &
         DTB%XPAR_HR_TARGET, DTB%LDATA_HR_TARGET)
 IF (.NOT.DTB%LDATA_HR_TARGET) DEALLOCATE(DTB%XPAR_HR_TARGET)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_V_VENT       (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','V_VENT','TWN',CFNAM_V_VENT, CFTYP_V_VENT, &
                            XUNIF_V_VENT, DTB%XPAR_V_VENT, DTB%LDATA_V_VENT)
 IF (.NOT.DTB%LDATA_V_VENT) DEALLOCATE(DTB%XPAR_V_VENT)
 !
-!
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_T_SIZE_MAX   (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','T_SIZE_MAX','TWN',CFNAM_T_SIZE_MAX, CFTYP_T_SIZE_MAX, XUNIF_T_SIZE_MAX, &
         DTB%XPAR_T_SIZE_MAX, DTB%LDATA_T_SIZE_MAX)
 IF (.NOT.DTB%LDATA_T_SIZE_MAX) DEALLOCATE(DTB%XPAR_T_SIZE_MAX)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_T_SIZE_MIN   (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','T_SIZE_MIN','TWN',CFNAM_T_SIZE_MIN, CFTYP_T_SIZE_MIN, XUNIF_T_SIZE_MIN, &
         DTB%XPAR_T_SIZE_MIN, DTB%LDATA_T_SIZE_MIN)
 IF (.NOT.DTB%LDATA_T_SIZE_MIN) DEALLOCATE(DTB%XPAR_T_SIZE_MIN)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_CAP_SYS_HEAT (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','CAP_SYS_HEAT','TWN',CFNAM_CAP_SYS_HEAT, CFTYP_CAP_SYS_HEAT, XUNIF_CAP_SYS_HEAT, &
         DTB%XPAR_CAP_SYS_HEAT, DTB%LDATA_CAP_SYS_HEAT)
 IF (.NOT.DTB%LDATA_CAP_SYS_HEAT) DEALLOCATE(DTB%XPAR_CAP_SYS_HEAT)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_CAP_SYS_RAT  (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','CAP_SYS_RAT','TWN',CFNAM_CAP_SYS_RAT, CFTYP_CAP_SYS_RAT, XUNIF_CAP_SYS_RAT, &
         DTB%XPAR_CAP_SYS_RAT, DTB%LDATA_CAP_SYS_RAT)
 IF (.NOT.DTB%LDATA_CAP_SYS_RAT) DEALLOCATE(DTB%XPAR_CAP_SYS_RAT)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_M_SYS_RAT    (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','M_SYS_RAT','TWN',CFNAM_M_SYS_RAT, CFTYP_M_SYS_RAT, XUNIF_M_SYS_RAT, &
         DTB%XPAR_M_SYS_RAT, DTB%LDATA_M_SYS_RAT)
 IF (.NOT.DTB%LDATA_M_SYS_RAT) DEALLOCATE(DTB%XPAR_M_SYS_RAT)
@@ -582,11 +571,13 @@ ELSE
   DTB%LDATA_T_SIZE_MIN = .FALSE.
 END IF
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_T_ADP        (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','T_ADP','TWN',CFNAM_T_ADP, CFTYP_T_ADP, XUNIF_T_ADP, DTB%XPAR_T_ADP, DTB%LDATA_T_ADP)
 IF (.NOT.DTB%LDATA_T_ADP) DEALLOCATE(DTB%XPAR_T_ADP)
 !
- CALL INI_VAR_FROM_DATA_0D(DTCO, DGU, UG, U, USS, &
+ALLOCATE(DTB%XPAR_COP_RAT      (KDIM))
+CALL INI_VAR_FROM_DATA_0D(DTCO, UG, U, USS, &
                            HPROGRAM,'ARI','COP_RAT','TWN',CFNAM_COP_RAT, CFTYP_COP_RAT, XUNIF_COP_RAT, &
         DTB%XPAR_COP_RAT, DTB%LDATA_COP_RAT)
 IF (.NOT.DTB%LDATA_COP_RAT) DEALLOCATE(DTB%XPAR_COP_RAT)
@@ -600,7 +591,7 @@ IF (.NOT.DTB%LDATA_COP_RAT) DEALLOCATE(DTB%XPAR_COP_RAT)
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('PGD_BEM_PAR',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 SUBROUTINE COHERENCE_THERMAL_DATA_FL(HTYPE,ODATA_HC,ODATA_TC,ODATA_D)
  CHARACTER(LEN=5), INTENT(IN) :: HTYPE
 LOGICAL,          INTENT(IN) :: ODATA_HC

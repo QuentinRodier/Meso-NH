@@ -11,7 +11,8 @@ INTERFACE TEST_NAM_VAR_SURF
       SUBROUTINE TEST_NAM_VARC0_SURF(KLUOUT,HNAME,HVAR,       &
                                        HVALUE1,HVALUE2,HVALUE3, &
                                        HVALUE4,HVALUE5,HVALUE6, &
-                                       HVALUE7,HVALUE8,HVALUE9  )  
+                                       HVALUE7,HVALUE8,HVALUE9, &
+                                       HVALUE10  )  
 !
 INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
  CHARACTER(LEN=*) ,INTENT(IN)           ::HNAME    ! name of the variable to test
@@ -26,6 +27,7 @@ INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
+ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! tenth possible value
 !
 END SUBROUTINE TEST_NAM_VARC0_SURF
 !
@@ -42,7 +44,8 @@ END SUBROUTINE TEST_NAM_VARL0_SURF
       SUBROUTINE TEST_NAM_VARN0_SURF(KLUOUT,HNAME,KVAR,       &
                                        KVALUE1,KVALUE2,KVALUE3, &
                                        KVALUE4,KVALUE5,KVALUE6, &
-                                       KVALUE7,KVALUE8,KVALUE9  )  
+                                       KVALUE7,KVALUE8,KVALUE9, &
+                                       KVALUE10  )  
 !
 INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
  CHARACTER(LEN=*) ,INTENT(IN)           ::HNAME    ! name of the variable to test
@@ -57,13 +60,15 @@ INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE6  ! sixth possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE7  ! seventh possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE8  ! eightth possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE9  ! nineth possible value
+INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE10 ! 10th possible value
 !
 END SUBROUTINE TEST_NAM_VARN0_SURF
 !
       SUBROUTINE TEST_NAM_VARX0_SURF(KLUOUT,HNAME,PVAR,       &
                                      PVALUE1,PVALUE2,PVALUE3, &
                                      PVALUE4,PVALUE5,PVALUE6, &
-                                     PVALUE7,PVALUE8,PVALUE9  )  
+                                     PVALUE7,PVALUE8,PVALUE9, &
+                                     PVALUE10  )  
 !
 INTEGER,          INTENT(IN)          ::KLUOUT   ! output listing logical unit
  CHARACTER(LEN=*) ,INTENT(IN)          ::HNAME    ! name of the variable to test
@@ -78,6 +83,7 @@ REAL             ,INTENT(IN), OPTIONAL ::PVALUE6  ! sixth possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE7  ! seventh possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE8  ! eightth possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE9  ! nineth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE10 ! 10th possible value
 !
 END SUBROUTINE TEST_NAM_VARX0_SURF
 !
@@ -90,7 +96,8 @@ END MODULE MODI_TEST_NAM_VAR_SURF
       SUBROUTINE TEST_NAM_VARC0_SURF(KLUOUT,HNAME,HVAR,       &
                                        HVALUE1,HVALUE2,HVALUE3, &
                                        HVALUE4,HVALUE5,HVALUE6, &
-                                       HVALUE7,HVALUE8,HVALUE9  )  
+                                       HVALUE7,HVALUE8,HVALUE9, &
+                                       HVALUE10  )  
 !     #########################################################
 !
 !!****  *TEST_NAM_VARC0* - routine to test the value of a character var.
@@ -152,6 +159,7 @@ INTEGER,          INTENT(IN)           ::KLUOUT   ! output listing logical unit
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE7  ! seventh possible value
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE8  ! eightth possible value
  CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE9  ! nineth possible value
+ CHARACTER(LEN=*) ,INTENT(IN), OPTIONAL ::HVALUE10 ! 10th possible value
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      0.2   Declarations of local variables
@@ -214,6 +222,12 @@ IF ( PRESENT (HVALUE9) ) THEN
   IF ( HVAR==HVALUE9 ) RETURN
 END IF
 !
+IF ( PRESENT (HVALUE10) ) THEN
+  IF ( HVAR==HVALUE10  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARC0_SURF',1,ZHOOK_HANDLE)
+  IF ( HVAR==HVALUE10 ) RETURN
+END IF
+!
 !-------------------------------------------------------------------------------
 !
 WRITE (KLUOUT,*) ' '
@@ -232,6 +246,7 @@ IF ( PRESENT (HVALUE6) ) WRITE (KLUOUT,*) '"',HVALUE6,'"'
 IF ( PRESENT (HVALUE7) ) WRITE (KLUOUT,*) '"',HVALUE7,'"'
 IF ( PRESENT (HVALUE8) ) WRITE (KLUOUT,*) '"',HVALUE8,'"'
 IF ( PRESENT (HVALUE9) ) WRITE (KLUOUT,*) '"',HVALUE9,'"'
+IF ( PRESENT (HVALUE10)) WRITE (KLUOUT,*) '"',HVALUE10,'"'
 !
  CALL ABOR1_SFX('TEST_NAM_VAR_SURF: (1) CHARACTER VALUE NOT ALLOWED')
 IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARC0_SURF',1,ZHOOK_HANDLE)
@@ -326,7 +341,8 @@ END SUBROUTINE TEST_NAM_VARL0_SURF
       SUBROUTINE TEST_NAM_VARN0_SURF(KLUOUT,HNAME,KVAR,       &
                                        KVALUE1,KVALUE2,KVALUE3, &
                                        KVALUE4,KVALUE5,KVALUE6, &
-                                       KVALUE7,KVALUE8,KVALUE9  )  
+                                       KVALUE7,KVALUE8,KVALUE9, &
+                                       KVALUE10  )  
 !     #########################################################
 !
 !!****  *TEST_NAM_VARN0* - routine to test the value of an integer var.
@@ -388,6 +404,7 @@ INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE6  ! sixth possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE7  ! seventh possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE8  ! eightth possible value
 INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE9  ! nineth possible value
+INTEGER          ,INTENT(IN), OPTIONAL ::KVALUE10 ! 10th possible value
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      0.2   Declarations of local variables
@@ -450,6 +467,12 @@ IF ( PRESENT (KVALUE9) ) THEN
   IF ( KVAR==KVALUE9 ) RETURN
 END IF
 !
+IF ( PRESENT (KVALUE10) ) THEN
+  IF ( KVAR==KVALUE10  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( KVAR==KVALUE10 ) RETURN
+END IF
+!
 !-------------------------------------------------------------------------------
 !
 WRITE (KLUOUT,*) ' '
@@ -468,6 +491,7 @@ IF ( PRESENT (KVALUE6) ) WRITE (KLUOUT,*) '"',KVALUE6,'"'
 IF ( PRESENT (KVALUE7) ) WRITE (KLUOUT,*) '"',KVALUE7,'"'
 IF ( PRESENT (KVALUE8) ) WRITE (KLUOUT,*) '"',KVALUE8,'"'
 IF ( PRESENT (KVALUE9) ) WRITE (KLUOUT,*) '"',KVALUE9,'"'
+IF ( PRESENT (KVALUE10)) WRITE (KLUOUT,*) '"',KVALUE10,'"'
 !
  CALL ABOR1_SFX('TEST_NAM_VAR_SURF: (3) INTEGER VALUE NOT ALLOWED')
 IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
@@ -478,7 +502,8 @@ END SUBROUTINE TEST_NAM_VARN0_SURF
       SUBROUTINE TEST_NAM_VARX0_SURF(KLUOUT,HNAME,PVAR,       &
                                      PVALUE1,PVALUE2,PVALUE3, &
                                      PVALUE4,PVALUE5,PVALUE6, &
-                                     PVALUE7,PVALUE8,PVALUE9  )  
+                                     PVALUE7,PVALUE8,PVALUE9, & 
+                                     PVALUE10  )  
 !     #########################################################
 !
 !!****  *TEST_NAM_VARN0* - routine to test the value of an integer var.
@@ -540,6 +565,7 @@ REAL             ,INTENT(IN), OPTIONAL ::PVALUE6  ! sixth possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE7  ! seventh possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE8  ! eightth possible value
 REAL             ,INTENT(IN), OPTIONAL ::PVALUE9  ! nineth possible value
+REAL             ,INTENT(IN), OPTIONAL ::PVALUE10 ! 10th possible value
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*      0.2   Declarations of local variables
@@ -602,6 +628,12 @@ IF ( PRESENT (PVALUE9) ) THEN
   IF ( PVAR==PVALUE9 ) RETURN
 END IF
 !
+IF ( PRESENT (PVALUE10) ) THEN
+  IF ( PVAR==PVALUE10  .AND. LHOOK) &
+        CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)
+  IF ( PVAR==PVALUE10 ) RETURN
+END IF
+!
 !-------------------------------------------------------------------------------
 !
 WRITE (KLUOUT,*) ' '
@@ -620,6 +652,7 @@ IF ( PRESENT (PVALUE6) ) WRITE (KLUOUT,*) '"',PVALUE6,'"'
 IF ( PRESENT (PVALUE7) ) WRITE (KLUOUT,*) '"',PVALUE7,'"'
 IF ( PRESENT (PVALUE8) ) WRITE (KLUOUT,*) '"',PVALUE8,'"'
 IF ( PRESENT (PVALUE9) ) WRITE (KLUOUT,*) '"',PVALUE9,'"'
+IF ( PRESENT (PVALUE10)) WRITE (KLUOUT,*) '"',PVALUE10,'"'
 !
  CALL ABOR1_SFX('TEST_NAM_VAR_SURF: (4) REAL VALUE NOT ALLOWED')
 IF (LHOOK) CALL DR_HOOK('MODI_TEST_NAM_VAR_SURF:TEST_NAM_VARN0_SURF',1,ZHOOK_HANDLE)

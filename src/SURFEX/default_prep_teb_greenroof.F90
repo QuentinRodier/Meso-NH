@@ -70,21 +70,21 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB_GREENROOF',0,ZHOOK_HANDLE)
- CFILE_GR      = '                          '
- CTYPE           = 'GRIB  '
- CFILEPGD_GR   = '                          '
- CTYPEPGD        = 'GRIB  '
- CFILE_HUG_GR       = '                          '
- CTYPE_HUG       = '      '
- CFILE_TG_GR        = '                          '
- CTYPE_TG        = '      '
+CFILE_GR      = '                          '
+CTYPE           = 'GRIB  '
+CFILEPGD_GR   = '                          '
+CTYPEPGD        = 'GRIB  '
+CFILE_HUG_GR       = '                          '
+CTYPE_HUG       = '      '
+CFILE_TG_GR        = '                          '
+CTYPE_TG        = '      '
 !
- CFILE_HUG_SURF_GR = '                          '
- CFILE_HUG_ROOT_GR = '                          '
- CFILE_HUG_DEEP_GR = '                          '
- CFILE_TG_SURF_GR  = '                          '
- CFILE_TG_ROOT_GR  = '                          '
- CFILE_TG_DEEP_GR  = '                          '
+CFILE_HUG_SURF_GR = '                          '
+CFILE_HUG_ROOT_GR = '                          '
+CFILE_HUG_DEEP_GR = '                          '
+CFILE_TG_SURF_GR  = '                          '
+CFILE_TG_ROOT_GR  = '                          '
+CFILE_TG_DEEP_GR  = '                          '
 !
 XHUG_SURF_GR = XUNDEF
 XHUG_ROOT_GR = XUNDEF

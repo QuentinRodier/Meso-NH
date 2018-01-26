@@ -48,8 +48,12 @@ USE MODI_LFIGET_LUOUT
 #ifdef SFX_MNH
 USE MODI_MNHGET_LUOUT
 #endif
+#ifdef SFX_ARO
+USE MODI_AROGET_LUOUT
+#endif
 !
 IMPLICIT NONE
+!
 !
 !*       0.1   Declarations of arguments
 !              -------------------------

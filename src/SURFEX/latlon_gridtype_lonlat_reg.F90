@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################################################################
-      SUBROUTINE LATLON_GRIDTYPE_LONLAT_REG(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,PDIR)
+      SUBROUTINE LATLON_GRIDTYPE_LONLAT_REG(G,KL,PDIR)
 !     #########################################################################
 !
 !!****  *LATLON_GRIDTYPE_LONLAT_REG* - routine to compute the horizontal geographic fields
@@ -37,6 +37,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SFX_GRID_n, ONLY : GRID_t
+!
 USE MODD_CSTS,     ONLY : XPI, XRADIUS
 !
 USE MODE_GRIDTYPE_LONLAT_REG
@@ -51,12 +53,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-INTEGER,                    INTENT(IN)  :: KGRID_PAR  ! size of PGRID_PAR
+TYPE(GRID_t), INTENT(INOUT) :: G
+!
 INTEGER,                    INTENT(IN)  :: KL         ! number of points
-REAL, DIMENSION(KGRID_PAR), INTENT(IN)  :: PGRID_PAR  ! parameters defining this grid
-REAL, DIMENSION(KL),        INTENT(OUT) :: PLAT       ! latitude  (degrees)
-REAL, DIMENSION(KL),        INTENT(OUT) :: PLON       ! longitude (degrees)
-REAL, DIMENSION(KL),        INTENT(OUT) :: PMESH_SIZE ! mesh size (m2)
 REAL, DIMENSION(KL),        INTENT(OUT) :: PDIR ! direction of main grid Y axis (deg. from N, clockwise)
 !
 !*       0.2   Declarations of local variables
@@ -78,8 +77,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ---------------
 !
 IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_LONLAT_REG',0,ZHOOK_HANDLE)
- CALL GET_GRIDTYPE_LONLAT_REG(PGRID_PAR,ZLONMIN,ZLONMAX,                    &
-                               ZLATMIN,ZLATMAX,ILON,ILAT,PLON=PLON,PLAT=PLAT )  
+ CALL GET_GRIDTYPE_LONLAT_REG(G%XGRID_PAR,ZLONMIN,ZLONMAX,                    &
+                               ZLATMIN,ZLATMAX,ILON,ILAT,PLON=G%XLON,PLAT=G%XLAT )  
 !
 !-----------------------------------------------------------------------------
 !
@@ -89,8 +88,8 @@ IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_LONLAT_REG',0,ZHOOK_HANDLE)
 ZDLAT = (ZLATMAX-ZLATMIN)/FLOAT(ILAT)
 ZDLON = (ZLONMAX-ZLONMIN)/FLOAT(ILON)
 !
-PMESH_SIZE(:) = XRADIUS**2 * XPI/180.*(ZDLON)              &
-       * (SIN((PLAT(:)+ZDLAT/2.)*XPI/180.)-SIN((PLAT(:)-ZDLAT/2.)*XPI/180.))  
+G%XMESH_SIZE(:) = XRADIUS**2 * XPI/180.*(ZDLON)              &
+       * (SIN((G%XLAT(:)+ZDLAT/2.)*XPI/180.)-SIN((G%XLAT(:)-ZDLAT/2.)*XPI/180.))  
 !
 !-----------------------------------------------------------------------------
 !

@@ -77,14 +77,14 @@ INTEGER, INTENT(in) ::  &
   klun
 INTEGER, INTENT(out) ::  &
   kend
- CHARACTER(80), INTENT(out) ::  &
+CHARACTER(80), INTENT(out) ::  &
   hpar,hval
- CHARACTER(1), OPTIONAL, INTENT(in) ::  &
+CHARACTER(1), OPTIONAL, INTENT(in) ::  &
   hcomment
 !
 INTEGER :: ji,iostat
- CHARACTER(1) :: ychar,ycomment
- CHARACTER(80) :: yline
+CHARACTER(1) :: ychar,ycomment
+CHARACTER(80) :: yline
 !
 !
 !

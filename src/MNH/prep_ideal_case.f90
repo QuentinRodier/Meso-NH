@@ -312,6 +312,7 @@
 !!                  missing '&' in continuation string  3/12/2014 J.Escobar
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -1779,7 +1780,8 @@ IF (CSURF =='EXTE') THEN
   ! computed ...
   IF (LEN_TRIM(CPGD_FILE)==0 .OR. .NOT. LREAD_GROUND_PARAM) THEN
     CPGDFILE = CINIFILE
-    CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',CINIFILE,'MESONH',.TRUE.)
+    CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',&
+                CINIFILE,'MESONH',.TRUE.,HDIR='-')
     CALL PGD_SURF_ATM     (YSURF_CUR,'MESONH',CINIFILE,'MESONH',.TRUE.)
     CPGDFILE = CINIFILEPGD                                   
   ELSE
@@ -1810,9 +1812,11 @@ IF (CSURF =='EXTE') THEN
     CALL WRITE_HGRID(1,CINIFILEPGD,' ')
     NC_FILE='sf1'
     NC_WRITE=LNETCDF
+    ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
     IF ( LNETCDF ) THEN
        DEF_NC=.FALSE.
+       ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
        CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
        DEF_NC=.TRUE.
        NC_WRITE = .FALSE.
@@ -1824,6 +1828,7 @@ IF (CSURF =='EXTE') THEN
     CALL FMWRIT(CINIFILEPGD,'L2D         ',CLUOUT,'--',L2D,0,1,' ',NRESP)
     CALL FMWRIT(CINIFILEPGD,'PACK        ',CLUOUT,'--',LPACK,0,1,' ',NRESP)
     CALL WRITE_HGRID(1,CINIFILEPGD,' ')
+    ALLOCATE(YSURF_CUR%DUO%CSELECT(0))    
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 #endif
   CSTORAGE_TYPE='TT'

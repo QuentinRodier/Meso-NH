@@ -56,7 +56,6 @@ IMPLICIT NONE
  CHARACTER(LEN=6) :: CFORCING_FILETYPE    = 'NETCDF' ! type of atmospheric FORCING files
 !                                                   ! 'NETDF', 'BINARY', or 'ASCII '
 !
-!
 !*    Names of files
 !     --------------
 !
@@ -81,11 +80,14 @@ LOGICAL          :: LOUT_TIMENAME = .FALSE.! change the name of output file at t
 !
 LOGICAL          :: LDIAG_FA_NOCOMPACT = .FALSE. ! fa compaction for diagnostic files
 !
+ LOGICAL           :: LALLOW_ADD_DIM   = .FALSE. ! allow multi-dimensional output 
+                                                 ! if IO scheme can deal with- e.g. XIOS
+!
 !*    Variables
 !     ---------
 !
 INTEGER          :: NSCAL = 0                 ! Number of scalar species
-INTEGER          :: NHALO = 2
+INTEGER          :: NHALO = 0
 !
 !*    Time steps
 !     ----------
@@ -93,6 +95,11 @@ INTEGER          :: NHALO = 2
 REAL             :: XTSTEP_SURF   = 300.   ! time step of the surface 
 REAL             :: XTSTEP_OUTPUT = 1800.  ! time step of the output time-series
 INTEGER          :: NB_READ_FORC  = 0      ! subdivisions of the reading of forcings
+!
+!*    Allow the simulation to start from a different time step than the first record of a netcdf file
+!     ----------
+LOGICAL          :: LDELAYEDSTART_NC = .FALSE.
+INTEGER,DIMENSION(4) :: NDATESTOP=(/0,0,0,0/) ! Year month day time (sec) to stop the simulation before the end of the netcdf forcing file
 !
 !*    General flag for coherence between forcing file orography and surface file orography
 !     ----------
@@ -122,6 +129,7 @@ LOGICAL          :: LLAND_USE = .FALSE.
 !     ----------
 !
 LOGICAL          :: LADAPT_SW = .FALSE.
+LOGICAL          :: LINTERP_SW = .FALSE.
 !
 !*    General flag to modify direct solar radiation due to slopes and shadows.
 !     ----------
@@ -129,13 +137,15 @@ LOGICAL          :: LADAPT_SW = .FALSE.
 LOGICAL          :: LSHADOWS_SLOPE = .FALSE.
 LOGICAL          :: LSHADOWS_OTHER = .FALSE.
 !
+LOGICAL          :: LWR_VEGTYPE = .FALSE.
+!
 ! * For offline driver with openMP
 INTEGER         :: NPROMA                 ! Size of openMP packets
 INTEGER         :: NI,NJ                  ! Domain size
 !
 REAL            :: XIO_FRAC = 1.          ! fraction of ISIZE deduced to I/O
 !
- CHARACTER(LEN=4) :: YALG_MPI = "LIN "     ! type of distribution algorithm for MPI
+CHARACTER(LEN=4) :: YALG_MPI = "LIN "     ! type of distribution algorithm for MPI
 !
 !-------------------------------------------------------------------------------
 !
@@ -147,9 +157,10 @@ NAMELIST/NAM_IO_OFFLINE/CSURF_FILETYPE, CTIMESERIES_FILETYPE, CFORCING_FILETYPE,
                         LPRINT, LRESTART, LINQUIRE, NSCAL, NHALO,                &
                         XTSTEP_SURF, XTSTEP_OUTPUT, LDIAG_FA_NOCOMPACT,          &
                         LSET_FORC_ZS, LWRITE_COORD, LOUT_TIMENAME, LLIMIT_QAIR,  &
-                        LSHADOWS_SLOPE,LSHADOWS_OTHER,                           &
+                        LSHADOWS_SLOPE,LSHADOWS_OTHER, LWR_VEGTYPE,              &
                         NB_READ_FORC, LLAND_USE, NPROMA, NI, NJ, XIO_FRAC,       &
-                        YALG_MPI, XDELTA_OROG, LADAPT_SW
+                        YALG_MPI, XDELTA_OROG, LADAPT_SW, LINTERP_SW,            &
+                        LALLOW_ADD_DIM, LDELAYEDSTART_NC, NDATESTOP
 !
 !-------------------------------------------------------------------------------
 END MODULE MODN_IO_OFFLINE

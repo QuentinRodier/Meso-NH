@@ -68,6 +68,7 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !!      01/12/03    (D.Gazen) change emissions handling for surf. externalization
 !!      Nov.  2010  (J.Escobar) PGI BUG , add SIZE(CSV) to interface
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -75,6 +76,8 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !
 USE MODE_ll
 USE MODE_IO_ll
+!
+USE MODD_DYN_n,      ONLY : NSTOP, XTSTEP
 !
 USE MODD_REF_n,      ONLY : XRHODREF
 USE MODD_TIME_n,     ONLY : TIME_MODEL ! To address TDTCUR of model number 1 (see code below)
@@ -84,9 +87,13 @@ USE MODD_DUST,       ONLY : CDUSTNAMES
 USE MODD_SALT,       ONLY : CSALTNAMES
 USE MODD_CH_AEROSOL, ONLY : CAERONAMES
 !
+USE MODD_TYPE_DATE_SURF, ONLY : DATE
+!
 USE MODD_PARAMETERS, ONLY : XUNDEF, JPVEXT
 !
+USE MODI_ADD_FORECAST_TO_DATE_SURF
 USE MODI_INIT_SURF_ATM_N
+!
 USE MODD_MNH_SURFEX_n 
 !
 IMPLICIT NONE
@@ -119,6 +126,10 @@ REAL, DIMENSION(:,:),  ALLOCATABLE :: ZSCA_ALB  ! diffuse albedo
 REAL, DIMENSION(:),    ALLOCATABLE :: ZEMIS     ! emissivity
 REAL, DIMENSION(:),    ALLOCATABLE :: ZTSRAD    ! radiative temperature
 REAL, DIMENSION(:),    ALLOCATABLE :: ZTSURF
+!
+TYPE(DATE) :: TDATE_END
+!
+REAL :: ZDURATION
 !
 INTEGER :: ISWB  ! number of SW bands
 INTEGER :: IIU   ! 1st array size
@@ -169,15 +180,21 @@ DO JLAYER=NSV_AERBEG,NSV_AEREND
   HSV(JLAYER) = '@'//TRIM(CAERONAMES(JLAYER-NSV_AERBEG+1))
 END DO
 !
+TDATE_END%YEAR  = TIME_MODEL(1)%TDTCUR%TDATE%YEAR
+TDATE_END%MONTH = TIME_MODEL(1)%TDTCUR%TDATE%MONTH
+TDATE_END%DAY   = TIME_MODEL(1)%TDTCUR%TDATE%DAY
+ZDURATION = NSTOP * XTSTEP + TIME_MODEL(1)%TDTCUR%TIME
+ CALL ADD_FORECAST_TO_DATE_SURF(TDATE_END%YEAR, TDATE_END%MONTH, TDATE_END%DAY, ZDURATION)
+!
 ISV = SIZE(HSV)
-CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                                        &
-                     ILU,ISV,SIZE(PSW_BANDS),                         &
+CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                      &
+                     ILU,ISV,SIZE(PSW_BANDS),                               &
                      HSV,ZCO2,ZRHODREF,                                     &
                      ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,             &
                      ZEMIS,ZTSRAD,ZTSURF,                                          &
                      TIME_MODEL(1)%TDTCUR%TDATE%YEAR, TIME_MODEL(1)%TDTCUR%TDATE%MONTH,&
                      TIME_MODEL(1)%TDTCUR%TDATE%DAY, TIME_MODEL(1)%TDTCUR%TIME,        &
-                     '                            ','      ',               &
+                     TDATE_END,'                            ','      ',                &
                      'OK'                                                   )
 !
 PDIR_ALB = XUNDEF

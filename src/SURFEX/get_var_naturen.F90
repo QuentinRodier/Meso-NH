@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_VAR_NATURE_n (I, DGI, DGMI, &
+      SUBROUTINE GET_VAR_NATURE_n (S, DGO, D, DMI, &
                                    HPROGRAM,KI,PQS,PSNG,PSNV,PZ0EFF,PZ0,PZ0H,PTWSNOW,PBARE)
 !     ######################################################################
 !
@@ -42,8 +42,8 @@
 !              ------------
 !
 !
-USE MODD_ISBA_n, ONLY : ISBA_t
-USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_S_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
 USE MODI_GET_LUOUT
@@ -60,9 +60,10 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(ISBA_t), INTENT(INOUT) :: I
-TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
-TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DGMI
+TYPE(ISBA_S_t), INTENT(INOUT) :: S
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMI
 !
  CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
 INTEGER,              INTENT(IN)     :: KI      ! Number of points
@@ -87,33 +88,33 @@ IF (LHOOK) CALL DR_HOOK('GET_VAR_NATURE_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF (DGI%LSURF_VARS) THEN 
-        PQS      = DGI%XAVG_QS      
+IF (DGO%LSURF_VARS) THEN 
+        PQS      = D%XQS      
    ELSE 
         PQS      = XUNDEF      
 ENDIF           
 !
-IF (DGMI%LSURF_MISC_BUDGET) THEN 
-        PSNG     = DGMI%XAVG_PSNG      
-        PSNV     = DGMI%XAVG_PSNV      
-        PTWSNOW  = DGMI%XAVG_TWSNOW
+IF (DMI%LSURF_MISC_BUDGET) THEN 
+        PSNG     = DMI%XPSNG      
+        PSNV     = DMI%XPSNV      
+        PTWSNOW  = DMI%XTWSNOW
    ELSE 
         PSNG     = XUNDEF      
         PSNV     = XUNDEF      
         PTWSNOW  = XUNDEF
 ENDIF           
 !
-IF (DGI%LCOEF) THEN
-   PZ0EFF   = DGI%XAVG_Z0EFF
-   PZ0      = DGI%XAVG_Z0      
-   PZ0H     = DGI%XAVG_Z0H
+IF (DGO%LCOEF) THEN
+   PZ0EFF   = D%XZ0EFF
+   PZ0      = D%XZ0      
+   PZ0H     = D%XZ0H
 ELSE
    PZ0EFF   = XUNDEF
    PZ0      = XUNDEF      
    PZ0H     = XUNDEF
 ENDIF
 !
-PBARE = I%XVEGTYPE(:,NVT_NO)
+PBARE = S%XVEGTYPE(:,NVT_NO)
 !
 IF (LHOOK) CALL DR_HOOK('GET_VAR_NATURE_N',1,ZHOOK_HANDLE)
 !

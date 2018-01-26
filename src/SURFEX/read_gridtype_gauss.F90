@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !################################################################
-SUBROUTINE READ_GRIDTYPE_GAUSS (&
-                                HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
+SUBROUTINE READ_GRIDTYPE_GAUSS (HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
 !################################################################
 !
 !!****  *READ_GRIDTYPE_GAUSS* - routine to initialise the horizontal grid
@@ -38,14 +37,12 @@ SUBROUTINE READ_GRIDTYPE_GAUSS (&
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-!
 USE MODI_READ_SURF
 USE MODI_GET_LUOUT
 !
 USE MODE_GRIDTYPE_GAUSS
 !
+USE MODD_SURF_PAR, ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -57,8 +54,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
-!
  CHARACTER(LEN=6),       INTENT(IN)    :: HPROGRAM   ! calling program
 INTEGER,                INTENT(INOUT) :: KGRID_PAR  ! real size of PGRID_PAR
 INTEGER,                INTENT(IN)    :: KLU        ! number of points
@@ -69,7 +64,6 @@ INTEGER,                INTENT(OUT)   :: KRESP      ! error return code
  CHARACTER(LEN=1),       INTENT(IN)    :: HDIR       ! reading directive
 !                                                   ! 'A' : all field
 !                                                   ! 'H' : field on this processor only
-!
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -91,10 +85,10 @@ REAL,    DIMENSION(KLU) :: ZLONSUP     ! Grid corner Longitude   |     |
 REAL,    DIMENSION(KLU) :: ZLATINF     ! Grid corner Latitude    |_____|
 REAL,    DIMENSION(KLU) :: ZLONINF     ! Grid corner Longitude  Inf
 !
+INTEGER :: IVERSION
 INTEGER                 :: ILUOUT
 !---------------------------------------------------------------------------
 REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
-!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !
@@ -102,47 +96,43 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_GAUSS',0,ZHOOK_HANDLE)
- CALL READ_SURF(&
-                HPROGRAM,'LAPO',ZLAPO, KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LOPO',ZLOPO,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'CODIL',ZCODIL,KRESP,HDIR=HDIR)
+!
+ CALL READ_SURF(HPROGRAM,'LAPO',ZLAPO, KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LOPO',ZLOPO,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'CODIL',ZCODIL,KRESP,HDIR=HDIR)
 !
 !---------------------------------------------------------------------------
 !
 !*       2.    Reading parameters of the grid
 !              ------------------------------
 !
- CALL READ_SURF(&
-                HPROGRAM,'NLATI',INLATI,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'NLATI',INLATI,KRESP,HDIR=HDIR)
 ALLOCATE(INLOPA(INLATI))
 IF (HDIR=='A') THEN
-  CALL READ_SURF(&
-                HPROGRAM,'NLOPA',INLOPA(:),KRESP,HDIR=HDIR)
+  CALL READ_SURF(HPROGRAM,'NLOPA',INLOPA(:),KRESP,HDIR=HDIR)
 ELSE
-  CALL READ_SURF(&
-                HPROGRAM,'NLOPA',INLOPA(:),KRESP,HDIR='-')
+  CALL READ_SURF(HPROGRAM,'NLOPA',INLOPA(:),KRESP,HDIR='-')
 ENDIF
- CALL READ_SURF(&
-                HPROGRAM,'LATGAUSS',ZLAT(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LONGAUSS',ZLON(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LAT_G_XY',ZLAT_XY(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LON_G_XY',ZLON_XY(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'MESHGAUSS',ZMESH_SIZE(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LONINF',ZLONINF(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LATINF',ZLATINF(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LONSUP',ZLONSUP(:),KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LATSUP',ZLATSUP(:),KRESP,HDIR=HDIR)
-
+ CALL READ_SURF(HPROGRAM,'LATGAUSS',ZLAT(:),KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LONGAUSS',ZLON(:),KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LAT_G_XY',ZLAT_XY(:),KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LON_G_XY',ZLON_XY(:),KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'MESHGAUSS',ZMESH_SIZE(:),KRESP,HDIR=HDIR)
+!
+ CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,KRESP,HDIR=HDIR)
+!
+IF (IVERSION>=8) THEN
+  CALL READ_SURF(HPROGRAM,'LONINF',ZLONINF(:),KRESP,HDIR=HDIR)
+  CALL READ_SURF(HPROGRAM,'LATINF',ZLATINF(:),KRESP,HDIR=HDIR)
+  CALL READ_SURF(HPROGRAM,'LONSUP',ZLONSUP(:),KRESP,HDIR=HDIR)
+  CALL READ_SURF(HPROGRAM,'LATSUP',ZLATSUP(:),KRESP,HDIR=HDIR)
+ELSE
+  ZLONINF(:) = XUNDEF
+  ZLATINF(:) = XUNDEF
+  ZLONSUP(:) = XUNDEF
+  ZLATSUP(:) = XUNDEF
+ENDIF
+!
 !---------------------------------------------------------------------------
 !
 !*       4.    All this information stored into pointer PGRID_PAR

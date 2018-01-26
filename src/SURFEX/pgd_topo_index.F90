@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TOPO_INDEX (DGU, DTCO, UG, U, USS, I, &
+      SUBROUTINE PGD_TOPO_INDEX (DTCO, UG, U, USS, S, OCTI, &
                                  HPROGRAM,KLU,HCTI,HCTIFILETYPE,OIMP_CTI)
 !     ##################################################################
 !
@@ -42,20 +42,21 @@
 !            -----------
 !
 !
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_ISBA_n, ONLY : ISBA_S_t
+!
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 !
 USE MODD_PGD_GRID,       ONLY : NL
 !
 !
-USE MODD_PGDWORK,        ONLY : XSUMVAL, XSUMVAL2, NSIZE, &
+USE MODD_PGDWORK,        ONLY : XALL, XEXT_ALL, NSIZE_ALL, &
                                 XMIN_WORK, XMAX_WORK,     &
                                 XMEAN_WORK, XSTD_WORK,    &
-                                XSKEW_WORK, XSUMVAL3  
+                                XSKEW_WORK, NSIZE, XSUMVAL 
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -96,17 +97,19 @@ IMPLICIT NONE
 !            ------------------------
 !
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
- CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM     ! program calling
+TYPE(ISBA_S_t), INTENT(INOUT) :: S
+!
+LOGICAL, INTENT(INOUT) :: OCTI
+!
+CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM     ! program calling
 INTEGER,              INTENT(IN)  :: KLU          ! number of nature points
- CHARACTER(LEN=28),    INTENT(IN)  :: HCTI         ! topographic index file name
- CHARACTER(LEN=6),     INTENT(IN)  :: HCTIFILETYPE ! topographic index file type
+CHARACTER(LEN=28),    INTENT(IN)  :: HCTI         ! topographic index file name
+CHARACTER(LEN=6),     INTENT(IN)  :: HCTIFILETYPE ! topographic index file type
 LOGICAL,              INTENT(IN)  :: OIMP_CTI     ! .true. if topographic index statistics is imposed
 !
 !
@@ -125,8 +128,8 @@ INTEGER :: I_DIM
 INTEGER :: IRET      ! error code
 INTEGER :: ILUOUT    ! output listing logical unit
 !
- CHARACTER(LEN=6  ) :: YFILETYPE, YSCHEME, YSUBROUTINE
- CHARACTER(LEN=20)  :: YFIELD        ! Name of the field.
+CHARACTER(LEN=6  ) :: YFILETYPE, YSCHEME, YSUBROUTINE
+CHARACTER(LEN=20)  :: YFIELD        ! Name of the field.
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -137,17 +140,17 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('PGD_TOPO_INDEX',0,ZHOOK_HANDLE)
 IF(LEN_TRIM(HCTI)==0)THEN
 !
-  ALLOCATE(I%XTI_MIN (0))
-  ALLOCATE(I%XTI_MAX (0))
-  ALLOCATE(I%XTI_MEAN(0))
-  ALLOCATE(I%XTI_STD (0))
-  ALLOCATE(I%XTI_SKEW(0))
+  ALLOCATE(S%XTI_MIN (0))
+  ALLOCATE(S%XTI_MAX (0))
+  ALLOCATE(S%XTI_MEAN(0))
+  ALLOCATE(S%XTI_STD (0))
+  ALLOCATE(S%XTI_SKEW(0))
 !        
 !-------------------------------------------------------------------------------
 ELSE
 !-------------------------------------------------------------------------------
 !
-  I%LCTI = .TRUE.
+  OCTI = .TRUE.
 !
 !*    2.      Find LUOUT
 !             ----------
@@ -161,25 +164,24 @@ ELSE
 !*    3.      Allocations of statistics arrays
 !             --------------------------------
 !
-  ALLOCATE(I%XTI_MIN (KLU))
-  ALLOCATE(I%XTI_MAX (KLU))
-  ALLOCATE(I%XTI_MEAN(KLU))
-  ALLOCATE(I%XTI_STD (KLU))
-  ALLOCATE(I%XTI_SKEW(KLU))
+  ALLOCATE(S%XTI_MIN (KLU))
+  ALLOCATE(S%XTI_MAX (KLU))
+  ALLOCATE(S%XTI_MEAN(KLU))
+  ALLOCATE(S%XTI_STD (KLU))
+  ALLOCATE(S%XTI_SKEW(KLU))
 !
-  I%XTI_MIN (:) = XUNDEF
-  I%XTI_MAX (:) = XUNDEF
-  I%XTI_MEAN(:) = XUNDEF
-  I%XTI_STD (:) = XUNDEF
-  I%XTI_SKEW(:) = XUNDEF
+  S%XTI_MIN (:) = XUNDEF
+  S%XTI_MAX (:) = XUNDEF
+  S%XTI_MEAN(:) = XUNDEF
+  S%XTI_STD (:) = XUNDEF
+  S%XTI_SKEW(:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
 !*    4.      Allocations of work arrays
 !             --------------------------
 !
-  CALL GET_TYPE_DIM_n(DTCO, U, &
-                      'NATURE',I_DIM)
+  CALL GET_TYPE_DIM_n(DTCO, U, 'NATURE',I_DIM)
   IF (I_DIM/=KLU) THEN
      WRITE(ILUOUT,*)'PGD_TOPO_INDEX: Wrong dimension of MASK: ',I_DIM,KLU
      CALL ABOR1_SFX('PGD_TOPO_INDEX: WRONG DIMENSION OF MASK')
@@ -226,20 +228,15 @@ ELSE
 #ifdef SFX_LFI
        CFILEIN_LFI = ADJUSTL(HCTI)
 #endif
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
+CALL INIT_IO_SURF_n(DTCO, U, &
                            YFILETYPE,'FULL  ','SURF  ','READ ')
      ENDIF     
 !   
-     CALL READ_SURF(&
-                    YFILETYPE,'TI_MIN' ,XMIN_WORK ,IRET) 
-     CALL READ_SURF(&
-                    YFILETYPE,'TI_MAX' ,XMAX_WORK ,IRET)
-     CALL READ_SURF(&
-                    YFILETYPE,'TI_MEAN',XMEAN_WORK,IRET)
-     CALL READ_SURF(&
-                    YFILETYPE,'TI_STD' ,XSTD_WORK ,IRET) 
-     CALL READ_SURF(&
-                    YFILETYPE,'TI_SKEW',XSKEW_WORK,IRET) 
+     CALL READ_SURF(YFILETYPE,'TI_MIN' ,XMIN_WORK ,IRET) 
+     CALL READ_SURF(YFILETYPE,'TI_MAX' ,XMAX_WORK ,IRET)
+     CALL READ_SURF(YFILETYPE,'TI_MEAN',XMEAN_WORK,IRET)
+     CALL READ_SURF(YFILETYPE,'TI_STD' ,XSTD_WORK ,IRET) 
+     CALL READ_SURF(YFILETYPE,'TI_SKEW',XSKEW_WORK,IRET) 
 !
      CALL END_IO_SURF_n(YFILETYPE)
 !
@@ -250,15 +247,14 @@ ELSE
 !*    6.      Use of cti file
 !             ---------------
 !
-     ALLOCATE(NSIZE   (IFULL))
-     ALLOCATE(XSUMVAL (IFULL))
-     ALLOCATE(XSUMVAL2(IFULL))
-     ALLOCATE(XSUMVAL3(IFULL))
+     ALLOCATE(NSIZE_ALL(U%NDIM_FULL,1))
+     ALLOCATE(XEXT_ALL (U%NDIM_FULL,2))
+     ALLOCATE(XALL     (U%NDIM_FULL,3,1))     
 !
-     NSIZE    (:) = 0.
-     XSUMVAL  (:) = 0.
-     XSUMVAL2 (:) = 0.
-     XSUMVAL3 (:) = 0.
+     NSIZE_ALL(:,1) = 0.
+     XEXT_ALL (:,1) = -99999.
+     XEXT_ALL (:,2) = 99999.
+     XALL   (:,:,1) = 0.     
 !
      XMAX_WORK(:) =-99999.
 !
@@ -273,13 +269,13 @@ ELSE
 !*    7.      Coherence
 !             ---------
 !
-     WHERE(NSIZE(:)<36.OR.XSTD_WORK(:)==0.0)
+     WHERE(NSIZE(:,1)<36.OR.XSTD_WORK(:)==0.0)
           XMIN_WORK (:) = XUNDEF
           XMAX_WORK (:) = XUNDEF
           XMEAN_WORK(:) = XUNDEF
           XSTD_WORK (:) = XUNDEF
           XSKEW_WORK(:) = XUNDEF
-          NSIZE     (:) = 0
+          NSIZE   (:,1) = 0
      ENDWHERE 
 !
      WHERE(U%XNATURE(:)>0.0.AND.XSKEW_WORK(:)<=-8.0)
@@ -288,7 +284,7 @@ ELSE
           XMEAN_WORK(:) = XUNDEF
           XSTD_WORK (:) = XUNDEF
           XSKEW_WORK(:) = XUNDEF
-          NSIZE     (:) = 0
+          NSIZE   (:,1) = 0
      ENDWHERE             
 !
      WHERE(U%XNATURE(:)==0.)
@@ -297,7 +293,7 @@ ELSE
           XMEAN_WORK(:) = XUNDEF
           XSTD_WORK (:) = XUNDEF
           XSKEW_WORK(:) = XUNDEF
-          NSIZE     (:) = 0
+          NSIZE   (:,1) = 0
      ENDWHERE   
 !
 !-------------------------------------------------------------------------------
@@ -356,6 +352,11 @@ ELSE
                    XSKEW_WORK(:)= 2.266-0.023*ZTI_MEAN(:)-0.245*ZTI_STD(:)-0.240*ZTI_SKEW(:)
            ENDWHERE
          ENDIF
+!
+         WHERE(XMEAN_WORK(:)/=XUNDEF.AND.(XMAX_WORK(:)-XMIN_WORK(:))>0.2)
+               XSTD_WORK (:)=MAX(0.2,XSTD_WORK (:))
+               XSKEW_WORK(:)=MAX(0.2,XSKEW_WORK(:))
+         ENDWHERE         
 !           
          WHERE(XMEAN_WORK(:)>0.0.AND.XMEAN_WORK(:)/=XUNDEF)
                ZDELTA   (:)= (XMEAN_WORK(:)-ZMEAN_INI(:))
@@ -367,7 +368,7 @@ ELSE
               XMEAN_WORK(:) = XUNDEF
               XSTD_WORK (:) = XUNDEF
               XSKEW_WORK(:) = XUNDEF
-              NSIZE     (:) = 0
+              NSIZE   (:,1) = 0
          ENDWHERE
 !
          DEALLOCATE(ZDELTA   )
@@ -390,10 +391,10 @@ ELSE
     WRITE(ILUOUT,*) '*********************************************'
 !
     ALLOCATE(ZLAT(NL))
-    CALL GET_GRID_COORD(UG, U, &
+    CALL GET_GRID_COORD(UG%G%CGRID, UG%G%NGRID_PAR, UG%G%XGRID_PAR, U%NSIZE_FULL, &
                         ILUOUT,PY=ZLAT)
 !
-    WHERE (U%XNATURE(:)==0..AND.NSIZE(:)==0) NSIZE(:) = -1
+    WHERE (U%XNATURE(:)==0..AND.NSIZE(:,1)==0) NSIZE(:,1) = -1
 !
 !   No Antarctic
     WHERE(U%XNATURE(:)>0..AND.ZLAT(:)<-60.)
@@ -402,26 +403,19 @@ ELSE
           XMEAN_WORK(:) = XUNDEF
           XSTD_WORK (:) = XUNDEF
           XSKEW_WORK(:) = XUNDEF
-          NSIZE     (:) = -1
+          NSIZE   (:,1) = -1
     ENDWHERE   
 !
-    IF(ALL(NSIZE(:)==0.0))NSIZE(:)=-1
+    IF(ALL(NSIZE(:,1)==0.0))NSIZE(:,1)=-1
 !
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE,XMIN_WORK (:),'TI_MIN ',PDEF=XUNDEF,KNPTS=1)
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE,XMAX_WORK (:),'TI_MAX ',PDEF=XUNDEF,KNPTS=1)
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE,XMEAN_WORK(:),'TI_MEAN',PDEF=XUNDEF,KNPTS=1)
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE,XSTD_WORK (:),'TI_STD ',PDEF=XUNDEF,KNPTS=1)
-    CALL INTERPOL_FIELD(UG, U, &
-                        HPROGRAM,ILUOUT,NSIZE,XSKEW_WORK(:),'TI_SKEW',PDEF=XUNDEF,KNPTS=1)
+    CALL INTERPOL_FIELD(UG, U, HPROGRAM,ILUOUT,NSIZE(:,1),XMIN_WORK (:),'TI_MIN ',PDEF=XUNDEF,KNPTS=1)
+    CALL INTERPOL_FIELD(UG, U, HPROGRAM,ILUOUT,NSIZE(:,1),XMAX_WORK (:),'TI_MAX ',PDEF=XUNDEF,KNPTS=1)
+    CALL INTERPOL_FIELD(UG, U, HPROGRAM,ILUOUT,NSIZE(:,1),XMEAN_WORK(:),'TI_MEAN',PDEF=XUNDEF,KNPTS=1)
+    CALL INTERPOL_FIELD(UG, U, HPROGRAM,ILUOUT,NSIZE(:,1),XSTD_WORK (:),'TI_STD ',PDEF=XUNDEF,KNPTS=1)
+    CALL INTERPOL_FIELD(UG, U, HPROGRAM,ILUOUT,NSIZE(:,1),XSKEW_WORK(:),'TI_SKEW',PDEF=XUNDEF,KNPTS=1)
 !
     DEALLOCATE(NSIZE     )
     DEALLOCATE(XSUMVAL   )
-    DEALLOCATE(XSUMVAL2  )
-    DEALLOCATE(XSUMVAL3  )
     DEALLOCATE(ZLAT      )
 !
   ENDIF
@@ -430,11 +424,11 @@ ELSE
 !*    11.     Asign parameters
 !             ----------------
 !
-  CALL PACK_SAME_RANK(IMASK,XMIN_WORK ,I%XTI_MIN)
-  CALL PACK_SAME_RANK(IMASK,XMAX_WORK ,I%XTI_MAX)
-  CALL PACK_SAME_RANK(IMASK,XMEAN_WORK,I%XTI_MEAN)
-  CALL PACK_SAME_RANK(IMASK,XSTD_WORK ,I%XTI_STD)
-  CALL PACK_SAME_RANK(IMASK,XSKEW_WORK,I%XTI_SKEW)
+  CALL PACK_SAME_RANK(IMASK,XMIN_WORK ,S%XTI_MIN)
+  CALL PACK_SAME_RANK(IMASK,XMAX_WORK ,S%XTI_MAX)
+  CALL PACK_SAME_RANK(IMASK,XMEAN_WORK,S%XTI_MEAN)
+  CALL PACK_SAME_RANK(IMASK,XSTD_WORK ,S%XTI_STD)
+  CALL PACK_SAME_RANK(IMASK,XSKEW_WORK,S%XTI_SKEW)
 !  
 !-------------------------------------------------------------------------------
 !
@@ -453,7 +447,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('PGD_TOPO_INDEX',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
- CONTAINS
+CONTAINS
 !
 SUBROUTINE CTIREG(OREG,OREG10,OREG2)  
 !      
@@ -483,7 +477,7 @@ REAL    :: ZGLBLONMIN                 ! minimum longitude of data box in the fil
 REAL    :: ZGLBLATMAX                 ! maximum latitude of data box in the file
 REAL    :: ZGLBLONMAX                 ! maximum longitude of data box in the file
 !
- CHARACTER(LEN=28)  :: YFILEHDR        ! Name of the field file header
+CHARACTER(LEN=28)  :: YFILEHDR        ! Name of the field file header
 !
 INTEGER                    :: INBLAT
 INTEGER                    :: INBLON
@@ -495,15 +489,15 @@ INTEGER                    :: IEINDEX    ! index of character 'E' in YSTRING1
 INTEGER                    :: IWINDEX    ! index of character 'W' in YSTRING1
 REAL, DIMENSION(7)         :: ZVAL       ! values of the head data
 INTEGER                    :: IHEAD      ! index of the data in the array ZVAL
- CHARACTER(LEN=100)         :: YSTRING    ! total string in the head
- CHARACTER(LEN=100)         :: YSTRING1   ! string less the begining line descriptor
- CHARACTER(LEN=100)         :: YVAL       ! absolute value of the data of the line
+CHARACTER(LEN=100)         :: YSTRING    ! total string in the head
+CHARACTER(LEN=100)         :: YSTRING1   ! string less the begining line descriptor
+CHARACTER(LEN=100)         :: YVAL       ! absolute value of the data of the line
 INTEGER                    :: IPOINT     ! index of '.' in the string YVAL
 INTEGER                    :: ILENGTH    ! length of the string YVAL
 INTEGER                    :: IFRACLENGTH! length of the fractional part in string YVAL
- CHARACTER(LEN=2)           :: YLENGTH    ! length of the string YVAL
- CHARACTER(LEN=2)           :: YFRACLENGTH! length of the fractional part in string YVAL
- CHARACTER(LEN=10)          :: YINTERNALFORMAT ! format to read YVAL in real ZVAL
+CHARACTER(LEN=2)           :: YLENGTH    ! length of the string YVAL
+CHARACTER(LEN=2)           :: YFRACLENGTH! length of the fractional part in string YVAL
+CHARACTER(LEN=10)          :: YINTERNALFORMAT ! format to read YVAL in real ZVAL
 !
 REAL    :: Z1000M, Z100M, Z10M
 !
@@ -519,7 +513,7 @@ OREG2 =.FALSE.
 !
 IGLB=11
 YFILEHDR =ADJUSTL(ADJUSTR(HCTI)//'.hdr')
- CALL OPEN_NAMELIST(HPROGRAM,IGLB,YFILEHDR)
+CALL OPEN_NAMELIST(HPROGRAM,IGLB,YFILEHDR)
 !
 !*         1.    Line of comments
 !                ----------------
@@ -631,12 +625,12 @@ IF(SQRT(ZDLAT*ZDLON)>=Z10M.AND.SQRT(ZDLAT*ZDLON)<=Z100M)THEN
    OREG2 =.TRUE.
 ENDIF
 !
- CALL CLOSE_NAMELIST(HPROGRAM,IGLB)
+CALL CLOSE_NAMELIST(HPROGRAM,IGLB)
 !
 IF (LHOOK) CALL DR_HOOK('PGD_TOPO_INDEX:CTIREG',1,ZHOOK_HANDLE)
 RETURN
 99 CONTINUE
- CALL ABOR1_SFX('CTIREG: PB READING TOPO INDEX FILE HEADER')
+CALL ABOR1_SFX('CTIREG: PB READING TOPO INDEX FILE HEADER')
 IF (LHOOK) CALL DR_HOOK('PGD_TOPO_INDEX:CTIREG',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE CTIREG

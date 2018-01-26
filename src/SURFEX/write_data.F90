@@ -47,10 +47,10 @@ USE MODD_DATA_COVER,     ONLY : XDATA_TOWN, XDATA_NATURE, XDATA_SEA, XDATA_WATER
                                   XDATA_GROUND_DEPTH, XDATA_ROOT_DEPTH,             &
                                   TDATA_SEED, TDATA_REAP, XDATA_WATSUP, XDATA_IRRIG,&
                                   XDATA_LAI_ALL_YEARS  
-USE MODD_DATA_COVER_PAR, ONLY : CNAMES
+USE MODD_DATA_COVER_PAR, ONLY : CNAMES, NVEGTYPE
 !
 
-USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, NVT_IRR, JPCOVER
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE, JPCOVER, NVT_IRR
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -69,38 +69,62 @@ IMPLICIT NONE
 !
 !
 INTEGER               :: JCOVER,JDEC,JK ! loop counters on covers, decades and vegtypes
-!
-
+INTEGER :: JBEG
 !
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
- CHARACTER(LEN=8), DIMENSION(19) :: CNVT
+ CHARACTER(LEN=8), DIMENSION(NVEGTYPE) :: CNVT
  CHARACTER(LEN=2) :: CF
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('WRITE_DATA',0,ZHOOK_HANDLE)
- CNVT(1) =  "NVT_NO  "      ! no vegetation (smooth)
- CNVT(2) =  "NVT_ROCK"      ! no vegetation (rocks)
- CNVT(3) =  "NVT_SNOW"      ! permanent snow and ice
- CNVT(4) =  "NVT_TEBD"      ! temperate broadleaf deciduous trees
- CNVT(5) =  "NVT_BONE"      ! boreal needleleaf evergreen trees 
- CNVT(6) =  "NVT_TRBE"      ! tropical broadleaf evergreen trees
- CNVT(7) =  "NVT_C3  "      ! C3 cultures types
- CNVT(8) =  "NVT_C4  "      ! C4 cultures types
- CNVT(9) =  "NVT_IRR "      ! irrigated crops
- CNVT(10)=  "NVT_GRAS"      ! temperate grassland C3
- CNVT(11)=  "NVT_TROG"      ! tropical  grassland C4
- CNVT(12)=  "NVT_PARK"      ! peat bogs, parks and gardens (irrigated grass)
- CNVT(13)=  "NVT_TRBD"      ! tropical  broadleaf  deciduous trees
- CNVT(14)=  "NVT_TEBE"      ! temperate broadleaf  evergreen trees
- CNVT(15)=  "NVT_TENE"      ! temperate needleleaf evergreen trees
- CNVT(16)=  "NVT_BOBD"      ! boreal    broadleaf  deciduous trees
- CNVT(17)=  "NVT_BOND"      ! boreal    needleleaf deciduous trees
- CNVT(18)=  "NVT_BOGR"      ! boreal grassland C3
- CNVT(19)=  "NVT_SHRB"      ! broadleaf shrub
-
-DO JCOVER=301,JPCOVER
+IF (NVT_IRR/=0) THEN
+  JBEG = 301
+  CNVT(1) =  "NVT_NO  "      ! no vegetation (smooth)
+  CNVT(2) =  "NVT_ROCK"      ! no vegetation (rocks)
+  CNVT(3) =  "NVT_SNOW"      ! permanent snow and ice
+  CNVT(4) =  "NVT_TEBD"      ! temperate broadleaf deciduous trees
+  CNVT(5) =  "NVT_BONE"      ! boreal needleleaf evergreen trees 
+  CNVT(6) =  "NVT_TRBE"      ! tropical broadleaf evergreen trees
+  CNVT(7) =  "NVT_C3  "      ! C3 cultures types
+  CNVT(8) =  "NVT_C4  "      ! C4 cultures types
+  CNVT(9) =  "NVT_IRR "      ! irrigated crops
+  CNVT(10)=  "NVT_GRAS"      ! temperate grassland C3
+  CNVT(11)=  "NVT_TROG"      ! tropical  grassland C4
+  CNVT(12)=  "NVT_PARK"      ! peat bogs, parks and gardens (irrigated grass)
+  CNVT(13)=  "NVT_TRBD"      ! tropical  broadleaf  deciduous trees
+  CNVT(14)=  "NVT_TEBE"      ! temperate broadleaf  evergreen trees
+  CNVT(15)=  "NVT_TENE"      ! temperate needleleaf evergreen trees
+  CNVT(16)=  "NVT_BOBD"      ! boreal    broadleaf  deciduous trees
+  CNVT(17)=  "NVT_BOND"      ! boreal    needleleaf deciduous trees
+  CNVT(18)=  "NVT_BOGR"      ! boreal grassland C3
+  CNVT(19)=  "NVT_SHRB"      ! broadleaf shrub
+ELSE
+  JBEG = 1
+  CNVT(1) =  "NVT_NO  "      ! no vegetation (smooth)
+  CNVT(2) =  "NVT_ROCK"      ! no vegetation (rocks)
+  CNVT(3) =  "NVT_SNOW"      ! permanent snow and ice
+  CNVT(4) =  "NVT_BOBD"      ! boreal    broadleaf  deciduous trees
+  CNVT(5) =  "NVT_TEBD"      ! temperate broadleaf deciduous trees
+  CNVT(6) =  "NVT_TRBD"      ! tropical  broadleaf  deciduous trees
+  CNVT(7) =  "NVT_TEBE"      ! temperate broadleaf  evergreen trees
+  CNVT(8) =  "NVT_TRBE"      ! tropical broadleaf evergreen trees
+  CNVT(9) =  "NVT_BONE"      ! boreal needleleaf evergreen trees 
+  CNVT(10)=  "NVT_TENE"      ! temperate needleleaf evergreen trees
+  CNVT(11)=  "NVT_BOND"      ! boreal    needleleaf deciduous trees
+  CNVT(12)=  "NVT_GRAS"      ! temperate grassland C3
+  CNVT(13)=  "NVT_TROG"      ! tropical  grassland C4
+  CNVT(14)=  "NVT_BOGR"      ! boreal grassland C3
+  CNVT(15)=  "NVT_SHRB"      ! broadleaf shrub
+  CNVT(16)=  "NVT_C3W "      ! winter C3 cultures types
+  CNVT(17)=  "NVT_C3E "      ! summer C3 cultures types
+  CNVT(18)=  "NVT_C4  "      ! C4 cultures types
+  CNVT(19)=  "NVT_FLTR"      ! flooded trees
+  CNVT(20)=  "NVT_FLGR"      ! flooded grassland
+ENDIF
+!
+DO JCOVER=JBEG,JPCOVER
 WRITE(*,FMT='(A80)') '!-------------------------------------------------------------------------------'
 WRITE(*,FMT='(A16,I3.3)') 'SUBROUTINE COVER',JCOVER
 WRITE(*,FMT='(A1)') '!'
@@ -187,7 +211,7 @@ END DO
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
-DO JCOVER=301,JPCOVER
+DO JCOVER=JBEG,JPCOVER
   WRITE(*,FMT='(A10,I3.3)') 'CALL COVER',JCOVER
 END DO
 IF (LHOOK) CALL DR_HOOK('WRITE_DATA',1,ZHOOK_HANDLE)

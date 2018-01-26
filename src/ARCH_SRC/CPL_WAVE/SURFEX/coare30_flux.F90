@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE COARE30_FLUX (S, &
-                             PZ0SEA,PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,  &
+    SUBROUTINE COARE30_FLUX (S,PZ0SEA,PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,  &
             PVMOD,PZREF,PUREF,PPS,PQSAT,PSFTH,PSFTQ,PUSTAR,PCD,PCDN,PCH,PCE,PRI,&
             PRESA,PRAIN,PZ0HSEA,PHS,PTP)  
 !     #######################################################################
@@ -71,6 +70,7 @@ USE MODD_CSTS,       ONLY : XKARMAN, XG, XSTEFAN, XRD, XRV, XPI, &
 USE MODD_SURF_ATM,   ONLY : XVZ0CM
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_WAVE
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF, XSURF_EPSILON
 USE MODD_WATER_PAR
 !
@@ -529,6 +529,8 @@ ZAC(:) = PCH(:)*ZVMOD(:)
 PRESA(:) = 1. / MAX(ZAC(:),XSURF_EPSILON)
 !
 !       5.3 Z0 and Z0H over sea
+!
+PZ0SEA(:) =  ZCHARN(:) * ZUSTAR2(:) / XG + XVZ0CM * PCD(:) / PCDN(:)
 !
 PZ0SEA(:) = MAX(MIN(ZO(:),0.05),10E-6)
 !

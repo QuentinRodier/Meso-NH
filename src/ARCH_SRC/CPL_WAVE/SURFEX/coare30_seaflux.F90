@@ -3,12 +3,11 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE COARE30_SEAFLUX (S, &
-                                PMASK,KSIZE_WATER,KSIZE_ICE,     &
-                                PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,        & 
-                                PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,     &
-                                PQSAT,PSFTH,PSFTQ,PUSTAR,  &
-                                PCD,PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA,PHS,PTP)
+    SUBROUTINE COARE30_SEAFLUX (S, PMASK,KSIZE_WATER,KSIZE_ICE,     &
+                                PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,     & 
+                                PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,  &
+                                PQSAT,PSFTH,PSFTQ,PUSTAR,           &
+                                PCD,PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA )
 !     ##################################################################
 !
 !
@@ -84,8 +83,6 @@ REAL, DIMENSION(:), INTENT(IN)    :: PVMOD ! module of wind at atm. wind level (
 REAL, DIMENSION(:), INTENT(IN)    :: PZREF ! atm. level for temp. and humidity (m)
 REAL, DIMENSION(:), INTENT(IN)    :: PUREF ! atm. level for wind (m)
 REAL, DIMENSION(:), INTENT(IN)    :: PSST  ! Sea Surface Temperature (K)
-REAL, DIMENSION(:), INTENT(IN)    :: PHS   ! wave significant height
-REAL, DIMENSION(:), INTENT(IN)    :: PTP   ! Wave peak period
 REAL, DIMENSION(:), INTENT(IN)    :: PEXNS ! Exner function at sea surface
 REAL, DIMENSION(:), INTENT(IN)    :: PPS   ! air pressure at sea surface (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PRAIN ! precipitation rate (kg/s/m2)
@@ -213,8 +210,8 @@ DO JJ=1, SIZE(KMASK)
   ZW_ZREF(JJ) = PZREF(KMASK(JJ)) 
   ZW_UREF(JJ) = PUREF(KMASK(JJ))
   ZW_SST(JJ)  = PSST(KMASK(JJ))
-  ZW_TP(JJ)   = PTP(KMASK(JJ))
-  ZW_HS(JJ)   = PHS(KMASK(JJ))
+  ZW_TP(JJ)   = S%XTP(KMASK(JJ))
+  ZW_HS(JJ)   = S%XHS(KMASK(JJ))  
   ZW_EXNS(JJ) = PEXNS(KMASK(JJ)) 
   ZW_PS(JJ)   = PPS(KMASK(JJ))
   ZW_RAIN(JJ) = PRAIN(KMASK(JJ))
@@ -236,8 +233,7 @@ ZW_Z0HSEA(:) = XUNDEF
 !
 IF (YTYPE=='W') THEN
   !
-  CALL COARE30_FLUX(S, &
-                    ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,&
+  CALL COARE30_FLUX(S, ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,&
         ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,&
         ZW_CD,ZW_CDN,ZW_CH,ZW_CE,ZW_RI,ZW_RESA,ZW_RAIN,ZW_Z0HSEA,ZW_HS,ZW_TP)   
   !

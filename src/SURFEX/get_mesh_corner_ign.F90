@@ -69,13 +69,13 @@ IF (LHOOK) CALL DR_HOOK('GET_MESH_CORNER_IGN',0,ZHOOK_HANDLE)
 !*    1.     Gets parameters of the projection
 !            ---------------------------------
 !
- CALL GET_GRIDTYPE_IGN(PGRID_PAR,KLAMBERT=ILAMBERT,KL=INI)
+CALL GET_GRIDTYPE_IGN(PGRID_PAR,KLAMBERT=ILAMBERT,KL=INI)
 !  
 IF(KL/=INI)THEN
   CALL ABOR1_SFX('GET_MESH_CORNER_IGN: WRONG NUMBER OF POINT')
 ENDIF
 !
- CALL GET_GRIDTYPE_IGN(PGRID_PAR,PX=ZX,PY=ZY,PDX=ZDX,PDY=ZDY)
+CALL GET_GRIDTYPE_IGN(PGRID_PAR,PX=ZX,PY=ZY,PDX=ZDX,PDY=ZDY)
 !
 !*    2.     grid cell corner (counterclockwise sense)
 !            -----------------------------------------

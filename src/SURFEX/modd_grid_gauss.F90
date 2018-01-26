@@ -46,5 +46,8 @@ REAL                                :: XLAP    ! Latitude of stretching pole
 REAL                                :: XLOP    ! Longitude of stretching pole
 REAL                                :: XCOEF   ! Stretching coefficient
 !
+REAL, DIMENSION(:), ALLOCATABLE    :: XILATARRAY! latitudes values array
+REAL, DIMENSION(:), ALLOCATABLE :: XLAT, XLON
+!
 END MODULE MODD_GRID_GAUSS
 

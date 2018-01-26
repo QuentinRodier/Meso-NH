@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_DIAG_PGD_GRDN_n (DTCO, DGU, U, DGMTO, TGDPE, TGDP, TVG, &
-                                        HPROGRAM)
+      SUBROUTINE WRITE_DIAG_PGD_GRDN_n (DTCO, HSELECT, U, OSURF_DIAG_ALBEDO, &
+                                        S, P, PEK, IO, HPROGRAM)
 !     #########################################
 !
 !!****  *WRITE_DIAG_PGD_TEB_GARDEN_n* - writes the ISBA physiographic diagnostic fields
@@ -42,12 +42,9 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_DIAG_MISC_TEB_OPTION_n, ONLY : DIAG_MISC_TEB_OPTIONS_t
-USE MODD_TEB_GARDEN_PGD_EVOL_n, ONLY : TEB_GARDEN_PGD_EVOL_t
-USE MODD_TEB_GARDEN_PGD_n, ONLY : TEB_GARDEN_PGD_t
-USE MODD_TEB_VEG_n, ONLY : TEB_VEG_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_P_t, ISBA_PE_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -69,12 +66,13 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(DIAG_MISC_TEB_OPTIONS_t), INTENT(INOUT) :: DGMTO
-TYPE(TEB_GARDEN_PGD_EVOL_t), INTENT(INOUT) :: TGDPE
-TYPE(TEB_GARDEN_PGD_t), INTENT(INOUT) :: TGDP
-TYPE(TEB_VEG_OPTIONS_t), INTENT(INOUT) :: TVG
+LOGICAL, INTENT(IN) :: OSURF_DIAG_ALBEDO
+TYPE(ISBA_S_t), INTENT(INOUT) :: S
+TYPE(ISBA_P_t), INTENT(INOUT) :: P
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -93,18 +91,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !         Initialisation for IO
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_PGD_GRDN_N',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                     HPROGRAM,'TOWN  ','TEB   ','WRITE')
+CALL INIT_IO_SURF_n(DTCO, U,   HPROGRAM,'TOWN  ','TEB   ','WRITE','TEB_PGD.OUT.nc')
 !
 !* Leaf Area Index
 !
-IF (TVG%CPHOTO=='NON' .OR. TVG%CPHOTO=='AGS' .OR. TVG%CPHOTO=='AST') THEN
+IF (IO%CPHOTO=='NON' .OR. IO%CPHOTO=='AST') THEN
   !
   YRECFM='GD_LAI'
   YCOMMENT='leaf area index (-)'
   !
-  CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XLAI(:),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XLAI(:),IRESP,HCOMMENT=YCOMMENT)
   !
 ENDIF
 !
@@ -115,26 +111,23 @@ ENDIF
 YRECFM='GD_VEG'
 YCOMMENT='vegetation fraction (-)'
 !
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XVEG(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XVEG(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !* Surface roughness length (without snow)
 !
 YRECFM='GD_Z0VEG'
 YCOMMENT='surface roughness length (without snow) (M)'
 !
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XZ0(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
 !* Soil depth for each patch
 !
-DO JL=1,SIZE(TGDP%XDG,2)
+DO JL=1,SIZE(P%XDG,2)
   WRITE(YRECFM,FMT='(A5,I1)') 'GD_DG',JL
   YCOMMENT='soil depth'//' (M)'
-  CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XDG(:,JL),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,P%XDG(:,JL),IRESP,HCOMMENT=YCOMMENT)
 END DO
 !
 !-------------------------------------------------------------------------------
@@ -149,24 +142,22 @@ ENDIF
 !
 !* Runoff soil ice depth for each patch
 !
-IF(TVG%CHORT=='SGH')THEN
+IF(IO%CHORT=='SGH')THEN
   YRECFM='GD_DICE'
   YCOMMENT='soil ice depth for runoff (m)'
-  CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XD_ICE(:),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,P%XD_ICE(:),IRESP,HCOMMENT=YCOMMENT)
 ENDIF
 !
 !-------------------------------------------------------------------------------
 !
 !* Fraction of each vegetation type for each patch
 !
-DO JL=1,SIZE(TGDP%XVEGTYPE,2)
+DO JL=1,SIZE(S%XVEGTYPE,2)
   WRITE(YPAS,'(I2)') JL 
   YLVLV=ADJUSTL(YPAS(:LEN_TRIM(YPAS)))
   WRITE(YRECFM,FMT='(A12)') 'GD_VEGTY_P'//YLVLV
   YCOMMENT='fraction of each vegetation type '//' (-)'
-  CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XVEGTYPE(:,JL),IRESP,HCOMMENT=YCOMMENT)
+  CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,S%XVEGTYPE(:,JL),IRESP,HCOMMENT=YCOMMENT)
 END DO
 !-------------------------------------------------------------------------------
 !
@@ -174,59 +165,50 @@ END DO
 !
 YRECFM='GD_RSMIN'
 YCOMMENT='minimum stomatal resistance (SM-1)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XRSMIN(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XRSMIN(:),IRESP,HCOMMENT=YCOMMENT)
 !
 YRECFM='GD_GAMMA'
 YCOMMENT='coefficient for RSMIN calculation (-)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XGAMMA(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XGAMMA(:),IRESP,HCOMMENT=YCOMMENT)
 !
 YRECFM='GD_CV'
 YCOMMENT='vegetation thermal inertia coefficient (-)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XCV(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XCV(:),IRESP,HCOMMENT=YCOMMENT)
 !
 YRECFM='GD_RGL'
 YCOMMENT='maximum solar radiation usable in photosynthesis (-)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XRGL(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XRGL(:),IRESP,HCOMMENT=YCOMMENT)
 !
 YRECFM='GD_EMIS_ISBA'
 YCOMMENT='surface emissivity (-)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XEMIS(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XEMIS(:),IRESP,HCOMMENT=YCOMMENT)
 !
 YRECFM='GD_WRMAX_CF'
 YCOMMENT='coefficient for maximum water interception (-)'
- CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XWRMAX_CF(:),IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XWRMAX_CF(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
-IF (DGMTO%LSURF_DIAG_ALBEDO) THEN
+IF (OSURF_DIAG_ALBEDO) THEN
 !
 !* Soil albedos
 !
 !
    YRECFM='GD_ALBNIR_S'
    YCOMMENT='soil near-infra-red albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XALBNIR_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBNIR_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
    YRECFM='GD_ALBVIS_S'
    YCOMMENT='soil visible albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XALBVIS_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBVIS_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
    YRECFM='GD_ALBUV_S'
    YCOMMENT='soil UV albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDP%XALBUV_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBUV_SOIL(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
@@ -234,22 +216,19 @@ IF (DGMTO%LSURF_DIAG_ALBEDO) THEN
 !
    YRECFM='GD_ALBNIR_T'
    YCOMMENT='total near-infra-red albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XALBNIR(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBNIR(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
    YRECFM='GD_ALBVIS_T'
    YCOMMENT='total visible albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XALBVIS(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBVIS(:),IRESP,HCOMMENT=YCOMMENT)
 !
 !-------------------------------------------------------------------------------
 !
    YRECFM='GD_ALBUV_T'
    YCOMMENT='total UV albedo (-)'
-   CALL WRITE_SURF(DGU, U, &
-                  HPROGRAM,YRECFM,TGDPE%CUR%XALBUV(:),IRESP,HCOMMENT=YCOMMENT)
+   CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,PEK%XALBUV(:),IRESP,HCOMMENT=YCOMMENT)
 !
 END IF
 !

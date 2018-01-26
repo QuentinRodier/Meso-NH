@@ -59,7 +59,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !  -------------------
 !
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST_ASC',0,ZHOOK_HANDLE)
- CLOSE(KLUNAM)
+CLOSE(KLUNAM)
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST_ASC',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

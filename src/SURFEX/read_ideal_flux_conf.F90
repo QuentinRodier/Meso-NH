@@ -79,7 +79,7 @@ IF (LHOOK) CALL DR_HOOK('READ_IDEAL_FLUX_CONF',0,ZHOOK_HANDLE)
 !
  CALL OPEN_NAMELIST(HPROGRAM,INAM)
 !
- CSFTQ='kg/m2/s'
+CSFTQ='kg/m2/s'
 !
 !* reading of namelist
 !  -------------------

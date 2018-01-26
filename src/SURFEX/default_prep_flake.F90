@@ -77,11 +77,11 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_FLAKE',0,ZHOOK_HANDLE)
- CFILE_FLAKE  = '                          '
- CTYPE        = '      '
+CFILE_FLAKE  = '                          '
+CTYPE        = '      '
 !
- CFILEPGD_FLAKE = '                          '
- CTYPEPGD       = '      '
+CFILEPGD_FLAKE = '                          '
+CTYPEPGD       = '      '
 !
 XTS_UNIF = XUNDEF
 XUNIF_T_SNOW   = XUNDEF

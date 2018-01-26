@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE READ_NAM_PGD_ISBA_MEB(HPROGRAM, KLUOUT, OMEB_PATCH, OFORC_MEASURE, &
-                 OMEB_LITTER, OMEB_GNDRES)  
+                      OMEB_LITTER, OMEB_GNDRES)  
 !     #############################################################################
 !
 !!**** *READ_NAM_PGD_ISBA_MEB* reads namelist for ISBA
@@ -43,6 +43,8 @@
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
 !
+USE MODD_DATA_COVER_PAR, ONLY : NVEGTYPE_ECOSG
+!
 USE MODE_POS_SURF
 !
 USE MODI_ABOR1_SFX
@@ -55,14 +57,13 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
- CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM      ! Type of program
+CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM      ! Type of program
 INTEGER,             INTENT(IN)    :: KLUOUT
 !
 LOGICAL, DIMENSION(:), INTENT(OUT) :: OMEB_PATCH
 LOGICAL              , INTENT(OUT) :: OFORC_MEASURE
 LOGICAL              , INTENT(OUT) :: OMEB_LITTER
 LOGICAL              , INTENT(OUT) :: OMEB_GNDRES
-!
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -74,14 +75,14 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
-LOGICAL, DIMENSION(19) :: LMEB_PATCH
+LOGICAL, DIMENSION(NVEGTYPE_ECOSG) :: LMEB_PATCH
 LOGICAL                :: LFORC_MEASURE
 LOGICAL                :: LMEB_LITTER
 LOGICAL                :: LMEB_GNDRES
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-NAMELIST/NAM_MEB_ISBA/LMEB_PATCH,LFORC_MEASURE,LMEB_LITTER,LMEB_GNDRES
+NAMELIST/NAM_MEB_ISBA/LMEB_PATCH,LFORC_MEASURE,LMEB_LITTER,LMEB_GNDRES  
 !
 !-------------------------------------------------------------------------------
 !
@@ -100,9 +101,9 @@ LMEB_GNDRES   =.FALSE.
 !*    2.      Reading of namelist
 !             -------------------
 !
- CALL OPEN_NAMELIST(HPROGRAM,ILUNAM)
+CALL OPEN_NAMELIST(HPROGRAM,ILUNAM)
 !
- CALL POSNAM(ILUNAM,'NAM_MEB_ISBA',GFOUND,KLUOUT)
+CALL POSNAM(ILUNAM,'NAM_MEB_ISBA',GFOUND,KLUOUT)
 IF (GFOUND) THEN
    READ(UNIT=ILUNAM,NML=NAM_MEB_ISBA)
 ELSE
@@ -114,7 +115,7 @@ ELSE
   CALL ABOR1_SFX('PGD_ISBA: NAM_MEB_ISBA and LMEB_PATCH not defined')
 ENDIF          
 !
- CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
+CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
 !-------------------------------------------------------------------------------
 !

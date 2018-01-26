@@ -17,7 +17,7 @@ USE MODI_ABOR1_SFX
 !
 IMPLICIT NONE
 !
- CONTAINS
+CONTAINS
 !
 !############################################################################
 !############################################################################
@@ -548,7 +548,7 @@ END SUBROUTINE GAUSS_GRID_LIMITS
 !############################################################################
   !############################################################################
   !        ####################################################################
-SUBROUTINE XY_GAUSS(PCODIL,KSIZE,PNODATA,PVALUE,PLAT_XY,PLON_XY)  
+SUBROUTINE XY_GAUSS(PCODIL,KSIZE_DLAT,KSIZE_LON,PNODATA,PVALUE,PLAT_XY,PLON_XY)  
   !      ####################################################################
   !
   !!****  *LATLON_GAUSS * - Routine to compute coordinates on a transform sphere
@@ -597,7 +597,8 @@ SUBROUTINE XY_GAUSS(PCODIL,KSIZE,PNODATA,PVALUE,PLAT_XY,PLON_XY)
   !*     0.1    Declarations of arguments and results
   !
   REAL,                 INTENT(IN) :: PCODIL
-  INTEGER,              INTENT(IN) :: KSIZE
+  INTEGER,              INTENT(IN) :: KSIZE_DLAT
+  INTEGER,              INTENT(IN) :: KSIZE_LON
   REAL,                 INTENT(IN) :: PNODATA
   REAL, DIMENSION(:),   INTENT(IN) :: PVALUE  ! value of the point to add
   REAL, DIMENSION(:),   INTENT(OUT):: PLAT_XY,PLON_XY 
@@ -609,24 +610,25 @@ SUBROUTINE XY_GAUSS(PCODIL,KSIZE,PNODATA,PVALUE,PLAT_XY,PLON_XY)
   !
   INTEGER :: JJ, IDN, IDT
   !
-  REAL(KIND=JPRB) :: ZHOOK_HANDLE
+  REAL(KIND=JPRB) :: ZHOOK_HANDLE_OMP
   !--------------------------------------------------------------------------------
   !
   !*     1.     Preliminary calculations
   !             ------------------------
   !
-  IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',0,ZHOOK_HANDLE)
   !
 !
-!$OMP PARALLEL DO PRIVATE(IDN,IDT,ZCOS1, ZV1, ZLAT1, ZCOS2, ZLON1, ZINVC, &
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP)
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',0,ZHOOK_HANDLE_OMP)
+!$OMP DO PRIVATE(IDN,IDT,ZCOS1, ZV1, ZLAT1, ZCOS2, ZLON1, ZINVC, &
 !$OMP ZSINN, ZV2, ZINVS, ZSINT, ZCOST, ZV3, ZLAT2, ZM, ZLON2)
   DO JJ=1,SIZE(PVALUE)
     !
     IF (PVALUE(JJ)==PNODATA) CYCLE
     !
-    IDN = MOD(JJ,KSIZE) 
-    IF (IDN==0) IDN=KSIZE
-    IDT = CEILING(1.*JJ/KSIZE)
+    IDN = MOD(JJ,KSIZE_LON) 
+    IF (IDN==0) IDN=KSIZE_LON
+    IDT = CEILING(1.*JJ/KSIZE_DLAT)
     !
     ZCOS1 = XCOSN(IDN)*XCOST(IDT)
     !ZCOS1 = COS(XLAT(IDT))*COS(XLON(IDN)-XLONP)
@@ -672,10 +674,10 @@ SUBROUTINE XY_GAUSS(PCODIL,KSIZE,PNODATA,PVALUE,PLAT_XY,PLON_XY)
     IF (ABS(PLON_XY(JJ)-360.)<1.E-4) PLON_XY(JJ) = 0.
     !
   ENDDO
-!$OMP END PARALLEL DO    
-!
-  IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE)
-    !---------------------------------------------------------------------------------
+!$OMP END DO
+IF (LHOOK) CALL DR_HOOK('MODE_GRIDTYPE_GAUSS:XY_GAUSS',1,ZHOOK_HANDLE_OMP)  
+!$OMP END PARALLEL
+!---------------------------------------------------------------------------------
   END SUBROUTINE XY_GAUSS
   !---------------------------------------------------------------------------------
   !############################################################################

@@ -3,9 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PREP_SEAFLUX_CONF (O, &
-                                         HPROGRAM,HVAR,HFILE,HFILETYPE,HFILEPGD,HFILEPGDTYPE, &
-                                        HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,KLUOUT,OUNIF)
+      SUBROUTINE READ_PREP_SEAFLUX_CONF (OMERCATOR, HPROGRAM,HVAR,HFILE,HFILETYPE,&
+                                         HFILEPGD,HFILEPGDTYPE, HATMFILE,HATMFILETYPE,&
+                                         HPGDFILE,HPGDFILETYPE,KLUOUT,OUNIF)
 !     #######################################################
 !
 !!****  *READ_PREP_SEAFLUX_CONF* - routine to read the configuration for 
@@ -67,19 +67,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+LOGICAL, INTENT(IN) :: OMERCATOR
 !
-TYPE(OCEAN_t), INTENT(INOUT) :: O
-!
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
- CHARACTER(LEN=7),  INTENT(IN)  :: HVAR     ! variable treated
- CHARACTER(LEN=28), INTENT(OUT) :: HFILE    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE! file type
- CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
- CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
- CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
- CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
- CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
+CHARACTER(LEN=7),  INTENT(IN)  :: HVAR     ! variable treated
+CHARACTER(LEN=28), INTENT(OUT) :: HFILE    ! file name
+CHARACTER(LEN=6),  INTENT(OUT) :: HFILETYPE! file type
+CHARACTER(LEN=28), INTENT(OUT) :: HFILEPGD    ! file name
+CHARACTER(LEN=6),  INTENT(OUT) :: HFILEPGDTYPE! file type
+CHARACTER(LEN=28), INTENT(IN)  :: HATMFILE    ! atmospheric file name
+CHARACTER(LEN=6),  INTENT(IN)  :: HATMFILETYPE! atmospheric file type
+CHARACTER(LEN=28), INTENT(IN)  :: HPGDFILE    ! atmospheric file name
+CHARACTER(LEN=6),  INTENT(IN)  :: HPGDFILETYPE! atmospheric file type
 INTEGER,           INTENT(IN)  :: KLUOUT   ! logical unit of output listing
 LOGICAL,           INTENT(OUT) :: OUNIF    ! flag for prescribed uniform field
 
@@ -171,7 +170,7 @@ END IF
 !* If 1D coupling: ocean variables initializing
 !  --------------------------------------------
 !
-IF (O%LMERCATOR) THEN
+IF (OMERCATOR) THEN
   WRITE(KLUOUT,*) 'LMERCATOR=T : initializing oceanic vertical grid'
   CALL PREP_OCEAN_MERCATORVERGRID(HPROGRAM,OUNIF)
 END IF

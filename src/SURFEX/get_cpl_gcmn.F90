@@ -60,7 +60,7 @@ IMPLICIT NONE
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
- CHARACTER(LEN=6),        INTENT(IN)  :: HPROGRAM
+CHARACTER(LEN=6),        INTENT(IN)  :: HPROGRAM
 INTEGER,                 INTENT(IN)  :: KI       ! number of points
 !
 REAL, DIMENSION(KI),     INTENT(OUT) :: PRAIN    ! total rainfall rate (kg/m2/s)
@@ -79,7 +79,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('GET_CPL_GCM_N',0,ZHOOK_HANDLE)
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 IF(LCPL_GCM) THEN
 !

@@ -66,7 +66,7 @@ LOGICAL,           INTENT(OUT) :: OPRECIP       ! precipitation correction
 LOGICAL,           INTENT(OUT) :: OPWEBB        ! Webb correction
 INTEGER,           INTENT(OUT) :: KZ0           ! PZ0SEA formulation
 INTEGER,           INTENT(OUT) :: KGRVWAVES     ! Wave gravity in roughness length
-LOGICAL,           INTENT(OUT) :: OPROGSST      !two-way 
+LOGICAL,           INTENT(OUT) :: OPROGSST      !two-way coupling
 INTEGER,           INTENT(OUT) :: KTIME_COUPLING!coupling frequency
 REAL,              INTENT(OUT) :: PICHCE        !CE coef calculation for ECUME
 REAL,              INTENT(OUT) :: POCEAN_TSTEP  !ocean 1D model time-step

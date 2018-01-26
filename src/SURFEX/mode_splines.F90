@@ -148,7 +148,7 @@ INTERFACE SPLB2C
         MODULE PROCEDURE SPLB2C
 END INTERFACE
 
- CONTAINS
+CONTAINS
 
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1871,7 +1871,7 @@ M=SIZE(IW,2)
 DO J=1,N
   C(J,J)=C(J,J)-1.
 ENDDO
- C(:,:)=-C(:,:)
+C(:,:)=-C(:,:)
 !-----------------------------------------------------------
 !     Calcul des vecteurs propres de I - Tm c ((Tm'*Tm)-1) c Tm'
  CALL EISRS1(C,VP,R1,WORK,IREP)

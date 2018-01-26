@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SUBSCALE_AOS (UG, USS, &
-                               OZ0EFFI,OZ0EFFJ,PSEA)
+      SUBROUTINE SUBSCALE_AOS (U, UG, USS, OZ0EFFI, OZ0EFFJ)
 !     #############################################
 !
 !!*SUBSCALE_AOS  computes the sum of the ratio: (h'-h)/L when  h'/L >h/L  
@@ -39,15 +38,17 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 USE MODD_PGDWORK,        ONLY : NSSO, XSSQO, LSSQO
-USE MODD_PGD_GRID,       ONLY : NL, CGRID, XGRID_PAR, NGRID_PAR
+USE MODD_PGD_GRID,       ONLY : NL
 !
 USE MODI_GET_ADJACENT_MESHES
-!
+USE MODI_READ_AND_SEND_MPI
+USE MODI_GATHER_AND_WRITE_MPI
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -58,9 +59,9 @@ IMPLICIT NONE
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
 !
-!
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
 LOGICAL, DIMENSION(:), INTENT(OUT) :: OZ0EFFI! .T. : the z0eff coefficients
 !                                            ! are computed at grid point
@@ -72,23 +73,21 @@ LOGICAL, DIMENSION(:), INTENT(OUT) :: OZ0EFFJ! .T. : the z0eff coefficients
 !                                            ! .F. : not enough sub-grid
 !                                            ! information avalaible to
 !                                            ! compute the coefficients
-REAL,    DIMENSION(:), INTENT(IN)  :: PSEA   ! sea fraction
-
 !
 !*    0.2    Declaration of indexes
 !            ----------------------
 !
-!
+INTEGER :: JS1, JS2
 INTEGER :: JL          ! loop index on grid meshs
 INTEGER :: IL          ! grid mesh index of second subgrid point used
 INTEGER :: JISS, JJSS  ! loop indexes for subsquares arrays
 INTEGER :: JNEXT       ! loop index on subgrid meshes
 INTEGER :: INEXT       ! index to add to JISS or JJSS to obtain the following
 !                      ! point containing a data in a segment
-INTEGER, DIMENSION(NL) :: ILEFT   ! index of left   grid mesh 
-INTEGER, DIMENSION(NL) :: IRIGHT  ! index of right  grid mesh 
-INTEGER, DIMENSION(NL) :: ITOP    ! index of top    grid mesh 
-INTEGER, DIMENSION(NL) :: IBOTTOM ! index of bottom grid mesh
+INTEGER, DIMENSION(:), ALLOCATABLE :: ILEFT   ! index of left   grid mesh 
+INTEGER, DIMENSION(:), ALLOCATABLE :: IRIGHT  ! index of right  grid mesh 
+INTEGER, DIMENSION(:), ALLOCATABLE :: ITOP    ! index of top    grid mesh 
+INTEGER, DIMENSION(:), ALLOCATABLE :: IBOTTOM ! index of bottom grid mesh
 !
 !*    0.3    Declaration of counters inside a grid (JL)
 !            -----------------------
@@ -125,10 +124,15 @@ REAL :: ZDYEFF    ! width of a subsquare along J axis
 !*    0.5    Declaration of other local variables
 !            ------------------------------------
 !
-REAL, DIMENSION(NL)   :: ZDX      ! grid mesh size in x direction
-REAL, DIMENSION(NL)   :: ZDY      ! grid mesh size in y direction
-REAL, DIMENSION(0:NL) :: ZSLOPEIP ! x mean slope
-REAL, DIMENSION(0:NL) :: ZSLOPEJP ! y mean slope
+INTEGER, DIMENSION(:), ALLOCATABLE :: ISSO, ISSOT
+INTEGER, DIMENSION(:,:,:), ALLOCATABLE :: ISSQOT, ISSQO
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSSQO
+LOGICAL, DIMENSION(:), ALLOCATABLE :: GZ0EFFI, GZ0EFFJ
+REAL, DIMENSION(:), ALLOCATABLE   :: ZDX, ZDY, ZSEA, ZAVG_ZS, ZMESH_SIZE    ! grid mesh size in x direction
+REAL, DIMENSION(:), ALLOCATABLE   :: ZAOSIP_ALL, ZAOSIM_ALL, ZAOSJP_ALL, ZAOSJM_ALL 
+REAL, DIMENSION(:), ALLOCATABLE   :: ZHO2IP_ALL, ZHO2IM_ALL, ZHO2JP_ALL, ZHO2JM_ALL 
+REAL :: ZSLOPEIP ! x mean slope
+REAL :: ZSLOPEJP ! y mean slope
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
@@ -142,54 +146,90 @@ IF (LHOOK) CALL DR_HOOK('SUBSCALE_AOS',0,ZHOOK_HANDLE)
 OZ0EFFI(:)=.FALSE.
 OZ0EFFJ(:)=.FALSE.
 !
+IF (NRANK==NPIO) THEN
+  ALLOCATE(ZSEA      (U%NDIM_FULL))
+  ALLOCATE(ZAVG_ZS   (U%NDIM_FULL))
+  ALLOCATE(ZMESH_SIZE(U%NDIM_FULL))  
+  ALLOCATE(ISSQOT(U%NDIM_FULL,NSSO,NSSO))
+  ALLOCATE(ZSSQO (U%NDIM_FULL,NSSO,NSSO))
+ELSE
+  ALLOCATE(ZSEA      (0))
+  ALLOCATE(ZAVG_ZS   (0)) 
+  ALLOCATE(ISSQOT(0,0,0))
+  ALLOCATE(ZSSQO (0,0,0))
+ENDIF
+!
+ CALL GATHER_AND_WRITE_MPI(U%XSEA,ZSEA)
+ CALL GATHER_AND_WRITE_MPI(USS%XAVG_ZS,ZAVG_ZS)
+ CALL GATHER_AND_WRITE_MPI(UG%G%XMESH_SIZE,ZMESH_SIZE)  
+ CALL GATHER_AND_WRITE_MPI(XSSQO,ZSSQO)
+!
+ALLOCATE(ISSQO(SIZE(XSSQO,1),NSSO,NSSO))
+ISSQO(:,:,:) = 0
+WHERE (LSSQO(:,:,:)) ISSQO(:,:,:) = 1
+ CALL GATHER_AND_WRITE_MPI(ISSQO,ISSQOT)
+DEALLOCATE(ISSQO)
+!
 !*    1.2    Grid dimension (meters)
 !            -----------------------
 !
- CALL GET_MESH_DIM(CGRID,NGRID_PAR,NL,XGRID_PAR,ZDX,ZDY,UG%XMESH_SIZE)
-!
-!
-!*    1.3    Left, top, right and bottom adjacent gris meshes
-!            ------------------------------------------------
-!
- CALL GET_ADJACENT_MESHES(CGRID,NGRID_PAR,NL,XGRID_PAR,ILEFT,IRIGHT,ITOP,IBOTTOM)
-!
-!
-!*    1.4    Mean slopes between 2 grid meshes
-!            -----------
-!
-ZSLOPEIP(0) = 0.
-ZSLOPEJP(0) = 0.
-!
-DO JL=1,NL
-  IF (IRIGHT(JL)/=0 .AND. ILEFT(JL)/=0) THEN
-    ZSLOPEIP(JL) =  0.5 * ( USS%XAVG_ZS(IRIGHT(JL)) - USS%XAVG_ZS(JL) ) &
-                          / ( 0.5 * (ZDX(IRIGHT(JL)) + ZDX(JL)) ) &
-                    + 0.5 * ( USS%XAVG_ZS(JL) - USS%XAVG_ZS(ILEFT (JL)) ) &
-                          / ( 0.5 * (ZDX(JL)  + ZDX(ILEFT(JL))) )  
-  ELSE
-    ZSLOPEIP(JL) = 0.
-  END IF
-  IF (ITOP(JL)/=0 .AND. IBOTTOM(JL)/=0) THEN
-    ZSLOPEJP(JL) =  0.5 * ( USS%XAVG_ZS(ITOP(JL))     - USS%XAVG_ZS(JL) ) &
-                          / ( 0.5 * (ZDY(ITOP(JL))     + ZDY(JL)) ) &
-                    + 0.5 * ( USS%XAVG_ZS(JL) - USS%XAVG_ZS(IBOTTOM (JL)) ) &
-                          / ( 0.5 * (ZDY(JL)  + ZDY(IBOTTOM(JL))) )  
-  ELSE
-    ZSLOPEJP(JL) = 0.
-  END IF
-END DO
+IF (NRANK==NPIO) THEN
+  !
+  ALLOCATE(ZDX(U%NDIM_FULL),ZDY(U%NDIM_FULL))
+  CALL GET_MESH_DIM(UG%G%CGRID,UG%NGRID_FULL_PAR,U%NDIM_FULL,UG%XGRID_FULL_PAR,ZDX,ZDY,ZMESH_SIZE)
+  DEALLOCATE(ZMESH_SIZE)
+  !
+  !
+  !*    1.3    Left, top, right and bottom adjacent gris meshes
+  !            ------------------------------------------------
+  !
+  ALLOCATE(ILEFT(U%NDIM_FULL),IRIGHT(U%NDIM_FULL),ITOP(U%NDIM_FULL),IBOTTOM(U%NDIM_FULL))
+  CALL GET_ADJACENT_MESHES(UG%G%CGRID,UG%NGRID_FULL_PAR,U%NDIM_FULL,UG%XGRID_FULL_PAR,&
+                                ILEFT,IRIGHT,ITOP,IBOTTOM)
+  !
+  ALLOCATE(GZ0EFFI(U%NDIM_FULL),GZ0EFFJ(U%NDIM_FULL))
+  ALLOCATE(ZHO2IM_ALL(U%NDIM_FULL),ZHO2IP_ALL(U%NDIM_FULL),&
+           ZAOSIM_ALL(U%NDIM_FULL),ZAOSIP_ALL(U%NDIM_FULL))
+  ALLOCATE(ZHO2JM_ALL(U%NDIM_FULL),ZHO2JP_ALL(U%NDIM_FULL),&
+           ZAOSJM_ALL(U%NDIM_FULL),ZAOSJP_ALL(U%NDIM_FULL))   
+  GZ0EFFI(:) = .FALSE.
+  GZ0EFFJ(:) = .FALSE.
+  !
+  !*    1.4    Mean slopes between 2 grid meshes
+  !            -----------
+  !
+  !
+  DO JL=1,U%NDIM_FULL
+    !
+    ZSLOPEIP = 0.
+    ZSLOPEJP = 0.
+    !
+    IF (IRIGHT(JL)/=0 .AND. ILEFT(JL)/=0) THEN
+      ZSLOPEIP =  0.5 * ( ZAVG_ZS(IRIGHT(JL)) - ZAVG_ZS(JL) ) &
+                            / ( 0.5 * (ZDX(IRIGHT(JL)) + ZDX(JL)) ) &
+                      + 0.5 * ( ZAVG_ZS(JL) - ZAVG_ZS(ILEFT (JL)) ) &
+                            / ( 0.5 * (ZDX(JL)  + ZDX(ILEFT(JL))) )  
+    ELSE
+      ZSLOPEIP = 0.
+    END IF
+    IF (ITOP(JL)/=0 .AND. IBOTTOM(JL)/=0) THEN
+      ZSLOPEJP =  0.5 * ( ZAVG_ZS(ITOP(JL))     - ZAVG_ZS(JL) ) &
+                            / ( 0.5 * (ZDY(ITOP(JL))     + ZDY(JL)) ) &
+                      + 0.5 * ( ZAVG_ZS(JL) - ZAVG_ZS(IBOTTOM (JL)) ) &
+                            / ( 0.5 * (ZDY(JL)  + ZDY(IBOTTOM(JL))) )  
+    ELSE
+      ZSLOPEJP = 0.
+    END IF
 !
 !----------------------------------------------------------------------------
 !
 !*    2.     Loop on grid points
 !            -------------------
-!
-DO JL=1,NL
-!
+!!
 !*    2.1    No land in grid mesh
 !            --------------------
 !
-    IF (PSEA(JL)==1.) CYCLE
+    IF (ZSEA(JL)==1.) CYCLE
 !
 !*    2.2    Index Initializations
 !            ---------------------
@@ -232,7 +272,7 @@ DO JL=1,NL
 !
 !*    3.3.1 first one
 !
-        IF (.NOT. LSSQO(JISS,JJSS,JL) ) CYCLE
+        IF (ISSQOT(JL,JISS,JJSS)==0 ) CYCLE
 !
 !*    3.3.2  second one (up to one grid mesh further)
 !
@@ -247,7 +287,7 @@ DO JL=1,NL
           ! no right point
           IF (IL==0) EXIT
           ! subgrid data found
-          IF (LSSQO(INEXT,JJSS,IL)) EXIT
+          IF (ISSQOT(IL,INEXT,JJSS)==1) EXIT
         END DO
 !
 !*    3.3.3  none found: end of loop along jss
@@ -269,11 +309,11 @@ DO JL=1,NL
 !
 !*    3.4.1  mean slope
 !
-        ZSLOPE=ZSLOPEIP(JL)
+        ZSLOPE=ZSLOPEIP
 !
 !*    3.4.2  A/S term
 !
-        ZSSAOS =  XSSQO(INEXT,JJSS,IL) - XSSQO(JISS,JJSS,JL) &
+        ZSSAOS =  ZSSQO(IL,INEXT,JJSS) - ZSSQO(JL,JISS,JJSS) &
                   - ZSLOPE * ZDXEFF * JNEXT  
         IF (ZSSAOS>0.) ZAIP=ZAIP+ZSSAOS
         IF (ZSSAOS<0.) ZAIM=ZAIM-ZSSAOS
@@ -307,19 +347,19 @@ DO JL=1,NL
 !            -----------------------------
 !
     IF (IAOSCOUNTER>0) THEN
-      USS%XAOSIP(JL)=SUM(ZAOSIP) / IAOSCOUNTER
-      USS%XAOSIM(JL)=SUM(ZAOSIM) / IAOSCOUNTER
+      ZAOSIP_ALL(JL)=SUM(ZAOSIP) / IAOSCOUNTER
+      ZAOSIM_ALL(JL)=SUM(ZAOSIM) / IAOSCOUNTER
       IF (IHO2COUNTERIP>0) THEN
-        USS%XHO2IP(JL)=ZSUMHO2IP   / IHO2COUNTERIP
+        ZHO2IP_ALL(JL)=ZSUMHO2IP   / IHO2COUNTERIP
       ELSE
-        USS%XHO2IP(JL)=0.
+        ZHO2IP_ALL(JL)=0.
       END IF
       IF (IHO2COUNTERIM>0) THEN
-        USS%XHO2IM(JL)=ZSUMHO2IM   / IHO2COUNTERIM
+        ZHO2IM_ALL(JL)=ZSUMHO2IM   / IHO2COUNTERIM
       ELSE
-        USS%XHO2IM(JL)=0.
+        ZHO2IM_ALL(JL)=0.
       END IF
-      OZ0EFFI(JL)=.TRUE.
+      GZ0EFFI(JL)=.TRUE.
     END IF
 !
 !----------------------------------------------------------------------------
@@ -357,7 +397,7 @@ DO JL=1,NL
 !
 !*    4.3.1 first one
 !
-        IF (.NOT. LSSQO(JISS,JJSS,JL) ) CYCLE
+        IF (ISSQOT(JL,JISS,JJSS)==0 ) CYCLE
 !
 !*    4.3.2  second one (up to one grid mesh further)
 !
@@ -372,7 +412,7 @@ DO JL=1,NL
           ! no right point
           IF (IL==0) EXIT
           ! subgrid data found
-          IF (LSSQO(JISS,INEXT,IL)) EXIT
+          IF (ISSQOT(IL,JISS,INEXT)==1) EXIT
         END DO
 !
 !*    4.3.3  none found: end of loop along jss
@@ -395,11 +435,11 @@ DO JL=1,NL
 !
 !*    4.4.1  mean slope
 !
-        ZSLOPE=ZSLOPEJP(JL)
+        ZSLOPE=ZSLOPEJP
 !
 !*    4.4.2  A/S term
 !
-        ZSSAOS =  XSSQO(JISS,INEXT,IL) - XSSQO(JISS,JJSS,JL) &
+        ZSSAOS =  ZSSQO(IL,JISS,INEXT) - ZSSQO(JL,JISS,JJSS) &
                   - ZSLOPE * ZDYEFF * JNEXT  
         IF (ZSSAOS>0.) ZAJP=ZAJP+ZSSAOS
         IF (ZSSAOS<0.) ZAJM=ZAJM-ZSSAOS
@@ -433,27 +473,73 @@ DO JL=1,NL
 !            -----------------------------
 !
     IF (IAOSCOUNTER>0) THEN
-      USS%XAOSJP(JL)=SUM(ZAOSJP) /IAOSCOUNTER
-      USS%XAOSJM(JL)=SUM(ZAOSJM) /IAOSCOUNTER
+      ZAOSJP_ALL(JL)=SUM(ZAOSJP) /IAOSCOUNTER
+      ZAOSJM_ALL(JL)=SUM(ZAOSJM) /IAOSCOUNTER
       IF (IHO2COUNTERJP>0) THEN
-        USS%XHO2JP(JL)=ZSUMHO2JP   /IHO2COUNTERJP
+        ZHO2JP_ALL(JL)=ZSUMHO2JP   /IHO2COUNTERJP
       ELSE
-        USS%XHO2JP(JL)=0.
+        ZHO2JP_ALL(JL)=0.
       END IF
       IF (IHO2COUNTERJM>0) THEN
-        USS%XHO2JM(JL)=ZSUMHO2JM   /IHO2COUNTERJM
+        ZHO2JM_ALL(JL)=ZSUMHO2JM   /IHO2COUNTERJM
       ELSE
-        USS%XHO2JM(JL)=0.
+        ZHO2JM_ALL(JL)=0.
       END IF
-      OZ0EFFJ(JL)=.TRUE.
+      GZ0EFFJ(JL)=.TRUE.
     END IF
+!
+  END DO
+  ! 
+ELSE
+  ALLOCATE(ZHO2IM_ALL(0),ZHO2IP_ALL(0),ZAOSIM_ALL(0),ZAOSIP_ALL(0))
+  ALLOCATE(ZHO2JM_ALL(0),ZHO2JP_ALL(0),ZAOSJM_ALL(0),ZAOSJP_ALL(0))
+ENDIF
+!
+DEALLOCATE(ZSSQO,ISSQOT)
+DEALLOCATE(ZSEA)  
+DEALLOCATE(ZAVG_ZS)
+!
+ CALL READ_AND_SEND_MPI(ZAOSIP_ALL,USS%XAOSIP)
+ CALL READ_AND_SEND_MPI(ZAOSIM_ALL,USS%XAOSIM)
+ CALL READ_AND_SEND_MPI(ZHO2IP_ALL,USS%XHO2IP)
+ CALL READ_AND_SEND_MPI(ZHO2IM_ALL,USS%XHO2IM)
+DEALLOCATE(ZHO2IM_ALL,ZHO2IP_ALL,ZAOSIM_ALL,ZAOSIP_ALL)
+!
+ CALL READ_AND_SEND_MPI(ZAOSJP_ALL,USS%XAOSJP)
+ CALL READ_AND_SEND_MPI(ZAOSJM_ALL,USS%XAOSJM)
+ CALL READ_AND_SEND_MPI(ZHO2JP_ALL,USS%XHO2JP)
+ CALL READ_AND_SEND_MPI(ZHO2JM_ALL,USS%XHO2JM)
+DEALLOCATE(ZHO2JM_ALL,ZHO2JP_ALL,ZAOSJM_ALL,ZAOSJP_ALL)
+!
+IF (NRANK==NPIO) THEN
+  ALLOCATE(ISSOT(U%NDIM_FULL))
+  ISSOT(:) = 0
+  WHERE (GZ0EFFI(:)) ISSOT(:) = 1
+  DEALLOCATE(GZ0EFFI)
+ELSE
+  ALLOCATE(ISSOT(0))
+ENDIF
+ALLOCATE(ISSO(NL))
+ CALL READ_AND_SEND_MPI(ISSOT,ISSO)
+WHERE(ISSO(:)==1) OZ0EFFI(:) = .TRUE.
+!
+IF (NRANK==NPIO) THEN
+  ISSOT(:) = 0
+  WHERE (GZ0EFFJ(:)) ISSOT(:) = 1
+  DEALLOCATE(GZ0EFFJ)
+ENDIF
+ CALL READ_AND_SEND_MPI(ISSOT,ISSO)
+WHERE(ISSO(:)==1) OZ0EFFJ(:) = .TRUE.
+DEALLOCATE(ISSO)
+!
+DEALLOCATE(ISSOT)
 !
 !-------------------------------------------------------------------------------
 !
 !*    5.     Next grid point
 !            ---------------
 !
-END DO
+
 IF (LHOOK) CALL DR_HOOK('SUBSCALE_AOS',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

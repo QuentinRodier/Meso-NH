@@ -3,10 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_FLAKE_FIELD (DTCO, UG, U, USS, &
-                                  FG, F,GCP, &
+SUBROUTINE PREP_HOR_FLAKE_FIELD (DTCO, UG, U, USS, GCP, KLAT, F, &
                                  HPROGRAM,HSURF,HATMFILE,HATMFILETYPE,&
-                                HPGDFILE,HPGDFILETYPE,ONOVALUE)
+                                 HPGDFILE,HPGDFILETYPE,ONOVALUE)
 !     #################################################################################
 !
 !!****  *PREP_HOR_FLAKE_FIELD* - Reads, interpolates and prepares a water field
@@ -34,30 +33,24 @@ SUBROUTINE PREP_HOR_FLAKE_FIELD (DTCO, UG, U, USS, &
 !!                             but not profiles
 !!------------------------------------------------------------------
 !
-!
-!
-!
-!
-!
-!
-!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
-USE MODD_FLAKE_GRID_n, ONLY : FLAKE_GRID_t
 USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE MODD_SURF_PAR,     ONLY : XUNDEF
-USE MODD_PREP,         ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, XLAT_OUT, XLON_OUT, &
-                               XX_OUT, XY_OUT, CMASK
-!
+USE MODD_TYPE_DATE_SURF, ONLY : DATE_TIME
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
+USE MODD_PREP,         ONLY : CINGRID_TYPE, CINTERP_TYPE, XZS_LS, CMASK
+USE MODD_GRID_GRIB, ONLY : CINMODEL 
 !
 USE MODD_CSTS,       ONLY : XTT
 USE MODD_PREP_FLAKE, ONLY : LCLIM_LAKE
 !
+USE MODI_PREP_GRIB_GRID
 USE MODI_READ_PREP_FLAKE_CONF
 USE MODI_PREP_FLAKE_GRIB
 USE MODI_PREP_FLAKE_ASCLLV
@@ -73,18 +66,20 @@ USE PARKIND1  ,ONLY : JPRB
 USE MODI_ABOR1_SFX
 IMPLICIT NONE
 !
+#ifdef SFX_MPI
+INCLUDE "mpif.h"
+#endif
+!
 !*      0.1    declarations of arguments
-!
-!
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
-!
-TYPE(FLAKE_GRID_t), INTENT(INOUT) :: FG
-TYPE(FLAKE_t), INTENT(INOUT) :: F
+TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+!
+INTEGER, INTENT(IN) :: KLAT
+TYPE(FLAKE_t), INTENT(INOUT) :: F
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
@@ -101,9 +96,11 @@ LOGICAL, OPTIONAL, INTENT(OUT) :: ONOVALUE  ! flag for the not given value
  CHARACTER(LEN=28)             :: YFILE     ! name of file
  CHARACTER(LEN=6)              :: YFILEPGDTYPE ! type of input file
  CHARACTER(LEN=28)             :: YFILEPGD     ! name of file
-REAL, POINTER, DIMENSION(:,:) :: ZFIELDIN  ! field to interpolate horizontally
+ TYPE (DATE_TIME)                :: TZTIME_GRIB    ! current date and time 
+REAL, POINTER, DIMENSION(:,:) :: ZFIELDIN=>NULL()  ! field to interpolate horizontally
 REAL, ALLOCATABLE, DIMENSION(:,:) :: ZFIELDOUT ! field interpolated   horizontally
 INTEGER                       :: ILUOUT    ! output listing logical unit
+INTEGER :: INL, INFOMPI
 !
 LOGICAL                       :: GUNIF     ! flag for prescribed uniform field
 LOGICAL                       :: GDEFAULT  ! flag for prescribed default field
@@ -119,10 +116,10 @@ IF (LHOOK) CALL DR_HOOK('PREP_HOR_FLAKE_FIELD',0,ZHOOK_HANDLE)
  CALL READ_PREP_FLAKE_CONF(HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,&
                           HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,ILUOUT,GUNIF)
 !
- CMASK = 'WATER'
+CMASK = 'WATER'
 !
 GDEFAULT = (YFILETYPE=='      ' .OR. (HSURF(1:2)/='ZS' .AND. HSURF(1:2)/='TS' &
-                .AND. SIZE(FG%XLAT).NE.1)) .AND. .NOT.GUNIF
+                .AND. KLAT.NE.1)) .AND. .NOT.GUNIF
 IF (PRESENT(ONOVALUE)) ONOVALUE = GDEFAULT
 !
 IF (.NOT. GDEFAULT) THEN
@@ -134,13 +131,13 @@ IF (.NOT. GDEFAULT) THEN
   IF (GUNIF) THEN
     CALL PREP_FLAKE_UNIF(ILUOUT,HSURF,ZFIELDIN)
   ELSE IF (YFILETYPE=='ASCLLV') THEN
-    CALL PREP_FLAKE_ASCLLV(DTCO, UG, U, USS, &
-                           HPROGRAM,HSURF,ILUOUT,ZFIELDIN)
+    CALL PREP_FLAKE_ASCLLV(DTCO, UG, U, USS, HPROGRAM,HSURF,ILUOUT,ZFIELDIN)
   ELSE IF (YFILETYPE=='GRIB  ') THEN
-    CALL PREP_FLAKE_GRIB(HPROGRAM,HSURF,YFILE,ILUOUT,ZFIELDIN)
-  ELSE IF (YFILETYPE=='MESONH' .OR. YFILETYPE=='ASCII ' .OR. YFILETYPE=='LFI   '.OR. YFILETYPE=='FA    ') THEN
-    CALL PREP_FLAKE_EXTERN(GCP,&
-                           HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,ILUOUT,ZFIELDIN)
+    CALL PREP_GRIB_GRID(YFILE,ILUOUT,CINMODEL,CINGRID_TYPE,CINTERP_TYPE,TZTIME_GRIB)
+    IF (NRANK==NPIO) CALL PREP_FLAKE_GRIB(HPROGRAM,HSURF,YFILE,ILUOUT,ZFIELDIN)            
+  ELSE IF (YFILETYPE=='MESONH' .OR. YFILETYPE=='ASCII ' .OR. YFILETYPE=='LFI   '.OR. YFILETYPE=='FA    '&
+          .OR.YFILETYPE=='NC    ') THEN
+    CALL PREP_FLAKE_EXTERN(GCP,HPROGRAM,HSURF,YFILE,YFILETYPE,YFILEPGD,YFILEPGDTYPE,ILUOUT,ZFIELDIN)
   ELSE IF (YFILETYPE=='BUFFER') THEN
     CALL PREP_FLAKE_BUFFER(HPROGRAM,HSURF,ILUOUT,ZFIELDIN)
   ELSE
@@ -150,19 +147,28 @@ IF (.NOT. GDEFAULT) THEN
 !
 !*      4.     Horizontal interpolation
 !
+IF (NRANK==NPIO) THEN
+  INL = SIZE(ZFIELDIN,2)
+ELSEIF (.NOT.ASSOCIATED(ZFIELDIN)) THEN
+ ALLOCATE(ZFIELDIN(0,0))
+ENDIF
+!
+IF (NPROC>1) THEN
+#ifdef SFX_MPI
+  CALL MPI_BCAST(INL,KIND(INL)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
+#endif
+ENDIF
   !ALLOCATE(ZFIELDOUT(SIZE(XLAT),SIZE(ZFIELDIN,2)))
-  ALLOCATE(ZFIELDOUT(SIZE(FG%XLAT),1))
+  ALLOCATE(ZFIELDOUT(KLAT,1))
 !
 !Impossible to interpolate lake profiles, only the lake surface temperature! 
 !But in uniform case and 1 point case
-  IF(GUNIF .OR. SIZE(FG%XLAT).EQ.1) THEN
-    CALL HOR_INTERPOL(DTCO, U,GCP, &
-                      ILUOUT,ZFIELDIN,ZFIELDOUT)
+  IF(GUNIF .OR. KLAT.EQ.1) THEN
+    CALL HOR_INTERPOL(DTCO, U, GCP, ILUOUT,ZFIELDIN,ZFIELDOUT)
   ELSE IF(HSURF(1:2)=='ZS' .OR. HSURF(1:2)=='TS') THEN
     WRITE(ILUOUT,*) "WARNING! Impossible to interpolate lake profiles in horisontal!"
     WRITE(ILUOUT,*) "So, interoplate only surface temperature and start from lakes mixed down to the bottom"
-    CALL HOR_INTERPOL(DTCO, U,GCP, &
-                      ILUOUT,ZFIELDIN,ZFIELDOUT)
+    CALL HOR_INTERPOL(DTCO, U, GCP, ILUOUT,ZFIELDIN,ZFIELDOUT)
   END IF
 !
 !*      5.     Return to historical variable

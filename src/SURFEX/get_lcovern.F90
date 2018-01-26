@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_LCOVER_n (U, &
-                               HPROGRAM,KCOVER,OCOVER)
+      SUBROUTINE GET_LCOVER_n (U,HPROGRAM,KCOVER,OCOVER)
 !     ########################################
 !
 !!****  *GET_LCOVER_n* - routine to get some surface fields

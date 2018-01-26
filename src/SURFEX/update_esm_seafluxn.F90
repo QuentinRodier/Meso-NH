@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###################################################################
-      SUBROUTINE UPDATE_ESM_SEAFLUX_n (S, &
-                                       KI,KSW,PZENITH,PDIR_ALB,     &
+      SUBROUTINE UPDATE_ESM_SEAFLUX_n (S, KI,KSW,PZENITH,PDIR_ALB,     &
                                       PSCA_ALB,PEMIS,PTSRAD,PTSURF )
 !     ##############################################################
 !
@@ -86,8 +85,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_ESM_SEAFLUX_N',0,ZHOOK_HANDLE)
 !
- CALL UPDATE_RAD_SEA(S%CSEA_ALB,S%XSST,PZENITH,XTTS,S%XEMIS,S%XDIR_ALB,&
-                    S%XSCA_ALB,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD   ) 
+CALL UPDATE_RAD_SEA(S,PZENITH,XTTS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD   ) 
 !
 PTSURF(:) = S%XSST(:)
 !

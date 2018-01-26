@@ -6,7 +6,7 @@
 SUBROUTINE SFX_OASIS_RECV(HPROGRAM,KI,KSW,PTIMEC,                &
                           ORECV_LAND, ORECV_SEA,                 &
                           PLAND_WTD,PLAND_FWTD,                  &
-                          PLAND_FFLOOD,PLAND_PIFLOOD,            &
+                          PLAND_FFLOOD, PLAND_PIFLOOD,           &
                           PSEA_SST,PSEA_UCU,PSEA_VCU,            &
                           PSEAICE_SIT,PSEAICE_CVR,PSEAICE_ALB    )
 !########################################
@@ -46,8 +46,6 @@ USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 USE MODD_SFX_OASIS
 !
-USE MODD_SGH_PAR,    ONLY :
-!
 USE MODI_GET_LUOUT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -62,7 +60,7 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=*),       INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=*),       INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
 INTEGER,                INTENT(IN)  :: KI        ! number of points on this proc
 INTEGER,                INTENT(IN)  :: KSW       ! number of short-wave spectral bands
 REAL,                   INTENT(IN)  :: PTIMEC    ! Cumulated run time step (s)
@@ -92,7 +90,7 @@ REAL, DIMENSION(KI,1) :: ZREAD
 INTEGER               :: IDATE  ! current coupling time step (s)
 INTEGER               :: IERR   ! Error info
 INTEGER               :: ILUOUT
- CHARACTER(LEN=50)     :: YCOMMENT
+CHARACTER(LEN=50)     :: YCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -105,7 +103,7 @@ IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV',0,ZHOOK_HANDLE)
 !*       1.     Initialize :
 !               ------------
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 IDATE = INT(PTIMEC)
 !
@@ -221,7 +219,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('SFX_OASIS_RECV',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE CHECK_RECV(KLUOUT,KERR,HCOMMENT)
@@ -232,7 +230,7 @@ IMPLICIT NONE
 !
 INTEGER,          INTENT(IN)  :: KLUOUT
 INTEGER,          INTENT(IN)  :: KERR
- CHARACTER(LEN=*), INTENT(IN)  :: HCOMMENT
+CHARACTER(LEN=*), INTENT(IN)  :: HCOMMENT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !

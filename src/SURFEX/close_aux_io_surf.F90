@@ -68,7 +68,12 @@ USE MODI_CLOSE_AUX_IO_SURF_NC
 USE MODI_MNHCLOSE_AUX_IO_SURF
 #endif
 !
+#ifdef SFX_ARO
+USE MODI_AROCLOSE_AUX_IO_SURF
+#endif
+
 IMPLICIT NONE
+!
 !
 !*       0.1   Declarations of arguments
 !              -------------------------

@@ -71,18 +71,18 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_SEAFLUX',0,ZHOOK_HANDLE)
- CFILE_SEAFLX = '                          '
- CTYPE_SEAFLX = 'GRIB  '
+CFILE_SEAFLX = '                          '
+CTYPE_SEAFLX = 'GRIB  '
 !
- CFILEPGD_SEAFLX = '                          '
- CTYPEPGD        = '      '
+CFILEPGD_SEAFLX = '                          '
+CTYPEPGD        = '      '
 !
 XSST_UNIF = XUNDEF
 XSSS_UNIF = XUNDEF
 XSIC_UNIF = XUNDEF
 !
 LSEA_SBL = .FALSE.
- CSEAICE_SCHEME='NONE  '
+CSEAICE_SCHEME='NONE  '
 LOCEAN_MERCATOR = .FALSE.
 LOCEAN_CURRENT = .FALSE.
 !

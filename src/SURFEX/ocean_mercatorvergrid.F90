@@ -44,6 +44,7 @@
 !!      Original    01/2008
 !       D.BARBARY 11/2014 : HPROGRAM,OUNIF in Calling OCEAN_MERCATORVERGRID
 !                           Reading oceanic level and depth
+!!      C. Lebeaupin Brossier, G. Faure 09/2016 : indice loop NOCKMIN+1 for XRAY
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -77,8 +78,6 @@ IF (LHOOK) CALL DR_HOOK('OCEAN_MERCATORVERGRID',0,ZHOOK_HANDLE)
 !       2.     Ocean Secondary Grids 
 !              ---------------------
 !
-!$OMP SINGLE
-!
 ALLOCATE(XK1        (NOCKMIN:NOCKMAX))
 ALLOCATE(XK2        (NOCKMIN:NOCKMAX))
 ALLOCATE(XK3        (NOCKMIN:NOCKMAX))
@@ -107,13 +106,14 @@ ENDDO
 !!              ---------------
 !
 XK1(NOCKMIN) = 0.
+XK4(NOCKMIN) = 1. / ( XDZ1(NOCKMIN) * XDZ1(NOCKMIN) )
 DO JLOOP = NOCKMIN+1,NOCKMAX
   XK1(JLOOP) = -1. / (XDZ2(JLOOP)*XDZ1(JLOOP-1))
+  XK4(JLOOP) =  1. / (XDZ1(JLOOP)*XDZ1(JLOOP))
 ENDDO
 !
 ZUP=1.
-DO JLOOP = NOCKMIN,NOCKMAX
-  XK4(JLOOP) =  1. / ( XDZ1(JLOOP) * XDZ1(JLOOP) )
+DO JLOOP = NOCKMIN+1,NOCKMAX
   ZDOWN = RAYO(XZ2(JLOOP))
   XRAY(JLOOP) = ZUP - ZDOWN
   ZUP = ZDOWN
@@ -127,11 +127,9 @@ ENDDO
 XK2(NOCKMAX) = XK2(NOCKMAX-1)
 XK3(NOCKMAX) = 0.
 !
-!$OMP END SINGLE
-!
 !-------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('OCEAN_MERCATORVERGRID',1,ZHOOK_HANDLE)
- CONTAINS
+CONTAINS
 !rayo
 !-------------------------------------------------------------------------------
 !

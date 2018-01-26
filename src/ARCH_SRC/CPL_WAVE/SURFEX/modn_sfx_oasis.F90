@@ -26,6 +26,7 @@ MODULE MODN_SFX_OASIS
 !!    MODIFICATIONS
 !!    -------------
 !!      Original       10/13
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !!      Modified       11/2014 : J. Pianezze - add wave coupling parameters
 !!                                             and surface pressure parameter for ocean coupling
 !
@@ -48,18 +49,19 @@ REAL             :: XTSTEP_CPL_WAVE = -1.0  ! Coupling time step for wave
 !
 ! Output variables
 !
- CHARACTER(LEN=8) :: CRUNOFF     = '        '   ! Surface runoff 
- CHARACTER(LEN=8) :: CDRAIN      = '        '   ! Deep drainage 
- CHARACTER(LEN=8) :: CCALVING    = '        '   ! Calving flux 
- CHARACTER(LEN=8) :: CRECHARGE   = '        '   ! groundwater recharge 
- CHARACTER(LEN=8) :: CSRCFLOOD   = '        '   ! Floodplains freshwater flux
+CHARACTER(LEN=8) :: CRUNOFF     = '        '   ! Surface runoff 
+CHARACTER(LEN=8) :: CDRAIN      = '        '   ! Deep drainage 
+CHARACTER(LEN=8) :: CCALVING    = '        '   ! Calving flux 
+CHARACTER(LEN=8) :: CSRCFLOOD   = '        '   ! Floodplains freshwater flux
 !
 ! Input variables
 !
- CHARACTER(LEN=8) :: CWTD        = '        '   ! water table depth
- CHARACTER(LEN=8) :: CFWTD       = '        '   ! grid-cell fraction of water table rise
- CHARACTER(LEN=8) :: CFFLOOD     = '        '   ! Floodplains fraction
- CHARACTER(LEN=8) :: CPIFLOOD    = '        '   ! Flood potential infiltartion
+CHARACTER(LEN=8) :: CWTD        = '        '   ! water table depth
+CHARACTER(LEN=8) :: CFWTD       = '        '   ! grid-cell fraction of water table rise
+CHARACTER(LEN=8) :: CFFLOOD     = '        '   ! Floodplains fraction
+CHARACTER(LEN=8) :: CPIFLOOD    = '        '   ! Flood potential infiltartion
+!
+REAL             :: XFLOOD_LIM = 0.01
 !
 !-------------------------------------------------------------------------------
 !
@@ -69,10 +71,10 @@ REAL             :: XTSTEP_CPL_WAVE = -1.0  ! Coupling time step for wave
 !
 ! Input variables
 !
- CHARACTER(LEN=8) :: CLAKE_EVAP  = '        '   ! Evaporation over lake area
- CHARACTER(LEN=8) :: CLAKE_RAIN  = '        '   ! Rainfall over lake area
- CHARACTER(LEN=8) :: CLAKE_SNOW  = '        '   ! Snowfall over lake area
- CHARACTER(LEN=8) :: CLAKE_WATF  = '        '   ! Net freshwater flux
+CHARACTER(LEN=8) :: CLAKE_EVAP  = '        '   ! Evaporation over lake area
+CHARACTER(LEN=8) :: CLAKE_RAIN  = '        '   ! Rainfall over lake area
+CHARACTER(LEN=8) :: CLAKE_SNOW  = '        '   ! Snowfall over lake area
+CHARACTER(LEN=8) :: CLAKE_WATF  = '        '   ! Net freshwater flux
 !
 !-------------------------------------------------------------------------------
 !
@@ -82,36 +84,36 @@ REAL             :: XTSTEP_CPL_WAVE = -1.0  ! Coupling time step for wave
 !
 ! Sea Output variables
 !
- CHARACTER(LEN=8) :: CSEA_FWSU = '        '   ! zonal wind stress 
- CHARACTER(LEN=8) :: CSEA_FWSV = '        '   ! meridian wind stress 
- CHARACTER(LEN=8) :: CSEA_HEAT = '        '   ! Non solar net heat flux
- CHARACTER(LEN=8) :: CSEA_SNET = '        '   ! Solar net heat flux
- CHARACTER(LEN=8) :: CSEA_WIND = '        '   ! module of 10m wind speed 
- CHARACTER(LEN=8) :: CSEA_FWSM = '        '   ! module of wind stress 
- CHARACTER(LEN=8) :: CSEA_EVAP = '        '   ! Evaporation 
- CHARACTER(LEN=8) :: CSEA_RAIN = '        '   ! Rainfall 
- CHARACTER(LEN=8) :: CSEA_SNOW = '        '   ! Snowfall 
- CHARACTER(LEN=8) :: CSEA_EVPR = '        '   ! Evaporation - Preci.
- CHARACTER(LEN=8) :: CSEA_WATF = '        '   ! Net freshwater flux
- CHARACTER(LEN=8) :: CSEA_PRES = '        '   ! Surface pressure 
+CHARACTER(LEN=8) :: CSEA_FWSU = '        '   ! zonal wind stress 
+CHARACTER(LEN=8) :: CSEA_FWSV = '        '   ! meridian wind stress 
+CHARACTER(LEN=8) :: CSEA_HEAT = '        '   ! Non solar net heat flux
+CHARACTER(LEN=8) :: CSEA_SNET = '        '   ! Solar net heat flux
+CHARACTER(LEN=8) :: CSEA_WIND = '        '   ! module of 10m wind speed 
+CHARACTER(LEN=8) :: CSEA_FWSM = '        '   ! module of wind stress 
+CHARACTER(LEN=8) :: CSEA_EVAP = '        '   ! Evaporation 
+CHARACTER(LEN=8) :: CSEA_RAIN = '        '   ! Rainfall 
+CHARACTER(LEN=8) :: CSEA_SNOW = '        '   ! Snowfall 
+CHARACTER(LEN=8) :: CSEA_EVPR = '        '   ! Evaporation - Preci.
+CHARACTER(LEN=8) :: CSEA_WATF = '        '   ! Net freshwater flux
+CHARACTER(LEN=8) :: CSEA_PRES = '        '   ! Surface pressure 
 !
 ! Sea-ice Output variables
 !  
- CHARACTER(LEN=8) :: CSEAICE_HEAT = '        '   ! Sea-ice non solar net heat flux
- CHARACTER(LEN=8) :: CSEAICE_SNET = '        '   ! Sea-ice solar net heat flux 
- CHARACTER(LEN=8) :: CSEAICE_EVAP = '        '   ! Sea-ice sublimation 
+CHARACTER(LEN=8) :: CSEAICE_HEAT = '        '   ! Sea-ice non solar net heat flux
+CHARACTER(LEN=8) :: CSEAICE_SNET = '        '   ! Sea-ice solar net heat flux 
+CHARACTER(LEN=8) :: CSEAICE_EVAP = '        '   ! Sea-ice sublimation 
 !
 ! Sea Input variables
 !
- CHARACTER(LEN=8) :: CSEA_SST    = '        ' ! Sea surface temperature
- CHARACTER(LEN=8) :: CSEA_UCU    = '        ' ! Sea u-current stress
- CHARACTER(LEN=8) :: CSEA_VCU    = '        ' ! Sea v-current stress
+CHARACTER(LEN=8) :: CSEA_SST    = '        ' ! Sea surface temperature
+CHARACTER(LEN=8) :: CSEA_UCU    = '        ' ! Sea u-current stress
+CHARACTER(LEN=8) :: CSEA_VCU    = '        ' ! Sea v-current stress
 !
 ! Sea-ice Input variables
 !
- CHARACTER(LEN=8) :: CSEAICE_SIT = '        ' ! Sea-ice temperature
- CHARACTER(LEN=8) :: CSEAICE_CVR = '        ' ! Sea-ice cover
- CHARACTER(LEN=8) :: CSEAICE_ALB = '        ' ! Sea-ice albedo
+CHARACTER(LEN=8) :: CSEAICE_SIT = '        ' ! Sea-ice temperature
+CHARACTER(LEN=8) :: CSEAICE_CVR = '        ' ! Sea-ice cover
+CHARACTER(LEN=8) :: CSEAICE_ALB = '        ' ! Sea-ice albedo
 !
 !-------------------------------------------------------------------------------
 !
@@ -140,8 +142,8 @@ LOGICAL          :: LWATER = .FALSE.
 !*       1.    NAMELISTS FOR LAND SURFACE FIELD
 !              ------------------------------------------------
 !
-NAMELIST/NAM_SFX_LAND_CPL/XTSTEP_CPL_LAND,                                &
-                         CRUNOFF,CDRAIN,CCALVING,CRECHARGE,CWTD,CFWTD,    &
+NAMELIST/NAM_SFX_LAND_CPL/XTSTEP_CPL_LAND, XFLOOD_LIM,          &
+                         CRUNOFF,CDRAIN,CCALVING,CWTD,CFWTD,    &
                          CFFLOOD,CPIFLOOD,CSRCFLOOD
 !
 !
@@ -162,14 +164,12 @@ NAMELIST/NAM_SFX_SEA_CPL/XTSTEP_CPL_SEA, LWATER,                               &
                           CSEAICE_EVAP,CSEA_SST,CSEA_UCU,CSEA_VCU,             &
                           CSEAICE_SIT,CSEAICE_CVR,CSEAICE_ALB
 !
-!
 !*       4.    NAMELISTS FOR WAVE FIELD
 !              ---------------------------------------------------------------
 !
 NAMELIST/NAM_SFX_WAVE_CPL/XTSTEP_CPL_WAVE,                                     &
                           CWAVE_U10, CWAVE_V10,                                &
                           CWAVE_CHA, CWAVE_UCU, CWAVE_VCU, CWAVE_HS, CWAVE_TP
- 
 !
 !-------------------------------------------------------------------------------
 !

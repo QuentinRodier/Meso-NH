@@ -6,7 +6,7 @@
 SUBROUTINE SFX_OASIS_END
 !########################
 !
-!!****  *SFX_OASIS_END* - end coupling SFX - OASIS
+!!****  *SFX_OASIS_END* - end coupling SFX - OASIS and XIOS
 !!
 !!    PURPOSE
 !!    -------
@@ -32,16 +32,23 @@ SUBROUTINE SFX_OASIS_END
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
+!!      S.Sénési    08/2015 : add XIOS_FINALIZE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_SFX_OASIS, ONLY : LOASIS
-!
 #ifdef CPLOASIS
 USE MOD_OASIS
+USE MODD_SFX_OASIS, ONLY : LOASIS
 #endif
+!
+#ifdef WXIOS
+USE MODD_XIOS , ONLY : LXIOS 
+USE XIOS, ONLY : XIOS_FINALIZE
+#endif
+!
+USE MODI_ABOR1_SFX
 !
 IMPLICIT NONE
 !
@@ -55,21 +62,31 @@ IMPLICIT NONE
 INTEGER                    :: IERR   ! Error info
 !
 !-------------------------------------------------------------------------------
-#ifdef CPLOASIS
-!-------------------------------------------------------------------------------
 !
-IF(LOASIS)THEN !Same test than in offline.F90 because use for Arpege-Aladin-Arome
-  CALL OASIS_TERMINATE(IERR)
-  IF (IERR/=OASIS_OK) THEN
-     WRITE(*,'(A)'   )'Error OASIS terminate'
-     WRITE(*,'(A,I4)')'Return code from oasis_terminate : ',IERR
-     CALL ABORT
-     STOP
-  ENDIF
+#ifdef WXIOS
+IF (LXIOS) THEN 
+! XIOS will finalize Oasis if needed
+   CALL XIOS_FINALIZE() 
 ENDIF
-!
-!-------------------------------------------------------------------------------
 #endif
+!
+#ifdef CPLOASIS
+IF(LOASIS) THEN
+#ifdef WXIOS
+  IF (.NOT. LXIOS)THEN !Same test than in offline.F90 because use for Arpege-Aladin-Arome
+#endif
+    CALL OASIS_TERMINATE(IERR)
+    IF (IERR/=OASIS_OK) THEN
+      WRITE(*,'(A)'   )'Error OASIS terminate'
+      WRITE(*,'(A,I4)')'Return code from oasis_terminate : ',IERR
+      CALL ABOR1_SFX("SFX_OASIS_END: Error OASIS terminate")
+    ENDIF
+#ifdef WXIOS
+  ENDIF
+#endif
+ENDIF
+#endif
+!
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SFX_OASIS_END

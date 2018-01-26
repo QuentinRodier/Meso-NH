@@ -4,26 +4,23 @@
 !SFX_LIC for details. version 1.
 
 MODULE MODE_WRITE_SURF_COV
-
-!RJ: split cover from read_surf.F90 to avoid compiler bugs
-!RJ: all safety compatibility checks should be done here
-PUBLIC :: WRITE_SURF_COV
-
- CONTAINS
-
+!
+INTERFACE WRITE_SURF_COV
+  MODULE PROCEDURE WRITE_SURF_COV
+END INTERFACE
+!
+CONTAINS
+!
 !     #############################################################
-      SUBROUTINE WRITE_SURF_COV (DGU, U, &
+      SUBROUTINE WRITE_SURF_COV (HSELECT, &
                                  HPROGRAM,HREC,PFIELD,OFLAG,KRESP,HCOMMENT,HDIR)
 !     #############################################################
 !
 !
 !
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 !
-!
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-!
-USE MODI_WRITE_SURF, ONLY: WRITE_SURF
+USE MODI_WRITE_SURF
 #ifdef SFX_MNH
 USE MODI_WRITE_SURFX2COV_MNH
 #endif
@@ -36,8 +33,7 @@ IMPLICIT NONE
 !*      0.1   Declarations of arguments
 !
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
 !
  CHARACTER(LEN=6),     INTENT(IN)  :: HPROGRAM ! calling program
  CHARACTER(LEN=*),     INTENT(IN)  :: HREC     ! name of the article to be read
@@ -52,6 +48,7 @@ INTEGER,              INTENT(OUT) :: KRESP    ! KRESP  : return-code if a proble
 !*      0.2   Declarations of local variables
 !
  CHARACTER(LEN=LEN_HREC)  :: YREC
+ CHARACTER(LEN=LEN_HREC)  :: YREC2
  CHARACTER(LEN=100) :: YCOMMENT
 INTEGER            :: IL1
 INTEGER            :: IL2
@@ -65,33 +62,34 @@ YREC = HREC
 YDIR = 'H'
 IF (PRESENT(HDIR)) YDIR = HDIR
 IL1  = SIZE(PFIELD,1)
-IL2  = SIZE(OFLAG)
+IL2  = SIZE(PFIELD,2)
 !
 IF (HPROGRAM=='MESONH') THEN
 #ifdef SFX_MNH
-    CALL WRITE_SURFX2COV_MNH(YREC,IL1,IL2,PFIELD,OFLAG,KRESP,HCOMMENT,YDIR)
+    YREC2 = YREC
+    CALL WRITE_SURFX2COV_MNH(YREC2,IL1,IL2,PFIELD,OFLAG,KRESP,HCOMMENT,YDIR)
 #endif
 ELSE
   !
 !RJ: could be generalized for all
-  IF (HPROGRAM=='LFI   ') THEN
-    YREC = 'COVER_PACKED'
-    YCOMMENT='-'
+  IF (NRANK==NPIO) THEN
+    IF (HPROGRAM=='LFI   ') THEN
+      YREC = 'COVER_PACKED'
+      YCOMMENT='-'
 !!    YCOMMENT=HCOMMENT
-    CALL WRITE_SURF(DGU, U, &
-                    HPROGRAM,YREC,.FALSE.,KRESP,YCOMMENT)
+      CALL WRITE_SURF(HSELECT,HPROGRAM,YREC,.FALSE.,KRESP,YCOMMENT)
+    ENDIF
   ENDIF
   !
   ICOVER=0
-  DO JCOVER=1,IL2
+  DO JCOVER=1,SIZE(OFLAG)
     !
     WRITE(YREC,'(A5,I3.3)') 'COVER',JCOVER
     YCOMMENT='X_Y_'//YREC
     IF (.NOT. OFLAG(JCOVER)) CYCLE
     ICOVER = ICOVER+1
     !
-    CALL WRITE_SURF(DGU, U, &
-                    HPROGRAM,YREC,PFIELD(:,ICOVER),KRESP,YCOMMENT,YDIR)
+    CALL WRITE_SURF(HSELECT, HPROGRAM,YREC,PFIELD(:,ICOVER),KRESP,YCOMMENT,YDIR)
     !
   END DO
 END IF

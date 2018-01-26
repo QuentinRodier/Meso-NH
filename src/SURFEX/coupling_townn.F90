@@ -3,16 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_TOWN_n (DTCO, U, DTI, IG, I, DGL, DST, SLT, TM, GDM, GRM, &
-                            HPROGRAM, HCOUPLING, PTIMEC,                                      &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PAZIM,    &
-                 PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                       )  
+SUBROUTINE COUPLING_TOWN_n (DTCO, U, DGO, DL, DLC, DST, SLT, TM, GDM, GRM, &
+                            HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
+                            KI, KSV, KSW, PTSUN, PZENITH, PAZIM, PZREF, PUREF, PZS, PU, PV,  &
+                            PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW,     &
+                            PSCA_SW, PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, &
+                            PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H,       &
+                            PQSURF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,      &
+                            PPET_B_COEF, PPEQ_B_COEF, HTEST        )  
 !     ###############################################################################
 !
 !!****  *COUPLING_TOWN_n * - Chooses the surface schemes for towns 
@@ -40,10 +38,7 @@ SUBROUTINE COUPLING_TOWN_n (DTCO, U, DTI, IG, I, DGL, DST, SLT, TM, GDM, GRM, &
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_ISBA_GRID_n, ONLY : ISBA_GRID_t
-USE MODD_ISBA_n, ONLY : ISBA_t
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
@@ -68,10 +63,9 @@ IMPLICIT NONE
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
-TYPE(ISBA_GRID_t), INTENT(INOUT) :: IG
-TYPE(ISBA_t), INTENT(INOUT) :: I
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: DL
+TYPE(DIAG_t), INTENT(INOUT) :: DLC
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
@@ -158,31 +152,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('COUPLING_TOWN_N',0,ZHOOK_HANDLE)
 !
 IF (U%CTOWN=='TEB   ') THEN 
-  CALL COUPLING_TEB_OROGRAPHY_n(DTCO, DTI, IG, I, DST, SLT, TM, GDM, GRM,            &
-                                HPROGRAM, HCOUPLING,                                       &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-                 KI, KSV, KSW,                                                               &
-                 PTSUN, PZENITH, PAZIM,                                                      &
-                 PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 'OK'                                                                        )  
+  CALL COUPLING_TEB_OROGRAPHY_n(DTCO, DST, SLT, TM, GDM, GRM, HPROGRAM, HCOUPLING, PTSTEP, &
+                                KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH,  &
+                                PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV,    &
+                                PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, &
+                                PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD,  &
+                                PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,      &
+                                PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,        &
+                                PPET_B_COEF, PPEQ_B_COEF, 'OK'  )  
 ELSE IF (U%CTOWN=='FLUX  ') THEN
-  CALL COUPLING_IDEAL_FLUX(DGL, &
-                           HPROGRAM, HCOUPLING, PTIMEC,                                      &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-                 KI, KSV, KSW,                                                               &
-                 PTSUN, PZENITH, PAZIM,                                                      &
-                 PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 'OK'                                                                        )  
+  CALL COUPLING_IDEAL_FLUX(DGO, DL, DLC, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, &
+                           KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PAZIM,   &
+                           PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, &
+                           PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,   &
+                           PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,   &
+                           PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,    &
+                           PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,         &
+                           PPEQ_B_COEF, 'OK'         )  
 ELSE IF (U%CTOWN=='NONE  ') THEN
   PSFTH = 0.
   PSFTQ = 0.

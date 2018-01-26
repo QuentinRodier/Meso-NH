@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_ISBA_n (DTCO, DGU, U, IM, DST, &
-                               HPROGRAM,HWRITE,OLAND_USE)
+      SUBROUTINE WRITE_ISBA_n (DTCO, HSELECT, OSNOWDIMNC, U, IM, NDST, HPROGRAM, HWRITE, OLAND_USE)
 !     ####################################
 !
 !!****  *WRITE_ISBA_n* - routine to write surface variables in their respective files
@@ -42,18 +41,17 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
-USE MODD_DST_n, ONLY : DST_t
+USE MODD_DST_n, ONLY : DST_NP_t
 !
 USE MODD_WRITE_SURF_ATM, ONLY : LNOWRITE_CANOPY
-USE MODI_INIT_IO_SURF_n
 USE MODI_WRITESURF_ISBA_n
 USE MODI_WRITESURF_ISBA_CONF_n
-USE MODI_END_IO_SURF_n
-USE MODI_WRITESURF_ISBA_CANOPY_n
+USE MODI_WRITESURF_SBL_n
 !
+USE MODI_END_IO_SURF_n
+USE MODI_INIT_IO_SURF_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -65,10 +63,11 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
+LOGICAL, INTENT(IN) :: OSNOWDIMNC 
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
-TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE    ! 'PREP' : does not write SBL XUNDEF fields
@@ -84,27 +83,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !         Initialisation for IO
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_ISBA_N',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                     HPROGRAM,'NATURE','ISBA  ','WRITE')
 !
 !*       1.     Selection of surface scheme
 !               ---------------------------
 !        
- CALL WRITESURF_ISBA_CONF_n(IM%CHI, IM%DGEI, IM%DGI, IM%DGMI, IM%I, &
-                            HPROGRAM)
- CALL WRITESURF_ISBA_n(DGU, U, &
-                       IM%CHI, DST, IM%I, &
-                       HPROGRAM,OLAND_USE)
+ CALL WRITESURF_ISBA_CONF_n(IM%CHI, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
 !
-IF ((.NOT.LNOWRITE_CANOPY).OR.DGU%LSELECT) CALL WRITESURF_ISBA_CANOPY_n(DGU, U, &
-                                                                        IM%ICP, IM%I, &
-                                                                        HPROGRAM,HWRITE)
+ CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','WRITE','ISBA_PROGNOSTIC.OUT.nc')
 !
-!-------------------------------------------------------------------------------
+ CALL WRITESURF_ISBA_n(HSELECT, OSNOWDIMNC, IM%CHI, NDST, IM%O, IM%S, IM%NP, IM%NPE, &
+                       U%NSIZE_NATURE, HPROGRAM,OLAND_USE)
 !
-!         End of IO
+IF ((.NOT.LNOWRITE_CANOPY).OR.SIZE(HSELECT)>0) THEN
+  CALL WRITESURF_SBL_n(HSELECT, IM%O%LCANOPY, IM%SB, HPROGRAM, HWRITE, "NATURE")
+ENDIF
 !
  CALL END_IO_SURF_n(HPROGRAM)
+!
 IF (LHOOK) CALL DR_HOOK('WRITE_ISBA_N',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE WRITE_ISBA_n

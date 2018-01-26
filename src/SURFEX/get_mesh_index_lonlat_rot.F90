@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################
-      SUBROUTINE GET_MESH_INDEX_LONLAT_ROT(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY)
+      SUBROUTINE GET_MESH_INDEX_LONLAT_ROT(KL,PGRID_PAR,PLAT,PLON,KINDEX,KSSO,KISSOX,KISSOY)
 !     ###############################################################
 !
 !!**** *GET_MESH_INDEX_LONLAT_ROT* get the grid mesh where point (lat,lon) is located
@@ -43,9 +43,8 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
-INTEGER,                       INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
 INTEGER,                       INTENT(IN)    :: KL        ! number of points
-REAL,    DIMENSION(KGRID_PAR), INTENT(IN)    :: PGRID_PAR ! grid parameters
+REAL,    DIMENSION(:), INTENT(IN)    :: PGRID_PAR ! grid parameters
 REAL,    DIMENSION(KL),        INTENT(IN)    :: PLAT      ! latitude of the point
 REAL,    DIMENSION(KL),        INTENT(IN)    :: PLON      ! longitude of the point
 INTEGER, DIMENSION(KL),        INTENT(OUT)   :: KINDEX    ! index of the grid mesh where the point is

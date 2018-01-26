@@ -72,7 +72,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_BUFFER',0,ZHOOK_HANDLE)
  CALL PREP_BUFFER_GRID(KLUOUT,YINMODEL,TZTIME_BUF)
 !
-IF (HSURF=='T_FLOOR' .OR. HSURF=='T_WALL' .OR. HSURF=='T_ROOF' .OR.  HSURF=='T_WIN2' .OR. HSURF=='TI_BLD') THEN
+IF (HSURF=='T_FLOOR' .OR. HSURF=='T_WALL ' .OR. HSURF=='T_ROOF ' .OR.  HSURF=='T_WIN2 ' .OR. HSURF=='TI_BLD ' .OR. &
+    HSURF=='T_WALLA' .OR. HSURF=='T_WALLB') THEN
    ZTI_BLD = XTI_BLD_DEF
    IF (XTI_BLD/=XUNDEF) ZTI_BLD=XTI_BLD
 ENDIF
@@ -95,7 +96,7 @@ SELECT CASE(HSURF)
 !*      3.     Profile of temperatures in roads
 !              --------------------------------
 !
-  CASE('T_ROAD')
+  CASE('T_ROAD ')
      !* reading of the profile and its depth definition
      SELECT CASE(YINMODEL)
        CASE('ALADIN')
@@ -129,7 +130,7 @@ SELECT CASE(HSURF)
      CALL READ_BUFFER_T_TEB(KLUOUT,YINMODEL,ZTI_BLD,ZFIELD,ZD)
      CALL TEB_PROFILE_BUFFER(XGRID_WALL)
         
-  CASE('T_WIN1')
+  CASE('T_WIN1 ')
     SELECT CASE (YINMODEL)
       CASE ('ALADIN')
         CALL READ_BUFFER_TS(KLUOUT,YINMODEL,ZFIELD1D)
@@ -141,14 +142,14 @@ SELECT CASE(HSURF)
 !*      5.     Profile of temperatures in roofs
 !              --------------------------------
 
-  CASE('T_ROOF')    
+  CASE('T_ROOF ')    
      CALL READ_BUFFER_T_TEB(KLUOUT,YINMODEL,ZTI_BLD,ZFIELD,ZD)
      CALL TEB_PROFILE_BUFFER(XGRID_ROOF)
 
 !*      5.bis    Profile of temperatures in thermal mass
 !              -----------------------------------------
 !    
-  CASE('T_MASS')
+  CASE('T_MASS ')
      ALLOCATE(PFIELD(NNI,3))
      PFIELD(:,:) = ZTI_BLD
      CALL TEB_PROFILE_BUFFER(XGRID_FLOOR)
@@ -198,7 +199,7 @@ SELECT CASE(HSURF)
      ALLOCATE(PFIELD(NNI,1))
      PFIELD(:,:) = ZTI_BLD
 !
-  CASE('T_WIN2')
+  CASE('T_WIN2 ')
      ALLOCATE(PFIELD(NNI,1))
      PFIELD(:,:) = ZTI_BLD
 
@@ -218,13 +219,13 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='BUFFER'
+CINTERP_TYPE='BUFFER'
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_BUFFER',1,ZHOOK_HANDLE)
- CONTAINS
+CONTAINS
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------

@@ -65,8 +65,8 @@ REAL,                INTENT(OUT)   :: PUNIF_ZS    ! uniform orography
  CHARACTER(LEN=3),    INTENT(OUT)   :: HOROGTYPE   ! orogpraphy type 
 REAL,                INTENT(OUT)   :: PENV        ! parameter for enveloppe orography:
 LOGICAL,             INTENT(OUT)   :: OIMP_ZS     ! Imposed orography from another PGD file
- CHARACTER(LEN=28),   INTENT(OUT),OPTIONAL   :: HSLOPE         ! file name for slope
- CHARACTER(LEN=6),    INTENT(OUT),OPTIONAL   :: HSLOPEFILETYPE   ! data file type
+CHARACTER(LEN=28),   INTENT(OUT),OPTIONAL   :: HSLOPE         ! file name for slope
+CHARACTER(LEN=6),    INTENT(OUT),OPTIONAL   :: HSLOPEFILETYPE   ! data file type
 LOGICAL,             INTENT(OUT),OPTIONAL   :: OEXPLICIT_SLOPE ! Slope is computed from explicit ZS field and not subgrid orography
 !                                  
 !
@@ -82,8 +82,8 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !
  CHARACTER(LEN=28)        :: YZS         ! file name for orography
  CHARACTER(LEN=6)         :: YZSFILETYPE   ! data file type
- CHARACTER(LEN=28)        :: YSLOPE         ! file name for slope
- CHARACTER(LEN=6)         :: YSLOPEFILETYPE   ! data file type
+CHARACTER(LEN=28)        :: YSLOPE         ! file name for slope
+CHARACTER(LEN=6)         :: YSLOPEFILETYPE   ! data file type
 REAL                     :: XUNIF_ZS    ! uniform orography
  CHARACTER(LEN=3)         :: COROGTYPE   ! orogpraphy type 
 !                                       ! 'AVG' : average orography
@@ -110,7 +110,7 @@ YZSFILETYPE    = '      '
 YSLOPE            = '                          '
 YSLOPEFILETYPE      = '      '
 !
- COROGTYPE      = 'ENV'
+COROGTYPE      = 'ENV'
 XENV           = 0.
 LIMP_ZS        = .FALSE.
 LEXPLICIT_SLOPE=.FALSE.

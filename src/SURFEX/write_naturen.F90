@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_NATURE_n (DTCO, DGU, U, IM, DST,  &
-                                 HPROGRAM,HWRITE,OLAND_USE)
+      SUBROUTINE WRITE_NATURE_n (DTCO, HSELECT, OSNOWDIMNC, U, IM, NDST,HPROGRAM,HWRITE,OLAND_USE)
 !     ####################################
 !
 !!****  *WRITE_NATURE_n* - routine to write surface variables in their respective files
@@ -40,10 +39,9 @@
 !              ------------
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
-USE MODD_DST_n, ONLY : DST_t
+USE MODD_DST_n, ONLY : DST_NP_t
 !
 USE MODI_WRITE_ISBA_n
 !
@@ -56,12 +54,12 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT 
+LOGICAL, INTENT(IN) :: OSNOWDIMNC
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
-TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE    ! 'PREP' : does not write SBL XUNDEF fields
@@ -79,8 +77,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_NATURE_N',0,ZHOOK_HANDLE)
 IF (U%CNATURE=='ISBA' .OR. U%CNATURE=='TSZ0') THEN
-  CALL WRITE_ISBA_n(DTCO, DGU, U, IM, DST, &
-                    HPROGRAM,HWRITE,OLAND_USE)
+  CALL WRITE_ISBA_n(DTCO, HSELECT, OSNOWDIMNC, U, IM, NDST, HPROGRAM, HWRITE, OLAND_USE)
 END IF
 IF (LHOOK) CALL DR_HOOK('WRITE_NATURE_N',1,ZHOOK_HANDLE)
 !

@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE CLS_WIND( PZONA, PMERA, PHW,                 &
-                            PCD, PCDN, PRI, PHV,               &
-                            PZON10M, PMER10M                   )  
+       SUBROUTINE CLS_WIND( PZONA, PMERA, PHW, PCD, PCDN, PRI, PHV, PZON10M, PMER10M  )  
 !     ###############################################################
 !
 !!****  *PARAMCLS*  

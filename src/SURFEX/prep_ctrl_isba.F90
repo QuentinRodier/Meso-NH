@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_CTRL_ISBA(K2M,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET,OCOEF,OSURF_VARS,&
-                                  OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OSURF_BUDGETC,     &
-                                  OPATCH_BUDGET,OSURF_MISC_DIF,KLUOUT                    )  
+SUBROUTINE PREP_CTRL_ISBA(DGO,OSURF_EVAP_BUDGET,OSURF_MISC_BUDGET,OSURF_MISC_DIF,KLUOUT )  
 !     #################################################################################################################
 !
 !!****  *PREP_CTRL_ISBA* - routine to check that diagnostics are switched off
@@ -41,7 +39,9 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t
 !
+USE MODI_PREP_CTRL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -51,17 +51,10 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 !
-INTEGER,  INTENT(INOUT) :: K2M                ! flag for 2m parameters
-LOGICAL,  INTENT(INOUT) :: OSURF_BUDGET       ! flag for surface budget
-LOGICAL,  INTENT(INOUT) :: O2M_MIN_ZS         ! flag for 2m parameters at min zs
-LOGICAL,  INTENT(INOUT) :: ORAD_BUDGET        ! flag for radiative budget
-LOGICAL,  INTENT(INOUT) :: OCOEF              ! flag for turbulent coefficients
-LOGICAL,  INTENT(INOUT) :: OSURF_VARS         ! flag for other surface variables
 LOGICAL,  INTENT(INOUT) :: OSURF_EVAP_BUDGET  ! flag for surface evaporation budget
 LOGICAL,  INTENT(INOUT) :: OSURF_MISC_BUDGET  ! flag for surface miscellaneous budget
-LOGICAL,  INTENT(INOUT) :: OSURF_BUDGETC      ! flag for cumulated surface budget
-LOGICAL,  INTENT(INOUT) :: OPATCH_BUDGET      ! flaf for surface budget by patch
 LOGICAL,  INTENT(INOUT) :: OSURF_MISC_DIF     ! flag for surface miscellaneous dif variables
 INTEGER,  INTENT(IN)    :: KLUOUT             ! unit number
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -72,16 +65,13 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_CTRL_ISBA',0,ZHOOK_HANDLE)
-K2M = 0
 !
-OSURF_BUDGET  = .FALSE.
-O2M_MIN_ZS    = .FALSE.
-ORAD_BUDGET   = .FALSE.
-OCOEF         = .FALSE.
-OSURF_VARS    = .FALSE.
+ CALL PREP_CTRL(DGO,KLUOUT)
 !
-OSURF_BUDGETC     = .FALSE.
-OPATCH_BUDGET     = .FALSE.
+DGO%N2M = 0
+!
+DGO%LPATCH_BUDGET     = .FALSE.
+!
 OSURF_EVAP_BUDGET = .FALSE.
 OSURF_MISC_BUDGET = .FALSE.
 OSURF_MISC_DIF    = .FALSE.
