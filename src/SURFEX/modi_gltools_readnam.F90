@@ -84,15 +84,15 @@ LOGICAL, INTENT(IN),OPTIONAL           :: &
 INTEGER, INTENT(IN),OPTIONAL           :: &
  kluout              ! imposed output logical unit ?
 
- CHARACTER(1) ::  &
+CHARACTER(1) ::  &
   ytag
- CHARACTER(6), PARAMETER ::  &
+CHARACTER(6), PARAMETER ::  &
   ypinpfile='gltpar'
- CHARACTER(80) ::  &
+CHARACTER(80) ::  &
   ypar,yval,yinsfld
- CHARACTER(80), DIMENSION(:), ALLOCATABLE ::  &
+CHARACTER(80), DIMENSION(:), ALLOCATABLE ::  &
   ylistfld 
- CHARACTER(1000) ::  &
+CHARACTER(1000) ::  &
   yfldin
 INTEGER ::  &
   iparlu,iok,infld,jl,icount, ierr
@@ -377,13 +377,13 @@ ENDIF
 !
 SELECT CASE ( TRIM(cnflxin) )
 !
- CASE('mixed')  ; nnflxin = 0 
+CASE('mixed')  ; nnflxin = 0 
   if (lp1) WRITE(*,*) 'We are using single physics (one input flux)'
- CASE('double') ; nnflxin = 1
+CASE('double') ; nnflxin = 1
   IF (lp1) WRITE(*,*) 'We are using double physics (two input fluxes)'  
- CASE('multi')  ; nnflxin = nt
+CASE('multi')  ; nnflxin = nt
   IF (lp1) WRITE(*,*) 'We are using multiple physics (one flux per ice cat + water)'
- CASE DEFAULT
+CASE DEFAULT
   IF (lp1) WRITE(*,*) 'We stop. Invalid parameter cnflxin = ' // TRIM(cnflxin) ; STOP
 !
 END SELECT

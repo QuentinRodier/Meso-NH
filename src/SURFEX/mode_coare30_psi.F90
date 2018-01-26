@@ -15,7 +15,7 @@ USE PARKIND1  ,ONLY : JPRB
   MODULE PROCEDURE PSIFUNCTT
  END INTERFACE
 !
- CONTAINS
+CONTAINS
 !
 !---------------------------------------------------------------------------------------
 !

@@ -20,6 +20,14 @@ INTEGER, DIMENSION(:,:),   INTENT(IN) :: K1D_IN
 INTEGER, DIMENSION(:,:),   INTENT(OUT):: K1D_OUT
 END SUBROUTINE PACK_SAME_RANK_FROM2DI
 !
+      SUBROUTINE PACK_SAME_RANK_FROM3DI(KM,K3D_IN,K3D_OUT)
+
+INTEGER, DIMENSION(:),   INTENT(IN) :: KM
+INTEGER, DIMENSION(:,:,:), INTENT(IN) :: K3D_IN
+INTEGER, DIMENSION(:,:,:), INTENT(OUT):: K3D_OUT
+!
+END SUBROUTINE PACK_SAME_RANK_FROM3DI
+!
       SUBROUTINE PACK_SAME_RANK_FROM1DL(KM,O1D_IN,O1D_OUT)
 
 INTEGER, DIMENSION(:),   INTENT(IN) :: KM
@@ -265,6 +273,77 @@ IF (LHOOK) CALL DR_HOOK('MODI_PACK_SAME_RANK:PACK_SAME_RANK_FROM2DI',1,ZHOOK_HAN
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE PACK_SAME_RANK_FROM2DI
+!
+!     ##############################################
+      SUBROUTINE PACK_SAME_RANK_FROM3DI(KM,K3D_IN,K3D_OUT)
+!     ##############################################
+!
+!!****  *PACK_SAME_RANK* - extract the defined data from a 2D field into a 2D field
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	F. Habets   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    08/03
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+INTEGER, DIMENSION(:),  INTENT(IN) :: KM
+INTEGER, DIMENSION(:,:,:),   INTENT(IN) :: K3D_IN
+INTEGER, DIMENSION(:,:,:),   INTENT(OUT):: K3D_OUT
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER :: JI, JJ, JK ! loop counter
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+!
+IF (LHOOK) CALL DR_HOOK('MODI_PACK_SAME_RANK:PACK_SAME_RANK_FROM3DI',0,ZHOOK_HANDLE)
+DO JK=1,SIZE(K3D_OUT,3)
+  DO JJ=1,SIZE(K3D_OUT,2)
+    DO JI=1,SIZE(K3D_OUT,1)
+      K3D_OUT(JI,JJ,JK) = K3D_IN(KM(JI),JJ,JK)
+    ENDDO
+  ENDDO 
+ENDDO
+
+IF (LHOOK) CALL DR_HOOK('MODI_PACK_SAME_RANK:PACK_SAME_RANK_FROM3DI',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE PACK_SAME_RANK_FROM3DI
 !
 !     ##############################################
       SUBROUTINE PACK_SAME_RANK_FROM1DL(KM,O1D_IN,O1D_OUT)

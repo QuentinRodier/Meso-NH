@@ -59,7 +59,7 @@ IF (LHOOK) CALL DR_HOOK('GET_MESH_CORNER_GAUSS',0,ZHOOK_HANDLE)
 !*    1.     Gets parameters of the projection
 !            ---------------------------------
 !
- CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,KL=INI)
+CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,KL=INI)
 !  
 IF(KL/=INI)THEN
   CALL ABOR1_SFX('GET_MESH_CORNER_GAUSS: WRONG NUMBER OF POINT')
@@ -75,7 +75,7 @@ ENDIF
 !       |_______|
 !       1       2
 !
- CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,PLONINF=PCORNER_LON(:,1), &
+CALL GET_GRIDTYPE_GAUSS(PGRID_PAR,PLONINF=PCORNER_LON(:,1), &
                                   PLATINF=PCORNER_LAT(:,1), &
                                   PLONSUP=PCORNER_LON(:,3), &
                                   PLATSUP=PCORNER_LAT(:,3)  )

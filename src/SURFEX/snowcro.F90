@@ -131,7 +131,7 @@
 USE MODD_TYPE_DATE_SURF, ONLY: DATE_TIME
 !
 USE MODD_CSTS, ONLY : XTT, XRHOLW, XLMTT,XLSTT,XLVTT, XCL, XCI, XPI, XRHOLI
-USE MODD_SNOW_PAR, ONLY : XZ0ICEZ0SNOW, XRHOTHRESHOLD_ICE
+USE MODD_SNOW_PAR, ONLY : XZ0ICEZ0SNOW, XRHOTHRESHOLD_ICE, XPERCENTAGEPORE
 USE MODD_SNOW_METAMO
 USE MODD_CONST_TARTES, ONLY: NPNIMP, XPSNOWG0, XPSNOWY0, XPSNOWW0, XPSNOWB0
 !
@@ -279,7 +279,7 @@ REAL, DIMENSION(:), INTENT(IN)        :: PXLAT,PXLON ! LAT/LON after packing
 !
 LOGICAL, INTENT(IN)                   :: OSNOWDRIFT, OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 LOGICAL, INTENT(IN)                   :: OSNOW_ABS_ZENITH ! activate parametrization of solar absorption for polar regions
- CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO, HSNOWRAD
+CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO, HSNOWRAD
                                          !-----------------------
                                          ! Metamorphism scheme
                                          ! HSNOWMETAMO=B92 Brun et al 1992
@@ -1003,7 +1003,8 @@ ENDIF
 DO JJ = 1,SIZE(ZSNOW)
 ! active layers
   DO JST = 1,INLVLS_USE(JJ)
-    ZWHOLDMAX (JJ,JST) = SNOWCROHOLD( PSNOWRHO(JJ,JST),PSNOWLIQ(JJ,JST),PSNOWDZ(JJ,JST) )
+    ZWHOLDMAX (JJ,JST) = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ(JJ,JST) * &
+            (XRHOLI-PSNOWRHO(JJ,JST)) + PSNOWLIQ(JJ,JST)*XRHOLW)
     ZLIQHEATXS(JJ)     = MAX( 0.0, (PSNOWLIQ(JJ,JST) - ZWHOLDMAX(JJ,JST)) * XRHOLW ) * XLMTT/PTSTEP 
     PSNOWLIQ  (JJ,JST) = PSNOWLIQ(JJ,JST) - ZLIQHEATXS(JJ)*PTSTEP/(XRHOLW*XLMTT)
     PSNOWLIQ  (JJ,JST) = MAX( 0.0, PSNOWLIQ(JJ,JST) )
@@ -1120,7 +1121,7 @@ PQS(:) = ZQSAT(:)
 !
 IF (LHOOK) CALL DR_HOOK('SNOWCRO',1,ZHOOK_HANDLE)
 !
- CONTAINS
+CONTAINS
 !
 !####################################################################
 !####################################################################
@@ -1176,7 +1177,7 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PSNOW        ! Snowheight UNIT : m
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWGRAN1, PSNOWGRAN2, PSNOWHIST, &!Snowtype variables
                                         PSNOWLIQ     ! Snow liquid water content UNIT ??? 
 INTEGER, DIMENSION(:), INTENT(IN)   :: INLVLS_USE   ! Number of snow layers used
- CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
 !
 !*      0.2    declarations of local variables
 !
@@ -1466,7 +1467,7 @@ INTEGER, DIMENSION(:), INTENT(IN)   :: INLVLS_USE
 !
 REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWAGE
 !
- CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
 !
 !     0.2 declaration of local variables      
 !     
@@ -1914,7 +1915,7 @@ INTEGER, DIMENSION(:), INTENT(IN) :: KNLVLS_USE
 ! 
 REAL, DIMENSION(:), INTENT(IN)    :: PZENITH ! solar zenith angle for future use
 !
- CHARACTER(3),INTENT(IN)           :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3),INTENT(IN)           :: HSNOWMETAMO ! metamorphism scheme
 !
 !*      0.2    declarations of local variables
 !
@@ -2035,7 +2036,7 @@ REAL, INTENT(IN) :: PVAGE1
 REAL, INTENT(IN) :: PSNOWGRAN1, PSNOWGRAN2, PSNOWAGE
 REAL, DIMENSION(3), INTENT(OUT) :: PALB
 !
- CHARACTER(3),INTENT(IN)::HSNOWMETAMO
+CHARACTER(3),INTENT(IN)::HSNOWMETAMO
 !
 REAL :: ZDIAM, ZDIAM_SQRT
 !
@@ -2111,7 +2112,7 @@ REAL, DIMENSION(:,:), INTENT(IN)    :: PSNOWRHO, PSNOWDZ
 !
 LOGICAL, INTENT(IN)                 :: OSNOW_ABS_ZENITH ! parametrization for polar regions (not physic but better results)
 !                                                       ! default FALSE
- CHARACTER(3), INTENT(IN)            :: HSNOWMETAMO
+CHARACTER(3), INTENT(IN)            :: HSNOWMETAMO
 !
 REAL, DIMENSION(:), INTENT(OUT)     :: PRADXS
 !
@@ -2944,7 +2945,8 @@ DO JJ=1,SIZE(PSNOWDZ,1)
   DO JST=1,KNLVLS_USE(JJ)
     ZSNOWRHO (JJ,JST) = PSNOWRHO(JJ,JST)
     ZSNOWTEMP(JJ,JST) = PSNOWTEMP(JJ,JST)
-    ZWHOLDMAX(JJ,JST) = SNOWCROHOLD( PSNOWRHO(JJ,JST),PSNOWLIQ(JJ,JST),PSNOWDZ(JJ,JST) )
+    ZWHOLDMAX(JJ,JST) = XPERCENTAGEPORE/XRHOLI * (PSNOWDZ(JJ,JST) * &
+            (XRHOLI-PSNOWRHO(JJ,JST)) + PSNOWLIQ(JJ,JST)*XRHOLW)
   ENDDO
 ENDDO
 !
@@ -2985,8 +2987,8 @@ DO JJ = 1,SIZE(PSNOWDZ,1)  ! loop JJ grid points
     !
     ! Difference with ISBA-ES: a possible cooling of current refreezing water
     !                          is taken into account to calculate temperature change
-    ZNUMER = ( ZSNOWRHO(JJ,JST) * ZSNOWDZ(JJ,JST) - ( PSNOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
-    ZDENOM = ( ZSNOWRHO(JJ,JST) * ZSNOWDZ(JJ,JST) - ( ZSNOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
+    ZNUMER =  ( ZSNOWRHO(JJ,JST) * ZSNOWDZ(JJ,JST) - ( PSNOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
+    ZDENOM =  ( ZSNOWRHO(JJ,JST) * ZSNOWDZ(JJ,JST) - ( ZSNOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
     !
     PSNOWTEMP(JJ,JST) = XTT + ( ZSNOWTEMP(JJ,JST)-XTT )*ZNUMER/ZDENOM + ZPHASE(JJ,JST)/( XCI*ZDENOM ) 
     !
@@ -3001,7 +3003,7 @@ DO JJ = 1,SIZE(PSNOWDZ,1)  ! loop JJ grid points
     !
     ! 5. Density is adjusted to conserve the mass
     !    --------------------------------------------------------------
-    ZNUMER = ( ZSNOWRHO(JJ,JST) * PSNOWDZ(JJ,JST) - ( ZFLOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
+    ZNUMER =  ( ZSNOWRHO(JJ,JST) * PSNOWDZ(JJ,JST) - ( ZFLOWLIQ(JJ,JST) - ZFLOWLIQ(JJ,JST-1) ) * XRHOLW )
     !
     ZSNOWRHO(JJ,JST) = ZNUMER / ZSNOWDZ(JJ,JST) 
     !
@@ -3476,7 +3478,7 @@ REAL, DIMENSION(:,:), INTENT(INOUT)   :: PSNOWTEMP  ! snow temperature profile  
 REAL, DIMENSION(:,:), INTENT(INOUT)   :: PSNOWLIQ   ! snow liquid water profile           (m)
 ! 
 INTEGER, DIMENSION(:), INTENT(IN)      :: KNLVLS_USE
- CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
 !
 !*      0.2    declarations of local variables
 !
@@ -3668,7 +3670,7 @@ LOGICAL, DIMENSION(:), INTENT(OUT)   :: OMODIF_GRID
 INTEGER, DIMENSION(:), INTENT(INOUT) :: KNLVLS_USE
 
 LOGICAL,INTENT(IN) :: OSNOWDRIFT ! if snowdrift then grain types are not modified by wind
- CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
 !*      0.2    declarations of local variables
 !
 !
@@ -4501,7 +4503,7 @@ INTEGER, INTENT(IN)               :: KNLVLS_USE
 !
 LOGICAL, INTENT(IN)               :: GSNOWFALL
 !
- CHARACTER(3),INTENT(IN)           :: HSNOWMETAMO
+CHARACTER(3),INTENT(IN)           :: HSNOWMETAMO
 !
 !*      0.2    declarations of local variables
 !
@@ -4733,7 +4735,7 @@ REAL, DIMENSION(:),INTENT(IN)       :: PZ0EFF,PUREF
 !
 LOGICAL,INTENT(IN)                  :: OSNOWDRIFT_SUBLIM
 !
- CHARACTER(3), INTENT(IN)            :: HSNOWMETAMO ! metamorphism scheme
+CHARACTER(3), INTENT(IN)            :: HSNOWMETAMO ! metamorphism scheme
 !
 REAL, DIMENSION(:,:), INTENT(INOUT) :: PSNOWRHO, PSNOWDZ,PSNOWGRAN1, &
                                        PSNOWGRAN2,PSNOWHIST
@@ -5117,7 +5119,7 @@ INTEGER,       INTENT(IN) :: KLAYERS
 REAL, DIMENSION(:), INTENT(IN) :: PSNOWDZ,PSNOWRHO,PSNOWTEMP,PSNOWLIQ, &
                                   PSNOWHEAT,PSNOWGRAN1,PSNOWGRAN2,     &
                                   PSNOWHIST,PSNOWAGE
- CHARACTER(3), INTENT(IN)       :: HSNOWMETAMO
+CHARACTER(3), INTENT(IN)       :: HSNOWMETAMO
 !
 REAL, DIMENSION(KLAYERS) :: ZSNOWSSA
 REAL :: ZDIAM

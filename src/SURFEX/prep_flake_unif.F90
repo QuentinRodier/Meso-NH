@@ -127,7 +127,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='UNIF  '
+CINTERP_TYPE='UNIF  '
 IF (LHOOK) CALL DR_HOOK('PREP_FLAKE_UNIF',1,ZHOOK_HANDLE)
 !
 !

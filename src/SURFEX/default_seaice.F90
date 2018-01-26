@@ -74,9 +74,9 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
- CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SIC ! Quadratic interpolation of monthly SIC
- CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SIT ! Quadratic interpolation of monthly SIT
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
+CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SIC ! Quadratic interpolation of monthly SIC
+CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SIT ! Quadratic interpolation of monthly SIT
 REAL,              INTENT(OUT) :: PFREEZING_SST ! Value marking frozen sea in SST data
 REAL,              INTENT(OUT) :: PSEAICE_TSTEP ! For damping of SIC (days)
 REAL,              INTENT(OUT) :: PSIC_EFOLDING_TIME ! E-folding time on SIC relaxation
@@ -97,7 +97,7 @@ real zjl
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_SEAICE',0,ZHOOK_HANDLE)
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 HINTERPOL_SIC = "NONE"
 HINTERPOL_SIT = "NONE"
@@ -432,7 +432,7 @@ xhsimin = .2
 !
 alblc = 0.
 xlmelt = 3.e-3
-xswhdfr = 0.95
+xswhdfr = 1.00
 albyngi = 1.
 albimlt = 0.56
 albsmlt = 0.77

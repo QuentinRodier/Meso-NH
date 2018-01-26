@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_TEB_IRRIG (DTCO, UG, U, USS, TG, TIR, &
-                                HPROGRAM)
+      SUBROUTINE PGD_TEB_IRRIG (DTCO, UG, U, USS, KDIM, TIR, HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_TEB_IRRIG* monitor for averaging and interpolations of cover fractions
@@ -45,8 +44,7 @@
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
-USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
+USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_TEB_IRRIG_n, ONLY : TEB_IRRIG_t
 !
 USE MODD_SURF_PAR,          ONLY : XUNDEF
@@ -74,8 +72,8 @@ IMPLICIT NONE
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
-TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
+TYPE(SSO_t), INTENT(INOUT) :: USS
+INTEGER, INTENT(IN) :: KDIM
 TYPE(TEB_IRRIG_t), INTENT(INOUT) :: TIR
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
@@ -222,37 +220,37 @@ XUNIF_RD_START_HOUR = XUNDEF
 XUNIF_RD_END_HOUR   = XUNDEF
 XUNIF_RD_24H_IRRIG  = XUNDEF
 !
- CFNAM_GD_START_MONTH  = '                            '
- CFNAM_GD_END_MONTH    = '                            '
- CFNAM_GD_START_HOUR   = '                            '
- CFNAM_GD_END_HOUR     = '                            '
- CFNAM_GD_24H_IRRIG    = '                            '
- CFNAM_GR_START_MONTH  = '                            '
- CFNAM_GR_END_MONTH    = '                            '
- CFNAM_GR_START_HOUR   = '                            '
- CFNAM_GR_END_HOUR     = '                            '
- CFNAM_GR_24H_IRRIG    = '                            '
- CFNAM_RD_START_MONTH  = '                            '
- CFNAM_RD_END_MONTH    = '                            '
- CFNAM_RD_START_HOUR   = '                            '
- CFNAM_RD_END_HOUR     = '                            '
- CFNAM_RD_24H_IRRIG    = '                            '
+CFNAM_GD_START_MONTH  = '                            '
+CFNAM_GD_END_MONTH    = '                            '
+CFNAM_GD_START_HOUR   = '                            '
+CFNAM_GD_END_HOUR     = '                            '
+CFNAM_GD_24H_IRRIG    = '                            '
+CFNAM_GR_START_MONTH  = '                            '
+CFNAM_GR_END_MONTH    = '                            '
+CFNAM_GR_START_HOUR   = '                            '
+CFNAM_GR_END_HOUR     = '                            '
+CFNAM_GR_24H_IRRIG    = '                            '
+CFNAM_RD_START_MONTH  = '                            '
+CFNAM_RD_END_MONTH    = '                            '
+CFNAM_RD_START_HOUR   = '                            '
+CFNAM_RD_END_HOUR     = '                            '
+CFNAM_RD_24H_IRRIG    = '                            '
 !
- CFTYP_GD_START_MONTH  = '      '
- CFTYP_GD_END_MONTH    = '      '
- CFTYP_GD_START_HOUR   = '      '
- CFTYP_GD_END_HOUR     = '      '
- CFTYP_GD_24H_IRRIG    = '      '
- CFTYP_GR_START_MONTH  = '      '
- CFTYP_GR_END_MONTH    = '      '
- CFTYP_GR_START_HOUR   = '      '
- CFTYP_GR_END_HOUR     = '      '
- CFTYP_GR_24H_IRRIG    = '      '
- CFTYP_RD_START_MONTH  = '      '
- CFTYP_RD_END_MONTH    = '      '
- CFTYP_RD_START_HOUR   = '      '
- CFTYP_RD_END_HOUR     = '      '
- CFTYP_RD_24H_IRRIG    = '      '
+CFTYP_GD_START_MONTH  = '      '
+CFTYP_GD_END_MONTH    = '      '
+CFTYP_GD_START_HOUR   = '      '
+CFTYP_GD_END_HOUR     = '      '
+CFTYP_GD_24H_IRRIG    = '      '
+CFTYP_GR_START_MONTH  = '      '
+CFTYP_GR_END_MONTH    = '      '
+CFTYP_GR_START_HOUR   = '      '
+CFTYP_GR_END_HOUR     = '      '
+CFTYP_GR_24H_IRRIG    = '      '
+CFTYP_RD_START_MONTH  = '      '
+CFTYP_RD_END_MONTH    = '      '
+CFTYP_RD_START_HOUR   = '      '
+CFTYP_RD_END_HOUR     = '      '
+CFTYP_RD_24H_IRRIG    = '      '
 !-------------------------------------------------------------------------------
 !
 !*    2.      Input file for cover types
@@ -292,18 +290,18 @@ END IF
 !-------------------------------------------------------------------------------
 IF (TIR%LPAR_GD_IRRIG) THEN
 !
-ALLOCATE(TIR%XGD_START_MONTH   (TG%NDIM        ))
-ALLOCATE(TIR%XGD_END_MONTH     (TG%NDIM        ))
-ALLOCATE(TIR%XGD_START_HOUR    (TG%NDIM        ))
-ALLOCATE(TIR%XGD_END_HOUR      (TG%NDIM        ))
-ALLOCATE(TIR%XGD_24H_IRRIG     (TG%NDIM        ))
+ALLOCATE(TIR%XGD_START_MONTH   (KDIM        ))
+ALLOCATE(TIR%XGD_END_MONTH     (KDIM        ))
+ALLOCATE(TIR%XGD_START_HOUR    (KDIM        ))
+ALLOCATE(TIR%XGD_END_HOUR      (KDIM        ))
+ALLOCATE(TIR%XGD_24H_IRRIG     (KDIM        ))
 !
 !-------------------------------------------------------------------------------
 !
 !*    4.      Fields are prescribed for gardens
 !             ---------------------------------
 !
- CATYPE = 'MAJ'
+CATYPE = 'MAJ'
 !
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GD_START_MONTH : start month for irrigation of gardens','TWN',CFNAM_GD_START_MONTH,   &
@@ -317,7 +315,7 @@ ALLOCATE(TIR%XGD_24H_IRRIG     (TG%NDIM        ))
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GD_END_HOUR    : end   HOUR  for irrigation of gardens','TWN',CFNAM_GD_END_HOUR ,     &
                  CFTYP_GD_END_HOUR   ,XUNIF_GD_END_HOUR   ,TIR%XGD_END_HOUR   (:))  
- CATYPE = 'ARI'
+CATYPE = 'ARI'
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GD_24H_IRRIG   : total irrigation over 24h for gardens','TWN',CFNAM_GD_24H_IRRIG ,    &
                  CFTYP_GD_24H_IRRIG  ,XUNIF_GD_24H_IRRIG  ,TIR%XGD_24H_IRRIG  (:))  
@@ -350,18 +348,18 @@ END IF
 !-------------------------------------------------------------------------------
 IF (TIR%LPAR_GR_IRRIG) THEN
 !
-ALLOCATE(TIR%XGR_START_MONTH   (TG%NDIM        ))
-ALLOCATE(TIR%XGR_END_MONTH     (TG%NDIM        ))
-ALLOCATE(TIR%XGR_START_HOUR    (TG%NDIM        ))
-ALLOCATE(TIR%XGR_END_HOUR      (TG%NDIM        ))
-ALLOCATE(TIR%XGR_24H_IRRIG     (TG%NDIM        ))
+ALLOCATE(TIR%XGR_START_MONTH   (KDIM        ))
+ALLOCATE(TIR%XGR_END_MONTH     (KDIM        ))
+ALLOCATE(TIR%XGR_START_HOUR    (KDIM        ))
+ALLOCATE(TIR%XGR_END_HOUR      (KDIM        ))
+ALLOCATE(TIR%XGR_24H_IRRIG     (KDIM        ))
 !
 !-------------------------------------------------------------------------------
 !
 !*    6.      fields are prescribed for greenroofs
 !             ------------------------------------
 !
- CATYPE = 'MAJ'
+CATYPE = 'MAJ'
 !
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GR_START_MONTH : start month for irrigation of greenroofs','TWN',CFNAM_GR_START_MONTH,   &
@@ -375,7 +373,7 @@ ALLOCATE(TIR%XGR_24H_IRRIG     (TG%NDIM        ))
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GR_END_HOUR    : end   HOUR  for irrigation of greenroofs','TWN',CFNAM_GR_END_HOUR ,     &
                  CFTYP_GR_END_HOUR   ,XUNIF_GR_END_HOUR   ,TIR%XGR_END_HOUR   (:))  
- CATYPE = 'ARI'
+CATYPE = 'ARI'
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'GR_24H_IRRIG   : total irrigation over 24h for greenroofs','TWN',CFNAM_GR_24H_IRRIG ,    &
                  CFTYP_GR_24H_IRRIG  ,XUNIF_GR_24H_IRRIG  ,TIR%XGR_24H_IRRIG  (:))  
@@ -407,18 +405,18 @@ END IF
 !-------------------------------------------------------------------------------
 IF (TIR%LPAR_RD_IRRIG) THEN
 !
-ALLOCATE(TIR%XRD_START_MONTH   (TG%NDIM        ))
-ALLOCATE(TIR%XRD_END_MONTH     (TG%NDIM        ))
-ALLOCATE(TIR%XRD_START_HOUR    (TG%NDIM        ))
-ALLOCATE(TIR%XRD_END_HOUR      (TG%NDIM        ))
-ALLOCATE(TIR%XRD_24H_IRRIG     (TG%NDIM        ))
+ALLOCATE(TIR%XRD_START_MONTH   (KDIM        ))
+ALLOCATE(TIR%XRD_END_MONTH     (KDIM        ))
+ALLOCATE(TIR%XRD_START_HOUR    (KDIM        ))
+ALLOCATE(TIR%XRD_END_HOUR      (KDIM        ))
+ALLOCATE(TIR%XRD_24H_IRRIG     (KDIM        ))
 !
 !-------------------------------------------------------------------------------
 !
 !*    8.      fields are prescribed for roads
 !             -------------------------------
 !
- CATYPE = 'MAJ'
+CATYPE = 'MAJ'
 !
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'RD_START_MONTH : start month for irrigation of roads','TWN',CFNAM_RD_START_MONTH,   &
@@ -432,7 +430,7 @@ ALLOCATE(TIR%XRD_24H_IRRIG     (TG%NDIM        ))
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'RD_END_HOUR    : end   HOUR  for irrigation of roads','TWN',CFNAM_RD_END_HOUR ,     &
                  CFTYP_RD_END_HOUR   ,XUNIF_RD_END_HOUR   ,TIR%XRD_END_HOUR   (:))  
- CATYPE = 'ARI'
+CATYPE = 'ARI'
  CALL PGD_FIELD(DTCO, UG, U, USS, &
                 HPROGRAM,'RD_24H_IRRIG   : total irrigation over 24h for roads','TWN',CFNAM_RD_24H_IRRIG ,    &
                  CFTYP_RD_24H_IRRIG  ,XUNIF_RD_24H_IRRIG  ,TIR%XRD_24H_IRRIG  (:))  

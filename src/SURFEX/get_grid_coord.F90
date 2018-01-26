@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_GRID_COORD (UG, U, &
+      SUBROUTINE GET_GRID_COORD (HGRID_IN, KGRID_PAR_IN, PGRID_PAR_IN, KSIZE_FULL, &
                                  KLUOUT,PX,PY,KL,HGRID,PGRID_PAR)
 !     #######################################
 !!
@@ -41,12 +41,6 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
-!
-!
-USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -70,9 +64,11 @@ IMPLICIT NONE
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
 !
+ CHARACTER(LEN=10),  INTENT(IN)  :: HGRID_IN     ! grid type
+INTEGER, INTENT(IN) :: KGRID_PAR_IN
+REAL, DIMENSION(:), INTENT(IN)  :: PGRID_PAR_IN  ! parameters defining this grid
 !
-TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+INTEGER, INTENT(IN) :: KSIZE_FULL
 !
 INTEGER,                      INTENT(IN)  :: KLUOUT ! output listing logical unit
 REAL, DIMENSION(:), OPTIONAL, INTENT(OUT) :: PX     ! X natural coordinate in the projection
@@ -103,11 +99,11 @@ IF (PRESENT(HGRID)) THEN
   ALLOCATE(ZGRID_PAR(IGRID_PAR))
   ZGRID_PAR = PGRID_PAR
 ELSE
-  YGRID = UG%CGRID
-  IGRID_PAR = UG%NGRID_PAR
-  IL = U%NSIZE_FULL
+  YGRID = HGRID_IN
+  IGRID_PAR = KGRID_PAR_IN
+  IL = KSIZE_FULL
   ALLOCATE(ZGRID_PAR(IGRID_PAR))
-  ZGRID_PAR = UG%XGRID_PAR
+  ZGRID_PAR = PGRID_PAR_IN
 END IF
 !
 ALLOCATE(ZX(IL))

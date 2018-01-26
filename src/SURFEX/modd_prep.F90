@@ -36,9 +36,9 @@ IMPLICIT NONE
 !
 !--------------------------------------------------------------------------
 !
- CHARACTER(LEN=10)  :: CINGRID_TYPE   ! type of input grid
- CHARACTER(LEN=6)   :: CINTERP_TYPE   ! type of interpolation
- CHARACTER(LEN=6)   :: CMASK          ! type of surface
+ CHARACTER(LEN=10)  :: CINGRID_TYPE = "          "   ! type of input grid
+ CHARACTER(LEN=6)   :: CINTERP_TYPE = "      "   ! type of interpolation
+ CHARACTER(LEN=6)   :: CMASK = "      "         ! type of surface
 !
 LOGICAL, DIMENSION(:), ALLOCATABLE :: LINTERP ! .true. where interpolation must be done
 !

@@ -59,7 +59,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !  -------------------
 !
 IF (LHOOK) CALL DR_HOOK('CLOSE_FILE_FA',0,ZHOOK_HANDLE)
- CLOSE(KUNIT)
+CLOSE(KUNIT)
 IF (LHOOK) CALL DR_HOOK('CLOSE_FILE_FA',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

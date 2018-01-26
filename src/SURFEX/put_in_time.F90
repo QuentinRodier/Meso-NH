@@ -11,14 +11,14 @@ USE MODI_ABOR1_SFX
 
 IMPLICIT NONE
 
- CHARACTER(LEN=*), INTENT(IN) :: HNAME
- CHARACTER(LEN=3), INTENT(IN) :: HTYPE
+CHARACTER(LEN=*), INTENT(IN) :: HNAME
+CHARACTER(LEN=3), INTENT(IN) :: HTYPE
 
 INTEGER, INTENT(IN) :: NTIME1
 INTEGER, INTENT(IN) :: NTIME2
 REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PDATA
 
- CHARACTER(LEN=2) :: YTIME1, YTIME2
+CHARACTER(LEN=2) :: YTIME1, YTIME2
 INTEGER :: I1, I2, JJ, JTIME
 REAL, DIMENSION(SIZE(PDATA,1),NTIME1,SIZE(PDATA,3)) :: ZDATA
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -36,20 +36,32 @@ ELSEIF (NTIME1==1) THEN
     PDATA(:,JJ,:)=PDATA(:,1,:)
   ENDDO
 ELSEIF (NTIME1==2) THEN !2 values: winter and summer
-  IF (NTIME2.NE.36) THEN
-      CALL ABOR1_SFX('PUT_IN_TIME: WITH NTIME1=2, NTIME2 MUST BE =36 (WINTER AND SUMMER VALUES) '//&
-                     'PROBLEM VAR '//HNAME//''//HTYPE)
+  IF (NTIME2.EQ.36) THEN
+    ZDATA=PDATA(:,1:2,:)
+    DO JJ=1,8
+      PDATA(:,JJ,:)=ZDATA(:,1,:)  !until 20 march
+    ENDDO
+    DO JJ=9,26
+      PDATA(:,JJ,:)=ZDATA(:,2,:) !from 21 march to 20 september
+    ENDDO
+    DO JJ=27,36
+      PDATA(:,JJ,:)=ZDATA(:,1,:) !from 21 september to 31 december
+    ENDDO
+  ELSEIF (NTIME2.EQ.12) THEN
+    ZDATA=PDATA(:,1:2,:)
+    DO JJ=1,3
+      PDATA(:,JJ,:)=ZDATA(:,1,:)  !until 20 march
+    ENDDO
+    DO JJ=4,9
+      PDATA(:,JJ,:)=ZDATA(:,2,:) !from 21 march to 20 september
+    ENDDO
+    DO JJ=10,12
+      PDATA(:,JJ,:)=ZDATA(:,1,:) !from 21 september to 31 december
+    ENDDO          
+  ELSE
+    CALL ABOR1_SFX('PUT_IN_TIME: WITH NTIME1=2, NTIME2 MUST BE =36 OR =12 (WINTER AND SUMMER VALUES) '//&
+                   'PROBLEM VAR '//HNAME//''//HTYPE)          
   ENDIF
-  ZDATA=PDATA(:,1:2,:)
-  DO JJ=1,8
-    PDATA(:,JJ,:)=ZDATA(:,1,:)  !until 20 march
-  ENDDO
-  DO JJ=9,26
-    PDATA(:,JJ,:)=ZDATA(:,2,:) !from 21 march to 20 september
-  ENDDO
-  DO JJ=27,36
-    PDATA(:,JJ,:)=ZDATA(:,1,:) !from 21 september to 31 december
-  ENDDO
 ELSE
   I1=NTIME2/NTIME1
   I2=NTIME2/I1  

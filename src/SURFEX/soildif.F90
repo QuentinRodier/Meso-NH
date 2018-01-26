@@ -3,13 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SOILDIF(HDIFSFCOND, OFLOOD,                                     &
-                         PVEG, PCV, PFFG, PFFV,                                  &
-                         PCG, PCT, PFROZEN1,                                     &
-                         PD_G, PDZG, PTG, PWG, PWGI, KWG_LAYER,                  &
-                         PHCAPSOILZ, PCONDDRYZ, PCONDSLDZ,                       &
-                         PBCOEF, PWSAT, PMPOTSAT, PSOILCONDZ, PSOILHCAPZ,        &
-                         PFWTD, PWTD, PWR                                        )
+      SUBROUTINE SOILDIF(IO, KK, PK, PEK, DMI, PVEG, PFROZEN1, PFFG, PFFV, PSOILCONDZ, PSOILHCAPZ   )
 !     ##########################################################################
 !
 !!****  *SOIL*  
@@ -67,11 +61,14 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+!
 USE MODD_CSTS,       ONLY : XCL, XCI, XRHOLW, XRHOLI, XPI, XDAY, XCONDI, XTT, XLMTT, XG
 USE MODD_ISBA_PAR,   ONLY : XCONDWTR, XWGMIN, XWTD_MAXDEPTH, & 
                             XOMRHO, XOMSPH, XOMCONDDRY,      &
                             XOMCONDSLD, XCVHEATF
-!
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -82,51 +79,19 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
- CHARACTER(LEN=*),     INTENT(IN)  :: HDIFSFCOND ! NOTE: Only used when HISBA = DIF
-!                                               ! MLCH' = include the insulating effect of leaf
-!                                               !         litter/mulch on the surface thermal cond.
-!                                               ! 'DEF' = no mulch effect
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_K_t), INTENT(INOUT) :: KK
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMI
 !
-LOGICAL, INTENT(IN)               :: OFLOOD ! Flood scheme 
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PVEG, PFWTD, PWTD, PCV, PWR
+REAL, DIMENSION(:), INTENT(IN)    :: PVEG
 !                                      Soil and vegetation parameters
 !                                      PVEG = fraction of vegetation
-!                                      PFWTD= grid-cell fraction of water table to rise
-!                                      PWTD = water table depth (negative below soil surface)
-!                                      PCV  = the heat capacity of the vegetation
-!                                      PWR  = canopy intercepted water
+
 !
-REAL, DIMENSION(:,:), INTENT(IN)  :: PHCAPSOILZ, PCONDDRYZ, PCONDSLDZ, PD_G, PDZG
-!                                    PHCAPSOILZ = soil heat capacity [J/(K m3)]
-!                                    PCONDDRYZ  = soil dry thermal conductivity 
-!                                                 [W/(m K)] 
-!                                    PCONDSLDZ  = soil solids thermal conductivity 
-!                                                 [W/(m K)]
-!                                    PD_G       = soil layer depth [m]
-!                                    PDZG       = soil layers thicknesses [m]
-!
-REAL, DIMENSION(:,:), INTENT(IN)  :: PBCOEF, PWSAT, PMPOTSAT, PTG
-!                                    PBCOEF   = profile of b-parameter (-)
-!                                    PWSAT    = profile of porosity (m3/m3)
-!                                    PMPOTSAT = profile of matric potential at saturation (m)
-!
-REAL, DIMENSION(:,:),INTENT(INOUT):: PWG, PWGI
-!                                    PWG    = soil liquid water content (m3/m3)
-!                                    PWGI   = soil frozen water content (m3/m3)
-!
-INTEGER, DIMENSION(:), INTENT(IN) :: KWG_LAYER  
-!                                    KWG_LAYER = Number of soil moisture layers (DIF option)
-!
-REAL, DIMENSION(:), INTENT(OUT)   :: PFROZEN1, PCG, PCT
+REAL, DIMENSION(:), INTENT(OUT)   :: PFROZEN1
 !                                      PFROZEN1 = fraction of ice in superficial soil
-!                                      PCT      = averaged surface heat capacity of the grid (m2 K J-1)
-!                                      PCG      = averaged surface soil heat capacity (m2 K J-1)
-!
-REAL, DIMENSION(:,:), INTENT(OUT) :: PSOILCONDZ, PSOILHCAPZ
-!                                    PSOILHCAP = soil heat capacity        (J m-3 K-1)
-!                                    PSOILCOND = soil thermal conductivity (W m-1 K-1)
-!
 !
 REAL, DIMENSION(:), INTENT(IN)   :: PFFV, PFFG
 !                                   PFFG = Floodplain fraction over the ground
@@ -134,9 +99,13 @@ REAL, DIMENSION(:), INTENT(IN)   :: PFFV, PFFG
 !                                   PFFV = Floodplain fraction over vegetation
 !                                   without snow (ES)
 !
+REAL, DIMENSION(:,:), INTENT(OUT) :: PSOILCONDZ, PSOILHCAPZ
+!                                    PSOILHCAP = soil heat capacity        (J m-3 K-1)
+!                                    PSOILCOND = soil thermal conductivity (W m-1 K-1)
+!
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PTG,1),SIZE(PTG,2)) :: ZMATPOT, ZCONDDRYZ, ZCONDSLDZ, ZVEGMULCH
+REAL, DIMENSION(SIZE(PEK%XTG,1),SIZE(PEK%XTG,2)) :: ZMATPOT, ZCONDDRYZ, ZCONDSLDZ, ZVEGMULCH
 !                                           ZMATPOT    = soil matric potential (m)
 !
 REAL                         :: ZFROZEN2DF, ZUNFROZEN2DF, ZCONDSATDF, ZLOG_CONDI, ZLOG_CONDWTR,  &
@@ -161,8 +130,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('SOILDIF',0,ZHOOK_HANDLE)
 !
-INI=SIZE(PWG,1)
-INL=SIZE(PWG,2)
+INI=SIZE(PEK%XWG,1)
+INL=SIZE(PEK%XWG,2)
 !
 ZFF (:) = 0.0
 ZCF (:) = XUNDEF
@@ -172,11 +141,11 @@ ZCF (:) = XUNDEF
 !*       1.     WATER TABLE DETH ADJUSTMENT FOR ISBA (m)
 !               -----------------------------------------
 !
-WHERE(PWTD(:)==XUNDEF)
+WHERE(KK%XWTD(:)==XUNDEF)
 ! no water table / surface coupling over some regions        
   ZWTD     (:) = XWTD_MAXDEPTH 
 ELSEWHERE
-  ZWTD     (:) = PFWTD(:)/MAX(-PWTD(:),0.001) + (1.0-PFWTD(:))/MAX(-PWTD(:),XWTD_MAXDEPTH)
+  ZWTD     (:) = KK%XFWTD(:)/MAX(-KK%XWTD(:),0.001) + (1.0-KK%XFWTD(:))/MAX(-KK%XWTD(:),XWTD_MAXDEPTH)
   ZWTD     (:) = 1.0/ZWTD(:)
 ENDWHERE
 !
@@ -188,37 +157,37 @@ ENDWHERE
 DO JL=1,INL
    DO JJ=1,INI
 !   
-      IDEPTH=KWG_LAYER(JJ)
+      IDEPTH=PK%NWG_LAYER(JJ)
       IF(JL>IDEPTH)THEN
 !                           
 !       total matric potential
-        ZWORK1  = MIN(1.0,(PWG(JJ,IDEPTH)+PWGI(JJ,IDEPTH))/PWSAT(JJ,IDEPTH))
-        ZLOG    = PBCOEF(JJ,IDEPTH)*LOG(ZWORK1)
-        ZMATPOT(JJ,IDEPTH) = PMPOTSAT(JJ,IDEPTH)*EXP(-ZLOG)
+        ZWORK1  = MIN(1.0,(PEK%XWG(JJ,IDEPTH)+PEK%XWGI(JJ,IDEPTH))/KK%XWSAT(JJ,IDEPTH))
+        ZLOG    = KK%XBCOEF(JJ,IDEPTH)*LOG(ZWORK1)
+        ZMATPOT(JJ,IDEPTH) = KK%XMPOTSAT(JJ,IDEPTH)*EXP(-ZLOG)
 
 !       extrapolation of total matric potential
-        ZWORK1         = 0.5*(PD_G(JJ,IDEPTH)+PD_G(JJ,IDEPTH-1))
-        ZWORK2         = 0.5*(PD_G(JJ,JL)+PD_G(JJ,JL-1))
+        ZWORK1         = 0.5*(PK%XDG(JJ,IDEPTH) + PK%XDG(JJ,IDEPTH-1))
+        ZWORK2         = 0.5*(PK%XDG(JJ,JL    ) + PK%XDG(JJ,JL-1))
         ZWORK3         = MAX(0.0,(ZWTD(JJ)-ZWORK2)/(ZWORK2-ZWORK1))
-        ZMATPOT(JJ,JL) = (PMPOTSAT(JJ,JL)+ZWORK3*ZMATPOT(JJ,IDEPTH))/(1.0+ZWORK3)
+        ZMATPOT(JJ,JL) = (KK%XMPOTSAT(JJ,JL)+ZWORK3*ZMATPOT(JJ,IDEPTH))/(1.0+ZWORK3)
 !
 !       total soil water content computation
-        ZWORK1      = MAX(1.0,ZMATPOT(JJ,JL)/PMPOTSAT(JJ,JL))
-        ZLOG        = LOG(ZWORK1)/PBCOEF(JJ,JL)
-        ZWTOT       = PWSAT(JJ,JL)*EXP(-ZLOG)
+        ZWORK1      = MAX(1.0,ZMATPOT(JJ,JL)/KK%XMPOTSAT(JJ,JL))
+        ZLOG        = LOG(ZWORK1)/KK%XBCOEF(JJ,JL)
+        ZWTOT       = KK%XWSAT(JJ,JL)*EXP(-ZLOG)
         ZWTOT       = MAX(XWGMIN,ZWTOT)
 !
 !       soil liquid water content computation
-        ZMATPOT(JJ,JL) = MIN(PMPOTSAT(JJ,JL),XLMTT*(PTG(JJ,JL)-XTT)/(XG*PTG(JJ,JL)))
+        ZMATPOT(JJ,JL) = MIN(KK%XMPOTSAT(JJ,JL),XLMTT*(PEK%XTG(JJ,JL)-XTT)/(XG*PEK%XTG(JJ,JL)))
 !        
-        ZWORK1      = MAX(1.0,ZMATPOT(JJ,JL)/PMPOTSAT(JJ,JL))
-        ZLOG        = LOG(ZWORK1)/PBCOEF(JJ,JL)
-        ZWL         = PWSAT(JJ,JL)*EXP(-ZLOG)
+        ZWORK1      = MAX(1.0,ZMATPOT(JJ,JL)/KK%XMPOTSAT(JJ,JL))
+        ZLOG        = LOG(ZWORK1)/KK%XBCOEF(JJ,JL)
+        ZWL         = KK%XWSAT(JJ,JL)*EXP(-ZLOG)
         ZWL         = MAX(ZWL,XWGMIN)
-        PWG (JJ,JL) = MIN(ZWL,ZWTOT )
+        PEK%XWG (JJ,JL) = MIN(ZWL,ZWTOT )
 !        
 !       soil ice computation        
-        PWGI(JJ,JL) = MAX(0.0,ZWTOT-PWG(JJ,JL))
+        PEK%XWGI(JJ,JL) = MAX(0.0,ZWTOT-PEK%XWG(JJ,JL))
 !        
       ENDIF
    ENDDO
@@ -232,7 +201,7 @@ ENDDO
 !
 ! Surface soil water reservoir frozen fraction:
 !
-PFROZEN1(:) = PWGI(:,1)/(PWGI(:,1) + MAX(PWG(:,1),XWGMIN))
+PFROZEN1(:) = PEK%XWGI(:,1)/(PEK%XWGI(:,1) + MAX(PEK%XWG(:,1),XWGMIN))
 !
 !-------------------------------------------------------------------------------
 !
@@ -243,19 +212,19 @@ PFROZEN1(:) = PWGI(:,1)/(PWGI(:,1) + MAX(PWG(:,1),XWGMIN))
 ! uppermost soil layers thermal properties. Use organic matter thermal properties.
 !
 !
-ZCONDDRYZ (:,:) = PCONDDRYZ (:,:)
-ZCONDSLDZ (:,:) = PCONDSLDZ (:,:)
+ZCONDDRYZ (:,:) = KK%XCONDDRY (:,:)
+ZCONDSLDZ (:,:) = KK%XCONDSLD (:,:)
 !
-IF(HDIFSFCOND == 'MLCH') THEN
+IF(IO%CDIFSFCOND == 'MLCH') THEN
 !  
   DO JL=1,INL
      DO JJ=1,INI  
 !
-        ZVEGMULCH(JJ,JL) = PVEG(JJ)*MIN(PDZG(JJ,JL),MAX(0.0,ZTHICKM-PD_G(JJ,JL)+PDZG(JJ,JL)))/PDZG(JJ,JL)     
+        ZVEGMULCH(JJ,JL) = PVEG(JJ)*MIN(PK%XDZG(JJ,JL),MAX(0.0,ZTHICKM-PK%XDG(JJ,JL)+PK%XDZG(JJ,JL)))/PK%XDZG(JJ,JL)     
 !
         IF(ZVEGMULCH(JJ,JL)>0.0)THEN
-           ZCONDDRYZ (JJ,JL) = 1.0/((1.0-ZVEGMULCH(JJ,JL))/PCONDDRYZ(JJ,JL)+ZVEGMULCH(JJ,JL)/XOMCONDDRY)
-           ZCONDSLDZ (JJ,JL) = 1.0/((1.0-ZVEGMULCH(JJ,JL))/PCONDSLDZ(JJ,JL)+ZVEGMULCH(JJ,JL)/XOMCONDSLD)
+           ZCONDDRYZ (JJ,JL) = 1.0/((1.0-ZVEGMULCH(JJ,JL))/KK%XCONDDRY(JJ,JL)+ZVEGMULCH(JJ,JL)/XOMCONDDRY)
+           ZCONDSLDZ (JJ,JL) = 1.0/((1.0-ZVEGMULCH(JJ,JL))/KK%XCONDSLD(JJ,JL)+ZVEGMULCH(JJ,JL)/XOMCONDSLD)
         ENDIF
 !
      ENDDO
@@ -276,16 +245,16 @@ ZLOG_CONDWTR = LOG(XCONDWTR)
 DO JL=1,INL
    DO JJ=1,INI
 !     
-      ZFROZEN2DF   = PWGI(JJ,JL)/(PWGI(JJ,JL) + MAX(PWG(JJ,JL),XWGMIN))
-      ZUNFROZEN2DF = (1.0-ZFROZEN2DF)*PWSAT(JJ,JL)
+      ZFROZEN2DF   = PEK%XWGI(JJ,JL)/(PEK%XWGI(JJ,JL) + MAX(PEK%XWG(JJ,JL),XWGMIN))
+      ZUNFROZEN2DF = (1.0-ZFROZEN2DF)*KK%XWSAT(JJ,JL)
 !
 !Old: CONDSATDF=(CONDSLDZ**(1.0-WSAT))*(CONDI**(WSAT-UNFROZEN2DF))*(CONDWTR**UNFROZEN2DF)  
-      ZWORK1      = LOG(ZCONDSLDZ(JJ,JL))*(1.0-PWSAT(JJ,JL))
-      ZWORK2      = ZLOG_CONDI*(PWSAT(JJ,JL)-ZUNFROZEN2DF)
+      ZWORK1      = LOG(ZCONDSLDZ(JJ,JL))*(1.0-KK%XWSAT(JJ,JL))
+      ZWORK2      = ZLOG_CONDI*(KK%XWSAT(JJ,JL)-ZUNFROZEN2DF)
       ZWORK3      = ZLOG_CONDWTR*ZUNFROZEN2DF
       ZCONDSATDF  = EXP(ZWORK1+ZWORK2+ZWORK3)
 !
-      ZSATDEGDF   = MAX(0.1, (PWGI(JJ,JL)+PWG(JJ,JL))/PWSAT(JJ,JL))
+      ZSATDEGDF   = MAX(0.1, (PEK%XWGI(JJ,JL)+PEK%XWG(JJ,JL))/KK%XWSAT(JJ,JL))
       ZSATDEGDF   = MIN(1.0,ZSATDEGDF)
       ZKERSTENDF  = LOG10(ZSATDEGDF) + 1.0
       ZKERSTENDF  = (1.0-ZFROZEN2DF)*ZKERSTENDF + ZFROZEN2DF *ZSATDEGDF  
@@ -306,17 +275,16 @@ ENDDO
 !
 DO JL=1,INL
    DO JJ=1,INI
-      PSOILHCAPZ(JJ,JL) = (1.0-PWSAT(JJ,JL))*PHCAPSOILZ(JJ,JL) +         &
-                               PWG  (JJ,JL) *XCL*XRHOLW        +         &
-                               PWGI (JJ,JL) *XCI*XRHOLI    
+      PSOILHCAPZ(JJ,JL) = (1.0-KK%XWSAT(JJ,JL))*KK%XHCAPSOIL(JJ,JL) +       &
+                           PEK%XWG  (JJ,JL) *XCL*XRHOLW + PEK%XWGI (JJ,JL) *XCI*XRHOLI    
    ENDDO
 ENDDO
 !
 ! Surface soil thermal inertia [(m2 K)/J]
 !
-PCG(:) = 1.0 / ( PD_G(:,1) * PSOILHCAPZ(:,1) )
+DMI%XCG(:) = 1.0 / ( PK%XDG(:,1) * PSOILHCAPZ(:,1) )
 !
-PCG(:) = MIN(ZCTMAX,PCG(:))
+DMI%XCG(:) = MIN(ZCTMAX,DMI%XCG(:))
 !
 !-------------------------------------------------------------------------------
 !
@@ -325,7 +293,7 @@ PCG(:) = MIN(ZCTMAX,PCG(:))
 !
 ! Vegetation thermal inertia [(m2 K)/J]
 !
-ZCV(:) = 1.0 / ( XCVHEATF/PCV(:) +  XCL * PWR(:) )
+ZCV(:) = 1.0 / ( XCVHEATF/PEK%XCV(:) +  XCL * PEK%XWR(:) )
 !
 ZCV(:) = MIN(ZCTMAX,ZCV(:))
 !
@@ -334,7 +302,7 @@ ZCV(:) = MIN(ZCTMAX,ZCV(:))
 !*       8.     THE HEAT CAPACITY OF FLOOD
 !               --------------------------------
 !
-IF(OFLOOD)THEN
+IF(IO%LFLOOD)THEN
 !
   ZFF(:) = PVEG(:)*PFFV(:) + (1.-PVEG(:))*PFFG(:)
 !
@@ -352,9 +320,8 @@ ENDIF
 ! With contribution from the ground, flood and vegetation for explicit
 ! (ISBA-ES) snow scheme option (i.e. no snow effects included here):
 !
-PCT(:) = 1. / ( (1.-PVEG(:))*(1.-PFFG(:)) / PCG(:)     &
-                 +  PVEG(:) *(1.-PFFV(:)) / ZCV(:)     &
-                 +  ZFF (:)               / ZCF(:)     )  
+DMI%XCT(:) = 1. / ( (1.-PVEG(:))*(1.-PFFG(:)) / DMI%XCG(:)     &
+                 +  PVEG(:) *(1.-PFFV(:)) / ZCV(:)  +  ZFF (:)  / ZCF(:)     )  
 !
 !-------------------------------------------------------------------------------
 !
@@ -365,10 +332,10 @@ PCT(:) = 1. / ( (1.-PVEG(:))*(1.-PFFG(:)) / PCG(:)     &
 !
 DO JL=1,INL
    DO JJ=1,INI
-      IDEPTH=KWG_LAYER(JJ)
+      IDEPTH=PK%NWG_LAYER(JJ)
       IF(JL>IDEPTH)THEN
-        PWG (JJ,JL) = XUNDEF
-        PWGI(JJ,JL) = XUNDEF
+        PEK%XWG (JJ,JL) = XUNDEF
+        PEK%XWGI(JJ,JL) = XUNDEF
       ENDIF
    ENDDO
 ENDDO

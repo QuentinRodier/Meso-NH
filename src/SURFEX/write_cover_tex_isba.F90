@@ -55,7 +55,8 @@ USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NVEGTYPE, NVT_NO, NVT_ROCK,      &
                                   NVT_C3, NVT_C4, NVT_IRR, NVT_GRAS,      &
                                   NVT_TROG,NVT_PARK, NVT_TRBD, NVT_TEBE,  &
                                   NVT_TENE, NVT_BOBD, NVT_BOND, NVT_BOGR, &
-                                  NVT_SHRB 
+                                  NVT_SHRB, NVT_C3W, NVT_C3S, NVT_FLTR,   &
+                                  NVT_FLGR 
 !
 USE MODD_REPROD_OPER,    ONLY : XEVERG_VEG, XEVERG_RSMIN
 !
@@ -380,8 +381,20 @@ DO JVEGTYPE=1,NVEGTYPE
      YPATCH(1) = 'irrigated grass              '
      YPATCH(2) = "les pelouses irrigu\'ees    "
   END IF
+  IF (JVEGTYPE==NVT_FLTR) THEN
+     YPATCH(1) = 'flooded trees             '
+     YPATCH(2) = "les arbres inondes    "
+  END IF
+  IF (JVEGTYPE==NVT_FLGR) THEN
+     YPATCH(1) = 'flooded grassland              '
+     YPATCH(2) = "les prairies inondees    "
+  END IF
   IF (JVEGTYPE==NVT_C3)   YPATCH = (/ 'C3 crops                     ',   &
                                         'les cultures C3              ' /)  
+  IF (JVEGTYPE==NVT_C3W)  YPATCH = (/ 'C3W crops                    ',   &
+                                        'les cultures C3 dhiver       ' /)  
+  IF (JVEGTYPE==NVT_C3S)  YPATCH = (/ 'C3S crops                    ',   &
+                                        'les cultures C3 dete         ' /)  
   IF (JVEGTYPE==NVT_C4)   YPATCH = (/ 'C4 crops                     ',   &
                                         'les cultures C4              ' /)  
   IF (JVEGTYPE==NVT_IRR ) THEN

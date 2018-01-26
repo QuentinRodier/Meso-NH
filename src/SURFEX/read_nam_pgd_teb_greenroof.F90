@@ -130,22 +130,22 @@ IF (LHOOK) CALL DR_HOOK('PGD_TEB_GREENROOF_PAR',0,ZHOOK_HANDLE)
 !
 NTIME_GR         = 1
 NLAYER_GR        = 6
- CTYP_GR          = 'GRASS'           ! Grasses - graminoïds
+CTYP_GR          = 'GRASS'           ! Grasses - graminoïds
 !
 XUNIF_OM_GR      = XUNDEF
 XUNIF_CLAY_GR    = XUNDEF
 XUNIF_SAND_GR    = XUNDEF
 XUNIF_LAI_GR     = XUNDEF
 !
- CFNAM_OM_GR      = '                            '
- CFNAM_CLAY_GR    = '                            '
- CFNAM_SAND_GR    = '                            '
- CFNAM_LAI_GR     = '                            '
+CFNAM_OM_GR      = '                            '
+CFNAM_CLAY_GR    = '                            '
+CFNAM_SAND_GR    = '                            '
+CFNAM_LAI_GR     = '                            '
 !
- CFTYP_OM_GR      = '      '
- CFTYP_CLAY_GR    = '      '
- CFTYP_SAND_GR    = '      '
- CFTYP_LAI_GR     = '      '
+CFTYP_OM_GR      = '      '
+CFTYP_CLAY_GR    = '      '
+CFTYP_SAND_GR    = '      '
+CFTYP_LAI_GR     = '      '
 !
 !-------------------------------------------------------------------------------
 !

@@ -251,30 +251,30 @@ XEVERG_VEG   = 1.0  !Veg fraction
 !
 ! * Soil depth average
 !
- CDGAVG = 'INV'
+CDGAVG = 'INV'
 !
 ! * Soil depth with ISBA-DF
 !
- CDGDIF = 'ROOT'
+CDGDIF = 'ROOT'
 !
 ! * wind implicitation option
 !
- CIMPLICIT_WIND = 'NEW'
+CIMPLICIT_WIND = 'NEW'
 !
 ! * qsat computation
 !
- CQSAT = 'NEW'
+CQSAT = 'NEW'
 !
 ! * Charnock parameter
 !
- CCHARNOCK = 'NEW'
+CCHARNOCK = 'NEW'
 !
 !-------------------------------------------------------------------------------
 !*       2. User values
 !-------------------------------------------------------------------------------
 !
  CALL GET_LUOUT(CPROGNAME,ILUOUT)
-!
+!    
  CALL OPEN_NAMELIST(CPROGNAME,ILUNAM)
 !
  CALL POSNAM(ILUNAM,'NAM_SURF_CSTS',GFOUND,ILUOUT)

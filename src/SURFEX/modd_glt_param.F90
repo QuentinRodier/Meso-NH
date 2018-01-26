@@ -131,7 +131,7 @@ INTEGER ::  &
   nmkinit, nrstout, nrstgl4, nthermo, ndynami, nadvect,  &
   ntimers, ndyncor, ncdlssh, niceage, nicesal, nmponds,  &
   nsnwrad, nleviti, nsalflx, nextqoc, nicesub
- CHARACTER(10) ::  &
+CHARACTER(10) ::  &
   cnflxin
 !
 !
@@ -152,7 +152,7 @@ INTEGER ::  &
 !       chsidmp='PRESCRIBE'  --> prescribe
 !  - xhsidmpeft : sea ice thickness damping e-folding time (in days)
 !
- CHARACTER(20) ::  &
+CHARACTER(20) ::  &
   cfsidmp, chsidmp
 REAL ::  &
   xfsidmpeft, xhsidmpeft
@@ -218,9 +218,9 @@ REAL ::  &
 !                     cinsfld = sic
 !                     ...
 !
- CHARACTER(8) ::  &
+CHARACTER(8) ::  &
   cdiafmt,cdialev
- CHARACTER(80), DIMENSION(:), ALLOCATABLE ::  &
+CHARACTER(80), DIMENSION(:), ALLOCATABLE ::  &
   cinsfld
 REAL :: &
   dttave
@@ -352,7 +352,7 @@ INTEGER ::  &
 !
 !  - ciopath    : path for input/output fields to glt_gelato routine
 !
- CHARACTER(80) ::  &
+CHARACTER(80) ::  &
   ciopath
 !
 !
@@ -368,7 +368,7 @@ INTEGER ::  &
 !  - nn_perio     : grid periodicity
 !  - rn_htopoc    : ocean uppermost grid cell thickness
 !
- CHARACTER(80) ::  &
+CHARACTER(80) ::  &
   cn_grdname
 INTEGER ::  &
   nn_readf, nn_first, nn_final, nn_step, nn_iglo, nn_jglo, nn_perio
@@ -544,7 +544,7 @@ INTEGER ::  &
   ntimnum
 REAL ::  &
   xtime
- CHARACTER(80) ::  &
+CHARACTER(80) ::  &
   clabel 
 !
 END MODULE modd_glt_param

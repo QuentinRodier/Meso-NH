@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_BINLLVFAST (USS, &
+      SUBROUTINE READ_BINLLVFAST (UG, U, USS, &
                                   HPROGRAM,HSUBROUTINE,HFILENAME)
 !     ##############################################################
 !
@@ -34,8 +34,9 @@
 !            -----------
 !
 !
-!
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_PGD_GRID,   ONLY : LLATLONMASK
@@ -55,7 +56,9 @@ IMPLICIT NONE
 !            ------------------------
 !
 !
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
@@ -72,6 +75,7 @@ INTEGER                                :: ICPT       ! number of data points to 
 REAL,DIMENSION(:,:),ALLOCATABLE,TARGET :: ZLLV       ! ZLLV(1,:) :: latitude of data points
                                                      ! ZLLV(2,:) :: longitude of data points
                                                      ! ZLLV(3,:) :: value of data points
+REAL, DIMENSION(:), ALLOCATABLE :: ZLLV2
 REAL,DIMENSION(:,:),POINTER            :: ZLLVWORK   ! point on ZLLV array 
 INTEGER                                :: JI         ! loop counter
 !
@@ -94,7 +98,8 @@ IF (LHOOK) CALL DR_HOOK('READ_BINLLVFAST',0,ZHOOK_HANDLE)
 !            -----------------------
 !
 READ(IGLB) INELT ! number of data points
-ALLOCATE(ZLLV(3,INELT))
+ALLOCATE(ZLLV (3,INELT))
+ALLOCATE(ZLLV2(INELT))
 READ(IGLB) ZLLV
 !
 !----------------------------------------------------------------------------
@@ -102,13 +107,13 @@ READ(IGLB) ZLLV
 !*    4.     Test if point is in the domain
 !            ------------------------------
 !
-ZLLV(2,:) = ZLLV(2,:)+NINT((180.-ZLLV(2,:))/360.)*360.
+ZLLV2(:) = ZLLV(2,:)+NINT((180.-ZLLV(2,:))/360.)*360.
 !
 ICPT = 0
 DO JI=1,INELT
   JLAT = 1 + INT( ( ZLLV(1,JI)+ 90. ) * 2. )
   JLAT = MIN(JLAT,360)
-  JLON = 1 + INT( ( ZLLV(2,JI)      ) * 2. )
+  JLON = 1 + INT( ( ZLLV2(JI)       ) * 2. )
   JLON = MIN(JLON,720)
   IF (LLATLONMASK(JLON,JLAT)) THEN
     ICPT = ICPT+1
@@ -123,7 +128,7 @@ END DO
 !     
 IF (ICPT > 0) THEN
   ZLLVWORK=>ZLLV(:,1:ICPT)
-  CALL PT_BY_PT_TREATMENT(USS, &
+  CALL PT_BY_PT_TREATMENT(UG, U, USS, &
                           ILUOUT,ZLLVWORK(1,:),ZLLVWORK(2,:),ZLLVWORK(3,:),HSUBROUTINE)
 END IF
 !

@@ -40,8 +40,8 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
- CHARACTER (LEN=28) :: YFILENAME
- CHARACTER (LEN=28)  :: YNCVARNAME
+CHARACTER (LEN=28) :: YFILENAME
+CHARACTER (LEN=28)  :: YNCVARNAME
 INTEGER :: JDIMENSION
 !
 !*    0.2    Declaration of local variables

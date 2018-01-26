@@ -37,6 +37,7 @@ IMPLICIT NONE
 !
 INTEGER :: NNI ! total number of physical points
 !
+ CHARACTER(LEN=6)  :: CINMODEL!
  CHARACTER(LEN=28) :: CGRIB_FILE
 INTEGER(KIND=kindOfInt) :: NIDX
 !

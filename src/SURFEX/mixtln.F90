@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE MIXTL_n (O, OR, SG, &
-                        PFSOL,PFNSOL,PSFTEAU,PSFU,PSFV,PSEATEMP)
+    SUBROUTINE MIXTL_n (O, OR, PLAT, PFSOL,PFNSOL,PSFTEAU,PSFU,PSFV,PSEATEMP)
 !     #######################################################################
 !
 !!****  *MIXTLN (1D MODEL)*  
@@ -46,6 +45,7 @@
 !!                   richardson nb in diapycnal mixing, 
 !!                   remove threshold value for mixing tendency
 !!    07/2012, P. Le Moigne : CMO1D phasing
+!!    09/2016, C. Lebeaupin Brossier: XSEATEND and initialization
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -54,7 +54,6 @@
 !
 USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
-USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
 !
 USE MODD_CSTS
 USE MODD_OCEAN_CSTS
@@ -76,7 +75,8 @@ IMPLICIT NONE
 !
 TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
-TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+!
+REAL, DIMENSION(:), INTENT(IN) :: PLAT
 !
 REAL, DIMENSION(:)  ,INTENT(IN)       :: PFSOL   ! solar flux (W/m2)
 REAL, DIMENSION(:)  ,INTENT(IN)       :: PFNSOL  ! non solar flux (W/m2)
@@ -234,7 +234,7 @@ DO JPT=1,SIZE(PFSOL)
   IKHML=1
 !
   !simplified variables inside this loop
-  ZLAT    = SG%XLAT   (JPT)
+  ZLAT    = PLAT   (JPT)
   ZFSOL   = PFSOL  (JPT)
   ZFNSOL  = PFNSOL (JPT)
   ZSFTEAU = PSFTEAU(JPT)
@@ -243,42 +243,41 @@ DO JPT=1,SIZE(PFSOL)
   ZEWS    = SQRT(ZSFU**2+ZSFV**2)/XRHOSW
   ZF      = 4.*XPI*SIN(ZLAT*XPI/180.)/86400.
 
-  ZSEAHMO=0.
+  ZSEAT(:) = O%XSEAT(JPT,:)
+  ZSEAS(:) = O%XSEAS(JPT,:)
+  ZSEAU(:) = O%XSEAU(JPT,:)
+  ZSEAV(:) = O%XSEAV(JPT,:)    
+  ZSEAE(:) = O%XSEAE(JPT,:)
+  !
+  ZSEAU_REL(:) = OR%XSEAU_REL(JPT,:)
+  ZSEAV_REL(:) = OR%XSEAV_REL(JPT,:)
+  ZSEAT_REL(:) = OR%XSEAT_REL(JPT,:)
+  ZSEAS_REL(:) = OR%XSEAS_REL(JPT,:)
+  !
+  ZSEAHMO = 0.
   DO J=IUP-1,IBOT
-    ZSEAT(J) = O%XSEAT(JPT,J)
-    ZSEAS(J) = O%XSEAS(JPT,J)
-    ZSEAU(J) = O%XSEAU(JPT,J)
-    ZSEAV(J) = O%XSEAV(JPT,J)    
-    ZSEAE(J) = O%XSEAE(JPT,J)
-    !
-    ZSEAU_REL(J) = OR%XSEAU_REL(JPT,J)
-    ZSEAV_REL(J) = OR%XSEAV_REL(JPT,J)
-    ZSEAT_REL(J) = OR%XSEAT_REL(JPT,J)
-    ZSEAS_REL(J) = OR%XSEAS_REL(JPT,J)
-    !
     IF (J>=IUP .AND. ZSEAE(J)>=(ZEMIN*SQRT(2.))) ZSEAHMO = ZSEAHMO-XDZ1(J)
   ENDDO
   O%XSEAHMO(JPT) = ZSEAHMO
-
- !precalculation of DRHO
-  DO J=IUP-1,IBOT
-    ZU(J)=0.
-    ZV(J)=0.
-    ZT(J)=0.
-    ZS(J)=0.
-    ZE(J)=0.
-    ADVT(J)=0.
-    ADVS(J)=0.
-    ADVU(J)=0.
-    ADVV(J)=0.
-    ADVE(J)=0.
-    ZZDRHO(J)=(ZSEAT(J)-ZT1)*(ZT2+ZT3*(ZSEAT(J)-ZT1)) + ZS2*(ZSEAS(J)-ZS1)
-    ZUDTREL(J)=0.
-    ZVDTREL(J)=0.
-    ZTDTREL(J)=0.
-    ZSDTREL(J)=0.
-    ZDTFSOL(J)=0.
-  ENDDO
+  !
+  !precalculation of DRHO
+  ZU     (:) = 0.
+  ZV     (:) = 0.
+  ZT     (:) = 0.
+  ZS     (:) = 0.
+  ZE     (:) = 0.
+  ADVT   (:) = 0.
+  ADVS   (:) = 0.
+  ADVU   (:) = 0.
+  ADVV   (:) = 0.
+  ADVE   (:) = 0.
+  ZZDRHO (:) = (ZSEAT(:)-ZT1)*(ZT2+ZT3*(ZSEAT(:)-ZT1)) + ZS2*(ZSEAS(:)-ZS1)
+  ZUDTREL(:) = 0.
+  ZVDTREL(:) = 0.
+  ZTDTREL(:) = 0.
+  ZSDTREL(:) = 0.
+  ZDTFSOL(:) = 0.
+  !
   ZDTFNSOL=0.
 !
 ! Control print
@@ -405,11 +404,14 @@ DO JPT=1,SIZE(PFSOL)
 !!       2.c    Numerical resolution of evolution equations
 !!              -------------------------------------------
 !
-  DO J=IUP,IBOT
-    IF (OR%LREL_CUR) THEN
+  IF (OR%LREL_CUR) THEN
+    DO J=IUP,IBOT
       ZUDTREL(J) =  - (ZSEAU(J)-ZSEAU_REL(J))  / OR%XTAU_REL 
       ZVDTREL(J) =  - (ZSEAV(J)-ZSEAV_REL(J))  / OR%XTAU_REL 
-    ENDIF
+    ENDDO
+  ENDIF
+  !
+  DO J=IUP,IBOT
     ! flux solaire
     ZDTFSOL(J) = XRAY(J)*ZFSOL/XDZ2(J) 
   ENDDO
@@ -549,7 +551,7 @@ DO JPT=1,SIZE(PFSOL)
 !!       3.     New oceanic profiles
 !!              --------------------
 !!
-  IF (O%LPROGSST) O%XSEATEND(JPT) = (ZT(IUP)-ZSEAT(IUP)) / O%XOCEAN_TSTEP
+  IF (O%LPROGSST) O%XSEATEND(JPT) = (ZT(IUP)-O%XSEAT(JPT,IUP)) / O%XOCEAN_TSTEP
   ZSEAT(NOCKMIN)  = ZT(IUP)
   ZSEAS(NOCKMIN)  = ZS(IUP)  
   ZSEAU(NOCKMIN)  = ZU(IUP)

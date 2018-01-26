@@ -69,16 +69,16 @@ FUNCTION gltools_nwords( hval ) RESULT(nwords)
 !
 IMPLICIT NONE
 !
- CHARACTER(*), INTENT(in) ::  &
+CHARACTER(*), INTENT(in) ::  &
   hval
 INTEGER ::  &
   nwords
 !
 INTEGER ::  &
   inum
- CHARACTER(1), PARAMETER ::  &
+CHARACTER(1), PARAMETER ::  &
   ysep=' '
- CHARACTER(LEN=LEN(hval)) ::  &
+CHARACTER(LEN=LEN(hval)) ::  &
   ystr
 !
 !

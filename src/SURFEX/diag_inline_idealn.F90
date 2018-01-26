@@ -3,12 +3,12 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_IDEAL_n (DGL, PTSTEP, PTA, PTS, PQA, PPA, PPS, PRHOA, PZONA,  &
-                                         PMERA, PHT, PHW, PRAIN, PSNOW,                &
-                                         PCD, PCDN, PCH, PRI, PHU, PZ0,                &
-                                         PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,    &
-                                         PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB,    &
-                                         PLE, PLEI, PSUBL, PLWUP)  
+       SUBROUTINE DIAG_INLINE_IDEAL_n (DGO, D, DC, PTSTEP, PTA, PTS,             &
+                                       PQA, PPA, PPS, PRHOA, PZONA, PMERA, PHT, PHW, &
+                                       PRAIN, PSNOW, PCD, PCDN, PCH, PRI, PHU, PZ0,  &
+                                       PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,    &
+                                       PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB,    &
+                                       PLE, PLEI, PSUBL, PLWUP)  
 !     ###############################################################################
 !
 !!****  *DIAG_INLINE_IDEAL_n * - computes diagnostics during IDEAL time-step
@@ -33,16 +33,15 @@
 !!------------------------------------------------------------------
 !
 !
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 USE MODD_CSTS,         ONLY : XTT, XLVTT
 USE MODD_SURF_PAR,     ONLY : XUNDEF
 !
-USE MODI_PARAM_CLS
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
 USE MODI_DIAG_SURF_BUDGET_IDEAL
-USE MODI_DIAG_SURF_BUDGETC_IDEAL
+USE MODI_DIAG_SURF_BUDGETC
 USE MODI_ABOR1_SFX
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -52,7 +51,9 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
 !
 REAL              , INTENT(IN) :: PTSTEP ! atmospheric time-step (s)
 REAL, DIMENSION(:), INTENT(IN) :: PTA    ! atmospheric temperature
@@ -99,84 +100,77 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_IDEAL_N',0,ZHOOK_HANDLE)
 !
-DGL%XDIAG_TS(:) = PTS(:)
+D%XTS(:) = PTS(:)
 !
-  IF (DGL%N2M==1) THEN
-    CALL PARAM_CLS(PTA, PTS, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
-                     PSFTH, PSFTQ, PSFZON, PSFMER,                    &
-                     DGL%XT2M, DGL%XQ2M, DGL%XHU2M, DGL%XZON10M, DGL%XMER10M )  
-  ELSE IF (DGL%N2M==2) THEN
+  IF (DGO%N2M==2) THEN
     ZH(:)=2.          
     CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,         &
-                  PCD, PCH, PRI,                 &
-                  PTS, PHU, PZ0H, ZH,            &
-                  DGL%XT2M, DGL%XQ2M, DGL%XHU2M  )  
+                PCD, PCH, PRI,                 &
+                PTS, PHU, PZ0H, ZH,            &
+                D%XT2M, D%XQ2M, D%XHU2M  )  
     ZH(:)=10.                
     CALL CLS_WIND(PZONA, PMERA, PHW,        &
                   PCD, PCDN, PRI, ZH,       &
-                  DGL%XZON10M, DGL%XMER10M  )  
+                  D%XZON10M, D%XMER10M  )  
   END IF
 !
-  IF (DGL%N2M>=1) THEN
+  IF (DGO%N2M>=1) THEN
     !
-    DGL%XT2M_MIN(:) = MIN(DGL%XT2M_MIN(:),DGL%XT2M(:))
-    DGL%XT2M_MAX(:) = MAX(DGL%XT2M_MAX(:),DGL%XT2M(:))
+    D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
+    D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
     !
-    DGL%XHU2M_MIN(:) = MIN(DGL%XHU2M_MIN(:),DGL%XHU2M(:))
-    DGL%XHU2M_MAX(:) = MAX(DGL%XHU2M_MAX(:),DGL%XHU2M(:))
+    D%XHU2M_MIN(:) = MIN(D%XHU2M_MIN(:),D%XHU2M(:))
+    D%XHU2M_MAX(:) = MAX(D%XHU2M_MAX(:),D%XHU2M(:))
     !
-    DGL%XWIND10M(:) = SQRT(DGL%XZON10M(:)**2+DGL%XMER10M(:)**2)
-    DGL%XWIND10M_MAX(:) = MAX(DGL%XWIND10M_MAX(:),DGL%XWIND10M(:))
+    D%XWIND10M(:) = SQRT(D%XZON10M(:)**2+D%XMER10M(:)**2)
+    D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
     !* Richardson number
-    DGL%XRI = PRI
+    D%XRI = PRI
     !
   ENDIF
 !
-IF (DGL%LSURF_BUDGET) THEN
+IF (DGO%LSURF_BUDGET) THEN
   !
-  DGL%XLE  (:) = PLE  (:)
-  DGL%XLEI (:) = PLEI (:)
-  DGL%XEVAP(:) = PSFTQ(:)
-  DGL%XSUBL(:) = PSUBL(:)
+  D%XLE  (:) = PLE  (:)
+  D%XLEI (:) = PLEI (:)
+  D%XEVAP(:) = PSFTQ(:)
+  D%XSUBL(:) = PSUBL(:)
   !
   CALL  DIAG_SURF_BUDGET_IDEAL ( PRHOA, PSFTH,                     &
-                                  PDIR_SW, PSCA_SW, PLW,                &
-                                  PDIR_ALB, PSCA_ALB, PLWUP,            &
-                                  PSFZON, PSFMER, DGL%XLE, DGL%XRN,     &
-                                  DGL%XH, DGL%XGFLUX, DGL%XSWD,         &
-                                  DGL%XSWU, DGL%XSWBD, DGL%XSWBU,       &
-                                  DGL%XLWD, DGL%XLWU, DGL%XFMU, DGL%XFMV )  
+                                 PDIR_SW, PSCA_SW, PLW,                &
+                                 PDIR_ALB, PSCA_ALB, PLWUP,            &
+                                 PSFZON, PSFMER, D%XLE, D%XRN,     &
+                                 D%XH, D%XGFLUX, D%XSWD,         &
+                                 D%XSWU, D%XSWBD, D%XSWBU,       &
+                                 D%XLWD, D%XLWU, D%XFMU, D%XFMV )  
   !
 END IF
 !
-IF( DGL%LSURF_BUDGETC)THEN
-  CALL DIAG_SURF_BUDGETC_IDEAL(DGL, PTSTEP,  DGL%XRN,  DGL%XH,  DGL%XLE,  &
-                               DGL%XLEI,  DGL%XGFLUX, DGL%XSWD,  DGL%XSWU, &
-                               DGL%XLWD,  DGL%XLWU,  DGL%XFMU,  DGL%XFMV,  &
-                               DGL%XEVAP, DGL%XSUBL                    )  
+IF( DGO%LSURF_BUDGETC)THEN
+  CALL DIAG_SURF_BUDGETC(D, DC, PTSTEP, .TRUE.   )  
 ENDIF
 !
-IF (DGL%LCOEF) THEN
+IF (DGO%LCOEF) THEN
   !
   !* Transfer coefficients
   !
-  DGL%XCD = PCD
-  DGL%XCH = PCH
-  DGL%XCE = PCH
+  D%XCD = PCD
+  D%XCH = PCH
+  D%XCE = PCH
   !
   !* Roughness lengths
   !
-  DGL%XZ0  = PZ0
-  DGL%XZ0H = PZ0H
+  D%XZ0  = PZ0
+  D%XZ0H = PZ0H
   !
 END IF
 !
-IF (DGL%LSURF_VARS) THEN
+IF (DGO%LSURF_VARS) THEN
   !
   !* Humidity at saturation
   !
-  DGL%XQS = PQSAT
+  D%XQS = PQSAT
   !
 END IF
 !

@@ -3,10 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-     SUBROUTINE CH_DEP_ISBA        (PUSTAR, PHU, PPSN,           &
-                      PVEG, PLAI, PSAND, PCLAY, PRESA,             &
-                      PRS, PZ0,  PTA, PPA, PTRAD, PNO, PROCK,      &
-                      HSV, PSOILRC_SO2, PSOILRC_O3, PDEP           )  
+     SUBROUTINE CH_DEP_ISBA(KK, PK, PEK, D, DM, CHIK, PUSTAR, PTA, PPA, PTRAD, KSIZE  )  
 !###########################################################                      
 !!
 !!    PURPOSE
@@ -34,6 +31,13 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_DIAG_n, ONLY : DIAG_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+!
+USE MODD_DATA_COVER_PAR, ONLY : NVT_NO, NVT_ROCK
+!
 USE MODD_ISBA_PAR
 USE MODD_DATA_COVER_PAR
 USE MODD_CSTS
@@ -50,75 +54,69 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
+TYPE(ISBA_K_t), INTENT(INOUT) :: KK
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(CH_ISBA_t), INTENT(INOUT) :: CHIK
+
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DM
+!
 REAL, DIMENSION(:),     INTENT(IN)  :: PUSTAR       ! friction velocity
-REAL, DIMENSION(:),     INTENT(IN)  :: PHU          ! soil humidity
-REAL, DIMENSION(:),     INTENT(IN)  :: PPSN         ! fraction of the grid covered
-                                                    ! by snow
-REAL, DIMENSION(:),     INTENT(IN)  :: PRS          ! stomatal resistance
-REAL, DIMENSION(:),     INTENT(IN)  :: PZ0          ! vegetation roughness length
-REAL, DIMENSION(:),     INTENT(IN)  :: PVEG         ! vegetation fraction
-REAL, DIMENSION(:),     INTENT(IN)  :: PLAI         ! Leaf area index
-REAL, DIMENSION(:,:),   INTENT(IN)  :: PSAND        ! Sand fraction
-REAL, DIMENSION(:,:),   INTENT(IN)  :: PCLAY        ! Clay fraction
-REAL, DIMENSION(:),     INTENT(IN)  :: PRESA        ! aerodynamical resistance
 REAL, DIMENSION(:),     INTENT(IN)  :: PTA          ! air temperature forcing (K)
 REAL, DIMENSION(:),     INTENT(IN)  :: PPA          ! surface atmospheric pressure
 REAL, DIMENSION(:),     INTENT(IN)  :: PTRAD        ! radiative temperature  (K)
-REAL, DIMENSION(:),     INTENT(IN)  :: PSOILRC_SO2  ! bare soil resistance for SO2
-REAL, DIMENSION(:),     INTENT(IN)  :: PSOILRC_O3   ! bare soil resistance for O3
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PDEP         ! deposition dry velocity (m/s)
-REAL, DIMENSION(:),     INTENT(IN)  :: PNO, PROCK   ! fractions of bare soil, rock
- CHARACTER(LEN=6), DIMENSION(:), INTENT(IN)  :: HSV  ! name of chemical
-                                                    ! species
+!
+INTEGER, INTENT(IN) :: KSIZE
 !
 !*       0.2   Declarations of local variables :
 !
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZDIFFMOLVAL
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZDIFFMOLVAL
 ! Molecular diffusivity
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZSCMDT 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZSCMDT 
 ! Sc(:)hmidt number
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZNATRB 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZNATRB 
 ! nature quasi-laminar  resistances
 !
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZHENRYVALCOR
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZSTOMRC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZHENRYVALCOR
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZSTOMRC 
 ! stomatal surface  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZMESORC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZMESORC 
 ! mesophyl  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZEXTRC   
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZEXTRC   
 !  leaf uptake external surface  resistance
 !
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZSOILRC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZSOILRC 
 ! bare soil surface  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZNATRC
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZNATRC
 ! nature surface resistances where vegetation is
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZSNOWRC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZSNOWRC 
 ! snow surface  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZCLAYRC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZCLAYRC 
 ! clay surface  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZSANDRC 
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZSANDRC 
 ! sand surface  resistance
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZBARERC
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZBARERC
 ! nature surface resistances for bare soils
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZROCKRC
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZROCKRC
 ! nature surface resistances for rocks
 !
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZRES_VEGTYPE
-REAL             , DIMENSION(SIZE(PTRAD,1),size(HSV,1)) :: ZRES_SNOWTYPE
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZRES_VEGTYPE
+REAL             , DIMENSION(SIZE(PTRAD),KSIZE) :: ZRES_SNOWTYPE
 !
 !  final nature resistance by vegtype
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZTYPE1_SAND, ZTYPE1_CLAY, ZTYPE1_SNOW ! Type soil 1
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZUSTAR
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZDIFFMOLH2O
+REAL, DIMENSION(SIZE(PTRAD))      :: ZTYPE1_SAND, ZTYPE1_CLAY, ZTYPE1_SNOW ! Type soil 1
+REAL, DIMENSION(SIZE(PTRAD))      :: ZUSTAR
+REAL, DIMENSION(SIZE(PTRAD))      :: ZDIFFMOLH2O
 !  final nature resistance
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZLANDEXT
+REAL, DIMENSION(SIZE(PTRAD))      :: ZLANDEXT
 ! computed Rext from Wesely tabulations (89)
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZINCRC 
+REAL, DIMENSION(SIZE(PTRAD))      :: ZINCRC 
 ! in-canopy transport  resistance
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZCOEF1, ZCOEF2, ZCOEF3, ZCOEF4, ZCOEF5, ZINV1, ZINV2
-REAL, DIMENSION(SIZE(PTRAD,1))      :: ZTCOR
+REAL, DIMENSION(SIZE(PTRAD))      :: ZCOEF1, ZCOEF2, ZCOEF3, ZCOEF4, ZCOEF5, ZINV1, ZINV2
+REAL, DIMENSION(SIZE(PTRAD))      :: ZTCOR
 !
-REAL, DIMENSION(size(HSV,1)) :: ZVAR1, ZVAR2, ZFACT1
+REAL, DIMENSION(KSIZE) :: ZVAR1, ZVAR2, ZFACT1
 !
 REAL :: ZTYPE2_SAND, ZTYPE2_CLAY, ZTYPE2_SNOW ! Type soil 2
 !
@@ -160,7 +158,7 @@ ELSE
   ZTYPE2_SNOW = 2000.
 ENDIF
 !
-DO JI = 1, SIZE(PVEG)
+DO JI = 1, SIZE(PEK%XVEG)
   !
   IF (XRCCLAYSO2.NE.XUNDEF) THEN
     ZTYPE1_CLAY(JI) = XRCCLAYSO2 
@@ -190,8 +188,8 @@ DO JI = 1, SIZE(PVEG)
   !        3.2.5 In-canopy transport resistance
   !              ------------------------------
   !
-  IF (PVEG(JI) > 0.) THEN
-    ZINCRC(JI) = 14. * PLAI(JI) * 4. * PZ0(JI) / ZUSTAR(JI)
+  IF (PEK%XVEG(JI) > 0.) THEN
+    ZINCRC(JI) = 14. * PEK%XLAI(JI) * 4. * PEK%XZ0(JI) / ZUSTAR(JI)
   ELSE
     ZINCRC(JI) = 1E-4
   ENDIF
@@ -202,9 +200,9 @@ DO JI = 1, SIZE(PVEG)
   IF ( XLANDREXT.NE.XUNDEF ) THEN
     ! user value
     ZLANDEXT(JI) = XLANDREXT
-  ELSEIF (PLAI(JI) /= XUNDEF) THEN
+  ELSEIF (PEK%XLAI(JI) /= XUNDEF) THEN
     ! computed value
-    ZLANDEXT(JI) = 6000. -  4000. * TANH( 1.6 * (PLAI(JI) - 1.6) )
+    ZLANDEXT(JI) = 6000. -  4000. * TANH( 1.6 * (PEK%XLAI(JI) - 1.6) )
   ELSE
     ZLANDEXT(JI) = 9999.
   END IF
@@ -213,7 +211,7 @@ DO JI = 1, SIZE(PVEG)
   ZCOEF1(JI) = 1./298. - 1./PTA(JI)
   !
   ZDIFFMOLH2O(JI)  = 2.22E-05 + 1.46E-07 * (PTA(JI) * (PPA(JI)/XP00)**(XRD/XCPD) - 273.)  
-  ZCOEF2(JI) = PRS(JI) * ZDIFFMOLH2O(JI)
+  ZCOEF2(JI) = DM%XRS(JI) * ZDIFFMOLH2O(JI)
   !
   ZCOEF3(JI) = 1./ZLANDEXT(JI)
   !
@@ -226,14 +224,14 @@ DO JI = 1, SIZE(PVEG)
   ZTCOR(JI) = MIN(2.5E3, ZCOEF4(JI))
   !
   !
-  ZINV1(JI) = 1.E-5/PSOILRC_SO2(JI)
+  ZINV1(JI) = 1.E-5/CHIK%XSOILRC_SO2(JI)
   !
-  ZINV2(JI) = 1./PSOILRC_O3(JI)
+  ZINV2(JI) = 1./CHIK%XSOILRC_O3(JI)
   !
 ENDDO
 !
 !
-DO JSV = 1, SIZE(HSV,1)
+DO JSV = 1, KSIZE
   !
   ZVAR1(JSV) = XSREALREACTVAL(JSV) / 3000.
   ZVAR2(JSV) = XSREALREACTVAL(JSV) * 100.
@@ -244,7 +242,7 @@ ENDDO
 !
 !============================================================================
 !
-DO JSV = 1, SIZE(HSV,1)
+DO JSV = 1, KSIZE
   !
   DO JI = 1, SIZE(PTA)
     !
@@ -262,13 +260,13 @@ DO JSV = 1, SIZE(HSV,1)
     ZSCMDT(JI,JSV) = 0.15E-4 / ZDIFFMOLVAL(JI,JSV)
     ZNATRB(JI,JSV) = ((ZSCMDT(JI,JSV)/0.72)**(2./3.)) * ZCOEF5(JI)
     !
-    IF (PLAI(JI)/=XUNDEF) ZNATRB(JI,JSV) = 2. * ZNATRB(JI,JSV)
+    IF (PEK%XLAI(JI)/=XUNDEF) ZNATRB(JI,JSV) = 2. * ZNATRB(JI,JSV)
     !
   ENDDO
   !
 ENDDO
 !
-DO JSV = 1, SIZE(HSV,1)
+DO JSV = 1, KSIZE
   !
   DO JI = 1, SIZE(PTA)
     !
@@ -284,7 +282,7 @@ DO JSV = 1, SIZE(HSV,1)
     !
     ZHENRYVALCOR(JI,JSV) = XSREALHENRYVAL(JSV,1) * EXP(XSREALHENRYVAL(JSV,2) * ZCOEF1(JI))
     !
-    IF (PRS(JI)>0.) THEN
+    IF (DM%XRS(JI)>0.) THEN
       ! 
       ZSTOMRC(JI,JSV) = ZCOEF2(JI) / ZDIFFMOLVAL(JI,JSV)   
       !
@@ -304,13 +302,13 @@ DO JSV = 1, SIZE(HSV,1)
     !        3.2.4 External leaf uptake resistance (Wesely, 1989)
     !              -------------------------------
     !
-    IF (PHU(JI) >= 1.) THEN ! for dew-wetted surface
+    IF (D%XHU(JI) >= 1.) THEN ! for dew-wetted surface
       !
       ! compute Rext for any species exept O3
       ! taking acount of (Walmsley, Wesely, 95, technical note, Atm Env vol 30)
       ZEXTRC(JI,JSV) = 1./( ZCOEF3(JI) + 1.0E-7*ZHENRYVALCOR(JI,JSV) + ZVAR1(JSV) )
       !
-    ELSEIF ( PRS(JI) > 0. ) THEN
+    ELSEIF ( DM%XRS(JI) > 0. ) THEN
       !
       ZEXTRC(JI,JSV) = ZLANDEXT(JI) / ( 1.0E-5 * ZHENRYVALCOR(JI,JSV) + XSREALREACTVAL(JSV) )
       !
@@ -319,11 +317,6 @@ DO JSV = 1, SIZE(HSV,1)
       ZEXTRC (JI,JSV) = 9999. 
       !
     ENDIF
-    !
-    !    IF ((HSV(JSV)=='O3').OR.(HSV(JSV)=='O_3')) &
-    !        ZEXTRC(:,JSV) =  ZEXTRC_O3(:)*ZTCOR(:) 
-    !    IF ((HSV(JSV)=='SO2').OR.(HSV(JSV)=='SO_2')) &
-    !        ZEXTRC(:,JSV) = ZTCOR(:)* 1./ (1/5000 +1./(3 *ZLANDEXT(:)))
     !
     !         Temperature correction
     !         ----------------------
@@ -334,7 +327,7 @@ DO JSV = 1, SIZE(HSV,1)
   !
 ENDDO
 !
-DO JSV = 1, SIZE(HSV,1)
+DO JSV = 1, KSIZE
   !
   DO JI = 1, SIZE(PTA)
     !    
@@ -373,7 +366,7 @@ DO JSV = 1, SIZE(HSV,1)
     !          3.3.3 Compute surface resistance on bare soil
     !                ---------------------------------------
     !
-    ZBARERC(JI,JSV) = 1./ ( PSAND(JI,1)/ZSANDRC(JI,JSV) + (1.-PSAND(JI,1))/ZCLAYRC(JI,JSV) )  
+    ZBARERC(JI,JSV) = 1./ ( KK%XSAND(JI,1)/ZSANDRC(JI,JSV) + (1.-KK%XSAND(JI,1))/ZCLAYRC(JI,JSV) )  
     !
     !          3.3.4 Surface temperature correction 
     !                ------------------------------
@@ -383,8 +376,8 @@ DO JSV = 1, SIZE(HSV,1)
     !          3.3.5 Compute surface resistance on ROCK AREA
     !                ---------------------------------------
     !
-    ZROCKRC(JI,JSV) = ( 1.E5 * PSOILRC_SO2(JI) * PSOILRC_O3(JI) ) / &
-           (ZHENRYVALCOR(JI,JSV)*PSOILRC_O3(JI) + PSOILRC_SO2(JI)*1.E5*XSREALREACTVAL(JSV) )
+    ZROCKRC(JI,JSV) = ( 1.E5 * CHIK%XSOILRC_SO2(JI) * CHIK%XSOILRC_O3(JI) ) / &
+         (ZHENRYVALCOR(JI,JSV)*CHIK%XSOILRC_O3(JI) + CHIK%XSOILRC_SO2(JI)*1.E5*XSREALREACTVAL(JSV) )
     !  
     !          3.3.6 Surface temperature correction 
     !                ------------------------------
@@ -409,18 +402,19 @@ DO JSV = 1, SIZE(HSV,1)
     !            --------------------------------------------
     !
     ! add rocks into bare soil resistance computation, when present
-    IF ( PROCK(JI)>0. ) THEN 
-      ZBARERC(JI,JSV) = ( PNO(JI)+PROCK(JI) )/( PNO(JI)/ZBARERC(JI,JSV) + PROCK(JI)/ZROCKRC(JI,JSV) )
+    IF ( PK%XVEGTYPE_PATCH(JI,NVT_ROCK)>0. ) THEN 
+      ZBARERC(JI,JSV) = ( PK%XVEGTYPE_PATCH(JI,NVT_NO)+PK%XVEGTYPE_PATCH(JI,NVT_ROCK) ) / &
+            ( PK%XVEGTYPE_PATCH(JI,NVT_NO)/ZBARERC(JI,JSV) + PK%XVEGTYPE_PATCH(JI,NVT_ROCK)/ZROCKRC(JI,JSV) )
     ENDIF
     !
     ! computes resistance due to soil and vegetation
-    ZNATRC(JI,JSV) = 1./ ( PVEG(JI)/ZNATRC(JI,JSV) + (1.-PVEG(JI))/ZBARERC(JI,JSV) ) 
+    ZNATRC(JI,JSV) = 1./ ( PEK%XVEG(JI)/ZNATRC(JI,JSV) + (1.-PEK%XVEG(JI))/ZBARERC(JI,JSV) ) 
     ! 
   ENDDO
   !
 ENDDO
 !
-DO JSV = 1, SIZE(HSV,1)
+DO JSV = 1, KSIZE
   !
   DO JI = 1, SIZE(PTA)
     !    
@@ -429,10 +423,10 @@ DO JSV = 1, SIZE(HSV,1)
     !       4.0  Compute nature resistance 
     !            --------------------------
     !
-    ZRES_VEGTYPE (JI,JSV) = PRESA(JI) + ZNATRB(JI,JSV) + ZNATRC(JI,JSV)
-    ZRES_SNOWTYPE(JI,JSV) = PRESA(JI) + ZNATRB(JI,JSV) + ZSNOWRC(JI,JSV)
+    ZRES_VEGTYPE (JI,JSV) = PEK%XRESA(JI) + ZNATRB(JI,JSV) + ZNATRC(JI,JSV)
+    ZRES_SNOWTYPE(JI,JSV) = PEK%XRESA(JI) + ZNATRB(JI,JSV) + ZSNOWRC(JI,JSV)
     !
-    PDEP(JI,JSV) = ( 1-PPSN(JI) )/ZRES_VEGTYPE(JI,JSV) + PPSN(JI)/ZRES_SNOWTYPE(JI,JSV)  
+    CHIK%XDEP(JI,JSV) = ( 1-PEK%XPSN(JI) )/ZRES_VEGTYPE(JI,JSV) + PEK%XPSN(JI)/ZRES_SNOWTYPE(JI,JSV)  
     !
   ENDDO
   !

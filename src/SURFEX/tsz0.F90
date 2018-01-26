@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE TSZ0 (DTZ, &
-                       PTIME, PTSTEP, PWFC, PTG, PWG )
+      SUBROUTINE TSZ0 (DTZ, PTIME, PTSTEP, KK, PEK )
 !     ################################################################
 !
 !
@@ -50,6 +49,7 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_PE_t
 !
 USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 !
@@ -67,21 +67,13 @@ IMPLICIT NONE
 !* general variables
 !  -----------------
 !
+TYPE(ISBA_K_t), INTENT(INOUT) :: KK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+!
 TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
 !
 REAL,                   INTENT(IN)  :: PTIME      ! Current time
 REAL,                   INTENT(IN)  :: PTSTEP     ! timestep of the integration
-!
-!* soil variables
-!  --------------
-!
-REAL, DIMENSION(:,:),   INTENT(IN)  :: PWFC       ! field capacity
-!
-!* prognostic variables
-!  --------------------
-!
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PTG      ! surface temperature
-REAL, DIMENSION(:,:,:), INTENT(INOUT) :: PWG      ! near-surface volumetric water
 !
 !
 !*      0.2    declarations of local variables
@@ -128,19 +120,17 @@ ENDIF
 !
 ! temporal interpolation of the surface temperature increment  over land at time t
 ZA= ZDTS_HOUR /3600. * PTSTEP
-WHERE (PTG(:,:,:)/=XUNDEF)
-  PTG(:,:,:)= PTG(:,:,:) + ZA
+WHERE (PEK%XTG(:,:)/=XUNDEF)
+  PEK%XTG(:,:)= PEK%XTG(:,:) + ZA
 END WHERE
 !
 ! temporal interpolation of the soil humidity increment at time t
 ZA= ZDHUGRD_HOUR /3600.* PTSTEP
-DO JPATCH=1,SIZE(PWG,3)
-  WHERE (PWG(:,:,JPATCH)/=XUNDEF)
-  PWG(:,:,JPATCH)= ACOS( 1.                                                               &
-      - 2.* MIN( 0.5 * (1. - COS( XPI * MIN(PWG(:,:,JPATCH) /PWFC(:,:),1.)  )) + ZA , 1.) &
-            ) / XPI * PWFC(:,:)  
-  END WHERE
-END DO
+WHERE (PEK%XWG(:,:)/=XUNDEF)
+  PEK%XWG(:,:)= ACOS( 1.                                                               &
+      - 2.* MIN( 0.5 * (1. - COS( XPI * MIN(PEK%XWG(:,:) /KK%XWFC(:,:),1.)  )) + ZA , 1.) &
+            ) / XPI * KK%XWFC(:,:)  
+END WHERE
 !
 IF (LHOOK) CALL DR_HOOK('TSZ0',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------

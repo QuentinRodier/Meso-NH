@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CARBON_INIT(KNBIOMASS,KNLITTER, KNLITTLEVS, KNSOILCARB)  
+      SUBROUTINE CARBON_INIT 
 !     #####################
 !
 !!****  *CARBON_INIT* - routine to initialize soil carbon parameters
@@ -54,10 +54,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-INTEGER,              INTENT(IN)    :: KNBIOMASS           ! number of biomass pools
-INTEGER,              INTENT(IN)    :: KNLITTER            ! number of litter pools
-INTEGER,              INTENT(IN)    :: KNLITTLEVS          ! number of litter levels
-INTEGER,              INTENT(IN)    :: KNSOILCARB          ! number of soil carbon pools
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------

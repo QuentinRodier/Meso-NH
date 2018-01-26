@@ -30,6 +30,7 @@
 !*       0.   DECLARATIONS
 !             ------------
 !
+USE MODD_SFX_GRID_n, ONLY : GRID_t, GRID_INIT
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -41,55 +42,34 @@ TYPE SURF_ATM_GRID_t
 !
 ! Grid definition
 !
-  CHARACTER(LEN=10)               :: CGRID       ! grid type
-!                                              ! "NONE        " : no grid computations
-!                                              ! "CONF PROJ   " : conformal projection
-!
-  REAL, POINTER,     DIMENSION(:) :: XGRID_PAR   ! lits of parameters used to define the grid
+TYPE(GRID_t) :: G
 !                                              ! (depends on value of CGRID)
   REAL, POINTER,     DIMENSION(:) :: XGRID_FULL_PAR   ! lits of parameters used to define the grid
 !                                                     ! (depends on value of CGRID)
-  INTEGER                         :: NGRID_PAR   ! size of XGRID_PAR
+  INTEGER                         :: NGRID_FULL_PAR   ! size of XGRID_FULL_PAR
 !
   INTEGER, POINTER, DIMENSION(:,:) :: NNEAR
 !-------------------------------------------------------------------------------
 !
 ! General surface parameters:
 !
-  REAL, POINTER, DIMENSION(:) :: XLAT        ! latitude (degrees +North)               (-)
-  REAL, POINTER, DIMENSION(:) :: XLON        ! longitude (degrees +East)               (-)
-  REAL, POINTER, DIMENSION(:) :: XMESH_SIZE  ! mesh size                               (m2)
   REAL, POINTER, DIMENSION(:) :: XJPDIR      ! heading of J direction (deg from N clockwise)
 !-------------------------------------------------------------------------------
 !
-
 END TYPE SURF_ATM_GRID_t
-
-
-
- CONTAINS
-
 !
-
-
-
-
+ CONTAINS
+!
 SUBROUTINE SURF_ATM_GRID_INIT(YSURF_ATM_GRID)
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: YSURF_ATM_GRID
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK("MODD_SURF_ATM_GRID_N:SURF_ATM_GRID_INIT",0,ZHOOK_HANDLE)
-  NULLIFY(YSURF_ATM_GRID%XGRID_PAR)
+  CALL GRID_INIT(YSURF_ATM_GRID%G)
   NULLIFY(YSURF_ATM_GRID%NNEAR)
   NULLIFY(YSURF_ATM_GRID%XGRID_FULL_PAR)
-  NULLIFY(YSURF_ATM_GRID%XLAT)
-  NULLIFY(YSURF_ATM_GRID%XLON)
-  NULLIFY(YSURF_ATM_GRID%XMESH_SIZE)
-  NULLIFY(YSURF_ATM_GRID%XJPDIR)
-YSURF_ATM_GRID%CGRID=' '
-YSURF_ATM_GRID%NGRID_PAR=0
+  NULLIFY(YSURF_ATM_GRID%XJPDIR) 
+YSURF_ATM_GRID%NGRID_FULL_PAR=0
 IF (LHOOK) CALL DR_HOOK("MODD_SURF_ATM_GRID_N:SURF_ATM_GRID_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE SURF_ATM_GRID_INIT
-
-
-
+!
 END MODULE MODD_SURF_ATM_GRID_n

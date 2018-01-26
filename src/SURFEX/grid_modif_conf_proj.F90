@@ -32,22 +32,23 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    01/2004
+!!      Original    01/2004 
 !!         M.Moge   06/2015 Initialization of MODD_SPAWN variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_SURF_PAR, ONLY : NUNDEF
+!
 #ifdef SFX_MNH
 USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
 #endif
-
+!
 USE MODE_POS_SURF
 USE MODE_GRIDTYPE_CONF_PROJ
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -60,6 +61,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
 INTEGER,                      INTENT(IN)    :: KLUOUT     ! output listing logical unit
 INTEGER,                      INTENT(IN)    :: KLUNAM     ! namelist file logical unit
 INTEGER,                      INTENT(IN)    :: KL         ! number of points
@@ -127,6 +129,7 @@ NAMELIST/NAM_INIFILE_CONF_PROJ/IXOR,IYOR,IXSIZE,IYSIZE,IDXRATIO,IDYRATIO
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF_CONF_PROJ',0,ZHOOK_HANDLE)
  CALL POSNAM(KLUNAM,'NAM_INIFILE_CONF_PROJ',GFOUND,KLUOUT)
 IF (GFOUND) READ(UNIT=KLUNAM,NML=NAM_INIFILE_CONF_PROJ)
+!
 #ifdef SFX_MNH
 ! store the parameter in MODD_SPAWN
 NXOR = IXOR
@@ -172,15 +175,7 @@ IJMAX2=IYSIZE*IDYRATIO
 !
 KL2 = IIMAX2 * IJMAX2
 !
-#ifdef MNH_PARALLEL
-#else
-ALLOCATE(ZX2 (IIMAX2*IJMAX2))
-ALLOCATE(ZY2 (IIMAX2*IJMAX2))
-ALLOCATE(ZDX2(IIMAX2*IJMAX2))
-ALLOCATE(ZDY2(IIMAX2*IJMAX2))
-#endif
-!
- CALL REGULAR_GRID_SPAWN(U,KLUOUT,                               &
+ CALL REGULAR_GRID_SPAWN(U,KLUOUT,                              &
                           KL, IIMAX1,IJMAX1,ZX1,ZY1,ZDX1,ZDY1,  &
                           IXOR, IYOR, IDXRATIO, IDYRATIO,       &
                           IXSIZE, IYSIZE,                       &

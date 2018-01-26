@@ -11,21 +11,22 @@ USE MODI_ABOR1_SFX
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------
 !-------------------------------------------------------------------
 !     ####################
       SUBROUTINE HANDLE_ERR_CDF(status,line)
 !     ####################
+USE NETCDF
+!
 IMPLICIT NONE
 INTEGER, INTENT(IN)           :: status
  CHARACTER(*), INTENT(IN) :: line
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-include 'netcdf.inc'
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:HANDLE_ERR_CDF',0,ZHOOK_HANDLE)
-IF (status /= NF_NOERR) THEN
+IF (status /= NF90_NOERR) THEN
   CALL ABOR1_SFX('MODE_READ_NETCDF: HANDLE_ERR_CDF:'//TRIM(line))
 END IF
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:HANDLE_ERR_CDF',1,ZHOOK_HANDLE)
@@ -35,6 +36,8 @@ END SUBROUTINE HANDLE_ERR_CDF
 !     ####################
       SUBROUTINE GET1DCDF(KCDF_ID,IDVAR,PMISSVALUE,PVALU1D)
 !     ####################
+!
+USE NETCDF
 !
 IMPLICIT NONE
 !
@@ -55,7 +58,6 @@ character(len=80),DIMENSION(:),ALLOCATABLE :: HNAME
 REAL,DIMENSION(:),ALLOCATABLE :: ZVALU1D !value array
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-include 'netcdf.inc'
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:GET1DCDF',0,ZHOOK_HANDLE)
 PMISSVALUE=-9999.9
@@ -67,41 +69,41 @@ NVARDIMLEN(:)=0
 NVARDIMNAM(:)=' '
 !
 HACTION='get variable type'
-status=nf_inq_vartype(KCDF_ID,IDVAR,KVARTYPE)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,XTYPE=KVARTYPE)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'variable type = ',KVARTYPE
 !
 HACTION='get variable dimensions identifiant'
-status=nf_inq_vardimid(KCDF_ID,IDVAR,NVARDIMID(NDIMS))
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,DIMIDS=NVARDIMID)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'variable dimension ',NDIMS,' identifiant ',NVARDIMID(NDIMS)
 !
 HACTION='get variable dimensions name'
-status=nf_inq_dimname(KCDF_ID,NVARDIMID(NDIMS),NVARDIMNAM(NDIMS))
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_dimension(KCDF_ID,NVARDIMID(NDIMS),NAME=NVARDIMNAM(NDIMS))
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !
 HACTION='get variable dimensions length'
-status=nf_inq_dimlen(KCDF_ID,NVARDIMID(NDIMS),NVARDIMLEN(NDIMS))
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_dimension(KCDF_ID,NVARDIMID(NDIMS),LEN=NVARDIMLEN(NDIMS))
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'variable dimension ',NDIMS,' named ',NVARDIMNAM(NDIMS),&
 !     &'has a length of',NVARDIMLEN(NDIMS)
 !
 HACTION='get attributs'
-!status=nf_inq_natts(KCDF_ID,NGATTS)
-status=nf_inq_varnatts(KCDF_ID,IDVAR,NGATTS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+!status=nf90_inq_natts(KCDF_ID,NGATTS)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,NATTS=NGATTS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'number of attributes = ',NGATTS
 allocate(hname(1:NGATTS))
 !
 DO JLOOP=1,NGATTS
-  status=nf_inq_attname(KCDF_ID,IDVAR,JLOOP,hname(JLOOP))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_inq_attname(KCDF_ID,IDVAR,JLOOP,hname(JLOOP))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   !write(0,*) 'attributes names = ', hname(JLOOP)
   if (TRIM(hname(JLOOP))=='missing_value') then
     !write(0,*) 'missing value search '
     HACTION='get missing value'
-    status=nf_get_att_double(KCDF_ID,IDVAR,"missing_value",PMISSVALUE)
-    if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+    status=nf90_get_att(KCDF_ID,IDVAR,"missing_value",PMISSVALUE)
+    if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
     !write(0,*) 'missing value = ',PMISSVALUE
   endif
 ENDDO
@@ -111,8 +113,8 @@ ZVALU1D=0.
 !
 IF (KVARTYPE>=5) then
   HACTION='get variable values (1D)'
-  status=nf_get_var_double(KCDF_ID,IDVAR,ZVALU1D(:))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_get_var(KCDF_ID,IDVAR,ZVALU1D(:))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 ENDIF
 PVALU1D(:)=ZVALU1D(:)
 IF (ALLOCATED(ZVALU1D  ))  DEALLOCATE(ZVALU1D)
@@ -125,6 +127,8 @@ END SUBROUTINE GET1DCDF
       SUBROUTINE GET2DCDF(KCDF_ID,IDVAR,PDIM1,HDIM1NAME,PDIM2,HDIM2NAME,&
              PMISSVALUE,PVALU2D)  
 !     ####################
+!
+USE NETCDF
 !
 IMPLICIT NONE
 !
@@ -141,14 +145,13 @@ integer,save :: NDIMS=2
 integer :: KVARTYPE
 integer,DIMENSION(:),ALLOCATABLE :: NVARDIMID,NVARDIMLEN
 character(len=80),DIMENSION(:),ALLOCATABLE :: NVARDIMNAM
-integer :: JLOOP2, JLOOP
+integer :: JLOOP
 integer :: NGATTS   
 character(len=80),DIMENSION(:),ALLOCATABLE :: HNAME
 real :: ZMISS1,ZMISS2
 REAL,DIMENSION(:,:),ALLOCATABLE :: ZVALU2D !value array
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-include 'netcdf.inc'
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:GET2DCDF',0,ZHOOK_HANDLE)
 PMISSVALUE=-9999.9 
@@ -160,52 +163,52 @@ NVARDIMLEN(:)=0
 NVARDIMNAM(:)=' '
 !
 HACTION='get variable type'
-status=nf_inq_vartype(KCDF_ID,IDVAR,KVARTYPE)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,XTYPE=KVARTYPE)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'variable type = ',KVARTYPE
 !
 HACTION='get variable dimensions identifiant'
-status=nf_inq_vardimid(KCDF_ID,IDVAR,NVARDIMID)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,DIMIDS=NVARDIMID)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !
 HACTION='get attributs'
-!status=nf_inq_natts(KCDF_ID,NGATTS)
-status=nf_inq_varnatts(KCDF_ID,IDVAR,NGATTS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+!status=nf90_inq_natts(KCDF_ID,NGATTS)
+status=nf90_inquire_variable(KCDF_ID,IDVAR,NATTS=NGATTS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'number of attributes = ',NGATTS
 allocate(hname(1:NGATTS))
 !
 DO JLOOP=1,NGATTS
-  status=nf_inq_attname(KCDF_ID,IDVAR,JLOOP,hname(JLOOP))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_inq_attname(KCDF_ID,IDVAR,JLOOP,hname(JLOOP))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   !write(0,*) 'attributes names = ', hname(JLOOP)
   if (TRIM(hname(JLOOP))=='missing_value') then
     !write(0,*) 'missing value search '
     HACTION='get missing value'
-    status=nf_get_att_double(KCDF_ID,IDVAR,"missing_value",PMISSVALUE)
-    if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+    status=nf90_get_att(KCDF_ID,IDVAR,"missing_value",PMISSVALUE)
+    if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
     !write(0,*) 'missing value = ',PMISSVALUE
   endif
 ENDDO
 !
 !
-DO JLOOP2=1,NDIMS
+DO JLOOP=1,NDIMS
   HACTION='get variable dimensions name'
-  status=nf_inq_dimname(KCDF_ID,JLOOP2,NVARDIMNAM(JLOOP2))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_inquire_dimension(KCDF_ID,NVARDIMID(JLOOP),NAME=NVARDIMNAM(JLOOP))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   HACTION='get variable dimensions length'
-  status=nf_inq_dimlen(KCDF_ID,JLOOP2,NVARDIMLEN(JLOOP2))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
-  !write(0,*) 'variable dimension ',JLOOP2,' named ',NVARDIMNAM(JLOOP2),&
-  !     &'has a length of',NVARDIMLEN(JLOOP2)
+  status=nf90_inquire_dimension(KCDF_ID,NVARDIMID(JLOOP),LEN=NVARDIMLEN(JLOOP))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  !write(0,*) 'variable dimension ',JLOOP,' named ',NVARDIMNAM(JLOOP),&
+  !     &'has a length of',NVARDIMLEN(JLOOP)
 ENDDO
 ! 
 ALLOCATE(ZVALU2D(1:NVARDIMLEN(1),1:NVARDIMLEN(2)))
 ZVALU2D=0.
 IF (KVARTYPE>=5) then
   HACTION='get variable values (2D)'
-  status=nf_get_var_double(KCDF_ID,IDVAR,ZVALU2D(:,:))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_get_var(KCDF_ID,IDVAR,ZVALU2D(:,:))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 ENDIF
 PVALU2D(:,:)=ZVALU2D(:,:)
 !
@@ -223,6 +226,8 @@ END SUBROUTINE GET2DCDF
        SUBROUTINE READ_LATLONVAL_CDF(HFILENAME,HNCVARNAME,PLON,PLAT,PVAL)
 !     ####################
 !
+USE NETCDF
+!
 IMPLICIT NONE
 !
  CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
@@ -239,7 +244,8 @@ integer ::JLOOP1,JDIM1,JDIM2,JLOOP
 integer ::ID_VARTOGET,ID_VARTOGET1,ID_VARTOGET2
 integer ::NVARDIMS
 integer ::NLEN
-integer,DIMENSION(1:2) :: NLEN2D
+integer,dimension(1) :: IDIMID
+integer,DIMENSION(1:2) :: NLEN2D,IDIMID2D
 integer,DIMENSION(:),ALLOCATABLE :: NVARDIMID,NVARDIMLEN
 character(len=80),DIMENSION(:),ALLOCATABLE :: NVARDIMNAM
 real,DIMENSION(:),ALLOCATABLE   :: ZVALU
@@ -251,7 +257,6 @@ character(len=80) :: YDIM1NAME,YDIM2NAME
 integer :: ILONFOUND,ILATFOUND, IARG
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-include 'netcdf.inc'
 !
 !*    1.      Open the netcdf file 
 !             --------------------
@@ -259,10 +264,10 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:READ_LATLONVAL_CDF',0,ZHOOK_HANDLE)
 status=-9999
 kcdf_id=-9999
 HACTION='open netcdf'
-status=NF_OPEN(HFILENAME,nf_nowrite,kcdf_id)
+status=NF90_OPEN(HFILENAME,nf90_nowrite,kcdf_id)
 !write(0,*) 'status=',status
 !write(0,*) 'identifiant de ',HFILENAME,'=',kcdf_id
-if (status/=NF_NOERR) then 
+if (status/=NF90_NOERR) then 
   CALL HANDLE_ERR_CDF(status,HACTION)
 !else
 !  write(0,*) 'netcdf file opened: ',HFILENAME
@@ -273,8 +278,8 @@ endif
 !*    2.      get the number of variables in netcdf file 
 !             ------------------------------------------
 HACTION='get number of variables'
-status=NF_INQ_NVARS(kcdf_id,NBVARS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=NF90_INQUIRE(kcdf_id,NVARIABLES=NBVARS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'nb vars', NBVARS
 ALLOCATE(VARNAME(NBVARS))
 !
@@ -286,8 +291,8 @@ ID_VARTOGET1=0
 ID_VARTOGET2=0
 DO JLOOP1=1,NBVARS
   HACTION='get variables  names'
-  status=NF_INQ_VARNAME(kcdf_id,JLOOP1,VARNAME(JLOOP1))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=NF90_INQUIRE_VARIABLE(kcdf_id,JLOOP1,NAME=VARNAME(JLOOP1))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   !write(0,*) 'var',JLOOP1,' name: ',VARNAME(JLOOP1)
   if (VARNAME(JLOOP1)==HNCVARNAME) then
     !write(0,*) 'var',JLOOP1,' corresponding to variable required'
@@ -309,8 +314,8 @@ else
 endif
 if (ID_VARTOGET==0) then
   HACTION='close netcdf'
-  status=nf_close(kcdf_id)
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_close(kcdf_id)
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   CALL ABOR1_SFX('MODE_READ_NETCDF: READ_LATLONVAL_CDF')
 endif
 !-----------
@@ -322,8 +327,8 @@ endif
 !             -----------------------------------
 !
 HACTION='get variable dimensions number'
-status=nf_inq_varndims(kcdf_id,ID_VARTOGET,NVARDIMS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,NDIMS=NVARDIMS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !
 !     4.2      get the variable dimensions length and values
 !              ----------------------------------------------
@@ -332,8 +337,9 @@ SELECT CASE (NVARDIMS)
   CASE (1) 
     !write(0,*) 'variable dimensions number = ',NVARDIMS
     HACTION='get variable dimensions length'
-    status=nf_inq_dimlen(kcdf_id,NVARDIMS,NLEN)
-    if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+    status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,DIMIDS=IDIMID)
+    status=nf90_inquire_dimension(kcdf_id,IDIMID(1),LEN=NLEN)
+    if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
     ALLOCATE(ZVALU(NLEN))
     !write(0,*) 'call GET1DCDF'
     CALL GET1DCDF(kcdf_id,ID_VARTOGET,ZMISS,ZVALU)
@@ -341,10 +347,11 @@ SELECT CASE (NVARDIMS)
 !CAS 2D
   CASE (2)
     !write(0,*) 'variable dimensions number = ',NVARDIMS
+    status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,DIMIDS=IDIMID2D)
     DO JLOOP=1,NVARDIMS
       HACTION='get variable dimensions length'
-      status=nf_inq_dimlen(kcdf_id,JLOOP,NLEN2D(JLOOP))
-      if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+      status=nf90_inquire_dimension(kcdf_id,IDIMID2D(JLOOP),LEN=NLEN2D(JLOOP))
+      if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
     ENDDO
     ALLOCATE(ZVALU2D(NLEN2D(1),NLEN2D(2)))
     ALLOCATE(ZDIM1(NLEN2D(1)))
@@ -393,8 +400,8 @@ END SELECT
 !*    10.     Close the netcdf file 
 !             ---------------------
 HACTION='close netcdf'
-status=nf_close(kcdf_id)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_close(kcdf_id)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'OK: netcdf file closed: ',HFILENAME
 !
 !-----------
@@ -417,6 +424,8 @@ END SUBROUTINE READ_LATLONVAL_CDF
        SUBROUTINE READ_DIM_CDF(HFILENAME,HNCVARNAME,KDIM)
 !     ####################
 !
+USE NETCDF
+!
 IMPLICIT NONE
 !
  CHARACTER(LEN=28), INTENT(IN) :: HFILENAME   ! Name of the field file.
@@ -431,17 +440,17 @@ character(len=80),DIMENSION(:),ALLOCATABLE :: VARNAME
 integer ::JLOOP1,JLOOP
 integer ::ID_VARTOGET,ID_VARTOGET1,ID_VARTOGET2
 integer ::NVARDIMS
-integer,DIMENSION(2) ::NLEN2D
+integer, dimension(1) :: NDIMID
+integer,DIMENSION(2) ::NLEN2D, NDIMID2D
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
-include 'netcdf.inc'
 !
 !*    1.      Open the netcdf file 
 !             --------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_CDF:READ_DIM_CDF',0,ZHOOK_HANDLE)
 HACTION='open netcdf'
-status=NF_OPEN(HFILENAME,nf_nowrite,kcdf_id)
-if (status/=NF_NOERR) then 
+status=NF90_OPEN(HFILENAME,nf90_nowrite,kcdf_id)
+if (status/=NF90_NOERR) then 
   CALL HANDLE_ERR_CDF(status,HACTION)
 !else
 endif
@@ -451,8 +460,8 @@ endif
 !*    2.      get the number of variables in netcdf file 
 !             ------------------------------------------
 HACTION='get number of variables'
-status=NF_INQ_NVARS(kcdf_id,NBVARS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=NF90_INQUIRE(kcdf_id,NVARIABLES=NBVARS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'nb vars', NBVARS
 ALLOCATE(VARNAME(NBVARS))
 !
@@ -464,8 +473,8 @@ ID_VARTOGET1=0
 ID_VARTOGET2=0
 DO JLOOP1=1,NBVARS
   HACTION='get variables  names'
-  status=NF_INQ_VARNAME(kcdf_id,JLOOP1,VARNAME(JLOOP1))
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=NF90_INQUIRE_VARIABLE(kcdf_id,JLOOP1,NAME=VARNAME(JLOOP1))
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   !write(0,*) 'var',JLOOP1,' name: ',VARNAME(JLOOP1)
   if (VARNAME(JLOOP1)==HNCVARNAME) then
     !write(0,*) 'var',JLOOP1,' corresponding to variable required'
@@ -487,8 +496,8 @@ else
 endif
 if (ID_VARTOGET==0) then
   HACTION='close netcdf'
-  status=nf_close(kcdf_id)
-  if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+  status=nf90_close(kcdf_id)
+  if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
   CALL ABOR1_SFX('MODE_READ_CDF: READ_DIM_CDF')
 endif
 !-----------
@@ -500,8 +509,8 @@ endif
 !             -----------------------------------
 !
 HACTION='get variable dimensions number'
-status=nf_inq_varndims(kcdf_id,ID_VARTOGET,NVARDIMS)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,ndims=NVARDIMS)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'variable dimensions number = ',NVARDIMS
 !
 !     4.2      get the variable dimensions length
@@ -510,16 +519,18 @@ SELECT CASE (NVARDIMS)
 !CAS 1D
   CASE (1) 
     HACTION='get variable dimensions length'
-    status=nf_inq_dimlen(kcdf_id,NVARDIMS,KDIM)
-    if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+    status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,dimids=NDIMID)
+    status=nf90_inquire_dimension(kcdf_id,NDIMID(1),LEN=KDIM)
+    if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !
 !CAS 2D
   CASE (2)
     KDIM=1
+    status=nf90_inquire_variable(kcdf_id,ID_VARTOGET,dimids=NDIMID2D)
     DO JLOOP=1,NVARDIMS
       HACTION='get variable dimensions length'
-      status=nf_inq_dimlen(kcdf_id,JLOOP,NLEN2D(JLOOP))
-      if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+      status=nf90_inquire_dimension(kcdf_id,NDIMID2D(JLOOP),LEN=NLEN2D(JLOOP))
+      if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
       KDIM=KDIM*NLEN2D(JLOOP)
     ENDDO
 END SELECT
@@ -527,8 +538,8 @@ END SELECT
 !*    10.     Close the netcdf file 
 !             ---------------------
 HACTION='close netcdf'
-status=nf_close(kcdf_id)
-if (status/=NF_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
+status=nf90_close(kcdf_id)
+if (status/=NF90_NOERR) CALL HANDLE_ERR_CDF(status,HACTION)
 !write(0,*) 'OK: netcdf file closed: ',HFILENAME
 !
 !-----------

@@ -3,11 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CARBON_SPINUP(KMONTH,KDAY,PTIME,                      &
-                   OSPINUPCARBS, OSPINUPCARBW, PSPINMAXS, PSPINMAXW,   &
-                   KNBYEARSPINS, KNBYEARSPINW, KNBYEARSOLD, HPHOTO,    &
-                   HRESPSL, KSPINS, KSPINW                             )
-  
+      SUBROUTINE CARBON_SPINUP(TPTIME, IO )
+!  
 !     #######################################################################
 !
 !
@@ -43,6 +40,9 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_TYPE_DATE_SURF
+!
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 !                              
 USE MODI_SPINUP_MAX
 !                              
@@ -51,25 +51,8 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=3), INTENT(IN) :: HRESPSL                ! Soil Respiration
-!                                                      ! 'DEF' = Norman 1992
-!                                                      ! 'PRM' = Rivalland PhD Thesis (2003)
-!                                                      ! 'CNT' = CENTURY model (Gibelin 2008)
- CHARACTER(LEN=3), INTENT(IN) :: HPHOTO                 ! type of photosynthesis
-!
-INTEGER,          INTENT(IN)  :: KMONTH                ! Current month
-INTEGER,          INTENT(IN)  :: KDAY                  ! Current day
-REAL,             INTENT(IN)  :: PTIME                 ! Current time
-LOGICAL,          INTENT(IN)  :: OSPINUPCARBS          ! T: do the soil carb spinup, F: no
-LOGICAL,          INTENT(IN)  :: OSPINUPCARBW          ! T: do the wood carb spinup, F: no
-REAL,             INTENT(IN)  :: PSPINMAXS             ! max number of times CARBON_SOIL subroutine
-REAL,             INTENT(IN)  :: PSPINMAXW             ! max number of times the wood is accelerated
-INTEGER,          INTENT(IN)  :: KNBYEARSPINS          ! nbr years needed to reaches soil equilibrium
-INTEGER,          INTENT(IN)  :: KNBYEARSPINW          ! nbr years needed to reaches wood equilibrium
-!
-INTEGER,          INTENT(INOUT) :: KNBYEARSOLD         ! nbr years executed at curent time step
-INTEGER,          INTENT(OUT)   :: KSPINS              ! number of times the soil is accelerated
-INTEGER,          INTENT(OUT)   :: KSPINW              ! number of times the wood is accelerated
+TYPE(DATE_TIME), INTENT(IN) :: TPTIME
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
 !*      0.    declarations of local variables
 !
@@ -85,20 +68,20 @@ IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',0,ZHOOK_HANDLE)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! number of times CARBON_SOIL subroutine is called for each time step
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-KSPINS =1
-IF ( OSPINUPCARBS .AND. HPHOTO/='NON' .AND. HRESPSL=='CNT' ) THEN
-   CALL SPINUP_MAX(PSPINMAXS,KNBYEARSPINS,KNBYEARSOLD,KSPINS)
+IO%NSPINS =1
+IF ( IO%LSPINUPCARBS .AND. IO%CPHOTO/='NON' .AND. IO%CRESPSL=='CNT' ) THEN
+   CALL SPINUP_MAX(IO%XSPINMAXS,IO%NNBYEARSPINS,IO%NNBYEARSOLD,IO%NSPINS)
 ENDIF
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! number of times  WOOD carbon subroutine is called for each time step
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-KSPINW=1
-IF ( OSPINUPCARBW .AND. HPHOTO=='NCB' ) THEN
-   CALL SPINUP_MAX(PSPINMAXW,KNBYEARSPINW,KNBYEARSOLD,KSPINW)
+IO%NSPINW=1
+IF ( IO%LSPINUPCARBW .AND. IO%CPHOTO=='NCB' ) THEN
+   CALL SPINUP_MAX(IO%XSPINMAXW,IO%NNBYEARSPINW,IO%NNBYEARSOLD,IO%NSPINW)
 ENDIF
 !
-IF (KMONTH == 1 .AND. KDAY==1 .AND. PTIME == 0.0 )THEN
-   KNBYEARSOLD = KNBYEARSOLD + 1
+IF (TPTIME%TDATE%MONTH == 1 .AND. TPTIME%TDATE%DAY==1 .AND. TPTIME%TIME == 0.0 )THEN
+   IO%NNBYEARSOLD = IO%NNBYEARSOLD + 1
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('CARBON_SPINUP',1,ZHOOK_HANDLE)

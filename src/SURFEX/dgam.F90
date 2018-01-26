@@ -5,11 +5,11 @@
 !######################################################################
 !######################################################################
 !
-!       THIS ROUTINE COMPUTE THE INCOMPLETE AND THE COMPLEMENTARY
+! THIS ROUTINE COMPUTE THE INCOMPLETE AND THE COMPLEMENTARY
 ! INCOMPLETE GAMMA FUNCTION REAL*8 IN BRIEF, THIS
 ! FUNCTION HELP TO COMPUTE THE DIFFERENT FRACTION PRESENT IN THE
 ! TOPMODEL FRAMEWORK.
-!       MORE EXPLANATION ON THE SUBROUTINE USE ARE GIVEN IN THE NEXT
+! MORE EXPLANATION ON THE SUBROUTINE USE ARE GIVEN IN THE NEXT
 ! COMMENTARY
 !
 ! THIS ROUTINE WAS FOUND ON http://www.netlib.org WEB SITE.
@@ -29,17 +29,17 @@
 ! FUNCTION, WHICH FOR A.GT.0. IS DEFINED BY
 !
 !  GAMSTAR(A,X)=(X**(-A)/GAMMA(A))*INTEGRAL FROM T=0 TO T=X OF
-!                EXP(-T)*T**(A-1),
+!    EXP(-T)*T**(A-1),
 !
 ! AND FOR A.LE.0. BY ANALYTIC CONTINUATION. FOR THE PURPOSE OF
 ! THIS SUBROUTINE, THESE FUNCTIONS ARE NORMALIZED AS FOLLOWS&
 !
-!             GAM(A,X)/GAMMA(A),  IF A.GT.0.,
+! GAM(A,X)/GAMMA(A),  IF A.GT.0.,
 !     G(A,X)=
-!             EXP(X)*X**(-A)*GAM(A,X),  IF A.LE.0.,
+! EXP(X)*X**(-A)*GAM(A,X),  IF A.LE.0.,
 !
 !     GSTAR(A,X)=(X**A)*GAMSTAR(A,X)
-!               =(1/GAMMA(A))*INTEGRAL FROM T=0 TO T=X OF EXP(-T)*T**(A-1)
+!   =(1/GAMMA(A))*INTEGRAL FROM T=0 TO T=X OF EXP(-T)*T**(A-1)
 !
 ! THE PROGRAM BELOW ATTEMPTS TO EVALUATE  G(A,X)  AND  GSTAR(A,X),
 ! BOTH TO AN ACCURACY OF ACC SIGNIFICANT DECIMAL DIGITS, FOR ARBI-
@@ -60,38 +60,38 @@
 !
 !     PARAMETER LIST&
 !
-!        A - - THE FIRST ARGUMENT OF G AND GSTAR. TYPE REAL.
-!        X - - THE SECOND ARGUMENT OF G AND GSTAR. TYPE REAL.
-!      ACC - - THE NUMBER OF CORRECT SIGNIFICANT DECIMAL DIGITS
-!              DESIRED IN THE RESULTS. TYPE REAL.
-!        G - - AN OUTPUT VARIABLE RETURNING THE VALUE OF G(A,X).
-!              TYPE REAL.
+!  A - - THE FIRST ARGUMENT OF G AND GSTAR. TYPE REAL.
+!  X - - THE SECOND ARGUMENT OF G AND GSTAR. TYPE REAL.
+!ACC - - THE NUMBER OF CORRECT SIGNIFICANT DECIMAL DIGITS
+!  DESIRED IN THE RESULTS. TYPE REAL.
+!  G - - AN OUTPUT VARIABLE RETURNING THE VALUE OF G(A,X).
+!  TYPE REAL.
 !    GSTAR - - AN OUTPUT VARIABLE RETURNING THE VALUE OF
-!              GSTAR(A,X). TYPE REAL.
+!  GSTAR(A,X). TYPE REAL.
 !     IFLG - - AN ERROR FLAG INDICATING A NUMBER OF ERROR CONDI-
-!              TIONS IN G UPON EXECUTION. TYPE INTEGER.
+!  TIONS IN G UPON EXECUTION. TYPE INTEGER.
 !   IFLGST - - AN ERROR FLAG INDICATING A NUMBER OF ERROR CONDI-
-!              TIONS IN GSTAR UPON EXECUTION. TYPE INTEGER.
-!              THE VALUES OF IFLG AND IFLGST HAVE THE FOLLOWING
-!              MEANINGS&
-!              0 - NO ERROR CONDITION.
-!              1 - ILLEGAL NEGATIVE ARGUMENT X. THE ROUTINE EXITS
-!                  WITH THE VALUES ZERO FOR G AND GSTAR.
-!              2 - INFINITELY LARGE RESULT AT X=0. THE ROUTINE
-!                  RETURNS THE LARGEST MACHINE-REPRESENTABLE NUMBER.
-!              3 - (ONLY FOR IFLGST) GSTAR IS INDETERMINATE AT
-!                  A=0. AND X=0. THE ROUTINE RETURNS THE VALUE 1.,
-!                  WHICH IS THE LIMIT VALUE AS X TENDS TO ZERO FOR
-!                  FIXED A=0.
-!              4 - THE RESULT UNDERFLOWS. IT IS SET EQUAL TO 0.
-!              5 - THE RESULT OVERFLOWS. IT IS SET EQUAL TO THE
-!                  LARGEST MACHINE-REPRESENTABLE NUMBER, WITH
-!                  PROPER SIGN.
-!              6 - CONVERGENCE FAILS WITHIN 600 ITERATIONS, EITHER
-!                  IN TAYLOR:S SERIES OR IN LEGENDRE:S CONTINUED
-!                  FRACTION. REASON UNKNOWN. THE COMPUTATION IS
-!                  ABORTED AND THE ROUTINE RETURNS WITH ZERO
-!                  VALUES FOR G AND GSTAR.
+!  TIONS IN GSTAR UPON EXECUTION. TYPE INTEGER.
+!  THE VALUES OF IFLG AND IFLGST HAVE THE FOLLOWING
+!  MEANINGS&
+!  0 - NO ERROR CONDITION.
+!  1 - ILLEGAL NEGATIVE ARGUMENT X. THE ROUTINE EXITS
+!WITH THE VALUES ZERO FOR G AND GSTAR.
+!  2 - INFINITELY LARGE RESULT AT X=0. THE ROUTINE
+!RETURNS THE LARGEST MACHINE-REPRESENTABLE NUMBER.
+!  3 - (ONLY FOR IFLGST) GSTAR IS INDETERMINATE AT
+!A=0. AND X=0. THE ROUTINE RETURNS THE VALUE 1.,
+!WHICH IS THE LIMIT VALUE AS X TENDS TO ZERO FOR
+!FIXED A=0.
+!  4 - THE RESULT UNDERFLOWS. IT IS SET EQUAL TO 0.
+!  5 - THE RESULT OVERFLOWS. IT IS SET EQUAL TO THE
+!LARGEST MACHINE-REPRESENTABLE NUMBER, WITH
+!PROPER SIGN.
+!  6 - CONVERGENCE FAILS WITHIN 600 ITERATIONS, EITHER
+!IN TAYLOR:S SERIES OR IN LEGENDRE:S CONTINUED
+!FRACTION. REASON UNKNOWN. THE COMPUTATION IS
+!ABORTED AND THE ROUTINE RETURNS WITH ZERO
+!VALUES FOR G AND GSTAR.
 !
 !     ALL MACHINE-DEPENDENT PARAMETERS ARE COLLECTED IN THE FIRST
 ! DATA DECLARATION. THEY ARE AS FOLLOWS&
@@ -124,331 +124,661 @@
 !----------------------------------------------------
 !!    MODIFICATIONS
 !!    -------------
-!!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!J.Escobar10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
 !----------------------------------------------------
 !################################################################
 !
-      SUBROUTINE DGAM(A, X, ACC, G, GSTAR, IFLG, IFLGST)
+SUBROUTINE DGAM(PA, PX, PACC, PG, PGSTAR, KFLG, KFLGST)
 !
 !################################################################
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE PARKIND1  ,ONLY : JPRB
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
 
-      IMPLICIT NONE
+IMPLICIT NONE
 
-      REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL, INTENT(IN) :: PA, PX, PACC
+REAL, INTENT(OUT) :: PG, PGSTAR
+INTEGER, INTENT(OUT) :: KFLG, KFLGST
+!
+REAL, PARAMETER :: XALPREC=DIGITS(1.)*LOG(2.), &
+        XTOP=LOG10(HUGE(1.)), XBOT=LOG10(TINY(1.))
+!
+REAL :: ZALX, ZALPHA
+REAL :: ZAINF, ZEPS, ZEPS1, ZES, ZSGA
+REAL :: ZAE, ZAA, ZAP1, ZAM1, ZAEP1
+REAL :: ZAEM1, ZFMA, ZAEPS, ZSGAE, ZAAEPS, ZALGP1
+REAL :: ZSGGA, ZALGEP1, ZSGGS, ZALGS
+REAL :: ZALG, ZSUMM, ZGA, ZY, ZTERM, ZU, ZP, ZQ, ZR, ZV, ZT, ZH
+REAL :: ZSGT, ZA1X, ZRHO, ZXPA
+REAL :: ZXMA, ZS, ZTEMP
+!
+INTEGER :: JI, JK, JK1, JMA
+LOGICAL :: GRET
+!
+!RJ REAL,SAVE::AL10=2.3025850929940456840179914547
+REAL,DIMENSION(29),PARAMETER :: XC=(/ &
+        0.57721566490153286060651209008, &
+       -.65587807152025388107701951515, &
+      -4.200263503409523552900393488e-2,  &
+        0.1665386113822914895017007951,  &
+      -4.21977345555443367482083013e-2,   &
+      -9.6219715278769735621149217e-3,    &
+       7.2189432466630995423950103e-3,    &
+      -1.165167591859065112113971e-3,     &
+      -2.15241674114950972815730e-4,&
+       1.2805028238811618615320e-4, &
+      -2.013485478078823865569e-5,  &
+      -1.2504934821426706573e-6,    &
+       1.1330272319816958824e-6,    &
+      -2.056338416977607103e-7,     &
+       6.1160951044814158e-9, &
+       5.0020076444692229e-9, &
+      -1.181274570487020e-9,  &
+       1.04342671169110e-10,  &
+       7.782263439905e-12,    &
+      -3.696805618642e-12,    &
+       5.1003702875e-13,&
+      -2.058326054e-14, &
+      -5.34812254e-15,  &
+       1.2267786e-15,   &
+      -1.181259e-16,    &
+       1.187e-18, &
+       1.412e-18, &
+      -2.30e-19,  &
+       1.7e-20/)
 
-      INTEGER,PARAMETER :: JDBL=8
-      REAL :: A, X, ACC, G, GSTAR
-      INTEGER :: IFLG, IFLGST, I, K, K1, MA
-
-      REAL(KIND=JDBL) :: ALX, ALPHA, ALPREC
-      REAL(KIND=JDBL) :: TOP, BOT, AINF, EPS, EPS1, ES, SGA
-      REAL(KIND=JDBL) :: AE, AA, AP1, AM1, AEP1
-      REAL(KIND=JDBL) :: AEM1, FMA, AEPS, SGAE, AAEPS, ALGP1
-      REAL(KIND=JDBL) :: SGGA, ALGEP1, SGGS, ALGS
-      REAL(KIND=JDBL) :: ALG, SUMM, GA, Y, TERM, U, P, Q, R, V, T, H
-      REAL(KIND=JDBL) :: SGT, A1X, RHO, XPA
-      REAL(KIND=JDBL) :: XMA, S, TEMP
-
-!RJ       REAL(KIND=JDBL),SAVE::AL10=2.3025850929940456840179914547e0_JDBL
-      REAL(KIND=JDBL),DIMENSION(29),PARAMETER :: C=(/                   &
-     &   .57721566490153286060651209008e0_JDBL,                         &
-     &  -.65587807152025388107701951515e0_JDBL,                         &
-     & -4.200263503409523552900393488e-2_JDBL,                          &
-     &   .1665386113822914895017007951e0_JDBL,                          &
-     & -4.21977345555443367482083013e-2_JDBL,                           &
-     & -9.6219715278769735621149217e-3_JDBL,                            &
-     &  7.2189432466630995423950103e-3_JDBL,                            &
-     & -1.165167591859065112113971e-3_JDBL,                             &
-     & -2.15241674114950972815730e-4_JDBL,                              &
-     &  1.2805028238811618615320e-4_JDBL,                               &
-     & -2.013485478078823865569e-5_JDBL,                                &
-     & -1.2504934821426706573e-6_JDBL,                                  &
-     &  1.1330272319816958824e-6_JDBL,                                  &
-     & -2.056338416977607103e-7_JDBL,                                   &
-     &  6.1160951044814158e-9_JDBL,                                     &
-     &  5.0020076444692229e-9_JDBL,                                     &
-     & -1.181274570487020e-9_JDBL,                                      &
-     &  1.04342671169110e-10_JDBL,                                      &
-     &  7.782263439905e-12_JDBL,                                        &
-     & -3.696805618642e-12_JDBL,                                        &
-     &  5.1003702875e-13_JDBL,                                          &
-     & -2.058326054e-14_JDBL,                                           &
-     & -5.34812254e-15_JDBL,                                            &
-     &  1.2267786e-15_JDBL,                                             &
-     & -1.181259e-16_JDBL,                                              &
-     &  1.187e-18_JDBL,                                                 &
-     &  1.412e-18_JDBL,                                                 &
-     & -2.30e-19_JDBL,                                                  &
-     &  1.7e-20_JDBL/)
-
-      IF (LHOOK) CALL DR_HOOK('DGAM',0,ZHOOK_HANDLE)
-
-      G = 0.e0_JDBL
-      GSTAR = 0.e0_JDBL
-      IF (X<0.e0_JDBL) GO TO 290
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!
+IF (LHOOK) CALL DR_HOOK('DGAM',0,ZHOOK_HANDLE)
+!
+PG     = 0.0
+PGSTAR = 0.0
+!
+KFLG   = 0
+KFLGST = 0
+!
+IF ( PX<0. ) THEN
+  ! 290 deb
+  KFLG = 1
+  KFLGST = 1
+  IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+  RETURN
+  ! 290 end
+ENDIF
 !
 ! INITIALIZATION
 !
-      IFLG = 0
-      IFLGST = 0
-      I = 0
-      IF (X>0.e0_JDBL) ALX = LOG(X*1.e0_JDBL)
-      ALPHA = X + .25e0_JDBL
-      IF (X<0.25e0_JDBL .AND. X>0.e0_JDBL) ALPHA = LOG(0.5e0_JDBL)/ALX
-      ALPREC = DIGITS(1.e0_JDBL)*LOG(2.e0_JDBL)
-      TOP    = LOG10(HUGE(1.e0_JDBL))
-      BOT    = LOG10(TINY(1.e0_JDBL))
-      AINF   = HUGE(1.e0_JDBL)
-      EPS = 0.5e0_JDBL*10.e0_JDBL**(-ACC)
-      EPS1 = EPS/1.e2_JDBL
-      SGA = 1.e0_JDBL
-      IF (A<0.e0_JDBL) SGA = -SGA
-      AE = A
-      AA = ABS(A*1.e0_JDBL)
-      AP1 = A + 1.e0_JDBL
-      AEP1 = AP1
-      MA = INT(0.5e0_JDBL-A)
-      FMA = MA
-      AEPS = A + FMA
-      SGAE = 1.e0_JDBL
-      IF (AEPS<0.e0_JDBL) SGAE = -SGAE
-      AAEPS = ABS(AEPS)
-      ALGP1 = 0.e0_JDBL
+ZAINF   = HUGE(1.)
+ZAA = ABS(PA)
+!
+IF ( PX==0. ) THEN
+  !
+  ! EVALUATION OF GSTAR(A,0.) AND G(A,0.)
+  !
+  IF (PA<0.) THEN
+    KFLGST = 2
+    PGSTAR = ZAINF
+    PG     = 1./ZAA
+  ELSEIF (PA==0.) THEN
+    KFLGST = 3
+    KFLG   = 2    
+    PGSTAR = 1.
+    PG     = ZAINF
+  ELSEIF (PA>0.) THEN
+    PG = 1.
+  ENDIF
+  !
+  IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+  RETURN
+  !
+ENDIF
+!
+! PX > 0.
+!
+! INITIALIZATION
+!
+JI = 0
+!
+ZEPS = 0.5*10.**(-PACC)
+ZEPS1 = ZEPS/100.
+!
+ZALX = LOG(PX)
+!
+ZALPHA = PX + 0.25
+IF ( PX<0.25 ) ZALPHA = LOG(0.5)/ZALX
+!
+ZSGA = 1.
+IF ( PA<0. ) ZSGA = -ZSGA
+!
+ZAE   = PA
+ZAP1  = PA + 1.
+ZAEP1 = ZAP1
+!
+JMA    = INT(0.5-PA)
+ZFMA   = FLOAT(JMA)
+ZAEPS  = PA + ZFMA
+ZAAEPS = ABS(ZAEPS)
+!
+ZSGAE = 1.
+IF (ZAEPS<0.) ZSGAE = -ZSGAE
 !
 ! EVALUATION OF THE LOGARITHM OF THE ABSOLUTE VALUE OF
 ! GAMMA(A+1.) AND DETERMINATION OF THE SIGN OF GAMMA(A+1.)
 !
-      SGGA = 1.e0_JDBL
-      IF (MA<=0) GO TO 10
-      IF (AEPS==0.e0_JDBL) GO TO 20
-      SGGA = SGAE
-      IF (MA==2*(MA/2)) SGGA = -SGGA
-      ALGP1 = DLGA(AEPS+1.e0_JDBL) - LOG(AAEPS)
-      IF (MA==1) GO TO 20
-      ALGP1 = ALGP1 + DLGA(1.e0_JDBL-AEPS) - DLGA(FMA-AEPS)
-      GO TO 20
-   10 ALGP1 = DLGA(AP1)
-   20 ALGEP1 = ALGP1
-      IF (X>0.e0_JDBL) GO TO 60
+ZALGP1 = 0.
+ZSGGA  = 1.
 !
-! EVALUATION OF GSTAR(A,0.) AND G(A,0.)
+IF (JMA>0 .AND. ZAEPS/=0.) THEN
+
+  ZSGGA = ZSGAE
+  IF ( JMA==2*(JMA/2) ) ZSGGA = -ZSGGA
+  ZALGP1 = DLGA(ZAEPS+1.) - LOG(ZAAEPS)
+
+  IF (JMA/=1) THEN
+    ZALGP1 = ZALGP1 + DLGA(1.-ZAEPS) - DLGA(ZFMA-ZAEPS)
+  ENDIF
+ 
+ELSEIF ( JMA<=0 ) THEN
+  !10 deb
+  ZALGP1 = DLGA(ZAP1)
+  ! 10 end
+ENDIF
 !
-      IF (A) 30, 40, 50
-   30 IFLGST = 2
-      GSTAR = AINF
-      G = 1.e0_JDBL/AA
+! 20 deb
+ZALGEP1 = ZALGP1
+!
+!Map: 
+! PA<=ZALPHA
+!   !
+!   PX>1.5 
+!     PA <0., ==0., >0. 
+!     RETURN
+!     !
+!   PA<-0.5
+!     PX<0.25 .AND. ZAE>ZALPHA
+!   ELSE
+!   !
+!   PA <0.5
+!   ELSE
+!   !
+!   CODE120
+!   PA <0., ==0., >0.
+!   RETURN
+!   !
+! PA>ZALPHA
+!
+! 60 deb
+IF ( PA<=ZALPHA ) THEN
+  !
+  IF ( PX>1.5 ) THEN 
+    !
+    ! EVALUATION OF G(A,X) FOR X.GT.1.5 AND A.LE.ALPHA(X) BY
+    ! MEANS OF THE LEGENDRE CONTINUED FRACTION      
+    !
+    !240 deb
+    PGSTAR = 1.
+    ZXPA = PX + 1. - PA
+    ZXMA = PX - 1. - PA
+    ZP = 0.
+    ZQ = ZXPA*ZXMA
+    ZR = 4.*ZXPA
+    ZS = -PA + 1.
+    ZTERM = 1.
+    ZSUMM = 1.
+    ZRHO = 0.
+    !
+    DO JK = 1,600
+      !
+      ZP = ZP + ZS
+      ZQ = ZQ + ZR
+      ZR = ZR + 8.
+      ZS = ZS + 2.
+      ZT = ZP*(1.+ZRHO)
+      ZRHO = ZT/(ZQ-ZT)
+      ZTERM = ZRHO*ZTERM
+      ZSUMM = ZSUMM + ZTERM
+      !
+      IF ( ABS(ZTERM)<=ZEPS*ZSUMM ) EXIT
+      !
+      IF ( JK==600 ) THEN
+        ! 330 deb
+        KFLG = 6
+        IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+        RETURN
+        ! 330 end
+      ENDIF
+      !
+    ENDDO
+    !
+    IF ( PA<0. ) THEN
+      !
+      ! 260 deb
+      PG = ZSUMM/ZXPA
+      ZALG = LOG (PG)
+      ! 260 end
+      !
+      ! EVALUATION OF GSTAR(A,X) IN TERMS OF G(A,X)
+      !  200 deb (200 est la fin de 180)
+      CALL CODE200(JMA, PX, PA, ZAEPS, ZSGA, ZSGGA, ZAA, ZALX, &
+                   ZALG, ZALGP1, ZAINF, PGSTAR, KFLGST, GRET)
+      !  
+      IF ( GRET ) THEN
+        IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+        RETURN
+      ENDIF
+      !      
+    ELSEIF ( PA==0. ) THEN
+      !
+      ! 270 deb
+      PG = ZSUMM/ZXPA
+      ! 270 end
+      !
+    ELSEIF ( PA>0. ) THEN
+      !
+      ! 280 deb
+      ZALG = PA*ZALX - PX + LOG(PA*ZSUMM/ZXPA) - ZALGP1
+      !
+      IF ( ZALG<=XBOT ) THEN
+        ! 300 deb
+        KFLG = 4
+        IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+        RETURN
+        ! 300 end
+      ENDIF
+      !
+      PG = EXP(ZALG)
+      PGSTAR = 1. - PG
+      ! 280 end
+      ! 
+    ENDIF 
+    !
+    IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+    RETURN    
+    !
+  ENDIF ! end  PX>1.5 
+  !
+  !
+  IF ( PA<-0.5 ) THEN
+    !
+    ! RECURSIVE EVALUATION OF G(A,X) FOR X.LE.1.5 AND A.LT.-.5
+    !
+    ! 170 deb
+    JI = 1
+    ZAE = ZAEPS
+    ZAEP1 = ZAEPS + 1.
+    ! 170 end
+    !
+    IF ( PX<0.25 .AND. ZAE>ZALPHA ) THEN
+      !
+      ! 210 deb
+      JI = 2
+      ZALGEP1 = DLGA(ZAEP1)
+      !
+      ! EVALUATION OF GSTAR(A,X) FOR A.GT.ALPHA(X) BY TAYLOR
+      ! EXPANSION
+      !
+      CALL CODE220(PX,ZAE,ZALX,ZALGEP1,ZEPS,PG,PGSTAR,KFLGST,GRET)
+      !
+      IF ( GRET ) THEN
+        IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+        RETURN
+      ENDIF
+      !
+      PG = PG*EXP(ZALGEP1)/ZAE
+      ! 210 end (220 230)
+      !
+      ! 180 deb
+      CALL CODE180(JMA, PX, PA, ZAE, ZAEPS, ZSGA, ZSGGA, ZAA, ZALX, &
+                   ZALGP1, ZAINF, PG, PGSTAR, KFLGST, GRET)
+      !
+      IF ( GRET ) THEN
+        IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+        RETURN
+      ENDIF
+      !
+    ENDIF ! PX<0.25 .AND. ZAE>ZALPHA
+    !
+  ELSE ! end PA < -0.5
+    !
+    ! DIRECT EVALUATION OF G(A,X) AND GSTAR(A,X) FOR X.LE.1.5
+    ! AND -.5.LE.A.LE.ALPHA(X)
+    !
+    PGSTAR = 1.
+    !
+  ENDIF
+  !
+  IF ( PA<0.5 ) THEN 
+    !
+    ! 70 deb
+    ZSUMM = XC(29)
+    !
+    DO JK = 1,28
+      JK1 = 29 - JK
+      ZSUMM = ZAE*ZSUMM + XC(JK1)
+    ENDDO
+    !
+    ZGA = -ZSUMM / (1.+ZAE*ZSUMM)
+    ZY  = ZAE*ZALX
+    !
+    IF ( ABS(ZY)<1. ) THEN
+      !
+      ZSUMM = 1.
+      ZTERM = 1.
+      !
+      DO JK = 1,600
+        !
+        ZTERM = ZY * ZTERM / JK
+        ZSUMM = ZSUMM + ZTERM
+        !
+        IF ( ABS(ZTERM)<=ZEPS1*ZSUMM ) EXIT
+        !
+        IF ( JK==600) THEN
+          KFLG = 6
+          IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+          RETURN
+        ENDIF
+        !
+      ENDDO
+      !
+      ZU = ZGA - ZSUMM*ZALX
+      ! 70 end
+      !
+    ELSE
+      !
+      ! 100 deb
+      ZU = ZGA - (EXP(ZY)-1.)/ZAE
+      ! 100 end
+      !
+    ENDIF
+    !
+  ELSE
+    !
+    ! 110 deb
+    ZTEMP = DLGA(PA*1.)
+    ZU = DEXP(ZTEMP) - (PX**PA)/PA
+    ! 110 end
+    !
+  ENDIF
+  !
+  ! 120 deb
+  ZP = ZAE*PX
+  ZQ = ZAEP1
+  ZR = ZAE + 3.
+  ZTERM = 1.
+  ZSUMM = 1.
+  !
+  DO JK = 1,600
+    !
+    ZP = ZP + PX
+    ZQ = ZQ + ZR
+    ZR = ZR + 2.
+    ZTERM = -ZP * ZTERM / ZQ
+    ZSUMM = ZSUMM + ZTERM
+    !
+    IF ( ABS(ZTERM)<=ZEPS1*ZSUMM ) EXIT
+    !
+    IF ( JK==600) THEN
+      KFLG = 6
       IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
       RETURN
-   40 IFLGST = 3
-      GSTAR = 1.e0_JDBL
-      IFLG = 2
-      G = AINF
+      !
+    ENDIF
+    !
+  ENDDO
+  !
+  ZV = (PX**ZAEP1) * ZSUMM / ZAEP1
+  PG = ZU + ZV
+  !
+  IF (JI==1) THEN
+    !
+    ! 180 deb
+    CALL CODE180(JMA, PX, PA, ZAE, ZAEPS, ZSGA, ZSGGA, ZAA, ZALX, &
+                 ZALGP1, ZAINF, PG, PGSTAR, KFLGST, GRET)
+    !
+    IF ( GRET ) THEN
       IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
       RETURN
-   50 G = 1.e0_JDBL
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-   60 IF (A>ALPHA) GO TO 220
-      IF (X>1.5e0_JDBL) GO TO 240
-      IF (A<-.5e0_JDBL) GO TO 170
-!
-! DIRECT EVALUATION OF G(A,X) AND GSTAR(A,X) FOR X.LE.1.5
-! AND -.5.LE.A.LE.ALPHA(X)
-!
-      GSTAR = 1.e0_JDBL
-      IF (A>=0.5e0_JDBL) GO TO 110
-   70 SUMM = C(29)
-      DO 80 K=1,28
-        K1 = 29 - K
-        SUMM = AE*SUMM + C(K1)
-   80 CONTINUE
-      GA = -SUMM/(1.e0_JDBL+AE*SUMM)
-      Y = AE*ALX
-      IF (ABS(Y)>=1.e0_JDBL) GO TO 100
-      SUMM = 1.e0_JDBL
-      TERM = 1.e0_JDBL
-      K = 1
-   90 K = K + 1
-      IF (K>600) GO TO 330
-      TERM = Y*TERM/K
-      SUMM = SUMM + TERM
-      IF (ABS(TERM)>EPS1*SUMM) GO TO 90
-      U = GA - SUMM*ALX
-      GO TO 120
-  100 U = GA - (EXP(Y)-1.e0_JDBL)/AE
-      GO TO 120
-  110 TEMP=DLGA(A*1.e0_JDBL)
-      U = DEXP(TEMP) - (X**A)/A
-  120 P = AE*X
-      Q = AEP1
-      R = AE + 3.e0_JDBL
-      TERM = 1.e0_JDBL
-      SUMM = 1.e0_JDBL
-      K = 1
-  130 K = K + 1
-      IF (K>600) GO TO 330
-      P = P + X
-      Q = Q + R
-      R = R + 2.e0_JDBL
-      TERM = -P*TERM/Q
-      SUMM = SUMM + TERM
-      IF (ABS(TERM)>EPS1*SUMM) GO TO 130
-      V = (X**AEP1)*SUMM/AEP1
-      G = U + V
-      IF (I==1) GO TO 180
-      IF (A) 140, 150, 160
-  140 T = EXP(X*1.e0_JDBL)*X**(-A)
-      G = T*G
-      GSTAR = 1.e0_JDBL - A*G*DEXP(-ALGP1)/T
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  150 G = EXP(X*1.e0_JDBL)*G
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  160 G = A*G*EXP(-ALGP1)
-      GSTAR = 1.e0_JDBL - G
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-!
-! RECURSIVE EVALUATION OF G(A,X) FOR X.LE.1.5 AND A.LT.-.5
-!
-  170 I = 1
-      AE = AEPS
-      AEP1 = AEPS + 1.e0_JDBL
-      IF (X<0.25e0_JDBL .AND. AE>ALPHA) GO TO 210
-      GO TO 70
-  180 G = G*EXP(X*1.e0_JDBL)*X**(-AE)
-      DO 190 K=1,MA
-        G = (1.e0_JDBL-X*G)/(K-AE)
-  190 CONTINUE
-      ALG = LOG(G*1.e0_JDBL)
-!
-! EVALUATION OF GSTAR(A,X) IN TERMS OF G(A,X)
-!
-  200 GSTAR = 1.e0_JDBL
-      IF (MA>=0 .AND. AEPS==0.e0_JDBL .AND. LHOOK)                       &
-     &      CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      IF (MA>=0 .AND. AEPS==0.0_JDBL) RETURN
-      SGT = SGA*SGGA
-      T = LOG(AA) - X + A*ALX + ALG - ALGP1
-      IF (T<-ALPREC .AND. LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      IF (T<-ALPREC) RETURN
-      IF (T>=TOP) GO TO 320
-      GSTAR = 1.e0_JDBL - SGT*EXP(T)
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  210 I = 2
-      ALGEP1 = DLGA(AEP1)
+    ENDIF
+    !
+  ENDIF
+  !
+  IF (PA<0.) THEN
+    !
+    ZT = EXP(PX) * PX**(-PA)
+    PG = ZT * PG
+    PGSTAR = 1. - PA * PG * DEXP(-ZALGP1) / ZT
+    !
+  ELSEIF (PA==0.) THEN
+    !
+    PG = EXP(PX)*PG
+    !
+  ELSEIF (PA>0.) THEN
+    !
+    PG = PA*PG*EXP(-ZALGP1)
+    PGSTAR = 1. - PG
+    !
+  ENDIF
+  !
+  IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+  RETURN  
+  ! 120 end
+  !
+ENDIF
 !
 ! EVALUATION OF GSTAR(A,X) FOR A.GT.ALPHA(X) BY TAYLOR
 ! EXPANSION
 !
-  220 G = 1.e0_JDBL
-      TERM = 1.e0_JDBL
-      SUMM = 1.e0_JDBL
-      K = 0
-  230 K = K + 1
-      IF (K>600) GO TO 340
-      TERM = X*TERM/(AE+K)
-      SUMM = SUMM + TERM
-      IF (ABS(TERM)>EPS*SUMM) GO TO 230
-      ALGS = AE*ALX - X + LOG(SUMM) - ALGEP1
-      IF (ALGS<=BOT) GO TO 310
-      GSTAR = EXP(ALGS)
-      G = 1.e0_JDBL - GSTAR
-      IF (I/=2 .AND. LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      IF (I/=2) RETURN
-      G = G*EXP(ALGEP1)/AE
-      GO TO 180
+! PA > ZALPHA : 220 deb
+  CALL CODE220(PX,ZAE,ZALX,ZALGEP1,ZEPS,PG,PGSTAR,KFLGST,GRET)
 !
-! EVALUATION OF G(A,X) FOR X.GT.1.5 AND A.LE.ALPHA(X) BY
-! MEANS OF THE LEGENDRE CONTINUED FRACTION
+IF ( GRET .OR. JI/=2) THEN
+  IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
+  RETURN
+ENDIF
 !
-  240 GSTAR = 1.e0_JDBL
-      XPA = X + 1.e0_JDBL - A
-      XMA = X - 1.e0_JDBL - A
-      P = 0.e0_JDBL
-      Q = XPA*XMA
-      R = 4.e0_JDBL*XPA
-      S = -A + 1.e0_JDBL
-      TERM = 1.e0_JDBL
-      SUMM = 1.e0_JDBL
-      RHO = 0.e0_JDBL
-      K = 1
-  250 K = K + 1
-      IF (K>600) GO TO 330
-      P = P + S
-      Q = Q + R
-      R = R + 8.e0_JDBL
-      S = S + 2.e0_JDBL
-      T = P*(1.e0_JDBL+RHO)
-      RHO = T/(Q-T)
-      TERM = RHO*TERM
-      SUMM = SUMM + TERM
-      IF (ABS(TERM)>EPS*SUMM) GO TO 250
-      IF (A) 260, 270, 280
-  260 G = SUMM/XPA
-      ALG = LOG(G*1.e0_JDBL)
-      GO TO 200
-  270 G = SUMM/XPA
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  280 ALG = A*ALX - X + LOG(A*SUMM/XPA) - ALGP1
-      IF (ALG<=BOT) GO TO 300
-      G = EXP(ALG)
-      GSTAR = 1.e0_JDBL - G
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  290 IFLG = 1
-      IFLGST = 1
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  300 IFLG = 4
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  310 IFLGST = 4
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  320 IFLGST = 5
-      GSTAR = -SGT*AINF
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  330 IFLG = 6
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
-  340 IFLGST = 6
-      IF (LHOOK) CALL DR_HOOK('DGAM',1,ZHOOK_HANDLE)
-      RETURN
+PG = PG*EXP(ZALGEP1)/ZAE
+! 220 230 end
+!
+! 180 deb
+! 180 deb
+ CALL CODE180(JMA, PX, PA, ZAE, ZAEPS, ZSGA, ZSGGA, ZAA, ZALX, &
+              ZALGP1, ZAINF, PG, PGSTAR, KFLGST, GRET)
+!
+CONTAINS
+!
+!
+SUBROUTINE CODE220(PX,PAE,PALX,PALGEP1,PEPS,PG,PGSTAR,KFLGST,ORET)
+!
+IMPLICIT NONE
+!
+REAL, INTENT(IN) :: PX
+REAL, INTENT(IN) :: PAE
+REAL, INTENT(IN) :: PALX
+REAL, INTENT(IN) :: PALGEP1
+REAL, INTENT(IN) :: PEPS
+REAL, INTENT(OUT) :: PG
+REAL, INTENT(INOUT) :: PGSTAR
+INTEGER, INTENT(INOUT) :: KFLGST
+LOGICAL, INTENT(OUT) :: ORET
+!
+REAL :: ZTERM, ZSUMM, ZALGS
+INTEGER :: JK
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE220',0,ZHOOK_HANDLE)
+!
+! 220 deb
+PG = 1.
+ZTERM = 1.
+ZSUMM = 1.
+!
+DO JK = 1,600
+  !
+  ZTERM = PX*ZTERM/(PAE+JK)
+  ZSUMM = ZSUMM + ZTERM
+  IF (ABS(ZTERM)<=PEPS*ZSUMM) EXIT
+  !
+  IF ( JK==600 ) THEN
+    KFLGST = 6
+    IF (LHOOK) CALL DR_HOOK('DGAM:CODE220',1,ZHOOK_HANDLE)
+    RETURN
+  ENDIF
+  !
+ENDDO
+!
+ZALGS = PAE*PALX - PX + LOG(ZSUMM) - PALGEP1
+!
+IF ( ZALGS<=XBOT ) THEN
+  KFLGST = 4
+  IF (LHOOK) CALL DR_HOOK('DGAM:CODE220',1,ZHOOK_HANDLE)
+  RETURN
+ENDIF
+!
+PGSTAR = EXP(ZALGS)
+PG = 1. - PGSTAR
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE220',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE CODE220
+!
+!
+SUBROUTINE CODE200(KMA, PX, PA, PAEPS, PSGA, PSGGA, PAA, PALX, &
+                   PALG, PALGP1, PAINF, PGSTAR, KFLGST, ORET)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN) :: KMA
+REAL, INTENT(IN) :: PX
+REAL, INTENT(IN) :: PA
+REAL, INTENT(IN) :: PAEPS
+REAL, INTENT(IN) :: PSGA
+REAL, INTENT(IN) :: PSGGA
+REAL, INTENT(IN) :: PAA
+REAL, INTENT(IN) :: PALX
+REAL, INTENT(IN) :: PALG
+REAL, INTENT(IN) :: PALGP1
+REAL, INTENT(IN) :: PAINF
+REAL, INTENT(OUT) :: PGSTAR
+INTEGER, INTENT(INOUT) :: KFLGST
+LOGICAL, INTENT(OUT) :: ORET
+!
+REAL :: ZSGT, ZT
+INTEGER :: JK
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE200',0,ZHOOK_HANDLE)
+!
+ORET = .FALSE.
+!
+! EVALUATION OF GSTAR(A,X) IN TERMS OF G(A,X)
+!
+PGSTAR = 1.
+!
+IF ( KMA>=0 .AND. PAEPS==0. ) THEN
+  ORET = .TRUE.        
+  IF ( LHOOK ) CALL DR_HOOK('DGAM:CODE200',1,ZHOOK_HANDLE)
+  RETURN
+ENDIF
+!
+ZSGT = PSGA*PSGGA
+ZT = LOG(PAA) - PX + PA*PALX + PALG - PALGP1
+!
+IF ( ZT<-XALPREC .OR. ZT>=XTOP ) THEN
+  !
+  IF ( ZT>=XTOP ) THEN
+    KFLGST = 5
+    PGSTAR = -ZSGT*PAINF
+  ENDIF
+  !
+  ORET = .TRUE.        
+  IF ( LHOOK ) CALL DR_HOOK('DGAM:CODE200',1,ZHOOK_HANDLE)
+  RETURN
+  !
+ENDIF
+!
+PGSTAR = 1. - ZSGT*EXP(ZT)
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE200',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE CODE200
+!
+!
+SUBROUTINE CODE180(KMA, PX, PA, PAE, PAEPS, PSGA, PSGGA, PAA, PALX, &
+                   PALGP1, PAINF, PG, PGSTAR, KFLGST, ORET)
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN) :: KMA
+REAL, INTENT(IN) :: PX
+REAL, INTENT(IN) :: PA
+REAL, INTENT(IN) :: PAE
+REAL, INTENT(IN) :: PAEPS
+REAL, INTENT(IN) :: PSGA
+REAL, INTENT(IN) :: PSGGA
+REAL, INTENT(IN) :: PAA
+REAL, INTENT(IN) :: PALX
+REAL, INTENT(IN) :: PALGP1
+REAL, INTENT(IN) :: PAINF
+REAL, INTENT(INOUT) :: PG
+REAL, INTENT(OUT) :: PGSTAR
+INTEGER, INTENT(INOUT) :: KFLGST
+LOGICAL, INTENT(OUT) :: ORET
+!
+REAL :: ZALG
+INTEGER :: JK
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE180',0,ZHOOK_HANDLE)
+!
+PG = PG*EXP(PX)*PX**(-PAE)
+!
+DO JK = 1,KMA
+  PG = (1.-PX*PG)/(JK-PAE)
+ENDDO
+!
+ZALG = LOG(PG)
+!
+! EVALUATION OF GSTAR(A,X) IN TERMS OF G(A,X)
+!
+ CALL CODE200(KMA, PX, PA, PAEPS, PSGA, PSGGA, PAA, PALX, &
+              ZALG, PALGP1, PAINF, &
+              PGSTAR, KFLGST, ORET)
+!
+IF (LHOOK) CALL DR_HOOK('DGAM:CODE180',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE CODE180
+!
+!
+FUNCTION DLGA(PDX) RESULT(PDLGAR)
 
-      CONTAINS
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
 
-      FUNCTION DLGA(DX) RESULT(DLGAR)
+IMPLICIT NONE
 
-      USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
-      USE PARKIND1  ,ONLY : JPRB
+REAL :: PDLGAR
+!
+REAL, INTENT(IN) :: PDX
+!
+REAL :: ZDC, ZDP, ZDY, ZDT, ZDS
+!
+REAL,DIMENSION(8),PARAMETER :: &
+        XDBNUM=(/-3617., 1., -691., 1., -1., 1., -1., 1./)
+REAL,DIMENSION(8),PARAMETER :: &
+        XDBDEN=(/122400., 156., 360360., 1188., 1680., 1260., 360. , 12./)
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
-      IMPLICIT NONE
+IF (LHOOK) CALL DR_HOOK('DGAMM:DLGA',0,ZHOOK_HANDLE)
 
-      REAL(KIND=JPRB) :: ZHOOK_HANDLE
-
-      REAL(KIND=JDBL) :: DLGAR
-      REAL(KIND=JDBL) :: DX, DC, DP, DY, DT, DS
-      REAL(KIND=JDBL),DIMENSION(8),PARAMETER :: DBNUM=(/                &
-     & -3.617e3_JDBL,1.e0_JDBL,-6.91e2_JDBL,1.e0_JDBL,                  &
-     & -1.e0_JDBL,   1.e0_JDBL,-1.e0_JDBL,  1.e0_JDBL/)
-      REAL(KIND=JDBL),DIMENSION(8),PARAMETER :: DBDEN=(/                &
-     &  1.224e5_JDBL,1.56e2_JDBL,3.6036e5_JDBL,1.188e3_JDBL,            &
-     &  1.68e3_JDBL, 1.26e3_JDBL,3.6e2_JDBL,   1.2e1_JDBL/)
-
-      IF (LHOOK) CALL DR_HOOK('DLGA',0,ZHOOK_HANDLE)
-
-      DC = 0.5e0_JDBL*LOG(8.e0_JDBL*ATAN(1.e0_JDBL))
-      DP = 1.e0_JDBL
-      DY = DX
-      Y = DY
+ZDC = 0.5*LOG(8.*ATAN(1.))
+ZDP = 1.
+ZDY = PDX
+ZY  = ZDY
 !
 ! THE CONDITIONAL CLAUSE IN THE NEXT STATEMENT EXPRESSES THE
 ! INEQUALITY Y.GT.EXP(.121189*DPREC+.053905), WHERE DPREC IS THE
@@ -456,19 +786,23 @@
 ! ARITHMETIC.
 !
 !RJ-remark this magic number is for 53 significant bit prec only +/-!!!!
-   10 IF (Y>35.027_JDBL) GO TO 20
-      DP = DY*DP
-      DY = DY + 1.e0_JDBL
-      Y = DY
-      GO TO 10
-   20 DT = 1.e0_JDBL/(DY*DY)
-      DS = 4.3867e4_JDBL/2.44188e5_JDBL
-      DO 30 I=1,8
-        DS = DT*DS + DBNUM(I)/DBDEN(I)
-   30 CONTINUE
-      DLGAR = (DY-0.5e0_JDBL)*LOG(DY) - DY + DC + DS/DY - LOG(DP)
-      IF (LHOOK) CALL DR_HOOK('DLGA',1,ZHOOK_HANDLE)
-      RETURN
-      END FUNCTION DLGA
+DO WHILE ( ZY<=35.027 )
+  ZDP = ZDY*ZDP
+  ZDY = ZDY + 1.
+  ZY  = ZDY
+ENDDO
+!
+ZDT = 1./(ZDY*ZDY)
+ZDS = 43867./244188.
+!
+DO JI=1,8
+  ZDS = ZDT*ZDS + XDBNUM(JI)/XDBDEN(JI)
+ENDDO
+!
+PDLGAR = (ZDY-0.5)*LOG(ZDY) - ZDY + ZDC + ZDS/ZDY - LOG(ZDP)
+!
+IF (LHOOK) CALL DR_HOOK('DGAMM:DLGA',1,ZHOOK_HANDLE)
+!
+END FUNCTION DLGA
 
-      END SUBROUTINE DGAM
+END SUBROUTINE DGAM

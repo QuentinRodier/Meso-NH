@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-SUBROUTINE INIT_FLAKE_n ( DTCO, DGU, UG, U, FM,                 &
+SUBROUTINE INIT_FLAKE_n ( DTCO, OREAD_BUDGETC, UG, U, FM,            &
                           HPROGRAM,HINIT,                            &
                           KI,KSV,KSW,                                &
                           HSV,PCO2,PRHOA,                            &
@@ -51,9 +51,7 @@ SUBROUTINE INIT_FLAKE_n ( DTCO, DGU, UG, U, FM,                 &
 !
 USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t
 !
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
@@ -90,7 +88,7 @@ USE MODI_READ_NAM_PREP_FLAKE_n
 USE MODI_INIT_CHEMICAL_n
 USE MODI_PREP_CTRL_FLAKE
 USE MODI_UPDATE_RAD_FLAKE
-USE MODI_READ_FLAKE_SBL_n
+USE MODI_READ_SBL_n
 !
 USE MODI_SET_SURFEX_FILEIN
 !
@@ -108,7 +106,7 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(FLAKE_MODEL_t), INTENT(INOUT) :: FM
@@ -163,7 +161,7 @@ IF (HTEST/='OK') THEN
   CALL ABOR1_SFX('INIT_FLAKEN: FATAL ERROR DURING ARGUMENT TRANSFER')
 END IF
 !
-ALLOCATE(FM%DGMF%XZWAT_PROFILE(100))
+ALLOCATE(FM%DMF%XZWAT_PROFILE(100))
 !
 !         Others litlle things
 !
@@ -183,23 +181,21 @@ IF (LNAM_READ) THEN
  CALL DEFAULT_FLAKE(FM%F%XTSTEP,FM%F%XOUT_TSTEP,FM%F%LSEDIMENTS,FM%F%CSNOW_FLK,FM%F%CFLK_FLUX,FM%F%CFLK_ALB,&
                     FM%F%LSKINTEMP)
  CALL DEFAULT_CH_DEP(FM%CHF%CCH_DRY_DEP)
- CALL DEFAULT_DIAG_FLAKE(FM%DGF%N2M,FM%DGF%LSURF_BUDGET,FM%DGF%L2M_MIN_ZS,FM%DGF%LRAD_BUDGET,&
-                         FM%DGF%LCOEF,FM%DGF%LSURF_VARS, FM%DGMF%LWATER_PROFILE,FM%DGF%LSURF_BUDGETC,&
-                         FM%DGF%LRESET_BUDGETC,FM%DGF%XDIAG_TSTEP,FM%DGMF%XZWAT_PROFILE      )  
+ CALL DEFAULT_DIAG_FLAKE(FM%DFO%N2M,FM%DFO%LSURF_BUDGET,FM%DFO%L2M_MIN_ZS,FM%DFO%LRAD_BUDGET,&
+                         FM%DFO%LCOEF,FM%DFO%LSURF_VARS, FM%DMF%LWATER_PROFILE,FM%DFO%LSURF_BUDGETC,&
+                         FM%DFO%LRESET_BUDGETC,FM%DFO%XDIAG_TSTEP,FM%DMF%XZWAT_PROFILE      )  
  !
 ENDIF
 !
 !        0.2. Defaults from file header
 !    
- CALL READ_DEFAULT_FLAKE_n(FM%CHF, FM%DGF, FM%DGMF, FM%F, &
-                           HPROGRAM)
+ CALL READ_DEFAULT_FLAKE_n(FM%CHF, FM%DFO, FM%DMF, FM%F, HPROGRAM)
 
 !
 !*       1.1    Reading of configuration:
 !               -------------------------
 !
- CALL READ_FLAKE_CONF_n(FM%CHF, FM%DGF, FM%DGMF, FM%F, &
-                        HPROGRAM)
+ CALL READ_FLAKE_CONF_n(FM%CHF, FM%DFO, FM%DMF, FM%F, HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !
@@ -215,18 +211,13 @@ SELECT CASE (HINIT)
     FM%F%TTIME%TIME       = XUNDEF
 
   CASE ('PRE')
-    CALL PREP_CTRL_FLAKE(FM%DGF%N2M,FM%DGF%LSURF_BUDGET,FM%DGF%L2M_MIN_ZS,FM%DGF%LRAD_BUDGET,&
-                         FM%DGF%LCOEF,FM%DGF%LSURF_VARS,ILUOUT,&
-                         FM%DGMF%LWATER_PROFILE,FM%DGF%LSURF_BUDGETC) 
+    CALL PREP_CTRL_FLAKE(FM%DFO,ILUOUT,FM%DMF%LWATER_PROFILE) 
     IF (LNAM_READ) CALL READ_NAM_PREP_FLAKE_n(HPROGRAM)                            
-    CALL READ_FLAKE_DATE(&
-                         HPROGRAM,HINIT,ILUOUT,HATMFILE,HATMFILETYPE,KYEAR,KMONTH,KDAY,PTIME,FM%F%TTIME)
+    CALL READ_FLAKE_DATE(HPROGRAM,HINIT,ILUOUT,HATMFILE,HATMFILETYPE,KYEAR,KMONTH,KDAY,PTIME,FM%F%TTIME)
 
   CASE DEFAULT
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                        HPROGRAM,'WATER ','FLAKE ','READ ')
-    CALL READ_SURF(&
-                   HPROGRAM,'DTCUR',FM%F%TTIME,IRESP)
+CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','SURF  ','READ ')
+    CALL READ_SURF(HPROGRAM,'DTCUR',FM%F%TTIME,IRESP)
     CALL END_IO_SURF_n(HPROGRAM)
 END SELECT
 !
@@ -237,13 +228,12 @@ END SELECT
 !         Initialisation for IO
 !
  CALL SET_SURFEX_FILEIN(HPROGRAM,'PGD ') ! change input file name to pgd name
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                        HPROGRAM,'WATER ','FLAKE ','READ ')
+!
+CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'WATER ','FLAKE ','READ ')
 !
 !         Reading of the fields
 !
- CALL READ_PGD_FLAKE_n(DTCO, U, FM%FG, FM%F, &
-                       HPROGRAM)
+ CALL READ_PGD_FLAKE_n(DTCO, U, UG, FM%G, FM%F, HPROGRAM)
 !
  CALL END_IO_SURF_n(HPROGRAM)
  CALL SET_SURFEX_FILEIN(HPROGRAM,'PREP') ! restore input file name
@@ -264,11 +254,9 @@ END IF
 !*       2.     Prognostic and cover fields:
 !               ---------------------------
 !
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                        HPROGRAM,'WATER ','FLAKE ','READ ')
+CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'WATER ','FLAKE ','READ ')
 !
- CALL READ_FLAKE_n(DTCO, U, FM%F, &
-                   HPROGRAM)
+ CALL READ_FLAKE_n(DTCO, U, FM%F, HPROGRAM)
 !
 ILU = SIZE(FM%F%XCOVER,1)
 !
@@ -283,7 +271,7 @@ ALLOCATE(FM%F%XSNOW_ALB      (ILU))
 ALLOCATE(FM%F%XEXTCOEF_ICE   (ILU))
 ALLOCATE(FM%F%XEXTCOEF_SNOW  (ILU))
 !
-FM%F%XCORIO(:) = 2*XOMEGA*SIN(FM%FG%XLAT(:)*XPI/180.)
+FM%F%XCORIO(:) = 2*XOMEGA*SIN(FM%G%XLAT(:)*XPI/180.)
 !
 FM%F%XICE_ALB  = XALBWATICE  ! constant, should be improved latter
 FM%F%XSNOW_ALB = XALBWATSNOW ! constant, should be improved latter
@@ -302,9 +290,7 @@ FM%F%XDIR_ALB = 0.0
 FM%F%XSCA_ALB = 0.0
 FM%F%XEMIS    = 0.0
 !
- CALL UPDATE_RAD_FLAKE(FM%F%CFLK_ALB,FM%F%XTS,PZENITH,FM%F%XH_ICE,FM%F%XH_SNOW,&
-                       FM%F%XICE_ALB,FM%F%XSNOW_ALB,FM%F%XDIR_ALB,FM%F%XSCA_ALB,&
-                       FM%F%XEMIS,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD  )
+ CALL UPDATE_RAD_FLAKE(FM%F,PZENITH,PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD  )
 !
 PTSURF(:) = FM%F%XTS(:)
 !
@@ -313,8 +299,7 @@ PTSURF(:) = FM%F%XTS(:)
 !*       6.     SBL air fields:
 !               --------------
 !
- CALL READ_FLAKE_SBL_n(DTCO, U, FM%F, FM%FSB, &
-                       HPROGRAM)
+ CALL READ_SBL_n(DTCO, U, FM%SB, FM%F%LSBL, HPROGRAM, "WATER ")
 !
 !-------------------------------------------------------------------------------
 !
@@ -339,7 +324,7 @@ END IF
 !*       7.     diagnostics initialization
 !               --------------------------
 !
- CALL DIAG_FLAKE_INIT_n(DGU, FM%DGF, FM%DGMF, FM%F, &
+ CALL DIAG_FLAKE_INIT_n(OREAD_BUDGETC, FM%DFO, FM%DF, FM%DFC, FM%DMF, FM%F, &
                         HPROGRAM,ILU,KSW)
 !
 !-------------------------------------------------------------------------------

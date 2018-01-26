@@ -34,6 +34,7 @@
 !
 USE MODE_GRIDTYPE_LONLATVAL
 !
+USE MODD_SURFEX_MPI, ONLY : NINDEX, NRANK, NNUM
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -76,22 +77,26 @@ ZDIS = 1.E20
 !
 DO JP1=1,KL
   !
-  DO JP2=1,KL
-    ZDIS(JP2) = SQRT((ZX(JP1)-ZX(JP2))**2+(ZY(JP1)-ZY(JP2))**2)
-  ENDDO
-  ZDMAX = MAXVAL(ZDIS(:)) + 1.
-  ZDIS(JP1) = ZDMAX
-  !
-  ! on prend les knear_nbr premiers, pour chaque
-  !
-  DO JN=1,MIN(KL-1,KNEAR_NBR)
+  IF (NINDEX(JP1)==NRANK) THEN
     !
-    ID0 = MAXVAL(MINLOC(ZDIS(:)))       
+    DO JP2=1,KL
+      ZDIS(JP2) = SQRT((ZX(JP1)-ZX(JP2))**2+(ZY(JP1)-ZY(JP2))**2)
+    ENDDO
+    ZDMAX = MAXVAL(ZDIS(:)) + 1.
+    ZDIS(JP1) = ZDMAX
     !
-    KNEAR(JP1,JN) = ID0
-    ZDIS(ID0) = ZDMAX
+    ! on prend les knear_nbr premiers, pour chaque
     !
-  ENDDO
+    DO JN=1,MIN(KL-1,KNEAR_NBR)
+      !
+      ID0 = MAXVAL(MINLOC(ZDIS(:)))       
+      !
+      KNEAR(NNUM(JP1),JN) = ID0
+      ZDIS(ID0) = ZDMAX
+      !
+    ENDDO
+    !
+  ENDIF
   !
 ENDDO
 !

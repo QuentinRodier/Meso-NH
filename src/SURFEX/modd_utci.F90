@@ -39,7 +39,7 @@ INTEGER,   PARAMETER :: NUTCI_STRESS = 10  ! number of stress ranges
 !
 REAL,             PARAMETER, DIMENSION(0:NUTCI_STRESS) :: XUTCI_STRESS_LIMITS = &
                                  (/ -999., -40., -28., -12., 0., 9., 26., 32., 38., 46., 999. /)
- CHARACTER(LEN=3), PARAMETER, DIMENSION(NUTCI_STRESS)   :: CUTCI_STRESS_NAMES  = &
+CHARACTER(LEN=3), PARAMETER, DIMENSION(NUTCI_STRESS)   :: CUTCI_STRESS_NAMES  = &
                                  (/ 'ECS', 'VCS', 'SCS', 'MCS', 'LCS', 'NHS', 'MHS', 'SHS', 'VHS', 'EHS' /)
 !-----------------------------------------------------------------------------------------------------
 !

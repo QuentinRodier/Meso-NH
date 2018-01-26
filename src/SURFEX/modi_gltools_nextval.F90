@@ -110,7 +110,7 @@ ENDIF
 ! 2. Get the first informative line
 ! ==================================
 !
- CALL gltools_nextline( klun,iend,hpar,hval,hcomment=ycomment )
+CALL gltools_nextline( klun,iend,hpar,hval,hcomment=ycomment )
 !
 !
 ! 3. Controls 

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_CHEMICAL_n(KLUOUT, KSV, HSV, YSV, HCH_NAMES, HAER_NAMES, &
+SUBROUTINE INIT_CHEMICAL_n(KLUOUT, KSV, HSV, SV, HCH_NAMES, HAER_NAMES, &
                            HDSTNAMES, HSLTNAMES     )  
 !#############################################################
 !
@@ -60,7 +60,7 @@ IMPLICIT NONE
 INTEGER,                          INTENT(IN) :: KLUOUT
 INTEGER,                          INTENT(IN) :: KSV      ! number of scalars
  CHARACTER(LEN=6), DIMENSION(KSV), INTENT(IN) :: HSV      ! name of all scalar variables
- TYPE(SV_t), INTENT(INOUT) :: YSV
+ TYPE(SV_t), INTENT(INOUT) :: SV
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HCH_NAMES
  CHARACTER(LEN=6), DIMENSION(:), POINTER :: HAER_NAMES     
 
@@ -81,22 +81,19 @@ IF (LHOOK) CALL DR_HOOK('INIT_CHEMICAL_n',0,ZHOOK_HANDLE)
 !
 IF (KSV /= 0) THEN
   !
-  ALLOCATE(YSV%CSV(KSV))
-  CALL CH_INIT_NAMES(KLUOUT, HSV, YSV%NBEQ, YSV%NAEREQ, YSV%CSV, &
-                     YSV%NSV_CHSBEG, YSV%NSV_CHSEND,         &
-                     YSV%NSV_AERBEG, YSV%NSV_AEREND,         &
-                     LVARSIGI, LVARSIGJ              )  
+  ALLOCATE(SV%CSV(KSV))
+  CALL CH_INIT_NAMES(KLUOUT, HSV, SV, LVARSIGI, LVARSIGJ    )  
 
-  IF (YSV%NBEQ > 0 ) THEN
-    ALLOCATE(HCH_NAMES(YSV%NBEQ))
-    HCH_NAMES(:) = YSV%CSV(YSV%NSV_CHSBEG:YSV%NSV_CHSEND)
+  IF (SV%NBEQ > 0 ) THEN
+    ALLOCATE(HCH_NAMES(SV%NBEQ))
+    HCH_NAMES(:) = SV%CSV(SV%NSV_CHSBEG:SV%NSV_CHSEND)
   ELSE
     ALLOCATE(HCH_NAMES(0))
   END IF
 
-  IF (YSV%NAEREQ > 0 ) THEN
-    ALLOCATE(HAER_NAMES(YSV%NAEREQ))
-    HAER_NAMES(:) = YSV%CSV(YSV%NSV_AERBEG:YSV%NSV_AEREND)
+  IF (SV%NAEREQ > 0 ) THEN
+    ALLOCATE(HAER_NAMES(SV%NAEREQ))
+    HAER_NAMES(:) = SV%CSV(SV%NSV_AERBEG:SV%NSV_AEREND)
   ELSE
     ALLOCATE(HAER_NAMES(0))
   END IF
@@ -106,27 +103,27 @@ IF (KSV /= 0) THEN
          'DSTM',                &
          HSV,                   &!I [char] list of scalar variables
          JPMODE_DST,            &
-         YSV%NDSTEQ,                &!O [nbr] number of dust related tracers
-         YSV%NSV_DSTBEG,            &!O [idx] first dust related scalar variable
-         YSV%NSV_DSTEND,            &!O [idx] last dust related scalar variable
+         SV%NDSTEQ,                &!O [nbr] number of dust related tracers
+         SV%NSV_DSTBEG,            &!O [idx] first dust related scalar variable
+         SV%NSV_DSTEND,            &!O [idx] last dust related scalar variable
          LVARSIG_DST,           &!O type of standard deviation (fixed or variable)
          LRGFIX_DST             &!O type of mean radius (fixed or variable)        
          )  
 
   IF (PRESENT(HDSTNAMES)) THEN
-    IF (YSV%NDSTEQ >=1) THEN
+    IF (SV%NDSTEQ >=1) THEN
       CALL DSLT_INIT_MODES(       &
-            YSV%NDSTEQ,               &!I [nbr] number of dust related variables in scalar list
-            YSV%NSV_DSTBEG,           &!I [idx] index of first dust related variable in scalar list
-            YSV%NSV_DSTEND,           &!I [idx] index of last dust related variable in scalar list
+            SV%NDSTEQ,               &!I [nbr] number of dust related variables in scalar list
+            SV%NSV_DSTBEG,           &!I [idx] index of first dust related variable in scalar list
+            SV%NSV_DSTEND,           &!I [idx] index of last dust related variable in scalar list
             LVARSIG_DST,          &!I type of standard deviation (fixed or variable)
             LRGFIX_DST,           &!O type of mean radius (fixed or variable)        
             NDST_MDEBEG,          &!O [idx] index of mass for first mode in scalar list
             NDSTMDE               &!O [nbr] number of modes to be transported
             )
 
-      IF(.NOT. ASSOCIATED(HDSTNAMES)) ALLOCATE (HDSTNAMES(YSV%NDSTEQ))
-      HDSTNAMES(:) = YSV%CSV(YSV%NSV_DSTBEG:YSV%NSV_DSTEND)
+      IF(.NOT. ASSOCIATED(HDSTNAMES)) ALLOCATE (HDSTNAMES(SV%NDSTEQ))
+      HDSTNAMES(:) = SV%CSV(SV%NSV_DSTBEG:SV%NSV_DSTEND)
     ENDIF
   ENDIF
 
@@ -136,31 +133,31 @@ IF (KSV /= 0) THEN
          'SLTM',                &          
           HSV,                  &!I [char] list of scalar variables
           JPMODE_SLT,           &          
-          YSV%NSLTEQ,               &!O [nbr] number of sea salt related tracers
-          YSV%NSV_SLTBEG,           &!O [idx] first sea salt related scalar variable
-          YSV%NSV_SLTEND,           &!O [idx] last sea salt related scalar variable
+          SV%NSLTEQ,               &!O [nbr] number of sea salt related tracers
+          SV%NSV_SLTBEG,           &!O [idx] first sea salt related scalar variable
+          SV%NSV_SLTEND,           &!O [idx] last sea salt related scalar variable
           LVARSIG_SLT,          &!O type of standard deviation (fixed or variable)
           LRGFIX_SLT            &!O type of mean radius (fixed or variable)        
           )  
 
   IF (PRESENT(HSLTNAMES)) THEN
-    IF (YSV%NSLTEQ >=1) THEN
+    IF (SV%NSLTEQ >=1) THEN
       CALL DSLT_INIT_MODES(       &
-            YSV%NSLTEQ,               &!I [nbr] number of sea salt related variables in scalar list
-            YSV%NSV_SLTBEG,           &!I [idx] index of first sea salt related variable in scalar list
-            YSV%NSV_SLTEND,           &!I [idx] index of last sea salt related variable in scalar list
+            SV%NSLTEQ,               &!I [nbr] number of sea salt related variables in scalar list
+            SV%NSV_SLTBEG,           &!I [idx] index of first sea salt related variable in scalar list
+            SV%NSV_SLTEND,           &!I [idx] index of last sea salt related variable in scalar list
             LVARSIG_SLT,          &!I type of standard deviation (fixed or variable)
             LRGFIX_SLT,           &!O type of mean radius (fixed or variable)
             NSLT_MDEBEG,          &!O [idx] index of mass for first mode in scalar list
             NSLTMDE               &!O [nbr] number of modes to be transported
             )  
-      IF(.NOT. ASSOCIATED(HSLTNAMES)) ALLOCATE (HSLTNAMES(YSV%NSLTEQ))
-      HSLTNAMES(:) = YSV%CSV(YSV%NSV_SLTBEG:YSV%NSV_SLTEND)
+      IF(.NOT. ASSOCIATED(HSLTNAMES)) ALLOCATE (HSLTNAMES(SV%NSLTEQ))
+      HSLTNAMES(:) = SV%CSV(SV%NSV_SLTBEG:SV%NSV_SLTEND)
     ENDIF
   END IF
 
 ELSE
-  ALLOCATE(YSV%CSV     (0))
+  ALLOCATE(SV%CSV     (0))
   IF (PRESENT(HDSTNAMES)) ALLOCATE(HDSTNAMES(0))
   IF (PRESENT(HSLTNAMES)) ALLOCATE(HSLTNAMES(0))
 ENDIF

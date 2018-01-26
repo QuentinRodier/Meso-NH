@@ -45,11 +45,13 @@ SUBROUTINE FAPAIR(PABC, PFD_SKY, PIA, PLAI, PXMUS, PSSA_SUP, PSSA_INF, &
 !!      Original    01/04/2011 
 !!      Commented by C. Delire 07/13
 !!      C. Delire   08/13 : moved calculation of diffuse fraction from here to radiative_transfert.F90
+!!      A. Boone    02/17 : corrected computation of PFAPR_BS
 !!
 !!-------------------------------------------------------------------------------
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_CO2V_PAR,   ONLY : XK_SUP, XK_INF, XXSI_SUP, XXSI_INF ! clumping index parameters (Carrer et al 2.1.3)
 !
+USE MODD_SURFEX_MPI, ONLY : NRANK
 USE MODI_CCETR_PAIR  
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -214,7 +216,7 @@ DO JINT = SIZE(PABC),1,-1
       !
       !sunlit leaves
       !absorbed PAR of an equivalent canopy representative of the layer of leaves  eq. (8)
-      ZCOEF = (1.0-ZFD_SUP(I))/ZTR(I)+ ZFD_SUP(I)
+      ZCOEF = (1.0-ZFD_SUP(I))/ZTR(I)+ ZFD_SUP(I)    
       ZIACAN_SUNLIT(I,JINT) =             ZCOEF/(ZWEIGHT*MAX(0.0001,PLAI(I)))*ZIACAN(I,JINT)    
       !not sunlit leaves
       ZIACAN_SHADE(I,JINT)  = MAX(0.,ZFD_SUP(I)/(ZWEIGHT*MAX(0.0001,PLAI(I)))*ZIACAN(I,JINT))
@@ -243,8 +245,7 @@ END DO
 !
 WHERE (PIA(:).NE.0.)
   PFAPR(:) = PFAPR(:) / PIA(:)
-  PFAPR_BS(:)=(1.-PALB_VEG(:))*(1-PALB_SOIL(:))*(1.+PALB_VEG(:)*PALB_SOIL(:))*ZTR(:)
-  WHERE (PLAI(:).EQ.0) PFAPR_BS(:) = 1-PALB_SOIL(:)
+  PFAPR_BS(:)= ZTR(:)*(1.-PALB_SOIL(:)*(1. - PALB_VEG(:)*(1.-ZTR(:))))
 END WHERE
 !
 !WHERE (ZLAI_SHADE(:) .NE.0.) ZRN_SHADE(:)  = ZXIA_SHADE(:) / ZLAI_SHADE(:)

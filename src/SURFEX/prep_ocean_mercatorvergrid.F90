@@ -59,7 +59,7 @@ USE PARKIND1  ,ONLY : JPRB
 IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
- CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
+CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 LOGICAL, INTENT(IN) :: OUNIF
 !
 !*      0.2    declarations of local variables

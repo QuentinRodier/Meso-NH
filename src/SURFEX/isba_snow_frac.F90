@@ -3,10 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE ISBA_SNOW_FRAC(HSNOW,                                &
-                                PWSNOW, PRSNOW, PASNOW,               &
-                                PVEG, PLAI, PZ0,                      &
-                                PPSN, PPSNV_A, PPSNG, PPSNV            )  
+      SUBROUTINE ISBA_SNOW_FRAC(HSNOW, PWSNOW, PRSNOW, PASNOW,       &
+                                PVEG, PLAI, PZ0, PPSN, PPSNV_A, PPSNG, PPSNV )  
 !     ##########################################################################
 !
 !!****  *ISBA_SNOW_FRAC*  

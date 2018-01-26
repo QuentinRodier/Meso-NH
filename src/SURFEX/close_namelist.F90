@@ -55,11 +55,15 @@ USE MODI_CLOSE_NAMELIST_NC
 #ifdef SFX_MNH
 USE MODI_MNHCLOSE_NAMELIST
 #endif
+#ifdef SFX_ARO
+USE MODI_AROCLOSE_NAMELIST
+#endif
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
@@ -74,7 +78,6 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST',0,ZHOOK_HANDLE)
-!$OMP SINGLE
 IF (HPROGRAM=='MESONH') THEN
 #ifdef SFX_MNH
   CALL MNHCLOSE_NAMELIST(HPROGRAM,KLUNAM)
@@ -104,7 +107,6 @@ ELSE IF (HPROGRAM=='NC    ') THEN
   CALL CLOSE_NAMELIST_NC(HPROGRAM,KLUNAM)
 #endif
 END IF
-!$OMP END SINGLE
 IF (LHOOK) CALL DR_HOOK('CLOSE_NAMELIST',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

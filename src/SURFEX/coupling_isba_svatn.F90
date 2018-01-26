@@ -3,16 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, DTGD, DTGR, TGRO, DST, SLT,    &
-                                 HPROGRAM, HCOUPLING,                                       &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, &
-                 PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,          &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
-                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                       )  
+SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, SLT, HPROGRAM, HCOUPLING, PTSTEP, &
+                                 KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH,    &
+                                 PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, &
+                                 PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW,         &
+                                 PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,&
+                                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, &
+                                 PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,          &
+                                 PPET_B_COEF, PPEQ_B_COEF, HTEST    )  
 !     ###############################################################################
 !
 !!****  *COUPLING_ISBA_SVAT_n * - Chooses the time method (explicit, 
@@ -47,13 +45,9 @@ USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
-USE MODD_DATA_TEB_GARDEN_n, ONLY : DATA_TEB_GARDEN_t
-USE MODD_DATA_TEB_GREENROOF_n, ONLY : DATA_TEB_GREENROOF_t
-USE MODD_TEB_GREENROOF_OPTION_n, ONLY : TEB_GREENROOF_OPTIONS_t
-USE MODD_DST_n, ONLY : DST_t
+USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
-!
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -66,16 +60,12 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-!
 TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
-TYPE(DATA_TEB_GARDEN_t), INTENT(INOUT) :: DTGD
-TYPE(DATA_TEB_GREENROOF_t), INTENT(INOUT) :: DTGR
-TYPE(TEB_GREENROOF_OPTIONS_t), INTENT(INOUT) :: TGRO
-TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
@@ -186,14 +176,14 @@ IF (HCOUPLING=='I') THEN
   ZTSTEP=PTSTEP
 !
 !* same timestep as atmospheric timestep as default
-ELSE IF (IM%I%XTSTEP==XUNDEF) THEN
+ELSE IF (IM%O%XTSTEP==XUNDEF) THEN
   IT=1
   ZT=1.
   ZTSTEP=PTSTEP
 !
 !* case of specified SVAT time-step
 ELSE
-  IT=MAX(NINT(PTSTEP/IM%I%XTSTEP),1)
+  IT=MAX(NINT(PTSTEP/IM%O%XTSTEP),1)
   ZT=FLOAT(IT)
   ZTSTEP=PTSTEP/ZT
 ENDIF
@@ -240,18 +230,16 @@ ZWORK_Z0H= 0.0 ! work array for mean roughness length for heat
 !
 DO JT=1,IT
 !
-  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM, DTGD, DTGR, TGRO, DST, SLT,   &
-                                 HPROGRAM, HCOUPLING,                                      &
-                 ZTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-                 KI, KSV, KSW,                                                               &
-                 PTSUN, PZENITH, PZENITH2, PAZIM,                                            &
-                 PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
-                 PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
-                 ZSFTQ, ZSFTH, ZSFTS, ZSFCO2, ZSFU, ZSFV,                                    &
-                 ZTRAD, ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSURF, ZZ0, ZZ0H, ZQSURF,                &
-                 PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 'OK'                                                                        ) 
+  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%DTV,     &
+                                 IM%ID, IM%NGB, IM%GB, IM%ISS, IM%NISS, IM%G, IM%NG, IM%O,     &
+                                 IM%S, IM%K, IM%NK, IM%NP, IM%NPE, NDST, SLT,                  &
+                                 HPROGRAM, HCOUPLING, ZTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,  &
+                                 KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, &
+                                 PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,   &
+                                 PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA, ZSFTQ, ZSFTH, ZSFTS,   &
+                                 ZSFCO2, ZSFU, ZSFV, ZTRAD, ZDIR_ALB, ZSCA_ALB, ZEMIS, ZTSURF, &
+                                 ZZ0, ZZ0H, ZQSURF, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF,     &
+                                 PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, 'OK'    ) 
 !
   PSFTQ    = PSFTQ    + ZSFTQ    / ZT
   PSFTH    = PSFTH    + ZSFTH    / ZT

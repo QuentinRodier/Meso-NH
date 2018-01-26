@@ -48,11 +48,11 @@ REAL,    DIMENSION(KGRID_PAR),   INTENT(IN)    :: PGRID_PAR ! grid parameters
 LOGICAL,                         INTENT(OUT)   :: ORECT     ! T if rectangular grid
 INTEGER,                         INTENT(OUT)   :: KDIM1     ! 1st dimension
 INTEGER,                         INTENT(OUT)   :: KDIM2     ! 2nd dimension
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*    0.2    Declaration of other local variables
 !            ------------------------------------
 !
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('GET_GRID_DIM_GAUSS',0,ZHOOK_HANDLE)

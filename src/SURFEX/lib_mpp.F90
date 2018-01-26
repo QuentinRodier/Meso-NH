@@ -257,7 +257,7 @@ MODULE lib_mpp
    !! Software governed by the CeCILL licence     (NEMOGCM/NEMO_CeCILL.txt)
    !!----------------------------------------------------------------------
 #endif
- CONTAINS
+CONTAINS
 #if ! defined in_surfex
    INTEGER FUNCTION lib_mpp_alloc( kumout )
       !!----------------------------------------------------------------------
@@ -2862,7 +2862,7 @@ MODULE lib_mpp
    LOGICAL, PUBLIC            ::   ln_nnogather  = .FALSE.  !: namelist control of northfold comms (needed here in case "key_mpp_mpi" is not used)
    INTEGER :: ncomm_ice
    !!----------------------------------------------------------------------
- CONTAINS
+CONTAINS
 
    INTEGER FUNCTION lib_mpp_alloc(kumout)          ! Dummy function
       INTEGER, INTENT(in) ::   kumout

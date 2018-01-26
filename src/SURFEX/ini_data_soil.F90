@@ -54,15 +54,15 @@ IMPLICIT NONE
 !            ------------------------
 !
  CHARACTER(LEN=*), INTENT(IN) :: HISBA   ! type of soil (Force-Restore OR Diffusion)
-REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDG_OUT
+REAL, DIMENSION(:,:), INTENT(OUT) :: PDG_OUT
 !
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PSURF
 REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PSURF2
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PROOTDEPTH
-REAL, DIMENSION(:,:), OPTIONAL, INTENT(IN) :: PSOILDEPTH
+REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PROOTDEPTH
+REAL, DIMENSION(:), OPTIONAL, INTENT(IN) :: PSOILDEPTH
 REAL, DIMENSION(:),   OPTIONAL, INTENT(IN) :: PSOILGRID   ! reference soil grid          (m)
 !
-INTEGER, DIMENSION(:,:), OPTIONAL, INTENT(OUT) :: KWG_LAYER   ! last layers for soil moisture
+INTEGER, DIMENSION(:), OPTIONAL, INTENT(OUT) :: KWG_LAYER   ! last layers for soil moisture
 !
 !*    0.2    Declaration of local variables
 !      ------------------------------
@@ -81,7 +81,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('INI_DATA_SOIL',0,ZHOOK_HANDLE)
 !
-PDG_OUT(:,:,:) = XUNDEF
+PDG_OUT(:,:) = XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
@@ -107,10 +107,10 @@ IF (HISBA=='2-L') THEN
    
   DO JLOOP = 1,SIZE(LSURF)
     IF (LSURF(JLOOP)) CYCLE
-    WHERE(PROOTDEPTH(JLOOP,:) /= XUNDEF)
-      PDG_OUT(JLOOP,1,:) = 0.01
-      PDG_OUT(JLOOP,2,:) = PROOTDEPTH(JLOOP,:)
-    END WHERE
+    IF(PROOTDEPTH(JLOOP) /= XUNDEF) THEN
+      PDG_OUT(JLOOP,1) = 0.01
+      PDG_OUT(JLOOP,2) = PROOTDEPTH(JLOOP)
+    ENDIF
   ENDDO
 !
 !
@@ -127,11 +127,11 @@ ELSE
 
     DO JLOOP = 1,SIZE(LSURF)
       IF (LSURF(JLOOP)) CYCLE
-      WHERE(PSOILDEPTH(JLOOP,:) /= XUNDEF)
-        PDG_OUT(JLOOP,1,:) = 0.01
-        PDG_OUT(JLOOP,2,:) = PROOTDEPTH(JLOOP,:)
-        PDG_OUT(JLOOP,3,:) = PSOILDEPTH(JLOOP,:)
-      END WHERE
+      IF(PSOILDEPTH(JLOOP) /= XUNDEF) THEN
+        PDG_OUT(JLOOP,1) = 0.01
+        PDG_OUT(JLOOP,2) = PROOTDEPTH(JLOOP)
+        PDG_OUT(JLOOP,3) = PSOILDEPTH(JLOOP)
+      ENDIF
     ENDDO
 !
 !

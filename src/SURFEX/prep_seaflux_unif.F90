@@ -84,7 +84,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='UNIF  '
+CINTERP_TYPE='UNIF  '
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_UNIF',1,ZHOOK_HANDLE)
 !
 !

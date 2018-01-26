@@ -69,14 +69,14 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB',0,ZHOOK_HANDLE)
- CFILE_TEB= '                          '
- CTYPE    = 'GRIB  '
- CFILEPGD_TEB = '                          '
- CTYPEPGD      = '      '
- CFILE_WS = '                          '
- CTYPE_WS = '      '
- CFILE_TS = '                          '
- CTYPE_TS = '      '
+CFILE_TEB= '                          '
+CTYPE    = 'GRIB  '
+CFILEPGD_TEB = '                          '
+CTYPEPGD      = '      '
+CFILE_WS = '                          '
+CTYPE_WS = '      '
+CFILE_TS = '                          '
+CTYPE_TS = '      '
 !
 XWS_ROOF = XUNDEF
 XWS_ROAD = XUNDEF
@@ -96,8 +96,8 @@ XHUI_BLD_DEF = 0.5
 XQ_CAN = 0.
 !
 LTEB_CANOPY = .FALSE.
- CROAD_DIR   = 'UNIF'
- CWALL_OPT   = 'UNIF'
+CROAD_DIR   = 'UNIF'
+CWALL_OPT   = 'UNIF'
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB',1,ZHOOK_HANDLE)
 !

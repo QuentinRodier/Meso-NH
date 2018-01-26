@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PREP_OUTPUT_GRID (UG, U, &
-                                   KLUOUT,HGRID,PGRID_PAR,PLAT,PLON)
+      SUBROUTINE PREP_OUTPUT_GRID (UG, G, KSIZE_FULL, KLUOUT)
 !     #######################################
 !!
 !!    PURPOSE
@@ -39,10 +38,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
-!
-USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SFX_GRID_n, ONLY : GRID_t
 !
 USE MODI_GET_GRID_COORD
 !
@@ -58,37 +54,39 @@ IMPLICIT NONE
 !            ------------------------------
 !
 !
-TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(GRID_t), INTENT(INOUT) :: UG
+TYPE(GRID_t), INTENT(INOUT) :: G
+INTEGER, INTENT(IN) :: KSIZE_FULL
 !
 INTEGER,           INTENT(IN)  :: KLUOUT     ! output listing logical unit
- CHARACTER(LEN=10), INTENT(IN)  :: HGRID      ! grid type
-REAL, DIMENSION(:), POINTER    :: PGRID_PAR  ! parameters defining this grid
-REAL, DIMENSION(:),INTENT(IN)  :: PLAT       ! latitudes
-REAL, DIMENSION(:),INTENT(IN)  :: PLON       ! longitudes
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
-!
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
-!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_OUTPUT_GRID',0,ZHOOK_HANDLE)
-IF (.NOT.ALLOCATED(XLAT_OUT)) ALLOCATE(XLAT_OUT(SIZE(PLAT)))
-IF (.NOT.ALLOCATED(XLON_OUT)) ALLOCATE(XLON_OUT(SIZE(PLAT)))
-IF (.NOT.ALLOCATED(XX_OUT)) ALLOCATE(XX_OUT  (SIZE(PLAT)))
-IF (.NOT.ALLOCATED(XY_OUT)) ALLOCATE(XY_OUT  (SIZE(PLAT)))
 !
-IF (.NOT.ALLOCATED(LINTERP)) ALLOCATE(LINTERP (SIZE(PLAT)))
-
-XLAT_OUT = PLAT
-XLON_OUT = PLON
+IF (.NOT.ALLOCATED(XLAT_OUT)) ALLOCATE(XLAT_OUT(SIZE(G%XLAT)))
+IF (.NOT.ALLOCATED(XLON_OUT)) ALLOCATE(XLON_OUT(SIZE(G%XLAT)))
+IF (.NOT.ALLOCATED(XX_OUT)) ALLOCATE(XX_OUT  (SIZE(G%XLAT)))
+IF (.NOT.ALLOCATED(XY_OUT)) ALLOCATE(XY_OUT  (SIZE(G%XLAT)))
+!
+IF (.NOT.ALLOCATED(LINTERP)) ALLOCATE(LINTERP (SIZE(G%XLAT)))
+!
+IF (SIZE(G%XLAT)==0) THEN
+  IF (LHOOK) CALL DR_HOOK('PREP_OUTPUT_GRID',1,ZHOOK_HANDLE)
+  RETURN
+ENDIF
+!
+XLAT_OUT = G%XLAT
+XLON_OUT = G%XLON
 LINTERP  = .TRUE.
 !
- CALL GET_GRID_COORD(UG, U, &
-                     KLUOUT,XX_OUT,XY_OUT,SIZE(PLAT),HGRID,PGRID_PAR)
+ CALL GET_GRID_COORD(UG%CGRID, UG%NGRID_PAR, UG%XGRID_PAR, KSIZE_FULL, &
+                     KLUOUT,XX_OUT,XY_OUT,SIZE(G%XLAT),G%CGRID,G%XGRID_PAR)
+!
 IF (LHOOK) CALL DR_HOOK('PREP_OUTPUT_GRID',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !

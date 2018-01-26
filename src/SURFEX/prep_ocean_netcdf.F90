@@ -61,7 +61,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !*      1.     Grid type
 !              ---------
 IF (LHOOK) CALL DR_HOOK('PREP_OCEAN_NETCDF',0,ZHOOK_HANDLE)
- CINGRID_TYPE='LATLON'
+CINGRID_TYPE='LATLON'
 !
 !
 IF (.NOT. ALLOCATED(XILONARRAY)) CALL PREP_NETCDF_GRID(HFILE,HNCVARNAME)
@@ -81,7 +81,7 @@ PFIELD=ZFIELD
 !*      3.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='HORIBL'
+CINTERP_TYPE='HORIBL'
 !
 !*      4.     Deallocations
 !              -------------

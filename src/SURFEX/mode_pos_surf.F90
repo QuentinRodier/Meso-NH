@@ -92,14 +92,17 @@ DO JFILE=1,2
   search_nam : DO
     YLINE=' '
     READ(UNIT=KULNAM,FMT='(A)',IOSTAT=IRET,END=100) YLINE
+
 !   If file does not exist, most compilers would just create it and jump 
 !   to the END label ; but a few of them would report an error:         
     IF (IRET /=0 ) THEN                 
       INQUIRE(KULNAM,OPENED=LLOPENED)
       IF (LLOPENED) THEN
-        IF (PRESENT(KLUOUT)) &
+        IF (PRESENT(KLUOUT)) THEN
           WRITE(KLUOUT,FMT=*) 'MODE_POS_SURF : error reading from unit ',&
-                               KULNAM,' file ',HDNAML,' line ',YLINE
+                KULNAM,' file ',HDNAML,' line ',YLINE
+          CALL FLUSH(KLUOUT)
+        ENDIF        
         CALL ABOR1_SFX('MODE_POS_SURF: read error in namelist file') 
       ELSE
         EXIT search_nam

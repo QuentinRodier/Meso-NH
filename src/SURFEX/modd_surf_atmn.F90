@@ -66,6 +66,7 @@ TYPE SURF_ATM_t
   LOGICAL                        :: LECOCLIMAP ! T: parameters computed from ecoclimap
 !                                              ! F: they are read in the file
 !
+  LOGICAL                        :: LECOSG     ! T: parameters computed from ecosg
 !-------------------------------------------------------------------------------
 !
 ! change water (not lake) to nature and/or town to rock : arrange cover properly
@@ -162,7 +163,7 @@ END TYPE SURF_ATM_t
 !
 
 
- CONTAINS
+CONTAINS
 
 
 !
@@ -195,6 +196,7 @@ YSURF_ATM%CNATURE=' '
 YSURF_ATM%CWATER=' '
 YSURF_ATM%CSEA=' '
 YSURF_ATM%LECOCLIMAP=.FALSE.
+YSURF_ATM%LECOSG=.FALSE.
 YSURF_ATM%LWATER_TO_NATURE=.FALSE.
 YSURF_ATM%LTOWN_TO_ROCK=.FALSE.
 YSURF_ATM%LGARDEN=.FALSE.

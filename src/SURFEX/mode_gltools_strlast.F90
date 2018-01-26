@@ -72,16 +72,16 @@ FUNCTION glt_strlast( hval,kn )
 !
 IMPLICIT NONE
 !
- CHARACTER(*), INTENT(in) ::  &
+CHARACTER(*), INTENT(in) ::  &
   hval
 INTEGER, INTENT(in) ::  &
   kn
- CHARACTER(LEN=kn) ::  &
+CHARACTER(LEN=kn) ::  &
   glt_strlast
 !
 INTEGER ::  &
   ilen
- CHARACTER(LEN=LEN(TRIM(hval))) ::  &
+CHARACTER(LEN=LEN(TRIM(hval))) ::  &
   ystr
 !
 ilen = LEN(TRIM(hval))

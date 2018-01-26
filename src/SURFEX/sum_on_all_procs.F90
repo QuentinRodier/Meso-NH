@@ -33,10 +33,13 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2011 
+!!      S.Senesi    08/2015 : Adapt to XIOS output mode
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
+!
+USE MODD_SURF_CONF, ONLY : CSOFTWARE
 !
 #ifdef SFX_OL
 USE MODI_SUM_ON_ALL_PROCS_OL
@@ -88,7 +91,7 @@ IF (HPROGRAM=='MESONH') THEN
     CALL SUM_ON_ALL_PROCS_MNH(ISIZE,IIN,KOUT)
   ENDIF
 #endif
-ELSE IF (HPROGRAM=='AROME ' ) THEN
+ELSE IF (HPROGRAM=='AROME ' .OR. (HPROGRAM=='XIOS  '.AND.TRIM(CSOFTWARE)/="OFFLINE")) THEN
 #ifdef SFX_ARO
   KOUT = MAX(COUNT(OIN),1)   ! to be coded properly in AROME
 #endif

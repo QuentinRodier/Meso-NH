@@ -39,9 +39,11 @@
 !            -----------
 !
 !
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
-USE MODD_PGDWORK,       ONLY : NSIZE, XSUMVAL, XSUMVAL2, LSSQO, XSSQO, NSSO
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURFEX_MPI, ONLY : NRANK
+USE MODD_PGDWORK,       ONLY : NSIZE, XSUMVAL, LSSQO, XSSQO, NSSO, XPREC
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -57,9 +59,10 @@ IMPLICIT NONE
 !            ------------------------------------
 !
 !
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
-INTEGER                  :: JL
+REAL :: ZINT
+INTEGER                  :: JL, JI
 REAL,    DIMENSION(NSSO) :: ZMAXX
 REAL,    DIMENSION(NSSO) :: ZMAXY
 LOGICAL, DIMENSION(NSSO) :: GSEGX
@@ -72,8 +75,8 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !            --------------
 !
 IF (LHOOK) CALL DR_HOOK('AVERAGE2_OROGRAPHY',0,ZHOOK_HANDLE)
-WHERE (NSIZE(:)/=0)
-  USS%XAVG_ZS(:)=XSUMVAL(:)/NSIZE(:)
+WHERE (NSIZE(:,1)/=0)
+  USS%XAVG_ZS(:) = XSUMVAL(:,1)/NSIZE(:,1)
 END WHERE
 !
 !-------------------------------------------------------------------------------
@@ -81,8 +84,8 @@ END WHERE
 !*    2.     Standard deviation
 !            ------------------
 !
-WHERE (NSIZE(:)/=0)
-  USS%XSSO_STDEV(:)=SQRT( MAX(0.,XSUMVAL2(:)/NSIZE(:) - USS%XAVG_ZS(:)*USS%XAVG_ZS(:)) )
+WHERE (NSIZE(:,1)/=0)
+  USS%XSSO_STDEV(:) = SQRT( MAX(0.,XSUMVAL(:,2)/NSIZE(:,1) - USS%XAVG_ZS(:)*USS%XAVG_ZS(:)) )
 END WHERE
 !
 !-------------------------------------------------------------------------------
@@ -91,15 +94,37 @@ END WHERE
 !            --------------------
 !
 DO JL=1,SIZE(USS%XSIL_ZS)
-  IF (NSIZE(JL)==0) CYCLE
-  ZMAXX(:) = MAXVAL(XSSQO(:,:,JL),DIM=2)
-  GSEGX(:) = ANY   (LSSQO(:,:,JL),DIM=2)
-  ZMAXY(:) = MAXVAL(XSSQO(:,:,JL),DIM=1)
-  GSEGY(:) = ANY   (LSSQO(:,:,JL),DIM=1)
+  IF (NSIZE(JL,1)==0) CYCLE
+  ZMAXX(:) = MAXVAL(XSSQO(JL,:,:),DIM=2)
+  GSEGX(:) = ANY   (LSSQO(JL,:,:),DIM=2)
+  ZMAXY(:) = MAXVAL(XSSQO(JL,:,:),DIM=1)
+  GSEGY(:) = ANY   (LSSQO(JL,:,:),DIM=1)
   USS%XSIL_ZS(JL) =0.5*(  SUM(ZMAXX(:),MASK=GSEGX(:)) / COUNT(GSEGX(:)) &
-                      + SUM(ZMAXY(:),MASK=GSEGY(:)) / COUNT(GSEGY(:)) )  
+                        + SUM(ZMAXY(:),MASK=GSEGY(:)) / COUNT(GSEGY(:)) )  
   
 END DO
+!
+!
+DO JI = 1,SIZE(USS%XAVG_ZS)
+
+  IF (USS%XAVG_ZS(JI)/=XUNDEF) THEN
+
+    ZINT = AINT(USS%XAVG_ZS(JI))
+    IF (USS%XAVG_ZS(JI)/=ZINT) &
+      USS%XAVG_ZS(JI) = ZINT + ANINT((USS%XAVG_ZS(JI)-ZINT)*XPREC)/XPREC
+
+    ZINT = AINT(USS%XSSO_STDEV(JI))
+    IF (USS%XSSO_STDEV(JI)/=ZINT) &
+      USS%XSSO_STDEV(JI) = ZINT + ANINT((USS%XSSO_STDEV(JI)-ZINT)*XPREC)/XPREC
+
+    ZINT = AINT(USS%XSIL_ZS(JI))
+    IF (USS%XSIL_ZS(JI)/=ZINT) &
+      USS%XSIL_ZS(JI) = ZINT + ANINT((USS%XSIL_ZS(JI)-ZINT)*XPREC)/XPREC
+
+  ENDIF
+
+ENDDO
+!    
 IF (LHOOK) CALL DR_HOOK('AVERAGE2_OROGRAPHY',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------

@@ -3,16 +3,11 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_TOWN_n (DTCO, DGU, UG, U, CHI, DTI, I, &
-                              TM, GDM, GRM, DGL, DST, SLT,GCP, &                        
-                                  HPROGRAM,HINIT,                            &
-                                   KI,KSV,KSW,                                &
-                                   HSV,PCO2,PRHOA,                            &
-                                   PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                                   PEMIS,PTSRAD,PTSURF,                       &
-                                   KYEAR, KMONTH,KDAY, PTIME,                 &
-                                   HATMFILE,HATMFILETYPE,                     &
-                                   HTEST                                      )  
+      SUBROUTINE INIT_TOWN_n (DTCO, OREAD_BUDGETC, UG, U, GCP, TM, GDM, GRM, DGO, DL, DLC,  &                        
+                              HPROGRAM,HINIT,KI,KSV,KSW, HSV,PCO2,PRHOA,       &
+                              PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
+                              PEMIS,PTSRAD,PTSURF,KYEAR,KMONTH,KDAY,PTIME,     &
+                              HATMFILE,HATMFILETYPE,HTEST                      )  
 !     #############################################################
 !
 !!****  *INIT_TOWN_n* - chooses initialization routine for towns
@@ -52,19 +47,13 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
-USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 USE MODD_SURFEX_n, ONLY : TEB_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GARDEN_MODEL_t
 USE MODD_SURFEX_n, ONLY : TEB_GREENROOF_MODEL_t
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
-USE MODD_DST_n, ONLY : DST_t
-USE MODD_SLT_n, ONLY : SLT_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t, DIAG_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -80,21 +69,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
-TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
 TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
 TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
-TYPE(DST_t), INTENT(INOUT) :: DST
-TYPE(SLT_t), INTENT(INOUT) :: SLT
-TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: DL
+TYPE(DIAG_t), INTENT(INOUT) :: DLC
 !
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
@@ -142,19 +128,16 @@ IF (U%CTOWN=='NONE  ') THEN
   PTSRAD  =XTT
   PTSURF  =XTT
 ELSE IF (U%CTOWN=='FLUX  ') THEN
-  CALL INIT_IDEAL_FLUX(DGL, DGU%LREAD_BUDGETC, &
-                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
-                           PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
-                           PEMIS,PTSRAD,PTSURF,'OK'                    )  
+  CALL INIT_IDEAL_FLUX(DGO, DL, DLC, OREAD_BUDGETC, &
+                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PDIR_ALB,PSCA_ALB,  &
+                       PEMIS,PTSRAD,PTSURF,'OK'                    )  
 ELSE IF (U%CTOWN=='TEB   ') THEN
-  CALL INIT_TEB_n(DTCO, DGU, UG, U, CHI, DTI, I, &
-                  TM, GDM, GRM, DST, SLT,GCP, &
-                  HPROGRAM,HINIT,                               &
-                    KI,KSV,KSW,HSV,PCO2,PRHOA,                    &
-                    PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                    PEMIS,PTSRAD,PTSURF,                          &
-                    KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
-                    'OK'                                          )  
+  CALL INIT_TEB_n(DTCO, UG, U, GCP, TM%CHT, TM%DTT, TM%SB, TM%G, TM%TOP,        &
+                  TM%TPN, TM%TIR, TM%NT, TM%TD, TM%BDD, TM%BOP, TM%DTB, TM%NB,  &
+                  GDM, GRM, HPROGRAM, HINIT, KI, KSV, KSW, HSV, PCO2,           &
+                  PRHOA, PZENITH, PAZIM, PSW_BANDS, PDIR_ALB,                   &
+                  PSCA_ALB, PEMIS, PTSRAD, PTSURF, KYEAR, KMONTH,               &
+                  KDAY, PTIME, HATMFILE, HATMFILETYPE, 'OK'                     )
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_TOWN_N',1,ZHOOK_HANDLE)
 !

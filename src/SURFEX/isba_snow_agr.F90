@@ -3,30 +3,12 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE ISBA_SNOW_AGR( HSNOW_ISBA, OMEB,                                &
-                         PEXNS, PEXNA, PTA, PQA, PZREF, PUREF, PDIRCOSZW, PVMOD, &
-                         PZ0EFF, PZ0, PZ0H, PRR, PSR,                            &
-                         PEMIS, PALB, PPSN, PPSNG, PPSNV,                        &
-                         PRN, PH, PLE, PLEI, PLEG, PLEGI, PLEV, PLES, PLER,      &
-                         PLETR, PEVAP, PSUBL, PGFLUX, PLVTT, PLSTT,              &
-                         PUSTAR,                                                 &
-                         PLES3L, PLEL3L, PEVAP3L,                                &
-                         PSWNET_V, PSWNET_G, PLWNET_V, PLWNET_G, PH_V, PH_G,     &
-                         PLEV_V_C, PLETR_V_C, PLES_V_C,                          &
-                         PQS3L, PALB3L,                                          &
-                         PRNSNOW, PHSNOW, PHPSNOW,                               &
-                         PSWNETSNOW, PSWNETSNOWS, PLWNETSNOW,                    &
-                         PGFLUXSNOW, PGSFCSNOW, PUSTARSNOW,                      &
-                         PZGRNDFLUX, PFLSN_COR, PGRNDFLUX, PLESL,                &
-                         PEMISNOW,                                               &
-                         PSNOWTEMP, PTS_RAD, PTS, PRI, PQS, PHU,                 &
-                         PCD, PCDN, PCH, PSNOWHMASS,                             &
-                         PRN_ISBA, PH_ISBA, PLEG_ISBA, PLEGI_ISBA, PLEV_ISBA,    &
-                         PLETR_ISBA, PUSTAR_ISBA, PLER_ISBA, PLE_ISBA,           &
-                         PLEI_ISBA, PGFLUX_ISBA, PMELTADV, PTG,                  &
-                         PEMIST, PALBT, PLE_FLOOD, PLEI_FLOOD,                   &
-                         PFFG, PFFV, PFF, PPALPHAN, PTC, OMEB_LITTER, PLELITTER, &
-                         PLELITTERI                                              )
+      SUBROUTINE ISBA_SNOW_AGR(KK, PK, PEK, DMK, DK, DEK, &
+                               OMEB, OMEB_LITTER, PEXNS, PEXNA, PTA, PQA,  &
+                               PZREF, PUREF, PDIRCOSZW, PVMOD, PRR, PSR,   &
+                               PEMIS, PALB, PUSTAR, PLES3L, PLEL3L,        &
+                               PEVAP3L, PQS3L, PALB3L, PGSFCSNOW,          &
+                               PZGRNDFLUX, PFLSN_COR, PEMIST, PPALPHAN )
 !     ##########################################################################
 !
 !
@@ -60,7 +42,7 @@
 !!      Original    10/03/95 
 !!      B. Decharme 01/2009  Floodplains 
 !!      B. Decharme 01/2010  Effective surface temperature (for diag)
-!!      B. Decharme 09/2012  Bug total sublimation flux: no PLESL
+!!      B. Decharme 09/2012  Bug total sublimation flux: no DEK%XLESL
 !!      B. Decharme 04/2013  Bug wrong radiative temperature
 !!                           Sublimation diag flux
 !!                           Qs for 3l or crocus (needed for coupling with atm)
@@ -69,8 +51,12 @@
 !
 !*       0.     DECLARATIONS
 !               ------------
-USE MODD_SURF_PAR,   ONLY : XUNDEF
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_DIAG_n, ONLY : DIAG_t
+USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
 !
+USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -84,13 +70,17 @@ IMPLICIT NONE
 !* general variables
 !  -----------------
 !
- CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
-!                                               !         (Douville et al. 1995)
-!                                               ! '3-L' = 3-L snow scheme (option)
-!                                               !         (Boone and Etchevers 2000)
+TYPE(ISBA_K_t), INTENT(INOUT) :: KK
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(DIAG_t), INTENT(INOUT) :: DK
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
 LOGICAL,              INTENT(IN)  :: OMEB       ! True = patch with multi-energy balance 
-!                                               ! False = patch with classical ISBA 
+!                                               ! False = patch with classical ISBA
+LOGICAL, INTENT(IN)               :: OMEB_LITTER !True = litter option activated
+!                                                 ! over the ground
 !
 !* surface and atmospheric parameters
 !  ----------------------------------
@@ -103,9 +93,6 @@ REAL, DIMENSION(:), INTENT(IN)  :: PZREF     ! reference height of the first atm
 REAL, DIMENSION(:), INTENT(IN)  :: PUREF     ! reference height of the wind
 REAL, DIMENSION(:), INTENT(IN)  :: PDIRCOSZW ! Cosinus of the angle between the normal to the surface and the vertical
 REAL, DIMENSION(:), INTENT(IN)  :: PVMOD     ! module of the horizontal wind
-REAL, DIMENSION(:), INTENT(IN)  :: PZ0EFF    ! effective roughness length
-REAL, DIMENSION(:), INTENT(IN)  :: PZ0       ! roughness length for momentum
-REAL, DIMENSION(:), INTENT(IN)  :: PZ0H      ! roughness length for heat
 REAL, DIMENSION(:), INTENT(IN)  :: PRR       ! Rain rate (in kg/m2/s)
 REAL, DIMENSION(:), INTENT(IN)  :: PSR       ! Snow rate (in kg/m2/s)
 !
@@ -122,15 +109,8 @@ REAL, DIMENSION(:), INTENT(IN)  :: PEMIS      ! emissivity
 !* snow fractions
 !  --------------
 !
-REAL, DIMENSION(:), INTENT(IN)  :: PPSN       ! fraction of the grid covered
-!                                             ! by snow
-REAL, DIMENSION(:), INTENT(IN)  :: PPSNG      ! fraction of the the bare
-!                                             ! ground covered by snow
-REAL, DIMENSION(:), INTENT(IN)  :: PPSNV      ! fraction of the the veg.
-!                                             ! covered by snow
 REAL, DIMENSION(:), INTENT(IN)  :: PPALPHAN   ! fraction of the the explicit veg.
 !                                             ! canopy buried by snow
-!
 !
 !* ISBA-SNOW3L variables/parameters:
 !  ---------------------------------
@@ -145,108 +125,20 @@ REAL, DIMENSION(:),   INTENT(IN) :: PQS3L       ! Surface humidity
 REAL, DIMENSION(:), INTENT(IN)    :: PZGRNDFLUX ! snow/soil-biomass interface flux (W/m2)
 REAL, DIMENSION(:), INTENT(IN)    :: PFLSN_COR  ! snow/soil-biomass correction flux (W/m2)
 !
-REAL, DIMENSION(:), INTENT(INOUT) :: PGRNDFLUX  ! snow/soil-biomass interface flux (W/m2)
-!
-REAL, DIMENSION(:), INTENT(INOUT) :: PHPSNOW    ! heat release from rainfall (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PSNOWHMASS ! snow heat content change from mass changes (J/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PRNSNOW    ! net radiative flux from snow (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PSWNETSNOW ! net shortwave snow radiative flux (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PSWNETSNOWS! net shortwave snow radiative flux in sfc layer (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PLWNETSNOW ! net longwave snow radiative flux (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PHSNOW     ! sensible heat flux from snow (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PGFLUXSNOW ! net heat flux from snow (W/m2)
 REAL, DIMENSION(:), INTENT(INOUT) :: PGSFCSNOW  ! heat flux from snow sfc to sub sfc layers (W/m2)
-REAL, DIMENSION(:), INTENT(INOUT) :: PSWNET_V   ! net shortwave radiation of vegetation canopy 
-REAL, DIMENSION(:), INTENT(INOUT) :: PSWNET_G   ! net shortwave radiation of (below snow) surface
-REAL, DIMENSION(:), INTENT(INOUT) :: PLWNET_V   ! net longwave radiation of vegetation canopy 
-REAL, DIMENSION(:), INTENT(INOUT) :: PLWNET_G   ! net longwave radiation of (below snow) surface
-REAL, DIMENSION(:), INTENT(IN)    :: PUSTARSNOW ! friction velocity
-REAL, DIMENSION(:), INTENT(OUT)   :: PLESL      ! Evaporation (liquid) from wet snow (W/m2)
-REAL, DIMENSION(:), INTENT(IN)    :: PEMISNOW   ! snow surface emissivity
-REAL, DIMENSION(:), INTENT(OUT)   :: PTS_RAD    ! effective radiative temperature 
-!                                                 of the natural surface (K)
-REAL, DIMENSION(:), INTENT(OUT)   :: PTS        ! effective surface temperature 
-REAL, DIMENSION(:), INTENT(IN)    :: PSNOWTEMP  ! snow layer sfc temperature (K)
 REAL, DIMENSION(:), INTENT(IN)    :: PLES3L     ! sublimation from ISBA-ES(3L)
 REAL, DIMENSION(:), INTENT(IN)    :: PLEL3L     ! evaporation heat flux of water in the snow (W/m2)
 REAL, DIMENSION(:), INTENT(INOUT) :: PEVAP3L    ! evaporation flux over snow from ISBA-ES (kg/m2/s)
-REAL, DIMENSION(:), INTENT(IN)    :: PLVTT, PLSTT    
-!
-!
-! Prognostic variables:
-!
-REAL, DIMENSION(:),   INTENT(IN)  :: PTG              ! soil sfc layer average temperatures    (K)
-REAL, DIMENSION(:),   INTENT(IN)  :: PTC              ! canopy air temperature                 (K)
-!
 !
 !* diagnostic variables
 !  --------------------
 !
 REAL, DIMENSION(:), INTENT(INOUT) :: PEMIST   ! total surface emissivity
-REAL, DIMENSION(:), INTENT(INOUT) :: PALBT    ! total surface albedo
 !
 !* surface fluxes
 !  --------------
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PLEV_V_C ! MEB: total evapotranspiration (no snow) from 
-!                                             !  vegetation canopy overstory [W/m2]
-REAL, DIMENSION(:), INTENT(IN)    :: PLES_V_C ! MEB: total (intercepted) snow sublimation from 
-!                                             !  vegetation canopy overstory [W/m2]
-REAL, DIMENSION(:), INTENT(IN)    :: PLETR_V_C! MEB: transpiration from overstory canopy 
-!                                             !  vegetation [W/m2]
-REAL, DIMENSION(:), INTENT(INOUT) :: PRN      ! net radiation
-REAL, DIMENSION(:), INTENT(INOUT) :: PH       ! sensible heat flux
-REAL, DIMENSION(:), INTENT(INOUT) :: PH_V     ! sensible heat flux from explicit veg canopy
-REAL, DIMENSION(:), INTENT(INOUT) :: PH_G     ! sensible heat flux from surface (below snow)
-REAL, DIMENSION(:), INTENT(INOUT) :: PLE      ! total latent heat flux
-REAL, DIMENSION(:), INTENT(OUT)   :: PLEI     ! sublimation latent heat flux
-REAL, DIMENSION(:), INTENT(INOUT) :: PLEGI    ! latent heat of sublimation over frozen soil
-REAL, DIMENSION(:), INTENT(INOUT) :: PLEG     ! latent heat of evaporation
-REAL, DIMENSION(:), INTENT(IN)    :: PLELITTERI! sublimation of water in litter reservoir
-REAL, DIMENSION(:), INTENT(IN)    :: PLELITTER !sublimation of water in litter reservoir
-LOGICAL, INTENT(IN)               :: OMEB_LITTER !True = litter option activated
-!                                             ! over the ground
-REAL, DIMENSION(:), INTENT(INOUT) :: PLEV     ! latent heat of evaporation
-!                                             ! over the vegetation
-REAL, DIMENSION(:), INTENT(INOUT) :: PLES     ! latent heat of sublimation
-!                                             ! over the snow
-REAL, DIMENSION(:), INTENT(INOUT) :: PLER     ! latent heat of the fraction
-!                                             ! delta of water retained on the
-!                                             ! foliage of the vegetation
-REAL, DIMENSION(:), INTENT(INOUT) :: PLETR    ! evapotranspiration of the rest
-!                                             ! of the vegetation
-REAL, DIMENSION(:), INTENT(INOUT) :: PEVAP    ! total evaporative flux (kg/m2/s)
-REAL, DIMENSION(:), INTENT(INOUT) :: PSUBL    ! sublimation flux (kg/m2/s)
-REAL, DIMENSION(:), INTENT(INOUT) :: PGFLUX   ! flux through the ground
 REAL, DIMENSION(:), INTENT(INOUT) :: PUSTAR   ! friction velocity
-REAL, DIMENSION(:), INTENT(INOUT) :: PMELTADV ! advection heat flux from snowmelt (W/m2)
-!
-! The following surface fluxes are from snow-free portion of grid
-! box when the ISBA-ES option is ON. Otherwise, they are equal
-! to the same variables without the _ISBA extension.
-!
-REAL, DIMENSION(:), INTENT(OUT) :: PRN_ISBA   ! net radiation
-REAL, DIMENSION(:), INTENT(OUT) :: PH_ISBA    ! sensible heat flux
-REAL, DIMENSION(:), INTENT(OUT) :: PLEG_ISBA  ! latent heat of evaporation (ground)
-REAL, DIMENSION(:), INTENT(OUT) :: PLEGI_ISBA ! latent heat of sublimation (ground)
-REAL, DIMENSION(:), INTENT(OUT) :: PLEV_ISBA  ! latent heat of evaporation (vegetation)
-REAL, DIMENSION(:), INTENT(OUT) :: PLETR_ISBA ! latent heat of evaporation (transpiration)
-REAL, DIMENSION(:), INTENT(OUT) :: PUSTAR_ISBA! friction velocity
-REAL, DIMENSION(:), INTENT(OUT) :: PLER_ISBA  ! latent heat of evaporation (plant interception)
-REAL, DIMENSION(:), INTENT(OUT) :: PLE_ISBA   ! total latent heat flux 
-REAL, DIMENSION(:), INTENT(OUT) :: PLEI_ISBA  ! sublimation latent heat flux 
-REAL, DIMENSION(:), INTENT(OUT) :: PGFLUX_ISBA! flux through the ground
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PFFG,PFFV,PFF
-REAL, DIMENSION(:), INTENT(INOUT) :: PLE_FLOOD, PLEI_FLOOD ! Flood evaporation
-!
-REAL, DIMENSION(:), INTENT(INOUT) :: PRI       ! grid-area Ridcharson number
-REAL, DIMENSION(:), INTENT(INOUT) :: PQS       ! grid-area Surface humidity
-REAL, DIMENSION(:), INTENT(INOUT) :: PHU       ! grid-area near surface humidity
-REAL, DIMENSION(:), INTENT(INOUT) :: PCH       ! grid-area drag coefficient for heat
-REAL, DIMENSION(:), INTENT(INOUT) :: PCD       ! grid-area drag coefficient for momentum
-REAL, DIMENSION(:), INTENT(INOUT) :: PCDN      ! grid-area neutral drag coefficient for momentum
-!
 !
 !*      0.2    declarations of local variables
 !
@@ -261,77 +153,82 @@ IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_AGR',0,ZHOOK_HANDLE)
 ZWORK(:) = 0.
 !
 IF(OMEB)THEN
-!
-! Snow free (ground-based snow) diagnostics: canopy and ground blended (W m-2):
-! NOTE that the effects of snow cover *fraction* are implicitly *included* in these fluxes 
-! so do NOT multiply by snow fraction.
+  !
+  ! Snow free (ground-based snow) diagnostics: canopy and ground blended (W m-2):
+  ! NOTE that the effects of snow cover *fraction* are implicitly *included* in these fluxes 
+  ! so do NOT multiply by snow fraction.
+  !
+  DEK%XRN_SN_FR   (:) = DEK%XSWNET_V(:) + DEK%XSWNET_G(:) + DEK%XLWNET_V(:) + DEK%XLWNET_G(:)
+  DEK%XH_SN_FR    (:) = DEK%XH_CV(:) + DEK%XH_GN(:)
+  IF (OMEB_LITTER) THEN
+    DEK%XLEG_SN_FR (:) = DEK%XLELITTER (:)
+    DEK%XLEGI_SN_FR(:) = DEK%XLELITTERI(:)
+    DEK%XLEG (:) = DEK%XLELITTER (:)
+    DEK%XLEGI(:) = DEK%XLELITTERI(:)
+  ELSE
+    DEK%XLEG_SN_FR (:) = DEK%XLEG (:)
+    DEK%XLEGI_SN_FR(:) = DEK%XLEGI(:)
+  ENDIF
 
-   PRN_ISBA(:)    = PSWNET_V(:) + PSWNET_G(:) + PLWNET_V(:) + PLWNET_G(:)
-   PH_ISBA(:)     = PH_V(:) + PH_G(:)
-   IF (OMEB_LITTER) THEN
-    PLEG_ISBA(:)   = PLELITTER(:)
-    PLEGI_ISBA(:)  = PLELITTERI(:)
-    PLEG(:)        = PLELITTER(:)
-    PLEGI(:)       = PLELITTERI(:)
-   ELSE
-    PLEG_ISBA(:)   = PLEG(:)
-    PLEGI_ISBA(:)  = PLEGI(:)
-   ENDIF
-   PLEI_ISBA(:)   = PLEGI(:) + PLEI_FLOOD(:) + PLES(:) + PLES_V_C(:)
-   PLEV_ISBA(:)   = PLEV_V_C(:)
-   PLETR_ISBA(:)  = PLETR_V_C(:) 
-   PUSTAR_ISBA(:) = PUSTAR(:)                  ! NOTE for now, this is same as total Ustar (includes snow)
-! LER does not include intercepted snow sublimation
-   PLER_ISBA(:)   = PLEV_V_C(:) - PLETR_V_C(:) 
-! LE includes intercepted snow sublimation
-   PLE_ISBA(:)    = PLEG_ISBA(:) + PLEGI_ISBA(:) + PLEV_ISBA(:) + PLE_FLOOD(:) + PLES_V_C(:) + PLEI_FLOOD(:)
-   PGFLUX_ISBA(:) = PRN_ISBA(:) - PH_ISBA(:) - PLE_ISBA(:)
-!
-   PEMIST(:)      = PEMIS(:)
-!
-! Effective surface temperature (for diag): for MEB:
+  DEK%XLEV_SN_FR (:) = DEK%XLEV_CV (:)
+  DEK%XLETR_SN_FR(:) = DEK%XLETR_CV(:) 
+  ! NOTE for now, this is same as total Ustar (includes snow)   
+  DEK%XUSTAR_SN_FR(:) = PUSTAR       (:)        
+  ! LER does not include intercepted snow sublimation
+  DEK%XLER_SN_FR  (:) = DEK%XLEV_CV(:) - DEK%XLETR_CV(:) 
 
-   ZWORK(:)       =  PPALPHAN(:)*PPSN(:)
-   PTS(:)         = (1.0 - ZWORK(:))*PTC(:) + ZWORK(:)*PSNOWTEMP(:)
-!
-! Total heat FLUX into snow/soil/vegetation surface:
-!
-   PGFLUX(:)      = PRN(:) - PH(:) - PLE(:) + PHPSNOW(:) 
-!
+  DEK%XLEI_SN_FR  (:) = DEK%XLEGI(:) + DEK%XLEI_FLOOD(:) + DEK%XLES(:) + DEK%XLES_CV(:)
+  ! LE includes intercepted snow sublimation
+  DEK%XLE_SN_FR   (:) = DEK%XLEG_SN_FR(:) + DEK%XLEGI_SN_FR(:) + DEK%XLEV_SN_FR(:) + &
+                 DEK%XLES_CV(:) + DEK%XLE_FLOOD(:) + DEK%XLEI_FLOOD(:)
+  DEK%XGFLUX_SN_FR(:) = DEK%XRN_SN_FR(:) - DEK%XH_SN_FR(:) - DEK%XLE_SN_FR(:)
+  !
+  PEMIST(:) = PEMIS(:)
+  !
+  ! Effective surface temperature (for diag): for MEB:
+
+  ZWORK   (:) =  PPALPHAN(:)*PEK%XPSN(:)
+  DK%XTS(:) = (1.0 - ZWORK(:))*PEK%XTC(:) + ZWORK(:)*DMK%XSNOWTEMP(:,1)
+  !
+  ! Total heat FLUX into snow/soil/vegetation surface:
+  !
+  DK%XGFLUX(:) = DK%XRN(:) - DK%XH(:) - PEK%XLE(:) + DMK%XHPSNOW(:) 
+  !
 ELSE
 !
 ! * 2. Using an explicit snow scheme option with composite soil/veg ISBA:
 !      ------------------------------------------------------------------
 !
-   IF(HSNOW_ISBA == '3-L' .OR. HSNOW_ISBA == 'CRO')THEN
+   IF(PEK%TSNOW%SCHEME == '3-L' .OR. PEK%TSNOW%SCHEME == 'CRO')THEN
 !
 !     Save fluxes from Force-Restore snow/explicit snow-free
 !     portion of grid box (vegetation/soil):
 !
-      PRN_ISBA(:)    = PRN(:)
-      PH_ISBA(:)     = PH(:)
-      PLEG_ISBA(:)   = PLEG(:)
-      PLEGI_ISBA(:)  = PLEGI(:)
-      PLEV_ISBA(:)   = PLEV(:)
-      PLETR_ISBA(:)  = PLETR(:)
-      PUSTAR_ISBA(:) = PUSTAR(:)
-      PLER_ISBA(:)   = PLER(:) 
-      PLE_ISBA(:)    = PLE(:)
-      PGFLUX_ISBA(:) = PGFLUX(:)
+      DEK%XLEG_SN_FR  (:) = DEK%XLEG (:)
+      DEK%XLEGI_SN_FR (:) = DEK%XLEGI(:)
+      DEK%XLEV_SN_FR  (:) = DEK%XLEV (:)
+      DEK%XLETR_SN_FR (:) = DEK%XLETR(:)
+      DEK%XLER_SN_FR  (:) = DEK%XLER (:)
+      DEK%XRN_SN_FR   (:) = DK%XRN   (:)
+      DEK%XH_SN_FR    (:) = DK%XH    (:)
+      DEK%XUSTAR_SN_FR(:) = PUSTAR   (:)      
+
+      DEK%XLE_SN_FR   (:) = PEK%XLE(:)
+      DEK%XGFLUX_SN_FR(:) = DK%XGFLUX(:)
 !  
-      PLEI_ISBA(:)   = PLEGI(:)+PLEI_FLOOD(:)+PLES(:)
+      DEK%XLEI_SN_FR  (:)= DEK%XLEGI(:) + DEK%XLEI_FLOOD(:) + DEK%XLES(:)
 !
 !     Effective surface temperature (for diag):
 !
-      PTS(:)       = (1.-PPSN(:))*PTG(:)+PPSN(:)*PSNOWTEMP(:)
+      DK%XTS(:) = (1.-PEK%XPSN(:))*PEK%XTG(:,1)+PEK%XPSN(:)*DMK%XSNOWTEMP(:,1)
 !
 !     Effective surface radiating temperature:
 !
-      PALBT (:)    = PALB (:)*(1.-PPSN(:)) + PPSN(:)*PALB3L  (:)
-      PEMIST(:)    = PEMIS(:)*(1.-PPSN(:)) + PPSN(:)*PEMISNOW(:)
+      DK%XALBT (:) = PALB (:)*(1.-PEK%XPSN(:)) + PEK%XPSN(:)*PALB3L(:)
+      PEMIST     (:) = PEMIS(:)*(1.-PEK%XPSN(:)) + PEK%XPSN(:)*PEK%TSNOW%EMIS(:)
 !  
-      PTS_RAD(:)   = ( ((1.-PPSN(:))*PEMIS   (:)*PTG      (:)**4 +   &
-                            PPSN(:) *PEMISNOW(:)*PSNOWTEMP(:)**4     &
+      DK%XTSRAD(:) = ( ((1.-PEK%XPSN(:))*PEMIS(:)*PEK%XTG(:,1)**4 +   &
+                               PEK%XPSN(:) *PEK%TSNOW%EMIS(:)*DMK%XSNOWTEMP(:,1)**4     &
                             )/PEMIST(:) )**(0.25)  
 !
 !     Calculate actual fluxes from snow-free natural
@@ -340,66 +237,67 @@ ELSE
 !     of natural portion of grid box when *ISBA-ES* in force.
 !     when NOT in use, then these fluxes equal those above.
 !
-      PRN(:)       = (1.-PPSN(:))  * PRN(:)   + PPSN(:) * PRNSNOW(:)
-      PH(:)        = (1.-PPSN(:))  * PH(:)    + PPSN(:) * PHSNOW(:)
+      DK%XRN   (:) = (1.-PEK%XPSN(:)) * DK%XRN(:) + PEK%XPSN(:) * DMK%XRNSNOW(:)
+      DK%XH    (:) = (1.-PEK%XPSN(:)) * DK%XH (:) + PEK%XPSN(:) * DMK%XHSNOW(:)
 !  
-      PLEG(:)      = (1.-PPSNG(:)-PFFG(:)) * PLEG(:)  
-      PLEGI(:)     = (1.-PPSNG(:)-PFFG(:)) * PLEGI(:)  
-      PLEV(:)      = (1.-PPSNV(:)-PFFV(:)) * PLEV(:)   
-      PLETR(:)     = (1.-PPSNV(:)-PFFV(:)) * PLETR(:)  
-      PLER(:)      = (1.-PPSNV(:)-PFFV(:)) * PLER(:)  
+      DEK%XLEG (:) = (1.-PEK%XPSNG(:)-KK%XFFG(:)) * DEK%XLEG(:)  
+      DEK%XLEGI(:) = (1.-PEK%XPSNG(:)-KK%XFFG(:)) * DEK%XLEGI(:)  
+      DEK%XLEV (:) = (1.-PEK%XPSNV(:)-KK%XFFV(:)) * DEK%XLEV(:)   
+      DEK%XLETR(:) = (1.-PEK%XPSNV(:)-KK%XFFV(:)) * DEK%XLETR(:)  
+      DEK%XLER (:) = (1.-PEK%XPSNV(:)-KK%XFFV(:)) * DEK%XLER(:)  
 !
 !     Total evapotranspiration flux (kg/m2/s):
 !
-      PEVAP(:)     = (PLEV(:) + PLEG(:))/PLVTT(:) + PLEGI(:)/PLSTT(:) + PLE_FLOOD(:)/PLVTT(:) + &
-                      PLEI_FLOOD(:)/PLSTT(:) + PPSN(:) * PEVAP3L(:)
+      DK%XEVAP(:) = (DEK%XLEV(:) + DEK%XLEG(:))/PK%XLVTT(:) + DEK%XLEGI(:)/PK%XLSTT(:) + &
+                                   DEK%XLE_FLOOD(:)/PK%XLVTT(:) + DEK%XLEI_FLOOD(:)/PK%XLSTT(:) + &
+                                   PEK%XPSN(:) * PEVAP3L(:)
 !
 !     ISBA-ES/SNOW3L fluxes:
 !
-      PLES(:)       =                           PPSN(:) * PLES3L(:)
-      PLESL(:)      =                           PPSN(:) * PLEL3L(:)
-      PRNSNOW(:)    =                           PPSN(:) * PRNSNOW(:)
-      PHSNOW(:)     =                           PPSN(:) * PHSNOW(:)
-      PGFLUXSNOW(:) =                           PPSN(:) * PGFLUXSNOW(:)
-      PSNOWHMASS(:) =                           PPSN(:) * PSNOWHMASS(:)  ! (J m-2)
-      PHPSNOW(:)    =                           PPSN(:) * PHPSNOW(:)
-      PGSFCSNOW(:)  =                           PPSN(:) * PGSFCSNOW(:)
-      PSWNETSNOW(:) =                           PPSN(:) * PSWNETSNOW(:)
-      PSWNETSNOWS(:)=                           PPSN(:) * PSWNETSNOWS(:)
-      PEVAP3L(:)    =                           PPSN(:) * PEVAP3L(:)
+      DEK%XLES     (:) = PEK%XPSN(:) * PLES3L(:)
+      DEK%XLESL    (:) = PEK%XPSN(:) * PLEL3L(:)
+      DMK%XRNSNOW   (:) = PEK%XPSN(:) * DMK%XRNSNOW   (:)
+      DMK%XHSNOW    (:) = PEK%XPSN(:) * DMK%XHSNOW    (:)
+      DMK%XGFLUXSNOW(:) = PEK%XPSN(:) * DMK%XGFLUXSNOW(:)
+      DMK%XSNOWHMASS(:) = PEK%XPSN(:) * DMK%XSNOWHMASS(:)  ! (J m-2)
+      DMK%XHPSNOW   (:) = PEK%XPSN(:) * DMK%XHPSNOW   (:)
+      PGSFCSNOW      (:) = PEK%XPSN(:) * PGSFCSNOW(:)
+      PEVAP3L        (:) = PEK%XPSN(:) * PEVAP3L  (:)
 !
 !     Total heat flux between snow and soil
 !
-      PGRNDFLUX(:) =                            PPSN(:) * (PZGRNDFLUX(:)+PFLSN_COR(:))
-      PMELTADV(:)  =                            PPSN(:) * PMELTADV(:)
+      DMK%XGRNDFLUX(:) = PEK%XPSN(:) * (PZGRNDFLUX(:)+PFLSN_COR(:))
+      DEK%XMELTADV(:) = PEK%XPSN(:) * DEK%XMELTADV(:)
 !
 !     Total evaporative flux (W/m2) :
 !
-      PLE(:)       = PLEG(:) + PLEV(:) + PLES(:) + PLESL(:) + PLEGI(:) + PLE_FLOOD(:) + PLEI_FLOOD(:)
+      PEK%XLE(:) = DEK%XLEG(:) + DEK%XLEV(:) + DEK%XLES(:) + DEK%XLESL(:) + &
+                   DEK%XLEGI(:) + DEK%XLE_FLOOD(:) + DEK%XLEI_FLOOD(:)
 !
 !     Total sublimation flux (W/m2) :
 !
-      PLEI(:)      = PLES(:) + PLEGI(:) + PLEI_FLOOD(:)
+      DK%XLEI  (:) = DEK%XLES(:) + DEK%XLEGI(:) + DEK%XLEI_FLOOD(:)
 !
 !     Total sublimation flux (kg/m2/s):
 !
-      PSUBL(:)     = PLEI(:)/PLSTT(:)
+      DK%XSUBL (:) = DK%XLEI(:)/PK%XLSTT(:)
 !
 !     Total FLUX into snow/soil/vegetation surface:
 !
-      PGFLUX(:)    = PRN(:) - PH(:) - PLE(:) + PHPSNOW(:)  
+      DK%XGFLUX(:) = DK%XRN(:) - DK%XH(:) - PEK%XLE(:) + DMK%XHPSNOW(:)  
 !
 !     surface humidity:
 !
-      PQS(:)       = (1.-PPSN(:))  * PQS(:)   + PPSN(:) * PQS3L(:)
+      DK%XQS   (:) = (1.-PEK%XPSN(:)) * DK%XQS(:) + PEK%XPSN(:) * PQS3L(:)
 !
 !     near-surface humidity :
 !  
-      PHU(:)       = (1.-PPSN(:))  * PHU(:)   + PPSN(:)
+      DK%XHU   (:) = (1.-PEK%XPSN(:)) * DK%XHU(:) + PEK%XPSN(:)
 !
 !     Momentum fluxes:
 !
-      PUSTAR(:)    = SQRT( (1.-PPSN(:))  * PUSTAR(:)**2  + PPSN(:) * PUSTARSNOW(:)**2 )
+      PUSTAR     (:) = SQRT( (1.-PEK%XPSN(:))  * PUSTAR(:)**2  + &
+                                 PEK%XPSN(:) * DMK%XUSTARSNOW(:)**2 )
 !
 !     Richardson number and Drag coeff:
 !
@@ -407,16 +305,16 @@ ELSE
 !
    ELSE
 !
-      PTS    (:)  = PTG  (:)
-      PTS_RAD(:)  = PTG  (:)
-      PALBT  (:)  = PALB (:)
-      PEMIST (:)  = PEMIS(:)
+      DK%XTS    (:)  = PEK%XTG(:,1)
+      DK%XTSRAD (:)  = PEK%XTG(:,1)
+      DK%XALBT  (:)  = PALB (:)
+      PEMIST    (:)  = PEMIS(:)
 !  
 !     Total sublimation flux (W/m2) :
-      PLEI   (:)  = PLES(:) + PLEGI(:) + PLEI_FLOOD(:)
+      DK%XLEI   (:)  = DEK%XLES(:) + DEK%XLEGI(:) + DEK%XLEI_FLOOD(:)
 !
 !     Total sublimation flux (kg/m2/s):
-      PSUBL  (:)  = PLEI(:)/PLSTT(:)
+      DK%XSUBL  (:)  = DK%XLEI(:)/PK%XLSTT(:)
 !
    ENDIF
 !
@@ -425,7 +323,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_AGR',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE COMPUT_RI_DRAG
@@ -451,8 +349,8 @@ IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_AGR:COMPUT_RI_DRAG',0,ZHOOK_HANDLE)
 !
 ! * Richardson number
 !
- CALL SURFACE_RI(PTS, PQS, PEXNS, PEXNA, PTA, PQA,  &
-                PZREF, PUREF, PDIRCOSZW, PVMOD, PRI)  
+CALL SURFACE_RI(DK%XTS, DK%XQS, PEXNS, PEXNA, PTA, PQA,  &
+                PZREF, PUREF, PDIRCOSZW, PVMOD, DK%XRI)  
 !
 ! * Wind check
 !
@@ -461,20 +359,20 @@ ZVMOD = WIND_THRESHOLD(PVMOD,PUREF)
 ! * Drag coefficient for heat and momentum
 !
 IF (LDRAG_COEF_ARP) THEN
-   CALL SURFACE_CDCH_1DARP(PZREF, PZ0EFF, PZ0H, ZVMOD, PTA, PTG, &
-                             PQA, PQS, PCD, PCDN, PCH              )
+   CALL SURFACE_CDCH_1DARP(PZREF, DK%XZ0EFF, DK%XZ0H, ZVMOD, PTA, PEK%XTG(:,1), &
+                             PQA, DK%XQS, DK%XCD, DK%XCDN, DK%XCH              )
 ELSE
-   CALL SURFACE_AERO_COND(PRI, PZREF, PUREF, ZVMOD, PZ0, PZ0H, ZAC, ZRA, PCH)
-   CALL SURFACE_CD(PRI, PZREF, PUREF, PZ0EFF, PZ0H, PCD, PCDN)
+   CALL SURFACE_AERO_COND(DK%XRI, PZREF, PUREF, ZVMOD, DK%XZ0, DK%XZ0H, ZAC, ZRA, DK%XCH)
+   CALL SURFACE_CD(DK%XRI, PZREF, PUREF, DK%XZ0EFF, DK%XZ0H, DK%XCD, DK%XCDN)
 ENDIF
 !
 IF (LRRGUST_ARP) THEN
    ZFP(:)=MAX(0.0,PRR(:)+PSR(:))
    ZRRCOR(:)=SQRT(1.0+((((ZFP(:)/(ZFP(:)+XRRSCALE))**XRRGAMMA)*XUTILGUST)**2) &
-       /(PCD(:)*ZVMOD(:)**2))  
-   PCD  = PCD  * ZRRCOR
-   PCH  = PCH  * ZRRCOR
-   PCDN = PCDN * ZRRCOR
+       /(DK%XCD(:)*ZVMOD(:)**2))  
+   DK%XCD  = DK%XCD  * ZRRCOR
+   DK%XCH  = DK%XCH  * ZRRCOR
+   DK%XCDN = DK%XCDN * ZRRCOR
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_SNOW_AGR:COMPUT_RI_DRAG',1,ZHOOK_HANDLE)

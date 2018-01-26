@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE HOR_INTERPOL (DTCO, U, GCP,&
-                         KLUOUT,PFIELDIN,PFIELDOUT)
+SUBROUTINE HOR_INTERPOL (DTCO, U, GCP, KLUOUT,PFIELDIN,PFIELDOUT)
 !     #################################################################################
 !
 !!****  *HOR_INTERPOL * - Call the interpolation of a surface field
@@ -29,12 +28,9 @@ SUBROUTINE HOR_INTERPOL (DTCO, U, GCP,&
 !!      P. Le Moigne 10/2005, Phasage Arome
 !!------------------------------------------------------------------
 !
-!
-!
-!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
 !
@@ -129,8 +125,7 @@ SELECT CASE (CINTERP_TYPE)
 !              ------------------------------
 !
   CASE('BUFFER')
-    CALL HOR_INTERPOL_BUFFER(DTCO, U, &
-                             KLUOUT,PFIELDIN,PFIELDOUT)
+    CALL HOR_INTERPOL_BUFFER(DTCO, U, KLUOUT,PFIELDIN,PFIELDOUT)
 
 !
 !*      4.     no interpolation

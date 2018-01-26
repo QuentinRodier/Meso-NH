@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_DEP_ISBA_n (CHI, DTCO, I, &
+      SUBROUTINE CH_INIT_DEP_ISBA_n (CHI, NCHI, NP, DTCO, KPATCH, OCOVER, PCOVER, &
                                      KCH,KLUOUT,KLU)
 !!    ##################################################
 !!
@@ -63,9 +63,9 @@
 !!    --------
 !
 !
-USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t, CH_ISBA_NP_t
+USE MODD_ISBA_n, ONLY : ISBA_NP_t
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_ISBA_n, ONLY : ISBA_t
 !
 USE MODI_CH_OPEN_INPUTB  ! open the general purpose ASCII input file
 USE MODI_CONVERT_COVER_CH_ISBA
@@ -90,8 +90,13 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(CH_ISBA_NP_t), INTENT(INOUT) :: NCHI
+TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(ISBA_t), INTENT(INOUT) :: I
+!
+INTEGER, INTENT(IN) :: KPATCH
+LOGICAL, DIMENSION(:), INTENT(IN) :: OCOVER
+REAL, DIMENSION(:,:), INTENT(IN) :: PCOVER
 !
 INTEGER,                         INTENT(IN)  :: KCH      ! chemistry input file
 INTEGER,                         INTENT(IN)  :: KLUOUT   ! output listing channel
@@ -108,7 +113,7 @@ INTEGER :: IRESIS         ! number of chemical reactivity factor to be read
 REAL             , DIMENSION(:), ALLOCATABLE :: ZRESISVAL 
 ! chemical reactivity factor value
 !
-INTEGER :: JI, JNREAL ! loop control variables
+INTEGER :: JI, JNREAL, JP ! loop control variables
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !=============================================================================
@@ -132,20 +137,23 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
     !
     !*       2.    Physiographic fields
     !
-    ALLOCATE(CHI%XSOILRC_SO2(KLU,I%NPATCH))
-    ALLOCATE(CHI%XSOILRC_O3(KLU,I%NPATCH))
-
-    CALL CONVERT_COVER_CH_ISBA(DTCO, &
-                               I%XCOVER,I%LCOVER,CHI%XSOILRC_SO2,CHI%XSOILRC_O3)
+    DO JP = 1,KPATCH
+      !
+      ALLOCATE(NCHI%AL(JP)%XSOILRC_SO2(NP%AL(JP)%NSIZE_P))
+      ALLOCATE(NCHI%AL(JP)%XSOILRC_O3 (NP%AL(JP)%NSIZE_P))
+      !
+      CALL CONVERT_COVER_CH_ISBA(DTCO, PCOVER, OCOVER, KPATCH, JP, NP%AL(JP), &
+                               NCHI%AL(JP)%XSOILRC_SO2, NCHI%AL(JP)%XSOILRC_O3)
+      !
+      !---------------------------------------------------------------------------
+      !
+      !
+      !*       3.    read surface resistance SURF_RES
+      !
+      ALLOCATE(NCHI%AL(JP)%XDEP(KLU,CHI%SVI%NBEQ))
+      !
+    ENDDO
     !
-    !---------------------------------------------------------------------------
-    !
-    !
-    !*       3.    read surface resistance SURF_RES
-    !
-    ALLOCATE(CHI%XDEP(KLU,CHI%SVI%NBEQ,I%NPATCH))
-    !
-!$OMP SINGLE
     ! open input file
     WRITE(KLUOUT,*) &
            "CH_INIT_DEP_ISBA_n: reading  reactivity factor "  
@@ -158,19 +166,16 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
     ! read data input format
     READ(KCH,"(A)") YFORMAT
     WRITE(KLUOUT,*) "input format is: ", YFORMAT
-!$OMP END SINGLE COPYPRIVATE(IRESIS,YFORMAT)
     !
     ! allocate fields
     ALLOCATE(YRESISNAME(IRESIS))
     ALLOCATE(ZRESISVAL(IRESIS))
     !
-!$OMP SINGLE
     ! read reactivity factor 
     DO JI = 1, IRESIS
       READ(KCH,YFORMAT) YRESISNAME(JI), ZRESISVAL(JI)
       WRITE(KLUOUT,YFORMAT) YRESISNAME(JI), ZRESISVAL(JI)
     END DO
-!$OMP END SINGLE COPYPRIVATE(YRESISNAME,ZRESISVAL)
 !
     ! close file
     DO JNREAL = 1, IRESIS
@@ -199,7 +204,9 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
    DEALLOCATE(YRESISNAME)
    DEALLOCATE(ZRESISVAL)
   ELSE
-    ALLOCATE(CHI%XDEP(0,0,0))
+    DO JP = 1,KPATCH
+      ALLOCATE(NCHI%AL(JP)%XDEP(0,0))
+    ENDDO
   END IF
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEP_ISBA_N',1,ZHOOK_HANDLE)
   !

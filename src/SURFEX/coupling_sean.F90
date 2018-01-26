@@ -3,16 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_SEA_n (SM, DGL, U, DST, SLT, &
-                           HPROGRAM, HCOUPLING, PTIMEC,                                       &
+SUBROUTINE COUPLING_SEA_n (SM, DGO, DL, DLC, U, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC,     &
                  PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, &
                  PAZIM,PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,           &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
                  PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                       )  
+                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST   )  
 !     ###############################################################################
 !
 !!****  *COUPLING_SEA_n * - Chooses the surface schemes for sea   
@@ -40,7 +38,7 @@ SUBROUTINE COUPLING_SEA_n (SM, DGL, U, DST, SLT, &
 !
 USE MODD_SURFEX_n, ONLY : SEAFLUX_MODEL_t
 !
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
@@ -61,7 +59,9 @@ IMPLICIT NONE
 !
 !
 TYPE(SEAFLUX_MODEL_t), INTENT(INOUT) :: SM
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: DL
+TYPE(DIAG_t), INTENT(INOUT) :: DLC
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
@@ -142,31 +142,25 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_SEA_N',0,ZHOOK_HANDLE)
 IF (U%CSEA=='SEAFLX') THEN
-  CALL COUPLING_SEAFLUX_OROG_n(SM, DST, SLT, &
-                               HPROGRAM, HCOUPLING, PTIMEC,                                  &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-                 KI, KSV, KSW,                                                               &
+  CALL COUPLING_SEAFLUX_OROG_n(SM, DST, SLT, HPROGRAM, HCOUPLING, PTIMEC,                    &
+                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,                           &
                  PTSUN, PZENITH, PZENITH2,PAZIM,                                             &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
                  PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                        )  
+                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST                 )  
 ELSE IF (U%CSEA=='FLUX  ') THEN
-  CALL COUPLING_IDEAL_FLUX(DGL, &
-                           HPROGRAM, HCOUPLING, PTIMEC,                                      &
-                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                         &
-                 KI, KSV, KSW,                                                               &
+  CALL COUPLING_IDEAL_FLUX(DGO, DL, DLC, HPROGRAM, HCOUPLING, PTIMEC,                      &
+                 PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,                           &
                  PTSUN, PZENITH, PAZIM,                                                      &
                  PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV,                 &
                  PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, PPA,                   &
                  PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                    &
                  PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                &
                  PPEW_A_COEF, PPEW_B_COEF,                                                   &
-                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,                         &
-                 HTEST                                                                        )  
+                 PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, HTEST       )  
 ELSE IF (U%CSEA=='NONE  ') THEN
   PSFTH = 0.
   PSFTQ = 0.

@@ -44,13 +44,26 @@ IMPLICIT NONE
 !------------------------------------------------------------------------------
 !
 ! Maximum number of cover classes
-INTEGER, PARAMETER    :: JPCOVER  = 573
+INTEGER  :: JPCOVER
 !last class number of EUROPE
 INTEGER, PARAMETER    :: NCOVER_ECO1_END    = 255
 !firt class number of EUROPE
 INTEGER, PARAMETER    :: NCOVER_ECO2_START  = 301
 !
-INTEGER                                :: NVEGTYPE
+INTEGER, PARAMETER :: NVEGTYPE_OLD = 19
+INTEGER, PARAMETER :: NVEGTYPE_ECOSG = 20
+!
+INTEGER, PARAMETER :: NWATTYPE = 2
+INTEGER, PARAMETER :: NSEATYPE = 1
+INTEGER, PARAMETER :: NTWNTYPE = 10
+INTEGER, DIMENSION(4) :: NTYPE = (/NSEATYPE,NWATTYPE,NVEGTYPE_ECOSG,NTWNTYPE/)
+!
+LOGICAL, DIMENSION(NVEGTYPE_ECOSG) :: LVEG_PRES
+!
+INTEGER, PARAMETER :: NCOVER = 573
+!
+INTEGER :: NVEGTYPE
+!
 ! number of vegetation types
 !
 INTEGER  :: NVT_C4    ! C4 cultures types
@@ -72,10 +85,27 @@ INTEGER  :: NVT_ROCK  ! ROCKs
 INTEGER  :: NVT_SNOW  ! Ice-cap ice-sheet
 INTEGER  :: NVT_IRR   ! IRRigated crops
 INTEGER  :: NVT_PARK  ! irrigated PARKs gardens or peat bogs
+!
+INTEGER :: NVT_C3W    ! winter C3 crops
+INTEGER :: NVT_C3S    ! summer C3 crops
+INTEGER :: NVT_FLTR   ! flooded trees
+INTEGER :: NVT_FLGR   ! flooded grassland
+!
 ! indexes of these types (C4 cultures types, Broadleaf TREEs, CONIferous trees,
 !                         EVERgreen broadleaf trees, GRASsland, TROpical Grass,
 !                         C3 CULTures types, NO vegetation, ROCKs,
 !                         IRRigated crops, irrigated PARKs gardens or peat bogs)
+!
+INTEGER :: NUT_CPHR
+INTEGER :: NUT_CPMR
+INTEGER :: NUT_CPLR
+INTEGER :: NUT_OPHR
+INTEGER :: NUT_OPMR
+INTEGER :: NUT_OPLR
+INTEGER :: NUT_LWLR
+INTEGER :: NUT_LALR
+INTEGER :: NUT_SPAR
+INTEGER :: NUT_INDU
 !
 !---------------------------------------------------------------------------------
 !
@@ -88,8 +118,8 @@ INTEGER                                :: NPERMSNOW
 !
 ! Free water bodies
 !
-INTEGER, DIMENSION(3)                  :: NSEA
-INTEGER, DIMENSION(2)                  :: NWATER
+INTEGER, DIMENSION(:), ALLOCATABLE     :: NSEA
+INTEGER, DIMENSION(:), ALLOCATABLE     :: NWATER
 !
 !---------------------------------------------------------------------------------
 !
@@ -109,7 +139,7 @@ INTEGER                                :: NDATA_FLOOR_LAYER
 !---------------------------------------------------------------------------------
 !* names of all ecosystems
 !
- CHARACTER(LEN=60), DIMENSION(JPCOVER,2) :: CNAMES
+ CHARACTER(LEN=60), DIMENSION(:,:), ALLOCATABLE :: CNAMES
 !---------------------------------------------------------------------------------
 !
 ! reference height for CDN averaging

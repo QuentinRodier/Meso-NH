@@ -53,7 +53,7 @@ END TYPE IDEAL_t
 
 
 
- CONTAINS
+CONTAINS
 
 !
 

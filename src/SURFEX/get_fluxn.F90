@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE GET_FLUX_n (DGU, &
+      SUBROUTINE GET_FLUX_n (DGO, D, &
                              HPROGRAM,KI,PRN,PH,PLE,PLEI,PGFLUX,PT2M,PQ2M,   &
                             PHU2M,PZON10M,PMER10M,PSURFLWNET,PSURFSWNET,PCD,&  
                             PEVAP, PSUBL                                    )  
@@ -42,7 +42,7 @@
 !              ------------
 !
 !
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 USE MODI_GET_LUOUT
 USE MODD_SURF_PAR,        ONLY   : XUNDEF
@@ -57,9 +57,10 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
 !
- CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
+CHARACTER(LEN=6),     INTENT(IN)     :: HPROGRAM
 INTEGER,              INTENT(IN)     :: KI        ! Number of points
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PRN       ! Net radiation at surface    (W/m2)
 REAL, DIMENSION(KI),  INTENT(OUT)    :: PH        ! Sensible heat flux          (W/m2)
@@ -89,16 +90,16 @@ IF (LHOOK) CALL DR_HOOK('GET_FLUX_N',0,ZHOOK_HANDLE)
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !-------------------------------------------------------------------------------
 !
-IF (DGU%LSURF_BUDGET)      THEN 
-        PRN       = DGU%XAVG_RN      
-        PH        = DGU%XAVG_H  
-        PLE       = DGU%XAVG_LE 
-        PLEI      = DGU%XAVG_LEI 
-        PGFLUX    = DGU%XAVG_GFLUX 
-        PSURFLWNET= DGU%XAVG_LWD-DGU%XAVG_LWU
-        PSURFSWNET= DGU%XAVG_SWD-DGU%XAVG_SWU
-        PEVAP     = DGU%XAVG_EVAP
-        PSUBL     = DGU%XAVG_SUBL
+IF (DGO%LSURF_BUDGET)      THEN 
+        PRN       = D%XRN      
+        PH        = D%XH  
+        PLE       = D%XLE 
+        PLEI      = D%XLEI 
+        PGFLUX    = D%XGFLUX 
+        PSURFLWNET= D%XLWD-D%XLWU
+        PSURFSWNET= D%XSWD-D%XSWU
+        PEVAP     = D%XEVAP
+        PSUBL     = D%XSUBL
    ELSE 
         PRN       = XUNDEF
         PH        = XUNDEF
@@ -111,12 +112,12 @@ IF (DGU%LSURF_BUDGET)      THEN
         PSUBL     = XUNDEF        
 ENDIF           
 !
-IF (DGU%N2M>0)      THEN 
-        PT2M      = DGU%XAVG_T2M
-        PQ2M      = DGU%XAVG_Q2M
-        PHU2M     = DGU%XAVG_HU2M
-        PZON10M   = DGU%XAVG_ZON10M
-        PMER10M   = DGU%XAVG_MER10M
+IF (DGO%N2M>0)      THEN 
+        PT2M      = D%XT2M
+        PQ2M      = D%XQ2M
+        PHU2M     = D%XHU2M
+        PZON10M   = D%XZON10M
+        PMER10M   = D%XMER10M
    ELSE 
         PT2M     = XUNDEF
         PQ2M     = XUNDEF
@@ -125,8 +126,8 @@ IF (DGU%N2M>0)      THEN
         PMER10M  = XUNDEF
 ENDIF   
 !
-IF (DGU%LCOEF) THEN
-  PCD      = DGU%XAVG_CD
+IF (DGO%LCOEF) THEN
+  PCD      = D%XCD
 ELSE
   PCD      = XUNDEF
 ENDIF

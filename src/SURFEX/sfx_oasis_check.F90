@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#########
-SUBROUTINE SFX_OASIS_CHECK (I, U, &
-                            KLUOUT)
+SUBROUTINE SFX_OASIS_CHECK (IO, U, KLUOUT)
 !###################################################
 !
 !!****  *SFX_OASIS_CHECK* - Definitions for exchange of coupling fields
@@ -33,6 +32,7 @@ SUBROUTINE SFX_OASIS_CHECK (I, U, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -41,7 +41,7 @@ SUBROUTINE SFX_OASIS_CHECK (I, U, &
 !
 !
 !
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODN_SFX_OASIS, ONLY : CCALVING, LWATER
@@ -58,7 +58,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 INTEGER, INTENT(IN) :: KLUOUT
@@ -86,7 +86,7 @@ ENDIF
 !
 !
 IF(LCPL_CALVING)THEN
-  IF(.NOT.I%LGLACIER)THEN
+  IF(.NOT.IO%LGLACIER)THEN
     WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
     WRITE(KLUOUT,*)'Calving flux is asked by SFX - OASIS coupling      '
     WRITE(KLUOUT,*)'CCALVING = '//TRIM(CCALVING)//' in NAM_SFX_LAND_CPL'
@@ -98,18 +98,18 @@ IF(LCPL_CALVING)THEN
 ENDIF  
 !
 !
-IF(LCPL_GW.AND.I%CISBA/='DIF')THEN
+IF(LCPL_GW.AND.IO%CISBA/='DIF')THEN
    WRITE(KLUOUT,*)'SFX_OASIS_CHECK: Water table depth / surface coupling requires ISBA-DF'
    CALL ABOR1_SFX('SFX_OASIS_CHECK: ISBA-DF is required for SFX - Groundwater coupling')
 ENDIF   
-IF(.NOT.LCPL_GW.AND.I%CISBA=='DIF'.AND.I%LWTD)THEN           
+IF(.NOT.LCPL_GW.AND.IO%CISBA=='DIF'.AND.IO%LWTD)THEN           
       WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
       WRITE(KLUOUT,*)'!!! A groundwater map is specified and LAND coupling    !!!'
       WRITE(KLUOUT,*)'!!!  is activated but not groundwater/surface coupling  !!!'
       WRITE(KLUOUT,*)'!!!                                                     !!!'
       WRITE(KLUOUT,*)'!!! ARE YOU SURE : YOU DO NOT WANT THIS COUPLING ?      !!!'
       WRITE(KLUOUT,*)'!!!                                                     !!!'
-      WRITE(KLUOUT,*)'!!! Use NAM_SFX_LAND_CPL with CWTD, CFWTD and CRECHARGE !!!'
+      WRITE(KLUOUT,*)'!!! Use NAM_SFX_LAND_CPL with CWTD and CFWTD            !!!'
       WRITE(KLUOUT,*)'!!!  if you want this coupling via OASIS                !!!'
       WRITE(KLUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'  
 ENDIF

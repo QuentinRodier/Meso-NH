@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE READ_BLD_DESCRIPTION_n (&
-                                          BDD, &
-                                         HPROGRAM)
+      SUBROUTINE READ_BLD_DESCRIPTION_n (BDD, HPROGRAM)
 !     #########################
 !
 !!
@@ -39,10 +37,6 @@
 !
 !*    0.     DECLARATION
 !            -----------
-!
-!
-!
-!
 !
 !
 USE MODD_BLD_DESCRIPTION_n, ONLY : BLD_DESC_t
@@ -89,18 +83,15 @@ IF (LHOOK) CALL DR_HOOK('READ_BLD_DESCRIPTION_n',0,ZHOOK_HANDLE)
 !*    1.   Read file version
 !          -----------------
 !
- CALL READ_SURF(&
-                HPROGRAM,'VERSION',IVERSION,IRESP)
- CALL READ_SURF(&
-                HPROGRAM,'BUG',IBUGFIX,IRESP)
+ CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
+ CALL READ_SURF(HPROGRAM,'BUG',IBUGFIX,IRESP)
 !-------------------------------------------------------------------------------
 !
 !*    1.   Read configuration variables of the descriptive data
 !          ----------------------------------------------------
 !
 ALLOCATE(ZWORK(7))
- CALL READ_SURF(&
-                HPROGRAM,'BLD_DESC_CNF',ZWORK,IRESP,HDIR='-')
+ CALL READ_SURF(HPROGRAM,'BLD_DESC_CNF',ZWORK,IRESP,HDIR='-')
 !
 BDD%NDESC_BLD         = NINT(ZWORK(1))
 BDD%NDESC_AGE         = NINT(ZWORK(2))
@@ -179,13 +170,12 @@ BDD%XDESC_FRAC_PANEL = 0.   ! no solar panels for old versions of SURFEX
 !*    3.   Read descriptive data
 !          ---------------------
 !
-ITOT=(21+3*BDD%NDESC_ROOF_LAYER+3*BDD%NDESC_ROAD_LAYER+3*BDD%NDESC_WALL_LAYER+3*BDD%NDESC_FLOOR_LAYER)*BDD%NDESC_CODE &
+ITOT = (21 + 3*BDD%NDESC_ROOF_LAYER + 3*BDD%NDESC_ROAD_LAYER + &
+        3*BDD%NDESC_WALL_LAYER + 3*BDD%NDESC_FLOOR_LAYER) * BDD%NDESC_CODE &
       + 9*BDD%NDESC_USE + 2*BDD%NDESC_AGE + BDD%NDESC_BLD
 ALLOCATE(ZWORK(ITOT))
 !
- CALL READ_SURF(&
-                HPROGRAM,'BLD_DESC_DAT',ZWORK,IRESP,HDIR='-')
-!
+ CALL READ_SURF(HPROGRAM,'BLD_DESC_DAT',ZWORK,IRESP,HDIR='-')
 !
 I1=0 ; I2=0
  CALL UP_DESC_IND(BDD%NDESC_BLD)  ; BDD%NDESC_BLD_LIST(:)  = NINT(ZWORK(I1:I2))
@@ -268,7 +258,7 @@ DEALLOCATE(ZWORK)
 !
 IF (LHOOK) CALL DR_HOOK('READ_BLD_DESCRIPTION_n',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 SUBROUTINE UP_DESC_IND(K)
 INTEGER, INTENT(IN) :: K
 I1=I2+1

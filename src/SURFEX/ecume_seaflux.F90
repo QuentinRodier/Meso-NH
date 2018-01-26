@@ -3,13 +3,11 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE ECUME_SEAFLUX(PZ0SEA,PMASK,KSIZE_WATER,KSIZE_ICE,       &
-                              PTA,PEXNA,PRHOA,PSST,PSSS,PEXNS,PQA,     &
+    SUBROUTINE ECUME_SEAFLUX(S,PMASK,KSIZE_WATER,KSIZE_ICE,       &
+                              PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,     &
                               PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,PPA,   &
-                              PICHCE,OPRECIP,OPWEBB,OPWG,KZ0,          &
-                              OHANDLE_SIC,PQSAT,PSFTH,PSFTQ,PUSTAR,PCD,&
-                              PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA,          &
-                              OPERTFLUX,PPERTFLUX,HECUME               ) 
+                              PQSAT,PSFTH,PSFTQ,PUSTAR,PCD,       &
+                              PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA      ) 
 !     #######################################################################
 !
 !
@@ -54,6 +52,9 @@
 !
 !*       0.     DECLARATIONS
 !               ------------
+!
+USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
+!
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !!
 USE MODI_ICE_SEA_FLUX
@@ -67,6 +68,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+TYPE(SEAFLUX_t), INTENT(INOUT) :: S
+!
 REAL, DIMENSION(:), INTENT(IN)   :: PMASK        ! Either a mask positive for open sea, or a seaice fraction
 INTEGER           , INTENT(IN)   :: KSIZE_WATER  ! number of points with some sea water 
 INTEGER           , INTENT(IN)   :: KSIZE_ICE    ! number of points with some sea ice
@@ -79,25 +82,11 @@ REAL, DIMENSION(:), INTENT(IN)    :: PVMOD ! module of wind at atm. wind level (
 REAL, DIMENSION(:), INTENT(IN)    :: PZREF ! atm. level for temp. and humidity (m)
 REAL, DIMENSION(:), INTENT(IN)    :: PUREF ! atm. level for wind (m)
 REAL, DIMENSION(:), INTENT(IN)    :: PSST  ! Sea Surface Temperature (K)
-REAL, DIMENSION(:), INTENT(IN)    :: PSSS  ! Sea Surface Salinity (g/kg)
 REAL, DIMENSION(:), INTENT(IN)    :: PEXNS ! Exner function at sea surface
 REAL, DIMENSION(:), INTENT(IN)    :: PPS   ! air pressure at sea surface (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PPA   ! air pressure at atm. level (Pa)
 REAL, DIMENSION(:), INTENT(IN)    :: PRAIN ! precipitation rate (kg/s/m2)
 REAL, DIMENSION(:), INTENT(IN)    :: PSNOW ! snow rate (kg/s/m2)
-REAL, DIMENSION(:), INTENT(IN)    :: PPERTFLUX   ! stochastic flux perturbation pattern
-!
-REAL,               INTENT(IN)    :: PICHCE ! 
-LOGICAL,            INTENT(IN)    :: OPRECIP! 
-LOGICAL,            INTENT(IN)    :: OPWEBB ! 
-LOGICAL,            INTENT(IN)    :: OPWG   ! 
-LOGICAL,            INTENT(IN)    :: OPERTFLUX !
-INTEGER,            INTENT(IN)    :: KZ0
-LOGICAL,            INTENT(IN)    :: OHANDLE_SIC ! Do we weight seaice and open sea fluxes
- CHARACTER(LEN=6),   INTENT(IN)    :: HECUME      ! type of ecume scheme
-!
-!
-REAL, DIMENSION(:), INTENT(INOUT)    :: PZ0SEA! roughness length over the ocean
 !                                                                                 
 !  surface fluxes : latent heat, sensible heat, friction fluxes
 REAL, DIMENSION(:), INTENT(OUT)      :: PSFTH ! heat flux (W/m2)
@@ -132,7 +121,7 @@ IR_ICE(:)=0
 J1=0
 J2=0
 !
-IF (OHANDLE_SIC) THEN 
+IF (S%LHANDLE_SIC) THEN 
    ! Must compute open sea fluxes even over fully ice-covered sea, which may melt partly
    DO JJ=1,SIZE(PSST(:))
       IR_WATER(JJ)= JJ
@@ -163,13 +152,13 @@ IF (KSIZE_WATER > 0 ) CALL TREAT_SURF(IR_WATER,'W')
 !       3.      sea ice : call to ICE_SEA_FLUX
 !              ------------------------------------
 !
-IF ( (KSIZE_ICE > 0 ) .AND. (.NOT. OHANDLE_SIC) ) CALL TREAT_SURF(IR_ICE,'I')
+IF ( (KSIZE_ICE > 0 ) .AND. (.NOT. S%LHANDLE_SIC) ) CALL TREAT_SURF(IR_ICE,'I')
 !
 !
 IF (LHOOK) CALL DR_HOOK('ECUME_SEAFLUX',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
- CONTAINS
+CONTAINS
 
 SUBROUTINE TREAT_SURF(KMASK,YTYPE)
 !
@@ -223,14 +212,14 @@ DO JJ=1, SIZE(KMASK)
   ZW_ZREF(JJ) = PZREF(KMASK(JJ)) 
   ZW_UREF(JJ) = PUREF(KMASK(JJ))
   ZW_SST(JJ)  = PSST(KMASK(JJ))
-  ZW_SSS(JJ)  = PSSS(KMASK(JJ))
+  ZW_SSS(JJ)  = S%XSSS(KMASK(JJ))
   ZW_EXNS(JJ) = PEXNS(KMASK(JJ)) 
   ZW_PS(JJ)   = PPS(KMASK(JJ))
   ZW_PA(JJ)   = PPA(KMASK(JJ))
   ZW_RAIN(JJ) = PRAIN(KMASK(JJ))
   ZW_SNOW(JJ) = PSNOW(KMASK(JJ))
-  ZW_PERTFLUX(JJ) = PPERTFLUX(KMASK(JJ))
-  ZW_Z0SEA(JJ)= PZ0SEA(KMASK(JJ))
+  ZW_PERTFLUX(JJ) = S%XPERTFLUX(KMASK(JJ))
+  ZW_Z0SEA(JJ)= S%XZ0(KMASK(JJ))
 END DO
 !
 ZW_SFTH(:)   = XUNDEF
@@ -247,21 +236,21 @@ ZW_Z0HSEA(:) = XUNDEF
 !
 IF (YTYPE=='W') THEN
   !
-  IF(HECUME=='ECUME6')THEN
+  IF(S%CSEA_FLUX=='ECUME6')THEN
     !new ecume scheme
     CALL ECUMEV6_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_SSS,ZW_EXNS,  &
-             ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_PA,PICHCE,OPRECIP,OPWEBB,&
+             ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_PA,S%XICHCE,S%LPRECIP,S%LPWEBB,&
              ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD,ZW_CDN,ZW_CH,ZW_CE,      &
-             ZW_RI,ZW_RESA,ZW_RAIN,KZ0,ZW_Z0HSEA,OPERTFLUX,ZW_PERTFLUX)    
+             ZW_RI,ZW_RESA,ZW_RAIN,S%NZ0,ZW_Z0HSEA,S%LPERTFLUX,ZW_PERTFLUX)    
   ELSE
     !old ecume scheme
     CALL ECUME_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,        &
-           ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,PICHCE,OPRECIP,OPWEBB,OPWG,&
+           ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,S%XICHCE,S%LPRECIP,S%LPWEBB,S%LPWG,&
            ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD,ZW_CDN,ZW_CH,ZW_CE,     &
-           ZW_RI,ZW_RESA,ZW_RAIN,ZW_Z0HSEA,OPERTFLUX,ZW_PERTFLUX)
+           ZW_RI,ZW_RESA,ZW_RAIN,ZW_Z0HSEA,S%LPERTFLUX,ZW_PERTFLUX)
   ENDIF
   !
-ELSEIF ( (YTYPE=='I') .AND. (.NOT. OHANDLE_SIC)) THEN
+ELSEIF ( (YTYPE=='I') .AND. (.NOT. S%LHANDLE_SIC)) THEN
   !
   CALL ICE_SEA_FLUX(ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,ZW_QA,ZW_RAIN,ZW_SNOW,  &
           ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,ZW_CD, &
@@ -271,7 +260,7 @@ ENDIF
 !
 DO JJ=1, SIZE(KMASK)
    PQSAT(KMASK(JJ)) =  ZW_QSAT(JJ) 
-   PZ0SEA(KMASK(JJ))=  ZW_Z0SEA(JJ)
+   S%XZ0(KMASK(JJ))=  ZW_Z0SEA(JJ)
    PUSTAR(KMASK(JJ))=  ZW_USTAR(JJ)
    PSFTH(KMASK(JJ)) =  ZW_SFTH(JJ) 
    PSFTQ(KMASK(JJ)) =  ZW_SFTQ(JJ) 

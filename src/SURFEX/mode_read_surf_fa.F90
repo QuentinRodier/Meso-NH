@@ -58,7 +58,7 @@ END INTERFACE
 !
 !----------------------------------------------------------------------------
 !
- CONTAINS
+CONTAINS
 !
 !----------------------------------------------------------------------------
 !
@@ -89,7 +89,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:SFX_FA_VERSION',0,ZHOOK_HANDLE)
 !
 IRESP=0
 !
- CALL FANION(IRESP,NUNIT_FA,CPREFIX1D,0,'VERSION',ONEW,GWORK,INGRIB,INBITS,ISTRON,IPUILA)
+CALL FANION(IRESP,NUNIT_FA,CPREFIX1D,0,'VERSION',ONEW,GWORK,INGRIB,INBITS,ISTRON,IPUILA)
 IF (IRESP/=0) CALL ERROR_READ_SURF_FA('FULLVERSION',IRESP)
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:SFX_FA_VERSION',1,ZHOOK_HANDLE)
@@ -104,11 +104,6 @@ END SUBROUTINE SFX_FA_VERSION
 !     #############################################################
 !
 !!****  *READX0* - routine to read a real scalar
-!
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, CMASK, CPREFIX1D
 !
@@ -126,17 +121,17 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),  INTENT(IN)  :: HREC     ! name of the article to be read
 REAL,              INTENT(OUT) :: PFIELD   ! the real scalar to be read
 INTEGER,           INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100),INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=100),INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50) :: YCOMMENT
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=50) :: YCOMMENT
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -144,19 +139,19 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFX0_FA',0,ZHOOK_HANDLE)
 !
 KRESP=0
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)
 ENDIF
 !
- CALL FALIT_R(KRESP,NUNIT_FA,YNAME,PFIELD)
+CALL FALIT_R(KRESP,NUNIT_FA,YNAME,PFIELD)
 IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
 !
 YCOMMENT = TRIM(YNAME)
@@ -174,16 +169,15 @@ END SUBROUTINE READ_SURFX0_FA
 !
 !!****  *READX1* - routine to fill a real 1D array for the externalised surface 
 !
-USE MODD_SURFEX_OMP, ONLY : XWORKD, NWORKB, CWORK0
-!
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NCOMM, NPIO, XTIME_NPIO_READ, XTIME_COMM_READ, &
-                            WLOG_MPI
+                            WLOG_MPI, NREQ
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, NMASK, NFULL, NFULL_EXT, &
                             NDGL, NDLON, NDGUX, NDLUX, CPREFIX1D
 !
 USE MODE_FASURFEX
 !
+USE MODI_PACK_SAME_RANK
 USE MODI_ERROR_READ_SURF_FA
 USE MODI_READ_AND_SEND_MPI
 !
@@ -198,37 +192,34 @@ INCLUDE "mpif.h"
 !
 !*      0.1   Declarations of arguments
 !
- CHARACTER(LEN=*),    INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),    INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KL       ! number of points
 REAL, DIMENSION(:),  INTENT(OUT) :: PFIELD   ! array containing the data field
 INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100),  INTENT(OUT) :: HCOMMENT ! comment
- CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :
+CHARACTER(LEN=100),  INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :
                                              ! 'H' : field with
                                              !       horizontal spatial dim.
                                              ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=4)           :: YPREFIX
- CHARACTER(LEN=3)           :: YPREF
+CHARACTER(LEN=4)           :: YPREFIX
+CHARACTER(LEN=3)           :: YPREF
 LOGICAL                    :: GV8
 !
 INTEGER ::  I, J, INFOMPI
 #ifdef SFX_MPI
-INTEGER, DIMENSION(MPI_STATUS_SIZE) :: ISTATUS
+INTEGER, DIMENSION(MPI_STATUS_SIZE,NPROC-1) :: ISTATUS
 #endif
 !
-REAL, DIMENSION(:), ALLOCATABLE :: ZWORK2
+REAL, DIMENSION(:), ALLOCATABLE :: ZWORK2, ZWORK
 REAL   :: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFX1_FA',0,ZHOOK_HANDLE)
 !
-!$OMP BARRIER
 !
-!$OMP SINGLE
-NWORKB=0
-!$OMP END SINGLE
+KRESP=0
 !
 #ifdef SFX_MPI
 XTIME0 = MPI_WTIME()
@@ -236,23 +227,21 @@ XTIME0 = MPI_WTIME()
 !
 IF (NRANK==NPIO) THEN
   !
-!$OMP SINGLE
-  !
-  ALLOCATE(XWORKD(NFULL))
+  ALLOCATE(ZWORK(NFULL))
   !
   YPREF=HREC(1:3)
   !
   IF (YPREF=='CLS' .OR. YPREF=='SUR' .OR. YPREF=='PRO' .OR. YPREF=='ATM') THEN
     ALLOCATE(ZWORK2(NFULL_EXT))
     CALL FACILE(KRESP,NUNIT_FA,HREC(1:4),0,HREC(5:16),ZWORK2,.FALSE.)
-    IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,NWORKB)
+    IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
     DO J=1,NDGUX
       DO I=1,NDLUX
-        XWORKD((J-1)*NDLUX + I) = ZWORK2((J-1)*NDLON + I)
+        ZWORK((J-1)*NDLUX + I) = ZWORK2((J-1)*NDLON + I)
       ENDDO
     ENDDO
     DEALLOCATE(ZWORK2)
-    CWORK0 = TRIM(HREC)
+    HCOMMENT = TRIM(HREC)
   ELSE
     CALL SFX_FA_VERSION(GV8)
     IF(GV8)THEN
@@ -260,32 +249,29 @@ IF (NRANK==NPIO) THEN
     ELSE
       YPREFIX='S1D_'
     ENDIF
-    CALL FACILE(NWORKB,NUNIT_FA,YPREFIX,0,HREC,XWORKD,.FALSE.)
-    IF (NWORKB/=0) CALL ERROR_READ_SURF_FA(HREC,NWORKB)  
-    CWORK0 = YPREFIX//TRIM(HREC)
+    CALL FACILE(KRESP,NUNIT_FA,YPREFIX,0,HREC,ZWORK,.FALSE.)
+    IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)  
+    HCOMMENT = YPREFIX//TRIM(HREC)
   ENDIF
   !
-!$OMP END SINGLE
-  !
 ELSEIF (HDIR/='-') THEN
-!$OMP SINGLE
-  ALLOCATE(XWORKD(0))
-!$OMP END SINGLE
+  ALLOCATE(ZWORK(0))
 ENDIF
-!
-KRESP = NWORKB
-HCOMMENT = CWORK0
 !
 #ifdef SFX_MPI
 XTIME_NPIO_READ = XTIME_NPIO_READ + (MPI_WTIME() - XTIME0)
 #endif
 !
-IF (HDIR=='A') THEN  ! no distribution on other tasks
+IF (HDIR=='E') THEN
+  IF ( NRANK==NPIO ) THEN
+    CALL PACK_SAME_RANK(NMASK,ZWORK(:),PFIELD(:))
+  ENDIF
+ELSEIF (HDIR=='A') THEN  ! no distribution on other tasks
   IF ( NRANK==NPIO ) THEN
 #ifdef SFX_MPI
     XTIME0 = MPI_WTIME()
 #endif
-    PFIELD(:) = XWORKD(1:KL)
+    PFIELD(:) = ZWORK(1:KL)
 #ifdef SFX_MPI
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
 #endif
@@ -293,25 +279,22 @@ IF (HDIR=='A') THEN  ! no distribution on other tasks
 ELSEIF (HDIR=='-') THEN ! distribution of the total field on other tasks
 #ifdef SFX_MPI
   IF (NPROC>1) THEN
-!$OMP SINGLE
     XTIME0 = MPI_WTIME()
     CALL MPI_BCAST(NFULL,KIND(NFULL)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
-    IF ( NRANK/=NPIO ) ALLOCATE(XWORKD(NFULL))
-    CALL MPI_BCAST(XWORKD(1:KL),KL*KIND(XWORKD)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
+    IF ( NRANK/=NPIO ) ALLOCATE(ZWORK(NFULL))
+    CALL MPI_BCAST(ZWORK(1:KL),KL*KIND(ZWORK)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
-!$OMP END SINGLE
   ENDIF
 #endif
-  PFIELD(:) = XWORKD(1:KL)
+  PFIELD(:) = ZWORK(1:KL)
 ELSE
-  CALL READ_AND_SEND_MPI(XWORKD,PFIELD,NMASK)
+  CALL READ_AND_SEND_MPI(ZWORK,PFIELD,NMASK)
+  !IF (NRANK==NPIO) THEN
+  !  CALL MPI_WAITALL(NPROC-1,NREQ,ISTATUS,INFOMPI)
+  !ENDIF  
 ENDIF
 !
-!$OMP BARRIER
-!
-!$OMP SINGLE
-DEALLOCATE(XWORKD)
-!$OMP END SINGLE
+DEALLOCATE(ZWORK)
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFX1_FA',1,ZHOOK_HANDLE)
 ! 
@@ -325,15 +308,14 @@ END SUBROUTINE READ_SURFX1_FA
 !
 !!****  *READX2* - routine to fill a real 2D array for the externalised surface 
 !
-USE MODD_SURFEX_OMP, ONLY : XWORKD2, NWORKB, CWORK0
-!
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NCOMM, NPIO, XTIME_NPIO_READ, XTIME_COMM_READ, &
-                            WLOG_MPI
+                            WLOG_MPI, NREQ
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, NMASK, NFULL, CPREFIX2D
 !
 USE MODE_FASURFEX
 !
+USE MODI_PACK_SAME_RANK
 USE MODI_ERROR_READ_SURF_FA
 USE MODI_READ_AND_SEND_MPI
 !
@@ -348,39 +330,36 @@ INCLUDE "mpif.h"
 !
 !*      0.1   Declarations of arguments
 !
- CHARACTER(LEN=*),         INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),         INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                  INTENT(IN)  :: KL1      ! number of points
 INTEGER,                  INTENT(IN)  :: KL2      ! 2nd dimension
 REAL, DIMENSION(:,:),     INTENT(OUT) :: PFIELD   ! array containing the data field
 INTEGER,                  INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100),       INTENT(OUT) :: HCOMMENT ! comment
- CHARACTER(LEN=1),         INTENT(IN)  :: HDIR     ! type of field :
+CHARACTER(LEN=100),       INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=1),         INTENT(IN)  :: HDIR     ! type of field :
                                                   ! 'H' : field with
                                                   !       horizontal spatial dim.
                                                   ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=4)           :: YPREFIX
- CHARACTER(LEN=2)           :: YPATCH
- CHARACTER(LEN=3)           :: YNUM
+CHARACTER(LEN=4)           :: YPREFIX
+CHARACTER(LEN=2)           :: YPATCH
+CHARACTER(LEN=3)           :: YNUM
 LOGICAL                    :: GV8
 !
 INTEGER :: JL, I, INFOMPI ! loop counter
 !
 #ifdef SFX_MPI
-INTEGER, DIMENSION(MPI_STATUS_SIZE) :: ISTATUS
+INTEGER, DIMENSION(MPI_STATUS_SIZE,NPROC-1) :: ISTATUS
 #endif
-REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK   ! work array read in the file
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2   ! work array read in the file
 REAL:: XTIME0
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFX2_FA',0,ZHOOK_HANDLE)
 !
-!$OMP BARRIER
 !
-!$OMP SINGLE
-NWORKB=0
-!$OMP END SINGLE
+KRESP=0
 !
 #ifdef SFX_MPI
 XTIME0 = MPI_WTIME()
@@ -388,9 +367,7 @@ XTIME0 = MPI_WTIME()
 !
 IF (NRANK==NPIO) THEN
   !
-!$OMP SINGLE
-  !
-  ALLOCATE(XWORKD2(NFULL,KL2)) 
+  ALLOCATE(ZWORK2(NFULL,KL2)) 
   !  
   CALL SFX_FA_VERSION(GV8)
   !
@@ -402,62 +379,56 @@ IF (NRANK==NPIO) THEN
       WRITE(YPATCH,'(I2.2)')JL
       YPREFIX='S'//YPATCH//'_'
     ENDIF
-    CALL FACILE(NWORKB,NUNIT_FA,YPREFIX,JL,HREC,XWORKD2(:,JL),.FALSE.)
-     IF (NWORKB/=0) THEN
-       CWORK0 = YPREFIX//TRIM(HREC)
-       CALL ERROR_READ_SURF_FA(CWORK0,NWORKB)
+    CALL FACILE(KRESP,NUNIT_FA,YPREFIX,JL,HREC,ZWORK2(:,JL),.FALSE.)
+     IF (KRESP/=0) THEN
+       HCOMMENT = YPREFIX//TRIM(HREC)
+       CALL ERROR_READ_SURF_FA(HCOMMENT,KRESP)
      ENDIF  
   END DO
   !
-  CWORK0 = 'PATCH_'//TRIM(HREC)
-  !
-!$OMP END SINGLE
+  HCOMMENT = 'PATCH_'//TRIM(HREC)
   !
 ELSEIF (HDIR/='-') THEN
-!$OMP SINGLE
-  ALLOCATE(XWORKD2(0,0))
-!$OMP END SINGLE
+  ALLOCATE(ZWORK2(0,0))
 ENDIF
-!
-KRESP = NWORKB
-HCOMMENT = CWORK0
 !
 #ifdef SFX_MPI
 XTIME_NPIO_READ = XTIME_NPIO_READ + (MPI_WTIME() - XTIME0)
 #endif
 !
-IF (HDIR=='A') THEN  ! no distribution on other tasks
+IF (HDIR=='E') THEN
+  IF ( NRANK==NPIO ) THEN
+    CALL PACK_SAME_RANK(NMASK,ZWORK2(:,:),PFIELD(:,:))
+  ENDIF
+ELSEIF (HDIR=='A') THEN  ! no distribution on other tasks
   IF ( NRANK==NPIO ) THEN
 #ifdef SFX_MPI
     XTIME0 = MPI_WTIME()
 #endif
-    PFIELD(:,:) = XWORKD2(1:KL1,1:KL2)
+    PFIELD(:,:) = ZWORK2(1:KL1,1:KL2)
 #ifdef SFX_MPI
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
 #endif
   ENDIF
 ELSEIF (HDIR=='-') THEN ! distribution of the total field on other tasks
-!$OMP SINGLE
 #ifdef SFX_MPI
   IF (NPROC>1) THEN
     XTIME0 = MPI_WTIME()
     CALL MPI_BCAST(NFULL,KIND(NFULL)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
-    IF ( NRANK/=NPIO ) ALLOCATE(XWORKD2(NFULL,KL2))    
-    CALL MPI_BCAST(XWORKD2(1:KL1,1:KL2),KL1*KL2*KIND(XWORKD2)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
+    IF ( NRANK/=NPIO ) ALLOCATE(ZWORK2(NFULL,KL2))    
+    CALL MPI_BCAST(ZWORK2(1:KL1,1:KL2),KL1*KL2*KIND(ZWORK2)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
   ENDIF
 #endif
-!$OMP END SINGLE
-  PFIELD(:,:) = XWORKD2(1:KL1,1:KL2)
+  PFIELD(:,:) = ZWORK2(1:KL1,1:KL2)
 ELSE
-  CALL READ_AND_SEND_MPI(XWORKD2,PFIELD,NMASK)
+  CALL READ_AND_SEND_MPI(ZWORK2,PFIELD,NMASK)
+  !IF (NRANK==NPIO) THEN
+  !  CALL MPI_WAITALL(NPROC-1,NREQ,ISTATUS,INFOMPI)
+  !ENDIF  
 ENDIF
 !
-!$OMP BARRIER
-!
-!$OMP SINGLE
-DEALLOCATE(XWORKD2)
-!$OMP END SINGLE
+DEALLOCATE(ZWORK2)
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFX2_FA',1,ZHOOK_HANDLE)
 !
@@ -471,11 +442,6 @@ END SUBROUTINE READ_SURFX2_FA
 !     #############################################################
 !
 !!****  *READN0* - routine to read an integer
-!
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, NMASK, CMASK, CPREFIX1D
 !
@@ -493,17 +459,17 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,            INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50) :: YCOMMENT
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=50) :: YCOMMENT
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 REAL(KIND=JPRB)  :: ZHOOK_HANDLE
 !
@@ -511,19 +477,19 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFN0_FA',0,ZHOOK_HANDLE)
 !
 KRESP=0
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)
 ENDIF
 !
- CALL FALIT_I(KRESP,NUNIT_FA,YNAME,KFIELD)
+CALL FALIT_I(KRESP,NUNIT_FA,YNAME,KFIELD)
 IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
 !
 YCOMMENT = YNAME
@@ -547,8 +513,6 @@ END SUBROUTINE READ_SURFN0_FA
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NCOMM, NPIO, XTIME_NPIO_READ, XTIME_COMM_READ, & 
                             WLOG_MPI
 !
-USE MODD_SURFEx_OMP, ONLY : LWORK0, CWORK0, NWORKD, NWORKB
-!
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, NMASK, NFULL, CMASK, CPREFIX1D
 !
 USE MODE_FASURFEX
@@ -570,21 +534,22 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 INTEGER, DIMENSION(:),  INTENT(OUT) :: KFIELD   ! the integer to be read
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
- CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
+CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
                                                 ! 'H' : field with
                                                 !       horizontal spatial dim.
                                                 ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
+INTEGER, DIMENSION(:), ALLOCATABLE :: IWORK
 INTEGER ::  I, INFOMPI
 #ifdef SFX_MPI
 INTEGER, DIMENSION(MPI_STATUS_SIZE) :: ISTATUS
@@ -595,57 +560,44 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFN1_FA',0,ZHOOK_HANDLE)
 !
-!$OMP SINGLE
-NWORKB = 0
-!$OMP END SINGLE
+KRESP = 0
 !
 #ifdef SFX_MPI
 XTIME0 = MPI_WTIME()
 #endif
 !
 IF (HDIR=='-') THEN
-!$OMP SINGLE
-  ALLOCATE(NWORKD(KL))
-!$OMP END SINGLE
+  ALLOCATE(IWORK(KL))
 ENDIF
 !
 IF (NRANK==NPIO) THEN
   !
-!$OMP SINGLE
-  !  
   CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+               HREC,'R',GFOUND)
   !
   CALL SFX_FA_VERSION(GV8)
   IF(GV8)THEN
     YNAME=CPREFIX1D//TRIM(HREC)
   ELSE
     YMASK=CMASK
-    IF (LWORK0) YMASK='FULL  '
+    IF (GFOUND) YMASK='FULL  '
     YNAME=TRIM(YMASK)//TRIM(HREC)
   ENDIF
   !
   IF (HDIR=='A') THEN
-    ALLOCATE(NWORKD(KL))
+    ALLOCATE(IWORK(KL))
   ELSEIF (HDIR/='-') THEN
-    ALLOCATE(NWORKD(NFULL))
+    ALLOCATE(IWORK(NFULL))
   END IF    
   !
-  CALL FALIT_I_D(NWORKB,NUNIT_FA,YNAME,SIZE(NWORKD),NWORKD)
-  IF (NWORKB/=0) CALL ERROR_READ_SURF_FA(HREC,NWORKB)
+  CALL FALIT_I_D(KRESP,NUNIT_FA,YNAME,SIZE(IWORK),IWORK)
+  IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
   !
-  CWORK0 = YNAME
-  !
-!$OMP END SINGLE
+  HCOMMENT = YNAME
   !
 ELSEIF (HDIR/='-') THEN
-!$OMP SINGLE
-  ALLOCATE(NWORKD(0))
-!$OMP END SINGLE
+  ALLOCATE(IWORK(0))
 ENDIF
-!
-KRESP = NWORKB
-HCOMMENT = CWORK0
 !
 #ifdef SFX_MPI
 XTIME_NPIO_READ = XTIME_NPIO_READ + (MPI_WTIME() - XTIME0)
@@ -656,33 +608,26 @@ IF (HDIR=='A') THEN  ! no distribution on other tasks
 #ifdef SFX_MPI
     XTIME0 = MPI_WTIME()
 #endif
-    KFIELD(:) = NWORKD(1:KL)
+    KFIELD(:) = IWORK(1:KL)
 #ifdef SFX_MPI
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
 #endif
   ENDIF
 ELSEIF (HDIR=='-') THEN ! distribution of the total field on other tasks
-!$OMP SINGLE
 #ifdef SFX_MPI
   IF (NPROC>1) THEN
     XTIME0 = MPI_WTIME()
-    CALL MPI_BCAST(NFULL,KIND(NFULL)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
-    IF ( NRANK/=NPIO ) ALLOCATE(NWORKD(NFULL))    
-    CALL MPI_BCAST(NWORKD(1:KL),KL*KIND(NWORKD)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
+    CALL MPI_BCAST(NFULL,KIND(NFULL)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI) 
+    CALL MPI_BCAST(IWORK(1:KL),KL*KIND(IWORK)/4,MPI_INTEGER,NPIO,NCOMM,INFOMPI)
     XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
   ENDIF
 #endif
-!$OMP END SINGLE
-  KFIELD(:) = NWORKD(1:KL)
+  KFIELD(:) = IWORK(1:KL)
 ELSE
-  CALL READ_AND_SEND_MPI(NWORKD,KFIELD,NMASK)
+  CALL READ_AND_SEND_MPI(IWORK,KFIELD,NMASK)
 ENDIF
 !
-!$OMP BARRIER
-!
-!$OMP SINGLE
-DEALLOCATE(NWORKD)
-!$OMP END SINGLE
+DEALLOCATE(IWORK)
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFN1_FA',1,ZHOOK_HANDLE)
 !
@@ -696,11 +641,6 @@ END SUBROUTINE READ_SURFN1_FA
 !     #############################################################
 !
 !!****  *READC0* - routine to read a character
-!
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, CMASK, CPREFIX1D
 !
@@ -718,18 +658,18 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),   INTENT(IN)  :: HREC      ! name of the article to be read
- CHARACTER(LEN=40),  INTENT(OUT) :: HFIELD    ! the integer to be read
+CHARACTER(LEN=*),   INTENT(IN)  :: HREC      ! name of the article to be read
+CHARACTER(LEN=40),  INTENT(OUT) :: HFIELD    ! the integer to be read
 INTEGER,            INTENT(OUT) :: KRESP     ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT  ! comment
+CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT  ! comment
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50)       :: YCOMMENT
- CHARACTER(LEN=6)        :: YMASK
- CHARACTER(LEN=18)       :: YNAME ! Field Name
- CHARACTER,DIMENSION(40) :: YFIELD
-LOGICAL                 :: GV8
+CHARACTER(LEN=50)       :: YCOMMENT
+CHARACTER(LEN=6)        :: YMASK
+CHARACTER(LEN=18)       :: YNAME ! Field Name
+CHARACTER,DIMENSION(40) :: YFIELD
+LOGICAL                 :: GV8, GFOUND
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
@@ -738,19 +678,19 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFC0_FA',0,ZHOOK_HANDLE)
 !
 KRESP=0
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)
 ENDIF
 !
- CALL FALIT_C(KRESP,NUNIT_FA,YNAME,40,YFIELD)
+CALL FALIT_C(KRESP,NUNIT_FA,YNAME,40,YFIELD)
 IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
 WRITE(HFIELD,'(40A1)') YFIELD(:)
 !
@@ -768,11 +708,6 @@ END SUBROUTINE READ_SURFC0_FA
 !
 !!****  *READL0* - routine to read a logical
 !
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
-!
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, CMASK, CPREFIX1D
 !
 USE MODE_FASURFEX
@@ -789,17 +724,17 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),   INTENT(IN)  :: HREC     ! name of the article to be read
 LOGICAL,            INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
 !
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50) :: YCOMMENT
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=50) :: YCOMMENT
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -807,19 +742,19 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFL0_FA',0,ZHOOK_HANDLE)
 !
 KRESP=0
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)
 ENDIF
 !
- CALL FALIT_L(KRESP,NUNIT_FA,YNAME,OFIELD)
+CALL FALIT_L(KRESP,NUNIT_FA,YNAME,OFIELD)
 IF (KRESP/=0)CALL ERROR_READ_SURF_FA(HREC,KRESP)
 !
 YCOMMENT = YNAME
@@ -836,11 +771,6 @@ END SUBROUTINE READ_SURFL0_FA
 !     #############################################################
 !
 !!****  *READL1* - routine to read a logical array
-!
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0, LWORKD, NWORKB, CWORK0
 !
 USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NCOMM, NPIO, XTIME_NPIO_READ, XTIME_COMM_READ, &
                             WLOG_MPI
@@ -865,20 +795,20 @@ INCLUDE "mpif.h"
 !
 !
 !
- CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),       INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,                INTENT(IN)  :: KL       ! number of points
 LOGICAL, DIMENSION(:),  INTENT(OUT) :: OFIELD   ! array containing the data field
 INTEGER,                INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
- CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
+CHARACTER(LEN=100),     INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=1),       INTENT(IN)  :: HDIR     ! type of field :
                                                 ! 'H' : field with
                                                 !       horizontal spatial dim.
                                                 ! '-' : no horizontal dim.
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 INTEGER           :: INFOMPI
 REAL  :: XTIME0
@@ -890,39 +820,30 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFL1_FA',0,ZHOOK_HANDLE)
 XTIME0 = MPI_WTIME()
 #endif
 !
-!$OMP SINGLE
-NWORKB = 0
-!
-ALLOCATE(LWORKD(KL))
-!$OMP END SINGLE
+KRESP = 0
 !
 IF (NRANK==NPIO) THEN
   !
-!$OMP SINGLE
   !
   CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+               HREC,'R',GFOUND)
   !
   CALL SFX_FA_VERSION(GV8)
   IF(GV8)THEN
     YNAME=CPREFIX1D//TRIM(HREC)
   ELSE
     YMASK=CMASK
-    IF (LWORK0) YMASK='FULL  '
+    IF (GFOUND) YMASK='FULL  '
     YNAME=TRIM(YMASK)//TRIM(HREC)
   ENDIF
   !
-  CALL FALIT_L_D(NWORKB,NUNIT_FA,YNAME,KL,LWORKD)
-  IF (NWORKB/=0) CALL ERROR_READ_SURF_FA(HREC,NWORKB)
+  CALL FALIT_L_D(KRESP,NUNIT_FA,YNAME,KL,OFIELD)
+  IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
   !
-  CWORK0 = YNAME
+  HCOMMENT = YNAME
   !
-!$OMP END SINGLE
   !
 ENDIF
-!
-KRESP = NWORKB
-HCOMMENT = CWORK0
 !
 #ifdef SFX_MPI
 XTIME_NPIO_READ = XTIME_NPIO_READ + (MPI_WTIME() - XTIME0)
@@ -930,15 +851,11 @@ XTIME_NPIO_READ = XTIME_NPIO_READ + (MPI_WTIME() - XTIME0)
 !
 #ifdef SFX_MPI
 IF (NPROC>1 .AND. HDIR/='A') THEN
-!$OMP SINGLE         
   XTIME0 = MPI_WTIME()
-  CALL MPI_BCAST(LWORKD,KL,MPI_LOGICAL,NPIO,NCOMM,INFOMPI)
+  CALL MPI_BCAST(OFIELD,KL,MPI_LOGICAL,NPIO,NCOMM,INFOMPI)
   XTIME_COMM_READ = XTIME_COMM_READ + (MPI_WTIME() - XTIME0)
-!$OMP END SINGLE  
 ENDIF
 #endif
-!
-OFIELD = LWORKD
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFL1_FA',1,ZHOOK_HANDLE)
 !
@@ -952,11 +869,6 @@ END SUBROUTINE READ_SURFL1_FA
 !     #############################################################
 !
 !!****  *READT0* - routine to read a date
-!
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
 !
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, CMASK, CPREFIX1D
 !
@@ -974,20 +886,20 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),  INTENT(IN)   :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),  INTENT(IN)   :: HREC     ! name of the article to be read
 INTEGER,            INTENT(OUT) :: KYEAR    ! year
 INTEGER,            INTENT(OUT) :: KMONTH   ! month
 INTEGER,            INTENT(OUT) :: KDAY     ! day
 REAL,               INTENT(OUT) :: PTIME    ! year
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
 
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50) :: YCOMMENT
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=50) :: YCOMMENT
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 INTEGER, DIMENSION(3) :: ITDATE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -996,35 +908,35 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_SURF_FA:READ_SURFT0_FA',0,ZHOOK_HANDLE)
 !
 KRESP=0
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)//'%TDATE'
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)//'%TDATE'
 ENDIF
 !
- CALL FALIT_I_D(KRESP,NUNIT_FA,YNAME,3,ITDATE)
+CALL FALIT_I_D(KRESP,NUNIT_FA,YNAME,3,ITDATE)
 IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
 !
 KYEAR  = ITDATE(1)
 KMONTH = ITDATE(2)
 KDAY   = ITDATE(3)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)//'%TIME'
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)//'%TIME'
 ENDIF
 !
- CALL FALIT_R(KRESP,NUNIT_FA,YNAME,PTIME)
+CALL FALIT_R(KRESP,NUNIT_FA,YNAME,PTIME)
 IF (KRESP/=0) CALL ERROR_READ_SURF_FA(HREC,KRESP)
 !
 YCOMMENT = TRIM(HREC)
@@ -1043,11 +955,6 @@ END SUBROUTINE READ_SURFT0_FA
 !
 !!****  *READT2* - routine to read a date
 !
-!
-!
-!
-USE MODD_SURFEX_OMP, ONLY : LWORK0
-!
 USE MODD_IO_SURF_FA, ONLY : NUNIT_FA, NLUOUT, CMASK, CPREFIX1D
 !
 USE MODE_FASURFEX
@@ -1065,21 +972,21 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=*),  INTENT(IN)  :: HREC     ! name of the article to be read
+CHARACTER(LEN=*),  INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER                                  :: KL1, KL2
 INTEGER, DIMENSION(:,:), INTENT(OUT) :: KYEAR    ! year
 INTEGER, DIMENSION(:,:), INTENT(OUT) :: KMONTH   ! month
 INTEGER, DIMENSION(:,:), INTENT(OUT) :: KDAY     ! day
 REAL,    DIMENSION(:,:), INTENT(OUT) :: PTIME    ! year
 INTEGER,            INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
- CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
+CHARACTER(LEN=100), INTENT(OUT) :: HCOMMENT ! comment
 
 !*      0.2   Declarations of local variables
 !
- CHARACTER(LEN=50) :: YCOMMENT
- CHARACTER(LEN=6)  :: YMASK
- CHARACTER(LEN=18) :: YNAME ! Field Name
-LOGICAL           :: GV8
+CHARACTER(LEN=50) :: YCOMMENT
+CHARACTER(LEN=6)  :: YMASK
+CHARACTER(LEN=18) :: YNAME ! Field Name
+LOGICAL           :: GV8, GFOUND
 !
 INTEGER, DIMENSION(3,SIZE(KYEAR,1),SIZE(KYEAR,2)) :: ITDATE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -1095,15 +1002,15 @@ PTIME=0.
 !
 HCOMMENT=""
 !
- CALL IO_BUFF(&
-               HREC,'R',LWORK0)
+CALL IO_BUFF(&
+               HREC,'R',GFOUND)
 !
- CALL SFX_FA_VERSION(GV8)
+CALL SFX_FA_VERSION(GV8)
 IF(GV8)THEN
   YNAME=CPREFIX1D//TRIM(HREC)
 ELSE
   YMASK=CMASK
-  IF (LWORK0) YMASK='FULL  '
+  IF (GFOUND) YMASK='FULL  '
   YNAME=TRIM(YMASK)//TRIM(HREC)
 ENDIF
 !

@@ -77,21 +77,21 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_ISBA',0,ZHOOK_HANDLE)
- CFILE_ISBA = '                          '
- CTYPE      = 'GRIB  '
- CFILEPGD_ISBA = '                          '
- CTYPEPGD      = '      '
- CFILE_HUG  = '                          '
- CTYPE_HUG  = '      '
- CFILE_TG   = '                          '
- CTYPE_TG   = '      '
+CFILE_ISBA = '                          '
+CTYPE      = 'GRIB  '
+CFILEPGD_ISBA = '                          '
+CTYPEPGD      = '      '
+CFILE_HUG  = '                          '
+CTYPE_HUG  = '      '
+CFILE_TG   = '                          '
+CTYPE_TG   = '      '
 !
- CFILE_HUG_SURF = '                          '
- CFILE_HUG_ROOT = '                          '
- CFILE_HUG_DEEP = '                          '
- CFILE_TG_SURF  = '                          '
- CFILE_TG_ROOT  = '                          '
- CFILE_TG_DEEP  = '                          '
+CFILE_HUG_SURF = '                          '
+CFILE_HUG_ROOT = '                          '
+CFILE_HUG_DEEP = '                          '
+CFILE_TG_SURF  = '                          '
+CFILE_TG_ROOT  = '                          '
+CFILE_TG_DEEP  = '                          '
 !
 XHUG_SURF = XUNDEF
 XHUG_ROOT = XUNDEF

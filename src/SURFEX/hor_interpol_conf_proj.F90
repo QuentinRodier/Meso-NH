@@ -35,14 +35,14 @@ SUBROUTINE HOR_INTERPOL_CONF_PROJ(GCP,KLUOUT,PFIELDIN,PFIELDOUT)
 !!    10/02/15 M.Moge  using SIZE(PFIELDOUT,1) instead of SIZE(XLAT_OUT)
 !-------------------------------------------------------------------------------
 !
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t, XY, XX, XCX, XCY, NCIJ
 !
-USE MODD_PREP,           ONLY : XLAT_OUT, XLON_OUT, LINTERP
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t,XY,XX
+USE MODD_SURFEX_MPI, ONLY : NRANK,NPIO
+USE MODD_PREP,           ONLY : XX_OUT, XY_OUT, LINTERP
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
-USE MODE_GRIDTYPE_CONF_PROJ
-USE MODI_BILIN
-!
+USE MODI_BILIN_VALUE
+USE MODI_BILIN_EXTRAP
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -52,93 +52,24 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+!
 INTEGER,            INTENT(IN)  :: KLUOUT    ! logical unit of output listing
 REAL, DIMENSION(:,:), INTENT(IN)  :: PFIELDIN  ! field to interpolate horizontally
 REAL, DIMENSION(:,:), INTENT(OUT) :: PFIELDOUT ! interpolated field
 !
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(:), ALLOCATABLE :: ZX,ZY        !   coordinate of the output field
-REAL, DIMENSION(:), ALLOCATABLE :: ZX_DUPLIQUE  ! X coordinate of the output field  ! Ajout MT
-REAL, DIMENSION(:), ALLOCATABLE :: ZY_DUPLIQUE  ! Y coordinate of the output field  ! Ajout MT
-REAL, DIMENSION(:), ALLOCATABLE :: ZXY_DUPLIQUE ! Y coordinate of the  input field  ! Ajout MT 
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFIELDIN           ! input field
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFIELDIN_DUPLIQUE  ! input field               ! Ajout MT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZFIELDOUT_DUPLIQUE ! interpolated output field ! Ajout MT
-!
-INTEGER                           :: INO      ! output number of points
-INTEGER                         :: JI,JJ,JL     ! loop index
-!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 LOGICAL, DIMENSION(:), ALLOCATABLE :: GINTERP_DUPLIQUE ! .true. where physical value is needed ! Ajout MT
 !-------------------------------------------------------------------------------------
 !
-!*      1.    Allocations
-!
 IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_CONF_PROJ',0,ZHOOK_HANDLE)
-INO = SIZE(PFIELDOUT,1)
-!
-ALLOCATE(ZX      (INO))
-ALLOCATE(ZY      (INO))
-!
-IF (GCP%NY==1) THEN                         ! Ajout MT
-   ALLOCATE(ZXY_DUPLIQUE(2),ZFIELDIN_DUPLIQUE(GCP%NX,2,SIZE(PFIELDIN,2))) 
-   ALLOCATE(ZX_DUPLIQUE(2*INO),ZY_DUPLIQUE(2*INO),ZFIELDOUT_DUPLIQUE(2*INO,SIZE(PFIELDIN,2)))    
-   ALLOCATE(GINTERP_DUPLIQUE(SIZE(ZFIELDOUT_DUPLIQUE,1)))    
-END IF
-!
-!*      2.    Transformation of latitudes/longitudes into metric coordinates of output grid
-!
- CALL XY_CONF_PROJ(GCP%XLAT0,GCP%XLON0,GCP%XRPK,GCP%XBETA,GCP%XLATORI,GCP%XLONORI, &
-                    ZX,ZY,XLAT_OUT,XLON_OUT          )  
-!
-!*      3.    Put input field on its squared grid
-!
-ALLOCATE(ZFIELDIN(GCP%NX,GCP%NY,SIZE(PFIELDIN,2)))
-!
-DO JJ=1,GCP%NY
-  DO JI=1,GCP%NX
-    ZFIELDIN(JI,JJ,:) = PFIELDIN(JI+GCP%NX*(JJ-1),:)
-  END DO
-END DO
-!
-IF (GCP%NY==1) THEN                  ! Ajout MT
-   ZFIELDIN_DUPLIQUE(:,1,:)=ZFIELDIN(:,1,:)
-   ZFIELDIN_DUPLIQUE(:,2,:)=ZFIELDIN(:,1,:)
-   ZXY_DUPLIQUE(1)=XY(1)
-   ZXY_DUPLIQUE(2)=XY(1)+10000.
-   ZX_DUPLIQUE(1:INO)      =ZX(:)
-   ZX_DUPLIQUE(INO+1:2*INO)=ZX(:)
-   ZY_DUPLIQUE(1:INO)      =ZY(:)
-   ZY_DUPLIQUE(INO+1:2*INO)=ZY(:)+10000.
-   GINTERP_DUPLIQUE(1:INO)      =LINTERP(1:INO)
-   GINTERP_DUPLIQUE(INO+1:2*INO)=LINTERP(1:INO)
-END IF
 !
 !*      4.    Interpolation with bilinear
 !
-IF (GCP%NY==1) THEN                  ! Ajout MT
-   DO JL=1,SIZE(PFIELDIN,2)
-       CALL BILIN(KLUOUT,XX,ZXY_DUPLIQUE,ZFIELDIN_DUPLIQUE(:,:,JL), &
-             ZX_DUPLIQUE,ZY_DUPLIQUE,ZFIELDOUT_DUPLIQUE(:,JL),GINTERP_DUPLIQUE)
-
-       PFIELDOUT(1:INO,JL)=ZFIELDOUT_DUPLIQUE(1:INO,JL)
-   END DO
-ELSE
-   DO JL=1,SIZE(PFIELDIN,2)
-      CALL BILIN(KLUOUT,XX,XY,ZFIELDIN(:,:,JL),ZX,ZY,PFIELDOUT(:,JL),LINTERP)
-   END DO
-END IF
-!
-!
-!*      5.    Deallocations
-!
-!
-DEALLOCATE(ZX,ZY)
-DEALLOCATE(ZFIELDIN)
-IF (GCP%NY==1) DEALLOCATE(ZXY_DUPLIQUE,ZX_DUPLIQUE,ZY_DUPLIQUE,       &
-               ZFIELDIN_DUPLIQUE,ZFIELDOUT_DUPLIQUE,GINTERP_DUPLIQUE) ! Ajout MT
+ CALL BILIN_VALUE(KLUOUT,GCP%NX,GCP%NY,PFIELDIN,XCX,XCY,NCIJ(:,1),NCIJ(:,2),PFIELDOUT)
+ CALL BILIN_EXTRAP(KLUOUT,GCP%NX,GCP%NY,NCIJ,XX,XY,PFIELDIN,XX_OUT,XY_OUT,PFIELDOUT,LINTERP)
 !
 IF (LHOOK) CALL DR_HOOK('HOR_INTERPOL_CONF_PROJ',1,ZHOOK_HANDLE)
 !

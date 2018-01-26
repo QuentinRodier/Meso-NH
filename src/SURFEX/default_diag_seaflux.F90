@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #########
       SUBROUTINE DEFAULT_DIAG_SEAFLUX(K2M,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET,OCOEF,OSURF_VARS,&
-                                      ODIAG_OCEAN,ODIAG_SEAICE,OSURF_BUDGETC,ORESET_BUDGETC,PDIAG_TSTEP  )  
+                                  ODIAG_OCEAN,ODIAG_MISC_SEAICE,OSURF_BUDGETC,ORESET_BUDGETC,PDIAG_TSTEP  )  
 !     ########################################################################
 !
 !!****  *DEFAULT_DIAG_SEAFLUX* - routine to set default values for the choice of diagnostics
@@ -50,7 +50,6 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
 INTEGER,  INTENT(OUT) :: K2M           ! flag for operational 2m quantities
 LOGICAL,  INTENT(OUT) :: OSURF_BUDGET  ! flag for surface budget
 LOGICAL,  INTENT(OUT) :: O2M_MIN_ZS
@@ -58,10 +57,11 @@ LOGICAL,  INTENT(OUT) :: ORAD_BUDGET   ! flag for radiative budget
 LOGICAL,  INTENT(OUT) :: OCOEF
 LOGICAL,  INTENT(OUT) :: OSURF_VARS
 LOGICAL,  INTENT(OUT) :: ODIAG_OCEAN
-LOGICAL,  INTENT(OUT) :: ODIAG_SEAICE
+LOGICAL,  INTENT(OUT) :: ODIAG_MISC_SEAICE
 LOGICAL,  INTENT(OUT) :: OSURF_BUDGETC ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: ORESET_BUDGETC! flag for cumulated surface budget
 REAL,     INTENT(OUT) :: PDIAG_TSTEP   ! time-step for writing
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -82,7 +82,7 @@ OCOEF        = .FALSE.
 OSURF_VARS   = .FALSE.
 !
 ODIAG_OCEAN  = .FALSE.
-ODIAG_SEAICE = .FALSE.
+ODIAG_MISC_SEAICE = .FALSE.
 !
 OSURF_BUDGETC = .FALSE.
 ORESET_BUDGETC= .FALSE.

@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_CPL_ESM_FLAKE (F, &
-                                       PTSTEP,PRAIN,PSNOW,PSFTQ)  
+       SUBROUTINE DIAG_CPL_ESM_FLAKE (F,PTSTEP,PRAIN,PSNOW,PSFTQ)  
 !     #####################################################################
 !
 !!****  *DIAG_CPL_ESM_FLAKE * - Computes diagnostics over sea for 

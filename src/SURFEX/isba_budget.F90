@@ -3,15 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE ISBA_BUDGET (DGEI, &
-                        HISBA, HSNOW_ISBA, OGLACIER, PTSTEP,    &
-                        PWG, PWGI, PWR, PSNOWSWE, PDG, PDZG,    &
-                        PWG_INI, PWGI_INI, PWR_INI, PSWE_INI,   & 
-                        PRAIN, PSNOW, PEVAP, PDRAIN, PRUNOFF,   &
-                        PIFLOOD, PPFLOOD, PLE_FLOOD, PLEI_FLOOD,&
-                        PICEFLUX, PIRRIG_FLUX, PSNDRIFT,        &
-                        PLVTT, PLSTT,                           &
-                        PDWG, PDWGI, PDWR, PDSWE, PWATBUD       )
+SUBROUTINE ISBA_BUDGET (IO, PK, PEK, DEK, OWATER_BUDGET, PTSTEP,&
+                       PWG_INI, PWGI_INI, PWR_INI, PSWE_INI, PRAIN, PSNOW, PEVAP  )
 !     ###############################################################################
 !
 !!****  *ISBA_BUDGET * - water and energy budget for ISBA
@@ -33,11 +26,11 @@ SUBROUTINE ISBA_BUDGET (DGEI, &
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    07/2012
-!!
 !!      B. Decharme    01/16 : Bug with flood budget
 !!------------------------------------------------------------------
 !
-!
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_P_t, ISBA_PE_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
@@ -51,28 +44,14 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DEK
 !
-TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
+LOGICAL, INTENT(IN) :: OWATER_BUDGET
 !
- CHARACTER(LEN=*),      INTENT(IN) :: HISBA      ! type of ISBA version:
-!                                               ! '2-L' (default)
-!                                               ! '3-L'
-!                                               ! 'DIF'
- CHARACTER(LEN=*),     INTENT(IN)  :: HSNOW_ISBA ! 'DEF' = Default F-R snow scheme
-!                                               !         (Douville et al. 1995)
-!                                               ! '3-L' = 3-L snow scheme (option)
-!                                               !         (Boone and Etchevers 2000)
-!                                               ! 'CRO' = Crocus snow scheme
-LOGICAL,               INTENT(IN) :: OGLACIER   ! True = glacier over permanent snow and ice
-                                                ! False = No specific treatment
 REAL,                  INTENT(IN) :: PTSTEP     ! timestep of the integration    (s)
-!
-REAL, DIMENSION(:,:),  INTENT(IN) :: PWG        ! liquid water content by layer  (m3/m3)
-REAL, DIMENSION(:,:),  INTENT(IN) :: PWGI       ! ice content by layer           (m3/m3)
-REAL, DIMENSION(:),    INTENT(IN) :: PWR        ! liquid water on veg canopy     (kg m-2)
-REAL, DIMENSION(:,:),  INTENT(IN) :: PSNOWSWE   ! snow water equivalent by layer (kg m-2)
-REAL, DIMENSION(:,:),  INTENT(IN) :: PDG        ! soil layer depth               (m)
-REAL, DIMENSION(:,:),  INTENT(IN) :: PDZG       ! soil layer thickness           (m)
 !
 REAL, DIMENSION(:),    INTENT(IN) :: PWG_INI    ! total wg at t-1                (kg m-2)
 REAL, DIMENSION(:),    INTENT(IN) :: PWGI_INI   ! total wgi at t-1               (kg m-2)
@@ -82,34 +61,18 @@ REAL, DIMENSION(:),    INTENT(IN) :: PSWE_INI   ! total swe at t-1              
 REAL, DIMENSION(:),    INTENT(IN)  :: PRAIN     ! Rain rate                      (kg/m2/s)
 REAL, DIMENSION(:),    INTENT(IN)  :: PSNOW     ! Snow rate                      (kg/m2/s)
 REAL, DIMENSION(:),    INTENT(IN)  :: PEVAP     ! total evaporative flux         (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PDRAIN    ! drainage                       (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PRUNOFF   ! surface runoff                 (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PIFLOOD   ! Floodplain infiltration        (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PPFLOOD   ! Floodplain direct precip runoff(kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PLE_FLOOD ! Floodplain latent heat         (W/m2)
-REAL, DIMENSION(:),    INTENT(IN)  :: PLEI_FLOOD! Floodplain sublimation heat    (W/m2)
-REAL, DIMENSION(:),    INTENT(IN)  :: PICEFLUX  ! Ice flux from Snow reservoir   (kg/m2/s)
-REAL ,DIMENSION(:),    INTENT(IN)  :: PIRRIG_FLUX! additional water flux from irrigation (kg/m2/s)
-REAL ,DIMENSION(:),    INTENT(IN)  :: PSNDRIFT   ! blowing snow sublimation (kg/m2/s)
-REAL, DIMENSION(:),    INTENT(IN)  :: PLVTT, PLSTT    
-! 
-REAL, DIMENSION(:),    INTENT(OUT) :: PDWG
-REAL, DIMENSION(:),    INTENT(OUT) :: PDWGI
-REAL, DIMENSION(:),    INTENT(OUT) :: PDWR
-REAL, DIMENSION(:),    INTENT(OUT) :: PDSWE
-REAL, DIMENSION(:),    INTENT(OUT) :: PWATBUD   ! ISBA water budget              (kg/m2/s)
 !
 !*      0.2    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PWR)) :: ZINPUT
-REAL, DIMENSION(SIZE(PWR)) :: ZOUTPUT
-REAL, DIMENSION(SIZE(PWR)) :: ZTENDENCY
-REAL, DIMENSION(SIZE(PWR)) :: ZICEFLUX
-REAL, DIMENSION(SIZE(PWR)) :: ZSWE_T
-REAL, DIMENSION(SIZE(PWR)) :: ZWG_T
-REAL, DIMENSION(SIZE(PWR)) :: ZWGI_T
-REAL, DIMENSION(SIZE(PWR)) :: ZSNDRIFT
-REAL, DIMENSION(SIZE(PWR)) :: ZEFLOOD
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZINPUT
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZOUTPUT
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZTENDENCY
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZICEFLUX
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZSWE_T
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZWG_T
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZWGI_T
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZSNDRIFT
+REAL, DIMENSION(SIZE(PEK%XWR)) :: ZEFLOOD
 !
 INTEGER :: INI, INL, INLS
 INTEGER :: JI, JL
@@ -122,83 +85,82 @@ IF (LHOOK) CALL DR_HOOK('ISBA_BUDGET',0,ZHOOK_HANDLE)
 !*      1.0    Init
 !       -----------
 !
-INI =SIZE(PWG,1)
-INL =SIZE(PWG,2)
-INLS=SIZE(PSNOWSWE,2)
+INI =SIZE(PEK%XWG,1)
+INL =SIZE(PEK%XWG,2)
+INLS=SIZE(PEK%TSNOW%WSNOW,2)
 !
-PDWG (:) = XUNDEF
-PDWGI(:) = XUNDEF
-PDWR (:) = XUNDEF
-PDSWE(:) = XUNDEF
+DEK%XDWG (:) = XUNDEF
+DEK%XDWGI(:) = XUNDEF
+DEK%XDWR (:) = XUNDEF
+DEK%XDSWE(:) = XUNDEF
 !
-IF (HSNOW_ISBA=='3-L'.OR.HSNOW_ISBA=='CRO') THEN
-   ZSNDRIFT(:)=PSNDRIFT(:)
+IF (PEK%TSNOW%SCHEME=='3-L'.OR.PEK%TSNOW%SCHEME=='CRO') THEN
+  ZSNDRIFT(:) = DEK%XSNDRIFT(:)
 ELSE
-   ZSNDRIFT(:)=0.0
+  ZSNDRIFT(:) = 0.0
 ENDIF
 !
 !*      2.0    Comptut isba water budget in kg/m2/s
 !       -------------------------------------------
 !
-IF(DGEI%LWATER_BUDGET)THEN
+IF(OWATER_BUDGET)THEN
 !
 ! total swe at t in kg/m2
   ZSWE_T(:)=0.0
   DO JL=1,INLS
-     DO JI=1,INI
-        ZSWE_T(JI)=ZSWE_T(JI)+PSNOWSWE(JI,JL)
-     ENDDO
+    DO JI=1,INI
+      ZSWE_T(JI) = ZSWE_T(JI)+PEK%TSNOW%WSNOW(JI,JL)
+    ENDDO
   ENDDO
 !
 ! total wg and wgi at t in kg/m2
   ZWG_T (:)= 0.0
   ZWGI_T(:)= 0.0
-  IF(HISBA=='DIF')THEN
+  IF(IO%CISBA=='DIF')THEN
     DO JL=1,INL
-       DO JI=1,INI
-          IF(PWG(JI,JL)/=XUNDEF)THEN
-             ZWG_T (JI)=ZWG_T (JI)+PWG (JI,JL)*PDZG(JI,JL)*XRHOLW
-             ZWGI_T(JI)=ZWGI_T(JI)+PWGI(JI,JL)*PDZG(JI,JL)*XRHOLW
-          ENDIF
-       ENDDO
+      DO JI=1,INI
+        IF(PEK%XWG(JI,JL)/=XUNDEF)THEN
+          ZWG_T (JI) = ZWG_T (JI)+PEK%XWG(JI,JL) *PK%XDZG(JI,JL)*XRHOLW
+          ZWGI_T(JI) = ZWGI_T(JI)+PEK%XWGI(JI,JL)*PK%XDZG(JI,JL)*XRHOLW
+        ENDIF
+      ENDDO
     ENDDO
   ELSE
-    ZWG_T (:)=PWG (:,2)*PDG(:,2)*XRHOLW
-    ZWGI_T(:)=PWGI(:,2)*PDG(:,2)*XRHOLW
-    IF(HISBA=='3-L')THEN
-      ZWG_T(:)=ZWG_T(:)+PWG(:,3)*(PDG(:,3)-PDG(:,2))*XRHOLW
+    ZWG_T (:) = PEK%XWG (:,2)*PK%XDG(:,2)*XRHOLW
+    ZWGI_T(:) = PEK%XWGI(:,2)*PK%XDG(:,2)*XRHOLW
+    IF(IO%CISBA=='3-L')THEN
+      ZWG_T(:)=ZWG_T(:)+PEK%XWG(:,3)*(PK%XDG(:,3)-PK%XDG(:,2))*XRHOLW
     ENDIF
   ENDIF
 !
 ! Comptut reservoir time tendencies in kg/m2/s
-  PDWG (:) = (ZWG_T (:)-PWG_INI (:))/PTSTEP
-  PDWGI(:) = (ZWGI_T(:)-PWGI_INI(:))/PTSTEP
-  PDWR (:) = (PWR   (:)-PWR_INI (:))/PTSTEP
-  PDSWE(:) = (ZSWE_T(:)-PSWE_INI(:))/PTSTEP
+  DEK%XDWG (:) = (ZWG_T   (:)-PWG_INI (:))/PTSTEP
+  DEK%XDWGI(:) = (ZWGI_T  (:)-PWGI_INI(:))/PTSTEP
+  DEK%XDWR (:) = (PEK%XWR(:)-PWR_INI (:))/PTSTEP
+  DEK%XDSWE(:) = (ZSWE_T  (:)-PSWE_INI(:))/PTSTEP
 !
 ! ice calving flux if used
-  IF(OGLACIER)THEN
-    ZICEFLUX(:)=PICEFLUX(:)
+  IF(IO%LGLACIER)THEN
+    ZICEFLUX(:)=DEK%XICEFLUX(:)
   ELSE
     ZICEFLUX(:)=0.0
   ENDIF
 !
 ! Floodplains evaporation (kg/m2/s)
-  ZEFLOOD(:)=PLE_FLOOD(:)/PLVTT(:)+PLEI_FLOOD(:)/PLSTT(:)
+  ZEFLOOD(:) = DEK%XLE_FLOOD(:)/PK%XLVTT(:)+DEK%XLEI_FLOOD(:)/PK%XLSTT(:)
 !
 ! total input water in the system at t
-  ZINPUT(:)=PRAIN(:)+PSNOW(:)+PIFLOOD(:)+PIRRIG_FLUX(:)
+  ZINPUT(:)=PRAIN(:)+PSNOW(:)+DEK%XIFLOOD(:)+DEK%XIRRIG_FLUX(:)
 !
 ! total output water in the system at t
-  ZOUTPUT(:) = PEVAP  (:)+PDRAIN  (:)+PRUNOFF (:) &
-             + PPFLOOD(:)+ZICEFLUX(:)+ZSNDRIFT(:) &
-             - ZEFLOOD(:)
+  ZOUTPUT(:) = PEVAP  (:)+DEK%XDRAIN  (:)+DEK%XRUNOFF (:) &
+             + DEK%XPFLOOD(:)+ZICEFLUX(:)+ZSNDRIFT(:) - ZEFLOOD(:)
 !
 ! total reservoir time tendencies at "t - (t-1)"
-  ZTENDENCY(:) = PDWG(:)+PDWGI(:)+PDWR(:)+PDSWE(:)
+  ZTENDENCY(:) = DEK%XDWG(:)+DEK%XDWGI(:)+DEK%XDWR(:)+DEK%XDSWE(:)
 !
 ! isba water budget (dw/dt=in-out) in kg/m2/s
-  PWATBUD(:)=ZTENDENCY(:)-(ZINPUT(:)-ZOUTPUT(:))
+  DEK%XWATBUD(:)=ZTENDENCY(:)-(ZINPUT(:)-ZOUTPUT(:))
 !
 ENDIF
 !

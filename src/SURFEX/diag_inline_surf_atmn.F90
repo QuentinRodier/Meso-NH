@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_SURF_ATM_n (DGU, &
-                                           PHW, PHT, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
+       SUBROUTINE DIAG_INLINE_SURF_ATM_n (DGO, D, PHW, PHT, PPS, PRHOA, PTRAD, PEMIS, PSFU, PSFV, PSFCO2)
 !     ###############################################################################!
 !!****  *DIAG_INLINE_SURF_ATM_n * - Computes diagnostics during SURF_ATM time-step
 !!
@@ -32,7 +31,7 @@
 !
 !
 !
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -42,7 +41,8 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
 !
 REAL, DIMENSION(:), INTENT(IN)       :: PHW    ! atmospheric level height for wind
 REAL, DIMENSION(:), INTENT(IN)       :: PHT    ! atmospheric level height
@@ -60,20 +60,20 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SURF_ATM_N',0,ZHOOK_HANDLE)
-IF (DGU%LCOEF) THEN
-  DGU%XDIAG_UREF = PHW
-  DGU%XDIAG_ZREF = PHT
+IF (DGO%LCOEF) THEN
+  D%XUREF = PHW
+  D%XZREF = PHT
 END IF
 !
-DGU%XRHOA = PRHOA
-DGU%XPS   = PPS
-DGU%XDIAG_TRAD = PTRAD
-DGU%XDIAG_EMIS = PEMIS
+D%XRHOA = PRHOA
+D%XPS   = PPS
+D%XTRAD = PTRAD
+D%XEMIS = PEMIS
 !
-DGU%XSSO_FMU   = PSFU
-DGU%XSSO_FMV   = PSFV
+D%XSSO_FMU   = PSFU
+D%XSSO_FMV   = PSFV
 !
-DGU%XAVG_SFCO2 = PSFCO2
+D%XSFCO2 = PSFCO2
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_SURF_ATM_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------

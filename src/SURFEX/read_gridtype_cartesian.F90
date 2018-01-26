@@ -66,7 +66,7 @@ LOGICAL,                INTENT(IN)    :: OREAD      ! flag to read the grid
 INTEGER,                INTENT(IN)    :: KSIZE      ! estimated size of PGRID_PAR
 REAL, DIMENSION(KSIZE), INTENT(OUT)   :: PGRID_PAR  ! parameters defining this grid
 INTEGER,                INTENT(OUT)   :: KRESP      ! error return code
- CHARACTER(LEN=1),       INTENT(OUT)   :: HDIR       ! reading directive ('A','H')
+ CHARACTER(LEN=1),       INTENT(IN)   :: HDIR       ! reading directive ('A','H')
 !
 !
 !*       0.2   Declarations of local variables
@@ -84,7 +84,6 @@ REAL, DIMENSION(KLU)              :: ZDY      ! Y grid mesh size
 INTEGER                           :: ILUOUT
 !---------------------------------------------------------------------------
 REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
-!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !

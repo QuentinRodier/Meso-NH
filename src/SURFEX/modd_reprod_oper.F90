@@ -56,30 +56,30 @@ REAL             :: XEVERG_VEG
 !CDGAVG : old         = 'ARI' Arithmetic average for all depths 
 !         recommended = 'INV' Harmonic average for all depths
 !
- CHARACTER(LEN=3) :: CDGAVG
+CHARACTER(LEN=3) :: CDGAVG
 !
 ! * Soil depth with ISBA-DF
 !
 !CDGDIF : old         = 'SOIL' Total soil depth (d3) in Ecoclimap
 !         recommended = 'ROOT' Root depth (d2) in Ecoclimap
 !
- CHARACTER(LEN=4) :: CDGDIF
+CHARACTER(LEN=4) :: CDGDIF
 !
 ! * wind implicitation
 !
- CHARACTER(LEN=3) :: CIMPLICIT_WIND ! wind implicitation option
+CHARACTER(LEN=3) :: CIMPLICIT_WIND ! wind implicitation option
 !                                  ! 'OLD' = direct
 !                                  ! 'NEW' = Taylor serie, order 1 (recommended)
 !
 ! * qsat computation
 !
- CHARACTER(LEN=3) :: CQSAT ! qsat computation option
+CHARACTER(LEN=3) :: CQSAT ! qsat computation option
 !                         ! 'OLD' = do not depend on temperature
 !                         ! 'NEW' = qsat and qsati merged (recommended)
 !
 ! * Charnock parameter
 !
- CHARACTER(LEN=3) :: CCHARNOCK ! Charnock parameter option
+CHARACTER(LEN=3) :: CCHARNOCK ! Charnock parameter option
 !                             ! 'OLD' = constant equal to XVCHRNK
 !                             ! 'NEW' = vary between 0.011 et 0.018 according
 !                             !         to Chris Fairall's data as in coare3.0

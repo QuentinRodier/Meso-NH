@@ -243,7 +243,7 @@ SUBROUTINE glt_thermo  &
 ! purely 1d...)
 !
   WHERE( tpdom(:,:)%tmk==1 .AND.  &
-  (tpmxl(:,:)%tml <= 1. .OR. zfsit(:,:)>epsil1) )
+  (tpmxl(:,:)%tml <= 1. .OR. zfsit(:,:)>0.0) )
       isel(:,:) = 1
   ENDWHERE
 !

@@ -181,7 +181,6 @@ REAL  ::    &
     z0u_sf=Z_                 ,  &! Roughness length with respect to wind velocity [m]
     z0t_sf=Z_                 ,  &! Roughness length with respect to potential temperature [m]
     z0q_sf=Z_                     ! Roughness length with respect to specific humidity [m]  
-!$OMP THREADPRIVATE(z0u_sf,z0t_sf,z0q_sf)
 !  Security constants
 REAL , PARAMETER ::   &
     u_wind_min_sf  = 1.0E-02  ,  &! Minimum wind speed [m s^{-1}]
@@ -198,7 +197,7 @@ REAL , PARAMETER ::     &
 ! Procedures 
 !==============================================================================
 
- CONTAINS
+CONTAINS
 
 !==============================================================================
 !  The codes of the sfcflx procedures are stored in separate "*.incf" files

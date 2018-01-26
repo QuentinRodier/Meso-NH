@@ -3,16 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #############################################################
-      SUBROUTINE INIT_NATURE_n (DTCO, DGU, UG, U, IM, DTZ, DGL, &
-                                DST, SLT, SV,GCP, &
-                                  HPROGRAM,HINIT,OLAND_USE,                    &
-                                   KI,KSV,KSW,                                &
-                                   HSV,PCO2,PRHOA,                            &
-                                   PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB, &
-                                   PEMIS,PTSRAD,PTSURF,                       &
-                                   KYEAR, KMONTH,KDAY, PTIME,                 &
-                                   HATMFILE,HATMFILETYPE,                     &
-                                   HTEST                                      )  
+      SUBROUTINE INIT_NATURE_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, &
+                                DTZ, DGO, DL, DLC, NDST, SLT, SV,         &
+                                HPROGRAM,HINIT,OLAND_USE, KI,KSV,KSW,     &
+                                HSV,PCO2,PRHOA,PZENITH,PAZIM,PSW_BANDS,   &
+                                PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD,PTSURF,    &
+                                KYEAR, KMONTH,KDAY, PTIME, TPDATE_END,    &
+                                HATMFILE,HATMFILETYPE,HTEST              )  
 !     #############################################################
 !
 !!****  *INIT_NATURE_n* - routine to choose initialization of vegetation scheme
@@ -53,20 +50,20 @@
 !
 USE MODD_SURFEX_n, ONLY : ISBA_MODEL_t
 !
+USE MODD_TYPE_DATE_SURF, ONLY : DATE
+!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
-USE MODD_DIAG_IDEAL_n, ONLY : DIAG_IDEAL_t
-USE MODD_DST_n, ONLY : DST_t
+USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SV_n, ONLY : SV_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_CSTS,       ONLY : XTT
-!
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -80,19 +77,20 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
-!
 TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+LOGICAL, INTENT(IN) :: OREAD_BUDGETC
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SSO_t), INTENT(INOUT) :: USS
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
-TYPE(DIAG_IDEAL_t), INTENT(INOUT) :: DGL
-TYPE(DST_t), INTENT(INOUT) :: DST
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: DL
+TYPE(DIAG_t), INTENT(INOUT) :: DLC
+TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 TYPE(SV_t), INTENT(INOUT) :: SV
-TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -116,6 +114,7 @@ INTEGER,                          INTENT(IN)  :: KMONTH    ! current month (UTC)
 INTEGER,                          INTENT(IN)  :: KDAY      ! current day (UTC)
 REAL,                             INTENT(IN)  :: PTIME     ! current time since
                                                           !  midnight (UTC, s)
+TYPE(DATE), INTENT(INOUT) :: TPDATE_END
 !
  CHARACTER(LEN=28),                INTENT(IN)  :: HATMFILE    ! atmospheric file name
  CHARACTER(LEN=6),                 INTENT(IN)  :: HATMFILETYPE! atmospheric file type
@@ -139,17 +138,17 @@ IF (U%CNATURE=='NONE  ') THEN
   PTSRAD  =XTT
   PTSURF  =XTT
 ELSE IF (U%CNATURE=='FLUX  ') THEN
-  CALL INIT_IDEAL_FLUX(DGL, DGU%LREAD_BUDGETC, &
-                       HPROGRAM,HINIT,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
-                           PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
-                           PEMIS,PTSRAD,PTSURF,'OK'                    )  
+  CALL INIT_IDEAL_FLUX(DGO, DL, DLC, OREAD_BUDGETC, HPROGRAM, HINIT, &
+                       KI, KSV, KSW, HSV, PDIR_ALB, PSCA_ALB, PEMIS,   &
+                       PTSRAD, PTSURF, 'OK'    )  
 ELSE IF (U%CNATURE=='ISBA  ' .OR. U%CNATURE=='TSZ0') THEN
-  CALL INIT_ISBA_n(DTCO, DGU, UG, U, IM, DTZ, DST, SLT, SV,GCP, &
-                   HPROGRAM,HINIT,OLAND_USE,KI,KSV,KSW,HSV,PCO2,PRHOA,     &
-                     PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,    &
-                     PEMIS,PTSRAD,PTSURF,                          &
-                     KYEAR,KMONTH,KDAY,PTIME,HATMFILE,HATMFILETYPE,&
-                     'OK'                                          )  
+  CALL INIT_ISBA_n(DTCO, OREAD_BUDGETC, UG, U, USS, GCP, &
+                   IM, DTZ, NDST, SLT, SV, &
+                   HPROGRAM, HINIT, OLAND_USE, KI, KSV, KSW, HSV, &
+                   PCO2, PRHOA, PZENITH, PAZIM, PSW_BANDS,        &
+                   PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD, PTSURF,     &
+                   KYEAR, KMONTH, KDAY, PTIME, TPDATE_END,        &
+                   HATMFILE, HATMFILETYPE, 'OK'     )  
 END IF
 IF (LHOOK) CALL DR_HOOK('INIT_NATURE_N',1,ZHOOK_HANDLE)
 !

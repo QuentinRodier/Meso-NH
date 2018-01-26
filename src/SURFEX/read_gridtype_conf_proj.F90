@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ################################################################
-      SUBROUTINE READ_GRIDTYPE_CONF_PROJ (&
-                                          HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
+      SUBROUTINE READ_GRIDTYPE_CONF_PROJ (HPROGRAM,KGRID_PAR,KLU,OREAD,KSIZE,PGRID_PAR,KRESP,HDIR)
 !     ################################################################
 !
 !!****  *READ_GRIDTYPE_CONF_PROJ* - routine to initialise the horizontal grid
@@ -39,9 +38,6 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-!
 USE MODI_READ_SURF
 USE MODI_GET_LUOUT
 !
@@ -51,6 +47,7 @@ USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
+!
 #ifdef MNH_PARALLEL
 USE MODE_TOOLS_ll, ONLY : GET_DIM_PHYS_ll
 #endif
@@ -99,10 +96,10 @@ INTEGER                           :: IIMAX_LOC    ! number of points in I direct
 INTEGER                           :: IJMAX_LOC    ! number of points in J direction local
 INTEGER                           :: IINFO
 #endif
+!
 INTEGER                           :: ILUOUT
 !---------------------------------------------------------------------------
 REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
-!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !
@@ -111,41 +108,30 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
 !
- CALL READ_SURF(&
-                HPROGRAM,'LAT0',ZLAT0,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LON0',ZLON0,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'RPK ',ZRPK, KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'BETA',ZBETA,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LAT0',ZLAT0,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LON0',ZLON0,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'RPK ',ZRPK, KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'BETA',ZBETA,KRESP,HDIR=HDIR)
 !
 !---------------------------------------------------------------------------
 !
 !*       2.    Reading parameters of the grid
 !              ------------------------------
 !
- CALL READ_SURF(&
-                HPROGRAM,'LATORI',ZLATORI,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'LONORI',ZLONORI,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'IMAX ',IIMAX, KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'JMAX ',IJMAX, KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LATORI',ZLATORI,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'LONORI',ZLONORI,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'IMAX ',IIMAX, KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'JMAX ',IJMAX, KRESP,HDIR=HDIR)
 !
 #ifdef MNH_PARALLEL
  CALL GET_DIM_PHYS_ll('B',IIMAX_LOC,IJMAX_LOC)
 #endif
- CALL READ_SURF(&
-                HPROGRAM,'XX',ZX,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'YY',ZY,KRESP,HDIR=HDIR)
 !
- CALL READ_SURF(&
-                HPROGRAM,'DX',ZDX,KRESP,HDIR=HDIR)
- CALL READ_SURF(&
-                HPROGRAM,'DY',ZDY,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'XX',ZX,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'YY',ZY,KRESP,HDIR=HDIR)
+!
+ CALL READ_SURF(HPROGRAM,'DX',ZDX,KRESP,HDIR=HDIR)
+ CALL READ_SURF(HPROGRAM,'DY',ZDY,KRESP,HDIR=HDIR)
 !
 !---------------------------------------------------------------------------
 !
@@ -154,13 +140,13 @@ IF (LHOOK) CALL DR_HOOK('READ_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
 !
 #ifdef MNH_PARALLEL
  CALL PUT_GRIDTYPE_CONF_PROJ(ZGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
-                              ZLATORI,ZLONORI,IIMAX_LOC,IJMAX_LOC,     &
+                              ZLATORI,ZLONORI,IIMAX_LOC,IJMAX_LOC,  &
                               ZX,ZY,ZDX,ZDY                    )
 #else
-  CALL PUT_GRIDTYPE_CONF_PROJ(ZGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
+ CALL PUT_GRIDTYPE_CONF_PROJ(ZGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
                               ZLATORI,ZLONORI,IIMAX,IJMAX,     &
                               ZX,ZY,ZDX,ZDY                    )  
-#endif                      
+#endif 
 !
 !---------------------------------------------------------------------------
 IF (OREAD) THEN
