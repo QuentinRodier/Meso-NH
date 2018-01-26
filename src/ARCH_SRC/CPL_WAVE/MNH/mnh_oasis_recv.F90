@@ -87,7 +87,6 @@ USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODD_MNH_SURFEX_n
 !
 USE MODI_GET_LUOUT
-USE MODI_GOTO_SURFEX
 USE MODI_SFX_OASIS_RECV
 USE MODI_PUT_SFX_LAND
 USE MODI_PUT_SFX_SEA
@@ -204,7 +203,8 @@ CALL SFX_OASIS_RECV(HPROGRAM,KI,KSW,ZTIME_CPL,        &
 !-------------------------------------------------------------------------------
 !
 IF(GRECV_LAND)THEN
-  CALL PUT_SFX_LAND(YSURF_CUR%IM%I, YSURF_CUR%U,      &
+  CALL PUT_SFX_LAND(YSURF_CUR%IM%O, YSURF_CUR%IM%S, YSURF_CUR%IM%K, &
+                    YSURF_CUR%IM%NK, YSURF_CUR%IM%NP, YSURF_CUR%U,      &
                     ILUOUT,LCPL_GW,LCPL_FLOOD,        &
                     ZLAND_WTD   (:),ZLAND_FWTD   (:), &
                     ZLAND_FFLOOD(:),ZLAND_PIFLOOD(:)  )        
@@ -239,7 +239,7 @@ ENDIF
 GRECV_FLOOD=(GRECV_LAND.AND.LCPL_FLOOD)
 !
 IF(GRECV_SEA.OR.GRECV_FLOOD)THEN     
-  CALL UPDATE_ESM_SURF_ATM_n(YSURF_CUR%FM%F, YSURF_CUR%IM%I, YSURF_CUR%SM%S, &
+  CALL UPDATE_ESM_SURF_ATM_n(YSURF_CUR%FM%F, YSURF_CUR%IM, YSURF_CUR%SM%S, &
                              YSURF_CUR%U, YSURF_CUR%WM%W, &
                              HPROGRAM, KI, KSW, PZENITH(:), PSW_BANDS, &
                              PTSRAD(:), PDIR_ALB(:,:),     &

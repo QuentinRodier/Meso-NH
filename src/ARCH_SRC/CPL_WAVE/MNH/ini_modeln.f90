@@ -1416,7 +1416,7 @@ IF (KMI == 1) THEN
     ALLOCATE(XGYTHFRC(0,0))
     ALLOCATE(XPGROUNDFRC(0))
     ALLOCATE(XTENDUFRC(0,0))
-    ALLOCATE(XTENDVFRC(0,0))    
+    ALLOCATE(XTENDVFRC(0,0))
   END IF
   IF ( LFORCING ) THEN
     ALLOCATE(XWTFRC(IIU,IJU,IKU))
@@ -1627,7 +1627,7 @@ CALL READ_FIELD(HINIFILE,HLUOUT,IMASDEV, IIU,IJU,IKU,XTSTEP,                  &
                 NFRC,TDTFRC,XUFRC,XVFRC,XWFRC,XTHFRC,XRVFRC,                  &
                 XTENDTHFRC,XTENDRVFRC,XGXTHFRC,XGYTHFRC,                      &
                 XPGROUNDFRC, XATC,                                            &
-                XTENDUFRC, XTENDVFRC,                                         &                
+                XTENDUFRC, XTENDVFRC,                                         &
                 NADVFRC,TDTADVFRC,XDTHFRC,XDRVFRC,                            &
                 NRELFRC,TDTRELFRC,XTHREL,XRVREL,                              &
                 XVTH_FLUX_M,XWTH_FLUX_M,XVU_FLUX_M,                           &
