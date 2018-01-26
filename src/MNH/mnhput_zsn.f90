@@ -52,6 +52,7 @@ END MODULE MODI_MNHPUT_ZS_n
 !!    -------------
 !!      Original    01/2004
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -103,7 +104,7 @@ IL = (IIE-IIB+1)*(IJE-IJB+1)
 ALLOCATE(ZZS(IL))
 ZZS(:) = RESHAPE (XZS(IIB:IIE,IJB:IJE), (/ IL /) )
 !
-CALL PUT_ZS_n(YSURF_CUR%FM%F,YSURF_CUR%IM%I,YSURF_CUR%SM%S,&
+CALL PUT_ZS_n(YSURF_CUR%FM%F,YSURF_CUR%IM%S,YSURF_CUR%SM%S,&
               YSURF_CUR%U,YSURF_CUR%TM%TOP,YSURF_CUR%WM%W,'MESONH',IL,ZZS(:))
 !
 CALL MPPDB_CHECK_SURFEX2D(ZZS,"mnhput_zs_n:ZZS",PRECISION,ILUOUT)

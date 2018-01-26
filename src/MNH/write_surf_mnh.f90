@@ -398,6 +398,7 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !!
 !!      original                                                     01/08/03
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -427,7 +428,7 @@ IMPLICIT NONE
 CHARACTER(LEN=LEN_HREC),   INTENT(IN)  :: HREC     ! name of the article to be read
 INTEGER,             INTENT(IN)  :: KL1,KL2       ! number of points
 REAL, DIMENSION(KL1,KL2), INTENT(IN)  :: PFIELD   ! array containing the data field
-LOGICAL,DIMENSION(JPCOVER),   INTENT(IN)  ::OFLAG  ! mask for array filling
+LOGICAL,DIMENSION(:),   INTENT(IN)  ::OFLAG  ! mask for array filling
 INTEGER,             INTENT(OUT) :: KRESP    ! KRESP  : return-code if a problem appears
 CHARACTER(LEN=100),  INTENT(IN)  :: HCOMMENT ! Comment string
 CHARACTER(LEN=1),    INTENT(IN)  :: HDIR     ! type of field :

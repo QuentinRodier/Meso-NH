@@ -66,10 +66,13 @@ END MODULE MODI_SPAWN_SURF
 !!
 !!      Original     01/2004  
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
+!
+USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODD_LUNIT,        ONLY : CPGDFILE, COUTFMFILE
 USE MODD_LUNIT_n,      ONLY : CLUOUT
@@ -115,6 +118,8 @@ LOGICAL,               INTENT(IN) :: OSPAWN_SURF  ! flag to spawn surface fields
 !
 !*       0.1.3  Declarations of local variables :
 !
+TYPE (PREP_CTL) :: YLCTL
+!
 INTEGER :: IRESP    ! Return codes in FM routines
 INTEGER :: ILUOUT   ! Logical unit number for the output listing 
 INTEGER :: IINFO_ll
@@ -144,21 +149,24 @@ IF (CSURF=='EXTE') THEN
 #ifdef MNH_NCWRIT
     NC_WRITE=LNETCDF
     NC_FILE='pgd'
+    ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
     IF ( LNETCDF ) THEN
       DEF_NC=.FALSE.
+      ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
       CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
       DEF_NC=.TRUE.
       NC_WRITE = .FALSE.
    END IF
 #else 
+    ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
     CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 #endif
     !* rereading of physiographic fields and definition of prognostic fields
     CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HINIFILE,'MESONH',      &
                            TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
                            TDTCUR%TDATE%DAY, TDTCUR%TIME          )
-    CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HINIFILE,'MESONH',HINIFILEPGD,'MESONH')
+    CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HINIFILE,'MESONH',HINIFILEPGD,'MESONH',YLCTL)
     !* writing of all surface fields
 #ifdef MNH_NCWRIT
     NC_WRITE=LNETCDF

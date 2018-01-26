@@ -15,9 +15,9 @@ MODULE MODI_PGD_GRID_IO_INIT_MNH
   INTERFACE
     !     ###############################
 #ifdef MNH_PARALLEL
-          SUBROUTINE PGD_GRID_IO_INIT_MNH(KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
+          SUBROUTINE PGD_GRID_IO_INIT_MNH(UG,KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
 #else
-      SUBROUTINE PGD_GRID_IO_INIT_MNH
+      SUBROUTINE PGD_GRID_IO_INIT_MNH(UG)
 #endif
     !     ###############################
     !!
@@ -61,6 +61,8 @@ MODULE MODI_PGD_GRID_IO_INIT_MNH
     !*    0.     DECLARATION
     !            -----------
     !
+    USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+    !
     USE MODE_ll
     USE MODE_FM
     USE MODD_PARAMETERS, ONLY : JPHEXT, JPVEXT, JPMODELMAX
@@ -79,6 +81,7 @@ MODULE MODI_PGD_GRID_IO_INIT_MNH
     !            ------------------------------
     !
 #ifdef MNH_PARALLEL
+    TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
     INTEGER,                         INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
     REAL,    DIMENSION(KGRID_PAR),   INTENT(IN)    :: PGRID_PAR ! grid parameters
     CHARACTER(LEN=10),     INTENT(IN), OPTIONAL    :: HGRID
@@ -96,9 +99,9 @@ MODULE MODI_PGD_GRID_IO_INIT_MNH
 END MODULE MODI_PGD_GRID_IO_INIT_MNH
 !     ###############################
 #ifdef MNH_PARALLEL
-      SUBROUTINE PGD_GRID_IO_INIT_MNH(KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
+      SUBROUTINE PGD_GRID_IO_INIT_MNH(UG,KGRID_PAR,PGRID_PAR,HGRID,ORECT,KIMAX,KJMAX,KDXRATIO,KDYRATIO)
 #else
-      SUBROUTINE PGD_GRID_IO_INIT_MNH
+      SUBROUTINE PGD_GRID_IO_INIT_MNH(UG)
 #endif
 !     ###############################
 !!
@@ -133,10 +136,13 @@ END MODULE MODI_PGD_GRID_IO_INIT_MNH
 !!    10/10/2011  J.Escobar call INI_PARAZ_ll
 !!    2014        M.Faivre
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
+!
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 !
 USE MODE_ll
 USE MODE_FM
@@ -157,6 +163,7 @@ IMPLICIT NONE
 !*    0.1    Declaration of dummy arguments
 !            ------------------------------
 !
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 #ifdef MNH_PARALLEL
 INTEGER,                         INTENT(IN)    :: KGRID_PAR ! size of PGRID_PAR
 REAL,    DIMENSION(KGRID_PAR),   INTENT(IN)    :: PGRID_PAR ! grid parameters
@@ -199,12 +206,12 @@ IF ( PRESENT(KIMAX) .AND. PRESENT(KJMAX) .AND. PRESENT(HGRID) .AND. PRESENT(OREC
   IDXRATIO = KDXRATIO
   IDYRATIO = KDYRATIO
 ELSE
-  CALL GET_SURF_GRID_DIM_n(YSURF_CUR%UG,YGRID,GRECT,IIMAX,IJMAX,KGRID_PAR,PGRID_PAR)
+  CALL GET_SURF_GRID_DIM_n(UG,YGRID,GRECT,IIMAX,IJMAX,KGRID_PAR,PGRID_PAR)
   IDXRATIO = 1
   IDYRATIO = 1
 ENDIF
 #else
-  CALL GET_SURF_GRID_DIM_n(YSURF_CUR%UG,YGRID,GRECT,IIMAX,IJMAX)
+  CALL GET_SURF_GRID_DIM_n(UG,YGRID,GRECT,IIMAX,IJMAX)
   IDXRATIO = 1
   IDYRATIO = 1
 #endif
