@@ -112,9 +112,8 @@
 &NAM_DIAG_SURF_ATMn LFRAC=.TRUE.,
                     LDIAG_GRID=.TRUE. /
 
+&NAM_ISBA CALBEDO="DRY"/
 &NAM_ISBAn CSCOND="NP89",
-           CALBEDO="DRY",
-           CROUGH='NONE', 
            CC1DRY='DEF',
            CSOILFRZ='DEF',
            CDIFSFCOND='DEF',

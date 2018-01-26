@@ -159,21 +159,21 @@ dstm31t@units="ppp"
 dstm31t@lat2d = lat2d
 dstm31t@lon2d = lon2d
 
-flx_dst001= fichier1->FLX_DST001(jphext:jmax+jphext-1,jphext:imax+jphext-1)
-flx_dst001@long_name="FLX_DST001"
+flx_dst001= fichier1->F_DST001P1(jphext:jmax+jphext-1,jphext:imax+jphext-1)
+flx_dst001@long_name="F_DST001P1"
 flx_dst001@units="kg/m2/s"
 flx_dst001@lat2d = lat2d
 flx_dst001@lon2d = lon2d
 
 
-flx_dst002= fichier1->FLX_DST002(jphext:jmax+jphext-1,jphext:imax+jphext-1)
-flx_dst002@long_name="FLX_DST002"
+flx_dst002= fichier1->F_DST002P1(jphext:jmax+jphext-1,jphext:imax+jphext-1)
+flx_dst002@long_name="F_DST002P1"
 flx_dst002@units="kg/m2/s"
 flx_dst002@lat2d = lat2d
 flx_dst002@lon2d = lon2d
 
-flx_dst003= fichier1->FLX_DST003(jphext:jmax+jphext-1,jphext:imax+jphext-1)
-flx_dst003@long_name="FLX_DST003"
+flx_dst003= fichier1->F_DST003P1(jphext:jmax+jphext-1,jphext:imax+jphext-1)
+flx_dst003@long_name="F_DST003P1"
 flx_dst003@units="kg/m2/s"
 flx_dst003@lat2d = lat2d
 flx_dst003@lon2d = lon2d
