@@ -667,7 +667,6 @@ CONTAINS
                          IOS = 0
                       END IF
                       CALL IO_SET_KNOWNDIMS_NC4(TZSPLITFILE)
-                      CALL IO_WRITE_COORDVAR_NC4(TZSPLITFILE)
                    END IF
                 END IF
 #endif
@@ -704,6 +703,13 @@ CONTAINS
                    !KNINAR = ININAR8
                 END IF
              ENDIF
+             !
+#if defined(MNH_IOCDF4)
+             !Write coordinates variables in NetCDF file
+             IF (LIOCDF4 .AND.YACTION == 'WRITE') THEN
+               CALL IO_WRITE_COORDVAR_NC4(TZSPLITFILE)
+             END IF
+#endif
              !
              TZSPLITFILE%LOPENED = .TRUE.
              TZSPLITFILE%NOPEN         = TZSPLITFILE%NOPEN         + 1
