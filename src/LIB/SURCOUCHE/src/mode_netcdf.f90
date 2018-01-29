@@ -1993,159 +1993,166 @@ END SUBROUTINE IO_WRITE_FIELD_NC4_T0
 ! Here come the NetCDF READ routines
 !
 !
-SUBROUTINE IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,KNCID,KVARID,KRESP,HCALENDAR)
+SUBROUTINE IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,KVARID,KRESP,HCALENDAR)
 !
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA),         INTENT(INOUT) :: TPFIELD
-INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KNCID
 INTEGER(KIND=IDCDF_KIND), INTENT(IN)    :: KVARID
 INTEGER,                  INTENT(OUT)   :: KRESP  ! return-code
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN)    :: HCALENDAR
 !
 INTEGER                      :: ILEN
 INTEGER                      :: IGRID
+INTEGER(KIND=IDCDF_KIND)     :: INCID
 INTEGER(KIND=IDCDF_KIND)     :: STATUS
 CHARACTER(LEN=12)            :: YVAL_FILE, YVAL_MEM
 CHARACTER(LEN=:),ALLOCATABLE :: YVALUE
 !
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','called for field '//TRIM(TPFIELD%CMNHNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)//': called for field '//TRIM(TPFIELD%CMNHNAME))
 !
 KRESP = 0
+INCID = TPFILE%NNCID
 !
 ! GRID
 !
-STATUS = NF90_GET_ATT(KNCID,KVARID,'GRID',IGRID)
+STATUS = NF90_GET_ATT(INCID,KVARID,'GRID',IGRID)
 IF (STATUS == NF90_NOERR) THEN
   IF (IGRID/=TPFIELD%NGRID) THEN
     WRITE(YVAL_FILE,'(I12)') IGRID
     WRITE(YVAL_MEM, '(I12)') TPFIELD%NGRID
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected GRID     value ('//TRIM(ADJUSTL(YVAL_MEM))// &
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected GRID     value ('//TRIM(ADJUSTL(YVAL_MEM))//             &
                    ') is different than found in file ('//TRIM(ADJUSTL(YVAL_FILE))//') for variable '//TRIM(TPFIELD%CMNHNAME))
     TPFIELD%NGRID = IGRID
     KRESP = -111 !Used later to broadcast modified metadata
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected GRID found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected GRID found in file for field '//TRIM(TPFIELD%CMNHNAME))
   ENDIF
 ELSE !no GRID
   IF (TPFIELD%NGRID==0 .OR. TPFIELD%NGRID==-1) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','no GRID (as expected) in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': no GRID (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected GRID but not found in file for field ' &
-                                                                  //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected GRID but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
 ENDIF
 !
 ! COMMENT
 !
-STATUS = NF90_INQUIRE_ATTRIBUTE(KNCID, KVARID, 'COMMENT', LEN=ILEN)
+STATUS = NF90_INQUIRE_ATTRIBUTE(INCID, KVARID, 'COMMENT', LEN=ILEN)
 IF (STATUS == NF90_NOERR) THEN
   ALLOCATE(CHARACTER(LEN=ILEN) :: YVALUE)
-  STATUS = NF90_GET_ATT(KNCID, KVARID, 'COMMENT', YVALUE)
+  STATUS = NF90_GET_ATT(INCID, KVARID, 'COMMENT', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CCOMMENT)) THEN
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected COMMENT ('//TRIM(TPFIELD%CCOMMENT)// &
-                   ') is different than found ('//TRIM(YVALUE)//')in file for field '//TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected COMMENT ('//TRIM(TPFIELD%CCOMMENT)//                    &
+                   ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
     TPFIELD%CCOMMENT=TRIM(YVALUE)
     KRESP = -111 !Used later to broadcast modified metadata
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected COMMENT  found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected COMMENT  found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
   DEALLOCATE(YVALUE)
 ELSE !no COMMENT
   IF (LEN_TRIM(TPFIELD%CCOMMENT)==0) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','no COMMENT (as expected) in file for field ' &
-                                                                //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': no COMMENT (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected COMMENT but not found in file for field ' &
-                                                                  //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected COMMENT but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
 END IF
 !
 ! STDNAME
 !
-STATUS = NF90_INQUIRE_ATTRIBUTE(KNCID, KVARID, 'standard_name', LEN=ILEN)
+STATUS = NF90_INQUIRE_ATTRIBUTE(INCID, KVARID, 'standard_name', LEN=ILEN)
 IF (STATUS == NF90_NOERR) THEN
   ALLOCATE(CHARACTER(LEN=ILEN) :: YVALUE)
-  STATUS = NF90_GET_ATT(KNCID, KVARID, 'standard_name', YVALUE)
+  STATUS = NF90_GET_ATT(INCID, KVARID, 'standard_name', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CSTDNAME)) THEN
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected STDNAME  ('//TRIM(TPFIELD%CSTDNAME)// &
-                   ') is different than found ('//TRIM(YVALUE)//')in file for field '//TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected STDNAME  ('//TRIM(TPFIELD%CSTDNAME)//                      &
+                   ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
     TPFIELD%CSTDNAME=TRIM(YVALUE)
     KRESP = -111 !Used later to broadcast modified metadata
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected STDNAME  found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected STDNAME  found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
   DEALLOCATE(YVALUE)
 ELSE !no STDNAME
   IF (LEN_TRIM(TPFIELD%CSTDNAME)==0) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','no STDNAME (as expected) in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': no STDNAME (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected STDNAME but not found in file for field ' &
-                                                                  //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected STDNAME but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
 END IF
 !
 ! LONGNAME
 !
-STATUS = NF90_INQUIRE_ATTRIBUTE(KNCID, KVARID, 'long_name', LEN=ILEN)
+STATUS = NF90_INQUIRE_ATTRIBUTE(INCID, KVARID, 'long_name', LEN=ILEN)
 IF (STATUS == NF90_NOERR) THEN
   ALLOCATE(CHARACTER(LEN=ILEN) :: YVALUE)
-  STATUS = NF90_GET_ATT(KNCID, KVARID, 'long_name', YVALUE)
+  STATUS = NF90_GET_ATT(INCID, KVARID, 'long_name', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CLONGNAME)) THEN
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected LONGNAME ('//TRIM(TPFIELD%CLONGNAME)// &
-                   ') is different than found ('//TRIM(YVALUE)//')in file for field '//TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected LONGNAME ('//TRIM(TPFIELD%CLONGNAME)//                  &
+                   ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
     TPFIELD%CLONGNAME=TRIM(YVALUE)
     KRESP = -111 !Used later to broadcast modified metadata
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected LONGNAME found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected LONGNAME found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
   DEALLOCATE(YVALUE)
 ELSE !no LONGNAME
   IF (LEN_TRIM(TPFIELD%CLONGNAME)==0) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','no LONGNAME (as expected) in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': no LONGNAME (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected LONGNAME but not found in file for field ' &
-                                                                  //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_INFO,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected LONGNAME but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
 END IF
 !
 ! UNITS
 !
-STATUS = NF90_INQUIRE_ATTRIBUTE(KNCID, KVARID, 'units', LEN=ILEN)
+STATUS = NF90_INQUIRE_ATTRIBUTE(INCID, KVARID, 'units', LEN=ILEN)
 IF (STATUS == NF90_NOERR) THEN
   ALLOCATE(CHARACTER(LEN=ILEN) :: YVALUE)
-  STATUS = NF90_GET_ATT(KNCID, KVARID, 'units', YVALUE)
+  STATUS = NF90_GET_ATT(INCID, KVARID, 'units', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(TPFIELD%CUNITS)) THEN
     IF(.NOT.PRESENT(HCALENDAR)) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected UNITS ('//TRIM(TPFIELD%CUNITS)// &
-                     ') is different than found ('//TRIM(YVALUE)//')in file for field '//TRIM(TPFIELD%CMNHNAME))
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                     ': expected UNITS ('//TRIM(TPFIELD%CUNITS)//                           &
+                     ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
       KRESP = -111 !Used later to broadcast modified metadata
     ELSE
-      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','UNITS found in file for field ' &
-                                                                     //TRIM(TPFIELD%CMNHNAME)//' (will be analysed later)')
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                     ': UNITS found in file for field '//TRIM(TPFIELD%CMNHNAME)//' (will be analysed later)')
     END IF
     TPFIELD%CUNITS=TRIM(YVALUE)
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected UNITS    found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected UNITS    found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
   DEALLOCATE(YVALUE)
 ELSE !no UNITS
   IF (LEN_TRIM(TPFIELD%CUNITS)==0) THEN
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','no UNITS (as expected) in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': no UNITS (as expected) in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
     IF(.NOT.PRESENT(HCALENDAR)) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected UNITS but not found in file for field ' &
-                                                                       //TRIM(TPFIELD%CMNHNAME))
+      CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                     ': expected UNITS but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
     ELSE
-      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected UNITS but not found in file for field ' &
-                                                                     //TRIM(TPFIELD%CMNHNAME))
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                     ': expected UNITS but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
       KRESP = -3
     END IF
   END IF
@@ -2154,21 +2161,22 @@ END IF
 ! CALENDAR
 !
 IF(PRESENT(HCALENDAR)) THEN
-STATUS = NF90_INQUIRE_ATTRIBUTE(KNCID, KVARID, 'calendar', LEN=ILEN)
+STATUS = NF90_INQUIRE_ATTRIBUTE(INCID, KVARID, 'calendar', LEN=ILEN)
 IF (STATUS == NF90_NOERR) THEN
   ALLOCATE(CHARACTER(LEN=ILEN) :: YVALUE)
-  STATUS = NF90_GET_ATT(KNCID, KVARID, 'calendar', YVALUE)
+  STATUS = NF90_GET_ATT(INCID, KVARID, 'calendar', YVALUE)
   IF (TRIM(YVALUE)/=TRIM(HCALENDAR)) THEN
-    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected CALENDAR ('//TRIM(HCALENDAR)// &
-                   ') is different than found ('//TRIM(YVALUE)//')in file for field '//TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected CALENDAR ('//TRIM(HCALENDAR)//                             &
+                   ') is different than found ('//TRIM(YVALUE)//') in file for field '//TRIM(TPFIELD%CMNHNAME))
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected CALENDAR found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                   ': expected CALENDAR found in file for field '//TRIM(TPFIELD%CMNHNAME))
   END IF
   DEALLOCATE(YVALUE)
 ELSE !no CALENDAR
-  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4','expected CALENDAR but not found in file for field ' &
-                                                                   //TRIM(TPFIELD%CMNHNAME))
+  CALL PRINT_MSG(NVERB_WARNING,'IO','IO_READ_CHECK_FIELD_ATTR_NC4',TRIM(TPFILE%CNAME)// &
+                 ': expected CALENDAR but not found in file for field '//TRIM(TPFIELD%CMNHNAME))
 END IF
 ENDIF
 !
@@ -2214,7 +2222,7 @@ IF (IDIMS == 0 .AND. ITYPE == NF90_DOUBLE) THEN
     GOTO 1000
   END IF
   ! Read and check attributes of variable
-  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
 ELSE
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                          ' not read (wrong size or type)')
@@ -2273,7 +2281,7 @@ IF (IDIMS == 1 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2352,7 +2360,7 @@ IF (IDIMS == 2 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X2',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2420,7 +2428,7 @@ IF (IDIMS == 3 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X3',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2491,7 +2499,7 @@ IF (IDIMS == 4 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X4',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2565,7 +2573,7 @@ IF (IDIMS == 5 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X5',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2641,7 +2649,7 @@ IF (IDIMS == 6 .AND. ITYPE == NF90_DOUBLE) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_X6',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2703,7 +2711,7 @@ IF (IDIMS == 0 .AND. (ITYPE == NF90_INT64 .OR. ITYPE == NF90_INT) ) THEN
       GOTO 1000
    END IF
    ! Read and check attributes of variable
-   CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+   CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
 ELSE
    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_N0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                           ' not read (wrong size or type)')
@@ -2767,7 +2775,7 @@ IF (IDIMS == 1 .AND. (ITYPE == NF90_INT64 .OR. ITYPE == NF90_INT1) ) THEN
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_N1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2851,7 +2859,7 @@ IF (IDIMS == SIZE(SHAPE(KFIELD)) .AND. (ITYPE == NF90_INT64 .OR. ITYPE == NF90_I
       GOTO 1000
     END IF
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_N2',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -2922,7 +2930,7 @@ IF (IDIMS == 0 .AND. (ITYPE == NF90_INT1 .OR. ITYPE == NF90_INT .OR. ITYPE == NF
   END IF
 
   ! Read and check attributes of variable
-  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
 ELSE
   CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_L0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                          ' not read (wrong size or type)')
@@ -3001,7 +3009,7 @@ IF (IDIMS == 1 .AND. (ITYPE == NF90_INT1 .OR. ITYPE == NF90_INT .OR. ITYPE == NF
     END IF
 
     ! Read and check attributes of variable
-    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+    CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
   ELSE
     CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_L1',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                            ' not read (wrong size)')
@@ -3071,7 +3079,7 @@ IF (IDIMS == 1 .AND. (ITYPE == NF90_CHAR) ) THEN
    DEALLOCATE(YSTR)
 
    ! Read and check attributes of variable
-   CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP)
+   CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP)
 ELSE
    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_C0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                           ' not read (wrong size or type)')
@@ -3127,7 +3135,7 @@ IF (IDIMS == 0 .AND. ITYPE == NF90_DOUBLE) THEN
     GOTO 1000
   END IF
   ! Read and check attributes of variable
-  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFIELD,INCID,IVARID,IRESP,HCALENDAR='standard')
+  CALL IO_READ_CHECK_FIELD_ATTR_NC4(TPFILE,TPFIELD,IVARID,IRESP,HCALENDAR='standard')
   ! Extract date from UNITS
   IDX =  INDEX(TPFIELD%CUNITS,'since ')
   READ(TPFIELD%CUNITS(IDX+6 :IDX+9), '( I4.4 )') TPDATA%TDATE%YEAR
