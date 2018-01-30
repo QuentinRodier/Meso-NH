@@ -455,7 +455,7 @@ DO JSV=1,ISV
     ! stores the JSVth vertical flux
     WRITE(TZFIELD%CMNHNAME,'("WSV_FLX_",I3.3)') JSV
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(TZFIELD%CMNHNAME)
+    TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
     !PW: TODO: use the correct units of the JSV variable (and multiply it by m s-1)
     TZFIELD%CUNITS     = 'SVUNIT m s-1'
     TZFIELD%CDIR       = 'XY'

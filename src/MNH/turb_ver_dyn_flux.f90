@@ -515,7 +515,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the U wind component vertical flux
   TZFIELD%CMNHNAME   = 'UW_VFLX'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: UW_VFLX'
+  TZFIELD%CLONGNAME  = 'UW_VFLX'
   TZFIELD%CUNITS     = 'm^2 s-2'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'U wind component vertical flux'
@@ -689,7 +689,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the V wind component vertical flux
   TZFIELD%CMNHNAME   = 'VW_VFLX'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: VW_VFLX'
+  TZFIELD%CLONGNAME  = 'VW_VFLX'
   TZFIELD%CUNITS     = 'm^2 s-2'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'V wind component vertical flux'
@@ -809,7 +809,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT .AND. HTURBDIM == '1DIM') THEN
   ! stores the W variance
   TZFIELD%CMNHNAME   = 'W_VVAR'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: W_VVAR'
+  TZFIELD%CLONGNAME  = 'W_VVAR'
   TZFIELD%CUNITS     = 'm^2 s-2'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'X_Y_Z_W_VVAR'

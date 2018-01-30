@@ -472,7 +472,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   END DO
   TZFIELD%CMNHNAME   = 'HBLTOP'
   TZFIELD%CSTDNAME   = 'atmosphere_boundary_layer_thickness'
-  TZFIELD%CLONGNAME  = 'MesoNH: HBLTOP'
+  TZFIELD%CLONGNAME  = 'HBLTOP'
   TZFIELD%CUNITS     = 'm'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'Height of Boundary Layer TOP'
@@ -487,7 +487,7 @@ IF (CPROGRAM == 'DIAG  ' ) THEN
   Z2D(:,:) = IK_BL_TOP(:,:)
   TZFIELD%CMNHNAME   = 'KBLTOP'
   TZFIELD%CSTDNAME   = 'model_level_number_at_top_of_atmosphere_boundary_layer'
-  TZFIELD%CLONGNAME  = 'MesoNH: KBLTOP'
+  TZFIELD%CLONGNAME  = 'KBLTOP'
   TZFIELD%CUNITS     = '1'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'Index of Boundary Layer TOP'
@@ -506,7 +506,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !
   TZFIELD%CMNHNAME   = 'FREE_ATM_GR'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: FREE_ATM_GR'
+  TZFIELD%CLONGNAME  = 'FREE_ATM_GR'
   TZFIELD%CUNITS     = 'K m-1'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'Free atmosphere gradient'
@@ -526,7 +526,7 @@ IF (CPROGRAM /= 'DIAG  ' .AND. CPROGRAM /= 'IDEAL ' ) THEN
 !
   TZFIELD%CMNHNAME   = 'THV_FREE'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: THV_FREE'
+  TZFIELD%CLONGNAME  = 'THV_FREE'
   TZFIELD%CUNITS     = 'K'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'X_Y_Z_THV_FREE'

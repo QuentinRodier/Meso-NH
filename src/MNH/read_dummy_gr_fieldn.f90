@@ -163,7 +163,7 @@ END IF
 IF (IMASDEV>=40) THEN
   TZFIELD%CMNHNAME   = 'DUMMY_GR_NBR'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: DUMMY_GR_NBR'
+  TZFIELD%CLONGNAME  = 'DUMMY_GR_NBR'
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = '--'
   TZFIELD%CCOMMENT   = 'number of dummy pgd fields chosen by user'
@@ -191,7 +191,7 @@ DO JDUMMY=1,NDUMMY_GR_NBR
   WRITE(YRECFM,'(A8,I3.3)') 'DUMMY_GR',JDUMMY
   TZFIELD%CMNHNAME   = TRIM(YRECFM)
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: '//TRIM(YRECFM)
+  TZFIELD%CLONGNAME  = TRIM(YRECFM)
   TZFIELD%CUNITS     = ''
   TZFIELD%CDIR       = 'XY'
   ! Expected comment is not known but is in the following form:

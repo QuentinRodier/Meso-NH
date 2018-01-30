@@ -612,7 +612,7 @@ IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
   ! stores the conservative potential temperature vertical flux
   TZFIELD%CMNHNAME   = 'THW_FLX'
   TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'MesoNH: THW_FLX'
+  TZFIELD%CLONGNAME  = 'THW_FLX'
   TZFIELD%CUNITS     = 'K m s-1'
   TZFIELD%CDIR       = 'XY'
   TZFIELD%CCOMMENT   = 'Conservative potential temperature vertical flux'
@@ -789,7 +789,7 @@ IF (KRR /= 0) THEN
     ! stores the conservative mixing ratio vertical flux
     TZFIELD%CMNHNAME   = 'RCONSW_FLX'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: RCONSW_FLX'
+    TZFIELD%CLONGNAME  = 'RCONSW_FLX'
     TZFIELD%CUNITS     = 'kg m s-1 kg-1'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%CCOMMENT   = 'Conservative mixing ratio vertical flux'
@@ -870,7 +870,7 @@ IF ( ((OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL) .AND. (KRRL > 0) ) THEN
   IF ( OTURB_FLX .AND. OCLOSE_OUT ) THEN
     TZFIELD%CMNHNAME   = 'RCW_FLX'
     TZFIELD%CSTDNAME   = ''
-    TZFIELD%CLONGNAME  = 'MesoNH: RCW_FLX'
+    TZFIELD%CLONGNAME  = 'RCW_FLX'
     TZFIELD%CUNITS     = 'kg m s-1 kg-1'
     TZFIELD%CDIR       = 'XY'
     TZFIELD%CCOMMENT   = 'Liquid water mixing ratio vertical flux'
