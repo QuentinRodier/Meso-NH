@@ -824,6 +824,7 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HNAME  ! Name of the file to find
 TYPE(TFILEDATA),POINTER,INTENT(OUT) :: TPFILE ! File structure to return
 INTEGER,                INTENT(OUT) :: KRESP  ! Return value
 LOGICAL, OPTIONAL,      INTENT(IN)  :: OOLD   ! FALSE if new file (should not be found)
+                                              ! TRUE if file may be in the list
 !
 TYPE(TFILEDATA),POINTER :: TZFILE ! File structure
 LOGICAL                 :: GOLD
@@ -859,11 +860,15 @@ ELSE
 END IF
 !
 IF (.NOT.ASSOCIATED(TPFILE)) THEN
-  IF (GOLD) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_FIND_BYNAME','file '//TRIM(HNAME)//' not found in list')
+  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME','file '//TRIM(HNAME)//' not found in list')
   KRESP = -1 !File not found
 ELSE
-  CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found')
-END IF  
+  IF (GOLD) THEN
+    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found')
+  ELSE !File should not be found
+    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_FIND_BYNAME',TRIM(HNAME)//' was found (unexpected)')
+  END IF
+END IF
 !
 END SUBROUTINE IO_FILE_FIND_BYNAME
 !
