@@ -26,7 +26,8 @@ CHARACTER(LEN=*),       INTENT(IN)  :: HSUBR    ! name of the subroutine calling
 TYPE(TFIELDDATA),       INTENT(OUT) :: TPFIELD  ! metadata of field
 !
 CHARACTER(LEN=32) :: YTXT
-INTEGER           :: IID, IRESP
+INTEGER           :: IDX,IID, IRESP
+LOGICAL           :: GWARN
 !
 CALL FIND_FIELD_ID_FROM_MNHNAME(TRIM(HREC),IID,IRESP,ONOWARNING=.TRUE.)
 IF (IRESP==0) THEN
@@ -46,9 +47,23 @@ IF (IRESP==0) THEN
   !Modify and check CCOMMENT
   IF (LEN_TRIM(HCOMMENT)/=0) THEN
     IF (TRIM(TPFIELD%CCOMMENT)/=TRIM(HCOMMENT)) THEN
-      CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'CCOMMENT different ('//TRIM(TPFIELD%CCOMMENT) &
-                      //'/'//TRIM(HCOMMENT)//') than expected for article '//TRIM(HREC))
-      TPFIELD%CCOMMENT = TRIM(HCOMMENT)
+      !Usually in SURFEX fields, units are given at the end of the comment and between parenthesis
+      !Neglect that part of the comment for comparison
+      IDX = INDEX(HCOMMENT,'(',BACK=.TRUE.)
+      IF (IDX/=0) THEN
+        IF (TRIM(TPFIELD%CCOMMENT)/=TRIM(HCOMMENT(1:IDX-1))) THEN
+          GWARN = .TRUE.
+        ELSE
+          GWARN = .FALSE.
+        END IF
+      ELSE
+        GWARN = .TRUE.
+      END IF
+      IF (GWARN) THEN
+        CALL PRINT_MSG(NVERB_INFO,'IO',TRIM(HSUBR),'CCOMMENT different ('//TRIM(TPFIELD%CCOMMENT) &
+                       //'/'//TRIM(HCOMMENT)//') than expected for article '//TRIM(HREC))
+        TPFIELD%CCOMMENT = TRIM(HCOMMENT)
+      END IF
     END IF
   ELSE
     CALL PRINT_MSG(NVERB_DEBUG,'IO',TRIM(HSUBR),'CCOMMENT was empty -> replaced by TPFIELD%CCOMMENT for article ' &

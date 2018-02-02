@@ -118,7 +118,7 @@ INTEGER       :: IINFO_ll                     ! return code of // routines
 !              --------------
 ! Switch to model 1 variables
 CALL MPPDB_INIT()
-CALL GOTO_MODEL(1)
+CALL GOTO_MODEL(1,ONOFIELDLIST=.TRUE.)
 !
 CALL INITIO_ll()
 !

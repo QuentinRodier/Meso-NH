@@ -803,7 +803,8 @@ SELECT CASE(TPFILE%CTYPE)
     END IF
     !
     IF(PRESENT(TPDADFILE)) THEN
-      IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST','TPDADFILE provided but not associated')
+      IF (.NOT.ASSOCIATED(TPDADFILE)) CALL PRINT_MSG(NVERB_WARNING,'IO','IO_FILE_ADD2LIST', &
+                                                     'TPDADFILE provided but not associated for file '//TRIM(HNAME))
       TPFILE%TDADFILE => TPDADFILE
     ELSE
       TPFILE%TDADFILE => NULL()
