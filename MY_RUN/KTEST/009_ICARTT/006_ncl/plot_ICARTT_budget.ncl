@@ -8,8 +8,8 @@ begin
 ;=================================================;
 ; open file and read in data
 ;=================================================;
-  a = addfile("ICART.1.SEG01.001dg.nc4", "r")
-  a2 = addfile("ICART.1.SEG01.002dg.nc4", "r")
+  a = addfile("ICART.1.SEG01.001dg.nc", "r")
+  a2 = addfile("ICART.1.SEG01.002dg.nc", "r")
 
 ;=================================================;
 ; Get informations on variable sizes

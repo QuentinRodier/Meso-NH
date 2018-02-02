@@ -17,7 +17,7 @@ begin
 ;
 curdir_path=systemfunc("pwd")+"/"
 ;
-file_RSTRT = curdir_path+"IROISE_5KM_201109_02_00.nc4"
+file_RSTRT = curdir_path+"IROISE_5KM_201109_02_00.nc"
 a=addfile(file_RSTRT,"r")
 
 ; fichier *.nc

@@ -4,7 +4,7 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
-ln -fs ../008_run2/16JAN.1.12B18.001.*{des,lfi,nc} .
+ln -fs ../008_run2/16JAN.1.12B18.001.{des,lfi,nc} .
 time ${MONORUN} SPECTRE${XYZ}  
 
 

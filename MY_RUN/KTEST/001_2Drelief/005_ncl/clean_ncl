@@ -1,2 +1,2 @@
 
-rm -f  *.nc *.ps 
+rm -f  *.nc *.ps *.png

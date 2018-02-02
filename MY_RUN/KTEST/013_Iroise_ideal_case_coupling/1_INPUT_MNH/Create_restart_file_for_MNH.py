@@ -16,7 +16,7 @@ import os
 
 curdir_path=os.path.abspath(os.curdir)+'/'
 
-file_RSTRT = netCDF4.Dataset(curdir_path+'IROISE_5KM_201109_02_00.nc4')
+file_RSTRT = netCDF4.Dataset(curdir_path+'IROISE_5KM_201109_02_00.nc')
 
 LON_MNH=file_RSTRT.variables['LON'][1:-1,1:-1]
 LAT_MNH=file_RSTRT.variables['LAT'][1:-1,1:-1]
