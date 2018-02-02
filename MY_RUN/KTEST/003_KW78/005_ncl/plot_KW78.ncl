@@ -65,15 +65,15 @@
   acprr@long_name="Accumulated Precipitation Rain Rate"
   acprr@units="mm"
 
-  YYYYDDMM1= fichier1->DTCUR__TDATE
-  SS1=fichier1->DTCUR__TIME
+  ;YYYYDDMM1= fichier1->DTCUR__TDATE
+  SS1=fichier1->DTCUR
 
 ;=================================================;
 ; Récupération de la date 
 ;=================================================;
-  year1=YYYYDDMM1(0)
-  day1=YYYYDDMM1(1)
-  min1=YYYYDDMM1(2)
+  ;year1=YYYYDDMM1(0)
+  ;day1=YYYYDDMM1(1)
+  ;min1=YYYYDDMM1(2)
   time1=SS1
 ;=================================================;
 ; On mets toutes les variables sur la grille 1 

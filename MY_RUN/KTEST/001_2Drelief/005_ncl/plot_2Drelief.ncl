@@ -55,10 +55,10 @@ cflw1= fichier1->CFLW(1:kmax,0,jphext:imax+jphext-1) ; CFLW
 cflw1@long_name="CFLW"
 cflw1@units=" "
 
-YYYYDDMM1= fichier1->DTCUR__TDATE
-SS1=fichier1->DTCUR__TIME
-YYYYDDMM2= fichier2->DTCUR__TDATE
-SS2=fichier2->DTCUR__TIME
+;YYYYDDMM1= fichier1->DTCUR__TDATE
+SS1=fichier1->DTCUR
+;YYYYDDMM2= fichier2->DTCUR__TDATE
+SS2=fichier2->DTCUR
 
 lsthm2 = fichier2->LSTHM(1:kmax,0,jphext:imax+jphext-1) ; LSTHM
 lsthm2@long_name="LSTHM"
@@ -87,13 +87,13 @@ cflw2@units=" "
 ;=================================================;
 ; Récupération de la date 
 ;=================================================;
-year1=YYYYDDMM1(0)
-day1=YYYYDDMM1(1)
-min1=YYYYDDMM1(2)
+;year1=YYYYDDMM1(0)
+;day1=YYYYDDMM1(1)
+;min1=YYYYDDMM1(2)
 time1=SS1
-year2=YYYYDDMM2(0)
-day2=YYYYDDMM2(1)
-min2=YYYYDDMM2(2)
+;year2=YYYYDDMM2(0)
+;day2=YYYYDDMM2(1)
+;min2=YYYYDDMM2(2)
 time2=SS2
 ;=================================================;
 ; On mets toutes les variables sur la grille 1 

@@ -124,15 +124,15 @@ phr1= fichier1->PHR(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 phr1@long_name="PHR"
 phr1@units=" "
 
-YYYYDDMM1= fichier1->DTCUR__TDATE
-SS1=fichier1->DTCUR__TIME
+;YYYYDDMM1= fichier1->DTCUR__TDATE
+SS1=fichier1->DTCUR
 
 ;=================================================;
 ; Récupération de la date 
 ;=================================================;
-year1=YYYYDDMM1(0)
-day1=YYYYDDMM1(1)
-min1=YYYYDDMM1(2)
+;year1=YYYYDDMM1(0)
+;day1=YYYYDDMM1(1)
+;min1=YYYYDDMM1(2)
 time1=SS1
 ;=================================================;
 ; On mets toutes les variables sur la grille 1 
