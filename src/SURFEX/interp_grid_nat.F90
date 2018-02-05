@@ -62,7 +62,7 @@ DO JL=1,SIZE(PT2,2)
   ZDG2(:,JL) = PDG2(JL)
 ENDDO
 !
- CALL VERTICAL_GRID_NAT(PDG1,PT1,ZDG2,PT2)
+CALL VERTICAL_GRID_NAT(PDG1,PT1,ZDG2,PT2)
 !
 IF (LHOOK) CALL DR_HOOK('MODI_INTERP_GRID_NAT:INTERP_GRID_NAT_1D',1,ZHOOK_HANDLE)
 !-----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-----------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODI_INTERP_GRID_NAT:INTERP_GRID_NAT_2D',0,ZHOOK_HANDLE)
 !
- CALL VERTICAL_GRID_NAT(PDG1,PT1,PDG2,PT2)
+CALL VERTICAL_GRID_NAT(PDG1,PT1,PDG2,PT2)
 !
 IF (LHOOK) CALL DR_HOOK('MODI_INTERP_GRID_NAT:INTERP_GRID_NAT_2D',1,ZHOOK_HANDLE)
 !-----------------------------------------------------------------------------

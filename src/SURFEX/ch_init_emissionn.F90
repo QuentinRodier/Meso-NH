@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CH_INIT_EMISSION_n (CHE, CHU, SV, &
-                                     HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE)
+      SUBROUTINE CH_INIT_EMISSION_n (CHE, PCONVERSION, HSV, HPROGRAM,KLU,HINIT,PRHOA,HCHEM_SURF_FILE)
 !     #######################################
 !
 !!****  *CH_INIT_EMIISION_n* - routine to initialize chemical emissions data structure
@@ -29,7 +28,6 @@
 !!      P.Tulet  01/01/04  introduction of rhodref for externalization
 !!      M.Leriche 04/2014  change length of CHARACTER for emission 6->12
 !!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
-!!      J. Pianezze 04/17 wrong length of YCOMMENT (100 instead of 40)
 !!      06/06/17    (V.Masson & M. Leriche) add emission time by species
 !-----------------------------------------------------------------------------
 !
@@ -37,17 +35,15 @@
 !
 !
 USE MODD_CH_EMIS_FIELD_n, ONLY : CH_EMIS_FIELD_t
-USE MODD_CH_SURF_n, ONLY : CH_SURF_t
-USE MODD_SV_n, ONLY : SV_t
 !
 USE MODI_GET_LUOUT
 USE MODI_BUILD_EMISSTAB_n
 USE MODI_BUILD_PRONOSLIST_n
 USE MODI_READ_SURF
-!
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
 USE MODI_READ_SURF_FIELD2D
+!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -61,23 +57,23 @@ IMPLICIT NONE
 !
 !
 TYPE(CH_EMIS_FIELD_t), INTENT(INOUT) :: CHE
-TYPE(CH_SURF_t), INTENT(INOUT) :: CHU
-TYPE(SV_t), INTENT(INOUT) :: SV
+REAL, DIMENSION(:), POINTER :: PCONVERSION
+ CHARACTER(LEN=*), DIMENSION(:), POINTER :: HSV
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! Program name
 INTEGER,           INTENT(IN)  :: KLU      ! number of points
- CHARACTER(LEN=3),  INTENT(IN)  :: HINIT    ! Flag to know if one initializes:
+CHARACTER(LEN=3),  INTENT(IN)  :: HINIT    ! Flag to know if one initializes:
 !                                          ! 'ALL' : all variables for a run
 !                                          ! 'PRE' : only variables to build 
 !                                          !         an initial file
 REAL, DIMENSION(:),INTENT(IN)  :: PRHOA    ! air density
- CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
+CHARACTER(LEN=28), INTENT(IN)  :: HCHEM_SURF_FILE ! ascii file for chemistry aggregation
 !
 !*       0.2   declarations of local variables
 !
 INTEGER             :: IRESP                 !   File 
 INTEGER             :: ILUOUT                ! output listing logical unit
- CHARACTER (LEN=LEN_HREC)  :: YRECFM                ! management
+ CHARACTER (LEN=LEN_HREC) :: YRECFM                ! management
  CHARACTER (LEN=40) :: YCOMMENT              ! variables
 INTEGER             :: JSPEC                 ! Loop index for cover data
 INTEGER             :: IIND1,IIND2           ! Indices counter
@@ -91,7 +87,7 @@ INTEGER                           :: INBTS   ! number of emission times for a sp
 INTEGER                           :: INBOFF  ! Number of offline emissions
 INTEGER                           :: IVERB   ! verbose level
 INTEGER                           :: ICH      ! logical unit of input chemistry file
- CHARACTER(LEN=3)                  :: YSURF   ! surface type
+CHARACTER(LEN=3)                  :: YSURF   ! surface type
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZWORK2D ! work array to read emission fields
 !
 INTEGER           :: IVERSION       ! version of surfex file being read
@@ -103,19 +99,16 @@ WRITE(ILUOUT,*) '------ Beginning of CH_INIT_EMISSION ------'
 !
 !* ascendant compatibility
 YRECFM='VERSION'
- CALL READ_SURF( &
-                HPROGRAM,YRECFM,IVERSION,IRESP)
+ CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 !*      1.     Chemical Emission fields
 !              ------------------------
 !
 ! Read the total number of emission files 
 IF (IVERSION>=4) THEN
-  CALL READ_SURF( &
-                HPROGRAM,'EMISFILE_NBR',CHE%NEMIS_NBR,IRESP)
+  CALL READ_SURF(HPROGRAM,'EMISFILE_NBR',CHE%NEMIS_NBR,IRESP)
 ELSE
-  CALL READ_SURF( &
-                HPROGRAM,'EMISFILE_GR_NBR',CHE%NEMIS_NBR,IRESP)
+  CALL READ_SURF(HPROGRAM,'EMISFILE_GR_NBR',CHE%NEMIS_NBR,IRESP)
 END IF
 IF (IRESP/=0) THEN
   CALL ABOR1_SFX('CH_INIT_EMISSIONN: PROBLEM WHEN READING NB OF 2D CHEMICAL EMISSION FIELDS')
@@ -123,11 +116,9 @@ END IF
 !
 ! Read the number of emission species
 IF (IVERSION>=4) THEN
-  CALL READ_SURF( &
-                HPROGRAM,'EMISPEC_NBR',CHE%NEMISPEC_NBR,IRESP)
+  CALL READ_SURF(HPROGRAM,'EMISPEC_NBR',CHE%NEMISPEC_NBR,IRESP)
 ELSE
-  CALL READ_SURF( &
-                HPROGRAM,'EMISPEC_GR_NBR',CHE%NEMISPEC_NBR,IRESP)
+  CALL READ_SURF(HPROGRAM,'EMISPEC_GR_NBR',CHE%NEMISPEC_NBR,IRESP)
 END IF
 IF (IRESP/=0) THEN
   CALL ABOR1_SFX('CH_INIT_EMISSIONN: PROBLEM WHEN READING NB OF EMITTED CHEMICAL SPECIES')
@@ -140,9 +131,9 @@ ELSE
   WRITE(ILUOUT,*) 'CEMIS_NAME already allocated with SIZE :',SIZE(CHE%CEMIS_NAME)
 END IF
 
-IF (.NOT. ASSOCIATED(CHE%NEMIS_NBT))    ALLOCATE(CHE%NEMIS_NBT(CHE%NEMISPEC_NBR))
+IF (.NOT. ASSOCIATED(CHE%NEMIS_NBT))   ALLOCATE(CHE%NEMIS_NBT(CHE%NEMISPEC_NBR))
 IF (.NOT. ASSOCIATED(CHE%NEMIS_TIME))   ALLOCATE(CHE%NEMIS_TIME(CHE%NEMIS_NBR))
- CHE%NEMIS_TIME(:) = -1
+CHE%NEMIS_TIME(:) = -1
 !
 IF (HINIT/='ALL') THEN
   ALLOCATE(CHE%XEMIS_FIELDS(KLU,CHE%NEMIS_NBR))
@@ -165,21 +156,18 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
 ! Read article EMISNAMExxx for the name of species
 ! and extract from comment : surface type + number of emission times
   WRITE(YRECFM,'("EMISNAME",I3.3)') JSPEC
-  CALL READ_SURF( &
-                HPROGRAM,YRECFM,YSPEC_NAME,IRESP,YCOMMENT)
+  CALL READ_SURF(HPROGRAM,YRECFM,YSPEC_NAME,IRESP,YCOMMENT)
   IF (IRESP/=0) THEN
     CALL ABOR1_SFX('CH_INIT_EMISSIONN: PROBLEM WHEN READING NAME OF EMITTED CHEMICAL SPECIES')
   END IF
 
   WRITE(YRECFM,'("EMISNBT",I3.3)') JSPEC
-  CALL READ_SURF( &
-                HPROGRAM,YRECFM,INBTS,IRESP,YCOMMENT)
+  CALL READ_SURF(HPROGRAM,YRECFM,INBTS,IRESP,YCOMMENT)
   WRITE(ILUOUT,*) ' Emission ',JSPEC,' : ',TRIM(YSPEC_NAME),'(',INBTS,' instants )'
 !
 ! Read emission times for species number JSPEC
   WRITE(YRECFM,'("EMISTIMES",I3.3)') JSPEC
-  CALL READ_SURF( &
-                HPROGRAM,YRECFM,ITIMES(1:INBTS),IRESP,YCOMMENT,'-')
+  CALL READ_SURF(HPROGRAM,YRECFM,ITIMES(1:INBTS),IRESP,YCOMMENT,'-')
   IF (IRESP/=0) THEN
     CALL ABOR1_SFX('CH_INIT_EMISSIONN: PROBLEM WHEN READING EMISSION TIMES')
   END IF
@@ -202,12 +190,12 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
     END IF
   END IF
 !
- CHE%NTIME_MAX = MAXVAL(CHE%NEMIS_TIME)
+CHE%NTIME_MAX = MAXVAL(CHE%NEMIS_TIME)
 !
-! INBTIMES  and CEMIS_NAME 
+! INBTIMES and CEMIS_NAME 
 ! are updated for ALL species
   CHE%CEMIS_NAME(JSPEC) = YSPEC_NAME
-!
+! 
 !*      2.     Simple reading of emission fields
 
   IF (HINIT /= "ALL") THEN
@@ -218,16 +206,17 @@ DO JSPEC = 1,CHE%NEMISPEC_NBR ! Loop on the number of species
     CHE%CEMIS_COMMENT(IIND1:IIND2) = YCOMMENT
     DEALLOCATE(ZWORK2D)
   END IF
-! 
+!
 END DO
 !
 CHE%NEMIS_NBT(:) = INBTIMES(:)
-
+!
 WRITE(ILUOUT,*) '---- Nunmer of OFFLINE species = ',INBOFF
 WRITE(ILUOUT,*) 'INBTIMES=',INBTIMES
 WRITE(ILUOUT,*) 'IOFFNDX=',IOFFNDX
 
 IVERB=6
+
 !*      3.     Conversion and aggregation
 
 IF (HINIT == "ALL") THEN
@@ -236,22 +225,20 @@ IF (HINIT == "ALL") THEN
     ALLOCATE(CHE%TSEMISS(INBOFF))
     ALLOCATE(YEMIS_NAME(INBOFF))
 
-    CALL BUILD_EMISSTAB_n( &
-                        CHU, &
-                        HPROGRAM,ICH,CHE%CEMIS_NAME,INBTIMES,CHE%NEMIS_TIME,&
-         IOFFNDX,CHE%TSEMISS,KLU,ILUOUT,IVERB,PRHOA)  
+    CALL BUILD_EMISSTAB_n(PCONVERSION, HPROGRAM,ICH,CHE%CEMIS_NAME,INBTIMES,CHE%NEMIS_TIME,&
+                          IOFFNDX,CHE%TSEMISS,KLU,ILUOUT,IVERB,PRHOA)  
     DO JSPEC = 1,INBOFF ! Loop on the number of species
       YEMIS_NAME(JSPEC) = CHE%TSEMISS(JSPEC)%CNAME(1:12)
     END DO
-    CALL BUILD_PRONOSLIST_n(SV, &
-                          SIZE(CHE%TSEMISS),YEMIS_NAME,CHE%TSPRONOSLIST,ICH,ILUOUT,IVERB)
+    CALL BUILD_PRONOSLIST_n(HSV, SIZE(CHE%TSEMISS),YEMIS_NAME,CHE%TSPRONOSLIST,ICH,ILUOUT,IVERB)
     DEALLOCATE(YEMIS_NAME)
     CALL CLOSE_NAMELIST(HPROGRAM,ICH)
   ELSE
     ALLOCATE(CHE%TSEMISS(0))
     NULLIFY(CHE%TSPRONOSLIST)
   END IF
-END IF
+ENDIF
+
 DEALLOCATE(ITIMES,INBTIMES,IOFFNDX)
 WRITE(ILUOUT,*) '------ Leaving CH_INIT_EMISSION ------'
 IF (LHOOK) CALL DR_HOOK('CH_INIT_EMISSION_N',1,ZHOOK_HANDLE)

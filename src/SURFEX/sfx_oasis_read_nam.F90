@@ -32,6 +32,7 @@ SUBROUTINE SFX_OASIS_READ_NAM(HPROGRAM,PTSTEP_SURF,HINIT)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    05/2008 
+!!    10/2016 B. Decharme : bug surface/groundwater coupling 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -60,18 +61,18 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6), INTENT(IN)           :: HPROGRAM    ! program calling surf. schemes
+CHARACTER(LEN=6), INTENT(IN)           :: HPROGRAM    ! program calling surf. schemes
 REAL,             INTENT(IN)           :: PTSTEP_SURF ! Surfex time step
- CHARACTER(LEN=3), INTENT(IN), OPTIONAL :: HINIT       ! choice of fields to initialize
+CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: HINIT       ! choice of fields to initialize
 !
 !*       0.2   Declarations of local parameter
 !              -------------------------------
 !
 INTEGER,          PARAMETER :: KIN   = 1
 INTEGER,          PARAMETER :: KOUT  = 0
- CHARACTER(LEN=5), PARAMETER :: YLAND = 'land'
- CHARACTER(LEN=5), PARAMETER :: YLAKE = 'lake'
- CHARACTER(LEN=5), PARAMETER :: YSEA  = 'ocean'
+CHARACTER(LEN=5), PARAMETER :: YLAND = 'land'
+CHARACTER(LEN=5), PARAMETER :: YLAKE = 'lake'
+CHARACTER(LEN=5), PARAMETER :: YSEA  = 'ocean'
 !
 !*       0.3   Declarations of local variables
 !              -------------------------------
@@ -79,9 +80,9 @@ INTEGER,          PARAMETER :: KOUT  = 0
 LOGICAL            :: GFOUND         ! Return code when searching namelist
 INTEGER            :: ILUOUT         ! Listing id
 INTEGER            :: ILUNAM         ! logical unit of namelist file
- CHARACTER(LEN=20)  :: YKEY
- CHARACTER(LEN=50)  :: YCOMMENT
- CHARACTER(LEN=3)   :: YINIT
+CHARACTER(LEN=20)  :: YKEY
+CHARACTER(LEN=50)  :: YCOMMENT
+CHARACTER(LEN=3)   :: YINIT
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -109,14 +110,14 @@ ENDIF
 YINIT = 'ALL'
 IF(PRESENT(HINIT))YINIT=HINIT
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 !*       1.     Read namelists and check status :
 !               --------------------------------
 !
- CALL OPEN_NAMELIST(HPROGRAM,ILUNAM)
+CALL OPEN_NAMELIST(HPROGRAM,ILUNAM)
 !
- CALL POSNAM(ILUNAM,'NAM_SFX_LAND_CPL',GFOUND,ILUOUT)
+CALL POSNAM(ILUNAM,'NAM_SFX_LAND_CPL',GFOUND,ILUOUT)
 !
 IF (GFOUND) THEN
    READ(UNIT=ILUNAM,NML=NAM_SFX_LAND_CPL)
@@ -128,7 +129,7 @@ ELSE
    WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 ENDIF
 !
- CALL POSNAM(ILUNAM,'NAM_SFX_SEA_CPL',GFOUND,ILUOUT)
+CALL POSNAM(ILUNAM,'NAM_SFX_SEA_CPL',GFOUND,ILUOUT)
 !
 IF (GFOUND) THEN
    READ(UNIT=ILUNAM,NML=NAM_SFX_SEA_CPL)
@@ -140,7 +141,7 @@ ELSE
    WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 ENDIF
 !
- CALL POSNAM(ILUNAM,'NAM_SFX_LAKE_CPL',GFOUND,ILUOUT)
+CALL POSNAM(ILUNAM,'NAM_SFX_LAKE_CPL',GFOUND,ILUOUT)
 !
 IF (GFOUND) THEN
    READ(UNIT=ILUNAM,NML=NAM_SFX_LAKE_CPL)
@@ -152,7 +153,7 @@ ELSE
    WRITE(ILUOUT,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
 ENDIF
 !
- CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
+CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
 !
 IF(XTSTEP_CPL_LAND>0.0)LCPL_LAND=.TRUE.
 IF(XTSTEP_CPL_LAKE>0.0)LCPL_LAKE=.TRUE.
@@ -216,17 +217,11 @@ IF(LCPL_LAND)THEN
 !
 ! Particular case due to water table depth / surface coupling
 !    
-  IF(LEN_TRIM(CWTD)>0.OR.LEN_TRIM(CFWTD)>0.OR.LEN_TRIM(CRECHARGE)>0)THEN
+  IF(LEN_TRIM(CWTD)>0.OR.LEN_TRIM(CFWTD)>0)THEN
     LCPL_GW = .TRUE.
   ENDIF
 !
   IF(LCPL_GW)THEN
-!
-!   Output variable
-!
-    YKEY  ='CRECHARGE'
-    YCOMMENT='Groundwater recharge'
-    CALL CHECK_FIELD(CRECHARGE,YKEY,YCOMMENT,YLAND,KOUT)
 !
 !   Input variable
 !
@@ -423,23 +418,23 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('SFX_OASIS_READ_NAM',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE CHECK_FIELD(HFIELD,HKEY,HCOMMENT,HTYP,KID)
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=*), INTENT(IN) :: HFIELD
- CHARACTER(LEN=*), INTENT(IN) :: HKEY
- CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
- CHARACTER(LEN=*), INTENT(IN) :: HTYP
+CHARACTER(LEN=*), INTENT(IN) :: HFIELD
+CHARACTER(LEN=*), INTENT(IN) :: HKEY
+CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
+CHARACTER(LEN=*), INTENT(IN) :: HTYP
 INTEGER,          INTENT(IN) :: KID
 !
- CHARACTER(LEN=20)  :: YWORK
- CHARACTER(LEN=20)  :: YNAMELIST
- CHARACTER(LEN=128) :: YCOMMENT1
- CHARACTER(LEN=128) :: YCOMMENT2
+CHARACTER(LEN=20)  :: YWORK
+CHARACTER(LEN=20)  :: YNAMELIST
+CHARACTER(LEN=128) :: YCOMMENT1
+CHARACTER(LEN=128) :: YCOMMENT2
 LOGICAL            :: LSTOP
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE

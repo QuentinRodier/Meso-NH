@@ -35,14 +35,14 @@
 !!    MODIFICATIONS
 !!    -------------
 !!    Original 16/02/01
-!!             2016 M.Leriche add open_namelist
+
 !!    EXTERNAL
 !!    --------
 !!
 ! open the general purpose ASCII input file
 USE MODI_OPEN_NAMELIST
 USE MODI_CLOSE_NAMELIST
-
+!
 USE MODI_CH_OPEN_INPUTB
 USE MODD_CH_SURF
 !!
@@ -89,9 +89,9 @@ REAL             , DIMENSION(:,:), ALLOCATABLE :: ZHENRYVAL
                           !chemical Henry constant value
 !
 INTEGER :: ICH      ! unit of input chemical file
+!
 INTEGER :: JI, JN, JNREAL ! loop control variables
 INTEGER :: INACT          ! array pointer
-logical :: lopened
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -100,12 +100,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------
 !
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEPCONST',0,ZHOOK_HANDLE)
-!$OMP SINGLE
 IF(.NOT. ALLOCATED(XSREALMASSMOLVAL)) ALLOCATE( XSREALMASSMOLVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALREACTVAL)  ) ALLOCATE( XSREALREACTVAL(SIZE(HSV,1)) )
 IF(.NOT. ALLOCATED(XSREALHENRYVAL)  ) ALLOCATE( XSREALHENRYVAL(SIZE(HSV,1),2) )
 !
-CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
+ CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
 !
 !*       2.  read chemical molecular diffusivity MASS_MOL
 !
@@ -121,15 +120,12 @@ CALL OPEN_NAMELIST(HPROGRAM,ICH,HFILE=HCHEM_SURF_FILE)
 ! read data input format
   READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
-!$OMP END SINGLE COPYPRIVATE(IMASS,YFORMAT)
 !
 ! allocate fields
   ALLOCATE(YMASSMOLNAME(IMASS))
   ALLOCATE(ZMASSMOLVAL(IMASS))
 !
-inquire(ICH,NAME=YNAME,opened=lopened)
 ! read molecular diffusivity
-!$OMP SINGLE
   DO JI = 1, IMASS
     READ(ICH,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
     WRITE(KLUOUT,YFORMAT) YMASSMOLNAME(JI), ZMASSMOLVAL(JI)
@@ -141,7 +137,6 @@ inquire(ICH,NAME=YNAME,opened=lopened)
     WRITE(KLUOUT,'(A)') 'molecular mass (in g/mol) for molecular diffusion'
     WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
     WRITE(KLUOUT,'(A)') YOUTFORMAT
-!$OMP END SINGLE COPYPRIVATE(YMASSMOLNAME,ZMASSMOLVAL)
 !
   XSREALMASSMOLVAL(:) = 50. ! default molecular mass 
   DO JNREAL = 1, SIZE(HSV,1)
@@ -162,7 +157,6 @@ inquire(ICH,NAME=YNAME,opened=lopened)
 !*       3.  read molecular reactivity factor REA_FACT
 !
 ! open input file
-!$OMP SINGLE
    WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading  reactivity factor "  
   CALL CH_OPEN_INPUTB("REA_FACT", ICH, KLUOUT)
@@ -174,13 +168,11 @@ inquire(ICH,NAME=YNAME,opened=lopened)
 ! read data input format
   READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
-!$OMP END SINGLE COPYPRIVATE(IREACT,YFORMAT)
 !
 ! allocate fields
   ALLOCATE(YREACTNAME(IREACT))
   ALLOCATE(ZREACTVAL(IREACT))
 ! read reactivity factor 
-!$OMP SINGLE
   DO JI = 1, IREACT
     READ(ICH,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
     WRITE(KLUOUT,YFORMAT) YREACTNAME(JI), ZREACTVAL(JI)
@@ -191,7 +183,6 @@ inquire(ICH,NAME=YNAME,opened=lopened)
     WRITE(KLUOUT,'(A)') 'reactivity factor'
     WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
     WRITE(KLUOUT,'(A)') YOUTFORMAT
-!$OMP END SINGLE COPYPRIVATE(YREACTNAME,ZREACTVAL)
 !    
   XSREALREACTVAL(:) = 0.0 ! default (high surface resistance)
   DO JNREAL = 1, SIZE(HSV,1)
@@ -215,7 +206,6 @@ inquire(ICH,NAME=YNAME,opened=lopened)
   WRITE(KLUOUT,*) &
        "CH_INIT_CONST: reading effective Henry constant", &
        " and its temperature correction "  
-!$OMP SINGLE
   CALL CH_OPEN_INPUTB("HENRY_SP", ICH, KLUOUT)
 !
 ! read number of molecular diffusivity IHENRY
@@ -225,14 +215,12 @@ inquire(ICH,NAME=YNAME,opened=lopened)
 ! read data input format
   READ(ICH,"(A)") YFORMAT
   WRITE(KLUOUT,*) "input format is: ", YFORMAT
-!$OMP END SINGLE COPYPRIVATe(IHENRY,YFORMAT)  
 !
 ! allocate fields
   ALLOCATE(YHENRYNAME(IHENRY))
   ALLOCATE(ZHENRYVAL(IHENRY,2))
 !
 ! read reactivity factor 
-!$OMP SINGLE
   DO JNREAL = 1, IHENRY
     READ(ICH,YFORMAT) YHENRYNAME(JNREAL), ZHENRYVAL(JNREAL,1),&
                              ZHENRYVAL(JNREAL,2)  
@@ -245,7 +233,6 @@ inquire(ICH,NAME=YNAME,opened=lopened)
   WRITE(KLUOUT,'(A)') 'Henrys law constants factor / exponent'
   WRITE(KLUOUT,'(I4)') SIZE(HSV,1)
   WRITE(KLUOUT,'(A)') YOUTFORMAT
-!$OMP END SINGLE COPYPRIVATE(YHENRYNAME,ZHENRYVAL)
 !  
   XSREALHENRYVAL(:,1) = 1E-8 ! no deposition; low Henry constant
   XSREALHENRYVAL(:,2) = 0. ! 
@@ -264,7 +251,7 @@ inquire(ICH,NAME=YNAME,opened=lopened)
                       XSREALHENRYVAL(JNREAL,2)  
   END DO
 
-CALL CLOSE_NAMELIST(HPROGRAM,ICH)
+ CALL CLOSE_NAMELIST(HPROGRAM,ICH)
 
 IF (LHOOK) CALL DR_HOOK('CH_INIT_DEPCONST',1,ZHOOK_HANDLE)
 !

@@ -65,8 +65,8 @@ IMPLICIT NONE
  LOGICAL                               :: LOBSHEADER
  LOGICAL                               :: LOBSNAT
 
- INTEGER, PARAMETER                    :: NOBSMAX = 5
- INTEGER, PARAMETER                    :: NVARMAX = 5
+ INTEGER, PARAMETER                    :: NOBSMAX = 5          ! Maximum number of observations
+ INTEGER, PARAMETER                    :: NVARMAX = 9          ! Maximum number of control variables
  INTEGER,DIMENSION(NOBSMAX)            :: NNCO                 ! Select the type of observations to be assimilated 
  INTEGER,DIMENSION(NVARMAX)            :: NNCV                 ! Select the control variables to be used 
  INTEGER                               :: NOBSTYPE
@@ -78,6 +78,7 @@ IMPLICIT NONE
  INTEGER                               :: NBOUTPUT  
  INTEGER                               :: NPRINTLEV            ! Verbosity 
 
+ CHARACTER(LEN=10),DIMENSION(NOBSMAX)  :: COBS_M               ! Observation variable name
  CHARACTER(LEN=3),DIMENSION(NVARMAX)   :: CVAR_M               ! X is ctrl
                                                                ! 'PLUS ' (default)
                                                                ! 'AVERA'            

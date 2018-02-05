@@ -3,13 +3,13 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-       SUBROUTINE DIAG_INLINE_FLAKE_n (DGF, F, &
-                                        PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,  &
-                                         PMERA, PHT, PHW, PRAIN, PSNOW,                &
-                                         PCD, PCDN, PCH, PRI, PHU,                &
-                                         PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER,    &
-                                         PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB,    &
-                                         PLE, PLEI, PSUBL, PLWUP, PALB, PSWE           )  
+       SUBROUTINE DIAG_INLINE_FLAKE_n (DGO, D, DC, F, &
+                                       PTSTEP, PTA, PQA, PPA, PPS, PRHOA, PZONA,  &
+                                       PMERA, PHT, PHW, PRAIN, PSNOW,             &
+                                       PCD, PCDN, PCH, PRI, PHU,                  &
+                                       PZ0H, PQSAT, PSFTH, PSFTQ, PSFZON, PSFMER, &
+                                       PDIR_SW, PSCA_SW, PLW, PDIR_ALB, PSCA_ALB, &
+                                       PLE, PLEI, PSUBL, PLWUP, PALB, PSWE        )  
 !     ###############################################################################
 !
 !!****  *DIAG_INLINE_FLAKE_n * - computes diagnostics during FLAKE time-step
@@ -41,18 +41,17 @@
 !
 !
 !
-USE MODD_DIAG_FLAKE_n, ONLY : DIAG_FLAKE_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE MODD_CSTS,         ONLY : XTT
 USE MODD_SURF_PAR,     ONLY : XUNDEF
 USE MODD_SFX_OASIS,    ONLY : LCPL_LAKE
 !
-USE MODI_PARAM_CLS
 USE MODI_CLS_TQ
 USE MODI_CLS_WIND
 USE MODI_DIAG_SURF_BUDGET_FLAKE
-USE MODI_DIAG_SURF_BUDGETC_FLAKE
+USE MODI_DIAG_SURF_BUDGETC
 USE MODI_DIAG_CPL_ESM_FLAKE
 USE MODI_ABOR1_SFX
 !
@@ -64,7 +63,9 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(DIAG_FLAKE_t), INTENT(INOUT) :: DGF
+TYPE(DIAG_OPTIONS_t), INTENT(IN) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
 TYPE(FLAKE_t), INTENT(INOUT) :: F
 !
 REAL              , INTENT(IN) :: PTSTEP ! atmospheric time-step (s)
@@ -113,99 +114,84 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('DIAG_INLINE_FLAKE_N',0,ZHOOK_HANDLE)
 !
-DGF%XDIAG_TS(:) = F%XTS(:)
+D%XTS(:) = F%XTS(:)
 !
 IF (.NOT. F%LSBL) THEN
 !
-  IF (DGF%N2M==1) THEN
-    CALL PARAM_CLS(PTA, F%XTS, PQA, PPA, PRHOA, PZONA, PMERA, PHT, PHW, &
-                     PSFTH, PSFTQ, PSFZON, PSFMER,                       &
-                     DGF%XT2M, DGF%XQ2M, DGF%XHU2M, DGF%XZON10M, DGF%XMER10M                       )  
-  ELSE IF (DGF%N2M==2) THEN
+  IF (DGO%N2M==2) THEN
     ZH(:)=2.          
-    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT,         &
-                  PCD, PCH, PRI,                   &
-                  F%XTS, PHU, PZ0H, ZH,              &
-                  DGF%XT2M, DGF%XQ2M, DGF%XHU2M                )  
+    CALL CLS_TQ(PTA, PQA, PPA, PPS, PHT, PCD, PCH, PRI, &
+                  F%XTS, PHU, PZ0H, ZH, D%XT2M, D%XQ2M, D%XHU2M )  
     ZH(:)=10.                
-    CALL CLS_WIND(PZONA, PMERA, PHW,             &
-                    PCD, PCDN, PRI, ZH,            &
-                    DGF%XZON10M, DGF%XMER10M               )  
+    CALL CLS_WIND(PZONA, PMERA, PHW, PCD, PCDN, PRI, ZH, D%XZON10M, D%XMER10M )  
   END IF
 !
-  IF (DGF%N2M>=1) THEN
+  IF (DGO%N2M>=1) THEN
     !
-    DGF%XT2M_MIN(:) = MIN(DGF%XT2M_MIN(:),DGF%XT2M(:))
-    DGF%XT2M_MAX(:) = MAX(DGF%XT2M_MAX(:),DGF%XT2M(:))
+    D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
+    D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
     !
-    DGF%XHU2M_MIN(:) = MIN(DGF%XHU2M_MIN(:),DGF%XHU2M(:))
-    DGF%XHU2M_MAX(:) = MAX(DGF%XHU2M_MAX(:),DGF%XHU2M(:))
+    D%XHU2M_MIN(:) = MIN(D%XHU2M_MIN(:),D%XHU2M(:))
+    D%XHU2M_MAX(:) = MAX(D%XHU2M_MAX(:),D%XHU2M(:))
     !
-    DGF%XWIND10M(:) = SQRT(DGF%XZON10M(:)**2+DGF%XMER10M(:)**2)
-    DGF%XWIND10M_MAX(:) = MAX(DGF%XWIND10M_MAX(:),DGF%XWIND10M(:))
+    D%XWIND10M(:) = SQRT(D%XZON10M(:)**2+D%XMER10M(:)**2)
+    D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
     !
     !* Richardson number
-    DGF%XRI = PRI
+    D%XRI = PRI
     !
   ENDIF
 !
 ELSE
   !
-  IF (DGF%N2M>=1) THEN
-    DGF%XT2M    = XUNDEF
-    DGF%XQ2M    = XUNDEF
-    DGF%XHU2M   = XUNDEF
-    DGF%XZON10M = XUNDEF
-    DGF%XMER10M = XUNDEF
-    DGF%XRI     = PRI
+  IF (DGO%N2M>=1) THEN
+    D%XT2M    = XUNDEF
+    D%XQ2M    = XUNDEF
+    D%XHU2M   = XUNDEF
+    D%XZON10M = XUNDEF
+    D%XMER10M = XUNDEF
+    D%XRI     = PRI
   ENDIF
 ENDIF
 !
-IF (DGF%LSURF_BUDGET.OR.DGF%LSURF_BUDGETC) THEN
+IF (DGO%LSURF_BUDGET.OR.DGO%LSURF_BUDGETC) THEN
   !
-  DGF%XLE  (:) = PLE  (:)
-  DGF%XLEI (:) = PLEI (:)
-  DGF%XEVAP(:) = PSFTQ(:)
-  DGF%XSUBL(:) = PSUBL(:)
-  DGF%XALBT(:) = PALB (:)
-  DGF%XSWE (:) = PSWE (:)
+  D%XLE  (:) = PLE  (:)
+  D%XLEI (:) = PLEI (:)
+  D%XEVAP(:) = PSFTQ(:)
+  D%XSUBL(:) = PSUBL(:)
+  D%XALBT(:) = PALB (:)
+  D%XSWE (:) = PSWE (:)
   !
-  CALL  DIAG_SURF_BUDGET_FLAKE ( PRHOA, PSFTH,                          &
-                                  PDIR_SW, PSCA_SW, PLW,                &
-                                  PDIR_ALB, PSCA_ALB, PLWUP,            &
-                                  PSFZON, PSFMER, DGF%XLE, DGF%XRN, DGF%XH, DGF%XGFLUX, &
-                                  DGF%XSWD, DGF%XSWU, DGF%XSWBD, DGF%XSWBU, DGF%XLWD, DGF%XLWU, &
-                                  DGF%XFMU, DGF%XFMV )  
+  CALL  DIAG_SURF_BUDGET_FLAKE (D, PRHOA, PSFTH, PDIR_SW, PSCA_SW, PLW, &
+                                PDIR_ALB, PSCA_ALB, PLWUP, PSFZON, PSFMER )  
   !
 END IF
 !
-IF(DGF%LSURF_BUDGETC)THEN
-  CALL DIAG_SURF_BUDGETC_FLAKE(DGF, &
-                               PTSTEP, DGF%XRN, DGF%XH, DGF%XLE, DGF%XLEI, DGF%XGFLUX,  &
-                                 DGF%XSWD, DGF%XSWU, DGF%XLWD, DGF%XLWU, DGF%XFMU, DGF%XFMV,&
-                                 DGF%XEVAP, DGF%XSUBL                       )  
+IF(DGO%LSURF_BUDGETC)THEN
+  CALL DIAG_SURF_BUDGETC(D, DC, PTSTEP, .TRUE.)  
 ENDIF
 !
-IF (DGF%LCOEF) THEN
+IF (DGO%LCOEF) THEN
   !
   !* Transfer coefficients
   !
-  DGF%XCD = PCD
-  DGF%XCH = PCH
-  DGF%XCE = PCH
+  D%XCD = PCD
+  D%XCH = PCH
+  D%XCE = PCH
   !
   !* Roughness lengths
   !
-  DGF%XZ0  = F%XZ0
-  DGF%XZ0H = PZ0H
+  D%XZ0  = F%XZ0
+  D%XZ0H = PZ0H
   !
 END IF
 !
-IF (DGF%LSURF_VARS) THEN
+IF (DGO%LSURF_VARS) THEN
   !
   !* Humidity at saturation
   !
-  DGF%XQS = PQSAT
+  D%XQS = PQSAT
   !
 END IF
 !
@@ -213,8 +199,7 @@ END IF
 !
 IF (LCPL_LAKE) THEN
 !
-  CALL DIAG_CPL_ESM_FLAKE(F, &
-                          PTSTEP,PRAIN,PSNOW,PSFTQ)
+  CALL DIAG_CPL_ESM_FLAKE(F,PTSTEP,PRAIN,PSNOW,PSFTQ)
 ! 
 ENDIF
 !

@@ -448,7 +448,7 @@ ALLOCATE(BDD%XDESC_NATVENT(BDD%NDESC_USE))
 !
 !* fraction of residential use for the buildings
 ALLOCATE(BDD%XDESC_RESIDENTIAL(BDD%NDESC_USE))
- CALL READ_CONF_IN_CSVFILE("Residentiel",IRES)
+CALL READ_CONF_IN_CSVFILE("Residentiel",IRES)
 BDD%XDESC_RESIDENTIAL(:) = 0.
 DO JUSE=1,BDD%NDESC_USE
   IF (JUSE==IRES) BDD%XDESC_RESIDENTIAL(JUSE) = 1.
@@ -482,7 +482,7 @@ BDD%XDESC_D_ROAD(:,3:) = 1.
 !
 IF (LHOOK) CALL DR_HOOK('READ_CSVDATA_TEB',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 FUNCTION BLD_CODE(KBLD,KAGE)

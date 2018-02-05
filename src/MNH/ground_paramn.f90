@@ -108,6 +108,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!     (B.Vie)                2016 LIMA
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
 !!      (M.Leriche)           01/07/2017 Add DIAG chimical surface fluxes
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -530,9 +531,7 @@ CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                        
 !
 
 IF (CPROGRAM=='DIAG  ' .OR. LDIAG_IN_RUN) THEN
-  CALL DIAG_SURF_ATM_n(YSURF_CUR%IM%DGEI, YSURF_CUR%FM%DGF, YSURF_CUR%DGL, YSURF_CUR%IM%DGI, &
-                             YSURF_CUR%SM%DGS, YSURF_CUR%DGU, YSURF_CUR%TM%DGT, YSURF_CUR%WM%DGW, &
-                             YSURF_CUR%U, YSURF_CUR%USS,'MESONH')
+  CALL DIAG_SURF_ATM_n(YSURF_CUR,'MESONH')
   CALL  MNHGET_SURF_PARAM_n(PRN=ZP_RN,PH=ZP_H,PLE=ZP_LE,PGFLUX=ZP_GFLUX, &
                            PT2M=ZP_T2M,PQ2M=ZP_Q2M,PHU2M=ZP_HU2M,        &
                            PZON10M=ZP_ZON10M,PMER10M=ZP_MER10M           )

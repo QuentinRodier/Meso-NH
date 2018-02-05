@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE PREP_SURF_ATM (YSC, &
-                          HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
+SUBROUTINE PREP_SURF_ATM (YSC, HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !     #################################################################################
 !
 !!****  *PREP_SURF_ATM* - driver for surface fields preparation
@@ -27,11 +26,12 @@ SUBROUTINE PREP_SURF_ATM (YSC, &
 !!    -------------
 !!      Original    01/2004
 !!      P. Le Moigne 10/2005, Phasage Arome
+!!      P. Marguinaud10/2014, Support for a 2-part PREP
 !!------------------------------------------------------------------
 !
-
-!
 USE MODD_SURFEX_n, ONLY : SURFEX_t
+!
+USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODI_PREP_NATURE
 USE MODI_PREP_SEA
@@ -50,6 +50,7 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 TYPE(SURFEX_t), INTENT(INOUT) :: YSC
+TYPE (PREP_CTL),   INTENT(INOUT) :: YDCTL
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM    ! program calling surf. schemes
  CHARACTER(LEN=28), INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
@@ -94,36 +95,35 @@ ELSE
   YPGDFILETYPE='      '
 ENDIF
 !
+IF (ASSOCIATED(YSC%U%XCOVER)) DEALLOCATE(YSC%U%XCOVER)
+!
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! SEA Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF(YSC%U%NDIM_SEA>0) CALL PREP_SEA(YSC%DTCO, YSC%UG, YSC%U, YSC%SM,YSC%GCP,  &
-   HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE)
+IF(YSC%U%NDIM_SEA>0) CALL PREP_SEA(YSC%DTCO, YSC%UG, YSC%U, YSC%GCP, YSC%SM,  &
+                                HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE,YDCTL)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! INLAND WATER Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF(YSC%U%NDIM_WATER>0) CALL PREP_INLAND_WATER(YSC%DTCO, YSC%USS, &
-                                    YSC%UG, YSC%U, YSC%FM, YSC%WM,YSC%GCP, &
-   HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE)
+IF(YSC%U%NDIM_WATER>0) CALL PREP_INLAND_WATER(YSC%DTCO, YSC%USS, YSC%UG, YSC%U, YSC%GCP, YSC%FM, YSC%WM, &
+                                        HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE,YDCTL)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! NATURAL SURFACE Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF(YSC%U%NDIM_NATURE>0) CALL PREP_NATURE(YSC%DTCO, YSC%IM%ICP, YSC%IM%IG, &
-                                        YSC%IM%I, YSC%UG, YSC%U,YSC%USS,YSC%GCP, &
-                                    HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE)
+IF(YSC%U%NDIM_NATURE>0) CALL PREP_NATURE(YSC%DTCO, YSC%IM, YSC%UG, YSC%U, YSC%USS, YSC%GCP, &
+                                         HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE,YDCTL)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! URBAN Tile calculations:
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-IF(YSC%U%NDIM_TOWN>0) CALL PREP_TOWN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, &
-                      YSC%IM%IG, YSC%IM%I, YSC%TM, YSC%GDM, YSC%GRM,YSC%GCP, &
-                      HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE)
+IF(YSC%U%NDIM_TOWN>0) CALL PREP_TOWN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%GCP, YSC%TM, YSC%GDM, YSC%GRM, &
+                                     HPROGRAM,YATMFILE,YATMFILETYPE,YPGDFILE,YPGDFILETYPE,YDCTL)
 !
  CALL CLEAR_GRIB_INDEX
 !

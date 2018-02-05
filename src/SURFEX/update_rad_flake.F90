@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE UPDATE_RAD_FLAKE(HALB,PTS,PZENITH,PH_ICE,PH_SNOW,PICE_ALB,PSNOW_ALB,   &
-                            PDIR_ALB,PSCA_ALB,PEMIS,PDIR_ALB_ATMOS,PSCA_ALB_ATMOS,&
-                            PEMIS_ATMOS,PTRAD )  
+SUBROUTINE UPDATE_RAD_FLAKE(F,PZENITH,PDIR_ALB_ATMOS,PSCA_ALB_ATMOS,PEMIS_ATMOS,PTRAD )  
 !     #######################################################################
 !
 !!****  *UPDATE_RAD_FLAKE * - update the radiative properties at time t+1 (see by the atmosphere) 
@@ -31,6 +29,8 @@ SUBROUTINE UPDATE_RAD_FLAKE(HALB,PTS,PZENITH,PH_ICE,PH_SNOW,PICE_ALB,PSNOW_ALB, 
 !!      Original    04/2013
 !!------------------------------------------------------------------
 !
+USE MODD_FLAKE_n, ONLY : FLAKE_t
+!
 USE MODD_WATER_PAR, ONLY : XALBSCA_WAT, XALBWAT, XEMISWAT, XEMISWATICE
 !
 USE modd_flake_parameters , ONLY : h_Snow_min_flk, h_Ice_min_flk
@@ -47,19 +47,8 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
- CHARACTER(LEN=4),       INTENT(IN)   :: HALB
-!
-REAL, DIMENSION(:),     INTENT(IN)   :: PTS       !  surface temperature
+TYPE(FLAKE_t), INTENT(INOUT) :: F
 REAL, DIMENSION(:),     INTENT(IN)   :: PZENITH   ! Zenithal angle at t+1
-REAL, DIMENSION(:),     INTENT(IN)   :: PH_ICE    ! ice depth at t+
-REAL, DIMENSION(:),     INTENT(IN)   :: PH_SNOW   ! snow depth at t+
-REAL, DIMENSION(:),     INTENT(IN)   :: PICE_ALB  ! ice albedo at t+
-REAL, DIMENSION(:),     INTENT(IN)   :: PSNOW_ALB ! snow albedo at t+
-!
-REAL, DIMENSION(:),     INTENT(INOUT):: PDIR_ALB  ! Direct albedo at t+1
-REAL, DIMENSION(:),     INTENT(INOUT):: PSCA_ALB  ! Diffuse albedo at t+1
-REAL, DIMENSION(:),     INTENT(OUT)  :: PEMIS     ! emissivity (soil+vegetation) at t+1
-!
 REAL, DIMENSION(:,:),   INTENT(OUT)  :: PDIR_ALB_ATMOS ! Direct albedo at t+1 for the atmosphere
 REAL, DIMENSION(:,:),   INTENT(OUT)  :: PSCA_ALB_ATMOS ! Diffuse albedo at t+1 for the atmosphere
 REAL, DIMENSION(:),     INTENT(OUT)  :: PEMIS_ATMOS    ! Emissivity at t+1 for the atmosphere
@@ -69,8 +58,8 @@ REAL, DIMENSION(:),     INTENT(OUT)  :: PTRAD          ! radiative temp at t+1 f
 !
 INTEGER :: JSWB
 !
-REAL, DIMENSION(SIZE(PTS)) :: ZALBDIR
-REAL, DIMENSION(SIZE(PTS)) :: ZALBSCA
+REAL, DIMENSION(SIZE(F%XTS)) :: ZALBDIR
+REAL, DIMENSION(SIZE(F%XTS)) :: ZALBSCA
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -81,10 +70,10 @@ IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_FLAKE',0,ZHOOK_HANDLE)
 ZALBDIR(:) = 0.
 ZALBSCA(:) = 0.
 !
-IF (HALB=='TA96') THEN
+IF (F%CFLK_ALB=='TA96') THEN
   ZALBDIR(:) = ALBEDO_TA96(PZENITH(:))
   ZALBSCA(:) = XALBSCA_WAT
-ELSEIF (HALB=='MK10') THEN
+ELSEIF (F%CFLK_ALB=='MK10') THEN
   ZALBDIR(:) = ALBEDO_MK10(PZENITH(:))
   ZALBSCA(:) = XALBSCA_WAT
 ELSE
@@ -92,32 +81,32 @@ ELSE
   ZALBSCA(:) = XALBWAT
 ENDIF
 !
-WHERE (PH_SNOW(:)>=h_Snow_min_flk)
+WHERE (F%XH_SNOW(:)>=h_Snow_min_flk)
 !* snow
-  PDIR_ALB  (:) = PSNOW_ALB(:)
-  PSCA_ALB  (:) = PSNOW_ALB(:)
-  PEMIS     (:) = XEMISSN
-ELSEWHERE(PH_ICE(:)>=h_ice_min_flk)
+  F%XDIR_ALB  (:) = F%XSNOW_ALB(:)
+  F%XSCA_ALB  (:) = F%XSNOW_ALB(:)
+  F%XEMIS     (:) = XEMISSN
+ELSEWHERE(F%XH_ICE(:)>=h_ice_min_flk)
 !* ice
-  PDIR_ALB(:) = PICE_ALB(:)
-  PSCA_ALB(:) = PICE_ALB(:)
-  PEMIS   (:) = XEMISWATICE
+  F%XDIR_ALB(:) = F%XICE_ALB(:)
+  F%XSCA_ALB(:) = F%XICE_ALB(:)
+  F%XEMIS   (:) = XEMISWATICE
 ELSEWHERE
 !* open water
-  PDIR_ALB  (:) = ZALBDIR(:)
-  PSCA_ALB  (:) = ZALBSCA(:)
-  PEMIS     (:) = XEMISWAT    
+  F%XDIR_ALB  (:) = ZALBDIR(:)
+  F%XSCA_ALB  (:) = ZALBSCA(:)
+  F%XEMIS     (:) = XEMISWAT    
 END WHERE
 !
 !-------------------------------------------------------------------------------------
 !
 DO JSWB=1,SIZE(PDIR_ALB_ATMOS,2)
-  PDIR_ALB_ATMOS(:,JSWB) = PDIR_ALB(:)
-  PSCA_ALB_ATMOS(:,JSWB) = PSCA_ALB(:)
+  PDIR_ALB_ATMOS(:,JSWB) = F%XDIR_ALB(:)
+  PSCA_ALB_ATMOS(:,JSWB) = F%XSCA_ALB(:)
 END DO
 !
-PEMIS_ATMOS(:) = PEMIS(:)
-PTRAD      (:) = PTS  (:)
+PEMIS_ATMOS(:) = F%XEMIS(:)
+PTRAD      (:) = F%XTS  (:)
 !
 IF (LHOOK) CALL DR_HOOK('UPDATE_RAD_FLAKE',1,ZHOOK_HANDLE)
 !

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################
-      SUBROUTINE ECOCLIMAP2_LAI (DTCO)
+      SUBROUTINE ECOCLIMAP2_LAI (KYEAR)
 !     #########################
 !
 !!**** *ECOCLIMAP2_LAI* initializes cover-field correspondance arrays
@@ -38,9 +38,6 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
-USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
 USE MODD_DATA_COVER,     ONLY : XDATA_LAI, XDATA_LAI_ALL_YEARS, LCLIM_LAI, &
@@ -60,8 +57,7 @@ IMPLICIT NONE
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
-!
-TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
+INTEGER, INTENT(IN) :: KYEAR
 !
 REAL, DIMENSION(36) :: ZLAI
 !
@@ -81,17 +77,15 @@ XDATA_LAI(301:,:,:) = XUNDEF
 !*       2. if averaged LAI
 !           ---------------
 !
-IF (LCLIM_LAI .OR. DTCO%NYEAR<NECO2_START_YEAR .OR. DTCO%NYEAR>NECO2_END_YEAR) THEN
+IF (LCLIM_LAI .OR. KYEAR<NECO2_START_YEAR .OR. KYEAR>NECO2_END_YEAR) THEN
 !
   DO JCOVER=301,JPCOVER
     DO JVEGTYPE=1,NVEGTYPE
-      IF (DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
-        ZLAI(:) = 0.
-        DO JYEAR=1,5
-          ZLAI(:) = ZLAI(:) + XDATA_LAI_ALL_YEARS(JCOVER,(JYEAR-1)*36+1:JYEAR*36,JVEGTYPE)/5.  
-        END DO
-        XDATA_LAI(JCOVER,:,JVEGTYPE) = ZLAI(:)
-      ENDIF
+      ZLAI(:) = 0.
+      DO JYEAR=1,5
+        ZLAI(:) = ZLAI(:) + XDATA_LAI_ALL_YEARS(JCOVER,(JYEAR-1)*36+1:JYEAR*36,JVEGTYPE)/5.  
+      END DO
+      XDATA_LAI(JCOVER,:,JVEGTYPE) = ZLAI(:)
     END DO
   END DO
 
@@ -100,12 +94,10 @@ IF (LCLIM_LAI .OR. DTCO%NYEAR<NECO2_START_YEAR .OR. DTCO%NYEAR>NECO2_END_YEAR) T
 !           -------------------------
 ELSE
 !
-  IYEAR = DTCO%NYEAR - NECO2_START_YEAR
+  IYEAR = KYEAR - NECO2_START_YEAR
   DO JCOVER=301,JPCOVER
     DO JVEGTYPE=1,NVEGTYPE
-      IF (DTCO%XDATA_VEGTYPE(JCOVER,JVEGTYPE).ne.0.) THEN
-        XDATA_LAI(JCOVER,:,JVEGTYPE)=XDATA_LAI_ALL_YEARS(JCOVER,IYEAR*36+1:(IYEAR+1)*36,JVEGTYPE)
-      ENDIF
+      XDATA_LAI(JCOVER,:,JVEGTYPE)=XDATA_LAI_ALL_YEARS(JCOVER,IYEAR*36+1:(IYEAR+1)*36,JVEGTYPE)
     ENDDO
   ENDDO
 !

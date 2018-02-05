@@ -24,7 +24,7 @@ MODULE MODE_FASURFEX
      MODULE PROCEDURE FALIT_L_D
   END INTERFACE
 !
- CONTAINS
+CONTAINS
 !
 ! #############################################################
   SUBROUTINE FAECR_I(KREP,KN,CNOMC,KDATA)

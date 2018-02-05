@@ -56,6 +56,15 @@ REAL, OPTIONAL,       INTENT(IN) :: PMISS
 !
 END SUBROUTINE UNPACK_SAME_RANK_FROM3D
 !
+      SUBROUTINE UNPACK_SAME_RANK_FROM3DI(KM,K3D_IN,K3D_OUT,KMISS)
+
+INTEGER, DIMENSION(:),   INTENT(IN) :: KM
+INTEGER, DIMENSION(:,:,:), INTENT(IN) :: K3D_IN
+INTEGER, DIMENSION(:,:,:), INTENT(OUT):: K3D_OUT
+INTEGER, OPTIONAL,       INTENT(IN) :: KMISS
+!
+END SUBROUTINE UNPACK_SAME_RANK_FROM3DI
+!
       SUBROUTINE UNPACK_SAME_RANK_FROM4D(KM,P4D_IN,P4D_OUT,PMISS)
 
 INTEGER, DIMENSION(:),   INTENT(IN) :: KM
@@ -259,8 +268,6 @@ END SUBROUTINE UNPACK_SAME_RANK_FROM1DI
 !              ------------
 !
 USE MODD_SURF_PAR,   ONLY : NUNDEF
-!
-USE MODD_SURFEX_OMP, ONLY : NWORK2_FULL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -539,6 +546,88 @@ IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM3D',1,ZHOOK_
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE UNPACK_SAME_RANK_FROM3D
+!
+!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
+!     ##############################################
+      SUBROUTINE UNPACK_SAME_RANK_FROM3DI(KM,K3D_IN,K3D_OUT,KMISS)
+!     ##############################################
+!
+!!****  *UNPACK_SAME_RANK* - extract the defined data from a 3D field into a 3D field
+!!
+!!    PURPOSE
+!!    -------
+!!
+!!**  METHOD
+!!    ------
+!!
+!!    EXTERNAL
+!!    --------
+!!
+!!
+!!    IMPLICIT ARGUMENTS
+!!    ------------------
+!!
+!!    REFERENCE
+!!    ---------
+!!
+!!
+!!    AUTHOR
+!!    ------
+!!	F. Habets   *Meteo France*	
+!!
+!!    MODIFICATIONS
+!!    -------------
+!!      Original    08/03
+!-------------------------------------------------------------------------------
+!
+!*       0.    DECLARATIONS
+!              ------------
+!
+USE MODD_SURF_PAR,   ONLY : NUNDEF
+!
+!
+USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
+USE PARKIND1  ,ONLY : JPRB
+!
+IMPLICIT NONE
+!
+!*       0.1   Declarations of arguments
+!              -------------------------
+!
+INTEGER, DIMENSION(:),   INTENT(IN) :: KM
+REAL, DIMENSION(:,:,:),  INTENT(IN) :: K3D_IN
+REAL, DIMENSION(:,:,:),  INTENT(OUT):: K3D_OUT
+REAL, OPTIONAL,          INTENT(IN) :: KMISS
+!
+!*       0.2   Declarations of local variables
+!              -------------------------------
+!
+INTEGER :: JI, JJ, JK ! loop counter
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+!-------------------------------------------------------------------------------
+!
+IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM3D',0,ZHOOK_HANDLE)
+IF(PRESENT(KMISS))THEN
+  K3D_OUT(:,:,:) = KMISS      
+ELSE
+  K3D_OUT(:,:,:) = NUNDEF
+ENDIF
+!
+DO JK=1,SIZE(K3D_IN,3)
+  DO JJ=1,SIZE(K3D_IN,2)
+!cdir nodep
+    DO JI=1,SIZE(K3D_IN,1)
+      K3D_OUT(KM(JI),JJ,JK) = K3D_IN(JI,JJ,JK)
+    ENDDO
+  ENDDO 
+ENDDO
+IF (LHOOK) CALL DR_HOOK('MODI_UNPACK_SAME_RANK:UNPACK_SAME_RANK_FROM3DI',1,ZHOOK_HANDLE)
+!
+!-------------------------------------------------------------------------------
+!
+END SUBROUTINE UNPACK_SAME_RANK_FROM3DI
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

@@ -43,6 +43,7 @@
 !!      Original    4/03/2002
 !!                Oct. 2011 : (P.Le Moigne) Surface series
 !!      June 2016: P. Wautelet: corrected writes
+!!      Nov. 2017: J.-P. Chaboureau: fix a bug in dimension check
 !!
 !-------------------------------------------------------------------------------
 !
@@ -122,7 +123,7 @@ IF ( ( NFREQSERIES*XTSTEP < XSEGLEN )       .AND.                        &
        ( NJBOXL      < IJB_ll         )      .OR.                        &
        ( NJBOXL      > NJBOXH         )      .OR.                        &
        ( NJBOXH      > IJE_ll         )      .OR.                        &
-       ( NBJSLICE   >= IJE_ll         )      .OR.                        &
+       ( NBJSLICE   >  IJE_ll         )      .OR.                        &
        ( NBJSLICE   > SIZE(NJSLICEL(:),1)  ) .OR.                        &
        ( NJSLICEL(1) < IJB_ll         )      .OR.                        &
        ( NJSLICEL(1) > IJE_ll         )      .OR.                        &

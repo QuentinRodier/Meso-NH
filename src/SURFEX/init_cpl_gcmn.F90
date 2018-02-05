@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE INIT_CPL_GCM_n (&
-                                  U, &
-                                 HPROGRAM,HINIT)
+      SUBROUTINE INIT_CPL_GCM_n (U, HPROGRAM,HINIT)
 !     ########################################
 !
 !!****  *INIT_CPL_GCM_n* - routine to read  physical fields into  
@@ -80,7 +78,7 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 INTEGER           :: IRESP      ! Error code after redding
 ! 
- CHARACTER(LEN=LEN_HREC) :: YRECFM     ! Name of the article to be read
+CHARACTER(LEN=LEN_HREC) :: YRECFM     ! Name of the article to be read
 !
 INTEGER           :: IVERSION   ! surface version
 !
@@ -119,38 +117,31 @@ ELSE
 ENDIF
 !
 YRECFM='VERSION'
- CALL READ_SURF(&
-               HPROGRAM,YRECFM,IVERSION,IRESP)
+CALL READ_SURF(HPROGRAM,YRECFM,IVERSION,IRESP)
 !
 LREAD=(HINIT/='PGD'.AND.HINIT/='PRE'.AND.IVERSION>=8)
 !
 IF (LREAD) THEN
    YRECFM='LCPL_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,GCPL_GCM,IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,GCPL_GCM,IRESP)
 ENDIF  
 !
 IF (LREAD.AND.GCPL_GCM) THEN
 !
    YRECFM='RAIN_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,U%XRAIN(:),IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XRAIN(:),IRESP)
 !
    YRECFM='SNOW_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,U%XSNOW(:),IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XSNOW(:),IRESP)
 !
    YRECFM='Z0_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,U%XZ0(:),IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XZ0(:),IRESP)
 !
    YRECFM='Z0H_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,U%XZ0H(:),IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XZ0H(:),IRESP)
 !
    YRECFM='QS_GCM'
-   CALL READ_SURF(&
-               HPROGRAM,YRECFM,U%XQSURF(:),IRESP)
+   CALL READ_SURF(HPROGRAM,YRECFM,U%XQSURF(:),IRESP)
 !
 ENDIF        
 !

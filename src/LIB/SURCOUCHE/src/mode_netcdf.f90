@@ -4,7 +4,8 @@
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
 !  Modifications:
-!    P. Wautelet : may 2016: use NetCDF Fortran module
+!    P. Wautelet : may 2016   : use NetCDF Fortran module
+!    J.Escobar   : 14/12/2017 : Correction for MNH_INT=8
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
 #if defined(MNH_IOCDF4)
@@ -1440,7 +1441,7 @@ CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 STATUS = NF90_INQ_VARID(INCID, YVARNAME, IVARID)
 IF (STATUS /= NF90_NOERR) THEN
    ! Define the scalar variable 
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT, IVARID)
 #else
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT64, IVARID)
@@ -1522,7 +1523,7 @@ IF (STATUS /= NF90_NOERR) THEN
    CALL FILLVDIMS(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=IDCDF_KIND), IVDIMS)
 
    ! Define the variable 
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT, IVDIMS, IVARID)
 #else
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT64, IVDIMS, IVARID)
@@ -1582,7 +1583,7 @@ IF (STATUS /= NF90_NOERR) THEN
    CALL FILLVDIMS(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=IDCDF_KIND), IVDIMS)
 
    ! Define the variable 
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT, IVDIMS, IVARID)
 #else
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT64, IVDIMS, IVARID)
@@ -1646,7 +1647,7 @@ IF (STATUS /= NF90_NOERR) THEN
    CALL FILLVDIMS(TPFILE, TPFIELD, INT(SHAPE(KFIELD),KIND=IDCDF_KIND), IVDIMS)
 
    ! Define the variable 
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT, IVDIMS, IVARID)
 #else
    STATUS = NF90_DEF_VAR(INCID, YVARNAME, NF90_INT64, IVDIMS, IVARID)
@@ -2748,7 +2749,7 @@ END IF
 STATUS = NF90_INQUIRE_VARIABLE(INCID, IVARID, XTYPE=ITYPE, NDIMS=IDIMS)
 IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(STATUS,__LINE__,'IO_READ_FIELD_NC4_N0[NF90_INQUIRE_VARIABLE] '//TRIM(YVARNAME))
 
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
 IF (IDIMS == 0 .AND. (ITYPE == NF90_INT) ) THEN
 #else
 !Can read either 4 or 8 byte integers
@@ -2808,7 +2809,7 @@ STATUS = NF90_INQUIRE_VARIABLE(INCID, IVARID, XTYPE=ITYPE, NDIMS=IDIMS, DIMIDS=I
 IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(STATUS,__LINE__,'IO_READ_FIELD_NC4_N1[NF90_INQUIRE_VARIABLE] '//TRIM(YVARNAME))
 
 !NF90_INT1 is for the case a boolean was written
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
 IF (IDIMS == 1 .AND. (ITYPE == NF90_INT .OR. ITYPE == NF90_INT1) ) THEN
 #else
 IF (IDIMS == 1 .AND. (ITYPE == NF90_INT64 .OR. ITYPE == NF90_INT1) ) THEN
@@ -2890,7 +2891,7 @@ IF (IDIMS==3) THEN
 END IF
 
 !NF90_INT1 is for the case a boolean was written
-#ifndef MNH_INT8
+#if ( MNH_INT == 4 )
 IF (IDIMS == SIZE(SHAPE(KFIELD)) .AND. (ITYPE == NF90_INT .OR. ITYPE == NF90_INT1) ) THEN
 #else
 IF (IDIMS == SIZE(SHAPE(KFIELD)) .AND. (ITYPE == NF90_INT64 .OR. ITYPE == NF90_INT1) ) THEN

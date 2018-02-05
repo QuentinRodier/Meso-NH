@@ -75,18 +75,18 @@ FUNCTION gltools_strsplit( hval,knword ) RESULT(hresult)
 !
 IMPLICIT NONE
 !
- CHARACTER(*), INTENT(in) ::  &
+CHARACTER(*), INTENT(in) ::  &
   hval
 INTEGER, INTENT(in) ::  &
   knword
- CHARACTER(80), DIMENSION(knword) ::  &
+CHARACTER(80), DIMENSION(knword) ::  &
   hresult
 !
 INTEGER ::  &
   inum,inwords
- CHARACTER(1), PARAMETER ::  &
+CHARACTER(1), PARAMETER ::  &
   ysep=' '
- CHARACTER(LEN=LEN(hval)) ::  &
+CHARACTER(LEN=LEN(hval)) ::  &
   ystr
 !
 !

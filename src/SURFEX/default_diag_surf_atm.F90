@@ -3,10 +3,10 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_DIAG_SURF_ATM(K2M,OT2MMW,OSURF_BUDGET,O2M_MIN_ZS,ORAD_BUDGET, &
-                                         OCOEF,OSURF_VARS,OSURF_BUDGETC,          &
-                                         ORESET_BUDGETC, OSELECT, OPROVAR_TO_DIAG,&
-                                         ODIAG_GRID, OFRAC, PDIAG_TSTEP, CSELECT  )                                         
+      SUBROUTINE DEFAULT_DIAG_SURF_ATM(K2M, OT2MMW, OSURF_BUDGET, O2M_MIN_ZS, ORAD_BUDGET, &
+                                       OCOEF, OSURF_VARS, OSURF_BUDGETC, ORESET_BUDGETC, &
+                                       OSELECT, OPROVAR_TO_DIAG, ODIAG_GRID, OFRAC, &
+                                       PDIAG_TSTEP, OSNOWDIMNC, ORESETCUMUL, CSELECT  )                                         
 !     ########################################################################
 !
 !!****  *DEFAULT_DIAG_SURF_ATM* - routine to set default values for the choice of diagnostics
@@ -66,10 +66,12 @@ LOGICAL,  INTENT(OUT) :: OSURF_BUDGETC ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: ORESET_BUDGETC  ! flag for cumulated surface budget
 LOGICAL,  INTENT(OUT) :: OSELECT       ! switch to control which fields are written
 LOGICAL,  INTENT(OUT) :: OPROVAR_TO_DIAG    ! switch to write (or not) prognostic variable
+LOGICAL,  INTENT(OUT) :: OSNOWDIMNC    ! if true create a snow layer dimension in nc files
+LOGICAL,  INTENT(OUT) :: ORESETCUMUL   ! if true reset cumulated variables at each output timestep
 LOGICAL,  INTENT(OUT) :: ODIAG_GRID    ! flag for mean grid diag
 LOGICAL,  INTENT(OUT) :: OFRAC         ! flag for fractions of tiles
 REAL,     INTENT(OUT) :: PDIAG_TSTEP   ! time-step for writing
- CHARACTER(LEN=LEN_HREC), DIMENSION(200), INTENT(OUT), OPTIONAL :: CSELECT  
+CHARACTER(LEN=LEN_HREC), DIMENSION(200), INTENT(OUT), OPTIONAL :: CSELECT  
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables
@@ -96,6 +98,9 @@ ORESET_BUDGETC    = .FALSE.
 OSELECT            = .FALSE.
 !
 OPROVAR_TO_DIAG    = .FALSE.
+!
+OSNOWDIMNC = .FALSE.
+ORESETCUMUL = .FALSE.
 !
 ODIAG_GRID   = .TRUE.
 !

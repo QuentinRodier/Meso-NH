@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_FRAC (DTCO, UG, U, USS, &
-                           HPROGRAM,OECOCLIMAP)
+      SUBROUTINE PGD_FRAC (DTCO, UG, U, USS, HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_FRAC* monitor for averaging and interpolations of cover fractions
@@ -47,11 +46,11 @@
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_PGD_GRID,       ONLY : NL, CGRID
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NCOVER, NTYPE
 !
 USE MODD_PGDWORK,        ONLY : CATYPE
 !
@@ -78,11 +77,9 @@ IMPLICIT NONE
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
-LOGICAL,             INTENT(OUT)   :: OECOCLIMAP   ! F if fractions prescribed by user
-!                                                  ! T if fractions will be computed from ecoclimap
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -99,6 +96,7 @@ REAL, DIMENSION(NL)   :: ZSUM      ! sum of 4 tiles fractions
 !            ------------------------
 !
 LOGICAL  :: LECOCLIMAP  ! F if ecoclimap is not used
+LOGICAL  :: LECOSG      ! F if ecosg is not used
 REAL     :: XUNIF_SEA   ! value of sea    fraction
 REAL     :: XUNIF_WATER ! value of water  fraction
 REAL     :: XUNIF_NATURE! value of nature fraction
@@ -118,6 +116,7 @@ REAL     :: XUNIF_TOWN  ! value of town   fraction
  CHARACTER(LEN=6)      :: CFTYP_NATURE ! type of nature file
  CHARACTER(LEN=6)      :: CFTYP_TOWN   ! type of town   file
 !
+INTEGER, DIMENSION(4) :: ID_COV
 INTEGER               :: ICOVER       ! 0 if cover is not present, >1 if present somewhere
 !                                     ! (even on another processor)
 INTEGER               :: ICPT
@@ -125,10 +124,10 @@ INTEGER               :: ICPT
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
-NAMELIST/NAM_FRAC/ LECOCLIMAP,                                         &
-                     XUNIF_SEA, XUNIF_WATER, XUNIF_NATURE, XUNIF_TOWN, &
-                     CFNAM_SEA, CFNAM_WATER, CFNAM_NATURE, CFNAM_TOWN, &
-                     CFTYP_SEA, CFTYP_WATER, CFTYP_NATURE, CFTYP_TOWN  
+NAMELIST/NAM_FRAC/ LECOCLIMAP, LECOSG,                               &
+                   XUNIF_SEA, XUNIF_WATER, XUNIF_NATURE, XUNIF_TOWN, &
+                   CFNAM_SEA, CFNAM_WATER, CFNAM_NATURE, CFNAM_TOWN, &
+                   CFTYP_SEA, CFTYP_WATER, CFTYP_NATURE, CFTYP_TOWN  
 !-------------------------------------------------------------------------------
 !
 !*    1.      Initializations
@@ -140,16 +139,18 @@ XUNIF_WATER    = XUNDEF
 XUNIF_NATURE   = XUNDEF
 XUNIF_TOWN     = XUNDEF
 LECOCLIMAP     = .TRUE.
- CFNAM_SEA   (:)= '                            '
- CFNAM_WATER (:)= '                            '
- CFNAM_NATURE(:)= '                            '
- CFNAM_TOWN  (:)= '                            '
- CFTYP_SEA   (:)= '      '
- CFTYP_WATER (:)= '      '
- CFTYP_NATURE(:)= '      '
- CFTYP_TOWN  (:)= '      '
+LECOSG         = .FALSE.
+CFNAM_SEA   (:)= '                            '
+CFNAM_WATER (:)= '                            '
+CFNAM_NATURE(:)= '                            '
+CFNAM_TOWN  (:)= '                            '
+CFTYP_SEA   (:)= '      '
+CFTYP_WATER (:)= '      '
+CFTYP_NATURE(:)= '      '
+CFTYP_TOWN  (:)= '      '
 !
-OECOCLIMAP = .TRUE.
+U%LECOCLIMAP = .TRUE.
+U%LECOSG = .FALSE.
 !
 !-------------------------------------------------------------------------------
 !
@@ -163,6 +164,8 @@ OECOCLIMAP = .TRUE.
 IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_FRAC)
 !
  CALL CLOSE_NAMELIST(HPROGRAM,ILUNAM)
+!
+U%LECOSG = LECOSG
 !
 !-------------------------------------------------------------------------------
 !
@@ -265,53 +268,67 @@ U%XTOWN(:)   = U%XTOWN(:)   / ZSUM(:)
 WRITE(ILUOUT,*) ' '
 !-------------------------------------------------------------------------------
 !
-OECOCLIMAP = LECOCLIMAP
+U%LECOCLIMAP = LECOCLIMAP
 !
 !*    5.      List of cover present
 !             ---------------------
 !
 IF (.NOT.LECOCLIMAP) THEN
 
+  IF (.NOT.LECOSG) THEN
+    ID_COV(1) = 1
+    ID_COV(2) = 2
+    ID_COV(3) = 4
+    ID_COV(4) = 151
+    JPCOVER   = NCOVER
+  ELSE
+    ID_COV(1) = 21
+    ID_COV(2) = 22
+    ID_COV(3) = 1
+    ID_COV(4) = 20
+    JPCOVER = SUM(NTYPE)    
+  ENDIF
+
   ALLOCATE(U%LCOVER(JPCOVER))
   U%LCOVER(:) = .FALSE.
   ICOVER = 0
   ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XSEA(:)/=0. ,'COV')
   IF (ICPT/=0) THEN
-    U%LCOVER(1) = .TRUE.
+    U%LCOVER(ID_COV(1)) = .TRUE.
     ICOVER=ICOVER+1
   ENDIF
   ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XWATER(:)/=0. ,'COV')
   IF (ICPT/=0) THEN  
-    U%LCOVER(2) = .TRUE.
+    U%LCOVER(ID_COV(2)) = .TRUE.
     ICOVER=ICOVER+1
   ENDIF
   ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XNATURE(:)/=0. ,'COV')
   IF (ICPT/=0) THEN  
-    U%LCOVER(4) = .TRUE.
+    U%LCOVER(ID_COV(3)) = .TRUE.
     ICOVER=ICOVER+1
   ENDIF
   ICPT= SUM_ON_ALL_PROCS(HPROGRAM,CGRID,U%XTOWN(:)/=0. ,'COV')
   IF (ICPT/=0) THEN  
-    U%LCOVER(151) = .TRUE.
+    U%LCOVER(ID_COV(4)) = .TRUE.
     ICOVER=ICOVER+1
   ENDIF
 
   ALLOCATE(U%XCOVER (NL,ICOVER))
 
   ICPT = 0
-  IF (U%LCOVER(1)) THEN
+  IF (U%LCOVER(ID_COV(1))) THEN
     ICPT = ICPT + 1
     U%XCOVER(:,ICPT) = U%XSEA(:)
   ENDIF
-  IF (U%LCOVER(2)) THEN
+  IF (U%LCOVER(ID_COV(2))) THEN
     ICPT = ICPT + 1
     U%XCOVER(:,ICPT) = U%XWATER(:)
   ENDIF
-  IF (U%LCOVER(4)) THEN
+  IF (U%LCOVER(ID_COV(3))) THEN
     ICPT = ICPT + 1
     U%XCOVER(:,ICPT) = U%XNATURE(:)
   ENDIF
-  IF (U%LCOVER(151)) THEN
+  IF (U%LCOVER(ID_COV(4))) THEN
     ICPT = ICPT + 1
     U%XCOVER(:,ICPT) = U%XTOWN(:)
   ENDIF

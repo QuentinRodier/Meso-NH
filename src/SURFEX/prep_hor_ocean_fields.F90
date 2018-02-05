@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_HOR_OCEAN_FIELDS (DTCO, UG, U, &
-                                   O, OR, SG, S,GCP, &
+SUBROUTINE PREP_HOR_OCEAN_FIELDS (DTCO, UG, U, GCP, O, OR, KLAT, PSEABATHY, &
                                   HPROGRAM,HSURF,HFILE,HFILETYPE,KLUOUT,OUNIF)
 !     #######################################################
 !
@@ -31,20 +30,13 @@ SUBROUTINE PREP_HOR_OCEAN_FIELDS (DTCO, UG, U, &
 !!      Modified    07/2012, P. Le Moigne : CMO1D phasing
 !!------------------------------------------------------------------
 !
-!
-!
-!
-!
-!
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
-USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
-USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 USE MODD_OCEAN_CSTS,     ONLY : XRHOSWREF
@@ -60,17 +52,15 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-!
-!
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
 TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
-TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
-TYPE(SEAFLUX_t), INTENT(INOUT) :: S
-TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
+REAL, DIMENSION(:), INTENT(IN) :: PSEABATHY
+INTEGER, INTENT(IN) :: KLAT
 !
  CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=7),   INTENT(IN)  :: HSURF     ! type of field
@@ -99,29 +89,25 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 IF (LHOOK) CALL DR_HOOK('PREP_HOR_OCEAN_FIELDS',0,ZHOOK_HANDLE)
 YSURF='TEMP_OC'
 YNCVARNAME='temperature'
- CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, &
-                           O, OR, SG,GCP, &
+ CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, GCP, O, OR, KLAT, &
                            HPROGRAM,HFILE,HFILETYPE,KLUOUT,OUNIF,YSURF,YNCVARNAME)
 !---------------------------------------------------------------------------
 !
 !*      4.     Treatment of oceanic salinity
 YSURF='SALT_OC'
 YNCVARNAME='salinity'
- CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, &
-                           O, OR, SG,GCP, &
+ CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, GCP, O, OR, KLAT, &
                            HPROGRAM,HFILE,HFILETYPE,KLUOUT,OUNIF,YSURF,YNCVARNAME)
 !---------------------------------------------------------------------------
 !
 !*      5.     Treatment of oceanic current
 YSURF='UCUR_OC'
 YNCVARNAME='u'
- CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, &
-                           O, OR, SG,GCP, &
+ CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, GCP, O, OR, KLAT, &
                            HPROGRAM,HFILE,HFILETYPE,KLUOUT,OUNIF,YSURF,YNCVARNAME)
 YSURF='VCUR_OC'
 YNCVARNAME='v'
- CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, &
-                           O, OR, SG,GCP, &
+ CALL PREP_HOR_OCEAN_FIELD(DTCO, UG, U, GCP, O, OR, KLAT, &
                            HPROGRAM,HFILE,HFILETYPE,KLUOUT,OUNIF,YSURF,YNCVARNAME)
 !---------------------------------------------------------------------------
 !
@@ -155,7 +141,7 @@ IF (IL/=0) THEN
 !!              apply bathy mask
   DO J=1,IL
     DO JLEV=IK1+1,NOCKMAX
-      IF (S%XSEABATHY(J)-XZHOC(JLEV)>0.) THEN
+      IF (PSEABATHY(J)-XZHOC(JLEV)>0.) THEN
         O%XSEABATH(J,JLEV)=0.
         O%XSEAE(J,JLEV)  = XUNDEF
         O%XSEAU(J,JLEV)  = XUNDEF

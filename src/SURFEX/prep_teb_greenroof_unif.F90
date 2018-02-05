@@ -70,41 +70,35 @@ SELECT CASE(HSURF)
 !*      3.1    Profile of soil relative humidity
 !
   CASE('WG     ')
-    ALLOCATE(PFIELD(1,3,NVEGTYPE))
-    DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XHUG_SURF_GR
-      PFIELD(:,2,JV) = XHUG_ROOT_GR
-      PFIELD(:,3,JV) = XHUG_DEEP_GR
-    END DO
-
+    ALLOCATE(PFIELD(1,3,1))
+    PFIELD(:,1,1) = XHUG_SURF_GR
+    PFIELD(:,2,1) = XHUG_ROOT_GR
+    PFIELD(:,3,1) = XHUG_DEEP_GR
+!
 !*      3.2    Profile of soil humidity for ice
 
   CASE('WGI    ')
-    ALLOCATE(PFIELD(1,3,NVEGTYPE))
-    DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XHUGI_SURF_GR
-      PFIELD(:,2,JV) = XHUGI_ROOT_GR
-      PFIELD(:,3,JV) = XHUGI_DEEP_GR
-    END DO
+    ALLOCATE(PFIELD(1,3,1))
+    PFIELD(:,1,1) = XHUGI_SURF_GR
+    PFIELD(:,2,1) = XHUGI_ROOT_GR
+    PFIELD(:,3,1) = XHUGI_DEEP_GR
 
 !*      3.3    Profile of temperatures
 
   CASE('TG     ')
-    ALLOCATE(PFIELD(1,3,NVEGTYPE))
-    DO JV=1,NVEGTYPE
-      PFIELD(:,1,JV) = XTG_SURF_GR
-      PFIELD(:,2,JV) = XTG_ROOT_GR
-      PFIELD(:,3,JV) = XTG_DEEP_GR
-    END DO
+    ALLOCATE(PFIELD(1,3,1))
+    PFIELD(:,1,1) = XTG_SURF_GR
+    PFIELD(:,2,1) = XTG_ROOT_GR
+    PFIELD(:,3,1) = XTG_DEEP_GR
 
 !*      3.4    Other quantities
 
   CASE('WR     ')
-    ALLOCATE(PFIELD(1,1,NVEGTYPE))
+    ALLOCATE(PFIELD(1,1,1))
     PFIELD = XWR_DEF
 
   CASE('LAI    ')
-    ALLOCATE(PFIELD(1,1,NVEGTYPE))
+    ALLOCATE(PFIELD(1,1,1))
     PFIELD = XUNDEF
 
 END SELECT
@@ -112,7 +106,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='UNIF  '
+CINTERP_TYPE='UNIF  '
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_GREENROOF_UNIF',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------------

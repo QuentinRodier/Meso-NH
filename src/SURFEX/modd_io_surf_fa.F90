@@ -31,16 +31,16 @@
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=6), SAVE  :: CDNOMC ='header'     ! Name of the header
- CHARACTER(LEN=28),SAVE  :: CFILEIN_FA       ='SURFIN.fa'  ! Name of the input
- CHARACTER(LEN=28),SAVE  :: CFILEIN_FA_SAVE  ='SURFIN.fa'  ! Name of the input
- CHARACTER(LEN=28),SAVE  :: CFILEOUT_FA      ='SURFOUT.fa' ! Name of the input
- CHARACTER(LEN=28),SAVE  :: CFILEPGD_FA      ='PGD.fa'     ! Name of the pgd file
- CHARACTER(LEN=4), SAVE  :: CPREFIX1D        ='SFX.'       ! Prefix name in fa file
- CHARACTER(LEN=1), SAVE  :: CPREFIX2D        ='X'          ! Prefix name in fa file
+CHARACTER(LEN=6), SAVE  :: CDNOMC ='header'     ! Name of the header
+CHARACTER(LEN=28),SAVE  :: CFILE_FA       ='SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=28),SAVE  :: CFILEIN_FA       ='SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=28),SAVE  :: CFILEIN_FA_SAVE  ='SURFIN.fa'  ! Name of the input
+CHARACTER(LEN=28),SAVE  :: CFILEOUT_FA      ='SURFOUT.fa' ! Name of the input
+CHARACTER(LEN=28),SAVE  :: CFILEPGD_FA      ='PGD.fa'     ! Name of the pgd file
+CHARACTER(LEN=4), SAVE  :: CPREFIX1D        ='SFX.'       ! Prefix name in fa file
+CHARACTER(LEN=1), SAVE  :: CPREFIX2D        ='X'          ! Prefix name in fa file
 !
- CHARACTER(LEN=6)        :: CMASK     ! surface mask type
-!$OMP THREADPRIVATE(CMASK)
+CHARACTER(LEN=6)        :: CMASK     ! surface mask type
 !
 INTEGER                 :: NUNIT_FA         =19           ! logical unit of surface file (FA part)
 INTEGER                 :: NLUOUT         ! logical unit of output file
@@ -50,10 +50,8 @@ LOGICAL, SAVE           :: LFANOCOMPACT=.FALSE.
 LOGICAL, SAVE           :: LPREP       =.FALSE.
 LOGICAL                 :: LOPEN   ! flag to know if the file has been openned during the surface call
 !      
-INTEGER, DIMENSION(:), POINTER :: NMASK     ! 1D mask to read only interesting
-!$OMP THREADPRIVATE(NMASK)
+INTEGER, DIMENSION(:), POINTER :: NMASK=>NULL()     ! 1D mask to read only interesting
 INTEGER                        :: NFULL     ! total number of points of surface
-!$OMP THREADPRIVATE(NFULL)
 INTEGER                        :: NFULL_EXT ! total number of points including the extension zone (ALADIN)
 INTEGER                        :: NDGL,NDLON,NDLUX,NDGUX        ! dimensions of ALADIN domain
 !

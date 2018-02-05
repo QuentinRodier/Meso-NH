@@ -34,6 +34,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    19/09/03
+!!                  20/08/14 R. Séférian correction of the zenith solar angle
 !       
 !-------------------------------------------------------------------------------
 !
@@ -41,7 +42,6 @@
 !               ------------
 !
 USE MODD_WATER_PAR,  ONLY : XALBCOEF_TA96
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB

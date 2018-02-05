@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CPL_GCM_n (U, &
-                            KI,PRAIN,PSNOW,PZ0,PZ0H,PQSURF)
+      SUBROUTINE CPL_GCM_n (U, KI,PRAIN,PSNOW,PZ0,PZ0H,PQSURF)
 !     ####################################################
 !
 !!****  *CPL_GCM_n* - Save some phisical fields for ARPEGE/ALADIN run

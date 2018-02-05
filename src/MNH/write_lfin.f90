@@ -169,6 +169,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       Modification    01/2016  (JP Pinty) Add LIMA
 !!       M.Mazoyer     04/16 : Add supersaturation fields
 !!       P.Wautelet    11/07/2016 removed MNH_NCWRIT define
+!!       JP Chaboureau 27/11/2017 add wind tendency forcing
 !!                   
 !-------------------------------------------------------------------------------
 !

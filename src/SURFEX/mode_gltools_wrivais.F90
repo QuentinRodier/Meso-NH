@@ -59,7 +59,7 @@ INTERFACE gltools_wrivai
   MODULE PROCEDURE gltools_wrivai_3d
 END INTERFACE
 !
- CONTAINS
+CONTAINS
 !
 ! -----------------------------------------------------------------------
 ! ------------------- SUBROUTINE gltools_wrivai_2d ----------------------

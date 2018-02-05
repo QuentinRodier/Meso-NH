@@ -46,7 +46,7 @@ INTEGER           :: NMONTH           ! MONTH for surface
 INTEGER           :: NDAY             ! DAY for surface
 REAL              :: XTIME            ! TIME for surface
 LOGICAL           :: LSEA_SBL         ! flag to use air layers inside the SBL
- CHARACTER(LEN=6)  :: CSEAICE_SCHEME    ! name of the seaice scheme
+CHARACTER(LEN=6)  :: CSEAICE_SCHEME    ! name of the seaice scheme
 LOGICAL           :: LOCEAN_MERCATOR  ! oceanic variables initialized from 
                                       !   MERCATOR if true
 LOGICAL           :: LOCEAN_CURRENT   ! initial ocean state with current 

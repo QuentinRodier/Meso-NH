@@ -5,7 +5,7 @@
 !     #########
       SUBROUTINE READ_NAM_PGD_COVER(HPROGRAM, HCOVER, HFILETYPE, PUNIF_COVER,  &
                                     PRM_COVER, PRM_COAST, PRM_LAKE, ORM_RIVER, &
-                                    PRM_SEA, OORCA_GRID, PLAT_ANT, OIMP_COVER  )  
+                                    PRM_SEA, OORCA_GRID, PLAT_ANT, OIMP_COVER )  
 !     ##############################################################
 !
 !!**** *READ_NAM_PGD_COVER* reads namelist for Cover
@@ -40,7 +40,7 @@
 !*    0.     DECLARATION
 !            -----------
 !
-USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
+USE MODD_DATA_COVER_PAR, ONLY : NCOVER
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -57,9 +57,9 @@ IMPLICIT NONE
 !*    0.1    Declaration of arguments
 !            ------------------------
 !                                   
- CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM    ! Type of program
- CHARACTER(LEN=28),   INTENT(OUT)   :: HCOVER      ! file name for cover types
- CHARACTER(LEN=6),    INTENT(OUT)   :: HFILETYPE   ! data file type
+CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM    ! Type of program
+CHARACTER(LEN=28),   INTENT(OUT)   :: HCOVER      ! file name for cover types
+CHARACTER(LEN=6),    INTENT(OUT)   :: HFILETYPE   ! data file type
 REAL, DIMENSION(:),  INTENT(OUT)   :: PUNIF_COVER ! value of each cover (cover will be uniform on the horizontal)
 REAL,                INTENT(OUT)   :: PRM_COVER   ! limit of coverage under which the cover is removed. Default is 1.E-6
 REAL,                INTENT(OUT)   :: PRM_COAST   ! limit of coast coverage
@@ -81,11 +81,11 @@ LOGICAL                           :: GFOUND    ! flag when namelist is present
 !*    0.3    Declaration of namelists
 !            ------------------------
 !
-REAL, DIMENSION(JPCOVER) :: XUNIF_COVER ! value of each cover (cover will be
+REAL, DIMENSION(NCOVER) :: XUNIF_COVER ! value of each cover (cover will be
 !                                                   uniform on the horizontal)
 !
- CHARACTER(LEN=28)        :: YCOVER      ! file name for cover types
- CHARACTER(LEN=6)         :: YCOVERFILETYPE   ! data file type
+CHARACTER(LEN=28)        :: YCOVER      ! file name for cover types
+CHARACTER(LEN=6)         :: YCOVERFILETYPE   ! data file type
 REAL                     :: XRM_COVER   ! limit of coverage under which the
                                         ! cover is removed. Default is 1.E-6
 REAL                     :: XRM_COAST   ! limit of coast coverage under which
@@ -105,10 +105,11 @@ LOGICAL                  :: LORCA_GRID  ! flag to compatibility between Surfex a
 REAL                     :: XLAT_ANT    ! Lattitude limit from Orca grid (Antartic)
 !
 LOGICAL                  :: LIMP_COVER  ! Imposed values for Cover from another PGD file
+!
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 NAMELIST/NAM_COVER/ YCOVER, YCOVERFILETYPE, XUNIF_COVER, XRM_COVER, XRM_COAST,     &
-                    XRM_LAKE, LRM_RIVER, XRM_SEA, LORCA_GRID, XLAT_ANT, LIMP_COVER  
+                    XRM_LAKE, LRM_RIVER, XRM_SEA, LORCA_GRID, XLAT_ANT, LIMP_COVER 
 !
 !-------------------------------------------------------------------------------
 !
@@ -148,7 +149,7 @@ IF (GFOUND) READ(UNIT=ILUNAM,NML=NAM_COVER)
 !
 HCOVER      = YCOVER      ! file name for cover types
 HFILETYPE   = YCOVERFILETYPE   ! data file type
-PUNIF_COVER = XUNIF_COVER ! value of each cover (cover will be uniform on the horizontal)
+PUNIF_COVER = XUNIF_COVER(1:SIZE(PUNIF_COVER)) ! value of each cover (cover will be uniform on the horizontal)
 PRM_COVER   = XRM_COVER   ! limit of coverage under which the cover is removed. Default is 1.E-6
 PRM_COAST   = XRM_COAST   ! limit of coast coverage
 PRM_LAKE    = XRM_LAKE    ! limit of inland lake coverage                                       

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################################################################
-      SUBROUTINE LATLON_GRIDTYPE_CONF_PROJ(KGRID_PAR,KL,PGRID_PAR,PLAT,PLON,PMESH_SIZE,PDIR)
+      SUBROUTINE LATLON_GRIDTYPE_CONF_PROJ(G,KL,PDIR)
 !     #########################################################################
 !
 !!****  *LATLON_GRIDTYPE_CONF_PROJ* - routine to compute the horizontal geographic fields
@@ -37,6 +37,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_SFX_GRID_n, ONLY : GRID_t
+!
 USE MODD_CSTS,     ONLY : XPI
 !
 USE MODE_GRIDTYPE_CONF_PROJ
@@ -51,12 +53,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-INTEGER,                    INTENT(IN)  :: KGRID_PAR  ! size of PGRID_PAR
+TYPE(GRID_t), INTENT(INOUT) :: G
+!
 INTEGER,                    INTENT(IN)  :: KL         ! number of points
-REAL, DIMENSION(KGRID_PAR), INTENT(IN)  :: PGRID_PAR  ! parameters defining this grid
-REAL, DIMENSION(KL),        INTENT(OUT) :: PLAT       ! latitude  (degrees)
-REAL, DIMENSION(KL),        INTENT(OUT) :: PLON       ! longitude (degrees)
-REAL, DIMENSION(KL),        INTENT(OUT) :: PMESH_SIZE ! mesh size (m2)
 REAL, DIMENSION(KL),        INTENT(OUT) :: PDIR ! direction of main grid Y axis (deg. from N, clockwise)
 !
 !*       0.2   Declarations of local variables
@@ -86,12 +85,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ---------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('LATLON_GRIDTYPE_CONF_PROJ',0,ZHOOK_HANDLE)
-ALLOCATE(ZX (SIZE(PLAT)))
-ALLOCATE(ZY (SIZE(PLAT)))
-ALLOCATE(ZDX(SIZE(PLAT)))
-ALLOCATE(ZDY(SIZE(PLAT)))
+ALLOCATE(ZX (SIZE(G%XLAT)))
+ALLOCATE(ZY (SIZE(G%XLAT)))
+ALLOCATE(ZDX(SIZE(G%XLAT)))
+ALLOCATE(ZDY(SIZE(G%XLAT)))
 !
- CALL GET_GRIDTYPE_CONF_PROJ(PGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
+ CALL GET_GRIDTYPE_CONF_PROJ(G%XGRID_PAR,ZLAT0,ZLON0,ZRPK,ZBETA,&
                               ZLATOR,ZLONOR,                   &
                               PX=ZX,PY=ZY,PDX=ZDX,PDY=ZDY      )  
 !
@@ -100,7 +99,7 @@ ALLOCATE(ZDY(SIZE(PLAT)))
 !*       2.    Computation of latitude and longitude
 !              -------------------------------------
 !
- CALL LATLON_CONF_PROJ(ZLAT0,ZLON0,ZRPK,ZBETA,ZLATOR,ZLONOR,ZX,ZY,PLAT,PLON)
+ CALL LATLON_CONF_PROJ(ZLAT0,ZLON0,ZRPK,ZBETA,ZLATOR,ZLONOR,ZX,ZY,G%XLAT,G%XLON)
 !
 !-----------------------------------------------------------------------------
 !
@@ -110,14 +109,14 @@ ALLOCATE(ZDY(SIZE(PLAT)))
 !        3.1   Map factor
 !              ----------
 !
-ALLOCATE(ZMAP(SIZE(PLAT)))
+ALLOCATE(ZMAP(SIZE(G%XLAT)))
 !
- CALL MAP_FACTOR_CONF_PROJ(ZLAT0,ZRPK,PLAT,ZMAP)
+ CALL MAP_FACTOR_CONF_PROJ(ZLAT0,ZRPK,G%XLAT,ZMAP)
 !
 !        3.2   Grid size
 !              ---------
 !
-PMESH_SIZE(:) = ZDX(:) * ZDY(:) / ZMAP(:)**2
+G%XMESH_SIZE(:) = ZDX(:) * ZDY(:) / ZMAP(:)**2
 !
 !-----------------------------------------------------------------------------
 !
@@ -125,7 +124,7 @@ PMESH_SIZE(:) = ZDX(:) * ZDY(:) / ZMAP(:)**2
 !              ----------------------------------------------------
 !
 !* the following formulae is given for clockwise angles.
-PDIR(:) = ZRPK * (PLON(:) - ZLON0) - ZBETA
+PDIR(:) = ZRPK * (G%XLON(:) - ZLON0) - ZBETA
 !
 WHERE (PDIR(:) <0.)    PDIR = PDIR + 360.
 WHERE (PDIR(:) >=360.) PDIR = PDIR - 360.

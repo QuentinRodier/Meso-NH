@@ -40,6 +40,7 @@
 !              ------------
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+!
 USE MODD_SURF_PAR, ONLY : NUNDEF
 #ifdef SFX_MNH
 USE MODD_SPAWN, ONLY : NDXRATIO,NDYRATIO,NXSIZE,NYSIZE,NXOR,NYOR
@@ -60,6 +61,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+!
 INTEGER,                      INTENT(IN)    :: KLUOUT     ! output listing logical unit
 INTEGER,                      INTENT(IN)    :: KLUNAM     ! namelist file logical unit
 INTEGER,                      INTENT(IN)    :: KL         ! number of points
@@ -118,6 +120,7 @@ NAMELIST/NAM_INIFILE_CARTESIAN/IXOR,IYOR,IXSIZE,IYSIZE,IDXRATIO,IDYRATIO
 IF (LHOOK) CALL DR_HOOK('GRID_MODIF_CARTESIAN',0,ZHOOK_HANDLE)
  CALL POSNAM(KLUNAM,'NAM_INIFILE_CARTESIAN',GFOUND,KLUOUT)
 IF (GFOUND) READ(UNIT=KLUNAM,NML=NAM_INIFILE_CARTESIAN)
+!
 #ifdef SFX_MNH
 ! store the parameter in MODD_SPAWN
 NXOR = IXOR
@@ -162,12 +165,7 @@ IJMAX2=IYSIZE*IDYRATIO
 !
 KL2 = IIMAX2 * IJMAX2
 !
-ALLOCATE(ZX2 (IIMAX2*IJMAX2))
-ALLOCATE(ZY2 (IIMAX2*IJMAX2))
-ALLOCATE(ZDX2(IIMAX2*IJMAX2))
-ALLOCATE(ZDY2(IIMAX2*IJMAX2))
-!
- CALL REGULAR_GRID_SPAWN(U,KLUOUT,                               &
+ CALL REGULAR_GRID_SPAWN(U,KLUOUT,                              &
                           KL, IIMAX1,IJMAX1,ZX1,ZY1,ZDX1,ZDY1,  &
                           IXOR, IYOR, IDXRATIO, IDYRATIO,       &
                           IXSIZE, IYSIZE,                       &

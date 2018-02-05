@@ -57,8 +57,8 @@ IMPLICIT NONE
 !
 REAL,              INTENT(OUT) :: PTSTEP        ! time step for run
 REAL,              INTENT(OUT) :: POUT_TSTEP    ! time step for writing
- CHARACTER(LEN=6),  INTENT(OUT) :: HSEA_FLUX     ! type of sea scheme
- CHARACTER(LEN=4),  INTENT(OUT) :: HSEA_ALB      ! type of sea albedo
+CHARACTER(LEN=6),  INTENT(OUT) :: HSEA_FLUX     ! type of sea scheme
+CHARACTER(LEN=4),  INTENT(OUT) :: HSEA_ALB      ! type of sea albedo
 LOGICAL,           INTENT(OUT) :: OPWG          ! gustiness impact
 LOGICAL,           INTENT(OUT) :: OPRECIP       ! precipitation correction
 LOGICAL,           INTENT(OUT) :: OPWEBB        ! Webb correction
@@ -68,8 +68,8 @@ LOGICAL,           INTENT(OUT) :: OPROGSST      !two-way coupling
 INTEGER,           INTENT(OUT) :: KTIME_COUPLING!coupling frequency
 REAL,              INTENT(OUT) :: PICHCE        !CE coef calculation for ECUME
 REAL,              INTENT(OUT) :: POCEAN_TSTEP  !ocean 1D model time-step
- CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SST ! Quadratic interpolation of monthly SST
- CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SSS ! Quadratic interpolation of monthly SSS
+CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SST ! Quadratic interpolation of monthly SST
+CHARACTER(LEN=6),  INTENT(OUT) :: HINTERPOL_SSS ! Quadratic interpolation of monthly SSS
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !*       0.2   Declarations of local variables

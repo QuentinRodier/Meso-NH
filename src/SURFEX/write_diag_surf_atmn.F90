@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #################################################################################
-SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC, &
-                                  HPROGRAM,HWRITE)
+SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC,HPROGRAM,HWRITE)
 !     #################################################################################
 !
 !!****  *WRITE_DIAG_SURF_ATM_n * - Chooses the surface schemes for diagnostics writing
@@ -28,11 +27,11 @@ SUBROUTINE WRITE_DIAG_SURF_ATM_n (YSC, &
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 !
 USE MODD_SURFEX_n, ONLY : SURFEX_t
 !
 USE MODD_SURF_CONF,      ONLY : CPROGNAME
-!
 !
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
@@ -72,56 +71,49 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',0,ZHOOK_HANDLE)
- CPROGNAME = HPROGRAM
 !
-IF (YSC%U%NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%SM, & 
+CPROGNAME = HPROGRAM
+!
+IF (YSC%U%NDIM_SEA    >0) CALL WRITE_DIAG_SEA_n(YSC%DTCO, YSC%DUO, YSC%U, YSC%SM, & 
                                                 HPROGRAM,HWRITE)
-IF (YSC%U%NDIM_WATER  >0) CALL WRITE_DIAG_INLAND_WATER_n(YSC%DTCO, YSC%DGU, YSC%U, &
-                                                         YSC%WM, YSC%FM, &
-                                                     HPROGRAM,HWRITE)
-IF (YSC%U%NDIM_NATURE >0) CALL WRITE_DIAG_NATURE_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%IM, YSC%DST, &
-                                                   HPROGRAM,HWRITE)
-IF (YSC%U%NDIM_TOWN   >0) CALL WRITE_DIAG_TOWN_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%TM, YSC%GDM, YSC%GRM, &
-                                                      HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_WATER  >0) CALL WRITE_DIAG_INLAND_WATER_n(YSC%DTCO, YSC%DUO, YSC%U, &
+                                                         YSC%WM, YSC%FM, HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_NATURE >0) CALL WRITE_DIAG_NATURE_n(YSC%DTCO, YSC%DUO, YSC%U, YSC%IM, &
+                                                   YSC%NDST, HPROGRAM,HWRITE)
+IF (YSC%U%NDIM_TOWN   >0) CALL WRITE_DIAG_TOWN_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%U, YSC%TM, &
+                                                 YSC%GDM, YSC%GRM, HPROGRAM,HWRITE)
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ! Writing
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
-!
-IF (YSC%DGU%XDIAG_TSTEP==XUNDEF .OR. &
-        ABS(NINT(YSC%U%TTIME%TIME/YSC%DGU%XDIAG_TSTEP)*YSC%DGU%XDIAG_TSTEP-YSC%U%TTIME%TIME)<1.E-3 ) THEN
+IF (YSC%DUO%XDIAG_TSTEP==XUNDEF .OR. &
+        ABS(NINT(YSC%U%TTIME%TIME/YSC%DUO%XDIAG_TSTEP)*YSC%DUO%XDIAG_TSTEP-YSC%U%TTIME%TIME)<1.E-3 ) THEN
   !
-  IF (YSC%DGU%LFRAC) THEN
- CALL INIT_IO_SURF_n(YSC%DTCO, YSC%DGU, YSC%U, &
-                        HPROGRAM,'FULL  ','SURF  ','WRITE')          
-    YCOMMENT = '(-)'
-    CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                    HPROGRAM,'FRAC_SEA   ',YSC%U%XSEA, IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                    HPROGRAM,'FRAC_NATURE',YSC%U%XNATURE,IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                    HPROGRAM,'FRAC_WATER ',YSC%U%XWATER, IRESP,HCOMMENT=YCOMMENT)
-    CALL WRITE_SURF(YSC%DGU, YSC%U, &
-                    HPROGRAM,'FRAC_TOWN  ',YSC%U%XTOWN, IRESP,HCOMMENT=YCOMMENT)
+  IF (YSC%DUO%LFRAC) THEN
+    CALL INIT_IO_SURF_n(YSC%DTCO, YSC%U, HPROGRAM,'FULL  ','SURF  ','WRITE','SURF_ATM.OUT.nc')          
+    YCOMMENT = '(fraction)'
+    CALL WRITE_SURF(YSC%DUO%CSELECT,HPROGRAM,'FRAC_SEA   ',YSC%U%XSEA, IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DUO%CSELECT,HPROGRAM,'FRAC_NATURE',YSC%U%XNATURE,IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DUO%CSELECT,HPROGRAM,'FRAC_WATER ',YSC%U%XWATER, IRESP,HCOMMENT=YCOMMENT)
+    CALL WRITE_SURF(YSC%DUO%CSELECT,HPROGRAM,'FRAC_TOWN  ',YSC%U%XTOWN, IRESP,HCOMMENT=YCOMMENT)
     CALL END_IO_SURF_n(HPROGRAM)
   END IF
   !
-  IF (HWRITE/='PGD'.AND.YSC%DGU%LDIAG_GRID) &
-          CALL WRITE_DIAG_SEB_SURF_ATM_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%UG, &
-                                         HPROGRAM)
+  IF (HWRITE/='PGD'.AND.YSC%DUO%LDIAG_GRID) &
+          CALL WRITE_DIAG_SEB_SURF_ATM_n(YSC%DTCO, YSC%DUO, YSC%DU, YSC%DUC, YSC%U, &
+                                         YSC%UG%G%CGRID, HPROGRAM)
   !
   IF (YSC%CHU%LCH_EMIS .AND. YSC%SV%NBEQ>0 .AND. YSC%CHU%LCH_SURF_EMIS) THEN
     IF (YSC%CHU%CCH_EMIS=='AGGR') THEN 
-      CALL WRITE_DIAG_CH_AGGR_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%CHE, &
-                                HPROGRAM)
+      CALL WRITE_DIAG_CH_AGGR_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%U, YSC%CHE, HPROGRAM)
     ELSE IF (YSC%CHU%CCH_EMIS=='SNAP') THEN
-      CALL WRITE_DIAG_CH_SNAP_n(YSC%DTCO, YSC%DGU, YSC%U, YSC%CHN, &
-                                HPROGRAM)
+      CALL WRITE_DIAG_CH_SNAP_n(YSC%DTCO, YSC%DUO%CSELECT, YSC%U, YSC%CHN, HPROGRAM)
     END IF
   END IF
   !  
 END IF
+!
 IF (LHOOK) CALL DR_HOOK('WRITE_DIAG_SURF_ATM_N',1,ZHOOK_HANDLE)
 !
 !--------------------------------------------------------------------------------------

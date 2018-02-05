@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE PGD_DUMMY (DTCO, DUU, UG, U, USS, &
-                            HPROGRAM)
+      SUBROUTINE PGD_DUMMY (DTCO, DUU, UG, U, USS, HPROGRAM)
 !     ##############################################################
 !
 !!**** *PGD_DUMMY* monitor for averaging and interpolations of physiographic fields
@@ -46,7 +45,7 @@ USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_DUMMY_SURF_FIELDS_n, ONLY : DUMMY_SURF_FIELDS_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,           ONLY : NL
 USE MODD_PGDWORK,            ONLY : CATYPE
@@ -70,7 +69,7 @@ TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(DUMMY_SURF_FIELDS_t), INTENT(INOUT) :: DUU
 TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),    INTENT(IN)    :: HPROGRAM     ! Type of program
 !

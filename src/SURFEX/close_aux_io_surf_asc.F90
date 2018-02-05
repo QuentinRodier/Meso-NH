@@ -58,11 +58,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('CLOSE_AUX_IO_SURF_ASC',0,ZHOOK_HANDLE)
- CLOSE(NUNIT)
+CLOSE(NUNIT)
 !
 NFULL=0
 NUNIT=0
- CMASK='      '
+CMASK='      '
 DEALLOCATE(NMASK)
 IF (LHOOK) CALL DR_HOOK('CLOSE_AUX_IO_SURF_ASC',1,ZHOOK_HANDLE)
 !

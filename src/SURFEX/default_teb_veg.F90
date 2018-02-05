@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE DEFAULT_TEB_VEG(HROUGH,HRUNOFF,HALBEDO,HSCOND,          &
+      SUBROUTINE DEFAULT_TEB_VEG(HRUNOFF, HSCOND,               &
                                  HC1DRY, HSOILFRZ, HDIFSFCOND, HSNOWRES, &
                                  HCPSURF, PCGMAX, HKSAT,                 &
                                  HRAIN, HHORT,                           &
@@ -53,8 +53,6 @@ IMPLICIT NONE
 !              -------------------------
 !
 !
- CHARACTER(LEN=4),  INTENT(OUT) :: HROUGH     ! type of roughness length
- CHARACTER(LEN=4),  INTENT(OUT) :: HALBEDO    ! albedo type ('DRY','EVOL4,'WET','USER')
  CHARACTER(LEN=4),  INTENT(OUT) :: HSCOND     ! Thermal conductivity ('DEF','PL98')
  CHARACTER(LEN=4),  INTENT(OUT) :: HC1DRY     ! C1 formulation for dry soils ('DEF','GB93')
  CHARACTER(LEN=3),  INTENT(OUT) :: HSOILFRZ   ! soil freezing-physics option ('DEF','LWT')
@@ -84,9 +82,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('DEFAULT_TEB_VEG',0,ZHOOK_HANDLE)
 !
-HROUGH     = 'UNDE'  ! undefined. Needs further information on canopy scheme use to set default
 HSCOND     = 'PL98'
-HALBEDO    = 'DRY '
 !
 HC1DRY     = 'DEF '
 HSOILFRZ   = 'DEF'

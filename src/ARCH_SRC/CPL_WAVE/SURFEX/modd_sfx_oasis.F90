@@ -27,6 +27,8 @@ MODULE MODD_SFX_OASIS
 !!    -------------
 !!      Original       10/13
 !!      Modified       11/2014 : J. Pianezze - add wave coupling and creation of OASIS grids
+!!      S.Senesi       08/2015 : add CMODEL_NAME
+!!    10/2016 B. Decharme : bug surface/groundwater coupling
 !
 !*       0.   DECLARATIONS
 !             ------------
@@ -40,7 +42,12 @@ IMPLICIT NONE
 !-------------------------------------------------------------------------------
 !
 LOGICAL             :: LOASIS   = .FALSE. ! To use oasis coupler or not
+!
 LOGICAL             :: LOASIS_GRID = .FALSE. ! To define oasis grids, areas and masks during simulation
+!
+CHARACTER(LEN=6)    :: CMODEL_NAME        ! component model name (i.e. name under which 
+!                                         ! Surfex is declared to Oasis)
+!
 REAL                :: XRUNTIME = 0.0     ! Total simulated time in oasis namcouple (s)
 !
 !-------------------------------------------------------------------------------
@@ -59,7 +66,6 @@ LOGICAL             :: LCPL_FLOOD   = .FALSE. ! Fields to/from surfex land area 
 INTEGER             :: NRUNOFF_ID    ! Surface runoff id
 INTEGER             :: NDRAIN_ID     ! Drainage id
 INTEGER             :: NCALVING_ID   ! Calving flux id
-INTEGER             :: NRECHARGE_ID  ! Groundwater recharge id
 INTEGER             :: NSRCFLOOD_ID  ! Floodplains freshwater flux id
 !
 ! Input variables

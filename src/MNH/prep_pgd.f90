@@ -70,6 +70,7 @@
 !!    06/2016     (G.Delautier) phasage surfex 8
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
 !!    10/2016    (S.Faroux S.Bielli) correction for NHALO=0
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -225,10 +226,10 @@ CALL INI_CST
 !             --------------------
 ! 
 CALL PGD_GRID_SURF_ATM(YSURF_CUR%UG, YSURF_CUR%U,YSURF_CUR%GCP,'MESONH',&
-                       '                            ','      ',.FALSE.)
+                       '                            ','      ',.FALSE.,HDIR='-')
 !
 CALL EXTEND_GRID_ON_HALO('MESONH',YSURF_CUR%UG, YSURF_CUR%U,&
-        YSURF_CUR%UG%NGRID_PAR, YSURF_CUR%UG%XGRID_PAR)
+        YSURF_CUR%UG%G%NGRID_PAR, YSURF_CUR%UG%G%XGRID_PAR)
 !
 !
 !*            Initializes all physiographic fields
@@ -271,6 +272,7 @@ CALL IO_WRITE_FIELD(TZFILE,'YOR',    NYOR)
 CALL IO_WRITE_FIELD(TZFILE,'JPHEXT', JPHEXT)
 !
 TFILE_SURFEX => TZFILE
+ALLOCATE(YSURF_CUR%DUO%CSELECT(0))
 CALL WRITE_PGD_SURF_ATM_n(YSURF_CUR,'MESONH')
 NULLIFY(TFILE_SURFEX) !Probably not necessary
 !
@@ -284,7 +286,7 @@ IF (.NOT.LCARTESIAN) THEN
    ALLOCATE(ZWORK(IIMAX+NHALO*2,IJMAX+NHALO*2))
    ALLOCATE(ZWORK_LAT(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
    ALLOCATE(ZWORK_LON(IIMAX+2*JPHEXT,IJMAX+2*JPHEXT))
-   ZWORK=RESHAPE(YSURF_CUR%UG%XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
+   ZWORK=RESHAPE(YSURF_CUR%UG%G%XLAT, (/ (IIMAX+NHALO*2),(IJMAX+NHALO*2) /) )
    IF (NHALO/=0) THEN   
      ZWORK_LAT=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
    ELSE
@@ -294,7 +296,7 @@ IF (.NOT.LCARTESIAN) THEN
      ZWORK_LAT(:,1) = ZWORK_LAT(:,2)
      ZWORK_LAT(:,IJMAX+2) = ZWORK_LAT(:,IJMAX+1)
    ENDIF
-   ZWORK=RESHAPE(YSURF_CUR%UG%XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
+   ZWORK=RESHAPE(YSURF_CUR%UG%G%XLON, (/ IIMAX+NHALO*2,IJMAX+NHALO*2 /) )
    IF (NHALO/=0) THEN   
      ZWORK_LON=ZWORK(NHALO:(IIMAX+NHALO+1),NHALO:(IJMAX+NHALO+1))
    ELSE

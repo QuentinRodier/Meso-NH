@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE SUNPOS (KSIZE_OMP, KYEAR, KMONTH, KDAY, PTIME, &
+      SUBROUTINE SUNPOS (KYEAR, KMONTH, KDAY, PTIME, &
                          PLON, PLAT, PTSUN, PZENITH, PAZIMSOL)
 !     ####################################################################################
 !
@@ -55,7 +55,6 @@
 !              ------------
 !
 USE MODD_CSTS,          ONLY : XPI, XDAY
-USE MODD_SURFEX_OMP, ONLY : NBLOCK, NBLOCKTOT, INIT_DIM
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -72,7 +71,6 @@ IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-INTEGER, DIMENSION(:), INTENT(IN) :: KSIZE_OMP
 INTEGER,                      INTENT(IN)   :: KYEAR      ! current year                        
 INTEGER,                      INTENT(IN)   :: KMONTH     ! current month                        
 INTEGER,                      INTENT(IN)   :: KDAY       ! current day                        
@@ -109,14 +107,15 @@ REAL                                       :: ZTSIDER, &
 !                                            
 INTEGER                                    :: JI, JJ, INKPROMA
 INTEGER    :: IINDX1, IINDX2
-REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL(KIND=JPRB) :: ZHOOK_HANDLE, ZHOOK_HANDLE_OMP
 !
 !-------------------------------------------------------------------------------
 !
 !*       1.    TO COMPUTE THE TRUE SOLAR TIME
 !              -------------------------------
 !
-IF (LHOOK) CALL DR_HOOK('SUNPOS',0,ZHOOK_HANDLE)
+IF (LHOOK) CALL DR_HOOK('SUNPOS_1',0,ZHOOK_HANDLE)
+!
 ZUT  = MOD( 24.0+MOD(PTIME/3600.,24.0),24.0 )
 
 INOBIS(:) = (/0,31,59,90,120,151,181,212,243,273,304,334/)
@@ -148,17 +147,12 @@ ZSINDEL = SIN(ZDECSOL)
 ZCOSDEL = COS(ZDECSOL)
 !-------------------------------------------------------------------------------
 !
-!$OMP PARALLEL PRIVATE(INKPROMA,IINDX1,IINDX2)
+IF (LHOOK) CALL DR_HOOK('SUNPOS_1',1,ZHOOK_HANDLE)
 !
-!$ NBLOCK = OMP_GET_THREAD_NUM()
-!
-IF (NBLOCK==NBLOCKTOT) THEN
-  CALL INIT_DIM(KSIZE_OMP,0,INKPROMA,IINDX1,IINDX2)
-ELSE
-  CALL INIT_DIM(KSIZE_OMP,NBLOCK,INKPROMA,IINDX1,IINDX2)
-ENDIF
-!
-DO JJ = IINDX1,IINDX2
+!$OMP PARALLEL PRIVATE(ZHOOK_HANDLE_OMP) 
+IF (LHOOK) CALL DR_HOOK('SUNPOS_2',0,ZHOOK_HANDLE_OMP)
+!$OMP DO PRIVATE(JJ)
+DO JJ = 1,SIZE(PLAT)
 !
 !*       3.    LOADS THE ZLAT, ZLON ARRAYS
 !              ---------------------------
@@ -210,10 +204,10 @@ DO JJ = IINDX1,IINDX2
   ENDIF
 !
 ENDDO
-!
+!$OMP END DO 
+IF (LHOOK) CALL DR_HOOK('SUNPOS_2',1,ZHOOK_HANDLE_OMP)
 !$OMP END PARALLEL
 !
-IF (LHOOK) CALL DR_HOOK('SUNPOS',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE SUNPOS

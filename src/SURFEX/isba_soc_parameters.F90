@@ -3,9 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################
-SUBROUTINE ISBA_SOC_PARAMETERS (HRUNOFF,PPATCH,PDG,PSOC,PBCOEF,PMPOTSAT,   &
-                                PCONDSAT,PWSAT,PHCAPSOIL,PCONDDRY,PCONDSLD,&
-                                PWFC,PWWILT,PWD0,PANISO,PFRACSOC           )
+SUBROUTINE ISBA_SOC_PARAMETERS (HRUNOFF,PSOC,K,NP,PFRACSOC,PWSAT,PWFC,PWWILT,KPATCH)
 !     ########################################################################
 !
 !!****  *ISBA_SOC_PARAMETERS*  
@@ -46,6 +44,8 @@ SUBROUTINE ISBA_SOC_PARAMETERS (HRUNOFF,PPATCH,PDG,PSOC,PBCOEF,PMPOTSAT,   &
 !!      (B. Decharme) 04/2013 ksat anisotropy factor
 !-------------------------------------------------------------------------------
 !
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_NP_t
+!
 USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_CSTS,     ONLY : XDAY
 USE MODD_ISBA_PAR, ONLY : XOMRHO, XOMSPH, XOMCONDDRY, XOMCONDSLD
@@ -58,27 +58,23 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
- CHARACTER(LEN=4),      INTENT(IN)    :: HRUNOFF
-!
-REAL, DIMENSION(:,:,:),INTENT(IN)    :: PDG
-!
-REAL, DIMENSION(:,:),  INTENT(IN)    :: PPATCH
+CHARACTER(LEN=4),      INTENT(IN)    :: HRUNOFF
 !
 REAL, DIMENSION(:,:),  INTENT(IN)    :: PSOC
 !
-REAL, DIMENSION(:,:,:),INTENT(INOUT) :: PCONDSAT
-!
-REAL, DIMENSION(:,:),  INTENT(INOUT) :: PBCOEF,PMPOTSAT,    &
-                                        PHCAPSOIL,PCONDDRY, &
-                                        PCONDSLD
-!
-REAL, DIMENSION(:,:),  INTENT(INOUT) :: PWSAT,PWFC,PWWILT,PWD0
-!
-REAL, DIMENSION(:,:),  INTENT(INOUT) :: PANISO
+TYPE(ISBA_K_t), INTENT(INOUT) :: K
+TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 !
 REAL, DIMENSION(:,:),  INTENT(OUT)   :: PFRACSOC
+INTEGER, INTENT(IN) :: KPATCH
+!
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PWSAT
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PWFC
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PWWILT
 !
 !*      0.2    declarations of local parameter
+!
+TYPE(ISBA_P_t), POINTER :: PK
 !
 REAL, DIMENSION(2), PARAMETER :: ZCONDSAT = (/24.192,0.00864/)  !Peatland hydraulic conductivity        (m/day)
                                                                 !from Letts et al. (2000)
@@ -115,20 +111,20 @@ REAL, PARAMETER :: ZDGHWSD_INF = 1000.
 !
 !*      0.3    declarations of local variables
 !
-REAL, DIMENSION(SIZE(PDG,1))              :: ZPEAT_PROFILE, ZMOSS_DEPTH
+REAL, DIMENSION(SIZE(PWSAT,1))              :: ZPEAT_PROFILE, ZMOSS_DEPTH
 !
-REAL, DIMENSION(SIZE(PDG,1))              :: ZMASK, ZRHO_TOP, ZRHO_SUB, ZRHO_INF
+REAL, DIMENSION(SIZE(PWSAT,1))              :: ZMASK, ZRHO_TOP, ZRHO_SUB, ZRHO_INF
 !
-REAL, DIMENSION(SIZE(PDG,1),SIZE(PDG,2))  :: ZDG_SOIL, ZDZG_SOIL, ZRHO_SOC, ZMID_SOIL
+REAL, DIMENSION(SIZE(PWSAT,1),SIZE(NP%AL(1)%XDG,2))  :: ZDG_SOIL, ZDZG_SOIL, ZRHO_SOC, ZMID_SOIL
 !
-REAL, DIMENSION(SIZE(PDG,1),SIZE(PDG,2))  :: ZPEAT_BCOEF,ZPEAT_MPOTSAT,&
+REAL, DIMENSION(SIZE(PWSAT,1),SIZE(NP%AL(1)%XDG,2))  :: ZPEAT_BCOEF,ZPEAT_MPOTSAT,&
                                              ZPEAT_WSAT,ZPEAT_WFC,     &
                                              ZPEAT_WWILT,ZPEAT_WD0,    &
                                              ZPEAT_ANISO, ZPEAT_RHO
 !
-REAL, DIMENSION(SIZE(PDG,1),SIZE(PDG,2),SIZE(PDG,3))  :: ZPEAT_CONDSAT, ZMID_CONDSAT
+REAL, DIMENSION(SIZE(PWSAT,1),SIZE(NP%AL(1)%XDG,2),KPATCH)  :: ZPEAT_CONDSAT, ZMID_CONDSAT
 !
-REAL, DIMENSION(SIZE(PDG,1))              ::  ZREFDEPTH,ZF_BCOEF,ZF_MPOTSAT,    &
+REAL, DIMENSION(SIZE(PWSAT,1))              ::  ZREFDEPTH,ZF_BCOEF,ZF_MPOTSAT,    &
                                               ZLOG_MOSS,ZLOG_PEAT_DEPTH    ,    &
                                               ZF_WSAT,ZF_CONDSAT,ZF_WFC,        &
                                               ZF_WWILT, ZF_WD0, ZF_ANISO
@@ -140,7 +136,7 @@ REAL, DIMENSION(2) :: ZLOG_CONDSAT,ZLOG_BCOEF,ZLOG_MPOTSAT, &
                       ZLOG_WSAT,ZLOG_WFC,ZLOG_WWILT,ZLOG_WD0,&
                       ZLOG_ANISO
 !
-INTEGER :: INI, INL, INP, JI, JL, JP
+INTEGER :: INI, INL, INP, JI, JL, JP, IMASK
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -148,16 +144,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('ISBA_SOC_PARAMETERS',0,ZHOOK_HANDLE)
 !
-INI=SIZE(PDG,1)
-INL=SIZE(PDG,2)
-INP=SIZE(PDG,3)
+INI = SIZE(PWSAT,1)
+INL = SIZE(NP%AL(1)%XDG,2)
+INP = KPATCH
 !
 ZMASK   (:) = 0.0
 ZRHO_TOP(:) = 0.0
 ZRHO_SUB(:) = 0.0
 ZRHO_INF(:) = 0.0
 !
-ZDG_SOIL(:,:) = 0.0
 ZRHO_SOC(:,:) = 0.0
 !
 ZPEAT_RHO    (:,:  )=0.0
@@ -174,19 +169,22 @@ PFRACSOC (:,:)=XUNDEF
 !
 !-------------------------------------------------------------------------------
 !
-DO JP=1,INP
-  DO JI=1,INI
-     ZMASK(JI)=ZMASK(JI)+PPATCH(JI,JP)
+ZDG_SOIL(:,:) = 0.0
+DO JP = 1,INP
+  PK => NP%AL(JP)
+  DO JI=1,PK%NSIZE_P
+    IMASK = PK%NR_P(JI)
+    IF(PK%XPATCH(JI)>0.0)THEN
+      ZMASK(IMASK)=ZMASK(IMASK)+PK%XPATCH(JI)
+      DO JL=1,INL
+        ZDG_SOIL(IMASK,JL)= ZDG_SOIL(IMASK,JL) + PK%XDG(JI,JL)*PK%XPATCH(JI)
+      ENDDO
+    ENDIF
   ENDDO
 ENDDO
-!  
-DO JL=1,INL
-   DO JI=1,INI
-     IF(ZMASK(JI)>0.0)THEN
-       ZDG_SOIL (JI,JL)=SUM(PDG(JI,JL,:)*PPATCH(JI,:),PPATCH(JI,:)>0.0) &
-                       /SUM(PPATCH(JI,:),PPATCH(JI,:)>0.0)
-     ENDIF
-  ENDDO
+!
+DO JL = 1,INL
+  WHERE (ZMASK(:)/=0.) ZDG_SOIL(:,JL) = ZDG_SOIL(:,JL)/ZMASK(:)
 ENDDO
 !
 ZDZG_SOIL(:,1)=ZDG_SOIL(:,1)
@@ -204,12 +202,14 @@ DO JL=2,INL
 ENDDO
 !
 DO JP=1,INP
+  PK => NP%AL(JP)
   DO JL=1,INL
-     DO JI=1,INI
-        IF(PPATCH(JI,JP)/=XUNDEF)THEN
-          ZMID_CONDSAT(JI,JL,JP)=ZMID_SOIL(JI,JL)
-        ENDIF
-     ENDDO
+    DO JI=1,PK%NSIZE_P
+      IMASK = PK%NR_P(JI)
+      IF(PK%XPATCH(JI)/=XUNDEF)THEN
+        ZMID_CONDSAT(IMASK,JL,JP)=ZMID_SOIL(IMASK,JL)
+      ENDIF
+    ENDDO
   ENDDO
 ENDDO
 !
@@ -320,11 +320,13 @@ DO JL=1,INL
       ZPEAT_RHO    (JI,JL)=(1.0-ZPEAT_WSAT(JI,JL))*XOMRHO
 !
       DO JP=1,INP
-         IF(PPATCH(JI,JP)/=XUNDEF)THEN
-           ZREFDEPTH(JI)=MIN(ZPEAT_PROFILE(JI),MAX(ZMOSS_DEPTH(JI),ZMID_CONDSAT(JI,JL,JP)))
-           ZREFDEPTH(JI)=LOG(ZREFDEPTH(JI))-ZLOG_MOSS(JI)                       
-           ZPEAT_CONDSAT(JI,JL,JP)=ZCONDSAT(1)*EXP(ZF_CONDSAT(JI)*ZREFDEPTH(JI))/XDAY
-         ENDIF
+        IF (JI>NP%AL(JP)%NSIZE_P) CYCLE
+        IMASK = NP%AL(JP)%NR_P(JI)
+        IF(NP%AL(JP)%XPATCH(JI)/=XUNDEF)THEN
+          ZREFDEPTH(IMASK)=MIN(ZPEAT_PROFILE(IMASK),MAX(ZMOSS_DEPTH(IMASK),ZMID_CONDSAT(IMASK,JL,JP)))
+          ZREFDEPTH(IMASK)=LOG(ZREFDEPTH(IMASK))-ZLOG_MOSS(IMASK)                       
+          ZPEAT_CONDSAT(IMASK,JL,JP)=ZCONDSAT(1)*EXP(ZF_CONDSAT(IMASK)*ZREFDEPTH(IMASK))/XDAY
+        ENDIF
       ENDDO
 !      
      ENDIF
@@ -334,35 +336,43 @@ ENDDO
 !-------------------------------------------------------------------------------
 !
 DO JL=1,INL
-   DO JI=1,INI
-     IF(ZMASK(JI)>0.0)THEN            
-!      Soil organic carbon fraction
-       PFRACSOC (JI,JL  ) = MIN(1.0,ZRHO_SOC(JI,JL)/ZPEAT_RHO(JI,JL))   
-!      New soil thermal properties      
-       PHCAPSOIL(JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PHCAPSOIL(JI,JL) + PFRACSOC(JI,JL)*XOMRHO*XOMSPH
-       PCONDDRY (JI,JL  ) = (PCONDDRY(JI,JL)**(1.0-PFRACSOC(JI,JL))) * (XOMCONDDRY**PFRACSOC(JI,JL))
-       PCONDSLD (JI,JL  ) = (PCONDSLD(JI,JL)**(1.0-PFRACSOC(JI,JL))) * (XOMCONDSLD**PFRACSOC(JI,JL))
-!      New soil hydraulic properties
-       PBCOEF   (JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PBCOEF   (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_BCOEF  (JI,JL)
-       PMPOTSAT (JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PMPOTSAT (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_MPOTSAT(JI,JL)
-       PWSAT    (JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PWSAT    (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WSAT   (JI,JL)  
-       PWFC     (JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PWFC     (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WFC    (JI,JL)
-       PWWILT   (JI,JL  ) = (1.0-PFRACSOC(JI,JL))*PWWILT   (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WWILT  (JI,JL)
-       DO JP=1,INP
-          IF(PPATCH(JI,JP)/=XUNDEF)THEN
-            PCONDSAT (JI,JL,JP) = PCONDSAT(JI,JL,JP)**(1.0-PFRACSOC(JI,JL))*ZPEAT_CONDSAT(JI,JL,JP)**PFRACSOC(JI,JL)
-          ENDIF
-       ENDDO
-     ENDIF
-   ENDDO   
+  DO JI=1,INI
+    IF(ZMASK(JI)>0.0)THEN            
+!     Soil organic carbon fraction
+      PFRACSOC (JI,JL) = MIN(1.0,ZRHO_SOC(JI,JL)/ZPEAT_RHO(JI,JL))   
+!     New soil thermal properties      
+      K%XHCAPSOIL(JI,JL) = (1.0-PFRACSOC(JI,JL))*K%XHCAPSOIL(JI,JL) + PFRACSOC(JI,JL)*XOMRHO*XOMSPH
+      K%XCONDDRY (JI,JL) = (K%XCONDDRY(JI,JL)**(1.0-PFRACSOC(JI,JL))) * (XOMCONDDRY**PFRACSOC(JI,JL))
+      K%XCONDSLD (JI,JL) = (K%XCONDSLD(JI,JL)**(1.0-PFRACSOC(JI,JL))) * (XOMCONDSLD**PFRACSOC(JI,JL))
+!     New soil hydraulic properties
+      K%XBCOEF  (JI,JL) = (1.0-PFRACSOC(JI,JL))*K%XBCOEF  (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_BCOEF  (JI,JL)
+      K%XMPOTSAT(JI,JL) = (1.0-PFRACSOC(JI,JL))*K%XMPOTSAT(JI,JL) + PFRACSOC(JI,JL)*ZPEAT_MPOTSAT(JI,JL)
+      PWSAT     (JI,JL) = (1.0-PFRACSOC(JI,JL))*PWSAT     (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WSAT   (JI,JL)  
+      PWFC      (JI,JL) = (1.0-PFRACSOC(JI,JL))*PWFC      (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WFC    (JI,JL)
+      PWWILT    (JI,JL) = (1.0-PFRACSOC(JI,JL))*PWWILT    (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WWILT  (JI,JL)
+    ENDIF
+  ENDDO
+ENDDO
+!
+DO JP=1,INP
+  PK => NP%AL(JP)
+  DO JL=1,INL
+    DO JI=1,PK%NSIZE_P
+      IMASK = PK%NR_P(JI)
+      IF(PK%XPATCH(JI)/=XUNDEF .AND. ZMASK(IMASK)>0.0)THEN
+        PK%XCONDSAT (JI,JL) = PK%XCONDSAT(JI,JL)**(1.0-PFRACSOC(IMASK,JL)) * &
+                                ZPEAT_CONDSAT(IMASK,JL,JP)**PFRACSOC(IMASK,JL)
+      ENDIF
+    ENDDO
+  ENDDO   
 ENDDO
 !
 IF(HRUNOFF=='SGH')THEN
   DO JL=1,INL
      DO JI=1,INI
        IF(ZMASK(JI)>0.0)THEN
-         PWD0  (JI,JL) = (1.0-PFRACSOC(JI,JL))*PWD0  (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WD0  (JI,JL)
-         PANISO(JI,JL) = (1.0-PFRACSOC(JI,JL))*PANISO(JI,JL) + PFRACSOC(JI,JL)*ZPEAT_ANISO(JI,JL)
+         K%XWD0  (JI,JL) = (1.0-PFRACSOC(JI,JL))*K%XWD0  (JI,JL) + PFRACSOC(JI,JL)*ZPEAT_WD0  (JI,JL)
+         K%XKANISO(JI,JL) = (1.0-PFRACSOC(JI,JL))*K%XKANISO(JI,JL) + PFRACSOC(JI,JL)*ZPEAT_ANISO(JI,JL)
        ENDIF
      ENDDO   
   ENDDO

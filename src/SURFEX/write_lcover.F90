@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_LCOVER(DGU,U,HPROGRAM,OCOVER)
+      SUBROUTINE WRITE_LCOVER(HSELECT,HPROGRAM,OCOVER)
 !     ################################
 !
 !!****  *READ_LCOVER* - routine to write a file for
@@ -42,8 +42,6 @@
 !              ------------
 !
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODI_WRITE_SURF
 !
@@ -52,21 +50,22 @@ USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
 !
+#ifdef MNH_PARALLEL
 #ifndef NOMPI
 INCLUDE "mpif.h"
+#endif
 #endif
 !
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! calling program
 LOGICAL, DIMENSION(JPCOVER)    :: OCOVER   ! list of covers
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 INTEGER           :: IRESP          ! Error code after reading
 CHARACTER(LEN=LEN_HREC) :: YRECFM         ! Name of the article to be read
 CHARACTER(LEN=100):: YCOMMENT       ! Comment string
@@ -78,13 +77,17 @@ INTEGER   :: IINFO
 !
 !* ascendant compatibility
 IF (LHOOK) CALL DR_HOOK('WRITE_LCOVER',0,ZHOOK_HANDLE)
+!
+#ifdef MNH_PARALLEL
 #ifndef NOMPI
 CALL MPI_ALLREDUCE(OCOVER, GCOVER, SIZE(OCOVER),MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, IINFO)
-#endif
 OCOVER(:)=GCOVER(:)
+#endif
+#endif
+!
 YRECFM='COVER_LIST'
 YCOMMENT='(LOGICAL LIST)'
-CALL WRITE_SURF(DGU,U,HPROGRAM,YRECFM,OCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
+CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,OCOVER(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-')
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_LCOVER',1,ZHOOK_HANDLE)
 !

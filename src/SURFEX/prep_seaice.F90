@@ -3,9 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE PREP_SEAICE (UG, &
-                         DTCO, DTS, O, OR, SG, S, U,GCP, &
-                        HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
+SUBROUTINE PREP_SEAICE (UG, DTCO, DTS, O, OR, KLAT, S, U, GCP, &
+                        HPROGRAM,HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 !     #################################################################################
 !
 !!****  *PREP_SEAICE* - prepares variables for SEAICE scheme (for now : Gelato only)
@@ -29,22 +28,15 @@ SUBROUTINE PREP_SEAICE (UG, &
 !!      Original    01/2014
 !!------------------------------------------------------------------
 !
-!
-!
-!
-!
-!
-!
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
 USE MODD_DATA_SEAFLUX_n, ONLY : DATA_SEAFLUX_t
 USE MODD_OCEAN_n, ONLY : OCEAN_t
 USE MODD_OCEAN_REL_n, ONLY : OCEAN_REL_t
-USE MODD_SEAFLUX_GRID_n, ONLY : SEAFLUX_GRID_t
 USE MODD_SEAFLUX_n, ONLY : SEAFLUX_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_GRID_CONF_PROJ, ONLY : GRID_CONF_PROJ_t
+USE MODD_GRID_CONF_PROJ_n, ONLY : GRID_CONF_PROJ_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 USE MODI_GET_LUOUT
@@ -52,6 +44,8 @@ USE MODI_GET_TYPE_DIM_N
 USE MODI_GLTOOLS_READNAM
 !
 USE MODD_TYPES_GLT,   ONLY : T_GLT
+!
+USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODN_PREP_SEAFLUX,   ONLY : CPREP_SEAICE_SCHEME => CSEAICE_SCHEME
 USE MODI_PREP_HOR_SEAFLUX_FIELD
@@ -74,16 +68,18 @@ TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(DATA_SEAFLUX_t), INTENT(INOUT) :: DTS
 TYPE(OCEAN_t), INTENT(INOUT) :: O
 TYPE(OCEAN_REL_t), INTENT(INOUT) :: OR
-TYPE(SEAFLUX_GRID_t), INTENT(INOUT) :: SG
+INTEGER, INTENT(IN) :: KLAT
 TYPE(SEAFLUX_t), INTENT(INOUT) :: S
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(GRID_CONF_PROJ_t),INTENT(INOUT) :: GCP
 !
- CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
- CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
- CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
- CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
+TYPE (PREP_CTL),    INTENT(INOUT) :: YDCTL
+!
+CHARACTER(LEN=6),   INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
+CHARACTER(LEN=28),  INTENT(IN)  :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),  INTENT(IN)  :: HPGDFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6),   INTENT(IN)  :: HPGDFILETYPE! type of the Atmospheric file
 !
 !*      0.2    declarations of local variables
 !
@@ -101,7 +97,7 @@ IF (LHOOK) CALL DR_HOOK('PREP_SEAICE',0,ZHOOK_HANDLE)
 !*      0.     Default of configuration
 !
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 !-------------------------------------------------------------------------------------
 !
@@ -122,9 +118,8 @@ ENDIF
 !*      2.     Reading and horizontal interpolations of Seaice cover
 !
 IF (S%LHANDLE_SIC) THEN 
-   CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, &
-                               DTS, O, OR, SG, S,GCP, &
-                               HPROGRAM,'SIC    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE)
+   CALL PREP_HOR_SEAFLUX_FIELD(DTCO, UG, U, GCP, DTS, O, OR, KLAT, S, &
+                               HPROGRAM,'SIC    ',HATMFILE,HATMFILETYPE,HPGDFILE,HPGDFILETYPE,YDCTL)
 ENDIF
 !
 !-------------------------------------------------------------------------------------
@@ -169,12 +164,11 @@ ENDIF
 !*      Creating default initial state for Gelato 
 !
 !
- CALL GET_TYPE_DIM_n(DTCO, U, &
-                    'SEA   ',nx)
+CALL GET_TYPE_DIM_n(DTCO, U, 'SEA   ',nx)
 ny=1
 nyglo=1
 nxglo=nx
- CALL GLTOOLS_ALLOC(S%TGLT)
+CALL GLTOOLS_ALLOC(S%TGLT)
 !
 !*       G1    Prognostic fields with only space dimension(s) :
 !

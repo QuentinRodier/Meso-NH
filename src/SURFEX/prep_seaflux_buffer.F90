@@ -113,7 +113,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='BUFFER'
+CINTERP_TYPE='BUFFER'
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_BUFFER',1,ZHOOK_HANDLE)
 !
 !

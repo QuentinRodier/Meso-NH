@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE AVERAGE_DIAG_ISBA_n (DGEI, DGI, I, &
-                                      PHW,PHT,PSFCO2,PTRAD)
+      SUBROUTINE AVERAGE_DIAG_ISBA_n (DGO, D, DC, ND, NDC, NP, KNPATCH, OSURF_BUDGETC, &
+                                      OCANOPY, PHW, PHT ,PSFCO2, PTRAD)
 !     #######################################
 !
 !
@@ -49,11 +49,8 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
-!
-!
-USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
-USE MODD_DIAG_ISBA_n, ONLY : DIAG_ISBA_t
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_NP_t, DIAG_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_NP_t
 !
 USE MODD_SURF_PAR,    ONLY : XUNDEF
 !
@@ -65,10 +62,16 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
+TYPE(DIAG_NP_t), INTENT(INOUT) :: ND
+TYPE(DIAG_NP_t), INTENT(INOUT) :: NDC
+TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
+INTEGER, INTENT(IN) :: KNPATCH
 !
-TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DGEI
-TYPE(DIAG_ISBA_t), INTENT(INOUT) :: DGI
-TYPE(ISBA_t), INTENT(INOUT) :: I
+LOGICAL, INTENT(IN) :: OSURF_BUDGETC
+LOGICAL, INTENT(IN) :: OCANOPY
 !
 REAL, DIMENSION(:), INTENT(IN)       :: PHW    ! atmospheric level height for wind (m)
 REAL, DIMENSION(:), INTENT(IN)       :: PHT    ! atmospheric level height (m)
@@ -77,9 +80,8 @@ REAL, DIMENSION(:), INTENT(IN)       :: PTRAD  ! Radiative temperature (K)
 !
 !*      0.2    declarations of local variables
 !
-INTEGER                              :: JPATCH ! tile loop counter
+INTEGER                              :: JP, JI, IMASK ! tile loop counter
 INTEGER                              :: JSWB   ! band loop counter
-REAL, DIMENSION(SIZE(I%XPATCH,1))      :: ZSUMPATCH
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -88,267 +90,256 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              --------------
 !
 IF (LHOOK) CALL DR_HOOK('AVERAGE_DIAG_ISBA_N',0,ZHOOK_HANDLE)
-ZSUMPATCH(:) = 0.
-DO JPATCH=1,SIZE(I%XPATCH,2)
-  ZSUMPATCH(:) = ZSUMPATCH(:) + I%XPATCH(:,JPATCH)
-END DO
 !
 !       1.     Energy fluxes
 !              -------------
 !
-IF (DGI%LSURF_BUDGET) THEN
-  DGI%XAVG_RN(:)     = 0.
-  DGI%XAVG_H (:)     = 0.
-  DGI%XAVG_LE(:)     = 0.
-  DGI%XAVG_LEI(:)    = 0.
-  DGI%XAVG_GFLUX(:)  = 0.
-  DGI%XAVG_SWD(:)    = 0.
-  DGI%XAVG_SWU(:)    = 0.
-  DGI%XAVG_LWD(:)    = 0.
-  DGI%XAVG_LWU(:)    = 0.
-  DGI%XAVG_FMU(:)    = 0.
-  DGI%XAVG_FMV(:)    = 0.
-  DGI%XAVG_SWBD(:,:) = 0.
-  DGI%XAVG_SWBU(:,:) = 0.
+IF (DGO%LSURF_BUDGET) THEN
   !
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-!
-! Net radiation
-!
-      DGI%XAVG_RN(:)  = DGI%XAVG_RN(:) +I%XPATCH(:,JPATCH) * DGI%XRN(:,JPATCH)
-!
-! Sensible heat flux
-!
-      DGI%XAVG_H (:)  = DGI%XAVG_H (:) +I%XPATCH(:,JPATCH) * DGI%XH (:,JPATCH)
-!
-! Total latent heat flux
-!
-      DGI%XAVG_LE(:)  = DGI%XAVG_LE(:) +I%XPATCH(:,JPATCH) * I%XLE(:,JPATCH)
-!
-! Sublimation latent heat flux
-!
-      DGI%XAVG_LEI(:) = DGI%XAVG_LEI(:) +I%XPATCH(:,JPATCH) * DGI%XLEI(:,JPATCH)
-!
-! Storage flux
-!
-      DGI%XAVG_GFLUX(:)  = DGI%XAVG_GFLUX(:) +I%XPATCH(:,JPATCH) * DGI%XGFLUX(:,JPATCH)
-!
-! Downwards SW radiation
-!
-      DGI%XAVG_SWD(:)  = DGI%XAVG_SWD(:) +I%XPATCH(:,JPATCH) * DGI%XSWD(:,JPATCH)
-!
-! Upwards SW radiation
-!
-      DGI%XAVG_SWU(:)  = DGI%XAVG_SWU(:) +I%XPATCH(:,JPATCH) * DGI%XSWU(:,JPATCH)
-!
-! Downwards LW radiation
-!
-      DGI%XAVG_LWD(:)  = DGI%XAVG_LWD(:) +I%XPATCH(:,JPATCH) * DGI%XLWD(:,JPATCH)
-!
-! Upwards LW radiation
-!
-      DGI%XAVG_LWU(:)  = DGI%XAVG_LWU(:) +I%XPATCH(:,JPATCH) * DGI%XLWU(:,JPATCH)
-!
-! Zonal wind stress
-!
-      DGI%XAVG_FMU(:)  = DGI%XAVG_FMU(:) +I%XPATCH(:,JPATCH) * DGI%XFMU(:,JPATCH)
-!
-! Meridian wind stress
-!
-      DGI%XAVG_FMV(:)  = DGI%XAVG_FMV(:) +I%XPATCH(:,JPATCH) * DGI%XFMV(:,JPATCH)
-!
-    END WHERE
+  CALL MAKE_AVERAGE(D,ND)
+  !
+  D%XSWBD(:,:) = 0.
+  D%XSWBU(:,:) = 0.
+  !
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P
+      IMASK = NP%AL(JP)%NR_P(JI)
+
+      DO JSWB =1,SIZE(D%XSWBD,2)
+        !
+        ! Downwards SW radiation for each spectral band
+        D%XSWBD(IMASK,JSWB) = D%XSWBD(IMASK,JSWB) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XSWBD(JI,JSWB)
+        !
+        ! Upwards SW radiation for each spectral band
+        D%XSWBU(IMASK,JSWB) = D%XSWBU(IMASK,JSWB) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XSWBU(JI,JSWB)
+        !
+      END DO
+
+    ENDDO
   END DO
-!
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    DO JSWB=1,SIZE(DGI%XSWBD,2)
-      WHERE (ZSUMPATCH(:) > 0.)
-!
-! Downwards SW radiation for each spectral band
-!
-        DGI%XAVG_SWBD(:,JSWB)  = DGI%XAVG_SWBD(:,JSWB) +I%XPATCH(:,JPATCH) * DGI%XSWBD(:,JSWB,JPATCH)
-!
-! Upwards SW radiation for each spectral band
-!
-        DGI%XAVG_SWBU(:,JSWB)  = DGI%XAVG_SWBU(:,JSWB) +I%XPATCH(:,JPATCH) * DGI%XSWBU(:,JSWB,JPATCH)
-!
-      END WHERE
-    END DO
-  END DO
+  !
 END IF
 !
-IF (DGEI%LSURF_BUDGETC) THEN
-   DGI%XAVG_SWDC(:) = 0.
-   DGI%XAVG_SWUC(:) = 0.
-   DGI%XAVG_LWDC(:) = 0.
-   DGI%XAVG_LWUC(:) = 0.
-   DGI%XAVG_FMUC(:) = 0.
-   DGI%XAVG_FMVC(:) = 0.
-   DO JPATCH=1,SIZE(I%XPATCH,2)
-      WHERE (ZSUMPATCH(:) > 0.)
-!
-!        Downwards SW radiation
-!
-         DGI%XAVG_SWDC(:) = DGI%XAVG_SWDC(:) + I%XPATCH(:,JPATCH) * DGI%XSWDC(:,JPATCH)
-!
-!        Upwards SW radiation
-!
-         DGI%XAVG_SWUC(:) = DGI%XAVG_SWUC(:) + I%XPATCH(:,JPATCH) * DGI%XSWUC(:,JPATCH)
-!
-!        Downwards LW radiation
-!
-         DGI%XAVG_LWDC(:) = DGI%XAVG_LWDC(:) + I%XPATCH(:,JPATCH) * DGI%XLWDC(:,JPATCH)
-!
-!        Upwards LW radiation
-!
-         DGI%XAVG_LWUC(:) = DGI%XAVG_LWUC(:) + I%XPATCH(:,JPATCH) * DGI%XLWUC(:,JPATCH)
-!
-!        Zonal wind stress
-!
-         DGI%XAVG_FMUC(:) = DGI%XAVG_FMUC(:) + I%XPATCH(:,JPATCH) * DGI%XFMUC(:,JPATCH)
-!
-!        Meridian wind stress
-!
-         DGI%XAVG_FMVC(:) = DGI%XAVG_FMVC(:) + I%XPATCH(:,JPATCH) * DGI%XFMVC(:,JPATCH)
-!
-    END WHERE
-  END DO
+IF (OSURF_BUDGETC) THEN
+  !
+  CALL MAKE_AVERAGE(DC,NDC)
+  !
 ENDIF    
-!
 !
 !       2.     surface temperature and 2 meters parameters
 !              -------------------------------------------
 !
-DGI%XAVG_TS(:) = 0.0
-DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-       DGI%XAVG_TS(:)  = DGI%XAVG_TS(:) + I%XPATCH(:,JPATCH) * DGI%XTS(:,JPATCH)
-    END WHERE
+D%XTS  (:) = 0.0
+D%XALBT(:) = 0.0
+DO JP=1,KNPATCH
+  DO JI = 1,NP%AL(JP)%NSIZE_P
+    IMASK = NP%AL(JP)%NR_P(JI)
+
+    D%XTS(IMASK) = D%XTS(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XTS(JI)
+    !   Total albedo
+    D%XALBT(IMASK) = D%XALBT(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XALBT(JI)  
+
+  ENDDO
 END DO
 !
-IF (.NOT. I%LCANOPY .AND. DGI%N2M>=1) THEN
+IF (.NOT. OCANOPY .AND. DGO%N2M>=1) THEN
 
-  DGI%XAVG_T2M(:)  = 0.
-  DGI%XAVG_Q2M(:)  = 0.
-  DGI%XAVG_HU2M(:)  = 0.
+  D%XT2M(:)  = 0.
+  D%XQ2M(:)  = 0.
+  D%XHU2M(:)  = 0.
   !
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-!
-! 2 meters temperature
-!
-      DGI%XAVG_T2M(:)  = DGI%XAVG_T2M(:) + I%XPATCH(:,JPATCH) * DGI%XT2M(:,JPATCH)
-!
-! 2 meters humidity
-!
-      DGI%XAVG_Q2M(:)  = DGI%XAVG_Q2M(:) + I%XPATCH(:,JPATCH) * DGI%XQ2M(:,JPATCH)
-!
-! 2 meters relative humidity
-!
-      DGI%XAVG_HU2M(:)  = DGI%XAVG_HU2M(:) + I%XPATCH(:,JPATCH) * DGI%XHU2M(:,JPATCH)
-!
-    END WHERE
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P
+      IMASK = NP%AL(JP)%NR_P(JI) 
+      !
+      ! 2 meters temperature
+      D%XT2M(IMASK) = D%XT2M(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XT2M(JI)
+      !
+      ! 2 meters humidity
+      D%XQ2M(IMASK) = D%XQ2M(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XQ2M(JI)
+      !
+      ! 2 meters relative humidity
+      D%XHU2M(IMASK) = D%XHU2M(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XHU2M(JI)
+      ! 
+    ENDDO
   END DO
-!
-! 10 meters wind
-!
-  DGI%XAVG_ZON10M (:)  = 0.
-  DGI%XAVG_MER10M (:)  = 0.
-  DGI%XAVG_WIND10M(:)  = 0.
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-      DGI%XAVG_ZON10M(:)  = DGI%XAVG_ZON10M (:) + I%XPATCH(:,JPATCH) * DGI%XZON10M (:,JPATCH)
-      DGI%XAVG_MER10M(:)  = DGI%XAVG_MER10M (:) + I%XPATCH(:,JPATCH) * DGI%XMER10M (:,JPATCH)
-      DGI%XAVG_WIND10M(:) = DGI%XAVG_WIND10M(:) + I%XPATCH(:,JPATCH) * DGI%XWIND10M(:,JPATCH)
-    END WHERE
+  !
+  ! 10 meters wind
+  !
+  D%XZON10M (:)  = 0.
+  D%XMER10M (:)  = 0.
+  D%XWIND10M(:)  = 0.
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P
+      IMASK = NP%AL(JP)%NR_P(JI)  
+
+      D%XZON10M(IMASK)  = D%XZON10M (IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XZON10M (JI)
+      D%XMER10M(IMASK)  = D%XMER10M (IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XMER10M (JI)
+      D%XWIND10M(IMASK) = D%XWIND10M(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XWIND10M(JI)
+    ENDDO
   ENDDO
-!
-  DGI%XAVG_T2M_MIN(:) = MIN(DGI%XAVG_T2M_MIN(:),DGI%XAVG_T2M(:))
-  DGI%XAVG_T2M_MAX(:) = MAX(DGI%XAVG_T2M_MAX(:),DGI%XAVG_T2M(:))
-!
-  DGI%XAVG_HU2M_MIN(:) = MIN(DGI%XAVG_HU2M_MIN(:),DGI%XAVG_HU2M(:))
-  DGI%XAVG_HU2M_MAX(:) = MAX(DGI%XAVG_HU2M_MAX(:),DGI%XAVG_HU2M(:))
-!
-  DGI%XAVG_WIND10M_MAX(:) = MAX(DGI%XAVG_WIND10M_MAX(:),DGI%XAVG_WIND10M(:))
-!
+  !
+  ! min and max of XT2M
+  !
+  DO JP=1,KNPATCH
+    ND%AL(JP)%XT2M_MIN(:) = MIN(ND%AL(JP)%XT2M_MIN(:),ND%AL(JP)%XT2M(:))
+    ND%AL(JP)%XT2M_MAX(:) = MAX(ND%AL(JP)%XT2M_MAX(:),ND%AL(JP)%XT2M(:))
+  ENDDO
+  !  
+  D%XT2M_MIN(:) = MIN(D%XT2M_MIN(:),D%XT2M(:))
+  D%XT2M_MAX(:) = MAX(D%XT2M_MAX(:),D%XT2M(:))
+  !
+  D%XHU2M_MIN(:) = MIN(D%XHU2M_MIN(:),D%XHU2M(:))
+  D%XHU2M_MAX(:) = MAX(D%XHU2M_MAX(:),D%XHU2M(:))
+  !
+  D%XWIND10M_MAX(:) = MAX(D%XWIND10M_MAX(:),D%XWIND10M(:))
+  !
 END IF
 !
 ! Richardson number
 !
-IF (DGI%N2M>=1) THEN
+IF (DGO%N2M>=1) THEN
 
-  DGI%XAVG_RI(:)  = 0.
-  !
-  DGI%XAVG_SFCO2(:)  = PSFCO2(:)
-  !
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-      DGI%XAVG_RI(:)  = DGI%XAVG_RI(:) + I%XPATCH(:,JPATCH) * DGI%XRI(:,JPATCH)
-    END WHERE
+  D%XRI(:)  = 0.
+  D%XSFCO2(:)  = PSFCO2(:)
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P
+      IMASK = NP%AL(JP)%NR_P(JI)    
+      D%XRI(IMASK) = D%XRI(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XRI(JI)
+    ENDDO
   END DO
-!
-! min and max of XT2M
-!
-  DGI%XT2M_MIN(:,:) = MIN(DGI%XT2M_MIN(:,:),DGI%XT2M(:,:))
-  DGI%XT2M_MAX(:,:) = MAX(DGI%XT2M_MAX(:,:),DGI%XT2M(:,:))
-!
+  !
 END IF
 !
 !       3.     Transfer coefficients
 !              ---------------------
 !
-IF (DGI%LCOEF) THEN
+IF (DGO%LCOEF) THEN
   !
-  DGI%XAVG_CD   (:) = 0.
-  DGI%XAVG_CH   (:) = 0.
-  DGI%XAVG_CE   (:) = 0.
-  DGI%XAVG_Z0   (:) = 0.
-  DGI%XAVG_Z0H  (:) = 0.
-  DGI%XAVG_Z0EFF(:) = 0.
+  D%XCD   (:) = 0.
+  D%XCH   (:) = 0.
+  D%XCE   (:) = 0.
+  D%XZ0   (:) = 0.
+  D%XZ0H  (:) = 0.
+  D%XZ0EFF(:) = 0.
   !
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P
+      IMASK = NP%AL(JP)%NR_P(JI)    
       !
-      DGI%XAVG_CD(:)  = DGI%XAVG_CD(:) + I%XPATCH(:,JPATCH) * DGI%XCD(:,JPATCH)
-      !
-      DGI%XAVG_CH(:)  = DGI%XAVG_CH(:) + I%XPATCH(:,JPATCH) * DGI%XCH(:,JPATCH)
-      !
-      DGI%XAVG_CE(:)  = DGI%XAVG_CE(:) + I%XPATCH(:,JPATCH) * DGI%XCE(:,JPATCH)
-      !
-      !             
-      DGI%XAVG_Z0(:)    = DGI%XAVG_Z0(:)    + I%XPATCH(:,JPATCH) * 1./(LOG(PHW(:)/DGI%XZ0_WITH_SNOW (:,JPATCH)))**2
+      D%XCD(IMASK)  = D%XCD(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XCD(JI)
+      D%XCH(IMASK)  = D%XCH(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XCH(JI)
+      D%XCE(IMASK)  = D%XCE(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XCE(JI)
+      !            
+      D%XZ0(IMASK)    = D%XZ0(IMASK)    + NP%AL(JP)%XPATCH(JI) * &
+              1./(LOG(PHW(IMASK)/ND%AL(JP)%XZ0 (JI)))**2  
+      D%XZ0H(IMASK)   = D%XZ0H(IMASK)   + NP%AL(JP)%XPATCH(JI) * &
+              1./(LOG(PHT(IMASK)/ND%AL(JP)%XZ0H(JI)))**2   
+      D%XZ0EFF(IMASK) = D%XZ0EFF(IMASK) + NP%AL(JP)%XPATCH(JI) * &
+              1./(LOG(PHW(IMASK)/ND%AL(JP)%XZ0EFF(JI)))**2
       !      
-      DGI%XAVG_Z0H(:)   = DGI%XAVG_Z0H(:)   + I%XPATCH(:,JPATCH) * 1./(LOG(PHT(:)/DGI%XZ0H_WITH_SNOW(:,JPATCH)))**2
-      !      
-      DGI%XAVG_Z0EFF(:) = DGI%XAVG_Z0EFF(:) + I%XPATCH(:,JPATCH) * 1./(LOG(PHW(:)/DGI%XZ0EFF        (:,JPATCH)))**2
-      !      
-    END WHERE
+    ENDDO
   END DO
   !
-  DGI%XAVG_Z0(:)    = PHW(:) *  EXP( - SQRT(1./DGI%XAVG_Z0(:)) )
+  D%XZ0(:)    = PHW(:) *  EXP( - SQRT(1./D%XZ0(:)) )
   !
-  DGI%XAVG_Z0H(:)   = PHT(:) *  EXP( - SQRT(1./DGI%XAVG_Z0H(:)) )
+  D%XZ0H(:)   = PHT(:) *  EXP( - SQRT(1./D%XZ0H(:)) )
   !
-  DGI%XAVG_Z0EFF(:) = PHW(:) *  EXP( - SQRT(1./DGI%XAVG_Z0EFF(:)) )
+  D%XZ0EFF(:) = PHW(:) *  EXP( - SQRT(1./D%XZ0EFF(:)) )
   !
 END IF
 !
-IF (DGI%LSURF_VARS) THEN
-  DGI%XAVG_QS(:)  = 0.
+IF (DGO%LSURF_VARS) THEN
+  D%XQS(:)  = 0.
   !
-  DO JPATCH=1,SIZE(I%XPATCH,2)
-    WHERE (ZSUMPATCH(:) > 0.)
-!
-! specific humidity at surface
-!
-      DGI%XAVG_QS(:)  = DGI%XAVG_QS(:) + I%XPATCH(:,JPATCH) * DGI%XQS(:,JPATCH)
-!
-    END WHERE
+  DO JP=1,KNPATCH
+    DO JI = 1,NP%AL(JP)%NSIZE_P  
+      IMASK = NP%AL(JP)%NR_P(JI)    
+      !
+      ! specific humidity at surface
+      D%XQS(IMASK) = D%XQS(IMASK) + NP%AL(JP)%XPATCH(JI) * ND%AL(JP)%XQS(JI)
+      !
+    ENDDO
   END DO
 END IF
 !
 IF (LHOOK) CALL DR_HOOK('AVERAGE_DIAG_ISBA_N',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
+CONTAINS
+!
+SUBROUTINE MAKE_AVERAGE(DA,NDA)
+!
+TYPE(DIAG_t), INTENT(INOUT) :: DA
+TYPE(DIAG_NP_t), INTENT(INOUT) :: NDA
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+IF (LHOOK) CALL DR_HOOK('AVERAGE_DIAG_ISBA_N:MAKE_AVERAGE',0,ZHOOK_HANDLE)
+!
+DA%XRN   (:) = 0.
+DA%XH    (:) = 0.
+DA%XLE   (:) = 0.
+DA%XLEI  (:) = 0.
+DA%XGFLUX(:) = 0.
+!
+DA%XSWD(:) = 0.
+DA%XSWU(:) = 0.
+DA%XLWD(:) = 0.
+DA%XLWU(:) = 0.
+DA%XFMU(:) = 0.
+DA%XFMV(:) = 0.
+!
+DA%XEVAP (:) = 0.
+DA%XSUBL (:) = 0.
+!
+DO JP=1,KNPATCH
+  DO JI = 1,NP%AL(JP)%NSIZE_P 
+    IMASK = NP%AL(JP)%NR_P(JI) 
+    !
+    ! Net radiation
+    DA%XRN   (IMASK) = DA%XRN   (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XRN(JI)
+    !
+    ! Sensible heat flux
+    DA%XH    (IMASK) = DA%XH    (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XH(JI)
+    !
+    ! Total latent heat flux
+    DA%XLE   (IMASK) = DA%XLE   (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XLE(JI)
+    !
+    ! Storage flux
+    DA%XGFLUX(IMASK) = DA%XGFLUX(IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XGFLUX(JI)
+    !
+    ! Total surface sublimation
+    DA%XLEI  (IMASK) = DA%XLEI  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XLEI(JI)          
+    !
+    ! Evapotranspiration
+    DA%XEVAP (IMASK) = DA%XEVAP (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XEVAP(JI)
+    !
+    !  Sublimation
+    DA%XSUBL (IMASK) = DA%XSUBL (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XSUBL(JI)
+    !
+    !  Downwards SW radiation
+    DA%XSWD  (IMASK) = DA%XSWD  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XSWD(JI)
+    !
+    !    Upwards SW radiation
+    DA%XSWU  (IMASK) = DA%XSWU  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XSWU(JI)
+    !
+    !    Downwards LW radiation
+    DA%XLWD  (IMASK) = DA%XLWD  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XLWD(JI)
+    !
+    !    Upwards LW radiation
+    DA%XLWU  (IMASK) = DA%XLWU  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XLWU(JI)
+    !
+    !    Zonal wind stress
+    DA%XFMU  (IMASK) = DA%XFMU  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XFMU(JI)
+    !
+    !    Meridian wind stress
+    DA%XFMV  (IMASK) = DA%XFMV  (IMASK) + NP%AL(JP)%XPATCH(JI) * NDA%AL(JP)%XFMV(JI)
+    !
+  ENDDO
+END DO
+!
+IF (LHOOK) CALL DR_HOOK('AVERAGE_DIAG_ISBA_N:MAKE_AVERAGE',1,ZHOOK_HANDLE)
+!
+END SUBROUTINE MAKE_AVERAGE
+!
 !
 END SUBROUTINE AVERAGE_DIAG_ISBA_n

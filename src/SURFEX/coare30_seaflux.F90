@@ -3,12 +3,11 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-    SUBROUTINE COARE30_SEAFLUX (S, &
-                                PMASK,KSIZE_WATER,KSIZE_ICE,     &
-                                PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,        & 
-                                PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,     &
-                                PQSAT,PSFTH,PSFTQ,PUSTAR,  &
-                                PCD,PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA     )
+    SUBROUTINE COARE30_SEAFLUX (S, PMASK,KSIZE_WATER,KSIZE_ICE,     &
+                                PTA,PEXNA,PRHOA,PSST,PEXNS,PQA,     & 
+                                PRAIN,PSNOW,PVMOD,PZREF,PUREF,PPS,  &
+                                PQSAT,PSFTH,PSFTQ,PUSTAR,           &
+                                PCD,PCDN,PCH,PCE,PRI,PRESA,PZ0HSEA  )
 !     ##################################################################
 !
 !
@@ -158,7 +157,7 @@ IF ( (KSIZE_ICE > 0 ) .AND. (.NOT. S%LHANDLE_SIC) ) CALL TREAT_SURF(IR_ICE,'I')
 IF (LHOOK) CALL DR_HOOK('MODI_COARE30_SEAFLUX:COARE30_SEAFLUX',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
 !
- CONTAINS
+CONTAINS
 !
 SUBROUTINE TREAT_SURF(KMASK,YTYPE)
 !
@@ -229,8 +228,7 @@ ZW_Z0HSEA(:) = XUNDEF
 !
 IF (YTYPE=='W') THEN
   !
-  CALL COARE30_FLUX(S, &
-                    ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,&
+  CALL COARE30_FLUX(S, ZW_Z0SEA,ZW_TA,ZW_EXNA,ZW_RHOA,ZW_SST,ZW_EXNS,&
         ZW_QA,ZW_VMOD,ZW_ZREF,ZW_UREF,ZW_PS,ZW_QSAT,ZW_SFTH,ZW_SFTQ,ZW_USTAR,&
         ZW_CD,ZW_CDN,ZW_CH,ZW_CE,ZW_RI,ZW_RESA,ZW_RAIN,ZW_Z0HSEA)   
   !

@@ -3,14 +3,14 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_FLAKE_SBL_n (FM, DST, SLT, &
-                                  HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
-                                  KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
-                                  PQA, PTA, PRHOA, PSV, PCO2, HSV,PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, &
-                                  PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, &
-                                  PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, &
-                                  PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, &
-                                  PPEQ_B_COEF, HTEST                                             )
+SUBROUTINE COUPLING_FLAKE_SBL_n (SB, CHF, DGO, D, DC, DMF, F, DST, SLT, &
+                                 HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,             &
+                                 KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PU, PV, &
+                                 PQA, PTA, PRHOA, PSV, PCO2, HSV,PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, &
+                                 PSW_BANDS, PPS, PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,        &
+                                 PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,         &
+                                 PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF,     &
+                                 PPEQ_B_COEF, HTEST                                             )
 !     ###############################################################################
 !
 !!****  *COUPLING_FLAKE_SBL_n * - Adds a SBL into SEAFLUX
@@ -40,8 +40,11 @@ SUBROUTINE COUPLING_FLAKE_SBL_n (FM, DST, SLT, &
 !----------------------------------------------------------------
 !
 !
-!
-USE MODD_SURFEX_n, ONLY : FLAKE_MODEL_t
+USE MODD_CANOPY_n, ONLY : CANOPY_t
+USE MODD_CH_FLAKE_n, ONLY : CH_FLAKE_t
+USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t, DIAG_t
+USE MODD_DIAG_MISC_FLAKE_n, ONLY : DIAG_MISC_FLAKE_t
+USE MODD_FLAKE_n, ONLY : FLAKE_t
 !
 USE MODD_DST_n, ONLY : DST_t
 USE MODD_SLT_n, ONLY : SLT_t
@@ -66,7 +69,14 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-TYPE(FLAKE_MODEL_t), INTENT(INOUT) :: FM
+TYPE(CANOPY_t), INTENT(INOUT) :: SB
+TYPE(CH_FLAKE_t), INTENT(INOUT) :: CHF
+TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
+TYPE(DIAG_t), INTENT(INOUT) :: D
+TYPE(DIAG_t), INTENT(INOUT) :: DC
+TYPE(DIAG_MISC_FLAKE_t), INTENT(INOUT) :: DMF
+TYPE(FLAKE_t), INTENT(INOUT) :: F
+!
 TYPE(DST_t), INTENT(INOUT) :: DST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 !
@@ -159,21 +169,20 @@ REAL, DIMENSION(KI)     :: ZPEQ_B_COEF ! coefficients (hum. in kg/kg)
 REAL, DIMENSION(KI)        :: ZSFLUX_U  ! Surface flux u'w' (m2/s2)
 REAL, DIMENSION(KI)        :: ZSFLUX_T  ! Surface flux w'T' (mK/s)
 REAL, DIMENSION(KI)        :: ZSFLUX_Q  ! Surface flux w'q' (kgm2/s)
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZFORC_U   ! tendency due to drag force for wind
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZDFORC_UDU! formal derivative of
+REAL, DIMENSION(KI,SB%NLVL)   :: ZFORC_U   ! tendency due to drag force for wind
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDFORC_UDU! formal derivative of
 !                                              ! tendency due to drag force for wind
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZFORC_E   ! tendency due to drag force for TKE
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZDFORC_EDE! formal derivative of
+REAL, DIMENSION(KI,SB%NLVL)   :: ZFORC_E   ! tendency due to drag force for TKE
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDFORC_EDE! formal derivative of
 !                                              ! tendency due to drag force for TKE
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZFORC_T   ! tendency due to drag force for Temp
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZDFORC_TDT! formal derivative of
+REAL, DIMENSION(KI,SB%NLVL)   :: ZFORC_T   ! tendency due to drag force for Temp
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDFORC_TDT! formal derivative of
 !                                              ! tendency due to drag force for Temp
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZFORC_Q   ! tendency due to drag force for Temp
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZDFORC_QDQ! formal derivative of
+REAL, DIMENSION(KI,SB%NLVL)   :: ZFORC_Q   ! tendency due to drag force for Temp
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDFORC_QDQ! formal derivative of
 !                                              ! tendency due to drag force for hum.
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZLMO      ! MO length
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZLM       ! mixing length
-REAL, DIMENSION(KI,FM%FSB%NLVL)   :: ZLEPS     ! dissipative length
+REAL, DIMENSION(KI,SB%NLVL)   :: ZLM       ! mixing length
+REAL, DIMENSION(KI,SB%NLVL)   :: ZLEPS     ! dissipative length
 REAL, DIMENSION(KI)     :: ZH           ! canopy height (m)
 REAL, DIMENSION(KI)     :: ZUSTAR       ! friction velocity (m/s)
 !
@@ -189,6 +198,7 @@ REAL, DIMENSION(KI)   :: ZBETATH  ! Th+(1) = - alfa rho w'th'(1) + beta
 REAL, DIMENSION(KI)   :: ZALFAQ   ! Q+(1) = - alfa rho w'q'(1) + beta
 REAL, DIMENSION(KI)   :: ZBETAQ   ! Q+(1) = - alfa rho w'q'(1) + beta
 !
+INTEGER :: JLAYER
  CHARACTER(LEN=1) :: GCOUPLING
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------------
@@ -198,7 +208,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_FLAKE_SBL_N',0,ZHOOK_HANDLE)
-IF (FM%F%LSBL) THEN
+IF (F%LSBL) THEN
 !
 !*      1.1    Updates SBL vertical grid as a function of forcing height
 !              ---------------------------------------------------------
@@ -206,45 +216,38 @@ IF (FM%F%LSBL) THEN
 !* determines where is the forcing level and modifies the upper levels of the canopy grid
 !
   ZH = 0.
-  CALL CANOPY_GRID_UPDATE(KI,FM%FSB%NLVL,ZH,PUREF,&
-                FM%FSB%XZ,FM%FSB%XZF,FM%FSB%XDZ,FM%FSB%XDZF)
+  CALL CANOPY_GRID_UPDATE(KI,ZH,PUREF,SB)
 !
 !
 !
 !*     1.2     Initialisation at first time step
 !              ---------------------------------
 !
-  IF(ANY(FM%FSB%XT(:,:) == XUNDEF)) THEN
-    CALL INIT_WATER_SBL(FM%FSB%NLVL, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
-                        PSFTH, PSFTQ, PZREF, PUREF, FM%F%XTS, FM%F%XZ0, FM%FSB%XZ,     &
-                        FM%FSB%XT, FM%FSB%XQ, FM%FSB%XU, FM%FSB%XTKE, FM%FSB%XP)
+  IF(ANY(SB%XT(:,:) == XUNDEF)) THEN
+    CALL INIT_WATER_SBL(SB, PPA, PPS, PTA, PQA, PRHOA, PU, PV, PRAIN, PSNOW,  &
+                        PSFTH, PSFTQ, PZREF, PUREF, F%XTS, F%XZ0)
   ENDIF
 !
 !
 !*      1.3    Allocations
 !              -----------
 !
-  CALL INIT_FORC( ZFORC_U, ZDFORC_UDU, ZFORC_E, ZDFORC_EDE, &
+  CALL INIT_FORC(ZFORC_U, ZDFORC_UDU, ZFORC_E, ZDFORC_EDE, &
                  ZFORC_T, ZDFORC_TDT, ZFORC_Q, ZDFORC_QDQ )
 !
   ZSFLUX_U = 0.
   ZSFLUX_T = 0.
   ZSFLUX_Q = 0.
 !
-  ZLMO = SPREAD(FM%FSB%XLMO,2,FM%FSB%NLVL)
-!
 !*      1.3   Computes coefficients for implicitation
 !             ---------------------------------------
 !
   ZWIND = SQRT(PU**2+PV**2)
-  CALL CANOPY_EVOL(KI,FM%FSB%NLVL,PTSTEP,1,FM%FSB%XZ,ZWIND,PTA,PQA,PPA,PRHOA,   &
-                 ZSFLUX_U,ZSFLUX_T,ZSFLUX_Q,                              &
-                 ZFORC_U,ZDFORC_UDU,ZFORC_E,ZDFORC_EDE,                   &
-                 ZFORC_T,ZDFORC_TDT,ZFORC_Q,ZDFORC_QDQ,                   &
-                 FM%FSB%XZ,FM%FSB%XZF,FM%FSB%XDZ,FM%FSB%XDZF,             &
-                 FM%FSB%XU,FM%FSB%XTKE,FM%FSB%XT,                         &
-                 FM%FSB%XQ,ZLMO,ZLM,ZLEPS,FM%FSB%XP,ZUSTAR,               &
-                 ZALFAU,ZBETAU,ZALFATH,ZBETATH,ZALFAQ,ZBETAQ              )
+  CALL CANOPY_EVOL(SB,KI,PTSTEP,1,SB%XZ,ZWIND,PTA,PQA,PPA,PRHOA,   &
+                   ZSFLUX_U,ZSFLUX_T,ZSFLUX_Q,ZFORC_U,ZDFORC_UDU,    &
+                   ZFORC_E,ZDFORC_EDE,ZFORC_T,ZDFORC_TDT,            &
+                   ZFORC_Q,ZDFORC_QDQ,ZLM,ZLEPS,ZUSTAR,              &
+                   ZALFAU,ZBETAU,ZALFATH,ZBETATH,ZALFAQ,ZBETAQ      )
 
 !
 !*     1.5     Goes from atmospheric forcing to canopy forcing height
@@ -252,9 +255,7 @@ IF (FM%F%LSBL) THEN
 !
   GCOUPLING = 'E'
 !
-  CALL INIT_COUPLING_CANOPY( FM%FSB%XP(:,1), PPA, FM%FSB%XT(:,1), &
-                           FM%FSB%XQ(:,1), PU, PV, FM%FSB%XZ(:,1), &
-                           FM%FSB%XU(:,1),        &
+  CALL INIT_COUPLING_CANOPY(SB, PPA, PU, PV,                &
                            PRHOA, ZALFAU, ZBETAU, ZALFATH,   &
                            ZBETATH, ZALFAQ, ZBETAQ,          &
                            ZPA, ZTA, ZQA, ZU, ZV,            &
@@ -291,34 +292,30 @@ END IF
 !*      2.     Call of SEAFLUX
 !              ------------
 !
-  CALL COUPLING_FLAKE_n(FM, DST, SLT, &
-                        HPROGRAM, GCOUPLING,                                                &
-              PTSTEP, KYEAR, KMONTH, KDAY, PTIME,                                           &
-              KI, KSV, KSW,                                                                 &
-              PTSUN, PZENITH, PZENITH2, PAZIM,                                              &
-              ZZREF, ZUREF, ZU, ZV, ZQA, ZTA, PRHOA, PSV, PCO2, HSV,               &
-              PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,                     &
-              PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV,                                      &
-              PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF,                  &
-              ZPEW_A_COEF, ZPEW_B_COEF,                                                     &
-              ZPET_A_COEF, ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF,                           &
-              HTEST                                                                         )
+  CALL COUPLING_FLAKE_n(CHF, DGO, D, DC, DMF, F, DST, SLT, &
+                        HPROGRAM, GCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIME,     &
+                        KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, ZZREF, ZUREF, &
+                        ZU, ZV, ZQA, ZTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,  &
+                        PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA, PSFTQ, PSFTH, PSFTS,  &
+                        PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB, PSCA_ALB, PEMIS, PTSURF,&
+                        PZ0, PZ0H, PQSURF, ZPEW_A_COEF, ZPEW_B_COEF, ZPET_A_COEF,    &
+                        ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF, HTEST  )
 !
 !-------------------------------------------------------------------------------------
 !
 !*      3.     End if no SBL is used
 !              ---------------------
 !
-IF (.NOT. FM%F%LSBL .AND. LHOOK) CALL DR_HOOK('COUPLING_FLAKE_SBL_N',1,ZHOOK_HANDLE)
-IF (.NOT. FM%F%LSBL) RETURN
+IF (.NOT. F%LSBL .AND. LHOOK) CALL DR_HOOK('COUPLING_FLAKE_SBL_N',1,ZHOOK_HANDLE)
+IF (.NOT. F%LSBL) RETURN
 !
 !-------------------------------------------------------------------------------------
 !
 !*      4.     Computes the impact of canopy and surfaces on air
 !              -------------------------------------------------
 !
- CALL INIT_FORC( ZFORC_U, ZDFORC_UDU, ZFORC_E, ZDFORC_EDE, &
-               ZFORC_T, ZDFORC_TDT, ZFORC_Q, ZDFORC_QDQ )
+ CALL INIT_FORC(ZFORC_U, ZDFORC_UDU, ZFORC_E, ZDFORC_EDE, &
+                ZFORC_T, ZDFORC_TDT, ZFORC_Q, ZDFORC_QDQ )
 !
 ZSFLUX_U = - SQRT(PSFU(:)**2+PSFV(:)**2) / PRHOA(:)
 ZSFLUX_T(:) = PSFTH(:) / XCPD * ZEXNA(:) / PRHOA(:)
@@ -330,16 +327,15 @@ ZSFLUX_Q(:) = PSFTQ(:)
 !             --------------------------------------------
 !
 ZWIND = SQRT(PU**2+PV**2)
- CALL CANOPY_EVOL(KI,FM%FSB%NLVL,PTSTEP,2,FM%FSB%XZ,ZWIND,PTA,PQA,PPA,PRHOA,        &
-                 ZSFLUX_U,ZSFLUX_T,ZSFLUX_Q,                                  &
-                 ZFORC_U,ZDFORC_UDU,ZFORC_E,ZDFORC_EDE,                       &
-                 ZFORC_T,ZDFORC_TDT,ZFORC_Q,ZDFORC_QDQ,                       &
-                 FM%FSB%XZ,FM%FSB%XZF,FM%FSB%XDZ,FM%FSB%XDZF,                 &
-                 FM%FSB%XU,FM%FSB%XTKE,FM%FSB%XT,      &
-                 FM%FSB%XQ,ZLMO,ZLM,ZLEPS,FM%FSB%XP,ZUSTAR,                   &
-                 ZALFAU,ZBETAU,ZALFATH,ZBETATH,ZALFAQ,ZBETAQ                  )
+ CALL CANOPY_EVOL(SB, KI, PTSTEP, 2,SB%XZ,ZWIND,PTA,PQA,PPA,PRHOA,   &
+                  ZSFLUX_U,ZSFLUX_T,ZSFLUX_Q,ZFORC_U,ZDFORC_UDU,       &
+                  ZFORC_E,ZDFORC_EDE,ZFORC_T,ZDFORC_TDT,               &
+                  ZFORC_Q,ZDFORC_QDQ,ZLM,ZLEPS,ZUSTAR,                 &
+                  ZALFAU,ZBETAU,ZALFATH,ZBETATH,ZALFAQ,ZBETAQ      )
 !
-FM%FSB%XLMO(:) = ZLMO(:,FM%FSB%NLVL)
+DO JLAYER = 1,SB%NLVL-1
+  SB%XLMO(:,JLAYER) = SB%XLMO(:,SB%NLVL)
+ENDDO
 !
 !-------------------------------------------------------------------------------------
 !
@@ -347,13 +343,7 @@ FM%FSB%XLMO(:) = ZLMO(:,FM%FSB%NLVL)
 !             ----------------------------------------
 !
 !
-IF (FM%F%LSBL .AND. FM%DGF%N2M>=1) CALL INIT_2M_10M( FM%FSB%XP(:,2), FM%FSB%XT(:,2), &
-                                         FM%FSB%XQ(:,2), FM%FSB%XU, FM%FSB%XZ, &
-                                         PU, PV, ZWIND, PRHOA,               &
-                                         FM%DGF%XT2M, FM%DGF%XQ2M, FM%DGF%XHU2M, &
-                                         FM%DGF%XZON10M, FM%DGF%XMER10M,&
-                                         FM%DGF%XWIND10M, FM%DGF%XWIND10M_MAX, FM%DGF%XT2M_MIN,   &
-                                         FM%DGF%XT2M_MAX, FM%DGF%XHU2M_MIN, FM%DGF%XHU2M_MAX      )
+IF (F%LSBL .AND. DGO%N2M>=1) CALL INIT_2M_10M( SB, D, PU, PV, ZWIND, PRHOA )
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_FLAKE_SBL_N',1,ZHOOK_HANDLE)
 !

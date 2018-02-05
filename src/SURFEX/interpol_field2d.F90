@@ -32,14 +32,13 @@
 !!    Original    01/2004
 !!    Modification
 !!      A. Alias        07/2013 add MODI_ABOR1_SFX
-!!      A. Alias        05/2016 add MODI_GET_INTERP_HALO
 !!      J. Escobar      09/2017 differencied error message :: SFX / NAM_IO_OFFLINE <=> MNH / NAM_PGDFILE 
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
 !            -----------
 !
-!
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO
 !
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
@@ -47,10 +46,10 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SURF_PAR,  ONLY : XUNDEF
 !
 USE MODI_GET_GRID_COORD
-USE MODI_GET_INTERP_HALO
 USE MODI_INTERPOL_NPTS
 USE MODI_SUM_ON_ALL_PROCS
 USE MODI_ABOR1_SFX
+USE MODI_GET_INTERP_HALO
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -82,12 +81,11 @@ INTEGER, OPTIONAL,       INTENT(IN)   :: KNPTS    ! number of points to interpol
 !*    0.2    Declaration of local variables
 !            ------------------------------
 !
-REAL, DIMENSION(SIZE(KCODE))   :: ZX             ! coordinate used for
-REAL, DIMENSION(SIZE(KCODE))   :: ZY             ! splines interpolation
+REAL, DIMENSION(U%NDIM_FULL)   :: ZX             ! coordinate used for
+REAL, DIMENSION(U%NDIM_FULL)   :: ZY             ! splines interpolation
 REAL, DIMENSION(SIZE(PFIELD,2)):: ZDEF           ! default value for field
-INTEGER                        :: INPTS          ! number of points to interpolate with
+INTEGER                        :: INPTS         ! number of points to interpolate with
 INTEGER :: IHALO, INEAR_NBR
-
 !
 INTEGER                        :: JLOOP          ! loop counter
 !
@@ -109,17 +107,18 @@ IF (PRESENT(PDEF)) ZDEF = PDEF
 !*    2.     Miscellaneous Initializations
 !            -----------------------------
 !
- CALL GET_GRID_COORD(UG, U, &
-                     KLUOUT,PX=ZX,PY=ZY)
+ CALL GET_GRID_COORD(UG%G%CGRID, UG%G%NGRID_PAR, UG%G%XGRID_PAR, U%NSIZE_FULL, &
+                     KLUOUT,KL=U%NDIM_FULL,HGRID=UG%G%CGRID,PGRID_PAR=UG%XGRID_FULL_PAR,&
+                        PX=ZX,PY=ZY)
 !
 !-------------------------------------------------------------------------------
 !
 !*    5.     Interpolation with 3 nearest points
 !            -----------------------------------
 !
-IERR0 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==0)
+IERR0 = SUM_ON_ALL_PROCS(HPROGRAM,UG%G%CGRID,KCODE(:)==0)
 !
- CALL GET_INTERP_HALO(HPROGRAM,UG%CGRID,IHALO)
+ CALL GET_INTERP_HALO(HPROGRAM,UG%G%CGRID,IHALO)
 !
 IF (IHALO/=0) THEN
   INEAR_NBR = (2*IHALO+1)**2
@@ -135,22 +134,25 @@ ENDIF
 !*    6.     Final check
 !            -----------
 !
-IERR1 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==0)
-IERR2 = SUM_ON_ALL_PROCS(HPROGRAM,UG%CGRID,KCODE(:)==-4)
+IERR1 = SUM_ON_ALL_PROCS(HPROGRAM,UG%G%CGRID,KCODE(:)==0)
+IERR2 = SUM_ON_ALL_PROCS(HPROGRAM,UG%G%CGRID,KCODE(:)==-4)
 !
-IF (IERR1>0 .OR. IERR2>0) THEN
+IF (NRANK==NPIO) THEN
   !
-  WRITE(KLUOUT,*) ' '
-  WRITE(KLUOUT,*) ' Interpolation of field : ',HFIELD
-  WRITE(KLUOUT,*) ' ----------------------'
-  WRITE(KLUOUT,*) ' '
-  WRITE(KLUOUT,*) ' Number of points interpolated with ',INPTS,' nearest points: ', &
-                    IERR1,' Total=',U%NDIM_FULL
-  !
-  !
-  IF (IERR2>0) THEN
-    WRITE(KLUOUT,*) ' Number of points that could not be interpolated : ', &
-                      IERR2
+  IF (IERR1>0 .OR. IERR2>0) THEN
+    !
+    WRITE(KLUOUT,*) ' '
+    WRITE(KLUOUT,*) ' Interpolation of field : ',HFIELD
+    WRITE(KLUOUT,*) ' ----------------------'
+    WRITE(KLUOUT,*) ' '
+    WRITE(KLUOUT,*) ' Number of points interpolated with ',INPTS,' nearest points: ', &
+                      IERR1
+    !
+    !
+    IF (IERR2>0) THEN
+      WRITE(KLUOUT,*) ' Number of points that could not be interpolated : ', &
+                        IERR2
+                !if all points were scanned or if no point could be interpolated 
       IF (PRESENT(PDEF) .AND. (INEAR_NBR>=U%NDIM_FULL .OR. IERR2==IERR0)) THEN          
         DO JLOOP=1,SIZE(PFIELD,2)
           WRITE(KLUOUT,*) ' For these points, the default value (',ZDEF(JLOOP),') is set.'
@@ -159,13 +161,15 @@ IF (IERR1>0 .OR. IERR2>0) THEN
         WRITE(KLUOUT,*) ' Please provide data with better resolution'
         WRITE(KLUOUT,*) ' Or define a higher halo value             '
       END IF
+    END IF
+    !
   END IF
-!
+  !
 END IF
 !
 IF (IERR2>0) THEN
   !
-  IF (.NOT.PRESENT(PDEF) .OR. (INEAR_NBR<U%NDIM_FULL .AND. IERR2/=IERR0)) THEN
+    IF (.NOT.PRESENT(PDEF) .OR. (INEAR_NBR<U%NDIM_FULL .AND. IERR2/=IERR0)) THEN
 #ifdef MNH
      WRITE(KLUOUT,*) 'NDIM_FULL=',U%NDIM_FULL,',NHALO=',IHALO,',Pts to interpol=',IERR0 &
           ,',Pts interpolated=',IERR1,',Pts missing=',IERR2 
@@ -175,8 +179,7 @@ IF (IERR2>0) THEN
      CALL ABOR1_SFX('Some points lack data and are too far away from other points. &
           Please define a higher halo value in NAM_IO_OFFLINE.')
 #endif
-  ENDIF
-  !
+  ENDIF  
 ENDIF
 !
 IF (COUNT(KCODE(:)==-4)>0) THEN

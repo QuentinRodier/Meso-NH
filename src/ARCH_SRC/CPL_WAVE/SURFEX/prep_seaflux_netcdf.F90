@@ -25,7 +25,7 @@ SUBROUTINE PREP_SEAFLUX_NETCDF(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2008
-!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC fields 
+!!      Modified    09/2013 : S. Senesi : extends to SSS and SIC fields
 !!      Modified    03/2014 : M.N. Bouin  ! possibility of wave parameters
 !!                                        ! from external source
 !!------------------------------------------------------------------
@@ -34,14 +34,19 @@ USE MODE_READ_NETCDF_MERCATOR
 !
 !USE MODD_TYPE_DATE_SURF
 !
-USE MODD_PREP,       ONLY : CINGRID_TYPE
-USE MODD_GRID_LATLONREGUL,  ONLY : NILENGTH
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPIO, NCOMM, NPROC
+USE MODD_PREP,       ONLY : CINGRID_TYPE, CINTERP_TYPE
+USE MODD_GRID_LATLONREGUL,  ONLY : NILENGTH,NINDEPTH
 !
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 IMPLICIT NONE
+!
+#ifdef SFX_MPI
+INCLUDE "mpif.h"
+#endif
 !
 !*      0.1    declarations of arguments
 !
@@ -57,6 +62,7 @@ REAL,DIMENSION(:,:), POINTER    :: PFIELD    ! field to interpolate horizontally
 !CHARACTER(LEN=6)              :: YINMODEL ! model from which GRIB file originates
 REAL, DIMENSION(:),       POINTER :: ZFIELD   ! field read
  CHARACTER(LEN=28) :: YNCVAR
+INTEGER :: INFOMPI
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------------
@@ -78,10 +84,14 @@ SELECT CASE(HSURF)
   CASE('ZS     ')
     YNCVAR='topo'
     CALL PREP_NETCDF_GRID(HFILE,YNCVAR)
-    CALL READ_NETCDF_ZS_SEA(HFILE,YNCVAR,ZFIELD)
-    ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
-    PFIELD(:,1) = ZFIELD(:)
-    DEALLOCATE(ZFIELD)
+    IF (NRANK==NPIO) THEN
+      CALL READ_NETCDF_ZS_SEA(HFILE,YNCVAR,ZFIELD)
+      ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
+      PFIELD(:,1) = ZFIELD(:)
+      DEALLOCATE(ZFIELD)
+    ELSE
+      ALLOCATE(PFIELD(0,0))
+    ENDIF
 !
 !
 !* 2.2 Temperature profiles
@@ -96,10 +106,12 @@ SELECT CASE(HSURF)
        YNCVAR='sic'
     END IF
     CALL PREP_NETCDF_GRID(HFILE,YNCVAR)
-    CALL READ_NETCDF_SST(HFILE,YNCVAR,ZFIELD)
-    ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
-    PFIELD(:,1) = ZFIELD(:)
-    DEALLOCATE(ZFIELD)
+    IF (NRANK==NPIO) THEN 
+      CALL READ_NETCDF_SST(HFILE,YNCVAR,ZFIELD)
+      ALLOCATE(PFIELD(MAX(1,NILENGTH),1))
+      PFIELD(:,1) = ZFIELD(:)
+      DEALLOCATE(ZFIELD)
+    ENDIF
 !
 !
 !* 2.3 Wave parameters
@@ -122,6 +134,21 @@ SELECT CASE(HSURF)
     DEALLOCATE(ZFIELD)
 !
 END SELECT
+!
+IF (NPROC>1) THEN
+#ifdef SFX_MPI
+  CALL MPI_BCAST(CINTERP_TYPE,LEN(CINTERP_TYPE),MPI_CHARACTER,NPIO,NCOMM,INFOMPI)
+#endif
+  IF (TRIM(CINTERP_TYPE)=="UNIF") THEN
+    IF (NRANK/=NPIO) ALLOCATE(PFIELD(1,1))
+#ifdef SFX_MPI
+    CALL MPI_BCAST(PFIELD(1:1,1:1),KIND(PFIELD)/4,MPI_REAL,NPIO,NCOMM,INFOMPI)
+#endif
+  ELSEIF (NRANK/=NPIO) THEN
+    ALLOCATE(PFIELD(0,0))
+  ENDIF
+ENDIF
+!
 IF (LHOOK) CALL DR_HOOK('PREP_SEAFLUX_NETCDF',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------------
 END SUBROUTINE PREP_SEAFLUX_NETCDF

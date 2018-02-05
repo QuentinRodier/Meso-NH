@@ -40,6 +40,9 @@
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
+!!       T. Dauhut     10/2017 add parallel 3D clustering
+!!       J.-P. Chaboureau 01/2018 add altitude interpolation
+!!       J.-P. Chaboureau 01/2018 add coarse graining
 !!
 !-------------------------------------------------------------------------------
 !
@@ -133,5 +136,15 @@ LOGICAL           :: LISOPR ! flag to write on isobaric level
 REAL,DIMENSION(10):: XISOPR ! list of level for isobaric interpolation
 LOGICAL           :: LISOTH ! flag to write on isentropic level
 REAL,DIMENSION(10):: XISOTH ! list of level for isentropic interpolation
+LOGICAL           :: LISOAL ! flag to write on altitude level
+REAL,DIMENSION(99):: XISOAL ! list of level for altitude interpolation
+!
+LOGICAL           :: LCOARSE   ! flag for coarse graining
+INTEGER           :: NDXCOARSE ! gridpoint number for coarse graining
+!
+LOGICAL           :: LCLSTR ! flag for 3D clustering
+LOGICAL           :: LBOTUP ! to propagate clustering from bottom to top, otherwise top to bottom
+CHARACTER(LEN=8)  :: CFIELD ! field on which clustering is applied, could be 'W' or 'CLOUD'
+REAL              :: XTHRES ! threshold value to detect the 3D structures
 
 END MODULE MODD_DIAG_FLAG

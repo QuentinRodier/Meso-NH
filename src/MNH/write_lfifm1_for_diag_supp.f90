@@ -89,6 +89,8 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      J.-P. Chaboureau 31/10/2016 add the call to RTTOV11
 !!      F. Brosse 10/2016 add chemical production destruction terms outputs
 !!      M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
+!!      J.-P. Chaboureau 01/2018 add altitude interpolation
+!!      J.-P. Chaboureau 01/2018 add coarse graining
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -145,6 +147,7 @@ USE MODI_GRADIENT_V
 USE MODI_GRADIENT_UV
 !
 USE MODI_SHUMAN
+USE MODE_NEIGHBORAVG
 #ifdef MNH_RTTOV_8
 USE MODI_CALL_RTTOV8
 #endif
@@ -203,6 +206,18 @@ REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZVOX,ZVOY,ZVOZ
 REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))  :: ZCORIOZ
 TYPE(TFIELDDATA)              :: TZFIELD
 TYPE(TFIELDDATA),DIMENSION(2) :: TZFIELD2
+!
+! variables needed for altitude interpolation                                 
+INTEGER :: IAL
+REAL :: ZFILLVAL
+REAL, DIMENSION(:), ALLOCATABLE :: ZAL
+REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWAL
+!
+! variables needed for coarse graining
+REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZUT_PRM,ZVT_PRM,ZWT_PRM
+REAL,DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZUU_AVG,ZVV_AVG,ZWW_AVG
+INTEGER :: IDX
+CHARACTER(LEN=3) :: YDX
 !-------------------------------------------------------------------------------
 !
 !*       0.     ARRAYS BOUNDS INITIALIZATION
@@ -1167,10 +1182,255 @@ ALLOCATE(ZWORK34(IIU,IJU,IKU))
 !
   DEALLOCATE(ZWTH,ZTH,ZWORK32,ZWORK33,ZWORK34)
 END IF
+!-------------------------------------------------------------------------------
+!
+!*       6.     DIAGNOSTIC ON ALTITUDE LEVELS
+!               -----------------------------
+!
+IF (LISOAL .AND.XISOAL(1)/=0.) THEN
+!
+!
+  ZFILLVAL = -99999.
+  ALLOCATE(ZWORK32(IIU,IJU,IKU))
+  ALLOCATE(ZWORK33(IIU,IJU,IKU))
+!
+! *************************************************
+! Determine the altitude level where to interpolate
+! *************************************************
+  IAL=0
+  DO JI=1,SIZE(XISOAL)
+    IF (XISOAL(JI)<0.) EXIT
+    IAL=IAL+1
+  END DO
+  ALLOCATE(ZWAL(IIU,IJU,IAL))
+  ZWAL(:,:,:)=XUNDEF
+  ALLOCATE(ZAL(IAL))
+  ZAL(:) = XISOAL(1:IAL)
+  PRINT *,'ALTITUDE LEVELS WHERE TO INTERPOLATE=',ZAL(:)
+! *********************
+! Altitude
+! *********************
+  TZFIELD%CMNHNAME   = 'ALT_ALT'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_ALT'
+  TZFIELD%CUNITS     = 'm'
+  TZFIELD%CDIR       = '--'
+  TZFIELD%CCOMMENT   = 'Z_alt ALT'
+  TZFIELD%NGRID      = 0
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 1
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZAL)
+!
+!*       Standard Variables
+!
+! *********************
+! Cloud
+! *********************
+  IF (SIZE(XRT,4) >= 5) THEN
+    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,4)+XRT(:,:,:,5))*1.E3
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    TZFIELD%CMNHNAME   = 'ALT_CLOUD'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'ALT_CLOUD'
+    TZFIELD%CUNITS     = 'g kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_cloud ALT'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+  END IF
+! *********************
+! Precipitation
+! *********************
+  IF (SIZE(XRT,4) >= 6) THEN
+    ZWORK31(:,:,:) = (XRT(:,:,:,2)+XRT(:,:,:,6))*1.E3
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    TZFIELD%CMNHNAME   = 'ALT_PRECIP'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'ALT_PRECIP'
+    TZFIELD%CUNITS     = 'g kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_precipitation ALT'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+  END IF
+! *********************
+! Pressure
+! *********************
+  CALL ZINTER(XPABST, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_PRESSURE'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_PRESSURE'
+  TZFIELD%CUNITS     = 'Pa'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_pressure ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+! *********************
+! Potential Vorticity
+! *********************
+  ZCORIOZ(:,:,:)=SPREAD( XCORIOZ(:,:),DIM=3,NCOPIES=IKU )
+  ZVOX(:,:,:)=GY_W_VW(1,IKU,1,XWT,XDYY,XDZZ,XDZY)-GZ_V_VW(1,IKU,1,XVT,XDZZ)
+  ZVOX(:,:,2)=ZVOX(:,:,3)
+  ZVOY(:,:,:)=GZ_U_UW(1,IKU,1,XUT,XDZZ)-GX_W_UW(1,IKU,1,XWT,XDXX,XDZZ,XDZX)
+  ZVOY(:,:,2)=ZVOY(:,:,3)
+  ZVOZ(:,:,:)=GX_V_UV(1,IKU,1,XVT,XDXX,XDZZ,XDZX)-GY_U_UV(1,IKU,1,XUT,XDYY,XDZZ,XDZY)
+  ZVOZ(:,:,2)=ZVOZ(:,:,3)
+  ZVOZ(:,:,1)=ZVOZ(:,:,3)
+  ZWORK31(:,:,:)=GX_M_M(1,IKU,1,XTHT,XDXX,XDZZ,XDZX)
+  ZWORK32(:,:,:)=GY_M_M(1,IKU,1,XTHT,XDYY,XDZZ,XDZY)
+  ZWORK33(:,:,:)=GZ_M_M(1,IKU,1,XTHT,XDZZ)
+  ZPOVO(:,:,:)= ZWORK31(:,:,:)*MZF(1,IKU,1,MYF(ZVOX(:,:,:)))     &
+  + ZWORK32(:,:,:)*MZF(1,IKU,1,MXF(ZVOY(:,:,:)))     &
+   + ZWORK33(:,:,:)*(MYF(MXF(ZVOZ(:,:,:))) + ZCORIOZ(:,:,:))
+  ZPOVO(:,:,:)= ZPOVO(:,:,:)*1E6/XRHODREF(:,:,:)
+  ZPOVO(:,:,1)  =-1.E+11
+  ZPOVO(:,:,IKU)=-1.E+11
+  CALL ZINTER(ZPOVO, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_PV'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_PV'
+  TZFIELD%CUNITS     = 'PVU'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_Potential Vorticity ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+! *********************
+! Wind
+! *********************
+  ZWORK31(:,:,:) = MXF(XUT(:,:,:))
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_U'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_U'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_U component of wind ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+  !
+  ZWORK31(:,:,:) = MYF(XVT(:,:,:))
+  CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+  WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+  TZFIELD%CMNHNAME   = 'ALT_V'
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'ALT_V'
+  TZFIELD%CUNITS     = 'm s-1'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'X_Y_V component of wind ALT'
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+! *********************
+! Dust extinction (optical depth per km)
+! *********************
+  IF (NRAD_3D >= 1.AND.LDUST) THEN
+    DO JK=IKB,IKE
+      IKRAD = JK - JPVEXT
+      ZWORK31(:,:,JK)= XAER(:,:,IKRAD,3)/(XZZ(:,:,JK+1)-XZZ(:,:,JK))*1.D3
+    ENDDO
+    CALL ZINTER(ZWORK31, XZZ, ZWAL, ZAL, IIU, IJU, IKU, IKB, IAL, XUNDEF)
+    WHERE(ZWAL.EQ.XUNDEF) ZWAL=ZFILLVAL
+    TZFIELD%CMNHNAME   = 'ALT_DSTEXT'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'ALT_DSTEXT'
+    TZFIELD%CUNITS     = 'km-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_DuST EXTinction ALT'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWAL)
+  END IF
+!
+! *********************
+  DEALLOCATE(ZWAL,ZAL,ZWORK32,ZWORK33)
+END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       6.     DIAGNOSTIC RELATED TO CHEMISTRY
+!*       7.     COARSE GRAINING DIAGNOSTIC
+!               --------------------------
+!
+IF (LCOARSE) THEN
+  IDX = NDXCOARSE
+!-------------------------------
+! AVERAGE OF TKE BY BLOCK OF IDX POINTS
+  CALL BLOCKAVG(XUT,IDX,IDX,ZWORK31)
+  ZUT_PRM=XUT-ZWORK31
+  CALL BLOCKAVG(XVT,IDX,IDX,ZWORK31)
+  ZVT_PRM=XVT-ZWORK31
+  CALL BLOCKAVG(XWT,IDX,IDX,ZWORK31)
+  ZWT_PRM=XWT-ZWORK31
+!
+  ZWORK31=MXF(ZUT_PRM*ZUT_PRM)
+  CALL BLOCKAVG(ZWORK31,IDX,IDX,ZUU_AVG)
+  ZWORK31=MYF(ZVT_PRM*ZVT_PRM)
+  CALL BLOCKAVG(ZWORK31,IDX,IDX,ZVV_AVG)
+  ZWORK31=MZF(1,IKU,1,ZWT_PRM*ZWT_PRM)
+  CALL BLOCKAVG(ZWORK31,IDX,IDX,ZWW_AVG)
+  CALL BLOCKAVG(XTKET,IDX,IDX,ZWORK31)
+  ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31
+  WRITE (YDX,FMT='(I3.3)') IDX
+  TZFIELD%CMNHNAME   = 'TKEBAVG'//YDX
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'TKEBAVG'//YDX
+  TZFIELD%CUNITS     = 'm2 s-2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'TKE_BLOCKAVG'//YDX
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK31)
+!---------------------------------
+! MOVING AVERAGE OF TKE OVER IDX+1 POINTS
+  IDX = IDX/2
+  CALL MOVINGAVG(XUT,IDX,IDX,ZWORK31)
+  ZUT_PRM=XUT-ZWORK31
+  CALL MOVINGAVG(XVT,IDX,IDX,ZWORK31)
+  ZVT_PRM=XVT-ZWORK31
+  CALL MOVINGAVG(XWT,IDX,IDX,ZWORK31)
+  ZWT_PRM=XWT-ZWORK31
+!
+  ZWORK31=MXF(ZUT_PRM*ZUT_PRM)
+  CALL MOVINGAVG(ZWORK31,IDX,IDX,ZUU_AVG)
+  ZWORK31=MYF(ZVT_PRM*ZVT_PRM)
+  CALL MOVINGAVG(ZWORK31,IDX,IDX,ZVV_AVG)
+  ZWORK31=MZF(1,IKU,1,ZWT_PRM*ZWT_PRM)
+  CALL MOVINGAVG(ZWORK31,IDX,IDX,ZWW_AVG)
+  CALL MOVINGAVG(XTKET,IDX,IDX,ZWORK31)
+  ZWORK31=0.5*( ZUU_AVG+ZVV_AVG+ZWW_AVG ) + ZWORK31
+  WRITE (YDX,FMT='(I3.3)') 2*IDX+1
+  TZFIELD%CMNHNAME   = 'TKEMAVG'//YDX
+  TZFIELD%CSTDNAME   = ''
+  TZFIELD%CLONGNAME  = 'TKEMAVG'//YDX
+  TZFIELD%CUNITS     = 'm2 s-2'
+  TZFIELD%CDIR       = 'XY'
+  TZFIELD%CCOMMENT   = 'TKE_MOVINGAVG'//YDX
+  TZFIELD%NGRID      = 1
+  TZFIELD%NTYPE      = TYPEREAL
+  TZFIELD%NDIMS      = 3
+  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK31)
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!*       8.     DIAGNOSTIC RELATED TO CHEMISTRY
 !               -------------------------------
 !
 IF (NEQ_BUDGET>0) THEN

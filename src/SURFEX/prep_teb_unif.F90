@@ -111,12 +111,12 @@ SELECT CASE(HSURF)
     PFIELD = XTI_BLD
 
   CASE('QI_BLD  ')
-    ALLOCATE(PFIELD(SIZE(XZS_LS),1))
+    ALLOCATE(PFIELD(MAX(1,SIZE(XZS_LS)),1))
     ALLOCATE(ZPS(SIZE(XZS_LS)))
     ALLOCATE(ZTI_BLD(SIZE(XZS_LS)))
     ZPS = XP00 - ZRHOA*XG*XZS_LS
     ZTI_BLD = XTI_BLD
-    PFIELD(:,1) = XHUI_BLD * QSAT(ZTI_BLD, ZPS)
+    PFIELD(:SIZE(XZS_LS),1) = XHUI_BLD * QSAT(ZTI_BLD, ZPS)
     DEALLOCATE(ZPS)
     DEALLOCATE(ZTI_BLD)
 
@@ -145,13 +145,13 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='UNIF  '
+CINTERP_TYPE='UNIF  '
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_TEB_UNIF',1,ZHOOK_HANDLE)
- CONTAINS
+CONTAINS
 !
 !-------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE TEBGRID( PSOILDEPTH, PD_G, PD_G1 )
+      SUBROUTINE TEBGRID3( PSOILDEPTH, PD_G, PD_G1 )
 
 !     ##########################################################################
 !
@@ -41,7 +41,7 @@
 !!      
 !!    AUTHOR
 !!    ------
-!!      A. Boone           * Meteo-France *
+!!	A. Boone           * Meteo-France *
 !!
 !!    MODIFICATIONS
 !!    -------------
@@ -61,15 +61,15 @@ IMPLICIT NONE
 !*      0.1    declarations of arguments
 !
 !
-REAL, DIMENSION(:),   INTENT(IN)  :: PSOILDEPTH  ! total soil depth            (m)
+REAL,  INTENT(IN)  :: PSOILDEPTH  ! total soil depth            (m)
 !                                   
-REAL, DIMENSION(:,:), INTENT(OUT) :: PD_G        ! depth of base of soil layers (m)
+REAL, DIMENSION(:), INTENT(OUT) :: PD_G        ! depth of base of soil layers (m)
 REAL, OPTIONAL,       INTENT(IN)  :: PD_G1       ! depth of first layer
 !
 !
 !*      0.2    declarations of local variables
 !
-INTEGER                           :: JJ, JNLVL
+INTEGER                           :: JJ, JI, JNLVL
 !
 !
 REAL, PARAMETER                   :: ZGRIDFACTOR = 3.0 ! soil depth factor
@@ -97,61 +97,53 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !        0.     Initialization
 !               --------------
 !
-IF (LHOOK) CALL DR_HOOK('TEBGRID',0,ZHOOK_HANDLE)
-JNLVL = SIZE(PD_G,2)
+JNLVL = SIZE(PD_G)
 !
 IF (PRESENT(PD_G1)) ZD_G1 = PD_G1
-!-------------------------------------------------------------------------------
 !
-!*       1.     Assign soil layer depths
-!               ------------------------
-!               using a geometric relation
-!               for layers 2...N
-!               This is GENERAL rule.
-!               Note that the first soil layer
-!               is FIXED except for VERY thin
-!               soils (see #3 below).
-!
-PD_G(:,1)     = ZD_G1
-PD_G(:,JNLVL) = PSOILDEPTH(:)
-!
-DO JJ=JNLVL-1,2,-1
-   PD_G(:,JJ) = PD_G(:,JJ+1)/ZGRIDFACTOR
-ENDDO
-!
-!-------------------------------------------------------------------------------
-!
-!*       2.     When the soil is sufficiently thin
-!               ------------------------------------------
-!               We recalculate layer depths such
-!               that all layer thicknesses are >= ZD_G1
-!               We favor keeping a minimum grid thickness
-!               OVER maintaining geometric relation
-!               for increasingly thin soils. This means
-!               that uppermost soil moisture is readily
-!               comparable (i.e. for same layer thickness)
-!               EVERYWHERE except for most thin soils (below).
-!
-DO JJ=1,JNLVL
-   PD_G(:,JJ) = MAX(PD_G(:,JJ), JJ*ZD_G1)
-ENDDO
-!
-!-------------------------------------------------------------------------------
-!
-!*       3.     In the LIMIT For extremely thin soils
-!               ------------------------------------------
-!               This should be a RARE occurance, but 
-!               accounted for none-the-less ...:
-!               hold the ratio between all layer 
-!               thicknesses constant. 
-!           
-DO JJ=1,JNLVL
-   WHERE(PSOILDEPTH(:) < JNLVL*ZD_G1)
-      PD_G(:,JJ) = JJ*PSOILDEPTH/JNLVL
-   END WHERE
-ENDDO
-IF (LHOOK) CALL DR_HOOK('TEBGRID',1,ZHOOK_HANDLE)
+IF (PSOILDEPTH < JNLVL*ZD_G1) THEN
+  !
+  !*       3.     In the LIMIT For extremely thin soils
+  !               ------------------------------------------
+  !               This should be a RARE occurance, but 
+  !               accounted for none-the-less ...:
+  !               hold the ratio between all layer 
+  !               thicknesses constant. 
+  DO JJ = 1,JNLVL
+    PD_G(JJ) = JJ*PSOILDEPTH/JNLVL
+  ENDDO
+  !
+ELSE
+  !
+  PD_G(1)     = ZD_G1
+  PD_G(JNLVL) = PSOILDEPTH
+  !
+  DO JJ=JNLVL-1,2,-1
+    !*       1.     Assign soil layer depths
+    !               ------------------------
+    !               using a geometric relation
+    !               for layers 2...N
+    !               This is GENERAL rule.
+    !               Note that the first soil layer
+    !               is FIXED except for VERY thin
+    !               soils (see #3 below).
+    PD_G(JJ) = PD_G(JJ+1)/ZGRIDFACTOR
+    !*       2.     When the soil is sufficiently thin
+    !               ------------------------------------------
+    !               We recalculate layer depths such
+    !               that all layer thicknesses are >= ZD_G1
+    !               We favor keeping a minimum grid thickness
+    !               OVER maintaining geometric relation
+    !               for increasingly thin soils. This means
+    !               that uppermost soil moisture is readily
+    !               comparable (i.e. for same layer thickness)
+    !               EVERYWHERE except for most thin soils (below).
+    PD_G(JJ) = MAX(PD_G(JJ), JJ*ZD_G1)
+    !
+  ENDDO     
+  !
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
-END SUBROUTINE TEBGRID
+END SUBROUTINE TEBGRID3

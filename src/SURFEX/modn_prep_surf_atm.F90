@@ -43,10 +43,10 @@ INTEGER           :: NYEAR        ! YEAR for surface
 INTEGER           :: NMONTH       ! MONTH for surface
 INTEGER           :: NDAY         ! DAY for surface
 REAL              :: XTIME        ! TIME for surface
-
+LOGICAL           :: LWRITE_EXTERN
 !
 NAMELIST/NAM_PREP_SURF_ATM/CFILE, CFILETYPE, CFILEPGD, CFILEPGDTYPE, NHALO_PREP, &
-         NYEAR, NMONTH, NDAY, XTIME
+         NYEAR, NMONTH, NDAY, XTIME, LWRITE_EXTERN
 !
 !-------------------------------------------------------------------------------
 !

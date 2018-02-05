@@ -103,7 +103,7 @@ END SELECT
 !*      4.     Interpolation method
 !              --------------------
 !
- CINTERP_TYPE='NONE'
+CINTERP_TYPE='NONE'
 IF (LHOOK) CALL DR_HOOK('PREP_FLAKE_BUFFER',1,ZHOOK_HANDLE)
 !
 !

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #######################################################################
-      SUBROUTINE GET_VEG_n(HPROGRAM, KI, U, I, PLAI, PVH)
+      SUBROUTINE GET_VEG_n(HPROGRAM, KI, U, IO, S, NP, NPE, PLAI, PVH)
 !     #######################################################################
 !
 !!****  *GET_VEG_n* - gets some veg fields on atmospheric grid
@@ -35,7 +35,8 @@
 !              ------------
 !
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_ISBA_n, ONLY : ISBA_t
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_P_t, ISBA_PE_t, ISBA_NP_t, ISBA_NPE_t
 !
 USE MODD_SURF_PAR,         ONLY : XUNDEF
 USE MODD_DATA_COVER_PAR
@@ -50,11 +51,14 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
- CHARACTER(LEN=6),   INTENT(IN)   :: HPROGRAM    
+CHARACTER(LEN=6),   INTENT(IN)   :: HPROGRAM    
 INTEGER,            INTENT(IN)   :: KI         ! number of points
 !
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(ISBA_t), INTENT(INOUT) :: I
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_S_t), INTENT(INOUT) :: S
+TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
+TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
 !
 REAL, DIMENSION(KI), INTENT(OUT) :: PVH    ! Tree height 
 REAL, DIMENSION(KI), INTENT(OUT) :: PLAI   
@@ -67,71 +71,74 @@ REAL, DIMENSION(KI), INTENT(OUT) :: PLAI
 !  Arrays defined for each tile
 !  
 !
+TYPE(ISBA_P_t), POINTER :: PK
+TYPE(ISBA_PE_t), POINTER :: PEK
 INTEGER                               :: JI,JJ           ! loop index over tiles
 INTEGER                               :: ILUOUT       ! unit numberi
 REAL, DIMENSION(U%NSIZE_NATURE)    :: ZH_TREE, ZLAI,ZWORK
 INTEGER:: IPATCH_TRBE, IPATCH_TRBD, IPATCH_TEBE, IPATCH_TEBD, IPATCH_TENE, &
-          IPATCH_BOBD, IPATCH_BONE, IPATCH_BOND
+          IPATCH_BOBD, IPATCH_BONE, IPATCH_BOND, IMASK, JP
 ! 
 !-------------------------------------------------------------------------------
 !
 !*   0. Logical unit for writing out
 !
- CALL GET_LUOUT(HPROGRAM,ILUOUT)
+CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
 !-------------------------------------------------------------------------------
 !
 !*       1. Passage dur le masque global
 !              -------------------------------
 
-IPATCH_TRBE = VEGTYPE_TO_PATCH(NVT_TRBE, I%NPATCH)
-IPATCH_TRBD = VEGTYPE_TO_PATCH(NVT_TRBD, I%NPATCH)
-IPATCH_TEBE = VEGTYPE_TO_PATCH(NVT_TEBE, I%NPATCH)
-IPATCH_TEBD = VEGTYPE_TO_PATCH(NVT_TEBD, I%NPATCH)
-IPATCH_TENE = VEGTYPE_TO_PATCH(NVT_TENE, I%NPATCH)
-IPATCH_BOBD = VEGTYPE_TO_PATCH(NVT_BOBD, I%NPATCH)
-IPATCH_BONE = VEGTYPE_TO_PATCH(NVT_BONE, I%NPATCH)
-IPATCH_BOND = VEGTYPE_TO_PATCH(NVT_BOND, I%NPATCH)
+IPATCH_TRBE = VEGTYPE_TO_PATCH(NVT_TRBE, IO%NPATCH)
+IPATCH_TRBD = VEGTYPE_TO_PATCH(NVT_TRBD, IO%NPATCH)
+IPATCH_TEBE = VEGTYPE_TO_PATCH(NVT_TEBE, IO%NPATCH)
+IPATCH_TEBD = VEGTYPE_TO_PATCH(NVT_TEBD, IO%NPATCH)
+IPATCH_TENE = VEGTYPE_TO_PATCH(NVT_TENE, IO%NPATCH)
+IPATCH_BOBD = VEGTYPE_TO_PATCH(NVT_BOBD, IO%NPATCH)
+IPATCH_BONE = VEGTYPE_TO_PATCH(NVT_BONE, IO%NPATCH)
+IPATCH_BOND = VEGTYPE_TO_PATCH(NVT_BOND, IO%NPATCH)
 
 
-ZWORK(:) = I%XVEGTYPE(:,NVT_TRBE) + I%XVEGTYPE(:,NVT_TRBD) + I%XVEGTYPE(:,NVT_TEBE) + &
-           I%XVEGTYPE(:,NVT_TEBD) + I%XVEGTYPE(:,NVT_TENE) + I%XVEGTYPE(:,NVT_BOBD) + &
-           I%XVEGTYPE(:,NVT_BONE) + I%XVEGTYPE(:,NVT_BOND)
+ZWORK(:) = S%XVEGTYPE(:,NVT_TRBE) + S%XVEGTYPE(:,NVT_TRBD) + S%XVEGTYPE(:,NVT_TEBE) + &
+           S%XVEGTYPE(:,NVT_TEBD) + S%XVEGTYPE(:,NVT_TENE) + S%XVEGTYPE(:,NVT_BOBD) + &
+           S%XVEGTYPE(:,NVT_BONE) + S%XVEGTYPE(:,NVT_BOND)
 
-DO JJ=1,U%NSIZE_NATURE
+ZH_TREE(:) = 0.
+ZLAI(:) = 0.
+!
+DO JP = 1,IO%NPATCH
   !
-  IF (ZWORK(JJ)==0) THEN
+  IF (JP==IPATCH_TRBE .OR. JP==IPATCH_TRBD .OR. JP==IPATCH_TEBE .OR. JP==IPATCH_TEBD .OR. &
+      JP==IPATCH_TENE .OR. JP==IPATCH_BOBD .OR. JP==IPATCH_BONE .OR. JP==IPATCH_BOND) THEN
     !
-    ZH_TREE(JJ) = 0.
-    ZLAI(JJ) = 0.
+    PK => NP%AL(JP)
+    PEK => NPE%AL(JP)
     !
-  ELSE
+    DO JJ=1,PK%NSIZE_P
+      !
+      IMASK = PK%NR_P(JJ)
+      !
+      IF (S%XVEGTYPE(IMASK,JP)/=0) THEN
+        !
+        ZH_TREE(IMASK) = ZH_TREE(IMASK) + PK%XH_TREE(JJ) * PK%XPATCH(JJ)
+        !
+        ZLAI(IMASK)  = ZLAI(IMASK) + PEK%XLAI(JJ) * PK%XPATCH(JJ)
+        !
+      ENDIF
+      !
+    ENDDO
     !
-    ZH_TREE(JJ) = ( (I%XH_TREE(JJ,IPATCH_TRBE) * I%XVEGTYPE(JJ,NVT_TRBE) ) + &
-                    (I%XH_TREE(JJ,IPATCH_TRBD) * I%XVEGTYPE(JJ,NVT_TRBD) ) + &
-                    (I%XH_TREE(JJ,IPATCH_TEBE) * I%XVEGTYPE(JJ,NVT_TEBE) ) + &
-                    (I%XH_TREE(JJ,IPATCH_TEBD) * I%XVEGTYPE(JJ,NVT_TEBD) ) + &
-                    (I%XH_TREE(JJ,IPATCH_TENE) * I%XVEGTYPE(JJ,NVT_TENE) ) + &
-                    (I%XH_TREE(JJ,IPATCH_BOBD) * I%XVEGTYPE(JJ,NVT_BOBD) ) + &
-                    (I%XH_TREE(JJ,IPATCH_BONE) * I%XVEGTYPE(JJ,NVT_BONE) ) + &
-                    (I%XH_TREE(JJ,IPATCH_BOND) * I%XVEGTYPE(JJ,NVT_BOND) ) &
-                     ) / ZWORK(JJ) 
-
-    ZLAI(JJ)  = ( I%XLAI(JJ,IPATCH_TRBE) * I%XVEGTYPE(JJ,NVT_TRBE) ) + &
-                ( I%XLAI(JJ,IPATCH_TRBD) * I%XVEGTYPE(JJ,NVT_TRBD) ) + &
-                ( I%XLAI(JJ,IPATCH_TEBE) * I%XVEGTYPE(JJ,NVT_TEBE) ) + &
-                ( I%XLAI(JJ,IPATCH_TEBD) * I%XVEGTYPE(JJ,NVT_TEBD) ) + &
-                ( I%XLAI(JJ,IPATCH_TENE) * I%XVEGTYPE(JJ,NVT_TENE) ) + &
-                ( I%XLAI(JJ,IPATCH_BOBD) * I%XVEGTYPE(JJ,NVT_BOBD) ) + &
-                ( I%XLAI(JJ,IPATCH_BONE) * I%XVEGTYPE(JJ,NVT_BONE) )+ &
-                ( I%XLAI(JJ,IPATCH_BOND) * I%XVEGTYPE(JJ,NVT_BOND) )
-    
-    !
-  END IF
+  ENDIF
   !
-  ZLAI(JJ) = U%XNATURE(U%NR_NATURE(JJ)) * ZLAI(JJ)
-  !
-END DO
+ENDDO  
+!
+WHERE(ZWORK(:)/=0.) 
+  ZH_TREE(:) = ZH_TREE(:)/ZWORK(:)
+  ZLAI(:) = ZLAI(:)/ZWORK(:)
+END WHERE
+!
+ZLAI(:) = U%XNATURE(:) * ZLAI(:)
 !
 !*       2. Envoi les variables vers mesonH 
 !             ------------------------------

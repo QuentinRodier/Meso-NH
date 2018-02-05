@@ -35,6 +35,9 @@ IMPLICIT NONE
 !
 REAL, DIMENSION(:), ALLOCATABLE    :: XX  ! X coordinate (meters)
 REAL, DIMENSION(:), ALLOCATABLE    :: XY  ! Y coordinate (meters)
+REAL, DIMENSION(:,:), ALLOCATABLE    :: XCX
+REAL, DIMENSION(:,:), ALLOCATABLE    :: XCY
+INTEGER, DIMENSION(:,:), ALLOCATABLE :: NCIJ
 INTEGER :: NX  ! number of points in X direction
 INTEGER :: NY  ! number of points in Y direction
 !

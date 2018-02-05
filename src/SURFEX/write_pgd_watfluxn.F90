@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_PGD_WATFLUX_n (DTCO, DGU, U, WG, W, &
-                                      HPROGRAM)
+      SUBROUTINE WRITE_PGD_WATFLUX_n (DTCO, HSELECT, U, G, W, HPROGRAM)
 !     ####################################
 !
 !!****  *WRITE_PGD_WATFLUX_n* - routine to write pgd surface variables in their respective files
@@ -40,9 +39,8 @@
 !
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_WATFLUX_GRID_n, ONLY : WATFLUX_GRID_t
+USE MODD_SFX_GRID_n, ONLY : GRID_t
 USE MODD_WATFLUX_n, ONLY : WATFLUX_t
 !
 USE MODI_INIT_IO_SURF_n
@@ -60,9 +58,9 @@ IMPLICIT NONE
 !
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(WATFLUX_GRID_t), INTENT(INOUT) :: WG
+TYPE(GRID_t), INTENT(INOUT) :: G
 TYPE(WATFLUX_t), INTENT(INOUT) :: W
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
@@ -76,15 +74,12 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_PGD_WATFLUX_N',0,ZHOOK_HANDLE)
- CALL INIT_IO_SURF_n(DTCO, DGU, U, &
-                     HPROGRAM,'WATER ','WATFLX','WRITE')
+CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'WATER ','WATFLX','WRITE')
 !
 !*       1.     Selection of surface scheme
 !               ---------------------------
 !
- CALL WRITESURF_PGD_WATFLUX_n(DGU, U, &
-                              WG, W, &
-                              HPROGRAM)
+ CALL WRITESURF_PGD_WATFLUX_n(HSELECT, G, W, HPROGRAM)
 !
 !-------------------------------------------------------------------------------
 !

@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ######spl
-      SUBROUTINE CONVERT_TEB (TOP, &
-                              PCOVER,PTEB_PATCH)
+      SUBROUTINE CONVERT_TEB (KTEB_PATCH,PCOVER,PTEB_PATCH)
 !     ##############################################################
 !
 !!**** *CONVERT_TEB* initialisation of TEB parameters valid for all patches
@@ -40,9 +39,6 @@
 !*    0.     DECLARATION
 !            -----------
 !
-!
-USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
-!
 USE MODD_SURF_PAR,       ONLY : XUNDEF
 !
 !
@@ -60,7 +56,7 @@ IMPLICIT NONE
 !            ------------------------
 !
 !
-TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
+INTEGER, INTENT(IN) :: KTEB_PATCH
 !
 REAL, DIMENSION(:,:),   INTENT(IN)    :: PCOVER
 !
@@ -89,8 +85,8 @@ IF (LHOOK) CALL DR_HOOK('CONVERT_TEB',0,ZHOOK_HANDLE)
 !       GARDEN fraction
 !       ---------------
 IF (PRESENT(PTEB_PATCH)) THEN
-  DO JPATCH=1,TOP%NTEB_PATCH
-    PTEB_PATCH(:,JPATCH) = 1./FLOAT(TOP%NTEB_PATCH)
+  DO JPATCH=1,KTEB_PATCH
+    PTEB_PATCH(:,JPATCH) = 1./FLOAT(KTEB_PATCH)
   END DO
 ENDIF
 !

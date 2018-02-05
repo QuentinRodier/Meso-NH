@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-SUBROUTINE DEALLOC_TOWN_n (B, CHT, DTT, U, TG, T, TOP, TPN)
+SUBROUTINE DEALLOC_TOWN_n (TM, GDM, GRM, U)
 !     ###############################################################################
 !
 !!****  *DEALLOC_TOWN_n * - Deallocate all arrays
@@ -27,20 +27,9 @@ SUBROUTINE DEALLOC_TOWN_n (B, CHT, DTT, U, TG, T, TOP, TPN)
 !!      Original    01/2004
 !!------------------------------------------------------------------
 !
-
+USE MODD_SURFEX_n, ONLY : TEB_MODEL_t, TEB_GARDEN_MODEL_t, TEB_GREENROOF_MODEL_t
 !
-!
-!
-!
-!
-USE MODD_BEM_n, ONLY : BEM_t
-USE MODD_CH_TEB_n, ONLY : CH_TEB_t
-USE MODD_DATA_TEB_n, ONLY : DATA_TEB_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-USE MODD_TEB_GRID_n, ONLY : TEB_GRID_t
-USE MODD_TEB_n, ONLY : TEB_t
-USE MODD_TEB_OPTION_n, ONLY : TEB_OPTIONS_t
-USE MODD_TEB_PANEL_n, ONLY : TEB_PANEL_t
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -53,27 +42,21 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
+TYPE(TEB_MODEL_t), INTENT(INOUT) :: TM
+TYPE(TEB_GARDEN_MODEL_t), INTENT(INOUT) :: GDM
+TYPE(TEB_GREENROOF_MODEL_t), INTENT(INOUT) :: GRM
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 !
 !*      0.2    declarations of local variables
 !
 !-------------------------------------------------------------------------------------
 !
-
-!
-TYPE(BEM_t), INTENT(INOUT) :: B
-TYPE(CH_TEB_t), INTENT(INOUT) :: CHT
-TYPE(DATA_TEB_t), INTENT(INOUT) :: DTT
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-TYPE(TEB_GRID_t), INTENT(INOUT) :: TG
-TYPE(TEB_t), INTENT(INOUT) :: T
-TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
-TYPE(TEB_PANEL_t), INTENT(INOUT) :: TPN
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEALLOC_TOWN_N',0,ZHOOK_HANDLE)
 IF (U%CTOWN=='TEB   ') THEN
-  CALL DEALLOC_TEB_n(B, CHT, DTT, TG, T, TOP, TPN)
+  CALL DEALLOC_TEB_n(TM, GDM, GRM)
 ELSE IF (U%CTOWN=='FLUX  ') THEN
   CALL DEALLOC_IDEAL_FLUX
 END IF

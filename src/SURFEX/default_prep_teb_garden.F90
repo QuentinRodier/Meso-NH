@@ -72,21 +72,21 @@ IMPLICIT NONE
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 IF (LHOOK) CALL DR_HOOK('DEFAULT_PREP_TEB_GARDEN',0,ZHOOK_HANDLE)
- CFILE_GD = '                          '
- CTYPE      = 'GRIB  '
- CFILEPGD_GD = '                          '
- CTYPEPGD      = '      '
- CFILE_HUG_GD  = '                          '
- CTYPE_HUG  = '      '
- CFILE_TG_GD   = '                          '
- CTYPE_TG   = '      '
+CFILE_GD = '                          '
+CTYPE      = 'GRIB  '
+CFILEPGD_GD = '                          '
+CTYPEPGD      = '      '
+CFILE_HUG_GD  = '                          '
+CTYPE_HUG  = '      '
+CFILE_TG_GD   = '                          '
+CTYPE_TG   = '      '
 !
- CFILE_HUG_SURF_GD = '                          '
- CFILE_HUG_ROOT_GD = '                          '
- CFILE_HUG_DEEP_GD = '                          '
- CFILE_TG_SURF_GD  = '                          '
- CFILE_TG_ROOT_GD  = '                          '
- CFILE_TG_DEEP_GD  = '                          '
+CFILE_HUG_SURF_GD = '                          '
+CFILE_HUG_ROOT_GD = '                          '
+CFILE_HUG_DEEP_GD = '                          '
+CFILE_TG_SURF_GD  = '                          '
+CFILE_TG_ROOT_GD  = '                          '
+CFILE_TG_DEEP_GD  = '                          '
 !
 XHUG_SURF_GD = XUNDEF
 XHUG_ROOT_GD = XUNDEF

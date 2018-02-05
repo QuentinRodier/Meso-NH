@@ -3,9 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE CANOPY_EVOL_WIND(KI,KLVL,PTSTEP,KIMPL,PWIND,PK,PDKDDVDZ,        &
-                                   PSFLUX_U,PFORC_U,PDFORC_UDU,PDZ,PDZF,PU,PUW,   &
-                                   PALFA,PBETA                                    ) 
+      SUBROUTINE CANOPY_EVOL_WIND(SB, KI, PTSTEP, KIMPL, PWIND, PK, PDKDDVDZ,   &
+                                  PSFLUX_U, PFORC_U, PDFORC_UDU, PUW, PALFA, PBETA ) 
 !     #########################################
 !
 !!****  *CANOPY_EVOL_WIND* - evolution of wind in canopy 
@@ -40,6 +39,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODD_CANOPY_n, ONLY : CANOPY_t
+!
 USE MODI_CANOPY_EVOL_FIELD
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
@@ -50,8 +51,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+TYPE(CANOPY_t), INTENT(INOUT) :: SB
+!
 INTEGER,                  INTENT(IN)    :: KI        ! number of horizontal points
-INTEGER,                  INTENT(IN)    :: KLVL      ! number of levels in canopy
 REAL,                     INTENT(IN)    :: PTSTEP    ! time-step                             (s)
 INTEGER,                  INTENT(IN)    :: KIMPL     ! implicitation code: 
 !                                                    ! 1 : computes only alfa and beta coupling
@@ -59,20 +61,15 @@ INTEGER,                  INTENT(IN)    :: KIMPL     ! implicitation code:
 !                                                    ! 2 : computes temporal evolution of the
 !                                                    !     variables
 REAL, DIMENSION(KI),      INTENT(IN)    :: PWIND     ! wind at forcing level                 (m/s)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PK        ! mixing exchange coefficient           (m2/s)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PDKDDVDZ  ! derivative of mixing coefficient as a
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PK        ! mixing exchange coefficient           (m2/s)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDKDDVDZ  ! derivative of mixing coefficient as a
 !                                                    ! function of vertical gradient of wind
 !                                                    ! (at mid levels)                       (m2)
 REAL, DIMENSION(KI),      INTENT(IN)    :: PSFLUX_U  ! Surface flux u'w'                     (m2/s2)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PFORC_U   ! tendency of wind due to canopy drag   (m/s2)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PDFORC_UDU! formal derivative of the tendency of
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PFORC_U   ! tendency of wind due to canopy drag   (m/s2)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(IN)    :: PDFORC_UDU! formal derivative of the tendency of
 !                                                    ! wind due to canopy drag              (1/s)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PDZ       ! deltaZ between canopy half levels,
-!                                                    ! located at full levels                (m)
-REAL, DIMENSION(KI,KLVL), INTENT(IN)    :: PDZF      ! deltaZ between canopy (full) levels,
-!                                                    ! located at half levels                (m)
-REAL, DIMENSION(KI,KLVL), INTENT(INOUT) :: PU        ! wind speed at canopy levels           (m/s)
-REAL, DIMENSION(KI,KLVL), INTENT(OUT)   :: PUW       ! turbulent flux (at half levels)       (m2/s2)
+REAL, DIMENSION(KI,SB%NLVL), INTENT(OUT)   :: PUW       ! turbulent flux (at half levels)       (m2/s2)
 REAL, DIMENSION(KI),      INTENT(OUT)   :: PALFA     !  V+(1) = alfa u'w' + beta
 REAL, DIMENSION(KI),      INTENT(OUT)   :: PBETA     !  V+(1) = alfa u'w' + beta
 !
@@ -82,16 +79,16 @@ REAL, DIMENSION(KI),      INTENT(OUT)   :: PBETA     !  V+(1) = alfa u'w' + beta
 !
 INTEGER                     :: JLAYER   ! loop counter on layers
 !
-REAL, DIMENSION(KI,KLVL)   :: ZDUDZ    ! dU/dz at mid levels
-REAL, DIMENSION(KI,KLVL)   :: ZF       ! turbulent flux at mid levels
-REAL, DIMENSION(KI,KLVL)   :: ZDFDDVDZ ! derivative of turbulent flux as a
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDUDZ    ! dU/dz at mid levels
+REAL, DIMENSION(KI,SB%NLVL)   :: ZF       ! turbulent flux at mid levels
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDFDDVDZ ! derivative of turbulent flux as a
 !                                       ! function of vertical gradient of wind variable
 !                                       ! (at mid levels)
-REAL, DIMENSION(KI,KLVL)   :: ZEXT     ! external forcing at full levels
-REAL, DIMENSION(KI,KLVL)   :: ZDEXTDV  ! derivative of external forcing as a
+REAL, DIMENSION(KI,SB%NLVL)   :: ZEXT     ! external forcing at full levels
+REAL, DIMENSION(KI,SB%NLVL)   :: ZDEXTDV  ! derivative of external forcing as a
 !                                       ! function of vertical variable
 !                                       ! (at full levels)
-REAL, DIMENSION(KI,KLVL)   :: ZU       ! work variable : wind at futur instant 
+REAL, DIMENSION(KI,SB%NLVL)   :: ZU       ! work variable : wind at futur instant 
 !                                       ! (or past at the end of the routine) 
 REAL, DIMENSION(KI)         :: ZDUADT   ! dUa/dt   at forcing level
 LOGICAL                     :: LIMPL
@@ -111,8 +108,8 @@ ZDEXTDV = 0.
 !
 !* coupling coefficient with the surface
 !
-PALFA(:)=0.
-PBETA(:)=PU(:,1)
+PALFA(:) = 0.
+PBETA(:) = SB%XU(:,1)
 !
 !-------------------------------------------------------------------------------
 !
@@ -143,27 +140,28 @@ ZDEXTDV = ZDEXTDV + PDFORC_UDU(:,:)
 ! This means that one assume that the forcing layer is in the inertail sublayer
 ! (where turbulent fluxes are constant).
 !
-ZDUADT(:) = ( PWIND(:) - PU(:,KLVL) ) /PTSTEP
+ZDUADT(:) = ( PWIND(:) - SB%XU(:,SB%NLVL) ) /PTSTEP
 !
 !* for smoother evolution at large time steps, does not include explicitely
 !  forcing term in lower layers
-DO JLAYER=1,KLVL-1
+DO JLAYER=1,SB%NLVL-1
   ZEXT(:,JLAYER) = ZEXT(:,JLAYER)
 END DO
 
 !* evolution of forcing layer forced by forcing...
-ZEXT(:,KLVL) = ZDUADT(:)
+ZEXT(:,SB%NLVL) = ZDUADT(:)
 !
- CALL  CANOPY_EVOL_FIELD(KI, KLVL, PTSTEP, KIMPL, PK, PDKDDVDZ, &
-                        PSFLUX_U, PFORC_U, PDFORC_UDU, PDZ, PDZF,     &
-                        ZEXT, ZDEXTDV, PU, PUW, PALFA, PBETA          ) 
+ CALL  CANOPY_EVOL_FIELD(KI, SB%NLVL, PTSTEP, KIMPL, PK, PDKDDVDZ,       &
+                         PSFLUX_U, PFORC_U, PDFORC_UDU, SB%XDZ, SB%XDZF, &
+                         ZEXT, ZDEXTDV, SB%XU, PUW, PALFA, PBETA          ) 
 !
 !-------------------------------------------------------------------------------
 !
 !*   10. Security at all levels : positivity of wind speed
 !        ----------------------
 !
-PU(:,:) = MAX(PU,0.)
+SB%XU(:,:) = MAX(SB%XU,0.)
+!
 IF (LHOOK) CALL DR_HOOK('CANOPY_EVOL_WIND',1,ZHOOK_HANDLE)
 !
 !----------------------------------------------------------------

@@ -116,11 +116,11 @@ NAMELIST/NAM_DUMMY_PGD/ NDUMMY_NBR, CDUMMY_NAME, CDUMMY_AREA,       &
 IF (LHOOK) CALL DR_HOOK('READ_NAM_PGD_DUMMY',0,ZHOOK_HANDLE)
 NDUMMY_NBR = 0
 !
- CDUMMY_NAME     = "                    "
- CDUMMY_FILE     = "                            "
- CDUMMY_FILETYPE = "      "
- CDUMMY_AREA     = "ALL"
- CDUMMY_ATYPE    = "ARI"
+CDUMMY_NAME     = "                    "
+CDUMMY_FILE     = "                            "
+CDUMMY_FILETYPE = "      "
+CDUMMY_AREA     = "ALL"
+CDUMMY_ATYPE    = "ARI"
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !

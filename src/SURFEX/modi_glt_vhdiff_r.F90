@@ -729,25 +729,25 @@ zdhmelt0 = sum(pdhmelt,dim=1)/dtt
   END DO         ! End of loop on grid cells
 !
 ! .. Change sign of pcondb
-  IF (lp1) THEN
+  IF (lwg) THEN
     ztot_ice_snow= np*nt+SUM(icv,MASK=icv<0)
-    WRITE(noutlu,*)
-    WRITE(noutlu,*) '                         ** WARNING **'
-    WRITE(noutlu,*)  &
-      '  Total number of cases with ice/snow            : ',  &
-      ztot_ice_snow
-    WRITE(noutlu,*)  &
-      '  Convergence failed on # of points              : ',  &
-      np*nt-SUM(ABS(icv))
-    IF ( ztot_ice_snow > 0) THEN 
-       zfailures=100.*FLOAT(np*nt-SUM(ABS(icv)))/ztot_ice_snow
-    ELSE
-       zfailures=0.
-    ENDIF
-    WRITE(noutlu,FMT='(A,F6.2)')  &
-            '   % of failure                                  : ',  &
-            zfailures
-    WRITE(noutlu,*)
+!    WRITE(noutlu,*)
+!    WRITE(noutlu,*) '                         ** WARNING **'
+!    WRITE(noutlu,*)  &
+!      '  Total number of cases with ice/snow            : ',  &
+!      ztot_ice_snow
+!    WRITE(noutlu,*)  &
+!      '  Convergence failed on # of points              : ',  &
+!      np*nt-SUM(ABS(icv))
+!    IF ( ztot_ice_snow > 0) THEN 
+!       zfailures=100.*FLOAT(np*nt-SUM(ABS(icv)))/ztot_ice_snow
+!    ELSE
+!       zfailures=0.
+!    ENDIF
+!    WRITE(noutlu,FMT='(A,F6.2)')  &
+!            '   % of failure                                  : ',  &
+!            zfailures
+!    WRITE(noutlu,*)
   ENDIF
 !
   pcondb(:,:) = -pcondb(:,:)

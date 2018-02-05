@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !#########
 SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,      &
-                          PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,PLAND_RECHARGE,&
+                          PLAND_RUNOFF,PLAND_DRAIN,PLAND_CALVING,               &
                           PLAND_SRCFLOOD,                                       &
                           PLAKE_EVAP,PLAKE_RAIN,PLAKE_SNOW,PLAKE_WATF,          &
                           PSEA_FWSU,PSEA_FWSV,PSEA_HEAT,PSEA_SNET,PSEA_WIND,    &
@@ -42,6 +42,7 @@ SUBROUTINE SFX_OASIS_SEND(KLUOUT,KI,KDATE,OSEND_LAND,OSEND_LAKE,OSEND_SEA,      
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    10/2013
+!!    10/2016 B. Decharme : bug surface/groundwater coupling 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -78,7 +79,6 @@ LOGICAL,             INTENT(IN) :: OSEND_SEA
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RUNOFF    ! Cumulated Surface runoff             (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_DRAIN     ! Cumulated Deep drainage              (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_CALVING   ! Cumulated Calving flux               (kg/m2)
-REAL, DIMENSION(KI), INTENT(IN) :: PLAND_RECHARGE  ! Cumulated Recharge to groundwater    (kg/m2)
 REAL, DIMENSION(KI), INTENT(IN) :: PLAND_SRCFLOOD  ! Cumulated flood freshwater flux      (kg/m2)
 !
 REAL, DIMENSION(KI), INTENT(IN) :: PLAKE_EVAP  ! Cumulated Evaporation              (kg/m2)
@@ -106,7 +106,7 @@ REAL, DIMENSION(KI), INTENT(IN) :: PSEAICE_EVAP ! Cumulated Sea-ice sublimation 
 !
 REAL, DIMENSION(KI,1) :: ZWRITE ! Mean flux send to OASIS (Pa, m/s, W/m2 or kg/m2/s)
 !
- CHARACTER(LEN=50)     :: YCOMMENT
+CHARACTER(LEN=50)     :: YCOMMENT
 INTEGER               :: IERR   ! Error info
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -145,13 +145,6 @@ IF(OSEND_LAND)THEN
     YCOMMENT='calving flux over land'
     CALL OUTVAR(PLAND_CALVING,XTSTEP_CPL_LAND,ZWRITE(:,1))
     CALL OASIS_PUT(NCALVING_ID,KDATE,ZWRITE(:,:),IERR)
-    CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
-  ENDIF
-!
-  IF(LCPL_GW)THEN
-    YCOMMENT='groundwater recharge over land'
-    CALL OUTVAR(PLAND_RECHARGE,XTSTEP_CPL_LAND,ZWRITE(:,1))
-    CALL OASIS_PUT(NRECHARGE_ID,KDATE,ZWRITE(:,:),IERR)
     CALL CHECK_SFX_SEND(KLUOUT,IERR,YCOMMENT,ZWRITE(:,1))
   ENDIF
 !
@@ -314,7 +307,7 @@ ENDIF
 IF (LHOOK) CALL DR_HOOK('SFX_OASIS_SEND',1,ZHOOK_HANDLE)
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !-------------------------------------------------------------------------------
 !
 SUBROUTINE CHECK_SFX_SEND(KLUOUT,KERR,HCOMMENT,PWRITE)
@@ -325,7 +318,7 @@ IMPLICIT NONE
 !
 INTEGER,          INTENT(IN) :: KLUOUT
 INTEGER,          INTENT(IN) :: KERR
- CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
+CHARACTER(LEN=*), INTENT(IN) :: HCOMMENT
 !
 REAL, DIMENSION(:), INTENT(OUT):: PWRITE
 !

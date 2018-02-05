@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_ASCLLV (USS, &
+      SUBROUTINE READ_ASCLLV (UG, U, USS, &
                               HPROGRAM,HSUBROUTINE,HFILENAME)
 !     ##############################################################
 !
@@ -30,8 +30,9 @@
 !            -----------
 !
 !
-!
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,   ONLY : LLATLONMASK
 !
@@ -50,7 +51,9 @@ IMPLICIT NONE
 !            ------------------------
 !
 !
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
@@ -63,10 +66,17 @@ TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
 INTEGER      :: IGLB                       ! logical unit
 !
 INTEGER      :: JLAT, JLON                 ! indexes of OLATLONMASK array
-REAL         :: ZVALUE                     ! values of a data point
-REAL         :: ZLAT                       ! latitude of data point
-REAL         :: ZLON                       ! longitude of data point
 !
+INTEGER*4, PARAMETER :: ILONG=200000
+!
+REAL         :: ZVALUER
+REAL, DIMENSION(ILONG) :: ZVALUE          ! values of a data point
+REAL         :: ZLATR
+REAL, DIMENSION(ILONG) :: ZLAT              ! latitude of data point
+REAL         :: ZLONR, ZLONR2
+REAL, DIMENSION(ILONG) :: ZLON              ! longitude of data point
+!
+INTEGER :: ICPT, ISTAT
 INTEGER      :: ILUOUT                     ! output listing
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
@@ -79,6 +89,12 @@ IF (LHOOK) CALL DR_HOOK('READ_ASCLLV',0,ZHOOK_HANDLE)
 !
  CALL GET_LUOUT(HPROGRAM,ILUOUT)
 !
+ICPT = 0
+!
+ZLAT(:) = 0
+ZLON(:) = 0
+ZVALUE(:) = 0
+!
 !----------------------------------------------------------------------------
 DO
 !----------------------------------------------------------------------------
@@ -86,32 +102,56 @@ DO
 !*    3.     Reading of a data point
 !            -----------------------
 !
-  READ(IGLB,*,END=99) ZLAT,ZLON,ZVALUE
+  READ(IGLB,*,IOSTAT=ISTAT) ZLATR,ZLONR,ZVALUER
 !
 !----------------------------------------------------------------------------
 !
 !*    4.     Test if point is in MESO-NH domain
 !            ----------------------------------
 !
-  ZLON=ZLON+NINT((180.-ZLON)/360.)*360.
+  IF (ISTAT==0) THEN
+    !
+    ZLONR2=ZLONR+NINT((180.-ZLONR)/360.)*360.
+    !
+    JLAT = 1 + INT( ( ZLATR + 90. ) * 2. )
+    JLAT = MIN(JLAT,360)
+    JLON = 1 + INT( ( ZLONR2      ) * 2. )
+    JLON = MIN(JLON,720)
+    !
+    IF (.NOT. LLATLONMASK(JLON,JLAT)) CYCLE
+    !
+    ICPT = ICPT + 1
+    !
+    IF (ICPT<=ILONG) THEN
+      !
+      ZLAT  (ICPT) = ZLATR
+      ZLON  (ICPT) = ZLONR
+      ZVALUE(ICPT) = ZVALUER
+      !
+    ENDIF
+    !
+  ENDIF
+    !
+  IF (ISTAT==-1 .OR. ICPT==ILONG) THEN
+    !
+    !-------------------------------------------------------------------------------
+    !
+    !*    5.     Call to the adequate subroutine (point by point treatment)
+    !            ----------------------------------------------------------
+    !
+    CALL PT_BY_PT_TREATMENT(UG, U, USS, ILUOUT, &
+            ZLAT(1:ICPT), ZLON(1:ICPT), ZVALUE(1:ICPT), HSUBROUTINE    )  
+    !
+    ICPT = 0
+    ZLAT  (:) = 0.
+    ZLON  (:) = 0.
+    ZVALUE(:) = 0.
+    !
+  ENDIF
   !
-  JLAT = 1 + INT( ( ZLAT + 90. ) * 2. )
-  JLAT = MIN(JLAT,360)
-  JLON = 1 + INT( ( ZLON       ) * 2. )
-  JLON = MIN(JLON,720)
+  IF (ISTAT==-1) EXIT
   !
-  IF (.NOT. LLATLONMASK(JLON,JLAT)) CYCLE
-!
-!-------------------------------------------------------------------------------
-!
-!*    5.     Call to the adequate subroutine (point by point treatment)
-!            ----------------------------------------------------------
-!     
-  CALL PT_BY_PT_TREATMENT(USS, &
-                          ILUOUT,  (/ ZLAT /) , (/ ZLON /) , (/ ZVALUE /) , &
-                            HSUBROUTINE                                       )  
-!
-!-------------------------------------------------------------------------------
+  !-------------------------------------------------------------------------------
 ENDDO
 !
 !----------------------------------------------------------------------------

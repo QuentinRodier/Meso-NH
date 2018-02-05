@@ -47,6 +47,7 @@ END MODULE MODI_PREP_SURF_MNH
 !!      Original    01/2004
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!    P.Wautelet : 08/07/2016 : removed MNH_NCWRIT define
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !------------------------------------------------------------------
 !
 USE MODD_IO_SURF_MNH, ONLY : COUTFILE
@@ -54,6 +55,8 @@ USE MODD_LUNIT,       ONLY : TLUOUT0, TOUTDATAFILE
 USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
 USE MODD_TIME_n,      ONLY : TDTCUR
+!
+USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODI_INIT_PGD_SURF_ATM
 USE MODI_PREP_SURF_ATM
@@ -70,6 +73,8 @@ CHARACTER(LEN=6),  INTENT(IN)   :: HATMFILETYPE! type of the Atmospheric file
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
+!
+TYPE (PREP_CTL) :: YLCTL
 !
 CHARACTER(LEN=28)  :: YPGDFILE  ='                            '  ! name of the pgd file
 CHARACTER(LEN=6)   :: YPGDFILETYPE ='      '                     ! type of the pgd file
@@ -93,7 +98,7 @@ IF (LEN_TRIM(HATMFILE)==0) YATMFILETYPE='      '
 CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HATMFILE,YATMFILETYPE,  &
                        TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
                        TDTCUR%TDATE%DAY, TDTCUR%TIME          )
-CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE)
+CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE,YLCTL)
 CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','PRE',.FALSE.)
 CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','PRE')
 !

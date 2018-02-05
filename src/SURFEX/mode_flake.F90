@@ -131,95 +131,60 @@ REAL,PARAMETER,PRIVATE :: Z_=-HUGE(0.0)
 
 !  Temperatures at the previous time step ("p") and the updated temperatures ("n") 
 REAL :: T_mnw_p_flk=Z_, T_mnw_n_flk=Z_      ! Mean temperature of the water column [K] 
-!$OMP THREADPRIVATE(T_mnw_p_flk, T_mnw_n_flk)
 REAL :: T_snow_p_flk=Z_, T_snow_n_flk=Z_    ! Temperature at the air-snow interface [K] 
-!$OMP THREADPRIVATE(T_snow_p_flk, T_snow_n_flk)
 REAL :: T_ice_p_flk=Z_, T_ice_n_flk=Z_      ! Temperature at the snow-ice or air-ice interface [K] 
-!$OMP THREADPRIVATE(T_ice_p_flk, T_ice_n_flk) 
 REAL :: T_wML_p_flk=Z_, T_wML_n_flk=Z_      ! Mixed-layer temperature [K] 
-!$OMP THREADPRIVATE(T_wML_p_flk, T_wML_n_flk)
 REAL :: T_bot_p_flk=Z_, T_bot_n_flk=Z_      ! Temperature at the water-bottom sediment interface [K] 
-!$OMP THREADPRIVATE(T_bot_p_flk, T_bot_n_flk)
 REAL :: T_B1_p_flk=Z_, T_B1_n_flk=Z_        ! Temperature at the bottom of the upper layer of the sediments [K]   
-!$OMP THREADPRIVATE(T_B1_p_flk, T_B1_n_flk) 
 
 !  Thickness of various layers at the previous time step ("p") and the updated values ("n") 
 REAL :: h_snow_p_flk=Z_, h_snow_n_flk=Z_    ! Snow thickness [m]*
-!$OMP THREADPRIVATE(h_snow_p_flk, h_snow_n_flk)
 REAL :: h_ice_p_flk=Z_, h_ice_n_flk=Z_      ! Ice thickness [m]
-!$OMP THREADPRIVATE(h_ice_p_flk, h_ice_n_flk)
 REAL :: h_ML_p_flk=Z_, h_ML_n_flk=Z_        ! Thickness of the mixed-layer [m] 
-!$OMP THREADPRIVATE(h_ML_p_flk, h_ML_n_flk)  
 REAL :: H_B1_p_flk=Z_, H_B1_n_flk=Z_        ! Thickness of the upper layer of bottom sediments [m]   
-!$OMP THREADPRIVATE(H_B1_p_flk, H_B1_n_flk)
 
 !  The shape factor(s) at the previous time step ("p") and the updated value(s) ("n") 
 REAL :: C_T_p_flk=Z_, C_T_n_flk=Z_          ! Shape factor (thermocline)
-!$OMP THREADPRIVATE(C_T_p_flk, C_T_n_flk)  
 REAL :: C_TT_flk=Z_                      ! Dimensionless parameter (thermocline)
-!$OMP THREADPRIVATE(C_TT_flk)
 REAL :: C_Q_flk=Z_                       ! Shape factor with respect to the heat flux (thermocline)
-!$OMP THREADPRIVATE(C_Q_flk)
 REAL :: C_I_flk=Z_                       ! Shape factor (ice)
-!$OMP THREADPRIVATE(C_I_flk)
 REAL :: C_S_flk=Z_                       ! Shape factor (snow) 
-!$OMP THREADPRIVATE(C_S_flk) 
 
 !  Derivatives of the shape functions
 REAL :: Phi_T_pr0_flk=Z_                 ! d\Phi_T(0)/d\zeta   (thermocline)
-!$OMP THREADPRIVATE(Phi_T_pr0_flk) 
 REAL :: Phi_I_pr0_flk=Z_                 ! d\Phi_I(0)/d\zeta_I (ice)
-!$OMP THREADPRIVATE(Phi_I_pr0_flk)
 REAL :: Phi_I_pr1_flk=Z_                 ! d\Phi_I(1)/d\zeta_I (ice)
-!$OMP THREADPRIVATE(Phi_I_pr1_flk)
 REAL :: Phi_S_pr0_flk=Z_                 ! d\Phi_S(0)/d\zeta_S (snow)  
-!$OMP THREADPRIVATE(Phi_S_pr0_flk)  
 
 !  Heat and radiation fluxes
 REAL :: Q_snow_flk=Z_                    ! Heat flux through the air-snow interface [W m^{-2}]
-!$OMP THREADPRIVATE(Q_snow_flk)  
 REAL :: Q_ice_flk=Z_                     ! Heat flux through the snow-ice or air-ice interface [W m^{-2}]
-!$OMP THREADPRIVATE(Q_ice_flk)  
 REAL :: Q_w_flk=Z_                       ! Heat flux through the ice-water or air-water interface [W m^{-2}]
-!$OMP THREADPRIVATE(Q_w_flk) 
 REAL :: Q_bot_flk=Z_                     ! Heat flux through the water-bottom sediment interface [W m^{-2}]
-!$OMP THREADPRIVATE(Q_bot_flk)   
 REAL :: I_atm_flk=Z_                     ! Radiation flux at the lower boundary of the atmosphere [W m^{-2}],
                                     ! i.e. the incident radiation flux with no regard for the surface albedo.
-!$OMP THREADPRIVATE(I_atm_flk)                                  
 REAL :: I_snow_flk=Z_                    ! Radiation flux through the air-snow interface [W m^{-2}]
-!$OMP THREADPRIVATE(I_snow_flk)  
 REAL :: I_ice_flk=Z_                     ! Radiation flux through the snow-ice or air-ice interface [W m^{-2}]
-!$OMP THREADPRIVATE(I_ice_flk)  
 REAL :: I_w_flk=Z_                       ! Radiation flux through the ice-water or air-water interface [W m^{-2}]
-!$OMP THREADPRIVATE(I_w_flk)  
 REAL :: I_h_flk=Z_                       ! Radiation flux through the mixed-layer-thermocline interface [W m^{-2}]
-!$OMP THREADPRIVATE(I_h_flk)
 REAL :: I_bot_flk=Z_                     ! Radiation flux through the water-bottom sediment interface [W m^{-2}]
-!$OMP THREADPRIVATE(I_bot_flk)
 REAL :: I_intm_0_h_flk=Z_                ! Mean radiation flux over the mixed layer [W m^{-1}]
-!$OMP THREADPRIVATE(I_intm_0_h_flk)   
 REAL :: I_intm_h_D_flk=Z_                ! Mean radiation flux over the thermocline [W m^{-1}]
-!$OMP THREADPRIVATE(I_intm_h_D_flk)   
 REAL :: Q_star_flk=Z_                        ! A generalized heat flux scale [W m^{-2}]  
-!$OMP THREADPRIVATE(Q_star_flk)  
 
 !  Velocity scales
 REAL :: u_star_w_flk=Z_                  ! Friction velocity in the surface layer of lake water [m s^{-1}]
-!$OMP THREADPRIVATE(u_star_w_flk)   
 REAL :: w_star_sfc_flk=Z_                 ! Convective velocity scale,   
                                     ! using a generalized heat flux scale [m s^{-1}]
-!$OMP THREADPRIVATE(w_star_sfc_flk)                                  
 
 !  The rate of snow accumulation
 REAL :: dMsnowdt_flk=Z_                      ! The rate of snow accumulation [kg m^{-2} s^{-1}]  
-!$OMP THREADPRIVATE(dMsnowdt_flk)
 
 !==============================================================================
 ! Procedures 
 !==============================================================================
 
- CONTAINS
+CONTAINS
 
 !==============================================================================
 !  The codes of the FLake procedures are stored in separate "*.incf" files
@@ -555,7 +520,7 @@ h_snow_n_flk = h_snow_p_flk
 h_ice_n_flk  = h_ice_p_flk   
 h_ML_n_flk   = h_ML_p_flk    
 H_B1_n_flk   = H_B1_p_flk   
- C_T_n_flk    = C_T_p_flk    
+C_T_n_flk    = C_T_p_flk    
 
 !------------------------------------------------------------------------------
 !  Compute fluxes, using variables from the previous time step.

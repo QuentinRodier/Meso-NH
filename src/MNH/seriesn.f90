@@ -42,6 +42,7 @@
 !!      Original    4/03/2002
 !!         Oct. 2011 : (P.Le Moigne) Surface series
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  01/2018      (G.Delautier) SURFEX 8.1
 !-------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS
@@ -132,10 +133,9 @@ END IF
 IF (LSURF) THEN
    KI=(IIE-IIB+1)*(IJE-IJB+1)
    ALLOCATE(ZSERIES(KI,5))
-   CALL GET_SURF_VAR_n(YSURF_CUR%FM%DGF,YSURF_CUR%IM%I,YSURF_CUR%IM%DGI,&
-                       YSURF_CUR%IM%DGMI,YSURF_CUR%SM%DGS,YSURF_CUR%DGU,&
-                       YSURF_CUR%TM%DGT,YSURF_CUR%WM%DGW,YSURF_CUR%FM%F,&
-                       YSURF_CUR%UG, YSURF_CUR%U, YSURF_CUR%USS,&
+   CALL GET_SURF_VAR_n(YSURF_CUR%FM,YSURF_CUR%IM,YSURF_CUR%SM,YSURF_CUR%TM, &
+                       YSURF_CUR%WM,YSURF_CUR%DUO,YSURF_CUR%DU,YSURF_CUR%UG,& 
+                       YSURF_CUR%U, YSURF_CUR%USS,&
                        'MESONH',KI,5,PSERIES=ZSERIES)
    ZTS(:,:)=0.
    ZTMNW(:,:)=0.

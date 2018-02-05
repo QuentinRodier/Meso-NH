@@ -157,23 +157,23 @@ ENDIF
 ! 2.2. Initialize lead temperature and sea ice-ocean fluxes
 ! ----------------------------------------------------------
 !
- CALL initfl( tpglt%tfl )
+CALL initfl( tpglt%tfl )
 !
 !
 ! 2.3. Initialize diagnostics
 ! ----------------------------
 !
- CALL inidia( tpglt%ind,tpglt%dia,tpglt%cdia0,tpglt%cdia )
- CALL gltools_timers('end inidia') 
+CALL inidia( tpglt%ind,tpglt%dia,tpglt%cdia0,tpglt%cdia )
+CALL gltools_timers('end inidia') 
 !
 !
 ! 2.4. Budgets initialization
 ! ----------------------------
 !
- CALL glt_inibud( tpglt%bud )
+CALL glt_inibud( tpglt%bud )
 !
- CALL glt_info_si( 'Initial conditions:',tpglt%dom,tpsit=tpglt%sit )
- CALL gltools_timers('end inibud') 
+CALL glt_info_si( 'Initial conditions:',tpglt%dom,tpsit=tpglt%sit )
+CALL gltools_timers('end inibud') 
 !
 !
 !
@@ -207,7 +207,7 @@ IF ( tpglt%ind%cur==tpglt%ind%beg ) CALL inisal( tpglt%dom,tpglt%tml,tpglt%sit )
 ! .. This is done even if glt_updbud flag is off, to allow the computation
 ! of certain diagnostics if wished by the user.
 !
- CALL glt_updbud( 1,'Initial conditions:',  &
+CALL glt_updbud( 1,'Initial conditions:',  &
   tpglt%dom,tpglt%tml,tpglt%tfl,tpglt%atm_all,tpglt%blkw,tpglt%blki,  &
   tpglt%sit,tpglt%sil,tpglt%bud )
 !
@@ -232,7 +232,7 @@ ELSE
     tpglt%bud,tpglt%dia,tpglt%tfl,tpglt%sit,tpglt%sil,tpsit_d=tpglt%sit_d )
 ENDIF
 !
- CALL gltools_timers('end thermo') 
+CALL gltools_timers('end thermo') 
 !
 !
 IF (lp1) THEN

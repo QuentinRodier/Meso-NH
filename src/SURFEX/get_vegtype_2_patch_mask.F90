@@ -6,12 +6,9 @@ SUBROUTINE GET_VEGTYPE_2_PATCH_MASK(  &
         KLUOUT,                            &! output listing logical unit
        KSIZE_VEG,                         &!I Size of a vegetation vector within a patch vector
        KSIZE_PATCH,                       &!I Size of a patch within a nature vector
-       KSIZE_NAT,                         &!I Size of nature vector
        KMASK_PATCH_NATURE,                &!I Mask to transform from patch vector to nature vector
        PVEGTYPE_PATCH,                    &!I Fraction of a nature point #i with vegetation #j which is packed to patch #k
        KMASK,                             &!O Mask from vegtype vector to patch vector
-       KPATCH_MAX,                        &!I Number of possible patches
-       KPATCH,                            &!I Index of patch in question
        KVEGTYPE                          &!I Index of vegtype in question
        )      
 !
@@ -43,14 +40,11 @@ IMPLICIT NONE
 INTEGER, INTENT(IN)                        :: KLUOUT               !Output listing logical unit
 INTEGER, INTENT(IN)                        :: KSIZE_VEG            !Size of vegetation vector in question
 INTEGER, INTENT(IN)                        :: KSIZE_PATCH          !Size of patch vector in question
-INTEGER, INTENT(IN)                        :: KSIZE_NAT            !Size of nature vector
-INTEGER, INTENT(IN),DIMENSION(KSIZE_PATCH) :: KMASK_PATCH_NATURE   !PATCH -->NATURE mask
-INTEGER, INTENT(IN)                        :: KPATCH_MAX           !Number of possible patches
+INTEGER, INTENT(IN),DIMENSION(:)           :: KMASK_PATCH_NATURE   !PATCH -->NATURE mask
 !
-INTEGER, INTENT(IN)                        :: KPATCH   !Patch in question
 INTEGER, INTENT(IN)                        :: KVEGTYPE !Vegtype in quesition
 
-REAL, DIMENSION(KSIZE_NAT,NVEGTYPE,KPATCH_MAX), INTENT(IN)  :: PVEGTYPE_PATCH  !Fraction of nature point in npatch with nveg vegetation
+REAL, DIMENSION(:,:), INTENT(IN)  :: PVEGTYPE_PATCH  !Fraction of nature point in npatch with nveg vegetation
 !
 !OUTPUT
 INTEGER, DIMENSION(KSIZE_VEG), INTENT(OUT)   :: KMASK     !vegetation type to patch
@@ -71,7 +65,7 @@ KMASK(:)              = 0
 KK=1  !First point of vegetation-vector
 DO JJ=1,KSIZE_PATCH                  !Number of points in the patch in question
    II=KMASK_PATCH_NATURE(JJ)         !Nature-index corresponding to the point in question
-   IF(PVEGTYPE_PATCH(II,KVEGTYPE,KPATCH)>0.)THEN
+   IF(PVEGTYPE_PATCH(II,KVEGTYPE)>0.)THEN
       KMASK(KK)=JJ
       KK=KK+1
    ENDIF

@@ -104,10 +104,10 @@ IF (LHOOK) CALL DR_HOOK('PGD_TSZ0_PAR',0,ZHOOK_HANDLE)
 NTIME             = 25
 XUNIF_DTS (:)     = -0.250
 XUNIF_DHUGRD(:)   = 0.0
- CFNAM_DTS   (:) = '                            '
- CFNAM_DHUGRD(:) = '                            '
- CFTYP_DTS   (:) = '      '
- CFTYP_DHUGRD(:) = '      '
+CFNAM_DTS   (:) = '                            '
+CFNAM_DHUGRD(:) = '                            '
+CFTYP_DTS   (:) = '      '
+CFTYP_DHUGRD(:) = '      '
 !
 !-------------------------------------------------------------------------------
 !

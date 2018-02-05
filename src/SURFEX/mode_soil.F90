@@ -114,7 +114,7 @@ INTERFACE ANISO_FUNC
 END INTERFACE
 !
 !-------------------------------------------------------------------------------
- CONTAINS
+CONTAINS
 !
    FUNCTION WSAT_FUNC_2D(PCLAY,PSAND,HPEDOTF)
    USE MODD_SURF_PAR,   ONLY : XUNDEF

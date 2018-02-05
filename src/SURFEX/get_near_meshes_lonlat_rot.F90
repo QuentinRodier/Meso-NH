@@ -34,6 +34,7 @@
 !
 USE MODE_GRIDTYPE_LONLAT_ROT
 !
+USE MODD_SURFEX_MPI, ONLY : NINDEX, NRANK, NNUM
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -74,15 +75,17 @@ IF (ILON*ILAT==KL) THEN
     DO JLON=1,ILON
       ICOUNT = 0
       JL = JLON + ILON * (JLAT-1)
-      KNEAR(JL,:) = 0      
-      DO JX=-(IDIST-1)/2,IDIST/2
-        DO JY=-(IDIST-1)/2,IDIST/2
-          IF (JLON+JX>0 .AND. JLON+JX<ILON+1 .AND. JLAT+JY>0 .AND. JLAT+JY<ILAT+1) THEN
-            ICOUNT = ICOUNT + 1
-            KNEAR(JL,ICOUNT) = (JLON+JX) + ILON * (JLAT+JY-1)
-          END IF
+      IF (NINDEX(JL)==NRANK) THEN
+        KNEAR(NNUM(JL),:) = 0      
+        DO JX=-(IDIST-1)/2,IDIST/2
+          DO JY=-(IDIST-1)/2,IDIST/2
+            IF (JLON+JX>0 .AND. JLON+JX<ILON+1 .AND. JLAT+JY>0 .AND. JLAT+JY<ILAT+1) THEN
+              ICOUNT = ICOUNT + 1
+              KNEAR(NNUM(JL),ICOUNT) = (JLON+JX) + ILON * (JLAT+JY-1)
+            END IF
+          END DO
         END DO
-      END DO
+      END IF
     END DO
   END DO
 END IF

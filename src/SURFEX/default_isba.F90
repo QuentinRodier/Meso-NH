@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     ######### 
       SUBROUTINE DEFAULT_ISBA(PTSTEP, POUT_TSTEP,                        &
-                              HROUGH, HRUNOFF, HALBEDO, HSCOND,          &
+                              HRUNOFF, HSCOND,                           &
                               HC1DRY, HSOILFRZ, HDIFSFCOND, HSNOWRES,    &
                               HCPSURF, PCGMAX, PCDRAG, HKSAT, OSOC,      &
                               HRAIN, HHORT, OGLACIER, OCANOPY_DRAG,      &
@@ -60,21 +60,15 @@ IMPLICIT NONE
 !
 REAL,              INTENT(OUT) :: PTSTEP     ! time-step for run
 REAL,              INTENT(OUT) :: POUT_TSTEP ! time-step for writing
- CHARACTER(LEN=4),  INTENT(OUT) :: HROUGH   ! type of roughness length
- CHARACTER(LEN=4),  INTENT(OUT) :: HALBEDO  ! albedo type
-!                                          ! 'DRY ' 
-!                                          ! 'EVOL' 
-!                                          ! 'WET ' 
-!                                          ! 'USER' 
- CHARACTER(LEN=4),  INTENT(OUT) :: HSCOND   ! Thermal conductivity
+CHARACTER(LEN=4),  INTENT(OUT) :: HSCOND   ! Thermal conductivity
 !                                          ! 'DEF ' = DEFault: NP89 implicit method
 !                                          ! 'PL98' = Peters-Lidard et al. 1998 used
 !                                          ! for explicit computation of CG
- CHARACTER(LEN=4),  INTENT(OUT) :: HC1DRY   ! C1 formulation for dry soils
+CHARACTER(LEN=4),  INTENT(OUT) :: HC1DRY   ! C1 formulation for dry soils
 !                                          ! 'DEF ' = DEFault: Giard-Bazile formulation
 !                                          ! 'GB93' = Giordani 1993, Braud 1993 
 !                                          !discontinuous at WILT
- CHARACTER(LEN=3),  INTENT(OUT) :: HSOILFRZ ! soil freezing-physics option
+CHARACTER(LEN=3),  INTENT(OUT) :: HSOILFRZ ! soil freezing-physics option
 !                                          ! 'DEF' = Default (Boone et al. 2000; 
 !                                          !        Giard and Bazile 2000)
 !                                          ! 'LWT' = Phase changes as above,
@@ -84,30 +78,30 @@ REAL,              INTENT(OUT) :: POUT_TSTEP ! time-step for writing
 !                            the 'LWT' method is used. It is only an option
 !                            when using the force-restore soil method ('2-L' or '3-L')
 !
- CHARACTER(LEN=4),  INTENT(OUT) :: HDIFSFCOND ! Mulch effects
+CHARACTER(LEN=4),  INTENT(OUT) :: HDIFSFCOND ! Mulch effects
 !                                          ! 'MLCH' = include the insulating effect of
 !                                          ! leaf litter/mulch on the surf. thermal cond.
 !                                          ! 'DEF ' = no mulch effect
 !                           NOTE: Only used when YISBA = DIF
 !
- CHARACTER(LEN=3), INTENT(OUT) :: HSNOWRES  ! Turbulent exchanges over snow
+CHARACTER(LEN=3), INTENT(OUT) :: HSNOWRES  ! Turbulent exchanges over snow
 !                                          ! 'DEF' = Default: Louis (ISBA)
 !                                          ! 'RIL' = Maximum Richardson number limit
 !                                          !         for stable conditions ISBA-SNOW3L
 !                                          !         turbulent exchange option
- CHARACTER(LEN=3), INTENT(OUT) :: HCPSURF   ! SPECIFIC HEAT
+CHARACTER(LEN=3), INTENT(OUT) :: HCPSURF   ! SPECIFIC HEAT
 !                                          ! 'DRY' = dry Cp
 !                                          ! 'HUM' = Cp fct of qs
 REAL,              INTENT(OUT) :: PCGMAX   ! maximum soil heat capacity
 !
 REAL,              INTENT(OUT) :: PCDRAG   ! drag coefficient in canopy
 !
- CHARACTER(LEN=4),  INTENT(OUT) :: HRUNOFF  ! surface runoff formulation
+CHARACTER(LEN=4),  INTENT(OUT) :: HRUNOFF  ! surface runoff formulation
 !                                          ! 'WSAT'
 !                                          ! 'DT92'
 !                                          ! 'SGH ' Topmodel
 !
- CHARACTER(LEN=3), INTENT(OUT) :: HKSAT     ! SOIL HYDRAULIC CONDUCTIVITY PROFILE OPTION
+CHARACTER(LEN=3), INTENT(OUT) :: HKSAT     ! SOIL HYDRAULIC CONDUCTIVITY PROFILE OPTION
 !                                          ! 'DEF'  = ISBA homogenous soil
 !                                          ! 'SGH'  = ksat exponential decay
 !
@@ -115,12 +109,12 @@ LOGICAL, INTENT(OUT) ::          OSOC      ! SOIL ORGANIC CARBON PROFILE OPTION
 !                                          ! False  = ISBA homogenous soil
 !                                          ! True   = SOC profile effect
 !
- CHARACTER(LEN=3), INTENT(OUT) :: HRAIN     ! Rainfall spatial distribution
+CHARACTER(LEN=3), INTENT(OUT) :: HRAIN     ! Rainfall spatial distribution
                                            ! 'DEF' = No rainfall spatial distribution
                                            ! 'SGH' = Rainfall exponential spatial distribution
                                            ! 
 ! 
- CHARACTER(LEN=3), INTENT(OUT) :: HHORT     ! Horton runoff
+CHARACTER(LEN=3), INTENT(OUT) :: HHORT     ! Horton runoff
                                            ! 'DEF' = no Horton runoff
                                            ! 'SGH' = Horton runoff
 !                                         
@@ -157,12 +151,7 @@ IF (LHOOK) CALL DR_HOOK('DEFAULT_ISBA',0,ZHOOK_HANDLE)
 !
 PTSTEP     = XUNDEF
 POUT_TSTEP = XUNDEF
-!!!!!do not phased!!!!!!!
-!HROUGH  = "NONE"
-!!!!!do not phased!!!!!!!
-HROUGH  = "UNDE"  ! undefined. Needs further information on canopy scheme use to set default
 HSCOND  = "PL98"
-HALBEDO = "DRY "
 !
 HC1DRY     = 'DEF '
 HSOILFRZ   = 'DEF'

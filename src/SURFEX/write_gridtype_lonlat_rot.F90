@@ -3,8 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #################################################################
-      SUBROUTINE WRITE_GRIDTYPE_LONLAT_ROT (DGU, U, &
-                                            HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
+      SUBROUTINE WRITE_GRIDTYPE_LONLAT_ROT (HSELECT,HPROGRAM,KLU,KGRID_PAR,PGRID_PAR,KRESP)
 !     #################################################################
 !
 !!****  *WRITE_GRIDTYPE_LONLAT_ROT* - routine to write the horizontal grid
@@ -38,11 +37,6 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-USE MODD_DIAG_SURF_ATM_n, ONLY : DIAG_SURF_ATM_t
-USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
-!
 USE MODI_WRITE_SURF
 !
 USE MODE_GRIDTYPE_LONLAT_ROT
@@ -56,11 +50,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
+ CHARACTER(LEN=*), DIMENSION(:), INTENT(IN) :: HSELECT
 !
-TYPE(DIAG_SURF_ATM_t), INTENT(INOUT) :: DGU
-TYPE(SURF_ATM_t), INTENT(INOUT) :: U
-!
- CHARACTER(LEN=6),           INTENT(IN)  :: HPROGRAM   ! calling program
+CHARACTER(LEN=6),           INTENT(IN)  :: HPROGRAM   ! calling program
 INTEGER,                    INTENT(IN)  :: KLU        ! number of points
 INTEGER,                    INTENT(IN)  :: KGRID_PAR  ! size of PGRID_PAR
 REAL, DIMENSION(KGRID_PAR), INTENT(IN)  :: PGRID_PAR  ! parameters defining this grid
@@ -81,7 +73,7 @@ INTEGER :: IL      ! number of points
 REAL, DIMENSION(:), ALLOCATABLE :: ZLON ! longitude of points
 REAL, DIMENSION(:), ALLOCATABLE :: ZLAT ! latitude  of points
 !
- CHARACTER(LEN=100)                :: YCOMMENT ! comment written in the file
+CHARACTER(LEN=100)                :: YCOMMENT ! comment written in the file
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !
@@ -89,7 +81,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !              ---------------
 !
 IF (LHOOK) CALL DR_HOOK('WRITE_GRIDTYPE_LONLAT_ROT',0,ZHOOK_HANDLE)
- CALL GET_GRIDTYPE_LONLAT_ROT(PGRID_PAR,                                 &
+ CALL GET_GRIDTYPE_LONLAT_ROT(PGRID_PAR,                                &
                                ZWEST,ZSOUTH,ZDLON,ZDLAT,ZPOLON,ZPOLAT,  &
                                ILON,ILAT,IL                             )  
 !
@@ -103,26 +95,16 @@ ALLOCATE(ZLAT(IL))
 !              -----------------------------------------
 !
 YCOMMENT=' '
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'WEST',ZWEST,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'SOUTH',ZSOUTH,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'DLON',ZDLON,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'DLAT',ZDLAT,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'POLON',ZPOLON,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'POLAT',ZPOLAT,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'NLON',ILON,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'NLAT',ILAT,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'REG_LON',ZLON,KRESP,YCOMMENT)
- CALL WRITE_SURF(DGU, U, &
-                 HPROGRAM,'REG_LAT',ZLAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'WEST',ZWEST,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'SOUTH',ZSOUTH,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'DLON',ZDLON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'DLAT',ZDLAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'POLON',ZPOLON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'POLAT',ZPOLAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'NLON',ILON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'NLAT',ILAT,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'REG_LON',ZLON,KRESP,YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,'REG_LAT',ZLAT,KRESP,YCOMMENT)
 !---------------------------------------------------------------------------
 DEALLOCATE(ZLON)
 DEALLOCATE(ZLAT)

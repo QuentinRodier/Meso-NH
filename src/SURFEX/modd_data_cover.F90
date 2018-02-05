@@ -100,22 +100,11 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_ROOT_LIN       ! ponderation coeffi
 !       
 !-------------------------------------------------------------------------------
 !
-! - vegetation: Ags parameters ('AGS', 'LAI', 'AST', 'LST', 'NIT', 'NCB' options)
+! - vegetation: Ags parameters ('AST', 'NIT', 'NCB' options)
 !
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_BSLAI   ! ratio d(biomass)/d(lai)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_LAIMIN  ! minimum LAI
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_SEFOLD  ! e-folding time for senescence (s)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_H_TREE  ! height of vegetation
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GMES    ! mesophyll conductance (m s-1)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RE25    ! Ecosystem Respiration parameter (kg.m2.s-1)
-!
-!-------------------------------------------------------------------------------
-!
-! - vegetation: Ags Stress parameters ('AST', 'LST', 'NIT', 'NCB' options)
-!
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_STRESS  !  defensive/offensive strategy (1/0)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_F2I     ! critical normilized soil water 
-!                                                    ! content for stress parameterisation
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GC      ! cuticular conductance (m/s)
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_DMAX    ! maximum air saturation deficit
 !                                                    ! tolerate by vegetation       (kg/kg)
@@ -126,6 +115,18 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GMES_ST   ! mesophyll conductance (
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GC_ST     ! cuticular conductance (m/s)
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_DMAX_ST   ! maximum air saturation deficit
 !                                                      ! tolerate by vegetation       (kg/kg)
+!-------------------------------------------------------------------------------
+!
+! - vegetation: Ags Stress parameters ('AST', 'NIT', 'NCB' options)
+!
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_LAIMIN  ! minimum LAI
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_H_TREE  ! height of vegetation
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RE25    ! Ecosystem Respiration parameter (kg.m2.s-1)
+!
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_STRESS  !  defensive/offensive strategy (1/0)
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_F2I     ! critical normilized soil water 
+!                                                    ! content for stress parameterisation
+!
 !-------------------------------------------------------------------------------
 !
 ! - vegetation: Ags Nitrogen-model parameters ('NIT', 'NCB' option)
@@ -143,7 +144,7 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GROUND_DEPTH   ! total soil depth
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_ROOT_DEPTH     ! root depth
 !-------------------------------------------------------------------------------
 !
-! - Vegetation: Ags Prognostic (YPHOTO = ('LAI', 'LST', 'NIT', or 'NCB') or prescribed (YPHOTO='NON', 'AGS' or 'AST')
+! - Vegetation: Ags Prognostic (YPHOTO = ('NIT', or 'NCB') or prescribed (YPHOTO='NON' or 'AST')
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_LAI    ! leaf area index (monthly)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_LAI_ALL_YEARS ! leaf area index fromm 2002 to 2007       
@@ -224,16 +225,8 @@ REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_TC_FLOOR     ! thermal conductivity o
 REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_D_FLOOR      ! thickness of floor layers [m]
 !
 ! For multi-energy balance (MEB)
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RGLGV              ! 
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_GAMMAGV            !
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_RSMINGV            ! Understory minimum
-!                                                               ! stomatal resistance 
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_ROOT_EXTINCTIONGV  ! Understory Jackson coefficient
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XDATA_WRMAX_CFGV
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_LAIGV              ! Understory LAI
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_GNDLITTER          ! Ground litter coverage
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_Z0LITTER           ! Ground litter roughness length
-REAL, DIMENSION(:,:), ALLOCATABLE :: XDATA_ROOT_DEPTHGV       ! Understory root depth
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: XDATA_H_VEG              ! Height of canopy vegetation
 !
 REAL, DIMENSION(:),   ALLOCATABLE :: XDATA_TCOOL_TARGET ! cooling setpoint of indoor air

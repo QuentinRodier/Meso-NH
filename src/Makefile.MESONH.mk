@@ -49,9 +49,11 @@ DIR_MASTER += $(DIR_MNH)
 CPPFLAGS   += $(CPPFLAGS_MNH)
 INC        += $(INC_MNH)
 
-ifeq "$(MNH_INT)" "8"
-CPPFLAGS   += -DMNH_INT=8
-endif
+#
+# MNH integer 4/8
+#
+CPPFLAGS   += -DMNH_INT=$(MNH_INT)
+#
 
 #
 #  Len of HREC characters 

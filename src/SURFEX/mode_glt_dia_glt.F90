@@ -76,7 +76,7 @@ MODULE mode_glt_dia_glt
 ! !
 ! END INTERFACE
 
- CONTAINS 
+CONTAINS 
 !
 ! ---------------------- END MODULE modi_glt_dia_glt ------------------------
 !

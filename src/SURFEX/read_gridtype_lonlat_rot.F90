@@ -59,7 +59,7 @@ IMPLICIT NONE
 !
 !
 !
- CHARACTER(LEN=6),       INTENT(IN)    :: HPROGRAM   ! calling program
+CHARACTER(LEN=6),       INTENT(IN)    :: HPROGRAM   ! calling program
 INTEGER,                INTENT(INOUT) :: KGRID_PAR  ! real size of PGRID_PAR
 INTEGER,                INTENT(IN)    :: KLU        ! number of points
 LOGICAL,                INTENT(IN)    :: OREAD      ! flag to read the grid
@@ -88,7 +88,6 @@ REAL, DIMENSION(KLU) :: ZLAT ! latitudes
 INTEGER :: ILUOUT
 !---------------------------------------------------------------------------
 REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
-!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !

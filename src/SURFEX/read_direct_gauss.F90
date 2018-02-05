@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_DIRECT_GAUSS (USS, &
-                                    HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD)
+      SUBROUTINE READ_DIRECT_GAUSS (UG, U, USS, &
+                                    HPROGRAM,HSCHEME,HSUBROUTINE,HFILENAME,HFIELD,OMULTITYPE)
 !     #########################################################
 !
 !!**** *READ_DIRECT_GAUSS1* reads a latlon file and call treatment subroutine
@@ -40,13 +40,18 @@
 !*    0.     DECLARATION
 !            -----------
 !
+USE MODD_SURF_PAR, ONLY : XUNDEF
+USE MODD_SURFEX_MPI, ONLY : NRANK, NPROC, NPIO
 !
-!
-USE MODD_SURF_ATM_SSO_n, ONLY : SURF_ATM_SSO_t
+USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
+USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
+USE MODD_SSO_n, ONLY : SSO_t
 !
 USE MODD_PGD_GRID,   ONLY : LLATLONMASK, XMESHLENGTH
 !
 USE MODD_ARCH, ONLY : LITTLE_ENDIAN_ARCH
+!
+USE MODD_DATA_COVER_PAR, ONLY : JPCOVER, NTYPE
 !
 USE MODI_GET_LUOUT
 USE MODI_OPEN_NAMELIST
@@ -58,27 +63,34 @@ USE MODI_INI_SSOWORK
 USE MODI_PT_BY_PT_TREATMENT
 USE MODE_CHAR2REAL
 !
+USE MODI_UNCOMPRESS_FIELD
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
 USE MODI_ABOR1_SFX
 !
+USE MODD_PGDWORK, ONLY : NSIZE_ALL, XALL, NVALNBR, NVALCOUNT, XVALLIST, &
+                         CATYPE, JPVALMAX
 USE MODI_REFRESH_PGDWORK
+!
+USE MODD_CSTS ,ONLY : XSURF_EPSILON
 !
 IMPLICIT NONE
 !
 !*    0.1    Declaration of arguments
 !            ------------------------
 !
-!
-TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
+TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
+TYPE(SURF_ATM_t), INTENT(INOUT) :: U
+TYPE(SSO_t), INTENT(INOUT) :: USS
 !
  CHARACTER(LEN=6),  INTENT(IN) :: HPROGRAM      ! Type of program
  CHARACTER(LEN=6),  INTENT(IN) :: HSCHEME       ! Scheme treated
  CHARACTER(LEN=6),  INTENT(IN) :: HSUBROUTINE   ! Name of the subroutine to call
  CHARACTER(LEN=28), INTENT(IN) :: HFILENAME     ! Name of the field file.
  CHARACTER(LEN=20), INTENT(IN) :: HFIELD        ! Name of the field.
+LOGICAL, OPTIONAL, INTENT(IN) :: OMULTITYPE
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -91,17 +103,21 @@ TYPE(SURF_ATM_SSO_t), INTENT(INOUT) :: USS
  CHARACTER(LEN=100):: YSTRING          ! string
  CHARACTER(LEN=88 ):: YSTRING1         ! part of string STRING
 !
+ CHARACTER(LEN=2), DIMENSION(1) :: YCPT16 ! value of a data point 
+ CHARACTER(LEN=4), DIMENSION(:), ALLOCATABLE :: YCPT32
+!
  CHARACTER,        DIMENSION(:), ALLOCATABLE :: YVALUE8 ! value of a data point
  CHARACTER(LEN=2), DIMENSION(:), ALLOCATABLE :: YVALUE16 ! value of a data point
  CHARACTER(LEN=4), DIMENSION(:), ALLOCATABLE :: YVALUE32R ! value of a data point
  CHARACTER(LEN=8), DIMENSION(:), ALLOCATABLE :: YVALUE64 ! value of a data point
 !
+REAL, DIMENSION(1) :: ZCPT
 !
 REAL    :: ZGLBLATMIN                 ! minimum latitude of data box in the file
 REAL    :: ZGLBLONMIN                 ! minimum longitude of data box in the file
 REAL    :: ZGLBLATMAX                 ! maximum latitude of data box in the file
 REAL    :: ZGLBLONMAX                 ! maximum longitude of data box in the file
-REAL    :: ZNODATA                    ! value below which data are not considered
+REAL    :: ZNODATA, ZNODATA2          ! value below which data are not considered
 REAL    :: ZDLAT                      ! latitude mesh in the data file
 REAL    :: ZDLON                      ! longitude mesh in the data file
 REAL    :: ZLONMIN                    ! minimum longitude of mask mesh
@@ -109,12 +125,14 @@ REAL    :: ZLONMAX                    ! maximum longitude of mask mesh
 REAL    :: ZLATMIN                    ! minimum latitude of mask mesh
 REAL    :: ZLATMAX                    ! maximum latitude of mask mesh
 REAL    :: ZSHIFT                     ! shift on longitudes
-REAL    :: ZFACT                      ! Factor integer to real
+INTEGER :: IFACT              ! Factor integer to real
+INTEGER(KIND=2) :: INODATA, INODATA2
 !
+REAL, DIMENSION(:), ALLOCATABLE :: ZVALUE
 REAL, DIMENSION(:), POINTER :: ZLAT   ! latitude of data points
 REAL, DIMENSION(:), POINTER :: ZLON   ! longitude of data points
 REAL(KIND=4), DIMENSION(:), ALLOCATABLE :: ZVALUE32 ! value of a data point
-REAL,         DIMENSION(:), ALLOCATABLE :: ZVALUE             ! value of a record of data points
+REAL,         DIMENSION(:), ALLOCATABLE :: ZINTER     ! value of a record of data points
 REAL,         DIMENSION(:), ALLOCATABLE :: ZVALUE_WORK        ! value of a valid data points 
 REAL,         DIMENSION(:), ALLOCATABLE :: ZLAT_WORK          ! latitude  of a valid data points 
 REAL,         DIMENSION(:), ALLOCATABLE :: ZLON_WORK          ! longitude of a valid data points 
@@ -134,15 +152,22 @@ INTEGER :: ILINE1,ILINE2              ! limits of index of lines
 INTEGER :: ICOL                       ! number of columns in mask domain
 INTEGER :: ICOLINDEX                  ! column index in record
 INTEGER :: INBLINES, ISIZE
-INTEGER :: IWORK              ! index of these data
-INTEGER :: JLOOP, JLON, JLAT, JLINE, JCOL                    ! loop index
+INTEGER :: IWORK, IDEB, IPAS         ! index of these data
+INTEGER :: JLOOP, JLON, JLAT, JLINE, JCOL, JL, ICPT, INB, JTYPE
+INTEGER :: ILINE_COMPRESS
+INTEGER :: INB_LINE_READ
+INTEGER(KIND=8) :: IPOS
 !
+INTEGER, DIMENSION(360) :: IMASK
 INTEGER, DIMENSION(2) :: ICOL1, ICOL2 ! limits of index of columns
 !
-INTEGER (KIND=4), DIMENSION(:), ALLOCATABLE :: IVALUE32 ! value of a data point
-INTEGER (KIND=8), DIMENSION(:), ALLOCATABLE :: IVALUE64 ! value of a data point
+INTEGER(KIND=4), DIMENSION(:), ALLOCATABLE :: ICPT0          ! loop index
+INTEGER(KIND=4), DIMENSION(:), ALLOCATABLE :: IVALUE32 ! value of a data point
+INTEGER(KIND=8), DIMENSION(:), ALLOCATABLE :: IVALUE64 ! value of a data point
 !
-LOGICAL                           :: GSWAP              ! T: swap has been done
+ CHARACTER(LEN=6) :: YACCESS
+LOGICAL           :: GSWAP              ! T: swap has been done
+LOGICAL :: GMULTITYPE, GCOMPRESS
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !----------------------------------------------------------------------------
@@ -167,7 +192,7 @@ YFILEHDR =ADJUSTL(ADJUSTR(HFILENAME)//'.hdr')
 !*    1.3    Reading in header of direct access characteristics
 !            --------------------------------------------------
 !
-DO JLOOP=1,9
+DO JLOOP=1,11
   READ(IGLBHDR,'(A100)') YSTRING
   IF (YSTRING(1:10)=='recordtype') EXIT
 END DO
@@ -193,19 +218,6 @@ IF (IINDEX/=0) IBITS=32
 IINDEX=INDEX(YSTRING1,'4')
 IF (IINDEX/=0) IBITS=64
 !
-IF(YTYPE=='INTEGER')THEN
-  IF(HFIELD=='CTI'.OR.HFIELD=='sand fraction'.OR. &
-     HFIELD=='clay fraction'.OR.HFIELD=='organic carbon')THEN
-    ZFACT=100.0
-  ELSEIF (HFIELD=='water depth') THEN
-    ZFACT=10.0
-  ELSE
-    ZFACT=1.0
-  ENDIF
-ELSE
-  ZFACT=1.0
-ENDIF
-!
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_1',1,ZHOOK_HANDLE)
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_2',0,ZHOOK_HANDLE)
 !----------------------------------------------------------------------------
@@ -217,8 +229,43 @@ IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_2',0,ZHOOK_HANDLE)
 !            -----------------
 !
  CALL READHEAD(IGLBHDR,ZGLBLATMIN,ZGLBLATMAX,ZGLBLONMIN,ZGLBLONMAX, &
-                INBLINE,INBCOL,ZNODATA,ZDLAT,ZDLON,ZLAT,ZLON,IERR)  
+               INBLINE,INBCOL,ZNODATA,ZDLAT,ZDLON,ZLAT,ZLON,IERR,IFACT,&
+               GCOMPRESS)  
 IF (IERR/=0) CALL ABOR1_SFX('READ_DIRECT_GAUSS: PB IN FILE HEADER')
+!
+IF (GCOMPRESS .AND. (YTYPE/='INTEGER' .OR. IBITS/=16)) &
+  CALL ABOR1_SFX('READ_DIRECT_GAUSS: COMPRESSED FILES ARE POSSIBLE ONLY WITH INTEGER 16 BYTES FOR THE MOMENT')
+!
+GMULTITYPE = .FALSE.
+IF (PRESENT(OMULTITYPE)) GMULTITYPE = OMULTITYPE
+!
+IF (GMULTITYPE) THEN
+  DEALLOCATE(NSIZE_ALL)
+  ALLOCATE(NSIZE_ALL(U%NDIM_FULL,SUM(NTYPE)))  
+  NSIZE_ALL(:,:) = 0
+  IF (CATYPE=='MAJ') THEN
+    DEALLOCATE(NVALNBR,NVALCOUNT,XVALLIST)
+    ALLOCATE(NVALNBR  (U%NDIM_FULL,SUM(NTYPE)))
+    ALLOCATE(NVALCOUNT(U%NDIM_FULL,JPVALMAX,SUM(NTYPE)))
+    ALLOCATE(XVALLIST (U%NDIM_FULL,JPVALMAX,SUM(NTYPE)))    
+    NVALNBR  (:,:)   = 0
+    NVALCOUNT(:,:,:) = 0
+    XVALLIST (:,:,:) = XUNDEF    
+  ELSE
+    DEALLOCATE(XALL)
+    ALLOCATE(XALL     (U%NDIM_FULL,SUM(NTYPE),1))
+    XALL   (:,:,:) = 0.
+  ENDIF
+ENDIF
+!
+IF(YTYPE=='INTEGER')THEN
+  IF(HFIELD(1:3)=='CTI'.OR.HFIELD=='sand fraction'.OR.HFIELD=='clay fraction'.OR.&
+     HFIELD=='organic carbon'.OR.HFIELD(1:4)=='SAND'.OR. HFIELD(1:4)=='CLAY'.OR.HFIELD(1:3)=='SOC')THEN
+    IFACT=100
+  ELSEIF (HFIELD=='water depth') THEN
+    IFACT=10
+  ENDIF
+ENDIF
 !
 !*    2.2    Closing of header
 !            -----------------
@@ -228,10 +275,19 @@ IF (IERR/=0) CALL ABOR1_SFX('READ_DIRECT_GAUSS: PB IN FILE HEADER')
 !*    2.3    Dimension of work arrays
 !            ------------------------
 !
-ISIZE = INBLINE*(INBCOL/((ZGLBLATMAX-ZGLBLATMIN)*2.))
+! ires c'est le nombre de lignes qu'on lit dans un demi degré (multiple de 60)
+INB_LINE_READ = INBLINE / ((ZGLBLATMAX-ZGLBLATMIN)*2.)
+IF (INB_LINE_READ>60) INB_LINE_READ = MAX(INB_LINE_READ/3,60)
+! on lit toujours 60 lignes d'un coup 
+ISIZE = INB_LINE_READ * INBCOL
+!
 ALLOCATE(ZLAT_WORK  (ISIZE))
 ALLOCATE(ZLON_WORK  (ISIZE))
 ALLOCATE(ZVALUE_WORK(ISIZE))
+IF (GCOMPRESS.OR.GMULTITYPE) THEN
+  ALLOCATE (ZINTER(ISIZE))
+  ZINTER(:) = 0.
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_2',1,ZHOOK_HANDLE)
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_3',0,ZHOOK_HANDLE)
@@ -253,7 +309,14 @@ IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_4',0,ZHOOK_HANDLE)
 !            -------------
 !
 IRECLENGTH = IBITS/8 * INBCOL
-ALLOCATE (ZVALUE(INBCOL))
+ALLOCATE (ZVALUE   (INBCOL))
+ZVALUE(:) = 0.
+!
+IF (GCOMPRESS) THEN
+  ALLOCATE(YCPT32(INBLINE))
+  ALLOCATE(ICPT0 (INBLINE))
+ENDIF
+!
 IF (YTYPE=='INTEGER' .AND. IBITS== 8) THEN  
   ALLOCATE (YVALUE8 (INBCOL))
 ELSEIF (YTYPE=='INTEGER' .AND. IBITS==16) THEN
@@ -271,8 +334,20 @@ ENDIF
 !*    7.2    Openning of direct access file
 !            ------------------------------
 !
+YACCESS = 'DIRECT'
+IF (GCOMPRESS) THEN
+  YACCESS='STREAM'
+  LITTLE_ENDIAN_ARCH = .FALSE.
+ENDIF
+!
  CALL OPEN_FILE(HPROGRAM,IGLB,YFILENAME,'UNFORMATTED',           &
-                 HACTION='READ',HACCESS='DIRECT',KRECL=IRECLENGTH ) 
+                 HACTION='READ',HACCESS=YACCESS,KRECL=IRECLENGTH ) 
+!
+! we read numbers of elements by line of the grid at the beginning
+IF (GCOMPRESS) THEN
+  READ(IGLB) YCPT32
+  ICPT0(:) = TRANSFER(YCPT32(:),1_4,INBLINE)
+ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_4',1,ZHOOK_HANDLE)
 IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_5',0,ZHOOK_HANDLE)
@@ -281,16 +356,51 @@ IF (LHOOK) CALL DR_HOOK('READ_DIRECT_GAUSS_5',0,ZHOOK_HANDLE)
 !*    4.     loop on mask meshes (lat)
 !            -------------------
 !
+!IMASK contains the indexes of lat to be read (inside the domain)
+IMASK(:) = 0
+ICPT = 0
+DO JLAT = 1,360
+  IF ( .NOT. ANY(LLATLONMASK(:,JLAT)) ) CYCLE
+  ZLATMIN = (JLAT-180)/2. - 0.5
+  ZLATMAX = (JLAT-180)/2.
+  IF ( .NOT. ANY(ZLAT(:)<ZLATMAX .AND. ZLAT(:)>=ZLATMIN) ) CYCLE
+  ICPT = ICPT + 1
+  IMASK(ICPT) = JLAT
+ENDDO
+!
+!INB: number of lat to be read
+INB = ICPT
+!
+!IPAS: number of lat to be read for each task
+IPAS = CEILING(INB*1./NPROC)
+!
 GSWAP = .FALSE.
 !
-JLAT = 0
+!first lat read for this task
+IDEB = IPAS*NRANK
+!
+ICPT = 0
+!
+JL = IPAS + 1
+!
+IF (GCOMPRESS) ILINE_COMPRESS = 1
+!
+IWORK=0
+!
+INODATA = ZNODATA
+INODATA2 = ISHFTC(INODATA,8)
+ZNODATA2 = INODATA2
 !
 DO 
   !
-  JLAT = JLAT + 1
-  IF (JLAT==361) EXIT
+  !the file is read from the top to the bottom (quicker)
+  JL = JL - 1
+  IF (JL==0) EXIT
   !
-  IF ( .NOT. ANY(LLATLONMASK(:,JLAT)) ) CYCLE
+  IF (IDEB+JL>INB) CYCLE
+  !
+  !lat read by this task for this loop index JL
+  JLAT = IMASK(IDEB+JL)
   !
   ZLATMIN = (JLAT-180)/2. - 0.5
   ZLATMAX = (JLAT-180)/2.
@@ -302,17 +412,31 @@ DO
   !
   ILINE1=MAX(MIN(INT((ZGLBLATMAX-ZDLAT/2.-ZLATMAX)/ZDLAT+1.),INBLINE),0)+1
   ILINE2=MAX(MIN(INT((ZGLBLATMAX-ZDLAT/2.-ZLATMIN)/ZDLAT+1.),INBLINE),0)
-  IF ( .NOT. ANY(ZLAT(:)<ZLATMAX .AND. ZLAT(:)>=ZLATMIN) ) CYCLE
   !
   !----------------------------------------------------------------------------
   !
   !*    8.     Loop on lines
   !            -------------
   !
-  IWORK=0
+  INBLINES = ILINE2 - ILINE1 + 1
+  !
+  ! first IPOS for this task is the first information plus the
+  ! number of elements by lines before the first to read
+  IF (GCOMPRESS.AND.(JL==IPAS.OR.ILINE_COMPRESS<ILINE1)) THEN
+    IPOS = 0
+    IF (ILINE1>1) THEN
+      DO JLOOP=1,ILINE1-1
+        IPOS = IPOS + ICPT0(JLOOP)
+      ENDDO
+    ENDIF
+    IPOS = IPOS*2 + 1 + INBLINE*4
+    ILINE_COMPRESS = ILINE1
+  ELSE
+    IPOS = 0
+  ENDIF
+  !
   DO JLINE = ILINE1,ILINE2
     !
-    INBLINES = ILINE2 - ILINE1 + 1
     !----------------------------------------------------------------------------
     !
     !*   10.     Reading in the direct access file
@@ -321,7 +445,7 @@ DO
     !*   10.1    Record number
     !            -------------
     !
-    IREC=JLINE
+    IREC = JLINE
     ! 
     !*   10.2    Reading the correct data type and conversion into real
     !            ------------------------------------------------------
@@ -333,21 +457,48 @@ DO
       WHERE (ZVALUE(:)<0.) ZVALUE(:) = NINT(256.+ZVALUE(:))
       !
     ELSE IF (YTYPE=='INTEGER' .AND. IBITS==16) THEN
-      READ(IGLB,REC=IREC) YVALUE16(:)
-      ZVALUE(:)=YVALUE16(:)
       !
-      IF (      ANY(ABS(ZVALUE)>15000)   ) THEN
-        IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
-        LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
-        GSWAP = .TRUE.
-        WRITE(ILUOUT,*) '*******************************************************************'
-        WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
-                           LITTLE_ENDIAN_ARCH  
-        WRITE(ILUOUT,*) '*******************************************************************'
-        JLAT = 0
-        CALL REFRESH_PGDWORK
-        EXIT   ! rereads the file
-      END IF
+      IF (GCOMPRESS) THEN
+        IF (IPOS/=0) THEN
+          READ(IGLB,POS=IPOS) YVALUE16(1:ICPT0(JLINE))
+          IPOS = 0
+        ELSE
+          READ(IGLB) YVALUE16(1:ICPT0(JLINE))
+        ENDIF
+        ZVALUE(1:ICPT0(JLINE))=YVALUE16(1:ICPT0(JLINE))
+        ILINE_COMPRESS = ILINE_COMPRESS + 1
+      ELSE
+        READ(IGLB,REC=IREC) YVALUE16(:)
+        ZVALUE(:)=YVALUE16(:)
+      ENDIF
+      !
+      IF (ICPT==0.AND..NOT.GCOMPRESS) THEN 
+        IF ( (HFIELD(1:5)=="COVER" .AND. (ANY(ZVALUE>JPCOVER.AND.ZVALUE/=ZNODATA) .OR. &
+                        ANY(ZVALUE<0..AND.ZVALUE/=ZNODATA) .OR. ALL(ZVALUE==256.)) ) .OR. & 
+             (ZNODATA/=0 .AND. (ALL(ZVALUE==ZNODATA2))) .OR. &
+            ((HFIELD(1:4)=="SAND" .OR. HFIELD(1:4)=="CLAY") .AND. &
+                (ANY(ZVALUE>100..AND.ZVALUE/=ZNODATA) .OR. ANY(ZVALUE<0..AND.ZVALUE/=ZNODATA)) ) .OR. &
+             (HFIELD(1:3)=="SOC" .AND. (ANY(ZVALUE>15000..AND.ZVALUE/=ZNODATA) .OR. ANY(ZVALUE<0..AND.ZVALUE/=ZNODATA)) )  .OR. &
+             ((HFIELD(1:5)/="COVER" .AND. HFIELD(1:4)/="SAND" .AND. HFIELD(1:4)/="CLAY" .AND. &
+              HFIELD(1:3)/="SOC" .AND. ANY(ZVALUE>15000..AND.ZVALUE/=ZNODATA) ) ) ) THEN
+          ICPT = ICPT + 1
+          IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
+          LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
+          GSWAP = .TRUE.
+          IF (NRANK==NPIO) THEN
+            WRITE(ILUOUT,*) '*******************************************************************'
+            WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
+                             LITTLE_ENDIAN_ARCH  
+            WRITE(ILUOUT,*) '*******************************************************************'
+          ENDIF
+          JL = IPAS + 1 !back to first lat
+          IWORK = 0
+          IF (HFIELD(1:5)=="COVER") U%LCOVER(:) = .FALSE.
+          CALL REFRESH_PGDWORK(HSUBROUTINE)
+          EXIT   ! rereads the file
+        ENDIF
+      ENDIF
+      !
       !
     ELSE IF (YTYPE=='INTEGER' .AND. IBITS==32) THEN
       READ(IGLB,REC=IREC) IVALUE32(:)
@@ -361,47 +512,63 @@ DO
       READ(IGLB,REC=IREC) YVALUE32R(:)
       ZVALUE(:)=YVALUE32R(:)
       !
-      IF (      ANY(ABS(ZVALUE)>0. .AND. ABS(ZVALUE)<1.E-50) &
-           .OR. ANY(ABS(ZVALUE)>1.E20)                       ) THEN
-        IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
-        LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
-        GSWAP = .TRUE.
-        WRITE(ILUOUT,*) '*******************************************************************'
-        WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
-                         LITTLE_ENDIAN_ARCH
-        WRITE(ILUOUT,*) '*******************************************************************'
-        JLAT = 0
-        CALL REFRESH_PGDWORK
-        EXIT
+      IF (ICPT==0) THEN      
+        IF (      ANY(ABS(ZVALUE)>0. .AND. ABS(ZVALUE)<1.E-50) &
+             .OR. ANY(ABS(ZVALUE)>1.E20)                       ) THEN
+          ICPT = ICPT + 1
+          IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
+          LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
+          GSWAP = .TRUE.
+          IF (NRANK==NPIO) THEN
+            WRITE(ILUOUT,*) '*******************************************************************'
+            WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
+                             LITTLE_ENDIAN_ARCH
+            WRITE(ILUOUT,*) '*******************************************************************'
+          ENDIF
+          JL = IPAS + 1
+          IWORK = 0
+          CALL REFRESH_PGDWORK(HSUBROUTINE)
+          EXIT
+        ENDIF
       END IF      
-      !      
+      !
     ELSE IF (YTYPE=='REAL   ' .AND. IBITS==64) THEN
       READ(IGLB,REC=IREC) YVALUE64(:)
       ZVALUE(:)=YVALUE64(:)
       !
-      IF (      ANY(ABS(ZVALUE)>0. .AND. ABS(ZVALUE)<1.E-50) &
-             .OR. ANY(ABS(ZVALUE)>1.E20)                       ) THEN  
-        IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
-        LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
-        GSWAP = .TRUE.
-        WRITE(ILUOUT,*) '*******************************************************************'
-        WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
-                           LITTLE_ENDIAN_ARCH  
-        WRITE(ILUOUT,*) '*******************************************************************'
-        JLAT = 0
-        CALL REFRESH_PGDWORK
-        EXIT
-      END IF
+      IF (ICPT==0) THEN      
+        IF (      ANY(ABS(ZVALUE)>0. .AND. ABS(ZVALUE)<1.E-50) &
+               .OR. ANY(ABS(ZVALUE)>1.E20)                       ) THEN  
+          ICPT = ICPT + 1
+          IF (GSWAP) CALL ABOR1_SFX('READ_DIRECT_GAUSS: SWAP ALREADY DONE, CANNOT BE REDONE')
+          LITTLE_ENDIAN_ARCH = .NOT. LITTLE_ENDIAN_ARCH
+          GSWAP = .TRUE.
+          IF (NRANK==NPIO) THEN
+            WRITE(ILUOUT,*) '*******************************************************************'
+            WRITE(ILUOUT,*) 'Architecture of the machine needs to swap LITTLE_ENDIAN_ARCH to ', &
+                             LITTLE_ENDIAN_ARCH  
+            WRITE(ILUOUT,*) '*******************************************************************'
+          ENDIF
+          JL = IPAS + 1
+          IWORK = 0
+          CALL REFRESH_PGDWORK(HSUBROUTINE)
+          EXIT
+        ENDIF
+      ENDIF
       !
     ELSE
-      CALL ABOR1_SFX('READ_DIRECT_GAUSS1: DATA TYPE NOT SUPPORTED')
+      CALL ABOR1_SFX('READ_DIRECT_GAUSS: DATA TYPE NOT SUPPORTED')
     END IF
     !
     IF(HFIELD=='CTI')THEN
       WHERE(ZVALUE(:)<0.0) ZVALUE(:)=ZNODATA
     ENDIF
     !
-    WHERE(ZVALUE(:)/=ZNODATA)ZVALUE(:)=ZVALUE(:)/ZFACT
+    IF (GCOMPRESS) THEN
+      WHERE (ZVALUE(1:ICPT0(JLINE))<0.) ZVALUE(1:ICPT0(JLINE)) = NINT(32768*2.+ZVALUE(1:ICPT0(JLINE)))
+      ZINTER(1:ICPT0(JLINE)) = ZVALUE(1:ICPT0(JLINE))
+      CALL UNCOMPRESS_FIELD(INBCOL,4000.,ZINTER(1:ICPT0(JLINE)),ZVALUE(:))
+    ENDIF
     !
     !----------------------------------------------------------------------------
     !
@@ -423,7 +590,7 @@ DO
       !*    5.1    left domain border is set just higher than the global field min. longitude
       !            -----------------------------------------------------------------
       !
-      ZSHIFT = 360. * NINT((ZLONMIN-ZGLBLONMIN-180.+1.E-10)/360.)
+      ZSHIFT = 360. * NINT((ZLONMIN-ZGLBLONMIN-180.*(1-XSURF_EPSILON))/360.)
       !
       ZGLBLONMIN = ZGLBLONMIN + ZSHIFT
       ZGLBLONMAX = ZGLBLONMAX + ZSHIFT
@@ -467,6 +634,8 @@ DO
           !*   11.2    Test with respect to the 'no data' value
           !            ----------------------------------------
           !
+          !IF (ABS(ZVALUE(ICOLINDEX)-ZNODATA)<=1.E-10) CYCLE
+          !
           !*   11.3    copy of the correct values in a work array
           !            ------------------------------------------
           !
@@ -481,17 +650,31 @@ DO
       !-------------------------------------------------------------------------------
     END DO !JLON
     !-------------------------------------------------------------------------------
+    IF (MOD((JLINE-ILINE1+1),INB_LINE_READ)==0.OR.JLINE==ILINE2) THEN
+      !
+      IF (.NOT.GMULTITYPE.AND.IFACT/=1) THEN
+        WHERE(ZVALUE_WORK(1:IWORK)/=ZNODATA)
+          ZVALUE_WORK(1:IWORK)=ZVALUE_WORK(1:IWORK)/FLOAT(IFACT)
+        END WHERE
+      ENDIF
+      !
+      !*   12.     Call to the adequate subroutine (point by point treatment)
+      !            ----------------------------------------------------------
+      !
+      IF (IWORK>0) THEN
+        CALL PT_BY_PT_TREATMENT(UG, U, USS, &
+                                ILUOUT, ZLAT_WORK(1:IWORK),ZLON_WORK(1:IWORK), &
+                                ZVALUE_WORK(1:IWORK), HSUBROUTINE, INBLINES, &
+                                ZNODATA, GMULTITYPE, IFACT )
+      ENDIF
+      !
+      IWORK = 0
+      !
+    ENDIF
+
   END DO ! JLINE
   !-------------------------------------------------------------------------------
   !
-  !*   12.     Call to the adequate subroutine (point by point treatment)
-  !            ----------------------------------------------------------
-  !
-  IF (IWORK>0) &
-    CALL PT_BY_PT_TREATMENT(USS, &
-                            ILUOUT, ZLAT_WORK(1:IWORK),ZLON_WORK(1:IWORK), &
-                            ZVALUE_WORK(1:IWORK),                          &
-                            HSUBROUTINE, INBLINES, ZNODATA                 )
 !
 !-------------------------------------------------------------------------------
 END DO !JLAT
@@ -509,6 +692,7 @@ DEALLOCATE(ZLON_WORK  )
 DEALLOCATE(ZVALUE_WORK)
 !
 DEALLOCATE (ZVALUE)
+IF (ALLOCATED(ZINTER)) DEALLOCATE (ZINTER)
 IF (ALLOCATED(YVALUE8)) DEALLOCATE (YVALUE8 )
 IF (ALLOCATED(YVALUE16)) DEALLOCATE (YVALUE16)
 IF (ALLOCATED(YVALUE32R)) DEALLOCATE (YVALUE32R)

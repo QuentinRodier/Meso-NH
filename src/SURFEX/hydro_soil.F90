@@ -3,16 +3,10 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE HYDRO_SOIL(HISBA,                                        &
-                         PTSTEP,                                            &
-                         PLETR, PLEG, PPG, PEVAPCOR,                        &
-                         PWDRAIN,                                           &
-                         PC1, PC2, PC3, PC4B, PC4REF, PWGEQ,                &
-                         PD_G2, PD_G3, PWSAT, PWFC,                         &
-                         PDWGI1, PDWGI2, PLEGI, PD_G1, PCG, PCT,            &
-                         PTG, PTG2,                                         &
-                         PWG1, PWG2, PWG3, PWGI1, PWGI2,                    &
-                         PRUNOFF, PDRAIN, HKSAT, PWWILT                     )  
+      SUBROUTINE HYDRO_SOIL(IO, KK, PK, PEK, DMK, PTSTEP,  &
+                            PLETR, PLEG, PPG, PEVAPCOR, PD_G3, &
+                            PWSAT, PWFC, PDWGI1, PDWGI2, PLEGI,&
+                            PWG3, PRUNOFF, PDRAIN, PWWILT )  
 !     #####################################################################
 !
 !!****  *HYDRO_SOIL*  
@@ -65,7 +59,7 @@
 !!                  25/01/00 A. Boone : fully implicit method for WG2, WG3
 !!                  05/03/07 A. Boone : changed drainage diagnostic computation for
 !!                                      single bulk-soil option...i.e. for
-!!                                      cases when HISBA=2-L or d2>=d3 (HISBA=3-L)
+!!                                      cases when IO%CISBA=2-L or d2>=d3 (IO%CISBA=3-L)
 !!                                      for tighter water budget closure 
 !!                  07/08/12 B. Decharme : Soil ice energy conservation
 !!                     04/13 B. Decharme : Apply physical limits on wg here instead of in hydro.F90
@@ -74,9 +68,12 @@
 !*       0.     DECLARATIONS
 !               ------------
 !
+USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
+USE MODD_ISBA_n, ONLY : ISBA_K_t, ISBA_P_t, ISBA_PE_t
+USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
+!
 USE MODD_CSTS,     ONLY : XLVTT, XRHOLW, XLMTT, XLSTT, XDAY
 USE MODD_ISBA_PAR, ONLY : XWGMIN
-!
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -85,16 +82,14 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-!
- CHARACTER(LEN=*),     INTENT(IN)   :: HISBA   ! type of ISBA version:
-!                                             ! '2-L' (default)
-!                                             ! '3-L'
+TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
+TYPE(ISBA_K_t), INTENT(INOUT) :: KK
+TYPE(ISBA_P_t), INTENT(INOUT) :: PK
+TYPE(ISBA_PE_t), INTENT(INOUT) :: PEK
+TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMK
 !
 REAL, INTENT(IN)                  :: PTSTEP
 !                                      timestep of the integration (s)
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PD_G1
-!                                      depth of surface ice reservoir (m)
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PLETR, PLEG, PPG, PEVAPCOR
 !                                      PLETR    = evapotranspiration of the vegetation (W m-2)
@@ -103,28 +98,12 @@ REAL, DIMENSION(:), INTENT(IN)    :: PLETR, PLEG, PPG, PEVAPCOR
 !                                      PEVAPCOR = correction for any excess evaporation 
 !                                                from snow as it completely ablates (kg m-2 s-1)
 !
-REAL, DIMENSION(:), INTENT(IN)    :: PWDRAIN  ! minimum Wg for drainage (m3 m-3)
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PC1, PC2, PWGEQ, PCG, PCT
-REAL, DIMENSION(:,:), INTENT(IN)  :: PC3
-!                                      soil coefficients
-!                                      C1, C2 = coefficients for the moisture calculations (-)
-!                                      C3     = coefficient for drainage calculation (m)
-!                                      PWGEQ  = equilibrium surface volumetric moisture (m3 m-3)
-!                                      PCG    = soil heat capacity
-!                                      PCT    = grid-averaged heat capacity (K m2 J-1)
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PD_G2, PD_G3, PWSAT, PWFC
-!                                      PD_G2 = root depth (m)
+REAL, DIMENSION(:), INTENT(IN)    :: PD_G3, PWSAT, PWFC
 !                                      PD_G3 = depth of the soil column (m)
 !                                      PWSAT = saturation volumetric water content
 !                                              of the soil (m3 m-3)
 !                                      PWFC  = field capacity volumetric water
 !                                              content (m3 m-3)
-!
-REAL, DIMENSION(:), INTENT(IN)    :: PC4B, PC4REF
-!                                      PC4REF, PC4B = fiiting soil paramter for vertical 
-!                                      diffusion (C4) (-)
 !
 REAL, DIMENSION(:), INTENT(IN)    :: PDWGI1, PDWGI2, PLEGI
 !                                      PDWGI1 = surface layer liquid water equivalent 
@@ -133,46 +112,32 @@ REAL, DIMENSION(:), INTENT(IN)    :: PDWGI1, PDWGI2, PLEGI
 !                                               volumetric ice content time tendency  (m3 m-3)
 !                                      PLEGI  = surface soil ice sublimation (W m-2)
 !
-!
-REAL, DIMENSION(:), INTENT(INOUT) :: PTG, PTG2
-!                                    PTG  = surface temperature at 't' (K)
-!                                    PTG2 = soil temperature at 't' (K)
-!
-REAL, DIMENSION(:), INTENT(INOUT) :: PWG1, PWG2, PWG3, PWGI1, PWGI2
-!                                      PWG1   = near-surface soil moisture at 't+dt' (m3 m-3)
-!                                      PWG2   = bulk root-soil moisture at 't+dt' (m3 m-3)
+REAL, DIMENSION(:), INTENT(INOUT) :: PWG3
 !                                      PWG3   = bulk deep-soil moisture at 't+dt' (m3 m-3)
-!                                      PWGI1  = bulk surface-soil ice at 't+dt' (m3 m-3)
-!                                      PWGI2  = bulk deep-soil ice at 't+dt' (m3 m-3)
 !
 REAL, DIMENSION(:), INTENT(OUT)   :: PRUNOFF, PDRAIN
 !                                      PRUNOFF = runoff (kg m-2 s-1)
 !                                      PDRAIN  = drainage (kg m-2 s-1)
 !
- CHARACTER(LEN=*),     INTENT(IN)  :: HKSAT      ! soil hydraulic profil option
-!                                               ! 'DEF'  = ISBA homogenous soil
-!                                               ! 'SGH'  = ksat exponential decay
-!
 REAL, DIMENSION(:), INTENT(IN)    :: PWWILT
 !                                    PWWILT = wilting point volumetric water
 !                                             content (m3 m-3)
-!
 !*      0.2    declarations of local variables
 !
 !
-REAL, DIMENSION(SIZE(PTG))   :: ZWGI1M, ZWG2M, ZWG3M, ZWGI2M
+REAL, DIMENSION(SIZE(PEK%XTG,1))   :: ZWGI1M, ZWG2M, ZWG3M, ZWGI2M
 !                                      Prognostic variables of ISBA at 't-dt'
 !                                      ZWG2M = root-soil volumetric water content
 !                                      ZWG3M = deep-soil volumetric water content
 !                                      ZWGI1M = surface-soil volumetric ice content
 !                                      ZWGI2M = deep-soil volumetric ice content
 !
-REAL, DIMENSION(SIZE(PTG))   :: ZETR, ZEG
+REAL, DIMENSION(SIZE(PEK%XTG,1))   :: ZETR, ZEG
 !                                             ZETR = evapotranspiration rate
 !                                             ZEG = evaporation rate from the ground
 !
 ! 
-REAL, DIMENSION(SIZE(PTG))   :: ZWSAT, ZWFC
+REAL, DIMENSION(SIZE(PEK%XTG,1))   :: ZWSAT, ZWFC
 !                                             ZWSAT = Wsat  when ice is present
 !                                             ZWFC  = Wfc   when ice is present
 !
@@ -224,14 +189,14 @@ ZEXCESSF(:)  = 0.0
 !
 ! Fields at time t-dt
 !
-ZWG2M(:)     = PWG2(:)
+ZWG2M(:)     = PEK%XWG(:,2)
 ZWG3M(:)     = PWG3(:)
-ZWGI1M(:)    = PWGI1(:)
-ZWGI2M(:)    = PWGI2(:)
+ZWGI1M(:)    = PEK%XWGI(:,1)
+ZWGI2M(:)    = PEK%XWGI(:,2)
 
 !-------------------------------------------------------------------------------
 !
-DO JJ=1,SIZE(PTG)
+DO JJ=1,SIZE(PEK%XTG,1)
 !
 !*       1.     New Wsat
 !               --------
@@ -267,14 +232,14 @@ DO JJ=1,SIZE(PTG)
 !
 !                                           updated values for wg 
 !
-  PWG1(JJ) = (PWG1(JJ) - PTSTEP * (PC1(JJ) * (ZEG(JJ) - PPG(JJ)) / XRHOLW    &
-                                -  PC2(JJ) * PWGEQ(JJ) / XDAY) )            &
-              / (1. + PTSTEP * PC2(JJ) / XDAY)  
+  PEK%XWG(JJ,1) = (PEK%XWG(JJ,1) - PTSTEP * &
+            (DMK%XC1(JJ)*(ZEG(JJ)-PPG(JJ))/XRHOLW - DMK%XC2(JJ)*DMK%XWGEQ(JJ)/XDAY)) &
+              / (1. + PTSTEP * DMK%XC2(JJ) / XDAY)  
 !
 !
 ENDDO
 !
-IF(HKSAT=='SGH' .OR. HKSAT=='EXP') THEN
+IF(IO%CKSAT=='SGH' .OR. IO%CKSAT=='EXP') THEN
   ZWLIM2(:)=ZWWILT(:)
   ZWLIM3(:)=PWWILT(:)
 ELSE
@@ -290,56 +255,56 @@ ENDIF
 !*       5.1    2-L ISBA version
 !               ----------------
 !
-IF (HISBA=='2-L') THEN
+IF (IO%CISBA=='2-L') THEN
 ! 
-  DO JJ=1,SIZE(PTG)
-
+  DO JJ=1,SIZE(PEK%XTG,1)
 !
-    PWG2(JJ) = ZWG2M(JJ) - PTSTEP*(ZEG(JJ) + ZETR(JJ) - PPG(JJ))   &
-                  / (PD_G2(JJ) * XRHOLW)  
+    PEK%XWG(JJ,2) = ZWG2M(JJ) - PTSTEP*(ZEG(JJ) + ZETR(JJ) - PPG(JJ)) / (PK%XDG(JJ,2) * XRHOLW)  
 !
 !*       6.     DRAINAGE FROM THE DEEP SOIL
 !               ------------------
 !
-    ZWDRAIN(JJ)   = PWDRAIN(JJ) * MAX(0.0, MIN(ZWFC(JJ),PWG2(JJ))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
+    ZWDRAIN(JJ)   = KK%XWDRAIN(JJ) * &
+            MAX(0.0, MIN(ZWFC(JJ),PEK%XWG(JJ,2))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
 
-    ZDRAIN2(JJ)   =  MAX( MIN(ZWDRAIN(JJ),PWG2(JJ)) , PWG2(JJ)-ZWFC(JJ) )*PC3(JJ,1)      &
-                      / (PD_G2(JJ)*XDAY) * PTSTEP  
+    ZDRAIN2(JJ)   =  MAX( MIN(ZWDRAIN(JJ),PEK%XWG(JJ,2)) , &
+               PEK%XWG(JJ,2)-ZWFC(JJ) )*PK%XC3(JJ,1) / (PK%XDG(JJ,2)*XDAY) * PTSTEP  
 !
 !                                      the deep-soil volumetric water content w2
 !                                      is modified consequently
 !
-    PWG2(JJ)    = PWG2(JJ) - ZDRAIN2(JJ)
+    PEK%XWG(JJ,2)    = PEK%XWG(JJ,2) - ZDRAIN2(JJ)
 
-    PDRAIN(JJ)  = ZDRAIN2(JJ)*PD_G2(JJ)*XRHOLW/PTSTEP  ! Final output units: kg m-2 s-1
+    PDRAIN(JJ)  = ZDRAIN2(JJ)*PK%XDG(JJ,2)*XRHOLW/PTSTEP  ! Final output units: kg m-2 s-1
 !
   ENDDO
 !
 ELSE
 !
-  DO JJ=1,SIZE(PTG)
+  DO JJ=1,SIZE(PEK%XTG,1)
 
 !*       5.2    3-L ISBA version (with only 2 active layers)
 !               ----------------
 !
-    IF (PD_G2(JJ) >= PD_G3(JJ)) THEN
+    IF (PK%XDG(JJ,2) >= PD_G3(JJ)) THEN
 
-      PWG2(JJ) = ZWG2M(JJ) - PTSTEP*(ZEG(JJ) + ZETR(JJ) - PPG(JJ))   &
-                    / (PD_G2(JJ) * XRHOLW)  
+      PEK%XWG(JJ,2) = ZWG2M(JJ) - PTSTEP*(ZEG(JJ) + ZETR(JJ) - PPG(JJ))   &
+                    / (PK%XDG(JJ,2) * XRHOLW)  
 
 !*       6.     DRAINAGE FROM THE DEEP SOIL
 !               ------------------
 !                                      when w2 > wfc, there is drainage
 !
-      ZWDRAIN(JJ) = PWDRAIN(JJ) * MAX(0.0, MIN(ZWFC(JJ),PWG2(JJ))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
+      ZWDRAIN(JJ) = KK%XWDRAIN(JJ) * &
+              MAX(0.0, MIN(ZWFC(JJ),PEK%XWG(JJ,2))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
 
-      ZDRAIN2(JJ) = MAX( MIN(ZWDRAIN(JJ),PWG2(JJ)) , PWG2(JJ)-ZWFC(JJ) )*PC3(JJ,1)        &
-                   / (PD_G2(JJ)*XDAY) * PTSTEP  
+      ZDRAIN2(JJ) = MAX( MIN(ZWDRAIN(JJ),PEK%XWG(JJ,2)) , &
+              PEK%XWG(JJ,2)-ZWFC(JJ) )*PK%XC3(JJ,1) / (PK%XDG(JJ,2)*XDAY) * PTSTEP  
 
-      PWG2(JJ)    = PWG2(JJ) -  ZDRAIN2(JJ)
-      PWG3(JJ)    = PWG2(JJ)
+      PEK%XWG(JJ,2)    = PEK%XWG(JJ,2) -  ZDRAIN2(JJ)
+      PWG3(JJ)    = PEK%XWG(JJ,2)
 
-      PDRAIN(JJ)  = ZDRAIN2(JJ)*PD_G2(JJ)*XRHOLW/PTSTEP  ! Final output units: kg m-2 s-1
+      PDRAIN(JJ)  = ZDRAIN2(JJ)*PK%XDG(JJ,2)*XRHOLW/PTSTEP  ! Final output units: kg m-2 s-1
 !
     ELSE
 !
@@ -352,8 +317,8 @@ ELSE
 ! rhobust (but more complicated) method is developed for maintaining a minimum river
 ! flow under dry conditions, this method will be used.
 !
-      ZWDRAIN2(JJ)   = PWDRAIN(JJ)* MAX(0.0, MIN(ZWFC(JJ),ZWG2M(JJ))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
-      ZWDRAIN3(JJ)   = PWDRAIN(JJ)* MAX(0.0, MIN(PWFC(JJ),ZWG3M(JJ))-ZWLIM3(JJ))/(PWFC(JJ)-ZWLIM3(JJ))
+      ZWDRAIN2(JJ) = KK%XWDRAIN(JJ)* MAX(0.0, MIN(ZWFC(JJ),ZWG2M(JJ))-ZWLIM2(JJ))/(ZWFC(JJ)-ZWLIM2(JJ))
+      ZWDRAIN3(JJ) = KK%XWDRAIN(JJ)* MAX(0.0, MIN(PWFC(JJ),ZWG3M(JJ))-ZWLIM3(JJ))/(PWFC(JJ)-ZWLIM3(JJ))
 !
 ! Delta functions:
 !
@@ -367,54 +332,54 @@ ELSE
 
 ! evaluate inter-facial water content, grid factor, and diffusion coefficient:
 
-      ZWAVG(JJ)     = ( ( (ZWG2M(JJ)**6)* PD_G2(JJ)          +                       &
-                           (ZWG3M(JJ)**6)*(PD_G3(JJ)-PD_G2(JJ)) )/PD_G3(JJ) )**(1./6.)  
+      ZWAVG(JJ)     = ( ( (ZWG2M(JJ)**6)* PK%XDG(JJ,2)          +                       &
+                           (ZWG3M(JJ)**6)*(PD_G3(JJ)-PK%XDG(JJ,2)) )/PD_G3(JJ) )**(1./6.)  
 
-      ZFACTOR(JJ)   = PD_G2(JJ)/(PD_G3(JJ)-PD_G2(JJ))
+      ZFACTOR(JJ)   = PK%XDG(JJ,2)/(PD_G3(JJ)-PK%XDG(JJ,2))
 
-      ZC4    (JJ)   = PC4REF(JJ)*(ZWAVG(JJ)**PC4B(JJ))                &
-                     *(10.**(-PC4B(JJ)*PWGI2(JJ)/(PWSAT(JJ)-XWGMIN)))  
+      ZC4    (JJ)   = PK%XC4REF(JJ)*(ZWAVG(JJ)**KK%XC4B(JJ))                &
+                     *(10.**(-KK%XC4B(JJ)*PEK%XWGI(JJ,2)/(PWSAT(JJ)-XWGMIN)))  
 !
 ! calculate sources/sinks
 !
-      ZSINK2 (JJ)   = -(ZEG(JJ) + ZETR(JJ) - PPG(JJ) )/(PD_G2(JJ)*XRHOLW)
+      ZSINK2 (JJ)   = -(ZEG(JJ) + ZETR(JJ) - PPG(JJ) )/(PK%XDG(JJ,2)*XRHOLW)
 
 ! Compute evolution of water content using linearized equations
 ! (see Boone 2000, Appendix F.2 for details)
 !
 ! sink terms are treated explicitly, other terms are implicit
 !
-      ZDRAINCF2(JJ) = PC3(JJ,1) / (PD_G2(JJ) * XDAY)
+      ZDRAINCF2(JJ) = PK%XC3(JJ,1) / (PK%XDG(JJ,2) * XDAY)
       ZDELTA22(JJ)  = ZDELTA2(JJ)*ZWFC(JJ) - (1.0-ZDELTA2(JJ))*ZWDRAIN2(JJ)
       ZC2(JJ)       = 1.0 + PTSTEP*(ZDELTA2(JJ)*ZDRAINCF2(JJ) + (ZC4(JJ)/XDAY)) 
       ZB2(JJ)       = PTSTEP*ZC4(JJ)/(XDAY*ZC2(JJ))
       ZA2(JJ)       = ( ZWG2M(JJ) + PTSTEP*(ZSINK2(JJ) + ZDRAINCF2(JJ)*ZDELTA22(JJ)) )/ZC2(JJ)
 !
-      ZDRAINCF3(JJ) = PC3(JJ,2) / ( (PD_G3(JJ)-PD_G2(JJ)) * XDAY)
+      ZDRAINCF3(JJ) = PK%XC3(JJ,2) / ( (PD_G3(JJ)-PK%XDG(JJ,2)) * XDAY)
       ZDELTA33(JJ)  = ZDELTA3(JJ)*PWFC(JJ) - (1.0-ZDELTA3(JJ))*ZWDRAIN3(JJ)
       ZC3(JJ)       = 1.0 + PTSTEP*(ZDELTA3(JJ)*ZDRAINCF3(JJ) + ZFACTOR(JJ)*(ZC4(JJ)/XDAY)) 
       ZB3(JJ)       = PTSTEP*ZFACTOR(JJ)*(ZDELTA2(JJ)*ZDRAINCF2(JJ) + (ZC4(JJ)/XDAY) )/ZC3(JJ)
       ZA3(JJ)       = ( ZWG3M(JJ) + PTSTEP*(                                                 &
-                         - ZFACTOR(JJ)*ZDRAINCF2(JJ)*ZDELTA22(JJ)                               &
-                         +            ZDRAINCF3(JJ)*ZDELTA33(JJ)) )/ZC3(JJ)  
+                         - ZFACTOR(JJ)*ZDRAINCF2(JJ)*ZDELTA22(JJ)                            &
+                          +            ZDRAINCF3(JJ)*ZDELTA33(JJ)) )/ZC3(JJ)  
 !
 ! Advance volumetric water content values in time:
 ! system of 2 linear equations:
 !
-      PWG2(JJ)      = ( ZA2(JJ)+ZB2(JJ)*ZA3(JJ) )/(1.0 - ZB2(JJ)*ZB3(JJ))
-      PWG3(JJ)      = ZA3(JJ) + ZB3(JJ)*PWG2(JJ)
+      PEK%XWG(JJ,2) = ( ZA2(JJ)+ZB2(JJ)*ZA3(JJ) )/(1.0 - ZB2(JJ)*ZB3(JJ))
+      PWG3(JJ)       = ZA3(JJ) + ZB3(JJ)*PEK%XWG(JJ,2)
 !
 ! Drainage (kg m-2 s-1): this term is implicit and is extracted directly from
 !                        the drainage computation in the above equations.
 !
-      ZWDRAIN(JJ)   = (XRHOLW*PC3(JJ,2)/XDAY)*                                                 &
+      ZWDRAIN(JJ)   = (XRHOLW*PK%XC3(JJ,2)/XDAY)*                                                 &
                        ( ZDELTA3(JJ)*(PWG3(JJ)-PWFC(JJ)) + (1.0-ZDELTA3(JJ))*ZWDRAIN3(JJ) )  
 !
 ! As drainage is implicit, perform a check to prevent any negative drainage
 ! (can arise rarely and is generally negligible, but to ensure a high order conservation):
 !
       PDRAIN(JJ)    = MAX(0.0, ZWDRAIN(JJ))
-      PWG3(JJ)      = PWG3(JJ) + (PDRAIN(JJ) - ZWDRAIN(JJ))*PTSTEP/((PD_G3(JJ)-PD_G2(JJ))*XRHOLW)
+      PWG3(JJ)      = PWG3(JJ) + (PDRAIN(JJ) - ZWDRAIN(JJ))*PTSTEP/((PD_G3(JJ)-PK%XDG(JJ,2))*XRHOLW)
 !
     ENDIF
   ENDDO
@@ -422,7 +387,7 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-DO JJ=1,SIZE(PTG)
+DO JJ=1,SIZE(PEK%XTG,1)
 !*       7.     EFFECT OF THE MELTING/FREEZING ON THE SOIL WATER CONTENT
 !               --------------------------------------------------------
 !
@@ -433,11 +398,11 @@ DO JJ=1,SIZE(PTG)
 ! and sublimation (*heat effect* of sublimation already accounted
 ! for in latent heat flux calculation):
 !           
-  PWGI1(JJ) = ZWGI1M(JJ) + PDWGI1(JJ) - PLEGI(JJ)*PTSTEP/(XLSTT*PD_G1(JJ)*XRHOLW)
+  PEK%XWGI(JJ,1) = ZWGI1M(JJ) + PDWGI1(JJ) - PLEGI(JJ)*PTSTEP/(XLSTT*PK%XDG(JJ,1)*XRHOLW)
 !
 ! Next, update the liquid water content:
 !
-  PWG1(JJ)  = PWG1(JJ)  - PDWGI1(JJ) 
+  PEK%XWG(JJ,1)  = PEK%XWG(JJ,1)  - PDWGI1(JJ) 
 !
 ! Make sure that ice has not dropped below
 ! zero due to sublimation (the ONLY way
@@ -450,9 +415,9 @@ DO JJ=1,SIZE(PTG)
 !
   ZEXCESSFC(JJ)= 0.0
 !
-  ZEXCESSF(JJ) = MAX(0.0, - PWGI1(JJ))
-  PWG1(JJ)     = PWG1(JJ)  - ZEXCESSF(JJ)
-  PWGI1(JJ)    = PWGI1(JJ) + ZEXCESSF(JJ)
+  ZEXCESSF(JJ) = MAX(0.0, - PEK%XWGI(JJ,1))
+  PEK%XWG(JJ,1)     = PEK%XWG(JJ,1)  - ZEXCESSF(JJ)
+  PEK%XWGI(JJ,1)    = PEK%XWGI(JJ,1) + ZEXCESSF(JJ)
   ZEXCESSFC(JJ)= ZEXCESSFC(JJ) - ZEXCESSF(JJ)
 !
 ! Modif H.Douville 26/08/03 (global scale)
@@ -462,9 +427,9 @@ DO JJ=1,SIZE(PTG)
 ! (thus cooling the layer) to ensure sublimation
 ! is accomodated, then extract this from frozen water store.
 !
-  ZEXCESSF(JJ) = MIN(0.0, PWSAT(JJ) - XWGMIN - PWGI1(JJ))
-  PWG1(JJ)     = PWG1(JJ)  - ZEXCESSF(JJ)
-  PWGI1(JJ)    = PWGI1(JJ) + ZEXCESSF(JJ)
+  ZEXCESSF(JJ) = MIN(0.0, PWSAT(JJ) - XWGMIN - PEK%XWGI(JJ,1))
+  PEK%XWG(JJ,1)     = PEK%XWG(JJ,1)  - ZEXCESSF(JJ)
+  PEK%XWGI(JJ,1)    = PEK%XWGI(JJ,1) + ZEXCESSF(JJ)
   ZEXCESSFC(JJ)= ZEXCESSFC(JJ) - ZEXCESSF(JJ)
 !
 ! Make sure that liquid has not dropped below
@@ -473,23 +438,23 @@ DO JJ=1,SIZE(PTG)
 ! Normally simply a budget check, i.e. usually small but accounted
 ! for none-the-less to assure high accuracy.
 !
-  ZEXCESSF(JJ) = MAX(0.0, XWGMIN - PWG1(JJ))
-  PWGI1(JJ)    = PWGI1(JJ)  - ZEXCESSF(JJ)
-  PWG1(JJ)     = PWG1(JJ)   + ZEXCESSF(JJ)
+  ZEXCESSF(JJ) = MAX(0.0, XWGMIN - PEK%XWG(JJ,1))
+  PEK%XWGI(JJ,1)    = PEK%XWGI(JJ,1)  - ZEXCESSF(JJ)
+  PEK%XWG(JJ,1)     = PEK%XWG(JJ,1)   + ZEXCESSF(JJ)
   ZEXCESSFC(JJ)= ZEXCESSFC(JJ) + ZEXCESSF(JJ)
 !
 ! removes very small values due to computation precision
 !
-  IF(PWGI1(JJ) < 1.0E-10) THEN
-    ZEXCESSF(JJ) = PWGI1(JJ)
-    PWG1(JJ)     = PWG1(JJ) + ZEXCESSF(JJ)
-    PWGI1(JJ)    = 0.0
-    ZEXCESSFC(JJ)= ZEXCESSFC(JJ) + ZEXCESSF(JJ)
+  IF(PEK%XWGI(JJ,1) < 1.0E-10) THEN
+    ZEXCESSF(JJ)    = PEK%XWGI(JJ,1)
+    PEK%XWG(JJ,1)  = PEK%XWG(JJ,1) + ZEXCESSF(JJ)
+    PEK%XWGI(JJ,1) = 0.0
+    ZEXCESSFC(JJ)   = ZEXCESSFC(JJ) + ZEXCESSF(JJ)
   ENDIF
 !
 ! Cummulative phase change for the ice/liquid budget corrections:
 !
-  PTG(JJ)        = PTG(JJ) - ZEXCESSFC(JJ)*XLMTT*PCT(JJ)*XRHOLW*PD_G1(JJ)
+  PEK%XTG(JJ,1) = PEK%XTG(JJ,1) - ZEXCESSFC(JJ)*XLMTT*DMK%XCT(JJ)*XRHOLW*PK%XDG(JJ,1)
 !
 !
 !*       7.2    Effect on deep-soil liquid and ice reservoirs
@@ -499,20 +464,20 @@ DO JJ=1,SIZE(PTG)
 ! Since this reservoir includes surface reservoir, add
 ! any changes in ice content due to sublimation:
 !
-  PWGI2(JJ) = ZWGI2M(JJ) + PDWGI2(JJ) - PLEGI(JJ)*PTSTEP/(XLSTT*PD_G2(JJ)*XRHOLW)
+  PEK%XWGI(JJ,2) = ZWGI2M(JJ) + PDWGI2(JJ) - PLEGI(JJ)*PTSTEP/(XLSTT*PK%XDG(JJ,2)*XRHOLW)
 !
 ! Update the liquid water content:
 !
-  PWG2(JJ)   = PWG2(JJ)   - PDWGI2(JJ)
+  PEK%XWG(JJ,2)   = PEK%XWG(JJ,2)   - PDWGI2(JJ)
 !
 ! Make sure that ice has not dropped below
 ! zero due to sublimation (as above).
 !
   ZEXCESSFC(JJ)= 0.0
 !
-  ZEXCESSF(JJ) = MAX(0.0, -PWGI2(JJ))
-  PWG2(JJ)     = PWG2(JJ)  - ZEXCESSF(JJ)
-  PWGI2(JJ)    = PWGI2(JJ) + ZEXCESSF(JJ)
+  ZEXCESSF(JJ) = MAX(0.0, -PEK%XWGI(JJ,2))
+  PEK%XWG(JJ,2)     = PEK%XWG(JJ,2)  - ZEXCESSF(JJ)
+  PEK%XWGI(JJ,2)    = PEK%XWGI(JJ,2) + ZEXCESSF(JJ)
   ZEXCESSFC(JJ)= ZEXCESSFC(JJ) - ZEXCESSF(JJ)
 !
 ! Budget check of minimum threshold for liquid
@@ -520,23 +485,23 @@ DO JJ=1,SIZE(PTG)
 ! to be utilized, but retained for accuracy
 ! in energy and water balance (as above).
 !
-  ZEXCESSF(JJ) = MAX(0.0, XWGMIN - PWG2(JJ))
-  PWGI2(JJ)    = PWGI2(JJ)  - ZEXCESSF(JJ)
-  PWG2(JJ)     = PWG2(JJ)   + ZEXCESSF(JJ)
+  ZEXCESSF(JJ) = MAX(0.0, XWGMIN - PEK%XWG(JJ,2))
+  PEK%XWGI(JJ,2)    = PEK%XWGI(JJ,2)  - ZEXCESSF(JJ)
+  PEK%XWG(JJ,2)     = PEK%XWG(JJ,2)   + ZEXCESSF(JJ)
   ZEXCESSFC(JJ)= ZEXCESSFC(JJ) + ZEXCESSF(JJ)
 !
 ! removes very small values due to computation precision
 !
-  IF (PWGI2(JJ) < 1.0E-10 * PTSTEP) THEN
-      ZEXCESSF(JJ) = PWGI2(JJ)
-      PWG2 (JJ)    = PWG2(JJ) + ZEXCESSF(JJ)
-      PWGI2(JJ)    = 0.
+  IF (PEK%XWGI(JJ,2) < 1.0E-10 * PTSTEP) THEN
+      ZEXCESSF(JJ) = PEK%XWGI(JJ,2)
+      PEK%XWG(JJ,2)    = PEK%XWG(JJ,2) + ZEXCESSF(JJ)
+      PEK%XWGI(JJ,2)    = 0.
       ZEXCESSFC(JJ)= ZEXCESSFC(JJ) + ZEXCESSF(JJ)
   ENDIF
 !
 ! Cummulative phase change for the ice/liquid budget corrections:
 !
-  PTG2(JJ) = PTG2(JJ) - ZEXCESSFC(JJ)*XLMTT*PCG(JJ)*XRHOLW*PD_G2(JJ)
+  PEK%XTG(JJ,2) = PEK%XTG(JJ,2) - ZEXCESSFC(JJ)*XLMTT*DMK%XCG(JJ)*XRHOLW*PK%XDG(JJ,2)
 !
 !
 ENDDO
@@ -548,20 +513,20 @@ ENDDO
 !
 ! runoff of second layer
 !
-PRUNOFF(:) = MAX( 0., PWG2(:)+PWGI2(:)-PWSAT(:) )*PD_G2(:) * XRHOLW / PTSTEP
+PRUNOFF(:) = MAX( 0., PEK%XWG(:,2)+PEK%XWGI(:,2)-PWSAT(:) )*PK%XDG(:,2) * XRHOLW / PTSTEP
 !
 ! now apply limits:
 !
-PWG1(:) = MIN( PWG1(:), PWSAT(:) - PWGI1(:) )
-PWG1(:) = MAX( PWG1(:), XWGMIN              )
+PEK%XWG(:,1) = MIN( PEK%XWG(:,1), PWSAT(:) - PEK%XWGI(:,1) )
+PEK%XWG(:,1) = MAX( PEK%XWG(:,1), XWGMIN              )
 !
-PWG2(:) = MIN( PWG2(:), PWSAT(:) - PWGI2(:) )
-PWG2(:) = MAX( PWG2(:), XWGMIN              )
+PEK%XWG(:,2) = MIN( PEK%XWG(:,2), PWSAT(:) - PEK%XWGI(:,2) )
+PEK%XWG(:,2) = MAX( PEK%XWG(:,2), XWGMIN              )
 !
 !runoff of third layer added to drainage
 !
-IF (HISBA=='3-L') THEN
-   PDRAIN(:) = PDRAIN(:) + MAX( 0., PWG3(:)-PWSAT(:) )* (PD_G3(:)-PD_G2(:)) * XRHOLW / PTSTEP  
+IF (IO%CISBA=='3-L') THEN
+   PDRAIN(:) = PDRAIN(:) + MAX( 0., PWG3(:)-PWSAT(:) )* (PD_G3(:)-PK%XDG(:,2)) * XRHOLW / PTSTEP  
    PWG3(:) = MIN( PWG3(:), PWSAT(:)         )
    PWG3(:) = MAX( PWG3(:), XWGMIN           )
 END IF

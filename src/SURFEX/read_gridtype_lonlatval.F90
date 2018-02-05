@@ -82,7 +82,6 @@ REAL, DIMENSION(KLU)              :: ZDY      ! Y grid mesh size
 INTEGER                           :: ILUOUT
 !---------------------------------------------------------------------------
 REAL, DIMENSION(:),   POINTER     :: ZGRID_PAR=>NULL()
-!$OMP THREADPRIVATE(ZGRID_PAR)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !---------------------------------------------------------------------------
 !

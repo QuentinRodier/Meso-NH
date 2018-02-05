@@ -66,13 +66,13 @@ IMPLICIT NONE
 !
 !*      0.1    declarations of arguments
 !
-REAL,    DIMENSION(:,:,:), INTENT(IN) :: PDG         ! depth of base of soil layers (m)
-REAL,    DIMENSION(:,:),   INTENT(IN) :: PROOTDEPTH  ! effective root depth         (m)
-REAL, DIMENSION(:,:), INTENT(IN)     :: PROOT_EXT
-REAL, DIMENSION(:,:), INTENT(IN)     :: PROOT_LIN
+REAL,    DIMENSION(:,:), INTENT(IN) :: PDG         ! depth of base of soil layers (m)
+REAL,    DIMENSION(:),   INTENT(IN) :: PROOTDEPTH  ! effective root depth         (m)
+REAL, DIMENSION(:), INTENT(IN)     :: PROOT_EXT
+REAL, DIMENSION(:), INTENT(IN)     :: PROOT_LIN
 LOGICAL, OPTIONAL, INTENT(IN)        :: OGV
 !
-REAL, DIMENSION(:,:,:), INTENT(OUT)  :: PROOTFRAC
+REAL, DIMENSION(:,:), INTENT(OUT)  :: PROOTFRAC
 !
 !*      0.2    declarations of local variables
 !
@@ -84,8 +84,8 @@ REAL               :: ZROOTFRGV ! Fraction of patch root depth given to
 !                               ! =1 for non-understory vegetation
 
 !
-INTEGER            :: INI,INL,IPATCH
-INTEGER            :: JJ,JL,JPATCH
+INTEGER            :: INI,INL
+INTEGER            :: JJ,JL
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
@@ -96,35 +96,33 @@ IF (LHOOK) CALL DR_HOOK('INI_DATA_ROOTFRAC',0,ZHOOK_HANDLE)
 !
 INI    = SIZE(PDG,1)
 INL    = SIZE(PDG,2)
-IPATCH = SIZE(PDG,3)
 !
 ZROOTFRGV  = 1.0
 IF (PRESENT(OGV)) THEN
   IF(OGV) ZROOTFRGV  = 0.5
 ENDIF
 !
-PROOTFRAC(:,:,:) = XUNDEF
+PROOTFRAC(:,:) = XUNDEF
 !
-DO JPATCH=1,IPATCH
   DO JJ=1,INI
     !
-    IF ( PROOTDEPTH(JJ,JPATCH)/=XUNDEF .AND. PROOTDEPTH(JJ,JPATCH)/=0.0 ) THEN 
+    IF ( PROOTDEPTH(JJ)/=XUNDEF .AND. PROOTDEPTH(JJ)/=0.0 ) THEN 
       !
       DO JL=1,INL                
-        ZLOG1    = 100. * LOG(PROOT_EXT(JJ,JPATCH)) * PDG    (JJ,JL,JPATCH)
-        ZLOG2    = 100. * LOG(PROOT_EXT(JJ,JPATCH)) * ZROOTFRGV * PROOTDEPTH(JJ,JPATCH)
+        ZLOG1    = 100. * LOG(PROOT_EXT(JJ)) * PDG    (JJ,JL)
+        ZLOG2    = 100. * LOG(PROOT_EXT(JJ)) * ZROOTFRGV * PROOTDEPTH(JJ)
         ZJACKSON = MIN(1.0,(1.0-EXP(ZLOG1))/(1.0-EXP(ZLOG2)))
-        ZUNIF    = MIN(1.0,(PDG(JJ,JL,JPATCH)/ZROOTFRGV/PROOTDEPTH(JJ,JPATCH))) 
-        PROOTFRAC(JJ,JL,JPATCH) =      PROOT_LIN(JJ,JPATCH)  * ZUNIF    &
-                                   + (1.0-PROOT_LIN(JJ,JPATCH)) * ZJACKSON
+        ZUNIF    = MIN(1.0,(PDG(JJ,JL)/ZROOTFRGV/PROOTDEPTH(JJ))) 
+        PROOTFRAC(JJ,JL) =      PROOT_LIN(JJ)  * ZUNIF    &
+                                   + (1.0-PROOT_LIN(JJ)) * ZJACKSON
       ENDDO
 !       No vegetation case                                    
     ELSE
-      PROOTFRAC(JJ,:,JPATCH) = 0.0
+      PROOTFRAC(JJ,:) = 0.0
     ENDIF
     !
   ENDDO
-ENDDO     
+  
 !
 IF (LHOOK) CALL DR_HOOK('INI_DATA_ROOTFRAC',1,ZHOOK_HANDLE)
 !-------------------------------------------------------------------------------
