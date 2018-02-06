@@ -816,6 +816,9 @@ CONTAINS
     !
     TZFILE => NULL()
     !
+    ZSLICE    => NULL()
+    ZSLICE_ll => NULL()
+    !
     YFILEM   = TPFILE%CNAME
     YRECFM   = TPFIELD%CMNHNAME
     YDIR     = TPFIELD%CDIR

@@ -631,7 +631,7 @@ CONTAINS
              WRITE(CFILE ,'(".Z",i3.3)') IFILE
              YFILE_IOZ           = TRIM(TPFILE%CNAME)//CFILE//".lfi"
 
-             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP,OOLD=.FALSE.)
+             CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP)
 
              IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
                CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
