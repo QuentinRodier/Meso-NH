@@ -50,7 +50,7 @@ INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessa
 !Structure containing one pointer to a file
 !Useful to create arrays of pointers to files
 TYPE TFILE_ELT
-  TYPE(TFILEDATA),POINTER :: TFILE
+  TYPE(TFILEDATA),POINTER :: TFILE => NULL()
 END TYPE TFILE_ELT
 
 !Structure describing the characteristics of an output or a backup
@@ -66,7 +66,7 @@ END TYPE TOUTBAK
 
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
-  CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME  !Filename
+  CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME = '' !Filename
   CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
@@ -124,6 +124,6 @@ TYPE(TFILEDATA),POINTER,SAVE :: TFILE_SURFEX  => NULL() !Pointer used to find th
 
 TYPE(TFILEDATA),POINTER,SAVE :: TFILE_OUTPUTLISTING  => NULL() !Pointer used to point to the file used when writing to OUTPUT_LISTINGn file
 
-TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy") !Non existing file which can be used as a dummy target
+TYPE(TFILEDATA),TARGET, SAVE :: TFILE_DUMMY = TFILEDATA(CNAME="dummy",TFILES_IOZ=NULL()) !Non existing file which can be used as a dummy target
 
 END MODULE MODD_IO_ll
