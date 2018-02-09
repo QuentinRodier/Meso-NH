@@ -68,7 +68,7 @@ INTEGER,SAVE,  DIMENSION(JPMODELMAX,JPMODELMAX) :: NMSG_END ! timestep END
                                                             !   MeSsaGes concerning
 INTEGER,SAVE,  DIMENSION(JPMODELMAX,JPMODELMAX) :: NMSG_AVR_END ! AVeRage END
 !
-CHARACTER(LEN=28),SAVE,   DIMENSION(JPMODELMAX) :: CMY_NAME,CDAD_NAME
+CHARACTER(LEN=NFILENAMELGTMAX),SAVE,   DIMENSION(JPMODELMAX) :: CMY_NAME,CDAD_NAME
                                                   ! names of the initial FM-Files
                                                   ! then generic names of output FM-Files
                                                   ! of each model "m"

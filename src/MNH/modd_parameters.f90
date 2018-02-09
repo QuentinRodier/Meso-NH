@@ -83,7 +83,9 @@ INTEGER, PARAMETER :: JPOUTVARMAX = 192 ! Maximum allowed number of variables in
 INTEGER, PARAMETER :: NMNHNAMELGTMAX = 32 ! Maximum length of a MNH variable name
 INTEGER, PARAMETER :: NSTDNAMELGTMAX = 64 ! Maximum length of the standard name of a variable (CF convention)
 !
-INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name
+INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must be at least NFILENAMELGTMAXLFI)
+INTEGER, PARAMETER :: NFILENAMELGTMAXLFI = 28 ! Maximum length of a file name in LFI file (this is necessary
+                                              ! to keep backward compatibility), MUST BE 28
 !
 INTEGER, PARAMETER :: JPLIMACCNMAX = 10 ! Maximum allowed number of CCN modes in LIMA
 INTEGER, PARAMETER :: JPLIMAIFNMAX = 10 ! Maximum allowed number of IFN modes in LIMA
