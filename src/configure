@@ -163,6 +163,7 @@ module load ga/\${VER_GA}
                 export  VER_MPI=${VER_MPI:-MPIINTEL}
                 export OPTLEVEL=${OPTLEVEL:-O2}
                 export MVWORK=${MVWORK:-YES}
+                export VER_CDF=${VER_CDF:-CDFAUTO}
                 export MNHENV=${MNHENV:-"
 #export OBJDIR_PATH=$WORKDIR/DIR_OBJ_ADA
 export MP_MPILIB=pempi

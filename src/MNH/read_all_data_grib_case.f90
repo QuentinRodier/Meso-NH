@@ -18,7 +18,7 @@ SUBROUTINE READ_ALL_DATA_GRIB_CASE(HFILE,TPPRE_REAL1,HGRIB,TPPGDFILE,    &
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
 CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1 ! PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPPRE_REAL1 ! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
 INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
@@ -185,7 +185,7 @@ IMPLICIT NONE
 !       ------------------------
 !
 CHARACTER(LEN=4),  INTENT(IN)    :: HFILE       ! which file ('ATM0','ATM1' or 'CHEM')
-TYPE(TFILEDATA),POINTER,INTENT(IN) :: TPPRE_REAL1! PRE_REAL1 file
+TYPE(TFILEDATA),POINTER,INTENT(INOUT) :: TPPRE_REAL1! PRE_REAL1 file
 CHARACTER(LEN=28), INTENT(IN)    :: HGRIB       ! name of the GRIB file
 TYPE(TFILEDATA),   INTENT(IN)    :: TPPGDFILE   ! physiographic data file
 INTEGER,           INTENT(IN)    :: KVERB       ! verbosity level
