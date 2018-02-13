@@ -30,8 +30,9 @@ OPT_NONAN =  -qsigtrap -qflttrap=qpxstore:overflow:zerodivide:invalid:enable -qf
 OPT_I8      = -qintsize=8 -qxlf77=intarg
 OPT_I4      = -qintsize=4 -qxlf77=intarg
 #
-# Integer 4/8 option
+# Real/Integer 4/8 option
 #
+MNH_REAL  ?=8
 MNH_INT   ?=4
 LFI_RECL  ?=512
 #

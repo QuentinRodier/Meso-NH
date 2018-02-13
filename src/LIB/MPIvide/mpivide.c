@@ -9,7 +9,7 @@ MNH_LIC for details. version 1.
 
 /* Variables defined in meso-nh code */
 #ifdef FUJI
-#if MNH_REALS == 4
+#if MNH_REAL == 4
   #define MPI_PRECISION MPI_REAL
   #define MPI_2PRECISION MPI_2REAL
 #else
@@ -32,7 +32,7 @@ MNH_LIC for details. version 1.
 #define SIZEINTEGER 4
 #define SIZELOGICAL 4
 #endif
-#if MNH_REALS == 4
+#if MNH_REAL == 4
 #define SIZEPRECISION 4
 #define SIZE2PRECISION 8
 #else

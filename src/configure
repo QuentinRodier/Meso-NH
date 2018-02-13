@@ -19,6 +19,7 @@ export VERSION_CDFF=${VERSION_CDFF:-"4.4.4"}
 export VERSION_GRIBAPI=${VERSION_GRIBAPI:-"1.13.1"}
 export MNH_INT=${MNH_INT:-"4"}
 export LFI_INT=${LFI_INT:-8}
+export MNH_REAL=${MNH_REAL:-"8"}
 export MNH_IOCDF4=${MNH_IOCDF4:-1}
 
 export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
@@ -398,7 +399,7 @@ fi
 #
 ${LOCAL}/bin/eval_dollar  profile_mesonh.ihm > profile_mesonh
 chmod +x profile_mesonh
-XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
+XYZ=${ARCH}-R${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
 cp profile_mesonh profile_mesonh-${XYZ}
 #
 #  Do some post-install stuff

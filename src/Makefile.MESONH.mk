@@ -14,7 +14,7 @@ OBJDIR_ROOT=${PWD}/dir_obj
 endif
 LIB_OBJS_ROOT=lib
 #
-ARCH_XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}
+ARCH_XYZ=${ARCH}-R${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}
 ##########################################################
 #                                                        #
 #            Source DIRECTORY                            #
@@ -54,7 +54,9 @@ INC        += $(INC_MNH)
 #
 CPPFLAGS   += -DMNH_INT=$(MNH_INT)
 #
-
+# MNH real 4/8
+#
+CPPFLAGS   += -DMNH_REAL=$(MNH_REAL)
 #
 #  Len of HREC characters 
 #
@@ -247,12 +249,7 @@ INC_MPI                = -I$(B)$(DIR_MPI)
 DIR_MASTER            += $(DIR_MPI)
 OBJS_LISTE_MASTER     += mpivide.o
 INC                   += $(INC_MPI)
-ifneq "$(MNH_REAL)" "R4"
-MNH_REALS=8
-else
-MNH_REALS=4
-endif
-mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT) -DMNH_REALS=$(MNH_REALS) \
+mpivide.o  : CPPFLAGS += -DFUJI -DMNH_INT=$(MNH_INT) -DMNH_REAL=$(MNH_REAL) \
                         -I$(DIR_MPI)/include
 VPATH                 += $(DIR_MPI)
 endif
