@@ -497,7 +497,7 @@ IF ( PA<=ZALPHA ) THEN
     !
     ! 110 deb
     ZTEMP = DLGA(PA*1.)
-    ZU = DEXP(ZTEMP) - (PX**PA)/PA
+    ZU = EXP(ZTEMP) - (PX**PA)/PA
     ! 110 end
     !
   ENDIF
@@ -548,7 +548,7 @@ IF ( PA<=ZALPHA ) THEN
     !
     ZT = EXP(PX) * PX**(-PA)
     PG = ZT * PG
-    PGSTAR = 1. - PA * PG * DEXP(-ZALGP1) / ZT
+    PGSTAR = 1. - PA * PG * EXP(-ZALGP1) / ZT
     !
   ELSEIF (PA==0.) THEN
     !
