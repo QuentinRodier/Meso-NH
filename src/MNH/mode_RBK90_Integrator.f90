@@ -733,7 +733,11 @@ Stage: DO istage = 1, ros_S
    END DO
    Err  = SQRT(Err/N)
 
+#if (MNH_REAL == 8)
+   ros_ErrorNorm = MAX(Err,1.0e-10)
+#else
    ros_ErrorNorm = MAX(Err,1.0d-10)
+#endif
 
   END FUNCTION ros_ErrorNorm
 

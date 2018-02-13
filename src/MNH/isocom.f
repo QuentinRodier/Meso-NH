@@ -374,14 +374,25 @@ C
 C
 C *** DEFAULT VALUES *************************************************
 C
+#if (MNH_REAL == 8)
+      DATA TEMP/298.E0/, R/82.0567E-6/, RH/0.9E0/, EPS/1E-6/, MAXIT/100/,
+     &     TINY/1E-20/, GREAT/1E10/, ZERO/0.0E0/, ONE/1.0E0/,NSWEEP/4/, 
+     &     TINY2/1E-11/,NDIV/5/, TWO/2.0E0/, HALF/0.5E0/, FOUR/4.0E0/
+C
+      DATA MOLAL/NIONS*0.0E0/, MOLALR/NPAIR*0.0E0/, GAMA/NPAIR*0.1E0/,
+     &     GAMOU/NPAIR*1E10/,  GAMIN/NPAIR*1E10/,   CALAIN/.TRUE./,
+     &     CALAOU/.TRUE./,     EPSACT/5E-2/,        ICLACT/0/,
+     &     IACALC/1/,          WFTYP/2/
+#else
       DATA TEMP/298.0/, R/82.0567D-6/, RH/0.9D0/, EPS/1D-6/, MAXIT/100/,
      &     TINY/1D-20/, GREAT/1D10/, ZERO/0.0D0/, ONE/1.0D0/,NSWEEP/4/, 
-     &     TINY2/1D-11/,NDIV/5/
+     &     TINY2/1D-11/,NDIV/5/, TWO/2.0D0/, HALF/0.5E0/, FOUR/4.0E0/
 C
       DATA MOLAL/NIONS*0.0D0/, MOLALR/NPAIR*0.0D0/, GAMA/NPAIR*0.1D0/,
      &     GAMOU/NPAIR*1D10/,  GAMIN/NPAIR*1D10/,   CALAIN/.TRUE./,
      &     CALAOU/.TRUE./,     EPSACT/5D-2/,        ICLACT/0/,
      &     IACALC/1/,          WFTYP/2/
+#endif
 C
       DATA ERRSTK/NERRMX*0/,   ERRMSG/NERRMX*' '/,  NOFER/0/, 
      &     STKOFL/.FALSE./ 
@@ -1543,7 +1554,7 @@ CC         ENDIF
 C
 C *** CALCULATE HCL SPECIATION IN THE GAS PHASE *************************
 C
-      GHCL     = MAX(X-DELT, 0.0d0)  ! GAS HCL
+      GHCL     = MAX(X-DELT, ZERO)  ! GAS HCL
 C
 C *** CALCULATE HCL SPECIATION IN THE LIQUID PHASE **********************
 C
@@ -1640,7 +1651,7 @@ CC         ENDIF
 C
 C *** CALCULATE HNO3 SPECIATION IN THE GAS PHASE ************************
 C
-      GHNO3    = MAX(X-DELT, 0.0d0)  ! GAS HNO3
+      GHNO3    = MAX(X-DELT, ZERO)  ! GAS HNO3
 C
 C *** CALCULATE HNO3 SPECIATION IN THE LIQUID PHASE *********************
 C
@@ -2323,7 +2334,7 @@ C
          MOLALR(2) = 0.5*MOLAL(2)                          ! NA2SO4
          TOTS4     = MOLAL(5)+MOLAL(6)                     ! Total SO4
          MOLALR(4) = MAX(TOTS4 - MOLALR(2), ZERO)          ! (NH4)2SO4
-         FRNH4     = MAX(MOLAL(3) - 2.D0*MOLALR(4), ZERO)
+         FRNH4     = MAX(MOLAL(3) - TWO*MOLALR(4), ZERO)
          MOLALR(5) = MIN(MOLAL(7),FRNH4)                   ! NH4NO3
          FRNH4     = MAX(FRNH4 - MOLALR(5), ZERO)
          MOLALR(6) = MIN(MOLAL(4), FRNH4)                  ! NH4CL
@@ -2774,13 +2785,13 @@ C
          BB =-GG
          CC =-AKW
          DD = BB*BB - 4.D0*CC
-         HI = MAX(0.5D0*(-BB + SQRT(DD)),CN)
+         HI = MAX(HALF*(-BB + SQRT(DD)),CN)
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
          DD = BB*BB - 4.D0*CC
-         OHI= MAX(0.5D0*(-BB + SQRT(DD)),CN)
+         OHI= MAX(HALF*(-BB + SQRT(DD)),CN)
          HI = AKW/OHI
       ENDIF
 C
@@ -2831,7 +2842,11 @@ C
       DO 30 I=1,NIONS
          IONIC=IONIC + MOLAL(I)*Z(I)*Z(I)
 30    CONTINUE
-      IONIC = MAX(MIN(0.5*IONIC/WATER,20.d0), TINY)
+#if (MNH_REAL == 8)
+      IONIC = MAX(MIN(HALF*IONIC/WATER,20.e0), TINY)
+#else
+      IONIC = MAX(MIN(HALF*IONIC/WATER,20.d0), TINY)
+#endif
 C
 C *** CALCULATE BINARY ACTIVITY COEFFICIENTS ***************************
 C
@@ -3811,7 +3826,7 @@ C  D = 0, THREE REAL (ONE DOUBLE) ROOTS
 C
          ELSE IF (D.LE.EPS) THEN    ! -EPS <= D <= EPS  : D = ZERO
             IX   = 2
-            SSIG = SIGN (1.D0, R)
+            SSIG = SIGN (ONE, R)
             S    = SSIG*(ABS(R))**EXPON
             X(1) = 2.D0*S  - EXPON*A1
             X(2) =     -S  - EXPON*A1
@@ -3821,8 +3836,8 @@ C
          ELSE                       ! D > EPS  : D > ZERO
             IX   = 1
             SQD  = SQRT(D)
-            SSIG = SIGN (1.D0, R+SQD)       ! TRANSFER SIGN TO SSIG
-            TSIG = SIGN (1.D0, R-SQD)
+            SSIG = SIGN (ONE, R+SQD)       ! TRANSFER SIGN TO SSIG
+            TSIG = SIGN (ONE, R-SQD)
             S    = SSIG*(ABS(R+SQD))**EXPON ! EXPONENTIATE ABS() 
             T    = TSIG*(ABS(R-SQD))**EXPON
             X(1) = S + T - EXPON*A1
@@ -3886,7 +3901,7 @@ C
       DO 10 I=1,NDIV
          X2 = X1+DX
          Y2 = FUNC (X2)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y2) .LT. ZERO) GOTO 20 ! (Y1*Y2.LT.ZERO)
+         IF (SIGN(ONE,Y1)*SIGN(ONE,Y2) .LT. ZERO) GOTO 20 ! (Y1*Y2.LT.ZERO)
          X1 = X2
          Y1 = Y2
 10    CONTINUE
@@ -3906,7 +3921,7 @@ C
 20    DO 30 I=1,MAXIT
          X3 = 0.5*(X1+X2)
          Y3 = FUNC (X3)
-         IF (SIGN(1.d0,Y1)*SIGN(1.d0,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
+         IF (SIGN(ONE,Y1)*SIGN(ONE,Y3) .LE. ZERO) THEN  ! (Y1*Y3 .LE. ZERO)
             Y2    = Y3
             X2    = X3
          ELSE

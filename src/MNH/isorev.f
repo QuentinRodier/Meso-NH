@@ -36,7 +36,7 @@ C
       IF (RH.GE.DRNH42S4) THEN         ! WET AEROSOL, NEED NH4 AT SRATIO=2.0
          SULRATW = GETASR(WAER(2), RHI)     ! AEROSOL SULFATE RATIO
       ELSE
-         SULRATW = 2.0D0                    ! DRY AEROSOL SULFATE RATIO
+         SULRATW = TWO                    ! DRY AEROSOL SULFATE RATIO
       ENDIF
       SULRAT  = WAER(3)/WAER(2)         ! SULFATE RATIO
 C
@@ -160,7 +160,7 @@ C
       IF (TRYLIQ .AND. RH.GE.DRNH4NO3) THEN ! *** WET AEROSOL
          SULRATW = GETASR(WAER(2), RHI)     ! LIMITING SULFATE RATIO
       ELSE
-         SULRATW = 2.0D0                    ! *** DRY AEROSOL
+         SULRATW = TWO                    ! *** DRY AEROSOL
       ENDIF
       SULRAT = WAER(3)/WAER(2)
 C
@@ -309,7 +309,7 @@ C
 ccC
 ccC *** CHECK IF TOO MUCH SODIUM ; ADJUST AND ISSUE ERROR MESSAGE *********
 ccC
-cc      REST = 2.D0*WAER(2) + WAER(4) + WAER(5) 
+cc      REST = TWO*WAER(2) + WAER(4) + WAER(5) 
 cc      IF (WAER(1).GT.REST) THEN            ! NA > 2*SO4+CL+NO3 ?
 cc         WAER(1) = (ONE-1D-6)*REST         ! Adjust Na amount
 cc         CALL PUSHERR (0050, 'ISRP3R')     ! Warning error: Na adjusted
@@ -318,13 +318,13 @@ C
 C *** CALCULATE SULFATE & SODIUM RATIOS *********************************
 C
       IF (TRYLIQ .AND. RH.GE.DRNH4NO3) THEN  ! ** WET AEROSOL
-         FRSO4   = WAER(2) - WAER(1)/2.0D0     ! SULFATE UNBOUND BY SODIUM
+         FRSO4   = WAER(2) - WAER(1)/TWO     ! SULFATE UNBOUND BY SODIUM
          FRSO4   = MAX(FRSO4, TINY)
          SRI     = GETASR(FRSO4, RHI)          ! SULFATE RATIO FOR NH4+
          SULRATW = (WAER(1)+FRSO4*SRI)/WAER(2) ! LIMITING SULFATE RATIO
-         SULRATW = MIN (SULRATW, 2.0D0)
+         SULRATW = MIN (SULRATW, TWO)
       ELSE
-         SULRATW = 2.0D0                     ! ** DRY AEROSOL
+         SULRATW = TWO                     ! ** DRY AEROSOL
       ENDIF
       SULRAT = (WAER(1)+WAER(3))/WAER(2)
       SODRAT = WAER(1)/WAER(2)
@@ -527,7 +527,7 @@ C
 C
 C *** CALCULATE WATER CONTENT *****************************************
 C
-      MOLALR(4)= MIN(WAER(2), 0.5d0*WAER(3))
+      MOLALR(4)= MIN(WAER(2), HALF*WAER(3))
       WATER    = MOLALR(4)/M0(4)  ! ZSR correlation
 C
 C *** SOLVE EQUATIONS ; WITH ITERATIONS FOR ACTIVITY COEF. ************
@@ -541,7 +541,7 @@ C
          SO4I = WAER(2)
          HSO4I= ZERO
 C
-         CALL CALCPH (2.D0*SO4I - NH4I, HI, OHI)    ! Get pH
+         CALL CALCPH (TWO*SO4I - NH4I, HI, OHI)    ! Get pH
 C
          NH3AQ = ZERO                               ! AMMONIA EQUILIBRIUM
          IF (HI.LT.OHI) THEN
@@ -606,11 +606,11 @@ C
       SUBROUTINE CALCK1
       INCLUDE 'isrpia.inc'
 C
-      CNH42S4 = MIN(WAER(2),0.5d0*WAER(3))  ! For bad input problems
+      CNH42S4 = MIN(WAER(2),HALF*WAER(3))  ! For bad input problems
       GNH3    = ZERO
 C
       W(2)    = CNH42S4
-      W(3)    = 2.D0*CNH42S4 + GNH3
+      W(3)    = TWO*CNH42S4 + GNH3
 C
       RETURN
 C
@@ -649,8 +649,8 @@ C
 C
 C *** AEROSOL WATER CONTENT
 C
-      MOLALR(4) = MIN(WAER(2),0.5d0*WAER(3))       ! (NH4)2SO4
-      AML5      = MAX(WAER(3)-2.D0*MOLALR(4),ZERO) ! "free" NH4
+      MOLALR(4) = MIN(WAER(2),HALF*WAER(3))       ! (NH4)2SO4
+      AML5      = MAX(WAER(3)-TWO*MOLALR(4),ZERO) ! "free" NH4
       MOLALR(5) = MAX(MIN(AML5,WAER(4)), ZERO)     ! NH4NO3=MIN("free",NO3)
       WATER     = MOLALR(4)/M0(4) + MOLALR(5)/M0(5)
       WATER     = MAX(WATER, TINY)
@@ -671,13 +671,13 @@ C
          SO4I  = WAER(2)
          HSO4I = ZERO
 C
-         CALL CALCPH (2.D0*SO4I + NO3I - NH4I, HI, OHI)
+         CALL CALCPH (TWO*SO4I + NO3I - NH4I, HI, OHI)
 C
 C AMMONIA ASSOCIATION EQUILIBRIUM
 C
          NH3AQ = ZERO
          NO3AQ = ZERO
-         GG    = 2.D0*SO4I + NO3I - NH4I
+         GG    = TWO*SO4I + NO3I - NH4I
          IF (HI.LT.OHI) THEN
             CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
             HI    = AKW/OHI
@@ -752,8 +752,8 @@ C
 C
 C *** SETUP PARAMETERS ************************************************
 C
-      CHI1   = MIN(WAER(2),0.5d0*WAER(3))     ! (NH4)2SO4
-      CHI2   = MAX(WAER(3) - 2.D0*CHI1, ZERO) ! "Free" NH4+
+      CHI1   = MIN(WAER(2),HALF*WAER(3))     ! (NH4)2SO4
+      CHI2   = MAX(WAER(3) - TWO*CHI1, ZERO) ! "Free" NH4+
       CHI3   = MAX(WAER(4) - CHI2, ZERO)      ! "Free" NO3
 C
       PSI2   = CHI2
@@ -869,18 +869,18 @@ CC         A21   = XK21*WATER*R*TEMP
 C
 C ION CONCENTRATIONS
 C
-         NH4I  = 2.D0*PSI1 + PSI2 
+         NH4I  = TWO*PSI1 + PSI2 
          NO3I  = PSI2 + PSI3
          SO4I  = PSI1 
          HSO4I = ZERO
 C
-         CALL CALCPH (2.D0*SO4I + NO3I - NH4I, HI, OHI)
+         CALL CALCPH (TWO*SO4I + NO3I - NH4I, HI, OHI)
 C
 C AMMONIA ASSOCIATION EQUILIBRIUM
 C
          NH3AQ = ZERO
          NO3AQ = ZERO
-         GG    = 2.D0*SO4I + NO3I - NH4I
+         GG    = TWO*SO4I + NO3I - NH4I
          IF (HI.LT.OHI) THEN
             CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
             HI    = AKW/OHI
@@ -1005,13 +1005,13 @@ CCC      A1      = XK10/R/TEMP/R/TEMP
 C
 C *** CALCULATE AEROSOL COMPOSITION ************************************
 C
-CCC      CHI1    = 2.D0*WAER(4)        ! Free parameter ; arbitrary value.
+CCC      CHI1    = TWO*WAER(4)        ! Free parameter ; arbitrary value.
       PSI1    = WAER(4)
 C
 C *** The following statment is here to avoid negative NH4+ values in 
 C     CALCN? routines that call CALCN1A
 C
-      PSI2    = MAX(MIN(WAER(2),0.5d0*(WAER(3)-PSI1)),TINY)
+      PSI2    = MAX(MIN(WAER(2),HALF*(WAER(3)-PSI1)),TINY)
 C
       CNH4NO3 = PSI1
       CNH42S4 = PSI2
@@ -1090,18 +1090,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -1112,7 +1112,7 @@ C
          HI    = AKW/OHI
          HSO4I = ZERO
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -1255,7 +1255,7 @@ C
 C
 C ION CONCENTRATIONS ; CORRECTIONS
 C
-      NAI = WAER(1) - 2.D0*ROOT3
+      NAI = WAER(1) - TWO*ROOT3
       SO4I= WAER(2) - ROOT3
       NH4I   = WAER(3)
       NO3I   = WAER(4)
@@ -1263,18 +1263,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -1285,7 +1285,7 @@ C
          HI    = AKW/OHI
          HSO4I = ZERO
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -1493,8 +1493,8 @@ C AMMONIUM SULFATE
 C
       IF (NH4I*NH4I*SO4I .GT. A4) THEN
          BB =-(WAER(2)+WAER(3)-ROOT3)
-         CC =  WAER(3)*(WAER(2)-ROOT3+0.5D0*WAER(3))
-         DD =-((WAER(2)-ROOT3)*WAER(3)**2.D0 + A4)/4.D0
+         CC =  WAER(3)*(WAER(2)-ROOT3+HALF*WAER(3))
+         DD =-((WAER(2)-ROOT3)*WAER(3)**TWO + A4)/FOUR
          CALL POLY3(BB, CC, DD, ROOT1, ISLV)
          IF (ISLV.NE.0) ROOT1 = TINY
          ROOT1 = MIN(ROOT1, WAER(3), WAER(2)-ROOT3, CHI6)
@@ -1506,26 +1506,26 @@ C
 C
 C ION CONCENTRATIONS
 C
-      NAI = WAER(1) - 2.D0*ROOT3
+      NAI = WAER(1) - TWO*ROOT3
       SO4I= WAER(2) - ROOT1 - ROOT3
-      NH4I= WAER(3) - 2.D0*ROOT1
+      NH4I= WAER(3) - TWO*ROOT1
       NO3I= WAER(4)
       CLI = WAER(5)
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -1536,7 +1536,7 @@ C
          HI    = AKW/OHI
          HSO4I = ZERO
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -1742,21 +1742,21 @@ C
 C AMMONIUM CHLORIDE
 C
       IF (NH4I*CLI .GT. A14) THEN
-         BB    =-(WAER(3) + WAER(5) - 2.D0*ROOT1)
-         CC    = WAER(5)*(WAER(3) - 2.D0*ROOT1) - A14
-         DD    = BB*BB - 4.D0*CC
+         BB    =-(WAER(3) + WAER(5) - TWO*ROOT1)
+         CC    = WAER(5)*(WAER(3) - TWO*ROOT1) - A14
+         DD    = BB*BB - FOUR*CC
          IF (DD.LT.ZERO) THEN
             ROOT2 = ZERO
          ELSE
             DD    = SQRT(DD)
-            ROOT2A= 0.5D0*(-BB+DD)  
-            ROOT2B= 0.5D0*(-BB-DD)  
+            ROOT2A= HALF*(-BB+DD)  
+            ROOT2B= HALF*(-BB-DD)  
             IF (ZERO.LE.ROOT2A) THEN
                ROOT2 = ROOT2A
             ELSE
                ROOT2 = ROOT2B
             ENDIF
-            ROOT2 = MIN(ROOT2, WAER(5), WAER(3) - 2.D0*ROOT1, CHI4)
+            ROOT2 = MIN(ROOT2, WAER(5), WAER(3) - TWO*ROOT1, CHI4)
             ROOT2 = MAX(ROOT2, ZERO)
             PSI4  = CHI4 - ROOT2
          ENDIF
@@ -1783,8 +1783,8 @@ C AMMONIUM SULFATE
 C
       IF (NH4I*NH4I*SO4I .GT. A4) THEN
          BB =-(WAER(2)+WAER(3)-ROOT2-ROOT3)
-         CC = (WAER(3)-ROOT2)*(WAER(2)-ROOT3+0.5D0*(WAER(3)-ROOT2))
-         DD =-((WAER(2)-ROOT3)*(WAER(3)-ROOT2)**2.D0 + A4)/4.D0
+         CC = (WAER(3)-ROOT2)*(WAER(2)-ROOT3+HALF*(WAER(3)-ROOT2))
+         DD =-((WAER(2)-ROOT3)*(WAER(3)-ROOT2)**TWO + A4)/FOUR
          CALL POLY3(BB, CC, DD, ROOT1, ISLV)
          IF (ISLV.NE.0) ROOT1 = TINY
          ROOT1 = MIN(ROOT1, WAER(3)-ROOT2, WAER(2)-ROOT3, CHI6)
@@ -1796,26 +1796,26 @@ C
 C
 C ION CONCENTRATIONS
 C
-      NAI = WAER(1) - 2.D0*ROOT3
+      NAI = WAER(1) - TWO*ROOT3
       SO4I= WAER(2) - ROOT1 - ROOT3
-      NH4I= WAER(3) - ROOT2 - 2.D0*ROOT1
+      NH4I= WAER(3) - ROOT2 - TWO*ROOT1
       NO3I= WAER(4)
       CLI = WAER(5) - ROOT2
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -1826,7 +1826,7 @@ C
          HI    = AKW/OHI
          HSO4I = ZERO
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -1992,11 +1992,11 @@ C
 C
 C *** CALCULATE SOLIDS **************************************************
 C
-      CNA2SO4 = 0.5d0*WAER(1)
+      CNA2SO4 = HALF*WAER(1)
       FRSO4   = MAX (WAER(2)-CNA2SO4, ZERO)
 C
-      CNH42S4 = MAX (MIN(FRSO4,0.5d0*WAER(3)), TINY)
-      FRNH3   = MAX (WAER(3)-2.D0*CNH42S4, ZERO)
+      CNH42S4 = MAX (MIN(FRSO4,HALF*WAER(3)), TINY)
+      FRNH3   = MAX (WAER(3)-TWO*CNH42S4, ZERO)
 C
       CNH4NO3 = MIN (FRNH3, WAER(4))
 CCC      FRNO3   = MAX (WAER(4)-CNH4NO3, ZERO)
@@ -2080,18 +2080,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG  = 2.D0*WAER(2) + NO3I + CLI - NAI - NH4I
+      GG  = TWO*WAER(2) + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -2101,7 +2101,7 @@ C
          CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
          HI    = AKW/OHI
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -2254,7 +2254,7 @@ C
 C
 C ION CONCENTRATIONS
 C
-      NAI  = WAER(1) - 2.D0*ROOT
+      NAI  = WAER(1) - TWO*ROOT
       SO4I = WAER(2) - ROOT
       NH4I = WAER(3)
       NO3I = WAER(4)
@@ -2262,18 +2262,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -2283,7 +2283,7 @@ C
          CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
          HI    = AKW/OHI
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -2485,7 +2485,7 @@ C
          IF (ISLV.NE.0) ROOT = TINY
          ROOT = MIN (MAX(ROOT,ZERO), CHI1)
          PSI1 = CHI1-ROOT
-         NAI  = WAER(1) - 2.D0*ROOT
+         NAI  = WAER(1) - TWO*ROOT
          SO4I = WAER(2) - ROOT
       ENDIF
       PSCONV1 = ABS(PSI1-PSIO1) .LE. EPS*PSIO1
@@ -2497,8 +2497,8 @@ C
       IF (NH4I*CLI .GT. A14) THEN
          BB   =-(NH4I + CLI)
          CC   =-A14 + NH4I*CLI
-         DD   = BB*BB - 4.D0*CC
-         ROOT = 0.5D0*(-BB-SQRT(DD)) 
+         DD   = BB*BB - FOUR*CC
+         ROOT = HALF*(-BB-SQRT(DD)) 
          IF (ROOT.GT.TINY) THEN
             ROOT    = MIN(ROOT, CHI4)
             PSI4    = CHI4 - ROOT
@@ -2513,18 +2513,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -2534,7 +2534,7 @@ C
          CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
          HI    = AKW/OHI
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -2762,9 +2762,9 @@ C
       IF (NH4I*CLI .GT. A14) THEN
          BB    =-(WAER(3) + WAER(5) - ROOT3)
          CC    =-A14 + NH4I*(WAER(5) - ROOT3)
-         DD    = MAX(BB*BB - 4.D0*CC, ZERO)
-         ROOT2A= 0.5D0*(-BB+SQRT(DD))  
-         ROOT2B= 0.5D0*(-BB-SQRT(DD))  
+         DD    = MAX(BB*BB - FOUR*CC, ZERO)
+         ROOT2A= HALF*(-BB+SQRT(DD))  
+         ROOT2B= HALF*(-BB-SQRT(DD))  
          IF (ZERO.LE.ROOT2A) THEN
             ROOT2 = ROOT2A
          ELSE
@@ -2781,8 +2781,8 @@ C SODIUM SULFATE
 C
       IF (NAI*NAI*SO4I .GT. A5) THEN
          BB =-(CHI1 + WAER(1) - ROOT3)
-         CC = 0.25D0*(WAER(1) - ROOT3)*(4.D0*CHI1+WAER(1)-ROOT3)
-         DD =-0.25D0*(CHI1*(WAER(1)-ROOT3)**2.D0 - A5) 
+         CC = 0.25D0*(WAER(1) - ROOT3)*(FOUR*CHI1+WAER(1)-ROOT3)
+         DD =-0.25D0*(CHI1*(WAER(1)-ROOT3)**TWO - A5) 
          CALL POLY3(BB, CC, DD, ROOT1, ISLV)
          IF (ISLV.NE.0) ROOT1 = TINY
          ROOT1 = MIN (MAX(ROOT1,ZERO), MAX(WAER(1)-ROOT3,ZERO), 
@@ -2794,7 +2794,7 @@ C
 C
 C ION CONCENTRATIONS
 C
-      NAI = WAER(1) - (2.D0*ROOT1 + ROOT3)
+      NAI = WAER(1) - (TWO*ROOT1 + ROOT3)
       SO4I= WAER(2) - ROOT1
       NH4I= WAER(3) - ROOT2
       CLI = WAER(5) - (ROOT3 + ROOT2)
@@ -2803,11 +2803,11 @@ C
 C SODIUM CHLORIDE  ; To obtain new value for ROOT3
 C
       IF (NAI*CLI .GT. A8) THEN
-         BB    =-((CHI1-2.D0*ROOT1) + (WAER(5) - ROOT2))
-         CC    = (CHI1-2.D0*ROOT1)*(WAER(5) - ROOT2) - A8
-         DD    = SQRT(MAX(BB*BB - 4.D0*CC, TINY))
-         ROOT3A= 0.5D0*(-BB-SQRT(DD)) 
-         ROOT3B= 0.5D0*(-BB+SQRT(DD)) 
+         BB    =-((CHI1-TWO*ROOT1) + (WAER(5) - ROOT2))
+         CC    = (CHI1-TWO*ROOT1)*(WAER(5) - ROOT2) - A8
+         DD    = SQRT(MAX(BB*BB - FOUR*CC, TINY))
+         ROOT3A= HALF*(-BB-SQRT(DD)) 
+         ROOT3B= HALF*(-BB+SQRT(DD)) 
          IF (ZERO.LE.ROOT3A) THEN
             ROOT3 = ROOT3A
          ELSE
@@ -2821,18 +2821,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -2842,7 +2842,7 @@ C
          CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
          HI    = AKW/OHI
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN
@@ -3116,10 +3116,10 @@ C
       IF (NH4I*CLI .GT. A14) THEN
          BB    =-(WAER(3) + WAER(5) - ROOT3)
          CC    = NH4I*(WAER(5) - ROOT3) - A14
-         DD    = MAX(BB*BB - 4.D0*CC, ZERO)
+         DD    = MAX(BB*BB - FOUR*CC, ZERO)
          DD    = SQRT(DD)
-         ROOT2A= 0.5D0*(-BB+DD)  
-         ROOT2B= 0.5D0*(-BB-DD)  
+         ROOT2A= HALF*(-BB+DD)  
+         ROOT2B= HALF*(-BB-DD)  
          IF (ZERO.LE.ROOT2A) THEN
             ROOT2 = ROOT2A
          ELSE
@@ -3135,10 +3135,10 @@ C SODIUM SULFATE
 C
       IF (NAI*NAI*SO4I .GT. A5) THEN
          BB =-(WAER(2) + WAER(1) - ROOT3 - ROOT4)
-         CC = WAER(1)*(2.D0*ROOT3 + 2.D0*ROOT4 - 4.D0*WAER(2) - ONE)
-     &       -(ROOT3 + ROOT4)**2.0 + 4.D0*WAER(2)*(ROOT3 + ROOT4)
+         CC = WAER(1)*(TWO*ROOT3 + TWO*ROOT4 - FOUR*WAER(2) - ONE)
+     &       -(ROOT3 + ROOT4)**2.0 + FOUR*WAER(2)*(ROOT3 + ROOT4)
          CC =-0.25*CC
-         DD = WAER(1)*WAER(2)*(ONE - 2.D0*ROOT3 - 2.D0*ROOT4) +
+         DD = WAER(1)*WAER(2)*(ONE - TWO*ROOT3 - TWO*ROOT4) +
      &        WAER(2)*(ROOT3 + ROOT4)**2.0 - A5
          DD =-0.25*DD
          CALL POLY3(BB, CC, DD, ROOT1, ISLV)
@@ -3152,11 +3152,11 @@ C
 C SODIUM NITRATE
 C
       IF (NAI*NO3I .GT. A9) THEN
-         BB    =-(WAER(4) + WAER(1) - 2.D0*ROOT1 - ROOT3)
-         CC    = WAER(4)*(WAER(1) - 2.D0*ROOT1 - ROOT3) - A9
-         DD    = SQRT(MAX(BB*BB - 4.D0*CC, TINY))
-         ROOT4A= 0.5D0*(-BB-DD) 
-         ROOT4B= 0.5D0*(-BB+DD) 
+         BB    =-(WAER(4) + WAER(1) - TWO*ROOT1 - ROOT3)
+         CC    = WAER(4)*(WAER(1) - TWO*ROOT1 - ROOT3) - A9
+         DD    = SQRT(MAX(BB*BB - FOUR*CC, TINY))
+         ROOT4A= HALF*(-BB-DD) 
+         ROOT4B= HALF*(-BB+DD) 
          IF (ZERO.LE.ROOT4A) THEN
             ROOT4 = ROOT4A
          ELSE
@@ -3170,7 +3170,7 @@ C
 C
 C ION CONCENTRATIONS
 C
-      NAI = WAER(1) - (2.D0*ROOT1 + ROOT3 + ROOT4)
+      NAI = WAER(1) - (TWO*ROOT1 + ROOT3 + ROOT4)
       SO4I= WAER(2) - ROOT1
       NH4I= WAER(3) - ROOT2
       NO3I= WAER(4) - ROOT4
@@ -3179,11 +3179,11 @@ C
 C SODIUM CHLORIDE  ; To obtain new value for ROOT3
 C
       IF (NAI*CLI .GT. A8) THEN
-         BB    =-(WAER(1) - 2.D0*ROOT1 + WAER(5) - ROOT2 - ROOT4)
-         CC    = (WAER(5) + ROOT2)*(WAER(1) - 2.D0*ROOT1 - ROOT4) - A8
-         DD    = SQRT(MAX(BB*BB - 4.D0*CC, TINY))
-         ROOT3A= 0.5D0*(-BB-DD) 
-         ROOT3B= 0.5D0*(-BB+DD) 
+         BB    =-(WAER(1) - TWO*ROOT1 + WAER(5) - ROOT2 - ROOT4)
+         CC    = (WAER(5) + ROOT2)*(WAER(1) - TWO*ROOT1 - ROOT4) - A8
+         DD    = SQRT(MAX(BB*BB - FOUR*CC, TINY))
+         ROOT3A= HALF*(-BB-DD) 
+         ROOT3B= HALF*(-BB+DD) 
          IF (ZERO.LE.ROOT3A) THEN
             ROOT3 = ROOT3A
          ELSE
@@ -3197,18 +3197,18 @@ C
 C
 C SOLUTION ACIDIC OR BASIC?
 C
-      GG   = 2.D0*SO4I + NO3I + CLI - NAI - NH4I
+      GG   = TWO*SO4I + NO3I + CLI - NAI - NH4I
       IF (GG.GT.TINY) THEN                        ! H+ in excess
          BB =-GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         HI = 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         HI = HALF*(-BB + SQRT(DD))
          OHI= AKW/HI
       ELSE                                        ! OH- in excess
          BB = GG
          CC =-AKW
-         DD = BB*BB - 4.D0*CC
-         OHI= 0.5D0*(-BB + SQRT(DD))
+         DD = BB*BB - FOUR*CC
+         OHI= HALF*(-BB + SQRT(DD))
          HI = AKW/OHI
       ENDIF
 C
@@ -3218,7 +3218,7 @@ C
          CALL CALCAMAQ2 (-GG, NH4I, OHI, NH3AQ)
          HI    = AKW/OHI
       ELSE
-         GGNO3 = MAX(2.D0*SO4I + NO3I - NAI - NH4I, ZERO)
+         GGNO3 = MAX(TWO*SO4I + NO3I - NAI - NH4I, ZERO)
          GGCL  = MAX(GG-GGNO3, ZERO)
          IF (GGCL .GT.TINY) CALL CALCCLAQ2 (GGCL, CLI, HI, CLAQ) ! HCl
          IF (GGNO3.GT.TINY) THEN

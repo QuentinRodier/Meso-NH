@@ -1122,7 +1122,11 @@ C     NOW HERE WE HAVE ONLY ONE REAL ROOT
          part2=abs(rr)
          part3=(part1+part2)**one3rd
          crutes(1) = 
+#if (MNH_REAL == 8)
+     &        -sign(1.0E0,rr) * ( part3 + (qq/part3) ) - a2/3. 
+#else
      &        -sign(1.0D0,rr) * ( part3 + (qq/part3) ) - a2/3. 
+#endif
          crutes(2)=0.
          crutes(3)=0.
       nr=1

@@ -260,8 +260,13 @@ C
 C
 C *** ADJUST FOR TOO LITTLE AMMONIUM AND CHLORIDE ***********************
 C
+#if (MNH_REAL == 8)
+      WI(3) = MAX (WI(3), 1.E-10)  ! NH4+ : 1e-4 umoles/m3
+      WI(5) = MAX (WI(5), 1.E-10)  ! Cl-  : 1e-4 umoles/m3
+#else
       WI(3) = MAX (WI(3), 1.D-10)  ! NH4+ : 1e-4 umoles/m3
       WI(5) = MAX (WI(5), 1.D-10)  ! Cl-  : 1e-4 umoles/m3
+#endif
 C
 C *** ADJUST FOR TOO LITTLE SODIUM, SULFATE AND NITRATE COMBINED ********
 C
@@ -2189,7 +2194,7 @@ C
       CHI1   = 0.5*W(1)
       CHI2   = MAX (W(2)-CHI1, ZERO)
       CHI3   = ZERO
-      CHI4   = MAX (W(3)-2.D0*CHI2, ZERO)
+      CHI4   = MAX (W(3)-TWO*CHI2, ZERO)
       CHI5   = W(4)
       CHI6   = W(5)
 C 
@@ -2318,7 +2323,7 @@ CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
          BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
-         DD   = MAX(BB*BB-4.d0*CC,ZERO)           ! Patch proposed by Uma Shankar, 19/11/01
+         DD   = MAX(BB*BB-FOUR*CC,ZERO)           ! Patch proposed by Uma Shankar, 19/11/01
          PSI4 =0.5d0*(-BB - SQRT(DD))
       ELSE
          PSI4 = TINY
@@ -2397,7 +2402,7 @@ C
       CHI1   = 0.5*W(1)
       CHI2   = MAX (W(2)-CHI1, ZERO)
       CHI3   = ZERO
-      CHI4   = MAX (W(3)-2.D0*CHI2, ZERO)
+      CHI4   = MAX (W(3)-TWO*CHI2, ZERO)
       CHI5   = W(4)
       CHI6   = W(5)
 C 
@@ -2525,7 +2530,7 @@ CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
          BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
-         DD   = MAX(BB*BB-4.d0*CC,ZERO) ! Patch proposed by Uma shankar, 19/11/2001
+         DD   = MAX(BB*BB-FOUR*CC,ZERO) ! Patch proposed by Uma shankar, 19/11/2001
          PSI4 =0.5d0*(-BB - SQRT(DD))
       ELSE
          PSI4 = TINY
@@ -2683,7 +2688,7 @@ C
       CHI1   = 0.5*W(1)
       CHI2   = MAX (W(2)-CHI1, ZERO)
       CHI3   = ZERO
-      CHI4   = MAX (W(3)-2.D0*CHI2, ZERO)
+      CHI4   = MAX (W(3)-TWO*CHI2, ZERO)
       CHI5   = W(4)
       CHI6   = W(5)
 C 
@@ -2830,7 +2835,7 @@ CCC      IF(CHI4.GT.TINY) THEN
       IF(W(2).GT.TINY) THEN       ! Accounts for NH3 evaporation
          BB   =-(CHI4 + PSI6 + PSI5 + 1./A4)
          CC   = CHI4*(PSI5+PSI6) - 2.d0*PSI2/A4
-         DD   = MAX(BB*BB-4.d0*CC,ZERO)  ! Patch proposed by Uma Shankar, 19/11/01
+         DD   = MAX(BB*BB-FOUR*CC,ZERO)  ! Patch proposed by Uma Shankar, 19/11/01
          PSI4 =0.5d0*(-BB - SQRT(DD))
       ELSE
          PSI4 = TINY
@@ -2984,7 +2989,7 @@ C
       CHI1   = 0.5*W(1)
       CHI2   = MAX (W(2)-CHI1, ZERO)
       CHI3   = ZERO
-      CHI4   = MAX (W(3)-2.D0*CHI2, ZERO)
+      CHI4   = MAX (W(3)-TWO*CHI2, ZERO)
       CHI5   = W(4)
       CHI6   = W(5)
 C 
@@ -3422,7 +3427,7 @@ C
       CHI1   = W(2)                                ! CNA2SO4
       CHI2   = ZERO                                ! CNH42S4
       CHI3   = ZERO                                ! CNH4CL
-      FRNA   = MAX (W(1)-2.D0*CHI1, ZERO)       
+      FRNA   = MAX (W(1)-TWO*CHI1, ZERO)
       CHI8   = MIN (FRNA, W(4))                    ! CNANO3
       CHI4   = W(3)                                ! NH3(g)
       CHI5   = MAX (W(4)-CHI8, ZERO)               ! HNO3(g)
@@ -3639,7 +3644,7 @@ C
       CHI1   = W(2)                                ! CNA2SO4
       CHI2   = ZERO                                ! CNH42S4
       CHI3   = ZERO                                ! CNH4CL
-      FRNA   = MAX (W(1)-2.D0*CHI1, ZERO)       
+      FRNA   = MAX (W(1)-TWO*CHI1, ZERO)
       CHI8   = MIN (FRNA, W(4))                    ! CNANO3
       CHI4   = W(3)                                ! NH3(g)
       CHI5   = MAX (W(4)-CHI8, ZERO)               ! HNO3(g)
@@ -3868,7 +3873,7 @@ C
       CHI1   = W(2)                                ! CNA2SO4
       CHI2   = ZERO                                ! CNH42S4
       CHI3   = ZERO                                ! CNH4CL
-      FRNA   = MAX (W(1)-2.D0*CHI1, ZERO)       
+      FRNA   = MAX (W(1)-TWO*CHI1, ZERO)
       CHI8   = MIN (FRNA, W(4))                    ! CNANO3
       CHI4   = W(3)                                ! NH3(g)
       CHI5   = MAX (W(4)-CHI8, ZERO)               ! HNO3(g)
@@ -4122,7 +4127,7 @@ C
       CHI1   = W(2)                                ! CNA2SO4
       CHI2   = ZERO                                ! CNH42S4
       CHI3   = ZERO                                ! CNH4CL
-      FRNA   = MAX (W(1)-2.D0*CHI1, ZERO)       
+      FRNA   = MAX (W(1)-TWO*CHI1, ZERO)
       CHI8   = MIN (FRNA, W(4))                    ! CNANO3
       CHI4   = W(3)                                ! NH3(g)
       CHI5   = MAX (W(4)-CHI8, ZERO)               ! HNO3(g)
@@ -4431,7 +4436,7 @@ C
       CHI1   = W(2)                                ! CNA2SO4
       CHI2   = ZERO                                ! CNH42S4
       CHI3   = ZERO                                ! CNH4CL
-      FRNA   = MAX (W(1)-2.D0*CHI1, ZERO)       
+      FRNA   = MAX (W(1)-TWO*CHI1, ZERO)
       CHI8   = MIN (FRNA, W(4))                    ! CNANO3
       CHI4   = W(3)                                ! NH3(g)
       CHI5   = MAX (W(4)-CHI8, ZERO)               ! HNO3(g)
@@ -6009,9 +6014,15 @@ C
       CNH42S4 = ZERO
       FRSO4   = MAX(W(2)-CNA2SO4, ZERO)
 C
+#if (MNH_REAL == 8)
+      CLC     = MIN(W(3)/3.E0, FRSO4/2.E0)
+      FRSO4   = MAX(FRSO4-2.E0*CLC, ZERO)
+      FRNH4   = MAX(W(3)-3.E0*CLC,  ZERO)
+#else
       CLC     = MIN(W(3)/3.D0, FRSO4/2.D0)
       FRSO4   = MAX(FRSO4-2.D0*CLC, ZERO)
       FRNH4   = MAX(W(3)-3.D0*CLC,  ZERO)
+#endif
 C
       IF (FRSO4.LE.TINY) THEN
          CLC     = MAX(CLC - FRNH4, ZERO)
@@ -6021,7 +6032,11 @@ C
          CNH4HS4 = 3.D0*MIN(FRSO4, CLC)
          CLC     = MAX(CLC-FRSO4, ZERO)
          IF (CNA2SO4.GT.TINY) THEN
+#if (MNH_REAL == 8)
+            FRSO4   = MAX(FRSO4-CNH4HS4/3.E0, ZERO)
+#else
             FRSO4   = MAX(FRSO4-CNH4HS4/3.D0, ZERO)
+#endif
             CNAHSO4 = 2.D0*FRSO4
             CNA2SO4 = MAX(CNA2SO4-FRSO4, ZERO)
          ENDIF

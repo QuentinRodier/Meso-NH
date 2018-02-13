@@ -87,7 +87,9 @@ C
 C *** GENERIC VARIABLES ************************************************
 C
       CHARACTER VERSION*14
-      COMMON /CGEN/ GREAT, TINY, TINY2, ZERO, ONE, VERSION
+      COMMON /CGEN/ GREAT, TINY, TINY2,
+     &              ZERO, HALF, ONE, TWO, FOUR,
+     &               VERSION
 C
 C *** END OF INCLUDE FILE **********************************************
 C

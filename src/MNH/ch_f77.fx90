@@ -8652,13 +8652,21 @@ c                     ** 51545.0 + 2.4e6 = noon 1 jan 2000
 c                    ** force mean longitude between 0 and 360 degs
 
       MNLONG = 280.460 + 0.9856474*TIME
+#if (MNH_REAL == 8)
+      MNLONG = MOD( MNLONG, 360.E0 )
+#else
       MNLONG = MOD( MNLONG, 360.D0 )
+#endif
       IF( MNLONG.LT.0. ) MNLONG = MNLONG + 360.
 
 c                    ** mean anomaly in radians between 0 and 2*pi
 
       MNANOM = 357.528 + 0.9856003*TIME
+#if (MNH_REAL == 8)
+      MNANOM = MOD( MNANOM, 360.E0 )
+#else
       MNANOM = MOD( MNANOM, 360.D0 )
+#endif
       IF( MNANOM.LT.0.) MNANOM = MNANOM + 360.
 
       MNANOM = MNANOM*RPD
@@ -8667,7 +8675,11 @@ c                    ** ecliptic longitude and obliquity
 c                    ** of ecliptic in radians
 
       ECLONG = MNLONG + 1.915*SIN( MNANOM ) + 0.020*SIN( 2.*MNANOM )
+#if (MNH_REAL == 8)
+      ECLONG = MOD( ECLONG, 360.E0 )
+#else
       ECLONG = MOD( ECLONG, 360.D0 )
+#endif
       IF( ECLONG.LT.0. ) ECLONG = ECLONG + 360.
 
       OBLQEC = 23.439 - 0.0000004*TIME
@@ -8699,13 +8711,21 @@ c                    ** Greenwich mean sidereal time in hours
 c                    ** Hour not changed to sidereal time since 
 c                    ** 'time' includes the fractional day
 
+#if (MNH_REAL == 8)
+      GMST  = MOD( GMST, 24.E0)
+#else
       GMST  = MOD( GMST, 24.D0)
+#endif
       IF( GMST.LT.0. ) GMST   = GMST + 24.
 
 c                    ** local mean sidereal time in radians
 
       LMST  = GMST + LONG / 15.
+#if (MNH_REAL == 8)
+      LMST  = MOD( LMST, 24.E0 )
+#else
       LMST  = MOD( LMST, 24.D0 )
+#endif
       IF( LMST.LT.0. ) LMST   = LMST + 24.
 
       LMST   = LMST*15.*RPD
