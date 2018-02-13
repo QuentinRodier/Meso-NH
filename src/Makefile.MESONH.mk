@@ -472,12 +472,12 @@ endif
 # NetCDF in BGQ
 #
 ifeq "$(VER_CDF)" "CDFBGQ"
-CDF_PATH?=/bglocal/cn/pub/NetCDF/4.1.3/
+CDF_PATH?=/bglocal/cn/pub/NetCDF/4.3.3.1/seq
 INC_NETCDF     ?= -I${CDF_PATH}/include
 LIB_NETCDF     ?= -L${CDF_PATH}/lib -lnetcdff -lnetcdf_c++ -lnetcdf
 INC            += $(INC_NETCDF)
 LIBS           += $(LIB_NETCDF)
-HDF5_PATH?=/bglocal/cn/pub/HDF5/1.8.9/par/
+HDF5_PATH?=/bglocal/cn/pub/HDF5/1.8.14/seq/
 LIB_HDF5       ?= -L${HDF5_PATH}/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm
 LIBS           += $(LIB_HDF5)
 LIBZ_PATH?=/bglocal/cn/pub/zlib/1.2.5
