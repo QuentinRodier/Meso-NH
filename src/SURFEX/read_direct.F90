@@ -36,6 +36,7 @@
 !!
 !! V. Masson, March 2010     Optimization of some lat/lon boundaries computations
 !!      J.Escobar     06/2013  for REAL4/8 add EPSILON management
+!! P. Wautelet 16/02/2018: initialize ILINE_COMPRESS to prevent crash with XLF
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -375,6 +376,7 @@ ICPT = 0
 !
 JL = IPAS + 1
 !
+ILINE_COMPRESS = 0
 IF (GCOMPRESS) ILINE_COMPRESS = 1
 !
 INODATA = ZNODATA
