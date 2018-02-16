@@ -98,7 +98,7 @@ INTEGER,           INTENT(IN)  :: KPATCH   ! current TEB patch
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
-REAL, DIMENSION(0,0,1) :: ZWSN_WR, ZRHO_WR, ZHEA_WR, ZAGE_WR, ZSG1_WR, ZSG2_WR, ZHIS_WR
+REAL, DIMENSION(0,1,1) :: ZWSN_WR, ZRHO_WR, ZHEA_WR, ZAGE_WR, ZSG1_WR, ZSG2_WR, ZHIS_WR
 REAL, DIMENSION(0,1) :: ZALB_WR
 !
 INTEGER, DIMENSION(SIZE(T%XT_ROOF,1)) :: IMASK
