@@ -92,6 +92,8 @@
 !!                  17/03/2010 (P. LeMoigne) bug in weights computations
 !!                  16/06/2010 (G. Tanguy) bug in 'grib north pole"
 !!                              extrapolation (tabular ZARIN not totaly filled)
+!!                  20/02/2018 (P. Wautelet) add special treatment if KP is
+!!                             zero size (to prevent problems with XLF)
 !!
 !------------------------------------------------------------------------------
 !
@@ -340,8 +342,13 @@ IF (LHOOK) CALL DR_HOOK('HORIBL_SURF_GRIDIN_1',1,ZHOOK_HANDLE)
 
 IF (NRANK/=NPIO) THEN
 IF (LHOOK) CALL DR_HOOK('HORIBL_SURF_GRIDIN_3',0,ZHOOK_HANDLE)
-  IEXT(1) = MINVAL(KP)
-  IEXT(2) = MAXVAL(KP)
+  IF (SIZE(KP)>0) THEN
+    IEXT(1) = MINVAL(KP)
+    IEXT(2) = MAXVAL(KP)
+  ELSE
+    IEXT(1) = 1
+    IEXT(2) = 0
+  ENDIF
   IDX_I = IDX_I + 1
 #ifdef SFX_MPI  
   CALL MPI_SEND(IEXT,2*KIND(IEXT)/4,MPI_INTEGER,NPIO,IDX_I,NCOMM,INFOMPI)
@@ -370,9 +377,12 @@ ELSE
 #ifdef SFX_MPI            
       CALL MPI_RECV(IEXT,2*KIND(IEXT)/4,MPI_INTEGER,J,IDX_I+1,NCOMM,ISTATUS,INFOMPI)
 #endif      
-    ELSE
+    ELSE IF (SIZE(KP)>0) THEN
       IEXT(1) = MINVAL(KP)
       IEXT(2) = MAXVAL(KP)
+    ELSE
+      IEXT(1) = 1
+      IEXT(2) = 0
     ENDIF
     IF (LHOOK) CALL DR_HOOK('HORIBL_SURF_GRIDIN_2',1,ZHOOK_HANDLE_OMP)
     IF (LHOOK) CALL DR_HOOK('HORIBL_SURF_GRIDIN_30',0,ZHOOK_HANDLE_OMP)
