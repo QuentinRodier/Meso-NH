@@ -1,14 +1,13 @@
 module mode_options
   implicit none
 
-  integer,parameter :: nbavailoptions = 10
+  integer,parameter :: nbavailoptions = 8
   integer,parameter :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
-  integer,parameter :: OPTCDF3   = 1, OPTCDF4   = 2, OPTCOMPRESS = 3
-  integer,parameter :: OPTHELP   = 4, OPTLIST   = 5, OPTMERGE    = 6
-  integer,parameter :: OPTOUTPUT = 7, OPTREDUCE = 8, OPTSPLIT    = 9
-  integer,parameter :: OPTVAR    = 10
+  integer,parameter :: OPTCOMPRESS = 1, OPTHELP   = 2, OPTLIST   = 3
+  integer,parameter :: OPTMERGE    = 4, OPTOUTPUT = 5, OPTREDUCE = 6
+  integer,parameter :: OPTSPLIT    = 7, OPTVAR    = 8
 
   type option
     logical :: set = .false.
@@ -97,14 +96,6 @@ subroutine init_options(options)
   type(option),dimension(:),allocatable,intent(out) :: options
 
   allocate(options(nbavailoptions))
-
-  options(OPTCDF3)%long_name    = "cdf3"
-  options(OPTCDF3)%short_name   = '3'
-  options(OPTCDF3)%has_argument = .false.
-
-  options(OPTCDF4)%long_name    = "cdf4"
-  options(OPTCDF4)%short_name   = '4'
-  options(OPTCDF4)%has_argument = .false.
 
   options(OPTCOMPRESS)%long_name    = "compress"
   options(OPTCOMPRESS)%short_name   = 'c'
@@ -234,17 +225,6 @@ subroutine check_options(options,infile,runmode)
     call help()
   end if
 
-  !Use NetCF-4 by default
-  if (.NOT.options(OPTCDF3)%set) then
-    options(OPTCDF4)%set = .true.
-  else
-    if (options(OPTCDF4)%set) then
-      print *,'Warning: NetCDF-3 and NetCDF-4 options are not compatible'
-      print *,'NetCDF-4 is forced'
-      options(OPTCDF3)%set = .false.
-    end if
-  end if
-
   !Check compression level
   if (options(OPTCOMPRESS)%set) then
     if (options(OPTCOMPRESS)%ivalue < 1 .OR. options(OPTCOMPRESS)%ivalue > 9 ) then
@@ -284,19 +264,15 @@ subroutine help()
   implicit none
 
 !TODO: -l option for cdf2cdf and cdf2lfi
-  print *,"Usage : lfi2cdf [-h --help] [--cdf4 -4] [-l] [-v --var var1[,...]] [-r --reduce-precision]"
+  print *,"Usage : lfi2cdf [-h --help] [-l] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
   print *,"                [-c --compress compression_level] input-file.lfi"
-  print *,"        cdf2cdf [-h --help] [--cdf4 -4] [-v --var var1[,...]] [-r --reduce-precision]"
+  print *,"        cdf2cdf [-h --help] [-v --var var1[,...]] [-r --reduce-precision]"
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
   print *,"                [-c --compress compression_level] input-file.nc"
   print *,"        cdf2lfi [-o --output output-file.lfi] input-file.nc"
   print *,""
   print *,"Options:"
-  print *,"  --cdf3, -3"
-  print *,"     Write netCDF file in netCDF-3 format (cdf2cdf and lfi2cdf only)"
-  print *,"  --cdf4, -4 (by default)"
-  print *,"     Write netCDF file in netCDF-4 format (HDF5 compatible) (cdf2cdf and lfi2cdf only)"
   print *,"  --compress, -c compression_level"
   print *,"     Compress data. The compression level should be in the 1 to 9 interval."
   print *,"     Only supported with the netCDF-4 format (cdf2cdf and lfi2cdf only)"
