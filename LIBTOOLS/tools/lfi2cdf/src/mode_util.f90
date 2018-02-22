@@ -739,14 +739,23 @@ END DO
           ndims = 0
        END IF
 
+! PRINT *,'Dimensions (',ndims,') for ',TRIM(tpreclist(ji)%name)
        idims(:) = 1
        if(ndims>0) idims(1) = ptdimx%len
        if(ndims>1) idims(2) = ptdimy%len
        if(ndims>2) idims(3) = ptdimz%len
        if(ndims>3) then
-         PRINT *,'Too many dimensions'
-         STOP
+         if(ndims==12) then
+           ndims = 2
+           idims(2) = ptdimz%len
+         else
+           PRINT *,'Too many dimensions (',ndims,') for ',TRIM(tpreclist(ji)%name)
+           STOP
+         endif
        endif
+
+!write(*,"( '----------------------------------------' )")
+!write(*,"( 'Field :',A )") trim(tpreclist(ji)%name)
 
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (INT,BOOL)
@@ -787,7 +796,7 @@ END DO
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
          CASE (2)
@@ -870,7 +879,7 @@ END DO
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
          CASE (2)
@@ -978,7 +987,7 @@ END DO
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
          CASE (2)
@@ -1203,7 +1212,7 @@ END DO
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
          IF (options(OPTCDF4)%set) THEN
-            status = NF90_CREATE(TRIM(houtfile)//'.nc4', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
+            status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
          ELSE
             status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_64BIT_OFFSET), outfiles%files(idx)%lun_id)
          END IF
