@@ -1,8 +1,11 @@
 MODULE mode_util
-  USE MODE_FIELDTYPE
-  USE mode_dimlist
-  USE mode_options
+  USE MODD_IO_ll, ONLY: TFILE_ELT
   USE MODD_PARAM
+
+  USE mode_dimlist
+  USE MODE_FIELDTYPE
+  USE mode_options
+
   USE netcdf
 
   IMPLICIT NONE 
@@ -27,6 +30,7 @@ MODULE mode_util
     INTEGER :: nbfiles = 0
 !    TYPE(filestruct),DIMENSION(:),ALLOCATABLE :: files
     TYPE(filestruct),DIMENSION(MAXFILES) :: files
+    TYPE(TFILE_ELT),DIMENSION(MAXFILES) :: TFILES
   END TYPE filelist_struct
 
 
@@ -1167,6 +1171,8 @@ END DO
   END SUBROUTINE UPDATE_VARID_IN
 
   SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,nbvar_infile,options,runmode)
+    USE MODE_FM,               ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
+    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
     TYPE(filelist_struct),INTENT(OUT) :: infiles, outfiles
     CHARACTER(LEN=*), INTENT(IN)  :: hinfile
     CHARACTER(LEN=*), INTENT(IN)  :: houtfile
@@ -1189,19 +1195,20 @@ END DO
        ! Cas LFI -> NetCDF
        infiles%nbfiles = infiles%nbfiles + 1
        idx = infiles%nbfiles
-       infiles%files(idx)%lun_id = 11
+       CALL IO_FILE_ADD2LIST(INFILES%TFILES(idx)%TFILE,HINFILE(1:LEN_TRIM(HINFILE)-4),'UNKNOWN','READ', &
+                             HFORMAT='LFI',KLFIVERB=0)
+       CALL IO_FILE_OPEN_ll(INFILES%TFILES(idx)%TFILE)
+       infiles%files(idx)%lun_id = INFILES%TFILES(idx)%TFILE%NLFIFLU
        infiles%files(idx)%format = LFI_FORMAT
        infiles%files(idx)%status = READING
        ilu = infiles%files(idx)%lun_id
-       CALL LFIOUV(iresp,ilu,ltrue,hinfile,'OLD',lfalse&
-            & ,lfalse,iverb,inap,inaf)
        infiles%files(idx)%opened  = .TRUE.
 
        nbvar_infile = inaf
 
        IF (options(OPTLIST)%set) THEN
           CALL LFILAF(iresp,ilu,lfalse)
-          CALL LFIFER(iresp,ilu,'KEEP')
+          CALL IO_FILE_CLOSE_ll(INFILES%TFILES(idx)%TFILE)
           return
        END IF
 

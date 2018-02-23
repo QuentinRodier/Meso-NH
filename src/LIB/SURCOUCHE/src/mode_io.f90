@@ -930,7 +930,7 @@ ELSE
 !PW: TODO?: temporary to detect non-initialisation
 ! should disappear except at the beginning of a run
   GWRITE_OUTLST = .FALSE.
-  IF (GWRITE_STDOUT) WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'TFILE_OUTPUTLISTING not associated'
+  IF (GWRITE_STDOUT .AND. CPROGRAM/='LFICDF') WRITE(UNIT=OUTPUT_UNIT,FMT=*) 'TFILE_OUTPUTLISTING not associated'
 END IF
 !
 SELECT CASE(HDOMAIN)
