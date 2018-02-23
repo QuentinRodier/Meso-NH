@@ -1,6 +1,12 @@
 program LFI2CDF
+  USE MODD_CONF,  ONLY: CPROGRAM
+
+  USE MODE_IO_ll,  ONLY: INITIO_ll, SET_CONFIO_ll
   USE mode_options
   USE mode_util
+
+  USE MODN_CONFIO, ONLY: LCDF4, LLFIOUT, LLFIREAD
+
   IMPLICIT NONE 
 
   INTEGER :: ibuflen
@@ -20,7 +26,29 @@ program LFI2CDF
   integer                      :: runmode
 
 
+  CPROGRAM = 'LFICDF'
+
+  CALL INITIO_ll()
+  CALL VERSION
+
   call read_commandline(options,hinfile,houtfile,runmode)
+
+  IF (runmode == MODELFI2CDF) THEN
+     LCDF4    = .TRUE.
+     LLFIOUT  = .FALSE.
+     LLFIREAD = .TRUE.
+     CALL SET_CONFIO_ll()
+  ELSE IF (runmode == MODECDF2CDF) THEN
+     LCDF4    = .TRUE.
+     LLFIOUT  = .FALSE.
+     LLFIREAD = .FALSE.
+     CALL SET_CONFIO_ll()
+  ELSE
+     LCDF4    = .TRUE.
+     LLFIOUT  = .TRUE.
+     LLFIREAD = .FALSE.
+     CALL SET_CONFIO_ll()
+  END IF
 
   CALL OPEN_FILES(infiles, outfiles, hinfile, houtfile, nbvar_infile, options, runmode)
   IF (options(OPTLIST)%set) STOP
