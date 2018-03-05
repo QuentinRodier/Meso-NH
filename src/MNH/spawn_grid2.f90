@@ -150,6 +150,7 @@ END MODULE MODI_SPAWN_GRID2
 !!      Modification 24/02/15 (M.Moge) parallelization
 !!      Modification 10/06/15 (M.Moge) bug fix for reproductibility
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      J.Escobar 05/03/2018 : bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -314,18 +315,18 @@ OSLEVE   = GRID_MODEL(1)%LSLEVE
 PLEN1    = GRID_MODEL(1)%XLEN1
 PLEN2    = GRID_MODEL(1)%XLEN2
 !
-IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
-!
-!*       2.1   special case of spawning - no change of resolution :
-!$ in our case we don't get them here !
-  PXHAT(:) = GRID_MODEL(1)%XXHAT(KXOR:KXEND)
-  PYHAT(:) = GRID_MODEL(1)%XYHAT(KYOR:KYEND)
-  PZS  (:,:) = GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
-  PZS_LS(:,:)= GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
-  PZSMT   (:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
-  PZSMT_LS(:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
-!
-ELSE
+!!$IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
+!!$!
+!!$!*       2.1   special case of spawning - no change of resolution :
+!!$!$ in our case we don't get them here !
+!!$  PXHAT(:) = GRID_MODEL(1)%XXHAT(KXOR:KXEND)
+!!$  PYHAT(:) = GRID_MODEL(1)%XYHAT(KYOR:KYEND)
+!!$  PZS  (:,:) = GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
+!!$  PZS_LS(:,:)= GRID_MODEL(1)%XZS  (KXOR:KXEND,KYOR:KYEND)
+!!$  PZSMT   (:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
+!!$  PZSMT_LS(:,:) = GRID_MODEL(1)%XZSMT(KXOR:KXEND,KYOR:KYEND)
+!!$!
+!!$ELSE
 !
 !*       2.2  general case - change of resolution :
 !
@@ -491,7 +492,7 @@ ELSE
 !
 !*       2.2.2  interpolation of ZS performed later
 !
-END IF
+!!$END IF
 !
 PLONOR = XLONORI
 PLATOR = XLATORI

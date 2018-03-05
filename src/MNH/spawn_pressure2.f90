@@ -106,6 +106,7 @@ END MODULE MODI_SPAWN_PRESSURE2
 !!      Modification 20/05/06 Remove Clark and Farley interpolation
 !!                  2014     (M.Faivre) parallelization
 !!                  10/02/15 (M.Moge) correction of M.Faivre's parallelization attempt
+!!                  05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -209,14 +210,14 @@ IKE=IKU-JPVEXT
 !              -----------------------
 !
 !
-IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
-!
-  PPABST  (:,:,:)   =  FIELD_MODEL(1)%XPABST  (KXOR:KXEND,KYOR:KYEND,:)
-!
-  CALL GOTO_MODEL(IMI) 
-  RETURN
-!
-END IF
+!!$IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
+!!$!
+!!$  PPABST  (:,:,:)   =  FIELD_MODEL(1)%XPABST  (KXOR:KXEND,KYOR:KYEND,:)
+!!$!
+!!$  CALL GOTO_MODEL(IMI) 
+!!$  RETURN
+!!$!
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !
