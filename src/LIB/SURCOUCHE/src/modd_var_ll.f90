@@ -44,11 +44,14 @@
 !!    -------------
 !
 !    Original 04/05/99
-
+!    Modifications
+!    J.Escobar 5/06/2018 : add cpp key MNH_USE_MPI_STATUSES_IGNORE for use of true MPI_STATUSES_IGNORE
 !-------------------------------------------------------------------------------
 !  
   USE MODD_STRUCTURE_ll
-  !USE MODD_MPIF, ONLY : MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE
+#ifdef MNH_USE_MPI_STATUSES_IGNORE
+  USE MODD_MPIF, ONLY : MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE 
+#endif
 ! 
   IMPLICIT NONE
 !
@@ -138,6 +141,8 @@ INTEGER,SAVE      :: NZ_PROC_ll = 0  ! Number of proc to use in the Z splitting
 !
   INTEGER, PARAMETER :: NMODULO_MSSGTAG = 10
 !
-  INTEGER, POINTER, DIMENSION(:,:) :: MNH_STATUSES_IGNORE 
+#ifndef MNH_USE_MPI_STATUSES_IGNORE
+  INTEGER, POINTER, DIMENSION(:,:) :: MNH_STATUSES_IGNORE
+#endif 
 !
 END MODULE MODD_VAR_ll

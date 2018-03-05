@@ -9,7 +9,7 @@
 ##########################################################
 #OBJDIR_PATH=/home/escj/azertyuiopqsdfghjklm/wxcvbn/azertyuiopqsdfghjklmwxcvbn
 #
-OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout
+OPT_BASE   =  -g -w -assume nosource_include -assume byterecl -fpe0 -ftz -fpic -traceback  -fp-model precise -switch fe_inline_all_arg_copy_inout -fno-common
 OPT_PERF0  =  -O0
 OPT_PERF2  =  -O2
 OPT_PERF3  =  -O3 -xHost
@@ -74,6 +74,7 @@ export TAU_MAKEFILE?=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_
 LIBS += -lz 
 else
 F90 = mpif90
+CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
 endif
 else
 ifeq "$(VER_MPI)" "MPIINTEL"
@@ -83,6 +84,7 @@ export TAU_MAKEFILE?=/home/escj/PATCH/TAU/TAU-2.21.1-IFORT10-OMPI152-THREAD/x86_
 LIBS += -lz 
 else
 F90 = mpiifort
+CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE -DUSE_MPI
 endif
 ifeq "$(MNH_INT)" "8"
 OPT_BASE         += -ilp64
