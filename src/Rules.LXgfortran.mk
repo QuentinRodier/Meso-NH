@@ -60,7 +60,7 @@ endif
 FC = gfortran 
 ifeq "$(VER_MPI)" "MPIAUTO"
 F90 = mpif90
-CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE -DUSE_MPI
+CPPFLAGS_SURCOUCHE += -DMNH_USE_MPI_STATUSES_IGNORE
 else         
 F90 = gfortran
 endif
