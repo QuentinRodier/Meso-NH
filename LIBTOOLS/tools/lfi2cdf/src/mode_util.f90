@@ -51,13 +51,6 @@ MODULE mode_util
      INTEGER                                 :: tgt    ! Target: id of the variable that use it (calc variable)
   END TYPE workfield
 
-#ifndef LOWMEM
-  TYPE lfidata
-     INTEGER(KIND=8), DIMENSION(:), POINTER :: iwtab
-  END TYPE lfidata
-  TYPE(lfidata), DIMENSION(:), ALLOCATABLE :: lfiart
-#endif
-
   LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
   LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
 
@@ -98,9 +91,7 @@ CONTAINS
     INTEGER                                  :: comment_size, fsize, sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
     CHARACTER(LEN=4)                         :: suffix
-#ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
-#endif
     INTEGER                                  :: IID, IRESP
     INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
@@ -157,9 +148,6 @@ CONTAINS
     !    l'utilisateur par exemple)
     !
     IF (options(OPTVAR)%set) THEN
-#ifndef LOWMEM
-      IF(.NOT.ALLOCATED(lfiart) .AND. infiles%files(1)%format == LFI_FORMAT) ALLOCATE(lfiart(nbvar_tbr+nbvar_calc))
-#endif
       ALLOCATE(tpreclist(nbvar_tbr+nbvar_calc))
       DO ji=1,nbvar_tbr+nbvar_calc
         tpreclist(ji)%found  = .FALSE.
@@ -265,10 +253,6 @@ CONTAINS
           ELSE
              ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
              IF (leng > sizemax) sizemax = leng
-#ifndef LOWMEM
-!TODO:useful for netcdf?
-             IF (infiles%files(1)%format == LFI_FORMAT) ALLOCATE(lfiart(ji)%iwtab(leng))
-#endif
           END IF
        END DO
 
@@ -280,10 +264,6 @@ END DO
 
     ELSE
        ! Entire file is converted
-#ifndef LOWMEM
-       IF(.NOT.ALLOCATED(lfiart) .AND. infiles%files(1)%format == LFI_FORMAT) ALLOCATE(lfiart(nbvar_infile))
-#endif
-print *,'PW: nbvar_infile=',nbvar_infile
        ALLOCATE(tpreclist(nbvar_infile))
        DO ji=1,nbvar_infile
          tpreclist(ji)%calc   = .FALSE. !By default variables are not computed from others
@@ -301,9 +281,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
            tpreclist(ji)%name = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
            IF (ileng > sizemax) sizemax = ileng
-#ifndef LOWMEM
-           ALLOCATE(lfiart(ji)%iwtab(ileng))
-#endif
          END DO
        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
          DO ji=1,nbvar_infile
@@ -338,10 +315,8 @@ print *,'PW: nbvar_infile=',nbvar_infile
 
     kbuflen = sizemax
 
-#ifdef LOWMEM
     WRITE(*,'("Taille maximale du buffer :",f10.3," Mio")') sizemax*8./1048576.
     ALLOCATE(iwork(sizemax))
-#endif
 
     ! Phase 2 : Extract comments and dimensions for valid articles.
     !           Infos are put in tpreclist.
@@ -352,24 +327,14 @@ print *,'PW: nbvar_infile=',nbvar_infile
        IF (infiles%files(1)%format == LFI_FORMAT) THEN
          yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
          CALL LFINFO(iresp2,ilu,yrecfm,ileng,ipos)
-#ifdef LOWMEM
          CALL LFILEC(iresp2,ilu,yrecfm,iwork,ileng)
          tpreclist(ji)%grid = iwork(1)
          comment_size = iwork(2)
-#else
-         CALL LFILEC(iresp2,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
-         tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
-         comment_size = lfiart(ji)%iwtab(2)
-#endif
          tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
 
          ALLOCATE(character(len=comment_size) :: tpreclist(ji)%comment)
          DO jj=1,comment_size
-#ifdef LOWMEM
            ich = iwork(2+jj)
-#else
-           ich = lfiart(ji)%iwtab(2+jj)
-#endif
            tpreclist(ji)%comment(jj:jj) = CHAR(ich)
          END DO
 
@@ -447,9 +412,7 @@ print *,'PW: nbvar_infile=',nbvar_infile
 
 
     PRINT *,'Nombre de dimensions = ', size_dimCDF()
-#ifdef LOWMEM
     DEALLOCATE(iwork)
-#endif
   END SUBROUTINE parse_infiles
   
   SUBROUTINE read_data_lfi(infiles, nbvar, tpreclist, kbuflen, current_level)
@@ -466,9 +429,7 @@ print *,'PW: nbvar_infile=',nbvar_infile
     INTEGER                                  :: fsize,sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
     CHARACTER(LEN=4)                         :: suffix
-#ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
-#endif
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
     CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
@@ -482,26 +443,17 @@ print *,'PW: nbvar_infile=',nbvar_infile
       suffix=''
     END IF
 
-#ifdef LOWMEM
     ALLOCATE(iwork(kbuflen))
-#endif
 
     DO ji=1,nbvar
        IF (.NOT.tpreclist(ji)%tbr) CYCLE
        yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
        CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
-#ifdef LOWMEM
        CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
        tpreclist(ji)%grid = iwork(1)
-#else
-       CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
-       tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
-#endif
     END DO
 
-#ifdef LOWMEM
     DEALLOCATE(iwork)
-#endif
   END SUBROUTINE read_data_lfi
 
   SUBROUTINE HANDLE_ERR(status,line)
@@ -666,9 +618,7 @@ print *,'PW: nbvar_infile=',nbvar_infile
     TYPE(option),DIMENSION(:),    INTENT(IN):: options
     INTEGER, INTENT(IN), OPTIONAL           :: current_level
 
-#ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
-#endif
     INTEGER                                  :: idx, ji,jj
     INTEGER                                  :: kcdf_id
     INTEGER                                  :: status
@@ -699,9 +649,7 @@ print *,'PW: nbvar_infile=',nbvar_infile
       level = 1
     END IF
 
-#if LOWMEM
     ALLOCATE(iwork(kbuflen))
-#endif
     ALLOCATE(itab(kbuflen))
     ALLOCATE(xtab(kbuflen))
 
@@ -740,7 +688,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
        SELECT CASE(tpreclist(ji)%TYPE)
        CASE (INT,BOOL)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
-#if LOWMEM
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
@@ -758,20 +705,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
              jj=jj+1
            END DO
          ENDIF
-#else
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           itab(1:extent) = lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):)
-         ELSE
-           src=tpreclist(ji)%src(1)
-           itab(1:extent) = lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             itab(1:extent) = xtab(1:extent) + lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):)
-             jj=jj+1
-           END DO
-         END IF
-#endif
 
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
@@ -824,7 +757,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
          
        CASE (FLOAT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
-#if LOWMEM
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
@@ -842,20 +774,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
              jj=jj+1
            END DO
          ENDIF
-#else
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
-         ELSE
-           src=tpreclist(ji)%src(1)
-           xtab(1:extent) = TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             xtab(1:extent) = xtab(1:extent) + TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
-             jj=jj+1
-           END DO
-         END IF
-#endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
@@ -906,17 +824,11 @@ print *,'PW: nbvar_infile=',nbvar_infile
 
        CASE (TEXT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
-#if LOWMEM
          CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
          CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
-#endif
          ALLOCATE(ytab(extent))
          DO jj=1,extent
-#if LOWMEM
            ich = iwork(2+iwork(2)+jj)
-#else
-           ich = lfiart(ji)%iwtab(2+lfiart(ji)%iwtab(2)+jj)
-#endif
            ytab(jj) = CHAR(ich)
          END DO
          status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,ytab,count=(/extent/))
@@ -932,7 +844,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
 
        CASE default
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
-#if LOWMEM
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
@@ -950,20 +861,6 @@ print *,'PW: nbvar_infile=',nbvar_infile
              jj=jj+1
            END DO
          ENDIF
-#else         
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           xtab(1:extent) = TRANSFER(lfiart(ji)%iwtab(3+lfiart(ji)%iwtab(2):),(/ 0.0_8 /))
-         ELSE
-           src=tpreclist(ji)%src(1)
-           xtab(1:extent) = TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             xtab(1:extent) = xtab(1:extent) + TRANSFER(lfiart(src)%iwtab(3+lfiart(src)%iwtab(2):),(/ 0.0_8 /))
-             jj=jj+1
-           END DO
-         END IF
-#endif
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
@@ -989,9 +886,7 @@ print *,'PW: nbvar_infile=',nbvar_infile
        if (options(OPTSPLIT)%set) idx = idx + 1
     END DO
     DEALLOCATE(itab,xtab)
-#if LOWMEM
     DEALLOCATE(iwork)
-#endif 
   END SUBROUTINE fill_ncdf
 
   SUBROUTINE build_lfi(infiles,outfiles,tpreclist,kbuflen)
