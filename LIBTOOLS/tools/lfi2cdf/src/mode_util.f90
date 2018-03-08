@@ -326,11 +326,16 @@ END DO
 
        IF (infiles%files(1)%format == LFI_FORMAT) THEN
          yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
+         CALL FIND_FIELD_ID_FROM_MNHNAME(yrecfm,IID,IRESP)
+         IF (IRESP==0) THEN
+           tpreclist(ji)%TYPE = TFIELDLIST(IID)%NTYPE
+         ELSE !Field not found in list
+              tpreclist(ji)%TYPE = TYPEREAL
+         END IF
          CALL LFINFO(iresp2,ilu,yrecfm,ileng,ipos)
          CALL LFILEC(iresp2,ilu,yrecfm,iwork,ileng)
          tpreclist(ji)%grid = iwork(1)
          comment_size = iwork(2)
-         tpreclist(ji)%TYPE = get_ftype(yrecfm,current_level)
 
          ALLOCATE(character(len=comment_size) :: tpreclist(ji)%comment)
          DO jj=1,comment_size
@@ -1020,32 +1025,32 @@ END DO
 
 
        SELECT CASE(tpreclist(ivar)%TYPE)
-       CASE(TYPEINT,TYPELOG)
+       CASE(INT,BOOL)
           ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,itab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'TYPEINT,TYPELOG --> ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'INT,BOOL --> ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( itab3d , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(itab3d)
 
-       CASE(TYPEREAL)
+       CASE(FLOAT)
           ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,xtab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'TYPEREAL -->    ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'FLOAT -->    ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(xtab3d)
 
-       CASE(TYPECHAR)
+       CASE(TEXT)
           ALLOCATE(ytab(idlen))
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,ytab)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'TYPECHAR -->     ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TEXT -->     ',tpreclist(ivar)%name,',len = ',idlen
           DO jj=1,idlen
              idata(jj) = ICHAR(ytab(jj))
           END DO
