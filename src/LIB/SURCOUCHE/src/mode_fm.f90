@@ -252,7 +252,7 @@ INTEGER :: IERR
 !JUAN
 INTEGER(KIND=LFI_INT) :: IRESOU,INUMBR8
 INTEGER(KIND=LFI_INT) :: IMELEV,INPRAR
-INTEGER(KIND=LFI_INT) :: ININAR ! Number of articles present in LFI file (unused here)
+INTEGER(KIND=LFI_INT) :: ININAR ! Number of articles present in LFI file
 LOGICAL               :: GNAMFI8,GFATER8,GSTATS8
 INTEGER               :: INB_PROCIO
 !JUAN
@@ -370,7 +370,7 @@ IF (TPFILE%LMASTER) THEN
           IMELEV,            &
           INPRAR,            &
           ININAR)
-     
+     TPFILE%NLFININAR = ININAR
   IF (IRESOU /= 0 ) THEN
         IRESP = IRESOU
      ENDIF

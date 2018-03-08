@@ -708,7 +708,7 @@ CONTAINS
                         IMELEV,            &
                         INPRAR,            &
                         ININAR8)
-                   !KNINAR = ININAR8
+                   TZSPLITFILE%NLFININAR = ININAR8
                 END IF
              ENDIF
              !

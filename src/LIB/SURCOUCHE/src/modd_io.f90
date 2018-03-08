@@ -86,6 +86,7 @@ TYPE TFILEDATA
   TYPE(TFILE_ELT),DIMENSION(:),ALLOCATABLE :: TFILES_IOZ !Corresponding Z-splitted files
   !
   ! Fields for LFI files
+  INTEGER(KIND=LFI_INT) :: NLFININAR = 0  !Number of articles of the LFI file (only accurate if file opened in read mode)
   INTEGER(KIND=LFI_INT) :: NLFINPRAR = 0  !Number of predicted articles of the LFI file (non crucial)
   INTEGER               :: NLFITYPE  = -1 !Type of the file (used to generate list of files to transfers)
   INTEGER               :: NLFIVERB  = 1  !LFI verbosity level
