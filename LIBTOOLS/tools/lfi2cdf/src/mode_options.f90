@@ -1,5 +1,5 @@
 module mode_options
-  USE MODE_FIELD, ONLY: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
+  USE MODD_PARAM
 
   implicit none
 

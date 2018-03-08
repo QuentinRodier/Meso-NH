@@ -358,11 +358,11 @@ END DO
 
          SELECT CASE(itype)
          CASE(NF90_CHAR)
-           tpreclist(ji)%TYPE = TEXT
+           tpreclist(ji)%TYPE = TYPECHAR
          CASE(NF90_INT)
-           tpreclist(ji)%TYPE = INT
+           tpreclist(ji)%TYPE = TYPEINT
          CASE(NF90_FLOAT,NF90_DOUBLE)
-           tpreclist(ji)%TYPE = FLOAT
+           tpreclist(ji)%TYPE = TYPEREAL
          CASE default
            PRINT *, 'Attention : variable ',TRIM(tpreclist(ji)%name), ' a un TYPE non reconnu par le convertisseur.'
            PRINT *, '--> TYPE force a REAL(KIND 8) dans LFI !'
@@ -555,20 +555,26 @@ END DO
        kcdf_id = outfiles%files(idx)%lun_id
 
        SELECT CASE(tpreclist(ji)%TYPE)
-       CASE (TEXT)
-!          PRINT *,'TEXT : ',tpreclist(ji)%name
+       CASE (TYPECHAR)
+!          PRINT *,'TYPECHAR : ',tpreclist(ji)%name
           status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_CHAR,&
                    ivdims(:invdims),tpreclist(ji)%id_out)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-       CASE (INT,BOOL)
-!          PRINT *,'INT,BOOL : ',tpreclist(ji)%name
+       CASE (TYPEINT)
+!          PRINT *,'TYPEINT : ',tpreclist(ji)%name
           status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_INT,&
                    ivdims(:invdims),tpreclist(ji)%id_out)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-       CASE(FLOAT)
-!          PRINT *,'FLOAT : ',tpreclist(ji)%name
+       CASE (TYPELOG)
+!          PRINT *,'TYPELOG : ',tpreclist(ji)%name
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_INT1,&
+                   ivdims(:invdims),tpreclist(ji)%id_out)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
+       CASE(TYPEREAL)
+!          PRINT *,'TYPEREAL : ',tpreclist(ji)%name
           status = NF90_DEF_VAR(kcdf_id,ycdfvar,type_float,&
                    ivdims(:invdims),tpreclist(ji)%id_out)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
@@ -686,7 +692,7 @@ END DO
 !write(*,"( 'Field :',A )") trim(tpreclist(ji)%name)
 
        SELECT CASE(tpreclist(ji)%TYPE)
-       CASE (INT,BOOL)
+       CASE (TYPEINT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
@@ -755,7 +761,64 @@ END DO
         END IF
 
          
-       CASE (FLOAT)
+       CASE (TYPELOG)
+        IF (infiles%files(1)%format == LFI_FORMAT) THEN
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+         ELSE
+           src=tpreclist(ji)%src(1)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
+             jj=jj+1
+           END DO
+         ENDIF
+         SELECT CASE(ndims)
+         CASE (0)
+             status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
+         CASE (1)
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
+         CASE DEFAULT
+           print *,'Error: arrays with ',tpreclist(ji)%dim%ndims,' dimensions are not supported'
+         END SELECT
+
+        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
+         ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
+         IF (.NOT.tpreclist(ji)%calc) THEN
+           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(ji)%id_in,itab3d)
+           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         ELSE
+           ALLOCATE( itab3d2(idims(1),idims(2),idims(3)) )
+           src=tpreclist(ji)%src(1)
+           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d)
+           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+           jj = 2
+           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+             src=tpreclist(ji)%src(jj)
+             status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d2)
+             IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+             itab3d(:,:,:) = itab3d(:,:,:) + itab3d2(:,:,:)
+             jj=jj+1
+           END DO
+           DEALLOCATE(itab3d2)
+         END IF
+
+         start = (/1,1,1/)
+         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab3d,start=start)
+         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
+         DEALLOCATE(itab3d)
+        END IF
+
+
+       CASE (TYPEREAL)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
@@ -822,7 +885,7 @@ END DO
          DEALLOCATE(xtab3d)
         END IF
 
-       CASE (TEXT)
+       CASE (TYPECHAR)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
          CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
@@ -957,32 +1020,32 @@ END DO
 
 
        SELECT CASE(tpreclist(ivar)%TYPE)
-       CASE(INT,BOOL)
+       CASE(TYPEINT,TYPELOG)
           ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,itab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'INT,BOOL --> ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPEINT,TYPELOG --> ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( itab3d , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(itab3d)
 
-       CASE(FLOAT)
+       CASE(TYPEREAL)
           ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,xtab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'FLOAT -->    ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPEREAL -->    ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(xtab3d)
 
-       CASE(TEXT)
+       CASE(TYPECHAR)
           ALLOCATE(ytab(idlen))
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,ytab)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'TEXT -->     ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPECHAR -->     ',tpreclist(ivar)%name,',len = ',idlen
           DO jj=1,idlen
              idata(jj) = ICHAR(ytab(jj))
           END DO
