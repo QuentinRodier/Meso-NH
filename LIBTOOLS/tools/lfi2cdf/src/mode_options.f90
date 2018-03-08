@@ -1,8 +1,9 @@
 module mode_options
+  USE MODE_FIELD, ONLY: TYPEUNDEF, TYPEINT, TYPELOG, TYPEREAL, TYPECHAR, TYPEDATE
+
   implicit none
 
   integer,parameter :: nbavailoptions = 8
-  integer,parameter :: TYPEUNDEF = -1, TYPEINT = 1, TYPELOG = 2, TYPEREAL = 3, TYPECHAR = 4
   integer,parameter :: MODEUNDEF = -11, MODECDF2CDF = 11, MODELFI2CDF = 12, MODECDF2LFI = 13
 
   integer,parameter :: OPTCOMPRESS = 1, OPTHELP   = 2, OPTLIST   = 3

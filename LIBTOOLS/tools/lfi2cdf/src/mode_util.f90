@@ -3,9 +3,11 @@ MODULE mode_util
   USE MODD_PARAM
 
   USE mode_dimlist
+  USE MODE_FIELD
   USE MODE_FIELDTYPE
+  USE MODE_FMREAD
+  USE MODE_FMWRIT
   USE mode_options
-
   USE netcdf
 
   IMPLICIT NONE 
@@ -59,6 +61,8 @@ MODULE mode_util
   LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
   LOGICAL(KIND=LFI_INT), PARAMETER :: lfalse = .FALSE.
 
+  CHARACTER(LEN=6) :: CPROGRAM_ORIG
+
 CONTAINS 
   FUNCTION str_replace(hstr, hold, hnew)
     CHARACTER(LEN=*) :: hstr, hold, hnew
@@ -75,31 +79,10 @@ CONTAINS
 
   END FUNCTION str_replace
 
-  SUBROUTINE FMREADLFIN1(klu,hrecfm,kval,kresp)
-  INTEGER(KIND=LFI_INT), INTENT(IN) :: klu ! logical fortran unit au lfi file
-  CHARACTER(LEN=*),INTENT(IN)       :: hrecfm ! article name to be read
-  INTEGER, INTENT(OUT)        :: kval ! integer value for hrecfm article
-  INTEGER(KIND=LFI_INT), INTENT(OUT):: kresp! return code null if OK
-  !
-  INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE::iwork
-  INTEGER :: icomlen
-  INTEGER(KIND=LFI_INT) :: iresp,ilenga,iposex
-  !
-  CALL LFINFO(iresp,klu,hrecfm,ilenga,iposex)
-  IF (iresp /=0 .OR. ilenga == 0) THEN
-    kresp = -1
-    kval = 0
-  ELSE
-    ALLOCATE(IWORK(ilenga))
-    CALL LFILEC(iresp,klu,hrecfm,iwork,ilenga)
-    icomlen = iwork(2)
-    kval = iwork(3+icomlen)
-    kresp = iresp
-    DEALLOCATE(IWORK)
-  END IF
-  END SUBROUTINE FMREADLFIN1
-
   SUBROUTINE parse_infiles(infiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options, icurrent_level)
+    USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+    USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+
     TYPE(filelist_struct),      INTENT(IN) :: infiles
     INTEGER,                    INTENT(IN) :: nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
@@ -118,27 +101,18 @@ CONTAINS
 #ifdef LOWMEM
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
 #endif
-    INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
+    INTEGER                                  :: IID, IRESP
+    INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
     CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
     INTEGER, DIMENSION(10)                   :: idim_id
-    INTEGER                                  :: JPHEXT
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
-      CALL FMREADLFIN1(ilu,'JPHEXT',JPHEXT,iresp)
-      IF (iresp /= 0) JPHEXT=1
-
-      ! First check if IMAX,JMAX,KMAX exist in LFI file
-      ! to handle 3D, 2D variables -> update IDIMX,IDIMY,IDIMZ
-      CALL FMREADLFIN1(ilu,'IMAX',IDIMX,iresp)
-      IF (iresp == 0) IDIMX = IDIMX+2*JPHEXT  ! IMAX + 2*JPHEXT
-       !
-      CALL FMREADLFIN1(ilu,'JMAX',IDIMY,iresp)
-      IF (iresp == 0) IDIMY = IDIMY+2*JPHEXT  ! JMAX + 2*JPHEXT
-      !
-      CALL FMREADLFIN1(ilu,'KMAX',IDIMZ,iresp)
-      IF (iresp == 0) IDIMZ = IDIMZ+2  ! KMAX + 2*JPVEXT
+      ! update IDIMX,IDIMY,IDIMZ
+      IDIMX = NIMAX_ll+2*JPHEXT
+      IDIMY = NJMAX_ll+2*JPHEXT
+      IDIMZ = NKMAX   +2*JPVEXT
     ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
       kcdf_id = infiles%files(1)%lun_id
 
@@ -255,8 +229,8 @@ CONTAINS
 
           yrecfm = TRIM(tpreclist(ji)%name)
           IF (infiles%files(1)%format == LFI_FORMAT) THEN
-            CALL LFINFO(iresp,ilu,trim(yrecfm)//trim(suffix),ileng,ipos)
-            IF (iresp == 0 .AND. ileng /= 0) tpreclist(ji)%found = .true.
+            CALL LFINFO(iresp2,ilu,trim(yrecfm)//trim(suffix),ileng,ipos)
+            IF (iresp2 == 0 .AND. ileng /= 0) tpreclist(ji)%found = .true.
             leng = ileng
           ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
             status = NF90_INQ_VARID(kcdf_id,trim(yrecfm)//trim(suffix),tpreclist(ji)%id_in)
@@ -309,6 +283,7 @@ END DO
 #ifndef LOWMEM
        IF(.NOT.ALLOCATED(lfiart) .AND. infiles%files(1)%format == LFI_FORMAT) ALLOCATE(lfiart(nbvar_infile))
 #endif
+print *,'PW: nbvar_infile=',nbvar_infile
        ALLOCATE(tpreclist(nbvar_infile))
        DO ji=1,nbvar_infile
          tpreclist(ji)%calc   = .FALSE. !By default variables are not computed from others
@@ -317,11 +292,11 @@ END DO
        END DO
 
        IF (infiles%files(1)%format == LFI_FORMAT) THEN
-         CALL LFIPOS(iresp,ilu)
+         CALL LFIPOS(iresp2,ilu)
          ladvan = .TRUE.
 
          DO ji=1,nbvar_infile
-           CALL LFICAS(iresp,ilu,yrecfm,ileng,ipos,ladvan)
+           CALL LFICAS(iresp2,ilu,yrecfm,ileng,ipos,ladvan)
            ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
            tpreclist(ji)%name = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
@@ -376,13 +351,13 @@ END DO
 
        IF (infiles%files(1)%format == LFI_FORMAT) THEN
          yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
-         CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
+         CALL LFINFO(iresp2,ilu,yrecfm,ileng,ipos)
 #ifdef LOWMEM
-         CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
+         CALL LFILEC(iresp2,ilu,yrecfm,iwork,ileng)
          tpreclist(ji)%grid = iwork(1)
          comment_size = iwork(2)
 #else
-         CALL LFILEC(iresp,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
+         CALL LFILEC(iresp2,ilu,yrecfm,lfiart(ji)%iwtab,ileng)
          tpreclist(ji)%grid = lfiart(ji)%iwtab(1)
          comment_size = lfiart(ji)%iwtab(2)
 #endif
@@ -699,6 +674,7 @@ END DO
     INTEGER                                  :: status
     INTEGER                                  :: extent, ndims
     INTEGER                                  :: ich
+    INTEGER                                  :: IID, IRESP2
     INTEGER                                  :: src
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
@@ -1171,6 +1147,13 @@ END DO
   END SUBROUTINE UPDATE_VARID_IN
 
   SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,nbvar_infile,options,runmode)
+    USE MODD_CONF,          ONLY: LCARTESIAN
+    USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
+    USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+    USE MODD_GRID,          ONLY: XBETA, XRPK, XLAT0, XLON0, XLATORI, XLONORI
+    USE MODD_GRID_n,        ONLY: LSLEVE, XXHAT, XYHAT, XZHAT
+    USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
+
     USE MODE_FM,               ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
     TYPE(filelist_struct),INTENT(OUT) :: infiles, outfiles
@@ -1180,8 +1163,9 @@ END DO
     TYPE(option),DIMENSION(:),INTENT(IN) :: options
     INTEGER         , INTENT(IN)  :: runmode
 
+    INTEGER                     :: IRESP
     INTEGER                     :: extindex
-    INTEGER(KIND=LFI_INT)       :: ilu,iresp,iverb,inap,inaf
+    INTEGER(KIND=LFI_INT)       :: ilu,iresp2,iverb,inap,inaf
     INTEGER                     :: idx,status
     CHARACTER(LEN=4)            :: ypextsrc, ypextdest
     LOGICAL                     :: fexist
@@ -1204,22 +1188,65 @@ END DO
        ilu = infiles%files(idx)%lun_id
        infiles%files(idx)%opened  = .TRUE.
 
-       nbvar_infile = inaf
+       nbvar_infile = INFILES%TFILES(idx)%TFILE%NLFININAR
 
        IF (options(OPTLIST)%set) THEN
-          CALL LFILAF(iresp,ilu,lfalse)
+          CALL LFILAF(iresp2,ilu,lfalse)
           CALL IO_FILE_CLOSE_ll(INFILES%TFILES(idx)%TFILE)
           return
+       END IF
+
+       !Read problem dimensions and some grid variables (needed by IO_FILE_OPEN_ll for netCDF files)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JPHEXT',JPHEXT)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JPVEXT',JPVEXT,IRESP)
+       IF(IRESP/=0) JPVEXT=1
+       !
+       ALLOCATE(NIMAX_ll,NJMAX_ll,NKMAX)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'IMAX',NIMAX_ll)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JMAX',NJMAX_ll)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'KMAX',NKMAX)
+       !
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'PROGRAM',CPROGRAM_ORIG)
+       !
+       ALLOCATE(CSTORAGE_TYPE)
+       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'STORAGE_TYPE',CSTORAGE_TYPE)
+       !
+       IF ( TRIM(CPROGRAM_ORIG)/='PGD' &
+         .AND. .NOT.(TRIM(CPROGRAM_ORIG)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
+         ALLOCATE(XXHAT(NIMAX_ll+2*JPHEXT))
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'XHAT',XXHAT)
+         ALLOCATE(XYHAT(NJMAX_ll+2*JPHEXT))
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'YHAT',XYHAT)
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'CARTESIAN',LCARTESIAN)
+         !
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'LAT0',XLAT0)
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'LON0',XLON0)
+         CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'BETA',XBETA)
+         !
+         IF (.NOT.LCARTESIAN) THEN
+           CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'RPK',   XRPK)
+           CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'LATORI',XLATORI)
+           CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'LONORI',XLONORI)
+         ENDIF
+         !
+         IF (TRIM(CPROGRAM_ORIG)/='NESPGD') THEN
+           ALLOCATE(XZHAT(NKMAX+2*JPVEXT))
+           CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'ZHAT',XZHAT)
+           ALLOCATE(LSLEVE)
+           CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'SLEVE',LSLEVE)
+         END IF
        END IF
 
        IF (.NOT.options(OPTSPLIT)%set) THEN
          outfiles%nbfiles = outfiles%nbfiles + 1
 
          idx = outfiles%nbfiles
+         CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
+                               HFORMAT='NETCDF4')
+         CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+         outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NNCID
          outfiles%files(idx)%format = NETCDF_FORMAT
          outfiles%files(idx)%status = WRITING
-         status = NF90_CREATE(TRIM(houtfile)//'.nc', IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
          outfiles%files(idx)%opened  = .TRUE.
 
          status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
@@ -1282,7 +1309,7 @@ END DO
        outfiles%files(idx)%format = LFI_FORMAT
        outfiles%files(idx)%status = WRITING
        ilu = outfiles%files(idx)%lun_id
-       CALL LFIOUV(iresp,ilu,ltrue,TRIM(houtfile)//'.lfi','NEW' ,lfalse,lfalse,iverb,inap,inaf)
+       CALL LFIOUV(iresp2,ilu,ltrue,TRIM(houtfile)//'.lfi','NEW' ,lfalse,lfalse,iverb,inap,inaf)
        outfiles%files(idx)%opened  = .TRUE.
     END IF
 

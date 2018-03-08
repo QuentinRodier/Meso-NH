@@ -1,6 +1,8 @@
 program LFI2CDF
   USE MODD_CONF,  ONLY: CPROGRAM
+  USE MODD_TIMEZ, ONLY: TIMEZ
 
+  USE MODE_FIELD,  ONLY: INI_FIELD_LIST
   USE MODE_IO_ll,  ONLY: INITIO_ll, SET_CONFIO_ll
   USE mode_options
   USE mode_util
@@ -30,6 +32,9 @@ program LFI2CDF
 
   CALL INITIO_ll()
   CALL VERSION
+  CALL INI_CST
+
+  ALLOCATE(TIMEZ) !Used by IO_WRITE_FIELD
 
   call read_commandline(options,hinfile,houtfile,runmode)
 
@@ -49,6 +54,8 @@ program LFI2CDF
      LLFIREAD = .FALSE.
      CALL SET_CONFIO_ll()
   END IF
+
+  CALL INI_FIELD_LIST(1)
 
   CALL OPEN_FILES(infiles, outfiles, hinfile, houtfile, nbvar_infile, options, runmode)
   IF (options(OPTLIST)%set) STOP
@@ -80,7 +87,7 @@ program LFI2CDF
 
   IF (runmode == MODELFI2CDF) THEN
      ! Conversion LFI -> NetCDF
-     
+
      !Standard treatment (one LFI file only)
      IF (.not.options(OPTMERGE)%set) THEN
        CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options)
