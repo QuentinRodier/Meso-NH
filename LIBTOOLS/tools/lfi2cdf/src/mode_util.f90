@@ -89,7 +89,7 @@ CONTAINS
     LOGICAL                                  :: ladvan
     INTEGER                                  :: ich, current_level, leng
     INTEGER                                  :: comment_size, fsize, sizemax
-    CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
+    CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm, YDATENAME
     CHARACTER(LEN=4)                         :: suffix
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
     INTEGER                                  :: IID, IRESP
@@ -97,6 +97,8 @@ CONTAINS
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
     CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
     INTEGER, DIMENSION(10)                   :: idim_id
+    INTEGER                                  :: IDXDATE, IDXTIME, IDX1
+    LOGICAL                                  :: GISDATE, GISTIME
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
@@ -275,12 +277,69 @@ END DO
          CALL LFIPOS(iresp2,ilu)
          ladvan = .TRUE.
 
+         GISDATE = .FALSE.
+         GISTIME = .FALSE.
+         YDATENAME = ''
          DO ji=1,nbvar_infile
            CALL LFICAS(iresp2,ilu,yrecfm,ileng,ipos,ladvan)
            ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
            tpreclist(ji)%name = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
            IF (ileng > sizemax) sizemax = ileng
+
+           !Detect if date variable
+           IDXDATE = INDEX(trim(yrecfm),"%TDATE",.TRUE.)
+           IDXTIME = INDEX(trim(yrecfm),"%TIME", .TRUE.)
+           IF (IDXDATE/=0 .AND. IDXTIME/=0) &
+             CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','field in LFI file with %TDATE and %TIME in name '//TRIM(YRECFM))
+           IDX = MAX(IDXDATE,IDXTIME)
+           IF (IDX>0) THEN
+             IF (LEN_TRIM(YDATENAME) == 0) THEN
+               !New date name detected
+               IDX1 = ji
+               YDATENAME = YRECFM(1:IDX-1)
+               IF (IDXDATE>0) GISDATE = .TRUE.
+               IF (IDXTIME>0) GISTIME = .TRUE.
+             ELSE
+               !Was already found => other field (date or time) is detected
+               IF (TRIM(YDATENAME)/=YRECFM(1:IDX-1)) STOP
+               IF (IDXDATE>0) THEN
+                 IF (.NOT.GISDATE) THEN
+                   GISDATE = .TRUE.
+                   IF (GISTIME) THEN
+                     tpreclist(ji)%name  = 'removed_time'
+                     tpreclist(ji)%tbw   = .FALSE.
+                     tpreclist(ji)%tbr   = .FALSE.
+                     tpreclist(ji)%found = .FALSE.
+                     tpreclist(IDX1)%name = YDATENAME
+                     !
+                     GISDATE = .FALSE.
+                     GISTIME = .FALSE.
+                     YDATENAME = ''
+                   END IF
+                 ELSE
+                   CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','GISDATE is already TRUE for '//TRIM(YDATENAME))
+                 END IF
+               ELSE IF (IDXTIME>0) THEN
+                 IF (.NOT.GISTIME) THEN
+                   GISTIME = .TRUE.
+                   IF (GISDATE) THEN
+                     tpreclist(ji)%name  = 'removed_date'
+                     tpreclist(ji)%tbw   = .FALSE.
+                     tpreclist(ji)%tbr   = .FALSE.
+                     tpreclist(ji)%found = .FALSE.
+                     tpreclist(IDX1)%name = YDATENAME
+                     !
+                     GISDATE = .FALSE.
+                     GISTIME = .FALSE.
+                     YDATENAME = ''
+                   END IF
+                 ELSE
+                   CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','GISTIME is already TRUE for '//TRIM(YDATENAME))
+                 END IF
+               END IF
+             END IF
+           END IF
          END DO
        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
          DO ji=1,nbvar_infile
@@ -332,6 +391,10 @@ END DO
          ELSE !Field not found in list
               tpreclist(ji)%TYPE = TYPEREAL
          END IF
+
+         !(temporary) workaround for DATE fields
+         IF (tpreclist(ji)%TYPE == TYPEDATE) YRECFM = TRIM(YRECFM)//'%TDATE'
+
          CALL LFINFO(iresp2,ilu,yrecfm,ileng,ipos)
          CALL LFILEC(iresp2,ilu,yrecfm,iwork,ileng)
          tpreclist(ji)%grid = iwork(1)
@@ -584,6 +647,12 @@ END DO
                    ivdims(:invdims),tpreclist(ji)%id_out)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
+       CASE(TYPEDATE)
+!          PRINT *,'TYPEDATE : ',tpreclist(ji)%name
+          status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_DOUBLE,&
+                   ivdims(:invdims),tpreclist(ji)%id_out)
+          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+
           
        CASE default
           PRINT *,'ATTENTION : ',TRIM(tpreclist(ji)%name),' est de&
@@ -622,6 +691,8 @@ END DO
   END SUBROUTINE def_ncdf
 
   SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,options,current_level)
+    USE MODD_TYPE_DATE
+
     TYPE(filelist_struct),        INTENT(IN):: infiles, outfiles
     TYPE(workfield), DIMENSION(:),INTENT(IN):: tpreclist
     INTEGER,                      INTENT(IN):: knaf
@@ -646,7 +717,7 @@ END DO
     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     REAL(KIND=8), DIMENSION(:,:,:), ALLOCATABLE :: xtab3d, xtab3d2
     INTEGER,      DIMENSION(:,:,:), ALLOCATABLE :: itab3d, itab3d2
-
+    TYPE(DATE_TIME)                          :: TZDATE
 
     !
     IF (infiles%files(1)%format == LFI_FORMAT) ilu = infiles%files(1)%lun_id
@@ -909,6 +980,14 @@ END DO
          status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,ytab,count=(/extent/))
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
         END IF
+
+       CASE (TYPEDATE)
+         IF (ndims/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','only ndims=0 is supported for TYPEDATE')
+         CALL FIND_FIELD_ID_FROM_MNHNAME(trim(tpreclist(ji)%name),IID,IRESP2)
+         IF (IRESP2/=0) &
+           CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','TYPEDATE variable '//TRIM(tpreclist(ji)%name)//' not found in TFIELDLIST')
+         CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   TFIELDLIST(IID),TZDATE)
+         CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,TFIELDLIST(IID),TZDATE)
 
        CASE default
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
