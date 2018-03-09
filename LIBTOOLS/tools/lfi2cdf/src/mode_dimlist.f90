@@ -1,22 +1,22 @@
 MODULE mode_dimlist
   IMPLICIT NONE 
   
-  TYPE dimCDF
+  TYPE dimCDFl2c
      CHARACTER(LEN=8)      :: name
      INTEGER               :: len
      INTEGER               :: id
      LOGICAL               :: create
      INTEGER               :: ndims  ! number of dim reference (when create=.FALSE.)
-     TYPE(dimCDF), POINTER :: next
-  END TYPE dimCDF
+     TYPE(dimCDFl2c), POINTER :: next
+  END TYPE dimCDFl2c
 
-  TYPE(dimCDF), POINTER, PRIVATE, SAVE :: dimlist
+  TYPE(dimCDFl2c), POINTER, PRIVATE, SAVE :: dimlist
   INTEGER, PRIVATE, SAVE               :: nbelt = 0
   INTEGER, SAVE :: IDIMX = 0
   INTEGER, SAVE :: IDIMY = 0
   INTEGER, SAVE :: IDIMZ = 0
   LOGICAL, SAVE :: GUSEDIM = .FALSE.
-  TYPE(dimCDF), POINTER :: ptdimx, ptdimy, ptdimz
+  TYPE(dimCDFl2c), POINTER :: ptdimx, ptdimy, ptdimz
 
 CONTAINS 
   
@@ -46,7 +46,7 @@ CONTAINS
   END FUNCTION size_dimCDF
 
   FUNCTION first_dimCDF()
-    TYPE(dimCDF), POINTER :: first_dimCDF
+    TYPE(dimCDFl2c), POINTER :: first_dimCDF
 
     first_dimCDF=>dimlist
 
@@ -56,10 +56,10 @@ CONTAINS
   FUNCTION get_dimCDF(len,ocreate)
     INTEGER, INTENT(IN)   :: len
     LOGICAL, INTENT(IN), OPTIONAL :: ocreate ! when .TRUE. create a dim CELL 
-    TYPE(dimCDF), POINTER :: get_dimCDF
+    TYPE(dimCDFl2c), POINTER :: get_dimCDF
     
 
-    TYPE(dimCDF), POINTER :: tmp
+    TYPE(dimCDFl2c), POINTER :: tmp
     INTEGER               :: count
     CHARACTER(LEN=5)      :: yndim
     LOGICAL               :: gforce

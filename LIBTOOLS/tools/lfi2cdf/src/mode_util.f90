@@ -38,7 +38,7 @@ MODULE mode_util
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)            :: name   ! nom du champ
-     TYPE(dimCDF),                   POINTER :: dim
+     TYPE(dimCDFl2c),                POINTER :: dim
      INTEGER                                 :: id_in = -1, id_out = -1
      LOGICAL                                 :: found  ! T if found in the input file
      LOGICAL                                 :: calc   ! T if computed from other variables
@@ -459,7 +459,7 @@ END DO
     INTEGER :: compress_level, status
     INTEGER :: idx, ji, nbfiles
     INTEGER :: kcdf_id
-    TYPE(dimCDF), POINTER :: tzdim
+    TYPE(dimCDFl2c), POINTER :: tzdim
     INTEGER               :: invdims
     INTEGER               :: type_float
     INTEGER, DIMENSION(10) :: ivdims
