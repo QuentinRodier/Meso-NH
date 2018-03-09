@@ -458,7 +458,7 @@ END DO
 
     INTEGER :: compress_level, status
     INTEGER :: idx, ji, nbfiles
-    INTEGER:: kcdf_id
+    INTEGER :: kcdf_id
     TYPE(dimCDF), POINTER :: tzdim
     INTEGER               :: invdims
     INTEGER               :: type_float
@@ -623,6 +623,7 @@ END DO
     CHARACTER(LEN=4)                         :: suffix
     INTEGER,DIMENSION(3)                     :: idims, start
     INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
+    LOGICAL,DIMENSION(:),ALLOCATABLE         :: gtab
     REAL(KIND=8),DIMENSION(:),ALLOCATABLE    :: xtab
     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     REAL(KIND=8), DIMENSION(:,:,:), ALLOCATABLE :: xtab3d, xtab3d2
@@ -643,6 +644,7 @@ END DO
 
     ALLOCATE(iwork(kbuflen))
     ALLOCATE(itab(kbuflen))
+    ALLOCATE(gtab(kbuflen))
     ALLOCATE(xtab(kbuflen))
 
     idx = 1
@@ -701,7 +703,7 @@ END DO
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,itab(1:extent))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
          CASE (2)
@@ -766,9 +768,18 @@ END DO
              jj=jj+1
            END DO
          ENDIF
+
+         DO JJ=1,EXTENT
+           IF (ITAB(JJ)==0) THEN
+             GTAB(JJ) = .FALSE.
+           ELSE
+             GTAB(JJ) = .TRUE.
+           END IF
+         END DO
+
          SELECT CASE(ndims)
          CASE (0)
-             status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,gtab(1:extent))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
          CASE DEFAULT
@@ -826,12 +837,11 @@ END DO
 !TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
          SELECT CASE(ndims)
          CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1:extent))
          CASE (1)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
          CASE (2)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,reshape(xtab,(/ptdimx%len,ptdimy%len/)), &
-                                 start = (/1,1,level/) )
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(xtab,(/ptdimx%len,ptdimy%len/)))
          CASE (3)
            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
          CASE DEFAULT
@@ -880,8 +890,7 @@ END DO
            ich = iwork(2+iwork(2)+jj)
            ytab(jj) = CHAR(ich)
          END DO
-         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,ytab,count=(/extent/))
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+         CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,ytab)
          DEALLOCATE(ytab)
         ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
          status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(ji)%id_in,ytab,count=(/extent/))
@@ -893,56 +902,18 @@ END DO
 
        CASE (TYPEDATE)
          IF (ndims/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','only ndims=0 is supported for TYPEDATE')
-         CALL FIND_FIELD_ID_FROM_MNHNAME(trim(tpreclist(ji)%name),IID,IRESP2)
-         IF (IRESP2/=0) &
-           CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','TYPEDATE variable '//TRIM(tpreclist(ji)%name)//' not found in TFIELDLIST')
-         CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   TFIELDLIST(IID),TZDATE)
-         CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,TFIELDLIST(IID),TZDATE)
+!PW: TODO: tpreclist(ji)%TFIELD%CMNHNAME => tpreclist(ji)%TFIELD
+         CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD%CMNHNAME,TZDATE)
+         CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,TZDATE)
 
        CASE default
-        IF (infiles%files(1)%format == LFI_FORMAT) THEN
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
-           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-         ELSE
-           src=tpreclist(ji)%src(1)
-           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
-           xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
-             xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-             jj=jj+1
-           END DO
-         ENDIF
-!TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
-         SELECT CASE(ndims)
-         CASE (0)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
-         CASE (1)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab(1:extent),count=(/extent/))
-         CASE (2)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,reshape(xtab,(/ptdimx%len,ptdimy%len/)), &
-                                 start = (/1,1,level/) )
-         CASE (3)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,reshape(xtab,(/ptdimx%len,ptdimy%len,ptdimz%len/)))
-         CASE DEFAULT
-           print *,'Error: arrays with ',tpreclist(ji)%dim%ndims,' dimensions are not supported'
-         END SELECT
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
-         print *,'Error: unknown datatype'
-         STOP
-        END IF
+         CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','invalid datatype')
 
        END SELECT
 
        if (options(OPTSPLIT)%set) idx = idx + 1
     END DO
-    DEALLOCATE(itab,xtab)
+    DEALLOCATE(itab,gtab,xtab)
     DEALLOCATE(iwork)
   END SUBROUTINE fill_ncdf
 
@@ -1150,8 +1121,9 @@ END DO
 
        !Read problem dimensions and some grid variables (needed by IO_FILE_OPEN_ll for netCDF files)
        CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JPHEXT',JPHEXT)
-       CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JPVEXT',JPVEXT,IRESP)
-       IF(IRESP/=0) JPVEXT=1
+       !CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'JPVEXT',JPVEXT,IRESP)
+       !IF(IRESP/=0) JPVEXT=1
+       JPVEXT = 1
        !
        ALLOCATE(NIMAX_ll,NJMAX_ll,NKMAX)
        CALL IO_READ_FIELD(INFILES%TFILES(idx)%TFILE,'IMAX',NIMAX_ll)
