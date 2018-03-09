@@ -114,7 +114,6 @@ program LFI2CDF
          print *,'Treating level ',current_level
          IF (current_level/=first_level) THEN
            CALL open_split_lfifile_in(infiles,hinfile,current_level)
-           CALL read_data_lfi(infiles,nbvar,tzreclist,ibuflen,current_level)
          END IF
          CALL fill_ncdf(infiles,outfiles,tzreclist,nbvar,ibuflen,options,current_level)
          IF (current_level/=last_level) CALL close_files(infiles)

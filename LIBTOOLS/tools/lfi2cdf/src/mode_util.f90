@@ -38,11 +38,8 @@ MODULE mode_util
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)            :: name   ! nom du champ
-     INTEGER                                 :: TYPE   ! type (entier ou reel)    
-     CHARACTER(LEN=:), POINTER               :: comment
      TYPE(dimCDF),                   POINTER :: dim
      INTEGER                                 :: id_in = -1, id_out = -1
-     INTEGER                                 :: grid
      LOGICAL                                 :: found  ! T if found in the input file
      LOGICAL                                 :: calc   ! T if computed from other variables
      LOGICAL                                 :: tbw    ! to be written or not
@@ -402,57 +399,16 @@ END DO
 
        IF (infiles%files(1)%format == LFI_FORMAT) THEN
          yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
-         CALL FIND_FIELD_ID_FROM_MNHNAME(yrecfm,IID,IRESP)
-         IF (IRESP==0) THEN
-           tpreclist(ji)%TYPE = TFIELDLIST(IID)%NTYPE
-         ELSE !Field not found in list
-              tpreclist(ji)%TYPE = TYPEREAL
-         END IF
 
          !(temporary) workaround for DATE fields
-         IF (tpreclist(ji)%TYPE == TYPEDATE) YRECFM = TRIM(YRECFM)//'%TDATE'
+         IF (tpreclist(ji)%TFIELD%NTYPE == TYPEDATE) YRECFM = TRIM(YRECFM)//'%TDATE'
 
          CALL LFINFO(iresp2,ilu,yrecfm,ileng,ipos)
          CALL LFILEC(iresp2,ilu,yrecfm,iwork,ileng)
-         tpreclist(ji)%grid = iwork(1)
          comment_size = iwork(2)
-
-         ALLOCATE(character(len=comment_size) :: tpreclist(ji)%comment)
-         DO jj=1,comment_size
-           ich = iwork(2+jj)
-           tpreclist(ji)%comment(jj:jj) = CHAR(ich)
-         END DO
-
          fsize = ileng-(2+comment_size)
 
        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
-         ! GRID attribute definition
-         status = NF90_GET_ATT(kcdf_id,tpreclist(ji)%id_in,'GRID',tpreclist(ji)%grid)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         ! COMMENT attribute definition
-         status = NF90_INQUIRE_ATTRIBUTE(kcdf_id,tpreclist(ji)%id_in,'COMMENT',len=comment_size)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-         ALLOCATE(character(len=comment_size) :: tpreclist(ji)%comment)
-         status = NF90_GET_ATT(kcdf_id,tpreclist(ji)%id_in,'COMMENT',tpreclist(ji)%comment)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         status = NF90_INQUIRE_VARIABLE(kcdf_id,tpreclist(ji)%id_in, xtype = itype, ndims = idims, &
-                                        dimids = idim_id)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         SELECT CASE(itype)
-         CASE(NF90_CHAR)
-           tpreclist(ji)%TYPE = TYPECHAR
-         CASE(NF90_INT)
-           tpreclist(ji)%TYPE = TYPEINT
-         CASE(NF90_FLOAT,NF90_DOUBLE)
-           tpreclist(ji)%TYPE = TYPEREAL
-         CASE default
-           PRINT *, 'Attention : variable ',TRIM(tpreclist(ji)%name), ' a un TYPE non reconnu par le convertisseur.'
-           PRINT *, '--> TYPE force a REAL(KIND 8) dans LFI !'
-         END SELECT
-
 !DUPLICATED
          IF (idims == 0) THEN
            ! variable scalaire
@@ -477,70 +433,14 @@ END DO
     IF (nbvar_calc>0) THEN
     DO ji=1,maxvar
        IF (.NOT.tpreclist(ji)%calc) CYCLE
-       tpreclist(ji)%TYPE = tpreclist(tpreclist(ji)%src(1))%TYPE
-       tpreclist(ji)%grid = tpreclist(tpreclist(ji)%src(1))%grid
        tpreclist(ji)%dim  => tpreclist(tpreclist(ji)%src(1))%dim
-
-!TODO: cleaner length!
-       ALLOCATE(character(len=256) :: tpreclist(ji)%comment)
-       tpreclist(ji)%comment='Constructed from'
-       jj = 1
-       DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-         tpreclist(ji)%comment = trim(tpreclist(ji)%comment)//' '//trim(tpreclist(tpreclist(ji)%src(jj))%name)
-         IF (jj<MAXRAW .AND. tpreclist(ji)%src(jj+1)>0) THEN
-           tpreclist(ji)%comment = trim(tpreclist(ji)%comment)//' +'
-         END IF
-         jj=jj+1
-       END DO
     END DO
     END IF
-
 
     PRINT *,'Nombre de dimensions = ', size_dimCDF()
     DEALLOCATE(iwork)
   END SUBROUTINE parse_infiles
   
-  SUBROUTINE read_data_lfi(infiles, nbvar, tpreclist, kbuflen, current_level)
-    TYPE(filelist_struct),      INTENT(IN) :: infiles
-    INTEGER, INTENT(INOUT)                 :: nbvar
-    TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
-    INTEGER, INTENT(IN)                    :: kbuflen
-    INTEGER, INTENT(IN), OPTIONAL          :: current_level
-
-    INTEGER                                  :: ji,jj
-    INTEGER                                  :: ndb, nde
-    LOGICAL                                  :: ladvan
-    INTEGER                                  :: ich
-    INTEGER                                  :: fsize,sizemax
-    CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm
-    CHARACTER(LEN=4)                         :: suffix
-    INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
-    INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
-    CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
-    CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
-
-
-    ilu = infiles%files(1)%lun_id
-
-    IF (present(current_level)) THEN
-      write(suffix,'(I4.4)') current_level
-    ElSE
-      suffix=''
-    END IF
-
-    ALLOCATE(iwork(kbuflen))
-
-    DO ji=1,nbvar
-       IF (.NOT.tpreclist(ji)%tbr) CYCLE
-       yrecfm = trim(tpreclist(ji)%name)//trim(suffix)
-       CALL LFINFO(iresp,ilu,yrecfm,ileng,ipos)
-       CALL LFILEC(iresp,ilu,yrecfm,iwork,ileng)
-       tpreclist(ji)%grid = iwork(1)
-    END DO
-
-    DEALLOCATE(iwork)
-  END SUBROUTINE read_data_lfi
-
   SUBROUTINE HANDLE_ERR(status,line)
     INTEGER :: status,line
 
@@ -639,7 +539,7 @@ END DO
 
        kcdf_id = outfiles%files(idx)%lun_id
 
-       SELECT CASE(tpreclist(ji)%TYPE)
+       SELECT CASE(tpreclist(ji)%TFIELD%NTYPE)
        CASE (TYPECHAR)
 !          PRINT *,'TYPECHAR : ',tpreclist(ji)%name
           status = NF90_DEF_VAR(kcdf_id,ycdfvar,NF90_CHAR,&
@@ -688,13 +588,6 @@ END DO
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        END IF
 
-       ! GRID attribute definition
-       status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id_out,'GRID',tpreclist(ji)%grid)
-       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-       ! COMMENT attribute definition
-       status = NF90_PUT_ATT(kcdf_id,tpreclist(ji)%id_out,'COMMENT',trim(tpreclist(ji)%comment))
-       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
        IF (options(OPTSPLIT)%set) idx = idx + 1
     END DO
@@ -784,7 +677,7 @@ END DO
 !write(*,"( '----------------------------------------' )")
 !write(*,"( 'Field :',A )") trim(tpreclist(ji)%name)
 
-       SELECT CASE(tpreclist(ji)%TYPE)
+       SELECT CASE(tpreclist(ji)%TFIELD%NTYPE)
        CASE (TYPEINT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
@@ -1086,17 +979,17 @@ END DO
     ALLOCATE(iwork(2+kbuflen))
 
     DO ivar=1,SIZE(tpreclist)
-       icomlen = LEN(tpreclist(ivar)%comment)
+       icomlen = LEN(tpreclist(ivar)%TFIELD%CCOMMENT)
        IF (icomlen > MAXLFICOMMENTLENGTH) THEN
          PRINT *,'ERROR: comment length is too big. Please increase MAXLFICOMMENTLENGTH'
          STOP
        END IF
 
        ! traitement Grille et Commentaire
-       iwork(1) = tpreclist(ivar)%grid
+       iwork(1) = tpreclist(ivar)%TFIELD%NGRID
        iwork(2) = icomlen
        DO jj=1,iwork(2)
-          iwork(2+jj)=ICHAR(tpreclist(ivar)%comment(jj:jj))
+          iwork(2+jj)=ICHAR(tpreclist(ivar)%TFIELD%CCOMMENT(jj:jj))
        END DO
 
        IF (ASSOCIATED(tpreclist(ivar)%dim)) THEN
@@ -1120,7 +1013,7 @@ END DO
        idata=>iwork(3+icomlen:iartlen)
 
 
-       SELECT CASE(tpreclist(ivar)%TYPE)
+       SELECT CASE(tpreclist(ivar)%TFIELD%NTYPE)
        CASE(TYPEINT,TYPELOG)
           ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,itab3d)
