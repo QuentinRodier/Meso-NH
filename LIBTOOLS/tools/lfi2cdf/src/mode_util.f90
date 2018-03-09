@@ -49,6 +49,7 @@ MODULE mode_util
      LOGICAL                                 :: tbr    ! to be read or not
      INTEGER,DIMENSION(MAXRAW)               :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                                 :: tgt    ! Target: id of the variable that use it (calc variable)
+     TYPE(TFIELDDATA)                        :: TFIELD ! Metadata about the field
   END TYPE workfield
 
   LOGICAL(KIND=LFI_INT), PARAMETER :: ltrue  = .TRUE.
@@ -341,6 +342,22 @@ END DO
              END IF
            END IF
          END DO
+         !
+         ! Check if variable is in TFIELDLIST and populate corresponding metadata
+         DO ji=1,nbvar_infile
+           IF (.NOT.tpreclist(ji)%found) CYCLE
+           !
+           CALL FIND_FIELD_ID_FROM_MNHNAME(tpreclist(ji)%name,IID,IRESP)
+           IF (IRESP==0) THEN
+             tpreclist(ji)%TFIELD = TFIELDLIST(IID)
+           ELSE !Field not found in list
+             CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','variable '//TRIM(tpreclist(ji)%name)//' is not known => ignored')
+             tpreclist(ji)%tbw   = .FALSE.
+             tpreclist(ji)%tbr   = .FALSE.
+             tpreclist(ji)%found = .FALSE.
+           END IF
+         END DO
+         !
        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
          DO ji=1,nbvar_infile
            tpreclist(ji)%id_in = ji
@@ -1104,32 +1121,32 @@ END DO
 
 
        SELECT CASE(tpreclist(ivar)%TYPE)
-       CASE(INT,BOOL)
+       CASE(TYPEINT,TYPELOG)
           ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,itab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'INT,BOOL --> ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPEINT,TYPELOG --> ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( itab3d , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(itab3d)
 
-       CASE(FLOAT)
+       CASE(TYPEREAL)
           ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,xtab3d)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'FLOAT -->    ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPEREAL -->    ',tpreclist(ivar)%name,',len = ',idlen
           idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
 
           DEALLOCATE(xtab3d)
 
-       CASE(TEXT)
+       CASE(TYPECHAR)
           ALLOCATE(ytab(idlen))
           status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,ytab)
           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!          PRINT *,'TEXT -->     ',tpreclist(ivar)%name,',len = ',idlen
+!          PRINT *,'TYPECHAR -->     ',tpreclist(ivar)%name,',len = ',idlen
           DO jj=1,idlen
              idata(jj) = ICHAR(ytab(jj))
           END DO
