@@ -1449,6 +1449,8 @@ stop
   END SUBROUTINE OPEN_SPLIT_NCFILE_IN
 
   SUBROUTINE OPEN_SPLIT_NCFILES_OUT(outfiles,houtfile,nbvar,tpreclist,options)
+    USE MODE_FM,               ONLY: IO_FILE_OPEN_ll
+    USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
     TYPE(filelist_struct),         INTENT(INOUT) :: outfiles
     CHARACTER(LEN=*),              INTENT(IN)    :: houtfile
     INTEGER,                       INTENT(IN)    :: nbvar
@@ -1471,15 +1473,25 @@ stop
       outfiles%files(idx)%var_id = ji
 
       filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
-      status = NF90_CREATE(trim(filename), IOR(NF90_CLOBBER,NF90_NETCDF4), outfiles%files(idx)%lun_id)
-      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+      CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,filename,'UNKNOWN','WRITE', &
+                            HFORMAT='NETCDF4')
+      CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+      outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NNCID
+      outfiles%files(idx)%format = NETCDF_FORMAT
+      outfiles%files(idx)%status = WRITING
+      outfiles%files(idx)%opened  = .TRUE.
+
+      IF (options(OPTCOMPRESS)%set) THEN
+        outfiles%tfiles(idx)%tfile%LNCCOMPRESS       = .TRUE.
+        outfiles%tfiles(idx)%tfile%NNCCOMPRESS_LEVEL = options(OPTCOMPRESS)%ivalue
+      END IF
+
+      IF (options(OPTREDUCE)%set) THEN
+        outfiles%tfiles(idx)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
+      END IF
 
       status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-      outfiles%files(idx)%opened  = .TRUE.
-      outfiles%files(idx)%format = NETCDF_FORMAT
-      outfiles%files(idx)%status = WRITING
 
       idx = idx + 1
     END DO
