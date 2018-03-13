@@ -159,7 +159,7 @@ program LFI2CDF
   ELSE
      ! Conversion NetCDF -> LFI
      CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,current_level)
-     CALL build_lfi(infiles,outfiles,tzreclist,ibuflen)
+     CALL build_lfi(infiles,outfiles,tzreclist,nbvar_infile,ibuflen)
   END IF
   
   CALL CLOSE_FILES(infiles)

@@ -220,7 +220,6 @@ subroutine check_options(options,infile,runmode)
 
   integer :: idx1, idx2
 
-
   !Check if help has been asked
   if (options(OPTHELP)%set) then
     call help()
@@ -276,7 +275,7 @@ subroutine help()
   print *,"Options:"
   print *,"  --compress, -c compression_level"
   print *,"     Compress data. The compression level should be in the 1 to 9 interval."
-  print *,"     Only supported with the netCDF-4 format (cdf2cdf and lfi2cdf only)"
+  print *,"     Only supported with the netCDF format (cdf2cdf and lfi2cdf only)"
   print *,"  --help, -h"
   print *,"     Print this text"
   print *,"  --list, -l"
