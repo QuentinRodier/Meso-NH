@@ -578,7 +578,12 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS)
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           END IF
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
          ELSE
            src=tpreclist(ji)%src(1)
@@ -682,7 +687,12 @@ print *,'PW:TODO'
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS)
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           END IF
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
          ELSE
            src=tpreclist(ji)%src(1)
@@ -781,7 +791,12 @@ print *,'PW:TODO'
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS)
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           END IF
            xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
          ELSE
            src=tpreclist(ji)%src(1)
