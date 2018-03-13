@@ -45,6 +45,7 @@ MODULE mode_util
      LOGICAL                               :: calc   ! T if computed from other variables
      LOGICAL                               :: tbw    ! to be written or not
      LOGICAL                               :: tbr    ! to be read or not
+     INTEGER                               :: NSRC = 0 ! Number of variables used to compute the variable (needed only if calc=.true.)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
      TYPE(TFIELDDATA)                      :: TFIELD ! Metadata about the field
@@ -99,6 +100,7 @@ CONTAINS
     INTEGER, DIMENSION(10)                   :: idim_id
     INTEGER                                  :: IDXDATE, IDXTIME, IDX1
     LOGICAL                                  :: GISDATE, GISTIME
+    LOGICAL                                  :: GOK
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
@@ -181,6 +183,7 @@ CONTAINS
             tpreclist(idx_var)%calc = .TRUE.
             tpreclist(idx_var)%tbw  = .TRUE.
             tpreclist(idx_var)%tbr  = .FALSE.
+            tpreclist(idx_var)%NSRC = idx-1
             idx_var=idx_var+1
             DO jj = 1, idx-1
               tpreclist(idx_var-jj)%src(jj) = idx_var
@@ -363,8 +366,8 @@ END DO
     END IF
 
     ! Check if variable is in TFIELDLIST and populate corresponding metadata
-    DO ji=1,nbvar_infile
-      IF (.NOT.tpreclist(ji)%found) CYCLE
+    DO ji=1,maxvar
+      IF (.NOT.tpreclist(ji)%found .OR. tpreclist(ji)%calc ) CYCLE
       !
       !Do not treat dimension variables (they are automatically added when creating netCDF file)
       IF (      tpreclist(ji)%name == 'ni'          &
@@ -399,6 +402,101 @@ END DO
         END IF
       END IF
     END DO
+
+    IF (nbvar_calc>0) THEN
+    !Calculated variables
+    !Done after previous loop to reuse metadate from component variables
+    !Derive metadata from its components
+    !If same value for all components => take it
+    !If not => nothing or default value
+    !Check sizes: must be the same for all
+    DO ji=1,maxvar
+      IF (.NOT.tpreclist(ji)%calc ) CYCLE
+      !
+      tpreclist(ji)%TFIELD%CMNHNAME  = tpreclist(ji)%name
+      tpreclist(ji)%TFIELD%CSTDNAME  = ''
+      tpreclist(ji)%TFIELD%CLONGNAME = tpreclist(ji)%name
+      !
+      GOK = .TRUE.
+      DO jj=1,tpreclist(ji)%NSRC
+        idx_var = tpreclist(ji)%src(jj)
+        IF(.NOT.tpreclist(idx_var)%found) THEN
+          CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','some components for calculated variable ' &
+                         //TRIM(tpreclist(ji)%name)//' are not known => ignored')
+          tpreclist(ji)%tbw   = .FALSE.
+          tpreclist(ji)%tbr   = .FALSE.
+          tpreclist(ji)%found = .FALSE.
+          GOK = .FALSE.
+          EXIT
+        END IF
+      END DO
+      !
+      IF (GOK) THEN
+        idx_var = tpreclist(ji)%src(1)
+        tpreclist(ji)%TFIELD%CUNITS   = tpreclist(idx_var)%TFIELD%CUNITS
+        tpreclist(ji)%TFIELD%CDIR     = tpreclist(idx_var)%TFIELD%CDIR
+        tpreclist(ji)%TFIELD%CLBTYPE  = tpreclist(idx_var)%TFIELD%CLBTYPE
+        tpreclist(ji)%TFIELD%CCOMMENT = TRIM(tpreclist(ji)%name)//'='//TRIM(tpreclist(idx_var)%name)
+        IF (tpreclist(ji)%NSRC>1) tpreclist(ji)%TFIELD%CCOMMENT = TRIM(tpreclist(ji)%TFIELD%CCOMMENT)//'+'
+        tpreclist(ji)%TFIELD%NGRID    = tpreclist(idx_var)%TFIELD%NGRID
+        tpreclist(ji)%TFIELD%NTYPE    = tpreclist(idx_var)%TFIELD%NTYPE
+        tpreclist(ji)%TFIELD%NDIMS    = tpreclist(idx_var)%TFIELD%NDIMS
+#if 0
+!PW: TODO?
+        tpreclist(ji)%TFIELD%NFILLVALUE
+        tpreclist(ji)%TFIELD%XFILLVALUE
+        tpreclist(ji)%TFIELD%NVALIDMIN
+        tpreclist(ji)%TFIELD%NVALIDMAX
+        tpreclist(ji)%TFIELD%XVALIDMIN
+        tpreclist(ji)%TFIELD%XVALIDMAX
+#endif
+        DO jj=2,tpreclist(ji)%NSRC
+          idx_var = tpreclist(ji)%src(jj)
+          !
+          IF (tpreclist(ji)%TFIELD%CUNITS /= tpreclist(idx_var)%TFIELD%CUNITS) THEN
+            CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','CUNITS is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name)//' => CUNITS not set')
+            tpreclist(ji)%TFIELD%CUNITS = ''
+          END IF
+          !
+          IF (tpreclist(ji)%TFIELD%CDIR /= tpreclist(idx_var)%TFIELD%CDIR) THEN
+            CALL PRINT_MSG(NVERB_ERROR,'IO','parse_infiles','CDIR is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name)//' => CDIR=--')
+            tpreclist(ji)%TFIELD%CDIR = '--'
+          END IF
+          !
+          IF (tpreclist(ji)%TFIELD%CLBTYPE /= tpreclist(idx_var)%TFIELD%CLBTYPE) THEN
+            CALL PRINT_MSG(NVERB_ERROR,'IO','parse_infiles','CLBTYPE is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name)//' => CLBTYPE=NONE')
+            tpreclist(ji)%TFIELD%CLBTYPE = 'NONE'
+          END IF
+          !
+          tpreclist(ji)%TFIELD%CCOMMENT = TRIM(tpreclist(ji)%TFIELD%CCOMMENT)//TRIM(tpreclist(idx_var)%name)
+          IF (jj<tpreclist(ji)%NSRC) tpreclist(ji)%TFIELD%CCOMMENT = TRIM(tpreclist(ji)%TFIELD%CCOMMENT)//'+'
+          !
+          IF (tpreclist(ji)%TFIELD%NGRID /= tpreclist(idx_var)%TFIELD%NGRID) THEN
+            CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','NGRID is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name)//' => NGRID=1')
+            tpreclist(ji)%TFIELD%NGRID = 1
+          END IF
+          !
+          IF (tpreclist(ji)%TFIELD%NTYPE /= tpreclist(idx_var)%TFIELD%NTYPE) THEN
+            CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','NTYPE is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name))
+            tpreclist(ji)%TFIELD%NTYPE = TYPEUNDEF
+          END IF
+          !
+          IF (tpreclist(ji)%TFIELD%NDIMS /= tpreclist(idx_var)%TFIELD%NDIMS) THEN
+            CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','NDIMS is not uniform between components of calculated variable '&
+                           //TRIM(tpreclist(ji)%name))
+          END IF
+        END DO
+        !
+        ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))
+        !
+      END IF
+    END DO !ji=1,maxvar
+    END IF !nbvar_calc>0
 
     kbuflen = sizemax
 
@@ -442,14 +540,6 @@ END DO
 
        tpreclist(ji)%dim=>get_dimCDF(fsize)
     END DO
-
-    !Complete info for calculated variables
-    IF (nbvar_calc>0) THEN
-    DO ji=1,maxvar
-       IF (.NOT.tpreclist(ji)%calc) CYCLE
-       tpreclist(ji)%dim  => tpreclist(tpreclist(ji)%src(1))%dim
-    END DO
-    END IF
 
     PRINT *,'Nombre de dimensions = ', size_dimCDF()
     DEALLOCATE(iwork)
@@ -591,12 +681,23 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+           ! Determine TDIMS
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           ELSE
+             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
+           END IF
            jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
+           DO jj=2,tpreclist(ji)%NSRC
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+!PW: TODO: check same dimensions
              itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
-             jj=jj+1
            END DO
          ENDIF
 
@@ -699,11 +800,23 @@ print *,'PW:TODO'
            CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
+           ! Determine TDIMS
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           ELSE
+             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
+           END IF
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+!PW: TODO: check same dimensions
              itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
              jj=jj+1
            END DO
@@ -803,11 +916,23 @@ print *,'PW:TODO'
            CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
+           ! Determine TDIMS
+           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
+           IF (IRESP2/=0) THEN
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                            ' => ignored')
+             CYCLE
+           ELSE
+             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
+           END IF
            xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+!PW: TODO: check same dimensions
              xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
              jj=jj+1
            END DO
