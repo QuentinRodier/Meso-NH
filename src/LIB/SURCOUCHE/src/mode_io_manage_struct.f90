@@ -623,12 +623,20 @@ END IF
 !
 CALL IO_FILE_FIND_BYNAME(HNAME,TPFILE,IRESP,OOLD=GOLD)
 IF (IRESP==0) THEN
-  IF (.NOT.GOLD) THEN
-    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+  !File has been found
+  !Check if really same one (LFI vs netCDF for LFI2CDF program)
+  IF (PRESENT(HFORMAT)) THEN
+    IF ( (HFORMAT=='LFI' .AND. TPFILE%CFORMAT/='NETCDF4') .OR. (HFORMAT=='NETCDF4' .AND. TPFILE%CFORMAT/='LFI') ) THEN
+      CALL PRINT_MSG(NVERB_FATAL,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+    END IF
   ELSE
-    CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist (not unexpected)')
+    IF (.NOT.GOLD) THEN
+      CALL PRINT_MSG(NVERB_ERROR,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist')
+    ELSE
+      CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_FILE_ADD2LIST','file '//TRIM(HNAME)//' already in filelist (not unexpected)')
+    END IF
+    RETURN
   END IF
-  RETURN
 END IF
 !
 IMI = GET_CURRENT_MODEL_INDEX()
