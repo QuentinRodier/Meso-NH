@@ -82,10 +82,13 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
 
   houtfile = options(OPTOUTPUT)%cvalue
 
+  call remove_suffix(hinfile)
+  call remove_suffix(houtfile)
+
   !Remove level in the filename if merging LFI splitted files and output name not set by option
   if (.NOT.options(OPTOUTPUT)%set) then
     if (options(OPTMERGE)%set) then
-      houtfile=hinfile(1:len(hinfile)-9)
+      houtfile=hinfile(1:len(hinfile)-5)
     end if
   end if
 
@@ -259,6 +262,31 @@ subroutine check_options(options,infile,runmode)
   end if
 
 end subroutine check_options
+
+
+subroutine remove_suffix(hfile)
+character(len=:),allocatable,intent(inout) :: hfile
+
+integer                      :: idx1, idx2
+character(len=:),allocatable :: yfile
+
+idx1 = index(hfile,'.lfi',back=.true.)
+idx2 = index(hfile,'.nc', back=.true.)
+
+if (idx1>0) then
+  yfile=hfile(1:idx1-1)
+else if (idx2>0) then
+  yfile=hfile(1:idx2-1)
+else
+  yfile=trim(hfile)
+endif
+
+deallocate(hfile)
+hfile = trim(yfile)
+deallocate(yfile)
+
+end subroutine remove_suffix
+
 
 subroutine help()
   implicit none

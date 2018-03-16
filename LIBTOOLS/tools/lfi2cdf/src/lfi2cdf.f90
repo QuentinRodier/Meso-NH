@@ -99,7 +99,7 @@ program LFI2CDF
      !Treat several LFI files and merge into 1 NC file
 
        !Determine first level (eg needed to find suffix of the variable name)
-       read( hinfile(len(hinfile)-6:len(hinfile)-4) , "(I3)" ) first_level
+       read( hinfile(len(hinfile)-2:len(hinfile)) , "(I3)" ) first_level
        nb_levels = options(OPTMERGE)%ivalue
        current_level = first_level
        last_level    = first_level + nb_levels - 1
@@ -134,7 +134,7 @@ program LFI2CDF
      !Treat several NC files and merge into 1 NC file
 
        !Determine first level (eg needed to find suffix of the variable name)
-       read( hinfile(len(hinfile)-5:len(hinfile)-3) , "(I3)" ) first_level
+       read( hinfile(len(hinfile)-2:len(hinfile)) , "(I3)" ) first_level
        nb_levels = options(OPTMERGE)%ivalue
        current_level = first_level
        last_level    = first_level + nb_levels - 1

@@ -1291,7 +1291,7 @@ stop
        !
        infiles%nbfiles = infiles%nbfiles + 1
        idx = infiles%nbfiles
-       CALL IO_FILE_ADD2LIST(INFILES%TFILES(idx)%TFILE,HINFILE(1:LEN_TRIM(HINFILE)-4),'UNKNOWN','READ', &
+       CALL IO_FILE_ADD2LIST(INFILES%TFILES(idx)%TFILE,HINFILE,'UNKNOWN','READ', &
                              HFORMAT='LFI',KLFIVERB=0)
        CALL IO_FILE_OPEN_ll(INFILES%TFILES(idx)%TFILE)
        infiles%files(idx)%lun_id = INFILES%TFILES(idx)%TFILE%NLFIFLU
@@ -1362,7 +1362,7 @@ stop
 
          idx = outfiles%nbfiles
          CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
-                               HFORMAT='NETCDF4')
+                               HFORMAT='NETCDF4',OOLD=.TRUE.)
          CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
          outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NNCID
          outfiles%files(idx)%format = NETCDF_FORMAT
@@ -1387,8 +1387,8 @@ stop
        !
        outfiles%nbfiles = outfiles%nbfiles + 1
        idx = outfiles%nbfiles
-       CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,TRIM(houtfile)//'.lfi','UNKNOWN','WRITE', &
-                             HFORMAT='LFI',KLFIVERB=0)
+       CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,houtfile,'UNKNOWN','WRITE', &
+                             HFORMAT='LFI',KLFIVERB=0,OOLD=.TRUE.)
        LIOCDF4 = .FALSE. !Necessary to open correctly the LFI file
        CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE)
        LIOCDF4 = .TRUE.
@@ -1420,7 +1420,7 @@ stop
     ilu = infiles%files(1)%lun_id !We assume only 1 infile
 
     write(suffix,'(I3.3)') current_level
-    filename=hinfile(1:len(hinfile)-7)//suffix//'.lfi'
+    filename=hinfile(1:len(hinfile)-4)//suffix
     CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar)
     infiles%files(1)%opened = .TRUE.
 
@@ -1440,7 +1440,7 @@ stop
     ALLOCATE(character(len=len(hinfile)) :: filename)
 
     write(suffix,'(I3.3)') current_level
-    filename=hinfile(1:len(hinfile)-6)//suffix//'.nc'
+    filename=hinfile(1:len(hinfile)-4)//suffix
     status = NF90_OPEN(filename,NF90_NOWRITE,infiles%files(1)%lun_id)
     IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     infiles%files(1)%opened  = .TRUE.
@@ -1472,7 +1472,7 @@ stop
       IF (.NOT.tpreclist(ji)%tbw) CYCLE
       outfiles%files(idx)%var_id = ji
 
-      filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)//'.nc'
+      filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)
       CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,filename,'UNKNOWN','WRITE', &
                             HFORMAT='NETCDF4')
       CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
