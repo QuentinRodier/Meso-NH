@@ -636,8 +636,9 @@ CONTAINS
              CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP)
 
              IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
-               CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE, &
-                                     KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB)
+               CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                                     KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
+                                     HFORMAT=TPFILE%CFORMAT)
              END IF
              TPFILE%TFILES_IOZ(IFILE)%TFILE => TZSPLITFILE
              !Done outside of the previous IF to prevent problems with .OUT files
