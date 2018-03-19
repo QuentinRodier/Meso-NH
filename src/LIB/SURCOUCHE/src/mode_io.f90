@@ -700,15 +700,15 @@ CONTAINS
                    !
                    ! JUAN open lfi file temporary modif
                    !
-                   CALL LFIOUV(IRESOU,     &
-                        TZSPLITFILE%NLFIFLU, &
-                        GNAMFI8,           &
-                        TZSPLITFILE%CNAME, &
-                        "UNKNOWN",         &
-                        GFATER8,           &
-                        GSTATS8,           &
-                        IMELEV,            &
-                        INPRAR,            &
+                   CALL LFIOUV(IRESOU,                   &
+                        TZSPLITFILE%NLFIFLU,             &
+                        GNAMFI8,                         &
+                        TRIM(TZSPLITFILE%CNAME)//'.lfi', &
+                        "UNKNOWN",                       &
+                        GFATER8,                         &
+                        GSTATS8,                         &
+                        IMELEV,                          &
+                        INPRAR,                          &
                         ININAR8)
                    TZSPLITFILE%NLFININAR = ININAR8
                 END IF
