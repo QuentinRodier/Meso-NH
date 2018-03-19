@@ -2,13 +2,14 @@ MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
   USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
 
-  USE mode_dimlist
   USE MODE_FIELD
   USE MODE_FIELDTYPE
   USE MODE_FMREAD
   USE MODE_FMWRIT
+
   USE mode_options
-  USE netcdf
+
+  USE NETCDF
 
   IMPLICIT NONE 
 
@@ -16,6 +17,8 @@ MODULE mode_util
   INTEGER,PARAMETER :: MAXLEN=512
   INTEGER,PARAMETER :: MAXFILES=100
   INTEGER,PARAMETER :: MAXLFICOMMENTLENGTH=100
+
+  INTEGER,PARAMETER :: FM_FIELD_SIZE = 32
 
   INTEGER,PARAMETER :: UNDEFINED = -1, READING = 1, WRITING = 2
   INTEGER,PARAMETER :: UNKNOWN_FORMAT = -1, NETCDF_FORMAT = 1, LFI_FORMAT = 2
@@ -38,7 +41,6 @@ MODULE mode_util
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)          :: name   ! nom du champ
-     TYPE(dimCDFl2c),              POINTER :: dim
      INTEGER                               :: id_in = -1, id_out = -1
      LOGICAL                               :: found  ! T if found in the input file
      LOGICAL                               :: calc   ! T if computed from other variables
@@ -57,6 +59,10 @@ MODULE mode_util
 
   CHARACTER(LEN=6) :: CPROGRAM_ORIG
 
+  INTEGER, SAVE :: IDIMX = 0
+  INTEGER, SAVE :: IDIMY = 0
+  INTEGER, SAVE :: IDIMZ = 0
+
 CONTAINS 
   FUNCTION str_replace(hstr, hold, hnew)
     CHARACTER(LEN=*) :: hstr, hold, hnew
@@ -73,7 +79,7 @@ CONTAINS
 
   END FUNCTION str_replace
 
-  SUBROUTINE parse_infiles(infiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options, icurrent_level)
+  SUBROUTINE parse_infiles(infiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options)
     USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
@@ -82,16 +88,14 @@ CONTAINS
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
     INTEGER,                   INTENT(OUT) :: kbuflen
     TYPE(option),DIMENSION(:), INTENT(IN)  :: options
-    INTEGER,          INTENT(IN), OPTIONAL :: icurrent_level
 
     INTEGER                                  :: ji,jj, kcdf_id, kcdf_id2, itype
     INTEGER                                  :: ndb, nde, ndey, idx, idx_var, maxvar
     INTEGER                                  :: idims, idimtmp, jdim, status, var_id
     LOGICAL                                  :: ladvan
-    INTEGER                                  :: ich, current_level, leng
+    INTEGER                                  :: ich, leng
     INTEGER                                  :: comment_size, fsize, sizemax
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm, YDATENAME
-    CHARACTER(LEN=4)                         :: suffix
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
     INTEGER                                  :: IID, IRESP
     INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
@@ -113,25 +117,12 @@ CONTAINS
     IDIMY = NJMAX_ll+2*JPHEXT
     IDIMZ = NKMAX   +2*JPVEXT
 
-    GUSEDIM = (IDIMX*IDIMY > 0)
-    IF (GUSEDIM) THEN
-      PRINT *,'MESONH 3D, 2D articles DIMENSIONS used :'
-      PRINT *,'DIMX =',IDIMX
-      PRINT *,'DIMY =',IDIMY
-      PRINT *,'DIMZ =',IDIMZ ! IDIMZ may be equal to 0 (PGD files)
-    ELSE
-      PRINT *,'BEWARE : ALL MesoNH arrays are handled as 1D arrays !'
-    END IF
+    PRINT *,'MESONH 3D, 2D articles DIMENSIONS used :'
+    PRINT *,'DIMX =',IDIMX
+    PRINT *,'DIMY =',IDIMY
+    PRINT *,'DIMZ =',IDIMZ ! IDIMZ may be equal to 0 (PGD files)
 
     sizemax = 0
-
-    IF (present(icurrent_level)) THEN
-      write(suffix,'(I4.4)') icurrent_level
-      current_level = icurrent_level
-    ElSE
-      suffix=''
-      current_level = -1
-    END IF
 
     ! Phase 1 : build articles list to convert.
     !
@@ -211,12 +202,12 @@ CONTAINS
 
           yrecfm = TRIM(tpreclist(ji)%name)
           IF (infiles%files(1)%format == LFI_FORMAT) THEN
-            CALL LFINFO(iresp2,ilu,trim(yrecfm)//trim(suffix),ileng,ipos)
+            CALL LFINFO(iresp2,ilu,trim(yrecfm),ileng,ipos)
             IF (iresp2 == 0 .AND. ileng /= 0) tpreclist(ji)%found = .true.
             IF (iresp2==0 .AND. ileng == 0 .AND. ipos==0 .AND. infiles%TFILES(1)%TFILE%NSUBFILES_IOZ>0) THEN
               !Variable not found with no error (iresp2==0 .AND. ileng == 0 .AND. ipos==0)
               !If we are merging, maybe it is one of the split variable
-              !In that case, the 1st part of the variable is in the 1st splitted file with a 0001 suffix
+              !In that case, the 1st part of the variable is in the 1st split file with a 0001 suffix
               CALL LFINFO(iresp2,infiles%TFILES(1)%TFILE%TFILES_IOZ(1)%TFILE%NLFIFLU,trim(yrecfm)//'0001',ileng,ipos)
               IF (iresp2 == 0 .AND. ileng /= 0) THEN
                 tpreclist(ji)%found  = .true.
@@ -230,11 +221,11 @@ CONTAINS
 
             leng = ileng
           ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
-            status = NF90_INQ_VARID(kcdf_id,trim(yrecfm)//trim(suffix),tpreclist(ji)%id_in)
+            status = NF90_INQ_VARID(kcdf_id,trim(yrecfm),tpreclist(ji)%id_in)
             IF (status /= NF90_NOERR .AND. infiles%TFILES(1)%TFILE%NSUBFILES_IOZ>0) THEN
               !Variable probably not found (other error possible...)
               !If we are merging, maybe it is one of the split variable
-              !In that case, the 1st part of the variable is in the 1st splitted file with a 0001 suffix
+              !In that case, the 1st part of the variable is in the 1st split file with a 0001 suffix
               kcdf_id2 = infiles%TFILES(1)%TFILE%TFILES_IOZ(1)%TFILE%NNCID
               status = NF90_INQ_VARID(kcdf_id2,trim(yrecfm)//'0001',tpreclist(ji)%id_in)
               IF (status == NF90_NOERR) THEN
@@ -267,7 +258,7 @@ CONTAINS
                 END DO
                 IF (tpreclist(ji)%LSPLIT) THEN
                   IF(idims/=2) CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','split variables can only be 3D')
-                  !Split variables are Z-splitted
+                  !Split variables are Z-split
                   leng = leng * IDIMZ
                 END IF
               END IF
@@ -441,7 +432,7 @@ END DO
 
     IF (nbvar_calc>0) THEN
     !Calculated variables
-    !Done after previous loop to reuse metadate from component variables
+    !Done after previous loop to reuse metadata from component variables
     !Derive metadata from its components
     !If same value for all components => take it
     !If not => nothing or default value
@@ -561,7 +552,6 @@ END DO
     INTEGER :: idx, ji, nbfiles
     INTEGER :: kcdf_id
     INTEGER :: IID, IRESP
-    TYPE(dimCDFl2c), POINTER :: tzdim
     INTEGER               :: invdims
     INTEGER               :: type_float
     INTEGER, DIMENSION(10) :: ivdims
@@ -588,7 +578,7 @@ END DO
     
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,options,current_level)
+  SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,options)
     USE MODD_TYPE_DATE
 
     USE MODE_NETCDF, ONLY: IO_GUESS_DIMIDS_NC4
@@ -598,7 +588,6 @@ END DO
     INTEGER,                      INTENT(IN)    :: knaf
     INTEGER,                      INTENT(IN)    :: kbuflen
     TYPE(option),DIMENSION(:),    INTENT(IN)    :: options
-    INTEGER,  OPTIONAL,           INTENT(IN)    :: current_level
 
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
     INTEGER                                  :: idx, ji,jj
@@ -610,7 +599,6 @@ END DO
     INTEGER                                  :: src
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
-    CHARACTER(LEN=4)                         :: suffix
 !     INTEGER,DIMENSION(3)                     :: idims, start
     INTEGER,DIMENSION(3)                     :: start
     INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
@@ -633,15 +621,6 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
     !
     IF (infiles%files(1)%format == LFI_FORMAT) ilu = infiles%files(1)%lun_id
     !
-
-    IF (present(current_level)) THEN
-      write(suffix,'(I4.4)') current_level
-      level = current_level
-    ElSE
-      suffix=''
-      level = 1
-    END IF
-
     ALLOCATE(iwork(kbuflen))
     ALLOCATE(itab(kbuflen))
     ALLOCATE(gtab(kbuflen))
@@ -659,8 +638,8 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
        CASE (TYPEINT)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
-           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
            CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
@@ -672,8 +651,8 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
          ELSE
            src=tpreclist(ji)%src(1)
-           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
            ! Determine TDIMS
@@ -690,7 +669,7 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
            jj = 2
            DO jj=2,tpreclist(ji)%NSRC
              src=tpreclist(ji)%src(jj)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
              itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
            END DO
@@ -779,8 +758,8 @@ print *,'PW:TODO'
        CASE (TYPELOG)
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
-           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
            CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
@@ -792,8 +771,8 @@ print *,'PW:TODO'
            itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
          ELSE
            src=tpreclist(ji)%src(1)
-           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
-           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+           CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
+           CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
            extent = ileng - 2 - iwork(2) !iwork(2) = comment length
            ! Determine TDIMS
            CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
@@ -810,7 +789,7 @@ print *,'PW:TODO'
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
              itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
              jj=jj+1
@@ -896,8 +875,8 @@ print *,'PW:TODO'
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          IF (.NOT.tpreclist(ji)%calc) THEN
            IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-             CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+             CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
              extent = ileng - 2 - iwork(2) !iwork(2) = comment length
              ! Determine TDIMS
              CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
@@ -908,7 +887,7 @@ print *,'PW:TODO'
              END IF
              xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
            ELSE
-             !We assume that splitted variables are always of size(IDIMX,IDMIY,IDIMZ)
+             !We assume that split variables are always of size(IDIMX,IDMIY,IDIMZ)
              ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
              CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(ji)%TFIELD,XTAB3D)
              extent = IDIMX*IDIMY*IDIMZ
@@ -925,8 +904,8 @@ print *,'PW:TODO'
          ELSE
            src=tpreclist(ji)%src(1)
            IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-             CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),ileng,ipos)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+             CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
+             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
              extent = ileng - 2 - iwork(2) !iwork(2) = comment length
              ! Determine TDIMS
              CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
@@ -943,13 +922,13 @@ print *,'PW:TODO'
              jj = 2
              DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
                src=tpreclist(ji)%src(jj)
-               CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name)//trim(suffix),iwork,ileng)
+               CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
                xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
                jj=jj+1
              END DO
            ELSE !Split variable
-             !We assume that splitted variables are always of size(IDIMX,IDMIY,IDIMZ)
+             !We assume that split variables are always of size(IDIMX,IDMIY,IDIMZ)
              ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
              ALLOCATE(xtab3d2(IDIMX,IDIMY,IDIMZ))
              CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(tpreclist(ji)%src(1))%TFIELD,XTAB3D)
@@ -1075,8 +1054,8 @@ END IF
        CASE (TYPECHAR)
          IF (ndims/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','only ndims=0 is supported for TYPECHAR')
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
-         CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),ileng,ipos)
-         CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name)//trim(suffix),iwork,ileng)
+         CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
+         CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
          extent = ileng - 2 - iwork(2) !iwork(2) = comment length
 !          ALLOCATE(ytab(extent))
          allocate(character(len=extent)::ytab)
@@ -1173,76 +1152,10 @@ END DO
           iwork(2+jj)=ICHAR(tpreclist(ivar)%TFIELD%CCOMMENT(jj:jj))
        END DO
 
+
 stop
 
-iartlen=2+icomlen+1
-#if 0
-       IF (ASSOCIATED(tpreclist(ivar)%dim)) THEN
-          idlen = tpreclist(ivar)%dim%len
-          ndims = tpreclist(ivar)%dim%ndims
-       ELSE 
-          idlen = 1
-          ndims = 0
-       END IF
-       
-       idims(:) = 1
-       if(ndims>0) idims(1) = ptdimx%len
-       if(ndims>1) idims(2) = ptdimy%len
-       if(ndims>2) idims(3) = ptdimz%len
-       if(ndims>3) then
-         PRINT *,'Too many dimensions'
-         STOP
-       endif
 
-       iartlen = 2+icomlen+idlen
-       idata=>iwork(3+icomlen:iartlen)
-
-
-       SELECT CASE(tpreclist(ivar)%TFIELD%NTYPE)
-       CASE(TYPEINT,TYPELOG)
-          ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,itab3d)
-          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-!          PRINT *,'TYPEINT,TYPELOG --> ',tpreclist(ivar)%name,',len = ',idlen
-          idata(1:idlen) = RESHAPE( itab3d , (/ idims(1)*idims(2)*idims(3) /) )
-
-          DEALLOCATE(itab3d)
-
-       CASE(TYPEREAL)
-          ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,xtab3d)
-          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-!          PRINT *,'TYPEREAL -->    ',tpreclist(ivar)%name,',len = ',idlen
-          idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
-
-          DEALLOCATE(xtab3d)
-
-       CASE(TYPECHAR)
-          ALLOCATE(ytab(idlen))
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,ytab)
-          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-!          PRINT *,'TYPECHAR -->     ',tpreclist(ivar)%name,',len = ',idlen
-          DO jj=1,idlen
-             idata(jj) = ICHAR(ytab(jj))
-          END DO
-          
-          DEALLOCATE(ytab)
-
-       CASE default
-          ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
-          status = NF90_GET_VAR(kcdf_id,tpreclist(ivar)%id_in,xtab3d)
-          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-          PRINT *,'Default (ERROR) -->',tpreclist(ivar)%name,',len = ',idlen
-          idata(1:idlen) = RESHAPE( TRANSFER(xtab3d,(/ 0_8 /),idlen) , (/ idims(1)*idims(2)*idims(3) /) )
-
-          DEALLOCATE(xtab3d)
-
-       END SELECT
-#endif
        
        ! Attention restoration des '%' dans le nom des champs LFI
        yrecfm = str_replace(tpreclist(ivar)%name,'__','%')
@@ -1255,34 +1168,6 @@ iartlen=2+icomlen+1
     DEALLOCATE(iwork)
 
   END SUBROUTINE build_lfi
-
-  SUBROUTINE UPDATE_VARID_IN(infiles,hinfile,tpreclist,nbvar,current_level)
-    !Update the id_in for netCDF files (could change from one file to the other)
-    TYPE(filelist_struct),         INTENT(IN)    :: infiles
-    CHARACTER(LEN=*),              INTENT(IN)    :: hinfile
-    TYPE(workfield), DIMENSION(:), INTENT(INOUT) :: tpreclist
-    INTEGER,                       INTENT(IN)    :: nbvar
-    INTEGER,                       INTENT(IN)    :: current_level
-
-    INTEGER :: ji, status
-    CHARACTER(len=4) :: suffix
-
-
-    if (infiles%files(1)%format /= NETCDF_FORMAT) return
-
-    write(suffix,'(I4.4)') current_level
-
-    DO ji=1,nbvar
-      IF (.NOT.tpreclist(ji)%tbr) CYCLE
-      status = NF90_INQ_VARID(infiles%files(1)%lun_id,trim(tpreclist(ji)%name)//trim(suffix),tpreclist(ji)%id_in)
-      IF (status /= NF90_NOERR .AND. tpreclist(ji)%found) THEN
-        tpreclist(ji)%found=.false.
-        tpreclist(ji)%tbr=.false.
-        tpreclist(ji)%tbw=.false.
-        print *,'Error: variable ',trim(tpreclist(ji)%name),' not found anymore in split file'
-      END IF
-    END DO
-  END SUBROUTINE UPDATE_VARID_IN
 
   SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,nbvar_infile,options,runmode)
     USE MODD_CONF,          ONLY: LCARTESIAN
@@ -1449,52 +1334,6 @@ iartlen=2+icomlen+1
    PRINT *,'--> Fichier converti : ', TRIM(houtfile)
 
   END SUBROUTINE OPEN_FILES
-
-  SUBROUTINE OPEN_SPLIT_LFIFILE_IN(infiles,hinfile,current_level)
-    TYPE(filelist_struct), INTENT(INOUT) :: infiles
-    CHARACTER(LEN=*), INTENT(IN) :: hinfile
-    INTEGER,          INTENT(IN) :: current_level
-
-    INTEGER(KIND=LFI_INT) :: ilu,iresp,iverb,inap,nbvar
-
-    CHARACTER(LEN=3)      :: suffix
-    CHARACTER(LEN=:),ALLOCATABLE :: filename
-
-
-    iverb = 0 !Verbosity level for LFI
-
-    ALLOCATE(character(len=len(hinfile)) :: filename)
-
-    ilu = infiles%files(1)%lun_id !We assume only 1 infile
-
-    write(suffix,'(I3.3)') current_level
-    filename=hinfile(1:len(hinfile)-4)//suffix
-    CALL LFIOUV(iresp,ilu,ltrue,filename,'OLD',lfalse,lfalse,iverb,inap,nbvar)
-    infiles%files(1)%opened = .TRUE.
-
-    DEALLOCATE(filename)
-  END SUBROUTINE OPEN_SPLIT_LFIFILE_IN
-
-  SUBROUTINE OPEN_SPLIT_NCFILE_IN(infiles,hinfile,current_level)
-    TYPE(filelist_struct), INTENT(INOUT) :: infiles
-    CHARACTER(LEN=*), INTENT(IN) :: hinfile
-    INTEGER,          INTENT(IN) :: current_level
-
-    INTEGER :: status
-    CHARACTER(LEN=3)      :: suffix
-    CHARACTER(LEN=:),ALLOCATABLE :: filename
-
-
-    ALLOCATE(character(len=len(hinfile)) :: filename)
-
-    write(suffix,'(I3.3)') current_level
-    filename=hinfile(1:len(hinfile)-4)//suffix
-    status = NF90_OPEN(filename,NF90_NOWRITE,infiles%files(1)%lun_id)
-    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-    infiles%files(1)%opened  = .TRUE.
-
-    DEALLOCATE(filename)
-  END SUBROUTINE OPEN_SPLIT_NCFILE_IN
 
   SUBROUTINE OPEN_SPLIT_NCFILES_OUT(outfiles,houtfile,nbvar,tpreclist,options)
     USE MODE_FM,               ONLY: IO_FILE_OPEN_ll

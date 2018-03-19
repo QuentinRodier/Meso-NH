@@ -22,7 +22,6 @@ program LFI2CDF
   INTEGER :: nbvar_calc ! number of variables to be computed from others
   INTEGER :: nbvar_tbw  ! number of variables to be written
   INTEGER :: nbvar      ! number of defined variables
-  INTEGER :: first_level, current_level, last_level, nb_levels
   INTEGER :: IINFO_ll                   ! return code of // routines
   CHARACTER(LEN=:),allocatable :: hvarlist
   TYPE(filelist_struct) :: infiles, outfiles
@@ -117,14 +116,14 @@ program LFI2CDF
 
   ELSE IF (runmode == MODECDF2CDF) THEN
      ! Conversion netCDF -> netCDF
-     CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,current_level)
+     CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options)
      IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,houtfile,nbvar,tzreclist,options)
      CALL def_ncdf(outfiles,tzreclist,nbvar,options)
      CALL fill_ncdf(infiles,outfiles,tzreclist,nbvar,ibuflen,options)
 
   ELSE
      ! Conversion NetCDF -> LFI
-     CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,current_level)
+     CALL parse_infiles(infiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options)
      CALL build_lfi(infiles,outfiles,tzreclist,nbvar_infile,ibuflen)
   END IF
   
