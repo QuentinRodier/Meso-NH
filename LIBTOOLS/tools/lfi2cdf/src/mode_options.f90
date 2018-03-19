@@ -80,17 +80,17 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
 
   call check_options(options,hinfile,runmode)
 
+  call remove_suffix(hinfile)
+
+  !Determine outfile name if not given
+  if (.NOT.options(OPTOUTPUT)%set) then
+    idx = index(hinfile,'/',back=.true.)
+    options(OPTOUTPUT)%cvalue = hinfile(idx+1:len_trim(hinfile))//'_merged'
+  end if
+
   houtfile = options(OPTOUTPUT)%cvalue
 
-  call remove_suffix(hinfile)
   call remove_suffix(houtfile)
-
-  !Remove level in the filename if merging LFI splitted files and output name not set by option
-  if (.NOT.options(OPTOUTPUT)%set) then
-    if (options(OPTMERGE)%set) then
-      houtfile=hinfile(1:len(hinfile)-5)
-    end if
-  end if
 
 end subroutine read_commandline
 
@@ -254,13 +254,6 @@ subroutine check_options(options,infile,runmode)
       print *,"Warning: split option is forced to disable"
   end if
 
-  !Determine outfile name if not given
-  if (.NOT.options(OPTOUTPUT)%set) then
-    idx1 = index(infile,'/',back=.true.)
-    idx2 = index(infile,'.',back=.true.)
-    options(OPTOUTPUT)%cvalue = infile(idx1+1:idx2-1)
-  end if
-
 end subroutine check_options
 
 
@@ -296,7 +289,7 @@ subroutine help()
   print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
   print *,"                [-c --compress compression_level] input-file.lfi"
   print *,"        cdf2cdf [-h --help] [-v --var var1[,...]] [-r --reduce-precision]"
-  print *,"                [-m --merge number_of_z_levels] [-s --split] [-o --output output-file.nc]"
+  print *,"                [-m --merge number_of_split_files] [-s --split] [-o --output output-file.nc]"
   print *,"                [-c --compress compression_level] input-file.nc"
   print *,"        cdf2lfi [-o --output output-file.lfi] input-file.nc"
   print *,""
@@ -308,8 +301,8 @@ subroutine help()
   print *,"     Print this text"
   print *,"  --list, -l"
   print *,"     List all the fields of the LFI file and returns (lfi2cdf only)"
-  print *,"  --merge, -m number_of_z_levels"
-  print *,"     Merge LFI files which are split by vertical level (cdf2cdf and lfi2cdf only)"
+  print *,"  --merge, -m number_of_split_files"
+  print *,"     Merge files which are split by vertical level (cdf2cdf and lfi2cdf only)"
   print *,"  --output, -o"
   print *,"     Name of file for the output"
   print *,"  --reduce-precision, -r"
