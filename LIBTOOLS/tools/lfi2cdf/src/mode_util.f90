@@ -1,7 +1,7 @@
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
   USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
-  USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
+  USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH, NMNHNAMELGTMAX
 
   USE MODE_FIELD
   USE MODE_FIELDTYPE
@@ -27,7 +27,6 @@ MODULE mode_util
     INTEGER :: lun_id                  ! Logical ID of file
     INTEGER :: format = UNKNOWN_FORMAT ! NETCDF, LFI
     INTEGER :: status = UNDEFINED      ! Opened for reading or writing
-    INTEGER :: var_id                  ! Position of the variable in the workfield structure
     LOGICAL :: opened = .false.
   END TYPE filestruct
 
@@ -95,7 +94,7 @@ CONTAINS
 
     INTEGER                                  :: ji,jj, kcdf_id, kcdf_id2, itype
     INTEGER                                  :: ndb, nde, ndey, idx, idx_out, idx_var, maxvar
-    INTEGER                                  :: idims, idimtmp, jdim, status, var_id
+    INTEGER                                  :: idims, idimtmp, jdim, status
     LOGICAL                                  :: ladvan
     INTEGER                                  :: ich, leng
     INTEGER                                  :: comment_size, fsize, sizemax
@@ -110,7 +109,11 @@ CONTAINS
     LOGICAL                                  :: GISDATE, GISTIME
     LOGICAL                                  :: GOK
 
-    idx_out = 1
+    IF (options(OPTSPLIT)%set) THEN
+      idx_out = 0
+    ELSE
+      idx_out = 1
+    END IF
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
@@ -209,7 +212,11 @@ CONTAINS
           yrecfm = TRIM(tpreclist(ji)%name)
           IF (infiles%files(1)%format == LFI_FORMAT) THEN
             CALL LFINFO(iresp2,ilu,trim(yrecfm),ileng,ipos)
-            IF (iresp2 == 0 .AND. ileng /= 0) tpreclist(ji)%found = .true.
+            IF (iresp2 == 0 .AND. ileng /= 0) THEN
+              tpreclist(ji)%found = .true.
+              tpreclist(ji)%NSIZE = ileng - 2 - NLFIMAXCOMMENTLENGTH
+            END IF
+
             IF (iresp2==0 .AND. ileng == 0 .AND. ipos==0 .AND. infiles%TFILES(1)%TFILE%NSUBFILES_IOZ>0) THEN
               !Variable not found with no error (iresp2==0 .AND. ileng == 0 .AND. ipos==0)
               !If we are merging, maybe it is one of the split variable
@@ -222,7 +229,8 @@ CONTAINS
                   tpreclist(tpreclist(ji)%tgt)%LSPLIT = .true.
                 END IF
               END IF
-              ileng = ileng * IDIMZ !Real size is slightly overestimated due to comment size
+              tpreclist(ji)%NSIZE = (ileng - 2 - NLFIMAXCOMMENTLENGTH) * IDIMZ
+              ileng = tpreclist(ji)%NSIZE + 2 + NLFIMAXCOMMENTLENGTH
             END IF
 
             leng = ileng
@@ -269,6 +277,7 @@ CONTAINS
                 END IF
               END IF
             END IF
+            tpreclist(ji)%NSIZE = leng
             !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
             leng = leng + NLFIMAXCOMMENTLENGTH
           END IF
@@ -402,6 +411,8 @@ END DO
 
     ! Check if variable is in TFIELDLIST and populate corresponding metadata
     DO ji=1,maxvar
+      IF (options(OPTSPLIT)%set .AND. tpreclist(ji)%tbw) idx_out = idx_out + 1
+
       IF (.NOT.tpreclist(ji)%found .OR. tpreclist(ji)%calc ) CYCLE
       !
       !Do not treat dimension variables (they are automatically added when creating netCDF file)
@@ -430,8 +441,8 @@ END DO
           tpreclist(ji)%TFIELD = TFIELDLIST(IID)
           ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))
           ! Determine TDIMS
-          CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx_out)%TFILE,tpreclist(ji)%TFIELD,tpreclist(ji)%NSIZE, &
-                                   tpreclist(ji)%TDIMS,IRESP)
+          CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx_out)%TFILE,tpreclist(ji)%TFIELD,&
+                                   tpreclist(ji)%NSIZE,tpreclist(ji)%TDIMS,IRESP)
           IF (IRESP/=0) THEN
             CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
                                          ' => ignored')
@@ -539,6 +550,7 @@ END DO
         END DO
         !
         ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))
+        tpreclist(ji)%TDIMS = tpreclist(idx_var)%TDIMS
         !
       END IF
     END DO !ji=1,maxvar
@@ -612,6 +624,7 @@ END DO
     INTEGER                                  :: ndims
     INTEGER                                  :: ich
     INTEGER                                  :: IID, IRESP2
+    INTEGER                                  :: ISRC
     INTEGER                                  :: src
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
@@ -619,10 +632,12 @@ END DO
     INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
     LOGICAL,DIMENSION(:),ALLOCATABLE         :: gtab
     REAL,DIMENSION(:),ALLOCATABLE    :: xtab
+    REAL,DIMENSION(:),      ALLOCATABLE :: XTAB1D, XTAB1D2
+    REAL,DIMENSION(:,:),    ALLOCATABLE :: XTAB2D, XTAB2D2
+    REAL,DIMENSION(:,:,:),  ALLOCATABLE :: XTAB3D, XTAB3D2
+    REAL,DIMENSION(:,:,:,:),ALLOCATABLE :: XTAB4D, XTAB4D2
+
     CHARACTER(LEN=:), ALLOCATABLE               :: ytab
-    REAL, DIMENSION(:,:), ALLOCATABLE :: xtab2d
-    REAL, DIMENSION(:,:,:), ALLOCATABLE :: xtab3d, xtab3d2
-    REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: xtab4d
     INTEGER,      DIMENSION(:,:,:), ALLOCATABLE :: itab3d, itab3d2
     TYPE(DATE_TIME)                          :: TZDATE
 
@@ -714,39 +729,6 @@ print *,'PW:TODO'
          CASE DEFAULT
            print *,'Error: arrays with ',ndims,' dimensions are not supported'
          END SELECT
-
-#if 0
-         ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(ji)%id_in,itab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-         ELSE
-           ALLOCATE( itab3d2(idims(1),idims(2),idims(3)) )
-           src=tpreclist(ji)%src(1)
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d2)
-             IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-             itab3d(:,:,:) = itab3d(:,:,:) + itab3d2(:,:,:)
-             jj=jj+1
-           END DO
-           DEALLOCATE(itab3d2)
-         END IF
-
-!TODO: not clean, should be done only if merging z-levels
-         IF (ndims == 2) THEN
-           start = (/1,1,level/)
-         ELSE
-           start = (/1,1,1/)
-         ENDIF
-         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab3d,start=start)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         DEALLOCATE(itab3d)
-#endif
         END IF
 
          
@@ -822,177 +804,90 @@ print *,'PW:TODO'
          CASE DEFAULT
            print *,'Error: arrays with ',ndims,' dimensions are not supported'
          END SELECT
-#if 0
-         ALLOCATE( itab3d(idims(1),idims(2),idims(3)) )
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(ji)%id_in,itab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-         ELSE
-           ALLOCATE( itab3d2(idims(1),idims(2),idims(3)) )
-           src=tpreclist(ji)%src(1)
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,itab3d2)
-             IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-             itab3d(:,:,:) = itab3d(:,:,:) + itab3d2(:,:,:)
-             jj=jj+1
-           END DO
-           DEALLOCATE(itab3d2)
-         END IF
-
-         start = (/1,1,1/)
-         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab3d,start=start)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         DEALLOCATE(itab3d)
-#endif
         END IF
 
 
-       CASE (TYPEREAL)
-        IF (infiles%files(1)%format == LFI_FORMAT) THEN
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-             CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
-             xtab(1:tpreclist(ji)%NSIZE) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-           ELSE
-             !We assume that split variables are always of size(IDIMX,IDMIY,IDIMZ)
-             ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
-             CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(ji)%TFIELD,XTAB3D)
-             xtab(1:tpreclist(ji)%NSIZE) = RESHAPE( xtab3d, (/tpreclist(ji)%NSIZE/) )
-             DEALLOCATE(xtab3d)
-           END IF
-         ELSE
-           src=tpreclist(ji)%src(1)
-           IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-             CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
-             CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
-             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-             xtab(1:tpreclist(ji)%NSIZE) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-             jj = 2
-             DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-               src=tpreclist(ji)%src(jj)
-               CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
-!PW: TODO: check same dimensions
-               xtab(1:tpreclist(ji)%NSIZE) = xtab(1:tpreclist(ji)%NSIZE) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
-               jj=jj+1
-             END DO
-           ELSE !Split variable
-             !We assume that split variables are always of size(IDIMX,IDMIY,IDIMZ)
-             ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
-             ALLOCATE(xtab3d2(IDIMX,IDIMY,IDIMZ))
-             CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(tpreclist(ji)%src(1))%TFIELD,XTAB3D)
-               tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-             jj = 2
-             DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-               CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(tpreclist(ji)%src(jj))%TFIELD,XTAB3D2)
-               XTAB3D(:,:,:) = XTAB3D(:,:,:) + XTAB3D2(:,:,:)
-               jj=jj+1
-             END DO
-             xtab(1:tpreclist(ji)%NSIZE) = RESHAPE( xtab3d, (/tpreclist(ji)%NSIZE/) )
-             DEALLOCATE(xtab3d,xtab3d2)
-           END IF
-         ENDIF
-!TODO: works in all cases??? (X, Y, Z dimensions assumed to be ptdimx,y or z)
-         SELECT CASE(ndims)
-         CASE (0)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1))
-         CASE (1)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1:tpreclist(ji)%NSIZE))
-         CASE (2)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(xtab,tpreclist(ji)%TDIMS(1:2)%LEN))
-         CASE (3)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(xtab,tpreclist(ji)%TDIMS(1:3)%LEN))
-         CASE (4)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(xtab,tpreclist(ji)%TDIMS(1:4)%LEN))
-         CASE DEFAULT
-           print *,'Error: arrays with ',ndims,' dimensions are not supported'
-         END SELECT
+      CASE (TYPEREAL)
+        IDIMLEN(1:ndims) = tpreclist(ji)%TDIMS(1:ndims)%LEN
 
-        ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
-IF (.NOT.tpreclist(ji)%LSPLIT) THEN
-  INCID = infiles%TFILES(1)%TFILE%NNCID
-  STATUS = NF90_INQ_VARID(INCID,tpreclist(ji)%TFIELD%CMNHNAME,IVARID)
-  IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-  STATUS = NF90_INQUIRE_VARIABLE(INCID, IVARID, NDIMS=IDIMS, DIMIDS=IVDIMS)
-  IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-  if (ndims/=idims) then
-  print *,'aieeeeeee'
-  stop
-  end if
-  DO JJ=1,IDIMS
-    STATUS = NF90_INQUIRE_DIMENSION(infiles%TFILES(1)%TFILE%NNCID, IVDIMS(JJ), LEN=IDIMLEN(JJ))
-    IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-  END DO
-ELSE
-  !Split variables are always 3D variables
-  IDIMLEN(1) = IDIMX
-  IDIMLEN(2) = IDIMY
-  IDIMLEN(3) = IDIMZ
-END IF
-         SELECT CASE(ndims)
-         CASE (0)
-           CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD,xtab(1))
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1))
-         CASE (1)
-           CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD,xtab(1:IDIMLEN(1)))
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1:IDIMLEN(1)))
-         CASE (2)
-           ALLOCATE(XTAB2D(IDIMLEN(1),IDIMLEN(2)))
-           CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD,XTAB2D)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB2D)
-           DEALLOCATE(XTAB2D)
-         CASE (3)
-           ALLOCATE(XTAB3D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
-           CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD,XTAB3D)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB3D)
-           DEALLOCATE(XTAB3D)
-         CASE (4)
-           ALLOCATE(XTAB4D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3),IDIMLEN(4)))
-           CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,   tpreclist(ji)%TFIELD,XTAB4D)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB4D)
-           DEALLOCATE(XTAB4D)
-         CASE DEFAULT
-           print *,'Error: arrays with ',ndims,' dimensions are not supported'
-         END SELECT
-
-#if 0
-         ALLOCATE( xtab3d(idims(1),idims(2),idims(3)) )
-         IF (.NOT.tpreclist(ji)%calc) THEN
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(ji)%id_in,xtab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-         ELSE
-           ALLOCATE( xtab3d2(idims(1),idims(2),idims(3)) )
-           src=tpreclist(ji)%src(1)
-           status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,xtab3d)
-           IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-           jj = 2
-           DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
-             src=tpreclist(ji)%src(jj)
-             status = NF90_GET_VAR(infiles%files(1)%lun_id,tpreclist(src)%id_in,xtab3d2)
-             IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-             xtab3d(:,:,:) = xtab3d(:,:,:) + xtab3d2(:,:,:)
-             jj=jj+1
-           END DO
-           DEALLOCATE(xtab3d2)
-         END IF
-
-!TODO: not clean, should be done only if merging z-levels
-         IF (ndims == 2) THEN
-           start = (/1,1,level/)
-         ELSE
-           start = (/1,1,1/)
-         ENDIF
-         status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,xtab3d,start=start)
-         IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-         DEALLOCATE(xtab3d)
-#endif
+        IF (.NOT.tpreclist(ji)%calc) THEN
+          ISRC = 1
+          src = ji
+        ELSE
+          ISRC = tpreclist(ji)%NSRC
+          src = tpreclist(ji)%src(1)
         END IF
+
+        SELECT CASE(ndims)
+        CASE (0)
+         ALLOCATE(XTAB1D(1))
+         IF (tpreclist(ji)%calc) ALLOCATE(XTAB1D2(1))
+         CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB1D(1))
+        CASE (1)
+          ALLOCATE(XTAB1D(IDIMLEN(1)))
+          IF (tpreclist(ji)%calc) ALLOCATE(XTAB1D2(IDIMLEN(1)))
+          CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB1D)
+        CASE (2)
+          ALLOCATE(XTAB2D(IDIMLEN(1),IDIMLEN(2)))
+          IF (tpreclist(ji)%calc) ALLOCATE(XTAB2D2(IDIMLEN(1),IDIMLEN(2)))
+          CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB2D)
+        CASE (3)
+          ALLOCATE(XTAB3D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
+          IF (tpreclist(ji)%calc) ALLOCATE(XTAB3D2(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3)))
+          CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB3D)
+        CASE (4)
+          ALLOCATE(XTAB4D(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3),IDIMLEN(4)))
+          IF (tpreclist(ji)%calc) ALLOCATE(XTAB4D2(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3),IDIMLEN(4)))
+          CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB4D)
+        CASE DEFAULT
+          CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','number of dimensions not supported for '//TRIM(tpreclist(src)%name))
+        END SELECT
+
+        DO JJ=2,ISRC
+          src = tpreclist(ji)%src(jj)
+
+          SELECT CASE(ndims)
+          CASE (0)
+            CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB1D2(1))
+            XTAB1D(1) = XTAB1D(1) + XTAB1D2(1)
+          CASE (1)
+            CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB1D2)
+            XTAB1D(:) = XTAB1D(:) + XTAB1D2(:)
+          CASE (2)
+            CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB2D2)
+            XTAB2D(:,:) = XTAB2D(:,:) + XTAB2D2(:,:)
+          CASE (3)
+            CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB3D2)
+            XTAB3D(:,:,:) = XTAB3D(:,:,:) + XTAB3D2(:,:,:)
+          CASE (4)
+            CALL IO_READ_FIELD (infiles%tfiles(1)%TFILE,tpreclist(src)%TFIELD,XTAB4D2)
+            XTAB4D(:,:,:,:) = XTAB4D(:,:,:,:) + XTAB4D2(:,:,:,:)
+          END SELECT
+        END DO
+
+        SELECT CASE(ndims)
+        CASE (0)
+          CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB1D(1))
+          DEALLOCATE(XTAB1D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(XTAB1D2)
+        CASE (1)
+          CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB1D)
+          DEALLOCATE(XTAB1D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(XTAB1D2)
+        CASE (2)
+          CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB2D)
+          DEALLOCATE(XTAB2D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(XTAB2D2)
+        CASE (3)
+          CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB3D)
+          DEALLOCATE(XTAB3D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(XTAB3D2)
+        CASE (4)
+          CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,XTAB4D)
+          DEALLOCATE(XTAB4D)
+          IF (tpreclist(ji)%calc) DEALLOCATE(XTAB4D2)
+        END SELECT
+
 
        CASE (TYPECHAR)
          IF (ndims/=0) CALL PRINT_MSG(NVERB_FATAL,'IO','fill_ncdf','only ndims=0 is supported for TYPECHAR')
@@ -1286,43 +1181,54 @@ stop
     TYPE(workfield), DIMENSION(:), INTENT(IN)    :: tpreclist
     TYPE(option),DIMENSION(:),     INTENT(IN)    :: options
 
-    INTEGER :: ji, idx
+    INTEGER :: ji
+    INTEGER :: idx1, idx2
     INTEGER :: status
     INTEGER :: omode
     CHARACTER(LEN=MAXLEN) :: filename
+    CHARACTER(LEN=:),ALLOCATABLE :: YLIST
+    CHARACTER(LEN=NMNHNAMELGTMAX),DIMENSION(nbvar) :: YVARS
 
+    outfiles%nbfiles = nbvar
+    YLIST = TRIM(options(OPTVAR)%cvalue)
 
-    DO ji = 1,nbvar
-      IF (tpreclist(ji)%tbw) outfiles%nbfiles = outfiles%nbfiles + 1
+    DO ji = 1,nbvar-1
+      idx1 = INDEX(YLIST,',')
+      idx2 = INDEX(YLIST,'=')
+      IF (idx1/=0) THEN
+        IF (idx2/=0 .AND. idx2<idx1) THEN
+          YVARS(ji) = YLIST(1:idx2-1)
+        ELSE
+          YVARS(ji) = YLIST(1:idx1-1)
+        END IF
+        YLIST = YLIST(idx1+1:)
+      ELSE
+        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_SPLIT_NCFILES_OUT','problem separating variable names')
+      END IF
     END DO
+    YVARS(nbvar) = YLIST
 
-    idx = 1
     DO ji = 1,nbvar
-      IF (.NOT.tpreclist(ji)%tbw) CYCLE
-      outfiles%files(idx)%var_id = ji
-
-      filename = trim(houtfile)//'.'//trim(tpreclist(ji)%name)
-      CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,filename,'UNKNOWN','WRITE', &
+      filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
+      CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(ji)%TFILE,filename,'UNKNOWN','WRITE', &
                             HFORMAT='NETCDF4')
-      CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
-      outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NNCID
-      outfiles%files(idx)%format = NETCDF_FORMAT
-      outfiles%files(idx)%status = WRITING
-      outfiles%files(idx)%opened  = .TRUE.
+      CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+      outfiles%files(ji)%lun_id = OUTFILES%TFILES(ji)%TFILE%NNCID
+      outfiles%files(ji)%format = NETCDF_FORMAT
+      outfiles%files(ji)%status = WRITING
+      outfiles%files(ji)%opened  = .TRUE.
 
       IF (options(OPTCOMPRESS)%set) THEN
-        outfiles%tfiles(idx)%tfile%LNCCOMPRESS       = .TRUE.
-        outfiles%tfiles(idx)%tfile%NNCCOMPRESS_LEVEL = options(OPTCOMPRESS)%ivalue
+        outfiles%tfiles(ji)%tfile%LNCCOMPRESS       = .TRUE.
+        outfiles%tfiles(ji)%tfile%NNCCOMPRESS_LEVEL = options(OPTCOMPRESS)%ivalue
       END IF
 
       IF (options(OPTREDUCE)%set) THEN
-        outfiles%tfiles(idx)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
+        outfiles%tfiles(ji)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
       END IF
 
-      status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
+      status = NF90_SET_FILL(outfiles%files(ji)%lun_id,NF90_NOFILL,omode)
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-
-      idx = idx + 1
     END DO
 
   END SUBROUTINE OPEN_SPLIT_NCFILES_OUT

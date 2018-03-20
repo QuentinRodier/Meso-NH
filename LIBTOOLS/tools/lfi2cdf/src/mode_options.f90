@@ -83,11 +83,15 @@ subroutine read_commandline(options,hinfile,houtfile,runmode)
   call remove_suffix(hinfile)
 
   !Determine outfile name if not given
-  if (.NOT.options(OPTOUTPUT)%set) then
+  if (.NOT.options(OPTOUTPUT)%set .AND. .NOT.options(OPTSPLIT)%set) then
     idx = index(hinfile,'/',back=.true.)
     options(OPTOUTPUT)%cvalue = hinfile(idx+1:len_trim(hinfile))//'_merged'
   end if
 
+  if (.NOT.options(OPTOUTPUT)%set .AND. options(OPTSPLIT)%set) then
+    idx = index(hinfile,'/',back=.true.)
+    options(OPTOUTPUT)%cvalue = trim(hinfile)
+  end if
   houtfile = options(OPTOUTPUT)%cvalue
 
   call remove_suffix(houtfile)

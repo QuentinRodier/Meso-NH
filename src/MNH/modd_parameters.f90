@@ -87,6 +87,8 @@ INTEGER, PARAMETER :: NFILENAMELGTMAX = 32 ! Maximum length of a file name (must
 INTEGER, PARAMETER :: NFILENAMELGTMAXLFI = 28 ! Maximum length of a file name in LFI file (this is necessary
                                               ! to keep backward compatibility), MUST BE 28
 !
+INTEGER, PARAMETER :: NLFIMAXCOMMENTLENGTH = 100 ! Length of comments in LFI files
+!
 INTEGER, PARAMETER :: JPLIMACCNMAX = 10 ! Maximum allowed number of CCN modes in LIMA
 INTEGER, PARAMETER :: JPLIMAIFNMAX = 10 ! Maximum allowed number of IFN modes in LIMA
 !
