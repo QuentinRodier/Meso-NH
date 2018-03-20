@@ -1,6 +1,7 @@
 MODULE mode_util
   USE MODD_IO_ll,  ONLY: TFILE_ELT
   USE MODD_NETCDF, ONLY: DIMCDF, IDCDF_KIND
+  USE MODD_PARAMETERS, ONLY: NLFIMAXCOMMENTLENGTH
 
   USE MODE_FIELD
   USE MODE_FIELDTYPE
@@ -16,7 +17,6 @@ MODULE mode_util
   INTEGER,PARAMETER :: MAXRAW=10
   INTEGER,PARAMETER :: MAXLEN=512
   INTEGER,PARAMETER :: MAXFILES=100
-  INTEGER,PARAMETER :: MAXLFICOMMENTLENGTH=100
 
   INTEGER,PARAMETER :: FM_FIELD_SIZE = 32
 
@@ -47,6 +47,7 @@ MODULE mode_util
      LOGICAL                               :: tbw    ! to be written or not
      LOGICAL                               :: tbr    ! to be read or not
      LOGICAL                               :: LSPLIT = .FALSE. ! TRUE if variable is split by vertical level
+     INTEGER                               :: NSIZE = 0 ! Size of the variable (in number of elements)
      INTEGER                               :: NSRC = 0 ! Number of variables used to compute the variable (needed only if calc=.true.)
      INTEGER,DIMENSION(MAXRAW)             :: src    ! List of variables used to compute the variable (needed only if calc=.true.)
      INTEGER                               :: tgt    ! Target: id of the variable that use it (calc variable)
@@ -79,18 +80,21 @@ CONTAINS
 
   END FUNCTION str_replace
 
-  SUBROUTINE parse_infiles(infiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options)
+  SUBROUTINE parse_infiles(infiles, outfiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options)
     USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
+    USE MODE_NETCDF, ONLY: IO_GUESS_DIMIDS_NC4
+
     TYPE(filelist_struct),      INTENT(IN) :: infiles
+    TYPE(filelist_struct),      INTENT(IN) :: outfiles
     INTEGER,                    INTENT(IN) :: nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
     INTEGER,                   INTENT(OUT) :: kbuflen
     TYPE(option),DIMENSION(:), INTENT(IN)  :: options
 
     INTEGER                                  :: ji,jj, kcdf_id, kcdf_id2, itype
-    INTEGER                                  :: ndb, nde, ndey, idx, idx_var, maxvar
+    INTEGER                                  :: ndb, nde, ndey, idx, idx_out, idx_var, maxvar
     INTEGER                                  :: idims, idimtmp, jdim, status, var_id
     LOGICAL                                  :: ladvan
     INTEGER                                  :: ich, leng
@@ -105,6 +109,8 @@ CONTAINS
     INTEGER                                  :: IDXDATE, IDXTIME, IDX1
     LOGICAL                                  :: GISDATE, GISTIME
     LOGICAL                                  :: GOK
+
+    idx_out = 1
 
     IF (infiles%files(1)%format == LFI_FORMAT) THEN
       ilu = infiles%files(1)%lun_id
@@ -264,7 +270,7 @@ CONTAINS
               END IF
             END IF
             !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
-            leng = leng + MAXLFICOMMENTLENGTH
+            leng = leng + NLFIMAXCOMMENTLENGTH
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
@@ -302,8 +308,9 @@ END DO
          DO ji=1,nbvar_infile
            CALL LFICAS(iresp2,ilu,yrecfm,ileng,ipos,ladvan)
            ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
-           tpreclist(ji)%name = trim(yrecfm)
+           tpreclist(ji)%name   = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
+           tpreclist(ji)%NSIZE  = ileng - 2 - NLFIMAXCOMMENTLENGTH
            IF (ileng > sizemax) sizemax = ileng
 
            !Detect if date variable
@@ -383,10 +390,11 @@ END DO
                leng = leng*idimtmp
              END DO
            END IF
+           tpreclist(ji)%NSIZE  = leng
            IF (leng > sizemax) sizemax = leng
          END DO
          !Add maximum comment size (necessary when writing LFI files because the comment is stored with the field)
-         sizemax = sizemax + MAXLFICOMMENTLENGTH
+         sizemax = sizemax + NLFIMAXCOMMENTLENGTH
        END IF
 
        maxvar = nbvar_infile
@@ -421,6 +429,17 @@ END DO
         IF (IRESP==0) THEN
           tpreclist(ji)%TFIELD = TFIELDLIST(IID)
           ALLOCATE(tpreclist(ji)%TDIMS(tpreclist(ji)%TFIELD%NDIMS))
+          ! Determine TDIMS
+          CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx_out)%TFILE,tpreclist(ji)%TFIELD,tpreclist(ji)%NSIZE, &
+                                   tpreclist(ji)%TDIMS,IRESP)
+          IF (IRESP/=0) THEN
+            CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+                                         ' => ignored')
+            tpreclist(ji)%tbw   = .FALSE.
+            tpreclist(ji)%tbr   = .FALSE.
+            tpreclist(ji)%found = .FALSE.
+            CYCLE
+          END IF
         ELSE !Field not found in list
           CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','variable '//TRIM(tpreclist(ji)%name)//' is not known => ignored')
           tpreclist(ji)%tbw   = .FALSE.
@@ -581,8 +600,6 @@ END DO
   SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,kbuflen,options)
     USE MODD_TYPE_DATE
 
-    USE MODE_NETCDF, ONLY: IO_GUESS_DIMIDS_NC4
-
     TYPE(filelist_struct),        INTENT(IN)    :: infiles, outfiles
     TYPE(workfield), DIMENSION(:),INTENT(INOUT) :: tpreclist
     INTEGER,                      INTENT(IN)    :: knaf
@@ -592,19 +609,16 @@ END DO
     INTEGER(KIND=8),DIMENSION(:),ALLOCATABLE :: iwork
     INTEGER                                  :: idx, ji,jj
     INTEGER                                  :: kcdf_id
-!     INTEGER                                  :: status
-    INTEGER                                  :: extent, ndims
+    INTEGER                                  :: ndims
     INTEGER                                  :: ich
     INTEGER                                  :: IID, IRESP2
     INTEGER                                  :: src
     INTEGER                                  :: level
     INTEGER(KIND=LFI_INT)                    :: iresp,ilu,ileng,ipos
-!     INTEGER,DIMENSION(3)                     :: idims, start
     INTEGER,DIMENSION(3)                     :: start
     INTEGER,DIMENSION(:),ALLOCATABLE         :: itab
     LOGICAL,DIMENSION(:),ALLOCATABLE         :: gtab
     REAL,DIMENSION(:),ALLOCATABLE    :: xtab
-!     CHARACTER, DIMENSION(:), ALLOCATABLE     :: ytab
     CHARACTER(LEN=:), ALLOCATABLE               :: ytab
     REAL, DIMENSION(:,:), ALLOCATABLE :: xtab2d
     REAL, DIMENSION(:,:,:), ALLOCATABLE :: xtab3d, xtab3d2
@@ -640,38 +654,19 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
-           extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-           ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
-           IF (IRESP2/=0) THEN
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                            ' => ignored')
-             CYCLE
-           END IF
-           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+           itab(1:tpreclist(ji)%NSIZE) = iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
          ELSE
            src=tpreclist(ji)%src(1)
            CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
-           extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
-           ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
-           IF (IRESP2/=0) THEN
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
-                            ' => ignored')
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                            ' => ignored')
-             CYCLE
-           ELSE
-             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-           END IF
+           itab(1:tpreclist(ji)%NSIZE) = iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
+           tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS !Dimensions of calculated variable are the same as its sources
            jj = 2
            DO jj=2,tpreclist(ji)%NSRC
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
-             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
+             itab(1:tpreclist(ji)%NSIZE) = itab(1:tpreclist(ji)%NSIZE) + iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
            END DO
          ENDIF
 
@@ -680,7 +675,7 @@ INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: IDIMLEN
          CASE (0)
            CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,itab(1))
          CASE (1)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,itab(1:extent))
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,itab(1:tpreclist(ji)%NSIZE))
          CASE (2)
            CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(itab,tpreclist(ji)%TDIMS(1:2)%LEN))
 !            status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,reshape(itab,(/ptdimx%len,ptdimy%len/)), &
@@ -760,43 +755,29 @@ print *,'PW:TODO'
          IF (.NOT.tpreclist(ji)%calc) THEN
            CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
-           extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-           ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
-           IF (IRESP2/=0) THEN
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
+           IF (iwork(2) /= NLFIMAXCOMMENTLENGTH) THEN
+             CALL PRINT_MSG(NVERB_ERROR,'IO','fill_ncdf','unexpected comment size for '//tpreclist(ji)%TFIELD%CMNHNAME// &
                             ' => ignored')
              CYCLE
            END IF
-           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+           itab(1:tpreclist(ji)%NSIZE) = iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
          ELSE
            src=tpreclist(ji)%src(1)
            CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
            CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
-           extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-           ! Determine TDIMS
-           CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
-           IF (IRESP2/=0) THEN
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
-                            ' => ignored')
-             CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                            ' => ignored')
-             CYCLE
-           ELSE
-             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-           END IF
-           itab(1:extent) = iwork(3+iwork(2):3+iwork(2)+extent-1)
+           tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
+           itab(1:tpreclist(ji)%NSIZE) = iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
            jj = 2
            DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
              src=tpreclist(ji)%src(jj)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
-             itab(1:extent) = itab(1:extent) + iwork(3+iwork(2):3+iwork(2)+extent-1)
+             itab(1:tpreclist(ji)%NSIZE) = itab(1:tpreclist(ji)%NSIZE) + iwork(3+iwork(2):3+iwork(2)+tpreclist(ji)%NSIZE-1)
              jj=jj+1
            END DO
          ENDIF
 
-         DO JJ=1,EXTENT
+         DO JJ=1,tpreclist(ji)%NSIZE
            IF (ITAB(JJ)==0) THEN
              GTAB(JJ) = .FALSE.
            ELSE
@@ -808,7 +789,7 @@ print *,'PW:TODO'
          CASE (0)
            CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,gtab(1))
          CASE (1)
-           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:extent),count=(/extent/))
+           status = NF90_PUT_VAR(kcdf_id,tpreclist(ji)%id_out,itab(1:tpreclist(ji)%NSIZE),count=(/tpreclist(ji)%NSIZE/))
          CASE DEFAULT
            print *,'Error: arrays with ',ndims,' dimensions are not supported'
          END SELECT
@@ -877,28 +858,12 @@ print *,'PW:TODO'
            IF (.NOT.tpreclist(ji)%LSPLIT) THEN
              CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
              CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
-             extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-             ! Determine TDIMS
-             CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
-             IF (IRESP2/=0) THEN
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CYCLE
-             END IF
-             xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+             xtab(1:tpreclist(ji)%NSIZE) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
            ELSE
              !We assume that split variables are always of size(IDIMX,IDMIY,IDIMZ)
              ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
              CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(ji)%TFIELD,XTAB3D)
-             extent = IDIMX*IDIMY*IDIMZ
-             ! Determine TDIMS
-             CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(ji)%TDIMS,IRESP2)
-             IF (IRESP2/=0) THEN
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CYCLE
-             END IF
-             xtab(1:extent) = RESHAPE( xtab3d, (/extent/) )
+             xtab(1:tpreclist(ji)%NSIZE) = RESHAPE( xtab3d, (/tpreclist(ji)%NSIZE/) )
              DEALLOCATE(xtab3d)
            END IF
          ELSE
@@ -906,25 +871,14 @@ print *,'PW:TODO'
            IF (.NOT.tpreclist(ji)%LSPLIT) THEN
              CALL LFINFO(iresp,ilu,trim(tpreclist(src)%name),ileng,ipos)
              CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
-             extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-             ! Determine TDIMS
-             CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(src)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
-             IF (IRESP2/=0) THEN
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CYCLE
-             ELSE
-               tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-             END IF
-             xtab(1:extent) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+             tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
+             xtab(1:tpreclist(ji)%NSIZE) = TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
              jj = 2
              DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
                src=tpreclist(ji)%src(jj)
                CALL LFILEC(iresp,ilu,trim(tpreclist(src)%name),iwork,ileng)
 !PW: TODO: check same dimensions
-               xtab(1:extent) = xtab(1:extent) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
+               xtab(1:tpreclist(ji)%NSIZE) = xtab(1:tpreclist(ji)%NSIZE) + TRANSFER(iwork(3+iwork(2):),(/ 0.0_8 /))
                jj=jj+1
              END DO
            ELSE !Split variable
@@ -932,25 +886,14 @@ print *,'PW:TODO'
              ALLOCATE(xtab3d(IDIMX,IDIMY,IDIMZ))
              ALLOCATE(xtab3d2(IDIMX,IDIMY,IDIMZ))
              CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(tpreclist(ji)%src(1))%TFIELD,XTAB3D)
-             extent = IDIMX*IDIMY*IDIMZ
-             ! Determine TDIMS
-             CALL IO_GUESS_DIMIDS_NC4(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,extent,tpreclist(src)%TDIMS,IRESP2)
-             IF (IRESP2/=0) THEN
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(src)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','can not guess dimensions for '//tpreclist(ji)%TFIELD%CMNHNAME// &
-                              ' => ignored')
-               CYCLE
-             ELSE
                tpreclist(ji)%TDIMS = tpreclist(src)%TDIMS
-             END IF
              jj = 2
              DO WHILE (tpreclist(ji)%src(jj)>0 .AND. jj.LE.MAXRAW)
                CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(tpreclist(ji)%src(jj))%TFIELD,XTAB3D2)
                XTAB3D(:,:,:) = XTAB3D(:,:,:) + XTAB3D2(:,:,:)
                jj=jj+1
              END DO
-             xtab(1:extent) = RESHAPE( xtab3d, (/extent/) )
+             xtab(1:tpreclist(ji)%NSIZE) = RESHAPE( xtab3d, (/tpreclist(ji)%NSIZE/) )
              DEALLOCATE(xtab3d,xtab3d2)
            END IF
          ENDIF
@@ -959,7 +902,7 @@ print *,'PW:TODO'
          CASE (0)
            CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1))
          CASE (1)
-           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1:extent))
+           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,xtab(1:tpreclist(ji)%NSIZE))
          CASE (2)
            CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,reshape(xtab,tpreclist(ji)%TDIMS(1:2)%LEN))
          CASE (3)
@@ -1056,10 +999,9 @@ END IF
         IF (infiles%files(1)%format == LFI_FORMAT) THEN
          CALL LFINFO(iresp,ilu,trim(tpreclist(ji)%name),ileng,ipos)
          CALL LFILEC(iresp,ilu,trim(tpreclist(ji)%name),iwork,ileng)
-         extent = ileng - 2 - iwork(2) !iwork(2) = comment length
-!          ALLOCATE(ytab(extent))
-         allocate(character(len=extent)::ytab)
-         DO jj=1,extent
+!          ALLOCATE(ytab(tpreclist(ji)%NSIZE))
+         allocate(character(len=tpreclist(ji)%NSIZE)::ytab)
+         DO jj=1,tpreclist(ji)%NSIZE
            ich = iwork(2+iwork(2)+jj)
 !            ytab(jj) = CHAR(ich)
            ytab(jj:jj) = CHAR(ich)
@@ -1140,8 +1082,8 @@ END DO
        IF (.NOT.tpreclist(ivar)%tbw) CYCLE
 
        icomlen = LEN(tpreclist(ivar)%TFIELD%CCOMMENT)
-       IF (icomlen > MAXLFICOMMENTLENGTH) THEN
-         PRINT *,'ERROR: comment length is too big. Please increase MAXLFICOMMENTLENGTH'
+       IF (icomlen > NLFIMAXCOMMENTLENGTH) THEN
+         PRINT *,'ERROR: comment length is too big. Please increase NLFIMAXCOMMENTLENGTH'
          STOP
        END IF
 
