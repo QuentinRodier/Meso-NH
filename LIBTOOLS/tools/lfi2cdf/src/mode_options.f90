@@ -258,6 +258,12 @@ subroutine check_options(options,infile,runmode)
       print *,"Warning: split option is forced to disable"
   end if
 
+  !Check list option
+  if (options(OPTSPLIT)%set .AND. runmode==MODECDF2LFI) then
+    print *,'Error: split option is not supported by cdf2lfi'
+    call help()
+  end if
+
 end subroutine check_options
 
 

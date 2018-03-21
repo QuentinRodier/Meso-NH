@@ -23,24 +23,15 @@ MODULE mode_util
   INTEGER,PARAMETER :: UNDEFINED = -1, READING = 1, WRITING = 2
   INTEGER,PARAMETER :: UNKNOWN_FORMAT = -1, NETCDF_FORMAT = 1, LFI_FORMAT = 2
 
-  TYPE filestruct
-    INTEGER :: lun_id                  ! Logical ID of file
-    INTEGER :: format = UNKNOWN_FORMAT ! NETCDF, LFI
-    INTEGER :: status = UNDEFINED      ! Opened for reading or writing
-    LOGICAL :: opened = .false.
-  END TYPE filestruct
-
   TYPE filelist_struct
     INTEGER :: nbfiles = 0
-!    TYPE(filestruct),DIMENSION(:),ALLOCATABLE :: files
-    TYPE(filestruct),DIMENSION(MAXFILES) :: files
     TYPE(TFILE_ELT),DIMENSION(MAXFILES) :: TFILES
   END TYPE filelist_struct
 
 
   TYPE workfield
      CHARACTER(LEN=FM_FIELD_SIZE)          :: name   ! nom du champ
-     INTEGER                               :: id_in = -1, id_out = -1
+     INTEGER                               :: id_in = -1
      LOGICAL                               :: found  ! T if found in the input file
      LOGICAL                               :: calc   ! T if computed from other variables
      LOGICAL                               :: tbw    ! to be written or not
@@ -79,7 +70,7 @@ CONTAINS
 
   END FUNCTION str_replace
 
-  SUBROUTINE parse_infiles(infiles, outfiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options)
+  SUBROUTINE parse_infiles(infiles, outfiles, nbvar_infile, nbvar_tbr, nbvar_calc, nbvar_tbw, tpreclist, kbuflen, options, runmode)
     USE MODD_DIM_n,      ONLY: NIMAX_ll, NJMAX_ll, NKMAX
     USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
@@ -91,6 +82,7 @@ CONTAINS
     TYPE(workfield), DIMENSION(:), POINTER :: tpreclist
     INTEGER,                   INTENT(OUT) :: kbuflen
     TYPE(option),DIMENSION(:), INTENT(IN)  :: options
+    INTEGER,                   INTENT(IN)  :: runmode
 
     INTEGER                                  :: ji,jj, kcdf_id, kcdf_id2, itype
     INTEGER                                  :: ndb, nde, ndey, idx, idx_out, idx_var, maxvar
@@ -115,10 +107,15 @@ CONTAINS
       idx_out = 1
     END IF
 
-    IF (infiles%files(1)%format == LFI_FORMAT) THEN
-      ilu = infiles%files(1)%lun_id
-    ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
-      kcdf_id = infiles%files(1)%lun_id
+    IF (runmode==MODECDF2LFI) THEN
+      !This file is a dummy one to manage netCDF dims
+      idx_out = outfiles%nbfiles
+    END IF
+
+    IF (infiles%TFILES(1)%TFILE%CFORMAT == 'LFI') THEN
+      ilu = infiles%TFILES(1)%TFILE%NLFIFLU
+    ELSE IF (infiles%TFILES(1)%TFILE%CFORMAT == 'NETCDF4') THEN
+      kcdf_id = infiles%TFILES(1)%TFILE%NNCID
     END IF
 
     ! update IDIMX,IDIMY,IDIMZ
@@ -210,7 +207,7 @@ CONTAINS
           IF (tpreclist(ji)%calc) CYCLE
 
           yrecfm = TRIM(tpreclist(ji)%name)
-          IF (infiles%files(1)%format == LFI_FORMAT) THEN
+          IF (infiles%TFILES(1)%TFILE%CFORMAT == 'LFI') THEN
             CALL LFINFO(iresp2,ilu,trim(yrecfm),ileng,ipos)
             IF (iresp2 == 0 .AND. ileng /= 0) THEN
               tpreclist(ji)%found = .true.
@@ -234,7 +231,7 @@ CONTAINS
             END IF
 
             leng = ileng
-          ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
+          ELSE IF (infiles%TFILES(1)%TFILE%CFORMAT == 'NETCDF4') THEN
             status = NF90_INQ_VARID(kcdf_id,trim(yrecfm),tpreclist(ji)%id_in)
             IF (status /= NF90_NOERR .AND. infiles%TFILES(1)%TFILE%NSUBFILES_IOZ>0) THEN
               !Variable probably not found (other error possible...)
@@ -307,7 +304,7 @@ END DO
          tpreclist(ji)%src(:) = -1
        END DO
 
-       IF (infiles%files(1)%format == LFI_FORMAT) THEN
+       IF (infiles%TFILES(1)%TFILE%CFORMAT == 'LFI') THEN
          CALL LFIPOS(iresp2,ilu)
          ladvan = .TRUE.
 
@@ -377,7 +374,7 @@ END DO
            END IF
          END DO
          !
-       ELSE IF (infiles%files(1)%format == NETCDF_FORMAT) THEN
+       ELSE IF (infiles%TFILES(1)%TFILE%CFORMAT == 'NETCDF4') THEN
          DO ji=1,nbvar_infile
            tpreclist(ji)%id_in = ji
            status = NF90_INQUIRE_VARIABLE(kcdf_id,tpreclist(ji)%id_in, name = tpreclist(ji)%name, ndims = idims, &
@@ -411,7 +408,7 @@ END DO
 
     ! Check if variable is in TFIELDLIST and populate corresponding metadata
     DO ji=1,maxvar
-      IF (options(OPTSPLIT)%set .AND. tpreclist(ji)%tbw) idx_out = idx_out + 1
+      IF (runmode/=MODECDF2LFI .AND. options(OPTSPLIT)%set .AND. tpreclist(ji)%tbw) idx_out = idx_out + 1
 
       IF (.NOT.tpreclist(ji)%found .OR. tpreclist(ji)%calc ) CYCLE
       !
@@ -589,16 +586,8 @@ END DO
     CHARACTER(LEN=20)     :: ycdfvar
 
 
-    nbfiles = outfiles%nbfiles
-
-    IF (options(OPTREDUCE)%set) THEN
-      type_float = NF90_REAL
-    ELSE
-      type_float = NF90_DOUBLE
-    END IF
-
-    DO ji = 1,nbfiles
-      kcdf_id = outfiles%files(ji)%lun_id
+    DO ji = 1,outfiles%nbfiles
+      kcdf_id = outfiles%TFILES(ji)%TFILE%NNCID
 
       ! global attributes
       CALL IO_WRITE_HEADER_NC4(outfiles%TFILES(ji)%TFILE)
@@ -609,7 +598,7 @@ END DO
     
   END SUBROUTINE def_ncdf
 
-  SUBROUTINE fill_ncdf(infiles,outfiles,tpreclist,knaf,options)
+  SUBROUTINE fill_files(infiles,outfiles,tpreclist,knaf,options)
     USE MODD_TYPE_DATE
 
     TYPE(filelist_struct),        INTENT(IN)    :: infiles, outfiles
@@ -666,7 +655,7 @@ END DO
           IF (tpreclist(ji)%calc) ALLOCATE(ITAB2D2(IDIMLEN(1),IDIMLEN(2)))
           CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(ISRC)%TFIELD,ITAB2D)
         CASE DEFAULT
-          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','too many dimensions for ' &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END SELECT
@@ -718,7 +707,7 @@ END DO
           CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,GTAB1D)
           DEALLOCATE(GTAB1D)
         CASE DEFAULT
-          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','too many dimensions for ' &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END SELECT
@@ -757,7 +746,7 @@ END DO
           IF (tpreclist(ji)%calc) ALLOCATE(XTAB4D2(IDIMLEN(1),IDIMLEN(2),IDIMLEN(3),IDIMLEN(4)))
           CALL IO_READ_FIELD(infiles%tfiles(1)%TFILE,tpreclist(ISRC)%TFIELD,XTAB4D)
         CASE DEFAULT
-          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','too many dimensions for ' &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END SELECT
@@ -810,7 +799,7 @@ END DO
 
       CASE (TYPECHAR)
         IF (IDIMS/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','too many dimensions for ' &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END IF
@@ -823,7 +812,7 @@ END DO
 
       CASE (TYPEDATE)
         IF (IDIMS/=0) THEN
-          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','too many dimensions for ' &
+          CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','too many dimensions for ' &
                          //TRIM(tpreclist(ISRC)%name)//' => ignored')
           CYCLE
         END IF
@@ -831,79 +820,15 @@ END DO
         CALL IO_WRITE_FIELD(outfiles%tfiles(idx)%TFILE,tpreclist(ji)%TFIELD,TZDATE)
 
       CASE default
-        CALL PRINT_MSG(NVERB_WARNING,'IO','fill_ncdf','invalid datatype for ' &
+        CALL PRINT_MSG(NVERB_WARNING,'IO','fill_files','invalid datatype for ' &
                        //TRIM(tpreclist(ISRC)%name)//' => ignored')
 
       END SELECT
 
       if (options(OPTSPLIT)%set) idx = idx + 1
     END DO
-  END SUBROUTINE fill_ncdf
+  END SUBROUTINE fill_files
 
-  SUBROUTINE build_lfi(infiles,outfiles,tpreclist,knaf,kbuflen)
-    TYPE(filelist_struct),         INTENT(IN) :: infiles, outfiles
-    TYPE(workfield), DIMENSION(:), INTENT(IN) :: tpreclist
-    INTEGER,                       INTENT(IN) :: knaf
-    INTEGER,                       INTENT(IN) :: kbuflen
-    
-    INTEGER :: kcdf_id, status
-    INTEGER :: ivar,ji,jj,ndims
-    INTEGER,DIMENSION(3) :: idims
-    INTEGER(KIND=8), DIMENSION(:), POINTER  :: iwork
-    INTEGER(KIND=8), DIMENSION(:), POINTER  :: idata
-    REAL(KIND=8), DIMENSION(:,:,:), ALLOCATABLE :: xtab3d
-    INTEGER,      DIMENSION(:,:,:), ALLOCATABLE :: itab3d
-    CHARACTER,    DIMENSION(:), ALLOCATABLE :: ytab
-    CHARACTER(LEN=FM_FIELD_SIZE)            :: yrecfm
-
-    INTEGER :: iartlen, idlen, icomlen
-    INTEGER(KIND=LFI_INT) :: iresp,ilu,iartlen8
-
-
-    ilu = outfiles%files(1)%lun_id
-    kcdf_id = infiles%files(1)%lun_id
-
-    ! Un article LFI est compose de :
-    !   - 1 entier identifiant le numero de grille
-    !   - 1 entier contenant la taille du commentaire
-    !   - le commentaire code en entier 64 bits
-    !   - les donnees proprement dites
-
-    PRINT *,'Taille buffer = ',2+kbuflen
-
-    ALLOCATE(iwork(2+kbuflen))
-    DO ivar=1,knaf
-       IF (.NOT.tpreclist(ivar)%tbw) CYCLE
-
-       icomlen = LEN(tpreclist(ivar)%TFIELD%CCOMMENT)
-       IF (icomlen > NLFIMAXCOMMENTLENGTH) THEN
-         PRINT *,'ERROR: comment length is too big. Please increase NLFIMAXCOMMENTLENGTH'
-         STOP
-       END IF
-
-       ! traitement Grille et Commentaire
-       iwork(1) = tpreclist(ivar)%TFIELD%NGRID
-       iwork(2) = icomlen
-       DO jj=1,iwork(2)
-          iwork(2+jj)=ICHAR(tpreclist(ivar)%TFIELD%CCOMMENT(jj:jj))
-       END DO
-
-
-stop
-
-
-       
-       ! Attention restoration des '%' dans le nom des champs LFI
-       yrecfm = str_replace(tpreclist(ivar)%name,'__','%')
-       ! et des '.'
-       yrecfm = str_replace(yrecfm,'--','.')
-       iartlen8 = iartlen
-       CALL LFIECR(iresp,ilu,yrecfm,iwork,iartlen8)
-
-    END DO
-    DEALLOCATE(iwork)
-
-  END SUBROUTINE build_lfi
 
   SUBROUTINE OPEN_FILES(infiles,outfiles,hinfile,houtfile,nbvar_infile,options,runmode)
     USE MODD_CONF,          ONLY: LCARTESIAN
@@ -946,13 +871,8 @@ stop
        idx = infiles%nbfiles
        CALL IO_FILE_ADD2LIST(INFILES%TFILES(idx)%TFILE,HINFILE,'UNKNOWN','READ',HFORMAT='NETCDF4')
        CALL IO_FILE_OPEN_ll(INFILES%TFILES(idx)%TFILE)
-       infiles%files(idx)%lun_id = INFILES%TFILES(idx)%TFILE%NNCID
-       infiles%files(idx)%format = NETCDF_FORMAT
-       infiles%files(idx)%status = READING
-       infiles%files(idx)%opened  = .TRUE.
 
-       status = NF90_INQUIRE(infiles%files(idx)%lun_id, nvariables = nbvar_infile)
-       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
+       nbvar_infile = INFILES%TFILES(idx)%TFILE%NNCNAR
    ELSE
        !
        ! LFI
@@ -962,11 +882,7 @@ stop
        CALL IO_FILE_ADD2LIST(INFILES%TFILES(idx)%TFILE,HINFILE,'UNKNOWN','READ', &
                              HFORMAT='LFI',KLFIVERB=0)
        CALL IO_FILE_OPEN_ll(INFILES%TFILES(idx)%TFILE)
-       infiles%files(idx)%lun_id = INFILES%TFILES(idx)%TFILE%NLFIFLU
-       infiles%files(idx)%format = LFI_FORMAT
-       infiles%files(idx)%status = READING
-       ilu = infiles%files(idx)%lun_id
-       infiles%files(idx)%opened  = .TRUE.
+       ilu = INFILES%TFILES(idx)%TFILE%NLFIFLU
 
        nbvar_infile = INFILES%TFILES(idx)%TFILE%NLFININAR
 
@@ -1033,10 +949,6 @@ stop
          CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
                                HFORMAT='NETCDF4',OOLD=.TRUE.)
          CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
-         outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NNCID
-         outfiles%files(idx)%format = NETCDF_FORMAT
-         outfiles%files(idx)%status = WRITING
-         outfiles%files(idx)%opened  = .TRUE.
 
          IF (options(OPTCOMPRESS)%set) THEN
            outfiles%tfiles(idx)%tfile%LNCCOMPRESS       = .TRUE.
@@ -1047,7 +959,7 @@ stop
            outfiles%tfiles(idx)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
          END IF
 
-         status = NF90_SET_FILL(outfiles%files(idx)%lun_id,NF90_NOFILL,omode)
+         status = NF90_SET_FILL(OUTFILES%TFILES(idx)%TFILE%NNCID,NF90_NOFILL,omode)
          IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
        END IF ! .NOT.osplit
     ELSE
@@ -1061,10 +973,16 @@ stop
        LIOCDF4 = .FALSE. !Necessary to open correctly the LFI file
        CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE)
        LIOCDF4 = .TRUE.
-       outfiles%files(idx)%lun_id = OUTFILES%TFILES(idx)%TFILE%NLFIFLU
-       outfiles%files(idx)%format = LFI_FORMAT
-       outfiles%files(idx)%status = WRITING
-       infiles%files(idx)%opened  = .TRUE.
+   END IF
+   !
+   ! Create a dummy netCDF file necessary to manage correctly the netCDF dims
+   IF (runmode == MODECDF2LFI) THEN
+     outfiles%nbfiles = outfiles%nbfiles + 1
+
+     idx = outfiles%nbfiles
+     CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
+                           HFORMAT='NETCDF4',OOLD=.TRUE.)
+     CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
    END IF
 
    PRINT *,'--> Fichier converti : ', TRIM(houtfile)
@@ -1112,10 +1030,6 @@ stop
       CALL IO_FILE_ADD2LIST(OUTFILES%TFILES(ji)%TFILE,filename,'UNKNOWN','WRITE', &
                             HFORMAT='NETCDF4')
       CALL IO_FILE_OPEN_ll(OUTFILES%TFILES(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
-      outfiles%files(ji)%lun_id = OUTFILES%TFILES(ji)%TFILE%NNCID
-      outfiles%files(ji)%format = NETCDF_FORMAT
-      outfiles%files(ji)%status = WRITING
-      outfiles%files(ji)%opened  = .TRUE.
 
       IF (options(OPTCOMPRESS)%set) THEN
         outfiles%tfiles(ji)%tfile%LNCCOMPRESS       = .TRUE.
@@ -1126,7 +1040,7 @@ stop
         outfiles%tfiles(ji)%tfile%LNCREDUCE_FLOAT_PRECISION = .TRUE.
       END IF
 
-      status = NF90_SET_FILL(outfiles%files(ji)%lun_id,NF90_NOFILL,omode)
+      status = NF90_SET_FILL(OUTFILES%TFILES(ji)%TFILE%NNCID,NF90_NOFILL,omode)
       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     END DO
 
@@ -1141,10 +1055,7 @@ stop
     INTEGER               :: ji,status
 
     DO ji=1,filelist%nbfiles
-      IF ( .NOT.filelist%files(ji)%opened ) CYCLE
-
-      CALL IO_FILE_CLOSE_ll(filelist%TFILES(ji)%TFILE)
-      filelist%files(ji)%opened=.false.
+      IF (filelist%TFILES(ji)%TFILE%LOPENED) CALL IO_FILE_CLOSE_ll(filelist%TFILES(ji)%TFILE)
     END DO
 
   END SUBROUTINE CLOSE_FILES
