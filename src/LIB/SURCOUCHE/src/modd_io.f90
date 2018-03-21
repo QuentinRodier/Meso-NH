@@ -94,6 +94,7 @@ TYPE TFILEDATA
   !
   ! Fields for netCDF files
   INTEGER(KIND=IDCDF_KIND) :: NNCID = -1 !File identifier
+  INTEGER(KIND=IDCDF_KIND) :: NNCNAR = 0 !Number of articles of the netCDF file (only accurate if file opened in read mode)
   LOGICAL                  :: LNCREDUCE_FLOAT_PRECISION = .FALSE. ! Reduce the precision of floats to single precision
                                                                   ! instead of double precision
   LOGICAL                  :: LNCCOMPRESS = .FALSE. ! Do compression on fields

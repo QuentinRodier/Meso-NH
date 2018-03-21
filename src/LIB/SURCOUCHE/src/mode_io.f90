@@ -662,6 +662,11 @@ CONTAINS
                       ELSE
                          IOS = 0
                       END IF
+                      IOSCDF = NF90_INQUIRE(TZSPLITFILE%NNCID,NVARIABLES=TZSPLITFILE%NNCNAR)
+                      IF (IOSCDF /= NF90_NOERR) THEN
+                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_INQUIRE for '//TRIM(TZSPLITFILE%CNAME)//'.nc: ' &
+                                                                  //NF90_STRERROR(IOSCDF))
+                      END IF
                    END IF
                    
                    IF (YACTION == 'WRITE') THEN
