@@ -2,6 +2,7 @@ program LFI2CDF
   USE MODD_CONF,          ONLY: CPROGRAM
   USE MODD_CONFZ,         ONLY: NB_PROCIO_R
   USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
+  USE MODD_IO_ll,         ONLY: NIO_VERB, NGEN_VERB, LVERB_OUTLST, LVERB_STDOUT, NVERB_DEBUG
   USE MODD_PARAMETERS,    ONLY: JPHEXT, JPVEXT
   USE MODD_TIMEZ,         ONLY: TIMEZ
 
@@ -16,13 +17,13 @@ program LFI2CDF
   IMPLICIT NONE 
 
   INTEGER :: ji
-  INTEGER :: nbvar_infile ! number of variables available in the input file
-  INTEGER :: nbvar_tbr  ! number of variables to be read
-  INTEGER :: nbvar_calc ! number of variables to be computed from others
-  INTEGER :: nbvar_tbw  ! number of variables to be written
-  INTEGER :: nbvar      ! number of defined variables
-  INTEGER :: IINFO_ll   ! return code of // routines
-  INTEGER :: nfiles_out ! number of output files
+  INTEGER :: nbvar_infile = 0 ! number of variables available in the input file
+  INTEGER :: nbvar_tbr    = 0 ! number of variables to be read
+  INTEGER :: nbvar_calc   = 0 ! number of variables to be computed from others
+  INTEGER :: nbvar_tbw    = 0 ! number of variables to be written
+  INTEGER :: nbvar        = 0 ! number of defined variables
+  INTEGER :: IINFO_ll         ! return code of // routines
+  INTEGER :: nfiles_out   = 0 ! number of output files
   CHARACTER(LEN=:),allocatable :: hvarlist
   TYPE(TFILE_ELT),DIMENSION(1)        :: infiles
   TYPE(TFILE_ELT),DIMENSION(MAXFILES) :: outfiles
@@ -41,6 +42,11 @@ program LFI2CDF
   CALL INI_CST
 
   ALLOCATE(TIMEZ) !Used by IO_WRITE_FIELD
+
+  NIO_VERB  = NVERB_WARNING
+  NGEN_VERB = NVERB_WARNING
+  LVERB_OUTLST = .FALSE.
+  LVERB_STDOUT = .TRUE.
 
   call read_commandline(options,hinfile,houtfile,runmode)
 
@@ -107,6 +113,8 @@ program LFI2CDF
      ELSE
         nbvar = nbvar_infile
      END IF
+  ELSE
+    nbvar = nbvar_infile
   END IF
 
   IF (runmode == MODELFI2CDF) THEN

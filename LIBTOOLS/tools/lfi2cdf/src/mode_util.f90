@@ -129,8 +129,7 @@ CONTAINS
             var_calc = yrecfm(1:ndey-1)
             DO WHILE (ndey /= 0)
               IF (idx>MAXRAW) THEN
-                print *,'Error: MAXRAW exceeded (too many raw variables for 1 computed one)'
-                STOP
+                CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','MAXRAW exceeded (too many raw variables for 1 computed one)')
               END IF
               yrecfm = yrecfm(ndey+1:)
               ndey = INDEX(TRIM(yrecfm),'+')
@@ -180,6 +179,7 @@ CONTAINS
               tpreclist(ji)%NSIZE = ileng - 2 - NLFIMAXCOMMENTLENGTH
             END IF
 
+            IF (iresp2==0 .AND. ileng == 0 .AND. ipos==0 .AND. INFILES(1)%TFILE%NSUBFILES_IOZ>0) THEN
               !Variable not found with no error (iresp2==0 .AND. ileng == 0 .AND. ipos==0)
               !If we are merging, maybe it is one of the split variable
               !In that case, the 1st part of the variable is in the 1st split file with a 0001 suffix
@@ -223,8 +223,6 @@ CONTAINS
               status = NF90_INQUIRE_VARIABLE(kcdf_id2,var_id,ndims = idims,dimids = idim_id)
               IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
 
-!TODO:useful?
-!DUPLICATED
               IF (idims == 0) THEN
                  ! variable scalaire
                  leng = 1
@@ -249,11 +247,10 @@ CONTAINS
           END IF
 
           IF (.NOT.tpreclist(ji)%found) THEN
-             PRINT *,'Article ',TRIM(yrecfm), ' not found!'
+            CALL PRINT_MSG(NVERB_WARNING,'IO','parse_infiles','variable '//TRIM(yrecfm)//' not found => ignored')
              tpreclist(ji)%tbw   = .FAlSE.
              tpreclist(ji)%tbr   = .FAlSE.
           ELSE
-             ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
              IF (leng > sizemax) sizemax = leng
           END IF
        END DO
@@ -282,7 +279,6 @@ END DO
          YDATENAME = ''
          DO ji=1,nbvar_infile
            CALL LFICAS(iresp2,ilu,yrecfm,ileng,ipos,ladvan)
-           ! PRINT *,'Article ',ji,' : ',TRIM(yrecfm),', longueur = ',ileng
            tpreclist(ji)%name   = trim(yrecfm)
            tpreclist(ji)%found  = .TRUE.
            tpreclist(ji)%NSIZE  = ileng - 2 - NLFIMAXCOMMENTLENGTH
@@ -349,10 +345,8 @@ END DO
            status = NF90_INQUIRE_VARIABLE(kcdf_id,var_id, name = tpreclist(ji)%name, ndims = idims, &
                                           dimids = idim_id)
            IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-           ! PRINT *,'Article ',ji,' : ',TRIM(tpreclist(ji)%name),', longueur = ',ileng
            tpreclist(ji)%found  = .TRUE.
-!TODO:useful?
-!DUPLICATED
+
            IF (idims == 0) THEN
              ! variable scalaire
              leng = 1
@@ -536,25 +530,27 @@ END DO
   END SUBROUTINE HANDLE_ERR
 
   SUBROUTINE def_ncdf(outfiles,KNFILES_OUT)
+    USE MODD_CONF,   ONLY: NMNHVERSION
     USE MODE_NETCDF, ONLY: IO_WRITE_HEADER_NC4
 
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(IN) :: outfiles
     INTEGER,                     INTENT(IN) :: KNFILES_OUT
 
+    CHARACTER(LEN=16) :: YMNHVERSION
     INTEGER :: ji
-!     INTEGER(KIND=IDCDF_KIND) :: status
-!     INTEGER(KIND=IDCDF_KIND) :: kcdf_id
+    INTEGER(KIND=IDCDF_KIND) :: status
+    INTEGER(KIND=IDCDF_KIND) :: kcdf_id
 
 
     DO ji = 1,KNFILES_OUT
-!       kcdf_id = outfiles(ji)%TFILE%NNCID
+      kcdf_id = outfiles(ji)%TFILE%NNCID
 
       ! global attributes
       CALL IO_WRITE_HEADER_NC4(outfiles(ji)%TFILE)
       !
-!       status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'Title',VERSION_ID)
-!       IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
-print *,'PW:TODO: add header specific to lfi2cdf (history...?)'
+      WRITE(YMNHVERSION,"( I0,'.',I0,'.',I0 )" ) NMNHVERSION(1),NMNHVERSION(2),NMNHVERSION(3)
+      status = NF90_PUT_ATT(kcdf_id,NF90_GLOBAL,'lfi2cdf_version',TRIM(YMNHVERSION))
+      IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__)
     END DO
     
   END SUBROUTINE def_ncdf
@@ -804,6 +800,7 @@ print *,'PW:TODO: add header specific to lfi2cdf (history...?)'
 
     USE MODE_FM,               ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
+
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(OUT) :: infiles
     TYPE(TFILE_ELT),DIMENSION(:),INTENT(OUT) :: outfiles
     INTEGER,                     INTENT(OUT) :: KNFILES_OUT
@@ -838,6 +835,7 @@ print *,'PW:TODO: add header specific to lfi2cdf (history...?)'
        CALL IO_FILE_ADD2LIST(INFILES(1)%TFILE,HINFILE,'UNKNOWN','READ', &
                              HFORMAT='LFI',KLFIVERB=0)
        CALL IO_FILE_OPEN_ll(INFILES(1)%TFILE)
+
        ilu = INFILES(1)%TFILE%NLFIFLU
 
        nbvar_infile = INFILES(1)%TFILE%NLFININAR
@@ -939,7 +937,7 @@ print *,'PW:TODO: add header specific to lfi2cdf (history...?)'
      CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
    END IF
 
-   PRINT *,'--> Fichier converti : ', TRIM(houtfile)
+   PRINT *,'--> Converted to file: ', TRIM(houtfile)
 
   END SUBROUTINE OPEN_FILES
 
@@ -978,7 +976,12 @@ print *,'PW:TODO: add header specific to lfi2cdf (history...?)'
         CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_SPLIT_NCFILES_OUT','problem separating variable names')
       END IF
     END DO
-    YVARS(nbvar) = YLIST
+    idx2 = INDEX(YLIST,'=')
+    IF (idx2>0) THEN
+      YVARS(nbvar) = YLIST(1:idx2-1)
+    ELSE
+      YVARS(nbvar) = YLIST
+    END IF
 
     DO ji = 1,nbvar
       filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
