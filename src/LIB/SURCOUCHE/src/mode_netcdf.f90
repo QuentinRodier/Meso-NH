@@ -23,6 +23,9 @@ PRIVATE
 INTEGER(KIND=IDCDF_KIND),PARAMETER :: SHUFFLE = 1 !Set to 1 for (usually) better compression
 INTEGER(KIND=IDCDF_KIND),PARAMETER :: DEFLATE = 1
 
+INTEGER,PARAMETER :: NSTRINGCHUNKSIZE = 16 !Dimension of the chunks of strings
+                                           !(to limit the number of dimensions for strings)
+
 INTERFACE IO_WRITE_FIELD_NC4
    MODULE PROCEDURE IO_WRITE_FIELD_NC4_X0,IO_WRITE_FIELD_NC4_X1, &
                     IO_WRITE_FIELD_NC4_X2,IO_WRITE_FIELD_NC4_X3, &
@@ -203,7 +206,7 @@ REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass po
 REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
 TYPE(IOCDF), POINTER            :: PIOCDF
 
-CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_COORDVAR_NC4','called for'//TRIM(TPFILE%CNAME))
+CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_COORDVAR_NC4','called for '//TRIM(TPFILE%CNAME))
 
 PIOCDF => TPFILE%TNCDIMS
 
@@ -1097,6 +1100,7 @@ ELSE
   END DO
 END IF
 !
+!print *,'IO_GUESS_DIMIDS_NC4: ',TPFIELD%CMNHNAME,':  klen,ilen,dims%len=',KLEN,ILEN,TPDIMS(:)%LEN
 IF (KLEN /= ILEN) THEN
   CALL PRINT_MSG(NVERB_WARNING,'IO','IO_GUESS_DIMIDS_NC4','problem with dimensions for field '&
                                    //TRIM(TPFIELD%CMNHNAME))
@@ -1957,8 +1961,6 @@ TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
 CHARACTER(LEN=*),      INTENT(IN) :: HFIELD
 INTEGER,               INTENT(OUT):: KRESP
 !
-INTEGER,PARAMETER :: IMULT = 16
-!
 INTEGER(KIND=IDCDF_KIND)               :: STATUS
 INTEGER(KIND=IDCDF_KIND)               :: INCID
 CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))   :: YVARNAME
@@ -1972,11 +1974,11 @@ CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_C0',TRIM(TPFILE%CNAME)//': w
 !
 IRESP = 0
 
-!Store the character string in a string of a size multiple of IMULT
+!Store the character string in a string of a size multiple of NSTRINGCHUNKSIZE
 !This is done to limit the number of dimensions in the netCDF file
-ILEN = ((LEN_TRIM(HFIELD)+IMULT-1)/IMULT)*IMULT
+ILEN = ((LEN_TRIM(HFIELD)+NSTRINGCHUNKSIZE-1)/NSTRINGCHUNKSIZE)*NSTRINGCHUNKSIZE
 !If the string is empty, create it anyway with a non-zero size (to prevent problems later)
-IF (ILEN==0) ILEN = IMULT
+IF (ILEN==0) ILEN = NSTRINGCHUNKSIZE
 
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
