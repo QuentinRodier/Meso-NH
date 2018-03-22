@@ -15,16 +15,18 @@ program LFI2CDF
 
   IMPLICIT NONE 
 
-  INTEGER :: ibuflen
   INTEGER :: ji
   INTEGER :: nbvar_infile ! number of variables available in the input file
   INTEGER :: nbvar_tbr  ! number of variables to be read
   INTEGER :: nbvar_calc ! number of variables to be computed from others
   INTEGER :: nbvar_tbw  ! number of variables to be written
   INTEGER :: nbvar      ! number of defined variables
-  INTEGER :: IINFO_ll                   ! return code of // routines
+  INTEGER :: IINFO_ll   ! return code of // routines
+  INTEGER :: nfiles_out ! number of output files
   CHARACTER(LEN=:),allocatable :: hvarlist
-  TYPE(filelist_struct) :: infiles, outfiles
+  TYPE(TFILE_ELT),DIMENSION(1)        :: infiles
+  TYPE(TFILE_ELT),DIMENSION(MAXFILES) :: outfiles
+
   TYPE(workfield), DIMENSION(:), POINTER :: tzreclist
 
   type(option),dimension(:),allocatable :: options
@@ -67,7 +69,7 @@ program LFI2CDF
 
   CALL INI_FIELD_LIST(1)
 
-  CALL OPEN_FILES(infiles, outfiles, hinfile, houtfile, nbvar_infile, options, runmode)
+  CALL OPEN_FILES(infiles, outfiles, nfiles_out, hinfile, houtfile, nbvar_infile, options, runmode)
   IF (options(OPTLIST)%set) STOP
 
   !Set and initialize parallel variables (necessary to read splitted files)
@@ -109,25 +111,25 @@ program LFI2CDF
 
   IF (runmode == MODELFI2CDF) THEN
      ! Conversion LFI -> NetCDF
-     IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,houtfile,nbvar_tbw,tzreclist,options)
-     CALL parse_infiles(infiles,outfiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,runmode)
-     CALL def_ncdf(outfiles,tzreclist,nbvar,options)
+     IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,nfiles_out,houtfile,nbvar_tbw,options)
+     CALL parse_infiles(infiles,outfiles,nfiles_out,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,options,runmode)
+     CALL def_ncdf(outfiles,nfiles_out)
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
 
   ELSE IF (runmode == MODECDF2CDF) THEN
      ! Conversion netCDF -> netCDF
-     IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,houtfile,nbvar_tbw,tzreclist,options)
-     CALL parse_infiles(infiles,outfiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,runmode)
-     CALL def_ncdf(outfiles,tzreclist,nbvar,options)
+     IF (options(OPTSPLIT)%set) call open_split_ncfiles_out(outfiles,nfiles_out,houtfile,nbvar_tbw,options)
+     CALL parse_infiles(infiles,outfiles,nfiles_out,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,options,runmode)
+     CALL def_ncdf(outfiles,nfiles_out)
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
 
   ELSE
      ! Conversion NetCDF -> LFI
-     CALL parse_infiles(infiles,outfiles,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,ibuflen,options,runmode)
+     CALL parse_infiles(infiles,outfiles,nfiles_out,nbvar_infile,nbvar_tbr,nbvar_calc,nbvar_tbw,tzreclist,options,runmode)
      CALL fill_files(infiles,outfiles,tzreclist,nbvar,options)
   END IF
 
-  CALL CLOSE_FILES(infiles)
-  CALL CLOSE_FILES(outfiles)
+  CALL CLOSE_FILES(infiles, 1)
+  CALL CLOSE_FILES(outfiles,nfiles_out)
   
 end program LFI2CDF
