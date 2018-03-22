@@ -610,8 +610,7 @@ CONTAINS
        END IF
 
 #if defined(MNH_IOCDF4)
-       IF (TPFILE%LMASTER .AND. (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT) &
-            &                    .OR. (YACTION=='READ'  .AND. LLFIREAD))) THEN
+       IF (TPFILE%LMASTER .AND. (TPFILE%CFORMAT=='LFI' .OR. TPFILE%CFORMAT=='LFICDF4') ) THEN
 #else
        IF (TPFILE%LMASTER) THEN
 #endif
@@ -650,8 +649,8 @@ CONTAINS
 
              IF ( TZSPLITFILE%LMASTER ) THEN
 #if defined(MNH_IOCDF4)                   
-                IF (LIOCDF4) THEN
-                   IF (YACTION == 'READ' .AND. .NOT. LLFIREAD) THEN
+                IF (TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
+                   IF (YACTION == 'READ') THEN
                       ! Open NetCDF File for reading
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
                       CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
@@ -686,8 +685,7 @@ CONTAINS
                    END IF
                 END IF
 #endif
-                IF (.NOT. LIOCDF4 .OR. (YACTION=='WRITE' .AND. LLFIOUT)&
-                     &            .OR. (YACTION=='READ'  .AND. LLFIREAD)) THEN
+                IF (TZSPLITFILE%CFORMAT=='LFI' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
                    ! LFI case
                    ! Open LFI File for reading
                    !this proc must write on this file open it ...    
@@ -722,7 +720,7 @@ CONTAINS
              !
 #if defined(MNH_IOCDF4)
              !Write coordinates variables in NetCDF file
-             IF (LIOCDF4 .AND.YACTION == 'WRITE') THEN
+             IF (YACTION == 'WRITE' .AND. TZSPLITFILE%CFORMAT=='NETCDF4' .OR. TZSPLITFILE%CFORMAT=='LFICDF4') THEN
                CALL IO_WRITE_COORDVAR_NC4(TZSPLITFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
              END IF
 #endif
