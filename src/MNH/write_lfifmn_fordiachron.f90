@@ -103,7 +103,6 @@ USE MODD_TYPE_DATE
 USE MODD_NESTING
 USE MODD_IO_ll, ONLY: TFILEDATA
 !
-USE MODE_FIELD, ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
 USE MODE_GATHER_ll
 USE MODE_GRIDPROJ
@@ -127,7 +126,6 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZXHAT_ll       !  Position x in the conform
                                                     ! plane (array on the complete domain)
 REAL, DIMENSION(:), ALLOCATABLE   :: ZYHAT_ll       !   Position y in the conformal
                                                     ! plane (array on the complete domain)
-TYPE(TFIELDDATA)                  :: TZFIELD
 !
 !-------------------------------------------------------------------------------
 !

@@ -1579,6 +1579,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
+    TZFIELD%LTIMEDEP   = .TRUE.
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT
     CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZANTMP)
   END IF
@@ -1635,6 +1636,7 @@ DO JSAT=1,IJSAT ! loop over sensors
     TZFIELD%NGRID      = 1
     TZFIELD%NTYPE      = TYPEREAL
     TZFIELD%NDIMS      = 2
+    TZFIELD%LTIMEDEP   = .TRUE.
     PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
          MINVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF), &
          MAXVAL(ZTBTMP(:,:,JCH),ZTBTMP(:,:,JCH)/=XUNDEF)
@@ -1649,6 +1651,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 2
+      TZFIELD%LTIMEDEP   = .TRUE.
 ! UTH computation from Buehler and John JGR 2005
       ZZH= 833000. ! (m) nominal altitude of the satellite
       zdeg_to_rad = XPI / 180.0
@@ -1729,6 +1732,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 2
+      TZFIELD%LTIMEDEP   = .TRUE.
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &
            MINVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF), &
            MAXVAL(ZTEMPK(:,:,:),ZTEMPK(:,:,:)/=XUNDEF)
@@ -1743,6 +1747,7 @@ DO JSAT=1,IJSAT ! loop over sensors
       TZFIELD%NGRID      = 1
       TZFIELD%NTYPE      = TYPEREAL
       TZFIELD%NDIMS      = 2
+      TZFIELD%LTIMEDEP   = .TRUE.
       WHERE (ZWVAPK(:,:,:) /= XUNDEF) &
            ZWVAPK(:,:,:)=ZWVAPK(:,:,:)*(-0.1*PRT(:,:,:,1))
       PRINT *,TZFIELD%CMNHNAME//TZFIELD%CCOMMENT, &

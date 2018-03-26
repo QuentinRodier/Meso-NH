@@ -433,6 +433,7 @@ TZFIELD%CCOMMENT   = 'X_Y_Z_U component of wind (m/s) at lowest physical level'
 TZFIELD%NGRID      = 2
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
+TZFIELD%LTIMEDEP   = .TRUE.
 CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XUT(:,:,IKB))
 !
 TZFIELD%CMNHNAME   = 'VTLOW'
@@ -444,6 +445,7 @@ TZFIELD%CCOMMENT   = 'X_Y_Z_V component of wind (m/s) at lowest physical level'
 TZFIELD%NGRID      = 3
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
+TZFIELD%LTIMEDEP   = .TRUE.
 CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XVT(:,:,IKB))
 !
 TZFIELD%CMNHNAME   = 'THTLOW'
@@ -455,6 +457,7 @@ TZFIELD%CCOMMENT   = 'X_Y_Z_potential temperature (K) at lowest physical level'
 TZFIELD%NGRID      = 1
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
+TZFIELD%LTIMEDEP   = .TRUE.
 CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XTHT(:,:,IKB))
 !
 TZFIELD%CMNHNAME   = 'RVTLOW'
@@ -467,6 +470,7 @@ TZFIELD%CCOMMENT   = 'X_Y_Z_Vapor mixing Ratio (KG/KG) at lowest physical level'
 TZFIELD%NGRID      = 1
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
+TZFIELD%LTIMEDEP   = .TRUE.
 CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XRT(:,:,IKB,1))
 !
 TZFIELD%CMNHNAME   = 'ACPRRSTEP'
@@ -478,6 +482,7 @@ TZFIELD%CCOMMENT   = 'X_Y_ACcumulated Precipitation Rain Rate during timestep (k
 TZFIELD%NGRID      = 1
 TZFIELD%NTYPE      = TYPEREAL
 TZFIELD%NDIMS      = 2
+TZFIELD%LTIMEDEP   = .TRUE.
 !XACPRR is multiplied by 1000. to convert from m to kg m-2 (water density is assumed to be 1000 kg m-3)
 CALL IO_WRITE_FIELD(TPOUTPUT%TFILE,TZFIELD,XINPRR*XTSTEP*1.0E3)
 #endif
