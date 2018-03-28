@@ -149,6 +149,7 @@ END MODULE MODI_FORCING
 !!      01/2014  J. escobar           correction for // initialisation geostrophic ZUF,ZVF,ZWF 
 !!      09/2017 Q.Rodier add LTEND_UV_FRC
 !!      28/03/2018 P. Wautelet        Replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!                                    use overloaded comparison operator for date_time
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -170,7 +171,6 @@ USE MODD_CST
 !
 USE MODI_SHUMAN
 USE MODI_UPSTREAM_Z
-USE MODI_TEMPORAL_LT
 USE MODI_BUDGET
 !
 USE MODI_GET_HALO
@@ -275,15 +275,15 @@ IF (GSFIRSTCALL) THEN
 !*        1.2  find first sounding to be used 
 !
   JSX = 0
-  IF( TEMPORAL_LT ( TPDTCUR, TDTFRC(1) ) ) THEN
+  IF( TPDTCUR < TDTFRC(1) ) THEN
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL FORCING FIELDS ARE NULL ")') 
-    ELSE IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(NFRC) ) ) THEN
+    ELSE IF( TPDTCUR >= TDTFRC(NFRC) ) THEN
       WRITE(UNIT=ILUOUT0,FMT='(" THE FORCING FIELDS WILL REMAIN STATIONARY ")')
       ELSE
 !
     TIM_FOR:    DO JI = NFRC-1, 1, -1
                   JSX = JI
-                  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(JSX) ) ) EXIT TIM_FOR
+                  IF( TPDTCUR >= TDTFRC(JSX) ) EXIT TIM_FOR
                 END DO TIM_FOR
 !
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL FORCING FIELDS ARE INTERPOLATED" , &
@@ -387,7 +387,7 @@ END IF
 !*       2.     INTERPOLATE IN TIME
 !    	        -------------------
 !
-IF( TEMPORAL_LT ( TPDTCUR, TDTFRC(1) ) ) THEN
+IF( TPDTCUR < TDTFRC(1) ) THEN
   ZXUFRC(:)    = XUFRC(:,1)
   ZXVFRC(:)    = XVFRC(:,1)
   ZXWFRC(:)    = XWFRC(:,1)
@@ -400,7 +400,7 @@ IF( TEMPORAL_LT ( TPDTCUR, TDTFRC(1) ) ) THEN
   ZXTENDUFRC(:) = XTENDUFRC(:,1)
   ZXTENDVFRC(:) = XTENDVFRC(:,1)
   ZXPGROUNDFRC  = XPGROUNDFRC(1)
-ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(NFRC) ) ) THEN
+ELSE IF ( TPDTCUR >= TDTFRC(NFRC) ) THEN
   ZXUFRC(:)    = XUFRC(:,NFRC)
   ZXVFRC(:)    = XVFRC(:,NFRC)
   ZXWFRC(:)    = XWFRC(:,NFRC)
@@ -415,7 +415,7 @@ ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(NFRC) ) ) THEN
   ZXPGROUNDFRC  = XPGROUNDFRC(NFRC)
 ELSE
   JXP = JSX + 1
-  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTFRC(JXP) ) ) THEN
+  IF( TPDTCUR >= TDTFRC(JXP) ) THEN
     JSX = JSX +1
     JXP= JSX +1
     WRITE(UNIT=ILUOUT0,FMT='(" THE FORCING FIELDS ARE INTERPOLATED NOW" ,&

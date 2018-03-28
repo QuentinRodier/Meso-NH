@@ -74,6 +74,7 @@ END MODULE MODI_SET_RELFRC
 !!    -------------
 !!      03/02/10 (Tomasini) USE MODD_RELFRC_n for grid-nesting
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!      P.Wautelet  28/03/2018 : use overloaded comparison operator for date_time
 !!
 !-------------------------------------------------------------------------------
 !
@@ -91,6 +92,7 @@ USE MODD_PARAMETERS, ONLY: JPHEXT
 USE MODD_REF
 USE MODD_RELFRC_n
 ! 
+USE MODE_DATETIME
 USE MODE_FM
 USE MODE_IO_ll
 USE MODE_MSG
@@ -101,7 +103,6 @@ USE MODI_HEIGHT_PRESS
 USE MODI_PRESS_HEIGHT
 USE MODI_READ_ASC_LATPRESS
 USE MODI_READ_ASCP
-USE MODI_TEMPORAL_LT
 USE MODI_THETAVPU_THETAVPM 
 !
 IMPLICIT NONE
@@ -351,7 +352,7 @@ DO JL = 1 , NRELFRC
 END DO
 !
 DO JKT = 2,NRELFRC-1
-  IF (.NOT.TEMPORAL_LT(TDTRELFRC(JKT-1), TDTRELFRC(JKT))) THEN
+  IF ( TDTRELFRC(JKT-1) >= TDTRELFRC(JKT) ) THEN
     WRITE(ILUOUT,*) &
       "SET_FRC ERROR: sounding", JKT-1, " is given for a later time than", JKT
     WRITE(ILUOUT,*) &

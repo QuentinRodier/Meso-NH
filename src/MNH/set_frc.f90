@@ -52,7 +52,6 @@ END MODULE MODI_SET_FRC
 !!                                 potential virtual temperature
 !!      Module  MODI_THETAVPU_THETAVPM: to interpolate thetav on wind levels
 !!                                      from thetav on mass levels
-!!      Module  MODI_TEMPORAL_LT: to compare 2 TYPEd date_and_time data
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -99,6 +98,7 @@ END MODULE MODI_SET_FRC
 !!                             data. Reproduces the same data instead.
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!      27/11/17    (Chaboureau) fix bug in allocation relative to LTEND_UV_FRC 
+!!      28/03/2018  (P.Wautelet) use overloaded comparison operator for date_time
 !!
 !-------------------------------------------------------------------------------
 !
@@ -115,6 +115,7 @@ USE MODD_IO_ll, ONLY : TFILEDATA
 USE MODD_REF
 USE MODD_PARAMETERS
 !
+USE MODE_DATETIME
 USE MODE_THERMO
 USE MODE_FM
 USE MODE_IO_ll
@@ -123,7 +124,6 @@ USE MODE_MSG
 USE MODI_HEIGHT_PRESS  ! interface modules
 USE MODI_PRESS_HEIGHT
 USE MODI_THETAVPU_THETAVPM
-USE MODI_TEMPORAL_LT
 !
 IMPLICIT NONE
 !
@@ -453,7 +453,7 @@ END DO ! End of loop in time
 !
 
 DO JKT = 2,NFRC-1
-  IF (.NOT.TEMPORAL_LT(TDTFRC(JKT-1), TDTFRC(JKT))) THEN
+  IF ( TDTFRC(JKT-1) >= TDTFRC(JKT) ) THEN
     WRITE(ILUOUT,*) &
       "SET_FRC ERROR: sounding", JKT-1, " is given for a later time than", JKT
     WRITE(ILUOUT,*) &

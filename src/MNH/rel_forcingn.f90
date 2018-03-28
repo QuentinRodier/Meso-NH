@@ -91,6 +91,7 @@ END MODULE MODI_REL_FORCING_n
 !!    -------------
 !!      Original    08/11/10
 !!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!                             use overloaded comparison operator for date_time
 !!
 !-------------------------------------------------------------------------------
 !
@@ -110,7 +111,6 @@ USE MODE_IO_ll
 !
 USE MODI_BUDGET
 USE MODI_SHUMAN
-USE MODI_TEMPORAL_LT
 !
 IMPLICIT NONE
 !
@@ -169,14 +169,14 @@ IF (GSFIRSTCALL) THEN
 
 !*        1.2  find first sounding to be used 
   JSX_REL = 0
-  IF( TEMPORAL_LT ( TPDTCUR, TDTRELFRC(1) ) ) THEN
+  IF( TPDTCUR < TDTRELFRC(1) ) THEN
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL REL FORCING FIELDS ARE NULL ")') 
-  ELSE IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTRELFRC(nRELFRC) ) ) THEN
+  ELSE IF( TPDTCUR >= TDTRELFRC(nRELFRC) ) THEN
       WRITE(UNIT=ILUOUT0,FMT='(" THE REL FORCING FIELDS WILL REMAIN STATIONARY ")')
   ELSE
     TIM1_FOR:  DO JN = NRELFRC-1, 1, -1
                   JSX_REL = JN
-                  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTRELFRC(JSX_REL) ) ) EXIT TIM1_FOR
+                  IF( TPDTCUR >= TDTRELFRC(JSX_REL) ) EXIT TIM1_FOR
                END DO TIM1_FOR
 !
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL FORCING FIELDS ARE INTERPOLATED" , &
@@ -190,16 +190,16 @@ END IF
 !
 !    2.1 Temporal interpolation of each term
 !   ------------------------------------------
-IF( TEMPORAL_LT ( TPDTCUR, TDTRELFRC(1) ) ) THEN
+IF( TPDTCUR < TDTRELFRC(1) ) THEN
   ZTHREL(:,:,:)   = 0.
   ZRVREL(:,:,:)   = 0.
-ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTRELFRC(NRELFRC) ) ) THEN
+ELSE IF ( TPDTCUR >= TDTRELFRC(NRELFRC) ) THEN
    ZTHREL(:,:,:)   = XTHREL(:,:,:,NRELFRC)
    ZRVREL(:,:,:)   = XRVREL(:,:,:,NRELFRC)
 ELSE
   JXP = JSX_REL + 1
 
-  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTRELFRC(JXP) ) ) THEN
+  IF( TPDTCUR >= TDTRELFRC(JXP) ) THEN
     JSX_REL = JSX_REL +1
     JXP= JSX_REL +1
     ILUOUT0 = TLUOUT0%NLU

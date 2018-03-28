@@ -92,6 +92,7 @@ END MODULE MODI_ADV_FORCING_n
 !!    -------------
 !!      Original    08/11/10
 !!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!                             use overloaded comparison operator for date_time
 !!
 !-------------------------------------------------------------------------------
 !
@@ -108,7 +109,6 @@ USE MODD_PARAMETERS
 USE MODD_TIME
 USE MODD_BUDGET
 !
-USE MODI_TEMPORAL_LT
 USE MODI_BUDGET
 !
 USE MODD_ADVFRC_n     ! Modules for time evolving advfrc
@@ -168,14 +168,14 @@ IF (GSFIRSTCALL) THEN
 
 !*        1.2  find first sounding to be used 
   JSX_ADV = 0
-  IF( TEMPORAL_LT ( TPDTCUR, TDTADVFRC(1) ) ) THEN
+  IF( TPDTCUR < TDTADVFRC(1) ) THEN
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL ADV FORCING FIELDS ARE NULL ")') 
-  ELSE IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTADVFRC(NADVFRC) ) ) THEN
+  ELSE IF( TPDTCUR >= TDTADVFRC(NADVFRC) ) THEN
       WRITE(UNIT=ILUOUT0,FMT='(" THE ADV FORCING FIELDS WILL REMAIN STATIONARY ")')
   ELSE
     TIM1_FOR:  DO JN = NADVFRC-1, 1, -1
                   JSX_ADV = JN
-                  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTADVFRC(JSX_ADV) ) ) EXIT TIM1_FOR
+                  IF( TPDTCUR >= TDTADVFRC(JSX_ADV) ) EXIT TIM1_FOR
                END DO TIM1_FOR
 !
     WRITE(UNIT=ILUOUT0,FMT='(" THE INITIAL FORCING FIELDS ARE INTERPOLATED" , &
@@ -189,16 +189,16 @@ END IF
 !
 !    2.1 Temporal interpolation of each term
 !   ------------------------------------------
-IF( TEMPORAL_LT ( TPDTCUR, TDTADVFRC(1) ) ) THEN
+IF( TPDTCUR < TDTADVFRC(1) ) THEN
   ZXADVTHFRC(:,:,:)   = 0.
   ZXADVRVFRC(:,:,:)   = 0.
-ELSE IF ( .NOT. TEMPORAL_LT ( TPDTCUR, TDTADVFRC(NADVFRC) ) ) THEN
+ELSE IF ( TPDTCUR >= TDTADVFRC(NADVFRC) ) THEN
    ZXADVTHFRC(:,:,:)   = XDTHFRC(:,:,:,NADVFRC)
    ZXADVRVFRC(:,:,:)   = XDRVFRC(:,:,:,NADVFRC)
 ELSE
   JXP = JSX_ADV + 1
 
-  IF( .NOT. TEMPORAL_LT ( TPDTCUR, TDTADVFRC(JXP) ) ) THEN
+  IF( TPDTCUR >= TDTADVFRC(JXP) ) THEN
     JSX_ADV = JSX_ADV +1
     JXP= JSX_ADV +1
     WRITE(UNIT=ILUOUT0,FMT='(" THE ADV FORCING FIELDS ARE INTERPOLATED NOW" ,&
