@@ -2208,7 +2208,10 @@ END SUBROUTINE IO_WRITE_FIELD_NC4_C1
 
 SUBROUTINE IO_WRITE_FIELD_NC4_T0(TPFILE,TPFIELD,TPDATA,KRESP)
 !
+USE MODD_TIME_n,     ONLY: TDTMOD
 USE MODD_TYPE_DATE
+!
+USE MODE_DATETIME
 !
 TYPE(TFILEDATA),       INTENT(IN) :: TPFILE
 TYPE(TFIELDDATA),      INTENT(IN) :: TPFIELD
@@ -2221,20 +2224,17 @@ CHARACTER(LEN=LEN(TPFIELD%CMNHNAME))   :: YVARNAME
 INTEGER(KIND=IDCDF_KIND)               :: IVARID
 INTEGER(KIND=IDCDF_KIND), DIMENSION(1) :: IVDIMS
 INTEGER                                :: IRESP
-INTEGER, DIMENSION(3)                  :: ITDATE    ! date array
 TYPE(TFIELDDATA)                       :: TZFIELD
 CHARACTER(LEN=40)                      :: YUNITS
 LOGICAL                                :: GEXISTED !True if variable was already defined
+REAL                                   :: ZDELTATIME !Distance in seconds since reference date and time
+TYPE(DATE_TIME)                        :: TZREF
 !
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_FIELD_NC4_T0',TRIM(TPFILE%CNAME)//': writing '//TRIM(TPFIELD%CMNHNAME))
 !
 IRESP = 0
 !
 TZFIELD = TPFIELD
-!
-ITDATE(1)=TPDATA%TDATE%YEAR
-ITDATE(2)=TPDATA%TDATE%MONTH
-ITDATE(3)=TPDATA%TDATE%DAY
 !
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
@@ -2244,7 +2244,13 @@ GEXISTED = .FALSE.
 CALL CLEANMNHNAME(TPFIELD%CMNHNAME,YVARNAME)
 !
 TZFIELD%CMNHNAME = TRIM(YVARNAME)
-WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') ITDATE(1),ITDATE(2),ITDATE(3)
+!
+! Model beginning date (TDTMOD%TDATE) is used as the reference date
+! Reference time is set to 0.
+TZREF = TDTMOD
+TZREF%TIME = 0.
+WRITE(YUNITS,'( "seconds since ",I4.4,"-",I2.2,"-",I2.2," 00:00:00 +0:00" )') &
+      TDTMOD%TDATE%YEAR, TDTMOD%TDATE%MONTH, TDTMOD%TDATE%DAY
 TZFIELD%CUNITS = TRIM(YUNITS)
 !
 IF (TPFIELD%LTIMEDEP) &
@@ -2264,8 +2270,12 @@ END IF
 
 ! Write metadata
 CALL IO_WRITE_FIELD_ATTR_NC4(TPFILE,TZFIELD,IVARID,GEXISTED,HCALENDAR='standard')
+!
+! Compute the temporal distance from reference
+CALL DATETIME_DISTANCE(TZREF,TPDATA,ZDELTATIME)
+
 ! Write the data
-STATUS = NF90_PUT_VAR(INCID, IVARID, TPDATA%TIME)
+STATUS = NF90_PUT_VAR(INCID, IVARID, ZDELTATIME)
 IF (status /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'IO_WRITE_FIELD_NC4_X0[NF90_PUT_VAR] '//TRIM(TPFIELD%CMNHNAME),IRESP)
 
 IF (IRESP/=0) THEN
@@ -3479,9 +3489,11 @@ KRESP = IRESP
 END SUBROUTINE IO_READ_FIELD_NC4_C0
 
 SUBROUTINE IO_READ_FIELD_NC4_T0(TPFILE, TPFIELD, TPDATA, KRESP)
-
+!
 USE MODD_TYPE_DATE
-
+!
+USE MODE_DATETIME
+!
 TYPE(TFILEDATA),  INTENT(IN)    :: TPFILE
 TYPE(TFIELDDATA), INTENT(INOUT) :: TPFIELD
 TYPE (DATE_TIME), INTENT(OUT)   :: TPDATA
@@ -3534,6 +3546,8 @@ IF (IDIMS == 0 .AND. ITYPE == NF90_DOUBLE) THEN
                                                            ' read date is invalid')
     IRESP = -3
   END IF
+  ! Correct date and time (necessary for example if time is bigger than 86400 s)
+  CALL DATETIME_CORRECTDATE(TPDATA)
 ELSE
    CALL PRINT_MSG(NVERB_ERROR,'IO','IO_READ_FIELD_NC4_T0',TRIM(TPFILE%CNAME)//': '//TRIM(YVARNAME)// &
                                                           ' not read (wrong size or type)')
