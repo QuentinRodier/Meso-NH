@@ -82,6 +82,7 @@ END MODULE MODI_FLASH_GEOM_ELEC_n
 !!      M. Chong  * LA *  Juin 2010 : add LiNOx
 !!      C. Barthe * LACy * Jan. 2015 : convert trig. pt into lat,lon in ascii file
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
+!!      J.Escobar : 28/03/2018 : Correction of multiple // bug & compiler indepedent mnh_random_number
 !!
 !-------------------------------------------------------------------------------
 !
@@ -127,6 +128,7 @@ USE MODE_PACK_PGI
 USE MODE_ll
 USE MODE_ELEC_ll
 USE MODE_GRIDPROJ
+USE MODE_MPPDB
 !
 IMPLICIT NONE
 !
@@ -266,7 +268,6 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZEMODULE ! Electric field module (V/m)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIST    ! distance between the trig. pt and the cell pts (m)
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSIGLOB  ! sum of the cross sections
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZQFLASH  ! total charge in excess of xqexcess (C/kg)
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZWORK
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOORD_TRIG ! Global coordinates of triggering point
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZCOORD_SEG ! Global coordinates of segments
 REAL, DIMENSION(:), ALLOCATABLE :: ZEM_TRIG     ! Electric field module at the triggering pt
@@ -300,6 +301,11 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZLNOX
 REAL    :: ZLGHTLENGTH, ZCOEF
 INTEGER :: IFLASH_COUNT, IFLASH_COUNT_GLOB  ! Total number of flashes within the timestep
 !
+REAL,DIMENSION(SIZE(PRT,1),SIZE(PRT,2)) :: ZCELL_NEW
+!
+INTEGER :: ILJ
+INTEGER :: NIMAX_ll, NJMAX_ll    ! dimensions of global domain
+!
 !-------------------------------------------------------------------------------
 !
 !*      1.      INITIALIZATION
@@ -315,6 +321,7 @@ IKE = SIZE(PRT,3) - JPVEXT
 IKU = SIZE(PRT,3)
 !
 ! global indexes of the local subdomains origin
+CALL GET_GLOBALDIMS_ll (NIMAX_ll,NJMAX_ll)
 CALL GET_OR_ll('B',IXOR,IYOR)
 !
 !
@@ -369,6 +376,7 @@ ALLOCATE (ZCLOUD(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (GPOSS(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (ZEMODULE(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 ALLOCATE (ZCELL(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3),NMAX_CELL))
+
 !
 ZQMT(:,:,:,:) = 0.
 ZQMTOT(:,:,:) = 0.
@@ -432,8 +440,17 @@ GEND_CELL = .FALSE.
 INB_CELL = 0
 ZE_TRIG_THRES = XETRIG * (1. - XEBALANCE)
 !
+CALL MPPDB_CHECK3DM("flash:: PRHODJ,PRT",PRECISION,&
+     PRHODJ,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),PRT(:,:,:,4),&
+     PRT(:,:,:,5),PRT(:,:,:,6))
+CALL MPPDB_CHECK3DM("flash:: ZQMT",PRECISION,&
+     ZQMT(:,:,:,1),ZQMT(:,:,:,2),ZQMT(:,:,:,3),ZQMT(:,:,:,4),&
+     ZQMT(:,:,:,5),ZQMT(:,:,:,6),ZQMT(:,:,:,7))
+
 CALL TO_ELEC_FIELD_n (PRT, ZQMT, PRHODJ, KTCOUNT, KRR, &
                       PEFIELDU, PEFIELDV, PEFIELDW)
+CALL MPPDB_CHECK3DM("flash:: PEFIELDU, PEFIELDV, PEFIELDW",PRECISION,&
+                     PEFIELDU, PEFIELDV, PEFIELDW)
 !
 ! electric field module including pressure effect
 ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE) = ZPRES_COEF(IIB:IIE,IJB:IJE,IKB:IKE)*    &
@@ -457,11 +474,12 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
     INB_CELL = INB_CELL + 1  ! one cell is detected
     ZEMAX(INB_CELL) = ZMAXE
 ! local coordinates of the maximum electric field
-    ICELL_LOC(1:3,INB_CELL) = MAXLOC(ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE), &
-                              MASK=GPOSS(IIB:IIE,IJB:IJE,IKB:IKE))
+    ICELL_LOC(1:3,INB_CELL) = MAXLOC(ZEMODULE, MASK=GPOSS )
     IICOORD = ICELL_LOC(1,INB_CELL)
     IJCOORD = ICELL_LOC(2,INB_CELL)
-    IKCOORD = ICELL_LOC(3,INB_CELL)
+    ICELL_LOC(1,INB_CELL) = IICOORD + IXOR -1
+    ICELL_LOC(2,INB_CELL) = IJCOORD + IYOR -1
+    IKCOORD = ICELL_LOC(3,INB_CELL) 
     ICELL_LOC(4,INB_CELL) = IPROC_CELL
 ! 
 ! Broadcast the center of the cell to all procs
@@ -491,6 +509,7 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
         COUNT_BEF = COUNT(ZCELL(IIB:IIE,IJB:IJE,IK,INB_CELL) .EQ. 1.)
         CALL SUM_ELEC_ll (COUNT_BEF)
 !
+        ZCELL_NEW = ZCELL(:,:,IK,INB_CELL)
         DO II = IIB, IIE
           DO IJ = IJB, IJE
             IF ((ZCELL(II,IJ,IK,INB_CELL) .EQ. 0.) .AND.  &
@@ -510,12 +529,13 @@ DO WHILE (.NOT. GEND_DOMAIN .AND. INB_CELL .LT. NMAX_CELL)
                   (ZCELL(II-1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
                   (ZCELL(II+1,IJ+1,IK,INB_CELL) .EQ. 1.) .OR. &
                   (ZCELL(II+1,IJ-1,IK,INB_CELL) .EQ. 1.)) THEN
-                ZCELL(II,IJ,IK,INB_CELL) = 1.
                 GPOSS(II,IJ,IK) = .FALSE.
+                ZCELL_NEW(II,IJ) = 1.
               END IF
             END IF
           END DO
         END DO
+        ZCELL(:,:,IK,INB_CELL) = ZCELL_NEW  
 !
         COUNT_AFT = COUNT(ZCELL(IIB:IIE,IJB:IJE,IK,INB_CELL) .EQ. 1.)
         CALL SUM_ELEC_ll(COUNT_AFT)
@@ -706,6 +726,17 @@ IF (INB_CELL .GE. 1) THEN
 !
   IF (KRR == 7) ZSIGLOB(:,:,:) = ZSIGLOB(:,:,:) + ZSIGMA(:,:,:,6)
 !
+IF (KRR == 7) THEN
+   CALL MPPDB_CHECK3DM("flash:: ZLBDAR,ZLBDAS,ZLBDAG,ZLBDAH",PRECISION,&
+        ZLBDAR,ZLBDAS,ZLBDAG,ZLBDAH,&
+        ZSIGMA(:,:,:,1),ZSIGMA(:,:,:,2),ZSIGMA(:,:,:,3),ZSIGMA(:,:,:,4),&
+        ZSIGMA(:,:,:,5),ZSIGMA(:,:,:,6))
+ELSE
+   CALL MPPDB_CHECK3DM("flash:: ZLBDAR,ZLBDAS,ZLBDAG",PRECISION,&
+        ZLBDAR,ZLBDAS,ZLBDAG,&
+        ZSIGMA(:,:,:,1),ZSIGMA(:,:,:,2),ZSIGMA(:,:,:,3),ZSIGMA(:,:,:,4),&
+        ZSIGMA(:,:,:,5))
+ENDIF
 !
 !-------------------------------------------------------------------------------
 !
@@ -760,6 +791,9 @@ IF (INB_CELL .GE. 1) THEN
 !
         GCG = .FALSE.
         GCG_POS = .FALSE.
+
+        CALL MPPDB_CHECK3DM("flash:: 4. ZFLASH(IL)",PRECISION,&
+             ZFLASH(:,:,:,IL))
 !
 !
 !-------------------------------------------------------------------------------
@@ -801,6 +835,9 @@ IF (INB_CELL .GE. 1) THEN
             ZEM_TRIG(IL) = ZEM_TRIG(IL)/ZPRES_COEF(IIBL_LOC,IJBL_LOC,IKBL)
           ENDIF
         ENDIF
+
+       CALL MPPDB_CHECK3DM("flash:: 5. ZFLASH(IL)",PRECISION,&
+             ZFLASH(:,:,:,IL))
 !
         CALL MPI_BCAST (GNEW_FLASH(IL),1, MPI_LOGICAL, IPROC_TRIG(IL), &
                         NMNH_COMM_WORLD, IERR)
@@ -954,11 +991,9 @@ IF (INB_CELL .GE. 1) THEN
 !
 !*      8.3     distribute the branches
 !
-          ALLOCATE (ZWORK(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)))
 !
           CALL BRANCH_GEOM(IKB, IKE)
 !
-          DEALLOCATE (ZWORK)
           DEALLOCATE (IMAX_BRANCH)
           DEALLOCATE (IMASKQ_DIST)
         END IF   ! end if count(gprop)
@@ -968,6 +1003,8 @@ IF (INB_CELL .GE. 1) THEN
 !
 !*      9.      NEUTRALIZATION
 !               --------------
+        CALL MPPDB_CHECK3DM("flash:: 9. ZQMTOT",PRECISION,ZQMTOT)
+        CALL MPPDB_CHECK3DM("flash:: 9. ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
 !
 !*      9.1     charge carried by the lightning flash
 !
@@ -1019,6 +1056,9 @@ IF (INB_CELL .GE. 1) THEN
 !
 !*      9.4     charge neutralization 
 !
+        CALL MPPDB_CHECK3DM("flash:: 9.4 ZQFLASH,ZSIGLOB",PRECISION,&
+             ZQFLASH,ZSIGLOB)
+
         ZDQDT(:,:,:,:) = 0.
 !  
         IF (GNEUTRALIZATION) THEN
@@ -1112,6 +1152,13 @@ IF (INB_CELL .GE. 1) THEN
 !
 !*      9.6     update the source term
 !
+          CALL MPPDB_CHECK3DM("flash:: 9.6 PRSVS",PRECISION,&
+               PRSVS(:,:,:,1),PRSVS(:,:,:,2),PRSVS(:,:,:,3),PRSVS(:,:,:,4),&
+               PRSVS(:,:,:,5),PRSVS(:,:,:,6),PRSVS(:,:,:,7))
+          CALL MPPDB_CHECK3DM("flash:: 9.6 ZDQDT",PRECISION,&
+               ZDQDT(:,:,:,1),ZDQDT(:,:,:,2),ZDQDT(:,:,:,3),ZDQDT(:,:,:,4),&
+               ZDQDT(:,:,:,5),ZDQDT(:,:,:,6),ZDQDT(:,:,:,7))
+
           DO II = IIB, IIE
             DO IJ = IJB, IJE
               DO IK = IKB, IKE
@@ -1319,6 +1366,11 @@ IF (INB_CELL .GE. 1) THEN
 !*    11.1     ion attachment
 !
     IF (INB_NEUT_OK .NE. 0) THEN
+
+       CALL MPPDB_CHECK3DM("flash:: PRSVS",PRECISION,&
+            PRSVS(:,:,:,1),PRSVS(:,:,:,2),PRSVS(:,:,:,3),PRSVS(:,:,:,4),&
+            PRSVS(:,:,:,5),PRSVS(:,:,:,6),PRSVS(:,:,:,7))
+
       PRSVS(:,:,:,1) = PRSVS(:,:,:,1) / XECHARGE
       PRSVS(:,:,:,NSV_ELEC) = - PRSVS(:,:,:,NSV_ELEC) / XECHARGE
 !
@@ -1334,6 +1386,10 @@ IF (INB_CELL .GE. 1) THEN
 !
       PRSVS(:,:,:,1) = PRSVS(:,:,:,1) * XECHARGE
       PRSVS(:,:,:,NSV_ELEC) = - PRSVS(:,:,:,NSV_ELEC) * XECHARGE
+
+       CALL MPPDB_CHECK3DM("flash:: after ION PRSVS",PRECISION,&
+            PRSVS(:,:,:,1),PRSVS(:,:,:,2),PRSVS(:,:,:,3),PRSVS(:,:,:,4),&
+            PRSVS(:,:,:,5),PRSVS(:,:,:,6),PRSVS(:,:,:,7))
     ENDIF
 !
 !
@@ -1357,8 +1413,16 @@ IF (INB_CELL .GE. 1) THEN
 
     IF ((MAXVAL(INB_FLASH(:))+1) < INBFTS_MAX) THEN
       IF (INB_NEUT_OK .NE. 0) THEN
+         CALL MPPDB_CHECK3DM("flash:: PRHODJ,PRT",PRECISION,&
+              PRHODJ,PRT(:,:,:,1),PRT(:,:,:,2),PRT(:,:,:,3),PRT(:,:,:,4),&
+              PRT(:,:,:,5),PRT(:,:,:,6))
+         CALL MPPDB_CHECK3DM("flash:: ZQMT",PRECISION,&
+              ZQMT(:,:,:,1),ZQMT(:,:,:,2),ZQMT(:,:,:,3),ZQMT(:,:,:,4),&
+              ZQMT(:,:,:,5),ZQMT(:,:,:,6),ZQMT(:,:,:,7))
         CALL TO_ELEC_FIELD_n (PRT, ZQMT, PRHODJ, KTCOUNT, KRR, &
                               PEFIELDU, PEFIELDV, PEFIELDW)
+        CALL MPPDB_CHECK3DM("flash:: PEFIELDU, PEFIELDV, PEFIELDW",PRECISION,&
+             PEFIELDU, PEFIELDV, PEFIELDW)
 ! electric field module including pressure effect
         ZEMODULE(IIB:IIE,IJB:IJE,IKB:IKE) = ZPRES_COEF(IIB:IIE,IJB:IJE,IKB:IKE)*    &
                                             (PEFIELDU(IIB:IIE,IJB:IJE,IKB:IKE)**2 + &
@@ -1562,13 +1626,13 @@ DO IL = 1, INB_CELL
     DO WHILE (IFOUND .NE. 1)
 !
 ! random choice of the 3 global ind.
-      CALL RANDOM_NUMBER(ZRANDOM)
+      CALL MNH_RANDOM_NUMBER(ZRANDOM)
       II_TRIG_GLOB = IWEST_GLOB_TRIG + &
                       INT(ANINT(ZRANDOM * (IEAST_GLOB_TRIG - IWEST_GLOB_TRIG)))
-      CALL RANDOM_NUMBER(ZRANDOM)
+      CALL MNH_RANDOM_NUMBER(ZRANDOM)
       IJ_TRIG_GLOB = ISOUTH_GLOB_TRIG + &
                       INT(ANINT(ZRANDOM * (INORTH_GLOB_TRIG - ISOUTH_GLOB_TRIG)))
-      CALL RANDOM_NUMBER(ZRANDOM)
+      CALL MNH_RANDOM_NUMBER(ZRANDOM)
       IK_TRIG = IDOWN_TRIG + INT(ANINT(ZRANDOM * (IUP_TRIG - IDOWN_TRIG)))
 !
 ! global ind. --> local ind. of the potential triggering pt
@@ -1666,6 +1730,7 @@ INTEGER :: IKSTEP, IIDECAL
 !
 !*      1.      BUILD THE POSITIVE/NEGATIVE LEADER
 !               ----------------------------------
+CALL MPPDB_CHECK3DM("flash:: one_leader ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
 !
 IKSTEP = ISIGN_LEADER * ISIGNE_EZ(IL)
     ! the positive leader propagates parallel to the electric field
@@ -1816,6 +1881,7 @@ CALL MPI_BCAST (ISEG_LOC(:,IL), 3*SIZE(PRT,3), &
 CALL MPI_BCAST (ITYPE(IL), 1, &
                 MPI_INTEGER, IPROC_TRIG(IL), NMNH_COMM_WORLD, IERR)
 !
+CALL MPPDB_CHECK3DM("flash:: one_leader end ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
 !
 END SUBROUTINE ONE_LEADER
 !
@@ -1832,7 +1898,8 @@ END SUBROUTINE ONE_LEADER
 !
 IMPLICIT NONE
 !
-REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)) :: ZSIGN_AREA
+REAL, DIMENSION(SIZE(PRT,1),SIZE(PRT,2),SIZE(PRT,3)) :: ZSIGN_AREA,ZSIGN_AREA_NEW
+
 REAL, DIMENSION(INB_CELL) :: ZSIGN  ! sign of the charge immediatly below/above the triggering pt 
 !
 INTEGER, DIMENSION(INB_CELL) :: IEND  ! if 1, no more neighbour pts meeting the conditions
@@ -1912,6 +1979,7 @@ DO WHILE (IEND_GLOB .NE. INB_CELL)
         ENDIF
       ENDIF
 !
+      ZSIGN_AREA_NEW(:,:,IKMIN:IKMAX) = ZSIGN_AREA (:,:,IKMIN:IKMAX)
       DO II = IIB, IIE
         DO IJ = IJB, IJE
           DO IK = IKMIN, IKMAX
@@ -1948,13 +2016,14 @@ DO WHILE (IEND_GLOB .NE. INB_CELL)
                   (ZSIGN_AREA(II-1,IJ+1,IK-1) .EQ. ZSIGN(IL)) .OR. &
                   (ZSIGN_AREA(II+1,IJ+1,IK-1) .EQ. ZSIGN(IL)) .OR. &
                   (ZSIGN_AREA(II+1,IJ-1,IK-1) .EQ. ZSIGN(IL))) THEN
-                ZSIGN_AREA(II,IJ,IK) = ZSIGN(IL)
+                ZSIGN_AREA_NEW(II,IJ,IK) = ZSIGN(IL)
                 GPROP(II,IJ,IK,IL) = .TRUE.
               END IF
             END IF
           END DO
         END DO
       END DO
+      ZSIGN_AREA (:,:,IKMIN:IKMAX) = ZSIGN_AREA_NEW(:,:,IKMIN:IKMAX)
 !
       COUNT_AFT2(IL) = COUNT(ZSIGN_AREA(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. ZSIGN(IL))
       CALL SUM_ELEC_ll(COUNT_AFT2(IL))
@@ -1964,7 +2033,6 @@ DO WHILE (IEND_GLOB .NE. INB_CELL)
       ELSE
         IEND(IL) = 0
       END IF
-
 ! broadcast IEND and find the proc where IEND = 1
       CALL MAX_ELEC_ll (IEND(IL), IPROC_END)
       IEND_GLOB = IEND_GLOB + IEND(IL)
@@ -2002,10 +2070,18 @@ LOGICAL :: GRANDOM           ! T = the gridpoints are chosen randomly
 INTEGER, DIMENSION(NPROC) :: INBPT_PROC
 REAL, DIMENSION(:), ALLOCATABLE :: ZAUX
 !
+INTEGER*8, DIMENSION(:), ALLOCATABLE :: I8VECT , I8VECT_LL 
+INTEGER  , DIMENSION(:), ALLOCATABLE :: IRANK  , IRANK_LL , IORDER_LL
+INTEGER  :: JI,JJ,JK,JIL , ICHOICE,IPOINT
+INTEGER, DIMENSION(NPROC+1) :: IDISPL
+!
+!
 !
 !*      1.      ON EACH PROC, COUNT THE NUMBER OF POINTS AT DISTANCE D 
 !*              THAT CAN RECEIVE A BRANCH
 !               ------------------------------------------------------
+CALL MPPDB_CHECK3DM("flash:: branch ZFLASH,IMASKQ_DIST",PRECISION,&
+     ZFLASH(:,:,:,IL),IMASKQ_DIST*1.0)
 !
 IM = 1
 ISTOP = 0
@@ -2056,73 +2132,64 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
         CALL MPI_ALLGATHER(IPT_DIST, 1, MPI_INTEGER, &
                    INBPT_PROC, 1, MPI_INTEGER, NMNH_COMM_WORLD, IERR)
 !
-        IF (IPROC .EQ. 0) THEN
-          IF (INBPT_PROC(1) .NE. 0) THEN
-            IMIN = 1
-            IMAX = INBPT_PROC(1)
-          ELSE 
-            IMIN = 0
-            IMAX = 0
-          END IF
-        ELSE
-          IF (INBPT_PROC(IPROC+1) .NE. 0) THEN
-            IMIN = SUM(INBPT_PROC(1:IPROC)) + 1
-            IMAX = SUM(INBPT_PROC(1:IPROC+1))
-          ELSE
-            IMIN = 0
-            IMAX = 0
-          END IF
-        END IF
+        IDISPL(1) = 0
+        DO JI=2, NPROC+1
+           IDISPL(JI) = IDISPL(JI-1)+INBPT_PROC(JI-1)
+        ENDDO
 !
-        ZWORK(:,:,:) = 0.
+        ALLOCATE (I8VECT(IPT_DIST))
+        ALLOCATE (IRANK(IPT_DIST))
         IF (IPT_DIST .GT. 0) THEN 
-          WHERE (IMASKQ_DIST(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. IM)
-            ZWORK(IIB:IIE,IJB:IJE,IKB:IKE) = 1.
-          END WHERE
-!
-          ALLOCATE (ZVECT(IPT_DIST))
-          ALLOCATE (ZAUX(IPT_DIST))
-          ZVECT(:) = PACK(ZWORK(:,:,:), MASK=(IMASKQ_DIST(:,:,:).EQ.IM))
-          ZVECT(:) = 0.
-          ZAUX(:) = 0.
-          DO II = 1, IPT_DIST
-            ZVECT(II) = REAL(IMIN + II - 1)
-          END DO
+           JIL=0
+           DO JK=IKB,IKE
+              DO JJ=IJB,IJE
+                 DO JI=IIB,IIE
+                    IF (IMASKQ_DIST(JI,JJ,JK) .EQ. IM) THEN
+                       JIL = JIL + 1
+                       I8VECT(JIL) = NJMAX_ll*NIMAX_ll*(JK-1) + NIMAX_ll*(IYOR+JJ-1) + (IXOR+JI-1)
+                    END IF
+                 END DO
+              END DO
+           END DO
+           !
+           IRANK(:)  = IPROC           
         END IF
+!
+        ALLOCATE(I8VECT_LL(IPT_DIST_GLOB))
+        ALLOCATE(IRANK_LL(IPT_DIST_GLOB))
+        ALLOCATE(IORDER_LL(IPT_DIST_GLOB))
+        CALL MPI_ALLGATHERV(I8VECT,IPT_DIST, MPI_INTEGER8,I8VECT_LL , &
+                        INBPT_PROC, IDISPL, MPI_INTEGER8, NMNH_COMM_WORLD, IERR)
+        CALL MPI_ALLGATHERV(IRANK,IPT_DIST, MPI_INTEGER,IRANK_LL , &
+                        INBPT_PROC, IDISPL, MPI_INTEGER, NMNH_COMM_WORLD, IERR)
+        CALL N8QUICK_SORT(I8VECT_LL, IORDER_LL)
 !
         DO IPOINT = 1, MIN(IMAX_BRANCH(IM), INB_SEG_TO_BRANCH)
-          IFOUND = 0
-          DO WHILE (IFOUND .NE. 1)
-! randomly chose points in zvect
-            CALL RANDOM_NUMBER(ZRANDOM)
-            ICHOICE = INT(ANINT(ZRANDOM * IPT_DIST_GLOB))
-            IF (ICHOICE .EQ. 0) ICHOICE = 1
-            DO II = 1, IPT_DIST
-              IF (ZVECT(II) .EQ. ICHOICE) THEN
-                ZVECT(II) = 0.
-                IFOUND = 1
-              END IF  
-            END DO
-            CALL SUM_ELEC_ll(IFOUND)
-          END DO
+           IFOUND = 0
+           DO WHILE (IFOUND .NE. 1)
+              ! randomly chose points in zvect
+              CALL MNH_RANDOM_NUMBER(ZRANDOM)
+              ICHOICE = INT(ANINT(ZRANDOM * IPT_DIST_GLOB)) 
+              IF (ICHOICE .EQ. 0) ICHOICE = 1
+              IF (I8VECT_LL(ICHOICE) .NE. 0 ) THEN
+                 IFOUND = 1               
+                 ! The points is in this processors  , get is coord and set it
+                 IF (IRANK_LL(IORDER_LL(ICHOICE)) .EQ. IPROC) THEN
+                    JK = I8VECT_LL(ICHOICE) / ( NJMAX_ll*NIMAX_ll ) +1 
+                    JJ = ( I8VECT_LL(ICHOICE) - NJMAX_ll*NIMAX_ll*(JK-1) ) / NIMAX_ll - IYOR +1
+                    JI = MOD(I8VECT_LL(ICHOICE),NIMAX_ll) - IXOR +1
+                    ZFLASH(JI,JJ,JK,IL) = 2.
+                 END IF
+                 I8VECT_LL(ICHOICE) = 0.
+              ENDIF
+           END DO
         END DO
 !
         INB_SEG_TO_BRANCH = INB_SEG_TO_BRANCH - MIN(IMAX_BRANCH(IM), INB_SEG_TO_BRANCH)
 !
-        IF (IPT_DIST .GT. 0) THEN
-          WHERE (ZVECT(:) .EQ. 0.)
-            ZAUX(:) = 1.
-          END WHERE
-!
-          ZWORK(:,:,:) = 0.
-          ZWORK(:,:,:) = UNPACK(ZAUX(:), MASK=(IMASKQ_DIST(:,:,:).EQ.IM), FIELD=0.0)
-          WHERE (ZWORK(IIB:IIE,IJB:IJE,IKB:IKE) .EQ. 1.) 
-            ZFLASH(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 2.
-            ZCELL(IIB:IIE,IJB:IJE,IKB:IKE,IL) = 0.
-          END WHERE
-          DEALLOCATE (ZVECT)
-          DEALLOCATE (ZAUX)
-        ENDIF
+        DEALLOCATE(I8VECT,I8VECT_LL,IRANK,IRANK_LL,IORDER_LL)
+        CALL MPPDB_CHECK3DM("flash:: branch IPT_DIST ZFLASH",PRECISION,&
+             ZFLASH(:,:,:,IL))
       END IF
     END IF                   !IPT_DIST .LE. IMAX_BRANCH(IM)
   ELSE
@@ -2131,6 +2198,7 @@ DO WHILE (IM .LE. IDELTA_IND .AND. ISTOP .NE. 1)
   END IF  ! end if ipt_dist > 0
 !
 ! next distance
+  CALL MPPDB_CHECK3DM("flash:: branch IM+1 ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
   IM = IM + 1
 END DO   ! end loop / do while / radius IM
 !
@@ -2157,6 +2225,8 @@ IF (INB_SEG_AFT .GT. INB_SEG_BEF) THEN
     END DO
   END DO
 END IF
+!
+CALL MPPDB_CHECK3DM("flash:: end branch ZFLASH",PRECISION,ZFLASH(:,:,:,IL))
 !
 END SUBROUTINE BRANCH_GEOM
 !
@@ -2520,6 +2590,245 @@ END DO
 END SUBROUTINE WRITE_OUT_LMA
 !
 !-------------------------------------------------------------------------------
+!
+RECURSIVE SUBROUTINE N8QUICK_SORT(PLIST, KORDER)
+
+! Quick sort routine from:
+! Brainerd, W.S., Goldberg, C.H. & Adams, J.C. (1990) "Programmer's Guide to
+! Fortran 90", McGraw-Hill  ISBN 0-07-000248-7, pages 149-150.
+! Modified by Alan Miller to include an associated integer array which gives
+! the positions of the elements in the original order.
+!
+IMPLICIT NONE
+!
+INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST
+INTEGER, DIMENSION (:), INTENT(OUT)  :: KORDER
+!
+! Local variable
+INTEGER :: JI
+
+DO JI = 1, SIZE(PLIST)
+  KORDER(JI) = JI
+END DO
+
+CALL N8QUICK_SORT_1(1, SIZE(PLIST), PLIST, KORDER)
+
+END SUBROUTINE N8QUICK_SORT
+!
+!-------------------------------------------------------------------------------
+!
+RECURSIVE SUBROUTINE N8QUICK_SORT_1(KLEFT_END, KRIGHT_END, PLIST1, KORDER1)
+
+INTEGER, INTENT(IN) :: KLEFT_END, KRIGHT_END
+INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST1
+INTEGER, DIMENSION (:), INTENT(INOUT)  :: KORDER1
+!     Local variables
+INTEGER             :: JI, JJ, ITEMP
+INTEGER*8                :: ZREF, ZTEMP
+INTEGER, PARAMETER  :: IMAX_SIMPLE_SORT_SIZE = 6
+
+IF (KRIGHT_END < KLEFT_END + IMAX_SIMPLE_SORT_SIZE) THEN
+  ! Use interchange sort for small PLISTs
+  CALL N8INTERCHANGE_SORT(KLEFT_END, KRIGHT_END, PLIST1, KORDER1)
+  !
+ELSE
+  !
+  ! Use partition ("quick") sort
+  ! valeur au centre du tableau
+  ZREF = PLIST1((KLEFT_END + KRIGHT_END)/2)
+  JI = KLEFT_END - 1
+  JJ = KRIGHT_END + 1
+
+  DO
+    ! Scan PLIST from left end until element >= ZREF is found
+    DO
+      JI = JI + 1
+      IF (PLIST1(JI) >= ZREF) EXIT
+    END DO
+    ! Scan PLIST from right end until element <= ZREF is found
+    DO
+      JJ = JJ - 1
+      IF (PLIST1(JJ) <= ZREF) EXIT
+    END DO
+
+
+    IF (JI < JJ) THEN
+      ! Swap two out-of-order elements
+      ZTEMP = PLIST1(JI)
+      PLIST1(JI) = PLIST1(JJ)
+      PLIST1(JJ) = ZTEMP
+      ITEMP = KORDER1(JI)
+      KORDER1(JI) = KORDER1(JJ)
+      KORDER1(JJ) = ITEMP
+    ELSE IF (JI == JJ) THEN
+      JI = JI + 1
+      EXIT
+    ELSE
+      EXIT
+    END IF
+  END DO
+
+  IF (KLEFT_END < JJ) CALL N8QUICK_SORT_1(KLEFT_END, JJ, PLIST1, KORDER1)
+  IF (JI < KRIGHT_END) CALL N8QUICK_SORT_1(JI, KRIGHT_END,PLIST1,KORDER1)
+END IF
+
+END SUBROUTINE N8QUICK_SORT_1
+!
+!-------------------------------------------------------------------------------
+!
+SUBROUTINE N8INTERCHANGE_SORT(KLEFT_END, KRIGHT_END, PLIST2, KORDER2)
+
+INTEGER, INTENT(IN) :: KLEFT_END, KRIGHT_END
+INTEGER*8, DIMENSION (:), INTENT(INOUT)  :: PLIST2
+INTEGER, DIMENSION (:), INTENT(INOUT)  :: KORDER2
+!     Local variables
+INTEGER             :: JI, JJ, ITEMP
+INTEGER*8                :: ZTEMP
+
+! boucle sur tous les points
+DO JI = KLEFT_END, KRIGHT_END - 1
+  !
+  ! boucle sur les points suivants le point JI
+  DO JJ = JI+1, KRIGHT_END
+    !
+    ! si la distance de JI au point est plus grande que celle de JJ
+    IF (PLIST2(JI) > PLIST2(JJ)) THEN
+      ! distance de JI au point (la plus grande)
+      ZTEMP = PLIST2(JI)
+      ! le point JJ est déplacé à l'indice JI dans le tableau 
+      PLIST2(JI) = PLIST2(JJ)
+      ! le point JI est déplacé à l'indice JJ dans le tableau
+      PLIST2(JJ) = ZTEMP
+      ! indice du point JI dans le tableau
+      ITEMP = KORDER2(JI)
+      ! l'indice du point JJ est mis à la place JI
+      KORDER2(JI) = KORDER2(JJ)
+      ! l'indice du point JI est mis à la place JJ
+      KORDER2(JJ) = ITEMP
+    END IF
+    !
+  END DO
+  !
+END DO
+
+END SUBROUTINE N8INTERCHANGE_SORT
+!-------------------------------------------------------------------------------
+  SUBROUTINE MNH_RANDOM_NUMBER(ZRANDOM)
+
+    REAL          :: ZRANDOM
+    INTEGER ,SAVE :: NSEED_MNH = 26032012
+
+    ZRANDOM = r8_uniform_01 (NSEED_MNH)
+
+  END SUBROUTINE MNH_RANDOM_NUMBER
+
+!------------------------------------------------------------------------------------------
+
+  FUNCTION r8_uniform_01 ( seed )
+
+    !*****************************************************************************80
+    !
+    !! R8_UNIFORM_01 returns a unit pseudorandom R8.
+    !
+    !  Discussion:
+    !
+    !    An R8 is a real ( kind = 8 ) value.
+    !
+    !    For now, the input quantity SEED is an integer variable.
+    !
+    !    This routine implements the recursion
+    !
+    !      seed = ( 16807 * seed ) mod ( 2^31 - 1 )
+    !      r8_uniform_01 = seed / ( 2^31 - 1 )
+    !
+    !    The integer arithmetic never requires more than 32 bits,
+    !    including a sign bit.
+    !
+    !    If the initial seed is 12345, then the first three computations are
+    !
+    !      Input     Output      R8_UNIFORM_01
+    !      SEED      SEED
+    !
+    !         12345   207482415  0.096616
+    !     207482415  1790989824  0.833995
+    !    1790989824  2035175616  0.947702
+    !
+    !  Licensing:
+    !
+    !    This code is distributed under the GNU LGPL license.     
+    !    Souce here : https://people.sc.fsu.edu/~jburkardt/f_src/uniform/uniform.f90
+    !
+    !  Modified:
+    !
+    !    31 May 2007
+    !
+    !  Author:
+    !
+    !    John Burkardt
+    !
+    !  Reference:
+    !
+    !    Paul Bratley, Bennett Fox, Linus Schrage,
+    !    A Guide to Simulation,
+    !    Second Edition,
+    !    Springer, 1987,
+    !    ISBN: 0387964673,
+    !    LC: QA76.9.C65.B73.
+    !
+    !    Bennett Fox,
+    !    Algorithm 647:
+    !    Implementation and Relative Efficiency of Quasirandom
+    !    Sequence Generators,
+    !    ACM Transactions on Mathematical Software,
+    !    Volume 12, Number 4, December 1986, pages 362-376.
+    !
+    !    Pierre L'Ecuyer,
+    !    Random Number Generation,
+    !    in Handbook of Simulation,
+    !    edited by Jerry Banks,
+    !    Wiley, 1998,
+    !    ISBN: 0471134031,
+    !    LC: T57.62.H37.
+    !
+    !    Peter Lewis, Allen Goodman, James Miller,
+    !    A Pseudo-Random Number Generator for the System/360,
+    !    IBM Systems Journal,
+    !    Volume 8, Number 2, 1969, pages 136-143.
+    !
+    !  Parameters:
+    !
+    !    Input/output, integer ( kind = 4 ) SEED, the "seed" value, which should
+    !    NOT be 0. On output, SEED has been updated.
+    !
+    !    Output, real ( kind = 8 ) R8_UNIFORM_01, a new pseudorandom variate,
+    !    strictly between 0 and 1.
+    !
+    IMPLICIT NONE
+
+    INTEGER ( kind = 4 ), PARAMETER :: i4_huge = 2147483647
+    INTEGER ( kind = 4 ) k
+    REAL   r8_uniform_01
+    INTEGER ( kind = 4 ) seed
+
+    IF ( seed == 0 ) THEN
+       WRITE ( *, '(a)' ) ' '
+       WRITE ( *, '(a)' ) 'R8_UNIFORM_01 - Fatal error!'
+       WRITE ( *, '(a)' ) '  Input value of SEED = 0.'
+       STOP 1
+    END IF
+
+    k = seed / 127773
+
+    seed = 16807 * ( seed - k * 127773 ) - k * 2836
+
+    IF ( seed < 0 ) THEN
+       seed = seed + i4_huge
+    END IF
+
+    r8_uniform_01 = REAL ( seed ) * 4.656612875D-10
+
+    RETURN
+  END FUNCTION r8_uniform_01
 !
 END SUBROUTINE FLASH_GEOM_ELEC_n
 !
