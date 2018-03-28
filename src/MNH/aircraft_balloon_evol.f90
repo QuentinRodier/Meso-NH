@@ -131,6 +131,7 @@ END MODULE MODI_AIRCRAFT_BALLOON_EVOL
 !!     July, 2015 (O.Nuissier/F.Duffourg) Add microphysics diagnostic for
 !!                                      aircraft, ballon and profiler
 !!      October, 2016 (G.DELAUTIER) LIMA
+!!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!
 !! --------------------------------------------------------------------------
 !       
@@ -174,6 +175,7 @@ USE MODD_TIME
 USE MODD_TURB_FLUX_AIRCRAFT_BALLOON
 USE MODD_TYPE_DATE
 !
+USE MODE_DATETIME
 USE MODE_FGAU,             ONLY: GAULAG
 USE MODE_FSCATTER,         ONLY: QEPSW,QEPSI,BHMIE,MOMG,MG
 USE MODE_GRIDPROJ
@@ -182,7 +184,6 @@ USE MODE_ll
 USE MODE_MSG
 !
 USE MODI_GAMMA,            ONLY: GAMMA
-USE MODI_TEMPORAL_DIST
 USE MODI_WATER_SUM
 !
 IMPLICIT NONE
@@ -402,15 +403,7 @@ ZYHATM(  IJU  )=1.5*PYHAT(  IJU  )-0.5*PYHAT(  IJU-1)
 !*      2.3  Compute time until launch by comparison of dates and times
 !            ----------------------------------------------------------
 !
-CALL TEMPORAL_DIST( TPDTCUR%TDATE%YEAR        , &
-                    TPDTCUR%TDATE%MONTH       , &
-                    TPDTCUR%TDATE%DAY         , &
-                    TPDTCUR%TIME              , &
-                    TPFLYER%LAUNCH%TDATE%YEAR , &
-                    TPFLYER%LAUNCH%TDATE%MONTH, &
-                    TPFLYER%LAUNCH%TDATE%DAY  , &
-                    TPFLYER%LAUNCH%TIME - .001, &
-                    ZTDIST                      )
+CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TPDTCUR,ZTDIST)
 !
 !*      3.   LAUNCH
 !            ------
@@ -424,21 +417,12 @@ IF (.NOT. TPFLYER%FLY) THEN
 !*      3.1  comparison of dates and times
 !            -----------------------------
 !
-!  CALL TEMPORAL_DIST( TPDTCUR%TDATE%YEAR        , &
-!                     TPDTCUR%TDATE%MONTH       , &
-!                     TPDTCUR%TDATE%DAY         , &
-!                     TPDTCUR%TIME              , &
-!                     TPFLYER%LAUNCH%TDATE%YEAR , &
-!                     TPFLYER%LAUNCH%TDATE%MONTH, &
-!                     TPFLYER%LAUNCH%TDATE%DAY  , &
-!                     TPFLYER%LAUNCH%TIME - .001, &
-!                     ZTDIST                      )
-!
+!  CALL DATETIME_DISTANCE(TPFLYER%LAUNCH,TPDTCUR,ZTDIST)
 !
 !*      3.2  launch/takeoff is effective
 !            ---------------------------
 !
-  IF (ZTDIST >= - PTSTEP .AND. ZTDIST /= XUNDEF ) THEN
+  IF (ZTDIST >= - PTSTEP ) THEN
     IF (TPFLYER%TYPE=='AIRCRA') THEN
 !
 !*     3.2.1 Determination of flight segment
@@ -523,9 +507,7 @@ END IF
 !
 IF (GSTORE) THEN
   IN = TPFLYER%N_CUR
-  CALL TEMPORAL_DIST(TDTSEG%TDATE%YEAR,TDTSEG%TDATE%MONTH,TDTSEG%TDATE%DAY, &
-         TDTSEG%TIME,TDTEXP%TDATE%YEAR,TDTEXP%TDATE%MONTH,TDTEXP%TDATE%DAY, &
-         TDTEXP%TIME,ZTIMEEXP)
+  CALL DATETIME_DISTANCE(TDTEXP,TDTSEG,ZTIMEEXP)
   !
   TPFLYER%TIME(IN) = (IN-1) * TPFLYER%STEP + ZTIMEEXP
   TPFLYER%DATIME( 1,IN) = TPDTEXP%TDATE%YEAR

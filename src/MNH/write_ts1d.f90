@@ -70,6 +70,7 @@
 !!                      XCHEMLON could gives some profiles if specified in
 !!                      namelist DIAG1.nam. Otherwise treatment is active only in
 !!                      1D case
+!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!
 !!    EXTERNAL
 !!    --------
@@ -79,11 +80,13 @@
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
 
+USE MODE_DATETIME
 USE MODE_FM,              ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
 USE MODE_IO_MANAGE_STRUCT,ONLY: IO_FILE_ADD2LIST
 USE MODE_IO_ll
 USE MODE_GRIDPROJ
 USE MODE_ll
+!
 USE MODD_LUNIT_n,         ONLY: CINIFILE
 USE MODD_NSV,             ONLY: NSV,NSV_CHEMBEG,NSV_CHEMEND,  &
                                 NSV_AERBEG,NSV_AEREND
@@ -122,7 +125,6 @@ USE MODD_CH_JVALUES_n,    ONLY: XJVALUES   ! Jvalues and
 USE MODD_CH_INIT_JVALUES, ONLY:JPJVMAX ! their number
 USE MODD_PARAMETERS,      ONLY: XUNDEF
 USE MODD_DIAG_FLAG,       ONLY: LCHEMDIAG, XCHEMLAT, XCHEMLON
-USE MODI_TEMPORAL_DIST
 USE MODI_TRANSFER_FILE
 
 IMPLICIT NONE
@@ -165,11 +167,7 @@ CHARACTER*5  :: YCTIME  ! current time
 TZFILE => NULL()
 NBPROF = 0
 
-CALL TEMPORAL_DIST (   TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,              &
-                       TDTCUR%TDATE%DAY ,TDTCUR%TIME,                     &
-                       TDTEXP%TDATE%YEAR,TDTEXP%TDATE%MONTH,              &
-                       TDTEXP%TDATE%DAY ,TDTEXP%TIME,                     &
-                       ZTIME                                              )
+CALL DATETIME_DISTANCE(TDTEXP,TDTCUR,ZTIME)
 ZTIME = ZTIME + TDTEXP%TIME
 CALL GET_DIM_EXT_ll ('B',IIU,IJU)
 

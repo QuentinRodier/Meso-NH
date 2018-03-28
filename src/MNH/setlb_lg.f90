@@ -48,6 +48,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original        22/06/01
+!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -62,8 +63,8 @@ USE MODD_GRID_n
 USE MODD_LG
 USE MODD_NSV,         ONLY : NSV_LGBEG,NSV_LGEND
 !
+USE MODE_DATETIME
 USE MODE_ll
-USE MODI_TEMPORAL_DIST
 !
 IMPLICIT NONE
 !
@@ -81,11 +82,7 @@ REAL         :: ZTEMP_DIST  ! time from the begining of simulation
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 IKU=SIZE(XZZ,3)
 !
-CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
-                   TDTCUR%TDATE%DAY, TDTCUR%TIME,                      &
-                   TDTEXP%TDATE%YEAR,TDTEXP%TDATE%MONTH,               &
-                   TDTEXP%TDATE%DAY, TDTEXP%TIME,                      &
-                   ZTEMP_DIST)
+CALL DATETIME_DISTANCE(TDTEXP,TDTCUR,ZTEMP_DIST)
 !
 IF ( CLBCX(1) /= "CYCL" .AND. LWEST_ll()) THEN
   DO JK=1,IKU

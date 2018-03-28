@@ -109,6 +109,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
 !!      (M.Leriche)           01/07/2017 Add DIAG chimical surface fluxes
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!     (P.Wautelet) 28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -154,6 +155,7 @@ USE MODI_COUPLING_SURF_ATM_n
 USE MODI_DIAG_SURF_ATM_n
 USE MODD_MNH_SURFEX_n
 !
+USE MODE_DATETIME
 USE MODE_ll
 USE MODD_ARGSLIST_ll, ONLY : LIST_ll
 #ifdef MNH_FOREFIRE
@@ -165,7 +167,6 @@ USE MODI_COUPLING_FOREFIRE_n
 !
 USE MODD_TIME_n
 USE MODD_TIME
-USE MODI_TEMPORAL_DIST
 !
 USE MODD_PARAM_LIMA, ONLY : MSEDC=>LSEDC
 !
@@ -509,11 +510,7 @@ CALL RESHAPE_SURF(IDIM1D)
 !
 ! call to have the cumulated time since beginning of simulation
 !
-CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
-                       TDTCUR%TDATE%DAY, TDTCUR%TIME,                      &
-                       TDTSEG%TDATE%YEAR,TDTSEG%TDATE%MONTH,               &
-                       TDTSEG%TDATE%DAY, TDTSEG%TIME,        &
-                       ZTIMEC)
+CALL DATETIME_DISTANCE(TDTSEG,TDTCUR,ZTIMEC)
 !
 ! Call to surface schemes
 !                       

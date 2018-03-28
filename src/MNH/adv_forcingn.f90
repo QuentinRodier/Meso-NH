@@ -90,13 +90,15 @@ END MODULE MODI_ADV_FORCING_n
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    08/11/10 
+!!      Original    08/11/10
+!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODE_DATETIME
 USE MODE_FM
 USE MODE_IO_ll
 !
@@ -107,7 +109,6 @@ USE MODD_TIME
 USE MODD_BUDGET
 !
 USE MODI_TEMPORAL_LT
-USE MODI_TEMPORAL_DIST 
 USE MODI_BUDGET
 !
 USE MODD_ADVFRC_n     ! Modules for time evolving advfrc
@@ -202,18 +203,10 @@ ELSE
     JXP= JSX_ADV +1
     WRITE(UNIT=ILUOUT0,FMT='(" THE ADV FORCING FIELDS ARE INTERPOLATED NOW" ,&
     & " BETWEEN SOUNDING NUMBER ",I2," AND SOUNDING NUMBER ",I2)') JSX_ADV,JXP
-    CALL TEMPORAL_DIST ( TDTADVFRC(JXP)%TDATE%YEAR,TDTADVFRC(JXP)%TDATE%MONTH,   &
-                         TDTADVFRC(JXP)%TDATE%DAY ,TDTADVFRC(JXP)%TIME,          &
-                         TDTADVFRC(JSX_ADV)%TDATE%YEAR ,TDTADVFRC(JSX_ADV)%TDATE%MONTH,  &
-                         TDTADVFRC(JSX_ADV)%TDATE%DAY  ,TDTADVFRC(JSX_ADV)%TIME,         &
-                         ZSDTJX                                            )
+    CALL DATETIME_DISTANCE(TDTADVFRC(JSX_ADV),TDTADVFRC(JXP),ZSDTJX)
   END IF
 !
-  CALL TEMPORAL_DIST ( TPDTCUR%TDATE%YEAR   ,TPDTCUR%TDATE%MONTH,      &
-                       TPDTCUR%TDATE%DAY    ,TPDTCUR%TIME,             &
-                       TDTADVFRC(JSX_ADV)%TDATE%YEAR,TDTADVFRC(JSX_ADV)%TDATE%MONTH, &
-                       TDTADVFRC(JSX_ADV)%TDATE%DAY ,TDTADVFRC(JSX_ADV)%TIME,        &
-                       ZDT                                             )
+  CALL DATETIME_DISTANCE(TDTADVFRC(JSX_ADV),TPDTCUR,ZDT)
 !
   ZALPHA = ZDT / ZSDTJX
 !

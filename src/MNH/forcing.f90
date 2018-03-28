@@ -148,11 +148,13 @@ END MODULE MODI_FORCING
 !!      06/2012  V. Masson            Adds tendency of geostrophic wind itself to wind tendency
 !!      01/2014  J. escobar           correction for // initialisation geostrophic ZUF,ZVF,ZWF 
 !!      09/2017 Q.Rodier add LTEND_UV_FRC
+!!      28/03/2018 P. Wautelet        Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
+USE MODE_DATETIME
 USE MODE_FM
 USE MODE_IO_ll
 USE MODE_MSG
@@ -169,7 +171,6 @@ USE MODD_CST
 USE MODI_SHUMAN
 USE MODI_UPSTREAM_Z
 USE MODI_TEMPORAL_LT
-USE MODI_TEMPORAL_DIST 
 USE MODI_BUDGET
 !
 USE MODI_GET_HALO
@@ -419,18 +420,10 @@ ELSE
     JXP= JSX +1
     WRITE(UNIT=ILUOUT0,FMT='(" THE FORCING FIELDS ARE INTERPOLATED NOW" ,&
     & " BETWEEN SOUNDING NUMBER ",I2," AND SOUNDING NUMBER ",I2)') JSX,JXP
-    CALL TEMPORAL_DIST ( TDTFRC(JXP)%TDATE%YEAR,TDTFRC(JXP)%TDATE%MONTH,   &
-                         TDTFRC(JXP)%TDATE%DAY ,TDTFRC(JXP)%TIME,          &
-                         TDTFRC(JSX)%TDATE%YEAR ,TDTFRC(JSX)%TDATE%MONTH,  &
-                         TDTFRC(JSX)%TDATE%DAY  ,TDTFRC(JSX)%TIME,         &
-                         ZSDTJX                                            )
+    CALL DATETIME_DISTANCE(TDTFRC(JSX),TDTFRC(JXP),ZSDTJX)
   END IF
 !
-  CALL TEMPORAL_DIST ( TPDTCUR%TDATE%YEAR   ,TPDTCUR%TDATE%MONTH,      &
-                       TPDTCUR%TDATE%DAY    ,TPDTCUR%TIME,             &
-                       TDTFRC(JSX)%TDATE%YEAR,TDTFRC(JSX)%TDATE%MONTH, &
-                       TDTFRC(JSX)%TDATE%DAY ,TDTFRC(JSX)%TIME,        &
-                       ZDT                                             )
+  CALL DATETIME_DISTANCE(TDTFRC(JSX),TPDTCUR,ZDT)
 !
   ZALPHA = ZDT / ZSDTJX
 !

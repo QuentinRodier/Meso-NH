@@ -229,11 +229,13 @@ END MODULE MODI_PHYS_PARAM_n
 !!      M. Leriche 02/2017 Avoid negative fluxes if sv=0 outside the physics domain
 !!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
 !!                       to be called directly by modeln as the last process 
+!!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
 !               ------------
 !    
+USE MODE_DATETIME
 USE MODE_ll
 USE MODE_FM
 USE MODE_FMWRIT
@@ -296,7 +298,6 @@ USE MODI_TURB
 USE MODI_SUNPOS_n
 USE MODI_RADIATIONS
 USE MODI_CONVECTION
-USE MODI_TEMPORAL_DIST
 USE MODI_BUDGET
 USE MODI_PASPOL
 USE MODI_CONDSAMP
@@ -588,11 +589,7 @@ IF (CRAD /='NONE') THEN
 !  test to see if the partial radiations for cloudy must be called
 !
   IF (CRAD =='ECMW') THEN
-    CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
-                       TDTCUR%TDATE%DAY, TDTCUR%TIME,                      &
-                       TDTRAD_CLONLY%TDATE%YEAR,TDTRAD_CLONLY%TDATE%MONTH, &
-                       TDTRAD_CLONLY%TDATE%DAY, TDTRAD_CLONLY%TIME,        &
-                       ZTEMP_DIST)
+    CALL DATETIME_DISTANCE(TDTRAD_CLONLY,TDTCUR,ZTEMP_DIST)
     IF( MOD(NINT(ZTEMP_DIST/XTSTEP),NINT(XDTRAD_CLONLY/XTSTEP))==0 ) THEN
       TDTRAD_CLONLY = TDTCUR
       GRAD = .TRUE.
@@ -602,11 +599,7 @@ IF (CRAD /='NONE') THEN
 !   
 ! test to see if the full radiations must be called
 !   
-  CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
-                     TDTCUR%TDATE%DAY, TDTCUR%TIME,                      &
-                     TDTRAD_FULL%TDATE%YEAR,TDTRAD_FULL%TDATE%MONTH,     &
-                     TDTRAD_FULL%TDATE%DAY, TDTRAD_FULL%TIME,            &
-                     ZTEMP_DIST)
+  CALL DATETIME_DISTANCE(TDTCUR,TDTRAD_FULL,ZTEMP_DIST)
   IF( MOD(NINT(ZTEMP_DIST/XTSTEP),NINT(XDTRAD/XTSTEP))==0 ) THEN
     TDTRAD_FULL = TDTCUR
     GRAD = .TRUE.
@@ -818,11 +811,7 @@ IF( CDCONV /= 'NONE' .OR. CSCONV == 'KAFR' ) THEN
 !
   GDCONV = .FALSE.
 !
-  CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,         &
-                     TDTCUR%TDATE%DAY, TDTCUR%TIME,                &
-                     TDTDCONV%TDATE%YEAR,TDTDCONV%TDATE%MONTH,     &
-                     TDTDCONV%TDATE%DAY, TDTDCONV%TIME,            &
-                     ZTEMP_DIST)
+  CALL DATETIME_DISTANCE(TDTDCONV,TDTCUR,ZTEMP_DIST)
   IF( MOD(NINT(ZTEMP_DIST/XTSTEP),NINT(XDTCONV/XTSTEP))==0 ) THEN
     TDTDCONV = TDTCUR
     GDCONV   = .TRUE.

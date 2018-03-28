@@ -129,18 +129,19 @@ END MODULE MODI_READ_ALL_DATA_GRIB_CASE
 !!                  08/06/2010 (G. Tanguy) replace GRIBEX by GRIB_API : change
 !!                                         of all the subroutine
 !!                  05/12/2016 (G.Delautier) length of HGRID for grib_api > 1.14
+!!                  08/03/2018 (P.Wautelet)  replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !-------------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
 !------------
 !
+USE MODE_DATETIME
 USE MODE_FM,    ONLY: IO_FILE_CLOSE_ll
 USE MODE_IO_ll, ONLY: UPCASE
 USE MODE_MSG
 USE MODE_TIME
 USE MODE_THERMO
 !
-USE MODI_ADD_FORECAST_TO_DATE
 USE MODI_READ_HGRID_n
 USE MODI_READ_VER_GRID
 USE MODI_XYTOLATLON
@@ -1386,10 +1387,7 @@ SELECT CASE (CSTEPUNIT)       ! Time unit indicator
    CASE DEFAULT
     WRITE (ILUOUT0,'(A,A,A)') ' | error CSTEPUNIT=',CSTEPUNIT, ' is different of s,m or h'
 END SELECT
-CALL ADD_FORECAST_TO_DATE(TPTCUR%TDATE%YEAR, &
-                          TPTCUR%TDATE%MONTH,&
-                          TPTCUR%TDATE%DAY,  &
-                          TPTCUR%TIME        )
+CALL DATETIME_CORRECTDATE(TPTCUR)
 IF (HFILE(1:3)=='ATM') THEN
   CALL SM_PRINT_TIME(TPTCUR,TLUOUT0,'MESONH current date')
   TDTCUR = TPTCUR

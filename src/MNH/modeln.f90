@@ -93,7 +93,7 @@ END MODULE MODI_MODEL_n
 !!                                 couple Model_n with outer informations.
 !!      Subroutine ENDSTEP_BUDGET: writes the budget informations.
 !!      Subroutine IO_FILE_CLOSE_ll: closes a file
-!!      Subroutine ADD_FORECAST_TO_DATE : transform the current time in GMT
+!!      Subroutine DATETIME_CORRECTDATE: transform the current time in GMT
 !!      Subroutine FORCING : computes forcing terms
 !!      Subroutine ADD3DFIELD_ll : add a field to 3D-list
 !!
@@ -249,6 +249,7 @@ END MODULE MODI_MODEL_n
 !!                   10/2017 (C.Lac) Necessity to have chemistry processes as
 !!                            the las process modifying XRSVS
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!  03/2018     (P.Wautelet)   replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -328,6 +329,7 @@ USE MODD_TIMEZ
 USE MODD_TURB_CLOUD,     ONLY: NMODEL_CLOUD,CTURBLEN_CLOUD,XCEI
 USE MODD_TURB_n
 !
+USE MODE_DATETIME
 USE MODE_ELEC_ll
 USE MODE_FM
 USE MODE_GRIDCART         
@@ -340,7 +342,6 @@ USE MODE_MODELN_HANDLER
 USE MODE_MPPDB
 USE MODE_NETCDF
 !
-USE MODI_ADD_FORECAST_TO_DATE
 USE MODI_ADVECTION_METSV
 USE MODI_ADVECTION_UVW     
 USE MODI_ADVECTION_UVW_CEN 
@@ -393,7 +394,6 @@ USE MODI_SET_MASK
 USE MODI_SHUMAN
 USE MODI_SPAWN_LS_n
 USE MODI_STATION_n
-USE MODI_TEMPORAL_DIST
 USE MODI_TURB_CLOUD_INDEX
 USE MODI_TWO_WAY
 USE MODI_UPDATE_NSV
@@ -2010,10 +2010,7 @@ END IF
 !               --------------------
 !
 TDTCUR%TIME=TDTCUR%TIME + XTSTEP
-CALL ADD_FORECAST_TO_DATE(TDTCUR%TDATE%YEAR, &
-                          TDTCUR%TDATE%MONTH,&
-                          TDTCUR%TDATE%DAY,  &
-                          TDTCUR%TIME        )
+CALL DATETIME_CORRECTDATE(TDTCUR)
 !
 !-------------------------------------------------------------------------------
 !

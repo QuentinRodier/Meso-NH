@@ -149,7 +149,7 @@ END MODULE MODI_INI_CPL
 !!      IO_FILE_CLOSE_ll : to close a FM-file
 !!      INI_LS      : to initialize larger scale fields
 !!      INI_LB      : to initialize "2D" surfacic LB fields 
-!!      TEMPORAL_DIST : compute the temporal distance in secunds between 2 dates
+!!      DATETIME_DISTANCE : compute the temporal distance in seconds between 2 dates
 !!
 !!      Module MODE_TIME : contains SM_PRINT_TIME routine
 !!                         and uses module MODD_TIME (for definition
@@ -212,6 +212,7 @@ END MODULE MODI_INI_CPL
 !!      Modification             05/2006  Remove KEPS
 !!                     (Escobar) 2/2014 add Forefire
 !!                     (J.Escobar) 26/03/2014 bug in init of NSV_USER on RESTA case
+!!                     (P.Wautelet)28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -230,6 +231,7 @@ USE MODD_TIME_n
 ! USE MODD_FOREFIRE_n
 ! #endif
 !
+USE MODE_DATETIME
 USE MODE_FM, ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
 USE MODE_FMREAD
 USE MODE_IO_ll
@@ -240,7 +242,6 @@ USE MODE_TIME
 !
 USE MODI_INI_LS
 USE MODI_INI_LB
-USE MODI_TEMPORAL_DIST
 !
 IMPLICIT NONE
 !
@@ -358,13 +359,9 @@ DO JCI=1,NCPL_NBR
 !
 !*       2.2   Check chronological order
 !
-  CALL TEMPORAL_DIST(TDTCPL(JCI)%TDATE%YEAR,TDTCPL(JCI)%TDATE%MONTH,    &
-                     TDTCPL(JCI)%TDATE%DAY ,TDTCPL(JCI)%TIME,           &
-                     TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,              &
-                     TDTCUR%TDATE%DAY ,TDTCUR%TIME,                     &
-                     ZDIST                                              )
+  CALL DATETIME_DISTANCE(TDTCUR,TDTCPL(JCI),ZDIST)
   !
-  IF ( ZDIST == XUNDEF .OR. ZDIST ==0. ) THEN
+  IF ( ZDIST <=0. ) THEN
     WRITE(ILUOUT,FMT=9002) 1
     WRITE(ILUOUT,*) 'YOUR COUPLING FILE ',JCI,' IS PREVIOUS TO THE DATE &
                & CORRESPONDING TO THE BEGINNING OF THE SEGMENT. IT WILL &
@@ -379,13 +376,9 @@ DO JCI=1,NCPL_NBR
   END IF
   !
   IF (JCI > 1) THEN
-    CALL TEMPORAL_DIST(TDTCPL(JCI)%TDATE%YEAR,TDTCPL(JCI)%TDATE%MONTH,      &
-                       TDTCPL(JCI)%TDATE%DAY ,TDTCPL(JCI)%TIME,             &
-                       TDTCPL(JCI-1)%TDATE%YEAR,TDTCPL(JCI-1)%TDATE%MONTH,  &
-                       TDTCPL(JCI-1)%TDATE%DAY ,TDTCPL(JCI-1)%TIME,         &
-                       ZDIST                                                )
+    CALL DATETIME_DISTANCE(TDTCPL(JCI-1),TDTCPL(JCI),ZDIST)
     !
-    IF ( ZDIST == XUNDEF ) THEN
+    IF ( ZDIST < 0. ) THEN
       WRITE(ILUOUT,FMT=9003) 1
       WRITE(ILUOUT,*) 'YOU MUST SPECIFY THE COUPLING FILES IN A CHRONOLOGICAL &
                        & ORDER'
