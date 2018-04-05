@@ -12,19 +12,20 @@
       MODULE MODI_PREP_SURF_MNH
 !     #############################
 INTERFACE
-      SUBROUTINE PREP_SURF_MNH(HATMFILE,HATMFILETYPE)
+      SUBROUTINE PREP_SURF_MNH(HATMFILE,HATMFILETYPE,OINIFILEOPEN)
 !
-CHARACTER(LEN=28), INTENT(IN)    :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),  INTENT(IN)    :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6), INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
+LOGICAL, OPTIONAL,INTENT(IN) :: OINIFILEOPEN! Open the INI file here (or not)
 !
 END SUBROUTINE PREP_SURF_MNH
 !
 END INTERFACE
 END MODULE MODI_PREP_SURF_MNH
 !
-!     #######################################################
-      SUBROUTINE PREP_SURF_MNH(HATMFILE,HATMFILETYPE)
-!     #######################################################
+!     ############################################################
+      SUBROUTINE PREP_SURF_MNH(HATMFILE,HATMFILETYPE,OINIFILEOPEN)
+!     ############################################################
 !
 !!****  *PREP_SURF_MNH* - calls surface field preparation
 !!
@@ -56,6 +57,7 @@ USE MODD_LUNIT_n,     ONLY : CINIFILE, TINIFILE
 USE MODD_MNH_SURFEX_n
 USE MODD_TIME_n,      ONLY : TDTCUR
 !
+USE MODE_FM,       ONLY : IO_FILE_OPEN_ll
 USE MODE_PREP_CTL, ONLY : PREP_CTL
 !
 USE MODI_INIT_PGD_SURF_ATM
@@ -68,8 +70,9 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-CHARACTER(LEN=28), INTENT(IN)   :: HATMFILE    ! name of the Atmospheric file
-CHARACTER(LEN=6),  INTENT(IN)   :: HATMFILETYPE! type of the Atmospheric file
+CHARACTER(LEN=28),INTENT(IN) :: HATMFILE    ! name of the Atmospheric file
+CHARACTER(LEN=6), INTENT(IN) :: HATMFILETYPE! type of the Atmospheric file
+LOGICAL, OPTIONAL,INTENT(IN) :: OINIFILEOPEN! Open the INI file here (or not)
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
@@ -99,6 +102,10 @@ CALL INIT_PGD_SURF_ATM(YSURF_CUR,'MESONH','PRE',HATMFILE,YATMFILETYPE,  &
                        TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, &
                        TDTCUR%TDATE%DAY, TDTCUR%TIME          )
 CALL PREP_SURF_ATM(YSURF_CUR,'MESONH',HATMFILE,YATMFILETYPE,HATMFILE,YATMFILETYPE,YLCTL)
+IF (PRESENT(OINIFILEOPEN)) THEN
+  !This is done here because model dimensions were not known before this call (for PREP_SURFEX)
+  IF (OINIFILEOPEN) CALL IO_FILE_OPEN_ll(TINIFILE)
+END IF
 CALL WRITE_SURF_ATM_n(YSURF_CUR,'MESONH','PRE',.FALSE.)
 CALL WRITE_DIAG_SURF_ATM_n(YSURF_CUR,'MESONH','PRE')
 !
