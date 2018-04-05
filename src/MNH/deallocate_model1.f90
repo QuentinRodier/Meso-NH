@@ -219,14 +219,16 @@ IF ( ASSOCIATED(XLON) .AND. KCALL == 3 ) THEN
 END IF
 !
 IF ( KCALL == 3 ) THEN
-  DEALLOCATE(XXHAT)
+  !Philippe W.: do not deallocate XXHAT, XYHAT and XZHAT because they are needed later on
+  !As they are 1D, their memory footprint is negligible
+  ! DEALLOCATE(XXHAT)
   DEALLOCATE(XDXHAT)
-  DEALLOCATE(XYHAT)
+  ! DEALLOCATE(XYHAT)
   DEALLOCATE(XDYHAT)
   DEALLOCATE(XZS)
   DEALLOCATE(XZSMT)
   DEALLOCATE(XZZ)
-  DEALLOCATE(XZHAT)
+  ! DEALLOCATE(XZHAT)
 END IF
 !
 IF ( KCALL == 2 ) THEN

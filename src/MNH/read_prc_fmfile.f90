@@ -163,9 +163,6 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZINPRG_LS
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZACPRG_LS
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZINPRH_LS
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZACPRH_LS
-REAL, DIMENSION(:),     ALLOCATABLE :: ZXHAT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZYHAT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZZHAT
 INTEGER  :: IMI
 !
 !20131105 add vars related to ADD3DFIELD and UPDATE_HALO
@@ -290,18 +287,6 @@ END IF
 !
 !-------------------------------------------------------------------------------
 !
-!*       4.    SAVE FIELDS STORED IN MODEL1 MODULE already INITIALIZED in PREP_REAL_CASE
-!              -------------------------------------------------------------------------
-!
-ALLOCATE(ZXHAT(SIZE(XXHAT)))
-ALLOCATE(ZYHAT(SIZE(XYHAT)))
-ALLOCATE(ZZHAT(SIZE(XZHAT)))
-ZXHAT(:) = XXHAT(:)
-ZYHAT(:) = XYHAT(:)
-ZZHAT(:) = XZHAT(:)
-!
-!-------------------------------------------------------------------------------
-!
 !*       5.    DEALLOCATIONS OF FIELDS OF MODEL1
 !              ---------------------------------
 !
@@ -316,16 +301,6 @@ DEALLOCATE(XTHVREFZ)
 !
 !*       6.    RECOVERS FIELDS STORED IN MODEL1 MODULE already INITIALIZED in PREP_REAL_CASE
 !              -----------------------------------------------------------------------------
-!
-ALLOCATE(XXHAT(SIZE(ZXHAT)))
-ALLOCATE(XYHAT(SIZE(ZYHAT)))
-ALLOCATE(XZHAT(SIZE(ZZHAT)))
-XXHAT(:) = ZXHAT(:)
-XYHAT(:) = ZYHAT(:)
-XZHAT(:) = ZZHAT(:)
-DEALLOCATE(ZXHAT)
-DEALLOCATE(ZYHAT)
-DEALLOCATE(ZZHAT)
 !
 IF (ALLOCATED(ZINPRC_LS)) THEN
   ALLOCATE(XINPRC(IIU,IJU))
