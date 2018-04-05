@@ -120,6 +120,8 @@ END SUBROUTINE CLEANIOCDF
 
 SUBROUTINE IO_SET_KNOWNDIMS_NC4(TPFILE)
 
+USE MODD_CONF,          ONLY: CPROGRAM
+USE MODD_CONF_n,        ONLY: CSTORAGE_TYPE
 USE MODD_DIM_n,         ONLY: NIMAX_ll, NJMAX_ll, NKMAX
 USE MODD_PARAMETERS_ll, ONLY: JPHEXT, JPVEXT
 
@@ -142,10 +144,19 @@ IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_U))    PIOCDF%DIM_NI_U    => GETDIMCDF(TPFILE
 IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_U))    PIOCDF%DIM_NJ_U    => GETDIMCDF(TPFILE, IJU_ll, 'nj_u')
 IF (.NOT. ASSOCIATED(PIOCDF%DIM_NI_V))    PIOCDF%DIM_NI_V    => GETDIMCDF(TPFILE, IIU_ll, 'ni_v')
 IF (.NOT. ASSOCIATED(PIOCDF%DIM_NJ_V))    PIOCDF%DIM_NJ_V    => GETDIMCDF(TPFILE, IJU_ll, 'nj_v')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => GETDIMCDF(TPFILE, IKU   , 'level')
-IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => GETDIMCDF(TPFILE, IKU   , 'level_w')
-
-IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => GETDIMCDF(TPFILE, NF90_UNLIMITED, 'time')
+IF (TRIM(CPROGRAM)/='PGD' .AND. TRIM(CPROGRAM)/='NESPGD' .AND. TRIM(CPROGRAM)/='ZOOMPG' &
+    .AND. .NOT.(TRIM(CPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   PIOCDF%DIM_LEVEL   => GETDIMCDF(TPFILE, IKU   , 'level')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) PIOCDF%DIM_LEVEL_W => GETDIMCDF(TPFILE, IKU   , 'level_w')
+  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME)) PIOCDF%DIMTIME => GETDIMCDF(TPFILE, NF90_UNLIMITED, 'time')
+ELSE
+  !PGD and SURFEX files for MesoNH have no vertical levels or time scale
+  !These dimensions are allocated to default values
+  !(they need to be allocated when looking for dimensions of variables)
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL))   ALLOCATE(PIOCDF%DIM_LEVEL)
+  IF (.NOT. ASSOCIATED(PIOCDF%DIM_LEVEL_W)) ALLOCATE(PIOCDF%DIM_LEVEL_W)
+  IF (.NOT. ASSOCIATED(PIOCDF%DIMTIME))     ALLOCATE(PIOCDF%DIMTIME)
+END IF
 
 ! Store X,Y,Z coordinates for the Arakawa points
 ! Mass point
@@ -193,6 +204,7 @@ USE MODD_PARAMETERS, ONLY: JPHEXT, JPVEXT
 
 USE MODE_FIELD,      ONLY: TFIELDLIST,FIND_FIELD_ID_FROM_MNHNAME
 USE MODE_GRIDPROJ
+USE MODE_NEST_ll,    ONLY: GET_MODEL_NUMBER_ll, GO_TOMODEL_ll
 
 TYPE(TFILEDATA),          INTENT(IN) :: TPFILE
 CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming from this program
@@ -200,15 +212,25 @@ CHARACTER(LEN=*),OPTIONAL,INTENT(IN) :: HPROGRAM_ORIG !To emulate a file coming 
 CHARACTER(LEN=:),ALLOCATABLE    :: YSTDNAMEPREFIX
 CHARACTER(LEN=:),ALLOCATABLE    :: YPROGRAM
 INTEGER                         :: IIU, IJU, IKU
-INTEGER                         :: ID, IRESP
+INTEGER                         :: ID, IID, IRESP
+INTEGER                         :: IMI
 INTEGER(KIND=IDCDF_KIND)        :: INCID
+LOGICAL                         :: GCHANGEMODEL
+LOGICAL,POINTER                 :: GSLEVE
+REAL,DIMENSION(:),POINTER       :: ZXHAT, ZYHAT, ZZHAT
 REAL,DIMENSION(:),ALLOCATABLE   :: ZXHATM, ZYHATM,ZZHATM !Coordinates at mass points in the transformed space
 REAL,DIMENSION(:,:),POINTER     :: ZLAT, ZLON
 TYPE(IOCDF), POINTER            :: PIOCDF
 
 CALL PRINT_MSG(NVERB_DEBUG,'IO','IO_WRITE_COORDVAR_NC4','called for '//TRIM(TPFILE%CNAME))
 
+ZXHAT => NULL()
+ZYHAT => NULL()
+ZZHAT => NULL()
+
 PIOCDF => TPFILE%TNCDIMS
+
+GCHANGEMODEL = .FALSE.
 
 IF (PRESENT(HPROGRAM_ORIG)) THEN
   YPROGRAM = HPROGRAM_ORIG
@@ -219,86 +241,102 @@ ENDIF
 ! Get the Netcdf file ID
 INCID = TPFILE%NNCID
 
-IF ( TRIM(YPROGRAM)/='PGD' &
-    .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
-  IIU = SIZE(XXHAT)
-  IJU = SIZE(XYHAT)
-  ALLOCATE(ZXHATM(IIU),ZYHATM(IJU))
-  !ZXHATM(IIU) and ZYHATM(IJU) are correct only on some processes
-  !but it is OK due to the way GATHER_XXFIELD is done
-  ZXHATM(1:IIU-1) = 0.5*(XXHAT(1:IIU-1)+XXHAT(2:IIU))
-  ZXHATM(IIU)     = 2.*XXHAT(IIU)-ZXHATM(IIU-1)
-  ZYHATM(1:IJU-1) = 0.5*(XYHAT(1:IJU-1)+XYHAT(2:IJU))
-  ZYHATM(IJU)     = 2.*XYHAT(IJU)-ZYHATM(IJU-1)
+IF (TPFILE%NMODEL>0) THEN
+  CALL FIND_FIELD_ID_FROM_MNHNAME('XHAT',IID,IRESP)
+  ZXHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
+  CALL FIND_FIELD_ID_FROM_MNHNAME('YHAT',IID,IRESP)
+  ZYHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
+  CALL FIND_FIELD_ID_FROM_MNHNAME('ZHAT',IID,IRESP)
+  ZZHAT => TFIELDLIST(IID)%TFIELD_X1D(TPFILE%NMODEL)%DATA
+  CALL FIND_FIELD_ID_FROM_MNHNAME('SLEVE',IID,IRESP)
+  GSLEVE => TFIELDLIST(IID)%TFIELD_L0D(TPFILE%NMODEL)%DATA
   !
-  IF (LCARTESIAN) THEN
-    YSTDNAMEPREFIX = 'plane'
-  ELSE
-    YSTDNAMEPREFIX = 'projection'
-  ENDIF
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location', &
-                       TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_u_location','X',-0.5,JPHEXT,0,     XXHAT)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location', &
-                       TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_u_location','Y', 0., JPHEXT,JPHEXT,ZYHATM)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location', &
-                       TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_v_location','X', 0., JPHEXT,JPHEXT,ZXHATM)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location', &
-                       TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_v_location','Y',-0.5,JPHEXT,0,     XYHAT)
-  !
-  IF (.NOT.LCARTESIAN) THEN
-    ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
-    !
-    !Compute latitude/longitude for the Arakawa points
-    !
-    ! Mass point
-    CALL WRITE_HOR_2DCOORD(ZXHATM,ZYHATM,'latitude',  'longitude')
-    ! u point
-    CALL WRITE_HOR_2DCOORD(XXHAT, ZYHATM,'latitude_u','longitude_u')
-    ! v point
-    CALL WRITE_HOR_2DCOORD(ZXHATM,XYHAT, 'latitude_v','longitude_v')
-    ! xi vorticity point (=f point =uv point)
-    CALL WRITE_HOR_2DCOORD(XXHAT, XYHAT, 'latitude_f','longitude_f')
-    !
-    DEALLOCATE(ZLAT,ZLON)
+  CALL GET_MODEL_NUMBER_ll(IMI)
+  IF (IMI/=TPFILE%NMODEL) THEN
+    !This is necessary to have correct domain sizes (used by GATHER_XXFIELD)
+    CALL GO_TOMODEL_ll(TPFILE%NMODEL,IRESP)
+    GCHANGEMODEL = .TRUE.
   END IF
-  !
-  DEALLOCATE(ZXHATM,ZYHATM)
 ELSE
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid','x_grid_index','X',0.,JPHEXT,JPHEXT)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid','y_grid_index','Y',0.,JPHEXT,JPHEXT)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location','x_grid_index_at_u_location','X',-0.5,JPHEXT,0)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location','y_grid_index_at_u_location',&
-                       'Y', 0., JPHEXT,JPHEXT)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location','x_grid_index_at_v_location',&
-                       'X', 0., JPHEXT,JPHEXT)
-  CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location','y_grid_index_at_v_location','Y',-0.5,JPHEXT,0)
+  ZXHAT => XXHAT
+  ZYHAT => XYHAT
+  ZZHAT => XZHAT
+  GSLEVE => LSLEVE
+END IF
+
+IIU = SIZE(ZXHAT)
+IJU = SIZE(ZYHAT)
+ALLOCATE(ZXHATM(IIU),ZYHATM(IJU))
+!ZXHATM(IIU) and ZYHATM(IJU) are correct only on some processes
+!but it is OK due to the way GATHER_XXFIELD is done
+ZXHATM(1:IIU-1) = 0.5*(ZXHAT(1:IIU-1)+ZXHAT(2:IIU))
+ZXHATM(IIU)     = 2.*ZXHAT(IIU)-ZXHATM(IIU-1)
+ZYHATM(1:IJU-1) = 0.5*(ZYHAT(1:IJU-1)+ZYHAT(2:IJU))
+ZYHATM(IJU)     = 2.*ZYHAT(IJU)-ZYHATM(IJU-1)
+!
+IF (LCARTESIAN) THEN
+  YSTDNAMEPREFIX = 'plane'
+ELSE
+  YSTDNAMEPREFIX = 'projection'
 ENDIF
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NI,'x-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_x_coordinate','X',0.,JPHEXT,JPHEXT,ZXHATM)
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ,'y-dimension of the grid',TRIM(YSTDNAMEPREFIX)//'_y_coordinate','Y',0.,JPHEXT,JPHEXT,ZYHATM)
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_U,'x-dimension of the grid at u location', &
+                     TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_u_location','X',-0.5,JPHEXT,0,     ZXHAT)
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_U,'y-dimension of the grid at u location', &
+                     TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_u_location','Y', 0., JPHEXT,JPHEXT,ZYHATM)
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NI_V,'x-dimension of the grid at v location', &
+                     TRIM(YSTDNAMEPREFIX)//'_x_coordinate_at_v_location','X', 0., JPHEXT,JPHEXT,ZXHATM)
+CALL WRITE_HOR_COORD(PIOCDF%DIM_NJ_V,'y-dimension of the grid at v location', &
+                     TRIM(YSTDNAMEPREFIX)//'_y_coordinate_at_v_location','Y',-0.5,JPHEXT,0,     ZYHAT)
+!
+IF (.NOT.LCARTESIAN) THEN
+  ALLOCATE(ZLAT(IIU,IJU),ZLON(IIU,IJU))
+  !
+  !Compute latitude/longitude for the Arakawa points
+  !
+  ! Mass point
+  CALL WRITE_HOR_2DCOORD(ZXHATM,ZYHATM,'latitude',  'longitude')
+  ! u point
+  CALL WRITE_HOR_2DCOORD(ZXHAT, ZYHATM,'latitude_u','longitude_u')
+  ! v point
+  CALL WRITE_HOR_2DCOORD(ZXHATM,ZYHAT, 'latitude_v','longitude_v')
+  ! xi vorticity point (=f point =uv point)
+  CALL WRITE_HOR_2DCOORD(ZXHAT, ZYHAT, 'latitude_f','longitude_f')
+  !
+  DEALLOCATE(ZLAT,ZLON)
+END IF
+!
+DEALLOCATE(ZXHATM,ZYHATM)
 !
 IF (TPFILE%LMASTER) THEN !vertical coordinates in the transformed space are the same on all processes
-  IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' &
+  IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
       .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
     !
-    IKU = SIZE(XZHAT)
+    IKU = SIZE(ZZHAT)
     ALLOCATE(ZZHATM(IKU))
-    ZZHATM(1:IKU-1) = 0.5 * (XZHAT(2:IKU)+XZHAT(1:IKU-1))
-    ZZHATM(IKU)     = 2.* XZHAT(IKU) - ZZHATM(IKU-1)
+    ZZHATM(1:IKU-1) = 0.5 * (ZZHAT(2:IKU)+ZZHAT(1:IKU-1))
+    ZZHATM(IKU)     = 2.* ZZHAT(IKU) - ZZHATM(IKU-1)
     !
     CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL,  'position z in the transformed space',              '', &
                          'altitude',               0., JPVEXT,JPVEXT,ZZHATM)
     !
     CALL WRITE_VER_COORD(PIOCDF%DIM_LEVEL_W,'position z in the transformed space at w location','', &
-                         'altitude_at_w_location',-0.5,JPVEXT,0,     XZHAT)
+                         'altitude_at_w_location',-0.5,JPVEXT,0,     ZZHAT)
     !
     DEALLOCATE(ZZHATM)
   END IF
 END IF
 !
 !Write time scale
-IF (TPFILE%LMASTER) THEN
-  CALL WRITE_TIME_COORD(PIOCDF%DIMTIME)
+IF (TPFILE%LMASTER) THEN !Time scale is the same on all processes
+  IF (TRIM(YPROGRAM)/='PGD' .AND. TRIM(YPROGRAM)/='NESPGD' .AND. TRIM(YPROGRAM)/='ZOOMPG' &
+      .AND. .NOT.(TRIM(YPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU') ) THEN !condition to detect PREP_SURFEX
+    CALL WRITE_TIME_COORD(PIOCDF%DIMTIME)
+  END IF
 END IF
+
+IF (GCHANGEMODEL) CALL GO_TOMODEL_ll(IMI,IRESP)
 
 CONTAINS
 SUBROUTINE WRITE_HOR_COORD(TDIM,HLONGNAME,HSTDNAME,HAXIS,PSHIFT,KBOUNDLOW,KBOUNDHIGH,PCOORDS)
@@ -494,7 +532,7 @@ SUBROUTINE WRITE_VER_COORD(TDIM,HLONGNAME,HSTDNAME,HCOMPNAME,PSHIFT,KBOUNDLOW,KB
   STATUS = NF90_PUT_ATT(INCID, IVARID, 'c_grid_dynamic_range',TRIM(YRANGE))
   IF (STATUS /= NF90_NOERR) CALL HANDLE_ERR(status,__LINE__,'WRITE_NC_COORDS_VAR[NF90_PUT_VAR] '//TRIM(YVARNAME))
   !
-  IF (LSLEVE) THEN
+  IF (GSLEVE) THEN
     !Remark: ZS, ZSMT and ZTOP in the formula are the same for mass point or flux point
     STATUS = NF90_PUT_ATT(INCID, IVARID,'formula_terms','s: '//TRIM(YVARNAME)//                   &
                                         ' height: ZTOP oro_ls: ZSMT oro: ZS len1: LEN1 len2: LEN2')
@@ -744,9 +782,7 @@ IF(PRESENT(HCALENDAR)) THEN
 ENDIF
 !
 ! Coordinates (CF convention)
-IF (.NOT.GISCOORD               &
-    .AND. TRIM(CPROGRAM)/='PGD' &
-    .AND. .NOT.(TRIM(CPROGRAM)=='REAL' .AND. CSTORAGE_TYPE=='SU' ) ) THEN !condition to detect PREP_SURFEX
+IF (.NOT.GISCOORD) THEN
   !0D: nothing to do
   !1D: no direct correspondance with latitude(_x)/longitude(_x) 2D variables => nothing to do
   IF (.NOT.LCARTESIAN .AND. TPFIELD%NDIMS>1 .AND. TPFIELD%NGRID/=0) THEN
