@@ -125,6 +125,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!J.Escobar10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!J.Escobar 5/04/2018: for real*4 compilation, replace DEXP => EXP
 !----------------------------------------------------
 !################################################################
 !
@@ -497,7 +498,7 @@ IF ( PA<=ZALPHA ) THEN
     !
     ! 110 deb
     ZTEMP = DLGA(PA*1.)
-    ZU = DEXP(ZTEMP) - (PX**PA)/PA
+    ZU = EXP(ZTEMP) - (PX**PA)/PA
     ! 110 end
     !
   ENDIF
@@ -548,7 +549,7 @@ IF ( PA<=ZALPHA ) THEN
     !
     ZT = EXP(PX) * PX**(-PA)
     PG = ZT * PG
-    PGSTAR = 1. - PA * PG * DEXP(-ZALGP1) / ZT
+    PGSTAR = 1. - PA * PG * EXP(-ZALGP1) / ZT
     !
   ELSEIF (PA==0.) THEN
     !

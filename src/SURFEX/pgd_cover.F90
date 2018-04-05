@@ -38,6 +38,7 @@
 !!    B. Decharme  07/2009  compatibility between Surfex and Orca (Nemo) grid (Earth Model)
 !!    B. Decharme  07/2012  if sea or water imposed to 1 in a grid cell: no extrapolation
 !!    B. Decharme  02/2014  Add LRM_RIVER and remove lake over antarctica
+!!    J. Escobar   05/04/2018  : for real*4 compilation , change some REAL kind
 !!
 !----------------------------------------------------------------------------
 !
@@ -741,7 +742,7 @@ INTEGER, INTENT(INOUT) :: KCOVER
 INTEGER, INTENT(OUT) :: KC_SURF
 !
 LOGICAL :: GPRESENT
-REAL :: ZHOOK_HANDLE
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PGD_COVER:FIT_COVERS',0,ZHOOK_HANDLE)
 !
@@ -802,7 +803,7 @@ INTEGER, DIMENSION(:), POINTER :: KMASK_COVER
 INTEGER, INTENT(IN) :: KCOVER
 !
 INTEGER :: ICPT
-REAL :: ZHOOK_HANDLE
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('PGD_COVER:MAKE_MASK_COVER',0,ZHOOK_HANDLE)
 !
@@ -836,7 +837,7 @@ REAL, DIMENSION(U%NDIM_FULL,SIZE(PCOVER,2)) :: ZCOVER_ALL
 INTEGER, DIMENSION(U%NDIM_FULL) :: IMAXCOVER_ALL
 INTEGER, DIMENSION(U%NSIZE_FULL) :: IMAXCOVER
 INTEGER :: JK, JCOV, ISIZE_OMP
-REAL :: ZHOOK_HANDLE_OMP
+REAL(KIND=JPRB) :: ZHOOK_HANDLE_OMP
 !
 ISIZE_OMP = MAX(1,SIZE(PCOVER,1)/NBLOCKTOT)
 !
