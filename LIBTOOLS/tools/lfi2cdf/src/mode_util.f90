@@ -15,6 +15,7 @@ MODULE mode_util
 
   INTEGER,PARAMETER :: MAXRAW=10
   INTEGER,PARAMETER :: MAXFILES=100
+  INTEGER,parameter :: MAXDATES=100
 
   INTEGER,PARAMETER :: FM_FIELD_SIZE = 32
 
@@ -54,6 +55,12 @@ CONTAINS
     TYPE(option),DIMENSION(:),            INTENT(IN)  :: options
     INTEGER,                              INTENT(IN)  :: runmode
 
+    TYPE TLFIDATE
+      CHARACTER(LEN=FM_FIELD_SIZE) :: CNAME = ''     !Name of the date variable
+      INTEGER                      :: NIDX_DATE = -1 !Index of the date part
+      INTEGER                      :: NIDX_TIME = -1 !Index of the time part
+    END TYPE TLFIDATE
+
     CHARACTER(LEN=FM_FIELD_SIZE)             :: yrecfm, YDATENAME
     CHARACTER(LEN=FM_FIELD_SIZE)             :: var_calc
     CHARACTER(LEN=FM_FIELD_SIZE),dimension(MAXRAW) :: var_raw
@@ -61,22 +68,24 @@ CONTAINS
     INTEGER                                  :: ndb, nde, ndey, idx, idx_out, idx_var, maxvar
     INTEGER                                  :: leng
     INTEGER                                  :: sizemax
-    INTEGER                                  :: IID, IRESP
-    INTEGER                                  :: IDXDATE, IDXTIME, IDX1
+    INTEGER                                  :: IID, IRESP, IDATES, ICURDATE
+    INTEGER                                  :: IDXDATE, IDXTIME
     INTEGER(KIND=LFI_INT)                    :: iresp2,ilu,ileng,ipos
     INTEGER(KIND=IDCDF_KIND)                 :: kcdf_id, kcdf_id2, var_id
     INTEGER(KIND=IDCDF_KIND)                 :: jdim, status
     INTEGER(KIND=IDCDF_KIND)                 :: idims, idimtmp
     INTEGER(KIND=IDCDF_KIND),DIMENSION(NF90_MAX_VAR_DIMS) :: idim_id
     LOGICAL                                  :: ladvan
-    LOGICAL                                  :: GISDATE, GISTIME
     LOGICAL                                  :: GOK
+    TYPE(TLFIDATE),DIMENSION(MAXDATES)       :: TLFIDATES
 
     IF (options(OPTSPLIT)%set) THEN
       idx_out = 0
     ELSE
       idx_out = 1
     END IF
+
+    IDATES = 0
 
     IF (runmode==MODECDF2LFI) THEN
       !This file is a dummy one to manage netCDF dims
@@ -274,9 +283,6 @@ END DO
          CALL LFIPOS(iresp2,ilu)
          ladvan = .TRUE.
 
-         GISDATE = .FALSE.
-         GISTIME = .FALSE.
-         YDATENAME = ''
          DO ji=1,nbvar_infile
            CALL LFICAS(iresp2,ilu,yrecfm,ileng,ipos,ladvan)
            tpreclist(ji)%name   = trim(yrecfm)
@@ -291,53 +297,48 @@ END DO
              CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','field in LFI file with %TDATE and %TIME in name '//TRIM(YRECFM))
            IDX = MAX(IDXDATE,IDXTIME)
            IF (IDX>0) THEN
-             IF (LEN_TRIM(YDATENAME) == 0) THEN
-               !New date name detected
-               IDX1 = ji
-               YDATENAME = YRECFM(1:IDX-1)
-               IF (IDXDATE>0) GISDATE = .TRUE.
-               IF (IDXTIME>0) GISTIME = .TRUE.
-             ELSE
-               !Was already found => other field (date or time) is detected
-               IF (TRIM(YDATENAME)/=YRECFM(1:IDX-1)) STOP
-               IF (IDXDATE>0) THEN
-                 IF (.NOT.GISDATE) THEN
-                   GISDATE = .TRUE.
-                   IF (GISTIME) THEN
-                     tpreclist(ji)%name  = 'removed_time'
-                     tpreclist(ji)%tbw   = .FALSE.
-                     tpreclist(ji)%tbr   = .FALSE.
-                     tpreclist(ji)%found = .FALSE.
-                     tpreclist(IDX1)%name = YDATENAME
-                     !
-                     GISDATE = .FALSE.
-                     GISTIME = .FALSE.
-                     YDATENAME = ''
-                   END IF
-                 ELSE
-                   CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','GISDATE is already TRUE for '//TRIM(YDATENAME))
-                 END IF
-               ELSE IF (IDXTIME>0) THEN
-                 IF (.NOT.GISTIME) THEN
-                   GISTIME = .TRUE.
-                   IF (GISDATE) THEN
-                     tpreclist(ji)%name  = 'removed_date'
-                     tpreclist(ji)%tbw   = .FALSE.
-                     tpreclist(ji)%tbr   = .FALSE.
-                     tpreclist(ji)%found = .FALSE.
-                     tpreclist(IDX1)%name = YDATENAME
-                     !
-                     GISDATE = .FALSE.
-                     GISTIME = .FALSE.
-                     YDATENAME = ''
-                   END IF
-                 ELSE
-                   CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','GISTIME is already TRUE for '//TRIM(YDATENAME))
-                 END IF
+             YDATENAME = YRECFM(1:IDX-1)
+             !Look if datename is already known
+             ICURDATE = 0
+             DO JJ=1,IDATES
+               IF (TRIM(YDATENAME)==TRIM(TLFIDATES(JJ)%CNAME)) THEN
+                 ICURDATE = JJ
+                 EXIT
                END IF
+             END DO
+             !
+             IF (ICURDATE == 0) THEN
+               !New date name detected
+               IDATES = IDATES + 1
+               IF (IDATES>MAXDATES) CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','too many dates, increase MAXDATES')
+               ICURDATE = IDATES
+             END IF
+             TLFIDATES(ICURDATE)%CNAME = TRIM(YDATENAME)
+             IF (IDXTIME>0) THEN
+               IF (TLFIDATES(ICURDATE)%NIDX_TIME /= -1) &
+                 CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','NIDX_TIME already set for '//TRIM(YDATENAME))
+               TLFIDATES(ICURDATE)%NIDX_TIME = JI
+               !Set variable name to truncated name (necessary to correctly identify the variable when read)
+               tpreclist(ji)%name = TRIM(YDATENAME)
+             END IF
+             IF (IDXDATE>0) THEN
+               IF (TLFIDATES(ICURDATE)%NIDX_DATE /= -1) &
+                 CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','NIDX_DATE already set for '//TRIM(YDATENAME))
+               TLFIDATES(ICURDATE)%NIDX_DATE = JI
+               !Do not treat this variable (the date part will be read with the time part)
+               tpreclist(ji)%name  = 'removed_date'
+               tpreclist(ji)%tbw   = .FALSE.
+               tpreclist(ji)%tbr   = .FALSE.
+               tpreclist(ji)%found = .FALSE.
              END IF
            END IF
          END DO
+         !
+         DO JI=1,IDATES
+           IF (TLFIDATES(JI)%NIDX_DATE == -1 .OR. TLFIDATES(JI)%NIDX_TIME == -1) &
+             CALL PRINT_MSG(NVERB_FATAL,'IO','parse_infiles','incomplete DATE/TIME fields for '//TRIM(TLFIDATES(JI)%CNAME))
+         END DO
+
          !
        ELSE IF (INFILES(1)%TFILE%CFORMAT == 'NETCDF4') THEN
          DO ji=1,nbvar_infile
@@ -797,6 +798,7 @@ END DO
     USE MODD_IO_ll,         ONLY: LIOCDF4
     USE MODD_PARAMETERS,    ONLY: JPHEXT
     USE MODD_PARAMETERS_ll, ONLY: JPHEXT_ll=>JPHEXT, JPVEXT_ll=>JPVEXT
+    USE MODD_TIME_n,        ONLY: TDTMOD
 
     USE MODE_FM,               ONLY: IO_FILE_OPEN_ll, IO_FILE_CLOSE_ll
     USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
@@ -885,8 +887,11 @@ END DO
        CALL IO_READ_FIELD(INFILES(1)%TFILE,'ZHAT',XZHAT)
        ALLOCATE(LSLEVE)
        CALL IO_READ_FIELD(INFILES(1)%TFILE,'SLEVE',LSLEVE)
+       ALLOCATE(TDTMOD)
+       CALL IO_READ_FIELD(INFILES(1)%TFILE,'DTMOD',TDTMOD)
      END IF
    END IF
+   !
    !
    ! Outfiles
    !
@@ -900,7 +905,7 @@ END DO
          idx = KNFILES_OUT
          CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,HOUTFILE,'UNKNOWN','WRITE', &
                                HFORMAT='NETCDF4',OOLD=.TRUE.)
-         CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+         CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE)
 
          IF (options(OPTCOMPRESS)%set) THEN
            outfiles(idx)%tfile%LNCCOMPRESS       = .TRUE.
@@ -934,7 +939,7 @@ END DO
      idx = KNFILES_OUT
      CALL IO_FILE_ADD2LIST(outfiles(idx)%TFILE,'dummy_file','UNKNOWN','WRITE', &
                            HFORMAT='NETCDF4',OOLD=.TRUE.)
-     CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+     CALL IO_FILE_OPEN_ll(outfiles(idx)%TFILE)
    END IF
 
    PRINT *,'--> Converted to file: ', TRIM(houtfile)
@@ -987,7 +992,7 @@ END DO
       filename = trim(houtfile)//'.'//TRIM(YVARS(ji))
       CALL IO_FILE_ADD2LIST(outfiles(ji)%TFILE,filename,'UNKNOWN','WRITE', &
                             HFORMAT='NETCDF4')
-      CALL IO_FILE_OPEN_ll(outfiles(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
+      CALL IO_FILE_OPEN_ll(outfiles(ji)%TFILE)
 
       IF (options(OPTCOMPRESS)%set) THEN
         outfiles(ji)%tfile%LNCCOMPRESS       = .TRUE.
@@ -1014,7 +1019,7 @@ END DO
 
 
     DO ji=1,KNFILES
-      IF (filelist(ji)%TFILE%LOPENED) CALL IO_FILE_CLOSE_ll(filelist(ji)%TFILE)
+      IF (filelist(ji)%TFILE%LOPENED) CALL IO_FILE_CLOSE_ll(filelist(ji)%TFILE,HPROGRAM_ORIG=CPROGRAM_ORIG)
     END DO
 
   END SUBROUTINE CLOSE_FILES
