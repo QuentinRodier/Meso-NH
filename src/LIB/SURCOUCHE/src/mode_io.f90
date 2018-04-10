@@ -210,7 +210,9 @@ CONTAINS
        PAD,      &
        KNB_PROCIO,& 
        KMELEV,&
-       OPARALLELIO)
+       OPARALLELIO, &
+       HPROGRAM_ORIG)
+
 #if defined(MNH_IOCDF4)
   USE MODD_NETCDF, ONLY:IDCDF_KIND
   USE MODE_NETCDF
@@ -233,6 +235,7 @@ CONTAINS
     INTEGER,         INTENT(IN),  OPTIONAL :: KNB_PROCIO
     INTEGER(KIND=LFI_INT), INTENT(IN),  OPTIONAL :: KMELEV    
     LOGICAL,         INTENT(IN),  OPTIONAL :: OPARALLELIO
+    CHARACTER(LEN=*),INTENT(IN),  OPTIONAL :: HPROGRAM_ORIG !To emulate a file coming from this program
     !
     ! local var
     !
@@ -679,7 +682,7 @@ CONTAINS
                       ELSE
                          IOS = 0
                       END IF
-                      CALL IO_SET_KNOWNDIMS_NC4(TZSPLITFILE)
+                      CALL IO_SET_KNOWNDIMS_NC4(TZSPLITFILE,HPROGRAM_ORIG=HPROGRAM_ORIG)
                    END IF
                 END IF
 #endif
