@@ -125,6 +125,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!J.Escobar10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!J.Escobar 5/04/2018: for real*4 compilation, replace DEXP => EXP
 !----------------------------------------------------
 !################################################################
 !

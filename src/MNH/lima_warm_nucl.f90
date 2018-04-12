@@ -306,7 +306,7 @@ IF( INUCT >= 1 ) THEN
 !  Remark : in LIMA's nucleation parameterization, Smax=0.01 for a supersaturation of 1% !
 !
 !
-   ZVEC1(:) = MAX( 1.00001, MIN( FLOAT(NAHEN)-0.00001, &
+   ZVEC1(:) = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ), MIN( FLOAT(NAHEN)*( 1.0 - 10.0 * XMNH_EPSILON ), &
                                  XAHENINTP1 * ZZT(:) + XAHENINTP2 )  )
    IVEC1(:) = INT( ZVEC1(:) )
    ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
@@ -392,7 +392,7 @@ IF( INUCT >= 1 ) THEN
 ! Modified values for Beta and C (see in init_aerosol_properties) account for that
 !
    WHERE (ZZW5(:) > 0. .AND. ZSMAX(:) > 0.)
-      ZVEC1(:) = MAX( 1.00001, MIN( FLOAT(NHYP)-0.00001,  &
+      ZVEC1(:) = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ), MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ),  &
                                     XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
       IVEC1(:) = INT( ZVEC1(:) )
       ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
@@ -791,7 +791,7 @@ REAL                           :: PZVEC1
 INTEGER                        :: PIVEC1
 !
 PSINGL_FUNCSMAX = 0.
-PZVEC1    = MAX( 1.00001,MIN( FLOAT(NHYP)-0.00001,               &
+PZVEC1    = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ),MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ),               &
                               XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
 PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )
