@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     #################################
       MODULE MODI_UV_TO_ZONAL_AND_MERID
@@ -94,6 +93,7 @@ END MODULE MODI_UV_TO_ZONAL_AND_MERID3D
 !!    -------------
 !!      Original    02/11/00
 !!      N.Asencio   10/09/03 no pointer for PZC,PMC (no pointer in SHUMAN)
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !
@@ -269,6 +269,7 @@ END SUBROUTINE UV_TO_ZONAL_AND_MERID3D
 !!    -------------
 !!      Original    02/11/00
 !!      I. Mallet   11/09/03 call to UV_ZONAL_AND_MERID3D
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

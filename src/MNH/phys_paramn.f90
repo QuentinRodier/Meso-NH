@@ -1,8 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!,!    ########################
+!    ########################
      MODULE MODI_PHYS_PARAM_n  
 !    ########################
 !
@@ -230,6 +230,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
 !!                       to be called directly by modeln as the last process 
 !!     28/03/2018 P. Wautelet: replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

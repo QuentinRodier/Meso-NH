@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -112,6 +112,7 @@ END MODULE MODI_CH_MONITOR_n
 !!    15/02/16 (M Leriche) call ch_init_rosenbrock only one time
 !!    20/01/17 (G.Delautier) bug if CPROGRAM/=DIAG
 !!    01/10/17 (C.Lac) add correction of negativity
+!!    Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !!    EXTERNAL
 !!    --------

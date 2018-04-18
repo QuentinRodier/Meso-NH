@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/khko_notadjust.f90,v $ $Revision: 1.1.2.1.2.1 $
-! MASDEV4_7 microph 2007/03/23 11:52:41
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_KHKO_NOTADJUST
@@ -96,6 +91,7 @@ END MODULE MODI_KHKO_NOTADJUST
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!   M.Mazoyer : 04/16 : New dummy arguments
 !!   M.Mazoyer : 10/2016 New KHKO output fields
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -51,6 +51,7 @@ END MODULE MODI_MNHOPEN_AUX_IO_SURF
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!         J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
 !!         J.Escobar : 02/06/2016 : abort MNHOPEN with STOP if problem with OPEN of INPUT/READ file 
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

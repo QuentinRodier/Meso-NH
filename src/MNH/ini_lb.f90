@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ######################
       MODULE MODI_INI_LB
 !     ######################
@@ -130,6 +131,7 @@ SUBROUTINE INI_LB(TPINIFILE,OLSOURCE,KSV,                          &
 !!      J.Escobar : 27/04/2016 : bug , test only on ANY(HGETSVM({{1:KSV}})=='READ'
 !!      J.-P. Pinty     09/02/16    Add LIMA that is LBC for CCN and IFN
 !!      M.Leriche       09/02/16    Treat gas and aq. chemicals separately
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

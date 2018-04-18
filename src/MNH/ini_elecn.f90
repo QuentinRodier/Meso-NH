@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/ini_elecn.f90,v $ $Revision: 1.1.2.1.10.1.2.2 $ $Date: 2014/01/09 13:25:03 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_INI_ELEC_n
@@ -77,6 +73,7 @@ END MODULE MODI_INI_ELEC_n
 !!                             boundary condition at the top
 !!      J.-P. Pinty  15/11/13  Initialize the flash maps
 !!                    10/2016 (C.Lac) Add droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

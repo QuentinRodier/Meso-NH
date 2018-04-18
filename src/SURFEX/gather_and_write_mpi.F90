@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -8,6 +8,7 @@ MODULE MODI_GATHER_AND_WRITE_MPI
 !!    -------------
 !!      Original       
 !!      J.Escobar      10/06/2013: replace DOUBLE PRECISION by REAL to handle problem for promotion of real on IBM SP
+!!      P.Wautelet     13/02/2018: re-added #ifndef MNH_SP4 to prevent problems when compiling on Blue Gene/Q with -qautodbl=4
 !!      J.Escobar      05/04/2018: for real*4 compilation, differenced real(kind=8) & real(kind=4) routine version 
 !----------------------------------------------------
 !

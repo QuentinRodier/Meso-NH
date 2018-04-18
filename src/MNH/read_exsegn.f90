@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/read_exsegn.f90,v $ $Revision: 1.2.2.5.2.4.2.14.2.5.2.4 $
-! masdev4_8 2008/07/09 16:40:30
 !-----------------------------------------------------------------
 !     ###################### 
       MODULE MODI_READ_EXSEG_n
@@ -289,6 +284,7 @@ END MODULE MODI_READ_EXSEG_n
 !!                                               LUSERx-type variables for LIMA
 !!      M.Leriche      06/2017 for spawn and prep_real avoid abort if wet dep for 
 !!                             aerosol and no cloud scheme defined
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

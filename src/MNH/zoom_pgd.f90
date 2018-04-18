@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2005-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:30
 !-----------------------------------------------------------------
 !     ################
       PROGRAM ZOOM_PGD
@@ -44,6 +39,7 @@
 !!    30/03/2012  S.Bielli  Add NAM_NCOUT
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!    08/07/2016  P.Wautelet Removed MNH_NCWRIT define
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !----------------------------------------------------------------------------
 !

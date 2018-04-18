@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 spawn 2006/06/27 14:37:30
 !-----------------------------------------------------------------
 !######################
 MODULE MODI_READ_EXSPA
@@ -98,6 +93,7 @@ END MODULE MODI_READ_EXSPA
 !!      Modification 07/07/05  (D.Barbary) spawn with 2 input files (father+son1)
 !!      Modification 30/03/12  (S.Bielli) add NAM_NCOUT for netcdf output (removed 08/07/2016)
 !!      Modification 08/07/2016 (P.Wautelet) removed MNH_NCWRIT define
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !
 !-------------------------------------------------------------------------------
 !

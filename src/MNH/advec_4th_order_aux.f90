@@ -3,11 +3,6 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 adiab 2006/05/18 14:35:31
-!-----------------------------------------------------------------
 !     ###############################
       MODULE MODI_ADVEC_4TH_ORDER_AUX
 !     ###############################

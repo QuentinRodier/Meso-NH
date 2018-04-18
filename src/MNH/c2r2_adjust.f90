@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 microph 2007/03/23 11:52:41
 !-----------------------------------------------------------------
 !     #######################
       MODULE MODI_C2R2_ADJUST
@@ -147,6 +142,7 @@ END MODULE MODI_C2R2_ADJUST
 !!                     March 2006 (O.Geoffroy) Add KHKO scheme
 !!                     October 2009 (G. Tanguy) add ILENCH=LEN(YCOMMENT) after
 !!                                              change of YCOMMENT
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

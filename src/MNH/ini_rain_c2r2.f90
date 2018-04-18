@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ $Log: ini_rain_c2r2.f90,v $
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ Revision 1.1  2006/03/13 15:14:51  lac
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $ Initial revision
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_rain_c2r2.f90,v $ $Revision: 1.2.2.4.2.1 $ $Date: 2009/04/21 07:42:51 $
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !      #########################
        MODULE MODI_INI_RAIN_C2R2 
@@ -96,6 +88,7 @@ END MODULE MODI_INI_RAIN_C2R2
 !!      O.Geoffroy  03/2006   Add KHKO scheme
 !!      G.Delautier 09/2014   fusion MODD_RAIN_C2R2_PARAM et MODD_RAIN_KHKO_PARAM
 !!      M.Mazoyer   10/2016 Constants for Droplet sedimentation adapted to fog for KHKO
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_RADAR_SCATTERING 
@@ -98,6 +94,7 @@ END MODULE MODI_RADAR_SCATTERING
 !!      G.Tanguy 25/03/2010 Introduction of MODD_TMAT and ALLOCATE/DEALLOCATE
 !!      C.Augros  2014 New simulator for T matrice
 !!      G.Delautier 10/2014 : Mise a jour simulateur T-matrice pour LIMA
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag_supp.f90,v $ $Revision: 1.3.2.3.2.2.2.5.2.2.2.3.2.4 $ $Date: 2016/03/17 12:59:13 $
 !-----------------------------------------------------------------
 !     ######################################
       MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
@@ -91,6 +87,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG_SUPP
 !!      M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !!      J.-P. Chaboureau 01/2018 add altitude interpolation
 !!      J.-P. Chaboureau 01/2018 add coarse graining
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

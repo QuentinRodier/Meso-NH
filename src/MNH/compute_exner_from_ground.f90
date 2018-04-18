@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/06/30 16:46:51
 !-----------------------------------------------------------------
 !     #####################################
       MODULE MODI_COMPUTE_EXNER_FROM_GROUND
@@ -112,6 +107,7 @@ END MODULE MODI_COMPUTE_EXNER_FROM_GROUND3
 !!      Original    06/03/96
 !!                  26/08/96 (V. Masson) thinshell approximation only available
 !!                  03/12/02 (P. Jabouille)  add no thinshell condition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !* 0.    DECLARATIONS
@@ -224,6 +220,7 @@ END SUBROUTINE COMPUTE_EXNER_FROM_GROUND3D
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    06/03/96
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !* 0.    DECLARATIONS

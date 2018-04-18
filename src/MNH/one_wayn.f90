@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/one_wayn.f90,v $ $Revision: 1.3.2.3.2.1.2.2.10.1.2.3 $
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_ONE_WAY_n
@@ -190,7 +185,8 @@ SUBROUTINE ONE_WAY_n(KDAD,PTSTEP,KMI,KTCOUNT,                            &
 !!    Bosseur & Filippi 07/2013 Adds Forefire
 !!   J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      J.Escobar : 18/12/2015 : Correction of bug in bound in // for NHALO <>1 
-!!!      Modification    01/2016  (JP Pinty) Add LIMA
+!!      Modification    01/2016  (JP Pinty) Add LIMA
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !------------------------------------------------------------------------------
 !
 !*      0.   DECLARATIONS

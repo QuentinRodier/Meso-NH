@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -87,6 +87,7 @@ END MODULE MODI_RADAR_RAIN_ICE
 !! J.-P. Chaboureau 17/06/10 bug correction in reflectivity calculation of icy hydrometeors
 !! J.-P. Chaboureau 03/02/12 set undef values for radar reflectivities
 !!       O. Caumont 09/04/14 correction of ZDR calculation
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

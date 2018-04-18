@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 init 2006/11/23 10:44:34
 !-----------------------------------------------------------------
 !      ########################
        MODULE MODI_INI_ICE_C1R3 
@@ -92,6 +87,7 @@ END MODULE MODI_INI_ICE_C1R3
 !!      J.-P. Pinty 23/09/2001 Review the HM process constants
 !!      J.-P. Pinty 23/10/2001 Add XRHORSMIN
 !!      J.-P. Pinty 05/04/2002 Add computation of the effective radius
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

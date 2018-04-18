@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     ###############################
       MODULE MODI_INI_DEEP_CONVECTION
 !     ###############################
@@ -108,6 +109,7 @@ END MODULE MODI_INI_DEEP_CONVECTION
 !!      D.Gazen       22/01/01 use MODD_NSV and add names to scalar variables
 !!      P.Jabouille   04/04/02 add PMFCONV used for subgrid condensation
 !!                    for a correct restart this variable has to be writen in FM file
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

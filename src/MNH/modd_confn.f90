@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:27
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_CONF_n
@@ -39,6 +34,7 @@
 !!      Original    05/05/94                      
 !!      J.-P. Pinty 11/04/96  include the ice concentration
 !!      D. Gazen    22/01/01  move NSV to MODD_NSV module
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

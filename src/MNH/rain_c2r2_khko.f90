@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/rain_c2r2_khko.f90,v $ $Revision: 1.1.2.1.2.3 $
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_RAIN_C2R2_KHKO
@@ -217,6 +213,7 @@ END MODULE MODI_RAIN_C2R2_KHKO
 !!      M.Mazoyer : 04/2016 : Add supersaturation diagnostics
 !!      C.Lac     : 07/2016 : Add droplet deposition
 !!      C.Lac     : 01/2017 : Correction on droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

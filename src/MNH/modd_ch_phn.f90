@@ -1,15 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2007-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home//MESONH/MNH-V4-6-5/src/SRC_CHIMAQ/modd_ch_pHn.f90
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------------------
 !!    ########################
       MODULE MODD_CH_PH_n
 !!    ########################
@@ -29,6 +22,7 @@
 !!    Original 01/06/07
 !!       P. Tulet      Nov 2014 accumulated moles of aqueous species that fall at the surface   
 !!       P. Tulet & M. Leriche Nov 2015 add pH in rain at the surface
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------

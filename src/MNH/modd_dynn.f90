@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_dynn.f90,v $ $Revision: 1.2.2.3.2.2.2.2.10.1.2.2 $ $Date: 2014/01/09 15:01:56 $
 !-----------------------------------------------------------------
 !     #################
       MODULE MODD_DYN_n
@@ -45,6 +41,7 @@
 !!      Modifications    05/07   (C.Lac)         Separation of num diffusion
 !!      Modifications    07/10   (M.Leriche)     Add relaxation for ice phase chemical
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

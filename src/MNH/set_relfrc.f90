@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
       MODULE MODI_SET_RELFRC
 !     ###################
@@ -75,6 +71,7 @@ END MODULE MODI_SET_RELFRC
 !!      03/02/10 (Tomasini) USE MODD_RELFRC_n for grid-nesting
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      P.Wautelet  28/03/2018 : use overloaded comparison operator for date_time
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

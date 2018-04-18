@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -237,6 +237,7 @@ END MODULE MODI_READ_FIELD
 !!          M. Leriche  02/16     treat gas and aq. chemicals separately
 !!          C.Lac        10/16 CEN4TH with RKC4 + Correction on RK loop
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

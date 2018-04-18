@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !###################
 MODULE MODI_PRESSURE
@@ -202,6 +198,7 @@ END MODULE MODI_PRESSURE
 !!                    11/2010 (V.Masson, C.Lac) PPABST, must not be cyclic => add temp array
 !!                                             to save it before UPDATE_HALO
 !!                    06/2011 (J.escobar ) Bypass Bug with ifort11/12 on  HLBCX,HLBCY 
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

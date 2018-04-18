@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_micron.f90,v $ $Revision: 1.3.2.2.2.1.2.2.10.2 $
-! MASDEV4_7 init 2007/03/23 11:55:57
 !-----------------------------------------------------------------
 !      ########################
        MODULE MODI_INI_MICRO_n 
@@ -55,6 +50,7 @@ END MODULE MODI_INI_MICRO_n
 !!      O.Geoffroy (03/2006) : Add KHKO scheme
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!      C.LAc          10/2016   Add budget for droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !

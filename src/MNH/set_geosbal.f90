@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 prep_ideal 2006/07/06 15:17:49
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_SET_GEOSBAL
@@ -251,6 +246,7 @@ END MODULE MODI_SET_GEOSBAL
 !!    Original : oct 2010 
 !!    crée à partir de l'ancienne routine set_mass.f90 en prenant la partie
 !!    concernant la balance geostrophique uniquement
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

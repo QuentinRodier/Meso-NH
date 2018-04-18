@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/spawn_surf2_rain.f90,v $ $Revision: 1.2.2.3.2.1.18.3 $
-! MASDEV4_7 spawn 2007/03/22 18:43:45
 !-----------------------------------------------------------------
 !###########################
 MODULE MODI_SPAWN_SURF2_RAIN
@@ -112,6 +107,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!      Modification    2014 (M.Faivre)
 !!      J.Escobar 2/05/2016 : bug in use of global/local bounds for call of BIKHARDT
 !!      C.Lac 10/2016 : Add droplet deposition for fog
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

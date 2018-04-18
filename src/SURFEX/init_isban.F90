@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -53,6 +53,7 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      J.Escobar      11/13 : add USE MODI_DEFAULT_CROCUS
 !!      B. Decharme  04/2013 new coupling variables
 !!      P. Samuelsson  10/14 : MEB
+!!      P. Wautelet    16/02/2018: bug correction: allocate some work arrays to 0,1,1 instead of 0,0,1 (crash with XLF)
 !!
 !-------------------------------------------------------------------------------
 !

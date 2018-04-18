@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2017 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !     ##################
       SUBROUTINE VERSION
@@ -34,6 +33,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    17/04/02
+!!      Ph.Wautelet 26/09/2017 added NMNHVERSION
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

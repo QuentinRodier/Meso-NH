@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2000-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/write_lesn.f90,v $
 !-----------------------------------------------------------------
 !######################
 MODULE MODI_WRITE_LES_n
@@ -56,6 +55,7 @@ END MODULE MODI_WRITE_LES_n
 !!                       10/10/09 (P. Aumond) Add user multimaskS
 !!                          11/15 (C.Lac) Add production terms of TKE
 !!                    10/2016 (C.Lac) Add droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !       

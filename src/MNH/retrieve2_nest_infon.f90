@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/retrieve2_nest_infon.f90,v $ $Revision: 1.2.2.1.2.1.18.2.2.1 $
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_RETRIEVE2_NEST_INFO_n
@@ -94,6 +90,7 @@ END MODULE MODI_RETRIEVE2_NEST_INFO_n
 !!      M.Faivre            2014
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      J.Escobar : 01/06/2016 : Bug in type of ZBUF INTEGER => REAL & use MPI_PRECISION for r4/R8 compatibility
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

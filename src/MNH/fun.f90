@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2017 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 prep_ideal 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ###############
       MODULE MODI_FUN
@@ -87,6 +82,7 @@ END MODULE MODI_FUN
 !!      G.Tanguy    26/10/10  add  PZHAT to aplly funuyz 
 !!                            to a field on a vertical grid different
 !!                            from XZHAT (mixed grid)
+!!      P.Wautelet  19/10/2017 removed extern_userio.f90
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

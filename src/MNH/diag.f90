@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/diag.f90,v $ $Revision: 1.3.2.4.2.4.2.5.2.6.2.3.2.6 $ $Date: 2015/11/26 14:55:02 $
 !-----------------------------------------------------------------
 !     ############
       PROGRAM DIAG
@@ -86,6 +85,7 @@
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  03/2018     (P.Wautelet)   replace SUBTRACT_TO_DATE and ADD_FORECAST_TO_DATE
 !!                             by DATETIME_CORRECTDATE
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS

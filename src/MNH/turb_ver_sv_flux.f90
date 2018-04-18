@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !    #################### 
      MODULE MODI_TURB_VER_SV_FLUX 
@@ -269,6 +264,7 @@ END MODULE MODI_TURB_VER_SV_FLUX
 !!                     Feb 2017(M. Leriche) add initialisation of ZSOURCE
 !!                                   to avoid unknwon values outside physical domain
 !!                                   and avoid negative values in sv tendencies
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 prep_real 2006/08/30 18:43:25
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_READ_VER_GRID
@@ -100,6 +95,7 @@ END MODULE MODI_READ_VER_GRID
 !!                  Aug. 10, 1996 (V. Masson) add LTHINSHELL in namelist
 !!                  Oct, 25, 1996 (V.Masson) deallocations
 !!                  Oct. 10, 2001 (I.Mallet) allow namelists in different orders
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

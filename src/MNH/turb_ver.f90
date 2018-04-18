@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 turb 2006/06/02 16:29:34
 !-----------------------------------------------------------------
 !    #################### 
      MODULE MODI_TURB_VER 
@@ -323,6 +318,7 @@ END MODULE MODI_TURB_VER
 !!                                 reversed vertical levels
 !!                     10/2012 (J.Escobar) Bypass PGI bug , redefine some allocatable array inplace of automatic
 !!                     08/2014 (J.Escobar) Bypass PGI memory leak bug , replace IF statement with IF THEN ENDIF
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!--------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS

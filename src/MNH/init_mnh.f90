@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !     ###############
       SUBROUTINE INIT_MNH
@@ -74,8 +69,9 @@
 !!      V. Masson   15/03/99  call to ini_data_cover
 !!      P.Jabouille 15/07/99  special initialisation for spawning
 !!      J.P Chaboureau 2015   add ini_spectre_n
-!!      J.Escoabr   2/03/2016 bypass , reset NHALO=1 for SPAWNING
+!!      J.Escobar   2/03/2016 bypass , reset NHALO=1 for SPAWNING
 !!  06/2016     (G.Delautier) phasage surfex 8
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

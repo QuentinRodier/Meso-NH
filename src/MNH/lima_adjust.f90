@@ -1,3 +1,8 @@
+!MNH_LIC Copyright 2013-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
+!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
+!MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !     #######################
       MODULE MODI_LIMA_ADJUST
 !     #######################
@@ -129,6 +134,7 @@ END MODULE MODI_LIMA_ADJUST
 !!      Original             ??/??/13 
 !!      C. Barthe  * LACy*   jan. 2014  add budgets
 !!      JP Chaboureau *LA*   March 2014  fix the calculation of icy cloud fraction
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

@@ -8,6 +8,7 @@ C
 C *** COPYRIGHT 1996-2000, UNIVERSITY OF MIAMI, CARNEGIE MELLON UNIVERSITY
 C *** WRITTEN BY ATHANASIOS NENES
 C   J.Escobar : 10/2017 , for real*4 replace DOUBLE => REAL
+C   P.Wautelet: 13/02/2018: add HALF, TWO and FOUR variables
 C
 C=======================================================================
 C

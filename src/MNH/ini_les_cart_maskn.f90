@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2017 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !#############################
 MODULE MODI_INI_LES_CART_MASKn
@@ -62,6 +58,7 @@ END MODULE MODI_INI_LES_CART_MASKn
 !!      Original         07/02/00
 !!      Modification     01/02/01 (D.Gazen) add module MODD_NSV for NSV variable
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      P.Wautelet: 19/10/2017 : IO: removed extern_userio.f90
 !!
 !! --------------------------------------------------------------------------
 !

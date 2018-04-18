@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 !########################
  MODULE MODI_WRITE_SERIES_n
@@ -63,6 +59,7 @@ END MODULE MODI_WRITE_SERIES_n
 !!      Modification 7/01/2013 Add key for netcdf writing
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      P.Wautelet: 11/07/2016 : removed MNH_NCWRIT define
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

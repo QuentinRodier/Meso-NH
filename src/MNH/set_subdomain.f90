@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 newsrc 2006/05/23 10:51:27
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_SET_SUBDOMAIN
@@ -84,6 +79,7 @@ END MODULE MODI_SET_SUBDOMAIN
 !!                   15/10/01 Allow namelists in different orders (I. Mallet)
 !!                   30/10/03 No more used in masdev4_6 version (V. Masson)
 !!                   30/11/04 Used again in masdev4_7 version (V. Masson)
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

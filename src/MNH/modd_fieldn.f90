@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_fieldn.f90,v $ $Revision: 1.2.4.1.18.2 $
-! MASDEV4_7 modd 2006/06/27 14:17:24
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODD_FIELD_n
@@ -53,6 +48,7 @@
 !!                               momentum (noted _PRES) + microphysics contrib
 !!                               for Theta and r (noted _CLD)
 !!                     04/16    (M.Mazoyer) New supersaturation fields
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !

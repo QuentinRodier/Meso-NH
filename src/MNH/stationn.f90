@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 profiler 2006/10/24 10:08:52
 !-----------------------------------------------------------------
 !      ##########################
 MODULE MODI_STATION_n
@@ -90,6 +85,7 @@ END MODULE MODI_STATION_n
 !!     C.Lac       04/2013 : Correction on the vertical levels
 !!     C.Lac       04/2013 : Add I/J positioning                   
 !!     P.Wautelet 28/03/2018 : Replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !       

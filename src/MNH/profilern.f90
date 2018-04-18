@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2002-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/profilern.f90,v $ $Revision: 1.3.4.1.2.1.10.2.2.4 $
-! MASDEV4_7 profiler 2006/06/01 09:51:49
 !-----------------------------------------------------------------
 !      ##########################
 MODULE MODI_PROFILER_n
@@ -94,6 +89,7 @@ END MODULE MODI_PROFILER_n
 !!     April 2014 : C.Lac : Call RADAR only if ICE3   
 !!     C.Lac 10/2016  Add visibility diagnostic
 !!     March,28, 2018 (P. Wautelet) replace TEMPORAL_DIST by DATETIME_DISTANCE
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !       

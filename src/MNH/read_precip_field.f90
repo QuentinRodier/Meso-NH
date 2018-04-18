@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/read_precip_field.f90,v $ $Revision: 1.1.8.2.2.1.2.1.12.2 $
-! MASDEV4_7 init 2007/03/22 18:24:54
 !-----------------------------------------------------------------
 !     #############################
       MODULE MODI_READ_PRECIP_FIELD
@@ -97,6 +92,7 @@ END MODULE MODI_READ_PRECIP_FIELD
 !!      (JP Pinty)     29/11/02  add C3R5, ICE2, ICE4
 !!      (C.Lac)        04/03/13  add YGETxxx for FIT scheme
 !!                    10/2016 (C.Lac) Add droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-----------------------------------------------------------------------------
 !

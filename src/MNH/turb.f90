@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 !    ################ 
      MODULE MODI_TURB  
 !    ################ 
@@ -339,6 +340,7 @@ END MODULE MODI_TURB
 !!                     10/2012 (J. Colin) Correct bug in DearDoff for dry simulations
 !!                     10/2012 J.Escobar Bypass PGI bug , redefine some allocatable array inplace of automatic
 !!                     04/2016  (C.Lac) correction of negativity for KHKO
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS

@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/deallocate_model1.f90,v $ $Revision: 1.2.2.2.2.2.2.1.10.2.2.3 $
-! MASDEV4_7 spawn 2007/01/12 14:12:39
 !-----------------------------------------------------------------
 !############################
 MODULE MODI_DEALLOCATE_MODEL1
@@ -70,6 +65,7 @@ END MODULE MODI_DEALLOCATE_MODEL1
 !!                   01/2004 V. Masson surface externalization
 !!                   06/2012 M.Tomasini add 2D nesting ADVFRC
 !!                   10/2016 M.Mazoyer New KHKO output fields
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

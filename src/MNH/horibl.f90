@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 interpol 2006/05/18 13:07:25
 !-----------------------------------------------------------------
 !     ##################
       MODULE MODI_HORIBL
@@ -133,6 +128,7 @@ END MODULE MODI_HORIBL
 !!                              extrapolation (tabular ZARIN not totaly filled)
 !!                  12/10/2012 J.Escobar & F.Tocquer , interface mismatch, remove OPTIONAL for OMINMAX
 !!                  2011       (P.Peyrille) 2D problem in the formulation
+!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !------------------------------------------------------------------------------
 !

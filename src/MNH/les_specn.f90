@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 les 2006/08/30 18:41:37
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODE_LES_SPEC_n
@@ -53,6 +48,7 @@ CONTAINS
 !!      Original         07/02/00
 !!                       01/02/01 (D. Gazen) add module MODD_NSV for NSV variable
 !!                       01/04/03 (V. Masson) bug in spectra normalization
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !

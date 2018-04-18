@@ -1,13 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/exchange.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5.2.1 $ $Date: 2015/12/01 15:26:23 $
-!-----------------------------------------------------------------
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 !     ####################
       MODULE MODI_EXCHANGE
@@ -92,6 +86,7 @@ END MODULE MODI_EXCHANGE
 !!                   corrections for aq. phase and ice phase (lost mass neglig.)
 !!      25/08/16 (M.Leriche) remove negative values for aerosols and conserve
 !!                   total mass for chemical species in aerosols
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!            
 !-----------------------------------------------------------------------------------------
 !

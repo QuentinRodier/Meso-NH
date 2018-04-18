@@ -1,15 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for CVS information
-!-----------------------------------------------------------------
-! $Source$
-! $Name$ 
-! $Revision$ 
-! $Date$
-!-----------------------------------------------------------------
 !-----------------------------------------------------------------
 
 #ifdef MNH_MPI_DOUBLE_PRECISION
@@ -24,7 +16,8 @@ MODULE MODE_FMREAD
 !  J.Escobar : 22/08/2005 : BUG : manque un "GOTO 1000" si champs
 !              lue non trouvé !!!
 !  J.Escobar : 13/01/2015 : remove comment on BCAST(IRESP in FMREADX2_ll
-!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !
 USE MODD_IO_ll, ONLY : NVERB_FATAL,NVERB_ERROR,NVERB_WARNING,NVERB_INFO,NVERB_DEBUG,TFILEDATA
 USE MODD_MPIF

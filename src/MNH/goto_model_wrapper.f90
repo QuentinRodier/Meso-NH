@@ -1,13 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/goto_model_wrapper.f90,v $ $Revision: 1.2.4.1.2.3.4.2.2.4.2.1 $
-! MASDEV4_7 newsrc 2006/06/26 12:01:39
-!
 !!    MODIFICATIONS
 !!    -------------
 !!      06/12 (Tomasini) Grid-nesting of ADVFRC and EDDY_FLUX
@@ -17,6 +12,7 @@
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
 !!                      07/2017 (M.Leriche) Add DIAG chimical surface fluxes
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 

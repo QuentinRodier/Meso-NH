@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 forcing 2006/10/16 14:23:23
 !-----------------------------------------------------------------
 !     ###################
       MODULE MODI_FORCING
@@ -150,6 +145,7 @@ END MODULE MODI_FORCING
 !!      09/2017 Q.Rodier add LTEND_UV_FRC
 !!      28/03/2018 P. Wautelet        Replace TEMPORAL_DIST by DATETIME_DISTANCE
 !!                                    use overloaded comparison operator for date_time
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

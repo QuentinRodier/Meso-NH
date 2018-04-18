@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 modd 2006/06/30 15:52:28
 !-----------------------------------------------------------------
 !!    ###################### 
       MODULE MODD_CH_MODEL0D
@@ -36,6 +31,7 @@
 !!              CCH_TUV_LOOKUP  : name of lookup table file
 !!              CCH_TUV_CLOUDS  : method for the impact of clouds on radiation
 !!    18/02/99  LCH_SURFACE0D   : apply surface emission / deposition fluxes
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------

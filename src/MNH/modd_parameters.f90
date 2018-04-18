@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modd_parameters.f90,v $ $Revision: 1.1.8.6.2.1.16.2.2.2 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODD_PARAMETERS
@@ -43,6 +39,7 @@
 !!      Modification 17/05/04 (P.Jabouille) add JPOUTMAX
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      B.VIE 2016 LIMA
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS

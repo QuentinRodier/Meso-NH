@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2003-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! MASDEV4_7 surfex 2006/05/23 15:47:28
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_MNHCLOSE_AUX_IO_SURF
@@ -54,6 +49,11 @@ END MODULE MODI_MNHCLOSE_AUX_IO_SURF
 !!    -------------
 !!      Original    09/2003 
 !!      J.Escobar : 19/04/2016 : Pb IOZ/NETCDF , missing OPARALLELIO=.FALSE. for PGD files
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$
+! MASDEV4_7 surfex 2006/05/23 15:47:28
+!-----------------------------------------------------------------
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

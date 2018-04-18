@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfifm1_for_diag.f90,v $ $Revision: 1.3.2.5.2.4.2.3.2.3.2.9.2.2 $
-! masdev4_7 BUG1 2007/06/15 17:47:18
 !-----------------------------------------------------------------
 !################################
 MODULE MODI_WRITE_LFIFM1_FOR_DIAG
@@ -144,6 +139,7 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !!       C.Lac  04/2016 : add visibility and droplet deposition
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !!       T.Dauhut      10/2017 : add parallel 3D clustering
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

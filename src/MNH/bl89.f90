@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_BL89
@@ -69,6 +65,7 @@ END MODULE MODI_BL89
 !!                  21/02/01 (P. Jabouille) improve vectorization
 !!                  2012-02 (Y. Seity) add possibility to run with 
 !!                            reversed vertical levels
+!!  Philippe 13/02/2018: use ifdef MNH_REAL to prevent problems with intrinsics on Blue Gene/Q
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

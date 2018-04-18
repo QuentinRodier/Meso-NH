@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 2010-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -117,6 +117,7 @@ SUBROUTINE SET_MASS(TPFILE,OPROFILE_IN_PROC, PZFLUX_PROFILE,                    
 !!    V.Masson    12/08/13  Parallelization of the initilization profile
 !!    M.Moge      08/2015   add UPDATE_HALO_ll on XTHT, ZTHV3D, XRT(:,:,1,:) after computation
 !!    J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!    
 !-------------------------------------------------------------------------------
 !!

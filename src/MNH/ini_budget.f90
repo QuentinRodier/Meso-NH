@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_budget.f90,v $ $Revision: 1.3.2.5.2.2.2.2.10.2.2.5.2.1 $
-! masdev4_8 budget 2008/06/20 10:08:26
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_INI_BUDGET
@@ -156,6 +151,7 @@ END MODULE MODI_INI_BUDGET
 !!                   04/2016 (C.LAC) negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe       01/2016   Add budget for LIMA
 !!      C.LAc          10/2016   Add budget for droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 
 !-------------------------------------------------------------------------------
 !

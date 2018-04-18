@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1997-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
 !-----------------------------------------------------------------
 MODULE MODE_WRITE_SURF_MNH_TOOLS
 
@@ -162,6 +158,7 @@ END MODULE MODE_WRITE_SURF_MNH_TOOLS
 !!        08/2015 M.Moge    write the COVERS as 2D fields because SURFEX cannot write/read 3D fields 
 !!                          with Z-splitting using NB_PROC_IO_W / NB_PROC_IO_W
 !!        J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -249,6 +246,7 @@ END SUBROUTINE WRITE_SURFX0_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -511,6 +509,7 @@ END SUBROUTINE WRITE_SURFX1_MNH
 !!      original                                                     01/08/03
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -711,6 +710,7 @@ END SUBROUTINE WRITE_SURFX2COV_MNH
 !!
 !!      original                                                     01/08/03
 !!      G.TANGUY 03/2009   add replace ZUNDEF(surfex) by XUNDEF(MNH)
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -861,6 +861,7 @@ END SUBROUTINE WRITE_SURFX2_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -955,6 +956,7 @@ END SUBROUTINE WRITE_SURFN0_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -1057,6 +1059,7 @@ END SUBROUTINE WRITE_SURFN1_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -1162,6 +1165,7 @@ END SUBROUTINE WRITE_SURFC0_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -1276,6 +1280,7 @@ END SUBROUTINE WRITE_SURFL1_MNH
 !!    -------------
 !!
 !!      original                                                     01/08/03
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -1358,6 +1363,7 @@ END SUBROUTINE WRITE_SURFL0_MNH
 !!    -------------
 !!
 !!      original                                                     18/08/97
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS
@@ -1451,6 +1457,7 @@ END SUBROUTINE WRITE_SURFT0_MNH
 !!    -------------
 !!
 !!      original                                                     03/03/09
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !----------------------------------------------------------------------------
 !
 !*      0.    DECLARATIONS

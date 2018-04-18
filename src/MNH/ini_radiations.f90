@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_INI_RADIATIONS
@@ -112,6 +108,7 @@ END MODULE MODI_INI_RADIATIONS
 !!      P. Peyrille, M. Tomasini 06/2012:  if LFIX_DAT=T, TDTCUR is replaced by
 !!                               TDTEXP to  have a perpetual day ie. the diurnal cycle is retained 
 !!                               but the day stays the same during the whole run 
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

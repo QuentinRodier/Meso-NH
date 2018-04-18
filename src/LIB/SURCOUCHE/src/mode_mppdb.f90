@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
 MODULE MODE_MPPDB
 !
 !       Modifs :
@@ -9,6 +10,7 @@ MODULE MODE_MPPDB
 !!      M.Moge 05/02/2015: MPPDB_CHECK_SURFEX2D and MPPDB_CHECK_SURFEX3D + bug fix in MPPDB_CHECK2D and MPPDB_CHECK3D (call MPI_AllReduce at the beginning)
 !  J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !  G.Delautier : 23/06/2016 : surfex v8
+!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !
   IMPLICIT NONE
 

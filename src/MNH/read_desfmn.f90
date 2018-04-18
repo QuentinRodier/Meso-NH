@@ -1,11 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/read_desfmn.f90,v $ $Revision: 1.2.2.1.2.1.2.2.10.1.2.4 $ $Date: 2014/02/14 09:15:53 $
 !-----------------------------------------------------------------
 !     ######################
       MODULE MODI_READ_DESFM_n
@@ -192,6 +188,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   01/2015   (C. Barthe) Add explicit LNOx
 !!      Modification   2016      (B.VIE) LIMA
 !!      Modification   11/2016   (Ph. Wautelet) Allocate/initialise some output/backup structures
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS

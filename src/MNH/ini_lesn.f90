@@ -1,8 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-! _Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/ini_lesn.f90,v _
 !-----------------------------------------------------------------
 !     ####################
       SUBROUTINE  INI_LES_n
@@ -33,6 +32,7 @@
 !!      Modification     01/02/01 (D.Gazen) add module MODD_NSV for NSV variable
 !!                       06/11/02 (V. Masson) add LES budgets
 !!                    10/2016 (C.Lac) Add droplet deposition
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !! --------------------------------------------------------------------------
 !

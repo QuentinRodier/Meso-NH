@@ -1,12 +1,7 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/write_lfin.f90,v $ $Revision: 1.2.2.4.2.4.2.8.2.4.2.5 $
-! masdev4_7 BUG1 2007/06/20 16:58:20
 !-----------------------------------------------------------------
 !     #########################
       MODULE MODI_WRITE_LFIFM_n
@@ -170,6 +165,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       M.Mazoyer     04/16 : Add supersaturation fields
 !!       P.Wautelet    11/07/2016 removed MNH_NCWRIT define
 !!       JP Chaboureau 27/11/2017 add wind tendency forcing
+!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   
 !-------------------------------------------------------------------------------
 !

@@ -1,12 +1,10 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! NEC0 masdev4_7 2007/06/16 01:41:59
+! Modifications:
+!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-----------------------------------------------------------------
 MODULE MODE_MODELN_HANDLER
 IMPLICIT NONE 

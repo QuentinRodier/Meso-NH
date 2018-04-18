@@ -1,4 +1,4 @@
-!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 2012-2018 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
@@ -28,6 +28,7 @@
 !!      Original       26/06/12
 !!      Modified    11/2013 by J.Escobar :add !$ to inhibit completly omp
 !!                                 dependency
+!!      P.Wautelet: 13/02/2018: comment OpenMP include/use if compiled without OpenMP
 !
 !*       0.   DECLARATIONS
 !             ------------
