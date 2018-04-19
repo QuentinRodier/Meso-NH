@@ -70,6 +70,7 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !         M.Mazoyer 2016 :  limit of 100 microns for effective radius 
 !         B.VIE 2016 : LIMA
 !         J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
+!!        Q.Libois  02/2018 : ECRAD
 !-----------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -77,10 +78,10 @@ SUBROUTINE ECMWF_RADIATION_VERS2 ( KLON,KLEV,KRAD_DIAG, KAER, &
 !ECMWF radiation scheme specific modules 
 !
 USE PARKIND1 , ONLY : JPRB
-USE YOMCST   , ONLY : RG ,RD ,RTT ,RPI
-USE YOERAD   , ONLY : NMODE, NSW ,LRRTM ,LINHOM ,LRADIP, LRADLP 
+USE OYOMCST   , ONLY : RG ,RD ,RTT ,RPI
+USE OYOERAD   , ONLY : NMODE, NSW ,LRRTM ,LINHOM ,LRADIP, LRADLP 
 USE YOELW    , ONLY : NSIL     ,NTRA     ,NUA      ,TSTAND   ,XP
-USE YOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
+USE OYOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
             &RYFWCE   ,RYFWCF   ,REBCUA   ,REBCUB   ,REBCUC   ,&
             &REBCUD   ,REBCUE   ,REBCUF   ,REBCUI   ,REBCUJ   ,&
             &REBCUG   ,REBCUH   ,RHSAVI   ,RFULIO   ,RFLAA0   ,&
@@ -92,9 +93,9 @@ USE YOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
             &RASWCB   ,RASWCC   ,RASWCD   ,RASWCE   ,RASWCF   ,&
             &RLINLI
 USE YOERDU   , ONLY : RCDAY,  NUAER    ,NTRAER   ,REPLOG   ,REPSC    ,DIFF
-USE YOERDI   , ONLY : REPCLC
+USE OYOERDI   , ONLY : REPCLC
 USE YOETHF   , ONLY : RTICE
-USE YOERRTWN , ONLY : NG ,NSPA ,NSPB ,WAVENUM1  ,&
+USE OYOERRTWN , ONLY : NG ,NSPA ,NSPB ,WAVENUM1  ,&
                       WAVENUM2, DELWAVE, TOTPLNK, TOTPLK16
 !
 !MESO-NH modules
@@ -114,7 +115,7 @@ USE MODD_PARAM_C2R2,  ONLY : UALPHAC=>XALPHAC,UNUC=>XNUC, &
 USE MODD_PARAM_RAD_n,  ONLY : CAOP                               
 !
 USE MODI_LW
-USE MODI_RRTM_RRTM_140GP
+!USE MODI_RRTM_RRTM_140GP
 USE MODI_SW
 !
 ! LIMA
@@ -132,7 +133,7 @@ IMPLICIT NONE
 !*       0.1   DECLARATIONS OF DUMMY ARGUMENTS :
 !  
 INTEGER, INTENT(IN) :: KAER !number of aerosol class     
-REAL, DIMENSION (:,:), INTENT (IN) ::PDZ !thickness of the mesh (m)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN) ::PDZ !thickness of the mesh (m)
 INTEGER, INTENT(IN) :: KLEV ! number of vertical level for radiation calulation 
 INTEGER, INTENT(IN) :: KLON ! number of columns            " 
 INTEGER, INTENT(IN) :: KRAD_DIAG ! index for the number of diagnostic fields 
@@ -147,14 +148,14 @@ REAL, INTENT(IN)               :: PFUDG  !subgrid cloud inhomogeneity factor
 !
 REAL(KIND=JPRB), INTENT(INOUT)       :: PRII0 ! corrected solar constant
 REAL, INTENT(IN)                     :: PCCO2 ! CO2 content (Pa/Pa)
-REAL, DIMENSION (:,:,:), INTENT (IN) :: PAER  ! aerosol optical thickness
-REAL, DIMENSION (:,:), INTENT (IN)   :: PALBD ! surface diffuse spectral albedo
-REAL, DIMENSION (:,:), INTENT (IN)   :: PALBP ! surface direct spectral albedo
-REAL, DIMENSION (:), INTENT (IN)     :: PEMIS ! surface emissivity
-REAL, DIMENSION (:), INTENT (IN)     :: PEMIW ! surface emissivity in LW window
-REAL, DIMENSION (:), INTENT (IN)     :: PLSM  ! land sea mask
-REAL, DIMENSION (:), INTENT (IN)     :: PMU0  ! cosine of solar angle 
-REAL, DIMENSION (:,:), INTENT (IN)   :: POZON ! ozone content (Pa/Pa)
+REAL(KIND=JPRB), DIMENSION (:,:,:), INTENT (IN) :: PAER  ! aerosol optical thickness
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PALBD ! surface diffuse spectral albedo
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PALBP ! surface direct spectral albedo
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PEMIS ! surface emissivity
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PEMIW ! surface emissivity in LW window
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PLSM  ! land sea mask
+REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PMU0  ! cosine of solar angle 
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: POZON ! ozone content (Pa/Pa)
 REAL(KIND=JPRB), DIMENSION (:), INTENT (IN)     :: PTS   ! surfaec temperature
 REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PT    ! mean layer  temperature (mass point) 
 REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PAP   ! mean layer  pressure (mass point)
@@ -163,16 +164,16 @@ REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PAPH  ! half-level pressure
 REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PDP   ! layer pressure thickness
 REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQ    ! mean layer specific humidity  (Pa/pa) 
 REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQS   ! mean layer saturation spec. humid.
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQIWC ! mean-layer ice specific water content (kg/kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PIWC ! mean-layer ice water content (kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQLWC ! mean-layer liquid specific water content(kg/Kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PLWC ! mean-layer liquid water content(kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PQRWC ! mean-layer rain specific water content(kg/kg)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PRWC ! mean-layer rain water content(kg/m3)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCLFR  ! mean-layer cloud fraction
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCCT_C2R2 ! cloud water concentration (C2R2)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCRT_C2R2 ! rain water concentration (C2R2)
-REAL, DIMENSION (:,:), INTENT (IN)   :: PCIT_C1R3 ! ice crystal concentration (C1R3)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQIWC ! mean-layer ice specific water content (kg/kg)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PIWC ! mean-layer ice water content (kg/m3)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQLWC ! mean-layer liquid specific water content(kg/Kg)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PLWC ! mean-layer liquid water content(kg/m3)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PQRWC ! mean-layer rain specific water content(kg/kg)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PRWC ! mean-layer rain water content(kg/m3)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PCLFR  ! mean-layer cloud fraction
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PCCT_C2R2 ! cloud water concentration (C2R2)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PCRT_C2R2 ! rain water concentration (C2R2)
+REAL(KIND=JPRB), DIMENSION (:,:), INTENT (IN)   :: PCIT_C1R3 ! ice crystal concentration (C1R3)
 REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PPIZA_DST   !Single scattering albedo of dust (wvl dependent)
 REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PCGA_DST    !Assymetry factor for dust (wvl dependent)
 REAL(KIND=JPRB), DIMENSION(:,:,:),INTENT(IN)    :: PTAUREL_DST !Optical depth of dust relative to the one at 550nm
@@ -411,7 +412,7 @@ END WHERE
 !
 !Care : OZONE field = (concentration) * DP, in initial ECMWF driver routines
 !
-ZOZON(:,:) = POZON (:,:) * PDP (:,:)
+ZOZON(:,:) = RG / 46.6968 * POZON (:,:) * PDP (:,:) ! to be consistent with the actual input of RADLSW
 !
 ! Aerosol field
 !
@@ -498,6 +499,7 @@ DO JK = 1 , KLEV
 ! --- Liquid Water Content (g.m-3) and Liquid Water Path (g.m-2)
 !
     ZLWGKG=MAX(PLWC(JL,IKL)*1000.,0.)
+    ZRWGKG=MAX(PRWC(JL,IKL)*1000.,0.)
     ZIWGKG=MAX(PIWC(JL,IKL)*1000.,0.)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Parametrisation des propriete optiques de la pluie non implementee
@@ -506,15 +508,17 @@ DO JK = 1 , KLEV
 !      ZRWGKG=MAX(PRWC(JL,IKL)*1000.,0.)
 !      IF (ZRWGKG.ne.0.0) ZCLFR(JL,IKL)=1.0
 !    ELSE
-      ZRWGKG=0.0   
+!      ZRWGKG=0.0   
 !    ENDIF
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     IF (ZCLFR(JL,IKL) > 1E-2 ) THEN
       ZLWGKG=ZLWGKG/ZCLFR(JL,IKL)
+      ZRWGKG=ZRWGKG/ZCLFR(JL,IKL)      
       ZIWGKG=ZIWGKG/ZCLFR(JL,IKL)
     ELSE
       ZLWGKG=0.
+      ZRWGKG=0.
       ZIWGKG=0.
     ENDIF
 
@@ -707,7 +711,7 @@ DO JK = 1 , KLEV
 !-- SW: Slingo, 1989
 !
                IF (ZRADLP(JL)>1.0) then
-                ZTOL = ZSWFUDG * ZFLWP(JL)*(RASWCA(JSW)+RASWCB(JSW)/ZRADLP(JL))
+                ZTOL = ZSWFUDG * (ZFLWP(JL)+ZFRWP(JL))*(RASWCA(JSW)+RASWCB(JSW)/ZRADLP(JL))
                 ZGL  = RASWCE(JSW)+RASWCF(JSW)*ZRADLP(JL)
                 ZOL  = 1. - RASWCC(JSW)-RASWCD(JSW)*ZRADLP(JL)
                ENDIF
@@ -1127,7 +1131,8 @@ ELSE
 !
   DO JK = 1, KLEV
     DO JL = IKIDIA,IKFDIA
-      ZOZN(JL,JK) = ZOZON(JL,JK)/PDP(JL,JK)
+!       ZOZN(JL,JK) = ZOZON(JL,JK)/PDP(JL,JK) 
+      ZOZN(JL,JK) = POZON(JL,JK)/PDP(JL,JK) ! Quentin because climatology in volume mixing ratio, not mmr
     ENDDO
   ENDDO
 !

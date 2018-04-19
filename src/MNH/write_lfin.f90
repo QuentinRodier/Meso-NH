@@ -165,6 +165,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       Modification    01/2016  (JP Pinty) Add LIMA
 !!       M.Mazoyer     04/16 : Add supersaturation fields
 !!       JP Chaboureau 27/11/2017 add wind tendency forcing
+!!                   02/2018 Q.Libois move Diagnostic related to the radiations in radiations.f90
 !!                   
 !-------------------------------------------------------------------------------
 !

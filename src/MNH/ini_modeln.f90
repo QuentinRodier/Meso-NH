@@ -275,6 +275,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   M.Leriche 10/02/17 prevent negative values in LBX(Y)SVS 
 !!                   M.Leriche 01/07/2017 Add DIAG chimical surface fluxes
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!                   02/2018 Q.Libois ECRAD
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -355,6 +356,7 @@ USE MODD_PASPOL_n
 USE MODI_GATHER_ll
 USE MODI_INI_BUDGET
 USE MODI_INI_SW_SETUP
+USE MODI_INI_LW_SETUP
 USE MODI_SET_GRID
 USE MODI_METRICS
 USE MODI_UPDATE_METRICS
@@ -366,6 +368,7 @@ USE MODI_SET_DIRCOS
 USE MODI_INI_CPL
 USE MODI_INI_RADIATIONS
 USE MODI_INI_RADIATIONS_ECMWF
+USE MODI_INI_RADIATIONS_ECRAD
 USE MODI_CH_INIT_FIELD_n
 USE MODI_INI_DEEP_CONVECTION
 USE MODI_INI_BIKHARDT_n
@@ -428,6 +431,9 @@ USE MODD_CH_M9_n, ONLY:NNONZEROTERMS
 !
 USE MODE_MPPDB
 USE MODI_INIT_AEROSOL_PROPERTIES
+#ifdef MNH_ECRAD
+USE YOERDI   , ONLY :RCCO2
+#endif
 !
 IMPLICIT NONE
 !
@@ -487,7 +493,7 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZBARE  ! bare soil fraction
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIR_ALB ! direct albedo
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSCA_ALB ! diffuse albedo
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTSRAD   ! surface temperature
 !
 !
@@ -1246,9 +1252,21 @@ END IF
 !
 !*       3.7   Module MODD_RADIATIONS_n (except XOZON and XAER)
 !
-!
-NSWB_MNH = 6
-ALLOCATE(XSW_BANDS (NSWB_MNH))
+! Initialization of SW bands
+NSWB_OLD = 6 ! Number of bands in ECMWF original scheme (from Fouquart et Bonnel (1980))
+             ! then modified through INI_RADIATIONS_ECMWF but remains equal to 6 practically
+             
+IF (CRAD == 'ECRA') THEN
+    NSWB_MNH = 14  
+ELSE
+    NSWB_MNH = NSWB_OLD  
+END IF
+
+NLWB_MNH = 16 ! For XEMIS initialization (should be spectral in the future)
+
+
+ALLOCATE(XSW_BANDS (NSWB_MNH)) 
+ALLOCATE(XLW_BANDS (NLWB_MNH)) 
 ALLOCATE(XZENITH   (IIU,IJU))
 ALLOCATE(XAZIM     (IIU,IJU))
 ALLOCATE(XALBUV    (IIU,IJU))
@@ -1263,7 +1281,7 @@ IF (CRAD /= 'NONE') THEN
   ALLOCATE(XDIRFLASWD(IIU,IJU,NSWB_MNH))
   ALLOCATE(XDIR_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(XSCA_ALB(IIU,IJU,NSWB_MNH))
-  ALLOCATE(XEMIS  (IIU,IJU))
+  ALLOCATE(XEMIS  (IIU,IJU,NLWB_MNH))
   ALLOCATE(XTSRAD (IIU,IJU))    ; XTSRAD = 0.0
   ALLOCATE(XSEA (IIU,IJU))
   ALLOCATE(XZS_XY (IIU,IJU))
@@ -1282,7 +1300,7 @@ ELSE
   ALLOCATE(XDIRFLASWD(0,0,0))
   ALLOCATE(XDIR_ALB(0,0,0))
   ALLOCATE(XSCA_ALB(0,0,0))
-  ALLOCATE(XEMIS  (0,0))
+  ALLOCATE(XEMIS  (0,0,0))
   ALLOCATE(XTSRAD (0,0))
   ALLOCATE(XSEA (0,0))
   ALLOCATE(XZS_XY (0,0))
@@ -1296,7 +1314,7 @@ ELSE
   ALLOCATE(XRADEFF(0,0,0))
 END IF
 
-IF (CRAD == 'ECMW') THEN
+IF (CRAD == 'ECMW' .OR. CRAD == 'ECRA') THEN
   ALLOCATE(XSTROATM(31,6))
   ALLOCATE(XSMLSATM(31,6))
   ALLOCATE(XSMLWATM(31,6))
@@ -1975,12 +1993,16 @@ END IF
 !
 !
 CALL INI_SW_SETUP (CRAD,NSWB_MNH,XSW_BANDS)
+CALL INI_LW_SETUP (CRAD,NLWB_MNH,XLW_BANDS)
 !
 !
 !       18.1.1 Special initialisation for CO2 content
 !              CO2 (molar mass=44) horizontally and vertically homogeneous at 360 ppm
 !
 XCCO2 = 360.0E-06 * 44.0E-03 / XMD
+#ifdef MNH_ECRAD
+RCCO2 = 360.0E-06 * 44.0E-03 / XMD
+#endif
 !
 !
 !*      18.2   Externalized surface fields
@@ -1992,7 +2014,7 @@ ZCO2(:,:) = XCCO2
 
 ALLOCATE(ZDIR_ALB(IIU,IJU,NSWB_MNH))
 ALLOCATE(ZSCA_ALB(IIU,IJU,NSWB_MNH))
-ALLOCATE(ZEMIS  (IIU,IJU))
+ALLOCATE(ZEMIS  (IIU,IJU,NLWB_MNH))
 ALLOCATE(ZTSRAD (IIU,IJU))
 !
 IF (IMASDEV>=46) THEN
@@ -2022,7 +2044,7 @@ IF (CSURF=='EXTE' .AND. (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ')) THEN
   CALL GOTO_SURFEX(KMI)
   !* initialization of surface
   CALL INIT_GROUND_PARAM_n ('ALL',SIZE(CSV),CSV,ZCO2,                             &
-                            XZENITH,XAZIM,XSW_BANDS,ZDIR_ALB,ZSCA_ALB,  &
+                            XZENITH,XAZIM,XSW_BANDS,XLW_BANDS,ZDIR_ALB,ZSCA_ALB,  &
                             ZEMIS,ZTSRAD                                )
   !
   IF (SIZE(XEMIS)>0) THEN
@@ -2068,7 +2090,7 @@ DEALLOCATE(ZCO2)
 !
 !* in a RESTART case, reads surface radiative quantities in the MESONH file
 !
-IF (CRAD   == 'ECMW' .AND. CGETRAD=='READ') THEN
+IF ((CRAD  == 'ECMW' .OR. CRAD  == 'ECRA') .AND. CGETRAD=='READ') THEN
   CALL INI_SURF_RAD(HINIFILE, CLUOUT, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD)
 END IF
 !
@@ -2102,7 +2124,7 @@ IF (CRAD   == 'ECMW') THEN
 !
     CALL INI_RADIATIONS_ECMWF (HINIFILE,HLUOUT,                                           &
                                XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,          &
-                               CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB,CAER,NAER,NSTATM,          &
+                               CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,          &
                                XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND              )
 !
     DEALLOCATE(ZSEA,ZTOWN,ZBARE)
@@ -2110,6 +2132,35 @@ IF (CRAD   == 'ECMW') THEN
     XAER_CLIM(:,:,:,:) =XAER(:,:,:,:)
 !
   END IF
+
+ELSE IF (CRAD   == 'ECRA') THEN
+#ifdef MNH_ECRAD
+!* get cover mask for aerosols
+!
+  IF (CPROGRAM=='MESONH' .OR. CPROGRAM=='DIAG  ') THEN
+    ALLOCATE(ZSEA(IIU,IJU))
+    ALLOCATE(ZTOWN(IIU,IJU))
+    ALLOCATE(ZBARE(IIU,IJU))
+    IF (CSURF=='EXTE') THEN
+      CALL GOTO_SURFEX(KMI)
+      CALL MNHGET_SURF_PARAM_n(PSEA=ZSEA,PTOWN=ZTOWN,PBARE=ZBARE)
+    ELSE
+      ZSEA (:,:) = 1.
+      ZTOWN(:,:) = 0.
+      ZBARE(:,:) = 0.
+    END IF
+!   
+    CALL INI_RADIATIONS_ECRAD (HINIFILE,HLUOUT,                                           &
+                               XZHAT,XPABST,XTHT,XTSRAD,XLAT,XLON,TDTCUR,TDTEXP,          &
+                               CLW,NDLON,NFLEV,NFLUX,NRAD,NSWB_OLD,CAER,NAER,NSTATM,          &
+                               XSTATM,ZSEA,ZTOWN,ZBARE,XOZON, XAER,XDST_WL, LSUBG_COND              )
+
+    DEALLOCATE(ZSEA,ZTOWN,ZBARE)
+    ALLOCATE (XAER_CLIM(SIZE(XAER,1),SIZE(XAER,2),SIZE(XAER,3),SIZE(XAER,4)))
+    XAER_CLIM(:,:,:,:) = XAER(:,:,:,:)
+!
+  END IF
+#endif
 ELSE
   ALLOCATE (XOZON(0,0,0))
   ALLOCATE (XAER(0,0,0,0))

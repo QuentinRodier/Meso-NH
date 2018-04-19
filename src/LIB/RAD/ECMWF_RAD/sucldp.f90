@@ -51,7 +51,7 @@ SUBROUTINE SUCLDP
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RG
+USE OYOMCST   , ONLY : RG
 USE YOECLDP  , ONLY : RAMID    ,RCLDIFF  ,RCLCRIT  ,RKCONV   ,&
             &RPRC1    ,RPRC2    ,RCLDMAX  ,RPECONS  ,RTAUMEL  ,&
             &RENTRTU  ,RENTRRA  ,RAMIN    ,RLMIN    ,RASMICE  ,&

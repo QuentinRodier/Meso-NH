@@ -126,6 +126,15 @@ DIR_RAD      +=  LIB/RAD/ECMWF_RAD
 #CPPFLAGS_RAD =
 INC_RAD      = -I$(B)LIB/RAD/ECMWF_RAD
 #
+ifdef MNH_ECRAD
+DIR_RAD      +=  LIB/RAD/ecrad-1.0.1_mnh
+DIR_RAD      +=  LIB/RAD/ecrad-1.0.1
+CPPFLAGS_RAD = -DMNH_ECRAD
+INC_RAD      += -I$(B)LIB/RAD/ecrad-1.0.1/include
+ARCH_XYZ    := $(ARCH_XYZ)-ECRAD
+endif
+#
+#
 ifdef DIR_RAD
 DIR_MASTER  += $(DIR_RAD)
 CPPFLAGS    += $(CPPFLAGS_RAD)
@@ -134,6 +143,16 @@ INC         += $(INC_RAD)
 IGNORE_DEP_MASTER   += olwu.D olwv.D rad1Driv_MACLATMOSPH_60LEVELS_ICRCCM3.D tstrad.D tstrad_chansubset.D tstrad_rttov7.D \
                        tstrad_sx6.D
 
+OBJS0 += spll_orrtm_kgb1.o spll_orrtm_kgb14.o spll_orrtm_kgb3_a.o spll_orrtm_kgb4_b.o \
+        spll_orrtm_kgb5_c.o spll_orrtm_kgb10.o spll_orrtm_kgb15.o spll_orrtm_kgb3_b.o \
+        spll_orrtm_kgb4_c.o spll_orrtm_kgb6.o spll_orrtm_kgb11.o spll_orrtm_kgb16.o \
+        spll_orrtm_kgb3_c.o spll_orrtm_kgb5.o spll_orrtm_kgb7.o spll_orrtm_kgb12.o \
+        spll_orrtm_kgb2.o spll_orrtm_kgb4.o spll_orrtm_kgb5_a.o spll_orrtm_kgb8.o \
+        spll_orrtm_kgb13.o spll_orrtm_kgb3.o spll_orrtm_kgb4_a.o spll_orrtm_kgb5_b.o \
+        spll_orrtm_kgb9.o spll_read_xker_raccs.o spll_read_xker_rdryg.o spll_read_xker_sdryg.o \
+        spll_suecaebc.o  spll_suecaec.o  spll_suecaeor.o  spll_suecaesd.o \
+        spll_suecaess.o  spll_suecaesu.o spll_suecozc.o  spll_suecozo.o
+ifdef MNH_ECRAD
 OBJS0 += spll_rrtm_kgb1.o spll_rrtm_kgb14.o spll_rrtm_kgb3_a.o spll_rrtm_kgb4_b.o \
         spll_rrtm_kgb5_c.o spll_rrtm_kgb10.o spll_rrtm_kgb15.o spll_rrtm_kgb3_b.o \
         spll_rrtm_kgb4_c.o spll_rrtm_kgb6.o spll_rrtm_kgb11.o spll_rrtm_kgb16.o \
@@ -143,6 +162,10 @@ OBJS0 += spll_rrtm_kgb1.o spll_rrtm_kgb14.o spll_rrtm_kgb3_a.o spll_rrtm_kgb4_b.
         spll_rrtm_kgb9.o spll_read_xker_raccs.o spll_read_xker_rdryg.o spll_read_xker_sdryg.o \
         spll_suecaebc.o  spll_suecaec.o  spll_suecaeor.o  spll_suecaesd.o \
         spll_suecaess.o  spll_suecaesu.o spll_suecozc.o  spll_suecozo.o
+IGNORE_DEP_MASTER   += rrtm_rrtm_140gp_mcica.D srtm_spcvrt_mcica.D srtm_srtm_224gp_mcica.D radiation_psrad.D \
+                       radiation_psrad_rrtm.D test_spartacus_math.D radiation_adding_ica_sw_test.D \
+                       radiation_adding_ica_sw_test2.D srtm_gas_optical_depth_test.D
+endif
 
 $(OBJS0): OPT = $(OPT0) 
 

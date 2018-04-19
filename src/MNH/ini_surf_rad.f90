@@ -21,7 +21,7 @@ CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! Direct albedo
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! Diffuse albedo
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! emissivity
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! emissivity
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !
 END SUBROUTINE INI_SURF_RAD
@@ -61,6 +61,7 @@ END MODULE MODI_INI_SURF_RAD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/03/03
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -76,7 +77,7 @@ CHARACTER (LEN=*),      INTENT(IN)  :: HINIFILE  ! Name of the initial file
 CHARACTER (LEN=*),      INTENT(IN)  :: HLUOUT    ! name for output-listing
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! Direct albedo
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! Diffuse albedo
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! emissivity
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! emissivity
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !
 !*       0.2   declarations of local variables

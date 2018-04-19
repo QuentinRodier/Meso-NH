@@ -72,9 +72,9 @@ USE PARKIND1, ONLY :&
 ! --------------------------------------
 
 
-USE YOERRTO5 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,&
+USE OYOERRTO5 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,&
            &FRACREFBO, CCL4O
-USE YOERRTA5 , ONLY : STRRAT1   ,STRRAT2
+USE OYOERRTA5 , ONLY : STRRAT1   ,STRRAT2
 
 !     ------------------------------------------------------------------
 

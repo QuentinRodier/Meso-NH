@@ -59,7 +59,7 @@ SUBROUTINE SWTT ( KIDIA, KFDIA, KLON, KNU, KA , PU, PTR)
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : APAD     ,BPAD     ,D
+USE OYOESW    , ONLY : APAD     ,BPAD     ,D
 
 
 IMPLICIT NONE

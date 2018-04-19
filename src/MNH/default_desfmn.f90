@@ -221,6 +221,7 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
 !!                   07/2017  (V. Masson) adds time step for output files writing.
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -244,6 +245,9 @@ USE MODD_TURB_n
 USE MODD_BUDGET
 USE MODD_LES
 USE MODD_PARAM_RAD_n
+#ifdef MNH_ECRAD
+USE MODD_PARAM_ECRAD_n
+#endif
 USE MODD_BLANK
 USE MODD_FRC
 USE MODD_PARAM_ICE
@@ -925,6 +929,31 @@ XFUDG = 1.
 LAERO_FT=.FALSE.
 LFIX_DAT=.FALSE.
 !
+#ifdef MNH_ECRAD
+!*      13bis.   SET DEFAULT VALUES FOR MODD_PARAM_ECRAD_n :
+!             ---------------------------------------
+!
+NSWSOLVER = 0           ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect                            
+NLWSOLVER = 0           ! 0: 'McICA 1: 'SPARTACUS' 2: 'SPARTACUS' + 3D effect 
+! LEFF3D         = .TRUE.
+! LSIDEM         = .TRUE.
+NREG           = 3            ! Number of cloudy regions (3=TripleClouds)
+! LLWCSCA        = .TRUE.       ! LW cloud scattering
+! LLWASCA        = .TRUE.       ! LW aerosols scattering
+NLWSCATTERING = 2
+NAERMACC = 0
+! CGAS           = 'RRTMG-IFS'  ! Gas optics model
+NOVLP          = 1     ! overlap assumption ; 0= 'Max-Ran' ; 1= 'Exp-Ran'; 2 = 'Exp-Exp'
+NLIQOPT        = 3            ! 1: 'Monochromatic', 2: 'HuStamnes', 3: 'SOCRATES', 4: 'Slingo' 
+NICEOPT        = 3            ! 1: 'Monochromatic', 2: 'Fu-PSRAD', 3: 'Fu-IFS', 4: 'Baran', 5: 'Baran2016', 6: 'Baran2017' 
+! LSW_ML_E       = .FALSE.
+! LLW_ML_E       = .FALSE.
+! LPSRAD         = .FALSE.
+! 
+NRADLP = 1                    ! 0: ERA-15, 1: Zhang and Rossow, 2: Martin (1994) et Woods (2000)
+NRADIP = 1                    ! 0: 40 mum, 1: Liou and Ou (1994), 2: Liou and Ou (1994) improved, 3: Sun and Rikus (1999)
+XCLOUD_FRAC_STD = 1.0_JPRB ! change to 0.75 for more realistic distribution
+#endif
 !-------------------------------------------------------------------------------
 !
 !*      14.   SET DEFAULT VALUES FOR MODD_BLANK :

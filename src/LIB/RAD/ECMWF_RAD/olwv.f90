@@ -85,7 +85,6 @@ INTEGER_M :: KFDIA
 INTEGER_M :: KIDIA
 INTEGER_M :: KLEV
 INTEGER_M :: KLON
-INTEGER_M :: KTRAER
 INTEGER_M :: KUAER, KTRAER
 
 !-----------------------------------------------------------------------

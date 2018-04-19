@@ -55,7 +55,7 @@ SUBROUTINE SUCST()
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RPI      ,RCLUM    ,RHPLA    ,RKBOL    ,&
+USE OYOMCST   , ONLY : RPI      ,RCLUM    ,RHPLA    ,RKBOL    ,&
             &RNAVO    ,RDAY     ,REA      ,REPSM    ,RSIYEA   ,&
             &RSIDAY   ,ROMEGA   ,RA       ,RG       ,R1SA     ,&
             &RSIGMA   ,RI0      ,R        ,RMD      ,RMV      ,&
@@ -65,7 +65,7 @@ USE YOMCST   , ONLY : RPI      ,RCLUM    ,RHPLA    ,RKBOL    ,&
             &RLMLT    ,RTT      ,RATM     ,RDT      ,RESTT    ,&
             &RALPW    ,RBETW    ,RGAMW    ,RALPS    ,RBETS    ,&
             &RGAMS    ,RALPD    ,RBETD    ,RGAMD
-USE YOMRIP   , ONLY : RTIMST   ,RTIMTR
+USE OYOMRIP   , ONLY : RTIMST   ,RTIMTR
 
 IMPLICIT NONE
 

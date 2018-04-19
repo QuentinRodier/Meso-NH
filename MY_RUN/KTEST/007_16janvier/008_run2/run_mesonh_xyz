@@ -5,11 +5,23 @@
 #MNH_LIC for details. version 1.
 set -x
 set -e
+
 rm -f 16JAN* OUT*  EXSEG?.nam 
-cp EXSEG1.nam.src EXSEG1.nam
-cp EXSEG2.nam.src EXSEG2.nam
+
 ln -sf  ../004_arp2lfi/16JAN_06_MNH.*??? .
 ln -sf  ../006_preal/16JAN_06_MNH2.*??? .
 ln -sf  ../003_nest/16JAN98_36km.neste1.* .
 ln -sf  ../003_nest/16JAN98_9km.neste1.* .
+
+if [ "x${MNH_ECRAD}" != "x" ]  ; then
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/RAD* .
+ln -sf ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1/data/*.nc .
+sed -e's/ECMW/ECRA/g' EXSEG1.nam.src > EXSEG1.nam
+sed -e's/ECMW/ECRA/g' EXSEG2.nam.src > EXSEG2.nam
+else
+cp EXSEG1.nam.src EXSEG1.nam
+cp EXSEG2.nam.src EXSEG2.nam
+fi
+
+
 time ${MPIRUN} MESONH${XYZ}

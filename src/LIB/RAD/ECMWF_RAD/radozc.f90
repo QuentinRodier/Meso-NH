@@ -52,7 +52,7 @@ SUBROUTINE RADOZC ( KIDIA , KFDIA , KLON , KTDIA , KLEV &
 
 #include "tsmbkind.h"
 
-  USE YOMCST   , ONLY : R
+  USE OYOMCST   , ONLY : R
   USE YOEOZOC  , ONLY : RSINC    ,ROZT     ,RPROC
 
 

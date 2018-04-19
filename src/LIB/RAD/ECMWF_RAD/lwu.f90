@@ -67,12 +67,12 @@ SUBROUTINE LWU &
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RG
-USE YOESW    , ONLY : RAER
+USE OYOMCST   , ONLY : RG
+USE OYOESW    , ONLY : RAER
 USE YOELW    , ONLY : NSIL     ,NUA      ,NG1      ,NG1P1    ,&
             &ALWT     ,BLWT     ,RO3T     ,RT1      ,TREF     ,&
             &RVGCO2   ,RVGH2O   ,RVGO3
-USE YOERDI   , ONLY : RCH4     ,RN2O     ,RCFC11   ,RCFC12
+USE OYOERDI   , ONLY : RCH4     ,RN2O     ,RCFC11   ,RCFC12
 USE YOERDU   , ONLY : R10E     ,REPSCO   ,REPSCQ
 
 

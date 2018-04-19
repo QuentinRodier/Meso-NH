@@ -60,6 +60,7 @@ END MODULE MODI_RESET_EXSEG
 !!    -------------
 !!      Original    14/09/00
 !!      Modifications  04/06/02  (P Jabouille) reset radiation and convective options
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -76,6 +77,7 @@ USE MODD_GET_n
 USE MODD_PARAM_n, ONLY: CDCONV, CRAD
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_RAD_n
+USE MODN_PARAM_ECRAD_n
 !
 IMPLICIT NONE
 !
@@ -152,6 +154,15 @@ IF(NRAD_3D>=1) THEN
     CALL UPDATE_NAM_PARAM_RADn
     PRINT*, '  namelist NAM_PARAM_RADN read'
   END IF
+#ifdef MNH_ECRAD
+  CALL POSNAM(ILUNAM,'NAM_PARAM_ECRADN',GFOUND)
+  IF (GFOUND) THEN
+    CALL INIT_NAM_PARAM_EcRADn
+    READ(UNIT=ILUNAM,NML=NAM_PARAM_ECRADN)
+    CALL UPDATE_NAM_PARAM_ECRADn
+    PRINT*, '  namelist NAM_PARAM_ECRADN read'    
+  END IF
+#endif
 ENDIF
 !
 

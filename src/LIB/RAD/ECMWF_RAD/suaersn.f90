@@ -51,7 +51,7 @@ SUBROUTINE SUAERSN (KTSW,KSW)
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : RTAUA     ,RPIZA    ,RCGA
+USE OYOESW    , ONLY : RTAUA     ,RPIZA    ,RCGA
 
 !      ----------------------------------------------------------------
 

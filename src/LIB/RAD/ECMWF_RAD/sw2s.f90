@@ -67,7 +67,7 @@ SUBROUTINE SW2S ( KIDIA, KFDIA, KLON , KLEV , KAER, KNU &
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : RRAY     ,RSUN
+USE OYOESW    , ONLY : RRAY     ,RSUN
 USE YOERDU   , ONLY : REPLOG
 
 

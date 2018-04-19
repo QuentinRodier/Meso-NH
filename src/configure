@@ -23,6 +23,10 @@ export VERSION_OASIS=${VERSION_OASIS:-"mct_v3"}
 export VERSION_TOY=${VERSION_TOY:-"v1-0"}
 export VERSION_NCL=${VERSION_NCL:-"ncl-6.4.0"}
 
+
+export VERSION_ECRAD=${VERSION_ECRAD:-"1.0.1"}
+
+
 export LEN_HREC=${LEN_HREC:-16}
 
 #
@@ -395,7 +399,7 @@ fi
 #
 ${LOCAL}/bin/eval_dollar  profile_mesonh.ihm > profile_mesonh
 chmod +x profile_mesonh
-XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
+XYZ=${ARCH}${MNH_REAL}I${MNH_INT}-${VERSION_XYZ}${MNH_ECRAD:+-ECRAD}${VER_USER:+-${VER_USER}}-${VER_MPI}-${OPTLEVEL}
 cp profile_mesonh profile_mesonh-${XYZ}
 #
 #  Do some post-install stuff

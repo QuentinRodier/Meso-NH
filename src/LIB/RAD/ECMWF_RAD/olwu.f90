@@ -62,12 +62,12 @@ SUBROUTINE OLWU ( KIDIA, KFDIA, KLON, KLEV &
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RG
-USE YOESW    , ONLY : RAER
+USE OYOMCST   , ONLY : RG
+USE OYOESW    , ONLY : RAER
 USE YOEOLW   , ONLY : NISP     ,NUA      ,NG1      ,NG1P1    ,&
             &AT       ,BT       ,RT1      ,TREF     ,OCT      ,&
             &RVGCO2   ,RVGH2O   ,RVGO3
-USE YOERDI   , ONLY : RCH4     ,RN2O     ,RCFC11   ,RCFC12
+USE OYOERDI   , ONLY : RCH4     ,RN2O     ,RCFC11   ,RCFC12
 USE YOERDU   , ONLY : R10E     ,REPSCO   ,REPSCQ
 USE YOEDBUG  , ONLY : LDEBUG
 

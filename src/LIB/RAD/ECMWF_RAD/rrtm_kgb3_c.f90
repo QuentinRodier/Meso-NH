@@ -72,9 +72,9 @@ USE PARKIND1, ONLY :&
 ! --------------------------------------
 
 
-USE YOERRTO3 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,&
+USE OYOERRTO3 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,&
            &FRACREFBO  ,FORREFO    ,ABSN2OAO   ,ABSN2OBO
-USE YOERRTA3 , ONLY : ABSN2OA ,ABSN2OB  ,ETAREF    ,H2OREF     ,&
+USE OYOERRTA3 , ONLY : ABSN2OA ,ABSN2OB  ,ETAREF    ,H2OREF     ,&
            &N2OREF     ,CO2REF     ,STRRAT
 
 !     ------------------------------------------------------------------

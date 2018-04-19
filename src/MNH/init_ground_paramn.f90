@@ -13,7 +13,7 @@
 !     #######################
 INTERFACE
       SUBROUTINE INIT_GROUND_PARAM_n(HINIT,KSV,HSV,PCO2,                       &
-                               PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
+                               PZENITH,PAZIM,PSW_BANDS,PLW_BANDS,PDIR_ALB,PSCA_ALB,  &
                                PEMIS,PTSRAD                                )
 !
 CHARACTER(LEN=3),                  INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -22,10 +22,11 @@ CHARACTER(LEN=6), DIMENSION(KSV),  INTENT(INOUT)::HSV       ! name of all scalar
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PCO2      ! CO2 concentration (kg/kg)
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PZENITH   ! solar zenithal angle
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PAZIM     ! solar azimuthal angle (rad from N, clockwise)
-REAL,             DIMENSION(:),    INTENT(IN)  :: PSW_BANDS ! middle wavelength of each band
+REAL,             DIMENSION(:),    INTENT(IN)  :: PSW_BANDS ! middle wavelength of each SW band
+REAL,             DIMENSION(:),    INTENT(IN)  :: PLW_BANDS ! middle wavelength of each LW band
 REAL,             DIMENSION(:,:,:),INTENT(OUT) :: PDIR_ALB  ! direct albedo for each band
 REAL,             DIMENSION(:,:,:),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
-REAL,             DIMENSION(:,:),  INTENT(OUT) :: PEMIS     ! emissivity
+REAL,             DIMENSION(:,:,:),INTENT(OUT) :: PEMIS     ! spectral emissivity
 REAL,             DIMENSION(:,:),  INTENT(OUT) :: PTSRAD    ! radiative temperature
 !
 END SUBROUTINE INIT_GROUND_PARAM_n
@@ -35,7 +36,7 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !
 !     #############################################################
       SUBROUTINE INIT_GROUND_PARAM_n(HINIT,KSV,HSV,PCO2,                       &
-                               PZENITH,PAZIM,PSW_BANDS,PDIR_ALB,PSCA_ALB,  &
+                               PZENITH,PAZIM,PSW_BANDS,PLW_BANDS,PDIR_ALB,PSCA_ALB,  &
                                PEMIS,PTSRAD                                )
 !     #############################################################
 !
@@ -69,6 +70,7 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !!      Nov.  2010  (J.Escobar) PGI BUG , add SIZE(CSV) to interface
 !!  06/2016     (G.Delautier) phasage surfex 8
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -107,10 +109,11 @@ CHARACTER(LEN=6), DIMENSION(KSV),  INTENT(INOUT)::HSV       ! name of all scalar
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PCO2      ! CO2 concentration (kg/kg)
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PZENITH   ! solar zenithal angle
 REAL,             DIMENSION(:,:),  INTENT(IN)  :: PAZIM     ! solar azimuthal angle (rad from N, clockwise)
-REAL,             DIMENSION(:),    INTENT(IN)  :: PSW_BANDS ! middle wavelength of each band
+REAL,             DIMENSION(:),    INTENT(IN)  :: PSW_BANDS ! middle wavelength of each SW band
+REAL,             DIMENSION(:),    INTENT(IN)  :: PLW_BANDS ! middle wavelength of each LW band
 REAL,             DIMENSION(:,:,:),INTENT(OUT) :: PDIR_ALB  ! direct albedo for each band
 REAL,             DIMENSION(:,:,:),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
-REAL,             DIMENSION(:,:),  INTENT(OUT) :: PEMIS     ! emissivity
+REAL,             DIMENSION(:,:,:),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(:,:),  INTENT(OUT) :: PTSRAD    ! radiative temperature
 !
 !
@@ -123,15 +126,15 @@ REAL, DIMENSION(:),    ALLOCATABLE :: ZZENITH   ! solar zenithal angle
 REAL, DIMENSION(:),    ALLOCATABLE :: ZAZIM     ! solar azimuthal angle
 REAL, DIMENSION(:,:),  ALLOCATABLE :: ZDIR_ALB  ! direct albedo
 REAL, DIMENSION(:,:),  ALLOCATABLE :: ZSCA_ALB  ! diffuse albedo
-REAL, DIMENSION(:),    ALLOCATABLE :: ZEMIS     ! emissivity
+REAL, DIMENSION(:),  ALLOCATABLE :: ZEMIS     ! spectral emissivity
 REAL, DIMENSION(:),    ALLOCATABLE :: ZTSRAD    ! radiative temperature
 REAL, DIMENSION(:),    ALLOCATABLE :: ZTSURF
 !
 TYPE(DATE) :: TDATE_END
 !
 REAL :: ZDURATION
-!
 INTEGER :: ISWB  ! number of SW bands
+INTEGER :: ILWB  ! number of LW bands
 INTEGER :: IIU   ! 1st array size
 INTEGER :: IJU   ! 2nd array size
 INTEGER :: IIB   ! X array physical boundary
@@ -146,6 +149,7 @@ INTEGER :: ISV
 !
 !
 ISWB = SIZE(PSW_BANDS)
+ILWB = SIZE(PLW_BANDS)
 !
 CALL GET_DIM_EXT_ll('B',IIU,IJU)
 CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
@@ -204,7 +208,9 @@ PTSRAD   = XUNDEF
 !
 PDIR_ALB(IIB:IIE,IJB:IJE,:) = RESHAPE(ZDIR_ALB, (/ IIE-IIB+1, IJE-IJB+1, ISWB /) )
 PSCA_ALB(IIB:IIE,IJB:IJE,:) = RESHAPE(ZSCA_ALB, (/ IIE-IIB+1, IJE-IJB+1, ISWB /) )
-PEMIS   (IIB:IIE,IJB:IJE)   = RESHAPE(ZEMIS,    (/ IIE-IIB+1, IJE-IJB+1 /)       )
+DO JLAYER=1,SIZE(PEMIS,3)
+  PEMIS   (IIB:IIE,IJB:IJE,JLAYER) = RESHAPE(ZEMIS,    (/ IIE-IIB+1, IJE-IJB+1 /)       )
+END DO
 PTSRAD  (IIB:IIE,IJB:IJE)   = RESHAPE(ZTSRAD,   (/ IIE-IIB+1, IJE-IJB+1 /)       )
 !-------------------------------------------------------------------------------
 DEALLOCATE(ZCO2    )

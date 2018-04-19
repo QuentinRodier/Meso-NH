@@ -54,9 +54,9 @@ SUBROUTINE SWU &
 #include "tsmbkind.h"
 
 USE YOECLD   , ONLY : REPSEC
-USE YOERAD   , ONLY : NOVLP    ,NSW
+USE OYOERAD   , ONLY : NOVLP    ,NSW
 USE YOERDU   , ONLY : REPSCQ
-USE YOESW    , ONLY : RPDH1    ,RPDU1    ,RPNH     ,RPNU     ,&
+USE OYOESW    , ONLY : RPDH1    ,RPDU1    ,RPNH     ,RPNU     ,&
             &RTDH2O   ,RTDUMG   ,RTH2O    ,RTUMG
 USE YOEOVLP  , ONLY : RA1OVLP
 !

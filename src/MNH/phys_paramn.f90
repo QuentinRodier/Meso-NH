@@ -229,6 +229,7 @@ END MODULE MODI_PHYS_PARAM_n
 !!      M. Leriche 02/2017 Avoid negative fluxes if sv=0 outside the physics domain
 !!      C.Lac  10/2017 : ch_monitor and aer_monitor extracted from phys_param
 !!                       to be called directly by modeln as the last process 
+!!                   02/2018 Q.Libois ECRAD
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -330,6 +331,7 @@ USE MODD_DEF_EDDYUV_FLUX_n         ! Ajout PP
 USE MODD_LATZ_EDFLX
 USE MODD_MNH_SURFEX_n
 USE MODI_SWITCH_SBG_LES_N
+USE MODD_TIME_n 
 !
 USE MODD_PARAM_LIMA,       ONLY : MSEDC => LSEDC, XRTMIN_LIMA=>XRTMIN
 !
@@ -365,7 +367,7 @@ REAL, DIMENSION(:,:), ALLOCATABLE     :: ZSFCO2! surface flux of CO2
 !
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZDIR_ALB ! direct albedo
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZSCA_ALB ! diffuse albedo
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
+REAL, DIMENSION(:,:,:),   ALLOCATABLE :: ZEMIS    ! emissivity
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZTSRAD   ! surface temperature
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZRGDST,ZSIGDST,ZNDST,ZSVDST
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE  :: ZRGSLT,ZSIGSLT,ZNSLT,ZSVSLT
@@ -587,7 +589,7 @@ IF (CRAD /='NONE') THEN
 !
 !  test to see if the partial radiations for cloudy must be called
 !
-  IF (CRAD =='ECMW') THEN
+  IF (CRAD =='ECMW' .OR. CRAD =='ECRA') THEN
     CALL TEMPORAL_DIST(TDTCUR%TDATE%YEAR,TDTCUR%TDATE%MONTH,               &
                        TDTCUR%TDATE%DAY, TDTCUR%TIME,                      &
                        TDTRAD_CLONLY%TDATE%YEAR,TDTRAD_CLONLY%TDATE%MONTH, &
@@ -615,7 +617,7 @@ IF (CRAD /='NONE') THEN
 !
 ! tests to see if any cloud exists
 !   
-  IF (CRAD =='ECMW') THEN
+  IF (CRAD =='ECMW' .OR. CRAD =='ECRA') THEN
     IF (GRAD .AND. NRR.LE.3 ) THEN 
       IF( MAXVAL(XCLDFR(:,:,:)).LE. 1.E-10 .AND. OCLOUD_ONLY ) THEN
           GRAD = .FALSE.                ! only the cloudy verticals would be 
@@ -714,10 +716,10 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       XDTHRAD(:,:,:) = 0.
       !
 !
-!*        1.3.2 ECMWf radiative surface and atmospheric fluxes
+!*        1.3.2 ECMWF or ECRAD radiative surface and atmospheric fluxes
 !               ----------------------------------------------
 !
-    CASE('ECMW')
+    CASE('ECMW' , 'ECRA')
       IF (LLES_MEAN) OCLOUD_ONLY=.FALSE.
       XRADEFF(:,:,:)=0.0
       XSWU(:,:,:)=0.0
@@ -729,8 +731,8 @@ CALL SUNPOS_n   ( XZENITH, ZCOSZEN, ZSINZEN, ZAZIMSOL )
       CALL RADIATIONS   ( OCLOSE_OUT, HFMFILE, CLUOUT,                             &
                LCLEAR_SKY,OCLOUD_ONLY, NCLEARCOL_TM1,CEFRADL, CEFRADI,COPWSW,COPISW,&
                COPWLW,COPILW, XFUDG,                                                &
-               NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD, NAER,NSWB, NSTATM, NRAD_COLNBR,&
-               ZCOSZEN, XSEA, XCORSOL,                                              &
+               NDLON, NFLEV, NRAD_DIAG, NFLUX, NRAD,NAER,NSWB_OLD,NSWB_MNH,NLWB_MNH,      &
+               NSTATM, NRAD_COLNBR, ZCOSZEN, XSEA, XCORSOL,                         &
                XDIR_ALB, XSCA_ALB, XEMIS, XCLDFR, XCCO2, XTSRAD, XSTATM, XTHT, XRT, &
                XPABST,XOZON, XAER,XDST_WL, XAER_CLIM, XSVT,                         &
                XDTHRAD, XFLALWD, XDIRFLASWD, XSCAFLASWD, XRHODREF, XZZ ,            &
@@ -1091,7 +1093,7 @@ IF (CSURF=='EXTE') THEN
   !
   ALLOCATE(ZDIR_ALB(IIU,IJU,NSWB_MNH))
   ALLOCATE(ZSCA_ALB(IIU,IJU,NSWB_MNH))
-  ALLOCATE(ZEMIS  (IIU,IJU))
+  ALLOCATE(ZEMIS  (IIU,IJU,NLWB_MNH))
   ALLOCATE(ZTSRAD (IIU,IJU))
   !  
   IKIDM=0

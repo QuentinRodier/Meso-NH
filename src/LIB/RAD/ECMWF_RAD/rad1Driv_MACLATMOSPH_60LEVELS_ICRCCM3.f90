@@ -14,7 +14,7 @@ USE PARRTM1D , ONLY : JP_LON   ,JP_IDIA  ,JP_FDIA  ,JP_TDIA  ,&
 
 !     USE YOMLUN   , ONLY : NULNAM
 
-USE YOMCST   , ONLY : RD       ,RG       ,RTT      ,RSIGMA   ,&
+USE OYOMCST   , ONLY : RD       ,RG       ,RTT      ,RSIGMA   ,&
  &            RCPD   ,RPI      ,RDAY     ,RCPD     ,REA      ,&
  &            RI0    ,RSIGMA   ,REPSM
 USE YOEAERD  , ONLY : CVDAES   ,CVDAEL   ,CVDAEU   ,CVDAED   ,&
@@ -25,19 +25,19 @@ USE YOELW    , ONLY : NSIL     ,NIPD     ,NTRA     ,NUA      ,&
  &            NG1      ,NG1P1    ,WG1
 USE YOEOVLP  , ONLY : RA1OVLP
 USE YOEPHLI  , ONLY : LPHYLIN
-USE YOERAD   , ONLY : NAER     ,NMODE    ,NOZOCL   ,&
+USE OYOERAD   , ONLY : NAER     ,NMODE    ,NOZOCL   ,&
  &            NRADFR   ,NRADPFR  ,NRADPLA  ,NRINT    ,NHOWINH  ,&
  &            NOVLP    ,NRADF2C  ,NRADC2F  ,NLW      ,NSW      ,&
  &            NTSW     ,LERAD6H  ,LERADHS  ,LHVOLCA  ,LNEWAER  ,&
  &            LONEWSW  ,LOWASYF  ,LOWHSSS  ,LOIFUEC  ,LRRTM    ,&
  &            LRADLP   ,LINHOM   ,RAOVLP   ,RBOVLP   ,&
  &            NICEOPT  ,NLIQOPT  ,NRADIP   ,NRADLP   ,RMINICE
-USE YOERDI   , ONLY : RCARDI   ,RCH4     ,RN2O     ,RO3      ,&
+USE OYOERDI   , ONLY : RCARDI   ,RCH4     ,RN2O     ,RO3      ,&
  &            RCFC11   ,RCFC12   ,REPCLC  
 USE YOERDU   , ONLY : NUAER    ,NTRAER   ,NIMP     ,NOUT     ,&
  &            RCDAY    ,R10E     ,REPLOG   ,REPSC    ,REPSCO   ,&
  &            REPSCQ   ,REPSCT   ,REPSCW   ,DIFF
-USE YOESW    , ONLY : LO3ONLY 
+USE OYOESW    , ONLY : LO3ONLY 
 USE YOETHF   , ONLY : R2ES     ,R3LES    ,R3IES    ,R4LES    ,&
  &            R4IES    ,R5LES    ,R5IES    ,R5ALVCP  ,R5ALSCP  ,&
  &            RALVDCP  ,RALSDCP  ,RTWAT    ,RTICE    ,RTICECU

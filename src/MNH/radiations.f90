@@ -3,113 +3,17 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
-!    ########################
+!    ########################n
      MODULE MODI_RADIATIONS   
 !    ########################
 !
-INTERFACE 
-!
-    SUBROUTINE RADIATIONS (OCLOSE_OUT,HFMFILE,HLUOUT,OCLEAR_SKY,OCLOUD_ONLY,&
-               KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,   &
-               PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB,KSTATM, &
-               KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,                         &
-               PDIR_ALB, PSCA_ALB, PEMIS, PCLDFR, PCCO2, PTSRAD, PSTATM,  &
-               PTHT, PRT, PPABST, POZON, PAER,PDST_WL, PAER_CLIM, PSVT,   &
-               PDTHRAD, PSRFLWD, PSRFSWD_DIR,PSRFSWD_DIF,PRHODREF, PZZ,   &
-               PRADEFF, PSWU, PSWD, PLWU, PLWD, PDTHRADSW, PDTHRADLW      )
-!
-LOGICAL, INTENT(IN)                  :: OCLOSE_OUT! flag indicating that a FM
-                                                  ! file is opened during this 
-                                                  ! time-step
-CHARACTER(LEN=*), INTENT(IN)         :: HFMFILE   ! Name of the output
-                                                  ! FM-file
-CHARACTER(LEN=*), INTENT(IN)         :: HLUOUT    ! Output-listing name for
-                                                  ! model n
-LOGICAL, INTENT(IN)                  :: OCLOUD_ONLY! flag for the cloud column
-                                                   !    computations only
-LOGICAL, INTENT(IN)                  :: OCLEAR_SKY ! 
-INTEGER, INTENT(IN)                  :: KDLON   ! number of columns where the
-                                                ! radiation calculations are
-                                                !         performed
-INTEGER, INTENT(IN)                  :: KFLEV   ! number of vertical levels
-                                                !    where the radiation
-                                                ! calculations are performed
-INTEGER, INTENT(IN)                  :: KRAD_DIAG   ! index for the number of
-                                                    !  fields in the output
-INTEGER, INTENT(IN)                  :: KFLUX   ! number of top and ground 
-                                                ! fluxes for the ZFLUX array
-INTEGER, INTENT(IN)                  :: KRAD    ! number of satellite radiances
-                                                ! for the ZRAD and ZRADCS arrays
-INTEGER, INTENT(IN)                  :: KAER    ! number of AERosol classes
-
-INTEGER, INTENT(IN)                  :: KSWB    ! number of SW band  
-INTEGER, INTENT(IN)                  :: KSTATM  ! index of the standard 
-                                                ! atmosphere level just above
-                                                !      the model top
-INTEGER, INTENT(IN)                  :: KRAD_COLNBR ! factor by which the memory
-                                                    ! is splitted
-!
-                                               !Choice of :             
-CHARACTER (LEN=*), INTENT (IN)       :: HEFRADL!cloud liquid effective radius calculation
-CHARACTER (LEN=*), INTENT (IN)       :: HEFRADI!cloud ice effective radius calculation
-CHARACTER (LEN=*), INTENT (IN)       :: HOPWSW !cloud water SW optical properties   
-CHARACTER (LEN=*), INTENT (IN)       :: HOPISW !ice water SW optical properties 
-CHARACTER (LEN=*), INTENT (IN)       :: HOPWLW !cloud water LW optical properties
-CHARACTER (LEN=*), INTENT (IN)       :: HOPILW !ice water  LW optical properties
-REAL,              INTENT(IN)        :: PFUDG  ! subgrid cloud inhomogenity factor
-!
-REAL, DIMENSION(:,:),     INTENT(IN) :: PCOSZEN ! COS(zenithal solar angle)
-REAL,                     INTENT(IN) :: PCORSOL ! SOLar constant CORrection
-REAL, DIMENSION(:,:),     INTENT(IN) :: PSEA    ! Land-sea mask
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PDIR_ALB! Surface direct ALBedo
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PSCA_ALB! Surface diffuse ALBedo
-REAL, DIMENSION(:,:),     INTENT(IN) :: PEMIS   ! Surface IR EMISsivity
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PCLDFR  ! CLouD FRaction
-REAL,                     INTENT(IN) :: PCCO2   ! CO2 content
-REAL, DIMENSION(:,:),     INTENT(IN) :: PTSRAD  ! RADiative Surface Temperature
-REAL, DIMENSION(:,:),     INTENT(IN) :: PSTATM  ! selected standard atmosphere
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHT    ! THeta at t
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! moist variables at t
-REAL, DIMENSION(:,:,:),   INTENT(IN) :: PPABST  ! pressure at t
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT    ! scalar variable ( C2R2 and C1R3  particle) 
-!
-REAL, DIMENSION(:,:,:),   POINTER    :: POZON   ! OZON field from clim.
-REAL, DIMENSION(:,:,:,:), POINTER    :: PAER    ! AERosols optical thickness from clim. 
-REAL, DIMENSION(:,:,:,:), POINTER    :: PDST_WL ! AERosols Extinction.by wavelength 
-REAL, DIMENSION(:,:,:,:), POINTER    :: PAER_CLIM    ! AERosols optical thickness from clim.                                                 ! note : the vertical dimension of 
-                                                ! these fields include the "radiation levels"
-                                                ! above domain top 
-!
-REAL, DIMENSION(:,:,:), INTENT(IN)   :: PRHODREF ![kg/m3] air density
-REAL, DIMENSION(:,:,:), INTENT(IN)   :: PZZ      ![m] height of layers
-!
-INTEGER, DIMENSION(:,:), INTENT(INOUT)  :: KCLEARCOL_TM1 ! trace of cloud/clear col
-                                                         ! at the previous radiation step
-!                                                 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PDTHRAD ! THeta RADiative Tendancy
-REAL, DIMENSION(:,:),     INTENT(INOUT) :: PSRFLWD ! Downward SuRFace LW Flux
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRFSWD_DIR ! Downward SuRFace SW Flux DIRect 
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSRFSWD_DIF ! Downward SuRFace SW Flux DIFfuse 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PSWU ! upward SW Flux 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PSWD ! downward SW Flux 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PLWU ! upward LW Flux 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PLWD ! downward LW Flux 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PDTHRADSW ! dthrad sw 
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PDTHRADLW !  dthradsw
-REAL, DIMENSION(:,:,:),     INTENT(INOUT) :: PRADEFF ! effective radius
-!
-!
-END SUBROUTINE RADIATIONS
-!
-END INTERFACE
-!
-END MODULE MODI_RADIATIONS  
+CONTAINS
 !
 !   #######################################################################
     SUBROUTINE RADIATIONS (OCLOSE_OUT,HFMFILE,HLUOUT,OCLEAR_SKY,OCLOUD_ONLY,&
                KCLEARCOL_TM1,HEFRADL,HEFRADI,HOPWSW,HOPISW,HOPWLW,HOPILW,   &
-               PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB,KSTATM, &
-               KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,                         &
+               PFUDG, KDLON, KFLEV, KRAD_DIAG, KFLUX, KRAD, KAER, KSWB_OLD,   & 
+               KSWB_MNH,KLWB_MNH, KSTATM,KRAD_COLNBR,PCOSZEN,PSEA, PCORSOL,          &
                PDIR_ALB, PSCA_ALB,PEMIS, PCLDFR, PCCO2, PTSRAD, PSTATM,   &
                PTHT, PRT, PPABST, POZON, PAER, PDST_WL, PAER_CLIM, PSVT,  &
                PDTHRAD, PSRFLWD, PSRFSWD_DIR,PSRFSWD_DIF, PRHODREF, PZZ,  &
@@ -210,6 +114,7 @@ END MODULE MODI_RADIATIONS
 !!      J.Escobar 30/03/2017  : Management of compilation of ECMWF_RAD in REAL*8 with MNH_REAL=R4
 !!      J.Escobar 29/06/2017  : Check if Pressure Decreasing with height <-> elsif PB & STOP 
 !!      Q.LIBOIS  06/2017     : correction on CLOUD_ONLY
+!!      Q.Libois  02/2018     : ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -220,8 +125,15 @@ USE MODE_FMWRIT
 USE MODE_FM
 USE MODE_ll
 USE MODI_ECMWF_RADIATION_VERS2
-USE YOESW    , ONLY : RTAUA    ,RPIZA    ,RCGA
-
+USE MODI_ECRAD_INTERFACE
+USE OYOESW    , ONLY : RTAUA    ,RPIZA    ,RCGA
+USE MODD_CONF
+USE MODD_RADIATIONS_n,   ONLY : XDTHRAD, NCLEARCOL_TM1, XFLALWD, &
+                                XZENITH, XDIR_ALB, XSCA_ALB, XEMIS, XTSRAD, &
+                                XDIRSRFSWD, XSCAFLASWD, XDIRFLASWD, XAZIM
+!
+USE MODD_GRID_n , ONLY : XLAT, XLON
+USE MODD_GRID , ONLY : XLAT0, XLON0
 !
 USE MODD_TIME
 USE MODD_CST
@@ -246,6 +158,9 @@ USE MODE_DUSTOPT
 USE MODE_SALTOPT
 USE MODI_AEROOPT_GET
 USE MODD_PARAM_LIMA
+USE MODD_PARAM_n , ONLY : CRAD
+USE MODD_LUNIT_n
+USE MODD_TIME_n
 !
 #ifdef MNH_PGI
 USE MODE_PACK_PGI
@@ -281,7 +196,9 @@ INTEGER, INTENT(IN)                  :: KRAD    ! number of satellite radiances
                                                 ! for the ZRAD and ZRADCS arrays
 INTEGER, INTENT(IN)                  :: KAER    ! number of AERosol classes
 
-INTEGER, INTENT(IN)                  :: KSWB    ! number of SW band  
+INTEGER, INTENT(IN)                  :: KSWB_OLD    ! number of SW band ECMWF 
+INTEGER, INTENT(IN)                  :: KSWB_MNH    ! number of SW band ECRAD
+INTEGER, INTENT(IN)                  :: KLWB_MNH    ! number of LW band ECRAD
 INTEGER, INTENT(IN)                  :: KSTATM  ! index of the standard 
                                                 ! atmosphere level just above
                                                 !      the model top
@@ -302,14 +219,14 @@ REAL, DIMENSION(:,:),     INTENT(IN) :: PSEA    ! Land-sea mask
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PDIR_ALB! Surface direct ALBedo
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PSCA_ALB! Surface diffuse ALBedo
-REAL, DIMENSION(:,:),     INTENT(IN) :: PEMIS   ! Surface IR EMISsivity
+REAL, DIMENSION(:,:,:),   INTENT(IN) :: PEMIS   ! Surface IR EMISsivity
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PCLDFR  ! CLouD FRaction
 REAL,                     INTENT(IN) :: PCCO2   ! CO2 content
 REAL, DIMENSION(:,:),     INTENT(IN) :: PTSRAD  ! RADiative Surface Temperature
 REAL, DIMENSION(:,:),     INTENT(IN) :: PSTATM  ! selected standard atmosphere
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PTHT    ! THeta at t
-REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! moist variables at t
+REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PRT     ! moist variables at t (humidity, cloud water, rain water, ice water)
 REAL, DIMENSION(:,:,:),   INTENT(IN) :: PPABST  ! pressure at t
 REAL, DIMENSION(:,:,:,:), INTENT(IN) :: PSVT    ! scalar variable ( C2R2 and C1R3  particle)
 !
@@ -350,7 +267,7 @@ LOGICAL, DIMENSION(KFLEV,KDLON) :: GCLOUDT   ! transpose of the GCLOUD array
 LOGICAL, DIMENSION(KDLON)       :: GCLEAR_2D ! .TRUE. for the clear-sky columns
 LOGICAL, DIMENSION(KDLON,KFLEV) :: GCLEAR    ! .TRUE. for all the levels of the 
                                              !                clear-sky columns
-LOGICAL, DIMENSION(KDLON,KSWB)  :: GCLEAR_SWB! .TRUE. for all the bands of the  
+LOGICAL, DIMENSION(KDLON,KSWB_MNH)  :: GCLEAR_SWB! .TRUE. for all the bands of the  
                                              !                clear-sky columns
 INTEGER, DIMENSION(:), ALLOCATABLE :: ICLEAR_2D_TM1 !
 !
@@ -381,31 +298,31 @@ REAL, DIMENSION(:,:), ALLOCATABLE   :: ZPAVE    ! mean-layer pressure
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZPAVE_RAD    ! mean-layer pressure
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQSAVE   ! saturation specific humidity
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQVAVE   ! mean-layer specific humidity
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQLAVE   ! Liquid water KG/KG
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQRAVE   ! Rain water  KG/KG
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQIAVE   ! Ice water Kg/KG
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQLWC   ! liquid water content kg/m3
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQRWC   ! Rain water  content kg/m3
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZQIWC   ! ice water content  kg/m3
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCFAVE   ! mean-layer cloud fraction
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZO3AVE   ! mean-layer ozone content 
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQLAVE   ! Liquid water KG/KG
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQRAVE   ! Rain water  KG/KG
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQIAVE   ! Ice water Kg/KG
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQLWC   ! liquid water content kg/m3
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQRWC   ! Rain water  content kg/m3
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZQIWC   ! ice water content  kg/m3
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCFAVE   ! mean-layer cloud fraction
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZO3AVE   ! mean-layer ozone content 
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZPRES_HL ! half-level pressure
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZT_HL    ! half-level temperature
 REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZDPRES   ! layer pressure thickness
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2! Cloud water Concentarion (C2R2)
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2! Rain water Concentarion (C2R2)
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3! Ice water Concentarion (C2R2)
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA! Cloud water Concentration(LIMA)
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA! Rain water Concentration(LIMA)
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA! Ice water Concentration(LIMA)
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZAER     ! aerosol optical thickness
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBP    ! spectral surface albedo for direct radiations
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZALBD    ! spectral surface albedo for diffuse radiations 
-REAL, DIMENSION (:),  ALLOCATABLE   :: ZEMIS    ! surface LW  emissivity 
-REAL, DIMENSION (:), ALLOCATABLE    :: ZEMIW    ! surface LW  WINDOW emissivity
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2! Cloud water Concentarion (C2R2)
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2! Rain water Concentarion (C2R2)
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3! Ice water Concentarion (C2R2)
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA! Cloud water Concentration(LIMA)
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA! Rain water Concentration(LIMA)
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA! Ice water Concentration(LIMA)
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE :: ZAER     ! aerosol optical thickness
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZALBP    ! spectral surface albedo for direct radiations
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZALBD    ! spectral surface albedo for diffuse radiations 
+REAL(KIND=JPRB), DIMENSION (:,:),  ALLOCATABLE :: ZEMIS    ! surface LW  emissivity 
+REAL(KIND=JPRB), DIMENSION (:,:), ALLOCATABLE  :: ZEMIW    ! surface LW  WINDOW emissivity
 REAL(KIND=JPRB), DIMENSION(:), ALLOCATABLE     :: ZTS      ! reformatted surface PTSRAD array 
-REAL, DIMENSION(:), ALLOCATABLE     :: ZLSM     ! reformatted land sea mask
-REAL, DIMENSION(:),   ALLOCATABLE   :: ZRMU0    ! Reformatted ZMU0 array
+REAL(KIND=JPRB), DIMENSION(:), ALLOCATABLE     :: ZLSM     ! reformatted land sea mask
+REAL(KIND=JPRB), DIMENSION(:),   ALLOCATABLE   :: ZRMU0    ! Reformatted ZMU0 array
 REAL(KIND=JPRB)                     :: ZRII0    ! corrected solar constant
 !
 REAL, DIMENSION(:,:), ALLOCATABLE :: ZDTLW    ! LW temperature tendency
@@ -449,7 +366,7 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS
                         ! Clear-Sky  DowNward and UPward   SW Flux profiles
 REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZFLUX_LW_CS
                         ! Thicknes of the mesh
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZDZ
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZDZ
 !
 REAL, DIMENSION(KDLON,KFLEV) :: ZZDTSW ! SW diabatic heating
 REAL, DIMENSION(KDLON,KFLEV) :: ZZDTLW ! LW diabatic heating
@@ -461,15 +378,15 @@ REAL, DIMENSION(KDLON,SIZE(PSRFSWD_DIR,3)) :: ZZSFSWDIR
 REAL, DIMENSION(KDLON,SIZE(PSRFSWD_DIR,3)) :: ZZSFSWDIF
 !                                      ! SW diffuse surface flux   
 !
-REAL, DIMENSION(KDLON)       :: ZCLOUD ! vertically integrated cloud fraction
+REAL, DIMENSION(KDLON)       :: ZCLOUD ! vertically summed cloud fraction
 !
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3)) :: ZEXNT ! Exner function
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2))    :: ZLWD    ! surface Downward LW flux
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PSRFSWD_DIR,3)) :: ZSWDDIR ! surface
 REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PSRFSWD_DIR,3)) :: ZSWDDIF ! surface Downward SW diffuse flux
-REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB) :: ZPIZAZ ! Aerosols SSA
-REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB) :: ZTAUAZ ! Aerosols Optical Detph
-REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB) :: ZCGAZ  ! Aerosols Asymetric factor
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB_OLD) :: ZPIZAZ ! Aerosols SSA
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB_OLD) :: ZTAUAZ ! Aerosols Optical Detph
+REAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2),SIZE(PTHT,3),KSWB_OLD) :: ZCGAZ  ! Aerosols Asymetric factor
 REAL :: ZZTGVISC    ! downward surface SW flux (VIS band) for clear_sky
 REAL :: ZZTGNIRC    ! downward surface SW flux (NIR band) for clear_sky
 REAL :: ZZTGIRC     ! downward surface LW flux for clear_sky
@@ -485,8 +402,8 @@ REAL, DIMENSION(KFLEV) :: ZHP_CLEAR ! ensemble mean clear-sky half-lev. pression
 REAL, DIMENSION(KFLEV) :: ZHT_CLEAR ! ensemble mean clear-sky half-lev. temp.
 REAL, DIMENSION(KFLEV) :: ZDP_CLEAR ! ensemble mean clear-sky pressure thickness
 REAL, DIMENSION(KFLEV,KAER) :: ZAER_CLEAR  ! ensemble mean clear-sky aerosols optical thickness
-REAL, DIMENSION(KSWB)       :: ZALBP_CLEAR ! ensemble mean clear-sky surface albedo (parallel)
-REAL, DIMENSION(KSWB)       :: ZALBD_CLEAR ! ensemble mean clear-sky surface albedo (diffuse)
+REAL, DIMENSION(KSWB_MNH)       :: ZALBP_CLEAR ! ensemble mean clear-sky surface albedo (parallel)
+REAL, DIMENSION(KSWB_MNH)       :: ZALBD_CLEAR ! ensemble mean clear-sky surface albedo (diffuse)
 REAL                        :: ZEMIS_CLEAR ! ensemble mean clear-sky surface emissivity
 REAL                        :: ZEMIW_CLEAR ! ensemble mean clear-sky LW window
 REAL                        :: ZRMU0_CLEAR ! ensemble mean clear-sky MU0
@@ -501,33 +418,33 @@ LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: ZWORKL
 !  splitted arrays used to split the memory required by the ECMWF_radiation 
 !  subroutine, the fields have the same meaning as their complete counterpart
 !
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZALBP_SPLIT, ZALBD_SPLIT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZEMIS_SPLIT, ZEMIW_SPLIT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZRMU0_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZCFAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZO3AVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZALBP_SPLIT, ZALBD_SPLIT
+REAL(KIND=JPRB), DIMENSION(:),     ALLOCATABLE :: ZEMIS_SPLIT, ZEMIW_SPLIT
+REAL(KIND=JPRB), DIMENSION(:),     ALLOCATABLE :: ZRMU0_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZCFAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZO3AVE_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZT_HL_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZPRES_HL_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZTAVE_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZPAVE_SPLIT
-REAL, DIMENSION(:,:,:), ALLOCATABLE :: ZAER_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE :: ZAER_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZDPRES_SPLIT
-REAL, DIMENSION(:),     ALLOCATABLE :: ZLSM_SPLIT
+REAL(KIND=JPRB), DIMENSION(:),     ALLOCATABLE :: ZLSM_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQVAVE_SPLIT
 REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQSAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQLAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQIAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQRAVE_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQRWC_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQLWC_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZQIWC_SPLIT
-REAL, DIMENSION(:,:),   ALLOCATABLE :: ZDZ_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA_SPLIT
-REAL, DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQLAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQIAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQRAVE_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQRWC_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQLWC_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZQIWC_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:),   ALLOCATABLE :: ZDZ_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCCT_C2R2_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCRT_C2R2_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCIT_C1R3_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCCT_LIMA_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCRT_LIMA_SPLIT
+REAL(KIND=JPRB), DIMENSION(:,:), ALLOCATABLE   :: ZCIT_LIMA_SPLIT
 REAL(KIND=JPRB), DIMENSION(:),     ALLOCATABLE :: ZTS_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIR_SPLIT
 REAL, DIMENSION(:,:),   ALLOCATABLE :: ZSFSWDIF_SPLIT
@@ -588,9 +505,9 @@ REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ          !tau/tau
 REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZPIZA_EQ_SPLIT      !Single scattering albedo of aerosols (points,lev,wvl)
 REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZCGA_EQ_SPLIT       !Assymetry factor aerosols            (points,lev,wvl)
 REAL(KIND=JPRB), DIMENSION(:,:,:), ALLOCATABLE   :: ZTAUREL_EQ_SPLIT    !tau/tau_{550} aerosols               (points,lev,wvl)
-REAL, DIMENSION(KFLEV,KSWB)           :: ZPIZA_EQ_CLEAR      !Single scattering albedo of aerosols (lev,wvl)
-REAL, DIMENSION(KFLEV,KSWB)           :: ZCGA_EQ_CLEAR       !Assymetry factor aerosols            (lev,wvl)
-REAL, DIMENSION(KFLEV,KSWB)           :: ZTAUREL_EQ_CLEAR    !tau/tau_{550} aerosols               (lev,wvl)
+REAL, DIMENSION(KFLEV,KSWB_OLD)           :: ZPIZA_EQ_CLEAR      !Single scattering albedo of aerosols (lev,wvl)
+REAL, DIMENSION(KFLEV,KSWB_OLD)           :: ZCGA_EQ_CLEAR       !Assymetry factor aerosols            (lev,wvl)
+REAL, DIMENSION(KFLEV,KSWB_OLD)           :: ZTAUREL_EQ_CLEAR    !tau/tau_{550} aerosols               (lev,wvl)
 INTEGER                               :: WVL_IDX              !Counter for wavelength
 
 !
@@ -616,7 +533,7 @@ REAL, DIMENSION(SIZE(PDTHRAD,1),SIZE(PDTHRAD,2),SIZE(PDTHRAD,3)) &
 REAL, DIMENSION(SIZE(PDTHRAD,1),SIZE(PDTHRAD,2)) &
      :: ZSTORE_2D   ! 2D work array for storage!
 INTEGER                         :: JBAND       ! Solar band index
-CHARACTER (LEN=4), DIMENSION(KSWB) :: YBAND_NAME  ! Solar band name
+CHARACTER (LEN=4), DIMENSION(KSWB_OLD) :: YBAND_NAME  ! Solar band name
 CHARACTER (LEN=2)               :: YDIR        ! Type of the data field
 !
 INTEGER :: ISWB ! number of SW spectral bands (between radiations and surface schemes)
@@ -629,6 +546,8 @@ INTEGER, DIMENSION(3) :: IMINLOC
 INTEGER :: IINFO_ll
 LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: GCLOUD_SURF
 !
+REAL, DIMENSION(:),   ALLOCATABLE :: ZLON,ZLAT
+REAL, DIMENSION(:),   ALLOCATABLE :: ZLON_SPLIT,ZLAT_SPLIT
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -662,14 +581,31 @@ IF ( ZMINVAL <= 0.0 ) THEN
    WRITE(ILUOUT,*) ' radiation :: ZDZPABST ', ZMINVAL,' located at ',   IMINLOC
    CALL FLUSH(ILUOUT)
    STOP ' radiation.f90 STOP :: SOMETHING WRONG WITH PRESSURE , ZDZPABST < 0.0  '
-ENDIF 
+ENDIF
+!------------------------------------------------------------------------------
+ALLOCATE(ZLAT(KDLON))
+ALLOCATE(ZLON(KDLON))
+
+IF(LCARTESIAN) THEN
+  ZLAT(:) = XLAT0*(XPI/180.)
+  ZLON(:) = XLON0*(XPI/180.)
+ELSE
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+        ZLAT(IIJ) =  XLAT(JI,JJ)*(XPI/180.)
+        ZLON(IIJ) =  XLON(JI,JJ)*(XPI/180.)
+    END DO
+  END DO
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       2.    INITIALIZES THE MEAN-LAYER VARIABLES
 !              ------------------------------------
 !
 ZEXNT(:,:,:)= ( PPABST(:,:,:)/XP00 ) ** (XRD/XCPD)
-! 
+!
+! Columns where radiation is computed are put on a single line
 ALLOCATE(ZTAVE(KDLON,KFLEV))
 ALLOCATE(ZQVAVE(KDLON,KFLEV))
 ALLOCATE(ZQLAVE(KDLON,KFLEV))
@@ -698,7 +634,7 @@ DO JK=IKB,IKE
     DO JI=IIB,IIE
       IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
       ZDZ(IIJ,JKRAD)  =  PZZ(JI,JJ,JK+1) - PZZ(JI,JJ,JK)
-      ZTAVE(IIJ,JKRAD)  = PTHT(JI,JJ,JK)*ZEXNT(JI,JJ,JK)
+      ZTAVE(IIJ,JKRAD)  = PTHT(JI,JJ,JK)*ZEXNT(JI,JJ,JK) ! Conversion potential temperature -> actual temperature
     END DO
   END DO
 END DO
@@ -852,14 +788,13 @@ DO JK=IKB,IKE+1
     END DO
   END DO
 END DO
-!
-!  Standard atmosphere extension
-!
+
+!  Standard atmosphere extension - pressure
 !* begining at ikup+1 level allows to use a model domain higher than 50km
 !
 DO JK=IKUP+1,KFLEV+1
   JK1 = (KSTATM-1)+(JK-IKUP)
-  ZPRES_HL(:,JK) = PSTATM(JK1,2)*100.0
+  ZPRES_HL(:,JK) = PSTATM(JK1,2)*100.0 ! mb -> Pa
 END DO
 !
 !  Surface temperature at the first level
@@ -886,8 +821,7 @@ DO JJ=IJB,IJE
   END DO
 END DO
 !
-!  Standard atmosphere extension
-!
+!  Standard atmosphere extension - temperature
 !* begining at ikup+1 level allows to use a model domain higher than 50km
 !
 DO JK=IKUP+1,KFLEV+1
@@ -904,11 +838,11 @@ DO JKRAD=1,KFLEV
   ZDPRES(:,JKRAD)=ZPRES_HL(:,JKRAD)-ZPRES_HL(:,JKRAD+1)
 END DO
 !-----------------------------------------------------------------------
-!*       4.    INITIALIZES THE AEROSOLS and OZONE PROFILES from climatlogy
+!*       4.    INITIALIZES THE AEROSOLS and OZONE PROFILES from climatology
 !	           -------------------------------------------
 !
 !        4.1    AEROSOL optical thickness
-!
+! EXPL -> defined online, otherwise climatology
 IF (CAOP=='EXPL') THEN
    GAOP = .TRUE.
 ELSE
@@ -916,28 +850,28 @@ ELSE
 ENDIF
 !
 IF (CAOP=='EXPL') THEN
-   ALLOCATE(ZPIZA_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZCGA_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZTAUREL_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
+   ALLOCATE(ZPIZA_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZCGA_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZTAUREL_EQ_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
 
-   ALLOCATE(ZPIZA_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZCGA_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZTAUREL_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB)) 
+   ALLOCATE(ZPIZA_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZCGA_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZTAUREL_DST_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD)) 
    ALLOCATE(PAER_DST(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3)))
 
-   ALLOCATE(ZPIZA_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZCGA_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZTAUREL_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
+   ALLOCATE(ZPIZA_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZCGA_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZTAUREL_AER_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
    ALLOCATE(PAER_AER(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3)))
 
-   ALLOCATE(ZPIZA_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZCGA_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
-   ALLOCATE(ZTAUREL_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB))
+   ALLOCATE(ZPIZA_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZCGA_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
+   ALLOCATE(ZTAUREL_SLT_TMP(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3),KSWB_OLD))
    ALLOCATE(PAER_SLT(SIZE(PAER,1),SIZE(PAER,2),SIZE(PAER,3)))
    
 
-   ALLOCATE(ZII(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),KSWB))
-   ALLOCATE(ZIR(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),KSWB))
+   ALLOCATE(ZII(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),KSWB_OLD))
+   ALLOCATE(ZIR(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),KSWB_OLD))
 
   ZPIZA_EQ_TMP = 0.
   ZCGA_EQ_TMP = 0.
@@ -968,7 +902,7 @@ IF (CAOP=='EXPL') THEN
         ,ZCGA_AER_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)    &  !O [-] assymetry factor for aerosols
         ,ZTAUREL_AER_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         ,PAER_AER(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT)            &  !O [-] optical depth of aerosols at wvl=550nm
-        ,KSWB                                    &  !I |nbr] number of shortwave bands
+        ,KSWB_OLD                                    &  !I |nbr] number of shortwave bands
         ,ZIR(IIB:IIE,IJB:IJE,:,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         ,ZII(IIB:IIE,IJB:IJE,:,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         )
@@ -982,9 +916,9 @@ IF (CAOP=='EXPL') THEN
         ,ZCGA_DST_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)    &  !O [-] assymetry factor for dust
         ,ZTAUREL_DST_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         ,PAER_DST(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT)            &  !O [-] optical depth of dust at wvl=550nm
-        ,KSWB                                    &  !I |nbr] number of shortwave bands
+        ,KSWB_OLD                                   &  !I |nbr] number of shortwave bands
         )
-   DO WVL_IDX=1,KSWB
+   DO WVL_IDX=1,KSWB_OLD
      PDST_WL(:,:,:,WVL_IDX) = ZTAUREL_DST_TMP(:,:,:,WVL_IDX)* PAER(:,:,:,3)             
    ENDDO
  ENDIF
@@ -997,7 +931,7 @@ IF (CAOP=='EXPL') THEN
         ,ZCGA_SLT_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:)    &  !O [-] assymetry factor for sea salt
         ,ZTAUREL_SLT_TMP(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT,:) &  !O [-] opt.depth(wvl=lambda)/opt.depth(wvl=550nm)
         ,PAER_SLT(IIB:IIE,IJB:IJE,IKB-JPVEXT:IKE-JPVEXT)            &  !O [-] optical depth of sea salt at wvl=550nm
-        ,KSWB                                    &  !I |nbr] number of shortwave bands
+        ,KSWB_OLD                                    &  !I |nbr] number of shortwave bands
         )
 
  ENDIF
@@ -1035,7 +969,7 @@ ENDIF
 ZTAUAZ(:,:,:,:) = 0.
 ZPIZAZ(:,:,:,:) = 0.
 ZCGAZ(:,:,:,:)  = 0.
-DO WVL_IDX=1,KSWB
+DO WVL_IDX=1,KSWB_OLD
  DO JAE=1,KAER
       !Special optical properties for dust
       IF (CAOP=='EXPL'.AND.(JAE==3)) THEN
@@ -1085,6 +1019,7 @@ ENDDO
 ALLOCATE(ZAER(KDLON,KFLEV,KAER))
 ! Aerosol classes
 ! 1=Continental   2=Maritime   3=Desert     4=Urban     5=Volcanic 6=Stratos.Bckgnd
+! Loaded from climatology
 DO JJ=IJB,IJE
    DO JI=IIB,IIE
       IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
@@ -1116,9 +1051,9 @@ IF ((CAOP=='EXPL') .AND. LORILAM ) THEN
   END DO
 END IF
 !
-ALLOCATE(ZPIZA_EQ(KDLON,KFLEV,KSWB))
-ALLOCATE(ZCGA_EQ(KDLON,KFLEV,KSWB))
-ALLOCATE(ZTAUREL_EQ(KDLON,KFLEV,KSWB))
+ALLOCATE(ZPIZA_EQ(KDLON,KFLEV,KSWB_OLD))
+ALLOCATE(ZCGA_EQ(KDLON,KFLEV,KSWB_OLD))
+ALLOCATE(ZTAUREL_EQ(KDLON,KFLEV,KSWB_OLD))
 IF(CAOP=='EXPL')THEN
     !Transform from vector of type #lon #lat #lev #wvl
     !to vectors of type #points, #levs, #wavelengths
@@ -1173,16 +1108,17 @@ END DO
 ALLOCATE(ZRMU0(KDLON))
 ALLOCATE(ZLSM(KDLON))
 ! 
-ALLOCATE(ZALBP(KDLON,KSWB))
-ALLOCATE(ZALBD(KDLON,KSWB))
+ALLOCATE(ZALBP(KDLON,KSWB_MNH))
+ALLOCATE(ZALBD(KDLON,KSWB_MNH))
+
 !
-ALLOCATE(ZEMIS(KDLON))
-ALLOCATE(ZEMIW(KDLON))
+ALLOCATE(ZEMIS(KDLON,KLWB_MNH))
+ALLOCATE(ZEMIW(KDLON,KLWB_MNH))
 !
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
     IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-    ZEMIS(IIJ)   = PEMIS(JI,JJ)
+    ZEMIS(IIJ,:)   = PEMIS(JI,JJ,:)
     ZRMU0(IIJ)    = PCOSZEN(JI,JJ)
     ZLSM(IIJ)     = 1.0 - PSEA(JI,JJ)  
   END DO
@@ -1215,10 +1151,10 @@ END IF
 !
 !
 ! LW emissivity
-ZEMIW(:)= ZEMIS(:)
+ZEMIW(:,:)= ZEMIS(:,:)
 !
 !solar constant
-ZRII0= PCORSOL*XI0
+ZRII0= PCORSOL*XI0  ! solar constant multiplied by seasonal variations due to Earth-Sun distance
 !
 !
 !
@@ -1226,7 +1162,7 @@ ZRII0= PCORSOL*XI0
 !
 !  Performs the horizontal average of the fields when no cloud
 !
-ZCLOUD(:) = SUM( ZCFAVE(:,:),DIM=2 )
+ZCLOUD(:) = SUM( ZCFAVE(:,:),DIM=2 ) ! one where no cloud on the vertical
 !
 ! MODIF option CLLY      
 ALLOCATE ( ICLEAR_2D_TM1(KDLON) )
@@ -1241,7 +1177,7 @@ END DO
 IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   !
   GCLEAR_2D(:) = .TRUE.
-  WHERE( (ZCLOUD(:) > 0.0) .OR. (ICLEAR_2D_TM1(:)==0) )
+  WHERE( (ZCLOUD(:) > 0.0) .OR. (ICLEAR_2D_TM1(:)==0) )  ! FALSE on cloudy columns
     GCLEAR_2D(:) = .FALSE.
   END WHERE
   !
@@ -1252,15 +1188,15 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   IF( ICLEAR_COL == KDLON ) THEN ! No cloud case so only the mean clear-sky
     GCLEAR_2D(1) = .FALSE.       !           column is selected
     ICLEAR_COL = KDLON-1
-    GNOCL = .TRUE.
+    GNOCL = .TRUE.               ! TRUE if no cloud at all
   ELSE
     GNOCL = .FALSE.
   END IF
 
-  GCLEAR(:,:) = SPREAD( GCLEAR_2D(:),DIM=2,NCOPIES=KFLEV )
-  ICLOUD_COL = KDLON - ICLEAR_COL     ! number of  cloudy   columns
+  GCLEAR(:,:) = SPREAD( GCLEAR_2D(:),DIM=2,NCOPIES=KFLEV )  ! vertical extension of clear columns 2D map
+  ICLOUD_COL = KDLON - ICLEAR_COL                           ! number of  cloudy columns
 !
-  IF( ICLEAR_COL /=0 ) THEN ! at least one clear-sky column exists
+  IF( ICLEAR_COL /=0 ) THEN ! at least one clear-sky column exists -> average profiles on clear columns
     ZT_CLEAR(:)  = SUM( ZTAVE(:,:) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
     ZP_CLEAR(:)  = SUM( ZPAVE(:,:) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
     ZQV_CLEAR(:) = SUM( ZQVAVE(:,:),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
@@ -1271,7 +1207,7 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     END DO
     !Get an average value for the clear column
     IF(CAOP=='EXPL')THEN
-       DO WVL_IDX=1,KSWB
+       DO WVL_IDX=1,KSWB_OLD
           ZPIZA_EQ_CLEAR(:,WVL_IDX) = SUM( ZPIZA_EQ(:,:,WVL_IDX), DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
           ZCGA_EQ_CLEAR(:,WVL_IDX) = SUM( ZCGA_EQ(:,:,WVL_IDX),DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
           ZTAUREL_EQ_CLEAR(:,WVL_IDX) = SUM( ZTAUREL_EQ(:,:,WVL_IDX),DIM=1,MASK=GCLEAR(:,:))/FLOAT(ICLEAR_COL)
@@ -1282,19 +1218,19 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     ZHP_CLEAR(1:KFLEV) =SUM( ZPRES_HL(:,1:KFLEV),DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
     ZHT_CLEAR(1:KFLEV)  = SUM( ZT_HL(:,1:KFLEV) ,DIM=1,MASK=GCLEAR(:,:) )/FLOAT(ICLEAR_COL)
     ! 
-    GCLEAR_SWB(:,:) = SPREAD(GCLEAR_2D(:),DIM=2,NCOPIES=KSWB)
+    GCLEAR_SWB(:,:) = SPREAD(GCLEAR_2D(:),DIM=2,NCOPIES=KSWB_MNH)
     ZALBP_CLEAR(:) = SUM( ZALBP(:,:),DIM=1,MASK=GCLEAR_SWB(:,:) ) &
          / FLOAT(ICLEAR_COL)
     ZALBD_CLEAR(:) = SUM( ZALBD(:,:),DIM=1,MASK=GCLEAR_SWB(:,:) ) &
          / FLOAT(ICLEAR_COL)
     !
-    ZEMIS_CLEAR  = SUM( ZEMIS(:),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
-    ZEMIW_CLEAR  = SUM( ZEMIW(:),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
+    ZEMIS_CLEAR  = SUM( ZEMIS(:,1),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
+    ZEMIW_CLEAR  = SUM( ZEMIW(:,1),DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
     ZRMU0_CLEAR  = SUM( ZRMU0(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
     ZTS_CLEAR    = SUM( ZTS(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
     ZLSM_CLEAR   = SUM( ZLSM(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)  
 !
-  ELSE ! the first column is chosen, without physical meaning: it will not be
+  ELSE ! no clear columns -> the first column is chosen, without physical meaning: it will not be
     ! unpacked after the call to the radiation ecmwf routine
     ZT_CLEAR(:)  = ZTAVE(1,:)
     ZP_CLEAR(:)  = ZPAVE(1,:)
@@ -1313,8 +1249,8 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     ZALBP_CLEAR(:) = ZALBP(1,:)
     ZALBD_CLEAR(:) = ZALBD(1,:)
 !
-    ZEMIS_CLEAR  = ZEMIS(1)
-    ZEMIW_CLEAR  = ZEMIW(1) 
+    ZEMIS_CLEAR  = ZEMIS(1,1)
+    ZEMIW_CLEAR  = ZEMIW(1,1) 
     ZRMU0_CLEAR  = ZRMU0(1)
     ZTS_CLEAR    = ZTS(1) 
     ZLSM_CLEAR   = ZLSM(1)  
@@ -1322,11 +1258,11 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   !
   GCLOUD(:,:) = .NOT.GCLEAR(:,:) ! .true. where the column is cloudy
   GCLOUDT(:,:)=TRANSPOSE(GCLOUD(:,:))
-  ICLOUD = ICLOUD_COL*KFLEV
+  ICLOUD = ICLOUD_COL*KFLEV ! total number of voxels in cloudy columns
   ALLOCATE(ZWORK1(ICLOUD))
   ALLOCATE(ZWORK2(ICLOUD+KFLEV)) !  allocation for the KFLEV levels of 
                                  !  the ICLOUD cloudy columns
-                                 !  and of the single clear_sky one
+                                 !  and of the KFLEV levels of the clear sky one
   !
   ! temperature profiles
   !
@@ -1516,50 +1452,50 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   DEALLOCATE (ZWORK2AER)
   !
   IF(CAOP=='EXPL')THEN
-     ALLOCATE(ZWORK1AER(ICLOUD,KSWB))        !New vector with value for all cld. points
-     ALLOCATE(ZWORK2AER(ICLOUD+KFLEV,KSWB))  !New vector with value for all cld.points + 1 clr column
+     ALLOCATE(ZWORK1AER(ICLOUD,KSWB_OLD))        !New vector with value for all cld. points
+     ALLOCATE(ZWORK2AER(ICLOUD+KFLEV,KSWB_OLD))  !New vector with value for all cld.points + 1 clr column
      !Single scattering albedo
-     DO WVL_IDX=1,KSWB
+     DO WVL_IDX=1,KSWB_OLD
         ZWORK1AER(:,WVL_IDX) = PACK( TRANSPOSE(ZPIZA_EQ(:,:,WVL_IDX)),MASK=GCLOUDT(:,:) )
         ZWORK2AER(1:ICLOUD,WVL_IDX) = ZWORK1AER(:,WVL_IDX)
         ZWORK2AER(ICLOUD+1:,WVL_IDX) = ZPIZA_EQ_CLEAR(:,WVL_IDX)
      ENDDO
      DEALLOCATE(ZPIZA_EQ)
-     ALLOCATE(ZPIZA_EQ(ICLOUD_COL+1,KFLEV,KSWB))
-     DO WVL_IDX=1,KSWB
+     ALLOCATE(ZPIZA_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
+     DO WVL_IDX=1,KSWB_OLD
         ZPIZA_EQ(:,:,WVL_IDX) = TRANSPOSE( RESHAPE( ZWORK2AER(:,WVL_IDX),(/KFLEV,ICLOUD_COL+1/) ) )
      ENDDO
      !Assymetry factor
-     DO WVL_IDX=1,KSWB
+     DO WVL_IDX=1,KSWB_OLD
         ZWORK1AER(:,WVL_IDX) = PACK(TRANSPOSE(ZCGA_EQ(:,:,WVL_IDX)), MASK=GCLOUDT(:,:))
         ZWORK2AER(1:ICLOUD,WVL_IDX) = ZWORK1AER(:,WVL_IDX)
         ZWORK2AER(ICLOUD+1:,WVL_IDX) = ZCGA_EQ_CLEAR(:,WVL_IDX)
      ENDDO
      DEALLOCATE(ZCGA_EQ)
-     ALLOCATE(ZCGA_EQ(ICLOUD_COL+1,KFLEV,KSWB))
-     DO WVL_IDX=1,KSWB
+     ALLOCATE(ZCGA_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
+     DO WVL_IDX=1,KSWB_OLD
         ZCGA_EQ(:,:,WVL_IDX) = TRANSPOSE(RESHAPE(ZWORK2AER(:,WVL_IDX),(/KFLEV,ICLOUD_COL+1/)))
      ENDDO
      !Relative wavelength-distributed optical depth
-     DO WVL_IDX=1,KSWB
+     DO WVL_IDX=1,KSWB_OLD
         ZWORK1AER(:,WVL_IDX) =  PACK(TRANSPOSE(ZTAUREL_EQ(:,:,WVL_IDX)), MASK=GCLOUDT(:,:))
         ZWORK2AER(1:ICLOUD,WVL_IDX) = ZWORK1AER(:,WVL_IDX)
         ZWORK2AER(ICLOUD+1:,WVL_IDX) = ZTAUREL_EQ_CLEAR(:,WVL_IDX)
      ENDDO
      DEALLOCATE(ZTAUREL_EQ)
-     ALLOCATE(ZTAUREL_EQ(ICLOUD_COL+1,KFLEV,KSWB))
-     DO WVL_IDX=1,KSWB
+     ALLOCATE(ZTAUREL_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
+     DO WVL_IDX=1,KSWB_OLD
         ZTAUREL_EQ(:,:,WVL_IDX) = TRANSPOSE(RESHAPE(ZWORK2AER(:,WVL_IDX),(/KFLEV,ICLOUD_COL+1/)))
      ENDDO
      DEALLOCATE(ZWORK1AER)
      DEALLOCATE(ZWORK2AER)
   ELSE
      DEALLOCATE(ZPIZA_EQ)
-     ALLOCATE(ZPIZA_EQ(ICLOUD_COL+1,KFLEV,KSWB))
+     ALLOCATE(ZPIZA_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
      DEALLOCATE(ZCGA_EQ)
-     ALLOCATE(ZCGA_EQ(ICLOUD_COL+1,KFLEV,KSWB))
+     ALLOCATE(ZCGA_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
      DEALLOCATE(ZTAUREL_EQ)
-     ALLOCATE(ZTAUREL_EQ(ICLOUD_COL+1,KFLEV,KSWB))
+     ALLOCATE(ZTAUREL_EQ(ICLOUD_COL+1,KFLEV,KSWB_OLD))
   ENDIF !Check on LDUST
   
   ! half-level variables
@@ -1583,42 +1519,42 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   ! surface fields
   !
   ALLOCATE(ZWORK3(ICLOUD_COL))
-  ALLOCATE(ZWORK4(ICLOUD_COL,KSWB))
+  ALLOCATE(ZWORK4(ICLOUD_COL,KSWB_MNH))
   ALLOCATE(ZWORK(KDLON))
-  DO JALBS=1,KSWB
+  DO JALBS=1,KSWB_MNH
     ZWORK(:)  = ZALBP(:,JALBS)
     ZWORK3(:) = PACK( ZWORK(:),MASK=.NOT.GCLEAR_2D(:) )
     ZWORK4(:,JALBS) = ZWORK3(:)
   END DO
   DEALLOCATE(ZALBP)
-  ALLOCATE(ZALBP(ICLOUD_COL+1,KSWB))
+  ALLOCATE(ZALBP(ICLOUD_COL+1,KSWB_MNH))
   ZALBP(1:ICLOUD_COL,:) = ZWORK4(1:ICLOUD_COL,:)
   ZALBP(ICLOUD_COL+1,:) = ZALBP_CLEAR(:)
   !
-  DO JALBS=1,KSWB
+  DO JALBS=1,KSWB_MNH
     ZWORK(:)  = ZALBD(:,JALBS)
     ZWORK3(:) = PACK( ZWORK(:),MASK=.NOT.GCLEAR_2D(:) )
     ZWORK4(:,JALBS) = ZWORK3(:)
   END DO
   DEALLOCATE(ZALBD)
-  ALLOCATE(ZALBD(ICLOUD_COL+1,KSWB))
+  ALLOCATE(ZALBD(ICLOUD_COL+1,KSWB_MNH))
   ZALBD(1:ICLOUD_COL,:) = ZWORK4(1:ICLOUD_COL,:)  
   ZALBD(ICLOUD_COL+1,:) = ZALBD_CLEAR(:)  
   !
   DEALLOCATE(ZWORK4)
   !
-  ZWORK3(:) = PACK( ZEMIS(:),MASK=.NOT.GCLEAR_2D(:) )
+  ZWORK3(:) = PACK( ZEMIS(:,1),MASK=.NOT.GCLEAR_2D(:) )
   DEALLOCATE(ZEMIS)
-  ALLOCATE(ZEMIS(ICLOUD_COL+1))
-  ZEMIS(1:ICLOUD_COL) = ZWORK3(1:ICLOUD_COL)
-  ZEMIS(ICLOUD_COL+1) = ZEMIS_CLEAR
+  ALLOCATE(ZEMIS(ICLOUD_COL+1,1))
+  ZEMIS(1:ICLOUD_COL,1) = ZWORK3(1:ICLOUD_COL)
+  ZEMIS(ICLOUD_COL+1,1) = ZEMIS_CLEAR
   !
   !
-  ZWORK3(:) = PACK( ZEMIW(:),MASK=.NOT.GCLEAR_2D(:) )
+  ZWORK3(:) = PACK( ZEMIW(:,1),MASK=.NOT.GCLEAR_2D(:) )
   DEALLOCATE(ZEMIW)
-  ALLOCATE(ZEMIW(ICLOUD_COL+1))
-  ZEMIW(1:ICLOUD_COL) = ZWORK3(1:ICLOUD_COL)
-  ZEMIW(ICLOUD_COL+1) = ZEMIW_CLEAR
+  ALLOCATE(ZEMIW(ICLOUD_COL+1,1))
+  ZEMIW(1:ICLOUD_COL,1) = ZWORK3(1:ICLOUD_COL)
+  ZEMIW(ICLOUD_COL+1,1) = ZEMIW_CLEAR
   ! 
   !
   ZWORK3(:) = PACK( ZRMU0(:),MASK=.NOT.GCLEAR_2D(:) )
@@ -1644,9 +1580,9 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   DEALLOCATE(ZWORK3)
   DEALLOCATE(ZWORK)
   !  
-  IDIM = ICLOUD_COL +1
+  IDIM = ICLOUD_COL +1 ! Number of columns where RT is computed 
 !
-ELSE
+ELSE 
   !
   !*       5.3   RADIATION COMPUTATIONS FOR THE FULL COLUMN NUMBER (KDLON)
   !
@@ -1654,6 +1590,7 @@ ELSE
 END IF
 !
 ! initialisation of cloud trace for the next radiation time step
+! (if unchanged columns are not recomputed)
 WHERE ( ZCLOUD(:) <= 0.0 )
   ICLEAR_2D_TM1(:) = 1
 ELSEWHERE
@@ -1663,7 +1600,7 @@ END WHERE
 DO JJ=IJB,IJE
   DO JI=IIB,IIE
     IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-    KCLEARCOL_TM1(JI,JJ) = ICLEAR_2D_TM1(IIJ)
+    KCLEARCOL_TM1(JI,JJ) = ICLEAR_2D_TM1(IIJ) ! output to be saved for next time step
   END DO
 END DO
 ! 
@@ -1845,7 +1782,7 @@ END DO
 IF (CAOP=='EXPL') THEN
 !TURN MORE FIELDS UPSIDE DOWN...
 !Dust single scattering albedo
-DO JI=1,KSWB
+DO JI=1,KSWB_OLD
    ZWORK_GRID(:,:)=ZPIZA_EQ(:,:,JI)
    DO JKRAD=1,KFLEV
       JK1=KFLEV+1-JKRAD
@@ -1853,14 +1790,14 @@ DO JI=1,KSWB
    ENDDO
 ENDDO
 !Dust asymmetry factor
-DO JI=1,KSWB
+DO JI=1,KSWB_OLD
    ZWORK_GRID(:,:)=ZCGA_EQ(:,:,JI)
    DO JKRAD=1,KFLEV
       JK1=KFLEV+1-JKRAD
       ZCGA_EQ(:,JKRAD,JI)=ZWORK_GRID(:,JK1)
    ENDDO
 ENDDO
-DO JI=1,KSWB
+DO JI=1,KSWB_OLD
    ZWORK_GRID(:,:)=ZTAUREL_EQ(:,:,JI)
    DO JKRAD=1,KFLEV
       JK1=KFLEV+1-JKRAD
@@ -1940,9 +1877,9 @@ END IF
 IF( KRAD_DIAG >= 4) THEN
   ALLOCATE(ZEFCL_RRTM(IDIM,KFLEV))
   ALLOCATE(ZCLSW_TOTAL(IDIM,KFLEV))
-  ALLOCATE(ZTAU_TOTAL(IDIM,KSWB,KFLEV))
-  ALLOCATE(ZOMEGA_TOTAL(IDIM,KSWB,KFLEV))
-  ALLOCATE(ZCG_TOTAL(IDIM,KSWB,KFLEV))
+  ALLOCATE(ZTAU_TOTAL(IDIM,KSWB_OLD,KFLEV))
+  ALLOCATE(ZOMEGA_TOTAL(IDIM,KSWB_OLD,KFLEV))
+  ALLOCATE(ZCG_TOTAL(IDIM,KSWB_OLD,KFLEV))
   ALLOCATE(ZEFCL_LWD(IDIM,KFLEV))
   ALLOCATE(ZEFCL_LWU(IDIM,KFLEV))
   ALLOCATE(ZFLWP(IDIM,KFLEV))
@@ -1963,56 +1900,119 @@ END IF
 !
 !*       5.6   CALLS THE ECMWF_RADIATION ROUTINES
 !
-!  mixing ratio -> specific humidity conversion
-!
+! mixing ratio -> specific humidity conversion (for ECMWF routine)
+! mixing ratio = mv/md ; specific humidity = mv/(mv+md)
 
-ZQVAVE(:,:) = ZQVAVE(:,:) / (1.+ZQVAVE(:,:))
+ZQVAVE(:,:) = ZQVAVE(:,:) / (1.+ZQVAVE(:,:)) ! Because 
+! ZAER = 1e-5*ZAER
+! ZO3AVE = 1e-5*ZO3AVE
+IF(LCARTESIAN) THEN
+  ZLAT(:) = XLAT0*(XPI/180.)
+  ZLON(:) = XLON0*(XPI/180.)
+ELSE
+  DO JJ=IJB,IJE
+    DO JI=IIB,IIE
+        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
+        ZLAT(IIJ) =  XLAT(JI,JJ)*(XPI/180.)
+        ZLON(IIJ) =  XLON(JI,JJ)*(XPI/180.)
+    END DO
+  END DO
+END IF
+!
 !
 IF( IDIM <= KRAD_COLNBR ) THEN 
 !
-! there is less than KRAD_COLNBR verticals to be considered therefore
+! there is less than KRAD_COLNBR columns to be considered therefore
 ! no split of the arrays is performed
-!
+! Note that radiation scheme only takes scalar emissivities so only fist value of the spectral emissivity is taken
  ALLOCATE(ZTAVE_RAD(SIZE(ZTAVE,1),SIZE(ZTAVE,2)))
  ALLOCATE(ZPAVE_RAD(SIZE(ZPAVE,1),SIZE(ZPAVE,2)))
  ZTAVE_RAD = ZTAVE
  ZPAVE_RAD = ZPAVE
  IF (CCLOUD == 'LIMA') THEN
-  CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
-       ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
-       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
-       PCCO2, ZCFAVE, ZDPRES, ZEMIS, ZEMIW, ZLSM, ZRMU0,          &
-       ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
-       ZT_HL,ZTAVE_RAD, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
-       ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
-       ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
-       ZSFSWDIR, ZSFSWDIF,                                        &
-       ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
-       ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
-       ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
-       ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
-       ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
-       ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
-       ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
-       GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
+  IF (CRAD == "ECMW") THEN
+    CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
+        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+        ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
+        PCCO2, ZCFAVE, ZDPRES, ZEMIS(:,1), ZEMIW(:,1), ZLSM, ZRMU0,          &
+        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
+        ZT_HL,ZTAVE_RAD, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
+        ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
+        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
+        ZSFSWDIR, ZSFSWDIF,                                        &
+        ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
+        ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
+        ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
+        ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
+        ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
+        ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
+        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
+        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
+
+        
+  ELSE IF (CRAD == "ECRA") THEN  
+    CALL ECRAD_INTERFACE  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
+        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+        ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
+        PCCO2, ZCFAVE, ZDPRES, ZEMIS(:,1), ZEMIW(:,1), ZLSM, ZRMU0,          &
+        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
+        ZT_HL,ZTAVE_RAD, ZTS, ZCCT_LIMA, ZCRT_LIMA, ZCIT_LIMA,         &
+        ZNFLW, ZNFSW, ZNFLW_CS, ZNFSW_CS,                           &
+        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
+        ZSFSWDIR, ZSFSWDIF,                                        &
+        ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
+        ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
+        ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
+        ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
+        ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
+        ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
+        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
+        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ,ZLAT,ZLON                )      
+  ENDIF      
+ 
  ELSE
-   CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
-       ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
-       ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
-       PCCO2, ZCFAVE, ZDPRES, ZEMIS, ZEMIW, ZLSM, ZRMU0,          &
-       ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
-       ZT_HL,ZTAVE_RAD, ZTS, ZCCT_C2R2, ZCRT_C2R2, ZCIT_C1R3,         &
-       ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
-       ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
-       ZSFSWDIR, ZSFSWDIF,                                        &
-       ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
-       ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
-       ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
-       ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
-       ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
-       ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
-       ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
-       GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
+   IF (CRAD == "ECMW") THEN 
+     CALL ECMWF_RADIATION_VERS2  ( IDIM ,KFLEV, KRAD_DIAG, KAER,     &      
+        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+        ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
+        PCCO2, ZCFAVE, ZDPRES, ZEMIS(:,1), ZEMIW(:,1), ZLSM, ZRMU0,          &
+        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
+        ZT_HL,ZTAVE_RAD, ZTS, ZCCT_C2R2, ZCRT_C2R2, ZCIT_C1R3,         &
+        ZNFLW_CS, ZNFLW, ZNFSW_CS,ZNFSW,                           &
+        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
+        ZSFSWDIR, ZSFSWDIF,                                        &
+        ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
+        ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
+        ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
+        ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
+        ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
+        ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
+        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
+        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
+   
+   ELSE IF (CRAD == "ECRA") THEN 
+print*,"IDIM=",IDIM
+print*,"SHAPE(ZLON):",SHAPE(ZLON)
+     CALL ECRAD_INTERFACE  ( IDIM ,KFLEV, KRAD_DIAG, KAER,                   &      
+        ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+        ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
+        PCCO2, ZCFAVE, ZDPRES, ZEMIS(:,1), ZEMIW(:,1), ZLSM, ZRMU0,          &
+        ZO3AVE , ZQVAVE, ZQIAVE ,ZQIWC,ZQLAVE,ZQLWC, ZQSAVE, ZQRAVE,  ZQRWC,  &
+        ZT_HL,ZTAVE_RAD, ZTS, ZCCT_C2R2, ZCRT_C2R2, ZCIT_C1R3,         &
+        ZNFLW, ZNFSW, ZNFLW_CS, ZNFSW_CS,                           &
+        ZDTLW, ZDTSW, ZFLUX_TOP_GND_IRVISNIR,                      &
+        ZSFSWDIR, ZSFSWDIF,                                        &
+        ZFLUX_SW_DOWN, ZFLUX_SW_UP, ZFLUX_LW ,                     &
+        ZDTLW_CS, ZDTSW_CS, ZFLUX_TOP_GND_IRVISNIR_CS,             &
+        ZFLUX_SW_DOWN_CS, ZFLUX_SW_UP_CS, ZFLUX_LW_CS,             &           
+        ZPLAN_ALB_VIS,ZPLAN_ALB_NIR, ZPLAN_TRA_VIS, ZPLAN_TRA_NIR, &
+        ZPLAN_ABS_VIS, ZPLAN_ABS_NIR,ZEFCL_LWD, ZEFCL_LWU,         &
+        ZFLWP, ZFIWP,ZRADLP, ZRADIP,ZEFCL_RRTM,  ZCLSW_TOTAL,  ZTAU_TOTAL,  &
+        ZOMEGA_TOTAL,ZCG_TOTAL,                                    &
+        GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ ,ZLAT,ZLON               )
+  END IF      
+   
+   
  END IF
  DEALLOCATE(ZTAVE_RAD,ZPAVE_RAD)
 !
@@ -2027,11 +2027,13 @@ ELSE
     IDIM_EFF = MIN( IDIM_RESIDUE,KRAD_COLNBR )
     !
     IF( JI_SPLIT == 1 .OR. JI_SPLIT == INUM_CALL ) THEN       
-      ALLOCATE(  ZALBP_SPLIT(IDIM_EFF,KSWB))
-      ALLOCATE(  ZALBD_SPLIT(IDIM_EFF,KSWB))  
+      ALLOCATE(  ZALBP_SPLIT(IDIM_EFF,KSWB_MNH))
+      ALLOCATE(  ZALBD_SPLIT(IDIM_EFF,KSWB_MNH))  
       ALLOCATE(  ZEMIS_SPLIT(IDIM_EFF))
       ALLOCATE(  ZEMIW_SPLIT(IDIM_EFF))
       ALLOCATE(  ZRMU0_SPLIT(IDIM_EFF))
+      ALLOCATE(  ZLAT_SPLIT(IDIM_EFF))
+      ALLOCATE(  ZLON_SPLIT(IDIM_EFF))
       ALLOCATE(  ZCFAVE_SPLIT(IDIM_EFF,KFLEV))
       ALLOCATE(  ZO3AVE_SPLIT(IDIM_EFF,KFLEV))
       ALLOCATE(  ZT_HL_SPLIT(IDIM_EFF,KFLEV+1))
@@ -2047,9 +2049,9 @@ ELSE
       ALLOCATE(  ZTAVE_SPLIT(IDIM_EFF,KFLEV))
       ALLOCATE(  ZPAVE_SPLIT(IDIM_EFF,KFLEV))
       ALLOCATE(  ZAER_SPLIT( IDIM_EFF,KFLEV,KAER))
-      ALLOCATE( ZPIZA_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB))
-      ALLOCATE( ZCGA_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB))
-      ALLOCATE( ZTAUREL_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB))
+      ALLOCATE(  ZPIZA_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB_OLD))
+      ALLOCATE(  ZCGA_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB_OLD))
+      ALLOCATE(  ZTAUREL_EQ_SPLIT(IDIM_EFF,KFLEV,KSWB_OLD))
       ALLOCATE(  ZDPRES_SPLIT(IDIM_EFF,KFLEV))
       ALLOCATE(  ZLSM_SPLIT(IDIM_EFF))
       ALLOCATE(  ZQSAVE_SPLIT(IDIM_EFF,KFLEV))
@@ -2109,9 +2111,9 @@ ELSE
       IF( KRAD_DIAG >= 4) THEN
         ALLOCATE(  ZEFCL_RRTM_SPLIT(IDIM_EFF,KFLEV))
         ALLOCATE(  ZCLSW_TOTAL_SPLIT(IDIM_EFF,KFLEV))
-        ALLOCATE(  ZTAU_TOTAL_SPLIT(IDIM_EFF,KSWB,KFLEV))
-        ALLOCATE(  ZOMEGA_TOTAL_SPLIT(IDIM_EFF,KSWB,KFLEV))
-        ALLOCATE(  ZCG_TOTAL_SPLIT(IDIM_EFF,KSWB,KFLEV))
+        ALLOCATE(  ZTAU_TOTAL_SPLIT(IDIM_EFF,KSWB_OLD,KFLEV))
+        ALLOCATE(  ZOMEGA_TOTAL_SPLIT(IDIM_EFF,KSWB_OLD,KFLEV))
+        ALLOCATE(  ZCG_TOTAL_SPLIT(IDIM_EFF,KSWB_OLD,KFLEV))
         ALLOCATE(  ZEFCL_LWD_SPLIT(IDIM_EFF,KFLEV))
         ALLOCATE(  ZEFCL_LWU_SPLIT(IDIM_EFF,KFLEV))
         ALLOCATE(  ZFLWP_SPLIT(IDIM_EFF,KFLEV))
@@ -2166,9 +2168,11 @@ ELSE
 !
     ZALBP_SPLIT(:,:) = ZALBP( IBEG:IEND ,:)
     ZALBD_SPLIT(:,:) = ZALBD( IBEG:IEND ,:)
-    ZEMIS_SPLIT(:) = ZEMIS ( IBEG:IEND )
-    ZEMIW_SPLIT(:) = ZEMIW ( IBEG:IEND )
+    ZEMIS_SPLIT(:) = ZEMIS ( IBEG:IEND,1 )
+    ZEMIW_SPLIT(:) = ZEMIW ( IBEG:IEND,1 )
     ZRMU0_SPLIT(:)    = ZRMU0 ( IBEG:IEND )
+    ZLAT_SPLIT(:)    = ZLAT ( IBEG:IEND )
+    ZLON_SPLIT(:)    = ZLON ( IBEG:IEND )
     ZCFAVE_SPLIT(:,:) = ZCFAVE( IBEG:IEND ,:)
     ZO3AVE_SPLIT(:,:) = ZO3AVE( IBEG:IEND ,:)
     ZT_HL_SPLIT(:,:)    = ZT_HL( IBEG:IEND ,:)
@@ -2201,51 +2205,101 @@ ELSE
      ZCCT_LIMA_SPLIT(:,:) = ZCCT_LIMA (IBEG:IEND ,:)
      ZCRT_LIMA_SPLIT(:,:) = ZCRT_LIMA (IBEG:IEND ,:)
      ZCIT_LIMA_SPLIT(:,:) = ZCIT_LIMA (IBEG:IEND ,:)
+     
+   IF (CRAD == "ECMW") THEN  
 !
-   CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,               &
-         ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,          &
-         ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT,            &
-         ZPAVE_SPLIT,PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, &
-         ZLSM_SPLIT, ZRMU0_SPLIT,ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,      &
-         ZQLAVE_SPLIT,ZQLWC_SPLIT,ZQSAVE_SPLIT, ZQRAVE_SPLIT,ZQRWC_SPLIT,  ZT_HL_SPLIT,      &
-         ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_LIMA_SPLIT,ZCRT_LIMA_SPLIT,ZCIT_LIMA_SPLIT, &
-         ZNFLW_CS_SPLIT, ZNFLW_SPLIT, ZNFSW_CS_SPLIT,ZNFSW_SPLIT,                 &
-         ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                  &
-         ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                          &
-         ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                 &
-         ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,         &
-         ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,         &
-         ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT,            &
-         ZPLAN_TRA_NIR_SPLIT, ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,           &
-         ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT, ZFLWP_SPLIT,ZFIWP_SPLIT,               &
-         ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
-         ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
-         GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
+        CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,               &
+                ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,          &
+                ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT,            &
+                ZPAVE_SPLIT,PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, &
+                ZLSM_SPLIT, ZRMU0_SPLIT,ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,      &
+                ZQLAVE_SPLIT,ZQLWC_SPLIT,ZQSAVE_SPLIT, ZQRAVE_SPLIT,ZQRWC_SPLIT,  ZT_HL_SPLIT,      &
+                ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_LIMA_SPLIT,ZCRT_LIMA_SPLIT,ZCIT_LIMA_SPLIT, &
+                ZNFLW_CS_SPLIT, ZNFLW_SPLIT, ZNFSW_CS_SPLIT,ZNFSW_SPLIT,                 &
+                ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                  &
+                ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                          &
+                ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                 &
+                ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,         &
+                ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,         &
+                ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT,            &
+                ZPLAN_TRA_NIR_SPLIT, ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,           &
+                ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT, ZFLWP_SPLIT,ZFIWP_SPLIT,               &
+                ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
+                ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
+                GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
+                
+   ELSE IF (CRAD == "ECRA") THEN  
+        CALL ECRAD_INTERFACE  ( IDIM_EFF ,KFLEV, KRAD_DIAG, KAER,                   &      
+            ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+            ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT, ZPAVE_SPLIT,               &
+            PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, ZLSM_SPLIT, ZRMU0_SPLIT,          &
+            ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,ZQLAVE_SPLIT,ZQLWC_SPLIT, &
+            ZQSAVE_SPLIT, ZQRAVE_SPLIT,  ZQRWC_SPLIT,  &
+            ZT_HL_SPLIT,ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_LIMA_SPLIT, &
+            ZCRT_LIMA_SPLIT, ZCIT_LIMA_SPLIT,         &
+            ZNFLW_SPLIT, ZNFSW_SPLIT, ZNFLW_CS_SPLIT, ZNFSW_CS_SPLIT,                           &
+            ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                      &
+            ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                        &
+            ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                     &
+            ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,             &
+            ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,             &           
+            ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT, ZPLAN_TRA_NIR_SPLIT, &
+            ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT,         &
+            ZFLWP_SPLIT, ZFIWP_SPLIT,ZRADLP_SPLIT, ZRADIP_SPLIT, &
+            ZEFCL_RRTM_SPLIT,  ZCLSW_TOTAL_SPLIT,  ZTAU_TOTAL_SPLIT,  &
+            ZOMEGA_TOTAL_SPLIT,ZCG_TOTAL_SPLIT,                                    &
+            GAOP, ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT,ZLAT_SPLIT,ZLON_SPLIT    )
+  END IF              
   ELSE
 ! C2R2 concentrations
     IF (SIZE (ZCCT_C2R2) > 0)  ZCCT_C2R2_SPLIT(:,:) = ZCCT_C2R2 (IBEG:IEND ,:)
     IF (SIZE (ZCRT_C2R2) > 0)  ZCRT_C2R2_SPLIT(:,:) = ZCRT_C2R2 (IBEG:IEND ,:)  
     IF (SIZE (ZCIT_C1R3) > 0)  ZCIT_C1R3_SPLIT(:,:) = ZCIT_C1R3 (IBEG:IEND ,:)
-!
-   CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,              &    
-         ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,                    &
-         ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT,            &
-         ZPAVE_SPLIT,PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, &
-         ZLSM_SPLIT, ZRMU0_SPLIT,ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,      & 
-         ZQLAVE_SPLIT,ZQLWC_SPLIT,ZQSAVE_SPLIT, ZQRAVE_SPLIT,ZQRWC_SPLIT,  ZT_HL_SPLIT,      &
-         ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_C2R2_SPLIT,ZCRT_C2R2_SPLIT,ZCIT_C1R3_SPLIT, & 
-         ZNFLW_CS_SPLIT, ZNFLW_SPLIT, ZNFSW_CS_SPLIT,ZNFSW_SPLIT,                 &          
-         ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                  &
-         ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                          &
-         ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                 &
-         ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,         &
-         ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,         & 
-         ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT,            &
-         ZPLAN_TRA_NIR_SPLIT, ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,           &
-         ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT, ZFLWP_SPLIT,ZFIWP_SPLIT,               &
-         ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
-         ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
-         GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
+    IF (CRAD == "ECMW") THEN   
+        CALL ECMWF_RADIATION_VERS2  ( IDIM_EFF , KFLEV, KRAD_DIAG, KAER,              &    
+                ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,                    &
+                ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT,            &
+                ZPAVE_SPLIT,PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, &
+                ZLSM_SPLIT, ZRMU0_SPLIT,ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,      & 
+                ZQLAVE_SPLIT,ZQLWC_SPLIT,ZQSAVE_SPLIT, ZQRAVE_SPLIT,ZQRWC_SPLIT,  ZT_HL_SPLIT,      &
+                ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_C2R2_SPLIT,ZCRT_C2R2_SPLIT,ZCIT_C1R3_SPLIT, & 
+                ZNFLW_CS_SPLIT, ZNFLW_SPLIT, ZNFSW_CS_SPLIT,ZNFSW_SPLIT,                 &          
+                ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                  &
+                ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                          &
+                ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                 &
+                ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,         &
+                ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,         & 
+                ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT,            &
+                ZPLAN_TRA_NIR_SPLIT, ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,           &
+                ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT, ZFLWP_SPLIT,ZFIWP_SPLIT,               &
+                ZRADLP_SPLIT,ZRADIP_SPLIT,ZEFCL_RRTM_SPLIT, ZCLSW_TOTAL_SPLIT,           &
+                ZTAU_TOTAL_SPLIT,ZOMEGA_TOTAL_SPLIT, ZCG_TOTAL_SPLIT,                    &
+                GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
+         
+    ELSE IF (CRAD == "ECRA") THEN  
+ print*,"IDIM_EFF=",IDIM_EFF
+print*,"SHAPE(ZLON_SPLIT):",SHAPE(ZLON_SPLIT)
+       CALL ECRAD_INTERFACE  ( IDIM_EFF ,KFLEV, KRAD_DIAG, KAER,                   &      
+            ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
+            ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT, ZPAVE_SPLIT,               &
+            PCCO2, ZCFAVE_SPLIT, ZDPRES_SPLIT, ZEMIS_SPLIT, ZEMIW_SPLIT, ZLSM_SPLIT, ZRMU0_SPLIT,          &
+            ZO3AVE_SPLIT , ZQVAVE_SPLIT, ZQIAVE_SPLIT ,ZQIWC_SPLIT,ZQLAVE_SPLIT,ZQLWC_SPLIT, &
+            ZQSAVE_SPLIT, ZQRAVE_SPLIT,  ZQRWC_SPLIT,  &
+            ZT_HL_SPLIT,ZTAVE_SPLIT, ZTS_SPLIT, ZCCT_C2R2_SPLIT, &
+            ZCRT_C2R2_SPLIT, ZCIT_C1R3_SPLIT,         &
+            ZNFLW_SPLIT, ZNFSW_SPLIT, ZNFLW_CS_SPLIT, ZNFSW_CS_SPLIT,                           &
+            ZDTLW_SPLIT, ZDTSW_SPLIT, ZFLUX_TOP_GND_IRVISNIR_SPLIT,                      &
+            ZSFSWDIR_SPLIT, ZSFSWDIF_SPLIT,                                        &
+            ZFLUX_SW_DOWN_SPLIT, ZFLUX_SW_UP_SPLIT, ZFLUX_LW_SPLIT ,                     &
+            ZDTLW_CS_SPLIT, ZDTSW_CS_SPLIT, ZFLUX_TOP_GND_IRVISNIR_CS_SPLIT,             &
+            ZFLUX_SW_DOWN_CS_SPLIT, ZFLUX_SW_UP_CS_SPLIT, ZFLUX_LW_CS_SPLIT,             &           
+            ZPLAN_ALB_VIS_SPLIT,ZPLAN_ALB_NIR_SPLIT, ZPLAN_TRA_VIS_SPLIT, ZPLAN_TRA_NIR_SPLIT, &
+            ZPLAN_ABS_VIS_SPLIT, ZPLAN_ABS_NIR_SPLIT,ZEFCL_LWD_SPLIT, ZEFCL_LWU_SPLIT,         &
+            ZFLWP_SPLIT, ZFIWP_SPLIT,ZRADLP_SPLIT, ZRADIP_SPLIT, &
+            ZEFCL_RRTM_SPLIT,  ZCLSW_TOTAL_SPLIT,  ZTAU_TOTAL_SPLIT,  &
+            ZOMEGA_TOTAL_SPLIT,ZCG_TOTAL_SPLIT,                                    &
+            GAOP, ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT,ZLAT_SPLIT,ZLON_SPLIT    )
+    END IF                   
     END IF 
 !
 ! fill the full output arrays with the splitted arrays
@@ -2307,6 +2361,8 @@ ELSE
       DEALLOCATE(  ZALBD_SPLIT )  
       DEALLOCATE(  ZEMIS_SPLIT  )
       DEALLOCATE(  ZEMIW_SPLIT  )
+      DEALLOCATE(  ZLAT_SPLIT  )
+      DEALLOCATE(  ZLON_SPLIT  )
       DEALLOCATE(  ZRMU0_SPLIT      )
       DEALLOCATE(  ZCFAVE_SPLIT     )
       DEALLOCATE(  ZO3AVE_SPLIT     )
@@ -2396,6 +2452,8 @@ DEALLOCATE(ZDPRES)
 DEALLOCATE(ZCCT_C2R2)
 DEALLOCATE(ZCRT_C2R2)
 DEALLOCATE(ZCIT_C1R3)
+DEALLOCATE(ZLAT)
+DEALLOCATE(ZLON)
 IF (CCLOUD == 'LIMA') THEN 
   DEALLOCATE(ZCCT_LIMA)
   DEALLOCATE(ZCRT_LIMA)
@@ -2496,13 +2554,13 @@ DEALLOCATE(ZDTSW)
 DEALLOCATE(ZSFSWDIR)
 DEALLOCATE(ZSFSWDIF)
 !
-!-------------------------------------------------------------------------------
+!--------------------------------------------------------------------------------------------
 !
-!*       6.    COMPUTES THE RADIATIVE SOURCES AND THE DOWNWARD SURFACE FLUXES
-!              --------------------------------------------------------------
+!*       6.    COMPUTES THE RADIATIVE SOURCES AND THE DOWNWARD SURFACE FLUXES in 2D horizontal 
+!              ------------------------------------------------------------------------------
 !
 !  Computes the SW and LW radiative tendencies
-!  note : tendencies in K/s for MNH   
+!  note : tendencies in K/s for MNH (from K/day)
 !
 ZDTRAD_LW(:,:,:)=0.0
 ZDTRAD_SW(:,:,:)=0.0
@@ -2511,7 +2569,7 @@ DO JK=IKB,IKE
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
       IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-      ZDTRAD_LW(JI,JJ,JK) = ZZDTLW(IIJ,JKRAD)/XDAY
+      ZDTRAD_LW(JI,JJ,JK) = ZZDTLW(IIJ,JKRAD)/XDAY  ! XDAY from  modd_cst (day duration in s)
       ZDTRAD_SW(JI,JJ,JK) = ZZDTSW(IIJ,JKRAD)/XDAY      
     END DO
   END DO
@@ -2535,8 +2593,7 @@ END DO
 !final  THETA_radiative tendency and surface fluxes 
 !
 IF(OCLOUD_ONLY) THEN
-  !! Q.LIBOIS 06/2017
-  !ZWORKL(:,:) = SUM(PCLDFR(:,:,:),DIM=3) > 0.0
+
   DO JJ=IJB,IJE
     DO JI=IIB,IIE
         IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
@@ -2544,8 +2601,8 @@ IF(OCLOUD_ONLY) THEN
     END DO
   END DO
  
-  ZWORKL(:,:) = GCLOUD_SURF(:,:) ! nouvelle condition
-  !! Q.LIBOIS 06/2017
+  ZWORKL(:,:) = GCLOUD_SURF(:,:)
+
   DO JK = IKB,IKE
     WHERE( ZWORKL(:,:) )
       PDTHRAD(:,:,JK) = (ZDTRAD_LW(:,:,JK)+ZDTRAD_SW(:,:,JK))/ZEXNT(:,:,JK)
@@ -2562,7 +2619,7 @@ IF(OCLOUD_ONLY) THEN
     END WHERE
   END DO
 ELSE
-  PDTHRAD(:,:,:) = (ZDTRAD_LW(:,:,:)+ZDTRAD_SW(:,:,:))/ZEXNT(:,:,:)
+  PDTHRAD(:,:,:) = (ZDTRAD_LW(:,:,:)+ZDTRAD_SW(:,:,:))/ZEXNT(:,:,:)  ! tendency in potential temperature
   PDTHRADSW(:,:,:) = ZDTRAD_SW(:,:,:)/ZEXNT(:,:,:)
   PDTHRADLW(:,:,:) = ZDTRAD_LW(:,:,:)/ZEXNT(:,:,:)
   PSRFLWD(:,:) = ZLWD(:,:)
@@ -2581,7 +2638,7 @@ ELSE
           PSWU(JI,JJ,JK) = ZFLUX_SW_UP(IIJ,JKRAD)
           PSWD(JI,JJ,JK) = ZFLUX_SW_DOWN(IIJ,JKRAD)
           PLWU(JI,JJ,JK) = ZFLUX_LW(IIJ,1,JKRAD)
-          PLWD(JI,JJ,JK) = -ZFLUX_LW(IIJ,2,JKRAD)
+          PLWD(JI,JJ,JK) = -ZFLUX_LW(IIJ,2,JKRAD)  ! in ECMWF all fluxes are upward
     END DO
    END DO
   END DO
@@ -3127,7 +3184,7 @@ IF( OCLOSE_OUT .AND. (KRAD_DIAG >= 1) ) THEN
     CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,YDIR,ZSTORE_3D,IGRID,ILENCH,YCOMMENT,IRESP)
     !
     ! spectral bands
-    IF (KSWB==6) THEN
+    IF (KSWB_OLD==6) THEN
       INIR = 4
     ELSE
       INIR = 2
@@ -3136,11 +3193,11 @@ IF( OCLOSE_OUT .AND. (KRAD_DIAG >= 1) ) THEN
     DO JBAND=1,INIR-1
       WRITE(YBAND_NAME(JBAND),'(A3,I1)') 'VIS', JBAND
     END DO
-    DO JBAND= INIR, KSWB
+    DO JBAND= INIR, KSWB_OLD
       WRITE(YBAND_NAME(JBAND),'(A3,I1)') 'NIR', JBAND
     END DO
 !
-    DO JBAND=1,KSWB
+    DO JBAND=1,KSWB_OLD
       YRECFM   = 'ODAER_'//YBAND_NAME(JBAND)
       YCOMMENT = 'X_Y_Z_OD_'//YBAND_NAME(JBAND)
       IGRID    = 1
@@ -3158,7 +3215,7 @@ IF( OCLOSE_OUT .AND. (KRAD_DIAG >= 1) ) THEN
       CALL FMWRIT(HFMFILE,YRECFM,HLUOUT,YDIR,ZCGAZ(:,:,:,JBAND),IGRID,ILENCH,YCOMMENT,IRESP)
     ENDDO
 
-    DO JBAND=1,KSWB
+    DO JBAND=1,KSWB_OLD
       DO JK=IKB,IKE
         JKRAD = JK - JPVEXT
         DO JJ=IJB,IJE
@@ -3412,4 +3469,5 @@ DEALLOCATE(ZO3AVE)
 !-------------------------------------------------------------------------------
 !
 END SUBROUTINE RADIATIONS
-
+!
+END MODULE MODI_RADIATIONS  

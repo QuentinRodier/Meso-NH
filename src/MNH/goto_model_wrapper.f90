@@ -15,8 +15,9 @@
 !!      2014 (Faivre)
 !!      2016  (Leriche) Add MODD_CH_ICE Suppress MODD_CH_DEP_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
-!!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry  
+!!  10/2016     (F Brosse) Add prod/loss terms computation for chemistry 
 !!                      07/2017 (M.Leriche) Add DIAG chimical surface fluxes
+!                   02/2018 Q.Libois ECRAD
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -72,6 +73,7 @@ USE MODD_PARAM_KAFR_n
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PARAM_RAD_n
+USE MODD_PARAM_ECRAD_n
 USE MODD_PASPOL_n
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE_n
@@ -163,6 +165,9 @@ CALL PARAM_KAFR_GOTO_MODEL(KFROM, KTO)
 CALL PARAM_MFSHALL_GOTO_MODEL(KFROM, KTO)
 CALL PARAM_GOTO_MODEL(KFROM, KTO)
 CALL PARAM_RAD_GOTO_MODEL(KFROM, KTO)
+#ifdef MNH_ECRAD
+CALL PARAM_ECRAD_GOTO_MODEL(KFROM, KTO)
+#endif
 CALL PASPOL_GOTO_MODEL(KFROM, KTO)
 #ifdef MNH_FOREFIRE
 CALL FOREFIRE_GOTO_MODEL(KFROM, KTO)

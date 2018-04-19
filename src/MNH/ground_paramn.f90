@@ -33,7 +33,7 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions     
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! direct  albedo for each spectral band (-)
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each spectral band (-)
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! surface radiative temperature         (K)
 !
 END SUBROUTINE GROUND_PARAM_n
@@ -109,6 +109,7 @@ END MODULE MODI_GROUND_PARAM_n
 !!      (M.Leriche)            24/03/16 remove flag for chemical surface fluxes
 !!      (M.Leriche)           01/07/2017 Add DIAG chimical surface fluxes
 !!  01/2018      (G.Delautier) SURFEX 8.1
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -191,7 +192,7 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions     
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! direct  albedo for each spectral band (-)
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each spectral band (-)
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! surface radiative temperature         (K)
 !
 !
@@ -649,6 +650,8 @@ IF (LDIAG_IN_RUN) THEN
   !
   XCURRENT_LW   (:,:) = XFLALWD(:,:)
   XCURRENT_SW   (:,:) = SUM(XDIRSRFSWD(:,:,:)+XSCAFLASWD(:,:,:),DIM=3)
+  XCURRENT_SWDIR(:,:) = SUM(XDIRSRFSWD,DIM=3)
+  XCURRENT_SWDIFF(:,:) = SUM(XSCAFLASWD(:,:,:),DIM=3) 
   XCURRENT_SFCO2(:,:) = ZSFCO2(:,:)
   XCURRENT_DSTAOD(:,:)=0.0
   IF (CRAD=='ECMW') THEN
@@ -821,7 +824,9 @@ END DO
 ZSFCO2  (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_SFCO2(:),    ISHAPE_2)
 ZSFU    (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_SFU(:),      ISHAPE_2)
 ZSFV    (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_SFV(:),      ISHAPE_2)
-PEMIS   (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_EMIS(:),     ISHAPE_2)
+DO JLAYER=1,SIZE(PEMIS,3)
+    PEMIS   (IIB:IIE,IJB:IJE,JLAYER)     = RESHAPE(ZP_EMIS(:),     ISHAPE_2)
+END DO
 PTSRAD  (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_TSRAD(:),    ISHAPE_2)
 !
 IF (LDIAG_IN_RUN) THEN

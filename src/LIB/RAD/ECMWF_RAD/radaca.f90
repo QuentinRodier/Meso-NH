@@ -65,14 +65,14 @@ SUBROUTINE RADACA ( KIDIA , KFDIA , KLON , KTDIA , KLEV &
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : R        ,RPI
+USE OYOMCST   , ONLY : R        ,RPI
 USE YOEAERD  , ONLY : CVDAES   ,CVDAEL   ,CVDAEU   ,CVDAED   ,&
             &RCAEOPS  ,RCAEOPL  ,RCAEOPU  ,RCAEOPD  ,RCTRBGA  ,&
             &RCVOBGA  ,RCSTBGA  ,RCTRPT   ,RAESC    ,RAESS    ,&
             &RAELC    ,RAELS    ,RAEUC    ,RAEUS    ,RAEDC    ,&
             &RAEDS
 USE YOEOZOC  , ONLY : COZQC    ,COZQS    ,COZHC    ,COZHS
-USE YOERAD   , ONLY : LHVOLCA  ,LNEWAER
+USE OYOERAD   , ONLY : LHVOLCA  ,LNEWAER
 USE YOEAERC  , ONLY : RSINCT   ,RSINCV   ,REPAER   ,&
             &RTAEBC  ,RTAEOR   ,RTAESD   ,RTAESS   ,RTAESU   , &
             &RTAEVO 

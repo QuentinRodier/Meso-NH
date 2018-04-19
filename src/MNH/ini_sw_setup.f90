@@ -57,6 +57,7 @@ END MODULE MODI_INI_SW_SETUP
 !!    -------------
 !!      Original    03/03/03
 !!      modification : 01/09/03  Y. Seity, KSWB_MNH=6
+!!                   02/2018 Q.Libois ECRAD
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -91,10 +92,26 @@ SELECT CASE (HRAD)
        PSW_BANDS(5) = 1.785E-6
        PSW_BANDS(6) = 3.19E-6
     ELSE
-!callabortstop
-CALL ABORT
+       !callabortstop
+       CALL ABORT
        STOP     
     ENDIF
+    
+  CASE ('ECRA') 
+       PSW_BANDS(1) = 3.462E-6
+       PSW_BANDS(2) = 2.788E-6
+       PSW_BANDS(3) = 2.325E-6
+       PSW_BANDS(4) = 2.046E-6
+       PSW_BANDS(5) = 1.784E-6
+       PSW_BANDS(6) = 1.462E-6
+       PSW_BANDS(7) = 1.270E-6
+       PSW_BANDS(8) = 1.010E-6
+       PSW_BANDS(9) = 0.702E-6
+       PSW_BANDS(10) = 0.533E-6
+       PSW_BANDS(11) = 0.393E-6
+       PSW_BANDS(12) = 0.304E-6
+       PSW_BANDS(13) = 0.231E-6
+       PSW_BANDS(14) = 8.021E-6       
 
   CASE ('FIXE','TOPA','NONE')
 
