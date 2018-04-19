@@ -170,7 +170,6 @@ module load ga/\${VER_GA}
 export MP_MPILIB=pempi
 module purge
 module load intel/2013.1
-module load netcdf/seq/4.1.3
 "}
               ;;
 AIX*)
