@@ -49,6 +49,7 @@ NAMELIST/NAM_OUTPUT/LOUT_BEG,LOUT_END,&
                    XOUT_TIME_FREQ,XOUT_TIME_FREQ_FIRST, &
                    COUT_VAR, &
                    LOUT_REDUCE_FLOAT_PRECISION, &
-                   LOUT_COMPRESS, NOUT_COMPRESS_LEVEL
+                   LOUT_COMPRESS, NOUT_COMPRESS_LEVEL,&
+                   COUT_DIR
 !
 END MODULE MODN_OUTPUT

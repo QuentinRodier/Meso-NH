@@ -235,7 +235,6 @@ CONTAINS
     !JUANZ
     CHARACTER(len=5)                      :: CFILE
     INTEGER                               :: IFILE, IRANK_PROCIO
-    CHARACTER(len=128)                    :: YFILE_IOZ
     INTEGER(KIND=LFI_INT)                 :: IRESOU,IMELEV,INPRAR
     INTEGER(KIND=LFI_INT)                 :: ININAR8
     LOGICAL(KIND=LFI_INT)                 :: GNAMFI8,GFATER8,GSTATS8 
@@ -265,6 +264,7 @@ CONTAINS
     ! didier
     LOGICAL               :: GPARALLELIO
     TYPE(TFILEDATA),POINTER :: TZSPLITFILE
+    CHARACTER(LEN=:),ALLOCATABLE :: YPREFILENAME !To store the directory + filename
 
     CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','opening '//TRIM(TPFILE%CNAME)//' for '//TRIM(TPFILE%CMODE))
     !
@@ -358,6 +358,16 @@ CONTAINS
     ENDIF
 #endif
 
+    IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
+      IF(LEN_TRIM(TPFILE%CDIRNAME)>0) THEN
+        YPREFILENAME = TRIM(TPFILE%CDIRNAME)//'/'//TRIM(TPFILE%CNAME)
+      ELSE
+        YPREFILENAME = TRIM(TPFILE%CNAME)
+      END IF
+    ELSE
+      YPREFILENAME = TRIM(TPFILE%CNAME)
+    END IF
+
     SELECT CASE(YMODE)
 
     CASE('GLOBAL')
@@ -384,7 +394,7 @@ CONTAINS
           TPFILE%NLU = IONEWFLU()
 #ifdef MNH_VPP
           OPEN(UNIT=TPFILE%NLU,        &
-               FILE=TRIM(TPFILE%CNAME),&
+               FILE=TRIM(YPREFILENAME),&
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
                IOSTAT=IOS,             &
@@ -401,7 +411,7 @@ CONTAINS
           !JUAN : 31/03/2000 modif pour acces direct
           IF (YACCESS=='STREAM') THEN
              OPEN(UNIT=TPFILE%NLU,        &
-                  FILE=TRIM(TPFILE%CNAME),&
+                  FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
                   IOSTAT=IOS,             &
@@ -409,7 +419,7 @@ CONTAINS
                   ACTION=YACTION)
           ELSEIF (YACCESS=='DIRECT') THEN
              OPEN(UNIT=TPFILE%NLU,        &
-                  FILE=TRIM(TPFILE%CNAME),&
+                  FILE=TRIM(YPREFILENAME),&
                   STATUS=YSTATUS,         &
                   ACCESS=YACCESS,         &
                   IOSTAT=IOS,             &
@@ -420,7 +430,7 @@ CONTAINS
              IF (YFORM=="FORMATTED") THEN
                IF (YACTION=='READ') THEN
                 OPEN(UNIT=TPFILE%NLU,        &
-                     FILE=TRIM(TPFILE%CNAME),&
+                     FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
@@ -433,7 +443,7 @@ CONTAINS
                      PAD=YPAD)
                ELSE
                 OPEN(UNIT=TPFILE%NLU,        &
-                     FILE=TRIM(TPFILE%CNAME),&
+                     FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
@@ -447,7 +457,7 @@ CONTAINS
                ENDIF
              ELSE
                 OPEN(UNIT=TPFILE%NLU,        &
-                     FILE=TRIM(TPFILE%CNAME),&
+                     FILE=TRIM(YPREFILENAME),&
                      STATUS=YSTATUS,         &
                      ACCESS=YACCESS,         &
                      IOSTAT=IOS,             &
@@ -461,7 +471,7 @@ CONTAINS
 
           !print*,' OPEN_ll'
           !print*,' OPEN(UNIT=',TPFILE%NLU
-          !print*,' FILE=',TRIM(TPFILE%CNAME)
+          !print*,' FILE=',TRIM(YPREFILENAME)
           !print*,' STATUS=',YSTATUS       
           !print*,' ACCESS=',YACCESS
           !print*,' IOSTAT=',IOS
@@ -474,7 +484,7 @@ CONTAINS
           !print*,' PAD=',YPAD
 #else
           OPEN(UNIT=TPFILE%NLU,        &
-               FILE=TRIM(TPFILE%CNAME),&
+               FILE=TRIM(YPREFILENAME),&
                STATUS=STATUS,          &
                ACCESS=ACCESS,          &
                IOSTAT=IOS,             &
@@ -505,7 +515,7 @@ CONTAINS
 
 #ifdef MNH_VPP
        OPEN(UNIT=TPFILE%NLU,                       &
-            FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
+            FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
@@ -521,7 +531,7 @@ CONTAINS
 #if defined(MNH_SX5) || defined(MNH_SP4) || defined(NAGf95) || defined(MNH_LINUX)
        IF (ACCESS=='DIRECT') THEN
           OPEN(UNIT=TPFILE%NLU,                       &
-               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
+               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
                STATUS=YSTATUS,                        &
                ACCESS=YACCESS,                        &
                IOSTAT=IOS,                            &
@@ -531,7 +541,7 @@ CONTAINS
        ELSE
         IF (YACTION=='READ') THEN
           OPEN(UNIT=TPFILE%NLU,                        &
-               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"),  &
+               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
@@ -544,7 +554,7 @@ CONTAINS
                PAD=YPAD)
          ELSE
           OPEN(UNIT=TPFILE%NLU,                        &
-               FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"),  &
+               FILE=TRIM(YPREFILENAME)//SUFFIX(".P"),  &
                STATUS=YSTATUS,                         &
                ACCESS=YACCESS,                         &
                IOSTAT=IOS,                             &
@@ -559,7 +569,7 @@ CONTAINS
        ENDIF
 #else
        OPEN(UNIT=TPFILE%NLU,                       &
-            FILE=TRIM(TPFILE%CNAME)//SUFFIX(".P"), &
+            FILE=TRIM(YPREFILENAME)//SUFFIX(".P"), &
             STATUS=STATUS,                         &
             ACCESS=ACCESS,                         &
             IOSTAT=IOS,                            &
@@ -624,15 +634,32 @@ CONTAINS
           DO IFILE=1,TPFILE%NSUBFILES_IOZ
              IRANK_PROCIO = 1 + IO_RANK(IFILE-1,ISNPROC,TPFILE%NSUBFILES_IOZ)
              WRITE(CFILE ,'(".Z",i3.3)') IFILE
-             YFILE_IOZ           = TRIM(TPFILE%CNAME)//CFILE//".lfi"
 
              CALL IO_FILE_FIND_BYNAME(TRIM(TPFILE%CNAME)//TRIM(CFILE),TZSPLITFILE,IRESP)
 
              IF (IRESP/=0) THEN !File not yet in filelist => add it (nothing to do if already in list)
-               CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
-                                     KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
-                                     HFORMAT=TPFILE%CFORMAT)
+               IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
+                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                                       HDIRNAME=TPFILE%CDIRNAME,                                                     &
+                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
+                                       HFORMAT=TPFILE%CFORMAT)
+               ELSE
+                 CALL IO_FILE_ADD2LIST(TZSPLITFILE,TRIM(TPFILE%CNAME)//TRIM(CFILE),TPFILE%CTYPE,TPFILE%CMODE,        &
+                                       KLFINPRAR=TPFILE%NLFINPRAR,KLFITYPE=TPFILE%NLFITYPE,KLFIVERB=TPFILE%NLFIVERB, &
+                                       HFORMAT=TPFILE%CFORMAT)
+               END IF
              END IF
+
+             IF (ALLOCATED(TPFILE%CDIRNAME)) THEN
+               IF (LEN_TRIM(TZSPLITFILE%CDIRNAME)>0) THEN
+                 YPREFILENAME = TRIM(TZSPLITFILE%CDIRNAME)//'/'//TRIM(TZSPLITFILE%CNAME)
+               ELSE
+                 YPREFILENAME = TRIM(TZSPLITFILE%CNAME)
+               END IF
+             ELSE
+               YPREFILENAME = TRIM(TZSPLITFILE%CNAME)
+             END IF
+
              TPFILE%TFILES_IOZ(IFILE)%TFILE => TZSPLITFILE
              !Done outside of the previous IF to prevent problems with .OUT files
              TZSPLITFILE%NMPICOMM      = ICOMM
@@ -647,10 +674,10 @@ CONTAINS
                    IF (YACTION == 'READ') THEN
                       ! Open NetCDF File for reading
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
-                      IOSCDF = NF90_OPEN(TRIM(TPFILE%CNAME)//CFILE//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_OPEN(IO_ZSPLIT) for '//TRIM(TZSPLITFILE%CNAME)//'.nc')
+                      IOSCDF = NF90_OPEN(TRIM(YPREFILENAME)//".nc", NF90_NOWRITE, TZSPLITFILE%NNCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_OPEN for '//TRIM(TPFILE%CNAME)//CFILE//'.nc: '// &
+                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_OPEN for '//TRIM(TZSPLITFILE%CNAME)//'.nc: '// &
                                                                   NF90_STRERROR(IOSCDF))
                       ELSE
                          IOS = 0
@@ -666,11 +693,11 @@ CONTAINS
                       ! YACTION == 'WRITE'
                       ! Create NetCDF File for writing
                       TZSPLITFILE%TNCDIMS => NEWIOCDF()
-                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TPFILE%CNAME)//CFILE//'.nc')
-                      IOSCDF = NF90_CREATE(TRIM(TPFILE%CNAME)//CFILE//".nc", &
+                      CALL PRINT_MSG(NVERB_DEBUG,'IO','OPEN_ll','NF90_CREATE(IO_ZSPLIT) for '//TRIM(TZSPLITFILE%CNAME)//'.nc')
+                      IOSCDF = NF90_CREATE(TRIM(YPREFILENAME)//".nc", &
                            &IOR(NF90_CLOBBER,NF90_NETCDF4), TZSPLITFILE%NNCID)
                       IF (IOSCDF /= NF90_NOERR) THEN
-                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_CREATE for '//TRIM(TPFILE%CNAME)//CFILE//'.nc: '// &
+                        CALL PRINT_MSG(NVERB_FATAL,'IO','OPEN_ll','NF90_CREATE for '//TRIM(TZSPLITFILE%CNAME)//'.nc: '// &
                                                                   NF90_STRERROR(IOSCDF))
                       ELSE
                          IOS = 0
@@ -701,7 +728,7 @@ CONTAINS
                    CALL LFIOUV(IRESOU,                   &
                         TZSPLITFILE%NLFIFLU,             &
                         GNAMFI8,                         &
-                        TRIM(TZSPLITFILE%CNAME)//'.lfi', &
+                        TRIM(YPREFILENAME)//'.lfi',      &
                         "UNKNOWN",                       &
                         GFATER8,                         &
                         GSTATS8,                         &

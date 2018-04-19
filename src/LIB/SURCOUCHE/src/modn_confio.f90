@@ -36,7 +36,8 @@
 !             ------------
 !
 USE MODD_IO_ll, ONLY : LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, &
-                       NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL
+                       NIO_VERB, NIO_ABORT_LEVEL, NGEN_VERB, NGEN_ABORT_LEVEL, &
+                       CIO_DIR
 !
 IMPLICIT NONE
 !
@@ -48,7 +49,7 @@ LOGICAL,SAVE :: LLFIREAD = .FALSE. ! TRUE : enable LFI reading (disable NetCDF4 
 NAMELIST/NAM_CONFIO/LCDF4, LLFIOUT, LLFIREAD,                 &
                     LVERB_OUTLST, LVERB_STDOUT, LVERB_ALLPRC, &
                     NIO_VERB,  NIO_ABORT_LEVEL,               &
-                    NGEN_VERB, NGEN_ABORT_LEVEL
+                    NGEN_VERB, NGEN_ABORT_LEVEL, CIO_DIR
 !
 END MODULE MODN_CONFIO
 

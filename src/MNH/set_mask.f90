@@ -77,7 +77,6 @@ INTEGER                    :: IIB,IJB       ! Lower bounds of the physical
                                             ! sub-domain in x and y directions
 INTEGER                    :: IIE,IJE       ! Upper bounds of the physical
                                             ! sub-domain in x and y directions
-INTEGER :: IID, IRESP
 !-------------------------------------------------------------------------------
 !
 !*       1.    COMPUTES THE PHYSICAL SUBDOMAIN BOUNDS

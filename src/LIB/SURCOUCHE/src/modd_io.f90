@@ -10,7 +10,7 @@
 MODULE MODD_IO_ll
 !
 USE MODD_NETCDF,     ONLY: IDCDF_KIND, IOCDF
-USE MODD_PARAMETERS, ONLY: NFILENAMELGTMAX
+USE MODD_PARAMETERS, ONLY: NDIRNAMELGTMAX, NFILENAMELGTMAX
 !
 IMPLICIT NONE 
 !
@@ -42,6 +42,8 @@ INTEGER, SAVE :: NIO_ABORT_LEVEL = NVERB_ERROR   ! Level of IO error necessary t
 INTEGER, SAVE :: NGEN_VERB        = NVERB_WARNING ! Verbosity level for 'GEN' (generic) messages
 INTEGER, SAVE :: NGEN_ABORT_LEVEL = NVERB_ERROR   ! Level of 'GEN' error necessary to force stop of application
 
+CHARACTER(LEN=NDIRNAMELGTMAX) :: CIO_DIR = '' ! Directory for IO
+
 !Structure containing one pointer to a file
 !Useful to create arrays of pointers to files
 TYPE TFILE_ELT
@@ -62,6 +64,7 @@ END TYPE TOUTBAK
 !Structure describing the characteristics of a file
 TYPE TFILEDATA
   CHARACTER(LEN=NFILENAMELGTMAX) :: CNAME = '' !Filename
+  CHARACTER(LEN=:),ALLOCATABLE   :: CDIRNAME   !Directory name
   CHARACTER(LEN=13) :: CTYPE   = "UNKNOWN" !Filetype (backup, output, prepidealcase...)
   CHARACTER(LEN=7)  :: CFORMAT = "UNKNOWN" !Fileformat (NETCDF4, LFI, LFICDF4...)
   CHARACTER(LEN=7)  :: CMODE   = "UNKNOWN" !Opening mode (read, write...)
