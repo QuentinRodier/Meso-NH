@@ -36,23 +36,23 @@
   yhat  = fichier1->YHAT(1:jmax+jphext-1+1) ; YHAT
   xhat  = fichier1->XHAT(1:imax+jphext-1+1) ; XHAT
 
-  wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
-  vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
-  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+  wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+  vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+  ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
   
-  idt1= fichier2->CLUSTERID(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; CLUSTERID
+  idt1= fichier2->CLUSTERID(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; CLUSTERID
   idt1@long_name="Cluster Identity Number"
   idt1@units=""
 
-  YYYYDDMM1= fichier1->DTCUR__TDATE
-  SS1=fichier1->DTCUR__TIME
+  YYYYDDMM1= fichier1->DTCUR
+  SS1=fichier1->DTCUR
 
 ;=================================================;
 ; Récupération de la date 
 ;=================================================;
-  year1=YYYYDDMM1(0)
-  day1=YYYYDDMM1(1)
-  min1=YYYYDDMM1(2)
+  ;year1=YYYYDDMM1(0)
+  ;day1=YYYYDDMM1(1)
+  ;min1=YYYYDDMM1(2)
   time1=SS1
 ;=================================================;
 ; On mets toutes les variables sur la grille 1 

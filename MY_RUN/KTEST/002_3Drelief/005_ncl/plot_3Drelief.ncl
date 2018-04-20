@@ -27,7 +27,7 @@
 
 
 
-  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+  ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; UT
   ut@long_name="Zonal wind"
   ut@units="m/s"
 

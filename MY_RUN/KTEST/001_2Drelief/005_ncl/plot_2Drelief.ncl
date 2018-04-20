@@ -31,27 +31,27 @@ zs  = fichier1->ZS(0,jphext:imax+jphext-1) ; ZS
 zhat  = fichier1->ZHAT(1:kmax+1) ; ZHAT
 xhat  = fichier1->XHAT(jphext:imax+jphext-1+1) ; XHAT
 
-lsthm1 = fichier1->LSTHM(1:kmax,0,jphext:imax+jphext-1) ; LSTHM
+lsthm1 = fichier1->LSTHM(0,1:kmax,0,jphext:imax+jphext-1) ; LSTHM
 lsthm1@long_name="LSTHM"
 lsthm1@units="K"
 
-lsum1_old = fichier1->LSUM(1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
-wt1_old= fichier1->WT(1:kmax+1,0,jphext:imax+jphext-1) ; WT
-ut1_old= fichier1->UT(1:kmax,0,jphext:imax+jphext-1+1) ; UT
+lsum1_old = fichier1->LSUM(0,1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
+wt1_old= fichier1->WT(0,1:kmax+1,0,jphext:imax+jphext-1) ; WT
+ut1_old= fichier1->UT(0,1:kmax,0,jphext:imax+jphext-1+1) ; UT
 
-tht1= fichier1->THT(1:kmax,0,jphext:imax+jphext-1) ; THT
+tht1= fichier1->THT(0,1:kmax,0,jphext:imax+jphext-1) ; THT
 tht1@long_name="Potential Temperature"
 tht1@units="K"
 
-rvt1= fichier1->RVT(1:kmax,0,jphext:imax+jphext-1) ; RVT
+rvt1= fichier1->RVT(0,1:kmax,0,jphext:imax+jphext-1) ; RVT
 rvt1@long_name="Vapor mixing ratio"
 rvt1@units="g/kg"
 
-cflu1= fichier1->CFLU(1:kmax,0,jphext:imax+jphext-1) ; CFLU
+cflu1= fichier1->CFLU(0,1:kmax,0,jphext:imax+jphext-1) ; CFLU
 cflu1@long_name="CFLU"
 cflu1@units="-"
 
-cflw1= fichier1->CFLW(1:kmax,0,jphext:imax+jphext-1) ; CFLW
+cflw1= fichier1->CFLW(0,1:kmax,0,jphext:imax+jphext-1) ; CFLW
 cflw1@long_name="CFLW"
 cflw1@units=" "
 
@@ -60,27 +60,27 @@ SS1=fichier1->DTCUR
 ;YYYYDDMM2= fichier2->DTCUR__TDATE
 SS2=fichier2->DTCUR
 
-lsthm2 = fichier2->LSTHM(1:kmax,0,jphext:imax+jphext-1) ; LSTHM
+lsthm2 = fichier2->LSTHM(0,1:kmax,0,jphext:imax+jphext-1) ; LSTHM
 lsthm2@long_name="LSTHM"
 lsthm2@units="K"
 
-lsum2_old = fichier2->LSUM(1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
-wt2_old= fichier2->WT(1:kmax+1,0,jphext:imax+jphext-1) ; WT
-ut2_old= fichier2->UT(1:kmax,0,jphext:imax+jphext-1+1) ; UT
+lsum2_old = fichier2->LSUM(0,1:kmax,0,jphext:imax+jphext-1+1) ; LSUM
+wt2_old= fichier2->WT(0,1:kmax+1,0,jphext:imax+jphext-1) ; WT
+ut2_old= fichier2->UT(0,1:kmax,0,jphext:imax+jphext-1+1) ; UT
 
-tht2= fichier2->THT(1:kmax,0,jphext:imax+jphext-1) ; THT
+tht2= fichier2->THT(0,1:kmax,0,jphext:imax+jphext-1) ; THT
 tht2@long_name="Potential Temperature"
 tht2@units="K"
 
-rvt2= fichier2->RVT(1:kmax,0,jphext:imax+jphext-1) ; RVT
+rvt2= fichier2->RVT(0,1:kmax,0,jphext:imax+jphext-1) ; RVT
 rvt2@long_name="Vapor mixing ratio"
 rvt2@units="g/kg"
 
-cflu2= fichier2->CFLU(1:kmax,0,jphext:imax+jphext-1) ; CFLU
+cflu2= fichier2->CFLU(0,1:kmax,0,jphext:imax+jphext-1) ; CFLU
 cflu2@long_name="CFLU"
 cflu2@units="-"
 
-cflw2= fichier2->CFLW(1:kmax,0,jphext:imax+jphext-1) ; CFLW
+cflw2= fichier2->CFLW(0,1:kmax,0,jphext:imax+jphext-1) ; CFLW
 cflw2@long_name="CFLW"
 cflw2@units=" "
 

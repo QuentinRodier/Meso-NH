@@ -35,33 +35,33 @@
   yhat  = fichier1->YHAT(1:jmax+jphext-1+1) ; YHAT
   xhat  = fichier1->XHAT(1:imax+jphext-1+1) ; XHAT
 
-  wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
-  vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
-  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
-  tht1= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
+  wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+  vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+  ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+  tht1= fichier1->THT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
   tht1@long_name="Potential Temperature"
   tht1@units="K"
-  lsthm1= fichier1->LSTHM(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) 
+  lsthm1= fichier1->LSTHM(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   lsthm1@long_name="Large SCale Potential Temperature"
   lsthm1@units="K"
 
-  pabst1= fichier1->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
+  pabst1= fichier1->PABST(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
   pabst1@long_name="Pressure"
   pabst1@units="Pa"
-  rvt1= fichier1->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
+  rvt1= fichier1->RVT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
   rvt1@long_name="Vapor mixing ratio"
   rvt1@units="kg/kg"
-  rct1= fichier1->RCT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RCT
+  rct1= fichier1->RCT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RCT
   rct1@long_name="Cloud mixing ratio"
   rct1@units="kg/kg"
-  rrt1= fichier1->RRT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RRT
+  rrt1= fichier1->RRT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RRT
   rrt1@long_name="Rain mixing ratio"
   rrt1@units="kg/kg"
 
-  inprr= fichier1->INPRR(jphext:jmax+jphext-1,jphext:imax+jphext-1) 
+  inprr= fichier1->INPRR(0,jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   inprr@long_name="Instantaneous Precipitation Rain Rate"
   inprr@units="mm/h"
-  acprr= fichier1->ACPRR(jphext:jmax+jphext-1,jphext:imax+jphext-1) 
+  acprr= fichier1->ACPRR(0,jphext:jmax+jphext-1,jphext:imax+jphext-1) 
   acprr@long_name="Accumulated Precipitation Rain Rate"
   acprr@units="mm"
 
