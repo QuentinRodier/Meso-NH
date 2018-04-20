@@ -8,7 +8,7 @@ MODULE YOERRTAM
 
 #include "tsmbkind.h"
 
-USE PARRRTM
+USE OPARRRTM
 
 
 IMPLICIT NONE

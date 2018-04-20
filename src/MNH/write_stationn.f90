@@ -152,7 +152,7 @@ IF (TSTATION%Y(II)==XUNDEF) RETURN
 IPROC = 8 + SIZE(TSTATION%R,3) + SIZE(TSTATION%SV,3) 
 
 IF (SIZE(TSTATION%TKE  )>0) IPROC = IPROC + 1
-IF (LDIAG_IN_RUN) IPROC = IPROC + 13
+IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*(3+NSOA+NCARB+NSP)
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LSALT) IPROC = IPROC + NMODE_SLT*3
@@ -283,6 +283,18 @@ IF (LDIAG_IN_RUN) THEN
   YUNIT    (JPROC) = 'W/m2'  
   YCOMMENT (JPROC) = 'Downward short-wave radiation' 
   ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SW(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'SWDIR'   
+  YUNIT    (JPROC) = 'W/m2'  
+  YCOMMENT (JPROC) = 'Downward direct short-wave radiation' 
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIR(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'SWDIFF'   
+  YUNIT    (JPROC) = 'W/m2'  
+  YCOMMENT (JPROC) = 'Downward diffuse short-wave radiation' 
+  ZWORK6 (1,1,1,:,1,JPROC) = TSTATION%SWDIFF(:,II)  
   !       
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'LW'  

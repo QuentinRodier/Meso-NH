@@ -188,6 +188,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   01/2015   (C. Barthe) Add explicit LNOx
 !!      Modification   2016      (B.VIE) LIMA
 !!      Modification   11/2016   (Ph. Wautelet) Allocate/initialise some output/backup structures
+!!      Modification   02/2018   (Q.Libois) ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
@@ -209,6 +210,7 @@ USE MODN_DYN_n
 USE MODN_ADV_n
 USE MODN_PARAM_n
 USE MODN_PARAM_RAD_n
+USE MODN_PARAM_ECRAD_n
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_MFSHALL_n
 USE MODN_PARAM_ICE, ONLY : NAM_PARAM_ICE, ZWARM=>LWARM, ZSEDIC=>LSEDIC, &
@@ -369,6 +371,14 @@ IF (GFOUND) THEN
   READ(UNIT=ILUDES,NML=NAM_PARAM_RADn)
   CALL UPDATE_NAM_PARAM_RADn
 END IF
+#ifdef MNH_ECRAD
+CALL POSNAM(ILUDES,'NAM_PARAM_ECRADN',GFOUND)
+CALL INIT_NAM_PARAM_ECRADn
+IF (GFOUND) THEN 
+  READ(UNIT=ILUDES,NML=NAM_PARAM_ECRADn)
+  CALL UPDATE_NAM_PARAM_ECRADn
+END IF
+#endif
 CALL POSNAM(ILUDES,'NAM_PARAM_KAFRN',GFOUND)
 CALL INIT_NAM_PARAM_KAFRn
 IF (GFOUND) THEN 
@@ -625,6 +635,11 @@ IF (NVERB >= 10) THEN
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** RADIATIONSn *************')")
   WRITE(UNIT=ILUOUT,NML=NAM_PARAM_RADn)
+!  
+#ifdef MNH_ECRAD
+  WRITE(UNIT=ILUOUT,FMT="('********** ECRAD RADIATIONSn *************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_PARAM_ECRADn)
+#endif
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** DEEP CONVECTIONn ********')")
   WRITE(UNIT=ILUOUT,NML=NAM_PARAM_KAFRn)

@@ -61,7 +61,7 @@ SUBROUTINE SUCLOPN (KTSW,KSW , KLEV)
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
+USE OYOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
             &RYFWCE   ,RYFWCF   ,REBCUA   ,REBCUB   ,REBCUC   ,&
             &REBCUD   ,REBCUE   ,REBCUF   ,REBCUG   ,REBCUH   ,&
             &REBCUI   ,REBCUJ   ,RASWCA   ,RASWCB   ,RASWCC   ,&
@@ -74,7 +74,7 @@ USE YOESW    , ONLY : RYFWCA   ,RYFWCB   ,RYFWCC   ,RYFWCD   ,&
             &RFLBB1   ,RFLBB2   ,RFLBB3   ,RFLCC0   ,RFLCC1   ,&
             &RFLCC2   ,RFLCC3   ,RFLDD0   ,RFLDD1   ,RFLDD2   ,&
             &RFLDD3   ,RLINLI   ,RTIW     ,RRIW
-USE YOERAD   , ONLY : RAOVLP   ,RBOVLP
+USE OYOERAD   , ONLY : RAOVLP   ,RBOVLP
 
 IMPLICIT NONE
 

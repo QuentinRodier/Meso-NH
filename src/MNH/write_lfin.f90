@@ -165,6 +165,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       M.Mazoyer     04/16 : Add supersaturation fields
 !!       P.Wautelet    11/07/2016 removed MNH_NCWRIT define
 !!       JP Chaboureau 27/11/2017 add wind tendency forcing
+!!                   02/2018 Q.Libois move Diagnostic related to the radiations in radiations.f90
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   
 !-------------------------------------------------------------------------------

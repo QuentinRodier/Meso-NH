@@ -48,8 +48,8 @@ SUBROUTINE SUSW
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RG
-USE YOESW    , ONLY : APAD     ,BPAD     ,RRAY     ,RSUN     ,&
+USE OYOMCST   , ONLY : RG
+USE OYOESW    , ONLY : APAD     ,BPAD     ,RRAY     ,RSUN     ,&
             &RPDH1    ,RPDU1    ,RPNH     ,RPNU     ,RSWCE    ,&
             &RSWCP    ,RTDH2O   ,RTDUMG   ,RTH2O    ,RTUMG    ,D
 

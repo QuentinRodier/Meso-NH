@@ -9,6 +9,8 @@
 ! MASDEV4_7 modd 2006/10/24 10:07:40
 !-----------------------------------------------------------------
 MODULE MODD_DIAG_IN_RUN
+! Modifications
+!!                   02/2018 Q.Libois ECRAD
 !
 !* stores instantaneous diagnostic arrays for the current time-step
 !
@@ -23,6 +25,8 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LEI   ! Solid latent heat flux
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_GFLUX ! ground flux
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LW    ! incoming longwave at the surface
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SW    ! incoming Shortwave at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWDIR ! incoming Shortwave direct at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWDIFF! incoming Shortwave diffuse at the surface
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_T2M   ! temperature at 2m
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_Q2M   ! humidity at 2m
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_HU2M  ! relative humidity at 2m

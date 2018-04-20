@@ -59,7 +59,7 @@ SUBROUTINE SATUR ( KIDIA , KFDIA , KLON  , KTDIA , KLEV &
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RETV     ,RLVTT    ,RLSTT    ,RTT
+USE OYOMCST   , ONLY : RETV     ,RLVTT    ,RLSTT    ,RTT
 USE YOETHF   , ONLY : R2ES     ,R3LES    ,R3IES    ,R4LES    ,&
             &R4IES    ,R5LES    ,R5IES    ,R5ALVCP  ,R5ALSCP  ,&
             &RALVDCP  ,RALSDCP  ,RTWAT    ,RTICE    ,RTICECU

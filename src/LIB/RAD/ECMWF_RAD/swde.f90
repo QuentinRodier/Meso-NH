@@ -72,7 +72,7 @@ SUBROUTINE SWDE &
 
 
 #include "tsmbkind.h"
-USE YOERAD   , ONLY : NOVLP 
+USE OYOERAD   , ONLY : NOVLP 
 IMPLICIT NONE
 
 

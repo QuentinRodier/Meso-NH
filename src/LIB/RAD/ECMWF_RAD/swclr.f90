@@ -60,9 +60,9 @@ SUBROUTINE SWCLR &
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : RTAUA    ,RPIZA    ,RCGA
-USE YOERAD   , ONLY : NOVLP    ,NSW
-USE YOERDI   , ONLY : REPCLC
+USE OYOESW    , ONLY : RTAUA    ,RPIZA    ,RCGA
+USE OYOERAD   , ONLY : NOVLP    ,NSW
+USE OYOERDI   , ONLY : REPCLC
 USE YOERDU   , ONLY : REPSCT
 
 
@@ -226,14 +226,14 @@ DO JK = 1 , KLEV
    DO JL = KIDIA,KFDIA
     IF (KAER /= 0) THEN
       ZTRAY = PRAYL(JL) * PDSIG(JL,JK)
-      ZRATIO =PPIZAZ(JL,JK)+ZTRAY
+      ZRATIO =PPIZAZ(JL,JK)+ZTRAY  ! wi*ti+1*tr
       !Ponderation G**2
       ZFACOA_NEW(JL,JK)= ZFACOA_NEW(JL,JK)/ZRATIO
       !Ponderation w
       PPIZAZ(JL,JK)=ZRATIO/(PTAUAZ(JL,JK)+ZTRAY)
       !Ponderation g
       PCGAZ(JL,JK)=PCGAZ(JL,JK)/ZRATIO
-      !Ponderation+delta-modified parameters tau
+      !Ponderation+delta-modified parameters tau - applies delta-Eddington to the complete phase function 
       PTAUAZ(JL,JK)=(ZTRAY+PTAUAZ(JL,JK))*&
           (_ONE_-PPIZAZ(JL,JK)*ZFACOA_NEW(JL,JK))
       !delta-modified parameters w

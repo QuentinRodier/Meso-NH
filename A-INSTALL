@@ -23,7 +23,8 @@
 #       IX) OPTIONAL COMPILATION
 #           a) MNH_FOREFIRE for forefire runs ( external package needed )
 #           b) MNH_RTTOV for optional radiative computation
-#           c) cleaning previous compiled version
+#           c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 
+#           d) cleaning previous compiled version
 #
 #
 ^L
@@ -930,8 +931,7 @@ git clone -b 2014.01 https://github.com/forefireAPI/firefront.git
 # or move/linked to the 'exe' directory of MesoNH
 #    
 
-
-# see c) for cleaning previously version if needed
+# see d) for cleaning previously version if needed
 
 # b) MNH_RTTOV for optional radiative computation
 # --------------------------------------
@@ -996,7 +996,36 @@ export VER_RTTOV=8.7
 
 etc ...
 
-# c) cleaning previous compiled version
+# c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 
+# --------------------------------------
+#
+# The full ECRAD package was not included into the open source version of Meso-NH
+# because it needs a licence agrement.
+#
+# See here to get the licence & full sources : https://software.ecmwf.int/wiki/display/ECRAD/ECMWF+Radiation+Scheme+Home
+# 
+# REM : some of the files modified for MNH are included in the directory ${SRC_MESONH}/src/LIB/RAD/ecrad-1.0.1_mnh
+# 
+# Install the ECRAD package ecrad-1.0.1.tar.gz in the MNH tree directory
+
+cd ${SRC_MESONH}/src/LIB/RAD
+tar xvfz ecrad-1.0.1.tar.gz
+
+# Configure & Compilation
+export MNH_ECRAD=1
+./configure
+
+etc ...
+
+#
+# REM : the 'profile_mesonh...' file & the 'dir_obj...' directory will be suffixed with an ECRAD extension 
+#
+#  Usage :
+#   1) In namelist replace RAD='ECMW' be RAD='ECRAD' 
+#   2) Add link to 'ecrad-1.0.1/data' files 
+#      see 007_16janvier/008_run2 test case for example
+
+# d) cleaning previous compiled version
 # --------------------------------------
 #
 # If you have already compiled exactly the same version of MesoNH on this computer ( same $XYZ value )

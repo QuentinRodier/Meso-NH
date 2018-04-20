@@ -141,6 +141,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification   P. Tulet       01/2005  add dust, orilam
 !!      Modification                  05/2006  Remove EPS and OWRIGET
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
@@ -165,6 +166,7 @@ USE MODN_DYN_n
 USE MODN_ADV_n
 USE MODN_PARAM_n
 USE MODN_PARAM_RAD_n
+USE MODN_PARAM_ECRAD_n
 USE MODN_PARAM_KAFR_n
 USE MODN_PARAM_MFSHALL_n
 USE MODN_PARAM_ICE
@@ -316,6 +318,10 @@ WRITE(UNIT=ILUSEG,NML=NAM_PARAMn)
 !
 CALL INIT_NAM_PARAM_RADn
 IF(CRAD /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_PARAM_RADn)
+#ifdef MNH_ECRAD
+CALL INIT_NAM_PARAM_ECRADn
+IF(CRAD /= 'NONE') WRITE(UNIT=ILUSEG,NML=NAM_PARAM_ECRADn)
+#endif
 !
 CALL INIT_NAM_PARAM_KAFRn
 IF(CDCONV /= 'NONE' .OR. CSCONV == 'KAFR') &
@@ -437,6 +443,10 @@ IF (NVERB >= 5) THEN
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** RADIATIONn **************')")
   WRITE(UNIT=ILUOUT,NML=NAM_PARAM_RADn)
+#ifdef MNH_ECRAD
+  WRITE(UNIT=ILUOUT,FMT="('********** ECRADn **************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_PARAM_ECRADn)
+#endif
 !  
   WRITE(UNIT=ILUOUT,FMT="('********** CONVECTIONn *************')")
   WRITE(UNIT=ILUOUT,NML=NAM_PARAM_KAFRn)

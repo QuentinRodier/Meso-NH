@@ -68,9 +68,9 @@ SUBROUTINE SWNI &
 
 #include "tsmbkind.h"
 
-USE YOERAD   , ONLY : NOVLP 
-USE YOESW    , ONLY : RRAY     ,RSUN     ,RSWCE    ,RSWCP
-USE YOERAD   , ONLY : NSW
+USE OYOERAD   , ONLY : NOVLP 
+USE OYOESW    , ONLY : RRAY     ,RSUN     ,RSWCE    ,RSWCP
+USE OYOERAD   , ONLY : NSW
 USE YOERDU   , ONLY : REPLOG
 !
 USE MODI_SWCLR
@@ -113,11 +113,11 @@ REAL_B :: PFDOWN(KLON,KLEV+1)  , PFUP(KLON,KLEV+1)&
   &,  PCDOWN(KLON,KLEV+1)  , PCUP(KLON,KLEV+1)&
   &,  PSUDU2(KLON)         , PDIFF(KLON,KLEV)&
   &,  PDIRF(KLON,KLEV) 
-  
+
 !Quentin
 REAL_B :: ZCLDIR 
-REAL_B :: ZTA1(KLON)
-
+REAL_B :: ZTA1(KLON)  
+  
 !++MODIF_MESONH
 LOGICAL           :: ODUST                   ! flag for DUST
 REAL_B  :: PPIZA_DST(KLON,KLEV)    !wvl ssa dust for current wavelength
@@ -579,7 +579,12 @@ DO JK = 1 , KLEV
     ! PDIRF(JL,IKL)=ZFD(JL,IKL)*RSUN(KNU)* PCLEAR(JL)
   ENDDO
 ENDDO
-
+! 
+! PRINT*,"SWNI,PDIFF,PDIRF"
+! print*, KLEV,shape(PDIRF),shape(PFDOWN)
+! PRINT*,PDIRF(1,:)-PFDOWN(1,1:KLEV)
+! PRINT*,PDIFF(:,1)
+! PRINT*,PDIRF(:,1)
 
 !*         6.2    UPWARD FLUXES
 !                 -------------

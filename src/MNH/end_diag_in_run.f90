@@ -57,6 +57,7 @@ SUBROUTINE END_DIAG_IN_RUN
 !!    -------------
 !!     Original 11/2003
 !!
+!!                   02/2018 Q.Libois ECRAD
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -79,6 +80,8 @@ DEALLOCATE(XCURRENT_LEI   )! Solid latent heat flux
 DEALLOCATE(XCURRENT_GFLUX )! ground flux
 DEALLOCATE(XCURRENT_LW    )! incoming longwave at the surface
 DEALLOCATE(XCURRENT_SW    )! incoming Shortwave at the surface
+IF(ALLOCATED(XCURRENT_SWDIR)) DEALLOCATE(XCURRENT_SWDIR )! incoming Shortwave direct at the surface
+IF(ALLOCATED(XCURRENT_SWDIFF))DEALLOCATE(XCURRENT_SWDIFF)! incoming Shortwave diffuse at the surface
 DEALLOCATE(XCURRENT_T2M   )! temperature at 2m
 DEALLOCATE(XCURRENT_Q2M   )! humidity at 2m
 DEALLOCATE(XCURRENT_HU2M  )! humidity at 2m

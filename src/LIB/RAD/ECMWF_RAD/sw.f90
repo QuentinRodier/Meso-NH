@@ -66,10 +66,10 @@ SUBROUTINE SW &
 
 #include "tsmbkind.h"
 
-USE YOERAD   , ONLY : NSW
+USE OYOERAD   , ONLY : NSW
 USE YOERDU   , ONLY : RCDAY
 !++MODIF_MESONH
-USE YOERAD   , ONLY : NOVLP
+USE OYOERAD   , ONLY : NOVLP
 !--MODIF_MESONH
 USE MODI_SWU
 USE MODI_SW1S
@@ -242,6 +242,12 @@ DO JK = 1 , KLEV+1
   ENDDO
 ENDDO
 
+! PRINT*,"sw  PDIFFS,PDIRFS"
+! 
+! PRINT*,PDIFFS
+! 
+! PRINT*,PDIRFS
+
 DO JNU = INUIR , NSW
 
    !++MODIF_MESONH
@@ -256,8 +262,14 @@ DO JNU = INUIR , NSW
            &,  PTAUREL_DST(:,:,JNU) &
            &)
     !--MODIF_MESONH
+    
+    
 
   DO JL=KIDIA,KFDIA
+!     PRINT*,JL,JNU
+!     PRINT*,"SW"
+!     PRINT*,ZDIFF2(JL,1)
+    
     PDIFFS(JL,JNU)=ZDIFF2(JL,1)*ZFACT(JL)
     PDIRFS(JL,JNU)=ZDIRF2(JL,1)*ZFACT(JL)
   ENDDO
@@ -273,6 +285,14 @@ DO JNU = INUIR , NSW
     ZSUDU2T(JL)=ZSUDU2T(JL)+ZSUDU2(JL)
   ENDDO
 ENDDO
+! 
+! PRINT*,"sw  PDIFFS,PDIRFS"
+! 
+! PRINT*,PDIFFS
+! 
+! PRINT*,PDIRFS
+! 
+! pause
 
 !     ------------------------------------------------------------------
 

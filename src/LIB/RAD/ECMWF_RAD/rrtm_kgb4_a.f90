@@ -72,8 +72,8 @@ USE PARKIND1, ONLY :&
 ! --------------------------------------
 
 
-USE YOERRTO4 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,FRACREFBO
-USE YOERRTA4 , ONLY : STRRAT1   ,STRRAT2
+USE OYOERRTO4 , ONLY : KAO     ,KBO     ,SELFREFO   ,FRACREFAO  ,FRACREFBO
+USE OYOERRTA4 , ONLY : STRRAT1   ,STRRAT2
 
 !     ------------------------------------------------------------------
 

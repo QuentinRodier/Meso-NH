@@ -25,7 +25,8 @@ ch_f77.fx90|nband_model.fx90|BASIC.f90|mode_tmat.f90|\
 ini_cmfshall.f90|mode_double_double.f90|mode_fgau.f90|\
 extern_usersurc_ll.f90|\
 extern_userio.f90|fmreadwrit.f90|fm_read_ll.f90|poub.f90|\
-mode_glt.*.F90"
+mode_glt.*.F90|\
+rrtm_.*.F90|srtm_.*.F90"
 #
 
 if [ "$SUF" = "f" ]

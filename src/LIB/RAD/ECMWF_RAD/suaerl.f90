@@ -49,7 +49,7 @@ SUBROUTINE SUAERL
 
 #include "tsmbkind.h"
 
-USE YOESW    , ONLY : RAER
+USE OYOESW    , ONLY : RAER
 
 !      ----------------------------------------------------------------
 

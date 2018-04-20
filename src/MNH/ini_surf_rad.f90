@@ -16,7 +16,7 @@ USE MODD_IO_ll, ONLY : TFILEDATA
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! Direct albedo
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! Diffuse albedo
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! emissivity
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! emissivity
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !
 END SUBROUTINE INI_SURF_RAD
@@ -56,6 +56,7 @@ END MODULE MODI_INI_SURF_RAD
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    03/03/03
+!!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
@@ -73,7 +74,7 @@ IMPLICIT NONE
 TYPE(TFILEDATA),        INTENT(IN)  :: TPINIFILE ! Initial file
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! Direct albedo
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! Diffuse albedo
-REAL, DIMENSION(:,:),   INTENT(OUT) :: PEMIS     ! emissivity
+REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! emissivity
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! radiative surface temperature
 !
 !*       0.2   declarations of local variables

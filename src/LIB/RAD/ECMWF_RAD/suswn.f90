@@ -54,9 +54,9 @@ SUBROUTINE SUSWN (KTSW,KSW)
 
 #include "tsmbkind.h"
 
-USE YOMCST   , ONLY : RG
-USE YOERAD   , ONLY : NTSW     ,LONEWSW
-USE YOESW    , ONLY : APAD     ,BPAD     ,RRAY     ,RSUN     ,&
+USE OYOMCST   , ONLY : RG
+USE OYOERAD   , ONLY : NTSW     ,LONEWSW
+USE OYOESW    , ONLY : APAD     ,BPAD     ,RRAY     ,RSUN     ,&
            &RPDH1    ,RPDU1    ,RPNH     ,RPNU     ,RSWCE    ,&
            &RSWCP    ,RTDH2O   ,RTDUMG   ,RTH2O    ,RTUMG    ,&
            &D        ,RROMA    ,RROMB    ,RRASY    ,RHSRA    ,&
