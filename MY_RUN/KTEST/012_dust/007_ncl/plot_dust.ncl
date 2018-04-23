@@ -111,11 +111,11 @@ BETA = fichier1->BETA
 ;=================================================;
 ; lecture des différents champs
 ;=================================================;
-wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
-vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
-ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
 
-tht= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
+tht= fichier1->THT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
 tht@long_name="Potential Temperature"
 tht@units="K"
 tht@lat2d = lat2d
@@ -123,37 +123,37 @@ tht@lon2d = lon2d
 
 
 
-dstm03t= fichier1->DSTM03T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm03t= fichier1->DSTM03T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm03t@long_name="DSTM03T"
 dstm03t@units="ppp"
 dstm03t@lat2d = lat2d
 dstm03t@lon2d = lon2d
 
-dstm33t= fichier1->DSTM33T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm33t= fichier1->DSTM33T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm33t@long_name="DSTM33T"
 dstm33t@units="ppp"
 dstm33t@lat2d = lat2d
 dstm33t@lon2d = lon2d
 
-dstm02t= fichier1->DSTM02T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm02t= fichier1->DSTM02T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm02t@long_name="DSTM02T"
 dstm02t@units="ppp"
 dstm02t@lat2d = lat2d
 dstm02t@lon2d = lon2d
 
-dstm32t= fichier1->DSTM32T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm32t= fichier1->DSTM32T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm32t@long_name="DSTM32T"
 dstm32t@units="ppp"
 dstm32t@lat2d = lat2d
 dstm32t@lon2d = lon2d
 
-dstm01t= fichier1->DSTM01T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm01t= fichier1->DSTM01T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm01t@long_name="DSTM01T"
 dstm01t@units="ppp"
 dstm01t@lat2d = lat2d
 dstm01t@lon2d = lon2d
 
-dstm31t= fichier1->DSTM31T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+dstm31t= fichier1->DSTM31T(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
 dstm31t@long_name="DSTM31T"
 dstm31t@units="ppp"
 dstm31t@lat2d = lat2d

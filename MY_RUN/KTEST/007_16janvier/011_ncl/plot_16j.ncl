@@ -110,11 +110,11 @@ zs@lat2d = lat2d
 zs@lon2d = lon2d
 
 
-wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
-vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
-ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1) ; VT
+ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
 
-tht1= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
+tht1= fichier1->THT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
 tht1@long_name="Potential Temperature"
 tht1@units="K"
 tht1@lat2d = lat2d
@@ -122,13 +122,13 @@ tht1@lon2d = lon2d
 
 
 
-pabst1= fichier1->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
+pabst1= fichier1->PABST(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
 pabst1@long_name="Pressure"
 pabst1@units="Pa"
 pabst1@lat2d = lat2d
 pabst1@lon2d = lon2d
 
-rvt1= fichier1->RVT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
+rvt1= fichier1->RVT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; RVT
 rvt1=rvt1*1000
 rvt1@long_name="Vapor mixing ratio"
 rvt1@units="kg/kg"

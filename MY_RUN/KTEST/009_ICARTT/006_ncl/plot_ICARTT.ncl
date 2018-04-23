@@ -38,7 +38,7 @@ zs@lon2d = lon2d
 
 printMinMax(zs,0)
 
-  rc_t1 = a->MRC(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  rc_t1 = a->MRC(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   rc_t1@long_name="Cloud mixing ratio"
   rc_t1@units="g/kg"
   rc_t1@lat2d=lat2d
@@ -46,21 +46,21 @@ printMinMax(zs,0)
 printMinMax(rc_t1,0)
 
 ;
-  o3_t1 = a->O3T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3_t1 = a->O3T(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3_t1@long_name="Ozone"
   o3_t1@units="ppbv"
   o3_t1@lat2d=lat2d
   o3_t1@lon2d=lon2d
 
 ;
-  co_t1 = a->COT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  co_t1 = a->COT(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   co_t1@long_name="carbon monoxide"
   co_t1@units="ppbv"
   co_t1@lat2d=lat2d
   co_t1@lon2d=lon2d
 
 ;
-  o3p_t1=a->O3_PROD(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3p_t1=a->O3_PROD(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3p_t1 = o3p_t1*1e9*3600
   o3p_t1@long_name="ozone production"
   o3p_t1@units="ppbv/h"  
@@ -68,7 +68,7 @@ printMinMax(rc_t1,0)
   o3p_t1@lon2d=lon2d  
 
 ;
-  o3l_t1=a->O3_LOSS(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3l_t1=a->O3_LOSS(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3l_t1 = o3l_t1*1e9*3600
   o3l_t1@long_name="ozone loss"
   o3l_t1@units="ppbv/h"  
@@ -76,7 +76,7 @@ printMinMax(rc_t1,0)
   o3l_t1@lon2d=lon2d  
 
 ;
-  cop_t1=a->CO_PROD(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  cop_t1=a->CO_PROD(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   cop_t1 = cop_t1*1e9*3600
   cop_t1@long_name="carbon monoxide production"
   cop_t1@units="ppbv/h"  
@@ -84,7 +84,7 @@ printMinMax(rc_t1,0)
   cop_t1@lon2d=lon2d  
 
 ;   
-  col_t1=a->CO_LOSS(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  col_t1=a->CO_LOSS(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   col_t1 = col_t1*1e9*3600
   col_t1@long_name="carbon monoxide loss"
   col_t1@units="ppbv/h"
@@ -94,28 +94,28 @@ printMinMax(rc_t1,0)
 
 ;
 ;
-  rc_t2 = a2->MRC(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  rc_t2 = a2->MRC(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   rc_t2@long_name="Cloud mixing ratio"
   rc_t2@units="g/kg"
   rc_t2@lat2d=lat2d
   rc_t2@lon2d=lon2d
 
 ;
-  o3_t2 = a2->O3T(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3_t2 = a2->O3T(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3_t2@long_name="Ozone"
   o3_t2@units="ppbv"
   o3_t2@lat2d=lat2d
   o3_t2@lon2d=lon2d
 
 ;
-  co_t2 = a2->COT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  co_t2 = a2->COT(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   co_t2@long_name="carbon monoxide"
   co_t2@units="ppbv"
   co_t2@lat2d=lat2d
   co_t2@lon2d=lon2d
 
 ;
-  o3p_t2=a2->O3_PROD(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3p_t2=a2->O3_PROD(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3p_t2=o3p_t2*1e9*3600
   o3p_t2@long_name="ozone production"
   o3p_t2@units="pptv/h"  
@@ -123,7 +123,7 @@ printMinMax(rc_t1,0)
   o3p_t2@lon2d=lon2d  
 
 ;
-  o3l_t2=a2->O3_LOSS(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3l_t2=a2->O3_LOSS(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3l_t2=o3l_t2*1e9*3600
   o3l_t2@long_name="ozone loss"
   o3l_t2@units="pptv/h"
@@ -131,7 +131,7 @@ printMinMax(rc_t1,0)
   o3l_t2@lon2d=lon2d
 
 ;
-  cop_t2=a2->CO_PROD(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  cop_t2=a2->CO_PROD(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   cop_t2=cop_t2*1e9*3600
   cop_t2@long_name="carbon monoxide production"
   cop_t2@units="pptv/h"
@@ -139,7 +139,7 @@ printMinMax(rc_t1,0)
   cop_t2@lon2d=lon2d
 
 ;   
-  col_t2=a2->CO_LOSS(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  col_t2=a2->CO_LOSS(:,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   col_t2=col_t2*1e9*3600
   col_t2@long_name="carbon monoxide loss"
   col_t2@units="ppbv/h"
@@ -167,7 +167,7 @@ zhat= a2->ZHAT(1:kmax+1)
 
     do i=0,imax-1
     do j=0,jmax-1
-       alt(:,j,i) = nzhat*zcoef(j,i)+zs(j,i)
+       alt(0,:,j,i) = nzhat*zcoef(j,i)+zs(j,i)
     end do
     end do
 
@@ -250,23 +250,23 @@ alt@lon2d = lon2d
 ; PLOT
 ;=================================================;
 ; interpolation des champs a 1250 m
-rc_t1_plane = wrf_user_intrp3d(rc_t1,alt,"h",1250,0.,False)
+rc_t1_plane = wrf_user_intrp3d(rc_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
 printMinMax(rc_t1_plane,0)
 printMinMax(alt,0)
 
-rc_t2_plane = wrf_user_intrp3d(rc_t2,alt,"h",1250,0.,False)
-co_t1_plane = wrf_user_intrp3d(co_t1,alt,"h",1250,0.,False)
-co_t2_plane = wrf_user_intrp3d(co_t2,alt,"h",1250,0.,False)
-cop_t1_plane= wrf_user_intrp3d(cop_t1,alt,"h",1250,0.,False)
-cop_t2_plane= wrf_user_intrp3d(cop_t2,alt,"h",1250,0.,False)
-col_t1_plane= wrf_user_intrp3d(col_t1,alt,"h",1250,0.,False)
-col_t2_plane= wrf_user_intrp3d(col_t2,alt,"h",1250,0.,False)
-o3_t1_plane = wrf_user_intrp3d(o3_t1,alt,"h",1250,0.,False)
-o3_t2_plane = wrf_user_intrp3d(o3_t2,alt,"h",1250,0.,False)
-o3l_t1_plane= wrf_user_intrp3d(o3l_t1,alt,"h",1250,0.,False)
-o3l_t2_plane= wrf_user_intrp3d(o3l_t2,alt,"h",1250,0.,False)
-o3p_t1_plane= wrf_user_intrp3d(o3p_t1,alt,"h",1250,0.,False)
-o3p_t2_plane= wrf_user_intrp3d(o3p_t2,alt,"h",1250,0.,False)
+rc_t2_plane = wrf_user_intrp3d(rc_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+co_t1_plane = wrf_user_intrp3d(co_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+co_t2_plane = wrf_user_intrp3d(co_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+cop_t1_plane= wrf_user_intrp3d(cop_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+cop_t2_plane= wrf_user_intrp3d(cop_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+col_t1_plane= wrf_user_intrp3d(col_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+col_t2_plane= wrf_user_intrp3d(col_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3_t1_plane = wrf_user_intrp3d(o3_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3_t2_plane = wrf_user_intrp3d(o3_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3l_t1_plane= wrf_user_intrp3d(o3l_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3l_t2_plane= wrf_user_intrp3d(o3l_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3p_t1_plane= wrf_user_intrp3d(o3p_t1(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
+o3p_t2_plane= wrf_user_intrp3d(o3p_t2(0,:,:,:),alt(0,:,:,:),"h",1250,0.,False)
 
 
   figname ="zsection_1250"

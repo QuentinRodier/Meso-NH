@@ -102,28 +102,28 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   zs@lat2d = lat2d
   zs@lon2d = lon2d
 
-  wt= fichier1->WT(1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
-  vt= fichier1->VT(1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1); VT
-  ut= fichier1->UT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
+  wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
+  vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1); VT
+  ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
   tht= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
   tht@long_name="Potential Temperature"
   tht@units="K"
   tht@lat2d = lat2d
   tht@lon2d = lon2d
 
-  lsthm= fichier1->LSTHM(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ;LSTHM
+  lsthm= fichier1->LSTHM(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ;LSTHM
   lsthm@long_name="Large SCale Potential Temperature"
   lsthm@units="K"
   lsthm@lat2d = lat2d
   lsthm@lon2d = lon2d
 
-  lsvm= fichier1->LSVM(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; LSVM
+  lsvm= fichier1->LSVM(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; LSVM
   lsvm@long_name="Large SCale Merdian Wind"
   lsvm@units="m/s"
   lsvm@lat2d = lat2d
   lsvm@lon2d = lon2d
 
-  pabst= fichier1->PABST(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
+  pabst= fichier1->PABST(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; PABST
   pabst@long_name="Pressure"
   pabst@units="Pa"
   pabst@lat2d = lat2d

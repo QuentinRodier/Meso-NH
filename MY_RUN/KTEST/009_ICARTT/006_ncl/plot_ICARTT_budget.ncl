@@ -27,41 +27,44 @@ begin
 ;-------------------------------------------------;
 
 ; Liste de toutes les réactions impliquant O3
-  o3_list_t1=a->O3_CHREACLIST
+  o3_list_t1=a->O3_CHREACLIST(0,:)
 
 ; Tableau 4D (reac,Z,Y,X) regroupant les termes de prod. et destr. de O3
 ; Niveau k=13 approx. 1250m
-  o3_budget_t1=a->O3_BUDGET(:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3_budget_t1=a->O3_BUDGET(0,:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  printVarSummary(o3_budget_t1)
   o3_bud_t1=dim_avg_n(o3_budget_t1,(/1,2/))
+   printVarSummary(o3_bud_t1)
+ 
   o3_bud_t1=o3_bud_t1*1e9*3600
   o3_bud_t1@units="ppbv/h"
 
 ; Liste de toutes les réactions impliquant CO
-  co_list_t1=a->CO_CHREACLIST
+  co_list_t1=a->CO_CHREACLIST(0,:)
 
 ; Tableau 4D (reac,Z,Y,X) regroupant les termes de prod. et destr. de CO
 ; Niveau k=13 approx. 1250m
-  co_budget_t1=a->CO_BUDGET(:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  co_budget_t1=a->CO_BUDGET(0,:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   co_bud_t1=dim_avg_n(co_budget_t1,(/1,2/))
   co_bud_t1=co_bud_t1*1e9*3600
   co_bud_t1@units="ppbv/h"
 
 ; Liste de toutes les réactions impliquant O3
-  o3_list_t2=a2->O3_CHREACLIST
+  o3_list_t2=a2->O3_CHREACLIST(0,:)
 
 ; Tableau 4D (reac,Z,Y,X) regroupant les termes de prod. et destr. de O3
 ; Niveau k=13 approx. 1250m
-  o3_budget_t2=a2->O3_BUDGET(:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  o3_budget_t2=a2->O3_BUDGET(0,:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   o3_bud_t2=dim_avg_n(o3_budget_t2,(/1,2/))
   o3_bud_t2=o3_bud_t2*1e9*3600
   o3_bud_t2@units="ppbv/h"
 
 ; Liste de toutes les réactions impliquant CO
-  co_list_t2=a2->CO_CHREACLIST
+  co_list_t2=a2->CO_CHREACLIST(0,:)
 
 ; Tableau 4D (reac,Z,Y,X) regroupant les termes de prod. et destr. de CO
 ; Niveau k=13 approx. 1250m
-  co_budget_t2=a2->CO_BUDGET(:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
+  co_budget_t2=a2->CO_BUDGET(0,:,13,jphext:jmax+jphext-1,jphext:imax+jphext-1)
   co_bud_t2=dim_avg_n(co_budget_t2,(/1,2/))
   co_bud_t2=co_bud_t2*1e9*3600
   co_bud_t2@units="ppbv/h"
