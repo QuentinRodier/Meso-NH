@@ -105,7 +105,7 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/wrf/WRFUserARW.ncl"
   wt= fichier1->WT(0,1:kmax+1,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; WT
   vt= fichier1->VT(0,1:kmax,jphext:jmax+jphext-1+1,jphext:imax+jphext-1); VT
   ut= fichier1->UT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1+1) ; UT
-  tht= fichier1->THT(1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
+  tht= fichier1->THT(0,1:kmax,jphext:jmax+jphext-1,jphext:imax+jphext-1) ; THT
   tht@long_name="Potential Temperature"
   tht@units="K"
   tht@lat2d = lat2d
