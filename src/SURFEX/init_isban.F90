@@ -8,8 +8,8 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
                         OLAND_USE,                                    &
                         KI, KSV, KSW, HSV, PCO2, PRHOA, PZENITH,      &
                         PAZIM, PSW_BANDS, PDIR_ALB, PSCA_ALB, PEMIS,  &
-                        PTSRAD, PTSURF, KYEAR, KMONTH, KDAY, PTIME,   &
-                        TPDATE_END, HATMFILE, HATMFILETYPE, HTEST      )
+                        PTSRAD, PTSURF, PMEGAN_FIELDS, KYEAR, KMONTH, &
+                        KDAY, PTIME, TPDATE_END, HATMFILE, HATMFILETYPE, HTEST )
 !#############################################################
 !
 !!****  *INIT_ISBA_n* - routine to initialize ISBA
@@ -55,6 +55,8 @@ SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
 !!      B. Decharme  04/2013 new coupling variables
 !!      P. Samuelsson  10/14 : MEB
 !!      P. Wautelet    16/02/2018: bug correction: allocate some work arrays to 0,1,1 instead of 0,0,1 (crash with XLF)
+!!      V.VIonnet       2017 : Blow snow
+!!      P.Tulet        06/16 : add MEGAN coupling  
 !!
 !-------------------------------------------------------------------------------
 !
@@ -165,6 +167,7 @@ REAL,             DIMENSION(KI),  INTENT(IN)  :: PRHOA     ! air density
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PZENITH   ! solar zenithal angle
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PAZIM     ! solar azimuthal angle (rad from N, clock)
 REAL,             DIMENSION(KSW), INTENT(IN)  :: PSW_BANDS ! middle wavelength of each band
+REAL,             DIMENSION(KI,IM%MSF%NMEGAN_NBR),INTENT(IN) :: PMEGAN_FIELDS
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for each band
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
@@ -246,9 +249,9 @@ ENDIF
 !
 !        0.2. Defaults from file header
 !    
- CALL READ_DEFAULT_ISBA_n(IM%CHI, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
+ CALL READ_DEFAULT_ISBA_n(IM%CHI, IM%MGN, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
 !
- CALL READ_ISBA_CONF_n(IM%CHI, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
+ CALL READ_ISBA_CONF_n(IM%CHI, IM%MGN, IM%ID%DE, IM%ID%O, IM%ID%DM, IM%O, HPROGRAM)
 !
 CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','ISBA  ','READ ')
  CALL READ_SURF(HPROGRAM,'VERSION',IVERSION,IRESP)
@@ -471,11 +474,11 @@ END IF
 CALL COMPUTE_ISBA_PARAMETERS(DTCO, OREAD_BUDGETC, UG, U,                    &
                              IM%O, IM%DTV, IM%SB, IM%S, IM%G, IM%K, IM%NK,  &
                              IM%NG, IM%NP, IM%NPE, IM%NAG, IM%NISS, IM%ISS, &
-                             IM%NCHI, IM%CHI, IM%ID, IM%GB, IM%NGB,         &
-                             NDST, SLT,BLOWSNW, SV,HPROGRAM,HINIT,OLAND_USE,&
-                             KI,KSV,KSW, HSV,ZCO2,PRHOA,                &
+                             IM%NCHI, IM%CHI, IM%MGN, IM%MSF, IM%ID, IM%GB, &
+                             IM%NGB, NDST, SLT,BLOWSNW, SV, HPROGRAM,HINIT,         &
+                             OLAND_USE,KI,KSV,KSW, HSV,ZCO2,PRHOA,          &
                              PZENITH,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
-                             PEMIS,PTSRAD,PTSURF,HTEST                  )
+                             PEMIS,PTSRAD,PTSURF,PMEGAN_FIELDS, HTEST    )
 !
 IF ( IM%O%CSNOWMETAMO/="B92" ) THEN
   CALL READ_FZ06('drdt_bst_fit_60.nc')

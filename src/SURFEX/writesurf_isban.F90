@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_ISBA_n (HSELECT, OSNOWDIMNC, CHI, NDST, &
+      SUBROUTINE WRITESURF_ISBA_n (HSELECT, OSNOWDIMNC, CHI, MGN, NDST, &
                                    IO, S, NP, NPE, KI, HPROGRAM, OLAND_USE)
 !     #####################################
 !
@@ -46,6 +46,8 @@
 !!      B. Decharme  09/2012 : write some key for prep_read_external
 !!      B. Decharme  04/2013 : Only 2 temperature layer in ISBA-FR
 !!      P. Samuelsson 10/2014: MEB
+!!      P. Tulet  06/2016 : add XEF et XPFT for MEGAN coupling
+!!      M. Leriche 06/2017: comment write XEF & XPFT bug
 !!
 !-------------------------------------------------------------------------------
 !
@@ -62,6 +64,7 @@ USE MODD_DST_n, ONLY : DST_NP_t
 !
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_NP_t, ISBA_NPE_t, ISBA_S_t
+USE MODD_MEGAN_n, ONLY : MEGAN_t
 !
 USE MODD_SURF_PAR, ONLY : NUNDEF
 !
@@ -88,6 +91,7 @@ IMPLICIT NONE
 LOGICAL, INTENT(IN) :: OSNOWDIMNC  
 !
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(MEGAN_t), INTENT(INOUT) :: MGN
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 !
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO

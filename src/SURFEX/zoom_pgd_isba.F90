@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###########################################################
-      SUBROUTINE ZOOM_PGD_ISBA (CHI, DTCO, DTV, IG, IO, S, K, ISS, UG, U, USS, GCP, &
+      SUBROUTINE ZOOM_PGD_ISBA (CHI, MSF, DTCO, DTV, IG, IO, S, K, ISS, UG, U, USS, GCP, &
                                 HPROGRAM,HINIFILE,HINIFILETYPE,HFILE,HFILETYPE,OECOCLIMAP)
 !     ###########################################################
 
@@ -53,6 +53,7 @@ USE MODD_ISBA_n, ONLY : ISBA_S_t, ISBA_K_t
 USE MODD_SURF_ATM_GRID_n, ONLY : SURF_ATM_GRID_t
 USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
+USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
 USE MODD_SURF_PAR, ONLY : XUNDEF
 USE MODD_DATA_COVER_PAR, ONLY : JPCOVER
@@ -84,6 +85,7 @@ IMPLICIT NONE
 !
 !
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(MEGAN_SURF_FIELDS_t), INTENT(INOUT) :: MSF
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
 TYPE(GRID_t), INTENT(INOUT) :: IG
@@ -213,6 +215,8 @@ ENDIF
 !
 !------------------------------------------------------------------------------
 IO%LECOCLIMAP = OECOCLIMAP
+!
+MSF%NMEGAN_NBR = 0
 !
 !-------------------------------------------------------------------------------
 !

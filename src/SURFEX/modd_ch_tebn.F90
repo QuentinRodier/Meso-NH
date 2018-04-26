@@ -49,6 +49,7 @@ TYPE CH_TEB_t
                                                             ! biogenic fluxes
   LOGICAL                         :: LCH_NO_FLUX            ! flag for the calculation of
                                                             ! biogenic NO fluxes
+  CHARACTER(LEN=6)                :: CPARAMBVOC             !  BVOC flux scheme                                                            
   TYPE(SV_t) :: SVT
   
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
@@ -82,6 +83,7 @@ NULLIFY(YCH_TEB%CDSTNAMES)
 NULLIFY(YCH_TEB%CSLTNAMES)
 YCH_TEB%CCHEM_SURF_FILE=' '
 YCH_TEB%CCH_DRY_DEP=' '
+YCH_TEB%CPARAMBVOC=' '
 YCH_TEB%LCH_BIO_FLUX=.FALSE.
 YCH_TEB%LCH_NO_FLUX=.FALSE.
 CALL SV_INIT(YCH_TEB%SVT)

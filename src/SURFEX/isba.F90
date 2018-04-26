@@ -13,7 +13,7 @@
                       PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN, PTDEEP_A,   &
                       PCSP, PFFG_NOSNOW, PFFV_NOSNOW, PEMIST, PUSTAR, PAC_AGG,   &
                       PHU_AGG, PRESP_BIOMASS_INST, PDEEP_FLUX, PIRRIG_GR,        &
-                      PBLOWSNW_FLUX, PBLOWSNW_CONC   )      
+                      PRN_SHADE, PRN_SUNLIT,PBLOWSNW_FLUX, PBLOWSNW_CONC         )
 !     ##########################################################################
 !
 !
@@ -100,6 +100,8 @@
 !!      (P. LeMoigne) 12/2014 EBA scheme update
 !!      (A. Boone)    02/2015 Consider spectral band dependence of snow for IO%LTR_ML radiation option
 !!      B. Decharme    01/16 : Bug with flood budget
+!!       V.Vionnet 2017 blow snow
+!!      (P. Tulet)    06/2016 add RN leaves for MEGAN coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -302,6 +304,7 @@ REAL, DIMENSION(:,:),OPTIONAL, INTENT(INOUT) :: PBLOWSNW_FLUX! Blowing snow part
 REAL, DIMENSION(:,:),OPTIONAL, INTENT(IN)    :: PBLOWSNW_CONC ! Blowing snow particles concentration:
 !                                           1: Number (#/m3) 2: Mass (kg/m3)
 !
+REAL, DIMENSION(:), INTENT(INOUT) :: PRN_SHADE, PRN_SUNLIT ! RN leaves 
 !
 !*      0.2    declarations of local variables
 !
@@ -493,7 +496,7 @@ IF(OMEB)THEN
                  PHU_AGG, PAC_AGG, ZDELHEATV_SFC, ZDELHEATG_SFC, ZDELHEATG, &
                  ZDELHEATN, ZDELHEATN_SFC, ZGSFCSNOW, PTDEEP_A, PDEEP_FLUX, &
                  ZRI3L, ZSNOW_THRUFAL, ZSNOW_THRUFAL_SOIL, ZEVAPCOR, ZSUBVCOR, &
-                 ZLITCOR, ZSNOWSFCH, ZQS3L,PBLOWSNW_FLUX,PBLOWSNW_CONC    )
+                 ZLITCOR, ZSNOWSFCH, ZQS3L,PBLOWSNW_FLUX,PBLOWSNW_CONC, PRN_SHADE, PRN_SUNLIT   )
 
 ELSE
 !
@@ -508,7 +511,7 @@ ELSE
                              PEK%XLAI, PZENITH, PABC, PEK%XFAPARC, PEK%XFAPIRC,    &
                              PEK%XMUS, PEK%XLAI_EFFC, GSHADE, PIACAN, ZIACAN_SUNLIT,&
                              ZIACAN_SHADE, ZFRAC_SUN, DMK%XFAPAR, DMK%XFAPIR,     &
-                             DMK%XFAPAR_BS, DMK%XFAPIR_BS  )
+                             DMK%XFAPAR_BS, DMK%XFAPIR_BS, PRN_SHADE, PRN_SUNLIT  )
    ENDIF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -531,7 +534,7 @@ ELSE
                     PPET_B_COEF, PPEQ_B_COEF, ZSNOW_THRUFAL_SOIL, ZGRNDFLUX, ZFLSN_COR,    &
                     ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L, ZEVAP3L, ZSNOWSFCH, ZDELHEATN,   &
                     ZDELHEATN_SFC, ZRI3L, PZENITH, ZDELHEATG, ZDELHEATG_SFC, ZQS3L,       &
-                    PBLOWSNW_FLUX,PBLOWSNW_CONC     )  
+                    PBLOWSNW_FLUX,PBLOWSNW_CONC     )   
 !  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 !*      8.0    Plant stress, stomatal resistance and, possibly, CO2 assimilation

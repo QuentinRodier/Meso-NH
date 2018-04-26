@@ -3,7 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_GARDEN_PGD_n (DTCO, U, OCH_BIO_FLUX, G, PGARDEN, TOP, IO, S, K, P, PEK, DTV, GB,  &
+SUBROUTINE INIT_TEB_GARDEN_PGD_n (DTCO, U, OCH_BIO_FLUX, HPARAMBVOC, G, PGARDEN, &
+                                  TOP, IO, S, K, P, PEK, DTV, GB,  &
                                   HPROGRAM, HINIT, OPATCH1, KI, KVERSION, KBUGFIX, PCO2, PRHOA)
 !#############################################################
 !
@@ -36,6 +37,7 @@ SUBROUTINE INIT_TEB_GARDEN_PGD_n (DTCO, U, OCH_BIO_FLUX, G, PGARDEN, TOP, IO, S,
 !!      Original    09/2009
 !!  11/2013 (B. Decharme) No exp profile with DIF
 !!      P. Wautelet    16/02/2018: bug correction: allocate some work arrays to 0,1,1 instead of 0,0,1 (crash with XLF)
+!!      2018 (J.Piannezze) : add MEGAN
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -89,6 +91,7 @@ IMPLICIT NONE
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 LOGICAL, INTENT(IN) :: OCH_BIO_FLUX
+CHARACTER(LEN=*), INTENT(IN) :: HPARAMBVOC
 TYPE(GRID_t), INTENT(INOUT) :: G
 REAL, DIMENSION(:), INTENT(IN) :: PGARDEN
 TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
@@ -177,7 +180,7 @@ END IF
 !
 IF (OPATCH1) THEN
   !
-  CALL READ_PGD_TEB_GARDEN_n(OCH_BIO_FLUX, DTCO, DTV, GB, U, &
+  CALL READ_PGD_TEB_GARDEN_n(OCH_BIO_FLUX, HPARAMBVOC, DTCO, DTV, GB, U, &
                              IO, K, G%NDIM, TOP, HPROGRAM,KVERSION,KBUGFIX)
   !
   ALLOCATE(S%XVEGTYPE(KI,NVEGTYPE))

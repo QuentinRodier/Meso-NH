@@ -25,6 +25,7 @@
 !!    MODIFICATIONS
 !!    -------------
 !!  16/07/03 (P. Tulet)  restructured for externalization
+!!  06/2016 (P. Tulet) add CPARAMBVOC to choice between MEGAN and Solmon
 !------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -41,6 +42,7 @@ TYPE CH_ISBA_t
 !
   CHARACTER(LEN=28)  :: CCHEM_SURF_FILE  ! name of general (chemical) purpose ASCII input file
   CHARACTER(LEN=6)                :: CCH_DRY_DEP            !  deposition scheme
+  CHARACTER(LEN=6)                :: CPARAMBVOC             !  BVOC flux scheme 
   REAL, DIMENSION(:,:), POINTER :: XDEP                   ! final dry deposition  
                                                             ! velocity  for nature
   REAL, DIMENSION(:),   POINTER :: XSOILRC_SO2            ! for SO2
@@ -49,12 +51,13 @@ TYPE CH_ISBA_t
                                                             ! biogenic fluxes
   LOGICAL                         :: LCH_NO_FLUX            ! flag for the calculation of
                                                             ! biogenic NO fluxes
+  LOGICAL                         :: LSOILNOX               ! flag for the MEGAN SOILNOX parameterization                                                            
   TYPE(SV_t) :: SVI
 
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CCH_NAMES      ! NAME OF CHEMICAL SPECIES
                                                             ! (FOR DIAG ONLY)
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CAER_NAMES     ! NAME OF CHEMICAL SPECIES
-  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSNWNAMES      ! NAME OF CHEMICAL SPECIES  
+  CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSNWNAMES      ! NAME OF CHEMICAL SPECIES 
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CDSTNAMES      ! NAME OF CHEMICAL SPECIES
   CHARACTER(LEN=6), DIMENSION(:), POINTER :: CSLTNAMES      ! NAME OF CHEMICAL SPECIES                                                            
 !
@@ -82,8 +85,10 @@ NULLIFY(YCH_ISBA%CSLTNAMES)
 NULLIFY(YCH_ISBA%CSNWNAMES)
 YCH_ISBA%CCHEM_SURF_FILE=' '
 YCH_ISBA%CCH_DRY_DEP=' '
+YCH_ISBA%CPARAMBVOC=' '
 YCH_ISBA%LCH_BIO_FLUX=.FALSE.
 YCH_ISBA%LCH_NO_FLUX=.FALSE.
+YCH_ISBA%LSOILNOX=.FALSE.
 CALL SV_INIT(YCH_ISBA%SVI)
 IF (LHOOK) CALL DR_HOOK("MODD_CH_ISBA_N:CH_ISBA_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CH_ISBA_INIT

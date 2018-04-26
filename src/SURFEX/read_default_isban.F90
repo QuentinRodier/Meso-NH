@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_DEFAULT_ISBA_n (CHI, DE, DGO, DMI, IO, HPROGRAM)
+      SUBROUTINE READ_DEFAULT_ISBA_n (CHI, MGN, DE, DGO, DMI, IO, HPROGRAM)
 !     #######################################################
 !
 !!****  *READ_ISBA_CONF* - routine to read the configuration for ISBA
@@ -37,11 +37,8 @@
 !*       0.    DECLARATIONS
 !              ------------
 !
-!
-!
-!
-!
 USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t
+USE MODD_MEGAN_n, ONLY : MEGAN_t
 USE MODD_DIAG_EVAP_ISBA_n, ONLY : DIAG_EVAP_ISBA_t
 USE MODD_DIAG_n, ONLY : DIAG_OPTIONS_t
 USE MODD_DIAG_MISC_ISBA_n, ONLY : DIAG_MISC_ISBA_t
@@ -67,19 +64,17 @@ IMPLICIT NONE
 !*       0.1   Declarations of arguments
 !              -------------------------
 !
-!
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(MEGAN_t), INTENT(INOUT) :: MGN
 TYPE(DIAG_EVAP_ISBA_t), INTENT(INOUT) :: DE
 TYPE(DIAG_OPTIONS_t), INTENT(INOUT) :: DGO
 TYPE(DIAG_MISC_ISBA_t), INTENT(INOUT) :: DMI
 TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling ISBA
-
 !
 !*       0.2   Declarations of local variables
 !              -------------------------------
-!
 !
 LOGICAL           :: GFOUND         ! Return code when searching namelist
 INTEGER           :: ILUOUT         ! output listing logical unit
@@ -105,7 +100,7 @@ IF (IMI.NE.-1 .AND. LNAM_READ) THEN
  CALL INIT_NAM_DIAG_SURFn(DGO)
  CALL INIT_NAM_DIAG_ISBAn(DE, DGO, DMI)
  CALL INIT_NAM_CH_CONTROLn(CHI)
- CALL INIT_NAM_CH_ISBAn(CHI)
+ CALL INIT_NAM_CH_ISBAn(CHI, MGN)
  CALL INIT_NAM_SPINUP_CARB_ISBAn(IO)
  CALL INIT_NAM_ISBA_SNOWn(IO)
 ENDIF
@@ -142,7 +137,7 @@ IF (IMI.NE.-1) THEN
  CALL UPDATE_NAM_DIAG_SURFn(DGO)
  CALL UPDATE_NAM_DIAG_ISBAn(DE, DGO, DMI)
  CALL UPDATE_NAM_CH_CONTROLn(CHI)
- CALL UPDATE_NAM_CH_ISBAn(CHI)
+ CALL UPDATE_NAM_CH_ISBAn(CHI, MGN)
  CALL UPDATE_NAM_SPINUP_CARB_ISBAn(IO)
  CALL UPDATE_NAM_ISBA_SNOWn(IO) 
 ENDIF

@@ -5,7 +5,8 @@
 !     #########
       SUBROUTINE AVERAGED_ALBEDO_EMIS_ISBA (IO, S, NK, NP, NPE, &
                                  PZENITH, PTG1, PSW_BANDS, PDIR_ALB, PSCA_ALB, &
-                                 PEMIS, PTSRAD, PTSURF, PDIR_SW, PSCA_SW        )
+                                 PEMIS, PTSRAD, PTSURF, PDIR_SW, PSCA_SW,      & 
+                                 PRN_SHADE, PRN_SUNLIT        )
 !     ###################################################
 !
 !!**** ** computes radiative fields used in ISBA
@@ -90,6 +91,8 @@ REAL, DIMENSION(:),     INTENT(OUT)  :: PTSURF      ! surface effective temperat
 REAL, DIMENSION(:,:),   INTENT(IN), OPTIONAL   :: PDIR_SW ! Downwelling direct SW radiation
 REAL, DIMENSION(:,:),   INTENT(IN), OPTIONAL   :: PSCA_SW ! Downwelling diffuse SW radiation
 !
+REAL, DIMENSION(:),   INTENT(INOUT), OPTIONAL :: PRN_SHADE
+REAL, DIMENSION(:),   INTENT(INOUT), OPTIONAL :: PRN_SUNLIT
 !
 !*    0.2    Declaration of local variables
 !            ------------------------------
@@ -179,13 +182,14 @@ DO JP = 1,IO%NPATCH
     !
     CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH, PSW_BANDS,   &
                            ZDIR_ALB_PATCH(:,:,JP), ZSCA_ALB_PATCH(:,:,JP), ZEMIS_PATCH(:,JP), &
-                           PDIR_SW, PSCA_SW    )
+                           PRN_SHADE, PRN_SUNLIT, PDIR_SW, PSCA_SW    )
   ELSE
     !
     ! For cases when MEB patch albedo is not requested no downweeling SW is needed
     !
-    CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH, PSW_BANDS, &
-                           ZDIR_ALB_PATCH(:,:,JP), ZSCA_ALB_PATCH(:,:,JP), ZEMIS_PATCH(:,JP))
+    CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH, PSW_BANDS,  &
+                           ZDIR_ALB_PATCH(:,:,JP), ZSCA_ALB_PATCH(:,:,JP), ZEMIS_PATCH(:,JP),&
+                           PRN_SHADE, PRN_SUNLIT)
     !
   ENDIF
   !

@@ -3,8 +3,9 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PGD_TEB_GREENROOF_n (OCH_BIO_FLUX, DTCO, DTV, GB, U, &
-                                           IO, S, K, KDIM, HPROGRAM,KVERSION)
+      SUBROUTINE READ_PGD_TEB_GREENROOF_n (OCH_BIO_FLUX, HPARAMBVOC, &
+                                           DTCO, DTV, GB, U, IO, S, K, &
+                                           KDIM, HPROGRAM,KVERSION)
 !     #########################################
 !
 !!****  *READ_PGD_TEB_GREENROOF_n* - routine to initialise ISBA physiographic variables 
@@ -32,7 +33,10 @@
 !!
 !!    MODIFICATIONS
 !!    -------------
-!!      Original    07/2011 
+!!      Original    07/2011
+!!      P. Tulet    06/2016 : add XEF for MEGAN coupling
+!!      M. Leriche     2017 : BVOC emission do not work with greenroof
+!!                              -> to be debug
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -69,6 +73,7 @@ IMPLICIT NONE
 !
 !
 LOGICAL, INTENT(IN) :: OCH_BIO_FLUX
+CHARACTER(LEN=*), INTENT(IN) :: HPARAMBVOC
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
 TYPE(GR_BIOG_t), INTENT(INOUT) :: GB
@@ -121,7 +126,7 @@ ENDIF
 !-------------------------------------------------------------------------------
 !* biogenic chemical emissions
 !
-IF (OCH_BIO_FLUX) THEN
+IF (OCH_BIO_FLUX.AND.HPARAMBVOC=="SOLMON") THEN
   ALLOCATE(GB%XISOPOT(KDIM))
   YRECFM='E_ISOPOT'
   CALL READ_SURF(HPROGRAM,YRECFM,GB%XISOPOT,IRESP)

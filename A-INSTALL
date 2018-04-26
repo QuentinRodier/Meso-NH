@@ -23,8 +23,9 @@
 #       IX) OPTIONAL COMPILATION
 #           a) MNH_FOREFIRE for forefire runs ( external package needed )
 #           b) MNH_RTTOV for optional radiative computation
-#           c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF 
-#           d) cleaning previous compiled version
+#           c) MNH_ECRAD for optional compilation of new ECRAD radiative library from ECMWF
+#           d) MNH_MEGAN for optional compilation of MEGAN 
+#           e) cleaning previous compiled version
 #
 #
 ^L
@@ -1021,11 +1022,19 @@ etc ...
 # REM : the 'profile_mesonh...' file & the 'dir_obj...' directory will be suffixed with an ECRAD extension 
 #
 #  Usage :
-#   1) In namelist replace RAD='ECMW' be RAD='ECRAD' 
+#   1) In namelist replace RAD='ECMW' be RAD='ECRA' 
 #   2) Add link to 'ecrad-1.0.1/data' files 
 #      see 007_16janvier/008_run2 test case for example
+#
+# d) MNH_MEGAN for optional compilation of MEGAN code 
+# --------------------------------------
+#
+# Configure & Compilation
+export MNH_MEGAN=1
+./configure
 
-# d) cleaning previous compiled version
+etc ...
+# e) cleaning previous compiled version
 # --------------------------------------
 #
 # If you have already compiled exactly the same version of MesoNH on this computer ( same $XYZ value )

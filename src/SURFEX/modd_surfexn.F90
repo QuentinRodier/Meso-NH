@@ -59,6 +59,8 @@ USE MODD_BEM_n, ONLY : BEM_NP_t
 USE MODD_DIAG_MISC_TEB_n, ONLY : DIAG_MISC_TEB_NP_t
 USE MODD_TEB_n, ONLY : TEB_NP_t
 !
+USE MODD_MEGAN_n, ONLY : MEGAN_t
+USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
 !---------------------------------------------------------------------------
 !
@@ -158,6 +160,9 @@ TYPE(ISBA_NK_t) :: NK
 TYPE(ISBA_NP_t) :: NP
 TYPE(ISBA_NPE_t) :: NPE
 TYPE(AGRI_NP_t) :: NAG
+!
+TYPE(MEGAN_t) :: MGN
+TYPE(MEGAN_SURF_FIELDS_t) :: MSF
 !
 END TYPE ISBA_MODEL_t
 !

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE READ_PGD_TEB_GARDEN_n (OCH_BIO_FLUX, DTCO, DTV, GB, U, &
+      SUBROUTINE READ_PGD_TEB_GARDEN_n (OCH_BIO_FLUX, HPARAMBVOC, DTCO, DTV, GB, U, &
                                         IO, K, KDIM, TOP, HPROGRAM,KVERSION,KBUGFIX)
 !     #########################################
 !
@@ -69,6 +69,7 @@ IMPLICIT NONE
 !              -------------------------
 !
 LOGICAL, INTENT(IN) :: OCH_BIO_FLUX
+CHARACTER(LEN=*), INTENT(IN) :: HPARAMBVOC
 !
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
@@ -141,7 +142,7 @@ ENDIF
 !
 !* biogenic chemical emissions
 !
-IF (OCH_BIO_FLUX) THEN
+IF (OCH_BIO_FLUX.AND.HPARAMBVOC=="SOLMON") THEN
   ALLOCATE(GB%XISOPOT(KDIM))
   YRECFM='E_ISOPOT'
   CALL READ_SURF(HPROGRAM,YRECFM,GB%XISOPOT,IRESP)

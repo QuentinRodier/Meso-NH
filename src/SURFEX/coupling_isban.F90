@@ -3,8 +3,8 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, DTI, ID, NGB, GB,         &
-                            ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,       &
+SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, MGN, MSF,  DTI, ID, NGB,  &
+                            GB, ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,   &
                             HPROGRAM, HCOUPLING, PTSTEP,  KYEAR, KMONTH, KDAY, PTIME,   &
                             KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PZREF, PUREF, PZS,  &
                             PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW, &
@@ -68,6 +68,7 @@ SUBROUTINE COUPLING_ISBA_n (DTCO, UG, U, USS, NAG, CHI, NCHI, DTI, ID, NGB, GB, 
 !!      P Samuelsson 10/2014 : MEB
 !!      P. LeMoigne  12/2014 EBA scheme update
 !!      R. Seferian  05/2015 : Add coupling fiels to vegetation_evol call
+!!      P. Tulet     06/2016 : call coupling_megan add RN leaves for MEGAN
 !!-------------------------------------------------------------------
 !
 USE MODD_DATA_COVER_n, ONLY : DATA_COVER_t
@@ -76,6 +77,8 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 !
 USE MODD_AGRI_n, ONLY : AGRI_NP_t
 USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t, CH_ISBA_NP_t
+USE MODD_MEGAN_n, ONLY : MEGAN_t
+USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_SURFEX_n, ONLY : ISBA_DIAG_t
 USE MODD_GR_BIOG_n, ONLY : GR_BIOG_t, GR_BIOG_NP_t
@@ -151,6 +154,8 @@ USE MODI_ISBA_BUDGET_INIT
 USE MODI_ISBA_BUDGET
 USE MODI_UNPACK_DIAG_PATCH_n
 !
+USE MODI_COUPLING_MEGAN_n
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -166,6 +171,8 @@ TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(AGRI_NP_t), INTENT(INOUT) :: NAG
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
 TYPE(CH_ISBA_NP_t), INTENT(INOUT) :: NCHI
+TYPE(MEGAN_t), INTENT(INOUT) :: MGN
+TYPE(MEGAN_SURF_FIELDS_t), INTENT(INOUT) :: MSF
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTI
 TYPE(ISBA_DIAG_t), INTENT(INOUT) :: ID
 TYPE(GR_BIOG_NP_t), INTENT(INOUT) :: NGB
@@ -302,6 +309,9 @@ REAL, DIMENSION(KI, IO%NPATCH) :: ZCPL_ICEFLUX
 !
 REAL, DIMENSION(KI, IO%NPATCH) :: ZSW_FORBIO
 !
+REAL, DIMENSION(KI) :: ZRNSHADE
+REAL, DIMENSION(KI) :: ZRNSUNLIT
+!
 REAL                       :: ZCONVERTFACM0_SLT, ZCONVERTFACM0_DST
 REAL                       :: ZCONVERTFACM3_SLT, ZCONVERTFACM3_DST
 REAL                       :: ZCONVERTFACM6_SLT, ZCONVERTFACM6_DST
@@ -363,6 +373,9 @@ ZCPL_IFLOOD(:,:)  = 0.0
 ZCPL_ICEFLUX(:,:) = 0.0
 !
 ZSW_FORBIO(:,:)   =  XUNDEF
+!
+ZRNSHADE(:)       = 0.0
+ZRNSUNLIT(:)      = 0.0
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Forcing Modifications:
@@ -571,7 +584,7 @@ ENDIF
 DO JP = 1,IO%NPATCH
   CALL UPDATE_RAD_ISBA_n(IO, S, NK%AL(JP), NP%AL(JP), NPE%AL(JP), JP, PZENITH2, PSW_BANDS, &
                          ZDIR_ALB_TILE(:,:,JP), ZSCA_ALB_TILE(:,:,JP),                     &
-                         ZEMIS_TILE(:,JP), PDIR_SW, PSCA_SW  )
+                         ZEMIS_TILE(:,JP), ZRNSHADE, ZRNSUNLIT, PDIR_SW, PSCA_SW  )
 ENDDO
 !
  CALL AVERAGE_RAD(S%XPATCH, ZDIR_ALB_TILE, ZSCA_ALB_TILE, ZEMIS_TILE, &
@@ -610,7 +623,8 @@ PTRAD = S%XTSRAD_NAT
 ! --------------------------------------------------------------------------------------
 !
 IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
- CALL CH_BVOCEM_n(CHI%SVI, NGB, GB, IO, S, NP, NPE, ZSW_FORBIO, PRHOA, PSFTS)
+  IF (TRIM(CHI%CPARAMBVOC)=='SOLMON') &
+    CALL CH_BVOCEM_n(CHI%SVI, NGB, GB, IO, S, NP, NPE, ZSW_FORBIO, PRHOA, PSFTS)
 ENDIF
 !
 !SOILNOX
@@ -713,6 +727,10 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_Z0FLOOD  !Floodplain
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_FFGNOS   !Floodplain fraction over the ground without snow
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_FFVNOS   !Floodplain fraction over vegetation without snow
 !
+REAL, DIMENSION(SIZE(MGN%XPFT,1),PK%NSIZE_P) :: ZP_PFT
+REAL, DIMENSION(SIZE(MGN%XEF,1),PK%NSIZE_P) :: ZP_EF
+INTEGER, DIMENSION(PK%NSIZE_P) :: IP_SLTYP
+!
 REAL, DIMENSION(PK%NSIZE_P,IO%NNBIOMASS) :: ZP_RESP_BIOMASS_INST         ! instantaneous biomass respiration (kgCO2/kgair m/s)
 !
 !*  Aggregated coeffs for evaporative flux calculations
@@ -740,6 +758,9 @@ REAL, DIMENSION(PK%NSIZE_P) :: ZP_WG_INI
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_WGI_INI
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_WR_INI
 REAL, DIMENSION(PK%NSIZE_P) :: ZP_SWE_INI
+!
+REAL, DIMENSION(PK%NSIZE_P) :: ZP_RNSHADE
+REAL, DIMENSION(PK%NSIZE_P) :: ZP_RNSUNLIT
 !
 ! miscellaneous
 !
@@ -790,6 +811,15 @@ IF (IO%NPATCH==1) THEN
    ZP_EXNA(:)       = ZEXNA       (:)
    ZP_EXNS(:)       = ZEXNS       (:)
    ZP_ALFA(:)       = ZALFA       (:)
+
+   IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN') .AND. CHI%LCH_BIO_FLUX) THEN
+      ZP_PFT(:,:)  = MGN%XPFT  (:,:)
+      ZP_EF(:,:)   = MGN%XEF   (:,:)
+      IP_SLTYP(:)  = MGN%NSLTYP  (:)
+   END IF   
+   ZP_RNSHADE(:)    = ZRNSHADE    (:)
+   ZP_RNSUNLIT(:)   = ZRNSUNLIT   (:)
+
 ELSE
 !cdir nodep
 !cdir unroll=8
@@ -843,6 +873,20 @@ ELSE
     ENDDO
   ENDDO
 !
+  IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN') .AND. CHI%LCH_BIO_FLUX) THEN  
+    DO JJ=1,PK%NSIZE_P
+      JI=PK%NR_P(JJ)
+      ZP_PFT(:,JJ) = MGN%XPFT  (:,JI)
+      ZP_EF(:,JJ)  = MGN%XEF   (:,JI)
+      IP_SLTYP(JJ) = MGN%NSLTYP  (JI)
+    ENDDO
+  END IF
+  DO JJ=1,PK%NSIZE_P
+    JI=PK%NR_P(JJ)
+    ZP_RNSHADE(JJ)  = ZRNSHADE (JI)
+    ZP_RNSUNLIT(JJ) = ZRNSUNLIT(JI)
+  ENDDO
+  
 ENDIF
 !
 !--------------------------------------------------------------------------------------
@@ -962,7 +1006,7 @@ ZIRRIG_GR(:)= 0.
            ZP_ALBVIS_TSOIL, ZPALPHAN, ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV,    &
            ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZP_TDEEP_A, ZP_CO2, ZP_FFGNOS, ZP_FFVNOS,        &
            ZP_EMIS, ZP_USTAR, ZP_AC_AGG, ZP_HU_AGG, ZP_RESP_BIOMASS_INST, ZP_DEEP_FLUX,       &
-           ZIRRIG_GR, ZP_BLOWSNW_FLUX, ZP_BLOWSNW_CONC    )
+           ZIRRIG_GR, ZP_RNSHADE, ZP_RNSUNLIT, ZP_BLOWSNW_FLUX, ZP_BLOWSNW_CONC          )
 !
 ZP_TRAD = DK%XTSRAD
 DK%XLE  = PEK%XLE
@@ -1062,23 +1106,28 @@ END IF
 ! Chemical dry deposition :
 ! --------------------------------------------------------------------------------------
 IF (CHI%SVI%NBEQ>0) THEN
+  ZP_SFTS(:,CHI%SVI%NSV_CHSBEG:CHI%SVI%NSV_CHSEND) = 0.
+  ZP_SFTS(:,CHI%SVI%NSV_AERBEG:CHI%SVI%NSV_AEREND) = 0.        
   IF( CHI%CCH_DRY_DEP == "WES89") THEN
 
     IBEG = CHI%SVI%NSV_CHSBEG
     IEND = CHI%SVI%NSV_CHSEND 
     ISIZE = IEND - IBEG + 1 
 
-    CALL CH_DEP_ISBA(KK, PK, PEK, DK, DMK, CHIK, &
-                     ZP_USTAR, ZP_TA, ZP_PA, ZP_TRAD(:), ISIZE )  
+    IF (ANY(PEK%XLAI(:)/=XUNDEF) ) THEN    
+      CALL CH_DEP_ISBA(KK, PK, PEK, DK, DMK, CHIK, &
+                       ZP_USTAR, ZP_TA, ZP_PA, ZP_TRAD(:), ISIZE )  
  
-    ZP_SFTS(:,IBEG:IEND) = - ZP_SV(:,IBEG:IEND) * CHIK%XDEP(:,1:CHI%SVI%NBEQ)  
+      ZP_SFTS(:,IBEG:IEND) = - ZP_SV(:,IBEG:IEND) * CHIK%XDEP(:,1:CHI%SVI%NBEQ)  
 
-    IF (CHI%SVI%NAEREQ > 0 ) THEN
+      IF (CHI%SVI%NAEREQ > 0 ) THEN
        
-      IBEG = CHI%SVI%NSV_AERBEG
-      IEND = CHI%SVI%NSV_AEREND
-      CALL CH_AER_DEP(ZP_SV(:,IBEG:IEND), ZP_SFTS(:,IBEG:IEND), ZP_USTAR, PEK%XRESA, ZP_TA, ZP_RHOA)     
-    END IF
+        IBEG = CHI%SVI%NSV_AERBEG
+        IEND = CHI%SVI%NSV_AEREND
+        CALL CH_AER_DEP(ZP_SV(:,IBEG:IEND), ZP_SFTS(:,IBEG:IEND), ZP_USTAR, PEK%XRESA, ZP_TA, ZP_RHOA)     
+      END IF
+    ENDIF
+    
   ELSE
 
     IBEG = CHI%SVI%NSV_AERBEG
@@ -1089,6 +1138,20 @@ IF (CHI%SVI%NBEQ>0) THEN
   ENDIF
 ENDIF
 !
+! --------------------------------------------------------------------------------------
+! Chemical natural flux (BVOC, NOx) from MEGAN:
+! --------------------------------------------------------------------------------------
+IF (CHI%SVI%NBEQ>0 .AND. CHI%LCH_BIO_FLUX) THEN
+ IF ((TRIM(CHI%CPARAMBVOC) == 'MEGAN').AND.(ANY(PEK%XLAI(:)/=XUNDEF))) THEN
+
+ CALL COUPLING_MEGAN_n(MGN, CHI, GK, PEK, &
+                       KYEAR, KMONTH, KDAY, PTIME, IO%LTR_ML, &
+                       IP_SLTYP, ZP_PFT, ZP_EF, &
+                       ZP_TA, GBK%XIACAN, ZP_TRAD, ZP_RNSUNLIT, ZP_RNSHADE, &
+                       ZP_WIND, ZP_PA, ZP_QA, ZP_SFTS)
+
+ END IF
+ENDIF
 ! --------------------------------------------------------------------------------------
 ! Dust deposition and emission:
 ! --------------------------------------------------------------------------------------

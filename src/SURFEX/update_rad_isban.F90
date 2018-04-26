@@ -5,7 +5,7 @@
 !     #########
 SUBROUTINE UPDATE_RAD_ISBA_n (IO, S, KK, PK, PEK, KPATCH, PZENITH, PSW_BANDS, &
                               PDIR_ALB_WITH_SNOW,PSCA_ALB_WITH_SNOW, PEMIST,  &
-                              PDIR_SW, PSCA_SW     )
+                              PRN_SHADE, PRN_SUNLIT, PDIR_SW, PSCA_SW     )
 !     ####################################################################
 !
 !!****  *UPDATE_RAD_ISBA_n * - Calculate snow/flood fraction, dir/dif albedo
@@ -81,6 +81,9 @@ REAL, DIMENSION(:),     INTENT(IN)   :: PSW_BANDS ! mean wavelength of each shor
 REAL, DIMENSION(:,:), INTENT(OUT)  :: PDIR_ALB_WITH_SNOW ! Total direct albedo at t+1
 REAL, DIMENSION(:,:), INTENT(OUT)  :: PSCA_ALB_WITH_SNOW ! Total diffuse albedo at t+1
 REAL, DIMENSION(:),   INTENT(OUT)  :: PEMIST             ! Total emissivity at t+1
+!
+REAL, DIMENSION(:),   INTENT(INOUT), OPTIONAL :: PRN_SHADE
+REAL, DIMENSION(:),   INTENT(INOUT), OPTIONAL :: PRN_SUNLIT
 !
 REAL, DIMENSION(:,:),   INTENT(IN), OPTIONAL   :: PDIR_SW   ! direct  solar radiation (on horizontal surf.)
 REAL, DIMENSION(:,:),   INTENT(IN), OPTIONAL   :: PSCA_SW   ! diffuse solar radiation (on horizontal surf.)
@@ -226,7 +229,7 @@ IF(IO%LMEB_PATCH(KPATCH))THEN
               ZGLOBAL_SW, ZLAIN, ZZENITH, S%XABC,                                &
               PEK%XFAPARC, PEK%XFAPIRC, PEK%XMUS, PEK%XLAI_EFFC, GSHADE, ZIACAN, &              
               ZIACAN_SUNLIT, ZIACAN_SHADE, ZFRAC_SUN,                            &
-              ZFAPAR, ZFAPIR, ZFAPAR_BS, ZFAPIR_BS                               )    
+              ZFAPAR, ZFAPIR, ZFAPAR_BS, ZFAPIR_BS, PRN_SHADE, PRN_SUNLIT        )    
 
       ! Total effective surface (canopy, ground/flooded zone, snow) all-wavelength
       ! albedo: diagnosed from shortwave energy budget closure.

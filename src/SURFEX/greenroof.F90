@@ -50,6 +50,7 @@
 !                           calculation of vegetation CO2 flux
 !                           dummy for water table / surface coupling
 !!    P. Samuelsson  10/2014  Introduced dummy variables in call to ISBA for MEB
+!     P. Tulet    06/2016 add RN leaves to call ISBA (MEGAN coupling)
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -187,6 +188,8 @@ REAL, DIMENSION(SIZE(PPS)) :: ZEMISF
 !  variables for deep soil temperature
 REAL, DIMENSION(SIZE(PPS)) :: ZTDEEP_A
 !
+REAL, DIMENSION(SIZE(PPS)) :: ZRNSHADE, ZRNSUNLIT ! RN leaves
+!
 ! Dummy variables for MEB:
 REAL, DIMENSION(SIZE(PPS)) :: ZP_MEB_SCA_SW, ZPALPHAN, ZZ0G_WITHOUT_SNOW, &
                               ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN, &
@@ -269,7 +272,8 @@ ALLOCATE(GB%XIACAN(SIZE(PPS),SIZE(S%XABC)))
            PALBNIR_TVEG, PALBVIS_TVEG, PALBNIR_TSOIL, PALBVIS_TSOIL, ZPALPHAN,    &
            ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV, ZZ0_MEBN,         &
            ZZ0H_MEBN, ZZ0EFF_MEBN, ZTDEEP_A, PCO2, K%XFFG(:), K%XFFV(:),          &
-           ZEMISF, ZUSTAR, PAC_AGG, PHU_AGG, ZRESP_BIOMASS_INST, PDEEP_FLUX, PIRRIG )
+           ZEMISF, ZUSTAR, PAC_AGG, PHU_AGG, ZRESP_BIOMASS_INST, PDEEP_FLUX, PIRRIG, &
+           ZRNSHADE, ZRNSUNLIT )
 !
 IF (PEK%TSNOW%SCHEME=='3-L' .OR. PEK%TSNOW%SCHEME=='CRO') PEK%TSNOW%TS(:) = DMK%XSNOWTEMP(:,1)
 !

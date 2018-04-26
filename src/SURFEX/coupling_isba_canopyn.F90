@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_ISBA_CANOPY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, DTV, ID, NGB, GB, &
+SUBROUTINE COUPLING_ISBA_CANOPY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, MGN,MSF, DTV, ID, NGB, GB, &
                                    ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,   &
                                    BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP,                   &
                                    KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN,        &
@@ -43,6 +43,8 @@ SUBROUTINE COUPLING_ISBA_CANOPY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, DTV, ID
 !
 USE MODD_AGRI_n, ONLY : AGRI_NP_t
 USE MODD_CH_ISBA_n, ONLY : CH_ISBA_t, CH_ISBA_NP_t
+USE MODD_MEGAN_n, ONLY : MEGAN_t
+USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_SURFEX_n, ONLY : ISBA_DIAG_t
 USE MODD_GR_BIOG_n, ONLY : GR_BIOG_t, GR_BIOG_NP_t
@@ -93,6 +95,8 @@ IMPLICIT NONE
 TYPE(AGRI_NP_t), INTENT(INOUT) :: NAG
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
 TYPE(CH_ISBA_NP_t), INTENT(INOUT) :: NCHI
+TYPE(MEGAN_t), INTENT(INOUT) :: MGN
+TYPE(MEGAN_SURF_FIELDS_t), INTENT(INOUT) :: MSF
 TYPE(DATA_ISBA_t), INTENT(INOUT) :: DTV
 TYPE(ISBA_DIAG_t), INTENT(INOUT) :: ID
 TYPE(GR_BIOG_NP_t), INTENT(INOUT) :: NGB
@@ -424,7 +428,7 @@ END IF
 !*      2.     Call of ISBA
 !              ------------
 !
- CALL COUPLING_ISBA_n(DTCO, UG, U, USS, NAG, CHI, NCHI, DTV, ID, NGB, GB, ISS,NISS, IG, &
+ CALL COUPLING_ISBA_n(DTCO, UG, U, USS, NAG, CHI, NCHI, MGN,MSF, DTV, ID, NGB, GB, ISS,NISS, IG, &
                       NIG, IO, S, K, NK, NP, NPE, NDST, SLT, HPROGRAM, GCOUPLING,       &
                       PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, &
                       PZENITH2, ZZREF, ZUREF, PZS, ZU, ZV, ZQA, ZTA, PRHOA, ZSV, PCO2,  &

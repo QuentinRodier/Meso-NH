@@ -41,7 +41,9 @@
 !!                   11/2013  : same for groundwater distribution
 !!                   11/2014  : Read XSOILGRID as a series of real 
 !!      P. Samuelsson 10/2014 : MEB
-!!    10/2016 B. Decharme : bug surface/groundwater coupling   
+!!    10/2016 B. Decharme : bug surface/groundwater coupling  
+!!      M. Leriche   06/2017 add SOLMON option for biogenic emissions
+!!                           warning this option do not work anymore -> to be debug
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -539,32 +541,39 @@ ENDIF
 !* biogenic chemical emissions
 !
 IF (CHI%LCH_BIO_FLUX) THEN
-  ALLOCATE(ZWORK(U%NSIZE_FULL,1))
-  !
-  CALL END_IO_SURF_n(HPROGRAM)
-CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','SURF  ','READ ')
-  !
-  CALL GET_LUOUT(HPROGRAM,ILUOUT)
-  ALLOCATE(IMASK(IG%NDIM))
-  ILU=0
-  CALL GET_SURF_MASK_n(DTCO, U, 'NATURE',IG%NDIM,IMASK,ILU,ILUOUT)
-  ALLOCATE(GB%XISOPOT(IG%NDIM))
-  ALLOCATE(GB%XMONOPOT(IG%NDIM))
-  !
-  ZWORK(:,:) = 0.  
-  YRECFM='E_ISOPOT'
-  CALL READ_SURF(HPROGRAM,YRECFM,ZWORK,IRESP)
-  CALL PACK_SAME_RANK(IMASK,ZWORK(:,1),GB%XISOPOT(:))
-  !
-  ZWORK(:,:) = 0.  
-  YRECFM='E_MONOPOT'
-  CALL READ_SURF(HPROGRAM,YRECFM,ZWORK,IRESP)
-  CALL PACK_SAME_RANK(IMASK,ZWORK(:,1),GB%XMONOPOT(:))
-  !
-  CALL END_IO_SURF_n(HPROGRAM)
-CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','READ ')
-  !
-  DEALLOCATE(ZWORK)
+
+  IF (CHI%CPARAMBVOC=="SOLMON") THEN
+    !
+    ALLOCATE(ZWORK(U%NSIZE_FULL,1))
+    !
+    CALL END_IO_SURF_n(HPROGRAM)
+    CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'FULL  ','SURF  ','READ ')
+    !
+    CALL GET_LUOUT(HPROGRAM,ILUOUT)
+    ALLOCATE(IMASK(IG%NDIM))
+    ILU=0
+    CALL GET_SURF_MASK_n(DTCO, U, 'NATURE',IG%NDIM,IMASK,ILU,ILUOUT)
+    ALLOCATE(GB%XISOPOT(IG%NDIM))
+    ALLOCATE(GB%XMONOPOT(IG%NDIM))
+    !
+    ZWORK(:,:) = 0.  
+    YRECFM='E_ISOPOT'
+    CALL READ_SURF(HPROGRAM,YRECFM,ZWORK,IRESP)
+    CALL PACK_SAME_RANK(IMASK,ZWORK(:,1),GB%XISOPOT(:))
+    !
+    ZWORK(:,:) = 0.  
+    YRECFM='E_MONOPOT'
+    CALL READ_SURF(HPROGRAM,YRECFM,ZWORK,IRESP)
+    CALL PACK_SAME_RANK(IMASK,ZWORK(:,1),GB%XMONOPOT(:))
+    !
+    CALL END_IO_SURF_n(HPROGRAM)
+    CALL INIT_IO_SURF_n(DTCO, U, HPROGRAM,'NATURE','ISBA  ','READ ')
+    !
+    DEALLOCATE(ZWORK)
+  ELSE
+    ALLOCATE(GB%XISOPOT (0))
+    ALLOCATE(GB%XMONOPOT(0))
+  END IF
 ELSE
   ALLOCATE(GB%XISOPOT (0))
   ALLOCATE(GB%XMONOPOT(0))

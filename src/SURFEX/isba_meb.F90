@@ -17,7 +17,8 @@
                           PHU_AGG, PAC_AGG, PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG,&
                           PDELHEATN, PDELHEATN_SFC, PRESTOREN, PTDEEP_A, PDEEP_FLUX,&
                           PRISNOW, PSNOW_THRUFAL, PSNOW_THRUFAL_SOIL, PEVAPCOR,     &
-                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW, PBLOWSNW_FLUX, PBLOWSNW_CONC )
+                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW,                     &
+                          PBLOWSNW_FLUX, PBLOWSNW_CONC,PRN_SHADE, PRN_SUNLIT)
 !     ##########################################################################
 !
 !                             
@@ -245,6 +246,8 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: PLITCOR       ! A possible ice mass corre
 REAL, DIMENSION(:),   INTENT(OUT)   :: PSNOWSFCH     ! snow surface layer pseudo-heating term owing to
 !                                                    !  changes in grid thickness            (W/m2)
 REAL, DIMENSION(:),   INTENT(OUT)   :: PQSNOW        ! snow surface specific humidity (kg/kg)
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: PRN_SHADE, PRN_SUNLIT
 !
 ! diagnostic variables for Carbon assimilation:
 !
@@ -565,7 +568,7 @@ END WHERE
                           PSW_RAD, ZLAI, PZENITH, PABC, PEK%XFAPARC, PEK%XFAPIRC,    &
                           PEK%XMUS, PEK%XLAI_EFFC, OSHADE, ZIACAN,  ZIACAN_SUNLIT,   &
                           ZIACAN_SHADE, ZFRAC_SUN, DMK%XFAPAR, DMK%XFAPIR,           &
-                          DMK%XFAPAR_BS, DMK%XFAPIR_BS )    
+                          DMK%XFAPAR_BS, DMK%XFAPIR_BS, PRN_SHADE, PRN_SUNLIT )    
 
 ! Compute all-wavelength effective ground (soil+snow) surface,
 ! soil and veg albedos, respectively:

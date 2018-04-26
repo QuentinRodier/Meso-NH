@@ -204,6 +204,18 @@ CPPFLAGS_MNH += -DMNH_RTTOV_11=MNH_RTTOV_11
 endif
 endif
 ##########################################################
+#           Source MEGAN                                 #
+##########################################################
+ifdef MNH_MEGAN
+DIR_MEGAN      +=  LIB/MEGAN 
+CPPFLAGS_MEGAN = -DMNH_MEGAN
+#
+DIR_MASTER  += $(DIR_MEGAN)
+CPPFLAGS    += $(CPPFLAGS_MEGAN)
+INC         += $(INC_MEGAN)
+CPPFLAGS_MNH += -DMNH_MEGAN=${MNH_MEGAN}
+endif
+##########################################################
 #           Source NEWLFI                                #
 ##########################################################
 DIR_NEWLFI      += LIB/NEWLFI/src

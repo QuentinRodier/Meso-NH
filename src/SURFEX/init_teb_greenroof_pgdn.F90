@@ -1,9 +1,10 @@
-!SFX_LIC Copyright 2009-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
-SUBROUTINE INIT_TEB_GREENROOF_PGD_n (DTCO, U, OCH_BIO_FLUX, G, PGREENROOF, TOP, IO, S, K, P, PEK, DTV, GB, &
+SUBROUTINE INIT_TEB_GREENROOF_PGD_n (DTCO, U, OCH_BIO_FLUX, HPARAMBVOC, G, PGREENROOF, TOP, &
+                                     IO, S, K, P, PEK, DTV, GB, &
                                      HPROGRAM, HINIT, OPATCH1, KI, KVERSION, PCO2, PRHOA)
 !#############################################################
 !
@@ -87,6 +88,7 @@ IMPLICIT NONE
 TYPE(DATA_COVER_t), INTENT(INOUT) :: DTCO
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 LOGICAL, INTENT(IN) :: OCH_BIO_FLUX
+CHARACTER(LEN=*), INTENT(IN) :: HPARAMBVOC
 TYPE(GRID_t), INTENT(INOUT) :: G
 REAL, DIMENSION(:), INTENT(IN) :: PGREENROOF
 TYPE(TEB_OPTIONS_t), INTENT(INOUT) :: TOP
@@ -188,7 +190,7 @@ END IF
 !
 IF (OPATCH1) THEN
 
-  CALL READ_PGD_TEB_GREENROOF_n(OCH_BIO_FLUX, DTCO, DTV, GB, U, &
+  CALL READ_PGD_TEB_GREENROOF_n(OCH_BIO_FLUX, HPARAMBVOC, DTCO, DTV, GB, U, &
                                 IO, S, K, G%NDIM, HPROGRAM,KVERSION)
   !
   ALLOCATE(S%XVEGTYPE(KI,NVEGTYPE))

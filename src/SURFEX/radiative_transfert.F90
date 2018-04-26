@@ -8,7 +8,8 @@ SUBROUTINE RADIATIVE_TRANSFERT(OAGRI_TO_GRASS, PVEGTYPE,          &
             PSW_RAD, PLAI, PZENITH, PABC,                         &
             PFAPARC, PFAPIRC, PMUS, PLAI_EFFC, OSHADE, PIACAN,    &             
             PIACAN_SUNLIT, PIACAN_SHADE, PFRAC_SUN,               &          
-            PFAPAR, PFAPIR, PFAPAR_BS, PFAPIR_BS                  ) 
+            PFAPAR, PFAPIR, PFAPAR_BS, PFAPIR_BS, PRN_SHADE,      &
+            PRN_SUNLIT                  ) 
 !   #########################################################################
 !
 !!****  *RADIATIVE_TRANSFERT*  
@@ -54,6 +55,7 @@ SUBROUTINE RADIATIVE_TRANSFERT(OAGRI_TO_GRASS, PVEGTYPE,          &
 !!     Original    04/11 
 !!     C. Delire   08/13 : moved calculation of diffuse fraction from fapair to here
 !!     Commented by C. Delire 07/13
+!!      P. Tulet       06/16 : add RN leaves (shade and sunlit) for MEGAN
 !!
 !-------------------------------------------------------------------------------
 !!
@@ -115,6 +117,8 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PIACAN_SUNLIT, PIACAN_SHADE
 REAL, DIMENSION(:,:), INTENT(OUT) :: PFRAC_SUN   ! fraction of sunlit leaves
 !
 REAL, DIMENSION(:),   INTENT(OUT) :: PFAPAR, PFAPIR, PFAPAR_BS, PFAPIR_BS
+!
+REAL, DIMENSION(:),   INTENT(INOUT) :: PRN_SHADE, PRN_SUNLIT
 !
 !*      0.2    declarations of local variables
 !
@@ -186,12 +190,13 @@ END DO
 ZIA(:)     = PSW_RAD(:)*(1.-XPARCF)
  CALL FAPAIR(PABC, ZFD_SKY, ZIA, ZLAI, ZXMUS, XSSA_SUP_PIR, XSSA_INF_PIR,  &
          ZB_SUP, ZB_INF, PALBNIR_VEG, PALBNIR_SOIL, OSHADE,      &
-         PFAPIR, PFAPIR_BS                                       )
+         PFAPIR, PFAPIR_BS, PRN_SHADE, PRN_SUNLIT                )
 !
 ZIA(:)     = PSW_RAD(:)*XPARCF
- CALL FAPAIR(PABC, ZFD_SKY, ZIA, ZLAI, ZXMUS, XSSA_SUP, XSSA_INF,          &
+ CALL FAPAIR(PABC, ZFD_SKY, ZIA, ZLAI, ZXMUS, XSSA_SUP, XSSA_INF,&
          ZB_SUP, ZB_INF, PALBVIS_VEG, PALBVIS_SOIL, OSHADE,      &
-         PFAPAR, PFAPAR_BS, PLAI_EFF=ZLAI_EFF, PIACAN=PIACAN,    &
+         PFAPAR, PFAPAR_BS, PRN_SHADE, PRN_SUNLIT, &
+         PLAI_EFF=ZLAI_EFF, PIACAN=PIACAN,    &
          PIACAN_SHADE=PIACAN_SHADE, PIACAN_SUNLIT=PIACAN_SUNLIT, &
          PFRAC_SUN=PFRAC_SUN                                     )
 !

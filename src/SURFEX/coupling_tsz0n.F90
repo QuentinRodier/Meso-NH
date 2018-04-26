@@ -207,7 +207,7 @@ ENDDO
 !*      3.     Call to surface scheme
 !              ----------------------
 !
- CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%DTV, IM%ID, &
+ CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%MGN, IM%MSF,IM%DTV, IM%ID, &
                                 IM%NGB, IM%GB, IM%ISS, IM%NISS, IM%G, IM%NG, IM%O, IM%S, IM%K, IM%NK, &
                                 IM%NP, IM%NPE, NDST, SLT,BLOWSNW, HPROGRAM, 'E', 0.001, KYEAR,   &
                                 KMONTH, KDAY, PTIME,  KI, KSV, KSW, PTSUN, PZENITH,       &

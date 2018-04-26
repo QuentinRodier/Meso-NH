@@ -232,7 +232,7 @@ ZWORK_Z0H= 0.0 ! work array for mean roughness length for heat
 !
 DO JT=1,IT
 !
-  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%DTV,     &
+  CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%MGN, IM%MSF, IM%DTV,     &
                                  IM%ID, IM%NGB, IM%GB, IM%ISS, IM%NISS, IM%G, IM%NG, IM%O,     &
                                  IM%S, IM%K, IM%NK, IM%NP, IM%NPE, NDST, SLT, BLOWSNW,         &
                                  HPROGRAM, HCOUPLING, ZTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,  &

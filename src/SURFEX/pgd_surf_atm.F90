@@ -36,6 +36,7 @@
 !!      A. Lemonsu      05/2009         Ajout de la clef LGARDEN pour TEB
 !!      J. Escobar      11/2013         Add USE MODI_READ_NAM_PGD_CHEMISTRY
 !!      B. Decharme     02/2014         Add LRM_RIVER
+!!      M. Leriche      06/2017         Add MEGAN coupling
 !----------------------------------------------------------------------------
 !
 !*    0.     DECLARATION
@@ -74,6 +75,7 @@ USE MODI_PGD_CHEMISTRY
 USE MODI_PGD_CHEMISTRY_SNAP
 USE MODI_WRITE_COVER_TEX_END
 USE MODI_INIT_READ_DATA_COVER
+USE MODI_PGD_MEGAN
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -221,13 +223,17 @@ IF (YSC%U%NDIM_SEA>0) CALL PGD_SEA(YSC%DTCO, YSC%SM%DTS, YSC%SM%G, YSC%SM%S, &
 !*   10.      Chemical Emission fields
 !             ------------------------
 !
- CALL READ_NAM_PGD_CHEMISTRY(HPROGRAM,YSC%CHU%CCH_EMIS)
+ CALL READ_NAM_PGD_CHEMISTRY(HPROGRAM,YSC%CHU%CCH_EMIS,YSC%CHU%CCH_BIOEMIS)
 IF (YSC%CHU%CCH_EMIS=='SNAP') THEN
   CALL PGD_CHEMISTRY_SNAP(YSC%CHN, YSC%DTCO, YSC%UG, YSC%U, YSC%USS, &
                           HPROGRAM,YSC%CHU%LCH_EMIS)
 ELSE IF (YSC%CHU%CCH_EMIS=='AGGR') THEN
   CALL PGD_CHEMISTRY(YSC%CHE, YSC%DTCO, YSC%UG, YSC%U, YSC%USS, &
                      HPROGRAM,YSC%CHU%LCH_EMIS)
+ENDIF
+IF (YSC%CHU%CCH_BIOEMIS=='MEGA') THEN
+  CALL PGD_MEGAN(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%IM%MSF, &
+                 HPROGRAM,YSC%CHU%LCH_BIOEMIS)
 ENDIF
 !_______________________________________________________________________________
 !

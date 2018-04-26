@@ -19,8 +19,6 @@
 !!    -------------
 !!      Original    03/2004
 !!      M.Moge    01/2016  using WRITE_SURF_FIELD2D/3D for 2D/3D surfex fields writes
-!!      V.Masson & M. Leriche 06/06/17 do not count emitted species in nest case
-!!                                     do not write CEMIS_AREA no longer used
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -129,8 +127,7 @@ END IF
 !
 YRECFM='EMISPEC_NBR '
 YCOMMENT='Number of emitted chemical species.'
- CALL WRITE_SURF(HSELECT, &
-                 HPROGRAM,YRECFM,IEMISPEC_NBR,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT, HPROGRAM,YRECFM,IEMISPEC_NBR,IRESP,HCOMMENT=YCOMMENT)
 !
 IF (IEMISPEC_NBR > 0) THEN
   !
@@ -191,27 +188,27 @@ ZWORK2D(:,:) = CHE%XEMIS_FIELDS(:,IINDEX(:))
 ! Write NAME of species JSPEC with AREA and number of emission times 
 ! stored in the commentary
 WRITE(YRECFM,'("EMISNAME",I3.3)') JSPEC
-YCOMMENT = "Emission species name" 
- CALL WRITE_SURF(HSELECT, &
-                 HPROGRAM,YRECFM,YEMISPEC_NAMES(JSPEC),IRESP,HCOMMENT=YCOMMENT)
-! !
+WRITE(YCOMMENT,'(A3,", emission times number:",I5)') CHE%CEMIS_AREA(IINDEX(1)),KSIZE
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,YEMISPEC_NAMES(JSPEC),IRESP,HCOMMENT=YCOMMENT)
+! 
+WRITE(YRECFM,'("EMISAREA",I3.3)') JSPEC
+YCOMMENT = "Emission area" 
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,CHE%CEMIS_AREA(IINDEX(1)),IRESP,HCOMMENT=YCOMMENT)
+!
 WRITE(YRECFM,'("EMISNBT",I3.3)') JSPEC
 YCOMMENT = "Emission times number" 
- CALL WRITE_SURF(HSELECT, &
-                 HPROGRAM,YRECFM,KSIZE,IRESP,HCOMMENT=YCOMMENT)
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,KSIZE,IRESP,HCOMMENT=YCOMMENT)
 
 ! Write emission times (ITIME) for species JSPEC
 WRITE(YRECFM,'("EMISTIMES",I3.3)') JSPEC  
 YCOMMENT = "Emission times in second"
- CALL WRITE_SURF(HSELECT, &
-                 HPROGRAM,YRECFM,ITIME(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-',HNAM_DIM="Temporal_emiss  ")
+ CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,ITIME(:),IRESP,HCOMMENT=YCOMMENT,HDIR='-',HNAM_DIM="Temporal_emiss  ")
 !
 ! Finally write emission data for species JSPEC
 YRECFM = "E_"//TRIM(YEMISPEC_NAMES(JSPEC))
 YCOMMENT = "Emission data (x,y,t),"//TRIM(CHE%CEMIS_COMMENT(IINDEX(1)))
 YCOMMENTUNIT='-'
- CALL WRITE_SURF_FIELD2D(HSELECT, &
-                  HPROGRAM,ZWORK2D(:,:),YRECFM,YCOMMENT,YCOMMENTUNIT,HNAM_DIM="Temporal_emiss  ")
+ CALL WRITE_SURF_FIELD2D(HSELECT,HPROGRAM,ZWORK2D(:,:),YRECFM,YCOMMENT,YCOMMENTUNIT,HNAM_DIM="Temporal_emiss  ")
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_CH_EMIS_N:WRITE_EMIS_SPEC',1,ZHOOK_HANDLE)
 !

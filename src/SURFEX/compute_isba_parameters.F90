@@ -5,11 +5,11 @@
 !#############################################################
 SUBROUTINE COMPUTE_ISBA_PARAMETERS (DTCO, OREAD_BUDGETC, UG, U, &
                                     IO, DTI, SB, S, IG, K, NK, NIG, NP, NPE,   &
-                                    NAG, NISS, ISS, NCHI, CHI, ID, GB, NGB,    &
-                                    NDST, SLT, BLOWSNW, SV, HPROGRAM,HINIT,OLAND_USE, &
-                                    KI,KSV,KSW,HSV,PCO2,PRHOA,                 &
+                                    NAG, NISS, ISS, NCHI, CHI, MGN, MSF,  ID,  &
+                                    GB, NGB, NDST, SLT,BLOWSNW, SV, HPROGRAM,HINIT,    &
+                                    OLAND_USE,KI,KSV,KSW,HSV,PCO2,PRHOA,       &
                                     PZENITH,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
-                                    PEMIS,PTSRAD,PTSURF, HTEST             )  
+                                    PEMIS,PTSRAD,PTSURF, PMEGAN_FIELDS, HTEST  )  
 !#############################################################
 !
 !!****  *COMPUTE_ISBA_PARAMETERS_n* - routine to initialize ISBA
@@ -59,6 +59,7 @@ SUBROUTINE COMPUTE_ISBA_PARAMETERS (DTCO, OREAD_BUDGETC, UG, U, &
 !!      P. Samuelsson  02/14 : MEB
 !!      B. Decharme    01/16 : Bug when vegetation veg, z0 and emis are imposed whith interactive vegetation
 !!      B. Decharme   10/2016  bug surface/groundwater coupling 
+!!      P. Tulet       06/2016 : call init_megan for coupling megan with surfex
 !!
 !-------------------------------------------------------------------------------
 !
@@ -84,6 +85,9 @@ USE MODD_DST_n, ONLY : DST_NP_t, DST_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SV_n, ONLY : SV_t
 USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
+!
+USE MODD_MEGAN_n, ONLY : MEGAN_t
+USE MODD_MEGAN_SURF_FIELDS_n, ONLY : MEGAN_SURF_FIELDS_t
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_LAND, LCPL_FLOOD, LCPL_GW, LCPL_CALVING
 !
@@ -151,6 +155,8 @@ USE MODI_FIX_MEB_VEG
 USE MODI_AV_PGD
 USE MODI_SURF_PATCH
 !
+USE MODI_INIT_MEGAN_n
+!
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
 !
@@ -179,6 +185,8 @@ TYPE(SSO_NP_t), INTENT(INOUT) :: NISS
 TYPE(SSO_t), INTENT(INOUT) :: ISS
 TYPE(CH_ISBA_NP_t), INTENT(INOUT) :: NCHI
 TYPE(CH_ISBA_t), INTENT(INOUT) :: CHI
+TYPE(MEGAN_t), INTENT(INOUT) :: MGN
+TYPE(MEGAN_SURF_FIELDS_t), INTENT(INOUT) :: MSF
 TYPE(ISBA_DIAG_t), INTENT(INOUT) :: ID
 TYPE(GR_BIOG_t), INTENT(INOUT) :: GB
 TYPE(GR_BIOG_NP_t), INTENT(INOUT) :: NGB
@@ -204,6 +212,7 @@ REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo fo
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSRAD    ! radiative temperature
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PTSURF    ! surface effective temperature         (K)
+REAL,             DIMENSION(KI,MSF%NMEGAN_NBR),INTENT(IN) :: PMEGAN_FIELDS
 !
  CHARACTER(LEN=2),                 INTENT(IN)  :: HTEST       ! must be equal to 'OK'
 !
@@ -1085,6 +1094,16 @@ S%XEMIS_NAT (:) = XUNDEF
 PEMIS  = S%XEMIS_NAT
 PTSRAD = ZTSRAD_NAT
 PTSURF = ZTSURF_NAT
+!
+IF (CHI%LCH_BIO_FLUX .AND. TRIM(CHI%CPARAMBVOC) == 'MEGAN') THEN
+  IF (IO%CPHOTO/='NON') THEN
+    CALL INIT_MEGAN_n(IO, S, K, NP, MSF, MGN, &
+                      IG%XLAT, CHI%SVI%CSV(CHI%SVI%NSV_CHSBEG:CHI%SVI%NSV_CHSEND), &
+                      PMEGAN_FIELDS)
+  ELSE
+    CALL ABOR1_SFX("INIT_MEGAN: CPHOTO need to be 'AGS', 'LAI', 'AST', 'LST', 'NIT' options ")
+  END IF
+END IF
 !
 !-------------------------------------------------------------------------------
 !

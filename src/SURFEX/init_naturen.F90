@@ -8,6 +8,7 @@
                                 HPROGRAM,HINIT,OLAND_USE, KI,KSV,KSW,     &
                                 HSV,PCO2,PRHOA,PZENITH,PAZIM,PSW_BANDS,   &
                                 PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD,PTSURF,    &
+                                PMEGAN_FIELDS,                            &
                                 KYEAR, KMONTH,KDAY, PTIME, TPDATE_END,    &
                                 HATMFILE,HATMFILETYPE,HTEST              )  
 !     #############################################################
@@ -42,6 +43,8 @@
 !!       V.Masson   15/03/99 new PGD treatment with COVER types
 !        F.Solmon  06/00   adaptation for patch approach
 !!      B. Decharme  04/2013 new coupling variables
+!!       V.Vionnet 2017 blow snow
+!!       P.Tulet     06/16  add MEGAN coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -106,6 +109,7 @@ REAL,             DIMENSION(KI),  INTENT(IN)  :: PRHOA     ! air density
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PZENITH   ! solar zenithal angle
 REAL,             DIMENSION(KI),  INTENT(IN)  :: PAZIM     ! solar azimuthal angle (rad from N, clock)
 REAL,             DIMENSION(KSW), INTENT(IN)  :: PSW_BANDS ! middle wavelength of each band
+REAL,             DIMENSION(KI,IM%MSF%NMEGAN_NBR),INTENT(IN) :: PMEGAN_FIELDS
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PDIR_ALB  ! direct albedo for each band
 REAL,             DIMENSION(KI,KSW),INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each band
 REAL,             DIMENSION(KI),  INTENT(OUT) :: PEMIS     ! emissivity
@@ -149,6 +153,7 @@ ELSE IF (U%CNATURE=='ISBA  ' .OR. U%CNATURE=='TSZ0') THEN
                    HPROGRAM, HINIT, OLAND_USE, KI, KSV, KSW, HSV, &
                    PCO2, PRHOA, PZENITH, PAZIM, PSW_BANDS,        &
                    PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD, PTSURF,     &
+                   PMEGAN_FIELDS,                                 &
                    KYEAR, KMONTH, KDAY, PTIME, TPDATE_END,        &
                    HATMFILE, HATMFILETYPE, 'OK'     )  
 END IF

@@ -408,7 +408,9 @@ DO JSV = 1, KSIZE
     ENDIF
     !
     ! computes resistance due to soil and vegetation
-    ZNATRC(JI,JSV) = 1./ ( PEK%XVEG(JI)/ZNATRC(JI,JSV) + (1.-PEK%XVEG(JI))/ZBARERC(JI,JSV) ) 
+    IF ( PEK%XVEG(JI)>0. ) THEN
+      ZNATRC(JI,JSV) = 1./ ( PEK%XVEG(JI)/ZNATRC(JI,JSV) + (1.-PEK%XVEG(JI))/ZBARERC(JI,JSV) ) 
+    ENDIF
     ! 
   ENDDO
   !

@@ -150,7 +150,7 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
       !
       !*       3.    read surface resistance SURF_RES
       !
-      ALLOCATE(NCHI%AL(JP)%XDEP(KLU,CHI%SVI%NBEQ))
+      ALLOCATE(NCHI%AL(JP)%XDEP(NP%AL(JP)%NSIZE_P,CHI%SVI%NBEQ))
       !
     ENDDO
     !

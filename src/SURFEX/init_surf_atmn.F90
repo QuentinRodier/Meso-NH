@@ -54,6 +54,7 @@ SUBROUTINE INIT_SURF_ATM_n (YSC, HPROGRAM,HINIT, OLAND_USE,             &
 !!     (J.Durand)      2014   add activation of chemical deposition if LCH_EMIS=F
 !!      R. Séférian 03/2014   Adding decoupling between CO2 seen by photosynthesis and radiative CO2
 !!      M.Leriche & V. Masson 05/16 bug in write emis fields for nest
+!!     (P.Tulet & M.Leriche)    06/2016   add MEGAN coupling
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -111,8 +112,6 @@ USE MODI_INIT_CHEMICAL_n
 USE MODI_CH_INIT_DEPCONST
 USE MODI_CH_INIT_EMISSION_n
 USE MODI_CH_INIT_SNAP_n
-USE MODI_OPEN_NAMELIST
-USE MODI_CLOSE_NAMELIST
 USE MODI_ABOR1_SFX
 USE MODI_ALLOC_DIAG_SURF_ATM_n
 USE MODI_GET_1D_MASK
@@ -131,6 +130,7 @@ USE MODI_GET_LUOUT
 USE MODI_SET_SURFEX_FILEIN
 !
 USE MODI_INIT_CPL_GCM_n
+USE MODI_READ_MEGAN_n
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -185,7 +185,6 @@ INTEGER           :: ISWB     ! number of shortwave bands
 INTEGER           :: JTILE    ! loop counter on tiles
 INTEGER           :: IRESP    ! error return code
 INTEGER           :: ILUOUT   ! unit of output listing file
-INTEGER           :: ICH      ! unit of input chemical file
 INTEGER           :: IVERSION, IBUGFIX       ! surface version
 !
 INTEGER, DIMENSION(:), ALLOCATABLE :: ISIZE_OMP
@@ -211,6 +210,8 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: ZP_SCA_ALB  ! diffuse albedo
 REAL, DIMENSION(:),     ALLOCATABLE :: ZP_EMIS     ! emissivity
 REAL, DIMENSION(:),     ALLOCATABLE :: ZP_TSRAD    ! radiative temperature
 REAL, DIMENSION(:),     ALLOCATABLE :: ZP_TSURF    ! surface effective temperature
+!
+REAL, DIMENSION(:,:),   ALLOCATABLE :: ZP_MEGAN_FIELDS
 !
 REAL, DIMENSION(:), ALLOCATABLE :: ZZ0VEG
 REAL :: XTIME0
@@ -400,7 +401,7 @@ ENDIF
 !
  CALL READ_SURF(HPROGRAM,'CH_EMIS',YSC%CHU%LCH_EMIS,IRESP)
 !
-IF (YSC%CHU%LCH_EMIS) THEN
+IF (YSC%CHU%LCH_EMIS .AND. YSC%CHU%LCH_SURF_EMIS) THEN
   !
   IF ( IVERSION<7 .OR. IVERSION==7 .AND. IBUGFIX<3 ) THEN
     YSC%CHU%CCH_EMIS='AGGR'
@@ -448,6 +449,14 @@ DEALLOCATE(ZZ0VEG)
 !*       2.7 Dummy fields
 !
  CALL READ_DUMMY_n(YSC%DUU,YSC%U%NSIZE_FULL, HPROGRAM)
+!
+!*       2.8 MEGAN fields
+!
+ CALL READ_SURF (HPROGRAM,'CH_BIOEMIS',YSC%CHU%LCH_BIOEMIS,IRESP)
+!
+IF (YSC%CHU%LCH_BIOEMIS) THEN
+  CALL READ_MEGAN_n(YSC%IM%MSF, YSC%U, HPROGRAM)
+ENDIF
 !
 !         End of IO
 !
@@ -601,7 +610,7 @@ IF (YSC%U%NDIM_NATURE>0) &
                      HPROGRAM,HINIT,OLAND_USE,YSC%U%NSIZE_NATURE,       &
                      KSV,KSW, HSV,ZP_CO2,ZP_RHOA,                       &
                      ZP_ZENITH,ZP_AZIM,PSW_BANDS,ZP_DIR_ALB,ZP_SCA_ALB, &
-                     ZP_EMIS,ZP_TSRAD,ZP_TSURF,                         &
+                     ZP_EMIS,ZP_TSRAD,ZP_TSURF,ZP_MEGAN_FIELDS,         &
                      KYEAR,KMONTH,KDAY,PTIME,TPDATE_END,                &
                      HATMFILE,HATMFILETYPE,'OK'      )
 !
@@ -674,6 +683,7 @@ ALLOCATE(ZP_RHOA         (KSIZE))
 ALLOCATE(ZP_ZENITH       (KSIZE))
 ALLOCATE(ZP_AZIM         (KSIZE))
 !
+ALLOCATE(ZP_MEGAN_FIELDS (KSIZE,YSC%IM%MSF%NMEGAN_NBR))
 !
 ! output arguments:
 !
@@ -693,27 +703,30 @@ IF (KSIZE>0) THEN
   ZP_EMIS    = XUNDEF
   ZP_TSRAD   = XUNDEF
   ZP_TSURF   = XUNDEF
+  ZP_MEGAN_FIELDS = 0.
 END IF
 !
 DO JJ=1,KSIZE
-IF (SIZE(PCO2)>0) &
-     ZP_CO2   (JJ)     = PCO2        (KMASK(JJ))  
-IF (SIZE(PRHOA)>0) &
-     ZP_RHOA  (JJ)     = PRHOA       (KMASK(JJ))  
-IF (SIZE(PZENITH)>0) THEN
+  IF (SIZE(PCO2)>0) &
+    ZP_CO2   (JJ)     = PCO2        (KMASK(JJ))  
+  IF (SIZE(PRHOA)>0) &
+    ZP_RHOA  (JJ)     = PRHOA       (KMASK(JJ))  
+  IF (SIZE(PZENITH)>0) THEN
     IF (LZENITH) THEN
-       ZP_ZENITH(JJ)     = PZENITH     (KMASK(JJ)) 
+      ZP_ZENITH(JJ)     = PZENITH     (KMASK(JJ)) 
     ELSE
-       ZP_ZENITH(JJ)     = ZZENITH     (KMASK(JJ)) 
+      ZP_ZENITH(JJ)     = ZZENITH     (KMASK(JJ)) 
     ENDIF
-ENDIF
-IF (SIZE(PAZIM  )>0) THEN
+  ENDIF
+  IF (SIZE(PAZIM  )>0) THEN
     IF (LZENITH) THEN
-       ZP_AZIM  (JJ)     = PAZIM       (KMASK(JJ)) 
+      ZP_AZIM  (JJ)     = PAZIM       (KMASK(JJ)) 
     ELSE
-       ZP_AZIM  (JJ)     = ZAZIM       (KMASK(JJ)) 
+      ZP_AZIM  (JJ)     = ZAZIM       (KMASK(JJ)) 
     ENDIF
-ENDIF
+  ENDIF
+  IF (SIZE(YSC%IM%MSF%XMEGAN_FIELDS,1)>0 .AND. YSC%IM%MSF%NMEGAN_NBR>0 ) &
+    ZP_MEGAN_FIELDS  (JJ,:)  = YSC%IM%MSF%XMEGAN_FIELDS(KMASK(JJ),:)  
 ENDDO
 IF (LHOOK) CALL DR_HOOK('PACK_SURF_INIT_ARG',1,ZHOOK_HANDLE)
 !
@@ -752,6 +765,7 @@ DEALLOCATE(ZP_SCA_ALB)
 DEALLOCATE(ZP_EMIS   )
 DEALLOCATE(ZP_TSRAD  )
 DEALLOCATE(ZP_TSURF  )
+DEALLOCATE(ZP_MEGAN_FIELDS  )
 IF (LHOOK) CALL DR_HOOK('UNPACK_SURF_INIT_ARG',1,ZHOOK_HANDLE)
 !
 END SUBROUTINE UNPACK_SURF_INIT_ARG
