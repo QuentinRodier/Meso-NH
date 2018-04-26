@@ -72,7 +72,7 @@ END MODULE MODI_CH_INIT_JVALUES
 !!
 !!    EXTERNAL
 !!    --------
-!!    TUV39.f (Fortran 77 code from S. Madronich)
+!!    TUV version 5.3.1 (Fortran 77 code from S. Madronich)
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -148,8 +148,8 @@ IF (.NOT.ALLOCATED(XJDATA)) ALLOCATE(XJDATA(NSZA_INCR,NZZ_JVAL,JPJVMAX,NBALB))
     ZLWC(JKLEV)= 0.0
   ENDDO
   !
-  !*       CALL TUV 5.0
-  !        ------------
+  !*       CALL TUV 5.3.1
+  !        --------------
   !
   DO JALB=1,NBALB
     ZALBLOOP=0.02+0.20*FLOAT(JALB-1)/FLOAT(NBALB-1) 

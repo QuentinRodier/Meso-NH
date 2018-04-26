@@ -5,9 +5,8 @@
 set -x
 set -e
 export CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"} 
-ln -sf ${CHIMIE_FILES}/tuv50/DATAE1 .
-ln -sf ${CHIMIE_FILES}/tuv50/DATAJ1 .
-ln -sf ${CHIMIE_FILES}/tuv50/DATAS1 .
+ln -sf ${CHIMIE_FILES}/tuv531/DATAE1 .
+ln -sf ${CHIMIE_FILES}/tuv531/DATAJ1 .
 ln -fs ../001_prep_ideal_case/KWRAIN.{des,lfi,nc} .
 rm -f KWRAI.1.SEGCH OUT*
 time ${MPIRUN} MESONH${XYZ}
