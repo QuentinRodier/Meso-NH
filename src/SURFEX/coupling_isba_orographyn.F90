@@ -5,7 +5,7 @@
 !     ###############################################################################
 SUBROUTINE COUPLING_ISBA_OROGRAPHY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, DTV, ID, NGB, GB, &
                                       ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,   &
-                                      HPROGRAM, HCOUPLING, PTSTEP,                            &
+                                      BLOWSNW,HPROGRAM, HCOUPLING, PTSTEP,                    &
                                       KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN,        &
                                       PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV,    &
                                       PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,     &
@@ -63,6 +63,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t, SSO_NP_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_SURF_PAR,ONLY : XUNDEF
 USE MODD_CSTS,    ONLY : XSTEFAN, XCPD, XRD, XP00
@@ -106,6 +107,7 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -322,7 +324,7 @@ ENDIF
 !
  CALL COUPLING_ISBA_CANOPY_n(DTCO, UG, U, USS, SB, NAG, CHI, NCHI, DTV, ID, NGB, GB,   &
                              ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,     &
-                             HPROGRAM, HCOUPLING, PTSTEP,                              &
+                             BLOWSNW,HPROGRAM, HCOUPLING, PTSTEP,                      &
                              KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, &
                              PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, ZQA, ZTA,     &
                              ZRHOA, PSV, PCO2, HSV, ZRAIN, ZSNOW, ZLW, ZDIR_SW,        &

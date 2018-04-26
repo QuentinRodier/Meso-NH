@@ -601,8 +601,9 @@ ELSEIF (KTILE==2) THEN
   !
 ELSEIF (KTILE==3) THEN
   !
-  CALL COUPLING_NATURE_n(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%IM, YSC%DTZ, YSC%DLO, YSC%DL, &
-                         YSC%DLC, YSC%NDST, YSC%SLT, HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,     &
+  CALL COUPLING_NATURE_n(YSC%DTCO, YSC%UG, YSC%U, YSC%USS, YSC%IM, YSC%DTZ, YSC%DLO, YSC%DL,  &
+                         YSC%DLC, YSC%NDST, YSC%SLT, YSC%BLOWSNW,                             & 
+                         HPROGRAM, HCOUPLING, PTIMEC, PTSTEP,                                 &
                          KYEAR, KMONTH, KDAY, PTIME, YSC%U%NSIZE_NATURE, KSV, KSW, ZP_TSUN,   &
                          ZP_ZENITH, ZP_ZENITH2, ZP_AZIM, ZP_ZREF, ZP_UREF, ZP_ZS, ZP_U, ZP_V, &
                          ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, HSV, ZP_RAIN, ZP_SNOW, ZP_LW,  &

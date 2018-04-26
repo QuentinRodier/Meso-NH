@@ -248,6 +248,7 @@ END MODULE MODI_MODEL_n
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!  03/2018     (P.Wautelet)   replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                  07/2017  (V. Vionnet) : Add blowing snow scheme 
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -308,6 +309,8 @@ USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, L
                                MACTIT => LACTIT, LSCAV, NMOD_CCN, LCOLD,               &
                                MSEDI => LSEDI, MHHONI => LHHONI, NMOD_IFN, LHAIL,      &
                                XRTMIN_LIMA=>XRTMIN
+USE MODD_BLOWSNOW_n
+USE MODD_BLOWSNOW                       
 USE MODD_PARAM_MFSHALL_n
 USE MODD_PARAM_n
 USE MODD_PAST_FIELD_n
@@ -404,6 +407,8 @@ USE MODI_WRITE_LFIFMN_FORDIACHRO_n
 USE MODI_WRITE_PROFILER_n
 USE MODI_WRITE_SERIES_n
 USE MODI_WRITE_STATION_n
+USE MODI_BLOWSNOW
+
 USE MODI_WRITE_SURF_ATM_N
 !
 IMPLICIT NONE
@@ -1247,7 +1252,9 @@ END DO
 DO JSV = NSV_AERDEPBEG,NSV_AERDEPEND
   XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
 END DO
-
+DO JSV = NSV_SNWBEG,NSV_SNWEND
+  XRSVS(:,:,:,JSV) = MAX(XRSVS(:,:,:,JSV),0.)
+END DO
 IF (CELEC .NE. 'NONE') THEN
   XRSVS(:,:,:,NSV_ELECBEG) = MAX(XRSVS(:,:,:,NSV_ELECBEG),0.)
   XRSVS(:,:,:,NSV_ELECEND) = MAX(XRSVS(:,:,:,NSV_ELECEND),0.)
@@ -1278,7 +1285,7 @@ IF(LVE_RELAX .OR. LVE_RELAX_GRD .OR. LHORELAX_UVWTH .OR. LHORELAX_RV .OR.&
                    LHORELAX_SVELEC,LHORELAX_SVLG,                      &
                    LHORELAX_SVCHEM,LHORELAX_SVCHIC,LHORELAX_SVAER,     &
                    LHORELAX_SVDST,LHORELAX_SVSLT,LHORELAX_SVPP,        &
-                   LHORELAX_SVCS,                                      &
+                   LHORELAX_SVCS,LHORELAX_SVSNW,                       &
 #ifdef MNH_FOREFIRE
                    LHORELAX_SVFF,                                      &
 #endif
@@ -1437,6 +1444,12 @@ IF (.NOT. LSTEADYLS) THEN
         XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
         XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
       ENDDO
+      !
+      DO JSV=NSV_SNWBEG,NSV_SNWEND
+        XLBXSVS(:,:,:,JSV)=MAX(XLBXSVS(:,:,:,JSV),0.)
+        XLBYSVS(:,:,:,JSV)=MAX(XLBYSVS(:,:,:,JSV),0.)
+      ENDDO
+      !
      END IF
   END IF
 END IF
@@ -1447,6 +1460,18 @@ XT_COUPL = XT_COUPL + ZTIME2 - ZTIME1
 !
 !-------------------------------------------------------------------------------
 !
+!
+!
+!*      8 Bis . Blowing snow scheme
+!              ---------
+!
+IF(LBLOWSNOW) THEN
+ CALL BLOWSNOW(CLBCX,CLBCY,XTSTEP,NRR,XPABST,XTHT,XRT,XZZ,XRHODREF,  &
+                     XRHODJ,XEXNREF,XRRS,XRTHS,XSVT,XRSVS,XSNWSUBL3D )
+ENDIF
+!
+!
+!-------------------------------------------------------------------------------
 !
 !*       9.    ADVECTION
 !              ---------

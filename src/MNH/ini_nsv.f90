@@ -63,6 +63,7 @@ END MODULE MODI_INI_NSV
 !!                               the 4th C2R2 scalar variable
 !!       J.escobar     04/08/2015 suit Pb with writ_lfin JSA increment , modif in ini_nsv to have good order initialization
 !!      Modification    01/2016  (JP Pinty) Add LIMA and LUSECHEM condition
+!!      Modification    07/2017  (V. Vionnet) Add blowing snow condition
 !! 
 !-------------------------------------------------------------------------------
 !
@@ -79,7 +80,8 @@ USE MODD_DYN_n,     ONLY : LHORELAX_SV,LHORELAX_SVC2R2,LHORELAX_SVC1R3,   &
                            LHORELAX_SVLIMA,                               &
                            LHORELAX_SVELEC,LHORELAX_SVCHEM,LHORELAX_SVLG, &
                            LHORELAX_SVDST,LHORELAX_SVAER, LHORELAX_SVSLT, &
-                           LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC
+                           LHORELAX_SVPP,LHORELAX_SVCS, LHORELAX_SVCHIC,  &
+                           LHORELAX_SVSNW    
 #ifdef MNH_FOREFIRE
 USE MODD_DYN_n,     ONLY : LHORELAX_SVFF
 USE MODD_FOREFIRE
@@ -89,6 +91,7 @@ USE MODD_LG
 USE MODD_DUST
 USE MODD_SALT
 USE MODD_PASPOL
+USE MODD_BLOWSNOW
 USE MODD_CONDSAMP
 USE MODD_CH_AEROSOL
 USE MODD_PREP_REAL, ONLY: XT_LS
@@ -482,6 +485,21 @@ ELSE
 ! in order to create a null section
 END IF
 !
+! scalar variables used in blowing snow model
+!
+IF (LBLOWSNOW) THEN
+  NSV_SNW_A(KMI)   = NBLOWSNOW3D
+  NSV_SNWBEG_A(KMI)= ISV+1
+  NSV_SNWEND_A(KMI)= ISV+NSV_SNW_A(KMI)
+  ISV              = NSV_SNWEND_A(KMI)
+ELSE
+  NSV_SNW_A(KMI)   = 0
+! force First index to be superior to last index
+! in order to create a null section
+  NSV_SNWBEG_A(KMI)= 1
+  NSV_SNWEND_A(KMI)= 0
+END IF
+!
 ! scalar variables used as LiNOX passive tracer
 !
 ! In case without chemistry
@@ -552,6 +570,9 @@ LHORELAX_SV(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=LHORELAX_SVFF
 ! Conditional sampling
 IF (LCONDSAMP) &
 LHORELAX_SV(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=LHORELAX_SVCS
+! Blowing snow case
+IF (LBLOWSNOW) &
+LHORELAX_SV(NSV_SNWBEG_A(KMI):NSV_SNWEND_A(KMI))=LHORELAX_SVSNW
 ! Update NSV* variables for model KMI
 CALL UPDATE_NSV(KMI)
 !
@@ -591,7 +612,8 @@ IF (LPASPOL) XSVMIN(NSV_PPBEG_A(KMI):NSV_PPEND_A(KMI))=0.
 #ifdef MNH_FOREFIRE      
 IF (LFOREFIRE) XSVMIN(NSV_FFBEG_A(KMI):NSV_FFEND_A(KMI))=0.
 #endif
-IF (LCONDSAMP) XSVMIN(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=0.          
+IF (LCONDSAMP) XSVMIN(NSV_CSBEG_A(KMI):NSV_CSEND_A(KMI))=0.   
+IF (LBLOWSNOW) XSVMIN(NSV_SNWBEG_A(KMI):NSV_SNWEND_A(KMI))=XMNH_TINY
 !
 !  NAME OF THE SCALAR VARIABLES IN THE DIFFERENT SV GROUPS
 !

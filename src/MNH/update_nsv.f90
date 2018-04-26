@@ -23,6 +23,7 @@ END MODULE MODI_UPDATE_NSV
 !!                   the NSV_* variables.
 !!  Modify (Escobar ) 2/2014 : add Forefire var
 !!  Modify (Vie) 2016 : add LIMA
+!!         V. Vionnet 7/2017 : add blowing snow var
 USE MODD_CONF, ONLY : NVERB
 USE MODD_NSV
 IMPLICIT NONE 
@@ -110,6 +111,9 @@ NSV_FFEND   = NSV_FFEND_A(KMI)
 NSV_CS      = NSV_CS_A(KMI)
 NSV_CSBEG   = NSV_CSBEG_A(KMI)
 NSV_CSEND   = NSV_CSEND_A(KMI)
+NSV_SNW     = NSV_SNW_A(KMI)
+NSV_SNWBEG  = NSV_SNWBEG_A(KMI)
+NSV_SNWEND  = NSV_SNWEND_A(KMI)
 !
 
 END SUBROUTINE UPDATE_NSV

@@ -18,7 +18,7 @@ INTERFACE
                    OFOREFIRE,                                                      &
 #endif
                    OLNOX_EXPLICIT,                                                 &
-                   OCONDSAMP,                                                      &
+                   OCONDSAMP,OBLOWSNOW,                                            &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
@@ -52,6 +52,7 @@ LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 #endif
 LOGICAL,            INTENT(IN) :: OLNOX_EXPLICIT ! explicit LNOx FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
+LOGICAL,            INTENT(IN) :: OBLOWSNOW     ! Blowing snow FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCHTRANS       ! LCHTRANS FLAG in FMFILE
 
 LOGICAL,            INTENT(IN) :: OLG            ! lagrangian FLAG in FMFILE
@@ -90,7 +91,7 @@ END MODULE MODI_READ_EXSEG_n
                    OFOREFIRE,                                                      &
 #endif
                    OLNOX_EXPLICIT,                                                 &
-                   OCONDSAMP,                                                      &
+                   OCONDSAMP, OBLOWSNOW,                                           &
                    KRIMX,KRIMY, KSV_USER,                                          &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,              &
                    HEQNSYS,PTSTEP_ALL,HSTORAGE_TYPE,HINIFILEPGD                    )
@@ -286,6 +287,7 @@ END MODULE MODI_READ_EXSEG_n
 !!                             aerosol and no cloud scheme defined
 !!      Q.Libois       02/2018  ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Modification   07/2017   (V. Vionnet) add blowing snow scheme
 !!------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -362,11 +364,14 @@ USE MODD_FOREFIRE
 USE MODN_FOREFIRE
 #endif
 USE MODD_CONDSAMP
+USE MODD_BLOWSNOW
 USE MODN_DUST
 USE MODN_SALT
 USE MODD_CH_M9_n, ONLY : NEQ
 USE MODN_PASPOL
 USE MODN_CONDSAMP
+USE MODN_BLOWSNOW
+USE MODN_BLOWSNOW_n
 USE MODN_2D_FRC
 !
 IMPLICIT NONE
@@ -403,6 +408,7 @@ LOGICAL,            INTENT(IN) :: OFOREFIRE      ! ForeFire FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OLNOX_EXPLICIT ! explicit LNOx FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCONDSAMP      ! Conditional sampling FLAG in FMFILE
 LOGICAL,            INTENT(IN) :: OCHTRANS       ! LCHTRANS FLAG in FMFILE
+LOGICAL,            INTENT(IN) :: OBLOWSNOW     ! Blowing snow FLAG in FMFILE
 
 LOGICAL,            INTENT(IN) :: OLG            ! lagrangian FLAG in FMFILE
 INTEGER,            INTENT(IN) :: KRIMX, KRIMY   ! number of points for the
@@ -460,6 +466,7 @@ CALL INIT_NAM_TURBN
 CALL INIT_NAM_CH_MNHCN
 CALL INIT_NAM_CH_SOLVERN
 CALL INIT_NAM_SERIESN
+CALL INIT_NAM_BLOWSNOWN
 !
 WRITE(UNIT=ILUOUT,FMT="(/,'READING THE EXSEG.NAM FILE')")
 CALL POSNAM(ILUSEG,'NAM_LUNITN',GFOUND,ILUOUT)
@@ -494,6 +501,8 @@ CALL POSNAM(ILUSEG,'NAM_CH_SOLVERN',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_CH_SOLVERn)
 CALL POSNAM(ILUSEG,'NAM_SERIESN',GFOUND,ILUOUT)
 IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_SERIESn)
+CALL POSNAM(ILUSEG,'NAM_BLOWSNOWN',GFOUND,ILUOUT)
+IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BLOWSNOWn)
 !
 IF (KMI == 1) THEN                                               
   WRITE(UNIT=ILUOUT,FMT="(' namelists common to all the models ')")
@@ -632,6 +641,8 @@ IF (KMI == 1) THEN
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_2D_FRC)
   CALL POSNAM(ILUSEG,'NAM_LATZ_EDFLX',GFOUND)
   IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_LATZ_EDFLX)
+  CALL POSNAM(ILUSEG,'NAM_BLOWSNOW',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
 END IF
 !
 !-------------------------------------------------------------------------------
@@ -717,6 +728,20 @@ IF( CCLOUD == 'LIMA' ) THEN
   CALL TEST_NAM_VAR(ILUOUT,'CHEVRIMED_ICE_LIMA',CHEVRIMED_ICE_LIMA, &
                                                 'GRAU','HAIL')
 END IF
+IF(LBLOWSNOW) THEN
+       CALL TEST_NAM_VAR(ILUOUT,'CSNOWSEDIM',CSNOWSEDIM,'NONE','MITC','CARR','TABC')
+       IF (XALPHA_SNOW .NE. 3 .AND. CSNOWSEDIM=='TABC') THEN
+         WRITE(ILUOUT,*) '*****************************************'
+         WRITE(ILUOUT,*) '* XALPHA_SNW must be set to 3 when                '
+         WRITE(ILUOUT,*) '* CSNOWSEDIM = TABC                                 '
+         WRITE(ILUOUT,*) '* Update the look-up table in BLOWSNOW_SEDIM_LKT1D    '
+         WRITE(ILUOUT,*) '* to use TABC with a different value of XEMIALPHA_SNW'
+         WRITE(ILUOUT,*) '*****************************************'
+         !callabortstop
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','READ_EXSEG_n','')
+       ENDIF
+END IF
+!
 !-------------------------------------------------------------------------------!
 !*       2.    FIRST INITIALIZATIONS
 !              ---------------------
@@ -1902,6 +1927,28 @@ IF (LCONDSAMP) THEN
   END IF
 END IF
 !
+! Blowing snow scheme
+!
+IF (LBLOWSNOW) THEN
+  IF (OBLOWSNOW) THEN
+    CGETSVT(NSV_SNWBEG:NSV_SNWEND)='READ'
+  ELSE
+    WRITE(UNIT=ILUOUT,FMT=9001) KMI
+    WRITE(UNIT=ILUOUT,FMT='("THERE IS NO SCALAR VARIABLES FOR BLOWING SNOW &
+         &SCHEME IN INITIAL FMFILE",/,&
+         & "THE BLOWING SNOW VARIABLES HAVE BEEN INITIALIZED TO ZERO ")')
+    CGETSVT(NSV_SNWBEG:NSV_SNWEND)='INIT'
+  END IF
+  IF(.NOT.ALLOCATED(CSNOWNAMES)) THEN
+    IMOMENTS = (NSV_SNWEND - NSV_SNWBEG +1 )
+    ALLOCATE(CSNOWNAMES(IMOMENTS))
+    DO JMOM=1,IMOMENTS
+      CSNOWNAMES(JMOM) = YPSNOW_INI(JMOM)
+    ENDDO ! Loop on moments
+  END IF
+END IF
+!
+!
 !
 !*       3.5  Check coherence between the radiation control parameters
 !
@@ -2381,6 +2428,13 @@ IF (.NOT. LCONDSAMP .AND. LHORELAX_SVCS) THEN
   WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVCS=FALSE'
 END IF
 
+IF (.NOT. LBLOWSNOW .AND. LHORELAX_SVSNW) THEN
+  LHORELAX_SVSNW=.FALSE.
+  WRITE(UNIT=ILUOUT,FMT=9002) KMI
+  WRITE(ILUOUT,FMT=*) 'YOU WANT TO RELAX BLOWING SNOW FIELD BUT IT DOES NOT EXIST.'
+  WRITE(ILUOUT,FMT=*) 'THEREFORE LHORELAX_SVSNW=FALSE'
+END IF
+
 IF (ANY(LHORELAX_SV(NSV+1:))) THEN
   LHORELAX_SV(NSV+1:)=.FALSE.
   WRITE(UNIT=ILUOUT,FMT=9002) KMI
@@ -2752,6 +2806,7 @@ CALL UPDATE_NAM_TURBN
 CALL UPDATE_NAM_CH_MNHCN
 CALL UPDATE_NAM_CH_SOLVERN
 CALL UPDATE_NAM_SERIESN
+CALL UPDATE_NAM_BLOWSNOWN
 !-------------------------------------------------------------------------------
 WRITE(UNIT=ILUOUT,FMT='(/)')
 !-------------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITESURF_SBL_n (HSELECT, OSBL, SB, HPROGRAM, HWRITE, HSURF)
+      SUBROUTINE WRITESURF_SBL_n (HSELECT, OSBL, SB, HPROGRAM, HWRITE, HSURF,SV)
 !     ####################################
 !
 !!****  *WRITE_FLAKE_n* - writes FLAKE fields
@@ -39,6 +39,7 @@
 !              ------------
 !
 USE MODD_CANOPY_n, ONLY : CANOPY_t
+USE MODD_SV_n, ONLY : SV_t
 !
 USE MODI_WRITE_SURF
 USE MODI_END_IO_SURF_n
@@ -56,6 +57,7 @@ IMPLICIT NONE
  LOGICAL, INTENT(IN) :: OSBL
 !
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
+TYPE(SV_t), INTENT(IN),OPTIONAL :: SV
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
  CHARACTER(LEN=3),    INTENT(IN)  :: HWRITE    ! 'PREP' : does not write SBL XUNDEF fields
@@ -71,7 +73,7 @@ INTEGER           :: IRESP          ! IRESP  : return-code if a problem appears
  CHARACTER(LEN=13) :: YFORMAT 
  CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 !
-INTEGER :: JL  ! loop counter on layers
+INTEGER :: JL,JN  ! loop counter on layers
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------------------
 !
@@ -204,6 +206,20 @@ IF (HWRITE/='PRE') THEN
     CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,SB%XP(:,JL),IRESP,HCOMMENT=YCOMMENT)
   END DO
   !
+  IF (HSURF=="NATURE") THEN
+    IF(SV%NSNWEQ>0) THEN
+      DO JN=1,SV%NSNWEQ
+      !DO JN=1,2
+        DO JL=1,SB%NLVL
+          WRITE(YRECFM,'(A8,I1.1,A1,I2.2)') 'CANSNW_M',JN,'L',JL
+          YCOMMENT='Blown snow variables at canopy levels (__ /kg)'
+          CALL WRITE_SURF(HSELECT,HPROGRAM,YRECFM,SB%XBLOWSNW(:,JL,JN),IRESP,HCOMMENT=YCOMMENT)
+        END DO
+      END DO
+    ENDIF
+  ENDIF           
+
+
 ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('WRITESURF_SBL_N',1,ZHOOK_HANDLE)

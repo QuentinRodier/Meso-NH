@@ -190,7 +190,7 @@ END MODULE MODI_ENDSTEP
 !!                 10/2009  (C.Lac)       Correction on FIT temporal scheme for variables
 !!                                         advected with PPM
 !!                 04/2013  (C.Lac)       FIT for all the variables     
-!!                 04/2014  (C.Lac)       Check on the positivity of XSVT
+!!                 04/2014  (C.Lac)       Check on the positivity of PSVT
 !!                 J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!
 !------------------------------------------------------------------------------
@@ -205,12 +205,14 @@ USE MODD_GRID_n
 USE MODD_BUDGET
 USE MODD_NSV, ONLY : XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
                      NSV_AERBEG, NSV_AEREND,&
-                     NSV_DSTBEG, NSV_DSTEND
-
+                     NSV_DSTBEG, NSV_DSTEND,&
+                     NSV_SNWBEG, NSV_SNWEND
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_DUST,       ONLY : LDUST
 USE MODD_PARAM_C2R2, ONLY : LACTIT
 USE MODD_LBC_n, ONLY : CLBCX, CLBCY
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 USE MODI_BUDGET
 USE MODI_SHUMAN
 !
@@ -315,6 +317,24 @@ IF (SIZE(PTKET,1) /= 0) PTKET(:,:,:)=PTKES(:,:,:)
 ! Other scalars
 !
 PSVT(:,:,:,1:KSV)=PSVS(:,:,:,1:KSV)
+!
+IF(LBLOWSNOW) THEN
+   DO JSV=1,(NBLOWSNOW_2D)
+       XSNWCANO(:,:,JSV) = XRSNWCANOS(:,:,JSV)
+   END DO
+!*         MINIMUM VALUE FOR BLOWING SNOW
+!
+   WHERE(XSNWCANO(:,:,:)<1.E-20)
+       XSNWCANO(:,:,:)=0.
+   END WHERE
+
+   IF (SIZE(PSVT,4) > 1) THEN
+     WHERE(PSVT(:,:,:,NSV_SNWBEG:NSV_SNWEND)<1.E-20)
+       PSVT(:,:,:,NSV_SNWBEG:NSV_SNWEND)=0.
+     END WHERE
+   END IF
+!
+END IF
 !
 IF (LWEST_ll( ) .AND. CLBCX(1)=='OPEN') THEN
  DO JSV=1,KSV

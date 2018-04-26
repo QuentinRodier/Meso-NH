@@ -26,6 +26,7 @@
 !!       C.Lac         07/11    add conditional sampling
 !!       Pialat/Tulet  15/02/12 add ForeFire
 !!      Modification    01/2016  (JP Pinty) Add LIMA
+!!       V. Vionnet     07/17   add blowing snow
 !!
 !-------------------------------------------------------------------------------
 !
@@ -135,6 +136,10 @@ INTEGER,DIMENSION(JPMODELMAX)::NSV_FFBEG_A = 0 ! with indices in the range :
 INTEGER,DIMENSION(JPMODELMAX)::NSV_FFEND_A = 0 ! NSV_FFBEG_A...NSV_FFEND_A
 #endif
 !
+INTEGER,DIMENSION(JPMODELMAX)::NSV_SNW_A = 0    ! number of blowing snow scalar
+INTEGER,DIMENSION(JPMODELMAX)::NSV_SNWBEG_A = 0 ! with indices in the range :
+INTEGER,DIMENSION(JPMODELMAX)::NSV_SNWEND_A = 0 ! NSV_SNWBEG_A...NSV_SNWEND_A
+!
 !###############################################################################
 !
 ! variables updated for the current model
@@ -231,5 +236,9 @@ INTEGER :: NSV_FF    = 0 ! number of ForeFire scalar variables
 INTEGER :: NSV_FFBEG = 0 ! with indices in the range :
 INTEGER :: NSV_FFEND = 0 ! NSV_FFBEG...NSV_FFEND
 #endif
+!
+INTEGER :: NSV_SNW     = 0 ! number of blowing snow scalar variables
+INTEGER :: NSV_SNWBEG  = 0 ! with indices in the range :
+INTEGER :: NSV_SNWEND  = 0 ! NSV_SNWBEG...NSV_SNWEND
 
 END MODULE MODD_NSV

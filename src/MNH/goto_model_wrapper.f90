@@ -14,6 +14,7 @@
 !!                      07/2017 (M.Leriche) Add DIAG chimical surface fluxes
 !                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!                  2017 V.Vionnet blow snow
 !-----------------------------------------------------------------
 MODULE MODI_GOTO_MODEL_WRAPPER
 
@@ -87,6 +88,7 @@ USE MODD_SERIES_n
 USE MODD_STATION_n
 !USE MODD_TIME_n
 USE MODD_TURB_n
+USE MODD_BLOWSNOW_n
 !
 USE MODD_SUB_CH_FIELD_VALUE_n
 USE MODD_SUB_CH_MONITOR_n
@@ -221,6 +223,7 @@ CALL ADVFRC_GOTO_MODEL(KFROM, KTO)
 CALL RELFRC_GOTO_MODEL(KFROM, KTO)
 CALL CH_PRODLOSSTOT_GOTO_MODEL(KFROM,KTO)
 CALL CH_BUDGET_GOTO_MODEL(KFROM,KTO)
+CALL BLOWSNOW_GOTO_MODEL(KFROM, KTO)
 !
 IF (.NOT.GNOFIELDLIST) CALL FIELDLIST_GOTO_MODEL(KFROM, KTO)
 !

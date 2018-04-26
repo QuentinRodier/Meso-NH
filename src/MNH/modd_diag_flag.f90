@@ -85,6 +85,7 @@ REAL, DIMENSION(2) :: XMEAN_POVO
 LOGICAL     :: LGEO        ! Geostrophic wind (m/s)
 LOGICAL     :: LAGEO       ! Ageostrophic wind (m/s)
 LOGICAL     :: LWIND_ZM    ! Zonal and meridien components of wind (m/s)
+LOGICAL     :: LWIND_CONTRAV ! Contravariant component of wind (m/s)
 LOGICAL     :: LMSLP       ! Mean Sea Level Pressure (hPa)
 LOGICAL     :: LTHW
 LOGICAL     :: LCLD_COV

@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, SLT, &
+SUBROUTINE COUPLING_NATURE_n (DTCO, UG, U, USS, IM, DTZ, DGO, DL, DLC, NDST, SLT, BLOWSNW, &
                               HPROGRAM, HCOUPLING, PTIMEC, PTSTEP, KYEAR, KMONTH, KDAY, PTIME, &
                               KI, KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS,&
                               PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &
@@ -46,6 +46,7 @@ USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 USE MODD_DIAG_n, ONLY : DIAG_t, DIAG_OPTIONS_t
 USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -73,6 +74,7 @@ TYPE(DIAG_t), INTENT(INOUT) :: DL
 TYPE(DIAG_t), INTENT(INOUT) :: DLC
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -150,15 +152,15 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_NATURE_N',0,ZHOOK_HANDLE)
 IF (U%CNATURE=='ISBA  ') THEN
-  CALL COUPLING_ISBA_SVAT_n(DTCO, UG, U, USS, IM, NDST, SLT, HPROGRAM, HCOUPLING,  PTSTEP,    &
-                            KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,  PTSUN, PZENITH,       &
+  CALL COUPLING_ISBA_SVAT_n(DTCO, UG, U, USS, IM, NDST, SLT, BLOWSNW, HPROGRAM, HCOUPLING,  PTSTEP,    &
+                            KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW,  PTSUN, PZENITH,&
                             PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, PSV,&
                             PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS,  &
                             PPA, PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,   &
                             PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, PPEW_A_COEF,         &
                             PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF,'OK')  
 ELSE IF (U%CNATURE=='TSZ0  ') THEN
-  CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ,  NDST, SLT,     &
+  CALL COUPLING_TSZ0_n(DTCO, UG, U, USS, IM, DTZ,  NDST, SLT, BLOWSNW,     &
                        HPROGRAM, HCOUPLING, PTSTEP, KYEAR, KMONTH, KDAY, PTIMEC, KI,    &
                        KSV, KSW, PTSUN, PZENITH,  PZENITH2, PAZIM, PZREF, PUREF, PZS,   &
                        PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,      &

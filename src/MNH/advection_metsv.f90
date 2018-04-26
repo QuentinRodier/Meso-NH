@@ -134,6 +134,8 @@ END MODULE MODI_ADVECTION_METSV
 !!                  10/2016  (C.Lac) Correction on the flag for Strang splitting
 !!                                  to insure reproducibility between START and RESTA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                  07/2017  (V. Vionnet)  : add advection of 2D variables at
+!!                                      the surface for the blowing snow scheme
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -147,6 +149,9 @@ USE MODD_IO_ll,     ONLY: TFILEDATA
 USE MODD_LUNIT_n,   ONLY: TLUOUT
 USE MODD_PARAM_n
 USE MODD_TYPE_DATE, ONLY: DATE_TIME
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
+USE MODD_PARAMETERS
 !
 USE MODE_FIELD,     ONLY: TFIELDDATA, TYPEREAL
 USE MODE_FMWRIT
@@ -233,12 +238,17 @@ REAL, DIMENSION(SIZE(PTHT,1), SIZE(PTHT,2), SIZE(PTHT,3) ) :: ZRTHS_PPM
 REAL, DIMENSION(SIZE(PTKET,1),SIZE(PTKET,2),SIZE(PTKET,3)) :: ZRTKES_PPM
 REAL, DIMENSION(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3), SIZE(PRT,4) ) :: ZR
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZSV
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NBLOWSNOW_2D) :: ZSNWC
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NBLOWSNOW_2D) :: ZSNWC_INIT
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3), NBLOWSNOW_2D) :: ZRSNWCS
 ! Guess at the sub time step
 REAL, DIMENSION(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3), SIZE(PRT,4) ) :: ZRRS_OTHER
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZRSVS_OTHER
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),NBLOWSNOW_2D) ::  ZRSNWCS_OTHER
 ! Tendencies since the beginning of the time step
 REAL, DIMENSION(SIZE(PRT,1), SIZE(PRT,2), SIZE(PRT,3), SIZE(PRT,4) ) :: ZRRS_PPM
 REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),SIZE(PSVT,4)) :: ZRSVS_PPM
+REAL, DIMENSION(SIZE(PSVT,1),SIZE(PSVT,2),SIZE(PSVT,3),NBLOWSNOW_2D) :: ZRSNWCS_PPM
 ! Guess at the end of the sub time step
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOX1,ZRHOX2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOY1,ZRHOY2
@@ -246,7 +256,7 @@ REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: ZRHOZ1,ZRHOZ2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZT,ZEXN,ZLV,ZLS,ZCPH
 ! Temporary advected rhodj for PPM routines
 !
-INTEGER :: JS,JR,JSV,JSPL  ! Loop index
+INTEGER :: JS,JR,JSV,JSPL, JI, JJ  ! Loop index
 REAL    :: ZTSTEP_PPM ! Sub Time step 
 LOGICAL :: GTKE
 !
@@ -258,7 +268,7 @@ TYPE(LIST_ll), POINTER      :: TZFIELDS1_ll ! list of fields to exchange
 INTEGER             :: IRESP        ! Return code of FM routines
 INTEGER             :: ILUOUT       ! logical unit
 INTEGER             :: ISPLIT_PPM   ! temporal time splitting 
-INTEGER             :: IIB, IIE, IJB, IJE
+INTEGER             :: IIB, IIE, IJB, IJE,IKB,IKE
 TYPE(TFIELDDATA) :: TZFIELD
 !-------------------------------------------------------------------------------
 !
@@ -268,8 +278,23 @@ TYPE(TFIELDDATA) :: TZFIELD
 ILUOUT = TLUOUT%NLU
 !
 CALL GET_INDICE_ll(IIB,IJB,IIE,IJE)
+IKB=1+JPVEXT
+IKE=SIZE(PSVT,3) - JPVEXT
+
 !
 GTKE=(SIZE(PTKET)/=0)
+!
+!
+IF(LBLOWSNOW) THEN    ! Put 2D Canopy blowing snow variables into a 3D array for advection
+  ZSNWC_INIT = 0.
+  ZRSNWCS = 0.
+
+  DO JSV=1,(NBLOWSNOW_2D)
+     ZSNWC_INIT(:,:,IKB,JSV) = XSNWCANO(:,:,JSV)
+     ZRSNWCS(:,:,IKB,JSV)    = XRSNWCANOS(:,:,JSV)
+  END DO
+ENDIF
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -442,6 +467,11 @@ END DO
 DO JSV = 1, KSV
  ZRSVS_OTHER(:,:,:,JSV) = PRSVS(:,:,:,JSV) - PSVT(:,:,:,JSV) * PRHODJ / PTSTEP
 END DO
+IF(LBLOWSNOW) THEN
+   DO JSV = 1, (NBLOWSNOW_2D)        
+     ZRSNWCS_OTHER(:,:,:,JSV) = ZRSNWCS(:,:,:,JSV) - ZSNWC_INIT(:,:,:,JSV) * PRHODJ / PTSTEP
+   END DO   
+ENDIF
 !
 ! Top and bottom Boundaries 
 !
@@ -453,6 +483,11 @@ END DO
 DO JSV = 1, KSV
   CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZRSVS_OTHER(:,:,:,JSV))
 END DO
+IF(LBLOWSNOW) THEN
+  DO JSV = 1, (NBLOWSNOW_2D)        
+    CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZRSNWCS_OTHER(:,:,:,JSV))
+  END DO 
+END IF
 !
 ! Exchanges on processors
 !
@@ -466,6 +501,11 @@ NULLIFY(TZFIELDS0_ll)
   DO JSV=1,KSV
     CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRSVS_OTHER(:,:,:,JSV))
   END DO
+  IF(LBLOWSNOW) THEN
+    DO JSV = 1, (NBLOWSNOW_2D)  
+      CALL ADD3DFIELD_ll(TZFIELDS0_ll, ZRSNWCS_OTHER(:,:,:,JSV))
+    END DO
+  END IF
   CALL UPDATE_HALO_ll(TZFIELDS0_ll,IINFO_ll)
   CALL CLEANLIST_ll(TZFIELDS0_ll)
 !!$END IF
@@ -486,6 +526,13 @@ ZTH   = PTHT
 ZTKE   = PTKET
 IF (KRR /=0 ) ZR    = PRT
 IF (KSV /=0 ) ZSV   = PSVT
+IF(LBLOWSNOW) THEN
+    DO JSV = 1, (NBLOWSNOW_2D)
+        ZSNWC(:,:,:,JSV) = ZRSNWCS(:,:,:,JSV)* PTSTEP/ PRHODJ
+        CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZSNWC(:,:,:,JSV))
+    END DO
+    ZSNWC_INIT=ZSNWC
+ENDIF
 !
 IF (GTKE)    PRTKES_ADV(:,:,:)  = 0.              
 !
@@ -540,6 +587,28 @@ DO JSPL=1,KSPLIT
    DO JSV = 1, KSV
      CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZSV(:,:,:,JSV), PSVT(:,:,:,JSV))
    END DO
+
+   IF(LBLOWSNOW) THEN ! Advection of Canopy mass at the 1st atmospheric level
+      ZRSNWCS_PPM(:,:,:,:) = 0.
+   !
+
+      CALL PPM_SCALAR (HLBCX,HLBCY, NBLOWSNOW_2D, TPDTCUR, ZRUCPPM, ZRVCPPM, ZRWCPPM,PTSTEP,    &
+                 ZTSTEP_PPM, PRHODJ, ZRHOX1, ZRHOX2, ZRHOY1, ZRHOY2,  ZRHOZ1, ZRHOZ2,          &
+                 ZSNWC, ZRSNWCS_PPM, HSV_ADV_SCHEME)
+
+
+! Tendencies of PPM
+      ZRSNWCS(:,:,:,:)        =    ZRSNWCS(:,:,:,:)  + ZRSNWCS_PPM (:,:,:,:)   / KSPLIT
+!  Guesses of the field inside the time splitting loop 
+      DO JSV = 1, ( NBLOWSNOW_2D)
+          ZSNWC(:,:,:,JSV) = ZSNWC(:,:,:,JSV) + ZRSNWCS_PPM(:,:,:,JSV)*ZTSTEP_PPM/ PRHODJ(:,:,:)  
+      END DO
+
+! Top and bottom Boundaries and LBC for the guesses      
+      DO JSV = 1, (NBLOWSNOW_2D)
+          CALL ADV_BOUNDARIES (HLBCX, HLBCY, ZSNWC(:,:,:,JSV), ZSNWC_INIT(:,:,:,JSV))
+      END DO
+   END IF   
 !
 !  Exchanges fields between processors
 !
@@ -553,6 +622,11 @@ DO JSPL=1,KSPLIT
     DO JSV=1,KSV
       CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZSV(:,:,:,JSV))
     END DO
+    IF(LBLOWSNOW) THEN
+       DO JSV=1,(NBLOWSNOW_2D)
+         CALL ADD3DFIELD_ll(TZFIELDS1_ll, ZSNWC(:,:,:,JSV))
+       END DO
+    END IF
     CALL UPDATE_HALO_ll(TZFIELDS1_ll,IINFO_ll)
     CALL CLEANLIST_ll(TZFIELDS1_ll)
 !!$   END IF
@@ -572,6 +646,25 @@ IF (GTKE) THEN
    PRTKES(:,:,:) = MAX (PRTKES(:,:,:) , XTKEMIN * PRHODJ(:,:,:) / PTSTEP )
 END IF
 !
+!
+!-------------------------------------------------------------------------------
+! Update tendency for cano variables : from 3D to 2D
+! 
+IF(LBLOWSNOW) THEN
+
+    DO JSV=1,(NBLOWSNOW_2D) 
+       DO JI=1,SIZE(PSVT,1)
+         DO JJ=1,SIZE(PSVT,2)
+             XRSNWCANOS(JI,JJ,JSV) = SUM(ZRSNWCS(JI,JJ,IKB:IKE,JSV))
+         END DO
+       END DO
+    END DO
+IF(LWEST_ll())  XRSNWCANOS(IIB,:,:)  = ZRSNWCS(IIB,:,IKB,:)
+IF(LEAST_ll())  XRSNWCANOS(IIE,:,:)  = ZRSNWCS(IIE,:,IKB,:)
+IF(LSOUTH_ll()) XRSNWCANOS(:,IJB,:)  = ZRSNWCS(:,IJB,IKB,:)
+IF(LNORTH_ll()) XRSNWCANOS(:,IJE,:)  = ZRSNWCS(:,IJE,IKB,:)
+
+END IF
 !-------------------------------------------------------------------------------
 !
 !*       5.     BUDGETS                                                 

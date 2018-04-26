@@ -95,6 +95,7 @@ USE MODD_CTURB
 USE MODD_PARAMETERS
 USE MODD_NSV, ONLY : NSV,NSV_LGBEG,NSV_LGEND
 USE MODD_LES
+USE MODD_BLOWSNOW
 !
 USE MODI_GRADIENT_M
 USE MODI_GRADIENT_U
@@ -148,10 +149,19 @@ REAL :: ZTIME1, ZTIME2
 REAL :: ZCSVD  = 1.2  ! constant for scalar variance dissipation
 REAL :: ZCTSVD = 2.4  ! constant for temperature - scalar covariance dissipation
 REAL :: ZCQSVD = 2.4  ! constant for humidity - scalar covariance dissipation
+!
+REAL :: ZCSV          !constant for the scalar flux 
 ! ---------------------------------------------------------------------------
 !
 IKU=SIZE(PTKEM,3)
 CALL SECOND_MNH(ZTIME1)
+!
+IF(LBLOWSNOW) THEN
+! See Vionnet (PhD, 2012) for a complete discussion around the value of the Schmidt number for blowing snow variables        
+   ZCSV= XCHF/XRSNOW 
+ELSE
+   ZCSV= XCHF
+ENDIF
 !
 DO JSV=1,NSV
 !
@@ -161,11 +171,11 @@ DO JSV=1,NSV
   !
   IF (LLES_CALL) THEN
     IF (.NOT. L2D) THEN
-      ZFLX(:,:,:) =  XCHF / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
+      ZFLX(:,:,:) =  ZCSV / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
          (  GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2             &
           + GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)**2 )
     ELSE
-      ZFLX(:,:,:) =  XCHF / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
+      ZFLX(:,:,:) =  ZCSV / ZCSVD * PLM(:,:,:) * PLEPS(:,:,:) *   &
             GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)**2
     END IF
     CALL LES_MEAN_SUBGRID( -2.*ZCSVD*SQRT(PTKEM)*ZFLX/PLEPS, &
@@ -181,11 +191,11 @@ DO JSV=1,NSV
       ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                          &
           *  (  GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
               + GY_M_M(1,IKU,1,PTHLM,PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
-             ) * (XCSHF+XCHF) / (2.*ZCTSVD)
+             ) * (XCSHF+ZCSV) / (2.*ZCTSVD)
     ELSE
       ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                          &
               * GX_M_M(1,IKU,1,PTHLM,PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
-              * (XCSHF+XCHF) / (2.*ZCTSVD)
+              * (XCSHF+ZCSV) / (2.*ZCTSVD)
     END IF
     CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_SvThv(:,:,:,JSV) , .TRUE.)
     CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_SvPz(:,:,:,JSV), .TRUE. )
@@ -196,11 +206,11 @@ DO JSV=1,NSV
         ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                                 &
             *  (  GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
                 + GY_M_M(1,IKU,1,PRM(:,:,:,1),PDYY,PDZZ,PDZY) * GY_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)  &
-               ) * (XCHF+XCHF) / (2.*ZCQSVD)
+               ) * (XCHF+ZCSV) / (2.*ZCQSVD)
       ELSE
         ZFLX(:,:,:)=  PLM(:,:,:) * PLEPS(:,:,:)                                                 &
                 * GX_M_M(1,IKU,1,PRM(:,:,:,1),PDXX,PDZZ,PDZX) * GX_M_M(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)  &
-                * (XCHF+XCHF) / (2.*ZCQSVD)
+                * (XCHF+ZCSV) / (2.*ZCQSVD)
       END IF
       CALL LES_MEAN_SUBGRID( ZA*ZFLX, X_LES_SUBGRID_SvThv(:,:,:,JSV) , .TRUE.)
       CALL LES_MEAN_SUBGRID( -XG/PTHVREF/3.*ZA*ZFLX, X_LES_SUBGRID_SvPz(:,:,:,JSV), .TRUE. )

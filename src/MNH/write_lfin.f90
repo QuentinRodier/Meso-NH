@@ -167,6 +167,7 @@ END MODULE MODI_WRITE_LFIFM_n
 !!       JP Chaboureau 27/11/2017 add wind tendency forcing
 !!                   02/2018 Q.Libois move Diagnostic related to the radiations in radiations.f90
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!       V. Vionnet    07/2017, add blowing snow variables
 !!                   
 !-------------------------------------------------------------------------------
 !
@@ -224,6 +225,8 @@ USE MODD_FOREFIRE
 #endif
 USE MODD_CONDSAMP
 USE MODD_CH_AEROSOL
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 USE MODD_PAST_FIELD_n
 USE MODD_ADV_n, ONLY: CUVW_ADV_SCHEME,XRTKEMS,CTEMP_SCHEME
 USE MODD_ELEC_FLASH
@@ -948,6 +951,37 @@ IF (NSV >=1) THEN
     END DO
   END IF
 #endif
+! Blowing snow variables
+  IF (LBLOWSNOW) THEN
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'kg kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    DO JSV = NSV_SNWBEG,NSV_SNWEND
+      TZFIELD%CMNHNAME=TRIM(CSNOWNAMES(JSV-NSV_SNWBEG+1))//'T'
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
+      JSA=JSA+1
+    END DO
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CUNITS     = 'kg kg-1'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 2
+    TZFIELD%LTIMEDEP   = .TRUE.
+    DO JSV = 1,(NSV_SNW)
+      WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SNOWCANO_M',JSV
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      WRITE(TZFIELD%CCOMMENT,'(A6,A8,I3.3,A8)')'X_Y_Z_','SNOWCANO',JSV,' (KG/KG)'
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSNWCANO(:,:,JSV))
+      JSA=JSA+1
+    END DO
+  ENDIF
   ! Conditional sampling variables  
   IF (LCONDSAMP) THEN
     TZFIELD%CSTDNAME   = ''
@@ -1728,7 +1762,43 @@ IF (CPROGRAM /= 'IDEAL') THEN
   END IF
 !
 END IF
-!
+
+  IF(LBLOWSNOW) THEN
+    IF (ASSOCIATED(XSNWSUBL3D)) THEN
+      IF (SIZE(XSNWSUBL3D) /= 0 ) THEN
+
+        TZFIELD%CMNHNAME   = 'SNWSUBL3D'
+        TZFIELD%CSTDNAME   = ''
+        TZFIELD%CLONGNAME  = 'SNWSUBL3D'
+        TZFIELD%CUNITS     = 'KG/M3/S'
+        TZFIELD%CDIR       = 'XY'
+        TZFIELD%CCOMMENT   = 'X_Y_INstantaneous 3D Drifting snow sublimation flux (KG/M3/S)'
+        TZFIELD%NGRID      = 1
+        TZFIELD%NTYPE      = TYPEREAL
+        TZFIELD%NDIMS      = 3
+        TZFIELD%LTIMEDEP   = .TRUE.
+        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSNWSUBL3D(:,:,:))
+        ZWORK2D(:,:) = 0.
+        DO JK = IKB,IKE
+          ZWORK2D(:,:) = ZWORK2D(:,:)+XSNWSUBL3D(:,:,JK) * &
+                     (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW*3600*24
+        END DO
+        ZWORK2D(:,:) = ZWORK2D(:,:)*1000. ! vapor water in mm unit
+
+        TZFIELD%CMNHNAME   = 'COL_SNWSUBL'
+        TZFIELD%CSTDNAME   = ''
+        TZFIELD%CLONGNAME  = 'COL_SNWSUBL'
+        TZFIELD%CUNITS     = 'mmSWE/day'
+        TZFIELD%CDIR       = 'XY'
+        TZFIELD%CCOMMENT   = 'X_Y_Column Sublimation Rate (mmSWE/day)'
+        TZFIELD%NGRID      = 1
+        TZFIELD%NTYPE      = TYPEREAL
+        TZFIELD%NDIMS      = 2
+        TZFIELD%LTIMEDEP   = .TRUE.
+        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK2D(:,:))
+     END IF
+    END IF
+  ENDIF
 !
 !*       1.11   Forcing variables
 !

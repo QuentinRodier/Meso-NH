@@ -11,7 +11,8 @@ SUBROUTINE SNOW3L_ISBA(IO, G, PK, PEK, DK, DEK, DMK, OMEB, HIMPLICIT_WIND,      
                        PPEQ_A_COEF, PPET_B_COEF, PPEQ_B_COEF, PTHRUFAL,          &
                        PGRNDFLUX, PFLSN_COR, PGSFCSNOW, PEVAPCOR, PLES3L, PLEL3L,&
                        PEVAP, PSNOWSFCH, PDELHEATN, PDELHEATN_SFC, PRI, PZENITH, &
-                       PDELHEATG, PDELHEATG_SFC, PQS             )                               
+                       PDELHEATG, PDELHEATG_SFC, PQS ,                           &
+                       PBLOWSNW_FLUX,PBLOWSNW_CONC)                                                                        
 !     ######################################################################################
 !
 !!****  *SNOW3L_ISBA*  
@@ -84,9 +85,12 @@ USE MODD_DATA_COVER_PAR, ONLY : NVT_SNOW,                       &
                                 NVT_TRBD, NVT_TEBE, NVT_TENE,   &
                                 NVT_BOBD, NVT_BOND, NVT_SHRB
 !
+USE MODD_BLOWSNW_SURF
+!
 USE MODI_SNOW3L
 USE MODI_SNOWCRO
 USE MODI_SNOWCRO_DIAG
+USE MODI_SNOWPACK_EVOL
 !
 #ifdef SFX_OL
 USE MODN_IO_OFFLINE, ONLY : XTSTEP_OUTPUT
@@ -207,6 +211,15 @@ REAL, DIMENSION(:), INTENT(OUT)     :: PQS
 ! puis plus tard dans LALB
 REAL, DIMENSION(:), INTENT(IN)      :: PZENITH    ! solar zenith angle
 !
+REAL, DIMENSION(:,:), INTENT(INOUT) :: PBLOWSNW_FLUX
+!                                      PBLOWSNW_FLUX  = Blowing snow particles flux:
+!                                           1: Number (#/m2/s) 2: Mass (kg/m2/s)
+!                                        IN : contains sedimentation flux
+!                                        OUT : contains emitted turbulent flux towards the atmosphere
+REAL, DIMENSION(:,:), INTENT(IN)    :: PBLOWSNW_CONC
+!                                      PBLOWSNW_CONC = Blowing snow particles concentration:
+!                                           1: Number (#/m3) 2: Mass (kg/m3)
+!
 !*      0.2    declarations of local variables
 !
 REAL, PARAMETER                     :: ZCHECK_TEMP = 50.0 
@@ -216,6 +229,7 @@ INTEGER                             :: JWRK, JJ ! Loop control
 !
 INTEGER                             :: INLVLS   ! maximum number of snow layers
 INTEGER                             :: INLVLG   ! number of ground layers
+INTEGER                             :: IBLOWSNW ! number of blowing snow variables
 !
 REAL, DIMENSION(SIZE(PTA))          :: ZRRSNOW, ZSOILCOND, ZSNOW, ZSNOWFALL,  &
                                        ZSNOWABLAT_DELTA, ZSNOWSWE_1D, ZSNOWD, & 
@@ -247,6 +261,11 @@ REAL, DIMENSION(SIZE(PTA))          :: ZRRSNOW, ZSOILCOND, ZSNOW, ZSNOWFALL,  &
 !                                                     of total ablation during a timestep (-).
 !                                      ZWORK        = local working variable (*)
 !                                      ZC2          = sub-surface heat capacity [(K m2)/J]
+REAL, DIMENSION(SIZE(PTA))          :: ZBLOWSNW_ACC,ZBLOWSNW_DEPFLUX
+!                                      ZBLOWSNW_ACC  = minimum equivalent snow depth
+!                                                      for deposition of blown snow particles
+!                                                      during the current time step (m)
+!                                      ZBLOWSNW_DEPFLUX = deposition flux of blowing snow (kg/m2/s)
 !
 !*      0.3    declarations of packed  variables
 !
@@ -299,6 +318,8 @@ ZSOILCOND(:)   = 0.0
 ZRRSNOW(:)     = 0.0
 ZSNOWFALL(:)   = 0.0
 ZSNOWABLAT_DELTA(:) = 0.0
+ZBLOWSNW_ACC(:) = 0.0
+ZBLOWSNW_DEPFLUX(:) = 0.0
 !
 ZWGHT(:)       = 0.0
 ZWORK(:)       = 0.0
@@ -309,6 +330,7 @@ DMK%XSNOWDZ(:,:)   = 0.0
 !
 INLVLS          = SIZE(PEK%TSNOW%WSNOW(:,:),2)    
 INLVLG          = MIN(SIZE(PD_G(:,:),2),SIZE(PTG(:,:),2)) 
+IBLOWSNW       = SIZE(PBLOWSNW_FLUX(:,:),2)
 !
 !
 IF(.NOT.OMEB)THEN 
@@ -359,6 +381,19 @@ IF (PEK%TSNOW%SCHEME=='3-L' .OR. IO%CISBA == 'DIF' .OR. PEK%TSNOW%SCHEME == 'CRO
     ZSNOWFALL(JJ)      = PSR(JJ)*PTSTEP/XRHOSMAX_ES    ! maximum possible snowfall depth (m)
   ENDDO
 !
+! Calculate maximum deposited snow depth (m) of blown snow particles
+!
+!
+  IF(IBLOWSNW>0.)THEN
+       DO JJ=1,SIZE(PSR)   
+            ZBLOWSNW_ACC(JJ)=(PBLOWSNW_FLUX(JJ,2)+PBLOWSNW_FLUX(JJ,3))*PTSTEP/XRHO_DEP
+            IF (PBLOWSNW_FLUX(JJ,2)+PBLOWSNW_FLUX(JJ,3)>0.) THEN
+                ZBLOWSNW_DEPFLUX(JJ) = (PBLOWSNW_FLUX(JJ,2)+PBLOWSNW_FLUX(JJ,3))
+            ENDIF  
+       ENDDO  
+  ENDIF   
+!
+!
 ! Calculate preliminary snow depth (m)
 
   ZSNOW(:)      =0.
@@ -400,13 +435,13 @@ IF (PEK%TSNOW%SCHEME=='3-L' .OR. IO%CISBA == 'DIF' .OR. PEK%TSNOW%SCHEME == 'CRO
   NMASK(:) = 0
 !
   DO JJ=1,SIZE(ZSNOW)
-    IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN) THEN
+    IF (ZSNOW(JJ) >= XSNOWDMIN .OR. ZSNOWFALL(JJ) >= XSNOWDMIN .OR. ZBLOWSNW_ACC(JJ) >= XSNOWDMIN) THEN
       ISIZE_SNOW = ISIZE_SNOW + 1
       NMASK(ISIZE_SNOW) = JJ
     ENDIF
   ENDDO
 !  
-  IF (ISIZE_SNOW>0) CALL CALL_MODEL(ISIZE_SNOW,INLVLS,INLVLG,NMASK)
+  IF (ISIZE_SNOW>0) CALL CALL_MODEL(ISIZE_SNOW,INLVLS,INLVLG,IBLOWSNW,NMASK)
 !
 ! ===============================================================
 !
@@ -448,7 +483,7 @@ IF (PEK%TSNOW%SCHEME=='3-L' .OR. IO%CISBA == 'DIF' .OR. PEK%TSNOW%SCHEME == 'CRO
   WHERE(LREMOVE_SNOW(:))
     !
     ZSNOWSWE_OUT(:)     = 0.0
-    PLES3L(:)           = MIN(PLES3L(:), XLSTT*(ZSNOWSWE_1D(:)/PTSTEP + PSR(:)))
+    PLES3L(:)           = MIN(PLES3L(:), XLSTT*(ZSNOWSWE_1D(:)/PTSTEP + PSR(:)+ZBLOWSNW_DEPFLUX(:)))
     PLEL3L(:)           = 0.0
     PEVAP(:)            = PLES3L(:)/PK%XLSTT(:)
     PTHRUFAL(:)         = MAX(0.0, ZSNOWSWE_1D(:)/PTSTEP + PSR(:) - PEVAP(:)*ZPSN(:) + ZRRSNOW(:)) ! kg m-2 s-1
@@ -584,13 +619,14 @@ IF (LHOOK) CALL DR_HOOK('SNOW3L_ISBA',1,ZHOOK_HANDLE)
  CONTAINS
 !
 !================================================================
-SUBROUTINE CALL_MODEL(KSIZE1,KSIZE2,KSIZE3,KMASK)
+SUBROUTINE CALL_MODEL(KSIZE1,KSIZE2,KSIZE3,KSIZE4,KMASK)
 !
 IMPLICIT NONE
 !
 INTEGER, INTENT(IN) :: KSIZE1
 INTEGER, INTENT(IN) :: KSIZE2
 INTEGER, INTENT(IN) :: KSIZE3
+INTEGER, INTENT(IN) :: KSIZE4
 INTEGER, DIMENSION(:), INTENT(IN) :: KMASK
 !
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWSWE
@@ -603,6 +639,8 @@ REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWGRAN1
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWGRAN2
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWHIST
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWAGE
+REAL, DIMENSION(KSIZE1,KSIZE4) :: ZP_BLOWSNW_FLUX
+REAL, DIMENSION(KSIZE1,KSIZE4-1):: ZP_BLOWSNW_CONC
 REAL, DIMENSION(KSIZE1)        :: ZP_SNOWALB
 REAL, DIMENSION(KSIZE1)        :: ZP_SWNETSNOW
 REAL, DIMENSION(KSIZE1)        :: ZP_SWNETSNOWS
@@ -675,6 +713,7 @@ REAL, DIMENSION(KSIZE1)        :: ZP_LAT,ZP_LON
 REAL, DIMENSION(KSIZE1)        :: ZP_PSN_INV
 REAL, DIMENSION(KSIZE1)        :: ZP_PSN
 REAL, DIMENSION(KSIZE1)        :: ZP_PSN_GFLXCOR
+REAL, DIMENSION(KSIZE1)        :: ZP_BLOWSNW_DEP
 REAL, DIMENSION(KSIZE1)        :: ZP_WORK
 !
 REAL, DIMENSION(KSIZE1,KSIZE2) :: ZP_SNOWDEND
@@ -733,6 +772,36 @@ IF (PEK%TSNOW%SCHEME=='CRO') THEN
          ZP_SNOWHIST (JJ,JWRK) = PEK%TSNOW%HIST  (JI,JWRK)
       ENDDO
    ENDDO
+
+  IF(KSIZE4>0) THEN
+      DO JWRK=1,KSIZE4
+        DO JJ=1,KSIZE1
+          JI = KMASK(JJ)
+          ZP_BLOWSNW_FLUX(JJ,JWRK) = PBLOWSNW_FLUX(JI,JWRK)
+        ENDDO
+      ENDDO
+      DO JWRK=1,KSIZE4-1
+        DO JJ=1,KSIZE1
+          JI = KMASK(JJ)
+          ZP_BLOWSNW_CONC(JJ,JWRK) = PBLOWSNW_CONC(JI,JWRK)
+        ENDDO
+      ENDDO
+  ELSE
+      DO JWRK=1,KSIZE4
+        DO JJ=1,KSIZE1
+          ZP_BLOWSNW_FLUX(JJ,JWRK) = XUNDEF
+        ENDDO
+      ENDDO
+      DO JWRK=1,KSIZE4-1
+        DO JJ=1,KSIZE1
+          ZP_BLOWSNW_CONC(JJ,JWRK) = XUNDEF
+        ENDDO
+      ENDDO
+      DO JJ=1,KSIZE1
+        ZP_BLOWSNW_DEP(JJ) = 0.
+      ENDDO
+   ENDIF 
+
 ELSE
    DO JWRK=1,KSIZE2
       DO JJ=1,KSIZE1
@@ -741,6 +810,16 @@ ELSE
          ZP_SNOWHIST (JJ,JWRK) = XUNDEF
       ENDDO
    ENDDO
+ 
+ IF(KSIZE4>0) THEN
+  DO JWRK=1,KSIZE4
+     DO JJ=1,KSIZE1
+        ZP_BLOWSNW_CONC(JJ,JWRK) = XUNDEF
+        ZP_BLOWSNW_FLUX(JJ,JWRK) = XUNDEF
+     ENDDO
+  ENDDO  
+ ENDIF
+
 ENDIF
 !  
 DO JWRK=1,KSIZE3
@@ -883,6 +962,24 @@ ENDIF
 ! Call ISBA-SNOW3L model:  
 !  
 IF (PEK%TSNOW%SCHEME=='CRO') THEN 
+!
+! ------------------------
+! Blowing snow scheme (when coupled to Meso-NH)
+! Handel snow Erosion and deposition
+!
+  IF(KSIZE4>0)THEN
+         CALL SNOWPACK_EVOL(IO%CSNOWRES,ZP_BLOWSNW_FLUX,ZP_SNOWHEAT,          &
+                            ZP_SNOWSWE,ZP_SNOWRHO,                         &
+                            ZP_SNOWGRAN1,ZP_SNOWGRAN2,ZP_SNOWHIST,         &
+                            ZP_SNOWAGE, PTSTEP,ZP_RHOA,ZP_TA,              &
+                            ZP_BLOWSNW_CONC,ZP_VMOD, ZP_QA,ZP_PS,          &
+                            ZP_UREF,ZP_EXNS,ZP_DIRCOSZW,                   &
+                            ZP_ZREF,ZP_Z0EFF,ZP_Z0HNAT,ZP_BLOWSNW_DEP,     &
+                            ZP_TG(:,1))
+  ENDIF
+!
+! ------------------------
+! Main call to Crocus        
    CALL SNOWCRO(IO%CSNOWRES, TPTIME, IO%LGLACIER, HIMPLICIT_WIND,          &
                 ZP_PEW_A_COEF, ZP_PEW_B_COEF, ZP_PET_A_COEF, ZP_PEQ_A_COEF,&
                 ZP_PET_B_COEF, ZP_PEQ_B_COEF, ZP_SNOWSWE, ZP_SNOWRHO,      &
@@ -896,7 +993,7 @@ IF (PEK%TSNOW%SCHEME=='CRO') THEN
                 ZP_HSNOW, ZP_GFLUXSNOW, ZP_HPSNOW, ZP_LES3L, ZP_LEL3L,     &
                 ZP_EVAP, ZP_SNDRIFT, ZP_RI,ZP_EMISNOW, ZP_CDSNOW,          &
                 ZP_USTARSNOW, ZP_CHSNOW, ZP_SNOWHMASS, ZP_QS, ZP_VEGTYPE,  &
-                ZP_ZENITH, ZP_LAT, ZP_LON, IO%LSNOWDRIFT,                  &
+                ZP_ZENITH, ZP_LAT, ZP_LON,ZP_BLOWSNW_DEP, IO%LSNOWDRIFT,   &
                 IO%LSNOWDRIFT_SUBLIM, IO%LSNOW_ABS_ZENITH, IO%CSNOWMETAMO, &
                 IO%CSNOWRAD                        )
 !
@@ -1071,6 +1168,15 @@ IF (PEK%TSNOW%SCHEME=='CRO') THEN
       PEK%TSNOW%HIST (JI,JWRK) = ZP_SNOWHIST (JJ,JWRK)
     ENDDO
   ENDDO
+
+  IF(KSIZE4>0.)THEN
+    DO JWRK=1,KSIZE4
+      DO JJ=1,KSIZE1
+        JI = KMASK(JJ)
+        PBLOWSNW_FLUX(JI,JWRK) = ZP_BLOWSNW_FLUX(JJ,JWRK)
+      ENDDO
+    ENDDO
+  ENDIF
 
   IF (SIZE(DMK%XSNOWDEND)>0) THEN
   ! This is equivalent to test the value of DGMI%LPROSNOW which does not enter in ISBA

@@ -3,6 +3,12 @@
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
 !-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/exchange.f90,v $ $Revision: 1.2.2.2.2.2.16.1.2.5.2.1 $ $Date: 2015/12/01 15:26:23 $
+!-----------------------------------------------------------------
+!-----------------------------------------------------------------
+!-----------------------------------------------------------------
 !     ####################
       MODULE MODI_EXCHANGE
 !     ####################
@@ -106,6 +112,8 @@ USE MODI_SUM_ll
 USE MODI_BUDGET
 USE MODD_CH_MNHC_n,   ONLY : LUSECHEM, LUSECHAQ, LUSECHIC
 USE MODD_CH_AEROSOL,  ONLY : LORILAM, NM6_AER
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 !
 IMPLICIT NONE
 !
@@ -257,6 +265,13 @@ ENDIF
 DO JSV=1,KSV
   PRSVS(:,:,:,JSV) = PRSVS(:,:,:,JSV)*PTSTEP/PRHODJ
 END DO
+!
+IF(LBLOWSNOW) THEN
+   DO JSV=1,(NBLOWSNOW_2D)
+       XRSNWCANOS(:,:,JSV) = XRSNWCANOS(:,:,JSV)*PTSTEP/PRHODJ(:,:,1)
+   END DO
+END IF
+!
 !
 !------------------------------------------------------------------------------
 !

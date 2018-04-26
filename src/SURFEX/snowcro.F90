@@ -17,7 +17,7 @@
                PTHRUFAL,PGRNDFLUX,PEVAPCOR,PRNSNOW,PHSNOW,PGFLUXSNOW,    &
                PHPSNOW,PLES3L,PLEL3L,PEVAP,PSNDRIFT,PRI,                 &
                PEMISNOW,PCDSNOW,PUSTAR,PCHSNOW,PSNOWHMASS,PQS,           &
-               PPERMSNOWFRAC,PZENITH,PXLAT,PXLON,                        &
+               PPERMSNOWFRAC,PZENITH,PXLAT,PXLON,PBLOWSNW_DEP,           &
                OSNOWDRIFT,OSNOWDRIFT_SUBLIM,OSNOW_ABS_ZENITH,            &
                HSNOWMETAMO,HSNOWRAD) 
 !     ##########################################################################
@@ -276,6 +276,9 @@ REAL, DIMENSION(:), INTENT(OUT)      :: PRI, PQS
 !
 REAL, DIMENSION(:), INTENT(IN)        :: PZENITH ! solar zenith angle
 REAL, DIMENSION(:), INTENT(IN)        :: PXLAT,PXLON ! LAT/LON after packing
+!
+REAL, DIMENSION(:), INTENT(IN)        :: PBLOWSNW_DEP ! Blowing snow deposition rate (kg/m2/s)               
+!                                                     (when coupled with MNH)
 !
 LOGICAL, INTENT(IN)                   :: OSNOWDRIFT, OSNOWDRIFT_SUBLIM ! activate snowdrift, sublimation during drift
 LOGICAL, INTENT(IN)                   :: OSNOW_ABS_ZENITH ! activate parametrization of solar absorption for polar regions
@@ -548,7 +551,7 @@ ZSNOWBIS(:) = ZSNOW(:)
                         PSNOWGRAN1,PSNOWGRAN2,GSNOWFALL,ZSNOWDZN,               &
                         ZSNOWRHOF,ZSNOWDZF,ZSNOWGRAN1F,ZSNOWGRAN2F, ZSNOWHISTF, &
                         ZSNOWAGEF,GMODIF_MAILLAGE,INLVLS_USE,OSNOWDRIFT,PZ0EFF,PUREF,&
-                        HSNOWMETAMO) 
+                        HSNOWMETAMO,PBLOWSNW_DEP) 
 !
 !***************************************DEBUG IN**********************************************
 IF (GCRODEBUGDETAILSPRINT) THEN
@@ -3595,7 +3598,7 @@ SUBROUTINE SNOWNLFALL_UPGRID(TPTIME, OGLACIER,PTSTEP,PSR,PTA,PVMOD,        &
                              GSNOWFALL,PSNOWDZN,PSNOWRHOF,PSNOWDZF,        &
                              PSNOWGRAN1F,PSNOWGRAN2F,PSNOWHISTF,PSNOWAGEF, &
                              OMODIF_GRID,KNLVLS_USE,OSNOWDRIFT,PZ0EFF,PUREF,&
-                             HSNOWMETAMO) 
+                             HSNOWMETAMO,PBLOWSNW_DEP) 
 !
 !!    PURPOSE
 !!    -------
@@ -3629,6 +3632,8 @@ USE MODD_SNOW_PAR, ONLY : XRHOSMIN_ES, XSNOWDMIN, XANSMAX, XAGLAMAX, XSNOWCRITD,
                           XRATIO_NEWLAYER, XDEPTH_THRESHOLD1, XDEPTH_THRESHOLD2,   &
                           XDEPTH_SURFACE, XDIFF_1, XDIFF_MAX, XSCALE_DIFF,         &
                           XSNOWFALL_A_SN, XSNOWFALL_B_SN, XSNOWFALL_C_SN
+!
+USE MODD_BLOWSNW_SURF
 !
 USE MODE_SNOW3L
 !
@@ -3671,6 +3676,9 @@ INTEGER, DIMENSION(:), INTENT(INOUT) :: KNLVLS_USE
 
 LOGICAL,INTENT(IN) :: OSNOWDRIFT ! if snowdrift then grain types are not modified by wind
 CHARACTER(3), INTENT(IN)              :: HSNOWMETAMO ! metamorphism scheme
+!
+REAL, DIMENSION(:), INTENT(IN)     :: PBLOWSNW_DEP ! Blowing snow deposition flux (kg/m2/s)
+!
 !*      0.2    declarations of local variables
 !
 !
@@ -3709,6 +3717,10 @@ REAL, PARAMETER                    :: PPHREF_WIND_GRAIN = 5.
 REAL, PARAMETER                    :: PPHREF_WIND_MIN = MIN(PPHREF_WIND_RHO,PPHREF_WIND_GRAIN)*0.5
 REAL, DIMENSION(SIZE(PTA))         :: ZWIND_RHO
 REAL, DIMENSION(SIZE(PTA))         :: ZWIND_GRAIN
+!
+REAL, DIMENSION(SIZE(PTA))          :: ZRHO_BS ! Density of deposited blowing snow
+!
+REAL                                :: ZMOB, ZG1_BS, ZG2_BS
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -3916,7 +3928,7 @@ END DO
 !!
 DO JJ = 1,SIZE(PSNOW(:))
   !
-  IF ( PSR(JJ)>0.0 ) THEN  
+  IF ( PSR(JJ)>0.0 .OR. PBLOWSNW_DEP(JJ) > XUEPSI ) THEN  
     !    
     ! newly fallen snow characteristics:
     IF ( KNLVLS_USE(JJ)>0 ) THEN !Case of new snowfall on a previously snow-free surface 
@@ -3941,12 +3953,21 @@ DO JJ = 1,SIZE(PSNOW(:))
     ZWIND_GRAIN(JJ) = PVMOD(JJ)*LOG(PPHREF_WIND_GRAIN/ZZ0EFF)/        &
                                LOG(PUREF(JJ)/ZZ0EFF)    
     
-    PSNOWHMASS(JJ) = PSR(JJ) * ( XCI * ( ZSNOWTEMP(JJ)-XTT ) - XLMTT ) * PTSTEP
+    PSNOWHMASS(JJ) = (PSR(JJ)+PBLOWSNW_DEP(JJ)) * ( XCI * ( ZSNOWTEMP(JJ)-XTT ) - XLMTT ) * PTSTEP
     !
     PSNOWRHOF (JJ) = MAX( XRHOSMIN_ES, XSNOWFALL_A_SN + &
                                        XSNOWFALL_B_SN * ( PTA(JJ)-XTT ) + &
                                        XSNOWFALL_C_SN * MIN( PVMOD(JJ), SQRT(ZWIND_RHO(JJ) ) ) ) 
-    ZSNOWFALL (JJ) = PSR(JJ) * PTSTEP / PSNOWRHOF(JJ)    ! snowfall thickness (m)
+!
+!  Density of deposited blown snow particles (can be adjusted depending on model application)
+!      1st option : same as fresh snow
+    ZRHO_BS(JJ) = PSNOWRHOF(JJ)
+
+!  Density of accumulated snow (falling+blowing snow) : weighted average of PSNOWRHOF and ZRHO_BS
+    PSNOWRHOF(JJ) = (PSNOWRHOF(JJ)*PSR(JJ) + ZRHO_BS(JJ) * PBLOWSNW_DEP(JJ))/ &
+                       (PSR(JJ)+PBLOWSNW_DEP(JJ))
+!                               
+    ZSNOWFALL (JJ) = (PSR(JJ)+PBLOWSNW_DEP(JJ)) * PTSTEP / PSNOWRHOF(JJ)    ! snowfall thickness (m)
     PSNOW     (JJ) = PSNOW(JJ) + ZSNOWFALL(JJ)
     PSNOWDZF  (JJ) = ZSNOWFALL(JJ)
     !
@@ -3960,6 +3981,25 @@ DO JJ = 1,SIZE(PSNOW(:))
         PSNOWGRAN2F(JJ) = MIN( MAX( XNSPH1*ZWIND_GRAIN(JJ)+XNSPH2, XNSPH3 ), XNSPH4 )     
       END IF
       !
+!   --------------------------------------------------------------------
+!  Characteristic of deposited blown snow particles (dendricity and sphericity)
+!   ----------------------------------------------------------------------
+!           1st Option : same as falling snow flakes
+        ZG1_BS = PSNOWGRAN1F(JJ)
+        ZG2_BS = PSNOWGRAN2F(JJ)
+!
+!           2nd Option : fixed characteristics
+!        ZG1_BS = XSDEP_GRA1
+!        ZG2_BS = XSDEP_GRA2
+!
+!   --------------------------------------------------------------------
+!  Characteristic of accumulated snow grains (falling snow + deposited blowing
+!      snow) : weighted average
+!   ----------------------------------------------------------------------
+       PSNOWGRAN1F(JJ) = (PSNOWGRAN1F(JJ)*PSR(JJ) + ZG1_BS * PBLOWSNW_DEP(JJ))/ &
+                   (PSR(JJ)+PBLOWSNW_DEP(JJ))
+       PSNOWGRAN2F(JJ) = (PSNOWGRAN2F(JJ)*PSR(JJ) + ZG2_BS * PBLOWSNW_DEP(JJ))/ &
+                   (PSR(JJ)+PBLOWSNW_DEP(JJ))
     ELSE
       !
       IF ( OSNOWDRIFT ) THEN
@@ -4024,7 +4064,7 @@ DO JJ=1,SIZE(PSNOW(:)) ! grid point loop
                                  PSNOWGRAN2(JJ,1),PSNOWGRAN2F(JJ),HSNOWMETAMO ) 
     !
     IF ( ( ZDIFTYPE_SUP<XDIFF_1        .AND. PSNOWDZ(JJ,1)<   ZDZOPT(JJ,1) ) .OR. &
-         ( PSR(JJ)<XSNOWFALL_THRESHOLD .AND. PSNOWDZ(JJ,1)<2.*ZDZOPT(JJ,1) ) .OR. &
+         ( (PSR(JJ)+PBLOWSNW_DEP(JJ))<XSNOWFALL_THRESHOLD .AND. PSNOWDZ(JJ,1)<2.*ZDZOPT(JJ,1) ) .OR. &
                                              PSNOWDZ(JJ,1)<XDZMIN_TOP_EXTREM ) THEN
       !
       ! Fresh snow is similar to a shallow surface layer (< ZDZOPT)

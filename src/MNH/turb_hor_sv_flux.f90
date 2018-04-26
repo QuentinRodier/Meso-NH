@@ -119,6 +119,7 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
 USE MODD_NSV, ONLY : NSV_LGBEG,NSV_LGEND
 USE MODD_LES
+USE MODD_BLOWSNOW
 !
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
@@ -177,6 +178,8 @@ REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),SIZE(PSVM,3))       &
     ! work arrays
 REAL, DIMENSION(SIZE(PSVM,1),SIZE(PSVM,2),1) :: ZWORK2D
 !
+REAL :: ZCSV          !constant for the scalar flux
+
 INTEGER             :: IKB,IKE
                                     ! Index values for the Beginning and End
                                     ! mass points of the domain  
@@ -200,6 +203,12 @@ IKU = SIZE(PSVM,3)
 !
 ISV = SIZE(PSVM,4)
 !
+IF(LBLOWSNOW) THEN
+! See Vionnet (PhD, 2012) for a complete discussion around the value of the Schmidt number for blowing snow variables              
+   ZCSV= XCHF/XRSNOW
+ELSE
+   ZCSV= XCHF
+ENDIF
 !
 !  compute the coefficients for the uncentred gradient computation near the 
 !  ground
@@ -223,12 +232,12 @@ DO JSV=1,ISV
 !              ----------
 !
   ! Computes the flux in the X direction
-  ZFLXX(:,:,:) = -XCHF * MXM(PK) * GX_M_U(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)
+  ZFLXX(:,:,:) = -ZCSV * MXM(PK) * GX_M_U(1,IKU,1,PSVM(:,:,:,JSV),PDXX,PDZZ,PDZX)
   ZFLXX(:,:,IKE+1) = ZFLXX(:,:,IKE) 
 !
 ! Compute the flux at the first inner U-point with an uncentred vertical  
 ! gradient
-  ZFLXX(:,:,IKB:IKB) = -XCHF * MXM( PK(:,:,IKB:IKB) ) *             &
+  ZFLXX(:,:,IKB:IKB) = -ZCSV * MXM( PK(:,:,IKB:IKB) ) *             &
     ( DXM(PSVM(:,:,IKB:IKB,JSV)) * PINV_PDXX(:,:,IKB:IKB)           &
      -MXM ( ZCOEFF(:,:,IKB+2:IKB+2)*PSVM(:,:,IKB+2:IKB+2,JSV)       &
            +ZCOEFF(:,:,IKB+1:IKB+1)*PSVM(:,:,IKB+1:IKB+1,JSV)       &
@@ -273,13 +282,13 @@ DO JSV=1,ISV
   IF (.NOT. L2D) THEN
 !
 ! Computes the flux in the Y direction
-    ZFLXY(:,:,:)=-XCHF * MYM(PK) * GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)
+    ZFLXY(:,:,:)=-ZCSV * MYM(PK) * GY_M_V(1,IKU,1,PSVM(:,:,:,JSV),PDYY,PDZZ,PDZY)
     ZFLXY(:,:,IKE+1) = ZFLXY(:,:,IKE) 
 !
 ! Compute the flux at the first inner V-point with an uncentred vertical  
 ! gradient
 !
-    ZFLXY(:,:,IKB:IKB) = -XCHF * MYM( PK(:,:,IKB:IKB) ) *             &
+    ZFLXY(:,:,IKB:IKB) = -ZCSV * MYM( PK(:,:,IKB:IKB) ) *             &
       ( DYM(PSVM(:,:,IKB:IKB,JSV)) * PINV_PDYY(:,:,IKB:IKB)           &
        -MYM ( ZCOEFF(:,:,IKB+2:IKB+2)*PSVM(:,:,IKB+2:IKB+2,JSV)       &
              +ZCOEFF(:,:,IKB+1:IKB+1)*PSVM(:,:,IKB+1:IKB+1,JSV)       &

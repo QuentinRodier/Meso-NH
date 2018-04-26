@@ -1,10 +1,11 @@
-!SFX_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!SFX_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !SFX_LIC This is part of the SURFEX software governed by the CeCILL-C licence
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !#############################################################
 SUBROUTINE INIT_ISBA_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, DTZ,&
-                        NDST, SLT, SV, HPROGRAM, HINIT, OLAND_USE,    &
+                        NDST, SLT, BLOWSNW, SV, HPROGRAM, HINIT,      &
+                        OLAND_USE,                                    &
                         KI, KSV, KSW, HSV, PCO2, PRHOA, PZENITH,      &
                         PAZIM, PSW_BANDS, PDIR_ALB, PSCA_ALB, PEMIS,  &
                         PTSRAD, PTSURF, KYEAR, KMONTH, KDAY, PTIME,   &
@@ -71,6 +72,7 @@ USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SV_n, ONLY : SV_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_TYPE_DATE_SURF, ONLY : DATE
 !
@@ -147,6 +149,8 @@ TYPE(ISBA_MODEL_t), INTENT(INOUT) :: IM
 TYPE(DATA_TSZ0_t), INTENT(INOUT) :: DTZ
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
+
 TYPE(SV_t), INTENT(INOUT) :: SV
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
@@ -468,7 +472,7 @@ CALL COMPUTE_ISBA_PARAMETERS(DTCO, OREAD_BUDGETC, UG, U,                    &
                              IM%O, IM%DTV, IM%SB, IM%S, IM%G, IM%K, IM%NK,  &
                              IM%NG, IM%NP, IM%NPE, IM%NAG, IM%NISS, IM%ISS, &
                              IM%NCHI, IM%CHI, IM%ID, IM%GB, IM%NGB,         &
-                             NDST, SLT, SV, HPROGRAM,HINIT,OLAND_USE,       &
+                             NDST, SLT,BLOWSNW, SV,HPROGRAM,HINIT,OLAND_USE,&
                              KI,KSV,KSW, HSV,ZCO2,PRHOA,                &
                              PZENITH,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
                              PEMIS,PTSRAD,PTSURF,HTEST                  )

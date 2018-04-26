@@ -275,6 +275,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   V. Vionnet : 18/07/2017 : add blowing snow scheme 
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -353,6 +354,8 @@ USE MODD_TURB_n
 USE MODD_CTURB
 USE MODD_LBC_n
 USE MODD_PASPOL_n
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 !
 !
 USE MODI_INI_BUDGET
@@ -799,6 +802,16 @@ IF (LPASPOL) THEN
              ELSE
   ALLOCATE( XATC(0,0,0,0))
   XATC = 0.
+END IF
+!
+IF(LBLOWSNOW) THEN
+  ALLOCATE(XSNWCANO(IIU,IJU,NBLOWSNOW_2D))
+  ALLOCATE(XRSNWCANOS(IIU,IJU,NBLOWSNOW_2D))
+  XSNWCANO(:,:,:) = 0.0
+  XRSNWCANOS(:,:,:) = 0.0
+ELSE
+  ALLOCATE(XSNWCANO(0,0,0))
+  ALLOCATE(XRSNWCANOS(0,0,0))
 END IF
 !
 !*       3.2   Module MODD_GRID_n and MODD_METRICS_n
@@ -1923,7 +1936,7 @@ CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              LHORELAX_RH,LHORELAX_TKE,LHORELAX_SV,                            &
              LHORELAX_SVC2R2,LHORELAX_SVC1R3,LHORELAX_SVELEC,LHORELAX_SVLG,   &
              LHORELAX_SVCHEM,LHORELAX_SVAER,LHORELAX_SVDST,LHORELAX_SVSLT,    &
-             LHORELAX_SVPP,LHORELAX_SVCS,LHORELAX_SVCHIC,                     &
+             LHORELAX_SVPP,LHORELAX_SVCS,LHORELAX_SVCHIC,LHORELAX_SVSNW,      &
 #ifdef MNH_FOREFIRE
              LHORELAX_SVFF,                                                   &
 #endif

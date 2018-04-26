@@ -42,6 +42,7 @@
 !!      Modifications    07/10   (M.Leriche)     Add relaxation for ice phase chemical
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Modification    07/2017  (V. Vionnet)    Add blowing snow variable
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
@@ -135,6 +136,7 @@ TYPE DYN_t
   LOGICAL :: LHORELAX_SVFF
 #endif
   LOGICAL :: LHORELAX_SVCS 
+  LOGICAL :: LHORELAX_SVSNW  
   LOGICAL, DIMENSION(:),POINTER :: LHORELAX_SV =>NULL()
 !
   REAL    :: XRIMKMAX   ! Max. value of the horiz. relaxation coeff.
@@ -224,6 +226,7 @@ LOGICAL, POINTER :: LHORELAX_SVPP=>NULL()
 LOGICAL, POINTER :: LHORELAX_SVFF=>NULL()
 #endif
 LOGICAL, POINTER :: LHORELAX_SVCS=>NULL()
+LOGICAL, POINTER :: LHORELAX_SVSNW=>NULL()
 LOGICAL, DIMENSION(:), POINTER :: LHORELAX_SV=>NULL()
 REAL, POINTER :: XRIMKMAX=>NULL()
 INTEGER, POINTER :: NRIMX=>NULL(),NRIMY=>NULL()
@@ -331,6 +334,7 @@ LHORELAX_SVPP=>DYN_MODEL(KTO)%LHORELAX_SVPP
 LHORELAX_SVFF=>DYN_MODEL(KTO)%LHORELAX_SVFF
 #endif
 LHORELAX_SVCS=>DYN_MODEL(KTO)%LHORELAX_SVCS
+LHORELAX_SVSNW=>DYN_MODEL(KTO)%LHORELAX_SVSNW
 LHORELAX_SV=>DYN_MODEL(KTO)%LHORELAX_SV
 XRIMKMAX=>DYN_MODEL(KTO)%XRIMKMAX
 !NRIMX=>DYN_MODEL(KTO)%NRIMX !Done in FIELDLIST_GOTO_MODEL

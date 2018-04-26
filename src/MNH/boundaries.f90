@@ -172,6 +172,7 @@ END MODULE MODI_BOUNDARIES
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1
 !!      Redelsperger & Pianezze : 08/2015 : add XPOND coefficient
 !!      Modification    01/2016  (JP Pinty) Add LIMA that is LBC for CCN and IFN
+!!      Modification    18/07/17 (Vionnet)  Add blowing snow variables 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -187,7 +188,9 @@ USE MODD_SALT,        ONLY : LSALT
 USE MODD_PASPOL,      ONLY : LPASPOL
 USE MODD_CONDSAMP,    ONLY : LCONDSAMP
 USE MODD_ELEC_DESCR             
-USE MODD_ELEC_n                 
+USE MODD_ELEC_n 
+USE MODD_BLOWSNOW,  ONLY : LBLOWSNOW,NBLOWSNOW_2D
+USE MODD_BLOWSNOW_n
 USE MODD_REF_n    
 USE MODD_PARAM_n,    ONLY : CELEC,CCLOUD 
 USE MODD_LBC_n,      ONLY : XPOND
@@ -266,7 +269,7 @@ REAL                :: ZPOND      !  Coeff PONDERATION LS
 INTEGER             :: ILBX,ILBY ! size of LB fields' arrays
 LOGICAL, SAVE, DIMENSION(:), ALLOCATABLE :: GCHBOUNDARY, GAERBOUNDARY,&
                     GDSTBOUNDARY, GSLTBOUNDARY, GPPBOUNDARY,          &
-                    GCSBOUNDARY, GICBOUNDARY, GLIMABOUNDARY 
+                    GCSBOUNDARY, GICBOUNDARY, GLIMABOUNDARY,GSNWBOUNDARY 
 LOGICAL, SAVE        :: GFIRSTCALL1 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL2 = .TRUE.
 LOGICAL, SAVE        :: GFIRSTCALL3 = .TRUE.
@@ -473,6 +476,7 @@ SELECT CASE ( HLBCX(1) )
        IF(SIZE(PRT) /= 0) PRT  (IIB-JEXT,:,:,:) = PRT  (IIB-1+JEXT,:,:,:)
        IF(SIZE(PSVT) /= 0) PSVT(IIB-JEXT,:,:,:) = PSVT (IIB-1+JEXT,:,:,:)
        IF(SIZE(PSRCT) /= 0) PSRCT (IIB-JEXT,:,:)   = PSRCT (IIB-1+JEXT,:,:)
+       IF(LBLOWSNOW) XSNWCANO(IIB-JEXT,:,:)     = XSNWCANO(IIB-1+JEXT,:,:)            
 !
     END DO
 !
@@ -548,6 +552,30 @@ SELECT CASE ( HLBCX(1) )
     END IF
     !
   END DO
+  !
+    IF(LBLOWSNOW) THEN
+    DO JSV=1 ,NBLOWSNOW_2D
+      WHERE ( PUT(IIB,:,IKB) <= 0. )         !  OUTFLOW condition
+        XSNWCANO(IIB-1,:,JSV) = MAX(0.,2.*XSNWCANO(IIB,:,JSV) - &
+                                             XSNWCANO(IIB+1,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        XSNWCANO(IIB-1,:,JSV) = 0.         ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END DO
+   DO JSV=NSV_SNWBEG ,NSV_SNWEND
+    IF(SIZE(PUT) /= 0) THEN
+      WHERE ( PUT(IIB,:,:) <= 0. )         !  OUTFLOW condition
+        PSVT(IIB-1,:,:,JSV) = MAX(0.,2.*PSVT(IIB,:,:,JSV) - &
+                                               PSVT(IIB+1,:,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        PSVT(IIB-1,:,:,JSV) = 0.           ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END IF
+    !
+   END DO
+  ENDIF
 !
 !
 END SELECT
@@ -576,6 +604,7 @@ SELECT CASE ( HLBCX(2) )
        IF(SIZE(PRT) /= 0) PRT  (IIE+JEXT,:,:,:) = PRT  (IIE+1-JEXT,:,:,:)
        IF(SIZE(PSVT) /= 0) PSVT(IIE+JEXT,:,:,:) = PSVT (IIE+1-JEXT,:,:,:)
        IF(SIZE(PSRCT) /= 0) PSRCT (IIE+JEXT,:,:)= PSRCT (IIE+1-JEXT,:,:)
+       IF(LBLOWSNOW) XSNWCANO(IIE+JEXT,:,:) = XSNWCANO(IIE+1-JEXT,:,:)           
 !
     END DO
 !
@@ -653,6 +682,29 @@ SELECT CASE ( HLBCX(2) )
     !
   END DO
 !
+  IF(LBLOWSNOW) THEN
+    DO JSV=1 ,3
+      WHERE ( PUT(IIE+1,:,IKB) >= 0. )       !  OUTFLOW condition
+        XSNWCANO(IIE+1,:,JSV) = MAX(0.,2.*XSNWCANO(IIE,:,JSV) - &
+                                              XSNWCANO(IIE-1,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        XSNWCANO(IIE+1,:,JSV) = 0.         ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END DO
+    DO JSV=NSV_SNWBEG ,NSV_SNWEND
+    IF(SIZE(PUT) /= 0) THEN
+      WHERE ( PUT(IIE+1,:,:) >= 0. )       !  OUTFLOW condition
+        PSVT(IIE+1,:,:,JSV) = MAX(0.,2.*PSVT(IIE,:,:,JSV) - &
+                                               PSVT(IIE-1,:,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        PSVT(IIE+1,:,:,JSV) = 0.           ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END IF
+    !
+  END DO
+  END IF
 !
 END SELECT
 !
@@ -679,6 +731,7 @@ SELECT CASE ( HLBCY(1) )
        IF(SIZE(PRT) /= 0) PRT  (:,IJB-JEXT,:,:) = PRT  (:,IJB-1+JEXT,:,:)
        IF(SIZE(PSVT) /= 0) PSVT (:,IJB-JEXT,:,:)= PSVT (:,IJB-1+JEXT,:,:)
        IF(SIZE(PSRCT) /= 0) PSRCT(:,IJB-JEXT,:) = PSRCT(:,IJB-1+JEXT,:)
+       IF(LBLOWSNOW) XSNWCANO(:,IJB-JEXT,:)     = XSNWCANO(:,IJB-1+JEXT,:)     
 !
     END DO
 !
@@ -753,6 +806,30 @@ SELECT CASE ( HLBCY(1) )
     !
   END DO
 !
+   IF(LBLOWSNOW) THEN
+    DO JSV=1 ,3
+      WHERE ( PVT(:,IJB,IKB) <= 0. )         !  OUTFLOW condition
+        XSNWCANO(:,IJB-1,JSV) = MAX(0.,2.*XSNWCANO(:,IJB,JSV) - &
+                                             XSNWCANO(:,IJB+1,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        XSNWCANO(:,IJB-1,JSV) = 0.         ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END DO
+   DO JSV=NSV_SNWBEG ,NSV_SNWEND
+    IF(SIZE(PVT) /= 0) THEN
+      WHERE ( PVT(:,IJB,:) <= 0. )         !  OUTFLOW condition
+        PSVT(:,IJB-1,:,JSV) = MAX(0.,2.*PSVT(:,IJB,:,JSV) - &
+                                               PSVT(:,IJB+1,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        PSVT(:,IJB-1,:,JSV) = 0.           ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END IF
+    !
+  END DO
+  END IF 
+!
 !
 END SELECT
 !
@@ -780,6 +857,7 @@ SELECT CASE ( HLBCY(2) )
        IF(SIZE(PRT) /= 0) PRT  (:,IJE+JEXT,:,:) = PRT  (:,IJE+1-JEXT,:,:)
        IF(SIZE(PSVT) /= 0) PSVT (:,IJE+JEXT,:,:)= PSVT (:,IJE+1-JEXT,:,:)
        IF(SIZE(PSRCT) /= 0) PSRCT(:,IJE+JEXT,:) = PSRCT(:,IJE+1-JEXT,:)
+       IF(LBLOWSNOW) XSNWCANO(:,IJE+JEXT,:)     = XSNWCANO(:,IJE+1-JEXT,:)   
 !
     END DO
 !
@@ -858,6 +936,30 @@ SELECT CASE ( HLBCY(2) )
     !
   END DO
 !
+    IF(LBLOWSNOW) THEN
+  DO JSV=1 ,3
+    WHERE ( PVT(:,IJE+1,IKB) >= 0. )         !  OUTFLOW condition
+      XSNWCANO(:,IJE+1,JSV) = MAX(0.,2.*XSNWCANO(:,IJE,JSV) - &
+                                            XSNWCANO(:,IJE-1,JSV))
+    ELSEWHERE                            !  INFLOW  condition
+      XSNWCANO(:,IJE+1,JSV) = 0.         ! Assume no snow enter throug
+                                         ! boundaries
+    END WHERE
+  END DO
+  DO JSV=NSV_SNWBEG ,NSV_SNWEND
+    !
+    IF(SIZE(PVT) /= 0) THEN
+      WHERE ( PVT(:,IJE+1,:) >= 0. )         !  OUTFLOW condition
+        PSVT(:,IJE+1,:,JSV) = MAX(0.,2.*PSVT(:,IJE,:,JSV) - &
+                                               PSVT(:,IJE-1,:,JSV))
+      ELSEWHERE                            !  INFLOW  condition
+        PSVT(:,IJE+1,:,JSV) = 0.           ! Assume no snow enter throug
+                                           ! boundaries
+      END WHERE
+    END IF
+    !
+  END DO
+  ENDIF
 !
 END SELECT
 END IF
@@ -1052,6 +1154,22 @@ IF ( LCONDSAMP .AND. IMI == 1) THEN
     ENDIF
   ENDDO
 ENDIF
+
+IF (LBLOWSNOW .AND. IMI == 1) THEN
+  IF (GFIRSTCALL3) THEN
+    ALLOCATE(GSNWBOUNDARY(NSV_SNW))
+    GFIRSTCALL3 = .FALSE.
+    DO JSV=NSV_SNWBEG,NSV_SNWEND
+       GCHTMP = .FALSE.
+       IF (LWEST_ll().AND.HLBCX(1)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(1,:,:,JSV)==0)
+       IF (LEAST_ll().AND.HLBCX(2)=='OPEN')  GCHTMP = GCHTMP .OR. ALL(PLBXSVM(ILBX,:,:,JSV)==0)
+       IF (LSOUTH_ll().AND.HLBCY(1)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,1,:,JSV)==0)
+       IF (LNORTH_ll().AND.HLBCY(2)=='OPEN') GCHTMP = GCHTMP .OR. ALL(PLBYSVM(:,ILBY,:,JSV)==0)
+       GSNWBOUNDARY(JSV-NSV_SNWBEG+1) = GCHTMP
+    ENDDO
+  ENDIF
+ENDIF
+
 #ifdef MNH_FOREFIRE
 !ForeFire 
 IF ( LFOREFIRE .AND. IMI == 1) THEN

@@ -306,6 +306,11 @@ REAL                       :: ZCONVERTFACM0_SLT, ZCONVERTFACM0_DST
 REAL                       :: ZCONVERTFACM3_SLT, ZCONVERTFACM3_DST
 REAL                       :: ZCONVERTFACM6_SLT, ZCONVERTFACM6_DST
 !
+! for blowing snow scheme
+!
+REAL, DIMENSION(KI,CHI%SVI%N2DSNWEQ) :: ZP_BLOWSNW_FLUX      ! blowing snow fluxes
+REAL, DIMENSION(KI,CHI%SVI%NSNWEQ)   :: ZP_BLOWSNW_CONC      ! blowing snow concentration
+!
 ! dimensions and loop counters
 !
 INTEGER :: ISWB   ! number of spectral shortwave bands
@@ -860,6 +865,24 @@ IF(LNOSOF) ZP_SLOPE_COS(:) = 1.0
 ! (see update_frac_alb_emis_isban.f90) in order to close the energy budget
 ! between surfex and the atmosphere. This fact do not change the offline runs.
 !
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! Blowing snow scheme
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+IF(CHI%SVI%NSNWEQ>0.) THEN
+	ZP_BLOWSNW_CONC(:,:) =  ZP_SV(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND)
+	ZP_BLOWSNW_FLUX(:,:) =  ZP_SV(:,CHI%SVI%N2D_SNWBEG:CHI%SVI%N2D_SNWEND)
+!     ZP_BLOWSNW_FLUX           IN : fluxes sent from Canopy:
+!                                            [1] number sedim. flux (#/m2/s)
+!                                            [2] mass sedim flux (kg{snow}/m2/s)
+!                                            [3] contrib. saltation (kg{snow}/m2/s)
+!                               OUT : fluxes towards Canopy:
+!                                            [1] number turbulent flux (#/m2/s)
+!                                            [2] mass turbulent flux (kg{snow}/m2/s)
+!                                            [3] updated streamwise saltation flux (kg{snow}/m2/s)
+ELSE
+	ZP_BLOWSNW_CONC(:,:) =  XUNDEF
+	ZP_BLOWSNW_FLUX(:,:) =  XUNDEF
+END IF
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! No implicitation of Tdeep
@@ -939,7 +962,7 @@ ZIRRIG_GR(:)= 0.
            ZP_ALBVIS_TSOIL, ZPALPHAN, ZZ0G_WITHOUT_SNOW, ZZ0_MEBV, ZZ0H_MEBV, ZZ0EFF_MEBV,    &
            ZZ0_MEBN, ZZ0H_MEBN, ZZ0EFF_MEBN, ZP_TDEEP_A, ZP_CO2, ZP_FFGNOS, ZP_FFVNOS,        &
            ZP_EMIS, ZP_USTAR, ZP_AC_AGG, ZP_HU_AGG, ZP_RESP_BIOMASS_INST, ZP_DEEP_FLUX,       &
-           ZIRRIG_GR             )
+           ZIRRIG_GR, ZP_BLOWSNW_FLUX, ZP_BLOWSNW_CONC    )
 !
 ZP_TRAD = DK%XTSRAD
 DK%XLE  = PEK%XLE
@@ -1027,7 +1050,14 @@ END WHERE
 ZP_SFTS(:,:) = 0.
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-!
+! Blowing snow scheme
+! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+IF(CHI%SVI%NSNWEQ>0) THEN
+! Store emitted turbulent flux  1: number (#/m2/s); 2: mass (kg/m2/s)
+  ZP_SFTS(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND) = ZP_BLOWSNW_FLUX(:,1:CHI%SVI%NSNWEQ)
+! Store streamwise saltation flux  (kg/m/s)
+  ZP_SFTS(:,CHI%SVI%N2D_SNWEND) = ZP_BLOWSNW_FLUX(:,CHI%SVI%NSNWEQ+1)
+END IF
 ! --------------------------------------------------------------------------------------
 ! Chemical dry deposition :
 ! --------------------------------------------------------------------------------------

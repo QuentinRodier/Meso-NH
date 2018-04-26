@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     ###############################################################################
-SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, SLT, HPROGRAM, HCOUPLING, PTSTEP, &
+SUBROUTINE COUPLING_ISBA_SVAT_n (DTCO, UG, U, USS, IM, NDST, SLT, BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP, &
                                  KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH,    &
                                  PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV, PQA, PTA, PRHOA, &
                                  PSV, PCO2, HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW,         &
@@ -48,6 +48,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
@@ -67,6 +68,7 @@ TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -232,7 +234,7 @@ DO JT=1,IT
 !
   CALL COUPLING_ISBA_OROGRAPHY_n(DTCO, UG, U, USS, IM%SB, IM%NAG, IM%CHI, IM%NCHI, IM%DTV,     &
                                  IM%ID, IM%NGB, IM%GB, IM%ISS, IM%NISS, IM%G, IM%NG, IM%O,     &
-                                 IM%S, IM%K, IM%NK, IM%NP, IM%NPE, NDST, SLT,                  &
+                                 IM%S, IM%K, IM%NK, IM%NP, IM%NPE, NDST, SLT, BLOWSNW,         &
                                  HPROGRAM, HCOUPLING, ZTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI,  &
                                  KSV, KSW, PTSUN, PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, &
                                  PU, PV, PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,   &

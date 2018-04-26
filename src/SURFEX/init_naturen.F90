@@ -4,7 +4,7 @@
 !SFX_LIC for details. version 1.
 !     #############################################################
       SUBROUTINE INIT_NATURE_n (DTCO, OREAD_BUDGETC, UG, U, USS, GCP, IM, &
-                                DTZ, DGO, DL, DLC, NDST, SLT, SV,         &
+                                DTZ, DGO, DL, DLC, NDST, SLT, BLOWSNW,SV, &
                                 HPROGRAM,HINIT,OLAND_USE, KI,KSV,KSW,     &
                                 HSV,PCO2,PRHOA,PZENITH,PAZIM,PSW_BANDS,   &
                                 PDIR_ALB,PSCA_ALB,PEMIS,PTSRAD,PTSURF,    &
@@ -62,6 +62,7 @@ USE MODD_DATA_TSZ0_n, ONLY : DATA_TSZ0_t
 USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SV_n, ONLY : SV_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_CSTS,       ONLY : XTT
 !
@@ -91,6 +92,7 @@ TYPE(DIAG_t), INTENT(INOUT) :: DLC
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 TYPE(SV_t), INTENT(INOUT) :: SV
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),                 INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                 INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -143,7 +145,7 @@ ELSE IF (U%CNATURE=='FLUX  ') THEN
                        PTSRAD, PTSURF, 'OK'    )  
 ELSE IF (U%CNATURE=='ISBA  ' .OR. U%CNATURE=='TSZ0') THEN
   CALL INIT_ISBA_n(DTCO, OREAD_BUDGETC, UG, U, USS, GCP, &
-                   IM, DTZ, NDST, SLT, SV, &
+                   IM, DTZ, NDST, SLT, BLOWSNW, SV, &
                    HPROGRAM, HINIT, OLAND_USE, KI, KSV, KSW, HSV, &
                    PCO2, PRHOA, PZENITH, PAZIM, PSW_BANDS,        &
                    PDIR_ALB, PSCA_ALB, PEMIS, PTSRAD, PTSURF,     &

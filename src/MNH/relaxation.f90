@@ -16,7 +16,7 @@ INTERFACE
                              OHORELAX_SVELEC,OHORELAX_SVLG,                    &
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
-                             OHORELAX_SVCS,                                    &
+                             OHORELAX_SVCS,OHORELAX_SVSNW,                     &
 #ifdef MNH_FOREFIRE
                              OHORELAX_SVFF,                                    &
 #endif
@@ -83,6 +83,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the
 #endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW  ! switch for the
+                       ! horizontal relaxation for blowing snow variables
 INTEGER,                  INTENT(IN)    :: KTCOUNT! Temporal loop counter       
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
@@ -156,7 +158,7 @@ END MODULE MODI_RELAXATION
                              OHORELAX_SVELEC,OHORELAX_SVLG,                    &
                              OHORELAX_SVCHEM,OHORELAX_SVCHIC, OHORELAX_SVAER,  &
                              OHORELAX_SVDST, OHORELAX_SVSLT, OHORELAX_SVPP,    &
-                             OHORELAX_SVCS,                                    &
+                             OHORELAX_SVCS,OHORELAX_SVSNW,                     &
 #ifdef MNH_FOREFIRE
                              OHORELAX_SVFF,                                    &
 #endif
@@ -329,6 +331,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the
 #endif
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW  ! switch for the
+                       ! horizontal relaxation for blowing snow variables                       
 INTEGER,                  INTENT(IN)    :: KTCOUNT! Temporal loop counter       
 REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 INTEGER,                  INTENT(IN)    :: KRR    ! Number of moist variables
@@ -419,9 +423,9 @@ LOGICAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)) :: GMASK3D_RELAX ! 3D
                              ! mask for hor. relax.
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
 #ifdef MNH_FOREFIRE
-LOGICAL, DIMENSION(12) :: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(13) :: GHORELAXSV! local array of logical
 #else
-LOGICAL, DIMENSION(11) :: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(12) :: GHORELAXSV! local array of logical
 #endif
 !  
 !-------------------------------------------------------------------------------
@@ -459,8 +463,9 @@ GHORELAXSV(8) = OHORELAX_SVSLT
 GHORELAXSV(9) = OHORELAX_SVPP
 GHORELAXSV(10) = OHORELAX_SVCS
 GHORELAXSV(11) = OHORELAX_SVCHIC
+GHORELAXSV(12) = OHORELAX_SVSNW
 #ifdef MNH_FOREFIRE
-GHORELAXSV(12) = OHORELAX_SVFF
+GHORELAXSV(13) = OHORELAX_SVFF
 #endif
 !-------------------------------------------------------------------------------
 !

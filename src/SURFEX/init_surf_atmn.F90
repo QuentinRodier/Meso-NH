@@ -597,7 +597,7 @@ ZFRAC_TILE(:,JTILE) = YSC%U%XNATURE(:)
 IF (YSC%U%NDIM_NATURE>0) &
   CALL INIT_NATURE_n(YSC%DTCO, YSC%DUO%LREAD_BUDGETC, YSC%UG, YSC%U,    &
                      YSC%USS, YSC%GCP, YSC%IM, YSC%DTZ, YSC%DLO, YSC%DL,&
-                     YSC%DLC, YSC%NDST, YSC%SLT, YSC%SV,                &
+                     YSC%DLC, YSC%NDST, YSC%SLT,YSC%BLOWSNW, YSC%SV,    &
                      HPROGRAM,HINIT,OLAND_USE,YSC%U%NSIZE_NATURE,       &
                      KSV,KSW, HSV,ZP_CO2,ZP_RHOA,                       &
                      ZP_ZENITH,ZP_AZIM,PSW_BANDS,ZP_DIR_ALB,ZP_SCA_ALB, &

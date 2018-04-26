@@ -277,7 +277,7 @@ USE MODD_PARAMETERS
 USE MODD_LES
 USE MODD_CONF
 USE MODD_NSV, ONLY : XSVMIN,NSV_LGBEG,NSV_LGEND
-!
+USE MODD_BLOWSNOW
 USE MODE_FIELD, ONLY: TFIELDDATA,TYPEREAL
 USE MODE_FMWRIT
 !
@@ -361,6 +361,8 @@ INTEGER             :: ISV          ! number of scalar var.
 REAL :: ZTIME1, ZTIME2
 
 REAL :: ZCSVP = 4.0  ! constant for scalar flux presso-correlation (RS81)
+REAL :: ZCSV          !constant for the scalar flux
+!
 TYPE(TFIELDDATA)  :: TZFIELD
 !----------------------------------------------------------------------------
 !
@@ -377,6 +379,12 @@ ISV=SIZE(PSVM,4)
 !
 ZKEFF(:,:,:) = MZM(KKA,KKU,KKL, PLM(:,:,:) * SQRT(PTKEM(:,:,:)) )
 !
+IF(LBLOWSNOW) THEN
+! See Vionnet (PhD, 2012) for a complete discussion around the value of the Schmidt number for blowing snow variables           
+   ZCSV= XCHF/XRSNOW
+ELSE
+   ZCSV= XCHF
+ENDIF
 !----------------------------------------------------------------------------
 !
 !*       8.   SOURCES OF PASSIVE SCALAR VARIABLES
@@ -387,7 +395,7 @@ DO JSV=1,ISV
   IF (LNOMIXLG .AND. JSV >= NSV_LGBEG .AND. JSV<= NSV_LGEND) CYCLE
 !
 ! Preparation of the arguments for TRIDIAG 
-  ZA(:,:,:)    = -PTSTEP*XCHF*PPSI_SV(:,:,:,JSV) *   &
+  ZA(:,:,:)    = -PTSTEP*ZCSV*PPSI_SV(:,:,:,JSV) *   &
                  ZKEFF * MZM(KKA,KKU,KKL,PRHODJ) /   &
                  PDZZ**2
   ZSOURCE(:,:,:) = 0.
@@ -423,7 +431,7 @@ DO JSV=1,ISV
   IF ( (OTURB_FLX .AND. OCLOSE_OUT) .OR. LLES_CALL ) THEN
     ! Diagnostic of the cartesian vertical flux
     !
-    ZFLXZ(:,:,:) = -XCHF * PPSI_SV(:,:,:,JSV) * MZM(KKA,KKU,KKL,PLM*SQRT(PTKEM)) / PDZZ * &
+    ZFLXZ(:,:,:) = -ZCSV * PPSI_SV(:,:,:,JSV) * MZM(KKA,KKU,KKL,PLM*SQRT(PTKEM)) / PDZZ * &
                   DZM(KKA,KKU,KKL, PIMPL*ZRES(:,:,:) + PEXPL*PSVM(:,:,:,JSV) )
     ! surface flux
     !* in 3DIM case, a part of the flux goes vertically, and another goes horizontally

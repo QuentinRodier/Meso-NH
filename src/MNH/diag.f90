@@ -86,6 +86,7 @@
 !!  03/2018     (P.Wautelet)   replace SUBTRACT_TO_DATE and ADD_FORECAST_TO_DATE
 !!                             by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!  V.Vionnet 07/2017 add LWIND_CONTRAV
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -208,7 +209,7 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    LVAR_MRW, LVAR_MRSV, LVAR_FRC, &
                    LTPZH, LMOIST_V, LMOIST_E,LMOIST_ES, LCOREF, &
                    LVORT, LDIV, LMEAN_POVO, XMEAN_POVO, &
-                   LGEO, LAGEO, LWIND_ZM, LMSLP, LTHW, &
+                   LGEO, LAGEO, LWIND_ZM,LWIND_CONTRAV, LMSLP, LTHW, &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
                    NCAPE, LBV_FR, LRADAR, CBLTOP, LTRAJ, &
                    LDIAG,XDIAG,LCHEMDIAG,LCHAQDIAG,XCHEMLAT,XCHEMLON,&
@@ -275,6 +276,7 @@ XMEAN_POVO(2)=50000
 LGEO=.FALSE.
 LAGEO=.FALSE.
 LWIND_ZM=.FALSE.
+LWIND_CONTRAV=.FALSE.
 LMSLP=.FALSE.
 LTHW=.FALSE.
 LCLD_COV=.FALSE.

@@ -106,6 +106,8 @@ END MODULE MODI_GROUND_PARAM_n
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!                   02/2018 Q.Libois ECRAD
 !!     (P.Wautelet) 28/03/2018 replace TEMPORAL_DIST by DATETIME_DISTANCE
+
+!!     (V. Vionnet)           18/07/2017 add coupling for blowing snow module 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -120,7 +122,7 @@ USE MODD_METRICS_n,  ONLY : XDXX, XDYY, XDZZ
 USE MODD_DIM_n,      ONLY : NKMAX
 USE MODD_GRID_n,     ONLY : XLON, XZZ, XDIRCOSXW, XDIRCOSYW, XDIRCOSZW, &
                             XCOSSLOPE, XSINSLOPE, XZS
-USE MODD_REF_n,      ONLY : XRHODREF
+USE MODD_REF_n,      ONLY : XRHODREF,XRHODJ
 USE MODD_CONF_n,     ONLY : NRR
 USE MODD_PARAM_n,    ONLY : CDCONV,CCLOUD, CRAD
 USE MODD_PRECIP_n,   ONLY : XINPRC, XINPRR, XINPRS, XINPRG, XINPRH
@@ -137,6 +139,8 @@ USE MODD_PARAM_C2R2, ONLY : LSEDC
 USE MODD_DIAG_IN_RUN
 USE MODD_DUST,       ONLY : LDUST 
 USE MODD_SALT,       ONLY : LSALT
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_CSTS_DUST,  ONLY : XMOLARWEIGHT_DUST
 USE MODD_CSTS_SALT,  ONLY : XMOLARWEIGHT_SALT
@@ -188,7 +192,7 @@ REAL, DIMENSION(:,:), INTENT(OUT) :: PSFV  ! momentum in x and y directions     
 !
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PDIR_ALB  ! direct  albedo for each spectral band (-)
 REAL, DIMENSION(:,:,:), INTENT(OUT) :: PSCA_ALB  ! diffuse albedo for each spectral band (-)
-REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
+REAL, DIMENSION(:,:,:), INTENT(OUT) :: PEMIS     ! surface emissivity                    (-)
 REAL, DIMENSION(:,:),   INTENT(OUT) :: PTSRAD    ! surface radiative temperature         (K)
 !
 !
@@ -240,7 +244,13 @@ REAL, DIMENSION(SIZE(PSFTH,1),SIZE(PSFTH,2))  :: ZSFTH  ! Turbulent flux of heat
 REAL, DIMENSION(SIZE(PSFTH,1),SIZE(PSFTH,2))  :: ZSFTQ  ! Turbulent flux of water
 REAL, DIMENSION(SIZE(PSFTH,1),SIZE(PSFTH,2))  :: ZSFCO2 ! Turbulent flux of CO2
 REAL, DIMENSION(SIZE(PSFTH,1),SIZE(PSFTH,2),NSV):: ZSFTS! Turbulent flux of scalar
-
+!
+REAL, DIMENSION(SIZE(PSFTH,1),SIZE(PSFTH,2),NBLOWSNOW_2D)  :: ZBLOWSNOW_2D  ! 2D blowing snow variables
+                                                                            ! after advection
+                                  ! They refer to the 2D fields advected by MNH including:
+                                  !             - total number concentration in Canopy
+                                  !             - total mass concentration in Canopy
+                                  !             - equivalent concentration in the saltation layer
 !
 !* Dimensions
 !  ----------
@@ -261,6 +271,8 @@ INTEGER :: IDIM1 ! X physical dimension
 INTEGER :: IDIM2 ! Y physical dimension
 INTEGER :: IDIM1D! total physical dimension
 INTEGER :: IKRAD
+!
+INTEGER :: KSV_SURF  ! Number of scalar variables sent to SURFEX
 !
 !* Arrays put in 1D vectors
 !  ------------------------
@@ -319,6 +331,10 @@ REAL, DIMENSION(:),   ALLOCATABLE :: ZP_MER10M    ! meridian Wind at 10 meters  
 TYPE(LIST_ll), POINTER            :: TZFIELDSURF_ll    ! list of fields to exchange
 INTEGER                           :: IINFO_ll       ! return code of parallel routine
 !
+!
+CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
+                                                        ! sent to SURFEX
+!                                                        
 REAL                              :: ZTIMEC
 !
 !-------------------------------------------------------------------------------
@@ -487,6 +503,36 @@ ZZREF(:,:) = 0.5*( XZZ(:,:,IKB+1)-XZZ(:,:,IKB) )*XDIRCOSZW(:,:)
 !
 ZCO2(:,:) = XCCO2 * XRHODREF(:,:,IKB)
 !
+!
+!
+!        1.14   Blowing snow scheme (optional)
+!               -----------------
+!
+ZBLOWSNOW_2D=0.
+
+IF(LBLOWSNOW) THEN
+    KSV_SURF = NSV+NBLOWSNOW_2D ! When blowing snow scheme is used
+                  ! NBLOWSN0W_2D variables are sent to SURFEX through ZP_SV.
+                  ! They refer to the 2D fields advected by MNH including:
+                  !             - total number concentration in Canopy
+                  !             - total mass concentration in Canopy
+                  !             - equivalent concentration in the saltation layer
+    ! Initialize array of scalar to be sent to SURFEX including 2D blowing snow fields
+    ALLOCATE(YSV_SURF(KSV_SURF))
+    YSV_SURF(1:NSV)          = CSV(:)
+    YSV_SURF(NSV+1:KSV_SURF) = YPBLOWSNOW_2D(:)
+
+
+    DO JSV=1,NBLOWSNOW_2D 
+       ZBLOWSNOW_2D(:,:,JSV) = XRSNWCANOS(:,:,JSV)*XTSTEP/XRHODJ(:,:,IKB)
+    END DO
+
+ELSE
+    KSV_SURF = NSV
+    ALLOCATE(YSV_SURF(KSV_SURF))
+    YSV_SURF(:)     = CSV(:)
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !*       2.     Call to surface monitor with 2D variables
@@ -512,9 +558,9 @@ CALL DATETIME_DISTANCE(TDTSEG,TDTCUR,ZTIMEC)
 !                       
 CALL COUPLING_SURF_ATM_n(YSURF_CUR,'MESONH', 'E',ZTIMEC,                                                   &
                XTSTEP, TDTCUR%TDATE%YEAR, TDTCUR%TDATE%MONTH, TDTCUR%TDATE%DAY, TDTCUR%TIME,  &
-               IDIM1D,NSV,SIZE(XSW_BANDS),                                                    &
+               IDIM1D,KSV_SURF,SIZE(XSW_BANDS),                                                    &
                ZP_TSUN, ZP_ZENITH,ZP_ZENITH, ZP_AZIM,                                                   &
-               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, CSV,&
+               ZP_ZREF, ZP_ZREF, ZP_ZS, ZP_U, ZP_V, ZP_QA, ZP_TA, ZP_RHOA, ZP_SV, ZP_CO2, YSV_SURF,&
                ZP_RAIN, ZP_SNOW, ZP_LW, ZP_DIR_SW, ZP_SCA_SW, XSW_BANDS, ZP_PS, ZP_PA,        &
                ZP_SFTQ, ZP_SFTH, ZP_SFTS, ZP_SFCO2, ZP_SFU, ZP_SFV,                           &
                ZP_TSRAD, ZP_DIR_ALB, ZP_SCA_ALB, ZP_EMIS, ZP_TSURF, ZP_Z0, ZP_Z0H, ZP_QSURF,  &
@@ -629,6 +675,21 @@ ELSE
   PSFSV(:,:,NSV_AERBEG:NSV_AEREND) = 0.
 END IF
 !
+!* conversion from blowing snow flux (kg/m2/s) to [kg(snow)/kg(dry air).m.s-1]
+!
+IF (LBLOWSNOW) THEN
+  DO JSV=NSV_SNWBEG,NSV_SNWEND
+     PSFSV(:,:,JSV) = ZSFTS(:,:,JSV)/ (ZRHOA(:,:))
+  END DO
+  !* Update tendency for blowing snow 2D fields
+  DO JSV=1,(NBLOWSNOW_2D)
+     XRSNWCANOS(:,:,JSV) = ZBLOWSNOW_2D(:,:,JSV)*XRHODJ(:,:,IKB)/(XTSTEP*ZRHOA(:,:))
+  END DO
+
+ELSE
+  PSFSV(:,:,NSV_SNWBEG:NSV_SNWEND) = 0.
+END IF
+!
 !* conversion from CO2 flux (kg/m2/s) to w'CO2'
 !
 PSFCO2(:,:) = ZSFCO2(:,:) / XRHODREF(:,:,IKB)
@@ -699,7 +760,7 @@ ALLOCATE(ZP_V       (KDIM1D))
 ALLOCATE(ZP_QA      (KDIM1D))
 ALLOCATE(ZP_TA      (KDIM1D))
 ALLOCATE(ZP_RHOA    (KDIM1D))
-ALLOCATE(ZP_SV      (KDIM1D,NSV))
+ALLOCATE(ZP_SV      (KDIM1D,KSV_SURF))
 ALLOCATE(ZP_CO2     (KDIM1D))
 ALLOCATE(ZP_RAIN    (KDIM1D))
 ALLOCATE(ZP_SNOW    (KDIM1D))
@@ -713,7 +774,7 @@ ALLOCATE(ZP_SFTQ    (KDIM1D))
 ALLOCATE(ZP_SFTH    (KDIM1D))
 ALLOCATE(ZP_SFU     (KDIM1D))
 ALLOCATE(ZP_SFV     (KDIM1D))
-ALLOCATE(ZP_SFTS    (KDIM1D,NSV))
+ALLOCATE(ZP_SFTS    (KDIM1D,KSV_SURF))
 ALLOCATE(ZP_SFCO2   (KDIM1D))
 ALLOCATE(ZP_TSRAD   (KDIM1D))
 ALLOCATE(ZP_DIR_ALB (KDIM1D,SIZE(PDIR_ALB,3)))
@@ -759,6 +820,12 @@ DO JLAYER=1,NSV
   ZP_SV(:,JLAYER) = RESHAPE(XSVT(IIB:IIE,IJB:IJE,IKB,JLAYER), ISHAPE_1)
 END DO
 !
+IF(LBLOWSNOW) THEN
+  DO JLAYER=1,NBLOWSNOW_2D
+      ZP_SV(:,NSV+JLAYER) = RESHAPE(ZBLOWSNOW_2D(IIB:IIE,IJB:IJE,JLAYER), ISHAPE_1)
+  END DO
+END IF
+!
 !chemical conversion : from part/part to molec./m3
 DO JLAYER=NSV_CHEMBEG,NSV_CHEMEND
   ZP_SV(:,JLAYER) = ZP_SV(:,JLAYER) * XAVOGADRO * ZP_RHOA(:) / XMD
@@ -774,6 +841,18 @@ END DO
 DO JLAYER=NSV_SLTBEG,NSV_SLTEND
  ZP_SV(:,JLAYER) = ZP_SV(:,JLAYER) *  XMOLARWEIGHT_SALT* ZP_RHOA(:) / XMD
 END DO
+!
+!blowing snow conversion : from kg(snow)/kg(dry air) to kg(snow)/m3
+DO JLAYER=NSV_SNWBEG,NSV_SNWEND
+ ZP_SV(:,JLAYER) = ZP_SV(:,JLAYER) * ZP_RHOA(:)
+END DO
+
+IF(LBLOWSNOW) THEN ! Convert 2D blowing snow fields
+                    ! from kg(snow)/kg(dry air) to kg(snow)/m3
+  DO JLAYER=(NSV+1),KSV_SURF
+     ZP_SV(:,JLAYER) = ZP_SV(:,JLAYER) * ZP_RHOA(:)
+  END DO
+END IF
 !
 ZP_ZENITH(:)      = RESHAPE(XZENITH(IIB:IIE,IJB:IJE),      ISHAPE_1)
 ZP_AZIM  (:)      = RESHAPE(XAZIM  (IIB:IIE,IJB:IJE),      ISHAPE_1)
@@ -820,6 +899,11 @@ DO JLAYER=1,SIZE(PEMIS,3)
     PEMIS   (IIB:IIE,IJB:IJE,JLAYER)     = RESHAPE(ZP_EMIS(:),     ISHAPE_2)
 END DO
 PTSRAD  (IIB:IIE,IJB:IJE)       = RESHAPE(ZP_TSRAD(:),    ISHAPE_2)
+IF(LBLOWSNOW) THEN
+  DO JLAYER=1,NBLOWSNOW_2D
+    ZBLOWSNOW_2D(IIB:IIE,IJB:IJE,JLAYER)  =  RESHAPE(ZP_SFTS(:,NSV+JLAYER),  ISHAPE_2)
+  END DO
+END IF
 !
 IF (LDIAG_IN_RUN) THEN
   XCURRENT_RN      (IIB:IIE,IJB:IJE)  = RESHAPE(ZP_RN(:),     ISHAPE_2)

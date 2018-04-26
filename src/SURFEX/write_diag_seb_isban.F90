@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########
-      SUBROUTINE WRITE_DIAG_SEB_ISBA_n ( DTCO, DUO, U, NCHI, CHI, ID, NDST, GB, &
+      SUBROUTINE WRITE_DIAG_SEB_ISBA_n ( DTCO, DUO, U, NCHI, CHI, ID, NDST, BLOWSNW, GB, &
                                          IO, S, NP, NPE, HPROGRAM)
 !     #################################
 !
@@ -56,6 +56,7 @@ USE MODD_DST_n, ONLY : DST_NP_t
 USE MODD_GR_BIOG_n, ONLY : GR_BIOG_t
 USE MODD_ISBA_OPTIONS_n, ONLY : ISBA_OPTIONS_t
 USE MODD_ISBA_n, ONLY : ISBA_NP_t, ISBA_P_t, ISBA_NPE_t, ISBA_PE_t, ISBA_S_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 #ifdef SFX_ARO
 USE MODD_IO_SURF_ARO,   ONLY : NBLOCK
@@ -72,6 +73,7 @@ USE MODD_CSTS,       ONLY : XRHOLW, XTT, XLMTT
 USE MODD_DST_SURF
 !
 USE MODD_AGRI,     ONLY : LAGRIP
+USE MODD_BLOWSNW_SURF, ONLY : LBLOWSNW_CANODIAG
 !
 USE MODE_DIAG
 !
@@ -106,6 +108,7 @@ TYPE(ISBA_OPTIONS_t), INTENT(INOUT) :: IO
 TYPE(ISBA_S_t), INTENT(INOUT) :: S
 TYPE(ISBA_NP_t), INTENT(INOUT) :: NP
 TYPE(ISBA_NPE_t), INTENT(INOUT) :: NPE
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),  INTENT(IN)  :: HPROGRAM ! program calling
 !
@@ -121,7 +124,7 @@ CHARACTER(LEN=100):: YCOMMENT       ! Comment string
 CHARACTER(LEN=2)  :: YNUM
 !
 LOGICAL           :: GRESET
-INTEGER           :: JSV, JSW, JP, ISIZE
+INTEGER           :: JSV, JSW, JP, ISIZE, JLAYER
 INTEGER           :: ISIZE_LMEB_PATCH   ! Number of patches where multi-energy balance should be applied
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
@@ -671,6 +674,93 @@ IF (CHI%SVI%NDSTEQ > 0)THEN
   !
 ENDIF
 !
+!
+! Blowing snow variables
+!
+IF (CHI%SVI%NSNWEQ > 0)THEN
+
+     YRECFM='SNOW_SALT'
+     YCOMMENT='streamwise snow saltation flux (kg/m/s)'   
+    CALL WRITE_SURF(DUO%CSELECT, &
+                  HPROGRAM,YRECFM,BLOWSNW%XSNW_FSALT(:,1),IRESP,HCOMMENT=YCOMMENT)
+
+DO JSV=1,2
+
+    WRITE(YRECFM,'(A8,I1.1,A3)') 'SNW_FTUR',JSV,'   '
+    YCOMMENT='Ins. surface turbulent snow flux (__ /m2/s)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FTURB(:,JSV),IRESP,HCOMMENT=YCOMMENT)
+
+    WRITE(YRECFM,'(A8,I1.1,A3)') 'SNW_FSED',JSV,'   '
+    YCOMMENT='Ins. surface sedimentation snow flux (__ /m2/s)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FSED(:,JSV),IRESP,HCOMMENT=YCOMMENT)
+    
+    WRITE(YRECFM,'(A8,I1.1,A3)') 'SNW_FNET',JSV,'   '
+    YCOMMENT='Ins. surface net snow flux (__ /m2/s)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FNET(:,JSV),IRESP,HCOMMENT=YCOMMENT)
+
+ENDDO
+
+    YRECFM='SNW_FTUR_ACC'
+    YCOMMENT='Acc. surface turbulent snow flux (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FTURB(:,3),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_FSED_ACC'
+    YCOMMENT='Acc. surface sedimentation snow flux (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FSED(:,3),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_FNET_ACC'
+    YCOMMENT='Acc. surface net snow flux (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FNET(:,3),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_FSAL_ACC'
+    YCOMMENT='Acc. surface saltation flux (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FSALT(:,3),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_FSAL_INS'
+    YCOMMENT='Ins. surface saltatio flux (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_FSALT(:,2),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_SUBL_ACC'
+    YCOMMENT='Canopy Acc. sublimation (kg/m2)'
+    CALL WRITE_SURF(DUO%CSELECT, &
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_SUBL(:,3),IRESP,HCOMMENT=YCOMMENT)
+
+    YRECFM='SNW_SUBL_INS'
+    YCOMMENT='Canopy Sublimation Rate (mmSWE/day)'
+    CALL WRITE_SURF(DUO%CSELECT,&
+            HPROGRAM,YRECFM,BLOWSNW%XSNW_SUBL(:,2),IRESP,HCOMMENT=YCOMMENT)
+
+
+    IF(LBLOWSNW_CANODIAG) THEN
+        DO JLAYER=1,SIZE(BLOWSNW%XSNW_CANO_RGA,2)
+
+           WRITE(YRECFM,'(A10,I2.2)') 'CANSNW_RGL',JLAYER
+           YCOMMENT='Blowing snow radius at canopy level (m)'
+           CALL WRITE_SURF(DUO%CSELECT, &
+                    HPROGRAM,YRECFM,BLOWSNW%XSNW_CANO_RGA(:,JLAYER),IRESP,HCOMMENT=YCOMMENT)
+
+           WRITE(YRECFM,'(A10,I2.2)') 'CANSNW_MAS',JLAYER
+           YCOMMENT='Blowing snow mass at canopy level (kg/m3)'
+           CALL WRITE_SURF(DUO%CSELECT, &
+                    HPROGRAM,YRECFM,BLOWSNW%XSNW_CANO_VAR(:,JLAYER,2),IRESP,HCOMMENT=YCOMMENT)
+    
+           WRITE(YRECFM,'(A10,I2.2)') 'CANSNW_NUM',JLAYER
+           YCOMMENT='Blowing snow number at canopy level (#/m3)'
+           CALL WRITE_SURF(DUO%CSELECT, &
+                    HPROGRAM,YRECFM,BLOWSNW%XSNW_CANO_VAR(:,JLAYER,1),IRESP,HCOMMENT=YCOMMENT)
+        ENDDO
+    ENDIF
+
+ENDIF
+
 !----------------------------------------------------------------------------
 !
 !*       5.    Cumulated Energy fluxes

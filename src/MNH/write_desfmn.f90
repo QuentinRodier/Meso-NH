@@ -143,6 +143,7 @@ END MODULE MODI_WRITE_DESFM_n
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Modification   V. Vionnet     07/2017  add blowing snow variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -198,6 +199,8 @@ USE MODN_LATZ_EDFLX
 USE MODN_FOREFIRE
 USE MODD_FOREFIRE_n, ONLY : FFCOUPLING
 #endif
+USE MODN_BLOWSNOW_n
+USE MODN_BLOWSNOW
 !
 IMPLICIT NONE
 !
@@ -220,7 +223,7 @@ LOGICAL                     ::  GHORELAX_UVWTH,                               &
                                 GHORELAX_SVFF,                                &
 #endif
                                 GHORELAX_SVCHEM, GHORELAX_SVC1R3,             &
-                                GHORELAX_SVELEC, GHORELAX_SVLIMA
+                                GHORELAX_SVELEC, GHORELAX_SVLIMA,GHORELAX_SVSNW
 LOGICAL                     ::  GHORELAX_SVDST, GHORELAX_SVSLT,  GHORELAX_SVAER
 LOGICAL, DIMENSION(JPSVMAX) ::  GHORELAX_SV
 !
@@ -271,6 +274,7 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
 #endif
   GHORELAX_SVCS  = LHORELAX_SVCS 
   GHORELAX_SVAER = LHORELAX_SVAER
+  GHORELAX_SVSNW = LHORELAX_SVSNW    
 !
   LHORELAX_UVWTH = .FALSE.
   LHORELAX_RV    = .FALSE.
@@ -296,6 +300,7 @@ IF (CPROGRAM/='MESONH') THEN   ! impose default value for next simulation
   LHORELAX_SVDST= .FALSE.
   LHORELAX_SVSLT= .FALSE.
   LHORELAX_SVAER= .FALSE.
+  LHORELAX_SVSNW= .FALSE.    
 ELSE  !return to namelist meaning of LHORELAX_SV
   GHORELAX_SV(:) = LHORELAX_SV(:)
   LHORELAX_SV(NSV_USER+1:)=.FALSE. 
@@ -356,6 +361,10 @@ IF(LUSECHEM .OR. LCH_CONV_LINOX .OR. LCH_CONV_SCAV) &
 !
 CALL INIT_NAM_CH_SOLVERn
 IF(LUSECHEM) WRITE(UNIT=ILUSEG,NML=NAM_CH_SOLVERn)
+!
+CALL INIT_NAM_BLOWSNOWn
+IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOWn)
+IF(LBLOWSNOW) WRITE(UNIT=ILUSEG,NML=NAM_BLOWSNOW)
 !
 IF(LDUST) WRITE(UNIT=ILUSEG,NML=NAM_DUST)
 IF(LSALT) WRITE(UNIT=ILUSEG,NML=NAM_SALT)
@@ -472,6 +481,9 @@ IF (NVERB >= 5) THEN
   WRITE(UNIT=ILUOUT,FMT="('************ TEMPORAL SERIESn ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_SERIESn)
 !  
+  WRITE(UNIT=ILUOUT,FMT="('********** BLOWING SNOW SCHEME ****************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)
+!
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF SEGMENT FILE COMMON TO ALL THE MODELS')")
     WRITE(UNIT=ILUOUT,FMT="(  '---------------------------------------------')")
@@ -562,6 +574,9 @@ IF (NVERB >= 5) THEN
     WRITE(UNIT=ILUOUT,FMT="('********** SALT SCHEME ************************')")
     WRITE(UNIT=ILUOUT,NML=NAM_SALT)
 !
+    WRITE(UNIT=ILUOUT,FMT="('********** BLOWING SNOW SCHEME ****************')")
+    WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOW)    
+!
     WRITE(UNIT=ILUOUT,FMT="('************ ORILAM SCHEME ********************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CH_ORILAM)
 !    
@@ -624,6 +639,7 @@ IF (CPROGRAM /='MESONH') THEN !return to previous LHORELAX_
 #endif
   LHORELAX_SVCS  = GHORELAX_SVCS 
   LHORELAX_SVAER = GHORELAX_SVAER
+  LHORELAX_SVSNW = GHORELAX_SVSNW  
 ELSE
   LHORELAX_SV(:) = GHORELAX_SV(:)
 ENDIF

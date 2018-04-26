@@ -14,7 +14,7 @@ INTERFACE
             OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                            &
             OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,   &
             OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
-            OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,                    &
+            OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,     &
             PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
             PZZ, PZHAT, PTSTEP,                                              &
             PRIMKMAX,KRIMX, KRIMY,                                           &
@@ -67,6 +67,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the
                        ! horizontal relaxation for passive pollutants
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling 
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW  ! switch for the
+                       ! horizontal relaxation for blowing snow variables                        
 REAL,                   INTENT(IN)        :: PALKTOP   ! Damping coef. at the 
                                                        ! top of the abs. layer
 REAL,                   INTENT(IN)        :: PALKGRD   ! Damping coef. at the 
@@ -117,7 +119,7 @@ END MODULE MODI_RELAXDEF
             OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                            &
             OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,   &
             OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
-            OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,                    &
+            OHORELAX_SVPP,OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,     &
             PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
             PZZ, PZHAT, PTSTEP,                                              &
             PRIMKMAX,KRIMX, KRIMY,                                           &
@@ -290,6 +292,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the
                        ! horizontal relaxation for passive pollutants
 LOGICAL,             INTENT(IN):: OHORELAX_SVCS   ! switch for the 
                        ! horizontal relaxation for conditional sampling 
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW  ! switch for the
+                       ! horizontal relaxation for blowing snow variables                       
 REAL,                   INTENT(IN)        :: PALKTOP   ! Damping coef. at the 
                                                        ! top of the abs. layer
 REAL,                   INTENT(IN)        :: PALKGRD   ! Damping coef. at the 
@@ -380,7 +384,7 @@ REAL                       :: ZYWPOS      ! lateral boundary for "w" locations
 REAL                       :: ZPOS        ! Normalized distance
                                           ! to the inner boundary
 LOGICAL, DIMENSION(7)      :: GHORELAXR   ! local array of logical
-LOGICAL, DIMENSION(11)     :: GHORELAXSV  ! local array of logical
+LOGICAL, DIMENSION(12)     :: GHORELAXSV  ! local array of logical
 INTEGER                    :: IINFO_ll    ! return code of parallel routine
 INTEGER                    :: IIMAX_ll,IJMAX_ll ! Number of points of
                                                 ! Global physical domain
@@ -493,6 +497,7 @@ GHORELAXSV(8) = OHORELAX_SVSLT
 GHORELAXSV(9) = OHORELAX_SVPP 
 GHORELAXSV(10)= OHORELAX_SVCS 
 GHORELAXSV(11) = OHORELAX_SVCHIC
+GHORELAXSV(12) = OHORELAX_SVSNW
 !
 IF ( ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
                     .OR. OHORELAX_UVWTH  .OR. OHORELAX_TKE     ) THEN 

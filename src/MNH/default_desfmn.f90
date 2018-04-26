@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+! _Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/default_desfmn.f90,v _
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_DEFAULT_DESFM_n
@@ -218,9 +219,11 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                    10/2016 (C.Lac) Add droplet deposition
 !!                   10/2016  (R.Honnert and S.Riette) : Improvement of EDKF and adaptation to the grey zone
 !!                   10/2016  (F Brosse) add prod/loss terms computation for chemistry
+!!                   07/2017  (V. Masson) adds time step for output files writing.
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!                   02/2018 Q.Libois ECRAD
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   07/2017 (V. Vionnet) add blowing snow variables
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -284,6 +287,8 @@ USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
 !
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
+USE MODD_BLOWSNOW
+USE MODD_BLOWSNOW_n
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -425,6 +430,8 @@ LHORELAX_SVLIMA = .FALSE.
 #ifdef MNH_FOREFIRE
 LHORELAX_SVFF   = .FALSE.
 #endif
+LHORELAX_SVSNW  = .FALSE.
+!
 !
 !-------------------------------------------------------------------------------
 !
@@ -1378,5 +1385,18 @@ IF (KMI == 1) THEN
 ENDIF  
 #endif                 
 !-------------------------------------------------------------------------------
+!
+!*      28.   SET DEFAULT VALUES FOR MODD_BLOWSNOW AND  MODD_BLOWSNOW_n       
+!             ----------------------------------------
+! 
+IF (KMI == 1) THEN
+   LBLOWSNOW  = .FALSE.
+   XALPHA_SNOW  = 3.
+   XRSNOW       = 4.
+   CSNOWSEDIM  = 'TABC'
+END IF
+LSNOWSUBL = .FALSE.
+!
+!
 !
 END SUBROUTINE DEFAULT_DESFM_n

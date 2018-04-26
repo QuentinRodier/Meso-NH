@@ -67,6 +67,7 @@ END MODULE MODI_INIT_GROUND_PARAM_n
 !!  01/2018      (G.Delautier) SURFEX 8.1
 !!                   02/2018 Q.Libois ECRAD
 !!  03/2018     (P.Wautelet)   replace ADD_FORECAST_TO_DATE_SURF by DATETIME_CORRECTDATE
+!!   2017  V.Vionnet Blow snow
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -84,6 +85,7 @@ USE MODD_NSV
 USE MODD_DUST,       ONLY : CDUSTNAMES
 USE MODD_SALT,       ONLY : CSALTNAMES
 USE MODD_CH_AEROSOL, ONLY : CAERONAMES
+USE MODD_BLOWSNOW
 USE MODD_TYPE_DATE,  ONLY : DATE_TIME
 !
 USE MODD_TYPE_DATE_SURF, ONLY : DATE_SURF=>DATE
@@ -144,6 +146,8 @@ INTEGER :: IID,IRESP
 TYPE (DATE_TIME), POINTER :: TZTCUR=>NULL()
 TYPE (DATE_TIME)          :: TZDATE
 !
+CHARACTER(LEN=6), DIMENSION(:), ALLOCATABLE :: YSV_SURF ! name of the scalar variables
+                                                        ! sent to SURFEX
 !-------------------------------------------------------------------------------
 !
 !
@@ -194,10 +198,29 @@ TDATE_END%YEAR  = TZDATE%TDATE%YEAR
 TDATE_END%MONTH = TZDATE%TDATE%MONTH
 TDATE_END%DAY   = TZDATE%TDATE%DAY
 !
+DO JLAYER=NSV_SNWBEG,NSV_SNWEND
+  HSV(JLAYER) = TRIM(CSNOWNAMES(JLAYER-NSV_SNWBEG+1))
+END DO
+!
 ISV = SIZE(HSV)
+IF(LBLOWSNOW) THEN
+    ISV = ISV+NBLOWSNOW_2D ! When blowing snow scheme is used
+                  ! NBLOWSN0W_2D variables are sent to SURFEX through ZP_SV.
+                  ! They refer to the 2D fields advected by MNH including:
+                  !             - total number concentration in Canopy
+                  !             - total mass concentration in Canopy
+                  !             - equivalent concentration in the saltation layer
+
+    ALLOCATE(YSV_SURF(ISV))
+    YSV_SURF(1:KSV)          = HSV(:)
+    YSV_SURF(NSV+1:ISV) = YPBLOWSNOW_2D(:)                  
+ELSE
+    ALLOCATE(YSV_SURF(ISV))
+    YSV_SURF(:)     = HSV(:)
+ENDIF
 CALL INIT_SURF_ATM_n(YSURF_CUR,'MESONH',HINIT,.FALSE.,                  &
                      ILU,ISV,SIZE(PSW_BANDS),                           &
-                     HSV,ZCO2,ZRHODREF,                                 &
+                     YSV_SURF,ZCO2,ZRHODREF,                                 &
                      ZZENITH,ZAZIM,PSW_BANDS,ZDIR_ALB,ZSCA_ALB,         &
                      ZEMIS,ZTSRAD,ZTSURF,                               &
                      TZTCUR%TDATE%YEAR, TZTCUR%TDATE%MONTH,             &
@@ -225,6 +248,7 @@ DEALLOCATE(ZDIR_ALB)
 DEALLOCATE(ZSCA_ALB)
 DEALLOCATE(ZEMIS   )
 DEALLOCATE(ZTSRAD  )
+DEALLOCATE(YSV_SURF  )
 !
 !-------------------------------------------------------------------------------
 !

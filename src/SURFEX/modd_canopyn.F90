@@ -49,6 +49,8 @@ TYPE CANOPY_t
   REAL, POINTER, DIMENSION(:,:) :: XLM  ! Mixing lentgh                         (m)
   REAL, POINTER, DIMENSION(:,:) :: XLEPS! Dissipative length                    (m)
   REAL, POINTER, DIMENSION(:,:) :: XP   ! pressure    at each level in canopy   (kg/m3)
+  REAL, POINTER, DIMENSION(:,:,:):: XBLOWSNW ! Blowing snow moments at each level in canopy   
+                                             ! 1:( #/m3); 2:(kg/m3)    
 !
   REAL, POINTER, DIMENSION(:,:) :: XDZ  ! depth       of each level in canopy   (m)
   REAL, POINTER, DIMENSION(:,:) :: XZF  ! height of bottom of each level grid   (m)
@@ -74,6 +76,7 @@ IF (LHOOK) CALL DR_HOOK("MODD_CANOPY_N:CANOPY_INIT",0,ZHOOK_HANDLE)
   NULLIFY(SB%XDZ)
   NULLIFY(SB%XZF)
   NULLIFY(SB%XDZF)
+  NULLIFY(SB%XBLOWSNW)
 SB%NLVL=0
 IF (LHOOK) CALL DR_HOOK("MODD_CANOPY_N:CANOPY_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE CANOPY_INIT

@@ -17,7 +17,7 @@
                           PHU_AGG, PAC_AGG, PDELHEATV_SFC, PDELHEATG_SFC, PDELHEATG,&
                           PDELHEATN, PDELHEATN_SFC, PRESTOREN, PTDEEP_A, PDEEP_FLUX,&
                           PRISNOW, PSNOW_THRUFAL, PSNOW_THRUFAL_SOIL, PEVAPCOR,     &
-                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW)
+                          PSUBVCOR, PLITCOR, PSNOWSFCH, PQSNOW, PBLOWSNW_FLUX, PBLOWSNW_CONC )
 !     ##########################################################################
 !
 !                             
@@ -249,6 +249,17 @@ REAL, DIMENSION(:),   INTENT(OUT)   :: PQSNOW        ! snow surface specific hum
 ! diagnostic variables for Carbon assimilation:
 !
 REAL, DIMENSION(:,:), INTENT(OUT)   :: PRESP_BIOMASS_INST ! instantaneous biomass respiration (kgCO2/kgair m/s)
+!
+!
+!* Blowing snow variables
+!  ----------------------
+!
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(INOUT) :: PBLOWSNW_FLUX! Blowing snow particles flux:
+!                                           1: Number (#/m2/s) 2: Mass (kg/m2/s)
+!                                        IN : contains sedimentation flux
+!                                        OUT : contains emitted turbulent flux towards the atmosphere
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(IN)    :: PBLOWSNW_CONC ! Blowing snow particles concentration:
+!                                           1: Number (#/m3) 2: Mass (kg/m3)
 !
 !*      0.2    declarations of local variables
 !
@@ -922,7 +933,7 @@ ZVEGFACT(:) = ZSIGMA_F(:)*(1.0-PPALPHAN(:)*PEK%XPSN(:))
                   PPEQ_B_COEF, PSNOW_THRUFAL, PGRNDFLUX, PFLSN_COR,         &
                   PRESTOREN, PEVAPCOR, DEK%XLES, DEK%XLESL, ZEVAP3L, PSNOWSFCH, &
                   PDELHEATN, PDELHEATN_SFC, PRISNOW, PZENITH, PDELHEATG,    &
-                  PDELHEATG_SFC, PQSNOW     ) 
+                  PDELHEATG_SFC, PQSNOW,PBLOWSNW_FLUX,PBLOWSNW_CONC      ) 
 !
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !*      11.0    Litter layer hydrology:

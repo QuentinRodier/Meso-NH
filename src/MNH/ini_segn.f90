@@ -162,6 +162,7 @@ END MODULE MODI_INI_SEG_n
 !!                       01/2015   add GLNOX_EXPLICIT (C. Barthe)
 !!                       04/2016   add ABORT if CINIFILEPGD is not specified (G.Delautier)
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                       07/2017   add GBLOWSNOW (V. Vionnet)
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -232,6 +233,7 @@ LOGICAL            :: GPASPOL
 LOGICAL            :: GFOREFIRE
 #endif
 LOGICAL            :: GCONDSAMP
+LOGICAL            :: GBLOWSNOW
 LOGICAL            :: GCHTRANS 
 LOGICAL            :: GLNOX_EXPLICIT              ! flag for LNOx
                                                   ! These variables
@@ -358,7 +360,7 @@ CALL READ_DESFM_n(KMI,TPINIFILE,YCONF,GFLAT,GUSERV,GUSERC,                  &
                 GFOREFIRE,                                                  &
 #endif
                 GLNOX_EXPLICIT,                                             &
-                GCONDSAMP, IRIMX,IRIMY,ISV,                                 &
+                GCONDSAMP,GBLOWSNOW, IRIMX,IRIMY,ISV,                                 &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS   )
 !
 !-------------------------------------------------------------------------------
@@ -448,7 +450,7 @@ CALL READ_EXSEG_n(KMI,TZFILE_DES,YCONF,GFLAT,GUSERV,GUSERC,                 &
                 GFOREFIRE, &
 #endif
                 GLNOX_EXPLICIT,                                             &
-                GCONDSAMP, IRIMX,IRIMY,ISV, &
+                GCONDSAMP,GBLOWSNOW, IRIMX,IRIMY,ISV, &
                 YTURB,YTOM,GRMC01,YRAD,YDCONV,YSCONV,YCLOUD,YELEC,YEQNSYS,  &
                 PTSTEP_ALL,CSTORAGE_TYPE,CINIFILEPGD_n                      )
 !

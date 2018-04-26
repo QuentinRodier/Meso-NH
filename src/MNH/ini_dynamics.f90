@@ -14,7 +14,7 @@ SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
                OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                         &
                OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,&
                OHORELAX_SVCHEM,OHORELAX_SVAER,OHORELAX_SVDST,OHORELAX_SVSLT, &
-               OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,                &
+               OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,OHORELAX_SVSNW, &
 #ifdef MNH_FOREFIRE
                OHORELAX_SVFF,                                                &
 #endif
@@ -88,6 +88,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive pollutants
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW   ! switch for the
+                       ! horizontal relaxation for blowing snow variables    
 #ifdef MNH_FOREFIRE
 LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
                        ! horizontal relaxation for ForeFire variables
@@ -183,7 +185,7 @@ SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
                OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                         &
                OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,&
                OHORELAX_SVCHEM,OHORELAX_SVAER,OHORELAX_SVDST,OHORELAX_SVSLT, &
-               OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,                &
+               OHORELAX_SVPP,OHORELAX_SVCS,  OHORELAX_SVCHIC,OHORELAX_SVSNW, &
 #ifdef MNH_FOREFIRE
                OHORELAX_SVFF,                                                &
 #endif
@@ -277,6 +279,7 @@ SUBROUTINE INI_DYNAMICS(PLON,PLAT,PRHODJ,PTHVREF,PMAP,PZZ,                   &
 !!      Modification    20/05/06  Remove KEPS
 !!      Modification    07/2013   (Bosseur & Filippi) Adds Forefire
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!     Vionnet 07/2017 : blow snow
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -355,6 +358,8 @@ LOGICAL,             INTENT(IN):: OHORELAX_SVSLT  ! switch for the
                        ! horizontal relaxation for slt variables
 LOGICAL,             INTENT(IN):: OHORELAX_SVPP   ! switch for the 
                        ! horizontal relaxation for passive pollutants
+LOGICAL,             INTENT(IN):: OHORELAX_SVSNW   ! switch for the
+                       ! horizontal relaxation for blowing snow variables
 #ifdef MNH_FOREFIRE
 LOGICAL,             INTENT(IN):: OHORELAX_SVFF   ! switch for the 
                        ! horizontal relaxation for ForeFire variables
@@ -447,9 +452,9 @@ INTEGER                                    :: IIU,IJU !  Upper bounds in x,y dir
 LOGICAL                                    :: GHORELAX
 LOGICAL, DIMENSION(7) :: GHORELAXR ! local array of logical
 #ifdef MNH_FOREFIRE
-LOGICAL, DIMENSION(12):: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(13):: GHORELAXSV! local array of logical
 #else
-LOGICAL, DIMENSION(11):: GHORELAXSV! local array of logical
+LOGICAL, DIMENSION(12):: GHORELAXSV! local array of logical
 #endif
 !
 !-------------------------------------------------------------------------------
@@ -519,8 +524,9 @@ GHORELAXSV(8) = OHORELAX_SVSLT
 GHORELAXSV(9) = OHORELAX_SVPP
 GHORELAXSV(10)= OHORELAX_SVCS
 GHORELAXSV(11) = OHORELAX_SVCHIC
+GHORELAXSV(12) = OHORELAX_SVSNW
 #ifdef MNH_FOREFIRE
-GHORELAXSV(12) = OHORELAX_SVFF
+GHORELAXSV(13) = OHORELAX_SVFF
 #endif
 !
 GHORELAX=ANY(GHORELAXR) .OR. ANY(GHORELAXSV) .OR. ANY(OHORELAX_SV) &
@@ -532,7 +538,7 @@ IF (GHORELAX .OR. OVE_RELAX.OR.OVE_RELAX_GRD) THEN
      OHORELAX_RH,OHORELAX_TKE,OHORELAX_SV,                            &
      OHORELAX_SVC2R2,OHORELAX_SVC1R3,OHORELAX_SVELEC,OHORELAX_SVLG,   &
      OHORELAX_SVCHEM, OHORELAX_SVAER, OHORELAX_SVDST, OHORELAX_SVSLT, &
-     OHORELAX_SVPP, OHORELAX_SVCS, OHORELAX_SVCHIC,                   &
+     OHORELAX_SVPP, OHORELAX_SVCS, OHORELAX_SVCHIC,OHORELAX_SVSNW,    &
      PALKTOP,PALKGRD, PALZBOT,PALZBAS,                                &
      PZZ, PZHAT, PTSTEP,                                              &
      PRIMKMAX,KRIMX,KRIMY,                                            &

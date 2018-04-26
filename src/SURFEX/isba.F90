@@ -12,7 +12,8 @@
                       PPALPHAN, PZ0G_WITHOUT_SNOW, PZ0_MEBV, PZ0H_MEBV,          &
                       PZ0EFF_MEBV, PZ0_MEBN, PZ0H_MEBN, PZ0EFF_MEBN, PTDEEP_A,   &
                       PCSP, PFFG_NOSNOW, PFFV_NOSNOW, PEMIST, PUSTAR, PAC_AGG,   &
-                      PHU_AGG, PRESP_BIOMASS_INST, PDEEP_FLUX, PIRRIG_GR     )
+                      PHU_AGG, PRESP_BIOMASS_INST, PDEEP_FLUX, PIRRIG_GR,        &
+                      PBLOWSNW_FLUX, PBLOWSNW_CONC   )      
 !     ##########################################################################
 !
 !
@@ -291,6 +292,16 @@ REAL, DIMENSION(:),     INTENT(OUT) :: PDEEP_FLUX ! Heat flux at bottom of ISBA 
 !
 REAL   ,DIMENSION(:),INTENT(IN)    :: PIRRIG_GR ! ground irrigation rate (kg/m2/s)
 !
+!* Blowing snow variables
+!  ----------------------
+!
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(INOUT) :: PBLOWSNW_FLUX! Blowing snow particles flux:
+!                                           1: Number (#/m2/s) 2: Mass (kg/m2/s)
+!                                        IN : contains sedimentation flux
+!                                        OUT : contains emitted turbulent flux towards the atmosphere
+REAL, DIMENSION(:,:),OPTIONAL, INTENT(IN)    :: PBLOWSNW_CONC ! Blowing snow particles concentration:
+!                                           1: Number (#/m3) 2: Mass (kg/m3)
+!
 !
 !*      0.2    declarations of local variables
 !
@@ -482,7 +493,7 @@ IF(OMEB)THEN
                  PHU_AGG, PAC_AGG, ZDELHEATV_SFC, ZDELHEATG_SFC, ZDELHEATG, &
                  ZDELHEATN, ZDELHEATN_SFC, ZGSFCSNOW, PTDEEP_A, PDEEP_FLUX, &
                  ZRI3L, ZSNOW_THRUFAL, ZSNOW_THRUFAL_SOIL, ZEVAPCOR, ZSUBVCOR, &
-                 ZLITCOR, ZSNOWSFCH, ZQS3L   )
+                 ZLITCOR, ZSNOWSFCH, ZQS3L,PBLOWSNW_FLUX,PBLOWSNW_CONC    )
 
 ELSE
 !
@@ -519,7 +530,8 @@ ELSE
                     PK%XDG, PK%XDZG, PPEW_A_COEF, PPEW_B_COEF, PPET_A_COEF, PPEQ_A_COEF,  &
                     PPET_B_COEF, PPEQ_B_COEF, ZSNOW_THRUFAL_SOIL, ZGRNDFLUX, ZFLSN_COR,    &
                     ZGSFCSNOW, ZEVAPCOR, ZLES3L, ZLEL3L, ZEVAP3L, ZSNOWSFCH, ZDELHEATN,   &
-                    ZDELHEATN_SFC, ZRI3L, PZENITH, ZDELHEATG, ZDELHEATG_SFC, ZQS3L      )  
+                    ZDELHEATN_SFC, ZRI3L, PZENITH, ZDELHEATG, ZDELHEATG_SFC, ZQS3L,       &
+                    PBLOWSNW_FLUX,PBLOWSNW_CONC     )  
 !  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !
 !*      8.0    Plant stress, stomatal resistance and, possibly, CO2 assimilation

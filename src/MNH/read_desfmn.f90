@@ -18,7 +18,7 @@ INTERFACE
                    OFOREFIRE,                                                    &
 #endif
                    OLNOX_EXPLICIT,                                               &
-                   OCONDSAMP,                                                    &
+                   OCONDSAMP,OBLOWSNOW,                                          &
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 !
@@ -51,6 +51,7 @@ LOGICAL,            INTENT(OUT) :: OFOREFIRE! ForeFire flag
 #endif
 LOGICAL,            INTENT(OUT) :: OLNOX_EXPLICIT ! explicit LNOx flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
+LOGICAL,            INTENT(OUT) :: OBLOWSNOW ! Blowing snow flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Orilam flag
 LOGICAL,            INTENT(OUT) :: OCHTRANS ! Deep convection on scalar
 LOGICAL,DIMENSION(JPMODELMAX),INTENT(OUT) :: ODEPOS_DST    ! Dust Wet Deposition flag
@@ -85,7 +86,7 @@ END MODULE MODI_READ_DESFM_n
                    OFOREFIRE,                                                    &
 #endif
                    OLNOX_EXPLICIT,                                               &
-                   OCONDSAMP,                                                    &
+                   OCONDSAMP,OBLOWSNOW,                                          &
                    KRIMX,KRIMY,KSV_USER,                                         &
                    HTURB,HTOM,ORMC01,HRAD,HDCONV,HSCONV,HCLOUD,HELEC,HEQNSYS     )
 !     #########################################################################
@@ -190,6 +191,7 @@ END MODULE MODI_READ_DESFM_n
 !!      Modification   11/2016   (Ph. Wautelet) Allocate/initialise some output/backup structures
 !!      Modification   02/2018   (Q.Libois) ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Modification   07/2017   (V. Vionnet) Add blowing snow scheme
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -254,6 +256,8 @@ USE MODN_FOREFIRE
 USE MODN_CONDSAMP
 USE MODN_LATZ_EDFLX
 USE MODN_2D_FRC
+USE MODN_BLOWSNOW_n
+USE MODN_BLOWSNOW
 !
 USE MODN_PARAM_LIMA
 !
@@ -305,6 +309,7 @@ LOGICAL,            INTENT(OUT) :: OFOREFIRE ! ForeFire flag
 #endif
 LOGICAL,            INTENT(OUT) :: OLNOX_EXPLICIT ! explicit LNOx flag
 LOGICAL,            INTENT(OUT) :: OCONDSAMP! Conditional sampling flag
+LOGICAL,            INTENT(OUT) :: OBLOWSNOW! Blowing snow flag
 LOGICAL,            INTENT(OUT) :: ODUST    ! Dust flag
 LOGICAL,            INTENT(OUT) :: OORILAM  ! Dust flag
 LOGICAL,            INTENT(OUT) :: OCHTRANS ! Deep convection on scalar
@@ -427,6 +432,13 @@ CALL INIT_NAM_SERIESn
 IF (GFOUND) THEN 
   READ(UNIT=ILUDES,NML=NAM_SERIESn)
   CALL UPDATE_NAM_SERIESn
+END IF
+
+CALL POSNAM(ILUDES,'NAM_BLOWSNOWn',GFOUND,ILUOUT)
+CALL INIT_NAM_BLOWSNOWn
+IF (GFOUND) THEN
+  READ(UNIT=ILUDES,NML=NAM_BLOWSNOWn)
+  CALL UPDATE_NAM_BLOWSNOWn
 END IF
 !
 !
@@ -554,6 +566,8 @@ IF (KMI == 1) THEN
 #endif
   CALL POSNAM(ILUDES,'NAM_CONDSAMP',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_CONDSAMP)
+  CALL POSNAM(ILUDES,'NAM_BLOWSNOW',GFOUND,ILUOUT)
+  IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_BLOWSNOW)
   CALL POSNAM(ILUDES,'NAM_2D_FRC',GFOUND,ILUOUT)
   IF (GFOUND) READ(UNIT=ILUDES,NML=NAM_2D_FRC)
   LTEMPDEPOS_DST(:) = LDEPOS_DST(:)
@@ -596,6 +610,9 @@ OFOREFIRE  = LFOREFIRE
 #endif
 OLNOX_EXPLICIT = LLNOX_EXPLICIT
 OCONDSAMP= LCONDSAMP
+OBLOWSNOW= LBLOWSNOW
+! Initially atmosphere free of blowing snow particles
+IF(KMI>1) OBLOWSNOW=.FALSE.
 KRIMX  = NRIMX
 KRIMY  = NRIMY
 KSV_USER = NSV_USER
@@ -661,6 +678,9 @@ IF (NVERB >= 10) THEN
 !
   WRITE(UNIT=ILUOUT,FMT="('************ CHEMICAL SOLVER ******************')")
   WRITE(UNIT=ILUOUT,NML=NAM_CH_SOLVERn)
+!
+  WRITE(UNIT=ILUOUT,FMT="('********** BLOWSNOWn *******************')")
+  WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOWn)  
 !  
   IF (KMI==1) THEN
     WRITE(UNIT=ILUOUT,FMT="(/,'PART OF INITIAL FILE COMMON TO ALL THE MODELS')")
@@ -748,6 +768,9 @@ IF (NVERB >= 10) THEN
 #endif		
     WRITE(UNIT=ILUOUT,FMT="('************ CONDITIONAL SAMPLING *************')")
     WRITE(UNIT=ILUOUT,NML=NAM_CONDSAMP)
+ !
+    WRITE(UNIT=ILUOUT,FMT="('********** BLOWING SNOW SCHEME******************')")
+    WRITE(UNIT=ILUOUT,NML=NAM_BLOWSNOW)
 !
     IF( CCLOUD == 'C2R2' ) THEN
       WRITE(UNIT=ILUOUT,FMT="('************ C2R2 SCHEME **********************')")

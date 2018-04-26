@@ -46,8 +46,11 @@ TYPE SV_t
   INTEGER    :: NSV_SLTBEG, NSV_SLTEND    ! index of first and last sea salt related scalar variable
   INTEGER    :: NSLTEQ                    ! number of sea salt related species in scalar variables list
   INTEGER    :: NSV_AERBEG, NSV_AEREND    ! index of first and last aerosol related scalar variabl
-  INTEGER    :: NAEREQ                    ! number of aerosols variables
-
+  INTEGER    :: NAEREQ                    ! number of aerosols variables$
+  INTEGER    :: NSV_SNWBEG, NSV_SNWEND    ! index of first and last blowing snow related scalar variable
+  INTEGER    :: NSNWEQ                    ! number of blowing snow related species in scalar variables list
+  INTEGER    :: N2D_SNWBEG, N2D_SNWEND    ! index of first and last blowing snow 2D variable sent to MNH
+  INTEGER    :: N2DSNWEQ                  ! number of blowing snow 2D related species in scalar variables list   
 !
 !
 END TYPE SV_t
@@ -78,6 +81,12 @@ YSV%NSLTEQ=0
 YSV%NSV_AERBEG=0
 YSV%NSV_AEREND=0
 YSV%NAEREQ=0
+YSV%NSV_SNWBEG=0
+YSV%NSV_SNWEND=0
+YSV%NSNWEQ=0
+YSV%N2D_SNWBEG=0
+YSV%N2D_SNWEND=0
+YSV%N2DSNWEQ=0
 IF (LHOOK) CALL DR_HOOK("MODD_SV_N:SV_INIT",1,ZHOOK_HANDLE)
 END SUBROUTINE SV_INIT
 

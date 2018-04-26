@@ -5,7 +5,7 @@
 !     ###############################################################################
 SUBROUTINE COUPLING_ISBA_CANOPY_n (DTCO, UG, U, USS, SB, NAG, CHI, NCHI, DTV, ID, NGB, GB, &
                                    ISS, NISS, IG, NIG, IO, S, K, NK, NP, NPE, NDST, SLT,   &
-                                   HPROGRAM, HCOUPLING, PTSTEP,                            &
+                                   BLOWSNW, HPROGRAM, HCOUPLING, PTSTEP,                   &
                                    KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN,        &
                                    PZENITH, PZENITH2, PAZIM, PZREF, PUREF, PZS, PU, PV,    &
                                    PQA, PTA, PRHOA, PSV, PCO2, HSV, PRAIN, PSNOW, PLW,     &
@@ -61,6 +61,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_SSO_n, ONLY : SSO_t
 USE MODD_DATA_ISBA_n, ONLY : DATA_ISBA_t
 USE MODD_SLT_n, ONLY : SLT_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 !
 USE MODD_CSTS,          ONLY : XCPD
@@ -68,11 +69,14 @@ USE MODD_SURF_PAR,      ONLY : XUNDEF
 USE MODD_CANOPY_TURB,   ONLY : XALPSBL
 !
 USE MODE_COUPLING_CANOPY
+USE MODE_BLOWSNW_CANOPY
 !
 USE MODI_INIT_ISBA_SBL
 !
 USE MODI_CANOPY_EVOL
 USE MODI_CANOPY_GRID_UPDATE
+USE MODI_BLOWSNW_DEP
+USE MODI_CANOPY_BLOWSNW
 !
 USE MODI_COUPLING_ISBA_n
 !
@@ -113,6 +117,7 @@ TYPE(SURF_ATM_GRID_t), INTENT(INOUT) :: UG
 TYPE(SURF_ATM_t), INTENT(INOUT) :: U
 TYPE(SSO_t), INTENT(INOUT) :: USS
 TYPE(SLT_t), INTENT(INOUT) :: SLT
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),    INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=1),    INTENT(IN)  :: HCOUPLING ! type of coupling
@@ -198,8 +203,15 @@ REAL, DIMENSION(KI)     :: ZUREF    ! wind        forcing level                 
 REAL, DIMENSION(KI)     :: ZU       ! zonal wind                                    (m/s)
 REAL, DIMENSION(KI)     :: ZV       ! meridian wind                                 (m/s)
 REAL, DIMENSION(KI)     :: ZQA      ! specific humidity                             (kg/m3)
+REAL, DIMENSION(KI,CHI%SVI%NSNWEQ) :: ZBLOWSNWA ! lowest atmospheric blowing snow variable
+! 						1: #/kg(air)   2: kg/kg(air)
 REAL, DIMENSION(KI)     :: ZPEQ_A_COEF ! specific humidity implicit
 REAL, DIMENSION(KI)     :: ZPEQ_B_COEF ! coefficients (hum. in kg/kg)
+!
+!
+REAL, DIMENSION(KI,KSV) :: ZSV  ! scalar variables
+!                               ! chemistry:   first char. in HSV: '#'  (molecule/m3)!
+REAL, DIMENSION(KI,KSV) :: ZSFTS   ! flux of scalar var.                   (kg/m2/s)
 !
 !
 ! canopy turbulence scheme
@@ -244,7 +256,9 @@ REAL, DIMENSION(KI)   ::ZCANOPY_DENSITY
 REAL, DIMENSION(KI)   ::ZUW_GROUND
 REAL, DIMENSION(KI)   ::ZDUWDU_GROUND
 !
-INTEGER                      :: JJ, JLAYER, IMASK, JP, JI
+LOGICAL               :: LLOG_GRID
+!
+INTEGER                      :: JJ, JLAYER, IMASK, JP, JI ,JSV
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 
 !-------------------------------------------------------------------------------------
@@ -255,6 +269,11 @@ REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_ISBA_CANOPY_N',0,ZHOOK_HANDLE)
 !
+!* store scalar variables$
+ZSV(:,:)   = PSV(:,:)
+ZSFTS(:,:) = 0.
+!
+!
 IF (IO%LCANOPY) THEN
 !
 !*      1.1    Updates canopy vertical grid as a function of forcing height
@@ -263,7 +282,14 @@ IF (IO%LCANOPY) THEN
 !* determines where is the forcing level and modifies the upper levels of the canopy grid
 !
   ZCANOPY = 0.
-  CALL CANOPY_GRID_UPDATE(KI,ZCANOPY,PUREF,SB)
+!  
+  IF(CHI%SVI%NSNWEQ>0) THEN
+    LLOG_GRID =  .TRUE.
+  ELSE
+    LLOG_GRID =  .FALSE.
+  ENDIF
+!
+  CALL CANOPY_GRID_UPDATE(KI,ZCANOPY,PUREF,SB,LLOG_GRID)
 !
 !
 !
@@ -279,6 +305,17 @@ IF (IO%LCANOPY) THEN
                        PSCA_SW, PSW_BANDS, PRAIN, PSNOW, PZREF, PUREF, ISS%XSSO_SLOPE )
   ENDIF
 !
+!
+!  
+!       1.2.2 Blowing snow scheme: initialize and udpate blowing snow variables
+!				before calling Canopy
+!
+!
+IF(CHI%SVI%NSNWEQ>0) THEN
+   CALL INIT_BLOWSNW_SBL(KI,SB%NLVL,CHI%SVI%NSV_SNWBEG,CHI%SVI%NSV_SNWEND,CHI%SVI%NSNWEQ,  &
+                  CHI%SVI%N2D_SNWBEG,CHI%SVI%N2D_SNWEND,CHI%SVI%N2DSNWEQ,PTSTEP,               &     
+                  BLOWSNW,SB%XDZ,SB%XU,PUREF,PRHOA,ZSV,ZBLOWSNWA,SB%XBLOWSNW)
+ENDIF
 !*      1.3    Allocations
 !              -----------
 !
@@ -371,7 +408,15 @@ ELSE
                      ZPEW_B_COEF, ZPET_A_COEF,      &
                      ZPET_B_COEF, ZPEQ_A_COEF,      &
                      ZPEQ_B_COEF    ) 
-! 
+!
+IF(CHI%SVI%NSNWEQ>0) THEN
+! Compute sedimentation flux if blowing snow scheme is used without Canopy 
+! See example in Vionnet et al (TC, 2014)
+! Use value of M0 and M3 at 1st atmospheric level to compute sedimentation fluxes.
+  CALL BLOWSNW_DEP( CHI%SVI%N2D_SNWBEG,CHI%SVI%N2D_SNWEND,PTA,PPA,PRHOA,ZSV,BLOWSNW%XSFSNW)
+!
+END IF
+!
 END IF
 !
 !-------------------------------------------------------------------------------------
@@ -382,9 +427,9 @@ END IF
  CALL COUPLING_ISBA_n(DTCO, UG, U, USS, NAG, CHI, NCHI, DTV, ID, NGB, GB, ISS,NISS, IG, &
                       NIG, IO, S, K, NK, NP, NPE, NDST, SLT, HPROGRAM, GCOUPLING,       &
                       PTSTEP, KYEAR, KMONTH, KDAY, PTIME, KI, KSV, KSW, PTSUN, PZENITH, &
-                      PZENITH2, ZZREF, ZUREF, PZS, ZU, ZV, ZQA, ZTA, PRHOA, PSV, PCO2,  &
+                      PZENITH2, ZZREF, ZUREF, PZS, ZU, ZV, ZQA, ZTA, PRHOA, ZSV, PCO2,  &
                       HSV, PRAIN, PSNOW, PLW, PDIR_SW, PSCA_SW, PSW_BANDS, PPS, ZPA,    &
-                      PSFTQ, PSFTH, PSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,         &
+                      PSFTQ, PSFTH, ZSFTS, PSFCO2, PSFU, PSFV, PTRAD, PDIR_ALB,         &
                       PSCA_ALB, PEMIS, PTSURF, PZ0, PZ0H, PQSURF, ZPEW_A_COEF,          &
                       ZPEW_B_COEF, ZPET_A_COEF, ZPEQ_A_COEF, ZPET_B_COEF, ZPEQ_B_COEF,  &
                       'OK' )
@@ -395,7 +440,17 @@ END IF
 !              ------------------------
 !
 IF (.NOT. IO%LCANOPY .AND. LHOOK) CALL DR_HOOK('COUPLING_ISBA_CANOPY_N',1,ZHOOK_HANDLE)
-IF (.NOT. IO%LCANOPY) RETURN
+IF (.NOT. IO%LCANOPY) THEN
+  IF(CHI%SVI%NSNWEQ>0) THEN
+  ! Compute net fluxes blowing snow fluxes sent to MNH : Turb-Sed
+    DO JSV=CHI%SVI%NSV_SNWBEG,CHI%SVI%NSV_SNWEND
+      PSFTS(:,JSV) = ZSFTS(:,JSV)-BLOWSNW%XSFSNW(:,JSV)
+    END DO
+  ELSE
+    PSFTS(:,:) = ZSFTS(:,:)
+  ENDIF        
+  RETURN
+ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
@@ -429,6 +484,20 @@ IF (IO%LCANOPY_DRAG) THEN
   ZSFLUX_U = 0.  ! surface friction is incorporated in ZFORC_U by ISBA_CANOPY routine
 !
 END IF
+!
+!*      5.bis  Evolution of blowing snow variables in Canopy
+!              ------------------------------------
+!
+IF(CHI%SVI%NSNWEQ>0) THEN
+
+  CALL CANOPY_BLOWSNW(SB,KI,CHI%SVI%NSNWEQ,PTSTEP,BLOWSNW,SB%XZ,PRHOA,ZBLOWSNWA,   &
+                          ZSFTS(:,CHI%SVI%NSV_SNWBEG:CHI%SVI%NSV_SNWEND),            &
+                          PSFTH,PSFTQ)
+
+  ZSFLUX_T(:) = PSFTH(:) / XCPD * ZEXNA(:) / PRHOA(:)
+  ZSFLUX_Q(:) = PSFTQ(:)
+!
+ENDIF
 !
 !-------------------------------------------------------------------------------------
 !
@@ -470,6 +539,25 @@ END IF
 !             ----------------------------------------
 !
 IF (ID%O%N2M>=1) CALL INIT_2M_10M(SB, ID%D, PU, PV, ZWIND, PRHOA )
+
+!-------------------------------------------------------------------------------------
+!
+!*       8. Update blowing snow variable send to MNH
+!            -------------------------------------
+!
+IF(CHI%SVI%NSNWEQ>0) THEN
+  CALL UPDATE_BLOWSNW_SBL(KI,SB%NLVL,CHI%SVI%NSV_SNWBEG,CHI%SVI%NSV_SNWEND,CHI%SVI%NSNWEQ,  &
+                  CHI%SVI%N2D_SNWBEG,CHI%SVI%N2D_SNWEND,CHI%SVI%N2DSNWEQ,                       &
+                  BLOWSNW,SB%XDZ,SB%XU,PRHOA,PUREF,SB%XBLOWSNW,ZSFTS)
+ENDIF
+!
+!
+!-------------------------------------------------------------------------------------
+!
+!*       9. Update scalar flux
+!            -------------------------------------
+!
+PSFTS(:,:) = ZSFTS(:,:) 
 !
 IF (LHOOK) CALL DR_HOOK('COUPLING_ISBA_CANOPY_N',1,ZHOOK_HANDLE)
 !

@@ -6,7 +6,7 @@
 SUBROUTINE COMPUTE_ISBA_PARAMETERS (DTCO, OREAD_BUDGETC, UG, U, &
                                     IO, DTI, SB, S, IG, K, NK, NIG, NP, NPE,   &
                                     NAG, NISS, ISS, NCHI, CHI, ID, GB, NGB,    &
-                                    NDST, SLT, SV, HPROGRAM,HINIT,OLAND_USE,   &
+                                    NDST, SLT, BLOWSNW, SV, HPROGRAM,HINIT,OLAND_USE, &
                                     KI,KSV,KSW,HSV,PCO2,PRHOA,                 &
                                     PZENITH,PSW_BANDS,PDIR_ALB,PSCA_ALB,       &
                                     PEMIS,PTSRAD,PTSURF, HTEST             )  
@@ -83,6 +83,7 @@ USE MODD_SURF_ATM_n, ONLY : SURF_ATM_t
 USE MODD_DST_n, ONLY : DST_NP_t, DST_t
 USE MODD_SLT_n, ONLY : SLT_t
 USE MODD_SV_n, ONLY : SV_t
+USE MODD_BLOWSNW_n, ONLY : BLOWSNW_t
 !
 USE MODD_SFX_OASIS,  ONLY : LCPL_LAND, LCPL_FLOOD, LCPL_GW, LCPL_CALVING
 !
@@ -107,6 +108,7 @@ USE MODD_TOPD_PAR, ONLY : NUNIT
 USE MODD_TOPODYN, ONLY : NNCAT, NMESHT
 !
 USE MODE_RANDOM
+USE MODE_BLOWSNW_SEDIM_LKT1D
 !
 USE MODI_GET_1D_MASK
 USE MODI_GET_Z0REL
@@ -184,6 +186,7 @@ TYPE(GR_BIOG_NP_t), INTENT(INOUT) :: NGB
 TYPE(DST_NP_t), INTENT(INOUT) :: NDST
 TYPE(SLT_t), INTENT(INOUT) :: SLT
 TYPE(SV_t), INTENT(INOUT) :: SV
+TYPE(BLOWSNW_t), INTENT(INOUT) :: BLOWSNW
 !
  CHARACTER(LEN=6),                INTENT(IN)  :: HPROGRAM  ! program calling surf. schemes
  CHARACTER(LEN=3),                INTENT(IN)  :: HINIT     ! choice of fields to initialize
@@ -488,7 +491,8 @@ ALLOCATE(ISS%XZ0REL(KI))
     ! contains explicitely modules from ISBAn. It should be cleaned in a future
     ! version.
  CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, CHI%SVI, CHI%CCH_NAMES, CHI%CAER_NAMES,  &
-                      HDSTNAMES=CHI%CDSTNAMES, HSLTNAMES=CHI%CSLTNAMES        )
+                      HDSTNAMES=CHI%CDSTNAMES, HSLTNAMES=CHI%CSLTNAMES,          &
+                      HSNWNAMES=CHI%CSNWNAMES      )         
 !
 IF (KSV /= 0) THEN
   !
@@ -524,6 +528,32 @@ IF (KSV /= 0) THEN
     CALL INIT_SLT(SLT, HPROGRAM)
   END IF
   !
+  IF (CHI%SVI%NSNWEQ >=1) THEN
+    ALLOCATE (BLOWSNW%XSNW_FSED(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    ALLOCATE (BLOWSNW%XSNW_FTURB(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    ALLOCATE (BLOWSNW%XSNW_FNET(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    ALLOCATE (BLOWSNW%XSNW_FSALT(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    ALLOCATE (BLOWSNW%XSFSNW(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    ALLOCATE (BLOWSNW%XSNW_SUBL(KI,CHI%SVI%NSNWEQ+1))  !Output array
+    BLOWSNW%XSNW_FSED (:,:) = 0.
+    BLOWSNW%XSNW_FTURB(:,:) = 0.
+    BLOWSNW%XSNW_FNET (:,:) = 0.
+    BLOWSNW%XSNW_FSALT(:,:) = 0.
+    BLOWSNW%XSNW_SUBL (:,:) = 0.
+    BLOWSNW%XSFSNW    (:,:) = 0.
+    !Read in look up tables of snow particles properties
+    !No arguments, all look up tables are defined in module
+    !mode_snowdrift_sedim_lkt
+    CALL BLOWSNW_SEDIM_LKT1D_SET
+  ELSE
+    ALLOCATE(BLOWSNW%XSNW_FSED(0,0))
+    ALLOCATE(BLOWSNW%XSNW_FTURB(0,0))
+    ALLOCATE(BLOWSNW%XSNW_FSALT(0,0))
+    ALLOCATE(BLOWSNW%XSNW_FNET(0,0))
+    ALLOCATE(BLOWSNW%XSNW_SUBL(0,0))
+    ALLOCATE(BLOWSNW%XSFSNW(0,0))
+  END IF 
+
 ENDIF
 !
 !-------------------------------------------------------------------------------
@@ -963,7 +993,7 @@ END IF
 !*      12.     Canopy air fields:
 !               -----------------
 !
- CALL READ_SBL_n(DTCO, U, SB, IO%LCANOPY, HPROGRAM, "NATURE")
+ CALL READ_SBL_n(DTCO, U, SB, IO%LCANOPY,HPROGRAM, "NATURE", SV=CHI%SVI,BLOWSNW=BLOWSNW)
 !
 !-------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------

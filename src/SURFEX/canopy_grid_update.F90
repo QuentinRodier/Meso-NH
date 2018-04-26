@@ -3,7 +3,7 @@
 !SFX_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !SFX_LIC for details. version 1.
 !     #########################################
-      SUBROUTINE CANOPY_GRID_UPDATE(KI,PH,PZFORC,SB)
+      SUBROUTINE CANOPY_GRID_UPDATE(KI,PH,PZFORC,SB,OLOG_GRID)
 !     #########################################
 !
 !!****  *CANOPY_GRID_UPDATE* - set the upper levels at and just below forcing level
@@ -58,6 +58,8 @@ REAL, DIMENSION(KI),      INTENT(IN)    :: PZFORC    ! height of wind forcing   
 !
 TYPE(CANOPY_t), INTENT(INOUT) :: SB
 !
+LOGICAL, OPTIONAL,        INTENT(IN)    :: OLOG_GRID ! true if logarithmic grid is used (blowing snow scheme)
+!
 !*       0.2   Declarations of local variables
 !              -------------------------------
 !
@@ -70,6 +72,7 @@ INTEGER :: JI                     ! loop counter on points
 REAL    :: ZZTOP                  ! altitude of top of the grid of the initial level
 !                                 ! just below forcing height
 REAL    :: ZDZ                    ! difference of height between new levels
+LOGICAL :: GLOG_GRID
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
 !-------------------------------------------------------------------------------
@@ -78,6 +81,12 @@ IF (LHOOK) CALL DR_HOOK('CANOPY_GRID_UPDATE',0,ZHOOK_HANDLE)
 !
 IF(ALL(SB%XZ(:,SB%NLVL)==PZFORC(:)) .AND. LHOOK) CALL DR_HOOK('CANOPY_GRID_UPDATE',1,ZHOOK_HANDLE)
 IF(ALL(SB%XZ(:,SB%NLVL)==PZFORC(:))) RETURN
+!
+IF (PRESENT(OLOG_GRID)) THEN
+  GLOG_GRID = OLOG_GRID
+ELSE
+  GLOG_GRID = .FALSE.
+END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -91,24 +100,38 @@ SB%XZ(:,SB%NLVL) = PZFORC(:)
 !
 ! determination of levels below forcing height, low enough
 !
-ILEVEL=0
-DO JI=1,KI
-  DO JLAYER=1,SB%NLVL-1
-    IF( PZFORC(JI) > SB%XZF(JI,JLAYER+1) + 0.25 * SB%XDZ(JI,JLAYER) .AND. &
-        SB%XZ(JI,JLAYER) < PZFORC(JI) ) ILEVEL(JI,JLAYER) = JLAYER
-  ENDDO
-  ! determination of latest level from the ones selected before
-  IL(JI)=MAXVAL(ILEVEL(JI,1:SB%NLVL-1))
-  !
-  ICOUNT = SB%NLVL-IL(JI)-1
-  !
-  !* determination grid top of this level
-  ZZTOP = SB%XZF(JI,IL(JI)+1) ! ZZTOP=0 for IL=0
-  ZDZ   = 2. * ( SB%XZ(JI,SB%NLVL)-ZZTOP ) / ( 2*ICOUNT+1 )
-  DO JLAYER=1,ICOUNT
-    SB%XZ(JI,JLAYER+IL(JI)) = ZZTOP + (JLAYER-0.5) * ZDZ
+IF(GLOG_GRID) THEN
+  ! Logarithmic grid when blowing snow scheme is used
+  ! Lower height for flux is taken at 30 cm above the snow surface
+  SB%XZF(:,2) = 0.3
+  SB%XZF(:,SB%NLVL) = 0.95*PZFORC(:)
+  DO JI=1,KI
+    ZDZ = (LOG(SB%XZF(JI,SB%NLVL))-LOG(SB%XZF(JI,2)))/(SB%NLVL-2)
+    DO JLAYER=2,SB%NLVL
+      SB%XZF(JI,JLAYER) = EXP((JLAYER-2)*ZDZ+LOG(SB%XZF(JI,2)))
+      SB%XZ(JI,JLAYER-1) = (SB%XZF(JI,JLAYER)+SB%XZF(JI,JLAYER-1))/2
+    END DO
   END DO
-END DO
+ELSE
+  ILEVEL=0
+  DO JI=1,KI
+    DO JLAYER=1,SB%NLVL-1
+      IF( PZFORC(JI) > SB%XZF(JI,JLAYER+1) + 0.25 * SB%XDZ(JI,JLAYER) .AND. &
+          SB%XZ(JI,JLAYER) < PZFORC(JI) ) ILEVEL(JI,JLAYER) = JLAYER
+    ENDDO
+    ! determination of latest level from the ones selected before
+    IL(JI)=MAXVAL(ILEVEL(JI,1:SB%NLVL-1))
+    !
+    ICOUNT = SB%NLVL-IL(JI)-1
+    !
+    !* determination grid top of this level
+    ZZTOP = SB%XZF(JI,IL(JI)+1) ! ZZTOP=0 for IL=0
+    ZDZ   = 2. * ( SB%XZ(JI,SB%NLVL)-ZZTOP ) / ( 2*ICOUNT+1 )
+    DO JLAYER=1,ICOUNT
+      SB%XZ(JI,JLAYER+IL(JI)) = ZZTOP + (JLAYER-0.5) * ZDZ
+    END DO
+  END DO
+ENDIF
 !
 !*    3.  New grid characteristics
 !         ------------------------

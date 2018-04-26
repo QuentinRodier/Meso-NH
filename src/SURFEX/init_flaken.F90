@@ -309,7 +309,8 @@ PTSURF(:) = FM%F%XTS(:)
 !
  CALL INIT_CHEMICAL_n(ILUOUT, KSV, HSV, FM%CHF%SVF,    &      
                      FM%CHF%CCH_NAMES, FM%CHF%CAER_NAMES,      &
-                     HDSTNAMES=FM%CHF%CDSTNAMES, HSLTNAMES=FM%CHF%CSLTNAMES  )
+                     HDSTNAMES=FM%CHF%CDSTNAMES, HSLTNAMES=FM%CHF%CSLTNAMES  , &
+                     HSNWNAMES=FM%CHF%CSNWNAMES  )
 !
 !* depositiion scheme
 !
