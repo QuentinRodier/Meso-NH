@@ -32,6 +32,8 @@
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    05/2014
+!!      Modif  
+!!          J.Escobar 27/04/2018 : BUG?! => uncomment USE MODI_CANOPY_BLOWSNW_SUBL
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -47,7 +49,7 @@ USE MODE_BLOWSNW_SURF
 
 USE MODI_RMC01_SURF
 USE MODI_CANOPY_EVOL_BLOWSNW
-!USE MODI_CANOPY_BLOWSNW_SUBL
+USE MODI_CANOPY_BLOWSNW_SUBL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB

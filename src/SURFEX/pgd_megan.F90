@@ -34,6 +34,7 @@
 !!
 !!    Original    15/06/2017
 !!    Modified    06/07/2017  J. Pianezze : adapatation to SurfEx v8.0
+!!                27/04/2018  J.Escobar : missing USE MODI_GET_SURF_MASK_n
 !!
 !----------------------------------------------------------------------------
 !
@@ -55,6 +56,7 @@ USE MODI_PGD_FIELD
 USE MODI_READ_NAM_PGD_MEGAN
 USE MODI_UNPACK_SAME_RANK
 USE MODI_GET_SURF_SIZE_n
+USE MODI_GET_SURF_MASK_n
 !
 USE MODE_POS_SURF
 !

@@ -21,7 +21,8 @@
 &NAM_CONF  CCONF = "START", NVERB=5, NMODEL = 2,
             CEXP = "16JAN", CSEG = "12B18" ,
             CSPLIT='BSPLITTING' 
-            !NHALO=3 JPHEXT=3 
+            NHALO=3 
+            !JPHEXT=3 
             /
 &NAM_DYN  XSEGLEN = 300., LCORIO = T, LNUMDIFU = F,
            XALKTOP = 0.001, XALZBOT = 14500. /

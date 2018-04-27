@@ -7,7 +7,9 @@
 !-----------------------------------------------------------------
 ! $Source$
 ! $Name$ 
-! $Revision$ 
+! $Revision$
+!  J.Escobar 5/06/2018 : add cpp key MNH_USE_MPI_STATUSES_IGNORE for use of true MPI_STATUSES_IGNORE
+!                        & bypass bug with ifort+openmpi
 ! $Date$
 !-----------------------------------------------------------------
 !-----------------------------------------------------------------
@@ -19,5 +21,10 @@ MODULE MODD_MPIF
 #else
   IMPLICIT NONE
   INCLUDE 'mpif.h'
+#ifdef MNH_USE_MPI_STATUSES_IGNORE
+  ! bypass ifort bug with use only MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE
+  double precision XXXXXX
+  equivalence ( MPI_STATUSES_IGNORE , XXXXXX )
+#endif
 #endif
 END MODULE MODD_MPIF

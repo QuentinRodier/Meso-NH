@@ -108,6 +108,7 @@ END MODULE MODI_SPAWN_SURF2_RAIN
 !!      J.Escobar 2/05/2016 : bug in use of global/local bounds for call of BIKHARDT
 !!      C.Lac 10/2016 : Add droplet deposition for fog
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      J.Escobar 05/03/2018 : bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -195,46 +196,46 @@ YMETHOD='BI'
 !*       3.    INITIALIZATION OF THE SURFACE VARIABLES OF MODEL 2:
 !              --------------------------------------------------
 !
-IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
-!
-!*       3.1   special case of spawning - no change of resolution :
-!
-  IF (SIZE(XINPRC1) /= 0 ) THEN
-    PINPRC(:,:) = XINPRC1(KXOR:KXEND,KYOR:KYEND)
-    PACPRC(:,:) = XACPRC1(KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-  IF (SIZE(XINDEP1) /= 0 ) THEN
-    PINDEP(:,:) = XINDEP1(KXOR:KXEND,KYOR:KYEND)
-    PACDEP(:,:) = XACDEP1(KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-  IF (SIZE(XINPRR1) /= 0 ) THEN
-    PINPRR(:,:)     = XINPRR1  (KXOR:KXEND,KYOR:KYEND)
-    PINPRR3D(:,:,:) = XINPRR3D1(KXOR:KXEND,KYOR:KYEND,:)
-    PEVAP3D(:,:,:)  = XEVAP3D1 (KXOR:KXEND,KYOR:KYEND,:)
-    PACPRR(:,:)     = XACPRR1  (KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-  IF (SIZE(XINPRS1) /= 0 ) THEN
-    PINPRS(:,:) = XINPRS1(KXOR:KXEND,KYOR:KYEND)
-    PACPRS(:,:) = XACPRS1(KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-  IF (SIZE(XINPRG1) /= 0 ) THEN
-    PINPRG(:,:) = XINPRG1(KXOR:KXEND,KYOR:KYEND)
-    PACPRG(:,:) = XACPRG1(KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-  IF (SIZE(XINPRH1) /= 0 ) THEN
-    PINPRH(:,:) = XINPRH1(KXOR:KXEND,KYOR:KYEND)
-    PACPRH(:,:) = XACPRH1(KXOR:KXEND,KYOR:KYEND)
-  END IF
-!
-!
-!-------------------------------------------------------------------------------
-!
-ELSE
+!!$IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
+!!$!
+!!$!*       3.1   special case of spawning - no change of resolution :
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINPRC) /= 0 ) THEN
+!!$    PINPRC(:,:) = PRECIP_MODEL(1)%XINPRC(KXOR:KXEND,KYOR:KYEND)
+!!$    PACPRC(:,:) = PRECIP_MODEL(1)%XACPRC(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINDEP) /= 0 ) THEN
+!!$    PINDEP(:,:) = PRECIP_MODEL(1)%XINDEP(KXOR:KXEND,KYOR:KYEND)
+!!$    PACDEP(:,:) = PRECIP_MODEL(1)%XACDEP(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINPRR) /= 0 ) THEN
+!!$    PINPRR(:,:) = PRECIP_MODEL(1)%XINPRR(KXOR:KXEND,KYOR:KYEND)
+!!$    PINPRR3D(:,:,:) = PRECIP_MODEL(1)%XINPRR3D(KXOR:KXEND,KYOR:KYEND,:)
+!!$    PEVAP3D(:,:,:) = PRECIP_MODEL(1)%XEVAP3D(KXOR:KXEND,KYOR:KYEND,:)
+!!$    PACPRR(:,:) = PRECIP_MODEL(1)%XACPRR(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINPRS) /= 0 ) THEN
+!!$    PINPRS(:,:) = PRECIP_MODEL(1)%XINPRS(KXOR:KXEND,KYOR:KYEND)
+!!$    PACPRS(:,:) = PRECIP_MODEL(1)%XACPRS(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINPRG) /= 0 ) THEN
+!!$    PINPRG(:,:) = PRECIP_MODEL(1)%XINPRG(KXOR:KXEND,KYOR:KYEND)
+!!$    PACPRG(:,:) = PRECIP_MODEL(1)%XACPRG(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$  IF (SIZE(PRECIP_MODEL(1)%XINPRH) /= 0 ) THEN
+!!$    PINPRH(:,:) = PRECIP_MODEL(1)%XINPRH(KXOR:KXEND,KYOR:KYEND)
+!!$    PACPRH(:,:) = PRECIP_MODEL(1)%XACPRH(KXOR:KXEND,KYOR:KYEND)
+!!$  END IF
+!!$!
+!!$!
+!!$!-------------------------------------------------------------------------------
+!!$!
+!!$ELSE
 !
 !*       3.2  general case - change of resolution :
 !             -----------------------------------
@@ -348,7 +349,7 @@ ELSE
 !
 !-------------------------------------------------------------------------------
 !
-END IF
+!!$END IF
 !
 !*       3.3  Informations from model SON1
 !             ----------------------------

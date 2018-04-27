@@ -149,6 +149,7 @@ END MODULE MODI_SPAWN_FIELD2
 !!                   29/04/2016 (J.Escobar) bug in use of ZSVT_C in SET_LSFIELD_1WAY_ll        
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      Modification 05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -305,90 +306,90 @@ END IF
 !              ---------------------------------------------------------
 ! 
 !
-IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
-!
-!*       2.1   special case of spawning - no change of resolution :
-!
-!*       2.1.1  variables which always exist
-!
-  PUT  (:,:,:)   =  XUT1(KXOR:KXEND,KYOR:KYEND,:)
-  PVT  (:,:,:)   =  XVT1(KXOR:KXEND,KYOR:KYEND,:)
-  PWT  (:,:,:)   =  XWT1(KXOR:KXEND,KYOR:KYEND,:)
-  PTHVT(:,:,:)   =  ZTHVT(KXOR:KXEND,KYOR:KYEND,:)
-!
-  PLSUM (:,:,:)  =  PUT(:,:,:) 
-  PLSVM (:,:,:)  =  PVT(:,:,:) 
-  PLSWM (:,:,:)  =  PWT(:,:,:)
-  PLSTHM(:,:,:)  =  XTHT1(KXOR:KXEND,KYOR:KYEND,:)
-!
-  PLSRVM(:,:,:)  = 0.
-!
-!$20140707
-CALL MPPDB_CHECK3D(PUT,"SPAWN_FIELD2:PUT",PRECISION)
-CALL MPPDB_CHECK3D(PVT,"SPAWN_FIELD2:PVT",PRECISION)
-!$
-!*       2.1.2  TKE variable
-!
-  IF (HTURB /= 'NONE') THEN
-    PTKET(:,:,:)   =  XTKET1(KXOR:KXEND,KYOR:KYEND,:)
-  ENDIF
-!
-!*       2.1.3  moist variables
-!
-  IF (CONF_MODEL(1)%NRR /= 0) THEN
-    PRT  (:,:,:,:) =  XRT1  (KXOR:KXEND,KYOR:KYEND,:,:)
-    PLSRVM(:,:,:)  =  XRT1  (KXOR:KXEND,KYOR:KYEND,:,1)
-    PHUT (:,:,:)   =  ZHUT (KXOR:KXEND,KYOR:KYEND,:)
-  ENDIF
-!
-!*       2.1.4  scalar variables
-!
-  IF (NSV /= 0) THEN
-    PSVT (:,:,:,:) =  FIELD_MODEL(1)%XSVT (KXOR:KXEND,KYOR:KYEND,:,:)
-  ENDIF
-!
-!*       2.1.5  secondary prognostic variables
-!
-  IF (CONF_MODEL(1)%NRR > 1) THEN
-    PSRCT(:,:,:) = XSRCT1 (KXOR:KXEND,KYOR:KYEND,:)
-    PSIGS(:,:,:) = XSIGS1(KXOR:KXEND,KYOR:KYEND,:)
-  ENDIF
-!
-!*       2.1.6  Large scale variables
-!
-  PLSUM  (:,:,:)   =  XLSUM1  (KXOR:KXEND,KYOR:KYEND,:)
-  PLSVM  (:,:,:)   =  XLSVM1  (KXOR:KXEND,KYOR:KYEND,:)
-  PLSWM  (:,:,:)   =  XLSWM1  (KXOR:KXEND,KYOR:KYEND,:)
-  PLSTHM(:,:,:)    =  XLSTHM1 (KXOR:KXEND,KYOR:KYEND,:)
-  IF ( CONF_MODEL(1)%NRR > 0 ) THEN
-    PLSRVM  (:,:,:)   =  XLSRVM1  (KXOR:KXEND,KYOR:KYEND,:) 
-  END IF
-!
-!*       2.1.7  Advective forcing fields for 2D (Modif MT)
-!
-  IF (L2D_ADV_FRC) THEN
-    PDTHFRC(:,:,:,:)= ADVFRC_MODEL(1)%XDTHFRC (KXOR:KXEND,KYOR:KYEND,:,:)
-    PDRVFRC(:,:,:,:)= ADVFRC_MODEL(1)%XDRVFRC (KXOR:KXEND,KYOR:KYEND,:,:)
-  ENDIF
-  IF (L2D_REL_FRC) THEN
-    PTHREL(:,:,:,:)= RELFRC_MODEL(1)%XTHREL (KXOR:KXEND,KYOR:KYEND,:,:)
-    PRVREL(:,:,:,:)= RELFRC_MODEL(1)%XRVREL (KXOR:KXEND,KYOR:KYEND,:,:)
-  ENDIF
-!
-!*       2.1.8  Turbulent fluxes for 2D (Modif MT)                                    
-!
-  IF (LUV_FLX) THEN
-    PVU_FLUX_M(:,:,:)= XVU_FLUX_M1 (KXOR:KXEND,KYOR:KYEND,:)
-  END IF
-!
-  IF (LTH_FLX) THEN
-    PVTH_FLUX_M(:,:,:)= XVTH_FLUX_M1 (KXOR:KXEND,KYOR:KYEND,:)
-    PWTH_FLUX_M(:,:,:)= XWTH_FLUX_M1 (KXOR:KXEND,KYOR:KYEND,:)
-  END IF
-!
-!-------------------------------------------------------------------------------
-!
-ELSE
+!!$IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
+!!$!
+!!$!*       2.1   special case of spawning - no change of resolution :
+!!$!
+!!$!*       2.1.1  variables which always exist
+!!$!
+!!$  PUT  (:,:,:)   =  FIELD_MODEL(1)%XUT  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PVT  (:,:,:)   =  FIELD_MODEL(1)%XVT  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PWT  (:,:,:)   =  FIELD_MODEL(1)%XWT  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PTHVT(:,:,:)   =  ZTHVT(KXOR:KXEND,KYOR:KYEND,:)
+!!$!
+!!$  PLSUM (:,:,:)  =  FIELD_MODEL(1)%XUT (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSVM (:,:,:)  =  FIELD_MODEL(1)%XVT (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSWM (:,:,:)  =  FIELD_MODEL(1)%XWT (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSTHM(:,:,:)  =  FIELD_MODEL(1)%XTHT(KXOR:KXEND,KYOR:KYEND,:)
+!!$!
+!!$  PLSRVM(:,:,:)  = 0.
+!!$!
+!!$!$20140707
+!!$CALL MPPDB_CHECK3D(PUT,"SPAWN_FIELD2:PUT",PRECISION)
+!!$CALL MPPDB_CHECK3D(PVT,"SPAWN_FIELD2:PVT",PRECISION)
+!!$!$
+!!$!*       2.1.2  TKE variable
+!!$!
+!!$  IF (HTURB /= 'NONE') THEN
+!!$    PTKET(:,:,:)   =  FIELD_MODEL(1)%XTKET(KXOR:KXEND,KYOR:KYEND,:)
+!!$  ENDIF
+!!$!
+!!$!*       2.1.3  moist variables
+!!$!
+!!$  IF (CONF_MODEL(1)%NRR /= 0) THEN
+!!$    PRT  (:,:,:,:) =  FIELD_MODEL(1)%XRT  (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$    PLSRVM(:,:,:)  =  FIELD_MODEL(1)%XRT  (KXOR:KXEND,KYOR:KYEND,:,1)
+!!$    PHUT (:,:,:)   =  ZHUT (KXOR:KXEND,KYOR:KYEND,:)
+!!$  ENDIF
+!!$!
+!!$!*       2.1.4  scalar variables
+!!$!
+!!$  IF (NSV /= 0) THEN
+!!$    PSVT (:,:,:,:) =  FIELD_MODEL(1)%XSVT (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$  ENDIF
+!!$!
+!!$!*       2.1.5  secondary prognostic variables
+!!$!
+!!$  IF (CONF_MODEL(1)%NRR > 1) THEN
+!!$    PSRCT (:,:,:) =  FIELD_MODEL(1)%XSRCT (KXOR:KXEND,KYOR:KYEND,:)
+!!$    PSIGS(:,:,:) =  FIELD_MODEL(1)%XSIGS(KXOR:KXEND,KYOR:KYEND,:)
+!!$  ENDIF
+!!$!
+!!$!*       2.1.6  Large scale variables
+!!$!
+!!$  PLSUM  (:,:,:)   =  LSFIELD_MODEL(1)%XLSUM  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSVM  (:,:,:)   =  LSFIELD_MODEL(1)%XLSVM  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSWM  (:,:,:)   =  LSFIELD_MODEL(1)%XLSWM  (KXOR:KXEND,KYOR:KYEND,:)
+!!$  PLSTHM(:,:,:)    =  LSFIELD_MODEL(1)%XLSTHM (KXOR:KXEND,KYOR:KYEND,:)
+!!$  IF ( CONF_MODEL(1)%NRR > 0 ) THEN
+!!$    PLSRVM  (:,:,:)   =  LSFIELD_MODEL(1)%XLSRVM  (KXOR:KXEND,KYOR:KYEND,:) 
+!!$  END IF
+!!$!
+!!$!*       2.1.7  Advective forcing fields for 2D (Modif MT)
+!!$!
+!!$  IF (L2D_ADV_FRC) THEN
+!!$    PDTHFRC(:,:,:,:)= ADVFRC_MODEL(1)%XDTHFRC (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$    PDRVFRC(:,:,:,:)= ADVFRC_MODEL(1)%XDRVFRC (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$  ENDIF
+!!$  IF (L2D_REL_FRC) THEN
+!!$    PTHREL(:,:,:,:)= RELFRC_MODEL(1)%XTHREL (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$    PRVREL(:,:,:,:)= RELFRC_MODEL(1)%XRVREL (KXOR:KXEND,KYOR:KYEND,:,:)
+!!$  ENDIF
+!!$!
+!!$!*       2.1.8  Turbulent fluxes for 2D (Modif MT)                                    
+!!$!
+!!$  IF (LUV_FLX) THEN
+!!$    PVU_FLUX_M(:,:,:)= EDDYUV_FLUX_MODEL(1)%XVU_FLUX_M (KXOR:KXEND,KYOR:KYEND,:)
+!!$  END IF
+!!$!
+!!$  IF (LTH_FLX) THEN
+!!$    PVTH_FLUX_M(:,:,:)= EDDY_FLUX_MODEL(1)%XVTH_FLUX_M (KXOR:KXEND,KYOR:KYEND,:)
+!!$    PWTH_FLUX_M(:,:,:)= EDDY_FLUX_MODEL(1)%XWTH_FLUX_M (KXOR:KXEND,KYOR:KYEND,:)
+!!$  END IF
+!!$!
+!!$!-------------------------------------------------------------------------------
+!!$!
+!!$ELSE
 !
 !-------------------------------------------------------------------------------
 !
@@ -702,7 +703,7 @@ ELSE
       CALL MPPDB_CHECK3D(PWTH_FLUX_M,"SPAWN_FIELD2:PWTH_FLUX_M",PRECISION)
     ENDIF
 !
-END IF
+!!$END IF
 !
 IF (CONF_MODEL(1)%NRR>=3) THEN
   WHERE  (PRT(:,:,:,3)<1.E-20)

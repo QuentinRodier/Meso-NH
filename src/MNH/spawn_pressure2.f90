@@ -102,6 +102,7 @@ END MODULE MODI_SPAWN_PRESSURE2
 !!                  2014     (M.Faivre) parallelization
 !!                  10/02/15 (M.Moge) correction of M.Faivre's parallelization attempt
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                  05/03/2018 (J.Escobar) bypass gridnesting special case KD(X/Y)RATIO == 1 not parallelized
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -204,14 +205,14 @@ IKE=IKU-JPVEXT
 !              -----------------------
 !
 !
-IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
-!
-  PPABST  (:,:,:)   =  XPABST1  (KXOR:KXEND,KYOR:KYEND,:)
-!
-  CALL GOTO_MODEL(IMI) 
-  RETURN
-!
-END IF
+!!$IF (KDXRATIO == 1 .AND. KDYRATIO == 1 ) THEN
+!!$!
+!!$  PPABST  (:,:,:)   =  FIELD_MODEL(1)%XPABST  (KXOR:KXEND,KYOR:KYEND,:)
+!!$!
+!!$  CALL GOTO_MODEL(IMI) 
+!!$  RETURN
+!!$!
+!!$END IF
 !
 !-------------------------------------------------------------------------------
 !

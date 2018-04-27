@@ -100,6 +100,7 @@ CONTAINS
     !     R. Guivarch 29/11/99  x and y splitting -> YSPLITTING 
     !     J. Escobar  24/09/2013 : temp patch for problem of gridnesting with different SHAPE
     !     M.Moge      10/02/2015 construct halo extended (needed for an interpolation in SPAWNING)
+    !     J. Escobar 5/06/2018 : add cpp key MNH_USE_MPI_STATUSES_IGNORE for use of true MPI_STATUSES_IGNORE
     !
     !-------------------------------------------------------------------------------
     !
@@ -188,10 +189,11 @@ CONTAINS
     MPI_PRECISION  = MNH_MPI_REAL
     MPI_2PRECISION = MNH_MPI_2REAL
     !
-    ! For bug with intelmpi+ilp64+i8 declare MNH_STATUSES_INGORE
+    ! For bug with intelmpi+ilp64+i8 declare MNH_STATUSES_IGNORE
     !
-    ALLOCATE(MNH_STATUSES_IGNORE(MPI_STATUS_SIZE,NPROC))
-    !MNH_STATUSES_IGNORE => MPI_STATUSES_IGNORE
+#ifndef MNH_USE_MPI_STATUSES_IGNORE
+    ALLOCATE(MNH_STATUSES_IGNORE(MPI_STATUS_SIZE,NPROC*2))
+#endif
     !
     !-------------------------------------------------------------------------------
     !
