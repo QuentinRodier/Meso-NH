@@ -9,9 +9,8 @@ rm -f ICART* OUT*
 #
 export CHIMIE_FILES=${CHIMIE_FILES:-"$HOME/CHIMIE_FILES"}
 
-ln -sf ${CHIMIE_FILES}/tuv50/DATAE1 .
-ln -sf ${CHIMIE_FILES}/tuv50/DATAJ1 .
-ln -sf ${CHIMIE_FILES}/tuv50/DATAS1 .
+ln -sf ${CHIMIE_FILES}/tuv531/DATAE1 .
+ln -sf ${CHIMIE_FILES}/tuv531/DATAJ1 .
 
 ln -sf  ../003_mesonh/ICART.1.SEG01.002.{des,lfi,nc} .
 ln -sf  ../003_mesonh/ICART.1.SEG01.001.{des,lfi,nc} .
