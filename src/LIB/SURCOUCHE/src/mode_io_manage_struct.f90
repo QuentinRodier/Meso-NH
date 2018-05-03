@@ -141,6 +141,11 @@ DO IMI = 1, NMODEL
   CALL FIND_REMOVE_DUPLICATES(IBAK_NUMB,IBAK_STEP)
   CALL FIND_REMOVE_DUPLICATES(IOUT_NUMB,IOUT_STEP)
   !
+  !* Find and remove out of time range entries
+  !
+  CALL FIND_REMOVE_OUTOFTIMERANGE(IBAK_NUMB,IBAK_STEP)
+  CALL FIND_REMOVE_OUTOFTIMERANGE(IOUT_NUMB,IOUT_STEP)
+  !
   !* Sort entries
   !
   CALL SORT_ENTRIES(IBAK_NUMB,IBAK_STEP)
@@ -154,6 +159,8 @@ DO IMI = 1, NMODEL
       IBAK_NUMB = IBAK_NUMB + 1
     END IF
   END DO
+  IF (IBAK_NUMB==0) CALL PRINT_MSG(NVERB_ERROR,'IO','IO_PREPARE_BAKOUT_STRUCT','no (valid) backup time')
+  !
   IOUT_NUMB = 0
   DO JOUT = 1,SIZE(IOUT_STEP)
     IF (IOUT_STEP(JOUT) >= 0) THEN
@@ -424,6 +431,21 @@ SUBROUTINE FIND_REMOVE_DUPLICATES(KNUMB,KSTEPS)
     END DO
   END DO
 END SUBROUTINE FIND_REMOVE_DUPLICATES
+!
+!#########################################################################
+SUBROUTINE FIND_REMOVE_OUTOFTIMERANGE(KNUMB,KSTEPS)
+!#########################################################################
+  !
+  INTEGER,              INTENT(IN)    :: KNUMB
+  INTEGER,DIMENSION(:), INTENT(INOUT) :: KSTEPS
+  !
+  DO JOUT = 1,KNUMB
+    IF ( KSTEPS(JOUT) < 1 .OR. KSTEPS(JOUT) > ISTEP_MAX ) THEN
+      CALL PRINT_MSG(NVERB_WARNING,'IO','FIND_REMOVE_OUTOFTIMERANGE','found backup/output step outside of time range')
+      KSTEPS(JOUT) = NNEGUNDEF
+    END IF
+  END DO
+END SUBROUTINE FIND_REMOVE_OUTOFTIMERANGE
 !
 !#########################################################################
 SUBROUTINE SORT_ENTRIES(KNUMB,KSTEPS)
