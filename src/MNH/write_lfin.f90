@@ -963,7 +963,7 @@ IF (NSV >=1) THEN
     DO JSV = NSV_SNWBEG,NSV_SNWEND
       TZFIELD%CMNHNAME=TRIM(CSNOWNAMES(JSV-NSV_SNWBEG+1))//'T'
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3,A8)')'X_Y_Z_','SVT',JSV,' (KG/KG)'
+      WRITE(TZFIELD%CCOMMENT,'(A6,A3,I3.3)')'X_Y_Z_','SVT',JSV
       CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSVT(:,:,:,JSV))
       JSA=JSA+1
     END DO
@@ -977,7 +977,7 @@ IF (NSV >=1) THEN
     DO JSV = 1,(NSV_SNW)
       WRITE(TZFIELD%CMNHNAME,'(A3,I3.3)')'SNOWCANO_M',JSV
       TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
-      WRITE(TZFIELD%CCOMMENT,'(A6,A8,I3.3,A8)')'X_Y_Z_','SNOWCANO',JSV,' (KG/KG)'
+      WRITE(TZFIELD%CCOMMENT,'(A6,A8,I3.3)')'X_Y_Z_','SNOWCANO',JSV
       CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSNWCANO(:,:,JSV))
       JSA=JSA+1
     END DO
@@ -1762,60 +1762,49 @@ IF (CPROGRAM /= 'IDEAL') THEN
   END IF
 !
 END IF
-
-  IF(LBLOWSNOW) THEN
-    IF (ASSOCIATED(XSNWSUBL3D)) THEN
-      IF (SIZE(XSNWSUBL3D) /= 0 ) THEN
-
-        TZFIELD%CMNHNAME   = 'SNWSUBL3D'
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = 'SNWSUBL3D'
-        TZFIELD%CUNITS     = 'KG/M3/S'
-        TZFIELD%CDIR       = 'XY'
-        TZFIELD%CCOMMENT   = 'X_Y_INstantaneous 3D Drifting snow sublimation flux (KG/M3/S)'
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 3
-        TZFIELD%LTIMEDEP   = .TRUE.
-        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSNWSUBL3D(:,:,:))
-        ZWORK2D(:,:) = 0.
-        DO JK = IKB,IKE
-          ZWORK2D(:,:) = ZWORK2D(:,:)+XSNWSUBL3D(:,:,JK) * &
-                     (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW*3600*24
-        END DO
-        ZWORK2D(:,:) = ZWORK2D(:,:)*1000. ! vapor water in mm unit
-
-        TZFIELD%CMNHNAME   = 'COL_SNWSUBL'
-        TZFIELD%CSTDNAME   = ''
-        TZFIELD%CLONGNAME  = 'COL_SNWSUBL'
-        TZFIELD%CUNITS     = 'mmSWE/day'
-        TZFIELD%CDIR       = 'XY'
-        TZFIELD%CCOMMENT   = 'X_Y_Column Sublimation Rate (mmSWE/day)'
-        TZFIELD%NGRID      = 1
-        TZFIELD%NTYPE      = TYPEREAL
-        TZFIELD%NDIMS      = 2
-        TZFIELD%LTIMEDEP   = .TRUE.
-        CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK2D(:,:))
-     END IF
+!
+IF(LBLOWSNOW) THEN
+  IF (ASSOCIATED(XSNWSUBL3D)) THEN
+    IF (SIZE(XSNWSUBL3D) /= 0 ) THEN
+      TZFIELD%CMNHNAME   = 'SNWSUBL3D'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'kg m-3 s-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_INstantaneous 3D Drifting snow sublimation flux'
+      TZFIELD%NGRID      = 1
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 3
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,XSNWSUBL3D(:,:,:))
+      ZWORK2D(:,:) = 0.
+      DO JK = IKB,IKE
+        ZWORK2D(:,:) = ZWORK2D(:,:)+XSNWSUBL3D(:,:,JK) * &
+                    (XZZ(:,:,JK+1)-XZZ(:,:,JK))/XRHOLW*3600*24
+      END DO
+      ZWORK2D(:,:) = ZWORK2D(:,:)*1000. ! vapor water in mm unit
+      !
+      TZFIELD%CMNHNAME   = 'COL_SNWSUBL'
+      TZFIELD%CSTDNAME   = ''
+      TZFIELD%CLONGNAME  = TRIM(TZFIELD%CMNHNAME)
+      TZFIELD%CUNITS     = 'mm day-1'
+      TZFIELD%CDIR       = 'XY'
+      TZFIELD%CCOMMENT   = 'X_Y_Column Sublimation Rate (mmSWE/day)'
+      TZFIELD%NGRID      = 4
+      TZFIELD%NTYPE      = TYPEREAL
+      TZFIELD%NDIMS      = 2
+      TZFIELD%LTIMEDEP   = .TRUE.
+      CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK2D(:,:))
     END IF
-  ENDIF
+  END IF
+ENDIF
 !
 !*       1.11   Forcing variables
 !
 !
 IF (LFORCING) THEN
 !
-  TZFIELD%CMNHNAME   = 'FRC'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'FRC'
-  TZFIELD%CUNITS     = '1'
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = 'Number of forcing profiles'
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPEINT
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TPFILE,TZFIELD,NFRC)
+  CALL IO_WRITE_FIELD(TPFILE,'FRC',NFRC)
 !
   DO JT=1,NFRC
 !
