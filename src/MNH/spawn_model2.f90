@@ -228,7 +228,7 @@ USE MODD_CH_MNHC_n
 USE MODD_PASPOL_n
 !$20140515
 USE MODD_VAR_ll, ONLY : NPROC
-USE MODD_IO_ll, ONLY: TFILEDATA,TFILE_SURFEX
+USE MODD_IO_ll, ONLY: TFILEDATA,TFILE_DUMMY,TFILE_SURFEX
 !
 USE MODE_GRIDCART         ! Executive modules
 USE MODE_GRIDPROJ
@@ -386,7 +386,6 @@ REAL                :: ZZS_MAX, ZZS_MAX_ll
 !
 TYPE(TFILEDATA),POINTER :: TZFILE      => NULL()
 TYPE(TFILEDATA),POINTER :: TZSONFILE   => NULL()
-TYPE(TFILEDATA),POINTER :: TZFILEDUMMY => NULL()
 !-------------------------------------------------------------------------------
 !
 ! Save model index and switch to model 2 variables
@@ -1096,7 +1095,7 @@ CALL MPPDB_CHECK3D(XDZY,"spawnmod2-aftrupdate_metrics:XDZY",PRECISION)
 !
 !*       5.5    3D Reference state variables :
 !
-CALL SET_REF(0,TZFILEDUMMY,                        &
+CALL SET_REF(0,TFILE_DUMMY,                        &
              XZZ,XZHAT,ZJ,XDXX,XDYY,CLBCX,CLBCY,   &
              XREFMASS,XMASS_O_PHI0,XLINMASS,       &
              XRHODREF,XTHVREF,XRVREF,XEXNREF,XRHODJ)

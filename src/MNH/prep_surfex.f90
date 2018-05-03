@@ -83,7 +83,6 @@ CHARACTER (LEN=100)   :: HCOMMENT
 INTEGER               :: II, IJ, IGRID, ILENGTH
 !
 TYPE(TFILEDATA),POINTER :: TZATMFILE => NULL()
-TYPE(TFILEDATA),POINTER :: TZPGDFILE => NULL()
 TYPE(TFILEDATA),POINTER :: TZPRE_REAL1FILE => NULL()
 !
 !-------------------------------------------------------------------------------
@@ -107,10 +106,8 @@ CALL INITIO_ll()
 CALL OPEN_PRC_FILES(TZPRE_REAL1FILE,YATMFILE, YATMFILETYPE,TZATMFILE &
                                    ,YCHEMFILE,YCHEMFILETYPE &
                                    ,YSURFFILE,YSURFFILETYPE &
-                                   ,YPGDFILE,TZPGDFILE)
+                                   ,YPGDFILE,TPGDFILE)
 ILUOUT0 = TLUOUT0%NLU
-!
-TPGDFILE => TZPGDFILE
 !
 !-------------------------------------------------------------------------------
 !
@@ -134,8 +131,8 @@ CALL INI_FIELD_LIST(1)
 !
 CALL INI_FIELD_SCALARS()
 !
-CALL IO_READ_FIELD(TZPGDFILE,'IMAX',II)
-CALL IO_READ_FIELD(TZPGDFILE,'JMAX',IJ)
+CALL IO_READ_FIELD(TPGDFILE,'IMAX',II)
+CALL IO_READ_FIELD(TPGDFILE,'JMAX',IJ)
 CALL SET_JP_ll(JPMODELMAX,JPHEXT,JPVEXT,JPHEXT)
 CALL SET_DAD0_ll()
 CALL SET_DIM_ll(II, IJ, 1)
