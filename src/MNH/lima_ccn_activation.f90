@@ -2,25 +2,18 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!      ##########################
-       MODULE MODI_LIMA_WARM_NUCL
-!      ##########################
+!      ###############################
+       MODULE MODI_LIMA_CCN_ACTIVATION
+!      ###############################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
+                                   PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,   &
+                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT     )
+USE MODD_IO_ll, ONLY: TFILEDATA
 !
-USE MODD_IO_ll,   ONLY: TFILEDATA
-!
-LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
-                                                      ! activation by radiative
-                                                      ! tendency
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
-INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
 TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                       ! the output FM file
@@ -33,29 +26,22 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
 !   
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT       ! Water vapor m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVT       ! Water vapor m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT       ! CCN C. available at t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAT       ! CCN C. activated at t
 !
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS       ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCS       ! Cloud water m.r. source
-!
-REAL, DIMENSION(:,:,:)  , INTENT(INOUT) :: PCCS       ! Cloud water C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS       ! CCN C. available source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAS       ! CCN C. activated source
-!
-END SUBROUTINE LIMA_WARM_NUCL
+END SUBROUTINE LIMA_CCN_ACTIVATION
 END INTERFACE
-END MODULE MODI_LIMA_WARM_NUCL
+END MODULE MODI_LIMA_CCN_ACTIVATION
 !     #############################################################################
-      SUBROUTINE LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
-                                 PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
-                                 PRCM, PRVT, PRCT, PRRT,                          &
-                                 PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
+   SUBROUTINE LIMA_CCN_ACTIVATION (PTSTEP, TPFILE, OCLOSE_OUT,                 &
+                                   PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,   &
+                                   PTHT, PRVT, PRCT, PCCT, PRRT, PNFT, PNAT     )
 !     #############################################################################
 !
 !!
@@ -100,39 +86,34 @@ END MODULE MODI_LIMA_WARM_NUCL
 !!    MODIFICATIONS
 !!    -------------
 !!      Original             ??/??/13 
-!!      J. Escobar : 10/2017 , for real*4 use XMNH_EPSILON
-!!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
 !              ------------
 !
-USE MODD_PARAMETERS,     ONLY : JPHEXT, JPVEXT
-USE MODD_CST
-USE MODD_PARAM_LIMA
-USE MODD_PARAM_LIMA_WARM
+USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
+USE MODD_CST,             ONLY : XALPW, XBETAW, XCL, XCPD, XCPV, XGAMW, XLVTT, XMD, XMV, XRV, XTT
+USE MODD_PARAM_LIMA,      ONLY : LACTIT, NMOD_CCN, XKHEN_MULTI, XCTMIN, XLIMIT_FACTOR
+USE MODD_PARAM_LIMA_WARM, ONLY : XWMIN, NAHEN, NHYP, XAHENINTP1, XAHENINTP2, XCSTDCRIT, XHYPF12, &
+                                 XHYPINTP1, XHYPINTP2, XTMIN, XHYPF32, XPSI3, XAHENG, XPSI1
 !
 USE MODI_GAMMA
-USE MODI_LIMA_FUNCTIONS, ONLY : COUNTJV
+USE MODI_LIMA_FUNCTIONS,  ONLY : COUNTJV
 !
+USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_LUNIT_n,         ONLY : TLUOUT
+USE MODE_FIELD, ONLY : TFIELDDATA, TYPEREAL
 USE MODE_FM
 USE MODE_FMWRIT
-USE MODD_IO_ll,   ONLY: TFILEDATA
-USE MODD_LUNIT_n, ONLY: TLUOUT
-USE MODE_FIELD, ONLY : TFIELDDATA, TYPEREAL
 !
 IMPLICIT NONE
 !
 !*       0.1   Declarations of dummy arguments :
 !
-LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
-                                                      ! activation by radiative
-                                                      ! tendency
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
-INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
-TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
 LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
                                                       ! the output FM file
 !
@@ -144,20 +125,14 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)    :: ZTM        ! Temperature at time t-dt
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PW_NU      ! updraft velocity used for
                                                       ! the nucleation param.
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCM       ! Cloud water m.r. at t-dt
-!
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRVT       ! Water vapor m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRCT       ! Cloud water m.r. at t 
-REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Rain water m.r. at t 
-!
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS       ! Theta source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS       ! Water vapor m.r. source
-REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCS       ! Cloud water m.r. source
-!
-REAL, DIMENSION(:,:,:)  , INTENT(INOUT) :: PCCS       ! Cloud water C. source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFS       ! CCN C. available source
-REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAS       ! CCN C. activated source
+!   
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHT       ! Theta at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVT       ! Water vapor m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PCCT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PRRT       ! Cloud water m.r. at t 
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNFT       ! CCN C. available at t
+REAL, DIMENSION(:,:,:,:), INTENT(INOUT) :: PNAT       ! CCN C. activated at t
 !
 !
 !*       0.1   Declarations of local variables :
@@ -169,9 +144,8 @@ INTEGER , DIMENSION(SIZE(GNUCT))   :: I1,I2,I3 ! Used to replace the COUNT
 INTEGER                            :: JL       ! and PACK intrinsics 
 !
 ! Packed micophysical variables
-REAL, DIMENSION(:)  , ALLOCATABLE  :: ZCCS     ! cloud conc. source
-REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNFS     ! available nucleus conc. source
-REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNAS     ! activated nucleus conc. source
+REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNFT     ! available nucleus conc. source
+REAL, DIMENSION(:,:), ALLOCATABLE  :: ZNAT     ! activated nucleus conc. source
 !
 ! Other packed variables
 REAL, DIMENSION(:)  , ALLOCATABLE  :: ZRHODREF ! RHO Dry REFerence
@@ -180,7 +154,6 @@ REAL, DIMENSION(:)  , ALLOCATABLE  :: ZZT      ! Temperature
 !
 ! Work arrays
 REAL, DIMENSION(:), ALLOCATABLE    :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5, ZZW6, &
-                                      ZCTMIN, &
                                       ZZTDT,          & ! dT/dt
                                       ZSW,            & ! real supersaturation                                      
                                       ZSMAX,          & ! Maximum supersaturation
@@ -189,8 +162,8 @@ REAL, DIMENSION(:), ALLOCATABLE    :: ZZW1, ZZW2, ZZW3, ZZW4, ZZW5, ZZW6, &
 REAL, DIMENSION(:,:), ALLOCATABLE  :: ZTMP, ZCHEN_MULTI
 !
 REAL, DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-                                   :: ZTDT, ZDRC, ZRVSAT, ZW, ZW2
-REAL, DIMENSION(SIZE(PNFS,1),SIZE(PNFS,2),SIZE(PNFS,3))               &
+                                   :: ZTDT, ZDRC, ZRVSAT, ZW, ZW2  
+REAL, DIMENSION(SIZE(PNFT,1),SIZE(PNFT,2),SIZE(PNFT,3))               &
                                    :: ZCONC_TOT         ! total CCN C. available
 !
 INTEGER, DIMENSION(:), ALLOCATABLE :: IVEC1             ! Vectors of indices for
@@ -212,7 +185,6 @@ ZW(:,:,:)=0.
 !*       1.     PREPARE COMPUTATIONS - PACK
 !   	        ---------------------------
 !
-!
 IIB=1+JPHEXT
 IIE=SIZE(PRHODREF,1) - JPHEXT
 IJB=1+JPHEXT
@@ -220,43 +192,18 @@ IJE=SIZE(PRHODREF,2) - JPHEXT
 IKB=1+JPVEXT
 IKE=SIZE(PRHODREF,3) - JPVEXT
 !
-!++cb++
-!ALLOCATE(ZRTMIN(SIZE(XRTMIN)))
-!--cb--
-ALLOCATE(ZCTMIN(SIZE(XCTMIN)))
-!++cb++
-!ZRTMIN(:) = XRTMIN(:) / PTSTEP
-!--cb--
-ZCTMIN(:) = XCTMIN(:) / PTSTEP
-!
 !  Saturation vapor mixing ratio and radiative tendency                    
 !
 ZEPS= XMV / XMD
-!
-ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:) * &
-                EXP(-XALPW+XBETAW/ZT(:,:,:)+XGAMW*ALOG(ZT(:,:,:))) - 1.0)
+ZRVSAT(:,:,:) = ZEPS / (PPABST(:,:,:)*EXP(-XALPW+XBETAW/ZT(:,:,:)+XGAMW*ALOG(ZT(:,:,:))) - 1.0)
 ZTDT(:,:,:)   = 0.
-!! ZDRC(:,:,:)   = 0.
-IF (OACTIT) THEN
-   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                   ! dT/dt 
-!!! JPP
-!!! JPP
-!!!   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                ! drc/dt
-!!   ZDRC(:,:,:)   = PRCS(:,:,:)-(PRCT(:,:,:)/PTSTEP)                ! drc/dt
-!!! JPP
-!!! JPP
-!!
-!! BV - W and drc/dt effect should not be included in ZTDT (already accounted for in the computations) ?  
-!!
-!!   ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-!!        (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
-END IF
+IF (LACTIT) ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                   ! dT/dt
 !
 !  find locations where CCN are available
 !
 ZCONC_TOT(:,:,:) = 0.0
 DO JMOD = 1, NMOD_CCN 
-   ZCONC_TOT(:,:,:) = ZCONC_TOT(:,:,:) + PNFS(:,:,:,JMOD) ! sum over the free CCN
+   ZCONC_TOT(:,:,:) = ZCONC_TOT(:,:,:) + PNFT(:,:,:,JMOD) ! sum over the free CCN
 ENDDO
 !
 !  optimization by looking for locations where
@@ -265,29 +212,27 @@ ENDDO
 GNUCT(:,:,:) = .FALSE.
 !
 ! NEW : -22°C = limit sup for condensation freezing in Fridlin et al., 2007
-IF( OACTIT ) THEN
+IF( LACTIT ) THEN
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) = (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN  .OR. &
                                      ZTDT(IIB:IIE,IJB:IJE,IKB:IKE)<XTMIN   .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
              .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
-             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
+             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(4)
 ELSE 
    GNUCT(IIB:IIE,IJB:IJE,IKB:IKE) =   (PW_NU(IIB:IIE,IJB:IJE,IKB:IKE)>XWMIN .OR. &
         PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE)    ) .AND.&
             PRVT(IIB:IIE,IJB:IJE,IKB:IKE)>(0.98*ZRVSAT(IIB:IIE,IJB:IJE,IKB:IKE))&
              .AND. ZT(IIB:IIE,IJB:IJE,IKB:IKE)>(XTT-22.)                        &
-             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>ZCTMIN(4)
+             .AND. ZCONC_TOT(IIB:IIE,IJB:IJE,IKB:IKE)>XCTMIN(4)
 END IF
 INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !
-!
 IF( INUCT >= 1 ) THEN
 !
-   ALLOCATE(ZNFS(INUCT,NMOD_CCN))
-   ALLOCATE(ZNAS(INUCT,NMOD_CCN))
+   ALLOCATE(ZNFT(INUCT,NMOD_CCN))
+   ALLOCATE(ZNAT(INUCT,NMOD_CCN))
    ALLOCATE(ZTMP(INUCT,NMOD_CCN))
-   ALLOCATE(ZCCS(INUCT))
    ALLOCATE(ZZT(INUCT)) 
    ALLOCATE(ZZTDT(INUCT)) 
    ALLOCATE(ZSW(INUCT))    
@@ -303,7 +248,6 @@ IF( INUCT >= 1 ) THEN
    ALLOCATE(ZRHODREF(INUCT)) 
    ALLOCATE(ZEXNREF(INUCT)) 
    DO JL=1,INUCT
-      ZCCS(JL) = PCCS(I1(JL),I2(JL),I3(JL))
       ZZT(JL)  = ZT(I1(JL),I2(JL),I3(JL))
       ZZW1(JL) = ZRVSAT(I1(JL),I2(JL),I3(JL))
       ZZW2(JL) = PW_NU(I1(JL),I2(JL),I3(JL))
@@ -312,9 +256,9 @@ IF( INUCT >= 1 ) THEN
       ZRHODREF(JL) = PRHODREF(I1(JL),I2(JL),I3(JL))
       ZEXNREF(JL)  = PEXNREF(I1(JL),I2(JL),I3(JL))
       DO JMOD = 1,NMOD_CCN
-         ZNFS(JL,JMOD)        = PNFS(I1(JL),I2(JL),I3(JL),JMOD)
-         ZNAS(JL,JMOD)        = PNAS(I1(JL),I2(JL),I3(JL),JMOD)
-         ZCHEN_MULTI(JL,JMOD) = (ZNFS(JL,JMOD)+ZNAS(JL,JMOD))*PTSTEP*ZRHODREF(JL) &
+         ZNFT(JL,JMOD)        = PNFT(I1(JL),I2(JL),I3(JL),JMOD)
+         ZNAT(JL,JMOD)        = PNAT(I1(JL),I2(JL),I3(JL),JMOD)
+         ZCHEN_MULTI(JL,JMOD) = (ZNFT(JL,JMOD)+ZNAT(JL,JMOD))*ZRHODREF(JL) &
                                                              / XLIMIT_FACTOR(JMOD)
       ENDDO
    ENDDO
@@ -332,14 +276,13 @@ IF( INUCT >= 1 ) THEN
 !  Remark : in LIMA's nucleation parameterization, Smax=0.01 for a supersaturation of 1% !
 !
 !
-   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NAHEN)-0.0001, &
-                                 XAHENINTP1 * ZZT(:) + XAHENINTP2 )  )
+   ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NAHEN)-0.0001, XAHENINTP1 * ZZT(:) + XAHENINTP2 ) )
    IVEC1(:) = INT( ZVEC1(:) )
    ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
    ALLOCATE(ZSMAX(INUCT))
 !
 !
-   IF (OACTIT) THEN ! including a cooling rate
+   IF (LACTIT) THEN ! including a cooling rate
 !
 !       Compute the tabulation of function of ZZW3 :
 !
@@ -359,7 +302,7 @@ IF( INUCT >= 1 ) THEN
                        ! Cste*((Psi1*w+Psi3*dT/dt)/(G))**1.5
 !
 !
-   ELSE ! OACTIT , for clouds
+   ELSE ! LACTIT , for clouds
 !
 !
 !       Compute the tabulation of function of ZZW3 :
@@ -373,7 +316,7 @@ IF( INUCT >= 1 ) THEN
         ZZW3(:)=XAHENG(IVEC1(:)+1)*((XPSI1(IVEC1(:)+1)*ZZW2(:))**1.5)* ZVEC1(:)    &
                -XAHENG(IVEC1(:)  )*((XPSI1(IVEC1(:)  )*ZZW2(:))**1.5)*(ZVEC1(:)-1.0)
 !
-   END IF ! OACTIT
+   END IF ! LACTIT
 !
 !
 !              (Psi1*w+Psi3*DT/Dt)**1.5   rho_air
@@ -419,8 +362,7 @@ IF( INUCT >= 1 ) THEN
 ! Modified values for Beta and C (see in init_aerosol_properties) account for that
 !
    WHERE (ZZW5(:) > 0. .AND. ZSMAX(:) > 0.)
-      ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NHYP)-0.0001,  &
-                                    XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
+      ZVEC1(:) = MAX( 1.0001, MIN( FLOAT(NHYP)-0.0001, XHYPINTP1*LOG(ZSMAX(:))+XHYPINTP2 ) )
       IVEC1(:) = INT( ZVEC1(:) )
       ZVEC1(:) = ZVEC1(:) - FLOAT( IVEC1(:) )
    END WHERE
@@ -436,12 +378,11 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( ZSMAX(:)>0.0 )
+      WHERE( ZZW5(:) > 0. .AND. ZSMAX(:)>0.0 )
          ZZW2(:) =  XHYPF12( IVEC1(:)+1,JMOD )* ZVEC1(:)      & ! hypergeo function
                   - XHYPF12( IVEC1(:)  ,JMOD )*(ZVEC1(:) - 1.0) ! XHYPF12 is tabulated
    !
-         ZTMP(:,JMOD) = (ZCHEN_MULTI(:,JMOD)/ZRHODREF(:))*ZSMAX(:)**XKHEN_MULTI(JMOD) &
-                                                         *ZZW2(:)/PTSTEP
+         ZTMP(:,JMOD) = ZCHEN_MULTI(:,JMOD)/ZRHODREF(:)*ZSMAX(:)**XKHEN_MULTI(JMOD)*ZZW2(:)
       ENDWHERE
    ENDDO
 !
@@ -453,41 +394,36 @@ IF( INUCT >= 1 ) THEN
       ZZW2(:) = 0.
       ZZW3(:) = 0.
    !
-      WHERE( SUM(ZTMP(:,:),DIM=2)*PTSTEP .GT. 25.E6/ZRHODREF(:) ) 
-         ZZW1(:) = MIN( ZNFS(:,JMOD),MAX( ZTMP(:,JMOD)- ZNAS(:,JMOD) , 0.0 ) )
+      WHERE( SUM(ZTMP(:,:),DIM=2) .GT. 25.E6/ZRHODREF(:) ) 
+         ZZW1(:) = MIN( ZNFT(:,JMOD),MAX( ZTMP(:,JMOD)- ZNAT(:,JMOD) , 0.0 ) )
       ENDWHERE
    !
    !* update the concentration of activated CCN = Na
    !
-      PNAS(:,:,:,JMOD) = PNAS(:,:,:,JMOD) +                            &
-                         UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
+      PNAT(:,:,:,JMOD) = PNAT(:,:,:,JMOD) + UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
    !
    !* update the concentration of free CCN = Nf
    !
-      PNFS(:,:,:,JMOD) = PNFS(:,:,:,JMOD) -                            &
-                         UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
+      PNFT(:,:,:,JMOD) = PNFT(:,:,:,JMOD) - UNPACK( ZZW1(:), MASK=GNUCT(:,:,:), FIELD=0.0 )
    !
    !* prepare to update the cloud water concentration 
    !
       ZZW6(:) = ZZW6(:) + ZZW1(:)
    ENDDO
 !
-! Update PRVS, PRCS, PCCS, and PTHS
+! Output tendencies
 !
    ZZW1(:)=0.
    WHERE (ZZW5(:)>0.0 .AND. ZSMAX(:)>0.0) ! ZZW1 is computed with ZSMAX [NO UNIT]
       ZZW1(:) = MIN(XCSTDCRIT*ZZW6(:)/(((ZZT(:)*ZSMAX(:))**3)*ZRHODREF(:)),1.E-5)
    END WHERE
-   ZW(:,:,:) = MIN( UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ),PRVS(:,:,:) )
+   ZW(:,:,:) = MIN( UNPACK( ZZW1(:),MASK=GNUCT(:,:,:),FIELD=0.0 ),PRVT(:,:,:) )
 !
-   PRVS(:,:,:) = PRVS(:,:,:) - ZW(:,:,:)
-   PRCS(:,:,:) = PRCS(:,:,:) + ZW(:,:,:) 
-   ZW(:,:,:)   = ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))/                &
+   PTHT(:,:,:) = PTHT(:,:,:) + ZW(:,:,:) * (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))/                &
             (PEXNREF(:,:,:)*(XCPD+XCPV*PRVT(:,:,:)+XCL*(PRCT(:,:,:)+PRRT(:,:,:))))
-   PTHS(:,:,:) = PTHS(:,:,:) + ZW(:,:,:)
-!
-   ZW(:,:,:)   = PCCS(:,:,:)
-   PCCS(:,:,:) = UNPACK( ZZW6(:)+ZCCS(:),MASK=GNUCT(:,:,:),FIELD=ZW(:,:,:) )
+   PRVT(:,:,:) = PRVT(:,:,:) - ZW(:,:,:) 
+   PRCT(:,:,:) = PRCT(:,:,:) + ZW(:,:,:) 
+   PCCT(:,:,:) = PCCT(:,:,:) + UNPACK( ZZW6(:),MASK=GNUCT(:,:,:),FIELD=0. ) 
 !
    ZW(:,:,:)   = UNPACK( 100.0*ZSMAX(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
    ZW2(:,:,:)  = UNPACK( ZZW6(:),MASK=GNUCT(:,:,:),FIELD=0.0 )
@@ -502,9 +438,8 @@ IF( INUCT >= 1 ) THEN
 !
    DEALLOCATE(IVEC1)
    DEALLOCATE(ZVEC1)
-   DEALLOCATE(ZNFS)
-   DEALLOCATE(ZNAS)
-   DEALLOCATE(ZCCS)
+   DEALLOCATE(ZNFT)
+   DEALLOCATE(ZNAT)
    DEALLOCATE(ZZT)
    DEALLOCATE(ZSMAX)
    DEALLOCATE(ZZW1)
@@ -521,9 +456,6 @@ IF( INUCT >= 1 ) THEN
 !
 END IF ! INUCT
 !
-!++cb++
-DEALLOCATE(ZCTMIN)
-!--cb--
 IF ( OCLOSE_OUT ) THEN
   TZFIELD%CMNHNAME   ='SMAX'
   TZFIELD%CSTDNAME   = ''
@@ -670,6 +602,7 @@ DO JL = 1, NPTS
             PRINT*, 'PX2 ALWAYS too small, we put a greater one : PX2 =',PX2
             fh(JL)   = SINGL_FUNCSMAX(PX2,PZZW3(JL),JL)
             go to 100
+            print*, 'PZRIDDR: never get here'
             STOP
          end if
          if (abs(xh-xl) <= PXACC) then
@@ -682,6 +615,7 @@ DO JL = 1, NPTS
 !!$      endif   
 !!SB
       end do
+      print*, 'PZRIDDR: exceeded maximum iterations',j
       STOP
    else if (fl(JL) == 0.0) then
       PZRIDDR(JL)=PX1
@@ -784,7 +718,7 @@ INTEGER                        :: PIVEC1
 ALLOCATE(PFUNCSMAX(NPTS))
 !
 PFUNCSMAX(:) = 0.
-PZVEC1 = MAX( ( 1.0 + 10.0 * XMNH_EPSILON ) ,MIN( FLOAT(NHYP)*( 1.0 - 10.0 * XMNH_EPSILON ) ,               &
+PZVEC1 = MAX( 1.0001,MIN( FLOAT(NHYP)-0.0001,               &
                            XHYPINTP1*LOG(PPZSMAX)+XHYPINTP2 ) )
 PIVEC1 = INT( PZVEC1 )
 PZVEC1 = PZVEC1 - FLOAT( PIVEC1 )
@@ -861,4 +795,4 @@ END FUNCTION SINGL_FUNCSMAX
 !
 !-----------------------------------------------------------------------------
 !
-END SUBROUTINE LIMA_WARM_NUCL
+END SUBROUTINE LIMA_CCN_ACTIVATION

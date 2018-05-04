@@ -13,7 +13,7 @@ INTERFACE
                              PRHODREF, PEXNREF, PPABST, PW_NU,    &
                              PTHM, PPABSM,                        &
                              PTHT, PRT, PSVT,                     &
-                             PTHS, PRS, PSVS                      )
+                             PTHS, PRS, PSVS)
 !
 LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the 
                                                    ! cloud ice sedimentation
@@ -49,14 +49,14 @@ END SUBROUTINE LIMA_MIXED
 END INTERFACE
 END MODULE MODI_LIMA_MIXED
 !
-!     #############################################################
+!     #######################################################################
       SUBROUTINE LIMA_MIXED (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
                              KRR, PZZ, PRHODJ,                    &
                              PRHODREF, PEXNREF, PPABST, PW_NU,    &
                              PTHM, PPABSM,                        &
                              PTHT, PRT, PSVT,                     &
                              PTHS, PRS, PSVS                      )
-!     #############################################################
+!     #######################################################################
 !
 !!
 !!    PURPOSE
@@ -103,7 +103,7 @@ USE MODD_CST,              ONLY : XP00, XRD, XRV, XMV, XMD, XCPD, XCPV,       &
                                   XCL, XCI, XTT, XLSTT, XLVTT,                &
                                   XALPI, XBETAI, XGAMI
 USE MODD_PARAM_LIMA,       ONLY : NMOD_IFN, XRTMIN, XCTMIN, LWARM, LCOLD,     &
-                                  NMOD_CCN, NMOD_IMM, LRAIN, LHAIL
+                                  NMOD_CCN, NMOD_IMM, LRAIN, LSNOW, LHAIL
 USE MODD_PARAM_LIMA_WARM,  ONLY : XLBC, XLBEXC, XLBR, XLBEXR
 USE MODD_PARAM_LIMA_COLD,  ONLY : XLBI, XLBEXI, XLBS, XLBEXS, XSCFAC
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBH, XLBEXH
@@ -539,6 +539,7 @@ IF( IMICRO >= 1 ) THEN
 !        3.     Compute the fast RS and RG processes
 !   	        ------------------------------------
 !
+IF (LSNOW) THEN
    CALL LIMA_MIXED_FAST_PROCESSES(ZRHODREF, ZZT, ZPRES, PTSTEP,           &
                                   ZLSFACT, ZLVFACT, ZKA, ZDV, ZCJ,        &
                                   ZRVT, ZRCT, ZRRT, ZRIT, ZRST, ZRGT,     &
@@ -549,6 +550,7 @@ IF( IMICRO >= 1 ) THEN
                                   ZRHODJ, GMICRO, PRHODJ, KMI, PTHS,      &
                                   PRCS, PRRS, PRIS, PRSS, PRGS, PRHS,     &
                                   PCCS, PCRS, PCIS                        )
+END IF
 !
 !-------------------------------------------------------------------------------
 !
@@ -650,38 +652,38 @@ ELSE
   IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
     IF (LBUDGET_TH) THEN
       ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,4,'DEPG_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'DEPG_BU_RTH')
       CALL BUDGET (ZW,4,'IMLT_BU_RTH')
       CALL BUDGET (ZW,4,'BERFI_BU_RTH')
-      CALL BUDGET (ZW,4,'RIM_BU_RTH')
-      CALL BUDGET (ZW,4,'ACC_BU_RTH')
-      CALL BUDGET (ZW,4,'CFRZ_BU_RTH')
-      CALL BUDGET (ZW,4,'WETG_BU_RTH')
-      CALL BUDGET (ZW,4,'DRYG_BU_RTH')
-      CALL BUDGET (ZW,4,'GMLT_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'RIM_BU_RTH')
+      IF (LSNOW .AND. LRAIN) CALL BUDGET (ZW,4,'ACC_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'CFRZ_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'WETG_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'DRYG_BU_RTH')
+      IF (LSNOW) CALL BUDGET (ZW,4,'GMLT_BU_RTH')
       IF (LHAIL) CALL BUDGET (ZW,4,'WETH_BU_RTH')
       IF (LHAIL) CALL BUDGET (ZW,4,'HMLT_BU_RTH')
     ENDIF
     IF (LBUDGET_RV) THEN
       ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,6,'DEPG_BU_RRV')
+      IF (LSNOW) CALL BUDGET (ZW,6,'DEPG_BU_RRV')
     ENDIF
     IF (LBUDGET_RC) THEN
       ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,7,'IMLT_BU_RRC')
       CALL BUDGET (ZW,7,'BERFI_BU_RRC')
-      CALL BUDGET (ZW,7,'RIM_BU_RRC')
-      CALL BUDGET (ZW,7,'WETG_BU_RRC')
-      CALL BUDGET (ZW,7,'DRYG_BU_RRC')
+      IF (LSNOW) CALL BUDGET (ZW,7,'RIM_BU_RRC')
+      IF (LSNOW) CALL BUDGET (ZW,7,'WETG_BU_RRC')
+      IF (LSNOW) CALL BUDGET (ZW,7,'DRYG_BU_RRC')
       IF (LHAIL) CALL BUDGET (ZW,7,'WETH_BU_RRC')
     ENDIF
-    IF (LBUDGET_RR) THEN
+    IF (LBUDGET_RR .AND. LRAIN) THEN
       ZW(:,:,:) = PRRS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,8,'ACC_BU_RRR')
-      CALL BUDGET (ZW,8,'CFRZ_BU_RRR')
-      CALL BUDGET (ZW,8,'WETG_BU_RRR')
-      CALL BUDGET (ZW,8,'DRYG_BU_RRR')
-      CALL BUDGET (ZW,8,'GMLT_BU_RRR')
+      IF (LSNOW .AND. LRAIN) CALL BUDGET (ZW,8,'ACC_BU_RRR')
+      IF (LSNOW) CALL BUDGET (ZW,8,'CFRZ_BU_RRR')
+      IF (LSNOW) CALL BUDGET (ZW,8,'WETG_BU_RRR')
+      IF (LSNOW) CALL BUDGET (ZW,8,'DRYG_BU_RRR')
+      IF (LSNOW) CALL BUDGET (ZW,8,'GMLT_BU_RRR')
       IF (LHAIL) CALL BUDGET (ZW,8,'WETH_BU_RRR')
       IF (LHAIL) CALL BUDGET (ZW,8,'HMLT_BU_RRR')
     ENDIF
@@ -689,28 +691,28 @@ ELSE
       ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,9,'IMLT_BU_RRI')
       CALL BUDGET (ZW,9,'BERFI_BU_RRI')
-      CALL BUDGET (ZW,9,'HMS_BU_RRI')
-      CALL BUDGET (ZW,9,'CFRZ_BU_RRI')
-      CALL BUDGET (ZW,9,'WETG_BU_RRI')
-      CALL BUDGET (ZW,9,'DRYG_BU_RRI')
-      CALL BUDGET (ZW,9,'HMG_BU_RRI')
+      IF (LSNOW) CALL BUDGET (ZW,9,'HMS_BU_RRI')
+      IF (LSNOW) CALL BUDGET (ZW,9,'CFRZ_BU_RRI')
+      IF (LSNOW) CALL BUDGET (ZW,9,'WETG_BU_RRI')
+      IF (LSNOW) CALL BUDGET (ZW,9,'DRYG_BU_RRI')
+      IF (LSNOW) CALL BUDGET (ZW,9,'HMG_BU_RRI')
       IF (LHAIL) CALL BUDGET (ZW,9,'WETH_BU_RRI')
     ENDIF
-    IF (LBUDGET_RS) THEN
+    IF (LBUDGET_RS .AND. LSNOW) THEN
       ZW(:,:,:) = PRSS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,10,'RIM_BU_RRS')
       CALL BUDGET (ZW,10,'HMS_BU_RRS')
-      CALL BUDGET (ZW,10,'ACC_BU_RRS')
+      IF (LRAIN) CALL BUDGET (ZW,10,'ACC_BU_RRS')
       CALL BUDGET (ZW,10,'CMEL_BU_RRS')
       CALL BUDGET (ZW,10,'WETG_BU_RRS')
       CALL BUDGET (ZW,10,'DRYG_BU_RRS')
       IF (LHAIL) CALL BUDGET (ZW,10,'WETH_BU_RRS')
     ENDIF
-    IF (LBUDGET_RG) THEN
+    IF (LBUDGET_RG .AND. LSNOW) THEN
       ZW(:,:,:) = PRGS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,11,'DEPG_BU_RRG')
       CALL BUDGET (ZW,11,'RIM_BU_RRG')
-      CALL BUDGET (ZW,11,'ACC_BU_RRG')
+      IF (LRAIN) CALL BUDGET (ZW,11,'ACC_BU_RRG')
       CALL BUDGET (ZW,11,'CMEL_BU_RRG')
       CALL BUDGET (ZW,11,'CFRZ_BU_RRG')
       CALL BUDGET (ZW,11,'WETG_BU_RRG')
@@ -720,7 +722,7 @@ ELSE
       IF (LHAIL) CALL BUDGET (ZW,11,'WETH_BU_RRG')
       IF (LHAIL) CALL BUDGET (ZW,11,'COHG_BU_RRG')
     ENDIF
-    IF (LBUDGET_RH) THEN
+    IF (LBUDGET_RH .AND. LHAIL) THEN
       ZW(:,:,:) = PRHS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,12,'WETG_BU_RRH')
       IF (LHAIL) CALL BUDGET (ZW,12,'WETH_BU_RRH')
@@ -730,27 +732,27 @@ ELSE
     IF (LBUDGET_SV) THEN
       ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,12+NSV_LIMA_NC,'IMLT_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'RIM_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'WETG_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NC,'DRYG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NC,'RIM_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NC,'WETG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NC,'DRYG_BU_RSV')
       IF (LHAIL) CALL BUDGET (ZW,12+NSV_LIMA_NC,'WETH_BU_RSV')
 !
       ZW(:,:,:) = PCRS(:,:,:)*PRHODJ(:,:,:)
-      CALL BUDGET (ZW,12+NSV_LIMA_NR,'ACC_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NR,'CFRZ_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NR,'WETG_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NR,'DRYG_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NR,'GMLT_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NR,'ACC_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NR,'CFRZ_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NR,'WETG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NR,'DRYG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NR,'GMLT_BU_RSV')
       IF (LHAIL) CALL BUDGET (ZW,12+NSV_LIMA_NR,'WETH_BU_RSV')
       IF (LHAIL) CALL BUDGET (ZW,12+NSV_LIMA_NR,'HMLT_BU_RSV')
 !
       ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
       CALL BUDGET (ZW,12+NSV_LIMA_NI,'IMLT_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HMS_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'CFRZ_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'WETG_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'DRYG_BU_RSV')
-      CALL BUDGET (ZW,12+NSV_LIMA_NI,'HMG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HMS_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NI,'CFRZ_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NI,'WETG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NI,'DRYG_BU_RSV')
+      IF (LSNOW) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HMG_BU_RSV')
       IF (LHAIL) CALL BUDGET (ZW,12+NSV_LIMA_NI,'WETH_BU_RSV')
     ENDIF
   ENDIF

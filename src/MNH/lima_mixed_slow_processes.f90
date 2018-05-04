@@ -113,7 +113,7 @@ END MODULE MODI_LIMA_MIXED_SLOW_PROCESSES
 !
 USE MODD_CST,              ONLY : XTT, XALPI, XBETAI, XGAMI,          &
                                        XALPW, XBETAW, XGAMW
-USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, NMOD_IFN
+USE MODD_PARAM_LIMA,       ONLY : XRTMIN, XCTMIN, NMOD_IFN, LSNOW
 USE MODD_PARAM_LIMA_COLD,  ONLY : XDI, X0DEPI, X2DEPI, XSCFAC  
 USE MODD_PARAM_LIMA_MIXED, ONLY : XLBG, XLBEXG, XLBDAG_MAX,           &
                                   X0DEPG, XEX0DEPG, X1DEPG, XEX1DEPG 
@@ -178,6 +178,7 @@ INTEGER :: JMOD_IFN
 !        ---------------------------------------------
 !
 !
+IF (LSNOW) THEN
    ZZW(:) = 0.0
    WHERE ( (ZRGT(:)>XRTMIN(6)) .AND. (ZRGS(:)>XRTMIN(6)/PTSTEP) )
 !Correction BVIE RHODREF
@@ -202,7 +203,8 @@ INTEGER :: JMOD_IFN
      IF (LBUDGET_RG) CALL BUDGET (                                                 &
                    UNPACK(ZRGS(:),MASK=GMICRO(:,:,:),FIELD=PRGS)*PRHODJ(:,:,:), &
                                                                11,'DEPG_BU_RRG')
-   END IF
+  END IF
+END IF
 !
 !
 !*       2    cloud ice Melting: RIMLTC and CIMLTC

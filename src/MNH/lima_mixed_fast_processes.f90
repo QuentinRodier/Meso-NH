@@ -261,7 +261,7 @@ IF( IGRIM>0 ) THEN
 !               set of Lbda_s used to tabulate some moments of the incomplete 
 !               gamma function
 !
-   ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+   ZVEC2(1:IGRIM) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
                          XRIMINTP1 * LOG( ZVEC1(1:IGRIM) ) + XRIMINTP2 ) )
    IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
@@ -353,7 +353,7 @@ IF( IGRIM>0 ) THEN
    ALLOCATE(IVEC2(IGRIM))
 !
    ZVEC1(:) = PACK( ZLBDAC(:),MASK=GRIM(:) )
-   ZVEC2(1:IGRIM) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+   ZVEC2(1:IGRIM) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
                          XHMLINTP1 * LOG( ZVEC1(1:IGRIM) ) + XHMLINTP2 ) )
    IVEC2(1:IGRIM) = INT( ZVEC2(1:IGRIM) )
    ZVEC2(1:IGRIM) = ZVEC2(1:IGRIM) - FLOAT( IVEC2(1:IGRIM) )
@@ -398,7 +398,7 @@ ZZW1(:,2:3) = 0.0
 GACC(:) = (ZRRT(:)>XRTMIN(3)) .AND. (ZRST(:)>XRTMIN(5)) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) .AND. (ZZT(:)<XTT)
 IGACC = COUNT( GACC(:) )
 !
-IF( IGACC>0 ) THEN
+IF( IGACC>0 .AND. LRAIN) THEN
 !
 !        1.3.0  allocations
 !
@@ -417,12 +417,12 @@ IF( IGACC>0 ) THEN
 !               in the geometrical set of (Lbda_s,Lbda_r) couplet use to
 !               tabulate the RACCSS-kernel
 !
-   ZVEC1(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAS)-0.00001,           &
+   ZVEC1(1:IGACC) = MAX( 1.0001, MIN( FLOAT(NACCLBDAS)-0.0001,           &
                          XACCINTP1S * LOG( ZVEC1(1:IGACC) ) + XACCINTP2S ) )
    IVEC1(1:IGACC) = INT( ZVEC1(1:IGACC) )
    ZVEC1(1:IGACC) = ZVEC1(1:IGACC) - FLOAT( IVEC1(1:IGACC) )
 !
-   ZVEC2(1:IGACC) = MAX( 1.00001, MIN( FLOAT(NACCLBDAR)-0.00001,           &
+   ZVEC2(1:IGACC) = MAX( 1.0001, MIN( FLOAT(NACCLBDAR)-0.0001,           &
                          XACCINTP1R * LOG( ZVEC2(1:IGACC) ) + XACCINTP2R ) )
    IVEC2(1:IGACC) = INT( ZVEC2(1:IGACC) )
    ZVEC2(1:IGACC) = ZVEC2(1:IGACC) - FLOAT( IVEC2(1:IGACC) )
@@ -443,7 +443,7 @@ IF( IGACC>0 ) THEN
 !        1.3.4  raindrop accretion on the small sized aggregates
 !
    WHERE ( GACC(:) )
-      ZZW1(:,2) =                                            & !! coef of RRACCS
+      ZZW1(:,2) = ZCRT(:) *                                           & !! coef of RRACCS
               XFRACCSS*( ZLBDAS(:)**XCXS )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
          *( XLBRACCS1/((ZLBDAS(:)**2)               ) +                  &
             XLBRACCS2/( ZLBDAS(:)    * ZLBDAR(:)    ) +                  &
@@ -460,12 +460,12 @@ IF( IGACC>0 ) THEN
 !               RACCS-kernel
 !
    DO JJ = 1,IGACC
-      ZVEC3(JJ) =  (   XKER_RACCS(IVEC2(JJ)+1,IVEC1(JJ)+1)* ZVEC1(JJ)          &
-                    -  XKER_RACCS(IVEC2(JJ)+1,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
-                                                                         * ZVEC2(JJ) &
-                 - (   XKER_RACCS(IVEC2(JJ)  ,IVEC1(JJ)+1)* ZVEC1(JJ)          &
-                    -  XKER_RACCS(IVEC2(JJ)  ,IVEC1(JJ)  )*(ZVEC1(JJ) - 1.0) ) &
-                                                           * (ZVEC2(JJ) - 1.0)
+      ZVEC3(JJ) =  (   XKER_RACCS(IVEC1(JJ)+1,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                    -  XKER_RACCS(IVEC1(JJ)+1,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                                                         * ZVEC1(JJ) &
+                 - (   XKER_RACCS(IVEC1(JJ)  ,IVEC2(JJ)+1)* ZVEC2(JJ)          &
+                    -  XKER_RACCS(IVEC1(JJ)  ,IVEC2(JJ)  )*(ZVEC2(JJ) - 1.0) ) &
+                                                           * (ZVEC1(JJ) - 1.0)
    END DO
    ZZW1(:,2) = ZZW1(:,2)*UNPACK( VECTOR=ZVEC3(:),MASK=GACC(:),FIELD=0.0 ) !! RRACCS
 !
@@ -486,7 +486,7 @@ IF( IGACC>0 ) THEN
 !               into graupeln
 !
    WHERE ( GACC(:) .AND. (ZRSS(:)>XRTMIN(5)/PTSTEP) )
-      ZZW1(:,2) = MIN( ZRRS(:),ZZW1(:,2)-ZZW1(:,4) )                  ! RRACCSG
+      ZZW1(:,2) = MAX( MIN( ZRRS(:),ZZW1(:,2)-ZZW1(:,4) ) , 0. )      ! RRACCSG
       ZZW1(:,3) = MIN( ZRSS(:),XFSACCRG*ZZW(:)*                     & ! RSACCRG
             ( ZLBDAS(:)**(XCXS-XBS) )*( ZRHODREF(:)**(-XCEXVT-1.) ) &
            *( XLBSACCR1/((ZLBDAR(:)**2)               ) +           &
@@ -506,7 +506,7 @@ IF( IGACC>0 ) THEN
    DEALLOCATE(ZVEC1)
 END IF
 !
-IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
+IF (NBUMOD==KMI .AND. LBU_ENABLE .AND. LRAIN) THEN
   IF (LBUDGET_TH) CALL BUDGET (                                              &
                  UNPACK(ZTHS(:),MASK=GMICRO(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
                                                                4,'ACC_BU_RTH')
@@ -654,12 +654,12 @@ IF( IGDRY>0 ) THEN
 !               in the geometrical set of (Lbda_g,Lbda_s) couplet use to
 !               tabulate the SDRYG-kernel
 !
-   ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAG)-0.00001,           &
+   ZVEC1(1:IGDRY) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAG)-0.0001,           &
                          XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
    IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - FLOAT( IVEC1(1:IGDRY) )
 !
-   ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAS)-0.00001,           &
+   ZVEC2(1:IGDRY) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAS)-0.0001,           &
                          XDRYINTP1S * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2S ) )
    IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
@@ -718,12 +718,12 @@ IF( IGDRY>0 ) THEN
 !               in the geometrical set of (Lbda_g,Lbda_r) couplet use to
 !               tabulate the RDRYG-kernel
 !
-   ZVEC1(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAG)-0.00001,           &
+   ZVEC1(1:IGDRY) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAG)-0.0001,           &
                          XDRYINTP1G * LOG( ZVEC1(1:IGDRY) ) + XDRYINTP2G ) )
    IVEC1(1:IGDRY) = INT( ZVEC1(1:IGDRY) )
    ZVEC1(1:IGDRY) = ZVEC1(1:IGDRY) - FLOAT( IVEC1(1:IGDRY) )
 !
-   ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NDRYLBDAR)-0.00001,           &
+   ZVEC2(1:IGDRY) = MAX( 1.0001, MIN( FLOAT(NDRYLBDAR)-0.0001,           &
                          XDRYINTP1R * LOG( ZVEC2(1:IGDRY) ) + XDRYINTP2R ) )
    IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
@@ -742,7 +742,7 @@ IF( IGDRY>0 ) THEN
    ZZW(:) = UNPACK( VECTOR=ZVEC3(:),MASK=GDRY,FIELD=0.0 )
 !
    WHERE( GDRY(:) )
-      ZZW1(:,4) = MIN( ZRRS(:),XFRDRYG*ZZW(:)                    & ! RRDRYG
+      ZZW1(:,4) = MIN( ZRRS(:),XFRDRYG*ZZW(:) * ZCRT(:)                   & ! RRDRYG
                         *( ZLBDAR(:)**(-3) )*( ZLBDAG(:)**XCXG ) &
                                 *( ZRHODREF(:)**(-XCEXVT-1.) )   &
                     *( XLBRDRYG1/( ZLBDAG(:)**2              ) + &
@@ -924,7 +924,7 @@ IF( IGDRY>0 ) THEN
    ALLOCATE(IVEC2(IGDRY))
 !
    ZVEC1(:) = PACK( ZLBDAC(:),MASK=GDRY(:) )
-   ZVEC2(1:IGDRY) = MAX( 1.00001, MIN( FLOAT(NGAMINC)-0.00001,           &
+   ZVEC2(1:IGDRY) = MAX( 1.0001, MIN( FLOAT(NGAMINC)-0.0001,           &
                          XHMLINTP1 * LOG( ZVEC1(1:IGDRY) ) + XHMLINTP2 ) )
    IVEC2(1:IGDRY) = INT( ZVEC2(1:IGDRY) )
    ZVEC2(1:IGDRY) = ZVEC2(1:IGDRY) - FLOAT( IVEC2(1:IGDRY) )
@@ -1055,12 +1055,12 @@ IF( IHAIL>0 ) THEN
 !               in the geometrical set of (Lbda_h,Lbda_s) couplet use to
 !               tabulate the SWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAH)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.0001, MIN( FLOAT(NWETLBDAH)-0.0001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
       ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAS)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.0001, MIN( FLOAT(NWETLBDAS)-0.0001,           &
                             XWETINTP1S * LOG( ZVEC2(1:IGWET) ) + XWETINTP2S ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
       ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )
@@ -1118,12 +1118,12 @@ IF( IHAIL>0 ) THEN
 !               in the geometrical set of (Lbda_h,Lbda_g) couplet use to
 !               tabulate the GWETH-kernel
 !
-      ZVEC1(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC1(1:IGWET) = MAX( 1.0001, MIN( FLOAT(NWETLBDAG)-0.0001,           &
                             XWETINTP1H * LOG( ZVEC1(1:IGWET) ) + XWETINTP2H ) )
       IVEC1(1:IGWET) = INT( ZVEC1(1:IGWET) )
       ZVEC1(1:IGWET) = ZVEC1(1:IGWET) - FLOAT( IVEC1(1:IGWET) )
 !
-      ZVEC2(1:IGWET) = MAX( 1.00001, MIN( FLOAT(NWETLBDAG)-0.00001,           &
+      ZVEC2(1:IGWET) = MAX( 1.0001, MIN( FLOAT(NWETLBDAG)-0.0001,           &
                             XWETINTP1G * LOG( ZVEC2(1:IGWET) ) + XWETINTP2G ) )
       IVEC2(1:IGWET) = INT( ZVEC2(1:IGWET) )
       ZVEC2(1:IGWET) = ZVEC2(1:IGWET) - FLOAT( IVEC2(1:IGWET) )

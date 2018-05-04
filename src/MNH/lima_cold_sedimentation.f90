@@ -90,8 +90,6 @@ USE MODD_PARAMETERS,       ONLY : JPHEXT, JPVEXT
 USE MODI_LIMA_FUNCTIONS,   ONLY : COUNTJV
 !
 USE MODD_NSV
-USE MODD_BUDGET
-USE MODI_BUDGET
 !++cb++
 IMPLICIT NONE
 !--cb--
@@ -233,16 +231,16 @@ DO JN = 1 , KSPLITG
             ZCIT(JL) = PCIT(I1(JL),I2(JL),I3(JL))
          END DO
          ZLBDAI(:)  = 1.E10
-         WHERE (ZRIT(:)>XRTMIN(4) .AND. ZCIT(:)>XCTMIN(4))
-            ZLBDAI(:) = ( XLBI*ZCIT(:) / ZRIT(:) )**XLBEXI
-         END WHERE
-         WHERE( ZRIS(:)>ZRTMIN(4) )
+         WHERE (ZRIS(:)>XRTMIN(4) .AND. ZCIS(:)>XCTMIN(4))
+            ZLBDAI(:) = ( XLBI*ZCIS(:) / ZRIS(:) )**XLBEXI
             ZZY(:) = ZRHODREF(:)**(-XCEXVT) * ZLBDAI(:)**(-XDI)
             ZZW(:) = XFSEDRI * ZRIS(:) * ZZY(:) * ZRHODREF(:)
             ZZX(:) = XFSEDCI * ZCIS(:) * ZZY(:) * ZRHODREF(:)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRIS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
          ZWSEDC(:,:,:) = UNPACK( ZZX(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDC(:,:,IKB:IKE) = MIN( ZWSEDC(:,:,IKB:IKE), PCIS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
          DO JK = IKB , IKE
             PRIS(:,:,JK) = PRIS(:,:,JK) + ZW(:,:,JK)*    &
                  (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
@@ -259,17 +257,18 @@ DO JN = 1 , KSPLITG
 !*       2.22   for aggregates
 !
       ZZW(:) = 0.
-      IF( MAXVAL(PRSS(:,:,:))>ZRTMIN(5) ) THEN
+      IF( MAXVAL(PRSS(:,:,:))>XRTMIN(5) ) THEN
          ALLOCATE(ZRSS(ISEDIM)) 
          DO JL = 1,ISEDIM
             ZRSS(JL) = PRSS(I1(JL),I2(JL),I3(JL))
          END DO
-         WHERE( ZRSS(:)>ZRTMIN(5) )
+         WHERE( ZRSS(:)>XRTMIN(5) )
 ! Correction BVIE ZRHODREF
 !            ZZW(:) = XFSEDS * ZRSS(:)**XEXSEDS * ZRHODREF(:)**(XEXSEDS-XCEXVT)
             ZZW(:) = XFSEDS * ZRSS(:)**XEXSEDS * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRSS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
          DO JK = IKB , IKE
             PRSS(:,:,JK) = PRSS(:,:,JK) + ZW(:,:,JK)* &
                  (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
@@ -284,17 +283,18 @@ DO JN = 1 , KSPLITG
 !*       2.23   for graupeln
 !
       ZZW(:) = 0.
-      IF( MAXVAL(PRGS(:,:,:))>ZRTMIN(6) ) THEN
+      IF( MAXVAL(PRGS(:,:,:))>XRTMIN(6) ) THEN
          ALLOCATE(ZRGS(ISEDIM)) 
          DO JL = 1,ISEDIM
             ZRGS(JL) = PRGS(I1(JL),I2(JL),I3(JL))
          END DO
-         WHERE( ZRGS(:)>ZRTMIN(6) )
+         WHERE( ZRGS(:)>XRTMIN(6) )
 ! Correction BVIE ZRHODREF
 !            ZZW(:) = XFSEDG * ZRGS(:)**XEXSEDG * ZRHODREF(:)**(XEXSEDG-XCEXVT)
             ZZW(:) = XFSEDG * ZRGS(:)**XEXSEDG * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRGS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
          DO JK = IKB , IKE
             PRGS(:,:,JK) = PRGS(:,:,JK) + ZW(:,:,JK)* &
                  (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
@@ -309,17 +309,18 @@ DO JN = 1 , KSPLITG
 !*       2.23   for hail
 !
       ZZW(:) = 0.
-      IF( MAXVAL(PRHS(:,:,:))>ZRTMIN(7) ) THEN
+      IF( MAXVAL(PRHS(:,:,:))>XRTMIN(7) ) THEN
          ALLOCATE(ZRHS(ISEDIM)) 
          DO JL = 1,ISEDIM
             ZRHS(JL) = PRHS(I1(JL),I2(JL),I3(JL))
          END DO
-         WHERE( ZRHS(:)>ZRTMIN(7) )
+         WHERE( ZRHS(:)>XRTMIN(7) )
 ! Correction BVIE ZRHODREF
 !            ZZW(:) = XFSEDH * ZRHS(:)**XEXSEDH * ZRHODREF(:)**(XEXSEDH-XCEXVT)
             ZZW(:) = XFSEDH * ZRHS(:)**XEXSEDH * ZRHODREF(:)**(-XCEXVT) * ZRHODREF(:)
          END WHERE
          ZWSEDR(:,:,:) = UNPACK( ZZW(:),MASK=GSEDIM(:,:,:),FIELD=0.0 )
+         ZWSEDR(:,:,IKB:IKE) = MIN( ZWSEDR(:,:,IKB:IKE), PRHS(:,:,IKB:IKE) * PRHODREF(:,:,IKB:IKE) / ZW(:,:,IKB:IKE) )
          DO JK = IKB , IKE
             PRHS(:,:,JK) = PRHS(:,:,JK) + ZW(:,:,JK)* &
                  (ZWSEDR(:,:,JK+1)-ZWSEDR(:,:,JK))/PRHODREF(:,:,JK)
@@ -348,19 +349,6 @@ DO JN = 1 , KSPLITG
       END IF
    END IF
 END DO
-!
-!
-! Budget storage
-IF (LBU_ENABLE) THEN
-  IF (LBUDGET_RI .AND. OSEDI)                                              &
-                  CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9 ,'SEDI_BU_RRI')
-  IF (LBUDGET_RS) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),10 ,'SEDI_BU_RRS')
-  IF (LBUDGET_RG) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11 ,'SEDI_BU_RRG')
-  IF (LBUDGET_RH) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12 ,'SEDI_BU_RRH')
-  IF (LBUDGET_SV) THEN
-    IF (OSEDI) CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'SEDI_BU_RSV') ! RCI
-  END IF
-END IF
 !++cb++
 DEALLOCATE(ZRTMIN)
 !--cb--

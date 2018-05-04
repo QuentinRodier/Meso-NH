@@ -8,12 +8,12 @@
 !      #####################
 !
 INTERFACE
-      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
-                           KRR, PZZ, PRHODJ,                     &
-                           PRHODREF, PEXNREF, PPABST, PW_NU,     &
-                           PTHM, PPABSM,                         &
-                           PTHT, PRT, PSVT,                      &
-                           PTHS, PRS, PSVS,                      &
+      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
+                           KRR, PZZ, PRHODJ,                               &
+                           PRHODREF, PEXNREF, PPABST, PW_NU,               &
+                           PTHM, PPABSM,                                   &
+                           PTHT, PRT, PSVT,                                &
+                           PTHS, PRS, PSVS,                                &
                            PINPRS, PINPRG, PINPRH)
 !
 LOGICAL,                  INTENT(IN)    :: OSEDI   ! switch to activate the 
@@ -53,15 +53,15 @@ END SUBROUTINE LIMA_COLD
 END INTERFACE
 END MODULE MODI_LIMA_COLD
 !
-!     ############################################################
-      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
-                           KRR, PZZ, PRHODJ,                     &
-                           PRHODREF, PEXNREF, PPABST, PW_NU,     &
-                           PTHM, PPABSM,                         &
-                           PTHT, PRT, PSVT,                      &
-                           PTHS, PRS, PSVS,                      &
+!     ######################################################################
+      SUBROUTINE LIMA_COLD (OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,           &
+                           KRR, PZZ, PRHODJ,                               &
+                           PRHODREF, PEXNREF, PPABST, PW_NU,               &
+                           PTHM, PPABSM,                                   &
+                           PTHT, PRT, PSVT,                                &
+                           PTHS, PRS, PSVS,                                &
                            PINPRS, PINPRG, PINPRH)
-!     ############################################################
+!     ######################################################################
 !
 !!
 !!    PURPOSE
@@ -114,6 +114,9 @@ END MODULE MODI_LIMA_COLD
 !              ------------
 USE MODD_NSV
 USE MODD_PARAM_LIMA
+!
+USE MODD_BUDGET
+USE MODI_BUDGET
 !
 USE MODI_LIMA_COLD_SEDIMENTATION
 USE MODI_LIMA_MEYERS
@@ -304,6 +307,16 @@ CALL LIMA_COLD_SEDIMENTATION (OSEDI, KSPLITG, PTSTEP, KMI,     &
                               PRIS, PRSS, PRGS, PRHS, PCIS,    &
                               PINPRS, PINPRG,&
                               PINPRH                  )
+
+IF (LBU_ENABLE) THEN
+  IF (LBUDGET_RI .AND. OSEDI) CALL BUDGET (PRIS(:,:,:)*PRHODJ(:,:,:),9  ,'SEDI_BU_RRI')
+  IF (LBUDGET_RS .AND. LSNOW) CALL BUDGET (PRSS(:,:,:)*PRHODJ(:,:,:),10 ,'SEDI_BU_RRS')
+  IF (LBUDGET_RG .AND. LSNOW) CALL BUDGET (PRGS(:,:,:)*PRHODJ(:,:,:),11 ,'SEDI_BU_RRG')
+  IF (LBUDGET_RH .AND. LHAIL) CALL BUDGET (PRHS(:,:,:)*PRHODJ(:,:,:),12 ,'SEDI_BU_RRH')
+  IF (LBUDGET_SV) THEN
+    IF (OSEDI) CALL BUDGET (PCIS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NI,'SEDI_BU_RSV') ! RCI
+  END IF
+END IF
 !-------------------------------------------------------------------------------
 !
 !
@@ -329,7 +342,7 @@ IF (LNUCL) THEN
                           PNAS, PIFS, PINS, PNIS   )
    END IF
 !
-   IF (LWARM) THEN
+   IF (LWARM .OR. (LHHONI .AND. NMOD_CCN.GE.1)) THEN
       CALL LIMA_COLD_HOM_NUCL (OHHONI, PTSTEP, KMI,                         &
                                PZZ, PRHODJ,                                 &
                                PRHODREF, PEXNREF, PPABST, PW_NU,            &

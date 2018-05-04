@@ -210,6 +210,7 @@ USE MODD_NSV, ONLY : XSVMIN, NSV_CHEMBEG, NSV_CHEMEND, &
 USE MODD_CH_AEROSOL, ONLY : LORILAM
 USE MODD_DUST,       ONLY : LDUST
 USE MODD_PARAM_C2R2, ONLY : LACTIT
+USE MODD_PARAM_LIMA, ONLY : LACTIT_LIMA=>LACTIT
 USE MODD_LBC_n, ONLY : CLBCX, CLBCY
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
@@ -292,6 +293,13 @@ END IF
 
 !*      1.   TEMPORAL ADVANCE OF PROGNOSTIC VARIABLES
 !
+PPABSM(:,:,:) = PPABST(:,:,:)
+!
+IF (LACTIT .OR. LACTIT_LIMA) THEN
+   PTHM(:,:,:)   = PTHT(:,:,:)
+   PRCM(:,:,:)   = PRT(:,:,:,2)
+END IF
+
 PUT(:,:,:)=PUS(:,:,:)
 PVT(:,:,:)=PVS(:,:,:)
 PWT(:,:,:)=PWS(:,:,:)
@@ -304,12 +312,6 @@ PTHT(:,:,:)=PTHS(:,:,:)
 !
 PRT(:,:,:,1:KRR)=PRS(:,:,:,1:KRR)
 !
-PPABSM(:,:,:) = PPABST(:,:,:)
-!
-IF (LACTIT) THEN
-   PTHM(:,:,:)   = PTHT(:,:,:)
-   PRCM(:,:,:)   = PRT(:,:,:,2)
-END IF
 ! Turbulence
 !
 IF (SIZE(PTKET,1) /= 0) PTKET(:,:,:)=PTKES(:,:,:)

@@ -73,8 +73,9 @@ REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
 !*       0.2   Declarations of local variables :
 !
 REAL     :: ZT      ! Work variable
-REAL     :: ZVTRMAX
+REAL, DIMENSION(7)  :: ZVTRMAX
 !
+INTEGER  :: JI
 INTEGER  :: ILUOUT0 ! Logical unit number for output-listing
 INTEGER  :: IRESP   ! Return code of FM-routines
 !  
@@ -89,27 +90,40 @@ INTEGER  :: IRESP   ! Return code of FM-routines
 ILUOUT0 = TLUOUT0%NLU
 !
 !
+ZVTRMAX(2) = 0.3         ! Maximum cloud droplet fall speed
+ZVTRMAX(3) = 15.         ! Maximum rain drop fall speed
+ZVTRMAX(4) = 1.5         ! Maximum ice crystal fall speed
+ZVTRMAX(5) = 3.0         ! Maximum snow fall speed
+ZVTRMAX(6) = 15.         ! Maximum graupel fall speed
+ZVTRMAX(7) = 30.         ! Maximum hail fall speed
+!
+! NSPLITSED
+!
+DO JI=2,7
+   NSPLITSED(JI) = 1
+   SPLIT : DO
+      ZT = PTSTEP / FLOAT(NSPLITSED(JI))
+      IF ( ZT * ZVTRMAX(JI) / PDZMIN < 1.0) EXIT SPLIT
+      NSPLITSED(JI) = NSPLITSED(JI) + 1
+   END DO SPLIT
+END DO
+!
 ! KSPLITR
-ZVTRMAX = 30.         ! Maximum rain drop fall speed
 !
 KSPLITR = 1
 SPLITR : DO
    ZT = PTSTEP / FLOAT(KSPLITR)
-   IF ( ZT * ZVTRMAX / PDZMIN < 1.0) EXIT SPLITR
+   IF ( ZT * ZVTRMAX(7) / PDZMIN < 1.0) EXIT SPLITR
    KSPLITR = KSPLITR + 1
 END DO SPLITR
 !
 !
 ! KSPLITG
-ZVTRMAX = 30.                          
-IF( LHAIL ) THEN
-   ZVTRMAX = 60. ! Hail case 
-END IF
 !
 KSPLITG = 1
 SPLITG : DO
    ZT = 2.* PTSTEP / FLOAT(KSPLITG)
-   IF ( ZT * ZVTRMAX / PDZMIN .LT. 1.) EXIT SPLITG
+   IF ( ZT * ZVTRMAX(7) / PDZMIN .LT. 1.) EXIT SPLITG
    KSPLITG = KSPLITG + 1
 END DO SPLITG
 !
@@ -131,7 +145,7 @@ XRTMIN(6) = 1.0E-15   ! rg
 XRTMIN(7) = 1.0E-15   ! rh
 ALLOCATE( XCTMIN(7) )
 XCTMIN(1) = 1.0       ! Not used
-XCTMIN(2) = 1.0E+4    ! Nc
+XCTMIN(2) = 1.0E-3    ! Nc
 !XCTMIN(3) = 1.0E+1    ! Nr
 XCTMIN(3) = 1.0E-3    ! Nr
 XCTMIN(4) = 1.0E-3    ! Ni

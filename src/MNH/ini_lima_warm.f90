@@ -2,7 +2,6 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
 !      #########################
        MODULE MODI_INI_LIMA_WARM
 !      #########################
@@ -191,6 +190,17 @@ XFSEDCC  = XCC*GAMMA_X0D(XNUC+XDC/XALPHAC)/GAMMA_X0D(XNUC)*     &
             (ZRHO00)**XCEXVT
 
 !
+XLB(2)    = XLBC
+XLBEX(2)  = XLBEXC
+XD(2)     = XDC
+XFSEDR(2) = XFSEDRC
+XFSEDC(2) = XFSEDCC
+!
+XLB(3)    = XLBR
+XLBEX(3)  = XLBEXR
+XD(3)     = XDR
+XFSEDR(3) = XFSEDRR
+XFSEDC(3) = XFSEDCR
 !
 !------------------------------------------------------------------------------
 !

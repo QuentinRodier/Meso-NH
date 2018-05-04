@@ -8,11 +8,11 @@
 !      ##########################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                        &
-                                 PRHODREF, PEXNREF, PPABST, ZT,      &
-                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
-                                 PRVT, PRCT, PRRT, PCRT,             &
-                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
+      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                                &
+                                 PRHODREF, PEXNREF, PPABST, ZT,              &
+                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
+                                 PRVT, PRCT, PRRT, PCRT,                     &
+                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
                                  PEVAP3D)
 !
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
@@ -47,14 +47,14 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
       END SUBROUTINE LIMA_WARM_EVAP
 END INTERFACE
 END MODULE MODI_LIMA_WARM_EVAP
-!     ################################################################
-      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                        &
-                                 PRHODREF, PEXNREF, PPABST, ZT,      &
-                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
-                                 PRVT, PRCT, PRRT, PCRT,             &
-                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
+!     #############################################################################
+      SUBROUTINE LIMA_WARM_EVAP (PTSTEP, KMI,                                &
+                                 PRHODREF, PEXNREF, PPABST, ZT,              &
+                                 ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
+                                 PRVT, PRCT, PRRT, PCRT,                     &
+                                 PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
                                  PEVAP3D)
-!     ################################################################
+!     #############################################################################
 !
 !!
 !!    PURPOSE
@@ -150,7 +150,7 @@ REAL, DIMENSION(:), ALLOCATABLE   :: ZZW1, ZZW2, ZZW3, &
                                      ZZLV     ! Latent heat of vaporization at T
 !
 REAL,    DIMENSION(SIZE(PRHODREF,1),SIZE(PRHODREF,2),SIZE(PRHODREF,3))   &
-                                  :: ZW, ZW2, ZRVSAT
+                                  :: ZW, ZW2, ZRVSAT, ZDR
 !
 !
 REAL    :: ZEPS, ZFACT
@@ -294,47 +294,51 @@ IF( IEVAP >= 1 ) THEN
 !   	 ---------------------------------------
 !
 !
-   GEVAP(:,:,:) = PRRS(:,:,:)>ZRTMIN(3) .AND. PCRS(:,:,:)>ZCTMIN(3) .AND. &
-                  PRCS(:,:,:)>ZRTMIN(2) .AND. PCCS(:,:,:)>ZCTMIN(2)
+   GEVAP(:,:,:) = PRRS(:,:,:)>ZRTMIN(3) .AND. PCRS(:,:,:)>ZCTMIN(3)
+   ZDR(:,:,:) = 9999.
    WHERE (GEVAP(:,:,:))
+      ZDR(:,:,:)=(6.*PRRS(:,:,:)/XPI/XRHOLW/PCRS(:,:,:))**0.33
       ZWLBDR3(:,:,:) = XLBR * PCRS(:,:,:) / PRRS(:,:,:)
       ZWLBDR(:,:,:)  = ZWLBDR3(:,:,:)**XLBEXR
-!
-      ZWLBDC3(:,:,:) = XLBC * PCCS(:,:,:) / PRCS(:,:,:)
-      ZWLBDC(:,:,:)  = ZWLBDC3(:,:,:)**XLBEXC
-      ZWLBDC3(:,:,:) = (XACCR1/XACCR3)*(XACCR4/ZWLBDC(:,:,:)-XACCR5) ! 1/D_h, not "Lambda_h"
    END WHERE
-!
-   GMICRO(:,:,:) = GEVAP(:,:,:) .AND. ZWLBDR(:,:,:)>ZWLBDC3(:,:,:)
-                          ! the raindrops are too small, that is lower than D_h
-   ZFACT = 1.2E4*XACCR1
-   WHERE (GMICRO(:,:,:))
-      ZWLBDC(:,:,:) = XLBR / MIN( ZFACT,ZWLBDC3(:,:,:) )**3
-      ZW(:,:,:) = MIN( MAX(                                                      &
-           (PRHODREF(:,:,:)*PRRS(:,:,:) - ZWLBDC(:,:,:)*PCRS(:,:,:)) / &
-           (PRHODREF(:,:,:)*PRCS(:,:,:)/PCCS(:,:,:) - ZWLBDC(:,:,:)) , &
-                    0.0 ),PCRS(:,:,:),                                         &
-                          PCCS(:,:,:)*PRRS(:,:,:)/(PRCS(:,:,:)))
-!
-! Compute the percent (=1 if (ZWLBDR/XACCR1) >= 1.2E4
-! of transfer with    (=0 if (ZWLBDR/XACCR1) <= (XACCR4/ZWLBDC-XACCR5)/XACCR3
-!
-      ZW(:,:,:) = ZW(:,:,:)*( (MIN(ZWLBDR(:,:,:),1.2E4*XACCR1)-ZWLBDC3(:,:,:)) / &
-                            (                  1.2E4*XACCR1 -ZWLBDC3(:,:,:))   )
-!
-      ZW2(:,:,:) = PCCS(:,:,:)      !temporary storage
-      PCCS(:,:,:)   = PCCS(:,:,:)+ZW(:,:,:)
-      PCRS(:,:,:)   = PCRS(:,:,:)-ZW(:,:,:)
-      ZW(:,:,:)     = ZW(:,:,:) * (PRHODREF(:,:,:)*PRCS(:,:,:)/ZW2(:,:,:))
-      PRCS(:,:,:)   = PRCS(:,:,:)+ZW(:,:,:)
-      PRRS(:,:,:)   = PRRS(:,:,:)-ZW(:,:,:)
+   !
+   WHERE (GEVAP(:,:,:) .AND. ZDR(:,:,:).LT.82.E-6)
+      PCCS(:,:,:)   = PCCS(:,:,:)+PCRS(:,:,:)
+      PCRS(:,:,:)   = 0.
+      PRCS(:,:,:)   = PRCS(:,:,:)+PRRS(:,:,:)
+      PRRS(:,:,:)   = 0.
    END WHERE
-!
-   GEVAP(:,:,:) = PRRS(:,:,:)<ZRTMIN(3) .OR. PCRS(:,:,:)<ZCTMIN(3)
-   WHERE (GEVAP(:,:,:))
-      PCRS(:,:,:) = 0.0
-      PRRS(:,:,:) = 0.0
-   END WHERE
+
+!!$   GMICRO(:,:,:) = GEVAP(:,:,:) .AND. ZWLBDR(:,:,:)/XACCR1>ZWLBDC3(:,:,:)
+!!$                          ! the raindrops are too small, that is lower than D_h
+!!$   ZFACT = 1.2E4*XACCR1
+!!$   WHERE (GMICRO(:,:,:))
+!!$      ZWLBDC(:,:,:) = XLBR / MIN( ZFACT,ZWLBDC3(:,:,:) )**3
+!!$      ZW(:,:,:) = MIN( MAX(                                                      &
+!!$           (PRHODREF(:,:,:)*PRRS(:,:,:) - ZWLBDC(:,:,:)*PCRS(:,:,:)) / &
+!!$           (PRHODREF(:,:,:)*PRCS(:,:,:)/PCCS(:,:,:) - ZWLBDC(:,:,:)) , &
+!!$                    0.0 ),PCRS(:,:,:),                                         &
+!!$                          PCCS(:,:,:)*PRRS(:,:,:)/(PRCS(:,:,:)))
+!!$!
+!!$! Compute the percent (=1 if (ZWLBDR/XACCR1) >= 1.2E4
+!!$! of transfer with    (=0 if (ZWLBDR/XACCR1) <= (XACCR4/ZWLBDC-XACCR5)/XACCR3
+!!$!
+!!$      ZW(:,:,:) = ZW(:,:,:)*( (MIN(ZWLBDR(:,:,:),1.2E4*XACCR1)-ZWLBDC3(:,:,:)) / &
+!!$                            (                  1.2E4*XACCR1 -ZWLBDC3(:,:,:))   )
+!!$!
+!!$      ZW2(:,:,:) = PCCS(:,:,:)      !temporary storage
+!!$      PCCS(:,:,:)   = PCCS(:,:,:)+ZW(:,:,:)
+!!$      PCRS(:,:,:)   = PCRS(:,:,:)-ZW(:,:,:)
+!!$      ZW(:,:,:)     = ZW(:,:,:) * (PRHODREF(:,:,:)*PRCS(:,:,:)/ZW2(:,:,:))
+!!$      PRCS(:,:,:)   = PRCS(:,:,:)+ZW(:,:,:)
+!!$      PRRS(:,:,:)   = PRRS(:,:,:)-ZW(:,:,:)
+!!$   END WHERE
+!!$!
+!!$   GEVAP(:,:,:) = PRRS(:,:,:)<ZRTMIN(3) .OR. PCRS(:,:,:)<ZCTMIN(3)
+!!$   WHERE (GEVAP(:,:,:))
+!!$      PCRS(:,:,:) = 0.0
+!!$      PRRS(:,:,:) = 0.0
+!!$   END WHERE
 !
 END IF ! IEVAP
 !

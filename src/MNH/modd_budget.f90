@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1995-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -16,7 +16,7 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX, NMNHNAMELGTMAX
+!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX,NMNHNAMELGTMAX
 !!
 !!    REFERENCE
 !!    ---------
@@ -39,13 +39,14 @@
 !!      C. Barthe       19/11/09    add budget terms for electricity          
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe            /16    add budget terms for LIMA
-!!      C. LAc          10/2016 add droplets deposition
+!!      C. Lac          10/2016 add droplets deposition
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NMNHNAMELGTMAX
+USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX,NMNHNAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -282,6 +283,7 @@ INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            C3R5
 INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         C3R5
 INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            C3R5
 INTEGER, SAVE :: NCEDSTH    ! adjustment
+INTEGER, SAVE :: NSEDITH    ! Temperature transport by hydrometeors sedimentation
 !
 !      Allowed processes for the budget of RTKE (kinetic energy)
 !                                                  
@@ -372,6 +374,9 @@ INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact C3R5
 INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      C3R5
 INTEGER, SAVE :: NCEDSRC    ! adjustment                          C3R5
 INTEGER, SAVE :: NREVARC    ! evaporation of rain drops
+INTEGER, SAVE :: NCORRRC    ! rain <-> cloud transfer at the beginning of LIMA
+INTEGER, SAVE :: NR2C1RC    ! rain -> cloud change after sedimentation in LIMA
+INTEGER, SAVE :: NCVRCRC    ! rain -> cloud change after other microphysical processes in LIMA
 !
 !      Allowed processes for the budget of moist variable RRR (rain water)
 !
@@ -399,6 +404,9 @@ INTEGER, SAVE :: NGMLTRR    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRR    ! wet growth of hail      ICE4
 INTEGER, SAVE :: NHMLTRR    ! melting of hail         ICE4
 INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation C3R5
+INTEGER, SAVE :: NCORRRR    ! rain <-> cloud transfer at the beginning of LIMA
+INTEGER, SAVE :: NR2C1RR    ! rain -> cloud change after sedimentation in LIMA
+INTEGER, SAVE :: NCVRCRR    ! rain -> cloud change after other microphysical processes in LIMA
 !
 !      Allowed processes for the budget of moist variable RRI (ice)
 !
@@ -437,6 +445,7 @@ INTEGER, SAVE :: NCNVSRI ! Conversion of pristine ice to r_s      C3R5
 INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow riming C3R5
 INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming C3R5
 INTEGER, SAVE :: NCEDSRI ! adjustement                            C3R5
+INTEGER, SAVE :: NCORRRI    ! ice <-> snow transfer at the beginning of LIMA
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
 !
@@ -464,6 +473,7 @@ INTEGER, SAVE :: NWETHRS    ! wet growth of hail      ICE4
 INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         C3R5
 INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s C3R5
 INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming C3R5
+INTEGER, SAVE :: NCORRRS    ! ice <-> snow transfer at the beginning of LIMA
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
 !

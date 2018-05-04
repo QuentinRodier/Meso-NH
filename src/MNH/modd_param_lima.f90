@@ -35,6 +35,12 @@ IMPLICIT NONE
 !
 LOGICAL, SAVE :: LLIMA_DIAG             ! Compute diagnostics for concentration /m3
 !
+LOGICAL, SAVE :: LPTSPLIT               ! activate time-splitting technique by S. Riette
+LOGICAL, SAVE :: LFEEDBACKT             ! recompute tendencies if T changes sign
+INTEGER, SAVE :: NMAXITER               ! maximum number of iterations
+REAL,    SAVE :: XMRSTEP                ! maximum change in mixing ratio allowed before recomputing tedencies
+REAL,    SAVE :: XTSTEP_TS              ! maximum time for the sub-time-step
+!
 !*       1.   COLD SCHEME
 !             -----------
 !
@@ -50,22 +56,22 @@ LOGICAL, SAVE :: LMEYERS                ! TRUE to use Meyers nucleation
 !
 ! 1.2 IFN initialisation
 !
-INTEGER, SAVE          :: NMOD_IFN      ! Number of IFN modes
+INTEGER, SAVE          :: NMOD_IFN               ! Number of IFN modes
 REAL, DIMENSION(JPLIMAIFNMAX), SAVE :: XIFN_CONC ! Ref. concentration of IFN(#/L)
-LOGICAL, SAVE          :: LIFN_HOM       ! True for z-homogeneous IFN concentrations
-CHARACTER(LEN=8), SAVE :: CIFN_SPECIES   ! Internal mixing species definitions
-CHARACTER(LEN=8), SAVE :: CINT_MIXING    ! Internal mixing type selection (pure DM1 ...)
-INTEGER, SAVE          :: NMOD_IMM      ! Number of CCN modes acting by immersion
-INTEGER, SAVE          :: NIND_SPECIE    ! CCN acting by immersion are considered pure
-                                        ! IFN of either DM = 1, BC = 2 or O = 3
-INTEGER, DIMENSION(:), SAVE, ALLOCATABLE :: NIMM        ! Link between CCN and IMM modes
+LOGICAL, SAVE          :: LIFN_HOM               ! True for z-homogeneous IFN concentrations
+CHARACTER(LEN=8), SAVE :: CIFN_SPECIES           ! Internal mixing species definitions
+CHARACTER(LEN=8), SAVE :: CINT_MIXING            ! Internal mixing type selection (pure DM1 ...)
+INTEGER, SAVE          :: NMOD_IMM               ! Number of CCN modes acting by immersion
+INTEGER, SAVE          :: NIND_SPECIE            ! CCN acting by immersion are considered pure
+                                                 ! IFN of either DM = 1, BC = 2 or O = 3
+INTEGER, DIMENSION(:), SAVE, ALLOCATABLE :: NIMM            ! Link between CCN and IMM modes
 INTEGER, DIMENSION(:), SAVE, ALLOCATABLE :: NINDICE_CCN_IMM ! ??????????
-INTEGER, SAVE                            :: NSPECIE     ! Internal mixing number of species
-REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XMDIAM_IFN  ! Mean diameter of IFN modes
-REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XSIGMA_IFN  ! Sigma of IFN modes
-REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XRHO_IFN    ! Density of IFN modes 
-REAL, DIMENSION(:,:),  SAVE, ALLOCATABLE :: XFRAC       ! Composition of each IFN mode
-REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XFRAC_REF   ! AP compostion in Phillips 08
+INTEGER, SAVE                            :: NSPECIE         ! Internal mixing number of species
+REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XMDIAM_IFN      ! Mean diameter of IFN modes
+REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XSIGMA_IFN      ! Sigma of IFN modes
+REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XRHO_IFN        ! Density of IFN modes 
+REAL, DIMENSION(:,:),  SAVE, ALLOCATABLE :: XFRAC           ! Composition of each IFN mode
+REAL, DIMENSION(:),    SAVE, ALLOCATABLE :: XFRAC_REF       ! AP compostion in Phillips 08
 !
 ! 1.3 Ice characteristics
 !
@@ -119,26 +125,27 @@ LOGICAL, SAVE :: LBOUND        ! TRUE to enable the continuously replenishing
                                ! aerosol concentrations through the open
                                ! lateral boundaries -> boundaries.f90
 LOGICAL, SAVE :: LDEPOC        ! Deposition of rc at 1st level above ground
+LOGICAL, SAVE :: LACTTKE       ! TRUE to take into account TKE in W for activation
 !
 ! 2.2 CCN initialisation
 !
-INTEGER,         SAVE                 :: NMOD_CCN      ! Number of CCN modes
-REAL, DIMENSION(JPLIMACCNMAX), SAVE   :: XCCN_CONC      ! CCN conc.  (#/cm3)
-LOGICAL,         SAVE                 :: LCCN_HOM       ! True for z-homogeneous CCN concentrations
-CHARACTER(LEN=8),SAVE                 :: CCCN_MODES     ! CCN modes characteristics (Jungfraujoch ...)
-REAL, DIMENSION(:), SAVE, ALLOCATABLE :: XR_MEAN_CCN,   & ! Mean radius of CCN modes
-                                         XLOGSIG_CCN,   & ! Log of geometric dispersion of the CCN modes
-                                         XRHO_CCN         ! Density of the CCN modes
-REAL, DIMENSION(:), SAVE, ALLOCATABLE :: XKHEN_MULTI,   & ! Parameters defining the CCN activation
-                                         XMUHEN_MULTI,  & ! spectra for a multimodal aerosol distribution
-                                         XBETAHEN_MULTI   ! 
-REAL, DIMENSION(:,:,:)  ,SAVE, ALLOCATABLE :: XCONC_CCN_TOT    !* Total aerosol number concentration
-REAL, DIMENSION(:),      SAVE, ALLOCATABLE :: XLIMIT_FACTOR    !* compute CHEN ????????????
+INTEGER,         SAVE                     :: NMOD_CCN         ! Number of CCN modes
+REAL, DIMENSION(JPLIMACCNMAX), SAVE       :: XCCN_CONC        ! CCN conc.  (#/cm3)
+LOGICAL,         SAVE                     :: LCCN_HOM         ! True for z-homogeneous CCN concentrations
+CHARACTER(LEN=8),SAVE                     :: CCCN_MODES       ! CCN modes characteristics (Jungfraujoch ...)
+REAL, DIMENSION(:), SAVE, ALLOCATABLE     :: XR_MEAN_CCN,   & ! Mean radius of CCN modes
+                                             XLOGSIG_CCN,   & ! Log of geometric dispersion of the CCN modes
+                                             XRHO_CCN         ! Density of the CCN modes
+REAL, DIMENSION(:), SAVE, ALLOCATABLE     :: XKHEN_MULTI,   & ! Parameters defining the CCN activation
+                                             XMUHEN_MULTI,  & ! spectra for a multimodal aerosol distribution
+                                             XBETAHEN_MULTI   ! 
+REAL, DIMENSION(:,:,:) ,SAVE, ALLOCATABLE :: XCONC_CCN_TOT    ! Total aerosol number concentration
+REAL, DIMENSION(:),     SAVE, ALLOCATABLE :: XLIMIT_FACTOR    ! compute CHEN ????????????
 !
 ! 2.3 Water particles characteristics
 !
-REAL,SAVE     :: XALPHAR,XNUR,       & ! Raindrop       distribution parameters
-                 XALPHAC,XNUC          ! Cloud droplet  distribution parameters
+REAL,SAVE     :: XALPHAR,XNUR,       & ! Raindrop      distribution parameters
+                 XALPHAC,XNUC          ! Cloud droplet distribution parameters
 !
 ! 2.4 CCN activation
 !
@@ -181,12 +188,22 @@ REAL, SAVE    :: XMFPA0    = 6.6E-08    ![m] Mean Free Path of Air under standar
 !
 REAL, SAVE    :: XVISCW = 1.0E-3        ![Pa.s] water viscosity at 20°C
 ! Correction
-!REAL, SAVE    :: XRHO00 = 1.292         !rho on the floor    [Kg/m**3]
-REAL, SAVE    :: XRHO00 = 1.2041         !rho at P=1013.25 and T=20°C
+!REAL, SAVE    :: XRHO00 = 1.292        !rho on the floor    [Kg/m**3]
+REAL, SAVE    :: XRHO00 = 1.2041        !rho at P=1013.25 and T=20°C
 !
-REAL,SAVE :: XCEXVT                    ! air density fall speed correction
+REAL,SAVE :: XCEXVT                     ! air density fall speed correction
 !
 REAL,DIMENSION(:),SAVE,ALLOCATABLE :: XRTMIN ! Min values of the mixing ratios
 REAL,DIMENSION(:),SAVE,ALLOCATABLE :: XCTMIN ! Min values of the drop concentrations
+!
+!
+! Sedimentation variables
+!
+INTEGER,DIMENSION(7),SAVE :: NSPLITSED
+REAL,DIMENSION(7),SAVE :: XLB
+REAL,DIMENSION(7),SAVE :: XLBEX
+REAL,DIMENSION(7),SAVE :: XD
+REAL,DIMENSION(7),SAVE :: XFSEDR
+REAL,DIMENSION(7),SAVE :: XFSEDC
 !
 END MODULE MODD_PARAM_LIMA

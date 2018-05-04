@@ -101,7 +101,7 @@ USE MODD_PARAMETERS,      ONLY : JPHEXT, JPVEXT
 USE MODD_CST,             ONLY : XP00, XRD, XRV, XMV, XMD, XCPD, XCPV, XCL, XCI,   &
                                  XTT, XLSTT, XLVTT, XALPI, XBETAI, XGAMI,          &
                                  XG
-USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IMM, XRTMIN, XCTMIN, XNUC
+USE MODD_PARAM_LIMA,      ONLY : NMOD_CCN, NMOD_IMM, XRTMIN, XCTMIN, XNUC, LWARM, LRAIN
 USE MODD_PARAM_LIMA_COLD, ONLY : XRCOEF_HONH, XCEXP_DIFVAP_HONH, XCOEF_DIFVAP_HONH,&
                                  XCRITSAT1_HONH, XCRITSAT2_HONH, XTMAX_HONH,       &
                                  XTMIN_HONH, XC1_HONH, XC2_HONH, XC3_HONH,         &
@@ -444,7 +444,7 @@ IF (INEGT.GT.0) THEN
    END IF ! OHHONI
 !
 ! Budget storage
-   IF (NBUMOD==KMI .AND. LBU_ENABLE .AND. OHHONI) THEN
+   IF (NBUMOD==KMI .AND. LBU_ENABLE .AND. OHHONI .AND. NMOD_CCN.GT.0 ) THEN
      IF (LBUDGET_TH) CALL BUDGET (                                                 &
                      UNPACK(ZTHS(:),MASK=GNEGT(:,:,:),FIELD=PTHS)*PRHODJ(:,:,:),&
                                                                  4,'HONH_BU_RTH')
@@ -480,6 +480,7 @@ IF (INEGT.GT.0) THEN
 !  Compute the droplet homogeneous nucleation source: RCHONI
 !                 -> Pruppacher(1995)
 !
+IF (LWARM) THEN
    ZZW(:) = 0.0
    ZZX(:) = 0.0
    WHERE( (ZZT(:)<XTT-35.0) .AND. (ZCCT(:)>XCTMIN(2)) .AND. (ZRCT(:)>XRTMIN(2)) )
@@ -519,6 +520,7 @@ IF (INEGT.GT.0) THEN
                                                           12+NSV_LIMA_NI,'HONC_BU_RSV')
      END IF
    END IF
+END IF
 !
 !
 !-------------------------------------------------------------------------------
@@ -530,6 +532,7 @@ IF (INEGT.GT.0) THEN
 !
 !  Compute the drop homogeneous nucleation source: RRHONG
 !
+IF (LWARM .AND. LRAIN) THEN
    ZZW(:) = 0.0
    WHERE( (ZZT(:)<XTT-35.0) .AND. (ZRRS(:)>XRTMIN(3)/PTSTEP) )
       ZZW(:)  = ZRRS(:) ! Instantaneous freezing of the raindrops
@@ -556,6 +559,7 @@ IF (INEGT.GT.0) THEN
                                                           12+NSV_LIMA_NR,'HONR_BU_RSV')
      END IF
    END IF
+END IF
 !
 !
 !-------------------------------------------------------------------------------
@@ -633,40 +637,40 @@ ELSE
    IF (NBUMOD==KMI .AND. LBU_ENABLE) THEN
      IF (LBUDGET_TH) THEN
        ZW(:,:,:) = PTHS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI ) CALL BUDGET (ZW,4,'HONH_BU_RTH')
-       CALL BUDGET (ZW,4,'HONC_BU_RTH')
-       CALL BUDGET (ZW,4,'HONR_BU_RTH')
+       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,4,'HONH_BU_RTH')
+       IF (LWARM) CALL BUDGET (ZW,4,'HONC_BU_RTH')
+       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,4,'HONR_BU_RTH')
      ENDIF
      IF (LBUDGET_RV) THEN
        ZW(:,:,:) = PRVS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI ) CALL BUDGET (ZW,6,'HONH_BU_RRV')
+       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,6,'HONH_BU_RRV')
      ENDIF
      IF (LBUDGET_RC) THEN
        ZW(:,:,:) = PRCS(:,:,:)*PRHODJ(:,:,:)
-       CALL BUDGET (ZW,7,'HONC_BU_RRC')
+       IF (LWARM) CALL BUDGET (ZW,7,'HONC_BU_RRC')
      ENDIF
      IF (LBUDGET_RR) THEN
        ZW(:,:,:) = PRRS(:,:,:)*PRHODJ(:,:,:)
-       CALL BUDGET (ZW,8,'HONR_BU_RRR')
+       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,8,'HONR_BU_RRR')
      ENDIF
      IF (LBUDGET_RI) THEN
        ZW(:,:,:) = PRIS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI ) CALL BUDGET (ZW,9,'HONH_BU_RRI')
-       CALL BUDGET (ZW,9,'HONC_BU_RRI')
+       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,9,'HONH_BU_RRI')
+       IF (LWARM) CALL BUDGET (ZW,9,'HONC_BU_RRI')
      ENDIF
      IF (LBUDGET_RG) THEN
        ZW(:,:,:) = PRGS(:,:,:)*PRHODJ(:,:,:)
-       CALL BUDGET (ZW,11,'HONR_BU_RRG')
+       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,11,'HONR_BU_RRG')
      ENDIF
      IF (LBUDGET_SV) THEN
        ZW(:,:,:) = PCCS(:,:,:)*PRHODJ(:,:,:)
-       CALL BUDGET (ZW,12+NSV_LIMA_NC,'HONC_BU_RSV')
+       IF (LWARM) CALL BUDGET (ZW,12+NSV_LIMA_NC,'HONC_BU_RSV')
        ZW(:,:,:) = PCRS(:,:,:)*PRHODJ(:,:,:)
-       CALL BUDGET (ZW,12+NSV_LIMA_NR,'HONR_BU_RSV')
+       IF (LWARM .AND. LRAIN) CALL BUDGET (ZW,12+NSV_LIMA_NR,'HONR_BU_RSV')
        ZW(:,:,:) = PCIS(:,:,:)*PRHODJ(:,:,:)
-       IF( OHHONI ) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONH_BU_RSV')
-       CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONC_BU_RSV')
-       IF (NMOD_CCN.GE.1 .AND. OHHONI) THEN
+       IF( OHHONI .AND. NMOD_CCN.GT.0 ) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONH_BU_RSV')
+       IF (LWARM) CALL BUDGET (ZW,12+NSV_LIMA_NI,'HONC_BU_RSV')
+       IF( OHHONI .AND. NMOD_CCN.GT.0 ) THEN
           DO JL=1, NMOD_CCN
              ZW(:,:,:) = PNFS(:,:,:,JL)*PRHODJ(:,:,:)
              CALL BUDGET (ZW,12+NSV_LIMA_CCN_FREE+JL-1,'HONH_BU_RSV') 

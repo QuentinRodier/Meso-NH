@@ -308,7 +308,7 @@ USE MODD_PARAM_ICE,      ONLY: LWARM,LSEDIC,LCONVHG,LDEPOSC
 USE MODD_PARAM_LIMA,     ONLY: MSEDC => LSEDC, MWARM => LWARM, MRAIN => LRAIN, LACTI,  &
                                MACTIT => LACTIT, LSCAV, NMOD_CCN, LCOLD,               &
                                MSEDI => LSEDI, MHHONI => LHHONI, NMOD_IFN, LHAIL,      &
-                               XRTMIN_LIMA=>XRTMIN
+                               XRTMIN_LIMA=>XRTMIN, MACTTKE=>LACTTKE
 USE MODD_BLOWSNOW_n
 USE MODD_BLOWSNOW                       
 USE MODD_PARAM_MFSHALL_n
@@ -1725,7 +1725,7 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
       ZWT_ACT_NUC(:,:,:) = XWT(:,:,:)
     END IF
     IF (CTURB /= 'NONE' ) THEN
-     IF (LACTTKE) THEN 
+     IF ( ((CCLOUD=='C2R2'.OR.CCLOUD=='KHKO').AND.LACTTKE) .OR. (CCLOUD=='LIMA'.AND.MACTTKE) ) THEN 
        ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) +  (2./3. * XTKET(:,:,:))**0.5
      ELSE
        ZWT_ACT_NUC(:,:,:) = ZWT_ACT_NUC(:,:,:) 

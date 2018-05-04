@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/resolved_cloud.f90,v $
 !-----------------------------------------------------------------
 !     ##########################
       MODULE MODI_RESOLVED_CLOUD
@@ -9,7 +10,7 @@
 INTERFACE
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
+                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,       &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -18,8 +19,8 @@ INTERFACE
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
-                                  PINPRS,PINPRG,PINPRH,                                &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
@@ -133,7 +134,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !     ##########################################################################
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
+                                  HLBCX, HLBCY,TPFILE, HRAD, HTURBDIM,       &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -142,8 +143,8 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,                     &
-                                  PINPRS,PINPRG,PINPRH,                                &
+                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRG,PINPRH,     &
                                   PSOLORG,PMI,                                         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
@@ -272,7 +273,8 @@ USE MODD_CH_AEROSOL , ONLY : LORILAM
 USE MODD_DUST , ONLY : LDUST
 USE MODD_SALT , ONLY : LSALT
 !
-USE MODD_PARAM_LIMA, ONLY : LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM
+USE MODD_PARAM_LIMA, ONLY : LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM, LPTSPLIT, &
+                            YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
 !
 USE MODI_SLOW_TERMS
 USE MODI_FAST_TERMS
@@ -287,6 +289,7 @@ USE MODI_SHUMAN
 USE MODI_BUDGET
 USE MODI_GET_HALO
 !
+USE MODI_LIMA
 USE MODI_LIMA_WARM
 USE MODI_LIMA_COLD
 USE MODI_LIMA_MIXED
@@ -433,6 +436,8 @@ REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysi
 !
 INTEGER                               :: JMOD, JMOD_IFN
 !
+! BVIE work array waiting for PINPRI
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
 !------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARY COMPUTATIONS
@@ -681,60 +686,39 @@ SELECT CASE ( HCLOUD )
     PSVS(:,:,:,:) = MAX( 0.0,PSVS(:,:,:,:) )
 !
    CASE('LIMA')   
-! Correction of CCN concentrations where rc<0 or Nc<0
-     IF (OWARM) THEN
-        DO JMOD = 1, NMOD_CCN 
-           WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.) ! rc or Nc < 0.
-              ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JMOD-1) =               &
-                   ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JMOD-1) + & ! NfreeCN = NfreeCN+
-                   ZSVS(:,:,:,NSV_LIMA_CCN_ACTI+JMOD-1)     ! N_activated_CCN
-              ZSVS(:,:,:,NSV_LIMA_CCN_ACTI+JMOD-1) = 0.0             ! N_activated_CCN=0
-           END WHERE
-        ENDDO
-     END IF
-! Correction where rc<0
-     IF (OWARM) THEN
-        WHERE (PRS(:,:,:,2) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NC) < 0.)
-           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
-           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-                ZCPH(:,:,:) / ZEXN(:,:,:)
-           PRS(:,:,:,2)  = 0.0
-           ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
-        END WHERE
-     END IF
-! Correction where rr<0
-     IF (OWARM .AND. ORAIN) THEN
-        WHERE (PRS(:,:,:,3) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NR) < 0.)
-           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
-           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
-                ZCPH(:,:,:) / ZEXN(:,:,:)
-           PRS(:,:,:,3)  = 0.0
-           ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
-        END WHERE
-     END IF
-! Correction of IFN concentrations where ri<0 or Ni<0
-     IF (LCOLD) THEN
-        DO JMOD = 1, NMOD_IFN 
-           WHERE (PRS(:,:,:,4) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NI) < 0.) ! ri or Ni < 0.
-              ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JMOD-1) =               &
-                   ZSVS(:,:,:,NSV_LIMA_IFN_FREE+JMOD-1) + &
-                   ZSVS(:,:,:,NSV_LIMA_IFN_NUCL+JMOD-1)     ! N_IF =N_IF+N_IN
-              ZSVS(:,:,:,NSV_LIMA_IFN_NUCL+JMOD-1) = 0.0             ! N_IN =0.
-           END WHERE
-        ENDDO
-     END IF
-! Correction where ri<0
-     IF (LCOLD) THEN
-        WHERE (PRS(:,:,:,4) < 0. .OR. ZSVS(:,:,:,NSV_LIMA_NI) < 0.)
-           PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
-           PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
-                ZCPH(:,:,:) / ZEXN(:,:,:)
-           PRS(:,:,:,4)  = 0.0
-           ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
-        END WHERE
-     END IF
+! Correction where rc<0 or Nc<0
+      IF (OWARM) THEN
+         WHERE (PRS(:,:,:,2) < YRTMIN(2)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NC) < YCTMIN(2)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,2)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NC) = 0.0
+         END WHERE
+      END IF
+! Correction where rr<0 or Nr<0
+      IF (OWARM .AND. ORAIN) THEN
+         WHERE (PRS(:,:,:,3) < YRTMIN(3)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NR) < YCTMIN(3)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,3)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,3) * ZLV(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,3)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NR) = 0.0
+         END WHERE
+      END IF
+! Correction where ri<0 or Ni<0
+      IF (LCOLD) THEN
+         WHERE (PRS(:,:,:,4) < YRTMIN(4)/PTSTEP .OR. ZSVS(:,:,:,NSV_LIMA_NI) < YCTMIN(4)/PTSTEP)
+            PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
+            PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
+                 ZCPH(:,:,:) / ZEXN(:,:,:)
+            PRS(:,:,:,4)  = 0.0
+            ZSVS(:,:,:,NSV_LIMA_NI) = 0.0
+         END WHERE
+      END IF
 !
      ZSVS(:,:,:,:) = MAX( 0.0,ZSVS(:,:,:,:) )
+     PRS(:,:,:,:) = MAX( 0.0,PRS(:,:,:,:) )
 !
 END SELECT
 !
@@ -753,9 +737,9 @@ IF (LBUDGET_RS) CALL BUDGET (PRS(:,:,:,5) * PRHODJ(:,:,:),10,'NEGA_BU_RRS')
 IF (LBUDGET_RG) CALL BUDGET (PRS(:,:,:,6) * PRHODJ(:,:,:),11,'NEGA_BU_RRG')
 IF (LBUDGET_RH) CALL BUDGET (PRS(:,:,:,7) * PRHODJ(:,:,:),12,'NEGA_BU_RRH')
 IF (LBUDGET_SV .AND. (HCLOUD == 'LIMA')) THEN
-   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
-   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
-   CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
+   IF (OWARM) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NC) * PRHODJ(:,:,:),12+NSV_LIMA_NC,'NEGA_BU_RSV')
+   IF (OWARM.AND.ORAIN) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NR) * PRHODJ(:,:,:),12+NSV_LIMA_NR,'NEGA_BU_RSV')
+   IF (LCOLD) CALL BUDGET (ZSVS(:,:,:,NSV_LIMA_NI) * PRHODJ(:,:,:),12+NSV_LIMA_NI,'NEGA_BU_RSV')
    IF (NMOD_CCN.GE.1) THEN
       DO JL=1, NMOD_CCN
          CALL BUDGET ( ZSVS(:,:,:,NSV_LIMA_CCN_FREE+JL-1)* &
@@ -813,7 +797,7 @@ SELECT CASE ( HCLOUD )
                       PZZ, PRHODJ, PRHODREF, PCLDFR,                          &
                       PTHT, PRT(:,:,:,1), PRT(:,:,:,2), PRT(:,:,:,3), PPABST, &
                       PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),         &
-                      PINPRR, PINPRR3D, PEVAP3D                               )
+                      PINPRR, PINPRR3D, PEVAP3D                         )
 !
 !*       5.2    Perform the saturation adjustment
 !
@@ -955,38 +939,49 @@ SELECT CASE ( HCLOUD )
 !*       12.1   Compute the explicit microphysical sources
 !
   CASE ('LIMA')
+     !
+     IF (LPTSPLIT) THEN
+           CALL LIMA (PTSTEP, TPFILE, OCLOSE_OUT,                    &
+                      PRHODREF, PEXNREF, PZZ,                         &
+                      PRHODJ, PPABSM, PPABST,                         &
+                      NMOD_CCN, NMOD_IFN, NMOD_IMM,                   &
+                      PTHM, PTHT, PRT, ZSVT, PW_ACT,                  &
+                      PTHS, PRS, ZSVS,                                &
+                      PINPRC, PINDEP, PINPRR, ZINPRI, PINPRS, PINPRG, PINPRH, &
+                      PEVAP3D                                         )
+     ELSE
+
+        IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
+                                  TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                                  PRHODREF, PEXNREF, PW_ACT, PPABSM, PPABST,    &
+                                  PTHM, PRCM,                                   &
+                                  PTHT, PRT, ZSVT,                              &
+                                  PTHS, PRS, ZSVS,                              &
+                                  PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D    )
 !
-    IF (OWARM) CALL LIMA_WARM(OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
-                              KRR, PZZ, PRHODJ,                           &
-                              PRHODREF, PEXNREF, PW_ACT, PPABST, PPABST,  &
-                              PTHT, PRCM,                                 &
-                              PTHT, PRT, ZSVT,                            &
-                              PTHS, PRS, ZSVS,                            &
-                              PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D   )
+        IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,               &
+                                  KRR, PZZ, PRHODJ,                                  &
+                                  PRHODREF, PEXNREF, PPABST, PW_ACT,                 &
+                                  PTHM, PPABSM,                                      &
+                                  PTHT, PRT, ZSVT,                                   &
+                                  PTHS, PRS, ZSVS,                                   &
+                                  PINPRS, PINPRG, PINPRH)
 !
-IF (LCOLD) CALL LIMA_COLD(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,          &
-                          KRR, PZZ, PRHODJ, &
-                          PRHODREF, PEXNREF, PPABST, PW_ACT,            &
-                          PTHT, PPABST,                                 &
-                          PTHT, PRT, ZSVT,                              &
-                          PTHS, PRS, ZSVS,                              &
-                          PINPRS, PINPRG, PINPRH)
-!
-IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI, &
-                                 KRR, PZZ, PRHODJ,                          &
-                                 PRHODREF, PEXNREF, PPABST, PW_ACT,         &
-                                 PTHT, PPABST,                              &
-                                 PTHT, PRT, ZSVT,                           &
-                                 PTHS, PRS, ZSVS                            )
-!
+        IF (OWARM .AND. LCOLD) CALL LIMA_MIXED(OSEDI, OHHONI, KSPLITG, PTSTEP, KMI,    &
+                                               KRR, PZZ, PRHODJ,                             &
+                                               PRHODREF, PEXNREF, PPABST, PW_ACT,            &
+                                               PTHM, PPABSM,                                 &
+                                               PTHT, PRT, ZSVT,                              &
+                                               PTHS, PRS, ZSVS                               )
+     ENDIF
 !
 !*       12.2   Perform the saturation adjustment
 !
-CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                           &
-                 HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
-                 PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
-                 PRT, PRS, ZSVT, ZSVS,                             &
-                 PTHS, PSRCS, PCLDFR                               )
+    CALL LIMA_ADJUST(KRR, KMI, TPFILE, HRAD,                  &
+                     HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,         &
+                     PRHODREF, PRHODJ, PEXNREF, PPABST, PSIGS, PPABST, &
+                     PRT, PRS, ZSVT, ZSVS,                             &
+                     PTHS, PSRCS, PCLDFR                               )
 !
 END SELECT
 !

@@ -8,13 +8,15 @@
 !      #####################
 !
 INTERFACE
-      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
-                            KRR, PZZ, PRHODJ,                           &
-                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,   &
-                            PTHM, PRCM,                                 &
-                            PTHT, PRT, PSVT,                            &
-                            PTHS, PRS, PSVS,                            &
-                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D   )
+      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
+                            TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,&
+                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
+                            PTHM, PRCM,                                   &
+                            PTHT, PRT, PSVT,                              &
+                            PTHS, PRS, PSVS,                              &
+                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
+!
+USE MODD_IO_ll,   ONLY: TFILEDATA
 !
 LOGICAL,                  INTENT(IN)    :: OACTIT     ! Switch to activate the
                                                       ! activation by radiative
@@ -28,6 +30,9 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
+TYPE(TFILEDATA),          INTENT(IN)    :: TPFILE     ! Output file
+LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
+                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -63,15 +68,15 @@ REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PEVAP3D    ! Rain evap profile
 END SUBROUTINE LIMA_WARM
 END INTERFACE
 END MODULE MODI_LIMA_WARM
-!     ###################################################################
-      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI, &
-                            KRR, PZZ, PRHODJ,                           &
-                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,   &
-                            PTHM, PRCM,                                 &
-                            PTHT, PRT, PSVT,                            &
-                            PTHS, PRS, PSVS,                            &
-                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D   )
-!     ###################################################################
+!     #####################################################################
+      SUBROUTINE LIMA_WARM (OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP, KMI,   &
+                            TPFILE, OCLOSE_OUT, KRR, PZZ, PRHODJ,         &
+                            PRHODREF, PEXNREF, PW_NU, PPABSM, PPABST,     &
+                            PTHM, PRCM,                                   &
+                            PTHT, PRT, PSVT,                              &
+                            PTHS, PRS, PSVS,                              &
+                            PINPRC, PINPRR, PINDEP, PINPRR3D, PEVAP3D     )
+!     #####################################################################
 !
 !!
 !!    PURPOSE
@@ -142,10 +147,12 @@ USE MODI_BUDGET
 USE MODE_FM
 USE MODE_FMWRIT
 !
-USE MODI_LIMA_WARM_SEDIM
+USE MODI_LIMA_WARM_SEDIMENTATION
 USE MODI_LIMA_WARM_NUCL
 USE MODI_LIMA_WARM_COAL
 USE MODI_LIMA_WARM_EVAP
+USE MODD_IO_ll,   ONLY: TFILEDATA
+USE MODD_LUNIT_n, ONLY: TLUOUT
 !
 IMPLICIT NONE
 !
@@ -163,6 +170,9 @@ INTEGER,                  INTENT(IN)    :: KSPLITR    ! Number of small time ste
 REAL,                     INTENT(IN)    :: PTSTEP     ! Double Time step
                                                       ! (single if cold start)
 INTEGER,                  INTENT(IN)    :: KMI        ! Model index 
+TYPE(TFILEDATA),          INTENT(IN)   :: TPFILE     ! Output file
+LOGICAL,                  INTENT(IN)    :: OCLOSE_OUT ! Conditional closure of 
+                                                      ! the tput FM fileoutp
 INTEGER,                  INTENT(IN)    :: KRR        ! Number of moist variables
 !
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PZZ        ! Height (z)
@@ -308,22 +318,19 @@ END IF
 !	        -------------------------------------
 !
 !
-CALL LIMA_WARM_SEDIM (OSEDC, KSPLITR, PTSTEP, KMI,  &
-                      PZZ, PRHODREF, PPABST, ZT,    &
-                      ZWLBDC,                       &
-                      PRCT, PRRT, PCCT, PCRT,       &
-                      PRCS, PRRS, PCCS, PCRS,       &
-                      PINPRC, PINPRR,               &
-                      PINPRR3D    )
+CALL LIMA_WARM_SEDIMENTATION (OSEDC, KSPLITR, PTSTEP, KMI,  &
+                              PZZ, PRHODREF, PPABST, ZT,    &
+                              ZWLBDC,                       &
+                              PRCT, PRRT, PCCT, PCRT,       &
+                              PRCS, PRRS, PCCS, PCRS,       &
+                              PINPRC, PINPRR,               &
+                              PINPRR3D    )
 !
-IF (LBUDGET_RC .AND. OSEDC)                                              &
-                CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'SEDI_BU_RRC')
-IF (LBUDGET_RR) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'SEDI_BU_RRR')
+IF (LBUDGET_RC .AND. OSEDC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'SEDI_BU_RRC')
+IF (LBUDGET_RR .AND. ORAIN) CALL BUDGET (PRRS(:,:,:)*PRHODJ(:,:,:),8 ,'SEDI_BU_RRR')
 IF (LBUDGET_SV) THEN
-  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,&
-                    &'SEDI_BU_RSV') ! RCC
-  IF (ORAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,&
-                    &'SEDI_BU_RSV') ! RCR
+  IF (OSEDC) CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'SEDI_BU_RSV')
+  IF (ORAIN) CALL BUDGET (PCRS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NR,'SEDI_BU_RSV')
 END IF
 !
 ! 2.bis Deposition at 1st level above ground
@@ -349,23 +356,21 @@ END IF
 !   	        --------------------------------------
 !
 !
-IF (LACTI) THEN
+IF (LACTI .AND. NMOD_CCN.GE.1) THEN
 !
-   CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI,                       &
-                        PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU, &
-                        PRCM, PRVT, PRCT, PRRT,                    &
-                        PTHS, PRVS, PRCS, PCCS, PNFS, PNAS         )
+   CALL LIMA_WARM_NUCL (OACTIT, PTSTEP, KMI, TPFILE, OCLOSE_OUT,&
+                        PRHODREF, PEXNREF, PPABST, ZT, ZTM, PW_NU,       &
+                        PRCM, PRVT, PRCT, PRRT,                          &
+                        PTHS, PRVS, PRCS, PCCS, PNFS, PNAS               )
 !
    IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:)*PRHODJ(:,:,:),4,'HENU_BU_RTH')
    IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6,'HENU_BU_RRV')
    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7,'HENU_BU_RRC')
    IF (LBUDGET_SV) THEN
       CALL BUDGET (PCCS(:,:,:)*PRHODJ(:,:,:),12+NSV_LIMA_NC,'HENU_BU_RSV') ! RCN
-      IF (NMOD_CCN.GE.1) THEN
          DO JL=1, NMOD_CCN
             CALL BUDGET ( PNFS(:,:,:,JL)*PRHODJ(:,:,:),12+NSV_LIMA_CCN_FREE+JL-1,'HENU_BU_RSV') 
          END DO
-      END IF
    END IF
 !
 END IF ! LACTI
@@ -392,12 +397,12 @@ END IF ! LACTI
 !
 IF (ORAIN) THEN
 !
-   CALL LIMA_WARM_EVAP (PTSTEP, KMI,                        &
-                        PRHODREF, PEXNREF, PPABST, ZT,      &
-                        ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,   &
-                        PRVT, PRCT, PRRT, PCRT,             &
-                        PRVS, PRCS, PRRS, PCCS, PCRS, PTHS, &
-                        PEVAP3D                             )
+   CALL LIMA_WARM_EVAP (PTSTEP, KMI,                                &
+                        PRHODREF, PEXNREF, PPABST, ZT,              &
+                        ZWLBDC3, ZWLBDC, ZWLBDR3, ZWLBDR,           &
+                        PRVT, PRCT, PRRT, PCRT,                     &
+                        PRVS, PRCS, PRRS, PCCS, PCRS, PTHS,         &
+                        PEVAP3D                                     )
 !
    IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:)*PRHODJ(:,:,:),6 ,'REVA_BU_RRV')
    IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:)*PRHODJ(:,:,:),7 ,'REVA_BU_RRC')
