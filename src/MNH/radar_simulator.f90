@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/radar_simulator.f90,v $ $Revision: 1.1.2.3.2.1.12.2.2.2 $ $Date: 2015/09/16 14:31:20 $
 !-----------------------------------------------------------------
 !      ###########################
        MODULE MODI_RADAR_SIMULATOR 
@@ -214,6 +218,7 @@ REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZR_RAY  ! rain            mi
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZI_RAY  ! pristine ice    mixing ratio interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZS_RAY  ! snow/aggregates mixing ratio interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZG_RAY  ! graupel         mixing ratio interpolated along the rays
+REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZH_RAY  ! hail            mixing ratio interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZCIT_RAY  ! pristine ice concentration interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZRHODREF_RAY
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE :: ZVDOP_RAY  
@@ -239,15 +244,20 @@ REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE, TARGET :: ZBU_MASK_RAY
 REAL, DIMENSION(:,:,:,:,:,:),ALLOCATABLE :: ZN_RAY,ZDNDZ_RAY ! refractivity and its vertical gradient in radar coordinates
 REAL, DIMENSION(:,:,:),ALLOCATABLE       :: ZN,ZDNDZ ! index of ZN_RAY,ZDNDZ_RAY in ZZE
 
-INTEGER,PARAMETER :: IZER=5,IZEI=6,IZES=7,IZEG=8
-INTEGER,PARAMETER :: IVDOP=9
-INTEGER,PARAMETER :: IAER=10,IAEI=11,IAES=12,IAEG=13
-INTEGER,PARAMETER :: IAVR=14,IAVI=15,IAVS=16,IAVG=17
-INTEGER,PARAMETER :: IATR=18,IATI=19,IATS=20,IATG=21
+INTEGER :: IZER,IZEI,IZES,IZEG
+INTEGER :: IVDOP
+INTEGER :: IAER,IAEI,IAES,IAEG
+INTEGER :: IAVR,IAVI,IAVS,IAVG
+INTEGER :: IATR,IATI,IATS,IATG
 INTEGER :: IRHV,IPDP,IDHV
 INTEGER :: IRHR, IRHS, IRHG, IZDA, IZDS, IZDG, IKDR, IKDS, IKDG
 INTEGER :: IHAS,IRFR,IDNZ   
 REAL :: ZZSTEP
+INTEGER :: IZEH, IRHH,IKDH,IZDH ! hail
+INTEGER :: IAEH,IAVH,IATH
+INTEGER :: IMR,IMI,IMS,IMG,IMH,ICIT,ITEM,ICRT
+LOGICAL :: GHAIL
+INTEGER,DIMENSION(:,:,:,:),ALLOCATABLE ::IREFL_CART_NBH
 !
 !Modif pour LIMA
 !
@@ -291,6 +301,12 @@ IF (PRESENT(PCRT)) THEN
 ELSE
   GLIMA=.FALSE.
 ENDIF
+IF (SIZE(PRT,4)== 7 ) THEN
+  GHAIL=.TRUE.
+ELSE
+  GHAIL=.FALSE.
+ENDIF
+
 !
 !*       1.2 Some constants and parameters
 !   
@@ -372,47 +388,110 @@ DO JH=1,NPTS_H
 END DO
 ZELEV(:,:,:,:)=ZELEV(:,:,:,:)*ZRDSDG ! in radian
 ! initialisation of refractivity indices
-IRFR=1    ! this is used down there in the interpolation part
-IDNZ=1 ! this is used down there in the interpolation part
-!IHAS=10 !number of calculated radar variables (on the radar projection) 
-!IHAS=13 !add of RhoHV, PhiDP, DeltaHV in ZZE
-IHAS=22 !add of RHR-RHG, ZDA-ZDG, KDR-KDG
-IF(LREFR) THEN
-  IRFR=IHAS+7 ! add of TEM:
-                      !"HAS","M_R","M_I","M_S","M_G","CIT","TEM"
-                      ! puis "RFR"
-  IF (GLIMA) IRFR=IRFR+1 ! add "CRT"
-ENDIF
-IF(LDNDZ) THEN
-   IF(LREFR) THEN
-      IDNZ=IHAS+8 !+7 !17 ! refractivity vertical gradient
-   ELSE
-      IDNZ=IHAS+7 !+6 !16 ! refractivity vertical gradient
-   END IF
-  IF (GLIMA) IDNZ=IDNZ+1
-END IF
-IF(LATT) THEN
-   IRFR=IRFR+12 !add of AVR-AVG (vertical specific attenuation)
-   IDNZ=IDNZ+12
-   IHAS=IHAS+12
+! 1 : ZHH
+! 2 : ZDR
+! 3 : KDP
+! 4 : CSR
+IZER=5 ! ZER
+IZEI=IZER+1 ! ZEI
+IZES=IZEI+1 ! ZES
+IZEG=IZES+1 ! ZEG
+IF (GHAIL) THEN
+  IZEH=IZEG+1 !ZEH
+  IVDOP=IZEH+1 !VRU
+ELSE
+  IVDOP=IZEG+1 !VRU
 END IF
 IF (LATT) THEN
-  IRHV=22   !"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"
-            !"AER","AEI","AES","AEG","AVR","AVI","AVS","AVG","ATR","ATI","ATS","ATG"
+  IF (GHAIL) THEN
+    IAER=IVDOP+1
+    IAEI=IAER+1
+    IAES=IAEI+1
+    IAEG=IAES+1
+    IAEH=IAEG+1
+    IAVR=IAEH+1
+    IAVI=IAVR+1
+    IAVS=IAVI+1
+    IAVG=IAVS+1
+    IAVH=IAVG+1
+    IATR=IAVH+1
+    IATI=IATR+1
+    IATS=IATI+1
+    IATG=IATS+1
+    IATH=IATG+1
+    IRHV=IATH+1
+  ELSE
+    IAER=IVDOP+1
+    IAEI=IAER+1
+    IAES=IAEI+1
+    IAEG=IAES+1
+    IAVR=IAEG+1
+    IAVI=IAVR+1
+    IAVS=IAVI+1
+    IAVG=IAVS+1
+    IATR=IAVG+1
+    IATI=IATR+1
+    IATS=IATI+1
+    IATG=IATS+1
+    IRHV=IATG+1
+  ENDIF
 ELSE
-  IRHV=10
-END IF
+    IRHV=IVDOP+1        
+ENDIF
 IPDP=IRHV+1
 IDHV=IPDP+1
 IRHR=IDHV+1
 IRHS=IRHR+1
 IRHG=IRHS+1
-IZDA=IRHG+1
+IF (GHAIL) THEN
+  IRHH=IRHG+1
+  IZDA=IRHH+1
+ELSE
+  IZDA=IRHG+1
+ENDIF
 IZDS=IZDA+1
 IZDG=IZDS+1
-IKDR=IZDG+1
+IF (GHAIL) THEN
+  IZDH=IZDG+1
+  IKDR=IZDH+1
+ELSE
+  IKDR=IZDG+1
+ENDIF
 IKDS=IKDR+1
 IKDG=IKDS+1
+IF (GHAIL) THEN
+  IKDH=IKDG+1
+  IHAS=IKDH+1
+ELSE
+  IHAS=IKDG+1
+ENDIF
+IMR=IHAS+1
+IMI=IMR+1
+IMS=IMI+1
+IMG=IMS+1
+IF (GHAIL) THEN
+  IMH=IMG+1
+  ICIT=IMH+1
+ELSE
+  ICIT=IMG+1
+ENDIF
+ITEM=ICIT+1
+IF (GLIMA) THEN
+  ICRT=ITEM+1
+  IF(LREFR) THEN
+    IRFR=ICRT+1
+    IF(LDNDZ) IDNZ=IRFR+1
+  ELSE
+    IF(LDNDZ) IDNZ=ICRT+1
+  ENDIF
+ELSE
+  IF(LREFR) THEN
+    IRFR=ITEM+1
+    IF(LDNDZ) IDNZ=IRFR+1
+  ELSE
+    IF(LDNDZ) IDNZ=ITEM+1
+  ENDIF
+ENDIF
 !
 !----------------------------------------------------------------------------------------
 !*       2.    RAY TRACING DEFINITION
@@ -528,6 +607,8 @@ DO JI=1,NBRAD
             IF(XRPK<0.)  ZLAT(JH,JV)=-ZLAT(JH,JV)     ! projection from north pole 
                
             IF(ABS(ZRPK-1.)>1.E-10 .AND. ABS(COS(ZRDSDG*ZLAT(JH,JV)))<1.E-10) THEN
+              WRITE(ILUOUT0,*) 'Error in projection : '
+              WRITE(ILUOUT0,*) 'pole in the domain, but not with stereopolar projection'
               !callabortstop
               CALL PRINT_MSG(NVERB_FATAL,'GEN','RADAR_SIMULATOR',&
                              'Error in projection: pole in the domain, but not with stereopolar projection')
@@ -696,6 +777,13 @@ IF (SIZE(PRT,4)>5) THEN
   ALLOCATE(ZG_RAY(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,NPTS_H,NPTS_V))
   TVARRAD(INVAR)%P=>ZG_RAY(:,:,:,:,:,:)
 END IF
+! HAIL
+IF (SIZE(PRT,4)>6) THEN
+  INVAR=INVAR+1
+  TVARMOD(INVAR)%P=>PRT(:,:,:,7)
+  ALLOCATE(ZH_RAY(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,NPTS_H,NPTS_V))
+  TVARRAD(INVAR)%P=>ZH_RAY(:,:,:,:,:,:)
+END IF
 ! convective/stratiform
 TVARMOD(INVAR+1)%P=>ZBU_MASK(:,:,:)
 ALLOCATE(ZBU_MASK_RAY(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,NPTS_H,NPTS_V))
@@ -767,11 +855,21 @@ ALLOCATE(ZZE(NBRAD,IIELV,NBAZIM,NBSTEPMAX+1,SIZE(PREFL_CART(:,:,:,:,:),5)))
 !-----------------------------------------------------------------------
 
 IF (GLIMA) THEN
-  CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
-     ZELEV,ZX_H,ZX_V,ZW_H,ZW_V,ZZE(:,:,:,:,1:IHAS-1),ZBU_MASK_RAY,ZCRT_RAY)
+  IF (GHAIL) THEN
+    CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
+     ZELEV,ZX_H,ZX_V,ZW_H,ZW_V,ZZE(:,:,:,:,1:IHAS-1),ZBU_MASK_RAY,PCR_RAY=ZCRT_RAY,PH_RAY=ZH_RAY)
+  ELSE
+    CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
+     ZELEV,ZX_H,ZX_V,ZW_H,ZW_V,ZZE(:,:,:,:,1:IHAS-1),ZBU_MASK_RAY,PCR_RAY=ZCRT_RAY)
+  ENDIF
 ELSE
-  CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
+  IF (GHAIL) THEN
+    CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
+     ZELEV,ZX_H,ZX_V,ZW_H,ZW_V,ZZE(:,:,:,:,1:IHAS-1),ZBU_MASK_RAY,PH_RAY=ZH_RAY)
+  ELSE
+    CALL RADAR_SCATTERING(ZT_RAY,ZRHODREF_RAY,ZR_RAY,ZI_RAY,ZCIT_RAY,ZS_RAY,ZG_RAY,ZVDOP_RAY, &
      ZELEV,ZX_H,ZX_V,ZW_H,ZW_V,ZZE(:,:,:,:,1:IHAS-1),ZBU_MASK_RAY)
+  ENDIF
 ENDIF
 DEALLOCATE(ZVDOP_RAY)
 ! convective/stratiform
@@ -792,7 +890,7 @@ END WHERE
 WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZR_RAY==XVALGROUND)
   ZWORK=XVALGROUND
 END WHERE
-ZZE(:,:,:,:,IHAS+1)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+ZZE(:,:,:,:,IMR)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
 ! M_i
 WHERE(ZRHODREF_RAY/=-XUNDEF .AND. ZI_RAY/=-XUNDEF)
   ZWORK=ZRHODREF_RAY*ZI_RAY
@@ -802,7 +900,7 @@ END WHERE
 WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZI_RAY==XVALGROUND)
   ZWORK=XVALGROUND
 END WHERE
-ZZE(:,:,:,:,IHAS+2)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+ZZE(:,:,:,:,IMI)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
 ! M_s
 WHERE(ZRHODREF_RAY/=-XUNDEF .AND. ZS_RAY/=-XUNDEF)
   ZWORK=ZRHODREF_RAY*ZS_RAY
@@ -812,7 +910,7 @@ END WHERE
 WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZS_RAY==XVALGROUND)
   ZWORK=XVALGROUND
 END WHERE
-ZZE(:,:,:,:,IHAS+3)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+ZZE(:,:,:,:,IMS)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
 ! M_g
 WHERE(ZRHODREF_RAY/=-XUNDEF .AND. ZG_RAY/=-XUNDEF)
   ZWORK=ZRHODREF_RAY*ZG_RAY
@@ -822,8 +920,24 @@ END WHERE
 WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZG_RAY==XVALGROUND)
   ZWORK=XVALGROUND
 END WHERE
-ZZE(:,:,:,:,IHAS+4)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+ZZE(:,:,:,:,IMG)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
 DEALLOCATE(ZWORK)
+IF (GHAIL) THEN 
+  ALLOCATE(ZWORK(SIZE(ZRHODREF_RAY,1),SIZE(ZRHODREF_RAY,2),&
+               SIZE(ZRHODREF_RAY,3),SIZE(ZRHODREF_RAY,4),&
+               SIZE(ZRHODREF_RAY,5),SIZE(ZRHODREF_RAY,6)))
+  ! M_h
+  WHERE(ZRHODREF_RAY/=-XUNDEF .AND. ZH_RAY/=-XUNDEF)
+    ZWORK=ZRHODREF_RAY*ZH_RAY
+  ELSEWHERE
+    ZWORK=-XUNDEF
+  END WHERE
+  WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZH_RAY==XVALGROUND)
+    ZWORK=XVALGROUND
+  END WHERE
+  ZZE(:,:,:,:,IMH)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+  DEALLOCATE(ZWORK)
+ENDIF
 ! CIT
 IF (GLIMA)THEN
   ALLOCATE(ZWORK(SIZE(ZRHODREF_RAY,1),SIZE(ZRHODREF_RAY,2),&
@@ -838,12 +952,14 @@ IF (GLIMA)THEN
     ZWORK=XVALGROUND
   END WHERE
 
-  ZZE(:,:,:,:,IHAS+5)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+  ZZE(:,:,:,:,ICIT)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
   DEALLOCATE(ZWORK)
 ELSE
-  ZZE(:,:,:,:,IHAS+5)=ZCIT_RAY(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+  ZZE(:,:,:,:,ICIT)=ZCIT_RAY(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
 ENDIF
-ZZE(:,:,:,:,IHAS+6)=ZT_RAY(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2) ! temperature 
+! temperature
+ZZE(:,:,:,:,ITEM)=ZT_RAY(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2) 
+!CRT 
 IF (GLIMA)THEN
   ALLOCATE(ZWORK(SIZE(ZRHODREF_RAY,1),SIZE(ZRHODREF_RAY,2),&
                  SIZE(ZRHODREF_RAY,3),SIZE(ZRHODREF_RAY,4),&
@@ -856,7 +972,7 @@ IF (GLIMA)THEN
   WHERE(ZRHODREF_RAY==XVALGROUND .OR. ZCRT_RAY==XVALGROUND)
     ZWORK=XVALGROUND
   END WHERE
-  ZZE(:,:,:,:,IHAS+7)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
+  ZZE(:,:,:,:,ICRT)=ZWORK(:,:,:,:,(NPTS_H+1)/2,(NPTS_V+1)/2)
   DEALLOCATE(ZWORK)
 ENDIF
 IF(LREFR) THEN
@@ -888,12 +1004,14 @@ IF (LCART_RAD) THEN !if cartesian interpolation
   ALLOCATE(IREFL_CART_NBI(NBRAD,IIELV,2*NMAX,2*NMAX))
   ALLOCATE(IREFL_CART_NBS(NBRAD,IIELV,2*NMAX,2*NMAX))
   ALLOCATE(IREFL_CART_NBG(NBRAD,IIELV,2*NMAX,2*NMAX))
+  IF (GHAIL) ALLOCATE(IREFL_CART_NBH(NBRAD,IIELV,2*NMAX,2*NMAX))
   PREFL_CART(:,:,:,:,:)=0.
   IREFL_CART_NB(:,:,:,:)=0
   IREFL_CART_NBR(:,:,:,:)=0
   IREFL_CART_NBS(:,:,:,:)=0
   IREFL_CART_NBI(:,:,:,:)=0
   IREFL_CART_NBG(:,:,:,:)=0
+  IF (GHAIL)   IREFL_CART_NBH(:,:,:,:)=0
   IVDOP_CART_NB(:,:,:,:)=0
 !
 !*       5.1  reflectivity on a cartesian grid (this is the way DSO/CMR creates BUFRs)
@@ -903,8 +1021,8 @@ IF (LCART_RAD) THEN !if cartesian interpolation
     DO JEL=1,IEL
       DO JAZ=1,NBAZIM
         DO JL=1,NBSTEPMAX+1
-          IF ((ZZE(JI,JEL,JAZ,JL,IHAS+6)/=XVALGROUND).AND.(ZZE(JI,JEL,JAZ,JL,IHAS+6)/=-XUNDEF)) THEN  !conversion en °C
-            ZZE(JI,JEL,JAZ,JL,IHAS+6)=ZZE(JI,JEL,JAZ,JL,IHAS+6)-273.15
+          IF ((ZZE(JI,JEL,JAZ,JL,ITEM)/=XVALGROUND).AND.(ZZE(JI,JEL,JAZ,JL,ITEM)/=-XUNDEF)) THEN  !conversion en °C
+            ZZE(JI,JEL,JAZ,JL,ITEM)=ZZE(JI,JEL,JAZ,JL,ITEM)-273.15
           ENDIF
           IXGRID=CEILING(NMAX+((JL-1)*XSTEP_RAD*SIN(ZAZIM_BASE(JAZ))/XGRID))
           IYGRID=CEILING(NMAX+((JL-1)*XSTEP_RAD*COS(ZAZIM_BASE(JAZ))/XGRID))
@@ -1196,7 +1314,63 @@ IF (LCART_RAD) THEN !if cartesian interpolation
             END IF
             IREFL_CART_NBG(JI,JEL,IXGRID,IYGRID)=IREFL_CART_NBG(JI,JEL,IXGRID,IYGRID)+1
           END IF           
+          !**********************************************
+          !****          HAIL VARIABLES           ****
+          !********************************************** 
+          IF (GHAIL) THEN
+            IF(ZZE(JI,JEL,JAZ,JL,IZEH)==XVALGROUND.OR.PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH)==XVALGROUND &
+                 .OR.(LREFR.AND.ZZE(JI,JEL,JAZ,JL,IRFR)==XVALGROUND) &    ! case for refractivity at boundaries
+                 .OR.(LDNDZ.AND.ZZE(JI,JEL,JAZ,JL,IDNZ)==XVALGROUND) & ! case for refractivity gradient at origin
+                 ) THEN ! if any XVALGROUND in the pixel for ZES -> pixel set to XVALGROUND for all snow variables
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH)=XVALGROUND
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IRHH)=XVALGROUND
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZDH)=XVALGROUND
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IKDH)=XVALGROUND
+              IF (LATT) THEN
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAEH)=XVALGROUND
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAVH)=XVALGROUND
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IATH)=XVALGROUND
+              END IF
 
+              IREFL_CART_NBG(JI,JEL,IXGRID,IYGRID)=1
+ 
+            !-xundef for ZEG
+            ELSE IF(ZZE(JI,JEL,JAZ,JL,IZEH)==-XUNDEF.OR.PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH)==-XUNDEF &
+                 .OR.(LREFR.AND.ZZE(JI,JEL,JAZ,JL,IRFR)==-XUNDEF) &    ! case for refractivity at boundaries
+                 .OR.(LDNDZ.AND.ZZE(JI,JEL,JAZ,JL,IDNZ)==-XUNDEF) & ! case for refractivity gradient at origin
+                 ) THEN ! if any -XUNDEF in the pixel for ZHH-> pixel set to -XUNDEF for all general variables
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH)=-XUNDEF
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IRHH)=-XUNDEF
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZDH)=-XUNDEF
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IKDH)=-XUNDEF
+              IF (LATT) THEN
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAEH)=-XUNDEF
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAVH)=-XUNDEF
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IATH)=-XUNDEF
+              END IF
+              IREFL_CART_NBG(JI,JEL,IXGRID,IYGRID)=1
+
+            !if no xvalground and no -xundef for REFL: incrementation of all polar pixels inside the cartesian pixel
+            ELSE 
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IZEH) &
+                   +ZZE(JI,JEL,JAZ,JL,IZEH)
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IRHH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IRHH) &
+                   +ZZE(JI,JEL,JAZ,JL,IRHH)
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IZDH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IZDH) &
+                   +ZZE(JI,JEL,JAZ,JL,IZDH)
+              PREFL_CART(JI,JEL,IXGRID,IYGRID,IKDH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IKDH) &
+                   +ZZE(JI,JEL,JAZ,JL,IKDH)
+              IF (LATT) THEN
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAEH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IAEH) &
+                   +ZZE(JI,JEL,JAZ,JL,IAEH)
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IAVH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IAVH) &
+                   +ZZE(JI,JEL,JAZ,JL,IAVH)
+                PREFL_CART(JI,JEL,IXGRID,IYGRID,IATH)=PREFL_CART(JI,JEL,IXGRID,IYGRID,IATH) &
+                   +ZZE(JI,JEL,JAZ,JL,IATH)
+              END IF
+              IREFL_CART_NBH(JI,JEL,IXGRID,IYGRID)=IREFL_CART_NBH(JI,JEL,IXGRID,IYGRID)+1
+            END IF
+          END IF 
         END DO !JL
       END DO !JAZ
     END DO !JEL
@@ -1458,7 +1632,61 @@ DEALLOCATE(ZZE)
               ENDIF
             ENDIF
           END IF !******** END GRAUPEL
+           !****   HAIL VARIABLES
+          IF (GHAIL) THEN
+            IF(IREFL_CART_NBH(JI,JEL,JH,JV) == 0) THEN ! no values inside the cartesian pixel
+              IF((JH+SIGN(.5,JH-.5-NMAX)-.5-NMAX)**2+(JV+SIGN(.5,JV-.5-NMAX)-.5-NMAX)**2>=NMAX**2) THEN 
+                ! out of range
+                PREFL_CART(JI,JEL,JH,JV,IZEH)=XVALGROUND
+                PREFL_CART(JI,JEL,JH,JV,IRHH)=XVALGROUND
+                PREFL_CART(JI,JEL,JH,JV,IZDH)=XVALGROUND
+                PREFL_CART(JI,JEL,JH,JV,IKDH)=XVALGROUND
+                IF (LATT) THEN
+                  PREFL_CART(JI,JEL,JH,JV,IAEH)=XVALGROUND
+                  PREFL_CART(JI,JEL,JH,JV,IAVH)=XVALGROUND
+                  PREFL_CART(JI,JEL,JH,JV,IATH)=XVALGROUND
+                END IF
+              ELSE
+                PREFL_CART(JI,JEL,JH,JV,IZEH)=0
+                PREFL_CART(JI,JEL,JH,JV,IRHH)=0
+                PREFL_CART(JI,JEL,JH,JV,IZDH)=0
+                PREFL_CART(JI,JEL,JH,JV,IKDH)=0
+                IF (LATT) THEN
+                  PREFL_CART(JI,JEL,JH,JV,IAEH)=0
+                  PREFL_CART(JI,JEL,JH,JV,IAVH)=0
+                  PREFL_CART(JI,JEL,JH,JV,IATH)=0
+                ENDIF
+                WRITE(ILUOUT0,*) "Warning: some pixels have no reflectivity; increase XGRID or decrease XSTEP_RAD"
+              END IF
+            ELSE
+              PREFL_CART(JI,JEL,JH,JV,IZEH)=PREFL_CART(JI,JEL,JH,JV,IZEH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+              PREFL_CART(JI,JEL,JH,JV,IRHH)=PREFL_CART(JI,JEL,JH,JV,IRHH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+              PREFL_CART(JI,JEL,JH,JV,IZDH)=PREFL_CART(JI,JEL,JH,JV,IZDH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+              PREFL_CART(JI,JEL,JH,JV,IKDH)=PREFL_CART(JI,JEL,JH,JV,IKDH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+              IF (LATT) THEN
+                PREFL_CART(JI,JEL,JH,JV,IAEH)=PREFL_CART(JI,JEL,JH,JV,IAEH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+                PREFL_CART(JI,JEL,JH,JV,IAVH)=PREFL_CART(JI,JEL,JH,JV,IAVH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+                PREFL_CART(JI,JEL,JH,JV,IATH)=PREFL_CART(JI,JEL,JH,JV,IATH)/IREFL_CART_NBH(JI,JEL,JH,JV)
+              END IF
+            
+              ! --------- Converting to dB -----------
+              IF(PREFL_CART(JI,JEL,JH,JV,IZEH)> 0) THEN
+                PREFL_CART(JI,JEL,JH,JV,IZEH)=10.*LOG10(PREFL_CART(JI,JEL,JH,JV,IZEH)) ! Z_equiv in dBZ
+                IF(PREFL_CART(JI,JEL,JH,JV,IZDH) > 0.) THEN
+                  PREFL_CART(JI,JEL,JH,JV,IZDH)=PREFL_CART(JI,JEL,JH,JV,IZEH) &
+                                             -10.*LOG10(PREFL_CART(JI,JEL,JH,JV,IZDH)) ! Zdr=Z_HH-Z_VV  
+                ENDIF                      
+              ELSE IF (PREFL_CART(JI,JEL,JH,JV,IZEH)== 0) THEN
+                PREFL_CART(JI,JEL,JH,JV,IZES)=-XUNDEF 
+              END IF    
 
+              IF(LATT) THEN
+                IF(PREFL_CART(JI,JEL,JH,JV,IATH)>0.) THEN
+                  PREFL_CART(JI,JEL,JH,JV,IATH)=10.*LOG10(PREFL_CART(JI,JEL,JH,JV,IATH))
+                ENDIF
+              ENDIF
+            END IF !******** END HAIL
+          END IF
         END DO
       END DO
     END DO
@@ -1506,8 +1734,8 @@ ELSE ! if polar output
       DO JAZ=1,NBAZIM
         DO JL=1,NBSTEPMAX+1
           !conversion en deg celcius
-          IF (PREFL_CART(JI,JEL,JAZ,JL,IHAS+6)/=-XUNDEF .AND. PREFL_CART(JI,JEL,JAZ,JL,IHAS+6)/=XVALGROUND) &
-          PREFL_CART(JI,JEL,JAZ,JL,IHAS+6)=PREFL_CART(JI,JEL,JAZ,JL,IHAS+6)-273.15
+          IF (PREFL_CART(JI,JEL,JAZ,JL,ITEM)/=-XUNDEF .AND. PREFL_CART(JI,JEL,JAZ,JL,ITEM)/=XVALGROUND) &
+          PREFL_CART(JI,JEL,JAZ,JL,ITEM)=PREFL_CART(JI,JEL,JAZ,JL,ITEM)-273.15
           
           !------ ZHH and ZDR  
           IF(PREFL_CART(JI,JEL,JAZ,JL,1)> 0) THEN
@@ -1583,6 +1811,24 @@ ELSE ! if polar output
               PREFL_CART(JI,JEL,JAZ,JL,IATG)=10.*LOG10(PREFL_CART(JI,JEL,JAZ,JL,IATG))
             END IF
           END IF !------ END GRAUPEL
+! --------- HAIL  -----------
+          IF (GHAIL) THEN
+            IF(PREFL_CART(JI,JEL,JAZ,JL,IZEH)> 0) THEN
+              PREFL_CART(JI,JEL,JAZ,JL,IZEH)=10.*LOG10(PREFL_CART(JI,JEL,JAZ,JL,IZEH)) ! Z_equiv in dBZ
+              IF(PREFL_CART(JI,JEL,JAZ,JL,IZDH) > 0.) THEN
+                PREFL_CART(JI,JEL,JAZ,JL,IZDH)=PREFL_CART(JI,JEL,JAZ,JL,IZEH) &
+                                            -10.*LOG10(PREFL_CART(JI,JEL,JAZ,JL,IZDH)) ! Zdr=Z_HH-Z_VV  
+              ENDIF                      
+            ELSE IF (PREFL_CART(JI,JEL,JAZ,JL,IZEH)== 0) THEN
+              PREFL_CART(JI,JEL,JAZ,JL,IZES)=-XUNDEF 
+            END IF    
+
+            IF(LATT) THEN
+              IF(PREFL_CART(JI,JEL,JAZ,JL,IATH)>0.) THEN
+                PREFL_CART(JI,JEL,JAZ,JL,IATH)=10.*LOG10(PREFL_CART(JI,JEL,JAZ,JL,IATH))
+              END IF
+            END IF !------ END HAIL
+          END IF
         END DO
       END DO
     END DO

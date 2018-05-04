@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 2004-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ######spl
        MODULE MODI_RADAR_SCATTERING 
@@ -9,7 +13,7 @@
 !
 INTERFACE
     SUBROUTINE RADAR_SCATTERING(PT_RAY,PRHODREF_RAY,PR_RAY,PI_RAY,PCIT_RAY,PS_RAY,PG_RAY,PVDOP_RAY, &
-   PELEV,PX_H,PX_V,PW_H,PW_V,PZE,PBU_MASK_RAY,PCR_RAY)
+   PELEV,PX_H,PX_V,PW_H,PW_V,PZE,PBU_MASK_RAY,PCR_RAY,PH_RAY)
 REAL, DIMENSION(:,:,:,:,:,:),INTENT(IN)  :: PT_RAY ! temperature interpolated along the rays
 REAL, DIMENSION(:,:,:,:,:,:),INTENT(IN)  :: PRHODREF_RAY ! 
 REAL, DIMENSION(:,:,:,:,:,:),INTENT(IN)  :: PR_RAY  ! rainwater mixing ratio interpolated along the rays
@@ -27,14 +31,15 @@ REAL,DIMENSION(:,:,:,:,:),    INTENT(INOUT) :: PZE ! 5D matrix (iradar, ielev, i
 !in polar or cartesian projection (same projection as the observation grid)
 ! convective/stratiform
 REAL, DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PBU_MASK_RAY
-REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PCR_RAY  ! rainwater mixing ratio interpolated along the rays
+REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PCR_RAY  ! rainwater concentration interpolated along the rays
+REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PH_RAY   ! hail mixing ratio interpolated along the rays
     END SUBROUTINE RADAR_SCATTERING
 END INTERFACE
 END MODULE MODI_RADAR_SCATTERING
 !
 !     ######spl
        SUBROUTINE RADAR_SCATTERING(PT_RAY,PRHODREF_RAY,PR_RAY,PI_RAY,PCIT_RAY, &
-            PS_RAY,PG_RAY,PVDOP_RAY,PELEV,PX_H,PX_V,PW_H,PW_V,PZE,PBU_MASK_RAY,PCR_RAY)
+            PS_RAY,PG_RAY,PVDOP_RAY,PELEV,PX_H,PX_V,PW_H,PW_V,PZE,PBU_MASK_RAY,PCR_RAY,PH_RAY)
 !     ##############################
 !
 !!****  *RADAR_SCATTERING* - computes radar reflectivities.
@@ -104,6 +109,17 @@ USE MODD_CST
 USE MODD_IO_ll,           ONLY: TFILEDATA
 USE MODD_LUNIT
 USE MODD_PARAMETERS
+USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR_I=>XLBEXR,&
+                               XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XCR_I=>XCR,&
+                               XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XDS_I=>XDS,XLBEXS_I=>XLBEXS,&
+                               XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,XCS_I=>XCS,&
+                               XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
+                               XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
+                               XALPHAH_I=>XALPHAH,XNUH_I=>XNUH,XDH_I=>XDH,XLBEXH_I=>XLBEXH,&
+                               XLBH_I=>XLBH,XCCH_I=>XCCH,XAH_I=>XAH,XBH_I=>XBH,XCXH_I=>XCXH,XCH_I=>XCH,&
+                               XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
+                               XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
+                               XRTMIN_I=>XRTMIN
 !!LIMA         
 USE MODD_PARAM_LIMA_WARM, ONLY: XDR_L=>XDR,XLBEXR_L=>XLBEXR,XLBR_L=>XLBR,XBR_L=>XBR,XCR_L=>XCR
 USE MODD_PARAM_LIMA_COLD, ONLY: XDI_L=>XDI,XLBEXI_L=>XLBEXI,XLBI_L=>XLBI,XAI_L=>XAI,XBI_L=>XBI,XC_I_L=>XC_I,&
@@ -116,26 +132,20 @@ USE MODD_PARAM_LIMA, ONLY: XALPHAR_L=>XALPHAR,XNUR_L=>XNUR,XALPHAS_L=>XALPHAS,XN
 !!LIMA
 USE MODD_RADAR, ONLY:XLAM_RAD,XSTEP_RAD,NBELEV,NDIFF,LATT,NPTS_GAULAG,LQUAD,XVALGROUND,NDGS, &
      LFALL,LWBSCS,LWREFL,XREFLVDOPMIN,XREFLMIN,LSNRT,XSNRMIN
-USE MODD_RAIN_ICE_DESCR, ONLY: XALPHAR_I=>XALPHAR,XNUR_I=>XNUR,XDR_I=>XDR,XLBEXR_I=>XLBEXR,&
-                               XLBR_I=>XLBR,XCCR_I=>XCCR,XBR_I=>XBR,XCR_I=>XCR,&
-                               XALPHAS_I=>XALPHAS,XNUS_I=>XNUS,XDS_I=>XDS,XLBEXS_I=>XLBEXS,&
-                               XLBS_I=>XLBS,XCCS_I=>XCCS,XAS_I=>XAS,XBS_I=>XBS,XCXS_I=>XCXS,XCS_I=>XCS,&
-                               XALPHAG_I=>XALPHAG,XNUG_I=>XNUG,XDG_I=>XDG,XLBEXG_I=>XLBEXG,&
-                               XLBG_I=>XLBG,XCCG_I=>XCCG,XAG_I=>XAG,XBG_I=>XBG,XCXG_I=>XCXG,XCG_I=>XCG,&
-                               XALPHAI_I=>XALPHAI,XNUI_I=>XNUI,XDI_I=>XDI,XLBEXI_I=>XLBEXI,&
-                               XLBI_I=>XLBI,XAI_I=>XAI,XBI_I=>XBI,XC_I_I=>XC_I,&
-                               XRTMIN_I=>XRTMIN
 USE MODD_TMAT
 ! 
 USE MODE_ARF
-USE MODE_FGAU , ONLY:GAULAG
-USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
 USE MODE_FSCATTER
+USE MODE_READTMAT
+USE MODE_FGAU , ONLY:GAULAG
+USE MODI_GAMMA, ONLY:GAMMA
+!
+USE MODE_FM,               ONLY: IO_FILE_CLOSE_ll,IO_FILE_OPEN_ll
+USE MODE_IO_ll
+USE MODD_LUNIT
 USE MODE_IO_MANAGE_STRUCT, ONLY: IO_FILE_ADD2LIST
 USE MODE_MSG
-USE MODE_READTMAT
-!
-USE MODI_GAMMA, ONLY:GAMMA
+
 !
 IMPLICIT NONE
 !
@@ -159,7 +169,8 @@ REAL,DIMENSION(:,:,:,:,:),   INTENT(INOUT) :: PZE ! gate equivalent reflectivity
 ! convective/stratiform
 REAL,DIMENSION(:,:,:,:,:,:),INTENT(INOUT) :: PBU_MASK_RAY
 ! /convective/stratiform
-REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PCR_RAY  ! rainwater mixing ratio interpolated along the rays
+REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PCR_RAY  ! rainwater concentration interpolated along the rays
+REAL, DIMENSION(:,:,:,:,:,:),OPTIONAL,INTENT(IN)  :: PH_RAY   ! hail mixing ratio interpolated along the rays
 !
 !*       0.2   Declarations of local variables :
 !
@@ -173,8 +184,8 @@ REAL,   DIMENSION(:,:,:,:,:,:,:),ALLOCATABLE :: ZREFL
 
 REAL,   DIMENSION(:,:,:,:,:,:,:),ALLOCATABLE :: ZAELOC ! local attenuation
 REAL,   DIMENSION(:,:,:),ALLOCATABLE :: ZAETOT ! 1: total attenuation, 2: // vertical
-REAL :: ZAERINT,ZAEIINT,ZAESINT,ZAEGINT ! total attenuation horizontal
-REAL :: ZAVRINT,ZAVSINT,ZAVGINT ! total attenuation vertical 
+REAL :: ZAERINT,ZAEIINT,ZAESINT,ZAEGINT,ZAEHINT ! total attenuation horizontal
+REAL :: ZAVRINT,ZAVSINT,ZAVGINT,ZAVHINT ! total attenuation vertical 
 !
 REAL,DIMENSION(:),ALLOCATABLE :: ZX,ZW ! Gauss-Laguerre points and weights
 !
@@ -199,6 +210,7 @@ REAL :: ZS11_CARRE_R,ZS22_CARRE_R,ZRE_S22S11_R,ZIM_S22S11_R
 REAL :: ZS11_CARRE_I,ZS22_CARRE_I,ZRE_S22S11_I,ZIM_S22S11_I
 REAL :: ZS11_CARRE_S,ZS22_CARRE_S,ZRE_S22S11_S,ZIM_S22S11_S
 REAL :: ZS11_CARRE_G,ZS22_CARRE_G,ZRE_S22S11_G,ZIM_S22S11_G
+REAL :: ZS11_CARRE_H,ZS22_CARRE_H,ZRE_S22S11_H,ZIM_S22S11_H
 REAL :: ZS11_CARRE_T,ZS22_CARRE_T,ZRE_S22S11_T,ZIM_S22S11_T
 REAL :: ZRE_S22FMS11F,ZIM_S22FT,ZIM_S11FT 
 
@@ -209,30 +221,35 @@ INTEGER  :: IEL
 INTEGER  :: JI,JL,JEL,JAZ,JH,JV,JJ,JT ! Loop variables of control
 REAL :: ZLB ! depolarization factor along the spheroid symmetry axis
 REAL :: ZCXI=0. ! should be defined with other parameters of microphysical scheme
-REAL :: ZCR,ZCI,ZCS,ZCG ! coefficients to take into account fall speeds when simulating Doppler winds
+REAL :: ZCR,ZCI,ZCS,ZCG,ZCH ! coefficients to take into account fall speeds when simulating Doppler winds
 REAL, DIMENSION(:,:,:,:),ALLOCATABLE :: ZCONC_BIN
-INTEGER :: IVDOP,IMAX,IRHOHV,IPHIDP,IDELTAHV
-INTEGER :: IRHR,IRHS,IRHG,IZDA,IZDS,IZDG,IKDR,IKDS,IKDG
+INTEGER :: IMAX
 LOGICAL :: LPART_MASK ! indicates a partial mask along the beam
-INTEGER,PARAMETER :: IZER=5,IZEI=6,IZES=7,IZEG=8
-INTEGER,PARAMETER :: IAER=10,IAEI=11,IAES=12,IAEG=13
-INTEGER,PARAMETER :: IAVR=14,IAVI=15,IAVS=16,IAVG=17
-INTEGER,PARAMETER :: IATR=18,IATI=19,IATS=20,IATG=21
 
+!
+INTEGER :: IZER,IZEI,IZES,IZEG
+INTEGER :: IVDOP,IRHV,IPDP,IDHV
+INTEGER :: IAER,IAEI,IAES,IAEG
+INTEGER :: IAVR,IAVI,IAVS,IAVG
+INTEGER :: IATR,IATI,IATS,IATG
+INTEGER :: IRHR, IRHS, IRHG, IZDA, IZDS, IZDG, IKDR, IKDS, IKDG
+INTEGER :: IZEH, IRHH,IKDH,IZDH ! hail
+INTEGER :: IAEH,IAVH,IATH
+!
 !for ZSNR threshold
-REAL ::ZDISTRAD,ZSNR,ZSNR_R,ZSNR_S,ZSNR_I,ZSNR_G,ZZHH,ZZE_R,ZZE_I,ZZE_S,ZZE_G
-LOGICAL :: GTHRESHOLD_V, GTHRESHOLD_Z,GTHRESHOLD_ZR,GTHRESHOLD_ZI,GTHRESHOLD_ZS,GTHRESHOLD_ZG
+REAL ::ZDISTRAD,ZSNR,ZSNR_R,ZSNR_S,ZSNR_I,ZSNR_G,ZSNR_H,ZZHH,ZZE_R,ZZE_I,ZZE_S,ZZE_G,ZZE_H
+LOGICAL :: GTHRESHOLD_V, GTHRESHOLD_Z,GTHRESHOLD_ZR,GTHRESHOLD_ZI,GTHRESHOLD_ZS,GTHRESHOLD_ZG,GTHRESHOLD_ZH
 
 !--------- TO READ T-MATRIX TABLE --------
 CHARACTER(LEN=6) :: YBAND
 CHARACTER(LEN=1) ::YTYPE
-CHARACTER(LEN=1),DIMENSION(4) :: YTAB_TYPE
-CHARACTER(LEN=25),DIMENSION(4) :: YFILE_COEFINT
+CHARACTER(LEN=1),DIMENSION(5) :: YTAB_TYPE
+CHARACTER(LEN=25),DIMENSION(5) :: YFILE_COEFINT
 
-REAL,DIMENSION(4) :: ZELEV_MIN,ZELEV_MAX,ZELEV_STEP,&
+REAL,DIMENSION(5) :: ZELEV_MIN,ZELEV_MAX,ZELEV_STEP,&
 ZTC_MIN,ZTC_MAX,ZTC_STEP,ZFW_MIN,ZFW_MAX,ZFW_STEP
 INTEGER :: IRESP,ILINE,INB_M
-INTEGER,DIMENSION(4) :: INB_ELEV,INB_TC,INB_FW,INB_LINE
+INTEGER,DIMENSION(5) :: INB_ELEV,INB_TC,INB_FW,INB_LINE
 
 REAL, DIMENSION(:),ALLOCATABLE :: ZTC_T_R,        ZTC_T_S,        ZTC_T_G,        ZTC_T_W
 REAL, DIMENSION(:),ALLOCATABLE :: ZELEV_T_R,      ZELEV_T_S,      ZELEV_T_G,      ZELEV_T_W
@@ -245,7 +262,8 @@ REAL, DIMENSION(:),ALLOCATABLE :: ZIM_S22S11_T_R, ZIM_S22S11_T_S, ZIM_S22S11_T_G
 REAL, DIMENSION(:),ALLOCATABLE :: ZIM_S22FT_T_R,  ZIM_S22FT_T_S,  ZIM_S22FT_T_G,  ZIM_S22FT_T_W
 REAL, DIMENSION(:),ALLOCATABLE :: ZIM_S11FT_T_R,  ZIM_S11FT_T_S,  ZIM_S11FT_T_G,  ZIM_S11FT_T_W
 REAL, DIMENSION(:),ALLOCATABLE :: ZRE_S22FMS11FT_T_R, ZRE_S22FMS11FT_T_S, ZRE_S22FMS11FT_T_G, ZRE_S22FMS11FT_T_W
-
+REAL, DIMENSION(:),ALLOCATABLE :: ZTC_T_H ,ZELEV_T_H ,ZFW_T_H,ZM_T_H,ZS11_CARRE_T_H,ZS22_CARRE_T_H,ZRE_S22S11_T_H
+REAL, DIMENSION(:),ALLOCATABLE :: ZIM_S22S11_T_H,ZIM_S22FT_T_H,ZIM_S11FT_T_H,ZRE_S22FMS11FT_T_H
 INTEGER,DIMENSION(16):: ITMAT
 REAL:: ZELEV_RED,ZTC_RED,ZM_RED,ZFW_RED
 INTEGER :: JIND
@@ -257,9 +275,9 @@ INTEGER :: ILUOUT0,IUNIT
 !
 ! MODIF GAELLE POUR LIMA
 !
-LOGICAL :: GLIMA
-REAL,DIMENSION(4) :: ZCC_MIN,ZCC_MAX, ZCC_STEP
-INTEGER,DIMENSION(4):: INB_CC
+LOGICAL :: GLIMA,GHAIL
+REAL,DIMENSION(5) :: ZCC_MIN,ZCC_MAX, ZCC_STEP
+INTEGER,DIMENSION(5):: INB_CC
 REAL, DIMENSION(:),ALLOCATABLE :: ZCC_T_R
 REAL :: ZCC_RED
 LOGICAL :: GCALC
@@ -270,6 +288,7 @@ REAL :: ZC
 REAL ::  ZCCR,ZLBR,ZLBEXR,ZDR,ZALPHAR,ZNUR,ZBR
 REAL ::  ZCCS,ZLBS,ZLBEXS,ZDS,ZALPHAS,ZNUS,ZAS,ZBS,ZCXS
 REAL ::  ZCCG,ZLBG,ZLBEXG,ZDG,ZALPHAG,ZNUG,ZAG,ZBG,ZCXG
+REAL ::  ZCCH,ZLBH,ZLBEXH,ZDH,ZALPHAH,ZNUH,ZAH,ZBH,ZCXH
 REAL ::       ZLBI,ZLBEXI,ZDI,ZALPHAI,ZNUI,ZAI,ZBI
 REAL,DIMENSION(:),ALLOCATABLE :: ZRTMIN
 CHARACTER(LEN=100) :: YMSG
@@ -284,6 +303,11 @@ IF (PRESENT(PCR_RAY)) THEN
   GLIMA=.TRUE.
 ELSE
   GLIMA=.FALSE.
+ENDIF
+IF (PRESENT(PH_RAY)) THEN
+  GHAIL=.TRUE.
+ELSE
+  GHAIL=.FALSE.
 ENDIF
 !
 !
@@ -304,6 +328,10 @@ ENDIF
   ZS22_CARRE_G=0
   ZRE_S22S11_G=0
   ZIM_S22S11_G=0
+  ZS11_CARRE_H=0
+  ZS22_CARRE_H=0
+  ZRE_S22S11_H=0
+  ZIM_S22S11_H=0  
 ! Initialisation varibales microphysiques
 IF (GLIMA) THEN ! LIMA
   ZLBR=XLBR_L
@@ -374,26 +402,97 @@ ELSE ! ICE3
   ZBI=XBI_I
   ALLOCATE(ZRTMIN(SIZE(XRTMIN_I)))
   ZRTMIN=XRTMIN_I
+  IF (GHAIL) THEN
+    ZCCH=XCCH_I
+    ZCXH=XCXH_I
+    ZLBH=XLBH_I
+    ZLBEXH=XLBEXH_I
+    ZDH=XDH_I
+    ZALPHAH=XALPHAH_I
+    ZNUH=XNUH_I
+    ZAH=XAH_I
+    ZBH=XBH_I
+  ENDIF
 ENDIF
-IF (LATT) THEN
-  IRHOHV=22 !au lieu de 18:
-            !"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"
-            !"AER","AEI","AES","AEG","AVR","AVI","AVS","AVG","ATR","ATI","ATS","ATG"
+!
+! initialisation of refractivity indices
+! 1 : ZHH
+! 2 : ZDR
+! 3 : KDP
+! 4 : CSR
+IZER=5 ! ZER
+IZEI=IZER+1 ! ZEI
+IZES=IZEI+1 ! ZES
+IZEG=IZES+1 ! ZEG
+IF (GHAIL) THEN
+  IZEH=IZEG+1 !ZEH
+  IVDOP=IZEH+1 !VRU
 ELSE
-  IRHOHV=10
+  IVDOP=IZEG+1 !VRU
 END IF
-IPHIDP=IRHOHV+1
-IDELTAHV=IPHIDP+1
-IRHR=IDELTAHV+1
+IF (LATT) THEN
+  IF (GHAIL) THEN
+    IAER=IVDOP+1
+    IAEI=IAER+1
+    IAES=IAEI+1
+    IAEG=IAES+1
+    IAEH=IAEG+1
+    IAVR=IAEH+1
+    IAVI=IAVR+1
+    IAVS=IAVI+1
+    IAVG=IAVS+1
+    IAVH=IAVG+1
+    IATR=IAVH+1
+    IATI=IATR+1
+    IATS=IATI+1
+    IATG=IATS+1
+    IATH=IATG+1
+    IRHV=IATH+1
+  ELSE
+    IAER=IVDOP+1
+    IAEI=IAER+1
+    IAES=IAEI+1
+    IAEG=IAES+1
+    IAVR=IAEG+1
+    IAVI=IAVR+1
+    IAVS=IAVI+1
+    IAVG=IAVS+1
+    IATR=IAVG+1
+    IATI=IATR+1
+    IATS=IATI+1
+    IATG=IATS+1
+    IRHV=IATG+1
+  ENDIF
+ELSE
+    IRHV=IVDOP+1        
+ENDIF
+IPDP=IRHV+1
+IDHV=IPDP+1
+IRHR=IDHV+1
 IRHS=IRHR+1
 IRHG=IRHS+1
-IZDA=IRHG+1
+IF (GHAIL) THEN
+  IRHH=IRHG+1
+  IZDA=IRHH+1
+ELSE
+  IZDA=IRHG+1
+ENDIF
 IZDS=IZDA+1
 IZDG=IZDS+1
-IKDR=IZDG+1
+IF (GHAIL) THEN
+  IZDH=IZDG+1
+  IKDR=IZDH+1
+ELSE
+  IKDR=IZDG+1
+ENDIF
 IKDS=IKDR+1
 IKDG=IKDS+1
-
+IF (GHAIL) THEN
+  IKDH=IKDG+1
+ENDIF
+!
+!
+!
 INBRAD=SIZE(PT_RAY,1)
 IIELV=SIZE(PT_RAY,2)
 INBAZIM=SIZE(PT_RAY,3)
@@ -413,12 +512,14 @@ IF(LFALL) THEN
     ZCI=XC_I_I
     ZCS=XCS_I
     ZCG=XCG_I
+    IF (GHAIL) ZCH=XCH_I
   ENDIF
 ELSE
   ZCR=0.
   ZCI=0.
   ZCS=0.
   ZCG=0.
+  IF (GHAIL)  ZCH=0.
 END IF
 
 ! Calculation of nodes and weights for the Gauss-Laguerre quadrature
@@ -428,7 +529,7 @@ IF(NDIFF/=0) THEN
   CALL GAULAG(NPTS_GAULAG,ZX,ZW)
 END IF
 !
-IVDOP=9 !index of Doppler Velocity (VRU) in ZREFL
+!
 IMAX=SIZE(PZE,5)
 WRITE(ILUOUT0,*) "-----------------"
 WRITE(ILUOUT0,*) "Radar scattering"
@@ -441,6 +542,7 @@ ALLOCATE(ZREFL(INBRAD,IIELV,INBAZIM,INBSTEPMAX,INPTS_H,INPTS_V,IMAX))
 ZREFL(:,:,:,:,:,:,:)=0.
 IF(LATT) THEN
   ZREFL(:,:,:,:,:,:,IATR:IATG)=1.
+  IF (GHAIL)  ZREFL(:,:,:,:,:,:,IATH)=1.
 END IF
 PZE(:,:,:,:,:)=0.
 IF (LATT)THEN
@@ -468,6 +570,11 @@ WRITE(ILUOUT0,*) "XCCG:",ZCCG
 WRITE(ILUOUT0,*) "XLBG:",ZLBG
 WRITE(ILUOUT0,*) "XLBEXG:",ZLBEXG
 
+IF (GHAIL)  THEN
+  WRITE(ILUOUT0,*) "XCCH:",ZCCH
+  WRITE(ILUOUT0,*) "XLBH:",ZLBH
+  WRITE(ILUOUT0,*) "XLBEXH:",ZLBEXH
+ENDIF
 !
 IF (GLIMA .AND. NDIFF==7) THEN
   IF (ZALPHAR/=1 .AND. ZNUR /=2.) THEN
@@ -493,7 +600,7 @@ IF(NDIFF==7) THEN
   YTAB_TYPE(2)='s'
   YTAB_TYPE(3)='g'
   YTAB_TYPE(4)='w'
-!
+  YTAB_TYPE(5)='h'
   ! definition des paramètres de lecture de la table T-matrice
   ! all mixing ratio
   ZEXPM_MIN=-7. 
@@ -545,8 +652,20 @@ IF(NDIFF==7) THEN
   ZCC_MIN(4)=1.
   ZCC_STEP(4)=1.
   ZCC_MAX(4)=1. 
-
-  DO JT=1,4
+  ! hail
+  ZELEV_MIN(5)=0.0
+  ZELEV_STEP(5)=4.0
+  ZELEV_MAX(5)=12.0
+  ZTC_MIN(5)=-20.0
+  ZTC_STEP(5)=1.0
+  ZTC_MAX(5)=30.0
+  ZFW_MIN(5)=0.
+  ZFW_STEP(5)=0.1
+  ZFW_MAX(5)=0.0
+  ZCC_MIN(5)=1.
+  ZCC_STEP(5)=1.
+  ZCC_MAX(5)=1. 
+  DO JT=1,5
     INB_ELEV(JT)=NINT((ZELEV_MAX(JT)-ZELEV_MIN(JT))/ZELEV_STEP(JT))+1
     INB_TC(JT)=NINT((ZTC_MAX(JT)-ZTC_MIN(JT))/ZTC_STEP(JT))+1
     INB_FW(JT)=NINT((ZFW_MAX(JT)-ZFW_MIN(JT))/ZFW_STEP(JT))+1
@@ -579,13 +698,13 @@ DO JI=1,INBRAD
     ELSE
       WRITE(ILUOUT0,*) "ERROR RADAR_SCATTERING"
       WRITE(ILUOUT0,*) "Tmatrice tables are only available for XLAM_RAD=0.1062"
-      WRITE(ILUOUT0,*) "or XLAM_RAD=0.053.2 or XLAM_RAD=0.031.8"
+      WRITE(ILUOUT0,*) "or XLAM_RAD=0.0532 or XLAM_RAD=0.0319"
       WRITE(ILUOUT0,*) "change XLAM_RAD in namelist or compute new tmatrice table"
-      CALL PRINT_MSG(NVERB_FATAL,'GEN','RADAR_SCATTERING','')
+    CALL PRINT_MSG(NVERB_FATAL,'GEN','RADAR_SCATTERING','')
     ENDIF
 
     !************ fichiers Min Max Pas et Coef Tmat ***********
-    DO JT=1,4  !types (r, s, g, w)
+    DO JT=1,5  !types (r, s, g, w, h)
   
       YTYPE=YTAB_TYPE(JT)
       IF (JT .EQ. 1) THEN
@@ -619,7 +738,12 @@ DO JI=1,INBRAD
     ZS11_CARRE_T_W(INB_LINE(4)),ZS22_CARRE_T_W(INB_LINE(4)), ZRE_S22S11_T_W(INB_LINE(4)),ZIM_S22S11_T_W(INB_LINE(4)),&
     ZRE_S22FMS11FT_T_W(INB_LINE(4)),ZIM_S22FT_T_W(INB_LINE(4)),ZIM_S11FT_T_W(INB_LINE(4)))
 
-
+    IF (GHAIL) THEN
+    !lookup tables for hail
+    ALLOCATE (ZTC_T_H(INB_LINE(5)),ZELEV_T_H(INB_LINE(5)),ZFW_T_H(INB_LINE(5)),ZM_T_H(INB_LINE(5)),&
+    ZS11_CARRE_T_H(INB_LINE(5)),ZS22_CARRE_T_H(INB_LINE(5)), ZRE_S22S11_T_H(INB_LINE(5)),ZIM_S22S11_T_H(INB_LINE(5)),&
+    ZRE_S22FMS11FT_T_H(INB_LINE(5)),ZIM_S22FT_T_H(INB_LINE(5)),ZIM_S11FT_T_H(INB_LINE(5)))
+    ENDIF
     !=====  Lecture des tables  ===========  
     
     6003 FORMAT (E11.4,2X,E9.3,2X,E10.4,2X,E10.4,2X,E12.5,2X,E12.5,2X,&
@@ -641,7 +765,7 @@ DO JI=1,INBRAD
       ILINE=ILINE+1
     ENDDO
     CALL IO_FILE_CLOSE_ll(TZFILE)
-    TZFILE => NULL()
+    TZFILE => NULL()    
     WRITE(ILUOUT0,*) "NLIGNE rain",ILINE      
     ILINE=2
     WRITE(ILUOUT0,*) "ILINE=",ILINE
@@ -732,6 +856,33 @@ DO JI=1,INBRAD
     WRITE(ILUOUT0,*) "ZIM_S22S11_T_W(ILINE),ZRE_S22FMS11FT_T_W(ILINE),ZIM_S22FT_T_W(ILINE),ZIM_S11FT_T_W(ILINE)",&
     ZIM_S22S11_T_W(ILINE),ZRE_S22FMS11FT_T_W(ILINE),ZIM_S22FT_T_W(ILINE),ZIM_S11FT_T_W(ILINE)
 
+    !hail
+    IF (GHAIL) THEN
+    CALL IO_FILE_ADD2LIST(TZFILE,YFILE_COEFINT(5),'TXT','READ')
+    CALL IO_FILE_OPEN_ll(TZFILE,KRESP=IRESP)
+    IUNIT = TZFILE%NLU
+    IF ( IRESP /= 0 ) THEN       
+      WRITE(YMSG,*) "problem opening file ",TRIM(YFILE_COEFINT(5))
+      CALL PRINT_MSG(NVERB_FATAL,'GEN','RADAR_SCATTERING',YMSG)
+    ENDIF
+      ILINE=1
+      DO WHILE (ILINE .LE. INB_LINE(5))
+        READ( UNIT=IUNIT, FMT=6003,IOSTAT=IRESP ) ZTC_T_H(ILINE),ZELEV_T_H(ILINE),&
+        ZFW_T_H(ILINE),ZM_T_H(ILINE),ZS11_CARRE_T_H(ILINE),ZS22_CARRE_T_H(ILINE),ZRE_S22S11_T_H(ILINE),&
+        ZIM_S22S11_T_H(ILINE),ZRE_S22FMS11FT_T_H(ILINE),ZIM_S22FT_T_H(ILINE),ZIM_S11FT_T_H(ILINE)
+        ILINE=ILINE+1
+      ENDDO
+      CALL IO_FILE_CLOSE_ll(TZFILE)
+      TZFILE => NULL()
+      WRITE(ILUOUT0,*) "NLIGNE hail",ILINE    
+      ILINE=2
+      WRITE(ILUOUT0,*) "ILINE=",ILINE
+      WRITE(ILUOUT0,*) "ZTC_T_H(ILINE),ZELEV_T_H(ILINE)", ZTC_T_H(ILINE),ZELEV_T_H(ILINE)
+      WRITE(ILUOUT0,*) "ZM_T_H(ILINE),ZS11_CARRE_T_H(ILINE),ZS22_CARRE_T_H(ILINE),ZRE_S22S11_T_H(ILINE)",&
+      ZM_T_W(ILINE),ZS11_CARRE_T_H(ILINE),ZS22_CARRE_T_H(ILINE),ZRE_S22S11_T_H(ILINE)
+      WRITE(ILUOUT0,*) "ZIM_S22S11_T_H(ILINE),ZRE_S22FMS11FT_T_H(ILINE),ZIM_S22FT_T_H(ILINE),ZIM_S11FT_T_H(ILINE)",&
+      ZIM_S22S11_T_H(ILINE),ZRE_S22FMS11FT_T_H(ILINE),ZIM_S22FT_T_H(ILINE),ZIM_S11FT_T_H(ILINE)
+    ENDIF
   ENDIF !END IF T-MATRIX => END OF LOOKUP TABLE READING
 
  !==============         loop over elevations      ================= 
@@ -760,6 +911,8 @@ DO JI=1,INBRAD
             ZAVSINT=1.
             ZAEGINT=1.
             ZAVGINT=1.
+            ZAEHINT=1.
+            ZAVHINT=1.
           END IF
           !Loop over the ranges for one azimuth. If the range is masked, the reflectivity for all the consecutive ranges is set to 0
           LPART_MASK=.FALSE.
@@ -1465,6 +1618,178 @@ DO JI=1,INBRAD
                 END IF ! **************** end GRAUPEL (end IF SIZE(PG_RAY,1) > 0)
                 !-----------------------------------------------------------------------------------------------
                 !-----------------------------------------------------------------------------------------------
+!**********************************
+!**********************************
+!**********************************
+!**********************************
+
+
+!---------------------------------------------------------------------------------------------------
+                !*       6. HAIL
+                !              -------
+                !
+                !
+                IF (GHAIL)  THEN
+                  ZM=PRHODREF_RAY(JI,JEL,JAZ,JL,JH,JV)*PH_RAY(JI,JEL,JAZ,JL,JH,JV) !graupel content
+                  IF(ZM > ZM_MIN) THEN
+                    YTYPE='h'
+                    ZQMI=SQRT(QEPSI(MIN(PT_RAY(JI,JEL,JAZ,JL,JH,JV),XTT),XLIGHTSPEED/XLAM_RAD(JI)))
+                    ZQMW=SQRT(QEPSW(MAX(PT_RAY(JI,JEL,JAZ,JL,JH,JV),XTT),XLIGHTSPEED/XLAM_RAD(JI)))
+                    !ini_radar.f90 : ZCXG = -0.5 XBG = 2.8 ( Xj et bj tab 2.1 p 24)
+                    !ini_rain_ice.f90 : XLBEXG = 1.0/(XCXG-XBG) XAG = 19.6 (aj tab 2.1 p 24)
+                    !XLBG   = ( XAG*XCCG*MOMG(XALPHAG,XNUG,XBG) )**(-XLBEXG) (eq 2.6 p 23)
+ZFW=0    !????????
+                    ZLBDA=ZLBH*(PRHODREF_RAY(JI,JEL,JAZ,JL,JH,JV)*PH_RAY(JI,JEL,JAZ,JL,JH,JV))**ZLBEXH
+                    !XTT : température du point triple de l'eau (273.16 K <=> 0.1 °C)
+                    IF(PT_RAY(JI,JEL,JAZ,JL,JH,JV) > XTT) THEN ! mixture of ice and water
+                      ZFRAC_ICE = .85 !(see p 68)
+                    ELSE ! only ice
+                      ZFRAC_ICE=1.
+                    END IF
+                    ! from eq 3.77 p 68
+                    !XRHOLW=1000 (initialized in ini_cst.f90)
+                    ZDMELT_FACT=6.*ZAG/(XPI*XRHOLW*((1.-ZFRAC_ICE)+ZFRAC_ICE*0.92))
+                    ZEXP=2.*ZBH
+                    !Calculation of the refractive index from Bohren and Battan (3.72 p66)
+                    ZQB=2.*ZQMW**2*(2.*ZQMI**2*LOG(ZQMI/ZQMW)/(ZQMI**2-ZQMW**2)-1.)/(ZQMI**2-ZQMW**2) !Beta (3.73 p66)
+                    ZQM=SQRT(((1.-ZFRAC_ICE)*ZQMW**2+ZFRAC_ICE*ZQB*ZQMI**2)/(1.-ZFRAC_ICE+ZFRAC_ICE*ZQB)) ! Bohren & Battan (1982) 3.72 p66
+                    ZQK=(ZQM**2-1.)/(ZQM**2+2.)                                       
+                    !Rayleigh, Rayleigh for ellipsoides or Rayleigh 6th order
+                    IF(NDIFF==0.OR.NDIFF==3.OR.NDIFF==4) THEN
+                      ZREFLOC(1:2)=ABS(ZQK)**2/.93*ZDMELT_FACT**2*1.E18*ZCCH*ZLBDA**(ZCXH-ZEXP)*MOMG(ZALPHAH,ZNUH,ZEXP)
+                      ZREFLOC(3)=0.
+                      IF(LWREFL) THEN ! weighting by reflectivities
+                        ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
+                              -ZCH*SIN(PELEV(JI,JEL,JL,JV))*ABS(ZQK)**2/.93*ZDMELT_FACT**2&
+                              *1.E18*ZCCH*ZLBDA**(ZCXH-ZEXP-ZDH)*MOMG(ZALPHAH,ZNUH,ZEXP+ZDH)
+                      ELSE
+                        ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)+ZCCH*ZLBDA**ZCXH                       
+                        ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
+                                                        -ZCH*SIN(PELEV(JI,JEL,JL,JV))&
+                                                        *ZCCH*ZLBDA**(ZCXH-ZDH)*MOMG(ZALPHAH,ZNUH,ZDH)
+                      END IF !end IF(LWREFL)
+                      IF(LATT) THEN
+                        IF(NDIFF==0.OR.NDIFF==3) THEN
+                          ZAETMP(:)=ZCCH*ZLBDA**ZCXH*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)   &
+                                    *MOMG(ZALPHAH,ZNUH,ZBH)/ZLBDA**ZBH)
+                        ELSE
+                          ZAETMP(:)=ZCCH*ZLBDA**ZCXH*(ZDMELT_FACT*XPI**2/XLAM_RAD(JI)*AIMAG(ZQK)   &
+                                   *MOMG(ZALPHAH,ZNUH,ZBH)/ZLBDA**ZBH&
+                                   +ZDMELT_FACT**(5./3.)*XPI**4/15./XLAM_RAD(JI)**3               &
+                                   *AIMAG(ZQK**2*(ZQM**4+27.*ZQM**2+38.)                             &
+                                   /(2.*ZQM**2+3.))*MOMG(ZALPHAH,ZNUH,5.*ZBH/3.)/ZLBDA**(5.*ZBH/3.)&
+                                   +ZDMELT_FACT**2   *2.*XPI**5/3. /XLAM_RAD(JI)**4*REAL(ZQK**2)   &
+                                   *MOMG(ZALPHAH,ZNUH,2.*ZBH)   /ZLBDA**(2.*ZBH))
+                        END IF ! end IF(NDIFF==0.OR.NDIFF==3)
+                      END IF ! end IF(LATT)
+                      ZRE_S22S11_H=0
+                      ZIM_S22S11_H=0
+                      ZS22_CARRE_H=0
+                      ZS11_CARRE_H=0                    
+                      !******************************* NDIFF==7 TmatInt ************************************ 
+                    ELSE IF(NDIFF==7) THEN
+                      ZREFLOC(:)=0
+                      IF(LATT) ZAETMP(:)=0                
+                         CALL CALC_KTMAT(PELEV(JI,JEL,JL,JV), PT_RAY(JI,JEL,JAZ,JL,JH,JV),&
+                                        ZFW,ZM,&
+                                        ZELEV_MIN(3),ZELEV_MAX(3),ZELEV_STEP(3),&
+                                        ZTC_MIN(3),ZTC_MAX(3),ZTC_STEP(3),&
+                                        ZFW_MIN(3),ZFW_MAX(3),ZFW_STEP(3),&
+                                        ZEXPM_MIN,ZEXPM_MAX,ZEXPM_STEP,&
+                                        ITMAT,ZELEV_RED,ZTC_RED,ZFW_RED,ZM_RED)
+                        IF (ITMAT(1) .NE. -NUNDEF) THEN 
+                          DO JIND=1,SIZE(KMAT_COEF,2),1
+                            KMAT_COEF(1,JIND)=ZS11_CARRE_T_H(ITMAT(JIND))
+                            KMAT_COEF(2,JIND)=ZS22_CARRE_T_H(ITMAT(JIND))
+                            KMAT_COEF(3,JIND)=ZRE_S22S11_T_H(ITMAT(JIND))
+                            KMAT_COEF(4,JIND)=ZIM_S22S11_T_H(ITMAT(JIND))
+                            KMAT_COEF(5,JIND)=ZRE_S22FMS11FT_T_H(ITMAT(JIND))
+                            KMAT_COEF(6,JIND)=ZIM_S22FT_T_H(ITMAT(JIND))
+                            KMAT_COEF(7,JIND)=ZIM_S11FT_T_H(ITMAT(JIND))
+                          ENDDO
+                         CALL  INTERPOL(ZELEV_RED,ZTC_RED,ZFW_RED,ZM_RED,KMAT_COEF,ZS11_CARRE_H,ZS22_CARRE_H,&
+                                         ZRE_S22S11_H,ZIM_S22S11_H,ZRE_S22FMS11F,ZIM_S22FT,ZIM_S11FT)
+                        ELSE
+                          ZS11_CARRE_H=0
+                          ZS22_CARRE_H=0
+                          ZRE_S22S11_H=0
+                          ZIM_S22S11_H=0
+                          ZRE_S22FMS11F=0
+                          ZIM_S22FT=0
+                          ZIM_S11FT=0
+                        END IF                    
+                      ZREFLOC(1)=1.E18*(XLAM_RAD(JI))**4/(XPI**5*.93)*4*XPI*ZS22_CARRE_H
+                      ZREFLOC(2)=1.E18*(XLAM_RAD(JI))**4/(XPI**5*.93)*4*XPI*ZS11_CARRE_H
+                      ZREFLOC(3)=180.E3/XPI*XLAM_RAD(JI)*ZRE_S22FMS11F
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=PVDOP_RAY(JI,JEL,JAZ,JL,JH,JV)*ZREFLOC(1) &
+                                                        -ZCH*SIN(PELEV(JI,JEL,JL,JV))*ZREFLOC(1) &
+                                         *1.E18*(XLAM_RAD(JI)/XPI)**4/.93*ZCCH/4./ZLBDA**(3+ZDH)
+                      IF(LATT) THEN
+                        ZAETMP(1)=ZIM_S22FT*XLAM_RAD(JI)*2
+                        ZAETMP(2)=ZIM_S11FT*XLAM_RAD(JI)*2
+                      END IF            
+                    ELSE ! Mie (NDIFF=1)
+                      ZREFLOC(:)=0.
+                      IF(LATT) ZAETMP(:)=0.
+                      DO JJ=1,NPTS_GAULAG ! ****** Gauss-Laguerre quadrature
+                        ZD=ZX(JJ)**(1./ZALPHAH)/ZLBDA
+                        ZDE=ZDMELT_FACT**(1./3.)*ZD**(ZBH/3.)
+                        CALL BHMIE(XPI/XLAM_RAD(JI)*ZDE,ZQM,ZQEXT(1),ZQSCA,ZQBACK(1))
+                        ZQBACK(2)=ZQBACK(1)
+                        ZQEXT(2)=ZQEXT(1) ! modif Clotilde 23/04/2012
+                        ZQBACK(3)=0.
+                        ZREFLOC(1:3)=ZREFLOC(1:3)+ZQBACK(1:3)*ZX(JJ)**(ZNUH-1.+2.*ZBH/3./ZALPHAH)*ZW(JJ)
+                        ZREFLOC(4)=ZREFLOC(4)+ZQBACK(1)*ZX(JJ)**(ZNUH-1.+2.*ZBH/3./ZALPHAH+ZDH/ZALPHAH)*ZW(JJ)
+                        IF(LATT) ZAETMP(:)=ZAETMP(:)+ZQEXT(:)*ZX(JJ)**(ZNUH-1.+2.*ZBH/3./ZALPHAH)*ZW(JJ)
+                      END DO ! ****** end loop on diameter (Gauss-Laguerre)                     
+                      ZREFLOC(1:2)=ZREFLOC(1:2)*1.E18*(XLAM_RAD(JI)/XPI)**4*ZCCH                      &
+                                    *ZLBDA**(ZCXH-2.*ZBH/3.)/(4.*GAMMA(ZNUH)*.93)*ZDMELT_FACT**(2./3.)                    
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)               &
+                                    +PVDOP_RAY(JI,JEL,JAZ,JL,JH,JV)*ZREFLOC(1)                        &
+                                    -ZCH*SIN(PELEV(JI,JEL,JL,JV))*ZREFLOC(4)                          &
+                                    *1.E18*(XLAM_RAD(JI)/XPI)**4*ZCCH                                 &
+                                    *ZLBDA**(ZCXH-2.*ZBH/3.-ZDH)/(4.*GAMMA(ZNUH)*.93)*ZDMELT_FACT**(2./3.)               
+                      IF(LATT) ZAETMP(:)=ZAETMP(:)*XPI*ZCCH*ZLBDA**(ZCXH-2.*ZBH/3.)/(4.*GAMMA(ZNUH))  &
+                                    *ZDMELT_FACT**(2./3.)
+                      ZRE_S22S11_H=0
+                      ZIM_S22S11_H=0
+                      ZS22_CARRE_H=0
+                      ZS11_CARRE_H=0  !0 in case of Mie
+                    END IF !**************** end loop for each type of diffusion : IF(NDIFF==0.OR.NDIFF==3.OR.NDIFF==4)          
+                    ZREFL(JI,JEL,JAZ,JL,JH,JV,1:3)=ZREFL(JI,JEL,JAZ,JL,JH,JV,1:3)+ZREFLOC(1:3)
+                    ZREFL(JI,JEL,JAZ,JL,JH,JV,IZEH)=ZREFLOC(1) ! z_e due to graupel
+                    ZREFL(JI,JEL,JAZ,JL,JH,JV,IZDH)=ZREFLOC(2) !Zvv for ZDR due to graupel
+                    ZREFL(JI,JEL,JAZ,JL,JH,JV,IKDH)=ZREFLOC(3) !Zvv for ZDR due to graupel  
+
+                    IF (ZS22_CARRE_H*ZS11_CARRE_H .GT. 0) THEN
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHH)=SQRT(ZRE_S22S11_H**2+ZIM_S22S11_H**2)/SQRT(ZS22_CARRE_H*ZS11_CARRE_H)
+                    ELSE
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHH)=1
+                    END IF
+                    IF(LATT) THEN
+                      ZAELOC(JI,JEL,JAZ,JL,JH,JV,:)=ZAELOC(JI,JEL,JAZ,JL,JH,JV,:)+ZAETMP(:)
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IAEH)=ZAETMP(1)
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IAVH)=ZAETMP(2)
+                      IF(JL>1) THEN
+                        ZAEHINT=ZAEHINT*EXP(-2.*ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IAEH)*XSTEP_RAD)
+                        ZAVHINT=ZAVHINT*EXP(-2.*ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IAVH)*XSTEP_RAD)
+                      END IF
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IZEH)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IZEH)*ZAEHINT ! Z_g attenuated
+                      ZREFL(JI,JEL,JAZ,JL,JH,JV,IZDH)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IZDH)*ZAVHINT ! Z_g attenuated
+                    END IF !end IF(LATT)            
+                  END IF !**************** IF(PH_RAY(JI,JEL,JAZ,JL,JH,JV) > XRTMIN(6))
+         
+                  ! Total attenuation even if no hydrometeors
+                  IF(LATT.AND.JL>1) ZREFL(JI,JEL,JAZ,JL,JH,JV,IATH)=ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IATH) &
+                                                *EXP(-2.*ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IAEH)*XSTEP_RAD)
+              
+                END IF ! **************** end HAIL (end IF SIZE(PH_RAY,1) > 0)
+                !-----------------------------------------------------------------------------------------------
+                !-----------------------------------------------------------------------------------------------
+!**********************************
+!**********************************
+!**********************************
+!**********************************
 
                 IF(LWREFL) THEN ! weighting by reflectivities
                   ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)&
@@ -1476,26 +1801,26 @@ DO JI=1,INBRAD
                   ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)=ZREFL(JI,JEL,JAZ,JL,JH,JV,IVDOP)/ZREFL(JI,JEL,JAZ,JL,JH,JV,IMAX)&
                                    +PVDOP_RAY(JI,JEL,JAZ,JL,JH,JV)
                 END IF
-                !Calculation of  Phidp  (ZREFL(JI,JEL,JAZ,JL,JH,JV,IPHIDP) is initialized to 0 before the loop
-                IF (JL>1) ZREFL(JI,JEL,JAZ,JL,JH,JV,IPHIDP)=ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IPHIDP)+ &
+                !Calculation of  Phidp  (ZREFL(JI,JEL,JAZ,JL,JH,JV,IPDP) is initialized to 0 before the loop
+                IF (JL>1) ZREFL(JI,JEL,JAZ,JL,JH,JV,IPDP)=ZREFL(JI,JEL,JAZ,JL-1,JH,JV,IPDP)+ &
                                    2.*ZREFL(JI,JEL,JAZ,JL-1,JH,JV,3)*XSTEP_RAD*1D-3
 
                 !Calculation of RhoHV and DeltaHV
-                ZRE_S22S11_T=ZRE_S22S11_R+ZRE_S22S11_I+ZRE_S22S11_S+ZRE_S22S11_G
-                ZIM_S22S11_T=ZIM_S22S11_R+ZIM_S22S11_I+ZIM_S22S11_S+ZIM_S22S11_G
-                ZS22_CARRE_T=ZS22_CARRE_R+ZS22_CARRE_I+ZS22_CARRE_S+ZS22_CARRE_G
-                ZS11_CARRE_T=ZS11_CARRE_R+ZS11_CARRE_I+ZS11_CARRE_S+ZS11_CARRE_G
+                ZRE_S22S11_T=ZRE_S22S11_R+ZRE_S22S11_I+ZRE_S22S11_S+ZRE_S22S11_G+ZRE_S22S11_H
+                ZIM_S22S11_T=ZIM_S22S11_R+ZIM_S22S11_I+ZIM_S22S11_S+ZIM_S22S11_G+ZIM_S22S11_H
+                ZS22_CARRE_T=ZS22_CARRE_R+ZS22_CARRE_I+ZS22_CARRE_S+ZS22_CARRE_G+ZS22_CARRE_H
+                ZS11_CARRE_T=ZS11_CARRE_R+ZS11_CARRE_I+ZS11_CARRE_S+ZS11_CARRE_G+ZS11_CARRE_H
                 !RhoHV 
                 IF ((ZS22_CARRE_T*ZS11_CARRE_T)>0.) THEN
-                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHOHV)=SQRT(ZRE_S22S11_T**2+ZIM_S22S11_T**2)/SQRT(ZS22_CARRE_T*ZS11_CARRE_T)   
+                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHV)=SQRT(ZRE_S22S11_T**2+ZIM_S22S11_T**2)/SQRT(ZS22_CARRE_T*ZS11_CARRE_T)   
                 ELSE
-                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHOHV)=-XUNDEF
+                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IRHV)=-XUNDEF
                 END IF 
                 !DeltaHV
                 IF (ZRE_S22S11_T/=0) THEN
-                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IDELTAHV)=180/XPI*ATAN(ZIM_S22S11_T/ZRE_S22S11_T)
+                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IDHV)=180/XPI*ATAN(ZIM_S22S11_T/ZRE_S22S11_T)
                 ELSE
-                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IDELTAHV)=0
+                  ZREFL(JI,JEL,JAZ,JL,JH,JV,IDHV)=0
                 END IF
               ELSE !if temperature is not defined
                 ZREFL(JI,JEL,JAZ,JL,JH,JV,1:2)=XVALGROUND
@@ -1521,11 +1846,16 @@ DO JI=1,INBRAD
   !lookup tables for wet graupel
   DEALLOCATE (ZTC_T_W,ZELEV_T_W,ZM_T_W,ZS11_CARRE_T_W,ZS22_CARRE_T_W,&
   ZRE_S22S11_T_W,ZIM_S22S11_T_W,ZRE_S22FMS11FT_T_W,ZIM_S22FT_T_W,ZIM_S11FT_T_W)   
+  IF (GHAIL) THEN
+    !lookup tables for hail
+    DEALLOCATE (ZTC_T_H,ZELEV_T_H,ZM_T_H,ZS11_CARRE_T_H,ZS22_CARRE_T_H,&
+    ZRE_S22S11_T_H,ZIM_S22S11_T_H,ZRE_S22FMS11FT_T_H,ZIM_S22FT_T_H,ZIM_S11FT_T_H)  
+  ENDIF
 END DO !JI
 !
 ! attenuation in dB/km
-IF(LATT) ZREFL(:,:,:,:,:,:,IAER:IAEG)=4343.*2.*ZREFL(:,:,:,:,:,:,IAER:IAEG) ! horizontal specific attenuation
-IF(LATT) ZREFL(:,:,:,:,:,:,IAVR:IAVG)=4343.*2.*ZREFL(:,:,:,:,:,:,IAVR:IAVG) ! vertical specific attenuation
+IF(LATT) ZREFL(:,:,:,:,:,:,IAER:IAEH)=4343.*2.*ZREFL(:,:,:,:,:,:,IAER:IAEH) ! horizontal specific attenuation
+IF(LATT) ZREFL(:,:,:,:,:,:,IAVR:IAVH)=4343.*2.*ZREFL(:,:,:,:,:,:,IAVR:IAVH) ! vertical specific attenuation
 ! convective/stratiform
 ZREFL(:,:,:,:,:,:,4)=PBU_MASK_RAY(:,:,:,:,:,:) ! CSR
 ! /convective/stratiform
@@ -1546,7 +1876,7 @@ DO JI=1,INBRAD
   DO JEL=1,IEL  
     DO JAZ=1,INBAZIM 
       IF (LATT) ZAETOT(:,:,1:2)=1.
-      PZE(JI,JEL,JAZ,1,IPHIDP)=0
+      PZE(JI,JEL,JAZ,1,IPDP)=0
       DO JL=1,INBSTEPMAX
         ! if no undef point in gate JL and at least one point where T is defined
         IF(COUNT(ZREFL(JI,JEL,JAZ,JL,:,:,1)==-XUNDEF)==0.AND. &
@@ -1604,11 +1934,13 @@ DO JI=1,INBRAD
           ZSNR_I=-XUNDEF
           ZSNR_S=-XUNDEF
           ZSNR_G=-XUNDEF
+          ZSNR_H=-XUNDEF
           ZZHH=PZE(JI,JEL,JAZ,JL,1)
           ZZE_R=PZE(JI,JEL,JAZ,JL,IZER)
           ZZE_I=PZE(JI,JEL,JAZ,JL,IZEI)
           ZZE_S=PZE(JI,JEL,JAZ,JL,IZES)
           ZZE_G=PZE(JI,JEL,JAZ,JL,IZEG)
+          IF (GHAIL) ZZE_H=PZE(JI,JEL,JAZ,JL,IZEH)
           ZDISTRAD=JL*XSTEP_RAD !radar distance in meters
           IF (LSNRT) THEN 
             IF (ZZHH/=XVALGROUND .AND. ZZHH/=-XUNDEF.AND.ZZHH/=0) THEN
@@ -1626,12 +1958,18 @@ DO JI=1,INBRAD
             IF (ZZE_G/=XVALGROUND .AND. ZZE_G/=-XUNDEF.AND.ZZE_G/=0) THEN
               ZSNR_G=10*LOG10(ZZE_G)-20*LOG10(ZDISTRAD/(100*10**3))
             END IF
+            IF (GHAIL) THEN
+              IF (ZZE_H/=XVALGROUND .AND. ZZE_H/=-XUNDEF.AND.ZZE_H/=0) THEN
+                ZSNR_H=10*LOG10(ZZE_H)-20*LOG10(ZDISTRAD/(100*10**3))
+              END IF
+            END IF
             GTHRESHOLD_V=(ZSNR>=XSNRMIN)
             GTHRESHOLD_Z=GTHRESHOLD_V
             GTHRESHOLD_ZR=(ZSNR_R>=XSNRMIN)
             GTHRESHOLD_ZI=(ZSNR_I>=XSNRMIN)
             GTHRESHOLD_ZS=(ZSNR_S>=XSNRMIN)
             GTHRESHOLD_ZG=(ZSNR_G>=XSNRMIN)
+            IF (GHAIL) GTHRESHOLD_ZH=(ZSNR_H>=XSNRMIN)
           ELSE
             GTHRESHOLD_V=(ZZHH>=10**(XREFLVDOPMIN/10.))
             GTHRESHOLD_Z=(ZZHH>=10**(XREFLMIN/10.))
@@ -1639,6 +1977,7 @@ DO JI=1,INBRAD
             GTHRESHOLD_ZI=(ZZE_I>=10**(XREFLMIN/10.))
             GTHRESHOLD_ZS=(ZZE_S>=10**(XREFLMIN/10.))
             GTHRESHOLD_ZG=(ZZE_G>=10**(XREFLMIN/10.))
+            IF (GHAIL) GTHRESHOLD_ZH=(ZZE_H>=10**(XREFLMIN/10.))
           END IF          
           !--- Doppler velocities 
           IF(GTHRESHOLD_V) THEN      
@@ -1661,7 +2000,7 @@ DO JI=1,INBRAD
           !--- Zhh, Zvv et variables globales
           IF(GTHRESHOLD_Z .EQV. .FALSE.) THEN
             PZE(JI,JEL,JAZ,JL,1:4)=-XUNDEF
-            PZE(JI,JEL,JAZ,JL,IRHOHV:IDELTAHV)=-XUNDEF
+            PZE(JI,JEL,JAZ,JL,IRHV:IDHV)=-XUNDEF
           END IF
           !--- ZER, ZDA, KDR, RHR
           IF(GTHRESHOLD_ZR .EQV. .FALSE.) THEN
@@ -1684,6 +2023,15 @@ DO JI=1,INBRAD
             PZE(JI,JEL,JAZ,JL,IZDG)=-XUNDEF
             PZE(JI,JEL,JAZ,JL,IKDG)=-XUNDEF
             PZE(JI,JEL,JAZ,JL,IRHG)=-XUNDEF
+          END IF
+          !--- ZEH, ZDH, KDH, RHH
+          IF (GHAIL) THEN
+            IF(GTHRESHOLD_ZH .EQV. .FALSE.) THEN
+              PZE(JI,JEL,JAZ,JL,IZEH)=-XUNDEF
+              PZE(JI,JEL,JAZ,JL,IZDH)=-XUNDEF
+              PZE(JI,JEL,JAZ,JL,IKDH)=-XUNDEF
+              PZE(JI,JEL,JAZ,JL,IRHH)=-XUNDEF
+            END IF
           END IF
           !--- ZEI
           IF(GTHRESHOLD_ZI .EQV. .FALSE.) THEN

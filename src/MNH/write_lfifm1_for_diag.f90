@@ -3608,7 +3608,13 @@ IF(LRADAR .AND. LUSERR) THEN
     IF (CCLOUD=='LIMA') INBOUT=INBOUT+1 ! rain concentration CRT
     IF(LREFR) INBOUT=INBOUT+1 !+refractivity
     IF(LDNDZ) INBOUT=INBOUT+1 !+refractivity vertical gradient 
-    IF(LATT)  INBOUT=INBOUT+12 !+AER-AEG AVR-AVG (vertical specific attenuation) and ATR-ATG  
+    IF(LATT)  INBOUT=INBOUT+12 !+AER-AEG AVR-AVG (vertical specific attenuation) and ATR-ATG 
+    IF ( CCLOUD=='ICE4' ) THEN
+      INBOUT=INBOUT+5 ! HAIL ZEH RHH ZDH KDH M_H 
+      IF (LATT) THEN
+        INBOUT=INBOUT+3  ! AEH AVH ATH
+      ENDIF
+    END IF
     WRITE(ILUOUT0,*) "Nombre de variables dans ZWORK42 en sortie de radar_simulator:",INBOUT
 
     IF (LCART_RAD) THEN
@@ -3625,18 +3631,51 @@ IF(LRADAR .AND. LUSERR) THEN
       CALL RADAR_SIMULATOR(XUT,XVT,XWT,XRT,XCIT,XRHODREF,ZTEMP,XPABSM,ZWORK42,ZWORK43)      
     ENDIF
     ALLOCATE(YRAD(INBOUT))
-    YRAD(1:9)=(/"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG","VRU"/)
-    ICURR=10
+    YRAD(1:8)=(/"ZHH","ZDR","KDP","CSR","ZER","ZEI","ZES","ZEG"/)
+    ICURR=9
+    IF (CCLOUD=='ICE4') THEN
+      YRAD(ICURR)="ZEH"
+      ICURR=ICURR+1      
+    END IF
+    YRAD(ICURR)="VRU"
+    ICURR=ICURR+1
     IF(LATT) THEN
-      YRAD(ICURR:ICURR+11)=(/"AER","AEI","AES","AEG","AVR","AVI","AVS","AVG","ATR","ATI","ATS","ATG"/)
-      ICURR=ICURR+12
+      IF (CCLOUD=='ICE4') THEN
+        YRAD(ICURR:ICURR+14)=(/"AER","AEI","AES","AEG","AEH","AVR","AVI","AVS","AVG","AVH","ATR","ATI","ATS","ATG","ATH"/)
+        ICURR=ICURR+15
+      ELSE
+        YRAD(ICURR:ICURR+11)=(/"AER","AEI","AES","AEG","AVR","AVI","AVS","AVG","ATR","ATI","ATS","ATG"/)
+        ICURR=ICURR+12
+      END IF
     END IF
     YRAD(ICURR:ICURR+2)=(/"RHV","PDP","DHV"/)
     ICURR=ICURR+3
-    YRAD(ICURR:ICURR+8)=(/"RHR","RHS","RHG","ZDA","ZDS","ZDG","KDR","KDS","KDG"/)
-    ICURR=ICURR+9
-    YRAD(ICURR:ICURR+6)=(/"HAS","M_R","M_I","M_S","M_G","CIT","TEM"/)
-    ICURR=ICURR+7
+    YRAD(ICURR:ICURR+2)=(/"RHR","RHS","RHG"/)
+    ICURR=ICURR+3
+    IF (CCLOUD=='ICE4') THEN
+      YRAD(ICURR)="RHH"
+      ICURR=ICURR+1      
+    END IF
+    YRAD(ICURR:ICURR+2)=(/"ZDA","ZDS","ZDG"/)
+    ICURR=ICURR+3
+    IF (CCLOUD=='ICE4') THEN
+      YRAD(ICURR)="ZDH"
+      ICURR=ICURR+1      
+    END IF
+    YRAD(ICURR:ICURR+2)=(/"KDR","KDS","KDG"/)
+    ICURR=ICURR+3
+    IF (CCLOUD=='ICE4') THEN
+      YRAD(ICURR)="KDH"
+      ICURR=ICURR+1      
+    END IF
+    YRAD(ICURR:ICURR+4)=(/"HAS","M_R","M_I","M_S","M_G"/)
+    ICURR=ICURR+5
+    IF (CCLOUD=='ICE4') THEN
+      YRAD(ICURR)="M_H"
+      ICURR=ICURR+1      
+    END IF
+    YRAD(ICURR:ICURR+1)=(/"CIT","TEM"/)
+    ICURR=ICURR+2
     IF (CCLOUD=='LIMA') THEN
       YRAD(ICURR)="CRT"
       ICURR=ICURR+1
