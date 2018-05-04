@@ -270,20 +270,22 @@ USE MODD_DRAGTREE
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,          &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                  &
+                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,       &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                &
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
                             XFACTNUC_DEP, XFACTNUC_CON,                        &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,   &
-                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,        &
-                            LCCN_HOM, CCCN_MODES,                                &
+                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,       &
+                            LCCN_HOM, CCCN_MODES,                              &
                             YALPHAR=>XALPHAR, YNUR=>XNUR,                      &
                             YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,  &
                             CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
                             YACTEMP_CCN=>XACTEMP_CCN, YAERDIFF=>XAERDIFF,      &
                             YAERHEIGHT=>XAERHEIGHT,                            &
                             LSCAV, LAERO_MASS, NPHILLIPS,                      &
-                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC
+                            ODEPOC=>LDEPOC, OVDEPOC=>XVDEPOC, OACTTKE=>LACTTKE,&
+                            LPTSPLIT, L_LFEEDBACKT=>LFEEDBACKT, L_NMAXITER=>NMAXITER, &
+                            L_XMRSTEP=>XMRSTEP, L_XTSTEP_TS=>XTSTEP_TS
 !
 USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
@@ -1137,6 +1139,12 @@ ENDIF
 !*      19.BIS   SET DEFAULT VALUES FOR MODD_PARAM_LIMA :
 !                ----------------------------------------
 !
+LPTSPLIT     = .FALSE.
+L_LFEEDBACKT = .TRUE.
+L_NMAXITER   = 1
+L_XMRSTEP    = 0.
+L_XTSTEP_TS  = 0.
+!
 IF (KMI == 1) THEN
   YNUC    = 1.0
   YALPHAC = 3.0
@@ -1150,6 +1158,7 @@ IF (KMI == 1) THEN
   OACTIT = .FALSE.
   ODEPOC = .FALSE.
   LBOUND = .FALSE.
+  OACTTKE = .TRUE.
 !
   OVDEPOC = 0.02 ! 2 cm/s
 !
