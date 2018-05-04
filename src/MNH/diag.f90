@@ -87,6 +87,7 @@
 !!                             by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!  V.Vionnet 07/2017 add LWIND_CONTRAV
+!!  11/2017      (D. Ricard, P. Marquet) add diagnostics for THETAS 
 !-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -207,7 +208,8 @@ NAMELIST/NAM_DIAG/ CISO, LVAR_RS, LVAR_LS,   &
                    NCONV_KF, NRAD_3D, CRAD_SAT, NRTTOVINFO, LRAD_SUBG_COND,  &
                    LVAR_TURB,LTURBFLX,LTURBDIAG,LMFFLX,XDTSTEP,  &
                    LVAR_MRW, LVAR_MRSV, LVAR_FRC, &
-                   LTPZH, LMOIST_V, LMOIST_E,LMOIST_ES, LCOREF, &
+                   LTPZH, LMOIST_V, LMOIST_E,LMOIST_ES, & 
+                   LMOIST_S1, LMOIST_S2, LMOIST_L, LCOREF, &
                    LVORT, LDIV, LMEAN_POVO, XMEAN_POVO, &
                    LGEO, LAGEO, LWIND_ZM,LWIND_CONTRAV, LMSLP, LTHW, &
                    LCLD_COV, LVAR_PR, LTOTAL_PR, LMEAN_PR, XMEAN_PR, &
@@ -267,6 +269,9 @@ LTPZH=.FALSE.
 LMOIST_V=.FALSE.
 LMOIST_E=.FALSE.
 LMOIST_ES=.FALSE.
+LMOIST_S1=.FALSE.
+LMOIST_S2=.FALSE.
+LMOIST_L=.FALSE.
 LCOREF=.FALSE.
 LVORT=.FALSE.
 LDIV=.FALSE.

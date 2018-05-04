@@ -140,6 +140,8 @@ END MODULE MODI_WRITE_LFIFM1_FOR_DIAG
 !! 10/2017      (G.Delautier) New boundary layer height : replace LBLTOP by CBLTOP 
 !!       T.Dauhut      10/2017 : add parallel 3D clustering
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!       D.Ricard and P.Marquet 2016-2017 : THETAL + THETAS1 POVOS1 or THETAS2 POVOS2
+!!                                        if  LMOIST_L     LMOIST_S1   or  LMOIST_S2
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -286,8 +288,8 @@ REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42 ! reflectivit
 REAL,DIMENSION(:,:,:,:,:), ALLOCATABLE                  :: ZWORK42_BIS
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZWORK43 ! latlon coordinates of cartesian grid points (PLATLON)
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZPHI,ZTHETAE,ZTHETAV
+REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZTHETAES,ZTHETAL,ZTHETAS1,ZTHETAS2
 REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZVISIKUN,ZVISIGUL,ZVISIZHA 
-REAL,DIMENSION(:,:,:), ALLOCATABLE                      :: ZTHETAES
 INTEGER, DIMENSION(:,:), ALLOCATABLE                    :: IWORK1
 integer :: ICURR,INBOUT,IERR
 !
@@ -1409,7 +1411,6 @@ IF(LBLOWSNOW) THEN
   TZFIELD%LTIMEDEP   = .TRUE.
   CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZWORK21(:,:))
 END IF
-!
 ! Lagrangian variables
 IF (LTRAJ) THEN
   TZFIELD%CSTDNAME   = ''
@@ -2450,6 +2451,129 @@ IF (LMOIST_ES .AND. (NRR>0)) THEN
 ENDIF
 !
 !-------------------------------------------------------------------------------
+!* The Liquid-Water potential temperature (Betts, 1973)
+!  (also needed for THETAS1 or THETAS2)
+!
+IF ( LMOIST_L .OR. LMOIST_S1 .OR. LMOIST_S2 ) THEN
+!
+  ALLOCATE(ZTHETAL(IIU,IJU,IKU))
+!
+  IF(NRR > 1) THEN
+!  The latent heat of Vaporization:
+    ZWORK31(:,:,:) = XLVTT + (XCPV-XCL)*(ZTEMP(:,:,:)-XTT)
+!  The latent heat of Sublimation:
+    ZWORK32(:,:,:) = XLSTT + (XCPV-XCI)*(ZTEMP(:,:,:)-XTT)
+!  The numerator in the exponential 
+!  and the total water mixing ratio:
+    ZTHETAL(:,:,:) = 0.0
+    ZWORK33(:,:,:) = XRT(:,:,:,1)
+    DO JLOOP = 2,1+NRRL              
+       ZTHETAL(:,:,:) = ZTHETAL(:,:,:) + XRT(:,:,:,JLOOP)*ZWORK31(:,:,:)
+       ZWORK33(:,:,:) = ZWORK33(:,:,:) + XRT(:,:,:,JLOOP)
+    END DO
+    DO JLOOP = 1+NRRL+1,1+NRRL+NRRI              
+       ZTHETAL(:,:,:) = ZTHETAL(:,:,:) + XRT(:,:,:,JLOOP)*ZWORK32(:,:,:)
+       ZWORK33(:,:,:) = ZWORK33(:,:,:) + XRT(:,:,:,JLOOP)
+    END DO
+!   compute the liquid-water potential temperature 
+!   theta_l = theta * exp[ -(L_vap * ql + L_sub * qi) / (c_pd * T) ]
+!   when water is present in any form:
+    ZTHETAL(:,:,:) = XTHT(:,:,:) &
+            * exp(-ZTHETAL(:,:,:)/(1.0+ZWORK33(:,:,:))/XCPD/ZTEMP(:,:,:))
+  ELSE
+!   compute the liquid-water potential temperature 
+!    when water is absent:
+    ZTHETAL(:,:,:) = XTHT(:,:,:)
+  END IF
+!
+  IF (LMOIST_L .AND. NRR > 0) THEN
+    ! Liquid-Water potential temperature
+    TZFIELD%CMNHNAME   = 'THETAL'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'THETAL'
+    TZFIELD%CUNITS     = 'K'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Liquid water potential temperature (K)'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTHETAL)
+  END IF
+!
+END IF
+!
+!-------------------------------------------------------------------------------
+!
+!* The Moist-air Entropy potential temperature (Marquet, QJ2011, HDR2016)
+!
+IF ( LMOIST_S1 .OR. LMOIST_S2 ) THEN
+  IF (LMOIST_S1) THEN
+    ALLOCATE(ZTHETAS1(IIU,IJU,IKU))
+  END IF
+  IF (LMOIST_S2) THEN
+    ALLOCATE(ZTHETAS2(IIU,IJU,IKU))
+  END IF
+!
+! The total water (ZWORK31) and condensed water (ZWORK32) mixing ratios:
+  ZWORK32(:,:,:) = 0.0
+  IF(NRR > 0) THEN
+    DO JLOOP = 2,1+NRRL+NRRI  
+       ZWORK32(:,:,:) = ZWORK32(:,:,:) + XRT(:,:,:,JLOOP)
+    END DO
+  END IF
+  ZWORK31(:,:,:) =  ZWORK32(:,:,:) + XRT(:,:,:,1)
+!
+  IF (LMOIST_S1) THEN
+!- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! thetas1 = thetal * exp[ 5.87 * qt ] ; with qt=rt/(1+rt)
+!- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ZTHETAS1(:,:,:) = ZTHETAL(:,:,:) * &
+     exp( 5.87*ZWORK31(:,:,:)/(1.0+ZWORK31(:,:,:)) )
+  END IF
+  IF (LMOIST_S2) THEN
+!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+! thetas2 = thetal * exp[ (5.87-0.46*ln(rv/0.0124)-0.46*qc) * qt ]
+!           where qt=rt/(1+rt)  and qc=rc/(1+rt)
+!- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    ZWORK33(:,:,:) =  5.87 - 0.46 * log(MAX(XRT(:,:,:,1),1.E-10)/0.0124)
+    ZTHETAS2(:,:,:) = ZTHETAL(:,:,:) * &
+     exp( ZWORK33(:,:,:)*ZWORK31(:,:,:)/(1.0+ZWORK31(:,:,:)) &
+                  - 0.46*ZWORK32(:,:,:)/(1.0+ZWORK31(:,:,:)) )
+  END IF
+  IF (LMOIST_S1) THEN
+! The Moist-air Entropy potential temperature (1st order)
+    TZFIELD%CMNHNAME   = 'THETAS1'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'THETAS1'
+    TZFIELD%CUNITS     = 'K'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (1st order) potential temperature (K)'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTHETAS1)
+  END IF
+  IF (LMOIST_S2) THEN
+! The Moist-air Entropy potential temperature (2nd order)
+    TZFIELD%CMNHNAME   = 'THETAS2'
+    TZFIELD%CSTDNAME   = ''
+    TZFIELD%CLONGNAME  = 'THETAS2'
+    TZFIELD%CUNITS     = 'K'
+    TZFIELD%CDIR       = 'XY'
+    TZFIELD%CCOMMENT   = 'X_Y_Z_Moist air Entropy (2nd order) potential temperature (K)'
+    TZFIELD%NGRID      = 1
+    TZFIELD%NTYPE      = TYPEREAL
+    TZFIELD%NDIMS      = 3
+    TZFIELD%LTIMEDEP   = .TRUE.
+    CALL IO_WRITE_FIELD(TPFILE,TZFIELD,ZTHETAS2)  
+  END IF
+!
+END IF
+!
+!-------------------------------------------------------------------------------
+!!
 !
 !* Vorticity quantities
 !
