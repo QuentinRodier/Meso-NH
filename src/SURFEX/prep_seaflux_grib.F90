@@ -25,13 +25,14 @@ SUBROUTINE PREP_SEAFLUX_GRIB(HPROGRAM,HSURF,HFILE,KLUOUT,PFIELD)
 !!    MODIFICATIONS
 !!    -------------
 !!      Original    01/2004
+!!      Modified    05/2018, S. Faroux/P. Wautelet: bug correction for allocation of PFIELD
 !!------------------------------------------------------------------
 !
 
 !
 USE MODE_READ_GRIB
 !
-USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE, CINMODEL
+USE MODD_GRID_GRIB,  ONLY : CGRIB_FILE, NNI, CINMODEL
 !
 USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK
 USE PARKIND1  ,ONLY : JPRB
@@ -98,7 +99,7 @@ SELECT CASE(HSURF)
 !      -------------------------------------
 !
   CASE('SSS    ','SIC    ')
-      ALLOCATE(PFIELD(SIZE(ZFIELD),1))
+      ALLOCATE(PFIELD(NNI,1))
       PFIELD = 0.0
 !
 END SELECT
