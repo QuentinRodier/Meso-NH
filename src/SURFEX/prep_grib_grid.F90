@@ -114,6 +114,11 @@ INTEGER                            :: JLOOP1        ! Dummy counter
 INTEGER :: INFOMPI, J
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !
+INTEGER                            :: JLOOP
+INTEGER(KIND=kindOfInt)                            :: ICOUNT        ! number of messages in the file
+INTEGER(KIND=kindOfInt),DIMENSION(:),ALLOCATABLE   :: IALLGRIB      ! number of the grib in memory
+!
+!
 !---------------------------------------------------------------------------------------
 !
 IF (LHOOK) CALL DR_HOOK('PREP_GRIB_GRID_1',0,ZHOOK_HANDLE)
@@ -135,6 +140,23 @@ END IF
 IF (IRET /= 0) THEN
   CALL ABOR1_SFX('PREP_GRIB_GRID: Error in reading the grib file')
 END IF
+!*JPC*GFS*AUG2015
+ CALL GRIB_COUNT_IN_FILE(IUNIT,ICOUNT)
+IF (IRET /= 0) THEN
+  CALL ABOR1_SFX('PREP_GRIB_GRID: Error in reading the grib file')
+END IF
+ALLOCATE(IALLGRIB(ICOUNT))
+! initialize the tabular with a negativ number 
+! ( all the IALLGRIB will be  different )
+IALLGRIB(:)=-12
+!charge all the message in memory
+DO JLOOP=1,ICOUNT
+CALL GRIB_NEW_FROM_FILE(IUNIT,IALLGRIB(JLOOP),IRET)
+IF (IRET /= 0) THEN
+  CALL ABOR1_SFX('PREP_GRIB_GRID: Error in reading the grib file')
+END IF
+END DO
+!*JPC*GFS*AUG2015
 !
 ! close the grib file
  CALL GRIB_CLOSE_FILE(IUNIT)
@@ -156,6 +178,10 @@ END IF
 !
 SELECT CASE (ICENTER)
 
+  CASE (7)
+    WRITE (KLUOUT,'(A)') ' | Grib file from National Centres for Environmental Prediction'
+    HINMODEL = 'NCEP  '
+    HGRIDTYPE= 'LATLON    '
   CASE (96)
     SELECT CASE (HGRID)
 

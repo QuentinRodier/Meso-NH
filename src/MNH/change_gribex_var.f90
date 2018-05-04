@@ -157,6 +157,7 @@ END MODULE MODI_CHANGE_GRIBEX_VAR
 !!         Masson   12/06/97 add relative humidity
 !!         J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!         Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!         Pergaud  : 2018 add GFS
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -241,27 +242,39 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 !*       1.    COMPUTATION OF PRESSURE AND EXNER FUNCTION
 !              ------------------------------------------
 !
-ALLOCATE(ZPFLUX_LS(IIU,IJU,ILU),ZEXNFLUX_LS(IIU,IJU,ILU))
+IF (SIZE(PB_LS)/=0) THEN   ! hybrid level
+
+  ALLOCATE(ZPFLUX_LS(IIU,IJU,ILU),ZEXNFLUX_LS(IIU,IJU,ILU))
 !
-ZPFLUX_LS(:,:,:)=SPREAD(SPREAD(PA_LS,1,IIU),2,IJU)*PP00_LS &
+  ZPFLUX_LS(:,:,:)=SPREAD(SPREAD(PA_LS,1,IIU),2,IJU)*PP00_LS &
                 +SPREAD(SPREAD(PB_LS,1,IIU),2,IJU)*SPREAD(PPS_LS,3,ILU)
 !
-ZEXNFLUX_LS(:,:,:)=(ZPFLUX_LS(:,:,:)/XP00)**(XRD/XCPD)
+  ZEXNFLUX_LS(:,:,:)=(ZPFLUX_LS(:,:,:)/XP00)**(XRD/XCPD)
 !
 !-------------------------------------------------------------------------------
 !
 !*       2.    COMPUTATION OF EXNER FUNCTION AT MASS POINT
 !              -------------------------------------------
 !
-ALLOCATE(ZEXNMASS_LS(IIU,IJU,ILU))
+  ALLOCATE(ZEXNMASS_LS(IIU,IJU,ILU))
 !
-ZEXNMASS_LS(:,:,1:ILU-1)=(ZEXNFLUX_LS(:,:,1:ILU-1)-ZEXNFLUX_LS(:,:,2:ILU))            &
+  ZEXNMASS_LS(:,:,1:ILU-1)=(ZEXNFLUX_LS(:,:,1:ILU-1)-ZEXNFLUX_LS(:,:,2:ILU))            &
                       /(LOG(ZEXNFLUX_LS(:,:,1:ILU-1))-LOG(ZEXNFLUX_LS(:,:,2:ILU)))
 !
-ZEXNMASS_LS(:,:,ILU)   =(ZPFLUX_LS(:,:,ILU)/2./XP00)**(XRD/XCPD)
+  ZEXNMASS_LS(:,:,ILU)   =(ZPFLUX_LS(:,:,ILU)/2./XP00)**(XRD/XCPD)
 !
-PPMASS_LS(:,:,:)=XP00*(ZEXNMASS_LS(:,:,:))**(XCPD/XRD)
-!-------------------------------------------------------------------------------
+  PPMASS_LS(:,:,:)=XP00*(ZEXNMASS_LS(:,:,:))**(XCPD/XRD)
+
+ELSE
+  PPMASS_LS(:,:,:)=SPREAD(SPREAD(PA_LS,1,IIU),2,IJU)
+  ALLOCATE(ZEXNMASS_LS(IIU,IJU,ILU))
+  ZEXNMASS_LS(:,:,:)=(PPMASS_LS(:,:,:)/XP00)**(XRD/XCPD)
+
+  ALLOCATE(ZEXNFLUX_LS(IIU,IJU,ILU))
+  ZEXNFLUX_LS(:,:,1:ILU-1)=(ZEXNMASS_LS(:,:,1:ILU-1)-ZEXNMASS_LS (:,:,2:ILU))            &
+                        /(LOG(ZEXNMASS_LS(:,:,1:ILU-1))-LOG(ZEXNMASS_LS (:,:,2:ILU)))
+  ZEXNFLUX_LS(:,:,ILU)   =(PPMASS_LS(:,:,ILU)/2./XP00)**(XRD/XCPD)
+END IF!-------------------------------------------------------------------------------
 !
 !*       3.    COMPUTATION OF RELATIVE HUMIDITY
 !              --------------------------------
@@ -326,7 +339,10 @@ PZMASS_LS(:,:,1)     =PZFLUX_LS(:,:,2)         -   XCPD/XG                    &
 !*       8.    VERTICAL WIND
 !              -------------
 !
-IF (PRESENT(PW_LS)) THEN
+IF (PRESENT(PW_LS) .AND. SIZE(PB_LS)==0) THEN
+  PW_LS(:,:,:)=0.  ! NCEP case not treated
+
+ELSEIF (PRESENT(PW_LS)) THEN
 !
 !*       8.0   allocations
 !              -----------

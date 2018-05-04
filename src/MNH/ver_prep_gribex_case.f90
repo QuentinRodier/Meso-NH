@@ -1,7 +1,12 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision
+! MASDEV4_7 prep_real 2006/05/23 14:49:51
 !-----------------------------------------------------------------
 !     ################################
       MODULE MODI_VER_PREP_GRIBEX_CASE
@@ -83,6 +88,7 @@ END MODULE MODI_VER_PREP_GRIBEX_CASE
 !!                  Nov, 22 2000 (I. Mallet) add scalar variables
 !!                  Nov, 22 2000 (P. Jabouille) change routine name
 !!                  May 2006                 Remove EPS
+!!                  Apr, 09 2018 (J.-P. Chaboureau) add isobaric surface 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !-------------------------------------------------------------------------------
 !
@@ -259,6 +265,8 @@ IF (HFILE(1:3)=='ATM') THEN
 END IF
 !
 IF (HFILE(1:3)=='ATM') THEN
+
+  IF (SIZE(XB_LS)/=0) THEN   ! hybrid level (w at flux points)
   CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
                                 ZZMASS_LS,ZSV_LS,                &
                                 ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
@@ -267,6 +275,16 @@ IF (HFILE(1:3)=='ATM') THEN
                                 ZTKE_LS,                         &
                                 ZU_LS,ZV_LS,                     &
                                 ZW_LS,'FLUX'                     )
+  ELSE                      ! isobaric surfaces (w at mass points)
+    CALL VER_INTERP_TO_MIXED_GRID('ATM ',.TRUE.,XZS_LS,XZSMT_LS,    &
+                                  ZZMASS_LS,ZSV_LS,                &
+                                  ZZFLUX_LS,XPS_LS,ZPMHP_LS,       &
+                                  ZTHV_LS,ZR_LS,                   &
+                                  ZHU_LS,                          &
+                                  ZTKE_LS,                         &
+                                  ZU_LS,ZV_LS,                     &
+                                  ZW_LS,'MASS'                     )
+  END IF
 ELSE IF (HFILE=='CHEM') THEN
   CALL VER_INTERP_TO_MIXED_GRID(HFILE,.TRUE.,XZS_SV_LS,XZS_SV_LS,&
                                 ZZMASS_LS,ZSV_LS                 )

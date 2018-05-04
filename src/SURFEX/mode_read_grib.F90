@@ -19,7 +19,7 @@ CONTAINS
       SUBROUTINE MAKE_GRIB_INDEX(HGRIB)
 !     ####################
 !
-USE MODD_GRID_GRIB, ONLY : CGRIB_FILE, NIDX
+USE MODD_GRID_GRIB, ONLY : CGRIB_FILE, NIDX, NGRIB_VERSION
 !
 IMPLICIT NONE
 !
@@ -27,6 +27,8 @@ IMPLICIT NONE
 !
 INTEGER(KIND=kindOfInt) :: IRET
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+INTEGER, DIMENSION(:), ALLOCATABLE  :: IVERSION
+INTEGER :: ILEN
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:MAKE_GRIB_INDEX',0,ZHOOK_HANDLE)
 !
@@ -35,7 +37,25 @@ IF (CGRIB_FILE==HGRIB) RETURN
 !
 CGRIB_FILE=HGRIB
 !
+ CALL GRIB_INDEX_CREATE(NIDX,HGRIB,'editionNumber',IRET)
+IF (IRET/=0) THEN
+    CALL ABOR1_SFX("MODE_READ_GRIB:MAKE_GRIB_INDEX: error while searching edition number")
+ELSE
+  call GRIB_INDEX_GET_SIZE(NIDX,'editionNumber',ILEN)
+  ALLOCATE(IVERSION(ILEN))
+  CALL GRIB_INDEX_GET(NIDX, 'editionNumber', IVERSION , IRET)
+  NGRIB_VERSION=IVERSION(1)
+
+  CALL GRIB_INDEX_RELEASE(NIDX,IRET)
+  IF (IRET/=0) CALL ABOR1_SFX("MODE_READ_GRIB:MAKE_GRIB_INDEX: error while deleting the grib index")
+ENDIF
+
+!test version
+IF (NGRIB_VERSION==1) THEN
  CALL GRIB_INDEX_CREATE(NIDX,HGRIB,'indicatorOfParameter',IRET)
+ELSEIF (NGRIB_VERSION==2) THEN
+ CALL GRIB_INDEX_CREATE(NIDX,HGRIB,'paramId',IRET)
+ENDIF
 IF (IRET/=0) CALL ABOR1_SFX("MODE_READ_GRIB:MAKE_GRIB_INDEX: error while creating the grib index")
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:MAKE_GRIB_INDEX',1,ZHOOK_HANDLE)
@@ -67,7 +87,7 @@ IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:CLEAR_GRIB_INDEX',1,ZHOOK_HANDLE)
 END SUBROUTINE CLEAR_GRIB_INDEX
 !-------------------------------------------------------------------
 !     ####################
-      SUBROUTINE GET_GRIB_MESSAGE(KLUOUT,KLTYPE,KLEV1,KLEV2,KGRIB,KFOUND)
+      SUBROUTINE GET_GRIB_MESSAGE(KLUOUT,KLTYPE,KLEV1,KLEV2,KGRIB,KFOUND,HTYPELEVEL,PLEV1,PLEV2)
 !     ####################
 !
 USE MODD_GRID_GRIB, ONLY : NIDX
@@ -80,10 +100,16 @@ INTEGER, INTENT(INOUT)  :: KLEV1
 INTEGER, INTENT(INOUT)  :: KLEV2
 INTEGER(KIND=kindOfInt), INTENT(INOUT) :: KGRIB
 INTEGER, INTENT(OUT) :: KFOUND
+CHARACTER(LEN=*), INTENT(INOUT), OPTIONAL  :: HTYPELEVEL      ! TypeOfLevel JPMODIF
+REAL, INTENT(INOUT), OPTIONAL  :: PLEV1      ! top level of soil
+REAL, INTENT(INOUT), OPTIONAL  :: PLEV2      ! Bottom level of soil
 !
+
 INTEGER :: ILTYPE
 INTEGER :: ILEV1
 INTEGER :: ILEV2
+CHARACTER(LEN=50) :: YTYPELEVEL      ! TypeOfLevel JPMODIF
+REAL :: ZLEV1,ZLEV2
 INTEGER(KIND=kindOfInt) :: IRET
 !
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
@@ -101,6 +127,11 @@ DO WHILE (IRET /= GRIB_END_OF_INDEX .AND. KFOUND/=3)
   IF (KLTYPE/=-2) THEN
     CALL GRIB_GET(KGRIB,'indicatorOfTypeOfLevel',ILTYPE,IRET)
     CALL TEST_IRET(KLUOUT,ILTYPE,KLTYPE,IRET)
+  ELSE
+     IF (PRESENT(HTYPELEVEL)) THEN
+        CALL GRIB_GET(KGRIB,'typeOfLevel',YTYPELEVEL,IRET)
+        CALL TEST_IRET_STR(KLUOUT,TRIM(YTYPELEVEL),HTYPELEVEL,IRET)
+     ENDIF
   ENDIF
   !
   IF (IRET.EQ.0) THEN
@@ -110,6 +141,10 @@ DO WHILE (IRET /= GRIB_END_OF_INDEX .AND. KFOUND/=3)
     IF (KLEV1/=-2) THEN
       CALL GRIB_GET(KGRIB,'topLevel',ILEV1,IRET)
       CALL TEST_IRET(KLUOUT,ILEV1,KLEV1,IRET)
+    ELSE IF (PRESENT(PLEV1)) THEN  !JP
+      CALL GRIB_GET(KGRIB,'topLevel',ZLEV1,IRET)
+      CALL TEST_IRET_FLOAT(KLUOUT,ZLEV1,PLEV1,IRET)
+
     ENDIF
     !
     IF (IRET.EQ.0) THEN
@@ -119,6 +154,9 @@ DO WHILE (IRET /= GRIB_END_OF_INDEX .AND. KFOUND/=3)
       IF (KLEV2/=-2) THEN
         CALL GRIB_GET(KGRIB,'bottomLevel',ILEV2,IRET)
         CALL TEST_IRET(KLUOUT,ILEV2,KLEV2,IRET)
+      ELSE IF (PRESENT(PLEV2)) THEN  !JP
+        CALL GRIB_GET(KGRIB,'bottomLevel',ZLEV2,IRET)
+        CALL TEST_IRET_FLOAT(KLUOUT,ZLEV2,PLEV2,IRET)
       ENDIF
       !
       IF (IRET.EQ.0) KFOUND = KFOUND + 1
@@ -167,14 +205,76 @@ ENDIF
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:TEST_IRET',1,ZHOOK_HANDLE)
 END SUBROUTINE TEST_IRET
+
+!       ##############
+        SUBROUTINE TEST_IRET_STR(KLUOUT,VAL1,VAL0,KRET)
+!       ##############
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN) :: KLUOUT ! logical unit of output listing
+CHARACTER(LEN=*), INTENT(IN) :: VAL1
+CHARACTER(LEN=*), INTENT(INOUT) :: VAL0
+INTEGER(KIND=kindOfInt), INTENT(INOUT) :: KRET   ! number of the message researched
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:TEST_IRET',0,ZHOOK_HANDLE)
+!
+IF (KRET > 0) THEN
+  WRITE (KLUOUT,'(A)')' | Error encountered in the Grib file, skipping field'
+ELSE IF (KRET == -6) THEN
+  WRITE (KLUOUT,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+ELSEIF (VAL1 /= VAL0) THEN
+  IF (VAL0 == '') THEN
+    VAL0 = VAL1
+  ELSE
+    KRET=1
+  ENDIF
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:TEST_IRET',1,ZHOOK_HANDLE)
+END SUBROUTINE TEST_IRET_STR
+
+!       ##############
+        SUBROUTINE TEST_IRET_FLOAT(KLUOUT,VAL1,VAL0,KRET)
+!       ##############
+!
+IMPLICIT NONE
+!
+INTEGER, INTENT(IN) :: KLUOUT ! logical unit of output listing
+REAL, INTENT(IN) :: VAL1
+REAL, INTENT(INOUT) :: VAL0
+INTEGER(KIND=kindOfInt), INTENT(INOUT) :: KRET   ! number of the message researched
+!
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:TEST_IRET',0,ZHOOK_HANDLE)
+!
+IF (KRET > 0) THEN
+  WRITE (KLUOUT,'(A)')' | Error encountered in the Grib file, skipping field'
+ELSE IF (KRET == -6) THEN
+  WRITE (KLUOUT,'(A)')' | ECMWF pseudo-Grib data encountered, skipping field'
+ELSEIF (VAL1 /= VAL0) THEN
+  IF (VAL0 == -1.0) THEN
+    VAL0 = VAL1
+  ELSE
+    KRET=1
+  ENDIF
+ENDIF
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:TEST_IRET',1,ZHOOK_HANDLE)
+END SUBROUTINE TEST_IRET_FLOAT
+
 !
 END SUBROUTINE GET_GRIB_MESSAGE
 !-------------------------------------------------------------------
 !     ####################
-      SUBROUTINE READ_GRIB(HGRIB,KLUOUT,KPARAM,KRET,PFIELD,KLTYPE,KLEV1,KLEV2,KPARAM2)
+      SUBROUTINE READ_GRIB(HGRIB,KLUOUT,KPARAM,KRET,PFIELD,KLTYPE,KLEV1,KLEV2,KPARAM2, &
+         HTYPELEVEL,PLEV1,PLEV2)
 !     ####################
 !
-USE MODD_GRID_GRIB, ONLY : NIDX
+USE MODD_GRID_GRIB, ONLY : NIDX, NGRIB_VERSION
 !
 IMPLICIT NONE
 !
@@ -187,11 +287,15 @@ INTEGER,INTENT(INOUT), OPTIONAL :: KLTYPE ! Level type
 INTEGER,INTENT(INOUT), OPTIONAL :: KLEV1  ! Level parameter 1
 INTEGER,INTENT(INOUT), OPTIONAL :: KLEV2  ! Level parameter 2
 INTEGER, INTENT(INOUT), OPTIONAL :: KPARAM2
+CHARACTER(LEN=*), INTENT(INOUT), OPTIONAL :: HTYPELEVEL
+!
+REAL, INTENT(INOUT), OPTIONAL :: PLEV1,PLEV2
 !
 INTEGER :: ILTYPE, ILEV1, ILEV2
 INTEGER(KIND=kindOfInt) :: IGRIB
 INTEGER :: ISIZE, IFOUND
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+REAL :: ZLEV1,ZLEV2
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB',0,ZHOOK_HANDLE)
 !
@@ -201,16 +305,36 @@ ILEV1=-2
 IF (PRESENT(KLEV1)) ILEV1=KLEV1
 ILEV2=-2
 IF (PRESENT(KLEV2)) ILEV2=KLEV2
+ZLEV1=-2.0
+IF (PRESENT(PLEV1)) ZLEV1=PLEV1
+ZLEV2=-2.0
+IF (PRESENT(PLEV2)) ZLEV2=PLEV2
 !
  CALL MAKE_GRIB_INDEX(HGRIB)
 !
 IFOUND=0
 KRET=0
 !
+IF (NGRIB_VERSION == 1) THEN
  CALL GRIB_INDEX_SELECT(NIDX,'indicatorOfParameter',KPARAM,KRET)
+ELSEIF (NGRIB_VERSION == 2) THEN
+ CALL GRIB_INDEX_SELECT(NIDX,'paramId',KPARAM,KRET)
+END IF
  CALL GRIB_NEW_FROM_INDEX(NIDX,IGRIB,KRET)
-IF (KRET.EQ.0) CALL GET_GRIB_MESSAGE(KLUOUT,ILTYPE,ILEV1,ILEV2,IGRIB,IFOUND)
+
+
+!WRITE (KLUOUT,*) 'READ_GRIB GRIB_NEW_FROM_INDEX ',KPARAM,IGRIB,KRET
+IF (KRET.EQ.0) THEN
+   IF (PRESENT(HTYPELEVEL)) THEN
+      CALL GET_GRIB_MESSAGE(KLUOUT,ILTYPE,ILEV1,ILEV2,IGRIB,IFOUND,HTYPELEVEL,ZLEV1,ZLEV2)
+   ELSE
+      CALL GET_GRIB_MESSAGE(KLUOUT,ILTYPE,ILEV1,ILEV2,IGRIB,IFOUND)
+   ENDIF
+ENDIF
 !
+
+!WRITE (KLUOUT,*) 'READ_GRIB GRIB_NEW_FROM_INDEX ',KPARAM,IGRIB,KRET,IFOUND
+
 IF (PRESENT(KPARAM2)) THEN
   IF (IFOUND/=3) THEN
     CALL GRIB_INDEX_SELECT(NIDX,'indicatorOfParameter',KPARAM2,KRET)
@@ -225,12 +349,15 @@ IF (PRESENT(KPARAM2)) THEN
   ENDIF
 ENDIF
 !
+
+
 IF (IFOUND==3) THEN
   !
   IF (PRESENT(KLTYPE)) KLTYPE = ILTYPE
   IF (PRESENT(KLEV1))  KLEV1  = ILEV1
   IF (PRESENT(KLEV2))  KLEV2  = ILEV2
   !
+
   IF (.NOT.ASSOCIATED(PFIELD)) THEN
     CALL GRIB_GET_SIZE(IGRIB,'values',ISIZE,KRET)
     IF (KRET.NE.0) CALL ABOR1_SFX("MODE_READ_GRIB:READ_GRIB: Problem getting size of values")
@@ -267,6 +394,8 @@ REAL, DIMENSION(:), POINTER       :: PMASK     ! Land mask
 INTEGER(KIND=kindOfInt)                 :: IRET      ! return code
 INTEGER                           :: ILTYPE    ! leveltype
 INTEGER                           :: ILEV      ! level
+INTEGER :: INUM_ZS,ISIZE,ICOUNT,JLOOP,IPARAM,IGRIB
+CHARACTER(LEN=24) :: YLTYPELU
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_LAND_MASK',0,ZHOOK_HANDLE)
@@ -275,6 +404,10 @@ WRITE (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_LAND_MASK: | Reading land mask fr
 SELECT CASE (HINMODEL)
   CASE ('ECMWF ')
     CALL READ_GRIB(HGRIB,KLUOUT,172,IRET,PMASK) 
+  CASE ('NCEP  ')
+    CALL READ_GRIB(HGRIB,KLUOUT,172,IRET,PMASK) 
+
+
   CASE ('ARPEGE','ALADIN','MOCAGE')
     CALL READ_GRIB(HGRIB,KLUOUT,81,IRET,PMASK)          
   CASE ('HIRLAM')        
@@ -312,6 +445,10 @@ INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
 REAL, DIMENSION(:), POINTER       :: PZS       ! 
 !
 INTEGER(KIND=kindOfInt)                           :: IRET      ! return code
+
+INTEGER :: ISIZE,JLOOP,ICOUNT
+CHARACTER(LEN=24) :: YLTYPELU
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !-------------------------------------------------------------------
 !* Read orography
@@ -321,6 +458,8 @@ WRITE (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_ZS: | Reading orography from ',HI
 SELECT CASE (HINMODEL)
   CASE ('ECMWF ')
     CALL READ_GRIB(HGRIB,KLUOUT,129,IRET,PZS) 
+  CASE ('NCEP  ')
+    CALL READ_GRIB(HGRIB,KLUOUT,228002,IRET,PZS)               
   CASE ('ARPEGE','MOCAGE')
     CALL READ_GRIB(HGRIB,KLUOUT,8,IRET,PZS)               
   CASE ('HIRLAM','ALADIN')
@@ -402,6 +541,8 @@ INTEGER(KIND=kindOfInt)                           :: IRET      ! return code
 INTEGER                           :: ILTYPE    ! type of level (Grib code table 3)
 INTEGER                           :: ILEV      ! level definition
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+CHARACTER(LEN=7)   :: YTYPELEVEL  ! Type of searched level 
+
 !-------------------------------------------------------------------
 !* Read surface temperature
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_T',0,ZHOOK_HANDLE)
@@ -429,6 +570,12 @@ SELECT CASE (HINMODEL)
      ILTYPE=105
      ILEV=904
     CALL READ_GRIB(HGRIB,KLUOUT,11,IRET,PT,KLTYPE=ILTYPE,KLEV1=ILEV)
+
+  CASE ('NCEP  ')
+    YTYPELEVEL='surface'
+    ILEV=0
+    ILTYPE=-2
+    CALL READ_GRIB(HGRIB,KLUOUT,130,IRET,PT,KLTYPE=ILTYPE,KLEV1=ILEV,KLEV2=ILEV,HTYPELEVEL=YTYPELEVEL) 
 
   CASE DEFAULT
     CALL ABOR1_SFX('MODE_READ_GRIB:READ_GRIB_T:OPTION NOT SUPPORTED '//HINMODEL)
@@ -489,7 +636,7 @@ SELECT CASE (HINMODEL)
   CASE ('ECMWF ')
      CALL READ_GRIB(HGRIB,KLUOUT,34,IRET,PSST)
      IF (IRET /= 0) CALL READ_GRIB_T(HGRIB,KLUOUT,HINMODEL,PSST)
-  CASE ('ARPEGE','ALADIN','MOCAGE','HIRLAM')
+  CASE ('ARPEGE','ALADIN','MOCAGE','HIRLAM','NCEP  ')
     CALL READ_GRIB_T(HGRIB,KLUOUT,HINMODEL,PSST)
    CASE DEFAULT
      CALL ABOR1_SFX('MODE_READ_GRIB:READ_GRIB_SST:OPTION NOT SUPPORTED '//HINMODEL)    
@@ -523,13 +670,13 @@ SELECT CASE (HINMODEL)
   CASE ('ECMWF ')
      CALL READ_GRIB(HGRIB,KLUOUT,3080,IRET,PTS)
      IF (IRET /= 0) CALL READ_GRIB_T2(HGRIB,KLUOUT,HINMODEL,PMASK,PTS)
-  CASE ('ARPEGE','ALADIN','MOCAGE','HIRLAM')
+  CASE ('ARPEGE','ALADIN','MOCAGE','HIRLAM','NCEP  ')
     CALL READ_GRIB_T2(HGRIB,KLUOUT,HINMODEL,PMASK,PTS)
    CASE DEFAULT
      CALL ABOR1_SFX('MODE_READ_GRIB:READ_GRIB_TSWATER:OPTION NOT SUPPORTED '//HINMODEL)    
 END SELECT
 !
-IF (SIZE(PMASK)==SIZE(PTS)) WHERE (PMASK(:)/=0.) PTS = XUNDEF
+IF (SIZE(PMASK)==SIZE(PTS)) WHERE (PMASK(:)/=1.) PTS = XUNDEF
 !
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TSWATER',1,ZHOOK_HANDLE)
 END SUBROUTINE READ_GRIB_TSWATER
@@ -541,7 +688,7 @@ END SUBROUTINE READ_GRIB_TSWATER
 USE MODD_SURF_PAR,   ONLY : XUNDEF
 !
 IMPLICIT NONE
-!
+ !
  CHARACTER(LEN=*),   INTENT(IN)    :: HGRIB     ! Grib file name
 INTEGER,            INTENT(IN)    :: KLUOUT    ! logical unit of output listing
  CHARACTER(LEN=6),   INTENT(IN)    :: HINMODEL  ! Grib originating model
@@ -551,6 +698,8 @@ REAL, DIMENSION(:), POINTER       :: PT2       !
 INTEGER(KIND=kindOfInt)                           :: IRET
 INTEGER                           :: ILTYPE, ILEV    ! type of level (Grib code table 3)
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
+CHARACTER(LEN=19)   :: YTYPELEVEL  ! Type of searched level 
+REAL :: ZLEV1,ZLEV2
 !-------------------------------------------------------------------
 !* Read deep soil temperature
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_T2',0,ZHOOK_HANDLE)
@@ -565,7 +714,13 @@ SELECT CASE (HINMODEL)
     IF (IRET /= 0) THEN
        ILTYPE=105
       CALL READ_GRIB(HGRIB,KLUOUT,11,IRET,PT2,KLTYPE=ILTYPE)   
-    ENDIF  
+    ENDIF
+  CASE ('NCEP  ') ! toto
+     YTYPELEVEL='depthBelowLandLayer'
+     ILTYPE=-2
+     ZLEV1=0.1
+     ZLEV2=0.4
+     CALL READ_GRIB(HGRIB,KLUOUT,228139,IRET,PT2,KLTYPE=ILTYPE,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)  
   CASE ('HIRLAM ')
      ILTYPE=105
      ILEV=954
@@ -632,7 +787,7 @@ IF (KLTYPE==112) THEN
   PD = (KLEV2 - KLEV1) / 100.
 ELSE
   IF (KNLAYERDEEP == 4) THEN
-    PD = PV4
+    PD = PV4            
   ELSE
     PD = PV
   END IF
@@ -713,6 +868,8 @@ INTEGER                           :: INLAYERDEEP! number of deep moisture layers
 REAL,    DIMENSION(:), POINTER    :: ZFIELD => NULL()  ! first layer temperature
 REAL,  DIMENSION(:,:), ALLOCATABLE:: ZTG      ! first layer temperature
 REAL, DIMENSION(:)   , ALLOCATABLE:: ZD
+
+
 REAL(KIND=JPRB) :: ZHOOK_HANDLE
 !--------------------------------------------------------------------------------
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TG_ECMWF',0,ZHOOK_HANDLE)
@@ -1882,7 +2039,9 @@ SELECT CASE(HINMODEL)
   CASE('ECMWF ')
     CALL READ_GRIB(HGRIB,KLUOUT,141,IRET,ZFIELD)
   CASE('ARPEGE','ALADIN','MOCAGE','HIRLAM')
-    CALL READ_GRIB(HGRIB,KLUOUT,66,IRET,ZFIELD)          
+    CALL READ_GRIB(HGRIB,KLUOUT,66,IRET,ZFIELD)
+  CASE('NCEP  ')
+    CALL READ_GRIB(HGRIB,KLUOUT,3066,IRET,ZFIELD)    
   CASE DEFAULT
     CALL ABOR1_SFX('MODE_READ_GRIB:READ_GRIB_SNOW_VEG_AND_DEPTH: OPTION NOT SUPPORTED '//HINMODEL)
 END SELECT
@@ -2127,5 +2286,345 @@ PD (:,3) = 1.          ! deep temperature value
 IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TF_TEB',1,ZHOOK_HANDLE)
 !------------------------------------------------------------------------------
 END SUBROUTINE READ_GRIB_TF_TEB
+!-------------------------------------------------------------------
+!     #######################
+      SUBROUTINE READ_GRIB_TG_NCEP(HGRIB,KLUOUT,HINMODEL,PMASK,PTG,PD)
+!     #######################
+!
+IMPLICIT NONE
+!
+!* dummy arguments
+!  ---------------
+ CHARACTER(LEN=*),     INTENT(IN)    :: HGRIB     ! Grib file name
+INTEGER,              INTENT(IN)    :: KLUOUT    ! logical unit of output listing
+ CHARACTER(LEN=6),     INTENT(IN)    :: HINMODEL  ! Grib originating model
+REAL, DIMENSION(:),   INTENT(IN)    :: PMASK     ! grib land mask
+REAL, DIMENSION(:,:), POINTER       :: PTG       ! field to initialize
+REAL, DIMENSION(:,:), POINTER       :: PD        ! thickness of each layer
+!
+!* local variables
+!  ---------------
+INTEGER(KIND=kindOfInt)                           :: IRET      ! return code
+INTEGER                           :: ILTYPE    ! type of level (Grib code table 3)
+INTEGER                           :: ILEV1     ! level definition
+INTEGER                           :: ILEV2     ! level definition
+INTEGER                           :: JL         ! layer loop counter
+INTEGER                           :: INLAYERDEEP! number of deep moisture layers
+REAL,    DIMENSION(:), POINTER    :: ZFIELD => NULL()  ! first layer temperature
+REAL,  DIMENSION(:,:), ALLOCATABLE:: ZTG      ! first layer temperature
+REAL, DIMENSION(:)   , ALLOCATABLE:: ZD
+REAL :: ZLEV1,ZLEV2 ! level definition in float
+CHARACTER(LEN=19)   :: YTYPELEVEL  ! Type of searched level 
+
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!--------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TG_NCEP',0,ZHOOK_HANDLE)
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_TG_NCEP: | Reading soil temperature'
+!
+ALLOCATE(ZD(5))
+!
+! 1.  Search and read level 1 (and its depth)
+!     --------------------------------------
+
+YTYPELEVEL='depthBelowLandLayer'
+
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.0
+ZLEV2= 0.1
+CALL READ_GRIB(HGRIB,KLUOUT,228139,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET== 0) THEN
+  ZD(1)=(ZLEV2 - ZLEV1)
+
+  ALLOCATE(ZTG(SIZE(ZFIELD),5))
+  ZTG(:,1)=ZFIELD
+   
+ELSE
+  CALL ABOR1_SFX('MODE_READ_GRIB: SOIL TEMPERATURE LEVEL 1 MISSING (READ_GRIB_TG_NCEP)')
+ENDIF
+!
+! 2.  Search and read level 4 (and its depth) This level is optionnal
+!     ---------------------------------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 1.0
+ZLEV2= 2.0
+
+!
+CALL READ_GRIB(HGRIB,KLUOUT,228139,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+
+IF (IRET == 0) THEN
+  INLAYERDEEP = 4
+  ZD(4)=(ZLEV2 - ZLEV1)
+
+  ZTG(:,4)=ZFIELD
+ELSE
+  INLAYERDEEP = 3
+  ZD(4) = 0.
+ENDIF
+!
+! 3.  Search and read level 3 (and its depth) This level is optionnal
+!     ---------------------------------------------------------------
+!     ---------------------------------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.4
+ZLEV2= 1.0
+
+ CALL READ_GRIB(HGRIB,KLUOUT,228139,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET == 0) THEN      
+  ZD(3)=(ZLEV2 - ZLEV1)
+  ZTG(:,3)=ZFIELD 
+ELSE
+  INLAYERDEEP = 2
+  ZD(3) = 0.        
+ENDIF
+!
+! 4.  Search and read level 2 (and its depth)
+!     ---------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.1
+ZLEV2= 0.4
+ CALL READ_GRIB(HGRIB,KLUOUT,228139,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET== 0) THEN 
+  ZD(2)=(ZLEV2 - ZLEV1)   
+  ZTG(:,2)=ZFIELD
+  DEALLOCATE(ZFIELD)    
+ELSE
+  CALL ABOR1_SFX('MODE_READ_GRIB: SOIL TEMPERATURE LEVEL 2 MISSING (READ_GRIB_TG_NCEP)')
+ENDIF
+!--------------------------------------------------------------------------------
+! 5.  Assumes uniform temperature profile up to 3m depth
+!     -------------------------------------------------
+!
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:UP TO 3m'
+  write(KLUOUT,'(a,i3,i3)') 'editionNumber MAKE_GRIB_INDEX',INLAYERDEEP
+
+IF(SUM(ZD(1:INLAYERDEEP)) < 3.) THEN
+  !We add a temperature layer
+  INLAYERDEEP=INLAYERDEEP+1
+  write(KLUOUT,'(a,i3,i3)') 'editionNumber MAKE_GRIB_INDEX',INLAYERDEEP
+
+  ZD(INLAYERDEEP)=3.-SUM(ZD(1:INLAYERDEEP-1))
+  write(KLUOUT,*) 'ZD',ZD
+
+  ZTG(:,INLAYERDEEP)=ZTG(:,INLAYERDEEP-1)
+ENDIF
+
+
+!
+!--------------------------------------------------------------------------------
+! 6.  Set temperature profile and layer thicknesses
+!     ----------------------------------------------
+
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB: FILL PROFILE'
+
+ CALL FILL_PFIELD(KLUOUT,'READ_GRIB_TG_NCEP',INLAYERDEEP,ZD,ZTG,PMASK,PTG,PD)
+DEALLOCATE(ZD)
+DEALLOCATE(ZTG)
+!
+!write(KLUOUT,*) 'OUT FILL ZD',PD,PTG
+
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_TG_NCEP',1,ZHOOK_HANDLE)
+
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:END READ GRIB'
+
+END SUBROUTINE READ_GRIB_TG_NCEP
+!--------------------------------------------------------------------------------
+!     #######################
+      SUBROUTINE READ_GRIB_WG_NCEP(HGRIB,KLUOUT,HINMODEL,PMASK,PFIELD,PD)
+!     #######################
+!
+USE MODD_GRID_GRIB,  ONLY : NNI
+USE MODD_SURF_PAR,   ONLY : XUNDEF
+!
+IMPLICIT NONE
+!
+!* dummy arguments
+!  ---------------
+ CHARACTER(LEN=*),     INTENT(IN)    :: HGRIB     ! Grib file name
+INTEGER,              INTENT(IN)    :: KLUOUT    ! logical unit of output listing
+ CHARACTER(LEN=6),     INTENT(IN)    :: HINMODEL  ! Grib originating model
+REAL, DIMENSION(:),   INTENT(IN)    :: PMASK     ! grib land mask
+REAL, DIMENSION(:,:), POINTER       :: PFIELD    ! field to initialize
+REAL, DIMENSION(:,:), POINTER       :: PD        ! thickness of each layer     
+!* local variables
+!  ---------------
+INTEGER(KIND=kindOfInt)                           :: IRET      ! return code
+INTEGER                           :: ILTYPE    ! type of level (Grib code table 3)
+INTEGER                           :: ILEV1     ! level definition
+INTEGER                           :: ILEV2     ! level definition
+REAL, DIMENSION(:), POINTER       :: ZFIELD => NULL()
+REAL, DIMENSION(:,:), ALLOCATABLE :: ZWG        ! first water reservoir
+REAL, DIMENSION(:), ALLOCATABLE   :: ZD         ! Height of each layer
+INTEGER                           :: INLAYERDEEP! number of deep moisture layers
+REAL                              :: ZWWILT     ! ECMWF wilting point
+REAL                              :: ZWFC       ! ECMWF field capacity
+REAL                              :: ZWSAT      ! ECMWF saturation
+INTEGER                           :: JL         ! loop counter on layers
+REAL :: ZLEV1,ZLEV2 ! level definition in float
+CHARACTER(LEN=19)   :: YTYPELEVEL  ! Type of searched level 
+
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!--------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_WG_NCEP',0,ZHOOK_HANDLE)
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_WG_NCEP: | Reading soil moisture'
+WRITE  (KLUOUT,'(A)') 'MODE_READ_GRIB:READ_GRIB_WG_NCEP: | WARNING READING LOW VEGETATION TILE (NR 4) ONLY'
+!
+ALLOCATE(ZD(5))
+
+! 1.  Search and read level 1 (and its depth)
+!     --------------------------------------
+
+YTYPELEVEL='depthBelowLandLayer'
+
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.0
+ZLEV2= 0.1
+CALL READ_GRIB(HGRIB,KLUOUT,260185,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET== 0) THEN
+  ZD(1)=(ZLEV2 - ZLEV1)
+
+  ALLOCATE(ZWG(SIZE(ZFIELD),5))
+  ZWG(:,1)=ZFIELD
+ELSE
+  CALL ABOR1_SFX('MODE_READ_GRIB: SOIL MOISTURE LEVEL 1 MISSING (READ_GRIB_TG_NCEP)')
+ENDIF
+!
+! 2.  Search and read level 4 (and its depth) This level is optionnal
+!     ---------------------------------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 1.0
+ZLEV2= 2.0
+
+!
+CALL READ_GRIB(HGRIB,KLUOUT,260185,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+
+IF (IRET == 0) THEN
+  INLAYERDEEP = 4
+  ZD(4)=(ZLEV2 - ZLEV1)
+
+  ZWG(:,4)=ZFIELD
+ELSE
+  INLAYERDEEP = 3
+  ZD(4) = 0.
+ENDIF
+!
+! 3.  Search and read level 3 (and its depth) This level is optionnal
+!     ---------------------------------------------------------------
+!     ---------------------------------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.4
+ZLEV2= 1.0
+
+ CALL READ_GRIB(HGRIB,KLUOUT,260185,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET == 0) THEN      
+  ZD(3)=(ZLEV2 - ZLEV1)
+  ZWG(:,3)=ZFIELD 
+ELSE
+  INLAYERDEEP = 2
+  ZD(3) = 0.        
+ENDIF
+!
+! 4.  Search and read level 2 (and its depth)
+!     ---------------------------------------
+ILTYPE= -2
+ILEV1 = -2
+ILEV2 = -2
+ZLEV1= 0.1
+ZLEV2= 0.4
+ CALL READ_GRIB(HGRIB,KLUOUT,260185,IRET,ZFIELD,KLTYPE=ILTYPE,KLEV1=ILEV1,KLEV2=ILEV2,HTYPELEVEL=YTYPELEVEL,PLEV1=ZLEV1,PLEV2=ZLEV2)
+!
+IF (IRET== 0) THEN 
+  ZD(2)=(ZLEV2 - ZLEV1)   
+  ZWG(:,2)=ZFIELD
+  DEALLOCATE(ZFIELD)    
+ELSE
+  CALL ABOR1_SFX('MODE_READ_GRIB: SOIL MOISTURE LEVEL 2 MISSING (READ_GRIB_TG_NCEP)')
+ENDIF
+!--------------------------------------------------------------------------------
+! 5.  Assumes uniform temperature profile up to 3m depth
+!     -------------------------------------------------
+!
+IF(SUM(ZD(1:INLAYERDEEP)) < 3.) THEN
+  !We add a humidity layer
+  INLAYERDEEP=INLAYERDEEP+1
+  ZD(INLAYERDEEP)=3.-SUM(ZD(1:INLAYERDEEP-1))
+  ZWG(:,INLAYERDEEP)=ZWG(:,INLAYERDEEP-1)
+ENDIF
+!
+!--------------------------------------------------------------------------------
+! 6.  Set temperature profile and layer thicknesses
+!     ----------------------------------------------
+ CALL FILL_PFIELD(KLUOUT,'READ_GRIB_WG_NCEP',INLAYERDEEP,ZD,ZWG,PMASK,PFIELD,PD)
+DEALLOCATE(ZD)
+DEALLOCATE(ZWG)
+
+!--------------------------------------------------------------------------------
+! 7.  Convert from specific humidity to relative humidity
+!     ---------------------------------------------------
+! Compute model's constants
+ZWFC   = 0.171
+ZWWILT = 0.086
+!
+! Then perform conversion
+DO JL=1,INLAYERDEEP
+  WHERE (PFIELD(:,JL).NE.XUNDEF) PFIELD(:,JL) = (PFIELD(:,JL) - ZWWILT) / (ZWFC - ZWWILT)
+ENDDO
+
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_WG_NCEP',1,ZHOOK_HANDLE)
+END SUBROUTINE READ_GRIB_WG_NCEP
+!----------------------------------------------------------------------------
+!     #######################
+      SUBROUTINE READ_GRIB_WGI_NCEP(HGRIB,KLUOUT,PFIELD,PD)
+!     #######################
+!
+USE MODD_GRID_GRIB,  ONLY : NNI
+!
+IMPLICIT NONE
+!
+!* dummy arguments
+!  ---------------
+ CHARACTER(LEN=*),     INTENT(IN)    :: HGRIB     ! Grib file name
+INTEGER,              INTENT(IN)    :: KLUOUT    ! logical unit of output listing
+REAL, DIMENSION(:,:), POINTER       :: PFIELD    ! field to initialize
+REAL, DIMENSION(:,:), POINTER       :: PD        ! thickness of each layer
+!
+!* local variables
+!  ---------------
+REAL(KIND=JPRB) :: ZHOOK_HANDLE
+!--------------------------------------------------------------------------------
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_WGI_NCEP',0,ZHOOK_HANDLE)
+!
+ALLOCATE (PFIELD(NNI,4))
+ALLOCATE (PD    (NNI,4))
+PFIELD(:,:) = 0.
+!
+PD    (:,1) = 0.1
+PD    (:,2) = 0.3
+PD    (:,3) = 0.6
+PD    (:,4) = 1.0
+
+
+!
+IF (LHOOK) CALL DR_HOOK('MODE_READ_GRIB:READ_GRIB_WGI_NCEP',1,ZHOOK_HANDLE)
+END SUBROUTINE READ_GRIB_WGI_NCEP
 !-------------------------------------------------------------------
 END MODULE MODE_READ_GRIB
