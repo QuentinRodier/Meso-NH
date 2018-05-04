@@ -382,15 +382,15 @@ end do
  start3d(2) = 1
  start3d(3) = 1
 ! Choose time index according to the chosen time in namelist
-! 1 for 00 - 2 for 06 - 3 for 12 - 4 for 18
-IF (CDUMMY1=="00") THEN 
-        itimeindex=1
-ELSEIF (CDUMMY1=="06") THEN
-        itimeindex=2
+! 1 for 06h - 2 for 12h - 3 for 18h - 4 for 24h
+IF (CDUMMY1=="06") THEN
+       itimeindex=1
 ELSEIF (CDUMMY1=="12") THEN
-        itimeindex=3
+       itimeindex=2
 ELSEIF (CDUMMY1=="18") THEN
-        itimeindex=4
+       itimeindex=3
+ELSEIF (CDUMMY1=="24") THEN
+       itimeindex=4
 ENDIF
  start3d(4) = itimeindex
 !
