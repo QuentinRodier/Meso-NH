@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1996-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/Attic/rain_c2r2_khko.f90,v $ $Revision: 1.1.2.1.2.3 $
 !-----------------------------------------------------------------
 !      ######################
        MODULE MODI_RAIN_C2R2_KHKO
@@ -9,8 +13,7 @@
 !
 INTERFACE
       SUBROUTINE RAIN_C2R2_KHKO(HCLOUD,OACTIT, OSEDC, ORAIN, KSPLITR, PTSTEP,   &
-                            KMI,                                                &
-                            TPFILE, OCLOSE_OUT,                                 &
+                            KMI,TPFILE, OCLOSE_OUT,                             &
                             PZZ, PRHODJ,                                        &
                             PRHODREF, PEXNREF,                                  &
                             PPABST, PTHT, PRVT, PRCT,                           &
@@ -236,9 +239,9 @@ USE MODI_BUDGET
 !
 USE MODE_FIELD
 USE MODE_FM
+USE MODE_ll
 USE MODE_FMWRIT
 USE MODI_GAMMA
-USE MODE_ll
 !
 IMPLICIT NONE
 !
@@ -619,8 +622,6 @@ IF (OACTIT) THEN
   ZTM(:,:,:)    = PTHM(:,:,:) * (PPABSM(:,:,:)/XP00)**(XRD/XCPD)
   ZTDT(:,:,:)   = (ZT(:,:,:)-ZTM(:,:,:))/PTSTEP                              ! dT/dt
   ZDRC(:,:,:)   = (PRCT(:,:,:)-PRCM(:,:,:))/PTSTEP                           ! drc/dt
-  ZTDT(:,:,:)   = MIN(0.,ZTDT(:,:,:)+(XG*PW_NU(:,:,:))/XCPD- &
-  (XLVTT+(XCPV-XCL)*(ZT(:,:,:)-XTT))*ZDRC(:,:,:)/XCPD)
 ! Modif M.Mazoyer
 ! ZTDT(:,:,:)   =  PDTHRAD(:,:,:)*(PPABST(:,:,:)/XP00)**(XRD/XCPD)
 END IF
@@ -819,9 +820,6 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
   ZW(:,:,:)   = PCNS(:,:,:)
   PCNS(:,:,:) = UNPACK( MAX( ZZW1(:),ZCNS(:) ),MASK=GNUCT(:,:,:), &
                                                  FIELD=ZW(:,:,:)  )
-  PNACT(:,:,:) = 0.0
-  PNACT(:,:,:) = MAX( (UNPACK(ZZW1(:),MASK=GNUCT(:,:,:), &
-                 FIELD=ZW(:,:,:))- PCCS(:,:,:))*PTSTEP  ,0.0 )
 !
   DEALLOCATE(IVEC1)
   DEALLOCATE(ZVEC1)
@@ -829,6 +827,10 @@ INUCT = COUNTJV( GNUCT(:,:,:),I1(:),I2(:),I3(:))
 !*       3.3    compute the cloud water concentration and mixing ratio sources
 !
   ZZW2(:) = MAX( (ZZW1(:)-ZCNS(:)),0.0 )
+  
+  PNACT(:,:,:) = 0.0
+  PNACT(:,:,:) = UNPACK(ZZW2(:)*PTSTEP,MASK=GNUCT(:,:,:),FIELD=0.)
+  
   ZZW1(:)=0.
   WHERE (ZZW5(:) > 0.)
     ZZW1(:) = MIN( XCSTDCRIT * ZZW2(:) / ( ((ZZT(:)*ZSMAX(:))**3.)*ZRHODREF(:) ),&
