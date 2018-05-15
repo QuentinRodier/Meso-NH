@@ -238,12 +238,15 @@ END SUBROUTINE COMPUTE_FRAC_ICE2D
 !!    -------------
 !!      Original         13/03/06
 !!      S. Riette        April 2011 optimisation
+!!      S. Riette        08/2016 add option O
 !!
 !! --------------------------------------------------------------------------
 !       0. DECLARATIONS
 !          ------------
 !
 USE MODD_NEB, ONLY : XTMINMIX, XTMAXMIX
+USE MODD_CST, ONLY : XTT
+USE MODE_MSG
 !
 IMPLICIT NONE
 !
@@ -265,7 +268,8 @@ REAL, DIMENSION(:), INTENT(INOUT) :: PFRAC_ICE  ! Ice fraction (1 for ice only, 
 !
 IF (HFRAC_ICE=='T') THEN !using Temperature
   PFRAC_ICE(:) = ( XTMAXMIX - PT(:) ) / ( XTMAXMIX - XTMINMIX ) ! freezing interval
-  PFRAC_ICE(:) = MAX( 0., MIN(1., PFRAC_ICE(:) ) )
+ELSEIF (HFRAC_ICE=='O') THEN !using Temperature with old formulae
+  PFRAC_ICE(:) = ( XTT - PT(:) ) / 40. ! freezing interval
 ELSEIF (HFRAC_ICE=='N') THEN !No ice
   PFRAC_ICE(:) = 0.
 ELSEIF (HFRAC_ICE=='S') THEN !Same as previous
@@ -273,9 +277,10 @@ ELSEIF (HFRAC_ICE=='S') THEN !Same as previous
 ELSE
   WRITE(*,*) ' STOP'
   WRITE(*,*) ' INVALID OPTION IN COMPUTE_FRAC_ICE, HFRAC_ICE=',HFRAC_ICE
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','COMPUTE_FRAC_ICE','')
 ENDIF
+
+PFRAC_ICE(:) = MAX( 0., MIN(1., PFRAC_ICE(:) ) )
 
 
 END SUBROUTINE COMPUTE_FRAC_ICE1D
