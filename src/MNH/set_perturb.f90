@@ -95,6 +95,7 @@ END MODULE MODI_SET_PERTURB
 !!      J.Escobar             27/03/2012 force identical random seed & correct XOR/YOR global shift 
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!      C.Lac, V.Masson       1/2018 : White noise in the LBC
 !!
 !-------------------------------------------------------------------------------
 !
@@ -109,6 +110,7 @@ USE MODD_GRID_n
 USE MODD_IO_ll,   ONLY: TFILEDATA
 USE MODD_LBC_n
 USE MODD_LUNIT_n, ONLY: CLUOUT, TLUOUT
+USE MODD_LSFIELD_n
 USE MODD_PARAMETERS
 USE MODD_REF_n
 !
@@ -175,6 +177,8 @@ REAL             :: XAMPLIUV=1.083367E6
                                    ! initially XAMPLIUV=1.7E5/(2*SIN(XPI/40.))
 REAL             :: XAMPLIWH=0.1   ! Perturbation amplitude maximum for the
                                    !                                WHite noise
+LOGICAL          :: LWH_LBXU=.FALSE.! White noise in inflow and outflow LBC of U
+LOGICAL          :: LWH_LBYV=.FALSE.! White noise in inflow and outflow LBC of V                                   
 INTEGER          :: NKWH=2         ! Upper level of the layer
                                    ! where white noise is applied
 LOGICAL          :: LSET_RHU=.TRUE.! Conservation of the Relative HUmidity when
@@ -446,6 +450,33 @@ SELECT CASE(CPERT_KIND)
     DEALLOCATE(ZWHITE)
 !
  END DO
+!
+! white noise for inflow/outflow U field in X direction                   
+!
+IF (LWH_LBXU) THEN
+  ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
+  CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
+  DO JK=1,MIN(IKU,IIU_ll)
+    DO JI=1,SIZE(XLBXUM,1)
+     XLBXUM(JI,:,JK) = XLBXUM(JI,:,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
+    END DO
+  END DO
+  DEALLOCATE(ZWHITE_ll)
+END IF
+!
+! white noise for inflow/outflow V field in Y direction                   
+!
+IF (LWH_LBYV) THEN
+  ALLOCATE(ZWHITE_ll(IIU_ll,IJU_ll))
+  CALL GATHERALL_FIELD_ll('XY',ZWHITE,ZWHITE_ll,IRESP)
+  DO JK=1,MIN(IKU,IJU_ll)
+    DO JJ=1,SIZE(XLBXVM,1)
+     XLBXVM(:,JJ,JK) = XLBXVM(:,JJ,JK) + XAMPLIWH * ZWHITE_ll(JK,:)
+    END DO
+  END DO
+  DEALLOCATE(ZWHITE_ll)
+END IF
+
 
  CALL GET_HALO(XTHT)
  CALL GET_HALO(XUT)
