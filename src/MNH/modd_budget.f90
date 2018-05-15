@@ -16,7 +16,7 @@
 !!
 !!**  IMPLICIT ARGUMENTS
 !!    ------------------
-!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX,NMNHNAMELGTMAX
+!!      MODD_PARAMETERS: JPBUMAX, JPBUPROCMAX
 !!
 !!    REFERENCE
 !!    ---------
@@ -39,14 +39,14 @@
 !!      C. Barthe       19/11/09    add budget terms for electricity          
 !!      C.Lac           04/2016  negative contribution to the budget splitted between advection, turbulence and microphysics for KHKO/C2R2
 !!      C. Barthe            /16    add budget terms for LIMA
-!!      C. Lac          10/2016 add droplets deposition
+!!      C. LAc          10/2016 add droplets deposition
+!!      S. Riette       11/2016  New budgets for ICE3/ICE4
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-
 !-------------------------------------------------------------------------------
 !
 !*       0.   DECLARATIONS
 !             ------------
-USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX,NMNHNAMELGTMAX
+USE MODD_PARAMETERS, ONLY :JPBUMAX, JPBUPROMAX, NMNHNAMELGTMAX
 !
 IMPLICIT NONE
 !
@@ -276,12 +276,15 @@ INTEGER, SAVE :: NIMLTTH    ! Ice MeLTing             ICE3
 INTEGER, SAVE :: NBERFITH   ! BERgeron-FIndeisen gth. ICE3
 INTEGER, SAVE :: NCDEPITH   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NWETHTH    ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHTH    ! dry growth of hail      ICE4
 INTEGER, SAVE :: NHMLTTH    ! melting of hail         ICE4
-INTEGER, SAVE :: NHINDTH    ! Heterogeneous Nucleation by Deposition C3R5
-INTEGER, SAVE :: NHINCTH    ! Heterogeneous Nucleation by Contact    C3R5
-INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            C3R5
-INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         C3R5
-INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            C3R5
+INTEGER, SAVE :: NADJUTH    ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NCORRTH    ! tendencies correction after ICE3
+INTEGER, SAVE :: NHINDTH    ! Heterogeneous Nucleation by Deposition LIMA
+INTEGER, SAVE :: NHINCTH    ! Heterogeneous Nucleation by Contact    LIMA
+INTEGER, SAVE :: NHONHTH    ! Haze Homogeneous Nucleation            LIMA
+INTEGER, SAVE :: NHONCTH    ! droplet homogeneous nucleation         LIMA
+INTEGER, SAVE :: NHONRTH    ! drop homogeneous nucleation            LIMA
 INTEGER, SAVE :: NCEDSTH    ! adjustment
 INTEGER, SAVE :: NSEDITH    ! Temperature transport by hydrometeors sedimentation
 !
@@ -332,8 +335,10 @@ INTEGER, SAVE :: NHENURV   ! HEterogenous NUcleation ICE3
 INTEGER, SAVE :: NDEPSRV   ! DEPosition on Snow      ICE3
 INTEGER, SAVE :: NDEPGRV   ! DEPosition on Graupel   ICE3
 INTEGER, SAVE :: NCDEPIRV  ! Cond./DEPosition on ice ICE3
-INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition C3R5
-INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            C3R5
+INTEGER, SAVE :: NADJURV   ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NCORRRV    ! tendencies correction after ICE3
+INTEGER, SAVE :: NHINDRV   ! Heterogeneous Nucleation by Deposition LIMA
+INTEGER, SAVE :: NHONHRV   ! Haze Homogeneous Nucleation            LIMA
 INTEGER, SAVE :: NCEDSRV   ! adjustement 
 !
 !      Allowed processes for the budget of moist variable RRC (cloud water)
@@ -360,6 +365,7 @@ INTEGER, SAVE :: NAUTORC    ! autoconversion
 INTEGER, SAVE :: NCONDRC    ! evaporation/condensation
 INTEGER, SAVE :: NHONRC     ! HOmogeneous Nucleation  ICE3
 INTEGER, SAVE :: NRIMRC     ! RIMing of cloudwater    ICE3
+INTEGER, SAVE :: NCMELRC    ! collection by snow and conversion into rain with T>XTT ICE3
 INTEGER, SAVE :: NWETGRC    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRC    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NIMLTRC    ! Ice MeLTing             ICE3
@@ -370,9 +376,11 @@ INTEGER, SAVE :: NSEDIRC    ! sedimentation  C2R2
 INTEGER, SAVE :: NDEPORC    ! ground deposition     
 INTEGER, SAVE :: NDEPOTRRC  ! deposition on tree
 INTEGER, SAVE :: NWETHRC    ! wet growth of hail
-INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact C3R5
-INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      C3R5
-INTEGER, SAVE :: NCEDSRC    ! adjustment                          C3R5
+INTEGER, SAVE :: NDRYHRC    ! dry growth of hail      ICE4
+INTEGER, SAVE :: NADJURC    ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NHINCRC    ! Heterogeneous Nucleation by Contact LIMA
+INTEGER, SAVE :: NHONCRC    ! droplet homogeneous nucleation      LIMA
+INTEGER, SAVE :: NCEDSRC    ! adjustment                          LIMA
 INTEGER, SAVE :: NREVARC    ! evaporation of rain drops
 INTEGER, SAVE :: NCORRRC    ! rain <-> cloud transfer at the beginning of LIMA
 INTEGER, SAVE :: NR2C1RC    ! rain -> cloud change after sedimentation in LIMA
@@ -397,14 +405,16 @@ INTEGER, SAVE :: NREVARR    ! rain evaporation
 INTEGER, SAVE :: NSEDIRR    ! sedimentation
 INTEGER, SAVE :: NSFRRR     ! Spontaneous FReezing    ICE3
 INTEGER, SAVE :: NACCRR     ! ACCretion of rainwater  ICE3
+INTEGER, SAVE :: NCMELRR    ! collection of droplets by snow and conversion into rain with T>XTT ICE3
 INTEGER, SAVE :: NCFRZRR    ! Conversion FReeZing     ICE3
 INTEGER, SAVE :: NWETGRR    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRR    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NGMLTRR    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRR    ! wet growth of hail      ICE4
+INTEGER, SAVE :: NDRYHRR    ! dry growth of hail      ICE4
 INTEGER, SAVE :: NHMLTRR    ! melting of hail         ICE4
-INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation C3R5
-INTEGER, SAVE :: NCORRRR    ! rain <-> cloud transfer at the beginning of LIMA
+INTEGER, SAVE :: NCORRRR    ! tendencies correction after ICE3
+INTEGER, SAVE :: NHONRRR    ! drop homogeneous nucleation LIMA
 INTEGER, SAVE :: NR2C1RR    ! rain -> cloud change after sedimentation in LIMA
 INTEGER, SAVE :: NCVRCRR    ! rain -> cloud change after other microphysical processes in LIMA
 !
@@ -436,15 +446,17 @@ INTEGER, SAVE :: NIMLTRI    ! Ice MeLTing             ICE3
 INTEGER, SAVE :: NBERFIRI   ! BERgeron-FIndeisen gth. ICE3
 INTEGER, SAVE :: NCDEPIRI   ! Cond./DEPosition on ice ICE3
 INTEGER, SAVE :: NWETHRI    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NHINDRI ! heterogeneous nucleation by deposition C3R5
-INTEGER, SAVE :: NHINCRI ! heterogeneous nucleation by contact    C3R5
-INTEGER, SAVE :: NHONHRI ! haze homogeneous nucleation source     C3R5
-INTEGER, SAVE :: NHONCRI ! droplet homogeneous nucleation         C3R5
-INTEGER, SAVE :: NCNVIRI ! Conversion of snow to r_i              C3R5
-INTEGER, SAVE :: NCNVSRI ! Conversion of pristine ice to r_s      C3R5
-INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow riming C3R5
-INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming C3R5
-INTEGER, SAVE :: NCEDSRI ! adjustement                            C3R5
+INTEGER, SAVE :: NDRYHRI    ! dry growth of hail      ICE4
+INTEGER, SAVE :: NADJURI    ! adjustement before rain_ice ICE3
+INTEGER, SAVE :: NHINDRI ! heterogeneous nucleation by deposition LIMA
+INTEGER, SAVE :: NHINCRI ! heterogeneous nucleation by contact    LIMA
+INTEGER, SAVE :: NHONHRI ! haze homogeneous nucleation source     LIMA
+INTEGER, SAVE :: NHONCRI ! droplet homogeneous nucleation         LIMA
+INTEGER, SAVE :: NCNVIRI ! Conversion of snow to r_i              LIMA
+INTEGER, SAVE :: NCNVSRI ! Conversion of pristine ice to r_s      LIMA
+INTEGER, SAVE :: NHMSRI  ! Hallett-Mossop ice multiplication process due to snow riming LIMA
+INTEGER, SAVE :: NHMGRI  ! Hallett-Mossop ice multiplication process due to graupel riming LIMA
+INTEGER, SAVE :: NCEDSRI ! adjustement LIMA
 INTEGER, SAVE :: NCORRRI    ! ice <-> snow transfer at the beginning of LIMA
 !
 !      Allowed processes for the budget of moist variable RRS (snow)
@@ -470,9 +482,10 @@ INTEGER, SAVE :: NCMELRS    ! Conversion MeLTing      ICE3
 INTEGER, SAVE :: NWETGRS    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRS    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NWETHRS    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         C3R5
-INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s C3R5
-INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming C3R5
+INTEGER, SAVE :: NDRYHRS    ! dry growth of hail      ICE4
+INTEGER, SAVE :: NCNVIRS   ! Conversion of snow to r_i         LIMA
+INTEGER, SAVE :: NCNVSRS   ! Conversion of pristine ice to r_s LIMA
+INTEGER, SAVE :: NHMSRS    ! Hallett-Mossop ice multiplication process due to snow riming LIMA
 INTEGER, SAVE :: NCORRRS    ! ice <-> snow transfer at the beginning of LIMA
 !
 !      Allowed processes for the budget of moist variable RRG (graupel)
@@ -499,7 +512,11 @@ INTEGER, SAVE :: NWETGRG    ! WET Growth of graupel   ICE3
 INTEGER, SAVE :: NDRYGRG    ! DRY Growth of graupel   ICE3
 INTEGER, SAVE :: NGMLTRG    ! Graupel MeLTing         ICE3
 INTEGER, SAVE :: NWETHRG    ! wet growth of hail      ICE4
-INTEGER, SAVE :: NHONRRG    ! drop homogeneous nucleation C3R5
+INTEGER, SAVE :: NDRYHRG    ! dry growth of hail      ICE4
+INTEGER, SAVE :: NCORRRG    ! tendencies correction after ICE3
+INTEGER, SAVE :: NHGCVRG    ! Hail to Graupel ConVersion ICE4
+INTEGER, SAVE :: NGHCVRG    ! Graupel to Hail ConVersion ICE4
+INTEGER, SAVE :: NHONRRG    ! drop homogeneous nucleation LIMA
 INTEGER, SAVE :: NHMGRG     ! Hallett-Mossop ice multiplication process due to graupel riming
 INTEGER, SAVE :: NCOHGRG    ! conversion of hail to graupel
 !
@@ -519,8 +536,12 @@ INTEGER, SAVE :: NNEGARH    ! negative correction
 INTEGER, SAVE :: NSEDIRH    ! sedimentation
 INTEGER, SAVE :: NWETGRH    ! wet growth of graupel
 INTEGER, SAVE :: NWETHRH    ! wet growth of hail
-INTEGER, SAVE :: NCOHGRH    ! reconversion from hail to graupel ICE4
+INTEGER, SAVE :: NCOHGRH    ! reconversion from hail to graupel LIMA
+INTEGER, SAVE :: NDRYHRH    ! dry growth of hail      ICE4
 INTEGER, SAVE :: NHMLTRH    ! melting                           
+INTEGER, SAVE :: NCORRRH    ! tendencies correction after ICE3
+INTEGER, SAVE :: NHGCVRH    ! Hail to Graupel ConVersion ICE4
+INTEGER, SAVE :: NGHCVRH    ! Graupel to Hail ConVersion ICE4
 !
 ! Courant namelist: NAM_BURSV
 !
