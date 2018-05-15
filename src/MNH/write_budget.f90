@@ -1027,7 +1027,7 @@ SELECT CASE (CBUTYPE)
         TZFIELD%CUNITS     = ''
         TZFIELD%CDIR       = 'XY'
         WRITE(TZFIELD%CCOMMENT,FMT="('X_Y_MASK',I4.4)") NBUTSHIFT
-        TZFIELD%NGRID      = 0
+        TZFIELD%NGRID      = 1
         TZFIELD%NTYPE      = TYPEREAL
         TZFIELD%NDIMS      = 6
         TZFIELD%LTIMEDEP   = .FALSE.

@@ -34,13 +34,13 @@ IF (IRESP==0) THEN
   IF (TRIM(TPFIELD%CLONGNAME)/=TRIM(HREC)) THEN
     CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'CLONGNAME different ('//TRIM(TPFIELD%CLONGNAME) &
                    //'/'//TRIM(HREC)//') than expected for article '//TRIM(HREC))
-    TPFIELD%CLONGNAME = TRIM(HREC)
+!     TPFIELD%CLONGNAME = TRIM(HREC)
   END IF
   !Modify and check CDIR
   IF (TPFIELD%CDIR/=HDIR) THEN
     CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'CDIR different ('//TRIM(TPFIELD%CDIR) &
                    //'/'//TRIM(HDIR)//') than expected for article '//TRIM(HREC))
-    TPFIELD%CDIR = HDIR
+!     TPFIELD%CDIR = HDIR
   END IF
   !Modify and check CCOMMENT
   IF (LEN_TRIM(HCOMMENT)/=0) THEN
@@ -60,7 +60,7 @@ IF (IRESP==0) THEN
       IF (GWARN) THEN
         CALL PRINT_MSG(NVERB_INFO,'IO',TRIM(HSUBR),'CCOMMENT different ('//TRIM(TPFIELD%CCOMMENT) &
                        //'/'//TRIM(HCOMMENT)//') than expected for article '//TRIM(HREC))
-        TPFIELD%CCOMMENT = TRIM(HCOMMENT)
+!         TPFIELD%CCOMMENT = TRIM(HCOMMENT)
       END IF
     END IF
   ELSE
@@ -72,21 +72,21 @@ IF (IRESP==0) THEN
     WRITE(YTXT,'( I0,"/",I0 )') TPFIELD%NGRID,KGRID
     CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'NGRID different ('//TRIM(YTXT) &
                     //') than expected for article '//TRIM(HREC))
-    TPFIELD%NGRID = KGRID
+!     TPFIELD%NGRID = KGRID
   END IF
   !Modify and check NTYPE
   IF (TPFIELD%NTYPE/=KTYPE) THEN
     WRITE(YTXT,'( I0,"/",I0 )') TPFIELD%NTYPE,KTYPE
     CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'NTYPE different ('//TRIM(YTXT) &
                     //') than expected for article '//TRIM(HREC))
-    TPFIELD%NTYPE = KTYPE
+!     TPFIELD%NTYPE = KTYPE
   END IF
   !Modify and check NDIMS
   IF (TPFIELD%NDIMS/=KDIMS) THEN
     WRITE(YTXT,'( I0,"/",I0 )') TPFIELD%NDIMS,KDIMS
     CALL PRINT_MSG(NVERB_WARNING,'IO',TRIM(HSUBR),'NDIMS different ('//TRIM(YTXT) &
                     //') than expected for article '//TRIM(HREC))
-    TPFIELD%NDIMS = KDIMS
+!     TPFIELD%NDIMS = KDIMS
   END IF
 ELSE
   CALL PRINT_MSG(NVERB_DEBUG,'IO',TRIM(HSUBR),TRIM(HREC)//' not found in FIELDLIST. Generating default metadata')
@@ -1122,17 +1122,7 @@ IF ( (CSTORAGE_TYPE=='PG' .OR. CSTORAGE_TYPE=='SU')  &
     GCARTESIAN = .TRUE.
   END IF
   !
-  TZFIELD%CMNHNAME   = 'CARTESIAN'
-  TZFIELD%CSTDNAME   = ''
-  TZFIELD%CLONGNAME  = 'CARTESIAN'
-  TZFIELD%CUNITS     = ''
-  TZFIELD%CDIR       = '--'
-  TZFIELD%CCOMMENT   = ''
-  TZFIELD%NGRID      = 0
-  TZFIELD%NTYPE      = TYPELOG
-  TZFIELD%NDIMS      = 0
-  TZFIELD%LTIMEDEP   = .FALSE.
-  CALL IO_WRITE_FIELD(TFILE_SURFEX,TZFIELD,GCARTESIAN,KRESP)
+  CALL IO_WRITE_FIELD(TFILE_SURFEX,'CARTESIAN',GCARTESIAN,KRESP)
   !
   IF (KRESP /=0) THEN
     WRITE ( YMSG, '( I5 )' ) KRESP
