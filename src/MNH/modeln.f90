@@ -249,6 +249,8 @@ END MODULE MODI_MODEL_n
 !!  03/2018     (P.Wautelet)   replace ADD_FORECAST_TO_DATE by DATETIME_CORRECTDATE
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                  07/2017  (V. Vionnet) : Add blowing snow scheme 
+!!      S. Riette : 11/2016 Add ZPABST to keep pressure constant during timestep
+!!                   01/2018 (C.Lac) Add VISCOSITY
 !!-------------------------------------------------------------------------------
 !
 !*       0.     DECLARATIONS
@@ -264,7 +266,9 @@ USE MODD_BUDGET
 USE MODD_CH_AERO_n,      ONLY: XSOLORG, XMI
 USE MODD_CH_MNHC_n,      ONLY: LUSECHEM,LCH_CONV_LINOX,LUSECHAQ,LUSECHIC, &
                                LCH_INIT_FIELD
-USE MODD_CLOUD_MF_n      
+USE MODD_CLOUD_MF_n  
+USE MODD_VISC
+USE MODD_DRAG_n
 USE MODD_CLOUDPAR_n
 USE MODD_CONF
 USE MODD_CONF_n
@@ -370,6 +374,7 @@ USE MODI_INI_MEAN_FIELD
 USE MODI_INITIAL_GUESS
 USE MODI_LES_INI_TIMESTEP_n
 USE MODI_LES_N
+USE MODI_VISC
 USE MODI_LIMA_PRECIP_SCAVENGING
 USE MODI_LS_COUPLING
 USE MODI_MASK_COMPRESS
@@ -503,6 +508,16 @@ REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRC,DPTR_XINPRR,DPTR_XINPRS,DPTR_XINPRG
 REAL, DIMENSION(:,:), POINTER :: DPTR_XINPRH,DPTR_XPRCONV,DPTR_XPRSCONV
 LOGICAL, DIMENSION(:,:),POINTER :: DPTR_GMASKkids
 !
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDC
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDR
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDS
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDG
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZSPEEDH
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRC3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRS3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRG3D
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3))           :: ZINPRH3D
+!
 LOGICAL :: KWARM        
 LOGICAL :: KRAIN        
 LOGICAL :: KSEDC  
@@ -519,6 +534,8 @@ INTEGER             :: IGRID      ! C-grid indicator in LFIFM file
 INTEGER             :: ILENCH     ! Length of comment string in LFIFM file
 !
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZRUS,ZRVS,ZRWS
+REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZPABST !To give pressure at t 
+                                                     ! (and not t+1) to resolved_cloud
 REAL, DIMENSION(SIZE(XTHT,1),SIZE(XTHT,2),SIZE(XTHT,3)) :: ZJ
 !
 ! for various testing
@@ -703,6 +720,7 @@ IF (KTCOUNT == 1) THEN
   XT_PARAM     = 0.0
   XT_SPECTRA   = 0.0
   XT_HALO      = 0.0
+  XT_VISC      = 0.0  
   XT_RAD_BOUND = 0.0
   XT_PRESS     = 0.0
   !
@@ -1470,7 +1488,29 @@ IF(LBLOWSNOW) THEN
                      XRHODJ,XEXNREF,XRRS,XRTHS,XSVT,XRSVS,XSNWSUBL3D )
 ENDIF
 !
+!-----------------------------------------------------------------------
 !
+!*       8 Ter  VISCOSITY (no-slip condition inside)
+!              ---------
+!
+!
+IF ( LVISC ) THEN
+!
+ZTIME1 = ZTIME2
+!
+   CALL VISCOSITY(CLBCX, CLBCY, NRR, NSV, XMU_v,XPRANDTL,         &
+                  LVISC_UVW,LVISC_TH,LVISC_SV,LVISC_R,            &
+                  LDRAG,    &
+                  XUT, XVT, XWT, XTHT, XRT, XSVT,                 &
+                  XRHODJ, XDXX, XDYY, XDZZ, XDZX, XDZY,           &
+                  XRUS, XRVS, XRWS, XRTHS, XRRS, XRSVS,XDRAG )
+!
+ENDIF
+!
+CALL SECOND_MNH2(ZTIME2)
+!
+XT_VISC = XT_VISC + ZTIME2 - ZTIME1
+!!
 !-------------------------------------------------------------------------------
 !
 !*       9.    ADVECTION
@@ -1616,6 +1656,7 @@ ZTIME1 = ZTIME2
 XTIME_BU_PROCESS = 0.
 XTIME_LES_BU_PROCESS = 0.
 !
+ZPABST = XPABST
 !
 IF(.NOT. L1D) THEN
 !
@@ -1749,14 +1790,15 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,XTSTEP,    &
                           XZZ, XRHODJ, XRHODREF, XEXNREF,                      &
-                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS, XINPRG, XINPRH, XSOLORG , XMI,               &
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
+                          XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO,                &
                           ZSEA, ZTOWN                                          )
     DEALLOCATE(ZTOWN)
@@ -1766,15 +1808,15 @@ IF (CCLOUD /= 'NONE' .AND. CELEC == 'NONE') THEN
                           CLBCX,CLBCY,TZBAKFILE, CRAD, CTURBDIM,               &
                           GCLOSE_OUT, LSUBG_COND,LSIGMAS,CSUBG_AUCV,           &
                           XTSTEP,XZZ, XRHODJ, XRHODREF, XEXNREF,               &
-                          XPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
+                          ZPABST, XTHT,XRT,XSIGS,VSIGQSAT,XMFCONV,XTHM,XRCM,   &
                           XPABSM, ZWT_ACT_NUC,XDTHRAD, XRTHS, XRRS,            &
                           XSVT, XRSVS,                                         &
                           XSRCT, XCLDFR,XCIT,                                  &
                           LSEDIC,KACTIT, KSEDC, KSEDI, KRAIN, KWARM, KHHONI,   &
                           LCONVHG, XCF_MF,XRC_MF, XRI_MF,                      &
-                          XINPRC,XINPRR, XINPRR3D, XEVAP3D,                    &
-                          XINPRS,XINPRG, XINPRH,                               &
-                          XSOLORG, XMI,                                        &
+                          XINPRC,ZINPRC3D,XINPRR, XINPRR3D, XEVAP3D,             &
+                          XINPRS,ZINPRS3D, XINPRG,ZINPRG3D, XINPRH,ZINPRH3D,   &
+                          XSOLORG, XMI,ZSPEEDC, ZSPEEDR, ZSPEEDS, ZSPEEDG, ZSPEEDH, &
                           XINDEP, XSUPSAT, XNACT, XNPRO,XSSPRO                 )
   END IF
   XRTHS_CLD  = XRTHS - XRTHS_CLD
@@ -1843,7 +1885,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
                           CLBCX, CLBCY, CRAD, CTURBDIM,                  &
                           LSUBG_COND, LSIGMAS,VSIGQSAT,CSUBG_AUCV,       &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
-                          XPABST, XTHT, XRTHS, XWT,  XRT, XRRS,          &
+                          ZPABST, XTHT, XRTHS, XWT,  XRT, XRRS,          &
                           XSVT, XRSVS, XCIT,                             &
                           XSIGS, XSRCT, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
                           XRI_MF, LSEDIC, LWARM,                         &
@@ -1857,7 +1899,7 @@ IF (CELEC /= 'NONE' .AND. (CCLOUD(1:3) == 'ICE')) THEN
                           CLBCX, CLBCY, CRAD, CTURBDIM,                  &
                           LSUBG_COND, LSIGMAS,VSIGQSAT, CSUBG_AUCV,      &
                           XTSTEP, XZZ, XRHODJ, XRHODREF, XEXNREF,        &
-                          XPABST, XTHT, XRTHS, XWT,                      &
+                          ZPABST, XTHT, XRTHS, XWT,                      &
                           XRT, XRRS, XSVT, XRSVS, XCIT,                  &
                           XSIGS, XSRCT, XCLDFR, XMFCONV, XCF_MF, XRC_MF, &
                           XRI_MF, LSEDIC, LWARM,                         &
