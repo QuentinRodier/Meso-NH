@@ -223,6 +223,8 @@ END MODULE MODI_DEFAULT_DESFM_n
 !!                   09/2017 Q.Rodier add LTEND_UV_FRC
 !!                   02/2018 Q.Libois ECRAD
 !  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   01/2018  (S. Riette) new budgets and variables for ICE3/ICE4
+!!                   01/2018 (J.Colin) add VISC and DRAG
 !!                   07/2017 (V. Vionnet) add blowing snow variables
 !-------------------------------------------------------------------------------
 !
@@ -270,13 +272,13 @@ USE MODD_DRAGTREE
 !
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, LNUCL, LSEDI, LHHONI, LSNOW, LHAIL, LMEYERS,&
-                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,       &
-                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                &
+                            NMOD_IFN, XIFN_CONC, LIFN_HOM, CIFN_SPECIES,          &
+                            CINT_MIXING, NMOD_IMM, NIND_SPECIE,                  &
                             CPRISTINE_ICE_LIMA, CHEVRIMED_ICE_LIMA,            &
                             XFACTNUC_DEP, XFACTNUC_CON,                        &
                             OWARM=>LWARM, LACTI, ORAIN=>LRAIN, OSEDC=>LSEDC,   &
-                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,       &
-                            LCCN_HOM, CCCN_MODES,                              &
+                            OACTIT=>LACTIT, LBOUND, NMOD_CCN, XCCN_CONC,        &
+                            LCCN_HOM, CCCN_MODES,                                &
                             YALPHAR=>XALPHAR, YNUR=>XNUR,                      &
                             YALPHAC=>XALPHAC, YNUC=>XNUC, CINI_CCN=>HINI_CCN,  &
                             CTYPE_CCN=>HTYPE_CCN, YFSOLUB_CCN=>XFSOLUB_CCN,    &
@@ -291,6 +293,8 @@ USE MODD_LATZ_EDFLX
 USE MODD_2D_FRC
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
+USE MODD_VISC 
+USE MODD_DRAG_n
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
 #endif
@@ -516,6 +520,7 @@ XTNUDGING = 21600.
 !
 XIMPL     = 1.
 XKEMIN    = 0.01
+XCEDIS    = 0.84
 CTURBLEN  = 'BL89'
 CTURBDIM  = '1DIM'
 LTURB_FLX =.FALSE.
@@ -648,12 +653,15 @@ IF (KMI == 1) THEN
   NCFRZTH  = 0
   NWETGTH  = 0
   NDRYGTH  = 0
+  NWETHTH  = 0
+  NDRYHTH  = 0
   NGMLTTH  = 0
   NIMLTTH  = 0
   NBERFITH = 0
   NCDEPITH = 0
-  NWETHTH = 0
-  NHMLTTH = 0
+  NHMLTTH  = 0
+  NCORRTH  = 0
+  NADJUTH  = 0
 !
 !                    Budget of RTKE
   LBU_RTKE = .FALSE.
@@ -692,6 +700,8 @@ IF (KMI == 1) THEN
   NDEPGRV  = 0
   NREVARV  = 0
   NCDEPIRV = 0
+  NCORRRV  = 0
+  NADJURV  = 0
 !
 !                    Budget of RRC
   LBU_RRC = .FALSE.
@@ -715,12 +725,16 @@ IF (KMI == 1) THEN
   NACCRRC  = 0
   NHONRC   = 0
   NRIMRC   = 0
+  NCMELRC  = 0
   NWETGRC  = 0
   NDRYGRC  = 0
   NIMLTRC  = 0
   NBERFIRC = 0
   NCDEPIRC = 0
   NWETHRC = 0
+  NDRYHRC = 0
+  NCORRRC = 0
+  NADJURC = 0
   NDEPORC = 0
   NDEPOTRRC = 0  
 !
@@ -739,12 +753,15 @@ IF (KMI == 1) THEN
   NSEDIRR  = 0
   NSFRRR   = 0
   NACCRR   = 0
+  NCMELRR  = 0
   NCFRZRR  = 0
   NWETGRR  = 0
   NDRYGRR  = 0
   NGMLTRR  = 0
   NWETHRR  = 0
+  NDRYHRR = 0
   NHMLTRR  = 0
+  NCORRRR  = 0
 !
 !                    Budget of RRI
   LBU_RRI = .FALSE.
@@ -770,6 +787,9 @@ IF (KMI == 1) THEN
   NBERFIRI = 0
   NCDEPIRI = 0
   NWETHRI = 0
+  NDRYHRI = 0
+  NCORRRI  = 0
+  NADJURI  = 0
 !
 !                    Budget of RRS
   LBU_RRS = .FALSE.
@@ -790,6 +810,8 @@ IF (KMI == 1) THEN
   NWETGRS  = 0
   NDRYGRS  = 0
   NWETHRS  = 0
+  NDRYHRS = 0
+  NCORRRS  = 0
 !
 !                    Budget of RRG
   LBU_RRG = .FALSE.
@@ -811,7 +833,10 @@ IF (KMI == 1) THEN
   NDRYGRG  = 0
   NGMLTRG  = 0
   NWETHRG  = 0
-  NCOHGRG  = 0
+  NDRYHRG = 0
+  NCORRRG  = 0
+  NHGCVRG  = 0
+  NGHCVRG  = 0
 !
 !                    Budget of RRH
   LBU_RRH = .FALSE.
@@ -824,8 +849,11 @@ IF (KMI == 1) THEN
   NNEGARH  = 0
   NWETGRH  = 0
   NWETHRH  = 0
-  NCOHGRH  = 0
+  NDRYHRH = 0
   NHMLTRH  = 0
+  NCORRRH  = 0
+  NHGCVRH  = 0
+  NGHCVRH  = 0
 !
 !                    Budget of RSVx
   LBU_RSV = .FALSE.
@@ -1034,11 +1062,33 @@ END IF
 !             ---------------------------------------
 !
 IF (KMI == 1) THEN
+  LRED    = .FALSE.
   LWARM = .TRUE.
   CPRISTINE_ICE = 'PLAT'
-  LSEDIC  = .FALSE.
+  LSEDIC  = .TRUE.
   LCONVHG = .FALSE.
   CSEDIM  = 'SPLI'
+  LFEEDBACKT = .TRUE.
+  LEVLIMIT = .TRUE.
+  LNULLWETG = .TRUE.
+  LWETGPOST = .TRUE.
+  LNULLWETH = .TRUE.
+  LWETHPOST = .TRUE.
+  CSNOWRIMING = 'M90 '
+  CSUBG_RC_RR_ACCR = 'NONE'
+  CSUBG_RR_EVAP = 'NONE'
+  CSUBG_PR_PDF = 'SIGM'
+  XFRACM90 = 0.1
+  LCRFLIMIT = .TRUE.
+  NMAXITER = 5
+  XMRSTEP = 0.00005
+  XTSTEP_TS = 0.
+  LADJ_BEFORE = .TRUE.
+  LADJ_AFTER = .TRUE.
+  CFRAC_ICE_ADJUST = 'S'
+  XSPLIT_MAXCFL = 0.8
+  CFRAC_ICE_SHALLOW_MF = 'S'
+  LSEDIM_AFTER = .FALSE.
   LDEPOSC = .FALSE.
   XVDEPOSC= 0.02 ! 2 cm/s  
 END IF
@@ -1406,6 +1456,38 @@ IF (KMI == 1) THEN
 END IF
 LSNOWSUBL = .FALSE.
 !
+!
+!-------------------------------------------------------------------------------
+!
+!*      29.   SET DEFAULT VALUES FOR MODD_VISC           
+!             ----------------------------------
+!
+! other values initialized in modd_VISC
+!
+IF (KMI == 1) THEN
+  LVISC    = .FALSE.
+  LVISC_UVW    = .FALSE.
+  LVISC_TH    = .FALSE.
+  LVISC_SV    = .FALSE.
+  LVISC_R    = .FALSE.
+  XMU_v   = 0.
+  XPRANDTL = 0.
+ENDIF
+!
+!-------------------------------------------------------------------------------
+!
+!
+!*      30.   SET DEFAULT VALUES FOR MODD_DRAG           
+!             ----------------------------------
+!
+! other values initialized in modd_DRAG
+!
+IF (KMI == 1) THEN
+  LDRAG    = .FALSE.
+  LMOUNT   = .FALSE.
+  NSTART = 1
+  XHSTART = 0.
+ENDIF
 !
 !
 END SUBROUTINE DEFAULT_DESFM_n
