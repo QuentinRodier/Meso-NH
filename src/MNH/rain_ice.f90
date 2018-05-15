@@ -644,18 +644,23 @@ IF( IMICRO >= 0 ) THEN
 
   ELSEIF (HSUBG_AUCV == 'CLFR') THEN
     !Cloud water is only in the cloudy part and entirely in low or high part
-    WHERE (ZCF(:) > 0. )
-      WHERE (ZRCT(:)/ZCF(:) > ZRCRAUTC(:))
+      WHERE (ZCF(:) > 0. .AND. ZRCT(:)/ZCF(:) > ZRCRAUTC(:))
         ZHLC_HCF(:) = ZCF(:)
         ZHLC_LCF(:) = 0.0
         ZHLC_HRC(:) = ZRCT(:)
         ZHLC_LRC(:) = 0.0
         ZRF(:)      = ZCF(:)
-      ELSEWHERE (ZRCT(:) > XRTMIN(2))
+      ELSEWHERE (ZCF(:) > 0. .AND. ZRCT(:) > XRTMIN(2))
         ZHLC_HCF(:) = 0.0
         ZHLC_LCF(:) = ZCF(:)
         ZHLC_HRC(:) = 0.0
         ZHLC_LRC(:) = ZRCT(:)
+        ZRF(:)      = 0.
+      ELSEWHERE (ZCF(:) > 0.)
+        ZHLC_HCF(:) = 0.0
+        ZHLC_LCF(:) = 0.0
+        ZHLC_HRC(:) = 0.0
+        ZHLC_LRC(:) = 0.0
         ZRF(:)      = 0.
       ELSEWHERE
         ZHLC_HCF(:) = 0.0
@@ -664,13 +669,6 @@ IF( IMICRO >= 0 ) THEN
         ZHLC_LRC(:) = 0.0
         ZRF(:)      = 0.
       END WHERE
-    ELSEWHERE
-      ZHLC_HCF(:) = 0.0
-      ZHLC_LCF(:) = 0.0
-      ZHLC_HRC(:) = 0.0
-      ZHLC_LRC(:) = 0.0
-      ZRF(:)      = 0.
-    END WHERE
 
   ELSEIF (HSUBG_AUCV == 'PDF ') THEN
     !Cloud water is split between high and low part according to a PDF
