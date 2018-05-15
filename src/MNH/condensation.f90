@@ -2,21 +2,16 @@
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/condensation.f90,v $ $Revision: 1.2.2.3.2.1.16.1.2.2.2.1 $
-! masdev4_7 BUG1 2007/06/15 17:47:17
-!-----------------------------------------------------------------
-!     ########################
+!     ######spl
       MODULE MODI_CONDENSATION
 !     ########################
 !
 INTERFACE
 !
-       SUBROUTINE CONDENSATION( KIU, KJU, KKU, KIB, KIE, KJB, KJE, KKB, KKE, KKL,&
-          PPABS, PZZ, PT, PRV, PRC, PRI, PSIGS, PMFCONV, PCLDFR, PSIGRC, OUSERI,&
-          OSIGMAS, PSIGQSAT)
+       SUBROUTINE CONDENSATION( KIU, KJU, KKU, KIB, KIE, KJB, KJE, KKB, KKE, KKL,         &
+          HFRAC_ICE,                                                                      &
+          PPABS, PZZ, PT, PRV, PRC, PRI, PRS, PRG, PSIGS, PMFCONV, PCLDFR, PSIGRC, OUSERI,&
+          OSIGMAS, PSIGQSAT, PLV, PLS, PCPH)
 !
 INTEGER,                      INTENT(IN)    :: KIU    ! horizontal dimension in x
 INTEGER,                      INTENT(IN)    :: KJU    ! horizontal dimension in y
@@ -28,10 +23,11 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+CHARACTER*1,                  INTENT(IN)    :: HFRAC_ICE
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
-REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PT     ! grid scale T  (K)
-REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
 LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
                                                       ! liquid and solid condensate (OUSERI=.TRUE.)
                                                       ! or only solid condensate (OUSERI=.FALSE.)
@@ -41,21 +37,25 @@ REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" va
                                                         ! multiplied by PSIGQSAT
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRI    ! grid scale r_i (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRS    ! grid scale mixing ration of snow (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRG    ! grid scale mixing ration of graupel (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PSIGS  ! Sigma_s from turbulence scheme
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PMFCONV! convective mass flux (kg /s m^2)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PCLDFR ! cloud fraction
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PSIGRC ! s r_c / sig_s^2
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLV
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLS
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PCPH
 END SUBROUTINE CONDENSATION
 !
 END INTERFACE
 !
 END MODULE MODI_CONDENSATION
-!
-!
-!   ################################################################################
-    SUBROUTINE CONDENSATION( KIU, KJU, KKU, KIB, KIE, KJB, KJE, KKB, KKE, KKL,        &
-       PPABS, PZZ, PT, PRV, PRC, PRI, PSIGS, PMFCONV, PCLDFR, PSIGRC, OUSERI, OSIGMAS,&
-          PSIGQSAT  )
+!     ######spl
+    SUBROUTINE CONDENSATION( KIU, KJU, KKU, KIB, KIE, KJB, KJE, KKB, KKE, KKL,         &
+       HFRAC_ICE,                                                                      &
+       PPABS, PZZ, PT, PRV, PRC, PRI, PRS, PRG, PSIGS, PMFCONV, PCLDFR, PSIGRC, OUSERI,&
+       OSIGMAS, PSIGQSAT, PLV, PLS, PCPH )
 !   ################################################################################
 !
 !!
@@ -63,8 +63,8 @@ END MODULE MODI_CONDENSATION
 !!    -------
 !!**  Routine to diagnose cloud fraction, liquid and ice condensate mixing ratios
 !!    and s'rl'/sigs^2
-!!     
-!!    
+!!
+!!
 !!**  METHOD
 !!    ------
 !!    Based on the large-scale fields of temperature, water vapor, and possibly
@@ -74,12 +74,12 @@ END MODULE MODI_CONDENSATION
 !!    The total variance is parameterized as the sum of  stratiform/turbulent variance
 !!    and a convective variance.
 !!    The turbulent variance is parameterized as a function of first-order moments, and
-!!    the convective variance is modelled as a function of the convective mass flux 
+!!    the convective variance is modelled as a function of the convective mass flux
 !!    (units kg/s m^2) as provided by the  mass flux convection scheme.
 !!
 !!    Nota: if the host model does not use prognostic values for liquid and solid condensate
 !!    or does not provide a convective mass flux, put all these values to zero.
-!!      
+!!
 !!
 !!    EXTERNAL
 !!    --------
@@ -118,6 +118,7 @@ END MODULE MODI_CONDENSATION
 !!      2015   C.Lac   Change min value of ZSIGMA to be in agreement with AROME
 !!      2016   G.Delautier   Restore min value of ZSIGMA (instability)
 !!      2016   S.Riette Change INQ1 
+!!      2016-11 S. Riette: use HFRAC_ICE, output adjusted state
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -125,6 +126,7 @@ END MODULE MODI_CONDENSATION
 !
 USE MODD_CST
 USE MODD_PARAMETERS
+USE MODI_COMPUTE_FRAC_ICE
 !
 IMPLICIT NONE
 !
@@ -141,12 +143,13 @@ INTEGER,                      INTENT(IN)    :: KJE    ! value of the last  point
 INTEGER,                      INTENT(IN)    :: KKB    ! value of the first point in z
 INTEGER,                      INTENT(IN)    :: KKE    ! value of the last  point in z
 INTEGER,                      INTENT(IN)    :: KKL    ! +1 if grid goes from ground to atmosphere top, -1 otherwise
+CHARACTER*1,                  INTENT(IN)    :: HFRAC_ICE
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PPABS  ! pressure (Pa)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PZZ    ! height of model levels (m)
-REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PT     ! grid scale T  (K)
-REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PT     ! grid scale T  (K)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRV    ! grid scale water vapor mixing ratio (kg/kg)
 LOGICAL, INTENT(IN)                         :: OUSERI ! logical switch to compute both
-						      ! liquid and solid condensate (OUSERI=.TRUE.)
+                                                      ! liquid and solid condensate (OUSERI=.TRUE.)
                                                       ! or only solid condensate (OUSERI=.FALSE.)
 LOGICAL, INTENT(IN)                         :: OSIGMAS! use present global Sigma_s values
                                                       ! or that from turbulence scheme
@@ -154,10 +157,15 @@ REAL, INTENT(IN)                            :: PSIGQSAT ! use an extra "qsat" va
                                                         ! multiplied by PSIGQSAT
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(INOUT) :: PRI    ! grid scale r_i (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRS    ! grid scale mixing ration of snow (kg/kg)
+REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PRG    ! grid scale mixing ration of graupel (kg/kg)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(IN)    :: PSIGS  ! Sigma_s from turbulence scheme
 REAL, DIMENSION(:,:,:),       INTENT(IN)    :: PMFCONV! convective mass flux (kg /s m^2)
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PCLDFR ! cloud fraction
 REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PSIGRC ! s r_c / sig_s^2
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLV
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PLS
+REAL, DIMENSION(KIU,KJU,KKU), OPTIONAL, INTENT(IN)    :: PCPH
 !
 !
 !*       0.2   Declarations of local variables :
@@ -165,11 +173,13 @@ REAL, DIMENSION(KIU,KJU,KKU), INTENT(OUT)   :: PSIGRC ! s r_c / sig_s^2
 INTEGER  :: JI, JJ, JK, JKP, JKM, IKTB, IKTE    ! loop index
 REAL, DIMENSION(KIU,KJU,KKU) :: ZTLK, ZRT       ! work arrays for T_l and total water mixing ratio
 REAL, DIMENSION(KIU,KJU,KKU) :: ZL              ! length scale
-INTEGER, DIMENSION(KIU,KJU)  :: ITPL            ! top levels of troposphere 
+REAL, DIMENSION(KIU,KJU,KKU) :: ZFRAC           ! Ice fraction
+INTEGER, DIMENSION(KIU,KJU)  :: ITPL            ! top levels of troposphere
 REAL,    DIMENSION(KIU,KJU)  :: ZTMIN           ! minimum Temp. related to ITPL
 !
-REAL :: ZTEMP, ZLV, ZLS, ZPV, ZQSL, ZPIV, ZQSI, ZFRAC, ZCOND, ZCPD ! thermodynamics
-REAL :: ZLL, DZZ, ZZZ                           ! used for length scales 
+REAL, DIMENSION(KIU,KJU,KKU) :: ZLV, ZLS, ZCPD
+REAL :: ZTEMP, ZPV, ZQSL, ZPIV, ZQSI, ZCOND, ZLVS ! thermodynamics
+REAL :: ZLL, DZZ, ZZZ                           ! used for length scales
 REAL :: ZAH, ZA, ZB, ZSBAR, ZQ1, ZSIGMA, ZDRW, ZDTL, ZSIG_CONV ! related to computation of Sig_s
 !
 !*       0.3  Definition of constants :
@@ -194,12 +204,11 @@ REAL, DIMENSION(-22:11) :: ZSRC_1D =(/                                   &
 INTEGER  :: INQ1
 REAL :: ZINC
 !
-
 !-------------------------------------------------------------------------------
 !
 !
 
-IKTB=1+JPVEXT              
+IKTB=1+JPVEXT
 IKTE=KKU-JPVEXT
 
 PCLDFR(:,:,:) = 0. ! Initialize values
@@ -216,22 +225,49 @@ DO JK=IKTB,IKTE
   END DO
 END DO
 !-------------------------------------------------------------------------------
+! Preliminary calculations
+! latent heat of vaporisation/sublimation
+IF(PRESENT(PLV) .AND. PRESENT(PLS)) THEN
+  ZLV(:,:,:)=PLV(:,:,:)
+  ZLS(:,:,:)=PLS(:,:,:)
+ELSE
+  DO JK=IKTB,IKTE
+    DO JJ=KJB,KJE
+      DO JI=KIB,KIE
+        ZTEMP  = PT(JI,JJ,JK)
+        ! latent heat of vaporisation/sublimation
+        ZLV(JI,JJ,JK) = XLVTT + ( XCPV - XCL ) * ( ZTEMP - XTT )
+        ZLS(JI,JJ,JK) = XLSTT + ( XCPV - XCI ) * ( ZTEMP - XTT )
+      ENDDO
+    ENDDO
+  ENDDO
+ENDIF
+IF(PRESENT(PCPH)) THEN
+  ZCPD(:,:,:)=PCPH(:,:,:)
+ELSE
+  DO JK=IKTB,IKTE
+    DO JJ=KJB,KJE
+      DO JI=KIB,KIE
+        ZCPD(JI,JJ,JK) = XCPD + XCPV*PRV(JI,JJ,JK) + XCL*PRC(JI,JJ,JK) + XCI*PRI(JI,JJ,JK) + &
+                                XCI*(PRS(JI,JJ,JK) + PRG(JI,JJ,JK) )
+      ENDDO
+    ENDDO
+  ENDDO
+ENDIF
+!-------------------------------------------------------------------------------
 ! Preliminary calculations needed for computing the "turbulent part" of Sigma_s
 IF ( .NOT. OSIGMAS ) THEN
   DO JK=IKTB,IKTE
     DO JJ=KJB,KJE
       DO JI=KIB,KIE
         ZTEMP  = PT(JI,JJ,JK)
-        ! latent heat of vaporisation/sublimation
-        ZLV    = XLVTT + ( XCPV - XCL ) * ( ZTEMP - XTT )
-        ZLS    = XLSTT + ( XCPV - XCI ) * ( ZTEMP - XTT )
         ! store temperature at saturation
-        ZCPD           = XCPD + XCPV*PRV(JI,JJ,JK) + XCL*PRC(JI,JJ,JK) + XCI*PRI(JI,JJ,JK)
-        ZTLK(JI,JJ,JK) = ZTEMP - ZLV*PRC(JI,JJ,JK)/ZCPD - ZLS*PRI(JI,JJ,JK)/ZCPD
+        ZTLK(JI,JJ,JK) = ZTEMP - ZLV(JI,JJ,JK)*PRC(JI,JJ,JK)/ZCPD(JI,JJ,JK) &
+                               - ZLS(JI,JJ,JK)*PRI(JI,JJ,JK)/ZCPD(JI,JJ,JK)
       END DO
     END DO
   END DO
-! Determine tropopause/inversion  height from minimum temperature
+  ! Determine tropopause/inversion  height from minimum temperature
   ITPL(:,:)  = KIB+1
   ZTMIN(:,:) = 400.
   DO JK = IKTB+1,IKTE-1
@@ -244,18 +280,18 @@ IF ( .NOT. OSIGMAS ) THEN
       END DO
     END DO
   END DO
-! Set the mixing length scale
+  ! Set the mixing length scale
   ZL(:,:,KKB) = 20.
   DO JK = KKB+KKL,KKE,KKL
     DO JJ=KJB,KJE
       DO JI=KIB,KIE
-! free troposphere
+        ! free troposphere
         ZL(JI,JJ,JK) = ZL0
         ZZZ =  PZZ(JI,JJ,JK) -  PZZ(JI,JJ,KKB)
         JKP = ITPL(JI,JJ)
-! approximate length for boundary-layer
+        ! approximate length for boundary-layer
         IF ( ZL0 > ZZZ ) ZL(JI,JJ,JK) = ZZZ
-! gradual decrease of length-scale near and above tropopause
+        ! gradual decrease of length-scale near and above tropopause
         IF ( ZZZ > 0.9*(PZZ(JI,JJ,JKP)-PZZ(JI,JJ,KKB)) ) &
              ZL(JI,JJ,JK) = .6 * ZL(JI,JJ,JK-KKL)
       END DO
@@ -265,43 +301,44 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !
+!Ice fraction
+ZFRAC(:,:,:) = 0.
+WHERE(PRC(:,:,:)+PRI(:,:,:) > 1.E-20)
+  ZFRAC(:,:,:) = PRI(:,:,:) / (PRC(:,:,:)+PRI(:,:,:))
+ENDWHERE
+CALL COMPUTE_FRAC_ICE(HFRAC_ICE, ZFRAC, PT)
+IF(.NOT. OUSERI) ZFRAC(:,:,:)=0.
+!
 DO JK=IKTB,IKTE
   JKP=MAX(MIN(JK+KKL,IKTE),IKTB)
-  JKM=MAX(MIN(JK-KKL,IKTE),IKTB) 
+  JKM=MAX(MIN(JK-KKL,IKTE),IKTB)
   DO JJ=KJB,KJE
     DO JI=KIB,KIE
       ! latent heats
       ZTEMP  = PT(JI,JJ,JK)
-! latent heat of vaporisation/sublimation
-      ZLV    = XLVTT + ( XCPV - XCL ) * ( ZTEMP - XTT )
-      ZLS    = XLSTT + ( XCPV - XCI ) * ( ZTEMP - XTT )
-
-      ZCPD   = XCPD + XCPV*PRV(JI,JJ,JK) + XCL*PRC(JI,JJ,JK) + XCI*PRI(JI,JJ,JK)
-! saturated water vapor mixing ratio over liquid water
+      ! saturated water vapor mixing ratio over liquid water
       ZPV    = MIN(EXP( XALPW - XBETAW / ZTEMP - XGAMW * LOG( ZTEMP ) ), .99*PPABS(JI,JJ,JK))
       ZQSL   = XRD / XRV * ZPV / ( PPABS(JI,JJ,JK) - ZPV )
 
-! saturated water vapor mixing ratio over ice
+      ! saturated water vapor mixing ratio over ice
       ZPIV   = MIN(EXP( XALPI - XBETAI / ZTEMP - XGAMI * LOG( ZTEMP ) ), .99*PPABS(JI,JJ,JK))
       ZQSI   = XRD / XRV * ZPIV / ( PPABS(JI,JJ,JK) - ZPIV )
 
-! interpolate between liquid and solid as function of temperature
-      ZFRAC = ( XTT - ZTEMP ) / 20.  ! liquid/solid fraction
-      ZFRAC = MAX( 0., MIN(1., ZFRAC ) )
-      IF(.NOT. OUSERI) ZFRAC=0.
-      ZQSL = ( 1. - ZFRAC ) * ZQSL + ZFRAC * ZQSI
-      ZLV  = ( 1. - ZFRAC ) * ZLV  + ZFRAC * ZLS
+      ! interpolate between liquid and solid as function of temperature
+      ZQSL = (1. - ZFRAC(JI,JJ,JK)) * ZQSL + ZFRAC(JI,JJ,JK) * ZQSI
+      ZLVS = (1. - ZFRAC(JI,JJ,JK)) * ZLV(JI,JJ,JK) + &
+             & ZFRAC(JI,JJ,JK)      * ZLS(JI,JJ,JK)
 
-! coefficients a and b
-      ZAH  = ZLV * ZQSL / ( XRV * ZTEMP**2 ) * (XRV * ZQSL / XRD + 1.)
-      ZA   = 1. / ( 1. + ZLV/ZCPD * ZAH )
+      ! coefficients a and b
+      ZAH  = ZLVS * ZQSL / ( XRV * ZTEMP**2 ) * (XRV * ZQSL / XRD + 1.)
+      ZA   = 1. / ( 1. + ZLVS/ZCPD(JI,JJ,JK) * ZAH )
       ZB   = ZAH * ZA
 
       ZSBAR = ZA * ( ZRT(JI,JJ,JK) - ZQSL + &
-                   & ZAH * ZLV * (PRC(JI,JJ,JK)+PRI(JI,JJ,JK)) / ZCPD)
+                   & ZAH * ZLVS * (PRC(JI,JJ,JK)+PRI(JI,JJ,JK)) / ZCPD(JI,JJ,JK))
 
-! switch to take either present computed value of SIGMAS
-! or that of Meso-NH turbulence scheme
+      ! switch to take either present computed value of SIGMAS
+      ! or that of Meso-NH turbulence scheme
       IF ( OSIGMAS ) THEN
         IF (PSIGQSAT/=0.) THEN
           ZSIGMA = SQRT((2*PSIGS(JI,JJ,JK))**2 + (PSIGQSAT*ZQSL*ZA)**2)
@@ -309,30 +346,30 @@ DO JK=IKTB,IKTE
           ZSIGMA = 2*PSIGS(JI,JJ,JK)
         END IF
       ELSE
-! parameterize Sigma_s with first_order closure
+        ! parameterize Sigma_s with first_order closure
         DZZ    =  PZZ(JI,JJ,JKP) - PZZ(JI,JJ,JKM)
         ZDRW   =  ZRT(JI,JJ,JKP) - ZRT(JI,JJ,JKM)
-        ZDTL   =  ZTLK(JI,JJ,JKP) - ZTLK(JI,JJ,JKM) + XG/ZCPD * DZZ
+        ZDTL   =  ZTLK(JI,JJ,JKP) - ZTLK(JI,JJ,JKM) + XG/ZCPD(JI,JJ,JK) * DZZ
         ZLL = ZL(JI,JJ,JK)
-! standard deviation due to convection   
+        ! standard deviation due to convection
         ZSIG_CONV =0.
         IF( SIZE(PMFCONV) /= 0) &
-             ZSIG_CONV = ZCSIG_CONV * PMFCONV(JI,JJ,JK) / ZA 
-! zsigma should be of order 4.e-4 in lowest 5 km of atmosphere
+             ZSIG_CONV = ZCSIG_CONV * PMFCONV(JI,JJ,JK) / ZA
+        ! zsigma should be of order 4.e-4 in lowest 5 km of atmosphere
         ZSIGMA =  SQRT( MAX( 1.E-25, ZCSIGMA * ZCSIGMA * ZLL*ZLL/(DZZ*DZZ)*(&
              ZA*ZA*ZDRW*ZDRW - 2.*ZA*ZB*ZDRW*ZDTL + ZB*ZB*ZDTL*ZDTL) + &
              ZSIG_CONV * ZSIG_CONV ) )
       END IF
-       ZSIGMA= MAX( 1.E-10, ZSIGMA )
-!      ZSIGMA= MAX( 1.E-12, ZSIGMA )
+      ZSIGMA= MAX( 1.E-10, ZSIGMA )
+!     ZSIGMA= MAX( 1.E-12, ZSIGMA )
 
-! normalized saturation deficit
+      ! normalized saturation deficit
       ZQ1   = ZSBAR/ZSIGMA
 
-! cloud fraction
+      ! cloud fraction
       PCLDFR(JI,JJ,JK) = MAX( 0., MIN(1.,0.5+0.36*ATAN(1.55*ZQ1)) )
 
-! total condensate
+      ! total condensate
       IF (ZQ1 > 0. .AND. ZQ1 <= 2 ) THEN
         ZCOND = MIN(EXP(-1.)+.66*ZQ1+.086*ZQ1**2, 2.) ! We use the MIN function for continuity
       ELSE IF (ZQ1 > 2.) THEN
@@ -350,25 +387,30 @@ DO JK=IKTB,IKTE
         ZCOND=0.
       ENDIF
 
-      PRC(JI,JJ,JK) = (1.-ZFRAC) * ZCOND ! liquid condensate
-      PRI(JI,JJ,JK) = ZFRAC * ZCOND   ! solid condensate
+      PT(JI,JJ,JK) = PT(JI,JJ,JK) + (((1.-ZFRAC(JI,JJ,JK))*ZCOND-PRC(JI,JJ,JK))*ZLV(JI,JJ,JK) + &
+                                    &(ZFRAC(JI,JJ,JK)     *ZCOND-PRI(JI,JJ,JK))*ZLS(JI,JJ,JK)   ) &
+                                  & /ZCPD(JI,JJ,JK)
+      PRC(JI,JJ,JK) = (1.-ZFRAC(JI,JJ,JK)) * ZCOND ! liquid condensate
+      PRI(JI,JJ,JK) = ZFRAC(JI,JJ,JK) * ZCOND   ! solid condensate
+      PRV(JI,JJ,JK) = ZRT(JI,JJ,JK) - PRC(JI,JJ,JK) - PRI(JI,JJ,JK)
+
 
 ! s r_c/ sig_s^2
 !    PSIGRC(JI,JJ,JK) = PCLDFR(JI,JJ,JK)  ! use simple Gaussian relation
 !
 !    multiply PSRCS by the lambda3 coefficient
-! 
+!
 !      PSIGRC(JI,JJ,JK) = 2.*PCLDFR(JI,JJ,JK) * MIN( 3. , MAX(1.,1.-ZQ1) )
 ! in the 3D case lambda_3 = 1.
 !     INQ1 = MIN( MAX(-22,FLOOR(2*ZQ1) ), 10)
       INQ1 = MIN( MAX(-22,FLOOR(MIN(100.,MAX(-100.,2*ZQ1))) ), 10)
       !inner min/max prevent sigfpe when 2*zq1 does not fit into an int
       ZINC = 2.*ZQ1 - INQ1
-      
+
       PSIGRC(JI,JJ,JK) =  MIN(1.,(1.-ZINC)*ZSRC_1D(INQ1)+ZINC*ZSRC_1D(INQ1+1))
 
       PSIGRC(JI,JJ,JK) = PSIGRC(JI,JJ,JK)* MIN( 3. , MAX(1.,1.-ZQ1) )
-      
+
     END DO
   END DO
 END DO
