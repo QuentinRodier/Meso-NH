@@ -341,6 +341,7 @@ END MODULE MODI_TURB
 !!                     10/2012 J.Escobar Bypass PGI bug , redefine some allocatable array inplace of automatic
 !!                     04/2016  (C.Lac) correction of negativity for KHKO
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                     01/2018 (Q.Rodier) Introduction of RM17
 !! --------------------------------------------------------------------------
 !       
 !*      0. DECLARATIONS
@@ -355,6 +356,9 @@ USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_LES
 USE MODD_NSV
 !
+USE MODI_GRADIENT_M
+USE MODI_GRADIENT_U
+USE MODI_GRADIENT_V
 USE MODI_BL89
 USE MODI_TURB_VER
 USE MODI_ROTATE_WIND
@@ -540,6 +544,7 @@ REAL                :: ZALPHA       ! proportionnality constant between Dz/2 and
 !
 REAL :: ZTIME1, ZTIME2
 REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3)):: ZTT,ZEXNE,ZLV,ZLS,ZCPH
+REAL, DIMENSION(SIZE(PUT,1),SIZE(PUT,2),SIZE(PUT,3))::  ZSHEAR, ZDUDZ, ZDVDZ
 TYPE(TFIELDDATA) :: TZFIELD
 !
 !------------------------------------------------------------------------------------------
@@ -740,21 +745,31 @@ SELECT CASE (HTURBLEN)
 !           ------------------
 
   CASE ('BL89')
-    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZLM)
+    ZSHEAR=0.
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM)
 !
-!*      3.2 Delta mixing length
+!*      3.2 RM17 mixing length
+!           ------------------
+
+  CASE ('RM17')
+    ZDUDZ = MXF(MZF(1,KKU,1,GZ_U_UW(1,KKU,1,PUT,PDZZ)))
+    ZDVDZ = MYF(MZF(1,KKU,1,GZ_V_VW(1,KKU,1,PVT,PDZZ)))
+    ZSHEAR = SQRT(ZDUDZ*ZDUDZ + ZDVDZ*ZDVDZ)
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM)
+!
+!*      3.3 Delta mixing length
 !           -------------------
 !
   CASE ('DELT')
     CALL DELT(ZLM)
 !
-!*      3.3 Deardorff mixing length
+!*      3.4 Deardorff mixing length
 !           -----------------------
 !
   CASE ('DEAR')
     CALL DEAR(ZLM)
 !
-!*      3.4 Blackadar mixing length
+!*      3.5 Blackadar mixing length
 !           -----------------------
 !
   CASE ('BLKR')
@@ -1635,8 +1650,9 @@ ELSE
 !
 !*         3.1 BL89 mixing length
 !           ------------------
-  CASE ('BL89')
-    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZLM_CLOUD)
+  CASE ('BL89','RM17')
+    ZSHEAR=0.
+    CALL BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,ZTHLM,KRR,ZRM,PTKET,ZSHEAR,ZLM_CLOUD)
 !
 !*         3.2 Delta mixing length
 !           -------------------

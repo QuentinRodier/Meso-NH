@@ -1,7 +1,8 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/lesn.f90,v $
 !-----------------------------------------------------------------
 !     #################
       SUBROUTINE  LES_n
@@ -3206,7 +3207,7 @@ ELSE IF (CBL_HEIGHT_DEF=='KE ') THEN
 !
   ZKE_TOT(:) = ZKE_TOT(:) + XLES_SUBGRID_TKE   (:,NLES_CURRENT_TCOUNT,1)
 !
-  IF (CTURBDIM/='BL89' .AND. LLES_RESOLVED) &
+  IF (CTURBLEN/='BL89' .AND. CTURBLEN/='RM17' .AND. LLES_RESOLVED) &
   ZKE_TOT(:) = ZKE_TOT(:) + XLES_RESOLVED_KE(:,NLES_CURRENT_TCOUNT,1)
 !
   ZINT_KE_TOT = 0.
