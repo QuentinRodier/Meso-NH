@@ -1376,7 +1376,7 @@ IF (HLES_AVG==' ' .OR. HLES_AVG=='A') THEN
      
   IF (LUSERR) &
   CALL LES_DIACHRO_SURF(TPDIAFILE,"ACCU_PREC    ",  &
-     "Accu precip rate","mm/day",XLES_ACPRR,HLES_AVG)   
+     "Accu precip rate","mm",XLES_ACPRR,HLES_AVG)   
 
   IF (LUSERC) &
   CALL LES_DIACHRO_SURF(TPDIAFILE,"ZMAXCF    ",  &
