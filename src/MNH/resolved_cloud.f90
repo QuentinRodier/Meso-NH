@@ -10,7 +10,7 @@
 INTERFACE
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,       &
+                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -19,9 +19,10 @@ INTERFACE
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRG,PINPRH,     &
+                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
                                   PSOLORG,PMI,                                         &
+                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
 !
@@ -117,8 +118,17 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINDEP! Cloud instant deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
@@ -134,7 +144,7 @@ END MODULE MODI_RESOLVED_CLOUD
 !     ##########################################################################
       SUBROUTINE RESOLVED_CLOUD ( HCLOUD, HACTCCN, HSCONV, HMF_CLOUD,                  &
                                   KRR, KSPLITR, KSPLITG, KMI, KTCOUNT,                 &
-                                  HLBCX, HLBCY,TPFILE, HRAD, HTURBDIM,       &
+                                  HLBCX, HLBCY, TPFILE, HRAD, HTURBDIM,                &
                                   OCLOSE_OUT, OSUBG_COND, OSIGMAS, HSUBG_AUCV,         &
                                   PTSTEP, PZZ, PRHODJ, PRHODREF, PEXNREF,              &
                                   PPABST, PTHT, PRT, PSIGS, PSIGQSAT, PMFCONV,         &
@@ -143,9 +153,10 @@ END MODULE MODI_RESOLVED_CLOUD
                                   PCIT, OSEDIC, OACTIT, OSEDC, OSEDI,                  &
                                   ORAIN, OWARM, OHHONI, OCONVHG,                       &
                                   PCF_MF,PRC_MF, PRI_MF,                               &
-                                  PINPRC,PINPRR,PINPRR3D, PEVAP3D,            &
-                                  PINPRS,PINPRG,PINPRH,     &
+                                  PINPRC,PINPRC3D,PINPRR,PINPRR3D, PEVAP3D,            &
+                                  PINPRS,PINPRS3D,PINPRG,PINPRG3D,PINPRH,PINPRH3D,     &
                                   PSOLORG,PMI,                                         &
+                                  PSPEEDC, PSPEEDR, PSPEEDS, PSPEEDG, PSPEEDH,         &
                                   PINDEP, PSUPSAT,  PNACT, PNPRO,PSSPRO,               &
                                   PSEA,PTOWN          )   
 !     ##########################################################################
@@ -251,8 +262,9 @@ END MODULE MODI_RESOLVED_CLOUD
 !!      Modification    01/2016  (JP Pinty) Add LIMA
 !!                     10/2016 M.Mazoyer New KHKO output fields
 !!                    10/2016 (C.Lac) Add droplet deposition
+!!      S.Riette  : 11/2016 : ice_adjust before and after rain_ice
+!!                            ICE3/ICE4 modified, old version under LRED=F   
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
-
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -264,7 +276,7 @@ USE MODD_CONF
 USE MODD_CST
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_PARAMETERS
-USE MODD_PARAM_ICE,  ONLY : CSEDIM
+USE MODD_PARAM_ICE,  ONLY : CSEDIM, LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LRED
 USE MODD_RAIN_ICE_DESCR
 USE MODD_PARAM_C2R2
 USE MODD_BUDGET
@@ -275,11 +287,13 @@ USE MODD_SALT , ONLY : LSALT
 !
 USE MODD_PARAM_LIMA, ONLY : LCOLD, XCONC_CCN_TOT, NMOD_CCN, NMOD_IFN, NMOD_IMM, LPTSPLIT, &
                             YRTMIN=>XRTMIN, YCTMIN=>XCTMIN
+
 !
 USE MODI_SLOW_TERMS
 USE MODI_FAST_TERMS
 USE MODI_ICE_ADJUST
 USE MODI_RAIN_ICE
+USE MODI_RAIN_ICE_RED
 USE MODI_RAIN_C2R2_KHKO
 USE MODI_ICE_C1R3
 USE MODI_C2R2_ADJUST
@@ -390,8 +404,17 @@ REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PEVAP3D  ! evap profile
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRS! Snow instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRG! Graupel instant precip
 REAL, DIMENSION(:,:), INTENT(INOUT)     :: PINPRH! Hail instant precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRC3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRS3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRG3D ! sed flux of precip
+REAL, DIMENSION(:,:,:), INTENT(INOUT)   :: PINPRH3D ! sed flux of precip
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PSOLORG ![%] solubility fraction of soa
 REAL, DIMENSION(:,:,:,:), INTENT(IN)    :: PMI !
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDC ! Cloud sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDR ! Rain sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDS ! Snow sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDG ! Graupel sedimentation speed
+REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSPEEDH ! Hail sedimentation speed
 REAL, DIMENSION(:,:),     INTENT(INOUT) :: PINDEP! Cloud instant deposition
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PSUPSAT  !sursat
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PNACT  !concentrtaion d'aérosols activés au temps t
@@ -433,11 +456,14 @@ INTEGER                               :: ISVBEG ! first scalar index for microph
 INTEGER                               :: ISVEND ! last  scalar index for microphysics
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVT   ! scalar variable for microphysics only
 REAL, DIMENSION(:,:,:,:), ALLOCATABLE :: ZSVS   ! scalar tendency for microphysics only
+LOGICAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3)):: LLMICRO ! mask to limit computation
+REAL, DIMENSION(SIZE(XRTMIN)) :: ZRSMIN ! Minimum value for tendencies
+REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2),SIZE(PZZ,3), KRR) :: ZFPR
 !
 INTEGER                               :: JMOD, JMOD_IFN
-!
 ! BVIE work array waiting for PINPRI
 REAL, DIMENSION(SIZE(PZZ,1),SIZE(PZZ,2)):: ZINPRI
+!
 !------------------------------------------------------------------------------
 !
 !*       1.     PRELIMINARY COMPUTATIONS
@@ -468,6 +494,7 @@ IF (HCLOUD=='C2R2' .OR. HCLOUD=='C3R5' .OR. HCLOUD=='KHKO' .OR. HCLOUD=='LIMA') 
   ZSVT(:,:,:,:) = PSVT(:,:,:,ISVBEG:ISVEND)
   ZSVS(:,:,:,:) = PSVS(:,:,:,ISVBEG:ISVEND)
 END IF
+IF (HCLOUD(1:3)=='ICE') ZRSMIN(:) = XRTMIN(:) / PTSTEP
 !
 !*       2.     TRANSFORMATION INTO PHYSICAL TENDENCIES
 !               ---------------------------------------
@@ -555,7 +582,8 @@ ZCPH(:,:,:)=XCPD +XCPV*PRT(:,:,:,1)
 !
 !*       3.1    Non local correction for precipitating species (Rood 87)
 !
-IF (HCLOUD == 'KESS' .OR. HCLOUD == 'ICE3' .OR. HCLOUD == 'C2R2' .OR. &
+IF (HCLOUD == 'KESS' .OR. HCLOUD == 'ICE3'                                &
+    .OR. HCLOUD == 'C2R2' .OR. &
     HCLOUD == 'C3R5' .OR. HCLOUD == 'KHKO' .OR. HCLOUD=='LIMA' ) THEN
 !
   DO JRR = 3,KRR
@@ -593,7 +621,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2) = 0.0
     END WHERE
 !
@@ -622,7 +650,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLS(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,4) = 0.
     END WHERE
 !
@@ -630,7 +658,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !
@@ -639,7 +667,7 @@ SELECT CASE ( HCLOUD )
     WHERE ((PRS(:,:,:,1) <0.) .AND. (PRS(:,:,:,2)> 0.) )
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2) = 0.
     END WHERE
 !   ice
@@ -648,7 +676,7 @@ SELECT CASE ( HCLOUD )
         ZCOR(:,:,:)=MIN(-PRS(:,:,:,1),PRS(:,:,:,4))
         PRS(:,:,:,1) = PRS(:,:,:,1) + ZCOR(:,:,:)
         PTHS(:,:,:) = PTHS(:,:,:) - ZCOR(:,:,:) * ZLS(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXN(:,:,:)
+             ZCPH(:,:,:) / PEXNREF(:,:,:)
         PRS(:,:,:,4) = PRS(:,:,:,4) -ZCOR(:,:,:)
       END WHERE
     END IF
@@ -661,7 +689,7 @@ SELECT CASE ( HCLOUD )
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXN(:,:,:)
+             ZCPH(:,:,:) / PEXNREF(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
@@ -671,7 +699,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,4) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,4)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,4) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,4)  = 0.0
       PSVS(:,:,:,4) = 0.0
     END WHERE
@@ -679,7 +707,7 @@ SELECT CASE ( HCLOUD )
     WHERE (PRS(:,:,:,2) < 0.)
       PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,2)
       PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,2) * ZLV(:,:,:) /  &
-           ZCPH(:,:,:) / ZEXN(:,:,:)
+           ZCPH(:,:,:) / PEXNREF(:,:,:)
       PRS(:,:,:,2)  = 0.0
       PSVS(:,:,:,2) = 0.0
     END WHERE
@@ -842,7 +870,7 @@ SELECT CASE ( HCLOUD )
                          ZSVS(:,:,:,4), PCLDFR, PSRCS , PNPRO,PSSPRO             )
 !
    ELSE
-    CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                                       &
+    CALL C2R2_ADJUST ( KRR,TPFILE, HRAD,                              &
                        HTURBDIM, OCLOSE_OUT, OSUBG_COND, PTSTEP,               &
                        PRHODJ, PSIGS, PPABST,                                  &
                        PTHS=PTHS, PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),        &
@@ -863,8 +891,45 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
-                    KSPLITR, PTSTEP, KMI, KRR,                           &
+    ZZZ = MZF(1,IKU,1, PZZ )
+    IF(LRED .AND. LADJ_BEFORE) THEN
+      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
+                      OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
+                      PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
+                      ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &   
+                      PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
+                      PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
+                      PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
+                      PRR=PRS(:,:,:,3)*PTSTEP,                                 &
+                      PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
+                      PRS=PRS(:,:,:,5)*PTSTEP,                                 &
+                      PRG=PRS(:,:,:,6)*PTSTEP                                  )
+    ENDIF
+    IF (LRED) THEN
+      LLMICRO(:,:,:)=PRT(:,:,:,2)>XRTMIN(2) .OR. &
+                   PRT(:,:,:,3)>XRTMIN(3) .OR. &
+                   PRT(:,:,:,4)>XRTMIN(4) .OR. &
+                   PRT(:,:,:,5)>XRTMIN(5) .OR. &
+                   PRT(:,:,:,6)>XRTMIN(6)
+      LLMICRO(:,:,:)=LLMICRO(:,:,:) .OR. &
+                   PRS(:,:,:,2)>ZRSMIN(2) .OR. &
+                   PRS(:,:,:,3)>ZRSMIN(3) .OR. &
+                   PRS(:,:,:,4)>ZRSMIN(4) .OR. &
+                   PRS(:,:,:,5)>ZRSMIN(5) .OR. &
+                   PRS(:,:,:,6)>ZRSMIN(6)
+      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
+                    PTSTEP, KRR, LLMICRO, ZEXN,            &
+                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
+                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
+                    PRT(:,:,:,3), PRT(:,:,:,4),                          &
+                    PRT(:,:,:,5), PRT(:,:,:,6),                          &
+                    PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),      &
+                    PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
+                    PINPRC,PINPRR, PINPRR3D, PEVAP3D,                    &
+                    PINPRS, PINPRG, PSIGS, PINDEP, PSEA,PTOWN, PFPR=ZFPR)
+    ELSE 
+      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,            &
+                    KSPLITR, PTSTEP, KRR,                           &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT,PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                    &
                     PRT(:,:,:,3), PRT(:,:,:,4),                          &
@@ -873,22 +938,25 @@ SELECT CASE ( HCLOUD )
                     PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),            &
                     PINPRC,PINPRR, PINPRR3D, PEVAP3D,           &
                     PINPRS, PINPRG, PSIGS,PINDEP,             &
-                    PSEA,PTOWN)
+                    PSEA,PTOWN, PFPR=ZFPR)
+    END IF
 !
 !*       9.2    Perform the saturation adjustment over cloud ice and cloud water
 !
-    ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HRAD, HTURBDIM,                      &
+!
+    IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
+      CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',    &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF,  PSIGS, PMFCONV, PPABST, ZZZ,           &
-                    PCF_MF,PRC_MF,PRI_MF,                                    &   
-                    PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
+                    ZEXN, PCF_MF,PRC_MF,PRI_MF,                                    &   
+                    PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,                    &
                     PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
-                    PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,                   &
-                    PRRT=PRT(:,:,:,3), PRRS=PRS(:,:,:,3),                    &
-                    PRIT=PRT(:,:,:,4), PRIS=PRS(:,:,:,4),                    &
-                    PRST=PRT(:,:,:,5), PRSS=PRS(:,:,:,5),                    &
-                    PRGT=PRT(:,:,:,6), PRGS=PRS(:,:,:,6)                     )
+                    PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,                   &
+                    PRR=PRS(:,:,:,3)*PTSTEP,                                 &
+                    PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
+                    PRS=PRS(:,:,:,5)*PTSTEP,                                 &
+                    PRG=PRS(:,:,:,6)*PTSTEP                                  )
+    END IF
 !
   CASE ('ICE4')
 !
@@ -902,8 +970,49 @@ SELECT CASE ( HCLOUD )
     DO JK=IKB,IKE
       ZDZZ(:,:,JK)=PZZ(:,:,JK+1)-PZZ(:,:,JK)    
     ENDDO
-    CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,             &
-                    KSPLITR, PTSTEP, KMI, KRR,                            &
+    ZZZ = MZF(1,IKU,1, PZZ )
+    IF(LRED .AND. LADJ_BEFORE) THEN
+            CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'ADJU',                 &
+                      OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
+                      PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
+                      ZEXN, PCF_MF,PRC_MF,PRI_MF,                              & 
+                      PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
+                      PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
+                      PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
+                      PRR=PRS(:,:,:,3)*PTSTEP,                                 &
+                      PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
+                      PRS=PRS(:,:,:,5)*PTSTEP,                                 &
+                      PRG=PRS(:,:,:,6)*PTSTEP,                                 &
+                      PRH=PRS(:,:,:,7)*PTSTEP                                  )
+    ENDIF
+    IF  (LRED) THEN
+      LLMICRO(:,:,:)=PRT(:,:,:,2)>XRTMIN(2) .OR. &
+                   PRT(:,:,:,3)>XRTMIN(3) .OR. &
+                   PRT(:,:,:,4)>XRTMIN(4) .OR. &
+                   PRT(:,:,:,5)>XRTMIN(5) .OR. &
+                   PRT(:,:,:,6)>XRTMIN(6) .OR. &
+                   PRT(:,:,:,7)>XRTMIN(7)
+      LLMICRO(:,:,:)=LLMICRO(:,:,:) .OR. &
+                   PRS(:,:,:,2)>ZRSMIN(2) .OR. &
+                   PRS(:,:,:,3)>ZRSMIN(3) .OR. &
+                   PRS(:,:,:,4)>ZRSMIN(4) .OR. &
+                   PRS(:,:,:,5)>ZRSMIN(5) .OR. &
+                   PRS(:,:,:,6)>ZRSMIN(6) .OR. &
+                   PRS(:,:,:,7)>ZRSMIN(7)
+      CALL RAIN_ICE_RED ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,             &
+                    PTSTEP, KRR, LLMICRO, ZEXN,             &
+                    ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
+                    PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
+                    PRT(:,:,:,3), PRT(:,:,:,4),                           &
+                    PRT(:,:,:,5), PRT(:,:,:,6),                           &
+                    PTHS, PRS(:,:,:,1), PRS(:,:,:,2), PRS(:,:,:,3),       &
+                    PRS(:,:,:,4), PRS(:,:,:,5), PRS(:,:,:,6),             &
+                    PINPRC, PINPRR, PINPRR3D, PEVAP3D,                    &
+                    PINPRS, PINPRG, PSIGS, PINDEP, PSEA, PTOWN,           &
+                    PRT(:,:,:,7), PRS(:,:,:,7), PINPRH, PFPR=ZFPR         )
+    ELSE
+      CALL RAIN_ICE ( OSEDIC,CSEDIM, HSUBG_AUCV, OWARM,1,IKU,1,         &
+                    KSPLITR, PTSTEP, KRR,                                 &
                     ZDZZ, PRHODJ, PRHODREF, PEXNREF, PPABST, PCIT, PCLDFR,&
                     PTHT, PRT(:,:,:,1), PRT(:,:,:,2),                     &
                     PRT(:,:,:,3), PRT(:,:,:,4),                           &
@@ -913,24 +1022,28 @@ SELECT CASE ( HCLOUD )
                     PINPRC, PINPRR, PINPRR3D, PEVAP3D,           &
                     PINPRS, PINPRG, PSIGS,PINDEP,              &
                     PSEA, PTOWN,                                          &
-                    PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,OCONVHG  )
+                    PRT(:,:,:,7),  PRS(:,:,:,7), PINPRH,PFPR=ZFPR )
+     END IF
+
 
 !
 !*       10.2   Perform the saturation adjustment over cloud ice and cloud water
 !
-    ZZZ = MZF(1,IKU,1, PZZ )
-    CALL ICE_ADJUST (1,IKU,1, KRR, KMI, HRAD, HTURBDIM,                      &
+    IF (.NOT. LRED .OR. (LRED .AND. LADJ_AFTER) ) THEN
+     CALL ICE_ADJUST (1,IKU,1, KRR, CFRAC_ICE_ADJUST, 'DEPI',                 &
                     OSUBG_COND, OSIGMAS, PTSTEP,PSIGQSAT,                    &
                     PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, ZZZ,            &
-                    PCF_MF,PRC_MF,PRI_MF,                                    &                     
-                    PRVT=PRT(:,:,:,1), PRCT=PRT(:,:,:,2),                    &
+                    ZEXN, PCF_MF,PRC_MF,PRI_MF,                              &                     
+                    PRV=PRS(:,:,:,1)*PTSTEP, PRC=PRS(:,:,:,2)*PTSTEP,        &
                     PRVS=PRS(:,:,:,1), PRCS=PRS(:,:,:,2),                    &
-                    PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,                   &
-                    PRRT=PRT(:,:,:,3), PRRS=PRS(:,:,:,3),                    &
-                    PRIT=PRT(:,:,:,4), PRIS=PRS(:,:,:,4),                    &
-                    PRST=PRT(:,:,:,5), PRSS=PRS(:,:,:,5),                    &
-                    PRGT=PRT(:,:,:,6), PRGS=PRS(:,:,:,6),                    &
-                    PRHT=PRT(:,:,:,7), PRHS=PRS(:,:,:,7)                     )
+                    PTH=PTHS*PTSTEP, PTHS=PTHS, PSRCS=PSRCS, PCLDFR=PCLDFR,  &
+                    PRR=PRS(:,:,:,3)*PTSTEP,                                 &
+                    PRI=PRS(:,:,:,4)*PTSTEP, PRIS=PRS(:,:,:,4),              &
+                    PRS=PRS(:,:,:,5)*PTSTEP,                                 &
+                    PRG=PRS(:,:,:,6)*PTSTEP,                                 &
+                    PRH=PRS(:,:,:,7)*PTSTEP                                  )
+    END IF
+!           
 !
 !*       12.    2-MOMENT MIXED-PHASE MICROPHYSICAL SCHEME LIMA
 !               --------------------------------------------------------------
@@ -985,6 +1098,31 @@ SELECT CASE ( HCLOUD )
 !
 END SELECT
 !
+IF(HCLOUD=='ICE3' .OR. HCLOUD=='ICE4' ) THEN
+  PINPRC3D=ZFPR(:,:,:,2) / XRHOLW
+  PINPRR3D=ZFPR(:,:,:,3) / XRHOLW
+  PINPRS3D=ZFPR(:,:,:,5) / XRHOLW
+  PINPRG3D=ZFPR(:,:,:,6) / XRHOLW
+  IF(KRR==7) PINPRH3D=ZFPR(:,:,:,7) / XRHOLW
+  WHERE (PRT(:,:,:,2) > 1.E-04 )
+    PSPEEDC=ZFPR(:,:,:,2) / (PRT(:,:,:,2) * PRHODREF(:,:,:))
+  ENDWHERE
+  WHERE (PRT(:,:,:,3) > 1.E-04 )
+    PSPEEDR=ZFPR(:,:,:,3) / (PRT(:,:,:,3) * PRHODREF(:,:,:))
+  ENDWHERE
+  WHERE (PRT(:,:,:,5) > 1.E-04 )
+    PSPEEDS=ZFPR(:,:,:,5) / (PRT(:,:,:,5) * PRHODREF(:,:,:))
+  ENDWHERE
+  WHERE (PRT(:,:,:,6) > 1.E-04 )
+    PSPEEDG=ZFPR(:,:,:,6) / (PRT(:,:,:,6) * PRHODREF(:,:,:))
+  ENDWHERE
+  IF(KRR==7) THEN
+    WHERE (PRT(:,:,:,7) > 1.E-04 )
+      PSPEEDH=ZFPR(:,:,:,7) / (PRT(:,:,:,7) * PRHODREF(:,:,:))
+    ENDWHERE
+  ENDIF
+ENDIF
+!
 IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
 !    CALL GET_HALO(PRS(:,:,:,2))
 !    CALL GET_HALO(ZSVS(:,:,:,2))
@@ -996,7 +1134,7 @@ IF ( (HCLOUD == 'KHKO') .OR. (HCLOUD == 'C2R2') ) THEN
       WHERE (PRS(:,:,:,JSV) < 0. .OR. ZSVS(:,:,:,JSV) < 0.)
         PRS(:,:,:,1) = PRS(:,:,:,1) + PRS(:,:,:,JSV)
         PTHS(:,:,:) = PTHS(:,:,:) - PRS(:,:,:,JSV) * ZLV(:,:,:) /  &
-             ZCPH(:,:,:) / ZEXN(:,:,:)
+             ZCPH(:,:,:) / PEXNREF(:,:,:)
         PRS(:,:,:,JSV)  = 0.0
         ZSVS(:,:,:,JSV) = 0.0
       END WHERE
