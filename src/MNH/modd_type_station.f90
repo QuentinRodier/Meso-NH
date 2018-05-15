@@ -79,10 +79,12 @@ REAL, DIMENSION(:,:),   POINTER :: H=>NULL()      !
 REAL, DIMENSION(:,:),   POINTER :: LE=>NULL()     !
 REAL, DIMENSION(:,:),   POINTER :: LEI=>NULL()    ! 
 REAL, DIMENSION(:,:),   POINTER :: GFLUX=>NULL()  !
-REAL, DIMENSION(:,:),   POINTER :: SW=>NULL()     !
+REAL, DIMENSION(:,:),   POINTER :: SWD=>NULL()     ! 
+REAL, DIMENSION(:,:),   POINTER :: SWU=>NULL()     ! 
+REAL, DIMENSION(:,:),   POINTER :: LWD=>NULL()     !
+REAL, DIMENSION(:,:),   POINTER :: LWU=>NULL()     !
 REAL, DIMENSION(:,:),   POINTER :: SWDIR=>NULL()  ! 
 REAL, DIMENSION(:,:),   POINTER :: SWDIFF=>NULL() !
-REAL, DIMENSION(:,:),   POINTER :: LW=>NULL()     !
 REAL, DIMENSION(:,:),   POINTER :: DSTAOD=>NULL() ! Dust Aerosol Optical Depth
 REAL, DIMENSION(:,:),   POINTER :: SFCO2=>NULL()  ! CO2 surface flux
 !

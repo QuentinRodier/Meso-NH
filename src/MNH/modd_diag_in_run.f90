@@ -23,8 +23,10 @@ REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_H     ! sensible heat flux
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LE    ! Total latent heat flux
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LEI   ! Solid latent heat flux
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_GFLUX ! ground flux
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LW    ! incoming longwave at the surface
-REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SW    ! incoming Shortwave at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LWD   ! incoming longwave at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_LWU   ! outcoming longwave at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWD   ! incoming Shortwave at the surface
+REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWU   ! outcoming Shortwave at the surface
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWDIR ! incoming Shortwave direct at the surface
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_SWDIFF! incoming Shortwave diffuse at the surface
 REAL, DIMENSION(:,:),   ALLOCATABLE :: XCURRENT_T2M   ! temperature at 2m

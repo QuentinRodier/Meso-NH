@@ -99,8 +99,10 @@ IF (LDIAG_IN_RUN) THEN
   ALLOCATE(XCURRENT_LE    (KIU,KJU))! Total latent heat flux
   ALLOCATE(XCURRENT_LEI   (KIU,KJU))! Solid latent heat flux  
   ALLOCATE(XCURRENT_GFLUX (KIU,KJU))! ground flux
-  ALLOCATE(XCURRENT_LW    (KIU,KJU))! incoming longwave at the surface
-  ALLOCATE(XCURRENT_SW    (KIU,KJU))! incoming Shortwave at the surface
+  ALLOCATE(XCURRENT_LWD   (KIU,KJU))! incoming longwave at the surface
+  ALLOCATE(XCURRENT_LWU   (KIU,KJU))! outcoming longwave at the surface
+  ALLOCATE(XCURRENT_SWD   (KIU,KJU))! incoming Shortwave at the surface
+  ALLOCATE(XCURRENT_SWU   (KIU,KJU))! outcoming Shortwave at the surface
   ALLOCATE(XCURRENT_SWDIR (KIU,KJU))! incoming Shortwave direct at the surface
   ALLOCATE(XCURRENT_SWDIFF(KIU,KJU))! incoming Shortwave diffuse at the surface  
   ALLOCATE(XCURRENT_T2M   (KIU,KJU))! temperature at 2m
@@ -118,8 +120,10 @@ IF (LDIAG_IN_RUN) THEN
   XCURRENT_LE    = XUNDEF
   XCURRENT_LEI   = XUNDEF  
   XCURRENT_GFLUX = XUNDEF
-  XCURRENT_LW    = XUNDEF
-  XCURRENT_SW    = XUNDEF
+  XCURRENT_LWD   = XUNDEF
+  XCURRENT_LWU   = XUNDEF
+  XCURRENT_SWD   = XUNDEF
+  XCURRENT_SWU   = XUNDEF
   XCURRENT_SWDIR = XUNDEF
   XCURRENT_SWDIFF= XUNDEF  
   XCURRENT_T2M   = XUNDEF
@@ -136,8 +140,10 @@ ELSE
   ALLOCATE(XCURRENT_LE    (0,0))! Total latent heat flux
   ALLOCATE(XCURRENT_LEI   (0,0))! Solid latent heat flux  
   ALLOCATE(XCURRENT_GFLUX (0,0))! ground flux
-  ALLOCATE(XCURRENT_LW    (0,0))! incoming longwave at the surface
-  ALLOCATE(XCURRENT_SW    (0,0))! incoming Shortwave at the surface
+  ALLOCATE(XCURRENT_LWD   (0,0))! incoming longwave at the surface
+  ALLOCATE(XCURRENT_LWU   (0,0))! outcoming longwave at the surface
+  ALLOCATE(XCURRENT_SWD   (0,0))! incoming Shortwave at the surface
+  ALLOCATE(XCURRENT_SWU   (0,0))! outcoming Shortwave at the surface
   ALLOCATE(XCURRENT_SWDIR (0,0))! incoming Shortwave direct at the surface
   ALLOCATE(XCURRENT_SWDIFF(0,0))! incoming Shortwave diffuse at the surface  
   ALLOCATE(XCURRENT_T2M   (0,0))! temperature at 2m

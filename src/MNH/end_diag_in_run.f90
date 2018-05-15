@@ -78,8 +78,10 @@ DEALLOCATE(XCURRENT_H     )! sensible heat flux
 DEALLOCATE(XCURRENT_LE    )! latent heat flux
 DEALLOCATE(XCURRENT_LEI   )! Solid latent heat flux
 DEALLOCATE(XCURRENT_GFLUX )! ground flux
-DEALLOCATE(XCURRENT_LW    )! incoming longwave at the surface
-DEALLOCATE(XCURRENT_SW    )! incoming Shortwave at the surface
+DEALLOCATE(XCURRENT_LWD   )! incoming longwave at the surface
+DEALLOCATE(XCURRENT_LWU   )! outcoming longwave at the surface
+DEALLOCATE(XCURRENT_SWD   )! incoming Shortwave at the surface
+DEALLOCATE(XCURRENT_SWU   )! outcoming Shortwave at the surface
 IF(ALLOCATED(XCURRENT_SWDIR)) DEALLOCATE(XCURRENT_SWDIR )! incoming Shortwave direct at the surface
 IF(ALLOCATED(XCURRENT_SWDIFF))DEALLOCATE(XCURRENT_SWDIFF)! incoming Shortwave diffuse at the surface
 DEALLOCATE(XCURRENT_T2M   )! temperature at 2m

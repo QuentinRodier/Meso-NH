@@ -154,7 +154,7 @@ IF (TPROFILER%Y(II)==XUNDEF) RETURN
 IKU = SIZE(TPROFILER%W,2)    !nbre de niveaux sur la verticale SIZE(TPROFILER%W,2)
 !
 IPROC = 24 + SIZE(TPROFILER%R,4) + SIZE(TPROFILER%SV,4)
-IF (LDIAG_IN_RUN) IPROC = IPROC + 13
+IF (LDIAG_IN_RUN) IPROC = IPROC + 15
 IF (LORILAM) IPROC = IPROC + JPMODE*3
 IF (LDUST) IPROC = IPROC + NMODE_DST*3
 IF (LDUST .OR. LORILAM .OR. LSALT) IPROC=IPROC+NAER
@@ -318,16 +318,29 @@ IF (LDIAG_IN_RUN) THEN
   ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%GFLUX(:,II)
   !
   JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'SW'
+  YTITLE   (JPROC) = 'SWD'
   YUNIT    (JPROC) = 'W/m²'
   YCOMMENT (JPROC) = 'Downward short-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SW(:,II)
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWD(:,II)
   !
   JPROC = JPROC + 1
-  YTITLE   (JPROC) = 'LW'
+  YTITLE   (JPROC) = 'SWU'
+  YUNIT    (JPROC) = 'W/m²'
+  YCOMMENT (JPROC) = 'Upward short-wave radiation'
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SWU(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'LWD'
   YUNIT    (JPROC) = 'W/m²'
   YCOMMENT (JPROC) = 'Downward long-wave radiation'
-  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LW(:,II)
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWD(:,II)
+  !
+  JPROC = JPROC + 1
+  YTITLE   (JPROC) = 'LWU'
+  YUNIT    (JPROC) = 'W/m²'
+  YCOMMENT (JPROC) = 'Upward long-wave radiation'
+  ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%LWU(:,II)
+  !
   !
   JPROC = JPROC + 1
   YTITLE   (JPROC) = 'TKE_DISS'
@@ -415,6 +428,14 @@ IF (SIZE(TPROFILER%SV,4)>=1) THEN
     WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
     YUNIT    (JPROC) = 'kg/kg'
     YCOMMENT (JPROC) = ' ' 
+    ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
+  END DO
+ ! Passive pollutant  scalar variables
+  DO JSV = NSV_PPBEG,NSV_PPEND
+    JPROC = JPROC+1
+    WRITE (YTITLE(JPROC),FMT='(A2,I3.3)')   'Sv',JSV
+    YUNIT    (JPROC) = ''
+    YCOMMENT (JPROC) = ' '
     ZWORK6 (1,1,IK,:,1,JPROC) = TPROFILER%SV(:,IK,II,JSV)
   END DO
  ! microphysical C2R2 scheme scalar variables
