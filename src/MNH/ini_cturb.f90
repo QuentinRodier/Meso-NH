@@ -81,10 +81,11 @@ IMPLICIT NONE
 !         1.1 Constant for dissipation of Tke
 !
 !XCED  = 0.70
-XCED  = 0.85
+XCED  = 0.84
 !       Redelsperger-Sommeria (1981) = 0.70
 !       Schmidt-Schumann      (1989) = 0.845
 !       Cheng-Canuto-Howard   (2002) = 0.845
+!       Rodier, Masson, Couvreux, Paci (2017) = 0.34
 !
 !
 !         1.2 Constant for wind pressure-correlations
@@ -161,6 +162,10 @@ XALPSBL = 4.63
 !       Wyngaard et al. 1974        = 3.75
 !       Stull 1988                  = 4.75
 !
+!
+!         1.11  Value related to the shear term in mixing length computation
+!
+XRM17 = 0.5  ! Rodier et al 2017
 !
 !
 !         2. Derivated constants
