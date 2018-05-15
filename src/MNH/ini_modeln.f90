@@ -276,6 +276,7 @@ END MODULE MODI_INI_MODEL_n
 !!                   02/2018 Q.Libois ECRAD
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!                   V. Vionnet : 18/07/2017 : add blowing snow scheme 
+!!                   01/18 J.Colin Add DRAG 
 !---------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -354,6 +355,7 @@ USE MODD_TURB_n
 USE MODD_CTURB
 USE MODD_LBC_n
 USE MODD_PASPOL_n
+USE MODD_DRAG_n
 USE MODD_BLOWSNOW
 USE MODD_BLOWSNOW_n
 !
@@ -407,6 +409,7 @@ USE MODI_INI_AEROSET3
 USE MODI_INI_AEROSET4
 USE MODI_INI_AEROSET5
 USE MODI_INI_AEROSET6
+USE MODI_INI_DRAG
 !
 #ifdef MNH_FOREFIRE
 USE MODD_FOREFIRE
@@ -750,6 +753,7 @@ IF (CTURB /= 'NONE') THEN
   ALLOCATE(XDISS(IIU,IJU,IKU))
   ALLOCATE(XLEM(IIU,IJU,IKU))
   XTKEMIN=XKEMIN
+  XCED   =XCEDIS
 ELSE
   ALLOCATE(XTKET(0,0,0))
   ALLOCATE(XRTKES(0,0,0))
@@ -1530,6 +1534,14 @@ IF ((LUSECHEM).AND.(CPROGRAM == 'DIAG  ')) THEN
   XCHFLX(:,:,:) = 0.
 END IF
 !
+!*          3.14 Module MODD_DRAG
+!
+IF (LDRAG) THEN
+      ALLOCATE(XDRAG(IIU,IJU))
+ELSE
+      ALLOCATE(XDRAG(0,0))
+ENDIF
+!
 !-------------------------------------------------------------------------------
 !
 !*       4.    INITIALIZE BUDGET VARIABLES
@@ -1951,6 +1963,12 @@ CALL INI_DYNAMICS(XLON,XLAT,XRHODJ,XTHVREF,XMAP,XZZ,XDXHAT,XDYHAT,            &
              LZDIFFU,XZDIFFU_HALO2,                                           &
              XBFB,XBF_SXP2_YP1_Z                                              ) 
 !
+!
+!*      16.1 Initialize the XDRAG array
+!              -------------
+IF (LDRAG) THEN
+   CALL INI_DRAG(LMOUNT,XZS,XHSTART,NSTART,XDRAG)
+ENDIF
 !-------------------------------------------------------------------------------
 !
 !*      17.    SURFACE FIELDS
