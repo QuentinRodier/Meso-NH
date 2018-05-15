@@ -401,6 +401,7 @@ REAL                        :: ZEMIW_CLEAR ! ensemble mean clear-sky LW window
 REAL                        :: ZRMU0_CLEAR ! ensemble mean clear-sky MU0
 REAL                        :: ZTS_CLEAR   ! ensemble mean clear-sky surface temperature.
 REAL                        :: ZLSM_CLEAR  !  ensemble mean clear-sky land sea-mask  
+REAL                        :: ZLAT_CLEAR,ZLON_CLEAR
 !
 !work arrays
 REAL, DIMENSION(:),   ALLOCATABLE :: ZWORK1, ZWORK2, ZWORK3, ZWORK
@@ -535,8 +536,8 @@ INTEGER, DIMENSION(3) :: IMINLOC
 INTEGER :: IINFO_ll
 LOGICAL, DIMENSION(SIZE(PTHT,1),SIZE(PTHT,2)) :: GCLOUD_SURF
 !
-REAL, DIMENSION(:),   ALLOCATABLE :: ZLON,ZLAT
-REAL, DIMENSION(:),   ALLOCATABLE :: ZLON_SPLIT,ZLAT_SPLIT
+REAL(KIND=JPRB), DIMENSION(:),   ALLOCATABLE :: ZLON,ZLAT
+REAL(KIND=JPRB), DIMENSION(:),   ALLOCATABLE :: ZLON_SPLIT,ZLAT_SPLIT
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
 !-------------------------------------------------------------------------
@@ -574,7 +575,6 @@ ENDIF
 !------------------------------------------------------------------------------
 ALLOCATE(ZLAT(KDLON))
 ALLOCATE(ZLON(KDLON))
-
 IF(LCARTESIAN) THEN
   ZLAT(:) = XLAT0*(XPI/180.)
   ZLON(:) = XLON0*(XPI/180.)
@@ -1099,7 +1099,6 @@ ALLOCATE(ZLSM(KDLON))
 ! 
 ALLOCATE(ZALBP(KDLON,KSWB_MNH))
 ALLOCATE(ZALBD(KDLON,KSWB_MNH))
-
 !
 ALLOCATE(ZEMIS(KDLON,KLWB_MNH))
 ALLOCATE(ZEMIW(KDLON,KLWB_MNH))
@@ -1218,6 +1217,8 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     ZRMU0_CLEAR  = SUM( ZRMU0(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
     ZTS_CLEAR    = SUM( ZTS(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)
     ZLSM_CLEAR   = SUM( ZLSM(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)  
+    ZLAT_CLEAR   = SUM( ZLAT(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)  
+    ZLON_CLEAR   = SUM( ZLON(:) ,DIM=1,MASK=GCLEAR_2D(:)) / FLOAT(ICLEAR_COL)    
 !
   ELSE ! no clear columns -> the first column is chosen, without physical meaning: it will not be
     ! unpacked after the call to the radiation ecmwf routine
@@ -1242,7 +1243,9 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
     ZEMIW_CLEAR  = ZEMIW(1,1) 
     ZRMU0_CLEAR  = ZRMU0(1)
     ZTS_CLEAR    = ZTS(1) 
-    ZLSM_CLEAR   = ZLSM(1)  
+    ZLSM_CLEAR   = ZLSM(1) 
+    ZLAT_CLEAR   = ZLAT(1)
+    ZLON_CLEAR   = ZLON(1)
   END IF
   !
   GCLOUD(:,:) = .NOT.GCLEAR(:,:) ! .true. where the column is cloudy
@@ -1558,6 +1561,18 @@ IF(OCLOUD_ONLY .OR. OCLEAR_SKY) THEN
   ZLSM(1:ICLOUD_COL) = ZWORK3(1:ICLOUD_COL)
   ZLSM (ICLOUD_COL+1)= ZLSM_CLEAR
   ! 
+  ZWORK3(:) = PACK( ZLAT(:),MASK=.NOT.GCLEAR_2D(:) )
+  DEALLOCATE(ZLAT)
+  ALLOCATE(ZLAT(ICLOUD_COL+1))
+  ZLAT(1:ICLOUD_COL) = ZWORK3(1:ICLOUD_COL)
+  ZLAT (ICLOUD_COL+1)= ZLAT_CLEAR
+  ! 
+  ZWORK3(:) = PACK( ZLON(:),MASK=.NOT.GCLEAR_2D(:) )
+  DEALLOCATE(ZLON)
+  ALLOCATE(ZLON(ICLOUD_COL+1))
+  ZLON(1:ICLOUD_COL) = ZWORK3(1:ICLOUD_COL)
+  ZLON (ICLOUD_COL+1)= ZLON_CLEAR
+  !   
   ZWORK3(:) = PACK( ZTS(:),MASK=.NOT.GCLEAR_2D(:) )
   DEALLOCATE(ZTS)
   ALLOCATE(ZTS(ICLOUD_COL+1))
@@ -1894,21 +1909,7 @@ END IF
 
 ZQVAVE(:,:) = ZQVAVE(:,:) / (1.+ZQVAVE(:,:)) ! Because 
 ! ZAER = 1e-5*ZAER
-! ZO3AVE = 1e-5*ZO3AVE
-IF(LCARTESIAN) THEN
-  ZLAT(:) = XLAT0*(XPI/180.)
-  ZLON(:) = XLON0*(XPI/180.)
-ELSE
-  DO JJ=IJB,IJE
-    DO JI=IIB,IIE
-        IIJ = 1 + (JI-IIB) + (IIE-IIB+1)*(JJ-IJB)
-        ZLAT(IIJ) =  XLAT(JI,JJ)*(XPI/180.)
-        ZLON(IIJ) =  XLON(JI,JJ)*(XPI/180.)
-    END DO
-  END DO
-END IF
-!
-!
+! ZO3AVE = 1e-5*ZO3AVE!
 IF( IDIM <= KRAD_COLNBR ) THEN 
 !
 ! there is less than KRAD_COLNBR columns to be considered therefore
@@ -1980,8 +1981,6 @@ IF( IDIM <= KRAD_COLNBR ) THEN
         GAOP, ZPIZA_EQ,ZCGA_EQ,ZTAUREL_EQ                       )
    
    ELSE IF (CRAD == "ECRA") THEN 
-print*,"IDIM=",IDIM
-print*,"SHAPE(ZLON):",SHAPE(ZLON)
      CALL ECRAD_INTERFACE  ( IDIM ,KFLEV, KRAD_DIAG, KAER,                   &      
         ZDZ,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
         ZRII0, ZAER , ZALBD, ZALBP, ZPRES_HL, ZPAVE_RAD,               &
@@ -2266,8 +2265,6 @@ ELSE
                 GAOP,ZPIZA_EQ_SPLIT,ZCGA_EQ_SPLIT,ZTAUREL_EQ_SPLIT  )
          
     ELSE IF (CRAD == "ECRA") THEN  
- print*,"IDIM_EFF=",IDIM_EFF
-print*,"SHAPE(ZLON_SPLIT):",SHAPE(ZLON_SPLIT)
        CALL ECRAD_INTERFACE  ( IDIM_EFF ,KFLEV, KRAD_DIAG, KAER,                   &      
             ZDZ_SPLIT,HEFRADL,HEFRADI,HOPWSW, HOPISW, HOPWLW, HOPILW,PFUDG,      &
             ZRII0, ZAER_SPLIT , ZALBD_SPLIT, ZALBP_SPLIT, ZPRES_HL_SPLIT, ZPAVE_SPLIT,               &
