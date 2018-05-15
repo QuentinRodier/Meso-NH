@@ -8,12 +8,12 @@
 !
 INTERFACE
 
-SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
+SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
                     HCLOUD,PPABST,PTHT,PRT,PSVT,         &
                     PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
                     PTHS,PRRS,PSVS)
 !
-
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET           !   at t
 LOGICAL,                  INTENT(IN)    :: ODEPOTREE ! Droplet deposition on tree
@@ -44,7 +44,7 @@ END INTERFACE
 END MODULE MODI_DRAG_VEG
 !
 !     ###################################################################
-SUBROUTINE DRAG_VEG(PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
+SUBROUTINE DRAG_VEG(PTSTEP,PUT,PVT,PTKET,ODEPOTREE, PVDEPOTREE, &
                     HCLOUD,PPABST,PTHT,PRT,PSVT,         &
                     PRHODJ,PZZ,PRUS, PRVS, PRTKES,       &
                     PTHS,PRRS,PSVS)
@@ -100,6 +100,7 @@ IMPLICIT NONE
 !  
 !*       0.1   Declarations of dummy arguments :
 !
+REAL,                     INTENT(IN)    :: PTSTEP ! Time step
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PUT, PVT   ! variables
 REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTKET           !   at t
 LOGICAL,                  INTENT(IN)    :: ODEPOTREE ! Droplet deposition on tree
@@ -226,15 +227,15 @@ GDEP(:,:,2) = .FALSE.
 !
 !* drag force by vertical surfaces
 !
-ZUS(:,:,:)=  ZUT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
+ZUS(:,:,:)=  ZUT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*PTSTEP &
             *SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
 !
-ZVS(:,:,:)=  ZVT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
+ZVS(:,:,:)=  ZVT(:,:,:)/(1 + ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*PTSTEP &
             *SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
 !
-PRUS(:,:,:)=PRUS(:,:,:)+((ZUS(:,:,:)-ZUT(:,:,:))*PRHODJ(:,:,:))
+PRUS(:,:,:)=PRUS(:,:,:)+((ZUS(:,:,:)-ZUT(:,:,:))*PRHODJ(:,:,:))/PTSTEP
 !
-PRVS(:,:,:)=PRVS(:,:,:)+((ZVS(:,:,:)-ZVT(:,:,:))*PRHODJ(:,:,:))
+PRVS(:,:,:)=PRVS(:,:,:)+((ZVS(:,:,:)-ZVT(:,:,:))*PRHODJ(:,:,:))/PTSTEP
 !
 IF (ODEPOTREE) THEN
   ZEXN(:,:,:)= (PPABST(:,:,:)/XP00)**(XRD/XCPD)
@@ -290,11 +291,14 @@ IF (LBUDGET_SV) CALL BUDGET (PSVS(:,:,:,NSV_C2R2BEG+1),14+(NSV_C2R2BEG-1),'DEPOT
 ! with Vair = Vair/Vtot * Vtot = (Vair/Vtot) * Stot * Dz
 ! and  Sv/Vair = (Sv/Stot) * Stot/Vair = (Sv/Stot) / (Vair/Vtot) / Dz
 !
+!ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
+!            *(SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))**3))   /&
+!            (1.+(2.*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2)))
 ZTKES(:,:,:)=  (ZTKET(:,:,:) + (ZCDRAG(:,:,:)* ZDENSITY(:,:,:) &
-            *(SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))**3))   /&
-            (1.+(2.*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2)))
+            *(SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))**3))*PTSTEP   /&
+            (1.+PTSTEP*ZCDRAG(:,:,:)* ZDENSITY(:,:,:)*SQRT(ZUT(:,:,:)**2+ZVT(:,:,:)**2))
 !
-PRTKES(:,:,:)=PRTKES(:,:,:)+((ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:))
+PRTKES(:,:,:)=PRTKES(:,:,:)+((ZTKES(:,:,:)-ZTKET(:,:,:))*PRHODJ(:,:,:)/PTSTEP)
 !
 IF (LBUDGET_TKE) CALL BUDGET (PRTKES(:,:,:),5,'DRAG_BU_RTKE')
 !
