@@ -5,12 +5,8 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/modn_param_ice.f90,v $ $Revision: 1.2.2.1.2.1.18.2 $
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/modn_param_ice.f90,v $ $Revision: 1.2.2.1.2.1.18.3 $
 ! MASDEV4_7 modn 2006/10/16 14:23:23
-!!
-!! MODIFICATIONS
-!!
-!!                    10/2016 (C.Lac) Add droplet deposition
 !-----------------------------------------------------------------
 !     #####################
       MODULE MODN_PARAM_ICE
@@ -25,6 +21,11 @@ USE MODD_PARAM_ICE
 !
 IMPLICIT NONE
 !
-NAMELIST/NAM_PARAM_ICE/LWARM,LSEDIC,LCONVHG,CPRISTINE_ICE,CSEDIM,LDEPOSC,XVDEPOSC
+NAMELIST/NAM_PARAM_ICE/LWARM,LSEDIC,LCONVHG,CPRISTINE_ICE,CSEDIM,LDEPOSC,XVDEPOSC, &
+                       LRED, LFEEDBACKT, &
+                       LEVLIMIT,LNULLWETG,LWETGPOST,LNULLWETH,LWETHPOST, &
+                       CSNOWRIMING,XFRACM90,NMAXITER,XMRSTEP,XTSTEP_TS, &
+                       LADJ_BEFORE, LADJ_AFTER, CFRAC_ICE_ADJUST, LCRFLIMIT, &
+                       XSPLIT_MAXCFL, CFRAC_ICE_SHALLOW_MF, LSEDIM_AFTER
 !
 END MODULE MODN_PARAM_ICE

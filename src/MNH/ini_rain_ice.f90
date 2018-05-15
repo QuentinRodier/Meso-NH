@@ -1,14 +1,4 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
-!-----------------------------------------------------------------
-!--------------- special set of characters for RCS information
-!-----------------------------------------------------------------
-! $Source$ $Revision$
-! masdev4_7 BUG1 2007/06/15 17:47:18
-!-----------------------------------------------------------------
-!      ########################
+!     ######spl
        MODULE MODI_INI_RAIN_ICE
 !      ########################
 !
@@ -31,7 +21,7 @@ END SUBROUTINE INI_RAIN_ICE
 END INTERFACE
 !
 END MODULE MODI_INI_RAIN_ICE
-!     ###########################################################
+!     ######spl
       SUBROUTINE INI_RAIN_ICE ( KLUOUT, PTSTEP, PDZMIN, KSPLITR, HCLOUD )
 !     ###########################################################
 !
@@ -40,12 +30,12 @@ END MODULE MODI_INI_RAIN_ICE
 !!
 !!    PURPOSE
 !!    -------
-!!      The purpose of this routine is to initialize the constants used to 
-!!    resolve the mixed phase microphysical scheme. The collection kernels of 
+!!      The purpose of this routine is to initialize the constants used to
+!!    resolve the mixed phase microphysical scheme. The collection kernels of
 !!    the precipitating particles are recomputed if necessary if some parameters
 !!    defining the ice categories have been modified. The number of small
 !!    time steps leading to stable scheme for the rain, ice, snow and ggraupeln
-!!    sedimentation is also computed (time-splitting technique).     
+!!    sedimentation is also computed (time-splitting technique).
 !!
 !!**  METHOD
 !!    ------
@@ -55,12 +45,12 @@ END MODULE MODI_INI_RAIN_ICE
 !!    sedimentation is fulfilled for a Raindrop maximal fall velocity equal
 !!    VTRMAX. The parameters defining the collection kernels are read and are
 !!    checked against the new ones. If any change occurs, these kernels are
-!!    recomputed and their numerical values are written in the output listiing. 
+!!    recomputed and their numerical values are written in the output listing.
 !!
 !!    EXTERNAL
 !!    --------
 !!      GAMMA    :  gamma function
-!!     
+!!
 !!
 !!    IMPLICIT ARGUMENTS
 !!    ------------------
@@ -104,6 +94,7 @@ END MODULE MODI_INI_RAIN_ICE
 !!      J.-P. Chaboureau & J.-P. Pinty
 !!                  24/03/01 Update XCRIAUTI for cirrus cases
 !!      J.-P. Pinty 24/11/01 Update ICE3/ICE4 options
+!!      S. Riette 2016-11: new ICE3/ICE4 options
 !!
 !-------------------------------------------------------------------------------
 !
@@ -129,6 +120,7 @@ USE MODI_READ_XKER_SDRYG
 USE MODI_READ_XKER_RDRYG
 USE MODI_READ_XKER_SWETH
 USE MODI_READ_XKER_GWETH
+USE MODI_READ_XKER_RWETH
 !
 IMPLICIT NONE
 !
@@ -140,7 +132,7 @@ INTEGER,                 INTENT(OUT):: KSPLITR   ! Number of small time step
                                                  ! integration for  rain
                                                  ! sedimendation
 !
-REAL,                    INTENT(IN) :: PTSTEP    ! Effective Time step 
+REAL,                    INTENT(IN) :: PTSTEP    ! Effective Time step
 !
 REAL,                    INTENT(IN) :: PDZMIN    ! minimun vertical mesh size
 !
@@ -150,17 +142,19 @@ CHARACTER (LEN=4), INTENT(IN)       :: HCLOUD    ! Indicator of the cloud scheme
 !
 !*       0.2   Declarations of local variables :
 !
-INTEGER :: IKB                ! Coordinates of the first physical 
+INTEGER :: IKB                ! Coordinates of the first physical
                               ! points along z
 INTEGER :: J1,J2              ! Internal loop indexes
 REAL :: ZT                    ! Work variable
 REAL :: ZVTRMAX               ! Raindrop maximal fall velocity
 REAL :: ZRHO00                ! Surface reference air density
+REAL :: ZE, ZRV               ! Work array for ZRHO00 computation
 REAL :: ZRATE                 ! Geometrical growth of Lbda in the tabulated
                               ! functions and kernels
 REAL :: ZBOUND                ! XDCSLIM*Lbda_s: upper bound for the partial
                               ! integration of the riming rate of the aggregates
-REAL :: ZEGS, ZEGR, ZEHS, ZEHG! Bulk collection efficiencies
+REAL :: ZEGS, ZEGR, ZEHS, &   ! Bulk collection efficiencies
+      & ZEHG, ZEHR
 !
 INTEGER :: IND                ! Number of interval to integrate the kernels
 REAL :: ZESR                  ! Mean efficiency of rain-aggregate collection
@@ -175,27 +169,27 @@ REAL     :: ZGAMC,ZGAMC2 ! parameters
                     ! involving various moments of the generalized gamma law
 REAL     :: ZFACT_NUCL! Amplification factor for the minimal ice concentration
 REAL     :: ZXR     ! Value of x_r in N_r = C_r lambda_r ** x_r
-!  
+!
 INTEGER  :: KND
 INTEGER  :: KACCLBDAS,KACCLBDAR,KDRYLBDAG,KDRYLBDAS,KDRYLBDAR
-INTEGER  :: KWETLBDAS,KWETLBDAG,KWETLBDAH
+INTEGER  :: KWETLBDAS,KWETLBDAG,KWETLBDAR,KWETLBDAH
 REAL     :: PALPHAR,PALPHAS,PALPHAG,PALPHAH
 REAL     :: PNUR,PNUS,PNUG,PNUH
-REAL     :: PBR,PBS,PBG,PBH
+REAL     :: PBR,PBS,PBG
 REAL     :: PCR,PCS,PCG,PCH
 REAL     :: PDR,PDS,PDG,PDH
-REAL     :: PESR,PEGS,PEGR,PEHS,PEHG
+REAL     :: PESR,PEGS,PEGR,PEHS,PEHG,PEHR
 REAL     :: PFDINFTY
 REAL     :: PACCLBDAS_MAX,PACCLBDAR_MAX,PACCLBDAS_MIN,PACCLBDAR_MIN
 REAL     :: PDRYLBDAG_MAX,PDRYLBDAS_MAX,PDRYLBDAG_MIN,PDRYLBDAS_MIN
 REAL     :: PDRYLBDAR_MAX,PDRYLBDAR_MIN
 REAL     :: PWETLBDAS_MAX,PWETLBDAG_MAX,PWETLBDAS_MIN,PWETLBDAG_MIN
-REAL     :: PWETLBDAH_MAX,PWETLBDAH_MIN
+REAL     :: PWETLBDAR_MAX,PWETLBDAH_MAX,PWETLBDAR_MIN,PWETLBDAH_MIN
 !-------------------------------------------------------------------------------
 !
 !
 !*       0.     FUNCTION STATEMENTS
-!   	        -------------------
+!               -------------------
 !
 !
 !*       0.1    p_moment of the Generalized GAMMA function
@@ -207,7 +201,7 @@ REAL     :: PWETLBDAH_MAX,PWETLBDAH_MIN
 !
 !*       1.1    Set the hailstones maximum fall velocity
 !
-IF (CSEDIM == 'SPLI') THEN
+IF (CSEDIM == 'SPLI' .AND. .NOT. LRED ) THEN
  IF (HCLOUD == 'ICE4') THEN
   ZVTRMAX = 40.
  ELSE IF (HCLOUD == 'ICE3') THEN
@@ -218,7 +212,7 @@ END IF
 !*       1.2    Compute the number of small time step integration
 !
 KSPLITR = 1
-IF (CSEDIM == 'SPLI') THEN
+IF (CSEDIM == 'SPLI' .AND. .NOT. LRED ) THEN
  SPLIT : DO
   ZT = PTSTEP / FLOAT(KSPLITR)
   IF ( ZT * ZVTRMAX / PDZMIN .LT. 1.) EXIT SPLIT
@@ -236,7 +230,7 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !*       2.     CHARACTERISTICS OF THE SPECIES
-!   	        ------------------------------
+!               ------------------------------
 !
 !
 !*       2.1    Cloud droplet and Raindrop characteristics
@@ -268,7 +262,7 @@ XC1R = 1./2.
 SELECT CASE (CPRISTINE_ICE)
   CASE('PLAT')
     XAI = 0.82      ! Plates
-    XBI = 2.5       ! Plates 
+    XBI = 2.5       ! Plates
     XC_I = 800.     ! Plates
     XDI = 1.0       ! Plates
     XC1I = 1./XPI   ! Plates
@@ -277,7 +271,7 @@ SELECT CASE (CPRISTINE_ICE)
     XBI = 1.7       ! Columns
     XC_I = 2.1E5    ! Columns
     XDI = 1.585     ! Columns
-    XC1I = 0.8      ! Columns 
+    XC1I = 0.8      ! Columns
   CASE('BURO')
     XAI = 44.0      ! Bullet rosettes
     XBI = 3.0       ! Bullet rosettes
@@ -353,7 +347,7 @@ XC1H = 1./2.
 !-------------------------------------------------------------------------------
 !
 !*       3.     DIMENSIONAL DISTRIBUTIONS OF THE SPECIES
-!	            ----------------------------------------
+!               ----------------------------------------
 !
 !
 !        3.1    Cloud droplet distribution
@@ -411,9 +405,7 @@ XLBH   = ( XAH*XCCH*MOMG(XALPHAH,XNUH,XBH) )**(-XLBEXH)
 !
 !*       3.5    Minimal values allowed for the mixing ratios
 !
-XLBDAR_MAX = 100000.0
 XLBDAS_MAX = 100000.0
-XLBDAG_MAX = 100000.0
 !
 ZCONC_MAX  = 1.E6 ! Maximal concentration for falling particules set to 1 per cc
 XLBDAS_MAX = ( ZCONC_MAX/XCCS )**(1./XCXS)
@@ -439,7 +431,7 @@ XCONC_URBAN=5E8 ! 500/cm3
 !-------------------------------------------------------------------------------
 !
 !*       4.     CONSTANTS FOR THE SEDIMENTATION
-!   	        -------------------------------
+!               -------------------------------
 !
 !
 !*       4.1    Exponent of the fall-speed air density correction
@@ -447,7 +439,11 @@ XCONC_URBAN=5E8 ! 500/cm3
 XCEXVT = 0.4
 !
 IKB = 1 + JPVEXT
-ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+!ZRHO00 = XP00/(XRD*XTHVREFZ(IKB))
+!According to Foote and Du Toit (1969) and List (1958), ZRHO00 must be computed for Hu=50%, P=101325Pa and T=293.15K
+ZE = (50./100.) * EXP(XALPW-XBETAW/293.15-XGAMW*LOG(293.15))
+ZRV = (XRD/XRV) * ZE / (101325.-ZE)
+ZRHO00 = 101325.*(1.+ZRV)/(XRD+ZRV*XRV)/293.15
 !
 !*       4.2    Constants for sedimentation
 !
@@ -466,6 +462,8 @@ XFSEDI   = (4.*XPI*900.)**(-XEXCSEDI) *                         &
            XC_I*XAI*MOMG(XALPHAI,XNUI,XBI+XDI) *                &
            ((XAI*MOMG(XALPHAI,XNUI,XBI)))**(-XEXRSEDI) *        &
            (ZRHO00)**XCEXVT
+!When we do not use computations for columns, I think we must uncomment line just below
+!XEXCSEDI = XEXCSEDI * 3. to be checked
 !
 !  Computations made for Columns
 !
@@ -493,7 +491,7 @@ XFSEDH  = XCH*XAH*XCCH*MOMG(XALPHAH,XNUH,XBH+XDH)*                         &
 !-------------------------------------------------------------------------------
 !
 !*       5.     CONSTANTS FOR THE SLOW COLD PROCESSES
-!      	        -------------------------------------
+!               -------------------------------------
 !
 !
 !*       5.1    Constants for ice nucleation
@@ -571,11 +569,13 @@ XEX1DEPH = XCXH-0.5*(XDH+3.0)
 !
 XTIMAUTI = 1.E-3  !  Time constant at T=T_t
 XTEXAUTI = 0.015  !  Temperature factor of the I+I collection efficiency
+!!XCRIAUTI = 0.25E-3 !  Critical ice content for the autoconversion to occur
 XCRIAUTI = 0.2E-4 !  Critical ice content for the autoconversion to occur
-                  !  Revised value by Chaboureau and Pinty (2006)
-XACRIAUTI = 0.06
-XBCRIAUTI = -3.5
-XT0CRIAUTI= (LOG10(XCRIAUTI)-XBCRIAUTI)/0.06
+                  !  Revised value by Chaboureau et al. (2001)
+XACRIAUTI=0.06
+XBCRIAUTI=-3.5
+XT0CRIAUTI=(LOG10(XCRIAUTI)-XBCRIAUTI)/0.06
+
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -583,10 +583,10 @@ IF (GFLAG) THEN
   WRITE(UNIT=KLUOUT,FMT='(" Time constant   XTIMAUTI=",E13.6)') XTIMAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Temp. factor    XTEXAUTI=",E13.6)') XTEXAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Crit. ice cont. XCRIAUTI=",E13.6)') XCRIAUTI
-  WRITE(UNIT=KLUOUT,FMT='(" A Coef. for cirrus law XACRIAUTI=",E13.6)') XACRIAUTI
-  WRITE(UNIT=KLUOUT,FMT='(" B Coef. for cirrus law XBCRIAUTI=",E13.6)') XBCRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" A Coef. for cirrus law XACRIAUTI=",E13.6)')XACRIAUTI
+  WRITE(UNIT=KLUOUT,FMT='(" B Coef. for cirrus law XBCRIAUTI=",E13.6)')XBCRIAUTI
   WRITE(UNIT=KLUOUT,FMT='(" Temp degC at which cirrus law starts to be &
-                            & used=",E13.6)') XT0CRIAUTI
+                              used=",E13.6)') XT0CRIAUTI
 END IF
 !
 !
@@ -608,13 +608,13 @@ END IF
 !-------------------------------------------------------------------------------
 !
 !*       6.     CONSTANTS FOR THE SLOW WARM PROCESSES
-!   	        -------------------------------------
+!               -------------------------------------
 !
 !
 !*       6.1    Constants for the cloud droplets autoconversion
 !
 XTIMAUTC = 1.E-3
-XCRIAUTC = 0.5E-3 
+XCRIAUTC = 0.5E-3
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -639,7 +639,7 @@ XEX1EVAR = -1.0-0.5*(XDR+3.0)
 !-------------------------------------------------------------------------------
 !
 !*       7.     CONSTANTS FOR THE FAST COLD PROCESSES FOR THE AGGREGATES
-!	        --------------------------------------------------------
+!               --------------------------------------------------------
 !
 !
 !*       7.1    Constants for the riming of the aggregates
@@ -652,6 +652,9 @@ XEXCRIMSG= XEXCRIMSS
 XCRIMSG  = XCRIMSS
 XSRIMCG  = XCCS*XAS*MOMG(XALPHAS,XNUS,XBS)
 XEXSRIMCG= XCXS-XBS
+XSRIMCG2 = XCCS*XAG*MOMG(XALPHAS,XNUS,XBG)
+XSRIMCG3 = XFRACM90
+XEXSRIMCG2=XCXS-XBG
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -667,11 +670,13 @@ ZRATE = EXP(LOG(XGAMINC_BOUND_MAX/XGAMINC_BOUND_MIN)/FLOAT(NGAMINC-1))
 !
 IF( .NOT.ALLOCATED(XGAMINC_RIM1) ) ALLOCATE( XGAMINC_RIM1(NGAMINC) )
 IF( .NOT.ALLOCATED(XGAMINC_RIM2) ) ALLOCATE( XGAMINC_RIM2(NGAMINC) )
+IF( .NOT.ALLOCATED(XGAMINC_RIM4) ) ALLOCATE( XGAMINC_RIM4(NGAMINC) )
 !
 DO J1=1,NGAMINC
   ZBOUND = XGAMINC_BOUND_MIN*ZRATE**(J1-1)
   XGAMINC_RIM1(J1) = GAMMA_INC(XNUS+(2.0+XDS)/XALPHAS,ZBOUND)
   XGAMINC_RIM2(J1) = GAMMA_INC(XNUS+XBS/XALPHAS      ,ZBOUND)
+  XGAMINC_RIM4(J1) = GAMMA_INC(XNUS+XBG/XALPHAS      ,ZBOUND)
 END DO
 !
 XRIMINTP1 = XALPHAS / LOG(ZRATE)
@@ -859,6 +864,8 @@ XCOLEXIG = 0.1  ! Temperature factor of the I+G collection efficiency
 WRITE (KLUOUT, FMT=*) ' NEW Constants for the cloud ice collection by the graupeln'
 WRITE (KLUOUT, FMT=*) ' XCOLIG, XCOLEXIG  = ',XCOLIG,XCOLEXIG
 XFIDRYG = (XPI/4.0)*XCOLIG*XCCG*XCG*(ZRHO00**XCEXVT)*MOMG(XALPHAG,XNUG,XDG+2.0)
+XEXFIDRYG=(XCXG-XDG-2.)/(XCXG-XBG)
+XFIDRYG2=XFIDRYG/XCOLIG*(XAG*XCCG*MOMG(XALPHAG,XNUG,XBG))**(-XEXFIDRYG)
 !
 GFLAG = .TRUE.
 IF (GFLAG) THEN
@@ -1062,10 +1069,14 @@ END IF
 !*       9.2.1  Constant for the cloud droplet and cloud ice collection
 !               by the hailstones
 !
+XCOLIH   = 0.01 ! Collection efficiency of I+H
+XCOLEXIH = 0.1  ! Temperature factor of the I+H collection efficiency
 XFWETH = (XPI/4.0)*XCCH*XCH*(ZRHO00**XCEXVT)*MOMG(XALPHAH,XNUH,XDH+2.0)
 !
 !*       9.2.2  Constants for the aggregate collection by the hailstones
 !
+XCOLSH   = 0.01 ! Collection efficiency of S+H
+XCOLEXSH = 0.1  ! Temperature factor of the S+H collection efficiency
 XFSWETH = (XPI/4.0)*XCCH*XCCS*XAS*(ZRHO00**XCEXVT)
 !
 XLBSWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAS,XNUS,XBS)
@@ -1074,11 +1085,21 @@ XLBSWETH3   =                          MOMG(XALPHAS,XNUS,XBS+2.)
 !
 !*       9.2.3  Constants for the graupel collection by the hailstones
 !
+XCOLGH   = 0.01 ! Collection efficiency of G+H
+XCOLEXGH = 0.1  ! Temperature factor of the G+H collection efficiency
 XFGWETH = (XPI/4.0)*XCCH*XCCG*XAG*(ZRHO00**XCEXVT)
 !
 XLBGWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAG,XNUG,XBG)
 XLBGWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAG,XNUG,XBG+1.)
 XLBGWETH3   =                          MOMG(XALPHAG,XNUG,XBG+2.)
+!
+!*       9.2.3 bis Constants for the rain collection by the hailstones
+!
+XFRWETH = (XPI/4.0)*XCCH*XCCR*XAR*(ZRHO00**XCEXVT)
+!
+XLBRWETH1   =    MOMG(XALPHAH,XNUH,2.)*MOMG(XALPHAR,XNUR,XBR)
+XLBRWETH2   = 2.*MOMG(XALPHAH,XNUH,1.)*MOMG(XALPHAR,XNUR,XBR+1.)
+XLBRWETH3   =                          MOMG(XALPHAR,XNUR,XBR+2.)
 !
 ! Notice: One magnitude of lambda discretized over 10 points
 !
@@ -1094,9 +1115,15 @@ XWETLBDAG_MAX = 1.0E7 ! Max value of Lbda_g to tabulate XKER_GWETH
 ZRATE = LOG(XWETLBDAG_MAX/XWETLBDAG_MIN)/FLOAT(NWETLBDAG-1)
 XWETINTP1G = 1.0 / ZRATE
 XWETINTP2G = 1.0 - LOG( XWETLBDAG_MIN ) / ZRATE
+NWETLBDAR = 40
+XWETLBDAR_MIN = 1.0E3 ! Minimal value of Lbda_r to tabulate XKER_RWETH
+XWETLBDAR_MAX = 1.0E7 ! Maximal value of Lbda_r to tabulate XKER_RWETH
+ZRATE = LOG(XWETLBDAR_MAX/XWETLBDAR_MIN)/FLOAT(NWETLBDAR-1)
+XWETINTP1R = 1.0 / ZRATE
+XWETINTP2R = 1.0 - LOG( XWETLBDAR_MIN ) / ZRATE
 NWETLBDAH = 40
-XWETLBDAH_MIN = 1.0E3 ! Min value of Lbda_h to tabulate XKER_SWETH,XKER_GWETH
-XWETLBDAH_MAX = 1.0E7 ! Max value of Lbda_h to tabulate XKER_SWETH,XKER_GWETH
+XWETLBDAH_MIN = 1.0E3 ! Min value of Lbda_h to tabulate XKER_SWETH,XKER_GWETH,XKER_RWETH
+XWETLBDAH_MAX = 1.0E7 ! Max value of Lbda_h to tabulate XKER_SWETH,XKER_GWETH,XKER_RWETH
 ZRATE = LOG(XWETLBDAH_MAX/XWETLBDAH_MIN)/FLOAT(NWETLBDAH-1)
 XWETINTP1H = 1.0 / ZRATE
 XWETINTP2H = 1.0 - LOG( XWETLBDAH_MIN ) / ZRATE
@@ -1232,6 +1259,72 @@ IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAG/=NWETLBDAG) .OR. (KND/=IND) .OR. &
                      PWETLBDAH_MAX,PWETLBDAG_MAX,PWETLBDAH_MIN,PWETLBDAG_MIN, &
                      PFDINFTY,XKER_GWETH                                      )
   WRITE(UNIT=KLUOUT,FMT='(" Read XKER_GWETH")')
+END IF
+!
+!
+IND      = 50    ! Number of interval used to integrate the dimensional
+ZEHR     = 1.0   ! distributions when computing the kernel XKER_RWETH
+ZFDINFTY = 20.0
+!
+IF( .NOT.ALLOCATED(XKER_RWETH) ) ALLOCATE( XKER_RWETH(NWETLBDAH,NWETLBDAR) )
+!
+CALL READ_XKER_RWETH (KWETLBDAH,KWETLBDAR,KND,                              &
+                   PALPHAH,PNUH,PALPHAR,PNUR,PEHR,PBR,PCH,PDH,PCR,PDR,      &
+                   PWETLBDAH_MAX,PWETLBDAR_MAX,PWETLBDAH_MIN,PWETLBDAR_MIN, &
+                   PFDINFTY                                                 )
+IF( (KWETLBDAH/=NWETLBDAH) .OR. (KWETLBDAR/=NWETLBDAR) .OR. (KND/=IND) .OR. &
+    (PALPHAH/=XALPHAH) .OR. (PNUH/=XNUH)                               .OR. &
+    (PALPHAR/=XALPHAR) .OR. (PNUR/=XNUR)                               .OR. &
+    (PEHR/=ZEHR) .OR. (PBR/=XBR)                                       .OR. &
+    (PCH/=XCH) .OR. (PDH/=XDH) .OR. (PCR/=XCR) .OR. (PDR/=XDR)         .OR. &
+    (PWETLBDAH_MAX/=XWETLBDAH_MAX) .OR. (PWETLBDAR_MAX/=XWETLBDAR_MAX) .OR. &
+    (PWETLBDAH_MIN/=XWETLBDAH_MIN) .OR. (PWETLBDAR_MIN/=XWETLBDAR_MIN) .OR. &
+    (PFDINFTY/=ZFDINFTY)                                               ) THEN
+  CALL RZCOLX ( IND, XALPHAH, XNUH, XALPHAR, XNUR,                          &
+                ZEHR, XBR, XCH, XDH, XCR, XDR,                              &
+                XWETLBDAH_MAX, XWETLBDAR_MAX, XWETLBDAH_MIN, XWETLBDAR_MIN, &
+                ZFDINFTY, XKER_RWETH                                        )
+  WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
+  WRITE(UNIT=KLUOUT,FMT='("**** UPDATE NEW SET OF RWETH KERNELS ****")')
+  WRITE(UNIT=KLUOUT,FMT='("*****************************************")')
+  WRITE(UNIT=KLUOUT,FMT='("!")')
+  WRITE(UNIT=KLUOUT,FMT='("KND=",I3)') IND
+  WRITE(UNIT=KLUOUT,FMT='("KWETLBDAH=",I3)') NWETLBDAH
+  WRITE(UNIT=KLUOUT,FMT='("KWETLBDAR=",I3)') NWETLBDAR
+  WRITE(UNIT=KLUOUT,FMT='("PALPHAH=",E13.6)') XALPHAH
+  WRITE(UNIT=KLUOUT,FMT='("PNUH=",E13.6)') XNUH
+  WRITE(UNIT=KLUOUT,FMT='("PALPHAR=",E13.6)') XALPHAR
+  WRITE(UNIT=KLUOUT,FMT='("PNUR=",E13.6)') XNUR
+  WRITE(UNIT=KLUOUT,FMT='("PEHR=",E13.6)') ZEHR
+  WRITE(UNIT=KLUOUT,FMT='("PBR=",E13.6)') XBR
+  WRITE(UNIT=KLUOUT,FMT='("PCH=",E13.6)') XCH
+  WRITE(UNIT=KLUOUT,FMT='("PDH=",E13.6)') XDH
+  WRITE(UNIT=KLUOUT,FMT='("PCR=",E13.6)') XCR
+  WRITE(UNIT=KLUOUT,FMT='("PDR=",E13.6)') XDR
+  WRITE(UNIT=KLUOUT,FMT='("PWETLBDAH_MAX=",E13.6)') &
+                                                    XWETLBDAH_MAX
+  WRITE(UNIT=KLUOUT,FMT='("PWETLBDAR_MAX=",E13.6)') &
+                                                    XWETLBDAR_MAX
+  WRITE(UNIT=KLUOUT,FMT='("PWETLBDAH_MIN=",E13.6)') &
+                                                    XWETLBDAH_MIN
+  WRITE(UNIT=KLUOUT,FMT='("PWETLBDAR_MIN=",E13.6)') &
+                                                    XWETLBDAR_MIN
+  WRITE(UNIT=KLUOUT,FMT='("PFDINFTY=",E13.6)') ZFDINFTY
+  WRITE(UNIT=KLUOUT,FMT='("!")')
+  WRITE(UNIT=KLUOUT,FMT='("IF( PRESENT(PKER_RWETH) ) THEN")')
+  DO J1 = 1 , NWETLBDAH
+    DO J2 = 1 , NWETLBDAR
+    WRITE(UNIT=KLUOUT,FMT='("PKER_RWETH(",I3,",",I3,") = ",E13.6)') &
+                        J1,J2,XKER_RWETH(J1,J2)
+    END DO
+  END DO
+  WRITE(UNIT=KLUOUT,FMT='("END IF")')
+  ELSE
+  CALL READ_XKER_RWETH (KWETLBDAH,KWETLBDAR,KND,                              &
+                     PALPHAH,PNUH,PALPHAR,PNUR,PEHR,PBR,PCH,PDH,PCR,PDR,      &
+                     PWETLBDAH_MAX,PWETLBDAR_MAX,PWETLBDAH_MIN,PWETLBDAR_MIN, &
+                     PFDINFTY,XKER_RWETH                                      )
+  WRITE(UNIT=KLUOUT,FMT='(" Read XKER_RWETH")')
 END IF
 !
 !
