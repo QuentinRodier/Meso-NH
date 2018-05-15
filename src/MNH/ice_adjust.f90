@@ -1,4 +1,4 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
@@ -9,22 +9,21 @@
 !
 INTERFACE
 !
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HRAD,                    &
-                             HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
-                             PCF_MF,PRC_MF, PRI_MF,                            &
-                             PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,     &
-                             PRRT, PRRS, PRIT, PRIS, PRST,PRSS, PRGT, PRGS,    &
-                             PRHT, PRHS                                        )
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE,                    &
+                             HBUNAME, OSUBG_COND, OSIGMAS,                     &
+                             PTSTEP, PSIGQSAT,                                 &
+                             PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, PZZ,     &
+                             PEXN, PCF_MF, PRC_MF, PRI_MF,                     &
+                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR ,  &
+                             PRR, PRI, PRIS, PRS, PRG,                         &
+                             PRH, POUT_RV, POUT_RC, POUT_RI, POUT_TH           )
 !
 INTEGER,                  INTENT(IN)    :: KKA   !near ground array index  
 INTEGER,                  INTENT(IN)    :: KKU   !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL   !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
-                                                    ! turbulence scheme
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER*1,              INTENT(IN)    :: HFRAC_ICE
+CHARACTER*4,              INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -41,30 +40,32 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t        
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ     ! height of model layer
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXN    ! Exner function
 !
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRI_MF! Convective Mass Flux ice mixing ratio
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRV     ! Water vapor m.r. to adjust
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRC     ! Cloud water m.r. to adjust
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS    ! Water vapor m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCS    ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTH     ! Theta to adjust
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
                                                    ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction          
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRRS ! Rain water m.r. at t+1
-REAL, DIMENSION(:,:,:),   INTENT(INOUT)::  PRIS ! Cloud ice  m.r. at t+1
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRSS ! Aggregate  m.r. at t+1
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRGS ! Graupel    m.r. at t+1
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRRT ! Rain water m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRIT ! Cloud ice  m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRST ! Aggregate  m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRGT ! Graupel    m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHT ! Hail       m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHS ! Hail       m.r. at t+1
+REAL, DIMENSION(:,:,:),   INTENT(INOUT) ::  PRIS   ! Cloud ice  m.r. at t+1
+REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRR    ! Rain water m.r. to adjust
+REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRI    ! Cloud ice  m.r. to adjust
+REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRS    ! Aggregate  m.r. to adjust
+REAL, DIMENSION(:,:,:),   INTENT(IN)    ::  PRG    ! Graupel    m.r. to adjust
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRH  ! Hail       m.r. to adjust
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RV ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RC ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RI ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_TH ! Adjusted value
 !
 !
 END SUBROUTINE ICE_ADJUST
@@ -72,15 +73,16 @@ END SUBROUTINE ICE_ADJUST
 END INTERFACE
 !
 END MODULE MODI_ICE_ADJUST
-!
+
 !     ##########################################################################
-      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, KMI, HRAD,                    &
-                             HTURBDIM, OSUBG_COND, OSIGMAS, PTSTEP, PSIGQSAT,  &
-                             PRHODJ, PEXNREF, PSIGS,PMFCONV,PPABST,PZZ,        &
-                             PCF_MF,PRC_MF,PRI_MF,                             &
-                             PRVT, PRCT, PRVS, PRCS, PTHS, PSRCS, PCLDFR ,     &
-                             PRRT, PRRS, PRIT, PRIS, PRST,PRSS, PRGT, PRGS,    &
-                             PRHT, PRHS       )
+      SUBROUTINE ICE_ADJUST (KKA, KKU, KKL, KRR, HFRAC_ICE,                    &
+                             HBUNAME, OSUBG_COND, OSIGMAS,                     &
+                             PTSTEP, PSIGQSAT,                                 &
+                             PRHODJ, PEXNREF, PSIGS, PMFCONV, PPABST, PZZ,     &
+                             PEXN, PCF_MF, PRC_MF, PRI_MF,                     &
+                             PRV, PRC, PRVS, PRCS, PTH, PTHS, PSRCS, PCLDFR ,  &
+                             PRR, PRI, PRIS, PRS, PRG, PRH,                    &
+                             POUT_RV, POUT_RC, POUT_RI, POUT_TH                )
 !     #########################################################################
 !
 !!****  *ICE_ADJUST* -  compute the ajustment of water vapor in mixed-phase 
@@ -153,10 +155,14 @@ END MODULE MODI_ICE_ADJUST
 !!      JP Pinty   29/11/02  add ICE2 and IC4 cases
 !!      (P. Jabouille) 27/05/04 safety test for case where esw/i(T)> pabs (~Z>40km)
 !!      J.Pergaud and S.Malardel Add EDKF case
-!!      (E.Perraud)  06/08   add correction to avoid ice when T >0
 !!      S. Riette ice for EDKF
 !!      2012-02 Y. Seity,  add possibility to run with reversed vertical levels
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
+!!      2016-07 S. Riette: adjustement is now realized on state variables (PRV, PRC, PRI, PTH)
+!!                         whereas tendencies are still applied on S variables.
+!!                         This modification allows to call ice_adjust on T variable
+!!                         or to call it on S variables
+!!      2016-11 S. Riette: all-or-nothing adjustment now uses condensation
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
 !!
 !-------------------------------------------------------------------------------
@@ -184,10 +190,8 @@ INTEGER,                  INTENT(IN)    :: KKA  !near ground array index
 INTEGER,                  INTENT(IN)    :: KKU  !uppest atmosphere array index
 INTEGER,                  INTENT(IN)    :: KKL  !vert. levels type 1=MNH -1=ARO
 INTEGER,                  INTENT(IN)    :: KRR      ! Number of moist variables
-INTEGER,                  INTENT(IN)    :: KMI      ! Model index 
-CHARACTER*4,              INTENT(IN)    :: HTURBDIM ! Dimensionality of the
-                                                    ! turbulence scheme
-CHARACTER*4,              INTENT(IN)    :: HRAD     ! Radiation scheme name
+CHARACTER*1,              INTENT(IN)    :: HFRAC_ICE
+CHARACTER*4,              INTENT(IN)    :: HBUNAME  ! Name of the budget
 LOGICAL,                  INTENT(IN)    :: OSUBG_COND ! Switch for Subgrid 
                                                     ! Condensation
 LOGICAL                                 :: OSIGMAS  ! Switch for Sigma_s: 
@@ -204,46 +208,44 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PSIGS   ! Sigma_s at time t
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PMFCONV ! convective mass flux
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PPABST  ! Absolute Pressure at t        
 REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PZZ     ! height of model layer
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PEXN    ! Exner function
 !
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PCF_MF! Convective Mass Flux Cloud fraction 
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRC_MF! Convective Mass Flux liquid mixing ratio
 REAL, DIMENSION(:,:,:),     INTENT(IN)    :: PRI_MF! Convective Mass Flux ice mixing ratio
 !
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRVT    ! Water vapor m.r. at t
-REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRCT    ! Cloud water m.r. at t
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRV     ! Water vapor m.r. to adjust
+REAL, DIMENSION(:,:,:),   INTENT(IN)   ::  PRC     ! Cloud water m.r. to adjust
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRVS    ! Water vapor m.r. source
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PRCS    ! Cloud water m.r. source
+REAL, DIMENSION(:,:,:),   INTENT(IN)    :: PTH     ! Theta to adjust
 REAL, DIMENSION(:,:,:),   INTENT(INOUT) :: PTHS    ! Theta source
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PSRCS   ! Second-order flux
                                                    ! s'rc'/2Sigma_s2 at time t+1
                                                    ! multiplied by Lambda_3
 REAL, DIMENSION(:,:,:),   INTENT(OUT)   :: PCLDFR  ! Cloud fraction          
 !
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRRS ! Rain water m.r. at t+1
 REAL, DIMENSION(:,:,:),  INTENT(INOUT)::  PRIS ! Cloud ice  m.r. at t+1
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRSS ! Aggregate  m.r. at t+1
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRGS ! Graupel    m.r. at t+1
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRRT ! Rain water m.r. at t
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRIT ! Cloud ice  m.r. at t
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRST ! Aggregate  m.r. at t
-REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRGT ! Graupel    m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHT ! Hail       m.r. at t
-REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRHS ! Hail       m.r. at t+1
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRR  ! Rain water m.r. to adjust
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRI  ! Cloud ice  m.r. to adjust
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRS  ! Aggregate  m.r. to adjust
+REAL, DIMENSION(:,:,:),  INTENT(IN)   ::  PRG  ! Graupel    m.r. to adjust
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(IN)   ::  PRH  ! Hail       m.r. to adjust
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RV ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RC ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_RI ! Adjusted value
+REAL, DIMENSION(:,:,:), OPTIONAL, INTENT(OUT)  ::  POUT_TH ! Adjusted value
 !
 !*       0.2   Declarations of local variables :
 !
 !
-REAL  :: ZEPS  ! Mv/Md
-REAL  :: ZT00,ZT0   ! Min and max temperature for the mixed phase liquid and solid water
-                    ! for the coeff CND of the barycentric mixing ratio
 REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) &
-                         :: ZEXNS,&  ! guess of the Exner functon at t+1
-                            ZT,   &  ! guess of the temperature at t+1
+                         :: ZT,   &  ! adjusted temperature
+                   ZRV, ZRC, ZRI, &  ! adjusted state
                             ZCPH, &  ! guess of the CPh for the mixing
                             ZLV,  &  ! guess of the Lv at t+1
                             ZLS,  &  ! guess of the Ls at t+1
-      ZW1,ZW2,ZW3,ZW4,ZW5,ZW6,ZW7,&  ! Work arrays for intermediate fields
-                            ZCND     ! CND=(T-T00)/(T0-T00) cf sc doc and TAO etal (89)
+                          ZW1,ZW2    ! Work arrays for intermediate fields
 !
 INTEGER             :: IIU,IJU,IKU! dimensions of dummy arrays
 INTEGER             :: IIB,IJB    ! Horz index values of the first inner mass points
@@ -252,7 +254,7 @@ INTEGER             :: IKB        ! K index value of the first inner mass point
 INTEGER             :: IKE        ! K index value of the last inner mass point
 INTEGER             :: JITER,ITERMAX ! iterative loop for first order adjustment
 !
-LOGICAL             :: LPRETREATMENT, LNEW_ADJUST
+REAL, DIMENSION(SIZE(PEXNREF,1),SIZE(PEXNREF,2),SIZE(PEXNREF,3)) :: ZSIGS,ZSRCS
 !
 !-------------------------------------------------------------------------------
 !
@@ -266,263 +268,115 @@ CALL GET_INDICE_ll (IIB,IJB,IIE,IJE)
 IKB=KKA+JPVEXT*KKL
 IKE=KKU-JPVEXT*KKL
 !
-ZEPS= XMV / XMD
-!
 ITERMAX=1
-!
-LPRETREATMENT=.TRUE.     ! FALSE to retreive the previous MASDEV4_1 version
-LNEW_ADJUST  =.TRUE.     ! FALSE to retreive the previous MASDEV4_1 version
-ZT0  = XTT               ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
-ZT00 = XTT-40.           ! Usefull if LPRETREATMENT=T or LNEW_ADJUST=T
 !
 !-------------------------------------------------------------------------------
 !
 !*       2.     COMPUTE QUANTITIES WITH THE GUESS OF THE FUTURE INSTANT
 !               -------------------------------------------------------
 !
-!*       2.1    estimate the pressure at t+1
 !
-ZEXNS(:,:,:) = ( PPABST(:,:,:) /XP00)**(XRD/XCPD)
-!
-!    beginning of the iterative loop
+!    beginning of the iterative loop (to compute the adjusted state)
+ZRV(:,:,:)=PRV(:,:,:)
+ZRC(:,:,:)=PRC(:,:,:)
+ZRI(:,:,:)=PRI(:,:,:)
+ZT(:,:,:)=PTH(:,:,:) * PEXN(:,:,:)
 !
 DO JITER =1,ITERMAX
-!
-!*       2.2    compute the intermediate temperature at t+1, T*
-!  
-  ZT(:,:,:) = ( PTHS(:,:,:) * PTSTEP ) * ZEXNS(:,:,:)
-!
-!*       2.3    compute the latent heat of vaporization Lv(T*) at t+1
-!                   and the latent heat of sublimation  Ls(T*) at t+1
-!
+  !
+  !*       2.3    compute the latent heat of vaporization Lv(T*) at t+1
+  !                   and the latent heat of sublimation  Ls(T*) at t+1
+  !
   ZLV(:,:,:) = XLVTT + ( XCPV - XCL ) * ( ZT(:,:,:) -XTT )
   ZLS(:,:,:) = XLSTT + ( XCPV - XCI ) * ( ZT(:,:,:) -XTT )
-!
-!*       2.4    compute the specific heat for moist air (Cph) at t+1
-!
-IF     ( KRR == 7 ) THEN
-  ZCPH(:,:,:) = XCPD + XCPV  *PTSTEP*   PRVS(:,:,:)                             &
-                     + XCL   *PTSTEP* ( PRCS(:,:,:) + PRRS(:,:,:) )             &
-                     + XCI   *PTSTEP* ( PRIS(:,:,:) + PRSS(:,:,:) + PRGS(:,:,:) &
-                                                               + PRHS(:,:,:) )
-ELSE IF( KRR == 6 ) THEN
-  ZCPH(:,:,:) = XCPD + XCPV  *PTSTEP*   PRVS(:,:,:)                             &
-                     + XCL   *PTSTEP* ( PRCS(:,:,:) + PRRS(:,:,:) )             &
-                     + XCI   *PTSTEP* ( PRIS(:,:,:) + PRSS(:,:,:) + PRGS(:,:,:) )
-ELSE IF( KRR == 5 ) THEN
-  ZCPH(:,:,:) = XCPD + XCPV  *PTSTEP*   PRVS(:,:,:)                             &
-                     + XCL   *PTSTEP* ( PRCS(:,:,:) + PRRS(:,:,:) )             &
-                     + XCI   *PTSTEP* ( PRIS(:,:,:) + PRSS(:,:,:) )
-ELSE IF( KRR == 3 ) THEN
-  ZCPH(:,:,:) = XCPD + XCPV  *PTSTEP*   PRVS(:,:,:)               &
-                     + XCL   *PTSTEP* ( PRCS(:,:,:) + PRRS(:,:,:) )
-ELSE IF( KRR == 2 ) THEN
-  ZCPH(:,:,:) = XCPD + XCPV  *PTSTEP*   PRVS(:,:,:) &
-                     + XCL   *PTSTEP*   PRCS(:,:,:)
-END IF
-!
-!
-!*       3.     FIRST ORDER SUBGRID CONDENSATION SCHEME
-!               ---------------------------------------
-!
+  !
+  !*       2.4    compute the specific heat for moist air (Cph) at t+1
+  !
+  IF     ( KRR == 7 ) THEN
+    ZCPH(:,:,:) = XCPD + XCPV * ZRV(:,:,:)                             &
+                       + XCL  * (ZRC(:,:,:) + PRR(:,:,:))             &
+                       + XCI  * (ZRI(:,:,:) + PRS(:,:,:) + PRG(:,:,:) + PRH(:,:,:))
+  ELSE IF( KRR == 6 ) THEN
+    ZCPH(:,:,:) = XCPD + XCPV * ZRV(:,:,:)                             &
+                       + XCL  * (ZRC(:,:,:) + PRR(:,:,:))             &
+                       + XCI  * (ZRI(:,:,:) + PRS(:,:,:) + PRG(:,:,:))
+  ELSE IF( KRR == 5 ) THEN
+    ZCPH(:,:,:) = XCPD + XCPV * ZRV(:,:,:)                             &
+                       + XCL  * (ZRC(:,:,:) + PRR(:,:,:))             &
+                       + XCI  * (ZRI(:,:,:) + PRS(:,:,:))
+  ELSE IF( KRR == 3 ) THEN
+    ZCPH(:,:,:) = XCPD + XCPV * ZRV(:,:,:)               &
+                       + XCL  * (ZRC(:,:,:) + PRR(:,:,:))
+  ELSE IF( KRR == 2 ) THEN
+    ZCPH(:,:,:) = XCPD + XCPV * ZRV(:,:,:) &
+                       + XCL  * ZRC(:,:,:)
+  END IF
+  !
   IF ( OSUBG_COND ) THEN
-!
-!
-!*       3.1    compute condensate, cloud fraction
-!
-
-  !   ZW3=water vapor    ZW1=rc (INOUT)  ZW2=ri (INOUT)   PSRC= s'rci'/Sigma_s^2
-    ZW3= PRVS*PTSTEP;     ZW1=PRCS*PTSTEP;  ZW2=PRIS*PTSTEP
-
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,               &
-       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., OSIGMAS, &
-       PSIGQSAT )
-!
-!*       3.2    compute the variation of mixing ratio
-!
-                                                      !         Rc - Rc*
-    ZW1(:,:,:) = (ZW1(:,:,:)/PTSTEP) - PRCS(:,:,:)       ! Pcon = ----------
-                                                      !         2 Delta t
-
-    ZW2(:,:,:) = (ZW2(:,:,:)/PTSTEP) - PRIS(:,:,:)       ! idem ZW1 but for Ri
-
+    !
+    !*       3.     SUBGRID CONDENSATION SCHEME
+    !               ---------------------------
+    !
+    !   PSRC= s'rci'/Sigma_s^2
+    !   ZT, ZRV, ZRC and ZRI are INOUT
+    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,                  &
+         HFRAC_ICE,                                                                      &
+         PPABST, PZZ, ZT, ZRV, ZRC, ZRI, PRS, PRG, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., OSIGMAS, &
+         PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
   ELSE
-!
-!
-!*       4.     SECOND ORDER ALL OR NOTHING CONDENSATION SCHEME
-!                            FOR MIXED-PHASE CLOUD
-!               -----------------------------------------------
-!
-!
-!*       4.1    Eventually pretreatment
-!
-    IF (LPRETREATMENT) THEN
-!
-!*    compute the saturation vapor pressures at t+1
-!
-      CALL GET_HALO(ZT)
-      ZW1(:,:,:) = EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) ) ! e_sw
-      ZW2(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:)) ) ! e_si
-      ZW1(:,:,:) =  MIN(PPABST(:,:,:)/2.,ZW1(:,:,:))   ! safety limitation
-      ZW2(:,:,:) =  MIN(PPABST(:,:,:)/2.,ZW2(:,:,:))   ! safety limitation
-!
-!*    compute the saturation mixing ratios at t+1
-!
-      ZW3(:,:,:) =  ZW1(:,:,:) * ZEPS     &
-                 / (  PPABST(:,:,:)  - ZW1(:,:,:) )     ! r_sw
-      ZW4(:,:,:) =  ZW2(:,:,:) * ZEPS     &
-                 / (  PPABST(:,:,:)  - ZW2(:,:,:) )     ! r_si
-!
-      WHERE(PRVS(:,:,:)*PTSTEP.LT.ZW4(:,:,:).AND. PRCS(:,:,:).GT.0..AND. ZT(:,:,:).LT.XTT)
-!
-!       Subsaturation case with respect to rsi(T,P) (and case rv<0):
-!       Evaporation of rc>0 (while enough) to decrease the lack of vapor 
-!
-        ZW5 (:,:,:)= MIN( PRCS , ZW4(:,:,:)/PTSTEP - PRVS(:,:,:) )                ! RVCNDC
-        PRVS(:,:,:)= PRVS(:,:,:) + ZW5(:,:,:) 
-        PRCS(:,:,:)= PRCS(:,:,:) - ZW5(:,:,:) 
-        PTHS(:,:,:)= PTHS(:,:,:) - ZW5(:,:,:) * ZLV(:,:,:) /(ZCPH(:,:,:)*PEXNREF(:,:,:))
-!
-      END WHERE
-!  
-      WHERE ( PRVS(:,:,:)*PTSTEP .GT. ZW3(:,:,:) )
-!
-!       Supersaturation case with respect to rsw(T,P):
-!       Condensation of the vapor that is left 
-!
-        ZW5 (:,:,:)= PRVS(:,:,:) - ZW3(:,:,:)/PTSTEP 
-        PRVS(:,:,:)= PRVS(:,:,:) - ZW5(:,:,:)                                  ! RVCNDC 
-        PRCS(:,:,:)= PRCS(:,:,:) + ZW5(:,:,:) 
-        PTHS(:,:,:)= PTHS(:,:,:) + ZW5(:,:,:) * ZLV(:,:,:) /(ZCPH(:,:,:)*PEXNREF(:,:,:))
-!
-      END WHERE
-!
-      WHERE ( PRCS(:,:,:).GT.0. .AND. ZT(:,:,:).LT.ZT00 )
-!
-!       Treatment of rc>0 if T<T00:
-!
-        PRIS(:,:,:)= PRIS(:,:,:) + PRCS(:,:,:) 
-        PTHS(:,:,:)= PTHS(:,:,:) +                                                     &
-                     PRCS(:,:,:) * (ZLS(:,:,:)-ZLV(:,:,:)) /(ZCPH(:,:,:)*PEXNREF(:,:,:))
-        PRCS(:,:,:)= 0. 
-!
-      END WHERE
-!
-!*       4.2    compute the intermediate temperature at t+1, T*
-!  
-      ZT(:,:,:) = ( PTHS(:,:,:) * PTSTEP ) * ZEXNS(:,:,:)
-!
-    END IF  !end PRETREATMENT 
-!
-!*       4.3    compute the saturation vapor pressures at t+1
-!
-    ZW1(:,:,:) = EXP( XALPW - XBETAW/ZT(:,:,:) - XGAMW*ALOG(ZT(:,:,:)) ) ! e_sw
-    ZW2(:,:,:) = EXP( XALPI - XBETAI/ZT(:,:,:) - XGAMI*ALOG(ZT(:,:,:)) ) ! e_si
-    ZW1(:,:,:) =  MIN(PPABST(:,:,:)/2.,ZW1(:,:,:))   ! safety limitation
-    ZW2(:,:,:) =  MIN(PPABST(:,:,:)/2.,ZW2(:,:,:))   ! safety limitation
-!
-!*       4.4    compute the saturation mixing ratios at t+1
-!
-    ZW3(:,:,:) =  ZW1(:,:,:) * ZEPS     &
-               / ( PPABST(:,:,:) - ZW1(:,:,:) ) ! r_sw
-    ZW4(:,:,:) =  ZW2(:,:,:) * ZEPS     &
-               / ( PPABST(:,:,:)  - ZW2(:,:,:) ) ! r_si
-!
-!*       4.5    compute the saturation mixing ratio derivatives (r'_vs)
-!
-    ZW1(:,:,:) = (( XBETAW/ZT(:,:,:) - XGAMW ) / ZT(:,:,:)) & ! r'_sw
-                    * ZW3(:,:,:) * ( 1. + ZW3(:,:,:)/ZEPS )
-    ZW2(:,:,:) = (( XBETAI/ZT(:,:,:) - XGAMI ) / ZT(:,:,:)) & ! r'_si
-                    * ZW4(:,:,:) * ( 1. + ZW4(:,:,:)/ZEPS )
-!
-    IF (LNEW_ADJUST) THEN
-      ZCND(:,:,:)= ( ZT(:,:,:) - ZT00 ) / (ZT0-ZT00)       ! Like Tao et al 89
-      ZCND(:,:,:)= MAX ( MIN(ZCND(:,:,:),1.) , 0. )
-    ELSE
-      WHERE( (PRCS(:,:,:)+PRIS(:,:,:)) .GT. 1.0E-20 )      &
-      ZCND(:,:,:)= PRCS(:,:,:) / (PRCS(:,:,:)+PRIS(:,:,:)) ! Like the original version
-    END IF
-!
-!*       4.5    compute L_v CND + L_s DEP and F'(T)
-!
-    WHERE( (PRCS(:,:,:)+PRIS(:,:,:)) .GT. 1.0E-20 )
-!
-      ZW5(:,:,:) = ZLS(:,:,:) + ( ZLV(:,:,:)-ZLS(:,:,:) ) * ZCND(:,:,:)
-      ZW6(:,:,:) = ZCPH(:,:,:) * ( PRCS(:,:,:) + PRIS(:,:,:) ) +               &
-                   ZW5(:,:,:)  * ( PRCS(:,:,:)*ZW1(:,:,:)                      &
-                                               + PRIS(:,:,:)*ZW2(:,:,:) )
-!
-!*       4.6    compute Delta 2
-!
-      ZW7(:,:,:) = (ZW5(:,:,:)/(ZW6(:,:,:)*ZT(:,:,:))) *                       &
-                   ( PRCS(:,:,:)*ZW1(:,:,:) *                                  &
-            ((-2.*XBETAW+XGAMW*ZT(:,:,:)) / (XBETAW-XGAMW*ZT(:,:,:))           &
-               + (XBETAW-XGAMW*ZT(:,:,:))*(1.0+2.0*ZW3(:,:,:)/ZEPS)/ZT(:,:,:)) &
-                   + PRIS(:,:,:)*ZW2(:,:,:) *                                  &
-            ((-2.*XBETAI+XGAMI*ZT(:,:,:)) / (XBETAI-XGAMI*ZT(:,:,:))           &
-               + (XBETAI-XGAMI*ZT(:,:,:))*(1.0+2.0*ZW4(:,:,:)/ZEPS)/ZT(:,:,:)) )
-!
-!*       4.7    compute Delta 1
-!
-      ZW6(:,:,:) = ZW5(:,:,:)*( PRCS(:,:,:)*ZW3(:,:,:) + PRIS(:,:,:)*ZW4(:,:,:)&
-                              - PRVS(:,:,:)*PTSTEP*(PRCS(:,:,:) + PRIS(:,:,:))    &
-                              )/ZW6(:,:,:)
-!
-!*       4.8    compute the sources
-!
-      ZW3(:,:,:) = (ZCPH(:,:,:)/ZW5(:,:,:)) *                               &
-                   (-ZW6(:,:,:) * ( 1.0 + 0.5*ZW6(:,:,:)*ZW7(:,:,:) )) / PTSTEP
-      ZW1(:,:,:) = ZW3(:,:,:)*ZCND(:,:,:)                               ! RVCNDC
-      ZW2(:,:,:) = ZW3(:,:,:)*( 1.0 - ZCND(:,:,:) )                       ! RVDEPI
-!
-    ELSEWHERE
-!
-!*       4.9    special case when both r_c and r_i are zero
-!
-      ZW6(:,:,:) = ZCPH(:,:,:) + ZLV(:,:,:) * ZW1(:,:,:)               ! F'(T)
-      ZW7(:,:,:) = (ZLV(:,:,:)/(ZW6(:,:,:)*ZT(:,:,:))) * &             ! Delta 2
-                   ( ZW1(:,:,:) *                                              &
-          ( (-2.*XBETAW+XGAMW*ZT(:,:,:)) / (XBETAW-XGAMW*ZT(:,:,:))            &
-              + (XBETAW-XGAMW*ZT(:,:,:))*(1.0+2.0*ZW3(:,:,:)/ZEPS)/ZT(:,:,:) ) )
-      ZW6(:,:,:) = ZLV(:,:,:)*( ZW3(:,:,:)-PRVS(:,:,:)*PTSTEP )/ZW6(:,:,:)! Delta 1
-      ZW1(:,:,:) = (ZCPH(:,:,:)/ZLV(:,:,:)) *                          &! RVCNDC
-                   (-ZW6(:,:,:) * ( 1.0 + 0.5*ZW6(:,:,:)*ZW7(:,:,:) ))/PTSTEP
-      ZW2(:,:,:) = 0.0                                                  ! RVDEPI
-!
-    END WHERE
-!
-  END IF 
+    !
+    !*       4.     ALL OR NOTHING CONDENSATION SCHEME
+    !                            FOR MIXED-PHASE CLOUD
+    !               -----------------------------------------------
+    !
+    !
+    !   ZT, ZRV, ZRC and ZRI are INOUT
+    !
+    !CALL ADJUST_LANGLOIS(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,                &
+    !                     PPABST, ZT, ZRV, ZRC, ZRI, ZLV, ZLS, ZCPH) HFRAC_ICE must be implemented in Langlois before using it again
+    ZSIGS=0.
+    ZSRCS=0.
+    CALL CONDENSATION(IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, KKL,        &
+         HFRAC_ICE,                                                            &
+         PPABST, PZZ, ZT, ZRV, ZRC, ZRI, PRS, PRG, ZSIGS, PMFCONV, PCLDFR,     &
+         ZSRCS, .TRUE., OSIGMAS=.TRUE.,                                        &
+         PSIGQSAT=0., PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
+  END IF
+ENDDO         ! end of the iterative loop
 !
 !*       5.     COMPUTE THE SOURCES AND STORES THE CLOUD FRACTION
 !               -------------------------------------------------
 !
 !
-!*       5.1    compute the sources 
-! 
-  WHERE( ZW1(:,:,:) < 0.0 )
-    ZW1(:,:,:) = MAX ( ZW1(:,:,:), -PRCS(:,:,:) )
-  ELSEWHERE
-    ZW1(:,:,:) = MIN ( ZW1(:,:,:),  PRVS(:,:,:) )
-  END WHERE
+!*       5.0    compute the variation of mixing ratio
 !
-  PRVS(:,:,:) = PRVS(:,:,:) - ZW1(:,:,:)
-  PRCS(:,:,:) = PRCS(:,:,:) + ZW1(:,:,:)  
-  PTHS(:,:,:) = PTHS(:,:,:) +        &
-                  ZW1(:,:,:) * ZLV(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
+                                                      !         Rc - Rc*
+ZW1(:,:,:) = (ZRC(:,:,:) - PRC(:,:,:)) / PTSTEP       ! Pcon = ----------
+                                                      !         2 Delta t
+
+ZW2(:,:,:) = (ZRI(:,:,:) - PRI(:,:,:)) / PTSTEP       ! idem ZW1 but for Ri
 !
-  WHERE( ZW2(:,:,:) < 0.0 )
-    ZW2(:,:,:) = MAX ( ZW2(:,:,:), -PRIS(:,:,:) )
-  ELSEWHERE
-    ZW2(:,:,:) = MIN ( ZW2(:,:,:),  PRVS(:,:,:) )
-  END WHERE
+!*       5.1    compute the sources
 !
-  PRVS(:,:,:) = PRVS(:,:,:) - ZW2(:,:,:)
-  PRIS(:,:,:) = PRIS(:,:,:) + ZW2(:,:,:)
-  PTHS(:,:,:) = PTHS(:,:,:) +        &
-                ZW2(:,:,:) * ZLS(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
+WHERE( ZW1(:,:,:) < 0.0 )
+  ZW1(:,:,:) = MAX ( ZW1(:,:,:), -PRCS(:,:,:) )
+ELSEWHERE
+  ZW1(:,:,:) = MIN ( ZW1(:,:,:),  PRVS(:,:,:) )
+END WHERE
+PRVS(:,:,:) = PRVS(:,:,:) - ZW1(:,:,:)
+PRCS(:,:,:) = PRCS(:,:,:) + ZW1(:,:,:)
+PTHS(:,:,:) = PTHS(:,:,:) +        &
+                ZW1(:,:,:) * ZLV(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
 !
-!
-END DO          ! end of the iterative loop
+WHERE( ZW2(:,:,:) < 0.0 )
+  ZW2(:,:,:) = MAX ( ZW2(:,:,:), -PRIS(:,:,:) )
+ELSEWHERE
+  ZW2(:,:,:) = MIN ( ZW2(:,:,:),  PRVS(:,:,:) )
+END WHERE
+PRVS(:,:,:) = PRVS(:,:,:) - ZW2(:,:,:)
+PRIS(:,:,:) = PRIS(:,:,:) + ZW2(:,:,:)
+PTHS(:,:,:) = PTHS(:,:,:) +        &
+              ZW2(:,:,:) * ZLS(:,:,:) / (ZCPH(:,:,:) * PEXNREF(:,:,:))
 !
 !
 !*       5.2    compute the cloud fraction PCLDFR
@@ -538,19 +392,37 @@ IF ( .NOT. OSUBG_COND ) THEN
   END IF
 ELSE
   !We limit PRC_MF+PRI_MF to PRVS*PTSTEP to avoid negative humidity
-  ZW1(:,:,:)=PRC_MF(:,:,:)
-  ZW2(:,:,:)=PRI_MF(:,:,:)
-  WHERE(ZW1(:,:,:)+ZW2(:,:,:)>PRVS(:,:,:)*PTSTEP)
-    ZW1(:,:,:)=ZW1(:,:,:)*PRVS(:,:,:)*PTSTEP/(ZW1(:,:,:)+ZW2(:,:,:))
-    ZW2(:,:,:)=PRVS(:,:,:)*PTSTEP-ZW1(:,:,:)
+  ZW1(:,:,:)=PRC_MF(:,:,:)/PTSTEP
+  ZW2(:,:,:)=PRI_MF(:,:,:)/PTSTEP
+  WHERE(ZW1(:,:,:)+ZW2(:,:,:)>PRVS(:,:,:))
+    ZW1(:,:,:)=ZW1(:,:,:)*PRVS(:,:,:)/(ZW1(:,:,:)+ZW2(:,:,:))
+    ZW2(:,:,:)=PRVS(:,:,:)-ZW1(:,:,:)
   ENDWHERE
   PCLDFR(:,:,:)=MIN(1.,PCLDFR(:,:,:)+PCF_MF(:,:,:))
-  PRCS(:,:,:)=PRCS(:,:,:)+ZW1(:,:,:)/PTSTEP
-  PRIS(:,:,:)=PRIS(:,:,:)+ZW2(:,:,:)/PTSTEP
-  PRVS(:,:,:)=PRVS(:,:,:)-(ZW1(:,:,:)+ZW2(:,:,:))/PTSTEP
+  PRCS(:,:,:)=PRCS(:,:,:)+ZW1(:,:,:)
+  PRIS(:,:,:)=PRIS(:,:,:)+ZW2(:,:,:)
+  PRVS(:,:,:)=PRVS(:,:,:)-(ZW1(:,:,:)+ZW2(:,:,:))
   PTHS(:,:,:) = PTHS(:,:,:) + &
                 (ZW1 * ZLV(:,:,:) + ZW2 * ZLS(:,:,:)) / ZCPH(:,:,:)     &
-                /  PEXNREF(:,:,:) /PTSTEP
+                /  PEXNREF(:,:,:)
+  IF(PRESENT(POUT_RV) .OR. PRESENT(POUT_RC) .OR. &
+    &PRESENT(POUT_RI) .OR. PRESENT(POUT_TH)) THEN
+    ZW1(:,:,:)=PRC_MF(:,:,:)
+    ZW2(:,:,:)=PRI_MF(:,:,:)
+    WHERE(ZW1(:,:,:)+ZW2(:,:,:)>ZRV(:,:,:))
+      ZW1(:,:,:)=ZW1(:,:,:)*ZRV(:,:,:)/(ZW1(:,:,:)+ZW2(:,:,:))
+      ZW2(:,:,:)=ZRV(:,:,:)-ZW1(:,:,:)
+    ENDWHERE
+    ZRC(:,:,:)=ZRC(:,:,:)+ZW1(:,:,:)
+    ZRI(:,:,:)=ZRI(:,:,:)+ZW2(:,:,:)
+    ZRV(:,:,:)=ZRV(:,:,:)-(ZW1(:,:,:)+ZW2(:,:,:))
+    ZT(:,:,:) = ZT(:,:,:) + &
+                (ZW1 * ZLV(:,:,:) + ZW2 * ZLS(:,:,:)) / ZCPH(:,:,:)
+    IF(PRESENT(POUT_RV)) POUT_RV=ZRV
+    IF(PRESENT(POUT_RC)) POUT_RC=ZRC
+    IF(PRESENT(POUT_RI)) POUT_RI=ZRI
+    IF(PRESENT(POUT_TH)) POUT_TH=ZT / PEXN(:,:,:)
+  ENDIF
 ENDIF
 !
 !
@@ -558,10 +430,10 @@ ENDIF
 !*       6.  STORE THE BUDGET TERMS
 !            ----------------------
 !
-IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),6,'DEPI_BU_RRV')
-IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),7,'DEPI_BU_RRC')
-IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),9,'DEPI_BU_RRI')
-IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),4,'DEPI_BU_RTH')
+IF (LBUDGET_RV) CALL BUDGET (PRVS(:,:,:) * PRHODJ(:,:,:),6,HBUNAME//'_BU_RRV')
+IF (LBUDGET_RC) CALL BUDGET (PRCS(:,:,:) * PRHODJ(:,:,:),7,HBUNAME//'_BU_RRC')
+IF (LBUDGET_RI) CALL BUDGET (PRIS(:,:,:) * PRHODJ(:,:,:),9,HBUNAME//'_BU_RRI')
+IF (LBUDGET_TH) CALL BUDGET (PTHS(:,:,:) * PRHODJ(:,:,:),4,HBUNAME//'_BU_RTH')
 !
 !------------------------------------------------------------------------------
 !
