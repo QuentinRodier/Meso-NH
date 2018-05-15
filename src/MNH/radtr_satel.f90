@@ -5,7 +5,7 @@
 !-----------------------------------------------------------------
 !--------------- special set of characters for RCS information
 !-----------------------------------------------------------------
-! $Source$ $Revision$
+! $Source: /srv/cvsroot/MNH-VX-Y-Z/src/MNH/radtr_satel.f90,v $ $Revision: 1.2.4.1.16.1.2.2 $
 !-----------------------------------------------------------------
 !    #######################
      MODULE MODI_RADTR_SATEL 
@@ -105,6 +105,7 @@ END MODULE MODI_RADTR_SATEL
 !!      J.-P. Chaboureau 15/04/03  add call to the subgrid condensation scheme
 !!      J.Escobar : 15/09/2015 : WENO5 & JPHEXT <> 1 
 !!      G.Delautier 04/2016 : BUG JPHEXT
+!!      S. Riette 11/2016 : Condensation interface changed
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -258,6 +259,7 @@ REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZSIGRC ! s r_c / sig_s^2
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZNCLD  ! grid scale cloud fraction
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRC    ! grid scale r_c mixing ratio (kg/kg)
 REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRI    ! grid scale r_i (kg/kg)
+REAL, DIMENSION(:,:,:), ALLOCATABLE  :: ZRV    ! grid scale r_v (kg/kg)
 !----------------------------------------------------------------------------
 !
 !*       1.    INITIALIZATION OF CONSTANTS FOR TRANSFERT CODE
@@ -475,8 +477,10 @@ IF( SIZE(PRT(:,:,:,:),4) >= 2 ) THEN
     ALLOCATE(ZTEMP(IIU,IJU,IKU))
     ZTEMP=PTHT*ZEXNT
     ALLOCATE(ZSIGRC(IIU,IJU,IKU))
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1,&
-         PPABST, PZZ, ZTEMP, PRT(:,:,:,1), ZRC, ZRI, PSIGS,          &
+    ALLOCATE(ZRV(IIU,IJU,IKU))
+    ZRV=PRT(:,:,:,1)
+    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE, 1, 'T',&
+         PPABST, PZZ, ZTEMP, ZRV, ZRC, ZRI, PRT(:,:,:,5), PRT(:,:,:,6), PSIGS,&
          PMFCONV, ZNCLD, ZSIGRC, OUSERI, OSIGMAS,PSIGQSAT )
     DEALLOCATE(ZTEMP,ZSIGRC)
   ELSE

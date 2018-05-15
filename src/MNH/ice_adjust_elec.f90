@@ -1,7 +1,11 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source$ $Revision$ $Date$
 !-----------------------------------------------------------------
 !     ###########################
       MODULE MODI_ICE_ADJUST_ELEC
@@ -365,10 +369,11 @@ DO JITER = 1, ITERMAX
 !
   !   ZW3=water vapor    ZW1=rc (INOUT)  ZW2=ri (INOUT)   PSRC= s'rci'/Sigma_s^2
     ZW3 = PRVS * PTSTEP;     ZW1 = PRCS * PTSTEP;  ZW2 = PRIS * PTSTEP
-
-    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1,         &
-       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., &
-       OSIGMAS, PSIGQSAT )
+!
+    CALL CONDENSATION( IIU, IJU, IKU, IIB, IIE, IJB, IJE, IKB, IKE,1, 'T',    &
+       PPABST, PZZ, ZT, ZW3, ZW1, ZW2, PRSS*PTSTEP, PRGS*PTSTEP, &
+       PSIGS, PMFCONV, PCLDFR, PSRCS, .TRUE., &
+       OSIGMAS, PSIGQSAT, PLV=ZLV, PLS=ZLS, PCPH=ZCPH )
 !
 !*       3.2    compute the variation of mixing ratio
 !
