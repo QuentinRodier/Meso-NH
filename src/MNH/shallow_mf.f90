@@ -188,6 +188,7 @@ USE MODI_COMPUTE_FRAC_ICE
 USE MODI_COMPUTE_BL89_ML
 USE MODD_GRID_n, ONLY : XDXHAT, XDYHAT
 USE MODD_REF_n, ONLY : XTHVREF
+USE MODE_MSG
 !
 IMPLICIT NONE
 
@@ -310,6 +311,10 @@ IF (HMF_UPDRAFT == 'EDKF' .OR. HMF_UPDRAFT == 'HRIO' .OR. &
 ENDIF
 
 ! Thermodynamics functions
+ZFRAC_ICE(:,:) = 0.
+WHERE(PRM(:,:,2)+PRM(:,:,4) > 1.E-20)
+  ZFRAC_ICE(:,:) = PRM(:,:,4) / (PRM(:,:,2)+PRM(:,:,4))
+ENDWHERE
 CALL COMPUTE_FRAC_ICE(HFRAC_ICE,ZFRAC_ICE(:,:),PTHM(:,:)*PEXNM(:,:))
 
 ! Conservative variables at t-dt
@@ -384,8 +389,7 @@ ELSEIF (HMF_UPDRAFT == 'HRIO') THEN
 ELSE
   WRITE(*,*) ' STOP'                                                     
   WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
-  CALL ABORT
-  STOP
+  CALL PRINT_MSG(NVERB_FATAL,'GEN','SHALLOW_MF','')  
 ENDIF
 
 !!! 5. Compute diagnostic convective cloud fraction and content
@@ -443,9 +447,8 @@ ENDIF
        ELSE
          WRITE(*,*) ' STOP'                                                     
          WRITE(*,*) ' NO UPDRAFT MODEL FOR EDKF : CMF_UPDRAFT =',HMF_UPDRAFT 
-         CALL ABORT
-         STOP
-      ENDIF  
+         CALL PRINT_MSG(NVERB_FATAL,'GEN','SHALLOW_MF','') 
+       ENDIF  
 
      IF (HMF_UPDRAFT == 'BOUT') THEN
       !! calcul de la hauteur de la couche limite ou de L_up

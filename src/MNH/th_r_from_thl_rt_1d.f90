@@ -1,7 +1,3 @@
-!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
-!MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
-!MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
-!MNH_LIC for details. version 1.
 !     ######spl
       MODULE MODI_TH_R_FROM_THL_RT_1D
 !     ###############################
@@ -63,6 +59,7 @@ REAL, DIMENSION(:), INTENT(OUT)  :: PRSATI ! estimated mixing ration at saturati
 !!      S. Riette April 2011 : ice added, allow ZRLTEMP to be negative
 !!                             we use dQsat/dT to help convergence
 !!                             use of optional PRR, PRS, PRG, PRH
+!!      S. Riette Nov 2016: support for HFRAC_ICE='S'
 !!
 !! --------------------------------------------------------------------------
 !
@@ -70,7 +67,7 @@ REAL, DIMENSION(:), INTENT(OUT)  :: PRSATI ! estimated mixing ration at saturati
 !          ------------
 !
 USE MODI_COMPUTE_FRAC_ICE
-USE MODD_CST
+USE MODD_CST !, ONLY: XP00, XRD, XCPD, XCPV, XCL, XCI, XLVTT, XTT, XLSTT
 USE MODE_THERMO
 !
 IMPLICIT NONE
@@ -137,6 +134,10 @@ DO II=1,JITER
   ZT(:)=PTH(:)*ZEXN(:)
 
   !Computation of liquid/ice fractions
+  PFRAC_ICE(:) = 0.
+  WHERE(PRL(:)+PRI(:) > 1.E-20)
+    PFRAC_ICE(:) = PRI(:) / (PRL(:)+PRI(:))
+  ENDWHERE
   CALL COMPUTE_FRAC_ICE(HFRAC_ICE,PFRAC_ICE(:),ZT(:))
 
   !Computation of Rvsat and dRsat/dT

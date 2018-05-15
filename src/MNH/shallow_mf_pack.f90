@@ -114,6 +114,7 @@ END MODULE MODI_SHALLOW_MF_PACK
 !!                                        for the height of the thermal
 !!                   M. Leriche 02/2017 : avoid negative values for sv tendencies
 !!  Philippe Wautelet: 05/2016-04/2018: new data structures and calls for I/O
+!!                   S. Riette 11/2016: support for CFRAC_ICE_SHALLOW_MF
 !! --------------------------------------------------------------------------
 !
 !*      0. DECLARATIONS
@@ -124,7 +125,7 @@ USE MODD_CST
 USE MODD_CONF
 USE MODD_IO_ll, ONLY: TFILEDATA
 USE MODD_NSV
-
+USE MODD_PARAM_ICE, ONLY : CFRAC_ICE_SHALLOW_MF
 USE MODD_PARAM_MFSHALL_n
 USE MODD_BUDGET
 
@@ -308,7 +309,7 @@ ZSFRV(:)=RESHAPE(PSFRV(:,:),(/ IIU*IJU /) )
 !!! 3. Call of the physical parameterization of massflux vertical transport
 
 CALL SHALLOW_MF(1,IKU,1,KRR,KRRL,KRRI,                              &
-                HMF_UPDRAFT, HMF_CLOUD, 'T', OMIXUV,                  &
+                HMF_UPDRAFT, HMF_CLOUD, CFRAC_ICE_SHALLOW_MF, OMIXUV,                  &
                 LNOMIXLG,NSV_LGBEG,NSV_LGEND,                         &
                 PIMPL_MF, PTSTEP,                                     &
                 ZDZZ, ZZZ,                                            &
