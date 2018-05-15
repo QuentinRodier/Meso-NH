@@ -1,13 +1,17 @@
-!MNH_LIC Copyright 1994-2018 CNRS, Meteo-France and Universite Paul Sabatier
+!MNH_LIC Copyright 1994-2014 CNRS, Meteo-France and Universite Paul Sabatier
 !MNH_LIC This is part of the Meso-NH software governed by the CeCILL-C licence
 !MNH_LIC version 1. See LICENSE, CeCILL-C_V1-en.txt and CeCILL-C_V1-fr.txt  
 !MNH_LIC for details. version 1.
+!-----------------------------------------------------------------
+!--------------- special set of characters for RCS information
+!-----------------------------------------------------------------
+! $Source: /home/cvsroot/MNH-VX-Y-Z/src/MNH/bl89.f90,v $ $Revision: 1.1.8.1.2.2.16.1.2.1 $ $Date: 2014/01/09 13:25:02 $
 !-----------------------------------------------------------------
 !     ################
       MODULE MODI_BL89
 !     ################
 INTERFACE
-      SUBROUTINE BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,PTHLM,KRR,PRM,PTKEM,PLM)
+      SUBROUTINE BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,PTHLM,KRR,PRM,PTKEM,PSHEAR,PLM)
 !
 INTEGER,                  INTENT(IN)  :: KKA 
 INTEGER,                  INTENT(IN)  :: KKU 
@@ -19,6 +23,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHLM
 INTEGER,                  INTENT(IN)  :: KRR
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTKEM
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PSHEAR
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PLM
 
 END SUBROUTINE BL89
@@ -26,7 +31,7 @@ END INTERFACE
 END MODULE MODI_BL89
 !
 !     #########################################################
-      SUBROUTINE BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,PTHLM,KRR,PRM,PTKEM,PLM)
+      SUBROUTINE BL89(KKA,KKU,KKL,PZZ,PDZZ,PTHVREF,PTHLM,KRR,PRM,PTKEM,PSHEAR,PLM)
 !     #########################################################
 !
 !!****  *BL89* -
@@ -92,6 +97,7 @@ REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTHLM       ! conservative pot. temp.
 INTEGER,                  INTENT(IN)  :: KRR
 REAL, DIMENSION(:,:,:,:), INTENT(IN)  :: PRM       ! water var.
 REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PTKEM     ! TKE
+REAL, DIMENSION(:,:,:),   INTENT(IN)  :: PSHEAR
 REAL, DIMENSION(:,:,:),   INTENT(OUT) :: PLM       ! Mixing length
 !   thermodynamical variables PTHLM=Theta at the begining
 !
@@ -114,7 +120,8 @@ REAL, DIMENSION(SIZE(PTKEM,1)*SIZE(PTKEM,2)) ::  ZLWORK,ZINTE
 REAL, DIMENSION(SIZE(PTKEM,1)*SIZE(PTKEM,2),SIZE(PTKEM,3)) :: ZZZ,ZDZZ,       &
                                                               ZG_O_THVREF,    &
                                                               ZTHM,ZTKEM,ZLM, &
-                                                              ZLMDN
+                                                              ZLMDN,ZSHEAR,   &
+                                                              ZSQRT_TKE
 !           ! input and output arrays packed according one horizontal coord.
 REAL, DIMENSION(SIZE(PRM,1)*SIZE(PRM,2),SIZE(PRM,3),SIZE(PRM,4)) :: ZRM
 !           ! input array packed according one horizontal coord.
@@ -122,7 +129,7 @@ REAL, DIMENSION(SIZE(PRM,1)*SIZE(PRM,2),SIZE(PRM,3)) :: ZSUM ! to replace SUM fu
 !
 INTEGER :: IIU,IJU
 INTEGER :: J1D        ! horizontal loop counter
-INTEGER :: JK,JKK     ! loop counters
+INTEGER :: JK,JKK,J3RD     ! loop counters
 INTEGER :: JRR        ! moist loop counter
 REAL    :: ZRVORD     ! Rv/Rd
 REAL    :: ZPOTE,ZLWORK1,ZLWORK2
@@ -165,6 +172,7 @@ ELSE
     ZZZ    (:,JK)   = RESHAPE(PZZ    (:,:,JK),(/ IIU*IJU /) )
     ZDZZ   (:,JK)   = RESHAPE(PDZZ   (:,:,JK),(/ IIU*IJU /) )
     ZTHM   (:,JK)   = RESHAPE(PTHLM  (:,:,JK),(/ IIU*IJU /) )
+    ZSHEAR   (:,JK)   = RESHAPE(PSHEAR  (:,:,JK),(/ IIU*IJU /) )    
     ZTKEM  (:,JK)   = RESHAPE(PTKEM  (:,:,JK),(/ IIU*IJU /) )
     ZG_O_THVREF(:,JK)   = RESHAPE(XG/PTHVREF(:,:,JK),(/ IIU*IJU /) )
     DO JRR=1,KRR
@@ -173,6 +181,7 @@ ELSE
   END DO
 END IF
 !
+ZSQRT_TKE = SQRT(ZTKEM)
 !-------------------------------------------------------------------------------
 !
 !*       2.    Virtual potential temperature on the model grid
@@ -214,11 +223,18 @@ ZHLVPT(:,KKA)    =         ZVPT(:,KKA)
 !
 !*       3.  loop on model levels
 !            --------------------
+
+WHERE (ZSHEAR<1.E-7)
+  ZSHEAR = 1.E-7
+END WHERE
+ZLM = 1.0
 !
 DO JK=IKTB,IKTE
 !
 !-------------------------------------------------------------------------------
 !
+!
+
 !*       4.  mixing length for a downwards displacement
 !            ------------------------------------------
   ZINTE(:)=ZTKEM(:,JK)
@@ -228,21 +244,42 @@ DO JK=IKTB,IKTE
     IF(ZTESTM > 0.) THEN
       ZTESTM=0.
       DO J1D=1,IIU*IJU
-        ZTEST0=0.5+SIGN(0.5,ZINTE(J1D))
-        ZPOTE = -ZTEST0*ZG_O_THVREF(J1D,JK)*      &
-                (ZHLVPT(J1D,JKK)-ZVPT(J1D,JK) )*ZDZZ(J1D,JKK)
+        
+       ZTEST0=0.5+SIGN(0.5,ZINTE(J1D))
+        
+        !--------- SHEAR + STABILITY -----------
+        ZPOTE = ZTEST0* &
+                (-ZG_O_THVREF(J1D,JK)*(ZHLVPT(J1D,JKK)-ZVPT(J1D,JK)) &
+                + XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK) &
+                )*ZDZZ(J1D,JKK)
+
         ZTEST =0.5+SIGN(0.5,ZINTE(J1D)-ZPOTE)
         ZTESTM=ZTESTM+ZTEST0
         ZLWORK1=ZDZZ(J1D,JKK)
-        ZLWORK2= ( + ZG_O_THVREF(J1D,JK) *                                   &
-            (  ZVPT(J1D,JKK) - ZVPT(J1D,JK) )                                &
-          + SQRT (ABS(                                                       &
-            ( ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK) - ZVPT(J1D,JK)) )**2      &
-            + 2. * ZINTE(J1D) * ZG_O_THVREF(J1D,JK)                          &
-                 * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK)   ))) /                 &
-        ( ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK)) 
+        
+        !-------- ORIGINAL -------------        
+!        ZLWORK2= ( + ZG_O_THVREF(J1D,JK) *                                   &
+!            (  ZVPT(J1D,JKK) - ZVPT(J1D,JK) )                                &
+!          + SQRT (ABS(                                                       &
+!            ( ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK) - ZVPT(J1D,JK)) )**2      &
+!            + 2. * ZINTE(J1D) * ZG_O_THVREF(J1D,JK)                          &
+!                 * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK)   ))) /                 &
+!        ( ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK)) 
+        
+
+        !--------- SHEAR + STABILITY ----------- 
+    ZLWORK2 = (ZG_O_THVREF(J1D,JK) *(ZVPT(J1D,JKK) - ZVPT(J1D,JK))  & 
+          -XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK) &
+          + sqrt(abs( (XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK) &
+          + ( -ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK) - ZVPT(J1D,JK)) ))**2.0 + &
+          2. * ZINTE(J1D) * &
+          (ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK)/ ZDZZ(J1D,JKK))))) / &
+          (ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK))
+
+  
         ZLWORK(J1D)=ZLWORK(J1D)+ZTEST0*(ZTEST*ZLWORK1+(1-ZTEST)*ZLWORK2)
         ZINTE(J1D) = ZINTE(J1D) - ZPOTE
+
       END DO
     ENDIF
   END DO
@@ -267,18 +304,43 @@ DO JK=IKTB,IKTE
       ZTESTM=0.
       DO J1D=1,IIU*IJU
         ZTEST0=0.5+SIGN(0.5,ZINTE(J1D))
-        ZPOTE = ZTEST0*ZG_O_THVREF(J1D,JK)      *      &
-               (ZHLVPT(J1D,JKK) - ZVPT(J1D,JK) ) *ZDZZ(J1D,JKK)
+
+        !-------- ORIGINAL -------------        
+       !ZPOTE = ZTEST0*ZG_O_THVREF(J1D,JK)      *      &
+       !        (ZHLVPT(J1D,JKK) - ZVPT(J1D,JK) ) *ZDZZ(J1D,JKK)
+
+        !--------- SHEAR + STABILITY -----------
+        ZPOTE = ZTEST0* &
+                (ZG_O_THVREF(J1D,JK)*(ZHLVPT(J1D,JKK)-ZVPT(J1D,JK)) &
+                +XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK) &
+                )*ZDZZ(J1D,JKK)
+
         ZTEST =0.5+SIGN(0.5,ZINTE(J1D)-ZPOTE)
         ZTESTM=ZTESTM+ZTEST0
         ZLWORK1=ZDZZ(J1D,JKK)
-        ZLWORK2= ( - ZG_O_THVREF(J1D,JK) *                                   &
-            (  ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK) )                              &
+
+        !-------- ORIGINAL -------------        
+       ! ZLWORK2= ( - ZG_O_THVREF(J1D,JK) *                                   &
+       !     (  ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK) )                              &
+       !   + SQRT (ABS(                                                       &
+       !     ( ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK)) )**2    &
+       !     + 2. * ZINTE(J1D) * ZG_O_THVREF(J1D,JK)                          &
+       !          * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK) ))    ) /               &
+       ! ( ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK) ) 
+        
+        !--------- SHEAR + STABILITY ----------- 
+       ZLWORK2= ( - ZG_O_THVREF(J1D,JK) *(ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK) )  &
+                   - XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK)  &
           + SQRT (ABS(                                                       &
-            ( ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK)) )**2    &
-            + 2. * ZINTE(J1D) * ZG_O_THVREF(J1D,JK)                          &
-                 * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK) ))    ) /               &
-        ( ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK) ) 
+          (XRM17*ZSHEAR(J1D,JKK)*ZSQRT_TKE(J1D,JK)   &
+            + ( ZG_O_THVREF(J1D,JK) * (ZVPT(J1D,JKK-KKL) - ZVPT(J1D,JK))) )**2    &
+            + 2. * ZINTE(J1D) * &
+            ( ZG_O_THVREF(J1D,JK)* ZDELTVPT(J1D,JKK)/ZDZZ(J1D,JKK))))) / &
+           (ZG_O_THVREF(J1D,JK) * ZDELTVPT(J1D,JKK) / ZDZZ(J1D,JKK))
+    
+
+
+
         ZLWORK(J1D)=ZLWORK(J1D)+ZTEST0*(ZTEST*ZLWORK1+(1-ZTEST)*ZLWORK2)
         ZINTE(J1D) = ZINTE(J1D) - ZPOTE
       END DO 
@@ -304,7 +366,8 @@ DO JK=IKTB,IKTE
 
 ZLM(:,JK)=MAX(ZLM(:,JK),XLINI)
 
-!------------------------------------------------------------------------------- 
+!
+!
 !*       8.  end of the loop on the vertical levels
 !            --------------------------------------
 !
