@@ -173,6 +173,7 @@ END MODULE MODI_BOUNDARIES
 !!      Redelsperger & Pianezze : 08/2015 : add XPOND coefficient
 !!      Modification    01/2016  (JP Pinty) Add LIMA that is LBC for CCN and IFN
 !!      Modification    18/07/17 (Vionnet)  Add blowing snow variables 
+!!      Modification    01/2018  (JL Redelsperger) Correction for TKE treatment 
 !-------------------------------------------------------------------------------
 !
 !*       0.    DECLARATIONS
@@ -510,7 +511,7 @@ SELECT CASE ( HLBCX(1) )
         WHERE ( PUT(IIB,:,:) <= 0. )               !  OUTFLOW condition
            PTKET(JI,:,:) = MAX(XTKEMIN, 2.*PTKET(JI+1,:,:)-PTKET(JI+2,:,:))  
         ELSEWHERE                                  !  INFLOW  condition
-           PTKET(JI,:,:) = MAX(XTKEMIN,ZLBXTKET(JI,:,:))  ! 1
+           PTKET(JI,:,:) = MAX(XTKEMIN, ZPOND*ZLBXTKET(JI,:,:) + (1.-ZPOND)*PTKET(JI+1,:,:))
         ENDWHERE
      ENDDO
   END IF
@@ -575,7 +576,7 @@ SELECT CASE ( HLBCX(1) )
     END IF
     !
    END DO
-  ENDIF
+  ENDIF  
 !
 !
 END SELECT
@@ -637,7 +638,8 @@ SELECT CASE ( HLBCX(2) )
            WHERE ( PUT(IIE+1,:,:) >= 0. )             !  OUTFLOW condition
               PTKET(IIE+JI,:,:) = MAX(XTKEMIN, 2.*PTKET(IIE+JI-1,:,:)-PTKET(IIE+JI-2,:,:))  
            ELSEWHERE                                  !  INFLOW  condition
-              PTKET(IIE+JI,:,:) = MAX(XTKEMIN,ZLBXTKET(ILBX-JPHEXT+JI,:,:))  
+              PTKET(IIE+JI,:,:) =  MAX(XTKEMIN, ZPOND*ZLBXTKET(ILBX-JPHEXT+JI,:,:) + &
+                                   (1.-ZPOND)*PTKET(IIE+JI-1,:,:))
            ENDWHERE
         END DO
      END IF
@@ -762,7 +764,8 @@ SELECT CASE ( HLBCY(1) )
         WHERE ( PVT(:,IJB,:) <= 0. )             !  OUTFLOW condition
            PTKET(:,JJ,:) = MAX(XTKEMIN, 2.*PTKET(:,JJ+1,:)-PTKET(:,JJ+2,:))  
         ELSEWHERE                                !  INFLOW  condition
-           PTKET(:,JJ,:) = MAX(XTKEMIN,ZLBYTKET(:,JJ,:))  
+           PTKET(:,JJ,:) =  MAX(XTKEMIN,ZPOND*ZLBYTKET(:,JJ,:) +  &
+                            (1.-ZPOND)*PTKET(:,JJ+1,:))
         ENDWHERE
      END DO
   END IF
@@ -890,7 +893,8 @@ SELECT CASE ( HLBCY(2) )
        WHERE ( PVT(:,IJE+1,:) >= 0. )             !  OUTFLOW condition
           PTKET(:,IJE+JJ,:) = MAX(XTKEMIN, 2.*PTKET(:,IJE+JJ-1,:)-PTKET(:,IJE+JJ-2,:))  
        ELSEWHERE                                  !  INFLOW  condition
-          PTKET(:,IJE+JJ,:) = MAX(XTKEMIN,ZLBYTKET(:,ILBY-JPHEXT+JJ,:))  
+          PTKET(:,IJE+JJ,:) = MAX(XTKEMIN,ZPOND*ZLBYTKET(:,ILBY-JPHEXT+JJ,:) + &
+                              (1.-ZPOND)*PTKET(:,IJE+JJ-1,:))
        ENDWHERE
     END DO
   ENDIF
